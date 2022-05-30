@@ -1,15 +1,9 @@
 /*
-<<<<<<< HEAD:src/mapgen_v6.cpp
-Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 Copyright (C) 2014-2018 paramat
->>>>>>> 5.5.0:src/mapgen/mapgen_v6.cpp
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -39,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include "profiler.h" // For TimeTaker
 #include "settings.h" // For g_settings
 #include "log_types.h"
+#include "serverenvironment.h"
 #include "emerge.h"
 #include "dungeongen.h"
 #include "cavegen.h"
@@ -114,26 +109,18 @@ MapgenV6::MapgenV6(MapgenV6Params *params, EmergeParams *emerge)
 	c_snow            = ndef->getId("mapgen_snow");
 	c_snowblock       = ndef->getId("mapgen_snowblock");
 	c_ice             = ndef->getId("mapgen_ice");
+
+	// freeminer:
 	c_clay            = ndef->getId("default:clay");
+	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
+	c_ice             = ndef->getId("mapgen_ice");
 
 	if (c_gravel == CONTENT_IGNORE)
 		c_gravel = c_stone;
 	if (c_desert_stone == CONTENT_IGNORE)
 		c_desert_stone = c_stone;
-<<<<<<< HEAD:src/mapgen_v6.cpp
-	if (c_mossycobble == CONTENT_IGNORE)
-		c_mossycobble = c_cobble;
-	if (c_stair_cobble == CONTENT_IGNORE)
-		c_stair_cobble = c_cobble;
-
-	// freeminer:
-	c_dirt_with_snow  = ndef->getId("mapgen_dirt_with_snow");
-	c_ice             = ndef->getId("mapgen_ice");
-
-=======
 	if (c_desert_sand == CONTENT_IGNORE)
 		c_desert_sand = c_sand;
->>>>>>> 5.5.0:src/mapgen/mapgen_v6.cpp
 	if (c_dirt_with_snow == CONTENT_IGNORE)
 		c_dirt_with_snow = c_dirt_with_grass;
 	if (c_snow == CONTENT_IGNORE)

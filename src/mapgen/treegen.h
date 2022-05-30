@@ -79,13 +79,11 @@ namespace treegen {
 		const NodeDefManager *ndef, s32 seed);
 	// Add pine tree
 	void make_pine_tree(MMVManip &vmanip, v3s16 p0,
-<<<<<<< HEAD:src/treegen.h
-		INodeDefManager *ndef, s32 seed);
-	void make_cavetree(MMVManip &vmanip, v3POS p0,
-		bool is_jungle_tree, INodeDefManager *ndef, int seed);
-=======
 		const NodeDefManager *ndef, s32 seed);
->>>>>>> 5.5.0:src/mapgen/treegen.h
+
+	void make_cavetree(MMVManip &vmanip, v3POS p0,
+		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed);
+
 
 	// Add L-Systems tree (used by engine)
 	treegen::error make_ltree(MMVManip &vmanip, v3s16 p0,

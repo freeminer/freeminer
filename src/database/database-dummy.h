@@ -51,11 +51,7 @@ public:
 	void endSave() {}
 
 private:
-<<<<<<< HEAD:src/database-dummy.h
 	concurrent_map<std::string, std::string> m_database;
-=======
-	std::map<s64, std::string> m_database;
 	std::set<std::string> m_player_database;
 	std::unordered_map<std::string, StringMap> m_mod_meta_database;
->>>>>>> 5.5.0:src/database/database-dummy.h
 };

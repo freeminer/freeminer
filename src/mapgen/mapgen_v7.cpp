@@ -1,16 +1,8 @@
 /*
-<<<<<<< HEAD:src/mapgen_v7.cpp
-mapgen_v7.cpp
-Copyright (C) 2010-2015 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2010-2015 paramat, Matt Gregory
-*/
-=======
 Minetest
 Copyright (C) 2014-2020 paramat
 Copyright (C) 2013-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
->>>>>>> 5.5.0:src/mapgen/mapgen_v7.cpp
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

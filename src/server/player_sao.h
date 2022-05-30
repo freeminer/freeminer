@@ -1,13 +1,8 @@
 /*
 content_sao.h
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-<<<<<<< HEAD:src/content_sao.h
-*/
-=======
 Copyright (C) 2013-2020 Minetest core developers & community
->>>>>>> 5.5.0:src/server/player_sao.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -27,134 +22,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "constants.h"
-<<<<<<< HEAD:src/content_sao.h
-
-class UnitSAO: public ServerActiveObject
-{
-public:
-	UnitSAO(ServerEnvironment *env, v3f pos):
-			ServerActiveObject(env, pos),
-			m_hp(-1), m_yaw(0) {}
-	virtual ~UnitSAO() {}
-
-	virtual void setYaw(const float yaw) { m_yaw = yaw; }
-	float getYaw() const { return m_yaw; };
-	f32 getRadYaw() const { return m_yaw * core::DEGTORAD; }
-	// Deprecated
-	f32 getRadYawDep() const { return (m_yaw + 90.) * core::DEGTORAD; }
-
-	s16 getHP() const { return m_hp; }
-	// Use a function, if isDead can be defined by other conditions
-	bool isDead() const { return m_hp == 0; }
-protected:
-	std::atomic_ushort m_hp;
-	float m_yaw;
-};
-
-/*
-	LuaEntitySAO needs some internals exposed.
-*/
-
-class LuaEntitySAO : public UnitSAO
-{
-public:
-	LuaEntitySAO(ServerEnvironment *env, v3f pos,
-	             const std::string &name, const std::string &state);
-	~LuaEntitySAO();
-	ActiveObjectType getType() const
-	{ return ACTIVEOBJECT_TYPE_LUAENTITY; }
-	ActiveObjectType getSendType() const
-	{ return ACTIVEOBJECT_TYPE_GENERIC; }
-	virtual void addedToEnvironment(u32 dtime_s);
-	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
-			const std::string &data);
-	bool isAttached();
-	void step(float dtime, bool send_recommended);
-	std::string getClientInitializationData(u16 protocol_version);
-	std::string getStaticData();
-	int punch(v3f dir,
-			const ToolCapabilities *toolcap=NULL,
-			ServerActiveObject *puncher=NULL,
-			float time_from_last_punch=1000000);
-	void rightClick(ServerActiveObject *clicker);
-	void setPos(const v3f &pos);
-	void moveTo(v3f pos, bool continuous);
-	float getMinimumSavedMovement();
-	std::string getDescription();
-	void setHP(s16 hp);
-	s16 getHP() const;
-	void setArmorGroups(const ItemGroupList &armor_groups);
-	ItemGroupList getArmorGroups();
-	void setAnimation(v2f frame_range, float frame_speed, float frame_blend, bool frame_loop);
-	void getAnimation(v2f *frame_range, float *frame_speed, float *frame_blend, bool *frame_loop);
-	void setBonePosition(const std::string &bone, v3f position, v3f rotation);
-	void getBonePosition(const std::string &bone, v3f *position, v3f *rotation);
-	void setAttachment(int parent_id, const std::string &bone, v3f position, v3f rotation);
-	void getAttachment(int *parent_id, std::string *bone, v3f *position, v3f *rotation);
-	void addAttachmentChild(int child_id);
-	void removeAttachmentChild(int child_id);
-	UNORDERED_SET<int> getAttachmentChildIds();
-	ObjectProperties* accessObjectProperties();
-	void notifyObjectPropertiesModified();
-	/* LuaEntitySAO-specific */
-	void setVelocity(v3f velocity);
-	v3f getVelocity();
-	void setAcceleration(v3f acceleration);
-	v3f getAcceleration();
-
-	void setTextureMod(const std::string &mod);
-	void setSprite(v2s16 p, int num_frames, float framelength,
-			bool select_horiz_by_yawpitch);
-	std::string getName();
-	bool getCollisionBox(aabb3f *toset);
-	bool collideWithObjects();
-protected:
-	std::string getPropertyPacket();
-	void sendPosition(bool do_interpolate, bool is_movement_end);
-
-	std::string m_init_name;
-	std::string m_init_state;
-	bool m_registered;
-
-public:
-	struct ObjectProperties m_prop;
-
-	//std::atomic_ushort m_hp;
-	v3f m_velocity;
-	v3f m_acceleration;
-
-private:
-	ItemGroupList m_armor_groups;
-
-	std::atomic_bool m_properties_sent;
-	float m_last_sent_yaw;
-	v3f m_last_sent_position;
-	v3f m_last_sent_velocity;
-	float m_last_sent_position_timer;
-	float m_last_sent_move_precision;
-	bool m_armor_groups_sent;
-
-	v2f m_animation_range;
-	float m_animation_speed;
-	float m_animation_blend;
-	bool m_animation_loop;
-	bool m_animation_sent;
-
-	UNORDERED_MAP<std::string, core::vector2d<v3f> > m_bone_position;
-	bool m_bone_position_sent;
-
-	int m_attachment_parent_id;
-	UNORDERED_SET<int> m_attachment_child_ids;
-	std::string m_attachment_bone;
-	v3f m_attachment_position;
-	v3f m_attachment_rotation;
-	bool m_attachment_sent;
-};
-=======
 #include "network/networkprotocol.h"
 #include "unit_sao.h"
 #include "util/numeric.h"
->>>>>>> 5.5.0:src/server/player_sao.h
 
 /*
 	PlayerSAO needs some internals exposed.
@@ -222,12 +92,8 @@ public:
 	void setBasePosition(const v3f &position);
 	void setPos(const v3f &pos);
 	void moveTo(v3f pos, bool continuous);
-<<<<<<< HEAD:src/content_sao.h
 	void addSpeed(v3f);
-	void setYaw(const float yaw);
-=======
 	void setPlayerYaw(const float yaw);
->>>>>>> 5.5.0:src/server/player_sao.h
 	// Data should not be sent at player initialization
 	void setPlayerYawAndSend(const float yaw);
 	void setLookPitch(const float pitch);
@@ -368,21 +234,7 @@ private:
 	LagPool m_move_pool;
 public:
 	v3f m_last_good_position;
-<<<<<<< HEAD:src/content_sao.h
 	std::atomic_uint m_ms_from_last_respawn;
-private:
-	float m_time_from_last_punch;
-	v3s16 m_nocheat_dig_pos;
-	float m_nocheat_dig_time;
-
-	int m_wield_index;
-	std::atomic_bool m_position_not_sent;
-	ItemGroupList m_armor_groups;
-	std::atomic_bool m_armor_groups_sent;
-
-	std::atomic_bool m_properties_sent;
-	struct ObjectProperties m_prop;
-=======
 	float m_time_from_last_teleport = 0.0f;
 	float m_time_from_last_punch = 0.0f;
 	v3s16 m_nocheat_dig_pos = v3s16(32767, 32767, 32767);
@@ -395,50 +247,19 @@ private:
 	IntervalLimiter m_drowning_interval;
 	IntervalLimiter m_node_hurt_interval;
 
-	bool m_position_not_sent = false;
+	std::atomic_bool m_position_not_sent = false;
 
->>>>>>> 5.5.0:src/server/player_sao.h
 	// Cached privileges for enforcement
 	std::set<std::string> m_privs;
 	bool m_is_singleplayer;
 
-<<<<<<< HEAD:src/content_sao.h
-	v2f m_animation_range;
-	float m_animation_speed;
-	float m_animation_blend;
-	bool m_animation_loop;
-	std::atomic_bool m_animation_sent;
-=======
 	u16 m_breath = PLAYER_MAX_BREATH_DEFAULT;
 	f32 m_pitch = 0.0f;
 	f32 m_fov = 0.0f;
 	s16 m_wanted_range = 0.0f;
->>>>>>> 5.5.0:src/server/player_sao.h
 
 	Metadata m_meta;
 
-<<<<<<< HEAD:src/content_sao.h
-	int m_attachment_parent_id;
-	UNORDERED_SET<int> m_attachment_child_ids;
-	std::string m_attachment_bone;
-	v3f m_attachment_position;
-	v3f m_attachment_rotation;
-	bool m_attachment_sent;
-	u16 m_breath;
-	f32 m_pitch;
-	f32 m_fov;
-	s16 m_wanted_range;
-
-	PlayerAttributes m_extra_attributes;
-	bool m_extended_attributes_modified;
-public:
-	float m_physics_override_speed;
-	float m_physics_override_jump;
-	float m_physics_override_gravity;
-	bool m_physics_override_sneak;
-	bool m_physics_override_sneak_glitch;
-	std::atomic_bool m_physics_override_sent;
-=======
 public:
 	float m_physics_override_speed = 1.0f;
 	float m_physics_override_jump = 1.0f;
@@ -446,8 +267,7 @@ public:
 	bool m_physics_override_sneak = true;
 	bool m_physics_override_sneak_glitch = false;
 	bool m_physics_override_new_move = true;
-	bool m_physics_override_sent = false;
->>>>>>> 5.5.0:src/server/player_sao.h
+	std::atomic_bool m_physics_override_sent = false;
 };
 
 struct PlayerHPChangeReason

@@ -1,15 +1,8 @@
 /*
-<<<<<<< HEAD:src/mg_biome.h
-biome.h
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-*/
-=======
 Minetest
 Copyright (C) 2014-2020 paramat
 Copyright (C) 2014-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
->>>>>>> 5.5.0:src/mapgen/mg_biome.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -32,14 +25,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "noise.h"
 
-<<<<<<< HEAD:src/mg_biome.h
-//#include "mapgen.h"
-
 struct MapgenParams;
 
-=======
 class Server;
->>>>>>> 5.5.0:src/mapgen/mg_biome.h
 class Settings;
 class BiomeManager;
 

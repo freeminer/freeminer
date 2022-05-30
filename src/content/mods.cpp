@@ -22,15 +22,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cctype>
 #include <fstream>
-<<<<<<< HEAD:src/mods.cpp
-#include "mods.h"
-//#include <fstream>
-=======
 #include <json/json.h>
 #include <algorithm>
 #include "content/mods.h"
 #include "database/database.h"
->>>>>>> 5.5.0:src/content/mods.cpp
 #include "filesys.h"
 #include "log.h"
 #include "content/subgames.h"
@@ -371,72 +366,6 @@ void ModConfiguration::checkConflictsAndDeps()
 	resolveDependencies();
 }
 
-<<<<<<< HEAD:src/mods.cpp
-void ModConfiguration::addModsInPath(std::string path)
-{
-	addMods(flattenMods(getModsInPath(path)));
-}
-
-void ModConfiguration::addMods(std::vector<ModSpec> new_mods)
-{
-	// Maintain a map of all existing m_unsatisfied_mods.
-	// Keys are mod names and values are indices into m_unsatisfied_mods.
-	std::map<std::string, u32> existing_mods;
-	for(u32 i = 0; i < m_unsatisfied_mods.size(); ++i){
-		existing_mods[m_unsatisfied_mods[i].name] = i;
-	}
-
-	// Add new mods
-	for(int want_from_modpack = 1; want_from_modpack >= 0; --want_from_modpack){
-		// First iteration:
-		// Add all the mods that come from modpacks
-		// Second iteration:
-		// Add all the mods that didn't come from modpacks
-
-		std::set<std::string> seen_this_iteration;
-
-		for(std::vector<ModSpec>::const_iterator it = new_mods.begin();
-				it != new_mods.end(); ++it){
-			const ModSpec &mod = *it;
-			if(mod.part_of_modpack != (bool)want_from_modpack)
-				continue;
-			if(existing_mods.count(mod.name) == 0){
-				// GOOD CASE: completely new mod.
-				m_unsatisfied_mods.push_back(mod);
-				existing_mods[mod.name] = m_unsatisfied_mods.size() - 1;
-			}
-			else if(seen_this_iteration.count(mod.name) == 0){
-				// BAD CASE: name conflict in different levels.
-				u32 oldindex = existing_mods[mod.name];
-				const ModSpec &oldmod = m_unsatisfied_mods[oldindex];
-				warningstream<<"Mod name conflict detected: \""
-					<<mod.name<<"\""<<std::endl
-					<<"Will not load: "<<oldmod.path<<std::endl
-					<<"Overridden by: "<<mod.path<<std::endl;
-				m_unsatisfied_mods[oldindex] = mod;
-
-				// If there was a "VERY BAD CASE" name conflict
-				// in an earlier level, ignore it.
-				m_name_conflicts.erase(mod.name);
-			}
-			else{
-				// VERY BAD CASE: name conflict in the same level.
-				u32 oldindex = existing_mods[mod.name];
-				const ModSpec &oldmod = m_unsatisfied_mods[oldindex];
-				errorstream<<"Mod name conflict detected: \""
-					<<mod.name<<"\""<<std::endl
-					<<"Will not load: "<<oldmod.path<<std::endl
-					<<"Will not load: "<<mod.path<<std::endl;
-				m_unsatisfied_mods[oldindex] = mod;
-				m_name_conflicts.insert(mod.name);
-			}
-			seen_this_iteration.insert(mod.name);
-		}
-	}
-}
-
-=======
->>>>>>> 5.5.0:src/content/mods.cpp
 void ModConfiguration::resolveDependencies()
 {
 	// Step 1: Compile a list of the mod names we're working with

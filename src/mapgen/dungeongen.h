@@ -1,15 +1,9 @@
 /*
-<<<<<<< HEAD:src/dungeongen.h
 dungeongen.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2015-2018 paramat
->>>>>>> 5.5.0:src/mapgen/dungeongen.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -49,12 +43,7 @@ int dir_to_facedir(v3s16 d);
 struct DungeonParams {
 	s32 seed;
 
-<<<<<<< HEAD:src/dungeongen.h
 	content_t c_ice;
-	content_t c_water;
-	content_t c_river_water;
-=======
->>>>>>> 5.5.0:src/mapgen/dungeongen.h
 	content_t c_wall;
 	// Randomly scattered alternative wall nodes
 	content_t c_alt_wall;

@@ -40,16 +40,8 @@ class RemotePlayer : public Player
 	friend class PlayerDatabaseFiles;
 
 public:
-<<<<<<< HEAD
 	RemotePlayer(const std::string & name, IItemDefManager *idef);
-	virtual ~RemotePlayer() {}
-
-	void save(std::string savedir, IGameDef *gamedef);
-	void deSerialize(std::istream &is, const std::string &playername, PlayerSAO *sao);
-=======
-	RemotePlayer(const char *name, IItemDefManager *idef);
 	virtual ~RemotePlayer() = default;
->>>>>>> 5.5.0
 
 	PlayerSAO *getPlayerSAO() { return m_sao; }
 	void setPlayerSAO(PlayerSAO *sao) { m_sao = sao; }
@@ -137,19 +129,7 @@ public:
 
 	void setDirty(bool dirty) { m_dirty = true; }
 
-<<<<<<< HEAD
-	u16 protocol_version;
-private:
-	/*
-		serialize() writes a bunch of text that can contain
-		any characters except a '\0', and such an ending that
-		deSerialize stops reading exactly at the right point.
-	*/
-	void serialize(std::ostream &os);
-	void serializeExtraAttributes(std::string &output);
-=======
 	u16 protocol_version = 0;
->>>>>>> 5.5.0
 
 	// v1 for clients older than 5.1.0-dev
 	u16 formspec_version = 1;
@@ -186,11 +166,6 @@ private:
 
 	session_t m_peer_id = PEER_ID_INEXISTENT;
 };
-<<<<<<< HEAD
 
 Json::Value operator<<(Json::Value &json, RemotePlayer &player);
 Json::Value operator>>(Json::Value &json, RemotePlayer &player);
-
-#endif
-=======
->>>>>>> 5.5.0

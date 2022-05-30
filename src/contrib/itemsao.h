@@ -19,7 +19,7 @@
 #ifndef __ITEMSAO_H__
 #define __ITEMSAO_H__
 
-#include "content_sao.h"
+#include "server/luaentity_sao.h"
 
 namespace epixel
 {

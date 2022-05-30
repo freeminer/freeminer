@@ -1,13 +1,8 @@
 /*
 ban.cpp
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-<<<<<<< HEAD
-*/
-=======
 Copyright (C) 2018 nerzhul, Loic BLOT <loic.blot@unix-experience.fr>
->>>>>>> 5.5.0
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

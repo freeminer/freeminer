@@ -67,7 +67,7 @@ struct PeerChange
 	PeerChange(PeerChangeType t, session_t _peer_id, bool _timeout) :
 			type(t), timeout(_timeout)
 	{
-		peer_id.store(_peer_id);
+		peer_id = _peer_id;
 	}
 	PeerChange() = delete;
 

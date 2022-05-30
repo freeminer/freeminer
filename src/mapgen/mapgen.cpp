@@ -1,29 +1,4 @@
 /*
-<<<<<<< HEAD:src/mapgen.cpp
-mapgen.cpp
-Copyright (C) 2010-2015 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include <fstream>
-=======
 Minetest
 Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
@@ -45,7 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include <cmath>
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -66,17 +40,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/directiontables.h"
 #include "filesys.h"
-<<<<<<< HEAD:src/mapgen.cpp
-
-#include "log_types.h"
-#include "mapgen_indev.h"
-#include "mapgen_math.h"
-#include "environment.h"
-
-=======
 #include "log.h"
 #include "mapgen_carpathian.h"
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 #include "mapgen_flat.h"
 #include "mapgen_fractal.h"
 #include "mapgen_v5.h"
@@ -86,6 +51,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_singlenode.h"
 #include "cavegen.h"
 #include "dungeongen.h"
+
+// fm:
+#include "log_types.h"
+#include "mapgen_indev.h"
+#include "mapgen_math.h"
+#include "environment.h"
 
 
 FlagDesc flagdesc_mapgen[] = {

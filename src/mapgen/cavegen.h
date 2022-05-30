@@ -1,15 +1,10 @@
 /*
-<<<<<<< HEAD:src/cavegen.h
 cavegen.h
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-*/
-=======
+
 Minetest
 Copyright (C) 2015-2020 paramat
 Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
->>>>>>> 5.5.0:src/mapgen/cavegen.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -161,11 +156,8 @@ public:
 
 	content_t c_water_source;
 	content_t c_lava_source;
-<<<<<<< HEAD:src/cavegen.h
 	content_t c_ice;
-=======
 	content_t c_biome_liquid;
->>>>>>> 5.5.0:src/mapgen/cavegen.h
 
 	// ndef is a mandatory parameter.
 	// If gennotify is NULL, generation events are not logged.

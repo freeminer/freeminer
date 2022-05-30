@@ -20,13 +20,12 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MAPGENINDEV_HEADER
-#define MAPGENINDEV_HEADER
+#pragma once
 
 #include "json/json.h"
-#include "mapgen.h"
-#include "mapgen_v6.h"
-#include "cavegen.h"
+#include "mapgen/mapgen.h"
+#include "mapgen/mapgen_v6.h"
+#include "mapgen/cavegen.h"
 
 //#define getNoiseIndevParams(x, y) getStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y), sizeof(y))
 //#define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
@@ -113,5 +112,3 @@ public:
 			v3POS node_min, bool is_large_cave);
 };
 */
-
-#endif

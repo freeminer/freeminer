@@ -306,7 +306,7 @@ public:
 	virtual const NodeDefManager* getNodeDefManager();
 	virtual ICraftDefManager* getCraftDefManager();
 	virtual u16 allocateUnknownNodeId(const std::string &name);
-	IRollbackManager *getRollbackManager() { return m_enable_rollback_recording ? m_rollback : nullptr; }
+	IRollbackManager *getRollbackManager() { return m_rollback; }
 	virtual EmergeManager *getEmergeManager() { return m_emerge; }
 	virtual ModMetadataDatabase *getModStorageDatabase() { return m_mod_storage_database; }
 

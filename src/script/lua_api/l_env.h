@@ -207,7 +207,6 @@ private:
 	// stops forceloading a position
 	static int l_forceload_free_block(lua_State *L);
 
-<<<<<<< HEAD
 	/* Epixel contrib */
 /*
 	static int l_add_creature(lua_State *L);
@@ -218,7 +217,6 @@ private:
 /*
 	static int l_make_explosion(lua_State *L);
 */
-=======
 	// compare_block_status(nodepos)
 	static int l_compare_block_status(lua_State *L);
 
@@ -229,7 +227,6 @@ private:
 
 	static void collectNodeIds(lua_State *L, int idx,
 		const NodeDefManager *ndef, std::vector<content_t> &filter);
->>>>>>> 5.5.0
 
 public:
 	static void Initialize(lua_State *L, int top);
@@ -243,14 +240,9 @@ class LuaABM : public ActiveBlockModifier {
 private:
 	int m_id;
 
-<<<<<<< HEAD
-	std::set<std::string> m_trigger_contents;
-	std::set<std::string> m_required_neighbors;
-	u32 m_neighbors_range;
-=======
+	u32 m_neighbors_range = 0;
 	std::vector<std::string> m_trigger_contents;
 	std::vector<std::string> m_required_neighbors;
->>>>>>> 5.5.0
 	float m_trigger_interval;
 	u32 m_trigger_chance;
 	bool m_simple_catch_up;
@@ -258,16 +250,10 @@ private:
 	s16 m_max_y;
 public:
 	LuaABM(lua_State *L, int id,
-<<<<<<< HEAD
-			const std::set<std::string> &trigger_contents,
-			const std::set<std::string> &required_neighbors,
 			int neighbors_range,
-			float trigger_interval, u32 trigger_chance, bool simple_catch_up):
-=======
 			const std::vector<std::string> &trigger_contents,
 			const std::vector<std::string> &required_neighbors,
 			float trigger_interval, u32 trigger_chance, bool simple_catch_up, s16 min_y, s16 max_y):
->>>>>>> 5.5.0
 		m_id(id),
 		m_trigger_contents(trigger_contents),
 		m_required_neighbors(required_neighbors),
@@ -283,11 +269,7 @@ public:
 	{
 		return m_trigger_contents;
 	}
-<<<<<<< HEAD
-	virtual std::set<std::string> getRequiredNeighbors(bool activate)
-=======
-	virtual const std::vector<std::string> &getRequiredNeighbors() const
->>>>>>> 5.5.0
+	virtual const std::vector<std::string> &getRequiredNeighbors(bool activate) const
 	{
 		return m_required_neighbors;
 	}

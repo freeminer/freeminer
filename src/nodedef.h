@@ -613,11 +613,11 @@ struct ContentFeatures
 		return 0;
 	}
 
-//#ifndef SERVER
+#ifndef SERVER
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings,
 		bool server = false);
-//#endif
+#endif
 
 private:
 #ifndef SERVER

@@ -1,16 +1,10 @@
 /*
-<<<<<<< HEAD:src/cavegen.cpp
 cavegen.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2015-2020 paramat
 Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
->>>>>>> 5.5.0:src/mapgen/cavegen.cpp
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

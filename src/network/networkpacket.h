@@ -46,7 +46,7 @@ public:
 
 	// Getters
 	u32 getSize() const { return m_datasize; }
-	session_t getPeerId() const { return m_peer_id.load(); }
+	session_t getPeerId() const { return m_peer_id; }
 	u16 getCommand() { return m_command; }
 	u32 getRemainingBytes() const { return m_datasize - m_read_offset; }
 	const char *getRemainingString() { return getString(m_read_offset); }

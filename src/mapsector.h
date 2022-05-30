@@ -90,56 +90,5 @@ protected:
 	MapBlock *getBlockBuffered(s16 y);
 
 };
-<<<<<<< HEAD
-
-class ServerMapSector : public MapSector
-{
-public:
-	ServerMapSector(Map *parent, v2s16 pos, IGameDef *gamedef);
-	~ServerMapSector();
-
-	u32 getId() const
-	{
-		return MAPSECTOR_SERVER;
-	}
-
-	/*
-		These functions handle metadata.
-		They do not handle blocks.
-	*/
-
-	void serialize(std::ostream &os, u8 version);
-
-	static ServerMapSector* deSerialize(
-			std::istream &is,
-			Map *parent,
-			v2s16 p2d,
-			std::map<v2s16, MapSector*> & sectors,
-			IGameDef *gamedef
-		);
-
-private:
-};
-
-#ifndef SERVER
-class ClientMapSector : public MapSector
-{
-public:
-	ClientMapSector(Map *parent, v2s16 pos, IGameDef *gamedef);
-	~ClientMapSector();
-
-	u32 getId() const
-	{
-		return MAPSECTOR_CLIENT;
-	}
-
-private:
-};
-#endif
 
 #endif
-
-#endif
-
-=======
->>>>>>> 5.5.0

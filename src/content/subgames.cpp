@@ -86,29 +86,19 @@ SubgameSpec findSubgame(const std::string &id)
 		find_paths.emplace_back(path, false);
 	}
 
-<<<<<<< HEAD:src/subgame.cpp
-	find_paths.push_back(GameFindPath(
-			user + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id + "_game", true));
-	find_paths.push_back(GameFindPath(
-			user + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id, true));
-	find_paths.push_back(GameFindPath(
-			share + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id + "_game", false));
-	find_paths.push_back(GameFindPath(
-			share + DIR_DELIM + "games" + GAMES_VERSION + DIR_DELIM + id, false));
-=======
 	std::string game_base = DIR_DELIM;
-	game_base = game_base.append("games").append(DIR_DELIM).append(id);
+	game_base = game_base.append("games").append(GAMES_VERSION).append(DIR_DELIM).append(id);
 	std::string game_suffixed = game_base + "_game";
 	find_paths.emplace_back(user + game_suffixed, true);
 	find_paths.emplace_back(user + game_base, true);
 	find_paths.emplace_back(share + game_suffixed, false);
 	find_paths.emplace_back(share + game_base, false);
 
->>>>>>> 5.5.0:src/content/subgames.cpp
 	// Find game directory
 	std::string game_path;
 	bool user_game = true; // Game is in user's directory
 	for (const GameFindPath &find_path : find_paths) {
+
 		const std::string &try_path = find_path.path;
 		if (fs::PathExists(try_path)) {
 			game_path = try_path;
@@ -264,11 +254,7 @@ std::string getWorldGameId(const std::string &world_path, bool can_be_legacy)
 	if (!succeeded) {
 		if (can_be_legacy) {
 			// If map_meta.txt exists, it is probably an old minetest world
-<<<<<<< HEAD:src/subgame.cpp
-			if(fs::PathExists(world_path + DIR_DELIM + "map_meta.json") || fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
-=======
-			if (fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
->>>>>>> 5.5.0:src/content/subgames.cpp
+			if (fs::PathExists(world_path + DIR_DELIM + "map_meta.json") || fs::PathExists(world_path + DIR_DELIM + "map_meta.txt"))
 				return LEGACY_GAMEID;
 		}
 		return "";
@@ -371,29 +357,21 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 	// Create world.mt if does not already exist
 	std::string worldmt_path = final_path + DIR_DELIM "world.mt";
 	if (!fs::PathExists(worldmt_path)) {
-<<<<<<< HEAD:src/subgame.cpp
-		std::ostringstream ss(std::ios_base::binary);
-		ss << "gameid = " << gamespec.id
-#if USE_LEVELDB
-				<< "\nbackend = leveldb"
-#elif USE_SQLITE3
-				<< "\nbackend = sqlite3"
-#endif
-			<< "\ncreative_mode = " << g_settings->get("creative_mode")
-			<< "\nenable_damage = " << g_settings->get("enable_damage")
-			<< "\n";
-		if (!fs::safeWriteToFile(worldmt_path, ss.str()))
-			return false;
-=======
 		Settings conf;
->>>>>>> 5.5.0:src/content/subgames.cpp
 
 		conf.set("world_name", name);
 		conf.set("gameid", gamespec.id);
+#if USE_LEVELDB
+		conf.set("backend", "leveldb");
+		conf.set("player_backend", "leveldb");
+		conf.set("auth_backend", "leveldb");
+		conf.set("mod_storage_backend", "leveldb");
+#elif USE_SQLITE3
 		conf.set("backend", "sqlite3");
 		conf.set("player_backend", "sqlite3");
 		conf.set("auth_backend", "sqlite3");
 		conf.set("mod_storage_backend", "sqlite3");
+#endif
 		conf.setBool("creative_mode", g_settings->getBool("creative_mode"));
 		conf.setBool("enable_damage", g_settings->getBool("enable_damage"));
 
@@ -402,36 +380,13 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 		}
 	}
 
-/* fmtodo: enable after remake layers params
 	// Create map_meta.txt if does not already exist
-<<<<<<< HEAD:src/subgame.cpp
-	std::string map_meta_path = path + DIR_DELIM + "map_meta.json";
-	if (!fs::PathExists(map_meta_path)){
-		verbosestream << "Creating map_meta.json (" << map_meta_path << ")" << std::endl;
-		fs::CreateAllDirs(path);
-		std::ostringstream oss(std::ios_base::binary);
-=======
-	std::string map_meta_path = final_path + DIR_DELIM + "map_meta.txt";
+	std::string map_meta_path = final_path + DIR_DELIM + "map_meta.json";
 	if (!fs::PathExists(map_meta_path)) {
 		MapSettingsManager mgr(map_meta_path);
->>>>>>> 5.5.0:src/content/subgames.cpp
 
 		mgr.setMapSetting("seed", g_settings->get("fixed_map_seed"));
 
-<<<<<<< HEAD:src/subgame.cpp
-		params.readParams(g_settings);
-		params.writeParams(&conf);
-		conf.writeJsonFile(map_meta_path);
-/ *
-		conf.writeLines(oss);
-		oss << "[end_of_params]\n";
-* /
-		fs::safeWriteToFile(map_meta_path, oss.str());
-	}
-*/
-	return true;
-}
-=======
 		mgr.makeMapgenParams();
 		mgr.saveMapMeta();
 	}
@@ -450,4 +405,3 @@ std::vector<std::string> getEnvModPaths()
 		paths.push_back(search_paths.next(PATH_DELIM));
 	return paths;
 }
->>>>>>> 5.5.0:src/content/subgames.cpp

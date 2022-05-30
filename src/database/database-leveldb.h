@@ -28,12 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 #include "database.h"
-<<<<<<< HEAD:src/database-leveldb.h
-#include "key_value_storage.h"
-#include <string>
-=======
 #include "leveldb/db.h"
->>>>>>> 5.5.0:src/database/database-leveldb.h
 
 class Database_LevelDB : public MapDatabase
 {
@@ -41,8 +36,10 @@ public:
 	Database_LevelDB(const std::string &savedir);
 	~Database_LevelDB();
 
-	void open() { m_database.open(); };
-	void close() { m_database.close(); };
+	/* fmtodo?:
+	void open() { m_database->open(); };
+	void close() { m_database->close(); };
+	*/
 
 	bool saveBlock(const v3s16 &pos, const std::string &data);
 	void loadBlock(const v3s16 &pos, std::string *block);
@@ -85,8 +82,8 @@ public:
 	virtual void reload();
 
 private:
-	//leveldb::DB *m_database;
-	KeyValueStorage m_database;
+	leveldb::DB *m_database;
+	//KeyValueStorage m_database;
 };
 
 #endif // USE_LEVELDB
