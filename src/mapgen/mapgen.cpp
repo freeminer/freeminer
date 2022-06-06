@@ -96,14 +96,9 @@ struct MapgenDesc {
 // Of the remaining, v5 last due to age, v7 first due to being the default.
 // The order of 'enum MapgenType' in mapgen.h must match this order.
 static MapgenDesc g_reg_mapgens[] = {
-<<<<<<< HEAD:src/mapgen.cpp
 	{"indev",      true},
 	{"math",       true},
 
-	{"v5",         true},
-	{"v6",         true},
-=======
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 	{"v7",         true},
 	{"valleys",    true},
 	{"carpathian", true},
@@ -125,40 +120,13 @@ STATIC_ASSERT(
 Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeParams *emerge) :
 	gennotify(emerge->gen_notify_on, emerge->gen_notify_on_deco_ids)
 {
-<<<<<<< HEAD:src/mapgen.cpp
-	generating  = false;
-	id          = -1;
-	seed        = 0;
-	water_level = 0;
-	flags       = 0;
-
-	liquid_pressure = 0;
-
-	vm        = NULL;
-	ndef      = NULL;
-	biomegen  = NULL;
-	biomemap  = NULL;
-	heightmap = NULL;
-}
-
-
-Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
-	gennotify(emerge->gen_notify_on, &emerge->gen_notify_on_deco_ids)
-{
-	this->m_emerge = emerge;
-	generating  = false;
-	id          = mapgenid;
-	water_level = params->water_level;
-	flags       = params->flags;
-	csize       = v3s16(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
-=======
 	id           = mapgenid;
 	water_level  = params->water_level;
 	mapgen_limit = params->mapgen_limit;
 	flags        = params->flags;
 	csize        = v3s16(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 
+	this->m_emerge = emerge;
 	liquid_pressure = params->liquid_pressure;
 
 	/*
@@ -205,17 +173,14 @@ Mapgen *Mapgen::createMapgen(MapgenType mgtype, MapgenParams *params,
 	EmergeParams *emerge)
 {
 	switch (mgtype) {
-<<<<<<< HEAD:src/mapgen.cpp
 
 	case MAPGEN_INDEV:
-		return new MapgenIndev(mgid, (MapgenIndevParams *)params, emerge);
+		return new MapgenIndev((MapgenIndevParams *)params, emerge);
 	case MAPGEN_MATH:
-		return new MapgenMath(mgid, (MapgenMathParams *)params, emerge);
+		return new MapgenMath((MapgenMathParams *)params, emerge);
 
-=======
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathian((MapgenCarpathianParams *)params, emerge);
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 	case MAPGEN_FLAT:
 		return new MapgenFlat((MapgenFlatParams *)params, emerge);
 	case MAPGEN_FRACTAL:
@@ -239,17 +204,14 @@ Mapgen *Mapgen::createMapgen(MapgenType mgtype, MapgenParams *params,
 MapgenParams *Mapgen::createMapgenParams(MapgenType mgtype)
 {
 	switch (mgtype) {
-<<<<<<< HEAD:src/mapgen.cpp
 
 	case MAPGEN_INDEV:
 		return new MapgenIndevParams;
 	case MAPGEN_MATH:
 		return new MapgenMathParams;
 
-=======
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathianParams;
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 	case MAPGEN_FLAT:
 		return new MapgenFlatParams;
 	case MAPGEN_FRACTAL:
@@ -426,13 +388,11 @@ inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s16 em)
 void Mapgen::updateLiquid(v3POS nmin, v3POS nmax)
 {
 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
-<<<<<<< HEAD:src/mapgen.cpp
-	v3s16 em  = vm->m_area.getExtent();
+
 	bool rare = g_settings->getBool("liquid_real");
 	int rarecnt = 0;
-=======
+
 	const v3s16 &em  = vm->m_area.getExtent();
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 
 	for (s16 z = nmin.Z + 1; z <= nmax.Z - 1; z++)
 	for (s16 x = nmin.X + 1; x <= nmax.X - 1; x++) {
@@ -465,13 +425,8 @@ void Mapgen::updateLiquid(v3POS nmin, v3POS nmax)
 			} else {
 				// This is the topmost node below a liquid column
 				u32 vi_above = vi;
-<<<<<<< HEAD:src/mapgen.cpp
-				vm->m_area.add_y(em, vi_above, 1);
-				if ((!rare || !(rarecnt++ % 36)) && !waspushed && (ndef->get(vm->m_data[vi]).floodable ||
-=======
 				VoxelArea::add_y(em, vi_above, 1);
-				if (!waspushed && (ndef->get(vm->m_data[vi]).floodable ||
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
+				if ((!rare || !(rarecnt++ % 36)) && !waspushed && (ndef->get(vm->m_data[vi]).floodable ||
 						(!waschecked && isLiquidHorizontallyFlowable(vi_above, em)))) {
 					// Push back the lowest node in the column which is one
 					// node above this one
@@ -502,14 +457,9 @@ void Mapgen::setLighting(u8 light, v3s16 nmin, v3s16 nmax)
 	}
 }
 
-<<<<<<< HEAD:src/mapgen.cpp
-void Mapgen::lightSpread(VoxelArea &a, v3s16 p, u8 light,
-		unordered_map_v3POS<u8> & skip, int r)
-=======
 
 void Mapgen::lightSpread(VoxelArea &a, std::queue<std::pair<v3s16, u8>> &queue,
 	const v3s16 &p, u8 light)
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 {
 	if (light <= 1 || !a.contains(p))
 		return;
@@ -541,27 +491,8 @@ void Mapgen::lightSpread(VoxelArea &a, std::queue<std::pair<v3s16, u8>> &queue,
 
 	n.param1 = light;
 
-<<<<<<< HEAD:src/mapgen.cpp
-	if (++r > 100) {
-		//errorstream<<"mapgen light recursion stop r="<<r << " p=" << p << " lwas=" << (int)n.param1 << " lnow="<< (int )light << " day="<<(int)light_day << " ni="<<(int)light_night<<" skip="<<skip.size() << "\n";
-		return;
-	}
-=======
 	// add to queue
 	queue.emplace(p, light);
-}
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
-
-	if (skip.count(p))
-		return;
-	skip.emplace(p, 1);
-
-	lightSpread(a, p + v3s16(0, 0, 1), light, skip, r);
-	lightSpread(a, p + v3s16(0, 1, 0), light, skip, r);
-	lightSpread(a, p + v3s16(1, 0, 0), light, skip, r);
-	lightSpread(a, p - v3s16(0, 0, 1), light, skip, r);
-	lightSpread(a, p - v3s16(0, 1, 0), light, skip, r);
-	lightSpread(a, p - v3s16(1, 0, 0), light, skip, r);
 }
 
 void Mapgen::calcLighting(v3s16 nmin, v3s16 nmax, v3s16 full_nmin, v3s16 full_nmax,
@@ -656,20 +587,10 @@ void Mapgen::spreadLight(const v3s16 &nmin, const v3s16 &nmax)
 
 				u8 light = n.param1;
 				if (light) {
-<<<<<<< HEAD:src/mapgen.cpp
-					unordered_map_v3POS<u8> skip;
-					lightSpread(a, v3s16(x,     y,     z + 1), light, skip);
-					lightSpread(a, v3s16(x,     y + 1, z    ), light, skip);
-					lightSpread(a, v3s16(x + 1, y,     z    ), light, skip);
-					lightSpread(a, v3s16(x,     y,     z - 1), light, skip);
-					lightSpread(a, v3s16(x,     y - 1, z    ), light, skip);
-					lightSpread(a, v3s16(x - 1, y,     z    ), light, skip);
-=======
 					const v3s16 p(x, y, z);
 					// spread to all 6 neighbor nodes
 					for (const auto &dir : g_6dirs)
 						lightSpread(a, queue, p + dir, light);
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 				}
 			}
 		}
@@ -731,6 +652,12 @@ MapgenBasic::MapgenBasic(int mapgenid, MapgenParams *params, EmergeParams *emerg
 	c_lava_source        = ndef->getId("mapgen_lava_source");
 	c_cobble             = ndef->getId("mapgen_cobble");
 
+	//freeminer:
+	c_ice                = ndef->getId("mapgen_ice");
+	if (c_ice == CONTENT_IGNORE)
+		c_ice = c_water_source;
+	//=========
+
 	// Fall back to more basic content if not defined.
 	// Lava falls back to water as both are suitable as cave liquids.
 	if (c_lava_source == CONTENT_IGNORE)
@@ -741,33 +668,7 @@ MapgenBasic::MapgenBasic(int mapgenid, MapgenParams *params, EmergeParams *emerg
 	if (c_water_source == CONTENT_IGNORE)
 		errorstream << "Mapgen: Mapgen alias 'mapgen_water_source' is invalid!" << std::endl;
 	if (c_river_water_source == CONTENT_IGNORE)
-<<<<<<< HEAD:src/mapgen.cpp
-		c_river_water_source = c_water_source;
-
-	//// Content used for dungeon generation
-	c_cobble               = ndef->getId("mapgen_cobble");
-	c_stair_cobble         = ndef->getId("mapgen_stair_cobble");
-	c_mossycobble          = ndef->getId("mapgen_mossycobble");
-	c_sandstonebrick       = ndef->getId("mapgen_sandstonebrick");
-	c_stair_sandstonebrick = ndef->getId("mapgen_stair_sandstonebrick");
-
-	// Fall back to more basic content if not defined
-	if (c_mossycobble == CONTENT_IGNORE)
-		c_mossycobble = c_cobble;
-	if (c_stair_cobble == CONTENT_IGNORE)
-		c_stair_cobble = c_cobble;
-	if (c_sandstonebrick == CONTENT_IGNORE)
-		c_sandstonebrick = c_sandstone;
-	if (c_stair_sandstonebrick == CONTENT_IGNORE)
-		c_stair_sandstonebrick = c_sandstone;
-
-	//freeminer:
-	c_ice                = ndef->getId("mapgen_ice");
-	//=========
-
-=======
 		warningstream << "Mapgen: Mapgen alias 'mapgen_river_water_source' is invalid!" << std::endl;
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 }
 
 
@@ -818,28 +719,14 @@ void MapgenBasic::generateBiomes()
 
 		for (s16 y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[vi].getContent();
-<<<<<<< HEAD:src/mapgen.cpp
-
-			bool cc_stone = (c != CONTENT_AIR && c != c_water_source && c != c_ice && c != CONTENT_IGNORE);
-
-			// Biome is recalculated each time an upper surface is detected while
-			// working down a column. The selected biome then remains in effect for
-			// all nodes below until the next surface and biome recalculation.
-			// Biome is recalculated:
-			// 1. At the surface of stone below air or water.
-			// 2. At the surface of water below air.
-			// 3. When stone or water is detected but biome has not yet been calculated.
-			bool is_stone_surface = (cc_stone) &&
-				(air_above || water_above || !biome);
-=======
+			bool cc_stone = (c != CONTENT_AIR && c != c_water_source && c != c_ice && c != CONTENT_IGNORE); // was in mt: c == c_stone
 			// Biome is (re)calculated:
 			// 1. At the surface of stone below air or water.
 			// 2. At the surface of water below air.
 			// 3. When stone or water is detected but biome has not yet been calculated.
 			// 4. When stone or water is detected just below a biome's lower limit.
-			bool is_stone_surface = (c == c_stone) &&
+			bool is_stone_surface = (cc_stone) &&
 				(air_above || water_above || !biome || y < biome_y_min); // 1, 3, 4
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 
 			bool is_water_surface =
 				(c == c_water_source || c == c_river_water_source) &&
@@ -992,16 +879,12 @@ void MapgenBasic::dustTopNodes()
 		}
 
 		content_t c = vm->m_data[vi].getContent();
-<<<<<<< HEAD:src/mapgen.cpp
-
-		if (c == c_stone || c == biome->c_stone || c == c_desert_stone || c == c_sandstone || c == c_mossycobble || c == c_sandstonebrick)
-		if (!ndef->get(c).buildable_to && c != CONTENT_IGNORE && c != biome->c_dust) {
-			vm->m_area.add_y(em, vi, 1);
-=======
 		NodeDrawType dtype = ndef->get(c).drawtype;
 		// Only place on cubic, walkable, non-dust nodes.
 		// Dust check needed due to avoid double layer of dust caused by
 		// dropping dust from 16 nodes above mapchunk top.
+
+		//fm?: if (c == c_stone || c == biome->c_stone || c == c_desert_stone || c == c_sandstone || c == c_mossycobble || c == c_sandstonebrick)
 		if ((dtype == NDT_NORMAL ||
 				dtype == NDT_ALLFACES ||
 				dtype == NDT_ALLFACES_OPTIONAL ||
@@ -1010,7 +893,6 @@ void MapgenBasic::dustTopNodes()
 				dtype == NDT_GLASSLIKE_FRAMED_OPTIONAL) &&
 				ndef->get(c).walkable && c != biome->c_dust) {
 			VoxelArea::add_y(em, vi, 1);
->>>>>>> 5.5.0:src/mapgen/mapgen.cpp
 			vm->m_data[vi] = MapNode(biome->c_dust);
 		}
 	}

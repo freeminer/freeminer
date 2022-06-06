@@ -54,47 +54,37 @@ Database_LevelDB::~Database_LevelDB()
 
 bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	if (!m_database.put(getBlockAsString(pos), data)) {
+	if (!m_database->Put(leveldb::WriteOptions(), getBlockAsString(pos), data)) {
 		warningstream << "WARNING: saveBlock: LevelDB error saving block "
-			<< pos << ": "<< m_database.get_error() << std::endl;
+			<< pos << ": "<< m_database->get_error() << std::endl;
 		return false;
 	}
-	m_database.del(i64tos(getBlockAsInteger(pos))); // delete old format
+	m_database->del(i64tos(getBlockAsInteger(pos))); // delete old format
 
 	return true;
 }
 
 void Database_LevelDB::loadBlock(const v3s16 &pos, std::string *block)
 {
-<<<<<<< HEAD:src/database-leveldb.cpp
-/*
-	std::string datastr;
-*/
+	m_database->Get(leveldb::ReadOptions(),
+		getBlockAsString(pos), block);
 
-	m_database.get(getBlockAsString(pos), *block);
-	if (block->length())
+	if (!block->empty())
 		return;
 
-	m_database.get(i64tos(getBlockAsInteger(pos)), *block);
-
-/*
-	*block = (status.ok()) ? datastr : "";
-*/
-=======
 	leveldb::Status status = m_database->Get(leveldb::ReadOptions(),
 		i64tos(getBlockAsInteger(pos)), block);
 
 	if (!status.ok())
 		block->clear();	
->>>>>>> 5.5.0:src/database/database-leveldb.cpp
 }
 
 bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 {
-	auto ok = m_database.del(getBlockAsString(pos));
-	if (ok) {
+	auto status = m_database->Delete(leveldb::WriteOptions(), getBlockAsString(pos));
+	if (!status.ok()) {
 		warningstream << "WARNING: deleteBlock: LevelDB error deleting block "
-			<< (pos) << ": " << m_database.get_error() << std::endl;
+			<< (pos) << ": " << status.ToString() << std::endl;
 		return false;
 	}
 
@@ -104,7 +94,7 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 #if USE_LEVELDB
-	auto it = m_database.new_iterator();
+	auto it = m_database->new_iterator();
 	if (!it)
 		return;
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {

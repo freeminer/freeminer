@@ -32,23 +32,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "common/c_internal.h"
 
 #define luamethod(class, name) {#name, class::l_##name}
-<<<<<<< HEAD
-#define luamethod_aliased(class, name, alias) {#name, class::l_##name}, {#alias, class::l_##name}
-#define API_FCT(name) registerFunction(L, #name, l_##name,top)
-#define ASYNC_API_FCT(name) engine.registerFunction(#name, l_##name)
-=======
->>>>>>> 5.5.0
 
 #define luamethod_dep(class, good, bad)                                     \
 		{#bad, [](lua_State *L) -> int {                                    \
 			return l_deprecated_function(L, #good, #bad, &class::l_##good); \
 		}}
 
-<<<<<<< HEAD
-/*
-#if (defined(WIN32) || defined(_WIN32) || defined(_WIN32_WCE))
-	#define NO_MAP_LOCK_REQUIRED
-=======
 #define luamethod_aliased(class, good, bad) \
 		luamethod(class, good),               \
 		luamethod_dep(class, good, bad)
@@ -65,7 +54,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define DEBUG_ASSERT_NO_CLIENTAPI                    \
 	FATAL_ERROR_IF(getClient(L) != nullptr, "Tried " \
 		"to retrieve ServerEnvironment on client")
->>>>>>> 5.5.0
 #else
 #define DEBUG_ASSERT_NO_CLIENTAPI ((void)0)
 #endif

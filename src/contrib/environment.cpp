@@ -204,7 +204,7 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		objProps->textures.push_back(itemName);
 		objProps->physical = true;
 		objProps->collideWithObjects = false;
-		objProps->visual_size = v2f(s, s);
+		objProps->visual_size = v3f(s, s, s);
 		objProps->collisionbox = core::aabbox3d<f32>(-s,-s,-s,s,s,s);
 		objProps->automatic_rotate = 3.1415 * 0.5;
 		obj->notifyObjectPropertiesModified();
@@ -342,7 +342,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 		return;
 	}
 
-	INodeDefManager* ndef = m_gamedef->getNodeDefManager();
+	auto* ndef = m_gamedef->getNodeDefManager();
 	MapNode n, n_bottom;
 #if 0
 	ContentFeatures f;
@@ -684,7 +684,7 @@ bool ServerEnvironment::checkAttachedNode(const v3s16 pos, MapNode n, const Cont
 	bool exists = false;
 */
 	MapNode n2 = m_map->getNode(pos + d);
-	INodeDefManager* ndef = m_gamedef->getNodeDefManager();
+	auto* ndef = m_gamedef->getNodeDefManager();
 	if (n2.getContent() != CONTENT_IGNORE && !ndef->get(n2).walkable) {
 		return false;
 	}

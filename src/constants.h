@@ -102,6 +102,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Default maximal breath of a player
 #define PLAYER_MAX_BREATH_DEFAULT 10
 
+// Number of different files to try to save a player to if the first fails
+// (because of a case-insensitive filesystem)
+// TODO: Use case-insensitive player names instead of this hack.
+#define PLAYER_FILE_ALTERNATE_TRIES 1000
+
 // For screenshots a serial number is appended to the filename + datetimestamp
 // if filename + datetimestamp is not unique.
 // This is the maximum number of attempts to try and add a serial to the end of

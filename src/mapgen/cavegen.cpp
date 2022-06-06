@@ -923,12 +923,8 @@ void CavesV6::carveRoute(v3f vec, float f, bool randomize_xz,
 						vm->m_data[i] = airnode;
 					}
 				} else {
-<<<<<<< HEAD:src/cavegen.cpp
 /*
-					if (c == CONTENT_IGNORE || c == CONTENT_AIR)
-=======
 					if (c == CONTENT_AIR)
->>>>>>> 5.5.0:src/mapgen/cavegen.cpp
 						continue;
 */
 

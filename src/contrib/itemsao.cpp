@@ -20,8 +20,9 @@
 #include "environment.h"
 #include "map.h"
 #include "nodedef.h"
+#include "scripting_server.h"
 #include "server.h"
-#include "scripting_game.h"
+//#include "scripting_game.h"
 #include "util/serialize.h"
 #include <sstream>
 
@@ -33,18 +34,19 @@ ItemSAO::ItemSAO(ServerEnvironment *env, v3f pos,
 		LuaEntitySAO(env, pos, name, state),
 		m_timer_before_loot(1.0f), m_life_timer(600.0f), m_check_current_node_timer(1.8f)
 {
+/*
 	if(env == NULL) {
 		ServerActiveObject::registerType(getType(), create);
 		return;
 	}
-
+*/
 	m_prop.physical = true;
 	m_prop.hp_max = 1;
 	m_prop.mesh = "empty.obj";
 	m_prop.collideWithObjects = false;
 	m_prop.collisionbox = core::aabbox3d<f32>(-0.3, -0.3, -0.3, 0.3, 0.3, 0.3);
 	m_prop.visual = "wielditem";
-	m_prop.visual_size = v2f(0.4,0.4);
+	m_prop.visual_size = v3f(0.4,0.4, 0.4);
 	m_prop.spritediv = v2s16(1,1);
 	m_prop.initial_sprite_basepos = v2s16(0,0);
 	m_prop.is_visible = false;
@@ -68,12 +70,12 @@ ServerActiveObject* ItemSAO::create(ServerEnvironment *env, v3f pos,
 		u8 version = readU8(is);
 		// check if version is supported
 		if(version == 0){
-			name = deSerializeString(is);
-			state = deSerializeLongString(is);
+			name = deSerializeString16(is);
+			state = deSerializeString32(is);
 		}
 		else if(version == 1){
-			name = deSerializeString(is);
-			state = deSerializeLongString(is);
+			name = deSerializeString16(is);
+			state = deSerializeString32(is);
 			hp = readS16(is);
 			velocity = readV3F1000(is);
 			yaw = readF1000(is);
@@ -84,8 +86,8 @@ ServerActiveObject* ItemSAO::create(ServerEnvironment *env, v3f pos,
 			<< state << "\")" << std::endl;
 	epixel::ItemSAO *sao = new epixel::ItemSAO(env, pos, name, state);
 	sao->m_hp = hp;
-	sao->m_velocity = velocity;
-	sao->m_yaw = yaw;
+	sao->setVelocity(velocity);
+	sao->setRotation({0, yaw, 0});
 	return sao;
 }
 
@@ -97,8 +99,8 @@ void ItemSAO::addedToEnvironment(u32 dtime_s)
 	m_registered = true;
 
 	// Add an axis to make entity do a little jump
-	m_velocity = v3f(0, 2 * BS, 0);
-	m_acceleration = v3f(0, -10 * BS, 0);
+	setVelocity(v3f(0, 2 * BS, 0));
+	setAcceleration(v3f(0, -10 * BS, 0));
 
 	// And make it immortal
 	ItemGroupList armor_groups;
@@ -112,14 +114,15 @@ void ItemSAO::step(float dtime, bool send_recommended)
 
 	m_timer_before_loot -= dtime;
 	// When loot timer expire, stop object move
-	if (m_timer_before_loot <= 0.0f && m_velocity != v3f(0,0,0)) {
-		m_velocity = v3f(0,m_velocity.Y,0);
+	const auto velocity = getVelocity();
+	if (m_timer_before_loot <= 0.0f && velocity != v3f(0,0,0)) {
+		setVelocity(v3f(0,velocity.Y,0));
 	}
 
 	m_life_timer -= dtime;
 	// Remove SAO is lifetime expire
 	if (m_life_timer <= 0.0f) {
-		m_removed = true;
+		m_pending_removal = true;
 	}
 
 	m_check_current_node_timer -= dtime;
@@ -127,7 +130,7 @@ void ItemSAO::step(float dtime, bool send_recommended)
 	if (m_check_current_node_timer <= 0.0f) {
 		v3s16 p(m_base_position.X / BS, m_base_position.Y / BS, m_base_position.Z / BS);
 		MapNode node = m_env->getMap().getNode(p);
-		INodeDefManager* ndef = ((Server*)m_env->getGameDef())->getNodeDefManager();
+		auto* ndef = ((Server*)m_env->getGameDef())->getNodeDefManager();
 		std::string nodeName = ndef->get(node).name;
 
 		// If node is lava, burn it
@@ -143,7 +146,7 @@ void ItemSAO::step(float dtime, bool send_recommended)
 			params.max_hear_distance = 15.0f * BS;
 
 			((Server*)m_env->getGameDef())->playSound(spec, params);
-			m_removed = true;
+			m_pending_removal = true;
 		}
 		// Check every 4 cycles
 		m_check_current_node_timer = 1.2f;

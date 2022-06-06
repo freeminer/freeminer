@@ -22,6 +22,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "unit_sao.h"
 
+class FallingSAO;
+
 class LuaEntitySAO : public UnitSAO
 {
 public:
@@ -84,9 +86,13 @@ private:
 	static std::string generateSetSpriteCommand(v2s16 p, u16 num_frames,
 			f32 framelength, bool select_horiz_by_yawpitch);
 
+public:
 	std::string m_init_name;
+private:
 	std::string m_init_state;
+public:
 	bool m_registered = false;
+private:
 
 	v3f m_velocity;
 	v3f m_acceleration;

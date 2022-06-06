@@ -1,16 +1,10 @@
 /*
-<<<<<<< HEAD:src/mapgen_singlenode.h
 mapgen_singlenode.h
-Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2013-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 Copyright (C) 2015-2018 paramat
->>>>>>> 5.5.0:src/mapgen/mapgen_singlenode.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

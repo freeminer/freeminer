@@ -1,16 +1,8 @@
 /*
-<<<<<<< HEAD:src/mapgen_v7.h
-mapgen_v7.h
-Copyright (C) 2010-2015 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2010-2015 paramat, Matt Gregory
-*/
-=======
 Minetest
 Copyright (C) 2014-2020 paramat
 Copyright (C) 2013-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
->>>>>>> 5.5.0:src/mapgen/mapgen_v7.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -99,12 +91,8 @@ struct MapgenV7Params : public MapgenParams {
 	void setDefaultSettings(Settings *settings);
 };
 
-<<<<<<< HEAD:src/mapgen_v7.h
-class MapgenV7 : public MapgenBasic, public Mapgen_features {
-=======
 
-class MapgenV7 : public MapgenBasic {
->>>>>>> 5.5.0:src/mapgen/mapgen_v7.h
+class MapgenV7 : public MapgenBasic, public Mapgen_features {
 public:
 	MapgenV7(MapgenV7Params *params, EmergeParams *emerge);
 	~MapgenV7();
@@ -121,12 +109,7 @@ public:
 	bool getRiverChannelFromMap(int idx_xyz, int idx_xz, s16 y);
 	bool getFloatlandTerrainFromMap(int idx_xyz, float float_offset);
 
-<<<<<<< HEAD:src/mapgen_v7.h
 	virtual int generateTerrain();
-	virtual void generateRidgeTerrain();
-=======
-	int generateTerrain();
->>>>>>> 5.5.0:src/mapgen/mapgen_v7.h
 
 private:
 	s16 mount_zero_level;
@@ -147,7 +130,6 @@ private:
 	Noise *noise_ridge_uwater;
 	Noise *noise_mountain;
 	Noise *noise_ridge;
-<<<<<<< HEAD:src/mapgen_v7.h
 
 	//freeminer:
 	MapgenV7Params *sp;
@@ -155,7 +137,5 @@ private:
 	//virtual void generateExperimental();
 	//=========
 
-=======
 	Noise *noise_floatland;
->>>>>>> 5.5.0:src/mapgen/mapgen_v7.h
 };

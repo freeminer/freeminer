@@ -139,16 +139,8 @@ void                warn_if_field_exists(lua_State *L, int table,
 
 size_t write_array_slice_float(lua_State *L, int table_index, float *data,
 	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);
-<<<<<<< HEAD
-size_t write_array_slice_u16(lua_State *L, int table_index, u16 *data,
-	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);
-
 
 v3POS               check_v3POS         (lua_State *L, int index);
 v2POS               read_v2POS          (lua_State *L, int index);
 v3POS               read_v3POS          (lua_State *L, int index);
 void                push_v3POS          (lua_State *L, v3POS p);
-
-#endif /* C_CONVERTER_H_ */
-=======
->>>>>>> 5.5.0

@@ -1037,7 +1037,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n)
 	return true;
 }
 
-bool ServerEnvironment::removeNode(v3s16 p)
+bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 {
 	const NodeDefManager *ndef = m_server->ndef();
 	MapNode n_old = m_map->getNode(p);
@@ -1048,8 +1048,20 @@ bool ServerEnvironment::removeNode(v3s16 p)
 
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
+
+	if (fast) {
+		MapNode n(CONTENT_AIR);
+		try {
+			if (fast == 2)
+				n.param1 = n_old.param1;
+			m_map->setNode(p, n);
+		} catch(InvalidPositionException &e) { }
+	} else
+
 	if (!m_map->removeNodeWithEvent(p))
 		return false;
+
+	m_circuit.removeNode(p, n_old);
 
 	// Update active VoxelManipulator if a mapgen thread
 	m_map->updateVManip(p);

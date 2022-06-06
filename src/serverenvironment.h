@@ -25,8 +25,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "server/activeobjectmgr.h"
 #include "util/numeric.h"
+#include <mutex>
 #include <set>
 #include <random>
+#include "server/abmhandler.h"
 
 class IGameDef;
 class ServerMap;
@@ -314,8 +316,8 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n);
-	bool removeNode(v3s16 p);
+	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0);
+	bool removeNode(v3s16 p, s16 fast = 0);
 	bool swapNode(v3s16 p, const MapNode &n);
 
 	// Find the daylight value at pos with a Depth First Search
@@ -339,7 +341,7 @@ public:
 	void clearObjects(ClearObjectsMode mode);
 
 	// This makes stuff happen
-	void step(f32 dtime);
+	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
 
 	u32 getGameTime() const { return m_game_time; }
 
@@ -374,6 +376,71 @@ public:
 	static bool migrateAuthDatabase(const GameParams &game_params,
 			const Settings &cmd_args);
 private:
+
+// freeminer
+
+	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
+	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
+public:
+	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
+			const ItemStack& items);
+
+	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3f pos,
+			const MapNode n, int fast = 2);
+private:
+
+	// is weather active in this environment?
+	bool m_use_weather;
+	bool m_use_weather_biome;
+	bool m_more_threads;
+	ABMHandler m_abmhandler;
+	void analyzeBlock(MapBlock * block);
+	IntervalLimiter m_analyze_blocks_interval;
+	IntervalLimiter m_abm_random_interval;
+	std::list<v3POS> m_abm_random_blocks;
+	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
+	u32 m_game_time_start;
+public:
+	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+private:
+	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
+
+/*
+	void contrib_player_globalstep(RemotePlayer *player, float dtime);
+	void contrib_lookupitemtogather(RemotePlayer* player, v3f playerPos,
+			Inventory* inv, ServerActiveObject* obj);
+*/
+	void contrib_globalstep(const float dtime);
+	bool checkAttachedNode(v3s16 pos, MapNode n, const ContentFeatures &f);
+/*
+	void explodeNode(const v3s16 pos);
+*/
+
+	std::deque<v3s16> m_nodeupdate_queue;
+	std::mutex m_nodeupdate_queue_mutex;
+	// Circuit manager
+	Circuit m_circuit;
+	// Key-value storage
+public:
+	std::unordered_map<std::string, KeyValueStorage> m_key_value_storage;
+private:
+	std::vector<u16> objects_to_remove;
+	std::vector<ServerActiveObject*> objects_to_delete;
+	//loop breakers
+	u32 m_active_objects_last;
+	u32 m_active_block_abm_last;
+	float m_active_block_abm_dtime;
+	float m_active_block_abm_dtime_counter;
+	u32 m_active_block_timer_last;
+	std::set<v3s16> m_blocks_added;
+	u32 m_blocks_added_last;
+	u32 m_active_block_analyzed_last;
+	std::mutex m_max_lag_estimate_mutex;
+	u32 m_active_objects_client_last;
+	u32 m_move_max_loop;
+//end of freeminer
+
+
 
 	/**
 	 * called if env_meta.txt doesn't exist (e.g. new world)

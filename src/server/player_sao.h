@@ -65,7 +65,6 @@ public:
 	}
 };
 
-typedef UNORDERED_MAP<std::string, std::string> PlayerAttributes;
 class RemotePlayer;
 
 class PlayerSAO : public UnitSAO
@@ -134,39 +133,6 @@ public:
 	u16 getWieldIndex() const;
 	ItemStack getWieldedItem(ItemStack *selected, ItemStack *hand = nullptr) const;
 	bool setWieldedItem(const ItemStack &item);
-
-	/*
-		Modding interface
-	*/
-	inline void setExtendedAttribute(const std::string &attr, const std::string &value)
-	{
-		m_extra_attributes[attr] = value;
-		m_extended_attributes_modified = true;
-	}
-
-	inline bool getExtendedAttribute(const std::string &attr, std::string *value)
-	{
-		if (m_extra_attributes.find(attr) == m_extra_attributes.end())
-			return false;
-
-		*value = m_extra_attributes[attr];
-		return true;
-	}
-
-	inline const PlayerAttributes &getExtendedAttributes()
-	{
-		return m_extra_attributes;
-	}
-
-	inline bool extendedAttributesModified() const
-	{
-		return m_extended_attributes_modified;
-	}
-
-	inline void setExtendedAttributeModified(bool v)
-	{
-		m_extended_attributes_modified = v;
-	}
 
 	/*
 		PlayerSAO-specific

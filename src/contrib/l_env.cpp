@@ -28,9 +28,9 @@
 #if 0
 #include "contrib/playersao.h"
 #endif
-#include "scripting_game.h"
+//#include "scripting_game.h"
 #include "environment.h"
-#include "content_sao.h"
+//#include "content_sao.h"
 #include "nodedef.h"
 #include "server.h"
 
@@ -89,7 +89,7 @@ int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	INodeDefManager *ndef = env->getGameDef()->ndef();
+	auto *ndef = env->getGameDef()->ndef();
 
 	// pos
 	v3f pos = checkFloatPos(L, 1);

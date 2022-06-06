@@ -70,13 +70,9 @@ struct MapgenV5Params : public MapgenParams
 	void setDefaultSettings(Settings *settings);
 };
 
-<<<<<<< HEAD:src/mapgen_v5.h
-
-class MapgenV5 : public MapgenBasic, public Mapgen_features {
-=======
 class MapgenV5 : public MapgenBasic
+, public Mapgen_features
 {
->>>>>>> 5.5.0:src/mapgen/mapgen_v5.h
 public:
 	MapgenV5(MapgenV5Params *params, EmergeParams *emerge);
 	~MapgenV5();
