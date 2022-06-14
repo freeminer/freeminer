@@ -259,15 +259,9 @@ void MapgenFractal::makeChunk(BlockMakeData *data)
 	if (flags & MG_BIOMES)
 		dustTopNodes();
 
-<<<<<<< HEAD:src/mapgen_fractal.cpp
-	//printf("makeChunk: %dms\n", t.stop());
-
-	updateLiquid(full_node_min, full_node_max);
-=======
 	// Update liquids
 	if (spflags & MGFRACTAL_TERRAIN)
 		updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
->>>>>>> 5.5.0:src/mapgen/mapgen_fractal.cpp
 
 	// Calculate lighting
 	if (flags & MG_LIGHT)

@@ -649,6 +649,12 @@ private:
  */
 class NodeDefManager {
 public:
+
+	//fm:
+	// Allows "group:name" in addition to regular node names
+	virtual bool getIds(const std::string &name, FMBitset &result) const=0;
+
+
 	/*!
 	 * Creates a NodeDefManager, and registers three ContentFeatures:
 	 * \ref CONTENT_AIR, \ref CONTENT_UNKNOWN and \ref CONTENT_IGNORE.

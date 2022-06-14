@@ -17,7 +17,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-<<<<<<< HEAD
 #include "config.h"
 
 #if !MINETEST_PROTO
@@ -25,9 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #else //TODO
 
-=======
 #include "chatmessage.h"
->>>>>>> 5.5.0
 #include "server.h"
 #include "log.h"
 #include "emerge.h"

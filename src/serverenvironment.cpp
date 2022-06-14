@@ -59,16 +59,49 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	ABMWithState
 */
 
-ABMWithState::ABMWithState(ActiveBlockModifier *abm_):
+ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	abm(abm_)
 {
+	auto ndef = senv->getGameDef()->ndef();
+	interval = abm->getTriggerInterval();
+	if (!interval)
+		interval = 10;
+	chance = abm->getTriggerChance();
+	if (!chance)
+		chance = 50;
+
+	// abm process may be very slow if > 1
+	neighbors_range = abm->getNeighborsRange();
+	int nr_max = g_settings->getS32("abm_neighbors_range_max");
+	if (!neighbors_range)
+		neighbors_range = 1;
+	else if (neighbors_range > nr_max)
+		neighbors_range = nr_max;
+
+	simple_catchup = abm->getSimpleCatchUp();
+
+
+
 	// Initialize timer to random value to spread processing
-	float itv = abm->getTriggerInterval();
+	float itv = interval;
 	itv = MYMAX(0.001, itv); // No less than 1ms
 	int minval = MYMAX(-0.51*itv, -60); // Clamp to
 	int maxval = MYMIN(0.51*itv, 60);   // +-60 seconds
 	timer = myrand_range(minval, maxval);
+
+
+
+	for(auto & i : abm->getRequiredNeighbors(0))
+		ndef->getIds(i, required_neighbors);
+
+	for(auto & i : abm->getRequiredNeighbors(1))
+		ndef->getIds(i, required_neighbors_activate);
+
+	for(auto & i : abm->getTriggerContents())
+		ndef->getIds(i, trigger_ids);
 }
+
+
 
 /*
 	LBMManager

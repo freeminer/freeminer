@@ -388,7 +388,8 @@ float MapgenV6::getHumidity(v3POS p)
 	noise = (noise + 1.0)/2.0;*/
 
 	if (m_emerge->env->m_use_weather_biome) {
-		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->mgparams->bparams->np_humidity.offset) / m_emerge->mgparams->bparams->np_humidity.scale;
+		//return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->mgparams->bparams->np_humidity.offset) / m_emerge->mgparams->bparams->np_humidity.scale;
+ 		return (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - np_humidity->offset) / np_humidity->scale;
 	}
 
 	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
@@ -465,8 +466,8 @@ BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
 	float d, h;
 
 	if (m_emerge->env->m_use_weather_biome) {
-		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->mgparams->bparams->np_heat.offset) / m_emerge->mgparams->bparams->np_heat.scale;
-		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->mgparams->bparams->np_humidity.offset) / m_emerge->mgparams->bparams->np_humidity.scale;
+		d = (m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, p, nullptr, &heat_cache) - m_emerge->biomemgr->mapgen_params->bparams->np_heat.offset) / m_emerge->biomemgr->mapgen_params->bparams->np_heat.scale;
+		h = (m_emerge->env->getServerMap().updateBlockHumidity(m_emerge->env, p, nullptr, &humidity_cache) - m_emerge->biomemgr->mapgen_params->bparams->np_humidity.offset) / m_emerge->biomemgr->mapgen_params->bparams->np_humidity.scale;
 	} else {
 		d = noise_biome->result[index];
 		h = noise_humidity->result[index];
@@ -592,14 +593,7 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 		if (num_dungeons >= 1) {
 			PseudoRandom ps(blockseed + 4713);
 
-<<<<<<< HEAD:src/mapgen_v6.cpp
-		if (getBiome(0, node_min) == BT_DESERT) {
-			dp.c_wall     = c_desert_stone;
-			dp.c_alt_wall = CONTENT_IGNORE;
-			dp.c_stair    = c_desert_stone;
-=======
 			DungeonParams dp;
->>>>>>> 5.5.0:src/mapgen/mapgen_v6.cpp
 
 			dp.seed              = seed;
 			dp.num_dungeons      = num_dungeons;
@@ -612,7 +606,7 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 			dp.np_alt_wall
 				= NoiseParams(-0.4, 1.0, v3f(40.0, 40.0, 40.0), 32474, 6, 1.1, 2.0);
 
-			if (getBiome(0, v2s16(node_min.X, node_min.Z)) == BT_DESERT) {
+			if (getBiome(0, node_min) == BT_DESERT) {
 				dp.c_wall              = c_desert_stone;
 				dp.c_alt_wall          = CONTENT_IGNORE;
 				dp.c_stair             = c_stair_desert_stone;
@@ -644,7 +638,7 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	}
 
 	// Add top and bottom side of water to transforming_liquid queue
-	updateLiquid(full_node_min, full_node_max);
+	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 
 	// Add surface nodes
 	growGrass();
@@ -908,25 +902,8 @@ void MapgenV6::flowMud(s16 &mudflow_minpos, s16 &mudflow_maxpos)
 							// any decorations above removed or placed mud.
 							moveMud(i, i2, i3, p2d, em);
 						}
-<<<<<<< HEAD:src/mapgen_v6.cpp
-					} while (ndef->get(*n2).walkable == false);
-					// Loop one up so that we're in air
-					vm->m_area.add_y(em, i2, 1);
-					n2 = &vm->m_data[i2];
-
-					bool old_is_water = n->getContent() == c_water_source || n->getContent() == c_ice;
-					// Move mud to new place
-					if (!dropped_to_unknown) {
-						*n2 = *n;
-						// Set old place to be air (or water)
-						if (old_is_water)
-							*n = MapNode(n->getContent());
-						else
-							*n = MapNode(CONTENT_AIR);
-=======
 						// Done, find next mud node in column
 						break;
->>>>>>> 5.5.0:src/mapgen/mapgen_v6.cpp
 					}
 				}
 			}
@@ -956,6 +933,7 @@ void MapgenV6::moveMud(u32 remove_index, u32 place_index,
 		while (vm->m_area.contains(above_remove_index) &&
 				vm->m_data[above_remove_index].getContent() != CONTENT_AIR &&
 				vm->m_data[above_remove_index].getContent() != c_water_source &&
+				vm->m_data[above_remove_index].getContent() != c_ice &&
 				vm->m_data[above_remove_index].getContent() != CONTENT_IGNORE) {
 			vm->m_data[above_remove_index] = n_air;
 			VoxelArea::add_y(em, above_remove_index, 1);
@@ -966,6 +944,7 @@ void MapgenV6::moveMud(u32 remove_index, u32 place_index,
 		while (vm->m_area.contains(place_index) &&
 				vm->m_data[place_index].getContent() != CONTENT_AIR &&
 				vm->m_data[place_index].getContent() != c_water_source &&
+				vm->m_data[place_index].getContent() != c_ice &&
 				vm->m_data[place_index].getContent() != CONTENT_IGNORE) {
 			vm->m_data[place_index] = n_air;
 			VoxelArea::add_y(em, place_index, 1);
@@ -1042,7 +1021,7 @@ void MapgenV6::placeTreesAndJungleGrass()
 								+ (x - node_min.X);
 				s16 y = heightmap[mapindex];
 */
-				s16 y = findGroundLevelFull(v2s16(x, z));
+				s16 y = findGroundLevel(v2s16(x, z), p2d_min.Y, p2d_max.Y);
 				if (y < water_level)
 					continue;
 
@@ -1064,7 +1043,7 @@ void MapgenV6::placeTreesAndJungleGrass()
 							+ (x - node_min.X);
 			s16 y = heightmap[mapindex];
 */
-			s16 y = findGroundLevelFull(v2s16(x, z));
+			s16 y = findGroundLevel(v2s16(x, z), p2d_min.Y, p2d_max.Y);
 
 			// Don't make a tree under water level
 			// Don't make a tree so high that it doesn't fit
@@ -1078,13 +1057,8 @@ void MapgenV6::placeTreesAndJungleGrass()
 				content_t c = vm->m_data[i].getContent();
 				if (c != c_dirt &&
 						c != c_dirt_with_grass &&
-<<<<<<< HEAD:src/mapgen_v6.cpp
-						c != c_dirt_with_snow &&
-						c != c_snowblock &&
-						(y >= water_level || c != c_sand))
-=======
+						(y >= water_level || c != c_sand) &&
 						c != c_dirt_with_snow)
->>>>>>> 5.5.0:src/mapgen/mapgen_v6.cpp
 					continue;
 			}
 			p.Y++;
@@ -1113,13 +1087,9 @@ void MapgenV6::growGrass() // Add surface nodes
 	MapNode n_dirt_with_grass(c_dirt_with_grass);
 	MapNode n_dirt_with_snow(c_dirt_with_snow);
 	MapNode n_snowblock(c_snowblock);
-<<<<<<< HEAD:src/mapgen_v6.cpp
-	MapNode n_snow(c_snow);
 	MapNode n_dirt(c_dirt);
-	v3s16 em = vm->m_area.getExtent();
-=======
+
 	const v3s16 &em = vm->m_area.getExtent();
->>>>>>> 5.5.0:src/mapgen/mapgen_v6.cpp
 
 	u32 index = 0;
 	for (s16 z = full_node_min.Z; z <= full_node_max.Z; z++)

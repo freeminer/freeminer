@@ -1,15 +1,9 @@
 /*
-<<<<<<< HEAD:src/dungeongen.cpp
-dungeongen.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2015-2018 paramat
->>>>>>> 5.5.0:src/mapgen/dungeongen.cpp
 
-/*
+
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -61,18 +55,10 @@ DungeonGen::DungeonGen(const NodeDefManager *ndef,
 		// Default dungeon parameters
 		dp.seed = 0;
 
-<<<<<<< HEAD:src/dungeongen.cpp
-		dp.c_ice         = ndef->getId("mapgen_ice");
-		dp.c_water       = ndef->getId("mapgen_water_source");
-		dp.c_river_water = ndef->getId("mapgen_river_water_source");
-		dp.c_wall        = ndef->getId("mapgen_cobble");
-		dp.c_alt_wall    = ndef->getId("mapgen_mossycobble");
-		dp.c_stair       = ndef->getId("mapgen_stair_cobble");
-=======
+		dp.c_ice      = ndef->getId("mapgen_ice");
 		dp.c_wall     = ndef->getId("mapgen_cobble");
 		dp.c_alt_wall = ndef->getId("mapgen_mossycobble");
 		dp.c_stair    = ndef->getId("mapgen_stair_cobble");
->>>>>>> 5.5.0:src/mapgen/dungeongen.cpp
 
 		dp.diagonal_dirs       = false;
 		dp.only_in_ground      = true;
@@ -110,18 +96,6 @@ void DungeonGen::generate(MMVManip *vm, u32 bseed, v3s16 nmin, v3s16 nmax)
 	// Dungeon generator doesn't modify places which have this set
 	vm->clearFlag(VMANIP_FLAG_DUNGEON_INSIDE | VMANIP_FLAG_DUNGEON_PRESERVE);
 
-<<<<<<< HEAD:src/dungeongen.cpp
-	// Set all air and water to be untouchable
-	// to make dungeons open to caves and open air
-	for (s16 z = nmin.Z; z <= nmax.Z; z++) {
-		for (s16 y = nmin.Y; y <= nmax.Y; y++) {
-			u32 i = vm->m_area.index(nmin.X, y, z);
-			for (s16 x = nmin.X; x <= nmax.X; x++) {
-				content_t c = vm->m_data[i].getContent();
-				if (c == CONTENT_AIR || c == dp.c_water || c == dp.c_river_water || c == dp.c_ice)
-					vm->m_flags[i] |= VMANIP_FLAG_DUNGEON_PRESERVE;
-				i++;
-=======
 	if (dp.only_in_ground) {
 		// Set all air and liquid drawtypes to be untouchable to make dungeons generate
 		// in ground only.
@@ -137,11 +111,11 @@ void DungeonGen::generate(MMVManip *vm, u32 bseed, v3s16 nmin, v3s16 nmax)
 					content_t c = vm->m_data[i].getContent();
 					NodeDrawType dtype = ndef->get(c).drawtype;
 					if (dtype == NDT_AIRLIKE || dtype == NDT_LIQUID ||
+					        c == dp.c_ice ||
 							c == CONTENT_IGNORE || !ndef->get(c).is_ground_content)
 						vm->m_flags[i] |= VMANIP_FLAG_DUNGEON_PRESERVE;
 					i++;
 				}
->>>>>>> 5.5.0:src/mapgen/dungeongen.cpp
 			}
 		}
 	}
@@ -183,26 +157,14 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 	*/
 	bool fits = false;
 	for (u32 i = 0; i < 100 && !fits; i++) {
-<<<<<<< HEAD:src/dungeongen.cpp
-		bool is_large_room = ((random.next() & 3) == 1);
-		if (is_large_room) {
-			roomsize.Z = random.range(8, 16 * far_multi);
-			roomsize.Y = random.range(8, 16 * far_multi);
-			roomsize.X = random.range(8, 16 * far_multi);
-		} else {
-			roomsize.Z = random.range(4, 8 * far_multi);
-			roomsize.Y = random.range(4, 6 * far_multi);
-			roomsize.X = random.range(4, 8 * far_multi);
-=======
 		if (dp.large_room_chance >= 1) {
-			roomsize.Z = random.range(dp.room_size_large_min.Z, dp.room_size_large_max.Z);
-			roomsize.Y = random.range(dp.room_size_large_min.Y, dp.room_size_large_max.Y);
-			roomsize.X = random.range(dp.room_size_large_min.X, dp.room_size_large_max.X);
+			roomsize.Z = random.range(dp.room_size_large_min.Z, dp.room_size_large_max.Z * far_multi);
+			roomsize.Y = random.range(dp.room_size_large_min.Y, dp.room_size_large_max.Y * far_multi);
+			roomsize.X = random.range(dp.room_size_large_min.X, dp.room_size_large_max.X * far_multi);
 		} else {
-			roomsize.Z = random.range(dp.room_size_min.Z, dp.room_size_max.Z);
-			roomsize.Y = random.range(dp.room_size_min.Y, dp.room_size_max.Y);
-			roomsize.X = random.range(dp.room_size_min.X, dp.room_size_max.X);
->>>>>>> 5.5.0:src/mapgen/dungeongen.cpp
+			roomsize.Z = random.range(dp.room_size_min.Z, dp.room_size_max.Z * far_multi);
+			roomsize.Y = random.range(dp.room_size_min.Y, dp.room_size_max.Y * far_multi);
+			roomsize.X = random.range(dp.room_size_min.X, dp.room_size_max.X * far_multi);
 		}
 
 		// start_padding is used to disallow starting the generation of
@@ -240,12 +202,11 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 	*/
 	v3s16 last_room_center = roomplace + v3s16(roomsize.X / 2, 1, roomsize.Z / 2);
 
-<<<<<<< HEAD:src/dungeongen.cpp
+/*
 	u32 room_count = random.range(dp.rooms_min, random.range(dp.rooms_max, dp.rooms_max * far_multi));
 	for (u32 i = 0; i < room_count; i++) {
-=======
+*/
 	for (u32 i = 0; i < dp.num_rooms; i++) {
->>>>>>> 5.5.0:src/mapgen/dungeongen.cpp
 		// Make a room to the determined place
 		makeRoom(roomsize, roomplace);
 
@@ -297,23 +258,16 @@ void DungeonGen::makeDungeon(v3s16 start_padding)
 		makeCorridor(doorplace, doordir, corridor_end, corridor_end_dir);
 
 		// Find a place for a random sized room
-<<<<<<< HEAD:src/dungeongen.cpp
-		roomsize.Z = random.range(4, 8 * far_multi);
-		roomsize.Y = random.range(4, 6 * far_multi);
-		roomsize.X = random.range(4, 8 * far_multi);
-		roomsize += dp.roomsize;
-=======
 		if (dp.large_room_chance > 1 && random.range(1, dp.large_room_chance) == 1) {
 			// Large room
-			roomsize.Z = random.range(dp.room_size_large_min.Z, dp.room_size_large_max.Z);
-			roomsize.Y = random.range(dp.room_size_large_min.Y, dp.room_size_large_max.Y);
-			roomsize.X = random.range(dp.room_size_large_min.X, dp.room_size_large_max.X);
+			roomsize.Z = random.range(dp.room_size_large_min.Z, dp.room_size_large_max.Z * far_multi);
+			roomsize.Y = random.range(dp.room_size_large_min.Y, dp.room_size_large_max.Y * far_multi);
+			roomsize.X = random.range(dp.room_size_large_min.X, dp.room_size_large_max.X * far_multi);
 		} else {
-			roomsize.Z = random.range(dp.room_size_min.Z, dp.room_size_max.Z);
-			roomsize.Y = random.range(dp.room_size_min.Y, dp.room_size_max.Y);
-			roomsize.X = random.range(dp.room_size_min.X, dp.room_size_max.X);
+			roomsize.Z = random.range(dp.room_size_min.Z, dp.room_size_max.Z * far_multi);
+			roomsize.Y = random.range(dp.room_size_min.Y, dp.room_size_max.Y * far_multi);
+			roomsize.X = random.range(dp.room_size_min.X, dp.room_size_max.X * far_multi);
 		}
->>>>>>> 5.5.0:src/mapgen/dungeongen.cpp
 
 		m_pos = corridor_end;
 		m_dir = corridor_end_dir;

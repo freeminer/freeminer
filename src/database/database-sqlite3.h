@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <cstring>
 #include <string>
+#include <mutex>
 #include "database.h"
 #include "exceptions.h"
 
@@ -159,6 +160,8 @@ protected:
 
 private:
 	void bindPos(sqlite3_stmt *stmt, const v3s16 &pos, int index = 1);
+
+	std::mutex mutex;
 
 	// Map
 	sqlite3_stmt *m_stmt_read = nullptr;

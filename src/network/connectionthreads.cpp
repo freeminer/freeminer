@@ -18,6 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "config.h"
+#if MINETEST_PROTO
+
 #include "connectionthreads.h"
 #include "log.h"
 #include "profiler.h"
@@ -1360,3 +1363,5 @@ SharedBuffer<u8> ConnectionReceiveThread::handlePacketType_Reliable(Channel *cha
 }
 
 }
+
+#endif

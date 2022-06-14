@@ -43,29 +43,29 @@ typedef struct {
 class Mapgen_features {
 public:
 
-	Mapgen_features(int mapgenid, MapgenParams *params, EmergeManager *emerge);
+	Mapgen_features(MapgenParams *params, EmergeParams *emerge);
 	~Mapgen_features();
 
-	int y_offset;
+	int y_offset = 0;
 	MapNode n_stone;
-	Noise *noise_layers;
-	float noise_layers_width;
+	Noise *noise_layers = nullptr;
+	float noise_layers_width = 0;
 	std::vector<layer_data> layers;
 	std::vector<MapNode> layers_node;
-	unsigned int layers_node_size;
-	void layers_init(EmergeManager *emerge, const Json::Value & layersj);
+	unsigned int layers_node_size = 0;
+	void layers_init(EmergeParams *emerge, const Json::Value & layersj);
 	void layers_prepare(const v3POS & node_min, const v3POS & node_max);
 	MapNode layers_get(unsigned int index);
 
-	Noise *noise_float_islands1;
-	Noise *noise_float_islands2;
-	Noise *noise_float_islands3;
+	Noise *noise_float_islands1 = nullptr;
+	Noise *noise_float_islands2 = nullptr;
+	Noise *noise_float_islands3 = nullptr;
 	void float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y);
 	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, MMVManip *vm);
 
-	Noise *noise_cave_indev;
-	int cave_noise_threshold;
-	bool cave_noise_enabled;
+	Noise *noise_cave_indev = nullptr;
+	int cave_noise_threshold = 0;
+	bool cave_noise_enabled = 0;
 	void cave_prepare(const v3POS & node_min, const v3POS & node_max, int max_y);
 
 };
@@ -96,7 +96,7 @@ public:
 	int xstride, ystride, zstride;
 
 	virtual MapgenType getType() const { return MAPGEN_INDEV; }
-	MapgenIndev(int mapgenid, MapgenIndevParams *params, EmergeManager *emerge);
+	MapgenIndev(MapgenIndevParams *params, EmergeParams *emerge);
 	~MapgenIndev();
 
 	virtual void calculateNoise();

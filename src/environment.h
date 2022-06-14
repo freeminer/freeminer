@@ -137,8 +137,8 @@ public:
 
 	IGameDef *getGameDef() { return m_gamedef; }
 
-protected:
 	std::atomic<float> m_time_of_day_speed;
+protected:
 
 	/*
 	 * Below: values managed by m_time_lock
@@ -155,7 +155,7 @@ protected:
 	u32 m_day_night_ratio_override = 0.0f;
 	// Days from the server start, accounts for time shift
 	// in game (e.g. /time or bed usage)
-	std::atomic<u32> m_day_count;
+	std::atomic<u32> m_day_count = 0;
 	/*
 	 * Above: values managed by m_time_lock
 	 */

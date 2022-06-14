@@ -18,11 +18,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "map.h"
 #include "gamedef.h"
+#include "scripting_server.h"
 #include "settings.h"
 #include "nodedef.h"
 #include "log_types.h"
 #include "server.h"
-#include "scripting_game.h"
+//#include "scripting_game.h"
 #include "profiler.h"
 #include "emerge.h"
 
@@ -69,11 +70,11 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-u32 Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
+void Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	auto *nodemgr = m_gamedef->ndef();
 
-	DSTACK(FUNCTION_NAME);
+	//DSTACK(FUNCTION_NAME);
 	//TimeTaker timer("transformLiquidsReal()");
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
@@ -692,7 +693,7 @@ NEXT_LIQUID:
 				v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
 				MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 				if(block) {
-					block->setLightingExpired(true);
+					//block->setLightingExpired(true);
 					//modified_blocks[blockpos] = block;
 					//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
 					//	lighting_modified_blocks.set_try(block->getPos(), block);
@@ -766,5 +767,5 @@ NEXT_LIQUID:
 	if (loopcount < initial_size)
 		g_profiler->add("Server: liquids queue", initial_size);
 
-	return loopcount;
+	//return loopcount;
 }

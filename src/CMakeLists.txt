@@ -631,8 +631,6 @@ set(FMcommon_SRCS
 	circuit_element_virtual.cpp
 	key_value_storage.cpp
 	fm_bitset.cpp
-	mapgen_indev.cpp
-	mapgen_math.cpp
 	log_types.cpp
 	profiler.cpp
 	stat.cpp

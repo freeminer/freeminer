@@ -66,23 +66,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	Map
 */
-<<<<<<< HEAD
-Map::Map(IGameDef *gamedef):
-	m_blocks_delete(&m_blocks_delete_1),
-	m_gamedef(gamedef),
-	m_transforming_liquid_loop_count_multiplier(1.0f),
-	m_unprocessed_count(0),
-	m_inc_trending_up_start_time(0),
-	m_queue_size_timer_started(false)
-    ,
-	m_blocks_update_last(0),
-	m_blocks_save_last(0)
-=======
 
 Map::Map(IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
->>>>>>> 5.5.0
 {
 	m_liquid_step_flow = 1000;
 	time_life = 0;
@@ -91,7 +78,6 @@ Map::Map(IGameDef *gamedef):
 
 Map::~Map()
 {
-<<<<<<< HEAD
 	auto lock = m_blocks.lock_unique_rec();
 	for (auto & ir : m_blocks_delete_1)
 		delete ir.first;
@@ -100,14 +86,14 @@ Map::~Map()
 	for(auto & ir : m_blocks)
 		delete ir.second;
 	getBlockCacheFlush();
-=======
+#if WTF
 	/*
 		Free all MapSectors
 	*/
 	for (auto &sector : m_sectors) {
 		delete sector.second;
 	}
->>>>>>> 5.5.0
+#endif
 }
 
 void Map::addEventReceiver(MapEventReceiver *event_receiver)
@@ -186,679 +172,16 @@ void Map::setNode(v3s16 p, MapNode & n, bool no_light_check)
 		block->setNode(relpos, n);
 }
 
-<<<<<<< HEAD
-/*
-	Goes recursively through the neighbours of the node.
-
-	Alters only transparent nodes.
-
-	If the lighting of the neighbour is lower than the lighting of
-	the node was (before changing it to 0 at the step before), the
-	lighting of the neighbour is set to 0 and then the same stuff
-	repeats for the neighbour.
-
-	The ending nodes of the routine are stored in light_sources.
-	This is useful when a light is removed. In such case, this
-	routine can be called for the light node and then again for
-	light_sources to re-light the area without the removed light.
-
-	values of from_nodes are lighting values.
-*/
-void Map::unspreadLight(enum LightBank bank,
-		std::map<v3s16, u8> & from_nodes,
-		std::set<v3s16> & light_sources,
-		std::map<v3s16, MapBlock*>  & modified_blocks)
-{
-	INodeDefManager *nodemgr = m_gamedef->ndef();
-
-	v3s16 dirs[6] = {
-		v3s16(0,0,1), // back
-		v3s16(0,1,0), // top
-		v3s16(1,0,0), // right
-		v3s16(0,0,-1), // front
-		v3s16(0,-1,0), // bottom
-		v3s16(-1,0,0), // left
-	};
-
-	if(from_nodes.empty())
-		return;
-
-	u32 blockchangecount = 0;
-
-	std::map<v3s16, u8> unlighted_nodes;
-
-	/*
-		Initialize block cache
-	*/
-	v3s16 blockpos_last;
-	MapBlock *block = NULL;
-	// Cache this a bit, too
-	bool block_checked_in_modified = false;
-
-	for(std::map<v3s16, u8>::iterator j = from_nodes.begin();
-		j != from_nodes.end(); ++j)
-	{
-		v3s16 pos = j->first;
-		v3s16 blockpos = getNodeBlockPos(pos);
-
-		// Only fetch a new block if the block position has changed
-/*
-		try{
-*/
-			if(block == NULL || blockpos != blockpos_last){
-				block = getBlockNoCreateNoEx(blockpos);
-				blockpos_last = blockpos;
-
-				block_checked_in_modified = false;
-				blockchangecount++;
-			}
-/*
-		}
-		catch(InvalidPositionException &e)
-		{
-			continue;
-		}
-*/
-
-		if(!block || block->isDummy())
-			continue;
-
-		// Calculate relative position in block
-		//v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
-
-		// Get node straight from the block
-		//MapNode n = block->getNode(relpos);
-
-		u8 oldlight = j->second;
-
-		// Loop through 6 neighbors
-		for(u16 i=0; i<6; i++)
-		{
-			// Get the position of the neighbor node
-			v3s16 n2pos = pos + dirs[i];
-
-			// Get the block where the node is located
-			v3s16 blockpos, relpos;
-			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
-
-			// Only fetch a new block if the block position has changed
-/*
-			try {
-*/
-				if(block == NULL || blockpos != blockpos_last){
-					block = getBlockNoCreateNoEx(blockpos);
-
-					if (!block || block->isDummy())
-						continue;
-
-					blockpos_last = blockpos;
-
-					block_checked_in_modified = false;
-					blockchangecount++;
-				}
-/*
-			}
-			catch(InvalidPositionException &e) {
-				continue;
-			}
-*/
-
-			// Get node straight from the block
-			bool is_valid_position;
-			MapNode n2 = block->getNode(relpos, &is_valid_position);
-			if (!is_valid_position)
-				continue;
-
-			bool changed = false;
-
-			//TODO: Optimize output by optimizing light_sources?
-
-			/*
-				If the neighbor is dimmer than what was specified
-				as oldlight (the light of the previous node)
-			*/
-			if(n2.getLight(bank, nodemgr) < oldlight)
-			{
-				/*
-					And the neighbor is transparent and it has some light
-				*/
-				if(nodemgr->get(n2).light_propagates
-						&& n2.getLight(bank, nodemgr) != 0)
-				{
-					/*
-						Set light to 0 and add to queue
-					*/
-
-					u8 current_light = n2.getLight(bank, nodemgr);
-					n2.setLight(bank, 0, nodemgr);
-					block->setNode(relpos, n2);
-
-					unlighted_nodes[n2pos] = current_light;
-					changed = true;
-
-					/*
-						Remove from light_sources if it is there
-						NOTE: This doesn't happen nearly at all
-					*/
-					/*if(light_sources.find(n2pos))
-					{
-						infostream<<"Removed from light_sources"<<std::endl;
-						light_sources.remove(n2pos);
-					}*/
-				}
-
-				/*// DEBUG
-				if(light_sources.find(n2pos) != NULL)
-					light_sources.remove(n2pos);*/
-			}
-			else{
-				light_sources.insert(n2pos);
-			}
-
-			// Add to modified_blocks
-			if(changed == true && block_checked_in_modified == false)
-			{
-				// If the block is not found in modified_blocks, add.
-/*
-				if(modified_blocks.find(blockpos) == modified_blocks.end())
-				{
-*/
-					++block->lighting_broken;
-					modified_blocks[blockpos] = block;
-/*
-				}
-*/
-				block_checked_in_modified = true;
-			}
-		}
-	}
-
-	/*infostream<<"unspreadLight(): Changed block "
-	<<blockchangecount<<" times"
-	<<" for "<<from_nodes.size()<<" nodes"
-	<<std::endl;*/
-
-	if(!unlighted_nodes.empty())
-		unspreadLight(bank, unlighted_nodes, light_sources, modified_blocks);
-}
-
-/*
-	Lights neighbors of from_nodes, collects all them and then
-	goes on recursively.
-*/
-void Map::spreadLight(enum LightBank bank,
-		std::set<v3s16> & from_nodes,
-		std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms)
-{
-	INodeDefManager *nodemgr = m_gamedef->ndef();
-
-	const v3s16 dirs[6] = {
-		v3s16(0,0,1), // back
-		v3s16(0,1,0), // top
-		v3s16(1,0,0), // right
-		v3s16(0,0,-1), // front
-		v3s16(0,-1,0), // bottom
-		v3s16(-1,0,0), // left
-	};
-
-	if(from_nodes.empty())
-		return;
-
-	u32 blockchangecount = 0;
-
-	std::set<v3s16> lighted_nodes;
-
-	/*
-		Initialize block cache
-	*/
-	v3s16 blockpos_last;
-	MapBlock *block = NULL;
-		// Cache this a bit, too
-	bool block_checked_in_modified = false;
-
-	for(std::set<v3s16>::iterator j = from_nodes.begin();
-		j != from_nodes.end(); ++j)
-	{
-		v3s16 pos = *j;
-		v3s16 blockpos, relpos;
-
-		getNodeBlockPosWithOffset(pos, blockpos, relpos);
-
-		// Only fetch a new block if the block position has changed
-			if(block == NULL || blockpos != blockpos_last){
-#if !ENABLE_THREADS
-				auto lock = m_nothread_locker.try_lock_shared_rec();
-				if (!lock->owns_lock())
-					continue;
-#endif
-				block = getBlockNoCreateNoEx(blockpos);
-				if (!block)
-					continue;
-				blockpos_last = blockpos;
-
-				block_checked_in_modified = false;
-				blockchangecount++;
-			}
-
-		if(block->isDummy())
-			continue;
-
-		//auto lock = block->try_lock_unique_rec();
-		//if (!lock->owns_lock())
-		//	continue;
-
-		// Get node straight from the block
-		bool is_valid_position;
-		MapNode n = block->getNode(relpos, &is_valid_position);
-		if (n.getContent() == CONTENT_IGNORE)
-			continue;
-
-		u8 oldlight = is_valid_position ? n.getLight(bank, nodemgr) : 0;
-		u8 newlight = diminish_light(oldlight);
-
-		// Loop through 6 neighbors
-		for(u16 i=0; i<6; i++){
-			// Get the position of the neighbor node
-			v3s16 n2pos = pos + dirs[i];
-
-			// Get the block where the node is located
-			v3s16 blockpos, relpos;
-			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
-
-			// Only fetch a new block if the block position has changed
-			//try {
-				if(block == NULL || blockpos != blockpos_last){
-					block = getBlockNoCreateNoEx(blockpos);
-					if (!block)
-						continue;
-					blockpos_last = blockpos;
-
-					block_checked_in_modified = false;
-					blockchangecount++;
-				}
-/*
-			}
-			catch(InvalidPositionException &e) {
-				continue;
-			}
-*/
-
-			// Get node straight from the block
-			MapNode n2 = block->getNode(relpos, &is_valid_position);
-			if (!is_valid_position)
-				continue;
-
-			bool changed = false;
-			/*
-				If the neighbor is brighter than the current node,
-				add to list (it will light up this node on its turn)
-			*/
-			if(n2.getLight(bank, nodemgr) > undiminish_light(oldlight))
-			{
-				lighted_nodes.insert(n2pos);
-				changed = true;
-			}
-			/*
-				If the neighbor is dimmer than how much light this node
-				would spread on it, add to list
-			*/
-			if(n2.getLight(bank, nodemgr) < newlight)
-			{
-				if(nodemgr->get(n2).light_propagates)
-				{
-					n2.setLight(bank, newlight, nodemgr);
-					block->setNode(relpos, n2);
-					lighted_nodes.insert(n2pos);
-					changed = true;
-				}
-			}
-
-			// Add to modified_blocks
-			if(changed == true && block_checked_in_modified == false)
-			{
-				// If the block is not found in modified_blocks, add.
-/*
-				if(modified_blocks.find(blockpos) == modified_blocks.end())
-				{
-*/
-					modified_blocks[blockpos] = block;
-/*
-				}
-*/
-				block_checked_in_modified = true;
-			}
-		}
-	}
-
-	/*infostream<<"spreadLight(): Changed block "
-			<<blockchangecount<<" times"
-			<<" for "<<from_nodes.size()<<" nodes"
-			<<std::endl;*/
-
-	if(!lighted_nodes.empty() && (!end_ms || porting::getTimeMs() <= end_ms)) { // maybe 32 too small
-/*
-		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
-			<<" from="<<from_nodes.size()
-			<<" lighted="<<lighted_nodes.size()
-			<<" modifiedB="<<modified_blocks.size()
-			<<std::endl;
-*/
-		spreadLight(bank, lighted_nodes, modified_blocks, end_ms);
-	}
-}
-
-#if 0
-
-u32 Map::updateLighting(enum LightBank bank,
-		concurrent_map<v3POS, MapBlock*> & a_blocks,
-		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
-{
-	INodeDefManager *nodemgr = m_gamedef->ndef();
-
-	/*m_dout<<"Map::updateLighting(): "
-			<<a_blocks.size()<<" blocks."<<std::endl;*/
-
-	//TimeTaker timer("updateLighting");
-
-	// For debugging
-	//bool debug=true;
-	//u32 count_was = modified_blocks.size();
-
-	//std::map<v3s16, MapBlock*> blocks_to_update;
-
-	std::set<v3s16> light_sources;
-
-	std::map<v3s16, u8> unlight_from;
-
-	int num_bottom_invalid = 0;
-
-	//MutexAutoLock lock2(m_update_lighting_mutex);
-
-	MAP_NOTHREAD_LOCK(this);
-
-	{
-	TimeTaker t("updateLighting: first stuff");
-
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
-	if(!max_cycle_ms)
-		updateLighting_last[bank] = 0;
-	for(std::map<v3s16, MapBlock*>::iterator i = a_blocks.begin();
-		i != a_blocks.end(); ++i)
-	{
-			if (n++ < updateLighting_last[bank])
-				continue;
-			else
-				updateLighting_last[bank] = 0;
-			++calls;
-
-		MapBlock *block = getBlockNoCreateNoEx(i->first);
-		//MapBlock *block = i->second;
-
-		for(;;)
-		{
-			// Don't bother with dummy blocks.
-			if(!block || block->isDummy())
-				break;
-
-			auto lock = block->try_lock_unique_rec();
-			if (!lock->owns_lock())
-				break; // may cause dark areas
-			v3s16 pos = block->getPos();
-			v3s16 posnodes = block->getPosRelative();
-			modified_blocks[pos] = block;
-			//blocks_to_update[pos] = block;
-
-			block->setLightingExpired(true);
-
-			/*
-				Clear all light from block
-			*/
-			for(s16 z=0; z<MAP_BLOCKSIZE; z++)
-			for(s16 x=0; x<MAP_BLOCKSIZE; x++)
-			for(s16 y=0; y<MAP_BLOCKSIZE; y++)
-			{
-				v3s16 p(x,y,z);
-				bool is_valid_position;
-				MapNode n = block->getNode(p, &is_valid_position);
-				if (!is_valid_position) {
-					/* This would happen when dealing with a
-					   dummy block.
-					*/
-					infostream<<"updateLighting(): InvalidPositionException"
-							<<std::endl;
-					continue;
-				}
-				u8 oldlight = n.getLight(bank, nodemgr);
-				n.setLight(bank, 0, nodemgr);
-				block->setNode(p, n);
-
-				// If node sources light, add to list
-				u8 source = nodemgr->get(n).light_source;
-				if(source != 0)
-					light_sources.insert(p + posnodes);
-
-				// Collect borders for unlighting
-				if((x==0 || x == MAP_BLOCKSIZE-1
-						|| y==0 || y == MAP_BLOCKSIZE-1
-						|| z==0 || z == MAP_BLOCKSIZE-1)
-						&& oldlight != 0)
-				{
-					v3s16 p_map = p + posnodes;
-					unlight_from[p_map] = oldlight;
-				}
-
-
-			}
-
-			if(bank == LIGHTBANK_DAY)
-			{
-				bool bottom_valid = block->propagateSunlight(light_sources);
-
-				if(!bottom_valid)
-					num_bottom_invalid++;
-
-				// If bottom is valid, we're done.
-				if(bottom_valid)
-					break;
-			}
-			else if(bank == LIGHTBANK_NIGHT)
-			{
-				// For night lighting, sunlight is not propagated
-				break;
-			}
-
-			/*infostream<<"Bottom for sunlight-propagated block ("
-					<<pos.X<<","<<pos.Y<<","<<pos.Z<<") not valid"
-					<<std::endl;*/
-
-			// Bottom sunlight is not valid; get the block and loop to it
-
-			pos.Y--;
-			lock->unlock();
-			block = getBlockNoCreateNoEx(pos);
-		}
-		if (porting::getTimeMs() > end_ms) {
-			updateLighting_last[bank] = n;
-			break;
-		}
-	}
-	if (!calls)
-		updateLighting_last[bank] = 0;
-	}
-	/*
-		Enable this to disable proper lighting for speeding up map
-		generation for testing or whatever
-	*/
-#if 0
-	//if(g_settings->get(""))
-	{
-		core::map<v3s16, MapBlock*>::Iterator i;
-		i = blocks_to_update.getIterator();
-		for(; i.atEnd() == false; i++)
-		{
-			MapBlock *block = i.getNode()->getValue();
-			v3s16 p = block->getPos();
-			block->setLightingExpired(false);
-		}
-		return;
-	}
-#endif
-
-#if 1
-	{
-		TimeTaker timer("updateLighting: unspreadLight");
-		unspreadLight(bank, unlight_from, light_sources, modified_blocks);
-	}
-
-	/*if(debug)
-	{
-		u32 diff = modified_blocks.size() - count_was;
-		count_was = modified_blocks.size();
-		infostream<<"unspreadLight modified "<<diff<<std::endl;
-	}*/
-
-	{
-		TimeTaker timer("updateLighting: spreadLight");
-		spreadLight(bank, light_sources, modified_blocks, porting::getTimeMs() + max_cycle_ms*10);
-	}
-
-	/*
-	for (auto & ir : blocks_to_update) {
-		auto block = getBlockNoCreateNoEx(ir.first);
-		block->setLightingExpired(false);
-	}
-	*/
-
-	/*if(debug)
-	{
-		u32 diff = modified_blocks.size() - count_was;
-		count_was = modified_blocks.size();
-		infostream<<"spreadLight modified "<<diff<<std::endl;
-	}*/
-#endif
-
-#if 0
-	{
-		//MapVoxelManipulator vmanip(this);
-
-		// Make a manual voxel manipulator and load all the blocks
-		// that touch the requested blocks
-		MMVManip vmanip(this);
-
-		{
-		//TimeTaker timer("initialEmerge");
-
-		core::map<v3s16, MapBlock*>::Iterator i;
-		i = blocks_to_update.getIterator();
-		for(; i.atEnd() == false; i++)
-		{
-			MapBlock *block = i.getNode()->getValue();
-			v3s16 p = block->getPos();
-
-			// Add all surrounding blocks
-			vmanip.initialEmerge(p - v3s16(1,1,1), p + v3s16(1,1,1));
-
-			/*
-				Add all surrounding blocks that have up-to-date lighting
-				NOTE: This doesn't quite do the job (not everything
-					  appropriate is lighted)
-			*/
-			/*for(s16 z=-1; z<=1; z++)
-			for(s16 y=-1; y<=1; y++)
-			for(s16 x=-1; x<=1; x++)
-			{
-				v3s16 p2 = p + v3s16(x,y,z);
-				MapBlock *block = getBlockNoCreateNoEx(p2);
-				if(block == NULL)
-					continue;
-				if(block->isDummy())
-					continue;
-				if(block->getLightingExpired())
-					continue;
-				vmanip.initialEmerge(p2, p2);
-			}*/
-
-			// Lighting of block will be updated completely
-			block->setLightingExpired(false);
-		}
-		}
-
-		{
-			//TimeTaker timer("unSpreadLight");
-			vmanip.unspreadLight(bank, unlight_from, light_sources, nodemgr);
-		}
-		{
-			//TimeTaker timer("spreadLight");
-			vmanip.spreadLight(bank, light_sources, nodemgr);
-		}
-		{
-			//TimeTaker timer("blitBack");
-			vmanip.blitBack(modified_blocks);
-		}
-		/*infostream<<"emerge_time="<<emerge_time<<std::endl;
-		emerge_time = 0;*/
-	}
-#endif
-	return updateLighting_last[bank];
-	//m_dout<<"Done ("<<getTimestamp()<<")"<<std::endl;
-}
-
-u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*> & a_blocks,
-		std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms)
-{
-	int ret = 0;
-{
-TimeTaker timer("updateLighting(LIGHTBANK_DAY)");
-
-	ret += updateLighting(LIGHTBANK_DAY, a_blocks, modified_blocks, max_cycle_ms);
-}
-{
-TimeTaker timer("updateLighting(LIGHTBANK_NIGHT)");
-	ret += updateLighting(LIGHTBANK_NIGHT, a_blocks, modified_blocks, max_cycle_ms);
-}
-
-	if (max_cycle_ms && ret)
-		return ret;
-
-	a_blocks.clear();
-TimeTaker timer("updateLighting expireDayNightDiff");
-	//MutexAutoLock lock2(m_update_lighting_mutex);
-
-	/*
-		Update information about whether day and night light differ
-	*/
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = modified_blocks.begin();
-			i != modified_blocks.end(); ++i)
-	{
-		MapBlock *block = getBlockNoCreateNoEx(i->first);
-		//can contain already deleted block from Map::timerUpdate -> MapSector::deleteBlock
-		//MapBlock *block = i->second;
-		if(block == NULL || block->isDummy())
-			continue;
-		block->setLightingExpired(false);
-		block->expireDayNightDiff();
-	}
-	return ret;
-}
-#endif
-
-=======
->>>>>>> 5.5.0
 void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		std::map<v3s16, MapBlock*> &modified_blocks,
 		bool remove_metadata, int fast)
 {
-<<<<<<< HEAD
-
-	INodeDefManager *ndef = m_gamedef->ndef();
-
 	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from old; 3: place, recalculate light and skip liquid queue
 		if (fast == 2 && !n.param1) {
-			MapNode from_node = getNodeNoEx(p);
+			MapNode from_node = getNode(p);
 			if (from_node) {
-				n.setLight(LIGHTBANK_DAY,   from_node.getLight(LIGHTBANK_DAY, ndef), ndef);
-				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, ndef), ndef);
+				n.setLight(LIGHTBANK_DAY,   from_node.getLight(LIGHTBANK_DAY, m_nodedef), m_nodedef);
+				n.setLight(LIGHTBANK_NIGHT, from_node.getLight(LIGHTBANK_NIGHT, m_nodedef), m_nodedef);
 			}
 
 /*
@@ -878,8 +201,6 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	}
 
 
-=======
->>>>>>> 5.5.0
 	// Collect old node for rollback
 	RollbackNode rollback_oldnode(this, p, m_gamedef);
 
@@ -919,31 +240,8 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		Add neighboring liquid nodes and this node to transform queue.
 		(it's vital for the node itself to get updated last, if it was removed.)
 	 */
-<<<<<<< HEAD
-	v3s16 dirs[7] = {
-		v3s16(0,0,1), // back
-		v3s16(0,1,0), // top
-		v3s16(1,0,0), // right
-		v3s16(0,0,-1), // front
-		v3s16(0,-1,0), // bottom
-		v3s16(-1,0,0), // left
-		v3s16(0,0,0), // self
-	};
 
 	if (!fast)
-	for(u16 i=0; i<7; i++)
-	{
-		v3s16 p2 = p + dirs[i];
-
-		bool is_valid_position;
-		MapNode n2 = getNodeNoEx(p2, &is_valid_position);
-		if(is_valid_position
-				&& (ndef->get(n2).isLiquid() || n2.getContent() == CONTENT_AIR))
-		{
-			transforming_liquid_add(p2);
-		}
-=======
-
 	for (const v3s16 &dir : g_7dirs) {
 		v3s16 p2 = p + dir;
 
@@ -952,8 +250,8 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		if(is_valid_position &&
 				(m_nodedef->get(n2).isLiquid() ||
 				n2.getContent() == CONTENT_AIR))
-			m_transforming_liquid.push_back(p2);
->>>>>>> 5.5.0
+			transforming_liquid_add(p2);
+			//m_transforming_liquid.push_back(p2);
 	}
 }
 
@@ -1171,8 +469,7 @@ void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 	timerUpdate(0.0, -1.0, 100, 0, unloaded_blocks);
 }
 
-<<<<<<< HEAD
-=======
+#if WTF
 void Map::deleteSectors(std::vector<v2s16> &sectorList)
 {
 	for (v2s16 j : sectorList) {
@@ -1185,17 +482,12 @@ void Map::deleteSectors(std::vector<v2s16> &sectorList)
 		delete sector;
 	}
 }
->>>>>>> 5.5.0
+#endif
 
 void Map::PrintInfo(std::ostream &out)
 {
 	out<<"Map: ";
 }
-
-<<<<<<< HEAD
-enum NeighborType {
-=======
-#define WATER_DROP_BOOST 4
 
 const static v3s16 liquid_6dirs[6] = {
 	// order: upper before same level before lower
@@ -1207,8 +499,9 @@ const static v3s16 liquid_6dirs[6] = {
 	v3s16( 0,-1, 0)
 };
 
+#define WATER_DROP_BOOST 4
+
 enum NeighborType : u8 {
->>>>>>> 5.5.0
 	NEIGHBOR_UPPER,
 	NEIGHBOR_SAME_LEVEL,
 	NEIGHBOR_LOWER
@@ -1236,32 +529,21 @@ void Map::transforming_liquid_add(v3POS p) {
 	m_transforming_liquid.push_back(p);
 }
 
-<<<<<<< HEAD
 u32 Map::transforming_liquid_size() {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 	return m_transforming_liquid.size();
 }
 
-#define WATER_DROP_BOOST 4
-
-u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
+//u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
+void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env, Server *m_server, unsigned int max_cycle_ms)
 {
-
 	if (g_settings->getBool("liquid_real"))
 		return Map::transformLiquidsReal(m_server, max_cycle_ms);
 
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 
-	INodeDefManager *nodemgr = m_gamedef->ndef();
 
-	DSTACK(FUNCTION_NAME);
-	//TimeTaker timer("transformLiquids()");
-
-=======
-void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env)
-{
->>>>>>> 5.5.0
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
 
@@ -1278,28 +560,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
 
-<<<<<<< HEAD
-#if 0
-
-	/* If liquid_loop_max is not keeping up with the queue size increase
-	 * loop_max up to a maximum of liquid_loop_max * dedicated_server_step.
-	 */
-	if (transforming_liquid_size() > loop_max * 2) {
-		// "Burst" mode
-		float server_step = g_settings->getFloat("dedicated_server_step");
-		if (m_transforming_liquid_loop_count_multiplier - 1.0 < server_step)
-			m_transforming_liquid_loop_count_multiplier *= 1.0 + server_step / 10;
-	} else {
-		m_transforming_liquid_loop_count_multiplier = 1.0;
-	}
-
-	loop_max *= m_transforming_liquid_loop_count_multiplier;
-#endif
-
 	while (transforming_liquid_size() != 0)
-=======
-	while (m_transforming_liquid.size() != 0)
->>>>>>> 5.5.0
 	{
 		// This should be done here so that it is done when continue is used
 		if (loopcount >= initial_size || loopcount >= loop_max || porting::getTimeMs() > end_ms)
@@ -1614,19 +875,12 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 	//infostream<<"Map::transformLiquids(): loopcount="<<loopcount<<" per="<<timer.getTimerTime()<<" ret="<<ret<<std::endl;
 
-<<<<<<< HEAD
-	for (std::deque<v3s16>::iterator iter = must_reflow.begin(); iter != must_reflow.end(); ++iter)
-		transforming_liquid_add(*iter);
-
-/*
-	voxalgo::update_lighting_nodes(this, nodemgr, changed_nodes, modified_blocks);
-*/
-=======
 	for (auto &iter : must_reflow)
-		m_transforming_liquid.push_back(iter);
->>>>>>> 5.5.0
-
+		transforming_liquid_add(iter);
+/*
 	voxalgo::update_lighting_nodes(this, changed_nodes, modified_blocks);
+*/
+
 	env->getScriptIface()->on_liquid_transformed(changed_nodes);
 
 	/* ----------------------------------------------------------------------
@@ -2254,23 +1508,15 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		Copy transforming liquid information
 	*/
 
-/*
+
 	while (data->transforming_liquid.size()) {
 		transforming_liquid_add(data->transforming_liquid.front());
 		data->transforming_liquid.pop_front();
 	}
-*/
 
-<<<<<<< HEAD
 	auto save_generated_block = g_settings->getBool("save_generated_block");
-	for (std::map<v3s16, MapBlock *>::iterator
-			it = changed_blocks->begin();
-			it != changed_blocks->end(); ++it) {
-		MapBlock *block = it->second;
-=======
 	for (auto &changed_block : *changed_blocks) {
 		MapBlock *block = changed_block.second;
->>>>>>> 5.5.0
 		if (!block)
 			continue;
 		/*
@@ -2579,7 +1825,6 @@ MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
 	return block;
 }
 
-<<<<<<< HEAD
 void ServerMap::prepareBlock(MapBlock *block) {
 	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
 
@@ -2589,11 +1834,11 @@ void ServerMap::prepareBlock(MapBlock *block) {
 	v3POS p = block->getPos() *  MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
-=======
+}
+
 bool ServerMap::isBlockInQueue(v3s16 pos)
 {
 	return m_emerge && m_emerge->isBlockInQueue(pos);
->>>>>>> 5.5.0
 }
 
 // N.B.  This requires no synchronization, since data will not be modified unless

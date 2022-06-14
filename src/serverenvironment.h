@@ -58,11 +58,17 @@ public:
 	ActiveBlockModifier() = default;
 	virtual ~ActiveBlockModifier() = default;
 
+
+	// fm:
+	// Maximum range to neighbors  
+	virtual u32 getNeighborsRange() { return 1; };                 
+
+
 	// Set of contents to trigger on
 	virtual const std::vector<std::string> &getTriggerContents() const = 0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual const std::vector<std::string> &getRequiredNeighbors() const = 0;
+	virtual const std::vector<std::string> &getRequiredNeighbors(bool activate) const = 0;
 	// Trigger interval in seconds
 	virtual float getTriggerInterval() = 0;
 	// Random chance of (1 / return value), 0 is disallowed
@@ -74,9 +80,13 @@ public:
 	// get max Y for apply abm
 	virtual s16 getMaxY() = 0;
 	// This is called usually at interval for 1/chance of the nodes
+/*
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
+*/
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider){};
+		u32 active_object_count, u32 active_object_count_wider
+		, MapNode neighbor, bool activate = false
+		){};
 };
 
 struct ABMWithState
@@ -84,7 +94,18 @@ struct ABMWithState
 	ActiveBlockModifier *abm;
 	float timer = 0.0f;
 
-	ABMWithState(ActiveBlockModifier *abm_);
+
+	// fm:
+	float interval = 10;
+	float chance = 50;
+	int neighbors_range;
+	bool simple_catchup;
+	std::unordered_set<content_t> trigger_ids;
+	FMBitset required_neighbors = CONTENT_ID_CAPACITY,
+			 required_neighbors_activate = CONTENT_ID_CAPACITY;
+
+
+	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
 };
 
 struct LoadingBlockModifierDef
@@ -177,7 +198,8 @@ public:
 		m_list.clear();
 	}
 
-	std::set<v3s16> m_list;
+	//std::set<v3s16> m_list;
+	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
 	std::set<v3s16> m_abm_list;
 	std::set<v3s16> m_forceloaded_list;
 
@@ -390,8 +412,10 @@ public:
 private:
 
 	// is weather active in this environment?
+public:
 	bool m_use_weather;
 	bool m_use_weather_biome;
+private:
 	bool m_more_threads;
 	ABMHandler m_abmhandler;
 	void analyzeBlock(MapBlock * block);

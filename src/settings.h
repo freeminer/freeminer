@@ -176,9 +176,9 @@ public:
 	v3f getV3F(const std::string &name) const;
 	u32 getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 			u32 *flagmask) const;
-	bool getNoiseParams(const std::string &name, NoiseParams &np);
+	bool getNoiseParams(const std::string &name, NoiseParams &np) const;
 	bool getNoiseParamsFromValue(const std::string &name, NoiseParams &np) const;
-	bool getNoiseParamsFromGroup(const std::string &name, NoiseParams &np);
+	bool getNoiseParamsFromGroup(const std::string &name, NoiseParams &np) const;
 
 	// return all keys used in this object
 	std::vector<std::string> getNames() const;
@@ -245,7 +245,7 @@ public:
 	const FlagDesc *getFlagDescFallback(const std::string &name) const;
 
 	//freeminer:
-	Json::Value getJson(const std::string & name, const Json::Value & def = Json::Value());
+	Json::Value getJson(const std::string & name, const Json::Value & def = Json::Value()) const;
 	void setJson(const std::string & name, const Json::Value & value);
 
 	Json::Value m_json;

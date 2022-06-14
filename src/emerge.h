@@ -56,6 +56,7 @@ struct BlockMakeData {
 	u64 seed = 0;
 	v3s16 blockpos_min;
 	v3s16 blockpos_max;
+	UniqueQueue<v3s16> transforming_liquid;
 	const NodeDefManager *nodedef = nullptr;
 
 	BlockMakeData() = default;
@@ -204,7 +205,9 @@ private:
 	// Managers of various map generation-related components
 	// Note that each Mapgen gets a copy(!) of these to work with
 	BiomeGen *biomegen;
+public:
 	BiomeManager *biomemgr;
+private:
 	OreManager *oremgr;
 	DecorationManager *decomgr;
 	SchematicManager *schemmgr;

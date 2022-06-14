@@ -1,4 +1,8 @@
 set(mapgen_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
+
+
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/dungeongen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_carpathian.cpp

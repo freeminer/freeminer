@@ -91,7 +91,7 @@ enum BiomeGenType {
 };
 
 struct BiomeParams {
-	virtual void readParams(Settings *settings) = 0;
+	virtual void readParams(const Settings *settings) = 0;
 	virtual void writeParams(Settings *settings) const = 0;
 	virtual ~BiomeParams() = default;
 
@@ -163,7 +163,7 @@ struct BiomeParamsOriginal : public BiomeParams {
 	{
 	}
 
-	virtual void readParams(Settings *settings);
+	virtual void readParams(const Settings *settings);
 	virtual void writeParams(Settings *settings) const;
 
 	NoiseParams np_heat;
@@ -241,7 +241,7 @@ public:
 	s32 weather_humidity_days;
 	s32 weather_hot_core;
 
-	MapgenParams * mapgen_params;
+	MapgenParams * mapgen_params = nullptr;
 	s16 calcBlockHeat(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	s16 calcBlockHumidity(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	//====

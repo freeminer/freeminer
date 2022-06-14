@@ -19,17 +19,15 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef MAPGEN_MATH_HEADER
-#define MAPGEN_MATH_HEADER
+#pragma once
 
 #include "config.h"
-#include "mapgen.h"
-#include "mapgen_v7.h"
+#include "mapgen/mapgen.h"
+#include "mapgen/mapgen_v7.h"
 #include "json/json.h"
 
 #if USE_MANDELBULBER
 #define MANDELBULBER_EMBEDDED
-#include "util/mathconstants.h"
 //#include "mandelbulber/algebra.cpp"
 #include "mandelbulber/fractal.h"
 #endif
@@ -55,7 +53,7 @@ public:
 	MapgenMathParams * mg_params;
 
 	virtual MapgenType getType() const { return MAPGEN_MATH; }
-	MapgenMath(int mapgenid, MapgenMathParams *mg_params, EmergeManager *emerge);
+	MapgenMath(MapgenMathParams *mg_params, EmergeParams *emerge);
 	~MapgenMath();
 
 	virtual void calculateNoise();
@@ -80,5 +78,3 @@ public:
 	double (*func)(double, double, double, double, int, int);
 	MapNode layers_get(float value, float max);
 };
-
-#endif

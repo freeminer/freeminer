@@ -58,11 +58,11 @@ void make_tree(MMVManip &vmanip, v3s16 p0, bool is_apple_tree,
 	MapNode treenode(ndef->getId("mapgen_tree"));
 	MapNode leavesnode(ndef->getId("mapgen_leaves"));
 	MapNode applenode(ndef->getId("mapgen_apple"));
-	if (treenode == CONTENT_IGNORE)
+	if (treenode.param0 == CONTENT_IGNORE)
 		errorstream << "Treegen: Mapgen alias 'mapgen_tree' is invalid!" << std::endl;
-	if (leavesnode == CONTENT_IGNORE)
+	if (leavesnode.param0 == CONTENT_IGNORE)
 		errorstream << "Treegen: Mapgen alias 'mapgen_leaves' is invalid!" << std::endl;
-	if (applenode == CONTENT_IGNORE)
+	if (applenode.param0 == CONTENT_IGNORE)
 		errorstream << "Treegen: Mapgen alias 'mapgen_apple' is invalid!" << std::endl;
 
 	PseudoRandom pr(seed);
@@ -79,13 +79,9 @@ void make_tree(MMVManip &vmanip, v3s16 p0, bool is_apple_tree,
 	// p1 is now the last piece of the trunk
 	p1.Y -= 1;
 
-<<<<<<< HEAD:src/treegen.cpp
 	s16 size = pr.range(2, 3);
 	VoxelArea leaves_a(v3s16(-size, -pr.range(2, 3), -size), v3s16(size, pr.range(2, 3), size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
-=======
-	VoxelArea leaves_a(v3s16(-2, -1, -2), v3s16(2, 2, 2));
->>>>>>> 5.5.0:src/mapgen/treegen.cpp
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
 		leaves_d[i] = 0;
@@ -155,29 +151,14 @@ treegen::error spawn_ltree(ServerMap *map, v3s16 p0,
 
 	voxalgo::blit_back_with_light(map, &vmanip, &modified_blocks);
 
-<<<<<<< HEAD:src/treegen.cpp
-	// update lighting
-	concurrent_map<v3POS, MapBlock*> lighting_modified_blocks;
-	lighting_modified_blocks.insert(modified_blocks.begin(), modified_blocks.end());
-	map->updateLighting(lighting_modified_blocks, modified_blocks);
+
 	// Send a MEET_OTHER event
-	MapEditEvent event;
-	event.type = MEET_OTHER;
-/*
-	for (std::map<v3s16, MapBlock*>::iterator
-			i = modified_blocks.begin();
-			i != modified_blocks.end(); ++i)
-		event.modified_blocks.insert(i->first);
-*/
-	map->dispatchEvent(&event);
-=======
-	// Send a MEET_OTHER event
+
 	MapEditEvent event;
 	event.type = MEET_OTHER;
 	for (auto &modified_block : modified_blocks)
 		event.modified_blocks.insert(modified_block.first);
 	map->dispatchEvent(event);
->>>>>>> 5.5.0:src/mapgen/treegen.cpp
 	return SUCCESS;
 }
 
@@ -822,13 +803,8 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 	// Make p1 the top node of the trunk
 	p1.Y -= 1;
 
-<<<<<<< HEAD:src/treegen.cpp
 	u16 size = pr.range(2, 4);
 	VoxelArea leaves_a(v3s16(-4, -4*2, -4), v3s16(4, 4, 4));
-	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
-=======
-	VoxelArea leaves_a(v3s16(-3, -6, -3), v3s16(3, 3, 3));
->>>>>>> 5.5.0:src/mapgen/treegen.cpp
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
 		leaves_d[i] = 0;
@@ -918,7 +894,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 }
 
 void make_cavetree(MMVManip &vmanip, v3POS p0,
-		bool is_jungle_tree, INodeDefManager *ndef, int seed)
+		bool is_jungle_tree, NodeDefManager *ndef, int seed)
 {
 	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));
 	MapNode leavesnode(ndef->getId(is_jungle_tree ? "mapgen_jungleleaves" : "mapgen_leaves"));

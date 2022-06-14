@@ -20,16 +20,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+#include "remoteplayer.h"
+#include "scripting_server.h"
 #include "server.h"
 #include "log_types.h"
 
-#include "content_abm.h"
+#include "../content_abm.h"
 #include "content_sao.h"
 #include "emerge.h"
 #include "nodedef.h"
 #include "player.h"
 #include "rollback_interface.h"
 #include "scripting_game.h"
+#include "server/player_sao.h"
 #include "settings.h"
 #include "tool.h"
 #include "version.h"
@@ -309,11 +312,11 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 	RemotePlayer *player =
 	    static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
 
-	if (player && player->peer_id != 0) {
+	if (player && player->m_peer_id != 0) {
 
 		if (given_password.size()) {
 			actionstream << "Server: " << playername << " rejoining" << std::endl;
-			DenyAccessVerCompliant(player->peer_id, player->protocol_version, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
+			DenyAccessVerCompliant(player->m_peer_id, player->protocol_version, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
 			player->getPlayerSAO()->removingFromEnvironment();
 			m_env->removePlayer(player);
 			player = nullptr;

@@ -18,7 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "fm_lan.h"
-#include "../socket.h"
+#include "socket.h"
 #include "../util/string.h"
 #include "../log_types.h"
 #include "../settings.h"

@@ -56,7 +56,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log_types.h"
 #include "mapgen_indev.h"
 #include "mapgen_math.h"
-#include "environment.h"
+#include "serverenvironment.h"
 
 
 FlagDesc flagdesc_mapgen[] = {
@@ -385,7 +385,7 @@ inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s16 em)
 	return false;
 }
 
-void Mapgen::updateLiquid(v3POS nmin, v3POS nmax)
+void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3POS nmin, v3POS nmax)
 {
 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
 
@@ -979,6 +979,10 @@ void MapgenBasic::generateDungeons(s16 max_stone_y)
 	dp.num_dungeons        = num_dungeons;
 	dp.notifytype          = GENNOTIFY_DUNGEON;
 	dp.num_rooms           = ps.range(2, 16);
+
+    float far_multi = farscale(5, vm->m_area.MinEdge.X, vm->m_area.MinEdge.Y, vm->m_area.MinEdge.Z);
+	dp.num_rooms = ps.range(2, ps.range(2, 16 * far_multi));
+
 	dp.room_size_min       = v3s16(5, 5, 5);
 	dp.room_size_max       = v3s16(12, 6, 12);
 	dp.room_size_large_min = v3s16(12, 6, 12);
@@ -1086,7 +1090,7 @@ MapgenParams::~MapgenParams()
 }
 
 
-void MapgenParams::readParams(Settings *settings)
+void MapgenParams::readParams(const Settings *settings)
 {
 	// should always be used via MapSettingsManager
 	assert(settings != g_settings);

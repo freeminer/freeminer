@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "settings.h"
 #include "emerge.h"
-#include "environment.h"
+#include "serverenvironment.h"
 #include "mg_biome.h"
 #include "log_types.h"
 
@@ -281,8 +281,8 @@ void MapgenMathParams::writeParams(Settings *settings) const {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *emerge) :
-	MapgenV7(mapgenid, (MapgenV7Params *)params_, emerge) {
+MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
+	MapgenV7((MapgenV7Params *)params_, emerge) {
 	ndef = emerge->ndef;
 	//mg_params = (MapgenMathParams *)params_->sparams;
 	mg_params = params_;
@@ -292,9 +292,9 @@ MapgenMath::MapgenMath(int mapgenid, MapgenMathParams *params_, EmergeManager *e
 	if (params.get("light", 0).asBool())
 		this->flags &= ~MG_LIGHT;
 
-	n_air		= MapNode(ndef, params.get("air", "air").asString(), LIGHT_SUN);
-	n_water	= MapNode(ndef, params.get("water_source", "mapgen_water_source").asString(), LIGHT_SUN);
-	n_stone		= MapNode(ndef, params.get("stone", "mapgen_stone").asString(), LIGHT_SUN);
+	n_air		= MapNode(ndef->getId(params.get("air", "air").asString()), LIGHT_SUN);
+	n_water	= MapNode(ndef->getId(params.get("water_source", "mapgen_water_source").asString()), LIGHT_SUN);
+	n_stone		= MapNode(ndef->getId(params.get("stone", "mapgen_stone").asString()), LIGHT_SUN);
 
 	if (params["generator"].empty()) {
 		params["generator"] = "menger_sponge";

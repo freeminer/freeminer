@@ -200,7 +200,8 @@ public:
 	void setLighting(u8 light, v3s16 nmin, v3s16 nmax);
 	void lightSpread(VoxelArea &a, std::queue<std::pair<v3s16, u8>> &queue,
 		const v3s16 &p, u8 light
-		, unordered_map_v3POS<u8> & skip, int r = 0);
+		//, unordered_map_v3POS<u8> & skip, int r = 0
+		);
 	void calcLighting(v3s16 nmin, v3s16 nmax, v3s16 full_nmin, v3s16 full_nmax,
 		bool propagate_shadow = true);
 	void propagateSunlight(v3s16 nmin, v3s16 nmax, bool propagate_shadow);
@@ -210,7 +211,8 @@ public:
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
 
 	// freeminer:
-	EmergeManager *m_emerge = nullptr;
+	//EmergeManager *m_emerge = nullptr;
+	EmergeParams *m_emerge = nullptr;
 	s16 liquid_pressure = 0;
 	unordered_map_v3POS<s16> heat_cache;
 	unordered_map_v3POS<s16> humidity_cache;

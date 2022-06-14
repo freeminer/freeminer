@@ -44,14 +44,9 @@ FlagDesc flagdesc_mapgen_v5[] = {
 };
 
 
-<<<<<<< HEAD:src/mapgen_v5.cpp
-MapgenV5::MapgenV5(int mapgenid, MapgenV5Params *params, EmergeManager *emerge)
-	: MapgenBasic(mapgenid, params, emerge)
-	, Mapgen_features(mapgenid, params, emerge)
-=======
 MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	: MapgenBasic(MAPGEN_V5, params, emerge)
->>>>>>> 5.5.0:src/mapgen/mapgen_v5.cpp
+	, Mapgen_features(params, emerge)
 {
 	spflags            = params->spflags;
 	cave_width         = params->cave_width;
@@ -75,7 +70,6 @@ MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	// 3D terrain noise
 	// 1-up 1-down overgeneration
 	noise_ground = new Noise(&params->np_ground, seed, csize.X, csize.Y + 2, csize.Z);
-<<<<<<< HEAD:src/mapgen_v5.cpp
 
 	//freeminer:
 	y_offset = 1;
@@ -90,15 +84,11 @@ MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	//noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	//=========
 
-	MapgenBasic::np_cave1 = params->np_cave1;
-	MapgenBasic::np_cave2 = params->np_cave2;
-=======
 	// 1 down overgeneration
 	MapgenBasic::np_cave1    = params->np_cave1;
 	MapgenBasic::np_cave2    = params->np_cave2;
 	MapgenBasic::np_cavern   = params->np_cavern;
 	MapgenBasic::np_dungeons = params->np_dungeons;
->>>>>>> 5.5.0:src/mapgen/mapgen_v5.cpp
 }
 
 
@@ -120,38 +110,18 @@ MapgenV5Params::MapgenV5Params():
 	np_cave2        (0,   12,  v3f(67,  67,  67),  10325,  3, 0.5,  2.0),
 	np_cavern       (0,   1,   v3f(384, 128, 384), 723,    5, 0.63, 2.0),
 	np_dungeons     (0.9, 0.5, v3f(500, 500, 500), 0,      2, 0.8,  2.0)
-{
-<<<<<<< HEAD:src/mapgen_v5.cpp
-	spflags    = 0;
-	cave_width = 0.125;
-
-	np_filler_depth = NoiseParams(0, 1,  v3f(150, 150, 150), 261,    4, 0.7,  2.0);
-	np_factor       = NoiseParams(0, 1,  v3f(250, 250, 250), 920381, 3, 0.45, 2.0);
-	np_height       = NoiseParams(0, 10, v3f(250, 250, 250), 84174,  4, 0.5,  2.0);
-	np_cave1        = NoiseParams(0, 12, v3f(50,  50,  50),  52534,  4, 0.5,  2.0);
-	np_cave2        = NoiseParams(0, 12, v3f(50,  50,  50),  10325,  4, 0.5,  2.0);
-	np_ground       = NoiseParams(0, 40, v3f(80,  80,  80),  983240, 4, 0.55, 2.0, NOISE_FLAG_EASED);
 
 	//freeminer:
-	float_islands = 500;
-	np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683, 6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5);
-	np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5);
-	np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 0.5);
-	np_layers          = NoiseParams(500,  500, v3f(100, 100, 100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.1,   0.5);
-}
-
-
-//#define CAVE_NOISE_SCALE 12.0
-//#define CAVE_NOISE_THRESHOLD (1.5/CAVE_NOISE_SCALE) = 0.125
-
-
-void MapgenV5Params::readParams(Settings *settings)
-=======
+    ,
+	np_float_islands1  (0,    1,   v3f(256, 256, 256), 3683, 6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5),
+	np_float_islands2  (0,    1,   v3f(8,   8,   8  ), 9292, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5),
+	np_float_islands3  (0,    1,   v3f(256, 256, 256), 6412, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 0.5),
+	np_layers          (500,  500, v3f(100, 100, 100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.1,   0.5)
+{
 }
 
 
 void MapgenV5Params::readParams(const Settings *settings)
->>>>>>> 5.5.0:src/mapgen/mapgen_v5.cpp
 {
 	settings->getFlagStrNoEx("mgv5_spflags", spflags, flagdesc_mapgen_v5);
 	settings->getFloatNoEx("mgv5_cave_width",         cave_width);
@@ -173,9 +143,8 @@ void MapgenV5Params::readParams(const Settings *settings)
 	settings->getNoiseParams("mgv5_np_ground",       np_ground);
 	settings->getNoiseParams("mgv5_np_cave1",        np_cave1);
 	settings->getNoiseParams("mgv5_np_cave2",        np_cave2);
-<<<<<<< HEAD:src/mapgen_v5.cpp
-	settings->getNoiseParams("mgv5_np_ground",       np_ground);
-
+	
+	
 	//freeminer:
 	settings->getS16NoEx("mg_float_islands", float_islands);
 	settings->getNoiseParamsFromGroup("mg_np_float_islands1", np_float_islands1);
@@ -183,10 +152,10 @@ void MapgenV5Params::readParams(const Settings *settings)
 	settings->getNoiseParamsFromGroup("mg_np_float_islands3", np_float_islands3);
 	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
-=======
+	//
+
 	settings->getNoiseParams("mgv5_np_cavern",       np_cavern);
 	settings->getNoiseParams("mgv5_np_dungeons",     np_dungeons);
->>>>>>> 5.5.0:src/mapgen/mapgen_v5.cpp
 }
 
 
@@ -212,8 +181,6 @@ void MapgenV5Params::writeParams(Settings *settings) const
 	settings->setNoiseParams("mgv5_np_ground",       np_ground);
 	settings->setNoiseParams("mgv5_np_cave1",        np_cave1);
 	settings->setNoiseParams("mgv5_np_cave2",        np_cave2);
-<<<<<<< HEAD:src/mapgen_v5.cpp
-	settings->setNoiseParams("mgv5_np_ground",       np_ground);
 
 	//freeminer:
 	settings->setS16("mg_float_islands", float_islands);
@@ -222,10 +189,9 @@ void MapgenV5Params::writeParams(Settings *settings) const
 	settings->setNoiseParams("mg_np_float_islands3", np_float_islands3);
 	settings->setNoiseParams("mg_np_layers",         np_layers);
 	settings->setJson("mg_params", paramsj);
-=======
+    //
 	settings->setNoiseParams("mgv5_np_cavern",       np_cavern);
 	settings->setNoiseParams("mgv5_np_dungeons",     np_dungeons);
->>>>>>> 5.5.0:src/mapgen/mapgen_v5.cpp
 }
 
 
@@ -354,7 +320,7 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 	//printf("makeChunk: %dms\n", t.stop());
 
 	// Add top and bottom side of water to transforming_liquid queue
-	updateLiquid(full_node_min, full_node_max);
+	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 
 	// Calculate lighting
 	if (flags & MG_LIGHT) {

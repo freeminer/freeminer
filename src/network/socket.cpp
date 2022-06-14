@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <cstring>
 #include <iomanip>
+#include "settings.h"
 #include "util/string.h"
 #include "util/numeric.h"
 #include "constants.h"

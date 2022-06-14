@@ -23,9 +23,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "environment.h"
 #include "emerge.h"
-#include "mg_biome.h"
+#include "mapgen/mg_biome.h"
 #include "gamedef.h"
 #include "util/directiontables.h"
+#include "serverenvironment.h"
 
 
 #if HAVE_THREAD_LOCAL
@@ -270,7 +271,7 @@ int ServerMap::getSurface(v3POS basepos, int searchup, bool walkable_only) {
 	MapNode last_node = getNode(basepos);
 	MapNode node = last_node;
 	v3POS runpos = basepos;
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	auto *nodemgr = m_gamedef->ndef();
 
 	bool last_was_walkable = nodemgr->get(node).walkable;
 
@@ -299,9 +300,9 @@ int ServerMap::getSurface(v3POS basepos, int searchup, bool walkable_only) {
 }
 
 
-INodeDefManager* Map::getNodeDefManager() {
+/*NodeDefManager* Map::getNodeDefManager() {
 	return m_gamedef->ndef();
-}
+}*/
 
 void Map::copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip) {
 
@@ -481,7 +482,7 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 
 	std::map<v3POS, MapBlock*> modified_blocks;
 
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	auto *nodemgr = m_gamedef->ndef();
 
 	int ret = 0;
 	int loopcount = 0;
@@ -631,7 +632,7 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 		MapBlock *block = getBlockNoCreateNoEx(i.first);
 		if(!block)
 			continue;
-		block->setLightingExpired(false);
+		//block->setLightingExpired(false);
 		block->lighting_broken = 0;
 	}
 	//infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
@@ -648,7 +649,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 
 	//auto lock = block->lock_unique_rec(); //no: in block_below_is_valid getnode outside block
 
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	auto *nodemgr = m_gamedef->ndef();
 
 	// Whether the sunlight at the top of the bottom block is valid
 	bool block_below_is_valid = true;
@@ -818,6 +819,7 @@ unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount
 	return ret;
 }
 
+/*
 MapNode Map::getNodeNoEx(v3s16 p) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
@@ -831,3 +833,4 @@ MapNode Map::getNodeNoEx(v3s16 p) {
 	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNode(relpos);
 }
+*/

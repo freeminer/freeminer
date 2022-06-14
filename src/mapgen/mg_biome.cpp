@@ -1,15 +1,11 @@
 /*
-<<<<<<< HEAD:src/mg_biome.cpp
 biome.cpp
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-*/
-=======
+
 Minetest
 Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 Copyright (C) 2014-2018 paramat
->>>>>>> 5.5.0:src/mapgen/mg_biome.cpp
 
-/*
+
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -32,10 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "nodedef.h"
 #include "map.h" //for MMVManip
-<<<<<<< HEAD:src/mg_biome.cpp
 #include "log_types.h"
-=======
->>>>>>> 5.5.0:src/mapgen/mg_biome.cpp
 #include "util/numeric.h"
 #include "porting.h"
 #include "settings.h"
@@ -66,28 +59,19 @@ BiomeManager::BiomeManager(Server *server) :
 	b->humidity_point  = 0.0;
 	b->vertical_blend  = 0;
 
-<<<<<<< HEAD:src/mg_biome.cpp
-	b->m_nodenames.push_back("mapgen_stone");
-	b->m_nodenames.push_back("mapgen_stone");
-	b->m_nodenames.push_back("mapgen_stone");
-	b->m_nodenames.push_back("mapgen_water_source");
-	b->m_nodenames.push_back("mapgen_water_source");
-	b->m_nodenames.push_back("mapgen_river_water_source");
-
-	//freeminer
-	b->m_nodenames.push_back("mapgen_ice");
-	b->m_nodenames.push_back("mapgen_dirt_with_snow");
-	//========
-
-	b->m_nodenames.push_back("mapgen_stone");
-	b->m_nodenames.push_back("ignore");
-=======
 	b->m_nodenames.emplace_back("mapgen_stone");
 	b->m_nodenames.emplace_back("mapgen_stone");
 	b->m_nodenames.emplace_back("mapgen_stone");
 	b->m_nodenames.emplace_back("mapgen_water_source");
 	b->m_nodenames.emplace_back("mapgen_water_source");
 	b->m_nodenames.emplace_back("mapgen_river_water_source");
+
+	//freeminer
+	b->m_nodenames.emplace_back("mapgen_ice");
+	b->m_nodenames.emplace_back("mapgen_dirt_with_snow");
+	//========
+
+
 	b->m_nodenames.emplace_back("mapgen_stone");
 	b->m_nodenames.emplace_back("ignore");
 	b->m_nodenames.emplace_back("ignore");
@@ -95,7 +79,6 @@ BiomeManager::BiomeManager(Server *server) :
 	b->m_nodenames.emplace_back("ignore");
 	b->m_nodenames.emplace_back("ignore");
 	b->m_nodenames.emplace_back("ignore");
->>>>>>> 5.5.0:src/mapgen/mg_biome.cpp
 	m_ndef->pendNodeResolve(b);
 
 	year_days = g_settings->getS16("year_days");
@@ -144,7 +127,7 @@ BiomeManager *BiomeManager::clone() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void BiomeParamsOriginal::readParams(Settings *settings)
+void BiomeParamsOriginal::readParams(const Settings *settings)
 {
 	settings->getNoiseParams("mg_biome_np_heat",           np_heat);
 	settings->getNoiseParams("mg_biome_np_heat_blend",     np_heat_blend);
@@ -290,12 +273,7 @@ Biome *BiomeGenOriginal::calcBiomeFromNoise(float heat, float humidity, v3s16 po
 		float heat_point = (b->heat_point - 50) * (( m_params->np_heat.offset + m_params->np_heat.scale ) / 100)
 			 + m_params->np_heat.offset;
 
-		float d_heat     = heat     - heat_point;
-
-<<<<<<< HEAD:src/mg_biome.cpp
-=======
-		float d_heat = heat - b->heat_point;
->>>>>>> 5.5.0:src/mapgen/mg_biome.cpp
+		float d_heat = heat - heat_point;
 		float d_humidity = humidity - b->humidity_point;
 		float dist = (d_heat * d_heat) + (d_humidity * d_humidity);
 
@@ -411,33 +389,22 @@ ObjDef *Biome::clone() const
 
 void Biome::resolveNodeNames()
 {
-<<<<<<< HEAD:src/mg_biome.cpp
-	getIdFromNrBacklog(&c_top,         "mapgen_stone",              CONTENT_AIR);
-	getIdFromNrBacklog(&c_filler,      "mapgen_stone",              CONTENT_AIR);
-	getIdFromNrBacklog(&c_stone,       "mapgen_stone",              CONTENT_AIR);
-	getIdFromNrBacklog(&c_water_top,   "mapgen_water_source",       CONTENT_AIR);
-	getIdFromNrBacklog(&c_water,       "mapgen_water_source",       CONTENT_AIR);
-	getIdFromNrBacklog(&c_river_water, "mapgen_river_water_source", CONTENT_AIR);
-
-	//freeminer:
-	getIdFromNrBacklog(&c_ice,         "mapgen_ice",                c_water);
-	getIdFromNrBacklog(&c_top_cold,    "mapgen_dirt_with_snow",     c_top);
-	//==========
-
-	getIdFromNrBacklog(&c_riverbed,    "mapgen_stone",              CONTENT_AIR);
-	getIdFromNrBacklog(&c_dust,        "ignore",                    CONTENT_IGNORE);
-=======
 	getIdFromNrBacklog(&c_top,           "mapgen_stone",              CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_filler,        "mapgen_stone",              CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_stone,         "mapgen_stone",              CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_water_top,     "mapgen_water_source",       CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_water,         "mapgen_water_source",       CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_river_water,   "mapgen_river_water_source", CONTENT_AIR,    false);
+
+	//freeminer:
+	getIdFromNrBacklog(&c_ice,           "mapgen_ice",                c_water,        false);
+	getIdFromNrBacklog(&c_top_cold,      "mapgen_dirt_with_snow",     c_top,          false);
+	//==========
+
 	getIdFromNrBacklog(&c_riverbed,      "mapgen_stone",              CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_dust,          "ignore",                    CONTENT_IGNORE, false);
 	getIdsFromNrBacklog(&c_cave_liquid);
 	getIdFromNrBacklog(&c_dungeon,       "ignore",                    CONTENT_IGNORE, false);
 	getIdFromNrBacklog(&c_dungeon_alt,   "ignore",                    CONTENT_IGNORE, false);
 	getIdFromNrBacklog(&c_dungeon_stair, "ignore",                    CONTENT_IGNORE, false);
->>>>>>> 5.5.0:src/mapgen/mg_biome.cpp
 }

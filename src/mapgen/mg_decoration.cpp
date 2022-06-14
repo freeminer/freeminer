@@ -388,12 +388,8 @@ size_t DecoSimple::generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-<<<<<<< HEAD:src/mg_decoration.cpp
-DecoSchematic::DecoSchematic()
-=======
 
 DecoSchematic::~DecoSchematic()
->>>>>>> 5.5.0:src/mapgen/mg_decoration.cpp
 {
 	if (was_cloned)
 		delete schematic;

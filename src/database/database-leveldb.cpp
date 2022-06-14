@@ -44,7 +44,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 Database_LevelDB::Database_LevelDB(const std::string &savedir)
-	: m_database(savedir, "map")
 {
 }
 
@@ -54,15 +53,20 @@ Database_LevelDB::~Database_LevelDB()
 
 bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	if (!m_database->Put(leveldb::WriteOptions(), getBlockAsString(pos), data)) {
-		warningstream << "WARNING: saveBlock: LevelDB error saving block "
-			<< pos << ": "<< m_database->get_error() << std::endl;
+	leveldb::Status status = m_database->Put(leveldb::WriteOptions(),
+			getBlockAsString(pos), data);
+	if (!status.ok()) {
+		warningstream << "saveBlock: LevelDB error saving block "
+			<< PP(pos) << ": " << status.ToString() << std::endl;
 		return false;
 	}
-	m_database->del(i64tos(getBlockAsInteger(pos))); // delete old format
+
+        // delete old format
+        auto status_del = m_database->Delete(leveldb::WriteOptions(), i64tos(getBlockAsInteger(pos)));
 
 	return true;
 }
+
 
 void Database_LevelDB::loadBlock(const v3s16 &pos, std::string *block)
 {
@@ -94,7 +98,7 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
 #if USE_LEVELDB
-	auto it = m_database->new_iterator();
+	auto it = m_database->NewIterator(leveldb::ReadOptions());
 	if (!it)
 		return;
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {

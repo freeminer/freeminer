@@ -255,9 +255,9 @@ public:
 			const std::vector<std::string> &required_neighbors,
 			float trigger_interval, u32 trigger_chance, bool simple_catch_up, s16 min_y, s16 max_y):
 		m_id(id),
+		m_neighbors_range(neighbors_range),
 		m_trigger_contents(trigger_contents),
 		m_required_neighbors(required_neighbors),
-		m_neighbors_range(neighbors_range),
 		m_trigger_interval(trigger_interval),
 		m_trigger_chance(trigger_chance),
 		m_simple_catch_up(simple_catch_up),

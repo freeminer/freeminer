@@ -41,18 +41,6 @@ public:
 
 private:
 	std::condition_variable cv;
-<<<<<<< HEAD
-	Mutex mutex;
-	bool notified = false;
-#elif USE_WIN_MUTEX
-	HANDLE event;
-#else
-	pthread_cond_t cv;
-	pthread_mutex_t mutex;
-	bool notified = false;
-#endif
-=======
 	std::mutex mutex;
 	bool notified = false;
->>>>>>> 5.5.0
 };

@@ -225,12 +225,10 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	u32 transformLiquids(Server *m_server, unsigned int max_cycle_ms);
-	u32 transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
-/*
+	void transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
 	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
-			ServerEnvironment *env);
-*/
+			ServerEnvironment *env, 
+			Server *m_server, unsigned int max_cycle_ms);
 	/*
 		Node metadata
 		These are basically coordinate wrappers to MapBlock

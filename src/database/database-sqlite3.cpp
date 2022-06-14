@@ -116,13 +116,8 @@ int Database_SQLite3::busyHandler(void *data, int count)
 	return cur_time - first_time < BUSY_FATAL_TRESHOLD;
 }
 
-<<<<<<< HEAD:src/database-sqlite3.cpp
-Database_SQLite3::Database_SQLite3(const std::string &savedir) :
-	m_initialized(false),
-=======
 
 Database_SQLite3::Database_SQLite3(const std::string &savedir, const std::string &dbname) :
->>>>>>> 5.5.0:src/database/database-sqlite3.cpp
 	m_savedir(savedir),
 	m_dbname(dbname)
 {
@@ -847,9 +842,6 @@ bool ModMetadataDatabaseSQLite3::setModEntry(const std::string &modname,
 	return true;
 }
 
-<<<<<<< HEAD:src/database-sqlite3.cpp
-#endif
-=======
 bool ModMetadataDatabaseSQLite3::removeModEntry(const std::string &modname,
 		const std::string &key)
 {
@@ -883,4 +875,5 @@ void ModMetadataDatabaseSQLite3::listMods(std::vector<std::string> *res)
 		throw e;
 	}
 }
->>>>>>> 5.5.0:src/database/database-sqlite3.cpp
+
+#endif

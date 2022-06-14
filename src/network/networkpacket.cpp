@@ -23,16 +23,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/serialize.h"
 #include "networkprotocol.h"
 
-<<<<<<< HEAD
 #include "config.h"
 
 
-NetworkPacket::NetworkPacket(u16 command, u32 datasize, u16 peer_id):
-m_datasize(datasize), m_read_offset(0), m_command(command), m_peer_id(peer_id)
-=======
 NetworkPacket::NetworkPacket(u16 command, u32 datasize, session_t peer_id):
 m_datasize(datasize), m_command(command), m_peer_id(peer_id)
->>>>>>> 5.5.0
 {
 	m_data.resize(m_datasize);
 }

@@ -23,82 +23,36 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <fstream>
 #include "environment.h"
 #include "collision.h"
-<<<<<<< HEAD
-#include "content_mapnode.h"
-#include "mapblock.h"
-#include "serverobject.h"
-#include "content_sao.h"
-#include "settings.h"
-#include "log_types.h"
-#include "profiler.h"
-#include "scripting_game.h"
-#include "nodedef.h"
-#include "nodemetadata.h"
-//#include <fstream>
-#include "gamedef.h"
-#ifndef SERVER
-#include "clientmap.h"
-#include "localplayer.h"
-#include "mapblock_mesh.h"
-#include "event.h"
-#endif
-
 #include "contrib/fallingsao.h"
 #include "contrib/itemsao.h"
 
-=======
 #include "raycast.h"
 #include "scripting_server.h"
->>>>>>> 5.5.0
 #include "server.h"
 #include "daynightratio.h"
 #include "emerge.h"
-<<<<<<< HEAD
-#include "util/serialize.h"
+
 #include "fm_bitset.h"
 #include "circuit.h"
 #include "key_value_storage.h"
 #include <random>
-#include "util/basic_macros.h"
-#include "threading/mutex_auto_lock.h"
+
 
 std::random_device random_device; // todo: move me to random.h
 std::mt19937 random_gen(random_device());
-
-#define LBM_NAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyz0123456789_:"
-
-// A number that is much smaller than the timeout for particle spawners should/could ever be
-#define PARTICLE_SPAWNER_NO_EXPIRY -1024.f
-
-Environment::Environment():
-	m_time_of_day_speed(0),
-/*
-	m_time_of_day(9000),
-	m_time_of_day_f(9000./24000),
-*/
-	m_time_conversion_skew(0.0f),
-	m_enable_day_night_ratio_override(false),
-	m_day_night_ratio_override(0.0f)
-=======
 
 
 Environment::Environment(IGameDef *gamedef):
 	m_time_of_day_speed(0.0f),
 	m_day_count(0),
 	m_gamedef(gamedef)
->>>>>>> 5.5.0
 {
 	m_time_of_day = 9000;
 	m_cache_enable_shaders = g_settings->getBool("enable_shaders");
 	m_cache_active_block_mgmt_interval = g_settings->getFloat("active_block_mgmt_interval");
 	m_cache_abm_interval = g_settings->getFloat("abm_interval");
 	m_cache_nodetimer_interval = g_settings->getFloat("nodetimer_interval");
-<<<<<<< HEAD
-	m_day_count = 0;
-}
-=======
 	m_cache_abm_time_budget = g_settings->getFloat("abm_time_budget");
->>>>>>> 5.5.0
 
 	m_time_of_day = g_settings->getU32("world_start_time");
 	m_time_of_day_f = (float)m_time_of_day / 24000.0f;
@@ -395,6 +349,8 @@ u32 Environment::getDayCount()
 	// Atomic<u32> counter
 	return m_day_count;
 }
+
+#if 0
 <<<<<<< HEAD
 
 
@@ -3884,3 +3840,5 @@ ClientEnvEvent ClientEnvironment::getClientEvent()
 #endif // #ifndef SERVER
 =======
 >>>>>>> 5.5.0
+
+#endif

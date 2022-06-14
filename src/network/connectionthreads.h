@@ -20,6 +20,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "config.h"
+#if MINETEST_PROTO
+
+
 #include <cassert>
 #include "threading/thread.h"
 #include "connection.h"
@@ -167,3 +171,5 @@ private:
 	Connection *m_connection = nullptr;
 };
 }
+
+#endif

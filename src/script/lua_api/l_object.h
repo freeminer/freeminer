@@ -35,14 +35,6 @@ class RemotePlayer;
 */
 
 class ObjectRef : public ModApiBase {
-<<<<<<< HEAD
-private:
-	ServerActiveObject *m_object;
-
-	static const char className[];
-	static const luaL_Reg methods[];
-=======
->>>>>>> 5.5.0
 public:
 	ObjectRef(ServerActiveObject *object);
 
@@ -80,20 +72,12 @@ private:
 	static int l_remove(lua_State *L);
 
 	// get_pos(self)
-<<<<<<< HEAD
-	// returns: {x=num, y=num, z=num}
-=======
->>>>>>> 5.5.0
 	static int l_get_pos(lua_State *L);
 
 	// set_pos(self, pos)
 	static int l_set_pos(lua_State *L);
 
-<<<<<<< HEAD
-	// move_to(self, pos, continuous=false)
-=======
 	// move_to(self, pos, continuous)
->>>>>>> 5.5.0
 	static int l_move_to(lua_State *L);
 
 	// punch(self, puncher, time_from_last_punch, tool_capabilities, dir)

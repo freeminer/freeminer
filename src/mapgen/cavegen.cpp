@@ -521,16 +521,6 @@ void CavesRandomWalk::carveRoute(v3f vec, float f, bool randomize_xz)
 	v3s16 startp(orp.X, orp.Y, orp.Z);
 	startp += of;
 
-<<<<<<< HEAD:src/cavegen.cpp
-	float nval = NoisePerlin3D(np_caveliquids, startp.X,
-		startp.Y, startp.Z, seed);
-/*
-	MapNode liquidnode = (nval < 0.40f && node_max.Y < lava_depth) ?
-		lavanode : waternode;
-*/
-
-=======
->>>>>>> 5.5.0:src/mapgen/cavegen.cpp
 	v3f fp = orp + vec * f;
 	fp.X += 0.1f * ps->range(-10, 10);
 	fp.Z += 0.1f * ps->range(-10, 10);
@@ -597,7 +587,8 @@ void CavesRandomWalk::carveRoute(v3f vec, float f, bool randomize_xz)
 				if (large_cave) {
 
 					MapNode n_water_or_ice = (heat < 0 && (p.Y > water_level + heat/4 || p.Y > startp.Y - 2 + heat/4)) ? n_ice : waternode;
-					MapNode liquidnode = (nval < 0.40 && node_max.Y < lava_depth ) ? lavanode : n_water_or_ice;
+					if (liquidnode == waternode)
+						liquidnode = n_water_or_ice;
 
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
 					int full_ymax = node_max.Y + MAP_BLOCKSIZE;

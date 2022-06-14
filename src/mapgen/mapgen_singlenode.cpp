@@ -78,7 +78,7 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data)
 	}
 
 	// Add top and bottom side of water to transforming_liquid queue
-	updateLiquid(node_min, node_max);
+	updateLiquid(&data->transforming_liquid, node_min, node_max);
 
 	// Set lighting
 	if ((flags & MG_LIGHT) && set_light == LIGHT_SUN)

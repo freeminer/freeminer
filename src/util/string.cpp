@@ -27,8 +27,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cctype>
 
 #include "hex.h"
-<<<<<<< HEAD
-#include "../porting.h"
+#include "porting.h"
+#include "translation.h"
+
 #include "../log.h"
 
 #include "../config.h"
@@ -144,10 +145,6 @@ std::string wide_to_narrow(const std::wstring &input) {
 }
 
 #endif
-=======
-#include "porting.h"
-#include "translation.h"
->>>>>>> 5.5.0
 
 #include <algorithm>
 #include <array>
@@ -174,16 +171,11 @@ std::string wide_to_narrow(const std::wstring &input) {
 #endif
 */
 
-<<<<<<< HEAD
-static bool parseHexColorString(const std::string &value, video::SColor &color);
-static bool parseNamedColorString(const std::string &value, video::SColor &color);
 
 std::wstring utf8_to_wide(const std::string &input) { return narrow_to_wide(input); };
 std::string wide_to_utf8(const std::wstring &input) { return wide_to_narrow(input); };
 
 /*
-=======
->>>>>>> 5.5.0
 #ifndef _WIN32
 
 static bool convert(const char *to, const char *from, char *outbuf,
@@ -320,153 +312,6 @@ wchar_t *utf8_to_wide_c(const char *str)
 	return ret_c;
 }
 
-<<<<<<< HEAD
-// You must free the returned string!
-// The returned string is allocated using new
-wchar_t *narrow_to_wide_c(const char *str)
-{
-	wchar_t *nstr = NULL;
-#if defined(_WIN32)
-	int nResult = MultiByteToWideChar(CP_UTF8, 0, (LPCSTR) str, -1, 0, 0);
-	if (nResult == 0) {
-		errorstream<<"gettext: MultiByteToWideChar returned null"<<std::endl;
-	} else {
-		nstr = new wchar_t[nResult];
-		MultiByteToWideChar(CP_UTF8, 0, (LPCSTR) str, -1, (WCHAR *) nstr, nResult);
-	}
-#else
-	size_t len = strlen(str);
-	nstr = new wchar_t[len + 1];
-
-	std::wstring intermediate = narrow_to_wide(str);
-	memset(nstr, 0, (len + 1) * sizeof(wchar_t));
-	memcpy(nstr, intermediate.c_str(), len * sizeof(wchar_t));
-#endif
-
-	return nstr;
-}
-
-
-#ifdef __ANDROID__
-int wctomb(char *s, wchar_t wc) { return wcrtomb(s,wc,NULL); }
-int mbtowc(wchar_t *pwc, const char *s, size_t n) { return mbrtowc(pwc, s, n, NULL); }
-#endif
-
-#ifdef __ANDROID__
-
-const wchar_t wide_chars[] =
-	L" !\"#$%&'()*+,-./0123456789:;<=>?@"
-	L"ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
-	L"abcdefghijklmnopqrstuvwxyz{|}~";
-
-int NOT_USED_wctomb(char *s, wchar_t wc)
-{
-	for (unsigned int j = 0; j < (sizeof(wide_chars)/sizeof(wchar_t));j++) {
-		if (wc == wide_chars[j]) {
-			*s = (char) (j+32);
-			return 1;
-		}
-		else if (wc == L'\n') {
-			*s = '\n';
-			return 1;
-		}
-	}
-	return -1;
-}
-
-int NOT_USED_mbtowc(wchar_t *pwc, const char *s, size_t n)
-{
-	std::wstring intermediate = narrow_to_wide(s);
-
-	if (intermediate.length() > 0) {
-		*pwc = intermediate[0];
-		return 1;
-	}
-	else {
-		return -1;
-	}
-}
-
-std::wstring narrow_to_wide_real(const std::string &mbs) {
-	size_t wcl = mbs.size();
-
-	std::wstring retval = L"";
-
-	for (unsigned int i = 0; i < wcl; i++) {
-		if (((unsigned char) mbs[i] >31) &&
-		 ((unsigned char) mbs[i] < 127)) {
-
-			retval += wide_chars[(unsigned char) mbs[i] -32];
-		}
-		//handle newline
-		else if (mbs[i] == '\n') {
-			retval += L'\n';
-		}
-	}
-
-	return retval;
-}
-
-#else // not Android
-
-std::wstring narrow_to_wide_real(const std::string &mbs)
-{
-	size_t wcl = mbs.size();
-	Buffer<wchar_t> wcs(wcl + 1);
-	size_t len = mbstowcs(*wcs, mbs.c_str(), wcl);
-	if (len == (size_t)(-1))
-		return L"<invalid multibyte string>";
-	wcs[len] = 0;
-	return *wcs;
-}
-
-#endif
-
-#ifdef __ANDROID__
-
-std::string wide_to_narrow_real(const std::wstring &wcs) {
-	size_t mbl = wcs.size()*4;
-
-	std::string retval = "";
-	for (unsigned int i = 0; i < wcs.size(); i++) {
-		wchar_t char1 = (wchar_t) wcs[i];
-
-		if (char1 == L'\n') {
-			retval += '\n';
-			continue;
-		}
-
-		for (unsigned int j = 0; j < wcslen(wide_chars);j++) {
-			wchar_t char2 = (wchar_t) wide_chars[j];
-
-			if (char1 == char2) {
-				char toadd = (j+32);
-				retval += toadd;
-				break;
-			}
-		}
-	}
-
-	return retval;
-}
-
-#else // not Android
-
-std::string wide_to_narrow_real(const std::wstring &wcs)
-{
-	size_t mbl = wcs.size() * 4;
-	SharedBuffer<char> mbs(mbl+1);
-	size_t len = wcstombs(*mbs, wcs.c_str(), mbl);
-	if (len == (size_t)(-1))
-		return "Character conversion failed!";
-	else
-		mbs[len] = 0;
-	return *mbs;
-}
-
-#endif
-=======
->>>>>>> 5.5.0
 
 std::string urlencode(const std::string &str)
 {
@@ -865,7 +710,6 @@ static bool parseNamedColorString(const std::string &value, video::SColor &color
 	return true;
 }
 
-<<<<<<< HEAD
 //freeminer:
 
 std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &colors, const video::SColor &initial_color) {
@@ -915,7 +759,6 @@ bool string_icompare(const std::string& a, const std::string& b)
 //== eofreeminer
 
 
-=======
 bool parseColorString(const std::string &value, video::SColor &color, bool quiet,
 		unsigned char default_alpha)
 {
@@ -932,7 +775,6 @@ bool parseColorString(const std::string &value, video::SColor &color, bool quiet
 	return success;
 }
 
->>>>>>> 5.5.0
 void str_replace(std::string &str, char from, char to)
 {
 	std::replace(str.begin(), str.end(), from, to);

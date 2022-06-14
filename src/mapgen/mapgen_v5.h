@@ -54,7 +54,7 @@ struct MapgenV5Params : public MapgenParams
 	NoiseParams np_cavern;
 	NoiseParams np_dungeons;
 
-	s16 float_islands;
+	s16 float_islands = 500;
 	NoiseParams np_float_islands1;
 	NoiseParams np_float_islands2;
 	NoiseParams np_float_islands3;
@@ -65,7 +65,7 @@ struct MapgenV5Params : public MapgenParams
 	MapgenV5Params();
 	~MapgenV5Params() = default;
 
-	void readParams(Settings *settings);
+	void readParams(const Settings *settings);
 	void writeParams(Settings *settings) const;
 	void setDefaultSettings(Settings *settings);
 };

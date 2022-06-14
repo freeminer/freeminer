@@ -23,17 +23,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_indev.h"
 #include "constants.h"
 #include "map.h"
+#include "mapgen/mapgen_v6.h"
+#include "serverenvironment.h"
 #include "util/numeric.h"
 #include "log_types.h"
 #include "emerge.h"
 #include "environment.h"
 #include "settings.h"
 
-#include "cavegen.h"
+#include "mapgen/cavegen.h"
 
-void Mapgen_features::layers_init(EmergeManager *emerge, const Json::Value & paramsj) {
+void Mapgen_features::layers_init(EmergeParams *emerge, const Json::Value & paramsj) {
 	const auto & layersj = paramsj["layers"];
-	INodeDefManager *ndef = emerge->ndef;
+	auto *ndef = emerge->ndef;
 	auto layer_default_thickness = paramsj.get("layer_default_thickness", 1).asInt();
 	auto layer_thickness_multiplier = paramsj.get("layer_thickness_multiplier", 1).asInt();
 	if (!layersj.empty())
@@ -116,21 +118,10 @@ void Mapgen_features::cave_prepare(const v3POS & node_min, const v3POS & node_ma
 	cave_noise_threshold = 800;
 }
 
-Mapgen_features::Mapgen_features(int mapgenid, MapgenParams *params, EmergeManager *emerge) :
-	noise_layers(nullptr),
-	layers_node_size(0),
-	noise_float_islands1(nullptr),
-	noise_float_islands2(nullptr),
-	noise_float_islands3(nullptr),
-	noise_cave_indev(nullptr)
+Mapgen_features::Mapgen_features(MapgenParams *params, EmergeParams *emerge)
 {
-	y_offset = 0;
-
 	auto ndef = emerge->ndef;
 	n_stone = MapNode(ndef->getId("mapgen_stone"));
-
-	//noise_cave_indev = nullptr;
-	cave_noise_threshold = 0;
 }
 
 Mapgen_features::~Mapgen_features() {
@@ -147,9 +138,9 @@ Mapgen_features::~Mapgen_features() {
 }
 
 
-MapgenIndev::MapgenIndev(int mapgenid, MapgenIndevParams *params, EmergeManager *emerge)
-	: MapgenV6(mapgenid, params, emerge)
-	, Mapgen_features(mapgenid, params, emerge)
+MapgenIndev::MapgenIndev(MapgenIndevParams *params, EmergeParams *emerge)
+	: MapgenV6(params, emerge)
+	, Mapgen_features(params, emerge)
 {
 	//sp = (MapgenIndevParams *)params->sparams;
 	sp = params;
@@ -173,7 +164,7 @@ MapgenIndev::~MapgenIndev() {
 
 void MapgenIndev::calculateNoise() {
 	MapgenV6::calculateNoise();
-	if (!(flags & MG_FLAT)) {
+	if (!(flags & MGV6_FLAT)) {
 		float_islands_prepare(node_min, node_max, sp->float_islands);
 	}
 

@@ -5,7 +5,7 @@
 #include "mapnode.h"
 
 class ServerEnvironment;
-class ABMWithState;
+struct ABMWithState;
 class MapBlock;
 class ServerMap;
 
