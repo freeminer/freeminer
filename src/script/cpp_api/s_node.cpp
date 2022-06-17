@@ -235,10 +235,9 @@ void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	lua_pushcfunction(L, script_error_handler);
-	int errorhandler = lua_gettop(L);
+	int error_handler = PUSH_ERROR_HANDLER(L);
 
-	INodeDefManager *ndef = getServer()->ndef();
+	auto *ndef = getServer()->ndef();
 
 	// Push callback function on stack
 	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
@@ -247,7 +246,7 @@ void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
 	}
 	// Call function
 	push_v3s16(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, errorhandler));
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler
 }
 
@@ -255,10 +254,9 @@ void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	lua_pushcfunction(L, script_error_handler);
-	int errorhandler = lua_gettop(L);
+	int error_handler = PUSH_ERROR_HANDLER(L);
 
-	INodeDefManager *ndef = getServer()->ndef();
+	auto *ndef = getServer()->ndef();
 
 	// Push callback function on stack
 	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))
@@ -266,7 +264,7 @@ void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
 
 	// Call function
 	push_v3s16(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, errorhandler));
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler
 }
 
@@ -326,46 +324,16 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 	PCALL_RES(lua_pcall(L, 4, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
 }
-<<<<<<< HEAD
-
-/*
-void ScriptApiNode::node_falling_update(v3s16 p)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	lua_getglobal(L, "nodeupdate");
-	push_v3s16(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
-	lua_pop(L, 1);  // Pop error handler
-}
-
-void ScriptApiNode::node_falling_update_single(v3s16 p)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	lua_getglobal(L, "nodeupdate_single");
-	push_v3s16(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
-	lua_pop(L, 1);  // Pop error handler
-}
-*/
 
 void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	lua_pushcfunction(L, script_error_handler);
-	int errorhandler = lua_gettop(L);
+	int error_handler = PUSH_ERROR_HANDLER(L);
 
 	lua_getglobal(L, "node_drop");
 	push_v3s16(L, p);
 	lua_pushinteger(L, fast);
-	PCALL_RES(lua_pcall(L, 2, 0, errorhandler));
+	PCALL_RES(lua_pcall(L, 2, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler
 }
-=======
->>>>>>> 5.5.0

@@ -135,11 +135,6 @@ bool Address::operator==(const Address &address)
 		return false;
 }
 
-bool Address::operator!=(const Address &address)
-{
-	return !(*this == address);
-}
-
 void Address::Resolve(const char *name)
 {
 	if (!name || name[0] == 0) {
@@ -472,7 +467,7 @@ void UDPSocket::Send(const Address &destination, const void *data, int size)
 	if (m_addr_family == AF_INET6) {
 		struct sockaddr_in6 address = {0};
 		address.sin6_family = AF_INET6;
-		address.sin6_addr = destination.getAddress6();
+		address = destination.getAddress6();
 		address.sin6_port = htons(destination.getPort());
 
 		sent = sendto(m_handle, (const char *)data, size, 0,
@@ -480,7 +475,7 @@ void UDPSocket::Send(const Address &destination, const void *data, int size)
 	} else {
 		struct sockaddr_in address = {0};
 		address.sin_family = AF_INET;
-		address.sin_addr = destination.getAddress();
+		address = destination.getAddress();
 		address.sin_port = htons(destination.getPort());
 
 		sent = sendto(m_handle, (const char *)data, size, 0,
@@ -510,18 +505,11 @@ int UDPSocket::Receive(Address &sender, void *data, int size)
 			return -1;
 
 /*
-		u16 address_port = ntohs(address.sin6_port);
-<<<<<<< HEAD:src/socket.cpp
-		IPv6AddressBytes bytes;
-		memcpy(bytes.bytes, address.sin6_addr.s6_addr, 16);
-		sender = Address(&bytes, address_port);
-*/
-		sender = address;
-=======
 		const auto *bytes = reinterpret_cast<IPv6AddressBytes*>
 			(address.sin6_addr.s6_addr);
 		sender = Address(bytes, address_port);
->>>>>>> 5.5.0:src/network/socket.cpp
+*/
+		sender = address;
 	} else {
 		struct sockaddr_in address;
 		memset(&address, 0, sizeof(address));

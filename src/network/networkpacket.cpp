@@ -75,15 +75,11 @@ void NetworkPacket::putRawPacket(const u8 *data, u32 datasize, session_t peer_id
 
 	// split command and datas
 	m_command = readU16(&data[0]);
-<<<<<<< HEAD
 #if MINETEST_PROTO
-	m_data = std::vector<u8>(&data[2], &data[2 + m_datasize]);
-#else
-	m_data = std::vector<u8>(&data[0], &data[m_datasize]);
-#endif
-=======
 	memcpy(m_data.data(), &data[2], m_datasize);
->>>>>>> 5.5.0
+#else
+	memcpy(m_data.data(), &data[0], m_datasize);
+#endif
 }
 
 void NetworkPacket::clear()

@@ -53,14 +53,14 @@ public:
 	Address(u8 a, u8 b, u8 c, u8 d, u16 port);
 	Address(const IPv6AddressBytes *ipv6_bytes, u16 port);
 	Address(const in6_addr & addr, u16 port) { setAddress(addr); setPort(port); };
-	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai.sin6_addr; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
-	Address(const sockaddr_in & sai) { m_address.ipv4 = sai.sin_addr; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
+	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
+	Address(const sockaddr_in & sai) { m_address.ipv4 = sai; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
 
 	bool operator==(const Address &address);
 	bool operator!=(const Address &address) { return !(*this == address); }
 
-	struct in_addr getAddress() const;
-	struct in6_addr getAddress6() const;
+	struct sockaddr_in getAddress() const;
+	struct sockaddr_in6 getAddress6() const;
 	u16 getPort() const;
 	int getFamily() const { return m_addr_family; }
 	bool isIPv6() const { return m_addr_family == AF_INET6; }
@@ -75,15 +75,17 @@ public:
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
 	void setAddress(const IPv6AddressBytes *ipv6_bytes);
-	void setAddress(const in6_addr & addr) { m_address.ipv6 = addr; m_addr_family = AF_INET6; }
+	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_addr_family = AF_INET6; }
 	void setPort(u16 port);
 
 private:
 	unsigned short m_addr_family = 0;
+	//unsigned short & m_addr_family = m_address.ipv6.sin6_family;
 	union
 	{
-		struct in_addr ipv4;
-		struct in6_addr ipv6;
-	} m_address;
+		struct sockaddr_in ipv4;
+		struct sockaddr_in6 ipv6;
+	} m_address = {};
 	u16 m_port = 0; // Port is separate from sockaddr structures
+	//u16 & m_port = m_address.ipv6.sin6_port;
 };

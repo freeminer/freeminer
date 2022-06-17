@@ -767,7 +767,7 @@ protected:
 	// Command queue: user -> SendThread
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 
-	bool Receive(NetworkPacket *pkt, u32 timeout);
+	u32 Receive(NetworkPacket *pkt, u32 timeout);
 
 	void putEvent(ConnectionEventPtr e);
 

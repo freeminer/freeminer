@@ -94,12 +94,12 @@ bool Address::operator==(const Address &other)
 		return false;
 
 	if (m_addr_family == AF_INET) {
-		return m_address.ipv4.s_addr == other.m_address.ipv4.s_addr;
+		return m_address.ipv4.sin_addr.s_addr == other.m_address.ipv4.sin_addr.s_addr;
 	}
 
 	if (m_addr_family == AF_INET6) {
-		return memcmp(m_address.ipv6.s6_addr,
-				other.m_address.ipv6.s6_addr, 16) == 0;
+		return memcmp(m_address.ipv6.sin6_addr.s6_addr,
+				other.m_address.ipv6.sin6_addr.s6_addr, 16) == 0;
 	}
 
 	return false;
@@ -135,11 +135,11 @@ void Address::Resolve(const char *name)
 	if (resolved->ai_family == AF_INET) {
 		struct sockaddr_in *t = (struct sockaddr_in *)resolved->ai_addr;
 		m_addr_family = AF_INET;
-		m_address.ipv4 = t->sin_addr;
+		m_address.ipv4 = *t;
 	} else if (resolved->ai_family == AF_INET6) {
 		struct sockaddr_in6 *t = (struct sockaddr_in6 *)resolved->ai_addr;
 		m_addr_family = AF_INET6;
-		m_address.ipv6 = t->sin6_addr;
+		m_address.ipv6 = *t;
 	} else {
 		m_addr_family = 0;
 	}
@@ -175,12 +175,12 @@ std::string Address::serializeString() const
 #endif
 }
 
-struct in_addr Address::getAddress() const
+struct sockaddr_in Address::getAddress() const
 {
 	return m_address.ipv4;
 }
 
-struct in6_addr Address::getAddress6() const
+struct sockaddr_in6 Address::getAddress6() const
 {
 	return m_address.ipv6;
 }
@@ -193,12 +193,12 @@ u16 Address::getPort() const
 bool Address::isZero() const
 {
 	if (m_addr_family == AF_INET) {
-		return m_address.ipv4.s_addr == 0;
+		return m_address.ipv4.sin_addr.s_addr == 0;
 	}
 
 	if (m_addr_family == AF_INET6) {
 		static const char zero[16] = {0};
-		return memcmp(m_address.ipv6.s6_addr, zero, 16) == 0;
+		return memcmp(m_address.ipv6.sin6_addr.s6_addr, zero, 16) == 0;
 	}
 
 	return false;
@@ -207,7 +207,7 @@ bool Address::isZero() const
 void Address::setAddress(u32 address)
 {
 	m_addr_family = AF_INET;
-	m_address.ipv4.s_addr = htonl(address);
+	m_address.ipv4.sin_addr.s_addr = htonl(address);
 }
 
 void Address::setAddress(u8 a, u8 b, u8 c, u8 d)
@@ -220,9 +220,9 @@ void Address::setAddress(const IPv6AddressBytes *ipv6_bytes)
 {
 	m_addr_family = AF_INET6;
 	if (ipv6_bytes)
-		memcpy(m_address.ipv6.s6_addr, ipv6_bytes->bytes, 16);
+		memcpy(m_address.ipv6.sin6_addr.s6_addr, ipv6_bytes->bytes, 16);
 	else
-		memset(m_address.ipv6.s6_addr, 0, 16);
+		memset(m_address.ipv6.sin6_addr.s6_addr, 0, 16);
 }
 
 void Address::setPort(u16 port)
@@ -248,12 +248,12 @@ bool Address::isLocalhost() const
 		static const u8 mapped_ipv4_localhost[] = {
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0, 0, 0};
 
-		auto addr = m_address.ipv6.s6_addr;
+		auto addr = m_address.ipv6.sin6_addr.s6_addr;
 
 		return memcmp(addr, localhost_bytes, 16) == 0 ||
 			memcmp(addr, mapped_ipv4_localhost, 13) == 0;
 	}
 
-	auto addr = ntohl(m_address.ipv4.s_addr);
+	auto addr = ntohl(m_address.ipv4.sin_addr.s_addr);
 	return (addr >> 24) == 0x7f;
 }

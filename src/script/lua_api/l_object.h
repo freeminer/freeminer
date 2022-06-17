@@ -157,31 +157,6 @@ private:
 
 	/* LuaEntitySAO-only */
 
-<<<<<<< HEAD
-	// set_velocity(self, {x=num, y=num, z=num})
-	static int l_set_velocity(lua_State *L);
-
-	// get_velocity(self)
-	static int l_get_velocity(lua_State *L);
-
-	// set_acceleration(self, {x=num, y=num, z=num})
-	static int l_set_acceleration(lua_State *L);
-
-	// get_acceleration(self)
-	static int l_get_acceleration(lua_State *L);
-
-	// set_yaw(self, radians)
-	static int l_set_yaw(lua_State *L);
-
-	// get_yaw(self)
-	static int l_get_yaw(lua_State *L);
-
-	// set_texture_mod(self, mod)
-	static int l_set_texture_mod(lua_State *L);
-
-	// set_sprite(self, p={x=0,y=0}, num_frames=1, framelength=0.2,
-	//           select_horiz_by_yawpitch=false)
-=======
 	// set_velocity(self, velocity)
 	static int l_set_velocity(lua_State *L);
 
@@ -216,7 +191,6 @@ private:
 	static int l_get_texture_mod(lua_State *L);
 
 	// set_sprite(self, start_frame, num_frames, framelength, select_x_by_camera)
->>>>>>> 5.5.0
 	static int l_set_sprite(lua_State *L);
 
 	// DEPRECATED
@@ -274,14 +248,6 @@ private:
 	// get_breath(self, breath)
 	static int l_get_breath(lua_State *L);
 
-<<<<<<< HEAD
-	// set_attribute(self, attribute, value)
-	static int l_set_attribute(lua_State *L);
-
-	// get_attribute(self, attribute)
-	static int l_get_attribute(lua_State *L);
-
-=======
 	// DEPRECATED
 	// set_attribute(self, attribute, value)
 	static int l_set_attribute(lua_State *L);
@@ -293,7 +259,6 @@ private:
 	// get_meta(self)
 	static int l_get_meta(lua_State *L);
 
->>>>>>> 5.5.0
 	// set_inventory_formspec(self, formspec)
 	static int l_set_inventory_formspec(lua_State *L);
 
