@@ -32,12 +32,7 @@ local clientpath = scriptdir .. "client" .. DIR_DELIM
 local commonpath = scriptdir .. "common" .. DIR_DELIM
 local asyncpath = scriptdir .. "async" .. DIR_DELIM
 
-<<<<<<< HEAD
---dofile(scriptdir .. "profiler.lua") --TODO: repair me
-
-=======
 dofile(commonpath .. "vector.lua")
->>>>>>> 5.5.0
 dofile(commonpath .. "strict.lua")
 
 dofile(commonpath .. "serialize.lua")
@@ -52,12 +47,6 @@ if INIT == "game" then
 	assert(not core.get_http_api)
 elseif INIT == "mainmenu" then
 	local mm_script = core.settings:get("main_menu_script")
-<<<<<<< HEAD
-	if mm_script and mm_script ~= "" then
-		dofile(mm_script)
-	else
-	  if PLATFORM == "Android" then
-=======
 	local custom_loaded = false
 	if mm_script and mm_script ~= "" then
 		local testfile = io.open(mm_script, "r")
@@ -72,8 +61,8 @@ elseif INIT == "mainmenu" then
 		end
 	end
 	if not custom_loaded then
->>>>>>> 5.5.0
-		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
+      if PLATFORM == "Android" then
+    	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  else
 		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
 	  end

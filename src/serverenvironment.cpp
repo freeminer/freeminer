@@ -392,10 +392,10 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 		Find out which blocks on the old list are not on the new list
 	*/
 	// Go through old list
-	for (v3s16 p : m_list) {
+	for (const auto & p : m_list) {
 		// If not on new list, it's been removed
-		if (newlist.find(p) == newlist.end())
-			blocks_removed.insert(p);
+		if (newlist.find(p.first) == newlist.end())
+			blocks_removed.insert(p.first);
 	}
 
 	/*
@@ -413,7 +413,7 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 	*/
 	m_list.clear();
 	for (v3s16 p : newlist) {
-		m_list.insert(p);
+		m_list.set(p, true);
 	}
 }
 

@@ -170,7 +170,7 @@ std::string Address::serializeString() const
 #else
 	char str[INET6_ADDRSTRLEN];
 	if (inet_ntop(m_addr_family, (void*) &m_address, str, sizeof(str)) == nullptr)
-		return "";
+		return "" + std::string{((m_addr_family == AF_INET6) ? (m_address.ipv6.sin6_scope_id ? "%" + itos(m_address.ipv6.sin6_scope_id) : "") : "")};
 	return str;
 #endif
 }
@@ -228,6 +228,7 @@ void Address::setAddress(const IPv6AddressBytes *ipv6_bytes)
 void Address::setPort(u16 port)
 {
 	m_port = port;
+	m_address.ipv6.sin6_port = ntohs(m_port);
 }
 
 void Address::print(std::ostream *s) const

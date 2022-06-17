@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <exception>
 #include <map>
 #include <sstream>
 #include <thread>
@@ -75,7 +76,7 @@ void fatal_error_fn(const char *msg, const char *file,
 		<< std::this_thread::get_id() << ":" << std::endl;
 	errorstream << file << ":" << line << ": " << function
 		<< ": A fatal error occurred: " << msg << std::endl;
-
+	throw std::runtime_error{msg};
 #ifndef __ANDROID__
 	abort();
 #endif

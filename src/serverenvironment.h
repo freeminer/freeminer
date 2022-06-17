@@ -100,7 +100,7 @@ struct ABMWithState
 	float chance = 50;
 	int neighbors_range;
 	bool simple_catchup;
-	std::unordered_set<content_t> trigger_ids;
+	std::vector<content_t> trigger_ids;
 	FMBitset required_neighbors = CONTENT_ID_CAPACITY,
 			 required_neighbors_activate = CONTENT_ID_CAPACITY;
 
@@ -397,13 +397,12 @@ public:
 	AuthDatabase *getAuthDatabase() { return m_auth_database; }
 	static bool migrateAuthDatabase(const GameParams &game_params,
 			const Settings &cmd_args);
-private:
 
 // freeminer
 
+public:
 	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
 	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
-public:
 	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
 			const ItemStack& items);
 
@@ -536,7 +535,9 @@ private:
 	// World path
 	const std::string m_path_world;
 	// Outgoing network message buffer for active objects
-	std::queue<ActiveObjectMessage> m_active_object_messages;
+public:
+	Queue<ActiveObjectMessage> m_active_object_messages;
+private:	
 	// Some timers
 	float m_send_recommended_timer = 0.0f;
 	IntervalLimiter m_object_management_interval;

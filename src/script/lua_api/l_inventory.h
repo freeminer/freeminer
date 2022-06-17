@@ -121,11 +121,7 @@ class ModApiInventory : public ModApiBase {
 private:
 	static int l_create_detached_inventory_raw(lua_State *L);
 
-<<<<<<< HEAD
-	static int l_delete_detached_inventory(lua_State *L);
-=======
 	static int l_remove_detached_inventory_raw(lua_State *L);
->>>>>>> 5.5.0
 
 	static int l_get_inventory(lua_State *L);
 

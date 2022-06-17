@@ -32,11 +32,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_env.h"
 #include "lua_api/l_inventory.h"
 #include "lua_api/l_item.h"
-<<<<<<< HEAD:src/script/scripting_game.cpp
 #include "lua_api/l_key_value_storage.h"
-=======
 #include "lua_api/l_itemstackmeta.h"
->>>>>>> 5.5.0:src/script/scripting_server.cpp
 #include "lua_api/l_mapgen.h"
 #include "lua_api/l_modchannels.h"
 #include "lua_api/l_nodemeta.h"
@@ -97,36 +94,25 @@ ServerScripting::ServerScripting(Server* server):
 
 void ServerScripting::InitializeModApi(lua_State *L, int top)
 {
+
+    // freeminer:
+	ModApiKeyValueStorage::Initialize(L, top);
+
 	// Register reference classes (userdata)
 	InvRef::Register(L);
-<<<<<<< HEAD:src/script/scripting_game.cpp
-=======
 	ItemStackMetaRef::Register(L);
->>>>>>> 5.5.0:src/script/scripting_server.cpp
 	LuaAreaStore::Register(L);
 	LuaItemStack::Register(L);
 	LuaPerlinNoise::Register(L);
 	LuaPerlinNoiseMap::Register(L);
 	LuaPseudoRandom::Register(L);
 	LuaPcgRandom::Register(L);
-<<<<<<< HEAD:src/script/scripting_game.cpp
-=======
 	LuaRaycast::Register(L);
->>>>>>> 5.5.0:src/script/scripting_server.cpp
 	LuaSecureRandom::Register(L);
 	LuaVoxelManip::Register(L);
 	NodeMetaRef::Register(L);
 	NodeTimerRef::Register(L);
 	ObjectRef::Register(L);
-<<<<<<< HEAD:src/script/scripting_game.cpp
-	LuaSettings::Register(L);
-	// fm todo: StorageRef::Register(L);
-
-    // freeminer:
-	ModApiKeyValueStorage::Initialize(L, top);
-
-	// Initialize mod api modules
-=======
 	PlayerMetaRef::Register(L);
 	LuaSettings::Register(L);
 	StorageRef::Register(L);
@@ -134,7 +120,6 @@ void ServerScripting::InitializeModApi(lua_State *L, int top)
 
 	// Initialize mod api modules
 	ModApiAuth::Initialize(L, top);
->>>>>>> 5.5.0:src/script/scripting_server.cpp
 	ModApiCraft::Initialize(L, top);
 	ModApiEnvMod::Initialize(L, top);
 	ModApiInventory::Initialize(L, top);
@@ -145,15 +130,6 @@ void ServerScripting::InitializeModApi(lua_State *L, int top)
 	ModApiServer::Initialize(L, top);
 	ModApiUtil::Initialize(L, top);
 	ModApiHttp::Initialize(L, top);
-<<<<<<< HEAD:src/script/scripting_game.cpp
-	// fm todo: ModApiStorage::Initialize(L, top);
-}
-
-void log_deprecated(const std::string &message)
-{
-	log_deprecated(NULL, message);
-=======
 	ModApiStorage::Initialize(L, top);
 	ModApiChannels::Initialize(L, top);
->>>>>>> 5.5.0:src/script/scripting_server.cpp
 }

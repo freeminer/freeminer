@@ -90,11 +90,7 @@ int ModApiServer::l_chat_send_all(lua_State *L)
 	// Get server from registry
 	Server *server = getServer(L);
 	// Send
-<<<<<<< HEAD
 	server->notifyPlayers(text);
-=======
-	server->notifyPlayers(utf8_to_wide(text));
->>>>>>> 5.5.0
 	return 0;
 }
 
@@ -108,11 +104,7 @@ int ModApiServer::l_chat_send_player(lua_State *L)
 	// Get server from registry
 	Server *server = getServer(L);
 	// Send
-<<<<<<< HEAD
 	server->notifyPlayer(name, text);
-=======
-	server->notifyPlayer(name, utf8_to_wide(text));
->>>>>>> 5.5.0
 	return 0;
 }
 
@@ -341,11 +333,7 @@ int ModApiServer::l_disconnect_player(lua_State *L)
 		lua_pushboolean(L, false); // No such player
 		return 1;
 	}
-<<<<<<< HEAD
-	getServer(L)->DenyAccess(player->peer_id, message);
-=======
-	getServer(L)->DenyAccess_Legacy(player->getPeerId(), utf8_to_wide(message));
->>>>>>> 5.5.0
+	getServer(L)->DenyAccess_Legacy(player->getPeerId(), message);
 	lua_pushboolean(L, true);
 	return 1;
 }

@@ -340,7 +340,7 @@ public:
 	bool hudChange(RemotePlayer *player, u32 id, HudElementStat stat, void *value);
 	bool hudSetFlags(RemotePlayer *player, u32 flags, u32 mask);
 	bool hudSetHotbarItemcount(RemotePlayer *player, s32 hotbar_itemcount);
-	void hudSetHotbarImage(RemotePlayer *player, const std::string &name);
+	void hudSetHotbarImage(RemotePlayer *player, const std::string &name, int items = 0);
 	void hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &name, int items = 0);
 
 	Address getPeerAddress(session_t peer_id);
@@ -374,7 +374,7 @@ public:
 	void DenyAccess(session_t peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason = "");
 	void acceptAuth(session_t peer_id, bool forSudoMode);
-	void DenyAccess_Legacy(session_t peer_id, const std::wstring &reason);
+	void DenyAccess_Legacy(session_t peer_id, const std::string &reason);
 	void DisconnectPeer(session_t peer_id);
 	bool getClientConInfo(session_t peer_id, con::rtt_stat_type type, float *retval);
 	bool getClientInfo(session_t peer_id, ClientInfo &ret);

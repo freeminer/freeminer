@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "common/c_internal.h"
+#include "serverenvironment.h"
 
 #define luamethod(class, name) {#name, class::l_##name}
 

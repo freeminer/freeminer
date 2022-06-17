@@ -250,9 +250,9 @@ private:
 	s16 m_max_y;
 public:
 	LuaABM(lua_State *L, int id,
-			int neighbors_range,
 			const std::vector<std::string> &trigger_contents,
 			const std::vector<std::string> &required_neighbors,
+			int neighbors_range,
 			float trigger_interval, u32 trigger_chance, bool simple_catch_up, s16 min_y, s16 max_y):
 		m_id(id),
 		m_neighbors_range(neighbors_range),

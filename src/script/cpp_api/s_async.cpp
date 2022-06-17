@@ -67,10 +67,7 @@ AsyncEngine::~AsyncEngine()
 /******************************************************************************/
 void AsyncEngine::registerStateInitializer(StateInitializer func)
 {
-<<<<<<< HEAD
-=======
 	FATAL_ERROR_IF(initDone, "Initializer may not be registered after init");
->>>>>>> 5.5.0
 	stateInitializers.push_back(func);
 }
 
@@ -167,14 +164,8 @@ void AsyncEngine::step(lua_State *L)
 /******************************************************************************/
 void AsyncEngine::prepareEnvironment(lua_State* L, int top)
 {
-<<<<<<< HEAD
-	for (std::vector<StateInitializer>::iterator it = stateInitializers.begin();
-			it != stateInitializers.end(); it++) {
-		(*it)(L, top);
-=======
 	for (StateInitializer &stateInitializer : stateInitializers) {
 		stateInitializer(L, top);
->>>>>>> 5.5.0
 	}
 }
 
@@ -263,13 +254,9 @@ void* AsyncWorkerThread::run()
 		lua_pop(L, 1);  // Pop retval
 
 		// Put job result
-<<<<<<< HEAD
-		jobDispatcher->putJobResult(toProcess);
-		EXCEPTION_HANDLER_END;
-=======
 		if (!j.result.empty())
 			jobDispatcher->putJobResult(std::move(j));
->>>>>>> 5.5.0
+		EXCEPTION_HANDLER_END;
 	}
 
 	lua_pop(L, 2);  // Pop core and error handler

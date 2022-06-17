@@ -1827,7 +1827,6 @@
 #    type: int
 # profiler_print_interval = 0
 
-<<<<<<< HEAD:freeminer.conf.example
 
 #
 # Freeminer
@@ -2084,7 +2083,6 @@
 #    Do not propagate dark shadows everywhere. Useful for math mapgen.
 #    type: bool
 # light_ambient = false
-=======
 #
 # Mapgen
 #
@@ -3741,4 +3739,3 @@
 #    type: int
 # contentdb_max_concurrent_downloads = 3
 
->>>>>>> 5.5.0:minetest.conf.example

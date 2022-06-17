@@ -575,7 +575,7 @@ Buffer<u8> NetworkPacket::oldForgePacket()
 }
 
 //freeminer:
-bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg) {
+bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg) {
 	try {
 		msgpack::unpack(msg, data, datasize);
 		msgpack::object obj = msg.get();

@@ -30,19 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 
 
-<<<<<<< HEAD
-#define SET_SECURITY_CHECK(L, name) \
-	if (o->m_settings == g_settings && ScriptApiSecurity::isSecure(L) && \
-			name.compare(0, 7, "secure.") == 0) { \
-		throw LuaError("Attempt to set secure setting."); \
-	}
-
-LuaSettings::LuaSettings(Settings *settings, const std::string &filename) :
-	m_settings(settings),
-	m_filename(filename),
-	m_is_own_settings(false),
-	m_write_allowed(true)
-=======
 /* This protects:
  * 'secure.*' settings from being set
  * some mapgen settings from being set
@@ -76,7 +63,6 @@ static inline int checkSettingSecurity(lua_State* L, const std::string &name)
 LuaSettings::LuaSettings(Settings *settings, const std::string &filename) :
 	m_settings(settings),
 	m_filename(filename)
->>>>>>> 5.5.0
 {
 }
 
@@ -204,11 +190,7 @@ int LuaSettings::l_set(lua_State* L)
 	std::string key = std::string(luaL_checkstring(L, 2));
 	const char* value = luaL_checkstring(L, 3);
 
-<<<<<<< HEAD
-	SET_SECURITY_CHECK(L, key);
-=======
 	CHECK_SETTING_SECURITY(L, key);
->>>>>>> 5.5.0
 
 	if (!o->m_settings->set(key, value))
 		throw LuaError("Invalid sequence found in setting parameters");
@@ -223,15 +205,6 @@ int LuaSettings::l_set_bool(lua_State* L)
 	LuaSettings* o = checkobject(L, 1);
 
 	std::string key = std::string(luaL_checkstring(L, 2));
-<<<<<<< HEAD
-	bool value = lua_toboolean(L, 3);
-
-	SET_SECURITY_CHECK(L, key);
-
-	o->m_settings->setBool(key, value);
-
-	return 1;
-=======
 	bool value = readParam<bool>(L, 3);
 
 	CHECK_SETTING_SECURITY(L, key);
@@ -256,7 +229,6 @@ int LuaSettings::l_set_np_group(lua_State *L)
 	o->m_settings->setNoiseParams(key, value);
 
 	return 0;
->>>>>>> 5.5.0
 }
 
 // remove(self, key) -> success
@@ -267,11 +239,7 @@ int LuaSettings::l_remove(lua_State* L)
 
 	std::string key = std::string(luaL_checkstring(L, 2));
 
-<<<<<<< HEAD
-	SET_SECURITY_CHECK(L, key);
-=======
 	CHECK_SETTING_SECURITY(L, key);
->>>>>>> 5.5.0
 
 	bool success = o->m_settings->remove(key);
 	lua_pushboolean(L, success);
@@ -409,10 +377,7 @@ const luaL_Reg LuaSettings::methods[] = {
 	luamethod(LuaSettings, get_flags),
 	luamethod(LuaSettings, set),
 	luamethod(LuaSettings, set_bool),
-<<<<<<< HEAD
-=======
 	luamethod(LuaSettings, set_np_group),
->>>>>>> 5.5.0
 	luamethod(LuaSettings, remove),
 	luamethod(LuaSettings, get_names),
 	luamethod(LuaSettings, write),

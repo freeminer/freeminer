@@ -133,15 +133,9 @@ void LuaPerlinNoise::Register(lua_State *L)
 
 
 const char LuaPerlinNoise::className[] = "PerlinNoise";
-<<<<<<< HEAD
-const luaL_Reg LuaPerlinNoise::methods[] = {
-	luamethod(LuaPerlinNoise, get2d),
-	luamethod(LuaPerlinNoise, get3d),
-=======
 luaL_Reg LuaPerlinNoise::methods[] = {
 	luamethod_aliased(LuaPerlinNoise, get_2d, get2d),
 	luamethod_aliased(LuaPerlinNoise, get_3d, get3d),
->>>>>>> 5.5.0
 	{0,0}
 };
 
@@ -397,16 +391,6 @@ void LuaPerlinNoiseMap::Register(lua_State *L)
 
 
 const char LuaPerlinNoiseMap::className[] = "PerlinNoiseMap";
-<<<<<<< HEAD
-const luaL_Reg LuaPerlinNoiseMap::methods[] = {
-	luamethod(LuaPerlinNoiseMap, get2dMap),
-	luamethod(LuaPerlinNoiseMap, get2dMap_flat),
-	luamethod(LuaPerlinNoiseMap, calc2dMap),
-	luamethod(LuaPerlinNoiseMap, get3dMap),
-	luamethod(LuaPerlinNoiseMap, get3dMap_flat),
-	luamethod(LuaPerlinNoiseMap, calc3dMap),
-	luamethod(LuaPerlinNoiseMap, getMapSlice),
-=======
 luaL_Reg LuaPerlinNoiseMap::methods[] = {
 	luamethod_aliased(LuaPerlinNoiseMap, get_2d_map,      get2dMap),
 	luamethod_aliased(LuaPerlinNoiseMap, get_2d_map_flat, get2dMap_flat),
@@ -415,7 +399,6 @@ luaL_Reg LuaPerlinNoiseMap::methods[] = {
 	luamethod_aliased(LuaPerlinNoiseMap, get_3d_map_flat, get3dMap_flat),
 	luamethod_aliased(LuaPerlinNoiseMap, calc_3d_map,     calc3dMap),
 	luamethod_aliased(LuaPerlinNoiseMap, get_map_slice,   getMapSlice),
->>>>>>> 5.5.0
 	{0,0}
 };
 

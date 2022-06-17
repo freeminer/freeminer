@@ -804,15 +804,11 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 	// the slowest possible
 	f.liquid_viscosity = getintfield_default(L, index,
 			"liquid_viscosity", f.liquid_viscosity);
-<<<<<<< HEAD
-
-=======
 	// If move_resistance is not set explicitly,
 	// move_resistance is equal to liquid_viscosity
 	f.move_resistance = f.liquid_viscosity;
 	f.liquid_range = getintfield_default(L, index,
 			"liquid_range", f.liquid_range);
->>>>>>> 5.5.0
 	f.leveled = getintfield_default(L, index, "leveled", f.leveled);
 	f.leveled_max = getintfield_default(L, index,
 			"leveled_max", f.leveled_max);

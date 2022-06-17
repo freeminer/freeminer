@@ -280,11 +280,13 @@ protected:
 	bool m_pending_removal = false;
 
 //fm:
+	public:
 	float m_uptime_last = 0;
+	protected:
 
 
 	/*
 		Queue of messages to be sent to the client
 	*/
-	Queue<ActiveObjectMessage> m_messages_out;
+	Queue<ActiveObjectMessage> & m_messages_out;
 };

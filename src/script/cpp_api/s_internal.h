@@ -32,7 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <thread>
 #include "common/c_internal.h"
 #include "cpp_api/s_base.h"
-<<<<<<< HEAD
+/*
 #include "config.h"
 
 #if ENABLE_THREADS
@@ -40,9 +40,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #define SCRIPTAPI_LOCK
 #endif
-=======
+*/
 #include "threading/mutex_auto_lock.h"
->>>>>>> 5.5.0
 
 #ifdef SCRIPTAPI_LOCK_DEBUG
 #include <cassert>

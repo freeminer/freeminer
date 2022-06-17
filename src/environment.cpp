@@ -692,7 +692,7 @@ void ActiveBlockList::update(std::vector<v3s16> &active_positions,
 */
 
 ServerEnvironment::ServerEnvironment(ServerMap *map,
-		GameScripting *scriptIface,
+		ServerScripting *scriptIface,
 		IGameDef *gamedef,
 		const std::string &path_world) :
 	m_abmhandler(this),

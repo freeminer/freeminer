@@ -21,7 +21,6 @@
 #include "nodedef.h"
 #include "mapblock.h"
 #include "mapnode.h"
-#include "scripting_game.h"
 #include "map.h"
 #include "serialization.h"
 #include "settings.h"
@@ -36,12 +35,10 @@
 #include <sstream>
 #include <fstream>
 
-#define PP(x) ((x).X)<<" "<<((x).Y)<<" "<<((x).Z)<<" "
-
 const u32 Circuit::circuit_simulator_version = 1;
 const char Circuit::elements_states_file[] = "circuit_elements_states";
 
-Circuit::Circuit(GameScripting* script, Map* map, INodeDefManager* ndef, std::string savedir) :
+Circuit::Circuit(ServerScripting* script, Map* map, const NodeDefManager* ndef, const std::string & savedir) :
 	m_script(script),
 	m_map(map),
 	m_ndef(ndef),

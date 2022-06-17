@@ -163,12 +163,8 @@ void ScriptApiEnv::initializeEnvironment(ServerEnvironment *env)
 		lua_pop(L, 1);
 
 		LuaABM *abm = new LuaABM(L, id, trigger_contents, required_neighbors,
-<<<<<<< HEAD
 			neighbors_range,
-			trigger_interval, trigger_chance, simple_catch_up);
-=======
 			trigger_interval, trigger_chance, simple_catch_up, min_y, max_y);
->>>>>>> 5.5.0
 
 		env->addActiveBlockModifier(abm);
 

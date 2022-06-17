@@ -76,26 +76,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "script/scripting_client.h"
 #include "hud.h"
 
+#include <future>
+
+
 #if USE_SOUND
 	#include "client/sound_openal.h"
 #else
 	#include "client/sound.h"
 #endif
-<<<<<<< HEAD:src/game.cpp
-
-#ifdef HAVE_TOUCHSCREENGUI
-	#include "touchscreengui.h"
-#endif
-
-//freeminer:
-//#include "FMStaticText.h"
-#include <future>
-
-//extern Settings *g_settings;
-//extern Profiler *g_profiler;
-
-=======
->>>>>>> 5.5.0:src/client/game.cpp
 /*
 	Text input system
 */

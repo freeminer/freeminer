@@ -125,7 +125,7 @@ enum
 	TOCLIENT_ACCESS_DENIED_RECONNECT
 };
 
-#define TOCLIENT_PUNCH_PLAYER 0x36
+#define TOCLIENT_PUNCH_PLAYER 0x11
 enum
 {
 	// v3f player speed add

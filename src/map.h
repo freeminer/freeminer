@@ -267,13 +267,20 @@ public:
 		Variables
 	*/
 
+	u32 transforming_liquid_size();
+
+//freeminer:
 	void transforming_liquid_add(v3s16 p);
 	v3s16 transforming_liquid_pop();
-	u32 transforming_liquid_size();
 	std::atomic_uint m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
+
+	virtual int getSurface(v3s16 basepos, int searchup, bool walkable_only) {
+        return basepos.Y -1;
+	}
+
 
 // from old mapsector:
 	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;

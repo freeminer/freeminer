@@ -107,12 +107,7 @@ void script_error(lua_State *L, int pcall_result, const char *mod, const char *f
 
 static void script_log_add_source(lua_State *L, std::string &message, int stack_depth)
 {
-<<<<<<< HEAD
-	if (lua_gettop(L) < nargs + 1)
-		return;
-=======
 	lua_Debug ar;
->>>>>>> 5.5.0
 
 	if (lua_getstack(L, stack_depth, &ar)) {
 		FATAL_ERROR_IF(!lua_getinfo(L, "Sl", &ar), "lua_getinfo() failed");

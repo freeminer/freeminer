@@ -1,17 +1,4 @@
 /*
-<<<<<<< HEAD:src/treegen.cpp
-treegen.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>,
-Copyright (C) 2012-2013 RealBadAngel, Maciej Kasatkin <mk@realbadangel.pl>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-=======
 Minetest
 Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>,
 Copyright (C) 2012-2018 RealBadAngel, Maciej Kasatkin
@@ -20,7 +7,6 @@ Copyright (C) 2015-2018 paramat
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation; either version 2.1 of the License, or
->>>>>>> 5.5.0:src/mapgen/treegen.cpp
 (at your option) any later version.
 
 Freeminer  is distributed in the hope that it will be useful,

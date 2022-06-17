@@ -47,33 +47,6 @@ private:
 	// get us precision time
 	static int l_get_us_time(lua_State *L);
 
-<<<<<<< HEAD
-// fm old remove:
-/*
-	// setting_set(name, value)
-	static int l_setting_set(lua_State *L);
-
-	// setting_get(name)
-	static int l_setting_get(lua_State *L);
-
-	// setting_setbool(name, value)
-	static int l_setting_setbool(lua_State *L);
-
-	// setting_getbool(name)
-	static int l_setting_getbool(lua_State *L);
-
-	// setting_setjson(name, value)
-	static int l_setting_setjson(lua_State *L);
-
-	// setting_getjson(name[, nullvalue])
-	static int l_setting_getjson(lua_State *L);
-
-	// setting_save()
-	static int l_setting_save(lua_State *L);
-*/
-
-=======
->>>>>>> 5.5.0
 	// parse_json(str[, nullvalue])
 	static int l_parse_json(lua_State *L);
 
@@ -156,17 +129,9 @@ private:
 	static int l_set_last_run_mod(lua_State *L);
 
 public:
-<<<<<<< HEAD
-
-	static void Initialize(lua_State *L, int top);
-	static void InitializeAsync(lua_State *L, int top);
-	static void InitializeClient(lua_State *L, int top);
-
-=======
 	static void Initialize(lua_State *L, int top);
 	static void InitializeAsync(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);
 
 	static void InitializeAsync(AsyncEngine &engine);
->>>>>>> 5.5.0
 };

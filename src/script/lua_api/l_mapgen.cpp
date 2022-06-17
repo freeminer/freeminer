@@ -400,21 +400,6 @@ Biome *read_biome_def(lua_State *L, int index, const NodeDefManager *ndef)
 	getintfield(L, index, "y_max", b->max_pos.Y);
 
 	std::vector<std::string> &nn = b->m_nodenames;
-<<<<<<< HEAD
-	nn.push_back(getstringfield_default(L, index, "node_top",         ""));
-	nn.push_back(getstringfield_default(L, index, "node_filler",      ""));
-	nn.push_back(getstringfield_default(L, index, "node_stone",       ""));
-	nn.push_back(getstringfield_default(L, index, "node_water_top",   ""));
-	nn.push_back(getstringfield_default(L, index, "node_water",       ""));
-	nn.push_back(getstringfield_default(L, index, "node_river_water", ""));
-	nn.push_back(getstringfield_default(L, index, "node_riverbed",    ""));
-	nn.push_back(getstringfield_default(L, index, "node_dust",        ""));
-
-	//freeminer:
-	nn.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
-	nn.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
-
-=======
 	nn.push_back(getstringfield_default(L, index, "node_top",           ""));
 	nn.push_back(getstringfield_default(L, index, "node_filler",        ""));
 	nn.push_back(getstringfield_default(L, index, "node_stone",         ""));
@@ -423,6 +408,11 @@ Biome *read_biome_def(lua_State *L, int index, const NodeDefManager *ndef)
 	nn.push_back(getstringfield_default(L, index, "node_river_water",   ""));
 	nn.push_back(getstringfield_default(L, index, "node_riverbed",      ""));
 	nn.push_back(getstringfield_default(L, index, "node_dust",          ""));
+
+	//freeminer:
+	nn.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
+	nn.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
+
 
 	size_t nnames = getstringlistfield(L, index, "node_cave_liquid", &nn);
 	// If no cave liquids defined, set list to "ignore" to trigger old hardcoded
@@ -436,7 +426,6 @@ Biome *read_biome_def(lua_State *L, int index, const NodeDefManager *ndef)
 	nn.push_back(getstringfield_default(L, index, "node_dungeon",       ""));
 	nn.push_back(getstringfield_default(L, index, "node_dungeon_alt",   ""));
 	nn.push_back(getstringfield_default(L, index, "node_dungeon_stair", ""));
->>>>>>> 5.5.0
 	ndef->pendNodeResolve(b);
 
 	return b;
@@ -1016,12 +1005,8 @@ int ModApiMapgen::l_get_decoration_id(lua_State *L)
 	if (!deco_str)
 		return 0;
 
-<<<<<<< HEAD
-	DecorationManager *dmgr = getServer(L)->getEmergeManager()->decomgr;
-=======
 	const DecorationManager *dmgr =
 		getServer(L)->getEmergeManager()->getDecorationManager();
->>>>>>> 5.5.0
 
 	if (!dmgr)
 		return 0;

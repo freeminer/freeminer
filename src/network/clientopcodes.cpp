@@ -41,7 +41,7 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	null_command_handler, // 0x0E
 	null_command_handler, // 0x0F
 	null_command_handler, // 0x10
-	null_command_handler,
+	{ "TOCLIENT_PUNCH_PLAYER",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_PunchPlayer }, // 0x11
 	null_command_handler,
 	null_command_handler,
 	null_command_handler,
@@ -78,11 +78,7 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_HP",                       TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HP }, // 0x33
 	{ "TOCLIENT_MOVE_PLAYER",              TOCLIENT_STATE_CONNECTED, &Client::handleCommand_MovePlayer }, // 0x34
 	{ "TOCLIENT_ACCESS_DENIED_LEGACY",     TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_AccessDenied }, // 0x35
-<<<<<<< HEAD
-	{ "TOCLIENT_PUNCH_PLAYER",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_PunchPlayer }, // 0x36
-=======
 	{ "TOCLIENT_FOV",                      TOCLIENT_STATE_CONNECTED, &Client::handleCommand_Fov }, // 0x36
->>>>>>> 5.5.0
 	{ "TOCLIENT_DEATHSCREEN",              TOCLIENT_STATE_CONNECTED, &Client::handleCommand_DeathScreen }, // 0x37
 	{ "TOCLIENT_MEDIA",                    TOCLIENT_STATE_CONNECTED, &Client::handleCommand_Media }, // 0x38
 	null_command_handler,

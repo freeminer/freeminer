@@ -1,13 +1,9 @@
 /*
 content_sao.cpp
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-<<<<<<< HEAD:src/content_sao.cpp
-*/
-=======
 Copyright (C) 2013-2020 Minetest core developers & community
->>>>>>> 5.5.0:src/server/player_sao.cpp
 
-/*
+
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -30,8 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "scripting_server.h"
 #include "server.h"
 <<<<<<< HEAD:src/content_sao.cpp
-#include "scripting_game.h"
-#include "genericobject.h"
 #include "log_types.h"
 
 std::map<u16, ServerActiveObject::Factory> ServerActiveObject::m_types;

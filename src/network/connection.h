@@ -734,7 +734,7 @@ public:
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(NetworkPacket* pkt, int timeout = 0);
+	u32 Receive(NetworkPacket* pkt);
 	bool TryReceive(NetworkPacket *pkt);
 	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
 	session_t GetPeerID() const { return m_peer_id; }

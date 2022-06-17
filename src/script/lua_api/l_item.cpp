@@ -572,10 +572,6 @@ int ModApiItemMod::l_register_item_raw(lua_State *L)
 	idef->registerItem(def);
 
 	// Read the node definition (content features) and register it
-<<<<<<< HEAD
-	if(def.type == ITEM_NODE){
-		const ContentFeatures &f = read_content_features(L, table);
-=======
 	if (def.type == ITEM_NODE) {
 		ContentFeatures f;
 		read_content_features(L, f, table);
@@ -584,7 +580,6 @@ int ModApiItemMod::l_register_item_raw(lua_State *L)
 		if (f.name == "ignore")
 			return 0;
 
->>>>>>> 5.5.0
 		content_t id = ndef->set(f.name, f);
 
 		if (id > MAX_REGISTERED_CONTENT) {

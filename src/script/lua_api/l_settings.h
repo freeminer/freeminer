@@ -57,9 +57,6 @@ private:
 	// set_np_group(self, key, value)
 	static int l_set_np_group(lua_State *L);
 
-	// set_bool(self, key, value)
-	static int l_set_bool(lua_State* L);
-
 	// remove(self, key) -> success
 	static int l_remove(lua_State *L);
 
@@ -72,17 +69,10 @@ private:
 	// to_table(self) -> {[key1]=value1,...}
 	static int l_to_table(lua_State *L);
 
-<<<<<<< HEAD
-	Settings *m_settings;
-	std::string m_filename;
-	bool m_is_own_settings;
-	bool m_write_allowed;
-=======
 	Settings *m_settings = nullptr;
 	std::string m_filename;
 	bool m_is_own_settings = false;
 	bool m_write_allowed = true;
->>>>>>> 5.5.0
 
 public:
 	LuaSettings(Settings *settings, const std::string &filename);
@@ -90,23 +80,12 @@ public:
 	~LuaSettings();
 
 	static void create(lua_State *L, Settings *settings, const std::string &filename);
-<<<<<<< HEAD
 
 	// LuaSettings(filename)
 	// Creates a LuaSettings and leaves it on top of the stack
 	static int create_object(lua_State *L);
 
 	static LuaSettings *checkobject(lua_State *L, int narg);
-
-	static void Register(lua_State* L);
-=======
-
-	// LuaSettings(filename)
-	// Creates a LuaSettings and leaves it on top of the stack
-	static int create_object(lua_State *L);
-
-	static LuaSettings *checkobject(lua_State *L, int narg);
->>>>>>> 5.5.0
 
 	static void Register(lua_State *L);
 };

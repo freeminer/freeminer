@@ -39,9 +39,9 @@
 
 class CircuitElement;
 class Circuit;
-class GameScripting;
+class ServerScripting;
 class Map;
-class INodeDefManager;
+class NodeDefManager;
 
 // enum FaceId
 // {
@@ -80,7 +80,7 @@ public:
 	~CircuitElement();
 	void addConnectedElement();
 	void update();
-	bool updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef);
+	bool updateState(ServerScripting* m_script, Map* map, const NodeDefManager* ndef);
 	void resetState();
 
 	void serialize(std::ostream& out) const;
@@ -94,7 +94,7 @@ public:
 	// First - pointer to object to which connected.
 	// Second - face id.
 	static void findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, u8> >& connected,
-	                                  Map* map, INodeDefManager* ndef, v3POS pos, u8 face,
+	                                  Map* map, const NodeDefManager* ndef, v3POS pos, u8 face,
 	                                  std::map<v3POS, std::list<CircuitElement>::iterator>& pos_to_iterator,
 	                                  bool connected_faces[6]);
 

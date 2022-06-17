@@ -237,16 +237,6 @@ void NodeMetaRef::RegisterCommon(lua_State *L)
 	lua_pop(L, 1);  // drop metatable
 }
 
-<<<<<<< HEAD
-const char NodeMetaRef::className[] = "NodeMetaRef";
-const luaL_Reg NodeMetaRef::methods[] = {
-	luamethod(NodeMetaRef, get_string),
-	luamethod(NodeMetaRef, set_string),
-	luamethod(NodeMetaRef, get_int),
-	luamethod(NodeMetaRef, set_int),
-	luamethod(NodeMetaRef, get_float),
-	luamethod(NodeMetaRef, set_float),
-=======
 void NodeMetaRef::Register(lua_State *L)
 {
 	RegisterCommon(L);
@@ -266,7 +256,6 @@ const luaL_Reg NodeMetaRef::methodsServer[] = {
 	luamethod(MetaDataRef, set_float),
 	luamethod(MetaDataRef, to_table),
 	luamethod(MetaDataRef, from_table),
->>>>>>> 5.5.0
 	luamethod(NodeMetaRef, get_inventory),
 	luamethod(NodeMetaRef, mark_as_private),
 	luamethod(MetaDataRef, equals),

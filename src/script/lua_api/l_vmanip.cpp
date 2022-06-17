@@ -169,20 +169,15 @@ int LuaVoxelManip::l_update_liquids(lua_State *L)
 
 	LuaVoxelManip *o = checkobject(L, 1);
 
-<<<<<<< HEAD
-	//Map *map = &(env->getMap());
-	INodeDefManager *ndef = getServer(L)->getNodeDefManager();
-=======
 	Map *map = &(env->getMap());
 	const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
->>>>>>> 5.5.0
 	MMVManip *vm = o->vm;
 
 	Mapgen mg;
 	mg.vm   = vm;
 	mg.ndef = ndef;
 
-	mg.updateLiquid(
+	mg.updateLiquid(&map->m_transforming_liquid,
 			vm->m_area.MinEdge, vm->m_area.MaxEdge);
 
 	return 0;
@@ -354,37 +349,6 @@ int LuaVoxelManip::l_set_param2_data(lua_State *L)
 
 int LuaVoxelManip::l_update_map(lua_State *L)
 {
-<<<<<<< HEAD
-	GET_ENV_PTR;
-
-	LuaVoxelManip *o = checkobject(L, 1);
-	if (o->is_mapgen_vm)
-		return 0;
-
-	Map *map = &(env->getMap());
-
-	// TODO: Optimize this by using Mapgen::calcLighting() instead
-	concurrent_map<v3POS, MapBlock *> lighting_mblocks;
-	std::map<v3s16, MapBlock *> *mblocks = &o->modified_blocks;
-
-	lighting_mblocks.insert(mblocks->begin(), mblocks->end());
-
-	map->updateLighting(lighting_mblocks, *mblocks);
-
-	MapEditEvent event;
-	event.type = MEET_OTHER;
-/*
-	for (std::map<v3s16, MapBlock *>::iterator
-		it = mblocks->begin();
-		it != mblocks->end(); ++it)
-		event.modified_blocks.insert(it->first);
-*/
-	map->dispatchEvent(&event);
-
-	mblocks->clear();
-
-=======
->>>>>>> 5.5.0
 	return 0;
 }
 

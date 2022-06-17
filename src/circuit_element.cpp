@@ -19,7 +19,7 @@
 #include "nodedef.h"
 #include "mapnode.h"
 #include "map.h"
-#include "scripting_game.h"
+#include "scripting_server.h"
 
 #include <set>
 #include <queue>
@@ -120,7 +120,7 @@ void CircuitElement::update() {
 	}
 }
 
-bool CircuitElement::updateState(GameScripting* m_script, Map* map, INodeDefManager* ndef) {
+bool CircuitElement::updateState(ServerScripting* m_script, Map* map, const NodeDefManager* ndef) {
 	MapNode node = map->getNode(m_pos);
 	// Map not yet loaded
 	if(!node) {
@@ -221,7 +221,7 @@ void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>
 }
 
 void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, u8> >& connected,
-        Map* map, INodeDefManager* ndef, v3POS pos, u8 face,
+        Map* map, const NodeDefManager* ndef, v3POS pos, u8 face,
         std::map<v3POS, std::list<CircuitElement>::iterator>& pos_to_iterator,
         bool connected_faces[6]) {
 	static v3POS directions[6] = {v3POS(0, 1, 0),
@@ -284,7 +284,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 
 					if(is_part_of_circuit && not_used) {
 						if(node_features.is_circuit_element) {
-							connected.push_back(std::make_pair(pos_to_iterator[next_pos], next_real_shift));
+							connected.emplace_back(pos_to_iterator[next_pos], next_real_shift);
 						} else {
 							q.push(std::make_pair(next_pos, node_features.wire_connections[next_real_shift]));
 						}
@@ -299,7 +299,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 			}
 		}
 	} else if(current_node_features.is_circuit_element) {
-		connected.push_back(std::make_pair(pos_to_iterator[current_pos], OPPOSITE_SHIFT(real_face_id)));
+		connected.emplace_back(pos_to_iterator[current_pos], OPPOSITE_SHIFT(real_face_id));
 	}
 }
 
