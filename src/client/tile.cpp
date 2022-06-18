@@ -2294,10 +2294,6 @@ video::SColor TextureSource::getTextureAverageColor(const std::string &name)
 		texture->getOriginalSize());
 	if (!image)
 		return c;
-<<<<<<< HEAD
-=======
-
->>>>>>> 5.5.0
 	u32 total = 0;
 	v3f col_acc(0, 0, 0);
 	core::dimension2d<u32> dim = image->getDimension();
@@ -2330,26 +2326,12 @@ video::ITexture *TextureSource::getShaderFlagsTexture(bool normalmap_present)
 
 	if (isKnownSourceImage(tname)) {
 		return getTexture(tname);
-<<<<<<< HEAD
-	} else {
-		video::IVideoDriver *driver = m_device->getVideoDriver();
-		video::IImage *flags_image = driver->createImage(
-			video::ECF_A8R8G8B8, core::dimension2d<u32>(1, 1));
-		if(!flags_image)
-			return nullptr;
-		video::SColor c(255, normalmap_present ? 255 : 0, 0, 0);
-		flags_image->setPixel(0, 0, c);
-		insertSourceImage(tname, flags_image);
-		flags_image->drop();
-		return getTexture(tname);
-=======
->>>>>>> 5.5.0
 	}
 
 	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
 	video::IImage *flags_image = driver->createImage(
 		video::ECF_A8R8G8B8, core::dimension2d<u32>(1, 1));
-	sanity_check(flags_image != NULL);
+	if (!flags_image) return nullptr;
 	video::SColor c(255, normalmap_present ? 255 : 0, 0, 0);
 	flags_image->setPixel(0, 0, c);
 	insertSourceImage(tname, flags_image);

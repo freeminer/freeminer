@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class ITextureSource;
 class Map;
 class Player;
-class INodeDefManager;
+class NodeDefManager;
 
 enum class SKY_ROTATE {
 	SUN,
@@ -222,7 +222,7 @@ private:
 		float horizon_position,	float day_position);
 
 public:
-	irr::scene::ISceneNode * sun_moon_light;
+	irr::scene::ISceneNode * sun_moon_light = nullptr;
 	v3POS camera_offset;
 	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
 private:

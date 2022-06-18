@@ -259,7 +259,7 @@ inline bool isPointableNode(const MapNode &n,
 	       (liquids_pointable && features.isLiquid());
 }
 
-static inline void getNeighborConnectingFace(v3s16 p, INodeDefManager *nodedef,
+static inline void getNeighborConnectingFace(v3s16 p, const NodeDefManager *nodedef,
 		ClientMap *map, MapNode n, u8 bitmask, u8 *neighbors)
 {
 	MapNode n2 = map->getNodeNoEx(p);
@@ -267,7 +267,7 @@ static inline void getNeighborConnectingFace(v3s16 p, INodeDefManager *nodedef,
 		*neighbors |= bitmask;
 }
 
-static inline u8 getNeighbors(v3s16 p, INodeDefManager *nodedef, ClientMap *map, MapNode n)
+static inline u8 getNeighbors(v3s16 p, const NodeDefManager *nodedef, ClientMap *map, MapNode n)
 {
 	u8 neighbors = 0;
 	const ContentFeatures &f = nodedef->get(n);
@@ -319,7 +319,7 @@ PointedThing getPointedThing(Client *client, Hud *hud, const v3f &player_positio
 
 	selected_object = NULL;
 
-	INodeDefManager *nodedef = client->getNodeDefManager();
+	const NodeDefManager *nodedef = client->getNodeDefManager();
 	ClientMap &map = client->getEnv().getClientMap();
 
 	f32 min_distance = BS * 1001;
@@ -1130,7 +1130,7 @@ bool nodePlacementPrediction(Client &client,
 		const ItemDefinition &playeritem_def, v3s16 nodepos, v3s16 neighbourpos)
 {
 	std::string prediction = playeritem_def.node_placement_prediction;
-	INodeDefManager *nodedef = client.ndef();
+	const NodeDefManager *nodedef = client.ndef();
 	ClientMap &map = client.getEnv().getClientMap();
 	MapNode node;
 	bool is_valid_position;
@@ -6088,7 +6088,7 @@ void Game::updateGui(float *statustext_time, const RunStats &stats,
 
 		if (runData.pointed_old.type == POINTEDTHING_NODE) {
 			ClientMap &map = client->getEnv().getClientMap();
-			const INodeDefManager *nodedef = client->getNodeDefManager();
+			const NodeDefManager *nodedef = client->getNodeDefManager();
 			MapNode n = map.getNodeNoEx(runData.pointed_old.node_undersurface);
 			const ContentFeatures &features = nodedef->get(n);
 			if (n.getContent() != CONTENT_IGNORE && features.name != "unknown") {

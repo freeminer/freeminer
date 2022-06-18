@@ -106,7 +106,7 @@ void Server::SendItemDef(u16 peer_id,
 }
 
 void Server::SendNodeDef(u16 peer_id,
-		INodeDefManager *nodedef, u16 protocol_version)
+		const NodeDefManager *nodedef, u16 protocol_version)
 {
 	DSTACK(FUNCTION_NAME);
 

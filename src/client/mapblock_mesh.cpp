@@ -797,7 +797,7 @@ static void makeFastFace(const TileSpec &tile, u16 li0, u16 li1, u16 li2, u16 li
 */
 static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 <<<<<<< HEAD:src/mapblock_mesh.cpp
-		INodeDefManager *ndef, int step)
+		const NodeDefManager *ndef, int step)
 {
 	*equivalent = false;
 
@@ -965,7 +965,7 @@ static void getTileInfo(
 	)
 {
 	auto &vmanip = data->m_vmanip;
-	INodeDefManager *ndef = data->m_gamedef->ndef();
+	const NodeDefManager *ndef = data->m_gamedef->ndef();
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 
 	MapNode n0;

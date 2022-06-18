@@ -37,63 +37,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	LocalPlayer
 */
 
-<<<<<<< HEAD:src/localplayer.cpp
-LocalPlayer::LocalPlayer(Client *gamedef, const char *name):
-	Player(name, gamedef->idef()),
-	parent(0),
-	hp(PLAYER_MAX_HP),
-	got_teleported(false),
-	isAttached(false),
-	touching_ground(false),
-	in_liquid(false),
-	in_liquid_stable(false),
-	liquid_viscosity(0),
-	is_climbing(false),
-	swimming_vertical(false),
-	// Movement overrides are multipliers and must be 1 by default
-	physics_override_speed(1.0f),
-	physics_override_jump(1.0f),
-	physics_override_gravity(1.0f),
-	physics_override_sneak(true),
-	physics_override_sneak_glitch(true),
-	overridePosition(v3f(0,0,0)),
-	last_position(v3f(0,0,0)),
-	last_speed(v3f(0,0,0)),
-	last_pitch(0),
-	last_yaw(0),
-	last_keyPressed(0),
-	last_camera_fov(0),
-	last_wanted_range(0),
-	camera_impact(0.f),
-	last_animation(NO_ANIM),
-	/*
-	hotbar_image(""),
-	hotbar_image_items(0),
-	hotbar_selected_image(""),
-	*/
-	light_color(255,255,255,255),
-	hurt_tilt_timer(0.0f),
-	hurt_tilt_strength(0.0f),
-	m_position(0,0,0),
-	m_sneak_node(32767,32767,32767),
-	m_sneak_node_exists(false),
-	m_need_to_get_new_sneak_node(true),
-	m_sneak_node_bb_ymax(0),
-	m_old_node_below(32767,32767,32767),
-	m_old_node_below_type("air"),
-	m_can_jump(false),
-	m_breath(PLAYER_MAX_BREATH),
-	m_yaw(0),
-	m_pitch(0),
-	camera_barely_in_ceiling(false),
-	m_collisionbox(-BS * 0.30, 0.0, -BS * 0.30, BS * 0.30, BS * 1.75, BS * 0.30),
-	m_cao(NULL),
-	m_gamedef(gamedef)
-=======
 LocalPlayer::LocalPlayer(Client *client, const char *name):
 	Player(name, client->idef()),
 	m_client(client)
->>>>>>> 5.5.0:src/client/localplayer.cpp
 {
 }
 
@@ -285,37 +231,18 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	// If in liquid, the threshold of coming out is at higher y
 	if (in_liquid)
 	{
-<<<<<<< HEAD:src/localplayer.cpp
-		// If not in liquid, the threshold of going in is at lower y
-		pp = floatToInt(position + v3f(0,BS*(in_liquid ? 0.1 : 0.5),0), BS);
-		node = map->getNodeNoEx(pp, &is_valid_position);
-		if (is_valid_position) {
-			auto f = nodemgr->get(node.getContent());
-			in_liquid = f.isLiquid();
-			liquid_viscosity = f.liquid_viscosity;
-			if (f.param_type_2 == CPT2_LEVELED) {
-				float level = node.getLevel(nodemgr);
-				float maxlevel = node.getMaxLevel(nodemgr);
-				if (level && maxlevel && level < maxlevel)
-					liquid_viscosity /= maxlevel / level;
-			}
-		} else {
-			in_liquid = false;
-		}
-
-	}
-	// If not in liquid, the threshold of going in is at lower y
-	else
-	{
-		pp = floatToInt(position + v3f(0,BS*0.5,0), BS);
-		node = map->getNodeNoEx(pp, &is_valid_position);
-=======
 		pp = floatToInt(position + v3f(0.0f, BS * 0.1f, 0.0f), BS);
 		node = map->getNode(pp, &is_valid_position);
 		if (is_valid_position) {
 			const ContentFeatures &cf = nodemgr->get(node.getContent());
 			in_liquid = cf.liquid_move_physics;
 			move_resistance = cf.move_resistance;
+			if (cf.param_type_2 == CPT2_LEVELED) {
+				float level = node.getLevel(nodemgr);
+				float maxlevel = node.getMaxLevel(nodemgr);
+				if (level && maxlevel && level < maxlevel)
+					move_resistance /= maxlevel / level;
+			}
 		} else {
 			in_liquid = false;
 		}
@@ -324,7 +251,6 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 
 		pp = floatToInt(position + v3f(0.0f, BS * 0.5f, 0.0f), BS);
 		node = map->getNode(pp, &is_valid_position);
->>>>>>> 5.5.0:src/client/localplayer.cpp
 		if (is_valid_position) {
 			const ContentFeatures &cf = nodemgr->get(node.getContent());
 			in_liquid = cf.liquid_move_physics;
@@ -359,17 +285,12 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	if (!(is_valid_position && is_valid_position2)) {
 		is_climbing = false;
 	} else {
-<<<<<<< HEAD:src/localplayer.cpp
-		bool can_climbing = (nodemgr->get(node.getContent()).climbable
-				|| nodemgr->get(node2.getContent()).climbable) && !free_move;
+		bool can_climbing = (nodemgr->get(node.getContent()).climbable ||
+			nodemgr->get(node2.getContent()).climbable) && !free_move;
 		if (m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
 			is_climbing = can_climbing;
 		else if (can_climbing)
 			m_speed.Y += 0.3*BS;
-=======
-		is_climbing = (nodemgr->get(node.getContent()).climbable ||
-			nodemgr->get(node2.getContent()).climbable) && !free_move;
->>>>>>> 5.5.0:src/client/localplayer.cpp
 	}
 
 	/*
@@ -378,11 +299,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	*/
 	//f32 d = pos_max_d * 1.1;
 	// A fairly large value in here makes moving smoother
-<<<<<<< HEAD:src/localplayer.cpp
-	//f32 d = 0.15*BS;
-=======
 	f32 d = 0.15f * BS;
->>>>>>> 5.5.0:src/client/localplayer.cpp
 
 	// This should always apply, otherwise there are glitches
 	//sanity_check(d > pos_max_d);
@@ -967,14 +884,9 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, f32 pos_max_d,
 			physics_override_sneak) {
 		f32 maxd = 0.5f * BS + sneak_max;
 		v3f lwn_f = intToFloat(m_sneak_node, BS);
-<<<<<<< HEAD:src/localplayer.cpp
 		auto old_pos = position;
-		position.X = rangelim(position.X, lwn_f.X-maxd, lwn_f.X+maxd);
-		position.Z = rangelim(position.Z, lwn_f.Z-maxd, lwn_f.Z+maxd);
-=======
 		position.X = rangelim(position.X, lwn_f.X - maxd, lwn_f.X + maxd);
 		position.Z = rangelim(position.Z, lwn_f.Z - maxd, lwn_f.Z + maxd);
->>>>>>> 5.5.0:src/client/localplayer.cpp
 
 		if (old_pos != position) {
 			m_speed.X = rangelim(m_speed.X, -movement_speed_climb, movement_speed_climb);
@@ -983,30 +895,19 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, f32 pos_max_d,
 
 		if (!is_climbing) {
 			// Move up if necessary
-<<<<<<< HEAD:src/localplayer.cpp
-			f32 new_y = (lwn_f.Y - 0.5 * BS) + m_sneak_node_bb_ymax;
-			if (position.Y < new_y && m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
-=======
 			f32 new_y = (lwn_f.Y - 0.5f * BS) + m_sneak_node_bb_ymax;
-			if (position.Y < new_y)
->>>>>>> 5.5.0:src/client/localplayer.cpp
+			if (position.Y < new_y && m_speed.Y >= -PLAYER_FALL_TOLERANCE_SPEED)
 				position.Y = new_y;
 			/*
 				Collision seems broken, since player is sinking when
 				sneaking over the edges of current sneaking_node.
 				TODO (when fixed): Set Y-speed only to 0 when position.Y < new_y.
 			*/
-<<<<<<< HEAD:src/localplayer.cpp
 			if (m_speed.Y < -PLAYER_FALL_TOLERANCE_SPEED)
-				m_speed.Y += 0.3*BS;
+				m_speed.Y += 0.3f*BS;
 			else
-			if (m_speed.Y < 0)
-				m_speed.Y = 0;
-
-=======
 			if (m_speed.Y < 0.0f)
 				m_speed.Y = 0.0f;
->>>>>>> 5.5.0:src/client/localplayer.cpp
 		}
 	}
 
@@ -1017,18 +918,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, f32 pos_max_d,
 	const v3f initial_position = position;
 	const v3f initial_speed = m_speed;
 
-<<<<<<< HEAD:src/localplayer.cpp
-	static const auto autojump = g_settings->getBool("autojump");
-	if (control.aux1 || autojump) {
-		player_stepheight += (0.6 * BS);
-	}
-
-	v3f accel_f = v3f(0,0,0);
-
-	collisionMoveResult result = collisionMoveSimple(env, m_gamedef,
-=======
 	collisionMoveResult result = collisionMoveSimple(env, m_client,
->>>>>>> 5.5.0:src/client/localplayer.cpp
 		pos_max_d, m_collisionbox, player_stepheight, dtime,
 		&position, &m_speed, accel_f);
 
@@ -1221,17 +1111,16 @@ float LocalPlayer::getSlipFactor(Environment *env, const v3f &speedH)
 	return 1.0f;
 }
 
-<<<<<<< HEAD:src/localplayer.cpp
 bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 {
-	bool noclip = m_gamedef->checkLocalPrivilege("noclip") &&
+	bool noclip = m_client->checkLocalPrivilege("noclip") &&
 		g_settings->getBool("noclip");
 	// Dont place node when player would be inside new node
 	// NOTE: This is to be eventually implemented by a mod as client-side Lua
 
-	if (m_gamedef->ndef()->get(n).walkable && !noclip && !g_settings->getBool("enable_build_where_you_stand")) {
+	if (m_client->ndef()->get(n).walkable && !noclip && !g_settings->getBool("enable_build_where_you_stand")) {
 		std::vector<aabb3f> nodeboxes;
-		n.getNodeBoxes(m_gamedef->ndef(), &nodeboxes);
+		n.getNodeBoxes(m_client->ndef(), &nodeboxes);
 		aabb3f player_box = m_collisionbox;
 		v3f position(getPosition());
 		v3f node_pos(p.X, p.Y, p.Z);
@@ -1253,12 +1142,9 @@ bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
 	return true;
 }
 
-void LocalPlayer::applyControl(float dtime, ClientEnvironment *env)
-=======
 void LocalPlayer::handleAutojump(f32 dtime, Environment *env,
 	const collisionMoveResult &result, const v3f &initial_position,
 	const v3f &initial_speed, f32 pos_max_d)
->>>>>>> 5.5.0:src/client/localplayer.cpp
 {
 	PlayerSettings &player_settings = getPlayerSettings();
 	if (!player_settings.autojump)
@@ -1273,105 +1159,11 @@ void LocalPlayer::handleAutojump(f32 dtime, Environment *env,
 	if (!could_autojump)
 		return;
 
-<<<<<<< HEAD:src/localplayer.cpp
-	free_move = fly_allowed && g_settings->getBool("free_move");
-	bool fast_move = fast_allowed && g_settings->getBool("fast_move");
-	// When aux1_descends is enabled the fast key is used to go down, so fast isn't possible
-	bool fast_climb = fast_move && control.aux1 && !g_settings->getBool("aux1_descends");
-	bool continuous_forward = g_settings->getBool("continuous_forward");
-	bool fast_pressed = false;
-	bool always_fly_fast = g_settings->getBool("always_fly_fast");
-
-	// Whether superspeed mode is used or not
-	superspeed = false;
-
-	if (always_fly_fast && free_move && fast_move)
-		superspeed = true;
-
-	// Old descend control
-	if(g_settings->getBool("aux1_descends"))
-	{
-		// If free movement and fast movement, always move fast
-		if(free_move && fast_move)
-			superspeed = true;
-
-		// Auxiliary button 1 (E)
-		if(control.aux1)
-		{
-			if(free_move)
-			{
-				// In free movement mode, aux1 descends
-				if(fast_move)
-					speedV.Y = -movement_speed_fast;
-				else
-					speedV.Y = -movement_speed_walk;
-			}
-			else if(in_liquid || in_liquid_stable)
-			{
-				speedV.Y = -movement_speed_walk;
-				swimming_vertical = true;
-			}
-			else if(is_climbing)
-			{
-				speedV.Y = -movement_speed_climb;
-			}
-			else
-			{
-				// If not free movement but fast is allowed, aux1 is
-				// "Turbo button"
-				if(fast_allowed)
-					superspeed = true;
-			}
-		}
-	}
-	// New minecraft-like descend control
-	else
-	{
-		// Auxiliary button 1 (E)
-		if(control.aux1)
-		{
-			if(!is_climbing)
-			{
-				// aux1 is "Turbo button"
-				if(fast_allowed)
-					superspeed = true;
-			}
-			if(fast_allowed)
-				fast_pressed = true;
-		}
-
-		if(control.sneak)
-		{
-			if(free_move)
-			{
-				// In free movement mode, sneak descends
-				if (fast_move && (control.aux1 || always_fly_fast))
-					speedV.Y = -movement_speed_fast;
-				else
-					speedV.Y = -movement_speed_walk;
-			}
-			else if(in_liquid || in_liquid_stable)
-			{
-				if(fast_climb)
-					speedV.Y = -movement_speed_fast;
-				else
-					speedV.Y = -movement_speed_walk;
-				swimming_vertical = true;
-			}
-			else if(is_climbing)
-			{
-				if(fast_climb)
-					speedV.Y = -movement_speed_fast;
-				else
-					speedV.Y = -movement_speed_climb;
-			}
-=======
 	bool horizontal_collision = false;
 	for (const auto &colinfo : result.collisions) {
 		if (colinfo.type == COLLISION_NODE && colinfo.plane != 1) {
 			horizontal_collision = true;
 			break; // one is enough
->>>>>>> 5.5.0:src/client/localplayer.cpp
 		}
 	}
 
@@ -1401,112 +1193,6 @@ void LocalPlayer::handleAutojump(f32 dtime, Environment *env,
 		}
 	}
 
-<<<<<<< HEAD:src/localplayer.cpp
-	// The speed of the player (Y is ignored)
-	if(superspeed || (is_climbing && fast_climb) || ((in_liquid || in_liquid_stable) && fast_climb) || fast_pressed)
-		speedH = speedH.normalize() * movement_speed_fast;
-	else if(control.sneak && !free_move && !in_liquid && !in_liquid_stable)
-		speedH = speedH.normalize() * movement_speed_crouch;
-	else
-		speedH = speedH.normalize() * movement_speed_walk;
-
-	// Acceleration increase
-	f32 incH = 0; // Horizontal (X, Z)
-	f32 incV = 0; // Vertical (Y)
-	if((!touching_ground && !free_move && !is_climbing && !in_liquid) || (!free_move && m_can_jump && control.jump))
-	{
-		// Jumping and falling
-		if(superspeed || (fast_move && control.aux1))
-			incH = movement_acceleration_fast * BS * dtime;
-		else
-			incH = movement_acceleration_air * BS * dtime;
-		incV = 0; // No vertical acceleration in air
-
-		// better air control when falling fast
-		float speed = m_speed.getLength();
-		if (!superspeed && speed > movement_speed_fast && (control.down || control.up || control.left || control.right)) {
-			v3f rotate = move_direction * (speed / (movement_fall_aerodynamics * BS));
-
-			if(control.up)		rotate = rotate.crossProduct(v3f(0,1,0));
-			if(control.down)	rotate = rotate.crossProduct(v3f(0,-1,0));
-			if(control.left)	rotate *=-1;
-			m_speed.rotateYZBy(rotate.X);
-			m_speed.rotateXZBy(rotate.Y);
-			m_speed.rotateXYBy(rotate.Z);
-			m_speed = m_speed.normalize() * speed * (1-speed*0.00001); // 0.998
-			if (m_speed.Y)
-				return;
-		}
-	}
-	else if (superspeed || (is_climbing && fast_climb) || ((in_liquid || in_liquid_stable) && fast_climb))
-		incH = incV = movement_acceleration_fast * BS * dtime;
-	else
-		incH = incV = movement_acceleration_default * BS * dtime;
-
-	// Accelerate to target speed with maximum increment
-	INodeDefManager *nodemgr = m_gamedef->ndef();
-	Map *map = &env->getMap();
-	v3s16 p = floatToInt(getPosition() - v3f(0,BS/2,0), BS);
-	float slippery = 0;
-	try {
-		slippery = itemgroup_get(nodemgr->get(map->getNode(p)).groups, "slippery");
-	}
-	catch (...) {}
-	accelerateHorizontal(speedH * physics_override_speed, incH * physics_override_speed, slippery);
-	accelerateVertical(speedV * physics_override_speed, incV * physics_override_speed);
-}
-
-v3s16 LocalPlayer::getStandingNodePos()
-{
-	if(m_sneak_node_exists)
-		return m_sneak_node;
-	return floatToInt(getPosition() - v3f(0, BS, 0), BS);
-}
-
-// Horizontal acceleration (X and Z), Y direction is ignored
-void LocalPlayer::accelerateHorizontal(const v3f &target_speed, const f32 max_increase, float slippery)
-{
-        if (max_increase == 0)
-                return;
-
-        v3f d_wanted = target_speed - m_speed;
-
-	if (slippery && !free_move)
-	{
-		if (target_speed == v3f(0))
-			d_wanted = -m_speed*(1-slippery/100)/2;
-		else
-			d_wanted = target_speed*(1-slippery/100) - m_speed*(1-slippery/100);
-	}
-
-        d_wanted.Y = 0;
-        f32 dl = d_wanted.getLength();
-        if (dl > max_increase)
-                dl = max_increase;
-
-        v3f d = d_wanted.normalize() * dl;
-
-        m_speed.X += d.X;
-        m_speed.Z += d.Z;
-
-}
-
-// Vertical acceleration (Y), X and Z directions are ignored
-void LocalPlayer::accelerateVertical(const v3f &target_speed, const f32 max_increase)
-{
-        if (max_increase == 0)
-                return;
-
-        f32 d_wanted = target_speed.Y - m_speed.Y;
-        if (d_wanted > max_increase)
-                d_wanted = max_increase;
-        else if (d_wanted < -max_increase)
-                d_wanted = -max_increase;
-
-        m_speed.Y += d_wanted;
-}
-
-=======
 	float jump_height = 1.1f; // TODO: better than a magic number
 	v3f jump_pos = initial_position + v3f(0.0f, jump_height * BS, 0.0f);
 	v3f jump_speed = initial_speed;
@@ -1526,4 +1212,3 @@ void LocalPlayer::accelerateVertical(const v3f &target_speed, const f32 max_incr
 		m_autojump_time = 0.1f;
 	}
 }
->>>>>>> 5.5.0:src/client/localplayer.cpp

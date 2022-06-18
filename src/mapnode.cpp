@@ -553,7 +553,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 	}
 }
 
-void MapNode::getNodeBoxes(INodeDefManager *nodemgr, std::vector<aabb3f> *boxes, u8 neighbors) const
+void MapNode::getNodeBoxes(const NodeDefManager *nodemgr, std::vector<aabb3f> *boxes, u8 neighbors) const
 =======
 		boxes.emplace_back(-BS/2,-BS/2,-BS/2,BS/2,BS/2,BS/2);
 	}
@@ -630,7 +630,7 @@ void MapNode::getSelectionBoxes(const NodeDefManager *nodemgr,
 }
 
 <<<<<<< HEAD
-u8 MapNode::getMaxLevel(INodeDefManager *nodemgr, bool compress) const
+u8 MapNode::getMaxLevel(const NodeDefManager *nodemgr, bool compress) const
 {
 	return nodemgr->get(*this).getMaxLevel(compress);
 =======
@@ -674,7 +674,7 @@ u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 	return 0;
 }
 
-u16 MapNode::setLevel(INodeDefManager *nodemgr, s16 level, bool compress)
+u16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 {
 	//debug: auto level_orig = level;
 	s16 rest = 0;
@@ -760,7 +760,7 @@ s8 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level)
 }
 
 <<<<<<< HEAD
-u16 MapNode::addLevel(INodeDefManager *nodemgr, s16 add, bool compress)
+u16 MapNode::addLevel(const NodeDefManager *nodemgr, s16 add, bool compress)
 {
 	s16 level = getLevel(nodemgr);
 	if (add == 0)
@@ -774,7 +774,7 @@ s8 MapNode::addLevel(const NodeDefManager *nodemgr, s16 add)
 	return setLevel(nodemgr, level, compress);
 }
 
-int MapNode::freeze_melt(INodeDefManager *ndef, int direction) {
+int MapNode::freeze_melt(const NodeDefManager *ndef, int direction) {
 	content_t to = ndef->getId(direction < 0 ? ndef->get(*this).freeze : ndef->get(*this).melt);
 	if (to == CONTENT_IGNORE)
 		return 0;

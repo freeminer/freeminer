@@ -231,7 +231,7 @@ bool MapBlock::propagateSunlight(std::set<v3s16> & light_sources,
 {
 	auto lock = lock_unique_rec();
 
-	INodeDefManager *nodemgr = m_gamedef->ndef();
+	const NodeDefManager *nodemgr = m_gamedef->ndef();
 
 	// Whether the sunlight at the top of the bottom block is valid
 	bool block_below_is_valid = true;

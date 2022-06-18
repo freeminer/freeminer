@@ -521,28 +521,17 @@ public:
 	// Remove stopped sounds
 	void maintain()
 	{
-<<<<<<< HEAD:src/sound_openal.cpp
-/*
-		verbosestream<<"OpenALSoundManager::maintain(): "
-				<<m_sounds_playing.size()<<" playing sounds, "
-				<<m_buffers.size()<<" sound names loaded"<<std::endl;
-*/
-		std::set<int> del_list;
-		for(UNORDERED_MAP<int, PlayingSound*>::iterator i = m_sounds_playing.begin();
-				i != m_sounds_playing.end(); ++i) {
-			int id = i->first;
-			PlayingSound *sound = i->second;
-=======
 		if (!m_sounds_playing.empty()) {
+/*			
 			verbosestream << "OpenALSoundManager::maintain(): "
 					<< m_sounds_playing.size() <<" playing sounds, "
 					<< m_buffers.size() <<" sound names loaded"<<std::endl;
+*/
 		}
 		std::unordered_set<int> del_list;
 		for (const auto &sp : m_sounds_playing) {
 			int id = sp.first;
 			PlayingSound *sound = sp.second;
->>>>>>> 5.5.0:src/client/sound_openal.cpp
 			// If not playing, remove it
 			{
 				ALint state;
