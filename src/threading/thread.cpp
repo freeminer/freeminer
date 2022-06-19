@@ -28,37 +28,6 @@ DEALINGS IN THE SOFTWARE.
 #include "log.h"
 #include "porting.h"
 
-<<<<<<< HEAD
-#define UNUSED(expr) do { (void)(expr); } while (0)
-
-#if USE_CPP11_THREADS
-	#include <chrono>
-	#include <system_error>
-#elif USE_WIN_THREADS
-	#ifndef _WIN32_WCE
-		#include <process.h>
-	#endif
-#elif USE_POSIX_THREADS
-	#include <time.h>
-	#include <assert.h>
-	#include <stdlib.h>
-	#include <unistd.h>
-	#include <sys/time.h>
-
-	#if defined(__FreeBSD__) || defined(__APPLE__)
-		#include <sys/types.h>
-		#include <sys/sysctl.h>
-	#elif defined(_GNU_SOURCE)
-		#include <sys/sysinfo.h>
-	#endif
-#endif
-
-#if !defined(_WIN32)
-	#include <unistd.h>
-#endif
-
-=======
->>>>>>> 5.5.0
 // for setName
 #if defined(__linux__)
 	#include <sys/prctl.h>
@@ -234,16 +203,10 @@ void Thread::setName(const std::string &name)
 	// It would be cleaner to do this with pthread_setname_np,
 	// which was added to glibc in version 2.12, but some major
 	// distributions are still runing 2.11 and previous versions.
-<<<<<<< HEAD
 	//prctl(PR_SET_NAME, name.c_str());
 	porting::setThreadName(name.c_str());
-	
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-=======
-	prctl(PR_SET_NAME, name.c_str());
 
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
->>>>>>> 5.5.0
 
 	porting::setThreadName(name.c_str());
 
@@ -289,54 +252,11 @@ void Thread::setName(const std::string &name)
 
 unsigned int Thread::getNumberOfProcessors()
 {
-<<<<<<< HEAD
 #if defined(_SC_NPROCESSORS_CONF)
-
 	return sysconf(_SC_NPROCESSORS_CONF);
-
-#elif USE_CPP11_THREADS
-
-	return std::thread::hardware_concurrency();
-
-#elif USE_WIN_THREADS
-
-	SYSTEM_INFO sysinfo;
-	GetSystemInfo(&sysinfo);
-	return sysinfo.dwNumberOfProcessors;
-
-#elif defined(_SC_NPROCESSORS_ONLN)
-
-	return sysconf(_SC_NPROCESSORS_ONLN);
-
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || \
-	defined(__DragonFly__) || defined(__APPLE__)
-
-	unsigned int num_cpus = 1;
-	size_t len = sizeof(num_cpus);
-
-	int mib[2];
-	mib[0] = CTL_HW;
-	mib[1] = HW_NCPU;
-
-	sysctl(mib, 2, &num_cpus, &len, NULL, 0);
-	return num_cpus;
-
-#elif defined(_GNU_SOURCE)
-
-	return get_nprocs_conf();
-
-#elif defined(PTW32_VERSION) || defined(__hpux)
-
-	return pthread_num_processors_np();
-
 #else
-
-	return 1;
-
-#endif
-=======
 	return std::thread::hardware_concurrency();
->>>>>>> 5.5.0
+#endif
 }
 
 

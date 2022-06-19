@@ -37,30 +37,20 @@ Settings *g_settings = nullptr;
 static SettingsHierarchy g_hierarchy;
 std::string g_settings_path;
 
-<<<<<<< HEAD
 Json::Reader json_reader;
 Json::StyledWriter json_writer;
 
-
-Settings::~Settings()
-=======
 std::unordered_map<std::string, const FlagDesc *> Settings::s_flags;
 
 /* Settings hierarchy implementation */
 
 SettingsHierarchy::SettingsHierarchy(Settings *fallback)
->>>>>>> 5.5.0
 {
 	layers.push_back(fallback);
 }
 
-<<<<<<< HEAD
-/*
-Settings & Settings::operator += (const Settings &other)
-=======
 
 Settings *SettingsHierarchy::getLayer(int layer) const
->>>>>>> 5.5.0
 {
 	if (layer < 0 || layer >= (int)layers.size())
 		throw BaseException("Invalid settings layer");
@@ -613,7 +603,7 @@ u32 Settings::getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 }
 
 
-bool Settings::getNoiseParams(const std::string &name, NoiseParams &np)
+bool Settings::getNoiseParams(const std::string &name, NoiseParams &np) const
 {
 	if (getNoiseParamsFromGroup(name, np) || getNoiseParamsFromValue(name, np))
 		return true;
@@ -657,7 +647,7 @@ bool Settings::getNoiseParamsFromValue(const std::string &name,
 
 
 bool Settings::getNoiseParamsFromGroup(const std::string &name,
-	NoiseParams &np)
+	NoiseParams &np) const
 {
 	Settings *group = NULL;
 	bool created = false;
@@ -1011,16 +1001,12 @@ bool Settings::setNoiseParams(const std::string &name, const NoiseParams &np)
 	group->setFloat("lacunarity",  np.lacunarity);
 	group->setFlagStr("flags",     np.flags, flagdesc_noiseparams, np.flags);
 
-<<<<<<< HEAD
 	group->setFloat("farscale",    np.far_scale);
 	group->setFloat("farspread",   np.far_spread);
 	group->setFloat("farpersist",  np.far_persist);
 	group->setFloat("farlacunarity",  np.far_lacunarity);
 
-	return setEntry(name, &group, true, set_default);
-=======
 	return setEntry(name, &group, true);
->>>>>>> 5.5.0
 }
 
 
@@ -1079,14 +1065,9 @@ void Settings::clearNoLock()
 			it != m_settings.end(); ++it)
 		delete it->second.group;
 	m_settings.clear();
-<<<<<<< HEAD
 
 	if (m_json.isObject() || m_json.isArray())
 		m_json.clear();
-
-	clearDefaultsNoLock();
-=======
->>>>>>> 5.5.0
 }
 
 

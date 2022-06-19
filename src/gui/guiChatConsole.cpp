@@ -30,13 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "porting.h"
 #include "client/tile.h"
-<<<<<<< HEAD:src/guiChatConsole.cpp
-#include "fontengine.h"
-#include "log_types.h"
-=======
 #include "client/fontengine.h"
-#include "log.h"
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
+#include "log_types.h"
 #include "gettext.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include <string>
@@ -112,11 +107,7 @@ GUIChatConsole::~GUIChatConsole()
 		m_font->drop();
 }
 
-<<<<<<< HEAD:src/guiChatConsole.cpp
-void GUIChatConsole::openConsole(float height)
-=======
 void GUIChatConsole::openConsole(f32 scale)
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
 {
 	assert(scale > 0.0f && scale <= 1.0f);
 
@@ -345,16 +336,10 @@ void GUIChatConsole::drawText()
 			s32 x = (fragment.column + 1) * m_fontsize.X;
 			core::rect<s32> destrect(
 				x, y, x + m_fontsize.X * fragment.text.size(), y + m_fontsize.Y);
-<<<<<<< HEAD:src/guiChatConsole.cpp
-			#if USE_FREETYPE
-			// Draw colored text if FreeType is enabled
-				irr::gui::CGUITTFont *tmp = static_cast<irr::gui::CGUITTFont*>(m_font);
-=======
 
 			if (m_font->getType() == irr::gui::EGFT_CUSTOM) {
 				// Draw colored text if possible
 				gui::CGUITTFont *tmp = static_cast<gui::CGUITTFont*>(m_font);
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
 				tmp->draw(
 					fragment.text,
 					destrect,
@@ -469,20 +454,9 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 
 	ChatPrompt &prompt = m_chat_backend->getPrompt();
 
-<<<<<<< HEAD:src/guiChatConsole.cpp
-	//errorstream << "cgc:event eventtype=" << (int)event.EventType << " pd=" << event.KeyInput.PressedDown << " key="<<(int)event.KeyInput.Key << " char=" <<  (int)event.KeyInput.Char<<std::endl;
 
-	if(event.EventType == EET_KEY_INPUT_EVENT && event.KeyInput.PressedDown)
-	{
-		KeyPress kp(event.KeyInput);
-		// Key input
-		if(kp == getKeySetting("keymap_console"))
-		{
-/* old fm
-			closeConsoleAtOnce();
-			Environment->removeFocus(this);
-*/
-=======
+	KeyPress kp(event.KeyInput);
+
 	if (event.EventType == EET_KEY_INPUT_EVENT && !event.KeyInput.PressedDown)
 	{
 		// CTRL up
@@ -500,7 +474,12 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 
 		// Key input
 		if (KeyPress(event.KeyInput) == getKeySetting("keymap_console")) {
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
+
+/* old fm
+			closeConsoleAtOnce();
+			Environment->removeFocus(this);
+*/
+
 			closeConsole();
 
 			// inhibit open so the_game doesn't reopen immediately
@@ -508,13 +487,9 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			m_close_on_enter = false;
 			return true;
 		}
-<<<<<<< HEAD:src/guiChatConsole.cpp
-		else if ( (kp == EscapeKey || kp == CancelKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) )
-		{
-=======
 
-		if (event.KeyInput.Key == KEY_ESCAPE) {
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
+		//if (event.KeyInput.Key == KEY_ESCAPE) {
+		if ( (kp == EscapeKey || kp == CancelKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) )
 			closeConsoleAtOnce();
 			m_close_on_enter = false;
 			// inhibit open so the_game doesn't reopen immediately
@@ -646,15 +621,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			if (prompt.getCursorLength() <= 0)
 				return true;
 			std::wstring wselected = prompt.getSelection();
-<<<<<<< HEAD:src/guiChatConsole.cpp
-/*
-			std::string selected(wselected.begin(), wselected.end());
-*/
-			auto selected = wide_to_utf8(wselected);
-
-=======
 			std::string selected = wide_to_utf8(wselected);
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
 			Environment->getOSOperator()->copyToClipboard(selected.c_str());
 			return true;
 		}
@@ -673,17 +640,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			const c8 *text = os_operator->getTextFromClipboard();
 			if (!text)
 				return true;
-<<<<<<< HEAD:src/guiChatConsole.cpp
-
-			prompt.input(utf8_to_wide(std::string(text)));
-
-/*
-			std::basic_string<unsigned char> str((const unsigned char*)text);
-			prompt.input(std::wstring(str.begin(), str.end()));
-*/
-=======
 			prompt.input(utf8_to_wide(text));
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
 			return true;
 		}
 		else if(event.KeyInput.Key == KEY_KEY_X && event.KeyInput.Control)
@@ -729,21 +686,8 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			bool backwards = event.KeyInput.Shift;
 			prompt.nickCompletion(names, backwards);
 			return true;
-<<<<<<< HEAD:src/guiChatConsole.cpp
-		}
-		else if(event.KeyInput.Char != 0 && !event.KeyInput.Control)
-		{
-			#if (defined(__linux__) || defined(__FreeBSD__)) and IRRLICHT_VERSION_10000 < 10900
-				wchar_t wc = L'_';
-				mbtowc( &wc, (char *) &event.KeyInput.Char, sizeof(event.KeyInput.Char) );
-				prompt.input(wc);
-			#else
-				prompt.input(event.KeyInput.Char);
-			#endif
-=======
 		} else if (!iswcntrl(event.KeyInput.Char) && !event.KeyInput.Control) {
 			prompt.input(event.KeyInput.Char);
->>>>>>> 5.5.0:src/gui/guiChatConsole.cpp
 			return true;
 		}
 	}

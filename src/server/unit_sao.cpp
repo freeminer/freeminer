@@ -1,15 +1,8 @@
 /*
-<<<<<<< HEAD:src/genericobject.cpp
-genericobject.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-=======
 Minetest
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 Copyright (C) 2013-2020 Minetest core developers & community
->>>>>>> 5.5.0:src/server/unit_sao.cpp
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -108,6 +101,10 @@ void UnitSAO::sendOutdatedData()
 	}
 
 	if (!m_animation_sent) {
+		auto lock = try_lock_unique_rec();
+        if (!lock->owns_lock())
+             goto NOLOCK4;
+
 		m_animation_sent = true;
 		m_animation_speed_sent = true;
 		m_messages_out.emplace(getId(), true, generateUpdateAnimationCommand());
@@ -116,6 +113,8 @@ void UnitSAO::sendOutdatedData()
 		m_animation_speed_sent = true;
 		m_messages_out.emplace(getId(), true, generateUpdateAnimationSpeedCommand());
 	}
+
+	NOLOCK4:;
 
 	if (!m_bone_position_sent) {
 		m_bone_position_sent = true;

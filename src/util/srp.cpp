@@ -46,13 +46,7 @@
 
 #include <config.h>
 
-<<<<<<< HEAD
-#include <cstddef> // fix gmp: error: ‘::max_align_t’ has not been declared
-
-#if USE_SYSTEM_GMP || defined (__ANDROID__) || defined (ANDROID)
-=======
 #if USE_SYSTEM_GMP
->>>>>>> 5.5.0
 	#include <gmp.h>
 #else
 	#include <mini-gmp.h>
@@ -622,11 +616,7 @@ SRP_Result srp_create_salted_verification_key( SRP_HashAlgorithm alg,
 			if (fill_buff() != SRP_OK) goto error_and_exit;
 		*bytes_s = (unsigned char *)srp_alloc(size_to_fill);
 		if (!*bytes_s) goto error_and_exit;
-<<<<<<< HEAD
-		memcpy(*bytes_s, g_rand_buff + g_rand_idx, size_to_fill);
-=======
 		memcpy(*bytes_s, &g_rand_buff[g_rand_idx], size_to_fill);
->>>>>>> 5.5.0
 		g_rand_idx += size_to_fill;
 	}
 

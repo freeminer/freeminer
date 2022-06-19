@@ -101,11 +101,11 @@ void TestSocket::testIPv4Socket()
 	UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer)) == 0);
 
 	if (address != Address(0, 0, 0, 0, port)) {
-		UASSERT(sender.getAddress().s_addr ==
-				address.getAddress().s_addr);
+		UASSERT(sender.getAddress().sin_addr.s_addr ==
+				address.getAddress().sin_addr.s_addr);
 	} else {
-		UASSERT(sender.getAddress().s_addr ==
-				Address(127, 0, 0, 1, 0).getAddress().s_addr);
+		UASSERT(sender.getAddress().sin_addr.s_addr ==
+				Address(127, 0, 0, 1, 0).getAddress().sin_addr.s_addr);
 	}
 }
 
@@ -147,7 +147,7 @@ void TestSocket::testIPv6Socket()
 		//FIXME: This fails on some systems
 		UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer)) == 0);
 
-		UASSERT(memcmp(sender.getAddress6().s6_addr,
-				Address(&bytes, 0).getAddress6().s6_addr, 16) == 0);
+		UASSERT(memcmp(sender.getAddress6().sin6_addr.s6_addr,
+				Address(&bytes, 0).getAddress6().sin6_addr.s6_addr, 16) == 0);
 	}
 }

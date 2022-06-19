@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <unordered_map>
 #include "irrlichttypes.h"
+#include "threading/concurrent_unordered_map.h"
 
 class TestClientActiveObjectMgr;
 class TestServerActiveObjectMgr;
@@ -62,5 +63,5 @@ protected:
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 
-	std::unordered_map<u16, T *> m_active_objects;
+	maybe_concurrent_unordered_map<u16, T *> m_active_objects;
 };

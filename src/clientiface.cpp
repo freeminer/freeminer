@@ -30,14 +30,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverenvironment.h"
 #include "map.h"
 #include "emerge.h"
-<<<<<<< HEAD
-#include "content_sao.h"              // TODO this is used for cleanup of only
-#include "log_types.h"
-=======
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
-#include "log.h"
->>>>>>> 5.5.0
+#include "log_types.h"
 #include "util/srp.h"
 #include "face_position_cache.h"
 
@@ -46,48 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "gamedef.h"
 
-
-//VERY BAD COPYPASTE FROM clientmap.cpp!
-static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
-		float start_off, float end_off, u32 needed_count, const NodeDefManager *nodemgr,
-		unordered_map_v3POS<bool> & occlude_cache)
-{
-	float d0 = (float)1 * p0.getDistanceFrom(p1);
-	v3s16 u0 = p1 - p0;
-	v3f uf = v3f(u0.X, u0.Y, u0.Z);
-	uf.normalize();
-	v3f p0f = v3f(p0.X, p0.Y, p0.Z);
-	u32 count = 0;
-	for(float s=start_off; s<d0+end_off; s+=step){
-		v3f pf = p0f + uf * s;
-		v3s16 p = floatToInt(pf, 1);
-		bool is_transparent = false;
-		bool cache = true;
-		if (occlude_cache.count(p)) {
-			cache = false;
-			is_transparent = occlude_cache[p];
-		} else {
-		MapNode n = map->getNodeTry(p);
-		if (!n) {
-			return true; // ONE DIFFERENCE FROM clientmap.cpp
-		}
-		const ContentFeatures &f = nodemgr->get(n);
-		if(f.solidness == 0)
-			is_transparent = (f.visual_solidness != 2);
-		else
-			is_transparent = (f.solidness != 2);
-		}
-		if (cache)
-			occlude_cache[p] = is_transparent;
-		if(!is_transparent){
-			if(count == needed_count)
-				return true;
-			count++;
-		}
-		step *= stepfac;
-	}
-	return false;
-}
 
 const char *ClientInterface::statenames[] = {
 	"Invalid",
@@ -126,9 +79,6 @@ void RemoteClient::ResendBlockIfOnWire(v3s16 p)
 	SetBlockNotSent(p);
 }
 
-<<<<<<< HEAD
-int RemoteClient::GetNextBlocks (
-=======
 LuaEntitySAO *getAttachedObject(PlayerSAO *sao, ServerEnvironment *env)
 {
 	if (!sao->isAttached())
@@ -148,8 +98,8 @@ LuaEntitySAO *getAttachedObject(PlayerSAO *sao, ServerEnvironment *env)
 	return dynamic_cast<LuaEntitySAO *>(ao);
 }
 
-void RemoteClient::GetNextBlocks (
->>>>>>> 5.5.0
+#if WTF
+int RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
@@ -813,16 +763,13 @@ queue_full_break:
 		}
 	}
 
-<<<<<<< HEAD
-	if(new_nearest_unsent_d != -1) {
-=======
 	if (new_nearest_unsent_d != -1)
->>>>>>> 5.5.0
 		m_nearest_unsent_d = new_nearest_unsent_d;
-	}
 
 	return num_blocks_selected - num_blocks_sending;
 }
+
+#endif
 
 /*
 void RemoteClient::GotBlock(v3s16 p)
@@ -856,45 +803,21 @@ void RemoteClient::SentBlock(v3s16 p)
 
 void RemoteClient::SetBlockNotSent(v3s16 p)
 {
-<<<<<<< HEAD
 	++m_nearest_unsent_reset;
 /*
-	m_nearest_unsent_d = 0;
-	m_nothing_to_send_pause_timer = 0;
-
-	if(m_blocks_sending.find(p) != m_blocks_sending.end())
-		m_blocks_sending.erase(p);
-	if(m_blocks_sent.find(p) != m_blocks_sent.end())
-		m_blocks_sent.erase(p);
-	m_blocks_modified.insert(p);
-*/
-}
-
-void RemoteClient::SetBlocksNotSent()
-{
-	++m_nearest_unsent_reset;
-=======
 	m_nothing_to_send_pause_timer = 0;
 
 	// remove the block from sending and sent sets,
 	// and mark as modified if found
 	if (m_blocks_sending.erase(p) + m_blocks_sent.erase(p) > 0)
 		m_blocks_modified.insert(p);
->>>>>>> 5.5.0
+*/
 }
 
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
-<<<<<<< HEAD
 	++m_nearest_unsent_reset;
 /*
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = blocks.begin();
-			i != blocks.end(); ++i)
-	{
-		v3s16 p = i->first;
-		m_blocks_modified.insert(p);
-=======
 	m_nothing_to_send_pause_timer = 0;
 
 	for (auto &block : blocks) {
@@ -903,7 +826,6 @@ void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 		// and mark as modified if found
 		if (m_blocks_sending.erase(p) + m_blocks_sent.erase(p) > 0)
 			m_blocks_modified.insert(p);
->>>>>>> 5.5.0
 	}
 */
 }
@@ -1101,22 +1023,13 @@ ClientInterface::~ClientInterface()
 
 std::vector<session_t> ClientInterface::getClientIDs(ClientState min_state)
 {
-<<<<<<< HEAD
-	std::vector<u16> reply;
-	auto clientslock = m_clients.lock_shared_rec();
-
-	for(auto i = m_clients.begin();
-		i != m_clients.end(); ++i) {
-		if (i->second->getState() >= min_state)
-			reply.push_back(i->second->peer_id);
-=======
 	std::vector<session_t> reply;
-	RecursiveMutexAutoLock clientslock(m_clients_mutex);
+	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
+	auto clientslock = m_clients.lock_shared_rec();
 
 	for (const auto &m_client : m_clients) {
 		if (m_client.second->getState() >= min_state)
 			reply.push_back(m_client.second->peer_id);
->>>>>>> 5.5.0
 	}
 
 	return reply;
@@ -1157,25 +1070,16 @@ void ClientInterface::UpdatePlayerList()
 		std::vector<session_t> clients = getClientIDs();
 		m_clients_names.clear();
 
-<<<<<<< HEAD
 		auto now = porting::getTimeMs();
 		static auto last_print = now;
 		bool print = now >= last_print;
 		if (print)
 			last_print = now + 5000;
-
 		if (print && !clients.empty())
 			infostream<<"Players ["<<clients.size()<<"]:"<<std::endl;
 
-		for(auto i = clients.begin(); i != clients.end(); ++i) {
-			RemotePlayer *player = m_env->getPlayer(*i);
-=======
-		if (!clients.empty())
-			infostream<<"Players:"<<std::endl;
-
 		for (session_t i : clients) {
 			RemotePlayer *player = m_env->getPlayer(i);
->>>>>>> 5.5.0
 
 			if (player == NULL)
 				continue;
@@ -1184,15 +1088,9 @@ void ClientInterface::UpdatePlayerList()
 			infostream << "* " << player->getName() << "\t";
 
 			{
-<<<<<<< HEAD
-				//MutexAutoLock clientslock(m_clients_mutex);
-				RemoteClient* client = lockedGetClientNoEx(*i);
-				if(client != NULL)
-=======
-				RecursiveMutexAutoLock clientslock(m_clients_mutex);
+				//RecursiveMutexAutoLock clientslock(m_clients_mutex);
 				RemoteClient* client = lockedGetClientNoEx(i);
 				if (client)
->>>>>>> 5.5.0
 					client->PrintInfo(infostream);
 			}
 		  }
@@ -1202,7 +1100,6 @@ void ClientInterface::UpdatePlayerList()
 	}
 }
 
-<<<<<<< HEAD
 
 
 #if !MINETEST_PROTO
@@ -1221,29 +1118,17 @@ void ClientInterface::send(u16 peer_id,u8 channelnum,
 #endif
 
 #if MINETEST_PROTO
-void ClientInterface::send(u16 peer_id, u8 channelnum,
-		NetworkPacket* pkt, bool reliable)
-=======
 void ClientInterface::send(session_t peer_id, u8 channelnum,
 		NetworkPacket *pkt, bool reliable)
->>>>>>> 5.5.0
 {
 	m_con->Send(peer_id, channelnum, pkt, reliable);
 }
 
 void ClientInterface::sendToAll(NetworkPacket *pkt)
 {
-<<<<<<< HEAD
 	auto clientslock = m_clients.lock_shared_rec();
-	for(auto i = m_clients.begin();
-		i != m_clients.end(); ++i)
-	{
-		RemoteClient *client = i->second.get();
-=======
-	RecursiveMutexAutoLock clientslock(m_clients_mutex);
 	for (auto &client_it : m_clients) {
 		RemoteClient *client = client_it.second;
->>>>>>> 5.5.0
 
 		if (client->net_proto_version != 0) {
 			m_con->Send(client->peer_id,
@@ -1253,7 +1138,6 @@ void ClientInterface::sendToAll(NetworkPacket *pkt)
 	}
 }
 
-<<<<<<< HEAD
 #else
 
 void ClientInterface::sendToAll(u16 channelnum,
@@ -1288,15 +1172,10 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 	return client.get();
 }
 
-std::shared_ptr<RemoteClient> ClientInterface::getClient(u16 peer_id, ClientState state_min) {
-	auto clientslock = m_clients.lock_shared_rec();
-	auto n = m_clients.find(peer_id);
-=======
-RemoteClient* ClientInterface::getClientNoEx(session_t peer_id, ClientState state_min)
+std::shared_ptr<RemoteClient> ClientInterface::getClient(session_t peer_id, ClientState state_min)
 {
-	RecursiveMutexAutoLock clientslock(m_clients_mutex);
-	RemoteClientMap::const_iterator n = m_clients.find(peer_id);
->>>>>>> 5.5.0
+	auto clientslock = m_clients.lock_shared_rec();
+	const auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if (n == m_clients.end())
@@ -1310,13 +1189,9 @@ RemoteClient* ClientInterface::getClientNoEx(session_t peer_id, ClientState stat
 
 RemoteClient* ClientInterface::lockedGetClientNoEx(session_t peer_id, ClientState state_min)
 {
-<<<<<<< HEAD
 	return getClientNoEx(peer_id, state_min);
 #if WTF
-	UNORDERED_MAP<u16, RemoteClient*>::iterator n = m_clients.find(peer_id);
-=======
 	RemoteClientMap::const_iterator n = m_clients.find(peer_id);
->>>>>>> 5.5.0
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if (n == m_clients.end())
@@ -1324,25 +1199,15 @@ RemoteClient* ClientInterface::lockedGetClientNoEx(session_t peer_id, ClientStat
 
 	if (n->second->getState() >= state_min)
 		return n->second;
-<<<<<<< HEAD
-	else
-		return NULL;
-#endif
-=======
 
 	return NULL;
->>>>>>> 5.5.0
+#endif
 }
 
 ClientState ClientInterface::getClientState(session_t peer_id)
 {
-<<<<<<< HEAD
 	auto clientslock = m_clients.lock_shared_rec();
-	auto n = m_clients.find(peer_id);
-=======
-	RecursiveMutexAutoLock clientslock(m_clients_mutex);
-	RemoteClientMap::const_iterator n = m_clients.find(peer_id);
->>>>>>> 5.5.0
+	const auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if (n == m_clients.end())
@@ -1353,28 +1218,24 @@ ClientState ClientInterface::getClientState(session_t peer_id)
 
 void ClientInterface::setPlayerName(session_t peer_id, const std::string &name)
 {
-<<<<<<< HEAD
 	auto client = getClient(peer_id, CS_Invalid);
 	if(!client)
 		return;
 
 	client->setName(name);
-=======
+#if WTF
 	RecursiveMutexAutoLock clientslock(m_clients_mutex);
 	RemoteClientMap::iterator n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if (n != m_clients.end())
 		n->second->setName(name);
->>>>>>> 5.5.0
+#endif		
 }
 
 void ClientInterface::DeleteClient(session_t peer_id)
 {
-<<<<<<< HEAD
-	auto client = getClient(peer_id, CS_Invalid);
-	if (!client)
-=======
+#if WTF
 	RecursiveMutexAutoLock conlock(m_clients_mutex);
 
 	// Error check
@@ -1382,7 +1243,9 @@ void ClientInterface::DeleteClient(session_t peer_id)
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if (n == m_clients.end())
->>>>>>> 5.5.0
+#endif	
+	auto client = getClient(peer_id, CS_Invalid);
+	if (!client)
 		return;
 
 	/*
@@ -1390,21 +1253,11 @@ void ClientInterface::DeleteClient(session_t peer_id)
 	*/
 	//TODO this should be done by client destructor!!!
 	// Handle objects
-<<<<<<< HEAD
 	{
 	auto lock = client->m_known_objects.lock_unique_rec();
-	for(auto
-			i = client->m_known_objects.begin();
-			i != client->m_known_objects.end(); ++i)
-	{
-		// Get object
-		u16 id = i->first;
-		ServerActiveObject* obj = m_env->getActiveObject(id, true);
-=======
 	for (u16 id : client->m_known_objects) {
 		// Get object
-		ServerActiveObject* obj = m_env->getActiveObject(id);
->>>>>>> 5.5.0
+		ServerActiveObject* obj = m_env->getActiveObject(id, true);
 
 		if(obj && obj->m_known_by_count > 0)
 			obj->m_known_by_count--;
@@ -1418,20 +1271,20 @@ void ClientInterface::DeleteClient(session_t peer_id)
 
 void ClientInterface::CreateClient(session_t peer_id)
 {
-<<<<<<< HEAD
 	{
 		auto client = getClient(peer_id, CS_Invalid);
 		if(client)
 			return;
 	}
-=======
+
+#if WTF
 	RecursiveMutexAutoLock conlock(m_clients_mutex);
 
 	// Error check
 	RemoteClientMap::iterator n = m_clients.find(peer_id);
 	// The client shouldn't already exist
 	if (n != m_clients.end()) return;
->>>>>>> 5.5.0
+#endif	
 
 	// Create client
 	auto client = std::shared_ptr<RemoteClient>(new RemoteClient(m_env));
@@ -1441,13 +1294,13 @@ void ClientInterface::CreateClient(session_t peer_id)
 
 void ClientInterface::event(session_t peer_id, ClientStateEvent event)
 {
-<<<<<<< HEAD
 	auto client = getClient(peer_id, CS_Invalid);
 	if (!client)
 		return;
 
 	client->notifyEvent(event);
-=======
+
+#if WTF
 	{
 		RecursiveMutexAutoLock clientlock(m_clients_mutex);
 
@@ -1459,7 +1312,7 @@ void ClientInterface::event(session_t peer_id, ClientStateEvent event)
 			return;
 		n->second->notifyEvent(event);
 	}
->>>>>>> 5.5.0
+#endif
 
 	if ((event == CSE_SetClientReady) ||
 		(event == CSE_Disconnect)     ||
@@ -1471,10 +1324,7 @@ void ClientInterface::event(session_t peer_id, ClientStateEvent event)
 
 u16 ClientInterface::getProtocolVersion(session_t peer_id)
 {
-<<<<<<< HEAD
-	auto client = getClient(peer_id, CS_Invalid);
-	if (!client)
-=======
+#if WTF
 	RecursiveMutexAutoLock conlock(m_clients_mutex);
 
 	// Error check
@@ -1482,7 +1332,10 @@ u16 ClientInterface::getProtocolVersion(session_t peer_id)
 
 	// No client to get version
 	if (n == m_clients.end())
->>>>>>> 5.5.0
+#endif	
+
+	auto client = getClient(peer_id, CS_Invalid);
+	if (!client)
 		return 0;
 
 	return client->net_proto_version;
@@ -1491,13 +1344,12 @@ u16 ClientInterface::getProtocolVersion(session_t peer_id)
 void ClientInterface::setClientVersion(session_t peer_id, u8 major, u8 minor, u8 patch,
 		const std::string &full)
 {
-<<<<<<< HEAD
 	auto client = getClient(peer_id, CS_Invalid);
 	if (!client)
 		return;
 
-	client->setVersionInfo(major,minor,patch,full);
-=======
+	client->setVersionInfo(major, minor, patch, full);
+#if WTF
 	RecursiveMutexAutoLock conlock(m_clients_mutex);
 
 	// Error check
@@ -1508,5 +1360,5 @@ void ClientInterface::setClientVersion(session_t peer_id, u8 major, u8 minor, u8
 		return;
 
 	n->second->setVersionInfo(major, minor, patch, full);
->>>>>>> 5.5.0
+#endif
 }

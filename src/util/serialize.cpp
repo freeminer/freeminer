@@ -249,12 +249,6 @@ std::string serializeJsonStringIfNeeded(const std::string &s)
 	return s;
 }
 
-<<<<<<< HEAD
-	char *s = &valstr[0];
-	char *buf = new char[len];
-	memset(buf, 0, len);
-	char *bufpos = buf;
-=======
 std::string deSerializeJsonStringIfNeeded(std::istream &is)
 {
 	std::stringstream tmp_os(std::ios_base::binary | std::ios_base::in | std::ios_base::out);
@@ -265,7 +259,6 @@ std::string deSerializeJsonStringIfNeeded(std::istream &is)
 		char c = is.get();
 		if (is.eof())
 			break;
->>>>>>> 5.5.0
 
 		if (expect_initial_quote && c == '"') {
 			tmp_os << c;
@@ -293,20 +286,6 @@ std::string deSerializeJsonStringIfNeeded(std::istream &is)
 		return deSerializeJsonString(tmp_os);
 	}
 
-<<<<<<< HEAD
-	if (f && *f) { //error, mismatched number of fields and values
-fail:
-		for (size_t i = 0; i != strs_alloced.size(); i++)
-			delete strs_alloced[i];
-		delete[] buf;
-		return false;
-	}
-
-	memcpy(out, buf, bufpos - buf);
-	delete[] buf;
-	return true;
-=======
 	return tmp_os.str();
->>>>>>> 5.5.0
 }
 

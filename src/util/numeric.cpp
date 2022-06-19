@@ -23,20 +23,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "numeric.h"
 
 #include "log.h"
-<<<<<<< HEAD
-#include "../constants.h" // BS, MAP_BLOCKSIZE
-#include "../noise.h" // PseudoRandom, PcgRandom
-#include "../threading/mutex_auto_lock.h"
-#include <string.h>
-#include <iostream>
-#include <atomic>
-=======
 #include "constants.h" // BS, MAP_BLOCKSIZE
 #include "noise.h" // PseudoRandom, PcgRandom
 #include "threading/mutex_auto_lock.h"
 #include <cstring>
 #include <cmath>
->>>>>>> 5.5.0
+#include <atomic>
 
 
 // myrand
@@ -118,16 +110,6 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 		f32 camera_fov, f32 range, f32 *distance_ptr)
 {
-<<<<<<< HEAD
-	// Maximum radius of a block.  The magic number is
-	// sqrt(3.0) / 2.0 in literal form.
-/*
-	const f32 block_max_radius = 0.866025403784 * MAP_BLOCKSIZE * BS;
-*/
-	const f32 block_max_radius = MAP_BLOCKSIZE * BS;
-
-=======
->>>>>>> 5.5.0
 	v3s16 blockpos_nodes = blockpos_b * MAP_BLOCKSIZE;
 
 	// Block center position
@@ -141,14 +123,10 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	//v3f blockpos_relative = blockpos - camera_pos;
 
 	// Total distance
-<<<<<<< HEAD
-	f32 d = radius_box(blockpos, camera_pos);
 /*
-	f32 d = MYMAX(0, blockpos_relative.getLength() - block_max_radius);
-*/
-=======
 	f32 d = MYMAX(0, blockpos_relative.getLength() - BLOCK_MAX_RADIUS);
->>>>>>> 5.5.0
+*/	
+	f32 d = radius_box(blockpos, camera_pos);
 
 	if (distance_ptr)
 		*distance_ptr = d;

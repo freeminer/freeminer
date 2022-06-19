@@ -31,25 +31,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /*
 	Debug stuff
 */
-<<<<<<< HEAD
-u32 clearflag_time = 0;
-//u32 getwaterpressure_time = 0;
-//u32 spreadwaterpressure_time = 0;
-u32 updateareawaterpressure_time = 0;
-u32 flowwater_pre_time = 0;
-
-
-VoxelManipulator::VoxelManipulator():
-	m_data(NULL),
-	m_flags(NULL)
-{
-}
-=======
 u64 addarea_time = 0;
 u64 emerge_time = 0;
 u64 emerge_load_time = 0;
 u64 clearflag_time = 0;
->>>>>>> 5.5.0
 
 VoxelManipulator::~VoxelManipulator()
 {
@@ -60,15 +45,10 @@ void VoxelManipulator::clear()
 {
 	// Reset area to volume=0
 	m_area = VoxelArea();
-<<<<<<< HEAD
-	if(m_data)
-		delete m_data;
-	m_data = NULL;
-	if(m_flags)
-=======
+   if(m_data)
 	delete[] m_data;
 	m_data = nullptr;
->>>>>>> 5.5.0
+   if (m_flags)
 	delete[] m_flags;
 	m_flags = nullptr;
 }

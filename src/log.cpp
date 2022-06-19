@@ -107,21 +107,8 @@ LogBuffer verbose_buf(g_logger, LL_VERBOSE);
 std::ostream *dout_con_ptr = &null_stream;
 std::ostream *derr_con_ptr = &verbosestream;
 
-<<<<<<< HEAD
-// Server
-std::ostream *dout_server_ptr = &infostream;
-std::ostream *derr_server_ptr = &errorstream;
-
-#ifndef SERVER
-// Client
-std::ostream *dout_client_ptr = &infostream;
-std::ostream *derr_client_ptr = &errorstream;
-#endif
-
-THREAD_LOCAL_LOG
-=======
 // Common streams
->>>>>>> 5.5.0
+THREAD_LOCAL_LOG
 std::ostream rawstream(&raw_buf);
 THREAD_LOCAL_LOG
 std::ostream dstream(&none_buf);
@@ -279,13 +266,9 @@ const std::string Logger::getThreadName()
 {
 	std::map<std::thread::id, std::string>::const_iterator it;
 
-<<<<<<< HEAD
-	threadid_t id = thr_get_current_thread_id();
+	std::thread::id id = std::this_thread::get_id();
 	{
 	MutexAutoLock lock(m_mutex);
-=======
-	std::thread::id id = std::this_thread::get_id();
->>>>>>> 5.5.0
 	it = m_thread_names.find(id);
 	if (it != m_thread_names.end())
 		return it->second;

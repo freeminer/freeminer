@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <iostream>
+#include "json/value.h"
 #include "version.h"
 //#include <fstream>
 #include "settings.h"
@@ -31,163 +32,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <json/json.h>
 #include "convert_json.h"
 #include "httpfetch.h"
-<<<<<<< HEAD
-#include "util/string.h"
 #include "config.h"
 
 namespace ServerList
 {
-
-std::string getFilePath()
-{
-	std::string serverlist_file = g_settings->get("serverlist_file");
-
-	std::string dir_path = std::string("client") + DIR_DELIM;
-	fs::CreateDir(porting::path_user + DIR_DELIM + dir_path);
-	return porting::path_user + DIR_DELIM + dir_path + serverlist_file;
-}
-
-
-std::vector<ServerListSpec> getLocal()
-{
-	std::string path = ServerList::getFilePath();
-	std::string liststring;
-	if (fs::PathExists(path)) {
-		std::ifstream istream(path.c_str());
-		if (istream.is_open()) {
-			std::ostringstream ostream;
-			ostream << istream.rdbuf();
-			liststring = ostream.str();
-			istream.close();
-		}
-	}
-
-	return deSerialize(liststring);
-}
-
-
-std::vector<ServerListSpec> cached_online;
-
-std::vector<ServerListSpec> getOnline()
-{
-	std::ostringstream geturl;
-
-	u16 proto_version_min = g_settings->getFlag("send_pre_v25_init") ?
-		CLIENT_PROTOCOL_VERSION_MIN_LEGACY : CLIENT_PROTOCOL_VERSION_MIN;
-
-	geturl << g_settings->get("serverlist_url") <<
-		"/list?proto_version_min=" << proto_version_min <<
-		"&proto_version_max=" << CLIENT_PROTOCOL_VERSION_MAX;
-	Json::Value root = fetchJsonValue(geturl.str(), NULL);
-
-	std::vector<ServerListSpec> server_list;
-
-	if (!root.isObject()) {
-		return server_list;
-	}
-
-	root = root["list"];
-	if (!root.isArray()) {
-		return server_list;
-	}
-
-	for (unsigned int i = 0; i < root.size(); i++) {
-		if (root[i].isObject()) {
-			server_list.push_back(root[i]);
-		}
-	}
-
-	cached_online = server_list; 
-	return server_list;
-}
-
-
-// Delete a server from the local favorites list
-bool deleteEntry(const ServerListSpec &server)
-{
-	std::vector<ServerListSpec> serverlist = ServerList::getLocal();
-	for (std::vector<ServerListSpec>::iterator it = serverlist.begin();
-			it != serverlist.end();) {
-		if ((*it)["address"] == server["address"] &&
-				(*it)["port"] == server["port"]) {
-			it = serverlist.erase(it);
-		} else {
-			++it;
-		}
-	}
-
-	std::string path = ServerList::getFilePath();
-	std::ostringstream ss(std::ios_base::binary);
-	ss << ServerList::serialize(serverlist);
-	if (!fs::safeWriteToFile(path, ss.str()))
-		return false;
-	return true;
-}
-
-// Insert a server to the local favorites list
-bool insert(const ServerListSpec &server)
-{
-	// Remove duplicates
-	ServerList::deleteEntry(server);
-
-	std::vector<ServerListSpec> serverlist = ServerList::getLocal();
-
-	// Insert new server at the top of the list
-	serverlist.insert(serverlist.begin(), server);
-
-	std::string path = ServerList::getFilePath();
-	std::ostringstream ss(std::ios_base::binary);
-	ss << ServerList::serialize(serverlist);
-	if (!fs::safeWriteToFile(path, ss.str()))
-		return false;
-
-	return true;
-}
-
-std::vector<ServerListSpec> deSerialize(const std::string &liststring)
-{
-	std::vector<ServerListSpec> serverlist;
-	Json::Value root;
-	Json::Reader reader;
-	std::istringstream stream(liststring);
-	if (!liststring.size()) {
-		return serverlist;
-	}
-	if (!reader.parse( stream, root ) )
-	{
-		errorstream  << "Failed to parse server list " << reader.getFormattedErrorMessages();
-		return serverlist;
-	}
-	if (root["list"].isArray())
-		for (unsigned int i = 0; i < root["list"].size(); i++)
-			if (root["list"][i].isObject())
-				serverlist.push_back(root["list"][i]);
-	return serverlist;
-}
-
-const std::string serialize(const std::vector<ServerListSpec> &serverlist)
-{
-	Json::Value root;
-	Json::Value list(Json::arrayValue);
-	for (std::vector<ServerListSpec>::const_iterator it = serverlist.begin();
-			it != serverlist.end();
-			++it) {
-		list.append(*it);
-	}
-	root["list"] = list;
-	Json::StyledWriter writer;
-	return writer.write(root);
-}
-
-
-void sendAnnounce(const std::string &action,
-=======
-
-namespace ServerList
-{
-#if USE_CURL
 void sendAnnounce(AnnounceAction action,
->>>>>>> 5.5.0
 		const u16 port,
 		const std::vector<std::string> &clients_names,
 		const double uptime,
@@ -198,11 +47,8 @@ void sendAnnounce(AnnounceAction action,
 		const std::vector<ModSpec> &mods,
 		bool dedicated)
 {
-<<<<<<< HEAD
 #if USE_CURL
-=======
 	static const char *aa_names[] = {"start", "update", "delete"};
->>>>>>> 5.5.0
 	Json::Value server;
 	server["action"] = aa_names[action];
 	server["port"] = port;
@@ -231,13 +77,9 @@ void sendAnnounce(AnnounceAction action,
 		for (const std::string &clients_name : clients_names) {
 			server["clients_list"].append(clients_name);
 		}
-<<<<<<< HEAD
-		if (gameid != "") server["gameid"] = gameid;
-		server["proto"]        = g_settings->get("server_proto");
-=======
 		if (!gameid.empty())
 			server["gameid"] = gameid;
->>>>>>> 5.5.0
+		server["proto"]        = g_settings->get("server_proto");
 	}
 
 	if (action == AA_START) {
@@ -266,10 +108,11 @@ void sendAnnounce(AnnounceAction action,
 	}
 
 	HTTPFetchRequest fetch_request;
-<<<<<<< HEAD
-	fetch_request.timeout = fetch_request.connect_timeout = 59000;
+	fetch_request.caller = HTTPFETCH_PRINT_ERR;
 	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
+	fetch_request.method = HTTP_POST;
 
+	fetch_request.timeout = fetch_request.connect_timeout = 59000;
 #if !MINETEST_PROTO
 	// todo: need to patch masterserver script to parse multipart posts
 	std::string query = std::string("json=") + urlencode(writer.write(server));
@@ -278,17 +121,10 @@ void sendAnnounce(AnnounceAction action,
 	else
 		fetch_request.post_data = query;
 #else
-	fetch_request.post_fields["json"] = writer.write(server);
-=======
-	fetch_request.caller = HTTPFETCH_PRINT_ERR;
-	fetch_request.url = g_settings->get("serverlist_url") + std::string("/announce");
-	fetch_request.method = HTTP_POST;
 	fetch_request.fields["json"] = fastWriteJson(server);
->>>>>>> 5.5.0
 	fetch_request.multipart = true;
 #endif
 
-<<<<<<< HEAD
 	httpfetch_async(fetch_request);
 #endif
 }
@@ -302,7 +138,7 @@ void lan_get() {
 	lan_adv_client.ask();
 }
 
-void lan_apply(std::vector<ServerListSpec> & servers) {
+void lan_apply(std::vector<Json::Value> & servers) {
 	auto lock = lan_adv_client.collected.lock_unique_rec();
 	if (lan_adv_client.collected.size()) {
 		if (servers.size()) {
@@ -323,7 +159,4 @@ bool lan_fresh() {
 }
 
 
-} //namespace ServerList
-=======
 } // namespace ServerList
->>>>>>> 5.5.0

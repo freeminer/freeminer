@@ -636,6 +636,8 @@ set(FMcommon_SRCS
 	stat.cpp
 	fm_liquid.cpp
 	fm_map.cpp
+        fm_abm.cpp
+        fm_clientiface.cpp
 )
 #	FMColoredString.cpp
 

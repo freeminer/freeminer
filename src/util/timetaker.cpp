@@ -26,13 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include <ostream>
 
-<<<<<<< HEAD
 unsigned int g_time_taker_enabled = 0;
 
-TimeTaker::TimeTaker(const std::string &name, u32 *result, TimePrecision prec)
-=======
 TimeTaker::TimeTaker(const std::string &name, u64 *result, TimePrecision prec)
->>>>>>> 5.5.0
 {
 	if (!g_time_taker_enabled) {
 		m_running = false;
@@ -50,15 +46,8 @@ u64 TimeTaker::stop(bool quiet)
 		u64 dtime = porting::getTime(m_precision) - m_time1;
 		if (m_result != nullptr) {
 			(*m_result) += dtime;
-<<<<<<< HEAD
-		}
-		else
-		{
-			if (!quiet && dtime >= g_time_taker_enabled) {
-=======
 		} else {
-			if (!quiet) {
->>>>>>> 5.5.0
+			if (!quiet && dtime >= g_time_taker_enabled) {
 				static const char* const units[] = {
 					"s"  /* PRECISION_SECONDS */,
 					"ms" /* PRECISION_MILLI */,

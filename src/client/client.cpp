@@ -1369,30 +1369,6 @@ AuthMechanism Client::choseAuthMech(const u32 mechs)
 	return AUTH_MECHANISM_NONE;
 }
 
-<<<<<<< HEAD:src/client.cpp
-void Client::sendLegacyInit(const std::string &playerName, const std::string &playerPassword)
-{
-	NetworkPacket pkt(TOSERVER_INIT_LEGACY,
-			1 + PLAYERNAME_SIZE + PASSWORD_SIZE + 2 + 2);
-
-	u16 proto_version_min = g_settings->getFlag("send_pre_v25_init") ?
-		CLIENT_PROTOCOL_VERSION_MIN_LEGACY : CLIENT_PROTOCOL_VERSION_MIN;
-
-	pkt << (u8) SER_FMT_VER_HIGHEST_READ;
-
-	std::string tmp = playerName;
-	tmp.resize(tmp.size()+PLAYERNAME_SIZE);
-	pkt.putRawString(tmp.c_str(),PLAYERNAME_SIZE);
-	tmp = playerPassword;
-	tmp.resize(tmp.size()+PASSWORD_SIZE);
-	pkt.putRawString(tmp.c_str(), PASSWORD_SIZE);
-	pkt << (u16) proto_version_min << (u16) CLIENT_PROTOCOL_VERSION_MAX;
-
-	Send(&pkt);
-}
-
-=======
->>>>>>> 5.5.0:src/client/client.cpp
 void Client::sendInit(const std::string &playerName)
 {
 	NetworkPacket pkt(TOSERVER_INIT, 1 + 2 + 2 + (1 + playerName.size()));

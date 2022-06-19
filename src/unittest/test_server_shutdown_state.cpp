@@ -66,60 +66,15 @@ void TestServerShutdownState::runTests(IGameDef *gamedef)
 
 void TestServerShutdownState::testInit()
 {
-<<<<<<< HEAD:src/unittest/test_player.cpp
-	RemotePlayer rplayer("testplayer_save", gamedef->idef());
-	PlayerSAO sao(NULL, 1, false);
-	sao.initialize(&rplayer, std::set<std::string>());
-	rplayer.setPlayerSAO(&sao);
-	sao.setBreath(10);
-	sao.setHPRaw(8);
-	sao.setYaw(0.1f);
-	sao.setPitch(0.6f);
-	sao.setBasePosition(v3f(450.2f, -15.7f, 68.1f));
-#if WTF
-	rplayer.save(".", gamedef);
-	UASSERT(fs::PathExists("testplayer_save"));
-#endif
-=======
 	Server::ShutdownState ss;
 	UASSERT(!ss.is_requested);
 	UASSERT(!ss.should_reconnect);
 	UASSERT(ss.message.empty());
 	UASSERT(ss.m_timer == 0.0f);
->>>>>>> 5.5.0:src/unittest/test_server_shutdown_state.cpp
 }
 
 void TestServerShutdownState::testReset()
 {
-<<<<<<< HEAD:src/unittest/test_player.cpp
-	RemotePlayer rplayer("testplayer_load", gamedef->idef());
-	PlayerSAO sao(NULL, 1, false);
-	sao.initialize(&rplayer, std::set<std::string>());
-	rplayer.setPlayerSAO(&sao);
-	sao.setBreath(10);
-	sao.setHPRaw(8);
-	sao.setYaw(0.1f);
-	sao.setPitch(0.6f);
-	sao.setBasePosition(v3f(450.2f, -15.7f, 68.1f));
-#if WTF
-	rplayer.save(".", gamedef);
-	UASSERT(fs::PathExists("testplayer_load"));
-#endif
-
-	RemotePlayer rplayer_load("testplayer_load", gamedef->idef());
-	PlayerSAO sao_load(NULL, 2, false);
-	std::ifstream is("testplayer_load", std::ios_base::binary);
-	UASSERT(is.good());
-	rplayer_load.deSerialize(is, "testplayer_load", &sao_load);
-	is.close();
-
-	UASSERT(rplayer_load.getName() == "testplayer_load");
-	UASSERT(sao_load.getBreath() == 10);
-	UASSERT(sao_load.getHP() == 8);
-	UASSERT(sao_load.getYaw() == 0.1f);
-	UASSERT(sao_load.getPitch() == 0.6f);
-	UASSERT(sao_load.getBasePosition() == v3f(450.2f, -15.7f, 68.1f));
-=======
 	Server::ShutdownState ss;
 	ss.reset();
 	UASSERT(!ss.is_requested);
@@ -164,5 +119,4 @@ void TestServerShutdownState::testTick()
 	UASSERT(ss.should_reconnect);
 	UASSERT(ss.message == "testtrigger");
 	UASSERT(ss.m_timer == 0.0f);
->>>>>>> 5.5.0:src/unittest/test_server_shutdown_state.cpp
 }

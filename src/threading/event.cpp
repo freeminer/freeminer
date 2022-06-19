@@ -25,35 +25,6 @@ DEALINGS IN THE SOFTWARE.
 
 #include "threading/event.h"
 #include "threading/mutex_auto_lock.h"
-<<<<<<< HEAD
-
-Event::Event()
-{
-#ifndef USE_CPP11_MUTEX
-#	if USE_WIN_MUTEX
-	event = CreateEvent(NULL, false, false, NULL);
-#	else
-	pthread_cond_init(&cv, NULL);
-	pthread_mutex_init(&mutex, NULL);
-	notified = false;
-#	endif
-#endif
-}
-
-#ifndef USE_CPP11_MUTEX
-Event::~Event()
-{
-#if USE_WIN_MUTEX
-	CloseHandle(event);
-#else
-	pthread_cond_destroy(&cv);
-	pthread_mutex_destroy(&mutex);
-#endif
-}
-#endif
-
-=======
->>>>>>> 5.5.0
 
 void Event::wait()
 {

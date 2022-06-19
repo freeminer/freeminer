@@ -50,11 +50,8 @@ static TestConnection g_test_instance;
 
 void TestConnection::runTests(IGameDef *gamedef)
 {
-<<<<<<< HEAD
 #if MINETEST_PROTO
-=======
 	TEST(testNetworkPacketSerialize);
->>>>>>> 5.5.0
 	TEST(testHelpers);
 	TEST(testConnectSendReceive);
 #endif

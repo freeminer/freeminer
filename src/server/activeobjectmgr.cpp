@@ -27,13 +27,25 @@ namespace server
 
 void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)> &cb)
 {
+
 	std::vector<u16> objects_to_remove;
+
+   {
+	auto lock = m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return;
+
 	for (auto &it : m_active_objects) {
 		if (cb(it.second, it.first)) {
 			// Id to be removed from m_active_objects
 			objects_to_remove.push_back(it.first);
 		}
 	}
+   }
+
+	if (objects_to_remove.empty())
+		return;
+	auto lock = m_active_objects.lock_unique_rec();
 
 	// Remove references from m_active_objects
 	for (u16 i : objects_to_remove) {
@@ -53,7 +65,7 @@ void ActiveObjectMgr::step(
 // clang-format off
 bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 {
-	assert(obj); // Pre-condition
+	if (!obj) return false; // Pre-condition
 	if (obj->getId() == 0) {
 		u16 new_id = getFreeId();
 		if (new_id == 0) {
@@ -87,11 +99,12 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 		return false;
 	}
 
-	m_active_objects[obj->getId()] = obj;
-
+	m_active_objects.set(obj->getId(),obj);
+#if !NDEBUG
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 			<< "Added id=" << obj->getId() << "; there are now "
 			<< m_active_objects.size() << " active objects." << std::endl;
+#endif
 	return true;
 }
 
@@ -146,6 +159,11 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		f32 player_radius, std::set<u16> &current_objects,
 		std::queue<u16> &added_objects)
 {
+	auto lock = m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())                            
+		return;                                    
+
+	int count = 0;
 	/*
 		Go through the object list,
 		- discard removed/deactivated objects,
@@ -178,6 +196,11 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 			continue;
 		// Add to added_objects
 		added_objects.push(id);
+
+
+		if (++count > 20)
+			break;   
+	
 	}
 }
 

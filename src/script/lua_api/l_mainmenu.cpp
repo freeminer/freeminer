@@ -369,52 +369,6 @@ int ModApiMainMenu::l_get_content_info(lua_State *L)
 	lua_pushstring(L, spec.path.c_str());
 	lua_setfield(L, -2, "path");
 
-<<<<<<< HEAD
-	std::vector<ServerListSpec> servers_cache;
-	std::mutex servers_cache_mutex;
-
-/******************************************************************************/
-int ModApiMainMenu::l_get_favorites(lua_State *L)
-{
-	std::string listtype = "local";
-
-	if (!lua_isnone(L,1)) {
-		listtype = luaL_checkstring(L,1);
-	}
-
-	std::vector<ServerListSpec> servers;
-
-	if(listtype == "online") {
-		ServerList::lan_get();
-		{
-		MutexAutoLock lock(servers_cache_mutex);
-		servers_cache =
-		servers = ServerList::getOnline();
-		}
-		ServerList::lan_apply(servers);
-	} else if (listtype == "sleep_cache") {
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		if (ServerList::lan_fresh()) {
-			{
-			MutexAutoLock lock(servers_cache_mutex);
-			servers = servers_cache;
-			}
-			ServerList::lan_apply(servers);
-		}
-	} else {
-		servers = ServerList::getLocal();
-	}
-
-	Json::Value root(Json::arrayValue);
-	for (unsigned int i = 0; i < servers.size(); i++)
-	{
-		root[i] = servers[i];
-	}
-	lua_pushnil(L);
-	int nullindex = lua_gettop(L);
-	if(!push_json_value(L, root, nullindex)) {
-	}
-=======
 	if (spec.type == "mod") {
 		ModSpec spec;
 		spec.path = path;
@@ -438,7 +392,6 @@ int ModApiMainMenu::l_get_favorites(lua_State *L)
 		}
 		lua_setfield(L, -2, "optional_depends");
 	}
->>>>>>> 5.5.0
 
 	return 1;
 }
@@ -762,22 +715,17 @@ bool ModApiMainMenu::mayModifyPath(std::string path)
 	if (fs::PathStartsWith(path, fs::TempPath()))
 		return true;
 
-<<<<<<< HEAD
-	/* games */
-	if (fs::PathStartsWith(path,fs::RemoveRelativePathComponents(porting::path_share + DIR_DELIM + "games" + GAMES_VERSION)))
-=======
 	std::string path_user = fs::RemoveRelativePathComponents(porting::path_user);
 
 	if (fs::PathStartsWith(path, path_user + DIR_DELIM "client"))
 		return true;
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "games"))
+	if (fs::PathStartsWith(path, path_user + DIR_DELIM "games" + GAMES_VERSION))
 		return true;
 	if (fs::PathStartsWith(path, path_user + DIR_DELIM "mods"))
 		return true;
 	if (fs::PathStartsWith(path, path_user + DIR_DELIM "textures"))
 		return true;
 	if (fs::PathStartsWith(path, path_user + DIR_DELIM "worlds"))
->>>>>>> 5.5.0
 		return true;
 
 	if (fs::PathStartsWith(path, fs::RemoveRelativePathComponents(porting::path_cache)))
@@ -996,25 +944,6 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 /******************************************************************************/
 void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 {
-<<<<<<< HEAD
-
-	API_FCT(get_worlds);
-	API_FCT(get_games);
-	API_FCT(get_favorites);
-	API_FCT(get_mapgen_names);
-	API_FCT(get_modpath);
-	API_FCT(get_gamepath);
-	API_FCT(get_texturepath);
-	API_FCT(get_texturepath_share);
-	API_FCT(create_dir);
-	API_FCT(delete_dir);
-	API_FCT(copy_dir);
-	//API_FCT(extract_zip); //TODO remove dependency to GuiEngine
-	API_FCT(download_file);
-	API_FCT(get_modstore_details);
-	API_FCT(get_modstore_list);
-	//API_FCT(gettext); (gettext lib isn't threadsafe)
-=======
 	API_FCT(get_worlds);
 	API_FCT(get_games);
 	API_FCT(get_mapgen_names);
@@ -1037,6 +966,5 @@ void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 	API_FCT(get_min_supp_proto);
 	API_FCT(get_max_supp_proto);
 	API_FCT(gettext);
->>>>>>> 5.5.0
 }
 

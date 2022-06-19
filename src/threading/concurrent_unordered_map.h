@@ -59,7 +59,7 @@ public:
 		return full_type::empty();
 	}
 
-	size_type size() {
+	size_type size() const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::size();
 	}

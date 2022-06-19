@@ -265,9 +265,12 @@ public:
 		-------------------------------------------
 	*/
 
-	ServerActiveObject* getActiveObject(u16 id)
+	ServerActiveObject* getActiveObject(u16 id, bool removed = false)
 	{
-		return m_ao_manager.getActiveObject(id);
+		const auto obj = m_ao_manager.getActiveObject(id);
+		if (!removed && (!obj || obj->isGone()))
+			return nullptr;
+		return obj;
 	}
 
 	/*
@@ -304,7 +307,8 @@ public:
 	*/
 	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
-		std::set<u16> &current_objects,
+		//std::set<u16> &current_objects,
+		maybe_concurrent_unordered_map<u16, bool> &current_objects,
 		std::queue<u16> &removed_objects);
 
 	/*
@@ -387,7 +391,7 @@ public:
 		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
 	RemotePlayer *getPlayer(const session_t peer_id);
-	RemotePlayer *getPlayer(const char* name);
+	RemotePlayer *getPlayer(const std::string &name);
 	const std::vector<RemotePlayer *> getPlayers() const { return m_players; }
 	u32 getPlayerCount() const { return m_players.size(); }
 
@@ -412,17 +416,17 @@ private:
 
 	// is weather active in this environment?
 public:
-	bool m_use_weather;
-	bool m_use_weather_biome;
+	bool m_use_weather = true;
+	bool m_use_weather_biome = true;
 private:
-	bool m_more_threads;
+	bool m_more_threads = true;
 	ABMHandler m_abmhandler;
 	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3POS> m_abm_random_blocks;
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
-	u32 m_game_time_start;
+	u32 m_game_time_start = 0;
 public:
 	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
 private:
@@ -450,17 +454,17 @@ private:
 	std::vector<u16> objects_to_remove;
 	std::vector<ServerActiveObject*> objects_to_delete;
 	//loop breakers
-	u32 m_active_objects_last;
-	u32 m_active_block_abm_last;
-	float m_active_block_abm_dtime;
-	float m_active_block_abm_dtime_counter;
-	u32 m_active_block_timer_last;
+	u32 m_active_objects_last = 0;
+	u32 m_active_block_abm_last = 0;
+	float m_active_block_abm_dtime = 0;
+	float m_active_block_abm_dtime_counter = 0;
+	u32 m_active_block_timer_last = 0;
 	std::set<v3s16> m_blocks_added;
-	u32 m_blocks_added_last;
-	u32 m_active_block_analyzed_last;
+	u32 m_blocks_added_last = 0;
+	u32 m_active_block_analyzed_last = 0;
 	std::mutex m_max_lag_estimate_mutex;
-	u32 m_active_objects_client_last;
-	u32 m_move_max_loop;
+	u32 m_active_objects_client_last = 0;
+	u32 m_move_max_loop = 0;
 //end of freeminer
 
 
@@ -494,7 +498,7 @@ private:
 	/*
 		Remove all objects that satisfy (isGone() && m_known_by_count==0)
 	*/
-	void removeRemovedObjects();
+	void removeRemovedObjects(u32 max_cycle_ms = 1000);
 
 	/*
 		Convert stored objects from block to active
@@ -566,7 +570,7 @@ private:
 	float m_max_lag_estimate = 0.1f;
 
 	// peer_ids in here should be unique, except that there may be many 0s
-	std::vector<RemotePlayer*> m_players;
+	concurrent_vector<RemotePlayer*> m_players;
 
 	PlayerDatabase *m_player_database = nullptr;
 	AuthDatabase *m_auth_database = nullptr;

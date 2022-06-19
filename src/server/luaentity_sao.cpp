@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "log_types.h"
 #include "luaentity_sao.h"
 #include "collision.h"
 #include "constants.h"
@@ -69,7 +70,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos, const std::string &d
 		break;
 	}
 	// create object
-	infostream << "LuaEntitySAO::create(name=\"" << name << "\" state=\""
+	verbosestream << "LuaEntitySAO::create(name=\"" << name << "\" state=\""
 			 << state << "\")" << std::endl;
 
 	m_init_name = name;
@@ -130,10 +131,10 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 {
 	if(!m_properties_sent)
 	{
-		m_properties_sent = true;
 		std::string str = getPropertyPacket();
 		// create message and add to list
 		m_messages_out.emplace(getId(), true, str);
+		m_properties_sent = true;
 	}
 
 	// If attached, check that our parent is still there. If it isn't, detach.
@@ -152,7 +153,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 	// Each frame, parent position is copied if the object is attached, otherwise it's calculated normally
 	// If the object gets detached this comes into effect automatically from the last known origin
 	if (auto *parent = getParent()) {
-		m_base_position = parent->getBasePosition();
+		setBasePosition(parent->getBasePosition());
 		m_velocity = v3f(0,0,0);
 		m_acceleration = v3f(0,0,0);
 	} else {
@@ -161,7 +162,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			box.MinEdge *= BS;
 			box.MaxEdge *= BS;
 			f32 pos_max_d = BS*0.25; // Distance per iteration
-			v3f p_pos = m_base_position;
+			v3f p_pos = getBasePosition();
 			v3f p_velocity = m_velocity;
 			v3f p_acceleration = m_acceleration;
 			moveresult = collisionMoveSimple(m_env, m_env->getGameDef(),
@@ -171,12 +172,14 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			moveresult_p = &moveresult;
 
 			// Apply results
-			m_base_position = p_pos;
+			setBasePosition(p_pos);
 			m_velocity = p_velocity;
 			m_acceleration = p_acceleration;
 		} else {
-			m_base_position += dtime * m_velocity + 0.5 * dtime
+			auto p_pos = getBasePosition();
+			p_pos += dtime * m_velocity + 0.5 * dtime
 					* dtime * m_acceleration;
+			setBasePosition(p_pos);
 			m_velocity += dtime * m_acceleration;
 		}
 
@@ -198,7 +201,10 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		}
 	}
 
-	if(m_registered) {
+	if(m_registered
+		&& (getType() < ACTIVEOBJECT_TYPE_LUACREATURE
+        || getType() > ACTIVEOBJECT_TYPE_LUAFALLING)
+    ) {
 		m_env->getScriptIface()->luaentity_Step(m_id, dtime, moveresult_p);
 	}
 
@@ -214,7 +220,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		} else if(m_last_sent_position_timer > 0.2){
 			minchange = 0.05*BS;
 		}
-		float move_d = m_base_position.getDistanceFrom(m_last_sent_position);
+		float move_d = getBasePosition().getDistanceFrom(m_last_sent_position);
 		move_d += m_last_sent_move_precision;
 		float vel_d = m_velocity.getDistanceFrom(m_last_sent_velocity);
 		if (move_d > minchange || vel_d > minchange ||
@@ -233,12 +239,15 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
+	auto lock = lock_shared_rec();
+       try {
+
 	// PROTOCOL_VERSION >= 37
 	writeU8(os, 1); // version
 	os << serializeString16(""); // name
 	writeU8(os, 0); // is_player
 	writeU16(os, getId()); //id
-	writeV3F32(os, m_base_position);
+	writeV3F32(os, getBasePosition());
 	writeV3F32(os, m_rotation);
 	writeU16(os, m_hp);
 
@@ -268,6 +277,11 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, message_count);
 	std::string serialized = msg_os.str();
 	os.write(serialized.c_str(), serialized.size());
+
+    } catch (const std::exception &e){
+           errorstream << "Catn serialize object id="<<getId()<< " pos="<< getBasePosition() << std::endl;
+           return "";
+    }
 
 	// return result
 	return os.str();
@@ -372,7 +386,7 @@ void LuaEntitySAO::setPos(const v3f &pos)
 {
 	if(isAttached())
 		return;
-	m_base_position = pos;
+	setBasePosition(pos);
 	sendPosition(false, true);
 }
 
@@ -380,7 +394,7 @@ void LuaEntitySAO::moveTo(v3f pos, bool continuous)
 {
 	if(isAttached())
 		return;
-	m_base_position = pos;
+	setBasePosition(pos);
 	if(!continuous)
 		sendPosition(true, true);
 }
@@ -394,7 +408,7 @@ std::string LuaEntitySAO::getDescription()
 {
 	std::ostringstream oss;
 	oss << "LuaEntitySAO \"" << m_init_name << "\" ";
-	auto pos = floatToInt(m_base_position, BS);
+	auto pos = floatToInt(getBasePosition(), BS);
 	oss << "at " << PP(pos);
 	return oss.str();
 }
@@ -498,10 +512,10 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	// Send attachment updates instantly to the client prior updating position
 	sendOutdatedData();
 
-	m_last_sent_move_precision = m_base_position.getDistanceFrom(
+	m_last_sent_move_precision = getBasePosition().getDistanceFrom(
 			m_last_sent_position);
 	m_last_sent_position_timer = 0;
-	m_last_sent_position = m_base_position;
+	m_last_sent_position = getBasePosition();
 	m_last_sent_velocity = m_velocity;
 	//m_last_sent_acceleration = m_acceleration;
 	m_last_sent_rotation = m_rotation;
@@ -509,7 +523,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	float update_interval = m_env->getSendRecommendedInterval();
 
 	std::string str = generateUpdatePositionCommand(
-		m_base_position,
+		getBasePosition(),
 		m_velocity,
 		m_acceleration,
 		m_rotation,
@@ -529,8 +543,9 @@ bool LuaEntitySAO::getCollisionBox(aabb3f *toset) const
 		toset->MinEdge = m_prop.collisionbox.MinEdge * BS;
 		toset->MaxEdge = m_prop.collisionbox.MaxEdge * BS;
 
-		toset->MinEdge += m_base_position;
-		toset->MaxEdge += m_base_position;
+		const auto bpos = getBasePosition();
+		toset->MinEdge += bpos;
+		toset->MaxEdge += bpos;
 
 		return true;
 	}
