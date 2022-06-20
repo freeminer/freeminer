@@ -22,7 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "../irrlichttypes_extrabloated.h"
 #include "activeobject.h"
 #include <unordered_map>
 #include <unordered_set>

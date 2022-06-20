@@ -164,48 +164,27 @@ EmergeManager::EmergeManager(Server *server)
 	g_settings->getS16NoEx("num_emerge_threads", nthreads);
 	// If automatic, leave a proc for the main thread and one for
 	// some other misc thread
-<<<<<<< HEAD
-	s16 nthreads = 0;
-	if (!g_settings->getS16NoEx("num_emerge_threads", nthreads))
-	{}
 #if ENABLE_THREADS
-	if (nthreads < 1)
-=======
 	if (nthreads == 0)
->>>>>>> 5.5.0
 		nthreads = Thread::getNumberOfProcessors() - 2;
 #endif
 	if (nthreads < 1)
 		nthreads = 1;
 
-<<<<<<< HEAD
-	m_qlimit_total = g_settings->getU16("emergequeue_limit_total");
-	if (!g_settings->getU16NoEx("emergequeue_limit_diskonly", m_qlimit_diskonly))
-		{ }
-	if (!g_settings->getU16NoEx("emergequeue_limit_generate", m_qlimit_generate))
-		{ }
-	//errorstream<<"==> qlimit_generate="<<qlimit_generate<<"  qlimit_diskonly="<<qlimit_diskonly<<" qlimit_total="<<qlimit_total<<std::endl;
-
-	// don't trust user input for something very important like this
+	m_qlimit_total = g_settings->getU32("emergequeue_limit_total");
 	if (m_qlimit_total < 1)
 		m_qlimit_total = nthreads * 128;
-	if (m_qlimit_diskonly < 1)
-		m_qlimit_diskonly = nthreads * 100;
-	if (m_qlimit_generate < 1)
-		m_qlimit_generate = nthreads * 32;
-=======
-	m_qlimit_total = g_settings->getU32("emergequeue_limit_total");
+
 	// FIXME: these fallback values are probably not good
 	if (!g_settings->getU32NoEx("emergequeue_limit_diskonly", m_qlimit_diskonly))
-		m_qlimit_diskonly = nthreads * 5 + 1;
+		m_qlimit_diskonly = nthreads * 100;
 	if (!g_settings->getU32NoEx("emergequeue_limit_generate", m_qlimit_generate))
-		m_qlimit_generate = nthreads + 1;
+		m_qlimit_generate = nthreads * 32;
 
 	// don't trust user input for something very important like this
 	m_qlimit_total = rangelim(m_qlimit_total, 1, 1000000);
 	m_qlimit_diskonly = rangelim(m_qlimit_diskonly, 1, 1000000);
 	m_qlimit_generate = rangelim(m_qlimit_generate, 1, 1000000);
->>>>>>> 5.5.0
 
 	for (s16 i = 0; i < nthreads; i++)
 		m_threads.push_back(new EmergeThread(server, i));
@@ -274,28 +253,18 @@ void EmergeManager::initMapgens(MapgenParams *params)
 
 	mgparams = params;
 
+	biomemgr->mapgen_params = params;
+
 	v3s16 csize = v3s16(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
 	biomegen = biomemgr->createBiomeGen(BIOMEGEN_ORIGINAL, params->bparams, csize);
 
 	for (u32 i = 0; i != m_threads.size(); i++) {
-<<<<<<< HEAD
-		Mapgen *mg = Mapgen::createMapgen(params->mgtype, i, params, this);
-		if (!mg)
-			continue;
-		m_mapgens.push_back(mg);
-	}
-
-	biomemgr->mapgen_params = params;
-
-	return true;
-=======
 		EmergeParams *p = new EmergeParams(this, biomegen,
 			biomemgr, oremgr, decomgr, schemmgr);
 		infostream << "EmergeManager: Created params " << p
 			<< " for thread " << i << std::endl;
 		m_mapgens.push_back(Mapgen::createMapgen(params->mgtype, params, p));
 	}
->>>>>>> 5.5.0
 }
 
 
@@ -731,14 +700,10 @@ void *EmergeThread::run()
 	m_mapgen = m_emerge->m_mapgens[id];
 	enable_mapgen_debug_info = m_emerge->enable_mapgen_debug_info;
 
+    try {
 	reg("EmergeThread" + itos(id), 5);
 
 	while (!stopRequested()) {
-<<<<<<< HEAD
-	try {
-		std::map<v3s16, MapBlock *> modified_blocks;
-=======
->>>>>>> 5.5.0
 		BlockEmergeData bedata;
 		BlockMakeData bmdata;
 		EmergeAction action;
@@ -777,20 +742,15 @@ void *EmergeThread::run()
 			verbosestream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
 		}
 
-<<<<<<< HEAD
-		if (modified_blocks.size() > 0)
+		if (!modified_blocks.empty())
 			m_server->SetBlocksNotSent(/*modified_blocks*/);
+		modified_blocks.clear();
 
 		if (m_mapgen->heat_cache.size() > 1000) {
 			m_mapgen->heat_cache.clear();
 			m_mapgen->humidity_cache.clear();
 		}
-=======
-		if (!modified_blocks.empty())
-			m_server->SetBlocksNotSent(modified_blocks);
-		modified_blocks.clear();
 	}
->>>>>>> 5.5.0
 	} catch (VersionMismatchException &e) {
 		std::ostringstream err;
 		err << "World data version mismatch in MapBlock " << PP(pos) << std::endl
@@ -799,7 +759,6 @@ void *EmergeThread::run()
 			<< "See debug.txt." << std::endl
 			<< "World probably saved by a newer version of " PROJECT_NAME_C "."
 			<< std::endl;
-		debug_stacks_print();
 		m_server->setAsyncFatalError(err.str());
 	} catch (SerializationError &e) {
 		std::ostringstream err;
@@ -809,11 +768,9 @@ void *EmergeThread::run()
 			<< "See debug.txt." << std::endl
 			<< "You can ignore this using [ignore_world_load_errors = true]."
 			<< std::endl;
-		debug_stacks_print();
 		m_server->setAsyncFatalError(err.str());
-	} catch (std::exception &e) {
+	} catch (const std::exception &e) {
 		errorstream << m_name << ": exception at " << pos << " : " << e.what() << std::endl;
-	}
 	}
 
 	cancelPendingItems();

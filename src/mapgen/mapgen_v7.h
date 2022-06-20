@@ -86,7 +86,7 @@ struct MapgenV7Params : public MapgenParams {
 	MapgenV7Params();
 	~MapgenV7Params() = default;
 
-	void readParams(Settings *settings);
+	void readParams(const Settings *settings);
 	void writeParams(Settings *settings) const;
 	void setDefaultSettings(Settings *settings);
 };

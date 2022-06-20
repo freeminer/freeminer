@@ -1,3 +1,6 @@
+#include "server.h"
+#include "util/timetaker.h"
+
 class ServerThread : public thread_pool
 {
 public:
@@ -15,7 +18,6 @@ private:
 
 void *ServerThread::run()
 {
-	DSTACK(FUNCTION_NAME);
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
@@ -100,8 +102,6 @@ public:
 	{}
 
 	void * run() {
-		DSTACK(FUNCTION_NAME);
-
 		auto time = porting::getTimeMs();
 		while(!stopRequested()) {
 			auto time_now = porting::getTimeMs();
@@ -394,3 +394,12 @@ void Server::maintenance_end() {
 void Server::SendPunchPlayer(u16 peer_id, v3f speed) { }
 #endif
 
+KeyValueStorage &ServerEnvironment::getKeyValueStorage(const std::string & name) {
+	if (name.empty()) {
+		name = "key_value_storage";
+	}
+	if (!m_key_value_storage.count(name)) {
+		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name), std::forward_as_tuple(m_path_world, name));
+	}
+	return m_key_value_storage.at(name);
+}

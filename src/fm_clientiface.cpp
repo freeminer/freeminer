@@ -1,6 +1,11 @@
 #include "clientiface.h"
 #include "map.h"
-
+#include "profiler.h"
+#include "remoteplayer.h"
+#include "server/player_sao.h"
+#include "serverenvironment.h"
+#include "server.h"
+#include "emerge.h"
 
 //VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
@@ -322,7 +327,7 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Do not go over-limit
 			*/
-			if (blockpos_over_limit(p))
+			if (blockpos_over_max_limit(p))
 				continue;
 
 			// If this is true, inexistent block will be made from scratch
@@ -432,21 +437,24 @@ int RemoteClient::GetNextBlocks (
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
+/* TODO
 				if (block->getLightingExpired()) {
 					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
 					env->getServerMap().lighting_modified_add(p, d);
 					if (block_sent && can_skip)
 						continue;
 				}
-
+*/
 				if (block->lighting_broken > 0 && (block_sent || can_skip))
 					continue;
 
 				// Block is valid if lighting is up-to-date and data exists
-				if(block->isValid() == false)
+/*
+				if(block->is isValid() == false)
 				{
 					block_is_invalid = true;
 				}
+*/
 
 				if(block->isGenerated() == false)
 				{

@@ -139,6 +139,9 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
 
 void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 {
+
+	TimeTaker timer0("ClientEnvironment::step()");
+
 	/* Step time of day */
 	stepTimeOfDay(dtime);
 
@@ -158,6 +161,7 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 	bool is_climbing = lplayer->is_climbing;
 
 	f32 player_speed = lplayer->getSpeed().getLength();
+	v3f pf = lplayer->getPosition();
 
 	/*
 		Maximum position increment
@@ -175,13 +179,24 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 	if(dtime_max_increment > 0.01)
 		dtime_max_increment = 0.01;
 
+	if (dtime_max_increment * m_move_max_loop < dtime)
+		dtime_max_increment = dtime / m_move_max_loop;
+
+	static constexpr float DTIME_MAX = 2.0;
+
 	// Don't allow overly huge dtime
-	if(dtime > 0.5)
-		dtime = 0.5;
+	if(dtime > DTIME_MAX)
+		dtime = DTIME_MAX;
+
+	if (player_speed <= 0.01 && dtime < 0.1)
+		dtime_max_increment = dtime;
 
 	/*
 		Stuff that has a maximum time increment
 	*/
+
+	u32 breaked = 0, lend_ms = porting::getTimeMs() + max_cycle_ms;
+	u32 loopcount = 0;
 
 	u32 steps = ceil(dtime / dtime_max_increment);
 	f32 dtime_part = dtime / steps;
@@ -195,11 +210,18 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 
 		// Apply physics
 		if (!free_move) {
+			f32 resistance_factor = 0.3f;
 			// Gravity
 			v3f speed = lplayer->getSpeed();
-			if (!is_climbing && !lplayer->in_liquid)
+			if (!is_climbing && !lplayer->in_liquid) {
 				speed.Y -= lplayer->movement_gravity *
 					lplayer->physics_override_gravity * dtime_part * 2.0f;
+
+				resistance_factor = 0.97; // todo maybe depend on speed; 0.96 = ~100 nps max
+				resistance_factor += (1.0 - resistance_factor) *
+									(1 - (MAX_MAP_GENERATION_LIMIT - pf.Y / BS) /
+													MAX_MAP_GENERATION_LIMIT);
+			}
 
 			// Liquid floating / sinking
 			if (!is_climbing && lplayer->in_liquid &&
@@ -212,11 +234,11 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 				// How much the node's move_resistance blocks movement, ranges
 				// between 0 and 1. Should match the scale at which liquid_viscosity
 				// increase affects other liquid attributes.
-				static const f32 resistance_factor = 0.3f;
 
 				v3f d_wanted;
 				bool in_liquid_stable = lplayer->in_liquid_stable || lplayer->in_liquid;
 				if (in_liquid_stable) {
+					resistance_factor = 0.3;
 					d_wanted = -speed / lplayer->movement_liquid_fluidity;
 				} else {
 					d_wanted = -speed / BS;
@@ -226,6 +248,9 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 					if (dl > lplayer->movement_liquid_fluidity_smooth)
 						dl = lplayer->movement_liquid_fluidity_smooth;
 				}
+
+				if (lplayer->move_resistance < 1) // rewrite this shit
+					dl /= 2;
 
 				dl *= (lplayer->move_resistance * resistance_factor) +
 					(1 - resistance_factor);
@@ -242,7 +267,19 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 		*/
 		lplayer->move(dtime_part, this, position_max_increment,
 			&player_collisions);
+
+		++loopcount;
+		if (porting::getTimeMs() >= lend_ms) {
+			breaked = loopcount;
+			break;
+		}
 	}
+
+	if (breaked && m_move_max_loop > loopcount)
+		--m_move_max_loop;
+	if (!breaked && m_move_max_loop < 5)
+		++m_move_max_loop;
+
 
 	bool player_immortal = false;
 	f32 player_fall_factor = 1.0f;
@@ -255,17 +292,19 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 		player_fall_factor = 1.0f + (float)addp_p / 100.0f;
 	}
 
+	if (dtime < DTIME_MAX || lplayer->getSpeed().getLength() > PLAYER_FALL_TOLERANCE_SPEED)
 	for (const CollisionInfo &info : player_collisions) {
 		v3f speed_diff = info.new_speed - info.old_speed;;
 		// Handle only fall damage
 		// (because otherwise walking against something in fast_move kills you)
-		if (speed_diff.Y < 0 || info.old_speed.Y >= 0)
+		if ((speed_diff.Y < 0 || info.old_speed.Y >= 0)
+			&& speed_diff.getLength() <= lplayer->movement_speed_fast * 1.1)
 			continue;
 		// Get rid of other components
 		speed_diff.X = 0;
 		speed_diff.Z = 0;
 		f32 pre_factor = 1; // 1 hp per node/s
-		f32 tolerance = BS*14; // 5 without damage
+		f32 tolerance = PLAYER_FALL_TOLERANCE_SPEED; // 5 without damage
 		if (info.type == COLLISION_NODE) {
 			const ContentFeatures &f = m_client->ndef()->
 				get(m_map->getNode(info.node_p));
@@ -395,6 +434,9 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 			<<e.what()
 			<<": init_data="<<serializeJsonString(init_data)
 			<<std::endl;
+
+			delete obj;
+			return;
 	}
 
 	u16 new_id = addActiveObject(obj);

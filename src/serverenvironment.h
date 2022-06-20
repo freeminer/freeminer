@@ -199,7 +199,7 @@ public:
 	}
 
 	//std::set<v3s16> m_list;
-	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
+	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list; // TODO: make concurent_set and replace
 	std::set<v3s16> m_abm_list;
 	std::set<v3s16> m_forceloaded_list;
 
@@ -405,7 +405,7 @@ public:
 // freeminer
 
 public:
-	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
+	KeyValueStorage &getKeyValueStorage(const std::string & name = "key_value_storage");
 	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
 	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
 			const ItemStack& items);
@@ -463,8 +463,6 @@ private:
 	u32 m_blocks_added_last = 0;
 	u32 m_active_block_analyzed_last = 0;
 	std::mutex m_max_lag_estimate_mutex;
-	u32 m_active_objects_client_last = 0;
-	u32 m_move_max_loop = 0;
 //end of freeminer
 
 

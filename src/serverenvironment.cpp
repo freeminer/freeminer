@@ -569,6 +569,7 @@ ServerMap & ServerEnvironment::getServerMap()
 
 RemotePlayer *ServerEnvironment::getPlayer(const session_t peer_id)
 {
+	auto lock = m_players.lock_shared_rec();
 	for (RemotePlayer *player : m_players) {
 		if (player->getPeerId() == peer_id)
 			return player;
@@ -578,6 +579,7 @@ RemotePlayer *ServerEnvironment::getPlayer(const session_t peer_id)
 
 RemotePlayer *ServerEnvironment::getPlayer(const std::string &name)
 {
+	auto lock = m_players.lock_shared_rec();
 	for (RemotePlayer *player : m_players) {
 		if (player->getName() == name)
 			return player;
@@ -713,9 +715,9 @@ void ServerEnvironment::saveMeta()
 
 	if(!fs::safeWriteToFile(path, ss.str()))
 	{
-		infostream<<"ServerEnvironment::saveMeta(): Failed to write "
+		errorstream<<"ServerEnvironment::saveMeta(): Failed to write "
 			<<path<<std::endl;
-		throw SerializationError("Couldn't save env meta");
+		//throw SerializationError("Couldn't save env meta");
 	}
 }
 
@@ -739,16 +741,18 @@ void ServerEnvironment::loadMeta()
 	// Open file and deserialize
 	std::ifstream is(path.c_str(), std::ios_base::binary);
 	if (!is.good()) {
-		infostream << "ServerEnvironment::loadMeta(): Failed to open "
+		errorstream << "ServerEnvironment::loadMeta(): Failed to open "
 			<< path << std::endl;
-		throw SerializationError("Couldn't load env meta");
+		//throw SerializationError("Couldn't load env meta");
 	}
 
 	Settings args("EnvArgsEnd");
 
 	if (!args.parseConfigLines(is)) {
+/*
 		throw SerializationError("ServerEnvironment::loadMeta(): "
 			"EnvArgsEnd not found!");
+*/	
 	}
 
 	try {
@@ -1320,7 +1324,8 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 	// Grab a reference on each loaded block to avoid unloading it
 	for (v3s16 p : loaded_blocks) {
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-		assert(block != NULL);
+		if (!block)
+			continue;
 		block->refGrab();
 	}
 
@@ -1373,7 +1378,8 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 	// Drop references that were added above
 	for (v3s16 p : loaded_blocks) {
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
-		assert(block);
+		if (!block)
+			continue;
 		block->refDrop();
 	}
 
@@ -1384,7 +1390,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 		<< " in " << num_blocks_cleared << " blocks" << std::endl;
 }
 
-void ServerEnvironment::step(float dtime)
+void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_ms)
 {
 	ScopeProfiler sp2(g_profiler, "ServerEnv::step()", SPT_AVG);
 	/* Step time of day */
@@ -1407,14 +1413,22 @@ void ServerEnvironment::step(float dtime)
 		m_game_time_fraction_counter -= (float)inc_i;
 	}
 
+	TimeTaker timer_step("Environment step");
+#if ENABLE_THREADS
+	g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
+#endif
+
 	/*
 		Handle players
 	*/
 	{
+#if !NDEBUG
 		ScopeProfiler sp(g_profiler, "ServerEnv: move players", SPT_AVG);
+#endif
+		auto lock = m_players.lock_shared_rec();
 		for (RemotePlayer *player : m_players) {
 			// Ignore disconnected players
-			if (player->getPeerId() == PEER_ID_INEXISTENT)
+			if (!player || player->getPeerId() == PEER_ID_INEXISTENT)
 				continue;
 
 			// Move
@@ -1423,24 +1437,65 @@ void ServerEnvironment::step(float dtime)
 	}
 
 	/*
+	 * Update circuit
+	 */
+	m_circuit.update(dtime);
+
+#if !ENABLE_THREADS
+	auto lockmap = m_map->m_nothread_locker.try_lock_unique_rec();
+	if (!lockmap->owns_lock())
+		return;
+#endif
+
+	/*
 		Manage active block list
 	*/
-	if (m_active_blocks_management_interval.step(dtime, m_cache_active_block_mgmt_interval)) {
+	if (m_blocks_added_last || m_active_blocks_management_interval.step(dtime, m_cache_active_block_mgmt_interval)) {
 		ScopeProfiler sp(g_profiler, "ServerEnv: update active blocks", SPT_AVG);
+	   if (!m_blocks_added_last) {
 		/*
 			Get player block positions
 		*/
 		std::vector<PlayerSAO*> players;
+	   {
+		const auto lock =  m_players.lock_shared_rec();
 		for (RemotePlayer *player: m_players) {
 			// Ignore disconnected players
-			if (player->getPeerId() == PEER_ID_INEXISTENT)
+			if (!player || player->getPeerId() == PEER_ID_INEXISTENT)
 				continue;
 
 			PlayerSAO *playersao = player->getPlayerSAO();
-			assert(playersao);
+			if (!playersao)
+				continue;
 
 			players.push_back(playersao);
 		}
+	   }
+
+/* TODO use ao manager
+		if (!m_blocks_added_last && g_settings->getBool("enable_force_load")) {
+			//TimeTaker timer_s2("force load");
+			auto lock = m_active_objects.try_lock_shared_rec();
+			if (lock->owns_lock())
+			for(auto
+				i = m_active_objects.begin();
+				i != m_active_objects.end(); ++i)
+			{
+				ServerActiveObject* obj = i->second;
+				if(!obj || obj->getType() == ACTIVEOBJECT_TYPE_PLAYER)
+					continue;
+				ObjectProperties* props = obj->accessObjectProperties();
+				if (!props)
+					continue;
+				if(props->force_load){
+					v3f objectpos = obj->getBasePosition();
+					v3s16 blockpos = getNodeBlockPos(
+					floatToInt(objectpos, BS));
+					players_blockpos.push_back(blockpos);
+				}
+			}
+		}
+*/
 
 		/*
 			Update list of active blocks, collecting changes
@@ -1452,9 +1507,9 @@ void ServerEnvironment::step(float dtime)
 		static thread_local const s16 active_block_range =
 				g_settings->getS16("active_block_range");
 		std::set<v3s16> blocks_removed;
-		std::set<v3s16> blocks_added;
+		//std::set<v3s16> blocks_added;
 		m_active_blocks.update(players, active_block_range, active_object_range,
-			blocks_removed, blocks_added);
+			blocks_removed, m_blocks_added);
 
 		/*
 			Handle removed blocks
@@ -1463,6 +1518,7 @@ void ServerEnvironment::step(float dtime)
 		// Convert active objects that are no more in active blocks to static
 		deactivateFarObjects(false);
 
+/*
 		for (const v3s16 &p: blocks_removed) {
 			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
 			if (!block)
@@ -1471,33 +1527,63 @@ void ServerEnvironment::step(float dtime)
 			// Set current time as timestamp (and let it set ChangedFlag)
 			block->setTimestamp(m_game_time);
 		}
+*/
+       } // if (!m_blocks_added_last)
 
 		/*
 			Handle added blocks
 		*/
 
-		for (const v3s16 &p: blocks_added) {
-			MapBlock *block = m_map->getBlockOrEmerge(p);
-			if (!block) {
-				m_active_blocks.m_list.erase(p);
-				m_active_blocks.m_abm_list.erase(p);
-				continue;
-			}
+	   u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	   m_blocks_added_last = 0;
+	   auto i = m_blocks_added.begin();
+	   for (; i != m_blocks_added.end(); ++i) {
+		   ++n;
+		   auto p = *i;
+		   // for (const v3s16 &p: m_blocks_added) {
+		   MapBlock *block = m_map->getBlockOrEmerge(p);
+		   if (!block) {
+			   m_active_blocks.m_list.erase(p);
+			   m_active_blocks.m_abm_list.erase(p);
+			   continue;
+		   }
 
-			activateBlock(block);
-		}
+		   activateBlock(block);
+
+		   if (porting::getTimeMs() > end_ms) {
+			   m_blocks_added_last = n;
+			   break;
+		   }
+	   }
+	   m_blocks_added.erase(m_blocks_added.begin(), i);
 	}
+
+	if (!m_more_threads)
+		analyzeBlocks(dtime, max_cycle_ms);
 
 	/*
 		Mess around in active blocks
 	*/
-	if (m_active_blocks_nodemetadata_interval.step(dtime, m_cache_nodetimer_interval)) {
+	if (m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, m_cache_nodetimer_interval)) {
+#if !NDEBUG
 		ScopeProfiler sp(g_profiler, "ServerEnv: Run node timers", SPT_AVG);
-
+#endif
+/*
 		float dtime = m_cache_nodetimer_interval;
+*/
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+		auto lock = m_active_blocks.m_list.lock_shared_rec();
 
-		for (const v3s16 &p: m_active_blocks.m_list) {
-			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+		for (const auto &i: m_active_blocks.m_list) {
+			if (n++ < m_active_block_timer_last)
+				continue;
+			else
+				m_active_block_timer_last = 0;
+			++calls;
+
+			v3POS p = i.first;
+
+			MapBlock *block = m_map->getBlockNoCreateNoEx(p, true);
 			if (!block)
 				continue;
 
@@ -1513,7 +1599,11 @@ void ServerEnvironment::step(float dtime)
 					MOD_REASON_BLOCK_EXPIRED);
 
 			// Run node timers
-			std::vector<NodeTimer> elapsed_timers = block->m_node_timers.step(dtime);
+			if (!block->m_node_timers.m_uptime_last) // not very good place, but minimum modifications
+				block->m_node_timers.m_uptime_last = uptime - dtime;
+
+			std::vector<NodeTimer> elapsed_timers = block->m_node_timers.step(uptime - block->m_node_timers.m_uptime_last);
+			block->m_node_timers.m_uptime_last = uptime;
 			if (!elapsed_timers.empty()) {
 				MapNode n;
 				v3s16 p2;
@@ -1526,31 +1616,56 @@ void ServerEnvironment::step(float dtime)
 					}
 				}
 			}
+			if (porting::getTimeMs() > end_ms) {
+				m_active_block_timer_last = n;
+				break;
+			}
 		}
+		if (!calls)
+			m_active_block_timer_last = 0;
 	}
 
-	if (m_active_block_modifier_interval.step(dtime, m_cache_abm_interval)) {
+	g_profiler->add("SMap: Blocks: Active", m_active_blocks.m_list.size());
+	m_active_block_abm_dtime_counter += dtime;
+
+	if (m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, m_cache_abm_interval)) {
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg per interval", SPT_AVG);
 		TimeTaker timer("modify in active blocks per interval");
 
+/*
 		// Initialize handling of ActiveBlockModifiers
 		ABMHandler abmhandler(m_abms, m_cache_abm_interval, this, true);
+*/
 
 		int blocks_scanned = 0;
 		int abms_run = 0;
 		int blocks_cached = 0;
 
+
 		std::vector<v3s16> output(m_active_blocks.m_abm_list.size());
 
+       {
+		auto lock = m_active_blocks.m_list.lock_shared_rec();
 		// Shuffle the active blocks so that each block gets an equal chance
 		// of having its ABMs run.
 		std::copy(m_active_blocks.m_abm_list.begin(), m_active_blocks.m_abm_list.end(), output.begin());
+	   }
 		std::shuffle(output.begin(), output.end(), m_rgen);
-
+	   
 		int i = 0;
 		// determine the time budget for ABMs
+		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms; 
 		u32 max_time_ms = m_cache_abm_interval * 1000 * m_cache_abm_time_budget;
 		for (const v3s16 &p : output) {
+/*
+			if (n++ < m_active_block_abm_last)
+				continue;
+			else
+				m_active_block_abm_last = 0;
+			++calls;
+*/
+			ScopeProfiler sp(g_profiler, "SEnv: ABM one block avg", SPT_AVG);
+
 			MapBlock *block = m_map->getBlockNoCreateNoEx(p);
 			if (!block)
 				continue;
@@ -1561,7 +1676,18 @@ void ServerEnvironment::step(float dtime)
 			block->setTimestampNoChangedFlag(m_game_time);
 
 			/* Handle ActiveBlockModifiers */
+/*
 			abmhandler.apply(block, blocks_scanned, abms_run, blocks_cached);
+*/
+
+			block->abmTriggersRun(this, m_game_time);
+
+/*
+			if (porting::getTimeMs() > end_ms) {
+				m_active_block_abm_last = n;
+				break;
+			}
+*/
 
 			u32 time_ms = timer.getTimerTime();
 
@@ -1572,6 +1698,13 @@ void ServerEnvironment::step(float dtime)
 				break;
 			}
 		}
+		if (!calls)
+			m_active_block_abm_last = 0;
+		if (!m_active_block_abm_last) {
+			m_active_block_abm_dtime = m_active_block_abm_dtime_counter;
+			m_active_block_abm_dtime_counter = 0;
+		}
+
 		g_profiler->avg("ServerEnv: active blocks", m_active_blocks.m_abm_list.size());
 		g_profiler->avg("ServerEnv: active blocks cached", blocks_cached);
 		g_profiler->avg("ServerEnv: active blocks scanned for ABMs", blocks_scanned);
@@ -1579,6 +1712,15 @@ void ServerEnvironment::step(float dtime)
 
 		timer.stop(true);
 	}
+
+	{
+	TimeTaker timer("contrib_globalstep");
+	contrib_globalstep(dtime);
+	}
+
+	ScopeProfiler sp(g_profiler, "SEnv: environment_Step AVG", SPT_AVG);
+	TimeTaker timer("environment_Step");
+
 
 	/*
 		Step script environment (run global on_step())
@@ -1596,6 +1738,10 @@ void ServerEnvironment::step(float dtime)
 		m_send_recommended_timer += dtime;
 		if (m_send_recommended_timer > getSendRecommendedInterval()) {
 			m_send_recommended_timer -= getSendRecommendedInterval();
+			if (m_send_recommended_timer > getSendRecommendedInterval() * 2) {
+				m_send_recommended_timer = 0;
+			}
+
 			send_recommended = true;
 		}
 
@@ -1614,7 +1760,7 @@ void ServerEnvironment::step(float dtime)
 	/*
 		Manage active objects
 	*/
-	if (m_object_management_interval.step(dtime, 0.5)) {
+	if (m_object_management_interval.step(dtime, 5)) {
 		removeRemovedObjects();
 	}
 

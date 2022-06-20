@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <functional>
 #include <unordered_map>
 #include "irrlichttypes.h"
 #include "threading/concurrent_unordered_map.h"

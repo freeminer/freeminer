@@ -17,8 +17,10 @@
 
 #include <mutex>
 
+#include "convert_json.h"
 #include "exceptions.h"
 #include "filesys.h"
+#include "json/reader.h"
 #include "key_value_storage.h"
 #include "log.h"
 #include "util/pointer.h"
@@ -121,7 +123,7 @@ bool KeyValueStorage::put(const std::string &key, const float &data) {
 
 
 bool KeyValueStorage::put_json(const std::string &key, const Json::Value &data) {
-	return put(key, json_writer.write(data).c_str());
+	return put(key, fastWriteJson(data));
 }
 
 bool KeyValueStorage::get(const std::string &key, std::string &data) {
@@ -145,11 +147,12 @@ bool KeyValueStorage::get(const std::string &key, float &data) {
 }
 
 bool KeyValueStorage::get_json(const std::string &key, Json::Value & data) {
-	std::string value;
+	std::string value, errors;
 	get(key, value);
 	if (value.empty())
 		return false;
-	return json_reader.parse(value, data);
+	std::istringstream stream(value);
+	return Json::parseFromStream(json_char_reader_builder, stream, &data, &errors);
 }
 
 std::string KeyValueStorage::get_error() {

@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-#include "environment.h"
+#include "../environment.h"
 #include <ISceneManager.h>
 #include "clientobject.h"
 #include "util/numeric.h"
@@ -63,6 +63,13 @@ typedef std::unordered_map<u16, ClientActiveObject*> ClientActiveObjectMap;
 class ClientEnvironment : public Environment
 {
 public:
+
+// fm:
+	u32 m_active_objects_client_last = 0;
+	u32 m_move_max_loop = 3;
+// --
+
+
 	ClientEnvironment(ClientMap *map, ITextureSource *texturesource, Client *client);
 	~ClientEnvironment();
 

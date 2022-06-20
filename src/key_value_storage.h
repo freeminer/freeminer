@@ -57,8 +57,9 @@ public:
 private:
 	const std::string db_name;
 	std::string fullpath;
-	Json::FastWriter json_writer;
-	Json::Reader json_reader;
+	//Json::FastWriter json_writer;
+	//Json::Reader json_reader;
+	Json::CharReaderBuilder json_char_reader_builder;
 	std::mutex mutex;
 };
 

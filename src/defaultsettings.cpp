@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen/mapgen.h" // Mapgen::setDefaultSettings
 #include "util/string.h"
 
-<<<<<<< HEAD
 
 // freeminer part:
 #include "network/connection.h" // ENET_IPV6
@@ -123,6 +122,7 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Game Speed
 	settings->setDefault("pause_fps_max", "10"); // "20"
+	settings->setDefault("static_viewing_range", "false");
 
 	// Debugging stuff
 	settings->setDefault("show_debug", debug ? "true" : "false"); // "true"
@@ -389,10 +389,7 @@ void fm_set_default_settings(Settings *settings) {
 // End of freeminer ======
 
 
-void set_default_settings(Settings *settings)
-=======
 void set_default_settings()
->>>>>>> 5.5.0
 {
 	Settings *settings = Settings::createLayer(SL_DEFAULTS);
 
@@ -418,7 +415,7 @@ void set_default_settings()
 	settings->setDefault("screenshot_path", "screenshots");
 	settings->setDefault("screenshot_format", "png");
 	settings->setDefault("screenshot_quality", "0");
-	settings->setDefault("client_unload_unused_data_timeout", "600");
+	settings->setDefault("client_unload_unused_data_timeout", "300");
 	settings->setDefault("client_mapblock_limit", "7500");
 	settings->setDefault("enable_build_where_you_stand", "false");
 	settings->setDefault("curl_timeout", "20000");
@@ -523,31 +520,11 @@ void set_default_settings()
 	settings->setDefault("show_debug", "false");
 #else
 	settings->setDefault("show_debug", "true");
-<<<<<<< HEAD
-	#endif
-
-	settings->setDefault("fps_max", "60");
-	settings->setDefault("pause_fps_max", "20");
-	settings->setDefault("viewing_range", "100");
-	settings->setDefault("static_viewing_range", "false");
-	settings->setDefault("map_generation_limit", "31000");
-	settings->setDefault("screenW", "800");
-	settings->setDefault("screenH", "600");
-	settings->setDefault("fullscreen", "false");
-	settings->setDefault("fullscreen_bpp", "24");
-	settings->setDefault("fsaa", "0");
-	settings->setDefault("vsync", "false");
-	settings->setDefault("address", "");
-	settings->setDefault("random_input", "false");
-	settings->setDefault("client_unload_unused_data_timeout", "300");
-	settings->setDefault("client_mapblock_limit", "5000");
-=======
 #endif
 	settings->setDefault("fsaa", "0");
 	settings->setDefault("undersampling", "0");
 	settings->setDefault("world_aligned_mode", "enable");
 	settings->setDefault("autoscale_mode", "disable");
->>>>>>> 5.5.0
 	settings->setDefault("enable_fog", "true");
 	settings->setDefault("fog_start", "0.4");
 	settings->setDefault("3d_mode", "none");
@@ -897,17 +874,3 @@ void set_default_settings()
 
 	fm_set_default_settings(settings);
 }
-<<<<<<< HEAD
-
-
-
-void override_default_settings(Settings *settings, Settings *from)
-{
-	std::vector<std::string> names = from->getNames();
-	for(size_t i=0; i<names.size(); i++){
-		const std::string &name = names[i];
-		settings->setDefault(name, from->get(name));
-	}
-}
-=======
->>>>>>> 5.5.0

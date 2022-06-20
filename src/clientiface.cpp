@@ -37,7 +37,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "face_position_cache.h"
 
 #include "util/numeric.h"
-#include "util/mathconstants.h"
 #include "profiler.h"
 #include "gamedef.h"
 
@@ -1037,7 +1036,7 @@ std::vector<session_t> ClientInterface::getClientIDs(ClientState min_state)
 
 void ClientInterface::markBlockposAsNotSent(const v3s16 &pos)
 {
-	RecursiveMutexAutoLock clientslock(m_clients_mutex);
+	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
 	for (const auto &client : m_clients) {
 		if (client.second->getState() >= CS_Active)
 			client.second->SetBlockNotSent(pos);
@@ -1128,7 +1127,7 @@ void ClientInterface::sendToAll(NetworkPacket *pkt)
 {
 	auto clientslock = m_clients.lock_shared_rec();
 	for (auto &client_it : m_clients) {
-		RemoteClient *client = client_it.second;
+		const auto client = client_it.second;
 
 		if (client->net_proto_version != 0) {
 			m_con->Send(client->peer_id,
@@ -1255,7 +1254,7 @@ void ClientInterface::DeleteClient(session_t peer_id)
 	// Handle objects
 	{
 	auto lock = client->m_known_objects.lock_unique_rec();
-	for (u16 id : client->m_known_objects) {
+	for (const auto [id, one]: client->m_known_objects) {
 		// Get object
 		ServerActiveObject* obj = m_env->getActiveObject(id, true);
 
@@ -1287,7 +1286,7 @@ void ClientInterface::CreateClient(session_t peer_id)
 #endif	
 
 	// Create client
-	auto client = std::shared_ptr<RemoteClient>(new RemoteClient(m_env));
+	auto client = std::shared_ptr<RemoteClient>(new RemoteClient());
 	client->peer_id = peer_id;
 	m_clients.set(client->peer_id, client);
 }
