@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "settings.h"
+#include "convert_json.h"
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
@@ -38,7 +39,7 @@ static SettingsHierarchy g_hierarchy;
 std::string g_settings_path;
 
 Json::Reader json_reader;
-Json::StyledWriter json_writer;
+//Json::StyledWriter json_writer;
 
 std::unordered_map<std::string, const FlagDesc *> Settings::s_flags;
 
@@ -1162,7 +1163,7 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 
 void Settings::setJson(const std::string & name, const Json::Value & value) {
 	if (!value.empty())
-		set(name, json_writer.write( value )); //todo: remove later
+		set(name, fastWriteJson( value )); //todo: remove later
 
 	MutexAutoLock lock(m_mutex);
 	m_json[name] = value;

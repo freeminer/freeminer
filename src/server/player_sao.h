@@ -202,7 +202,7 @@ private:
 	LagPool m_move_pool;
 public:
 	v3f m_last_good_position;
-	std::atomic_uint m_ms_from_last_respawn;
+	std::atomic_uint m_ms_from_last_respawn = 10000; //more than ignore move time (1)
 	float m_time_from_last_teleport = 0.0f;
 	float m_time_from_last_punch = 0.0f;
 	v3s16 m_nocheat_dig_pos = v3s16(32767, 32767, 32767);

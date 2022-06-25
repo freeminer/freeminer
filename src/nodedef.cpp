@@ -1462,31 +1462,28 @@ bool NodeDefManager::getIds(const std::string &name,
 	return true;
 }
 
-/* fm need?
-	bool NodeDefManager::getIds(const std::string &name, FMBitset &result) const {
-		if(name.substr(0,6) != "group:"){
-			content_t id = CONTENT_IGNORE;
-			bool exists = getId(name, id);
-			if (exists)
-				result.set(id, true);
-			return exists;
-		}
-		std::string group = name.substr(6);
-
-		auto
-			i = m_group_to_items.find(group);
-		if (i == m_group_to_items.end())
-			return true;
-
-		const GroupItems &items = i->second;
-		for (GroupItems::const_iterator j = items.begin();
-			j != items.end(); ++j) {
-			if ((*j).second != 0)
-				result.set((*j).first, true);
-		}
-		return true;
+bool NodeDefManager::getIds(const std::string &name, FMBitset &result) const
+{
+	if (name.substr(0, 6) != "group:") {
+		content_t id = CONTENT_IGNORE;
+		bool exists = getId(name, id);
+		if (exists)
+			result.set(id, true);
+		return exists;
 	}
-*/
+	std::string group = name.substr(6);
+
+	auto i = m_group_to_items.find(group);
+	if (i == m_group_to_items.end())
+		return true;
+
+	const auto &items = i->second;
+	for (const auto &j : items) {
+		if (j)
+			result.set(j, true);
+	}
+	return true;
+}
 
 const ContentFeatures& NodeDefManager::get(const std::string &name) const
 {

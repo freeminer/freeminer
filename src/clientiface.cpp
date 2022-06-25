@@ -106,7 +106,6 @@ int RemoteClient::GetNextBlocks (
 		std::vector<PrioritySortedBlockTransfer> &dest)
 {
 <<<<<<< HEAD
-	DSTACK(FUNCTION_NAME);
 
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())

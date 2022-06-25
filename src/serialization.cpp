@@ -434,6 +434,7 @@ void decompress(std::istream &is, std::ostream &os, u8 version)
 
 
 //freeminer:
+/*
 void compressZlib(const std::string &data, std::string &os, int level) {
 	SharedBuffer<u8> databuf((u8*)data.c_str(), data.size());
 	std::ostringstream oss;
@@ -447,4 +448,4 @@ void decompressZlib(const std::string &is, std::string &os) {
 	decompressZlib(iss, oss);
 	os = oss.str();
 }
-
+*/

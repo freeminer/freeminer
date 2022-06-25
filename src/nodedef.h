@@ -653,7 +653,9 @@ public:
 
 	//fm:
 	// Allows "group:name" in addition to regular node names
-	virtual bool getIds(const std::string &name, FMBitset &result) const=0;
+	virtual bool getIds(const std::string &name, FMBitset &result) const;
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	virtual void msgpack_unpack(msgpack::object o);
 
 
 	/*!
@@ -674,9 +676,6 @@ public:
 			c < m_content_features.size() ?
 				m_content_features[c] : m_content_features[CONTENT_UNKNOWN];
 	}
-
-	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
-	virtual void msgpack_unpack(msgpack::object o)=0;
 
 	/*!
 	 * Returns the properties of the given node.

@@ -143,7 +143,7 @@ public:
 	~Settings();
 
 	//Settings & operator += (const Settings &other);
-	//Settings & operator = (const Settings &other);
+	Settings & operator = (const Settings &other);
 
 	/***********************
 	 * Reading and writing *

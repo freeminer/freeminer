@@ -64,6 +64,12 @@ void ServerModManager::loadMods(ServerScripting *script)
 		mod.checkAndLog();
 
 		std::string script_path = mod.path + DIR_DELIM + "init.lua";
+
+		if (!fs::PathExists(script_path)) {
+			errorstream << "Ignoring empty mod: "<< mod.name << std::endl;
+			continue;
+		}
+
 		auto t = porting::getTimeMs();
 		script->loadMod(script_path, mod.name);
 		infostream << "Mod \"" << mod.name << "\" loaded after "

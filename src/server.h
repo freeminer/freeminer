@@ -60,6 +60,16 @@ class LiquidThread;
 class EnvThread;
 class AbmThread;
 
+class ClientNotFoundException : public BaseException
+{
+public:
+	ClientNotFoundException(const char *s):
+		BaseException(s)
+	{}
+};
+
+
+
 
 class ChatEvent;
 struct ChatEventChat;

@@ -269,25 +269,18 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 	std::vector<aabb3f> &boxes = *p_boxes;
 
 	if (nodebox.type == NODEBOX_FIXED || nodebox.type == NODEBOX_LEVELED) {
+		const ContentFeatures &f = nodemgr->get(n);
 		const std::vector<aabb3f> &fixed = nodebox.fixed;
 		int facedir = n.getFaceDir(nodemgr, true);
 		u8 axisdir = facedir>>2;
 		facedir&=0x03;
 		for (aabb3f box : fixed) {
-			if (nodebox.type == NODEBOX_LEVELED)
-				box.MaxEdge.Y = (-0.5f + n.getLevel(nodemgr) / 64.0f) * BS;
-
-<<<<<<< HEAD
 			if (nodebox.type == NODEBOX_LEVELED) {
-				const ContentFeatures &f = nodemgr->get(n);
-				box.MaxEdge.Y = -BS/2 + BS*((float)1/n.getMaxLevel(nodemgr)) * std::min(n.getLevel(nodemgr), f.getMaxLevel());
+				//box.MaxEdge.Y = (-0.5f + n.getLevel(nodemgr) / 64.0f) * BS;
+				box.MaxEdge.Y = (-0.5f + 1.0f/n.getMaxLevel(nodemgr) * std::min(n.getLevel(nodemgr), f.getMaxLevel())) * BS;
 			}
 
-			switch (axisdir)
-			{
-=======
 			switch (axisdir) {
->>>>>>> 5.5.0
 			case 0:
 				if(facedir == 1)
 				{
@@ -543,19 +536,16 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 	}
 	else // NODEBOX_REGULAR
 	{
-<<<<<<< HEAD
+/*
+		boxes.emplace_back(-BS/2,-BS/2,-BS/2,BS/2,BS/2,BS/2);
+*/
 		const ContentFeatures &f = nodemgr->get(n);
 		float top = BS/2;
 		if (f.param_type_2 == CPT2_LEVELED || f.param_type_2 == CPT2_FLOWINGLIQUID)
 			top = -BS/2 + BS*((float)1/f.getMaxLevel()) * std::min(n.getLevel(nodemgr), f.getMaxLevel());
 
-		boxes.push_back(aabb3f(-BS/2,-BS/2,-BS/2,BS/2,top,BS/2));
-	}
-}
+		boxes.emplace_back(-BS/2,-BS/2,-BS/2,BS/2,top,BS/2);
 
-void MapNode::getNodeBoxes(const NodeDefManager *nodemgr, std::vector<aabb3f> *boxes, u8 neighbors) const
-=======
-		boxes.emplace_back(-BS/2,-BS/2,-BS/2,BS/2,BS/2,BS/2);
 	}
 }
 
@@ -606,7 +596,6 @@ u8 MapNode::getNeighbors(v3s16 p, Map *map) const
 
 void MapNode::getNodeBoxes(const NodeDefManager *nodemgr,
 	std::vector<aabb3f> *boxes, u8 neighbors) const
->>>>>>> 5.5.0
 {
 	const ContentFeatures &f = nodemgr->get(*this);
 	transformNodeBox(*this, f.node_box, nodemgr, boxes, neighbors);
@@ -629,13 +618,10 @@ void MapNode::getSelectionBoxes(const NodeDefManager *nodemgr,
 	transformNodeBox(*this, f.selection_box, nodemgr, boxes, neighbors);
 }
 
-<<<<<<< HEAD
 u8 MapNode::getMaxLevel(const NodeDefManager *nodemgr, bool compress) const
 {
 	return nodemgr->get(*this).getMaxLevel(compress);
-=======
-u8 MapNode::getMaxLevel(const NodeDefManager *nodemgr) const
-{
+/*
 	const ContentFeatures &f = nodemgr->get(*this);
 	// todo: after update in all games leave only if (f.param_type_2 ==
 	if( f.liquid_type == LIQUID_FLOWING || f.param_type_2 == CPT2_FLOWINGLIQUID)
@@ -643,13 +629,13 @@ u8 MapNode::getMaxLevel(const NodeDefManager *nodemgr) const
 	if(f.leveled || f.param_type_2 == CPT2_LEVELED)
 		return f.leveled_max;
 	return 0;
->>>>>>> 5.5.0
+*/
 }
 
 u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 {
 	const ContentFeatures &f = nodemgr->get(*this);
-<<<<<<< HEAD
+/* FM WAS:
 	if (f.param_type_2 == CPT2_LEVELED) {
 		u8 level = getParam2() & LEVELED_MASK;
 		if (f.liquid_type == LIQUID_SOURCE)
@@ -672,20 +658,67 @@ u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 	if (f.param_type_2 == CPT2_FLOWINGLIQUID || f.liquid_type == LIQUID_FLOWING) //remove liquid_type later
 		return getParam2() & LIQUID_LEVEL_MASK;
 	return 0;
+*/
+
+	// todo: after update in all games leave only if (f.param_type_2 ==
+	if(f.liquid_type == LIQUID_SOURCE)
+	{
+		if (nodemgr->get(nodemgr->getId(f.liquid_alternative_flowing)).param_type_2 == CPT2_LEVELED)
+			return LEVELED_MAX;
+		return LIQUID_LEVEL_SOURCE;
+	}
+	if (f.param_type_2 == CPT2_FLOWINGLIQUID)
+		return getParam2() & LIQUID_LEVEL_MASK;
+	if(f.liquid_type == LIQUID_FLOWING) // can remove if all param_type_2 setted
+		return getParam2() & LIQUID_LEVEL_MASK;
+	if (f.param_type_2 == CPT2_LEVELED) {
+		u8 level = getParam2() & LEVELED_MASK;
+		if (f.liquid_type == LIQUID_SOURCE)
+			level += f.getMaxLevel();
+		if (level)
+			return level;
+		//fm? return 1; // default snow
+	}
+	// Return static value from nodedef if param2 isn't used for level
+	if (f.leveled > f.leveled_max)
+		return f.leveled_max;
+	return f.leveled;
 }
 
-u16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
+s16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 {
-	//debug: auto level_orig = level;
 	s16 rest = 0;
-	if (level < 1) {
-		setContent(CONTENT_AIR);
-		setParam2(0);
-		return 0;
-	}
 	const ContentFeatures &f = nodemgr->get(*this);
-	if (f.param_type_2 == CPT2_LEVELED) {
-		if (level > f.getMaxLevel(compress)) {
+	if (f.param_type_2 == CPT2_FLOWINGLIQUID
+			|| f.liquid_type == LIQUID_FLOWING
+			|| f.liquid_type == LIQUID_SOURCE) {
+		if (level <= 0) { // liquid can’t exist with zero level
+			setContent(CONTENT_AIR);
+			setParam2(0);
+			return 0;
+		}
+		if (level >= LIQUID_LEVEL_SOURCE) {
+			rest = level - LIQUID_LEVEL_SOURCE;
+			setContent(f.liquid_alternative_source_id);
+			setParam2(0);
+		} else {
+			setContent(f.liquid_alternative_flowing_id);
+			setParam2((level & LIQUID_LEVEL_MASK) | (getParam2() & ~LIQUID_LEVEL_MASK));
+		}
+
+   	} else if (f.param_type_2 == CPT2_LEVELED) {
+
+		if (level < 0) { // zero means default for a leveled nodebox
+			rest = level;
+			level = 0;
+/*
+		} else if (level > f.leveled_max) {
+			rest = level - f.leveled_max;
+			level = f.leveled_max;
+		}
+*/
+
+		} else if (level > f.getMaxLevel(compress)) {
 			rest = level - f.getMaxLevel(compress);
 			level = f.getMaxLevel(compress);
 		}
@@ -699,77 +732,15 @@ u16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 		} else if (!f.liquid_alternative_flowing.empty()) {
 			setContent(nodemgr->getId(f.liquid_alternative_flowing));
 		}
-		setParam2(level & LEVELED_MASK);
-		//debug: if(getLevel(nodemgr)!=level_orig) errorstream<<"AFTERSET not match want="<<(int)level_orig<<" compress="<<compress<< " res="<< (int)getLevel(nodemgr) << " setted="<<(int)level<< " rest="<<(int)rest<<" name="<<f.name<< " max="<< (int)f.getMaxLevel()<< " maxC="<< (int)f.getMaxLevel(compress)<<std::endl;
-	} else if (f.param_type_2 == CPT2_FLOWINGLIQUID
-		|| f.liquid_type == LIQUID_FLOWING
-		|| f.liquid_type == LIQUID_SOURCE) {
-=======
-	// todo: after update in all games leave only if (f.param_type_2 ==
-	if(f.liquid_type == LIQUID_SOURCE)
-		return LIQUID_LEVEL_SOURCE;
-	if (f.param_type_2 == CPT2_FLOWINGLIQUID)
-		return getParam2() & LIQUID_LEVEL_MASK;
-	if(f.liquid_type == LIQUID_FLOWING) // can remove if all param_type_2 setted
-		return getParam2() & LIQUID_LEVEL_MASK;
-	if (f.param_type_2 == CPT2_LEVELED) {
-		u8 level = getParam2() & LEVELED_MASK;
-		if (level)
-			return level;
-	}
-	// Return static value from nodedef if param2 isn't used for level
-	if (f.leveled > f.leveled_max)
-		return f.leveled_max;
-	return f.leveled;
-}
 
-s8 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level)
-{
-	s8 rest = 0;
-	const ContentFeatures &f = nodemgr->get(*this);
-	if (f.param_type_2 == CPT2_FLOWINGLIQUID
-			|| f.liquid_type == LIQUID_FLOWING
-			|| f.liquid_type == LIQUID_SOURCE) {
-		if (level <= 0) { // liquid can’t exist with zero level
-			setContent(CONTENT_AIR);
-			return 0;
-		}
->>>>>>> 5.5.0
-		if (level >= LIQUID_LEVEL_SOURCE) {
-			rest = level - LIQUID_LEVEL_SOURCE;
-			setContent(f.liquid_alternative_source_id);
-			setParam2(0);
-		} else {
-			setContent(f.liquid_alternative_flowing_id);
-			setParam2((level & LIQUID_LEVEL_MASK) | (getParam2() & ~LIQUID_LEVEL_MASK));
-		}
-<<<<<<< HEAD
-=======
-	} else if (f.param_type_2 == CPT2_LEVELED) {
-		if (level < 0) { // zero means default for a leveled nodebox
-			rest = level;
-			level = 0;
-		} else if (level > f.leveled_max) {
-			rest = level - f.leveled_max;
-			level = f.leveled_max;
-		}
 		setParam2((level & LEVELED_MASK) | (getParam2() & ~LEVELED_MASK));
->>>>>>> 5.5.0
 	}
 	return rest;
 }
 
-<<<<<<< HEAD
-u16 MapNode::addLevel(const NodeDefManager *nodemgr, s16 add, bool compress)
+s16 MapNode::addLevel(const NodeDefManager *nodemgr, s16 add, bool compress)
 {
 	s16 level = getLevel(nodemgr);
-	if (add == 0)
-		level = 1;
-=======
-s8 MapNode::addLevel(const NodeDefManager *nodemgr, s16 add)
-{
-	s16 level = getLevel(nodemgr);
->>>>>>> 5.5.0
 	level += add;
 	return setLevel(nodemgr, level, compress);
 }

@@ -102,7 +102,7 @@ void ServerInventoryManager::setInventoryModified(const InventoryLocation &loc)
 		// Updates are sent in ServerEnvironment::step()
 	} break;
 	default:
-		sanity_check(false); // abort
+		//sanity_check(false); // abort
 		break;
 	}
 }

@@ -1,3 +1,4 @@
+#include "profiler.h"
 #include "server.h"
 #include "util/timetaker.h"
 
@@ -53,7 +54,7 @@ void *ServerThread::run()
 					break;
 				}
 			}
-			auto events = m_server->m_con.events_size();
+			auto events = m_server->m_con->events_size();
 			if (events) {
 				g_profiler->add("Server: Queue", events);
 			}
@@ -137,7 +138,6 @@ public:
 	{}
 
 	void * run() {
-		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		auto time = porting::getTimeMs();
@@ -175,7 +175,6 @@ public:
 	{}
 
 	void * run() {
-		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 1000;
@@ -184,7 +183,8 @@ public:
 				m_server->getEnv().getMap().getBlockCacheFlush();
 				auto time_start = porting::getTimeMs();
 				m_server->getEnv().getMap().getBlockCacheFlush();
-				m_server->getEnv().getMap().transformLiquids(m_server, max_cycle_ms);
+				std::map<v3s16, MapBlock*> modified_blocks; // not used by fm
+				m_server->getEnv().getMap().transformLiquids(modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
 				auto time_spend = porting::getTimeMs() - time_start;
 				std::this_thread::sleep_for(std::chrono::milliseconds(time_spend > 300 ? 1 : 300 - time_spend));
 
@@ -213,8 +213,6 @@ public:
 	{}
 
 	void * run() {
-		DSTACK(FUNCTION_NAME);
-
 		unsigned int max_cycle_ms = 1000;
 		unsigned int time = porting::getTimeMs();
 		while(!stopRequested()) {
@@ -249,7 +247,6 @@ public:
 	{}
 
 	void * run() {
-		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		unsigned int max_cycle_ms = 10000;
@@ -277,8 +274,6 @@ public:
 };
 
 int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async) {
-	DSTACK(FUNCTION_NAME);
-
 	TimeTaker timer_step("Server map step");
 	g_profiler->add("Server::AsyncRunMapStep (num)", 1);
 
@@ -327,8 +322,8 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 				ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 				// not all liquid was processed per step, forcing on next step
-				//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
-				if (m_env->getMap().transformLiquids(this, max_cycle_ms) > 0) {
+				std::map<v3s16, MapBlock*> modified_blocks;
+				if (m_env->getMap().transformLiquids(modified_blocks, m_env, this, max_cycle_ms) > 0) {
 					m_liquid_transform_timer = m_liquid_transform_every /*  *0.8  */;
 					++ret;
 				}

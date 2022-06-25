@@ -33,9 +33,9 @@ enum ChatMessageType
 
 struct ChatMessage
 {
-	ChatMessage(const std::wstring &m = L"") : message(m) {}
+	ChatMessage(const std::string &m = "") : message(m) {}
 
-	ChatMessage(ChatMessageType t, const std::wstring &m, const std::wstring &s = L"",
+	ChatMessage(ChatMessageType t, const std::string &m, const std::string &s = "",
 			std::time_t ts = std::time(0)) :
 			type(t),
 			message(m), sender(s), timestamp(ts)
@@ -43,7 +43,7 @@ struct ChatMessage
 	}
 
 	ChatMessageType type = CHATMESSAGE_TYPE_RAW;
-	std::wstring message = L"";
-	std::wstring sender = L"";
+	std::string message = "";
+	std::string sender = "";
 	std::time_t timestamp = std::time(0);
 };
