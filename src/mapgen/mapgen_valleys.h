@@ -74,7 +74,7 @@ struct MapgenValleysParams : public MapgenParams {
 	MapgenValleysParams();
 	~MapgenValleysParams() = default;
 
-	void readParams(Settings *settings);
+	void readParams(const Settings *settings);
 	void writeParams(Settings *settings) const;
 	void setDefaultSettings(Settings *settings);
 };

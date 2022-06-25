@@ -35,19 +35,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"  // strlcpy
 
 
-<<<<<<< HEAD
 Player::Player(const std::string & name, IItemDefManager *idef):
-	inventory(idef),
-	peer_id(PEER_ID_INEXISTENT),
-	keyPressed(0),
-// protected
-	m_speed(0,0,0)
-=======
-Player::Player(const char *name, IItemDefManager *idef):
 	inventory(idef)
->>>>>>> 5.5.0
 {
-	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
 	hotbar_image_items = 0;
 
@@ -177,7 +167,6 @@ void Player::clearHud()
 	}
 }
 
-<<<<<<< HEAD
 //freeminer part:
 void Player::addSpeed(v3f speed) {
 		auto lock = lock_unique_rec();
@@ -185,7 +174,8 @@ void Player::addSpeed(v3f speed) {
 }
 
 // end of freeminer
-=======
+
+
 #ifndef SERVER
 
 u32 PlayerControl::getKeysPressed() const
@@ -260,4 +250,3 @@ void Player::settingsChangedCallback(const std::string &name, void *data)
 {
 	((PlayerSettings *)data)->readGlobalSettings();
 }
->>>>>>> 5.5.0

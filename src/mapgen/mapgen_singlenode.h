@@ -30,7 +30,7 @@ struct MapgenSinglenodeParams : public MapgenParams
 	MapgenSinglenodeParams() = default;
 	~MapgenSinglenodeParams() = default;
 
-	void readParams(Settings *settings) {}
+	void readParams(const Settings *settings) {}
 	void writeParams(Settings *settings) const {}
 };
 

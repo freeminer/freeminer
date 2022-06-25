@@ -1077,6 +1077,9 @@ else()
 		set(WARNING_FLAGS "${WARNING_FLAGS} -Wsign-compare")
 	endif()
 
+        # FM: TODO: REMOVE:
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
+
 	if(APPLE AND USE_LUAJIT)
 		# required per http://luajit.org/install.html
 		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")

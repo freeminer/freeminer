@@ -810,7 +810,6 @@ u32 MapNode::serializedLength(u8 version)
 
 	return 4;
 }
-<<<<<<< HEAD
 void MapNode::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_array(3);
@@ -829,10 +828,7 @@ void MapNode::msgpack_unpack(msgpack::object o)
 	param1 = data[1];
 	param2 = data[2];
 }
-void MapNode::serialize(u8 *dest, u8 version)
-=======
 void MapNode::serialize(u8 *dest, u8 version) const
->>>>>>> 5.5.0
 {
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapNode format not supported");

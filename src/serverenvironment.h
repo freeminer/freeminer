@@ -420,7 +420,9 @@ public:
 	bool m_use_weather_biome = true;
 private:
 	bool m_more_threads = true;
+public:
 	ABMHandler m_abmhandler;
+private:
 	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;

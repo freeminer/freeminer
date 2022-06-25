@@ -31,8 +31,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/tile.h"
 #ifndef SERVER
 #include <IMeshManipulator.h>
-class Client;
 #endif
+class Client;
 #include "itemgroup.h"
 #include "sound.h" // SimpleSoundSpec
 #include "constants.h" // BS
@@ -43,6 +43,7 @@ class Client;
 //fm:
 #include "fm_bitset.h"
 #include <unordered_set>
+
 
 #include "msgpack_fix.h"
 
@@ -613,11 +614,11 @@ struct ContentFeatures
 		return 0;
 	}
 
-#ifndef SERVER
+//#ifndef SERVER
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings,
 		bool server = false);
-#endif
+//#endif
 
 private:
 #ifndef SERVER

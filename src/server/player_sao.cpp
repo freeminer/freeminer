@@ -267,8 +267,6 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		m_env->getGameDef()->SendMovePlayer(m_peer_id);
 	}
 
-	NOLOCK1:;
-
 	//dstream<<"PlayerSAO::step: dtime: "<<dtime<<std::endl;
 
 	// Set lag pool maximums based on estimated lag
@@ -350,6 +348,8 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		// create message and add to list
 		m_messages_out.emplace(getId(), true, generateUpdatePhysicsOverrideCommand());
 	}
+
+	NOLOCK3:;
 
 	sendOutdatedData();
 }

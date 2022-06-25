@@ -27,40 +27,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/basic_macros.h"
 #include <sstream>
 
-<<<<<<< HEAD
-ObjectProperties::ObjectProperties():
-	hp_max(1),
-	physical(false),
-	collideWithObjects(true),
-	weight(5),
-	collisionbox(-0.5,-0.5,-0.5, 0.5,0.5,0.5),
-	visual("sprite"),
-	mesh(""),
-	visual_size(1,1),
-	spritediv(1,1),
-	initial_sprite_basepos(0,0),
-	is_visible(true),
-	makes_footstep_sound(false),
-	automatic_rotate(0),
-	stepheight(0),
-	automatic_face_movement_dir(false),
-	automatic_face_movement_dir_offset(0.0),
-	force_load(false),
-	backface_culling(true),
-	nametag(""),
-	nametag_color(255, 255, 255, 255),
-	automatic_face_movement_max_rotation_per_sec(-1)
-{
-	textures.push_back("blank.png");
-	colors.push_back(video::SColor(255,255,255,255));
-=======
 static const video::SColor NULL_BGCOLOR{0, 1, 1, 1};
 
 ObjectProperties::ObjectProperties()
 {
-	textures.emplace_back("no_texture.png");
+	textures.emplace_back("blank.png");
 	colors.emplace_back(255,255,255,255);
->>>>>>> 5.5.0
 }
 
 std::string ObjectProperties::dump()
@@ -84,25 +56,15 @@ std::string ObjectProperties::dump()
 		os << "\"" << color.getAlpha() << "," << color.getRed() << ","
 			<< color.getGreen() << "," << color.getBlue() << "\" ";
 	}
-<<<<<<< HEAD
-	os<<"]";
-	os<<", spritediv="<<PP2(spritediv);
-	os<<", initial_sprite_basepos="<<PP2(initial_sprite_basepos);
-	os<<", is_visible="<<is_visible;
-	os<<", makes_footstep_sound="<<makes_footstep_sound;
-	os<<", automatic_rotate="<<automatic_rotate;
-	os<<", force_load="<<force_load;
-	os<<", backface_culling="<<backface_culling;
-=======
 	os << "]";
 	os << ", spritediv=" << PP2(spritediv);
 	os << ", initial_sprite_basepos=" << PP2(initial_sprite_basepos);
 	os << ", is_visible=" << is_visible;
 	os << ", makes_footstep_sound=" << makes_footstep_sound;
 	os << ", automatic_rotate="<< automatic_rotate;
+	os << ", force_load=" << force_load;
 	os << ", backface_culling="<< backface_culling;
 	os << ", glow=" << glow;
->>>>>>> 5.5.0
 	os << ", nametag=" << nametag;
 	os << ", nametag_color=" << "\"" << nametag_color.getAlpha() << "," << nametag_color.getRed()
 			<< "," << nametag_color.getGreen() << "," << nametag_color.getBlue() << "\" ";
@@ -190,15 +152,11 @@ void ObjectProperties::serialize(std::ostream &os) const
 	writeU8(os, automatic_face_movement_dir);
 	writeF32(os, automatic_face_movement_dir_offset);
 	writeU8(os, backface_culling);
-<<<<<<< HEAD
 
 	//freeminer:
 	//writeU8(os, force_load);
 
-	os << serializeString(nametag);
-=======
 	os << serializeString16(nametag);
->>>>>>> 5.5.0
 	writeARGB8(os, nametag_color);
 	writeF32(os, automatic_face_movement_max_rotation_per_sec);
 	os << serializeString16(infotext);
@@ -226,52 +184,7 @@ void ObjectProperties::serialize(std::ostream &os) const
 void ObjectProperties::deSerialize(std::istream &is)
 {
 	int version = readU8(is);
-<<<<<<< HEAD
-	if(version == 1)
-	{
-		try{
-			hp_max = readS16(is);
-			physical = readU8(is);
-			weight = readF1000(is);
-			collisionbox.MinEdge = readV3F1000(is);
-			collisionbox.MaxEdge = readV3F1000(is);
-			visual = deSerializeString(is);
-			visual_size = readV2F1000(is);
-			textures.clear();
-			u32 texture_count = readU16(is);
-			for(u32 i=0; i<texture_count; i++){
-				textures.push_back(deSerializeString(is));
-			}
-			spritediv = readV2S16(is);
-			initial_sprite_basepos = readV2S16(is);
-			is_visible = readU8(is);
-			makes_footstep_sound = readU8(is);
-			automatic_rotate = readF1000(is);
-			mesh = deSerializeString(is);
-			u32 color_count = readU16(is);
-			for(u32 i=0; i<color_count; i++){
-				colors.push_back(readARGB8(is));
-			}
-			collideWithObjects = readU8(is);
-			stepheight = readF1000(is);
-			automatic_face_movement_dir = readU8(is);
-			automatic_face_movement_dir_offset = readF1000(is);
-			backface_culling = readU8(is);
-
-			//freeminer:
-			//force_load = readU8(is);
-
-			nametag = deSerializeString(is);
-			nametag_color = readARGB8(is);
-			automatic_face_movement_max_rotation_per_sec = readF1000(is);
-			infotext = deSerializeString(is);
-		}catch(SerializationError &e){}
-	}
-	else
-	{
-=======
 	if (version != 4)
->>>>>>> 5.5.0
 		throw SerializationError("unsupported ObjectProperties version");
 
 	hp_max = readU16(is);
@@ -305,6 +218,10 @@ void ObjectProperties::deSerialize(std::istream &is)
 	automatic_face_movement_dir = readU8(is);
 	automatic_face_movement_dir_offset = readF32(is);
 	backface_culling = readU8(is);
+
+	//freeminer:
+	//force_load = readU8(is);
+
 	nametag = deSerializeString16(is);
 	nametag_color = readARGB8(is);
 	automatic_face_movement_max_rotation_per_sec = readF32(is);

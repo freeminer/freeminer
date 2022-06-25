@@ -22,11 +22,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "staticobject.h"
 #include "util/serialize.h"
-<<<<<<< HEAD
-#include "constants.h"
-#include "log_types.h"
-=======
 #include "server/serveractiveobject.h"
+#include "log_types.h"
 
 StaticObject::StaticObject(const ServerActiveObject *s_obj, const v3f &pos_):
 	type(s_obj->getType()),
@@ -34,7 +31,6 @@ StaticObject::StaticObject(const ServerActiveObject *s_obj, const v3f &pos_):
 {
 	s_obj->getStaticData(&data);
 }
->>>>>>> 5.5.0
 
 void StaticObject::serialize(std::ostream &os)
 {
@@ -49,12 +45,8 @@ void StaticObject::serialize(std::ostream &os)
 	// data
 	os<<serializeString16(data);
 }
-<<<<<<< HEAD
-bool StaticObject::deSerialize(std::istream &is, u8 version)
-=======
 
-void StaticObject::deSerialize(std::istream &is, u8 version)
->>>>>>> 5.5.0
+bool StaticObject::deSerialize(std::istream &is, u8 version)
 {
 	// type
 	type = readU8(is);
@@ -65,12 +57,8 @@ void StaticObject::deSerialize(std::istream &is, u8 version)
 		return true;
 	}
 	// data
-<<<<<<< HEAD
-	data = deSerializeString(is);
-	return false;
-=======
 	data = deSerializeString16(is);
->>>>>>> 5.5.0
+	return false;
 }
 
 void StaticObjectList::serialize(std::ostream &os)

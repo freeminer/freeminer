@@ -189,7 +189,7 @@ MapgenIndevParams::MapgenIndevParams() {
 	np_cave_indev      = NoiseParams(0,   1000, v3f(500, 500, 500), 3664,  4, 0.8,  2.0, NOISE_FLAG_DEFAULTS, 4,   1,   1);
 }
 
-void MapgenIndevParams::readParams(Settings *settings) {
+void MapgenIndevParams::readParams(const Settings *settings) {
 	MapgenV6Params::readParams(settings);
 
 	auto mg_params = settings->getJson("mg_params", paramsj);

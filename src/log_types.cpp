@@ -16,6 +16,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "log_types.h"
+#include "convert_json.h"
 
 std::ostream & operator<<(std::ostream & s, v2POS p) {
 	s << "(" << p.X << "," << p.Y << ")";
@@ -60,13 +61,11 @@ std::ostream & operator<<(std::ostream & s, irr::video::SColorf c) {
 
 #include "util/string.h"
 std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
-	s << wide_to_narrow(w);
+	s << wide_to_utf8(w);
 	return s;
 }
 
-#include "json/json.h"
-Json::StyledWriter writer;
 std::ostream & operator<<(std::ostream & s, Json::Value & json) {
-	s << writer.write(json);
+	s << fastWriteJson(json);
 	return s;
 }

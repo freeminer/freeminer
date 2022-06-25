@@ -26,27 +26,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "chat_interface.h"
 #include "debug.h"
+#include "profiler.h"
 #include "unittest/test.h"
 #include "server.h"
 #include "filesys.h"
+#include "util/timetaker.h"
 #include "version.h"
 #include "client/game.h"
 #include "defaultsettings.h"
 #include "gettext.h"
-<<<<<<< HEAD
-#include "profiler.h"
-#include "log_types.h"
-#include "quicktune.h"
-#include "httpfetch.h"
-#include "guiEngine.h"
-#include "map.h"
-#include "player.h"
-#include "fontengine.h"
-=======
 #include "log.h"
 #include "util/quicktune.h"
 #include "httpfetch.h"
->>>>>>> 5.5.0
 #include "gameparams.h"
 #include "database/database.h"
 #include "config.h"
@@ -63,27 +54,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gui/guiEngine.h"
 #include "gui/mainmenumanager.h"
 #endif
-<<<<<<< HEAD
 
 #if USE_ENET
 // todo: move to connection
 #include "enet/enet.h"
 #endif
 
-=======
->>>>>>> 5.5.0
 #ifdef HAVE_TOUCHSCREENGUI
 	#include "gui/touchscreengui.h"
 #endif
 
-<<<<<<< HEAD
-/*
-#if !defined(SERVER) && \
-	(IRRLICHT_VERSION_MAJOR == 1) && \
-	(IRRLICHT_VERSION_MINOR == 8) && \
-	(IRRLICHT_VERSION_REVISION == 2)
-	#error "Irrlicht 1.8.2 is known to be broken - please update Irrlicht to version >= 1.8.3"
-=======
 // for version information only
 extern "C" {
 #if USE_LUAJIT
@@ -95,9 +75,8 @@ extern "C" {
 
 #if !defined(__cpp_rtti) || !defined(__cpp_exceptions)
 #error Minetest cannot be built without exceptions or RTTI
->>>>>>> 5.5.0
 #endif
-*/
+
 
 #define DEBUGFILE "debug.txt"
 #define DEFAULT_SERVER_PORT 30000
@@ -154,7 +133,6 @@ static OptionList allowed_options;
 
 int main(int argc, char *argv[])
 {
-<<<<<<< HEAD
 	int retval = 0;
 
 #if USE_ENET
@@ -165,9 +143,6 @@ int main(int argc, char *argv[])
 	atexit(enet_deinitialize);
 #endif
 
-=======
-	int retval;
->>>>>>> 5.5.0
 	debug_set_exception_handler();
 
 	g_logger.registerThread("Main");
@@ -236,7 +211,6 @@ int main(int argc, char *argv[])
 	if (!init_common(cmd_args, argc, argv))
 		return 1;
 
-<<<<<<< HEAD
 	// parse settings from cmdline. must be after loading settings. maybe better to move
 	for (int i = 1; i < argc; i++) {
 		std::string arg_name = argv[i];
@@ -255,13 +229,10 @@ int main(int argc, char *argv[])
 		continue;
 	}
 
-#if !defined(__ANDROID__) && !defined(_MSC_VER)
-=======
 	if (g_settings->getBool("enable_console"))
 		porting::attachOrCreateConsole();
 
-#ifndef __ANDROID__
->>>>>>> 5.5.0
+#if !defined(__ANDROID__) && !defined(_MSC_VER)
 	// Run unit tests
 	if (cmd_args.getFlag("run-unittests")) {
 #if BUILD_UNITTESTS
@@ -364,19 +335,16 @@ static void set_allowed_options(OptionList *allowed_options)
 			_("Set gameid (\"--gameid list\" prints available ones)"))));
 	allowed_options->insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
 			_("Migrate from current map backend to another (Only works when using minetestserver or with --server)"))));
-<<<<<<< HEAD
 
 	allowed_options->insert(std::make_pair("autoexit", ValueSpec(VALUETYPE_STRING,
 			_("Exit after X seconds"))));
 
-=======
 	allowed_options->insert(std::make_pair("migrate-players", ValueSpec(VALUETYPE_STRING,
 		_("Migrate from current players backend to another (Only works when using minetestserver or with --server)"))));
 	allowed_options->insert(std::make_pair("migrate-auth", ValueSpec(VALUETYPE_STRING,
 		_("Migrate from current auth backend to another (Only works when using minetestserver or with --server)"))));
 	allowed_options->insert(std::make_pair("migrate-mod-storage", ValueSpec(VALUETYPE_STRING,
 		_("Migrate from current mod storage backend to another (Only works when using minetestserver or with --server)"))));
->>>>>>> 5.5.0
 	allowed_options->insert(std::make_pair("terminal", ValueSpec(VALUETYPE_FLAG,
 			_("Feature an interactive terminal (Only works when using minetestserver or with --server)"))));
 	allowed_options->insert(std::make_pair("recompress", ValueSpec(VALUETYPE_FLAG,
@@ -553,12 +521,6 @@ static bool create_userdata_path()
 	} else {
 		success = true;
 	}
-<<<<<<< HEAD
-
-	porting::copyAssets();
-
-=======
->>>>>>> 5.5.0
 #else
 	// Create user data directory
 	success = fs::CreateDir(porting::path_user);
@@ -653,35 +615,28 @@ static bool read_config_file(const Settings &cmd_args)
 				DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "freeminer");
 #endif
 
-<<<<<<< HEAD
-		for (size_t i = 0; i < filenames.size(); i++) {
+		// compat:
+		filenames.push_back(porting::path_user + DIR_DELIM + "minetest");
+#if RUN_IN_PLACE
+		filenames.push_back(porting::path_user + DIR_DELIM + ".." + DIR_DELIM + ".." + DIR_DELIM + "minetest");
+#endif
 
-			if (g_settings->readJsonFile(filenames[i] + ".json")) {
-				g_settings_path = filenames[i] + ".json";
+		for (const std::string &filename : filenames) {
+			if (g_settings->readJsonFile(filename + ".json")) {
+				g_settings_path = filename + ".json";
 				break;
 			}
 
-			bool r = g_settings->readConfigFile((filenames[i] + ".conf").c_str());
+			bool r = g_settings->readConfigFile(filename + ".conf");
 			if (r) {
-				g_settings_path = filenames[i] + ".conf";
-=======
-		for (const std::string &filename : filenames) {
-			bool r = g_settings->readConfigFile(filename.c_str());
-			if (r) {
-				g_settings_path = filename;
->>>>>>> 5.5.0
+				g_settings_path = filename + ".conf";
 				break;
 			}
 		}
 
 		// If no path found, use the first one (menu creates the file)
-<<<<<<< HEAD
-		if (g_settings_path == "")
-			g_settings_path = filenames[0] + ".conf";
-=======
 		if (g_settings_path.empty())
-			g_settings_path = filenames[0];
->>>>>>> 5.5.0
+			g_settings_path = filenames[0] + ".conf";
 	}
 
 	return true;
@@ -721,15 +676,9 @@ static void init_log_streams(const Settings &cmd_args)
 			"using maximum." << std::endl;
 	}
 
-<<<<<<< HEAD
-	verbosestream << "log_filename = " << log_filename << std::endl;
-
 	try {
-	file_log_output.open(log_filename.c_str());
-=======
 	file_log_output.setFile(log_filename,
 		g_settings->getU64("debug_log_size_max") * 1000000);
->>>>>>> 5.5.0
 	g_logger.addOutputMaxLevel(&file_log_output, log_level);
 	} catch (std::exception &e) {
 		errorstream << ": log open exception: " << log_filename << " err: " << e.what() << std::endl;
@@ -804,16 +753,20 @@ static bool get_world_from_cmdline(GameParams *game_params, const Settings &cmd_
 			}
 		}
 		if (!found) {
+/* fm del?
 			std::string fullpath = porting::path_user + DIR_DELIM + "worlds" DIR_DELIM + commanded_worldname;
 			game_configure_subgame(game_params, cmd_args);
 			if (!loadGameConfAndInitWorld(fullpath, game_params->game_spec)) {
+*/
 			dstream << _("World") << " '" << commanded_worldname
 			        << _("' not available. Available worlds:") << std::endl;
 			print_worldspecs(worldspecs, dstream);
 			return false;
+/* fm del?
 			} else {
 				commanded_world = fullpath;
 			}
+*/
 		}
 
 		game_params->world_path = get_clean_world_path(commanded_world);
@@ -932,13 +885,8 @@ static bool determine_subgame(GameParams *game_params)
 	//assert(game_params->world_path != "");	// Pre-condition
 
 	// If world doesn't exist
-<<<<<<< HEAD
-	if (game_params->world_path == ""
-			|| !getWorldExists(game_params->world_path)) {
-=======
-	if (!game_params->world_path.empty()
-		&& !getWorldExists(game_params->world_path)) {
->>>>>>> 5.5.0
+	if (game_params->world_path.empty()
+		|| !getWorldExists(game_params->world_path)) {
 		// Try to take gamespec from command line
 		if (game_params->game_spec.isValid()) {
 			gamespec = game_params->game_spec;

@@ -138,27 +138,15 @@ bool MapSettingsManager::saveMapMeta()
 	mapgen_params->MapgenParams::writeParams(m_map_settings);
 	mapgen_params->writeParams(m_map_settings);
 
-<<<<<<< HEAD
-	mapgen_params->MapgenParams::writeParams(&conf);
-	mapgen_params->writeParams(&conf);
-
-	if (conf.writeJsonFile(m_map_meta_path + ".json")) {
+//fm:
+	if (m_map_settings->writeJsonFile(m_map_meta_path + ".json")) {
 		return true;
 	}
 	errorstream << "cant write " << m_map_meta_path + ".json" << std::endl;
 	auto map_meta_path = m_map_meta_path + ".txt";
+//
 
-	conf.writeLines(oss);
-
-	// NOTE: If there are ever types of map settings other than
-	// those relating to map generation, save them here
-
-	oss << "[end_of_params]\n";
-
-	if (!fs::safeWriteToFile(map_meta_path, oss.str())) {
-=======
-	if (!m_map_settings->updateConfigFile(m_map_meta_path.c_str())) {
->>>>>>> 5.5.0
+	if (!m_map_settings->updateConfigFile(map_meta_path.c_str())) {
 		errorstream << "saveMapMeta: could not write "
 			<< map_meta_path << std::endl;
 		return false;

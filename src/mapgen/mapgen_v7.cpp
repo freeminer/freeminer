@@ -203,7 +203,7 @@ MapgenV7Params::MapgenV7Params():
 }
 
 
-void MapgenV7Params::readParams(Settings *settings)
+void MapgenV7Params::readParams(const Settings *settings)
 {
 //freeminer:
 	//settings->getS16NoEx("mg_float_islands", float_islands);

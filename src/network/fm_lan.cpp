@@ -18,6 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "fm_lan.h"
+#include "convert_json.h"
 #include "socket.h"
 #include "../util/string.h"
 #include "../log_types.h"
@@ -68,17 +69,16 @@ void lan_adv::ask() {
 	reanimate();
 
 	if (ask_str.empty()) {
-		Json::FastWriter writer;
 		Json::Value j;
 		j["cmd"] = "ask";
 		j["proto"] = g_settings->get("server_proto");
-		ask_str = writer.write(j);
+		ask_str = fastWriteJson(j);
 	}
 
 	send_string(ask_str);
 }
 
-void lan_adv::send_string(std::string str) {
+void lan_adv::send_string(const std::string& str) {
 	try {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
@@ -187,7 +187,6 @@ void * lan_adv::run() {
 	const unsigned int packet_maxsize = 16384;
 	char buffer [packet_maxsize];
 	Json::Reader reader;
-	Json::FastWriter writer;
 	std::string answer_str;
 	Json::Value server;
 	if (server_port) {
@@ -207,7 +206,7 @@ void * lan_adv::run() {
 		server["clients_max"]  = g_settings->getU16("max_users");
 		server["proto"]        = g_settings->get("server_proto");
 
-		send_string(writer.write(server));
+		send_string(fastWriteJson(server));
 	}
 	while(!stopRequested()) {
 		EXCEPTION_HANDLER_BEGIN;
@@ -228,7 +227,7 @@ void * lan_adv::run() {
 					(clients_num.load() ? infostream : actionstream) << "lan: want play " << addr_str << " " << p["proto"] << std::endl;
 
 					server["clients"] = clients_num.load();
-					answer_str = writer.write(server);
+					answer_str = fastWriteJson(server);
 
 					limiter[addr_str] = now + 3000;
 					UDPSocket socket_send(true);
@@ -264,7 +263,7 @@ void * lan_adv::run() {
 		Json::Value answer_json;
 		answer_json["port"] = server_port;
 		answer_json["cmd"] = "shutdown";
-		send_string(writer.write(answer_json));
+		send_string(fastWriteJson(answer_json));
 	}
 
 	EXCEPTION_HANDLER_END;

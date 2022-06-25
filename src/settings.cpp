@@ -151,7 +151,7 @@ Settings & Settings::operator = (const Settings &other)
 
 	return *this;
 }
-*/
+
 
 bool Settings::checkNameValid(const std::string &name)
 {
@@ -1134,7 +1134,7 @@ void Settings::doCallbacks(const std::string &name) const
 }
 
 
-Json::Value Settings::getJson(const std::string & name, const Json::Value & def) {
+Json::Value Settings::getJson(const std::string & name, const Json::Value & def) const {
 	{
 		MutexAutoLock lock(m_mutex);
 		if (!m_json[name].empty() || m_json[name].isObject() || m_json[name].isArray())
@@ -1199,8 +1199,8 @@ bool Settings::fromJson(const Json::Value &json) {
 	for (const auto & key: json.getMemberNames()) {
 		if (json[key].isObject()) {
 			//setJson(key, json[key]); // save type info
-			auto s = new Settings;
-			s->fromJson(json[key]);
+			Settings s;
+			s.fromJson(json[key]);
 			setGroup(key, s);
 		} else if (json[key].isArray()) {
 			//setJson(key, json[key]);

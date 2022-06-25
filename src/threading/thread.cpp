@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include "threading/thread.h"
+#include "fm_porting.h"
 #include "threading/mutex_auto_lock.h"
 #include "log.h"
 #include "porting.h"

@@ -90,18 +90,10 @@ void InventoryLocation::deSerialize(std::istream &is)
 	} else if (tname == "detached") {
 		type = InventoryLocation::DETACHED;
 		std::getline(is, name, '\n');
-<<<<<<< HEAD
-	}
-	else
-	{
-		errorstream<<"Unknown InventoryLocation type=\""<<tname<<"\""<<std::endl;
-		type = InventoryLocation::UNDEFINED;
-		//throw SerializationError("Unknown InventoryLocation type");
-=======
 	} else {
-		infostream<<"Unknown InventoryLocation type=\""<<tname<<"\""<<std::endl;
+		errorstream<<"Unknown InventoryLocation type=\""<<tname<<"\""<<std::endl;
+		return;
 		throw SerializationError("Unknown InventoryLocation type");
->>>>>>> 5.5.0
 	}
 }
 
@@ -741,11 +733,7 @@ void IDropAction::apply(InventoryManager *mgr, ServerActiveObject *player, IGame
 	item1.count = take_count;
 	if(PLAYER_TO_SA(player)->item_OnDrop(item1, player,
 				player->getBasePosition())) {
-<<<<<<< HEAD
-		actually_dropped_count = take_count - item1.count;
-=======
 		int actually_dropped_count = take_count - item1.count;
->>>>>>> 5.5.0
 
 		if (actually_dropped_count == 0) {
 			infostream<<"Actually dropped no items"<<std::endl;
@@ -953,15 +941,9 @@ void ICraftAction::apply(InventoryManager *mgr,
 			continue;
 		u16 count = output_replacement.count;
 		do {
-<<<<<<< HEAD
-			PLAYER_TO_SA(player)->item_OnDrop(*it, player,
-				player->getBasePosition());
-			if (count >= it->count) {
-=======
 			PLAYER_TO_SA(player)->item_OnDrop(output_replacement, player,
 				player->getBasePosition());
 			if (count >= output_replacement.count) {
->>>>>>> 5.5.0
 				errorstream << "Couldn't drop replacement stack " <<
 					output_replacement.getItemString() << " because drop loop didn't "
 					"decrease count." << std::endl;

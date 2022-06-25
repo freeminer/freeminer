@@ -38,7 +38,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 //#include "profiler.h" // For TimeTaker
 #include "network/connection.h"
-#include "shader.h"
 #include "exceptions.h"
 #include "debug.h"
 #include "gamedef.h"
@@ -333,24 +332,23 @@ void TileDef::deSerialize(std::istream &is, u8 contentfeatures_version,
 		color.setGreen(readU8(is));
 		color.setBlue(readU8(is));
 	}
-<<<<<<< HEAD
-
-	if ((contenfeatures_version < 8) &&
-		((drawtype == NDT_MESH) ||
-		 (drawtype == NDT_FIRELIKE) ||
-		 (drawtype == NDT_LIQUID) ||
-		 (drawtype == NDT_PLANTLIKE)))
-		backface_culling = false;
+	scale = has_scale ? readU8(is) : 0;
+	if (has_align_style)
+		align_style = static_cast<AlignStyle>(readU8(is));
+	else
+		align_style = ALIGN_STYLE_NODE;
 }
 
+// FMTODO fix:
 void TileDef::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_map(8);
 	PACK(TILEDEF_NAME, name);
 	PACK(TILEDEF_ANIMATION_TYPE, (int)animation.type);
-	PACK(TILEDEF_ANIMATION_ASPECT_W, animation.aspect_w);
-	PACK(TILEDEF_ANIMATION_ASPECT_H, animation.aspect_h);
-	PACK(TILEDEF_ANIMATION_LENGTH, animation.length);
+// TODO: pack-unpack animation object
+	//PACK(TILEDEF_ANIMATION_ASPECT_W, animation.aspect_w);
+	//PACK(TILEDEF_ANIMATION_ASPECT_H, animation.aspect_h);
+	//PACK(TILEDEF_ANIMATION_LENGTH, animation.length);
 	PACK(TILEDEF_BACKFACE_CULLING, backface_culling);
 	PACK(TILEDEF_TILEABLE_VERTICAL, tileable_vertical);
 	PACK(TILEDEF_TILEABLE_HORIZONTAL, tileable_horizontal);
@@ -365,35 +363,12 @@ void TileDef::msgpack_unpack(msgpack::object o)
 	packet[TILEDEF_ANIMATION_TYPE].convert(type_tmp);
 	animation.type = (TileAnimationType)type_tmp;
 
-	packet[TILEDEF_ANIMATION_ASPECT_W].convert(animation.aspect_w);
-	packet[TILEDEF_ANIMATION_ASPECT_H].convert(animation.aspect_h);
-	packet[TILEDEF_ANIMATION_LENGTH].convert(animation.length);
+	//packet[TILEDEF_ANIMATION_ASPECT_W].convert(animation.aspect_w);
+	//packet[TILEDEF_ANIMATION_ASPECT_H].convert(animation.aspect_h);
+	//packet[TILEDEF_ANIMATION_LENGTH].convert(animation.length);
 	packet[TILEDEF_BACKFACE_CULLING].convert(backface_culling);
 	packet_convert_safe(packet, TILEDEF_TILEABLE_VERTICAL, tileable_vertical);
 	packet_convert_safe(packet, TILEDEF_TILEABLE_HORIZONTAL, tileable_horizontal);
-}
-
-/*
-	SimpleSoundSpec serialization
-*/
-
-static void serializeSimpleSoundSpec(const SimpleSoundSpec &ss,
-		std::ostream &os)
-{
-	os<<serializeString(ss.name);
-	writeF1000(os, ss.gain);
-}
-static void deSerializeSimpleSoundSpec(SimpleSoundSpec &ss, std::istream &is)
-{
-	ss.name = deSerializeString(is);
-	ss.gain = readF1000(is);
-=======
-	scale = has_scale ? readU8(is) : 0;
-	if (has_align_style)
-		align_style = static_cast<AlignStyle>(readU8(is));
-	else
-		align_style = ALIGN_STYLE_NODE;
->>>>>>> 5.5.0
 }
 
 void TextureSettings::readSettings()
@@ -591,15 +566,8 @@ u8 ContentFeatures::getAlphaForLegacy() const
 
 void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 {
-<<<<<<< HEAD
-	if(protocol_version < 24){
-		//serializeOld(os, protocol_version);
-		return;
-	}
-=======
 	const u8 version = CONTENTFEATURES_VERSION;
 	writeU8(os, version);
->>>>>>> 5.5.0
 
 	// general
 	os << serializeString16(name);
@@ -686,26 +654,6 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	// legacy
 	writeU8(os, legacy_facedir_simple);
 	writeU8(os, legacy_wallmounted);
-<<<<<<< HEAD
-	serializeSimpleSoundSpec(sound_footstep, os);
-	serializeSimpleSoundSpec(sound_dig, os);
-	serializeSimpleSoundSpec(sound_dug, os);
-	writeU8(os, rightclickable);
-	writeU8(os, drowning);
-	writeU8(os, leveled);
-	writeU8(os, liquid_range);
-	writeU8(os, waving);
-	// Stuff below should be moved to correct place in a version that otherwise changes
-	// the protocol version
-	os<<serializeString(mesh);
-	collision_box.serialize(os, protocol_version);
-	writeU8(os, floodable);
-	writeU16(os, connects_to_ids.size());
-	for (auto i = connects_to_ids.begin();
-			i != connects_to_ids.end(); ++i)
-		writeU16(os, *i);
-	writeU8(os, connect_sides);
-=======
 
 	// new attributes
 	os << serializeString16(node_dig_prediction);
@@ -713,21 +661,10 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	writeU8(os, alpha);
 	writeU8(os, move_resistance);
 	writeU8(os, liquid_move_physics);
->>>>>>> 5.5.0
 }
 
 void ContentFeatures::deSerialize(std::istream &is)
 {
-<<<<<<< HEAD
-	int version = readU8(is);
-	if (version < 7) {
-		//deSerializeOld(is, version);
-		return;
-	} else if (version > 8) {
-		throw SerializationError("unsupported ContentFeatures version");
-	}
-	name = deSerializeString(is);
-=======
 	// version detection
 	const u8 version = readU8(is);
 	if (version < CONTENTFEATURES_VERSION)
@@ -735,7 +672,6 @@ void ContentFeatures::deSerialize(std::istream &is)
 
 	// general
 	name = deSerializeString16(is);
->>>>>>> 5.5.0
 	groups.clear();
 	u32 groups_size = readU16(is);
 	for (u32 i = 0; i < groups_size; i++) {
@@ -861,7 +797,8 @@ void ContentFeatures::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	for (size_t i = 0; i < CF_SPECIAL_COUNT; ++i)
 		pk.pack(tiledef_special[i]);
 
-	PACK(CONTENTFEATURES_ALPHA, alpha);
+//FMTODO:
+	//PACK(CONTENTFEATURES_ALPHA, alpha);
 	PACK(CONTENTFEATURES_POST_EFFECT_COLOR, post_effect_color);
 	PACK(CONTENTFEATURES_PARAM_TYPE, (int)param_type);
 	PACK(CONTENTFEATURES_PARAM_TYPE_2, (int)param_type_2);
@@ -927,7 +864,7 @@ void ContentFeatures::msgpack_unpack(msgpack::object o)
 	for (size_t i = 0; i < CF_SPECIAL_COUNT; ++i)
 		tiledef_special[i] = tiledef_special_received[i];
 
-	packet[CONTENTFEATURES_ALPHA].convert(alpha);
+	//TODOpacket[CONTENTFEATURES_ALPHA].convert(alpha);
 	packet[CONTENTFEATURES_POST_EFFECT_COLOR].convert(post_effect_color);
 
 	int param_type_tmp;
@@ -1023,25 +960,12 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 
 	// Animation parameters
 	int frame_count = 1;
-<<<<<<< HEAD
-	if (tile->material_flags & MATERIAL_FLAG_ANIMATION_VERTICAL_FRAMES) {
-		// Get texture size to determine frame count by aspect ratio
-		v2u32 size = tile->texture->getOriginalSize();
-		int frame_height = (float)size.X /
-				(tiledef->animation.aspect_w ? (float)tiledef->animation.aspect_w : 1) *
-				(tiledef->animation.aspect_h ? (float)tiledef->animation.aspect_h : 1);
-		frame_count = size.Y / (frame_height ? frame_height : size.Y ? size.Y : 1);
-		int frame_length_ms = 1000.0 * tiledef->animation.length / frame_count;
-		tile->animation_frame_count = frame_count;
-		tile->animation_frame_length_ms = frame_length_ms;
-=======
 	if (layer->material_flags & MATERIAL_FLAG_ANIMATION) {
 		int frame_length_ms;
 		tiledef.animation.determineParams(layer->texture->getOriginalSize(),
 				&frame_count, &frame_length_ms, NULL);
 		layer->animation_frame_count = frame_count;
 		layer->animation_frame_length_ms = frame_length_ms;
->>>>>>> 5.5.0
 	}
 
 	if (frame_count == 1) {
@@ -1071,16 +995,6 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 	}
 }
 
-<<<<<<< HEAD
-/*
-#ifndef SERVER
-*/
-void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-	scene::ISceneManager *smgr, scene::IMeshManipulator *meshmanip,
-	IGameDef *gamedef, const TextureSettings &tsettings,
-	bool server
-	)
-=======
 bool ContentFeatures::textureAlphaCheck(ITextureSource *tsrc, const TileDef *tiles, int length)
 {
 	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
@@ -1129,6 +1043,9 @@ break_loop:
 	}
 	return false;
 }
+#endif
+
+#ifndef SERVER
 
 bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
 {
@@ -1145,18 +1062,17 @@ bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype
 	return false;
 }
 
+#endif
+
 void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
-	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings)
->>>>>>> 5.5.0
+	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings
+	, bool server
+	)
 {
 #ifndef SERVER
 	// minimap pixel color - the average color of a texture
-<<<<<<< HEAD
 	if (tsrc)
-	if (tsettings.enable_minimap && tiledef[0].name != "")
-=======
 	if (tsettings.enable_minimap && !tiledef[0].name.empty())
->>>>>>> 5.5.0
 		minimap_color = tsrc->getTextureAverageColor(tiledef[0].name);
 #endif
 
@@ -1181,10 +1097,12 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 
 	bool is_liquid = false;
 
+#ifndef SERVER
 	if (alpha == ALPHAMODE_LEGACY_COMPAT) {
 		// Before working with the alpha mode, resolve any legacy kludges
 		alpha = textureAlphaCheck(tsrc, tdef, 6) ? ALPHAMODE_CLIP : ALPHAMODE_OPAQUE;
 	}
+#endif
 
 	MaterialType material_type = alpha == ALPHAMODE_OPAQUE ?
 		TILE_MATERIAL_OPAQUE : (alpha == ALPHAMODE_CLIP ? TILE_MATERIAL_BASIC :
@@ -1199,20 +1117,12 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		solidness = 0;
 		break;
 	case NDT_LIQUID:
-<<<<<<< HEAD
-		//assert(liquid_type == LIQUID_SOURCE);
-=======
->>>>>>> 5.5.0
 		if (tsettings.opaque_water)
 			alpha = ALPHAMODE_OPAQUE;
 		solidness = 1;
 		is_liquid = true;
 		break;
 	case NDT_FLOWINGLIQUID:
-<<<<<<< HEAD
-		//assert(liquid_type == LIQUID_FLOWING);
-=======
->>>>>>> 5.5.0
 		solidness = 0;
 		if (tsettings.opaque_water)
 			alpha = ALPHAMODE_OPAQUE;
@@ -1309,20 +1219,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		}
 	}
 
-<<<<<<< HEAD
-	u32 tile_shader[6];
 	if (shdsrc) {
-	for (u16 j = 0; j < 6; j++) {
-		tile_shader[j] = shdsrc->getShader("nodes_shader",
-			material_type, drawtype);
-	}
-
-	if (is_water_surface) {
-		tile_shader[0] = shdsrc->getShader("water_surface_shader",
-			material_type, drawtype);
-	}
-	}
-=======
 	u32 tile_shader = shdsrc->getShader("nodes_shader", material_type, drawtype);
 
 	MaterialType overlay_material = material_type;
@@ -1332,7 +1229,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		overlay_material = TILE_MATERIAL_LIQUID_TRANSPARENT;
 
 	u32 overlay_shader = shdsrc->getShader("nodes_shader", overlay_material, drawtype);
->>>>>>> 5.5.0
+	}
 
 	if (tsrc) {
 	// Tiles (fill in f->tiles[])
@@ -1358,30 +1255,21 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	u32 special_shader = shdsrc->getShader("nodes_shader", special_material, drawtype);
 
 	// Special tiles (fill in f->special_tiles[])
-<<<<<<< HEAD
-	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++) {
-		fillTileAttribs(tsrc, &special_tiles[j], &tiledef_special[j],
-			tile_shader[j], tsettings.use_normal_texture,
-			tiledef_special[j].backface_culling, alpha, material_type);
-	}
-	}
-
-	if ((drawtype == NDT_MESH) && (mesh != "")) {
-	  if (gamedef) {
-=======
+	if(tsrc)
 	for (u16 j = 0; j < CF_SPECIAL_COUNT; j++)
 		fillTileAttribs(tsrc, &special_tiles[j].layers[0], special_tiles[j], tdef_spec[j],
 				color, special_material, special_shader,
 				tdef_spec[j].backface_culling, tsettings);
 
+	if(tsrc)
 	if (param_type_2 == CPT2_COLOR ||
 			param_type_2 == CPT2_COLORED_FACEDIR ||
 			param_type_2 == CPT2_COLORED_WALLMOUNTED ||
 			param_type_2 == CPT2_COLORED_DEGROTATE)
 		palette = tsrc->getPalette(palette_name);
 
+    if(client)
 	if (drawtype == NDT_MESH && !mesh.empty()) {
->>>>>>> 5.5.0
 		// Meshnode drawtype
 		// Read the mesh and apply scale
 		mesh_ptr[0] = client->getMesh(mesh);
@@ -1391,23 +1279,6 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 			recalculateBoundingBox(mesh_ptr[0]);
 			meshmanip->recalculateNormals(mesh_ptr[0], true, false);
 		}
-<<<<<<< HEAD
-	  }
-	} else if ((drawtype == NDT_NODEBOX) &&
-			((node_box.type == NODEBOX_REGULAR) ||
-			(node_box.type == NODEBOX_FIXED)) &&
-			(!node_box.fixed.empty())) {
-		//Convert regular nodebox nodes to meshnodes
-		//Change the drawtype and apply scale
-		if (!server)
-		drawtype = NDT_MESH;
-		mesh_ptr[0] = convertNodeboxesToMesh(node_box.fixed);
-		v3f scale = v3f(1.0, 1.0, 1.0) * visual_scale;
-		scaleMesh(mesh_ptr[0], scale);
-		recalculateBoundingBox(mesh_ptr[0]);
-		meshmanip->recalculateNormals(mesh_ptr[0], true, false);
-=======
->>>>>>> 5.5.0
 	}
 
 	//Cache 6dfacedir and wallmounted rotated clones of meshes
@@ -1444,75 +1315,6 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	NodeDefManager
 */
 
-<<<<<<< HEAD
-class CNodeDefManager: public IWritableNodeDefManager {
-public:
-	CNodeDefManager();
-	virtual ~CNodeDefManager();
-	void clear();
-	virtual IWritableNodeDefManager *clone();
-	inline virtual const ContentFeatures& get(content_t c) const;
-	inline virtual const ContentFeatures& get(const MapNode &n) const;
-	virtual bool getId(const std::string &name, content_t &result) const;
-	virtual content_t getId(const std::string &name) const;
-	virtual bool getIds(const std::string &name, FMBitset &result) const;
-	virtual bool getIds(const std::string &name, std::unordered_set<content_t> &result) const;
-	virtual const ContentFeatures& get(const std::string &name) const;
-	content_t allocateId();
-	virtual content_t set(const std::string &name, const ContentFeatures &def);
-	virtual content_t allocateDummy(const std::string &name);
-	virtual void removeNode(const std::string &name);
-	virtual void updateAliases(IItemDefManager *idef);
-	virtual void applyTextureOverrides(const std::string &override_filepath);
-	virtual void updateTextures(IGameDef *gamedef,
-		void (*progress_cbk)(void *progress_args, u32 progress, u32 max_progress),
-		void *progress_cbk_args);
-	void serialize(std::ostream &os, u16 protocol_version) const;
-	void deSerialize(std::istream &is);
-	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
-	void msgpack_unpack(msgpack::object o);
-
-	inline virtual bool getNodeRegistrationStatus() const;
-	inline virtual void setNodeRegistrationStatus(bool completed);
-
-	virtual void pendNodeResolve(NodeResolver *nr);
-	virtual bool cancelNodeResolveCallback(NodeResolver *nr);
-	virtual void runNodeResolveCallbacks();
-	virtual void resetNodeResolveState();
-	virtual void mapNodeboxConnections();
-	virtual bool nodeboxConnects(MapNode from, MapNode to, u8 connect_face);
-
-private:
-	void addNameIdMapping(content_t i, std::string name);
-
-	// Features indexed by id
-	std::vector<ContentFeatures> m_content_features;
-
-	// A mapping for fast converting back and forth between names and ids
-	NameIdMapping m_name_id_mapping;
-
-	// Like m_name_id_mapping, but only from names to ids, and includes
-	// item aliases too. Updated by updateAliases()
-	// Note: Not serialized.
-
-	UNORDERED_MAP<std::string, content_t> m_name_id_mapping_with_aliases;
-
-	// A mapping from groups to a list of content_ts (and their levels)
-	// that belong to it.  Necessary for a direct lookup in getIds().
-	// Note: Not serialized.
-	UNORDERED_MAP<std::string, GroupItems> m_group_to_items;
-
-	// Next possibly free id
-	content_t m_next_id;
-
-	// NodeResolvers to callback once node registration has ended
-	std::vector<NodeResolver *> m_pending_resolve_callbacks;
-
-	// True when all nodes have been registered
-	bool m_node_registration_complete;
-};
-=======
->>>>>>> 5.5.0
 
 
 
@@ -1636,13 +1438,8 @@ content_t NodeDefManager::getId(const std::string &name) const
 }
 
 
-<<<<<<< HEAD
-bool CNodeDefManager::getIds(const std::string &name,
-		std::unordered_set<content_t> &result) const
-=======
 bool NodeDefManager::getIds(const std::string &name,
 		std::vector<content_t> &result) const
->>>>>>> 5.5.0
 {
 	//TimeTaker t("getIds", NULL, PRECISION_MICRO);
 	if (name.substr(0,6) != "group:") {
@@ -1665,7 +1462,8 @@ bool NodeDefManager::getIds(const std::string &name,
 	return true;
 }
 
-	bool CNodeDefManager::getIds(const std::string &name, FMBitset &result) const {
+/* fm need?
+	bool NodeDefManager::getIds(const std::string &name, FMBitset &result) const {
 		if(name.substr(0,6) != "group:"){
 			content_t id = CONTENT_IGNORE;
 			bool exists = getId(name, id);
@@ -1688,7 +1486,7 @@ bool NodeDefManager::getIds(const std::string &name,
 		}
 		return true;
 	}
-
+*/
 
 const ContentFeatures& NodeDefManager::get(const std::string &name) const
 {
@@ -1868,18 +1666,12 @@ void NodeDefManager::eraseIdFromGroups(content_t id)
 content_t NodeDefManager::set(const std::string &name, const ContentFeatures &def)
 {
 	// Pre-conditions
-<<<<<<< HEAD
-	if (name == "")
-		return CONTENT_IGNORE;
-	if (name != def.name)
-		return CONTENT_IGNORE;
-=======
-	assert(name != "");
-	assert(name != "ignore");
-	assert(name == def.name);
->>>>>>> 5.5.0
 
 	content_t id = CONTENT_IGNORE;
+
+	if (name == "" || name != def.name || name == "ignore")
+		return id;
+
 	if (!m_name_id_mapping.getId(name, id)) { // ignore aliases
 		// Get new id
 		id = allocateId();
@@ -2010,51 +1802,39 @@ void NodeDefManager::applyTextureOverrides(const std::vector<TextureOverride> &o
 
 void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_args)
 {
-<<<<<<< HEAD
-	infostream << "CNodeDefManager::updateTextures(): Updating "
-		"textures in node definitions" << std::endl;
-	bool server = !progress_callback;
-
-	ITextureSource *tsrc = !gamedef ? nullptr : gamedef->tsrc();
-	IShaderSource *shdsrc = !gamedef ? nullptr : gamedef->getShaderSource();
-	scene::ISceneManager* smgr = !gamedef ? nullptr : gamedef->getSceneManager();
-	scene::IMeshManipulator* meshmanip = !smgr ? nullptr : smgr->getMeshManipulator();
-=======
-#ifndef SERVER
+//#ifndef SERVER
 	infostream << "NodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
 
+#ifndef SERVER
 	Client *client = (Client *)gamedef;
-	ITextureSource *tsrc = client->tsrc();
-	IShaderSource *shdsrc = client->getShaderSource();
-	auto smgr = client->getSceneManager();
-	scene::IMeshManipulator *meshmanip = smgr->getMeshManipulator();
->>>>>>> 5.5.0
+	ITextureSource *tsrc = !client ? nullptr : client->tsrc();
+	IShaderSource *shdsrc = !client ? nullptr : client->getShaderSource();
+	auto smgr = !client ? nullptr : client->getSceneManager();
+	scene::IMeshManipulator *meshmanip = !smgr ? nullptr : smgr->getMeshManipulator();
+#else
+	Client *client = nullptr;
+	ITextureSource *tsrc = nullptr;
+	IShaderSource *shdsrc = nullptr;
+	scene::ISceneManager *smgr = nullptr;
+	scene::IMeshManipulator *meshmanip = nullptr;
+#endif
 	TextureSettings tsettings;
 	tsettings.readSettings();
 
 	u32 size = m_content_features.size();
 
 	for (u32 i = 0; i < size; i++) {
-<<<<<<< HEAD
-		m_content_features[i].updateTextures(tsrc, shdsrc, smgr, meshmanip, gamedef, tsettings, server);
-		if (progress_callback)
-		progress_callback(progress_callback_args, i, size);
-=======
 		ContentFeatures *f = &(m_content_features[i]);
-		f->updateTextures(tsrc, shdsrc, meshmanip, client, tsettings);
+		f->updateTextures(tsrc, shdsrc, meshmanip, client, tsettings, !progress_callback_args);
+#ifndef SERVER
+		if (progress_callback_args)
 		client->showUpdateProgressTexture(progress_callback_args, i, size);
->>>>>>> 5.5.0
+#endif
 	}
 }
 
-<<<<<<< HEAD
-
-
-void CNodeDefManager::serialize(std::ostream &os, u16 protocol_version) const
-=======
 void NodeDefManager::serialize(std::ostream &os, u16 protocol_version) const
->>>>>>> 5.5.0
 {
 	writeU8(os, 1); // version
 	u16 count = 0;
@@ -2137,19 +1917,19 @@ void NodeDefManager::deSerialize(std::istream &is)
 }
 
 // map of content features, key = id, value = ContentFeatures
-void CNodeDefManager::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
+void NodeDefManager::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	std::vector<std::pair<int, const ContentFeatures*> > features_to_pack;
 	for (size_t i = 0; i < m_content_features.size(); ++i) {
 		if (i == CONTENT_IGNORE || i == CONTENT_AIR || i == CONTENT_UNKNOWN || m_content_features[i].name == "")
 			continue;
-		features_to_pack.push_back(std::make_pair(i, &m_content_features[i]));
+		features_to_pack.emplace_back(std::make_pair(i, &m_content_features[i]));
 	}
 	pk.pack_map(features_to_pack.size());
 	for (size_t i = 0; i < features_to_pack.size(); ++i)
 		PACK(features_to_pack[i].first, *features_to_pack[i].second);
 }
-void CNodeDefManager::msgpack_unpack(msgpack::object o)
+void NodeDefManager::msgpack_unpack(msgpack::object o)
 {
 	clear();
 
@@ -2204,137 +1984,8 @@ NodeDefManager *createNodeDefManager()
 	return new NodeDefManager();
 }
 
-<<<<<<< HEAD
-#if 0
-void ContentFeatures::deSerializeOld(std::istream &is, int version)
-	if (version == 5) // In PROTOCOL_VERSION 13
-	{
-		name = deSerializeString(is);
-		groups.clear();
-		u32 groups_size = readU16(is);
-		for(u32 i=0; i<groups_size; i++){
-			std::string name = deSerializeString(is);
-			int value = readS16(is);
-			groups[name] = value;
-		}
-		drawtype = (enum NodeDrawType)readU8(is);
-
-		visual_scale = readF1000(is);
-		if (readU8(is) != 6)
-			throw SerializationError("unsupported tile count");
-		for (u32 i = 0; i < 6; i++)
-			tiledef[i].deSerialize(is, version, drawtype);
-		if (readU8(is) != CF_SPECIAL_COUNT)
-			throw SerializationError("unsupported CF_SPECIAL_COUNT");
-		for (u32 i = 0; i < CF_SPECIAL_COUNT; i++)
-			tiledef_special[i].deSerialize(is, version, drawtype);
-		alpha = readU8(is);
-		post_effect_color.setAlpha(readU8(is));
-		post_effect_color.setRed(readU8(is));
-		post_effect_color.setGreen(readU8(is));
-		post_effect_color.setBlue(readU8(is));
-		param_type = (enum ContentParamType)readU8(is);
-		param_type_2 = (enum ContentParamType2)readU8(is);
-		is_ground_content = readU8(is);
-		light_propagates = readU8(is);
-		sunlight_propagates = readU8(is);
-		walkable = readU8(is);
-		pointable = readU8(is);
-		diggable = readU8(is);
-		climbable = readU8(is);
-		buildable_to = readU8(is);
-		deSerializeString(is); // legacy: used to be metadata_name
-		liquid_type = (enum LiquidType)readU8(is);
-		liquid_alternative_flowing = deSerializeString(is);
-		liquid_alternative_source = deSerializeString(is);
-		liquid_viscosity = readU8(is);
-		light_source = readU8(is);
-		light_source = MYMIN(light_source, LIGHT_MAX);
-		damage_per_second = readU32(is);
-		node_box.deSerialize(is);
-		selection_box.deSerialize(is);
-		legacy_facedir_simple = readU8(is);
-		legacy_wallmounted = readU8(is);
-		deSerializeSimpleSoundSpec(sound_footstep, is);
-		deSerializeSimpleSoundSpec(sound_dig, is);
-		deSerializeSimpleSoundSpec(sound_dug, is);
-	} else if (version == 6) {
-		name = deSerializeString(is);
-		groups.clear();
-		u32 groups_size = readU16(is);
-		for (u32 i = 0; i < groups_size; i++) {
-			std::string name = deSerializeString(is);
-			int	value = readS16(is);
-			groups[name] = value;
-		}
-		drawtype = (enum NodeDrawType)readU8(is);
-		visual_scale = readF1000(is);
-		if (readU8(is) != 6)
-			throw SerializationError("unsupported tile count");
-		for (u32 i = 0; i < 6; i++)
-			tiledef[i].deSerialize(is, version, drawtype);
-		// CF_SPECIAL_COUNT in version 6 = 2
-		if (readU8(is) != 2)
-			throw SerializationError("unsupported CF_SPECIAL_COUNT");
-		for (u32 i = 0; i < 2; i++)
-			tiledef_special[i].deSerialize(is, version, drawtype);
-		alpha = readU8(is);
-		post_effect_color.setAlpha(readU8(is));
-		post_effect_color.setRed(readU8(is));
-		post_effect_color.setGreen(readU8(is));
-		post_effect_color.setBlue(readU8(is));
-		param_type = (enum ContentParamType)readU8(is);
-		param_type_2 = (enum ContentParamType2)readU8(is);
-		is_ground_content = readU8(is);
-		light_propagates = readU8(is);
-		sunlight_propagates = readU8(is);
-		walkable = readU8(is);
-		pointable = readU8(is);
-		diggable = readU8(is);
-		climbable = readU8(is);
-		buildable_to = readU8(is);
-		deSerializeString(is); // legacy: used to be metadata_name
-		liquid_type = (enum LiquidType)readU8(is);
-		liquid_alternative_flowing = deSerializeString(is);
-		liquid_alternative_source = deSerializeString(is);
-		liquid_viscosity = readU8(is);
-		liquid_renewable = readU8(is);
-		light_source = readU8(is);
-		damage_per_second = readU32(is);
-		node_box.deSerialize(is);
-		selection_box.deSerialize(is);
-		legacy_facedir_simple = readU8(is);
-		legacy_wallmounted = readU8(is);
-		deSerializeSimpleSoundSpec(sound_footstep, is);
-		deSerializeSimpleSoundSpec(sound_dig, is);
-		deSerializeSimpleSoundSpec(sound_dug, is);
-		rightclickable = readU8(is);
-		drowning = readU8(is);
-		leveled = readU8(is);
-		liquid_range = readU8(is);
-	} else {
-		throw SerializationError("unsupported ContentFeatures version");
-	}
-}
-#endif
-
-inline bool CNodeDefManager::getNodeRegistrationStatus() const
-{
-	return m_node_registration_complete;
-}
-
-
-inline void CNodeDefManager::setNodeRegistrationStatus(bool completed)
-{
-	m_node_registration_complete = completed;
-}
-
-
-void CNodeDefManager::pendNodeResolve(NodeResolver *nr)
-=======
 
 void NodeDefManager::pendNodeResolve(NodeResolver *nr) const
->>>>>>> 5.5.0
 {
 	nr->m_ndef = this;
 	if (m_node_registration_complete)
@@ -2508,14 +2159,9 @@ bool NodeResolver::getIdFromNrBacklog(content_t *result_out,
 	}
 
 	if (!success) {
-<<<<<<< HEAD
-		infostream << "NodeResolver: failed to resolve node name '" << name
-			<< "'." << std::endl;
-=======
 		if (error_on_fallback)
 			errorstream << "NodeResolver: failed to resolve node name '" << name
 				<< "'." << std::endl;
->>>>>>> 5.5.0
 		c = c_fallback;
 	}
 
@@ -2555,14 +2201,7 @@ bool NodeResolver::getIdsFromNrBacklog(std::vector<content_t> *result_out,
 				success = false;
 			}
 		} else {
-<<<<<<< HEAD
-			std::unordered_set<content_t> cids;
-			m_ndef->getIds(name, cids);
-			for (auto it = cids.begin(); it != cids.end(); ++it)
-				result_out->push_back(*it);
-=======
 			m_ndef->getIds(name, *result_out);
->>>>>>> 5.5.0
 		}
 	}
 

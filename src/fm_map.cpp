@@ -469,7 +469,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 	return m_blocks_update_last;
 }
 
-
+#if TODO
 u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks, std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms) {
 	Map::lighting_map_t lighting_mblocks;
 	for (auto & i : a_blocks)
@@ -756,6 +756,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 
 	return block_below_is_valid;
 }
+#endif
 
 void Map::lighting_modified_add(v3POS pos, int range) {
 	MutexAutoLock lock(m_lighting_modified_mutex);
@@ -834,3 +835,57 @@ MapNode Map::getNodeNoEx(v3s16 p) {
 	return block->getNode(relpos);
 }
 */
+
+/**
+ * Get the ground level by searching for a non CONTENT_AIR node in a column from top to bottom
+ */
+s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
+{
+	
+	POS level;
+
+	// The reference height is the original mapgen height
+	POS referenceHeight = m_emerge->getGroundLevelAtPoint(p2d);
+	POS maxSearchHeight =  63 + referenceHeight;
+	POS minSearchHeight = -63 + referenceHeight;
+	v3POS probePosition(p2d.X, maxSearchHeight, p2d.Y);
+	v3POS blockPosition = getNodeBlockPos(probePosition);
+	v3POS prevBlockPosition = blockPosition;
+
+	MAP_NOTHREAD_LOCK(this);
+
+	// Cache the block to be inspected.
+	if(cacheBlocks) {
+		emergeBlock(blockPosition, false);
+	}
+
+	// Probes the nodes in the given column
+	for(; probePosition.Y > minSearchHeight; probePosition.Y--)
+	{
+		if(cacheBlocks) {
+			// Calculate the block position of the given node
+			blockPosition = getNodeBlockPos(probePosition); 
+
+			// If the node is in an different block, cache it
+			if(blockPosition != prevBlockPosition) {
+				emergeBlock(blockPosition, false);
+				prevBlockPosition = blockPosition;
+			}
+		}
+
+		MapNode node = getNode(probePosition);
+		if (node.getContent() != CONTENT_IGNORE &&
+		    node.getContent() != CONTENT_AIR) {
+			break;
+		}
+	}
+
+	// Could not determine the ground. Use map generator noise functions.
+	if(probePosition.Y == minSearchHeight) {
+		level = referenceHeight; 
+	} else {
+		level = probePosition.Y;
+	}
+
+	return level;
+}

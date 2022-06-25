@@ -20,20 +20,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "remoteplayer.h"
 #include <json/json.h>
-<<<<<<< HEAD
-#include "content_sao.h"
-=======
->>>>>>> 5.5.0
 #include "filesys.h"
 #include "gamedef.h"
 #include "porting.h"  // strlcpy
 #include "server.h"
 #include "settings.h"
-<<<<<<< HEAD
-=======
 #include "convert_json.h"
 #include "server/player_sao.h"
->>>>>>> 5.5.0
 
 /*
 	RemotePlayer
@@ -140,15 +133,16 @@ Json::Value operator<<(Json::Value &json, RemotePlayer &player) {
 
 	json["name"] = player.m_name;
 	if (playersao) {
-		json["pitch"] = playersao->getPitch();
-		json["yaw"] = playersao->getYaw();
+		json["pitch"] = playersao->getLookPitch();
+		auto rotation = playersao->getRotation();
+		json["rotation"] << rotation;
 		auto pos = playersao->getBasePosition();
 		json["position"] << pos;
 
 		json["hp"] = playersao->getHP();
 		json["breath"] = playersao->getBreath();
 
-		for (const auto &attr : playersao->getExtendedAttributes()) {
+		for (const auto &attr : playersao->getMeta().getStrings()) {
 			json["extended_attributes"][attr.first] = attr.second;
 		}
 	}
@@ -159,20 +153,27 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 	auto playersao = player.getPlayerSAO();
 	player.m_name = json["name"].asString();
 	if (playersao) {
-		playersao->setPitch(json["pitch"].asFloat());
-		playersao->setYaw(json["yaw"].asFloat());
+		playersao->setLookPitch(json["pitch"].asFloat());
+
+		if (json["rotation"]) {
+			v3f rotation;
+			json["rotation"]>>rotation;
+			playersao->setRotation(rotation);
+		} else {
+			playersao->setRotation({0, json["yaw"].asFloat(), 0});
+		}
 		v3f position;
 		json["position"]>>position;
 		playersao->setBasePosition(position);
-		playersao->setHP(json["hp"].asInt());
+		playersao->setHP(json["hp"].asInt(), PlayerHPChangeReason::SET_HP);
 		playersao->setBreath(json["breath"].asInt());
 
 		const auto attr_root = json["extended_attributes"];
 		const Json::Value::Members attr_list =
 		attr_root.getMemberNames();
 		for (Json::Value::Members::const_iterator it = attr_list.begin(); it != attr_list.end(); ++it) {
-			Json::Value attr_value = attr_root[*it];
-			playersao->setExtendedAttribute(*it, attr_value.asString());
+			const Json::Value & attr_value = attr_root[*it];
+			playersao->getMeta().setString(*it, attr_value.asString());
         }
 	}
 
@@ -197,6 +198,7 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 	}
 
 	return json;
+}
 
 void RemotePlayer::onSuccessfulSave()
 {

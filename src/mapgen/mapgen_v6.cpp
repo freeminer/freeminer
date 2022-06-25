@@ -192,7 +192,7 @@ MapgenV6Params::MapgenV6Params():
 }
 
 
-void MapgenV6Params::readParams(Settings *settings)
+void MapgenV6Params::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgv6_spflags", spflags, flagdesc_mapgen_v6);
 	settings->getFloatNoEx("mgv6_freq_desert", freq_desert);

@@ -228,13 +228,9 @@ void NodeMetadataList::remove(v3s16 p)
 {
 	NodeMetadata *olddata = get(p);
 	if (olddata) {
-<<<<<<< HEAD
-=======
+		m_data.erase(p);
 		if (m_is_metadata_owner)
 			delete olddata;
->>>>>>> 5.5.0
-		m_data.erase(p);
-		delete olddata;
 	}
 }
 

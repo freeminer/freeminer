@@ -33,7 +33,7 @@ public:
 
 	lan_adv();
 	void ask();
-	void send_string(std::string str);
+	void send_string(const std::string& str);
 
 	void serve(unsigned short port);
 

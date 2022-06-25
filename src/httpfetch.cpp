@@ -40,16 +40,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "noise.h"
 
-<<<<<<< HEAD
-std::mutex g_httpfetch_mutex;
-std::map<unsigned long, std::queue<HTTPFetchResult> > g_httpfetch_results;
-std::unique_ptr<PcgRandom> g_callerid_randomness;
-=======
 static std::mutex g_httpfetch_mutex;
 static std::unordered_map<u64, std::queue<HTTPFetchResult>>
 	g_httpfetch_results;
-static PcgRandom g_callerid_randomness;
->>>>>>> 5.5.0
+std::unique_ptr<PcgRandom> g_callerid_randomness;
 
 HTTPFetchRequest::HTTPFetchRequest() :
 	timeout(g_settings->getS32("curl_timeout")),
@@ -314,16 +308,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &oss);
 	}
 
-<<<<<<< HEAD
-	// Set POST (or GET) data
-/*
-	if (request.post_fields.empty() && request.post_data.empty()) {
-		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
-	} else if (request.multipart) {
-*/
-=======
 	// Set data from fields or raw_data
->>>>>>> 5.5.0
 	if (request.multipart) {
 		curl_httppost *last = NULL;
 		for (StringMap::iterator it = request.fields.begin();
@@ -338,33 +323,6 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 		curl_easy_setopt(curl, CURLOPT_HTTPPOST, post);
 		// request.post_fields must now *never* be
 		// modified until CURLOPT_HTTPPOST is cleared
-<<<<<<< HEAD
-	} else if (!request.post_fields.empty()) {
-		curl_easy_setopt(curl, CURLOPT_POST, 1);
-		std::string str;
-		for (StringMap::iterator it = request.post_fields.begin();
-				it != request.post_fields.end(); ++it) {
-			if (str != "")
-				str += "&";
-			str += urlencode(it->first);
-			str += "=";
-			str += urlencode(it->second);
-		}
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
-				str.size());
-		curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS,
-				str.c_str());
-	} else if (!request.post_data.empty()) {
-		curl_easy_setopt(curl, CURLOPT_POST, 1);
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
-				request.post_data.size());
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
-				request.post_data.c_str());
-		// request.post_data must now *never* be
-		// modified until CURLOPT_POSTFIELDS is cleared
-	} else {
-		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
-=======
 	} else {
 		switch (request.method) {
 		case HTTP_GET:
@@ -401,7 +359,6 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 						str.c_str());
 			}
 		}
->>>>>>> 5.5.0
 	}
 	// Set additional HTTP headers
 	for (const std::string &extra_header : request.extra_headers) {

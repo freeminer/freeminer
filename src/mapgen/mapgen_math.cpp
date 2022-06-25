@@ -263,7 +263,7 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 
 //////////////////////// Mapgen Math parameter read/write
 
-void MapgenMathParams::readParams(Settings *settings) {
+void MapgenMathParams::readParams(const Settings *settings) {
 	try {
 		MapgenV7Params::readParams(settings);
 	} catch (...) {}

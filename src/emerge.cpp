@@ -400,6 +400,17 @@ int EmergeManager::getSpawnLevelAtPoint(v2s16 p)
 	return m_mapgens[0]->getSpawnLevelAtPoint(p);
 }
 
+int EmergeManager::getGroundLevelAtPoint(v2s16 p)
+{
+       if (m_mapgens.empty() || !m_mapgens[0]) {
+               errorstream << "EmergeManager: getGroundLevelAtPoint() called"
+                       " before mapgen init" << std::endl;
+               return 0;
+       }
+
+       return m_mapgens[0]->getGroundLevelAtPoint(p);
+}
+
 
 // TODO(hmmmm): Move this to ServerMap
 bool EmergeManager::isBlockUnderground(v3s16 blockpos)

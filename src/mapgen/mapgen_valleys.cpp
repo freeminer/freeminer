@@ -127,7 +127,7 @@ MapgenValleysParams::MapgenValleysParams():
 }
 
 
-void MapgenValleysParams::readParams(Settings *settings)
+void MapgenValleysParams::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgvalleys_spflags", spflags, flagdesc_mapgen_valleys);
 	settings->getU16NoEx("mgvalleys_altitude_chill",       altitude_chill);

@@ -22,26 +22,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "itemdef.h"
-<<<<<<< HEAD
-#include "gamedef.h"
-=======
-
->>>>>>> 5.5.0
 #include "nodedef.h"
 #include "tool.h"
 #include "inventory.h"
 #ifndef SERVER
-<<<<<<< HEAD
-#include "mapblock_mesh.h"
-#include "mesh.h"
-#include "wieldmesh.h"
-//#include "mapblock.h"
-#include "clientmap.h"
-=======
 #include "client/mapblock_mesh.h"
 #include "client/mesh.h"
 #include "client/wieldmesh.h"
->>>>>>> 5.5.0
 #include "client/tile.h"
 #include "client/client.h"
 #endif
@@ -53,14 +40,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <set>
 
-<<<<<<< HEAD
-#ifdef __ANDROID__
-#include <GLES/gl.h>
-#endif
-
-
-=======
->>>>>>> 5.5.0
 /*
 	ItemDefinition
 */
@@ -247,7 +226,6 @@ void ItemDefinition::deSerialize(std::istream &is)
 	} catch(SerializationError &e) {};
 }
 
-<<<<<<< HEAD
 void ItemDefinition::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_map(tool_capabilities ? 15 : 14);
@@ -301,8 +279,6 @@ void ItemDefinition::msgpack_unpack(msgpack::object o)
 	packet[ITEMDEF_SOUND_PLACE_GAIN].convert(sound_place.gain);
 	packet[ITEMDEF_RANGE].convert(range);
 }
-=======
->>>>>>> 5.5.0
 
 /*
 	CItemDefManager

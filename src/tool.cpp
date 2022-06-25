@@ -186,7 +186,6 @@ void ToolCapabilities::deserializeJson(std::istream &is)
 	}
 }
 
-<<<<<<< HEAD
 void ToolCapabilities::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 {
 	pk.pack_map(4);
@@ -205,11 +204,7 @@ void ToolCapabilities::msgpack_unpack(msgpack::object o)
 	packet[TOOLCAP_DAMAGEGROUPS].convert(damageGroups);
 }
 
-DigParams getDigParams(const ItemGroupList &groups,
-		const ToolCapabilities *tp, float time_from_last_punch)
-=======
 static u32 calculateResultWear(const u32 uses, const u16 initial_wear)
->>>>>>> 5.5.0
 {
 	if (uses == 0) {
 		// Trivial case: Infinite uses

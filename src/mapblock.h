@@ -574,32 +574,32 @@ public:
 	*/
 
 #ifndef SERVER // Only on client
-	mesh_type mesh , mesh_old;
-	mesh_type mesh2, mesh4, mesh8, mesh16;
-	std::atomic_uint mesh_size;
+	mesh_type mesh = nullptr , mesh_old = nullptr;
+	mesh_type mesh2 = nullptr, mesh4 = nullptr, mesh8 = nullptr, mesh16 = nullptr;
+	std::atomic_uint mesh_size = 0;
 #endif
 
 	NodeMetadataList m_node_metadata;
 	NodeTimerList m_node_timers;
 	StaticObjectList m_static_objects;
 	
-	std::atomic_short heat;
-	std::atomic_short humidity;
-	std::atomic_short heat_add;
-	std::atomic_short humidity_add;
-	std::atomic_ulong heat_last_update;
-	u32 humidity_last_update;
-	float m_uptime_timer_last;
-	std::atomic_short usage_timer_multiplier;
+	std::atomic_short heat = 0;
+	std::atomic_short humidity = 0;
+	std::atomic_short heat_add = 0;
+	std::atomic_short humidity_add = 0;
+	std::atomic_ulong heat_last_update = 0;
+	u32 humidity_last_update = 0;
+	float m_uptime_timer_last = 0;
+	std::atomic_short usage_timer_multiplier = 1;
 
 	// Last really changed time (need send to client)
-	std::atomic_uint m_changed_timestamp;
-	u32 m_next_analyze_timestamp;
+	std::atomic_uint m_changed_timestamp = 0;
+	u32 m_next_analyze_timestamp = 0;;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
 	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
-	u32 m_abm_timestamp;
+	u32 m_abm_timestamp = 0;;
 
 	u32 getActualTimestamp() {
 		u32 block_timestamp = 0;
@@ -612,10 +612,10 @@ public:
 	}
 
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
-	content_t content_only;
-	u8 content_only_param1, content_only_param2;
+	content_t content_only = CONTENT_IGNORE;
+	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
-	std::atomic_short lighting_broken;
+	std::atomic_short lighting_broken = 0;
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -661,7 +661,7 @@ private:
 		  block has been modified from the one on disk.
 		- On the client, this is used for nothing.
 	*/
-	u32 m_modified = MOD_STATE_WRITE_NEEDED;
+	u32 m_modified = MOD_STATE_CLEAN;
 	u32 m_modified_reason = MOD_REASON_INITIAL;
 
 	/*

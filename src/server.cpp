@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/serveractiveobject.h"
 #include "settings.h"
 #include "profiler.h"
-#include "log_types.h.h"
+#include "log_types.h"
 #include "scripting_server.h"
 #include "nodedef.h"
 #include "itemdef.h"

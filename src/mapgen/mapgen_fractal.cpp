@@ -104,7 +104,7 @@ MapgenFractalParams::MapgenFractalParams():
 }
 
 
-void MapgenFractalParams::readParams(Settings *settings)
+void MapgenFractalParams::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgfractal_spflags", spflags, flagdesc_mapgen_fractal);
 	settings->getFloatNoEx("mgfractal_cave_width",         cave_width);

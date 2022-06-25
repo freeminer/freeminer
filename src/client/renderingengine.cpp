@@ -593,7 +593,8 @@ static float calcDisplayDensity()
 	}
 
 	/* return manually specified dpi */
-	return g_settings->getFloat("screen_dpi") / 96.0;
+	//return g_settings->getFloat("screen_dpi") / 96.0;
+	return porting::get_dpi() / 96.0;
 }
 
 float RenderingEngine::getDisplayDensity()
@@ -617,6 +618,7 @@ static float calcDisplayDensity(irr::video::IVideoDriver *driver)
 
 	/* return manually specified dpi */
 	return g_settings->getFloat("screen_dpi") / 96.0f;
+
 }
 
 float RenderingEngine::getDisplayDensity()
@@ -634,7 +636,7 @@ float RenderingEngine::getDisplayDensity()
 
 float RenderingEngine::getDisplayDensity()
 {
-	return (g_settings->getFloat("screen_dpi") / 96.0) * g_settings->getFloat("display_density_factor");
+	return (porting::get_dpi() / 96.0f) * g_settings->getFloat("display_density_factor");
 }
 
 #endif

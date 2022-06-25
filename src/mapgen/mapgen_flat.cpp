@@ -105,7 +105,7 @@ MapgenFlatParams::MapgenFlatParams():
 }
 
 
-void MapgenFlatParams::readParams(Settings *settings)
+void MapgenFlatParams::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgflat_spflags", spflags, flagdesc_mapgen_flat);
 	settings->getS16NoEx("mgflat_ground_level",         ground_level);

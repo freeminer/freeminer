@@ -6,6 +6,7 @@
 #include "serverenvironment.h"
 #include "server.h"
 #include "emerge.h"
+#include "face_position_cache.h"
 
 //VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
@@ -57,8 +58,6 @@ int RemoteClient::GetNextBlocks (
 		double m_uptime,
 		std::vector<PrioritySortedBlockTransfer> &dest)
 {
-	DSTACK(FUNCTION_NAME);
-
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
@@ -113,8 +112,8 @@ int RemoteClient::GetNextBlocks (
 	// Camera position and direction
 	v3f camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0,0,1);
-	camera_dir.rotateYZBy(sao->getPitch());
-	camera_dir.rotateXZBy(sao->getYaw());
+	camera_dir.rotateYZBy(sao->getLookPitch());
+	camera_dir.rotateXZBy(sao->getRotation().Y);
 
 	//infostream<<"camera_dir=("<<camera_dir<<")"<< " camera_pos="<<camera_pos<<std::endl;
 
@@ -265,7 +264,7 @@ int RemoteClient::GetNextBlocks (
 
 		std::vector<v3POS> list;
 		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
-			list.push_back(v3POS(0,0,0));
+			list.emplace_back(0,0,0);
 		}
 
 		bool can_skip = d > 1;
