@@ -351,7 +351,7 @@ public:
 	bool hudSetFlags(RemotePlayer *player, u32 flags, u32 mask);
 	bool hudSetHotbarItemcount(RemotePlayer *player, s32 hotbar_itemcount);
 	void hudSetHotbarImage(RemotePlayer *player, const std::string &name, int items = 0);
-	void hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &name, int items = 0);
+	void hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &name);
 
 	Address getPeerAddress(session_t peer_id);
 
@@ -384,7 +384,7 @@ public:
 	void DenyAccess(session_t peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason = "");
 	void acceptAuth(session_t peer_id, bool forSudoMode);
-	void DenyAccess_Legacy(session_t peer_id, const std::string &reason);
+	void DenyAccess_Legacy(session_t peer_id, const std::wstring &reason);
 	void DisconnectPeer(session_t peer_id);
 	bool getClientConInfo(session_t peer_id, con::rtt_stat_type type, float *retval);
 	bool getClientInfo(session_t peer_id, ClientInfo &ret);
@@ -467,7 +467,7 @@ private:
 	void SendBreath(session_t peer_id, u16 breath);
 	void SendAccessDenied(session_t peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason, bool reconnect = false);
-	void SendAccessDenied_Legacy(session_t peer_id, const std::string &reason);
+	void SendAccessDenied_Legacy(session_t peer_id, const std::wstring &reason);
 	void SendDeathscreen(session_t peer_id, bool set_camera_point_target,
 		v3f camera_point_target);
 	void SendItemDef(session_t peer_id, IItemDefManager *itemdef, u16 protocol_version);
@@ -527,7 +527,7 @@ public:
 	int SendBlocks(float dtime);
 private:
 
-	bool addMediaFile(const std::string &filename, const std::string &filepath,
+	size_t addMediaFile(const std::string &filename, const std::string &filepath,
 			std::string *filedata = nullptr, std::string *digest = nullptr);
 	void fillMediaCache();
 	void sendMediaAnnouncement(session_t peer_id, const std::string &lang_code);

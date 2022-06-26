@@ -55,8 +55,7 @@ int RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
-		double m_uptime,
-		std::vector<PrioritySortedBlockTransfer> &dest)
+		std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
 {
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())

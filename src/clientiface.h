@@ -276,7 +276,7 @@ public:
 		dtime is used for resetting send radius at slow interval
 	*/
 	int GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
-			float dtime, double m_uptime, std::vector<PrioritySortedBlockTransfer> &dest);
+			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime);
 
 	void SentBlock(v3s16 p, double time);
 

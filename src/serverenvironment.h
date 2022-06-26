@@ -405,7 +405,7 @@ public:
 // freeminer
 
 public:
-	KeyValueStorage &getKeyValueStorage(const std::string & name = "key_value_storage");
+	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
 	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
 	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
 			const ItemStack& items);
@@ -418,7 +418,6 @@ private:
 public:
 	bool m_use_weather = true;
 	bool m_use_weather_biome = true;
-private:
 	bool m_more_threads = true;
 public:
 	ABMHandler m_abmhandler;
@@ -562,7 +561,9 @@ private:
 	// When a mapblock older than this is loaded, its objects are cleared.
 	u32 m_last_clear_objects_time = 0;
 	// Active block modifiers
+public:
 	std::vector<ABMWithState> m_abms;
+private:
 	LBMManager m_lbm_mgr;
 	// An interval for generally sending object positions and stuff
 	float m_recommended_send_interval = 0.1f;

@@ -638,6 +638,7 @@ set(FMcommon_SRCS
 	fm_map.cpp
         fm_abm.cpp
         fm_clientiface.cpp
+        content_abm.cpp
 )
 #	FMColoredString.cpp
 

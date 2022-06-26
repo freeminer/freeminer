@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <string>
 #include <ctime>
+#include "util/string.h"
 
 enum ChatMessageType
 {
@@ -33,17 +34,27 @@ enum ChatMessageType
 
 struct ChatMessage
 {
-	ChatMessage(const std::string &m = "") : message(m) {}
+	ChatMessage(const std::wstring &m = L"") : message(m) {}
 
-	ChatMessage(ChatMessageType t, const std::string &m, const std::string &s = "",
+	ChatMessage(ChatMessageType t, const std::wstring &m, const std::wstring &s = L"",
 			std::time_t ts = std::time(0)) :
 			type(t),
 			message(m), sender(s), timestamp(ts)
 	{
 	}
 
+	ChatMessage(const std::string &m) : message(utf8_to_wide(m)) {}
+
+	ChatMessage(ChatMessageType t, const std::string &m, const std::string &s,
+			std::time_t ts = std::time(0)) :
+			type(t),
+			message(utf8_to_wide(m)), sender(utf8_to_wide(s)), timestamp(ts)
+	{
+	}
+
+
 	ChatMessageType type = CHATMESSAGE_TYPE_RAW;
-	std::string message = "";
-	std::string sender = "";
+	std::wstring message = L"";
+	std::wstring sender = L"";
 	std::time_t timestamp = std::time(0);
 };

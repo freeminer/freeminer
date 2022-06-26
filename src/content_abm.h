@@ -19,18 +19,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+#pragma once
 
-#ifndef CONTENT_ABM_HEADER
-#define CONTENT_ABM_HEADER
 
 class ServerEnvironment;
-class INodeDefManager;
+class NodeDefManager;
 
 /*
 	Legacy ActiveBlockModifiers
 */
 
-void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef);
-
-#endif
-
+void add_legacy_abms(ServerEnvironment *env, NodeDefManager *nodedef);

@@ -1,5 +1,8 @@
+#include "database/database.h"
+#include "emerge.h"
 #include "profiler.h"
 #include "server.h"
+#include "util/string.h"
 #include "util/timetaker.h"
 
 class ServerThread : public thread_pool
@@ -221,7 +224,7 @@ public:
 				auto ctime = porting::getTimeMs();
 				unsigned int dtimems = ctime - time;
 				time = ctime;
-				m_server->getEnv().step(dtimems / 1000.0f, m_server->m_uptime.get(), max_cycle_ms);
+				m_server->getEnv().step(dtimems / 1000.0f, m_server->m_uptime_counter->get(), max_cycle_ms);
 				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
 #if !EXEPTION_DEBUG
 			} catch(std::exception &e) {
@@ -279,7 +282,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 
 	int ret = 0;
 
-	m_env->getMap().time_life = m_uptime.get() + m_env->m_game_time_start;
+	m_env->getMap().time_life = m_uptime_counter->get() + m_env->m_game_time_start;
 
 	/*
 		float dtime;
@@ -297,7 +300,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 		//MutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		if(m_env->getMap().timerUpdate(m_uptime.get(), g_settings->getFloat("server_unload_unused_data_timeout"), -1, max_cycle_ms)) {
+		if(m_env->getMap().timerUpdate(m_uptime_counter->get(), g_settings->getFloat("server_unload_unused_data_timeout"), -1, max_cycle_ms)) {
 			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 			++ret;
 		}
@@ -354,6 +357,7 @@ no_send:
 	return ret;
 }
 
+/* TODO
 void Server::deleteDetachedInventory(const std::string &name) {
 	if(m_detached_inventories.count(name) > 0) {
 		infostream << "Server deleting detached inventory \"" << name << "\"" << std::endl;
@@ -361,6 +365,7 @@ void Server::deleteDetachedInventory(const std::string &name) {
 		m_detached_inventories.erase(name);
 	}
 }
+*/
 
 void Server::maintenance_start() {
 	infostream << "Server: Starting maintenance: saving..." << std::endl;
@@ -368,7 +373,7 @@ void Server::maintenance_start() {
 	save(0.1);
 	m_env->getServerMap().m_map_saving_enabled = false;
 	m_env->getServerMap().m_map_loading_enabled = false;
-	m_env->getServerMap().dbase->close();
+	//fmtodo: m_env->getServerMap().dbase->close();
 	m_env->m_key_value_storage.clear();
 	stat.close();
 	actionstream << "Server: Starting maintenance: bases closed now." << std::endl;
@@ -376,7 +381,7 @@ void Server::maintenance_start() {
 };
 
 void Server::maintenance_end() {
-	m_env->getServerMap().dbase->open();
+	//fmtodo:m_env->getServerMap().dbase->open();
 	stat.open();
 	m_env->getServerMap().m_map_saving_enabled = true;
 	m_env->getServerMap().m_map_loading_enabled = true;
@@ -389,7 +394,7 @@ void Server::maintenance_end() {
 void Server::SendPunchPlayer(u16 peer_id, v3f speed) { }
 #endif
 
-KeyValueStorage &ServerEnvironment::getKeyValueStorage(const std::string & name) {
+KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name) {
 	if (name.empty()) {
 		name = "key_value_storage";
 	}
@@ -398,3 +403,22 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(const std::string & name)
 	}
 	return m_key_value_storage.at(name);
 }
+
+void Server::SendChatMessage(u16 peer_id, const std::string &message) {
+	SendChatMessage(peer_id, utf8_to_wide(message));
+}
+
+/*
+//fmtodo: remove:
+void Server::DenyAccess(u16 peer_id, const std::string &custom_reason)
+{
+    DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, custom_reason);
+}
+
+//fmtodo: remove:
+void Server::DenyAccess_Legacy(u16 peer_id, const std::wstring &custom_reason)
+{
+    DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, wide_to_utf8(custom_reason));
+}
+*/
+

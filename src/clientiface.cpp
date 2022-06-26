@@ -102,8 +102,9 @@ int RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
-		double m_uptime,
-		std::vector<PrioritySortedBlockTransfer> &dest)
+		std::vector<PrioritySortedBlockTransfer> &dest,
+		double m_uptime
+)
 {
 <<<<<<< HEAD
 

@@ -333,7 +333,7 @@ int ModApiServer::l_disconnect_player(lua_State *L)
 		lua_pushboolean(L, false); // No such player
 		return 1;
 	}
-	getServer(L)->DenyAccess_Legacy(player->getPeerId(), message);
+	getServer(L)->DenyAccess_Legacy(player->getPeerId(), utf8_to_wide(message));
 	lua_pushboolean(L, true);
 	return 1;
 }
