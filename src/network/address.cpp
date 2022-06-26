@@ -169,9 +169,11 @@ std::string Address::serializeString() const
 	}
 #else
 	char str[INET6_ADDRSTRLEN];
-	if (inet_ntop(m_addr_family, (void*) &m_address, str, sizeof(str)) == nullptr)
-		return "" + std::string{((m_addr_family == AF_INET6) ? (m_address.ipv6.sin6_scope_id ? "%" + itos(m_address.ipv6.sin6_scope_id) : "") : "")};
-	return str;
+	if (!inet_ntop(m_addr_family, (m_addr_family == AF_INET) ? (void*)&(m_address.ipv4.sin_addr) : (void*)&(m_address.ipv6.sin6_addr), str, INET6_ADDRSTRLEN)) {
+		return "";
+	}
+	return std::string{str} + ((m_addr_family == AF_INET6) ? (m_address.ipv6.sin6_scope_id ? "%" + itos(m_address.ipv6.sin6_scope_id) : "") : "");
+
 #endif
 }
 
@@ -206,6 +208,7 @@ bool Address::isZero() const
 
 void Address::setAddress(u32 address)
 {
+	m_address.ipv4.sin_family =
 	m_addr_family = AF_INET;
 	m_address.ipv4.sin_addr.s_addr = htonl(address);
 }
@@ -218,17 +221,22 @@ void Address::setAddress(u8 a, u8 b, u8 c, u8 d)
 
 void Address::setAddress(const IPv6AddressBytes *ipv6_bytes)
 {
+	m_address.ipv6.sin6_family =
 	m_addr_family = AF_INET6;
 	if (ipv6_bytes)
 		memcpy(m_address.ipv6.sin6_addr.s6_addr, ipv6_bytes->bytes, 16);
 	else
 		memset(m_address.ipv6.sin6_addr.s6_addr, 0, 16);
+		
 }
 
 void Address::setPort(u16 port)
 {
 	m_port = port;
-	m_address.ipv6.sin6_port = ntohs(m_port);
+	if (m_addr_family == AF_INET6)
+		m_address.ipv6.sin6_port = ntohs(m_port);
+	else 
+		m_address.ipv4.sin_port = ntohs(m_port);
 }
 
 void Address::print(std::ostream *s) const

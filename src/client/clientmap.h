@@ -210,7 +210,7 @@ private:
 	int m_drawlist_current = 0;
 	std::vector<std::pair<v3POS, int>> draw_nearest;
 public:
-	std::atomic_uint m_drawlist_last = 0;
+	std::atomic_uint m_drawlist_last {0};
 	std::map<v3POS, MapBlock*> m_block_boundary;
 private:
 	std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;

@@ -365,7 +365,7 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 		conf.set("backend", "leveldb");
 		conf.set("player_backend", "leveldb");
 		conf.set("auth_backend", "leveldb");
-		conf.set("mod_storage_backend", "leveldb");
+		conf.set("mod_storage_backend", "files");
 #elif USE_SQLITE3
 		conf.set("backend", "sqlite3");
 		conf.set("player_backend", "sqlite3");
@@ -381,7 +381,7 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 	}
 
 	// Create map_meta.txt if does not already exist
-	std::string map_meta_path = final_path + DIR_DELIM + "map_meta.json";
+	std::string map_meta_path = final_path + DIR_DELIM + "map_meta";
 	if (!fs::PathExists(map_meta_path)) {
 		MapSettingsManager mgr(map_meta_path);
 

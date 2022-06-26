@@ -75,17 +75,15 @@ public:
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
 	void setAddress(const IPv6AddressBytes *ipv6_bytes);
-	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_addr_family = AF_INET6; }
+	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_address.ipv6.sin6_family = m_addr_family = AF_INET6; m_address.ipv6.sin6_port = ntohs(m_port); }
 	void setPort(u16 port);
 
 private:
 	unsigned short m_addr_family = 0;
-	//unsigned short & m_addr_family = m_address.ipv6.sin6_family;
 	union
 	{
 		struct sockaddr_in ipv4;
 		struct sockaddr_in6 ipv6;
 	} m_address = {};
 	u16 m_port = 0; // Port is separate from sockaddr structures
-	//u16 & m_port = m_address.ipv6.sin6_port;
 };

@@ -21,7 +21,7 @@ set(VERSION_MINOR 5)
 set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
-set(VERSION_TWEAK 8)
+set(VERSION_TWEAK 0) # freeminer
 
 # Change to false for releases
 set(DEVELOPMENT_BUILD FALSE)

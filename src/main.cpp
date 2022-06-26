@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <netinet/in.h>
 #include "irrlichttypes.h" // must be included before anything irrlicht, see comment in the file
 #include "irrlicht.h" // createDevice
 #include "irrlichttypes_extrabloated.h"
@@ -942,7 +943,7 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 
 	// Bind address
 	std::string bind_str = g_settings->get("bind_address");
-	Address bind_addr(0, 0, 0, 0, game_params.socket_port);
+	Address bind_addr(INADDR_ANY, game_params.socket_port);
 
 	if (g_settings->getBool("ipv6_server") && g_settings->getBool("enable_ipv6")) {
 		bind_addr.setAddress(in6addr_any);

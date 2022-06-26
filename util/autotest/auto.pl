@@ -553,7 +553,7 @@ our $tasks = {
                 (
                     #map { $buildname . '_' . $_ => [[\$buildname, $_]] }
                     map { $_ . '_' . $buildname => [[\$buildname, $_]] }
-                      qw(build build_client build_client_debug build_server build_server_debug stress)
+                      qw(build build_client build_client_debug build_server build_server_debug play server stress)
                 ),    # '
 
                 'bot_' . $buildname => sub {

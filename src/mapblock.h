@@ -576,7 +576,7 @@ public:
 #ifndef SERVER // Only on client
 	mesh_type mesh = nullptr , mesh_old = nullptr;
 	mesh_type mesh2 = nullptr, mesh4 = nullptr, mesh8 = nullptr, mesh16 = nullptr;
-	std::atomic_uint mesh_size = 0;
+	std::atomic_uint mesh_size {0};
 #endif
 
 	NodeMetadataList m_node_metadata;

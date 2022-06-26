@@ -4091,78 +4091,77 @@ v3f Server::findSpawnPos()
 }
 
 #if 0
-v3f Server::findSpawnPos()                                                                                                                                     
-{                                                                                                                                                              
-    ServerMap &map = m_env->getServerMap();                                                                                                                    
-    v3f nodeposf;                                                                                                                                              
-    POS find = 0;                                                                                                                                              
-    g_settings->getS16NoEx("static_spawnpoint_find", find);                                                                                                    
-    if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {                                                                                      
-        return nodeposf * BS;                                                                                                                                  
-    }                                                                                                                                                          
-                                                                                                                                                               
-//todo: remove                                                                                                                                                 
-    s16 water_level = map.getWaterLevel();                                                                                                                     
-    s16 vertical_spawn_range = g_settings->getS16("vertical_spawn_range");                                                                                     
-//============                                                                                                                                                 
-    auto cache_block_before_spawn = g_settings->getBool("cache_block_before_spawn");                                                                           
-                                                                                                                                                               
-    bool is_good = false;                                                                                                                                      
-    POS min_air_height = 3;                                                                                                                                    
-    g_settings->getS16NoEx("static_spawnpoint_find_height", min_air_height);                                                                                   
-                                                                                                                                                               
-    // Try to find a good place a few times                                                                                                                    
-    for(s32 i = 0; i < 4000 && !is_good; i++) {                                                                                                                
-        s32 range = 1 + i;                                                                                                                                     
-        // We're going to try to throw the player to this position                                                                                             
-        v2s16 nodepos2d = v2s16(                                                                                                                               
-            nodeposf.X -range + (myrand() % (range * 2)),                                                                                                      
-            nodeposf.Z -range + (myrand() % (range * 2)));                                                                                                     
-                                                                                                                                                               
-// FM version:                                                                                                                                                 
-        // Get ground height at point                                                                                                                          
-        s16 spawn_level = map.findGroundLevel(nodepos2d, cache_block_before_spawn);                                                                            
-        // Don't go underwater or to high places                                                                                                               
-        if (spawn_level <= water_level ||                                                                                                                      
-                spawn_level > water_level + vertical_spawn_range)                                                                                              
-                                                                                                                                                               
-/*MT :                                                                                                                                                         
-        // Get spawn level at point                                                                                                                            
-        s16 spawn_level = m_emerge->getSpawnLevelAtPoint(nodepos2d);                                                                                           
-        // Continue if MAX_MAP_GENERATION_LIMIT was returned by                                                                                                
-        // the mapgen to signify an unsuitable spawn position                                                                                                  
-        if (spawn_level == MAX_MAP_GENERATION_LIMIT)                                                                                                           
-*/                                                                                                                                                             
-            continue;                                                                                                                                          
-                                                                                                                                                               
-        v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);                                                                        
-                                                                                                                                                               
-        s32 air_count = 0;                                                                                                                                     
-        for (s32 i = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50; i < vertical_spawn_range; i++) {                                              
-            v3s16 blockpos = getNodeBlockPos(nodepos);                                                                                                         
-            map.emergeBlock(blockpos, false);                                                                                                                  
-            content_t c = map.getNode(nodepos).getContent();                                                                                               
-            if (c == CONTENT_AIR /*|| c == CONTENT_IGNORE*/) {                                                                                                 
-                air_count++;                                                                                                                                   
-                if (air_count >= min_air_height) {                                                                                                             
-                    nodeposf = intToFloat(nodepos, BS);                                                                                                        
-                    // Don't spawn the player outside map boundaries                                                                                           
-                    if (objectpos_over_limit(nodeposf))                                                                                                        
-                        continue;                                                                                                                              
-                    is_good = true;                                                                                                                            
-                    break;                                                                                                                                     
-                }                                                                                                                                              
-            } else {                                                                                                                                           
-                air_count = 0;                                                                                                                                 
-            }                                                                                                                                                  
-            nodepos.Y++;                                                                                                                                       
-        }                                                                                                                                                      
-    }                                                                                                                                                          
-                                                                                                                                                               
-    return nodeposf;                                                                                                                                           
-}                                                                                                                                                              
-#endif
+v3f Server::findSpawnPos()
+{
+	ServerMap &map = m_env->getServerMap();
+	v3f nodeposf;
+	POS find = 0;
+	g_settings->getS16NoEx("static_spawnpoint_find", find);
+	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
+		return nodeposf * BS;
+	}
 
+	// todo: remove
+	s16 water_level = map.getWaterLevel();
+	s16 vertical_spawn_range = g_settings->getS16("vertical_spawn_range");
+	//============
+	auto cache_block_before_spawn = g_settings->getBool("cache_block_before_spawn");
+
+	bool is_good = false;
+	POS min_air_height = 3;
+	g_settings->getS16NoEx("static_spawnpoint_find_height", min_air_height);
+
+	// Try to find a good place a few times
+	for (s32 i = 0; i < 4000 && !is_good; i++) {
+		s32 range = 1 + i;
+		// We're going to try to throw the player to this position
+		v2s16 nodepos2d = v2s16(nodeposf.X - range + (myrand() % (range * 2)),
+				nodeposf.Z - range + (myrand() % (range * 2)));
+
+		// FM version:
+		// Get ground height at point
+		s16 spawn_level = map.findGroundLevel(nodepos2d, cache_block_before_spawn);
+		// Don't go underwater or to high places
+		if (spawn_level <= water_level ||
+				spawn_level > water_level + vertical_spawn_range)
+
+			/*MT :
+					// Get spawn level at point
+					s16 spawn_level = m_emerge->getSpawnLevelAtPoint(nodepos2d);
+					// Continue if MAX_MAP_GENERATION_LIMIT was returned by
+					// the mapgen to signify an unsuitable spawn position
+					if (spawn_level == MAX_MAP_GENERATION_LIMIT)
+			*/
+			continue;
+
+		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
+
+		s32 air_count = 0;
+		for (s32 i = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50;
+				i < vertical_spawn_range; i++) {
+			v3s16 blockpos = getNodeBlockPos(nodepos);
+			map.emergeBlock(blockpos, false);
+			content_t c = map.getNode(nodepos).getContent();
+			if (c == CONTENT_AIR /*|| c == CONTENT_IGNORE*/) {
+				air_count++;
+				if (air_count >= min_air_height) {
+					nodeposf = intToFloat(nodepos, BS);
+					// Don't spawn the player outside map boundaries
+					if (objectpos_over_limit(nodeposf))
+						continue;
+					is_good = true;
+					break;
+				}
+			} else {
+				air_count = 0;
+			}
+			nodepos.Y++;
+		}
+	}
+
+	return nodeposf;
+}
+#endif
 
 void Server::requestShutdown(const std::string &msg, bool reconnect, float delay)
 {
