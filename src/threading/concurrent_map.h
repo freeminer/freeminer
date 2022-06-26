@@ -15,8 +15,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef THREADING_CONCURENT_MAP_HEADER
-#define THREADING_CONCURENT_MAP_HEADER
+#pragma once
+
 
 #include <map>
 
@@ -190,7 +190,5 @@ public:
 template < class Key, class T, class Compare = std::less<Key>,
            class Allocator = std::allocator<std::pair<const Key, T> >>
 using maybe_concurrent_map = not_concurrent_map<Key, T, Compare, Allocator>;
-
-#endif
 
 #endif

@@ -404,9 +404,11 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name) {
 	return m_key_value_storage.at(name);
 }
 
+/*
 void Server::SendChatMessage(u16 peer_id, const std::string &message) {
 	SendChatMessage(peer_id, utf8_to_wide(message));
 }
+*/
 
 /*
 //fmtodo: remove:

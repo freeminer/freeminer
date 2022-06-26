@@ -70,7 +70,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-void Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
+size_t Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 
 	auto *nodemgr = m_gamedef->ndef();
 
@@ -766,5 +766,5 @@ NEXT_LIQUID:
 	if (loopcount < initial_size)
 		g_profiler->add("Server: liquids queue", initial_size);
 
-	//return loopcount;
+	return loopcount;
 }

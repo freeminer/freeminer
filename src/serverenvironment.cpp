@@ -1869,7 +1869,7 @@ u16 ServerEnvironment::addActiveObject(ServerActiveObject *object)
 */
 void ServerEnvironment::getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 	s16 player_radius,
-	std::set<u16> &current_objects,
+	maybe_concurrent_set<u16> &current_objects,
 	std::queue<u16> &added_objects)
 {
 	f32 radius_f = radius * BS;
@@ -1878,8 +1878,12 @@ void ServerEnvironment::getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 	if (player_radius_f < 0.0f)
 		player_radius_f = 0.0f;
 
+	auto lock = current_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return;
+
 	m_ao_manager.getAddedActiveObjectsAroundPos(playersao->getBasePosition(), radius_f,
-		player_radius_f, current_objects, added_objects);
+				player_radius_f, current_objects, added_objects);
 }
 
 /*
@@ -1888,7 +1892,7 @@ void ServerEnvironment::getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 */
 void ServerEnvironment::getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 	s16 player_radius,
-	maybe_concurrent_unordered_map<u16, bool> &current_objects,
+	maybe_concurrent_set<u16> &current_objects,
 	std::queue<u16> &removed_objects)
 {
 	f32 radius_f = radius * BS;
@@ -1903,7 +1907,7 @@ void ServerEnvironment::getRemovedActiveObjects(PlayerSAO *playersao, s16 radius
 		if (!lock->owns_lock())
 			return;
 		for (auto &i : current_objects)
-			current_objects_vector.emplace_back(i.first);
+			current_objects_vector.emplace_back(i);
 	}
 
 	/*

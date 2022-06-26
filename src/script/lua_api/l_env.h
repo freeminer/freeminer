@@ -265,11 +265,11 @@ public:
 		m_max_y(max_y)
 	{
 	}
-	virtual const std::vector<std::string> &getTriggerContents() const
+	virtual const std::vector<std::string> getTriggerContents() const
 	{
 		return m_trigger_contents;
 	}
-	virtual const std::vector<std::string> &getRequiredNeighbors(bool activate) const
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const
 	{
 		return m_required_neighbors;
 	}

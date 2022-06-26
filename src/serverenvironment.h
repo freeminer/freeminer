@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapnode.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
+#include "threading/concurrent_set.h"
 #include "util/numeric.h"
 #include <mutex>
 #include <set>
@@ -65,10 +66,10 @@ public:
 
 
 	// Set of contents to trigger on
-	virtual const std::vector<std::string> &getTriggerContents() const = 0;
+	virtual const std::vector<std::string> getTriggerContents() const = 0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual const std::vector<std::string> &getRequiredNeighbors(bool activate) const = 0;
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const = 0;
 	// Trigger interval in seconds
 	virtual float getTriggerInterval() = 0;
 	// Random chance of (1 / return value), 0 is disallowed
@@ -298,7 +299,8 @@ public:
 	*/
 	void getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
-		std::set<u16> &current_objects,
+		//std::set<u16>  &current_objects,
+		maybe_concurrent_set<u16> &current_objects,
 		std::queue<u16> &added_objects);
 
 	/*
@@ -308,7 +310,7 @@ public:
 	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
 		//std::set<u16> &current_objects,
-		maybe_concurrent_unordered_map<u16, bool> &current_objects,
+		maybe_concurrent_set<u16> &current_objects,
 		std::queue<u16> &removed_objects);
 
 	/*

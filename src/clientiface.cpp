@@ -1254,7 +1254,7 @@ void ClientInterface::DeleteClient(session_t peer_id)
 	// Handle objects
 	{
 	auto lock = client->m_known_objects.lock_unique_rec();
-	for (const auto [id, one]: client->m_known_objects) {
+	for (const auto id: client->m_known_objects) {
 		// Get object
 		ServerActiveObject* obj = m_env->getActiveObject(id, true);
 

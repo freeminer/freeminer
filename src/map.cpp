@@ -534,8 +534,7 @@ u32 Map::transforming_liquid_size() {
 	return m_transforming_liquid.size();
 }
 
-//u32 Map::transformLiquids(Server *m_server, unsigned int max_cycle_ms)
-void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+size_t Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env, Server *m_server, unsigned int max_cycle_ms)
 {
 	if (g_settings->getBool("liquid_real"))
@@ -889,8 +888,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 	u16 time_until_purge = g_settings->getU16("liquid_queue_purge_time");
 
 	if (time_until_purge == 0)
-		return;
-		//return ret; // Feature disabled
+		return ret; // Feature disabled
 
 	time_until_purge *= 1000;	// seconds -> milliseconds
 
@@ -934,8 +932,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 	g_profiler->add("Server: liquids processed", loopcount);
 
-	return;
-	//return ret;
+	return ret;
 }
 
 std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)

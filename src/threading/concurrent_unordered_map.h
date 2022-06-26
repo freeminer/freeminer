@@ -15,8 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef THREADING_CONCURENT_UNORDERED_MAP_HEADER
-#define THREADING_CONCURENT_UNORDERED_MAP_HEADER
+#pragma once
 
 #include <unordered_map>
 
@@ -163,7 +162,5 @@ public:
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
            class Alloc = std::allocator<std::pair<const Key, T> >>
 using maybe_concurrent_unordered_map = not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
-
-#endif
 
 #endif

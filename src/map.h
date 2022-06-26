@@ -225,8 +225,8 @@ public:
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
 
-	void transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
-	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
+	size_t transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
+	size_t transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
 			ServerEnvironment *env, 
 			Server *m_server, unsigned int max_cycle_ms);
 	/*
