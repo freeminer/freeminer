@@ -45,8 +45,8 @@ public:
 	typedef typename full_type::const_iterator const_iterator;
 	typedef typename full_type::reverse_iterator reverse_iterator;
 	typedef typename full_type::const_reverse_iterator const_reverse_iterator;
-	typedef typename full_type::node_type node_type;				   // C++17
-	typedef typename full_type::insert_return_type insert_return_type; // C++17
+	//typedef typename full_type::node_type node_type;				   // C++17
+	//typedef typename full_type::insert_return_type insert_return_type; // C++17
 
 	typedef typename std::pair<iterator,bool> insert_return_type_old;
 

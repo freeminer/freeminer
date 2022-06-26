@@ -583,17 +583,17 @@ public:
 	NodeTimerList m_node_timers;
 	StaticObjectList m_static_objects;
 	
-	std::atomic_short heat = 0;
-	std::atomic_short humidity = 0;
-	std::atomic_short heat_add = 0;
-	std::atomic_short humidity_add = 0;
-	std::atomic_ulong heat_last_update = 0;
+	std::atomic_short heat {0};
+	std::atomic_short humidity {0};
+	std::atomic_short heat_add {0};
+	std::atomic_short humidity_add {0};
+	std::atomic_ulong heat_last_update {0};
 	u32 humidity_last_update = 0;
 	float m_uptime_timer_last = 0;
-	std::atomic_short usage_timer_multiplier = 1;
+	std::atomic_short usage_timer_multiplier {1};
 
 	// Last really changed time (need send to client)
-	std::atomic_uint m_changed_timestamp = 0;
+	std::atomic_uint m_changed_timestamp {0};
 	u32 m_next_analyze_timestamp = 0;;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
@@ -615,7 +615,7 @@ public:
 	content_t content_only = CONTENT_IGNORE;
 	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
-	std::atomic_short lighting_broken = 0;
+	std::atomic_short lighting_broken {0};
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -682,11 +682,11 @@ private:
 	 * night X-, night Y-, night Z-, night Z+, night Y+, night X+,
 	 * day X-,   day Y-,   day Z-,   day Z+,   day Y+,   day X+.
 	*/
-	std::atomic_short m_lighting_complete = 0xFFFF;
+	std::atomic_short m_lighting_complete {static_cast<short>(0xFFFF)};
 
 	// Whether day and night lighting differs
 	bool m_day_night_differs = false;
-	std::atomic_bool m_day_night_differs_expired = true;
+	std::atomic_bool m_day_night_differs_expired {true};
 
 	bool m_generated = false;
 
@@ -694,7 +694,7 @@ private:
 		When block is removed from active blocks, this is set to gametime.
 		Value BLOCK_TIMESTAMP_UNDEFINED=0xffffffff means there is no timestamp.
 	*/
-	std::atomic_uint m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
+	std::atomic_uint m_timestamp {BLOCK_TIMESTAMP_UNDEFINED};
 	// The on-disk (or to-be on-disk) timestamp value
 	u32 m_disk_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 
@@ -709,7 +709,7 @@ private:
 		Reference count; currently used for determining if this block is in
 		the list of blocks to be drawn.
 	*/
-	std::atomic_int m_refcount = 0;
+	std::atomic_int m_refcount {0};
 };
 
 typedef std::vector<MapBlock*> MapBlockVect;

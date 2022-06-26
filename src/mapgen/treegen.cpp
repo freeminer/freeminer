@@ -880,7 +880,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 }
 
 void make_cavetree(MMVManip &vmanip, v3POS p0,
-		bool is_jungle_tree, NodeDefManager *ndef, int seed)
+		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed)
 {
 	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));
 	MapNode leavesnode(ndef->getId(is_jungle_tree ? "mapgen_jungleleaves" : "mapgen_leaves"));

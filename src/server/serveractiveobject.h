@@ -224,7 +224,7 @@ public:
 		deleted until this is 0 to keep the id preserved for the right
 		object.
 	*/
-	std::atomic_ushort m_known_by_count = 0;
+	std::atomic_ushort m_known_by_count {0};
 
 	/*
 		A getter that unifies the above to answer the question:

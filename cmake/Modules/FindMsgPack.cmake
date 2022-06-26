@@ -52,10 +52,12 @@ elseif(NOT MSGPACK_LIBRARY)
 	set(MSGPACK_BUILD_TESTS OFF)
 	if(MSVC)
 	set(MSGPACK_ENABLE_SHARED OFF)
+	set(GLOBAL MSGPACK_ENABLE_STATIC ON)
 	endif()
 	add_subdirectory(external/msgpack-c)
 	#include_directories(${PROJECT_SOURCE_DIR}/external/msgpack-c/include)
-	set(MSGPACK_LIBRARY msgpackc-static) # before 1.4.0 was msgpack-static
+	#set(MSGPACK_LIBRARY msgpackc-static) # before 1.4.0 was msgpack-static
+	set(MSGPACK_LIBRARY msgpackc-cxx)
 	set(MSGPACK_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/msgpack-c/include)
 	message(STATUS "Using bundled msgpack ${MSGPACK_INCLUDE_DIR} ${MSGPACK_LIBRARY}")
 endif()

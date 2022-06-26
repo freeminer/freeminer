@@ -813,6 +813,11 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 */
 }
 
+void RemoteClient::SetBlocksNotSent()
+{
+	++m_nearest_unsent_reset;
+}
+
 void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 {
 	++m_nearest_unsent_reset;

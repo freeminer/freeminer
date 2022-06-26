@@ -245,15 +245,15 @@ public:
 
 	//fm:
 	u16 net_proto_version_fm = 0;
-	std::atomic_int m_nearest_unsent_reset = 0;
-	std::atomic_int wanted_range = 9 * MAP_BLOCKSIZE;
-	std::atomic_int range_all = 0;
-	std::atomic_int farmesh = 0;
+	std::atomic_int m_nearest_unsent_reset {0};
+	std::atomic_int wanted_range {9 * MAP_BLOCKSIZE};
+	std::atomic_int range_all {0};
+	std::atomic_int farmesh = {0};
 	float fov = 72;
 	//bool block_overflow;
 	ServerEnvironment *m_env = nullptr;
 
-	std::atomic_ushort net_proto_version = 0;
+	std::atomic_ushort net_proto_version = {0};
 
 	/* Authentication information */
 	std::string enc_pwd = "";
@@ -398,7 +398,7 @@ private:
 
 	//std::set<v3s16> m_blocks_sent;
 public:
-	std::atomic_int m_nearest_unsent_d = 0;
+	std::atomic_int m_nearest_unsent_d {0};
 private:
 	v3s16 m_last_center;
 	v3f m_last_camera_dir;

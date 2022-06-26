@@ -527,7 +527,7 @@ private:
 	PacketCounter m_packetcounter;
 	// Block mesh animation parameters
 	float m_animation_time = 0.0f;
-	std::atomic_int m_crack_level = -1;
+	std::atomic_int m_crack_level {-1};
 	v3s16 m_crack_pos;
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;

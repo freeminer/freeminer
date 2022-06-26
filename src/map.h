@@ -277,23 +277,24 @@ public:
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
 
-	virtual int getSurface(v3s16 basepos, int searchup, bool walkable_only) {
-        return basepos.Y -1;
+	virtual int getSurface(v3s16 basepos, int searchup, bool walkable_only)
+	{
+		return basepos.Y - 1;
 	}
 
-
-// from old mapsector:
-	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_blocks_type;
+	// from old mapsector:
+	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual>
+			m_blocks_type;
 	m_blocks_type m_blocks;
-	//MapBlock * getBlockNoCreateNoEx(v3s16 & p);
-	MapBlock * createBlankBlockNoInsert(v3s16 & p);
-	MapBlock * createBlankBlock(v3s16 & p);
+	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
+	MapBlock *createBlankBlockNoInsert(v3s16 &p);
+	MapBlock *createBlankBlock(v3s16 &p);
 	bool insertBlock(MapBlock *block);
 	void deleteBlock(MapBlockP block);
-	std::unordered_map<MapBlockP, int> * m_blocks_delete;
+	std::unordered_map<MapBlockP, int> *m_blocks_delete;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	unsigned int m_blocks_delete_time = 0;
-	//void getBlocks(std::list<MapBlock*> &dest);
+	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
 
 #if !ENABLE_THREADS
@@ -306,13 +307,20 @@ public:
 	MapBlockP m_block_cache;
 	v3POS m_block_cache_p;
 #endif
-	void copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip);
+	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 
-	bool propagateSunlight(v3POS pos, std::set<v3POS> & light_sources, bool remove_light=false);
+	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
+			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
+	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
+			std::map<v3s16, MapBlock *> &modified_blocks, u32 end_ms);
 
+	u32 updateLighting(concurrent_map<v3POS, MapBlock *> &a_blocks,
+			std::map<v3POS, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
 
+	bool propagateSunlight(
+			v3POS pos, std::set<v3POS> &light_sources, bool remove_light = false);
 
-// freeminer:
+	// freeminer:
 	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
 protected:
 	friend class LuaVoxelManip;

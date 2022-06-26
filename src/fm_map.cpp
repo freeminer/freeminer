@@ -132,6 +132,16 @@ bool Map::insertBlock(MapBlock *block) {
 	return true;
 }
 
+MapBlock * ServerMap::createBlock(v3s16 p)
+{
+	if (MapBlock *block = getBlockNoCreateNoEx(p)) {
+		return block;
+	}
+	return createBlankBlock(p);
+}
+
+
+
 void Map::deleteBlock(MapBlockP block) {
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
@@ -469,7 +479,398 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 	return m_blocks_update_last;
 }
 
-#if TODO
+//#if TODO
+
+inline u8 diminish_light(u8 light)
+{
+	if(light == 0)
+		return 0;
+	if(light >= LIGHT_MAX)
+		return LIGHT_MAX - 1;
+		
+	return light - 1;
+}
+
+inline u8 diminish_light(u8 light, u8 distance)
+{
+	if(distance >= light)
+		return 0;
+	return  light - distance;
+}
+
+inline u8 undiminish_light(u8 light)
+{
+	// We don't know if light should undiminish from this particular 0.
+	// Thus, keep it at 0.
+	if(light == 0)
+		return 0;
+	if(light == LIGHT_MAX)
+		return light;
+	
+	return light + 1;
+}
+
+/*
+	Goes recursively through the neighbours of the node.
+
+	Alters only transparent nodes.
+
+	If the lighting of the neighbour is lower than the lighting of
+	the node was (before changing it to 0 at the step before), the
+	lighting of the neighbour is set to 0 and then the same stuff
+	repeats for the neighbour.
+
+	The ending nodes of the routine are stored in light_sources.
+	This is useful when a light is removed. In such case, this
+	routine can be called for the light node and then again for
+	light_sources to re-light the area without the removed light.
+
+	values of from_nodes are lighting values.
+*/
+void Map::unspreadLight(enum LightBank bank,
+		std::map<v3s16, u8> & from_nodes,
+		std::set<v3s16> & light_sources,
+		std::map<v3s16, MapBlock*>  & modified_blocks)
+{
+	auto *nodemgr = m_gamedef->ndef();
+
+	v3s16 dirs[6] = {
+		v3s16(0,0,1), // back
+		v3s16(0,1,0), // top
+		v3s16(1,0,0), // right
+		v3s16(0,0,-1), // front
+		v3s16(0,-1,0), // bottom
+		v3s16(-1,0,0), // left
+	};
+
+	if(from_nodes.empty())
+		return;
+
+	u32 blockchangecount = 0;
+
+	std::map<v3s16, u8> unlighted_nodes;
+
+	/*
+		Initialize block cache
+	*/
+	v3s16 blockpos_last;
+	MapBlock *block = NULL;
+	// Cache this a bit, too
+	bool block_checked_in_modified = false;
+
+	for(std::map<v3s16, u8>::iterator j = from_nodes.begin();
+		j != from_nodes.end(); ++j)
+	{
+		v3s16 pos = j->first;
+		v3s16 blockpos = getNodeBlockPos(pos);
+
+		// Only fetch a new block if the block position has changed
+/*
+		try{
+*/
+			if(block == NULL || blockpos != blockpos_last){
+				block = getBlockNoCreateNoEx(blockpos);
+				blockpos_last = blockpos;
+
+				block_checked_in_modified = false;
+				blockchangecount++;
+			}
+/*
+		}
+		catch(InvalidPositionException &e)
+		{
+			continue;
+		}
+*/
+
+		if(!block || block->isDummy())
+			continue;
+
+		// Calculate relative position in block
+		//v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
+
+		// Get node straight from the block
+		//MapNode n = block->getNode(relpos);
+
+		u8 oldlight = j->second;
+
+		// Loop through 6 neighbors
+		for(u16 i=0; i<6; i++)
+		{
+			// Get the position of the neighbor node
+			v3s16 n2pos = pos + dirs[i];
+
+			// Get the block where the node is located
+			v3s16 blockpos, relpos;
+			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
+
+			// Only fetch a new block if the block position has changed
+/*
+			try {
+*/
+				if(block == NULL || blockpos != blockpos_last){
+					block = getBlockNoCreateNoEx(blockpos);
+
+					if (!block || block->isDummy())
+						continue;
+
+					blockpos_last = blockpos;
+
+					block_checked_in_modified = false;
+					blockchangecount++;
+				}
+/*
+			}
+			catch(InvalidPositionException &e) {
+				continue;
+			}
+*/
+
+			// Get node straight from the block
+			bool is_valid_position;
+			MapNode n2 = block->getNode(relpos, &is_valid_position);
+			if (!is_valid_position)
+				continue;
+
+			bool changed = false;
+
+			//TODO: Optimize output by optimizing light_sources?
+
+			/*
+				If the neighbor is dimmer than what was specified
+				as oldlight (the light of the previous node)
+			*/
+			if(n2.getLight(bank, nodemgr) < oldlight)
+			{
+				/*
+					And the neighbor is transparent and it has some light
+				*/
+				if(nodemgr->get(n2).light_propagates
+						&& n2.getLight(bank, nodemgr) != 0)
+				{
+					/*
+						Set light to 0 and add to queue
+					*/
+
+					u8 current_light = n2.getLight(bank, nodemgr);
+					n2.setLight(bank, 0, nodemgr);
+					block->setNode(relpos, n2);
+
+					unlighted_nodes[n2pos] = current_light;
+					changed = true;
+
+					/*
+						Remove from light_sources if it is there
+						NOTE: This doesn't happen nearly at all
+					*/
+					/*if(light_sources.find(n2pos))
+					{
+						infostream<<"Removed from light_sources"<<std::endl;
+						light_sources.remove(n2pos);
+					}*/
+				}
+
+				/*// DEBUG
+				if(light_sources.find(n2pos) != NULL)
+					light_sources.remove(n2pos);*/
+			}
+			else{
+				light_sources.insert(n2pos);
+			}
+
+			// Add to modified_blocks
+			if(changed == true && block_checked_in_modified == false)
+			{
+				// If the block is not found in modified_blocks, add.
+/*
+				if(modified_blocks.find(blockpos) == modified_blocks.end())
+				{
+*/
+					++block->lighting_broken;
+					modified_blocks[blockpos] = block;
+/*
+				}
+*/
+				block_checked_in_modified = true;
+			}
+		}
+	}
+
+	/*infostream<<"unspreadLight(): Changed block "
+	<<blockchangecount<<" times"
+	<<" for "<<from_nodes.size()<<" nodes"
+	<<std::endl;*/
+
+	if(!unlighted_nodes.empty())
+		unspreadLight(bank, unlighted_nodes, light_sources, modified_blocks);
+}
+
+/*
+	Lights neighbors of from_nodes, collects all them and then
+	goes on recursively.
+*/
+void Map::spreadLight(enum LightBank bank,
+		std::set<v3s16> & from_nodes,
+		std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms)
+{
+	auto *nodemgr = m_gamedef->ndef();
+
+	const v3s16 dirs[6] = {
+		v3s16(0,0,1), // back
+		v3s16(0,1,0), // top
+		v3s16(1,0,0), // right
+		v3s16(0,0,-1), // front
+		v3s16(0,-1,0), // bottom
+		v3s16(-1,0,0), // left
+	};
+
+	if(from_nodes.empty())
+		return;
+
+	u32 blockchangecount = 0;
+
+	std::set<v3s16> lighted_nodes;
+
+	/*
+		Initialize block cache
+	*/
+	v3s16 blockpos_last;
+	MapBlock *block = NULL;
+		// Cache this a bit, too
+	bool block_checked_in_modified = false;
+
+	for(std::set<v3s16>::iterator j = from_nodes.begin();
+		j != from_nodes.end(); ++j)
+	{
+		v3s16 pos = *j;
+		v3s16 blockpos, relpos;
+
+		getNodeBlockPosWithOffset(pos, blockpos, relpos);
+
+		// Only fetch a new block if the block position has changed
+			if(block == NULL || blockpos != blockpos_last){
+#if !ENABLE_THREADS
+				auto lock = m_nothread_locker.try_lock_shared_rec();
+				if (!lock->owns_lock())
+					continue;
+#endif
+				block = getBlockNoCreateNoEx(blockpos);
+				if (!block)
+					continue;
+				blockpos_last = blockpos;
+
+				block_checked_in_modified = false;
+				blockchangecount++;
+			}
+
+		if(block->isDummy())
+			continue;
+
+		//auto lock = block->try_lock_unique_rec();
+		//if (!lock->owns_lock())
+		//	continue;
+
+		// Get node straight from the block
+		bool is_valid_position;
+		MapNode n = block->getNode(relpos, &is_valid_position);
+		if (n.getContent() == CONTENT_IGNORE)
+			continue;
+
+		u8 oldlight = is_valid_position ? n.getLight(bank, nodemgr) : 0;
+		u8 newlight = diminish_light(oldlight);
+
+		// Loop through 6 neighbors
+		for(u16 i=0; i<6; i++){
+			// Get the position of the neighbor node
+			v3s16 n2pos = pos + dirs[i];
+
+			// Get the block where the node is located
+			v3s16 blockpos, relpos;
+			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
+
+			// Only fetch a new block if the block position has changed
+			//try {
+				if(block == NULL || blockpos != blockpos_last){
+					block = getBlockNoCreateNoEx(blockpos);
+					if (!block)
+						continue;
+					blockpos_last = blockpos;
+
+					block_checked_in_modified = false;
+					blockchangecount++;
+				}
+/*
+			}
+			catch(InvalidPositionException &e) {
+				continue;
+			}
+*/
+
+			// Get node straight from the block
+			MapNode n2 = block->getNode(relpos, &is_valid_position);
+			if (!is_valid_position)
+				continue;
+
+			bool changed = false;
+			/*
+				If the neighbor is brighter than the current node,
+				add to list (it will light up this node on its turn)
+			*/
+			if(n2.getLight(bank, nodemgr) > undiminish_light(oldlight))
+			{
+				lighted_nodes.insert(n2pos);
+				changed = true;
+			}
+			/*
+				If the neighbor is dimmer than how much light this node
+				would spread on it, add to list
+			*/
+			if(n2.getLight(bank, nodemgr) < newlight)
+			{
+				if(nodemgr->get(n2).light_propagates)
+				{
+					n2.setLight(bank, newlight, nodemgr);
+					block->setNode(relpos, n2);
+					lighted_nodes.insert(n2pos);
+					changed = true;
+				}
+			}
+
+			// Add to modified_blocks
+			if(changed == true && block_checked_in_modified == false)
+			{
+				// If the block is not found in modified_blocks, add.
+/*
+				if(modified_blocks.find(blockpos) == modified_blocks.end())
+				{
+*/
+					modified_blocks[blockpos] = block;
+/*
+				}
+*/
+				block_checked_in_modified = true;
+			}
+		}
+	}
+
+	/*infostream<<"spreadLight(): Changed block "
+			<<blockchangecount<<" times"
+			<<" for "<<from_nodes.size()<<" nodes"
+			<<std::endl;*/
+
+	if(!lighted_nodes.empty() && (!end_ms || porting::getTimeMs() <= end_ms)) { // maybe 32 too small
+/*
+		infostream<<"spreadLight(): recursive("<<recursive<<"): changed=" <<blockchangecount
+			<<" from="<<from_nodes.size()
+			<<" lighted="<<lighted_nodes.size()
+			<<" modifiedB="<<modified_blocks.size()
+			<<std::endl;
+*/
+		spreadLight(bank, lighted_nodes, modified_blocks, end_ms);
+	}
+}
+
+
 u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks, std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms) {
 	Map::lighting_map_t lighting_mblocks;
 	for (auto & i : a_blocks)
@@ -539,7 +940,8 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 				v3POS posnodes = block->getPosRelative();
 				//modified_blocks[pos] = block;
 
-				block->setLightingExpired(true);
+				//block->setLightingExpired(true);
+				block->setLightingComplete(0);
 				++block->lighting_broken;
 
 				/*
@@ -756,7 +1158,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 
 	return block_below_is_valid;
 }
-#endif
+//#endif
 
 void Map::lighting_modified_add(v3POS pos, int range) {
 	MutexAutoLock lock(m_lighting_modified_mutex);

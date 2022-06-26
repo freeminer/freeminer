@@ -202,7 +202,7 @@ private:
 	LagPool m_move_pool;
 public:
 	v3f m_last_good_position;
-	std::atomic_uint m_ms_from_last_respawn = 10000; //more than ignore move time (1)
+	std::atomic_uint m_ms_from_last_respawn {10000}; //more than ignore move time (1)
 	float m_time_from_last_teleport = 0.0f;
 	float m_time_from_last_punch = 0.0f;
 	v3s16 m_nocheat_dig_pos = v3s16(32767, 32767, 32767);
@@ -215,7 +215,7 @@ public:
 	IntervalLimiter m_drowning_interval;
 	IntervalLimiter m_node_hurt_interval;
 
-	std::atomic_bool m_position_not_sent = false;
+	std::atomic_bool m_position_not_sent {false};
 
 	// Cached privileges for enforcement
 	std::set<std::string> m_privs;
@@ -235,7 +235,7 @@ public:
 	bool m_physics_override_sneak = true;
 	bool m_physics_override_sneak_glitch = false;
 	bool m_physics_override_new_move = true;
-	std::atomic_bool m_physics_override_sent = false;
+	std::atomic_bool m_physics_override_sent {false};
 };
 
 struct PlayerHPChangeReason
