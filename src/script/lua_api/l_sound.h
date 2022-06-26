@@ -1,13 +1,8 @@
 /*
 content_abm.h
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-<<<<<<< HEAD:src/content_abm.h
-*/
-=======
 Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
->>>>>>> 5.5.0:src/script/lua_api/l_sound.h
 
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

@@ -157,11 +157,7 @@ core.register_chatcommand("me", {
 core.register_chatcommand("admin", {
 	description = S("Show the name of the server owner"),
 	func = function(name)
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-		local admin = minetest.settings:get("name")
-=======
 		local admin = core.settings:get("name")
->>>>>>> 5.5.0:builtin/game/chat.lua
 		if admin then
 			return true, S("The administrator of this server is @1.", admin)
 		else
@@ -171,62 +167,6 @@ core.register_chatcommand("admin", {
 	end,
 })
 
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-core.register_chatcommand("help", {
-	privs = {},
-	params = "[all/privs/<cmd>]",
-	description = "Get help for commands or list privileges",
-	func = function(name, param)
-		local function format_help_line(cmd, def)
-			local msg = core.colorize("#00ffff", "/"..cmd)
-			if def.params and def.params ~= "" then
-				msg = msg .. " " .. core.colorize("#eeeeee", def.params)
-			end
-			if def.description and def.description ~= "" then
-				msg = msg .. ": " .. def.description
-			end
-			return msg
-		end
-		if param == "" then
-			local msg = ""
-			local cmds = {}
-			for cmd, def in pairs(core.chatcommands) do
-				if core.check_player_privs(name, def.privs) then
-					cmds[#cmds + 1] = cmd
-				end
-			end
-			table.sort(cmds)
-			return true, "Available commands: " .. table.concat(cmds, " ") .. "\n"
-					.. "Use '/help <cmd>' to get more information,"
-					.. " or '/help all' to list everything."
-		elseif param == "all" then
-			local cmds = {}
-			for cmd, def in pairs(core.chatcommands) do
-				if core.check_player_privs(name, def.privs) then
-					cmds[#cmds + 1] = format_help_line(cmd, def)
-				end
-			end
-			table.sort(cmds)
-			return true, "Available commands:\n"..table.concat(cmds, "\n")
-		elseif param == "privs" then
-			local privs = {}
-			for priv, def in pairs(core.registered_privileges) do
-				privs[#privs + 1] = priv .. ": " .. def.description
-			end
-			table.sort(privs)
-			return true, "Available privileges:\n"..table.concat(privs, "\n")
-		else
-			local cmd = param
-			local def = core.chatcommands[cmd]
-			if not def then
-				return false, "Command not available: "..cmd
-			else
-				return true, format_help_line(cmd, def)
-			end
-		end
-	end,
-})
-=======
 local function privileges_of(name, privs)
 	if not privs then
 		privs = core.get_player_privs(name)
@@ -238,7 +178,6 @@ local function privileges_of(name, privs)
 		return S("Privileges of @1: @2", name, privstr)
 	end
 end
->>>>>>> 5.5.0:builtin/game/chat.lua
 
 core.register_chatcommand("privs", {
 	params = S("[<name>]"),
@@ -465,39 +404,7 @@ core.register_chatcommand("revokeme", {
 		if param == "" then
 			return false, S("Invalid parameters (see /help revokeme).")
 		end
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-		local revoke_privs = core.string_to_privs(revoke_priv_str)
-		local privs = core.get_player_privs(revoke_name)
-		local basic_privs =
-			core.string_to_privs(core.settings:get("basic_privs") or "interact,shout")
-		for priv, _ in pairs(revoke_privs) do
-			if not basic_privs[priv] and
-					not core.check_player_privs(name, {privs=true}) then
-				return false, "Your privileges are insufficient."
-			end
-		end
-		if revoke_priv_str == "all" then
-			privs = {}
-		else
-			for priv, _ in pairs(revoke_privs) do
-				privs[priv] = nil
-			end
-		end
-		core.set_player_privs(revoke_name, privs)
-		core.log("action", name..' revoked ('
-				..core.privs_to_string(revoke_privs, ', ')
-				..') privileges from '..revoke_name)
-		if revoke_name ~= name then
-			core.chat_send_player(revoke_name, name
-					.. " revoked privileges from you: "
-					.. core.privs_to_string(revoke_privs, ' '))
-		end
-		return true, "Privileges of " .. revoke_name .. ": "
-			.. core.privs_to_string(
-				core.get_player_privs(revoke_name), ' ')
-=======
 		return handle_revoke_command(name, name, param)
->>>>>>> 5.5.0:builtin/game/chat.lua
 	end,
 })
 
@@ -715,27 +622,16 @@ core.register_chatcommand("set", {
 		setname, setvalue = string.match(param, "([^ ]+) (.+)")
 		if setname and setvalue then
 			if not core.settings:get(setname) then
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-				return false, "Failed. Use '/set -n <name> <value>' to create a new setting."
-			end
-			core.settings:set(setname, setvalue)
-			return true, setname .. " = " .. setvalue
-=======
 				return false, S("Failed. Use '/set -n <name> <value>' "
 					.. "to create a new setting.")
 			end
 			core.settings:set(setname, setvalue)
 			return true, S("@1 = @2", setname, setvalue)
->>>>>>> 5.5.0:builtin/game/chat.lua
 		end
 
 		setname = string.match(param, "([^ ]+)")
 		if setname then
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-			local setvalue = core.settings:get(setname)
-=======
 			setvalue = core.settings:get(setname)
->>>>>>> 5.5.0:builtin/game/chat.lua
 			if not setvalue then
 				setvalue = S("<not set>")
 			end
@@ -1014,11 +910,7 @@ core.register_chatcommand("rollback_check", {
 	privs = {rollback=true},
 	func = function(name, param)
 		if not core.settings:get_bool("enable_rollback_recording") then
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-			return false, "Rollback functions are disabled."
-=======
 			return false, S("Rollback functions are disabled.")
->>>>>>> 5.5.0:builtin/game/chat.lua
 		end
 		local range, seconds, limit =
 			param:match("(%d+) *(%d*) *(%d*)")
@@ -1071,11 +963,7 @@ core.register_chatcommand("rollback", {
 	privs = {rollback=true},
 	func = function(name, param)
 		if not core.settings:get_bool("enable_rollback_recording") then
-<<<<<<< HEAD:builtin/game/chatcommands.lua
-			return false, "Rollback functions are disabled."
-=======
 			return false, S("Rollback functions are disabled.")
->>>>>>> 5.5.0:builtin/game/chat.lua
 		end
 		local target_name, seconds = string.match(param, ":([^ ]+) *(%d*)")
 		local rev_msg

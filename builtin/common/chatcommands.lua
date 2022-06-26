@@ -73,7 +73,8 @@ local function format_help_line(cmd, def)
 	local cmd_marker = INIT == "client" and "." or "/"
 	local msg = core.colorize("#00ffff", cmd_marker .. cmd)
 	if def.params and def.params ~= "" then
-		msg = msg .. " " .. def.params
+		--msg = msg .. " " .. def.params
+		msg = msg .. " " .. core.colorize("#eeeeee", def.params)
 	end
 	if def.description and def.description ~= "" then
 		msg = msg .. ": " .. def.description

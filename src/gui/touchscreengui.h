@@ -18,16 +18,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-<<<<<<< HEAD:src/touchscreengui.h
 #include "fm_touchscreengui.h"
 #if 0
 
-
-#include <IGUIEnvironment.h>
-#include <IGUIButton.h>
-=======
 #include "irrlichttypes.h"
->>>>>>> 5.5.0:src/gui/touchscreengui.h
 #include <IEventReceiver.h>
 #include <IGUIButton.h>
 #include <IGUIEnvironment.h>
@@ -334,8 +328,4 @@ private:
 };
 
 extern TouchScreenGUI *g_touchscreengui;
-<<<<<<< HEAD:src/touchscreengui.h
 #endif
-#endif
-=======
->>>>>>> 5.5.0:src/gui/touchscreengui.h

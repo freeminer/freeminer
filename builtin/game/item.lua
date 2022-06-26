@@ -495,16 +495,7 @@ function core.item_drop(itemstack, dropper, pos)
 			dir.z = dir.z * 2.9
 			obj:set_velocity(dir)
 			obj:get_luaentity().dropped_by = dropper:get_player_name()
-<<<<<<< HEAD
 			obj:get_luaentity().ttl = 86400 * 365 * 10; -- huge time for player drops
-			return itemstack
-		end
-
-	else
-		if core.add_item(pos, itemstack) then
-			return itemstack
-=======
->>>>>>> 5.5.0
 		end
 		return itemstack
 	end
@@ -631,19 +622,6 @@ function core.node_dig(pos, node, digger)
 	local wielded = digger and digger:get_wielded_item()
 	local drops = core.get_node_drops(node, wielded and wielded:get_name())
 
-<<<<<<< HEAD
-	local wdef = wielded:get_definition()
-	local tp = wielded:get_tool_capabilities()
-	local dp = core.get_dig_params(def.groups, tp)
-	if wdef and wdef.after_use then
-		wielded = wdef.after_use(wielded, digger, node, dp) or wielded
-	else
-		-- Wear out tool
-		if not core.settings:get_bool("creative_mode") then
-			wielded:add_wear(dp.wear)
-			if wielded:get_count() == 0 and wdef.sound and wdef.sound.breaks then
-				core.sound_play(wdef.sound.breaks, {pos = pos, gain = 0.5})
-=======
 	if wielded then
 		local wdef = wielded:get_definition()
 		local tp = wielded:get_tool_capabilities()
@@ -660,7 +638,6 @@ function core.node_dig(pos, node, digger)
 						gain = 0.5
 					}, true)
 				end
->>>>>>> 5.5.0
 			end
 		end
 		digger:set_wielded_item(wielded)

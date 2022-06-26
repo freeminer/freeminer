@@ -14,17 +14,9 @@ end
 -- If item_entity_ttl is not set, enity will have default life time
 -- Setting it to -1 disables the feature
 
-<<<<<<< HEAD
-local time_to_live = tonumber(core.settings:get("item_entity_ttl"))
-if not time_to_live then
-	--time_to_live = -1
-	time_to_live = 86400
-end
-=======
-local time_to_live = tonumber(core.settings:get("item_entity_ttl")) or 900
+local time_to_live = tonumber(core.settings:get("item_entity_ttl")) or 86400
 local gravity = tonumber(core.settings:get("movement_gravity")) or 9.81
 
->>>>>>> 5.5.0
 
 core.register_entity(":__builtin:item", {
 	initial_properties = {
@@ -164,67 +156,9 @@ core.register_entity(":__builtin:item", {
 
 	on_step = function(self, dtime, moveresult)
 		self.age = self.age + dtime
-<<<<<<< HEAD
-		local ttl = self.object:get_luaentity().ttl
-		if not ttl then ttl = time_to_live end
-		if ttl > 0 and self.age > ttl then
-			self.itemstring = ''
-			self.object:remove()
-			return
-		end
-		local p = self.object:getpos()
-		local node_in = core.get_node_or_nil(p)
-		p.y = p.y - 0.5
-		local node = core.get_node_or_nil(p)
-		local in_unloaded = (node == nil)
-		if in_unloaded then
-			-- Don't infinetly fall into unloaded map
-			self.object:setvelocity({x = 0, y = 0, z = 0})
-			self.object:setacceleration({x = 0, y = 0, z = 0})
-			self.physical_state = false
-			self.object:set_properties({physical = false})
-			return
-		end
-		local nn = node.name
-		-- If node is not registered or node is walkably solid and resting on nodebox
-		local v = self.object:getvelocity()
-		if not core.registered_nodes[nn] or (core.registered_nodes[nn].walkable and core.get_item_group(nn, "slippery")==0) and v.y == 0 then
-			if self.physical_state then
-				local own_stack = ItemStack(self.object:get_luaentity().itemstring)
-				-- Merge with close entities of the same item
-				for _, object in ipairs(core.get_objects_inside_radius(p, 0.8)) do
-					local obj = object:get_luaentity()
-					if obj and obj.name == "__builtin:item"
-							and obj.physical_state == false then
-						if self:try_merge_with(own_stack, object, obj) then
-							return
-						end
-					end
-				end
-				self.object:setvelocity({x = 0, y = 0, z = 0})
-				self.object:setacceleration({x = 0, y = 0, z = 0})
-				self.physical_state = false
-				self.object:set_properties({physical = false})
-			end
-		else
-			if not self.physical_state then
-				self.object:setvelocity({x = 0, y = 0, z = 0})
-				self.object:setacceleration({x = 0, y = -10, z = 0})
-				self.physical_state = true
-				self.object:set_properties({physical = true})
-			elseif core.get_item_group(nn, "slippery") ~= 0 then
-				if math.abs(v.x) < .2 and math.abs(v.z) < .2 then
-					self.object:setvelocity({x=0,y=0,z=0})
-					self.object:setacceleration({x=0, y=0, z=0})
-					self.physical_state = false
-					self.object:set_properties({
-						physical = false
-					})
-				else
-					self.object:setacceleration({x=-v.x, y=-10, z=-v.z})
-				end
-=======
-		if time_to_live > 0 and self.age > time_to_live then
+			local ttl = self.object:get_luaentity().ttl
+			if not ttl then ttl = time_to_live end
+			if ttl > 0 and self.age > ttl then
 			self.itemstring = ""
 			self.object:remove()
 			return
@@ -379,7 +313,6 @@ core.register_entity(":__builtin:item", {
 						return
 					end
 				end
->>>>>>> 5.5.0
 			end
 		end
 

@@ -15,11 +15,8 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-<<<<<<< HEAD
-=======
 local S = core.get_translator("__builtin")
 
->>>>>>> 5.5.0
 local function get_bool_default(name, default)
 	local val = core.settings:get_bool(name)
 	if val == nil then

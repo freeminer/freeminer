@@ -47,8 +47,6 @@ core.setting_get = setting_proxy("get")
 core.setting_setbool = setting_proxy("set_bool")
 core.setting_getbool = setting_proxy("get_bool")
 core.setting_save = setting_proxy("write")
-<<<<<<< HEAD
-=======
 
 --
 -- core.register_on_auth_fail
@@ -65,4 +63,3 @@ function core.register_on_auth_fail(func)
 		end
 	end)
 end
->>>>>>> 5.5.0

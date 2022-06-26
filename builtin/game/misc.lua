@@ -13,40 +13,7 @@ function core.kick_player(player_name, reason)
 	else
 		reason = "Kicked."
 	end
-<<<<<<< HEAD
-	last = new
-
-	if #jobs < 1 then
-		return
-	end
-
-	local end_ms = os.clock() * 1000 + 50
-	-- Iterate backwards so that we miss any new timers added by
-	-- a timer callback, and so that we don't skip the next timer
-	-- in the list if we remove one.
-	for i = #jobs, 1, -1 do
-		local job = jobs[i]
-		if time >= job.expire then
-			core.set_last_run_mod(job.mod_origin)
-			job.func(unpack(job.arg))
-			table.remove(jobs, i)
-			if os.clock() * 1000 > end_ms then return end
-		end
-	end
-end)
-
-function core.after(after, func, ...)
-	assert(tonumber(after) and type(func) == "function",
-			"Invalid core.after invocation")
-	jobs[#jobs + 1] = {
-		func = func,
-		expire = time + after,
-		arg = {...},
-		mod_origin = core.get_last_run_mod()
-	}
-=======
 	return core.disconnect_player(player_name, reason)
->>>>>>> 5.5.0
 end
 
 function core.check_player_privs(name, ...)
@@ -57,11 +24,8 @@ function core.check_player_privs(name, ...)
 			"argument.", 2)
 	end
 
-<<<<<<< HEAD
 	if name == "" then return true, "" end
 
-=======
->>>>>>> 5.5.0
 	local requested_privs = {...}
 	local player_privs = core.get_player_privs(name)
 	local missing_privileges = {}
@@ -219,7 +183,6 @@ function core.record_protection_violation(pos, name)
 	end
 end
 
-<<<<<<< HEAD
 --[[
 function freeminer.color(color)
 	assert(#color == 6, "Color must be six characters in length.")
@@ -230,7 +193,6 @@ function freeminer.colorize(color, message)
 	return freeminer.color(color) .. message .. freeminer.color("ffffff")
 end
 ]]
-=======
 -- To be overridden by Creative mods
 
 local creative_mode_cache = core.settings:get_bool("creative_mode")
@@ -284,7 +246,6 @@ function core.is_area_protected(minp, maxp, player_name, interval)
 	return false
 end
 
->>>>>>> 5.5.0
 
 local raillike_ids = {}
 local raillike_cur_id = 0

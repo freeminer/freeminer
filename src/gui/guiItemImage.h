@@ -19,12 +19,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-<<<<<<< HEAD:src/drawscene.h
-#include "camera.h"
-#include "hud.h"
-//#include "minimap.h"
-=======
->>>>>>> 5.5.0:src/gui/guiItemImage.h
+#include "IGUIElement.h"
+#include "IGUIEnvironment.h"
 #include "irrlichttypes_extrabloated.h"
 #include "util/string.h"
 

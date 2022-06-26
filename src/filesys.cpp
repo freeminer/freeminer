@@ -53,12 +53,6 @@ namespace fs
 
 #ifdef _WIN32
 
-<<<<<<< HEAD
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
-#endif
-
-=======
 /***********
  * Windows *
  ***********/
@@ -66,7 +60,6 @@ namespace fs
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #endif
->>>>>>> 5.5.0
 #include <windows.h>
 #include <shlwapi.h>
 #include <io.h>

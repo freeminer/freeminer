@@ -49,15 +49,12 @@ class NodeDefManager;
 */
 
 /*
-<<<<<<< HEAD
-=======
 	Debug stuff
 */
 extern u64 emerge_time;
 extern u64 emerge_load_time;
 
 /*
->>>>>>> 5.5.0
 	This class resembles aabbox3d<s16> a lot, but has inclusive
 	edges for saner handling of integer sizes
 */

@@ -269,31 +269,6 @@ core.register_entity(":__builtin:falling_node", {
 		end
 	end,
 
-<<<<<<< HEAD
-	on_step = function(self, dtime)
-		if dtime > 0.2 then remove_fast = 2 else remove_fast = 0 end
-		-- Set gravity
-		local acceleration = self.object:getacceleration()
-		if not vector.equals(acceleration, {x = 0, y = -10, z = 0}) then
-			self.object:setacceleration({x = 0, y = -10, z = 0})
-		end
-		-- Turn to actual node when colliding with ground, or continue to move
-		local pos = self.object:getpos()
-		-- Position of bottom center point
-		local bcp = {x = pos.x, y = pos.y - 0.7, z = pos.z}
-		-- Avoid bugs caused by an unloaded node below
-		local bcn = core.get_node_or_nil(bcp)
-		local bcd = bcn and core.registered_nodes[bcn.name]
-		if bcn and
-				(not bcd or bcd.walkable or
-				(core.get_item_group(self.node.name, "float") ~= 0 and
-				bcd.liquidtype ~= "none")) then
-			if bcd and bcd.leveled and bcd.leveled > 0 and
-					bcn.name == self.node.name then
-				local addlevel = self.node.level
-				if not addlevel or addlevel <= 0 then
-					addlevel = bcd.leveled
-=======
 	try_place = function(self, bcp, bcn)
 		local bcd = core.registered_nodes[bcn.name]
 		-- Add levels if dropped on same leveled node
@@ -315,7 +290,7 @@ core.register_entity(":__builtin:falling_node", {
 		local np = vector.new(bcp)
 		if bcd and bcd.buildable_to and
 				(not self.floats or bcd.liquidtype == "none") then
-			core.remove_node(bcp)
+			core.remove_node(bcp, remove_fast)
 		else
 			np.y = np.y + 1
 		end
@@ -331,10 +306,9 @@ core.register_entity(":__builtin:falling_node", {
 				-- If it's still there, it might be protected
 				if core.get_node(np).name == n2.name then
 					return false
->>>>>>> 5.5.0
 				end
 			else
-				core.remove_node(np)
+				core.remove_node(np, remove_fast)
 			end
 		end
 
@@ -354,6 +328,7 @@ core.register_entity(":__builtin:falling_node", {
 	end,
 
 	on_step = function(self, dtime, moveresult)
+		if dtime > 0.2 then remove_fast = 2 else remove_fast = 0 end
 		-- Fallback code since collision detection can't tell us
 		-- about liquids (which do not collide)
 		if self.floats then
@@ -368,23 +343,6 @@ core.register_entity(":__builtin:falling_node", {
 					self.object:remove()
 					return
 				end
-<<<<<<< HEAD
-			elseif bcd and bcd.buildable_to and
-					(core.get_item_group(self.node.name, "float") == 0 or
-					bcd.liquidtype == "none") then
-				core.remove_node(bcp, remove_fast)
-				return
-			end
-			local np = {x = bcp.x, y = bcp.y + 1, z = bcp.z}
-			-- Check what's here
-			local n2 = core.get_node(np)
-			-- If it's not air or liquid, remove node and replace it with
-			-- it's drops
-				node_drop(np, remove_fast)
-			-- Create node and remove entity
-			if core.registered_nodes[self.node.name] then
-				core.add_node(np, self.node)
-=======
 			end
 		end
 
@@ -423,7 +381,6 @@ core.register_entity(":__builtin:falling_node", {
 					vel.z
 				))
 				self.object:set_pos(self.object:get_pos():offset(0, -0.5, 0))
->>>>>>> 5.5.0
 			end
 			return
 		elseif bcn.name == "ignore" then
@@ -468,24 +425,10 @@ core.register_entity(":__builtin:falling_node", {
 	end
 })
 
-<<<<<<< HEAD
-local function spawn_falling_node(p, node)
-	return core.spawn_falling_node(p, node)
---[[
-local function spawn_falling_node(p, node)
-	local obj = core.add_entity(p, "__builtin:falling_node")
-	if obj then
-		obj:get_luaentity():set_node(node)
-	end
-]]
-end
-
-local function drop_attached_node(p)
-	local nn = core.get_node(p).name
-	core.remove_node(p, remove_fast)
-	for _, item in pairs(core.get_node_drops(nn, "")) do
-=======
 local function convert_to_falling_node(pos, node)
+	core.spawn_falling_node(pos, node)
+	return true
+--[[
 	local obj = core.add_entity(pos, "__builtin:falling_node")
 	if not obj then
 		return false
@@ -501,10 +444,12 @@ local function convert_to_falling_node(pos, node)
 	end
 
 	obj:get_luaentity():set_node(node, metatable)
-	core.remove_node(pos)
+	core.remove_node(pos, remove_fast)
 	return true, obj
+]]
 end
 
+--[[
 function core.spawn_falling_node(pos)
 	local node = core.get_node(pos)
 	if node.name == "air" or node.name == "ignore" then
@@ -512,6 +457,7 @@ function core.spawn_falling_node(pos)
 	end
 	return convert_to_falling_node(pos, node)
 end
+]]
 
 local function drop_attached_node(p)
 	local n = core.get_node(p)
@@ -532,9 +478,8 @@ local function drop_attached_node(p)
 	if def and def.sounds and def.sounds.fall then
 		core.sound_play(def.sounds.fall, {pos = p}, true)
 	end
-	core.remove_node(p)
+	core.remove_node(p, remove_fast)
 	for _, item in pairs(drops) do
->>>>>>> 5.5.0
 		local pos = {
 			x = p.x + math.random()/2 - 0.25,
 			y = p.y + math.random()/2 - 0.25,
@@ -577,22 +522,6 @@ function core.check_single_for_falling(p)
 		-- Only spawn falling node if node below is loaded
 		local n_bottom = core.get_node_or_nil(p_bottom)
 		local d_bottom = n_bottom and core.registered_nodes[n_bottom.name]
-<<<<<<< HEAD
-		if d_bottom and
-
-				(core.get_item_group(n.name, "float") == 0 or
-				d_bottom.liquidtype == "none") and
-
-				(n.name ~= n_bottom.name or (d_bottom.leveled and
-				core.get_node_level(p_bottom) <
-				core.get_node_max_level(p_bottom))) and
-
-				(not d_bottom.walkable or d_bottom.buildable_to) then
-			n.level = core.get_node_level(p)
-			core.remove_node(p, remove_fast)
-			spawn_falling_node(p, n)
-			return true
-=======
 		if d_bottom then
 			local same = n.name == n_bottom.name
 			-- Let leveled nodes fall if it can merge with the bottom node
@@ -610,7 +539,6 @@ function core.check_single_for_falling(p)
 				convert_to_falling_node(p, n)
 				return true
 			end
->>>>>>> 5.5.0
 		end
 	end
 

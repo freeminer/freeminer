@@ -18,8 +18,6 @@ function metatable.__index(v, key)
 	return rawget(v, xyz[key]) or vector[key]
 end
 
-<<<<<<< HEAD
-=======
 -- only called when rawget(v, key) returns nil
 function metatable.__newindex(v, key, value)
 	rawset(v, xyz[key] or key, value)
@@ -54,7 +52,6 @@ function vector.copy(v)
 	return fast_new(v.x, v.y, v.z)
 end
 
->>>>>>> 5.5.0
 function vector.from_string(s, init)
 	local x, y, z, np = string.match(s, "^%s*%(%s*([^%s,]+)%s*[,%s]%s*([^%s,]+)%s*[,%s]" ..
 			"%s*([^%s,]+)%s*[,%s]?%s*%)()", init)
@@ -64,20 +61,13 @@ function vector.from_string(s, init)
 	if not (x and y and z) then
 		return nil
 	end
-<<<<<<< HEAD
-	return {x = x, y = y, z = z}, np
-=======
 	return fast_new(x, y, z), np
->>>>>>> 5.5.0
 end
 
 function vector.to_string(v)
 	return string.format("(%g, %g, %g)", v.x, v.y, v.z)
 end
-<<<<<<< HEAD
-=======
 metatable.__tostring = vector.to_string
->>>>>>> 5.5.0
 
 function vector.equals(a, b)
 	return a.x == b.x and
@@ -107,19 +97,11 @@ function vector.floor(v)
 end
 
 function vector.round(v)
-<<<<<<< HEAD
-	return {
-		x = math.round(v.x),
-		y = math.round(v.y),
-		z = math.round(v.z)
-	}
-=======
 	return fast_new(
 		math.round(v.x),
 		math.round(v.y),
 		math.round(v.z)
 	)
->>>>>>> 5.5.0
 end
 
 function vector.apply(v, func)
@@ -138,15 +120,7 @@ function vector.distance(a, b)
 end
 
 function vector.direction(pos1, pos2)
-<<<<<<< HEAD
-	return vector.normalize({
-		x = pos2.x - pos1.x,
-		y = pos2.y - pos1.y,
-		z = pos2.z - pos1.z
-	})
-=======
 	return vector.subtract(pos2, pos1):normalize()
->>>>>>> 5.5.0
 end
 
 function vector.angle(a, b)
@@ -161,14 +135,6 @@ function vector.dot(a, b)
 end
 
 function vector.cross(a, b)
-<<<<<<< HEAD
-	return {
-		x = a.y * b.z - a.z * b.y,
-		y = a.z * b.x - a.x * b.z,
-		z = a.x * b.y - a.y * b.x
-	}
-end
-=======
 	return fast_new(
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
@@ -181,7 +147,6 @@ function metatable.__unm(v)
 end
 
 -- add, sub, mul, div operations
->>>>>>> 5.5.0
 
 function vector.add(a, b)
 	if type(b) == "table" then
@@ -275,18 +240,6 @@ function vector.divide(a, b)
 		)
 	end
 end
-<<<<<<< HEAD
-
-function vector.offset(v, x, y, z)
-	return {x = v.x + x,
-		y = v.y + y,
-		z = v.z + z}
-end
-
-function vector.sort(a, b)
-	return {x = math.min(a.x, b.x), y = math.min(a.y, b.y), z = math.min(a.z, b.z)},
-		{x = math.max(a.x, b.x), y = math.max(a.y, b.y), z = math.max(a.z, b.z)}
-=======
 function metatable.__div(a, b)
 	-- scalar/vector makes no sense
 	return fast_new(
@@ -313,7 +266,6 @@ end
 
 function vector.check(v)
 	return getmetatable(v) == metatable
->>>>>>> 5.5.0
 end
 
 local function sin(x)
@@ -381,11 +333,7 @@ end
 
 function vector.dir_to_rotation(forward, up)
 	forward = vector.normalize(forward)
-<<<<<<< HEAD
-	local rot = {x = math.asin(forward.y), y = -math.atan2(forward.x, forward.z), z = 0}
-=======
 	local rot = vector.new(math.asin(forward.y), -math.atan2(forward.x, forward.z), 0)
->>>>>>> 5.5.0
 	if not up then
 		return rot
 	end
@@ -393,11 +341,7 @@ function vector.dir_to_rotation(forward, up)
 			"Invalid vectors passed to vector.dir_to_rotation().")
 	up = vector.normalize(up)
 	-- Calculate vector pointing up with roll = 0, just based on forward vector.
-<<<<<<< HEAD
-	local forwup = vector.rotate({x = 0, y = 1, z = 0}, rot)
-=======
 	local forwup = vector.rotate(vector.new(0, 1, 0), rot)
->>>>>>> 5.5.0
 	-- 'forwup' and 'up' are now in a plane with 'forward' as normal.
 	-- The angle between them is the absolute of the roll value we're looking for.
 	rot.z = vector.angle(forwup, up)

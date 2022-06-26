@@ -17,17 +17,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-<<<<<<< HEAD
 #include "config.h"
 
 #if !MINETEST_PROTO
 #include "network/fm_clientpackethandler.cpp"
 #else //TODO
 
-#include "client.h"
-=======
 #include "client/client.h"
->>>>>>> 5.5.0
 
 #include "util/base64.h"
 #include "client/camera.h"
@@ -177,13 +173,9 @@ void Client::handleCommand_AcceptSudoMode(NetworkPacket* pkt)
 }
 void Client::handleCommand_DenySudoMode(NetworkPacket* pkt)
 {
-<<<<<<< HEAD
-	m_chat_queue.push("Password change denied. Password NOT changed.");
-=======
 	ChatMessage *chatMessage = new ChatMessage(CHATMESSAGE_TYPE_SYSTEM,
 			L"Password change denied. Password NOT changed.");
 	pushToChatQueue(chatMessage);
->>>>>>> 5.5.0
 	// reset everything and be sad
 	deleteAuthData();
 }
@@ -441,9 +433,6 @@ void Client::handleCommand_ChatMessage(NetworkPacket *pkt)
 		return;
 	}
 
-<<<<<<< HEAD
-	m_chat_queue.push(wide_to_narrow(message));
-=======
 	u64 timestamp;
 	*pkt >> chatMessage->sender >> chatMessage->message >> timestamp;
 	chatMessage->timestamp = static_cast<std::time_t>(timestamp);
@@ -458,7 +447,6 @@ void Client::handleCommand_ChatMessage(NetworkPacket *pkt)
 	} else {
 		pushToChatQueue(chatMessage);
 	}
->>>>>>> 5.5.0
 }
 
 void Client::handleCommand_ActiveObjectRemoveAdd(NetworkPacket* pkt)
@@ -1504,9 +1492,6 @@ void Client::handleCommand_SrpBytesSandB(NetworkPacket* pkt)
 	Send(&resp_pkt);
 }
 
-<<<<<<< HEAD
-#endif
-=======
 void Client::handleCommand_FormspecPrepend(NetworkPacket *pkt)
 {
 	LocalPlayer *player = m_env.getLocalPlayer();
@@ -1725,4 +1710,5 @@ void Client::handleCommand_MinimapModes(NetworkPacket *pkt)
 	if (m_minimap)
 		m_minimap->setModeIndex(mode);
 }
->>>>>>> 5.5.0
+
+#endif

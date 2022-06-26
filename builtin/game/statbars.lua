@@ -9,13 +9,8 @@ local health_bar_definition = {
 	number = core.PLAYER_MAX_HP_DEFAULT,
 	item = core.PLAYER_MAX_HP_DEFAULT,
 	direction = 0,
-<<<<<<< HEAD
-	size = { x=24, y=24 },
-	offset = { x=(-10*24)-25, y=-(48+24+24) },
-=======
 	size = {x = 24, y = 24},
-	offset = {x = (-10 * 24) - 25, y = -(48 + 24 + 16)},
->>>>>>> 5.5.0
+	offset = {x = (-10 * 24) - 25, y = -(48 + 24 + 24)},
 }
 
 local breath_bar_definition = {
@@ -26,13 +21,8 @@ local breath_bar_definition = {
 	number = core.PLAYER_MAX_BREATH_DEFAULT,
 	item = core.PLAYER_MAX_BREATH_DEFAULT * 2,
 	direction = 0,
-<<<<<<< HEAD
-	size = { x=24, y=24 },
-	offset = { x=25, y=-(48+24+24) },
-=======
 	size = {x = 24, y = 24},
-	offset = {x = 25, y= -(48 + 24 + 16)},
->>>>>>> 5.5.0
+	offset = {x = 25, y= -(48 + 24 + 24)},
 }
 
 local hud_ids = {}

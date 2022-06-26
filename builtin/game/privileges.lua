@@ -94,17 +94,8 @@ core.register_privilege("noclip", {
 	give_to_singleplayer = false,
 })
 core.register_privilege("rollback", {
-<<<<<<< HEAD
-	description = "Can use the rollback functionality",
-	give_to_singleplayer = false,
-})
-core.register_privilege("zoom", {
-	description = "Can zoom the camera",
-	give_to_singleplayer = true,
-=======
 	description = S("Can use the rollback functionality"),
 	give_to_singleplayer = false,
->>>>>>> 5.5.0
 })
 core.register_privilege("debug", {
 	description = S("Can enable wireframe"),

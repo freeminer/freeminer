@@ -584,8 +584,8 @@ void Server::start()
 		lan_adv_server.serve(m_bind_addr.getPort());
 
 	// ASCII art for the win!
-	std::cerr
 /*
+	std::cerr
 		<< "         __.               __.                 __.  " << std::endl
 		<< "  _____ |__| ____   _____ /  |_  _____  _____ /  |_ " << std::endl
 		<< " /     \\|  |/    \\ /  __ \\    _\\/  __ \\/   __>    _\\" << std::endl
@@ -594,6 +594,7 @@ void Server::start()
 		<< "      \\/ \\/     \\/         \\/                  \\/   " << std::endl;
 */
 
+	 actionstream
 	 << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash << "\033[0m \t"
 #if ENABLE_THREADS
 			<< " THREADS \t"
