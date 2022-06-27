@@ -70,10 +70,10 @@ bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 
 void Database_LevelDB::loadBlock(const v3s16 &pos, std::string *block)
 {
-	m_database->Get(leveldb::ReadOptions(),
+	leveldb::Status status0 = m_database->Get(leveldb::ReadOptions(),
 		getBlockAsString(pos), block);
 
-	if (!block->empty())
+	if (status0.ok() && !block->empty())
 		return;
 
 	leveldb::Status status = m_database->Get(leveldb::ReadOptions(),
@@ -144,7 +144,8 @@ void PlayerDatabaseLevelDB::savePlayer(RemotePlayer *player)
 	writeU8(os, 1);
 
 	PlayerSAO *sao = player->getPlayerSAO();
-	sanity_check(sao);
+	if (!sao)
+		return;
 	writeU16(os, sao->getHP());
 	writeV3F32(os, sao->getBasePosition());
 	writeF32(os, sao->getLookPitch());

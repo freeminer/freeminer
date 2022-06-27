@@ -25,7 +25,15 @@ void *ServerThread::run()
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
 	f32 dedicated_server_step = g_settings->getFloat("dedicated_server_step");
-	m_server->AsyncRunStep(0.1, true);
+	try {
+		m_server->AsyncRunStep(0.1, true);
+	} catch (const con::ConnectionBindFailed &e) {
+		m_server->setAsyncFatalError(e.what());
+	} catch (const LuaError &e) {
+		m_server->setAsyncFatalError(e);
+	} catch (const std::exception &e) {
+		errorstream << m_name << ": exception: " << e.what() << std::endl;
+	}
 
 	auto time = porting::getTimeMs();
 	while (!stopRequested()) {
@@ -53,7 +61,7 @@ void *ServerThread::run()
 					break;
 				}
 				if (i > 50 && porting::getTimeMs() > end_ms) {
-					//verbosestream<<"Server: Recieve queue overloaded: processed="  << i << " per="<<porting::getTimeMs()-(end_ms-sleep)<<" sleep="<<sleep << " eventssize=" << m_server->m_con.events_size()<<std::endl;
+					//verbosestream<<"Server: Recieve queue overloaded: processed="  << i << " per="<<porting::getTimeMs()-(end_ms-sleep)<<" sleep="<<sleep << " eventssize=" << m_server->m_con->events_size()<<std::endl;
 					break;
 				}
 			}
@@ -71,17 +79,15 @@ void *ServerThread::run()
 					errorstream<<"Server: Disabling overload mode queue=" << events << "\n";
 				m_server->overload = 0;
 			}
-		} catch (con::NoIncomingDataException &e) {
-			//std::this_thread::sleep_for(std::chrono::milliseconds(10));
-		} catch (con::PeerNotFoundException &e) {
+		} catch (const con::PeerNotFoundException &e) {
 			infostream<<"Server: PeerNotFoundException"<<std::endl;
-		} catch (ClientNotFoundException &e) {
-		} catch (con::ConnectionBindFailed &e) {
+		} catch (const ClientNotFoundException &e) {
+		} catch (const con::ConnectionBindFailed &e) {
 			m_server->setAsyncFatalError(e.what());
 #if !EXEPTION_DEBUG
-		} catch (LuaError &e) {
+		} catch (const LuaError &e) {
 			m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
-		} catch (std::exception &e) {
+		} catch (const std::exception &e) {
 			errorstream << m_name << ": exception: "<<e.what()<<std::endl;
 		} catch (...) {
 			errorstream << m_name << ": Ooops..."<<std::endl;

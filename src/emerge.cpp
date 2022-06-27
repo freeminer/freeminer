@@ -135,6 +135,8 @@ EmergeParams::EmergeParams(EmergeManager *parent, const BiomeGen *biomegen,
 	biomemgr(biomemgr->clone()), oremgr(oremgr->clone()),
 	decomgr(decomgr->clone()), schemmgr(schemmgr->clone())
 {
+	env = parent->env;
+
 	this->biomegen = biomegen->clone(this->biomemgr);
 }
 

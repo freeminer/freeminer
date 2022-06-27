@@ -112,7 +112,8 @@ void BiomeManager::clear()
 	for (size_t i = 1; i < m_objects.size(); i++)
 		delete (Biome *)m_objects[i];
 
-	m_objects.clear();
+	m_objects.resize(1);
+	//m_objects.clear(); // WTF 1 ????
 }
 
 

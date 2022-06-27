@@ -93,7 +93,8 @@ struct BlockEmergeData {
 class EmergeParams {
 	friend class EmergeManager;
 public:
-	ServerEnvironment *env;
+	ServerEnvironment *env = nullptr;
+
 	EmergeParams() = delete;
 	~EmergeParams();
 	DISABLE_CLASS_COPY(EmergeParams);
@@ -124,6 +125,8 @@ class EmergeManager {
 	 */
 	friend class ModApiMapgen;
 public:
+	ServerEnvironment *env = nullptr;
+
 	const NodeDefManager *ndef;
 	bool enable_mapgen_debug_info;
 

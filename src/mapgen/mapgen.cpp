@@ -1118,7 +1118,7 @@ void MapgenParams::readParams(const Settings *settings)
 	settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
 	delete bparams;
-	bparams = (BiomeParamsOriginal*)BiomeManager::createBiomeParams(BIOMEGEN_ORIGINAL);
+	bparams = static_cast<BiomeParamsOriginal*>(BiomeManager::createBiomeParams(BIOMEGEN_ORIGINAL));
 	if (bparams) {
 		bparams->readParams(settings);
 		bparams->seed = seed;

@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server/activeobjectmgr.h"
 #include "threading/concurrent_set.h"
 #include "util/numeric.h"
+#include <atomic>
 #include <mutex>
 #include <set>
 #include <random>
@@ -556,7 +557,7 @@ private:
 	bool m_meta_loaded = false;
 	// Time from the beginning of the game in seconds.
 	// Incremented in step().
-	u32 m_game_time = 0;
+	std::atomic_uint32_t m_game_time {0};
 	// A helper variable for incrementing the latter
 	float m_game_time_fraction_counter = 0.0f;
 	// Time of last clearObjects call (game time).
@@ -568,10 +569,10 @@ public:
 private:
 	LBMManager m_lbm_mgr;
 	// An interval for generally sending object positions and stuff
-	float m_recommended_send_interval = 0.1f;
+	std::atomic<float> m_recommended_send_interval {0.1f};
 	// Estimate for general maximum lag as determined by server.
 	// Can raise to high values like 15s with eg. map generation mods.
-	float m_max_lag_estimate = 0.1f;
+	std::atomic<float> m_max_lag_estimate {0.1f};
 
 	// peer_ids in here should be unique, except that there may be many 0s
 	concurrent_vector<RemotePlayer*> m_players;

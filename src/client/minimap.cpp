@@ -45,15 +45,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 MinimapUpdateThread::~MinimapUpdateThread()
 {
-<<<<<<< HEAD:src/minimap.cpp
-	for (auto
-			it = m_blocks_cache.begin();
-			it != m_blocks_cache.end(); ++it) {
-		delete it->second;
-=======
 	for (auto &it : m_blocks_cache) {
 		delete it.second;
->>>>>>> 5.5.0:src/client/minimap.cpp
 	}
 
 	for (auto &q : m_update_queue) {

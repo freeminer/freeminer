@@ -75,6 +75,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gameparams.h"
 
 
+#include "log.h"
 #include "log_types.h"
 #include "tool.h"
 #include <iomanip>
@@ -513,7 +514,7 @@ void Server::init()
 	m_startup_server_map = nullptr; // Ownership moved to ServerEnvironment
 	m_env = new ServerEnvironment(servermap, m_script, this, m_path_world);
 	m_env->m_more_threads = m_more_threads;
-	//m_emerge->env = m_env;
+	m_emerge->env = m_env;
 
 	m_inventory_mgr->setEnv(m_env);
 	m_clients.setEnv(m_env);
@@ -568,7 +569,7 @@ void Server::start()
 
 	// Start thread
 	//fmtodo: test need restart?
-	//m_thread->restart();
+	m_thread->restart();
 	if (m_map_thread)
 		m_map_thread->restart();
 	if (m_sendblocks)

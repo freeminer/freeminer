@@ -28,7 +28,7 @@ namespace server
 void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)> &cb)
 {
 
-	std::vector<u16> objects_to_remove;
+	//std::vector<u16> objects_to_remove;
 
    {
 	auto lock = m_active_objects.try_lock_shared_rec();
@@ -45,7 +45,10 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 
 	if (objects_to_remove.empty())
 		return;
-	auto lock = m_active_objects.lock_unique_rec();
+
+	auto lock = m_active_objects.try_lock_unique_rec();
+	if (!lock->owns_lock())
+		return;
 
 	// Remove references from m_active_objects
 	for (u16 i : objects_to_remove) {
@@ -56,9 +59,20 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 void ActiveObjectMgr::step(
 		float dtime, const std::function<void(ServerActiveObject *)> &f)
 {
-	g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
-	for (auto &ao_it : m_active_objects) {
-		f(ao_it.second);
+	std::vector<ServerActiveObject *> active_objects;
+	active_objects.reserve(m_active_objects.size());
+	{
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+		g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
+		for (const auto &ao_it : m_active_objects) {
+			active_objects.emplace_back(ao_it.second);
+		}
+	}
+	// unlocked
+	for (const auto &ao_it : active_objects) {
+		f(ao_it);
 	}
 }
 
@@ -128,6 +142,9 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 		std::vector<ServerActiveObject *> &result,
 		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 {
+	auto lock = m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())                            
+		return;                                    
 	float r2 = radius * radius;
 	for (auto &activeObject : m_active_objects) {
 		ServerActiveObject *obj = activeObject.second;
@@ -144,6 +161,10 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		std::vector<ServerActiveObject *> &result,
 		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 {
+	auto lock = m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())                            
+		return;                                    
+
 	for (auto &activeObject : m_active_objects) {
 		ServerActiveObject *obj = activeObject.second;
 		const v3f &objectpos = obj->getBasePosition();

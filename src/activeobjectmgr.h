@@ -65,4 +65,5 @@ protected:
 	}
 
 	maybe_concurrent_unordered_map<u16, T *> m_active_objects;
+	std::vector<u16> objects_to_remove;
 };

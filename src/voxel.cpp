@@ -46,7 +46,7 @@ void VoxelManipulator::clear()
 	// Reset area to volume=0
 	m_area = VoxelArea();
    if(m_data)
-	delete[] m_data;
+	delete m_data;
 	m_data = nullptr;
    if (m_flags)
 	delete[] m_flags;

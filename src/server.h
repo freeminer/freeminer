@@ -685,11 +685,11 @@ private:
 	// The server mainly operates in this thread
 	ServerThread *m_thread = nullptr;
 
-	MapThread *m_map_thread;
-	SendBlocksThread *m_sendblocks;
-	LiquidThread *m_liquid;
-	EnvThread *m_envthread;
-	AbmThread *m_abmthread;
+	MapThread *m_map_thread = nullptr;
+	SendBlocksThread *m_sendblocks = nullptr;
+	LiquidThread *m_liquid = nullptr;
+	EnvThread *m_envthread = nullptr;
+	AbmThread *m_abmthread = nullptr;
 
 	/*
 		Time related stuff

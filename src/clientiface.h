@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/address.h"
 #include "porting.h"
 
+#include <atomic>
 #include <list>
 #include <vector>
 #include <set>
@@ -376,7 +377,7 @@ private:
 	u8 m_pending_serialization_version = SER_FMT_VER_INVALID;
 
 	/* current state of client */
-	ClientState m_state = CS_Created;
+	std::atomic<ClientState> m_state = CS_Created;
 
 	// Cached here so retrieval doesn't have to go to connection API
 	Address m_addr;

@@ -193,6 +193,20 @@ public:
 		std::queue<T>::push(t);
 	}
 
+	template<typename... Args>
+	decltype(auto) emplace(Args&&... args)
+	{
+		auto lock = lock_unique();
+		return std::queue<T>::emplace(std::forward<Args>(args)...);
+	}
+
+	template<typename... Args>
+	decltype(auto) emplace_back(Args&&... args)
+	{
+		auto lock = lock_unique();
+		return std::queue<T>::emplace_back(std::forward<Args>(args)...);
+	}
+
 	// usually used as pop_front()
 	T front() = delete;
 	void pop() = delete;
