@@ -67,7 +67,7 @@ public:
 						<<"id already exists"<<std::endl;
 				return;
 			}
-			m_active.set(id, obj);
+			m_active.emplace(id, obj);
 		}
 	}
 

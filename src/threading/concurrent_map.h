@@ -17,178 +17,158 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-
 #include <map>
 
 #include "lock.h"
 
-
-template < class LOCKER, class Key, class T, class Compare = std::less<Key>,
-           class Allocator = std::allocator<std::pair<const Key, T> > >
-class concurrent_map_: public std::map<Key, T, Compare, Allocator>,
-	public LOCKER {
+template <class LOCKER, class Key, class T, class Compare = std::less<Key>,
+		class Allocator = std::allocator<std::pair<const Key, T>>>
+class concurrent_map_ : public std::map<Key, T, Compare, Allocator>, public LOCKER
+{
 public:
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
-	typedef Key                                           key_type;
-	typedef T                                             mapped_type;
-	typedef Allocator                                     allocator_type;
-	typedef typename allocator_type::size_type            size_type;
-	typedef typename full_type::const_iterator            const_iterator;
-	typedef typename full_type::iterator                  iterator;
-	typedef typename full_type::reverse_iterator          reverse_iterator;
-	typedef typename full_type::const_reverse_iterator    const_reverse_iterator;
+	typedef Key key_type;
+	typedef T mapped_type;
 
-	mapped_type& get(const key_type& k) {
+	mapped_type &operator[](const key_type &k) = delete;
+	mapped_type &operator[](key_type &&k) = delete;
+
+	template <typename... Args>
+	decltype(auto) get(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::operator[](k);
+		return full_type::get(std::forward<Args>(args)...);
 	}
 
-	void set(const key_type& k, const mapped_type& v) {
+	template <typename... Args>
+	decltype(auto) at(Args &&...args)
+	{
+		auto lock = LOCKER::lock_shared_rec();
+		return full_type::get(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) insert(Args &&...args)
+	{
 		auto lock = LOCKER::lock_unique_rec();
-		full_type::operator[](k) = v;
+		return full_type::insert(std::forward<Args>(args)...);
 	}
 
-	bool set_try(const key_type& k, const mapped_type& v) {
+	template <typename... Args>
+	decltype(auto) emplace(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::emplace(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) emplace_try(Args &&...args)
+	{
 		auto lock = LOCKER::try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return false;
-		full_type::operator[](k) = v;
-		return true;
+		return full_type::emplace(std::forward<Args>(args)...).second;
 	}
 
-	bool      empty() {
+	template <typename... Args>
+	decltype(auto) empty(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::empty();
+		return full_type::empty(std::forward<Args>(args)...);
 	}
 
-	size_type size() const {
+	template <typename... Args>
+	decltype(auto) size(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::size();
+		return full_type::size(std::forward<Args>(args)...);
 	}
 
-	size_type count(const key_type& k) {
+	template <typename... Args>
+	decltype(auto) count(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::count(k);
+		return full_type::count(std::forward<Args>(args)...);
 	}
 
-	iterator find(const key_type& k) {
+	template <typename... Args>
+	decltype(auto) find(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::find(k);
-	};
+		return full_type::find(std::forward<Args>(args)...);
+	}
 
-	const_iterator find(const key_type& k) const {
+	template <typename... Args>
+	decltype(auto) begin(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::find(k);
-	};
+		return full_type::begin(std::forward<Args>(args)...);
+	}
 
-	iterator begin() {
+	template <typename... Args>
+	decltype(auto) rbegin(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::begin();
-	};
+		return full_type::rbegin(std::forward<Args>(args)...);
+	}
 
-	const_iterator begin()   const {
+	template <typename... Args>
+	decltype(auto) end(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::begin();
-	};
+		return full_type::end(std::forward<Args>(args)...);
+	}
 
-	reverse_iterator rbegin() {
+	template <typename... Args>
+	decltype(auto) rend(Args &&...args)
+	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::rbegin();
-	};
+		return full_type::rend(std::forward<Args>(args)...);
+	}
 
-	const_reverse_iterator rbegin()   const {
-		auto lock = LOCKER::lock_shared_rec();
-		return full_type::rbegin();
-	};
 
-	iterator end() {
-		auto lock = LOCKER::lock_shared_rec();
-		return full_type::end();
-	};
-
-	const_iterator end()   const {
-		auto lock = LOCKER::lock_shared_rec();
-		return full_type::end();
-	};
-
-	reverse_iterator rend() {
-		auto lock = LOCKER::lock_shared_rec();
-		return full_type::rend();
-	};
-
-	const_reverse_iterator rend()   const {
-		auto lock = LOCKER::lock_shared_rec();
-		return full_type::rend();
-	};
-
-	mapped_type& operator[](const key_type& k) = delete;
-
-	mapped_type& operator[](key_type&& k) = delete;
-
-	typename full_type::iterator  erase(const_iterator position) {
+	template <typename... Args>
+	decltype(auto) erase(Args &&...args)
+	{
 		auto lock = LOCKER::lock_unique_rec();
-		return full_type::erase(position);
+		return full_type::erase(std::forward<Args>(args)...);
 	}
 
-	typename full_type::iterator  erase(iterator position) {
+	template <typename... Args>
+	decltype(auto) clear(Args &&...args)
+	{
 		auto lock = LOCKER::lock_unique_rec();
-		return full_type::erase(position);
-	}
-
-	size_type erase(const key_type& k) {
-		auto lock = LOCKER::lock_unique_rec();
-		return full_type::erase(k);
-	}
-
-	typename full_type::iterator  erase(const_iterator first, const_iterator last) {
-		auto lock = LOCKER::lock_unique_rec();
-		return full_type::erase(first, last);
-	}
-
-	void clear() {
-		auto lock = LOCKER::lock_unique_rec();
-		full_type::clear();
+		return full_type::clear(std::forward<Args>(args)...);
 	}
 };
 
 template <class Key, class T, class Compare = std::less<Key>,
-          class Allocator = std::allocator<std::pair<const Key, T> >>
-using concurrent_map  = concurrent_map_<locker<>, Key, T, Compare, Allocator>;
-
+		class Allocator = std::allocator<std::pair<const Key, T>>>
+using concurrent_map = concurrent_map_<locker<>, Key, T, Compare, Allocator>;
 
 #if ENABLE_THREADS
 
-template < class Key, class T, class Compare = std::less<Key>,
-           class Allocator = std::allocator<std::pair<const Key, T> >>
+template <class Key, class T, class Compare = std::less<Key>,
+		class Allocator = std::allocator<std::pair<const Key, T>>>
 using maybe_concurrent_map = concurrent_map<Key, T, Compare, Allocator>;
 
 #else
 
-template < class Key, class T, class Compare = std::less<Key>,
-           class Allocator = std::allocator<std::pair<const Key, T> >>
-class not_concurrent_map: public std::map<Key, T, Compare, Allocator>,
-	public dummy_locker {
+template <class Key, class T, class Compare = std::less<Key>,
+		class Allocator = std::allocator<std::pair<const Key, T>>>
+class not_concurrent_map : public std::map<Key, T, Compare, Allocator>,
+						   public dummy_locker
+{
 public:
 	typedef typename std::map<Key, T, Compare, Allocator> full_type;
-	typedef Key                                           key_type;
-	typedef T                                             mapped_type;
+	typedef Key key_type;
+	typedef T mapped_type;
 
-	mapped_type& get(const key_type& k) {
-		return full_type::operator[](k);
-	}
-
-	void set(const key_type& k, const mapped_type& v) {
-		full_type::operator[](k) = v;
-	}
-
-	bool set_try(const key_type& k, const mapped_type& v) {
-		full_type::operator[](k) = v;
-		return true;
-	}
+	mapped_type &get(const key_type &k) { return full_type::operator[](k); }
 };
 
-template < class Key, class T, class Compare = std::less<Key>,
-           class Allocator = std::allocator<std::pair<const Key, T> >>
+template <class Key, class T, class Compare = std::less<Key>,
+		class Allocator = std::allocator<std::pair<const Key, T>>>
 using maybe_concurrent_map = not_concurrent_map<Key, T, Compare, Allocator>;
 
 #endif

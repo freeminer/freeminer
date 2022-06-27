@@ -27,7 +27,7 @@ Dummy database class
 
 bool Database_Dummy::saveBlock(const v3s16 &pos, const std::string &data)
 {
-	m_database.set(getBlockAsString(pos), data);
+	m_database.emplace(getBlockAsString(pos), data);
 	return true;
 }
 

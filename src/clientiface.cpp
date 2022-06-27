@@ -1293,7 +1293,7 @@ void ClientInterface::CreateClient(session_t peer_id)
 	// Create client
 	auto client = std::shared_ptr<RemoteClient>(new RemoteClient());
 	client->peer_id = peer_id;
-	m_clients.set(client->peer_id, client);
+	m_clients.emplace(client->peer_id, client);
 }
 
 void ClientInterface::event(session_t peer_id, ClientStateEvent event)
