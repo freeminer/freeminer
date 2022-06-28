@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <map>
 #include <vector>
+#include "threading/concurrent_vector.h"
 #include "util/Optional.h"
 
 struct ObjectProperties
@@ -42,7 +43,7 @@ struct ObjectProperties
 	std::string visual = "sprite";
 	std::string mesh = "";
 	v3f visual_size = v3f(1, 1, 1);
-	std::vector<std::string> textures;
+	concurrent_vector<std::string> textures;
 	std::string damage_texture_modifier = "^[brighten";
 	std::vector<video::SColor> colors;
 	v2s16 spritediv = v2s16(1, 1);

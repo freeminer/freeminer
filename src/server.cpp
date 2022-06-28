@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 #include <algorithm>
-#include "content_abm.h"
 #include "network/connection.h"
 #include "network/networkprotocol.h"
 #include "network/serveropcodes.h"
@@ -41,6 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/serveractiveobject.h"
 #include "settings.h"
 #include "profiler.h"
+#include "log.h"
 #include "scripting_server.h"
 #include "nodedef.h"
 #include "itemdef.h"
@@ -75,7 +75,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gameparams.h"
 
 
-#include "log.h"
+#include "content_abm.h"
 #include "log_types.h"
 #include "tool.h"
 #include <iomanip>
@@ -348,7 +348,7 @@ Server::~Server()
 		m_emerge->stopThreads();
 
 	if (m_env) {
-		MutexAutoLock envlock(m_env_mutex);
+		//MutexAutoLock envlock(m_env_mutex);
 
 		// Execute script shutdown hooks
 		infostream << "Executing shutdown hooks" << std::endl;
@@ -748,6 +748,10 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		m_env->setTimeOfDaySpeed(g_settings->getFloat("time_speed"));
 
+	/*
+		Send to clients at constant intervals
+	*/
+
 	m_time_of_day_send_timer -= dtime;
 	if (m_time_of_day_send_timer < 0.0) {
 		m_time_of_day_send_timer = g_settings->getFloat("time_send_interval");
@@ -801,7 +805,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	*/
 	if (m_admin_chat) {
 		if (!m_admin_chat->command_queue.empty()) {
-			MutexAutoLock lock(m_env_mutex);
+			//MutexAutoLock lock(m_env_mutex);
 			while (!m_admin_chat->command_queue.empty()) {
 				ChatEvent *evt = m_admin_chat->command_queue.pop_frontNoEx();
 				handleChatInterfaceEvent(evt);
@@ -931,7 +935,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		m_aom_buffer_counter->increment(aom_count);
 
-		//m_clients.lock();
+		m_clients.lock();
 		const auto &clients = m_clients.getClientList();
 		// Route data to every client
 #if MINETEST_PROTO
@@ -1004,6 +1008,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				SendActiveObjectMessages(client->peer_id, unreliable_data, false);
 			}
 		}
+		m_clients.unlock();
+
 		// Clear buffered_messages
 		for (auto &buffered_message : buffered_messages) {
 			delete buffered_message.second;
@@ -2964,7 +2970,7 @@ void Server::sendRequestedMedia(session_t peer_id,
 
 void Server::stepPendingDynMediaCallbacks(float dtime)
 {
-	MutexAutoLock lock(m_env_mutex);
+	//MutexAutoLock lock(m_env_mutex);
 
 	for (auto it = m_pending_dyn_media.begin(); it != m_pending_dyn_media.end();) {
 		it->second.expiry_timer -= dtime;
@@ -3224,6 +3230,7 @@ void Server::DeleteClient(session_t peer_id, ClientDeletionReason reason)
 					RemotePlayer *player = m_env->getPlayer(client_id);
 					if (!player)
 						continue;
+
 					// Get name of player
 					os << player->getName() << " ";
 				}
@@ -4091,7 +4098,9 @@ v3f Server::findSpawnPos()
 	return v3f(0.0f, 0.0f, 0.0f);
 }
 
-#if 0
+#if 0 
+fmtodo?
+
 v3f Server::findSpawnPos()
 {
 	ServerMap &map = m_env->getServerMap();
@@ -4163,6 +4172,7 @@ v3f Server::findSpawnPos()
 	return nodeposf;
 }
 #endif
+
 
 void Server::requestShutdown(const std::string &msg, bool reconnect, float delay)
 {

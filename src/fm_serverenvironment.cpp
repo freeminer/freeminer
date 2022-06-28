@@ -8,7 +8,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 		//if (!m_active_block_analyzed_last) infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 		TimeTaker timer("env: block analyze and abm apply from " + itos(m_active_block_analyzed_last));
 
-		std::unordered_map<v3POS, bool, v3POSHash, v3POSEqual> active_blocks_list;
+		std::set<v3POS> active_blocks_list;
 		//auto active_blocks_list = m_active_blocks.m_list;
 		{
 			auto lock = m_active_blocks.m_list.try_lock_shared_rec();
@@ -16,15 +16,13 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 				active_blocks_list = m_active_blocks.m_list;
 		}
 
-		for(auto i = active_blocks_list.begin(); i != active_blocks_list.end(); ++i)
+		for(const auto & p : active_blocks_list)
 		{
 			if (n++ < m_active_block_analyzed_last)
 				continue;
 			else
 				m_active_block_analyzed_last = 0;
 			++calls;
-
-			v3POS p = i->first;
 
 			MapBlock *block = m_map->getBlock(p, true);
 			if(!block)

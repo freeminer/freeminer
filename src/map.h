@@ -536,7 +536,8 @@ public:
 
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3s16, MapBlock*> * modified_blocks,
-		bool overwrite_generated = true);
+		bool overwrite_generated = true
+		, bool save_generated_block = true);
 
 	bool m_is_dirty = false;
 

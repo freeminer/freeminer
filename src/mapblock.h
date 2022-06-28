@@ -612,7 +612,7 @@ public:
 	}
 
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
-	content_t content_only = CONTENT_IGNORE;
+	std::atomic<content_t> content_only = CONTENT_IGNORE;
 	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
 	std::atomic_short lighting_broken {0};

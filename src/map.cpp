@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "map.h"
+#include "log.h"
 #include "mapblock.h"
 #ifndef SERVER
 	#include "mapblock_mesh.h"
@@ -489,6 +490,8 @@ void Map::PrintInfo(std::ostream &out)
 	out<<"Map: ";
 }
 
+#define WATER_DROP_BOOST 4
+
 const static v3s16 liquid_6dirs[6] = {
 	// order: upper before same level before lower
 	v3s16( 0, 1, 0),
@@ -498,8 +501,6 @@ const static v3s16 liquid_6dirs[6] = {
 	v3s16(-1, 0, 0),
 	v3s16( 0,-1, 0)
 };
-
-#define WATER_DROP_BOOST 4
 
 enum NeighborType : u8 {
 	NEIGHBOR_UPPER,
@@ -1267,6 +1268,8 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 	}
 	std::string backend = conf.get("backend");
 	dbase = createDatabase(backend, savedir, conf);
+errorstream << "backend=" << backend << " dbase=" << dbase << std::endl;
+
 	if (conf.exists("readonly_backend")) {
 		std::string readonly_dir = savedir + DIR_DELIM + "readonly";
 		dbase_ro = createDatabase(conf.get("readonly_backend"), readonly_dir, conf);
@@ -1468,6 +1471,8 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	bool enable_mapgen_debug_info = m_emerge->enable_mapgen_debug_info;
 	EMERGE_DBG_OUT("finishBlockMake(): " PP(bpmin) " - " PP(bpmax));
 
+	static const thread_local auto save_generated_block = g_settings->getBool("save_generated_block");
+
 	/*
 		Blit generated stuff to map
 		NOTE: blitBackAll adds nearly everything to changed_blocks
@@ -1476,7 +1481,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		MAP_NOTHREAD_LOCK(this);
 		// 70ms @cs=8
 		//TimeTaker timer("finishBlockMake() blitBackAll");
-	data->vmanip->blitBackAll(changed_blocks, false);
+	data->vmanip->blitBackAll(changed_blocks, false, save_generated_block);
 	}
 
 	EMERGE_DBG_OUT("finishBlockMake: changed_blocks.size()="
@@ -1492,7 +1497,6 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		data->transforming_liquid.pop_front();
 	}
 
-	auto save_generated_block = g_settings->getBool("save_generated_block");
 	for (auto &changed_block : *changed_blocks) {
 		MapBlock *block = changed_block.second;
 		if (!block)
@@ -1535,6 +1539,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	//save(MOD_STATE_WRITE_AT_UNLOAD);
 	m_chunks_in_progress.erase(bpmin);
 
+    //fmtodo merge with m_chunks_in_progress
 	m_mapgen_process.erase(bpmin);
 }
 
@@ -1973,6 +1978,25 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 		}
 */
 
+	//MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	if (created_new && (block != NULL)) {
+		std::map<v3s16, MapBlock*> modified_blocks;
+		// Fix lighting if necessary
+		voxalgo::update_block_border_lighting(this, block, modified_blocks);
+		if (!modified_blocks.empty()) {
+			//Modified lighting, send event
+			MapEditEvent event;
+			event.type = MEET_OTHER;
+			std::map<v3s16, MapBlock *>::iterator it;
+			for (it = modified_blocks.begin();
+					it != modified_blocks.end(); ++it)
+				event.modified_blocks.insert(it->first);
+			dispatchEvent(event);
+		}
+	}
+
+
+
 		return block;
 	} catch (const std::exception &e) {
 		if (block)
@@ -2016,6 +2040,10 @@ void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool 
 		{
 			block = sector->createBlankBlockNoInsert(p3d.Y);
 			created_new = true;
+		}
+
+		// Read basic data
+		block->deSerialize(is, version, true);
 
 		// If it's a new block, insert it to the map
 		if (created_new) {
@@ -2219,7 +2247,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 }
 
 void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
-	bool overwrite_generated)
+	bool overwrite_generated, bool save_generated_block)
 {
 	if(m_area.getExtent() == v3s16(0,0,0))
 		return;
@@ -2236,6 +2264,8 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 			continue;
 
 		block->copyFrom(*this);
+
+   	  if (save_generated_block)
 		block->raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_VMANIP);
 
 		if(modified_blocks)

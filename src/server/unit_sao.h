@@ -99,7 +99,7 @@ protected:
 	ItemGroupList m_armor_groups;
 
 	// Object properties
-	bool m_properties_sent = true;
+	std::atomic_bool m_properties_sent {true};
 	ObjectProperties m_prop;
 
 	// Stores position and rotation for each bone name

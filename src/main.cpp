@@ -21,17 +21,14 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <netinet/in.h>
 #include "irrlichttypes.h" // must be included before anything irrlicht, see comment in the file
 #include "irrlicht.h" // createDevice
 #include "irrlichttypes_extrabloated.h"
 #include "chat_interface.h"
 #include "debug.h"
-#include "profiler.h"
 #include "unittest/test.h"
 #include "server.h"
 #include "filesys.h"
-#include "util/timetaker.h"
 #include "version.h"
 #include "client/game.h"
 #include "defaultsettings.h"
@@ -56,6 +53,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gui/mainmenumanager.h"
 #endif
 
+#include <netinet/in.h>
+#include "profiler.h"
+#include "util/timetaker.h"
 #if USE_ENET
 // todo: move to connection
 #include "enet/enet.h"
@@ -77,7 +77,6 @@ extern "C" {
 #if !defined(__cpp_rtti) || !defined(__cpp_exceptions)
 #error Minetest cannot be built without exceptions or RTTI
 #endif
-
 
 #define DEBUGFILE "debug.txt"
 #define DEFAULT_SERVER_PORT 30000
@@ -652,7 +651,6 @@ static void init_log_streams(const Settings &cmd_args)
 
 	g_logger.removeOutput(&file_log_output);
 	std::string conf_loglev = g_settings->get("debug_log_level");
-
 	// Old integer format
 	if (std::isdigit(conf_loglev[0])) {
 		warningstream << "Deprecated use of debug_log_level with an "
@@ -676,7 +674,6 @@ static void init_log_streams(const Settings &cmd_args)
 		warningstream << "Supplied unrecognized debug_log_level; "
 			"using maximum." << std::endl;
 	}
-
 	try {
 	file_log_output.setFile(log_filename,
 		g_settings->getU64("debug_log_size_max") * 1000000);
@@ -1040,7 +1037,6 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 	} {
 #endif
 		try {
-
 			// Create server
 			Server server(game_params.world_path, game_params.game_spec, false,
 				bind_addr, true);

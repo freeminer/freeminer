@@ -55,7 +55,7 @@ Environment::Environment(IGameDef *gamedef):
 	m_cache_abm_time_budget = g_settings->getFloat("abm_time_budget");
 
 	m_time_of_day = g_settings->getU32("world_start_time");
-	m_time_of_day_f = (float)m_time_of_day / 24000.0f;
+	//m_time_of_day_f = (float)m_time_of_day / 24000.0f;
 }
 
 u32 Environment::getDayNightRatio()

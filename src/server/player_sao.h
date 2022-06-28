@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <atomic>
 #include "constants.h"
 #include "network/networkprotocol.h"
 #include "unit_sao.h"
@@ -183,7 +184,7 @@ public:
 
 	void finalize(RemotePlayer *player, const std::set<std::string> &privs);
 
-	v3f getEyePosition() const { return m_base_position + getEyeOffset(); }
+	v3f getEyePosition() const { return getBasePosition() + getEyeOffset(); }
 	v3f getEyeOffset() const;
 	float getZoomFOV() const;
 
@@ -223,8 +224,8 @@ public:
 
 	u16 m_breath = PLAYER_MAX_BREATH_DEFAULT;
 	f32 m_pitch = 0.0f;
-	f32 m_fov = 0.0f;
-	s16 m_wanted_range = 0.0f;
+	std::atomic<f32> m_fov {0.0f};
+	std::atomic_short m_wanted_range {0};
 
 	Metadata m_meta;
 

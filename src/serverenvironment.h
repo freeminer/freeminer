@@ -201,7 +201,7 @@ public:
 	}
 
 	//std::set<v3s16> m_list;
-	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list; // TODO: make concurent_set and replace
+	maybe_concurrent_set<v3POS> m_list;
 	std::set<v3s16> m_abm_list;
 	std::set<v3s16> m_forceloaded_list;
 

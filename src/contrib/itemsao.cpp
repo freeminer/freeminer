@@ -128,6 +128,7 @@ void ItemSAO::step(float dtime, bool send_recommended)
 	m_check_current_node_timer -= dtime;
 	// Check on which node is the SAO
 	if (m_check_current_node_timer <= 0.0f) {
+		const auto m_base_position = getBasePosition();
 		v3s16 p(m_base_position.X / BS, m_base_position.Y / BS, m_base_position.Z / BS);
 		MapNode node = m_env->getMap().getNode(p);
 		auto* ndef = ((Server*)m_env->getGameDef())->getNodeDefManager();

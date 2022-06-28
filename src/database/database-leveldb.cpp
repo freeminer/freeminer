@@ -45,10 +45,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Database_LevelDB::Database_LevelDB(const std::string &savedir)
 {
+	leveldb::Options options;
+	options.create_if_missing = true;
+	leveldb::Status status = leveldb::DB::Open(options,
+		savedir + DIR_DELIM + "map.db", &m_database);
+	ENSURE_STATUS_OK(status);
 }
 
 Database_LevelDB::~Database_LevelDB()
 {
+	delete m_database;
 }
 
 bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)

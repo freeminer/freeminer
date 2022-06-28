@@ -279,7 +279,7 @@ void LuaEmergeAreaCallback(v3s16 blockpos, EmergeAction action, void *param)
 
 	// state must be protected by envlock
 	Server *server = state->script->getServer();
-	MutexAutoLock envlock(server->m_env_mutex);
+	//MutexAutoLock envlock(server->m_env_mutex);
 
 	state->refcount--;
 

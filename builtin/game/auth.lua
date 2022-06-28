@@ -49,8 +49,8 @@ core.builtin_auth_handler = {
 		assert(type(password) == "string")
 		core.log('info', "Built-in authentication handler adding player '"..name.."'")
 		local privs = core.settings:get("default_privs")
-		if core.setting:getbool("creative_mode") and core.setting:get("default_privs_creative") then
-			privs = core.setting:get("default_privs_creative")
+		if core.settings:get_bool("creative_mode") and core.settings:get("default_privs_creative") then
+			privs = core.settings:get("default_privs_creative")
 		end
 		return core_auth.create({
 			name = name,

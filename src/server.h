@@ -431,7 +431,7 @@ public:
 	Address m_bind_addr;
 
 	// Environment mutex (envlock)
-	std::mutex m_env_mutex;
+	//std::mutex m_env_mutex;
 
 private:
 	friend class EmergeThread;

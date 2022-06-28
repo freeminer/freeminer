@@ -83,7 +83,6 @@ public:
 
 private:
 	leveldb::DB *m_database;
-	//KeyValueStorage m_database;
 };
 
 #endif // USE_LEVELDB
