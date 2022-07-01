@@ -48,6 +48,8 @@ void ProfilerGraph::draw(s32 x_left, s32 y_bottom, video::IVideoDriver *driver,
 				continue;
 			}
 
+			j->second.cur = value;
+
 			if (value < j->second.min)
 				j->second.min = value;
 
@@ -112,7 +114,7 @@ void ProfilerGraph::draw(s32 x_left, s32 y_bottom, video::IVideoDriver *driver,
 		font->draw(utf8_to_wide(buf).c_str(),
 				core::rect<s32>(textx, y - texth, textx2, y), meta.color);
 
-		font->draw(utf8_to_wide(id).c_str(),
+		font->draw(utf8_to_wide(id + " " + ftos(meta.cur)).c_str(),
 				core::rect<s32>(textx, y - graphh / 2 - texth / 2, textx2,
 						y - graphh / 2 + texth / 2),
 				meta.color);

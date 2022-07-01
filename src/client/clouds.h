@@ -140,7 +140,9 @@ private:
 	v2f m_origin;
 	v3s16 m_camera_offset;
 	video::SColorf m_color = video::SColorf(1.0f, 1.0f, 1.0f, 1.0f);
+public:
 	CloudParams m_params;
+private:
 	bool m_camera_inside_cloud = false;
 
 };

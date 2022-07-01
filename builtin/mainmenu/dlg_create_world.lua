@@ -184,7 +184,7 @@ local function create_world_formspec(dialogdata)
 	mglist = mglist:sub(1, -2)
 	
 	gamemgr.update_gamelist()
-	local gameid = core.setting:get("menu_last_game")
+	local gameid = core.settings:get("menu_last_game")
 	
 	local game, gameidx = nil , 0
 	if gameid ~= nil then

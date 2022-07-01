@@ -169,7 +169,7 @@ public:
 	// For debug printing
 	virtual void PrintInfo(std::ostream &out);
 
-	const MapDrawControl & getControl() const { return m_control; }
+	MapDrawControl & getControl() const { return m_control; }
 	f32 getWantedRange() const { return m_control.wanted_range; }
 	f32 getCameraFov() const { return m_camera_fov; }
 

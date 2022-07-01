@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <ctime>
 #include <mutex>
+#include "mapblock.h"
 #include "mapblock_mesh.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/thread.h"
@@ -100,7 +101,9 @@ private:
 struct MeshUpdateResult
 {
 	v3s16 p = v3s16(-1338, -1338, -1338);
-	MapBlockMesh *mesh = nullptr;
+	//MapBlockMesh *mesh = nullptr;
+	MapBlock::mesh_type mesh;
+	
 	bool ack_block_to_server = false;
 
 	MeshUpdateResult() = default;

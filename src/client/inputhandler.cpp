@@ -30,6 +30,12 @@ void KeyCache::populate_nonchanging()
 
 void KeyCache::populate()
 {
+	//freeminer:
+	//key[KeyType::MSG]            = getKeySetting("keymap_msg");
+	key[KeyType::PLAYERLIST]     = getKeySetting("keymap_playerlist");
+    //==
+
+
 	key[KeyType::FORWARD] = getKeySetting("keymap_forward");
 	key[KeyType::BACKWARD] = getKeySetting("keymap_backward");
 	key[KeyType::LEFT] = getKeySetting("keymap_left");
@@ -64,7 +70,9 @@ void KeyCache::populate()
 	key[KeyType::TOGGLE_HUD] = getKeySetting("keymap_toggle_hud");
 	key[KeyType::TOGGLE_CHAT] = getKeySetting("keymap_toggle_chat");
 	key[KeyType::TOGGLE_FOG] = getKeySetting("keymap_toggle_fog");
+	/*
 	key[KeyType::TOGGLE_UPDATE_CAMERA] = getKeySetting("keymap_toggle_update_camera");
+	*/
 	key[KeyType::TOGGLE_DEBUG] = getKeySetting("keymap_toggle_debug");
 	key[KeyType::TOGGLE_PROFILER] = getKeySetting("keymap_toggle_profiler");
 	key[KeyType::CAMERA_MODE] = getKeySetting("keymap_camera_mode");

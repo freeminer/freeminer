@@ -193,7 +193,9 @@ private:
 	// Stores the top bounding box of m_sneak_node
 	aabb3f m_sneak_node_bb_top = aabb3f(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	// Whether the player is allowed to sneak
+public:
 	bool m_sneak_node_exists = false;
+private:
 	// Whether a "sneak ladder" structure is detected at the players pos
 	// see detectSneakLadder() in the .cpp for more info (always false if disabled)
 	bool m_sneak_ladder_detected = false;

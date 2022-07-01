@@ -18,11 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include <algorithm>
-#include "contrib/fallingsao.h"
-#include "contrib/itemsao.h"
 #include "serverenvironment.h"
 #include "settings.h"
-#include "log_types.h"
+#include "log.h"
 #include "mapblock.h"
 #include "nodedef.h"
 #include "nodemetadata.h"
@@ -51,6 +49,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
+
+#include "contrib/fallingsao.h"
+#include "contrib/itemsao.h"
+#include "log_types.h"
 
 #define LBM_NAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyz0123456789_:"
 
@@ -396,8 +398,8 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 	// Go through old list
 	for (const auto & p : m_list) {
 		// If not on new list, it's been removed
-		if (newlist.find(p.first) == newlist.end())
-			blocks_removed.insert(p.first);
+		if (newlist.find(p) == newlist.end())
+			blocks_removed.insert(p);
 	}
 
 	/*
@@ -415,7 +417,7 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 	*/
 	m_list.clear();
 	for (v3s16 p : newlist) {
-		m_list.set(p, true);
+		m_list.insert(p);
 	}
 }
 
@@ -1574,14 +1576,12 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
 		auto lock = m_active_blocks.m_list.lock_shared_rec();
 
-		for (const auto &i: m_active_blocks.m_list) {
+		for (const auto &p: m_active_blocks.m_list) {
 			if (n++ < m_active_block_timer_last)
 				continue;
 			else
 				m_active_block_timer_last = 0;
 			++calls;
-
-			v3POS p = i.first;
 
 			MapBlock *block = m_map->getBlockNoCreateNoEx(p, true);
 			if (!block)

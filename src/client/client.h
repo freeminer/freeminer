@@ -50,6 +50,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
+class Server;
+class ChatBackend;
+
 struct ClientEvent;
 struct MeshMakeData;
 struct ChatMessage;
@@ -70,8 +73,6 @@ struct PointedThing;
 class MapDatabase;
 class Minimap;
 struct MinimapMapblock;
-class Server;
-class ChatBackend;
 class Camera;
 class NetworkPacket;
 namespace con {
@@ -126,7 +127,6 @@ public:
 	*/
 
 	Client(
-			bool is_simple_singleplayer_game,
 			const char *playername,
 			const std::string &password,
 			const std::string &address_name,
@@ -140,6 +140,7 @@ public:
 			RenderingEngine *rendering_engine,
 			bool ipv6,
 			GameUI *game_ui
+			, bool is_simple_singleplayer_game
 	);
 
 	~Client();
@@ -157,6 +158,9 @@ public:
 	 request all threads managed by client to be stopped
 	 */
 	void Stop();
+
+
+	bool isShutdown();
 
 	/*
 		The name of the local player should already be set when
@@ -251,6 +255,7 @@ public:
 		const StringMap &fields);
 	void sendInventoryAction(InventoryAction *a);
 	void sendChatMessage(const std::string &message);
+	void sendChatMessage(const std::wstring &message);
 	void clearOutChatQueue();
 	void sendChangePassword(const std::string &oldpassword,
 		const std::string &newpassword);
@@ -310,15 +315,15 @@ public:
 	const std::unordered_set<std::string> &getPrivilegeList() const
 	{ return m_privileges; }
 
-	bool getChatMessage(std::string &message);
-	void typeChatMessage(const std::string& message);
+	bool getChatMessage(std::wstring &message);
+	void typeChatMessage(const std::wstring& message);
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool urgent=false, int step = 0);
+	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
 	// Including blocks at appropriate edges
-	void addUpdateMeshTaskWithEdge(v3POS blockpos, bool urgent = false);
-	void addUpdateMeshTaskForNode(v3s16 nodepos, bool urgent=false);
+	void addUpdateMeshTaskWithEdge(v3POS blockpos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
 
 	void updateMeshTimestampWithEdge(v3s16 blockpos);
 
@@ -532,7 +537,7 @@ private:
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;
-	std::queue<std::wstring> m_out_chat_queue;
+	std::queue<std::string> m_out_chat_queue;
 	u32 m_last_chat_message_sent;
 	float m_chat_message_allowance = 5.0f;
 	Queue<ChatMessage *> m_chat_queue;

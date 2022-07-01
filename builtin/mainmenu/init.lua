@@ -208,7 +208,7 @@ local function init_globals()
 	if PLATFORM ~= "Android" then
 ]]
 	if true then
-		tv_main:set_tab(core.setting:get("maintab_LAST") or 'multiplayer')
+		tv_main:set_tab(core.settings:get("maintab_LAST") or 'multiplayer')
 =======
 	local last_tab = core.settings:get("maintab_LAST")
 	if last_tab and tv_main.current_tab ~= last_tab then
