@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/strfnd.h"
 #include "network/clientopcodes.h"
 #include "util/serialize.h"
-
+#include "fm_networkprotocol.h"
 #include "settings.h"
 #include "emerge.h"
 #include "profiler.h"
@@ -101,7 +101,7 @@ void Client::handleCommand_InitLegacy(NetworkPacket* pkt)   {
 	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 
 	// Reply to server
-	MSGPACK_PACKET_INIT(TOSERVER_INIT2, 0);
+	MSGPACK_PACKET_INIT((int)TOSERVER_INIT2, 0);
 	m_con.Send(PEER_ID_SERVER, 1, buffer, true);
 
 	m_state = LC_Init;

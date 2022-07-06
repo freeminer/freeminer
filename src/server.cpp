@@ -963,7 +963,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 			}
 
-			MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 2);
+			MSGPACK_PACKET_INIT((int)TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 2);
 			PACK(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_REMOVE, removed_objects_data);
 			PACK(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_ADD, added_objects_data);
 

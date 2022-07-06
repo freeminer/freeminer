@@ -14,12 +14,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "server.h"
 
 void Server::SendMovement(u16 peer_id)
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MOVEMENT, 13);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_MOVEMENT, 13);
 
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT, g_settings->getFloat("movement_acceleration_default") * BS);
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_AIR, g_settings->getFloat("movement_acceleration_air") * BS);
@@ -44,7 +45,7 @@ void Server::SendHP(u16 peer_id, u8 hp)
 	DSTACK(FUNCTION_NAME);
 	std::ostringstream os(std::ios_base::binary);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_HP, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_HP, 1);
 	PACK(TOCLIENT_HP_HP, hp);
 
 	// Send as reliable
@@ -54,7 +55,7 @@ void Server::SendHP(u16 peer_id, u8 hp)
 void Server::SendBreath(u16 peer_id, u16 breath)
 {
 	DSTACK(FUNCTION_NAME);
-	MSGPACK_PACKET_INIT(TOCLIENT_BREATH, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BREATH, 1);
 	PACK(TOCLIENT_BREATH_BREATH, breath);
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
@@ -63,7 +64,7 @@ void Server::SendBreath(u16 peer_id, u16 breath)
 void Server::SendAccessDenied(u16 peer_id, AccessDeniedCode reason, const std::string &custom_reason, bool reconnect)
 {
 	DSTACK(FUNCTION_NAME);
-	MSGPACK_PACKET_INIT(TOCLIENT_ACCESS_DENIED_LEGACY, 3);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_ACCESS_DENIED_LEGACY, 3);
 	PACK(TOCLIENT_ACCESS_DENIED_CUSTOM_STRING, custom_reason);
 	PACK(TOCLIENT_ACCESS_DENIED_REASON, (int)reason);
 	PACK(TOCLIENT_ACCESS_DENIED_RECONNECT, reconnect);
@@ -77,7 +78,7 @@ void Server::SendDeathscreen(u16 peer_id,bool set_camera_point_target,
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_DEATHSCREEN, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_DEATHSCREEN, 2);
 	PACK(TOCLIENT_DEATHSCREEN_SET_CAMERA, set_camera_point_target);
 	PACK(TOCLIENT_DEATHSCREEN_CAMERA_POINT, camera_point_target);
 
@@ -89,7 +90,7 @@ void Server::SendItemDef(u16 peer_id,
 		IItemDefManager *itemdef, u16 protocol_version)
 {
 	DSTACK(FUNCTION_NAME);
-	MSGPACK_PACKET_INIT(TOCLIENT_ITEMDEF, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_ITEMDEF, 1);
 
 	auto client = m_clients.getClient(peer_id, CS_InitDone);
 	if (!client)
@@ -109,7 +110,7 @@ void Server::SendNodeDef(u16 peer_id,
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_NODEDEF, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_NODEDEF, 1);
 
 	auto client = m_clients.getClient(peer_id, CS_InitDone);
 	if (!client)
@@ -143,7 +144,7 @@ void Server::SendInventory(PlayerSAO* playerSAO)
 
 	std::string s = os.str();
 
-	MSGPACK_PACKET_INIT(TOCLIENT_INVENTORY, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_INVENTORY, 1);
 	PACK(TOCLIENT_INVENTORY_DATA, s);
 
 	// Send as reliable
@@ -154,7 +155,7 @@ void Server::SendChatMessage(u16 peer_id, const std::string &message)
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_CHAT_MESSAGE, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_CHAT_MESSAGE, 1);
 	PACK(TOCLIENT_CHAT_MESSAGE_DATA, message);
 
 	if (peer_id != PEER_ID_INEXISTENT)
@@ -173,7 +174,7 @@ void Server::SendShowFormspecMessage(u16 peer_id, const std::string &formspec,
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_SHOW_FORMSPEC, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_SHOW_FORMSPEC, 2);
 	PACK(TOCLIENT_SHOW_FORMSPEC_DATA, FORMSPEC_VERSION_STRING + formspec);
 	PACK(TOCLIENT_SHOW_FORMSPEC_NAME, formname);
 
@@ -189,7 +190,7 @@ void Server::SendSpawnParticle(u16 peer_id, v3f pos, v3f velocity, v3f accelerat
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_SPAWN_PARTICLE, 9);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_SPAWN_PARTICLE, 9);
 	PACK(TOCLIENT_SPAWN_PARTICLE_POS, pos);
 	PACK(TOCLIENT_SPAWN_PARTICLE_VELOCITY, velocity);
 	PACK(TOCLIENT_SPAWN_PARTICLE_ACCELERATION, acceleration);
@@ -219,7 +220,7 @@ void Server::SendAddParticleSpawner(u16 peer_id, u16 amount, float spawntime, v3
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_ADD_PARTICLESPAWNER, 18);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_ADD_PARTICLESPAWNER, 18);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_AMOUNT, amount);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_SPAWNTIME, spawntime);
 	PACK(TOCLIENT_ADD_PARTICLESPAWNER_MINPOS, minpos);
@@ -253,7 +254,7 @@ void Server::SendDeleteParticleSpawner(u16 peer_id, u32 id)
 {
 	DSTACK(FUNCTION_NAME);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_DELETE_PARTICLESPAWNER, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_DELETE_PARTICLESPAWNER, 1);
 	PACK(TOCLIENT_DELETE_PARTICLESPAWNER_ID, id);
 
 	if (peer_id != PEER_ID_INEXISTENT) {
@@ -268,7 +269,7 @@ void Server::SendDeleteParticleSpawner(u16 peer_id, u32 id)
 
 void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_HUDADD, 13);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_HUDADD, 13);
 	PACK(TOCLIENT_HUDADD_ID, id);
 	PACK(TOCLIENT_HUDADD_TYPE, (int)form->type);
 	PACK(TOCLIENT_HUDADD_POS, form->pos);
@@ -289,7 +290,7 @@ void Server::SendHUDAdd(u16 peer_id, u32 id, HudElement *form)
 
 void Server::SendHUDRemove(u16 peer_id, u32 id)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_HUDRM, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_HUDRM, 1);
 	PACK(TOCLIENT_HUDRM_ID, id);
 
 	// Send as reliable
@@ -299,7 +300,7 @@ void Server::SendHUDRemove(u16 peer_id, u32 id)
 
 void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_HUDCHANGE, 3);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_HUDCHANGE, 3);
 	PACK(TOCLIENT_HUDCHANGE_ID, id);
 	PACK(TOCLIENT_HUDCHANGE_STAT, (int)stat);
 
@@ -334,7 +335,7 @@ void Server::SendHUDChange(u16 peer_id, u32 id, HudElementStat stat, void *value
 
 void Server::SendHUDSetFlags(u16 peer_id, u32 flags, u32 mask)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_HUD_SET_FLAGS, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_HUD_SET_FLAGS, 2);
 	//////////////////////////// compatibility code to be removed //////////////
 	// ?? flags &= ~(HUD_FLAG_HEALTHBAR_VISIBLE | HUD_FLAG_BREATHBAR_VISIBLE);
 	PACK(TOCLIENT_HUD_SET_FLAGS_FLAGS, flags);
@@ -346,7 +347,7 @@ void Server::SendHUDSetFlags(u16 peer_id, u32 flags, u32 mask)
 
 void Server::SendHUDSetParam(u16 peer_id, u16 param, const std::string &value)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_HUD_SET_PARAM, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_HUD_SET_PARAM, 2);
 	PACK(TOCLIENT_HUD_SET_PARAM_ID, param);
 	PACK(TOCLIENT_HUD_SET_PARAM_VALUE, value);
 
@@ -357,7 +358,7 @@ void Server::SendHUDSetParam(u16 peer_id, u16 param, const std::string &value)
 void Server::SendSetSky(u16 peer_id, const video::SColor &bgcolor,
 		const std::string &type, const std::vector<std::string> &params)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_SET_SKY, 3);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_SET_SKY, 3);
 	PACK(TOCLIENT_SET_SKY_COLOR, bgcolor);
 	PACK(TOCLIENT_SET_SKY_TYPE, type);
 	PACK(TOCLIENT_SET_SKY_PARAMS, params);
@@ -369,7 +370,7 @@ void Server::SendSetSky(u16 peer_id, const video::SColor &bgcolor,
 void Server::SendOverrideDayNightRatio(u16 peer_id, bool do_override,
 		float ratio)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO, 2);
 	PACK(TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_DO, do_override);
 	PACK(TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO_VALUE, ratio);
 
@@ -382,7 +383,7 @@ void Server::SendTimeOfDay(u16 peer_id, u16 time, f32 time_speed)
 	DSTACK(FUNCTION_NAME);
 
 	// Make packet
-	MSGPACK_PACKET_INIT(TOCLIENT_TIME_OF_DAY, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_TIME_OF_DAY, 2);
 	PACK(TOCLIENT_TIME_OF_DAY_TIME, time);
 	PACK(TOCLIENT_TIME_OF_DAY_TIME_SPEED, time_speed);
 
@@ -430,7 +431,7 @@ void Server::SendMovePlayer(u16 peer_id)
 	if (!playersao)
 		return;
 
-	MSGPACK_PACKET_INIT(TOCLIENT_MOVE_PLAYER, 3);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_MOVE_PLAYER, 3);
 	PACK(TOCLIENT_MOVE_PLAYER_POS, playersao->getBasePosition());
 	PACK(TOCLIENT_MOVE_PLAYER_PITCH, playersao->getPitch());
 	PACK(TOCLIENT_MOVE_PLAYER_YAW, playersao->getYaw());
@@ -446,7 +447,7 @@ void Server::SendPunchPlayer(u16 peer_id, v3f speed)
 	if (!player)
 		return;
 
-	MSGPACK_PACKET_INIT(TOCLIENT_PUNCH_PLAYER, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_PUNCH_PLAYER, 1);
 	PACK(TOCLIENT_PUNCH_PLAYER_SPEED, speed);
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);
@@ -454,7 +455,7 @@ void Server::SendPunchPlayer(u16 peer_id, v3f speed)
 
 void Server::SendLocalPlayerAnimations(u16 peer_id, v2s32 animation_frames[4], f32 animation_speed)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_LOCAL_PLAYER_ANIMATIONS, 5);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_LOCAL_PLAYER_ANIMATIONS, 5);
 	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_IDLE, animation_frames[0]);
 	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_WALK, animation_frames[1]);
 	PACK(TOCLIENT_LOCAL_PLAYER_ANIMATIONS_DIG, animation_frames[2]);
@@ -467,7 +468,7 @@ void Server::SendLocalPlayerAnimations(u16 peer_id, v2s32 animation_frames[4], f
 
 void Server::SendEyeOffset(u16 peer_id, v3f first, v3f third)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_EYE_OFFSET, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_EYE_OFFSET, 2);
 	PACK(TOCLIENT_EYE_OFFSET_FIRST, first);
 	PACK(TOCLIENT_EYE_OFFSET_THIRD, third);
 	// Send as reliable
@@ -485,7 +486,7 @@ void Server::SendPlayerPrivileges(u16 peer_id)
 	std::set<std::string> privs;
 	m_script->getAuth(player->getName(), NULL, &privs);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_PRIVILEGES, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_PRIVILEGES, 1);
 	PACK(TOCLIENT_PRIVILEGES_PRIVILEGES, privs);
 
 	// Send as reliable
@@ -501,7 +502,7 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 	if(player->peer_id == PEER_ID_INEXISTENT)
 		return;
 
-	MSGPACK_PACKET_INIT(TOCLIENT_INVENTORY_FORMSPEC, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_INVENTORY_FORMSPEC, 1);
 	PACK(TOCLIENT_INVENTORY_FORMSPEC_DATA, FORMSPEC_VERSION_STRING + player->inventory_formspec);
 
 	// Send as reliable
@@ -510,7 +511,7 @@ void Server::SendPlayerInventoryFormspec(u16 peer_id)
 
 void Server::SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &datas, bool reliable)
 {
-	MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_ACTIVE_OBJECT_MESSAGES, 1);
 	PACK(TOCLIENT_ACTIVE_OBJECT_MESSAGES_MESSAGES, datas);
 
 	// Send as reliable
@@ -581,7 +582,7 @@ s32 Server::playSound(const SimpleSoundSpec &spec,
 			i != dst_clients.end(); i++)
 		psound.clients.insert(*i);
 	// Create packet
-	MSGPACK_PACKET_INIT(TOCLIENT_PLAY_SOUND, 7);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_PLAY_SOUND, 7);
 	PACK(TOCLIENT_PLAY_SOUND_ID, id);
 	PACK(TOCLIENT_PLAY_SOUND_NAME, spec.name);
 	PACK(TOCLIENT_PLAY_SOUND_GAIN, spec.gain * params.gain);
@@ -606,7 +607,7 @@ void Server::stopSound(s32 handle)
 		return;
 	ServerPlayingSound &psound = i->second;
 	// Create packet
-	MSGPACK_PACKET_INIT(TOCLIENT_STOP_SOUND, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_STOP_SOUND, 1);
 	PACK(TOCLIENT_STOP_SOUND_ID, handle);
 	// Send
 	for(auto i = psound.clients.begin();
@@ -626,7 +627,7 @@ void Server::sendRemoveNode(v3s16 p, u16 ignore_id,
 	v3f p_f = intToFloat(p, BS);
 
 	// Create packet
-	MSGPACK_PACKET_INIT(TOCLIENT_REMOVENODE, 1);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_REMOVENODE, 1);
 	PACK(TOCLIENT_REMOVENODE_POS, p);
 
 	auto clients = m_clients.getClientIDs();
@@ -689,7 +690,7 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 		if (client != 0)
 		{
 			// Create packet
-			MSGPACK_PACKET_INIT(TOCLIENT_ADDNODE, 3);
+			MSGPACK_PACKET_INIT((int)TOCLIENT_ADDNODE, 3);
 			PACK(TOCLIENT_ADDNODE_POS, p);
 			PACK(TOCLIENT_ADDNODE_NODE, n);
 			PACK(TOCLIENT_ADDNODE_REMOVE_METADATA, remove_metadata);
@@ -706,7 +707,7 @@ void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_BLOCKDATA, 8);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATA, 8);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -741,7 +742,7 @@ void Server::sendMediaAnnouncement(u16 peer_id)
 			i != m_media.end(); i++)
 		announce_list.push_back(std::make_pair(i->first, i->second.sha1_digest));
 
-	MSGPACK_PACKET_INIT(TOCLIENT_ANNOUNCE_MEDIA, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_ANNOUNCE_MEDIA, 2);
 	PACK(TOCLIENT_ANNOUNCE_MEDIA_LIST, announce_list);
 	PACK(TOCLIENT_ANNOUNCE_MEDIA_REMOTE_SERVER, g_settings->get("remote_media"));
 
@@ -790,7 +791,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 		media_data.push_back(std::make_pair(name, contents));
 		size += contents.size();
 		if (size > 0xffff) {
-			MSGPACK_PACKET_INIT(TOCLIENT_MEDIA, 1);
+			MSGPACK_PACKET_INIT((int)TOCLIENT_MEDIA, 1);
 			PACK(TOCLIENT_MEDIA_MEDIA, media_data);
 			m_clients.send(peer_id, 2, buffer, true);
 			media_data.clear();
@@ -799,7 +800,7 @@ void Server::sendRequestedMedia(u16 peer_id,
 	}
 
 	if (!media_data.empty()) {
-		MSGPACK_PACKET_INIT(TOCLIENT_MEDIA, 1);
+		MSGPACK_PACKET_INIT((int)TOCLIENT_MEDIA, 1);
 		PACK(TOCLIENT_MEDIA_MEDIA, media_data);
 		m_clients.send(peer_id, 2, buffer, true);
 	}
@@ -816,7 +817,7 @@ void Server::sendDetachedInventory(const std::string &name, u16 peer_id)
 	std::ostringstream os(std::ios_base::binary);
 	inv->serialize(os);
 
-	MSGPACK_PACKET_INIT(TOCLIENT_DETACHED_INVENTORY, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_DETACHED_INVENTORY, 2);
 	PACK(TOCLIENT_DETACHED_INVENTORY_NAME, name);
 	PACK(TOCLIENT_DETACHED_INVENTORY_DATA, os.str());
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8.12)
 
 project(freeminer)
 
@@ -119,107 +119,6 @@ else()
 	set(STATIC_BUILD 0)
 endif()
 
-if(MSVC)
-	# Visual Studio
-
-	# EHa enables SEH exceptions (used for catching segfaults)
-	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /GL /FD /MT /GS- /Zi /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
-	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /DEBUG /OPT:REF /OPT:ICF")
-
-	set(CMAKE_CXX_FLAGS_SEMIDEBUG "/MDd /Zi /Ob0 /O1 /RTC1")
-
-	# Debug build doesn't catch exceptions by itself
-	# Add some optimizations because otherwise it's VERY slow
-	set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1")
-
-	if (STATIC_BUILD)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
-	endif()
-
-	# Flags for C files (sqlite)
-	# /MT = Link statically with standard library stuff
-	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
-else()
-	# Probably GCC
-	if(APPLE)
-		SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000" )
-	endif()
-	if(WARN_ALL)
-		set(RELEASE_WARNING_FLAGS "-Wall")
-	else()
-		set(RELEASE_WARNING_FLAGS "")
-	endif()
-
-	set(OTHER_FLAGS "")
-
-	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-		# clang does not understand __extern_always_inline but libc headers use it
-		set(OTHER_FLAGS "${OTHER_FLAGS} \"-D__extern_always_inline=extern __always_inline\"")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -Wsign-compare")
-	endif()
-
-	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
-        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
-        endif ()
-	endif ()
-
-	if(WIN32 AND NOT ZLIBWAPI_DLL AND CMAKE_SIZEOF_VOID_P EQUAL 4)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -DWIN32_NO_ZLIB_WINAPI")
-		message(WARNING "Defaulting to cdecl for zlib on win32 because ZLIBWAPI_DLL"
-			" isn't set, ensure that ZLIBWAPI_DLL is set if you want stdcall.")
-	endif()
-
-	if(MINGW)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
-	endif()
-
-
-	if(SANITIZE_ADDRESS)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-	endif()
-	if(SANITIZE_THREAD)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
-		endif()
-	endif()
-	if(SANITIZE_MEMORY)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
-	endif()
-	if(SANITIZE_UNDEFINED)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-	endif()
-	if(USE_GPERF)
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} -ltcmalloc -lprofiler)
-		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-	endif()
-
-
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
-
-	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
-
-	if(APPLE)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
-	else()
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-	endif()
-
-	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
-
-	if(USE_GPROF)
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
-	endif()
-
-endif()
 
 if(NOT HAVE_SHARED_MUTEX)
 	# avoid empty value in cmake_config.h
@@ -786,7 +685,6 @@ set(FMcommon_SRCS
 	circuit_element_virtual.cpp
 	key_value_storage.cpp
 	fm_bitset.cpp
-	mapgen_v5.cpp
 	mapgen_indev.cpp
 	mapgen_math.cpp
 	log_types.cpp
@@ -1162,6 +1060,110 @@ if (GETTEXT_FOUND AND APPLY_LOCALE_BLACKLIST)
 		endif()
 	endforeach()
 	message(STATUS "Locale blacklist applied; Locales used: ${GETTEXT_USED_LOCALES}")
+endif()
+
+# freeminer: move to top this section:
+
+if(MSVC)
+	# Visual Studio
+
+	# EHa enables SEH exceptions (used for catching segfaults)
+	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /GL /FD /MT /GS- /Zi /arch:SSE /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0 /TP")
+	#set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /NODEFAULTLIB:\"libcmtd.lib\" /NODEFAULTLIB:\"libcmt.lib\"")
+	set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/LTCG /DEBUG /OPT:REF /OPT:ICF")
+
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "/MDd /Zi /Ob0 /O1 /RTC1")
+
+	# Debug build doesn't catch exceptions by itself
+	# Add some optimizations because otherwise it's VERY slow
+	set(CMAKE_CXX_FLAGS_DEBUG "/MDd /Zi /Ob0 /Od /RTC1")
+
+	if (STATIC_BUILD)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /D _IRR_STATIC_LIB_ /D AL_LIBTYPE_STATIC /D CURL_STATICLIB")
+	endif()
+
+	# Flags for C files (sqlite)
+	# /MT = Link statically with standard library stuff
+	set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /MT")
+else()
+	# Probably GCC
+	if(APPLE)
+		SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000" )
+	endif()
+	if(WARN_ALL)
+		set(RELEASE_WARNING_FLAGS "-Wall")
+	else()
+		set(RELEASE_WARNING_FLAGS "")
+	endif()
+
+	set(OTHER_FLAGS "")
+
+	if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		# clang does not understand __extern_always_inline but libc headers use it
+		set(OTHER_FLAGS "${OTHER_FLAGS} \"-D__extern_always_inline=extern __always_inline\"")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -Wsign-compare")
+	endif()
+
+	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
+        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
+        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
+        endif ()
+	endif ()
+
+	if(WIN32 AND NOT ZLIBWAPI_DLL AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -DWIN32_NO_ZLIB_WINAPI")
+		message(WARNING "Defaulting to cdecl for zlib on win32 because ZLIBWAPI_DLL"
+			" isn't set, ensure that ZLIBWAPI_DLL is set if you want stdcall.")
+	endif()
+
+	if(MINGW)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
+	endif()
+
+
+	if(SANITIZE_ADDRESS)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+	if(SANITIZE_THREAD)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
+		endif()
+	endif()
+	if(SANITIZE_MEMORY)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
+	endif()
+	if(SANITIZE_UNDEFINED)
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+	if(USE_GPERF)
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} -ltcmalloc -lprofiler)
+		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+	endif()
+
+
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
+
+	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -ffast-math -Wall -pipe -funroll-loops")
+
+	if(APPLE)
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+	else()
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
+	endif()
+
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall -Wabi ${WARNING_FLAGS} ${OTHER_FLAGS}")
+
+	if(USE_GPROF)
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
+	endif()
+
 endif()
 
 # Installation

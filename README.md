@@ -120,7 +120,7 @@ nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 
 or for debian based:
 ```sh
-curl https://raw.githubusercontent.com/freeminer/freeminer/master/build/debian_ogles.sh | sh
+curl https://raw.githubusercontent.com/freeminer/freeminer/master/build_tools/debian_ogles.sh | sh
 ```
 
 Build it (OS X):
