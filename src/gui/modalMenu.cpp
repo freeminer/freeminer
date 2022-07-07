@@ -353,8 +353,26 @@ bool GUIModalMenu::preprocessEvent(const SEvent &event)
 			}
 		}
 	}
+/* fm?
+		#ifdef __ANDROID__
+		if (porting::canKeyboard()) {
+		// display software keyboard when clicking edit boxes
+			if (event.EventType == EET_MOUSE_INPUT_EVENT
+					&& event.MouseInput.Event == EMIE_LMOUSE_PRESSED_DOWN) {
+				gui::IGUIElement *hovered =
+					Environment->getRootGUIElement()->getElementFromPoint(
+						core::position2d<s32>(event.MouseInput.X, event.MouseInput.Y));
+				if (hovered && hovered->getType() == irr::gui::EGUIET_EDIT_BOX)
+					porting::displayKeyboard(true, porting::app_global, porting::jnienv);
+			}
+		}
+		#endif
+
+*/
 	return false;
 }
+
+
 
 #ifdef __ANDROID__
 bool GUIModalMenu::hasAndroidUIInput()

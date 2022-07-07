@@ -489,7 +489,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 		}
 
 		//if (event.KeyInput.Key == KEY_ESCAPE) {
-		if ( (kp == EscapeKey || kp == CancelKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) )
+		if ( (kp == EscapeKey || kp == CancelKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) ) {
 			closeConsoleAtOnce();
 			m_close_on_enter = false;
 			// inhibit open so the_game doesn't reopen immediately
@@ -519,7 +519,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 
 			prompt.addToHistory(prompt.getLine());
 			std::wstring text = prompt.replace(L"");
-			m_client->typeChatMessage(wide_to_utf8(text));
+			m_client->typeChatMessage(text);
 			if (m_close_on_enter) {
 				closeConsoleAtOnce();
 				m_close_on_enter = false;

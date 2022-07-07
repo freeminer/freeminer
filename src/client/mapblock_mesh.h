@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes_extrabloated.h"
 #include "client/tile.h"
+#include "map.h"
 #include "voxel.h"
 #include <array>
 #include <map>
@@ -62,20 +63,20 @@ struct MeshMakeData
 	bool m_use_shaders;
 
     // fm:
-	int step;
-	int range;
-	bool no_draw;
-	unsigned int timestamp;
-	MapBlock * block;
-	Map & map;
-	MapDrawControl& draw_control;
-	bool debug;
-	bool filled;
+	int step = 1;
+	int range = 1;
+	bool no_draw = false;
+	unsigned int timestamp = 0;
+	MapBlock * block = nullptr;
+	//Map & map;
+	//MapDrawControl& draw_control;
+	bool debug = false;
+	bool filled = false;
 
-	MeshMakeData(Client *client, bool use_shaders,
-			bool use_tangent_vertices,
-			Map & map_, MapDrawControl& draw_control_);
-	~MeshMakeData();
+	MeshMakeData(Client *client, bool use_shaders
+			//Map & map_ = {nullptr},
+			 //MapDrawControl& draw_control_ = {}
+			 );
 
 	/*
 		Copy block data manually (to allow optimizations by the caller)

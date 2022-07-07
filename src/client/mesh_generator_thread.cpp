@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "mesh_generator_thread.h"
+#include "client/clientmap.h"
 #include "settings.h"
 #include "profiler.h"
 #include "client.h"
@@ -201,7 +202,7 @@ CachedMapBlockData* MeshUpdateQueue::getCachedBlock(const v3s16 &p)
 
 void MeshUpdateQueue::fillDataFromMapBlockCache(QueuedMeshUpdate *q)
 {
-	MeshMakeData *data = new MeshMakeData(m_client, m_cache_enable_shaders);
+	auto * data = new MeshMakeData(m_client, m_cache_enable_shaders);
 	q->data = data;
 
 	data->fillBlockDataBegin(q->p);
@@ -296,7 +297,7 @@ void MeshUpdateThread::doUpdate()
 			sleep_ms(m_generation_interval);
 		ScopeProfiler sp(g_profiler, "Client: Mesh making (sum)");
 
-		MapBlockMesh *mesh_new = new MapBlockMesh(q->data, m_camera_offset);
+		auto mesh_new = std::make_shared<MapBlockMesh>(q->data, m_camera_offset);
 
 		MeshUpdateResult r;
 		r.p = q->p;

@@ -100,7 +100,7 @@ MapBlock::~MapBlock()
 #ifndef SERVER
 	if (0)
 	{
-		delete mesh;
+		//delete mesh;
 		mesh = nullptr;
 	}
 #endif

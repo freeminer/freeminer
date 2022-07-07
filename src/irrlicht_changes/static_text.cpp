@@ -110,54 +110,11 @@ void StaticText::draw()
 					(RestrainTextInside ? &AbsoluteClippingRect : NULL));
 			} else
 			{
-<<<<<<< HEAD
-				if (font != LastBreakFont)
-					breakText();
-
-				core::rect<s32> r = frameRect;
-				s32 height = font->getDimension(L"A").Height + font->getKerningHeight();
-				s32 totalHeight = height * BrokenText.size();
-				if (VAlign == EGUIA_CENTER)
-				{
-					r.UpperLeftCorner.Y = r.getCenter().Y - (totalHeight / 2);
-				}
-				else if (VAlign == EGUIA_LOWERRIGHT)
-				{
-					r.UpperLeftCorner.Y = r.LowerRightCorner.Y - totalHeight;
-				}
-
-				irr::video::SColor previous_color(255, 255, 255, 255);
-				for (u32 i=0; i<BrokenText.size(); ++i)
-				{
-					if (HAlign == EGUIA_LOWERRIGHT)
-					{
-						r.UpperLeftCorner.X = frameRect.LowerRightCorner.X -
-							font->getDimension(BrokenText[i].c_str()).Width;
-					}
-
-					std::vector<irr::video::SColor> colors;
-					//std::wstring str;
-					EnrichedString str = BrokenText[i];
-
-					str = colorizeText(BrokenText[i].c_str(), colors, previous_color);
-					if (!colors.empty())
-						previous_color = colors[colors.size() - 1];
-
-					irr::gui::CGUITTFont *tmp = static_cast<irr::gui::CGUITTFont*>(font);
-					tmp->draw(str, r,
-						previous_color, // FIXME
-						HAlign == EGUIA_CENTER, false, (RestrainTextInside ? &AbsoluteClippingRect : NULL));
-
-					r.LowerRightCorner.Y += height;
-					r.UpperLeftCorner.Y += height;
-				}
-=======
 				// Draw non-colored text
 				font->draw(str.c_str(),
 					r, str.getDefaultColor(), // TODO: Implement colorization
 					HAlign == EGUIA_CENTER, VAlign == EGUIA_CENTER,
 					(RestrainTextInside ? &AbsoluteClippingRect : NULL));
->>>>>>> 5.5.0
 			}
 
 
@@ -240,12 +197,6 @@ video::SColor StaticText::getBackgroundColor() const
 //! Checks if background drawing is enabled
 bool StaticText::isDrawBackgroundEnabled() const
 {
-<<<<<<< HEAD
-#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
-#endif
-=======
->>>>>>> 5.5.0
 	return Background;
 }
 
@@ -260,12 +211,6 @@ void StaticText::setDrawBorder(bool draw)
 //! Checks if border drawing is enabled
 bool StaticText::isDrawBorderEnabled() const
 {
-<<<<<<< HEAD
-#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
-#endif
-=======
->>>>>>> 5.5.0
 	return Border;
 }
 
@@ -311,15 +256,7 @@ void StaticText::enableOverrideColor(bool enable)
 
 bool StaticText::isOverrideColorEnabled() const
 {
-<<<<<<< HEAD
-
-#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
-#endif
-	return OverrideColorEnabled;
-=======
 	return true;
->>>>>>> 5.5.0
 }
 
 
@@ -334,12 +271,6 @@ void StaticText::setWordWrap(bool enable)
 
 bool StaticText::isWordWrapEnabled() const
 {
-<<<<<<< HEAD
-#if defined(_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX)
-	_IRR_IMPLEMENT_MANAGED_MARSHALLING_BUGFIX;
-#endif
-=======
->>>>>>> 5.5.0
 	return WordWrap;
 }
 

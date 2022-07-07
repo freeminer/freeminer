@@ -506,7 +506,9 @@ private:
 	RenderingEngine *m_rendering_engine;
 
 	MeshUpdateThread m_mesh_update_thread;
+public:
 	ClientEnvironment m_env;
+private:
 	ParticleManager m_particle_manager;
 public:
 	std::unique_ptr<con::Connection> m_con;

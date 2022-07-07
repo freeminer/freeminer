@@ -22,22 +22,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client.h"
 #include "clientmap.h"
 #include "settings.h"
-<<<<<<< HEAD:src/minimap.cpp
-#include "nodedef.h"
-#include "porting.h"
-#include "util/numeric.h"
-#include "util/string.h"
-#include <math.h>
-
-#include "profiler.h"
-#include "log_types.h"
-
-=======
 #include "shader.h"
 #include "mapblock.h"
 #include "client/renderingengine.h"
 #include "gettext.h"
->>>>>>> 5.5.0:src/client/minimap.cpp
+
+
+#include "profiler.h"
+#include "log_types.h"
 
 ////
 //// MinimapUpdateThread
@@ -121,7 +113,6 @@ void MinimapUpdateThread::doUpdate()
 		}
 	}
 
-<<<<<<< HEAD:src/minimap.cpp
 	auto now = porting::getTimeMs();
 	if (next_update < now) {
 		next_update = now + 333;
@@ -129,24 +120,16 @@ void MinimapUpdateThread::doUpdate()
 		return;
 	}
 
-	bool do_update;
-	{
-		MutexAutoLock lock(data->m_mutex);
-		do_update = data->map_invalidated && data->mode != MINIMAP_MODE_OFF;
-	}
-	if (do_update) {
-		getMap(data->pos, data->map_size, data->scan_height, data->is_radar);
-=======
 
 	if (data->map_invalidated && (
 				data->mode.type == MINIMAP_TYPE_RADAR ||
 				data->mode.type == MINIMAP_TYPE_SURFACE)) {
 		getMap(data->pos, data->mode.map_size, data->mode.scan_height);
->>>>>>> 5.5.0:src/client/minimap.cpp
 		data->map_invalidated = false;
 	}
 }
 
+#if 0
 void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 {
 	v3s16 pos_min(pos.X - size / 2, pos.Y - height / 2, pos.Z - size / 2);
@@ -154,28 +137,6 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 	v3s16 blockpos_min = getNodeBlockPos(pos_min);
 	v3s16 blockpos_max = getNodeBlockPos(pos_max);
 
-<<<<<<< HEAD:src/minimap.cpp
-	getNodeBlockPosWithOffset(
-		v3s16(pos.X, pos.Y - scan_height / 2, pos.Z),
-		blockpos_min, relpos);
-	getNodeBlockPosWithOffset(
-		v3s16(pos.X, pos.Y + scan_height / 2, pos.Z),
-		blockpos_max, relpos);
-
-	for (s16 i = blockpos_max.Y; i > blockpos_min.Y - 1; i--) {
-		auto it =
-			m_blocks_cache.find(v3s16(blockpos_max.X, i, blockpos_max.Z));
-		if (it != m_blocks_cache.end()) {
-			MinimapMapblock *mmblock = it->second;
-			MinimapPixel *pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
-			if (pixel->id != CONTENT_AIR) {
-				*pixel_height = height + pixel->height;
-				return pixel;
-			}
-		}
-
-		height -= MAP_BLOCKSIZE;
-=======
 // clear the map
 	for (int z = 0; z < size; z++)
 	for (int x = 0; x < size; x++) {
@@ -183,7 +144,6 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 		mmpixel.air_count = 0;
 		mmpixel.height = 0;
 		mmpixel.n = MapNode(CONTENT_AIR);
->>>>>>> 5.5.0:src/client/minimap.cpp
 	}
 
 // draw the map
@@ -211,38 +171,6 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 			const MinimapPixel &in_pixel =
 				block.data[inblock_pos.Z * MAP_BLOCKSIZE + inblock_pos.X];
 
-<<<<<<< HEAD:src/minimap.cpp
-	for (s16 i = blockpos_max.Y; i > blockpos_min.Y - 1; i--) {
-		auto it =
-			m_blocks_cache.find(v3s16(blockpos_max.X, i, blockpos_max.Z));
-		if (it != m_blocks_cache.end()) {
-			MinimapMapblock *mmblock = it->second;
-			MinimapPixel *pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
-			air_count += pixel->air_count;
-		}
-	}
-
-	return air_count;
-}
-
-#if 0
-void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height, bool is_radar)
-{
-	v3s16 p = v3s16(pos.X - size / 2, pos.Y, pos.Z - size / 2);
-
-	for (s16 x = 0; x < size; x++)
-	for (s16 z = 0; z < size; z++) {
-		u16 id = CONTENT_AIR;
-		MinimapPixel *mmpixel = &data->minimap_scan[x + z * size];
-
-		if (!is_radar) {
-			s16 pixel_height = 0;
-			MinimapPixel *cached_pixel =
-				getMinimapPixel(v3s16(p.X + x, p.Y, p.Z + z), height, &pixel_height);
-			if (cached_pixel) {
-				id = cached_pixel->id;
-				mmpixel->height = pixel_height;
-=======
 			v3s16 inmap_pos = pos - pos_min;
 			MinimapPixel &out_pixel =
 				data->minimap_scan[inmap_pos.X + inmap_pos.Z * size];
@@ -251,7 +179,6 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height, bool is_radar)
 			if (in_pixel.n.param0 != CONTENT_AIR) {
 				out_pixel.n = in_pixel.n;
 				out_pixel.height = inmap_pos.Y + in_pixel.height;
->>>>>>> 5.5.0:src/client/minimap.cpp
 			}
 		}
 	}
@@ -279,9 +206,7 @@ Minimap::Minimap(Client *client)
 	m_surface_mode_scan_height =
 		g_settings->getBool("minimap_double_scan_height") ? 256 : 128;
 
-<<<<<<< HEAD:src/minimap.cpp
 	setAngle(0);
-=======
 	// Initialize minimap modes
 	addMode(MINIMAP_TYPE_OFF);
 	addMode(MINIMAP_TYPE_SURFACE, 256);
@@ -290,7 +215,6 @@ Minimap::Minimap(Client *client)
 	addMode(MINIMAP_TYPE_RADAR,   512);
 	addMode(MINIMAP_TYPE_RADAR,   256);
 	addMode(MINIMAP_TYPE_RADAR,   128);
->>>>>>> 5.5.0:src/client/minimap.cpp
 
 	// Initialize minimap data
 	data = new MinimapData;
@@ -377,36 +301,16 @@ void Minimap::toggleMinimapShape()
 
 void Minimap::setMinimapShape(MinimapShape shape)
 {
-<<<<<<< HEAD:src/minimap.cpp
-	static const MinimapModeDef modedefs[MINIMAP_MODE_COUNT] = {
-		{false, 0, 0},
-		{false, m_surface_mode_scan_height, 256},
-		{false, m_surface_mode_scan_height, 128},
-		{false, m_surface_mode_scan_height, 64},
-		{true, 32, 128},
-		{true, 32, 64},
-		{true, 32, 32}
-	};
-
-	if (mode >= MINIMAP_MODE_COUNT)
-		return;
-
 	MutexAutoLock lock(data->m_mutex);
-=======
-	MutexAutoLock lock(m_mutex);
->>>>>>> 5.5.0:src/client/minimap.cpp
 
 	if (shape == MINIMAP_SHAPE_SQUARE)
 		data->minimap_shape_round = false;
 	else if (shape == MINIMAP_SHAPE_ROUND)
 		data->minimap_shape_round = true;
 
-<<<<<<< HEAD:src/minimap.cpp
 	m_minimap_update_thread->next_update = 0;
 
-=======
 	g_settings->setBool("minimap_shape_round", data->minimap_shape_round);
->>>>>>> 5.5.0:src/client/minimap.cpp
 	m_minimap_update_thread->deferUpdate();
 }
 
@@ -421,7 +325,7 @@ MinimapShape Minimap::getMinimapShape()
 
 void Minimap::setModeIndex(size_t index)
 {
-	MutexAutoLock lock(m_mutex);
+	MutexAutoLock lock(data->m_mutex);
 
 	if (index < m_modes.size()) {
 		data->mode = m_modes[index];
@@ -886,8 +790,8 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 
 
 ///freeminer:
-
-void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
+void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 scan_height) {
+//void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
 	v3POS p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 
 	v3POS blockpos_player, relpos;
@@ -897,7 +801,7 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 		for (s16 z = 0; z < size; z++) {
 			auto mmpixel = &data->minimap_scan[x + z * size];
 			mmpixel->air_count = 0;
-			mmpixel->id = CONTENT_AIR;
+			mmpixel->n = CONTENT_AIR;
 
 			v3POS pos(p.X + x, p.Y, p.Z + z);
 			v3POS blockpos_max, blockpos_min;
@@ -941,12 +845,12 @@ void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_r
 				auto & mmblock = it.second;
 				auto pixel = &mmblock->data[relpos.Z * MAP_BLOCKSIZE + relpos.X];
 				mmpixel->air_count += pixel->air_count;
-				if (pixel->id != CONTENT_AIR) {
+				if (pixel->n.param0 != CONTENT_AIR) {
 					pixel_height = height + pixel->height;
-					mmpixel->id = pixel->id;
+					mmpixel->n = pixel->n;
 					mmpixel->height = pixel_height;
-					if (!is_radar)
-						break;
+					/*if (!is_radar)
+						break;*/
 				}
 				height -= MAP_BLOCKSIZE;
 			}

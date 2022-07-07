@@ -95,7 +95,7 @@ public:
 
 	void toggleChat();
 	void toggleHud();
-	void toggleProfiler();
+	void toggleProfiler(bool&);
 
 	GUIFormSpecMenu *&updateFormspec(const std::string &formname)
 	{

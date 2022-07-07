@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sstream>
 #include "clientiface.h"
+#include "log.h"
 #include "network/connection.h"
 #include "network/serveropcodes.h"
 #include "remoteplayer.h"
@@ -1133,7 +1134,6 @@ void ClientInterface::sendToAll(NetworkPacket *pkt)
 	auto clientslock = m_clients.lock_shared_rec();
 	for (auto &client_it : m_clients) {
 		const auto client = client_it.second;
-
 		if (client->net_proto_version != 0) {
 			m_con->Send(client->peer_id,
 					clientCommandFactoryTable[pkt->getCommand()].channel, pkt,

@@ -342,7 +342,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	if (!overload && getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
 		addUpdateMeshTaskWithEdge(p);
 
-	sendGotBlocks(p);
+	sendGotBlocks({p});
 }
 
 void Client::handleCommand_Inventory(NetworkPacket* pkt)
@@ -633,17 +633,9 @@ void Client::handleCommand_MovePlayer(NetworkPacket* pkt)
 	event->player_force_move.pitch = pitch;
 	event->player_force_move.yaw = yaw;
 	m_client_event_queue.push(event);
-<<<<<<< HEAD
-
-	// Ignore damage for a few seconds, so that the player doesn't
-	// get damage from falling on ground
-	m_ignore_damage_timer = 3.0;
 }
 
 void Client::handleCommand_PunchPlayer(NetworkPacket* pkt) { }
-=======
-}
->>>>>>> 5.5.0
 
 void Client::handleCommand_DeathScreen(NetworkPacket* pkt)
 {

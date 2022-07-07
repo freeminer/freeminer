@@ -60,6 +60,12 @@ void MeshBufListList::add(scene::IMeshBuffer *buf, v3s16 position, u8 layer)
 	list.emplace_back(l);
 }
 
+void MapDrawControl::fm_init() {
+	farmesh = g_settings->getS32("farmesh");
+	farmesh_step = g_settings->getS32("farmesh_step");
+	fov_want = fov = g_settings->getFloat("fov");
+}
+
 // ClientMap
 
 ClientMap::ClientMap(

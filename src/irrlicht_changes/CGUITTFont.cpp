@@ -510,22 +510,17 @@ CGUITTGlyphPage* CGUITTFont::createGlyphPage(const u8& pixel_mode)
 	if (page_texture_size.Width > max_texture_size.Width || page_texture_size.Height > max_texture_size.Height)
 		page_texture_size = max_texture_size;
 
-<<<<<<< HEAD:src/cguittfont/CGUITTFont.cpp
 	// Create the new page.
 	page = new CGUITTGlyphPage(Driver, name);
-=======
+
+	if (page)
+	{
+
 	if (!page->createPageTexture(pixel_mode, page_texture_size)) {
 		// TODO: add error message?
 		delete page;
 		return 0;
 	}
->>>>>>> 5.5.0:src/irrlicht_changes/CGUITTFont.cpp
-
-	if (page)
-	{
-		if (!page->createPageTexture(pixel_mode, page_texture_size))
-			// TODO: add error message?
-			return 0;
 
 		// Determine the number of glyph slots on the page and add it to the list of pages.
 		page->available_slots = (page_texture_size.Width / size) * (page_texture_size.Height / size);
@@ -679,9 +674,10 @@ void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& positio
 		++iter;
 		//++current_color;
 	}
+	/*
 	if (applied_colors.empty())
 		applied_colors.push_back(irr::video::SColor(255, 255, 255, 255));
-
+	*/
 	// Draw now.
 	update_glyph_pages();
 	core::map<u32, CGUITTGlyphPage*>::Iterator j = Render_Map.getIterator();

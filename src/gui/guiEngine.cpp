@@ -77,22 +77,13 @@ video::ITexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
 	if (id)
 		*id = 0;
 
-<<<<<<< HEAD:src/guiEngine.cpp
-#ifdef __ANDROID__
-	porting::irr_device_wait_egl();
-	video::IImage *image = m_driver->createImageFromFile(name.c_str());
-	if (image) {
-		image = Align2Npot2(image, m_driver);
-		video::ITexture* retval = m_driver->addTexture(name.c_str(), image);
-		image->drop();
-=======
 	if (name.empty())
 		return NULL;
 
 #if ENABLE_GLES
+	porting::irr_device_wait_egl();
 	video::ITexture *retval = m_driver->findTexture(name.c_str());
 	if (retval)
->>>>>>> 5.5.0:src/gui/guiEngine.cpp
 		return retval;
 
 	video::IImage *image = m_driver->createImageFromFile(name.c_str());
@@ -399,10 +390,6 @@ void GUIEngine::cloudPreProcess()
 /******************************************************************************/
 void GUIEngine::cloudPostProcess(u32 frametime_min, IrrlichtDevice *device)
 {
-<<<<<<< HEAD:src/guiEngine.cpp
-	static const float fps_max = g_settings->getFloat("pause_fps_max");
-=======
->>>>>>> 5.5.0:src/gui/guiEngine.cpp
 	// Time of frame without fps limit
 	u32 busytime_u32;
 

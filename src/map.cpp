@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "mapblock.h"
 #ifndef SERVER
-	#include "mapblock_mesh.h"
+	#include "client/mapblock_mesh.h"
 #endif
 #include "filesys.h"
 #include "voxel.h"

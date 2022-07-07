@@ -394,36 +394,6 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 
 	// Handle nodes
 	// See also CItemDefManager::createClientCached()
-<<<<<<< HEAD:src/wieldmesh.cpp
-	else if (def.type == ITEM_NODE) {
-		if (f.mesh_ptr[0]) {
-			// e.g. mesh nodes and nodeboxes
-			changeToMesh(f.mesh_ptr[0]);
-			// mesh_ptr[0] is pre-scaled by BS * f->visual_scale
-			m_meshnode->setScale(
-					def.wield_scale * WIELD_SCALE_FACTOR
-					/ (BS * f.visual_scale));
-		} else if (f.drawtype == NDT_AIRLIKE) {
-			changeToMesh(NULL);
-		} else if (f.drawtype == NDT_PLANTLIKE) {
-			setExtruded(tsrc->getTextureName(f.tiles[0].texture_id), def.wield_scale, tsrc, f.tiles[0].animation_frame_count);
-		} else if (f.drawtype == NDT_NORMAL || f.drawtype == NDT_ALLFACES) {
-			setCube(f.tiles, def.wield_scale, tsrc);
-		} else {
-			Map map(gamedef);
-			MapDrawControl map_draw_control;
-			//// TODO: Change false in the following constructor args to
-			//// appropriate value when shader is added for wield items (if applicable)
-			MeshMakeData mesh_make_data(gamedef, false, false, map, map_draw_control);
-			MapNode mesh_make_node(id, 255, 0);
-			mesh_make_data.fillSingleNode(&mesh_make_node);
-			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
-			changeToMesh(mapblock_mesh.getMesh());
-			translateMesh(m_meshnode->getMesh(), v3f(-BS, -BS, -BS));
-			m_meshnode->setScale(
-					def.wield_scale * WIELD_SCALE_FACTOR
-					/ (BS * f.visual_scale));
-=======
 	if (def.type == ITEM_NODE) {
 		bool cull_backface = f.needsBackfaceCulling();
 
@@ -451,7 +421,6 @@ void WieldMeshSceneNode::setItem(const ItemStack &item, Client *client, bool che
 			const TileLayer &l1 = f.tiles[0].layers[1];
 			m_colors.emplace_back(l1.has_color, l1.color);
 			break;
->>>>>>> 5.5.0:src/client/wieldmesh.cpp
 		}
 		case NDT_PLANTLIKE_ROOTED: {
 			setExtruded(tsrc->getTextureName(f.special_tiles[0].layers[0].texture_id),
@@ -613,73 +582,6 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			def.inventory_overlay);
 		result->needs_shading = false;
 	} else if (def.type == ITEM_NODE) {
-<<<<<<< HEAD:src/wieldmesh.cpp
-		if (f.mesh_ptr[0]) {
-			mesh = cloneMesh(f.mesh_ptr[0]);
-			scaleMesh(mesh, v3f(0.12, 0.12, 0.12));
-			setMeshColor(mesh, video::SColor (255, 255, 255, 255));
-		} else if (f.drawtype == NDT_PLANTLIKE) {
-			mesh = getExtrudedMesh(tsrc,
-				tsrc->getTextureName(f.tiles[0].texture_id));
-			return mesh;
-		} else if (f.drawtype == NDT_NORMAL || f.drawtype == NDT_ALLFACES
-			|| f.drawtype == NDT_LIQUID || f.drawtype == NDT_FLOWINGLIQUID) {
-			mesh = cloneMesh(g_extrusion_mesh_cache->createCube());
-			scaleMesh(mesh, v3f(1.2, 1.2, 1.2));
-		} else {
-
-//fm:
-// /*
-				Map map(gamedef);
-				MapDrawControl map_draw_control;
-				MeshMakeData mesh_make_data(gamedef, false, false, map, map_draw_control);
-				v3POS bp = v3POS(32000, 32000, 32000-id);
-				auto block = map.createBlankBlockNoInsert(bp);
-				auto air_node = MapNode(CONTENT_AIR, LIGHT_MAX);
-				for(s16 z0=0; z0<=2; ++z0)
-				for(s16 y0=0; y0<=2; ++y0)
-				for(s16 x0=0; x0<=2; ++x0) {
-					v3s16 p(x0,y0,z0);
-					block->setNode(p, air_node);
-				}
-				u8 param1 = 0;
-				u8 param2 = 0;
-				if (f.param_type_2 == CPT2_WALLMOUNTED)
-					param2 = 1;
-				MapNode mesh_make_node(id, param1, param2);
-				mesh_make_data.fillSingleNode(&mesh_make_node, bp);
-				block->setNode(v3s16(1,1,1), mesh_make_node);
-				map.insertBlock(block);
-				MapBlockMesh mapblock_mesh(&mesh_make_data, bp*MAP_BLOCKSIZE);
-// */
-//==
-
-/*MT
-			MeshMakeData mesh_make_data(gamedef, false);
-			MapNode mesh_make_node(id, 255, 0);
-			mesh_make_data.fillSingleNode(&mesh_make_node);
-			MapBlockMesh mapblock_mesh(&mesh_make_data, v3s16(0, 0, 0));
-*/
-			mesh = cloneMesh(mapblock_mesh.getMesh());
-			translateMesh(mesh, v3f(-BS, -BS, -BS));
-			scaleMesh(mesh, v3f(0.12, 0.12, 0.12));
-			rotateMeshXZby(mesh, -45);
-			rotateMeshYZby(mesh, -30);
-
-			u32 mc = mesh->getMeshBufferCount();
-			for (u32 i = 0; i < mc; ++i) {
-				video::SMaterial &material1 =
-					mesh->getMeshBuffer(i)->getMaterial();
-				video::SMaterial &material2 =
-					mapblock_mesh.getMesh()->getMeshBuffer(i)->getMaterial();
-				material1.setTexture(0, material2.getTexture(0));
-				material1.setTexture(1, material2.getTexture(1));
-				material1.setTexture(2, material2.getTexture(2));
-				material1.setTexture(3, material2.getTexture(3));
-				material1.MaterialType = material2.MaterialType;
-			}
-			return mesh;
-=======
 		switch (f.drawtype) {
 		case NDT_NORMAL:
 		case NDT_ALLFACES:
@@ -699,7 +601,6 @@ void getItemMesh(Client *client, const ItemStack &item, ItemMesh *result)
 			if (f.drawtype == NDT_ALLFACES)
 				scaleMesh(mesh, v3f(f.visual_scale));
 			break;
->>>>>>> 5.5.0:src/client/wieldmesh.cpp
 		}
 		case NDT_PLANTLIKE: {
 			mesh = getExtrudedMesh(tsrc,

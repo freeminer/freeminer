@@ -299,7 +299,7 @@ void GameUI::toggleHud()
 		showTranslatedStatusText("HUD hidden");
 }
 
-void GameUI::toggleProfiler()
+void GameUI::toggleProfiler(bool & profiler_state)
 {
 	m_profiler_current_page = (m_profiler_current_page + 1) % (m_profiler_max_page + 1);
 
@@ -311,7 +311,7 @@ void GameUI::toggleProfiler()
 				m_profiler_current_page, m_profiler_max_page);
 		showStatusText(msg);
 		if (m_profiler_current_page == 1)
-			runData.profiler_state = g_profiler_enabled;
+			profiler_state = g_profiler_enabled;
 		g_profiler_enabled = true;
 
 	} else {

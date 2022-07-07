@@ -817,10 +817,8 @@ protected:
 	void updateShadows();
 
 	// Misc
-	void showOverlayMessage(const char *msg, float dtime, int percent,
+	void showOverlayMessage(const std::string &msg, float dtime, int percent,
 			bool draw_clouds = true);
-
-	void showOverlayMessage(const std::string &msg, float dtime, int percent, bool draw_clouds = true);
 
 	static void settingChangedCallback(const std::string &setting_name, void *data);
 	void readSettings();
@@ -2205,7 +2203,7 @@ void Game::processKeyInput()
 	} else if (wasKeyDown(KeyType::TOGGLE_DEBUG)) {
 		toggleDebug();
 	} else if (wasKeyDown(KeyType::TOGGLE_PROFILER)) {
-		m_game_ui->toggleProfiler();
+		m_game_ui->toggleProfiler(runData.profiler_state);
 	} else if (wasKeyDown(KeyType::INCREASE_VIEWING_RANGE)) {
 		increaseViewRange();
 		client->sendDrawControl();

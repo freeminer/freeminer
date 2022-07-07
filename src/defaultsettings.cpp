@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // freeminer part:
 #include "network/connection.h" // ENET_IPV6
 #ifndef SERVER // Only on client
-#include "minimap.h"
+#include "hud.h"
 #endif
 
 
@@ -211,7 +211,7 @@ void fm_set_default_settings(Settings *settings) {
 
 // TODO: refactor and resolve client/server dependencies
 #ifndef SERVER // Only on client
-	settings->setDefault("minimap_default_mode", itos(MINIMAP_MODE_SURFACEx1));
+	settings->setDefault("minimap_default_mode", itos(MINIMAP_TYPE_SURFACE));
 #endif
 
 #if !MINETEST_PROTO

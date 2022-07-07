@@ -39,7 +39,6 @@ static SettingsHierarchy g_hierarchy;
 std::string g_settings_path;
 
 Json::Reader json_reader;
-//Json::StyledWriter json_writer;
 
 std::unordered_map<std::string, const FlagDesc *> Settings::s_flags;
 
