@@ -39,32 +39,6 @@ dofile(menupath .. DIR_DELIM .. "game_theme.lua")
 
 dofile(menupath .. DIR_DELIM .. "dlg_config_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_settings_advanced.lua")
-<<<<<<< HEAD
---if PLATFORM ~= "Android" then
-	dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
-	dofile(menupath .. DIR_DELIM .. "dlg_delete_mod.lua")
-	dofile(menupath .. DIR_DELIM .. "dlg_delete_world.lua")
-	dofile(menupath .. DIR_DELIM .. "dlg_rename_modpack.lua")
---[[
-end
-]]
-local tabs = {}
-
-tabs.settings = dofile(menupath .. DIR_DELIM .. "tab_settings.lua")
-tabs.mods = dofile(menupath .. DIR_DELIM .. "tab_mods.lua")
-tabs.credits = dofile(menupath .. DIR_DELIM .. "tab_credits.lua")
---[[
-if PLATFORM == "Android" then
-]]
-if false then
-	tabs.simple_main = dofile(menupath .. DIR_DELIM .. "tab_simple_main.lua")
-else
-	tabs.singleplayer = dofile(menupath .. DIR_DELIM .. "tab_singleplayer.lua")
-	tabs.multiplayer = dofile(menupath .. DIR_DELIM .. "tab_multiplayer.lua")
-	tabs.server = dofile(menupath .. DIR_DELIM .. "tab_server.lua")
-	tabs.texturepacks = dofile(menupath .. DIR_DELIM .. "tab_texturepacks.lua")
-end
-=======
 dofile(menupath .. DIR_DELIM .. "dlg_contentstore.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_create_world.lua")
 dofile(menupath .. DIR_DELIM .. "dlg_delete_content.lua")
@@ -79,7 +53,6 @@ tabs.about    = dofile(menupath .. DIR_DELIM .. "tab_about.lua")
 tabs.local_game = dofile(menupath .. DIR_DELIM .. "tab_local.lua")
 tabs.play_online = dofile(menupath .. DIR_DELIM .. "tab_online.lua")
 
->>>>>>> 5.5.0
 --------------------------------------------------------------------------------
 local function main_event_handler(tabview, event)
 	if event == "MenuQuit" then
@@ -93,22 +66,6 @@ local function init_globals()
 	-- Init gamedata
 	gamedata.worldindex = 0
 
-<<<<<<< HEAD
---[[
-	if PLATFORM == "Android" then
-]]
-	if false then
-		local world_list = core.get_worlds()
-		local world_index
-
-		local found_singleplayerworld = false
-		for i, world in ipairs(world_list) do
-			if world.name == "singleplayerworld" then
-				found_singleplayerworld = true
-				world_index = i
-				break
-			end
-=======
 	menudata.worldlist = filterlist.create(
 		core.get_worlds,
 		compare_worlds,
@@ -119,53 +76,15 @@ local function init_globals()
 		-- Filter function
 		function(element, gameid)
 			return element.gameid == gameid
->>>>>>> 5.5.0
 		end
 	)
 
 	menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
 	menudata.worldlist:set_sortmode("alphabetic")
 
-<<<<<<< HEAD
-			world_list = core.get_worlds()
-
-			for i, world in ipairs(world_list) do
-				if world.name == "singleplayerworld" then
-					world_index = i
-					break
-				end
-			end
-		end
-
-		gamedata.worldindex = world_index
-	else
-		menudata.worldlist = filterlist.create(
-			core.get_worlds,
-			compare_worlds,
-			-- Unique id comparison function
-			function(element, uid)
-				return element.name == uid
-			end,
-			-- Filter function
-			function(element, gameid)
-				return element.gameid == gameid
-			end
-		)
-
-		menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
-		menudata.worldlist:set_sortmode("alphabetic")
-
-		if not core.settings:get("menu_last_game") then
-			local default_game = core.settings:get("default_game") or "default"
-			core.settings:set("menu_last_game", default_game)
-		end
-
-		mm_texture.init()
-=======
 	if not core.settings:get("menu_last_game") then
-		local default_game = core.settings:get("default_game") or "minetest"
+		local default_game = core.settings:get("default_game") or "default"
 		core.settings:set("menu_last_game", default_game)
->>>>>>> 5.5.0
 	end
 
 	mm_game_theme.init()
@@ -173,28 +92,9 @@ local function init_globals()
 	-- Create main tabview
 	local tv_main = tabview_create("maintab", {x = 12, y = 5.4}, {x = 0, y = 0})
 
-<<<<<<< HEAD
---[[
-	if PLATFORM == "Android" then
-		tv_main:add(tabs.simple_main)
-		tv_main:add(tabs.settings)
-	else
-]]
-	if true then
-		tv_main:set_autosave_tab(true)
-		tv_main:add(tabs.singleplayer)
-		tv_main:add(tabs.multiplayer)
-		tv_main:add(tabs.server)
-		tv_main:add(tabs.settings)
-		if PLATFORM ~= "Android" then
-		tv_main:add(tabs.texturepacks)
-		end
-	end
-=======
 	tv_main:set_autosave_tab(true)
 	tv_main:add(tabs.local_game)
 	tv_main:add(tabs.play_online)
->>>>>>> 5.5.0
 
 	tv_main:add(tabs.content)
 	tv_main:add(tabs.settings)
@@ -203,17 +103,9 @@ local function init_globals()
 	tv_main:set_global_event_handler(main_event_handler)
 	tv_main:set_fixed_size(false)
 
-<<<<<<< HEAD
---[[
-	if PLATFORM ~= "Android" then
-]]
-	if true then
-		tv_main:set_tab(core.settings:get("maintab_LAST") or 'multiplayer')
-=======
-	local last_tab = core.settings:get("maintab_LAST")
+	local last_tab = core.settings:get("maintab_LAST") or 'online'
 	if last_tab and tv_main.current_tab ~= last_tab then
 		tv_main:set_tab(last_tab)
->>>>>>> 5.5.0
 	end
 
 	-- In case the folder of the last selected game has been deleted,
@@ -229,13 +121,8 @@ local function init_globals()
 	tv_main:show()
 
 	ui.update()
-<<<<<<< HEAD
 
 	updater_init()
-
-	core.sound_play("main_menu", true)
-=======
->>>>>>> 5.5.0
 end
 
 init_globals()

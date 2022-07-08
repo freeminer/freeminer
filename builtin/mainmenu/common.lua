@@ -18,6 +18,26 @@
 -- Global menu data
 menudata = {}
 
+-- fm:
+function updater_init()
+	return
+	--[[ FMTODO
+	local updater_req =  function(param) return serverlistmgr.get_favorites() end
+	local updater_res;
+	updater_res = function(result)
+			if core.setting_getbool("public_serverlist") and result[1] then
+				local favs = order_favorite_list(result)
+					menudata.public_known = favs
+					menudata.favorites = menudata.public_known
+				core.event_handler("Refresh")
+			end
+	core.handle_async(updater_req, nil, updater_res)
+	end
+	core.handle_async(updater_req, nil, updater_res)
+	]]
+end
+
+
 -- Local cached values
 local min_supp_proto, max_supp_proto
 
@@ -30,14 +50,9 @@ common_update_cached_supp_proto()
 -- Menu helper functions
 
 local function render_client_count(n)
-<<<<<<< HEAD
 	n = n + 0
-	if     n > 99 then return '99+'
-	elseif n >= 0 then return tostring(n)
-=======
 	if     n > 999 then return '99+'
 	elseif n >= 0  then return tostring(n)
->>>>>>> 5.5.0
 	else return '?' end
 end
 
@@ -51,61 +66,19 @@ local function configure_selected_world_params(idx)
 	end
 end
 
-<<<<<<< HEAD
---------------------------------------------------------------------------------
-function image_column(tooltip, flagname)
-	return "image,tooltip=" .. core.formspec_escape(tooltip) .. "," ..
-		"0=" .. core.formspec_escape(defaulttexturedir .. "blank.png") .. "," ..
-		"1=" .. core.formspec_escape(defaulttexturedir .. "server_flags_" .. flagname .. ".png")
-end
-
---------------------------------------------------------------------------------
-function order_favorite_list(list)
-	local res = {}
-	if not list then list = {} end
-	--orders the favorite list after support
-	for i = 1, #list do
-		local fav = list[i]
-		if is_server_protocol_compat(fav.proto_min, fav.proto_max, fav.proto) then
-			res[#res + 1] = fav
-		end
-	end
-	for i = 1, #list do
-		local fav = list[i]
-		if not is_server_protocol_compat(fav.proto_min, fav.proto_max, fav.proto) then
-			res[#res + 1] = fav
-		end
-	end
-	return res
-end
-
---------------------------------------------------------------------------------
-function render_favorite(spec, is_favorite)
-=======
 function render_serverlist_row(spec)
->>>>>>> 5.5.0
 	local text = ""
 	if not spec then return "" end
 	if spec.name and spec.name ~= "" then
 		text = text .. core.formspec_escape(spec.name:trim())
 	elseif spec.address then
-<<<<<<< HEAD
-		text = text .. spec.address:trim()
-		if spec.port and tostring(spec.port) ~= "30000" then
-=======
 		text = text .. core.formspec_escape(spec.address:trim())
-		if spec.port then
->>>>>>> 5.5.0
+		if spec.port and tostring(spec.port) ~= "30000" then
 			text = text .. ":" .. spec.port
 		end
 	end
 
-<<<<<<< HEAD
-	local details = ""
-	local grey_out = not is_server_protocol_compat(spec.proto_min, spec.proto_max, spec.proto)
-=======
 	local grey_out = not spec.is_compatible
->>>>>>> 5.5.0
 
 	local details = {}
 
@@ -168,31 +141,9 @@ function render_serverlist_row(spec)
 
 	return table.concat(details, ",")
 end
-<<<<<<< HEAD
-
---------------------------------------------------------------------------------
-os.tempfolder = function()
-	if core.settings:get("TMPFolder") then
-		return core.settings:get("TMPFolder") .. DIR_DELIM .. "MT_" .. math.random(0,10000)
-	end
-
-	local filetocheck = os.tmpname()
-	os.remove(filetocheck)
-
-	local randname = "MTTempModFolder_" .. math.random(0,10000)
-	if DIR_DELIM == "\\" then
-		local tempfolder = os.getenv("TEMP")
-		return tempfolder .. filetocheck
-	else
-		local backstring = filetocheck:reverse()
-		return filetocheck:sub(0,filetocheck:len()-backstring:find(DIR_DELIM)+1) ..randname
-	end
-
-=======
 ---------------------------------------------------------------------------------
 os.tmpname = function()
 	error('do not use') -- instead use core.get_temp_path()
->>>>>>> 5.5.0
 end
 --------------------------------------------------------------------------------
 
@@ -229,76 +180,6 @@ function menu_handle_key_up_down(fields, textlist, settingname)
 	return false
 end
 
-<<<<<<< HEAD
---------------------------------------------------------------------------------
-function asyncOnlineFavourites()
-	if not menudata.public_known then
-		local file = io.open( core.setting_get("serverlist_cache"), "r" )
-		if file then
-			local data = file:read("*all")
-			menudata.public_known = core.parse_json( data )
-			file:close()
-		end
-	end
-
-	if not menudata.public_known then
-	menudata.public_known = {{
-			name = fgettext("Loading..."),
-			description = fgettext_ne("Try reenabling public serverlist and check your internet connection.")
-		}}
-	end
-	menudata.favorites = menudata.public_known
-	menudata.favorites_is_public = true
-
-	if not menudata.public_downloading then
-		menudata.public_downloading = true
-	else
-		return
-	end
-
-	core.handle_async(
-		function(param)
-			return core.get_favorites("online")
-		end,
-		nil,
-		function(result)
-			menudata.public_downloading = nil
-			local favs = order_favorite_list(result)
-			if favs[1] then
-				menudata.public_known = favs
-				menudata.favorites = menudata.public_known
-				menudata.favorites_is_public = true
-
-					local file = io.open( core.setting_get("serverlist_cache"), "w" )
-					if file then
-						file:write( core.write_json( favs ) )
-						file:close()
-					end
-
-			end
-			core.event_handler("Refresh")
-		end
-	)
-end
-
-function updater_init()
-	local updater_req =  function(param) return core.get_favorites("sleep_cache") end
-	local updater_res;
-	updater_res = function(result)
-			if core.setting_getbool("public_serverlist") and result[1] then
-				local favs = order_favorite_list(result)
-					menudata.public_known = favs
-					menudata.favorites = menudata.public_known
-				core.event_handler("Refresh")
-			end
-	core.handle_async(updater_req, nil, updater_res)
-	end
-	core.handle_async(updater_req, nil, updater_res)
-end
-
---------------------------------------------------------------------------------
-=======
->>>>>>> 5.5.0
 function text2textlist(xpos, ypos, width, height, tl_name, textlen, text, transparency)
 	local textlines = core.wrap_text(text, textlen, true)
 	local retval = "textlist[" .. xpos .. "," .. ypos .. ";" .. width ..
@@ -316,28 +197,17 @@ function text2textlist(xpos, ypos, width, height, tl_name, textlen, text, transp
 	return retval
 end
 
-<<<<<<< HEAD
---------------------------------------------------------------------------------
 function is_server_protocol_compat(server_proto_min, server_proto_max, proto)
 	if proto and core.setting_get("server_proto") ~= proto then return false end
-=======
-function is_server_protocol_compat(server_proto_min, server_proto_max)
->>>>>>> 5.5.0
 	if (not server_proto_min) or (not server_proto_max) then
 		-- There is no info. Assume the best and act as if we would be compatible.
 		return true
 	end
 	return tonumber(min_supp_proto) <= tonumber(server_proto_max) and tonumber(max_supp_proto) >= tonumber(server_proto_min)
 end
-<<<<<<< HEAD
---------------------------------------------------------------------------------
+
 function is_server_protocol_compat_or_error(server_proto_min, server_proto_max, proto)
 	if not is_server_protocol_compat(server_proto_min, server_proto_max, proto) then
-=======
-
-function is_server_protocol_compat_or_error(server_proto_min, server_proto_max)
-	if not is_server_protocol_compat(server_proto_min, server_proto_max) then
->>>>>>> 5.5.0
 		local server_prot_ver_info, client_prot_ver_info
 
 		if proto and core.setting_get("server_proto") ~= proto then 

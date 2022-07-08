@@ -377,20 +377,10 @@ function pkgmgr.render_packagelist(render_list)
 end
 
 --------------------------------------------------------------------------------
-<<<<<<< HEAD:builtin/mainmenu/modmgr.lua
-
-function modmgr.get_dependencies(modfolder)
-	local toadd_hard = ""
-	local toadd_soft = ""
-	if modfolder ~= nil then
-		local filename = modfolder ..
-					DIR_DELIM .. "depends.txt"
-=======
 function pkgmgr.get_dependencies(path)
 	if path == nil then
 		return {}, {}
 	end
->>>>>>> 5.5.0:builtin/mainmenu/pkgmgr.lua
 
 	local info = core.get_content_info(path)
 	return info.depends or {}, info.optional_depends or {}
@@ -539,7 +529,7 @@ local function get_dependencies_list(modfolder)
 	return depends
 end
 
-function modmgr.fm_get_dependencies(modfolder, get_table)
+function pkgmgr.fm_get_dependencies(modfolder, get_table)
 	local depends = get_dependencies_list(modfolder)
 	if get_table then
 		return depends

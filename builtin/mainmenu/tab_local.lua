@@ -15,15 +15,6 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-<<<<<<< HEAD:builtin/mainmenu/tab_singleplayer.lua
-local function current_game()
-	local last_game_id = core.settings:get("menu_last_game")
-	local game, index = gamemgr.find_by_gameid(last_game_id)
-	
-	return game
-end
-=======
->>>>>>> 5.5.0:builtin/mainmenu/tab_local.lua
 
 local enable_gamebar = PLATFORM ~= "Android"
 local current_game, singleplayer_refresh_gamebar
@@ -42,27 +33,6 @@ if enable_gamebar then
 		return game
 	end
 
-<<<<<<< HEAD:builtin/mainmenu/tab_singleplayer.lua
-	local function game_buttonbar_button_handler(fields)
-		for key,value in pairs(fields) do
-			for j=1,#gamemgr.games,1 do
-				if ("game_btnbar_" .. gamemgr.games[j].id == key) then
-					mm_texture.update("singleplayer", gamemgr.games[j])
-					core.set_topleft_text(gamemgr.games[j].name)
-					core.settings:set("menu_last_game",gamemgr.games[j].id)
-					menudata.worldlist:set_filtercriteria(gamemgr.games[j].id)
-					local index = filterlist.get_current_index(menudata.worldlist,
-						tonumber(core.settings:get("mainmenu_last_selected_world")))
-					if not index or index < 1 then
-						local selected = core.get_textlist_index("sp_worlds")
-						if selected ~= nil and selected < #menudata.worldlist:get_list() then
-							index = selected
-						else
-							index = #menudata.worldlist:get_list()
-						end
-					end
-					menu_worldmt_legacy(index)
-=======
 	-- Apply menu changes from given game
 	function apply_game(game)
 		core.set_topleft_text(game.name)
@@ -104,7 +74,6 @@ if enable_gamebar then
 			for _, game in ipairs(pkgmgr.games) do
 				if fields["game_btnbar_" .. game.id] then
 					apply_game(game)
->>>>>>> 5.5.0:builtin/mainmenu/tab_local.lua
 					return true
 				end
 			end
@@ -176,23 +145,6 @@ local function get_formspec(tabview, name, tabdata)
 	local retval = ""
 
 	local index = filterlist.get_current_index(menudata.worldlist,
-<<<<<<< HEAD:builtin/mainmenu/tab_singleplayer.lua
-				tonumber(core.settings:get("mainmenu_last_selected_world"))
-				)
-
-	retval = retval ..
-			"button[4,4.15;2.6,0.5;world_delete;".. fgettext("Delete") .. "]" ..
-			"button[6.5,4.15;2.8,0.5;world_create;".. fgettext("New") .. "]" ..
-			"button[9.2,4.15;2.55,0.5;world_configure;".. fgettext("Configure") .. "]" ..
-			"button[8.5,4.95;3.25,0.5;play;".. fgettext("Play") .. "]" ..
-			"label[4,-0.25;".. fgettext("Select World:") .. "]"..
-			"checkbox[0.25,0.25;cb_creative_mode;".. fgettext("Creative Mode") .. ";" ..
-			dump(core.settings:get_bool("creative_mode")) .. "]"..
-			"checkbox[0.25,0.7;cb_enable_damage;".. fgettext("Enable Damage") .. ";" ..
-			dump(core.settings:get_bool("enable_damage")) .. "]"..
-			"textlist[4,0.25;7.5,3.7;sp_worlds;" ..
-			menu_render_worldlist() ..
-=======
 				tonumber(core.settings:get("mainmenu_last_selected_world")))
 	local list = menudata.worldlist:get_list()
 	local world = list and index and list[index]
@@ -236,7 +188,6 @@ local function get_formspec(tabview, name, tabdata)
 			host ..
 			"textlist[3.9,0.4;7.9,3.45;sp_worlds;" ..
 			menu_render_worldlist(not enable_gamebar) ..
->>>>>>> 5.5.0:builtin/mainmenu/tab_local.lua
 			";" .. index .. "]"
 
 	if core.settings:get_bool("enable_server") and disabled_settings["enable_server"] == nil then

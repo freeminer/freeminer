@@ -156,11 +156,7 @@ local function formspec(tabview, name, tabdata)
 				.. dump(core.settings:get_bool("opaque_water")) .. "]" ..
 		"checkbox[0.25,2.0;cb_connected_glass;" .. fgettext("Connected Glass") .. ";"
 				.. dump(core.settings:get_bool("connected_glass")) .. "]" ..
-<<<<<<< HEAD
-		"dropdown[0.25,2.8;3.3;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
-=======
 		"dropdown[0.25,2.8;3.5;dd_node_highlighting;" .. dd_options.node_highlighting[1] .. ";"
->>>>>>> 5.5.0
 				.. getSettingIndex.NodeHighlighting() .. "]" ..
 		"dropdown[0.25,3.6;3.5;dd_leaves_style;" .. dd_options.leaves[1] .. ";"
 				.. getSettingIndex.Leaves() .. "]" ..
@@ -173,23 +169,10 @@ local function formspec(tabview, name, tabdata)
 		"label[4.25,2.15;" .. fgettext("Antialiasing:") .. "]" ..
 		"dropdown[4.25,2.6;3.5;dd_antialiasing;" .. dd_options.antialiasing[1] .. ";"
 				.. getSettingIndex.Antialiasing() .. "]" ..
-<<<<<<< HEAD
-		"box[7.75,0;4,4.4;#999999]" ..
-
-		""
-		if PLATFORM ~= "Android" or core.setting_getbool("enable_shaders") then
-			tab_string = tab_string ..
-
-		"checkbox[8,0;cb_shaders;" .. fgettext("Shaders") .. ";"
-				.. dump(core.settings:get_bool("enable_shaders")) .. "]"
-
-		end
-=======
 		"label[4.25,3.45;" .. fgettext("Screen:") .. "]" ..
 		"checkbox[4.25,3.6;cb_autosave_screensize;" .. fgettext("Autosave Screen Size") .. ";"
 				.. dump(core.settings:get_bool("autosave_screensize")) .. "]" ..
 		"box[8,0;3.75,4.5;#999999]"
->>>>>>> 5.5.0
 
 	local video_driver = core.settings:get("video_driver")
 	local shaders_enabled = core.settings:get_bool("enable_shaders")
@@ -209,54 +192,19 @@ local function formspec(tabview, name, tabdata)
 					fgettext("Shaders (unavailable)")) .. "]"
 	end
 
-	tab_string = tab_string ..
-<<<<<<< HEAD
-
-		""
-		if PLATFORM ~= "Android" then
+	if PLATFORM ~= "Android" then
 		tab_string = tab_string ..
-		"button[8,4.75;3.75,0.5;btn_change_keys;" .. fgettext("Change keys") .. "]" ..
-		""
-		end
-		tab_string = tab_string ..
-
-		"button[0,4.75;3.75,0.5;btn_advanced_settings;"
-		.. fgettext("Advanced Settings") .. "]"
-=======
 		"button[8,4.75;3.95,1;btn_change_keys;"
 		.. fgettext("Change Keys") .. "]"
+	end
 
 	tab_string = tab_string ..
 		"button[0,4.75;3.95,1;btn_advanced_settings;"
 		.. fgettext("All Settings") .. "]"
->>>>>>> 5.5.0
 
 
 	if core.settings:get("touchscreen_threshold") ~= nil then
 		tab_string = tab_string ..
-<<<<<<< HEAD
-			"label[4.3,4.1;" .. fgettext("Touchthreshold (px)") .. "]" ..
-			"dropdown[3.85,4.55;3.85;dd_touchthreshold;0,10,20,30,40,50;" ..
-			((tonumber(core.settings:get("touchscreen_threshold")) / 10) + 1) .. "]"
-	end
-
-	if core.settings:get_bool("enable_shaders") then
-		tab_string = tab_string ..
-			"checkbox[8,0.5;cb_bumpmapping;" .. fgettext("Bump Mapping") .. ";"
-					.. dump(core.settings:get_bool("enable_bumpmapping")) .. "]" ..
-			"checkbox[8,1;cb_tonemapping;" .. fgettext("Tone Mapping") .. ";"
-					.. dump(core.settings:get_bool("tone_mapping")) .. "]" ..
-			"checkbox[8,1.5;cb_generate_normalmaps;" .. fgettext("Normal Mapping") .. ";"
-					.. dump(core.settings:get_bool("generate_normalmaps")) .. "]" ..
-			"checkbox[8,2;cb_parallax;" .. fgettext("Parallax Occlusion") .. ";"
-					.. dump(core.settings:get_bool("enable_parallax_occlusion")) .. "]" ..
-			"checkbox[8,2.5;cb_waving_water;" .. fgettext("Waving Water") .. ";"
-					.. dump(core.settings:get_bool("enable_waving_water")) .. "]" ..
-			"checkbox[8,3;cb_waving_leaves;" .. fgettext("Waving Leaves") .. ";"
-					.. dump(core.settings:get_bool("enable_waving_leaves")) .. "]" ..
-			"checkbox[8,3.5;cb_waving_plants;" .. fgettext("Waving Plants") .. ";"
-					.. dump(core.settings:get_bool("enable_waving_plants")) .. "]"
-=======
 			"label[4.3,4.2;" .. fgettext("Touchthreshold: (px)") .. "]" ..
 			"dropdown[4.25,4.65;3.5;dd_touchthreshold;0,10,20,30,40,50;" ..
 			((tonumber(core.settings:get("touchscreen_threshold")) / 10) + 1) ..
@@ -276,7 +224,6 @@ local function formspec(tabview, name, tabdata)
 			--"label[8.25,3.0;" .. fgettext("Dynamic shadows: ") .. "]" ..
 			--"dropdown[8.25,3.5;3.5;dd_shadows;" .. dd_options.shadow_levels[1] .. ";"
 			--		.. getSettingIndex.ShadowMapping() .. "]"
->>>>>>> 5.5.0
 	else
 		tab_string = tab_string ..
 			"label[8.38,0.7;" .. core.colorize("#888888",
@@ -330,36 +277,11 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 		return true
 	end
 	if fields["cb_shaders"] then
-<<<<<<< HEAD
-		if (core.settings:get("video_driver") == "direct3d8" or
-				core.settings:get("video_driver") == "direct3d9") then
-			core.settings:set("enable_shaders", "false")
-			gamedata.errormessage = fgettext("To enable shaders the OpenGL driver needs to be used.")
-		else
-			core.settings:set("enable_shaders", fields["cb_shaders"])
-		end
-		return true
-	end
-	if fields["cb_bumpmapping"] then
-		core.settings:set("enable_bumpmapping", fields["cb_bumpmapping"])
-=======
 		core.settings:set("enable_shaders", fields["cb_shaders"])
->>>>>>> 5.5.0
 		return true
 	end
 	if fields["cb_tonemapping"] then
 		core.settings:set("tone_mapping", fields["cb_tonemapping"])
-<<<<<<< HEAD
-		return true
-	end
-	if fields["cb_generate_normalmaps"] then
-		core.settings:set("generate_normalmaps", fields["cb_generate_normalmaps"])
-		return true
-	end
-	if fields["cb_parallax"] then
-		core.settings:set("enable_parallax_occlusion", fields["cb_parallax"])
-=======
->>>>>>> 5.5.0
 		return true
 	end
 	if fields["cb_waving_water"] then
@@ -379,13 +301,6 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 	end
 	if fields["cb_touchscreen_target"] then
 		core.settings:set("touchtarget", fields["cb_touchscreen_target"])
-<<<<<<< HEAD
-		return true
-	end
-	if fields["btn_reset_singleplayer"] then
-		showconfirm_reset(this)
-=======
->>>>>>> 5.5.0
 		return true
 	end
 

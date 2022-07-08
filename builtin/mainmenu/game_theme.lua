@@ -22,13 +22,6 @@ mm_game_theme = {}
 function mm_game_theme.init()
 	mm_game_theme.defaulttexturedir = core.get_texturepath_share() .. DIR_DELIM .. "base" ..
 						DIR_DELIM .. "pack" .. DIR_DELIM
-<<<<<<< HEAD:builtin/mainmenu/textures.lua
-	mm_texture.basetexturedir = mm_texture.defaulttexturedir
-	
-	mm_texture.texturepack = core.settings:get("texture_path")
-	
-	mm_texture.gameid = nil
-=======
 	mm_game_theme.basetexturedir = mm_game_theme.defaulttexturedir
 
 	mm_game_theme.texturepack = core.settings:get("texture_path")
@@ -36,7 +29,6 @@ function mm_game_theme.init()
 	mm_game_theme.gameid = nil
 
 	mm_game_theme.music_handle = nil
->>>>>>> 5.5.0:builtin/mainmenu/game_theme.lua
 end
 
 --------------------------------------------------------------------------------
@@ -101,11 +93,6 @@ function mm_game_theme.update_game(gamedetails)
 	core.set_clouds(false)
 
 	if not have_bg then
-<<<<<<< HEAD:builtin/mainmenu/textures.lua
-		
-=======
-
->>>>>>> 5.5.0:builtin/mainmenu/game_theme.lua
 		if core.settings:get_bool("menu_clouds") then
 			core.set_clouds(true)
 		else

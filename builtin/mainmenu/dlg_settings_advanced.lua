@@ -543,59 +543,12 @@ local checkboxes = {} -- handle checkboxes events
 
 local function create_change_setting_formspec(dialogdata)
 	local setting = settings[selected_setting]
-<<<<<<< HEAD
-	local formspec = "size[9,5,true]" ..
-			"button[5,4.5;2,1;btn_done;" .. fgettext("Save") .. "]" ..
-			"button[3,4.5;2,1;btn_cancel;" .. fgettext("Cancel") .. "]" ..
-			"tablecolumns[color;text]" ..
-			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
-			"table[0,0;10,3;info;"
-
-	if setting.readable_name then
-		formspec = formspec .. "#FFFF00," .. fgettext(setting.readable_name)
-				.. " (" .. core.formspec_escape(setting.name) .. "),"
-	else
-		formspec = formspec .. "#FFFF00," .. core.formspec_escape(setting.name) .. ","
-	end
-
-	formspec = formspec .. ",,"
-
-	local comment_text = ""
-
-	if setting.comment == "" then
-		comment_text = fgettext_ne("(No description of setting given)")
-	else
-		comment_text = fgettext_ne(setting.comment)
-	end
-	for _, comment_line in ipairs(comment_text:split("\n", true)) do
-		formspec = formspec .. "," .. core.formspec_escape(comment_line) .. ","
-	end
-
-	if setting.type == "flags" then
-		formspec = formspec .. ",,"
-				.. "," .. fgettext("Please enter a comma seperated list of flags.") .. ","
-				.. "," .. fgettext("Possible values are: ")
-				.. core.formspec_escape(setting.possible:gsub(",", ", ")) .. ","
-	elseif setting.type == "noise_params" then
-		formspec = formspec .. ",,"
-				.. "," .. fgettext("Format: <offset>, <scale>, (<spreadX>, <spreadY>, <spreadZ>), <seed>, <octaves>, <persistence>") .. ","
-				.. "," .. fgettext("Optionally the lacunarity can be appended with a leading comma.") .. ","
-	elseif setting.type == "v3f" then
-		formspec = formspec .. ",,"
-				.. "," .. fgettext_ne("Format is 3 numbers separated by commas and inside brackets.") .. ","
-	end
-
-	formspec = formspec:sub(1, -2) -- remove trailing comma
-
-	formspec = formspec .. ";1]"
-=======
 	-- Final formspec will be created at the end of this function
 	-- Default values below, may be changed depending on setting type
 	local width = 10
 	local height = 3.5
 	local description_height = 3
 	local formspec = ""
->>>>>>> 5.5.0
 
 	-- Setting-specific formspec elements
 	if setting.type == "bool" then
@@ -636,20 +589,6 @@ local function create_change_setting_formspec(dialogdata)
 				.. setting.type .. ";" .. fgettext("Browse") .. "]"
 		height = height + 1.15
 
-<<<<<<< HEAD
-	else
-		-- TODO: fancy input for float, int, flags, noise_params, v3f
-		local width = 8.5
-		local text = get_current_value(setting)
-		if dialogdata.error_message then
-			formspec = formspec .. "tablecolumns[color;text]" ..
-			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
-			"table[5,3.9;5,0.6;error_message;#FF0000,"
-					.. core.formspec_escape(dialogdata.error_message) .. ";0]"
-			width = 5
-			if dialogdata.entered_text then
-				text = dialogdata.entered_text
-=======
 	elseif setting.type == "noise_params_2d" or setting.type == "noise_params_3d" then
 		local t = get_current_np_group(setting)
 		local dimension = 3
@@ -756,7 +695,6 @@ local function create_change_setting_formspec(dialogdata)
 				flags[name:sub(3)] = false
 			else
 				flags[name] = true
->>>>>>> 5.5.0
 			end
 		end
 		local flags_count = #setting.possible / 2
@@ -903,8 +841,6 @@ local function handle_change_setting_buttons(this, fields)
 				core.update_formspec(this:get_formspec())
 				return true
 			end
-<<<<<<< HEAD
-=======
 			if setting.min and new_value < setting.min then
 				this.data.error_message = fgettext_ne("The value must be at least $1.", setting.min)
 				this.data.entered_text = fields["te_setting_value"]
@@ -917,7 +853,6 @@ local function handle_change_setting_buttons(this, fields)
 				core.update_formspec(this:get_formspec())
 				return true
 			end
->>>>>>> 5.5.0
 			core.settings:set(setting.name, new_value)
 
 		elseif setting.type == "flags" then
@@ -931,8 +866,6 @@ local function handle_change_setting_buttons(this, fields)
 					end
 				end
 			end
-<<<<<<< HEAD
-=======
 
 			checkboxes = {}
 
@@ -973,7 +906,6 @@ local function handle_change_setting_buttons(this, fields)
 					.. fields["te_x"] .. ", "
 					.. fields["te_y"] .. ", "
 					.. fields["te_z"] .. ")"
->>>>>>> 5.5.0
 			core.settings:set(setting.name, new_value)
 
 		else
@@ -1067,17 +999,10 @@ local function create_settings_formspec(tabview, _, tabdata)
 		formspec = formspec:sub(1, -2) -- remove trailing comma
 	end
 	formspec = formspec .. ";" .. selected_setting .. "]" ..
-<<<<<<< HEAD
-			"button[0,6;4,1;btn_back;".. fgettext("< Back to Settings page") .. "]" ..
-			"button[10,6;2,1;btn_edit;" .. fgettext("Edit") .. "]" ..
-			"button[7,6;3,1;btn_restore;" .. fgettext("Restore Default") .. "]" ..
-			"checkbox[0,5.3;cb_tech_settings;" .. fgettext("Show technical names") .. ";"
-=======
 			"button[0,4.9;4,1;btn_back;".. fgettext("< Back to Settings page") .. "]" ..
 			"button[10,4.9;2,1;btn_edit;" .. fgettext("Edit") .. "]" ..
 			"button[7,4.9;3,1;btn_restore;" .. fgettext("Restore Default") .. "]" ..
 			"checkbox[0,4.3;cb_tech_settings;" .. fgettext("Show technical names") .. ";"
->>>>>>> 5.5.0
 					.. dump(core.settings:get_bool("main_menu_technical_settings")) .. "]"
 
 	return formspec
@@ -1147,13 +1072,8 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 
 	if fields["btn_restore"] then
 		local setting = settings[selected_setting]
-<<<<<<< HEAD
-		if setting.type ~= "category" then
-			core.settings:set(setting.name, setting.default)
-=======
 		if setting and setting.type ~= "category" then
 			core.settings:remove(setting.name)
->>>>>>> 5.5.0
 			core.settings:write()
 			core.update_formspec(this:get_formspec())
 		end

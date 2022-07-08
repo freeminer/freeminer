@@ -106,16 +106,10 @@ return {
 	cbf_formspec = function(tabview, name, tabdata)
 		local logofile = defaulttexturedir .. "logo.png"
 		local version = core.get_version()
-<<<<<<< HEAD:builtin/mainmenu/tab_credits.lua
-		return "image[0.5,1;" .. core.formspec_escape(logofile) .. "]" ..
-			"label[0.5,3.2;" .. version.project .. " " .. version.string .. "]" ..
-			"label[0.5,3.5;http://freeminer.org]" ..
-=======
 		local fs = "image[0.75,0.5;2.2,2.2;" .. core.formspec_escape(logofile) .. "]" ..
 			"style[label_button;border=false]" ..
 			"button[0.5,2;2.5,2;label_button;" .. version.project .. " " .. version.string .. "]" ..
-			"button[0.75,2.75;2,2;homepage;minetest.net]" ..
->>>>>>> 5.5.0:builtin/mainmenu/tab_about.lua
+			"button[0.75,2.75;2,2;homepage;freeminer.org]" ..
 			"tablecolumns[color;text]" ..
 			"tableoptions[background=#00000000;highlight=#00000000;border=false]" ..
 			"table[3.5,-0.25;8.5,6.05;list_credits;" ..

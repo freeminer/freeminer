@@ -143,26 +143,6 @@ local function get_formspec(tabview, name, tabdata)
 		"text,align=inline,padding=1]" ..
 		"table[0.25,1;9.25,5.75;servers;"
 
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-	if #menudata.favorites > 0 then
-		local favs = core.get_favorites("local")
-		if #favs > 0 then
-			for i = 1, #favs do
-			for j = 1, #menudata.favorites do
-				if menudata.favorites[j] and menudata.favorites[j].address == favs[i].address and
-						menudata.favorites[j].port == favs[i].port then
-					table.insert(menudata.favorites, i, table.remove(menudata.favorites, j))
-				end
-			end
-				if menudata.favorites[i] and favs[i].address ~= menudata.favorites[i].address then
-					table.insert(menudata.favorites, i, favs[i])
-				end
-			end
-		end
-		retval = retval .. render_favorite(menudata.favorites[1], (#favs > 0))
-		for i = 2, #menudata.favorites do
-			retval = retval .. "," .. render_favorite(menudata.favorites[i], (i <= #favs))
-=======
 	local servers = get_sorted_servers()
 
 	local dividers = {
@@ -182,7 +162,6 @@ local function get_formspec(tabview, name, tabdata)
 				tabdata.lookup[#rows + 1] = server
 				rows[#rows + 1] = render_serverlist_row(server)
 			end
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
 		end
 	end
 
@@ -293,20 +272,10 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		local event = core.explode_table_event(fields.servers)
 		local server = tabdata.lookup[event.row]
 
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-		if not fav then return end
-
-		if event.type == "DCL" then
-			if event.row <= #menudata.favorites then
-				if menudata.favorites_is_public and
-						not is_server_protocol_compat_or_error(
-							fav.proto_min, fav.proto_max, fav.proto) then
-=======
 		if server then
 			if event.type == "DCL" then
 				if not is_server_protocol_compat_or_error(
-							server.proto_min, server.proto_max) then
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
+							server.proto_min, server.proto_max, server.proto) then
 					return true
 				end
 
@@ -329,150 +298,22 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				end
 				return true
 			end
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-			return true
-		end
-
-		if event.type == "CHG" then
-			if event.row <= #menudata.favorites then
-				gamedata.fav = false
-				local favs = core.get_favorites("local")
-				local address = fav.address
-				local port    = fav.port
-				gamedata.serverdescription = fav.description
-
-				for i = 1, #favs do
-					if fav.address == favs[i].address and
-							fav.port == favs[i].port then
-						gamedata.fav = true
-					end
-				end
-
-				if address and port then
-					core.settings:set("address", address)
-					core.settings:set("remote_port", port)
-				end
-				tabdata.fav_selected = event.row
-=======
 			if event.type == "CHG" then
 				set_selected_server(tabdata, event.row, server)
 				return true
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
 			end
 		end
 	end
 
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-	if fields.key_up or fields.key_down then
-		local fav_idx = core.get_table_index("favourites")
-		local fav = menudata.favorites[fav_idx]
-
-		if fav_idx then
-			if fields.key_up and fav_idx > 1 then
-				fav_idx = fav_idx - 1
-			elseif fields.key_down and fav_idx < #menudata.favorites then
-				fav_idx = fav_idx + 1
-			end
-		else
-			fav_idx = 1
-		end
-
-		if not menudata.favorites or not fav then
-			tabdata.fav_selected = 0
-			return true
-		end
-
-		local address = fav.address
-		local port    = fav.port
-
-		if address and port then
-			core.settings:set("address", address)
-			core.settings:set("remote_port", port)
-		end
-
-		tabdata.fav_selected = fav_idx
-		return true
-	end
-
-=======
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
 	if fields.btn_delete_favorite then
 		local idx = core.get_table_index("servers")
 		if not idx then return end
 		local server = tabdata.lookup[idx]
 		if not server then return end
 
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-		core.delete_favorite(current_favourite)
-		asyncOnlineFavourites()
-		tabdata.fav_selected = nil
-
-		core.settings:set("address", "")
-		core.settings:set("remote_port", "30000")
-		return true
-	end
-
-	if fields.btn_mp_search or fields.key_enter_field == "te_search" then
-		tabdata.fav_selected = 1
-		local input = fields.te_search:lower()
-		tabdata.search_for = fields.te_search
-
-		if #menudata.favorites < 2 then
-			return true
-		end
-
-		menudata.search_result = {}
-
-		-- setup the keyword list
-		local keywords = {}
-		for word in input:gmatch("%S+") do
-			table.insert(keywords, word)
-		end
-
-		if #keywords == 0 then
-			menudata.search_result = nil
-			return true
-		end
-
-		-- Search the serverlist
-		local search_result = {}
-		for i = 1, #menudata.favorites do
-			local server = menudata.favorites[i]
-			local found = 0
-			for k = 1, #keywords do
-				local keyword = keywords[k]
-				if server.name then
-					local name = server.name:lower()
-					local _, count = name:gsub(keyword, keyword)
-					found = found + count * 4
-				end
-
-				if server.description then
-					local desc = server.description:lower()
-					local _, count = desc:gsub(keyword, keyword)
-					found = found + count * 2
-				end
-			end
-			if found > 0 then
-				local points = (#menudata.favorites - i) / 5 + found
-				server.points = points
-				table.insert(search_result, server)
-			end
-		end
-		if #search_result > 0 then
-			table.sort(search_result, function(a, b)
-				return a.points > b.points
-			end)
-			menudata.search_result = search_result
-			local first_server = search_result[1]
-			core.settings:set("address",     first_server.address)
-			core.settings:set("remote_port", first_server.port)
-		end
-=======
 		serverlistmgr.delete_favorite(server)
 		-- the server at [idx+1] will be at idx once list is refreshed
 		set_selected_server(tabdata, idx, tabdata.lookup[idx+1])
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
 		return true
 	end
 
@@ -511,11 +352,6 @@ local function main_button_handler(tabview, fields, name, tabdata)
 
 		set_selected_server(tabdata)
 
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-			if menudata.favorites_is_public and
-					not is_server_protocol_compat_or_error(
-						fav.proto_min, fav.proto_max, fav.proto) then
-=======
 		if server and server.address == gamedata.address and
 				server.port == gamedata.port then
 
@@ -525,8 +361,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			gamedata.serverdescription = server.description
 
 			if not is_server_protocol_compat_or_error(
-						server.proto_min, server.proto_max) then
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
+						server.proto_min, server.proto_max, server.proto) then
 				return true
 			end
 		else
@@ -539,13 +374,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			})
 		end
 
-<<<<<<< HEAD:builtin/mainmenu/tab_multiplayer.lua
-		core.settings:set("address",     fields.te_address)
-		core.settings:set("remote_port", fields.te_port)
-=======
 		core.settings:set("address",     gamedata.address)
 		core.settings:set("remote_port", gamedata.port)
->>>>>>> 5.5.0:builtin/mainmenu/tab_online.lua
 
 		core.start()
 		return true

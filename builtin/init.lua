@@ -34,7 +34,6 @@ local asyncpath = scriptdir .. "async" .. DIR_DELIM
 
 dofile(commonpath .. "vector.lua")
 dofile(commonpath .. "strict.lua")
-
 dofile(commonpath .. "serialize.lua")
 dofile(commonpath .. "misc_helpers.lua")
 
@@ -64,7 +63,8 @@ elseif INIT == "mainmenu" then
       if PLATFORM == "Android" then
     	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  else
-		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
+		-- FMTODO: dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
+    	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  end
 	end
 elseif INIT == "async" then

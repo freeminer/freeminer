@@ -21,48 +21,6 @@ local packages
 
 --------------------------------------------------------------------------------
 local function get_formspec(tabview, name, tabdata)
-<<<<<<< HEAD:builtin/mainmenu/tab_server.lua
-	
-	local index = menudata.worldlist:get_current_index(
-				tonumber(core.settings:get("mainmenu_last_selected_world"))
-				)
-
-	local retval =
-		"button[4,4.15;2.6,0.5;world_delete;" .. fgettext("Delete") .. "]" ..
-		"button[6.5,4.15;2.8,0.5;world_create;" .. fgettext("New") .. "]" ..
-		"button[9.2,4.15;2.55,0.5;world_configure;" .. fgettext("Configure") .. "]" ..
-		"button[8.5,4.95;3.25,0.5;start_server;" .. fgettext("Start Game") .. "]" ..
-		"label[4,-0.25;" .. fgettext("Select World:") .. "]" ..
-		"checkbox[0.25,0.25;cb_creative_mode;" .. fgettext("Creative Mode") .. ";" ..
-		dump(core.settings:get_bool("creative_mode")) .. "]" ..
-		"checkbox[0.25,0.7;cb_enable_damage;" .. fgettext("Enable Damage") .. ";" ..
-		dump(core.settings:get_bool("enable_damage")) .. "]" ..
-		"checkbox[0.25,1.15;cb_server_announce;" .. fgettext("Public") .. ";" ..
-		dump(core.settings:get_bool("server_announce")) .. "]" ..
-		"label[0.25,2.2;" .. fgettext("Name/Password") .. "]" ..
-		"field[0.55,3.2;3.5,0.5;te_playername;;" ..
-		core.formspec_escape(core.settings:get("name")) .. "]" ..
-		"pwdfield[0.55,4;3.5,0.5;te_passwd;]"
-
-	local bind_addr = core.settings:get("bind_address")
-	if bind_addr ~= nil and bind_addr ~= "" then
-		retval = retval ..
-			"field[0.55,5.2;2.25,0.5;te_serveraddr;" .. fgettext("Bind Address") .. ";" ..
-			core.formspec_escape(core.settings:get("bind_address")) .. "]" ..
-			"field[2.8,5.2;1.25,0.5;te_serverport;" .. fgettext("Port") .. ";" ..
-			core.formspec_escape(core.settings:get("port")) .. "]"
-	else
-		retval = retval ..
-			"field[0.55,5.2;3.5,0.5;te_serverport;" .. fgettext("Server Port") .. ";" ..
-			core.formspec_escape(core.settings:get("port")) .. "]"
-	end
-
-	retval = retval ..
-		"textlist[4,0.25;7.5,3.7;srv_worlds;" ..
-		menu_render_worldlist() ..
-		";" .. index .. "]"
-	
-=======
 	if pkgmgr.global_mods == nil then
 		pkgmgr.refresh_globals()
 	end
@@ -184,90 +142,14 @@ local function get_formspec(tabview, name, tabdata)
 				fgettext("Uninstall Package") .. "]"
 		end
 	end
->>>>>>> 5.5.0:builtin/mainmenu/tab_content.lua
 	return retval
 end
 
 --------------------------------------------------------------------------------
-<<<<<<< HEAD:builtin/mainmenu/tab_server.lua
-local function main_button_handler(this, fields, name, tabdata)
-
-	local world_doubleclick = false
-
-	if fields["srv_worlds"] ~= nil then
-		local event = core.explode_textlist_event(fields["srv_worlds"])
-		local selected = core.get_textlist_index("srv_worlds")
-
-		menu_worldmt_legacy(selected)
-
-		if event.type == "DCL" then
-			world_doubleclick = true
-		end
-		if event.type == "CHG" then
-			core.settings:set("mainmenu_last_selected_world",
-				menudata.worldlist:get_raw_index(core.get_textlist_index("srv_worlds")))
-			return true
-		end
-	end
-
-	if menu_handle_key_up_down(fields,"srv_worlds","mainmenu_last_selected_world") then
-		return true
-	end
-
-	if fields["cb_creative_mode"] then
-		core.settings:set("creative_mode", fields["cb_creative_mode"])
-		local selected = core.get_textlist_index("srv_worlds")
-		menu_worldmt(selected, "creative_mode", fields["cb_creative_mode"])
-
-		return true
-	end
-
-	if fields["cb_enable_damage"] then
-		core.settings:set("enable_damage", fields["cb_enable_damage"])
-		local selected = core.get_textlist_index("srv_worlds")
-		menu_worldmt(selected, "enable_damage", fields["cb_enable_damage"])
-
-		return true
-	end
-
-	if fields["cb_server_announce"] then
-		core.settings:set("server_announce", fields["cb_server_announce"])
-		local selected = core.get_textlist_index("srv_worlds")
-		menu_worldmt(selected, "server_announce", fields["cb_server_announce"])
-
-		return true
-	end
-
-	if fields["start_server"] ~= nil or
-		world_doubleclick or
-		fields["key_enter"] then
-		local selected = core.get_textlist_index("srv_worlds")
-		gamedata.selected_world = menudata.worldlist:get_raw_index(selected)
-		if selected ~= nil and gamedata.selected_world ~= 0 then
-			gamedata.playername     = fields["te_playername"]
-			gamedata.password       = fields["te_passwd"]
-			gamedata.port           = fields["te_serverport"]
-			gamedata.address        = ""
-
-			core.settings:set("port",gamedata.port)
-			if fields["te_serveraddr"] ~= nil then
-				core.settings:set("bind_address",fields["te_serveraddr"])
-			end
-
-			--update last game
-			local world = menudata.worldlist:get_raw_element(gamedata.selected_world)
-			if world then
-				local game, index = gamemgr.find_by_gameid(world.gameid)
-				core.settings:set("menu_last_game", game.id)
-			end
-			
-			core.start()
-=======
 local function handle_doubleclick(pkg)
 	if pkg.type == "txp" then
 		if core.settings:get("texture_path") == pkg.path then
 			core.settings:set("texture_path", "")
->>>>>>> 5.5.0:builtin/mainmenu/tab_content.lua
 		else
 			core.settings:set("texture_path", pkg.path)
 		end

@@ -18,43 +18,18 @@
 serverlistmgr = {}
 
 --------------------------------------------------------------------------------
-<<<<<<< HEAD:builtin/mainmenu/tab_simple_main.lua
-local function get_formspec(tabview, name, tabdata)
-	-- Update the cached supported proto info,
-	-- it may have changed after a change by the settings menu.
-	common_update_cached_supp_proto()
-	local fav_selected = menudata.favorites[tabdata.fav_selected]
-
-	local retval =
-		"label[9.5,0;".. fgettext("Name / Password") .. "]" ..
-		"field[0.25,3.35;5.5,0.5;te_address;;" ..
-			core.formspec_escape(core.settings:get("address")) .."]" ..
-		"field[5.75,3.35;2.25,0.5;te_port;;" ..
-			core.formspec_escape(core.settings:get("remote_port")) .."]" ..
-		"button[10,2.6;2,1.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"field[9.8,1;2.6,0.5;te_name;;" ..
-			core.formspec_escape(core.settings:get("name")) .."]" ..
-		"pwdfield[9.8,2;2.6,0.5;te_pwd;]"
-
-
-	if tabdata.fav_selected and fav_selected then
-		if gamedata.fav then
-			retval = retval .. "button[7.7,2.6;2.3,1.5;btn_delete_favorite;" ..
-				fgettext("Del. Favorite") .. "]"
-=======
 local function order_server_list(list)
 	local res = {}
 	--orders the favorite list after support
 	for i = 1, #list do
 		local fav = list[i]
-		if is_server_protocol_compat(fav.proto_min, fav.proto_max) then
+		if is_server_protocol_compat(fav.proto_min, fav.proto_max, fav.proto) then
 			res[#res + 1] = fav
->>>>>>> 5.5.0:builtin/mainmenu/serverlistmgr.lua
 		end
 	end
 	for i = 1, #list do
 		local fav = list[i]
-		if not is_server_protocol_compat(fav.proto_min, fav.proto_max) then
+		if not is_server_protocol_compat(fav.proto_min, fav.proto_max, fav.proto) then
 			res[#res + 1] = fav
 		end
 	end
@@ -111,37 +86,7 @@ function serverlistmgr.sync()
 			end
 			core.event_handler("Refresh")
 		end
-<<<<<<< HEAD:builtin/mainmenu/tab_simple_main.lua
-		retval = retval .. render_favorite(menudata.favorites[1], (#favs > 0))
-		for i = 2, #menudata.favorites do
-			retval = retval .. "," .. render_favorite(menudata.favorites[i], (i <= #favs))
-		end
-	end
-
-	if tabdata.fav_selected then
-		retval = retval .. ";" .. tabdata.fav_selected .. "]"
-	else
-		retval = retval .. ";0]"
-	end
-
-	-- separator
-	retval = retval .. "box[-0.28,3.75;12.4,0.1;#FFFFFF]"
-
-	-- checkboxes
-	retval = retval ..
-		"checkbox[8.0,3.9;cb_creative;".. fgettext("Creative Mode") .. ";" ..
-			dump(core.settings:get_bool("creative_mode")) .. "]"..
-		"checkbox[8.0,4.4;cb_damage;".. fgettext("Enable Damage") .. ";" ..
-			dump(core.settings:get_bool("enable_damage")) .. "]"
-	-- buttons
-	retval = retval ..
-		"button[0,3.7;8,1.5;btn_start_singleplayer;" .. fgettext("Start Singleplayer") .. "]" ..
-		"button[0,4.5;8,1.5;btn_config_sp_world;" .. fgettext("Config mods") .. "]"
-
-	return retval
-=======
 	)
->>>>>>> 5.5.0:builtin/mainmenu/serverlistmgr.lua
 end
 
 --------------------------------------------------------------------------------
@@ -172,13 +117,6 @@ function serverlistmgr.read_legacy_favorites(path)
 		return nil
 	end
 
-<<<<<<< HEAD:builtin/mainmenu/tab_simple_main.lua
-				if address and port then
-					core.settings:set("address", address)
-					core.settings:set("remote_port", port)
-				end
-				tabdata.fav_selected = event.row
-=======
 	local lines = {}
 	for line in file:lines() do
 		lines[#lines + 1] = line
@@ -203,52 +141,8 @@ function serverlistmgr.read_legacy_favorites(path)
 
 			if name == "" then
 				name = nil
->>>>>>> 5.5.0:builtin/mainmenu/serverlistmgr.lua
 			end
 
-<<<<<<< HEAD:builtin/mainmenu/tab_simple_main.lua
-	if fields.btn_delete_favorite then
-		local current_favourite = core.get_table_index("favourites")
-		if not current_favourite then return end
-
-		core.delete_favorite(current_favourite)
-		asyncOnlineFavourites()
-		tabdata.fav_selected = nil
-
-		core.settings:set("address", "")
-		core.settings:set("remote_port", "30000")
-		return true
-	end
-
-	if fields.cb_creative then
-		core.settings:set("creative_mode", fields.cb_creative)
-		return true
-	end
-
-	if fields.cb_damage then
-		core.settings:set("enable_damage", fields.cb_damage)
-		return true
-	end
-
-	if fields.btn_mp_connect or fields.key_enter then
-		gamedata.playername = fields.te_name
-		gamedata.password   = fields.te_pwd
-		gamedata.address    = fields.te_address
-		gamedata.port	    = fields.te_port
-		local fav_idx = core.get_textlist_index("favourites")
-
-		if fav_idx and fav_idx <= #menudata.favorites and
-				menudata.favorites[fav_idx].address == fields.te_address and
-				menudata.favorites[fav_idx].port    == fields.te_port then
-			local fav = menudata.favorites[fav_idx]
-			gamedata.servername        = fav.name
-			gamedata.serverdescription = fav.description
-
-			if menudata.favorites_is_public and
-					not is_server_protocol_compat_or_error(
-						fav.proto_min, fav.proto_max, fav.proto) then
-				return true
-=======
 			if description == "" then
 				description = nil
 			end
@@ -268,18 +162,9 @@ function serverlistmgr.read_legacy_favorites(path)
 					port = port,
 					description = description
 				}
->>>>>>> 5.5.0:builtin/mainmenu/serverlistmgr.lua
 			end
 		end
-<<<<<<< HEAD:builtin/mainmenu/tab_simple_main.lua
-
-		gamedata.selected_world = 0
-
-		core.settings:set("address", fields.te_address)
-		core.settings:set("remote_port", fields.te_port)
-=======
 	end
->>>>>>> 5.5.0:builtin/mainmenu/serverlistmgr.lua
 
 	return favorites
 end

@@ -107,10 +107,8 @@ local function create_world_formspec(dialogdata)
 	local current_mg = dialogdata.mg
 	local mapgens = core.get_mapgen_names()
 
-<<<<<<< HEAD
-	local current_seed = core.settings:get("fixed_map_seed") or ""
-	local current_mg   = core.settings:get("mg_name")
-=======
+	gamemgr.update_gamelist()
+
 	local gameid = core.settings:get("menu_last_game")
 
 	local flags = dialogdata.flags
@@ -160,7 +158,6 @@ local function create_world_formspec(dialogdata)
 			disallowed_mapgen_settings[value:trim()] = true
 		end
 	end
->>>>>>> 5.5.0
 
 	local mglist = ""
 	local selindex
@@ -177,26 +174,9 @@ local function create_world_formspec(dialogdata)
 			i = i + 1
 			mglist = mglist .. core.formspec_escape(v) .. ","
 		end
-<<<<<<< HEAD
-		i = i + 1
-		mglist = mglist .. v .. ","
-	end
-	mglist = mglist:sub(1, -2)
-	
-	gamemgr.update_gamelist()
-	local gameid = core.settings:get("menu_last_game")
-	
-	local game, gameidx = nil , 0
-	if gameid ~= nil then
-		game, gameidx = gamemgr.find_by_gameid(gameid)
-		
-		if gameidx == nil then
-			gameidx = 0
-=======
 		if not selindex then
 			selindex = 1
 			current_mg = first_mg
->>>>>>> 5.5.0
 		end
 		mglist = mglist:sub(1, -2)
 	end
@@ -330,14 +310,7 @@ local function create_world_formspec(dialogdata)
 	end
 
 	local retval =
-<<<<<<< HEAD
-		"size[12,5,false]" ..
-		--"size[11.5,6.5,true]" ..
-		"label[2,0;" .. fgettext("World name") .. "]"..
-		"field[4.5,0.4;6,0.5;te_world_name;;]" ..
-=======
 		"size[12.25,7,true]" ..
->>>>>>> 5.5.0
 
 		-- Left side
 		"container[0,0]"..
@@ -350,25 +323,6 @@ local function create_world_formspec(dialogdata)
 		fgettext("Seed") ..
 		";".. core.formspec_escape(dialogdata.seed) .. "]" ..
 
-<<<<<<< HEAD
-		"label[2,3;" .. fgettext("Game") .. "]"..
-		"textlist[4.2,3;5.8,1;games;" .. gamemgr.gamelist() ..
-		";" .. gameidx .. ";true]" ..
-
-		"button[7.7,4.5;2.6,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
-		"button[4.2,4.5;2.8,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
-		--"button[3.25,6;2.5,0.5;world_create_confirm;" .. fgettext("Create") .. "]" ..
-		--"button[5.75,6;2.5,0.5;world_create_cancel;" .. fgettext("Cancel") .. "]"
-
-	if #gamemgr.games == 0 then
-		retval = retval .. "box[2,4;8,1;#ff8800]label[2.25,4;" ..
-				fgettext("You have no subgames installed.") .. "]label[2.25,4.4;" ..
-				fgettext("Download one from minetest.net") .. "]"
-	elseif #gamemgr.games == 1 and gamemgr.games[1].id == "minimal" then
-		retval = retval .. "box[1.75,4;8.7,1;#ff8800]label[2,4;" ..
-				fgettext("Warning: The minimal development test is meant for developers.") .. "]label[2,4.4;" ..
-				fgettext("Download a subgame, such as minetest_game, from minetest.net") .. "]"
-=======
 		"label[0,2;" .. fgettext("Mapgen") .. "]"..
 		"dropdown[0,2.5;6.3;dd_mapgen;" .. mglist .. ";" .. selindex .. "]"
 
@@ -380,7 +334,6 @@ local function create_world_formspec(dialogdata)
 			"container[0,4.5]" ..
 			devtest_only ..
 			"container_end[]"
->>>>>>> 5.5.0
 	end
 
 	retval = retval ..
@@ -434,36 +387,9 @@ local function create_world_buttonhandler(this, fields)
 				worldname = "world" .. worldnum_max + 1
 			end
 
-<<<<<<< HEAD
-			core.settings:set("fixed_map_seed", fields["te_seed"])
-
-			if not menudata.worldlist:uid_exists_raw(worldname) then
-				core.settings:set("mg_name",fields["dd_mapgen"])
-				message = core.create_world(worldname,gameindex)
-			else
-				message = fgettext("A world named \"$1\" already exists", worldname)
-			end
-
-			if message ~= nil then
-				gamedata.errormessage = message
-			else
-				core.settings:set("menu_last_game",gamemgr.games[gameindex].id)
-				if this.data.update_worldlist_filter then
-					menudata.worldlist:set_filtercriteria(gamemgr.games[gameindex].id)
-					mm_texture.update("singleplayer", gamemgr.games[gameindex].id)
-				end
-				menudata.worldlist:refresh()
-				core.settings:set("mainmenu_last_selected_world",
-									menudata.worldlist:raw_index_by_uid(worldname))
-			end
-		else
-			gamedata.errormessage =
-				fgettext("No worldname given or no game selected")
-=======
 			if menudata.worldlist:uid_exists_raw(worldname) then
 				message = fgettext("A world named \"$1\" already exists", worldname)
 			end
->>>>>>> 5.5.0
 		end
 
 		if message == nil then
