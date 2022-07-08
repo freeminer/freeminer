@@ -5,6 +5,7 @@ uniform vec4 skyBgColor;
 uniform float fogDistance;
 uniform vec3 eyePosition;
 uniform vec3 sunPosition;
+uniform float wieldLight;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -17,20 +18,7 @@ centroid varying vec2 varTexCoord;
 #endif
 
 varying vec3 eyeVec;
-<<<<<<< HEAD:client/shaders/water_surface_shader/opengl_fragment.glsl
-varying vec3 tsEyeVec;
-varying vec3 lightVec;
-varying vec3 tsLightVec;
-
-uniform float wieldLight;
-
-bool normalTexturePresent = false;
-bool texTileableHorizontal = false;
-bool texTileableVertical = false;
-bool texSeamless = false;
-=======
 varying float vIDiff;
->>>>>>> 5.5.0:client/shaders/object_shader/opengl_fragment.glsl
 
 const float e = 2.718281828459;
 const float BS = 10.0;
@@ -356,7 +344,11 @@ void main(void)
 
 	color = base.rgb;
 	vec4 col = vec4(color.rgb, base.a);
-	col.rgb *= varColor.rgb;
+
+	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
+	col.rgb *= min(varColor.rgb + light, 1.0);
+
+	//col.rgb *= varColor.rgb;
 	col.rgb *= emissiveColor.rgb * vIDiff;
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
@@ -376,14 +368,9 @@ void main(void)
 	shadow_int = getShadow(ShadowMapSampler, posLightSpace.xy, posLightSpace.z);
 #endif
 
-<<<<<<< HEAD:client/shaders/water_surface_shader/opengl_fragment.glsl
-	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
-	vec4 col = vec4(color.rgb * min(gl_Color.rgb + light, 1.0), 1.0);
-=======
 	if (f_normal_length != 0 && cosLight <= 0.001) {
 		shadow_int = clamp(shadow_int + 0.5 * abs(cosLight), 0.0, 1.0);
 	}
->>>>>>> 5.5.0:client/shaders/object_shader/opengl_fragment.glsl
 
 	shadow_int = 1.0 - (shadow_int * adj_shadow_strength);
 

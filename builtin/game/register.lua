@@ -620,7 +620,7 @@ minetest.register_on_dieplayer(function(player)
 
 	-- Idea from https://github.com/4Evergreen4/death_messages
 	-- Death by lava
-	local nodename = minetest.get_node(player:getpos()).name
+	local nodename = minetest.get_node(player:get_pos()).name
 	if nodename == "default:lava_source" or nodename == "default:lava_flowing" then
 		minetest.chat_send_all(player_name .. " melted into a ball of fire.")
 	-- Death by drowning

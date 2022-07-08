@@ -82,26 +82,6 @@ std::string getTexturePath(const std::string &filename, bool *is_base_pack = nul
 void clearTextureNameCache();
 
 /*
-<<<<<<< HEAD
-	ITextureSource::generateTextureFromMesh parameters
-*/
-namespace irr {namespace scene {class IMesh;}}
-struct TextureFromMeshParams
-{
-	scene::IMesh *mesh;
-	core::dimension2d<u32> dim;
-	std::string rtt_texture_name;
-	bool delete_texture_on_shutdown;
-	v3f camera_position;
-	v3f camera_lookat;
-	core::CMatrix4<f32> camera_projection_matrix;
-	video::SColorf ambient_light;
-	v3f light_position;
-	video::SColorf light_color;
-	f32 light_radius;
-};
-
-/*
 	Stores internal information about a texture.
 */
 struct TextureInfo
@@ -120,9 +100,9 @@ struct TextureInfo
 	}
 };
 
+
+
 /*
-=======
->>>>>>> 5.5.0
 	TextureSource creates and caches textures.
 */
 

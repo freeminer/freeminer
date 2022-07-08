@@ -233,7 +233,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		v3f accel_f, ActiveObject *self,
 		bool collideWithObjects)
 {
-	static bool time_notification_done = false;
+	thread_local static bool time_notification_done = false;
 	Map *map = &env->getMap();
 
 #if !NDEBUG

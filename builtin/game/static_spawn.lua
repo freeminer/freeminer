@@ -1,20 +1,11 @@
 -- Minetest: builtin/static_spawn.lua
 
-<<<<<<< HEAD
-local function warn_invalid_static_spawnpoint()
-	if core.settings:get("static_spawnpoint") and
-			not core.setting_get_pos("static_spawnpoint") then
-		core.log("error", "The static_spawnpoint setting is invalid: \""..
-				core.settings:get("static_spawnpoint").."\"")
-	end
-=======
 local static_spawnpoint_string = core.settings:get("static_spawnpoint")
 if static_spawnpoint_string and
 		static_spawnpoint_string ~= "" and
 		not core.setting_get_pos("static_spawnpoint") then
 	error('The static_spawnpoint setting is invalid: "' ..
 			static_spawnpoint_string .. '"')
->>>>>>> 5.5.0
 end
 
 local function put_player_in_spawn(player_obj)

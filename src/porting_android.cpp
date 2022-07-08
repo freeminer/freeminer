@@ -75,21 +75,12 @@ void android_main(android_app *app)
  * ToDo: this doesn't work as expected, there's a workaround for it right now
  */
 extern "C" {
-<<<<<<< HEAD
-	JNIEXPORT void JNICALL Java_org_freeminer_MtNativeActivity_putMessageBoxResult(
-			JNIEnv * env, jclass thiz, jstring text)
-	{
-		errorstream << "Java_net_freeminer_MtNativeActivity_putMessageBoxResult got: "
-				<< std::string((const char*)env->GetStringChars(text,0))
-				<< std::endl;
-=======
-	JNIEXPORT void JNICALL Java_net_minetest_minetest_GameActivity_putMessageBoxResult(
+	JNIEXPORT void JNICALL Java_org_freeminer_freeminer_GameActivity_putMessageBoxResult(
 			JNIEnv *env, jclass thiz, jstring text)
 	{
 		errorstream <<
-			"Java_net_minetest_minetest_GameActivity_putMessageBoxResult got: " <<
+			"Java_org_freeminer_freeminer_GameActivity_putMessageBoxResult got: " <<
 			std::string((const char*) env->GetStringChars(text, nullptr)) << std::endl;
->>>>>>> 5.5.0
 	}
 }
 
@@ -98,13 +89,8 @@ android_app *app_global;
 JNIEnv      *jnienv;
 jclass       nativeActivity;
 
-<<<<<<< HEAD
 int android_version_sdk_int = 0;
-
-jclass findClass(std::string classname)
-=======
 jclass findClass(const std::string &classname)
->>>>>>> 5.5.0
 {
 	if (jnienv == nullptr)
 		return nullptr;
@@ -135,13 +121,8 @@ void initAndroid()
 		exit(-1);
 	}
 
-<<<<<<< HEAD
-	nativeActivity = findClass("org/freeminer/" PROJECT_NAME_C "/MtNativeActivity");
-	if (nativeActivity == 0) {
-=======
-	nativeActivity = findClass("net/minetest/minetest/GameActivity");
+	nativeActivity = findClass("org/freeminer/" PROJECT_NAME_C "/GameActivity");
 	if (nativeActivity == nullptr)
->>>>>>> 5.5.0
 		errorstream <<
 			"porting::initAndroid unable to find java native activity class" <<
 			std::endl;
@@ -150,11 +131,7 @@ void initAndroid()
 	// in the start-up code
 	__android_log_print(ANDROID_LOG_ERROR, PROJECT_NAME_C,
 			"Initializing GPROF profiler");
-<<<<<<< HEAD
 	monstartup("libfreeminer.so");
-=======
-	monstartup("libMinetest.so");
->>>>>>> 5.5.0
 #endif
 
 	{
@@ -216,19 +193,6 @@ void initializePathsAndroid()
 		jnienv->ReleaseStringUTFChars((jstring) result, javachars);
 	}
 
-<<<<<<< HEAD
-	path_cache   = getAndroidPath(nativeActivity, app_global->activity->clazz,
-			cls_File, mt_getAbsPath, "getCacheDir");
-	path_storage = getAndroidPath(cls_Env, NULL, cls_File, mt_getAbsPath,
-			"getExternalStorageDirectory");
-/*
-	path_user    = path_storage + DIR_DELIM + PROJECT_NAME_C;
-	path_share   = path_storage + DIR_DELIM + PROJECT_NAME_C;
-*/
-	path_user    = path_storage + DIR_DELIM + PROJECT_NAME;
-	path_share   = path_storage + DIR_DELIM + PROJECT_NAME;
-	path_locale  = path_share + DIR_DELIM + "locale";
-=======
 	// Set cache path
 	{
 		jmethodID getCachePath = jnienv->GetMethodID(nativeActivity,
@@ -239,7 +203,6 @@ void initializePathsAndroid()
 		const char *javachars = jnienv->GetStringUTFChars((jstring) result, nullptr);
 		path_cache = javachars;
 		jnienv->ReleaseStringUTFChars((jstring) result, javachars);
->>>>>>> 5.5.0
 
 		migrateCachePath();
 	}

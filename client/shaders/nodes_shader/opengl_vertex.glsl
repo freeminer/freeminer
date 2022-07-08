@@ -2,13 +2,10 @@ uniform mat4 mWorld;
 // Color of the light emitted by the sun.
 uniform vec3 dayLight;
 uniform vec3 eyePosition;
-<<<<<<< HEAD
 uniform vec3 sunPosition;
-=======
 
 // The cameraOffset is the current center of the visible world.
 uniform vec3 cameraOffset;
->>>>>>> 5.5.0
 uniform float animationTimer;
 
 varying vec3 vNormal;
@@ -172,47 +169,6 @@ void main(void)
 	eyeVec = -(mWorldView * inVertexPosition).xyz;
 	vNormal = inVertexNormal;
 
-<<<<<<< HEAD
-	// Don't generate heightmaps when too far from the eye
-	float dist = distance (vec3(0.0, 0.0, 0.0), vPosition);
-	if (dist > 150.0) {
-		area_enable_parallax = 0.0;
-	}
-
-	//vec3 sunPosition = vec3 (0.0, eyePosition.y * BS + 900.0, 0.0);
-
-	vec3 normal, tangent, binormal;
-	normal = normalize(gl_NormalMatrix * gl_Normal);
-	tangent = normalize(gl_NormalMatrix * gl_MultiTexCoord1.xyz);
-	binormal = normalize(gl_NormalMatrix * gl_MultiTexCoord2.xyz);
-
-	vec3 v;
-
-	lightVec = sunPosition - worldPosition;
-	v.x = dot(lightVec, tangent);
-	v.y = dot(lightVec, binormal);
-	v.z = dot(lightVec, normal);
-	tsLightVec = normalize (v);
-
-	eyeVec = -(gl_ModelViewMatrix * gl_Vertex).xyz;
-	v.x = dot(eyeVec, tangent);
-	v.y = dot(eyeVec, binormal);
-	v.z = dot(eyeVec, normal);
-	tsEyeVec = normalize (v);
-
-	vec4 color;
-	float day = gl_Color.r;
-	float night = gl_Color.g;
-	float light_source = gl_Color.b;
-
-	float rg = mix(night, day, dayNightRatio);
-	rg += light_source * 2.5; // Make light sources brighter
-	float b = rg;
-
-	// Moonlight is blue
-	b += (day - night) / 13.0;
-	rg -= (day - night) / 23.0;
-=======
 	// Calculate color.
 	// Red, green and blue components are pre-multiplied with
 	// the brightness, so now we have to multiply these
@@ -228,7 +184,6 @@ void main(void)
 	color.rgb = color.rgb * (color.a * dayLight.rgb +
 		nightRatio * artificialLight.rgb) * 2.0;
 	color.a = 1.0;
->>>>>>> 5.5.0
 
 	// Emphase blue a bit in darker places
 	// See C++ implementation in mapblock_mesh.cpp final_color_blend()

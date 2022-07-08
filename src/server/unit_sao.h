@@ -35,7 +35,7 @@ public:
 
 	// Rotation
 	void setRotation(v3f rotation) { m_rotation = rotation; }
-	const v3f &getRotation() const { return m_rotation; }
+	const v3f getRotation() const { return m_rotation; }
 	v3f getRadRotation() { return m_rotation * core::DEGTORAD; }
 
 	// Deprecated

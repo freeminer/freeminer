@@ -74,7 +74,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 	#define sleep_ms(x) usleep(x*1000)
 
-	#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
+	//fmtodo: #define MAX_PACKET_SIZE_SINGLEPLAYER 8192
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #endif
 
 #ifdef _MSC_VER

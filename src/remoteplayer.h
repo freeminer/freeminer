@@ -142,7 +142,7 @@ public:
 
 private:
 	PlayerSAO *m_sao = nullptr;
-	bool m_dirty = false;
+	std::atomic_bool m_dirty = false;
 
 	static bool m_setting_cache_loaded;
 	static float m_setting_chat_message_limit_per_10sec;

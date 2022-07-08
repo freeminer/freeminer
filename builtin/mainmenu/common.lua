@@ -198,7 +198,7 @@ function text2textlist(xpos, ypos, width, height, tl_name, textlen, text, transp
 end
 
 function is_server_protocol_compat(server_proto_min, server_proto_max, proto)
-	if proto and core.setting_get("server_proto") ~= proto then return false end
+	if proto and core.setting:get("server_proto") ~= proto then return false end
 	if (not server_proto_min) or (not server_proto_max) then
 		-- There is no info. Assume the best and act as if we would be compatible.
 		return true

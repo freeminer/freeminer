@@ -480,12 +480,9 @@ void main(void)
 		discard;
 #endif
 
-<<<<<<< HEAD
-	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
-	vec4 col = vec4(color.rgb * min(gl_Color.rgb + light, 1.0), 1.0);
-=======
 	color = base.rgb;
-	vec4 col = vec4(color.rgb * varColor.rgb, 1.0);
+	float light = max((wieldLight/2.0)/vPosition.z, 0.0);
+	vec4 col = vec4(color.rgb * min(varColor.rgb + light, 1.0), 1.0);
 
 #ifdef ENABLE_DYNAMIC_SHADOWS
 	float shadow_int = 0.0;
@@ -496,7 +493,6 @@ void main(void)
 	float f_adj_shadow_strength = max(adj_shadow_strength-mtsmoothstep(0.9,1.1,  posLightSpace.z  ),0.0);
 
 	if (distance_rate > 1e-7) {
->>>>>>> 5.5.0
 	
 #ifdef COLORED_SHADOWS
 		vec4 visibility;

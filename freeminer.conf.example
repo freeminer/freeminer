@@ -508,40 +508,8 @@
 #    type: bool
 # show_nametag_backgrounds = true
 
-<<<<<<< HEAD:freeminer.conf.example
-#    Save the map received by the client on disk.
-#    type: bool
-# enable_local_map_saving = false
-
-#    Show entity selection boxes
-#    type: bool
-# show_entity_selectionbox = true
-
-#    Enable usage of remote media server (if provided by server).
-#    Remote servers offer a significantly faster way to download media (e.g. textures)
-#    when connecting to the server.
-#    type: bool
-# enable_remote_media_server = true
-
-#    URL to the server list displayed in the Multiplayer Tab.
-#    type: string
-# serverlist_url = servers.freeminer.org
-
-#    File in client/serverlist/ that contains your favorite servers displayed in the Multiplayer Tab.
-#    type: string
-# serverlist_file = favoriteservers.txt
-
-## Graphics
-
-### In-Game
-
-#### Basic
-
-#    Enable VBO
-=======
 #    Enable vertex buffer objects.
 #    This should greatly improve graphics performance.
->>>>>>> 5.5.0:minetest.conf.example
 #    type: bool
 # enable_vbo = true
 
@@ -1232,21 +1200,13 @@
 
 #    Homepage of server, to be displayed in the serverlist.
 #    type: string
-<<<<<<< HEAD:freeminer.conf.example
-# server_url = http://freeminer.org
-=======
-# server_url = https://minetest.net
->>>>>>> 5.5.0:minetest.conf.example
+# server_url = https://freeminer.org
 
 #    Automatically report to the serverlist.
 #    type: bool
 # server_announce = false
 
 #    Announce to this serverlist.
-<<<<<<< HEAD:freeminer.conf.example
-#    If you want to announce your ipv6 address, use  serverlist_url = v6.servers.freeminer.org
-=======
->>>>>>> 5.5.0:minetest.conf.example
 #    type: string
 # serverlist_url = servers.freeminer.org
 
@@ -1619,52 +1579,10 @@
 #    type: int min: 2
 # block_send_optimize_distance = 4
 
-<<<<<<< HEAD:freeminer.conf.example
-## Mapgen
-
-#    Name of map generator to be used when creating a new world.
-#    Creating a world in the main menu will override this.
-#    type: enum values: indev, v7, valleys, v5, math, fractal, flat, singlenode, v6
-# mg_name = v7
-
-#    Water surface level of the world.
-#    type: int
-# water_level = 1
-
-#    From how far blocks are generated for clients, stated in mapblocks (16 nodes).
-#    type: int
-# max_block_generate_distance = 6
-
-#    Where the map generator stops.
-#    Please note:
-#    -    Limited to 31000 (setting above has no effect)
-#    -    The map generator works in groups of 80x80x80 nodes (5x5x5 MapBlocks).
-#    -    Those groups have an offset of -32, -32 nodes from the origin.
-#    -    Only groups which are within the map_generation_limit are generated
-#    type: int min: 0 max: 31000
-# map_generation_limit = 31000
-
-#    Global map generation attributes.
-#    In Mapgen v6 the 'decorations' flag controls all decorations except trees
-#    and junglegrass, in all other mapgens this flag controls all decorations.
-#    Flags that are not specified in the flag string are not modified from the default.
-#    Flags starting with 'no' are used to explicitly disable them.
-#    type: flags possible values: caves, dungeons, light, decorations, nocaves, nodungeons, nolight, nodecorations
-# mg_flags = caves,dungeons,light,decorations
-
-### Advanced
-
-#    Size of chunks to be generated at once by mapgen, stated in mapblocks (16 nodes).
-#    type: int
-# chunksize = 5
-
-#    Dump the mapgen debug infos.
-=======
 #    If enabled the server will perform map block occlusion culling based on
 #    on the eye position of the player. This can reduce the number of blocks
 #    sent to the client 50-80%. The client will not longer receive most invisible
 #    so that the utility of noclip mode is reduced.
->>>>>>> 5.5.0:minetest.conf.example
 #    type: bool
 # server_side_occlusion_culling = true
 

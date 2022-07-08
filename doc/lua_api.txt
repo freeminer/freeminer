@@ -7,11 +7,7 @@ Minetest Lua Modding API Reference
 
 
 Introduction
-<<<<<<< HEAD
-============
-=======
 ------------
->>>>>>> 5.5.0
 
 Content and functionality can be added to Minetest using Lua scripting
 in run-time loaded mods.
@@ -172,11 +168,6 @@ Mods can be put in a subdirectory, if the parent directory, which otherwise
 should be a mod, contains a file named `modpack.conf`.
 The file is a key-value store of modpack details.
 
-<<<<<<< HEAD
-* `name`: The modpack name.
-* `description`: Description of mod to be shown in the Mods tab of the main
-                 menu.
-=======
 * `name`: The modpack name. Allows Minetest to determine the modpack name even
           if the folder is wrongly named.
 * `description`: Description of mod to be shown in the Mods tab of the main
@@ -186,7 +177,6 @@ The file is a key-value store of modpack details.
 * `release`: Ignore this: Should only ever be set by ContentDB, as it is an
              internal ID used to track versions.
 * `title`: A human-readable title to address the modpack.
->>>>>>> 5.5.0
 
 Note: to support 0.4.x, please also create an empty modpack.txt file.
 
@@ -225,11 +215,7 @@ The location of this directory can be fetched by using
 
 ### mod.conf
 
-<<<<<<< HEAD
-A key-value store of mod details.
-=======
 A `Settings` file that provides meta information about the mod.
->>>>>>> 5.5.0
 
 * `name`: The mod name. Allows Minetest to determine the mod name even if the
           folder is wrongly named.
@@ -239,14 +225,11 @@ A `Settings` file that provides meta information about the mod.
              loaded before this mod.
 * `optional_depends`: A comma separated list of optional dependencies.
                       Like a dependency, but no error if the mod doesn't exist.
-<<<<<<< HEAD
-=======
 * `author`: The author of the mod. It only appears when downloaded from
             ContentDB.
 * `release`: Ignore this: Should only ever be set by ContentDB, as it is an
              internal ID used to track versions.
 * `title`: A human-readable title to address the mod.
->>>>>>> 5.5.0
 
 Note: to support 0.4.x, please also provide depends.txt.
 
@@ -279,14 +262,9 @@ A file containing a description to be shown in the Mods tab of the main menu.
 
 ### `settingtypes.txt`
 
-<<<<<<< HEAD
-A file in the same format as the one in builtin. It will be parsed by the
-settings menu and the settings will be displayed in the "Mods" category.
-=======
 The format is documented in `builtin/settingtypes.txt`.
 It is parsed by the main menu settings dialogue to list mod-specific
 settings in the "Mods" category.
->>>>>>> 5.5.0
 
 ### `init.lua`
 
@@ -297,17 +275,8 @@ registered callbacks.
 `minetest.settings` can be used to read custom or existing settings at load
 time, if necessary. (See [`Settings`])
 
-<<<<<<< HEAD
-### `models`
-
-Models for entities or meshnodes.
-
-### `textures`, `sounds`, `media`
-
-=======
 ### `textures`, `sounds`, `media`, `models`, `locale`
 
->>>>>>> 5.5.0
 Media files (textures, sounds, whatever) that will be transferred to the
 client and will be available for use by the mod and translation files for
 the clients (see [Translations]).
@@ -476,11 +445,6 @@ Deprecated for non-V6 mapgens, define dungeon nodes in biome definitions instead
 * mapgen_snow
 * mapgen_ice
 
-<<<<<<< HEAD
-#### Flora
-
-=======
->>>>>>> 5.5.0
 * mapgen_tree
 * mapgen_leaves
 * mapgen_apple
@@ -490,11 +454,6 @@ Deprecated for non-V6 mapgens, define dungeon nodes in biome definitions instead
 * mapgen_pine_tree
 * mapgen_pine_needles
 
-<<<<<<< HEAD
-#### Dungeons
-
-=======
->>>>>>> 5.5.0
 * mapgen_cobble
 * mapgen_stair_cobble
 * mapgen_mossycobble
@@ -741,8 +700,6 @@ Result is more like what you'd expect if you put a color on top of another
 color, meaning white surfaces get a lot of your new color while black parts
 don't change very much.
 
-<<<<<<< HEAD
-=======
 #### `[png:<base64>`
 
 Embed a base64 encoded PNG image in the texture string.
@@ -760,7 +717,6 @@ In particular consider `minetest.dynamic_add_media` and test whether
 using other texture modifiers could result in a shorter string than
 embedding a whole image, this may vary by use case.
 
->>>>>>> 5.5.0
 Hardware coloring
 -----------------
 
@@ -949,11 +905,7 @@ Example (colored grass block):
         -- Overlay tiles: define them in the same style
         -- The top and bottom tile does not have overlay
         overlay_tiles = {"", "",
-<<<<<<< HEAD
-            {name = "default_grass_side.png", tileable_vertical = false}},
-=======
             {name = "default_grass_side.png"}},
->>>>>>> 5.5.0
         -- Global color, used in inventory
         color = "green",
         -- Palette in the world
@@ -1162,11 +1114,7 @@ The function of `param1` is determined by `paramtype` in node definition.
 `param1` is reserved for the engine when `paramtype != "none"`.
 
 * `paramtype = "light"`
-<<<<<<< HEAD
-    * The value stores light with and without sun in its upper and lower 4 bits
-=======
     * The value stores light with and without sun in its lower and upper 4 bits
->>>>>>> 5.5.0
       respectively.
     * Required by a light source node to enable spreading its light.
     * Required by the following drawtypes as they determine their visual
@@ -1180,28 +1128,13 @@ The function of `param1` is determined by `paramtype` in node definition.
         * mesh
         * plantlike
         * plantlike_rooted
-<<<<<<< HEAD
-=======
 * `paramtype = "none"`
     * `param1` will not be used by the engine and can be used to store
       an arbitrary value
->>>>>>> 5.5.0
 
 The function of `param2` is determined by `paramtype2` in node definition.
 `param2` is reserved for the engine when `paramtype2 != "none"`.
 
-<<<<<<< HEAD
-* `liquidtype = "flowing"`
-    * The level and some flags of the liquid is stored in `param2`
-* `drawtype = "flowingliquid"`
-    * The drawn liquid level is read from `param2`
-* `drawtype = "torchlike"`
-* `drawtype = "signlike"`
-* `paramtype2 = "wallmounted"`
-    * The rotation of the node is stored in `param2`. You can make this value
-      by using `minetest.dir_to_wallmounted()`.
-* `paramtype2 = "facedir"`
-=======
 * `paramtype2 = "flowingliquid"`
     * Used by `drawtype = "flowingliquid"` and `liquidtype = "flowing"`
     * The liquid level and a flag of the liquid are stored in `param2`
@@ -1219,7 +1152,6 @@ The function of `param2` is determined by `paramtype2` in node definition.
       0 = y+,   1 = y-,   2 = x+,   3 = x-,   4 = z+,   5 = z-
 * `paramtype2 = "facedir"`
     * Supported drawtypes: "normal", "nodebox", "mesh"
->>>>>>> 5.5.0
     * The rotation of the node is stored in `param2`. Furnaces and chests are
       rotated this way. Can be made by using `minetest.dir_to_facedir()`.
     * Values range 0 - 23
@@ -1238,17 +1170,6 @@ The function of `param2` is determined by `paramtype2` in node definition.
             * The height of the 'plantlike' section is stored in `param2`.
             * The height is (`param2` / 16) nodes.
 * `paramtype2 = "degrotate"`
-<<<<<<< HEAD
-    * Only valid for "plantlike". The rotation of the node is stored in
-      `param2`.
-    * Values range 0 - 179. The value stored in `param2` is multiplied by two to
-      get the actual rotation in degrees of the node.
-* `paramtype2 = "meshoptions"`
-    * Only valid for "plantlike". The value of `param2` becomes a bitfield which
-      can be used to change how the client draws plantlike nodes.
-    * Bits 0, 1 and 2 form a mesh selector.
-      Currently the following meshes are choosable:
-=======
     * Valid for `plantlike` and `mesh` drawtypes. The rotation of the node is
       stored in `param2`.
     * Values range 0–239. The value stored in `param2` is multiplied by 1.5 to
@@ -1258,21 +1179,12 @@ The function of `param2` is determined by `paramtype2` in node definition.
       optional modifiers of the "plant". `param2` is a bitfield.
     * Bits 0 to 2 select the shape.
       Use only one of the values below:
->>>>>>> 5.5.0
         * 0 = a "x" shaped plant (ordinary plant)
         * 1 = a "+" shaped plant (just rotated 45 degrees)
         * 2 = a "*" shaped plant with 3 faces instead of 2
         * 3 = a "#" shaped plant with 4 faces instead of 2
         * 4 = a "#" shaped plant with 4 faces that lean outwards
         * 5-7 are unused and reserved for future meshes.
-<<<<<<< HEAD
-    * Bits 3 through 7 are optional flags that can be combined and give these
-      effects:
-        * bit 3 (0x08) - Makes the plant slightly vary placement horizontally
-        * bit 4 (0x10) - Makes the plant mesh 1.4x larger
-        * bit 5 (0x20) - Moves each face randomly a small bit down (1/8 max)
-        * bits 6-7 are reserved for future use.
-=======
     * Bits 3 to 7 are used to enable any number of optional modifiers.
       Just add the corresponding value(s) below to `param2`:
         * 8  - Makes the plant slightly vary placement horizontally
@@ -1281,7 +1193,6 @@ The function of `param2` is determined by `paramtype2` in node definition.
         * values 64 and 128 (bits 6-7) are reserved for future use.
     * Example: `param2 = 0` selects a normal "x" shaped plant
     * Example: `param2 = 17` selects a "+" shaped plant, 1.4x larger (1+16)
->>>>>>> 5.5.0
 * `paramtype2 = "color"`
     * `param2` tells which color is picked from the palette.
       The palette should have 256 pixels.
@@ -1295,12 +1206,6 @@ The function of `param2` is determined by `paramtype2` in node definition.
       palette. The palette should have 32 pixels.
 * `paramtype2 = "glasslikeliquidlevel"`
     * Only valid for "glasslike_framed" or "glasslike_framed_optional"
-<<<<<<< HEAD
-      drawtypes.
-    * `param2` values 0-63 define 64 levels of internal liquid, 0 being empty
-      and 63 being full.
-    * Liquid texture is defined using `special_tiles = {"modname_tilename.png"}`
-=======
       drawtypes. "glasslike_framed_optional" nodes are only affected if the
       "Connected Glass" setting is enabled.
     * Bits 0-5 define 64 levels of internal liquid, 0 being empty and 63 being
@@ -1318,7 +1223,6 @@ The function of `param2` is determined by `paramtype2` in node definition.
 * `paramtype2 = "none"`
     * `param2` will not be used by the engine and can be used to store
       an arbitrary value
->>>>>>> 5.5.0
 
 Nodes can also contain extra data. See [Node Metadata].
 
@@ -1335,10 +1239,6 @@ Look for examples in `games/devtest` or `games/minetest_game`.
     * Invisible, uses no texture.
 * `liquid`
     * The cubic source node for a liquid.
-<<<<<<< HEAD
-* `flowingliquid`
-    * The flowing version of a liquid, appears with various heights and slopes.
-=======
     * Faces bordering to the same node are never rendered.
     * Connects to node specified in `liquid_alternative_flowing`.
     * Use `backface_culling = false` for the tiles you want to make
@@ -1353,7 +1253,6 @@ Look for examples in `games/devtest` or `games/minetest_game`.
     * `tiles` is used for the item/inventory/wield image rendering.
     * Use `backface_culling = false` for the special tiles you want to make
       visible when inside the node
->>>>>>> 5.5.0
 * `glasslike`
     * Often used for partially-transparent nodes.
     * Only external sides of textures are visible.
@@ -1451,11 +1350,7 @@ Look for examples in `games/devtest` or `games/minetest_game`.
       base cube without affecting them.
     * The base cube texture tiles are defined as normal, the `plantlike`
       extension uses the defined special tile, for example:
-<<<<<<< HEAD
-      `special_tiles = {{name = "default_papyrus.png", tileable_vertical = true}},`
-=======
       `special_tiles = {{name = "default_papyrus.png"}},`
->>>>>>> 5.5.0
 
 `*_optional` drawtypes need less rendering time if deactivated
 (always client-side).
@@ -1525,12 +1420,9 @@ A box of a regular node would look like:
 
     {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
 
-<<<<<<< HEAD
-=======
 To avoid collision issues, keep each value within the range of +/- 1.45.
 This also applies to leveled nodeboxes, where the final height shall not
 exceed this soft limit.
->>>>>>> 5.5.0
 
 
 
@@ -1674,11 +1566,6 @@ Displays text on the HUD.
   The player-set font size is multiplied by size.x (y value isn't used).
 
 ### `statbar`
-<<<<<<< HEAD
-
-Displays a horizontal bar made up of half-images.
-=======
->>>>>>> 5.5.0
 
 Displays a horizontal bar made up of half-images with an optional background.
 
@@ -1853,25 +1740,16 @@ since, by default, no schematic attributes are set.
 Items
 =====
 
-<<<<<<< HEAD
-=======
 Items are things that can be held by players, dropped in the map and
 stored in inventories.
 Items come in the form of item stacks, which are collections of equal
 items that occupy a single inventory slot.
 
->>>>>>> 5.5.0
 Item types
 ----------
 
 There are three kinds of items: nodes, tools and craftitems.
 
-<<<<<<< HEAD
-* Node: Can be placed in the world's voxel grid
-* Tool: Has a wear property but cannot be stacked. The default use action is to
-  dig nodes or hit objects according to its tool capabilities.
-* Craftitem: Cannot dig nodes or be placed
-=======
 * Node: Placeable item form of a node in the world's voxel grid
 * Tool: Has a changable wear property but cannot be stacked
 * Craftitem: Has no special properties
@@ -1893,7 +1771,6 @@ that acts as tool in a gameplay sense as a craftitem, and vice-versa.
 
 Craftitems can be used for items that neither need to be a node
 nor a tool.
->>>>>>> 5.5.0
 
 Amount and wear
 ---------------
@@ -1904,13 +1781,9 @@ default. Tool item stacks can not have an amount greater than 1.
 Tools use a wear (damage) value ranging from 0 to 65535. The
 value 0 is the default and is used for unworn tools. The values
 1 to 65535 are used for worn tools, where a higher value stands for
-<<<<<<< HEAD
-a higher wear. Non-tools always have a wear value of 0.
-=======
 a higher wear. Non-tools technically also have a wear property,
 but it is always 0. There is also a special 'toolrepair' crafting
 recipe that is only available to tools.
->>>>>>> 5.5.0
 
 Item formats
 ------------
@@ -2006,27 +1879,12 @@ Groups of entities
 ------------------
 
 For entities, groups are, as of now, used only for calculating damage.
-<<<<<<< HEAD
-The rating is the percentage of damage caused by tools with this damage group.
-=======
 The rating is the percentage of damage caused by items with this damage group.
->>>>>>> 5.5.0
 See [Entity damage mechanism].
 
     object.get_armor_groups() --> a group-rating table (e.g. {fleshy=100})
     object.set_armor_groups({fleshy=30, cracky=80})
 
-<<<<<<< HEAD
-Groups of tools
----------------
-
-Groups in tools define which groups of nodes and entities they are
-effective towards.
-
-Groups in crafting recipes
---------------------------
-
-=======
 Groups of tool capabilities
 ---------------------------
 
@@ -2036,7 +1894,6 @@ are effective towards.
 Groups in crafting recipes
 --------------------------
 
->>>>>>> 5.5.0
 An example: Make meat soup from any meat, any water and any bowl:
 
     {
@@ -2248,33 +2105,19 @@ Tool capabilities define:
 
 ### Full punch interval
 
-<<<<<<< HEAD
-When used as a weapon, the tool will do full damage if this time is spent
-between punches. If e.g. half the time is spent, the tool will do half
-=======
 When used as a weapon, the item will do full damage if this time is spent
 between punches. If e.g. half the time is spent, the item will do half
->>>>>>> 5.5.0
 damage.
 
 ### Maximum drop level
 
-<<<<<<< HEAD
-Suggests the maximum level of node, when dug with the tool, that will drop
-it's useful item. (e.g. iron ore to drop a lump of iron).
-=======
 Suggests the maximum level of node, when dug with the item, that will drop
 its useful item. (e.g. iron ore to drop a lump of iron).
->>>>>>> 5.5.0
 
 This is not automated; it is the responsibility of the node definition
 to implement this.
 
-<<<<<<< HEAD
-### Uses
-=======
 ### Uses (tools only)
->>>>>>> 5.5.0
 
 Determines how many uses the tool has when it is used for digging a node,
 of this group, of the maximum level. The maximum supported number of
@@ -2906,10 +2749,6 @@ Elements
 
 ### `background[<X>,<Y>;<W>,<H>;<texture name>;<auto_clip>]`
 
-<<<<<<< HEAD
-* Use a background. Inventory rectangles are not drawn then.
-=======
->>>>>>> 5.5.0
 * Example for formspec 8x4 in 16x resolution:
   image shall be sized 8 times 16px  times  4 times 16px
 * If `auto_clip` is `true`, the background is clipped to the formspec size
@@ -5533,23 +5372,16 @@ Call these functions only at load time!
     * `hitter`: ObjectRef - Player that hit
     * `time_from_last_punch`: Meant for disallowing spamming of clicks
       (can be nil).
-<<<<<<< HEAD
-    * `tool_capabilities`: Capability table of used tool (can be nil)
-=======
     * `tool_capabilities`: Capability table of used item (can be nil)
->>>>>>> 5.5.0
     * `dir`: Unit vector of direction of punch. Always defined. Points from
       the puncher to the punched.
     * `damage`: Number that represents the damage calculated by the engine
     * should return `true` to prevent the default damage mechanism
-<<<<<<< HEAD
-=======
 * `minetest.register_on_rightclickplayer(function(player, clicker))`
     * Called when the 'place/use' key was used while pointing a player
       (not neccessarily an actual rightclick)
     * `player`: ObjectRef - Player that is acted upon
     * `clicker`: ObjectRef - Object that acted upon `player`, may or may not be a player
->>>>>>> 5.5.0
 * `minetest.register_on_player_hpchange(function(player, hp_change, reason), modifier)`
     * Called when the player gets damaged or healed
     * `player`: ObjectRef of the player
@@ -5560,12 +5392,8 @@ Call these functions only at load time!
                         giving a type - use this for custom damage types.
             * `punch`: Was punched. `reason.object` will hold the puncher, or nil if none.
             * `fall`
-<<<<<<< HEAD
-            * `node_damage`: damage_per_second from a neighbouring node.
-=======
             * `node_damage`: `damage_per_second` from a neighbouring node.
                              `reason.node` will hold the node name or nil.
->>>>>>> 5.5.0
             * `drown`
             * `respawn`
         * Any of the above types may have additional fields from mods.
@@ -5626,10 +5454,7 @@ Call these functions only at load time!
     * `cheat`: `{type=<cheat_type>}`, where `<cheat_type>` is one of:
         * `moved_too_fast`
         * `interacted_too_far`
-<<<<<<< HEAD
-=======
         * `interacted_with_self`
->>>>>>> 5.5.0
         * `interacted_while_dead`
         * `finished_unknown_dig`
         * `dug_unbreakable`
@@ -5638,14 +5463,11 @@ Call these functions only at load time!
     * Called always when a player says something
     * Return `true` to mark the message as handled, which means that it will
       not be sent to other players.
-<<<<<<< HEAD
-=======
 * `minetest.register_on_chatcommand(function(name, command, params))`
     * Called always when a chatcommand is triggered, before `minetest.registered_chatcommands`
       is checked to see if the command exists, but after the input is parsed.
     * Return `true` to mark the command as handled, which means that the default
       handlers will be prevented.
->>>>>>> 5.5.0
 * `minetest.register_on_player_receive_fields(function(player, formname, fields))`
     * Called when the server received input from `player` in a formspec with
       the given `formname`. Specifically, this is called on any of the
@@ -5707,11 +5529,7 @@ Call these functions only at load time!
     * The same as before, except that it is called before the player crafts, to
       make craft prediction, and it should not change anything.
 * `minetest.register_allow_player_inventory_action(function(player, action, inventory, inventory_info))`
-<<<<<<< HEAD
-    * Determinates how much of a stack may be taken, put or moved to a
-=======
     * Determines how much of a stack may be taken, put or moved to a
->>>>>>> 5.5.0
       player inventory.
     * `player` (type `ObjectRef`) is the player who modified the inventory
       `inventory` (type `InvRef`).
@@ -5736,12 +5554,7 @@ Call these functions only at load time!
       allow for multiple protection mods.
 * `minetest.register_on_item_eat(function(hp_change, replace_with_item, itemstack, user, pointed_thing))`
     * Called when an item is eaten, by `minetest.item_eat`
-<<<<<<< HEAD
-    * Return `true` or `itemstack` to cancel the default item eat response
-      (i.e.: hp increase).
-=======
     * Return `itemstack` to cancel the default item eat response (i.e.: hp increase).
->>>>>>> 5.5.0
 * `minetest.register_on_priv_grant(function(name, granter, priv))`
     * Called when `granter` grants the priv `priv` to `name`.
     * Note that the callback will be called twice if it's done by a player,
@@ -5778,11 +5591,6 @@ Setting-related
 Authentication
 --------------
 
-<<<<<<< HEAD
-* `minetest.string_to_privs(str)`: returns `{priv1=true,...}`
-* `minetest.privs_to_string(privs)`: returns `"priv1,priv2,..."`
-    * Convert between two privilege representations
-=======
 * `minetest.string_to_privs(str[, delim])`:
     * Converts string representation of privs into table form
     * `delim`: String separating the privs. Defaults to `","`.
@@ -5790,7 +5598,6 @@ Authentication
 * `minetest.privs_to_string(privs[, delim])`:
     * Returns the string representation of `privs`
     * `delim`: String to delimit privs. Defaults to `","`.
->>>>>>> 5.5.0
 * `minetest.get_player_privs(name) -> {priv1=true,...}`
 * `minetest.check_player_privs(player_or_name, ...)`:
   returns `bool, missing_privs`
@@ -5831,13 +5638,8 @@ Authentication
 * `minetest.auth_reload()`
     * See `reload()` in authentication handler definition
 
-<<<<<<< HEAD
-`minetest.set_player_password`, `minetest_set_player_privs`,
-`minetest_get_player_privs` and `minetest.auth_reload` call the authentication
-=======
 `minetest.set_player_password`, `minetest.set_player_privs`,
 `minetest.get_player_privs` and `minetest.auth_reload` call the authentication
->>>>>>> 5.5.0
 handler.
 
 Chat
@@ -5845,15 +5647,12 @@ Chat
 
 * `minetest.chat_send_all(text)`
 * `minetest.chat_send_player(name, text)`
-<<<<<<< HEAD
-=======
 * `minetest.format_chat_message(name, message)`
     * Used by the server to format a chat message, based on the setting `chat_message_format`.
       Refer to the documentation of the setting for a list of valid placeholders.
     * Takes player name and message, and returns the formatted string to be sent to players.
     * Can be redefined by mods if required, for things like colored names or messages.
     * **Only** the first occurrence of each placeholder will be replaced.
->>>>>>> 5.5.0
 
 Environment access
 ------------------
@@ -6899,20 +6698,6 @@ Misc.
     * Example: `minetest.rgba(10, 20, 30, 40)`, returns `"#0A141E28"`
 * `minetest.encode_base64(string)`: returns string encoded in base64
     * Encodes a string in base64.
-<<<<<<< HEAD
-* `minetest.decode_base64(string)`: returns string
-    * Decodes a string encoded in base64.
-* `minetest.is_protected(pos, name)`: returns boolean
-    * Returns true, if player `name` shouldn't be able to dig at `pos` or do
-      other actions, definable by mods, due to some mod-defined ownership-like
-      concept.
-    * Returns false or nil, if the player is allowed to do such actions.
-    * `name` will be "" for non-players or unknown players.
-    * This function should be overridden by protection mods and should be used
-      to check if a player can interact at a position.
-    * This function should call the old version of itself if the position is
-      not protected by the mod.
-=======
 * `minetest.decode_base64(string)`: returns string or nil on failure
     * Padding characters are only supported starting at version 5.4.0, where
       5.5.0 and newer perform proper checks.
@@ -6925,7 +6710,6 @@ Misc.
       recommended to grant access to players with the `protection_bypass` privilege.
     * Cache and call the old version of this function if the position is
       not protected by the mod. This will allow using multiple protection mods.
->>>>>>> 5.5.0
     * Example:
 
           local old_is_protected = minetest.is_protected
@@ -6938,8 +6722,6 @@ Misc.
 * `minetest.record_protection_violation(pos, name)`
     * This function calls functions registered with
       `minetest.register_on_protection_violation`.
-<<<<<<< HEAD
-=======
 * `minetest.is_creative_enabled(name)`: returns boolean
     * Returning `true` means that Creative Mode is enabled for player `name`.
     * `name` will be `""` for non-players or if the player is unknown.
@@ -6947,7 +6729,6 @@ Misc.
       implement a per-player Creative Mode.
     * By default, this function returns `true` if the setting
       `creative_mode` is `true` and `false` otherwise.
->>>>>>> 5.5.0
 * `minetest.is_area_protected(pos1, pos2, player_name, interval)`
     * Returns the position of the first node that `player_name` may not modify
       in the specified cuboid between `pos1` and `pos2`.
@@ -7010,8 +6791,6 @@ Misc.
     * If `transient` is `false` or absent, frees a persistent forceload.
       If `true`, frees a transient forceload.
 
-<<<<<<< HEAD
-=======
 * `minetest.compare_block_status(pos, condition)`
     * Checks whether the mapblock at positition `pos` is in the wanted condition.
     * `condition` may be one of the following values:
@@ -7025,18 +6804,12 @@ Misc.
         * `true`: Mapblock meets the requirement
         * `nil`: Unsupported `condition` value
 
->>>>>>> 5.5.0
 * `minetest.request_insecure_environment()`: returns an environment containing
   insecure functions if the calling mod has been listed as trusted in the
   `secure.trusted_mods` setting or security is disabled, otherwise returns
   `nil`.
-<<<<<<< HEAD
-    * Only works at init time and must be called from the mod's main scope (not
-      from a function).
-=======
     * Only works at init time and must be called from the mod's main scope
       (ie: the init.lua of the mod, not from another Lua file or within a function).
->>>>>>> 5.5.0
     * **DO NOT ALLOW ANY OTHER MODS TO ACCESS THE RETURNED ENVIRONMENT, STORE
       IT IN A LOCAL VARIABLE!**
 
@@ -7085,19 +6858,6 @@ Global tables
     * Map of registered aliases, indexed by name
 * `minetest.registered_ores`
     * Map of registered ore definitions, indexed by the `name` field.
-<<<<<<< HEAD
-    * If `name` is nil, the key is the ID returned by `minetest.register_ore`.
-* `minetest.registered_biomes`
-    * Map of registered biome definitions, indexed by the `name` field.
-    * If `name` is nil, the key is the ID returned by `minetest.register_biome`.
-* `minetest.registered_decorations`
-    * Map of registered decoration definitions, indexed by the `name` field.
-    * If `name` is nil, the key is the ID returned by
-      `minetest.register_decoration`.
-* `minetest.registered_schematics`
-    * Map of registered schematic definitions, indexed by the `name` field.
-    * If `name` is nil, the key is the ID returned by
-=======
     * If `name` is nil, the key is the object handle returned by
       `minetest.register_ore`.
 * `minetest.registered_biomes`
@@ -7111,7 +6871,6 @@ Global tables
 * `minetest.registered_schematics`
     * Map of registered schematic definitions, indexed by the `name` field.
     * If `name` is nil, the key is the object handle returned by
->>>>>>> 5.5.0
       `minetest.register_schematic`.
 * `minetest.registered_chatcommands`
     * Map of registered chat command definitions, indexed by name
@@ -7317,8 +7076,6 @@ an itemstring, a table or `nil`.
 * `get_metadata()`: (DEPRECATED) Returns metadata (a string attached to an item
   stack).
 * `set_metadata(metadata)`: (DEPRECATED) Returns true.
-<<<<<<< HEAD
-=======
 * `get_description()`: returns the description shown in inventory list tooltips.
     * The engine uses this when showing item descriptions in tooltips.
     * Fields for finding the description, in order:
@@ -7332,7 +7089,6 @@ an itemstring, a table or `nil`.
         * `short_description` in item definition
         * first line of the description (From item meta or def, see `get_description()`.)
         * Returns nil if none of the above are set
->>>>>>> 5.5.0
 * `clear()`: removes all items from the stack, making it empty.
 * `replace(item)`: replace the contents of this stack.
     * `item` can also be an itemstring or table.
@@ -7600,34 +7356,14 @@ object you are working with still exists.
 * `get_nametag_attributes()`
     * returns a table with the attributes of the nametag of an object
     * {
-<<<<<<< HEAD
-        color = {a=0..255, r=0..255, g=0..255, b=0..255},
-        text = "",
-=======
         text = "",
         color = {a=0..255, r=0..255, g=0..255, b=0..255},
         bgcolor = {a=0..255, r=0..255, g=0..255, b=0..255},
->>>>>>> 5.5.0
       }
 * `set_nametag_attributes(attributes)`
     * sets the attributes of the nametag of an object
     * `attributes`:
       {
-<<<<<<< HEAD
-        color = ColorSpec,
-        text = "My Nametag",
-      }
-
-#### LuaEntitySAO-only (no-op for other objects)
-
-* `set_velocity(vel)`
-    * `vel` is a vector, e.g. `{x=0.0, y=2.3, z=1.0}`
-* `add_velocity(vel)`
-    * `vel` is a vector, e.g. `{x=0.0, y=2.3, z=1.0}`
-    * In comparison to using get_velocity, adding the velocity and then using
-      set_velocity, add_velocity is supposed to avoid synchronization problems.
-* `get_velocity()`: returns the velocity, a vector
-=======
         text = "My Nametag",
         color = ColorSpec,
         -- ^ Text color
@@ -7645,7 +7381,6 @@ object you are working with still exists.
       no effect and returning `nil`.
 * `set_velocity(vel)`
     * `vel` is a vector, e.g. `{x=0.0, y=2.3, z=1.0}`
->>>>>>> 5.5.0
 * `set_acceleration(acc)`
     * `acc` is a vector
 * `get_acceleration()`: returns the acceleration, a vector
@@ -7653,29 +7388,6 @@ object you are working with still exists.
     * `rot` is a vector (radians). X is pitch (elevation), Y is yaw (heading)
       and Z is roll (bank).
 * `get_rotation()`: returns the rotation, a vector (radians)
-<<<<<<< HEAD
-* `set_yaw(radians)`: sets the yaw (heading).
-* `get_yaw()`: returns number in radians
-* `set_texture_mod(mod)`
-* `get_texture_mod()` returns current texture modifier
-* `set_sprite(p, num_frames, framelength, select_horiz_by_yawpitch)`
-    * Select sprite from spritesheet with optional animation and Dungeon Master
-      style texture selection based on yaw relative to camera
-    * `p`: {x=number, y=number}, the coordinate of the first frame
-      (x: column, y: row), default: `{x=0, y=0}`
-    * `num_frames`: number, default: `1`
-    * `framelength`: number, default: `0.2`
-    * `select_horiz_by_yawpitch`: boolean, this was once used for the Dungeon
-      Master mob, default: `false`
-* `get_entity_name()` (**Deprecated**: Will be removed in a future version)
-* `get_luaentity()`
-
-#### Player-only (no-op for other objects)
-
-* `get_player_name()`: returns `""` if is not a player
-* `get_player_velocity()`: returns `nil` if is not a player, otherwise a
-  table {x, y, z} representing the player's instantaneous velocity in nodes/s
-=======
 * `set_yaw(yaw)`: sets the yaw in radians (heading).
 * `get_yaw()`: returns number in radians
 * `set_texture_mod(mod)`
@@ -7707,7 +7419,6 @@ object you are working with still exists.
 * `get_player_velocity()`: **DEPRECATED**, use get_velocity() instead.
   table {x, y, z} representing the player's instantaneous velocity in nodes/s
 * `add_player_velocity(vel)`: **DEPRECATED**, use add_velocity(vel) instead.
->>>>>>> 5.5.0
 * `get_look_dir()`: get camera direction as a unit vector
 * `get_look_vertical()`: pitch in radians
     * Angle ranges between -pi/2 and pi/2, which are straight up and down
@@ -7768,10 +7479,7 @@ object you are working with still exists.
 * `set_inventory_formspec(formspec)`
     * Redefine player's inventory form
     * Should usually be called in `on_joinplayer`
-<<<<<<< HEAD
-=======
     * If `formspec` is `""`, the player's inventory is disabled.
->>>>>>> 5.5.0
 * `get_inventory_formspec()`: returns a formspec string
 * `set_formspec_prepend(formspec)`:
     * the formspec string will be added to every formspec shown to the user,
@@ -9135,70 +8843,13 @@ Used by `minetest.register_node`.
         -- Tells connected nodebox nodes to connect only to these sides of this
         -- node
 
-<<<<<<< HEAD
-        mesh = "model",
-=======
         mesh = "model.obj",
         -- File name of mesh when using "mesh" drawtype
->>>>>>> 5.5.0
 
         selection_box = {
             type = "fixed",
             fixed = {
                 {-2 / 16, -0.5, -2 / 16, 2 / 16, 3 / 16, 2 / 16},
-<<<<<<< HEAD
-            },
-        },
-        -- Custom selection box definition. Multiple boxes can be defined.
-        -- If "nodebox" drawtype is used and selection_box is nil, then node_box
-        -- definition is used for the selection box.
-
-        collision_box = {
-            type = "fixed",
-            fixed = {
-                {-2 / 16, -0.5, -2 / 16, 2 / 16, 3 / 16, 2 / 16},
-            },
-        },
-        -- Custom collision box definition. Multiple boxes can be defined.
-        -- If "nodebox" drawtype is used and collision_box is nil, then node_box
-        -- definition is used for the collision box.
-        -- Both of the boxes above are defined as:
-        -- {xmin, ymin, zmin, xmax, ymax, zmax} in nodes from node center.
-
-        -- Support maps made in and before January 2012
-        legacy_facedir_simple = false,
-        legacy_wallmounted = false,
-
-        waving = 0,
-        -- Valid for mesh, nodebox, plantlike, allfaces_optional nodes.
-        -- 1 - wave node like plants (top of node moves, bottom is fixed)
-        -- 2 - wave node like leaves (whole node moves side-to-side)
-        -- caveats: not all models will properly wave.
-        -- plantlike drawtype nodes can only wave like plants.
-        -- allfaces_optional drawtype nodes can only wave like leaves.
-
-        sounds = {
-            footstep = <SimpleSoundSpec>,
-            dig = <SimpleSoundSpec>,  -- "__group" = group-based sound (default)
-            dug = <SimpleSoundSpec>,
-            place = <SimpleSoundSpec>,
-            place_failed = <SimpleSoundSpec>,
-            fall = <SimpleSoundSpec>,
-        },
-
-        drop = "",
-        -- Name of dropped node when dug. Default is the node itself.
-        -- Alternatively:
-        drop = {
-            -- Maximum number of items to drop
-            max_items = 1,
-            -- Choose max_items randomly from this list
-            items = {
-                {
-                    items = {"foo:bar", "baz:frob"},  -- Items to drop
-                    rarity = 1,  -- Probability of dropping is 1 / rarity
-                    inherit_color = true, -- Inherit palette color from the node
-=======
                 -- Node box format: see [Node boxes]
             },
         },
@@ -9316,7 +8967,6 @@ Used by `minetest.register_node`.
                         {"pickaxe", "lucky"}
                     },
                     items = {"default:coal_lump"},
->>>>>>> 5.5.0
                 },
             },
         },
@@ -9392,12 +9042,9 @@ Used by `minetest.register_node`.
 
         on_rightclick = function(pos, node, clicker, itemstack, pointed_thing),
         -- default: nil
-<<<<<<< HEAD
-=======
         -- Called when clicker (an ObjectRef) used the 'place/build' key
         -- (not neccessarily an actual rightclick)
         -- while pointing at the node at pos with 'node' being the node table.
->>>>>>> 5.5.0
         -- itemstack will hold clicker's wielded item.
         -- Shall return the leftover itemstack.
         -- Note: pointed_thing can be nil, if a mod calls this function.
@@ -9406,13 +9053,9 @@ Used by `minetest.register_node`.
 
         on_dig = function(pos, node, digger),
         -- default: minetest.node_dig
-<<<<<<< HEAD
-        -- By default checks privileges, wears out tool and removes node.
-=======
         -- By default checks privileges, wears out item (if tool) and removes node.
         -- return true if the node was dug successfully, false otherwise.
         -- Deprecated: returning nil is the same as returning true.
->>>>>>> 5.5.0
 
         on_timer = function(pos, elapsed),
         -- default: nil

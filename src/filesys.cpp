@@ -405,11 +405,7 @@ std::string TempPath()
 	*/
 
 #ifdef __ANDROID__
-<<<<<<< HEAD
-	return porting::path_user + "/tmp/";
-=======
 	return porting::path_cache;
->>>>>>> 5.5.0
 #else
 	return DIR_DELIM "tmp";
 #endif

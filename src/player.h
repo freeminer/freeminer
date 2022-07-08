@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "network/networkprotocol.h"
 #include "util/basic_macros.h"
+#include <atomic>
 #include <list>
 #include "threading/lock.h"
 #include "json/json.h"
@@ -140,7 +141,7 @@ public:
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
-	const v3f &getSpeed() //const
+	const v3f getSpeed() //const
 	{
 		auto lock = lock_shared_rec();
 		return m_speed;
@@ -285,7 +286,7 @@ public:
 protected:
 	//char m_name[PLAYERNAME_SIZE];
 	v3f m_speed;
-	u16 m_wield_index = 0;
+	std::atomic_uint16_t m_wield_index {0};
 	PlayerFovSpec m_fov_override_spec = { 0.0f, false, 0.0f };
 
 	std::vector<HudElement *> hud;

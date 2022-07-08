@@ -578,7 +578,7 @@ class GameGlobalShaderConstantSetterFactory : public IShaderConstantSetterFactor
 	Client *m_client;
 
 	// freeminer:
-	Inventory * m_local_inventory;
+	Inventory * m_local_inventory = nullptr;
 	// =========
 
 	std::vector<GameGlobalShaderConstantSetter *> created_nosky;

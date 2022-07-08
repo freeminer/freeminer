@@ -38,17 +38,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 using namespace irr::core;
 
-<<<<<<< HEAD:src/touchscreengui.cpp
-extern Settings *g_settings;
-
-const char* touchgui_button_imagenames[] = {
-	"up_arrow.png",
-	"down_arrow.png",
-	"left_arrow.png",
-	"right_arrow.png",
-=======
-const char **button_imagenames = (const char *[]) {
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
+const char * button_imagenames[] = {
 	"jump_btn.png",
 	"down.png",
 	"zoom.png",
@@ -125,12 +115,8 @@ static irr::EKEY_CODE id2keycode(touch_gui_button_id id)
 		default:
 			break;
 	}
-<<<<<<< HEAD:src/touchscreengui.cpp
-	if(!key.size())
+	if(key.empty())
 		return irr::EKEY_CODE();
-=======
-	assert(!key.empty());
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
 	return keyname_to_keycode(g_settings->get("keymap_" + key).c_str());
 }
 
@@ -177,12 +163,8 @@ void AutoHideButtonBar::init(ISimpleTextureSource *tsrc,
 	m_upper_left = UpperLeft;
 	m_lower_right = LowerRight;
 
-<<<<<<< HEAD:src/touchscreengui.cpp
-	/* init settings bar */
-	clear();
-=======
 	// init settings bar
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
+	clear();
 
 	irr::core::rect<int> current_button = rect<s32>(UpperLeft.X, UpperLeft.Y,
 			LowerRight.X, LowerRight.Y);
@@ -674,12 +656,8 @@ void TouchScreenGUI::handleButtonEvent(touch_gui_button_id button,
 
 	// add this event
 	if (action) {
-<<<<<<< HEAD:src/touchscreengui.cpp
-		if(!(std::find(btn->ids.begin(),btn->ids.end(), eventID) == btn->ids.end()))
+		if(!(std::find(btn->ids.begin(), btn->ids.end(), eventID) == btn->ids.end()))
 			return;
-=======
-		assert(std::find(btn->ids.begin(), btn->ids.end(), eventID) == btn->ids.end());
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
 
 		btn->ids.push_back(eventID);
 
@@ -691,19 +669,12 @@ void TouchScreenGUI::handleButtonEvent(touch_gui_button_id button,
 		m_receiver->OnEvent(*translated);
 	}
 
-<<<<<<< HEAD:src/touchscreengui.cpp
-		std::vector<int>::iterator pos =
-				std::find(btn->ids.begin(),btn->ids.end(), eventID);
-		/* has to be in touch list */
-		if(!(pos != btn->ids.end()))
-			return;
-=======
 	// remove event
 	if ((!action) || (btn->immediate_release)) {
 		auto pos = std::find(btn->ids.begin(), btn->ids.end(), eventID);
 		// has to be in touch list
-		assert(pos != btn->ids.end());
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
+		if(!(pos != btn->ids.end()))
+			return;
 		btn->ids.erase(pos);
 
 		if (!btn->ids.empty())
@@ -870,16 +841,8 @@ void TouchScreenGUI::translateEvent(const SEvent &event)
 		verbosestream
 			<< "Up event for pointerid: " << event.TouchInput.ID << std::endl;
 		handleReleaseEvent(event.TouchInput.ID);
-<<<<<<< HEAD:src/touchscreengui.cpp
-	}
-	else {
-		if(!(event.TouchInput.Event == ETIE_MOVED))
-			return;
-		int move_idx = event.TouchInput.ID;
-=======
 	} else {
-		assert(event.TouchInput.Event == ETIE_MOVED);
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
+		if(!(event.TouchInput.Event == ETIE_MOVED)) return;
 
 		if (m_pointerpos[event.TouchInput.ID] ==
 				v2s32(event.TouchInput.X, event.TouchInput.Y))
