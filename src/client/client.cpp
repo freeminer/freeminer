@@ -1799,7 +1799,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, int ste
 		return;
 
 #if FMTODO
-<< <<<<< HEAD:src/client.cpp
+<< <<< << HEAD:src/client.cpp
 	/*
 		Create a task to update the mesh of the block
 	*/
@@ -1832,7 +1832,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, int ste
 	//m_mesh_update_thread.m_queue_in.addBlock(p, data, urgent);
 	m_mesh_update_thread.enqueueUpdate(p, data, urgent);
 	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
-== =====
+== == ===
 #endif
 	m_mesh_update_thread.updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
 }

@@ -481,17 +481,12 @@ button_info *TouchScreenGUI::initJoystickButton(touch_gui_button_id id,
 
 void TouchScreenGUI::init(ISimpleTextureSource *tsrc)
 {
-	assert(tsrc);
+	if (!tsrc)
+		return;
 
 	m_visible       = true;
 	m_texturesource = tsrc;
 
-<<<<<<< HEAD:src/touchscreengui.cpp
-void TouchScreenGUI::init(ISimpleTextureSource* tsrc)
-{
-	if (!tsrc)
-		return;
-=======
 	/* Init joystick display "button"
 	 * Joystick is placed on bottom left of screen.
 	 */
@@ -508,7 +503,6 @@ void TouchScreenGUI::init(ISimpleTextureSource* tsrc)
 						button_size * 3,
 						m_screensize.Y - button_size), 0);
 	}
->>>>>>> 5.5.0:src/gui/touchscreengui.cpp
 
 	m_joystick_btn_bg = initJoystickButton(joystick_bg_id,
 			rect<s32>(button_size,

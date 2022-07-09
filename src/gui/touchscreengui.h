@@ -91,12 +91,8 @@ typedef enum
 // Very slow button repeat frequency
 #define SLOW_BUTTON_REPEAT 1.0f
 
-<<<<<<< HEAD:src/touchscreengui.h
-extern const char* touchgui_button_imagenames[];
-=======
-extern const char **button_imagenames;
+extern const char *button_imagenames[];
 extern const char **joystick_imagenames;
->>>>>>> 5.5.0:src/gui/touchscreengui.h
 
 struct button_info
 {
@@ -236,13 +232,6 @@ private:
 	 */
 	line3d<f32> m_shootline;
 
-<<<<<<< HEAD:src/touchscreengui.h
-	int                     m_move_id;
-	bool                    m_move_has_really_moved;
-	u32                     m_move_downtime;
-	bool                    m_move_sent_as_mouse_event;
-	v2s32                   m_move_downlocation;
-=======
 	bool m_has_move_id = false;
 	size_t m_move_id;
 	bool m_move_has_really_moved = false;
@@ -258,7 +247,6 @@ private:
 	button_info *m_joystick_btn_off = nullptr;
 	button_info *m_joystick_btn_bg = nullptr;
 	button_info *m_joystick_btn_center = nullptr;
->>>>>>> 5.5.0:src/gui/touchscreengui.h
 
 	button_info m_buttons[after_last_element_id];
 

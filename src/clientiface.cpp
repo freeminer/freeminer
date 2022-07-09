@@ -107,35 +107,6 @@ int RemoteClient::GetNextBlocks (
 		double m_uptime
 )
 {
-<<<<<<< HEAD
-
-	auto lock = try_lock_unique_rec();
-	if (!lock->owns_lock())
-		return 0;
-
-	// Increment timers
-	m_nothing_to_send_pause_timer -= dtime;
-	m_nearest_unsent_reset_timer += dtime;
-	m_time_from_building += dtime;
-
-	if (m_nearest_unsent_reset) {
-		m_nearest_unsent_reset = 0;
-		m_nearest_unsent_reset_timer = 999;
-		m_nothing_to_send_pause_timer = 0;
-	}
-
-	if(m_nothing_to_send_pause_timer >= 0)
-		return 0;
-
-	RemotePlayer *player = env->getPlayer(peer_id);
-	// This can happen sometimes; clients and players are not in perfect sync.
-	if (player == NULL)
-		return 0;
-
-	PlayerSAO *sao = player->getPlayerSAO();
-	if (sao == NULL)
-		return 0;
-=======
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 
@@ -150,7 +121,6 @@ int RemoteClient::GetNextBlocks (
 	PlayerSAO *sao = player->getPlayerSAO();
 	if (!sao)
 		return;
->>>>>>> 5.5.0
 
 /*
 	// Won't send anything if already sending
@@ -161,15 +131,9 @@ int RemoteClient::GetNextBlocks (
 */
 
 	v3f playerpos = sao->getBasePosition();
-<<<<<<< HEAD
-	v3f playerspeed = player->getSpeed();
-	if(playerspeed.getLength() > 1000.0*BS) //cheater or bug, ignore him
-		return 0;
-=======
 	// if the player is attached, get the velocity from the attached object
 	LuaEntitySAO *lsao = getAttachedObject(sao, env);
 	const v3f &playerspeed = lsao? lsao->getVelocity() : player->getSpeed();
->>>>>>> 5.5.0
 	v3f playerspeeddir(0,0,0);
 	if (playerspeed.getLength() > 1.0f * BS)
 		playerspeeddir = playerspeed / playerspeed.getLength();
@@ -186,62 +150,15 @@ int RemoteClient::GetNextBlocks (
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);
 
-<<<<<<< HEAD
-	//infostream<<"camera_dir=("<<camera_dir<<")"<< " camera_pos="<<camera_pos<<std::endl;
-
-	/*
-		Get the starting value of the block finder radius.
-	*/
-
-	if(m_last_center != center)
-	{
-		m_last_center = center;
-		m_nearest_unsent_reset_timer = 999;
-	}
-
-	if (m_last_direction.getDistanceFrom(camera_dir)>0.4) { // 1 = 90deg
-		m_last_direction = camera_dir;
-		m_nearest_unsent_reset_timer = 999;
-	}
-
-	/*infostream<<"m_nearest_unsent_reset_timer="
-			<<m_nearest_unsent_reset_timer<<std::endl;*/
-
-	// Reset periodically to workaround for some bugs or stuff
-	if(m_nearest_unsent_reset_timer > 120.0)
-	{
-		m_nearest_unsent_reset_timer = 0;
-		m_nearest_unsent_d = 0;
-		m_nearest_unsent_reset = 0;
-		//infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
-	}
-
-	//s16 last_nearest_unsent_d = m_nearest_unsent_d;
-	s16 d_start = m_nearest_unsent_d;
-
-	//infostream<<"d_start="<<d_start<<std::endl;
-
-	static const u16 max_simul_sends_setting = g_settings->getU16
-			("max_simultaneous_block_sends_per_client");
-	static const u16 max_simul_sends_usually = max_simul_sends_setting;
-=======
 	u16 max_simul_sends_usually = m_max_simul_sends;
->>>>>>> 5.5.0
 
 	/*
 		Check the time from last addNode/removeNode.
 
 		Decrease send rate if player is building stuff.
 	*/
-<<<<<<< HEAD
-	static const auto full_block_send_enable_min_time_from_building = g_settings->getFloat("full_block_send_enable_min_time_from_building");
-	if(m_time_from_building < full_block_send_enable_min_time_from_building)
-	{
-		/*
-=======
 	m_time_from_building += dtime;
 	if (m_time_from_building < m_min_time_from_building) {
->>>>>>> 5.5.0
 		max_simul_sends_usually
 			= LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS;
 		*/
@@ -271,29 +188,6 @@ int RemoteClient::GetNextBlocks (
 	// Get view range and camera fov (radians) from the client
 	s16 wanted_range = sao->getWantedRange() + 1;
 	float camera_fov = sao->getFov();
-<<<<<<< HEAD
-	// if FOV, wanted_range are not available (old client), fall back to old default
-	/*
-	if (wanted_range <= 0) wanted_range = 140;
-	*/
-	if (camera_fov <= 0) camera_fov = ((fov+5)*M_PI/180) * 4./3.;
-
-
-	static const auto max_block_send_distance = g_settings->getS16("max_block_send_distance");
-	s16 full_d_max = max_block_send_distance;
-	if (wanted_range) {
-		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
-		if (wanted_blocks < full_d_max)
-			full_d_max = wanted_blocks;
-	}
-
-
-/*
-	const s16 full_d_max = MYMIN(g_settings->getS16("max_block_send_distance"), wanted_range);
-	const s16 d_opt = MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
-*/
-
-=======
 
 	/*
 		Get the starting value of the block finder radius.
@@ -330,26 +224,16 @@ int RemoteClient::GetNextBlocks (
 		wanted_range);
 	const s16 d_opt = std::min(adjustDist(m_block_optimize_distance, prop_zoom_fov),
 		wanted_range);
->>>>>>> 5.5.0
 	const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
 
 	s16 d_max_gen = std::min(adjustDist(m_max_gen_distance, prop_zoom_fov),
 		wanted_range);
 
 	s16 d_max = full_d_max;
-<<<<<<< HEAD
-	static const s16 d_max_gen_s = g_settings->getS16("max_block_generate_distance");
-	s16 d_max_gen = MYMIN(d_max_gen_s, wanted_range);
-
-	// Don't loop very much at a time
-	s16 max_d_increment_at_time = 10;
-	if(d_max > d_start + max_d_increment_at_time)
-=======
 
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 2;
 	if (d_max > d_start + max_d_increment_at_time)
->>>>>>> 5.5.0
 		d_max = d_start + max_d_increment_at_time;
 	/*if(d_max_gen > d_start+2)
 		d_max_gen = d_start+2;*/
@@ -369,70 +253,10 @@ int RemoteClient::GetNextBlocks (
 	s32 nearest_sent_d = -1;
 	//bool queue_is_full = false;
 
-<<<<<<< HEAD
-	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
-
-	int num_blocks_air = 0;
-	int blocks_occlusion_culled = 0;
-	static const bool server_occlusion = g_settings->getBool("server_occlusion");
-	bool occlusion_culling_enabled = server_occlusion;
-
-	auto cam_pos_nodes = floatToInt(playerpos, BS);
-
-	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n;
-	{
-#if !ENABLE_THREADS
-		auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-		n = env->getMap().getNodeTry(cam_pos_nodes);
-	}
-
-	if(n && nodemgr->get(n).solidness == 2)
-		occlusion_culling_enabled = false;
-
-	unordered_map_v3POS<bool> occlude_cache;
-
-	s16 d;
-	for(d = d_start; d <= d_max; d++) {
-		/*errorstream<<"checking d="<<d<<" for "
-				<<server->getPlayerName(peer_id)<<std::endl;*/
-		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
-
-		std::vector<v3POS> list;
-		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
-			list.push_back(v3POS(0,0,0));
-		}
-
-		bool can_skip = d > 1;
-		// Fast fall/move optimize. speed_in_blocks now limited to 6.4
-		if (speed_in_blocks>0.8 && d <= 2) {
-			can_skip = false;
-			if (d == 0) {
-				for(s16 addn = 0; addn < (speed_in_blocks+1)*2; ++addn)
-					list.push_back(floatToInt(playerspeeddir*addn, 1));
-			} else if (d == 1) {
-				for(s16 addn = 0; addn < (speed_in_blocks+1)*1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 0,  0,  1)); // back
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0,  0)); // left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0,  0)); // right
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 0,  0, -1)); // front
-				}
-			} else if (d == 2) {
-				for(s16 addn = 0; addn < (speed_in_blocks+1)*1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0,  1)); // back left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0,  1)); // left right
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0, -1)); // right left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0, -1)); // front right
-				}
-			}
-		} else {
-=======
 	const v3s16 cam_pos_nodes = floatToInt(camera_pos, BS);
 
 	s16 d;
 	for (d = d_start; d <= d_max; d++) {
->>>>>>> 5.5.0
 		/*
 			Get the border/face dot coordinates of a "d-radiused"
 			box
@@ -440,16 +264,9 @@ int RemoteClient::GetNextBlocks (
 			list = FacePositionCache::getFacePositions(d);
 		}
 
-<<<<<<< HEAD
-
-		for(auto li=list.begin(); li!=list.end(); ++li)
-		{
-			v3POS p = *li + center;
-=======
 		std::vector<v3s16>::iterator li;
 		for (li = list.begin(); li != list.end(); ++li) {
 			v3s16 p = *li + center;
->>>>>>> 5.5.0
 
 			/*
 				Send throttling
@@ -491,139 +308,25 @@ int RemoteClient::GetNextBlocks (
 				movement.
 				(0.1 is about 4 degrees)
 			*/
-<<<<<<< HEAD
-
-			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, d_blocks_in_sight) == false)
-			{
-=======
 			f32 dist;
 			if (!(isBlockInSight(p, camera_pos, camera_dir, camera_fov,
 						d_blocks_in_sight, &dist) ||
 					(playerspeed.getLength() > 1.0f * BS &&
 					isBlockInSight(p, camera_pos, playerspeeddir, 0.1f,
 						d_blocks_in_sight)))) {
->>>>>>> 5.5.0
 				continue;
 			}
 
 			/*
 				Don't send already sent blocks
 			*/
-<<<<<<< HEAD
-			unsigned int block_sent = 0;
-			{
-				auto lock = m_blocks_sent.lock_shared_rec();
-				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
-			}
-
-			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
-				continue;
-			}
-=======
 			if (m_blocks_sent.find(p) != m_blocks_sent.end())
 				continue;
->>>>>>> 5.5.0
 
 			/*
 				Check if map has this block
 			*/
 
-<<<<<<< HEAD
-			MapBlock *block;
-			{
-#if !ENABLE_THREADS
-			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-
-			block = env->getMap().getBlockNoCreateNoEx(p);
-			}
-
-			//bool surely_not_found_on_disk = false;
-			bool block_is_invalid = false;
-			if(block != NULL)
-			{
-
-				/*if (d > 3 && block->content_only == CONTENT_AIR) {
-					continue;
-				}*/
-
-				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
-					continue;
-				}
-
-		if (occlusion_culling_enabled) {
-			ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
-			//Occlusion culling
-			auto cpn = p*MAP_BLOCKSIZE;
-
-			// No occlusion culling when free_move is on and camera is
-			// inside ground
-			cpn += v3POS(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
-
-			float step = 1;
-			float stepfac = 1.3;
-			float startoff = 5;
-			float endoff = -MAP_BLOCKSIZE;
-			v3POS spn = cam_pos_nodes + v3POS(0,0,0);
-			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
-			u32 needed_count = 1;
-#if !ENABLE_THREADS
-			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-			//VERY BAD COPYPASTE FROM clientmap.cpp!
-			if( can_skip &&
-				occlusion_culling_enabled &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(0,0,0),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)
-			)
-			{
-				//infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<" block="<<cpn<<" total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
-				g_profiler->add("SMap: Occlusion skip", 1);
-				blocks_occlusion_culled++;
-				continue;
-			}
-		}
-
-				// Reset usage timer, this block will be of use in the future.
-				block->resetUsageTimer();
-
-				if (block->getLightingExpired()) {
-					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
-					env->getServerMap().lighting_modified_add(p, d);
-					if (block_sent && can_skip)
-						continue;
-				}
-
-				if (block->lighting_broken > 0 && (block_sent || can_skip))
-					continue;
-
-				// Block is valid if lighting is up-to-date and data exists
-				if(block->isValid() == false)
-				{
-					block_is_invalid = true;
-				}
-
-				if(block->isGenerated() == false)
-				{
-					continue;
-				}
-=======
 			bool block_not_found = false;
 			if (block) {
 				// Reset usage timer, this block will be of use in the future.
@@ -632,7 +335,6 @@ int RemoteClient::GetNextBlocks (
 				// Check whether the block exists (with data)
 				if (block->isDummy() || !block->isGenerated())
 					block_not_found = true;
->>>>>>> 5.5.0
 
 				/*
 					If block is not close, don't send it unless it is near
@@ -641,15 +343,6 @@ int RemoteClient::GetNextBlocks (
 					Block is near ground level if night-time mesh
 					differs from day-time mesh.
 				*/
-<<<<<<< HEAD
-/*
-				if(d >= d_opt)
-				{
-					if(block->getDayNightDiff() == false)
-						continue;
-				}
-*/
-=======
 				if (d >= d_opt) {
 					if (!block->getIsUnderground() && !block->getDayNightDiff())
 						continue;
@@ -659,20 +352,13 @@ int RemoteClient::GetNextBlocks (
 						env->getMap().isBlockOccluded(block, cam_pos_nodes)) {
 					continue;
 				}
->>>>>>> 5.5.0
 			}
 
 			/*
 				If block has been marked to not exist on disk (dummy) or is
 				not generated and generating new ones is not wanted, skip block.
 			*/
-<<<<<<< HEAD
-			/*
-			if(generate == false && surely_not_found_on_disk == true)
-			{
-=======
 			if (!generate && block_not_found) {
->>>>>>> 5.5.0
 				// get next one.
 				continue;
 			}
@@ -681,15 +367,7 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Add inexistent block to emerge queue.
 			*/
-<<<<<<< HEAD
-			if(!block || /*surely_not_found_on_disk ||*/ block_is_invalid)
-			{
-				//infostream<<"start gen d="<<d<<" p="<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<" generate="<<generate<<std::endl;
-				if (generate || !env->getServerMap().m_db_miss.count(p)) {
-
-=======
 			if (block == NULL || block_not_found) {
->>>>>>> 5.5.0
 				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 					if (nearest_emerged_d == -1)
 						nearest_emerged_d = d;
@@ -712,12 +390,7 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Add block to send queue
 			*/
-<<<<<<< HEAD
-
-			PrioritySortedBlockTransfer q((float)d, p, peer_id);
-=======
 			PrioritySortedBlockTransfer q((float)dist, p, peer_id);
->>>>>>> 5.5.0
 
 			dest.push_back(q);
 
@@ -739,22 +412,14 @@ queue_full_break:
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
-<<<<<<< HEAD
-	if(nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d){
-=======
 	if (nearest_emerged_d != -1) {
->>>>>>> 5.5.0
 		new_nearest_unsent_d = nearest_emerged_d;
 	} else if (nearest_emergefull_d != -1) {
 		new_nearest_unsent_d = nearest_emergefull_d;
 	} else {
 		if (d > full_d_max) {
 			new_nearest_unsent_d = 0;
-<<<<<<< HEAD
-			m_nothing_to_send_pause_timer = 10.0;
-=======
 			m_nothing_to_send_pause_timer = 2.0f;
->>>>>>> 5.5.0
 		} else {
 			if (nearest_sent_d != -1)
 				new_nearest_unsent_d = nearest_sent_d;
