@@ -657,3 +657,140 @@ if INIT == "mainmenu" then
 		return core.formspec_escape(fgettext_ne(text, ...))
 	end
 end
+
+
+--------------------------------------------------------------------------------
+-- Returns the exact coordinate of a pointed surface
+--------------------------------------------------------------------------------
+function core.pointed_thing_to_face_pos(placer, pointed_thing)
+	-- Avoid crash in some situations when player is inside a node, causing
+	-- 'above' to equal 'under'.
+	if vector.equals(pointed_thing.above, pointed_thing.under) then
+		return pointed_thing.under
+	end
+
+	-- only on new api:
+	local eye_height = 1.625 -- placer:get_properties().eye_height
+	local eye_offset_first = {x=0, y=0, z=0} -- placer:get_eye_offset()
+	local node_pos = pointed_thing.under
+	local camera_pos = placer:get_pos()
+	local pos_off = vector.multiply(
+			vector.subtract(pointed_thing.above, node_pos), 0.5)
+	local look_dir = placer:get_look_dir()
+	local offset, nc
+	local oc = {}
+
+	for c, v in pairs(pos_off) do
+		if nc or v == 0 then
+			oc[#oc + 1] = c
+		else
+			offset = v
+			nc = c
+		end
+	end
+
+	local fine_pos = {[nc] = node_pos[nc] + offset}
+	camera_pos.y = camera_pos.y + eye_height + eye_offset_first.y / 10
+	--camera_pos.y = camera_pos.y + eye_height + 1.625 / 10
+	
+	local f = (node_pos[nc] + offset - camera_pos[nc]) / look_dir[nc]
+
+	for i = 1, #oc do
+		fine_pos[oc[i]] = camera_pos[oc[i]] + look_dir[oc[i]] * f
+	end
+	return fine_pos
+end
+
+function core.string_to_privs(str, delim)
+	assert(type(str) == "string")
+	delim = delim or ','
+	local privs = {}
+	for _, priv in pairs(string.split(str, delim)) do
+		privs[priv:trim()] = true
+	end
+	return privs
+end
+
+function core.privs_to_string(privs, delim)
+	assert(type(privs) == "table")
+	delim = delim or ','
+	local list = {}
+	for priv, bool in pairs(privs) do
+		if bool then
+			list[#list + 1] = priv
+		end
+	end
+	return table.concat(list, delim)
+end
+
+function core.is_nan(number)
+	return number ~= number
+end
+
+--[[ Helper function for parsing an optionally relative number
+of a chat command parameter, using the chat command tilde notation.
+
+Parameters:
+* arg: String snippet containing the number; possible values:
+    * "<number>": return as number
+    * "~<number>": return relative_to + <number>
+    * "~": return relative_to
+    * Anything else will return `nil`
+* relative_to: Number to which the `arg` number might be relative to
+
+Returns:
+A number or `nil`, depending on `arg.
+
+Examples:
+* `core.parse_relative_number("5", 10)` returns 5
+* `core.parse_relative_number("~5", 10)` returns 15
+* `core.parse_relative_number("~", 10)` returns 10
+]]
+function core.parse_relative_number(arg, relative_to)
+	if not arg then
+		return nil
+	elseif arg == "~" then
+		return relative_to
+	elseif string.sub(arg, 1, 1) == "~" then
+		local number = tonumber(string.sub(arg, 2))
+		if not number then
+			return nil
+		end
+		if core.is_nan(number) or number == math.huge or number == -math.huge then
+			return nil
+		end
+		return relative_to + number
+	else
+		local number = tonumber(arg)
+		if core.is_nan(number) or number == math.huge or number == -math.huge then
+			return nil
+		end
+		return number
+	end
+end
+
+--[[ Helper function to parse coordinates that might be relative
+to another position; supports chat command tilde notation.
+Intended to be used in chat command parameter parsing.
+
+Parameters:
+* x, y, z: Parsed x, y, and z coordinates as strings
+* relative_to: Position to which to compare the position
+
+Syntax of x, y and z:
+* "<number>": return as number
+* "~<number>": return <number> + player position on this axis
+* "~": return player position on this axis
+
+Returns: a vector or nil for invalid input or if player does not exist
+]]
+function core.parse_coordinates(x, y, z, relative_to)
+	if not relative_to then
+		x, y, z = tonumber(x), tonumber(y), tonumber(z)
+		return x and y and z and { x = x, y = y, z = z }
+	end
+	local rx = core.parse_relative_number(x, relative_to.x)
+	local ry = core.parse_relative_number(y, relative_to.y)
+	local rz = core.parse_relative_number(z, relative_to.z)
+	return rx and ry and rz and { x = rx, y = ry, z = rz }
+end
