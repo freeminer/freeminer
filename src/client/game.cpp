@@ -4344,7 +4344,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	float update_draw_list_delta = 0.5f;
 
-/* mt dir
+/* mt dir */
 	v3f camera_direction = camera->getDirection();
 	if (!runData.headless_optimize)
 	if (runData.update_draw_list_timer >= update_draw_list_delta
@@ -4352,10 +4352,12 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			|| m_camera_offset_changed
 			|| client->getEnv().getClientMap().needsUpdateDrawList()) {
 		runData.update_draw_list_timer = 0;
-		client->getEnv().getClientMap().updateDrawList();
+		client->getEnv().getClientMap().updateDrawList(dtime, 100);
 		runData.update_draw_list_last_cam_dir = camera_direction;
 	}
-*/
+/* */
+
+/* TODO:
 // fm pos:
 	auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize)
@@ -4393,6 +4395,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			if (allow)
 				runData.update_draw_list_last_cam_pos = camera->getPosition();
 		}
+*/
 
 	if (RenderingEngine::get_shadow_renderer()) {
 		updateShadows();

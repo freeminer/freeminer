@@ -107,7 +107,7 @@ local function create_world_formspec(dialogdata)
 	local current_mg = dialogdata.mg
 	local mapgens = core.get_mapgen_names()
 
-	gamemgr.update_gamelist()
+        pkgmgr.update_gamelist()
 
 	local gameid = core.settings:get("menu_last_game")
 

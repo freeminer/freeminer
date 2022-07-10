@@ -318,8 +318,10 @@ void Client::Stop()
 	if (m_mods_loaded)
 		delete m_script;
 
-	delete m_localserver;
-	delete m_localdb;
+	if(m_localserver)
+		delete m_localserver;
+	if (m_localdb)
+		delete m_localdb;
 }
 
 bool Client::isShutdown()

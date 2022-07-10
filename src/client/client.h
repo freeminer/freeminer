@@ -610,7 +610,7 @@ public:
 	unsigned int overload = 0;
 	void sendDrawControl();
 private:
-	Server *m_localserver;
+	Server *m_localserver = nullptr;
 
 
 	// Storage for mesh data for creating multiple instances of the same mesh
