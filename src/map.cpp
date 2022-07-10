@@ -1268,7 +1268,6 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 	}
 	std::string backend = conf.get("backend");
 	dbase = createDatabase(backend, savedir, conf);
-errorstream << "backend=" << backend << " dbase=" << dbase << std::endl;
 
 	if (conf.exists("readonly_backend")) {
 		std::string readonly_dir = savedir + DIR_DELIM + "readonly";

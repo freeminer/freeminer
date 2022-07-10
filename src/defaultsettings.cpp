@@ -152,8 +152,8 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Map generation
 	settings->setDefault("mg_name", "indev"); // "v6"
-	settings->setDefault("mg_flags", "trees, caves, dungeons"); // "dungeons"
-	settings->setDefault("mgv6_spflags", "jungles, biome_blend, snowbiomes"); // "jungles, snowbiomes"
+	//settings->setDefault("mg_flags", "trees, caves, dungeons"); // "dungeons"
+	//settings->setDefault("mgv6_spflags", "jungles, biome_blend, snowbiomes"); // "jungles, snowbiomes"
 	settings->setDefault("mg_math", ""); // configuration in json struct
 	settings->setDefault("mg_params", ""); // configuration in json struct
 	settings->setDefault("static_spawnpoint_find", "0");

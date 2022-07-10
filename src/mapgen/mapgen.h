@@ -104,6 +104,9 @@ private:
 
 // Order must match the order of 'static MapgenDesc g_reg_mapgens[]' in mapgen.cpp
 enum MapgenType {
+	MAPGEN_INDEV,
+	MAPGEN_MATH,
+
 	MAPGEN_V7,
 	MAPGEN_VALLEYS,
 	MAPGEN_CARPATHIAN,
@@ -112,9 +115,6 @@ enum MapgenType {
 	MAPGEN_FRACTAL,
 	MAPGEN_SINGLENODE,
 	MAPGEN_V6,
-
-	MAPGEN_INDEV,
-	MAPGEN_MATH,
 
 	MAPGEN_INVALID,
 };
