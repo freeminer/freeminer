@@ -36,8 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nameidmapping.h"
 #include "util/numeric.h"
 #include "util/serialize.h"
-//#include "profiler.h" // For TimeTaker
-#include "network/connection.h"
+#include "util/string.h"
 #include "exceptions.h"
 #include "debug.h"
 #include "gamedef.h"
@@ -280,10 +279,21 @@ void TileDef::serialize(std::ostream &os, u16 protocol_version) const
 		// Before f018737, TextureSource::getTextureAverageColor did not handle
 		// missing textures. "[png" can be used as base texture, but is not known
 		// on older clients. Hence use "blank.png" to avoid this problem.
-		if (!name.empty() && name[0] == '[')
-			os << serializeString16("blank.png^" + name);
-		else
+		// To be forward-compatible with future base textures/modifiers,
+		// we apply the same prefix to any texture beginning with [,
+		// except for the ones that are supported on older clients.
+		bool pass_through = true;
+
+		if (!name.empty() && name[0] == '[') {
+			pass_through = str_starts_with(name, "[combine:") ||
+				str_starts_with(name, "[inventorycube{") ||
+				str_starts_with(name, "[lowpart:");
+		}
+
+		if (pass_through)
 			os << serializeString16(name);
+		else
+			os << serializeString16("blank.png^" + name);
 	}
 	animation.serialize(os, version);
 	bool has_scale = scale > 0;
@@ -574,7 +584,12 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	writeU16(os, groups.size());
 	for (const auto &group : groups) {
 		os << serializeString16(group.first);
-		writeS16(os, group.second);
+		if (group.first.compare("bouncy") == 0) {
+			// Clients may choke on negative bouncy value
+			writeS16(os, abs(group.second));
+		} else {
+			writeS16(os, group.second);
+		}
 	}
 	writeU8(os, param_type);
 	writeU8(os, param_type_2);
@@ -925,7 +940,7 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 	bool has_scale = tiledef.scale > 0;
 	bool use_autoscale = tsettings.autoscale_mode == AUTOSCALE_FORCE ||
 		(tsettings.autoscale_mode == AUTOSCALE_ENABLE && !has_scale);
-	if (use_autoscale) {
+	if (use_autoscale && layer->texture) {
 		auto texture_size = layer->texture->getOriginalSize();
 		float base_size = tsettings.node_texture_size;
 		float size = std::fmin(texture_size.Width, texture_size.Height);
@@ -961,6 +976,7 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 	// Animation parameters
 	int frame_count = 1;
 	if (layer->material_flags & MATERIAL_FLAG_ANIMATION) {
+		assert(layer->texture);
 		int frame_length_ms;
 		tiledef.animation.determineParams(layer->texture->getOriginalSize(),
 				&frame_count, &frame_length_ms, NULL);
@@ -971,14 +987,13 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 	if (frame_count == 1) {
 		layer->material_flags &= ~MATERIAL_FLAG_ANIMATION;
 	} else {
-		std::ostringstream os(std::ios::binary);
-		if (!layer->frames) {
+		assert(layer->texture);
+		if (!layer->frames)
 			layer->frames = new std::vector<FrameSpec>();
-		}
 		layer->frames->resize(frame_count);
 
+		std::ostringstream os(std::ios::binary);
 		for (int i = 0; i < frame_count; i++) {
-
 			FrameSpec frame;
 
 			os.str("");

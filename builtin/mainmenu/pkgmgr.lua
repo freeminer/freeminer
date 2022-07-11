@@ -435,9 +435,8 @@ function pkgmgr.enable_mod(this, toset)
 	local toggled_mods = {}
 	local enabled_mods = {}
 	toggle_mod_or_modpack(list, toggled_mods, enabled_mods, toset, mod)
-	toset = mod.enabled -- Update if toggled
 
-	if not toset then
+	if next(enabled_mods) == nil then
 		-- Mod(s) were disabled, so no dependencies need to be enabled
 		table.sort(toggled_mods)
 		core.log("info", "Following mods were disabled: " ..
@@ -447,11 +446,16 @@ function pkgmgr.enable_mod(this, toset)
 
 	-- Enable mods' depends after activation
 
-	-- Make a list of mod ids indexed by their names
+	-- Make a list of mod ids indexed by their names. Among mods with the
+	-- same name, enabled mods take precedence, after which game mods take
+	-- precedence, being last in the mod list.
 	local mod_ids = {}
 	for id, mod2 in pairs(list) do
 		if mod2.type == "mod" and not mod2.is_modpack then
-			mod_ids[mod2.name] = id
+			local prev_id = mod_ids[mod2.name]
+			if not prev_id or not list[prev_id].enabled then
+				mod_ids[mod2.name] = id
+			end
 		end
 	end
 
@@ -480,14 +484,14 @@ function pkgmgr.enable_mod(this, toset)
 				core.log("warning", "Mod dependency \"" .. name ..
 					"\" not found!")
 			else
-				if mod_to_enable.enabled == false then
+				if not mod_to_enable.enabled  then
 					mod_to_enable.enabled = true
 					toggled_mods[#toggled_mods+1] = mod_to_enable.name
 				end
 				-- Push the dependencies of the dependency onto the stack
 				local depends = pkgmgr.get_dependencies(mod_to_enable.path)
 				for i = 1, #depends do
-					if not enabled_mods[name] then
+					if not enabled_mods[depends[i]] then
 						sp = sp+1
 						to_enable[sp] = depends[i]
 					end

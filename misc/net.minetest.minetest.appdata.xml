@@ -62,6 +62,6 @@
 	<translation type="gettext">freeminer</translation>
 	<update_contact></update_contact>
 	<releases>
-		<release date="2022-01-30" version="5.5.0"/>
+		<release date="2022-05-15" version="5.5.1"/>
 	</releases>
 </component>

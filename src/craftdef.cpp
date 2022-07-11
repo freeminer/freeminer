@@ -737,7 +737,8 @@ bool CraftDefinitionCooking::check(const CraftInput &input, IGameDef *gamedef) c
 	}
 
 	// Check the single input item
-	return inputItemMatchesRecipe(input_filtered[0], recipe, gamedef->idef());
+	std::string rec_name = craftGetItemName(recipe, gamedef);
+	return inputItemMatchesRecipe(input_filtered[0], rec_name, gamedef->idef());
 }
 
 CraftOutput CraftDefinitionCooking::getOutput(const CraftInput &input, IGameDef *gamedef) const
@@ -839,7 +840,8 @@ bool CraftDefinitionFuel::check(const CraftInput &input, IGameDef *gamedef) cons
 	}
 
 	// Check the single input item
-	return inputItemMatchesRecipe(input_filtered[0], recipe, gamedef->idef());
+	std::string rec_name = craftGetItemName(recipe, gamedef);
+	return inputItemMatchesRecipe(input_filtered[0], rec_name, gamedef->idef());
 }
 
 CraftOutput CraftDefinitionFuel::getOutput(const CraftInput &input, IGameDef *gamedef) const

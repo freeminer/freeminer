@@ -985,7 +985,10 @@ private:
 
 	bool m_does_lost_focus_pause_game = false;
 
+#if IRRLICHT_VERSION_MT_REVISION < 5
 	int m_reset_HW_buffer_counter = 0;
+#endif
+
 #ifdef HAVE_TOUCHSCREENGUI
 	bool m_cache_hold_aux1 = false;
 #endif
@@ -3498,19 +3501,12 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud, bool show_debug)
 			!runData.btn_down_for_dig,
 			camera_offset);
 
-	if (pointed != runData.pointed_old) {
+	if (pointed != runData.pointed_old)
 		infostream << "Pointing at " << pointed.dump() << std::endl;
 
-/* node debug
-			MapNode nu = client->getEnv().getClientMap().getNodeNoEx(pointed.node_undersurface);
-			MapNode na = client->getEnv().getClientMap().getNodeNoEx(pointed.node_abovesurface);
-			infostream	<< "|| nu0="<<(int)nu.param0<<" nu1"<<(int)nu.param1<<" nu2"<<(int)nu.param1<<"; nam="<<client->getNodeDefManager()->get(nu.getContent()).name
-						<< "|| na0="<<(int)na.param0<<" na1"<<(int)na.param1<<" na2"<<(int)na.param1<<"; nam="<<client->getNodeDefManager()->get(na.getContent()).name
-						<<std::endl;
-*/
-
-		hud->updateSelectionMesh(camera_offset);
-	}
+	// Note that updating the selection mesh every frame is not particularly efficient,
+	// but the halo rendering code is already inefficient so there's no point in optimizing it here
+	hud->updateSelectionMesh(camera_offset);
 
 	// Allow digging again if button is not pressed
 	if (runData.digging_blocked && !isKeyDown(KeyType::DIG))
@@ -4481,6 +4477,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	/*
 		==================== End scene ====================
 	*/
+#if IRRLICHT_VERSION_MT_REVISION < 5
 	if (++m_reset_HW_buffer_counter > 500) {
 		/*
 		  Periodically remove all mesh HW buffers.
@@ -4502,6 +4499,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		driver->removeAllHardwareBuffers();
 		m_reset_HW_buffer_counter = 0;
 	}
+#endif
 
 	/*
 		Draw background for player list
