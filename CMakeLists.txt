@@ -12,7 +12,7 @@ project(freeminer)
 set(PROJECT_NAME_CAPITALIZED "freeminer")
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(GCC_MINIMUM_VERSION "5.1")
 set(CLANG_MINIMUM_VERSION "3.5")
 
@@ -23,6 +23,11 @@ set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 set(VERSION_TWEAK 0) # freeminer
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(BUILD_TYPE_DEBUG 1 CACHE BOOL "")
+else()
+	set(BUILD_TYPE_DEBUG 0 CACHE BOOL "")
+endif()
 
 # Change to false for releases
 set(DEVELOPMENT_BUILD FALSE)
@@ -66,8 +71,7 @@ endif()
 set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
 
 set(WARN_ALL TRUE CACHE BOOL "Enable -Wall for Release build")
-
-set(DEBUG 0 CACHE BOOL "Build with debug symbols and without optimization")
+set(DEBUG ${BUILD_TYPE_DEBUG} CACHE BOOL "Build with debug symbols and without optimization")
 if(DEBUG)
 	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type: Debug or Release" FORCE)
 else()

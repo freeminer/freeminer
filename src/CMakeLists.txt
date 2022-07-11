@@ -11,82 +11,21 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# test compiler capabilities
+set(CMAKE_CXX_STANDARD 17)
 
-if(MSVC)
-else()
-	option(ENABLE_CXX1Y "Try use C++14 features (shared_mutex) *experimental!*" 0)
-	if(ENABLE_CXX1Y)
-		#set(STD_FLAGS "-std=c++1y -stdlib=libstdc++ -lc++")
-		set(STD_FLAGS "-std=c++1y")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(STD_FLAGS "${STD_FLAGS} -lstdc++")
-		endif()
-		set(CMAKE_REQUIRED_FLAGS "${STD_FLAGS}")
-		CHECK_CXX_SOURCE_RUNS("
-			#include <shared_mutex>
-			int main(int argc, char *argv[]) {
-				std::shared_timed_mutex m;
-				std::shared_lock<std::shared_timed_mutex> lock(m);
-				lock.unlock();
-				return 0;
-			}
-			"
-			HAVE_SHARED_MUTEX)
-	else()
-		if(WIN32) # http://forum.freeminer.org/threads/building-errors.182/#post-1855
-			#set(STD_FLAGS "-std=gnu++0x")
-		else()
-			#set(STD_FLAGS "-std=c++0x")
-		endif()
-	endif()
-endif()
+set(HAVE_SHARED_MUTEX 1)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-CHECK_CXX_SOURCE_RUNS("
-	#include <string>
-	thread_local std::string test;
-	int main(int argc, char *argv[]) {
-		test = __LINE__;
-		return 0;
-	}
-	"
-	HAVE_THREAD_LOCAL)
-if(NOT HAVE_THREAD_LOCAL)
-	set(HAVE_THREAD_LOCAL 0)
-endif()
+set(HAVE_THREAD_LOCAL 1)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-
-CHECK_CXX_SOURCE_RUNS("
-	#include <future>
-	int main(int argc, char *argv[]) {
-		std::future<void> updateDrawList_future;
-		bool allow = false;
-		if (updateDrawList_future.valid()) {
-			auto res = updateDrawList_future.wait_for(std::chrono::milliseconds(0));
-			if (res == std::future_status::timeout)
-				allow = false;
-		}
-		if (false)
-			updateDrawList_future = std::async(std::launch::async, [](){ });
-		return 0;
-	}
-	"
-	HAVE_FUTURE)
-if(NOT HAVE_FUTURE)
-	set(HAVE_FUTURE 0)
-endif()
+	set(HAVE_FUTURE 1)
 
 set(CMAKE_REQUIRED_FLAGS "")
 
-if(MSVC)
-	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-else()
-	option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-endif()
+option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
 
 if(ENABLE_THREADS)
 	set(ENABLE_THREADS 1)
@@ -118,10 +57,24 @@ else()
 endif()
 
 
-if(NOT HAVE_SHARED_MUTEX)
-	# avoid empty value in cmake_config.h
-	set(HAVE_SHARED_MUTEX 0)
+message(WARNING "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(USE_DEBUG_HELPERS ON)
 endif()
+
+if (USE_DEBUG_HELPERS)
+    #get_target_property(MAGIC_ENUM_INCLUDE_DIR ch_contrib::magic_enum INTERFACE_INCLUDE_DIRECTORIES)
+    # CMake generator expression will do insane quoting when it encounters special character like quotes, spaces, etc.
+    # Prefixing "SHELL:" will force it to use the original text.
+    #set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${MAGIC_ENUM_INCLUDE_DIR}\" -include \"${ClickHouse_SOURCE_DIR}/base/base/iostream_debug_helpers.h\"")
+    set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${CMAKE_CURRENT_SOURCE_DIR}/debug/\" -include \"${CMAKE_CURRENT_SOURCE_DIR}/debug/iostream_debug_helpers.h\"")
+    #set (INCLUDE_DEBUG_HELPERS "SHELL:-include \"${CMAKE_CURRENT_SOURCE_DIR}/util/iostream_debug_helpers.h\"")
+    # Use generator expression as we don't want to pollute CMAKE_CXX_FLAGS, which will interfere with CMake check system.
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${INCLUDE_DEBUG_HELPERS}>)
+endif ()
+
+
+
 
 # Add custom SemiDebug build mode
 set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall" CACHE STRING
@@ -565,6 +518,9 @@ add_custom_target(GenerateVersion
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(contrib)
+if (USE_DEBUG_HELPERS)
+    add_subdirectory(debug)
+endif()
 
 add_subdirectory(threading)
 add_subdirectory(content)
@@ -625,7 +581,7 @@ if(USE_ENET)
 	message(STATUS "Using enet: ${ENET_INCLUDE_DIR} ${ENET_LIBRARY}")
 endif()
 
-set(FMcommon_SRCS
+set(FMcommon_SRCS ${FMcommon_SRCS}
 	circuit.cpp
 	circuit_element.cpp
 	circuit_element_virtual.cpp
@@ -719,6 +675,7 @@ set(common_SRCS
 	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
 	${UTIL_SRCS}
+	${DEBUG_SRCS}
 )
 
 if(BUILD_UNITTESTS)

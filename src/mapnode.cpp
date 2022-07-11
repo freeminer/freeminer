@@ -689,6 +689,7 @@ s16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 {
 	s16 rest = 0;
 	const ContentFeatures &f = nodemgr->get(*this);
+/*
 	if (f.param_type_2 == CPT2_FLOWINGLIQUID
 			|| f.liquid_type == LIQUID_FLOWING
 			|| f.liquid_type == LIQUID_SOURCE) {
@@ -697,7 +698,10 @@ s16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 			setParam2(0);
 			return 0;
 		}
-		if (level >= LIQUID_LEVEL_SOURCE) {
+		//if (level >= LIQUID_LEVEL_SOURCE) {
+		if (level > f.getMaxLevel(compress)){
+			rest = level - f.getMaxLevel(compress);
+			level = f.getMaxLevel(compress);
 			rest = level - LIQUID_LEVEL_SOURCE;
 			setContent(f.liquid_alternative_source_id);
 			setParam2(0);
@@ -706,7 +710,14 @@ s16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 			setParam2((level & LIQUID_LEVEL_MASK) | (getParam2() & ~LIQUID_LEVEL_MASK));
 		}
 
-   	} else if (f.param_type_2 == CPT2_LEVELED) {
+   	} else 
+*/	
+	if (f.param_type_2 == CPT2_LEVELED
+	        || f.param_type_2 == CPT2_FLOWINGLIQUID
+			|| f.liquid_type == LIQUID_FLOWING
+			|| f.liquid_type == LIQUID_SOURCE
+	
+	) {
 
 		if (level < 0) { // zero means default for a leveled nodebox
 			rest = level;
@@ -725,12 +736,12 @@ s16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 		if (level >= f.getMaxLevel()) {
 			if(f.liquid_type == LIQUID_SOURCE) {
 				level -= f.getMaxLevel();
-			} else if (!f.liquid_alternative_source.empty()) {
-				setContent(nodemgr->getId(f.liquid_alternative_source));
+			} else if (f.liquid_alternative_source_id != CONTENT_IGNORE) {
+				setContent(f.liquid_alternative_source_id);
 				level -= f.getMaxLevel();
 			}
-		} else if (!f.liquid_alternative_flowing.empty()) {
-			setContent(nodemgr->getId(f.liquid_alternative_flowing));
+		} else if (f.liquid_alternative_flowing_id != CONTENT_IGNORE) {
+			setContent(f.liquid_alternative_flowing_id);
 		}
 
 		setParam2((level & LEVELED_MASK) | (getParam2() & ~LEVELED_MASK));

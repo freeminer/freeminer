@@ -1016,7 +1016,7 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 	lua_setfield(L, -2, "rightclickable");
 	lua_pushnumber(L, c.damage_per_second);
 	lua_setfield(L, -2, "damage_per_second");
-	if (c.isLiquid()) {
+	//if (c.isLiquid()) {
 		lua_pushstring(L, liquid_type.c_str());
 		lua_setfield(L, -2, "liquid_type");
 		lua_pushstring(L, c.liquid_alternative_flowing.c_str());
@@ -1029,7 +1029,7 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 		lua_setfield(L, -2, "liquid_renewable");
 		lua_pushnumber(L, c.liquid_range);
 		lua_setfield(L, -2, "liquid_range");
-	}
+	//}
 	lua_pushnumber(L, c.drowning);
 	lua_setfield(L, -2, "drowning");
 	lua_pushboolean(L, c.floodable);

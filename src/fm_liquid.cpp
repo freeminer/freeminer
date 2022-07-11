@@ -72,7 +72,7 @@ const s8 liquid_random_map[4][7] = {
 
 size_t Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 
-	auto *nodemgr = m_gamedef->ndef();
+	const auto *nodemgr = m_nodedef;
 
 	//TimeTaker timer("transformLiquidsReal()");
 	u32 loopcount = 0;
@@ -202,8 +202,7 @@ NEXT_LIQUID:
 				// if this node is not (yet) of a liquid type,
 				// choose the first liquid type we encounter
 				if (liquid_kind_flowing == CONTENT_IGNORE)
-					liquid_kind_flowing = nodemgr->getId(
-					                          f.liquid_alternative_flowing);
+					liquid_kind_flowing = f.liquid_alternative_flowing_id;
 				if (liquid_kind == CONTENT_IGNORE)
 					liquid_kind = nb.content;
 				if (liquid_kind_flowing == CONTENT_IGNORE)
@@ -211,10 +210,7 @@ NEXT_LIQUID:
 				if (melt_kind == CONTENT_IGNORE)
 					melt_kind = nodemgr->getId(f.melt);
 				if (melt_kind_flowing == CONTENT_IGNORE)
-					melt_kind_flowing =
-					    nodemgr->getId(
-					        nodemgr->get(nodemgr->getId(f.melt)
-					                    ).liquid_alternative_flowing);
+					melt_kind_flowing = nodemgr->get(nodemgr->getId(f.melt)).liquid_alternative_flowing_id;
 				if (melt_kind_flowing == CONTENT_IGNORE)
 					melt_kind_flowing = melt_kind;
 				if (nb.content == liquid_kind) {
@@ -231,15 +227,13 @@ NEXT_LIQUID:
 				if (liquid_kind_flowing == CONTENT_IGNORE)
 					liquid_kind_flowing = nb.content;
 				if (liquid_kind == CONTENT_IGNORE)
-					liquid_kind = nodemgr->getId(
-					                  f.liquid_alternative_source);
+					liquid_kind = f.liquid_alternative_source_id;
 				if (liquid_kind == CONTENT_IGNORE)
 					liquid_kind = liquid_kind_flowing;
 				if (melt_kind_flowing == CONTENT_IGNORE)
 					melt_kind_flowing = nodemgr->getId(f.melt);
 				if (melt_kind == CONTENT_IGNORE)
-					melt_kind = nodemgr->getId(nodemgr->get(nodemgr->getId(
-					        f.melt)).liquid_alternative_source);
+					melt_kind = nodemgr->get(nodemgr->getId(f.melt)).liquid_alternative_source_id;
 				if (melt_kind == CONTENT_IGNORE)
 					melt_kind = melt_kind_flowing;
 				if (nb.content == liquid_kind_flowing) {
