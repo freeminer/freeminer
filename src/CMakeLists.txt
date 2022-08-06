@@ -190,31 +190,17 @@ if(ENABLE_SOUND AND BUILD_CLIENT)
 	endif()
 endif()
 
+# TODO: this should be removed one day, we can enable it unconditionally
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
-option(ENABLE_GLES "Enable OpenGL ES support (ARM, android. special irrlicht version needed!)" TRUE)
+option(ENABLE_GLES "Enable extra support code for OpenGL ES" TRUE)
 else()
-option(ENABLE_GLES "Enable OpenGL ES support (ARM, android. special irrlicht version needed!)" FALSE)
+option(ENABLE_GLES "Enable extra support code for OpenGL ES" FALSE)
 mark_as_advanced(ENABLE_GLES)
 endif()
 
 option(ENABLE_TOUCH "Enable Touchscreen support" FALSE)
 if(ENABLE_TOUCH)
 	add_definitions(-DHAVE_TOUCHSCREENGUI)
-endif()
-
-if(BUILD_CLIENT)
-	# transitive dependency from Irrlicht (see longer explanation below)
-	if(NOT WIN32)
-		if(ENABLE_GLES)
-			find_package(OpenGLES2 REQUIRED)
-		else()
-			set(OPENGL_GL_PREFERENCE "LEGACY" CACHE STRING
-				"See CMake Policy CMP0072 for reference. GLVND is broken on some nvidia setups")
-			set(OpenGL_GL_PREFERENCE ${OPENGL_GL_PREFERENCE})
-
-			find_package(OpenGL REQUIRED)
-		endif()
-	endif()
 endif()
 
 if(BUILD_CLIENT)
@@ -251,6 +237,7 @@ if(ENABLE_POSTGRESQL)
 		if(PostgreSQL_INCLUDE_DIR AND PostgreSQL_LIBRARY)
 			set(PostgreSQL_FOUND TRUE)
 			set(PostgreSQL_INCLUDE_DIRS ${PostgreSQL_INCLUDE_DIR})
+			set(PostgreSQL_LIBRARIES ${PostgreSQL_LIBRARY})
 		endif()
 	else()
 		find_package(PostgreSQL)
@@ -530,6 +517,7 @@ add_subdirectory(mapgen)
 add_subdirectory(network)
 add_subdirectory(script)
 add_subdirectory(unittest)
+add_subdirectory(benchmark)
 add_subdirectory(util)
 add_subdirectory(irrlicht_changes)
 add_subdirectory(server)
@@ -682,6 +670,9 @@ if(BUILD_UNITTESTS)
 	set(common_SRCS ${common_SRCS} ${UNITTEST_SRCS})
 endif()
 
+if(BUILD_BENCHMARKS)
+	set(common_SRCS ${common_SRCS} ${BENCHMARK_SRCS})
+endif()
 
 # This gives us the icon and file version information
 if(WIN32)
@@ -734,6 +725,10 @@ if(BUILD_UNITTESTS)
 	set(client_SRCS ${client_SRCS} ${UNITTEST_CLIENT_SRCS})
 endif()
 
+if(BUILD_BENCHMARKS)
+	set(client_SRCS ${client_SRCS} ${BENCHMARK_CLIENT_SRCS})
+endif()
+
 list(SORT client_SRCS)
 
 # Server sources
@@ -752,13 +747,15 @@ endif()
 include_directories(
 	${PROJECT_BINARY_DIR}
 	${PROJECT_SOURCE_DIR}
+	${PROJECT_SOURCE_DIR}/script
+)
+include_directories(SYSTEM
 	${ZLIB_INCLUDE_DIR}
 	${ZSTD_INCLUDE_DIR}
 	${LUA_INCLUDE_DIR}
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${LUA_BIT_INCLUDE_DIR}
-	${PROJECT_SOURCE_DIR}/script
 )
 
 #freeminer includes:
@@ -771,7 +768,7 @@ if(USE_GETTEXT)
 endif()
 
 if(BUILD_CLIENT)
-	include_directories(
+	include_directories(SYSTEM
 		${FREETYPE_INCLUDE_DIRS}
 		${SOUND_INCLUDE_DIRS}
 		${X11_INCLUDE_DIR}
@@ -819,18 +816,6 @@ if(BUILD_CLIENT)
 		)
 	endif()
 
-	if(ENABLE_GLES)
-		target_link_libraries(
-			${PROJECT_NAME}
-			${OPENGLES2_LIBRARIES}
-			${EGL_LIBRARIES}
-		)
-	else()
-		target_link_libraries(
-			${PROJECT_NAME}
-			${OPENGL_LIBRARIES}
-		)
-	endif()
 	if(STATIC_BUILD AND USE_GETTEXT)
 		target_link_libraries(
 			${PROJECT_NAME}
@@ -872,6 +857,9 @@ if(BUILD_CLIENT)
 	endif()
 	if (USE_SPATIAL)
 		target_link_libraries(${PROJECT_NAME} ${SPATIAL_LIBRARY})
+	endif()
+	if(BUILD_BENCHMARKS)
+		target_link_libraries(${PROJECT_NAME} catch2)
 	endif()
 endif(BUILD_CLIENT)
 
@@ -940,6 +928,9 @@ if(BUILD_SERVER)
 		)
 	endif()
 	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
+	if(BUILD_BENCHMARKS)
+		target_link_libraries(${PROJECT_NAME}server catch2)
+	endif()
 endif(BUILD_SERVER)
 
 # Blacklisted locales that don't work.
@@ -1013,16 +1004,15 @@ if(MSVC)
 	endif()
 else()
 	# GCC or compatible compilers such as Clang
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	set(WARNING_FLAGS "-Wall -Wextra")
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-parameter -Wno-implicit-fallthrough")
 	if(WARN_ALL)
-		set(RELEASE_WARNING_FLAGS "-Wall")
+		set(RELEASE_WARNING_FLAGS "${WARNING_FLAGS}")
 	else()
 		set(RELEASE_WARNING_FLAGS "")
 	endif()
 
 	set(OTHER_FLAGS "")
-
-
 
 	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
         if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -1032,9 +1022,6 @@ else()
         endif ()
 	endif ()
 
-	if(CMAKE_CXX_COMPILER_ID MATCHES "(Apple)?Clang")
-		set(WARNING_FLAGS "${WARNING_FLAGS} -Wsign-compare")
-	endif()
 
         # FM: TODO: REMOVE:
 	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
@@ -1048,7 +1035,7 @@ else()
 			# Move text segment below LuaJIT's 47-bit limit (see issue #9367)
 			if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
 				# FreeBSD uses lld, and lld does not support -Ttext-segment, suggesting
-				# --image-base instead. Not sure if it's equivalent change for the purpose 
+				# --image-base instead. Not sure if it's equivalent change for the purpose
 				# but at least if fixes build on FreeBSD/aarch64
 				# XXX: the condition should also be changed to check for lld regardless of
 				# os, bit CMake doesn't have anything like CMAKE_LINKER_IS_LLD yet
@@ -1104,7 +1091,7 @@ else()
 		endif()
 	endif()
 
-	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${WARNING_FLAGS} ${OTHER_FLAGS} -Wall -pipe -funroll-loops")
+	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${OTHER_FLAGS} -pipe -funroll-loops")
 	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
 	else()
@@ -1117,8 +1104,9 @@ else()
 			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MATH_FLAGS}")
 		endif()
 	endif()
-	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
-	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 -Wall ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -g")
+	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 ${WARNING_FLAGS} ${OTHER_FLAGS}")
+	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
@@ -1188,12 +1176,13 @@ if(WIN32 AND NOT STATIC_BUILD)
 		if(LUA_DLL)
 			install(FILES ${LUA_DLL} DESTINATION ${BINDIR})
 		endif()
-		if(BUILD_CLIENT AND IRRLICHT_DLL)
-			install(FILES ${IRRLICHT_DLL} DESTINATION ${BINDIR})
-		endif()
 		if(BUILD_CLIENT AND USE_GETTEXT AND GETTEXT_DLL)
 			install(FILES ${GETTEXT_DLL} DESTINATION ${BINDIR})
 		endif()
+	endif()
+
+	if(BUILD_CLIENT AND IRRLICHT_DLL)
+		install(FILES ${IRRLICHT_DLL} DESTINATION ${BINDIR})
 	endif()
 endif()
 

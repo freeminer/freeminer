@@ -57,23 +57,6 @@ GUIPasswordChange::GUIPasswordChange(gui::IGUIEnvironment* env,
 {
 }
 
-GUIPasswordChange::~GUIPasswordChange()
-{
-	removeChildren();
-}
-
-void GUIPasswordChange::removeChildren()
-{
-	const core::list<gui::IGUIElement *> &children = getChildren();
-	core::list<gui::IGUIElement *> children_copy;
-	for (gui::IGUIElement *i : children) {
-		children_copy.push_back(i);
-	}
-
-	for (gui::IGUIElement *i : children_copy) {
-		i->remove();
-	}
-}
 void GUIPasswordChange::regenerateGui(v2u32 screensize)
 {
 	/*
@@ -84,7 +67,7 @@ void GUIPasswordChange::regenerateGui(v2u32 screensize)
 	/*
 		Remove stuff
 	*/
-	removeChildren();
+	removeAllChildren();
 
 	//const static double gui_scaling = g_settings->getFloat("hud_scaling"); // gui_scaling here or get from pixel ratio
 	/*

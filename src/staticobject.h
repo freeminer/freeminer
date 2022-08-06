@@ -41,7 +41,7 @@ struct StaticObject
 	StaticObject() = default;
 	StaticObject(const ServerActiveObject *s_obj, const v3f &pos_);
 
-	void serialize(std::ostream &os);
+	void serialize(std::ostream &os) const;
 	bool deSerialize(std::istream &is, u8 version);
 };
 

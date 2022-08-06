@@ -83,13 +83,13 @@ stat_value Stat::add(const std::string & key, const std::string & player, stat_v
 }
 
 void Stat::update_time() {
-	auto t = time(NULL);
-	auto tm = localtime_safe(&t);
+	//auto t = time(NULL);
+	const auto tm = mt_localtime(); //localtime_safe(&t);
 	char cs[20];
-	strftime(cs, 20, "%Y_%m", tm);
+	strftime(cs, 20, "%Y_%m", &tm);
 	month = cs;
-	strftime(cs, 20, "%Y_%W", tm);
+	strftime(cs, 20, "%Y_%W", &tm);
 	week = cs;
-	strftime(cs, 20, "%Y_%j", tm);
+	strftime(cs, 20, "%Y_%j", &tm);
 	day = cs;
 }

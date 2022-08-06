@@ -95,9 +95,11 @@ struct SkyboxParams;
 struct SunParams;
 struct MoonParams;
 struct StarParams;
+struct Lighting;
 class ServerThread;
 class ServerModManager;
 class ServerInventoryManager;
+struct PackedValue;
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -120,30 +122,22 @@ struct MediaInfo
 	}
 };
 
-struct ServerSoundParams
+// Combines the pure sound (SimpleSoundSpec) with positional information
+struct ServerPlayingSound
 {
-	enum Type {
-		SSP_LOCAL,
-		SSP_POSITIONAL,
-		SSP_OBJECT
-	} type = SSP_LOCAL;
-	float gain = 1.0f;
-	float fade = 0.0f;
-	float pitch = 1.0f;
-	bool loop = false;
+	SoundLocation type = SoundLocation::Local;
+
+	float gain = 1.0f; // for amplification of the base sound
 	float max_hear_distance = 32 * BS;
 	v3f pos;
 	u16 object = 0;
-	std::string to_player = "";
-	std::string exclude_player = "";
+	std::string to_player;
+	std::string exclude_player;
 
 	v3f getPos(ServerEnvironment *env, bool *pos_exists) const;
-};
 
-struct ServerPlayingSound
-{
-	ServerSoundParams params;
 	SimpleSoundSpec spec;
+
 	std::unordered_set<session_t> clients; // peer ids
 };
 
@@ -196,6 +190,10 @@ public:
 //fm:
 	int AsyncRunMapStep(float dtime, float dedicated_server_step = 0.1, bool async=true);
 	int save(float dtime, float dedicated_server_step = 0.1, bool breakable = false);
+
+    //fmtodo: remove:
+	void DenyAccess(u16 peer_id, const std::string &reason);
+
 
 	void AsyncRunStep( float dtime, bool initial_step=false);
 	u16 Receive(int ms = 10);
@@ -268,8 +266,7 @@ public:
 
 	// Returns -1 if failed, sound handle on success
 	// Envlock
-	s32 playSound(const SimpleSoundSpec &spec, const ServerSoundParams &params,
-			bool ephemeral=false);
+	s32 playSound(ServerPlayingSound &params, bool ephemeral=false);
 	void stopSound(s32 handle);
 	void fadeSound(s32 handle, float step, float gain);
 
@@ -286,7 +283,7 @@ public:
 
 	// Envlock and conlock should be locked when calling this
 	void notifyPlayer(const char *name, const std::string &msg);
-	void notifyPlayers(const std::string &msg);
+	void notifyPlayers(const std::wstring &msg);
 
 	void spawnParticle(const std::string &playername,
 		const ParticleParameters &p);
@@ -326,11 +323,10 @@ public:
 
 	virtual const std::vector<ModSpec> &getMods() const;
 	virtual const ModSpec* getModSpec(const std::string &modname) const;
-	void getModNames(std::vector<std::string> &modlist);
-	std::string getBuiltinLuaPath();
+	static std::string getBuiltinLuaPath();
 	virtual std::string getWorldPath() const { return m_path_world; }
 
-	inline bool isSingleplayer()
+	inline bool isSingleplayer() const
 			{ return m_simple_singleplayer_mode; }
 
 	inline void setAsyncFatalError(const std::string &error)
@@ -368,23 +364,18 @@ public:
 
 	void overrideDayNightRatio(RemotePlayer *player, bool do_override, float brightness);
 
-	// con::PeerHandler implementation.
-	// These queue stuff to be processed by handlePeerChanges().
-	// As of now, these create and remove clients and players.
-	void peerAdded(u16 peer_id);
-	void deletingPeer(u16 peer_id, bool timeout);
+	void setLighting(RemotePlayer *player, const Lighting &lighting);
+
+	void RespawnPlayer(session_t peer_id);
+
+	/* con::PeerHandler implementation. */
+	void peerAdded(session_t peer_id);
+	void deletingPeer(session_t peer_id, bool timeout);
 
 	void DenySudoAccess(session_t peer_id);
-	void DenyAccessVerCompliant(session_t peer_id, u16 proto_ver, AccessDeniedCode reason,
-		const std::string &str_reason = "", bool reconnect = false);
-
-	//fmtodo: remove:
-	void DenyAccess(u16 peer_id, const std::string &reason);
-
 	void DenyAccess(session_t peer_id, AccessDeniedCode reason,
-		const std::string &custom_reason = "");
+		const std::string &custom_reason = "", bool reconnect = false);
 	void acceptAuth(session_t peer_id, bool forSudoMode);
-	void DenyAccess_Legacy(session_t peer_id, const std::wstring &reason);
 	void DisconnectPeer(session_t peer_id);
 	bool getClientConInfo(session_t peer_id, con::rtt_stat_type type, float *retval);
 	bool getClientInfo(session_t peer_id, ClientInfo &ret);
@@ -392,7 +383,7 @@ public:
 	void printToConsoleOnly(const std::string &text);
 
 	void HandlePlayerHPChange(PlayerSAO *sao, const PlayerHPChangeReason &reason);
-	void SendPlayerHP(PlayerSAO *sao);
+	void SendPlayerHP(PlayerSAO *sao, bool effect);
 	void SendPlayerBreath(PlayerSAO *sao);
 	void SendInventory(PlayerSAO *playerSAO, bool incremental);
 	void SendMovePlayer(session_t peer_id);
@@ -427,6 +418,12 @@ public:
 	static bool migrateModStorageDatabase(const GameParams &game_params,
 			const Settings &cmd_args);
 
+	// Lua files registered for init of async env, pair of modname + path
+	std::vector<std::pair<std::string, std::string>> m_async_init_files;
+
+	// Data transferred into async envs at init time
+	std::unique_ptr<PackedValue> m_async_globals_data;
+
 	// Bind address
 	Address m_bind_addr;
 
@@ -460,10 +457,19 @@ private:
 		std::unordered_set<session_t> waiting_players;
 	};
 
+	// The standard library does not implement std::hash for pairs so we have this:
+	struct SBCHash {
+		size_t operator() (const std::pair<v3s16, u16> &p) const {
+			return std::hash<v3s16>()(p.first) ^ p.second;
+		}
+	};
+
+	typedef std::unordered_map<std::pair<v3s16, u16>, std::string, SBCHash> SerializedBlockCache;
+
 	void init();
 
 	void SendMovement(session_t peer_id);
-	void SendHP(session_t peer_id, u16 hp);
+	void SendHP(session_t peer_id, u16 hp, bool effect);
 	void SendBreath(session_t peer_id, u16 breath);
 	void SendAccessDenied(session_t peer_id, AccessDeniedCode reason,
 		const std::string &custom_reason, bool reconnect = false);
@@ -501,6 +507,7 @@ private:
 	void SendSetStars(session_t peer_id, const StarParams &params);
 	void SendCloudParams(session_t peer_id, const CloudParams &params);
 	void SendOverrideDayNightRatio(session_t peer_id, bool do_override, float ratio);
+	void SendSetLighting(session_t peer_id, const Lighting &lighting);
 	void broadcastModChannelMessage(const std::string &channel,
 			const std::string &message, session_t from_peer);
 
@@ -516,11 +523,13 @@ private:
 			std::unordered_set<u16> *far_players = nullptr,
 			float far_d_nodes = 100, bool remove_metadata = true);
 
-	void sendMetadataChanged(const std::list<v3s16> &meta_updates,
+	void sendMetadataChanged(const std::unordered_set<v3s16> &positions,
 			float far_d_nodes = 100);
 
 	// Environment and Connection must be locked when called
-	void SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver, u16 net_proto_version);
+	// `cache` may only be very short lived! (invalidation not handeled)
+	void SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
+		u16 net_proto_version, SerializedBlockCache *cache = nullptr);
 
 	// Sends blocks to clients (locks env and con on its own)
 public:
@@ -566,7 +575,6 @@ private:
 	};
 
 	void HandlePlayerDeath(PlayerSAO* sao, const PlayerHPChangeReason &reason);
-	void RespawnPlayer(session_t peer_id);
 	void DeleteClient(session_t peer_id, ClientDeletionReason reason);
 	void UpdateCrafting(RemotePlayer *player);
 	bool checkInteractDistance(RemotePlayer *player, const f32 d, const std::string &what);
@@ -798,11 +806,11 @@ public:
 	MetricCounterPtr m_uptime_counter;
 	MetricGaugePtr m_player_gauge;
 	MetricGaugePtr m_timeofday_gauge;
-	// current server step lag
 	MetricGaugePtr m_lag_gauge;
-	MetricCounterPtr m_aom_buffer_counter;
+	MetricCounterPtr m_aom_buffer_counter[2]; // [0] = rel, [1] = unrel
 	MetricCounterPtr m_packet_recv_counter;
 	MetricCounterPtr m_packet_recv_processed_counter;
+	MetricCounterPtr m_map_edit_event_counter;
 };
 
 /*

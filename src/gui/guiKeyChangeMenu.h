@@ -49,7 +49,6 @@ public:
 			IMenuManager *menumgr, ISimpleTextureSource *tsrc);
 	~GUIKeyChangeMenu();
 
-	void removeChildren();
 	/*
 	 Remove and re-add (or reposition) stuff
 	 */

@@ -106,7 +106,7 @@ public:
 		ServerMap *map = &env->getServerMap();
 		auto *ndef = env->getGameDef()->ndef();
 
-		float heat = map->updateBlockHeat(env, p);
+		auto heat = map->updateBlockHeat(env, p);
 		//heater = rare
 		content_t c = map->getNodeTry(p - v3POS(0,  -1, 0 )).getContent(); // top
 		//more chance to freeze if air at top
@@ -144,7 +144,7 @@ public:
 			}
 			if (allow) {
 				n.freeze_melt(ndef, -1);
-				map->setNode(p, n, 2);
+				map->setNode(p, n);
 			}
 		}
 	}
@@ -181,14 +181,14 @@ public:
 		content_t c = map->getNodeTry(p - v3POS(0,  -1, 0 )).getContent(); // top
 		int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 		if (heat >= melt + 1 && (activate || heat >= melt + 40 ||
-		                         ((myrand_range(heat, melt + 40)) >= (c == CONTENT_AIR ? melt + 10 : melt + 20)))) {
+		                         ((myrand_range(heat, (float)melt + 40)) >= (c == CONTENT_AIR ? melt + 10 : melt + 20)))) {
 			if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE) {
 				c = map->getNodeTry(p - v3POS(0,  1, 0 )).getContent(); // below
 				if (c == CONTENT_AIR || c == CONTENT_IGNORE)
 					return; // do not melt when falling (dirt->dirt_with_grass on air)
 			}
 			n.freeze_melt(ndef, +1);
-			map->setNode(p, n, 2);
+			map->setNode(p, n);
 			env->nodeUpdate(p, 2); //enable after making FAST nodeupdate
 		}
 	}
@@ -225,7 +225,7 @@ public:
 		int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 		if (hot > melt) {
 			n.freeze_melt(ndef, +1);
-			map->setNode(p, n, 2);
+			map->setNode(p, n);
 			env->nodeUpdate(p, 2);
 		}
 	}
@@ -261,7 +261,7 @@ public:
 		int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
 		if (cold < freeze) {
 			n.freeze_melt(ndef, -1);
-			map->setNode(p, n, 2);
+			map->setNode(p, n);
 		}
 	}
 };

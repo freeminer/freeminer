@@ -86,7 +86,7 @@ void Database_LevelDB::loadBlock(const v3s16 &pos, std::string *block)
 		i64tos(getBlockAsInteger(pos)), block);
 
 	if (!status.ok())
-		block->clear();	
+		block->clear();
 }
 
 bool Database_LevelDB::deleteBlock(const v3s16 &pos)
@@ -94,7 +94,7 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 	auto status = m_database->Delete(leveldb::WriteOptions(), getBlockAsString(pos));
 	if (!status.ok()) {
 		warningstream << "WARNING: deleteBlock: LevelDB error deleting block "
-			<< (pos) << ": " << status.ToString() << std::endl;
+			<< PP(pos) << ": " << status.ToString() << std::endl;
 		return false;
 	}
 

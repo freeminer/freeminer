@@ -193,7 +193,7 @@ public:
 				auto time_start = porting::getTimeMs();
 				m_server->getEnv().getMap().getBlockCacheFlush();
 				std::map<v3s16, MapBlock*> modified_blocks; // not used by fm
-				m_server->getEnv().getMap().transformLiquids(modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
+				m_server->getEnv().getServerMap().transformLiquids(modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
 				auto time_spend = porting::getTimeMs() - time_start;
 				std::this_thread::sleep_for(std::chrono::milliseconds(time_spend > 300 ? 1 : 300 - time_spend));
 
@@ -306,7 +306,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 		//MutexAutoLock lock(m_env_mutex);
 		// Run Map's timers and unload unused data
 		ScopeProfiler sp(g_profiler, "Server: map timer and unload");
-		if(m_env->getMap().timerUpdate(m_uptime_counter->get(), g_settings->getFloat("server_unload_unused_data_timeout"), -1, max_cycle_ms)) {
+		if(m_env->getMap().timerUpdate(m_uptime_counter->get(), g_settings->getFloat("server_unload_unused_data_timeout"), -1, {}, max_cycle_ms)) {
 			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 			++ret;
 		}
@@ -332,7 +332,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 
 				// not all liquid was processed per step, forcing on next step
 				std::map<v3s16, MapBlock*> modified_blocks;
-				if (m_env->getMap().transformLiquids(modified_blocks, m_env, this, max_cycle_ms) > 0) {
+				if (m_env->getServerMap().transformLiquids(modified_blocks, m_env, this, max_cycle_ms) > 0) {
 					m_liquid_transform_timer = m_liquid_transform_every /*  *0.8  */;
 					++ret;
 				}

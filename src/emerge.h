@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/networkprotocol.h"
 #include "irr_v3d.h"
 #include "util/container.h"
+#include "util/metricsbackend.h"
 #include "mapgen/mapgen.h" // for MapgenParams
 #include "map.h"
 
@@ -71,6 +72,14 @@ enum EmergeAction {
 	EMERGE_FROM_MEMORY,
 	EMERGE_FROM_DISK,
 	EMERGE_GENERATED,
+};
+
+const static std::string emergeActionStrs[] = {
+	"cancelled",
+	"errored",
+	"from_memory",
+	"from_disk",
+	"generated",
 };
 
 // Callback
@@ -146,7 +155,7 @@ public:
 	MapSettingsManager *map_settings_mgr;
 
 	// Methods
-	EmergeManager(Server *server);
+	EmergeManager(Server *server, MetricsBackend *mb);
 	~EmergeManager();
 	DISABLE_CLASS_COPY(EmergeManager);
 
@@ -206,6 +215,9 @@ private:
 	u32 m_qlimit_diskonly;
 	u32 m_qlimit_generate;
 
+	// Emerge metrics
+	MetricCounterPtr m_completed_emerge_counter[5];
+
 	// Managers of various map generation-related components
 	// Note that each Mapgen gets a copy(!) of these to work with
 	BiomeGen *biomegen;
@@ -228,6 +240,8 @@ private:
 		bool *entry_already_exists);
 
 	bool popBlockEmergeData(v3s16 pos, BlockEmergeData *bedata);
+
+	void reportCompletedEmerge(EmergeAction action);
 
 	friend class EmergeThread;
 };

@@ -41,9 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "mesh.h"
 #include "nodedef.h"
-#include "serialization.h" // For decompressZlib
 #include "settings.h"
-#include "sound.h"
 #include "tool.h"
 #include "wieldmesh.h"
 #include <algorithm>
@@ -439,7 +437,7 @@ const v3f GenericCAO::getPosition() const
 	return m_position;
 }
 
-const bool GenericCAO::isImmortal()
+bool GenericCAO::isImmortal() const
 {
 	return itemgroup_get(getGroups(), "immortal");
 }
@@ -751,9 +749,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 		m_meshnode = m_smgr->addMeshSceneNode(mesh, m_matrixnode);
 		m_meshnode->grab();
 		mesh->drop();
-		// Set it to use the materials of the meshbuffers directly.
-		// This is needed for changing the texture in the future
-		m_meshnode->setReadOnlyMaterials(true);
 	} else if (m_prop.visual == "cube") {
 		grabMatrixNode();
 		scene::IMesh *mesh = createCubeMesh(v3f(BS,BS,BS));
@@ -893,10 +888,11 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 
 void GenericCAO::updateLight(u32 day_night_ratio)
 {
-	if (m_glow < 0)
+	if (m_prop.glow < 0)
 		return;
 
-	u8 light_at_pos = 0;
+	u16 light_at_pos = 0;
+	u8 light_at_pos_intensity = 0;
 	bool pos_ok = false;
 
 	v3s16 pos[3];
@@ -905,28 +901,33 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 		bool this_ok;
 		MapNode n = m_env->getMap().getNode(pos[i], &this_ok);
 		if (this_ok) {
-			u8 this_light = n.getLightBlend(day_night_ratio, m_client->ndef());
-			light_at_pos = MYMAX(light_at_pos, this_light);
+			u16 this_light = getInteriorLight(n, 0, m_client->ndef());
+			u8 this_light_intensity = MYMAX(this_light & 0xFF, this_light >> 8);
+			if (this_light_intensity > light_at_pos_intensity) {
+				light_at_pos = this_light;
+				light_at_pos_intensity = this_light_intensity;
+			}
 			pos_ok = true;
 		}
 	}
 	if (!pos_ok)
-		light_at_pos = blend_light(day_night_ratio, LIGHT_SUN, 0);
+		light_at_pos = LIGHT_SUN;
 
-	u8 light = decode_light(light_at_pos + m_glow);
+	video::SColor light = encode_light(light_at_pos, m_prop.glow);
+	if (!m_enable_shaders)
+		final_color_blend(&light, light_at_pos, day_night_ratio);
+
 	if (light != m_last_light) {
 		m_last_light = light;
 		setNodeLight(light);
 	}
 }
 
-void GenericCAO::setNodeLight(u8 light)
+void GenericCAO::setNodeLight(const video::SColor &light_color)
 {
-	video::SColor color(255, light, light, light);
-
 	if (m_prop.visual == "wielditem" || m_prop.visual == "item") {
 		if (m_wield_meshnode)
-			m_wield_meshnode->setNodeLightColor(color);
+			m_wield_meshnode->setNodeLightColor(light_color);
 		return;
 	}
 
@@ -934,12 +935,8 @@ void GenericCAO::setNodeLight(u8 light)
 		if (m_prop.visual == "upright_sprite") {
 			if (!m_meshnode)
 				return;
-
-			scene::IMesh *mesh = m_meshnode->getMesh();
-			for (u32 i = 0; i < mesh->getMeshBufferCount(); ++i) {
-				scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
-				buf->getMaterial().EmissiveColor = color;
-			}
+			for (u32 i = 0; i < m_meshnode->getMaterialCount(); ++i)
+				m_meshnode->getMaterial(i).EmissiveColor = light_color;
 		} else {
 			scene::ISceneNode *node = getSceneNode();
 			if (!node)
@@ -947,16 +944,16 @@ void GenericCAO::setNodeLight(u8 light)
 
 			for (u32 i = 0; i < node->getMaterialCount(); ++i) {
 				video::SMaterial &material = node->getMaterial(i);
-				material.EmissiveColor = color;
+				material.EmissiveColor = light_color;
 			}
 		}
 	} else {
 		if (m_meshnode) {
-			setMeshColor(m_meshnode->getMesh(), color);
+			setMeshColor(m_meshnode->getMesh(), light_color);
 		} else if (m_animated_meshnode) {
-			setAnimatedMeshColor(m_animated_meshnode, color);
+			setAnimatedMeshColor(m_animated_meshnode, light_color);
 		} else if (m_spritenode) {
-			m_spritenode->setColor(color);
+			m_spritenode->setColor(light_color);
 		}
 	}
 }
@@ -1212,7 +1209,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 				// Reduce footstep gain, as non-local-player footsteps are
 				// somehow louder.
 				spec.gain *= 0.6f;
-				m_client->sound()->playSoundAt(spec, false, getPosition());
+				m_client->sound()->playSoundAt(spec, getPosition());
 			}
 		}
 	}
@@ -1237,7 +1234,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		}
 	}
 
-	if (!getParent() && node && fabs(m_prop.automatic_rotate) > 0.001f) {
+	if (node && fabs(m_prop.automatic_rotate) > 0.001f) {
 		// This is the child node's rotation. It is only used for automatic_rotate.
 		v3f local_rot = node->getRotation();
 		local_rot.Y = modulo360f(local_rot.Y - dtime * core::RADTODEG *
@@ -1365,7 +1362,6 @@ void GenericCAO::updateTextures(std::string mod)
 
 	m_previous_texture_modifier = m_current_texture_modifier;
 	m_current_texture_modifier = mod;
-	m_glow = m_prop.glow;
 
 	if (m_spritenode) {
 		if (m_prop.visual == "sprite") {
@@ -1486,22 +1482,22 @@ void GenericCAO::updateTextures(std::string mod)
 				if (!m_prop.textures.empty())
 					tname = m_prop.textures[0];
 				tname += mod;
-				scene::IMeshBuffer *buf = mesh->getMeshBuffer(0);
-				buf->getMaterial().setTexture(0,
+				auto& material = m_meshnode->getMaterial(0);
+				material.setTexture(0,
 						tsrc->getTextureForMesh(tname));
 
 				// This allows setting per-material colors. However, until a real lighting
 				// system is added, the code below will have no effect. Once MineTest
 				// has directional lighting, it should work automatically.
 				if(!m_prop.colors.empty()) {
-					buf->getMaterial().AmbientColor = m_prop.colors[0];
-					buf->getMaterial().DiffuseColor = m_prop.colors[0];
-					buf->getMaterial().SpecularColor = m_prop.colors[0];
+					material.AmbientColor = m_prop.colors[0];
+					material.DiffuseColor = m_prop.colors[0];
+					material.SpecularColor = m_prop.colors[0];
 				}
 
-				buf->getMaterial().setFlag(video::EMF_TRILINEAR_FILTER, use_trilinear_filter);
-				buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, use_bilinear_filter);
-				buf->getMaterial().setFlag(video::EMF_ANISOTROPIC_FILTER, use_anisotropic_filter);
+				material.setFlag(video::EMF_TRILINEAR_FILTER, use_trilinear_filter);
+				material.setFlag(video::EMF_BILINEAR_FILTER, use_bilinear_filter);
+				material.setFlag(video::EMF_ANISOTROPIC_FILTER, use_anisotropic_filter);
 			}
 			{
 				//std::string tname = "no_texture.png";
@@ -1511,29 +1507,29 @@ void GenericCAO::updateTextures(std::string mod)
 				else if (!m_prop.textures.empty())
 					tname = m_prop.textures[0];
 				tname += mod;
-				scene::IMeshBuffer *buf = mesh->getMeshBuffer(1);
-				buf->getMaterial().setTexture(0,
+				auto& material = m_meshnode->getMaterial(1);
+				material.setTexture(0,
 						tsrc->getTextureForMesh(tname));
 
 				// This allows setting per-material colors. However, until a real lighting
 				// system is added, the code below will have no effect. Once MineTest
 				// has directional lighting, it should work automatically.
 				if (m_prop.colors.size() >= 2) {
-					buf->getMaterial().AmbientColor = m_prop.colors[1];
-					buf->getMaterial().DiffuseColor = m_prop.colors[1];
-					buf->getMaterial().SpecularColor = m_prop.colors[1];
+					material.AmbientColor = m_prop.colors[1];
+					material.DiffuseColor = m_prop.colors[1];
+					material.SpecularColor = m_prop.colors[1];
 				} else if (!m_prop.colors.empty()) {
-					buf->getMaterial().AmbientColor = m_prop.colors[0];
-					buf->getMaterial().DiffuseColor = m_prop.colors[0];
-					buf->getMaterial().SpecularColor = m_prop.colors[0];
+					material.AmbientColor = m_prop.colors[0];
+					material.DiffuseColor = m_prop.colors[0];
+					material.SpecularColor = m_prop.colors[0];
 				}
 
-				buf->getMaterial().setFlag(video::EMF_TRILINEAR_FILTER, use_trilinear_filter);
-				buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, use_bilinear_filter);
-				buf->getMaterial().setFlag(video::EMF_ANISOTROPIC_FILTER, use_anisotropic_filter);
+				material.setFlag(video::EMF_TRILINEAR_FILTER, use_trilinear_filter);
+				material.setFlag(video::EMF_BILINEAR_FILTER, use_bilinear_filter);
+				material.setFlag(video::EMF_ANISOTROPIC_FILTER, use_anisotropic_filter);
 			}
 			// Set mesh color (only if lighting is disabled)
-			if (!m_prop.colors.empty() && m_glow < 0)
+			if (!m_prop.colors.empty() && m_prop.glow < 0)
 				setMeshColor(mesh, m_prop.colors[0]);
 		}
 	}
@@ -2010,19 +2006,16 @@ void GenericCAO::updateMeshCulling()
 
 	const bool hidden = m_client->getCamera()->getCameraMode() == CAMERA_MODE_FIRST;
 
-	if (m_meshnode && m_prop.visual == "upright_sprite") {
-		u32 buffers = m_meshnode->getMesh()->getMeshBufferCount();
-		for (u32 i = 0; i < buffers; i++) {
-			video::SMaterial &mat = m_meshnode->getMesh()->getMeshBuffer(i)->getMaterial();
-			// upright sprite has no backface culling
-			mat.setFlag(video::EMF_FRONT_FACE_CULLING, hidden);
-		}
-		return;
-	}
-
 	scene::ISceneNode *node = getSceneNode();
+
 	if (!node)
 		return;
+
+	if (m_prop.visual == "upright_sprite") {
+		// upright sprite has no backface culling
+		node->setMaterialFlag(video::EMF_FRONT_FACE_CULLING, hidden);
+		return;
+	}
 
 	if (hidden) {
 		// Hide the mesh by culling both front and

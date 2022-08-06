@@ -339,12 +339,9 @@ void Map::copy_27_blocks_to_vm(MapBlock * block, VoxelManipulator & vmanip) {
 }
 
 
-
-
-u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
-                     unsigned int max_cycle_ms,
-                     std::vector<v3POS> *unloaded_blocks) {
-	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
+u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
+                     std::vector<v3s16> *unloaded_blocks, unsigned int max_cycle_ms) {
+	bool save_before_unloading = maySaveBlocks();
 
 	// Profile modified reasons
 	Profiler modprofiler;
@@ -453,7 +450,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, u32 max_loaded_blocks,
 		m_blocks_update_last = 0;
 
 	for (auto & block : blocks_delete)
-		this->deleteBlock(block);
+		this->deleteBlock(block->getPos());
 
 	// Finally delete the empty sectors
 

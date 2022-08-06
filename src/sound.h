@@ -40,30 +40,29 @@ enum {
 	SOUNDSPEC_FADE
 };
 
+
+// This class describes the basic sound information for playback.
+// Positional handling is done separately.
+
 struct SimpleSoundSpec
 {
 	SimpleSoundSpec(const std::string &name = "", float gain = 1.0f,
-			float fade = 0.0f, float pitch = 1.0f) :
-			name(name),
-			gain(gain), fade(fade), pitch(pitch)
+			bool loop = false, float fade = 0.0f, float pitch = 1.0f) :
+			name(name), gain(gain), fade(fade), pitch(pitch), loop(loop)
 	{
 	}
 
 	bool exists() const { return !name.empty(); }
 
-	// Take cf_version from ContentFeatures::serialize to
-	// keep in sync with item definitions
-	void serialize(std::ostream &os, u8 cf_version) const
+	void serialize(std::ostream &os, u16 protocol_version) const
 	{
 		os << serializeString16(name);
 		writeF32(os, gain);
 		writeF32(os, pitch);
 		writeF32(os, fade);
-		// if (cf_version < ?)
-		//     return;
 	}
 
-	void deSerialize(std::istream &is, u8 cf_version)
+	void deSerialize(std::istream &is, u16 protocol_version)
 	{
 		name = deSerializeString16(is);
 		gain = readF32(is);
@@ -92,4 +91,16 @@ struct SimpleSoundSpec
 		packet[SOUNDSPEC_FADE].convert(fade);
 	}
 
+
+
+
+	bool loop = false;
+};
+
+
+// The order must not be changed. This is sent over the network.
+enum class SoundLocation : u8 {
+	Local,
+	Position,
+	Object
 };

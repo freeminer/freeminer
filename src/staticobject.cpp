@@ -32,7 +32,7 @@ StaticObject::StaticObject(const ServerActiveObject *s_obj, const v3f &pos_):
 	s_obj->getStaticData(&data);
 }
 
-void StaticObject::serialize(std::ostream &os)
+void StaticObject::serialize(std::ostream &os) const
 {
 	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
 		errorstream << "serialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
@@ -41,7 +41,7 @@ void StaticObject::serialize(std::ostream &os)
 	// type
 	writeU8(os, type);
 	// pos
-	writeV3F1000(os, pos);
+	writeV3F1000(os, clampToF1000(pos));
 	// data
 	os<<serializeString16(data);
 }

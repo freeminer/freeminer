@@ -165,7 +165,7 @@ void ServerEnvironment::contrib_lookupitemtogather(RemotePlayer* player, v3f pla
 				SimpleSoundSpec spec;
 				spec.name = "item_drop_pickup";
 
-				ServerSoundParams params;
+				ServerPlayingSound params;
 				params.gain = 0.4f;
 				params.to_player = player->getName();
 

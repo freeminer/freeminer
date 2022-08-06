@@ -12,14 +12,14 @@ project(freeminer)
 set(PROJECT_NAME_CAPITALIZED "freeminer")
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(GCC_MINIMUM_VERSION "5.1")
 set(CLANG_MINIMUM_VERSION "3.5")
 
 # Also remember to set PROTOCOL_VERSION in network/networkprotocol.h when releasing
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 5)
-set(VERSION_PATCH 1)
+set(VERSION_MINOR 6)
+set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 set(VERSION_TWEAK 0) # freeminer
@@ -69,6 +69,7 @@ else()
 endif()
 
 set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
+set(BUILD_BENCHMARKS FALSE CACHE BOOL "Build benchmarks")
 
 set(WARN_ALL TRUE CACHE BOOL "Enable -Wall for Release build")
 set(DEBUG ${BUILD_TYPE_DEBUG} CACHE BOOL "Build with debug symbols and without optimization")
@@ -80,6 +81,9 @@ endif()
 MARK_AS_ADVANCED(CMAKE_BUILD_TYPE)
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL
+	"Whether to enable update checks by default")
+
 # Included stuff
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -90,7 +94,7 @@ if(NOT "${IRRLICHTMT_BUILD_DIR}" STREQUAL "")
 	find_package(IrrlichtMt QUIET
 		PATHS "${IRRLICHTMT_BUILD_DIR}"
 		NO_DEFAULT_PATH
-)
+	)
 
 	if(NOT TARGET IrrlichtMt::IrrlichtMt)
 		# find_package() searches certain subdirectories. ${PATH}/cmake is not
@@ -98,7 +102,6 @@ if(NOT "${IRRLICHTMT_BUILD_DIR}" STREQUAL "")
 		# IrrlichtMtConfig.cmake
 		message(FATAL_ERROR "Could not find IrrlichtMtConfig.cmake in ${IRRLICHTMT_BUILD_DIR}/cmake.")
 	endif()
-# This is done here so that relative search paths are more reasonable
 elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt")
 	message(STATUS "Using user-provided IrrlichtMt at subdirectory 'lib/irrlichtmt'")
 	if(BUILD_CLIENT)
@@ -128,9 +131,9 @@ else()
 
 		include(MinetestFindIrrlichtHeaders)
 		if(NOT IRRLICHT_INCLUDE_DIR)
-			message(FATAL_ERROR "Irrlicht or IrrlichtMt headers are required to build the server, but none found.\n${explanation_msg}")
+			message(FATAL_ERROR "IrrlichtMt headers are required to build the server, but none found.\n${explanation_msg}")
 		endif()
-		message(STATUS "Found Irrlicht headers: ${IRRLICHT_INCLUDE_DIR}")
+		message(STATUS "Found IrrlichtMt headers: ${IRRLICHT_INCLUDE_DIR}")
 		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
 		# Note that we can't use target_include_directories() since that doesn't work for IMPORTED targets before CMake 3.11
 		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
@@ -138,8 +141,20 @@ else()
 	endif()
 endif()
 
-if(TARGET IrrlichtMt::IrrlichtMt)
+if(BUILD_CLIENT AND TARGET IrrlichtMt::IrrlichtMt)
+	# retrieve version somehow
+	if(NOT IrrlichtMt_VERSION)
+		get_target_property(IrrlichtMt_VERSION IrrlichtMt VERSION)
+	endif()
 	message(STATUS "Found IrrlichtMt ${IrrlichtMt_VERSION}")
+
+	set(TARGET_VER_S 1.9.0mt7)
+	string(REPLACE "mt" "." TARGET_VER ${TARGET_VER_S})
+	if(IrrlichtMt_VERSION VERSION_LESS ${TARGET_VER})
+		message(FATAL_ERROR "At least IrrlichtMt ${TARGET_VER_S} is required to build")
+	elseif(NOT DEVELOPMENT_BUILD AND IrrlichtMt_VERSION VERSION_GREATER ${TARGET_VER})
+		message(FATAL_ERROR "IrrlichtMt ${TARGET_VER_S} is required to build")
+	endif()
 endif()
 endif()
 
@@ -300,6 +315,10 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "(Apple)?Clang")
 		message(FATAL_ERROR "Insufficient clang version, found ${CMAKE_CXX_COMPILER_VERSION}. "
 			"Version ${CLANG_MINIMUM_VERSION} or higher is required.")
 	endif()
+endif()
+
+if(BUILD_BENCHMARKS)
+	add_subdirectory(lib/catch2)
 endif()
 
 # Subdirectories

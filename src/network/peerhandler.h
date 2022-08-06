@@ -47,13 +47,13 @@ public:
 		This is called after the Peer has been inserted into the
 		Connection's peer container.
 	*/
-	virtual void peerAdded(u16 peer_id) = 0;
+	virtual void peerAdded(session_t peer_id) = 0;
 
 	/*
 		This is called before the Peer has been removed from the
 		Connection's peer container.
 	*/
-	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
+	virtual void deletingPeer(session_t peer_id, bool timeout) = 0;
 };
 
 enum PeerChangeType : u8

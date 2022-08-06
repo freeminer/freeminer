@@ -18,7 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef LOG_TYPES_HEADER
 #define LOG_TYPES_HEADER
 
-#include "log.h" //for replacing log.h to log_types.h in includes
+//#include "log.h" //for replacing log.h to log_types.h in includes
 
 #include "irr_v2d.h"
 #include "irr_v3d.h"

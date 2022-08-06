@@ -35,8 +35,15 @@ RenderingCore::RenderingCore(IrrlichtDevice *_device, Client *_client, Hud *_hud
 	screensize = driver->getScreenSize();
 	virtual_size = screensize;
 
+	// disable if unsupported
+	if (g_settings->getBool("enable_dynamic_shadows") && (
+		g_settings->get("video_driver") != "opengl" ||
+		!g_settings->getBool("enable_shaders"))) {
+		g_settings->setBool("enable_dynamic_shadows", false);
+	}
+
 	if (g_settings->getBool("enable_shaders") &&
-			false && g_settings->getBool("enable_dynamic_shadows")) {
+			g_settings->getBool("enable_dynamic_shadows")) {
 		shadow_renderer = new ShadowRenderer(device, client);
 	}
 }
@@ -76,8 +83,11 @@ void RenderingCore::draw(video::SColor _skycolor, bool _show_hud, bool _show_min
 	draw_wield_tool = _draw_wield_tool;
 	draw_crosshair = _draw_crosshair;
 
-	if (shadow_renderer)
+	if (shadow_renderer) {
+		// This is necessary to render shadows for animations correctly
+		smgr->getRootSceneNode()->OnAnimate(device->getTimer()->getTime());
 		shadow_renderer->update();
+	}
 
 	beforeDraw();
 	drawAll();
@@ -103,7 +113,7 @@ void RenderingCore::drawHUD()
 	if (show_hud) {
 		if (draw_crosshair)
 			hud->drawCrosshair();
-	
+
 		hud->drawHotbar(client->getEnv().getLocalPlayer()->getWieldIndex());
 		hud->drawLuaElements(camera->getOffset());
 		camera->drawNametags();

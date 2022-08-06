@@ -72,6 +72,7 @@ struct StarParams
 	u32 count;
 	video::SColor starcolor;
 	f32 scale;
+	f32 day_opacity;
 };
 
 struct CloudParams
@@ -147,6 +148,7 @@ public:
 		stars.count = 1000;
 		stars.starcolor = video::SColor(105, 235, 235, 255);
 		stars.scale = 1;
+		stars.day_opacity = 0;
 		return stars;
 	}
 

@@ -114,6 +114,44 @@ void Map::dispatchEvent(const MapEditEvent &event)
 	}
 }
 
+/*
+MapSector * Map::getSectorNoGenerateNoLock(v2s16 p)
+{
+	if(m_sector_cache != NULL && p == m_sector_cache_p){
+		MapSector * sector = m_sector_cache;
+		return sector;
+	}
+
+	auto n = m_sectors.find(p);
+
+	if (n == m_sectors.end())
+		return NULL;
+
+	MapSector *sector = n->second;
+
+	// Cache the last result
+	m_sector_cache_p = p;
+	m_sector_cache = sector;
+
+	return sector;
+}
+
+MapSector * Map::getSectorNoGenerate(v2s16 p)
+{
+	return getSectorNoGenerateNoLock(p);
+}
+
+MapBlock * Map::getBlockNoCreateNoEx(v3s16 p3d)
+{
+	v2s16 p2d(p3d.X, p3d.Z);
+	MapSector * sector = getSectorNoGenerate(p2d);
+	if(sector == NULL)
+		return NULL;
+	MapBlock *block = sector->getBlockNoCreateNoEx(p3d.Y);
+	return block;
+}
+*/
+
 MapBlock * Map::getBlockNoCreate(v3s16 p3d)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p3d);
@@ -152,25 +190,30 @@ MapNode Map::getNode(v3s16 p, bool *is_valid_position)
 	return node;
 }
 
+static void set_node_in_block(MapBlock *block, v3s16 relpos, MapNode n)
+{
+	// Never allow placing CONTENT_IGNORE, it causes problems
+	if(n.getContent() == CONTENT_IGNORE){
+		const NodeDefManager *nodedef = block->getParent()->getNodeDefManager();
+		v3s16 blockpos = block->getPos();
+		v3s16 p = blockpos * MAP_BLOCKSIZE + relpos;
+		bool temp_bool;
+		errorstream<<"Not allowing to place CONTENT_IGNORE"
+				<<" while trying to replace \""
+				<<nodedef->get(block->getNodeNoCheck(relpos, &temp_bool)).name
+				<<"\" at "<<PP(p)<<" (block "<<PP(blockpos)<<")"<<std::endl;
+		return;
+	}
+	block->setNodeNoCheck(relpos, n);
+}
+
 // throws InvalidPositionException if not found
-void Map::setNode(v3s16 p, MapNode & n, bool no_light_check)
+void Map::setNode(v3s16 p, MapNode & n)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreate(blockpos);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
-	// Never allow placing CONTENT_IGNORE, it causes problems
-	if(n.getContent() == CONTENT_IGNORE){
-		bool temp_bool;
-		errorstream<<"Map::setNode(): Not allowing to place CONTENT_IGNORE"
-				<<" while trying to replace \""
-				<<m_nodedef->get(block->getNodeNoCheck(relpos, &temp_bool)).name
-				<<"\" at "<<PP(p)<<" (block "<<PP(blockpos)<<")"<<std::endl;
-		return;
-	}
-	if (no_light_check)
-	block->setNodeNoCheck(relpos, n);
-	else
-		block->setNode(relpos, n);
+	set_node_in_block(block, relpos, n);
 }
 
 void Map::addNodeAndUpdate(v3s16 p, MapNode n,
@@ -205,8 +248,14 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	// Collect old node for rollback
 	RollbackNode rollback_oldnode(this, p, m_gamedef);
 
+	v3s16 blockpos = getNodeBlockPos(p);
+	MapBlock *block = getBlockNoCreate(blockpos);
+	if (block->isDummy())
+		throw InvalidPositionException();
+	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
+
 	// This is needed for updating the lighting
-	MapNode oldnode = getNode(p);
+	MapNode oldnode = block->getNodeUnsafe(relpos);
 
 	// Remove node metadata
 	if (remove_metadata) {
@@ -214,18 +263,29 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	}
 
 	// Set the node on the map
-	// Ignore light (because calling voxalgo::update_lighting_nodes)
-	n.setLight(LIGHTBANK_DAY, 0, m_nodedef);
-	n.setLight(LIGHTBANK_NIGHT, 0, m_nodedef);
-	setNode(p, n);
+	const ContentFeatures &cf = m_nodedef->get(n);
+	const ContentFeatures &oldcf = m_nodedef->get(oldnode);
+	if (cf.lightingEquivalent(oldcf)) {
+		// No light update needed, just copy over the old light.
+		n.setLight(LIGHTBANK_DAY, oldnode.getLightRaw(LIGHTBANK_DAY, oldcf), cf);
+		n.setLight(LIGHTBANK_NIGHT, oldnode.getLightRaw(LIGHTBANK_NIGHT, oldcf), cf);
+		set_node_in_block(block, relpos, n);
 
-	// Update lighting
-	std::vector<std::pair<v3s16, MapNode> > oldnodes;
-	oldnodes.emplace_back(p, oldnode);
-	voxalgo::update_lighting_nodes(this, oldnodes, modified_blocks);
+		modified_blocks[blockpos] = block;
+	} else {
+		// Ignore light (because calling voxalgo::update_lighting_nodes)
+		n.setLight(LIGHTBANK_DAY, 0, cf);
+		n.setLight(LIGHTBANK_NIGHT, 0, cf);
+		set_node_in_block(block, relpos, n);
 
-	for (auto &modified_block : modified_blocks) {
-		modified_block.second->expireDayNightDiff();
+		// Update lighting
+		std::vector<std::pair<v3s16, MapNode> > oldnodes;
+		oldnodes.emplace_back(p, oldnode);
+		voxalgo::update_lighting_nodes(this, oldnodes, modified_blocks);
+
+		for (auto &modified_block : modified_blocks) {
+			modified_block.second->expireDayNightDiff();
+		}
 	}
 
 	// Report for rollback
@@ -235,24 +295,6 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		RollbackAction action;
 		action.setSetNode(p, rollback_oldnode, rollback_newnode);
 		m_gamedef->rollback()->reportAction(action);
-	}
-
-	/*
-		Add neighboring liquid nodes and this node to transform queue.
-		(it's vital for the node itself to get updated last, if it was removed.)
-	 */
-
-	if (!fast)
-	for (const v3s16 &dir : g_7dirs) {
-		v3s16 p2 = p + dir;
-
-		bool is_valid_position;
-		MapNode n2 = getNode(p2, &is_valid_position);
-		if(is_valid_position &&
-				(m_nodedef->get(n2).isLiquid() ||
-				n2.getContent() == CONTENT_AIR))
-			transforming_liquid_add(p2);
-			//m_transforming_liquid.push_back(p2);
 	}
 }
 
@@ -332,10 +374,10 @@ struct TimeOrderedMapBlock {
 	Updates usage timers
 */
 #if WTF
-void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
+void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 		std::vector<v3s16> *unloaded_blocks)
 {
-	bool save_before_unloading = (mapType() == MAPTYPE_SERVER);
+	bool save_before_unloading = maySaveBlocks();
 
 	// Profile modified reasons
 	Profiler modprofiler;
@@ -345,10 +387,11 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
+	const auto start_time = porting::getTimeUs();
 	beginSave();
 
 	// If there is no practical limit, we spare creation of mapblock_queue
-	if (max_loaded_blocks == U32_MAX) {
+	if (max_loaded_blocks < 0) {
 		for (auto &sector_it : m_sectors) {
 			MapSector *sector = sector_it.second;
 
@@ -386,6 +429,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 				}
 			}
 
+			// Delete sector if we emptied it
 			if (all_blocks_deleted) {
 				sector_deletion_queue.push_back(sector_it.first);
 			}
@@ -404,8 +448,9 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			}
 		}
 		block_count_all = mapblock_queue.size();
+
 		// Delete old blocks, and blocks over the limit from the memory
-		while (!mapblock_queue.empty() && (mapblock_queue.size() > max_loaded_blocks
+		while (!mapblock_queue.empty() && ((s32)mapblock_queue.size() > max_loaded_blocks
 				|| mapblock_queue.top().block->getUsageTimer() > unload_timeout)) {
 			TimeOrderedMapBlock b = mapblock_queue.top();
 			mapblock_queue.pop();
@@ -434,6 +479,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			deleted_blocks_count++;
 			block_count_all--;
 		}
+
 		// Delete empty sectors
 		for (auto &sector_it : m_sectors) {
 			if (sector_it.second->empty()) {
@@ -441,7 +487,11 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			}
 		}
 	}
+
 	endSave();
+	const auto end_time = porting::getTimeUs();
+
+	reportMetrics(end_time - start_time, saved_blocks_count, block_count_all);
 
 	// Finally delete the empty sectors
 	deleteSectors(sector_deletion_queue);
@@ -467,7 +517,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 
 void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
 {
-	timerUpdate(0.0, -1.0, 100, 0, unloaded_blocks);
+	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
 }
 
 #if WTF
@@ -524,22 +574,23 @@ struct NodeNeighbor {
 	{ }
 };
 
-void Map::transforming_liquid_add(v3POS p) {
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-	//m_transforming_liquid.set(p, 1);
-	m_transforming_liquid.push_back(p);
-}
-
 u32 Map::transforming_liquid_size() {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 	return m_transforming_liquid.size();
 }
 
-size_t Map::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env, Server *m_server, unsigned int max_cycle_ms)
+void ServerMap::transforming_liquid_add(v3s16 p) {
+    	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+        m_transforming_liquid.push_back(p);
+}
+
+size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env
+		, Server *m_server, unsigned int max_cycle_ms
+		)
 {
 	if (g_settings->getBool("liquid_real"))
-		return Map::transformLiquidsReal(m_server, max_cycle_ms);
+		return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
 
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 
@@ -1280,7 +1331,12 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 	m_map_saving_enabled = false;
 	m_map_loading_enabled = true;
 
-	m_save_time_counter = mb->addCounter("minetest_core_map_save_time", "Map save time (in nanoseconds)");
+	m_save_time_counter = mb->addCounter(
+		"minetest_map_save_time", "Time spent saving blocks (in microseconds)");
+	m_save_count_counter = mb->addCounter(
+		"minetest_map_saved_blocks", "Number of blocks saved");
+	m_loaded_blocks_gauge = mb->addGauge(
+		"minetest_map_loaded_blocks", "Number of loaded blocks");
 
 	m_map_compression_level = rangelim(g_settings->getS16("map_compression_level_disk"), -1, 9);
 
@@ -1681,6 +1737,30 @@ bool ServerMap::isBlockInQueue(v3s16 pos)
 	return m_emerge && m_emerge->isBlockInQueue(pos);
 }
 
+void ServerMap::addNodeAndUpdate(v3s16 p, MapNode n,
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		bool remove_metadata,
+		int fast)
+{
+	Map::addNodeAndUpdate(p, n, modified_blocks, remove_metadata, fast);
+
+	/*
+		Add neighboring liquid nodes and this node to transform queue.
+		(it's vital for the node itself to get updated last, if it was removed.)
+	 */
+    if (!fast)
+	for (const v3s16 &dir : g_7dirs) {
+		v3s16 p2 = p + dir;
+
+		bool is_valid_position;
+		MapNode n2 = getNode(p2, &is_valid_position);
+		if(is_valid_position &&
+				(m_nodedef->get(n2).isLiquid() ||
+				n2.getContent() == CONTENT_AIR))
+			m_transforming_liquid.push_back(p2);
+	}
+}
+
 // N.B.  This requires no synchronization, since data will not be modified unless
 // the VoxelManipulator being updated belongs to the same thread.
 void ServerMap::updateVManip(v3s16 pos)
@@ -1703,6 +1783,13 @@ void ServerMap::updateVManip(v3s16 pos)
 	vm->m_is_dirty = true;
 }
 
+void ServerMap::reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks)
+{
+	m_loaded_blocks_gauge->set(all_blocks);
+	m_save_time_counter->increment(save_time_us);
+	m_save_count_counter->increment(saved_blocks);
+}
+
 s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool breakable)
 {
 	if (!m_map_saving_enabled) {
@@ -1710,7 +1797,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 		return 0;
 	}
 
-	u64 start_time = porting::getTimeNs();
+	const auto start_time = porting::getTimeUs();
 
 	if(save_level == MOD_STATE_CLEAN)
 		infostream<<"ServerMap: Saving whole map, this can take time."
@@ -1801,8 +1888,11 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 		modprofiler.print(infostream);
 	}
 
-	auto end_time = porting::getTimeNs();
+	const auto end_time = porting::getTimeUs();
+
 	m_save_time_counter->increment(end_time - start_time);
+
+	reportMetrics(end_time - start_time, block_count, block_count_all);
 
 	return m_blocks_save_last;
 }
@@ -2159,12 +2249,15 @@ MMVManip::MMVManip(Map *map):
 		VoxelManipulator(),
 		m_map(map)
 {
+	assert(map);
 }
 
 void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 	bool load_if_inexistent)
 {
 	TimeTaker timer1("initialEmerge");
+
+	assert(m_map);
 
 	// Units of these are MapBlocks
 	v3s16 p_min = blockpos_min;
@@ -2250,6 +2343,7 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 {
 	if(m_area.getExtent() == v3s16(0,0,0))
 		return;
+	assert(m_map);
 
 	/*
 		Copy data of all blocks
@@ -2270,6 +2364,35 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 		if(modified_blocks)
 			(*modified_blocks)[p] = block;
 	}
+}
+
+MMVManip *MMVManip::clone() const
+{
+	MMVManip *ret = new MMVManip();
+
+	const s32 size = m_area.getVolume();
+	ret->m_area = m_area;
+	if (m_data) {
+		ret->m_data = new MapNode[size];
+		memcpy(ret->m_data, m_data, size * sizeof(MapNode));
+	}
+	if (m_flags) {
+		ret->m_flags = new u8[size];
+		memcpy(ret->m_flags, m_flags, size * sizeof(u8));
+	}
+
+	ret->m_is_dirty = m_is_dirty;
+	// Even if the copy is disconnected from a map object keep the information
+	// needed to write it back to one
+	ret->m_loaded_blocks = m_loaded_blocks;
+
+	return ret;
+}
+
+void MMVManip::reparent(Map *map)
+{
+	assert(map && !m_map);
+	m_map = map;
 }
 
 //END

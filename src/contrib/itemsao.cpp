@@ -23,6 +23,7 @@
 #include "scripting_server.h"
 #include "server.h"
 //#include "scripting_game.h"
+#include "sound.h"
 #include "util/serialize.h"
 #include <sstream>
 
@@ -138,15 +139,13 @@ void ItemSAO::step(float dtime, bool send_recommended)
 		if (nodeName.compare("default:lava_flowing") == 0 ||
 				nodeName.compare("default:lava_source") == 0) {
 
-			SimpleSoundSpec spec;
-			spec.name = "builtin_item_lava";
-
-			ServerSoundParams params;
+			ServerPlayingSound params;
+			params.spec.name = "builtin_item_lava";
 			params.object = getId();
-			params.type = ServerSoundParams::Type::SSP_OBJECT;
+			params.type = SoundLocation::Object;
 			params.max_hear_distance = 15.0f * BS;
 
-			((Server*)m_env->getGameDef())->playSound(spec, params);
+			((Server*)m_env->getGameDef())->playSound(params);
 			m_pending_removal = true;
 		}
 		// Check every 4 cycles

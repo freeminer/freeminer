@@ -204,7 +204,7 @@ void ToolCapabilities::msgpack_unpack(msgpack::object o)
 	packet[TOOLCAP_DAMAGEGROUPS].convert(damageGroups);
 }
 
-static u32 calculateResultWear(const u32 uses, const u16 initial_wear)
+u32 calculateResultWear(const u32 uses, const u16 initial_wear)
 {
 	if (uses == 0) {
 		// Trivial case: Infinite uses

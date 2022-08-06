@@ -78,34 +78,35 @@ local function load_texture_packs(txtpath, retval)
 
 	for _, item in ipairs(list) do
 		if item ~= "base" then
-			local name = item
-
 			local path = txtpath .. DIR_DELIM .. item .. DIR_DELIM
-			if path == current_texture_path then
-				name = fgettext("$1 (Enabled)", name)
-			end
-
 			local conf = Settings(path .. "texture_pack.conf")
+			local enabled = path == current_texture_path
 
+			local title = conf:get("title") or item
+
+			-- list_* is only used if non-nil, else the regular versions are used.
 			retval[#retval + 1] = {
 				name = item,
+				title = title,
+				list_name = enabled and fgettext("$1 (Enabled)", item) or nil,
+				list_title = enabled and fgettext("$1 (Enabled)", title) or nil,
 				author = conf:get("author"),
 				release = tonumber(conf:get("release")) or 0,
-				list_name = name,
 				type = "txp",
 				path = path,
-				enabled = path == current_texture_path,
+				enabled = enabled,
 			}
 		end
 	end
 end
 
-function get_mods(path,retval,modpack)
+function get_mods(path, virtual_path, retval, modpack)
 	local mods = core.get_dir_list(path, true)
 
 	for _, name in ipairs(mods) do
 		if name:sub(1, 1) ~= "." then
-			local prefix = path .. DIR_DELIM .. name
+			local mod_path = path .. DIR_DELIM .. name
+			local mod_virtual_path = virtual_path .. "/" .. name
 			local toadd = {
 				dir_name = name,
 				parent_dir = path,
@@ -114,18 +115,18 @@ function get_mods(path,retval,modpack)
 
 			-- Get config file
 			local mod_conf
-			local modpack_conf = io.open(prefix .. DIR_DELIM .. "modpack.conf")
+			local modpack_conf = io.open(mod_path .. DIR_DELIM .. "modpack.conf")
 			if modpack_conf then
 				toadd.is_modpack = true
 				modpack_conf:close()
 
-				mod_conf = Settings(prefix .. DIR_DELIM .. "modpack.conf"):to_table()
+				mod_conf = Settings(mod_path .. DIR_DELIM .. "modpack.conf"):to_table()
 				if mod_conf.name then
 					name = mod_conf.name
 					toadd.is_name_explicit = true
 				end
 			else
-				mod_conf = Settings(prefix .. DIR_DELIM .. "mod.conf"):to_table()
+				mod_conf = Settings(mod_path .. DIR_DELIM .. "mod.conf"):to_table()
 				if mod_conf.name then
 					name = mod_conf.name
 					toadd.is_name_explicit = true
@@ -134,14 +135,16 @@ function get_mods(path,retval,modpack)
 
 			-- Read from config
 			toadd.name = name
+			toadd.title = mod_conf.title
 			toadd.author = mod_conf.author
 			toadd.release = tonumber(mod_conf.release) or 0
-			toadd.path = prefix
+			toadd.path = mod_path
+			toadd.virtual_path = mod_virtual_path
 			toadd.type = "mod"
 
 			-- Check modpack.txt
 			-- Note: modpack.conf is already checked above
-			local modpackfile = io.open(prefix .. DIR_DELIM .. "modpack.txt")
+			local modpackfile = io.open(mod_path .. DIR_DELIM .. "modpack.txt")
 			if modpackfile then
 				modpackfile:close()
 				toadd.is_modpack = true
@@ -153,7 +156,7 @@ function get_mods(path,retval,modpack)
 			elseif toadd.is_modpack then
 				toadd.type = "modpack"
 				toadd.is_modpack = true
-				get_mods(prefix, retval, name)
+				get_mods(mod_path, mod_virtual_path, retval, name)
 			end
 		end
 	end
@@ -334,7 +337,7 @@ function pkgmgr.identify_modname(modpath,filename)
 	return nil
 end
 --------------------------------------------------------------------------------
-function pkgmgr.render_packagelist(render_list)
+function pkgmgr.render_packagelist(render_list, use_technical_names, with_error)
 	if not render_list then
 		if not pkgmgr.global_mods then
 			pkgmgr.refresh_globals()
@@ -346,22 +349,57 @@ function pkgmgr.render_packagelist(render_list)
 	local retval = {}
 	for i, v in ipairs(list) do
 		local color = ""
+		local icon = 0
+		local error = with_error and with_error[v.virtual_path]
+		local function update_error(val)
+			if val and (not error or (error.type == "warning" and val.type == "error")) then
+				error = val
+			end
+		end
+
 		if v.is_modpack then
 			local rawlist = render_list:get_raw_list()
 			color = mt_color_dark_green
 
-			for j = 1, #rawlist, 1 do
-				if rawlist[j].modpack == list[i].name and
-						not rawlist[j].enabled then
-					-- Modpack not entirely enabled so showing as grey
-					color = mt_color_grey
-					break
+			for j = 1, #rawlist do
+				if rawlist[j].modpack == list[i].name then
+					if with_error then
+						update_error(with_error[rawlist[j].virtual_path])
+					end
+
+					if rawlist[j].enabled then
+						icon = 1
+					else
+						-- Modpack not entirely enabled so showing as grey
+						color = mt_color_grey
+					end
 				end
 			end
 		elseif v.is_game_content or v.type == "game" then
+			icon = 1
 			color = mt_color_blue
+
+			local rawlist = render_list:get_raw_list()
+			if v.type == "game" and with_error then
+				for j = 1, #rawlist do
+					if rawlist[j].is_game_content then
+						update_error(with_error[rawlist[j].virtual_path])
+					end
+				end
+			end
 		elseif v.enabled or v.type == "txp" then
+			icon = 1
 			color = mt_color_green
+		end
+
+		if error then
+			if error.type == "warning" then
+				color = mt_color_orange
+				icon = 2
+			else
+				color = mt_color_red
+				icon = 3
+			end
 		end
 
 		retval[#retval + 1] = color
@@ -370,7 +408,16 @@ function pkgmgr.render_packagelist(render_list)
 		else
 			retval[#retval + 1] = "0"
 		end
-		retval[#retval + 1] = core.formspec_escape(v.list_name or v.name)
+
+		if with_error then
+			retval[#retval + 1] = icon
+		end
+
+		if use_technical_names then
+			retval[#retval + 1] = core.formspec_escape(v.list_name or v.name)
+		else
+			retval[#retval + 1] = core.formspec_escape(v.list_title or v.list_name or v.title or v.name)
+		end
 	end
 
 	return table.concat(retval, ",")
@@ -397,6 +444,14 @@ function pkgmgr.is_modpack_entirely_enabled(data, name)
 	return true
 end
 
+local function disable_all_by_name(list, name, except)
+	for i=1, #list do
+		if list[i].name == name and list[i] ~= except then
+			list[i].enabled = false
+		end
+	end
+end
+
 ---------- toggles or en/disables a mod or modpack and its dependencies --------
 local function toggle_mod_or_modpack(list, toggled_mods, enabled_mods, toset, mod)
 	if not mod.is_modpack then
@@ -405,13 +460,16 @@ local function toggle_mod_or_modpack(list, toggled_mods, enabled_mods, toset, mo
 			toset = not mod.enabled
 		end
 		if mod.enabled ~= toset then
-			mod.enabled = toset
 			toggled_mods[#toggled_mods+1] = mod.name
 		end
 		if toset then
 			-- Mark this mod for recursive dependency traversal
 			enabled_mods[mod.name] = true
+
+			-- Disable other mods with the same name
+			disable_all_by_name(list, mod.name, mod)
 		end
+		mod.enabled = toset
 	else
 		-- Toggle or en/disable every mod in the modpack,
 		-- interleaved unsupported
@@ -472,6 +530,7 @@ function pkgmgr.enable_mod(this, toset)
 			end
 		end
 	end
+
 	-- If sp is 0, every dependency is already activated
 	while sp > 0 do
 		local name = to_enable[sp]
@@ -483,8 +542,8 @@ function pkgmgr.enable_mod(this, toset)
 			if not mod_to_enable then
 				core.log("warning", "Mod dependency \"" .. name ..
 					"\" not found!")
-			else
-				if not mod_to_enable.enabled  then
+			elseif not mod_to_enable.is_game_content then
+				if not mod_to_enable.enabled then
 					mod_to_enable.enabled = true
 					toggled_mods[#toggled_mods+1] = mod_to_enable.name
 				end
@@ -665,6 +724,8 @@ function pkgmgr.install_dir(type, path, basename, targetpath)
 		else
 			targetpath = core.get_gamepath() .. DIR_DELIM .. basename
 		end
+	else
+		error("basefolder didn't return a recognised type, this shouldn't happen")
 	end
 
 	-- Copy it
@@ -691,13 +752,14 @@ function pkgmgr.preparemodlist(data)
 
 	--read global mods
 	local modpaths = core.get_modpaths()
-	for _, modpath in ipairs(modpaths) do
-		get_mods(modpath, global_mods)
+	for key, modpath in pairs(modpaths) do
+		get_mods(modpath, key, global_mods)
 	end
 
 	for i=1,#global_mods,1 do
 		global_mods[i].type = "mod"
 		global_mods[i].loc = "global"
+		global_mods[i].enabled = false
 		retval[#retval + 1] = global_mods[i]
 	end
 
@@ -710,7 +772,7 @@ function pkgmgr.preparemodlist(data)
 		retval[#retval + 1] = {
 			type = "game",
 			is_game_content = true,
-			name = fgettext("$1 mods", gamespec.name),
+			name = fgettext("$1 mods", gamespec.title),
 			path = gamespec.path
 		}
 	end
@@ -731,22 +793,37 @@ function pkgmgr.preparemodlist(data)
 				DIR_DELIM .. "world.mt"
 
 	local worldfile = Settings(filename)
-
-	for key,value in pairs(worldfile:to_table()) do
+	for key, value in pairs(worldfile:to_table()) do
 		if key:sub(1, 9) == "load_mod_" then
 			key = key:sub(10)
-			local element = nil
-			for i=1,#retval,1 do
+			local mod_found = false
+
+			local fallback_found = false
+			local fallback_mod = nil
+
+			for i=1, #retval do
 				if retval[i].name == key and
-					not retval[i].is_modpack then
-					element = retval[i]
-					break
+						not retval[i].is_modpack then
+					if core.is_yes(value) or retval[i].virtual_path == value then
+						retval[i].enabled = true
+						mod_found = true
+						break
+					elseif fallback_found then
+						-- Only allow fallback if only one mod matches
+						fallback_mod = nil
+					else
+						fallback_found = true
+						fallback_mod = retval[i]
+					end
 				end
 			end
-			if element ~= nil then
-				element.enabled = value ~= "false" and value ~= "nil" and value
-			else
-				core.log("info", "Mod: " .. key .. " " .. dump(value) .. " but not found")
+
+			if not mod_found then
+				if fallback_mod and value:find("/") then
+					fallback_mod.enabled = true
+				else
+					core.log("info", "Mod: " .. key .. " " .. dump(value) .. " but not found")
+				end
 			end
 		end
 	end
@@ -840,7 +917,7 @@ function pkgmgr.get_game_mods(gamespec, retval)
 	if gamespec ~= nil and
 		gamespec.gamemods_path ~= nil and
 		gamespec.gamemods_path ~= "" then
-		get_mods(gamespec.gamemods_path, retval)
+		get_mods(gamespec.gamemods_path, ("games/%s/mods"):format(gamespec.id), retval)
 	end
 end
 
@@ -876,10 +953,10 @@ end
 function pkgmgr.gamelist()
 	local retval = ""
 	if #pkgmgr.games > 0 then
-		retval = retval .. core.formspec_escape(pkgmgr.games[1].name)
+		retval = retval .. core.formspec_escape(pkgmgr.games[1].title)
 
 		for i=2,#pkgmgr.games,1 do
-			retval = retval .. "," .. core.formspec_escape(pkgmgr.games[i].name)
+			retval = retval .. "," .. core.formspec_escape(pkgmgr.games[i].title)
 		end
 	end
 	return retval

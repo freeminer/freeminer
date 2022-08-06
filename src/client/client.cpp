@@ -61,6 +61,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h"
 #include "chatmessage.h"
 #include "translation.h"
+#include "content/mod_configuration.h"
 
 #include "database/database.h"
 #include "server.h"
@@ -101,6 +102,8 @@ void PacketCounter::print(std::ostream &o) const
 */
 
 Client::Client(
+		bool is_simple_singleplayer_game,
+
 		const char *playername,
 		const std::string &password,
 		const std::string &address_name,
@@ -113,8 +116,8 @@ Client::Client(
 		MtEventManager *event,
 		RenderingEngine *rendering_engine,
 		bool ipv6,
-		GameUI *game_ui
-		, bool is_simple_singleplayer_game
+		GameUI *game_ui,
+		ELoginRegister allow_login_or_register
 ):
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_tsrc(tsrc),
@@ -132,6 +135,7 @@ Client::Client(
 	m_particle_manager(&m_env),
 	m_con(new con::Connection(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this)),
 	m_address_name(address_name),
+	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),
 	m_password(password),
@@ -209,7 +213,21 @@ void Client::loadMods()
 	scanModIntoMemory(BUILTIN_MOD_NAME, getBuiltinLuaPath());
 	m_script->loadModFromMemory(BUILTIN_MOD_NAME);
 
-	ClientModConfiguration modconf(getClientModsLuaPath());
+	ModConfiguration modconf;
+	{
+		std::unordered_map<std::string, std::string> paths;
+		std::string path_user = porting::path_user + DIR_DELIM + "clientmods";
+		const auto modsPath = getClientModsLuaPath();
+		if (modsPath != path_user) {
+			paths["share"] = modsPath;
+		}
+		paths["mods"] = path_user;
+
+		std::string settings_path = path_user + DIR_DELIM + "mods.conf";
+		modconf.addModsFromConfig(settings_path, paths);
+		modconf.checkConflictsAndDeps();
+	}
+
 	m_mods = modconf.getMods();
 	// complain about mods with unsatisfied dependencies
 	if (!modconf.isConsistent()) {
@@ -419,10 +437,6 @@ void Client::step(float dtime)
 		initial_step = false;
 	}
 	else if(m_state == LC_Created) {
-		if (m_is_registration_confirmation_state) {
-			// Waiting confirmation
-			return;
-		}
 		float &counter = m_connection_reinit_timer;
 		counter -= dtime;
 		if(counter <= 0.0) {
@@ -449,12 +463,12 @@ void Client::step(float dtime)
 	const float map_timer_and_unload_dtime = 10.25;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		std::vector<v3s16> deleted_blocks;
-		
+		//m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
 		if(m_env.getMap().timerUpdate(m_uptime,
-			g_settings->getFloat("client_unload_unused_data_timeout"),
+			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
 			g_settings->getS32("client_mapblock_limit"),
-			max_cycle_ms,
-			&deleted_blocks))
+			&deleted_blocks,
+			max_cycle_ms))
 			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 
 		/*if(deleted_blocks.size() > 0)
@@ -526,6 +540,7 @@ void Client::step(float dtime)
 			ClientEvent *event = new ClientEvent();
 			event->type = CE_PLAYER_DAMAGE;
 			event->player_damage.amount = damage;
+			event->player_damage.effect = true;
 			m_client_event_queue.push(event);
 		}
 	}
@@ -568,12 +583,11 @@ void Client::step(float dtime)
 		u32 end_ms = porting::getTimeMs() + 10;
 		std::vector<v3s16> blocks_to_ack;
 
-		{
-
 		auto qsize = m_mesh_update_thread.m_queue_out.size();
 		if (qsize > 1000)
 			end_ms += 200;
 
+		bool force_update_shadows = false;
 		while (!m_mesh_update_thread.m_queue_out.empty_try())
 		{
 			num_processed_meshes++;
@@ -607,10 +621,11 @@ void Client::step(float dtime)
 
 					if (is_empty)
 						delete r.mesh;
-					else
+					else {
 						// Replace with the new mesh
 						block->mesh = r.mesh;
 */
+						force_update_shadows = true;
 				}
 /*
 			} else {
@@ -643,7 +658,10 @@ void Client::step(float dtime)
 
 		if (num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
-		}
+
+		auto shadow_renderer = RenderingEngine::get_shadow_renderer();
+		if (shadow_renderer && force_update_shadows)
+			shadow_renderer->setForceUpdateShadowMap();
 	}
 
 	/*
@@ -862,16 +880,18 @@ void Client::peerAdded(u16 peer_id)
 	infostream << "Client::peerAdded(): peer->id="
 			<< peer_id << std::endl;
 }
+
 void Client::deletingPeer(u16 peer_id, bool timeout)
 {
 	infostream << "Client::deletingPeer(): "
 			"Server Peer is getting deleted "
 			<< "(timeout=" << timeout << ")" << std::endl;
 
-	if (timeout) {
-		m_access_denied = true;
-		m_access_denied_reason = _("Connection timed out.");
-	}
+	m_access_denied = true;
+	if (timeout)
+		m_access_denied_reason = gettext("Connection timed out.");
+	else if (m_access_denied_reason.empty())
+		m_access_denied_reason = gettext("Connection aborted (protocol error?).");
 }
 
 /*
@@ -1219,18 +1239,6 @@ void Client::sendInit(const std::string &playerName)
 	Send(&pkt);
 }
 
-void Client::promptConfirmRegistration(AuthMechanism chosen_auth_mechanism)
-{
-	m_chosen_auth_mech = chosen_auth_mechanism;
-	m_is_registration_confirmation_state = true;
-}
-
-void Client::confirmRegistration()
-{
-	m_is_registration_confirmation_state = false;
-	startAuth(m_chosen_auth_mech);
-}
-
 void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 {
 	m_chosen_auth_mech = chosen_auth_mechanism;
@@ -1408,7 +1416,7 @@ void Client::sendChatMessage(const std::string &message)
 		pkt << message;
 
 		Send(&pkt);
-	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size == -1) {
+	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size < 0) {
 		m_out_chat_queue.push(message);
 	} else {
 		infostream << "Could not queue chat message because maximum out chat queue size ("
@@ -2045,11 +2053,10 @@ void Client::makeScreenshot(const std::string & name)
 	if (!raw_image)
 		return;
 
-	time_t t = time(NULL);
-	struct tm *tm = localtime(&t);
+	const struct tm tm = mt_localtime();
 
 	char timetstamp_c[64];
-	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", tm);
+	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", &tm);
 
 	std::string screenshot_dir;
 

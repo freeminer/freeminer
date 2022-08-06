@@ -70,7 +70,7 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
-size_t Map::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
+size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 
 	const auto *nodemgr = m_nodedef;
 
@@ -675,8 +675,8 @@ NEXT_LIQUID:
 			neighbors[i].node.setLevel(nodemgr, liquid_levels_want[i], 1);
 
 			try {
-				setNode(neighbors[i].pos, neighbors[i].node, true);
-			} catch(InvalidPositionException &e) {
+				setNode(neighbors[i].pos, neighbors[i].node);
+			} catch(const InvalidPositionException &e) {
 				verbosestream << "transformLiquidsReal: setNode() failed:" << neighbors[i].pos << ":" << e.what() << std::endl;
 			}
 

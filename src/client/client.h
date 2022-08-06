@@ -46,6 +46,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh_generator_thread.h"
 #include "network/address.h"
 #include "network/peerhandler.h"
+#include "gameparams.h"
 #include <fstream>
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
@@ -127,6 +128,8 @@ public:
 	*/
 
 	Client(
+			bool is_simple_singleplayer_game,
+
 			const char *playername,
 			const std::string &password,
 			const std::string &address_name,
@@ -139,8 +142,8 @@ public:
 			MtEventManager *event,
 			RenderingEngine *rendering_engine,
 			bool ipv6,
-			GameUI *game_ui
-			, bool is_simple_singleplayer_game
+			GameUI *game_ui,
+			ELoginRegister allow_login_or_register
 	);
 
 	~Client();
@@ -241,6 +244,7 @@ public:
 	void handleCommand_PlayerSpeed(NetworkPacket *pkt);
 	void handleCommand_MediaPush(NetworkPacket *pkt);
 	void handleCommand_MinimapModes(NetworkPacket *pkt);
+	void handleCommand_SetLighting(NetworkPacket *pkt);
 
 	void ProcessData(NetworkPacket *pkt);
 
@@ -364,8 +368,6 @@ public:
 	u16 getProtoVersion()
 	{ return m_proto_ver; }
 
-	void confirmRegistration();
-	bool m_is_registration_confirmation_state = false;
 	bool m_simple_singleplayer_mode;
 
 	float mediaReceiveProgress();
@@ -426,7 +428,7 @@ public:
 	}
 
 	ClientScripting *getScript() { return m_script; }
-	const bool modsLoaded() const { return m_mods_loaded; }
+	bool modsLoaded() const { return m_mods_loaded; }
 
 	void pushToEventQueue(ClientEvent *event);
 
@@ -479,7 +481,6 @@ private:
 	static AuthMechanism choseAuthMech(const u32 mechs);
 
 	void sendInit(const std::string &playerName);
-	void promptConfirmRegistration(AuthMechanism chosen_auth_mechanism);
 	void startAuth(AuthMechanism chosen_auth_mechanism);
 	void sendDeletedBlocks(std::vector<v3s16> &blocks);
 	void sendGotBlocks(const std::vector<v3s16> &blocks);
@@ -514,6 +515,7 @@ public:
 	std::unique_ptr<con::Connection> m_con;
 private:
 	std::string m_address_name;
+	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
 	Camera *m_camera = nullptr;
 	Minimap *m_minimap = nullptr;
 	bool m_minimap_disabled_by_server = false;

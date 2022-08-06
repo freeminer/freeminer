@@ -191,6 +191,15 @@ public:
 		auto lock = LOCKER::lock_unique_rec();
 		full_type::clear();
 	}
+
+	template <typename... Args>
+	decltype(auto) operator=(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::operator=(std::forward<Args>(args)...);
+	}
+
+
 };
 
 template <class Key, class Compare = std::less<Key>,

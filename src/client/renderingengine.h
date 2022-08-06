@@ -55,7 +55,6 @@ public:
 
 	static const VideoDriverInfo &getVideoDriverInfo(irr::video::E_DRIVER_TYPE type);
 	static float getDisplayDensity();
-	static v2u32 getDisplaySize();
 
 	bool setupTopLevelWindow(const std::string &name);
 	void setupTopLevelXorgWindow(const std::string &name);
@@ -123,8 +122,8 @@ public:
 	// FIXME: this is still global when it shouldn't be
 	static ShadowRenderer *get_shadow_renderer()
 	{
-		//if (s_singleton && s_singleton->core)
-		//	return s_singleton->core->get_shadow_renderer();
+		if (s_singleton && s_singleton->core)
+			return s_singleton->core->get_shadow_renderer();
 		return nullptr;
 	}
 	static std::vector<irr::video::E_DRIVER_TYPE> getSupportedVideoDrivers();

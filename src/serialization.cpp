@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 
 /* report a zlib or i/o error */
-void zerr(int ret)
+static void zerr(int ret)
 {
     dstream<<"zerr: ";
     switch (ret) {
@@ -57,6 +57,17 @@ void zerr(int ret)
     }
 }
 
+// Make sure that z is deleted in case of exception
+template <int (*F)(z_stream*)>
+class ZlibAutoDeleter {
+public:
+	ZlibAutoDeleter(z_stream *ptr) : ptr_(ptr) {}
+	~ZlibAutoDeleter() { F(ptr_); }
+
+private:
+	z_stream *ptr_;
+};
+
 void compressZlib(const u8 *data, size_t data_size, std::ostream &os, int level)
 {
 	z_stream z;
@@ -72,6 +83,8 @@ void compressZlib(const u8 *data, size_t data_size, std::ostream &os, int level)
 	ret = deflateInit(&z, level);
 	if(ret != Z_OK)
 		throw SerializationError("compressZlib: deflateInit failed");
+
+	ZlibAutoDeleter<deflateEnd> deleter(&z);
 
 	// Point zlib to our input buffer
 	z.next_in = (Bytef*)&data[0];
@@ -96,8 +109,6 @@ void compressZlib(const u8 *data, size_t data_size, std::ostream &os, int level)
 		if(status == Z_STREAM_END)
 			break;
 	}
-
-	deflateEnd(&z);
 }
 
 void compressZlib(const std::string &data, std::ostream &os, int level)
@@ -113,7 +124,6 @@ void decompressZlib(std::istream &is, std::ostream &os, size_t limit)
 	char output_buffer[bufsize];
 	int status = 0;
 	int ret;
-	int bytes_read = 0;
 	int bytes_written = 0;
 	int input_buffer_len = 0;
 
@@ -125,9 +135,9 @@ void decompressZlib(std::istream &is, std::ostream &os, size_t limit)
 	if(ret != Z_OK)
 		throw SerializationError("dcompressZlib: inflateInit failed");
 
-	z.avail_in = 0;
+	ZlibAutoDeleter<inflateEnd> deleter(&z);
 
-	//dstream<<"initial fail="<<is.fail()<<" bad="<<is.bad()<<std::endl;
+	z.avail_in = 0;
 
 	for(;;)
 	{
@@ -152,19 +162,13 @@ void decompressZlib(std::istream &is, std::ostream &os, size_t limit)
 			is.read(input_buffer, bufsize);
 			input_buffer_len = is.gcount();
 			z.avail_in = input_buffer_len;
-			//dstream<<"read fail="<<is.fail()<<" bad="<<is.bad()<<std::endl;
 		}
 		if(z.avail_in == 0)
 		{
-			//dstream<<"z.avail_in == 0"<<std::endl;
 			break;
 		}
 
-		//dstream<<"1 z.avail_in="<<z.avail_in<<std::endl;
 		status = inflate(&z, Z_NO_FLUSH);
-		//dstream<<"2 z.avail_in="<<z.avail_in<<std::endl;
-		bytes_read += is.gcount() - z.avail_in;
-		//dstream<<"bytes_read="<<bytes_read<<std::endl;
 
 		if(status == Z_NEED_DICT || status == Z_DATA_ERROR
 				|| status == Z_MEM_ERROR)
@@ -173,16 +177,11 @@ void decompressZlib(std::istream &is, std::ostream &os, size_t limit)
 			throw SerializationError("decompressZlib: inflate failed");
 		}
 		int count = output_size - z.avail_out;
-		//dstream<<"count="<<count<<std::endl;
 		if(count)
 			os.write(output_buffer, count);
 		bytes_written += count;
 		if(status == Z_STREAM_END)
 		{
-			//dstream<<"Z_STREAM_END"<<std::endl;
-
-			//dstream<<"z.avail_in="<<z.avail_in<<std::endl;
-			//dstream<<"fail="<<is.fail()<<" bad="<<is.bad()<<std::endl;
 			// Unget all the data that inflate didn't take
 			is.clear(); // Just in case EOF is set
 			for(u32 i=0; i < z.avail_in; i++)
@@ -199,8 +198,6 @@ void decompressZlib(std::istream &is, std::ostream &os, size_t limit)
 			break;
 		}
 	}
-
-	inflateEnd(&z);
 }
 
 struct ZSTD_Deleter {

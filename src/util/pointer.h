@@ -48,7 +48,7 @@ public:
 	Buffer()
 	{
 		m_size = 0;
-		data = NULL;
+		data = nullptr;
 	}
 	Buffer(unsigned int size)
 	{
@@ -56,7 +56,7 @@ public:
 		if(size != 0)
 			data = new T[size];
 		else
-			data = NULL;
+			data = nullptr;
 	}
 
 	// Disable class copy
@@ -85,7 +85,7 @@ public:
 			memcpy(data, t, size);
 		}
 		else
-			data = NULL;
+			data = nullptr;
 	}
 
 	~Buffer()
@@ -172,7 +172,7 @@ public:
 			memset(data,0,sizeof(T)*m_size);
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		refcount = new unsigned int;
 		(*refcount) = 1;
 	}
@@ -206,7 +206,7 @@ public:
 			memcpy(data, t, m_size);
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		refcount = new unsigned int;
 		(*refcount) = 1;
 	}
@@ -221,7 +221,7 @@ public:
 				memcpy(data, *buffer, buffer.getSize());
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		refcount = new unsigned int;
 		(*refcount) = 1;
 	}

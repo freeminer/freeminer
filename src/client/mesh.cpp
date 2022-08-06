@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mesh.h"
 #include "debug.h"
 #include "log.h"
-#include "irrMap.h"
 #include <cmath>
 #include <iostream>
 #include <IAnimatedMesh.h>

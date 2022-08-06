@@ -141,13 +141,13 @@ public:
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
-	const v3f getSpeed() //const
+	v3f getSpeed() //const
 	{
 		auto lock = lock_shared_rec();
 		return m_speed;
 	}
 
-	void setSpeed(const v3f &speed)
+	void setSpeed(v3f speed)
 	{
 		auto lock = lock_unique_rec();
 		m_speed = speed;

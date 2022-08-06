@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "irrlichttypes_extrabloated.h"
+#include "gameparams.h"
 #include <string>
 #include <list>
 
@@ -52,6 +53,8 @@ struct MainMenuData {
 
 	// Data to be passed to the script
 	MainMenuDataForScript script_data;
+
+	ELoginRegister allow_login_or_register = ELoginRegister::Any;
 
 	MainMenuData() = default;
 };

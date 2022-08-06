@@ -494,13 +494,13 @@ void Server::SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &d
 
 
 s32 Server::playSound(const SimpleSoundSpec &spec,
-		const ServerSoundParams &params)
+		const ServerPlayingSound &params)
 {
 	// Find out initial position of sound
 	bool pos_exists = false;
 	v3f pos = params.getPos(m_env, &pos_exists);
 	// If position is not found while it should be, cancel sound
-	if(pos_exists != (params.type != ServerSoundParams::SSP_LOCAL))
+	if(pos_exists != (params.type != ServerPlayingSound::SSP_LOCAL))
 		return -1;
 
 	// Filter destination clients

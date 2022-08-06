@@ -156,7 +156,7 @@ CollisionAxis axisAlignedCollision(
 						(std::max(movingbox.MaxEdge.Z + speed.Z * time, staticbox.MaxEdge.Z)
 							- std::min(movingbox.MinEdge.Z + speed.Z * time, staticbox.MinEdge.Z)
 							- relbox.MinEdge.Z < 0)
-					) 
+					)
 					return COLLISION_AXIS_X;
 			}
 		} else {
@@ -183,7 +183,7 @@ CollisionAxis axisAlignedCollision(
 						(std::max(movingbox.MaxEdge.Y + speed.Y * time, staticbox.MaxEdge.Y)
 							- std::min(movingbox.MinEdge.Y + speed.Y * time, staticbox.MinEdge.Y)
 							- relbox.MinEdge.Y < 0)
-					) 
+					)
 					return COLLISION_AXIS_Z;
 			}
 		}

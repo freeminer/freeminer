@@ -54,7 +54,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
 	m_draw_control(draw_control),
-	m_client(client)
+	m_client(client),
+	m_player_light_color(0xFFFFFFFF)
 {
 	auto smgr = rendering_engine->get_scene_manager();
 	// note: making the camera node a child of the player node
@@ -87,11 +88,11 @@ Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *re
 	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
 	m_draw_control.wanted_range = g_settings->getFloat("viewing_range");
 	
-	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount");
-	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
+	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount", 0.0f, 100.0f);
+	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount", 0.0f, 7.9f);
 	// 45 degrees is the lowest FOV that doesn't cause the server to treat this
 	// as a zoom FOV and load world beyond the set server limits.
-	m_cache_fov                 = std::fmax(g_settings->getFloat("fov"), 45.0f);
+	m_cache_fov                 = g_settings->getFloat("fov", 45.0f, 160.0f);
 	m_arm_inertia               = g_settings->getBool("arm_inertia");
 	m_nametags.clear();
 	m_show_nametag_backgrounds  = g_settings->getBool("show_nametag_backgrounds");
@@ -166,8 +167,10 @@ void Camera::step(f32 dtime)
 	bool was_under_zero = m_wield_change_timer < 0;
 	m_wield_change_timer = MYMIN(m_wield_change_timer + dtime, 0.125);
 
-	if (m_wield_change_timer >= 0 && was_under_zero)
+	if (m_wield_change_timer >= 0 && was_under_zero) {
 		m_wieldnode->setItem(m_wield_item_next, m_client);
+		m_wieldnode->setNodeLightColor(m_player_light_color);
+	}
 
 	if (m_view_bobbing_state != 0)
 	{
@@ -584,7 +587,8 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	m_wieldnode->setPosition(wield_position);
 	m_wieldnode->setRotation(wield_rotation);
 
-	m_wieldnode->setNodeLightColor(player->light_color);
+	m_player_light_color = player->light_color;
+	m_wieldnode->setNodeLightColor(m_player_light_color);
 
 	// Set render distance
 	updateViewingRange();

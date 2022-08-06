@@ -109,7 +109,7 @@ Sky::Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, IShade
 
 	//sun_moon_light = rendering_engine->get_scene_manager()->addLightSceneNode(this, core::vector3df(0, MAX_MAP_GENERATION_LIMIT*BS*2,0), video::SColorf(1.0f, 0.6f, 0.7f, 1.0f), MAX_MAP_GENERATION_LIMIT*BS*5);
 
-	if (false && g_settings->getBool("enable_dynamic_shadows")) {
+	if (g_settings->getBool("enable_dynamic_shadows")) {
 		float val = g_settings->getFloat("shadow_sky_body_orbit_tilt");
 		m_sky_body_orbit_tilt = rangelim(val, 0.0f, 60.0f);
 	}
@@ -726,9 +726,12 @@ void Sky::draw_stars(video::IVideoDriver * driver, float wicked_time_of_day)
 	// to time 4000.
 
 	float tod = wicked_time_of_day < 0.5f ? wicked_time_of_day : (1.0f - wicked_time_of_day);
-	float starbrightness = (0.25f - fabsf(tod)) * 20.0f;
+	float day_opacity = clamp(m_star_params.day_opacity, 0.0f, 1.0f);
+	float starbrightness = (0.25f - fabs(tod)) * 20.0f;
+	float alpha = clamp(starbrightness, day_opacity, 1.0f);
+
 	m_star_color = m_star_params.starcolor;
-	m_star_color.a *= clamp(starbrightness, 0.0f, 1.0f);
+	m_star_color.a *= alpha;
 	if (m_star_color.a <= 0.0f) // Stars are only drawn when not fully transparent
 		return;
 	m_materials[0].DiffuseColor = m_materials[0].EmissiveColor = m_star_color.toSColor();

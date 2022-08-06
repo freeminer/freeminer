@@ -26,24 +26,21 @@ RUN apk add --no-cache git build-base cmake sqlite-dev curl-dev zlib-dev zstd-de
 	rm -fr ./games/minetest_game/.git
 
 WORKDIR /usr/src/
-RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp/ -b v1.0.0 && \
-	mkdir prometheus-cpp/build && \
-	cd prometheus-cpp/build && \
-	cmake .. \
+RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp/ && \
+	cd prometheus-cpp && \
+	cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DENABLE_TESTING=0 \
 		-GNinja && \
-	ninja && \
-	ninja install
+	cmake --build build && \
+	cmake --install build
 
 RUN git clone --depth=1 https://github.com/minetest/irrlicht/ -b ${IRRLICHT_VERSION} && \
 	cp -r irrlicht/include /usr/include/irrlichtmt
 
 WORKDIR /usr/src/minetest
-RUN mkdir build && \
-	cd build && \
-	cmake .. \
+RUN cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DBUILD_SERVER=TRUE \
@@ -51,8 +48,8 @@ RUN mkdir build && \
 		-DBUILD_UNITTESTS=FALSE \
 		-DBUILD_CLIENT=FALSE \
 		-GNinja && \
-	ninja && \
-	ninja install
+	cmake --build build && \
+	cmake --install build
 
 ARG DOCKER_IMAGE=alpine:3.14
 FROM $DOCKER_IMAGE AS runtime

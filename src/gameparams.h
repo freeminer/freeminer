@@ -22,8 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include "content/subgames.h"
 #include "irrlichttypes.h"
-
-struct SubgameSpec;
+#include "content/subgames.h"
 
 // Information provided from "main"
 struct GameParams
@@ -34,6 +33,12 @@ struct GameParams
 	std::string world_path;
 	SubgameSpec game_spec;
 	bool is_dedicated_server;
+};
+
+enum class ELoginRegister {
+	Any = 0,
+	Login,
+	Register
 };
 
 // Information processed by main menu
@@ -47,6 +52,8 @@ struct GameStartData : GameParams
 	std::string password;
 	std::string address;
 	bool local_server;
+
+	ELoginRegister allow_login_or_register = ELoginRegister::Any;
 
 	// "world_path" must be kept in sync!
 	WorldSpec world_spec;

@@ -73,7 +73,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 // Retrieve Environment pointer as `env` (no map lock)
 #define GET_PLAIN_ENV_PTR_NO_MAP_LOCK            \
-	Environment *env = (Environment *)getEnv(L); \
+	Environment *env = getEnv(L);                \
 	if (env == NULL)                             \
 		return 0
 
