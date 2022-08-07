@@ -530,7 +530,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				<<": Timestamp"<<std::endl);
 		setTimestampNoChangedFlag(readU32(is));
-		m_disk_timestamp = m_timestamp;
+		m_disk_timestamp.store(m_timestamp);
 
 		// Node/id mapping
 		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
@@ -628,7 +628,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 			TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
 				    <<": Timestamp"<<std::endl);
 			setTimestampNoChangedFlag(readU32(is));
-			m_disk_timestamp = m_timestamp;
+			m_disk_timestamp.store(m_timestamp);
 			m_changed_timestamp = (unsigned int)m_timestamp != BLOCK_TIMESTAMP_UNDEFINED ? (unsigned int)m_timestamp : 0;
 
 			// Node/id mapping
@@ -712,7 +712,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		if(mod > m_modified){
 			m_modified = mod;
 			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
-				m_disk_timestamp = m_timestamp;
+				m_disk_timestamp.store(m_timestamp);
 		}
 		if (light == modified_light_yes)
 			setLightingComplete(0);
@@ -925,7 +925,7 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 		// Timestamp
 		if (version >= 17) {
 			setTimestampNoChangedFlag(readU32(is));
-			m_disk_timestamp = m_timestamp;
+			m_disk_timestamp.store(m_timestamp);
 		} else {
 			setTimestampNoChangedFlag(BLOCK_TIMESTAMP_UNDEFINED);
 		}

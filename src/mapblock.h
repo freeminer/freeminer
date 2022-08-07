@@ -696,7 +696,7 @@ private:
 	*/
 	std::atomic_uint m_timestamp {BLOCK_TIMESTAMP_UNDEFINED};
 	// The on-disk (or to-be on-disk) timestamp value
-	u32 m_disk_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
+	std::atomic_uint m_disk_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 
 	/*
 		When the block is accessed, this is set to 0.

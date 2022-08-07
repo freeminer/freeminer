@@ -40,6 +40,7 @@ public:
 
 	T *getActiveObject(u16 id)
 	{
+		auto lock = m_active_objects.lock_shared_rec();
 		typename std::unordered_map<u16, T *>::const_iterator n =
 				m_active_objects.find(id);
 		return (n != m_active_objects.end() ? n->second : nullptr);
