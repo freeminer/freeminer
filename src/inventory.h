@@ -287,7 +287,7 @@ private:
 	u32 m_size; // always the same as m_items.size()
 	u32 m_width = 0;
 	IItemDefManager *m_itemdef;
-	bool m_dirty = true;
+	std::atomic_bool m_dirty = true;
 };
 
 class Inventory

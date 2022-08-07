@@ -34,9 +34,17 @@ public:
 	bool isDead() const { return m_hp == 0; }
 
 	// Rotation
-	void setRotation(v3f rotation) { m_rotation = rotation; }
-	const v3f getRotation() const { return m_rotation; }
-	v3f getRadRotation() { return m_rotation * core::DEGTORAD; }
+	void setRotation(const v3f &rotation) {
+		std::unique_lock lock{m_rotation_mutex};
+		m_rotation = rotation; }
+	const v3f getRotation() {
+		std::shared_lock lock{m_rotation_mutex};
+		return m_rotation;
+	}
+	v3f getRadRotation() {
+		 std::shared_lock lock{m_rotation_mutex};
+		 return m_rotation * core::DEGTORAD;
+	}
 
 	// Deprecated
 	f32 getRadYawDep() const { return (m_rotation.Y + 90.) * core::DEGTORAD; }
@@ -95,6 +103,8 @@ protected:
 	u16 m_hp = 1;
 
 	v3f m_rotation;
+
+	std::shared_mutex m_rotation_mutex;
 
 	ItemGroupList m_armor_groups;
 

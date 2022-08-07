@@ -1615,7 +1615,7 @@ u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
 
 const std::string Connection::getDesc()
 {
-	MutexAutoLock _(m_info_mutex);
+	//MutexAutoLock _(m_info_mutex);
 	return std::string("con(")+
 			itos(m_udpSocket.GetHandle())+"/"+itos(m_peer_id)+")";
 }

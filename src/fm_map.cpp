@@ -140,7 +140,13 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 	return createBlankBlock(p);
 }
 
-
+bool Map::deleteBlock(v3s16 blockpos) {
+	auto block = getBlockNoCreateNoEx(blockpos);
+	if (!block)
+		return false;
+	deleteBlock(block);
+	return true;
+}
 
 void Map::deleteBlock(MapBlockP block) {
 	auto block_p = block->getPos();

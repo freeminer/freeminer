@@ -61,6 +61,8 @@ protected:
 
 	bool isFreeId(u16 id) const
 	{
+		auto lock = m_active_objects.lock_shared_rec();
+
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 

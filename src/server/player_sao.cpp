@@ -140,7 +140,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, 1); // is_player
 	writeS16(os, getId()); // id
 	writeV3F32(os, getBasePosition());
-	writeV3F32(os, m_rotation);
+	writeV3F32(os, getRotation());
 	writeU16(os, getHP());
 
 	auto lock = lock_shared_rec();
@@ -331,7 +331,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 			pos,
 			vel,
 			acc,
-			m_rotation,
+			getRotation(),
 			true,
 			false,
 			update_interval

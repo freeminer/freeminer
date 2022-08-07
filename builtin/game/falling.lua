@@ -424,8 +424,8 @@ core.register_entity(":__builtin:falling_node", {
 })
 
 local function convert_to_falling_node(pos, node)
-	core.spawn_falling_node(pos, node)
-	return true
+	return core.spawn_falling_node(pos, node)
+
 --[[
 	local obj = core.add_entity(pos, "__builtin:falling_node")
 	if not obj then
@@ -514,6 +514,8 @@ end
 --
 
 function core.check_single_for_falling(p)
+    return core.nodeupdate(p)
+--[[
 	local n = core.get_node(p)
 	if core.get_item_group(n.name, "falling_node") ~= 0 then
 		local p_bottom = vector.offset(p, 0, -1, 0)
@@ -548,6 +550,7 @@ function core.check_single_for_falling(p)
 	end
 
 	return false
+]]
 end
 
 -- This table is specifically ordered.
@@ -569,6 +572,8 @@ local check_for_falling_neighbors = {
 }
 
 function core.check_for_falling(p)
+    return core.nodeupdate(p)
+--[[
 	-- Round p to prevent falling entities to get stuck.
 	p = vector.round(p)
 
@@ -616,6 +621,7 @@ function core.check_for_falling(p)
 			v = 1
 		end
 	end
+]]
 end
 
 --

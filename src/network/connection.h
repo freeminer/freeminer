@@ -777,7 +777,7 @@ private:
 	// Event queue: ReceiveThread -> user
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
 
-	session_t m_peer_id = 0;
+	atomic_session_t m_peer_id = 0;
 	u32 m_protocol_id;
 
 	std::map<session_t, Peer *> m_peers;

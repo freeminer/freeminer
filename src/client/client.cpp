@@ -20,6 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstdint>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -2006,9 +2007,13 @@ void Client::afterContentReceived()
 	}
 
 	if (!headless_optimize) {
-	// Start mesh update thread after setting up content definitions
-		int threads = !g_settings->getBool("more_threads") ? 1 : (Thread::getNumberOfProcessors() - (m_simple_singleplayer_mode ? 3 : 1));
-		infostream<<"- Starting mesh update threads = "<<threads<<std::endl;
+		// Start mesh update thread after setting up content definitions
+		int threads = !g_settings->getBool("more_threads")
+							  ? 1
+							  : std::max<uint16_t>(
+										8, Thread::getNumberOfProcessors() -
+												   (m_simple_singleplayer_mode ? 3 : 1));
+		infostream << "- Starting mesh update threads = " << threads << std::endl;
 		m_mesh_update_thread.start(threads < 1 ? 1 : threads);
 	}
 

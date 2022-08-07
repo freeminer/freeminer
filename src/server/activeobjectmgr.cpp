@@ -29,19 +29,23 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 {
 
 	//std::vector<u16> objects_to_remove;
-
+   
+   decltype(m_active_objects)::full_type active_objects;
+   
    {
+	// bad copy: avoid deadlocks with locks in cb 
 	auto lock = m_active_objects.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
+	active_objects = m_active_objects;
+   }
 
-	for (auto &it : m_active_objects) {
+	for (auto &it : active_objects) {
 		if (cb(it.second, it.first)) {
 			// Id to be removed from m_active_objects
 			objects_to_remove.push_back(it.first);
 		}
 	}
-   }
 
 	if (objects_to_remove.empty())
 		return;

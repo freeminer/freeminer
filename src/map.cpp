@@ -2217,7 +2217,7 @@ bool ServerMap::deleteBlock(v3s16 blockpos)
 
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (block) {
-		deleteBlock(blockpos);
+		Map::deleteBlock(blockpos);
 /*
 		v2s16 p2d(blockpos.X, blockpos.Z);
 		MapSector *sector = getSectorNoGenerate(p2d);

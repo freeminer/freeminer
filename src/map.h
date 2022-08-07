@@ -203,7 +203,7 @@ public:
 	// Server implements these.
 	// Client leaves them as no-op.
 	virtual bool saveBlock(MapBlock *block) { return false; }
-	virtual bool deleteBlock(v3s16 blockpos) { return false; }
+	virtual bool deleteBlock(v3s16 blockpos); // { return false; }
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.

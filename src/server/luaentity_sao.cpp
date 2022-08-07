@@ -77,7 +77,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos, const std::string &d
 	m_init_state = state;
 	m_hp = hp;
 	m_velocity = velocity;
-	m_rotation = rotation;
+	setRotation(rotation);
 }
 
 LuaEntitySAO::~LuaEntitySAO()
@@ -248,7 +248,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, 0); // is_player
 	writeU16(os, getId()); //id
 	writeV3F32(os, getBasePosition());
-	writeV3F32(os, m_rotation);
+	writeV3F32(os, getRotation());
 	writeU16(os, m_hp);
 
 	std::ostringstream msg_os(std::ios::binary);
@@ -522,7 +522,7 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	m_last_sent_position = getBasePosition();
 	m_last_sent_velocity = m_velocity;
 	//m_last_sent_acceleration = m_acceleration;
-	m_last_sent_rotation = m_rotation;
+	m_last_sent_rotation = getRotation();
 
 	float update_interval = m_env->getSendRecommendedInterval();
 

@@ -372,7 +372,7 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 	*/
 	std::set<v3s16> newlist = m_forceloaded_list;
 	m_abm_list = m_forceloaded_list;
-	for (const PlayerSAO *playersao : active_players) {
+	for (PlayerSAO *playersao : active_players) {
 		v3s16 pos = getNodeBlockPos(floatToInt(playersao->getBasePosition(), BS));
 		fillRadiusBlock(pos, active_block_range, m_abm_list);
 		fillRadiusBlock(pos, active_block_range, newlist);
