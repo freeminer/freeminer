@@ -574,26 +574,17 @@ struct NodeNeighbor {
 	{ }
 };
 
-u32 Map::transforming_liquid_size() {
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-	return m_transforming_liquid.size();
-}
-
-void ServerMap::transforming_liquid_add(v3s16 p) {
-    	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-        m_transforming_liquid.push_back(p);
-}
-
 size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		ServerEnvironment *env
 		, Server *m_server, unsigned int max_cycle_ms
 		)
 {
+	g_profiler->add("Server: liquids queue", transforming_liquid_size());
+
 	if (g_settings->getBool("liquid_real"))
 		return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
 
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
-
 
 	u32 loopcount = 0;
 	u32 initial_size = transforming_liquid_size();
@@ -1456,7 +1447,7 @@ bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 			//verbosestream << " already generating" << blockpos_min << " for " << blockpos << " gentime=" << now - gen << std::endl;
 			return false;
 		}
-		m_mapgen_process.set(bpmin, now);
+		m_mapgen_process.emplace(bpmin, now);
 	}
 
 	v3s16 extra_borders(1, 1, 1);
@@ -1757,7 +1748,7 @@ void ServerMap::addNodeAndUpdate(v3s16 p, MapNode n,
 		if(is_valid_position &&
 				(m_nodedef->get(n2).isLiquid() ||
 				n2.getContent() == CONTENT_AIR))
-			m_transforming_liquid.push_back(p2);
+			transforming_liquid_add(p2);
 	}
 }
 
@@ -2010,7 +2001,7 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 			dbase_ro->loadBlock(p3d, &blob);
 		}
 		if (!blob.length()) {
-			m_db_miss.set(p3d, 1);
+			m_db_miss.emplace(p3d, 1);
 			return nullptr;
 		}
 

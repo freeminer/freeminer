@@ -41,6 +41,8 @@ ServerActiveObject *UnitSAO::getParent() const
 
 void UnitSAO::setArmorGroups(const ItemGroupList &armor_groups)
 {
+	auto lock = lock_unique_rec();
+
 	m_armor_groups = armor_groups;
 	m_armor_groups_sent = false;
 }

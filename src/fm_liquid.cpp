@@ -70,6 +70,17 @@ const s8 liquid_random_map[4][7] = {
 #define D_TOP 6
 #define D_SELF 1
 
+
+u32 ServerMap::transforming_liquid_size() {
+	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+	return m_transforming_liquid.size();
+}
+
+void ServerMap::transforming_liquid_add(const v3s16 &p) {
+    	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+        m_transforming_liquid.push_back(p);
+}
+
 size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
 
 	const auto *nodemgr = m_nodedef;
@@ -757,8 +768,10 @@ NEXT_LIQUID:
 	g_profiler->add("Server: liquids real processed", loopcount);
 	if (regenerated)
 		g_profiler->add("Server: liquids regenerated", regenerated);
+/*
 	if (loopcount < initial_size)
 		g_profiler->add("Server: liquids queue", initial_size);
+*/
 
 	return loopcount;
 }

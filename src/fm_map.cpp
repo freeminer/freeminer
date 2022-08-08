@@ -109,7 +109,7 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 
 	block = createBlankBlockNoInsert(p);
 
-	m_blocks.set(p, block);
+	m_blocks.emplace(p, block);
 
 	return block;
 }
@@ -128,7 +128,7 @@ bool Map::insertBlock(MapBlock *block) {
 	}
 
 	// Insert into container
-	m_blocks.set(block_p, block);
+	m_blocks.emplace(block_p, block);
 	return true;
 }
 
@@ -191,7 +191,7 @@ MapNode Map::getNodeNoLock(v3POS p) //dont use
 	return block->getNodeNoLock(p - blockpos*MAP_BLOCKSIZE);
 }
 */
-v3POS Map::transforming_liquid_pop() {
+v3POS ServerMap::transforming_liquid_pop() {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 	auto front = m_transforming_liquid.front();
 	m_transforming_liquid.pop_front();

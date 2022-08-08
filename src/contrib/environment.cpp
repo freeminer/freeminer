@@ -192,7 +192,6 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		v3f pos, const ItemStack &items)
 {
 	epixel::ItemSAO* obj = new epixel::ItemSAO(this, pos, "__builtin:item", "");
-	if (addActiveObject(obj)) {
 		IItemDefManager* idef = m_gamedef->getItemDefManager();
 		float s = 0.2 + 0.1 * (items.count / items.getStackMax(idef));
 		ObjectProperties* objProps = obj->accessObjectProperties();
@@ -209,8 +208,10 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		objProps->automatic_rotate = 3.1415 * 0.5;
 		obj->notifyObjectPropertiesModified();
 		obj->attachItems(items);
+	if (addActiveObject(obj)) {
 		return obj;
 	}
+	delete obj;
 	return nullptr;
 }
 
@@ -218,7 +219,6 @@ epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::strin
 		v3f pos, const MapNode n, int fast)
 {
 	epixel::FallingSAO* obj = new epixel::FallingSAO(this, pos, "__builtin:falling_node", "", fast);
-	if (addActiveObject(obj)) {
 		ObjectProperties* objProps = obj->accessObjectProperties();
 		objProps->is_visible = true;
 		objProps->visual = "wielditem";
@@ -228,8 +228,10 @@ epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::strin
 		objProps->collideWithObjects = false;
 		obj->notifyObjectPropertiesModified();
 		obj->attachNode(n);
+	if (addActiveObject(obj)) {
 		return obj;
 	}
+	delete obj;
 	return nullptr;
 }
 

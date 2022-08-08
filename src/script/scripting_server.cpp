@@ -125,6 +125,11 @@ void ServerScripting::initAsync()
 
 void ServerScripting::stepAsync()
 {
+	auto _script_lock = RecursiveMutexAutoLock(m_luastackmutex, std::try_to_lock);
+	if (!_script_lock.owns_lock()) {
+		return;
+	}
+
 	asyncEngine.step(getStack());
 }
 

@@ -30,13 +30,13 @@ unsigned int g_time_taker_enabled = 0;
 
 TimeTaker::TimeTaker(const std::string &name, u64 *result, TimePrecision prec)
 {
+	m_name = name;
+	m_result = result;
+	m_precision = prec;
 	if (!g_time_taker_enabled) {
 		m_running = false;
 		return;
 	}
-	m_name = name;
-	m_result = result;
-	m_precision = prec;
 	m_time1 = porting::getTime(prec);
 }
 

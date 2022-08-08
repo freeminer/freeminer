@@ -182,6 +182,7 @@ CachedMapBlockData* MeshUpdateQueue::cacheBlock(Map *map, v3s16 p, UpdateMode mo
 		if (!cached_block->data)
 			cached_block->data =
 					new MapNode[MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE];
+		auto lock = b->lock_shared_rec();
 		memcpy(cached_block->data, b->getData(),
 				MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE * sizeof(MapNode));
 	} else {
@@ -223,6 +224,12 @@ void MeshUpdateQueue::fillDataFromMapBlockCache(QueuedMeshUpdate *q)
 
 	data->setCrack(q->crack_level, q->crack_pos);
 	data->setSmoothLighting(m_cache_smooth_lighting);
+
+
+    data->step = q->step ? q->step : getFarmeshStep(m_client->m_env.getClientMap().getControl(), getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)), q->p);
+	data->range = getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(q->p);
+	if (q->step)
+		data->no_draw = true;
 }
 
 void MeshUpdateQueue::cleanupCache()

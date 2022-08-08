@@ -537,9 +537,6 @@ ServerEnvironment::~ServerEnvironment()
 
 
 	removeRemovedObjects(50000);
-	if (!objects_to_delete.empty())
-		removeRemovedObjects(50000);
-
 
 	// Drop/delete map
 	m_map->drop();
@@ -1297,7 +1294,8 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 
 		// Delete active object
 		if (obj->environmentDeletes())
-			delete obj;
+			m_ao_manager.deferDelete(obj);
+			//delete obj;
 
 		return true;
 	};
@@ -1769,7 +1767,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		u32 object_count = 0;
 
 		auto cb_state = [&] (ServerActiveObject *obj) {
-			if (obj->isGone())
+			if (!obj || obj->isGone())
 				return;
 			object_count++;
 
@@ -2094,7 +2092,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 {
 	ScopeProfiler sp(g_profiler, "ServerEnvironment::removeRemovedObjects()", SPT_AVG);
-
+/*
 	{
 		RecursiveMutexAutoLock testscriptlock(getScriptIface()->m_luastackmutex, std::try_to_lock);
 		if (testscriptlock.owns_lock()) {
@@ -2103,6 +2101,7 @@ void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 			objects_to_delete.clear();
 		}
 	}
+*/
 
 	auto clear_cb = [this] (ServerActiveObject *obj, u16 id) {
 		// This shouldn't happen but check it
@@ -2160,7 +2159,8 @@ void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 
 		// Delete
 		if (obj->environmentDeletes())
-			delete obj;
+			m_ao_manager.deferDelete(obj);
+			//delete obj;
 
 		return true;
 	};
@@ -2460,7 +2460,7 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 		if (obj->environmentDeletes())
 		{
 			//m_active_objects.set(id, nullptr);
-			objects_to_delete.push_back(obj);
+			m_ao_manager.deferDelete(obj);
 		}
 
 		return true;

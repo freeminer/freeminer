@@ -452,7 +452,7 @@ void RemoteClient::GotBlock(v3s16 p)
 
 void RemoteClient::SentBlock(v3s16 p, double time)
 {
-	m_blocks_sent.set(p, time);
+	m_blocks_sent.emplace(p, time);
 }
 
 /*
@@ -842,7 +842,7 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 	return client.get();
 }
 
-std::shared_ptr<RemoteClient> ClientInterface::getClient(session_t peer_id, ClientState state_min)
+RemoteClientPtr ClientInterface::getClient(session_t peer_id, ClientState state_min)
 {
 	auto clientslock = m_clients.lock_shared_rec();
 	const auto n = m_clients.find(peer_id);

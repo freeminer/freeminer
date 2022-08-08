@@ -200,7 +200,7 @@ int RemoteClient::GetNextBlocks (
 	static const auto max_block_send_distance = g_settings->getS16("max_block_send_distance");
 	s16 full_d_max = max_block_send_distance;
 	if (wanted_range) {
-		s16 wanted_blocks = wanted_range / MAP_BLOCKSIZE + 1;
+		s16 wanted_blocks = wanted_range /* / MAP_BLOCKSIZE */ + 1;
 		if (wanted_blocks < full_d_max)
 			full_d_max = wanted_blocks;
 	}

@@ -2723,7 +2723,7 @@ int Server::SendBlocks(float dtime)
 
 		ClientInterface::AutoLock clientlock(m_clients);
 		for (const session_t client_id : clients) {
-			RemoteClient *client = m_clients.lockedGetClientNoEx(client_id, CS_Active);
+			auto client = m_clients.getClient(client_id, CS_Active);
 
 			if (!client)
 				continue;
@@ -3457,6 +3457,7 @@ RemoteClient *Server::getClient(session_t peer_id, ClientState state_min)
 
 	return client;
 }
+
 RemoteClient *Server::getClientNoEx(session_t peer_id, ClientState state_min)
 {
 	return m_clients.getClientNoEx(peer_id, state_min);

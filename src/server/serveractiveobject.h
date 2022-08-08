@@ -277,7 +277,7 @@ protected:
 		  to be deleted but can be set by anything else too.
 		Note: Do not assign this directly, use markForRemoval() instead.
 	*/
-	bool m_pending_removal = false;
+	std::atomic_bool m_pending_removal = false;
 
 //fm:
 	public:

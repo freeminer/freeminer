@@ -205,7 +205,7 @@ public:
 private:
 	std::vector<Mapgen *> m_mapgens;
 	std::vector<EmergeThread *> m_threads;
-	bool m_threads_active = false;
+	std::atomic_bool m_threads_active {false};
 
 	std::mutex m_queue_mutex;
 	std::map<v3s16, BlockEmergeData> m_blocks_enqueued;

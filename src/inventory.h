@@ -352,5 +352,5 @@ private:
 
 	std::vector<InventoryList*> m_lists;
 	IItemDefManager *m_itemdef;
-	bool m_dirty = true;
+	std::atomic_bool m_dirty = true;
 };

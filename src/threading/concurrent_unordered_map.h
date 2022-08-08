@@ -48,9 +48,11 @@ public:
 		return full_type::operator[](k);
 	}
 
-	void set(const key_type& k, const mapped_type& v) {
+	template <typename... Args>
+	decltype(auto) emplace(Args &&...args)
+	{
 		auto lock = LOCKER::lock_unique_rec();
-		full_type::operator[](k) = v;
+		return full_type::emplace(std::forward<Args>(args)...);
 	}
 
 	bool      empty() {

@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/event_manager.h"
 #include "fontengine.h"
 #include "itemdef.h"
-#include "log_types.h"
+#include "log.h"
 #include "filesys.h"
 #include "gameparams.h"
 #include "gettext.h"
@@ -4347,6 +4347,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	float update_draw_list_delta = 0.5f;
 
 /* mt dir */
+/*
 	v3f camera_direction = camera->getDirection();
 	if (!runData.headless_optimize)
 	if (runData.update_draw_list_timer >= update_draw_list_delta
@@ -4357,9 +4358,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		client->getEnv().getClientMap().updateDrawList(dtime, 100);
 		runData.update_draw_list_last_cam_dir = camera_direction;
 	}
+*/
 /* */
 
-/* TODO:
+// /* TODO:
 // fm pos:
 	auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize)
@@ -4382,22 +4384,22 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 					updateDrawList_future = std::async(
 							std::launch::async,
 							[=](float dtime) {
-								client->getEnv().getClientMap().updateDrawList(
-										dtime, 1000);
+								client->getEnv().getClientMap().updateDrawListFm(
+										dtime, 10000);
 							},
 							runData.update_draw_list_timer);
 				}
 			} else
 #endif
 
-				client->getEnv().getClientMap().updateDrawList(
+				client->getEnv().getClientMap().updateDrawListFm(
 						runData.update_draw_list_timer);
 			runData.update_draw_list_timer = 0;
 			// runData.update_draw_list_last_cam_dir = camera_direction;
 			if (allow)
 				runData.update_draw_list_last_cam_pos = camera->getPosition();
 		}
-*/
+// */
 
 	if (RenderingEngine::get_shadow_renderer()) {
 		updateShadows();
@@ -4619,7 +4621,7 @@ void Game::showOverlayMessage(const std::string &msg, float dtime, int percent, 
 	const wchar_t *wmsg = wgettext(msg.c_str());
 	m_rendering_engine->draw_load_screen(wmsg, guienv, texture_src, dtime, percent,
 		draw_clouds);
-	//delete[] wmsg;
+	delete[] wmsg;
 }
 
 void Game::settingChangedCallback(const std::string &setting_name, void *data)

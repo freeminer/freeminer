@@ -41,6 +41,11 @@ struct CachedMapBlockData
 
 struct QueuedMeshUpdate
 {
+	//fm:
+	int step = 0;
+	//int range = 1;
+
+
 	v3s16 p = v3s16(-1337, -1337, -1337);
 	bool ack_block_to_server = false;
 	int crack_level = -1;

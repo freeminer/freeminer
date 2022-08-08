@@ -28,7 +28,16 @@ namespace server
 {
 class ActiveObjectMgr : public ::ActiveObjectMgr<ServerActiveObject>
 {
+
+    std::vector<ServerActiveObject *> m_objects_to_delete;
+	std::vector<u16> objects_to_remove;
 public:
+	~ActiveObjectMgr();
+
+
+public:
+	void deferDelete(ServerActiveObject *obj);
+
 	void clear(const std::function<bool(ServerActiveObject *, u16)> &cb);
 	void step(float dtime,
 			const std::function<void(ServerActiveObject *)> &f) override;

@@ -45,6 +45,9 @@ struct MapDrawControl
 	float fov = 180;
 	float fov_add = 0;
 	float fov_want = 180; // smooth change
+
+	float farthest_drawn = 0;
+
 	//bool block_overflow;
 	void fm_init();
 	MapDrawControl() {
@@ -142,6 +145,7 @@ public:
 	void getBlocksInViewRange(v3s16 cam_pos_nodes,
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
 	void updateDrawList(float dtime, unsigned int max_cycle_ms = 0);
+	void updateDrawListFm(float dtime, unsigned int max_cycle_ms = 0);
 	void updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length);
 	// Returns true if draw list needs updating before drawing the next frame.
 	bool needsUpdateDrawList() { return m_needs_update_drawlist; }
@@ -224,16 +228,20 @@ private:
 	v3s16 m_camera_offset;
 	bool m_needs_update_transparent_meshes = true;
 
-	std::atomic<concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> *> m_drawlist_fm;
-	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_0;
-	concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual> m_drawlist_1;
+
+// fm:
+    using drawlist_map = std::map<v3POS, MapBlockP, MapBlockComparer>;
+	drawlist_map m_drawlist_0, m_drawlist_1;
+	std::atomic<drawlist_map *> m_drawlist {&m_drawlist_0};
 	int m_drawlist_current = 0;
 	std::vector<std::pair<v3POS, int>> draw_nearest;
 public:
 	std::atomic_uint m_drawlist_last {0};
 	std::map<v3POS, MapBlock*> m_block_boundary;
 private:
-	std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
+
+
+	//std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
 	std::map<v3s16, MapBlock*> m_drawlist_shadow;
 	bool m_needs_update_drawlist;
 	std::set<v2s16> m_last_drawn_sectors;

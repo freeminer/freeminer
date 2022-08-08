@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <atomic>
 #include <mutex>
 #include <set>
 #include "irr_v3d.h"
@@ -626,7 +627,7 @@ public:
 	// Cache of content types
 	std::unordered_set<content_t> contents;
 	// True if content types are cached
-	bool contents_cached = false;
+	std::atomic_bool contents_cached {false};
 	// True if we never want to cache content types for this block
 	bool do_not_cache_contents = false;
 
@@ -661,7 +662,7 @@ private:
 		  block has been modified from the one on disk.
 		- On the client, this is used for nothing.
 	*/
-	u32 m_modified = MOD_STATE_CLEAN;
+	std::atomic_uint8_t m_modified = MOD_STATE_CLEAN;
 	u32 m_modified_reason = MOD_REASON_INITIAL;
 
 	/*
@@ -688,7 +689,7 @@ private:
 	bool m_day_night_differs = false;
 	std::atomic_bool m_day_night_differs_expired {true};
 
-	bool m_generated = false;
+	std::atomic_bool m_generated {false};
 
 	/*
 		When block is removed from active blocks, this is set to gametime.

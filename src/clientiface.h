@@ -462,7 +462,8 @@ private:
 };
 
 //typedef std::unordered_map<u16, RemoteClient*> RemoteClientMap;
-using RemoteClientMap = concurrent_map<u16, std::shared_ptr<RemoteClient>>;
+using RemoteClientPtr = std::shared_ptr<RemoteClient>;
+using RemoteClientMap = concurrent_unordered_map<u16, RemoteClientPtr>;
 using RemoteClientVector = std::vector<std::shared_ptr<RemoteClient>>;
 
 class ClientInterface {
@@ -507,7 +508,7 @@ public:
 	/* create client */
 	void CreateClient(session_t peer_id);
 
-	std::shared_ptr<RemoteClient> getClient(u16 peer_id,  ClientState state_min=CS_Active);
+	RemoteClientPtr getClient(u16 peer_id,  ClientState state_min=CS_Active);
 
 	/* get a client by peer_id */
 	RemoteClient *getClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);

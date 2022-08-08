@@ -25,20 +25,32 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 namespace server
 {
 
+void ActiveObjectMgr::deferDelete(ServerActiveObject *obj) {
+	obj->markForRemoval();
+	m_objects_to_delete.emplace_back(obj);
+}
+
+ActiveObjectMgr::~ActiveObjectMgr() {
+	for (auto & obj : m_objects_to_delete)
+		delete obj;
+	for (auto & obj : m_objects_to_delete_2)
+		delete obj;
+}
+
 void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)> &cb)
 {
 
 	//std::vector<u16> objects_to_remove;
-   
-   decltype(m_active_objects)::full_type active_objects;
-   
-   {
-	// bad copy: avoid deadlocks with locks in cb 
-	auto lock = m_active_objects.try_lock_shared_rec();
-	if (!lock->owns_lock())
-		return;
-	active_objects = m_active_objects;
-   }
+
+	decltype(m_active_objects)::full_type active_objects;
+
+	{
+		// bad copy: avoid deadlocks with locks in cb
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+		active_objects = m_active_objects;
+	}
 
 	for (auto &it : active_objects) {
 		if (cb(it.second, it.first)) {
@@ -63,6 +75,11 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 void ActiveObjectMgr::step(
 		float dtime, const std::function<void(ServerActiveObject *)> &f)
 {
+
+	for (auto & obj : m_objects_to_delete)
+		delete obj;
+	m_objects_to_delete.clear();
+
 	std::vector<ServerActiveObject *> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
@@ -117,7 +134,7 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 		return false;
 	}
 
-	m_active_objects.set(obj->getId(),obj);
+	m_active_objects.emplace(obj->getId(),obj);
 #if !NDEBUG
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 			<< "Added id=" << obj->getId() << "; there are now "
@@ -137,8 +154,9 @@ void ActiveObjectMgr::removeObject(u16 id)
 		return;
 	}
 
+    deferDelete(m_active_objects.get(id));
 	m_active_objects.erase(id);
-	delete obj;
+	//delete obj;
 }
 
 // clang-format on
@@ -184,9 +202,14 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		f32 player_radius, std::set<u16> &current_objects,
 		std::queue<u16> &added_objects)
 {
-	auto lock = m_active_objects.try_lock_shared_rec();
-	if (!lock->owns_lock())                            
-		return;                                    
+	decltype(m_active_objects)::full_type active_objects;
+	{
+		// bad copy: avoid deadlocks with locks in cb
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+		active_objects = m_active_objects;
+	}
 
 	int count = 0;
 	/*
@@ -196,7 +219,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		- discard objects that are found in current_objects.
 		- add remaining objects to added_objects
 	*/
-	for (auto &ao_it : m_active_objects) {
+	for (auto &ao_it : active_objects) {
 		u16 id = ao_it.first;
 
 		// Get object

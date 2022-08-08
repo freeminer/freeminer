@@ -52,7 +52,7 @@ public:
 	{
 		if (m_set.insert(value).second)
 		{
-			m_queue.push(value);
+			m_queue.emplace(value);
 			return true;
 		}
 		return false;

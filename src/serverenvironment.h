@@ -466,7 +466,7 @@ public:
 	std::unordered_map<std::string, KeyValueStorage> m_key_value_storage;
 private:
 	std::vector<u16> objects_to_remove;
-	std::vector<ServerActiveObject*> objects_to_delete;
+	//std::vector<ServerActiveObject*> objects_to_delete;
 	//loop breakers
 	u32 m_active_objects_last = 0;
 	u32 m_active_block_abm_last = 0;

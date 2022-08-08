@@ -264,8 +264,6 @@ public:
 
 
 //freeminer:
-	u32 transforming_liquid_size();
-	v3s16 transforming_liquid_pop();
 	std::atomic_uint m_liquid_step_flow;
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
@@ -337,7 +335,6 @@ protected:
 public:
 	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
-	UniqueQueue<v3POS> m_transforming_liquid;
 	typedef unordered_map_v3POS<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
 	std::map<v3POS, int> m_lighting_modified_blocks;
@@ -372,6 +369,11 @@ public:
 //freeminer:
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
+
+	u32 transforming_liquid_size();
+	v3s16 transforming_liquid_pop();
+	void transforming_liquid_add(const v3s16 &p);
+	size_t transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
@@ -477,13 +479,10 @@ public:
 	bool repairBlockLight(v3s16 blockpos,
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
-	size_t transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
 	size_t transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
 			ServerEnvironment *env
             , Server *m_server, unsigned int max_cycle_ms			
 			);
-
-	void transforming_liquid_add(v3s16 p);
 
 	MapSettingsManager settings_mgr;
 

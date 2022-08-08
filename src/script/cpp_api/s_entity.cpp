@@ -34,10 +34,10 @@ bool ScriptApiEntity::luaentity_Add(u16 id, const char *name, bool force_usage)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-/*
+#if !NDEBUG
 	verbosestream<<"scriptapi_luaentity_add: id="<<id<<" name=\""
 			<<name<<"\""<<std::endl;
-*/
+#endif
 
 	// Get core.registered_entities[name]
 	lua_getglobal(L, "core");
@@ -49,7 +49,7 @@ bool ScriptApiEntity::luaentity_Add(u16 id, const char *name, bool force_usage)
 	//luaL_checktype(L, -1, LUA_TTABLE);
 	if (lua_type(L, -1) != LUA_TTABLE){
 		if (!reported_not_defined[name])
-		infostream<<"LuaEntity name \""<<name<<"\" not defined"<<std::endl;
+		errorstream<<"LuaEntity name \""<<name<<"\" not defined"<<std::endl;
 		reported_not_defined[name] = true;
 		return false;
 	}
@@ -88,9 +88,9 @@ void ScriptApiEntity::luaentity_Activate(u16 id,
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-/*
+#if !NDEBUG
 	verbosestream << "scriptapi_luaentity_activate: id=" << id << std::endl;
-*/
+#endif
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
@@ -144,9 +144,9 @@ void ScriptApiEntity::luaentity_Remove(u16 id)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-/*
+#if !NDEBUG
 	verbosestream << "scriptapi_luaentity_rm: id=" << id << std::endl;
-*/
+#endif
 
 	// Get core.luaentities table
 	lua_getglobal(L, "core");

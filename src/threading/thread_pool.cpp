@@ -70,8 +70,6 @@ bool thread_pool::stopRequested() {
 	return requeststop;
 }
 bool thread_pool::isRunning() {
-	if (requeststop)
-		join();
 	return !workers.empty();
 }
 void thread_pool::wait() {
