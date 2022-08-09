@@ -56,8 +56,6 @@ else()
 	set(STATIC_BUILD 0)
 endif()
 
-
-message(WARNING "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(USE_DEBUG_HELPERS ON)
 endif()

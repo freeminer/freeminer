@@ -370,7 +370,7 @@ public:
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 
-	u32 transforming_liquid_size();
+	size_t transforming_liquid_size();
 	v3s16 transforming_liquid_pop();
 	void transforming_liquid_add(const v3s16 &p);
 	size_t transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);

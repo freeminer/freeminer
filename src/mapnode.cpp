@@ -639,14 +639,13 @@ u8 MapNode::getMaxLevel(const NodeDefManager *nodemgr, bool compress) const
 u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 {
 	const ContentFeatures &f = nodemgr->get(*this);
-/* FM WAS:
 	if (f.param_type_2 == CPT2_LEVELED) {
 		u8 level = getParam2() & LEVELED_MASK;
 		if (f.liquid_type == LIQUID_SOURCE)
 			level += f.getMaxLevel();
 		if(level)
 			return level;
-		return 1; // default snow
+		//? return 1; // default snow
 	} 
 	if(f.leveled) {
 		if(f.leveled > LEVELED_MAX)
@@ -654,6 +653,7 @@ u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 		//if(f.leveled > f.getMaxLevel()) return f.getMaxLevel();
 		return f.leveled; //default
 	}
+/* FM WAS:
 	if(f.liquid_type == LIQUID_SOURCE) {
 		if (nodemgr->get(nodemgr->getId(f.liquid_alternative_flowing)).param_type_2 == CPT2_LEVELED)
 			return LEVELED_MAX;

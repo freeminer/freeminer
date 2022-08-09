@@ -266,7 +266,7 @@ protected:
 		priority.
 		Note: Do not assign this directly, use markForDeactivation() instead.
 	*/
-	bool m_pending_deactivation = false;
+	std::atomic_bool m_pending_deactivation = false;
 
 	/*
 		- Whether this object is to be removed when nobody knows about

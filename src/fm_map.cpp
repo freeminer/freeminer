@@ -191,18 +191,6 @@ MapNode Map::getNodeNoLock(v3POS p) //dont use
 	return block->getNodeNoLock(p - blockpos*MAP_BLOCKSIZE);
 }
 */
-v3POS ServerMap::transforming_liquid_pop() {
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-	auto front = m_transforming_liquid.front();
-	m_transforming_liquid.pop_front();
-	return front;
-
-	//auto lock = m_transforming_liquid.lock_unique_rec();
-	//auto it = m_transforming_liquid.begin();
-	//auto value = it->first;
-	//m_transforming_liquid.erase(it);
-	//return value;
-}
 
 s16 Map::getHeat(v3POS p, bool no_random) {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
