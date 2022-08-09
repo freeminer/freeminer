@@ -180,7 +180,7 @@ return {
 	end,
 	cbf_button_handler = function(this, fields, name, tabdata)
 		if fields.homepage then
-			core.open_url("https://www.minetest.net")
+			core.open_url("https://freeminer.org")
 		end
 
 		if fields.share_debug then
