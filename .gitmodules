@@ -16,3 +16,6 @@
 [submodule "src/external/msgpack-c"]
 	path = src/external/msgpack-c
 	url = https://github.com/msgpack/msgpack-c.git
+[submodule "lib/irrlichtmt"]
+	path = lib/irrlichtmt
+	url = https://github.com/minetest/irrlicht
