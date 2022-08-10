@@ -1,7 +1,7 @@
 #!/bin/bash
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 gameid=${gameid:-devtest}
-minetest=$dir/../bin/minetest
+minetest=$dir/../bin/freeminer
 testspath=$dir/../tests
 conf_client1=$testspath/client1.conf
 conf_server=$testspath/server.conf

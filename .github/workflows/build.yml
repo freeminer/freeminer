@@ -49,7 +49,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/freeminer --run-unittests
 
   # Current gcc version
   gcc_10:
@@ -70,7 +70,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/freeminer --run-unittests
 
   # Older clang version (should be close to our minimum supported version)
   clang_3_9:
@@ -91,7 +91,7 @@ jobs:
 
       - name: Unittest
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/freeminer --run-unittests
 
       - name: Integration test + devtest
         run: |
@@ -117,11 +117,11 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetest --run-unittests
+          ./bin/freeminer --run-unittests
 
       - name: Valgrind
         run: |
-          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/minetest --run-unittests
+          valgrind --leak-check=full --leak-check-heuristics=all --undef-value-errors=no --error-exitcode=9 ./bin/freeminer --run-unittests
 
   # Build with prometheus-cpp (server-only)
   clang_9_prometheus:
@@ -148,7 +148,7 @@ jobs:
 
       - name: Test
         run: |
-          ./bin/minetestserver --run-unittests
+          ./bin/freeminerserver --run-unittests
 
   docker:
     name: "Docker image"
@@ -158,7 +158,7 @@ jobs:
       - name: Build docker image
         run: |
           docker build . -t minetest:latest
-          docker run --rm minetest:latest /usr/local/bin/minetestserver --version
+          docker run --rm minetest:latest /usr/local/bin/freeminerserver --version
 
   win32:
     name: "MinGW cross-compiler (32-bit)"

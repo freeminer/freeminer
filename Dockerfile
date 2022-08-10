@@ -4,10 +4,11 @@ FROM $DOCKER_IMAGE AS builder
 ENV MINETEST_GAME_VERSION master
 ENV IRRLICHT_VERSION master
 
+COPY mods /usr/src/minetest/mods
 COPY .git /usr/src/minetest/.git
 COPY CMakeLists.txt /usr/src/minetest/CMakeLists.txt
 COPY README.md /usr/src/minetest/README.md
-COPY minetest.conf.example /usr/src/minetest/minetest.conf.example
+COPY freeminer.conf.example /usr/src/minetest/freeminer.conf.example
 COPY builtin /usr/src/minetest/builtin
 COPY cmake /usr/src/minetest/cmake
 COPY doc /usr/src/minetest/doc
@@ -21,9 +22,11 @@ COPY textures /usr/src/minetest/textures
 WORKDIR /usr/src/minetest
 
 RUN apk add --no-cache git build-base cmake sqlite-dev curl-dev zlib-dev zstd-dev \
+                msgpack-c boost-dev leveldb-dev snappy-dev \
 		gmp-dev jsoncpp-dev postgresql-dev ninja luajit-dev ca-certificates && \
-	git clone --depth=1 -b ${MINETEST_GAME_VERSION} https://github.com/minetest/minetest_game.git ./games/minetest_game && \
-	rm -fr ./games/minetest_game/.git
+true
+#	git clone --depth=1 -b ${MINETEST_GAME_VERSION} https://github.com/minetest/minetest_game.git ./games/minetest_game && \
+#	rm -fr ./games/minetest_game/.git
 
 WORKDIR /usr/src/
 RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp/ && \
@@ -60,12 +63,12 @@ RUN apk add --no-cache sqlite-libs curl gmp libstdc++ libgcc libpq luajit jsoncp
 
 WORKDIR /var/lib/minetest
 
-COPY --from=builder /usr/local/share/minetest /usr/local/share/minetest
-COPY --from=builder /usr/local/bin/minetestserver /usr/local/bin/minetestserver
-COPY --from=builder /usr/local/share/doc/minetest/minetest.conf.example /etc/minetest/minetest.conf
+COPY --from=builder /usr/local/share/freeminer /usr/local/share/freeminer
+COPY --from=builder /usr/local/bin/freeminerserver /usr/local/bin/freeminerserver
+COPY --from=builder /usr/local/share/doc/minetest/freeminer.conf.example /etc/minetest/freeminer.conf
 
 USER minetest:minetest
 
 EXPOSE 30000/udp 30000/tcp
 
-CMD ["/usr/local/bin/minetestserver", "--config", "/etc/minetest/minetest.conf"]
+CMD ["/usr/local/bin/freeminerserver", "--config", "/etc/minetest/freeminer.conf"]

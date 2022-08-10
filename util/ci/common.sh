@@ -3,6 +3,7 @@
 # Linux build only
 install_linux_deps() {
 	local pkgs=(cmake libpng-dev \
+        libleveldb-dev libsnappy-dev \
 		libjpeg-dev libxxf86vm-dev libgl1-mesa-dev libsqlite3-dev \
 		libhiredis-dev libogg-dev libgmp-dev libvorbis-dev libopenal-dev \
 		gettext libpq-dev libleveldb-dev libcurl4-openssl-dev libzstd-dev)

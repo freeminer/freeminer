@@ -282,8 +282,8 @@ install(FILES "freeminer.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 
 if(UNIX AND NOT APPLE)
 	install(FILES "doc/freeminer.6" "doc/freeminerserver.6" DESTINATION "${MANDIR}/man6")
-	install(FILES "misc/net.freeminer.freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/net.freeminer.freeminer.appdata.xml" DESTINATION "${APPDATADIR}")
+	install(FILES "misc/org.freeminer.freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
+	install(FILES "misc/org.freeminer.freeminer.appdata.xml" DESTINATION "${APPDATADIR}")
 	install(FILES "misc/freeminer.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
 	install(FILES "misc/freeminer-xorg-icon-128.png"
 		DESTINATION "${ICONDIR}/hicolor/128x128/apps"
