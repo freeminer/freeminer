@@ -97,7 +97,6 @@ v3POS ServerMap::transforming_liquid_pop() {
 }
 
 size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms) {
-
 	const auto *nodemgr = m_nodedef;
 
 	//TimeTaker timer("transformLiquidsReal()");
@@ -111,8 +110,8 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 #endif
 
 	uint8_t relax = g_settings->getS16("liquid_relax");
-	static int fast_flood = g_settings->getS16("liquid_fast_flood");
-	static int water_level = g_settings->getS16("water_level");
+	thread_local static int fast_flood = g_settings->getS16("liquid_fast_flood");
+	thread_local static int water_level = g_settings->getS16("water_level");
 	int16_t liquid_pressure = m_server->m_emerge->mgparams->liquid_pressure;
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
@@ -657,7 +656,7 @@ NEXT_LIQUID:
 				continue;
 
 #if LIQUID_DEBUG
-			if (debug) infostream << " set=" << i << " " << neighbors[i].pos << " want=" << (int)liquid_levels_want[i] << " was=" << (int) liquid_levels[i] << std::endl;
+			if (debug) infostream << " set=" << (int)i << " " << neighbors[i].pos << " want=" << (int)liquid_levels_want[i] << " was=" << (int) liquid_levels[i] << std::endl;
 #endif
 
 			/* disabled because brokes constant volume of lava
@@ -734,8 +733,8 @@ NEXT_LIQUID:
 		//if (total_was != flowed) {
 		if (total_was > flowed) {
 			infostream << " volume changed!  flowed=" << flowed << " total_was=" << total_was << " want_level=" << want_level;
-			for (u16 rr = 0; rr <= 6; rr++) {
-				infostream << "  i=" << rr << ",b" << (int)liquid_levels[rr] << ",a" << (int)liquid_levels_want[rr];
+			for (uint8_t rr = 0; rr <= 6; rr++) {
+				infostream << "  i=" << (int)rr << ",b" << (int)liquid_levels[rr] << ",a" << (int)liquid_levels_want[rr];
 			}
 			infostream << std::endl;
 		}

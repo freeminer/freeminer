@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapgen_v7.h"
 #include "mapgen_indev.h" //farscale
 #include "serverenvironment.h"
-#include "log_types.h"
+#include "log.h"
 
 
 
