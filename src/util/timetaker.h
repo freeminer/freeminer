@@ -33,6 +33,11 @@ extern unsigned int g_time_taker_enabled;
 class TimeTaker
 {
 public:
+	// in freeminer timetaker by default disabled for release builds.
+	// to count time should call this: 
+	void start();
+
+
 	TimeTaker(const std::string &name, u64 *result=nullptr,
 		TimePrecision prec=PRECISION_MILLI);
 
@@ -47,7 +52,7 @@ public:
 
 private:
 	std::string m_name;
-	u64 m_time1;
+	u64 m_time1 = 0;
 	bool m_running = true;
 	TimePrecision m_precision;
 	u64 *m_result = nullptr;

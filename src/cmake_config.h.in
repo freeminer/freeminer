@@ -17,6 +17,7 @@
 #cmakedefine01 USE_SCTP
 #cmakedefine01 LOCK_PROFILE
 #cmakedefine01 BUILD_CLIENT
+#define USE_ASYNC_DRAWLIST_UPDATE 1
 
 
 #define PROJECT_NAME "@PROJECT_NAME@"

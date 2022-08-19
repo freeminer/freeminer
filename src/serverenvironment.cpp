@@ -1648,6 +1648,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	if (m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, m_cache_abm_interval)) {
 		ScopeProfiler sp(g_profiler, "SEnv: modify in blocks avg per interval", SPT_AVG);
 		TimeTaker timer("modify in active blocks per interval");
+		timer.start();
 
 /*
 		// Initialize handling of ActiveBlockModifiers

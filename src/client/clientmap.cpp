@@ -754,6 +754,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	}
 
 	TimeTaker draw("Drawing mesh buffers");
+	draw.start();
 
 	core::matrix4 m; // Model matrix
 	v3f offset = intToFloat(m_camera_offset, BS);
@@ -1108,6 +1109,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	}
 
 	TimeTaker draw("Drawing shadow mesh buffers");
+	draw.start();
 
 	core::matrix4 m; // Model matrix
 	v3f offset = intToFloat(m_camera_offset, BS);

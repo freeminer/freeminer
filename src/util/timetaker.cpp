@@ -28,6 +28,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 unsigned int g_time_taker_enabled = 0;
 
+void TimeTaker::start() {
+	if (!m_time1)
+		m_time1 = porting::getTime(m_precision);
+};
+
 TimeTaker::TimeTaker(const std::string &name, u64 *result, TimePrecision prec)
 {
 	m_name = name;
