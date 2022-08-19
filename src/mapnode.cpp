@@ -645,7 +645,7 @@ u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 			level += f.getMaxLevel();
 		if(level)
 			return level;
-		//? return 1; // default snow
+		return 1; // default snow
 	} 
 	if(f.leveled) {
 		if(f.leveled > LEVELED_MAX)
@@ -726,6 +726,12 @@ s16 MapNode::setLevel(const NodeDefManager *nodemgr, s16 level, bool compress)
 		if (level < 0) { // zero means default for a leveled nodebox
 			rest = level;
 			level = 0;
+
+		} else if (level <= 0) { // liquid can’t exist with zero level
+			setContent(CONTENT_AIR);
+			setParam2(0);
+			return 0;
+
 /*
 		} else if (level > f.leveled_max) {
 			rest = level - f.leveled_max;
