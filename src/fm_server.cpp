@@ -122,7 +122,7 @@ public:
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #if !EXEPTION_DEBUG
-			} catch(std::exception &e) {
+			} catch(const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl;
 			} catch (...) {
 				errorstream << m_name << ": Ooops..." << std::endl;
@@ -159,7 +159,7 @@ public:
 				time = time_now;
 				std::this_thread::sleep_for(std::chrono::milliseconds(sent ? 5 : 100));
 #if !EXEPTION_DEBUG
-			} catch(std::exception &e) {
+			} catch(const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl;
 			} catch (...) {
 				errorstream << m_name << ": Ooops..." << std::endl;
@@ -198,7 +198,7 @@ public:
 				std::this_thread::sleep_for(std::chrono::milliseconds(time_spend > 300 ? 1 : 300 - time_spend));
 
 #if !EXEPTION_DEBUG
-			} catch(std::exception &e) {
+			} catch(const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl;
 			} catch (...) {
 				errorstream << m_name << ": Ooops..." << std::endl;
@@ -233,7 +233,7 @@ public:
 				m_server->getEnv().step(dtimems / 1000.0f, m_server->m_uptime_counter->get(), max_cycle_ms);
 				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
 #if !EXEPTION_DEBUG
-			} catch(std::exception &e) {
+			} catch(const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl;
 			} catch (...) {
 				errorstream << m_name << ": Ooops..." << std::endl;
@@ -268,7 +268,7 @@ public:
 				m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
 				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
 #if !EXEPTION_DEBUG
-			} catch(std::exception &e) {
+			} catch(const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl;
 			} catch (...) {
 				errorstream << m_name << ": Ooops..." << std::endl;

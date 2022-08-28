@@ -256,7 +256,8 @@ std::vector<SubgameSpec> getAvailableGames()
 
 bool getWorldExists(const std::string &world_path)
 {
-	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.json") ||
+	return (fs::PathExists(world_path + DIR_DELIM + "map_meta.txt") ||
+			fs::PathExists(world_path + DIR_DELIM + "map_meta.json") ||
 			fs::PathExists(world_path + DIR_DELIM + "world.mt"));
 }
 
@@ -411,7 +412,7 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 
 	// Create map_meta.txt if does not already exist
 	std::string map_meta_path = final_path + DIR_DELIM + "map_meta";
-	if (!fs::PathExists(map_meta_path)) {
+	if (!fs::PathExists(map_meta_path + ".txt") && !fs::PathExists(map_meta_path + ".json")) {
 		MapSettingsManager mgr(map_meta_path);
 
 		mgr.setMapSetting("seed", g_settings->get("fixed_map_seed"));

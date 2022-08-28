@@ -87,7 +87,7 @@ struct MapgenIndevParams : public MapgenV6Params {
 	~MapgenIndevParams() {}
 
 	void readParams(const Settings *settings) override;
-	void writeParams(Settings *settings) override const;
+	void writeParams(Settings *settings) const override ;
 	void setDefaultSettings(Settings *settings) override;
 };
 
