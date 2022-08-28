@@ -232,6 +232,13 @@ void MapgenIndevParams::writeParams(Settings *settings) const {
 	settings->setNoiseParams("mgindev_np_cave_indev",     np_cave_indev);
 }
 
+void MapgenIndevParams::setDefaultSettings(Settings *settings)
+{
+	settings->setDefault("mgindev_spflags", flagdesc_mapgen_v6, MGV6_JUNGLES |
+		MGV6_SNOWBIOMES | MGV6_TREES | MGV6_BIOMEBLEND | MGV6_MUDFLOW);
+}
+
+
 void MapgenIndev::generateCaves(int max_stone_y) {
 	MapgenV6::generateCaves(max_stone_y);
 	return;

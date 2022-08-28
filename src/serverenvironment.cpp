@@ -1951,8 +1951,10 @@ void ServerEnvironment::getRemovedActiveObjects(PlayerSAO *playersao, s16 radius
 		ServerActiveObject *object = getActiveObject(id, true);
 
 		if (object == NULL) {
+#if !NDEBUG
 			infostream << "ServerEnvironment::getRemovedActiveObjects():"
 				<< " object in current_objects is NULL" << std::endl;
+#endif
 			removed_objects.push(id);
 			continue;
 		}

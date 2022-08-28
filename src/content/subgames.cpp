@@ -252,7 +252,7 @@ std::vector<SubgameSpec> getAvailableGames()
 	return specs;
 }
 
-#define LEGACY_GAMEID "minetest"
+#define LEGACY_GAMEID "default"
 
 bool getWorldExists(const std::string &world_path)
 {

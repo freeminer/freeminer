@@ -79,7 +79,7 @@ struct MapgenV6Params : public MapgenParams {
 
 	void readParams(const Settings *settings);
 	void writeParams(Settings *settings) const;
-	void setDefaultSettings(Settings *settings);
+	virtual void setDefaultSettings(Settings *settings);
 };
 
 

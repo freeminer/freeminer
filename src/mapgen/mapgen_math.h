@@ -44,8 +44,9 @@ struct MapgenMathParams : public MapgenV7Params {
 	enumCalculationMode mode;
 #endif
 
-	void readParams(const Settings *settings);
-	void writeParams(Settings *settings) const;
+	void readParams(const Settings *settings) override;
+	void writeParams(Settings *settings) const override;
+	void setDefaultSettings(Settings *settings) override;
 };
 
 class MapgenMath : public MapgenV7 {

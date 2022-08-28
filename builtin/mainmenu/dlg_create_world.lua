@@ -33,6 +33,20 @@ local cb_caverns = { "caverns", fgettext("Caverns"),
 	fgettext("Very large caverns deep in the underground") }
 
 local flag_checkboxes = {
+	indev = {
+		{ "trees", fgettext("Trees and jungle grass") },
+		{ "flat", fgettext("Flat terrain") },
+		{ "mudflow", fgettext("Mud flow"), fgettext("Terrain surface erosion") },
+		-- Biome settings are in mgv6_biomes below
+	},
+	math = {
+		cb_caverns,
+		{ "ridges", fgettext("Rivers"), fgettext("Sea level rivers") },
+		{ "mountains", fgettext("Mountains") },
+		{ "floatlands", fgettext("Floatlands (experimental)"),
+		fgettext("Floating landmasses in the sky") },
+	},
+
 	v5 = {
 		cb_caverns,
 	},
@@ -393,6 +407,10 @@ local function create_world_buttonhandler(this, fields)
 				fixed_map_seed = this.data.seed,
 				mg_name = this.data.mg,
 				mg_flags = table_to_flags(this.data.flags.main),
+
+				mgindev_spflags = table_to_flags(this.data.flags.indev),
+				mgmath_spflags = table_to_flags(this.data.flags.math),
+
 				mgv5_spflags = table_to_flags(this.data.flags.v5),
 				mgv6_spflags = table_to_flags(this.data.flags.v6),
 				mgv7_spflags = table_to_flags(this.data.flags.v7),
@@ -476,6 +494,8 @@ function create_create_world_dlg()
 		mg = core.settings:get("mg_name"),
 		flags = {
 			main = core.settings:get_flags("mg_flags"),
+			indev = core.settings:get_flags("mgindev_spflags"),
+			math = core.settings:get_flags("mgmath_spflags"),
 			v5 = core.settings:get_flags("mgv5_spflags"),
 			v6 = core.settings:get_flags("mgv6_spflags"),
 			v7 = core.settings:get_flags("mgv7_spflags"),

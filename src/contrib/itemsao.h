@@ -30,15 +30,15 @@ public:
 			const std::string &name, const std::string &state);
 	~ItemSAO();
 
-	ActiveObjectType getType() const
+	ActiveObjectType getType() const override
 	{ return ACTIVEOBJECT_TYPE_LUAITEM; }
 
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
 			const std::string &data);
 
-	virtual void addedToEnvironment(u32 dtime_s);
+	virtual void addedToEnvironment(u32 dtime_s) override;
 
-	void step(float dtime, bool send_recommended);
+	void step(float dtime, bool send_recommended) override;
 
 	void attachItems(ItemStack st) { m_item_stack = st; }
 	ItemStack getAttachedItems() { return m_item_stack; }

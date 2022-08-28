@@ -43,6 +43,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mandelbulber/fractal.cpp"
 #endif
 
+
+void MapgenMathParams::setDefaultSettings(Settings *settings)
+{
+	settings->setDefault("mgmath_spflags", flagdesc_mapgen_v7,
+		MGV7_FLOATLANDS |
+		MGV7_MOUNTAINS | MGV7_RIDGES | MGV7_CAVERNS);
+}
+
+
 /* TODO:
 http://k3dsurf.s4.bizhat.com/k3dsurf-ftopic119-0-asc-15.html
 

@@ -4080,6 +4080,7 @@ std::string Server::getBuiltinLuaPath()
 	return porting::path_share + DIR_DELIM + "builtin";
 }
 
+#if 1
 v3f Server::findSpawnPos()
 {
 	ServerMap &map = m_env->getServerMap();
@@ -4150,9 +4151,10 @@ v3f Server::findSpawnPos()
 	// No suitable spawn point found, return fallback 0,0,0
 	return v3f(0.0f, 0.0f, 0.0f);
 }
+#endif
 
 #if 0 
-fmtodo?
+//fmtodo?
 
 v3f Server::findSpawnPos()
 {
@@ -4165,7 +4167,8 @@ v3f Server::findSpawnPos()
 	}
 
 	// todo: remove
-	s16 water_level = map.getWaterLevel();
+	//s16 water_level = map.getWaterLevel();
+	s16 water_level = m_emerge->getSpawnLevelAtPoint(v2s16(nodeposf.X, nodeposf.Z));
 	s16 vertical_spawn_range = g_settings->getS16("vertical_spawn_range");
 	//============
 	auto cache_block_before_spawn = g_settings->getBool("cache_block_before_spawn");
@@ -4180,10 +4183,12 @@ v3f Server::findSpawnPos()
 		// We're going to try to throw the player to this position
 		v2s16 nodepos2d = v2s16(nodeposf.X - range + (myrand() % (range * 2)),
 				nodeposf.Z - range + (myrand() % (range * 2)));
-
 		// FM version:
 		// Get ground height at point
 		s16 spawn_level = map.findGroundLevel(nodepos2d, cache_block_before_spawn);
+
+//DUMP(i, is_good, nodepos2d.X, nodepos2d.Y, spawn_level);
+
 		// Don't go underwater or to high places
 		if (spawn_level <= water_level ||
 				spawn_level > water_level + vertical_spawn_range)
@@ -4200,11 +4205,13 @@ v3f Server::findSpawnPos()
 		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 
 		s32 air_count = 0;
-		for (s32 i = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50;
-				i < vertical_spawn_range; i++) {
+		for (s32 ii = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50;
+				ii < vertical_spawn_range; ii++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
-			map.emergeBlock(blockpos, false);
+			if (!map.emergeBlock(blockpos, false))
+				continue;
 			content_t c = map.getNode(nodepos).getContent();
+DUMP(ii, c, air_count, nodepos.Y, is_good);
 			if (c == CONTENT_AIR /*|| c == CONTENT_IGNORE*/) {
 				air_count++;
 				if (air_count >= min_air_height) {

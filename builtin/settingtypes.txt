@@ -1003,7 +1003,7 @@ fixed_map_seed (Fixed map seed) string
 #    Creating a world in the main menu will override this.
 #    Current mapgens in a highly unstable state:
 #    -    The optional floatlands of v7 (disabled by default).
-mg_name (Mapgen name) enum v7 v7,valleys,carpathian,v5,flat,fractal,singlenode,v6
+mg_name (Mapgen name) enum v7 indev,math,v7,valleys,carpathian,v5,flat,fractal,singlenode,v6
 
 #    Water surface level of the world.
 water_level (Water level) int 1 -31000 31000
@@ -1104,6 +1104,25 @@ mgv5_np_ground (Ground noise) noise_params_3d 0, 40, (80, 80, 80), 983240, 4, 0.
 
 #    3D noise that determines number of dungeons per mapchunk.
 mgv5_np_dungeons (Dungeon noise) noise_params_3d 0.9, 0.5, (500, 500, 500), 0, 2, 0.8, 2.0
+
+
+
+[*Mapgen indev]
+
+#    Map generation attributes specific to Mapgen v6.
+#    The 'snowbiomes' flag enables the new 5 biome system.
+#    When the 'snowbiomes' flag is enabled jungles are automatically enabled and
+#    the 'jungles' flag is ignored.
+mgindev_spflags (Mapgen indev specific flags) flags jungles,biomeblend,mudflow,snowbiomes,noflat,trees jungles,biomeblend,mudflow,snowbiomes,flat,trees,nojungles,nobiomeblend,nomudflow,nosnowbiomes,noflat,notrees
+
+[*Mapgen math]
+
+#    Map generation attributes specific to Mapgen v7.
+#    'ridges': Rivers.
+#    'floatlands': Floating land masses in the atmosphere.
+#    'caverns': Giant caves deep underground.
+mgmath_spflags (Mapgen math specific flags) flags mountains,ridges,nofloatlands,caverns mountains,ridges,floatlands,caverns,nomountains,noridges,nofloatlands,nocaverns
+
 
 [*Mapgen V6]
 
