@@ -1109,7 +1109,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 					nn.param1 = 5; // will be recalculated by next light step
 			}
 			m_map->setNode(p, nn);
-		} catch(InvalidPositionException &e) { }
+		} catch(const InvalidPositionException &e) { }
 	} else {
 
 	if (!m_map->addNodeWithEvent(p, n))
@@ -1155,7 +1155,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 			if (fast == 2)
 				n.param1 = n_old.param1;
 			m_map->setNode(p, n);
-		} catch(InvalidPositionException &e) { }
+		} catch(const InvalidPositionException &e) { }
 	} else
 
 	if (!m_map->removeNodeWithEvent(p))
@@ -1672,7 +1672,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 	   
 		int i = 0;
 		// determine the time budget for ABMs
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms; 
+		u32 n = 0, calls = 0; // end_ms = porting::getTimeMs() + max_cycle_ms; 
 		u32 max_time_ms = m_cache_abm_interval * 1000 * m_cache_abm_time_budget;
 		for (const v3s16 &p : output) {
 /*

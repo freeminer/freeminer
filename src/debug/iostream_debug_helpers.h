@@ -25,14 +25,16 @@ Out & dumpValue(Out &, T &&);
 template <int priority, typename Out, typename T>
 std::enable_if_t<priority == -1, Out> & dumpImpl(Out & out, T &&)
 {
-    return out << "{...}";
+    out << "{...}";
+    return out;
 }
 
 /// An object, that could be output with operator <<.
 template <int priority, typename Out, typename T>
 std::enable_if_t<priority == 0, Out> & dumpImpl(Out & out, T && x, std::decay_t<decltype(std::declval<Out &>() << std::declval<T>())> * = nullptr)
 {
-    return out << x;
+    out << x;
+    return out;
 }
 
 /// A pointer-like object.
@@ -61,7 +63,8 @@ std::enable_if_t<priority == 2, Out> & dumpImpl(Out & out, T && x, std::decay_t<
             out << ", ";
         dumpValue(out, elem);
     }
-    return out << "}";
+    out << "}";
+    return out;
 }
 
 
@@ -69,7 +72,8 @@ template <int priority, typename Out, typename T>
 std::enable_if_t<priority == 3 && std::is_enum_v<std::decay_t<T>>, Out> &
 dumpImpl(Out & out, T && x)
 {
-    return out << magic_enum::enum_name(x);
+    out << magic_enum::enum_name(x);
+    return out;
 }
 
 /// string and const char * - output not as container or pointer.
@@ -78,7 +82,8 @@ template <int priority, typename Out, typename T>
 std::enable_if_t<priority == 3 && (std::is_same_v<std::decay_t<T>, std::string> || std::is_same_v<std::decay_t<T>, const char *>), Out> &
 dumpImpl(Out & out, T && x)
 {
-    return out << std::quoted(x);
+    out << std::quoted(x);
+    return out;
 }
 
 /// UInt8 - output as number, not char.
@@ -87,7 +92,8 @@ template <int priority, typename Out, typename T>
 std::enable_if_t<priority == 3 && std::is_same_v<std::decay_t<T>, unsigned char>, Out> &
 dumpImpl(Out & out, T && x)
 {
-    return out << int(x);
+    out << int(x);
+    return out;
 }
 
 
@@ -149,21 +155,43 @@ Out & dump(Out & out, const char * name, T && x)
          const auto value_len = strlen(x);
          // `name` is the same as quoted `x`
          if (name_len > 2 && value_len > 0 && name[0] == '"' && name[name_len - 1] == '"'
-                 && strncmp(name + 1, x, std::min(value_len, name_len) - 1) == 0)
-             return out << x;
+                 && strncmp(name + 1, x, std::min(value_len, name_len) - 1) == 0) {
+             out << x;
+             return out;
+         }
     }
 
     out << demangle(typeid(x).name()) << " " << name << " = ";
-    return dumpValue(out, x) << "; ";
+    dumpValue(out, x) << "; ";
+    return out;
 }
 
 #ifdef __clang__
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 
-#define DUMPVAR(VAR) ::dump(std::cerr, #VAR, (VAR));
-#define DUMPHEAD std::cerr << __FILE__ << ':' << __LINE__ << " [ " << getThreadId() << " ] ";
-#define DUMPTAIL std::cerr << '\n';
+#if !defined(DUMP_STREAM)                                                   
+    #define DUMP_STREAM std::cerr                                           
+#endif                                                                      
+                                                                            
+#if !defined(DUMP_FILE)                                                     
+    #define DUMP_FILE << __FILE__ << ':' << __LINE__                        
+#endif                                                                      
+                                                                            
+#if !defined(DUMP_ENDL)                                                     
+    #define DUMP_ENDL << '\n'                                               
+#endif                                                                      
+                                                                            
+#if !defined(DUMP_THREAD)                                                   
+    #define DUMP_THREAD << " [ " << getThreadId() << " ] "     
+#endif                                                                      
+                                                                            
+#define DUMPVAR(VAR)                \
+    ::dump(DUMP_STREAM, #VAR, (VAR)); \
+    DUMP_STREAM << "; ";                                      
+#define DUMPHEAD DUMP_STREAM DUMP_FILE DUMP_THREAD;           
+                                                              
+#define DUMPTAIL DUMP_STREAM DUMP_ENDL;                       
 
 #define DUMP1(V1) do { DUMPHEAD DUMPVAR(V1) DUMPTAIL } while(0)
 #define DUMP2(V1, V2) do { DUMPHEAD DUMPVAR(V1) DUMPVAR(V2) DUMPTAIL } while(0)

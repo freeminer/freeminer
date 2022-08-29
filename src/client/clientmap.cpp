@@ -353,7 +353,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 
 	// Number of blocks currently loaded by the client
-	u32 blocks_loaded = 0;
+	//u32 blocks_loaded = 0;
 	// Number of blocks with mesh in rendering range
 	u32 blocks_in_range_with_mesh = 0;
 	// Number of blocks occlusion culled
@@ -374,7 +374,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	float farthest_drawn = 0;
 	int m_mesh_queued = 0;
 
-	bool free_move = g_settings->getBool("free_move");
+	//bool free_move = g_settings->getBool("free_move");
 
 	float range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range * (m_control.wanted_range > 200 ? 1.2 : 1.5);
 
@@ -588,7 +588,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	m_drawlist_current = !m_drawlist_current;
 
-	auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
+	//auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
 
 /*

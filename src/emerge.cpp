@@ -180,8 +180,11 @@ EmergeManager::EmergeManager(Server *server, MetricsBackend *mb)
 	// If automatic, leave a proc for the main thread and one for
 	// some other misc thread
 #if ENABLE_THREADS
-	if (nthreads <= 0)
+	if (nthreads <= 0) {
 		nthreads = Thread::getNumberOfProcessors() - 2;
+		if (nthreads > 8)
+			nthreads = 8;
+	}
 #endif
 	if (nthreads < 1)
 		nthreads = 1;

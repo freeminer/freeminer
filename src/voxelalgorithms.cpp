@@ -643,6 +643,10 @@ void update_lighting_nodes(Map *map,
 		// Spread lights.
 		spread_light(map, ndef, bank, light_sources, modified_blocks);
 	}
+
+	for (const auto & block : modified_blocks) {
+		block.second->lighting_broken = 0;
+	}
 }
 
 /*!
@@ -763,6 +767,10 @@ void update_block_border_lighting(Map *map, MapBlock *block,
 		}
 		// Spread lights.
 		spread_light(map, ndef, bank, light_sources, modified_blocks);
+	}
+
+	for (const auto & block : modified_blocks) {
+		block.second->lighting_broken = 0;
 	}
 }
 
@@ -1045,6 +1053,10 @@ void finish_bulk_light_update(Map *map, mapblock_v3 minblock,
 		}
 		// Spread lights.
 		spread_light(map, ndef, bank, relight[b], *modified_blocks);
+	}
+
+	for (const auto & block : *modified_blocks) {
+		block.second->lighting_broken = 0;
 	}
 }
 

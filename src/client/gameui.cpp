@@ -121,7 +121,17 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 			<< " | view range: "
 			<< (draw_control->range_all ? "All" : itos(draw_control->wanted_range))
 			<< std::setprecision(2)
+;
+
+		if (draw_control->farmesh)
+			os << ", farmesh = " << draw_control->farmesh << ":"
+			   << draw_control->farmesh_step;
+#if MINETEST_PROTO
+		os 
+
 			<< " | RTT: " << (client->getRTT() * 1000.0f) << "ms";
+#endif
+
 		setStaticText(m_guitext, utf8_to_wide(os.str()).c_str());
 
 		m_guitext->setRelativePosition(core::rect<s32>(5, 5, screensize.X,
@@ -145,6 +155,12 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 			<< yawToDirectionString(cam.camera_yaw)
 			<< " | pitch: " << (-wrapDegrees_180(cam.camera_pitch)) << "°"
 			<< " | seed: " << ((u64)client->getMapSeed());
+
+		auto pos_i = floatToInt(player_position, BS);
+		os << " | (t=" << client->getEnv().getClientMap().getHeat(pos_i, 1)
+		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1) << "%"
+		   << ")";
+		;
 
 		if (pointed_old.type == POINTEDTHING_NODE) {
 			ClientMap &map = client->getEnv().getClientMap();

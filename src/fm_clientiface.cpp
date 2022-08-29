@@ -148,16 +148,16 @@ int RemoteClient::GetNextBlocks (
 
 	//infostream<<"d_start="<<d_start<<std::endl;
 
-	static const u16 max_simul_sends_setting = g_settings->getU16
+	thread_local static const u16 max_simul_sends_setting = g_settings->getU16
 			("max_simultaneous_block_sends_per_client");
-	static const u16 max_simul_sends_usually = max_simul_sends_setting;
+	thread_local static const u16 max_simul_sends_usually = max_simul_sends_setting;
 
 	/*
 		Check the time from last addNode/removeNode.
 
 		Decrease send rate if player is building stuff.
 	*/
-	static const auto full_block_send_enable_min_time_from_building = g_settings->getFloat("full_block_send_enable_min_time_from_building");
+	thread_local static const auto full_block_send_enable_min_time_from_building = g_settings->getFloat("full_block_send_enable_min_time_from_building");
 	if(m_time_from_building < full_block_send_enable_min_time_from_building)
 	{
 		/*
@@ -197,7 +197,7 @@ int RemoteClient::GetNextBlocks (
 	if (camera_fov <= 0) camera_fov = ((fov+5)*M_PI/180) * 4./3.;
 
 
-	static const auto max_block_send_distance = g_settings->getS16("max_block_send_distance");
+ 	thread_local static const auto max_block_send_distance = g_settings->getS16("max_block_send_distance");
 	s16 full_d_max = max_block_send_distance;
 	if (wanted_range) {
 		s16 wanted_blocks = wanted_range /* / MAP_BLOCKSIZE */ + 1;
@@ -215,7 +215,7 @@ int RemoteClient::GetNextBlocks (
 	//infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max << std::endl;
 
 	s16 d_max = full_d_max;
-	static const s16 d_max_gen_s = g_settings->getS16("max_block_generate_distance");
+	thread_local static const s16 d_max_gen_s = g_settings->getS16("max_block_generate_distance");
 	s16 d_max_gen = MYMIN(d_max_gen_s, wanted_range);
 
 	// Don't loop very much at a time
@@ -236,7 +236,7 @@ int RemoteClient::GetNextBlocks (
 
 	int num_blocks_air = 0;
 	int blocks_occlusion_culled = 0;
-	static const bool server_occlusion = g_settings->getBool("server_occlusion");
+	thread_local static const bool server_occlusion = g_settings->getBool("server_occlusion");
 	bool occlusion_culling_enabled = server_occlusion;
 
 	auto cam_pos_nodes = floatToInt(playerpos, BS);
@@ -371,8 +371,8 @@ int RemoteClient::GetNextBlocks (
 			}
 
 			//bool surely_not_found_on_disk = false;
-			bool block_is_invalid = false;
-			if(block != NULL)
+			//bool block_is_invalid = false;
+			if(block)
 			{
 
 				/*if (d > 3 && block->content_only == CONTENT_AIR) {
@@ -490,7 +490,7 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Add inexistent block to emerge queue.
 			*/
-			if(!block || /*surely_not_found_on_disk ||*/ block_is_invalid)
+			if(!block /*|| surely_not_found_on_disk || block_is_invalid*/)
 			{
 				//infostream<<"start gen d="<<d<<" p="<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<" generate="<<generate<<std::endl;
 				if (generate || !env->getServerMap().m_db_miss.count(p)) {
