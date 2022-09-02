@@ -33,7 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_mapnode.h" // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
 #include "serialization.h"
-#ifndef SERVER
+#if BUILD_CLIENT
 #include "client/mapblock_mesh.h"
 #endif
 #include "porting.h"
@@ -740,7 +740,7 @@ void MapBlock::pushElementsToCircuit(Circuit* circuit)
 	}
 
 
-#ifndef SERVER
+#if BUILD_CLIENT
 MapBlock::mesh_type MapBlock::getMesh(int step) {
 	if (step >= 16 && mesh16) return mesh16;
 	if (step >= 8  && mesh8)  return mesh8;

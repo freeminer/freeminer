@@ -44,8 +44,10 @@ std::enable_if_t<priority == 1
     && !std::is_same_v<std::decay_t<T>, std::decay_t<decltype(*std::declval<T>())>>
     , Out> & dumpImpl(Out & out, T && x, std::decay_t<decltype(*std::declval<T>())> * = nullptr)
 {
-    if (!x)
-        return out << "nullptr";
+    if (!x) {
+        out << "nullptr";
+        return out;
+    }
     return dumpValue(out, *x);
 }
 

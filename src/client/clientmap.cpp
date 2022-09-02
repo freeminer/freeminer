@@ -113,7 +113,8 @@ ClientMap::ClientMap(
 
 void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
 {
-	v3s16 previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
+	//v3s16 previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
+	v3s16 previous_node = m_camera_position_node;
 	v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 
 	m_camera_position = pos;
@@ -122,6 +123,7 @@ void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
 	m_camera_offset = offset;
 
 	v3s16 current_node = floatToInt(m_camera_position, BS) + m_camera_offset;
+	m_camera_position_node = current_node;
 	v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
 	// reorder the blocks when camera crosses block boundary
@@ -217,7 +219,8 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	// Blocks are cropped better when they are drawn.
 	const f32 camera_fov = m_camera_fov * 1.1f;
 
-	v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
+	//v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
+	v3s16 cam_pos_nodes = m_camera_position_node;
 
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
@@ -275,10 +278,12 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 				if not seen on display
 			*/
 
+			/*
 			if (!block->mesh) {
 				// Ignore if mesh doesn't exist
 				continue;
 			}
+			*/
 
 			v3s16 block_coord = block->getPos();
 			v3s16 block_position = block->getPosRelative() + MAP_BLOCKSIZE / 2;
@@ -346,7 +351,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	// Or maybe they aren't? Well whatever.
 	camera_fov *= 1.2;
 
-	v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
+	//v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
+	v3s16 cam_pos_nodes = m_camera_position_node;
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
@@ -528,7 +534,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			if ((!m_control.range_all && d > m_control.wanted_range * BS) ||
 					(occlusion_culling_enabled && isBlockOccluded(block, cam_pos_nodes))) {
 				blocks_occlusion_culled++;
-				continue;
+			    continue;
 			}
 
 
@@ -677,9 +683,12 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	for (auto &i : m_drawlist) {
 		v3s16 block_pos = i.first;
 		MapBlock *block = i.second;
-
+		//int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), block->getPos());
+		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos());
+		
 		// If the mesh of the block happened to get deleted, ignore it
-		if (!block->mesh)
+		const auto mapBlockMesh = block->getMesh(mesh_step);
+		if (!mapBlockMesh)
 			continue;
 
 		v3f block_pos_r = intToFloat(block->getPosRelative() + MAP_BLOCKSIZE / 2, BS);
@@ -688,8 +697,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 		// Mesh animation
 		if (pass == scene::ESNRP_SOLID) {
-			auto mapBlockMesh = block->mesh;
-			assert(mapBlockMesh);
+			//auto mapBlockMesh = block->mesh;
+			//assert(mapBlockMesh);
 			// Pretty random but this should work somewhat nicely
 			bool faraway = d >= BS * 50;
 			if (mapBlockMesh->isAnimationForced() || !faraway ||
@@ -710,13 +719,13 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		if (is_transparent_pass) {
 			// In transparent pass, the mesh will give us
 			// the partial buffers in the correct order
-			for (auto &buffer : block->mesh->getTransparentBuffers())
+			for (auto &buffer : mapBlockMesh->getTransparentBuffers())
 				draw_order.emplace_back(block_pos, &buffer);
 		}
 		else {
 			// otherwise, group buffers across meshes
 			// using MeshBufListList
-			auto mapBlockMesh = block->mesh;
+			//auto mapBlockMesh = block->mesh;
 			assert(mapBlockMesh);
 
 			for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
@@ -1056,7 +1065,9 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		MapBlock *block = i.second;
 
 		// If the mesh of the block happened to get deleted, ignore it
-		if (!block->mesh)
+		const auto mapBlockMesh = block->getMesh(getFarmeshStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()));
+
+		if (!mapBlockMesh)
 			continue;
 
 		/*
@@ -1065,14 +1076,14 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		if (is_transparent_pass) {
 			// In transparent pass, the mesh will give us
 			// the partial buffers in the correct order
-			for (auto &buffer : block->mesh->getTransparentBuffers())
+			for (auto &buffer : mapBlockMesh->getTransparentBuffers())
 				draw_order.emplace_back(block_pos, &buffer);
 		}
 		else {
 			// otherwise, group buffers across meshes
 			// using MeshBufListList
-			auto mapBlockMesh = block->mesh;
-			assert(mapBlockMesh);
+			//auto mapBlockMesh = block->mesh;
+			//assert(mapBlockMesh);
 
 			for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 				scene::IMesh *mesh = mapBlockMesh->getMesh(layer);
@@ -1204,8 +1215,10 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 
 		for (auto & [key, block] : m_blocks) {
 			++blocks_loaded;
+			
+			const auto mapBlockMesh = block->getMesh(getFarmeshStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()));
 
-			if (!block->mesh) {
+			if (!mapBlockMesh) {
 				// Ignore if mesh doesn't exist
 				continue;
 			}
@@ -1246,21 +1259,22 @@ void ClientMap::updateTransparentMeshBuffers()
 	// Update the order of transparent mesh buffers in each mesh
 	for (auto it = m_drawlist.begin(); it != m_drawlist.end(); it++) {
 		MapBlock* block = it->second;
-		if (!block->mesh)
+		const auto mapBlockMesh = block->getMesh(getFarmeshStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()));
+		if (!mapBlockMesh)
 			continue;
 		
 		if (m_needs_update_transparent_meshes || 
-				block->mesh->getTransparentBuffers().size() == 0) {
+				mapBlockMesh->getTransparentBuffers().size() == 0) {
 
 			v3s16 block_pos = block->getPos();
 			v3f block_pos_f = intToFloat(block_pos * MAP_BLOCKSIZE + MAP_BLOCKSIZE / 2, BS);
 			f32 distance = m_camera_position.getDistanceFromSQ(block_pos_f);
 			if (distance <= sorting_distance_sq) {
-				block->mesh->updateTransparentBuffers(m_camera_position, block_pos);
+				mapBlockMesh->updateTransparentBuffers(m_camera_position, block_pos);
 				++sorted_blocks;
 			}
 			else {
-				block->mesh->consolidateTransparentBuffers();
+				mapBlockMesh->consolidateTransparentBuffers();
 				++unsorted_blocks;
 			}
 		}

@@ -43,7 +43,7 @@ class IShaderSource;
 	Mesh making stuff
 */
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3POS & player_pos, const v3POS & block_pos);
+int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerblockpos, const v3POS & block_pos);
 
 class MapBlock;
 struct MinimapMapblock;
@@ -261,10 +261,10 @@ public:
 		m_usage_timer += dtime;
 	}
 
-	int step;
-	bool no_draw;
-	unsigned int timestamp;
-	u32 m_usage_timer;
+	int step = 1;
+	bool no_draw = 0;
+	unsigned int timestamp = 0;
+	u32 m_usage_timer = 0;
 
 
 	/// update transparent buffers to render towards the camera

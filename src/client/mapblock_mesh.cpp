@@ -36,8 +36,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <algorithm>
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerpos, const v3POS & blockpos) {
-	int range = radius_box(playerpos, blockpos);
+int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerblockpos, const v3POS & blockpos) {
+	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.farmesh) {
 		const POS nearest = 256/MAP_BLOCKSIZE;
 		if		(range >= std::min<POS>(nearest*8, draw_control.farmesh+draw_control.farmesh_step*4))	return 16;
@@ -77,6 +77,9 @@ bool MeshMakeData::fill_data()
 		return filled;
 	filled = true;
 	timestamp = block->getTimestamp();
+
+	return filled;
+
 
 #if !defined(MESH_ZEROCOPY)
 	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
@@ -1331,7 +1334,8 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	if (!data->fill_data())
 		return;
-	if (step == 1 || !data->block->getMesh())
+
+	if (step == 1) // || !data->block->getMesh())
 	if (data->m_client->getMinimap()) {
 		m_minimap_mapblock = new MinimapMapblock;
 		m_minimap_mapblock->getMinimapNodes(
@@ -1518,22 +1522,15 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 			}
 			mesh->addMeshBuffer(buf);
 			buf->drop();
+
 		}
 
-
-
-/* FMTODO move?
-	v3f t = v3f(0,0,0);
-	if (step>1) {
-		F(m_mesh, v3f(HBS, 0, HBS));
-		scaleMesh(m_mesh, v3f(step,step,step));
-		t = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
-	}
-*/
-/*
-	translateMesh(m_mesh,
-		intToFloat(data->m_blockpos * MAP_BLOCKSIZE - camera_offset, BS) + t);
-*/
+		// v3f t = v3f(0,0,0);
+		if (step > 1) {
+			translateMesh(m_mesh[layer], v3f(HBS, 0, HBS));
+			scaleMesh(m_mesh[layer], v3f(step, step, step));
+			// t = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
+		}
 
 		if (m_mesh[layer]) {
 			// Use VBO for mesh (this just would set this for ever buffer)
