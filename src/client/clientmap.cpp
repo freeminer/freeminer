@@ -122,7 +122,7 @@ void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
 	m_camera_fov = fov;
 	m_camera_offset = offset;
 
-	v3s16 current_node = floatToInt(m_camera_position, BS) + m_camera_offset;
+	v3s16 current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
 	m_camera_position_node = current_node;
 	v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
@@ -343,20 +343,21 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	if (!max_cycle_ms)
 		max_cycle_ms = 300/getControl().fps_wanted;
 
-	v3f camera_position = m_camera_position;
-	f32 camera_fov = m_camera_fov;
+	//v3f camera_position = m_camera_position;
+	//f32 camera_fov = m_camera_fov;
 
 	// Use a higher fov to accomodate faster camera movements.
 	// Blocks are cropped better when they are drawn.
 	// Or maybe they aren't? Well whatever.
-	camera_fov *= 1.2;
+	//camera_fov *= 1.2;
 
 	//v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
 	v3s16 cam_pos_nodes = m_camera_position_node;
+/*
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
-
+*/
 
 	// Number of blocks currently loaded by the client
 	//u32 blocks_loaded = 0;
