@@ -351,7 +351,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 
 		//concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
 		//if (m_env->getMap().updateLighting(m_env->getMap().lighting_modified_blocks, modified_blocks, max_cycle_ms)) {
-		if (m_env->getMap().updateLightingQueue(max_cycle_ms, ret)) {
+		if (m_env->getServerMap().updateLightingQueue(max_cycle_ms, ret)) {
 			m_liquid_send_timer = m_liquid_send_interval;
 			goto no_send;
 		}

@@ -709,11 +709,11 @@ NEXT_LIQUID:
 
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
-			if (!liquid_levels[i] != !liquid_levels_want[i]) {
+			if (!(bool)liquid_levels[i] != !(bool)liquid_levels_want[i]) {
 				v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
 				MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 				if(block) {
-					//block->setLightingExpired(true);
+					block->setLightingExpired(true);
 					//modified_blocks[blockpos] = block;
 					//if(!nodemgr->get(neighbors[i].node).light_propagates || nodemgr->get(neighbors[i].node).light_source) // better to update always
 					//	lighting_modified_blocks.set_try(block->getPos(), block);

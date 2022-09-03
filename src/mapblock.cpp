@@ -714,9 +714,10 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
 				m_disk_timestamp.store(m_timestamp);
 		}
-		if (light == modified_light_yes)
+		if (light == modified_light_yes) {
 			setLightingComplete(0);
-			//setLightingExpired(true);
+			setLightingExpired(true);
+		}
 	}
 
 void MapBlock::pushElementsToCircuit(Circuit* circuit)

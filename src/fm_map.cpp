@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gamedef.h"
 #include "util/directiontables.h"
 #include "serverenvironment.h"
+#include "voxelalgorithms.h"
 
 
 #if HAVE_THREAD_LOCAL
@@ -518,7 +519,7 @@ inline u8 undiminish_light(u8 light)
 
 	values of from_nodes are lighting values.
 */
-void Map::unspreadLight(enum LightBank bank,
+void ServerMap::unspreadLight(enum LightBank bank,
 		std::map<v3s16, u8> & from_nodes,
 		std::set<v3s16> & light_sources,
 		std::map<v3s16, MapBlock*>  & modified_blocks)
@@ -677,7 +678,9 @@ void Map::unspreadLight(enum LightBank bank,
 				if(modified_blocks.find(blockpos) == modified_blocks.end())
 				{
 */
-					++block->lighting_broken;
+					//++block->lighting_broken;
+					block->setLightingExpired(true);
+
 					modified_blocks[blockpos] = block;
 /*
 				}
@@ -700,7 +703,7 @@ void Map::unspreadLight(enum LightBank bank,
 	Lights neighbors of from_nodes, collects all them and then
 	goes on recursively.
 */
-void Map::spreadLight(enum LightBank bank,
+void ServerMap::spreadLight(enum LightBank bank,
 		std::set<v3s16> & from_nodes,
 		std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms)
 {
@@ -862,16 +865,15 @@ void Map::spreadLight(enum LightBank bank,
 }
 
 
-u32 Map::updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks, std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms) {
-	Map::lighting_map_t lighting_mblocks;
+u32 ServerMap::updateLighting(concurrent_map<v3POS, MapBlock*>  & a_blocks, std::map<v3POS, MapBlock*> & modified_blocks, unsigned int max_cycle_ms) {
+	lighting_map_t lighting_mblocks;
 	for (auto & i : a_blocks)
 		lighting_mblocks[i.first] = 0;
 	unordered_map_v3POS<int> processed;
 	return updateLighting(lighting_mblocks, processed, max_cycle_ms);
 }
 
-u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms) {
-
+u32 ServerMap::updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms) {
 	std::map<v3POS, MapBlock*> modified_blocks;
 
 	auto *nodemgr = m_gamedef->ndef();
@@ -909,6 +911,10 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 			//infostream<<"Light: start col if=" << i->first << std::endl;
 			auto block = getBlockNoCreateNoEx(i->first);
 
+			// TOdo:
+			//voxalgo::repair_block_light(this, block,&modified_blocks);
+			//continue;
+
 			for(;;) {
 				// Don't bother with dummy blocks.
 				if(!block || block->isDummy() || !block->isGenerated()) {
@@ -931,9 +937,9 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 				v3POS posnodes = block->getPosRelative();
 				//modified_blocks[pos] = block;
 
-				//block->setLightingExpired(true);
+				block->setLightingExpired(true);
 				block->setLightingComplete(0);
-				++block->lighting_broken;
+				//++block->lighting_broken;
 
 				/*
 					Clear all light from block
@@ -1025,8 +1031,8 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 		MapBlock *block = getBlockNoCreateNoEx(i.first);
 		if(!block)
 			continue;
-		//block->setLightingExpired(false);
-		block->lighting_broken = 0;
+		block->setLightingExpired(false);
+		//block->lighting_broken = 0;
 	}
 	//infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
 
@@ -1036,7 +1042,7 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 }
 
 
-bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
+bool ServerMap::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
                             bool remove_light) {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
@@ -1151,7 +1157,7 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 }
 //#endif
 
-void Map::lighting_modified_add(v3POS pos, int range) {
+void ServerMap::lighting_modified_add(v3POS pos, int range) {
 	MutexAutoLock lock(m_lighting_modified_mutex);
 	if (m_lighting_modified_blocks.count(pos)) {
 		auto old_range = m_lighting_modified_blocks[pos];
@@ -1164,10 +1170,11 @@ void Map::lighting_modified_add(v3POS pos, int range) {
 };
 
 
-unsigned int Map::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount) {
+unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount) {
 	unsigned int ret = 0;
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 	unordered_map_v3POS<int> processed;
+DUMP(m_lighting_modified_blocks_range.size(), m_lighting_modified_blocks.size());
 	for (;;) {
 		lighting_map_t blocks;
 		int range = 5;

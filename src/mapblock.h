@@ -238,6 +238,17 @@ public:
 		return (m_lighting_complete & (1 << direction)) != 0;
 	}
 
+	inline void setLightingExpired(bool expired)
+	{
+		m_lighting_expired = expired;
+	}
+
+	inline bool getLightingExpired() const
+	{
+		return m_lighting_expired;
+	}
+
+
 	inline bool isGenerated()
 	{
 		return m_generated;
@@ -619,7 +630,7 @@ public:
 	std::atomic<content_t> content_only = CONTENT_IGNORE;
 	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
-	std::atomic_short lighting_broken {0};
+	//std::atomic_short lighting_broken {0};
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -677,6 +688,16 @@ private:
 		caves.
 	*/
 	bool is_underground = false;
+
+	/*
+		Set to true if changes has been made that make the old lighting
+		values wrong but the lighting hasn't been actually updated.
+
+		If this is false, lighting is exactly right.
+		If this is true, lighting might be wrong or right.
+	*/
+
+	std::atomic_bool m_lighting_expired {false};
 
 	/*!
 	 * Each bit indicates if light spreading was finished

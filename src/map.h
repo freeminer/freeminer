@@ -296,19 +296,19 @@ public:
 #endif
 	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 
-	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
-			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
-	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
-			std::map<v3s16, MapBlock *> &modified_blocks, u32 end_ms);
+protected:
+	u32 m_blocks_update_last;
+	u32 m_blocks_save_last;
 
-	u32 updateLighting(concurrent_map<v3POS, MapBlock *> &a_blocks,
-			std::map<v3POS, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
+public:
+	std::atomic_uint time_life;
 
-	bool propagateSunlight(
-			v3POS pos, std::set<v3POS> &light_sources, bool remove_light = false);
 //end of freeminer
 
 
+
+
+public:
 
 	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
 protected:
@@ -325,27 +325,6 @@ protected:
 
 	// This stores the properties of the nodes on the map.
 	const NodeDefManager *m_nodedef;
-
-
-	// freminer:
-protected:
-	u32 m_blocks_update_last;
-	u32 m_blocks_save_last;
-
-public:
-	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
-	std::mutex m_transforming_liquid_mutex;
-	typedef unordered_map_v3POS<int> lighting_map_t;
-	std::mutex m_lighting_modified_mutex;
-	std::map<v3POS, int> m_lighting_modified_blocks;
-	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
-	void lighting_modified_add(v3POS pos, int range = 5);
-	std::atomic_uint time_life;
-	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms = 0);
-	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
-private:
-
-
 
 	// Can be implemented by child class
 	virtual void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) {}
@@ -386,6 +365,33 @@ public:
 		return basepos.Y - 1;
 	}
 */
+
+	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	std::mutex m_transforming_liquid_mutex;
+	typedef unordered_map_v3POS<int> lighting_map_t;
+	std::mutex m_lighting_modified_mutex;
+	std::map<v3POS, int> m_lighting_modified_blocks;
+	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
+	void lighting_modified_add(v3POS pos, int range = 5);
+
+	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
+			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
+	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
+			std::map<v3s16, MapBlock *> &modified_blocks, u32 end_ms);
+
+	u32 updateLighting(concurrent_map<v3POS, MapBlock *> &a_blocks,
+			std::map<v3POS, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
+	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms = 0);
+	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
+
+	bool propagateSunlight(
+			v3POS pos, std::set<v3POS> &light_sources, bool remove_light = false);
+
+//end of freeminer
+
+
+
+
 
 
 	/*

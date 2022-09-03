@@ -645,7 +645,7 @@ void update_lighting_nodes(Map *map,
 	}
 
 	for (const auto & block : modified_blocks) {
-		block.second->lighting_broken = 0;
+		block.second->setLightingExpired(false);
 	}
 }
 
@@ -770,7 +770,7 @@ void update_block_border_lighting(Map *map, MapBlock *block,
 	}
 
 	for (const auto & block : modified_blocks) {
-		block.second->lighting_broken = 0;
+		block.second->setLightingExpired(false);
 	}
 }
 
@@ -1056,7 +1056,7 @@ void finish_bulk_light_update(Map *map, mapblock_v3 minblock,
 	}
 
 	for (const auto & block : *modified_blocks) {
-		block.second->lighting_broken = 0;
+		block.second->setLightingExpired(false);
 	}
 }
 
