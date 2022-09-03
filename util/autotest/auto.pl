@@ -434,14 +434,16 @@ our $tasks = {
     build       => [\'build_normal'],                                                                              #'
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
-    build_server       => [{-no_build_client => 1, -no_build_server => 0,}, 'build_normal',],
-    build_server_debug => [{-no_build_client => 1, -no_build_server => 0,}, 'build_debug',],
-    build_client       => [{-no_build_client => 0, -no_build_server => 1,}, 'build_normal',],
-    build_client_debug => [{-no_build_client => 0, -no_build_server => 1,}, 'build_debug',],
-    bot                => [{-no_build_client => 0, -no_build_server => 1,}, 'build_normal', 'run_single'],
+    set_server         => [{-no_build_client => 1, -no_build_server => 0, -options_add => 'no_exit'}],
+    build_server       => ['set_server', 'build_normal',],
+    (map { ( "build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_",  'run_server']  ) } qw(debug asan tsan usan msan)),
+    set_client         => [{-no_build_client => 0, -no_build_server => 1,}],
+    build_client       => ['set_client', 'build_normal',],
+    (map { ( "build_client_$_" => ['set_client', "build_$_",] ) } qw(debug asan tsan usan msan)),
+    bot                => ['set_client', 'build_normal', 'run_single'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
-    build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'prepare', 'cmake', 'make',],
+    build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'build_debug',],
     bot_tsan   => [{-no_build_server => 1,}, 'build_tsan', 'cgroup', 'run_single_tsan',],
     bot_tsannt => sub {
         $g->{build_name} .= '_nt';
@@ -463,9 +465,7 @@ our $tasks = {
             -cmake_asan => 1,
             #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
         },
-        'prepare',
-        'cmake',
-        'make',
+        'build_debug',
     ],
     build_msan => [
         sub {
@@ -474,9 +474,7 @@ our $tasks = {
         }, {
             -cmake_msan => 1,
         },
-        'prepare',
-        'cmake',
-        'make',
+        'build_debug',
     ],
     build_usan => [
         sub {
@@ -485,9 +483,7 @@ our $tasks = {
         }, {
             -cmake_usan => 1,
         },
-        'prepare',
-        'cmake',
-        'make',
+        'build_debug',
     ],
     build_gperf => [
         sub {
