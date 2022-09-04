@@ -35,7 +35,8 @@ Clouds *g_menuclouds = NULL;
 scene::ISceneManager *g_menucloudsmgr = NULL;
 
 // Constant for now
-float cloud_size = 0;
+//float cloud_size = 0;
+static constexpr const float cloud_size = BS * 64.0f;
 
 static void cloud_3d_setting_changed(const std::string &settingname, void *data)
 {
@@ -116,9 +117,9 @@ void Clouds::render()
 		Clouds move from Z+ towards Z-
 	*/
 
-	const float cloud_mul = m_params.height/BS/300; // fmtodo: remake
-	cloud_size = BS * 64.0f * cloud_mul;
-
+	//const float cloud_mul = m_params.height/BS/120; // fmtodo: remake
+	const float cloud_mul = 1;
+	//cloud_size = BS * 64.0f * cloud_mul;
 	const float cloud_full_radius = cloud_size * m_cloud_radius_i;
 
 	v2f camera_pos_2d(m_camera_pos.X, m_camera_pos.Z);

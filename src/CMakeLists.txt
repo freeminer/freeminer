@@ -59,7 +59,6 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(USE_DEBUG_HELPERS ON)
 endif()
-    set(USE_DEBUG_HELPERS ON)
 
 if (USE_DEBUG_HELPERS)
     #get_target_property(MAGIC_ENUM_INCLUDE_DIR ch_contrib::magic_enum INTERFACE_INCLUDE_DIRECTORIES)

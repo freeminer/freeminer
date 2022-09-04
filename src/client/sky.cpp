@@ -33,7 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "camera.h" // CameraModes
 
-#include "log_types.h"
+#include "log.h"
 #include "player.h"
 #include "map.h"
 #include "light.h"
@@ -109,10 +109,12 @@ Sky::Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, IShade
 
 	//sun_moon_light = rendering_engine->get_scene_manager()->addLightSceneNode(this, core::vector3df(0, MAX_MAP_GENERATION_LIMIT*BS*2,0), video::SColorf(1.0f, 0.6f, 0.7f, 1.0f), MAX_MAP_GENERATION_LIMIT*BS*5);
 
+/*
 	if (g_settings->getBool("enable_dynamic_shadows")) {
 		float val = g_settings->getFloat("shadow_sky_body_orbit_tilt");
 		m_sky_body_orbit_tilt = rangelim(val, 0.0f, 60.0f);
 	}
+*/
 
 	setStarCount(1000);
 }
@@ -404,10 +406,10 @@ void Sky::update(float time_of_day, float time_brightness,
 {
 	// Stabilize initial brightness and color values by flooding updates
 	if (m_first_update) {
-		/*dstream<<"First update with time_of_day="<<time_of_day
+		/**/dstream<<"First update with time_of_day="<<time_of_day
 				<<" time_brightness="<<time_brightness
 				<<" direct_brightness="<<direct_brightness
-				<<" sunlight_seen="<<sunlight_seen<<std::endl;*/
+				<<" sunlight_seen="<<sunlight_seen<<std::endl;//*/
 		m_first_update = false;
 		for (u32 i = 0; i < 100; i++) {
 			update(time_of_day, time_brightness, direct_brightness,
@@ -418,11 +420,13 @@ void Sky::update(float time_of_day, float time_brightness,
 
 	scene::ICameraSceneNode* camera = SceneManager->getActiveCamera();
 	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
-	float shift1 = (float)player_position.Y / MAX_MAP_GENERATION_LIMIT;
+	float shifty = (float)player_position.Y / MAX_MAP_GENERATION_LIMIT;
 	float height_color = 1;
-	if (shift1 > 0)
-		height_color -= shift1*0.8;
-
+	if (shifty > 0)
+		height_color -= shifty*0.8;
+	double shiftz = (double)player_position.Z / MAX_MAP_GENERATION_LIMIT;
+	m_sky_body_orbit_tilt = 70 * -shiftz; // 70 - maximum angle near end of map
+ 
 	m_time_of_day = time_of_day;
 	m_time_brightness = time_brightness;
 	m_sunlight_seen = sunlight_seen;

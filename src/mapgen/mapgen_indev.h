@@ -32,14 +32,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#define setNoiseIndevParams(x, y) setStruct((x), "f,f,v3,s32,s32,f,f,f,f", &(y))
 
 
-typedef struct {
-	content_t content = CONTENT_IGNORE;
+struct layer_data {
+	content_t content {CONTENT_IGNORE};
 	MapNode node;
-	int height_min = -MAX_MAP_GENERATION_LIMIT;
-	int height_max = +MAX_MAP_GENERATION_LIMIT;
-	int thickness = 1;
+	int height_min {-MAX_MAP_GENERATION_LIMIT};
+	int height_max {+MAX_MAP_GENERATION_LIMIT};
+	int thickness {1};
 	//std::string name; //dev
-} layer_data;
+};
 
 class Mapgen_features {
 public:
