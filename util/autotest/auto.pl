@@ -118,7 +118,8 @@ sub init_config () {
         clang_version     => $clang_version,                                               #"", # "-3.6",
         autotest_dir_rel  => 'util/autotest/',
         build_name        => '',
-        root_prefix       => $root_path . 'auto',
+        root_prefix       => $root_path,
+        build_prefix       => 'build',
         root_path         => $root_path,
         date              => $g->{date},
         world             => $script_path . 'world',
@@ -312,11 +313,12 @@ our $commands = {
     prepare => sub {
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
         $g->{build_name} .= $config->{clang_version} if $config->{cmake_clang};
+        my $build_dir = "$config->{root_prefix}$config->{build_prefix}$g->{build_name}";
         chdir $config->{root_path};
         rename qw(CMakeCache.txt CMakeCache.txt.backup);
         rename qw(src/cmake_config.h src/cmake_config.backup);
-        sy qq{mkdir -p $config->{root_prefix}$g->{build_name} $config->{logdir}};
-        chdir "$config->{root_prefix}$g->{build_name}";
+        sy qq{mkdir -p $build_dir $config->{logdir}};
+        chdir $build_dir;
         rename $config->{config} => $config->{config} . '.old';
         return 0;
     },
@@ -348,12 +350,14 @@ our $commands = {
         $D{uc($_)} = $config->{lc($_)} for grep { length $config->{lc($_)} } @{$config->{cmake_opts}};
         #warn 'D=', Data::Dumper::Dumper \%D;
         my $D = join ' ', map { '-D' . $_ . '=' . ($D{$_} =~ /\s/ ? qq{"$D{$_}"} : $D{$_}) } sort keys %D;
-        sy qq{cmake .. $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
+        my $ninja = `ninja --version` ? '-GNinja' : '';
+        sy qq{cmake .. $ninja $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
-        sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
+        #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
+        sy qq{nice cmake --build . -j $config->{makej} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
@@ -412,8 +416,7 @@ qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task
     cgroup => sub {
         return 0 unless $config->{cgroup};
         local $config->{cgroup} = '4G' if $config->{cgroup} eq 1;
-        sy
-qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/tasks; echo $config->{cgroup} > /sys/fs/cgroup/memory/0/memory.limit_in_bytes");
+        sy qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/tasks; echo $config->{cgroup} > /sys/fs/cgroup/memory/0/memory.limit_in_bytes");
     },
     timelapse_video => sub {
         sy
@@ -430,7 +433,7 @@ qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -
 };
 
 our $tasks = {
-    build_normal => [sub { $g->{build_name} ||= '_normal'; 0 }, 'prepare', 'cmake', 'make',],
+    build_normal => ['prepare', 'cmake', 'make',],
     build       => [\'build_normal'],                                                                              #'
     build_debug => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
@@ -574,12 +577,12 @@ our $tasks = {
     ),
     stress => ['build_normal', {-server_bg => 1,}, 'run_server', ['sleep', 10], 'clients_run',],
 
-    clients_run => [{build_name => '_normal'}, 'run_clients'],
+    clients_run => [{build_name => ''}, 'run_clients'],
     clients => ['build_client', 'clients_run'],
 
     stress_tsan => [
         {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_tsan', 'cgroup',
-        'run_server', ['sleep', 10], {build_name => '_normal', -cmake_tsan => 0,}, 'clients',
+        'run_server', ['sleep', 10], {build_name => '', -cmake_tsan => 0,}, 'clients',
 
         # todo split build and run:
         #{-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_tsan', 'cgroup',
@@ -589,7 +592,7 @@ our $tasks = {
     ],
     stress_asan => [
         {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_asan', 'cgroup',
-        'run_server', ['sleep', 10], {build_name => '_normal', -cmake_asan => 0,}, 'clients',
+        'run_server', ['sleep', 10], {build_name => '', -cmake_asan => 0,}, 'clients',
     ],
 
     stress_massif => [
@@ -672,7 +675,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
 
     stress_gperf => [
         {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_gperf',
-        ['gperf', 'run_server'], ['sleep', 10], {build_name => '_normal', -cmake_gperf => 0,}, 'clients',
+        ['gperf', 'run_server'], ['sleep', 10], {build_name => '', -cmake_gperf => 0,}, 'clients',
     ],
 
     play_task => sub {

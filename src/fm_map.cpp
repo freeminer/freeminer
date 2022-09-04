@@ -1174,7 +1174,6 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int & loo
 	unsigned int ret = 0;
 	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
 	unordered_map_v3POS<int> processed;
-DUMP(m_lighting_modified_blocks_range.size(), m_lighting_modified_blocks.size());
 	for (;;) {
 		lighting_map_t blocks;
 		int range = 5;

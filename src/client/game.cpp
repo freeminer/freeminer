@@ -67,6 +67,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "translation.h"
 #include "util/basic_macros.h"
 #include "util/directiontables.h"
+#include "util/numeric.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
 #include "irrlicht_changes/static_text.h"
@@ -4250,7 +4251,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			camera_node_position.Y   = camera_node_position.Y + camera_offset.Y * BS;
 			camera_node_position.Z   = camera_node_position.Z + camera_offset.Z * BS;
 			clouds->update(camera_node_position,
-					sky->getCloudColor());
+					sky->getCloudColor(),
+					//client->getEnv().getClientMap().getHumidity(floatToInt(camera_node_position, BS), 1)
+					client->getEnv().getClientMap().getHumidity({pos_i.X, (POS)clouds->m_params.height, pos_i.Z}, 1)
+			);
 			if (clouds->isCameraInsideCloud() && m_cache_enable_fog) {
 				// if inside clouds, and fog enabled, use that as sky
 				// color(s)

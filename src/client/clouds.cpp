@@ -90,6 +90,13 @@ void Clouds::OnRegisterSceneNode()
 	ISceneNode::OnRegisterSceneNode();
 }
 
+inline static void applyShadeFactor(video::SColor& color, float factor)
+{
+	color.setRed(core::clamp(core::round32(color.getRed()*factor), 0, 255));
+	color.setGreen(core::clamp(core::round32(color.getGreen()*factor), 0, 255));
+	color.setBlue(core::clamp(core::round32(color.getBlue()*factor), 0, 255));
+}
+
 void Clouds::render()
 {
 
@@ -161,6 +168,14 @@ void Clouds::render()
 	video::SColor c_side_2 = c_side_2_f.toSColor();
 	video::SColor c_bottom = c_bottom_f.toSColor();
 
+
+	const auto humidity_color = 1 - ((float)m_humidity / 300);
+	applyShadeFactor(c_bottom, humidity_color);
+	applyShadeFactor(c_top, humidity_color);
+	applyShadeFactor(c_side_1, humidity_color);
+	applyShadeFactor(c_side_2, humidity_color);
+
+
 	// Get fog parameters for setting them back later
 	video::SColor fog_color(0,0,0,0);
 	video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
@@ -191,6 +206,7 @@ void Clouds::render()
 			grid[i] = gridFilled(
 				xi + center_of_drawing_in_noise_i.X,
 				zi + center_of_drawing_in_noise_i.Y
+			, m_humidity
 			);
 		}
 	}
@@ -347,8 +363,13 @@ void Clouds::step(float dtime)
 	m_origin = m_origin + dtime * BS * m_params.speed;
 }
 
-void Clouds::update(const v3f &camera_p, const video::SColorf &color_diffuse)
+void Clouds::update(const v3f &camera_p, const video::SColorf &color_diffuse, s16 humidity)
 {
+	if(humidity) {
+		if (humidity > m_humidity) ++m_humidity;
+		if (humidity < m_humidity) --m_humidity;
+	}
+
 	video::SColorf ambient(m_params.color_ambient);
 	video::SColorf bright(m_params.color_bright);
 	m_camera_pos = camera_p;
@@ -366,7 +387,7 @@ void Clouds::update(const v3f &camera_p, const video::SColorf &color_diffuse)
 			v2f camera_in_noise;
 			camera_in_noise.X = floor((camera_p.X - m_origin.X) / cloud_size + 0.5);
 			camera_in_noise.Y = floor((camera_p.Z - m_origin.Y) / cloud_size + 0.5);
-			bool filled = gridFilled(camera_in_noise.X, camera_in_noise.Y);
+			bool filled = gridFilled(camera_in_noise.X, camera_in_noise.Y, m_humidity);
 			m_camera_inside_cloud = filled;
 		}
 	}
@@ -379,7 +400,7 @@ void Clouds::readSettings()
 	m_enable_3d = g_settings->getBool("enable_3d_clouds");
 }
 
-bool Clouds::gridFilled(int x, int y) const
+bool Clouds::gridFilled(int x, int y, s16 humidity) const
 {
 	float cloud_size_noise = cloud_size / (BS * 200.f);
 	float noise = noise2d_perlin(
@@ -389,5 +410,6 @@ bool Clouds::gridFilled(int x, int y) const
 	// normalize to 0..1 (given 3 octaves)
 	static constexpr const float noise_bound = 1.0f + 0.5f + 0.25f;
 	float density = noise / noise_bound * 0.5f + 0.5f;
+	density += float(50 - humidity)/300;
 	return (density < m_params.density);
 }

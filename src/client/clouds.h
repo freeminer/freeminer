@@ -73,7 +73,7 @@ public:
 
 	void step(float dtime);
 
-	void update(const v3f &camera_p, const video::SColorf &color);
+	void update(const v3f &camera_p, const video::SColorf &color, s16 humidity = 50);
 
 	void updateCameraOffset(const v3s16 &camera_offset)
 	{
@@ -129,7 +129,11 @@ private:
 				BS * 1000000.0f, height_bs + thickness_bs - BS * m_camera_offset.Y, BS * 1000000.0f);
 	}
 
-	bool gridFilled(int x, int y) const;
+	bool gridFilled(int x, int y, s16 humidity) const;
+
+//freeminer:
+	s32 m_humidity = 50;
+
 
 	video::SMaterial m_material;
 	aabb3f m_box;
