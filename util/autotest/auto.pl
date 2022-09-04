@@ -357,7 +357,7 @@ our $commands = {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
-        sy qq{nice cmake --build . -j $config->{makej} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
+        sy qq{nice cmake --build . -- -j $config->{makej} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;

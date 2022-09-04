@@ -193,7 +193,7 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Weather
 	settings->setDefault("weather", threads ? "true" : "false");
-	settings->setDefault("weather_biome", "false");
+	settings->setDefault("weather_biome", "true");
 	settings->setDefault("weather_heat_season", "20");
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");

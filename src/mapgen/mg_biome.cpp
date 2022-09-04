@@ -123,6 +123,7 @@ BiomeManager *BiomeManager::clone() const
 	assert(mgr);
 	ObjDefManager::cloneTo(mgr);
 	mgr->m_server = m_server;
+	mgr->mapgen_params = mapgen_params;
 	return mgr;
 }
 

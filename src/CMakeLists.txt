@@ -59,6 +59,8 @@ endif()
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(USE_DEBUG_HELPERS ON)
 endif()
+set(USE_DEBUG_HELPERS ON)
+
 
 if (USE_DEBUG_HELPERS)
     #get_target_property(MAGIC_ENUM_INCLUDE_DIR ch_contrib::magic_enum INTERFACE_INCLUDE_DIRECTORIES)
@@ -785,6 +787,8 @@ if(NOT CMAKE_CROSSCOMPILING)
 	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 endif()
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
 if(BUILD_CLIENT)
 	add_executable(${PROJECT_NAME} ${client_SRCS} ${extra_windows_SRCS})
 	add_dependencies(${PROJECT_NAME} GenerateVersion)
@@ -814,8 +818,7 @@ if(BUILD_CLIENT)
 			ENABLE_EXPORTS 1
 		)
 	endif()
-
-	if(STATIC_BUILD AND USE_GETTEXT)
+	if(USE_GETTEXT)
 		target_link_libraries(
 			${PROJECT_NAME}
 			${GETTEXT_LIBRARY}
