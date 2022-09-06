@@ -155,7 +155,8 @@ sub init_config () {
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
     };
 
-    map { /^--(\w+)(?:=(.*))/ and $config->{$1} = $2; } @ARGV;
+    map { /^--(\w+)(?:=(.*))?/ and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
+    map { /^---(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
     $config->{clang_version} =~ s/\s+$//;
 }
 init_config();
@@ -416,7 +417,10 @@ qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task
     cgroup => sub {
         return 0 unless $config->{cgroup};
         local $config->{cgroup} = '4G' if $config->{cgroup} eq 1;
-        sy qq(sudo sh -c "mkdir /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/tasks; echo $config->{cgroup} > /sys/fs/cgroup/memory/0/memory.limit_in_bytes");
+        if (-e '/sys/fs/cgroup/memory/tasks') { # cgroups v1
+            sy qq(sudo sh -c "mkdir -p /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory/0/tasks; echo $config->{cgroup} > /sys/fs/cgroup/memory/0/memory.limit_in_bytes");
+        } 
+        # TODO: cgroup v2:
     },
     timelapse_video => sub {
         sy
@@ -762,7 +766,7 @@ sub options_make(;$$) {
 
     $m ||= [
         map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display}, $config->{options_bot},
-        $config->{options_int}, $config->{options_add}, 'opt'
+        $config->{options_int}, $config->{options_add}, $config->{options_arr}, 'opt'
     ];
     for my $name (array(@$m)) {
         $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
@@ -850,7 +854,7 @@ sub task_start(@) {
 my $task_run = [grep { !/^-/ } @ARGV];
 $task_run = [
     @$task_run,
-    qw(bot_tsan bot_asan bot_usan bot_tsannt bot_tsannta valgrind_memcheck bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan)
+    qw(bot_tsan bot_asan bot_usan bot_tsannt bot_tsannta valgrind_memcheck) #  bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan
   ]
   if !@$task_run or 'default' ~~ $task_run;
 if ('all' ~~ $task_run) {
@@ -864,8 +868,8 @@ unless (@ARGV) {
     print "$_ " for sort keys %$tasks;
     say "\n\n but running default list: ", join ' ', @$task_run;
     say '';
-    say "possible presets in --options_add=... :";
-    print "$_ " for sort keys %$options;
+    say "possible presets:";
+    print "---$_ " for sort keys %$options;
     say '';
     sleep 1;
 }

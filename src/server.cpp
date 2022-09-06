@@ -4085,8 +4085,15 @@ v3f Server::findSpawnPos()
 {
 	ServerMap &map = m_env->getServerMap();
 	v3f nodeposf;
-	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf))
+
+	POS find = 0;
+	g_settings->getS16NoEx("static_spawnpoint_find", find);
+	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
 		return nodeposf * BS;
+	}
+
+	POS min_air_height = 3;
+	g_settings->getS16NoEx("static_spawnpoint_find_height", min_air_height);
 
 	bool is_good = false;
 	// Limit spawn range to mapgen edges (determined by 'mapgen_limit')
@@ -4116,23 +4123,27 @@ v3f Server::findSpawnPos()
 		// In ungenerated mapblocks consisting of 'ignore' nodes, there will be
 		// no obstructions, but mapgen decorations are generated after spawn so
 		// the player may end up inside one.
-		for (s32 i = 0; i < 8; i++) {
+		for (s32 ii = (find > 0) ? 0 : find - 50;
+				ii < find; ii++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
-			map.emergeBlock(blockpos, true);
+			if (!map.emergeBlock(blockpos, true))
+				break;
 			content_t c = map.getNode(nodepos).getContent();
 
 			// In generated mapblocks allow spawn in all 'airlike' drawtype nodes.
 			// In ungenerated mapblocks allow spawn in 'ignore' nodes.
-			if (m_nodedef->get(c).drawtype == NDT_AIRLIKE || c == CONTENT_IGNORE) {
+			if (m_nodedef->get(c).drawtype == NDT_AIRLIKE /*|| c == CONTENT_IGNORE*/) {
 				air_count++;
-				if (air_count >= 2) {
+				if (air_count >= min_air_height) {
 					// Spawn in lower empty node
 					nodepos.Y--;
 					nodeposf = intToFloat(nodepos, BS);
 					// Don't spawn the player outside map boundaries
-					if (objectpos_over_limit(nodeposf))
+					if (objectpos_over_limit(nodeposf)) {
+						nodeposf = {0,0,0};
 						// Exit this loop, positions above are probably over limit
 						break;
+					}
 
 					// Good position found, cause an exit from main loop
 					is_good = true;
@@ -4144,6 +4155,9 @@ v3f Server::findSpawnPos()
 			nodepos.Y++;
 		}
 	}
+
+	return nodeposf;
+
 
 	if (is_good)
 		return nodeposf;
