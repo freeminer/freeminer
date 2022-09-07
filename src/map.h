@@ -264,7 +264,7 @@ public:
 
 
 //freeminer:
-	std::atomic_uint m_liquid_step_flow;
+	std::atomic_uint m_liquid_step_flow {0};
 
 	virtual s16 getHeat(v3s16 p, bool no_random = 0);
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
@@ -278,7 +278,7 @@ public:
 	MapBlock *createBlankBlock(v3s16 &p);
 	bool insertBlock(MapBlock *block);
 	void deleteBlock(MapBlockP block);
-	std::unordered_map<MapBlockP, int> *m_blocks_delete;
+	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	unsigned int m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
@@ -297,11 +297,11 @@ public:
 	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 
 protected:
-	u32 m_blocks_update_last;
-	u32 m_blocks_save_last;
+	u32 m_blocks_update_last = 0;
+	u32 m_blocks_save_last = 0;
 
 public:
-	std::atomic_uint time_life;
+	std::atomic_uint time_life {0};
 
 //end of freeminer
 

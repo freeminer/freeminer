@@ -453,10 +453,10 @@ our $tasks = {
     build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
     set_server         => [{-no_build_client => 1, -no_build_server => 0, -options_add => 'no_exit'}],
     build_server       => ['set_server', 'build_normal',],
-    (map { ( "build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_",  'run_server']  ) } qw(debug asan tsan usan msan)),
+    (map { ( "build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_",  'run_server']  ) } qw(debug asan tsan usan msan gperf)),
     set_client         => [{-no_build_client => 0, -no_build_server => 1,}],
     build_client       => ['set_client', 'build_normal',],
-    (map { ( "build_client_$_" => ['set_client', "build_$_",] ) } qw(debug asan tsan usan msan)),
+    (map { ( "build_client_$_" => ['set_client', "build_$_",] ) } qw(debug asan tsan usan msan gperf)),
     bot                => ['set_client', 'build_normal', 'run_single'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
@@ -594,20 +594,9 @@ our $tasks = {
     clients_run => [{build_name => ''}, 'run_clients'],
     clients => ['build_client', 'clients_run'],
 
-    stress_tsan => [
-        {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_tsan', 'cgroup',
-        'run_server', ['sleep', 10], {build_name => '', -cmake_tsan => 0,}, 'clients',
-
-        # todo split build and run:
-        #{-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_tsan', 'cgroup',
-        #{build_name => '_normal', -cmake_tsan => 0,}, 'build_client',
-        #{build_name => '_tsan',}, 'run_server',
-        #{build_name => '_normal',}, ['sleep', 10], 'clients_run',
-    ],
-    stress_asan => [
-        {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_asan', 'cgroup',
-        'run_server', ['sleep', 10], {build_name => '', -cmake_asan => 0,}, 'clients',
-    ],
+    ( map { 'stress_' . $_ => [ { -server_bg => 1, },
+         'cgroup', "server_$_", ['sleep', 10], {build_name => '', "-cmake_$_" => 0,}, 'clients',
+    ] } qw( tsan asan msan usan gperf debug gdb) ),
 
     stress_massif => [
         'build_client',
@@ -669,9 +658,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         'build_debug',
         [\'vtune', 'run_server'],
         ['sleep',  10],
-        #{build_name => '_normal'},
+        #{build_name => '_normal'}, # '
         'clients',
-
     ],
 
     gperf => sub {
@@ -684,13 +672,22 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         @_ = ('debug') if !@_;
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
-    bot_gperf => [{-no_build_server => 1,}, 'build_gperf', ['gperf', 'run_single'], 'gperf_report'],
-    play_gperf => [{-no_build_server => 1,}, [\'play_task', 'build_gperf', [\'gperf', $config->{run_task}], 'gperf_report']],
+
+    prepare_gperf => sub { $ENV{PPROF_PATH}=`which google-pprof pprof`; 0; },
+    bot_gperf => [{-no_build_server => 1,}, 'prepare_gperf', 'build_gperf', ['gperf', 'run_single'], 'report_gperf'],
+    play_gperf => [{-no_build_server => 1,}, 'prepare_gperf', [\'play_task', 'build_gperf', [\'gperf', $config->{run_task}], 'report_gperf']],
 
     stress_gperf => [
-        {-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_gperf',
+        #{-no_build_client => 1, -no_build_server => 0, -server_bg => 1,}, 'build_gperf',
+        'prepare_gperf',
+        'build_server_gperf',
         ['gperf', 'run_server'], ['sleep', 10], {build_name => '', -cmake_gperf => 0,}, 'clients',
+        'report_gperf',
     ],
+
+    report_gperf => sub {
+        sy qq{google-pprof --text ./freeminer $config->{logdir}/heap.out*}
+    },
 
     play_task => sub {
         return 1 if $config->{all_run};
@@ -703,13 +700,13 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
 
     (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', 'bot_' . $_]] }
-          qw(tsan asan msan usan asannta minetest minetest_debug)
+          qw(tsan asan msan usan gperf asannta minetest minetest_debug)
     ), (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(debug gdb nothreads vtune),
         map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
 
-    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_ } qw(tsan asan msan usan asannta minetest minetest_debug)),
+    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_ } qw(tsan asan msan usan gperf asannta minetest minetest_debug)),
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
 
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
@@ -827,7 +824,8 @@ sub command_run(@) {
         #return sy $cmd, @_;
         return commands_run($cmd, @_);
     } else {
-        dmp 'no cmd', $cmd;
+        warn 'unknown command ', $cmd;
+        return 0;
     }
 }
 
@@ -853,7 +851,7 @@ sub commands_run(@) {
         #    #command_run({-options_add => $name});
         #    return 0;
     } else {
-        say 'msg ', $name;
+        warn 'unknown commands ', $name;
         return 0;
     }
 }
@@ -872,7 +870,7 @@ sub task_start(@) {
 my $task_run = [grep { !/^-/ } @ARGV];
 $task_run = [
     @$task_run,
-    qw(bot_tsan bot_asan bot_usan bot_tsannt bot_tsannta valgrind_memcheck) #  bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan
+    qw(bot_tsan bot_asan bot_usan bot_gperf valgrind_memcheck) #  bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan  bot_tsannt bot_tsannta 
   ]
   if !@$task_run or 'default' ~~ $task_run;
 if ('all' ~~ $task_run) {

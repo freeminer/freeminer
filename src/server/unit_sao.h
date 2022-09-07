@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <atomic>
 #include "object_properties.h"
 #include "serveractiveobject.h"
 
@@ -100,7 +101,7 @@ public:
 	void sendPunchCommand();
 
 protected:
-	u16 m_hp = 1;
+	std::atomic_uint16_t m_hp {1};
 
 	v3f m_rotation;
 

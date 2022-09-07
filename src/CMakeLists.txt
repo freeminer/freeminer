@@ -75,6 +75,59 @@ endif ()
 
 
 
+if(NOT MSVC)
+        # FM: TODO: REMOVE:
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
+
+	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
+		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
+	        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
+		endif ()
+	endif ()
+
+	if(SANITIZE_ADDRESS)
+                message(STATUS "Build with sanitize=address")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+	if(SANITIZE_THREAD)
+                message(STATUS "Build with sanitize=thread")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
+		endif()
+	endif()
+	if(SANITIZE_MEMORY)
+                message(STATUS "Build with sanitize=memory")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
+	endif()
+	if(SANITIZE_UNDEFINED)
+                message(STATUS "Build with sanitize=undefined ")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+	endif()
+	if(USE_GPERF)
+                set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+        	#find_library(TCMALLOC_LIBRARY NAMES libtcmalloc.a tcmalloc)
+        	#find_library(PROFILER_LIBRARY NAMES libprofiler.a profiler)
+        	#find_library(UNWIND_LIBRARY NAMES libunwind.a unwind)
+        	find_library(TCMALLOC_LIBRARY NAMES tcmalloc)
+        	find_library(PROFILER_LIBRARY NAMES profiler)
+        	find_library(UNWIND_LIBRARY NAMES unwind)
+		#SET(PLATFORM_LIBS ${PLATFORM_LIBS} -lprofiler -ltcmalloc)
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY} ${UNWIND_LIBRARY})
+		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+                message(STATUS "Build with gperf ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY}")
+	endif()
+
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
+endif()
+
+
+
+
 # Add custom SemiDebug build mode
 set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall" CACHE STRING
 	"Flags used by the C++ compiler during semidebug builds."
@@ -463,7 +516,7 @@ else()
 		endif(NOT HAIKU AND NOT APPLE)
 	endif()
 
-	set(PLATFORM_LIBS Threads::Threads ${CMAKE_DL_LIBS})
+	set(PLATFORM_LIBS ${PLATFORM_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
 	if(APPLE)
 		set(PLATFORM_LIBS "-framework CoreFoundation" ${PLATFORM_LIBS})
 	else()
@@ -1012,20 +1065,6 @@ else()
 		set(RELEASE_WARNING_FLAGS "")
 	endif()
 
-	set(OTHER_FLAGS "")
-
-	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
-        if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
-        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
-        endif ()
-	endif ()
-
-
-        # FM: TODO: REMOVE:
-	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
-
 	if(APPLE AND USE_LUAJIT)
 		# required per http://luajit.org/install.html
 		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
@@ -1050,31 +1089,6 @@ else()
 		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32_LEAN_AND_MEAN")
 	endif()
-
-	if(SANITIZE_ADDRESS)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-	endif()
-	if(SANITIZE_THREAD)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
-		endif()
-	endif()
-	if(SANITIZE_MEMORY)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
-	endif()
-	if(SANITIZE_UNDEFINED)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-	endif()
-	if(USE_GPERF)
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} -ltcmalloc -lprofiler)
-		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-	endif()
-
-
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
 
 	# Use a safe subset of flags to speed up math calculations:
 	# - we don't need errno or math exceptions
