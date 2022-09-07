@@ -11,7 +11,7 @@ $0 [--this_script_params] [-freeminer_params] [cmd]
 $0 valgrind_massif
 
 # run one task with headless config
-$0 --options_add=headless gdb
+$0 ---headless gdb
 
 # pass options to app
 $0 -num_emerge_threads=1 bot_tsan
@@ -37,9 +37,9 @@ $0 server_gdb
 $0 server_gdb_nd
 
 # with periodic profiler
-$0 stress --options_add=headless,headless_optimize,info --clients_num=10 -profiler_print_interval=5
+$0 stress ---headless ---headless_optimize ---info --clients_num=10 -profiler_print_interval=5
 
-$0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 --options_add=headless
+$0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 ---headless
 
 $0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
@@ -59,22 +59,22 @@ $0 stress_vtune
 
 # google-perftools https://github.com/gperftools/gperftools
 $0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 bot_gperf
-$0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 --options_add=headless,headless_optimize,info --clients_num=50 -profiler_print_interval=10 stress_gperf
+$0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 ---headless ---headless_optimize ---info --clients_num=50 -profiler_print_interval=10 stress_gperf
 
 # stress test of flowing liquid
-$0 --options_add=world_water
+$0 ---world_water
 
 # stress test of falling sand
-$0 --options_add=world_sand
+$0 ---world_sand
 
-$0 --cmake_minetest=1 --build_name=_minetest --options_add=headless,headless_optimize --address=cool.server.org --port=30001 --clients_num=25 clients
+$0 --cmake_minetest=1 --build_name=_minetest ---headless --headless_optimize --address=cool.server.org --port=30001 --clients_num=25 clients
 
 # timelapse video
 $0 timelapse
 
 #fly
-$0 --options_add=server_optimize,far fly
-$0 -farmesh=1 --options_add=mg_math_tglag,server_optimize,far -static_spawnpoint=10000,30030,-22700 fly
+$0 ---server_optimize ---far fly
+$0 -farmesh=1 ---mg_math_tglag ---server_optimize ---far -static_spawnpoint=10000,30030,-22700 fly
 $0 --options_bot=fall1 -continuous_forward=1 bot
 };
 
@@ -89,6 +89,7 @@ use POSIX ();
 use Time::HiRes qw(sleep);
 
 sub sy (@);
+sub sf (@);
 sub dmp (@);
 
 our $signal;
@@ -309,6 +310,8 @@ our $options = {
 
 map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
 
+my $child;
+
 our $commands = {
     init => sub { init_config(); 0 },
     prepare => sub {
@@ -387,13 +390,18 @@ our $commands = {
 qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log $fork};
     },
     run_server => sub {
-        my $fork = $config->{server_bg} ? '&' : '';
         #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
-        sy qq{$config->{env} $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+        my $cmd = qq{$config->{env} $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world port config autoexit verbose)])
-          . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log $fork};
+          . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
+        if ($config->{server_bg}) {
+            sf $cmd;
+        } else {
+            sy $cmd;
+        }
     },
     run_clients => sub {
+
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
@@ -401,11 +409,12 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
             #my $args = join ' ',
             #  map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
             for ($config->{clients_start} .. $config->{clients_num}) {
-                sy
-qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+
+            sleep $config->{clients_spawn_sleep} // 0.2;
+
+            sf qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
                   . options_make([qw( address gameid world address port config verbose)])
-                  . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log & };
-                sleep $config->{clients_spawn_sleep} // 0.2;
+                  . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
             sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
         }
@@ -427,6 +436,7 @@ qq{asan_symbolize$config->{clang_version} < $config->{logdir}/autotest.$g->{task
 qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -f image2pipe -i - -vcodec libx264 ../$config->{autotest_dir_rel}timelapse-$config->{date}.mp4 };
     },
     sleep => sub {
+        say 'sleep ', $_[0];
         sleep $_[0] || 1;
         0;
     },
@@ -579,7 +589,7 @@ our $tasks = {
               )
         } qw(minetest sctp)
     ),
-    stress => ['build_normal', {-server_bg => 1,}, 'run_server', ['sleep', 10], 'clients_run',],
+    stress => ['build_normal', {-server_bg => 1,}, 'run_server', ['sleep', 10], 'clients_run', ['sleep', $config->{autoexit}]],
 
     clients_run => [{build_name => ''}, 'run_clients'],
     clients => ['build_client', 'clients_run'],
@@ -734,15 +744,23 @@ sub sy (@) {
     say 'running ', join ' ', @_;
     system @_;
     if ($? == -1) {
-        say "failed to execute: $!";
+        say 'failed to execute:', $!;
         return $?;
     } elsif ($? & 127) {
         $signal = $? & 127;
-        say "child died with signal ", ($signal), ", " . (($? & 128) ? 'with' : 'without') . " coredump";
+        say 'child died with signal ', ($signal), ', ' . (($? & 128) ? 'with' : 'without') . ' coredump';
         return $?;
     } else {
         return $? >> 8;
     }
+}
+
+sub sf (@) {
+    say 'forking ', join ' ', @_;
+    my $pid = fork();
+    push(@$child, $pid), return if $pid;
+    sy @_;
+    exit;
 }
 
 sub array (@) {

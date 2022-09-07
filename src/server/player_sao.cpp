@@ -38,9 +38,9 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t p
 {
     m_ms_from_last_respawn = 10000; //more than ignore move time (1)
 
-    if (m_player) {
+    /*if (m_player) {
         ++m_player->refs;
-    }
+    }*/
 
 	//SANITY_CHECK(m_peer_id != PEER_ID_INEXISTENT);
 
@@ -77,9 +77,9 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t p
 
 PlayerSAO::~PlayerSAO()
 {
-	if (!m_player)
+	/*if (!m_player)
 		return;
-	--m_player->refs;
+	--m_player->refs;*/
 }
 
 void PlayerSAO::finalize(RemotePlayer *player, const std::set<std::string> &privs)
@@ -621,10 +621,8 @@ void PlayerSAO::unlinkPlayerSessionAndSave()
 	m_player->setPeerId(PEER_ID_INEXISTENT);
 	m_env->savePlayer(m_player);
 	m_player->setPlayerSAO(NULL);
-/*
 	m_env->removePlayer(m_player);
-*/
-	--m_player->refs;
+	//--m_player->refs;
 	m_player = nullptr;
 }
 

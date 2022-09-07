@@ -141,7 +141,7 @@ public:
 
 	void onSuccessfulSave();
 
-	s16 refs = 0;
+	//s16 refs = 0;
 
 private:
 	PlayerSAO *m_sao = nullptr;
