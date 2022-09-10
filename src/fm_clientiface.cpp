@@ -325,8 +325,9 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Do not go over-limit
 			*/
-			if (blockpos_over_max_limit(p))
+			if (blockpos_over_max_limit(p)) {
 				continue;
+			}
 
 			// If this is true, inexistent block will be made from scratch
 			bool generate = d <= d_max_gen;
@@ -341,6 +342,7 @@ int RemoteClient::GetNextBlocks (
 
 			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, d_blocks_in_sight) == false)
 			{
+				//DUMP(p, can_skip, "nosight");
 				continue;
 			}
 
@@ -354,6 +356,7 @@ int RemoteClient::GetNextBlocks (
 			}
 
 			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
+				//DUMP(p, block_sent, d, "ddd");
 				continue;
 			}
 
@@ -380,6 +383,7 @@ int RemoteClient::GetNextBlocks (
 				}*/
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
+					//DUMP(p, block_sent, block->m_changed_timestamp, block->getDiskTimestamp(), block->getActualTimestamp(), "ch");
 					continue;
 				}
 
@@ -435,11 +439,18 @@ int RemoteClient::GetNextBlocks (
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
+				const auto complete = block->getLightingComplete();
 				if (block->getLightingExpired()) {
 					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
-					env->getServerMap().lighting_modified_add(p, d);
-					if (block_sent && can_skip)
+					if (complete) // complete = 0 means lighting calc in progress
+						env->getServerMap().lighting_modified_add(p, d);
+					if (!complete){
 						continue;
+					}
+
+					if (block_sent && can_skip) {
+						continue;
+					}
 				}
 
 				//if (block->lighting_broken > 0 && (block_sent || can_skip))
@@ -455,6 +466,7 @@ int RemoteClient::GetNextBlocks (
 
 				if(block->isGenerated() == false)
 				{
+					//DUMP(p, block->isGenerated());
 					continue;
 				}
 
@@ -505,6 +517,8 @@ int RemoteClient::GetNextBlocks (
 				} else {
 					//infostream << "skip tryload " << p << "\n";
 				}
+
+				//DUMP(p, nearest_emerged_d,nearest_emergefull_d, "go generate");
 
 				// get next one.
 				continue;

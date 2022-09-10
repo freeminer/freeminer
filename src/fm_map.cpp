@@ -912,9 +912,19 @@ u32 ServerMap::updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int
 			auto block = getBlockNoCreateNoEx(i->first);
 
 			// TOdo:
-			//voxalgo::repair_block_light(this, block,&modified_blocks);
-			//continue;
+/*
+			if (!block)
+				continue;
+			auto lock = block->try_lock_unique_rec();
+			if (!lock->owns_lock()) {
+				continue; // may cause dark areas
+			}
 
+			++loopcount;
+
+			voxalgo::repair_block_light(this, block,&modified_blocks);
+			continue;
+*/
 			for(;;) {
 				// Don't bother with dummy blocks.
 				if(!block || block->isDummy() || !block->isGenerated()) {
@@ -1032,6 +1042,7 @@ u32 ServerMap::updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int
 		if(!block)
 			continue;
 		block->setLightingExpired(false);
+		block->setLightingComplete(0xFFFF);
 		//block->lighting_broken = 0;
 	}
 	//infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
