@@ -116,7 +116,7 @@ protected:
 	// Stores position and rotation for each bone name
 	std::unordered_map<std::string, core::vector2d<v3f>> m_bone_position;
 
-	int m_attachment_parent_id = 0;
+	std::atomic_int m_attachment_parent_id {0};
 
 private:
 	void onAttach(int parent_id);
