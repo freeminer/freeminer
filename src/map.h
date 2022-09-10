@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "util/unordered_map_hash.h"
 #include "threading/concurrent_unordered_map.h"
+#include "threading/concurrent_set.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
@@ -511,7 +512,7 @@ private:
 
 	int m_map_compression_level;
 
-	std::set<v3s16> m_chunks_in_progress;
+	concurrent_set<v3s16> m_chunks_in_progress;
 
 	// Queued transforming water nodes
 	UniqueQueue<v3s16> m_transforming_liquid;

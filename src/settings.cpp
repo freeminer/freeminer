@@ -764,7 +764,6 @@ bool Settings::getFlag(const std::string &name) const
 	}
 }
 
-
 bool Settings::getFloatNoEx(const std::string &name, float &val) const
 {
 	try {
@@ -1262,4 +1261,15 @@ void Settings::msgpack_unpack(msgpack::object o) {
 	std::istringstream os(data, std::ios_base::binary);
 	os >> m_json;
 	fromJson(m_json);
+}
+
+
+bool Settings::getBoolNoEx(const std::string &name, bool &val) const
+{
+	try {
+		val = getBool(name);
+		return true;
+	} catch (const SettingNotFoundException &e) {
+		return false;
+	}
 }

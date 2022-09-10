@@ -170,7 +170,12 @@ void ConnectionSendThread::runTimeouts(float dtime)
 	std::vector<session_t> timeouted_peers;
 	std::vector<session_t> peerIds = m_connection->getPeerIDs();
 
-	const u32 numpeers = m_connection->m_peers.size();
+	u32 numpeers;
+
+	{
+		MutexAutoLock peerlock(m_connection->m_peers_mutex);
+		numpeers = m_connection->m_peers.size();
+	}
 
 	if (numpeers == 0)
 		return;

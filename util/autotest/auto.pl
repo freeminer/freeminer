@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 
 # install:
-# sudo apt-get install valgrind clang
-# sudo apt-get install google-perftools libgoogle-perftools-dev
+# sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev
 
 our $help = qq{
 $0 [--this_script_params] [-freeminer_params] [cmd]
@@ -170,9 +169,13 @@ our $options = {
         respawn_auto            => 1,
         disable_anticheat       => 1,
         reconnects              => 10000,
-        profiler_print_interval => 100000,
+        profiler_print_interval => 10,
         default_game            => $config->{gameid},
         max_users               => 4000,
+        show_basic_debug        => 1,
+        show_profiler_graph     => 1,
+        profiler_max_page       => 1,
+        profiler_page           => 1,
     },
     no_exit => {
         autoexit => 0,
@@ -539,6 +542,13 @@ our $tasks = {
     debug     => ['build_client_debug', $config->{run_task},],
     bot_debug => ['build_client_debug', $config->{run_task},],
 
+    #valgrind => sub {
+    #    local $config->{runner} = $config->{runner} . q{'valgrind'};
+    #    for (@_) { my $r = commands_run($_); return $r if $r; }
+    #},
+
+    #(map { 'bot_valgrind_'.$_ => ["valgrind_$_"], } @{$config->{valgrind_tools}}),
+
     nothreads => [{-no_build_server => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
         map {
@@ -703,7 +713,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
           qw(tsan asan msan usan gperf asannta minetest minetest_debug)
     ), (
         map { 'play_' . $_ => [{-no_build_server => 1,}, [\'play_task', $_]] } qw(debug gdb nothreads vtune),
-        map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
+        #map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
 
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_ } qw(tsan asan msan usan gperf asannta minetest minetest_debug)),

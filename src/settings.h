@@ -196,6 +196,7 @@ public:
 	bool getGroupNoEx(const std::string &name, Settings *&val) const;
 	bool getNoEx(const std::string &name, std::string &val) const;
 	bool getFlag(const std::string &name) const;
+	bool getBoolNoEx(const std::string &name, bool &val) const;
 	bool getU16NoEx(const std::string &name, u16 &val) const;
 	bool getS16NoEx(const std::string &name, s16 &val) const;
 	bool getU32NoEx(const std::string &name, u32 &val) const;

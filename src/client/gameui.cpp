@@ -94,6 +94,14 @@ void GameUI::init()
 	m_guitext_profiler->setOverrideFont(g_fontengine->getFont(
 		g_fontengine->getDefaultFontSize() * 0.9f, FM_Mono));
 	m_guitext_profiler->setVisible(false);
+
+	
+	g_settings->getU16NoEx("profiler_max_page", m_profiler_max_page);
+	u16 profiler_page = 0;
+	g_settings->getU16NoEx("profiler_page", profiler_page);
+	for (u16 i = 0; i < profiler_page; ++i) {
+		bool tmp; toggleProfiler(tmp);
+	}
 }
 
 void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_control,
@@ -229,6 +237,10 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 void GameUI::initFlags()
 {
 	m_flags = GameUI::Flags();
+
+	g_settings->getBoolNoEx("show_basic_debug", m_flags.show_basic_debug);
+	g_settings->getBoolNoEx("show_profiler_graph", m_flags.show_profiler_graph);
+
 	m_flags.show_minimal_debug = g_settings->getBool("show_debug");
 }
 

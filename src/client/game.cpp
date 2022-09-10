@@ -1967,7 +1967,6 @@ void Game::updateProfilers(const RunStats &stats, const FpsControl &draw_times,
 		profiler_print_interval = 3;
 	}
 
-	if (!runData.autoexit)
 	if (profiler_interval.step(dtime, profiler_print_interval)) {
 		if (print_to_log) {
 			infostream << "Profiler:" << std::endl;
