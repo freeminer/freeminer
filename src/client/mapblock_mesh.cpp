@@ -1527,9 +1527,10 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 		// v3f t = v3f(0,0,0);
 		if (step > 1) {
-			translateMesh(m_mesh[layer], v3f(HBS, 0, HBS));
+			translateMesh(m_mesh[layer], v3f(HBS, HBS, HBS));
 			scaleMesh(m_mesh[layer], v3f(step, step, step));
-			// t = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
+			translateMesh(m_mesh[layer], v3f(-HBS, -HBS, -HBS));
+			//m_mesh_offset = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
 		}
 
 		if (m_mesh[layer]) {

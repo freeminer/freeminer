@@ -12,18 +12,22 @@ ABMHandler::ABMHandler(ServerEnvironment *env):
 	}
 
 	void ABMHandler::init(std::vector<ABMWithState> &abms) {
-		for(auto & ai: abms){
-			auto i = &ai;
+		for(auto & abmws: abms){
+			auto i = &abmws;
 			ActiveABM aabm;
 			aabm.abmws = i;
+
+			aabm.min_y = i->abm->getMinY();
+			aabm.max_y = i->abm->getMaxY();
+
 			// Trigger contents
 				for (auto &c : i->trigger_ids)
 				{
 					if (!m_aabms[c]) {
 						m_aabms[c] = new std::vector<ActiveABM>;
-						m_aabms_list.push_back(m_aabms[c]);
+						m_aabms_list.emplace_back(m_aabms[c]);
 					}
-					m_aabms[c]->push_back(aabm);
+					m_aabms[c]->emplace_back(aabm);
 					m_aabms_empty = false;
 				}
 		}
@@ -254,24 +258,31 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		m_abm_timestamp = time;
 		for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end() ; ++abm_trigger) {
 			//ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
-			auto & abm = abm_trigger->abm;
-			if (!abm || !abm->abmws || !abm->abmws->interval) {
+			auto & aabm = *abm_trigger->abm;
+			if (!abm_trigger->abm || !aabm.abmws || !aabm.abmws->interval) {
 				infostream << "remove strange abm trigger dtime=" << dtime << std::endl;
 				abm_trigger = abm_triggers->erase(abm_trigger);
 				continue;
 			}
-			float intervals = dtime / abm->abmws->interval;
 
-			if(!abm->abmws->simple_catchup)
+			const auto & p = abm_trigger->pos;
+
+			/*if ((p.Y < aabm.min_y) || (p.Y > aabm.max_y))
+				continue;*/
+			if ((p.Y < aabm.abmws->abm->getMinY()) || (p.Y > aabm.abmws->abm->getMaxY()))
+				continue;
+
+			float intervals = dtime / aabm.abmws->interval;
+
+			if(!aabm.abmws->simple_catchup)
 				intervals = 1;
 
 			if (!intervals) {
 				verbosestream << "abm: intervals=" << intervals << " dtime="<<dtime<< std::endl;
 				intervals = 1;
 			}
-			int chance = (abm->abmws->chance / intervals);
+			int chance = (aabm.abmws->chance / intervals);
 			//infostream<<"TST: dtime="<<dtime<<" Achance="<<abm->abmws->chance<<" Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals << std::endl;
-
 			if(chance && myrand() % chance)
 					continue;
 			//infostream<<"HIT! dtime="<<dtime<<" Achance="<<abm->abmws->chance<<" Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<" Rintervals="<<intervals << std::endl;
@@ -287,9 +298,8 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 			int active_object_add = 0;
 			if (active_object_added.count(blockpos))
 				active_object_add = active_object_added[blockpos];
-			abm->abmws->abm->trigger(m_env, abm_trigger->pos, node,
+			aabm.abmws->abm->trigger(m_env, abm_trigger->pos, node,
 				abm_trigger->active_object_count+active_object_add, abm_trigger->active_object_count_wider+active_object_add, map->getNodeTry(abm_trigger->neighbor_pos), activate);
-
 				// Count surrounding objects again if the abms added any
 				//infostream<<" m_env->m_added_objects="<<m_env->m_added_objects<<" add="<<active_object_add<<" bp="<<getNodeBlockPos(abm_trigger->pos)<<std::endl;
 				if(m_env->m_added_objects > 0) {

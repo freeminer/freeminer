@@ -41,8 +41,8 @@ public:
 	void step(float dtime, bool send_recommended) override;
 
 	void attachItems(ItemStack st) { m_item_stack = st; }
-	ItemStack getAttachedItems() { return m_item_stack; }
-	bool canBeLooted() { return (m_timer_before_loot < 0.0f); }
+	//ItemStack getAttachedItems() { return m_item_stack; }
+	//bool canBeLooted() { return (m_timer_before_loot < 0.0f); }
 private:
 	ItemStack m_item_stack;
 	float m_timer_before_loot;

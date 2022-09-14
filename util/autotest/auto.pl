@@ -248,7 +248,7 @@ our $options = {
         -world            => $script_path . 'world_math_tglad',
         mg_name           => 'math',
         mg_math           => {"N" => 30, "generator" => "tglad", "mandelbox_scale" => 1.5, "scale" => 0.000333333333,},
-        static_spawnpoint => '30010,30010,-30010',
+        static_spawnpoint => '(30010,30010,-30010)',
         mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
@@ -256,7 +256,7 @@ our $options = {
         -world            => $script_path . 'world_fall1',
         mg_name           => 'math',
         mg_math           => {"generator" => "menger_sponge"},
-        static_spawnpoint => '-70,20020,-190',
+        static_spawnpoint => '(-70,20020,-190)',
         mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
@@ -290,7 +290,7 @@ our $options = {
         time_speed         => 0,
         enable_minimap     => 0,
         random_input       => 0,
-        static_spawnpoint  => '0,50,0',
+        static_spawnpoint  => '(0,50,0)',
         creative_mode      => 1,
         free_move          => 1,
         enable_damage      => 0,
@@ -702,7 +702,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     play_task => sub {
         return 1 if $config->{all_run};
         local $config->{no_build_server} = 1;
-        local $config->{go}              = undef;
+        #local $config->{go}              = undef;
         local $config->{options_bot}     = undef;
         local $config->{autoexit}        = undef;
         for (@_) { my $r = commands_run($_); return $r if $r; }
@@ -807,7 +807,7 @@ sub options_make(;$$) {
         }
     }
 
-    return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_=$rm->{$_}"} sort keys %$rm);
+    return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_='$rm->{$_}'"} sort keys %$rm);
 }
 
 sub command_run(@);
