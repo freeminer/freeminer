@@ -322,7 +322,7 @@ core.register_entity(":__builtin:item", {
 		end
 
 		-- push item up from ground
-		if node_in and ( not core.registered_nodes[node_in.name] or (not core.registered_nodes[node_in.name].buildable_to and not core.registered_nodes[node_in.name].sunlight_propagates ) ) then
+		if snode and ( not core.registered_nodes[snode.name] or (not core.registered_nodes[snode.name].buildable_to and not core.registered_nodes[snode.name].sunlight_propagates ) ) then
 			self.object:setvelocity({x=0,y=2,z=0})
 		end
 

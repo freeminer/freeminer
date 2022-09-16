@@ -156,8 +156,12 @@ int Profiler::print(std::ostream &o, u32 page, u32 pagecount)
 			else
 				o << " ";
 		}
+       {
+        MutexAutoLock lock(m_mutex);
+
 		porting::mt_snprintf(num_buf, sizeof(num_buf), "% 4ix % 3g",
 				getAvgCount(i.first), i.second);
+       }
 		o << num_buf << std::endl;
 	}
 	return values.size();

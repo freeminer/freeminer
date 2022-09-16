@@ -103,7 +103,7 @@ public:
 	}
 
 private:
-	std::mutex m_mutex;
+	mutable std::mutex m_mutex;
 	std::map<std::string, float> m_data;
 	std::map<std::string, int> m_avgcounts;
 	std::map<std::string, float> m_graphvalues;
