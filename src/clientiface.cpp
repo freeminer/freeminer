@@ -741,7 +741,7 @@ void ClientInterface::UpdatePlayerList()
 		std::vector<session_t> clients = getClientIDs();
 		m_clients_names.clear();
 
-		auto now = porting::getTimeMs();
+		const auto now = porting::getTimeMs();
 		static auto last_print = now;
 		bool print = now >= last_print;
 		if (print)

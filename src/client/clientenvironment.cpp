@@ -195,7 +195,8 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 		Stuff that has a maximum time increment
 	*/
 
-	u32 breaked = 0, lend_ms = porting::getTimeMs() + max_cycle_ms;
+	u32 breaked = 0;
+	const auto lend_ms = porting::getTimeMs() + max_cycle_ms;
 	u32 loopcount = 0;
 
 	u32 steps = ceil(dtime / dtime_max_increment);

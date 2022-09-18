@@ -48,6 +48,9 @@ std::enable_if_t<priority == 1
         out << "nullptr";
         return out;
     }
+    if constexpr (std::is_pointer_v<T>) {
+        out << "*" << (long) x << " ";
+    }
     return dumpValue(out, *x);
 }
 

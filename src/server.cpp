@@ -1068,7 +1068,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		std::unordered_set<v3s16> node_meta_updates;
 
-		u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 #if !ENABLE_THREADS
 		auto lock = m_env->getMap().m_nothread_locker.lock_shared_rec();
 		if (lock->owns_lock())
@@ -2731,6 +2731,7 @@ int Server::SendBlocks(float dtime)
 			//total_sending += client->getSendingCount();
 			const auto old_count = queue.size();
 			total += client->GetNextBlocks(m_env,m_emerge, dtime, queue, m_uptime_counter->get() + m_env->m_game_time_start);
+			//total_sending += queue.size();
 			unique_clients += queue.size() > old_count ? 1 : 0;
 		}
 	}

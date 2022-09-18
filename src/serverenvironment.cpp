@@ -67,12 +67,16 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	abm(abm_)
 {
 	auto ndef = senv->getGameDef()->ndef();
-	interval = abm->getTriggerInterval();
-	if (!interval)
-		interval = 10;
+
+    float trigger_interval = abm->getTriggerInterval();
+    if(trigger_interval < 0.001)
+        trigger_interval = 0.001;
+
+    interval = trigger_interval;
+
 	chance = abm->getTriggerChance();
-	if (!chance)
-		chance = 50;
+	if(chance == 0)
+		chance = 1;
 
 	// abm process may be very slow if > 1
 	neighbors_range = abm->getNeighborsRange();
@@ -83,8 +87,6 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 		neighbors_range = nr_max;
 
 	simple_catchup = abm->getSimpleCatchUp();
-
-
 
 	// Initialize timer to random value to spread processing
 	float itv = interval;
@@ -762,6 +764,7 @@ void ServerEnvironment::loadMeta()
 	}
 
 	try {
+		m_game_time_start =
 		m_game_time = args.getU64("game_time");
 	} catch (SettingNotFoundException &e) {
 		// Getting this is crucial, otherwise timestamps are useless
@@ -1546,7 +1549,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			Handle added blocks
 		*/
 
-	    u32 n = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	    u32 n = 0;
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	    m_blocks_added_last = 0;
 	    auto i = m_blocks_added.begin();
 	    for (; i != m_blocks_added.end(); ++i) {
@@ -1590,7 +1594,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 /*
 		float dtime = m_cache_nodetimer_interval;
 */
-		u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+		u32 n = 0, calls = 0;
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 		auto lock = m_active_blocks.m_list.lock_shared_rec();
 
 		for (const auto &p: m_active_blocks.m_list) {

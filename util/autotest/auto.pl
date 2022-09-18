@@ -379,7 +379,7 @@ our $commands = {
     run_single_tsan => sub {
         local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
-        local $config->{runner} = $config->{runner} . " env TSAN_OPTIONS=second_deadlock_stack=1 ";
+        local $config->{env} = $config->{env} . " TSAN_OPTIONS=second_deadlock_stack=1 ";
         local $options->{opt}{enable_minimap} = 0;    # too unsafe
         commands_run($config->{run_task});
     },
@@ -405,7 +405,6 @@ qq{$config->{env} $config->{runner} @_ ./freeminerserver $config->{tee} $config-
         }
     },
     run_clients => sub {
-
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
@@ -703,7 +702,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     play_task => sub {
         return 1 if $config->{all_run};
         local $config->{no_build_server} = 1;
-        #local $config->{go}              = undef;
+        local $config->{go}              = undef;
         local $config->{options_bot}     = undef;
         local $config->{autoexit}        = undef;
         for (@_) { my $r = commands_run($_); return $r if $r; }

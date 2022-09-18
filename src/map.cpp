@@ -584,10 +584,10 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 	if (g_settings->getBool("liquid_real"))
 		return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
 
-	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	u32 loopcount = 0;
-	u32 initial_size = transforming_liquid_size();
+	const auto initial_size = transforming_liquid_size();
 
 	/*if(initial_size != 0)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/

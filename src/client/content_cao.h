@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <cstdint>
 #include <map>
 #include "irrlichttypes_extrabloated.h"
 #include "clientobject.h"
@@ -138,7 +139,7 @@ private:
 
 	bool visualExpiryRequired(const ObjectProperties &newprops) const;
 
-	unsigned int m_position_recd = 0;
+	uint64_t m_position_recd = 0;
 	float m_update_interval = 0.1;
 
 public:

@@ -49,7 +49,7 @@ void *ServerThread::run()
 			TimeTaker timer("Server Receive()");
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
-			u32 end_ms = porting::getTimeMs();
+		 	auto end_ms = porting::getTimeMs();
 			int sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
 			auto sleep_min = m_server->overload ? 1000 : 50;
 			if (sleep < sleep_min)

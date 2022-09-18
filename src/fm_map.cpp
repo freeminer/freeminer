@@ -15,6 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstdint>
 #include "map.h"
 #include "mapblock.h"
 #include "log_types.h"
@@ -358,7 +359,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	u32 n = 0, calls = 0;
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	std::vector<MapBlockP> blocks_delete;
 	int save_started = 0;
@@ -705,7 +707,7 @@ void ServerMap::unspreadLight(enum LightBank bank,
 */
 void ServerMap::spreadLight(enum LightBank bank,
 		std::set<v3s16> & from_nodes,
-		std::map<v3s16, MapBlock*> & modified_blocks, u32 end_ms)
+		std::map<v3s16, MapBlock*> & modified_blocks, uint64_t end_ms)
 {
 	auto *nodemgr = m_gamedef->ndef();
 
@@ -903,7 +905,7 @@ u32 ServerMap::updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int
 	{
 		//TimeTaker t("updateLighting: first stuff");
 
-		u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 		for(auto i = a_blocks.begin();
 		        i != a_blocks.end();) {
 

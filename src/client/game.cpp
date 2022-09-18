@@ -4445,7 +4445,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	*/
 	const video::SColor skycolor = sky->getSkyColor();
 
-	auto start_ms = porting::getTimeMs();
+	//auto start_ms = porting::getTimeMs();
 
 	TimeTaker tt_draw("Draw scene", nullptr, PRECISION_MICRO);
 	if (!runData.headless_optimize)

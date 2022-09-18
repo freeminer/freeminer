@@ -18,6 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "fm_lan.h"
+#include <cstdint>
 #include "convert_json.h"
 #include "socket.h"
 #include "../util/string.h"
@@ -180,7 +181,7 @@ void * lan_adv::run() {
 			return nullptr;
 		}
 	}
-	std::unordered_map<std::string, unsigned int> limiter;
+	std::unordered_map<std::string, uint64_t> limiter;
 
 	const auto proto = g_settings->get("server_proto");
 

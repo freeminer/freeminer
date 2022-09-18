@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <set>
@@ -43,6 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 
 #include "mapblock.h"
+#include <sys/types.h>
 #include <unordered_set>
 #include "config.h"
 
@@ -281,7 +283,7 @@ public:
 	void deleteBlock(MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
-	unsigned int m_blocks_delete_time = 0;
+	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
 
@@ -378,7 +380,7 @@ public:
 	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
 			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
 	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
-			std::map<v3s16, MapBlock *> &modified_blocks, u32 end_ms);
+			std::map<v3s16, MapBlock *> &modified_blocks, uint64_t end_ms);
 
 	u32 updateLighting(concurrent_map<v3POS, MapBlock *> &a_blocks,
 			std::map<v3POS, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);

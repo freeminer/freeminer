@@ -437,7 +437,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			occlusion_culling_enabled = false;
 	}
 
-	u32 calls = 0, end_ms = porting::getTimeMs() + u32(max_cycle_ms);
+	u32 calls = 0;
+	const auto end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
 	unordered_map_v3POS<bool> occlude_cache;
 
@@ -472,7 +473,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			{
 				if(!mesh) {
 					blocks_in_range_without_mesh++;
-					if (m_mesh_queued < maxq || range <= 2) {
+					if (m_mesh_queued < maxq || range <= 1) {
 						m_client->addUpdateMeshTask(bp, false);
 						++m_mesh_queued;
 					}

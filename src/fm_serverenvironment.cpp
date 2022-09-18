@@ -3,7 +3,8 @@
 #include "util/timetaker.h"
 
 int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
-	u32 n = 0, calls = 0, end_ms = porting::getTimeMs() + max_cycle_ms;
+	u32 n = 0, calls = 0;
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	if (m_active_block_analyzed_last || m_analyze_blocks_interval.step(dtime, 1.0)) {
 		//if (!m_active_block_analyzed_last) infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 		TimeTaker timer("env: block analyze and abm apply from " + itos(m_active_block_analyzed_last));
@@ -43,7 +44,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 	if (g_settings->getBool("abm_random") && (!m_abm_random_blocks.empty() || m_abm_random_interval.step(dtime, 10.0))) {
 		TimeTaker timer("env: random abm " + itos(m_abm_random_blocks.size()));
 
-		u32 end_ms = porting::getTimeMs() + max_cycle_ms/10;
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms/10;
 
 		if (m_abm_random_blocks.empty()) {
 #if !ENABLE_THREADS

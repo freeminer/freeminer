@@ -581,7 +581,7 @@ void Client::step(float dtime)
 		TimeTaker timer_step("Client: Replace updated meshes");
 
 		int num_processed_meshes = 0;
-		u32 end_ms = porting::getTimeMs() + 10;
+		auto end_ms = porting::getTimeMs() + 10;
 		std::vector<v3s16> blocks_to_ack;
 
 		auto qsize = m_mesh_update_thread.m_queue_out.size();

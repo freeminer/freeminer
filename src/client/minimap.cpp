@@ -113,7 +113,7 @@ void MinimapUpdateThread::doUpdate()
 		}
 	}
 
-	auto now = porting::getTimeMs();
+	const auto now = porting::getTimeMs();
 	if (next_update < now) {
 		next_update = now + 333;
 	} else {
