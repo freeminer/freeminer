@@ -101,7 +101,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 	//TimeTaker timer("transformLiquidsReal()");
 	uint32_t loopcount = 0;
-	uint32_t initial_size = transforming_liquid_size();
+	const auto initial_size = transforming_liquid_size();
 
 	int32_t regenerated = 0;
 
@@ -109,10 +109,10 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	bool debug = 1;
 #endif
 
-	uint8_t relax = g_settings->getS16("liquid_relax");
-	thread_local static int fast_flood = g_settings->getS16("liquid_fast_flood");
-	thread_local static int water_level = g_settings->getS16("water_level");
-	int16_t liquid_pressure = m_server->m_emerge->mgparams->liquid_pressure;
+	thread_local static const uint8_t relax = g_settings->getS16("liquid_relax");
+	thread_local static const auto fast_flood = g_settings->getS16("liquid_fast_flood");
+	thread_local static const int water_level = g_settings->getS16("water_level");
+	const int16_t liquid_pressure = m_server->m_emerge->mgparams->liquid_pressure;
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
 	// list of nodes that due to viscosity have not reached their max level height
@@ -122,7 +122,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	int falling = 0;
 	uint16_t loop_rand = myrand();
 
-	uint32_t end_ms = porting::getTimeMs() + max_cycle_ms;
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
 NEXT_LIQUID:
 	;

@@ -128,6 +128,7 @@ sub init_config () {
         screenshot_dir    => 'screenshot.' . $g->{date},
         env               => 'OPENSSL_armcap=0',
         gdb_stay          => 0,                                                            # dont exit from gdb
+        gdb               => 'gdb',
         runner            => 'nice ',
         name              => 'bot',
         go                => '--go',
@@ -627,7 +628,7 @@ our $tasks = {
     ],
     gdb => sub {
         local $config->{runner} =
-          $config->{runner} . q{gdb -ex 'run' -ex 't a a bt' } . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' }) . q{ --args };
+          $config->{runner} . $config->{gdb} . q{ -ex 'run' -ex 't a a bt' } . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' }) . q{ --args };
         @_ = ('debug') if !@_;
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
