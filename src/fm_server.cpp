@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "database/database.h"
 #include "emerge.h"
 #include "profiler.h"
@@ -39,7 +40,7 @@ void *ServerThread::run()
 	while (!stopRequested()) {
 		try {
 			m_server->getEnv().getMap().getBlockCacheFlush();
-			u32 time_now = porting::getTimeMs();
+			const auto time_now = porting::getTimeMs();
 			{
 			TimeTaker timer("Server AsyncRunStep()");
 			m_server->AsyncRunStep((time_now - time)/1000.0f);
@@ -50,7 +51,7 @@ void *ServerThread::run()
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 		 	auto end_ms = porting::getTimeMs();
-			int sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
+			uint64_t sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
 			auto sleep_min = m_server->overload ? 1000 : 50;
 			if (sleep < sleep_min)
 				sleep = sleep_min;
@@ -223,12 +224,12 @@ public:
 
 	void * run() {
 		unsigned int max_cycle_ms = 1000;
-		unsigned int time = porting::getTimeMs();
+		auto time = porting::getTimeMs();
 		while(!stopRequested()) {
 			try {
 				m_server->getEnv().getMap().getBlockCacheFlush();
 				auto ctime = porting::getTimeMs();
-				unsigned int dtimems = ctime - time;
+				auto dtimems = ctime - time;
 				time = ctime;
 				m_server->getEnv().step(dtimems / 1000.0f, m_server->m_uptime_counter->get(), max_cycle_ms);
 				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
@@ -263,7 +264,7 @@ public:
 		while(!stopRequested()) {
 			try {
 				auto ctime = porting::getTimeMs();
-				unsigned int dtimems = ctime - time;
+				auto dtimems = ctime - time;
 				time = ctime;
 				m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
 				std::this_thread::sleep_for(std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));

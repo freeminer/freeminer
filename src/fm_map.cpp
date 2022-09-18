@@ -1185,7 +1185,7 @@ void ServerMap::lighting_modified_add(v3POS pos, int range) {
 
 unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int & loopcount) {
 	unsigned int ret = 0;
-	u32 end_ms = porting::getTimeMs() + max_cycle_ms;
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	unordered_map_v3POS<int> processed;
 	for (;;) {
 		lighting_map_t blocks;
