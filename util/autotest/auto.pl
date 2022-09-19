@@ -803,7 +803,7 @@ sub options_make(;$$) {
             }
             next if !ref $rm->{$k};
             #($rm->{$k} = JSON::encode_json($rm->{$k})) =~ s/"/$config->{run_escape}\\"/g;    #"
-            ($rm->{$k} = ${json($rm->{$k})}) =~ s/"/$config->{run_escape}\\"/g;    #"
+            ($rm->{$k} = ${json($rm->{$k})}); # =~ s/"/$config->{run_escape}\\"/g;    #"
         }
     }
 

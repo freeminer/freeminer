@@ -1425,7 +1425,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		m_game_time_fraction_counter -= (float)inc_i;
 	}
 
-	TimeTaker timer_step("Environment step");
+	TimeTaker timer_step("Server Environment step");
 #if ENABLE_THREADS
 	g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
 #endif
