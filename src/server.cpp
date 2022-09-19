@@ -4105,7 +4105,9 @@ v3f Server::findSpawnPos()
 		s32 range = MYMIN(1 + i, range_max);
 		// We're going to try to throw the player to this position
 		v2s16 nodepos2d = v2s16(
+		    nodeposf.X
 			-range + myrand_range(0, range*2),
+		    nodeposf.Z
 			-range + myrand_range(0, range*2));
 		// Get spawn level at point
 		s16 spawn_level = m_emerge->getSpawnLevelAtPoint(nodepos2d);
@@ -4115,7 +4117,7 @@ v3f Server::findSpawnPos()
 				spawn_level <= -MAX_MAP_GENERATION_LIMIT)
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, spawn_level, nodepos2d.Y);
+		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 		// Consecutive empty nodes
 		s32 air_count = 0;
 
