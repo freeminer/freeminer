@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+#include "debug/stacktrace.h"
 #include "porting.h"
 #include "debug.h"
 #include "exceptions.h"
@@ -76,7 +77,10 @@ void fatal_error_fn(const char *msg, const char *file,
 		<< std::this_thread::get_id() << ":" << std::endl;
 	errorstream << file << ":" << line << ": " << function
 		<< ": A fatal error occurred: " << msg << std::endl;
-	throw std::runtime_error{msg};
+
+	errorstream << stacktrace() << std::endl;
+	//throw std::runtime_error{msg};
+
 #ifndef __ANDROID__
 	abort();
 #endif
