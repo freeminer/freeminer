@@ -56,7 +56,7 @@ else()
 	set(STATIC_BUILD 0)
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
     set(USE_DEBUG_HELPERS ON)
 endif()
 
@@ -557,9 +557,7 @@ add_custom_target(GenerateVersion
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(contrib)
-if (USE_DEBUG_HELPERS)
-    add_subdirectory(debug)
-endif()
+add_subdirectory(debug)
 
 add_subdirectory(threading)
 add_subdirectory(content)
