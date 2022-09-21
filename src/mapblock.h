@@ -114,7 +114,7 @@ public:
 		if(data != NULL)
 			delete data;
 		data = reinterpret_cast<MapNode*>( ::operator new(nodecount * sizeof(MapNode)));
-		if (!CONTENT_IGNORE)
+		if constexpr(!CONTENT_IGNORE)
 			memset(data, 0, nodecount * sizeof(MapNode));
 		else
 		for (u32 i = 0; i < nodecount; i++)

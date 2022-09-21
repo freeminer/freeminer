@@ -177,6 +177,7 @@ our $options = {
         show_profiler_graph     => 1,
         profiler_max_page       => 1,
         profiler_page           => 1,
+        debug_log_level         => 'info',
     },
     no_exit => {
         autoexit => 0,

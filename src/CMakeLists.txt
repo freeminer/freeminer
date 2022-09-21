@@ -69,7 +69,7 @@ if (USE_DEBUG_HELPERS)
     #set (INCLUDE_DEBUG_HELPERS "SHELL:-include \"${CMAKE_CURRENT_SOURCE_DIR}/util/iostream_debug_helpers.h\"")
     # Use generator expression as we don't want to pollute CMAKE_CXX_FLAGS, which will interfere with CMake check system.
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${INCLUDE_DEBUG_HELPERS}>)
-    add_definitions(-DDUMP_STREAM=verbosestream)
+    add_definitions(-DDUMP_STREAM=infostream)
 endif ()
 
 

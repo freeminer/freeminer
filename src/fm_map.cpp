@@ -218,8 +218,8 @@ s16 Map::getHumidity(v3POS p, bool no_random) {
 
 
 s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block, unordered_map_v3POS<s16> * cache) {
-	auto bp = getNodeBlockPos(p);
-	auto gametime = env->getGameTime();
+	const auto bp = getNodeBlockPos(p);
+	const auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->heat_last_update)
 			return block->heat + block->heat_add + myrand_range(0, 1);
@@ -244,8 +244,8 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block,
 }
 
 s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block, unordered_map_v3POS<s16> * cache) {
-	auto bp = getNodeBlockPos(p);
-	auto gametime = env->getGameTime();
+	const auto bp = getNodeBlockPos(p);
+	const auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->humidity_last_update)
 			return block->humidity + block->humidity_add + myrand_range(0, 1);
