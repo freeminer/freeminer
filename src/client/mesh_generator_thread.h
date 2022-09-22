@@ -51,6 +51,7 @@ struct QueuedMeshUpdate
 	int crack_level = -1;
 	v3s16 crack_pos;
 	MeshMakeData *data = nullptr; // This is generated in MeshUpdateQueue::pop()
+	bool urgent = false;
 
 	QueuedMeshUpdate() = default;
 	~QueuedMeshUpdate();
@@ -113,6 +114,7 @@ struct MeshUpdateResult
 	MapBlock::mesh_type mesh;
 	
 	bool ack_block_to_server = false;
+	bool urgent = false;
 
 	MeshUpdateResult() = default;
 };

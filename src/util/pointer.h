@@ -278,3 +278,18 @@ class sloppy<T**>
     operator T** () const { return t; }
     operator const T** () const { return const_cast<const T**>(t); }
 };
+
+// This class is not thread-safe!
+class IntrusiveReferenceCounted {
+public:
+	IntrusiveReferenceCounted() = default;
+	virtual ~IntrusiveReferenceCounted() = default;
+	void grab() noexcept { ++m_refcount; }
+	void drop() noexcept { if (--m_refcount == 0) delete this; }
+
+	// Preserve own reference count.
+	IntrusiveReferenceCounted(const IntrusiveReferenceCounted &) {}
+	IntrusiveReferenceCounted &operator=(const IntrusiveReferenceCounted &) { return *this; }
+private:
+	u32 m_refcount = 1;
+};
