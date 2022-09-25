@@ -194,9 +194,7 @@ Out & dump(Out & out, const char * name, T && x)
     #define DUMP_THREAD << " [ " << getThreadId() << " ] "     
 #endif                                                                      
                                                                             
-#define DUMPVAR(VAR)                \
-    ::dump(DUMP_STREAM, #VAR, (VAR)); \
-    DUMP_STREAM << "; ";                                      
+#define DUMPVAR(VAR) ::dump(DUMP_STREAM, #VAR, (VAR));
 #define DUMPHEAD DUMP_STREAM DUMP_FILE DUMP_THREAD;           
                                                               
 #define DUMPTAIL DUMP_STREAM DUMP_ENDL;                       

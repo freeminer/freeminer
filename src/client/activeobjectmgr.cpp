@@ -68,7 +68,7 @@ bool ActiveObjectMgr::registerObject(ClientActiveObject *obj)
 	}
 	infostream << "Client::ActiveObjectMgr::registerObject(): "
 			<< "added (id=" << obj->getId() << ")" << std::endl;
-	m_active_objects.emplace(obj->getId(), obj);
+	m_active_objects.insert_or_assign(obj->getId(), obj);
 	return true;
 }
 

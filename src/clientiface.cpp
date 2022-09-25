@@ -452,7 +452,7 @@ void RemoteClient::GotBlock(v3s16 p)
 
 void RemoteClient::SentBlock(v3s16 p, double time)
 {
-	m_blocks_sent.emplace(p, time);
+	m_blocks_sent.insert_or_assign(p, time);
 }
 
 /*
@@ -959,7 +959,7 @@ void ClientInterface::CreateClient(session_t peer_id)
 	// Create client
 	auto client = std::shared_ptr<RemoteClient>(new RemoteClient());
 	client->peer_id = peer_id;
-	m_clients.emplace(client->peer_id, client);
+	m_clients.insert_or_assign(client->peer_id, client);
 }
 
 void ClientInterface::event(session_t peer_id, ClientStateEvent event)

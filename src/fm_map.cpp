@@ -111,7 +111,7 @@ MapBlock * Map::createBlankBlock(v3POS & p) {
 
 	block = createBlankBlockNoInsert(p);
 
-	m_blocks.emplace(p, block);
+	m_blocks.insert_or_assign(p, block);
 
 	return block;
 }
@@ -130,7 +130,7 @@ bool Map::insertBlock(MapBlock *block) {
 	}
 
 	// Insert into container
-	m_blocks.emplace(block_p, block);
+	m_blocks.insert_or_assign(block_p, block);
 	return true;
 }
 
