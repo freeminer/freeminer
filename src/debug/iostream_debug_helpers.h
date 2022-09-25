@@ -164,7 +164,7 @@ Out & dump(Out & out, const char * name, T && x)
          // `name` is the same as quoted `x`
          if (name_len > 2 && value_len > 0 && name[0] == '"' && name[name_len - 1] == '"'
                  && strncmp(name + 1, x, std::min(value_len, name_len) - 1) == 0) {
-             out << x;
+             out << x << "; ";
              return out;
          }
     }

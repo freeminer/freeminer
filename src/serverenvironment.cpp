@@ -2074,7 +2074,7 @@ u16 ServerEnvironment::addActiveObjectRaw(ServerActiveObject *object,
 		v3s16 blockpos = getNodeBlockPos(floatToInt(objectpos, BS));
 		MapBlock *block = m_map->emergeBlock(blockpos);
 		if(block){
-			block->m_static_objects.m_active.emplace(object->getId(), s_obj);
+			block->m_static_objects.m_active.insert_or_assign(object->getId(), s_obj);
 			{
 			auto lock = object->lock_unique_rec();
 			object->m_static_exists = true;

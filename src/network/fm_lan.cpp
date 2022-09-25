@@ -249,7 +249,7 @@ void * lan_adv::run() {
 					} else if (p["proto"] == proto) {
 						if (!collected.count(key))
 							actionstream << "lan server start " << key << "\n";
-						collected.emplace(key, p);
+						collected.insert_or_assign(key, p);
 						fresh = true;
 					}
 				}

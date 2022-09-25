@@ -1447,7 +1447,7 @@ bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 			//verbosestream << " already generating" << blockpos_min << " for " << blockpos << " gentime=" << now - gen << std::endl;
 			return false;
 		}
-		m_mapgen_process.emplace(bpmin, now);
+		m_mapgen_process.insert_or_assign(bpmin, now);
 	}
 
 	v3s16 extra_borders(1, 1, 1);

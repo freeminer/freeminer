@@ -71,6 +71,13 @@ public:
 	}
 
 	template <typename... Args>
+	decltype(auto) insert_or_assign(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::insert_or_assign(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
 	decltype(auto) empty(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();

@@ -591,7 +591,7 @@ private:
 	mesh_type mesh2 = nullptr, mesh4 = nullptr, mesh8 = nullptr, mesh16 = nullptr;
 public:	
 	mesh_type mesh_old = nullptr;
-	std::atomic_uint mesh_size {0};
+	std::atomic_int mesh_size {-1};
 #endif
 
 	NodeMetadataList m_node_metadata;

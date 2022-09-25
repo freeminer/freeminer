@@ -132,7 +132,7 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 		return false;
 	}
 
-	m_active_objects.emplace(obj->getId(),obj);
+	m_active_objects.insert_or_assign(obj->getId(),obj);
 #if !NDEBUG
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 			<< "Added id=" << obj->getId() << "; there are now "
