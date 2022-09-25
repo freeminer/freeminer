@@ -539,7 +539,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 	}
 
 	if (!m_generated) {
-		verbosestream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
+		errorstream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
 		//if (disk) m_generated = false; else // uncomment if you want convert old buggy map
 		return false;
 	}
@@ -755,14 +755,56 @@ MapBlock::mesh_type MapBlock::getMesh(int step) {
 	return mesh;
 }
 
-void MapBlock::setMesh(MapBlock::mesh_type & rmesh) {
-	if (rmesh && !mesh_size)
+int32_t MapBlock::getMeshSize(int step)
+{
+	if (step >= 16 && m_mesh_size_16)
+		return m_mesh_size_16;
+	if (step >= 8 && m_mesh_size_8)
+		return m_mesh_size_8;
+	if (step >= 4 && m_mesh_size_4)
+		return m_mesh_size_4;
+	if (step >= 2 && m_mesh_size_2)
+		return m_mesh_size_2;
+	return m_mesh_size;
+}
+
+void MapBlock::setMeshSize(int step, int32_t size)
+{
+	if (step >= 16)
+		m_mesh_size_16 = size;
+	else if (step >= 8)
+		m_mesh_size_8 = size;
+	else if (step >= 4)
+		m_mesh_size_4 = size;
+	else if (step >= 2)
+		m_mesh_size_2 = size;
+	else
+		m_mesh_size = size;
+}
+
+void MapBlock::setMesh(MapBlock::mesh_type &rmesh)
+{
+	int32_t mesh_size = -1;
+	if (rmesh /*&& !mesh_size*/)
 		mesh_size = rmesh->getMesh()->getMeshBufferCount();
-	     if (rmesh->step == 16) {mesh_old = mesh16; mesh16 = rmesh;}
-	else if (rmesh->step == 8 ) {mesh_old = mesh8;  mesh8  = rmesh;}
-	else if (rmesh->step == 4 ) {mesh_old = mesh4;  mesh4  = rmesh;}
-	else if (rmesh->step == 2 ) {mesh_old = mesh2;  mesh2  = rmesh;}
-	else                        {mesh_old = mesh;   mesh   = rmesh;}
+	setMeshSize(rmesh->step, mesh_size);
+
+	if (rmesh->step == 16) {
+		mesh_old = mesh16;
+		mesh16 = rmesh;
+	} else if (rmesh->step == 8) {
+		mesh_old = mesh8;
+		mesh8 = rmesh;
+	} else if (rmesh->step == 4) {
+		mesh_old = mesh4;
+		mesh4 = rmesh;
+	} else if (rmesh->step == 2) {
+		mesh_old = mesh2;
+		mesh2 = rmesh;
+	} else {
+		mesh_old = mesh;
+		mesh = rmesh;
+	}
 }
 
 /*

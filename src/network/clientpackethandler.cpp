@@ -347,8 +347,9 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		Add it to mesh update queue and set it to be acknowledged after update.
 	*/
 	updateMeshTimestampWithEdge(p);
-	if (!overload && getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
-		addUpdateMeshTaskWithEdge(p);
+	if (!overload && getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1) {
+		addUpdateMeshTask(p);
+	}
 
 	sendGotBlocks({p});
 }

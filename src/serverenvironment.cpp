@@ -1427,7 +1427,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 	TimeTaker timer_step("Server Environment step");
 #if ENABLE_THREADS
-	g_profiler->add("SMap: Blocks", getMap().m_blocks.size());
+	g_profiler->avg("SMap: Blocks", getMap().m_blocks.size());
 #endif
 
 	/*
@@ -1647,7 +1647,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			m_active_block_timer_last = 0;
 	}
 
-	g_profiler->add("SMap: Blocks: Active", m_active_blocks.m_list.size());
+	g_profiler->avg("SMap: Blocks: Active", m_active_blocks.m_list.size());
 	m_active_block_abm_dtime_counter += dtime;
 
 	if (m_active_block_abm_last || m_active_block_modifier_interval.step(dtime, m_cache_abm_interval)) {
@@ -1731,7 +1731,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		g_profiler->avg("ServerEnv: active blocks", m_active_blocks.m_abm_list.size());
 		g_profiler->avg("ServerEnv: active blocks cached", blocks_cached);
 		g_profiler->avg("ServerEnv: active blocks scanned for ABMs", blocks_scanned);
-		g_profiler->avg("ServerEnv: ABMs run", abms_run);
+		//g_profiler->avg("ServerEnv: ABMs run", abms_run);
 
 		timer.stop(true);
 	}

@@ -1416,7 +1416,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 			applyTileColor(p);
 
-    	   if (step <= data->m_client->m_env.getClientMap().getControl().farmesh || !data->m_client->m_env.getClientMap().getControl().farmesh)
+    	   if (step <= data->m_client->m_env.getClientMap().getControl().farmesh || !data->m_client->m_env.getClientMap().getControl().farmesh) {
 			// Generate animation data
 			// - Cracks
 			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
@@ -1455,7 +1455,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 				// Replace tile texture with the first animation frame
 				p.layer.texture = (*p.layer.frames)[0].texture;
 			}
-
+		   }
 			if (!m_enable_shaders) {
 				// Extract colors for day-night animation
 				// Dummy sunlight to handle non-sunlit areas

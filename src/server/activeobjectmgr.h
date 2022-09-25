@@ -29,7 +29,7 @@ namespace server
 class ActiveObjectMgr : public ::ActiveObjectMgr<ServerActiveObject>
 {
 
-    std::vector<ServerActiveObject *> m_objects_to_delete;
+    std::vector<ServerActiveObject *> m_objects_to_delete, m_objects_to_delete_2;
 	std::vector<u16> objects_to_remove;
 public:
 	~ActiveObjectMgr();

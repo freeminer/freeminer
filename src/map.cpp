@@ -579,7 +579,7 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		, Server *m_server, unsigned int max_cycle_ms
 		)
 {
-	g_profiler->add("Server: liquids queue", transforming_liquid_size());
+	g_profiler->avg("Server: liquids queue", transforming_liquid_size());
 
 	if (g_settings->getBool("liquid_real"))
 		return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);

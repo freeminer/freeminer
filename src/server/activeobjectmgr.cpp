@@ -33,6 +33,8 @@ void ActiveObjectMgr::deferDelete(ServerActiveObject *obj) {
 ActiveObjectMgr::~ActiveObjectMgr() {
 	for (auto & obj : m_objects_to_delete)
 		delete obj;
+	for (auto & obj : m_objects_to_delete_2)
+		delete obj;
 }
 
 void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)> &cb)
@@ -73,7 +75,7 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 void ActiveObjectMgr::step(
 		float dtime, const std::function<void(ServerActiveObject *)> &f)
 {
-
+	std::swap(m_objects_to_delete, m_objects_to_delete_2);
 	for (auto & obj : m_objects_to_delete)
 		delete obj;
 	m_objects_to_delete.clear();

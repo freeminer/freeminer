@@ -40,7 +40,7 @@ m_datasize(datasize), m_command(command)
 
 NetworkPacket::~NetworkPacket()
 {
-	m_data.clear();
+	//m_data.clear();
 
 	delete packet;
 	packet = nullptr;

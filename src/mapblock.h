@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include <mutex>
 #include <set>
 #include "irr_v3d.h"
@@ -589,9 +590,10 @@ public:
 private:
 	mesh_type mesh = nullptr;
 	mesh_type mesh2 = nullptr, mesh4 = nullptr, mesh8 = nullptr, mesh16 = nullptr;
+	int16_t m_mesh_size_16 = -1, m_mesh_size_8 = -1, m_mesh_size_4 = -1, m_mesh_size_2 = -1, m_mesh_size = -1;
 public:	
 	mesh_type mesh_old = nullptr;
-	std::atomic_int mesh_size {-1};
+	//std::atomic_int mesh_size {-1};
 #endif
 
 	NodeMetadataList m_node_metadata;
@@ -631,6 +633,8 @@ public:
 	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
 	//std::atomic_short lighting_broken {0};
+	void setMeshSize(int step, int32_t size);
+	int32_t getMeshSize(int step);
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;

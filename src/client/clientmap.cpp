@@ -466,12 +466,12 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 			blocks_in_range++;
 
-			unsigned int smesh_size = block->mesh_size;
+			const int smesh_size = block->getMeshSize(mesh_step);
 			/*
 				Ignore if mesh doesn't exist
 			*/
 			{
-				if(!mesh) {
+				if(!mesh && smesh_size < 0) {
 					blocks_in_range_without_mesh++;
 					if (m_mesh_queued < maxq || range <= 1) {
 						m_client->addUpdateMeshTask(bp, false);
@@ -553,7 +553,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				continue;
 */
 
-			if (mesh_step != mesh->step && (m_mesh_queued < maxq*1.2 || range <= 2)) {
+			if (mesh_step != mesh->step && smesh_size < 0 && (m_mesh_queued < maxq*1.2 || range <= 2)) {
 				m_client->addUpdateMeshTask(bp);
 				++m_mesh_queued;
 			} else if (block->getTimestamp() > mesh->timestamp + (smesh_size ? 0 : range >= 1 ? 60 : 5) && (m_mesh_queued < maxq*1.5 || range <= 2)) {

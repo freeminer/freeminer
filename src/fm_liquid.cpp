@@ -781,9 +781,9 @@ NEXT_LIQUID:
 		must_reflow_third.clear();
 	}
 
-	g_profiler->add("Server: liquids real processed", loopcount);
+	g_profiler->avg("Server: liquids real processed", loopcount);
 	if (regenerated)
-		g_profiler->add("Server: liquids regenerated", regenerated);
+		g_profiler->avg("Server: liquids regenerated", regenerated);
 /*
 	if (loopcount < initial_size)
 		g_profiler->add("Server: liquids queue", initial_size);
