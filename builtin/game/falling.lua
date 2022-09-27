@@ -424,9 +424,9 @@ core.register_entity(":__builtin:falling_node", {
 })
 
 local function convert_to_falling_node(pos, node)
-	return core.spawn_falling_node(pos, node)
+--	return core.spawn_falling_node(pos, node)
 
---[[
+-- --[[
 	local obj = core.add_entity(pos, "__builtin:falling_node")
 	if not obj then
 		return false
@@ -444,10 +444,10 @@ local function convert_to_falling_node(pos, node)
 	obj:get_luaentity():set_node(node, metatable)
 	core.remove_node(pos, remove_fast)
 	return true, obj
-]]
+-- ]]
 end
 
---[[
+-- --[[
 function core.spawn_falling_node(pos)
 	local node = core.get_node(pos)
 	if node.name == "air" or node.name == "ignore" then
@@ -455,7 +455,7 @@ function core.spawn_falling_node(pos)
 	end
 	return convert_to_falling_node(pos, node)
 end
-]]
+-- ]]
 
 local function drop_attached_node(p)
 	local n = core.get_node(p)
@@ -514,8 +514,8 @@ end
 --
 
 function core.check_single_for_falling(p)
-    return core.nodeupdate(p)
---[[
+--    return core.nodeupdate(p)
+-- --[[
 	local n = core.get_node(p)
 	if core.get_item_group(n.name, "falling_node") ~= 0 then
 		local p_bottom = vector.offset(p, 0, -1, 0)
@@ -550,7 +550,7 @@ function core.check_single_for_falling(p)
 	end
 
 	return false
-]]
+-- ]]
 end
 
 -- This table is specifically ordered.
@@ -572,8 +572,8 @@ local check_for_falling_neighbors = {
 }
 
 function core.check_for_falling(p)
-    return core.nodeupdate(p)
---[[
+--     return core.nodeupdate(p)
+-- --[[
 	-- Round p to prevent falling entities to get stuck.
 	p = vector.round(p)
 
@@ -621,7 +621,7 @@ function core.check_for_falling(p)
 			v = 1
 		end
 	end
-]]
+-- ]]
 end
 
 --

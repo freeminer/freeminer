@@ -337,6 +337,10 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
  */
 void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fast, bool destroy)
 {
+
+	// fmTODO remove:
+	return;
+
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
 		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);

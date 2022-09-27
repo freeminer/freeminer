@@ -708,7 +708,7 @@ void Camera::updateViewingRange()
 
 	} // static_viewing_range
 
-	g_profiler->add("CM: wanted_range", m_draw_control.wanted_range);
+	g_profiler->avg("CM: wanted_range", m_draw_control.wanted_range);
 
 	const auto viewing_range_new = m_draw_control.wanted_range;
 
