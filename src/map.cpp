@@ -104,7 +104,7 @@ MapSector * Map::getSectorNoGenerateNoLock(v2bpos_t p)
 		return sector;
 	}
 
-	std::map<v2bpos_t, MapSector*>::iterator n = m_sectors.find(p);
+	auto n = m_sectors.find(p);
 
 	if (n == m_sectors.end())
 		return NULL;
@@ -325,7 +325,7 @@ struct TimeOrderedMapBlock {
 /*
 	Updates usage timers
 */
-void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
+void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 		std::vector<v3bpos_t> *unloaded_blocks)
 {
 	bool save_before_unloading = maySaveBlocks();
@@ -338,10 +338,11 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
 
+	const auto start_time = porting::getTimeUs();
 	beginSave();
 
 	// If there is no practical limit, we spare creation of mapblock_queue
-	if (max_loaded_blocks == U32_MAX) {
+	if (max_loaded_blocks < 0) {
 		for (auto &sector_it : m_sectors) {
 			MapSector *sector = sector_it.second;
 
@@ -379,6 +380,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 				}
 			}
 
+			// Delete sector if we emptied it
 			if (all_blocks_deleted) {
 				sector_deletion_queue.push_back(sector_it.first);
 			}
@@ -397,8 +399,9 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			}
 		}
 		block_count_all = mapblock_queue.size();
+
 		// Delete old blocks, and blocks over the limit from the memory
-		while (!mapblock_queue.empty() && (mapblock_queue.size() > max_loaded_blocks
+		while (!mapblock_queue.empty() && ((s32)mapblock_queue.size() > max_loaded_blocks
 				|| mapblock_queue.top().block->getUsageTimer() > unload_timeout)) {
 			TimeOrderedMapBlock b = mapblock_queue.top();
 			mapblock_queue.pop();
@@ -427,6 +430,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			deleted_blocks_count++;
 			block_count_all--;
 		}
+
 		// Delete empty sectors
 		for (auto &sector_it : m_sectors) {
 			if (sector_it.second->empty()) {
@@ -434,7 +438,11 @@ void Map::timerUpdate(float dtime, float unload_timeout, u32 max_loaded_blocks,
 			}
 		}
 	}
+
 	endSave();
+	const auto end_time = porting::getTimeUs();
+
+	reportMetrics(end_time - start_time, saved_blocks_count, block_count_all);
 
 	// Finally delete the empty sectors
 	deleteSectors(sector_deletion_queue);
@@ -1223,7 +1231,12 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 	m_savedir = savedir;
 	m_map_saving_enabled = false;
 
-	m_save_time_counter = mb->addCounter("minetest_core_map_save_time", "Map save time (in nanoseconds)");
+	m_save_time_counter = mb->addCounter(
+		"minetest_map_save_time", "Time spent saving blocks (in microseconds)");
+	m_save_count_counter = mb->addCounter(
+		"minetest_map_saved_blocks", "Number of blocks saved");
+	m_loaded_blocks_gauge = mb->addGauge(
+		"minetest_map_loaded_blocks", "Number of loaded blocks");
 
 	m_map_compression_level = rangelim(g_settings->getS16("map_compression_level_disk"), -1, 9);
 
@@ -1599,6 +1612,13 @@ void ServerMap::updateVManip(v3pos_t pos)
 	vm->m_is_dirty = true;
 }
 
+void ServerMap::reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks)
+{
+	m_loaded_blocks_gauge->set(all_blocks);
+	m_save_time_counter->increment(save_time_us);
+	m_save_count_counter->increment(saved_blocks);
+}
+
 void ServerMap::save(ModifiedState save_level)
 {
 	if (!m_map_saving_enabled) {
@@ -1606,7 +1626,7 @@ void ServerMap::save(ModifiedState save_level)
 		return;
 	}
 
-	u64 start_time = porting::getTimeNs();
+	const auto start_time = porting::getTimeUs();
 
 	if(save_level == MOD_STATE_CLEAN)
 		infostream<<"ServerMap: Saving whole map, this can take time."
@@ -1667,8 +1687,8 @@ void ServerMap::save(ModifiedState save_level)
 		modprofiler.print(infostream);
 	}
 
-	auto end_time = porting::getTimeNs();
-	m_save_time_counter->increment(end_time - start_time);
+	const auto end_time = porting::getTimeUs();
+	reportMetrics(end_time - start_time, block_count, block_count_all);
 }
 
 void ServerMap::listAllLoadableBlocks(std::vector<v3bpos_t> &dst)
@@ -1901,12 +1921,15 @@ MMVManip::MMVManip(Map *map):
 		VoxelManipulator(),
 		m_map(map)
 {
+	assert(map);
 }
 
 void MMVManip::initialEmerge(v3bpos_t blockpos_min, v3bpos_t blockpos_max,
 	bool load_if_inexistent)
 {
 	TimeTaker timer1("initialEmerge", &emerge_time);
+
+	assert(m_map);
 
 	// Units of these are MapBlocks
 	v3bpos_t p_min = blockpos_min;
@@ -1991,6 +2014,7 @@ void MMVManip::blitBackAll(std::map<v3bpos_t, MapBlock*> *modified_blocks,
 {
 	if(m_area.getExtent() == v3pos_t(0,0,0))
 		return;
+	assert(m_map);
 
 	/*
 		Copy data of all blocks
@@ -2009,6 +2033,35 @@ void MMVManip::blitBackAll(std::map<v3bpos_t, MapBlock*> *modified_blocks,
 		if(modified_blocks)
 			(*modified_blocks)[p] = block;
 	}
+}
+
+MMVManip *MMVManip::clone() const
+{
+	MMVManip *ret = new MMVManip();
+
+	const s32 size = m_area.getVolume();
+	ret->m_area = m_area;
+	if (m_data) {
+		ret->m_data = new MapNode[size];
+		memcpy(ret->m_data, m_data, size * sizeof(MapNode));
+	}
+	if (m_flags) {
+		ret->m_flags = new u8[size];
+		memcpy(ret->m_flags, m_flags, size * sizeof(u8));
+	}
+
+	ret->m_is_dirty = m_is_dirty;
+	// Even if the copy is disconnected from a map object keep the information
+	// needed to write it back to one
+	ret->m_loaded_blocks = m_loaded_blocks;
+
+	return ret;
+}
+
+void MMVManip::reparent(Map *map)
+{
+	assert(map && !m_map);
+	m_map = map;
 }
 
 //END

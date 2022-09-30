@@ -127,7 +127,6 @@ private:
 	float m_step_distance_counter = 0.0f;
 	video::SColor m_last_light = video::SColor(0xFFFFFFFF);
 	bool m_is_visible = false;
-	s8 m_glow = 0;
 	// Material
 	video::E_MATERIAL_TYPE m_material_type;
 	// Settings
@@ -165,14 +164,9 @@ public:
 
 	const v3opos_t getPosition() const;
 
-	void setPosition(const v3opos_t &pos)
-	{
-		pos_translator.val_current = pos;
-	}
-
 	inline const v3f &getRotation() const { return m_rotation; }
 
-	const bool isImmortal();
+	bool isImmortal() const;
 
 	inline const ObjectProperties &getProperties() const { return m_prop; }
 

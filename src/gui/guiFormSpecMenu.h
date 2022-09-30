@@ -212,7 +212,7 @@ public:
 		m_lockscreensize = basescreensize;
 	}
 
-	void removeChildren();
+	void removeTooltip();
 	void setInitialFocus();
 
 	void setFocus(const std::string &elementname)
@@ -457,6 +457,8 @@ private:
 	void parseSetFocus(const std::string &element);
 	void parseModel(parserData *data, const std::string &element);
 
+	bool parseMiddleRect(const std::string &value, core::rect<s32> *parsed_rect);
+
 	void tryClose();
 
 	void showTooltip(const std::wstring &text, const irr::video::SColor &color,
@@ -467,7 +469,7 @@ private:
 	 * types were drawn before others.
 	 * This function sorts the elements in the old order for backwards compatibility.
 	 */
-	void legacySortElements(core::list<IGUIElement *>::Iterator from);
+	void legacySortElements(std::list<IGUIElement *>::iterator from);
 
 	int m_btn_height;
 	gui::IGUIFont *m_font = nullptr;
