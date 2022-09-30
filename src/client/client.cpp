@@ -58,6 +58,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "game.h"
 #include "chatmessage.h"
 #include "translation.h"
+#include "content/mod_configuration.h"
 
 extern gui::IGUIEnvironment* guienv;
 
@@ -100,7 +101,8 @@ Client::Client(
 		MtEventManager *event,
 		RenderingEngine *rendering_engine,
 		bool ipv6,
-		GameUI *game_ui
+		GameUI *game_ui,
+		ELoginRegister allow_login_or_register
 ):
 	m_tsrc(tsrc),
 	m_shsrc(shsrc),
@@ -117,6 +119,7 @@ Client::Client(
 	m_particle_manager(&m_env),
 	m_con(new con::Connection(PROTOCOL_ID, 512, CONNECTION_TIMEOUT, ipv6, this)),
 	m_address_name(address_name),
+	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),
 	m_password(password),
@@ -194,7 +197,21 @@ void Client::loadMods()
 	scanModIntoMemory(BUILTIN_MOD_NAME, getBuiltinLuaPath());
 	m_script->loadModFromMemory(BUILTIN_MOD_NAME);
 
-	ClientModConfiguration modconf(getClientModsLuaPath());
+	ModConfiguration modconf;
+	{
+		std::unordered_map<std::string, std::string> paths;
+		std::string path_user = porting::path_user + DIR_DELIM + "clientmods";
+		const auto modsPath = getClientModsLuaPath();
+		if (modsPath != path_user) {
+			paths["share"] = modsPath;
+		}
+		paths["mods"] = path_user;
+
+		std::string settings_path = path_user + DIR_DELIM + "mods.conf";
+		modconf.addModsFromConfig(settings_path, paths);
+		modconf.checkConflictsAndDeps();
+	}
+
 	m_mods = modconf.getMods();
 	// complain about mods with unsatisfied dependencies
 	if (!modconf.isConsistent()) {
@@ -334,6 +351,8 @@ Client::~Client()
 	// cleanup 3d model meshes on client shutdown
 	m_rendering_engine->cleanupMeshCache();
 
+	guiScalingCacheClear();
+
 	delete m_minimap;
 	m_minimap = nullptr;
 
@@ -394,10 +413,6 @@ void Client::step(float dtime)
 		initial_step = false;
 	}
 	else if(m_state == LC_Created) {
-		if (m_is_registration_confirmation_state) {
-			// Waiting confirmation
-			return;
-		}
 		float &counter = m_connection_reinit_timer;
 		counter -= dtime;
 		if(counter <= 0.0) {
@@ -424,7 +439,7 @@ void Client::step(float dtime)
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		std::vector<v3bpos_t> deleted_blocks;
 		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
-			g_settings->getFloat("client_unload_unused_data_timeout"),
+			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
 			g_settings->getS32("client_mapblock_limit"),
 			&deleted_blocks);
 
@@ -493,6 +508,7 @@ void Client::step(float dtime)
 			ClientEvent *event = new ClientEvent();
 			event->type = CE_PLAYER_DAMAGE;
 			event->player_damage.amount = damage;
+			event->player_damage.effect = true;
 			m_client_event_queue.push(event);
 		}
 	}
@@ -528,6 +544,7 @@ void Client::step(float dtime)
 	{
 		int num_processed_meshes = 0;
 		std::vector<v3bpos_t> blocks_to_ack;
+		bool force_update_shadows = false;
 		while (!m_mesh_update_thread.m_queue_out.empty())
 		{
 			num_processed_meshes++;
@@ -554,9 +571,12 @@ void Client::step(float dtime)
 
 					if (is_empty)
 						delete r.mesh;
-					else
+					else {
 						// Replace with the new mesh
 						block->mesh = r.mesh;
+						if (r.urgent)
+							force_update_shadows = true;
+					}
 				}
 			} else {
 				delete r.mesh;
@@ -581,6 +601,10 @@ void Client::step(float dtime)
 
 		if (num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
+
+		auto shadow_renderer = RenderingEngine::get_shadow_renderer();
+		if (shadow_renderer && force_update_shadows)
+			shadow_renderer->setForceUpdateShadowMap();
 	}
 
 	/*
@@ -784,16 +808,18 @@ void Client::peerAdded(con::Peer *peer)
 	infostream << "Client::peerAdded(): peer->id="
 			<< peer->id << std::endl;
 }
+
 void Client::deletingPeer(con::Peer *peer, bool timeout)
 {
 	infostream << "Client::deletingPeer(): "
 			"Server Peer is getting deleted "
 			<< "(timeout=" << timeout << ")" << std::endl;
 
-	if (timeout) {
-		m_access_denied = true;
+	m_access_denied = true;
+	if (timeout)
 		m_access_denied_reason = gettext("Connection timed out.");
-	}
+	else if (m_access_denied_reason.empty())
+		m_access_denied_reason = gettext("Connection aborted (protocol error?).");
 }
 
 /*
@@ -1067,18 +1093,6 @@ void Client::sendInit(const std::string &playerName)
 	Send(&pkt);
 }
 
-void Client::promptConfirmRegistration(AuthMechanism chosen_auth_mechanism)
-{
-	m_chosen_auth_mech = chosen_auth_mechanism;
-	m_is_registration_confirmation_state = true;
-}
-
-void Client::confirmRegistration()
-{
-	m_is_registration_confirmation_state = false;
-	startAuth(m_chosen_auth_mech);
-}
-
 void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 {
 	m_chosen_auth_mech = chosen_auth_mechanism;
@@ -1256,7 +1270,7 @@ void Client::sendChatMessage(const std::wstring &message)
 		pkt << message;
 
 		Send(&pkt);
-	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size == -1) {
+	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size < 0) {
 		m_out_chat_queue.push(message);
 	} else {
 		infostream << "Could not queue chat message because maximum out chat queue size ("
@@ -1810,11 +1824,10 @@ void Client::makeScreenshot()
 	if (!raw_image)
 		return;
 
-	time_t t = time(NULL);
-	struct tm *tm = localtime(&t);
+	const struct tm tm = mt_localtime();
 
 	char timetstamp_c[64];
-	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", tm);
+	strftime(timetstamp_c, sizeof(timetstamp_c), "%Y%m%d_%H%M%S", &tm);
 
 	std::string screenshot_dir;
 

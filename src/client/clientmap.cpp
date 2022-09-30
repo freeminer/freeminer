@@ -220,13 +220,11 @@ void ClientMap::updateDrawList()
 	// Number of blocks occlusion culled
 	u32 blocks_occlusion_culled = 0;
 
-	// No occlusion culling when free_move is on and camera is
-	// inside ground
+	// No occlusion culling when free_move is on and camera is inside ground
 	bool occlusion_culling_enabled = true;
-	if (g_settings->getBool("free_move") && g_settings->getBool("noclip")) {
+	if (m_control.allow_noclip) {
 		MapNode n = getNode(cam_pos_nodes);
-		if (n.getContent() == CONTENT_IGNORE ||
-				m_nodedef->get(n).solidness == 2)
+		if (n.getContent() == CONTENT_IGNORE || m_nodedef->get(n).solidness == 2)
 			occlusion_culling_enabled = false;
 	}
 
@@ -450,15 +448,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	drawcall_count += draw_order.size();
 
 	for (auto &descriptor : draw_order) {
-		scene::IMeshBuffer *buf;
-		
-		if (descriptor.m_use_partial_buffer) {
-			descriptor.m_partial_buffer->beforeDraw();
-			buf = descriptor.m_partial_buffer->getBuffer();
-		}
-		else {
-			buf = descriptor.m_buffer;
-		}
+		scene::IMeshBuffer *buf = descriptor.getBuffer();
 
 		// Check and abort if the machine is swapping a lot
 		if (draw.getTimerTime() > 2000) {
@@ -483,24 +473,27 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			// pass the shadow map texture to the buffer texture
 			ShadowRenderer *shadow = m_rendering_engine->get_shadow_renderer();
 			if (shadow && shadow->is_active()) {
-				auto &layer = material.TextureLayer[3];
+				auto &layer = material.TextureLayer[ShadowRenderer::TEXTURE_LAYER_SHADOW];
 				layer.Texture = shadow->get_texture();
 				layer.TextureWrapU = video::E_TEXTURE_CLAMP::ETC_CLAMP_TO_EDGE;
 				layer.TextureWrapV = video::E_TEXTURE_CLAMP::ETC_CLAMP_TO_EDGE;
 				// Do not enable filter on shadow texture to avoid visual artifacts
 				// with colored shadows.
 				// Filtering is done in shader code anyway
+				layer.BilinearFilter = false;
+				layer.AnisotropicFilter = false;
 				layer.TrilinearFilter = false;
 			}
 			driver->setMaterial(material);
 			++material_swaps;
+			material.TextureLayer[ShadowRenderer::TEXTURE_LAYER_SHADOW].Texture = nullptr;
 		}
 
 		v3f block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, BS);
 		m.setTranslation(block_wpos - offset);
 
 		driver->setTransform(video::ETS_WORLD, m);
-		driver->drawMeshBuffer(buf);
+		descriptor.draw(driver);
 		vertex_count += buf->getIndexCount();
 	}
 
@@ -685,19 +678,17 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 
 	MapNode n = getNode(floatToInt(m_camera_position, BS));
 
-	// - If the player is in a solid node, make everything black.
-	// - If the player is in liquid, draw a semi-transparent overlay.
-	// - Do not if player is in third person mode
 	const ContentFeatures& features = m_nodedef->get(n);
 	video::SColor post_effect_color = features.post_effect_color;
-	if(features.solidness == 2 && !(g_settings->getBool("noclip") &&
-			m_client->checkLocalPrivilege("noclip")) &&
-			cam_mode == CAMERA_MODE_FIRST)
-	{
+
+	// If the camera is in a solid node, make everything black.
+	// (first person mode only)
+	if (features.solidness == 2 && cam_mode == CAMERA_MODE_FIRST &&
+		!m_control.allow_noclip) {
 		post_effect_color = video::SColor(255, 0, 0, 0);
 	}
-	if (post_effect_color.getAlpha() != 0)
-	{
+
+	if (post_effect_color.getAlpha() != 0) {
 		// Draw a full-screen rectangle
 		video::IVideoDriver* driver = SceneManager->getVideoDriver();
 		v2u32 ss = driver->getScreenSize();
@@ -811,15 +802,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	drawcall_count += draw_order.size();
 
 	for (auto &descriptor : draw_order) {
-		scene::IMeshBuffer *buf;
-		
-		if (descriptor.m_use_partial_buffer) {
-			descriptor.m_partial_buffer->beforeDraw();
-			buf = descriptor.m_partial_buffer->getBuffer();
-		}
-		else {
-			buf = descriptor.m_buffer;
-		}
+		scene::IMeshBuffer *buf = descriptor.getBuffer();
 
 		// Check and abort if the machine is swapping a lot
 		if (draw.getTimerTime() > 1000) {
@@ -844,7 +827,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		m.setTranslation(block_wpos - offset);
 
 		driver->setTransform(video::ETS_WORLD, m);
-		driver->drawMeshBuffer(buf);
+		descriptor.draw(driver);
 		vertex_count += buf->getIndexCount();
 	}
 
@@ -965,3 +948,18 @@ void ClientMap::updateTransparentMeshBuffers()
 	m_needs_update_transparent_meshes = false;
 }
 
+scene::IMeshBuffer* ClientMap::DrawDescriptor::getBuffer()
+{
+	return m_use_partial_buffer ? m_partial_buffer->getBuffer() : m_buffer;
+}
+
+void ClientMap::DrawDescriptor::draw(video::IVideoDriver* driver)
+{
+	if (m_use_partial_buffer) {
+		m_partial_buffer->beforeDraw();
+		driver->drawMeshBuffer(m_partial_buffer->getBuffer());
+		m_partial_buffer->afterDraw();
+	} else {
+		driver->drawMeshBuffer(m_buffer);
+	}
+}

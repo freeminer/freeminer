@@ -319,7 +319,7 @@ std::string PlayerSAO::generateUpdatePhysicsOverrideCommand() const
 	return os.str();
 }
 
-void PlayerSAO::setBasePosition(const v3f &position)
+void PlayerSAO::setBasePosition(v3f position)
 {
 	if (m_player && position != m_base_position)
 		m_player->setDirty(true);
@@ -344,7 +344,7 @@ void PlayerSAO::setPos(const v3f &pos)
 
 	setBasePosition(pos);
 	// Movement caused by this command is always valid
-	m_last_good_position = pos;
+	m_last_good_position = getBasePosition();
 	m_move_pool.empty();
 	m_time_from_last_teleport = 0.0;
 	m_env->getGameDef()->SendMovePlayer(m_peer_id);
@@ -357,7 +357,7 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 
 	setBasePosition(pos);
 	// Movement caused by this command is always valid
-	m_last_good_position = pos;
+	m_last_good_position = getBasePosition();
 	m_move_pool.empty();
 	m_time_from_last_teleport = 0.0;
 	m_env->getGameDef()->SendMovePlayer(m_peer_id);
@@ -489,7 +489,7 @@ void PlayerSAO::setHP(s32 target_hp, const PlayerHPChangeReason &reason, bool fr
 		m_hp = hp;
 		m_env->getGameDef()->HandlePlayerHPChange(this, reason);
 	} else if (from_client)
-		m_env->getGameDef()->SendPlayerHP(this);
+		m_env->getGameDef()->SendPlayerHP(this, true);
 }
 
 void PlayerSAO::setBreath(const u16 breath, bool send)

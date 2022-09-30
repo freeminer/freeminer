@@ -360,7 +360,7 @@ struct TestMapBlock: public TestBase
 
 		MapNode node;
 		bool position_valid;
-		core::list<v3pos_t> validity_exceptions;
+		std::list<v3pos_t> validity_exceptions;
 
 		TC()
 		{
@@ -371,7 +371,7 @@ struct TestMapBlock: public TestBase
 		{
 			//return position_valid ^ (p==position_valid_exception);
 			bool exception = false;
-			for(core::list<v3pos_t>::Iterator i=validity_exceptions.begin();
+			for(std::list<v3pos_t>::iterator i=validity_exceptions.begin();
 					i != validity_exceptions.end(); i++)
 			{
 				if(p == *i)
@@ -533,7 +533,7 @@ struct TestMapBlock: public TestBase
 			parent.node.setContent(CONTENT_AIR);
 			parent.node.setLight(LIGHTBANK_DAY, LIGHT_SUN);
 			parent.node.setLight(LIGHTBANK_NIGHT, 0);
-			core::map<v3pos_t, bool> light_sources;
+			std::map<v3pos_t, bool> light_sources;
 			// The bottom block is invalid, because we have a shadowing node
 			UASSERT(b.propagateSunlight(light_sources) == false);
 			UASSERT(b.getNode(v3pos_t(1,4,0)).getLight(LIGHTBANK_DAY) == LIGHT_SUN);
@@ -560,7 +560,7 @@ struct TestMapBlock: public TestBase
 			parent.position_valid = true;
 			b.setIsUnderground(true);
 			parent.node.setLight(LIGHTBANK_DAY, LIGHT_MAX/2);
-			core::map<v3pos_t, bool> light_sources;
+			std::map<v3pos_t, bool> light_sources;
 			// The block below should be valid because there shouldn't be
 			// sunlight in there either
 			UASSERT(b.propagateSunlight(light_sources, true) == true);
@@ -601,7 +601,7 @@ struct TestMapBlock: public TestBase
 			}
 			// Lighting value for the valid nodes
 			parent.node.setLight(LIGHTBANK_DAY, LIGHT_MAX/2);
-			core::map<v3pos_t, bool> light_sources;
+			std::map<v3pos_t, bool> light_sources;
 			// Bottom block is not valid
 			UASSERT(b.propagateSunlight(light_sources) == false);
 		}

@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "noise.h"
 #include "nodedef.h"
 #include "util/string.h"
@@ -190,12 +191,38 @@ public:
 
 	void updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3pos_t nmax);
 
+	/**
+	 * Set light in entire area to fixed value.
+	 * @param light Light value (contains both banks)
+	 * @param nmin Area to operate on
+	 * @param nmax ^
+	 */
 	void setLighting(u8 light, v3pos_t nmin, v3pos_t nmax);
-	void lightSpread(VoxelArea &a, std::queue<std::pair<v3pos_t, u8>> &queue,
-		const v3pos_t &p, u8 light);
+	/**
+	 * Run all lighting calculations.
+	 * @param nmin Area to spread sunlight in
+	 * @param nmax ^
+	 * @param full_nmin Area to recalculate light in
+	 * @param full_nmax ^
+	 * @param propagate_shadow see propagateSunlight()
+	 */
 	void calcLighting(v3pos_t nmin, v3pos_t nmax, v3pos_t full_nmin, v3pos_t full_nmax,
 		bool propagate_shadow = true);
+	/**
+	 * Spread sunlight from the area above downwards.
+	 * Note that affected nodes have their night bank cleared so you want to
+	 * run a light spread afterwards.
+	 * @param nmin Area to operate on
+	 * @param nmax ^
+	 * @param propagate_shadow Ignore obstructions above and spread sun anyway
+	 */
 	void propagateSunlight(v3pos_t nmin, v3pos_t nmax, bool propagate_shadow);
+	/**
+	 * Spread light in the given area.
+	 * Artificial light is taken from nodedef, sunlight must already be set.
+	 * @param nmin Area to operate on
+	 * @param nmax ^
+	 */
 	void spreadLight(const v3pos_t &nmin, const v3pos_t &nmax);
 
 	virtual void makeChunk(BlockMakeData *data) {}
@@ -218,6 +245,18 @@ public:
 	static void setDefaultSettings(Settings *settings);
 
 private:
+	/**
+	 * Spread light to the node at the given position, add to queue if changed.
+	 * The given light value is diminished once.
+	 * @param a VoxelArea being operated on
+	 * @param queue Queue for later lightSpread() calls
+	 * @param p Node position
+	 * @param light Light value (contains both banks)
+	 *
+	 */
+	void lightSpread(VoxelArea &a, std::queue<std::pair<v3pos_t, u8>> &queue,
+		const v3pos_t &p, u8 light);
+
 	// isLiquidHorizontallyFlowable() is a helper function for updateLiquid()
 	// that checks whether there are floodable nodes without liquid beneath
 	// the node at index vi.

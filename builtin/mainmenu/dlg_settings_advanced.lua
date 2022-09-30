@@ -351,9 +351,9 @@ local function parse_config_file(read_all, parse_mods)
 			local file = io.open(path, "r")
 			if file then
 				if not games_category_initialized then
-					fgettext_ne("Games") -- not used, but needed for xgettext
+					fgettext_ne("Content: Games") -- not used, but needed for xgettext
 					table.insert(settings, {
-						name = "Games",
+						name = "Content: Games",
 						level = 0,
 						type = "category",
 					})
@@ -384,13 +384,44 @@ local function parse_config_file(read_all, parse_mods)
 			local file = io.open(path, "r")
 			if file then
 				if not mods_category_initialized then
-					fgettext_ne("Mods") -- not used, but needed for xgettext
+					fgettext_ne("Content: Mods") -- not used, but needed for xgettext
 					table.insert(settings, {
-						name = "Mods",
+						name = "Content: Mods",
 						level = 0,
 						type = "category",
 					})
 					mods_category_initialized = true
+				end
+
+				table.insert(settings, {
+					name = mod.name,
+					readable_name = mod.title,
+					level = 1,
+					type = "category",
+				})
+
+				parse_single_file(file, path, read_all, settings, 2, false)
+
+				file:close()
+			end
+		end
+
+		-- Parse client mods
+		local clientmods_category_initialized = false
+		local clientmods = {}
+		get_mods(core.get_clientmodpath(), "clientmods", clientmods)
+		for _, mod in ipairs(clientmods) do
+			local path = mod.path .. DIR_DELIM .. FILENAME
+			local file = io.open(path, "r")
+			if file then
+				if not clientmods_category_initialized then
+					fgettext_ne("Client Mods") -- not used, but needed for xgettext
+					table.insert(settings, {
+						name = "Client Mods",
+						level = 0,
+						type = "category",
+					})
+					clientmods_category_initialized = true
 				end
 
 				table.insert(settings, {
@@ -956,7 +987,7 @@ local function create_settings_formspec(tabview, _, tabdata)
 	local current_level = 0
 	for _, entry in ipairs(settings) do
 		local name
-		if not core.settings:get_bool("main_menu_technical_settings") and entry.readable_name then
+		if not core.settings:get_bool("show_technical_names") and entry.readable_name then
 			name = fgettext_ne(entry.readable_name)
 		else
 			name = entry.name
@@ -997,7 +1028,7 @@ local function create_settings_formspec(tabview, _, tabdata)
 			"button[10,4.9;2,1;btn_edit;" .. fgettext("Edit") .. "]" ..
 			"button[7,4.9;3,1;btn_restore;" .. fgettext("Restore Default") .. "]" ..
 			"checkbox[0,4.3;cb_tech_settings;" .. fgettext("Show technical names") .. ";"
-					.. dump(core.settings:get_bool("main_menu_technical_settings")) .. "]"
+					.. dump(core.settings:get_bool("show_technical_names")) .. "]"
 
 	return formspec
 end
@@ -1080,7 +1111,7 @@ local function handle_settings_buttons(this, fields, tabname, tabdata)
 	end
 
 	if fields["cb_tech_settings"] then
-		core.settings:set("main_menu_technical_settings", fields["cb_tech_settings"])
+		core.settings:set("show_technical_names", fields["cb_tech_settings"])
 		core.settings:write()
 		core.update_formspec(this:get_formspec())
 		return true
