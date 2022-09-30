@@ -28,15 +28,15 @@ StaticObject::StaticObject(const ServerActiveObject *s_obj, const v3opos_t &pos_
 	s_obj->getStaticData(&data);
 }
 
-void StaticObject::serialize(std::ostream &os)
+void StaticObject::serialize(std::ostream &os) const
 {
 	// type
 	writeU8(os, type);
 	// pos
-#if USE_POS32
+#if USE_OPOS64
 	writeV3O(os, pos);
 #else
-	writeV3F1000(os, oposToV3f(pos));
+	writeV3F1000(os, clampToF1000(oposToV3f(pos)));
 #endif
 	// data
 	os<<serializeString16(data);

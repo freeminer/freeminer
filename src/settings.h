@@ -165,6 +165,7 @@ public:
 	u64 getU64(const std::string &name) const;
 	pos_t getPOS(const std::string &name) const;
 	float getFloat(const std::string &name) const;
+	float getFloat(const std::string &name, float min, float max) const;
 	v2f getV2F(const std::string &name) const;
 	v3f getV3F(const std::string &name) const;
 	u32 getFlagStr(const std::string &name, const FlagDesc *flagdesc,

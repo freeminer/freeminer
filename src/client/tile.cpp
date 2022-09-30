@@ -1109,9 +1109,6 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 	// Stuff starting with [ are special commands
 	if (part_of_name.empty() || part_of_name[0] != '[') {
 		video::IImage *image = m_sourcecache.getOrLoad(part_of_name);
-#if ENABLE_GLES
-		image = Align2Npot2(image, driver);
-#endif
 		if (image == NULL) {
 			if (!part_of_name.empty()) {
 
@@ -1622,7 +1619,7 @@ bool TextureSource::generateImagePart(std::string part_of_name,
 			 * textures that don't have the resources to offer high-res alternatives.
 			 */
 			const bool filter = m_setting_trilinear_filter || m_setting_bilinear_filter;
-			const s32 scaleto = filter ? g_settings->getS32("texture_min_size") : 1;
+			const s32 scaleto = filter ? g_settings->getU16("texture_min_size") : 1;
 			if (scaleto > 1) {
 				const core::dimension2d<u32> dim = baseimg->getDimension();
 

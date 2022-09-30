@@ -30,10 +30,24 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 using m4f = core::matrix4;
 
+static v3f quantizeDirection(v3f direction, float step)
+{
+
+	float yaw = std::atan2(direction.Z, direction.X);
+	float pitch = std::asin(direction.Y); // assume look is normalized
+
+	yaw = std::floor(yaw / step) * step;
+	pitch = std::floor(pitch / step) * step;
+
+	return v3f(std::cos(yaw)*std::cos(pitch), std::sin(pitch), std::sin(yaw)*std::cos(pitch));
+}
+
 void DirectionalLight::createSplitMatrices(const Camera *cam)
 {
+	const float DISTANCE_STEP = BS * 2.0; // 2 meters
 	v3f newCenter;
 	v3f look = cam->getDirection();
+	look = quantizeDirection(look, M_PI / 12.0); // 15 degrees
 
 	// camera view tangents
 	float tanFovY = tanf(cam->getFovY() * 0.5f);
@@ -45,6 +59,10 @@ void DirectionalLight::createSplitMatrices(const Camera *cam)
 
 	// adjusted camera positions
 	auto cam_pos_world = cam->getPosition();
+	cam_pos_world = v3opos_t(
+			floor(cam_pos_world.X / DISTANCE_STEP) * DISTANCE_STEP,
+			floor(cam_pos_world.Y / DISTANCE_STEP) * DISTANCE_STEP,
+			floor(cam_pos_world.Z / DISTANCE_STEP) * DISTANCE_STEP);
 	v3f cam_pos_scene = v3f(cam_pos_world.X - cam->getOffset().X * BS,
 			cam_pos_world.Y - cam->getOffset().Y * BS,
 			cam_pos_world.Z - cam->getOffset().Z * BS);
@@ -64,7 +82,7 @@ void DirectionalLight::createSplitMatrices(const Camera *cam)
 	v3f boundVec = (cam_pos_scene + farCorner * sfFar) - center_scene;
 	float radius = boundVec.getLength();
 	float length = radius * 3.0f;
-	v3f eye_displacement = direction * length;
+	v3f eye_displacement = quantizeDirection(direction, M_PI / 2880 /*15 seconds*/) * length;
 
 	// we must compute the viewmat with the position - the camera offset
 	// but the future_frustum position must be the actual world position
