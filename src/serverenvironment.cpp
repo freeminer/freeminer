@@ -1814,6 +1814,9 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		}
 	}
 
+   {
+	auto lock = m_players.lock_shared_rec();
+
 	// Send outdated player inventories
 	for (RemotePlayer *player : m_players) {
 		if (player->getPeerId() == PEER_ID_INEXISTENT)
@@ -1823,7 +1826,8 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		if (sao && player->inventory.checkModified())
 			m_server->SendInventory(sao, true);
 	}
-
+   }
+   
 	// Send outdated detached inventories
 	m_server->sendDetachedInventories(PEER_ID_INEXISTENT, true);
 
