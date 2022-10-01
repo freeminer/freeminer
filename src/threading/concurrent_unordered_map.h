@@ -43,6 +43,13 @@ public:
 	typedef typename full_type::const_iterator                         const_iterator;
 	typedef typename full_type::iterator                               iterator;
 
+	template <typename... Args>
+	decltype(auto) operator=(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::operator=(std::forward<Args>(args)...);
+	}
+
 	mapped_type& get(const key_type& k) {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::operator[](k);

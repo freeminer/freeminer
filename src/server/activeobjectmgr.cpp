@@ -70,6 +70,7 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 	for (u16 i : objects_to_remove) {
 		m_active_objects.erase(i);
 	}
+	objects_to_remove.clear();
 }
 
 void ActiveObjectMgr::step(
