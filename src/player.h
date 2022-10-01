@@ -126,7 +126,7 @@ struct HudElement;
 class Environment;
 
 class Player
-: public locker<>
+: public shared_locker
 {
 public:
 

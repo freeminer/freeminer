@@ -54,7 +54,7 @@ const auto try_to_lock = boost::try_to_lock;
 //#elif __cplusplus >= 201305L
 
 #include <shared_mutex>
-using try_shared_mutex = std::shared_timed_mutex;
+using try_shared_mutex = std::shared_mutex;
 using try_shared_lock = std::shared_lock<try_shared_mutex>;
 using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;

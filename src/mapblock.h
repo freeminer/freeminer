@@ -691,7 +691,7 @@ private:
 		undeground with nothing visible above the ground except
 		caves.
 	*/
-	bool is_underground = false;
+	std::atomic_bool is_underground = false;
 
 	/*
 		Set to true if changes has been made that make the old lighting

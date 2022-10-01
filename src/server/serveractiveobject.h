@@ -53,7 +53,7 @@ struct ObjectProperties;
 struct PlayerHPChangeReason;
 
 class ServerActiveObject : public ActiveObject
-, public locker<>
+, public shared_locker
 {
 public:
 	/*

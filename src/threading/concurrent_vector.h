@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 template <class T, class Allocator = std::allocator<T> >
 class concurrent_vector :
 	public std::vector<T, Allocator>,
-	public locker<> {
+	public shared_locker {
 public:
 	typedef typename std::vector<T, Allocator>           full_type;
 	typedef T                                        value_type;
