@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "itemdef.h"
 #include "irrlichttypes.h"
 #include "itemstackmetadata.h"
+#include "threading/concurrent_vector.h"
 #include <istream>
 #include <ostream>
 #include <string>
@@ -282,7 +283,8 @@ public:
 	inline void setModified(bool dirty = true) { m_dirty = dirty; }
 
 private:
-	std::vector<ItemStack> m_items;
+	//std::vector<ItemStack> m_items;
+	concurrent_vector<ItemStack> m_items;
 	std::string m_name;
 	u32 m_size; // always the same as m_items.size()
 	u32 m_width = 0;

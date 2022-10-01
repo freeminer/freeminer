@@ -29,6 +29,13 @@ public:
 	typedef T mapped_type;
 
 	template <typename... Args>
+	decltype(auto) assign(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::assign(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
 	decltype(auto) insert(Args &&...args)
 	{
 		auto lock = LOCKER::lock_unique_rec();

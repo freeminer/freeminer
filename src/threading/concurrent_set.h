@@ -64,6 +64,13 @@ public:
 		return full_type::operator[](std::forward<Args>(args)...);
 	}
 
+	template <typename... Args>
+	decltype(auto) assign(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::assign(std::forward<Args>(args)...);
+	}
+
 	insert_return_type_old insert(const key_type &k)
 	{
 		auto lock = LOCKER::lock_unique_rec();

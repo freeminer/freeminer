@@ -165,12 +165,22 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 		std::vector<ServerActiveObject *> &result,
 		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 {
-	auto lock = m_active_objects.try_lock_shared_rec();
-	if (!lock->owns_lock())                            
-		return;                                    
+	std::vector<ServerActiveObject *> active_objects;
+	active_objects.reserve(m_active_objects.size());
+	{
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+		// bad copy: avoid deadlocks with locks in cb
+		for (const auto &ao_it : m_active_objects) {
+			active_objects.emplace_back(ao_it.second);
+		}
+	}
+
 	float r2 = radius * radius;
-	for (auto &activeObject : m_active_objects) {
-		ServerActiveObject *obj = activeObject.second;
+
+	for (auto &obj : active_objects) {
+		//ServerActiveObject *obj = activeObject.second;
 		const v3f &objectpos = obj->getBasePosition();
 		if (objectpos.getDistanceFromSQ(pos) > r2)
 			continue;
@@ -184,12 +194,22 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		std::vector<ServerActiveObject *> &result,
 		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
 {
-	auto lock = m_active_objects.try_lock_shared_rec();
-	if (!lock->owns_lock())                            
-		return;                                    
 
-	for (auto &activeObject : m_active_objects) {
-		ServerActiveObject *obj = activeObject.second;
+	std::vector<ServerActiveObject *> active_objects;
+	active_objects.reserve(m_active_objects.size());
+	{
+		auto lock = m_active_objects.try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return;
+		// bad copy: avoid deadlocks with locks in cb
+		for (const auto &ao_it : m_active_objects) {
+			active_objects.emplace_back(ao_it.second);
+		}
+
+	}
+
+	for (auto &obj : active_objects) {
+		//ServerActiveObject *obj = activeObject.second;
 		const v3f &objectpos = obj->getBasePosition();
 		if (!box.isPointInside(objectpos))
 			continue;

@@ -44,8 +44,14 @@ public:
 	{
 		auto lock = lock_unique_rec();
 		// TODO: other.shared_lock
-		full_type::operator=(std::forward<Args>(args)...);
-		return *this;
+		return full_type::operator=(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) assign(Args &&...args)
+	{
+		auto lock = lock_unique_rec();
+		return full_type::assign(std::forward<Args>(args)...);
 	}
 
 	bool      empty() {
@@ -78,15 +84,19 @@ public:
 		return full_type::clear();
 	};
 
-	void push_back(const value_type& x) {
+	template <typename... Args>
+	decltype(auto) push_back(Args &&...args)
+	{
 		auto lock = lock_unique_rec();
-		return full_type::push_back(x);
-	};
+		return full_type::push_back(std::forward<Args>(args)...);
+	}
 
-	void push_back(value_type&& x) {
+	template <typename... Args>
+	decltype(auto) emplace_back(Args &&...args)
+	{
 		auto lock = lock_unique_rec();
-		return full_type::push_back(x);
-	};
+		return full_type::emplace_back(std::forward<Args>(args)...);
+	}
 
 };
 

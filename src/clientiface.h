@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "threading/concurrent_set.h"
-#include "threading/concurrent_map.h"
 #include "threading/concurrent_unordered_map.h"
 #include "util/unordered_map_hash.h"
 #include "network/networkpacket.h"

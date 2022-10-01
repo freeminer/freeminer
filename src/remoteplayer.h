@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "network/networkprotocol.h"
 #include "player.h"
 #include "skyparams.h"
 #include "lighting.h"
@@ -169,7 +170,7 @@ private:
 
 	Lighting m_lighting;
 
-	session_t m_peer_id = PEER_ID_INEXISTENT;
+	atomic_session_t m_peer_id = PEER_ID_INEXISTENT;
 };
 
 Json::Value operator<<(Json::Value &json, RemotePlayer &player);

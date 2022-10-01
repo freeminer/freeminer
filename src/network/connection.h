@@ -793,7 +793,7 @@ private:
 	PeerHandler *m_bc_peerhandler;
 	u32 m_bc_receive_timeout = 0;
 
-	bool m_shutting_down = false;
+	std::atomic_bool m_shutting_down = false;
 
 	session_t m_next_remote_peer_id = 2;
 

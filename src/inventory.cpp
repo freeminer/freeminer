@@ -508,7 +508,8 @@ void InventoryList::deSerialize(std::istream &is)
 
 InventoryList & InventoryList::operator = (const InventoryList &other)
 {
-	m_items = other.m_items;
+	//m_items = other.m_items;
+	m_items.assign(other.m_items.begin(), other.m_items.end());
 	m_size = other.m_size;
 	m_width = other.m_width;
 	m_name = other.m_name;
