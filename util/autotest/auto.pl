@@ -380,7 +380,7 @@ our $commands = {
     run_single_tsan => sub {
         local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
-        local $config->{env} = $config->{env} . " TSAN_OPTIONS=second_deadlock_stack=1 ";
+        local $config->{env} = $config->{env} . " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
         local $options->{opt}{enable_minimap} = 0;    # too unsafe
         commands_run($config->{run_task});
     },

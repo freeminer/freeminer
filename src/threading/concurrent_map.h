@@ -33,18 +33,25 @@ public:
 	mapped_type &operator[](const key_type &k) = delete;
 	mapped_type &operator[](key_type &&k) = delete;
 
+	mapped_type nothing = {};
+
 	template <typename... Args>
-	decltype(auto) get(Args &&...args)
+	mapped_type& get(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::get(std::forward<Args>(args)...);
+
+		//if (!full_type::contains(std::forward<Args>(args)...))
+		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
+			return nothing;
+
+		return full_type::operator[](std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) at(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::get(std::forward<Args>(args)...);
+		return full_type::at(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>

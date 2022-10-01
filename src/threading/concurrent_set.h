@@ -50,10 +50,18 @@ public:
 
 	typedef typename std::pair<iterator,bool> insert_return_type_old;
 
-	mapped_type &get(const key_type &k)
+	mapped_type nothing = {};
+
+	template <typename... Args>
+	mapped_type& get(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();
-		return full_type::operator[](k);
+
+		//if (!full_type::contains(std::forward<Args>(args)...))
+		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
+			return nothing;
+
+		return full_type::operator[](std::forward<Args>(args)...);
 	}
 
 	insert_return_type_old insert(const key_type &k)
