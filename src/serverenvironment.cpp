@@ -612,6 +612,8 @@ void ServerEnvironment::addPlayer(RemotePlayer *player)
 
 void ServerEnvironment::removePlayer(RemotePlayer *player)
 {
+	auto lock = m_players.lock_unique_rec();
+
 	for (std::vector<RemotePlayer *>::iterator it = m_players.begin();
 		it != m_players.end(); ++it) {
 		if ((*it) == player) {

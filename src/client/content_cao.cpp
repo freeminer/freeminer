@@ -1701,7 +1701,8 @@ void GenericCAO::processMessage(const std::string &data)
 	// command
 	u8 cmd = readU8(is);
 	if (cmd == AO_CMD_SET_PROPERTIES) {
-		ObjectProperties newprops;
+		//ObjectProperties newprops;
+		auto & newprops = m_prop;
 		newprops.show_on_minimap = m_is_player; // default
 
 		newprops.deSerialize(is);
@@ -1711,7 +1712,7 @@ void GenericCAO::processMessage(const std::string &data)
 		bool textures_changed = m_prop.textures != newprops.textures;
 
 		// Apply changes
-		m_prop = std::move(newprops);
+		//m_prop = std::move(newprops);
 
 		m_selection_box = m_prop.selectionbox;
 		m_selection_box.MinEdge *= BS;
