@@ -2878,7 +2878,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 
 	// autoforward if set: move at maximum speed
 	if (player->getPlayerSettings().continuous_forward &&
-			client->activeObjectsReceived() && !player->isDead()) {
+			/*client->activeObjectsReceived() */ player->getCAO() && !player->isDead()) {
 		control.movement_speed = 1.0f;
 		// sideways movement only
 		float dx = sin(control.movement_direction);

@@ -1486,7 +1486,9 @@ void Client::sendPlayerPos()
 	// Save bandwidth by only updating position when
 	// player is not dead and something changed
 
-	if (m_activeobjects_received && player->isDead())
+	if (!player->getCAO())
+		return;
+	if (/*m_activeobjects_received && */ player->isDead())
 		return;
 
 	ClientMap &map = m_env.getClientMap();

@@ -119,6 +119,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("main_menu_tab", "multiplayer");
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("password_save", "1");
+	settings->setDefault("enable_split_login_register", "false");
 
 	// Game Speed
 	settings->setDefault("pause_fps_max", "10"); // "20"

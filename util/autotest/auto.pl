@@ -789,7 +789,7 @@ sub options_make(;$$) {
     my ($rm, $rmm);
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
-
+    $rmm->{$_} = $options->{pass}{$_} for sort keys %{$options->{pass}};
     $m ||= [
         map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display}, $config->{options_bot},
         $config->{options_int}, $config->{options_add}, $config->{options_arr}, 'opt'

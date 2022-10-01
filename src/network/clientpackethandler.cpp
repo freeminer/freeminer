@@ -500,7 +500,7 @@ void Client::handleCommand_ActiveObjectRemoveAdd(NetworkPacket* pkt)
 
 	// m_activeobjects_received is false before the first
 	// TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD packet is received
-	m_activeobjects_received = true;
+	//m_activeobjects_received = true;
 }
 
 void Client::handleCommand_ActiveObjectMessages(NetworkPacket* pkt)

@@ -362,8 +362,10 @@ public:
 	{ return m_nodedef_received; }
 	bool mediaReceived() const
 	{ return !m_media_downloader; }
+/*
 	bool activeObjectsReceived() const
 	{ return m_activeobjects_received; }
+*/
 
 	u16 getProtoVersion()
 	{ return m_proto_ver; }
@@ -567,7 +569,7 @@ private:
 	Queue<ClientEvent *> m_client_event_queue;
 	bool m_itemdef_received = false;
 	bool m_nodedef_received = false;
-	bool m_activeobjects_received = false;
+	//bool m_activeobjects_received = false;
 	bool m_mods_loaded = false;
 
 	std::vector<std::string> m_remote_media_servers;
