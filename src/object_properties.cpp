@@ -122,6 +122,8 @@ bool ObjectProperties::validate()
 
 void ObjectProperties::serialize(std::ostream &os) const
 {
+	auto lock = lock_shared();
+
 	writeU8(os, 4); // PROTOCOL_VERSION >= 37
 	writeU16(os, hp_max);
 	writeU8(os, physical);
@@ -183,6 +185,8 @@ void ObjectProperties::serialize(std::ostream &os) const
 
 void ObjectProperties::deSerialize(std::istream &is)
 {
+	auto lock = lock_unique();
+
 	int version = readU8(is);
 	if (version != 4)
 		throw SerializationError("unsupported ObjectProperties version");

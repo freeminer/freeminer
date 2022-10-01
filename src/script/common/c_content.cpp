@@ -196,6 +196,8 @@ void read_object_properties(lua_State *L, int index,
 
 	luaL_checktype(L, -1, LUA_TTABLE);
 
+	auto lock = prop->lock_unique();
+
 	int hp_max = 0;
 	if (getintfield(L, -1, "hp_max", hp_max)) {
 		prop->hp_max = (u16)rangelim(hp_max, 0, U16_MAX);

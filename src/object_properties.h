@@ -28,9 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <vector>
 #include "threading/concurrent_vector.h"
+#include "threading/lock.h"
 #include "util/Optional.h"
 
-struct ObjectProperties
+struct ObjectProperties : public shared_locker 
 {
 	u16 hp_max = 1;
 	u16 breath_max = 0;
