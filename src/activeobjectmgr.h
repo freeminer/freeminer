@@ -19,6 +19,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <memory>
+
 #include <functional>
 #include <unordered_map>
 #include "irrlichttypes.h"
