@@ -163,7 +163,11 @@ public:
 
 template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
           class Alloc = std::allocator<std::pair<const Key, T> > >
-using concurrent_unordered_map = concurrent_unordered_map_<shared_locker, Key, T, Hash, Pred, Alloc>;
+using concurrent_unordered_map = concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>;
+
+template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
+          class Alloc = std::allocator<std::pair<const Key, T> > >
+using concurrent_shared_unordered_map = concurrent_unordered_map_<shared_locker, Key, T, Hash, Pred, Alloc>;
 
 #if ENABLE_THREADS
 

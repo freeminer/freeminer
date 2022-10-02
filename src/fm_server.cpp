@@ -51,7 +51,7 @@ void *ServerThread::run()
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 		 	auto end_ms = porting::getTimeMs();
-			uint64_t sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
+			int64_t sleep = (1000 * dedicated_server_step) - (end_ms - time_now);
 			auto sleep_min = m_server->overload ? 1000 : 50;
 			if (sleep < sleep_min)
 				sleep = sleep_min;

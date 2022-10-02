@@ -67,5 +67,5 @@ protected:
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 
-	maybe_concurrent_unordered_map<u16, T *> m_active_objects;
+	concurrent_shared_unordered_map<u16, T *> m_active_objects;
 };

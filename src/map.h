@@ -273,7 +273,7 @@ public:
 	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef maybe_concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual>
+	typedef concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
 	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
@@ -285,7 +285,7 @@ public:
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
+	concurrent_shared_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -509,7 +509,7 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
-	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
+	concurrent_shared_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
 private:
 
 	int m_map_compression_level;

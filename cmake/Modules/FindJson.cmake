@@ -23,6 +23,7 @@ if(NOT USE_SYSTEM_JSONCPP)
 	message(STATUS "Using bundled JSONCPP library. ${jsoncpp_BINARY_DIR}")
 	set(JSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/external/jsoncpp/include)
 	set(JSON_LIBRARY jsoncpp_static)
+	#set(JSON_LIBRARY jsoncpp_lib)
 
 	#set(JSON_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/lib/jsoncpp)
 	#set(JSON_LIBRARY jsoncpp)

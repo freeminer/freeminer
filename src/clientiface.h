@@ -397,7 +397,7 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	unsigned int m_nearest_unsent_reset_want = 0;
-	concurrent_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
+	concurrent_shared_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 
 	//std::set<v3s16> m_blocks_sent;
 public:
@@ -462,7 +462,7 @@ private:
 
 //typedef std::unordered_map<u16, RemoteClient*> RemoteClientMap;
 using RemoteClientPtr = std::shared_ptr<RemoteClient>;
-using RemoteClientMap = concurrent_unordered_map<u16, RemoteClientPtr>;
+using RemoteClientMap = concurrent_shared_unordered_map<u16, RemoteClientPtr>;
 using RemoteClientVector = std::vector<std::shared_ptr<RemoteClient>>;
 
 class ClientInterface {
