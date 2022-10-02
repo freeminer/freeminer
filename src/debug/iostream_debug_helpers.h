@@ -179,7 +179,7 @@ Out & dump(Out & out, const char * name, T && x)
 #endif
 
 #if !defined(DUMP_STREAM)                                                   
-    #define DUMP_STREAM std::cerr                                           
+    #define DUMP_STREAM std::cerr
 #endif                                                                      
                                                                             
 #if !defined(DUMP_FILE)                                                     

@@ -108,20 +108,20 @@ public:
 	void unlock();
 };
 
-template<class mutex = use_mutex, class uniquelock = std::unique_lock<mutex> , class sharedlock = std::unique_lock<mutex> >
+template<class mutex = use_mutex, class unique_lock = std::unique_lock<mutex> , class shared_lock = std::unique_lock<mutex> >
 class locker {
 public:
-	typedef recursive_lock<sharedlock, mutex> lock_rec_shared;
-	typedef recursive_lock<uniquelock, mutex> lock_rec_unique;
+	using lock_rec_shared = recursive_lock<shared_lock, mutex>;
+	using lock_rec_unique = recursive_lock<unique_lock, mutex>;
 
 	mutable mutex mtx;
 	mutable std::atomic<std::size_t> thread_id;
 
 	locker();
-	std::unique_ptr<uniquelock> lock_unique();
-	std::unique_ptr<uniquelock> try_lock_unique();
-	std::unique_ptr<sharedlock> lock_shared() const;
-	std::unique_ptr<sharedlock> try_lock_shared();
+	std::unique_ptr<unique_lock> lock_unique();
+	std::unique_ptr<unique_lock> try_lock_unique();
+	std::unique_ptr<shared_lock> lock_shared() const;
+	std::unique_ptr<shared_lock> try_lock_shared();
 	std::unique_ptr<lock_rec_unique> lock_unique_rec() const;
 	std::unique_ptr<lock_rec_unique> try_lock_unique_rec();
 	//std::unique_ptr<lock_rec_shared> lock_shared_rec();
