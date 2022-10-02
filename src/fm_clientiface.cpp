@@ -369,8 +369,11 @@ int RemoteClient::GetNextBlocks (
 #if !ENABLE_THREADS
 			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
 #endif
+				auto lock = env->getMap().m_blocks.try_lock_shared_rec();
+				if (!lock->owns_lock())
+					continue;
 
-			block = env->getMap().getBlockNoCreateNoEx(p);
+				block = env->getMap().getBlockNoCreateNoEx(p);
 			}
 
 			//bool surely_not_found_on_disk = false;
