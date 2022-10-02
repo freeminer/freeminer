@@ -862,7 +862,7 @@ void Client::handleCommand_PlaySound(NetworkPacket* pkt)
 		break;
 	case SoundLocation::Object:
 		{
-			ClientActiveObject *cao = m_env.getActiveObject(object_id);
+			auto cao = m_env.getActiveObject(object_id);
 			if (cao)
 				pos = cao->getPosition();
 			client_id = m_sound->playSoundAt(spec, pos);

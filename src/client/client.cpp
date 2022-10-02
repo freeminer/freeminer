@@ -729,7 +729,7 @@ void Client::step(float dtime)
 		for (auto &m_sounds_to_object : m_sounds_to_objects) {
 			int client_id = m_sounds_to_object.first;
 			u16 object_id = m_sounds_to_object.second;
-			ClientActiveObject *cao = m_env.getActiveObject(object_id);
+			const auto cao = m_env.getActiveObject(object_id);
 			if (!cao)
 				continue;
 			m_sound->updateSoundPosition(client_id, cao->getPosition());

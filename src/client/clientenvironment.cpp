@@ -354,7 +354,7 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 	*/
 
 	bool update_lighting = m_active_object_light_update_interval.step(dtime, 0.21);
-	auto cb_state = [this, dtime, update_lighting, day_night_ratio] (ClientActiveObject *cao) {
+	auto cb_state = [this, dtime, update_lighting, day_night_ratio] (const ClientActiveObjectPtr &cao) {
 		// Step object
 		cao->step(dtime, this);
 
@@ -448,7 +448,7 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 		// Data provided by AO_CMD_SPAWN_INFANT
 		const auto &children = obj->getAttachmentChildIds();
 		for (auto c_id : children) {
-			if (auto *o = getActiveObject(c_id))
+			if (auto o = getActiveObject(c_id))
 				o->updateAttachments();
 		}
 	}
@@ -459,21 +459,21 @@ void ClientEnvironment::removeActiveObject(u16 id)
 {
 	// Get current attachment childs to detach them visually
 	std::unordered_set<int> attachment_childs;
-	if (auto *obj = getActiveObject(id))
+	if (auto obj = getActiveObject(id))
 		attachment_childs = obj->getAttachmentChildIds();
 
 	m_ao_manager.removeObject(id);
 
 	// Perform a proper detach in Irrlicht
 	for (auto c_id : attachment_childs) {
-		if (ClientActiveObject *child = getActiveObject(c_id))
+		if (auto child = getActiveObject(c_id))
 			child->updateAttachments();
 	}
 }
 
 void ClientEnvironment::processActiveObjectMessage(u16 id, const std::string &data)
 {
-	ClientActiveObject *obj = getActiveObject(id);
+	auto obj = getActiveObject(id);
 	if (obj == NULL) {
 		infostream << "ClientEnvironment::processActiveObjectMessage():"
 			<< " got message for id=" << id << ", which doesn't exist."

@@ -117,3 +117,5 @@ public:
 private:
 	f32 d;
 };
+
+using ClientActiveObjectPtr = std::shared_ptr<ClientActiveObject>;

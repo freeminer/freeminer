@@ -63,8 +63,8 @@ void TestServerActiveObjectMgr::runTests(IGameDef *gamedef)
 
 void clearSAOMgr(server::ActiveObjectMgr *saomgr)
 {
-	auto clear_cb = [](ServerActiveObject *obj, u16 id) {
-		delete obj;
+	auto clear_cb = [](const ServerActiveObjectPtr& obj, u16 id) {
+		//delete obj;
 		return true;
 	};
 	saomgr->clear(clear_cb);
@@ -106,14 +106,14 @@ void TestServerActiveObjectMgr::testRegisterObject()
 
 	u16 id = tsao->getId();
 
-	auto tsaoToCompare = saomgr.getActiveObject(id);
+	auto tsaoToCompare = saomgr.getActiveObject(id).get();
 	UASSERT(tsaoToCompare->getId() == id);
 	UASSERT(tsaoToCompare == tsao);
 
 	tsao = new TestServerActiveObject();
 	UASSERT(saomgr.registerObject(tsao));
-	UASSERT(saomgr.getActiveObject(tsao->getId()) == tsao);
-	UASSERT(saomgr.getActiveObject(tsao->getId()) != tsaoToCompare);
+	UASSERT(saomgr.getActiveObject(tsao->getId()).get() == tsao);
+	UASSERT(saomgr.getActiveObject(tsao->getId()).get() != tsaoToCompare);
 
 	clearSAOMgr(&saomgr);
 }
@@ -148,7 +148,7 @@ void TestServerActiveObjectMgr::testGetObjectsInsideRadius()
 		saomgr.registerObject(new TestServerActiveObject(p));
 	}
 
-	std::vector<ServerActiveObject *> result;
+	std::vector<ServerActiveObjectPtr> result;
 	saomgr.getObjectsInsideRadius(v3f(), 50, result, nullptr);
 	UASSERTCMP(int, ==, result.size(), 1);
 
@@ -161,7 +161,7 @@ void TestServerActiveObjectMgr::testGetObjectsInsideRadius()
 	UASSERTCMP(int, ==, result.size(), 5);
 
 	result.clear();
-	auto include_obj_cb = [](ServerActiveObject *obj) {
+	auto include_obj_cb = [](const ServerActiveObjectPtr& obj) {
 		return (obj->getBasePosition().X != 10);
 	};
 

@@ -34,14 +34,15 @@ class ActiveObjectMgr
 	friend class ::TestServerActiveObjectMgr;
 
 public:
-	virtual void step(float dtime, const std::function<void(T *)> &f) = 0;
+	using TPtr = std::shared_ptr<T>;
+	virtual void step(float dtime, const std::function<void(const TPtr&)> &f) = 0;
 	virtual bool registerObject(T *obj) = 0;
 	virtual void removeObject(u16 id) = 0;
 
-	T *getActiveObject(u16 id)
+	TPtr getActiveObject(u16 id)
 	{
 		auto lock = m_active_objects.lock_shared_rec();
-		typename std::unordered_map<u16, T *>::const_iterator n =
+		const auto &n =
 				m_active_objects.find(id);
 		return (n != m_active_objects.end() ? n->second : nullptr);
 	}
@@ -67,5 +68,5 @@ protected:
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 
-	concurrent_shared_unordered_map<u16, T *> m_active_objects;
+	concurrent_shared_unordered_map<u16, std::shared_ptr<T>> m_active_objects;
 };

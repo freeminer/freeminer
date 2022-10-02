@@ -68,6 +68,19 @@ else()
 	set(BUILD_SERVER TRUE CACHE BOOL "Build server")
 endif()
 
+if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	find_library (LIBCXX_LIBRARY c++)      
+	find_library (LIBCXXABI_LIBRARY c++abi)
+	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
+		set(ENABLE_SYSTEM_JSONCPP 0)
+        set(ENABLE_LEVELDB 0) # TODO: build via submodule
+        add_link_options(-fuse-ld=lld -stdlib=libc++)
+        add_compile_options(-stdlib=libc++)
+		message(STATUS "Using libc++ and lld linker")
+	endif()
+endif()
+
+
 set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
 set(BUILD_BENCHMARKS FALSE CACHE BOOL "Build benchmarks")
 

@@ -224,7 +224,7 @@ public:
 	std::set<std::string> m_privs;
 	bool m_is_singleplayer;
 
-	u16 m_breath = PLAYER_MAX_BREATH_DEFAULT;
+	std::atomic_uint16_t m_breath = PLAYER_MAX_BREATH_DEFAULT;
 	std::atomic<f32> m_pitch {0.0f};
 	std::atomic<f32> m_fov {0.0f};
 	std::atomic_short m_wanted_range {0};

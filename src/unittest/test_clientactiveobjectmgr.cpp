@@ -90,14 +90,14 @@ void TestClientActiveObjectMgr::testRegisterObject()
 
 	u16 id = tcao->getId();
 
-	auto tcaoToCompare = caomgr.getActiveObject(id);
+	auto tcaoToCompare = caomgr.getActiveObject(id).get();
 	UASSERT(tcaoToCompare->getId() == id);
 	UASSERT(tcaoToCompare == tcao);
 
 	tcao = new TestClientActiveObject();
 	UASSERT(caomgr.registerObject(tcao));
-	UASSERT(caomgr.getActiveObject(tcao->getId()) == tcao);
-	UASSERT(caomgr.getActiveObject(tcao->getId()) != tcaoToCompare);
+	UASSERT(caomgr.getActiveObject(tcao->getId()).get() == tcao);
+	UASSERT(caomgr.getActiveObject(tcao->getId()).get() != tcaoToCompare);
 
 	caomgr.clear();
 }

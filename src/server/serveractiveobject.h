@@ -290,3 +290,5 @@ protected:
 	*/
 	Queue<ActiveObjectMessage> & m_messages_out;
 };
+
+using ServerActiveObjectPtr = std::shared_ptr<ServerActiveObject>;

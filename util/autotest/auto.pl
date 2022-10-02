@@ -348,6 +348,7 @@ our $commands = {
         $D{MINETEST_PROTO}     = $config->{cmake_minetest}    if defined $config->{cmake_minetest};
         $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}     if defined $config->{cmake_leveldb};
         $D{ENABLE_SCTP}        = $config->{cmake_sctp}        if defined $config->{cmake_sctp};
+        $D{USE_LIBCXX}         = $config->{cmake_libcxx}      if defined $config->{cmake_libcxx};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
         $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
 

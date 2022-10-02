@@ -97,7 +97,7 @@ public:
 	GenericCAO* getGenericCAO(u16 id);
 	ClientActiveObject* getActiveObject(u16 id)
 	{
-		return m_ao_manager.getActiveObject(id);
+		return m_ao_manager.getActiveObject(id).get();
 	}
 
 	/*

@@ -789,16 +789,16 @@ int ModApiEnvMod::l_get_objects_inside_radius(lua_State *L)
 	// Do it
 	v3f pos = checkFloatPos(L, 1);
 	float radius = readParam<float>(L, 2) * BS;
-	std::vector<ServerActiveObject *> objs;
+	std::vector<ServerActiveObjectPtr> objs;
 
-	auto include_obj_cb = [](ServerActiveObject *obj){ return !obj->isGone(); };
+	auto include_obj_cb = [](const ServerActiveObjectPtr &obj){ return !obj->isGone(); };
 	env->getObjectsInsideRadius(objs, pos, radius, include_obj_cb);
 
 	int i = 0;
 	lua_createtable(L, objs.size(), 0);
-	for (const auto obj : objs) {
+	for (const auto &obj : objs) {
 		// Insert object reference into table
-		script->objectrefGetOrCreate(L, obj);
+		script->objectrefGetOrCreate(L, obj.get());
 		lua_rawseti(L, -2, ++i);
 	}
 	return 1;
@@ -814,18 +814,18 @@ int ModApiEnvMod::l_get_objects_in_area(lua_State *L)
 	v3f maxp = read_v3f(L, 2) * BS;
 	aabb3f box(minp, maxp);
 	box.repair();
-	std::vector<ServerActiveObject *> objs;
+	std::vector<ServerActiveObjectPtr> objs;
 
-	auto include_obj_cb = [](ServerActiveObject *obj){ return !obj->isGone(); };
+	auto include_obj_cb = [](const ServerActiveObjectPtr &obj){ return !obj->isGone(); };
 	env->getObjectsInArea(objs, box, include_obj_cb);
 
 	int i = 0;
 	lua_createtable(L, objs.size(), 0);
-	for (const auto obj : objs) {
+	for (const auto &obj : objs) {
 		if (!obj)
 			continue;
 		// Insert object reference into table
-		script->objectrefGetOrCreate(L, obj);
+		script->objectrefGetOrCreate(L, obj.get());
 		lua_rawseti(L, -2, ++i);
 	}
 	return 1;

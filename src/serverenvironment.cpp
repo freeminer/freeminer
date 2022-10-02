@@ -1279,12 +1279,12 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 {
 	infostream << "ServerEnvironment::clearObjects(): "
 		<< "Removing all active objects" << std::endl;
-	auto cb_removal = [this] (ServerActiveObject *obj, u16 id) {
+	auto cb_removal = [this] (const ServerActiveObjectPtr &obj, u16 id) {
 		if (obj->getType() == ACTIVEOBJECT_TYPE_PLAYER)
 			return false;
 
 		// Delete static object if block is loaded
-		deleteStaticFromBlock(obj, id, MOD_REASON_CLEAR_ALL_OBJECTS, true);
+		deleteStaticFromBlock(obj.get(), id, MOD_REASON_CLEAR_ALL_OBJECTS, true);
 
 		// If known by some client, don't delete immediately
 		if (obj->m_known_by_count > 0) {
@@ -1295,7 +1295,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 		// Tell the object about removal
 		obj->removingFromEnvironment();
 		// Deregister in scripting api
-		m_script->removeObjectReference(obj);
+		m_script->removeObjectReference(obj.get());
 
 		// Delete active object
 		if (obj->environmentDeletes())
@@ -1774,7 +1774,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 		u32 object_count = 0;
 
-		auto cb_state = [&] (ServerActiveObject *obj) {
+		auto cb_state = [&] (const ServerActiveObjectPtr &obj) {
 			if (!obj || obj->isGone())
 				return;
 			object_count++;
@@ -1996,7 +1996,7 @@ void ServerEnvironment::setStaticForActiveObjectsInBlock(
 
 	for (auto &so_it : block->m_static_objects.m_active) {
 		// Get the ServerActiveObject counterpart to this StaticObject
-		ServerActiveObject *sao = m_ao_manager.getActiveObject(so_it.first);
+		auto sao = m_ao_manager.getActiveObject(so_it.first);
 		if (!sao) {
 			// If this ever happens, there must be some kind of nasty bug.
 			errorstream << "ServerEnvironment::setStaticForObjectsInBlock(): "
@@ -2027,7 +2027,7 @@ void ServerEnvironment::getSelectedActiveObjects(
 	const core::line3d<f32> &shootline_on_map,
 	std::vector<PointedThing> &objects)
 {
-	std::vector<ServerActiveObject *> objs;
+	std::vector<ServerActiveObjectPtr> objs;
 	getObjectsInsideRadius(objs, shootline_on_map.start,
 		shootline_on_map.getLength() + 10.0f, nullptr);
 	const v3f line_vector = shootline_on_map.getVector();
@@ -2117,7 +2117,7 @@ void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 	}
 */
 
-	auto clear_cb = [this] (ServerActiveObject *obj, u16 id) {
+	auto clear_cb = [this] (const ServerActiveObjectPtr& obj, u16 id) {
 		// This shouldn't happen but check it
 		if (!obj) {
 			errorstream << "ServerEnvironment::removeRemovedObjects(): "
@@ -2135,7 +2135,7 @@ void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 			Delete static data from block if removed
 		*/
 		if (obj->isPendingRemoval())
-			deleteStaticFromBlock(obj, id, MOD_REASON_REMOVE_OBJECTS_REMOVE, false);
+			deleteStaticFromBlock(obj.get(), id, MOD_REASON_REMOVE_OBJECTS_REMOVE, false);
 
 		// If still known by clients, don't actually remove. On some future
 		// invocation this will be 0, which is when removal will continue.
@@ -2169,9 +2169,10 @@ void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 		// Tell the object about removal
 		obj->removingFromEnvironment();
 		// Deregister in scripting api
-		m_script->removeObjectReference(obj);
+		m_script->removeObjectReference(obj.get());
 
 		// Delete
+
 		if (obj->environmentDeletes())
 			m_ao_manager.deferDelete(obj);
 			//delete obj;
@@ -2324,7 +2325,9 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 */
 void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 {
-	auto cb_deactivate = [this, _force_delete] (ServerActiveObject *obj, u16 id) {
+	auto cb_deactivate = [this, _force_delete] (const ServerActiveObjectPtr &objp, u16 id) {
+		const auto obj = objp.get();
+
 		// force_delete might be overriden per object
 		bool force_delete = _force_delete;
 
@@ -2471,10 +2474,11 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 		m_script->removeObjectReference(obj);
 
 		// Delete active object
+
 		if (obj->environmentDeletes())
 		{
 			//m_active_objects.set(id, nullptr);
-			m_ao_manager.deferDelete(obj);
+			m_ao_manager.deferDelete(objp);
 		}
 
 		return true;

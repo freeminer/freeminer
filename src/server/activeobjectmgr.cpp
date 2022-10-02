@@ -25,19 +25,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 namespace server
 {
 
-void ActiveObjectMgr::deferDelete(ServerActiveObject *obj) {
+
+void ActiveObjectMgr::deferDelete(ServerActiveObjectPtr obj) {
 	obj->markForRemoval();
 	m_objects_to_delete.emplace_back(obj);
 }
 
 ActiveObjectMgr::~ActiveObjectMgr() {
+/*
 	for (auto & obj : m_objects_to_delete)
 		delete obj;
 	for (auto & obj : m_objects_to_delete_2)
 		delete obj;
+		*/
 }
 
-void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)> &cb)
+void ActiveObjectMgr::clear(const std::function<bool(const ServerActiveObjectPtr&, u16)> &cb)
 {
 
 	//std::vector<u16> objects_to_remove;
@@ -74,14 +77,14 @@ void ActiveObjectMgr::clear(const std::function<bool(ServerActiveObject *, u16)>
 }
 
 void ActiveObjectMgr::step(
-		float dtime, const std::function<void(ServerActiveObject *)> &f)
+		float dtime, const std::function<void(const ServerActiveObjectPtr&)> &f)
 {
 	std::swap(m_objects_to_delete, m_objects_to_delete_2);
-	for (auto & obj : m_objects_to_delete)
-		delete obj;
+	/*for (auto & obj : m_objects_to_delete)
+		delete obj;*/
 	m_objects_to_delete.clear();
 
-	std::vector<ServerActiveObject *> active_objects;
+	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
 		auto lock = m_active_objects.try_lock_shared_rec();
@@ -135,7 +138,7 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 		return false;
 	}
 
-	m_active_objects.insert_or_assign(obj->getId(),obj);
+	m_active_objects.insert_or_assign(obj->getId(), ServerActiveObjectPtr{obj});
 #if !NDEBUG
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 			<< "Added id=" << obj->getId() << "; there are now "
@@ -148,7 +151,7 @@ void ActiveObjectMgr::removeObject(u16 id)
 {
 	verbosestream << "Server::ActiveObjectMgr::removeObject(): "
 			<< "id=" << id << std::endl;
-	ServerActiveObject *obj = getActiveObject(id);
+	auto obj = getActiveObject(id);
 	if (!obj) {
 		infostream << "Server::ActiveObjectMgr::removeObject(): "
 				<< "id=" << id << " not found" << std::endl;
@@ -162,10 +165,10 @@ void ActiveObjectMgr::removeObject(u16 id)
 
 // clang-format on
 void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
-		std::vector<ServerActiveObject *> &result,
-		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
+		std::vector<ServerActiveObjectPtr> &result,
+		const std::function<bool(ServerActiveObjectPtr &obj)> &include_obj_cb)
 {
-	std::vector<ServerActiveObject *> active_objects;
+	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
 		auto lock = m_active_objects.try_lock_shared_rec();
@@ -191,11 +194,11 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 }
 
 void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
-		std::vector<ServerActiveObject *> &result,
-		std::function<bool(ServerActiveObject *obj)> include_obj_cb)
+		std::vector<ServerActiveObjectPtr> &result,
+		const std::function<bool(ServerActiveObjectPtr &obj)> &include_obj_cb)
 {
 
-	std::vector<ServerActiveObject *> active_objects;
+	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
 		auto lock = m_active_objects.try_lock_shared_rec();
@@ -244,7 +247,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		u16 id = ao_it.first;
 
 		// Get object
-		ServerActiveObject *object = ao_it.second;
+		auto object = ao_it.second;
 		if (!object)
 			continue;
 

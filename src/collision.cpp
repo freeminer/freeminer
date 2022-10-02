@@ -405,15 +405,15 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 				// search for objects which are not us, or we are not its parent
 				// we directly use the callback to populate the result to prevent
 				// a useless result loop here
-				auto include_obj_cb = [self, &objects] (ServerActiveObject *obj) {
+				auto include_obj_cb = [self, &objects] (const ServerActiveObjectPtr &obj) {
 					if (!obj->isGone() &&
-						(!self || (self != obj && self != obj->getParent()))) {
-						objects.push_back((ActiveObject *)obj);
+						(!self || (self != obj.get() && self != obj->getParent()))) {
+						objects.push_back((ActiveObject *)obj.get());
 					}
 					return false;
 				};
 
-				std::vector<ServerActiveObject *> s_objects;
+				std::vector<ServerActiveObjectPtr> s_objects;
 				s_env->getObjectsInsideRadius(s_objects, *pos_f, distance, include_obj_cb);
 			}
 		}

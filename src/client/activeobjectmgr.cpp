@@ -27,16 +27,18 @@ namespace client
 void ActiveObjectMgr::clear()
 {
 	// delete active objects
+/*
 	for (auto &active_object : m_active_objects) {
 		delete active_object.second;
 		// Object must be marked as gone when children try to detach
 		active_object.second = nullptr;
 	}
+*/
 	m_active_objects.clear();
 }
 
 void ActiveObjectMgr::step(
-		float dtime, const std::function<void(ClientActiveObject *)> &f)
+		float dtime, const std::function<void(const ClientActiveObjectPtr&)> &f)
 {
 	g_profiler->avg("ActiveObjectMgr: CAO count [#]", m_active_objects.size());
 	for (auto &ao_it : m_active_objects) {
@@ -68,7 +70,7 @@ bool ActiveObjectMgr::registerObject(ClientActiveObject *obj)
 	}
 	infostream << "Client::ActiveObjectMgr::registerObject(): "
 			<< "added (id=" << obj->getId() << ")" << std::endl;
-	m_active_objects.insert_or_assign(obj->getId(), obj);
+	m_active_objects.insert_or_assign(obj->getId(), ClientActiveObjectPtr{obj});
 	return true;
 }
 
@@ -76,7 +78,7 @@ void ActiveObjectMgr::removeObject(u16 id)
 {
 	verbosestream << "Client::ActiveObjectMgr::removeObject(): "
 			<< "id=" << id << std::endl;
-	ClientActiveObject *obj = getActiveObject(id);
+	auto obj = getActiveObject(id);
 	if (!obj) {
 		infostream << "Client::ActiveObjectMgr::removeObject(): "
 				<< "id=" << id << " not found" << std::endl;
@@ -86,7 +88,7 @@ void ActiveObjectMgr::removeObject(u16 id)
 	m_active_objects.erase(id);
 
 	obj->removeFromScene(true);
-	delete obj;
+	//delete obj;
 }
 
 // clang-format on
@@ -95,14 +97,14 @@ void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,
 {
 	f32 max_d2 = max_d * max_d;
 	for (auto &ao_it : m_active_objects) {
-		ClientActiveObject *obj = ao_it.second;
+		const auto obj = ao_it.second;
 
 		f32 d2 = (obj->getPosition() - origin).getLengthSQ();
 
 		if (d2 > max_d2)
 			continue;
 
-		dest.emplace_back(obj, d2);
+		dest.emplace_back(obj.get(), d2);
 	}
 }
 

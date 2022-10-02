@@ -278,7 +278,7 @@ public:
 
 	ServerActiveObject* getActiveObject(u16 id, bool removed = false)
 	{
-		const auto obj = m_ao_manager.getActiveObject(id);
+		const auto obj = m_ao_manager.getActiveObject(id).get();
 		if (!removed && (!obj || obj->isGone()))
 			return nullptr;
 		return obj;
@@ -362,15 +362,15 @@ public:
 	u8 findSunlight(v3s16 pos) const;
 
 	// Find all active objects inside a radius around a point
-	void getObjectsInsideRadius(std::vector<ServerActiveObject *> &objects, const v3f &pos, float radius,
-			std::function<bool(ServerActiveObject *obj)> include_obj_cb)
+	void getObjectsInsideRadius(std::vector<ServerActiveObjectPtr> &objects, const v3f &pos, float radius,
+			const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb)
 	{
 		return m_ao_manager.getObjectsInsideRadius(pos, radius, objects, include_obj_cb);
 	}
 
 	// Find all active objects inside a box
-	void getObjectsInArea(std::vector<ServerActiveObject *> &objects, const aabb3f &box,
-			std::function<bool(ServerActiveObject *obj)> include_obj_cb)
+	void getObjectsInArea(std::vector<ServerActiveObjectPtr> &objects, const aabb3f &box,
+			const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb)
 	{
 		return m_ao_manager.getObjectsInArea(box, objects, include_obj_cb);
 	}
