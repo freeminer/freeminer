@@ -87,7 +87,7 @@ void ActiveObjectMgr::step(
 	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
-		auto lock = m_active_objects.try_lock_shared_rec();
+		auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 		if (!lock->owns_lock())
 			return;
 		g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
@@ -171,7 +171,7 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
-		auto lock = m_active_objects.try_lock_shared_rec();
+		auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 		if (!lock->owns_lock())
 			return;
 		// bad copy: avoid deadlocks with locks in cb
@@ -201,7 +201,7 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
-		auto lock = m_active_objects.try_lock_shared_rec();
+		auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 		if (!lock->owns_lock())
 			return;
 		// bad copy: avoid deadlocks with locks in cb

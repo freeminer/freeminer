@@ -28,6 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "config.h"
 #include "filesys.h"
 #include "log.h"
+#include "stacktrace.h"
 
 #include <sstream>
 #include <exception>
@@ -57,7 +58,7 @@ void android_main(android_app *app)
 		errorstream << "Uncaught exception in main thread: " << e.what() << std::endl;
 		retval = -1;
 	} catch (...) {
-		errorstream << "Uncaught exception in main thread!" << std::endl;
+		errorstream << "Uncaught exception in main thread!" << std::endl << stacktrace() << std::endl;
 		retval = -1;
 #else
 	} catch (int) { // impossible

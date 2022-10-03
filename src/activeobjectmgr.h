@@ -43,7 +43,7 @@ public:
 
 	TPtr getActiveObject(u16 id)
 	{
-		auto lock = m_active_objects.lock_shared_rec();
+		auto lock = m_active_objects.lock_unique_rec(); //prelock
 		const auto &n =
 				m_active_objects.find(id);
 		return (n != m_active_objects.end() ? n->second : nullptr);
@@ -65,8 +65,7 @@ protected:
 
 	bool isFreeId(u16 id) const
 	{
-		auto lock = m_active_objects.lock_shared_rec();
-
+		auto lock = m_active_objects.lock_unique_rec(); // prelock
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 
