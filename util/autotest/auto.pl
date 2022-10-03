@@ -108,14 +108,13 @@ our $config = {};
 our $g = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
 
 sub init_config () {
-    (my $clang_version = `bash -c "compgen -c clang | grep 'clang-[[:digit:]]' | sort --version-sort --reverse | head -n1"`) =~ s/^clang//;
     $config = {
         #address           => '::1',
         port              => 60001,
         clients_start     => 0,
         clients_num       => 5,
         autoexit          => 600,
-        clang_version     => $clang_version,                                               #"", # "-3.6",
+        clang_version     => `bash -c "compgen -c clang | grep 'clang[-]*[[:digit:]]' | sort --version-sort --reverse | head -n1"` =~ s/(?:^clang)|(?:\s+$)//rg, #"" "-3.6" "15"
         autotest_dir_rel  => 'util/autotest/',
         build_name        => '',
         root_prefix       => $root_path,
@@ -128,7 +127,7 @@ sub init_config () {
         screenshot_dir    => 'screenshot.' . $g->{date},
         env               => 'OPENSSL_armcap=0',
         gdb_stay          => 0,                                                            # dont exit from gdb
-        gdb               => 'gdb',
+        gdb               => `bash -c 'compgen -c gdb' | grep 'gdb[-]*[[:digit:]]*\$' | sort --version-sort --reverse | head -n1` =~ s/\s+$//rg, # 'gdb' 'gdb112'
         runner            => 'nice ',
         name              => 'bot',
         go                => '--go',
@@ -158,7 +157,6 @@ sub init_config () {
 
     map { /^--(\w+)(?:=(.*))?/ and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
     map { /^---(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
-    $config->{clang_version} =~ s/\s+$//;
 }
 init_config();
 
@@ -718,7 +716,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         #map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
 
-    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_ } qw(tsan asan msan usan gperf asannta minetest minetest_debug)),
+    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_, 'server_' . $_ } qw(tsan asan msan usan gperf asannta minetest minetest_debug)),
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
 
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
