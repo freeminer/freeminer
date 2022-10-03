@@ -3,7 +3,7 @@
 #include "emerge.h"
 #include "profiler.h"
 #include "server.h"
-#include "stacktrace.h"
+#include "debug/stacktrace.h"
 #include "util/string.h"
 #include "util/timetaker.h"
 
