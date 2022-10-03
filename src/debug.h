@@ -100,9 +100,9 @@ void debug_set_exception_handler();
 #if CATCH_UNHANDLED_EXCEPTIONS == 1
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER try {
 	#define END_DEBUG_EXCEPTION_HANDLER                        \
-		} catch (std::exception &e) {                          \
+		} catch (const std::exception &e) {                    \
 			errorstream << "An unhandled exception occurred: " \
-				<< e.what() << std::endl;                      \
+				<< e.what() << std::endl << stacktrace() << std::endl; \
 			FATAL_ERROR(e.what());                             \
 		}
 #else
@@ -118,6 +118,6 @@ void debug_set_exception_handler();
 	#define EXCEPTION_HANDLER_END
 #else
 	#define EXCEPTION_HANDLER_BEGIN try {
-	#define EXCEPTION_HANDLER_END } catch (std::exception &e) { errorstream << m_name << ": An unhandled exception occurred: " << e.what() << std::endl << stacktrace() << std::endl; } \
+	#define EXCEPTION_HANDLER_END } catch (const std::exception &e) { errorstream << m_name << ": An unhandled exception occurred: " << e.what() << std::endl << stacktrace() << std::endl; } \
 									catch (...)               { errorstream << m_name << ": Ooops..." << std::endl << stacktrace() << std::endl; }
 #endif
