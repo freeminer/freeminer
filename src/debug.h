@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <exception>
 #include <cassert>
 #include "gettime.h"
+#include "debug/stacktrace.h"
 #include "log.h"
 
 #ifdef _WIN32
@@ -117,6 +118,6 @@ void debug_set_exception_handler();
 	#define EXCEPTION_HANDLER_END
 #else
 	#define EXCEPTION_HANDLER_BEGIN try {
-	#define EXCEPTION_HANDLER_END } catch (std::exception &e) { errorstream << m_name << ": An unhandled exception occurred: " << e.what() << std::endl; } \
-									catch (...)               { errorstream << m_name << ": Ooops..." << std::endl; }
+	#define EXCEPTION_HANDLER_END } catch (std::exception &e) { errorstream << m_name << ": An unhandled exception occurred: " << e.what() << std::endl << stacktrace() << std::endl; } \
+									catch (...)               { errorstream << m_name << ": Ooops..." << std::endl << stacktrace() << std::endl; }
 #endif

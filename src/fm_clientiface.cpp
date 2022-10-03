@@ -8,10 +8,10 @@
 #include "emerge.h"
 #include "face_position_cache.h"
 
-//VERY BAD COPYPASTE FROM clientmap.cpp!
+// VERY BAD COPYPASTE FROM clientmap.cpp!
 static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, const NodeDefManager *nodemgr,
-		unordered_map_v3POS<bool> & occlude_cache)
+		unordered_map_v3POS<bool> &occlude_cache)
 {
 	float d0 = (float)1 * p0.getDistanceFrom(p1);
 	v3s16 u0 = p1 - p0;
@@ -19,7 +19,7 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	uf.normalize();
 	v3f p0f = v3f(p0.X, p0.Y, p0.Z);
 	u32 count = 0;
-	for(float s=start_off; s<d0+end_off; s+=step){
+	for (float s = start_off; s < d0 + end_off; s += step) {
 		v3f pf = p0f + uf * s;
 		v3s16 p = floatToInt(pf, 1);
 		bool is_transparent = false;
@@ -28,20 +28,20 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 			cache = false;
 			is_transparent = occlude_cache[p];
 		} else {
-		MapNode n = map->getNodeTry(p);
-		if (!n) {
-			return true; // ONE DIFFERENCE FROM clientmap.cpp
-		}
-		const ContentFeatures &f = nodemgr->get(n);
-		if(f.solidness == 0)
-			is_transparent = (f.visual_solidness != 2);
-		else
-			is_transparent = (f.solidness != 2);
+			MapNode n = map->getNodeTry(p);
+			if (!n) {
+				return true; // ONE DIFFERENCE FROM clientmap.cpp
+			}
+			const ContentFeatures &f = nodemgr->get(n);
+			if (f.solidness == 0)
+				is_transparent = (f.visual_solidness != 2);
+			else
+				is_transparent = (f.solidness != 2);
 		}
 		if (cache)
 			occlude_cache[p] = is_transparent;
-		if(!is_transparent){
-			if(count == needed_count)
+		if (!is_transparent) {
+			if (count == needed_count)
 				return true;
 			count++;
 		}
@@ -50,12 +50,8 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 	return false;
 }
 
-
-int RemoteClient::GetNextBlocks (
-		ServerEnvironment *env,
-		EmergeManager * emerge,
-		float dtime,
-		std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
+int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
+		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
 {
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
@@ -72,7 +68,7 @@ int RemoteClient::GetNextBlocks (
 		m_nothing_to_send_pause_timer = 0;
 	}
 
-	if(m_nothing_to_send_pause_timer >= 0)
+	if (m_nothing_to_send_pause_timer >= 0)
 		return 0;
 
 	RemotePlayer *player = env->getPlayer(peer_id);
@@ -84,25 +80,25 @@ int RemoteClient::GetNextBlocks (
 	if (sao == NULL)
 		return 0;
 
-/*
-	// Won't send anything if already sending
-	if(m_blocks_sending.size() >= g_settings->getU16
-			("max_simultaneous_block_sends_per_client"))
-	{
-		//infostream<<"Not sending any blocks, Queue full."<<std::endl;
-		return;
-	}
-*/
+	/*
+		// Won't send anything if already sending
+		if(m_blocks_sending.size() >= g_settings->getU16
+				("max_simultaneous_block_sends_per_client"))
+		{
+			//infostream<<"Not sending any blocks, Queue full."<<std::endl;
+			return;
+		}
+	*/
 
 	v3f playerpos = sao->getBasePosition();
 	v3f playerspeed = player->getSpeed();
-	if(playerspeed.getLength() > 1000.0*BS) //cheater or bug, ignore him
+	if (playerspeed.getLength() > 1000.0 * BS) // cheater or bug, ignore him
 		return 0;
-	v3f playerspeeddir(0,0,0);
-	if(playerspeed.getLength() > 1.0*BS)
+	v3f playerspeeddir(0, 0, 0);
+	if (playerspeed.getLength() > 1.0 * BS)
 		playerspeeddir = playerspeed / playerspeed.getLength();
 	// Predict to next block
-	v3f playerpos_predicted = playerpos + playerspeeddir*MAP_BLOCKSIZE*BS;
+	v3f playerpos_predicted = playerpos + playerspeeddir * MAP_BLOCKSIZE * BS;
 
 	v3s16 center_nodepos = floatToInt(playerpos_predicted, BS);
 
@@ -110,23 +106,23 @@ int RemoteClient::GetNextBlocks (
 
 	// Camera position and direction
 	v3f camera_pos = sao->getEyePosition();
-	v3f camera_dir = v3f(0,0,1);
+	v3f camera_dir = v3f(0, 0, 1);
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);
 
-	//infostream<<"camera_dir=("<<camera_dir<<")"<< " camera_pos="<<camera_pos<<std::endl;
+	// infostream<<"camera_dir=("<<camera_dir<<")"<< "
+	// camera_pos="<<camera_pos<<std::endl;
 
 	/*
 		Get the starting value of the block finder radius.
 	*/
 
-	if(m_last_center != center)
-	{
+	if (m_last_center != center) {
 		m_last_center = center;
 		m_nearest_unsent_reset_timer = 999;
 	}
 
-	if (m_last_direction.getDistanceFrom(camera_dir)>0.4) { // 1 = 90deg
+	if (m_last_direction.getDistanceFrom(camera_dir) > 0.4) { // 1 = 90deg
 		m_last_direction = camera_dir;
 		m_nearest_unsent_reset_timer = 999;
 	}
@@ -135,21 +131,20 @@ int RemoteClient::GetNextBlocks (
 			<<m_nearest_unsent_reset_timer<<std::endl;*/
 
 	// Reset periodically to workaround for some bugs or stuff
-	if(m_nearest_unsent_reset_timer > 120.0)
-	{
+	if (m_nearest_unsent_reset_timer > 120.0) {
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
 		m_nearest_unsent_reset = 0;
-		//infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
+		// infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
 
-	//s16 last_nearest_unsent_d = m_nearest_unsent_d;
+	// s16 last_nearest_unsent_d = m_nearest_unsent_d;
 	s16 d_start = m_nearest_unsent_d;
 
-	//infostream<<"d_start="<<d_start<<std::endl;
+	// infostream<<"d_start="<<d_start<<std::endl;
 
-	thread_local static const u16 max_simul_sends_setting = g_settings->getU16
-			("max_simultaneous_block_sends_per_client");
+	thread_local static const u16 max_simul_sends_setting =
+			g_settings->getU16("max_simultaneous_block_sends_per_client");
 	thread_local static const u16 max_simul_sends_usually = max_simul_sends_setting;
 
 	/*
@@ -157,19 +152,20 @@ int RemoteClient::GetNextBlocks (
 
 		Decrease send rate if player is building stuff.
 	*/
-	thread_local static const auto full_block_send_enable_min_time_from_building = g_settings->getFloat("full_block_send_enable_min_time_from_building");
-	if(m_time_from_building < full_block_send_enable_min_time_from_building)
-	{
+	thread_local static const auto full_block_send_enable_min_time_from_building =
+			g_settings->getFloat("full_block_send_enable_min_time_from_building");
+	if (m_time_from_building < full_block_send_enable_min_time_from_building) {
 		/*
 		max_simul_sends_usually
 			= LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS;
 		*/
-		if(d_start<=1)
-			d_start=2;
+		if (d_start <= 1)
+			d_start = 2;
 		++m_nearest_unsent_reset_want;
 	} else if (m_nearest_unsent_reset_want) {
 		m_nearest_unsent_reset_want = 0;
-		m_nearest_unsent_reset_timer = 999; //magical number more than ^ other number 120 - need to reset d on next iteration
+		m_nearest_unsent_reset_timer = 999; // magical number more than ^ other number 120
+											// - need to reset d on next iteration
 	}
 
 	/*
@@ -194,10 +190,11 @@ int RemoteClient::GetNextBlocks (
 	/*
 	if (wanted_range <= 0) wanted_range = 140;
 	*/
-	if (camera_fov <= 0) camera_fov = ((fov+5)*M_PI/180) * 4./3.;
+	if (camera_fov <= 0)
+		camera_fov = ((fov + 5) * M_PI / 180) * 4. / 3.;
 
-
- 	thread_local static const auto max_block_send_distance = g_settings->getS16("max_block_send_distance");
+	thread_local static const auto max_block_send_distance =
+			g_settings->getS16("max_block_send_distance");
 	s16 full_d_max = max_block_send_distance;
 	if (wanted_range) {
 		s16 wanted_blocks = wanted_range /* / MAP_BLOCKSIZE */ + 1;
@@ -205,38 +202,41 @@ int RemoteClient::GetNextBlocks (
 			full_d_max = wanted_blocks;
 	}
 
-
-/*
-	const s16 full_d_max = MYMIN(g_settings->getS16("max_block_send_distance"), wanted_range);
-	const s16 d_opt = MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
-*/
+	/*
+		const s16 full_d_max = MYMIN(g_settings->getS16("max_block_send_distance"),
+	   wanted_range); const s16 d_opt =
+	   MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
+	*/
 
 	const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
-	//infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max << std::endl;
+	// infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max <<
+	// std::endl;
 
 	s16 d_max = full_d_max;
-	thread_local static const s16 d_max_gen_s = g_settings->getS16("max_block_generate_distance");
+	thread_local static const s16 d_max_gen_s =
+			g_settings->getS16("max_block_generate_distance");
 	s16 d_max_gen = MYMIN(d_max_gen_s, wanted_range);
 
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 10;
-	if(d_max > d_start + max_d_increment_at_time)
+	if (d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
 	/*if(d_max_gen > d_start+2)
 		d_max_gen = d_start+2;*/
 
-	//infostream<<"Starting from "<<d_start<<std::endl;
+	// infostream<<"Starting from "<<d_start<<std::endl;
 
 	s32 nearest_emerged_d = -1;
 	s32 nearest_emergefull_d = -1;
 	s32 nearest_sent_d = -1;
-	//bool queue_is_full = false;
+	// bool queue_is_full = false;
 
-	f32 speed_in_blocks = (playerspeed/(MAP_BLOCKSIZE*BS)).getLength();
+	f32 speed_in_blocks = (playerspeed / (MAP_BLOCKSIZE * BS)).getLength();
 
 	int num_blocks_air = 0;
 	int blocks_occlusion_culled = 0;
-	thread_local static const bool server_occlusion = g_settings->getBool("server_occlusion");
+	thread_local static const bool server_occlusion =
+			g_settings->getBool("server_occlusion");
 	bool occlusion_culling_enabled = server_occlusion;
 
 	auto cam_pos_nodes = floatToInt(playerpos, BS);
@@ -250,55 +250,64 @@ int RemoteClient::GetNextBlocks (
 		n = env->getMap().getNodeTry(cam_pos_nodes);
 	}
 
-	if(n && nodemgr->get(n).solidness == 2)
+	if (n && nodemgr->get(n).solidness == 2)
 		occlusion_culling_enabled = false;
 
 	unordered_map_v3POS<bool> occlude_cache;
 
 	s16 d;
-	for(d = d_start; d <= d_max; d++) {
+	for (d = d_start; d <= d_max; d++) {
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
-		//infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<" d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
+		// infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<"
+		// d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
 
 		std::vector<v3POS> list;
-		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want && m_nearest_unsent_reset_timer != 999) { // oops, again magic number from up ^
-			list.emplace_back(0,0,0);
+		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want &&
+				m_nearest_unsent_reset_timer !=
+						999) { // oops, again magic number from up ^
+			list.emplace_back(0, 0, 0);
 		}
 
 		bool can_skip = d > 1;
 		// Fast fall/move optimize. speed_in_blocks now limited to 6.4
-		if (speed_in_blocks>0.8 && d <= 2) {
+		if (speed_in_blocks > 0.8 && d <= 2) {
 			can_skip = false;
 			if (d == 0) {
-				for(s16 addn = 0; addn < (speed_in_blocks+1)*2; ++addn)
-					list.push_back(floatToInt(playerspeeddir*addn, 1));
+				for (s16 addn = 0; addn < (speed_in_blocks + 1) * 2; ++addn)
+					list.push_back(floatToInt(playerspeeddir * addn, 1));
 			} else if (d == 1) {
-				for(s16 addn = 0; addn < (speed_in_blocks+1)*1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 0,  0,  1)); // back
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0,  0)); // left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0,  0)); // right
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 0,  0, -1)); // front
+				for (s16 addn = 0; addn < (speed_in_blocks + 1) * 1.5; ++addn) {
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(0, 0, 1)); // back
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(-1, 0, 0)); // left
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(1, 0, 0)); // right
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(0, 0, -1)); // front
 				}
 			} else if (d == 2) {
-				for(s16 addn = 0; addn < (speed_in_blocks+1)*1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0,  1)); // back left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0,  1)); // left right
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( -1, 0, -1)); // right left
-					list.push_back(floatToInt(playerspeeddir*addn, 1) + v3POS( 1,  0, -1)); // front right
+				for (s16 addn = 0; addn < (speed_in_blocks + 1) * 1.5; ++addn) {
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(-1, 0, 1)); // back left
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(1, 0, 1)); // left right
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(-1, 0, -1)); // right left
+					list.push_back(floatToInt(playerspeeddir * addn, 1) +
+								   v3POS(1, 0, -1)); // front right
 				}
 			}
 		} else {
-		/*
-			Get the border/face dot coordinates of a "d-radiused"
-			box
-		*/
+			/*
+				Get the border/face dot coordinates of a "d-radiused"
+				box
+			*/
 			list = FacePositionCache::getFacePositions(d);
 		}
 
-
-		for(auto li=list.begin(); li!=list.end(); ++li)
-		{
+		for (auto li = list.begin(); li != list.end(); ++li) {
 			v3POS p = *li + center;
 
 			/*
@@ -313,12 +322,12 @@ int RemoteClient::GetNextBlocks (
 			u16 max_simul_dynamic = max_simul_sends_usually;
 
 			// If block is very close, allow full maximum
-			if(d <= BLOCK_SEND_DISABLE_LIMITS_MAX_D)
+			if (d <= BLOCK_SEND_DISABLE_LIMITS_MAX_D)
 				max_simul_dynamic = max_simul_sends_setting;
 
 			// Don't select too many blocks for sending
 			if (num_blocks_selected + num_blocks_sending >= max_simul_dynamic) {
-				//queue_is_full = true;
+				// queue_is_full = true;
 				goto queue_full_break;
 			}
 
@@ -332,7 +341,7 @@ int RemoteClient::GetNextBlocks (
 			// If this is true, inexistent block will be made from scratch
 			bool generate = d <= d_max_gen;
 
-			//infostream<<"d="<<d<<std::endl;
+			// infostream<<"d="<<d<<std::endl;
 
 			/*
 				Don't generate or send if not in sight
@@ -340,9 +349,9 @@ int RemoteClient::GetNextBlocks (
 				FOV setting. The default of 72 degrees is fine.
 			*/
 
-			if(can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov, d_blocks_in_sight) == false)
-			{
-				//DUMP(p, can_skip, "nosight");
+			if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
+									d_blocks_in_sight) == false) {
+				// DUMP(p, can_skip, "nosight");
 				continue;
 			}
 
@@ -352,11 +361,15 @@ int RemoteClient::GetNextBlocks (
 			unsigned int block_sent = 0;
 			{
 				auto lock = m_blocks_sent.lock_shared_rec();
-				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end() ? m_blocks_sent.get(p) : 0;
+				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end()
+									 ? m_blocks_sent.get(p)
+									 : 0;
 			}
 
-			if(block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d*d*d) > m_uptime)) {
-				//DUMP(p, block_sent, d, "ddd");
+			if (block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent +
+												  (d <= 2 ? 1 : d * d * d) >
+										  m_uptime)) {
+				// DUMP(p, block_sent, d, "ddd");
 				continue;
 			}
 
@@ -367,7 +380,7 @@ int RemoteClient::GetNextBlocks (
 			MapBlock *block;
 			{
 #if !ENABLE_THREADS
-			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+				auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
 #endif
 				auto lock = env->getMap().m_blocks.try_lock_shared_rec();
 				if (!lock->owns_lock())
@@ -376,78 +389,86 @@ int RemoteClient::GetNextBlocks (
 				block = env->getMap().getBlockNoCreateNoEx(p);
 			}
 
-			//bool surely_not_found_on_disk = false;
-			//bool block_is_invalid = false;
-			if(block)
-			{
+			// bool surely_not_found_on_disk = false;
+			// bool block_is_invalid = false;
+			if (block) {
 
 				/*if (d > 3 && block->content_only == CONTENT_AIR) {
 					continue;
 				}*/
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
-					//DUMP(p, block_sent, block->m_changed_timestamp, block->getDiskTimestamp(), block->getActualTimestamp(), "ch");
+					// DUMP(p, block_sent, block->m_changed_timestamp,
+					// block->getDiskTimestamp(), block->getActualTimestamp(), "ch");
 					continue;
 				}
 
-		if (occlusion_culling_enabled) {
-			ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
-			//Occlusion culling
-			auto cpn = p*MAP_BLOCKSIZE;
+				if (occlusion_culling_enabled) {
+					ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
+					// Occlusion culling
+					auto cpn = p * MAP_BLOCKSIZE;
 
-			// No occlusion culling when free_move is on and camera is
-			// inside ground
-			cpn += v3POS(MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2, MAP_BLOCKSIZE/2);
+					// No occlusion culling when free_move is on and camera is
+					// inside ground
+					cpn += v3POS(MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
 
-			float step = 1;
-			float stepfac = 1.3;
-			float startoff = 5;
-			float endoff = -MAP_BLOCKSIZE;
-			v3POS spn = cam_pos_nodes + v3POS(0,0,0);
-			s16 bs2 = MAP_BLOCKSIZE/2 + 1;
-			u32 needed_count = 1;
+					float step = 1;
+					float stepfac = 1.3;
+					float startoff = 5;
+					float endoff = -MAP_BLOCKSIZE;
+					v3POS spn = cam_pos_nodes + v3POS(0, 0, 0);
+					s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
+					u32 needed_count = 1;
 #if !ENABLE_THREADS
-			auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
+					auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
 #endif
-			//VERY BAD COPYPASTE FROM clientmap.cpp!
-			if( can_skip &&
-				occlusion_culling_enabled &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(0,0,0),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,-bs2,bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-				isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2,-bs2,-bs2),
-					step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)
-			)
-			{
-				//infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<" block="<<cpn<<" total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
-				g_profiler->add("SMap: Occlusion skip", 1);
-				blocks_occlusion_culled++;
-				continue;
-			}
-		}
+					// VERY BAD COPYPASTE FROM clientmap.cpp!
+					if (can_skip && occlusion_culling_enabled &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(0, 0, 0), step,
+									stepfac, startoff, endoff, needed_count, nodemgr,
+									occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(bs2, bs2, bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(bs2, bs2, -bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(bs2, -bs2, bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(bs2, -bs2, -bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2, bs2, bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2, bs2, -bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2, -bs2, bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn, cpn + v3POS(-bs2, -bs2, -bs2),
+									step, stepfac, startoff, endoff, needed_count,
+									nodemgr, occlude_cache)) {
+						// infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<"
+						// block="<<cpn<<"
+						// total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
+						g_profiler->add("SMap: Occlusion skip", 1);
+						blocks_occlusion_culled++;
+						continue;
+					}
+				}
 
 				// Reset usage timer, this block will be of use in the future.
 				block->resetUsageTimer();
 
 				const auto complete = block->getLightingComplete();
 				if (block->getLightingExpired()) {
-					//env->getServerMap().lighting_modified_blocks.set(p, nullptr);
+					// env->getServerMap().lighting_modified_blocks.set(p, nullptr);
 					if (complete) // complete = 0 means lighting calc in progress
 						env->getServerMap().lighting_modified_add(p, d);
-					if (!complete){
+					if (!complete) {
 						continue;
 					}
 
@@ -456,20 +477,19 @@ int RemoteClient::GetNextBlocks (
 					}
 				}
 
-				//if (block->lighting_broken > 0 && (block_sent || can_skip))
+				// if (block->lighting_broken > 0 && (block_sent || can_skip))
 				//	continue;
 
 				// Block is valid if lighting is up-to-date and data exists
-/*
-				if(block->is isValid() == false)
-				{
-					block_is_invalid = true;
-				}
-*/
+				/*
+								if(block->is isValid() == false)
+								{
+									block_is_invalid = true;
+								}
+				*/
 
-				if(block->isGenerated() == false)
-				{
-					//DUMP(p, block->isGenerated());
+				if (block->isGenerated() == false) {
+					// DUMP(p, block->isGenerated());
 					continue;
 				}
 
@@ -480,13 +500,13 @@ int RemoteClient::GetNextBlocks (
 					Block is near ground level if night-time mesh
 					differs from day-time mesh.
 				*/
-/*
-				if(d >= d_opt)
-				{
-					if(block->getDayNightDiff() == false)
-						continue;
-				}
-*/
+				/*
+								if(d >= d_opt)
+								{
+									if(block->getDayNightDiff() == false)
+										continue;
+								}
+				*/
 			}
 
 			/*
@@ -504,30 +524,31 @@ int RemoteClient::GetNextBlocks (
 			/*
 				Add inexistent block to emerge queue.
 			*/
-			if(!block /*|| surely_not_found_on_disk || block_is_invalid*/)
-			{
-				//infostream<<"start gen d="<<d<<" p="<<p<<" notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<" block="<<block<<" generate="<<generate<<std::endl;
+			if (!block /*|| surely_not_found_on_disk || block_is_invalid*/) {
+				// infostream<<"start gen d="<<d<<" p="<<p<<"
+				// notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<"
+				// block="<<block<<" generate="<<generate<<std::endl;
 				if (generate || !env->getServerMap().m_db_miss.count(p)) {
 
-				if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
-					if (nearest_emerged_d == -1)
-						nearest_emerged_d = d;
+					if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
+						if (nearest_emerged_d == -1)
+							nearest_emerged_d = d;
+					} else {
+						if (nearest_emergefull_d == -1)
+							nearest_emergefull_d = d;
+						goto queue_full_break;
+					}
 				} else {
-					if (nearest_emergefull_d == -1)
-						nearest_emergefull_d = d;
-					goto queue_full_break;
-				}
-				} else {
-					//infostream << "skip tryload " << p << "\n";
+					// infostream << "skip tryload " << p << "\n";
 				}
 
-				//DUMP(p, nearest_emerged_d,nearest_emergefull_d, "go generate");
+				// DUMP(p, nearest_emerged_d,nearest_emergefull_d, "go generate");
 
 				// get next one.
 				continue;
 			}
 
-			if(nearest_sent_d == -1)
+			if (nearest_sent_d == -1)
 				nearest_sent_d = d;
 
 			/*
@@ -541,41 +562,44 @@ int RemoteClient::GetNextBlocks (
 			if (block->content_only == CONTENT_AIR)
 				++num_blocks_air;
 			else
-			num_blocks_selected += 1;
+				num_blocks_selected += 1;
 		}
 	}
 queue_full_break:
 
-	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending << " air="<<num_blocks_air<< " culled=" << blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
+	// infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<"
+	// nearest_emerged_d="<<nearest_emerged_d<<"
+	// nearest_emergefull_d="<<nearest_emergefull_d<< "
+	// new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<<
+	// "+"<<num_blocks_sending << " air="<<num_blocks_air<< " culled=" <<
+	// blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
 	num_blocks_selected += num_blocks_sending;
-	if(!num_blocks_selected && !num_blocks_air && d_start <= d) {
-		//new_nearest_unsent_d = 0;
+	if (!num_blocks_selected && !num_blocks_air && d_start <= d) {
+		// new_nearest_unsent_d = 0;
 		m_nothing_to_send_pause_timer = 1.0;
 	}
-		
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
-	if(nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d){
+	if (nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d) {
 		new_nearest_unsent_d = nearest_emerged_d;
-	} else if(nearest_emergefull_d != -1){
+	} else if (nearest_emergefull_d != -1) {
 		new_nearest_unsent_d = nearest_emergefull_d;
 	} else {
-		if(d > full_d_max){
+		if (d > full_d_max) {
 			new_nearest_unsent_d = 0;
 			m_nothing_to_send_pause_timer = 10.0;
 		} else {
-			if(nearest_sent_d != -1)
+			if (nearest_sent_d != -1)
 				new_nearest_unsent_d = nearest_sent_d;
 			else
 				new_nearest_unsent_d = d;
 		}
 	}
 
-	if(new_nearest_unsent_d != -1) {
+	if (new_nearest_unsent_d != -1) {
 		m_nearest_unsent_d = new_nearest_unsent_d;
 	}
 
 	return num_blocks_selected - num_blocks_sending;
 }
-

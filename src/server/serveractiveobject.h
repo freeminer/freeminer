@@ -22,6 +22,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
+
 #include <unordered_set>
 #include "irrlichttypes_bloated.h"
 #include "activeobject.h"
