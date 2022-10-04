@@ -23,11 +23,6 @@ set(VERSION_PATCH 1)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 set(VERSION_TWEAK 0) # freeminer
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	set(BUILD_TYPE_DEBUG 1 CACHE BOOL "")
-else()
-	set(BUILD_TYPE_DEBUG 0 CACHE BOOL "")
-endif()
 
 # Change to false for releases
 set(DEVELOPMENT_BUILD FALSE)
@@ -77,7 +72,7 @@ if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	find_library (LIBCXX_LIBRARY c++)      
 	find_library (LIBCXXABI_LIBRARY c++abi)
 	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
-        set(ENABLE_LEVELDB 0) # TODO: build via submodule
+        set(ENABLE_LEVELDB 0 CACHE BOOL "") # TODO: build via submodule
         add_link_options(-stdlib=libc++)
         add_compile_options(-stdlib=libc++)
 		message(STATUS "Using libc++ and lld linker")
@@ -93,13 +88,11 @@ set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
 set(BUILD_BENCHMARKS FALSE CACHE BOOL "Build benchmarks")
 
 set(WARN_ALL TRUE CACHE BOOL "Enable -Wall for Release build")
-set(DEBUG ${BUILD_TYPE_DEBUG} CACHE BOOL "Build with debug symbols and without optimization")
-if(DEBUG)
-	set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type: Debug or Release" FORCE)
-else()
-	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type: Debug or Release" FORCE)
+if(NOT CMAKE_BUILD_TYPE)
+	# Default to release
+	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type: Debug or Release" FORCE)
 endif()
-MARK_AS_ADVANCED(CMAKE_BUILD_TYPE)
+
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL

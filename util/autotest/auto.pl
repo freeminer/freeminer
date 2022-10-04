@@ -342,7 +342,7 @@ our $commands = {
 
         $D{ENABLE_LUAJIT}      = 0                            if $config->{cmake_debug} and !$config->{keep_luajit};
         $D{ENABLE_LUAJIT}      = $config->{cmake_luajit}      if defined $config->{cmake_luajit};
-        $D{DEBUG}              = 1                            if $config->{cmake_debug};
+        $D{CMAKE_BUILD_TYPE}   = 'Debug'                      if $config->{cmake_debug};
         $D{MINETEST_PROTO}     = $config->{cmake_minetest}    if defined $config->{cmake_minetest};
         $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}     if defined $config->{cmake_leveldb};
         $D{ENABLE_SCTP}        = $config->{cmake_sctp}        if defined $config->{cmake_sctp};
