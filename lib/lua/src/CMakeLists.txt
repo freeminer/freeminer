@@ -5,6 +5,8 @@ set(LUA_CORE_SRC
 	lauxlib.c
 	lbaselib.c
 	lcode.c
+	lcorolib.c
+	lctype.c
 	ldblib.c
 	ldebug.c
 	ldo.c
@@ -28,6 +30,7 @@ set(LUA_CORE_SRC
 	ltablib.c
 	ltm.c
 	lundump.c
+	lutf8lib.c
 	lvm.c
 	lzio.c
 )
