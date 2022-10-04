@@ -223,7 +223,7 @@ static NGConstant *new_ng(SRP_NGType ng_type, const char *n_hex, const char *g_h
 
 typedef union {
 	SHA_CTX sha;
-	SHA256_CTX sha256;
+	mt_SHA256_CTX sha256;
 	// SHA512_CTX sha512;
 } HashCTX;
 
@@ -269,10 +269,10 @@ static int hash_init(SRP_HashAlgorithm alg, HashCTX *c)
 		case SRP_SHA1: return SHA1_Init(&c->sha);
 #endif
 		/*
-		case SRP_SHA224: return SHA224_Init(&c->sha256);
+		case SRP_SHA224: return mt_SHA224_Init(&c->sha256);
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256_Init(&c->sha256);
+		case SRP_SHA256: return mt_SHA256_Init(&c->sha256);
 #endif
 		/*
 		case SRP_SHA384: return SHA384_Init(&c->sha512);
@@ -291,7 +291,7 @@ static int hash_update( SRP_HashAlgorithm alg, HashCTX *c, const void *data, siz
 		case SRP_SHA224: return SHA224_Update(&c->sha256, data, len);
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256_Update(&c->sha256, data, len);
+		case SRP_SHA256: return mt_SHA256_Update(&c->sha256, data, len);
 #endif
 		/*
 		case SRP_SHA384: return SHA384_Update(&c->sha512, data, len);
@@ -310,7 +310,7 @@ static int hash_final( SRP_HashAlgorithm alg, HashCTX *c, unsigned char *md )
 		case SRP_SHA224: return SHA224_Final(md, &c->sha256);
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256_Final(md, &c->sha256);
+		case SRP_SHA256: return mt_SHA256_Final(md, &c->sha256);
 #endif
 		/*
 		case SRP_SHA384: return SHA384_Final(md, &c->sha512);

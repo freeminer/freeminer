@@ -68,16 +68,24 @@ else()
 	set(BUILD_SERVER TRUE CACHE BOOL "Build server")
 endif()
 
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_link_options(-fuse-ld=lld)
+endif()
+
 if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	find_library (LIBCXX_LIBRARY c++)      
 	find_library (LIBCXXABI_LIBRARY c++abi)
 	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
-		set(ENABLE_SYSTEM_JSONCPP 0)
         set(ENABLE_LEVELDB 0) # TODO: build via submodule
-        add_link_options(-fuse-ld=lld -stdlib=libc++)
+        add_link_options(-stdlib=libc++)
         add_compile_options(-stdlib=libc++)
 		message(STATUS "Using libc++ and lld linker")
 	endif()
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR SANITIZE_ADDRESS OR SANITIZE_THREAD OR SANITIZE_MEMORY OR SANITIZE_UNDEFINED)
+		set(ENABLE_SYSTEM_JSONCPP 0 CACHE BOOL "")
 endif()
 
 

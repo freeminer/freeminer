@@ -30,7 +30,7 @@ static void OPENSSL_cleanse(void *ptr, size_t len)
     cleanse_ctr = (unsigned char)ctr;
 }
 
-fips_md_init_ctx(SHA224, SHA256)
+fips_md_init_ctx(mt_SHA224, mt_SHA256)
 {
     memset(c, 0, sizeof(*c));
     c->h[0] = 0xc1059ed8UL;
@@ -45,7 +45,7 @@ fips_md_init_ctx(SHA224, SHA256)
     return 1;
 }
 
-fips_md_init(SHA256)
+fips_md_init(mt_SHA256)
 {
     memset(c, 0, sizeof(*c));
     c->h[0] = 0x6a09e667UL;
@@ -62,46 +62,46 @@ fips_md_init(SHA256)
 
 unsigned char *SHA224(const unsigned char *d, size_t n, unsigned char *md)
 {
-    SHA256_CTX c;
+    mt_SHA256_CTX c;
     static unsigned char m[SHA224_DIGEST_LENGTH];
 
     if (md == NULL)
         md = m;
-    SHA224_Init(&c);
-    SHA256_Update(&c, d, n);
-    SHA256_Final(md, &c);
+    mt_SHA224_Init(&c);
+    mt_SHA256_Update(&c, d, n);
+    mt_SHA256_Final(md, &c);
     OPENSSL_cleanse(&c, sizeof(c));
     return (md);
 }
 
 unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md)
 {
-    SHA256_CTX c;
+    mt_SHA256_CTX c;
     static unsigned char m[SHA256_DIGEST_LENGTH];
 
     if (md == NULL)
         md = m;
-    SHA256_Init(&c);
-    SHA256_Update(&c, d, n);
-    SHA256_Final(md, &c);
+    mt_SHA256_Init(&c);
+    mt_SHA256_Update(&c, d, n);
+    mt_SHA256_Final(md, &c);
     OPENSSL_cleanse(&c, sizeof(c));
     return (md);
 }
 
-int SHA224_Update(SHA256_CTX *c, const void *data, size_t len)
+int mt_SHA224_Update(mt_SHA256_CTX *c, const void *data, size_t len)
 {
-    return SHA256_Update(c, data, len);
+    return mt_SHA256_Update(c, data, len);
 }
 
-int SHA224_Final(unsigned char *md, SHA256_CTX *c)
+int mt_SHA224_Final(unsigned char *md, mt_SHA256_CTX *c)
 {
-    return SHA256_Final(md, c);
+    return mt_SHA256_Final(md, c);
 }
 
 # define DATA_ORDER_IS_BIG_ENDIAN
 
 # define HASH_LONG               SHA_LONG
-# define HASH_CTX                SHA256_CTX
+# define HASH_CTX                mt_SHA256_CTX
 # define HASH_CBLOCK             SHA_CBLOCK
 /*
  * Note that FIPS180-2 discusses "Truncation of the Hash Function Output."
@@ -132,14 +132,14 @@ int SHA224_Final(unsigned char *md, SHA256_CTX *c)
         }                               \
         } while (0)
 
-# define HASH_UPDATE             SHA256_Update
+# define HASH_UPDATE             mt_SHA256_Update
 # define HASH_TRANSFORM          SHA256_Transform
-# define HASH_FINAL              SHA256_Final
+# define HASH_FINAL              mt_SHA256_Final
 # define HASH_BLOCK_DATA_ORDER   sha256_block_data_order
 # ifndef SHA256_ASM
 static
 # endif
-void sha256_block_data_order(SHA256_CTX *ctx, const void *in, size_t num);
+void sha256_block_data_order(mt_SHA256_CTX *ctx, const void *in, size_t num);
 
 # include "md32_common.h"
 
@@ -178,7 +178,7 @@ static const SHA_LONG K256[64] = {
 
 #  ifdef OPENSSL_SMALL_FOOTPRINT
 
-static void sha256_block_data_order(SHA256_CTX *ctx, const void *in,
+static void sha256_block_data_order(mt_SHA256_CTX *ctx, const void *in,
                                     size_t num)
 {
     unsigned MD32_REG_T a, b, c, d, e, f, g, h, s0, s1, T1, T2;
@@ -256,7 +256,7 @@ static void sha256_block_data_order(SHA256_CTX *ctx, const void *in,
         T1 = X[(i)&0x0f] += s0 + s1 + X[(i+9)&0x0f];    \
         ROUND_00_15(i,a,b,c,d,e,f,g,h);         } while (0)
 
-static void sha256_block_data_order(SHA256_CTX *ctx, const void *in,
+static void sha256_block_data_order(mt_SHA256_CTX *ctx, const void *in,
                                     size_t num)
 {
     unsigned MD32_REG_T a, b, c, d, e, f, g, h, s0, s1, T1;

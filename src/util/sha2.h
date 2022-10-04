@@ -128,22 +128,22 @@ typedef struct SHA256state_st
 	SHA_LONG Nl, Nh;
 	SHA_LONG data[SHA_LBLOCK];
 	unsigned int num, md_len;
-} SHA256_CTX;
+} mt_SHA256_CTX;
 
 #ifndef OPENSSL_NO_SHA256
 #ifdef OPENSSL_FIPS
-int private_SHA224_Init(SHA256_CTX *c);
-int private_SHA256_Init(SHA256_CTX *c);
+int private_SHA224_Init(mt_SHA256_CTX *c);
+int private_SHA256_Init(mt_SHA256_CTX *c);
 #endif
-int SHA224_Init(SHA256_CTX *c);
-int SHA224_Update(SHA256_CTX *c, const void *data, size_t len);
-int SHA224_Final(unsigned char *md, SHA256_CTX *c);
+int mt_SHA224_Init(mt_SHA256_CTX *c);
+int mt_SHA224_Update(mt_SHA256_CTX *c, const void *data, size_t len);
+int mt_SHA224_Final(unsigned char *md, mt_SHA256_CTX *c);
 unsigned char *SHA224(const unsigned char *d, size_t n, unsigned char *md);
-int SHA256_Init(SHA256_CTX *c);
-int SHA256_Update(SHA256_CTX *c, const void *data, size_t len);
-int SHA256_Final(unsigned char *md, SHA256_CTX *c);
+int mt_SHA256_Init(mt_SHA256_CTX *c);
+int mt_SHA256_Update(mt_SHA256_CTX *c, const void *data, size_t len);
+int mt_SHA256_Final(unsigned char *md, mt_SHA256_CTX *c);
 unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md);
-void SHA256_Transform(SHA256_CTX *c, const unsigned char *data);
+void SHA256_Transform(mt_SHA256_CTX *c, const unsigned char *data);
 #endif
 
 #define SHA384_DIGEST_LENGTH 48
