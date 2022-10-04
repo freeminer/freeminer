@@ -359,6 +359,7 @@ our $commands = {
         #warn 'D=', Data::Dumper::Dumper \%D;
         my $D = join ' ', map { '-D' . $_ . '=' . ($D{$_} =~ /\s/ ? qq{"$D{$_}"} : $D{$_}) } sort keys %D;
         my $ninja = `ninja --version` ? '-GNinja' : '';
+        unlink("CMakeCache.txt");
         sy qq{cmake .. $ninja $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
@@ -607,6 +608,10 @@ our $tasks = {
     ( map { 'stress_' . $_ => [ { -server_bg => 1, },
          'cgroup', "server_$_", ['sleep', 10], {build_name => '', "-cmake_$_" => 0,}, 'clients',
     ] } qw( tsan asan msan usan gperf debug gdb) ),
+
+    ( map { 'gdb_stress_' . $_ => [ { -server_bg => 1, },
+         'cgroup', "gdb_server_$_", ['sleep', 10], {build_name => '', "-cmake_$_" => 0,}, 'clients',
+    ] } qw( tsan asan msan usan gperf debug) ),
 
     stress_massif => [
         'build_client',

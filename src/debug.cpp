@@ -79,7 +79,7 @@ void fatal_error_fn(const char *msg, const char *file,
 		<< ": A fatal error occurred: " << msg << std::endl;
 
 	errorstream << stacktrace() << std::endl;
-	//throw std::runtime_error{msg};
+	throw std::runtime_error{msg};
 
 #ifndef __ANDROID__
 	abort();
