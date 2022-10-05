@@ -360,7 +360,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			*/
 			unsigned int block_sent = 0;
 			{
-				auto lock = m_blocks_sent.lock_shared_rec();
+				auto lock = m_blocks_sent.lock_unique_rec();
 				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end()
 									 ? m_blocks_sent.get(p)
 									 : 0;

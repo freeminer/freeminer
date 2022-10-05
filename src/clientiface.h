@@ -555,7 +555,7 @@ protected:
 public:
 	RemoteClientVector getClientList() {
 		RemoteClientVector clients;
-		auto lock = m_clients.lock_shared_rec();
+		auto lock = m_clients.lock_unique_rec();
 		for(auto & ir : m_clients) {
 			auto c = ir.second;
 			if (c)

@@ -696,7 +696,7 @@ std::vector<session_t> ClientInterface::getClientIDs(ClientState min_state)
 {
 	std::vector<session_t> reply;
 	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
-	auto clientslock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_unique_rec();
 
 	for (const auto &m_client : m_clients) {
 		if (m_client.second->getState() >= min_state)
@@ -797,7 +797,7 @@ void ClientInterface::send(session_t peer_id, u8 channelnum,
 
 void ClientInterface::sendToAll(NetworkPacket *pkt)
 {
-	auto clientslock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_unique_rec();
 	for (auto &client_it : m_clients) {
 		const auto client = client_it.second;
 		if (client->net_proto_version != 0) {
@@ -844,7 +844,7 @@ RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
 
 RemoteClientPtr ClientInterface::getClient(session_t peer_id, ClientState state_min)
 {
-	auto clientslock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_unique_rec();
 	const auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
@@ -876,7 +876,7 @@ RemoteClient* ClientInterface::lockedGetClientNoEx(session_t peer_id, ClientStat
 
 ClientState ClientInterface::getClientState(session_t peer_id)
 {
-	auto clientslock = m_clients.lock_shared_rec();
+	auto clientslock = m_clients.lock_unique_rec();
 	const auto n = m_clients.find(peer_id);
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.

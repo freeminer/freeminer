@@ -219,10 +219,10 @@ public:
 
 template <class Key, class Compare = std::less<Key>,
 		class Allocator = std::allocator<Key>>
-using concurrent_set = concurrent_set_<shared_locker, Key, Compare, Allocator>;
+using concurrent_set = concurrent_set_<locker<>, Key, Compare, Allocator>;
 
 template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>>
-using concurrent_sharred_set = concurrent_set_<locker<>, Key, Compare, Allocator>;
+using concurrent_shared_set = concurrent_set_<shared_locker, Key, Compare, Allocator>;
 
 #if ENABLE_THREADS
 
