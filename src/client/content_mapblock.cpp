@@ -1574,7 +1574,7 @@ void MapblockMeshGenerator::drawMeshNode()
 void MapblockMeshGenerator::errorUnknownDrawtype()
 {
 	infostream << "Got drawtype " << f->drawtype << std::endl;
-	FATAL_ERROR("Unknown drawtype");
+	FATAL_ERROR(("Unknown drawtype " + std::to_string(f->drawtype)).c_str());
 }
 
 void MapblockMeshGenerator::drawNode()

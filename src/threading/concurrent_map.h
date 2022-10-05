@@ -165,7 +165,10 @@ public:
 
 template <class Key, class T, class Compare = std::less<Key>,
 		class Allocator = std::allocator<std::pair<const Key, T>>>
-using concurrent_map = concurrent_map_<shared_locker, Key, T, Compare, Allocator>;
+using concurrent_map = concurrent_map_<locker<>, Key, T, Compare, Allocator>;
+
+template <class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
+using concurrent_shared_map = concurrent_map_<shared_locker, Key, T, Compare, Allocator>;
 
 #if ENABLE_THREADS
 
