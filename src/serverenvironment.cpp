@@ -1816,8 +1816,13 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 		}
 	}
 
+
+  {
+	std::vector<PlayerSAO*> send_inventory;
+
    {
-	auto lock = m_players.lock_shared_rec();
+	auto lock = m_players.try_lock_shared_rec();
+	if (lock->owns_lock())
 
 	// Send outdated player inventories
 	for (RemotePlayer *player : m_players) {
@@ -1826,9 +1831,14 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 
 		PlayerSAO *sao = player->getPlayerSAO();
 		if (sao && player->inventory.checkModified())
-			m_server->SendInventory(sao, true);
+			send_inventory.emplace_back(sao);
 	}
    }
+   // unlocked m_players
+   for (const auto & sao : send_inventory) {
+		m_server->SendInventory(sao, true);
+   }
+  }
    
 	// Send outdated detached inventories
 	m_server->sendDetachedInventories(PEER_ID_INEXISTENT, true);
