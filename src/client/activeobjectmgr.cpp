@@ -27,13 +27,13 @@ namespace client
 void ActiveObjectMgr::clear()
 {
 	// delete active objects
-/*
+
 	for (auto &active_object : m_active_objects) {
-		delete active_object.second;
+		//delete active_object.second;
 		// Object must be marked as gone when children try to detach
 		active_object.second = nullptr;
 	}
-*/
+
 	m_active_objects.clear();
 }
 
