@@ -1075,7 +1075,7 @@ NodeTimer Map::getNodeTimer(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::getNodeTimer(): Need to emerge "
 				<<PP(blockpos)<<std::endl;
@@ -1096,7 +1096,7 @@ void Map::setNodeTimer(const NodeTimer &t)
 	v3s16 p = t.position;
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
+	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::setNodeTimer(): Need to emerge "
 				<<PP(blockpos)<<std::endl;
@@ -1569,7 +1569,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	for (s16 z = bpmin.Z; z <= bpmax.Z; z++)
 	for (s16 y = bpmin.Y; y <= bpmax.Y; y++) {
 		v3POS p(x, y, z);
-		MapBlock *block = getBlockNoCreateNoEx(p);
+		MapBlock *block = getBlockNoCreateNoEx(p, false,true);
 		if (!block)
 			continue;
 
@@ -1705,7 +1705,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
 {
-	MapBlock *block = getBlockNoCreateNoEx(p3d);
+	MapBlock *block = getBlockNoCreateNoEx(p3d, false, true);
 	if (block == NULL && m_map_loading_enabled)
 		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, false);
 
@@ -2286,7 +2286,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 		{
 			TimeTaker timer2("emerge load");
 
-			block = m_map->getBlockNoCreateNoEx(p);
+			block = m_map->getBlockNoCreateNoEx(p, false, true);
 			if (!block || block->isDummy())
 				block_data_inexistent = true;
 			else

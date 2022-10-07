@@ -135,16 +135,16 @@ public:
 	//void addSpeed(v3f speed);
 //=========
 
-	u16 getBreath() { auto lock = lock_shared_rec(); return m_breath; }
+	u16 getBreath() { auto lock = lock_shared(); return m_breath; }
 	void setBreath(u16 breath) { auto lock = lock_unique_rec(); m_breath = breath; }
 
 	v3s16 getLightPosition() const;
 
 	void setYaw(f32 yaw) { auto lock = lock_unique_rec(); m_yaw = yaw; }
-	f32 getYaw() const { auto lock = lock_shared_rec(); return m_yaw; }
+	f32 getYaw() const { auto lock = lock_shared(); return m_yaw; }
 
 	void setPitch(f32 pitch) { auto lock = lock_unique_rec(); m_pitch = pitch; }
-	f32 getPitch() const { auto lock = lock_shared_rec(); return m_pitch; }
+	f32 getPitch() const { auto lock = lock_shared(); return m_pitch; }
 
 	inline void setPosition(const v3f &position)
 	{
@@ -153,11 +153,11 @@ public:
 		m_sneak_node_exists = false;
 	}
 
-	v3f getPosition() const { auto lock = lock_shared_rec(); return m_position; }
+	v3f getPosition() const { auto lock = lock_shared(); return m_position; }
 
 	// Non-transformed eye offset getters
 	// For accurate positions, use the Camera functions
-	v3f getEyePosition() const { auto lock = lock_shared_rec(); return m_position + getEyeOffset(); }
+	v3f getEyePosition() const { auto lock = lock_shared(); return m_position + getEyeOffset(); }
 	v3f getEyeOffset() const;
 	void setEyeHeight(float eye_height) { m_eye_height = eye_height; }
 

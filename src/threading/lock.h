@@ -15,8 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef THREADING_LOCK_HEADER
-#define THREADING_LOCK_HEADER
+#pragma once
 
 #include <mutex>
 #include <atomic>
@@ -124,7 +123,6 @@ public:
 	std::unique_ptr<shared_lock> try_lock_shared();
 	std::unique_ptr<lock_rec_unique> lock_unique_rec() const;
 	std::unique_ptr<lock_rec_unique> try_lock_unique_rec();
-	//std::unique_ptr<lock_rec_shared> lock_shared_rec();
 	std::unique_ptr<lock_rec_shared> lock_shared_rec() const;
 	std::unique_ptr<lock_rec_shared> try_lock_shared_rec();
 };
@@ -142,14 +140,14 @@ public:
 
 class dummy_locker {
 public:
-	dummy_lock lock_unique() { return dummy_lock(); };
-	dummy_lock try_lock_unique() { return dummy_lock(); };
-	dummy_lock lock_shared() { return dummy_lock(); };
-	dummy_lock try_lock_shared() { return dummy_lock(); };
-	dummy_lock lock_unique_rec() { return dummy_lock(); };
-	dummy_lock try_lock_unique_rec() { return dummy_lock(); };
-	dummy_lock lock_shared_rec() { return dummy_lock(); };
-	dummy_lock try_lock_shared_rec() { return dummy_lock(); };
+	dummy_lock lock_unique() { return {}; };
+	dummy_lock try_lock_unique() { return {}; };
+	dummy_lock lock_shared() { return {}; };
+	dummy_lock try_lock_shared() { return {}; };
+	dummy_lock lock_unique_rec() { return {}; };
+	dummy_lock try_lock_unique_rec() { return {}; };
+	dummy_lock lock_shared_rec() { return {}; };
+	dummy_lock try_lock_shared_rec() { return {}; };
 };
 
 
@@ -162,7 +160,5 @@ using maybe_shared_locker = shared_locker;
 
 using maybe_locker = dummy_locker;
 using maybe_shared_locker = dummy_locker;
-
-#endif
 
 #endif
