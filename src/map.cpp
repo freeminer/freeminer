@@ -993,7 +993,7 @@ std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)
 	for (s16 x = bpmin.X; x <= bpmax.X; x++) {
 		v3s16 blockpos(x, y, z);
 
-		MapBlock *block = getBlockNoCreateNoEx(blockpos);
+		MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 		if (!block) {
 			verbosestream << "Map::getNodeMetadata(): Need to emerge "
 				<< PP(blockpos) << std::endl;
@@ -2342,7 +2342,8 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 	*/
 	for (auto &loaded_block : m_loaded_blocks) {
 		v3s16 p = loaded_block.first;
-		MapBlock *block = m_map->getBlockNoCreateNoEx(p);
+		MapBlock *block = m_map->getBlockNoCreateNoEx(p, false, true);
+
 		bool existed = !(loaded_block.second & VMANIP_BLOCK_DATA_INEXIST);
 		if (!existed || (block == NULL) ||
 			(!overwrite_generated && block->isGenerated()))

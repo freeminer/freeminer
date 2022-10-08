@@ -269,7 +269,7 @@ public:
 	//// Position stuff
 	////
 
-	inline v3s16 getPos()
+	inline v3s16 getPos() const
 	{
 		return m_pos;
 	}

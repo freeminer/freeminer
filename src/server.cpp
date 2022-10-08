@@ -4129,7 +4129,7 @@ v3f Server::findSpawnPos()
 		for (s32 ii = (find > 0) ? 0 : find - 50;
 				ii < find; ii++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
-			if (!map.emergeBlock(blockpos, true))
+			if (!map.emergeBlock(blockpos, false))
 				break;
 			content_t c = map.getNode(nodepos).getContent();
 

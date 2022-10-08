@@ -66,7 +66,7 @@ MapBlock *Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 		auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())
 			return nullptr;
-		auto n = m_blocks.find(p);
+		const auto &n = m_blocks.find(p);
 		if (n == m_blocks.end())
 			return nullptr;
 		block = n->second;
@@ -99,14 +99,16 @@ void Map::getBlockCacheFlush()
 	m_block_cache = nullptr;
 }
 
-MapBlock *Map::createBlankBlockNoInsert(v3POS &p)
+MapBlock *Map::createBlankBlockNoInsert(const v3POS &p)
 {
 	auto block = new MapBlock(this, p, m_gamedef);
 	return block;
 }
 
-MapBlock *Map::createBlankBlock(v3POS &p)
+MapBlock *Map::createBlankBlock(const v3POS &p)
 {
+	m_db_miss.erase(p);
+
 	auto lock = m_blocks.lock_unique_rec();
 	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
 	if (block != NULL) {
@@ -142,7 +144,7 @@ bool Map::insertBlock(MapBlock *block)
 
 MapBlock *ServerMap::createBlock(v3s16 p)
 {
-	if (MapBlock *block = getBlockNoCreateNoEx(p)) {
+	if (MapBlock *block = getBlockNoCreateNoEx(p, false, true)) {
 		return block;
 	}
 	return createBlankBlock(p);
@@ -203,7 +205,7 @@ MapNode Map::getNodeNoLock(v3POS p) //dont use
 }
 */
 
-s16 Map::getHeat(v3POS p, bool no_random)
+s16 Map::getHeat(const v3POS &p, bool no_random)
 {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if (block != NULL) {
@@ -214,7 +216,7 @@ s16 Map::getHeat(v3POS p, bool no_random)
 	return 0;
 }
 
-s16 Map::getHumidity(v3POS p, bool no_random)
+s16 Map::getHumidity(const v3POS &p, bool no_random)
 {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if (block != NULL) {
@@ -226,7 +228,7 @@ s16 Map::getHumidity(v3POS p, bool no_random)
 }
 
 s16 ServerMap::updateBlockHeat(
-		ServerEnvironment *env, v3POS p, MapBlock *block, unordered_map_v3POS<s16> *cache)
+		ServerEnvironment *env, const v3POS &p, MapBlock *block, unordered_map_v3POS<s16> *cache)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
@@ -254,7 +256,7 @@ s16 ServerMap::updateBlockHeat(
 }
 
 s16 ServerMap::updateBlockHumidity(
-		ServerEnvironment *env, v3POS p, MapBlock *block, unordered_map_v3POS<s16> *cache)
+		ServerEnvironment *env, const v3POS &p, MapBlock *block, unordered_map_v3POS<s16> *cache)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
@@ -282,7 +284,7 @@ s16 ServerMap::updateBlockHumidity(
 	return value > 100 ? 100 : value;
 }
 
-int ServerMap::getSurface(v3POS basepos, int searchup, bool walkable_only)
+int ServerMap::getSurface(const v3POS &basepos, int searchup, bool walkable_only)
 {
 
 	s16 max = MYMIN(searchup + basepos.Y, 0x7FFF);
@@ -364,7 +366,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
-		static int block_delete_time = g_settings->getS16("block_delete_time");
+		const thread_local static auto block_delete_time = g_settings->getS16("block_delete_time");
 		m_blocks_delete_time = porting::getTimeMs() + block_delete_time * 1000;
 	}
 
@@ -400,7 +402,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 			++calls;
 
 			auto block = ir.second;
-			if (!block) {
+			if (!block || block->refGet() ||!block->isGenerated()) {
 				continue;
 			}
 
@@ -1067,7 +1069,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 }
 
 bool ServerMap::propagateSunlight(
-		v3POS pos, std::set<v3POS> &light_sources, bool remove_light)
+		const v3POS &pos, std::set<v3POS> &light_sources, bool remove_light)
 {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
@@ -1184,7 +1186,7 @@ bool ServerMap::propagateSunlight(
 }
 //#endif
 
-void ServerMap::lighting_modified_add(v3POS pos, int range)
+void ServerMap::lighting_modified_add(const v3POS &pos, int range)
 {
 	MutexAutoLock lock(m_lighting_modified_mutex);
 	if (m_lighting_modified_blocks.count(pos)) {

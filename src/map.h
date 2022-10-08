@@ -269,16 +269,16 @@ public:
 //freeminer:
 	std::atomic_uint m_liquid_step_flow {0};
 
-	virtual s16 getHeat(v3s16 p, bool no_random = 0);
-	virtual s16 getHumidity(v3s16 p, bool no_random = 0);
+	virtual s16 getHeat(const v3s16 &p, bool no_random = 0);
+	virtual s16 getHumidity(const v3s16& p, bool no_random = 0);
 
 	// from old mapsector:
 	typedef concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
 	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
-	MapBlock *createBlankBlockNoInsert(v3s16 &p);
-	MapBlock *createBlankBlock(v3s16 &p);
+	MapBlock *createBlankBlockNoInsert(const v3s16 &p);
+	MapBlock *createBlankBlock(const v3s16 &p);
 	bool insertBlock(MapBlock *block);
 	void deleteBlock(MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
@@ -349,20 +349,20 @@ class ServerMap : public Map
 {
 public:
 //freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3POS p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3POS &p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3POS & p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
 
 	size_t transforming_liquid_size();
 	v3s16 transforming_liquid_pop();
 	void transforming_liquid_add(const v3s16 &p);
-	size_t transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms);
+	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	//int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-	virtual int getSurface(v3s16 basepos, int searchup, bool walkable_only);
+	virtual int getSurface(const v3s16& basepos, int searchup, bool walkable_only);
 /*
 	{
 		return basepos.Y - 1;
@@ -375,7 +375,7 @@ public:
 	std::mutex m_lighting_modified_mutex;
 	std::map<v3POS, int> m_lighting_modified_blocks;
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
-	void lighting_modified_add(v3POS pos, int range = 5);
+	void lighting_modified_add(const v3POS& pos, int range = 5);
 
 	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
 			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
@@ -388,7 +388,7 @@ public:
 	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
 
 	bool propagateSunlight(
-			v3POS pos, std::set<v3POS> &light_sources, bool remove_light = false);
+			const v3POS& pos, std::set<v3POS> &light_sources, bool remove_light = false);
 
 //end of freeminer
 

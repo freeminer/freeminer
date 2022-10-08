@@ -143,13 +143,13 @@ public:
 
 	v3f getSpeed() //const
 	{
-		auto lock = lock_shared_rec();
+		auto lock = lock_shared();
 		return m_speed;
 	}
 
 	void setSpeed(v3f speed)
 	{
-		auto lock = lock_unique_rec();
+		auto lock = lock_unique();
 		m_speed = speed;
 	}
 

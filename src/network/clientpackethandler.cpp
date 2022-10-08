@@ -336,7 +336,10 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 			return;
 		}
 		block->deSerializeNetworkSpecific(istr);
-		sector->insertBlock(block);
+		if (!sector->insertBlock(block)) {
+			delete block;
+			return;
+		}
 	}
 
 	if (m_localdb) {
