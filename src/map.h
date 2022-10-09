@@ -167,8 +167,6 @@ public:
 	void setNode(v3s16 p, MapNode & n);
 
 	// Returns a CONTENT_IGNORE node if not found
-	MapNode getNodeTry(v3s16 p);
-	//MapNode getNodeNoLock(v3s16 p); // dont use
 	// If is_valid_position is not NULL then this will be set to true if the
 	// position is valid, otherwise false
 	MapNode getNode(v3s16 p, bool *is_valid_position = NULL);
@@ -206,7 +204,7 @@ public:
 	// Server implements these.
 	// Client leaves them as no-op.
 	virtual bool saveBlock(MapBlock *block) { return false; }
-	virtual bool deleteBlock(v3s16 blockpos); // { return false; }
+	virtual bool deleteBlock(v3s16 blockpos) { return false; }
 
 	/*
 		Updates usage timers and unloads unused blocks and sectors.
@@ -267,6 +265,9 @@ public:
 
 
 //freeminer:
+	MapNode getNodeTry(const v3s16 & p);
+	//MapNode getNodeNoLock(v3s16 p); // dont use
+
 	std::atomic_uint m_liquid_step_flow {0};
 
 	virtual s16 getHeat(const v3s16 &p, bool no_random = 0);
@@ -280,7 +281,7 @@ public:
 	MapBlock *createBlankBlockNoInsert(const v3s16 &p);
 	MapBlock *createBlankBlock(const v3s16 &p);
 	bool insertBlock(MapBlock *block);
-	void deleteBlock(MapBlockP block);
+	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;

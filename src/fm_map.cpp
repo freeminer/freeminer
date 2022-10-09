@@ -150,16 +150,18 @@ MapBlock *ServerMap::createBlock(v3s16 p)
 	return createBlankBlock(p);
 }
 
-bool Map::deleteBlock(v3s16 blockpos)
+/*
+bool Map::eraseBlock(v3s16 blockpos)
 {
 	auto block = getBlockNoCreateNoEx(blockpos);
 	if (!block)
 		return false;
-	deleteBlock(block);
+	eraseBlock(block);
 	return true;
 }
+*/
 
-void Map::deleteBlock(MapBlockP block)
+void Map::eraseBlock(const MapBlockP block)
 {
 	auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
@@ -170,7 +172,7 @@ void Map::deleteBlock(MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode Map::getNodeTry(v3POS p)
+MapNode Map::getNodeTry(const v3POS & p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
@@ -412,7 +414,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 					continue;
 				}
 				if (block->getUsageTimer() > unload_timeout) { // block->refGet() <= 0 &&
-					v3POS p = block->getPos();
+					const v3POS p = block->getPos();
 					// infostream<<" deleting block p="<<p<<"
 					// ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<"
 					// inc="<<(uptime - block->m_uptime_timer_last)<<"
@@ -467,7 +469,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 		m_blocks_update_last = 0;
 
 	for (auto &block : blocks_delete)
-		this->deleteBlock(block->getPos());
+		eraseBlock(block);
 
 	// Finally delete the empty sectors
 
