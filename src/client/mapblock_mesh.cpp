@@ -536,7 +536,7 @@ struct FastFace
 };
 
 static void makeFastFace(const TileSpec &tile, u16 li0, u16 li1, u16 li2, u16 li3,
-	const v3f &tp, const v3f &p, const v3s16 &dir, const v3f &scale, std::vector<FastFace> &dest)
+	const v3f &tp, const v3f &p, const v3s16 &dir, const v3f &scale, std::vector<FastFace> &dest, int step)
 {
 	// Position is at the center of the cube.
 	v3f pos = p * BS;
@@ -682,6 +682,8 @@ static void makeFastFace(const TileSpec &tile, u16 li0, u16 li1, u16 li2, u16 li
 	if      (scale.X < 0.999f || scale.X > 1.001f) abs_scale = scale.X;
 	else if (scale.Y < 0.999f || scale.Y > 1.001f) abs_scale = scale.Y;
 	else if (scale.Z < 0.999f || scale.Z > 1.001f) abs_scale = scale.Z;
+
+	abs_scale *= step;
 
 	v3f normal(dir.X, dir.Y, dir.Z);
 
@@ -1066,7 +1068,7 @@ static void updateFastFaceRow(
 					scale.Z = continuous_tiles_count;
 
 				makeFastFace(tile, lights[0], lights[1], lights[2], lights[3],
-						pf, sp, face_dir_corrected, scale, dest);
+						pf, sp, face_dir_corrected, scale, dest, step);
 #if !defined(NDEBUG)
 				g_profiler->avg("Meshgen: Tiles per face [#]", continuous_tiles_count);
 #endif
@@ -1416,7 +1418,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 			applyTileColor(p);
 
-    	   if (step <= data->m_client->m_env.getClientMap().getControl().farmesh || !data->m_client->m_env.getClientMap().getControl().farmesh) {
+      	    //if (step <= data->m_client->m_env.getClientMap().getControl().farmesh || !data->m_client->m_env.getClientMap().getControl().farmesh) {
 			// Generate animation data
 			// - Cracks
 			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
@@ -1455,7 +1457,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 				// Replace tile texture with the first animation frame
 				p.layer.texture = (*p.layer.frames)[0].texture;
 			}
-		   }
+
 			if (!m_enable_shaders) {
 				// Extract colors for day-night animation
 				// Dummy sunlight to handle non-sunlit areas
@@ -1525,12 +1527,10 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 		}
 
-		// v3f t = v3f(0,0,0);
 		if (step > 1) {
-			translateMesh(m_mesh[layer], v3f(HBS, HBS, HBS));
+			translateMesh(m_mesh[layer], v3f(HBS, 0, HBS));
 			scaleMesh(m_mesh[layer], v3f(step, step, step));
-			translateMesh(m_mesh[layer], v3f(-HBS, -HBS, -HBS));
-			//m_mesh_offset = v3f( -HBS, -BS*step/2+1.4142135623731*BS, -HBS); //magic number is sqrt(2)
+			translateMesh(m_mesh[layer], v3f(-HBS, -HBS*step + HBS + BS, -HBS));
 		}
 
 		if (m_mesh[layer]) {

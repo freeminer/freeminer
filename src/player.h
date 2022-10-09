@@ -278,7 +278,7 @@ public:
 
     // fm:
 	std::string hotbar_image;
-	int hotbar_image_items;
+	int hotbar_image_items = 0;
 	std::string hotbar_selected_image;
 
 	std::string m_name;

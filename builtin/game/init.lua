@@ -23,7 +23,7 @@ dofile(gamepath .. "deprecated.lua")
 dofile(gamepath .. "misc_s.lua")
 dofile(gamepath .. "misc.lua")
 dofile(gamepath .. "privileges.lua")
-if core.setting_getbool("auth_kv") then
+if core.settings:get_bool("auth_kv") then
 	dofile(gamepath .. "fm_auth.lua")
 else
 dofile(gamepath .. "auth.lua")

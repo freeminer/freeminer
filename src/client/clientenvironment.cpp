@@ -301,9 +301,12 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 		if ((speed_diff.Y < 0 || info.old_speed.Y >= 0)
 			&& speed_diff.getLength() <= lplayer->movement_speed_fast * 1.1)
 			continue;
+/*
 		// Get rid of other components
+		
 		speed_diff.X = 0;
 		speed_diff.Z = 0;
+*/		
 		f32 pre_factor = 1; // 1 hp per node/s
 		f32 tolerance = PLAYER_FALL_TOLERANCE_SPEED; // 5 without damage
 		if (info.type == COLLISION_NODE) {
