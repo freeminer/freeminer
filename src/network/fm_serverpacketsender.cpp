@@ -33,7 +33,7 @@ void Server::SendMovement(u16 peer_id)
 	PACK(TOCLIENT_MOVEMENT_LIQUID_FLUIDITY_SMOOTH, g_settings->getFloat("movement_liquid_fluidity_smooth") * BS);
 	PACK(TOCLIENT_MOVEMENT_LIQUID_SINK, g_settings->getFloat("movement_liquid_sink") * BS);
 	PACK(TOCLIENT_MOVEMENT_GRAVITY, g_settings->getFloat("movement_gravity") * BS);
-	PACK(TOCLIENT_MOVEMENT_FALL_AERODYNAMICS, g_settings->getFloat("movement_fall_aerodynamics"));
+	PACK(TOCLIENT_MOVEMENT_FALL_AERODYNAMICS, g_settings->getFloat("movement_fall_aerodynamics") * BS);
 
 	// Send as reliable
 	m_clients.send(peer_id, 0, buffer, true);

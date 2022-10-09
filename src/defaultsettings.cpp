@@ -276,7 +276,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("movement_speed_walk", "6"); // "4"
 	settings->setDefault("movement_speed_crouch", "2"); // "1.35"
 	settings->setDefault("movement_speed_fast", "20.5"); // "20"
-	settings->setDefault("movement_fall_aerodynamics", "110");
+	//settings->setDefault("movement_fall_aerodynamics", "110");
 
 /*
 	settings->setDefault("animation_default_start", "0");

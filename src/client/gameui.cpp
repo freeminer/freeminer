@@ -162,6 +162,7 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 			<< ") | yaw: " << (wrapDegrees_0_360(cam.camera_yaw)) << "° "
 			<< yawToDirectionString(cam.camera_yaw)
 			<< " | pitch: " << (-wrapDegrees_180(cam.camera_pitch)) << "°"
+		    << " | spd: " << (int)player->getSpeed().getLength()/BS
 			<< " | seed: " << ((u64)client->getMapSeed());
 
 		auto pos_i = floatToInt(player_position, BS);
