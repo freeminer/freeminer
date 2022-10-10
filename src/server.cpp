@@ -1013,7 +1013,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 							constexpr static auto max_seconds_skip = 30;
 							if (aom.skip_by_pos && sao->m_last_sent_pos_upime + max_seconds_skip > uptime) {
 								uint32_t dist = aom.skip_by_pos.value().getDistanceFrom(
-														player->getLastGoodPosition()) /
+														player->getBasePosition()) /
 												BS;
 								// fmtodo: dynamic values depend on loador overload  												
 								constexpr static auto min_nodes_always_send = MAP_BLOCKSIZE * 3;
