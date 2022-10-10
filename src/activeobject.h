@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irr_aabb3d.h"
 #include "irr_v3d.h"
+#include <optional>
 #include <string>
 
 
@@ -50,15 +51,18 @@ enum ActiveObjectType {
 
 struct ActiveObjectMessage
 {
-	ActiveObjectMessage(u16 id_, bool reliable_=true, const std::string &data_ = "") :
+	ActiveObjectMessage(u16 id_, bool reliable_=true, const std::string &data_ = "", std::optional<v3f> skip_by_pos_ = {}) :
 		id(id_),
 		reliable(reliable_),
 		datastring(data_)
+		, skip_by_pos(skip_by_pos_)
 	{}
 
 	u16 id;
 	bool reliable;
 	std::string datastring;
+
+	std::optional<v3f> skip_by_pos; 
 };
 
 enum ActiveObjectCommand {

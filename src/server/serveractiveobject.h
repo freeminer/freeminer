@@ -284,6 +284,7 @@ protected:
 //fm:
 	public:
 	float m_uptime_last = 0;
+	double m_last_sent_pos_upime = 0;
 	protected:
 
 

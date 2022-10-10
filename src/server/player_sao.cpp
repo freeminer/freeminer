@@ -337,7 +337,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 			update_interval
 		);
 		// create message and add to list
-		m_messages_out.emplace(getId(), false, str);
+		m_messages_out.emplace(getId(), false, str, pos);
 	}
 
 	if (!m_physics_override_sent) {

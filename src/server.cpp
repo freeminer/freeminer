@@ -1007,6 +1007,28 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 							if (parent && client->m_known_objects.find(parent->getId()) !=
 									client->m_known_objects.end())
 								continue;
+
+							// Limit position packets for far objects	
+							constexpr static auto max_seconds_skip = 30;
+							if (aom.skip_by_pos && sao->m_last_sent_pos_upime + max_seconds_skip > uptime) {
+								uint32_t dist = aom.skip_by_pos.value().getDistanceFrom(
+														player->getLastGoodPosition()) /
+												BS;
+								// fmtodo: dynamic values depend on loador overload  												
+								constexpr static auto min_nodes_always_send = MAP_BLOCKSIZE * 3;
+								if (dist > min_nodes_always_send) {
+									const auto rnd =
+											myrand() %
+											std::min<uint32_t>(
+													max_seconds_skip /
+															m_env->getSendRecommendedInterval(),
+													dist - min_nodes_always_send);
+									if (rnd != 1) {
+										continue;
+									}
+								}
+							}
+							sao->m_last_sent_pos_upime = getUptime();
 						}
 
 #if MINETEST_PROTO

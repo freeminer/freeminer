@@ -535,8 +535,12 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 		is_movement_end,
 		update_interval
 	);
+	std::optional<v3f> skip;
+	if (!is_movement_end)
+		skip = getBasePosition();
+
 	// create message and add to list
-	m_messages_out.emplace(getId(), false, str);
+	m_messages_out.emplace(getId(), false, str, skip);
 }
 
 bool LuaEntitySAO::getCollisionBox(aabb3f *toset) const
