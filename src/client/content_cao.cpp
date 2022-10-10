@@ -1775,6 +1775,9 @@ void GenericCAO::processMessage(const std::string &data)
 		if(m_prop.physical)
 			m_position += v3f(0,0.002,0);
 
+		if (porting::getTimeMs() > m_position_recd + 1000)
+			do_interpolate = false;
+
 		m_position_recd = porting::getTimeMs();
 
 		if(getParent() != NULL) // Just in case

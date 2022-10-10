@@ -302,6 +302,8 @@ public:
 */
 //fm:
 	u32 getSendingCount() const { return 0; }
+    std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
+
 
 	bool isBlockSent(v3s16 p) const
 	{

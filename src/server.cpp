@@ -1010,28 +1010,33 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 								continue;
 
 							// Limit position packets for far objects
-// /* TODO	
 							constexpr static auto max_seconds_skip = 30;
-							if (aom.skip_by_pos /* &&  sao->m_last_sent_pos_upime && sao->m_last_sent_pos_upime + max_seconds_skip > uptime*/) {
-								uint32_t dist = aom.skip_by_pos.value().getDistanceFrom(
+							auto &[last_time, last_dist] =
+									client->m_objects_last_pos_sent[id];
+						
+							if (aom.skip_by_pos && last_time && last_time + max_seconds_skip > uptime) {
+								int32_t dist = aom.skip_by_pos.value().getDistanceFrom(
 														player->getBasePosition()) /
 												(BS * MAP_BLOCKSIZE);
-								// fmtodo: dynamic values depend on loador overload  												
-								constexpr static auto min_nodes_always_send = /*MAP_BLOCKSIZE * */ 3;
-								if (dist > min_nodes_always_send) {
-                                    const auto rndmax = std::min<uint32_t>(
-													max_seconds_skip /
-															m_env->getSendRecommendedInterval(),
-													dist - min_nodes_always_send);
-									const auto rnd =											myrand() % rndmax;
+								// fmtodo: dynamic values depend on load or overload
+								constexpr static auto min_dist_blocks_always_send = 3;
+								if (dist > min_dist_blocks_always_send) {
+
+									if (dist > client->wanted_range / MAP_BLOCKSIZE && last_dist == dist) {
+										continue;
+									}
+									const auto rndmax = std::min<uint32_t>(
+											max_seconds_skip /
+													m_env->getSendRecommendedInterval(),
+											dist - min_dist_blocks_always_send);
+									const auto rnd = myrand() % rndmax;
 									if (rnd) {
 										continue;
 									}
 								}
+								last_dist = dist;
 							}
-							//sao->m_last_sent_pos_upime = getUptime();
-// */
-
+							last_time = getUptime();
 						}
 
 #if MINETEST_PROTO
