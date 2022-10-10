@@ -1009,7 +1009,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 									client->m_known_objects.end())
 								continue;
 
-							// Limit position packets for far objects	
+							// Limit position packets for far objects
+/* TODO	
 							constexpr static auto max_seconds_skip = 30;
 							if (aom.skip_by_pos && sao->m_last_sent_pos_upime + max_seconds_skip > uptime) {
 								uint32_t dist = aom.skip_by_pos.value().getDistanceFrom(
@@ -1030,6 +1031,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 								}
 							}
 							sao->m_last_sent_pos_upime = getUptime();
+*/
+
 						}
 
 #if MINETEST_PROTO
