@@ -974,6 +974,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 #if MINETEST_PROTO
 			std::string reliable_data, unreliable_data;
 #endif
+			const auto uptime = getUptime();
 			for (const auto &client : clients) {
 #if MINETEST_PROTO
 				reliable_data.clear();
