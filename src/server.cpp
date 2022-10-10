@@ -1010,28 +1010,27 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 								continue;
 
 							// Limit position packets for far objects
-/* TODO	
+// /* TODO	
 							constexpr static auto max_seconds_skip = 30;
-							if (aom.skip_by_pos && sao->m_last_sent_pos_upime + max_seconds_skip > uptime) {
+							if (aom.skip_by_pos /* &&  sao->m_last_sent_pos_upime && sao->m_last_sent_pos_upime + max_seconds_skip > uptime*/) {
 								uint32_t dist = aom.skip_by_pos.value().getDistanceFrom(
 														player->getBasePosition()) /
-												BS;
+												(BS * MAP_BLOCKSIZE);
 								// fmtodo: dynamic values depend on loador overload  												
-								constexpr static auto min_nodes_always_send = MAP_BLOCKSIZE * 3;
+								constexpr static auto min_nodes_always_send = /*MAP_BLOCKSIZE * */ 3;
 								if (dist > min_nodes_always_send) {
-									const auto rnd =
-											myrand() %
-											std::min<uint32_t>(
+                                    const auto rndmax = std::min<uint32_t>(
 													max_seconds_skip /
 															m_env->getSendRecommendedInterval(),
 													dist - min_nodes_always_send);
-									if (rnd != 1) {
+									const auto rnd =											myrand() % rndmax;
+									if (rnd) {
 										continue;
 									}
 								}
 							}
-							sao->m_last_sent_pos_upime = getUptime();
-*/
+							//sao->m_last_sent_pos_upime = getUptime();
+// */
 
 						}
 
