@@ -1470,29 +1470,6 @@ int ModApiEnvMod::l_transforming_liquid_add(lua_State *L)
 	return 1;
 }
 
-// freeminer.get_heat(pos)
-// pos = {x=num, y=num, z=num}
-int ModApiEnvMod::l_get_heat(lua_State *L)
-{
-	GET_ENV_PTR;
-
-	auto pos = read_v3POS(L, 1);
-
-	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos));
-	return 1;
-}
-
-// freeminer.get_humidity(pos)
-// pos = {x=num, y=num, z=num}
-int ModApiEnvMod::l_get_humidity(lua_State *L)
-{
-	GET_ENV_PTR;
-
-	auto pos = read_v3POS(L, 1);
-	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos));
-	return 1;
-}
-
 // forceload_block(blockpos)
 // blockpos = {x=num, y=num, z=num}
 int ModApiEnvMod::l_forceload_block(lua_State *L)
@@ -1594,8 +1571,6 @@ void ModApiEnvMod::Initialize(lua_State *L, int top)
 	API_FCT(line_of_sight);
 	API_FCT(raycast);
 	API_FCT(transforming_liquid_add);
-	API_FCT(get_heat);
-	API_FCT(get_humidity);
 	API_FCT(get_surface);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);

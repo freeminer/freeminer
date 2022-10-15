@@ -193,9 +193,6 @@ private:
 	// transforming_liquid_add(pos)
 	static int l_transforming_liquid_add(lua_State *L);
 
-	static int l_get_heat(lua_State *L);
-	static int l_get_humidity(lua_State *L);
-	
 	// freeminer.get_surface(basepos,yoffset,walkable_only=false)
 	static int l_get_surface(lua_State *L);
 

@@ -533,6 +533,11 @@ int ModApiMapgen::l_get_heat(lua_State *L)
 
 	v3s16 pos = read_v3s16(L, 1);
 
+	// freeminer dynamic:
+	GET_ENV_PTR; 
+	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos));
+	return 1;
+
 	const BiomeGen *biomegen = getServer(L)->getEmergeManager()->getBiomeGen();
 
 	if (!biomegen || biomegen->getType() != BIOMEGEN_ORIGINAL)
@@ -553,6 +558,12 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 
 	v3s16 pos = read_v3s16(L, 1);
+
+	// freeminer dynamic:
+	GET_ENV_PTR; 
+	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos));
+	return 1;
+
 
 	const BiomeGen *biomegen = getServer(L)->getEmergeManager()->getBiomeGen();
 

@@ -176,6 +176,8 @@ our $options = {
         profiler_max_page       => 1,
         profiler_page           => 1,
         debug_log_level         => 'info',
+        movement_speed_fast     => 10000,
+        max_block_send_distance => 100,
     },
     no_exit => {
         autoexit => 0,

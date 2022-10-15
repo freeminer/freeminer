@@ -311,6 +311,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 
 	//variant 2: season change based on default heat map
 	auto heat = NoisePerlin2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
+	// auto heat =calcHeatAtPoint(p);
 
 	if (use_weather) {
 		f32 seasonv = totaltime;
@@ -331,10 +332,11 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 	return heat;
 }
 
-
 s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
 	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
+	// auto humidity = calcHumidityAtPoint(p);
+
 	humidity *= 1.0 - ((float)p.Y / MAX_MAP_GENERATION_LIMIT);
 
 	if (use_weather) {
