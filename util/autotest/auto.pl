@@ -4,7 +4,7 @@
 # sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev
 
 our $help = qq{
-$0 [--this_script_params] [-freeminer_params] [cmd]
+$0 [-config_variables] [--freeminer_params] [---this_script_params] [----presets] [cmds]
 
 #simple task
 $0 valgrind_massif
@@ -25,9 +25,9 @@ $0 play_gdb
 $0 play
 
 #build with latests installed clang and play
-$0 --cmake_clang=1 play
+$0 ---cmake_clang=1 ---cmake_libcxx=1 play
 #build with clang-3.8 and play
-$0 --cmake_clang=-3.8 play
+$0 ---cmake_clang=-3.8 play
 
 # run server with debug in gdb
 $0 server_gdb
@@ -36,45 +36,45 @@ $0 server_gdb
 $0 server_gdb_nd
 
 # with periodic profiler
-$0 stress ---headless ---headless_optimize ---info --clients_num=10 -profiler_print_interval=5
+$0 stress ----headless ----headless_optimize ----info ---clients_num=10 -profiler_print_interval=5
 
-$0 stress_tsan  --clients_autoexit=30 --clients_runs=5 --clients_sleep=25 ---headless
+$0 stress_tsan ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----headless
 
-$0 --cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
+$0 ---cgroup=10g bot_tsannta --address=192.168.0.1 --port=30005
 
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
-$0 --build_name="_touch_asan" --cmake_touchscreen=1 --cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1" -touchscreen=0 play_asan
+$0 ---build_name="_touch_asan" ---cmake_touchscreen=1 ---cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1" -touchscreen=0 play_asan
 
 # sometimes *san + debug doesnt work with leveldb
-$0 --cmake_leveldb=0
+$0 ---cmake_leveldb=0
 #or buid and use custom leveldb
-$0 --cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
+$0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
 
 #if you have installed Intel(R) VTune(TM) Amplifier
-$0 play_vtune --vtune_gui=1
-$0 bot_vtune --autoexit=60 --vtune_gui=1
+$0 play_vtune ---vtune_gui=1
+$0 bot_vtune --autoexit=60 ---vtune_gui=1
 $0 bot_vtune --autoexit=60
 $0 stress_vtune
 
 # google-perftools https://github.com/gperftools/gperftools
-$0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 bot_gperf
-$0 --gperf_heapprofile=1 --gperf_heapcheck=1 --gperf_cpuprofile=1 ---headless ---headless_optimize ---info --clients_num=50 -profiler_print_interval=10 stress_gperf
+$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 bot_gperf
+$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 ----headless ----headless_optimize ----info ---clients_num=50 -profiler_print_interval=10 stress_gperf
 
 # stress test of flowing liquid
-$0 ---world_water
+$0 ----world_water
 
 # stress test of falling sand
-$0 ---world_sand
+$0 ----world_sand
 
-$0 --cmake_minetest=1 --build_name=_minetest ---headless --headless_optimize --address=cool.server.org --port=30001 --clients_num=25 clients
+$0 ---cmake_minetest=1 ---build_name=_minetest ----headless ----headless_optimize --address=cool.server.org --port=30001 ---clients_num=25 clients
 
 # timelapse video
 $0 timelapse
 
 #fly
-$0 ---server_optimize ---far fly
-$0 -farmesh=1 ---mg_math_tglag ---server_optimize ---far -static_spawnpoint=10000,30030,-22700 fly
-$0 --options_bot=fall1 -continuous_forward=1 bot
+$0 ----server_optimize ---far fly
+$0 -farmesh=1 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint=(10000,30030,-22700) fly
+$0 ---options_bot=fall1 -continuous_forward=1 bot
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -155,8 +155,8 @@ sub init_config () {
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
     };
 
-    map { /^--(\w+)(?:=(.*))?/ and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
-    map { /^---(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
+    map { /^---(\w+)(?:=(.*))?/ and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
+    map { /^----(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
 }
 init_config();
 
@@ -178,6 +178,8 @@ our $options = {
         debug_log_level         => 'info',
         movement_speed_fast     => 10000,
         max_block_send_distance => 100,
+        default_privs           => 'interact, shout, teleport, settime, privs, fly, noclip, fast, debug',
+        default_privs_creative  => 'interact, shout, teleport, settime, privs, fly, noclip, fast, debug',
     },
     no_exit => {
         autoexit => 0,
@@ -313,7 +315,8 @@ our $options = {
     bench1 => {fixed_map_seed => 1, -autoexit => 60, max_block_generate_distance => 100, max_block_send_distance => 100,},
 };
 
-map { /^-(\w+)(?:=(.*))/ and $options->{opt}{$1} = $2; } @ARGV;
+map { /^-(\w+)(?:=(.*))?/ and $options->{opt}{$1} = $2; } @ARGV;
+map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
 
 my $child;
 

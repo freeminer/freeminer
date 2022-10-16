@@ -4585,9 +4585,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			a->from_i = m_selected_item->i;
 			m_invmgr->inventoryAction(a);
 		} else if (craft_amount > 0) {
-			if(!s.isValid());
+			if(!s.isValid())
 				return false;
-
 			// if there are no items selected or the selected item
 			// belongs to craftresult list, proceed with crafting
 			if (!m_selected_item ||

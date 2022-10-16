@@ -143,7 +143,7 @@ public:
 	);
 
 	const std::list<std::string> &getPlayerNames() { return m_player_names; }
-	void addPlayerName(const std::string &name) { m_player_names.push_back(name); }
+	void addPlayerName(const std::string &name) { if (std::find(m_player_names.begin(), m_player_names.end(), name) == m_player_names.end() ) m_player_names.push_back(name); }
 	void removePlayerName(const std::string &name) { m_player_names.remove(name); }
 	void updateCameraOffset(const v3s16 &camera_offset)
 	{ m_camera_offset = camera_offset; }
