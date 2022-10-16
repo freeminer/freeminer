@@ -42,6 +42,7 @@ dofile(gamepath .. "statbars.lua")
 dofile(gamepath .. "knockback.lua")
 dofile(gamepath .. "async.lua")
 
+dofile(gamepath.."stat.lua")
 if core.setting_getbool("mod_debugging") then
 	dofile(gamepath.."mod_debugging.lua")
 end

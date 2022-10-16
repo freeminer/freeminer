@@ -62,7 +62,6 @@ public:
 	content_t c_dungeon_alt;
 	content_t c_dungeon_stair;
 
-
 	s16 depth_top;
 	s16 depth_filler;
 	s16 depth_water_top;
