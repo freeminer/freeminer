@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CONNECTION_SCTP_HEADER
 
 #include "irrlichttypes_bloated.h"
+#include "network/peerhandler.h"
 #include "socket.h"
 #include "exceptions.h"
 #include "constants.h"
@@ -47,10 +48,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CHANNEL_COUNT 3
 
+/*
 extern std::ostream *dout_con_ptr;
 extern std::ostream *derr_con_ptr;
 #define dout_con (*dout_con_ptr)
 #define derr_con (*derr_con_ptr)
+*/
 
 struct socket;
 union sctp_sockstore;
@@ -62,6 +65,7 @@ namespace con {
 /*
 	Exceptions
 */
+/*
 class NotFoundException : public BaseException {
 public:
 	NotFoundException(const char *s):
@@ -89,6 +93,7 @@ public:
 		BaseException(s)
 	{}
 };
+*/
 
 /*class ThrottlingException : public BaseException
 {
@@ -98,12 +103,14 @@ public:
 	{}
 };*/
 
+/*
 class InvalidIncomingDataException : public BaseException {
 public:
 	InvalidIncomingDataException(const char *s):
 		BaseException(s)
 	{}
 };
+*/
 
 class InvalidOutgoingDataException : public BaseException {
 public:
@@ -112,6 +119,7 @@ public:
 	{}
 };
 
+/*
 class NoIncomingDataException : public BaseException {
 public:
 	NoIncomingDataException(const char *s):
@@ -125,9 +133,11 @@ public:
 		BaseException(s)
 	{}
 };
+*/
 
 class Connection;
 
+/*
 enum PeerChangeType {
 	PEER_ADDED,
 	PEER_REMOVED
@@ -137,7 +147,8 @@ struct PeerChange {
 	u16 peer_id;
 	bool timeout;
 };
-
+*/
+#if 0
 class PeerHandler {
 public:
 	PeerHandler() {
@@ -156,8 +167,10 @@ public:
 	*/
 	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
 };
+#endif
 
 /*mt compat*/
+/*
 typedef enum rtt_stat_type {
 	MIN_RTT,
 	MAX_RTT,
@@ -166,6 +179,7 @@ typedef enum rtt_stat_type {
 	MAX_JITTER,
 	AVG_JITTER
 } rtt_stat_type;
+*/
 
 enum ConnectionEventType {
 	CONNEVENT_NONE,
@@ -176,6 +190,36 @@ enum ConnectionEventType {
 	CONNEVENT_CONNECT_FAILED,
 };
 
+struct ConnectionEvent;
+typedef std::shared_ptr<ConnectionEvent> ConnectionEventPtr;
+
+// This is very similar to ConnectionCommand
+struct ConnectionEvent
+{
+	const ConnectionEventType type;
+	session_t peer_id = 0;
+	Buffer<u8> data;
+	bool timeout = false;
+	Address address;
+
+	// We don't want to copy "data"
+	DISABLE_CLASS_COPY(ConnectionEvent);
+
+	static ConnectionEventPtr create(ConnectionEventType type);
+	static ConnectionEventPtr dataReceived(session_t peer_id, const Buffer<u8> &data);
+	static ConnectionEventPtr peerAdded(session_t peer_id, Address address);
+	static ConnectionEventPtr peerRemoved(session_t peer_id, bool is_timeout, Address address = {});
+	static ConnectionEventPtr bindFailed();
+	static ConnectionEventPtr connectFailed();
+
+	const char *describe() const;
+
+private:
+	ConnectionEvent(ConnectionEventType type_) :
+		type(type_) {}
+};
+
+/*
 struct ConnectionEvent {
 	enum ConnectionEventType type;
 	u16 peer_id;
@@ -223,8 +267,9 @@ struct ConnectionEvent {
 		type = CONNEVENT_BIND_FAILED;
 	}
 };
+*/
 
-enum ConnectionCommandType {
+enum ConnectionCommandType{
 	CONNCMD_NONE,
 	CONNCMD_SERVE,
 	CONNCMD_CONNECT,
@@ -232,10 +277,42 @@ enum ConnectionCommandType {
 	CONNCMD_DISCONNECT_PEER,
 	CONNCMD_SEND,
 	CONNCMD_SEND_TO_ALL,
-	CONNCMD_DELETE_PEER,
+	CONCMD_ACK,
+	CONCMD_CREATE_PEER
 };
 
-struct ConnectionCommand {
+struct ConnectionCommand;
+typedef std::shared_ptr<ConnectionCommand> ConnectionCommandPtr;
+// This is very similar to ConnectionEvent
+struct ConnectionCommand
+{
+	const ConnectionCommandType type;
+	Address address;
+	session_t peer_id = PEER_ID_INEXISTENT;
+	u8 channelnum = 0;
+	Buffer<u8> data;
+	bool reliable = false;
+	bool raw = false;
+
+	DISABLE_CLASS_COPY(ConnectionCommand);
+
+	static ConnectionCommandPtr serve(Address address);
+	static ConnectionCommandPtr connect(Address address);
+	static ConnectionCommandPtr disconnect();
+	static ConnectionCommandPtr disconnect_peer(session_t peer_id);
+	static ConnectionCommandPtr send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	static ConnectionCommandPtr send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	static ConnectionCommandPtr ack(session_t peer_id, u8 channelnum, const Buffer<u8> &data);
+	static ConnectionCommandPtr createPeer(session_t peer_id, const Buffer<u8> &data);
+
+private:
+	ConnectionCommand(ConnectionCommandType type_) :
+		type(type_) {}
+
+	static ConnectionCommandPtr create(ConnectionCommandType type);
+};
+
+struct ConnectionCommand__ {
 	enum ConnectionCommandType type;
 	Address address;
 	u16 peer_id;
@@ -243,7 +320,7 @@ struct ConnectionCommand {
 	Buffer<u8> data;
 	bool reliable;
 
-	ConnectionCommand(): type(CONNCMD_NONE) {}
+	ConnectionCommand__(): type(CONNCMD_NONE) {}
 
 	void serve(Address address_) {
 		type = CONNCMD_SERVE;
@@ -264,16 +341,20 @@ struct ConnectionCommand {
 		data = data_;
 		reliable = reliable_;
 	}
+	static ConnectionCommandPtr send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+
 	void sendToAll(u8 channelnum_, SharedBuffer<u8> data_, bool reliable_) {
 		type = CONNCMD_SEND_TO_ALL;
 		channelnum = channelnum_;
 		data = data_;
 		reliable = reliable_;
 	}
+/*
 	void deletePeer(u16 peer_id_) {
 		type = CONNCMD_DELETE_PEER;
 		peer_id = peer_id_;
 	}
+*/
 	void disconnect_peer(u16 peer_id_) {
 		type = CONNCMD_DISCONNECT_PEER;
 		peer_id = peer_id_;
@@ -289,28 +370,33 @@ public:
 
 	/* Interface */
 
-	ConnectionEvent getEvent();
-	ConnectionEvent waitEvent(u32 timeout_ms);
-	void putCommand(ConnectionCommand &c);
+	//ConnectionEvent getEvent();
+	ConnectionEventPtr waitEvent(u32 timeout_ms);
+	void putCommand(ConnectionCommandPtr c);
 
 	void Serve(Address bind_addr);
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
 	u32 Receive(NetworkPacket* pkt, int timeout = 1);
+	bool TryReceive(NetworkPacket *pkt);
+
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
-	u16 GetPeerID() { return m_peer_id; }
-	void DeletePeer(u16 peer_id);
-	Address GetPeerAddress(u16 peer_id);
-	float getPeerStat(u16 peer_id, rtt_stat_type type);
-	void DisconnectPeer(u16 peer_id);
+	void Send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void Send(session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
+	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	session_t GetPeerID() { return m_peer_id; }
+	void DeletePeer(session_t peer_id);
+	Address GetPeerAddress(session_t peer_id);
+	float getPeerStat(session_t peer_id, rtt_stat_type type);
+	//float getLocalStat(rate_stat_type type);
+
+	void DisconnectPeer(session_t peer_id);
 	size_t events_size() { return m_event_queue.size(); }
 
 private:
-	void putEvent(ConnectionEvent &e);
-	void processCommand(ConnectionCommand &c);
+	void putEvent(ConnectionEventPtr e);
+	void processCommand(ConnectionCommandPtr c);
 	void send(float dtime);
 	void receive();
 	void runTimeouts(float dtime);
@@ -318,19 +404,20 @@ private:
 	void connect(Address address);
 	void disconnect();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	struct socket * getPeer(u16 peer_id);
-	bool deletePeer(u16 peer_id, bool timeout = 0);
+	void send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	struct socket * getPeer(session_t peer_id);
+	bool deletePeer(session_t peer_id, bool timeout = 0);
 
-	MutexedQueue<ConnectionEvent> m_event_queue;
-	MutexedQueue<ConnectionCommand> m_command_queue;
+	MutexedQueue<ConnectionEventPtr> m_event_queue;
+	MutexedQueue<ConnectionCommandPtr> m_command_queue;
+
 
 	u32 m_protocol_id;
 	u32 m_max_packet_size;
-	float m_timeout;
+	float m_timeout = 0;
 	//struct sctp_udpencaps encaps;
-	struct socket *sock;
-	u16 m_peer_id;
+	struct socket *sock = nullptr;
+	session_t m_peer_id;
 
 	concurrent_map<u16, struct socket *> m_peers;
 	concurrent_unordered_map<u16, Address> m_peers_address;
@@ -349,12 +436,12 @@ private:
 
 	bool sock_listen = false, sock_connect = false, sctp_inited_by_me = false;
 	static bool sctp_inited;
-	int recv(u16 peer_id, struct socket *sock);
-	void sock_setup(u16 peer_id, struct socket *sock);
+	int recv(session_t peer_id, struct socket *sock);
+	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
 	void sctp_setup(u16 port = 9899);
 	std::unordered_map<u16, std::array<std::string, 10>> recv_buf;
 
-	void handle_association_change_event(u16 peer_id, const struct sctp_assoc_change *sac);
+	void handle_association_change_event(session_t peer_id, const struct sctp_assoc_change *sac);
 	/*
 		int sctp_recieve_callback(struct socket *sock, union sctp_sockstore addr, void *data,
 	                                 size_t datalen, struct sctp_rcvinfo, int flags, void *ulp_info);

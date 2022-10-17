@@ -629,7 +629,7 @@ void Server::start()
 #ifndef NDEBUG
 			<< " DEBUG \t"
 #endif
-#if MINETEST_PROTO
+#if MINETEST_PROTO && MINETEST_TRANSPORT
 			<< " MINETEST_PROTO \t"
 #endif
 #if USE_SCTP

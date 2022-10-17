@@ -50,14 +50,14 @@ static TestConnection g_test_instance;
 
 void TestConnection::runTests(IGameDef *gamedef)
 {
-#if MINETEST_PROTO
+#if MINETEST_PROTO && MINETEST_TRANSPORT
 	TEST(testNetworkPacketSerialize);
 	TEST(testHelpers);
 	TEST(testConnectSendReceive);
 #endif
 }
 
-#if MINETEST_PROTO
+#if MINETEST_PROTO && MINETEST_TRANSPORT
 
 ////////////////////////////////////////////////////////////////////////////////
 

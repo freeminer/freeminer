@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "config.h"
-#if MINETEST_PROTO
+#if MINETEST_TRANSPORT
 
 #include "connectionthreads.h"
 #include "log.h"

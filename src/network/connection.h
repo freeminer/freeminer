@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_SCTP
 #include "network/fm_connection_sctp.h"
-#elif !MINETEST_PROTO
+#elif USE_ENET
 #include "network/fm_connection.h"
 #else
 //Not used, keep for reduce MT merge conflicts

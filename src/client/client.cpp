@@ -554,7 +554,7 @@ void Client::step(float dtime)
 	if(counter >= 10) {
 		counter = 0.0;
 		// connectedAndInitialized() is true, peer exists.
-#if MINETEST_PROTO
+#if MINETEST_TRANSPORT
 		float avg_rtt = getRTT();
 		infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
 #endif
@@ -2037,7 +2037,7 @@ void Client::afterContentReceived()
 
 float Client::getRTT()
 {
-#if MINETEST_PROTO
+#if MINETEST_TRANSPORT
 	return m_con->getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
 #else
 	return 0;
@@ -2046,7 +2046,7 @@ float Client::getRTT()
 
 float Client::getCurRate()
 {
-#if MINETEST_PROTO
+#if MINETEST_TRANSPORT
 	return (m_con->getLocalStat(con::CUR_INC_RATE) +
 			m_con->getLocalStat(con::CUR_DL_RATE));
 #else

@@ -134,7 +134,7 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 		if (draw_control->farmesh)
 			os << ", farmesh = " << draw_control->farmesh << ":"
 			   << draw_control->farmesh_step;
-#if MINETEST_PROTO
+#if MINETEST_TRANSPORT
 		os 
 
 			<< " | RTT: " << (client->getRTT() * 1000.0f) << "ms";

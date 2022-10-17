@@ -17,55 +17,76 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log_types.h"
 #include "convert_json.h"
+#include "network/address.h"
 
-std::ostream & operator<<(std::ostream & s, v2POS p) {
+std::ostream &operator<<(std::ostream &s, const v2POS &p)
+{
 	s << "(" << p.X << "," << p.Y << ")";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, v2s32 p) {
+std::ostream &operator<<(std::ostream &s, const v2s32 &p)
+{
 	s << "(" << p.X << "," << p.Y << ")";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, v2f p) {
+std::ostream &operator<<(std::ostream &s, const v2f &p)
+{
 	s << "(" << p.X << "," << p.Y << ")";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, v3POS p) {
+std::ostream &operator<<(std::ostream &s, const v3POS &p)
+{
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, v3f p) {
+std::ostream &operator<<(std::ostream &s, const v3f &p)
+{
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, std::map<v3POS, unsigned int> & p) {
-	for (auto & i: p)
-		s << i.first << "=" << i.second<<" ";
+std::ostream &operator<<(std::ostream &s, const std::map<v3POS, unsigned int> &p)
+{
+	for (auto &i : p)
+		s << i.first << "=" << i.second << " ";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, irr::video::SColor c) {
-	s << "c32(" << c.color << ": a=" << c.getAlpha()<< ",r=" << c.getRed()<< ",g=" << c.getGreen()<< ",b=" << c.getBlue() << ")";
+std::ostream &operator<<(std::ostream &s, const irr::video::SColor &c)
+{
+	s << "c32(" << c.color << ": a=" << c.getAlpha() << ",r=" << c.getRed()
+	  << ",g=" << c.getGreen() << ",b=" << c.getBlue() << ")";
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, irr::video::SColorf c) {
-	s << "cf32(" << "a=" << c.getAlpha()<< ",r=" << c.getRed()<< ",g=" << c.getGreen()<< ",b=" << c.getBlue() << ")";
+std::ostream &operator<<(std::ostream &s, const irr::video::SColorf &c)
+{
+	s << "cf32("
+	  << "a=" << c.getAlpha() << ",r=" << c.getRed() << ",g=" << c.getGreen()
+	  << ",b=" << c.getBlue() << ")";
 	return s;
 }
 
 #include "util/string.h"
-std::ostream & operator<<(std::ostream & s, const std::wstring & w) {
+std::ostream &operator<<(std::ostream &s, const std::wstring &w)
+{
 	s << wide_to_utf8(w);
 	return s;
 }
 
-std::ostream & operator<<(std::ostream & s, Json::Value & json) {
+std::ostream &operator<<(std::ostream &s, const Json::Value &json)
+{
 	s << fastWriteJson(json);
+	return s;
+}
+
+std::ostream &operator<<(std::ostream &s, const Address &addr)
+{
+	addr.print(s);
+	// s << addr.getPort();
 	return s;
 }

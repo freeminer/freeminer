@@ -216,12 +216,12 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("minimap_default_mode", itos(MINIMAP_TYPE_SURFACE));
 #endif
 
-#if !MINETEST_PROTO
+#if !MINETEST_PROTO || !MINETEST_TRANSPORT
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
 #if USE_SCTP
 	settings->setDefault("server_proto", "fm_sctp");
 	settings->setDefault("serverlist_url", "servers2.freeminer.org");
-#else
+#elif USE_ENET
 	settings->setDefault("server_proto", "fm_enet");
 #endif
 #else
@@ -255,13 +255,13 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("save_generated_block", "true");
 	settings->setDefault("block_delete_time", threads && arm ? "60" : threads ? "30" : "10");
 
-#if (ENET_IPV6 || MINETEST_PROTO || USE_SCTP)
+#if (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
 	//settings->setDefault("enable_ipv6", "true");
 #else
 	settings->setDefault("enable_ipv6", "false");
 #endif
 
-#if !USE_IPV4_DEFAULT && (ENET_IPV6 || MINETEST_PROTO || USE_SCTP)
+#if !USE_IPV4_DEFAULT && (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
 	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
 #else
 	//settings->setDefault("ipv6_server", "false");

@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_SCTP
 #include "network/fm_connection_sctp.cpp"
-#elif !MINETEST_PROTO
+#elif USE_ENET
 #include "network/fm_connection.cpp"
 #else
 //Not used, keep for reduce MT merge conflicts
@@ -1246,7 +1246,7 @@ ConnectionEventPtr ConnectionEvent::peerRemoved(session_t peer_id, bool is_timeo
 	auto e = create(CONNEVENT_PEER_REMOVED);
 	e->peer_id = peer_id;
 	e->timeout = is_timeout;
-	e->address = address;
+	//e->address = address;
 	return e;
 }
 

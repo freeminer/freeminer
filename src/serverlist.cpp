@@ -113,13 +113,13 @@ void sendAnnounce(AnnounceAction action,
 	fetch_request.method = HTTP_POST;
 
 	fetch_request.timeout = fetch_request.connect_timeout = 59000;
-#if !MINETEST_PROTO
+#if !MINETEST_PROTO || !MINETEST_TRANSPORT
 	// todo: need to patch masterserver script to parse multipart posts
-	std::string query = std::string("json=") + urlencode(writer.write(server));
+	std::string query = std::string("json=") + urlencode(fastWriteJson(server));
 	if (query.size() < 1000)
 		fetch_request.url += "?" + query;
 	else
-		fetch_request.post_data = query;
+		fetch_request.raw_data = query;
 #else
 	fetch_request.fields["json"] = fastWriteJson(server);
 	fetch_request.multipart = true;
