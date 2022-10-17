@@ -619,7 +619,7 @@ handle_peer_address_change_event(const struct sctp_paddr_change *spc) {
 }
 
 
-std::pair<int, bool> Connection::recv(u16 peer_id, struct socket *sock) {
+std::pair<int, bool> Connection::recv(session_t peer_id, struct socket *sock) {
 
 	if (!sock) {
 		return {0, false};
@@ -715,6 +715,7 @@ std::pair<int, bool> Connection::recv(u16 peer_id, struct socket *sock) {
 			case SCTP_SHUTDOWN_EVENT:
 				cs << "SCTP_SHUTDOWN_EVENT" << std::endl;
 				deletePeer(peer_id,  false);
+				return {n, true};
 				break;
 			case SCTP_ADAPTATION_INDICATION:
 				cs << "SCTP_ADAPTATION_INDICATION" << std::endl;
@@ -797,7 +798,7 @@ std::pair<int, bool> Connection::recv(u16 peer_id, struct socket *sock) {
 	} else {
 
 		// drop peer here
-		cs<<"receive() ... drop " <<__LINE__<< " errno="<<errno << " EINPROGRESS="<<EINPROGRESS << " n=" << n <<std::endl;
+		cs<<"receive() ... drop on" <<__LINE__<< " peer_id="<< peer_id << " sock="<< (long)sock<< " errno="<<errno << " EINPROGRESS="<<EINPROGRESS << " n=" << n <<std::endl;
 		//if (m_peers.count(peer_id)) { //ugly fix. todo: fix enet and remove
 			deletePeer(peer_id,  false);
 		//}
@@ -903,7 +904,7 @@ void Connection::serve(Address bind_addr) {
 void Connection::connect(Address addr) {
 	cs << "connect() " << addr.serializeString() << " :" << addr.getPort() << std::endl;
 
-	sctp_setup(addr.getPort() + myrand_range(1000, 10000));
+	sctp_setup(addr.getPort() + myrand_range(100, 1000));
 
 	m_last_recieved = porting::getTimeMs();
 	auto node = m_peers.find(PEER_ID_SERVER);
