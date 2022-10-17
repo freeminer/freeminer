@@ -228,6 +228,8 @@ const char *ConnectionEvent::describe() const
 		return "CONNEVENT_PEER_REMOVED";
 	case CONNEVENT_BIND_FAILED:
 		return "CONNEVENT_BIND_FAILED";
+	case CONNEVENT_CONNECT_FAILED:
+		return "CONNEVENT_CONNECT_FAILED";
 	}
 	return "Invalid ConnectionEvent";
 }
@@ -320,7 +322,9 @@ void * Connection::run() {
 			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
-		receive();
+		if (receive() <= 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
 
 	return nullptr;
@@ -422,17 +426,17 @@ void Connection::sctp_setup(u16 port) {
 
 
 // Receive packets from the network and buffers and create ConnectionEvents
-void Connection::receive() {
-
+int Connection::receive() {
+	int n = 0;
 	{
 		auto lock = m_peers.lock_unique_rec();
 		for (auto & i : m_peers) {
-			recv(i.first, i.second);
+			 n += recv(i.first, i.second);
 		}
 	}
 
 	if (sock_connect && sock) {
-		recv(PEER_ID_SERVER, sock);
+		n += recv(PEER_ID_SERVER, sock);
 	}
 
 	if (sock_listen && sock) {
@@ -445,10 +449,10 @@ void Connection::receive() {
 		if ((conn_sock = usrsctp_accept(sock, (struct sockaddr *) &remote_addr, &addr_len)) == NULL) {
 			if (errno == EWOULDBLOCK) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				return;
+				return n;
 			} else {
 				cs << "usrsctp_accept failed.  exiting...\n";
-				return;
+				return n;
 			}
 		}
 
@@ -477,7 +481,9 @@ void Connection::receive() {
 		m_peers_address.insert_or_assign(peer_id, sender);
 
 		putEvent(ConnectionEvent::peerAdded(peer_id, sender));
+		++n;
 	}
+	return n;
 }
 
 //static
@@ -790,6 +796,7 @@ int Connection::recv(u16 peer_id, struct socket *sock) {
 			deletePeer(peer_id,  false);
 		//}
 		//break;
+		return 0;
 	}
 
 	return n;

@@ -398,7 +398,7 @@ private:
 	void putEvent(ConnectionEventPtr e);
 	void processCommand(ConnectionCommandPtr c);
 	void send(float dtime);
-	void receive();
+	int receive();
 	void runTimeouts(float dtime);
 	void serve(Address address);
 	void connect(Address address);
