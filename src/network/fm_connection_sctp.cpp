@@ -434,12 +434,15 @@ int Connection::receive() {
 	{
 		auto lock = m_peers.lock_unique_rec();
 		for (const auto & i : m_peers) {
-			 n += recv(i.first, i.second);
+			 const auto [nn, brk] = recv(i.first, i.second);
+			 n += nn;
+			 if (brk) break;
 		}
 	}
 
 	if (sock_connect && sock) {
-		n += recv(PEER_ID_SERVER, sock);
+		const auto [nn, brk] = recv(PEER_ID_SERVER, sock);
+		n += nn;
 	}
 
 	if (sock_listen && sock) {
@@ -616,10 +619,10 @@ handle_peer_address_change_event(const struct sctp_paddr_change *spc) {
 }
 
 
-int Connection::recv(u16 peer_id, struct socket *sock) {
+std::pair<int, bool> Connection::recv(u16 peer_id, struct socket *sock) {
 
 	if (!sock) {
-		return 0;
+		return {0, false};
 	}
 
 	usrsctp_set_non_blocking(sock, 1);
@@ -799,10 +802,10 @@ int Connection::recv(u16 peer_id, struct socket *sock) {
 			deletePeer(peer_id,  false);
 		//}
 		//break;
-		return 0;
+		return {0, true};
 	}
 
-	return n;
+	return {0, false};
 }
 
 

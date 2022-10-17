@@ -436,10 +436,10 @@ private:
 
 	bool sock_listen = false, sock_connect = false, sctp_inited_by_me = false;
 	static bool sctp_inited;
-	int recv(session_t peer_id, struct socket *sock);
+	std::pair<int, bool> recv(session_t peer_id, struct socket *sock);
 	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
 	void sctp_setup(u16 port = 9899);
-	std::unordered_map<u16, std::array<std::string, 10>> recv_buf;
+	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
 
 	void handle_association_change_event(session_t peer_id, const struct sctp_assoc_change *sac);
 	/*
