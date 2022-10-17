@@ -389,7 +389,10 @@ void Connection::sctp_setup(u16 port) {
 	debug_func = debug_printf;
 #endif
 
+	cs << "sctp_setup(" << port << ")" << std::endl;
+
 	usrsctp_init(port, nullptr, debug_func);
+	//usrsctp_init_nothreads(port, nullptr, debug_func);
 
 #if SCTP_DEBUG
 	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
