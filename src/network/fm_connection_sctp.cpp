@@ -433,7 +433,7 @@ int Connection::receive() {
 	int n = 0;
 	{
 		auto lock = m_peers.lock_unique_rec();
-		for (auto & i : m_peers) {
+		for (const auto & i : m_peers) {
 			 n += recv(i.first, i.second);
 		}
 	}
@@ -994,10 +994,9 @@ void Connection::disconnect() {
 }
 
 void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable) {
-	auto lock = m_peers.lock_shared_rec();
-	for (auto i = m_peers.begin();
-	        i != m_peers.end(); ++i)
-		send(i->first, channelnum, data, reliable);
+	auto lock = m_peers.lock_unique_rec();
+	for (const auto & i : m_peers)
+		send(i.first, channelnum, data, reliable);
 }
 
 void Connection::send(session_t peer_id, u8 channelnum,
