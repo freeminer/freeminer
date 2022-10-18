@@ -618,7 +618,7 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(USE_ENET 0)
 	set(MINETEST_TRANSPORT 0)
 
-	message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY}")
+	message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
 else()
 	set(USE_SCTP 0)
 endif()
