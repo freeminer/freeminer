@@ -44,7 +44,9 @@ void *ServerThread::run()
 			}
 			time = time_now;
 
+			/*
 			TimeTaker timer("Server Receive()");
+			*/
 			// Loop used only when 100% cpu load or on old slow hardware.
 			// usually only one packet recieved here
 			auto end_ms = porting::getTimeMs();

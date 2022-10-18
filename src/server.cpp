@@ -1294,7 +1294,9 @@ u16 Server::Receive(int ms)
 		pkt.clear();
 		peer_id = 0;
 		try {
+			/*
     		TimeTaker timer_step("Server recieve one packet");
+			*/
 			/*
 				In the first iteration *wait* for a packet, afterwards process
 				all packets that are immediately available (no waiting).
