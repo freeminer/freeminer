@@ -50,6 +50,10 @@ $0 ---cmake_leveldb=0
 #or buid and use custom leveldb
 $0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
 
+# sctp debug
+VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 ---cmake_add="-DSCTP_DEBUG=1" server_gdb
+VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 --address=localhost --port=60001 ---cmake_add="-DSCTP_DEBUG=1" bot_gdb
+
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 play_vtune ---vtune_gui=1
 $0 bot_vtune --autoexit=60 ---vtune_gui=1

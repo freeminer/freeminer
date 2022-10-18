@@ -1077,6 +1077,7 @@ void Connection::send(session_t peer_id, u8 channelnum,
 		if (errno == EWOULDBLOCK) {
 			cs << "send EWOULDBLOCK len=" << len << std::endl;
 			usrsctp_set_non_blocking(sock, 0);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 			continue;
 		}
