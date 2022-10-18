@@ -133,8 +133,11 @@ debug_printf(const char *format, ...) {
 
 
 //auto & cs = verbosestream; //errorstream; // remove after debug
+#if SCTP_DEBUG
 auto & cs = errorstream; // remove after debug
-
+#else
+auto & cs = verbosestream; // remove after debug
+#endif
 
 
 /*
@@ -395,13 +398,14 @@ void Connection::sctp_setup(u16 port) {
 	//usrsctp_init_nothreads(port, nullptr, debug_func);
 
 #if SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
-	//usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
+	//usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
 	usrsctp_sysctl_set_sctp_logging_level(0xffffffff);
 #endif
 
 	//usrsctp_sysctl_set_sctp_multiple_asconfs(1);
 
+/*
 //#if __ANDROID__
 	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
 	usrsctp_sysctl_set_sctp_mobility_base(1);
@@ -423,6 +427,7 @@ void Connection::sctp_setup(u16 port) {
 //#if !defined(SCTP_WITH_NO_CSUM)
 	usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
 //#endif
+*/
 
 }
 
@@ -835,6 +840,8 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock) {
 		}
 	}
 
+/*
+
 	const int one = 1;
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, &one, sizeof(one)) < 0) {
 		perror("usrsctp_setsockopt SCTP_I_WANT_MAPPED_V4_ADDR");
@@ -849,6 +856,8 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock) {
 			//return NULL;
 			perror("setsockopt SCTP_NODELAY");
 		}
+*/
+
 
 	/*
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REUSE_PORT, &on, sizeof(int)) < 0) {
