@@ -405,7 +405,6 @@ void Connection::sctp_setup(u16 port) {
 
 	//usrsctp_sysctl_set_sctp_multiple_asconfs(1);
 
-/*
 //#if __ANDROID__
 	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
 	usrsctp_sysctl_set_sctp_mobility_base(1);
@@ -427,7 +426,6 @@ void Connection::sctp_setup(u16 port) {
 //#if !defined(SCTP_WITH_NO_CSUM)
 	usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
 //#endif
-*/
 
 }
 
@@ -840,7 +838,6 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock) {
 		}
 	}
 
-/*
 
 	const int one = 1;
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, &one, sizeof(one)) < 0) {
@@ -856,7 +853,6 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock) {
 			//return NULL;
 			perror("setsockopt SCTP_NODELAY");
 		}
-*/
 
 
 	/*
