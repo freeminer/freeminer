@@ -609,6 +609,8 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	endif()
 	set(sctp_build_programs 0 CACHE INTERNAL "")
 	set(sctp_werror 0 CACHE INTERNAL "")
+	set(WERROR 0 CACHE INTERNAL "") #old
+	
 
 	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
 
