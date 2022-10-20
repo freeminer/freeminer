@@ -403,8 +403,18 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 			}
 			++calls;
 
-			auto block = ir.second;
-			if (!block || block->refGet() ||!block->isGenerated()) {
+			const auto block = ir.second;
+			if (!block) {
+				blocks_delete.emplace_back(block);
+				continue;
+			}
+
+			if (block->refGet() ) {
+				continue;
+			}
+
+			if (!block->isGenerated()) {
+				blocks_delete.emplace_back(block);
 				continue;
 			}
 
@@ -431,7 +441,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 						saved_blocks_count++;
 					}
 
-					blocks_delete.push_back(block);
+					blocks_delete.emplace_back(block);
 
 					if (unloaded_blocks)
 						unloaded_blocks->push_back(p);

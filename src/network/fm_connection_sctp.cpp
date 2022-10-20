@@ -418,7 +418,7 @@ void Connection::sctp_setup(u16 port) {
 	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
 
 	//usrsctp_sysctl_set_sctp_max_retran_chunk(5); // def 30
-	// usrsctp_sysctl_set_sctp_shutdown_guard_time_default(10); // def 180
+    usrsctp_sysctl_set_sctp_shutdown_guard_time_default(20); // def 180
 	usrsctp_sysctl_set_sctp_heartbeat_interval_default(10);
 	//usrsctp_sysctl_set_sctp_init_rtx_max_default(5); //def 8
 	//usrsctp_sysctl_set_sctp_assoc_rtx_max_default(5); //def 10

@@ -317,6 +317,7 @@ our $options = {
         fast_move => 1, movement_speed_fast => 30,
     },
     bench1 => {fixed_map_seed => 1, -autoexit => 60, max_block_generate_distance => 100, max_block_send_distance => 100,},
+    unload => { server_unload_unused_data_timeout => 20, client_unload_unused_data_timeout=>15, },
 };
 
 map { /^-(\w+)(?:=(.*))?/ and $options->{opt}{$1} = $2; } @ARGV;
