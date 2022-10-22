@@ -49,13 +49,13 @@ bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen
 		leveldb::Status status_repair;
 		try {
 			status_repair = leveldb::RepairDB(fullpath, options);
-		} catch (std::exception &e) {
+		} catch (const std::exception &e) {
 			errorstream << "First repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
 			auto options_repair = options;
 			options_repair.paranoid_checks = true;
 			try {
 				status_repair = leveldb::RepairDB(fullpath, options_repair);
-			} catch (std::exception &e) {
+			} catch (const std::exception &e) {
 				errorstream << "Second repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
 			}
 		}

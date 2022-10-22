@@ -70,7 +70,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 	std::string addr_s;
 	try {
 		addr_s = getPeerAddress(pkt->getPeerId()).serializeString();
-	} catch (std::exception &e) {
+	} catch (const std::exception &e) {
 		/*
 		 * no peer for this packet found
 		 * most common reason is peer timeout, e.g. peer didn't

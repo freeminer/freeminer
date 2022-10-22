@@ -666,8 +666,8 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 			group = new Settings;
 			created = true;
 			group->fromJson(getJson(name));
-		} catch (std::exception &e) {
-			//errorstream<<"fail " << e.what() << std::endl;
+		} catch (const std::exception &e) {
+			errorstream<<"Json read fail: " << e.what() << std::endl;
 			if (created)
 				delete group;
 			return false;
@@ -691,8 +691,9 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	group->getFloatNoEx("farpersist",    np.far_persist);
 	group->getFloatNoEx("farlacunarity", np.far_lacunarity);
 
-	if (created)
-		delete group;
+	//if (created)
+	//	delete group;
+
 	return true;
 }
 
@@ -1240,7 +1241,7 @@ bool Settings::readJsonFile(const std::string &filename) {
 	Json::Value json;
 	try {
 		is >> json;
-	} catch (std::exception &e) {
+	} catch (const std::exception &e) {
 		errorstream << "Error reading json file: \"" << filename << "\" : " << e.what() << std::endl;
 		return false;
 	}
