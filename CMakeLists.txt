@@ -104,7 +104,15 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type: Debug or Release" FORCE)
 endif()
 
+
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+	# include(CheckIPOSupported)
+	# check_ipo_supported(RESULT supported OUTPUT error)
+	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+	message(STATUS "Using lto")
+endif()
+
 
 set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL
 	"Whether to enable update checks by default")
