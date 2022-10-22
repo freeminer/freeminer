@@ -121,13 +121,13 @@ const std::string TestSettings::config_text_after =
 void compare_settings(const std::string &name, Settings *a, Settings *b)
 {
 	auto keys = a->getNames();
-	Settings *group1, *group2;
+	SettingsPtr group1, group2;
 	std::string value1, value2;
 	for (auto &key : keys) {
 		if (a->getGroupNoEx(key, group1)) {
 			UASSERT(b->getGroupNoEx(key, group2));
 
-			compare_settings(name + "->" + key, group1, group2);
+			compare_settings(name + "->" + key, group1.get(), group2.get());
 			continue;
 		}
 
@@ -169,7 +169,7 @@ void TestSettings::testAllSettings()
 	UASSERT(fabs(s.getV3F("coord2").Z - 3.3) < 0.001);
 
 	// Test settings groups
-	Settings *group = s.getGroup("asdf");
+	auto group = s.getGroup("asdf");
 	UASSERT(group != NULL);
 	UASSERT(s.getGroupNoEx("zoop", group) == false);
 	UASSERT(group->getS16("a") == 5);

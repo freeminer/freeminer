@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_bloated.h"
 #include "util/string.h"
 #include "util/basic_macros.h"
+#include <memory>
 #include <string>
 #include <list>
 #include <set>
@@ -36,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 
 class Settings;
+using SettingsPtr = std::shared_ptr<Settings>;
 struct NoiseParams;
 
 // Global objects
@@ -117,13 +119,13 @@ struct SettingsEntry {
 		value(value_)
 	{}
 
-	SettingsEntry(Settings *group_) :
+	SettingsEntry(const SettingsPtr & group_) :
 		group(group_),
 		is_group(true)
 	{}
 
 	std::string value = "";
-	Settings *group = nullptr;
+	SettingsPtr group = nullptr;
 	bool is_group = false;
 };
 
@@ -163,7 +165,7 @@ public:
 	 * Getters *
 	 ***********/
 
-	Settings *getGroup(const std::string &name) const;
+	SettingsPtr getGroup(const std::string &name) const;
 	const std::string &get(const std::string &name) const;
 	bool getBool(const std::string &name) const;
 	u16 getU16(const std::string &name) const;
@@ -193,7 +195,7 @@ public:
 	 * Getters that don't throw exceptions *
 	 ***************************************/
 
-	bool getGroupNoEx(const std::string &name, Settings *&val) const;
+	bool getGroupNoEx(const std::string &name, SettingsPtr &val) const;
 	bool getNoEx(const std::string &name, std::string &val) const;
 	bool getFlag(const std::string &name) const;
 	bool getBoolNoEx(const std::string &name, bool &val) const;
@@ -219,8 +221,10 @@ public:
 
 	// N.B. Groups not allocated with new must be set to NULL in the settings
 	// tree before object destruction.
+/*
 	bool setEntry(const std::string &name, const void *entry,
 		bool set_group);
+*/	
 	bool set(const std::string &name, const std::string &value);
 	bool setDefault(const std::string &name, const std::string &value);
 	bool setGroup(const std::string &name, const Settings &group);
@@ -247,6 +251,8 @@ public:
 	const FlagDesc *getFlagDescFallback(const std::string &name) const;
 
 	//freeminer:
+	bool setEntry(const std::string &name, const std::string &entry, bool set_group);
+	bool setEntry(const std::string &name, const SettingsPtr & entry, bool set_group);
 	Json::Value getJson(const std::string & name, const Json::Value & def = Json::Value()) const;
 	void setJson(const std::string & name, const Json::Value & value);
 

@@ -301,13 +301,13 @@ static void push_settings_table(lua_State *L, const Settings *settings)
 	lua_newtable(L);
 	for (const std::string &key : keys) {
 		std::string value;
-		Settings *group = nullptr;
+		SettingsPtr group = nullptr;
 
 		if (settings->getNoEx(key, value)) {
 			lua_pushstring(L, value.c_str());
 		} else if (settings->getGroupNoEx(key, group)) {
 			// Recursively push tables
-			push_settings_table(L, group);
+			push_settings_table(L, group.get());
 		} else {
 			// Impossible case (multithreading) due to MutexAutoLock
 			continue;

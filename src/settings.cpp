@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/strfnd.h"
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include "debug.h"
 #include "log.h"
@@ -237,9 +238,11 @@ bool Settings::parseConfigLines(std::istream &is)
 		case SPE_END:
 			return true;
 		case SPE_GROUP: {
-			Settings *group = new Settings("}");
+			SettingsPtr group {new Settings("}")};
 			if (!group->parseConfigLines(is)) {
+				/*
 				delete group;
+				*/
 				return false;
 			}
 			m_settings[name] = SettingsEntry(group);
@@ -493,7 +496,7 @@ const SettingsEntry &Settings::getEntry(const std::string &name) const
 }
 
 
-Settings *Settings::getGroup(const std::string &name) const
+SettingsPtr Settings::getGroup(const std::string &name) const
 {
 	const SettingsEntry &entry = getEntry(name);
 	if (!entry.is_group)
@@ -657,19 +660,21 @@ bool Settings::getNoiseParamsFromValue(const std::string &name,
 bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	NoiseParams &np) const
 {
-	Settings *group = NULL;
+	SettingsPtr group = NULL;
 	bool created = false;
 
 	if (!getGroupNoEx(name, group))
 	{
 		try {
-			group = new Settings;
+			group = std::make_shared<Settings>();
 			created = true;
 			group->fromJson(getJson(name));
 		} catch (const std::exception &e) {
 			errorstream<<"Json read fail: " << e.what() << std::endl;
+/*			
 			if (created)
 				delete group;
+*/			
 			return false;
 		}
 	}
@@ -734,7 +739,7 @@ std::vector<std::string> Settings::getNames() const
  * Getters that don't throw exceptions *
  ***************************************/
 
-bool Settings::getGroupNoEx(const std::string &name, Settings *&val) const
+bool Settings::getGroupNoEx(const std::string &name, SettingsPtr &val) const
 {
 	try {
 		val = getGroup(name);
@@ -872,7 +877,7 @@ bool Settings::getFlagStrNoEx(const std::string &name, u32 &val,
 /***********
  * Setters *
  ***********/
-
+#if WTF
 bool Settings::setEntry(const std::string &name, const void *data,
 	bool set_group)
 {
@@ -899,11 +904,11 @@ bool Settings::setEntry(const std::string &name, const void *data,
 
 	return true;
 }
-
+#endif
 
 bool Settings::set(const std::string &name, const std::string &value)
 {
-	if (!setEntry(name, &value, false))
+	if (!setEntry(name, value, false))
 		return false;
 
 	doCallbacks(name);
@@ -924,9 +929,9 @@ bool Settings::setGroup(const std::string &name, const Settings &group)
 {
 	// Settings must own the group pointer
 	// avoid double-free by copying the source
-	Settings *copy = new Settings();
+	SettingsPtr copy {new Settings()};
 	*copy = group;
-	return setEntry(name, &copy, true);
+	return setEntry(name, copy, true);
 }
 
 
@@ -998,7 +1003,7 @@ bool Settings::setFlagStr(const std::string &name, u32 flags,
 
 bool Settings::setNoiseParams(const std::string &name, const NoiseParams &np)
 {
-	Settings *group = new Settings;
+	SettingsPtr group {new Settings};
 
 	group->setFloat("offset",      np.offset);
 	group->setFloat("scale",       np.scale);
@@ -1014,7 +1019,7 @@ bool Settings::setNoiseParams(const std::string &name, const NoiseParams &np)
 	group->setFloat("farpersist",  np.far_persist);
 	group->setFloat("farlacunarity",  np.far_lacunarity);
 
-	return setEntry(name, &group, true);
+	return setEntry(name, group, true);
 }
 
 
@@ -1026,7 +1031,10 @@ bool Settings::remove(const std::string &name)
 	m_json.removeMember(name);
 	SettingEntries::iterator it = m_settings.find(name);
 	if (it != m_settings.end()) {
+		/*
 		delete it->second.group;
+		*/
+		it->second.group = nullptr;
 		m_settings.erase(it);
 		m_mutex.unlock();
 
@@ -1069,9 +1077,12 @@ SettingsParseEvent Settings::parseConfigObject(const std::string &line,
 
 void Settings::clearNoLock()
 {
-	for (SettingEntries::const_iterator it = m_settings.begin();
+	for (SettingEntries::iterator it = m_settings.begin();
 			it != m_settings.end(); ++it)
+		/*
 		delete it->second.group;
+		*/
+		it->second.group = nullptr;
 	m_settings.clear();
 
 	if (m_json.isObject() || m_json.isArray())
@@ -1152,7 +1163,7 @@ Json::Value Settings::getJson(const std::string & name, const Json::Value & def)
 	//todo: remove later:
 
 	Json::Value root;
-	Settings * group = nullptr;
+	SettingsPtr group = nullptr;
 	if (getGroupNoEx(name, group)) {
 		group->toJson(root);
 		return root;
@@ -1262,6 +1273,47 @@ void Settings::msgpack_unpack(msgpack::object o) {
 	std::istringstream os(data, std::ios_base::binary);
 	os >> m_json;
 	fromJson(m_json);
+}
+
+bool Settings::setEntry(const std::string &name, const SettingsPtr &data,
+	bool set_group)
+{
+	if (!checkNameValid(name))
+		return false;
+
+	{
+		MutexAutoLock lock(m_mutex);
+
+		SettingsEntry &entry = m_settings[name];
+
+		entry.value    =  "";
+		entry.group    = data;
+		entry.is_group = true;
+		entry.group->m_end_tag = "}";
+	}
+
+	return true;
+}
+
+bool Settings::setEntry(const std::string &name, const std::string &data,
+	bool set_group)
+{
+	if (!checkNameValid(name))
+		return false;
+	if (!checkValueValid(data))
+		return false;
+
+	{
+		MutexAutoLock lock(m_mutex);
+
+		SettingsEntry &entry = m_settings[name];
+
+		entry.value    = data;
+		entry.group    = nullptr;
+		entry.is_group = false;
+	}
+
+	return true;
 }
 
 
