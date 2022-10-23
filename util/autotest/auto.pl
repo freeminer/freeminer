@@ -76,7 +76,7 @@ $0 ---cmake_minetest=1 ---build_name=_minetest ----headless ----headless_optimiz
 $0 timelapse
 
 #fly
-$0 ----server_optimize ---far fly
+$0 ----server_optimize ----far fly
 $0 -farmesh=1 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint=(10000,30030,-22700) fly
 $0 ---options_bot=fall1 -continuous_forward=1 bot
 };
@@ -268,7 +268,6 @@ our $options = {
         mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
-
     far => {
         max_block_generate_distance => 50,
         max_block_send_distance     => 50,
@@ -342,7 +341,7 @@ our $commands = {
     cmake => sub {
         return if $config->{no_cmake};
         my %D;
-        $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";    # -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=`pwd`
+        $D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1,
@@ -387,6 +386,8 @@ our $commands = {
           . qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.out.log };
         0;
     },
+    set_bot => {'----bot'=>1, '----bot_random'=>1},
+    run_bot => ['set_bot', 'run_single'],
     run_single_tsan => sub {
         local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
@@ -457,7 +458,6 @@ qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -
     fail => sub {
         warn 'fail:', join ' ', @_;
     },
-
 };
 
 our $tasks = {
@@ -471,11 +471,12 @@ our $tasks = {
     set_client         => [{-no_build_client => 0, -no_build_server => 1,}],
     build_client       => ['set_client', 'build_normal',],
     (map { ( "build_client_$_" => ['set_client', "build_$_",] ) } qw(debug asan tsan usan msan gperf)),
-    bot                => ['set_client', 'build_normal', 'run_single'],
+    #bot                => [{'----bot'=>1, '----bot_random'=>1}, 'set_client', 'build_normal', 'run_single'],
+    bot                => ['set_client', 'build_normal', 'run_bot'],
     #run_single => ['run_single'],
     clang => ['prepare', {-cmake_clang => 1,}, 'cmake', 'make',],
     build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'build_debug',],
-    bot_tsan   => [{-no_build_server => 1,}, 'build_tsan', 'cgroup', 'run_single_tsan',],
+    bot_tsan   => ['set_bot', {-no_build_server => 1,}, 'build_tsan', 'cgroup', 'run_single_tsan',],
     bot_tsannt => sub {
         $g->{build_name} .= '_nt';
         local $config->{no_build_server} = 1;
@@ -528,6 +529,7 @@ our $tasks = {
         'make',
     ],
     bot_asan => [
+        'set_bot',
         {-no_build_server => 1,},
         'build_asan',
         $config->{run_task},
@@ -539,19 +541,21 @@ our $tasks = {
         commands_run('bot_asan');
     },
     bot_msan => [
+        'set_bot',
         {-no_build_server => 1,},
         'build_msan',
         $config->{run_task},
         'symbolize',
     ],
     bot_usan => [
+        'set_bot',
         {-no_build_server => 1, -env => 'UBSAN_OPTIONS=print_stacktrace=1',},
         'build_usan',
         $config->{run_task},
         'symbolize',
     ],
     debug     => ['build_client_debug', $config->{run_task},],
-    bot_debug => ['build_client_debug', $config->{run_task},],
+    bot_debug => ['set_bot', 'build_client_debug', $config->{run_task},],
 
     #valgrind => sub {
     #    local $config->{runner} = $config->{runner} . q{'valgrind'};
@@ -612,7 +616,7 @@ our $tasks = {
     ),
     stress => ['build_normal', {-server_bg => 1,}, 'run_server', ['sleep', 10], 'clients_run', ['sleep', $config->{autoexit}]],
 
-    clients_run => [{build_name => ''}, 'run_clients'],
+    clients_run => ['set_bot', {build_name => ''}, 'run_clients'],
     clients => ['build_client', 'clients_run'],
 
     ( map { 'stress_' . $_ => [ { -server_bg => 1, },
@@ -652,8 +656,8 @@ our $tasks = {
     server_gdb => [{-options_add => 'no_exit'}, ['gdb', 'server_debug']],
     server_gdb_nd => [{-options_add => 'no_exit'}, 'build_server', ['gdb', 'run_server']],
 
-    bot_gdb    => ['build_client_debug', ['gdb', 'run_single']],
-    bot_gdb_nd => ['build_client',       ['gdb', 'run_single']],
+    bot_gdb    => ['set_bot', 'build_client_debug', ['gdb', 'run_single']],
+    bot_gdb_nd => ['set_bot', 'build_client',       ['gdb', 'run_single']],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
@@ -674,7 +678,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             }
         }
     },
-    bot_vtune => ['build_client_debug', ['vtune', 'run_single'], 'vtune_report'],
+    bot_vtune => ['set_bot', 'build_client_debug', ['vtune', 'run_single'], 'vtune_report'],
     stress_vtune => [
         #'build_debug',sub { commands_run('vtune', 'run_server');}, ['sleep', 10], 'clients_run',
         {                                                                         #-no_build_client => 1, -no_build_server => 0,
@@ -718,7 +722,6 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         return 1 if $config->{all_run};
         local $config->{no_build_server} = 1;
         local $config->{go}              = undef;
-        local $config->{options_bot}     = undef;
         local $config->{autoexit}        = undef;
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
@@ -731,7 +734,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         #map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
     ),
 
-    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_, 'server_' . $_ } qw(tsan asan msan usan gperf asannta minetest minetest_debug)),
+    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map { $_, 'bot_' . $_, 'play_' . $_, 'server_' . $_ } qw(debug tsan asan msan usan gperf asannta minetest minetest_debug)),
     (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
 
     play => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],    #'
@@ -805,8 +808,8 @@ sub options_make(;$$) {
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
     $rmm->{$_} = $options->{pass}{$_} for sort keys %{$options->{pass}};
     $m ||= [
-        map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display}, $config->{options_bot},
-        $config->{options_int}, $config->{options_add}, $config->{options_arr}, 'opt'
+        map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display}, #$config->{options_bot},
+        $config->{options_int}, $config->{options_add}, $config->{options_arr}, 'opt', sort(keys %{$config->{options_use}})
     ];
     for my $name (array(@$m)) {
         $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
@@ -829,12 +832,14 @@ sub command_run(@);
 
 sub command_run(@) {
     my $cmd = shift;
-    #say "command_run $cmd ", @_;
+    # say "command_run $cmd ", @_;
     if ('CODE' eq ref $cmd) {
         return $cmd->(@_);
     } elsif ('HASH' eq ref $cmd) {
         for my $k (sort keys %$cmd) {
-            if ($k =~ /^-+(.+)/) {
+            if ($k =~ /^----(.+)/) {
+                $config->{options_use}{$1} = $cmd->{$k};
+            } elsif ($k =~ /^-(.+)/) {
                 $config->{$1} = $cmd->{$k};
             } else {
                 $g->{$k} = $cmd->{$k};
@@ -858,7 +863,7 @@ sub commands_run(@);
 
 sub commands_run(@) {
     my $name = shift;
-    #say "commands_run $name ", @_;
+    # say "commands_run $name ", @_;
     my $c = $commands->{$name} || $tasks->{$name};
     if ('SCALAR' eq ref $name) {
         commands_run($$name, @_);

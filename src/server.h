@@ -60,6 +60,7 @@ class LiquidThread;
 class EnvThread;
 class AbmThread;
 
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -67,7 +68,6 @@ public:
 		BaseException(s)
 	{}
 };
-
 
 
 
@@ -187,14 +187,6 @@ public:
 	void step(float dtime);
 	// This is run by ServerThread and does the actual processing
 
-//fm:
-	int AsyncRunMapStep(float dtime, float dedicated_server_step = 0.1, bool async=true);
-	int save(float dtime, float dedicated_server_step = 0.1, bool breakable = false);
-
-    //fmtodo: remove:
-	void DenyAccess(u16 peer_id, const std::string &reason);
-
-
 	void AsyncRunStep( float dtime, bool initial_step=false);
 	u16 Receive(int ms = 10);
 	PlayerSAO* StageTwoClientInit(session_t peer_id);
@@ -232,9 +224,6 @@ public:
 	void handleCommand_HaveMedia(NetworkPacket *pkt);
 
 	void ProcessData(NetworkPacket *pkt);
-
-//fm:
-	void handleCommand_Drawcontrol(NetworkPacket* pkt);
 
 	void Send(NetworkPacket *pkt);
 	void Send(session_t peer_id, NetworkPacket *pkt);
@@ -281,7 +270,6 @@ public:
 	void unsetIpBanned(const std::string &ip_or_name);
 	std::string getBanDescription(const std::string &ip_or_name);
 
-	// Envlock and conlock should be locked when calling this
 	void notifyPlayer(const char *name, const std::string &msg);
 	void notifyPlayers(const std::wstring &msg);
 
@@ -482,7 +470,6 @@ private:
 
 	/* mark blocks not sent for all clients */
 	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
-	void SetBlocksNotSent();
 
 
 	virtual void SendChatMessage(session_t peer_id, const ChatMessage &message);
@@ -558,21 +545,11 @@ private:
 //mt compat:
 	void SendActiveObjectMessages(session_t peer_id, const std::string &datas,
 		bool reliable = true);
-
-//fm:
-	void SendActiveObjectMessages(u16 peer_id, const ActiveObjectMessages &datas, bool reliable = true);
-	
 	void SendCSMRestrictionFlags(session_t peer_id);
 
 	/*
 		Something random
 	*/
-
-	enum ClientDeletionReason {
-		CDR_LEAVE,
-		CDR_TIMEOUT,
-		CDR_DENY
-	};
 
 	void HandlePlayerDeath(PlayerSAO* sao, const PlayerHPChangeReason &reason);
 	void DeleteClient(session_t peer_id, ClientDeletionReason reason);
@@ -624,13 +601,10 @@ private:
 	MutexedVariable<std::string> m_async_fatal_error;
 
 	// Some timers
-//fm:
-	float m_liquid_send_timer = 0 ;
-	float m_liquid_send_interval = 1;
 	float m_liquid_transform_timer = 0.0f;
 	float m_liquid_transform_every = 1.0f;
 	float m_masterserver_timer = 0.0f;
-	//float m_emergethread_trigger_timer = 0.0f;
+	float m_emergethread_trigger_timer = 0.0f;
 	float m_savemap_timer = 0.0f;
 	IntervalLimiter m_map_timer_and_unload_interval;
 
@@ -651,11 +625,6 @@ private:
 
 	// Rollback manager (behind m_env_mutex)
 	IRollbackManager *m_rollback = nullptr;
-
-//fm:
-public:
-	Stat stat;
-private:
 
 public:
 	// Emerge manager
@@ -692,12 +661,6 @@ private:
 
 	// The server mainly operates in this thread
 	ServerThread *m_thread = nullptr;
-
-	MapThread *m_map_thread = nullptr;
-	SendBlocksThread *m_sendblocks = nullptr;
-	LiquidThread *m_liquid = nullptr;
-	EnvThread *m_envthread = nullptr;
-	AbmThread *m_abmthread = nullptr;
 
 	/*
 		Time related stuff
@@ -774,7 +737,24 @@ private:
 	ModMetadataDatabase *m_mod_storage_database = nullptr;
 	float m_mod_storage_save_timer = 10.0f;
 
+
+
+
+
 	// freeminer:
+private:
+	int save(float dtime, float dedicated_server_step = 0.1, bool breakable = false);
+
+    //fmtodo: remove:
+	void DenyAccess(session_t peer_id, const std::string &reason);
+
+	void SetBlocksNotSent();
+	void SendFreeminerInit(session_t peer_id, u16 protocol_version);
+	void SendActiveObjectMessages(session_t peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+
+	float m_liquid_send_timer = 0 ;
+	float m_liquid_send_interval = 1;
+
 public:
 	lan_adv lan_adv_server;
 	int m_autoexit = 0;
@@ -782,11 +762,24 @@ public:
 	//concurrent_map<v3POS, MapBlock*> m_lighting_modified_blocks;
 	bool m_more_threads = false;
 	unsigned int overload = 0;
+
+	int AsyncRunMapStep(float dtime, float dedicated_server_step = 0.1, bool async=true);
 	void deleteDetachedInventory(const std::string &name);
 	void maintenance_start();
 	void maintenance_end();
 	int maintenance_status = 0;
-	void SendPunchPlayer(u16 peer_id, v3f speed);
+	void SendPunchPlayer(session_t peer_id, v3f speed);
+
+	void handleCommand_Drawcontrol(NetworkPacket* pkt);
+	Stat stat;
+
+	MapThread *m_map_thread = nullptr;
+	SendBlocksThread *m_sendblocks = nullptr;
+	LiquidThread *m_liquid = nullptr;
+	EnvThread *m_envthread = nullptr;
+	AbmThread *m_abmthread = nullptr;
+
+
 
 
 	// CSM restrictions byteflag

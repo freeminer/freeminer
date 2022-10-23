@@ -317,6 +317,8 @@ void Server::handleCommand_Init2(NetworkPacket* pkt)
 	infostream << "Server: Sending content to " << getPlayerName(peer_id) <<
 		std::endl;
 
+	SendFreeminerInit(peer_id, protocol_version);
+
 	// Send item definitions
 	SendItemDef(peer_id, m_itemdef, protocol_version);
 

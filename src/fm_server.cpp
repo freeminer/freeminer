@@ -435,22 +435,26 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	return m_key_value_storage.at(name);
 }
 
-/*
-void Server::SendChatMessage(u16 peer_id, const std::string &message) {
-	SendChatMessage(peer_id, utf8_to_wide(message));
-}
-*/
 
-/*
-//fmtodo: remove:
-void Server::DenyAccess(u16 peer_id, const std::string &custom_reason)
+void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 {
-	DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, custom_reason);
-}
+	NetworkPacket pkt(TOCLIENT_FREEMINER_INIT, 0, peer_id);
 
-//fmtodo: remove:
-void Server::DenyAccess_Legacy(u16 peer_id, const std::wstring &custom_reason)
-{
-	DenyAccess(peer_id, SERVER_ACCESSDENIED_CUSTOM_STRING, wide_to_utf8(custom_reason));
+	MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 3);
+
+	Settings params;
+	m_emerge->mgparams->MapgenParams::writeParams(&params);
+	m_emerge->mgparams->writeParams(&params);
+	PACK(TOCLIENT_INIT_MAP_PARAMS, params);
+
+	PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
+
+	PACK(TOCLIENT_INIT_WEATHER, g_settings->getBool("weather"));
+
+	pkt.putLongString({buffer.data(), buffer.size()});
+
+	verbosestream << "Server: Sending freeminer init to id(" << peer_id
+				  << "): size=" << pkt.getSize() << std::endl;
+
+	Send(&pkt);
 }
-*/

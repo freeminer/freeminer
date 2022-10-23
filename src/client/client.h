@@ -612,7 +612,10 @@ private:
 public:
 	bool use_weather = false;
 	unsigned int overload = 0;
+
+	void handleCommand_FreeminerInit(NetworkPacket* pkt);
 	void sendDrawControl();
+
 private:
 	Server *m_localserver = nullptr;
 

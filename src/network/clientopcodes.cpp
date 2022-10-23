@@ -32,7 +32,7 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_DENY_SUDO_MODE",          TOCLIENT_STATE_CONNECTED, &Client::handleCommand_DenySudoMode}, // 0x05
 	null_command_handler, // 0x06
 	null_command_handler, // 0x07
-	null_command_handler, // 0x08
+	{ "TOCLIENT_FREEMINER_INIT",          TOCLIENT_STATE_CONNECTED, &Client::handleCommand_FreeminerInit}, // 0x08
 	null_command_handler, // 0x09
 	{ "TOCLIENT_ACCESS_DENIED",           TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_AccessDenied }, // 0x0A
 	null_command_handler, // 0x0B

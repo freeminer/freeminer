@@ -270,6 +270,9 @@ enum ToClientCommand
 	/*
 		Signals client that sudo mode auth failed.
 	*/
+
+	TOCLIENT_FREEMINER_INIT = 0x08,
+
 	TOCLIENT_ACCESS_DENIED = 0x0A,
 	/*
 		u8 reason

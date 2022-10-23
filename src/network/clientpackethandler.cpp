@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #if !MINETEST_PROTO
 #include "network/fm_clientpackethandler.cpp"
 #else //TODO
+#include "emerge.h"
 
 #include "client/client.h"
 
@@ -1788,6 +1789,32 @@ void Client::handleCommand_SetLighting(NetworkPacket *pkt)
 
 	if (pkt->getRemainingBytes() >= 4)
 		*pkt >> lighting.shadow_intensity;
+}
+
+
+void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
+	if (!pkt->packet)
+		if (!pkt->packet_unpack())
+			return;
+
+	auto & packet = *(pkt->packet);
+
+	if (m_localserver) {
+		Settings settings;
+		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
+		if (m_localserver->getEmergeManager() &&
+				m_localserver->getEmergeManager()->mgparams) {
+			m_localserver->getEmergeManager()->mgparams->MapgenParams::readParams(
+					&settings);
+			m_localserver->getEmergeManager()->mgparams->readParams(&settings);
+		}
+	}
+
+	if (packet.count(TOCLIENT_INIT_WEATHER))
+		packet[TOCLIENT_INIT_WEATHER].convert(use_weather);
+
+	//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
+	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 }
 
 #endif

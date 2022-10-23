@@ -617,11 +617,18 @@ int NetworkPacket::packet_unpack() {
 		packet = new MsgpackPacketSafe;
 	if (!packet_unpacked)
 		packet_unpacked = new msgpack::unpacked;
-	if (!parse_msgpack_packet(getString(0), datasize, packet, &command, *packet_unpacked)) {
-		//verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<" (peer_id="<<peer_id<<") size="<<datasize<<std::endl;
+	if (!parse_msgpack_packet(getString(
+#if MINETEST_PROTO
+									  4
+#else
+									  0
+#endif
+									  ),
+				datasize, packet, &command, *packet_unpacked)) {
+		// verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<"
+		// (peer_id="<<peer_id<<") size="<<datasize<<std::endl;
 		return 0;
 	}
 	m_command = command;
 	return 1;
-
 }
