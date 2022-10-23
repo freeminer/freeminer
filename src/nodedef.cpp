@@ -881,20 +881,24 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		is_liquid = true;
 		break;
 	case NDT_GLASSLIKE:
+		solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		break;
 	case NDT_GLASSLIKE_FRAMED:
+		solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		break;
 	case NDT_GLASSLIKE_FRAMED_OPTIONAL:
+		solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		if (!server)
 		drawtype = tsettings.connected_glass ? NDT_GLASSLIKE_FRAMED : NDT_GLASSLIKE;
 		break;
 	case NDT_ALLFACES:
+		solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		break;
