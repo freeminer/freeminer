@@ -949,7 +949,7 @@ void Client::initLocalMapSaving(const Address &address,
 	world_path = porting::path_user \
 		+ DIR_DELIM + "worlds" \
 		+ DIR_DELIM + "server_" \
-		+ hostname;
+		+ hostname + (address.getPort() == 30000 ? "" : "_" + std::to_string(address.getPort()));
 
 	set_world_path(hostname);
 	if (!fs::IsDir(world_path)) {
