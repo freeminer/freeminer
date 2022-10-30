@@ -334,7 +334,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 		Answer with a TOCLIENT_INIT
 	*/
 	{
-		MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 6);
+		MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 7);
 		PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 		PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 		PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));

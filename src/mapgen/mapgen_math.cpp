@@ -596,6 +596,29 @@ MapNode MapgenMath::layers_get(float value, float max) {
 	return layers_node[layer_index];
 }
 
+std::pair<bool, double> MapgenMath::calc_point(POS x, POS y, POS z) {
+				v3f vec = (v3f(x, y, z) - center) * scale ;
+				if (invert_xy)
+					std::swap(vec.X, vec.Y);
+				if (invert_yz)
+					std::swap(vec.Y, vec.Z);
+double d = 0;
+#if USE_MANDELBULBER
+				if (!internal)
+					d = Compute<normal_mode>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
+				else
+#endif
+					if (internal)
+						d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations, mg_params->seed);
+
+	return {(!invert && d > 0) || (invert && d == 0), d};
+}
+
+bool MapgenMath::visible(POS x, POS y, POS z) {
+	auto [have, d] = calc_point(x,y,z);
+	return have;
+}
+
 int MapgenMath::generateTerrain() {
 
 	MapNode n_ice(c_ice);
@@ -625,26 +648,13 @@ int MapgenMath::generateTerrain() {
 	*/
 #endif
 
-	double d = 0;
 	for (s16 z = node_min.Z; z <= node_max.Z; z++) {
 		for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
 			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x, node_max.Y, z), nullptr, &heat_cache) : 0;
 
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {
-				v3f vec = (v3f(x, y, z) - center) * scale ;
-				if (invert_xy)
-					std::swap(vec.X, vec.Y);
-				if (invert_yz)
-					std::swap(vec.Y, vec.Z);
-
-#if USE_MANDELBULBER
-				if (!internal)
-					d = Compute<normal_mode>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
-				else
-#endif
-					if (internal)
-						d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations, mg_params->seed);
+			auto [have, d] = calc_point(x,y,z);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
 					if (!vm->m_data[i]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?

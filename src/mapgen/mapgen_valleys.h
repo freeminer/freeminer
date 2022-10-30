@@ -93,6 +93,10 @@ public:
 	int getSpawnLevelAtPoint(v2s16 p);
 
 private:
+	//freeminer:
+	bool visible(POS x, POS y, POS z) override { return getSpawnLevelAtPoint({x, z}) >= y; }
+
+
 	BiomeGenOriginal *m_bgen;
 
 	float altitude_chill;

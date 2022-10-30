@@ -616,8 +616,12 @@ public:
 	void handleCommand_FreeminerInit(NetworkPacket* pkt);
 	void sendDrawControl();
 
-private:
 	Server *m_localserver = nullptr;
+	std::string m_world_path;
+	EmergeManager *m_emerge = nullptr;
+	MapSettingsManager *m_settings_mgr = nullptr;
+
+private:	
 
 
 	// Storage for mesh data for creating multiple instances of the same mesh

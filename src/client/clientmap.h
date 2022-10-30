@@ -253,3 +253,7 @@ private:
 	bool m_added_to_shadow_renderer{false};
 	u16 m_cache_transparency_sorting_distance;
 };
+
+bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
+		float start_off, float end_off, u32 needed_count, NodeDefManager *nodemgr,
+		unordered_map_v3POS<bool> & occlude_cache);

@@ -78,4 +78,6 @@ public:
 
 	double (*func)(double, double, double, double, int, int);
 	MapNode layers_get(float value, float max);
+    std::pair<bool, double> calc_point(POS x, POS y, POS z);
+	bool visible(POS x, POS y, POS z) override;
 };

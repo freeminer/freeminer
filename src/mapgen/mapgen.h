@@ -240,6 +240,7 @@ public:
 	s16 liquid_pressure = 0;
 	unordered_map_v3POS<s16> heat_cache;
 	unordered_map_v3POS<s16> humidity_cache;
+	virtual bool visible(POS x, POS y, POS z) { return getGroundLevelAtPoint({x,z}) >= y; }
 
 	// getSpawnLevelAtPoint() is a function within each mapgen that returns a
 	// suitable y co-ordinate for player spawn ('suitable' usually meaning

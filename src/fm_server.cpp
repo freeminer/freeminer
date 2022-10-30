@@ -440,7 +440,7 @@ void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 {
 	NetworkPacket pkt(TOCLIENT_FREEMINER_INIT, 0, peer_id);
 
-	MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 3);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 4);
 
 	Settings params;
 	m_emerge->mgparams->MapgenParams::writeParams(&params);

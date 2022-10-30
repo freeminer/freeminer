@@ -82,6 +82,9 @@ public:
 	bool getFractalAtPoint(s16 x, s16 y, s16 z);
 	s16 generateTerrain();
 
+	//freeminer:
+	bool visible(POS x, POS y, POS z) override { return getFractalAtPoint(x, y, z); }
+
 private:
 	u16 formula;
 	bool julia;
