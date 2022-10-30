@@ -424,7 +424,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				continue;
 			}
 			int range = d / MAP_BLOCKSIZE;
-			draw_nearest.emplace_back(std::make_pair(bp, range));
+			draw_nearest.emplace_back(bp, range);
 		}
 	}
 

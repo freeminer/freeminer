@@ -549,8 +549,9 @@ public:
 //fm:
 	void pushElementsToCircuit(Circuit* circuit);
 
-#if BUILD_CLIENT // Only on client
 	typedef std::shared_ptr<MapBlockMesh> mesh_type;
+
+#if BUILD_CLIENT // Only on client
 
 	MapBlock::mesh_type getMesh(int step);
 	void setMesh(MapBlock::mesh_type & rmesh);

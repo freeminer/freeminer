@@ -339,6 +339,7 @@ void Client::Stop()
 
 	if(m_localserver)
 		delete m_localserver;
+
 	if (m_localdb)
 		delete m_localdb;
 }
@@ -385,6 +386,11 @@ Client::~Client()
 	if (m_mod_storage_database)
 		m_mod_storage_database->endSave();
 	delete m_mod_storage_database;
+	
+	//freeminer:
+	if (m_settings_mgr)
+		delete m_settings_mgr;
+	m_settings_mgr = nullptr;
 }
 
 void Client::connect(Address address, bool is_local_server)
@@ -941,7 +947,6 @@ void Client::initLocalMapSaving(const Address &address,
 		return;
 	}
 
-	m_localserver = nullptr;
 	m_localdb = nullptr;
 
 	std::string world_path;
@@ -959,24 +964,38 @@ void Client::initLocalMapSaving(const Address &address,
 	}
 #undef set_world_path
 
+	fs::CreateAllDirs(world_path);
+
 	SubgameSpec gamespec;
-	if (!getWorldExists(world_path)) {
+    std::string conf_path = world_path + DIR_DELIM + "world.mt";
+	Settings conf;
+	bool succeeded = conf.readConfigFile(conf_path.c_str());
+	if (!succeeded || !conf.exists("backend")) {
+		// fall back to sqlite3
+		#if USE_LEVELDB
+		conf.set("backend", "leveldb");
+		#elif USE_SQLITE3
+		conf.set("backend", "sqlite3");
+		#elif USE_REDIS
+		conf.set("backend", "redis");
+		#endif
+
 		gamespec = findSubgame(g_settings->get("default_game"));
 		if (!gamespec.isValid())
 			gamespec = findSubgame("minimal");
+		conf.set("gameid", gamespec.id); // Later rewrited from server data
 	} else {
 		gamespec = findWorldSubgame(world_path);
 	}
+	std::string backend = conf.get("backend");
+	m_localdb = ServerMap::createDatabase(backend, world_path, conf);
 
-	fs::CreateAllDirs(world_path);
+	if (!conf.updateConfigFile(conf_path.c_str()))
+		errorstream << __FUNCTION__ << ": Failed to update " << conf_path << std::endl;
 
-#if !MINETEST_PROTO
-	m_localserver = new Server(world_path, gamespec, false, false);
-#endif
-	/*
-	m_localdb = new MapDatabaseSQLite3(world_path);
+	m_world_path = world_path;
+
 	m_localdb->beginSave();
-	*/
 	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 }
 

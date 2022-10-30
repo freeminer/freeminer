@@ -629,7 +629,7 @@ void Camera::updateViewingRange()
 
 	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
 	if (m_draw_control.range_all) {
-		m_cameranode->setFarValue(100000.0);
+		m_cameranode->setFarValue(MAX_MAP_GENERATION_LIMIT * 2 * BS);
 		return;
 	}
 

@@ -244,4 +244,11 @@ private:
 	void reportCompletedEmerge(EmergeAction action);
 
 	friend class EmergeThread;
+
+	//freeminer:
+public:
+	Mapgen *getFirstMapgen() {
+		return m_mapgens[0];
+	}
+
 };

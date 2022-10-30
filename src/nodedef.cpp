@@ -1936,12 +1936,13 @@ void NodeDefManager::msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const
 	for (size_t i = 0; i < m_content_features.size(); ++i) {
 		if (i == CONTENT_IGNORE || i == CONTENT_AIR || i == CONTENT_UNKNOWN || m_content_features[i].name == "")
 			continue;
-		features_to_pack.emplace_back(std::make_pair(i, &m_content_features[i]));
+		features_to_pack.emplace_back(i, &m_content_features[i]);
 	}
 	pk.pack_map(features_to_pack.size());
 	for (size_t i = 0; i < features_to_pack.size(); ++i)
 		PACK(features_to_pack[i].first, *features_to_pack[i].second);
 }
+
 void NodeDefManager::msgpack_unpack(msgpack::object o)
 {
 	clear();
@@ -2131,8 +2132,10 @@ NodeResolver::~NodeResolver()
 
 void NodeResolver::cloneTo(NodeResolver *res) const
 {
+/*
 	FATAL_ERROR_IF(!m_resolve_done, "NodeResolver can only be cloned"
 		" after resolving has completed");
+*/
 	/* We don't actually do anything significant. Since the node resolving has
 	 * already completed, the class that called us will already have the
 	 * resolved IDs in its data structures (which it copies on its own) */

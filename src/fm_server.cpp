@@ -446,6 +446,7 @@ void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 	m_emerge->mgparams->MapgenParams::writeParams(&params);
 	m_emerge->mgparams->writeParams(&params);
 	PACK(TOCLIENT_INIT_MAP_PARAMS, params);
+	PACK(TOCLIENT_INIT_GAMEID, m_gamespec.id);
 
 	PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
 

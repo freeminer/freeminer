@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "network/fm_clientpackethandler.cpp"
 #else //TODO
 #include "emerge.h"
+#include "filesys.h"
 
 #include "client/client.h"
 
@@ -1799,14 +1800,51 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 
 	auto & packet = *(pkt->packet);
 
-	if (m_localserver) {
+	if (!m_world_path.empty() && packet.count(TOCLIENT_INIT_GAMEID)) {
+		std::string gameid;
+		packet[TOCLIENT_INIT_GAMEID].convert(gameid);
+		std::string conf_path = m_world_path + DIR_DELIM + "world.mt";
+		Settings conf;
+		conf.readConfigFile(conf_path.c_str());
+		conf.set("gameid", gameid);
+		conf.updateConfigFile(conf_path.c_str());
+	}
+/* TODO
+	if (g_settings->getS32("farmesh5") && !m_localserver) {
+		m_localserver = new Server("farmesh", findSubgame("minimal"), false, {}, true);
+	}
+*/
+	{
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
-		if (m_localserver->getEmergeManager() &&
-				m_localserver->getEmergeManager()->mgparams) {
-			m_localserver->getEmergeManager()->mgparams->MapgenParams::readParams(
-					&settings);
-			m_localserver->getEmergeManager()->mgparams->readParams(&settings);
+
+		std::string mg_name;
+		MapgenType mgtype = settings.getNoEx("mg_name", mg_name)
+									? Mapgen::getMapgenType(mg_name)
+									: MAPGEN_DEFAULT;
+
+		if (mgtype == MAPGEN_INVALID) {
+			errorstream << "Client map save: mapgen '" << mg_name
+						<< "' not valid; falling back to "
+						<< Mapgen::getMapgenName(MAPGEN_DEFAULT) << std::endl;
+			mgtype = MAPGEN_DEFAULT;
+		}
+
+		MapgenParams *params = Mapgen::createMapgenParams(mgtype);
+		params->MapgenParams::readParams(&settings);
+		params->readParams(&settings);
+
+		if (g_settings->getS32("farmesh5")) {
+			m_emerge = new EmergeManager(
+					m_localserver, m_localserver->m_metrics_backend.get());
+			m_emerge->initMapgens(params);
+		}
+
+		if (!m_world_path.empty()) {
+			m_settings_mgr =
+					new MapSettingsManager(m_world_path + DIR_DELIM + "map_meta");
+			m_settings_mgr->mapgen_params = params;
+			m_settings_mgr->saveMapMeta();
 		}
 	}
 
