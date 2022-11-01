@@ -76,7 +76,15 @@ if(${CMAKE_VERSION} VERSION_LESS 3.13)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_link_options(-fuse-ld=lld)
+	include (CheckCXXSourceCompiles)  
+	include (CMakePushCheckState)     
+
+	set (TEST_FLAG "-fuse-ld=lld")
+	set (CMAKE_REQUIRED_FLAGS ${TEST_FLAG})
+	check_cxx_source_compiles(" int main() { return 0; } " HAVE_LLD)
+	if (HAVE_LLD)
+		add_link_options(-fuse-ld=lld)
+	endif ()
 endif()
 
 if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

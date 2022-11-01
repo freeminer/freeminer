@@ -35,6 +35,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v3
+        with:
+            submodules: recursive
       - name: Install deps
         run: |
           source ./util/ci/common.sh
@@ -215,7 +217,7 @@ jobs:
     env:
       VCPKG_VERSION: 5cf60186a241e84e8232641ee973395d4fde90e1
       # 2022.02
-      vcpkg_packages: zlib zstd curl[winssl] openal-soft libvorbis libogg libjpeg-turbo sqlite3 freetype luajit gmp jsoncpp opengl-registry
+      vcpkg_packages: zlib zstd curl[winssl] openal-soft libvorbis libogg libjpeg-turbo sqlite3 freetype luajit gmp jsoncpp opengl-registry boost
     strategy:
       fail-fast: false
       matrix:
