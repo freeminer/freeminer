@@ -1834,11 +1834,13 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 		params->MapgenParams::readParams(&settings);
 		params->readParams(&settings);
 
+/*
 		if (g_settings->getS32("farmesh5")) {
 			m_emerge = new EmergeManager(
 					m_localserver, m_localserver->m_metrics_backend.get());
 			m_emerge->initMapgens(params);
 		}
+*/
 
 		if (!m_world_path.empty()) {
 			m_settings_mgr =
