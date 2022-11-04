@@ -44,6 +44,7 @@ RUN git clone --depth=1 https://github.com/minetest/irrlicht/ -b ${IRRLICHT_VERS
 
 WORKDIR /usr/src/minetest
 RUN cmake -B build \
+        -DRUN_IN_PLACE=0 \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DBUILD_SERVER=TRUE \
@@ -65,10 +66,10 @@ WORKDIR /var/lib/minetest
 
 COPY --from=builder /usr/local/share/freeminer /usr/local/share/freeminer
 COPY --from=builder /usr/local/bin/freeminerserver /usr/local/bin/freeminerserver
-COPY --from=builder /usr/local/share/doc/minetest/freeminer.conf.example /etc/minetest/freeminer.conf
+COPY --from=builder /usr/local/share/doc/freeminer/freeminer.conf.example /etc/freeminer/freeminer.conf
 
 USER minetest:minetest
 
 EXPOSE 30000/udp 30000/tcp
 
-CMD ["/usr/local/bin/freeminerserver", "--config", "/etc/minetest/freeminer.conf"]
+CMD ["/usr/local/bin/freeminerserver", "--config", "/etc/freeminer/freeminer.conf"]
