@@ -129,12 +129,14 @@ if(NOT MSVC)
 		endif()
 
 		find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
-		find_library(UNWIND_LIBRARY NAMES unwind)
 
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY} ${UNWIND_LIBRARY})
 		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 		message(STATUS "Build with gperf ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY}")
 	endif()
+
+	find_library(UNWIND_LIBRARY NAMES unwind)
+	SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
 
 	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} execinfo)
@@ -851,14 +853,16 @@ if(USE_CURL)
 endif()
 
 
+if (NO_BUILD_BIN_DIR)
+
 # When cross-compiling assume the user doesn't want to run the executable anyway,
 # otherwise place it in <source dir>/bin/ since Minetest can only run from there.
 if(NOT CMAKE_CROSSCOMPILING)
 	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 endif()
 
-if (NOT NO_BIN_DIR)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+
 endif()
 
 if(BUILD_CLIENT)
