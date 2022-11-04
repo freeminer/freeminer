@@ -1717,7 +1717,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			u32 time_ms = timer.getTimerTime();
 
 			if (time_ms > max_time_ms) {
-				warningstream << "active block modifiers took "
+				infostream << "active block modifiers took "
 					  << time_ms << "ms (processed " << i << " of "
 					  << output.size() << " active blocks)" << std::endl;
 				break;
