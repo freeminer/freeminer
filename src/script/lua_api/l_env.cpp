@@ -387,7 +387,7 @@ int ModApiEnvMod::l_get_node_level(lua_State *L)
 	return 1;
 }
 
-// set_node_level(pos, level)
+// set_node_level(pos, level, fast)
 // pos = {x=num, y=num, z=num}
 // level: 0..63
 int ModApiEnvMod::l_set_node_level(lua_State *L)
@@ -411,7 +411,7 @@ int ModApiEnvMod::l_set_node_level(lua_State *L)
 	return 1;
 }
 
-// add_node_level(pos, level)
+// add_node_level(pos, level, fast, compress)
 // pos = {x=num, y=num, z=num}
 // level: 0..63
 int ModApiEnvMod::l_add_node_level(lua_State *L)
@@ -424,9 +424,9 @@ int ModApiEnvMod::l_add_node_level(lua_State *L)
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
 	if(lua_isnumber(L, 3))
-		compress = lua_tonumber(L, 3);
-	if(lua_isnumber(L, 3))
 		fast = lua_tonumber(L, 3);
+	if(lua_isnumber(L, 4))
+		compress = lua_tonumber(L, 4);
 	MapNode n = env->getMap().getNodeNoEx(pos);
 	if(n.getContent() == CONTENT_IGNORE){
 		lua_pushnumber(L, 0);
