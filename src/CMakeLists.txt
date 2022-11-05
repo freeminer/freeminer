@@ -2,6 +2,10 @@ project(freeminer)
 
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
+
+
+# === fm ===
+
 INCLUDE(CheckCXXSourceRuns)
 
 find_program(CCACHE_FOUND ccache)
@@ -57,6 +61,7 @@ if(STATIC_BUILD)
 else()
 	set(STATIC_BUILD 0)
 endif()
+
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
     set(USE_DEBUG_HELPERS ON)
@@ -122,6 +127,7 @@ if(NOT MSVC)
 		# find_library(TCMALLOC_LIBRARY NAMES libtcmalloc.a tcmalloc)
 		# find_library(PROFILER_LIBRARY NAMES libprofiler.a profiler)
 		# find_library(UNWIND_LIBRARY NAMES libunwind.a unwind)
+
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
 		else()
@@ -145,6 +151,8 @@ if(NOT MSVC)
 	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
 	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
 endif()
+
+# === fm === ^^^
 
 
 
@@ -331,12 +339,20 @@ option(ENABLE_LEVELDB "Enable LevelDB backend" TRUE)
 set(USE_LEVELDB FALSE)
 
 if(ENABLE_LEVELDB)
+	if(USE_STATIC_LIBRARIES)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
 	find_library(LEVELDB_LIBRARY NAMES leveldb libleveldb)
 	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
 	find_library(SNAPPY_LIBRARY snappy)
 	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
 	message (STATUS "Snappy library: ${SNAPPY_LIBRARY} : ${SNAPPY_INCLUDE_DIR}")
 	message (STATUS "Leveldb library: ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
+
+	if(USE_STATIC_LIBRARIES)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
 
 	if (NOT SNAPPY_INCLUDE_DIR)
 		find_path(SNAPPY_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
@@ -849,7 +865,7 @@ if(BUILD_CLIENT)
 endif()
 
 if(USE_CURL)
-	include_directories(${CURL_INCLUDE_DIR})
+	include_directories(${CURL_INCLUDE_DIRS})
 endif()
 
 
@@ -861,7 +877,7 @@ if(NOT CMAKE_CROSSCOMPILING)
 	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 endif()
 
- set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 
 endif()
 
@@ -885,7 +901,6 @@ if(BUILD_CLIENT)
 
 		${LUA_BIT_LIBRARY}
 		${FREETYPE_LIBRARY}
-		${PLATFORM_LIBS}
 	)
 	if(NOT USE_LUAJIT)
 		set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -903,7 +918,7 @@ if(BUILD_CLIENT)
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}
-			${CURL_LIBRARY}
+			${CURL_LIBRARIES}
 		)
 	endif()
 	if(FREETYPE_PKGCONFIG_FOUND)
@@ -939,6 +954,8 @@ if(BUILD_CLIENT)
 	if(BUILD_BENCHMARKS)
 		target_link_libraries(${PROJECT_NAME} catch2)
 	endif()
+
+	target_link_libraries(${PROJECT_NAME} ${PLATFORM_LIBS})
 endif(BUILD_CLIENT)
 
 
@@ -963,7 +980,6 @@ if(BUILD_SERVER)
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}
 		${GMP_LIBRARY}
-		${PLATFORM_LIBS}
 	)
 	set_target_properties(${PROJECT_NAME}server PROPERTIES
 		COMPILE_DEFINITIONS "SERVER")
@@ -1002,13 +1018,15 @@ if(BUILD_SERVER)
 	if(USE_CURL)
 		target_link_libraries(
 			${PROJECT_NAME}server
-			${CURL_LIBRARY}
+			${CURL_LIBRARIES}
 		)
 	endif()
 	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 	if(BUILD_BENCHMARKS)
 		target_link_libraries(${PROJECT_NAME}server catch2)
 	endif()
+
+	target_link_libraries(${PROJECT_NAME}server ${PLATFORM_LIBS})
 endif(BUILD_SERVER)
 
 # Blacklisted locales that don't work.

@@ -937,7 +937,7 @@ sub task_start(@) {
 my $task_run = [grep { !/^-/ } @ARGV];
 $task_run = [
     @$task_run,
-    qw(bot_tsan bot_asan bot_usan bot_gperf valgrind_memcheck) #  bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan  bot_tsannt bot_tsannta
+    qw(test bot_tsan bot_asan bot_usan bot_gperf valgrind_memcheck) #  bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan  bot_tsannt bot_tsannta
   ]
   if !@$task_run or 'default' ~~ $task_run;
 if ('all' ~~ $task_run) {

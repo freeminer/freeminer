@@ -4,12 +4,12 @@
 
 #include "demangle.h"
 #include "getThreadId.h"
+#include "magic_enum.hpp"
 #include <cstring>
 #include <type_traits>
 #include <tuple>
 #include <iomanip>
 #include <iostream>
-#include <magic_enum.hpp>
 
 /** Usage:
   *

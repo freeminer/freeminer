@@ -103,6 +103,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR SANITIZE_ADDRESS OR SANITIZE_THREAD OR 
 		set(ENABLE_SYSTEM_JSONCPP 0 CACHE BOOL "")
 endif()
 
+option (USE_STATIC_LIBRARIES "Set to FALSE to use shared libraries" ON)
+
 
 set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
 set(BUILD_BENCHMARKS FALSE CACHE BOOL "Build benchmarks")
@@ -491,3 +493,7 @@ if(DOXYGEN_FOUND)
 		COMMENT "Generating API documentation with Doxygen" VERBATIM
 	)
 endif()
+
+
+#target_link_libraries(IrrlichtMt::IrrlichtMt PRIVATE xcb)
+#target_link_libraries(IrrlichtMt PRIVATE xcb)

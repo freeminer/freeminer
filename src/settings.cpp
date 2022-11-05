@@ -767,6 +767,7 @@ bool Settings::getFlag(const std::string &name) const
 	}
 }
 
+
 bool Settings::getFloatNoEx(const std::string &name, float &val) const
 {
 	try {
