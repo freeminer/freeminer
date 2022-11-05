@@ -3796,10 +3796,10 @@ v3f Server::findSpawnPos()
 */
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, nodeposf.Y + spawn_level, nodepos2d.Y);
+		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 
 		s32 air_count = 0;
-		for (s32 i = vertical_spawn_range > 0 ? 0 : vertical_spawn_range - 50; i < vertical_spawn_range; i++) {
+		for (s32 i = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50; i < vertical_spawn_range; i++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
 			map.emergeBlock(blockpos, false);
 			content_t c = map.getNodeNoEx(nodepos).getContent();

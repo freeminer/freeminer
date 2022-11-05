@@ -111,13 +111,14 @@ public:
 			content_t c_self = n.getContent();
 			// making freeze not annoying, do not freeze random blocks in center of ocean
 			// todo: any block not water (dont freeze _source near _flowing)
-			bool allow = activate || heat < freeze - 40;
+
+			c = map->getNodeTry(p - v3POS(0,  1, 0 )).getContent(); // below
+			if ((c == CONTENT_AIR || c == CONTENT_IGNORE) && (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE))
+				return; // do not freeze when falling
+
+			bool allow = activate || (heat < freeze - 40 && p.Y <= water_level);
 			// todo: make for(...)
 			if (!allow) {
-				c = map->getNodeTry(p - v3POS(0,  1, 0 )).getContent(); // below
-				if (c == CONTENT_AIR || c == CONTENT_IGNORE)
-					if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE)
-						return; // do not freeze when falling
 				if (c != c_self && c != CONTENT_IGNORE) allow = 1;
 				if (!allow) {
 					c = map->getNodeTry(p - v3POS(1,  0, 0 )).getContent(); // right

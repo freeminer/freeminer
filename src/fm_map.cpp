@@ -641,6 +641,15 @@ u32 Map::updateLighting(Map::lighting_map_t & a_blocks, unordered_map_v3POS<int>
 	return ret;
 }
 
+const v3POS g_4dirs[4] =
+{
+    // +right, +top, +back
+    { 0, 0, 1}, // back
+    { 1, 0, 0}, // right
+    { 0, 0,-1}, // front
+    {-1, 0, 0}, // left
+};
+
 
 bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
                             bool remove_light) {
@@ -709,6 +718,15 @@ bool Map::propagateSunlight(v3POS pos, std::set<v3POS> & light_sources,
 					// Diminish light
 					current_light = diminish_light(current_light);
 				}
+
+                if (y == 0 && !remove_light /* && current_light == LIGHT_SUN - 1*/) {
+                    for (const auto &dir : g_4dirs) {
+                        if (getNode(pos + dir).getLight(LIGHTBANK_DAY,m_gamedef->ndef()) == LIGHT_SUN) {
+                            current_light = LIGHT_SUN;
+                            break;
+                        }
+                    }
+                }
 
 				u8 old_light = n.getLight(LIGHTBANK_DAY, nodemgr);
 

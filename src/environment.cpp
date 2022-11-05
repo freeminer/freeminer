@@ -1323,7 +1323,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 				if (n_old.param1)
 					nn.param1 = n_old.param1;
 				else if (p.Y > 0)
-					nn.param1 = 5; // will be recalculated by next light step
+					nn.param1 = LIGHT_MAX; // will be recalculated by next light step
 			}
 			m_map->setNode(p, nn);
 		} catch(InvalidPositionException &e) { }
