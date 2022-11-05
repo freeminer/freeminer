@@ -661,20 +661,17 @@ bool Settings::getNoiseParamsFromGroup(const std::string &name,
 	NoiseParams &np) const
 {
 	SettingsPtr group = NULL;
-	bool created = false;
 
-	if (!getGroupNoEx(name, group))
-	{
+	if (!getGroupNoEx(name, group)) {
 		try {
 			group = std::make_shared<Settings>();
-			created = true;
-			group->fromJson(getJson(name));
+			const auto json = getJson(name);
+			if (json.empty() || json.getMemberNames().empty()) {
+				return false;
+			}
+			group->fromJson(json);
 		} catch (const std::exception &e) {
 			errorstream<<"Json read fail: " << e.what() << std::endl;
-/*			
-			if (created)
-				delete group;
-*/			
 			return false;
 		}
 	}

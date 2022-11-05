@@ -1105,7 +1105,7 @@ bool ServerMap::propagateSunlight(
 
 			MapNode n = getNode(pos_relative + v3POS(x, MAP_BLOCKSIZE, z));
 			if (n) {
-				if (n.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) != LIGHT_SUN &&
+				if (n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN &&
 						!light_ambient) {
 					no_sunlight = true;
 				}
@@ -1117,7 +1117,7 @@ bool ServerMap::propagateSunlight(
 					no_sunlight = true;
 				} else {
 					MapNode n = block->getNode(v3POS(x, MAP_BLOCKSIZE - 1, z));
-					if (n && m_gamedef->ndef()->get(n).sunlight_propagates == false)
+					if (n && nodemgr->get(n).sunlight_propagates == false)
 						no_sunlight = true;
 				}
 				// NOTE: As of now, this just would make everything dark.

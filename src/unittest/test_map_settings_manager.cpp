@@ -91,7 +91,7 @@ std::string TestMapSettingsManager::makeMetaFile(bool make_corrupt)
 		"mgv5_np_filler_depth = 20, 1, (150, 150, 150), 261, 4, 0.7,  1.0\n"
 		"mgv5_np_height = 20, 10, (250, 250, 250), 84174,  4, 0.5,  1.0\n";
 
-	FILE *f = fopen(metafile.c_str(), "wb");
+	FILE *f = fopen((metafile + ".txt").c_str(), "wb");
 	UASSERT(f != NULL);
 
 	fputs(metafile_contents, f);
@@ -258,7 +258,7 @@ void TestMapSettingsManager::testMapMetaFailures()
 	// Check to see if it'll fail on a corrupt map meta file
 	{
 		test_mapmeta_path = makeMetaFile(true);
-		UASSERT(fs::PathExists(test_mapmeta_path));
+		UASSERT(fs::PathExists(test_mapmeta_path+".txt"));
 
 		MapSettingsManager mgr2(test_mapmeta_path);
 		UASSERT(!mgr2.loadMapMeta());

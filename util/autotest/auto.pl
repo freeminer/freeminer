@@ -361,7 +361,7 @@ our $commands = {
         $D{USE_LIBCXX}         = $config->{cmake_libcxx}      if defined $config->{cmake_libcxx};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
         $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
-        $D{NO_LTO}             = 1                            if !$config->{lto};
+        $D{NO_LTO}             = $config->{cmake_no_lto} // 1;
 
         $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -794,7 +794,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         sub { $config->{cmake_opt}{CMAKE_INSTALL_PREFIX} = $config->{logdir} . '/install'; 0 }, 'build',
         sub { sy qq{nice cmake --install .}; },
     ],
-    test => ['build', 'run_test'],
+    test => ['build', {'---show_profiler_graph'=>0, -show_profiler_graph=>0}, 'run_test'],
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }
@@ -858,6 +858,7 @@ sub options_make(;$$) {
             ($rm->{$k} = ${json($rm->{$k})});    # =~ s/"/$config->{run_escape}\\"/g;    #"
         }
     }
+    $rm->{$_} = $config->{config_pass}{$_} for sort keys %{$config->{config_pass}};
 
     return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_='$rm->{$_}'"} sort keys %$rm);
 }
@@ -873,8 +874,10 @@ sub command_run(@) {
         for my $k (sort keys %$cmd) {
             if ($k =~ /^----(.+)/) {
                 $config->{options_use}{$1} = $cmd->{$k};
-            } elsif ($k =~ /^-(.+)/) {
+            } elsif ($k =~ /^---(.+)/) {
                 $config->{$1} = $cmd->{$k};
+            } elsif ($k =~ /^-(.+)/) {
+                $config->{config_pass}{$1} = $cmd->{$k};
             } else {
                 $g->{$k} = $cmd->{$k};
             }
