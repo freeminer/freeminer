@@ -303,7 +303,6 @@ enum ToClientCommand
 	*/
 
 	TOCLIENT_OBJECTDATA = 0x28, // Obsolete
-
 	TOCLIENT_TIME_OF_DAY = 0x29,
 	/*
 		u16 time (0-23999)

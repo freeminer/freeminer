@@ -579,7 +579,7 @@ int ModApiEnvMod::l_get_node_level(lua_State *L)
 	return 1;
 }
 
-// set_node_level(pos, level)
+// set_node_level(pos, level, fast)
 // pos = {x=num, y=num, z=num}
 // level: 0..63
 int ModApiEnvMod::l_set_node_level(lua_State *L)
@@ -588,19 +588,22 @@ int ModApiEnvMod::l_set_node_level(lua_State *L)
 
 	v3s16 pos = read_v3s16(L, 1);
 	s16 level = 1;
+	s16 fast = 0;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
+	if(lua_isnumber(L, 3))
+		fast = lua_tonumber(L, 3);
 	MapNode n = env->getMap().getNode(pos);
 	if(n.getContent() == CONTENT_IGNORE){
 		lua_pushnumber(L, 0);
 		return 1;
 	}
 	lua_pushnumber(L, n.setLevel(env->getGameDef()->ndef(), level));
-	env->setNode(pos, n);
+	env->setNode(pos, n, fast);
 	return 1;
 }
 
-// add_node_level(pos, level)
+// add_node_level(pos, level, fast, compress)
 // pos = {x=num, y=num, z=num}
 // level: -127..127
 int ModApiEnvMod::l_add_node_level(lua_State *L)
@@ -608,19 +611,21 @@ int ModApiEnvMod::l_add_node_level(lua_State *L)
 	GET_ENV_PTR;
 
 	v3s16 pos = read_v3s16(L, 1);
-	s16 level = 1;
+	s16 level = 1, fast = 0;
 	bool compress = 0;
 	if(lua_isnumber(L, 2))
 		level = lua_tonumber(L, 2);
 	if(lua_isnumber(L, 3))
-		compress = lua_tonumber(L, 3);
+		fast = lua_tonumber(L, 3);
+	if(lua_isnumber(L, 4))
+		compress = lua_tonumber(L, 4);
 	MapNode n = env->getMap().getNode(pos);
 	if(n.getContent() == CONTENT_IGNORE){
 		lua_pushnumber(L, 0);
 		return 1;
 	}
 	lua_pushnumber(L, n.addLevel(env->getGameDef()->ndef(), level, compress));
-	env->setNode(pos, n);
+	env->setNode(pos, n, fast);
 	return 1;
 }
 
@@ -633,15 +638,19 @@ int ModApiEnvMod::l_freeze_melt(lua_State *L)
 
 	v3s16 pos = read_v3s16(L, 1);
 	int direction = 1;
+	s16 fast = 0;
+
 	if(lua_isnumber(L, 2))
 		direction = lua_tonumber(L, 2);
+	if(lua_isnumber(L, 3))
+		fast = lua_tonumber(L, 3);
 	MapNode n = env->getMap().getNode(pos);
 	if(n.getContent() == CONTENT_IGNORE){
 		lua_pushnumber(L, 0);
 		return 1;
 	}
 	lua_pushnumber(L, n.freeze_melt(env->getGameDef()->ndef(), direction));
-	env->setNode(pos, n);
+	env->setNode(pos, n, fast);
 	return 1;
 }
 

@@ -170,7 +170,22 @@ void MapgenIndev::calculateNoise() {
 
 	layers_prepare(node_min, node_max);
 
-	cave_prepare(node_min, node_max, sp->paramsj.get("cave_indev", -100).asInt());
+	int ocean_min =
+	baseTerrainLevel(sp->np_terrain_base.offset - farscale(sp->np_terrain_base.far_scale,
+														  node_min.X, node_min.Z) *
+														  sp->np_terrain_base.scale,
+			sp->np_terrain_higher.offset -
+					farscale(sp->np_terrain_higher.far_scale, node_min.X, node_min.Z) *
+							sp->np_terrain_higher.scale,
+			sp->np_steepness.offset -
+					farscale(sp->np_steepness.far_scale, node_min.X, node_min.Z) *
+							sp->np_steepness.scale,
+			sp->np_height_select.offset -
+					farscale(sp->np_height_select.far_scale, node_min.X, node_min.Z) *
+							sp->np_height_select.scale
+	) - MAP_BLOCKSIZE;
+
+	cave_prepare(node_min, node_max, sp->paramsj.get("cave_indev", ocean_min).asInt());
 }
 
 MapgenIndevParams::MapgenIndevParams() {

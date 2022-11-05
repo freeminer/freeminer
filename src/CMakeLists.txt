@@ -653,10 +653,10 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
 	stat.cpp
 	fm_liquid.cpp
 	fm_map.cpp
-        fm_abm.cpp
-        fm_clientiface.cpp
-        content_abm.cpp
-        fm_serverenvironment.cpp
+    fm_abm.cpp
+    fm_clientiface.cpp
+    content_abm.cpp
+    fm_serverenvironment.cpp
 )
 #	FMColoredString.cpp
 
