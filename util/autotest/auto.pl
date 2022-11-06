@@ -317,7 +317,6 @@ our $options = {
     fast => {
         fast_move => 1, movement_speed_fast => 30,
     },
-    bench1 => {fixed_map_seed => 1, -autoexit => 60, max_block_generate_distance => 100, max_block_send_distance => 100,},
     unload => {server_unload_unused_data_timeout => 20, client_unload_unused_data_timeout => 15,},
 };
 
@@ -771,7 +770,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     fly            => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                                    #'
     timelapse_fly  => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],                        #'
     timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1,no_exit', -options_bot => '',}, \'bot', 'timelapse_video'],  #'
-    bench1         => [{-options_int => 'bench1,fly_forward,fast',}, \'bot'],                                                             #'
+    bench => [{'-fixed_map_seed' => 1, '--autoexit' => 30, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly_forward'=>1, '---world_clear'=>1, '--world' => $script_path . 'world_bench',
+        '-static_spawnpoint'  => '(0,20,0)',}, 'fly'],
     up             => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
@@ -876,6 +876,8 @@ sub command_run(@) {
                 $config->{options_use}{$1} = $cmd->{$k};
             } elsif ($k =~ /^---(.+)/) {
                 $config->{$1} = $cmd->{$k};
+            } elsif ($k =~ /^--(.+)/) {
+               $options->{pass}{$1} = $cmd->{$k};
             } elsif ($k =~ /^-(.+)/) {
                 $config->{config_pass}{$1} = $cmd->{$k};
             } else {
@@ -952,7 +954,7 @@ unless (@ARGV) {
     say "\n\n but running default list: ", join ' ', @$task_run;
     say '';
     say "possible presets:";
-    print "---$_ " for sort keys %$options;
+    print "----$_ " for sort keys %$options;
     say '';
     sleep 1;
 }

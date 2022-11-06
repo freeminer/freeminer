@@ -493,7 +493,3 @@ if(DOXYGEN_FOUND)
 		COMMENT "Generating API documentation with Doxygen" VERBATIM
 	)
 endif()
-
-
-#target_link_libraries(IrrlichtMt::IrrlichtMt PRIVATE xcb)
-#target_link_libraries(IrrlichtMt PRIVATE xcb)

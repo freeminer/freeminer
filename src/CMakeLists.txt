@@ -136,13 +136,18 @@ if(NOT MSVC)
 
 		find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
 
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY} ${UNWIND_LIBRARY})
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY})
 		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 		message(STATUS "Build with gperf ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY}")
 	endif()
 
 	find_library(UNWIND_LIBRARY NAMES unwind)
-	SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
+
+	if(UNWIND_LIBRARY)
+		set(USE_UNWIND 1)
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
+		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
+	endif()
 
 	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} execinfo)
