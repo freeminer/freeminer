@@ -207,10 +207,11 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 	int x = dx, y = dy, z = dz;
 	// if (x < y && x < z) return 0; // debug slice
 	const auto rooms_pow_min = 2, rooms_pow_max = 9;
-	const auto rooms_pow_cut_max = 7;
-	const auto rooms_pow_fill_max = 4;
-	const auto room_fill_every = 10;
-	const auto room_big_every = 14;
+	const auto rooms_pow_cut_max = 4;
+	const auto rooms_pow_fill_max = 5;
+	const auto room_fill_every = 9;
+	const auto room_big_every = 17;
+
 	const auto rooms_limit = (MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) << rooms_pow_max;
 	// errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
 	const int cxi = (x >> rooms_pow_max), cyi = (y >> rooms_pow_max), czi = (z >> rooms_pow_max);
