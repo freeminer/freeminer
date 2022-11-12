@@ -153,28 +153,31 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 	auto playersao = player.getPlayerSAO();
 	player.m_name = json["name"].asString();
 	if (playersao) {
+
+		v3f position;
+		json["position"] >> position;
+		playersao->setHPRaw(json["hp"].asInt());
+		playersao->setBasePosition(position);
+		playersao->setBreath(json["breath"].asInt(), false);
 		playersao->setLookPitch(json["pitch"].asFloat());
 
 		if (json["rotation"]) {
 			v3f rotation;
-			json["rotation"]>>rotation;
+			json["rotation"] >> rotation;
 			playersao->setRotation(rotation);
 		} else {
-			playersao->setRotation({0, json["yaw"].asFloat(), 0});
+			playersao->setPlayerYaw(json["yaw"].asFloat());
 		}
-		v3f position;
-		json["position"]>>position;
-		playersao->setBasePosition(position);
-		playersao->setHP(json["hp"].asInt(), PlayerHPChangeReason::SET_HP);
-		playersao->setBreath(json["breath"].asInt());
 
 		const auto attr_root = json["extended_attributes"];
-		const Json::Value::Members attr_list =
-		attr_root.getMemberNames();
-		for (Json::Value::Members::const_iterator it = attr_list.begin(); it != attr_list.end(); ++it) {
-			const Json::Value & attr_value = attr_root[*it];
+		const Json::Value::Members attr_list = attr_root.getMemberNames();
+		for (Json::Value::Members::const_iterator it = attr_list.begin();
+				it != attr_list.end(); ++it) {
+			const Json::Value &attr_value = attr_root[*it];
 			playersao->getMeta().setString(*it, attr_value.asString());
-        }
+		}
+
+		playersao->getMeta().setModified(false);
 	}
 
 	//todo

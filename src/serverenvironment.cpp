@@ -2564,8 +2564,10 @@ PlayerDatabase *ServerEnvironment::openPlayerDatabase(const std::string &name,
 		const std::string &savedir, const Settings &conf)
 {
 
+#if USE_SQLITE3
 	if (name == "sqlite3")
 		return new PlayerDatabaseSQLite3(savedir);
+#endif
 
 	if (name == "dummy")
 		return new Database_Dummy();
@@ -2581,6 +2583,9 @@ PlayerDatabase *ServerEnvironment::openPlayerDatabase(const std::string &name,
 #if USE_LEVELDB
 	if (name == "leveldb")
 		return new PlayerDatabaseLevelDB(savedir);
+
+	if (name == "leveldbfm")
+		return new PlayerDatabaseLevelDBFM(savedir);
 #endif
 
 	if (name == "files")

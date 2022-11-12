@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_LEVELDB
 
+#include <json/reader.h>
 #include <string>
 #include "database.h"
 #include "leveldb/db.h"
@@ -64,9 +65,26 @@ public:
 	bool removePlayer(const std::string &name);
 	void listPlayers(std::vector<std::string> &res);
 
-private:
+protected:
 	leveldb::DB *m_database;
 };
+
+
+// p.name : json
+class PlayerDatabaseLevelDBFM : public PlayerDatabaseLevelDB
+{
+public:
+	PlayerDatabaseLevelDBFM(const std::string &savedir);
+
+	void savePlayer(RemotePlayer *player);
+	bool loadPlayer(RemotePlayer *player, PlayerSAO *sao);
+	bool removePlayer(const std::string &name);
+	void listPlayers(std::vector<std::string> &res);
+
+private:
+	Json::CharReaderBuilder json_char_reader_builder;
+};
+
 
 class AuthDatabaseLevelDB : public AuthDatabase
 {

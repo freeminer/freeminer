@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_LEVELDB
 
+#include "convert_json.h"
 #include "database-leveldb.h"
 #include "log_types.h"
 #include "filesys.h"
@@ -222,6 +223,80 @@ void PlayerDatabaseLevelDB::listPlayers(std::vector<std::string> &res)
 	res.clear();
 	for (it->SeekToFirst(); it->Valid(); it->Next()) {
 		res.push_back(it->key().ToString());
+	}
+	delete it;
+}
+
+
+
+PlayerDatabaseLevelDBFM::PlayerDatabaseLevelDBFM(const std::string &savedir)
+: PlayerDatabaseLevelDB(savedir)
+{
+}
+
+void PlayerDatabaseLevelDBFM::savePlayer(RemotePlayer *player)
+{
+	if (!player || !player->getPlayerSAO())
+		return;
+	Json::Value player_json;
+	player_json << *player;
+
+	leveldb::Status status = m_database->Put(leveldb::WriteOptions(),
+		"p." + player->getName(), fastWriteJson(player_json));
+	ENSURE_STATUS_OK(status);
+	player->onSuccessfulSave();
+}
+
+bool PlayerDatabaseLevelDBFM::removePlayer(const std::string &name)
+{
+	leveldb::Status s = m_database->Delete(leveldb::WriteOptions(), "p." + name);
+	return s.ok();
+}
+
+bool PlayerDatabaseLevelDBFM::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
+{
+	try {
+		Json::Value player_json;
+		verbosestream << "Reading kv player " << player->getName() << std::endl;
+
+		std::string raw;
+		leveldb::Status s =
+				m_database->Get(leveldb::ReadOptions(), "p." + player->getName(), &raw);
+		if (!s.ok())
+			return false;
+
+		std::istringstream stream(raw);
+		std::string errors;
+		if (!Json::parseFromStream(
+					json_char_reader_builder, stream, &player_json, &errors)) {
+			errorstream << "Failed to load player. player_name=" << player->getName()
+						<< " " << errors << std::endl;
+			return false;
+		}
+
+		if (!player_json.empty()) {
+			player->setPlayerSAO(sao);
+			player_json >> *player;
+			return true;
+		}
+	} catch (const std::exception & e) {
+			errorstream << "Failed to load player. player_name=" << player->getName()
+						<< " " << e.what() << std::endl;
+			return false;
+	}
+
+	return false;
+}
+
+void PlayerDatabaseLevelDBFM::listPlayers(std::vector<std::string> &res)
+{
+	leveldb::Iterator *it = m_database->NewIterator(leveldb::ReadOptions());
+	res.clear();
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+			const auto key = it->key().ToString();
+			if (key.size() < 2)
+			continue;
+			res.push_back(key.substr(2, key.size() - 2));
 	}
 	delete it;
 }
