@@ -104,7 +104,6 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 
 void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
-#if USE_LEVELDB
 	auto it = m_database->NewIterator(leveldb::ReadOptions());
 	if (!it)
 		return;
@@ -113,15 +112,14 @@ void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
 	}
 	ENSURE_STATUS_OK(it->status());  // Check for any errors found during the scan
 	delete it;
-#endif
 }
 
-PlayerDatabaseLevelDB::PlayerDatabaseLevelDB(const std::string &savedir)
+PlayerDatabaseLevelDB::PlayerDatabaseLevelDB(const std::string &savedir, const std::string &name)
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
 	leveldb::Status status = leveldb::DB::Open(options,
-		savedir + DIR_DELIM + "players.db", &m_database);
+		savedir + DIR_DELIM + name, &m_database);
 	ENSURE_STATUS_OK(status);
 }
 
@@ -227,86 +225,12 @@ void PlayerDatabaseLevelDB::listPlayers(std::vector<std::string> &res)
 	delete it;
 }
 
-
-
-PlayerDatabaseLevelDBFM::PlayerDatabaseLevelDBFM(const std::string &savedir)
-: PlayerDatabaseLevelDB(savedir)
-{
-}
-
-void PlayerDatabaseLevelDBFM::savePlayer(RemotePlayer *player)
-{
-	if (!player || !player->getPlayerSAO())
-		return;
-	Json::Value player_json;
-	player_json << *player;
-
-	leveldb::Status status = m_database->Put(leveldb::WriteOptions(),
-		"p." + player->getName(), fastWriteJson(player_json));
-	ENSURE_STATUS_OK(status);
-	player->onSuccessfulSave();
-}
-
-bool PlayerDatabaseLevelDBFM::removePlayer(const std::string &name)
-{
-	leveldb::Status s = m_database->Delete(leveldb::WriteOptions(), "p." + name);
-	return s.ok();
-}
-
-bool PlayerDatabaseLevelDBFM::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
-{
-	try {
-		Json::Value player_json;
-		verbosestream << "Reading kv player " << player->getName() << std::endl;
-
-		std::string raw;
-		leveldb::Status s =
-				m_database->Get(leveldb::ReadOptions(), "p." + player->getName(), &raw);
-		if (!s.ok())
-			return false;
-
-		std::istringstream stream(raw);
-		std::string errors;
-		if (!Json::parseFromStream(
-					json_char_reader_builder, stream, &player_json, &errors)) {
-			errorstream << "Failed to load player. player_name=" << player->getName()
-						<< " " << errors << std::endl;
-			return false;
-		}
-
-		if (!player_json.empty()) {
-			player->setPlayerSAO(sao);
-			player_json >> *player;
-			return true;
-		}
-	} catch (const std::exception & e) {
-			errorstream << "Failed to load player. player_name=" << player->getName()
-						<< " " << e.what() << std::endl;
-			return false;
-	}
-
-	return false;
-}
-
-void PlayerDatabaseLevelDBFM::listPlayers(std::vector<std::string> &res)
-{
-	leveldb::Iterator *it = m_database->NewIterator(leveldb::ReadOptions());
-	res.clear();
-	for (it->SeekToFirst(); it->Valid(); it->Next()) {
-			const auto key = it->key().ToString();
-			if (key.size() < 2)
-			continue;
-			res.push_back(key.substr(2, key.size() - 2));
-	}
-	delete it;
-}
-
-AuthDatabaseLevelDB::AuthDatabaseLevelDB(const std::string &savedir)
+AuthDatabaseLevelDB::AuthDatabaseLevelDB(const std::string &savedir, const std::string &name)
 {
 	leveldb::Options options;
 	options.create_if_missing = true;
 	leveldb::Status status = leveldb::DB::Open(options,
-		savedir + DIR_DELIM + "auth.db", &m_database);
+		savedir + DIR_DELIM + name, &m_database);
 	ENSURE_STATUS_OK(status);
 }
 
@@ -396,5 +320,167 @@ void AuthDatabaseLevelDB::reload()
 {
 	// No-op for LevelDB.
 }
+
+
+
+
+
+//fm:
+
+
+PlayerDatabaseLevelDBFM::PlayerDatabaseLevelDBFM(const std::string &savedir)
+: PlayerDatabaseLevelDB(savedir)
+{
+}
+
+void PlayerDatabaseLevelDBFM::savePlayer(RemotePlayer *player)
+{
+	if (!player || !player->getPlayerSAO())
+		return;
+	Json::Value json;
+	json << *player;
+
+	leveldb::Status status = m_database->Put(leveldb::WriteOptions(),
+		m_prefix + player->getName(), fastWriteJson(json));
+	ENSURE_STATUS_OK(status);
+	player->onSuccessfulSave();
+}
+
+bool PlayerDatabaseLevelDBFM::removePlayer(const std::string &name)
+{
+	leveldb::Status s = m_database->Delete(leveldb::WriteOptions(), m_prefix + name);
+	return s.ok();
+}
+
+bool PlayerDatabaseLevelDBFM::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
+{
+	try {
+		Json::Value json;
+		verbosestream << "Reading kv player " << player->getName() << std::endl;
+
+		std::string raw;
+		leveldb::Status s =
+				m_database->Get(leveldb::ReadOptions(), m_prefix + player->getName(), &raw);
+		if (!s.ok())
+			return false;
+
+		std::istringstream stream(raw);
+		std::string errors;
+		if (!Json::parseFromStream(
+					m_json_char_reader_builder, stream, &json, &errors)) {
+			errorstream << "Failed to load player. player_name=" << player->getName()
+						<< " " << errors << std::endl;
+			return false;
+		}
+
+		if (!json.empty()) {
+			player->setPlayerSAO(sao);
+			json >> *player;
+			return true;
+		}
+	} catch (const std::exception & e) {
+			errorstream << "Failed to load player. player_name=" << player->getName()
+						<< " " << e.what() << std::endl;
+			return false;
+	}
+
+	return false;
+}
+
+void PlayerDatabaseLevelDBFM::listPlayers(std::vector<std::string> &res)
+{
+	leveldb::Iterator *it = m_database->NewIterator(leveldb::ReadOptions());
+	res.clear();
+	const auto prefix_size = m_prefix.size();
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+			const auto key = it->key().ToString();
+			if (key.size() < prefix_size || key.substr(0,prefix_size) != m_prefix)
+			continue;
+			res.emplace_back(key.substr(prefix_size, key.size() - prefix_size));
+	}
+	delete it;
+}
+
+
+
+
+AuthDatabaseLevelDBFM::AuthDatabaseLevelDBFM(const std::string &savedir):
+AuthDatabaseLevelDB(savedir, "players_auth.db")
+{}
+
+bool AuthDatabaseLevelDBFM::getAuth(const std::string &name, AuthEntry &res)
+{
+	std::string raw;
+	leveldb::Status s = m_database->Get(leveldb::ReadOptions(), m_prefix + name, &raw);
+	if (!s.ok())
+			return false;
+	std::istringstream is(raw, std::ios_base::binary);
+
+	Json::Value json;
+	std::istringstream stream(raw);
+	std::string errors;
+	if (!Json::parseFromStream(m_json_char_reader_builder, stream, &json, &errors)) {
+			errorstream << "Failed to load player auth . player_name=" << name << " "
+						<< errors << std::endl;
+			return false;
+	}
+
+	if (json.empty()) {
+			return false;
+	}
+
+	res.id = json["version"].asUInt64();
+	res.name = name;
+	res.password = json["password"].asString();
+
+	res.privileges.clear();
+	res.privileges.reserve(json["privileges"].size());
+	for (const auto & p : json["privileges"].getMemberNames()) {
+			DUMP(p);
+			res.privileges.emplace_back(p);
+	}
+
+	res.last_login = json["last_login"].asInt64();
+	return true;
+}
+
+bool AuthDatabaseLevelDBFM::saveAuth(const AuthEntry &authEntry)
+{
+	Json::Value json;
+ 	json["version"] = 1;
+ 	json["password"] = authEntry.password;
+	for (const std::string &privilege : authEntry.privileges) {
+		json["privileges"][privilege] = true;
+	}
+
+	json["last_login"] = authEntry.last_login;
+
+	leveldb::Status s = m_database->Put(leveldb::WriteOptions(),
+		m_prefix + authEntry.name, fastWriteJson(json));
+	return s.ok();
+}
+
+bool AuthDatabaseLevelDBFM::deleteAuth(const std::string &name)
+{
+	leveldb::Status s = m_database->Delete(leveldb::WriteOptions(), m_prefix + name);
+	return s.ok();
+}
+
+void AuthDatabaseLevelDBFM::listNames(std::vector<std::string> &res)
+{
+	leveldb::Iterator* it = m_database->NewIterator(leveldb::ReadOptions());
+	res.clear();
+	const auto prefix_size = m_prefix.size();
+	for (it->SeekToFirst(); it->Valid(); it->Next()) {
+			const auto key = it->key().ToString();
+			if (key.size() < prefix_size || key.substr(0,prefix_size) != m_prefix)
+			continue;
+			res.emplace_back(key.substr(prefix_size, key.size() - prefix_size));
+	}
+	delete it;
+}
+
+
+
 
 #endif // USE_LEVELDB

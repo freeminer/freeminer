@@ -171,7 +171,7 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 
 		const auto attr_root = json["extended_attributes"];
 		const Json::Value::Members attr_list = attr_root.getMemberNames();
-		for (Json::Value::Members::const_iterator it = attr_list.begin();
+		for (auto it = attr_list.begin();
 				it != attr_list.end(); ++it) {
 			const Json::Value &attr_value = attr_root[*it];
 			playersao->getMeta().setString(*it, attr_value.asString());

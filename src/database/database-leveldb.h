@@ -57,13 +57,30 @@ private:
 class PlayerDatabaseLevelDB : public PlayerDatabase
 {
 public:
-	PlayerDatabaseLevelDB(const std::string &savedir);
+	PlayerDatabaseLevelDB(const std::string &savedir, const std::string &name = "players.db");
 	~PlayerDatabaseLevelDB();
 
 	void savePlayer(RemotePlayer *player);
 	bool loadPlayer(RemotePlayer *player, PlayerSAO *sao);
 	bool removePlayer(const std::string &name);
 	void listPlayers(std::vector<std::string> &res);
+
+protected:
+	leveldb::DB *m_database;
+};
+
+class AuthDatabaseLevelDB : public AuthDatabase
+{
+public:
+	AuthDatabaseLevelDB(const std::string &savedir, const std::string &name = "auth.db");
+	virtual ~AuthDatabaseLevelDB();
+
+	virtual bool getAuth(const std::string &name, AuthEntry &res);
+	virtual bool saveAuth(const AuthEntry &authEntry);
+	virtual bool createAuth(AuthEntry &authEntry);
+	virtual bool deleteAuth(const std::string &name);
+	virtual void listNames(std::vector<std::string> &res);
+	virtual void reload();
 
 protected:
 	leveldb::DB *m_database;
@@ -82,25 +99,25 @@ public:
 	void listPlayers(std::vector<std::string> &res);
 
 private:
-	Json::CharReaderBuilder json_char_reader_builder;
+	Json::CharReaderBuilder m_json_char_reader_builder;
+	const std::string m_prefix {"p."};
 };
 
 
-class AuthDatabaseLevelDB : public AuthDatabase
+class AuthDatabaseLevelDBFM : public AuthDatabaseLevelDB
 {
 public:
-	AuthDatabaseLevelDB(const std::string &savedir);
-	virtual ~AuthDatabaseLevelDB();
+	AuthDatabaseLevelDBFM(const std::string &savedir);
 
 	virtual bool getAuth(const std::string &name, AuthEntry &res);
 	virtual bool saveAuth(const AuthEntry &authEntry);
-	virtual bool createAuth(AuthEntry &authEntry);
 	virtual bool deleteAuth(const std::string &name);
 	virtual void listNames(std::vector<std::string> &res);
-	virtual void reload();
 
 private:
-	leveldb::DB *m_database;
+	Json::CharReaderBuilder m_json_char_reader_builder;
+	const std::string m_prefix {"auth_"};
 };
+
 
 #endif // USE_LEVELDB
