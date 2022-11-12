@@ -436,7 +436,6 @@ bool AuthDatabaseLevelDBFM::getAuth(const std::string &name, AuthEntry &res)
 	res.privileges.clear();
 	res.privileges.reserve(json["privileges"].size());
 	for (const auto & p : json["privileges"].getMemberNames()) {
-			DUMP(p);
 			res.privileges.emplace_back(p);
 	}
 
