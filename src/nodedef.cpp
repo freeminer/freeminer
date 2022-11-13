@@ -1127,6 +1127,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 		is_liquid = true;
 		break;
 	case NDT_FLOWINGLIQUID:
+		solidness_far = 1;
 		solidness = 0;
 		if (tsettings.opaque_water)
 			alpha = ALPHAMODE_OPAQUE;
