@@ -1022,7 +1022,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 								constexpr static auto min_dist_blocks_always_send = 3;
 								if (dist > min_dist_blocks_always_send) {
 
-									if (dist > client->wanted_range / MAP_BLOCKSIZE && last_dist == dist) {
+									if (dist > player->getWantedRange() && last_dist == dist) {
 										continue;
 									}
 									const auto rndmax = std::min<uint32_t>(

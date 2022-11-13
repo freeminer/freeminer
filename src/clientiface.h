@@ -247,7 +247,7 @@ public:
 	//fm:
 	u16 net_proto_version_fm = 0;
 	std::atomic_int m_nearest_unsent_reset {0};
-	std::atomic_int wanted_range {9 * MAP_BLOCKSIZE};
+	std::atomic_uint wanted_range {10 };
 	std::atomic_int range_all {0};
 	std::atomic_int farmesh = {0};
 	float fov = 72;
@@ -320,7 +320,7 @@ public:
 		o<<"RemoteClient "<<peer_id<<": "
 				<<"m_blocks_sent.size()="<<m_blocks_sent.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
-				<<", wanted_range="<<wanted_range
+				<<", wanted_range="<<wanted_range * MAP_BLOCKSIZE
 				<<std::endl;
 	}
 

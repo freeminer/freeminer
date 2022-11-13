@@ -513,6 +513,8 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	playersao->setFov(fov);
 	playersao->setWantedRange(wanted_range);
 
+	getClient(pkt->getPeerId())->wanted_range = wanted_range;
+
    {
 	std::lock_guard<std::mutex> lock(player->control_mutex);
 
