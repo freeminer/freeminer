@@ -114,7 +114,11 @@ void LuaEntitySAO::addedToEnvironment(u32 dtime_s)
 		m_prop.infotext = m_init_name;
 		// Set unknown object texture
 		m_prop.textures.clear();
+#if NDEBUG
+		m_prop.textures.emplace_back("blank.png");
+#else
 		m_prop.textures.emplace_back("unknown_object.png");
+#endif
 	}
 }
 
