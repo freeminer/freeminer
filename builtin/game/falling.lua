@@ -326,7 +326,7 @@ core.register_entity(":__builtin:falling_node", {
 	end,
 
 	on_step = function(self, dtime, moveresult)
-		if dtime > 0.2 then remove_fast = 2 else remove_fast = 0 end
+		if dtime > 0.1 then remove_fast = 2 else remove_fast = 0 end
 		-- Fallback code since collision detection can't tell us
 		-- about liquids (which do not collide)
 		if self.floats then
