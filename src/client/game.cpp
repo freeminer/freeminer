@@ -1424,7 +1424,7 @@ bool Game::createSingleplayerServer(const std::string &map_dir,
 			false, nullptr, error_message);
 	server->start();
 
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 	} catch (const std::exception &e) {
 		*error_message = std::string("Unable to create server: ") + e.what();
 		errorstream << *error_message << std::endl;
@@ -1721,7 +1721,7 @@ bool Game::connectToServer(const GameStartData &start_data,
 		errorstream << "Connection error: "<< e.what() << std::endl;
 		return false;
 
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 	} catch (const std::exception &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0, false);
 		errorstream << "Connection error: "<< e.what() << std::endl;

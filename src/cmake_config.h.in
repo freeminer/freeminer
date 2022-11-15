@@ -19,6 +19,7 @@
 #cmakedefine01 USE_UNWIND
 #cmakedefine01 LOCK_PROFILE
 #cmakedefine01 BUILD_CLIENT
+#cmakedefine01 EXCEPTION_DEBUG
 #define USE_ASYNC_DRAWLIST_UPDATE 1
 
 

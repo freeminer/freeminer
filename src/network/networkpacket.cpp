@@ -599,7 +599,7 @@ bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet,
 		errorstream << "parse_msgpack_packet: exception: " << e.what() << " datasize=" << datasize << std::endl;
 		return false;
 	} catch (...) {
-		errorstream << "parse_msgpack_packet: Ooops..." << std::endl;
+		errorstream << "parse_msgpack_packet: Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl;
 		return false;
 	}
 

@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gettime.h"
 #include "debug/stacktrace.h"
 #include "log.h"
+#include "config.h"
 
 #ifdef _WIN32
 	#ifndef _WIN32_WINNT
@@ -104,6 +105,10 @@ void debug_set_exception_handler();
 			errorstream << "An unhandled exception occurred: " \
 				<< e.what() << std::endl << stacktrace() << std::endl; \
 			FATAL_ERROR(e.what());                             \
+		} catch (...) {                    \
+			errorstream << "An unknown unhandled exception occurred at " \
+				<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl << stacktrace() << std::endl; \
+			FATAL_ERROR("unknown");                             \
 		}
 #else
 	// Dummy ones
@@ -111,13 +116,13 @@ void debug_set_exception_handler();
 	#define END_DEBUG_EXCEPTION_HANDLER
 #endif
 
-//#define EXEPTION_DEBUG 1 // Disable almost all catch() to get good system stacktraces
+//#define EXCEPTION_DEBUG 1 // Disable almost all catch() to get good system stacktraces
 
-#if EXEPTION_DEBUG
+#if EXCEPTION_DEBUG
 	#define EXCEPTION_HANDLER_BEGIN
 	#define EXCEPTION_HANDLER_END
 #else
 	#define EXCEPTION_HANDLER_BEGIN try {
 	#define EXCEPTION_HANDLER_END } catch (const std::exception &e) { errorstream << m_name << ": An unhandled exception occurred: " << e.what() << std::endl << stacktrace() << std::endl; } \
-									catch (...)               { errorstream << m_name << ": Ooops..." << std::endl << stacktrace() << std::endl; }
+									catch (...)               { errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl << stacktrace() << std::endl; }
 #endif

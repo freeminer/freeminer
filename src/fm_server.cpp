@@ -90,14 +90,14 @@ void *ServerThread::run()
 		} catch (const ClientNotFoundException &e) {
 		} catch (const con::ConnectionBindFailed &e) {
 			m_server->setAsyncFatalError(e.what());
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 		} catch (const LuaError &e) {
 			m_server->setAsyncFatalError("Lua: " + std::string(e.what()));
 		} catch (const std::exception &e) {
 			errorstream << m_name << ": exception: " << e.what() << std::endl
 						<< stacktrace() << std::endl;
 		} catch (...) {
-			errorstream << m_name << ": Ooops..." << std::endl
+			errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
 						<< stacktrace() << std::endl;
 #endif
 		}
@@ -126,12 +126,12 @@ public:
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				else
 					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl
 							<< stacktrace() << std::endl;
 			} catch (...) {
-				errorstream << m_name << ": Ooops..." << std::endl
+				errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
 							<< stacktrace() << std::endl;
 #else
 			} catch (int) { // nothing
@@ -165,12 +165,12 @@ public:
 				auto sent = m_server->SendBlocks((time_now - time) / 1000.0f);
 				time = time_now;
 				std::this_thread::sleep_for(std::chrono::milliseconds(sent ? 5 : 100));
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl
 							<< stacktrace() << std::endl;
 			} catch (...) {
-				errorstream << m_name << ": Ooops..." << std::endl
+				errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
 							<< stacktrace() << std::endl;
 #else
 			} catch (int) { // nothing
@@ -206,12 +206,12 @@ public:
 				std::this_thread::sleep_for(std::chrono::milliseconds(
 						time_spend > 300 ? 1 : 300 - time_spend));
 
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl
 							<< stacktrace() << std::endl;
 			} catch (...) {
-				errorstream << m_name << ": Ooops..." << std::endl
+				errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
 							<< stacktrace() << std::endl;
 #else
 			} catch (int) { // nothing
@@ -244,12 +244,12 @@ public:
 						m_server->m_uptime_counter->get(), max_cycle_ms);
 				std::this_thread::sleep_for(
 						std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl
 							<< stacktrace() << std::endl;
 			} catch (...) {
-				errorstream << m_name << ": Ooops..." << std::endl
+				errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
 							<< stacktrace() << std::endl;
 #else
 			} catch (int) { // nothing
@@ -281,12 +281,12 @@ public:
 				m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
 				std::this_thread::sleep_for(
 						std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {
 				errorstream << m_name << ": exception: " << e.what() << std::endl
 							<< stacktrace() << std::endl;
 			} catch (...) {
-				errorstream << m_name << ": Ooops..." << std::endl
+				errorstream << m_name << ": Unknown unhandled exception at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
 							<< stacktrace() << std::endl;
 #else
 			} catch (int) { // nothing

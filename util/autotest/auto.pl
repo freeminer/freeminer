@@ -163,6 +163,7 @@ sub init_config () {
 
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
     map { /^----(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
+    map { /^-D(\w+)(?:=(.*))?/   and $config->{cmake_opt}{$1} = defined $2 ? $2 : 1; } @ARGV;
 }
 init_config();
 
@@ -361,6 +362,8 @@ our $commands = {
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
         $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
         $D{NO_LTO}             = $config->{cmake_no_lto} // 1;
+        $D{EXCEPTION_DEBUG}    = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
+        $D{USE_DEBUG_HELPERS}  = 1; 
 
         $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -488,7 +491,13 @@ our $tasks = {
     #bot                => [{'----bot'=>1, '----bot_random'=>1}, 'set_client', 'build_normal', 'run_single'],
     bot => ['set_client', 'build_normal', 'run_bot'],
     build_clang => [{-cmake_clang => 1,}, 'build'],
-    build_tsan => [sub { $g->{build_name} .= '_tsan'; 0 }, {-cmake_tsan => 1,}, 'build_debug',],
+
+    (
+        map { $_ => [sub { $g->{build_name} .= '_' . $_; 0 }, {keep_config=>1, '---cmake_' . $_ => 1, },],
+        'build_' . $_ => [$_, 'build',],
+         } qw(tsan asan msan usan gperf debug)
+    ),
+
     bot_tsan   => ['set_bot', {-no_build_server => 1,}, 'build_tsan', 'cgroup', 'run_single_tsan',],
     bot_tsannt => sub {
         $g->{build_name} .= '_nt';
@@ -567,7 +576,7 @@ our $tasks = {
         $config->{run_task},
         'symbolize',
     ],
-    debug     => ['build_client_debug', $config->{run_task},],
+    #debug     => ['build_client_debug', $config->{run_task},],
     bot_debug => ['set_bot', 'build_client_debug', $config->{run_task},],
 
     #valgrind => sub {
@@ -770,8 +779,11 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     fly            => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                                    #'
     timelapse_fly  => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],                        #'
     timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1,no_exit', -options_bot => '',}, \'bot', 'timelapse_video'],  #'
-    bench => [{'-fixed_map_seed' => 1, '--autoexit' => 30, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly_forward'=>1, '---world_clear'=>1, '--world' => $script_path . 'world_bench',
+    bench => [{'-fixed_map_seed' => 1, '--autoexit' => 30, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly_forward'=>1, '---world_clear'=>1, '---world' => $script_path . 'world_bench',
         '-static_spawnpoint'  => '(0,20,0)',}, 'fly'],
+
+    bench1 => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '---world_clear'=>1, '---world' => $script_path . 'world_bench1',
+        -mg_name=>'math', '-static_spawnpoint'=>"(0,20000,0)",}, 'set_client', 'build', 'run_single'],
     up             => sub {
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
@@ -840,7 +852,6 @@ sub options_make(;$$) {
     my ($rm, $rmm);
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
-    $rmm->{$_} = $options->{pass}{$_} for sort keys %{$options->{pass}};
     $m ||= [
         map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display},    #$config->{options_bot},
         $config->{options_int}, $config->{options_add}, $config->{options_arr}, 'opt', sort(keys %{$config->{options_use}})
@@ -858,8 +869,8 @@ sub options_make(;$$) {
             ($rm->{$k} = ${json($rm->{$k})});    # =~ s/"/$config->{run_escape}\\"/g;    #"
         }
     }
+    $rmm->{$_} = $options->{pass}{$_} for sort keys %{$options->{pass}};
     $rm->{$_} = $config->{config_pass}{$_} for sort keys %{$config->{config_pass}};
-
     return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_='$rm->{$_}'"} sort keys %$rm);
 }
 
@@ -878,6 +889,8 @@ sub command_run(@) {
                 $config->{$1} = $cmd->{$k};
             } elsif ($k =~ /^--(.+)/) {
                $options->{pass}{$1} = $cmd->{$k};
+            } elsif ($k =~ /^-D(.+)/) {
+                $config->{cmake_opt}{$1} = $cmd->{$k};
             } elsif ($k =~ /^-(.+)/) {
                 $config->{config_pass}{$1} = $cmd->{$k};
             } else {
@@ -931,7 +944,7 @@ sub task_start(@) {
     say "task start $name ", @_;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name}  = $name;
-    $g->{build_name} = $config->{build_name};
+    local $g->{build_name} = $config->{build_name};
     #task_run($name, @_);
     commands_run($name, @_);
 }
@@ -960,7 +973,7 @@ unless (@ARGV) {
 }
 
 for my $task (@$task_run) {
-    init_config();
+    init_config() unless $g->{keep_config}--;
     warn "task failed [$task]" if task_start($task);
     last                       if $signal ~~ [2, 3];
 }

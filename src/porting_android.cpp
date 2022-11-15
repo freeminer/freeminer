@@ -53,7 +53,7 @@ void android_main(android_app *app)
 		char *argv[] = {strdup(PROJECT_NAME), nullptr};
 		main(ARRLEN(argv) - 1, argv);
 		free(argv[0]);
-#if !EXEPTION_DEBUG
+#if !EXCEPTION_DEBUG
 	} catch (std::exception &e) {
 		errorstream << "Uncaught exception in main thread: " << e.what() << std::endl;
 		retval = -1;
