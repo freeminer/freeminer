@@ -363,6 +363,15 @@ core.register_entity(":__builtin:falling_node", {
 		if moveresult.touching_ground then
 			for _, info in ipairs(moveresult.collisions) do
 				if info.type == "object" then
+
+					-- merge with same leveled objects
+					local le = info.object:get_luaentity()
+					if le and le.node and self.node.name == le.node.name and le.node.level > 0 then
+						le.node.level = le.node.level + self.node.level
+						self.object:remove()
+						return
+					end
+
 					if info.axis == "y" and info.object:is_player() then
 						player_collision = info
 					end
