@@ -276,9 +276,17 @@ core.register_entity(":__builtin:falling_node", {
 			if (addlevel or 0) <= 0 then
 				addlevel = bcd.leveled
 			end
-			if core.add_node_level(bcp, addlevel) < addlevel then
+			local rest = core.add_node_level(bcp, addlevel)
+			if rest == 0 then
 				return true
-			elseif bcd.buildable_to then
+			end
+			if rest > 0 then
+				self.node.level = rest
+				local bcpc = bcp:offset(0, 1, 0)
+				local bcnc = core.get_node(bcpc)
+				return self:try_place(bcpc, bcnc)
+			end
+			if bcd.buildable_to then
 				-- Node level has already reached max, don't place anything
 				return true
 			end
@@ -314,6 +322,7 @@ core.register_entity(":__builtin:falling_node", {
 		local def = core.registered_nodes[self.node.name]
 		if def then
 			core.add_node(np, self.node)
+			core.set_node_level(np, self.node.level)
 			if self.meta then
 				core.get_meta(np):from_table(self.meta)
 			end
