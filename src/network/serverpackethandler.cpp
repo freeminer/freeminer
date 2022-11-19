@@ -121,7 +121,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 #endif
 
 	if (depl_serial_v == SER_FMT_VER_INVALID) {
-		actionstream << "Server: A mismatched client tried to connect from " <<
+		actionstream << "Server: A mismatched client " << playerName << " tried to connect from " <<
 			addr_s << " ser_fmt_max=" << (int)client_max << std::endl;
 		DenyAccess(peer_id, SERVER_ACCESSDENIED_WRONG_VERSION);
 		return;
@@ -156,7 +156,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 			net_proto_version != LATEST_PROTOCOL_VERSION) ||
 			net_proto_version < SERVER_PROTOCOL_VERSION_MIN ||
 			net_proto_version > SERVER_PROTOCOL_VERSION_MAX) {
-		actionstream << "Server: A mismatched client tried to connect from " <<
+		actionstream << "Server: A mismatched client " << playerName << " tried to connect from " <<
 			addr_s << " proto_max=" << (int)max_net_proto_version << std::endl;
 		DenyAccess(peer_id, SERVER_ACCESSDENIED_WRONG_VERSION);
 		return;

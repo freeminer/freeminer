@@ -25,7 +25,7 @@ set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 set(VERSION_TWEAK 0) # freeminer
 
 # Change to false for releases
-set(DEVELOPMENT_BUILD FALSE)
+set(DEVELOPMENT_BUILD TRUE)
 
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
 if(VERSION_EXTRA)
