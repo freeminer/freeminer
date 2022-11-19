@@ -21,21 +21,19 @@ if core.print then
 	core.print = nil -- don't pollute our namespace
 end
 math.randomseed(os.time())
-os.setlocale("C", "numeric")
 minetest = core
 freeminer = core
 multicraft = core
 
 -- Load other files
-local scriptdir = core.get_builtin_path() .. DIR_DELIM
+local scriptdir = core.get_builtin_path()
 local gamepath = scriptdir .. "game" .. DIR_DELIM
+local clientpath = scriptdir .. "client" .. DIR_DELIM
 local commonpath = scriptdir .. "common" .. DIR_DELIM
 local asyncpath = scriptdir .. "async" .. DIR_DELIM
 
---dofile(scriptdir .. "profiler.lua") --TODO: repair me
-
+dofile(commonpath .. "vector.lua")
 dofile(commonpath .. "strict.lua")
-
 dofile(commonpath .. "serialize.lua")
 dofile(commonpath .. "misc_helpers.lua")
 
@@ -45,20 +43,36 @@ dofile(scriptdir.."key_value_storage.lua")
 
 if INIT == "game" then
 	dofile(gamepath .. "init.lua")
+	assert(not core.get_http_api)
 elseif INIT == "mainmenu" then
 	local mm_script = core.settings:get("main_menu_script")
+	local custom_loaded = false
 	if mm_script and mm_script ~= "" then
-		dofile(mm_script)
-	else
-	  if PLATFORM == "Android" then
-		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
+		local testfile = io.open(mm_script, "r")
+		if testfile then
+			testfile:close()
+			dofile(mm_script)
+			custom_loaded = true
+			core.log("info", "Loaded custom main menu script: "..mm_script)
+		else
+			core.log("error", "Failed to load custom main menu script: "..mm_script)
+			core.log("info", "Falling back to default main menu script")
+		end
+	end
+	if not custom_loaded then
+      if PLATFORM == "Android" then
+    	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  else
-		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
+		-- FMTODO: dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
+    	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
 	  end
 	end
-elseif INIT == "async" then
-	dofile(asyncpath .. "init.lua")
+elseif INIT == "async"  then
+	dofile(asyncpath .. "mainmenu.lua")
+elseif INIT == "async_game" then
+	dofile(asyncpath .. "game.lua")
+elseif INIT == "client" then
+	dofile(clientpath .. "init.lua")
 else
 	error(("Unrecognized builtin initialization type %s!"):format(tostring(INIT)))
 end
-

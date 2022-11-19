@@ -1,0 +1,5 @@
+Checks: '-*,modernize-use-emplace,modernize-avoid-bind,misc-throw-by-value-catch-by-reference,misc-unconventional-assign-operator,performance-*'
+WarningsAsErrors: '-*,modernize-use-emplace,performance-type-promotion-in-math-fn,performance-faster-string-find,performance-implicit-cast-in-loop'
+CheckOptions:
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: v[23]f;v[23][su](16|32)

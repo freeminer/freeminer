@@ -32,7 +32,7 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_DENY_SUDO_MODE",          TOCLIENT_STATE_CONNECTED, &Client::handleCommand_DenySudoMode}, // 0x05
 	null_command_handler, // 0x06
 	null_command_handler, // 0x07
-	null_command_handler, // 0x08
+	{ "TOCLIENT_FREEMINER_INIT",          TOCLIENT_STATE_CONNECTED, &Client::handleCommand_FreeminerInit}, // 0x08
 	null_command_handler, // 0x09
 	{ "TOCLIENT_ACCESS_DENIED",           TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_AccessDenied }, // 0x0A
 	null_command_handler, // 0x0B
@@ -40,8 +40,8 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	null_command_handler, // 0x0D
 	null_command_handler, // 0x0E
 	null_command_handler, // 0x0F
-	{ "TOCLIENT_INIT",                    TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_InitLegacy }, // 0x10
-	null_command_handler,
+	null_command_handler, // 0x10
+	{ "TOCLIENT_PUNCH_PLAYER",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_PunchPlayer }, // 0x11
 	null_command_handler,
 	null_command_handler,
 	null_command_handler,
@@ -66,24 +66,24 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_INVENTORY",                TOCLIENT_STATE_CONNECTED, &Client::handleCommand_Inventory }, // 0x27
 	null_command_handler,
 	{ "TOCLIENT_TIME_OF_DAY",              TOCLIENT_STATE_CONNECTED, &Client::handleCommand_TimeOfDay }, // 0x29
+	{ "TOCLIENT_CSM_RESTRICTION_FLAGS",    TOCLIENT_STATE_CONNECTED, &Client::handleCommand_CSMRestrictionFlags }, // 0x2A
+	{ "TOCLIENT_PLAYER_SPEED",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_PlayerSpeed }, // 0x2B
+	{ "TOCLIENT_MEDIA_PUSH",               TOCLIENT_STATE_CONNECTED, &Client::handleCommand_MediaPush }, // 0x2C
 	null_command_handler,
 	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	{ "TOCLIENT_CHAT_MESSAGE",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ChatMessage }, // 0x30
+	{ "TOCLIENT_CHAT_MESSAGE",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ChatMessage }, // 0x2F
+	null_command_handler, // 0x30
 	{ "TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD", TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ActiveObjectRemoveAdd }, // 0x31
 	{ "TOCLIENT_ACTIVE_OBJECT_MESSAGES",   TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ActiveObjectMessages }, // 0x32
 	{ "TOCLIENT_HP",                       TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HP }, // 0x33
 	{ "TOCLIENT_MOVE_PLAYER",              TOCLIENT_STATE_CONNECTED, &Client::handleCommand_MovePlayer }, // 0x34
 	{ "TOCLIENT_ACCESS_DENIED_LEGACY",     TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_AccessDenied }, // 0x35
-	{ "TOCLIENT_PUNCH_PLAYER",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_PunchPlayer }, // 0x36
+	{ "TOCLIENT_FOV",                      TOCLIENT_STATE_CONNECTED, &Client::handleCommand_Fov }, // 0x36
 	{ "TOCLIENT_DEATHSCREEN",              TOCLIENT_STATE_CONNECTED, &Client::handleCommand_DeathScreen }, // 0x37
 	{ "TOCLIENT_MEDIA",                    TOCLIENT_STATE_CONNECTED, &Client::handleCommand_Media }, // 0x38
-	{ "TOCLIENT_TOOLDEF",                  TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ToolDef }, // 0x39
+	null_command_handler,
 	{ "TOCLIENT_NODEDEF",                  TOCLIENT_STATE_CONNECTED, &Client::handleCommand_NodeDef }, // 0x3a
-	{ "TOCLIENT_CRAFTITEMDEF",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_CraftItemDef }, // 0x3b
+	null_command_handler,
 	{ "TOCLIENT_ANNOUNCE_MEDIA",           TOCLIENT_STATE_CONNECTED, &Client::handleCommand_AnnounceMedia }, // 0x3c
 	{ "TOCLIENT_ITEMDEF",                  TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ItemDef }, // 0x3d
 	null_command_handler,
@@ -96,7 +96,7 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_MOVEMENT",                 TOCLIENT_STATE_CONNECTED, &Client::handleCommand_Movement }, // 0x45
 	{ "TOCLIENT_SPAWN_PARTICLE",           TOCLIENT_STATE_CONNECTED, &Client::handleCommand_SpawnParticle }, // 0x46
 	{ "TOCLIENT_ADD_PARTICLESPAWNER",      TOCLIENT_STATE_CONNECTED, &Client::handleCommand_AddParticleSpawner }, // 0x47
-	{ "TOCLIENT_DELETE_PARTICLESPAWNER_LEGACY",   TOCLIENT_STATE_CONNECTED, &Client::handleCommand_DeleteParticleSpawner }, // 0x48
+	null_command_handler,
 	{ "TOCLIENT_HUDADD",                   TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HudAdd }, // 0x49
 	{ "TOCLIENT_HUDRM",                    TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HudRemove }, // 0x4a
 	{ "TOCLIENT_HUDCHANGE",                TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HudChange }, // 0x4b
@@ -108,22 +108,35 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_LOCAL_PLAYER_ANIMATIONS",  TOCLIENT_STATE_CONNECTED, &Client::handleCommand_LocalPlayerAnimations }, // 0x51
 	{ "TOCLIENT_EYE_OFFSET",               TOCLIENT_STATE_CONNECTED, &Client::handleCommand_EyeOffset }, // 0x52
 	{ "TOCLIENT_DELETE_PARTICLESPAWNER",   TOCLIENT_STATE_CONNECTED, &Client::handleCommand_DeleteParticleSpawner }, // 0x53
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
-	null_command_handler,
+	{ "TOCLIENT_CLOUD_PARAMS",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_CloudParams }, // 0x54
+	{ "TOCLIENT_FADE_SOUND",               TOCLIENT_STATE_CONNECTED, &Client::handleCommand_FadeSound }, // 0x55
+	{ "TOCLIENT_UPDATE_PLAYER_LIST",       TOCLIENT_STATE_CONNECTED, &Client::handleCommand_UpdatePlayerList }, // 0x56
+	{ "TOCLIENT_MODCHANNEL_MSG",           TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ModChannelMsg }, // 0x57
+	{ "TOCLIENT_MODCHANNEL_SIGNAL",        TOCLIENT_STATE_CONNECTED, &Client::handleCommand_ModChannelSignal }, // 0x58
+	{ "TOCLIENT_NODEMETA_CHANGED",         TOCLIENT_STATE_CONNECTED, &Client::handleCommand_NodemetaChanged }, // 0x59
+	{ "TOCLIENT_SET_SUN",                  TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HudSetSun }, // 0x5a
+	{ "TOCLIENT_SET_MOON",                 TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HudSetMoon }, // 0x5b
+	{ "TOCLIENT_SET_STARS",                TOCLIENT_STATE_CONNECTED, &Client::handleCommand_HudSetStars }, // 0x5c
 	null_command_handler,
 	null_command_handler,
 	null_command_handler,
 	{ "TOCLIENT_SRP_BYTES_S_B",            TOCLIENT_STATE_NOT_CONNECTED, &Client::handleCommand_SrpBytesSandB }, // 0x60
+	{ "TOCLIENT_FORMSPEC_PREPEND",         TOCLIENT_STATE_CONNECTED, &Client::handleCommand_FormspecPrepend }, // 0x61,
+	{ "TOCLIENT_MINIMAP_MODES",            TOCLIENT_STATE_CONNECTED, &Client::handleCommand_MinimapModes }, // 0x62,
+	{ "TOCLIENT_SET_LIGHTING",        TOCLIENT_STATE_CONNECTED, &Client::handleCommand_SetLighting }, // 0x63,
 };
 
 const static ServerCommandFactory null_command_factory = { "TOSERVER_NULL", 0, false };
+
+/*
+	Channels used for Client -> Server communication
+	2: Notifications back to the server (e.g. GOTBLOCKS)
+	1: Init and Authentication
+	0: everything else
+
+	Packet order is only guaranteed inside a channel, so packets that operate on
+	the same objects are *required* to be in the same channel.
+*/
 
 const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 {
@@ -142,17 +155,17 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 	null_command_factory, // 0x0c
 	null_command_factory, // 0x0d
 	null_command_factory, // 0x0e
-	null_command_factory, // 0x0F
-	{ "TOSERVER_INIT_LEGACY",        1, false }, // 0x10
+	null_command_factory, // 0x0f
+	null_command_factory, // 0x10
 	{ "TOSERVER_INIT2",              1, true }, // 0x11
 	null_command_factory, // 0x12
 	null_command_factory, // 0x13
 	null_command_factory, // 0x14
 	null_command_factory, // 0x15
 	null_command_factory, // 0x16
-	null_command_factory, // 0x17
-	null_command_factory, // 0x18
-	null_command_factory, // 0x19
+	{ "TOSERVER_MODCHANNEL_JOIN",    0, true }, // 0x17
+	{ "TOSERVER_MODCHANNEL_LEAVE",   0, true }, // 0x18
+	{ "TOSERVER_MODCHANNEL_MSG",     0, true }, // 0x19
 	null_command_factory, // 0x1a
 	null_command_factory, // 0x1b
 	null_command_factory, // 0x1c
@@ -166,35 +179,35 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_GOTBLOCKS",          2, true }, // 0x24
 	{ "TOSERVER_DELETEDBLOCKS",      2, true }, // 0x25
 	null_command_factory, // 0x26
-	{ "TOSERVER_CLICK_OBJECT",       0, false }, // 0x27
-	{ "TOSERVER_GROUND_ACTION",      0, false }, // 0x28
-	{ "TOSERVER_RELEASE",            0, false }, // 0x29
+	null_command_factory, // 0x27
+	null_command_factory, // 0x28
+	null_command_factory, // 0x29
 	null_command_factory, // 0x2a
 	null_command_factory, // 0x2b
 	null_command_factory, // 0x2c
 	null_command_factory, // 0x2d
 	null_command_factory, // 0x2e
 	null_command_factory, // 0x2f
-	{ "TOSERVER_SIGNTEXT",           0, false }, // 0x30
+	null_command_factory, // 0x30
 	{ "TOSERVER_INVENTORY_ACTION",   0, true }, // 0x31
 	{ "TOSERVER_CHAT_MESSAGE",       0, true }, // 0x32
-	{ "TOSERVER_SIGNNODETEXT",       0, false }, // 0x33
-	{ "TOSERVER_CLICK_ACTIVEOBJECT", 0, false }, // 0x34
+	null_command_factory, // 0x33
+	null_command_factory, // 0x34
 	{ "TOSERVER_DAMAGE",             0, true }, // 0x35
-	{ "TOSERVER_PASSWORD_LEGACY",    0, true }, // 0x36
+	null_command_factory, // 0x36
 	{ "TOSERVER_PLAYERITEM",         0, true }, // 0x37
 	{ "TOSERVER_RESPAWN",            0, true }, // 0x38
 	{ "TOSERVER_INTERACT",           0, true }, // 0x39
-	{ "TOSERVER_REMOVED_SOUNDS",     1, true }, // 0x3a
+	{ "TOSERVER_REMOVED_SOUNDS",     2, true }, // 0x3a
 	{ "TOSERVER_NODEMETA_FIELDS",    0, true }, // 0x3b
 	{ "TOSERVER_INVENTORY_FIELDS",   0, true }, // 0x3c
 	null_command_factory, // 0x3d
 	null_command_factory, // 0x3e
 	null_command_factory, // 0x3f
 	{ "TOSERVER_REQUEST_MEDIA",      1, true }, // 0x40
-	{ "TOSERVER_RECEIVED_MEDIA",     1, true }, // 0x41
-	{ "TOSERVER_BREATH",             0, true }, // 0x42
-	{ "TOSERVER_CLIENT_READY",       0, true }, // 0x43
+	{ "TOSERVER_HAVE_MEDIA",         2, true }, // 0x41
+	null_command_factory, // 0x42
+	{ "TOSERVER_CLIENT_READY",       1, true }, // 0x43
 	null_command_factory, // 0x44
 	null_command_factory, // 0x45
 	null_command_factory, // 0x46

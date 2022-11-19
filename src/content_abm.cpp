@@ -21,40 +21,44 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "content_abm.h"
+#include <vector>
 
-#include "environment.h"
+//#include "environment.h"
 #include "gamedef.h"
 #include "nodedef.h"
-#include "content_sao.h"
 #include "settings.h"
 #include "mapblock.h" // For getNodeBlockPos
 #include "map.h"
-#include "scripting_game.h"
-#include "log.h"
+#include "log_types.h"
+#include "serverenvironment.h"
+#include "server.h"
 
 
 class LiquidDropABM : public ActiveBlockModifier {
 private:
-	std::set<std::string> contents;
+	std::vector<std::string> contents;
 
 public:
-	LiquidDropABM(ServerEnvironment *env, INodeDefManager *nodemgr) {
-		contents.insert("group:liquid_drop");
+	LiquidDropABM(ServerEnvironment *env, NodeDefManager *nodemgr) {
+		contents.emplace_back("group:liquid_drop");
 	}
-	virtual std::set<std::string> getTriggerContents()
+	virtual const std::vector<std::string> getTriggerContents() const override
 	{ return contents; }
-	virtual std::set<std::string> getRequiredNeighbors(bool activate) {
-		std::set<std::string> neighbors;
-		neighbors.insert("air");
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const override {
+		std::vector<std::string> neighbors;
+		neighbors.emplace_back("air");
 		return neighbors;
 	}
-	virtual float getTriggerInterval()
+	virtual float getTriggerInterval() override
 	{ return 20; }
-	virtual u32 getTriggerChance()
+	virtual u32 getTriggerChance() override
 	{ return 10; }
-	bool getSimpleCatchUp() { return true; }
+	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
+
+	bool getSimpleCatchUp() override { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
-	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
+	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();
 		if (map->transforming_liquid_size() > map->m_liquid_step_flow)
 			return;
@@ -71,36 +75,38 @@ public:
 
 class LiquidFreeze : public ActiveBlockModifier {
 public:
-	LiquidFreeze(ServerEnvironment *env, INodeDefManager *nodemgr) { }
-	virtual std::set<std::string> getTriggerContents() {
-		std::set<std::string> s;
-		s.insert("group:freeze");
+	LiquidFreeze(ServerEnvironment *env, NodeDefManager *nodemgr) { }
+	virtual const std::vector<std::string> getTriggerContents() const override {
+		std::vector<std::string> s;
+		s.emplace_back("group:freeze");
 		return s;
 	}
-	virtual std::set<std::string> getRequiredNeighbors(bool activate) {
-		std::set<std::string> s;
-		s.insert("air"); //maybe if !activate
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const override {
+		std::vector<std::string> s;
+		s.emplace_back("air"); //maybe if !activate
 		if(!activate) {
-			s.insert("group:melt");
+			s.emplace_back("group:melt");
 		}
 		return s;
 	}
-	virtual float getTriggerInterval()
+	virtual float getTriggerInterval() override
 	{ return 10; }
-	virtual u32 getTriggerChance()
+	virtual u32 getTriggerChance() override
 	{ return 10; }
+	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
-	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
+	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		static int water_level = g_settings->getS16("water_level");
 		// Try avoid flying square freezed blocks
 		if (p.Y > water_level && activate)
 			return;
 
 		ServerMap *map = &env->getServerMap();
-		INodeDefManager *ndef = env->getGameDef()->ndef();
+		auto *ndef = env->getGameDef()->ndef();
 
-		float heat = map->updateBlockHeat(env, p);
+		auto heat = map->updateBlockHeat(env, p);
 		//heater = rare
 		content_t c = map->getNodeTry(p - v3POS(0,  -1, 0 )).getContent(); // top
 		//more chance to freeze if air at top
@@ -139,7 +145,7 @@ public:
 			}
 			if (allow) {
 				n.freeze_melt(ndef, -1);
-				map->setNode(p, n, 2);
+				map->setNode(p, n);
 			}
 		}
 	}
@@ -147,41 +153,43 @@ public:
 
 class MeltWeather : public ActiveBlockModifier {
 public:
-	MeltWeather(ServerEnvironment *env, INodeDefManager *nodemgr) { }
-	virtual std::set<std::string> getTriggerContents() {
-		std::set<std::string> s;
-		s.insert("group:melt");
+	MeltWeather(ServerEnvironment *env, NodeDefManager *nodemgr) { }
+	virtual const std::vector<std::string> getTriggerContents() const override {
+		std::vector<std::string> s;
+		s.emplace_back("group:melt");
 		return s;
 	}
-	virtual std::set<std::string> getRequiredNeighbors(bool activate) {
-		std::set<std::string> s;
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const override {
+		std::vector<std::string> s;
 		if(!activate) {
-			s.insert("air");
-			s.insert("group:freeze");
+			s.emplace_back("air");
+			s.emplace_back("group:freeze");
 		}
 		return s;
 	}
-	virtual float getTriggerInterval()
+	virtual float getTriggerInterval() override
 	{ return 10; }
-	virtual u32 getTriggerChance()
+	virtual u32 getTriggerChance() override
 	{ return 10; }
-	bool getSimpleCatchUp() { return true; }
+	bool getSimpleCatchUp() override { return true; }
+	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
-	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
+	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();
-		INodeDefManager *ndef = env->getGameDef()->ndef();
+		auto *ndef = env->getGameDef()->ndef();
 		float heat = map->updateBlockHeat(env, p);
 		content_t c = map->getNodeTry(p - v3POS(0,  -1, 0 )).getContent(); // top
 		int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 		if (heat >= melt + 1 && (activate || heat >= melt + 40 ||
-		                         ((myrand_range(heat, melt + 40)) >= (c == CONTENT_AIR ? melt + 10 : melt + 20)))) {
+		                         ((myrand_range(heat, (float)melt + 40)) >= (c == CONTENT_AIR ? melt + 10 : melt + 20)))) {
 			if (ndef->get(n.getContent()).liquid_type == LIQUID_FLOWING || ndef->get(n.getContent()).liquid_type == LIQUID_SOURCE) {
 				c = map->getNodeTry(p - v3POS(0,  1, 0 )).getContent(); // below
 				if (c == CONTENT_AIR || c == CONTENT_IGNORE)
 					return; // do not melt when falling (dirt->dirt_with_grass on air)
 			}
 			n.freeze_melt(ndef, +1);
-			map->setNode(p, n, 2);
+			map->setNode(p, n);
 			env->nodeUpdate(p, 2); //enable after making FAST nodeupdate
 		}
 	}
@@ -189,34 +197,36 @@ public:
 
 class MeltHot : public ActiveBlockModifier {
 public:
-	MeltHot(ServerEnvironment *env, INodeDefManager *nodemgr) { }
-	virtual std::set<std::string> getTriggerContents() {
-		std::set<std::string> s;
-		s.insert("group:melt");
+	MeltHot(ServerEnvironment *env, NodeDefManager *nodemgr) { }
+	virtual const std::vector<std::string> getTriggerContents() const override {
+		std::vector<std::string> s;
+		s.emplace_back("group:melt");
 		return s;
 	}
-	virtual std::set<std::string> getRequiredNeighbors(bool activate) {
-		std::set<std::string> s;
-		s.insert("group:igniter");
-		s.insert("group:hot");
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const override {
+		std::vector<std::string> s;
+		s.emplace_back("group:igniter");
+		s.emplace_back("group:hot");
 		return s;
 	}
-	virtual u32 getNeighborsRange()
+	virtual u32 getNeighborsRange() override
 	{ return 2; }
-	virtual float getTriggerInterval()
+	virtual float getTriggerInterval() override
 	{ return 10; }
-	virtual u32 getTriggerChance()
+	virtual u32 getTriggerChance() override
 	{ return 5; }
-	bool getSimpleCatchUp() { return true; }
+	bool getSimpleCatchUp() override { return true; }
+	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
-	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
+	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();
-		INodeDefManager *ndef = env->getGameDef()->ndef();
+		auto *ndef = env->getGameDef()->ndef();
 		int hot = ((ItemGroupList) ndef->get(neighbor).groups)["hot"];
 		int melt = ((ItemGroupList) ndef->get(n).groups)["melt"];
 		if (hot > melt) {
 			n.freeze_melt(ndef, +1);
-			map->setNode(p, n, 2);
+			map->setNode(p, n);
 			env->nodeUpdate(p, 2);
 		}
 	}
@@ -224,38 +234,40 @@ public:
 
 class LiquidFreezeCold : public ActiveBlockModifier {
 public:
-	LiquidFreezeCold(ServerEnvironment *env, INodeDefManager *nodemgr) { }
-	virtual std::set<std::string> getTriggerContents() {
-		std::set<std::string> s;
-		s.insert("group:freeze");
+	LiquidFreezeCold(ServerEnvironment *env, NodeDefManager *nodemgr) { }
+	virtual const std::vector<std::string> getTriggerContents() const override {
+		std::vector<std::string> s;
+		s.emplace_back("group:freeze");
 		return s;
 	}
-	virtual std::set<std::string> getRequiredNeighbors(bool activate) {
-		std::set<std::string> s;
-		s.insert("group:cold");
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const override {
+		std::vector<std::string> s;
+		s.emplace_back("group:cold");
 		return s;
 	}
-	virtual u32 getNeighborsRange()
+	virtual u32 getNeighborsRange() override
 	{ return 2; }
-	virtual float getTriggerInterval()
+	virtual float getTriggerInterval() override
 	{ return 10; }
-	virtual u32 getTriggerChance()
+	virtual u32 getTriggerChance() override
 	{ return 4; }
-	bool getSimpleCatchUp() { return true; }
+	bool getSimpleCatchUp() override { return true; }
+	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	virtual void trigger(ServerEnvironment *env, v3POS p, MapNode n,
-	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) {
+	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();
-		INodeDefManager *ndef = env->getGameDef()->ndef();
+		auto *ndef = env->getGameDef()->ndef();
 		int cold = ((ItemGroupList) ndef->get(neighbor).groups)["cold"];
 		int freeze = ((ItemGroupList) ndef->get(n).groups)["freeze"];
 		if (cold < freeze) {
 			n.freeze_melt(ndef, -1);
-			map->setNode(p, n, 2);
+			map->setNode(p, n);
 		}
 	}
 };
 
-void add_legacy_abms(ServerEnvironment *env, INodeDefManager *nodedef) {
+void add_legacy_abms(ServerEnvironment *env, NodeDefManager *nodedef) {
 	if (g_settings->getBool("liquid_real")) {
 		env->addActiveBlockModifier(new LiquidDropABM(env, nodedef));
 		env->addActiveBlockModifier(new MeltHot(env, nodedef));

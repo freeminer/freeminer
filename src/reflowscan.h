@@ -17,19 +17,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef REFLOWSCAN_H
-#define REFLOWSCAN_H
+#pragma once
 
 #include "util/container.h"
 #include "irrlichttypes_bloated.h"
 
-class INodeDefManager;
+class NodeDefManager;
 class Map;
 class MapBlock;
 
 class ReflowScan {
 public:
-	ReflowScan(Map *map, INodeDefManager *ndef);
+	ReflowScan(Map *map, const NodeDefManager *ndef);
 	void scan(MapBlock *block, UniqueQueue<v3s16> *liquid_queue);
 
 private:
@@ -39,12 +38,10 @@ private:
 	void scanColumn(int x, int z);
 
 private:
-	Map *m_map;
-	INodeDefManager *m_ndef;
+	Map *m_map = nullptr;
+	const NodeDefManager *m_ndef = nullptr;
 	v3s16 m_block_pos, m_rel_block_pos;
-	UniqueQueue<v3s16> *m_liquid_queue;
+	UniqueQueue<v3s16> *m_liquid_queue = nullptr;
 	MapBlock *m_lookup[3 * 3 * 3];
 	u32 m_lookup_state_bitset;
 };
-
-#endif // REFLOWSCAN_H

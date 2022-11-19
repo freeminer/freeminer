@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CONTENT_MAPNODE_HEADER
-#define CONTENT_MAPNODE_HEADER
+#pragma once
 
 #include "mapnode.h"
 
@@ -36,5 +35,3 @@ MapNode mapnode_translate_to_internal(MapNode n_from, u8 version);
 // Get legacy node name mapping for loading old blocks
 class NameIdMapping;
 void content_mapnode_get_name_id_mapping(NameIdMapping *nimap);
-
-#endif

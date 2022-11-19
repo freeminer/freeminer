@@ -21,68 +21,76 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "light.h"
-#include <math.h>
+#include <algorithm>
+#include <cmath>
 #include "util/numeric.h"
+#include "settings.h"
 
 #ifndef SERVER
 
-// Length of LIGHT_MAX+1 means LIGHT_MAX is the last value.
-// LIGHT_SUN is read as LIGHT_MAX from here.
+static u8 light_LUT[LIGHT_SUN + 1];
 
-u8 light_LUT[LIGHT_MAX+1];
-
-// the const ref to light_LUT is what is actually used in the code.
+// The const ref to light_LUT is what is actually used in the code
 const u8 *light_decode_table = light_LUT;
 
-/** Initialize or update the light value tables using the specified \p gamma.
- *  If \p gamma == 1.0 then the light table is linear.  Typically values for
- *  gamma range between 1.8 and 2.2.
- *
- *  @note The value for gamma will be restricted to the range 1.1 <= gamma <= 3.0.
- *
- *  @note This function is not, currently, a simple linear to gamma encoding
- *        because adjustments are made so that a gamma of 1.8 gives the same
- *        results as those hardcoded for use by the server.
- */
+
+struct LightingParams {
+	float a, b, c; // Lighting curve polynomial coefficients
+	float boost, center, sigma; // Lighting curve parametric boost
+	float gamma; // Lighting curve gamma correction
+};
+
+static LightingParams params;
+
+
+float decode_light_f(float x)
+{
+	if (x >= 1.0f) // x is often 1.0f
+		return 1.0f;
+	x = std::fmax(x, 0.0f);
+	float brightness = ((params.a * x + params.b) * x + params.c) * x;
+	brightness += params.boost *
+		std::exp(-0.5f * sqr((x - params.center) / params.sigma));
+	if (brightness <= 0.0f) // May happen if parameters are extreme
+		return 0.0f;
+	if (brightness >= 1.0f)
+		return 1.0f;
+	return powf(brightness, 1.0f / params.gamma);
+}
+
+
+// Initialize or update the light value tables using the specified gamma
 void set_light_table(float gamma)
 {
-	static const float brightness_step = 255.0f / (LIGHT_MAX + 1);
+// Lighting curve bounding gradients
+	const float alpha = rangelim(g_settings->getFloat("lighting_alpha"), 0.0f, 3.0f);
+	const float beta  = rangelim(g_settings->getFloat("lighting_beta"), 0.0f, 3.0f);
+// Lighting curve polynomial coefficients
+	params.a = alpha + beta - 2.0f;
+	params.b = 3.0f - 2.0f * alpha - beta;
+	params.c = alpha;
+// Lighting curve parametric boost
+	params.boost = rangelim(g_settings->getFloat("lighting_boost"), 0.0f, 0.4f);
+	params.center = rangelim(g_settings->getFloat("lighting_boost_center"), 0.0f, 1.0f);
+	params.sigma = rangelim(g_settings->getFloat("lighting_boost_spread"), 0.0f, 0.4f);
+// Lighting curve gamma correction
+	params.gamma = rangelim(gamma, 0.33f, 3.0f);
 
-	// this table is pure arbitrary values, made so that
-	// at gamma 2.2 the game looks not too dark at light=1,
-	// and mostly linear for the rest of the scale.
-	// we could try to inverse the gamma power function, but this
-	// is simpler and quicker.
-	static const int adjustments[LIGHT_MAX + 1] = {
-		-67,
-		-91,
-		-125,
-		-115,
-		-104,
-		-85,
-		-70,
-		-63,
-		-56,
-		-49,
-		-42,
-		-35,
-		-28,
-		-22,
-		0
-	};
+// Boundary values should be fixed
+	light_LUT[0] = 0;
+	light_LUT[LIGHT_SUN] = 255;
 
-	gamma = rangelim(gamma, 1.0, 3.0);
+	for (size_t i = 1; i < LIGHT_SUN; i++) {
+		float brightness = decode_light_f((float)i / LIGHT_SUN);
+		// Strictly speaking, rangelim is not necessary here—if the implementation
+		// is conforming. But we don’t want problems in any case.
+		light_LUT[i] = rangelim((s32)(255.0f * brightness), 0, 255);
 
-	float brightness = brightness_step;
-
-	for (size_t i = 0; i < LIGHT_MAX; i++) {
-		light_LUT[i] = (u8)(255 * powf(brightness / 255.0f, 1.0 / gamma));
-		light_LUT[i] = rangelim(light_LUT[i] + adjustments[i], 0, 255);
-		if (i > 1 && light_LUT[i] < light_LUT[i - 1])
-			light_LUT[i] = light_LUT[i - 1] + 1;
-		brightness += brightness_step;
+		// Ensure light brightens with each level
+		if (i > 0 && light_LUT[i] <= light_LUT[i - 1]) {
+			light_LUT[i] = std::min((u8)254, light_LUT[i - 1]) + 1;
+		}
 	}
-	light_LUT[LIGHT_MAX] = 255;
 }
-#endif
 
+#endif

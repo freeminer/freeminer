@@ -18,10 +18,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef REMOTEPLAYER_HEADER
-#define REMOTEPLAYER_HEADER
+#pragma once
 
+#include "network/networkprotocol.h"
 #include "player.h"
+#include "skyparams.h"
+#include "lighting.h"
 
 class PlayerSAO;
 
@@ -37,17 +39,16 @@ enum RemotePlayerChatResult
 */
 class RemotePlayer : public Player
 {
+	friend class PlayerDatabaseFiles;
+
 public:
 	RemotePlayer(const std::string & name, IItemDefManager *idef);
-	virtual ~RemotePlayer() {}
-
-	void save(std::string savedir, IGameDef *gamedef);
-	void deSerialize(std::istream &is, const std::string &playername, PlayerSAO *sao);
+	virtual ~RemotePlayer() = default;
 
 	PlayerSAO *getPlayerSAO() { return m_sao; }
 	void setPlayerSAO(PlayerSAO *sao) { m_sao = sao; }
 
-	const RemotePlayerChatResult canSendChatMessage();
+	RemotePlayerChatResult canSendChatMessage();
 
 	void setHotbarItemcount(s32 hotbar_itemcount)
 	{
@@ -68,15 +69,9 @@ public:
 		*ratio = m_day_night_ratio;
 	}
 
-	void setHotbarImage(const std::string &name)
-	{
-		hud_hotbar_image = name;
-	}
+	void setHotbarImage(const std::string &name) { hud_hotbar_image = name; }
 
-	std::string getHotbarImage() const
-	{
-		return hud_hotbar_image;
-	}
+	const std::string &getHotbarImage() const { return hud_hotbar_image; }
 
 	void setHotbarSelectedImage(const std::string &name)
 	{
@@ -88,30 +83,35 @@ public:
 		return hud_hotbar_selected_image;
 	}
 
-	void setSky(const video::SColor &bgcolor, const std::string &type,
-				const std::vector<std::string> &params)
+	void setSky(const SkyboxParams &skybox_params)
 	{
-		m_sky_bgcolor = bgcolor;
-		m_sky_type = type;
-		m_sky_params = params;
+		m_skybox_params = skybox_params;
 	}
 
-	void getSky(video::SColor *bgcolor, std::string *type,
-				std::vector<std::string> *params)
+	const SkyboxParams &getSkyParams() const { return m_skybox_params; }
+
+	void setSun(const SunParams &sun_params) { m_sun_params = sun_params; }
+
+	const SunParams &getSunParams() const { return m_sun_params; }
+
+	void setMoon(const MoonParams &moon_params) { m_moon_params = moon_params; }
+
+	const MoonParams &getMoonParams() const { return m_moon_params; }
+
+	void setStars(const StarParams &star_params) { m_star_params = star_params; }
+
+	const StarParams &getStarParams() const { return m_star_params; }
+
+	void setCloudParams(const CloudParams &cloud_params)
 	{
-		*bgcolor = m_sky_bgcolor;
-		*type = m_sky_type;
-		*params = m_sky_params;
+		m_cloud_params = cloud_params;
 	}
+
+	const CloudParams &getCloudParams() const { return m_cloud_params; }
 
 	bool checkModified() const { return m_dirty || inventory.checkModified(); }
 
-	void setModified(const bool x)
-	{
-		m_dirty = x;
-		if (!x)
-			inventory.setModified(x);
-	}
+	inline void setModified(const bool x) { m_dirty = x; }
 
 	void setLocalAnimations(v2s32 frames[4], float frame_speed)
 	{
@@ -127,42 +127,51 @@ public:
 		*frame_speed = local_animation_speed;
 	}
 
-	s16 refs = 0;
+	void setLighting(const Lighting &lighting) { m_lighting = lighting; }
+
+	const Lighting& getLighting() const { return m_lighting; }
 
 	void setDirty(bool dirty) { m_dirty = true; }
 
-	u16 protocol_version;
-private:
-	/*
-		serialize() writes a bunch of text that can contain
-		any characters except a '\0', and such an ending that
-		deSerialize stops reading exactly at the right point.
-	*/
-	void serialize(std::ostream &os);
-	void serializeExtraAttributes(std::string &output);
+	u16 protocol_version = 0;
+	u16 formspec_version = 0;
 
-	PlayerSAO *m_sao;
-	bool m_dirty;
+	session_t getPeerId() const { return m_peer_id; }
+
+	void setPeerId(session_t peer_id) { m_peer_id = peer_id; }
+
+	void onSuccessfulSave();
+
+	//s16 refs = 0;
+
+private:
+	PlayerSAO *m_sao = nullptr;
+	std::atomic_bool m_dirty = false;
 
 	static bool m_setting_cache_loaded;
 	static float m_setting_chat_message_limit_per_10sec;
 	static u16 m_setting_chat_message_limit_trigger_kick;
 
-	u32 m_last_chat_message_sent;
-	float m_chat_message_allowance;
-	u16 m_message_rate_overhead;
+	u32 m_last_chat_message_sent = std::time(0);
+	float m_chat_message_allowance = 5.0f;
+	u16 m_message_rate_overhead = 0;
 
-	bool m_day_night_ratio_do_override;
+	bool m_day_night_ratio_do_override = false;
 	float m_day_night_ratio;
-	std::string hud_hotbar_image;
-	std::string hud_hotbar_selected_image;
+	std::string hud_hotbar_image = "";
+	std::string hud_hotbar_selected_image = "";
 
-	std::string m_sky_type;
-	video::SColor m_sky_bgcolor;
-	std::vector<std::string> m_sky_params;
+	CloudParams m_cloud_params;
+
+	SkyboxParams m_skybox_params;
+	SunParams m_sun_params;
+	MoonParams m_moon_params;
+	StarParams m_star_params;
+
+	Lighting m_lighting;
+
+	atomic_session_t m_peer_id = PEER_ID_INEXISTENT;
 };
 
 Json::Value operator<<(Json::Value &json, RemotePlayer &player);
 Json::Value operator>>(Json::Value &json, RemotePlayer &player);
-
-#endif

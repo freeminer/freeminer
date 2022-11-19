@@ -20,22 +20,24 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ACTIVEOBJECT_HEADER
-#define ACTIVEOBJECT_HEADER
+#pragma once
 
 #include "irr_aabb3d.h"
+#include "irr_v3d.h"
+#include <optional>
 #include <string>
+
 
 enum ActiveObjectType {
 	ACTIVEOBJECT_TYPE_INVALID = 0,
 	ACTIVEOBJECT_TYPE_TEST = 1,
-// Deprecated stuff
-	ACTIVEOBJECT_TYPE_ITEM = 2,
-	ACTIVEOBJECT_TYPE_RAT = 3,
-	ACTIVEOBJECT_TYPE_OERKKI1 = 4,
-	ACTIVEOBJECT_TYPE_FIREFLY = 5,
-	ACTIVEOBJECT_TYPE_MOBV2 = 6,
-// End deprecated stuff
+// Obsolete stuff
+// ACTIVEOBJECT_TYPE_ITEM = 2,
+// ACTIVEOBJECT_TYPE_RAT = 3,
+// ACTIVEOBJECT_TYPE_OERKKI1 = 4,
+// ACTIVEOBJECT_TYPE_FIREFLY = 5,
+// ACTIVEOBJECT_TYPE_MOBV2 = 6,
+// End obsolete stuff
 	ACTIVEOBJECT_TYPE_LUAENTITY = 7,
 	ACTIVEOBJECT_TYPE_LUACREATURE = 21,
 	ACTIVEOBJECT_TYPE_LUAITEM = 22,
@@ -49,15 +51,35 @@ enum ActiveObjectType {
 
 struct ActiveObjectMessage
 {
-	ActiveObjectMessage(u16 id_, bool reliable_=true, std::string data_=""):
+	ActiveObjectMessage(u16 id_, bool reliable_=true, const std::string &data_ = "", std::optional<v3f> skip_by_pos_ = {}) :
 		id(id_),
 		reliable(reliable_),
 		datastring(data_)
+		, skip_by_pos(skip_by_pos_)
 	{}
 
 	u16 id;
 	bool reliable;
 	std::string datastring;
+
+	std::optional<v3f> skip_by_pos; 
+};
+
+enum ActiveObjectCommand {
+	AO_CMD_SET_PROPERTIES,
+	AO_CMD_UPDATE_POSITION,
+	AO_CMD_SET_TEXTURE_MOD,
+	AO_CMD_SET_SPRITE,
+	AO_CMD_PUNCHED,
+	AO_CMD_UPDATE_ARMOR_GROUPS,
+	AO_CMD_SET_ANIMATION,
+	AO_CMD_SET_BONE_POSITION,
+	AO_CMD_ATTACH_TO,
+	AO_CMD_SET_PHYSICS_OVERRIDE,
+	AO_CMD_OBSOLETE1,
+	// ^ UPDATE_NAMETAG_ATTRIBUTES deprecated since 0.4.14, removed in 5.3.0
+	AO_CMD_SPAWN_INFANT,
+	AO_CMD_SET_ANIMATION_SPEED
 };
 
 /*
@@ -70,8 +92,8 @@ public:
 		m_id(id)
 	{
 	}
-	
-	u16 getId()
+
+	u16 getId() const
 	{
 		return m_id;
 	}
@@ -82,11 +104,39 @@ public:
 	}
 
 	virtual ActiveObjectType getType() const = 0;
-	virtual bool getCollisionBox(aabb3f *toset) = 0;
-	virtual bool collideWithObjects() = 0;
+
+
+	/*!
+	 * Returns the collision box of the object.
+	 * This box is translated by the object's
+	 * location.
+	 * The box's coordinates are world coordinates.
+	 * @returns true if the object has a collision box.
+	 */
+	virtual bool getCollisionBox(aabb3f *toset) const = 0;
+
+
+	/*!
+	 * Returns the selection box of the object.
+	 * This box is not translated when the
+	 * object moves.
+	 * The box's coordinates are world coordinates.
+	 * @returns true if the object has a selection box.
+	 */
+	virtual bool getSelectionBox(aabb3f *toset) const = 0;
+
+
+	virtual bool collideWithObjects() const = 0;
+
+
+	virtual void setAttachment(int parent_id, const std::string &bone, v3f position,
+			v3f rotation, bool force_visible) {}
+	virtual void getAttachment(int *parent_id, std::string *bone, v3f *position,
+			v3f *rotation, bool *force_visible) const {}
+	virtual void clearChildAttachments() {}
+	virtual void clearParentAttachment() {}
+	virtual void addAttachmentChild(int child_id) {}
+	virtual void removeAttachmentChild(int child_id) {}
 protected:
 	u16 m_id; // 0 is invalid, "no id"
 };
-
-#endif
-

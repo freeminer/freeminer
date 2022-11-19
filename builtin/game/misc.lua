@@ -1,62 +1,27 @@
 -- Minetest: builtin/misc.lua
 
+local S = core.get_translator("__builtin")
+
 --
 -- Misc. API functions
 --
 
-local jobs = {}
-local time = 0.0
-local last = core.get_us_time() / 1000000
-
-core.register_globalstep(function(dtime)
-	local new = core.get_us_time() / 1000000
-	if new > last then
-		time = time + (new - last)
+-- @spec core.kick_player(String, String) :: Boolean
+function core.kick_player(player_name, reason)
+	if type(reason) == "string" then
+		reason = "Kicked: " .. reason
 	else
-		-- Overflow, we may lose a little bit of time here but
-		-- only 1 tick max, potentially running timers slightly
-		-- too early.
-		time = time + new
+		reason = "Kicked."
 	end
-	last = new
-
-	if #jobs < 1 then
-		return
-	end
-
-	local end_ms = os.clock() * 1000 + 50
-	-- Iterate backwards so that we miss any new timers added by
-	-- a timer callback, and so that we don't skip the next timer
-	-- in the list if we remove one.
-	for i = #jobs, 1, -1 do
-		local job = jobs[i]
-		if time >= job.expire then
-			core.set_last_run_mod(job.mod_origin)
-			job.func(unpack(job.arg))
-			table.remove(jobs, i)
-			if os.clock() * 1000 > end_ms then return end
-		end
-	end
-end)
-
-function core.after(after, func, ...)
-	assert(tonumber(after) and type(func) == "function",
-			"Invalid core.after invocation")
-	jobs[#jobs + 1] = {
-		func = func,
-		expire = time + after,
-		arg = {...},
-		mod_origin = core.get_last_run_mod()
-	}
+	return core.disconnect_player(player_name, reason)
 end
 
 function core.check_player_privs(name, ...)
-	local arg_type = type(name)
-	if (arg_type == "userdata" or arg_type == "table") and
-			name.get_player_name then -- If it quacks like a Player...
+	if core.is_player(name) then
 		name = name:get_player_name()
-	elseif arg_type ~= "string" then
-		error("Invalid core.check_player_privs argument type: " .. arg_type, 2)
+	elseif type(name) ~= "string" then
+		error("core.check_player_privs expects a player or playername as " ..
+			"argument.", 2)
 	end
 
 	if name == "" then return true, "" end
@@ -64,7 +29,7 @@ function core.check_player_privs(name, ...)
 	local requested_privs = {...}
 	local player_privs = core.get_player_privs(name)
 	local missing_privileges = {}
-	
+
 	if type(requested_privs[1]) == "table" then
 		-- We were provided with a table like { privA = true, privB = true }.
 		for priv, value in pairs(requested_privs[1]) do
@@ -80,53 +45,73 @@ function core.check_player_privs(name, ...)
 			end
 		end
 	end
-	
+
 	if #missing_privileges > 0 then
 		return false, missing_privileges
 	end
-	
+
 	return true, ""
 end
 
-local player_list = {}
+
+function core.send_join_message(player_name)
+	if not core.is_singleplayer() then
+		core.chat_send_all("*** " .. S("@1 joined the game.", player_name))
+	end
+end
+
+
+function core.send_leave_message(player_name, timed_out)
+	local announcement = "*** " .. S("@1 left the game.", player_name)
+	if timed_out then
+		announcement = "*** " .. S("@1 left the game (timed out).", player_name)
+	end
+	core.chat_send_all(announcement)
+end
+
 
 core.register_on_joinplayer(function(player)
 	local player_name = player:get_player_name()
-	player_list[player_name] = player
-	if not minetest.is_singleplayer() then
-		core.chat_send_all("*** " .. player_name .. " joined the game.")
+	if not core.is_singleplayer() then
+		local status = core.get_server_status(player_name, true)
+		if status and status ~= "" then
+			core.chat_send_player(player_name, status)
+		end
 	end
+	core.send_join_message(player_name)
 end)
+
 
 core.register_on_leaveplayer(function(player, timed_out)
 	local player_name = player:get_player_name()
-	player_list[player_name] = nil
-	local announcement = "*** " ..  player_name .. " left the game."
-	if timed_out then
-		announcement = announcement .. " (timed out)"
-	end
-	core.chat_send_all(announcement)
+	core.send_leave_message(player_name, timed_out)
 end)
 
-function core.get_connected_players()
-	local temp_table = {}
-	for index, value in pairs(player_list) do
-		if value:is_player_connected() then
-			temp_table[#temp_table + 1] = value
-		end
-	end
-	return temp_table
+
+function core.is_player(player)
+	-- a table being a player is also supported because it quacks sufficiently
+	-- like a player if it has the is_player function
+	local t = type(player)
+	return (t == "userdata" or t == "table") and
+		type(player.is_player) == "function" and player:is_player()
 end
+
+
+function core.player_exists(name)
+	return core.get_auth_handler().get_auth(name) ~= nil
+end
+
 
 -- Returns two position vectors representing a box of `radius` in each
 -- direction centered around the player corresponding to `player_name`
+
 function core.get_player_radius_area(player_name, radius)
 	local player = core.get_player_by_name(player_name)
 	if player == nil then
 		return nil
 	end
 
-	local p1 = player:getpos()
+	local p1 = player:get_pos()
 	local p2 = p1
 
 	if radius then
@@ -137,45 +122,13 @@ function core.get_player_radius_area(player_name, radius)
 	return p1, p2
 end
 
-function core.hash_node_position(pos)
-	return (pos.z+32768)*65536*65536 + (pos.y+32768)*65536 + pos.x+32768
-end
-
-function core.get_position_from_hash(hash)
-	local pos = {}
-	pos.x = (hash%65536) - 32768
-	hash = math.floor(hash/65536)
-	pos.y = (hash%65536) - 32768
-	hash = math.floor(hash/65536)
-	pos.z = (hash%65536) - 32768
-	return pos
-end
-
-function core.get_item_group(name, group)
-	if not core.registered_items[name] or not
-			core.registered_items[name].groups[group] then
-		return 0
-	end
-	return core.registered_items[name].groups[group]
-end
-
-function core.get_node_group(name, group)
-	core.log("deprecated", "Deprecated usage of get_node_group, use get_item_group instead")
-	return core.get_item_group(name, group)
-end
-
-function core.setting_get_pos(name)
-	local value = core.settings:get(name)
-	if not value then
-		return nil
-	end
-	return core.string_to_pos(value)
-end
 
 -- To be overriden by protection mods
+
 function core.is_protected(pos, name)
 	return false
 end
+
 
 function core.record_protection_violation(pos, name)
 	for _, func in pairs(core.registered_on_protection_violation) do
@@ -193,6 +146,59 @@ function freeminer.colorize(color, message)
 	return freeminer.color(color) .. message .. freeminer.color("ffffff")
 end
 ]]
+-- To be overridden by Creative mods
+
+local creative_mode_cache = core.settings:get_bool("creative_mode")
+function core.is_creative_enabled(name)
+	return creative_mode_cache
+end
+
+-- Checks if specified volume intersects a protected volume
+
+function core.is_area_protected(minp, maxp, player_name, interval)
+	-- 'interval' is the largest allowed interval for the 3D lattice of checks.
+
+	-- Compute the optimal float step 'd' for each axis so that all corners and
+	-- borders are checked. 'd' will be smaller or equal to 'interval'.
+	-- Subtracting 1e-4 ensures that the max co-ordinate will be reached by the
+	-- for loop (which might otherwise not be the case due to rounding errors).
+
+	-- Default to 4
+	interval = interval or 4
+	local d = {}
+
+	for _, c in pairs({"x", "y", "z"}) do
+		if minp[c] > maxp[c] then
+			-- Repair positions: 'minp' > 'maxp'
+			local tmp = maxp[c]
+			maxp[c] = minp[c]
+			minp[c] = tmp
+		end
+
+		if maxp[c] > minp[c] then
+			d[c] = (maxp[c] - minp[c]) /
+				math.ceil((maxp[c] - minp[c]) / interval) - 1e-4
+		else
+			d[c] = 1 -- Any value larger than 0 to avoid division by zero
+		end
+	end
+
+	for zf = minp.z, maxp.z, d.z do
+		local z = math.floor(zf + 0.5)
+		for yf = minp.y, maxp.y, d.y do
+			local y = math.floor(yf + 0.5)
+			for xf = minp.x, maxp.x, d.x do
+				local x = math.floor(xf + 0.5)
+				local pos = vector.new(x, y, z)
+				if core.is_protected(pos, player_name) then
+					return pos
+				end
+			end
+		end
+	end
+	return false
+end
+
 
 local raillike_ids = {}
 local raillike_cur_id = 0
@@ -206,8 +212,10 @@ function core.raillike_group(name)
 	return id
 end
 
+
 -- HTTP callback interface
-function core.http_add_fetch(httpenv)
+
+core.set_http_api_lua(function(httpenv)
 	httpenv.fetch = function(req, callback)
 		local handle = httpenv.fetch_async(req)
 
@@ -223,40 +231,48 @@ function core.http_add_fetch(httpenv)
 	end
 
 	return httpenv
-end
+end)
+core.set_http_api_lua = nil
 
-if minetest.setting_getbool("disable_escape_sequences") then
-
-	function core.get_color_escape_sequence(color)
-		return ""
-	end
-
-	function core.get_background_escape_sequence(color)
-		return ""
-	end
-
-	function core.colorize(color, message)
-		return message
-	end
-
-else
-
-	local ESCAPE_CHAR = string.char(0x1b)
-	function core.get_color_escape_sequence(color)
-		return ESCAPE_CHAR .. "(c@" .. color .. ")"
-	end
-
-	function core.get_background_escape_sequence(color)
-		return ESCAPE_CHAR .. "(b@" .. color .. ")"
-	end
-
-	function core.colorize(color, message)
-		return core.get_color_escape_sequence(color) .. message .. core.get_color_escape_sequence("#ffffff")
-	end
-
-end
 
 function core.close_formspec(player_name, formname)
-	return minetest.show_formspec(player_name, formname, "")
+	return core.show_formspec(player_name, formname, "")
 end
 
+
+function core.cancel_shutdown_requests()
+	core.request_shutdown("", false, -1)
+end
+
+
+-- Used for callback handling with dynamic_add_media
+core.dynamic_media_callbacks = {}
+
+
+-- Transfer of certain globals into async environment
+-- see builtin/async/game.lua for the other side
+
+local function copy_filtering(t, seen)
+	if type(t) == "userdata" or type(t) == "function" then
+		return true -- don't use nil so presence can still be detected
+	elseif type(t) ~= "table" then
+		return t
+	end
+	local n = {}
+	seen = seen or {}
+	seen[t] = n
+	for k, v in pairs(t) do
+		local k_ = seen[k] or copy_filtering(k, seen)
+		local v_ = seen[v] or copy_filtering(v, seen)
+		n[k_] = v_
+	end
+	return n
+end
+
+function core.get_globals_to_transfer()
+	local all = {
+		registered_items = copy_filtering(core.registered_items),
+		registered_aliases = core.registered_aliases,
+	}
+	return all
+end

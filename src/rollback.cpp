@@ -93,8 +93,7 @@ struct Entity {
 
 RollbackManager::RollbackManager(const std::string & world_path,
 		IGameDef * gamedef_) :
-	gamedef(gamedef_),
-	current_actor_is_guess(false)
+	gamedef(gamedef_)
 {
 	verbosestream << "RollbackManager::RollbackManager(" << world_path
 		<< ")" << std::endl;
@@ -505,6 +504,7 @@ const std::list<ActionRow> RollbackManager::actionRowsFromSelect(sqlite3_stmt* s
 		row.actor     = sqlite3_column_int  (stmt, 0);
 		row.timestamp = sqlite3_column_int64(stmt, 1);
 		row.type      = sqlite3_column_int  (stmt, 2);
+		row.nodeMeta  = 0;
 
 		if (row.type == RollbackAction::TYPE_MODIFY_INVENTORY_STACK) {
 			text = sqlite3_column_text (stmt, 3);
@@ -600,35 +600,34 @@ const std::list<RollbackAction> RollbackManager::rollbackActionsFromActionRows(
 {
 	std::list<RollbackAction> actions;
 
-	for (std::list<ActionRow>::const_iterator it = rows.begin();
-			it != rows.end(); ++it) {
+	for (const ActionRow &row : rows) {
 		RollbackAction action;
-		action.actor     = (it->actor) ? getActorName(it->actor) : "";
-		action.unix_time = it->timestamp;
-		action.type      = static_cast<RollbackAction::Type>(it->type);
+		action.actor     = (row.actor) ? getActorName(row.actor) : "";
+		action.unix_time = row.timestamp;
+		action.type      = static_cast<RollbackAction::Type>(row.type);
 
 		switch (action.type) {
 		case RollbackAction::TYPE_MODIFY_INVENTORY_STACK:
-			action.inventory_location = it->location.c_str();
-			action.inventory_list     = it->list;
-			action.inventory_index    = it->index;
-			action.inventory_add      = it->add;
-			action.inventory_stack    = it->stack;
+			action.inventory_location = row.location;
+			action.inventory_list     = row.list;
+			action.inventory_index    = row.index;
+			action.inventory_add      = row.add;
+			action.inventory_stack    = row.stack;
 			if (action.inventory_stack.name.empty()) {
-				action.inventory_stack.name = getNodeName(it->stack.id);
+				action.inventory_stack.name = getNodeName(row.stack.id);
 			}
 			break;
 
 		case RollbackAction::TYPE_SET_NODE:
-			action.p            = v3s16(it->x, it->y, it->z);
-			action.n_old.name   = getNodeName(it->oldNode);
-			action.n_old.param1 = it->oldParam1;
-			action.n_old.param2 = it->oldParam2;
-			action.n_old.meta   = it->oldMeta;
-			action.n_new.name   = getNodeName(it->newNode);
-			action.n_new.param1 = it->newParam1;
-			action.n_new.param2 = it->newParam2;
-			action.n_new.meta   = it->newMeta;
+			action.p            = v3s16(row.x, row.y, row.z);
+			action.n_old.name   = getNodeName(row.oldNode);
+			action.n_old.param1 = row.oldParam1;
+			action.n_old.param2 = row.oldParam2;
+			action.n_old.meta   = row.oldMeta;
+			action.n_new.name   = getNodeName(row.newNode);
+			action.n_new.param1 = row.newParam1;
+			action.n_new.param2 = row.newParam2;
+			action.n_new.meta   = row.newMeta;
 			break;
 
 		default:
@@ -904,7 +903,7 @@ void RollbackManager::setActor(const std::string & actor, bool is_guess)
 std::string RollbackManager::getSuspect(v3s16 p, float nearness_shortcut,
 		float min_nearness)
 {
-	if (current_actor != "") {
+	if (!current_actor.empty()) {
 		return current_actor;
 	}
 	int cur_time = time(0);
@@ -917,7 +916,7 @@ std::string RollbackManager::getSuspect(v3s16 p, float nearness_shortcut,
 		if (i->unix_time < first_time) {
 			break;
 		}
-		if (i->actor == "") {
+		if (i->actor.empty()) {
 			continue;
 		}
 		// Find position of suspect or continue
@@ -954,7 +953,7 @@ void RollbackManager::flush()
 	for (iter  = action_todisk_buffer.begin();
 			iter != action_todisk_buffer.end();
 			++iter) {
-		if (iter->actor == "") {
+		if (iter->actor.empty()) {
 			continue;
 		}
 
@@ -976,12 +975,6 @@ void RollbackManager::addAction(const RollbackAction & action)
 	if (action_todisk_buffer.size() >= 500) {
 		flush();
 	}
-}
-
-std::list<RollbackAction> RollbackManager::getEntriesSince(time_t first_time)
-{
-	flush();
-	return getActionsSince(first_time);
 }
 
 std::list<RollbackAction> RollbackManager::getNodeActors(v3s16 pos, int range,

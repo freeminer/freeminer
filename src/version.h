@@ -20,12 +20,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef VERSION_HEADER
-#define VERSION_HEADER
+#pragma once
 
 extern const char *g_version_string;
 extern const char *g_version_hash;
 extern const char *g_build_info;
-
-#endif
-

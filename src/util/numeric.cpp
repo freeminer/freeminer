@@ -21,108 +21,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "numeric.h"
-#include "mathconstants.h"
 
 #include "log.h"
-#include "../constants.h" // BS, MAP_BLOCKSIZE
-#include "../noise.h" // PseudoRandom, PcgRandom
-#include "../threading/mutex_auto_lock.h"
-#include <string.h>
-#include <iostream>
+#include "constants.h" // BS, MAP_BLOCKSIZE
+#include "noise.h" // PseudoRandom, PcgRandom
+#include "threading/mutex_auto_lock.h"
+#include <cstring>
+#include <cmath>
 #include <atomic>
 
-UNORDERED_MAP<u16, std::vector<v3s16> > FacePositionCache::m_cache;
-Mutex FacePositionCache::m_cache_mutex;
-// Calculate the borders of a "d-radius" cube
-// TODO: Make it work without mutex and data races, probably thread-local
-std::vector<v3s16> FacePositionCache::getFacePositions(u16 d)
-{
-	MutexAutoLock cachelock(m_cache_mutex);
-	if (m_cache.find(d) != m_cache.end())
-		return m_cache[d];
 
-	generateFacePosition(d);
-	return m_cache[d];
-
-}
-
-void FacePositionCache::generateFacePosition(u16 d)
-{
-	m_cache[d] = std::vector<v3s16>();
-	if(d == 0) {
-		m_cache[d].push_back(v3s16(0,0,0));
-		return;
-	}
-	if(d == 1) {
-		/*
-			This is an optimized sequence of coordinates.
-		*/
-		m_cache[d].push_back(v3s16( 0, 1, 0)); // top
-		m_cache[d].push_back(v3s16( 0, 0, 1)); // back
-		m_cache[d].push_back(v3s16(-1, 0, 0)); // left
-		m_cache[d].push_back(v3s16( 1, 0, 0)); // right
-		m_cache[d].push_back(v3s16( 0, 0,-1)); // front
-		m_cache[d].push_back(v3s16( 0,-1, 0)); // bottom
-		// 6
-		m_cache[d].push_back(v3s16(-1, 0, 1)); // back left
-		m_cache[d].push_back(v3s16( 1, 0, 1)); // back right
-		m_cache[d].push_back(v3s16(-1, 0,-1)); // front left
-		m_cache[d].push_back(v3s16( 1, 0,-1)); // front right
-		m_cache[d].push_back(v3s16(-1,-1, 0)); // bottom left
-		m_cache[d].push_back(v3s16( 1,-1, 0)); // bottom right
-		m_cache[d].push_back(v3s16( 0,-1, 1)); // bottom back
-		m_cache[d].push_back(v3s16( 0,-1,-1)); // bottom front
-		m_cache[d].push_back(v3s16(-1, 1, 0)); // top left
-		m_cache[d].push_back(v3s16( 1, 1, 0)); // top right
-		m_cache[d].push_back(v3s16( 0, 1, 1)); // top back
-		m_cache[d].push_back(v3s16( 0, 1,-1)); // top front
-		// 18
-		m_cache[d].push_back(v3s16(-1, 1, 1)); // top back-left
-		m_cache[d].push_back(v3s16( 1, 1, 1)); // top back-right
-		m_cache[d].push_back(v3s16(-1, 1,-1)); // top front-left
-		m_cache[d].push_back(v3s16( 1, 1,-1)); // top front-right
-		m_cache[d].push_back(v3s16(-1,-1, 1)); // bottom back-left
-		m_cache[d].push_back(v3s16( 1,-1, 1)); // bottom back-right
-		m_cache[d].push_back(v3s16(-1,-1,-1)); // bottom front-left
-		m_cache[d].push_back(v3s16( 1,-1,-1)); // bottom front-right
-		// 26
-		return;
-	}
-
-	// Take blocks in all sides, starting from y=0 and going +-y
-	for(s16 y=0; y<=d-1; y++) {
-		// Left and right side, including borders
-		for(s16 z=-d; z<=d; z++) {
-			m_cache[d].push_back(v3s16(d,y,z));
-			m_cache[d].push_back(v3s16(-d,y,z));
-			if(y != 0) {
-				m_cache[d].push_back(v3s16(d,-y,z));
-				m_cache[d].push_back(v3s16(-d,-y,z));
-			}
-		}
-		// Back and front side, excluding borders
-		for(s16 x=-d+1; x<=d-1; x++) {
-			m_cache[d].push_back(v3s16(x,y,d));
-			m_cache[d].push_back(v3s16(x,y,-d));
-			if(y != 0) {
-				m_cache[d].push_back(v3s16(x,-y,d));
-				m_cache[d].push_back(v3s16(x,-y,-d));
-			}
-		}
-	}
-
-	// Take the bottom and top face with borders
-	// -d<x<d, y=+-d, -d<z<d
-	for(s16 x=-d; x<=d; x++)
-	for(s16 z=-d; z<=d; z++) {
-		m_cache[d].push_back(v3s16(x,-d,z));
-		m_cache[d].push_back(v3s16(x,d,z));
-	}
-}
-
-/*
-    myrand
-*/
+// myrand
 
 PcgRandom g_pcgrand;
 
@@ -141,9 +50,20 @@ void myrand_bytes(void *out, size_t len)
 	g_pcgrand.bytes(out, len);
 }
 
+float myrand_float()
+{
+	u32 uv = g_pcgrand.next();
+	return (float)uv / (float)U32_MAX;
+}
+
 int myrand_range(int min, int max)
 {
 	return g_pcgrand.range(min, max);
+}
+
+float myrand_range(float min, float max)
+{
+	return (max-min) * myrand_float() + min;
 }
 
 
@@ -156,13 +76,13 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 	const int r = 47;
 	u64 h = seed ^ (len * m);
 
-	const u64 *data = (const u64 *)key;
-	const u64 *end = data + (len / 8);
+	const u8 *data = (const u8 *)key;
+	const u8 *end = data + (len / 8) * 8;
 
 	while (data != end) {
 		u64 k;
 		memcpy(&k, data, sizeof(u64));
-		data++;
+		data += sizeof(u64);
 
 		k *= m;
 		k ^= k >> r;
@@ -201,13 +121,6 @@ u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed)
 bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 		f32 camera_fov, f32 range, f32 *distance_ptr)
 {
-	// Maximum radius of a block.  The magic number is
-	// sqrt(3.0) / 2.0 in literal form.
-/*
-	const f32 block_max_radius = 0.866025403784 * MAP_BLOCKSIZE * BS;
-*/
-	const f32 block_max_radius = MAP_BLOCKSIZE * BS;
-
 	v3s16 blockpos_nodes = blockpos_b * MAP_BLOCKSIZE;
 
 	// Block center position
@@ -221,21 +134,21 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	//v3f blockpos_relative = blockpos - camera_pos;
 
 	// Total distance
-	f32 d = radius_box(blockpos, camera_pos);
 /*
-	f32 d = MYMAX(0, blockpos_relative.getLength() - block_max_radius);
-*/
+	f32 d = MYMAX(0, blockpos_relative.getLength() - BLOCK_MAX_RADIUS);
+*/	
+	f32 d = radius_box(blockpos, camera_pos);
 
-	if(distance_ptr)
+	if (distance_ptr)
 		*distance_ptr = d;
 
 	// If block is far away, it's not in sight
-	if(d > range)
+	if (d > range)
 		return false;
 
 	// If block is (nearly) touching the camera, don't
 	// bother validating further (that is, render it anyway)
-	if(d == 0)
+	if (d == 0)
 		return true;
 
 	if (!camera_fov)
@@ -244,7 +157,7 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	// such that a block that has any portion visible with the
 	// current camera position will have the center visible at the
 	// adjusted postion
-	f32 adjdist = block_max_radius / cos((M_PI - camera_fov) / 2);
+	f32 adjdist = BLOCK_MAX_RADIUS / cos((M_PI - camera_fov) / 2);
 
 	// Block position relative to adjusted camera
 	v3f blockpos_adj = blockpos - (camera_pos - camera_dir * adjdist);
@@ -260,8 +173,60 @@ bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
 	// HOTFIX: use sligthly increased angle (+10%) to fix too agressive
 	// culling. Somebody have to find out whats wrong with the math here.
 	// Previous value: camera_fov / 2
-	if(cosangle < cos(camera_fov * 0.55))
+	if (cosangle < std::cos(camera_fov * 0.55f))
 		return false;
 
 	return true;
+}
+
+inline float adjustDist(float dist, float zoom_fov)
+{
+	// 1.775 ~= 72 * PI / 180 * 1.4, the default FOV on the client.
+	// The heuristic threshold for zooming is half of that.
+	static constexpr const float threshold_fov = 1.775f / 2.0f;
+	if (zoom_fov < 0.001f || zoom_fov > threshold_fov)
+		return dist;
+
+	return dist * std::cbrt((1.0f - std::cos(threshold_fov)) /
+		(1.0f - std::cos(zoom_fov / 2.0f)));
+}
+
+s16 adjustDist(s16 dist, float zoom_fov)
+{
+	return std::round(adjustDist((float)dist, zoom_fov));
+}
+
+void setPitchYawRollRad(core::matrix4 &m, const v3f &rot)
+{
+	f64 a1 = rot.Z, a2 = rot.X, a3 = rot.Y;
+	f64 c1 = cos(a1), s1 = sin(a1);
+	f64 c2 = cos(a2), s2 = sin(a2);
+	f64 c3 = cos(a3), s3 = sin(a3);
+	f32 *M = m.pointer();
+
+	M[0] = s1 * s2 * s3 + c1 * c3;
+	M[1] = s1 * c2;
+	M[2] = s1 * s2 * c3 - c1 * s3;
+
+	M[4] = c1 * s2 * s3 - s1 * c3;
+	M[5] = c1 * c2;
+	M[6] = c1 * s2 * c3 + s1 * s3;
+
+	M[8] = c2 * s3;
+	M[9] = -s2;
+	M[10] = c2 * c3;
+}
+
+v3f getPitchYawRollRad(const core::matrix4 &m)
+{
+	const f32 *M = m.pointer();
+
+	f64 a1 = atan2(M[1], M[5]);
+	f32 c2 = std::sqrt((f64)M[10]*M[10] + (f64)M[8]*M[8]);
+	f32 a2 = atan2f(-M[9], c2);
+	f64 c1 = cos(a1);
+	f64 s1 = sin(a1);
+	f32 a3 = atan2f(s1*M[6] - c1*M[2], c1*M[0] - s1*M[4]);
+
+	return v3f(a2, a3, a1);
 }

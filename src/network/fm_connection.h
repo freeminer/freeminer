@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define CONNECTION_ENET_HEADER
 
 #include "irrlichttypes_bloated.h"
+#include "network/peerhandler.h"
 #include "socket.h"
 #include "exceptions.h"
 #include "constants.h"
@@ -44,16 +45,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CHANNEL_COUNT 3
 
+/*
 extern std::ostream *dout_con_ptr;
 extern std::ostream *derr_con_ptr;
 #define dout_con (*dout_con_ptr)
 #define derr_con (*derr_con_ptr)
+*/
 
 namespace con {
 
 /*
 	Exceptions
 */
+#if MERGE_DELETE
 class NotFoundException : public BaseException {
 public:
 	NotFoundException(const char *s):
@@ -118,8 +122,11 @@ public:
 	{}
 };
 
+#endif
+
 class Connection;
 
+/*
 enum PeerChangeType {
 	PEER_ADDED,
 	PEER_REMOVED
@@ -129,7 +136,8 @@ struct PeerChange {
 	u16 peer_id;
 	bool timeout;
 };
-
+*/
+#if 0
 class PeerHandler {
 public:
 	PeerHandler() {
@@ -148,8 +156,10 @@ public:
 	*/
 	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
 };
+#endif
 
 /*mt compat*/
+/*
 typedef enum rtt_stat_type {
 	MIN_RTT,
 	MAX_RTT,
@@ -158,6 +168,7 @@ typedef enum rtt_stat_type {
 	MAX_JITTER,
 	AVG_JITTER
 } rtt_stat_type;
+*/
 
 enum ConnectionEventType {
 	CONNEVENT_NONE,
@@ -296,7 +307,7 @@ public:
 	u16 GetPeerID() { return m_peer_id; }
 	void DeletePeer(u16 peer_id);
 	Address GetPeerAddress(u16 peer_id);
-	float getPeerStat(u16 peer_id, rtt_stat_type type);
+	float getPeerStat(u16 peer_id, con::rtt_stat_type type);
 	void DisconnectPeer(u16 peer_id);
 	size_t events_size();
 
@@ -326,7 +337,7 @@ private:
 
 	concurrent_map<u16, ENetPeer*> m_peers;
 	concurrent_unordered_map<u16, Address> m_peers_address;
-	//Mutex m_peers_mutex;
+	//std::mutex m_peers_mutex;
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;

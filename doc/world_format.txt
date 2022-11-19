@@ -1,22 +1,18 @@
 =============================
-Minetest World Format 22...25
+Minetest World Format 22...29
 =============================
 
 This applies to a world format carrying the block serialization version
-22...25, used at least in
+22...27, used at least in
 - 0.4.dev-20120322 ... 0.4.dev-20120606 (22...23)
 - 0.4.0 (23)
 - 24 was never released as stable and existed for ~2 days
+- 27 was added in 0.4.15-dev
+- 29 was added in 5.5.0-dev
 
 The block serialization version does not fully specify every aspect of this
 format; if compliance with this format is to be checked, it needs to be
 done by detecting if the files and data indeed follows it.
-
-Legacy stuff
-=============
-Data can, in theory, be contained in the flat file directory structure
-described below in Version 17, but it is not officially supported. Also you
-may stumble upon all kinds of oddities in not-so-recent formats.
 
 Files
 ======
@@ -28,6 +24,7 @@ It can be copied over from an old world to a newly created world.
 
 World
 |-- auth.txt ----- Authentication data
+|-- auth.sqlite -- Authentication data (SQLite alternative)
 |-- env_meta.txt - Environment metadata
 |-- ipban.txt ---- Banned ips/users
 |-- map_meta.txt - Map metadata
@@ -60,6 +57,34 @@ Example lines:
     foo:#1#hPpy4O3IAn1hsNK00A6wNw#Kpu6rj7McsrPCt4euTb5RA5ltF7wdcWGoYMcRngwDi11cZhPuuR9i5Bo7o6A877TgcEwoc//HNrj9EjR/CGjdyTFmNhiermZOADvd8eu32FYK1kf7RMC0rXWxCenYuOQCG4WF9mMGiyTPxC63VAjAMuc1nCZzmy6D9zt0SIKxOmteI75pAEAIee2hx4OkSXRIiU4Zrxo1Xf7QFxkMY4x77vgaPcvfmuzom0y/fU1EdSnZeopGPvzMpFx80ODFx1P34R52nmVl0W8h4GNo0k8ZiWtRCdrJxs8xIg7z5P1h3Th/BJ0lwexpdK8sQZWng8xaO5ElthNuhO8UQx1l6FgEA:shout
 - Player "bar", no password, no privileges:
     bar::
+
+auth.sqlite
+------------
+Contains authentification data as an SQLite database. This replaces auth.txt
+above when auth_backend is set to "sqlite3" in world.mt .
+
+This database contains two tables "auth" and "user_privileges":
+
+CREATE TABLE `auth` (
+  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+  `name` VARCHAR(32) UNIQUE,
+  `password` VARCHAR(512),
+  `last_login` INTEGER
+);
+CREATE TABLE `user_privileges` (
+  `id` INTEGER,
+  `privilege` VARCHAR(32),
+  PRIMARY KEY (id, privilege)
+  CONSTRAINT fk_id FOREIGN KEY (id) REFERENCES auth (id) ON DELETE CASCADE
+);
+
+The "name" and "password" fields of the auth table are the same as the auth.txt
+fields (with modern password hash). The "last_login" field is the last login
+time as a unix time stamp.
+
+The "user_privileges" table contains one entry per privilege and player.
+A player with "interact" and "shout" privileges will have two entries, one
+with privilege="interact" and the second with privilege="shout".
 
 env_meta.txt
 -------------
@@ -97,8 +122,41 @@ See Player File Format below.
 world.mt
 ---------
 World metadata.
-Example content (added indentation):
-  gameid = mesetint
+Example content (added indentation and - explanations):
+  gameid = mesetint             - name of the game
+  enable_damage = true          - whether damage is enabled or not
+  creative_mode = false         - whether creative mode is enabled or not
+  backend = sqlite3             - which DB backend to use for blocks (sqlite3, dummy, leveldb, redis, postgresql)
+  player_backend = sqlite3      - which DB backend to use for player data
+  readonly_backend = sqlite3    - optionally readonly seed DB (DB file _must_ be located in "readonly" subfolder)
+  auth_backend = files          - which DB backend to use for authentication data
+  server_announce = false       - whether the server is publicly announced or not
+  load_mod_<mod> = false        - whether <mod> is to be loaded in this world
+
+For load_mod_<mod>, the possible values are:
+
+* `false` - Do not load the mod.
+* `true` - Load the mod from wherever it is found (may cause conflicts if the same mod appears also in some other place).
+* `mods/modpack/moddir` - Relative path to the mod
+    * Must be one of the following:
+        * `mods/`: mods in the user path's mods folder (ex `/home/user/.minetest/mods`)
+        * `share/`: mods in the share's mods folder (ex: `/usr/share/minetest/mods`)
+        * `/path/to/env`: you can use absolute paths to mods inside folders specified with the `MINETEST_MOD_PATH` env variable.
+    * Other locations and absolute paths are not supported
+    * Note that `moddir` is the directory name, not the mod name specified in mod.conf.
+
+PostgreSQL backend specific settings:
+  pgsql_connection = host=127.0.0.1 port=5432 user=mt_user password=mt_password dbname=minetest
+  pgsql_player_connection = (same parameters as above)
+  pgsql_readonly_connection = (same parameters as above)
+  pgsql_auth_connection = (same parameters as above)
+
+Redis backend specific settings:
+  redis_address = 127.0.0.1  - Redis server address
+  redis_hash = foo           - Database hash
+  redis_port = 6379          - (optional) connection port
+  redis_password = hunter2   - (optional) server password
+
 
 Player File Format
 ===================
@@ -249,6 +307,8 @@ MapBlock serialization format
 NOTE: Byte order is MSB first (big-endian).
 NOTE: Zlib data is in such a format that Python's zlib at least can
       directly decompress.
+NOTE: Since version 29 zstd is used instead of zlib. In addition the entire
+      block is first serialized and then compressed (except the version byte).
 
 u8 version
 - map format version number, see serialisation.h for the latest number
@@ -262,14 +322,52 @@ u8 flags
   - 0x02: day_night_differs: Whether the lighting of the block is different
     on day and night. Only blocks that have this bit set are updated when
     day transforms to night.
-  - 0x04: lighting_expired: If true, lighting is invalid and should be
-    updated.  If you can't calculate lighting in your generator properly,
-    you could try setting this 1 to everything and setting the uppermost
-    block in every sector as is_underground=0. I am quite sure it doesn't
-    work properly, though.
+  - 0x04: lighting_expired: Not used in version 27 and above. If true,
+    lighting is invalid and should be updated.  If you can't calculate
+    lighting in your generator properly, you could try setting this 1 to
+    everything and setting the uppermost block in every sector as
+    is_underground=0. I am quite sure it doesn't work properly, though.
   - 0x08: generated: True if the block has been generated. If false, block
     is mostly filled with CONTENT_IGNORE and is likely to contain eg. parts
     of trees of neighboring blocks.
+
+u16 lighting_complete
+- Added in version 27.
+- This contains 12 flags, each of them corresponds to a direction.
+- Indicates if the light is correct at the sides of a map block.
+  Lighting may not be correct if the light changed, but a neighbor
+  block was not loaded at that time.
+  If these flags are false, Minetest will automatically recompute light
+  when both this block and its required neighbor are loaded.
+- The bit order is:
+  nothing,  nothing,  nothing,  nothing,
+  night X-, night Y-, night Z-, night Z+, night Y+, night X+,
+  day X-,   day Y-,   day Z-,   day Z+,   day Y+,   day X+.
+  Where 'day' is for the day light bank, 'night' is for the night
+  light bank.
+  The 'nothing' bits should be always set, as they will be used
+  to indicate if direct sunlight spreading is finished.
+- Example: if the block at (0, 0, 0) has
+  lighting_complete = 0b1111111111111110,
+  then Minetest will correct lighting in the day light bank when
+  the block at (1, 0, 0) is also loaded.
+
+if map format version >= 29:
+  u32 timestamp
+  - Timestamp when last saved, as seconds from starting the game.
+  - 0xffffffff = invalid/unknown timestamp, nothing should be done with the time
+                 difference when loaded
+
+  u8 name_id_mapping_version
+  - Should be zero for map format version 29.
+  
+  u16 num_name_id_mappings
+  foreach num_name_id_mappings
+    u16 id
+    u16 name_len
+    u8[name_len] name
+if map format version < 29:
+  -- Nothing right here, timpstamp and node id mappings are serialized later
 
 u8 content_width
 - Number of bytes in the content (param0) fields of nodes
@@ -282,7 +380,7 @@ u8 params_width
 - Number of bytes used for parameters per node
 - Always 2
 
-zlib-compressed node data:
+node data (zlib-compressed if version < 29):
 if content_width == 1:
     - content:
       u8[4096]: param0 fields
@@ -295,28 +393,31 @@ if content_width == 2:
       u8[4096]: param2 fields
 - The location of a node in each of those arrays is (z*16*16 + y*16 + x).
 
-zlib-compressed node metadata list
+node metadata list (zlib-compressed if version < 29):
 - content:
-if map format version <= 22:
-  u16 version (=1)
-  u16 count of metadata
-  foreach count:
-    u16 position (p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X)
-    u16 type_id
-    u16 content_size
-    u8[content_size] content of metadata. Format depends on type_id, see below.
-if map format version >= 23:
-  u8 version (=1) -- Note the type is u8, while for map format version <= 22 it's u16
-  u16 count of metadata
-  foreach count:
-    u16 position (p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X)
-    u32 num_vars
-    foreach num_vars:
-      u16 key_len
-      u8[key_len] key
-      u32 val_len
-      u8[val_len] value
-    serialized inventory
+  if map format version <= 22:
+    u16 version (=1)
+    u16 count of metadata
+    foreach count:
+      u16 position (p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X)
+      u16 type_id
+      u16 content_size
+      u8[content_size] content of metadata. Format depends on type_id, see below.
+  if map format version >= 23:
+    u8 version -- Note: type was u16 for map format version <= 22
+      -- = 1 for map format version < 28
+      -- = 2 since map format version 28
+    u16 count of metadata
+    foreach count:
+      u16 position (p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X)
+      u32 num_vars
+      foreach num_vars:
+        u16 key_len
+        u8[key_len] key
+        u32 val_len
+        u8[val_len] value
+        u8 is_private -- only for version >= 2. 0 = not private, 1 = private
+      serialized inventory
 
 - Node timers
 if map format version == 23:
@@ -347,23 +448,21 @@ foreach static_object_count:
   u16 data_size
   u8[data_size] data
 
-u32 timestamp
-- Timestamp when last saved, as seconds from starting the game.
-- 0xffffffff = invalid/unknown timestamp, nothing should be done with the time
-               difference when loaded
+if map format version < 29:
+  u32 timestamp
+  - Same meaning as the timestamp further up
 
-u8 name-id-mapping version
-- Always 0
+  u8 name-id-mapping version
+  - Always 0
 
-u16 num_name_id_mappings
-
-foreach num_name_id_mappings
-  u16 id
-  u16 name_len
-  u8[name_len] name
+  u16 num_name_id_mappings
+  foreach num_name_id_mappings
+    u16 id
+    u16 name_len
+    u8[name_len] name
 
 - Node timers
-if map format version == 25:
+if map format version >= 25:
   u8 length of the data of a single timer (always 2+4+4=10)
   u16 num_of_timers
   foreach num_of_timers:
@@ -437,31 +536,23 @@ Static objects are persistent freely moving objects in the world.
 
 Object types:
 1: Test object
-2: Item
-3: Rat (deprecated)
-4: Oerkki (deprecated)
-5: Firefly (deprecated)
-6: MobV2 (deprecated)
 7: LuaEntity
 
-1: Item:
-  u8 version
-  version 0:
-    u16 len
-    u8[len] itemstring
-
 7: LuaEntity:
-  u8 version
-  version 1:
-    u16 len
-    u8[len] entity name
-    u32 len
-    u8[len] static data
-    s16 hp
-    s32 velocity.x * 10000
-    s32 velocity.y * 10000
-    s32 velocity.z * 10000
-    s32 yaw * 1000
+  u8 compatibility_byte (always 1)
+  u16 len
+  u8[len] entity name
+  u32 len
+  u8[len] static data
+  s16 hp
+  s32 velocity.x * 10000
+  s32 velocity.y * 10000
+  s32 velocity.z * 10000
+  s32 yaw * 1000
+  if PROTOCOL_VERSION >= 37:
+    u8 version2 (=1)
+    s32 pitch * 1000
+    s32 roll * 1000
 
 Itemstring format
 ------------------
@@ -503,107 +594,3 @@ Empty
 EndInventoryList
 EndInventory
 ---
-
-==============================================
-Minetest World Format used as of 2011-05 or so
-==============================================
-
-Map data serialization format version 17.
-
-0.3.1 does not use this format, but a more recent one. This exists here for
-historical reasons.
-
-Directory structure:
-sectors/XXXXZZZZ or sectors2/XXX/ZZZ
-XXXX, ZZZZ, XXX and ZZZ being the hexadecimal X and Z coordinates.
-Under these, the block files are stored, called YYYY.
-
-There also exists files map_meta.txt and chunk_meta, that are used by the
-generator. If they are not found or invalid, the generator will currently
-behave quite strangely.
-
-The MapBlock file format (sectors2/XXX/ZZZ/YYYY):
--------------------------------------------------
-
-NOTE: Byte order is MSB first.
-
-u8 version
-- map format version number, this one is version 17
-
-u8 flags
-- Flag bitmasks:
-  - 0x01: is_underground: Should be set to 0 if there will be no light
-    obstructions above the block. If/when sunlight of a block is updated and
-	there is no block above it, this value is checked for determining whether
-	sunlight comes from the top.
-  - 0x02: day_night_differs: Whether the lighting of the block is different on
-    day and night. Only blocks that have this bit set are updated when day
-	transforms to night.
-  - 0x04: lighting_expired: If true, lighting is invalid and should be updated.
-    If you can't calculate lighting in your generator properly, you could try
-	setting this 1 to everything and setting the uppermost block in every
-	sector as is_underground=0. I am quite sure it doesn't work properly,
-	though.
-
-zlib-compressed map data:
-- content:
-  u8[4096]: content types
-  u8[4096]: param1 values
-  u8[4096]: param2 values
-
-zlib-compressed node metadata
-- content:
-  u16 version (=1)
-  u16 count of metadata
-  foreach count:
-    u16 position (= p.Z*MAP_BLOCKSIZE*MAP_BLOCKSIZE + p.Y*MAP_BLOCKSIZE + p.X)
-	u16 type_id
-	u16 content_size
-	u8[content_size] misc. stuff contained in the metadata
-
-u16 mapblockobject_count
-- always write as 0.
-- if read != 0, just fail.
-
-foreach mapblockobject_count:
-  - deprecated, should not be used. Length of this data can only be known by
-    properly parsing it. Just hope not to run into any of this.
-
-u8 static object version:
-- currently 0
-
-u16 static_object_count
-
-foreach static_object_count:
-  u8 type (object type-id)
-  s32 pos_x * 1000
-  s32 pos_y * 1000
-  s32 pos_z * 1000
-  u16 data_size
-  u8[data_size] data
-
-u32 timestamp
-- Timestamp when last saved, as seconds from starting the game.
-- 0xffffffff = invalid/unknown timestamp, nothing will be done with the time
-               difference when loaded (recommended)
-
-Node metadata format:
----------------------
-
-Sign metadata:
-  u16 string_len
-  u8[string_len] string
-
-Furnace metadata:
-  TBD
-
-Chest metadata:
-  TBD
-
-Locking Chest metadata:
-  u16 string_len
-  u8[string_len] string
-  TBD
-
-// END
-

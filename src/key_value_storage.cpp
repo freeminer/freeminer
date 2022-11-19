@@ -17,8 +17,10 @@
 
 #include <mutex>
 
+#include "convert_json.h"
 #include "exceptions.h"
 #include "filesys.h"
+#include "json/reader.h"
 #include "key_value_storage.h"
 #include "log.h"
 #include "util/pointer.h"
@@ -36,7 +38,7 @@ bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen
 	if (status.ok()) {
 		return true;
 	}
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	error = status.ToString();
 	if (status.IsCorruption()) {
 		if (++repairs > 2)
@@ -47,13 +49,13 @@ bool KeyValueStorage::process_status(const leveldb::Status & status, bool reopen
 		leveldb::Status status_repair;
 		try {
 			status_repair = leveldb::RepairDB(fullpath, options);
-		} catch (std::exception &e) {
+		} catch (const std::exception &e) {
 			errorstream << "First repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
 			auto options_repair = options;
 			options_repair.paranoid_checks = true;
 			try {
 				status_repair = leveldb::RepairDB(fullpath, options_repair);
-			} catch (std::exception &e) {
+			} catch (const std::exception &e) {
 				errorstream << "Second repair [" << db_name << "] exception [" << e.what() << "]" << std::endl;
 			}
 		}
@@ -121,7 +123,7 @@ bool KeyValueStorage::put(const std::string &key, const float &data) {
 
 
 bool KeyValueStorage::put_json(const std::string &key, const Json::Value &data) {
-	return put(key, json_writer.write(data).c_str());
+	return put(key, fastWriteJson(data));
 }
 
 bool KeyValueStorage::get(const std::string &key, std::string &data) {
@@ -145,15 +147,16 @@ bool KeyValueStorage::get(const std::string &key, float &data) {
 }
 
 bool KeyValueStorage::get_json(const std::string &key, Json::Value & data) {
-	std::string value;
+	std::string value, errors;
 	get(key, value);
 	if (value.empty())
 		return false;
-	return json_reader.parse(value, data);
+	std::istringstream stream(value);
+	return Json::parseFromStream(json_char_reader_builder, stream, &data, &errors);
 }
 
 std::string KeyValueStorage::get_error() {
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	return error;
 }
 
@@ -161,7 +164,7 @@ bool KeyValueStorage::del(const std::string &key) {
 	if (!db)
 		return false;
 #if USE_LEVELDB
-	//std::lock_guard<Mutex> lock(mutex);
+	//std::lock_guard<std::mutex> lock(mutex);
 	auto status = db->Delete(write_options, key);
 	return process_status(status);
 #else

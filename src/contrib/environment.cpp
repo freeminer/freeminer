@@ -121,7 +121,7 @@ void ServerEnvironment::contrib_globalstep(const float dtime)
 		std::deque<v3s16> nuqueue; 
 		int i = 0;
 		{
-			std::lock_guard<Mutex> lock(m_nodeupdate_queue_mutex);
+			std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
 		while(++i < 1000 && !m_nodeupdate_queue.empty()) {nuqueue.emplace_back(m_nodeupdate_queue.front()); m_nodeupdate_queue.pop_front();}
 		}
 		//m_nodeupdate_queue.clear();
@@ -165,7 +165,7 @@ void ServerEnvironment::contrib_lookupitemtogather(RemotePlayer* player, v3f pla
 				SimpleSoundSpec spec;
 				spec.name = "item_drop_pickup";
 
-				ServerSoundParams params;
+				ServerPlayingSound params;
 				params.gain = 0.4f;
 				params.to_player = player->getName();
 
@@ -192,7 +192,6 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		v3f pos, const ItemStack &items)
 {
 	epixel::ItemSAO* obj = new epixel::ItemSAO(this, pos, "__builtin:item", "");
-	if (addActiveObject(obj)) {
 		IItemDefManager* idef = m_gamedef->getItemDefManager();
 		float s = 0.2 + 0.1 * (items.count / items.getStackMax(idef));
 		ObjectProperties* objProps = obj->accessObjectProperties();
@@ -204,13 +203,15 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		objProps->textures.push_back(itemName);
 		objProps->physical = true;
 		objProps->collideWithObjects = false;
-		objProps->visual_size = v2f(s, s);
+		objProps->visual_size = v3f(s, s, s);
 		objProps->collisionbox = core::aabbox3d<f32>(-s,-s,-s,s,s,s);
 		objProps->automatic_rotate = 3.1415 * 0.5;
 		obj->notifyObjectPropertiesModified();
 		obj->attachItems(items);
+	if (addActiveObject(obj)) {
 		return obj;
 	}
+	delete obj;
 	return nullptr;
 }
 
@@ -218,7 +219,6 @@ epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::strin
 		v3f pos, const MapNode n, int fast)
 {
 	epixel::FallingSAO* obj = new epixel::FallingSAO(this, pos, "__builtin:falling_node", "", fast);
-	if (addActiveObject(obj)) {
 		ObjectProperties* objProps = obj->accessObjectProperties();
 		objProps->is_visible = true;
 		objProps->visual = "wielditem";
@@ -228,8 +228,10 @@ epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::strin
 		objProps->collideWithObjects = false;
 		obj->notifyObjectPropertiesModified();
 		obj->attachNode(n);
+	if (addActiveObject(obj)) {
 		return obj;
 	}
+	delete obj;
 	return nullptr;
 }
 
@@ -335,14 +337,18 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
  */
 void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fast, bool destroy)
 {
+
+	// fmTODO remove:
+	return;
+
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
-		std::lock_guard<Mutex> lock(m_nodeupdate_queue_mutex);
+		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
 		m_nodeupdate_queue.push_back(pos);
 		return;
 	}
 
-	INodeDefManager* ndef = m_gamedef->getNodeDefManager();
+	auto* ndef = m_gamedef->getNodeDefManager();
 	MapNode n, n_bottom;
 #if 0
 	ContentFeatures f;
@@ -684,7 +690,7 @@ bool ServerEnvironment::checkAttachedNode(const v3s16 pos, MapNode n, const Cont
 	bool exists = false;
 */
 	MapNode n2 = m_map->getNode(pos + d);
-	INodeDefManager* ndef = m_gamedef->getNodeDefManager();
+	auto* ndef = m_gamedef->getNodeDefManager();
 	if (n2.getContent() != CONTENT_IGNORE && !ndef->get(n2).walkable) {
 		return false;
 	}

@@ -27,26 +27,29 @@
  */
 
 // clang-format off
+
+#include <cstddef>
+
 #ifdef WIN32
 	#include <windows.h>
 	#include <wincrypt.h>
 #else
-	#include <time.h>
+	#include <ctime>
+
 #endif
 // clang-format on
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <cstdint>
 
 #include <config.h>
 
-#include <cstddef> // fix gmp: error: ‘::max_align_t’ has not been declared
-
-#if USE_SYSTEM_GMP || defined (__ANDROID__) || defined (ANDROID)
+#if USE_SYSTEM_GMP
 	#include <gmp.h>
 #else
-	#include <gmp/mini-gmp.h>
+	#include <mini-gmp.h>
 #endif
 
 #include <util/sha2.h>
@@ -220,7 +223,7 @@ static NGConstant *new_ng(SRP_NGType ng_type, const char *n_hex, const char *g_h
 
 typedef union {
 	SHA_CTX sha;
-	SHA256_CTX sha256;
+	mt_SHA256_CTX sha256;
 	// SHA512_CTX sha512;
 } HashCTX;
 
@@ -266,10 +269,10 @@ static int hash_init(SRP_HashAlgorithm alg, HashCTX *c)
 		case SRP_SHA1: return SHA1_Init(&c->sha);
 #endif
 		/*
-		case SRP_SHA224: return SHA224_Init(&c->sha256);
+		case SRP_SHA224: return mt_SHA224_Init(&c->sha256);
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256_Init(&c->sha256);
+		case SRP_SHA256: return mt_SHA256_Init(&c->sha256);
 #endif
 		/*
 		case SRP_SHA384: return SHA384_Init(&c->sha512);
@@ -288,7 +291,7 @@ static int hash_update( SRP_HashAlgorithm alg, HashCTX *c, const void *data, siz
 		case SRP_SHA224: return SHA224_Update(&c->sha256, data, len);
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256_Update(&c->sha256, data, len);
+		case SRP_SHA256: return mt_SHA256_Update(&c->sha256, data, len);
 #endif
 		/*
 		case SRP_SHA384: return SHA384_Update(&c->sha512, data, len);
@@ -307,7 +310,7 @@ static int hash_final( SRP_HashAlgorithm alg, HashCTX *c, unsigned char *md )
 		case SRP_SHA224: return SHA224_Final(md, &c->sha256);
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256_Final(md, &c->sha256);
+		case SRP_SHA256: return mt_SHA256_Final(md, &c->sha256);
 #endif
 		/*
 		case SRP_SHA384: return SHA384_Final(md, &c->sha512);
@@ -351,7 +354,7 @@ static size_t hash_length(SRP_HashAlgorithm alg)
 		case SRP_SHA384: return SHA384_DIGEST_LENGTH;
 		case SRP_SHA512: return SHA512_DIGEST_LENGTH;
 		*/
-		default: return -1;
+		default: return 0;
 	};
 }
 // clang-format on
@@ -613,7 +616,7 @@ SRP_Result srp_create_salted_verification_key( SRP_HashAlgorithm alg,
 			if (fill_buff() != SRP_OK) goto error_and_exit;
 		*bytes_s = (unsigned char *)srp_alloc(size_to_fill);
 		if (!*bytes_s) goto error_and_exit;
-		memcpy(*bytes_s, g_rand_buff + g_rand_idx, size_to_fill);
+		memcpy(*bytes_s, &g_rand_buff[g_rand_idx], size_to_fill);
 		g_rand_idx += size_to_fill;
 	}
 
@@ -698,7 +701,7 @@ struct SRPVerifier *srp_verifier_new(SRP_HashAlgorithm alg,
 		goto cleanup_and_exit;
 	}
 
-	memcpy((char *)ver->username, username, ulen);
+	memcpy(ver->username, username, ulen);
 
 	ver->authenticated = 0;
 
@@ -863,7 +866,7 @@ err_exit:
 		mpz_clear(usr->a);
 		mpz_clear(usr->A);
 		mpz_clear(usr->S);
-		if (usr->ng) delete_ng(usr->ng);
+		delete_ng(usr->ng);
 		srp_free(usr->username);
 		srp_free(usr->username_verifier);
 		if (usr->password) {
@@ -1013,10 +1016,10 @@ void  srp_user_process_challenge(struct SRPUser *usr,
 			goto cleanup_and_exit;
 
 		*bytes_M = usr->M;
-		if (len_M) *len_M = hash_length(usr->hash_alg);
+		*len_M = hash_length(usr->hash_alg);
 	} else {
 		*bytes_M = NULL;
-		if (len_M) *len_M = 0;
+		*len_M = 0;
 	}
 
 cleanup_and_exit:

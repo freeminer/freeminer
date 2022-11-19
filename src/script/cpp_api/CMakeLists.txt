@@ -5,6 +5,7 @@ set(common_SCRIPT_CPP_API_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/s_env.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/s_inventory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/s_item.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/s_modchannels.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/s_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/s_nodemeta.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/s_player.cpp
@@ -13,6 +14,7 @@ set(common_SCRIPT_CPP_API_SRCS
 	PARENT_SCOPE)
 
 set(client_SCRIPT_CPP_API_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/s_client.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/s_mainmenu.cpp
 	PARENT_SCOPE)
 

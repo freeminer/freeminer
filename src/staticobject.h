@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef STATICOBJECT_HEADER
-#define STATICOBJECT_HEADER
+#pragma once
 
 #include "irrlichttypes_bloated.h"
 #include <string>
@@ -31,25 +30,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "threading/concurrent_map.h"
 
+class ServerActiveObject;
+
 struct StaticObject
 {
-	u8 type;
+	u8 type = 0;
 	v3f pos;
 	std::string data;
 
-	StaticObject():
-		type(0),
-		pos(0,0,0)
-	{
-	}
-	StaticObject(u8 type_, v3f pos_, const std::string &data_):
-		type(type_),
-		pos(pos_),
-		data(data_)
-	{
-	}
+	StaticObject() = default;
+	StaticObject(const ServerActiveObject *s_obj, const v3f &pos_);
 
-	void serialize(std::ostream &os);
+	void serialize(std::ostream &os) const;
 	bool deSerialize(std::istream &is, u8 version);
 };
 
@@ -60,7 +52,7 @@ public:
 		Inserts an object to the container.
 		Id must be unique (active) or 0 (stored).
 	*/
-	void insert(u16 id, StaticObject obj)
+	void insert(u16 id, const StaticObject &obj)
 	{
 		auto lock = m_active.lock_unique_rec();
 		if(id == 0)
@@ -75,7 +67,7 @@ public:
 						<<"id already exists"<<std::endl;
 				return;
 			}
-			m_active.set(id, obj);
+			m_active.emplace(id, obj);
 		}
 	}
 
@@ -97,7 +89,7 @@ public:
 
 	void serialize(std::ostream &os);
 	void deSerialize(std::istream &is);
-	
+
 	/*
 		NOTE: When an object is transformed to active, it is removed
 		from m_stored and inserted to m_active.
@@ -108,6 +100,3 @@ public:
 
 private:
 };
-
-#endif
-

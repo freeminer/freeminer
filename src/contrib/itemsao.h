@@ -19,7 +19,7 @@
 #ifndef __ITEMSAO_H__
 #define __ITEMSAO_H__
 
-#include "content_sao.h"
+#include "server/luaentity_sao.h"
 
 namespace epixel
 {
@@ -30,19 +30,19 @@ public:
 			const std::string &name, const std::string &state);
 	~ItemSAO();
 
-	ActiveObjectType getType() const
+	ActiveObjectType getType() const override
 	{ return ACTIVEOBJECT_TYPE_LUAITEM; }
 
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
 			const std::string &data);
 
-	virtual void addedToEnvironment(u32 dtime_s);
+	virtual void addedToEnvironment(u32 dtime_s) override;
 
-	void step(float dtime, bool send_recommended);
+	void step(float dtime, bool send_recommended) override;
 
 	void attachItems(ItemStack st) { m_item_stack = st; }
-	ItemStack getAttachedItems() { return m_item_stack; }
-	bool canBeLooted() { return (m_timer_before_loot < 0.0f); }
+	//ItemStack getAttachedItems() { return m_item_stack; }
+	//bool canBeLooted() { return (m_timer_before_loot < 0.0f); }
 private:
 	ItemStack m_item_stack;
 	float m_timer_before_loot;

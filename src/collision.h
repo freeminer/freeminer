@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef COLLISION_HEADER
-#define COLLISION_HEADER
+#pragma once
 
 #include "irrlichttypes_bloated.h"
 #include <vector>
@@ -37,39 +36,35 @@ enum CollisionType
 	COLLISION_OBJECT,
 };
 
+enum CollisionAxis
+{
+	COLLISION_AXIS_NONE = -1,
+	COLLISION_AXIS_X,
+	COLLISION_AXIS_Y,
+	COLLISION_AXIS_Z,
+};
+
 struct CollisionInfo
 {
-	enum CollisionType type;
-	v3s16 node_p; // COLLISION_NODE
-	bool bouncy;
+	CollisionInfo() = default;
+
+	CollisionType type = COLLISION_NODE;
+	CollisionAxis axis = COLLISION_AXIS_NONE;
+	v3s16 node_p = v3s16(-32768,-32768,-32768); // COLLISION_NODE
+	ActiveObject *object = nullptr; // COLLISION_OBJECT
 	v3f old_speed;
 	v3f new_speed;
-
-	CollisionInfo():
-		type(COLLISION_NODE),
-		node_p(-32768,-32768,-32768),
-		bouncy(false),
-		old_speed(0,0,0),
-		new_speed(0,0,0)
-	{}
+	int plane = -1;
 };
 
 struct collisionMoveResult
 {
-	bool touching_ground;
-	bool collides;
-	bool collides_xz;
-	bool standing_on_unloaded;
-	bool standing_on_object;
-	std::vector<CollisionInfo> collisions;
+	collisionMoveResult() = default;
 
-	collisionMoveResult():
-		touching_ground(false),
-		collides(false),
-		collides_xz(false),
-		standing_on_unloaded(false),
-		standing_on_object(false)
-	{}
+	bool touching_ground = false;
+	bool collides = false;
+	bool standing_on_object = false;
+	std::vector<CollisionInfo> collisions;
 };
 
 // Moves using a single iteration; speed should not exceed pos_max_d/dtime
@@ -84,9 +79,9 @@ collisionMoveResult collisionMoveSimple(Environment *env,IGameDef *gamedef,
 // Checks for collision of a moving aabbox with a static aabbox
 // Returns -1 if no collision, 0 if X collision, 1 if Y collision, 2 if Z collision
 // dtime receives time until first collision, invalid if -1 is returned
-int axisAlignedCollision(
+CollisionAxis axisAlignedCollision(
 		const aabb3f &staticbox, const aabb3f &movingbox,
-		const v3f &speed, f32 d, f32 *dtime);
+		const v3f &speed, f32 *dtime);
 
 // Helper function:
 // Checks if moving the movingbox up by the given distance would hit a ceiling.
@@ -94,7 +89,3 @@ bool wouldCollideWithCeiling(
 		const std::vector<aabb3f> &staticboxes,
 		const aabb3f &movingbox,
 		f32 y_increase, f32 d);
-
-
-#endif
-

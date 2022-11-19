@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef S_NODE_H_
-#define S_NODE_H_
+#pragma once
 
 #include "irr_v3d.h"
 #include "cpp_api/s_base.h"
@@ -36,15 +35,16 @@ class ScriptApiNode
 		  public ScriptApiNodemeta
 {
 public:
-	ScriptApiNode();
-	virtual ~ScriptApiNode();
+	ScriptApiNode() = default;
+	virtual ~ScriptApiNode() = default;
 
 	bool node_on_punch(v3s16 p, MapNode node,
-			ServerActiveObject *puncher, PointedThing pointed);
+			ServerActiveObject *puncher, const PointedThing &pointed);
 	bool node_on_dig(v3s16 p, MapNode node,
 			ServerActiveObject *digger);
 	void node_on_construct(v3s16 p, MapNode node);
 	void node_on_destruct(v3s16 p, MapNode node);
+	bool node_on_flood(v3s16 p, MapNode node, MapNode newnode);
 	void node_after_destruct(v3s16 p, MapNode node);
 	void node_on_activate(v3s16 p, MapNode node);
 	void node_on_deactivate(v3s16 p, MapNode node);
@@ -53,19 +53,13 @@ public:
 			const std::string &formname,
 			const StringMap &fields,
 			ServerActiveObject *sender);
-/*
-	void node_falling_update(v3s16 p);
-	void node_falling_update_single(v3s16 p);
-*/
 	void node_drop(v3s16 p, int fast);
 public:
 	static struct EnumString es_DrawType[];
 	static struct EnumString es_ContentParamType[];
 	static struct EnumString es_ContentParamType2[];
 	static struct EnumString es_LiquidType[];
+	static struct EnumString es_LiquidMoveType[];
 	static struct EnumString es_NodeBoxType[];
+	static struct EnumString es_TextureAlphaMode[];
 };
-
-
-
-#endif /* S_NODE_H_ */

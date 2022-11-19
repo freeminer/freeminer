@@ -19,11 +19,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef L_NODEMETA_H_
-#define L_NODEMETA_H_
+
+#pragma once
 
 #include "lua_api/l_base.h"
+#include "lua_api/l_metadata.h"
 #include "irrlichttypes_bloated.h"
+#include "nodemetadata.h"
 
 class ServerEnvironment;
 class NodeMetadata;
@@ -32,13 +34,18 @@ class NodeMetadata;
 	NodeMetaRef
 */
 
-class NodeMetaRef : public ModApiBase {
+class NodeMetaRef : public MetaDataRef {
 private:
+	bool m_is_local = false;
+	// Set for server metadata
 	v3s16 m_p;
-	ServerEnvironment *m_env;
+	ServerEnvironment *m_env = nullptr;
+	// Set for client metadata
+	Metadata *m_local_meta = nullptr;
 
 	static const char className[];
-	static const luaL_Reg methods[];
+	static const luaL_Reg methodsServer[];
+	static const luaL_Reg methodsClient[];
 
 	static NodeMetaRef *checkobject(lua_State *L, int narg);
 
@@ -55,52 +62,39 @@ private:
 	 * @param auto_create when true, try to create metadata information for the node if it has none.
 	 * @return pointer to a @c NodeMetadata object or @c NULL in case of error.
 	 */
-	static NodeMetadata* getmeta(NodeMetaRef *ref, bool auto_create);
+	virtual Metadata* getmeta(bool auto_create);
+	virtual void clearMeta();
 
-	static void reportMetadataChange(NodeMetaRef *ref);
+	virtual void reportMetadataChange(const std::string *name = nullptr);
+
+	virtual void handleToTable(lua_State *L, Metadata *_meta);
+	virtual bool handleFromTable(lua_State *L, int table, Metadata *_meta);
 
 	// Exported functions
 
 	// garbage collector
 	static int gc_object(lua_State *L);
 
-	// get_string(self, name)
-	static int l_get_string(lua_State *L);
-
-	// set_string(self, name, var)
-	static int l_set_string(lua_State *L);
-
-	// get_int(self, name)
-	static int l_get_int(lua_State *L);
-
-	// set_int(self, name, var)
-	static int l_set_int(lua_State *L);
-
-	// get_float(self, name)
-	static int l_get_float(lua_State *L);
-
-	// set_float(self, name, var)
-	static int l_set_float(lua_State *L);
-
 	// get_inventory(self)
 	static int l_get_inventory(lua_State *L);
 
-	// to_table(self)
-	static int l_to_table(lua_State *L);
-
-	// from_table(self, table)
-	static int l_from_table(lua_State *L);
+	// mark_as_private(self, <string> or {<string>, <string>, ...})
+	static int l_mark_as_private(lua_State *L);
 
 public:
 	NodeMetaRef(v3s16 p, ServerEnvironment *env);
+	NodeMetaRef(Metadata *meta);
 
-	~NodeMetaRef();
+	~NodeMetaRef() = default;
 
 	// Creates an NodeMetaRef and leaves it on top of stack
 	// Not callable from Lua; all references are created on the C side.
 	static void create(lua_State *L, v3s16 p, ServerEnvironment *env);
 
-	static void Register(lua_State *L);
-};
+	// Client-sided version of the above
+	static void createClient(lua_State *L, Metadata *meta);
 
-#endif /* L_NODEMETA_H_ */
+	static void RegisterCommon(lua_State *L);
+	static void Register(lua_State *L);
+	static void RegisterClient(lua_State *L);
+};

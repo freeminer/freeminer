@@ -32,7 +32,7 @@ Stat::~Stat() {
 };
 
 void Stat::save() {
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	for(const auto & ir : stats) {
 		//errorstream<<"stat saving: "<<ir.first<< " = "<< ir.second<<std::endl;
 		if (ir.second)
@@ -43,7 +43,7 @@ void Stat::save() {
 
 void Stat::unload() {
 	save();
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	stats.clear();
 }
 
@@ -57,7 +57,7 @@ void Stat::close() {
 }
 
 stat_value Stat::get(const std::string & key) {
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	if (!stats.count(key))
 		database.get(key, stats[key]);
 	//errorstream<<"stat get: "<<key<<" = "<< stats[key]<<std::endl;
@@ -67,7 +67,7 @@ stat_value Stat::get(const std::string & key) {
 stat_value Stat::write_one(const std::string & key, const stat_value & value) {
 	//errorstream<<"stat one: "<<key<< " = "<< value<<std::endl;
 	get(key);
-	std::lock_guard<Mutex> lock(mutex);
+	std::lock_guard<std::mutex> lock(mutex);
 	return stats[key] += value;
 }
 
@@ -83,13 +83,13 @@ stat_value Stat::add(const std::string & key, const std::string & player, stat_v
 }
 
 void Stat::update_time() {
-	auto t = time(NULL);
-	auto tm = localtime_safe(&t);
+	//auto t = time(NULL);
+	const auto tm = mt_localtime(); //localtime_safe(&t);
 	char cs[20];
-	strftime(cs, 20, "%Y_%m", tm);
+	strftime(cs, 20, "%Y_%m", &tm);
 	month = cs;
-	strftime(cs, 20, "%Y_%W", tm);
+	strftime(cs, 20, "%Y_%W", &tm);
 	week = cs;
-	strftime(cs, 20, "%Y_%j", tm);
+	strftime(cs, 20, "%Y_%j", &tm);
 	day = cs;
 }

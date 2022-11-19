@@ -20,49 +20,59 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GETTIME_HEADER
-#define GETTIME_HEADER
+#pragma once
 
-#include "irrlichttypes.h"
+#include <ctime>
+#include <string>
+#include <mutex>
 
-/*
-	Get a millisecond counter value.
-	Precision depends on implementation.
-	Overflows at any value above 10000000.
-
-	Implementation of this is done in:
-		Normal build: main.cpp
-		Server build: servermain.cpp
-*/
-enum TimePrecision {
-	PRECISION_SECONDS = 0,
+enum TimePrecision
+{
+	PRECISION_SECONDS,
 	PRECISION_MILLI,
 	PRECISION_MICRO,
 	PRECISION_NANO
 };
 
-extern u32 getTimeMs();
-extern u32 getTime(TimePrecision prec);
+inline struct tm mt_localtime()
+{
+	// initialize the time zone on first invocation
+	static std::once_flag tz_init;
+	std::call_once(tz_init, [] {
+#ifdef _WIN32
+		_tzset();
+#else
+		tzset();
+#endif
+		});
 
-/*
-	Timestamp stuff
-*/
+	struct tm ret;
+	time_t t = time(NULL);
+	// TODO we should check if the function returns NULL, which would mean error
+#ifdef _WIN32
+	localtime_s(&ret, &t);
+#else
+	localtime_r(&t, &ret);
+#endif
+	return ret;
+}
 
-#include <time.h>
-#include <string>
+
+inline std::string getTimestampMt()
+{
+	const struct tm tm = mt_localtime();
+	char cs[20]; // YYYY-MM-DD HH:MM:SS + '\0'
+	strftime(cs, 20, "%Y-%m-%d %H:%M:%S", &tm);
+	return cs;
+}
 
 extern tm * localtime_safe(time_t * t);
-
 inline std::string getTimestamp()
 {
 	time_t t = time(NULL);
-	// This is not really thread-safe but it won't break anything
-	// except its own output, so just go with it.
 	struct tm *tm = localtime_safe(&t);
 	char cs[20]; //YYYY-MM-DD HH:MM:SS + '\0'
 	strftime(cs, 20, "%Y-%m-%d %H:%M:%S", tm);
 	return cs;
 }
 
-
-#endif

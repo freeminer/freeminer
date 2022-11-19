@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include "fm_porting.h"
 #include "log.h"
 #include "porting.h"
 
@@ -31,6 +32,9 @@ void thread_pool::reg(const std::string &name, int priority) {
 };
 
 void thread_pool::start (int n) {
+#if !NDEBUG
+	infostream << "start thread "<< m_name << " n="<<n<<std::endl;
+#endif
 	requeststop = false;
 	for(int i = 0; i < n; ++i)
 		workers.emplace_back(std::thread(&thread_pool::func, this));
@@ -66,8 +70,6 @@ bool thread_pool::stopRequested() {
 	return requeststop;
 }
 bool thread_pool::isRunning() {
-	if (requeststop)
-		join();
 	return !workers.empty();
 }
 void thread_pool::wait() {

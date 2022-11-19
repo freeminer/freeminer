@@ -20,85 +20,25 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_POINTER_HEADER
-#define UTIL_POINTER_HEADER
+#pragma once
 
-#include "../irrlichttypes.h"
-#include "../debug.h" // For assert()
+#include "irrlichttypes.h"
+#include "debug.h" // For assert()
 #include <cstring>
+#include <memory> // std::shared_ptr
 
-template <typename T>
-class SharedPtr
-{
+
+template<typename T> class ConstSharedPtr {
 public:
-	SharedPtr(T *t=NULL)
-	{
-		refcount = new int;
-		*refcount = 1;
-		ptr = t;
-	}
-	SharedPtr(SharedPtr<T> &t)
-	{
-		//*this = t;
-		drop();
-		refcount = t.refcount;
-		(*refcount)++;
-		ptr = t.ptr;
-	}
-	~SharedPtr()
-	{
-		drop();
-	}
-	SharedPtr<T> & operator=(T *t)
-	{
-		drop();
-		refcount = new int;
-		*refcount = 1;
-		ptr = t;
-		return *this;
-	}
-	SharedPtr<T> & operator=(SharedPtr<T> &t)
-	{
-		drop();
-		refcount = t.refcount;
-		(*refcount)++;
-		ptr = t.ptr;
-		return *this;
-	}
-	T* operator->()
-	{
-		return ptr;
-	}
-	T & operator*()
-	{
-		return *ptr;
-	}
-	bool operator!=(T *t)
-	{
-		return ptr != t;
-	}
-	bool operator==(T *t)
-	{
-		return ptr == t;
-	}
-	T & operator[](unsigned int i)
-	{
-		return ptr[i];
-	}
+	ConstSharedPtr(T *ptr) : ptr(ptr) {}
+	ConstSharedPtr(const std::shared_ptr<T> &ptr) : ptr(ptr) {}
+
+	const T* get() const noexcept { return ptr.get(); }
+	const T& operator*() const noexcept { return *ptr.get(); }
+	const T* operator->() const noexcept { return ptr.get(); }
+
 private:
-	void drop()
-	{
-		assert((*refcount) > 0);
-		(*refcount)--;
-		if(*refcount == 0)
-		{
-			delete refcount;
-			if(ptr != NULL)
-				delete ptr;
-		}
-	}
-	T *ptr;
-	int *refcount;
+	std::shared_ptr<T> ptr;
 };
 
 template <typename T>
@@ -108,7 +48,7 @@ public:
 	Buffer()
 	{
 		m_size = 0;
-		data = NULL;
+		data = nullptr;
 	}
 	Buffer(unsigned int size)
 	{
@@ -116,19 +56,26 @@ public:
 		if(size != 0)
 			data = new T[size];
 		else
-			data = NULL;
+			data = nullptr;
 	}
-	Buffer(const Buffer &buffer)
+
+	// Disable class copy
+	Buffer(const Buffer &) = delete;
+	Buffer &operator=(const Buffer &) = delete;
+
+	Buffer(Buffer &&buffer)
 	{
 		m_size = buffer.m_size;
 		if(m_size != 0)
 		{
-			data = new T[buffer.m_size];
-			memcpy(data, buffer.data, buffer.m_size);
+			data = buffer.data;
+			buffer.data = nullptr;
+			buffer.m_size = 0;
 		}
 		else
-			data = NULL;
+			data = nullptr;
 	}
+	// Copies whole buffer
 	Buffer(const T *t, unsigned int size)
 	{
 		m_size = size;
@@ -138,13 +85,15 @@ public:
 			memcpy(data, t, size);
 		}
 		else
-			data = NULL;
+			data = nullptr;
 	}
+
 	~Buffer()
 	{
 		drop();
 	}
-	Buffer& operator=(const Buffer &buffer)
+
+	Buffer& operator=(Buffer &&buffer)
 	{
 		if(this == &buffer)
 			return *this;
@@ -152,13 +101,27 @@ public:
 		m_size = buffer.m_size;
 		if(m_size != 0)
 		{
-			data = new T[buffer.m_size];
-			memcpy(data, buffer.data, buffer.m_size);
+			data = buffer.data;
+			buffer.data = nullptr;
+			buffer.m_size = 0;
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		return *this;
 	}
+
+	void copyTo(Buffer &buffer) const
+	{
+		buffer.drop();
+		buffer.m_size = m_size;
+		if (m_size != 0) {
+			buffer.data = new T[m_size];
+			memcpy(buffer.data, data, m_size);
+		} else {
+			buffer.data = nullptr;
+		}
+	}
+
 	T & operator[](unsigned int i) const
 	{
 		return data[i];
@@ -167,15 +130,16 @@ public:
 	{
 		return data;
 	}
+
 	unsigned int getSize() const
 	{
 		return m_size;
 	}
+
 private:
 	void drop()
 	{
-		if(data)
-			delete[] data;
+		delete[] data;
 	}
 	T *data;
 	unsigned int m_size;
@@ -183,7 +147,6 @@ private:
 
 /************************************************
  *           !!!  W A R N I N G  !!!            *
- *           !!!  A C H T U N G  !!!            *
  *                                              *
  * This smart pointer class is NOT thread safe. *
  * ONLY use in a single-threaded context!       *
@@ -209,13 +172,12 @@ public:
 			memset(data,0,sizeof(T)*m_size);
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		refcount = new unsigned int;
 		(*refcount) = 1;
 	}
 	SharedBuffer(const SharedBuffer &buffer)
 	{
-		//std::cout<<"SharedBuffer(const SharedBuffer &buffer)"<<std::endl;
 		m_size = buffer.m_size;
 		data = buffer.data;
 		refcount = buffer.refcount;
@@ -223,7 +185,6 @@ public:
 	}
 	SharedBuffer & operator=(const SharedBuffer & buffer)
 	{
-		//std::cout<<"SharedBuffer & operator=(const SharedBuffer & buffer)"<<std::endl;
 		if(this == &buffer)
 			return *this;
 		drop();
@@ -245,7 +206,7 @@ public:
 			memcpy(data, t, m_size);
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		refcount = new unsigned int;
 		(*refcount) = 1;
 	}
@@ -255,13 +216,12 @@ public:
 	SharedBuffer(const Buffer<T> &buffer)
 	{
 		m_size = buffer.getSize();
-		if(m_size != 0)
-		{
-			data = new T[m_size];
-			memcpy(data, *buffer, buffer.getSize());
+		if (m_size != 0) {
+				data = new T[m_size];
+				memcpy(data, *buffer, buffer.getSize());
 		}
 		else
-			data = NULL;
+			data = nullptr;
 		refcount = new unsigned int;
 		(*refcount) = 1;
 	}
@@ -294,8 +254,7 @@ private:
 		(*refcount)--;
 		if(*refcount == 0)
 		{
-			if(data)
-				delete[] data;
+			delete[] data;
 			delete refcount;
 		}
 	}
@@ -303,12 +262,6 @@ private:
 	unsigned int m_size;
 	unsigned int *refcount;
 };
-
-inline SharedBuffer<u8> SharedBufferFromString(const char *string)
-{
-	SharedBuffer<u8> b((u8*)string, strlen(string)+1);
-	return b;
-}
 
 template<class T>
 class sloppy {}; 
@@ -326,5 +279,17 @@ class sloppy<T**>
     operator const T** () const { return const_cast<const T**>(t); }
 };
 
-#endif
+// This class is not thread-safe!
+class IntrusiveReferenceCounted {
+public:
+	IntrusiveReferenceCounted() = default;
+	virtual ~IntrusiveReferenceCounted() = default;
+	void grab() noexcept { ++m_refcount; }
+	void drop() noexcept { if (--m_refcount == 0) delete this; }
 
+	// Preserve own reference count.
+	IntrusiveReferenceCounted(const IntrusiveReferenceCounted &) {}
+	IntrusiveReferenceCounted &operator=(const IntrusiveReferenceCounted &) { return *this; }
+private:
+	u32 m_refcount = 1;
+};

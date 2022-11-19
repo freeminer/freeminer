@@ -20,10 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "client.h"
+#include "client/client.h"
 
 #include "util/base64.h"
-#include "clientmedia.h"
+#include "client/clientmedia.h"
 #include "log_types.h"
 #include "map.h"
 #include "mapsector.h"
@@ -37,6 +37,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "emerge.h"
 #include "profiler.h"
+#include "filesys.h"
+
 
 
 void Client::handleCommand_Deprecated(NetworkPacket* pkt) {
@@ -87,19 +89,49 @@ void Client::handleCommand_InitLegacy(NetworkPacket* pkt)   {
 
 	// TOCLIENT_INIT_POS
 
-	if (m_localserver) {
+
+    if (!m_world_path.empty() && packet.count(TOCLIENT_INIT_GAMEID)) {
+        std::string gameid;
+        packet[TOCLIENT_INIT_GAMEID].convert(gameid);
+        std::string conf_path = m_world_path + DIR_DELIM + "world.mt";
+        Settings conf;
+        conf.readConfigFile(conf_path.c_str());
+        conf.set("gameid", gameid);
+        conf.updateConfigFile(conf_path.c_str());
+    }
+
+    if (packet.count(TOCLIENT_INIT_MAP_PARAMS)) {
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
-		m_localserver->getEmergeManager()->mgparams->MapgenParams::readParams(&settings);
-		m_localserver->getEmergeManager()->mgparams->readParams(&settings);
-	}
+        std::string mg_name;
+        MapgenType mgtype = settings.getNoEx("mg_name", mg_name) ? Mapgen::getMapgenType(mg_name) : MAPGEN_DEFAULT;
 
-	if (packet.count(TOCLIENT_INIT_WEATHER))
-		packet[TOCLIENT_INIT_WEATHER].convert(use_weather);
+        if (mgtype == MAPGEN_INVALID) {
+        	errorstream << "Client map save: mapgen '" << mg_name << "' not valid; falling back to " << Mapgen::getMapgenName(MAPGEN_DEFAULT) << std::endl;
+            mgtype = MAPGEN_DEFAULT;
+        }
 
-	//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
-	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
+        MapgenParams *params = Mapgen::createMapgenParams(mgtype);
+        params->MapgenParams::readParams(&settings);
+        params->readParams(&settings);
+/*
+		if (g_settings->getS32("farmesh5")) {
+	 	    m_emerge = new EmergeManager(this);
+        	m_emerge->initMapgens(params);
+		}
+*/
 
+        if (!m_world_path.empty()) {
+            m_settings_mgr = new MapSettingsManager(g_settings, m_world_path + DIR_DELIM + "map_meta");
+            m_settings_mgr->mapgen_params = params;
+            m_settings_mgr->saveMapMeta();
+        }
+    }
+
+    if (packet.count(TOCLIENT_INIT_WEATHER))
+    	packet[TOCLIENT_INIT_WEATHER].convert(use_weather);
+	// if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
+    //	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 	// Reply to server
 	MSGPACK_PACKET_INIT((int)TOSERVER_INIT2, 0);
 	m_con.Send(PEER_ID_SERVER, 1, buffer, true);
@@ -167,8 +199,8 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)    {
 		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
 		block->humidity = h;
 
-		if (m_localserver != NULL) {
-			m_localserver->getMap().saveBlock(block);
+		if (m_localdb) {
+			ServerMap::saveBlock(block, m_localdb);
 		}
 
 		if (new_block) {

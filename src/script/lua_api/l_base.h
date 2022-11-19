@@ -20,29 +20,43 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_BASE_H_
-#define L_BASE_H_
+#pragma once
 
 #include "common/c_types.h"
 #include "common/c_internal.h"
+#include "common/helper.h"
+#include "gamedef.h"
+#include <unordered_map>
 
 extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
 }
 
+#ifndef SERVER
+class Client;
+class GUIEngine;
+#endif
+
 class ScriptApiBase;
 class Server;
 class Environment;
-class GUIEngine;
+class ServerInventoryManager;
 
-class ModApiBase {
-
+class ModApiBase : protected LuaHelper {
 public:
 	static ScriptApiBase*   getScriptApiBase(lua_State *L);
 	static Server*          getServer(lua_State *L);
-	static Environment*     getEnv(lua_State *L);
+	static ServerInventoryManager *getServerInventoryMgr(lua_State *L);
+	#ifndef SERVER
+	static Client*          getClient(lua_State *L);
 	static GUIEngine*       getGuiEngine(lua_State *L);
+	#endif // !SERVER
+
+	static IGameDef*        getGameDef(lua_State *L);
+
+	static Environment*     getEnv(lua_State *L);
+
 	// When we are not loading the mod, this function returns "."
 	static std::string      getCurrentModPath(lua_State *L);
 
@@ -62,6 +76,19 @@ public:
 			const char* name,
 			lua_CFunction func,
 			int top);
-};
 
-#endif /* L_BASE_H_ */
+	/**
+	 * A wrapper for deprecated functions.
+	 *
+	 * When called, handles the deprecation according to user settings and then calls `func`.
+	 *
+	 * @throws Lua Error if required by the user settings.
+	 *
+	 * @param L Lua state
+	 * @param good Name of good function/method
+	 * @param bad Name of deprecated function/method
+	 * @param func Actual implementation of function
+	 * @return value from `func`
+	 */
+	static int l_deprecated_function(lua_State *L, const char *good, const char *bad, lua_CFunction func);
+};

@@ -21,8 +21,9 @@
 #include "map.h"
 #include "mapnode.h"
 #include "nodedef.h"
+#include "scripting_server.h"
 #include "server.h"
-#include "scripting_game.h"
+//#include "scripting_game.h"
 #include "util/serialize.h"
 #include <sstream>
 
@@ -35,18 +36,20 @@ FallingSAO::FallingSAO(ServerEnvironment *env, v3f pos,
 		const std::string &name, const std::string &state, int fast_):
 		LuaEntitySAO(env, pos, name, state)
 {
+/*
 	if(env == NULL) {
 		ServerActiveObject::registerType(getType(), create);
 		return;
 	}
+*/
 
 	m_prop.physical = true;
 	m_prop.hp_max = 1;
 	m_prop.collideWithObjects = false;
 	m_prop.collisionbox = core::aabbox3d<f32>(-0.5, -0.5, -0.5, 0.5, 0.5, 0.5);
 	m_prop.visual = "wielditem";
-	m_prop.textures = {};
-	m_prop.visual_size = v2f(0.667,0.667);
+	m_prop.textures.clear();
+	m_prop.visual_size = v3f(0.667,0.667,0.667);
 	fast = fast_;
 }
 
@@ -68,12 +71,12 @@ ServerActiveObject* FallingSAO::create(ServerEnvironment *env, v3f pos,
 		u8 version = readU8(is);
 		// check if version is supported
 		if(version == 0){
-			name = deSerializeString(is);
-			state = deSerializeLongString(is);
+			name = deSerializeString16(is);
+			state = deSerializeString32(is);
 		}
 		else if(version == 1){
-			name = deSerializeString(is);
-			state = deSerializeLongString(is);
+			name = deSerializeString16(is);
+			state = deSerializeString32(is);
 			hp = readS16(is);
 			velocity = readV3F1000(is);
 			yaw = readF1000(is);
@@ -83,8 +86,8 @@ ServerActiveObject* FallingSAO::create(ServerEnvironment *env, v3f pos,
 	//infostream<<"FallingSAO::create(name='%s' state='%s')", name.c_str(), state.c_str();
 	epixel::FallingSAO *sao = new epixel::FallingSAO(env, pos, name, state);
 	sao->m_hp = hp;
-	sao->m_velocity = velocity;
-	sao->m_yaw = yaw;
+	sao->setVelocity(velocity);
+	sao->setRotation({0, yaw, 0});
 	return sao;
 }
 
@@ -104,22 +107,23 @@ void FallingSAO::addedToEnvironment(u32 dtime_s)
 void FallingSAO::step(float dtime, bool send_recommended)
 {
 	// Object pending removal, skip
-	if (m_removed || !m_env) {
+	if (m_pending_removal || !m_env) {
 		return;
 	}
 
 	// If no texture, remove it
 	if (m_prop.textures.empty()) {
-		m_removed = true;
+		m_pending_removal = true;
 		return;
 	}
 
 	LuaEntitySAO::step(dtime, send_recommended);
 
-	INodeDefManager* ndef = m_env->getGameDef()->getNodeDefManager();
+	auto* ndef = m_env->getGameDef()->getNodeDefManager();
 
-	m_acceleration = v3f(0,-10*BS,0);
+	setAcceleration(v3f(0,-10*BS,0));
 	// Under node, center
+	const auto m_base_position = getBasePosition();
 	v3f p_under(m_base_position.X, m_base_position.Y - 7, m_base_position.Z);
 	v3s16 p = floatToInt(m_base_position, BS);
 /*
@@ -147,7 +151,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 				m_env->setNode(p, m_node, fast);
 			}
 			m_env->setNode(floatToInt(p_under, BS), n_under, fast);
-			m_removed = true;
+			m_pending_removal = true;
 			return;
 		}
 		else if (f_under.buildable_to &&
@@ -167,7 +171,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 			}
 		}
 		m_env->setNode(p, m_node, fast);
-		m_removed = true;
+		m_pending_removal = true;
 		m_env->nodeUpdate(p, 2, fast);
 		return;
 	}

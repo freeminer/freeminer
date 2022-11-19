@@ -5,7 +5,7 @@ local commonpath = core.get_builtin_path()..DIR_DELIM.."common"..DIR_DELIM
 dofile(core.get_builtin_path()..DIR_DELIM.."game"..DIR_DELIM.."deprecated.lua")
 
 dofile(commonpath.."filterlist.lua")
-dofile(commonpath.."async_event.lua")
+dofile(menupath .. DIR_DELIM .. "async_event.lua")
 
 dofile(menupath.."fm_modmgr.lua")
 dofile(menupath.."fm_gamemgr.lua")
@@ -25,6 +25,57 @@ menudata = menu
 
 local tabbuilder = {}
 local worldlist = nil
+
+function asyncOnlineFavourites()
+	if not menudata.public_known then
+		local file = io.open( core.setting_get("serverlist_cache"), "r" )
+		if file then
+			local data = file:read("*all")
+			menudata.public_known = core.parse_json( data )
+			file:close()
+		end
+	end
+
+	if not menudata.public_known then
+	menudata.public_known = {{
+			name = fgettext("Loading..."),
+			description = fgettext_ne("Try reenabling public serverlist and check your internet connection.")
+		}}
+	end
+	menudata.favorites = menudata.public_known
+	menudata.favorites_is_public = true
+
+	if not menudata.public_downloading then
+		menudata.public_downloading = true
+	else
+		return
+	end
+
+	core.handle_async(
+		function(param)
+			return core.get_favorites("online")
+		end,
+		nil,
+		function(result)
+			menudata.public_downloading = nil
+			local favs = order_favorite_list(result)
+			if favs[1] then
+				menudata.public_known = favs
+				menudata.favorites = menudata.public_known
+				menudata.favorites_is_public = true
+
+					local file = io.open( core.setting_get("serverlist_cache"), "w" )
+					if file then
+						file:write( core.write_json( favs ) )
+						file:close()
+					end
+
+			end
+			core.event_handler("Refresh")
+		end
+	)
+end
+
 
 --------------------------------------------------------------------------------
 -- Common/Global menu functions

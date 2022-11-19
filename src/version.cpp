@@ -23,10 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "version.h"
 #include "config.h"
 
-#if defined(__ANDROID__)
-	#include "android_version.h"
-	#include "android_version_githash.h"
-#elif defined(USE_CMAKE_CONFIG_H)
+#if USE_CMAKE_CONFIG_H
 	#include "cmake_config_githash.h"
 #endif
 
@@ -34,8 +31,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#define VERSION_GITHASH VERSION_STRING
 #endif
 
-
 const char *g_version_string = VERSION_STRING;
 const char *g_version_hash = VERSION_GITHASH;
-const char *g_build_info = "VER=" VERSION_GITHASH " " BUILD_INFO;
-
+const char *g_build_info =
+	"BUILD_TYPE=" BUILD_TYPE "\n"
+	"RUN_IN_PLACE=" STR(RUN_IN_PLACE) "\n"
+	"USE_CURL=" STR(USE_CURL) "\n"
+#ifndef SERVER
+	"USE_GETTEXT=" STR(USE_GETTEXT) "\n"
+	"USE_SOUND=" STR(USE_SOUND) "\n"
+#endif
+	"STATIC_SHAREDIR=" STR(STATIC_SHAREDIR)
+#if USE_GETTEXT && defined(STATIC_LOCALEDIR)
+	"\n" "STATIC_LOCALEDIR=" STR(STATIC_LOCALEDIR)
+#endif
+;

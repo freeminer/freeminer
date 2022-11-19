@@ -1,0 +1,7 @@
+./util/autotest/logs.*
+./build_*
+
+./cmake-build-*
+./build/*
+./cache/*
+Dockerfile

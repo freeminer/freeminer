@@ -19,7 +19,6 @@
 #define KEY_VALUE_STORAGE_H
 
 #include <string>
-#include "threading/mutex.h"
 
 #include "config.h"
 #if USE_LEVELDB
@@ -27,6 +26,7 @@
 #endif
 #include "exceptions.h"
 #include "json/json.h"
+#include <mutex>
 
 class KeyValueStorage {
 public:
@@ -57,9 +57,10 @@ public:
 private:
 	const std::string db_name;
 	std::string fullpath;
-	Json::FastWriter json_writer;
-	Json::Reader json_reader;
-	Mutex mutex;
+	//Json::FastWriter json_writer;
+	//Json::Reader json_reader;
+	Json::CharReaderBuilder json_char_reader_builder;
+	std::mutex mutex;
 };
 
 #endif

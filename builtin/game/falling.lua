@@ -1,6 +1,36 @@
 -- Minetest: builtin/item.lua
 
 local builtin_shared = ...
+local SCALE = 0.667
+
+local facedir_to_euler = {
+	{y = 0, x = 0, z = 0},
+	{y = -math.pi/2, x = 0, z = 0},
+	{y = math.pi, x = 0, z = 0},
+	{y = math.pi/2, x = 0, z = 0},
+	{y = math.pi/2, x = -math.pi/2, z = math.pi/2},
+	{y = math.pi/2, x = math.pi, z = math.pi/2},
+	{y = math.pi/2, x = math.pi/2, z = math.pi/2},
+	{y = math.pi/2, x = 0, z = math.pi/2},
+	{y = -math.pi/2, x = math.pi/2, z = math.pi/2},
+	{y = -math.pi/2, x = 0, z = math.pi/2},
+	{y = -math.pi/2, x = -math.pi/2, z = math.pi/2},
+	{y = -math.pi/2, x = math.pi, z = math.pi/2},
+	{y = 0, x = 0, z = math.pi/2},
+	{y = 0, x = -math.pi/2, z = math.pi/2},
+	{y = 0, x = math.pi, z = math.pi/2},
+	{y = 0, x = math.pi/2, z = math.pi/2},
+	{y = math.pi, x = math.pi, z = math.pi/2},
+	{y = math.pi, x = math.pi/2, z = math.pi/2},
+	{y = math.pi, x = 0, z = math.pi/2},
+	{y = math.pi, x = -math.pi/2, z = math.pi/2},
+	{y = math.pi, x = math.pi, z = 0},
+	{y = -math.pi/2, x = math.pi, z = 0},
+	{y = 0, x = math.pi, z = 0},
+	{y = math.pi/2, x = math.pi, z = 0}
+}
+
+local gravity = tonumber(core.settings:get("movement_gravity")) or 9.81
 
 --
 -- Falling stuff
@@ -31,111 +61,441 @@ local remove_fast = 0
 
 core.register_entity(":__builtin:falling_node", {
 	initial_properties = {
-		visual = "wielditem",
-		visual_size = {x = 0.667, y = 0.667},
+		visual = "item",
+		visual_size = vector.new(SCALE, SCALE, SCALE),
 		textures = {},
 		physical = true,
 		is_visible = false,
-		collide_with_objects = false,
+		collide_with_objects = true,
 		collisionbox = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
 	},
 
 	node = {},
+	meta = {},
+	floats = false,
 
-	set_node = function(self, node)
+	set_node = function(self, node, meta)
+		node.param2 = node.param2 or 0
 		self.node = node
-		self.object:set_properties({
-			is_visible = true,
-			textures = {node.name},
-		})
+		meta = meta or {}
+		if type(meta.to_table) == "function" then
+			meta = meta:to_table()
+		end
+		for _, list in pairs(meta.inventory or {}) do
+			for i, stack in pairs(list) do
+				if type(stack) == "userdata" then
+					list[i] = stack:to_string()
+				end
+			end
+		end
+		local def = core.registered_nodes[node.name]
+		if not def then
+			-- Don't allow unknown nodes to fall
+			core.log("info",
+				"Unknown falling node removed at "..
+				core.pos_to_string(self.object:get_pos()))
+			self.object:remove()
+			return
+		end
+		self.meta = meta
+
+		-- Cache whether we're supposed to float on water
+		self.floats = core.get_item_group(node.name, "float") ~= 0
+
+		-- Set entity visuals
+		if def.drawtype == "torchlike" or def.drawtype == "signlike" then
+			local textures
+			if def.tiles and def.tiles[1] then
+				local tile = def.tiles[1]
+				if type(tile) == "table" then
+					tile = tile.name
+				end
+				if def.drawtype == "torchlike" then
+					textures = { "("..tile..")^[transformFX", tile }
+				else
+					textures = { tile, "("..tile..")^[transformFX" }
+				end
+			end
+			local vsize
+			if def.visual_scale then
+				local s = def.visual_scale
+				vsize = vector.new(s, s, s)
+			end
+			self.object:set_properties({
+				is_visible = true,
+				visual = "upright_sprite",
+				visual_size = vsize,
+				textures = textures,
+				glow = def.light_source,
+			})
+		elseif def.drawtype ~= "airlike" then
+			local itemstring = node.name
+			if core.is_colored_paramtype(def.paramtype2) then
+				itemstring = core.itemstring_with_palette(itemstring, node.param2)
+			end
+			-- FIXME: solution needed for paramtype2 == "leveled"
+			-- Calculate size of falling node
+			local s = {}
+			s.x = (def.visual_scale or 1) * SCALE
+			s.y = s.x
+			s.z = s.x
+			-- Compensate for wield_scale
+			if def.wield_scale then
+				s.x = s.x / def.wield_scale.x
+				s.y = s.y / def.wield_scale.y
+				s.z = s.z / def.wield_scale.z
+			end
+			self.object:set_properties({
+				is_visible = true,
+				wield_item = itemstring,
+				visual_size = s,
+				glow = def.light_source,
+			})
+		end
+
+		-- Set collision box (certain nodeboxes only for now)
+		local nb_types = {fixed=true, leveled=true, connected=true}
+		if def.drawtype == "nodebox" and def.node_box and
+			nb_types[def.node_box.type] and def.node_box.fixed then
+			local box = table.copy(def.node_box.fixed)
+			if type(box[1]) == "table" then
+				box = #box == 1 and box[1] or nil -- We can only use a single box
+			end
+			if box then
+				if def.paramtype2 == "leveled" and (self.node.level or 0) > 0 then
+					box[5] = -0.5 + self.node.level / 64
+				end
+				self.object:set_properties({
+					collisionbox = box
+				})
+			end
+		end
+
+		-- Rotate entity
+		if def.drawtype == "torchlike" then
+			self.object:set_yaw(math.pi*0.25)
+		elseif ((node.param2 ~= 0 or def.drawtype == "nodebox" or def.drawtype == "mesh")
+				and (def.wield_image == "" or def.wield_image == nil))
+				or def.drawtype == "signlike"
+				or def.drawtype == "mesh"
+				or def.drawtype == "normal"
+				or def.drawtype == "nodebox" then
+			if (def.paramtype2 == "facedir" or def.paramtype2 == "colorfacedir") then
+				local fdir = node.param2 % 32 % 24
+				-- Get rotation from a precalculated lookup table
+				local euler = facedir_to_euler[fdir + 1]
+				self.object:set_rotation(euler)
+			elseif (def.drawtype ~= "plantlike" and def.drawtype ~= "plantlike_rooted" and
+					(def.paramtype2 == "wallmounted" or def.paramtype2 == "colorwallmounted" or def.drawtype == "signlike")) then
+				local rot = node.param2 % 8
+				if (def.drawtype == "signlike" and def.paramtype2 ~= "wallmounted" and def.paramtype2 ~= "colorwallmounted") then
+					-- Change rotation to "floor" by default for non-wallmounted paramtype2
+					rot = 1
+				end
+				local pitch, yaw, roll = 0, 0, 0
+				if def.drawtype == "nodebox" or def.drawtype == "mesh" then
+					if rot == 0 then
+						pitch, yaw = math.pi/2, 0
+					elseif rot == 1 then
+						pitch, yaw = -math.pi/2, math.pi
+					elseif rot == 2 then
+						pitch, yaw = 0, math.pi/2
+					elseif rot == 3 then
+						pitch, yaw = 0, -math.pi/2
+					elseif rot == 4 then
+						pitch, yaw = 0, math.pi
+					end
+				else
+					if rot == 1 then
+						pitch, yaw = math.pi, math.pi
+					elseif rot == 2 then
+						pitch, yaw = math.pi/2, math.pi/2
+					elseif rot == 3 then
+						pitch, yaw = math.pi/2, -math.pi/2
+					elseif rot == 4 then
+						pitch, yaw = math.pi/2, math.pi
+					elseif rot == 5 then
+						pitch, yaw = math.pi/2, 0
+					end
+				end
+				if def.drawtype == "signlike" then
+					pitch = pitch - math.pi/2
+					if rot == 0 then
+						yaw = yaw + math.pi/2
+					elseif rot == 1 then
+						yaw = yaw - math.pi/2
+					end
+				elseif def.drawtype == "mesh" or def.drawtype == "normal" or def.drawtype == "nodebox" then
+					if rot >= 0 and rot <= 1 then
+						roll = roll + math.pi
+					else
+						yaw = yaw + math.pi
+					end
+				end
+				self.object:set_rotation({x=pitch, y=yaw, z=roll})
+			elseif (def.drawtype == "mesh" and def.paramtype2 == "degrotate") then
+				local p2 = (node.param2 - (def.place_param2 or 0)) % 240
+				local yaw = (p2 / 240) * (math.pi * 2)
+				self.object:set_yaw(yaw)
+			elseif (def.drawtype == "mesh" and def.paramtype2 == "colordegrotate") then
+				local p2 = (node.param2 % 32 - (def.place_param2 or 0) % 32) % 24
+				local yaw = (p2 / 24) * (math.pi * 2)
+				self.object:set_yaw(yaw)
+			end
+		end
 	end,
 
 	get_staticdata = function(self)
-		return core.serialize(self.node)
+		local ds = {
+			node = self.node,
+			meta = self.meta,
+		}
+		return core.serialize(ds)
 	end,
 
 	on_activate = function(self, staticdata)
 		self.object:set_armor_groups({immortal = 1})
-		
-		local node = core.deserialize(staticdata)
-		if node then
-			self:set_node(node)
+		self.object:set_acceleration(vector.new(0, -gravity, 0))
+
+		local ds = core.deserialize(staticdata)
+		if ds and ds.node then
+			self:set_node(ds.node, ds.meta)
+		elseif ds then
+			self:set_node(ds)
 		elseif staticdata ~= "" then
 			self:set_node({name = staticdata})
 		end
 	end,
 
-	on_step = function(self, dtime)
-		if dtime > 0.2 then remove_fast = 2 else remove_fast = 0 end
-		-- Set gravity
-		local acceleration = self.object:getacceleration()
-		if not vector.equals(acceleration, {x = 0, y = -10, z = 0}) then
-			self.object:setacceleration({x = 0, y = -10, z = 0})
+	try_place = function(self, bcp, bcn)
+		local bcd = core.registered_nodes[bcn.name]
+		-- Add levels if dropped on same leveled node
+		if bcd and bcd.paramtype2 == "leveled" and
+				bcn.name == self.node.name then
+			local addlevel = self.node.level
+			if (addlevel or 0) <= 0 then
+				addlevel = bcd.leveled
+			end
+			local rest = core.add_node_level(bcp, addlevel)
+			if rest == 0 then
+				return true
+			end
+			if rest > 0 then
+				self.node.level = rest
+				local bcpc = bcp:offset(0, 1, 0)
+				local bcnc = core.get_node(bcpc)
+				return self:try_place(bcpc, bcnc)
+			end
+			if bcd.buildable_to then
+				-- Node level has already reached max, don't place anything
+				return true
+			end
 		end
-		-- Turn to actual node when colliding with ground, or continue to move
-		local pos = self.object:getpos()
-		-- Position of bottom center point
-		local bcp = {x = pos.x, y = pos.y - 0.7, z = pos.z}
-		-- Avoid bugs caused by an unloaded node below
-		local bcn = core.get_node_or_nil(bcp)
-		local bcd = bcn and core.registered_nodes[bcn.name]
-		if bcn and
-				(not bcd or bcd.walkable or
-				(core.get_item_group(self.node.name, "float") ~= 0 and
-				bcd.liquidtype ~= "none")) then
-			if bcd and bcd.leveled and bcd.leveled > 0 and
-					bcn.name == self.node.name then
-				local addlevel = self.node.level
-				if not addlevel or addlevel <= 0 then
-					addlevel = bcd.leveled
+
+		-- Decide if we're replacing the node or placing on top
+		local np = vector.copy(bcp)
+		if bcd and bcd.buildable_to and
+				(not self.floats or bcd.liquidtype == "none") then
+			core.remove_node(bcp, remove_fast)
+		else
+			np.y = np.y + 1
+		end
+
+		-- Check what's here
+		local n2 = core.get_node(np)
+		local nd = core.registered_nodes[n2.name]
+		-- If it's not air or liquid, remove node and replace it with
+		-- it's drops
+		if n2.name ~= "air" and (not nd or nd.liquidtype == "none") then
+			if nd and nd.buildable_to == false then
+				nd.on_dig(np, n2, nil)
+				-- If it's still there, it might be protected
+				if core.get_node(np).name == n2.name then
+					return false
 				end
-				if core.add_node_level(bcp, addlevel) == 0 then
+			else
+				core.remove_node(np, remove_fast)
+			end
+		end
+
+		-- Create node
+		local def = core.registered_nodes[self.node.name]
+		if def then
+			core.add_node(np, self.node)
+			core.set_node_level(np, self.node.level)
+			if self.meta then
+				core.get_meta(np):from_table(self.meta)
+			end
+			if def.sounds and def.sounds.place then
+				core.sound_play(def.sounds.place, {pos = np}, true)
+			end
+		end
+		core.check_for_falling(np)
+		return true
+	end,
+
+	on_step = function(self, dtime, moveresult)
+		if dtime > 0.1 then remove_fast = 2 else remove_fast = 0 end
+		-- Fallback code since collision detection can't tell us
+		-- about liquids (which do not collide)
+		if self.floats then
+			local pos = self.object:get_pos()
+
+			local bcp = pos:offset(0, -0.7, 0):round()
+			local bcn = core.get_node(bcp)
+
+			local bcd = core.registered_nodes[bcn.name]
+			if bcd and bcd.liquidtype ~= "none" then
+				if self:try_place(bcp, bcn) then
 					self.object:remove()
 					return
 				end
-			elseif bcd and bcd.buildable_to and
-					(core.get_item_group(self.node.name, "float") == 0 or
-					bcd.liquidtype == "none") then
-				core.remove_node(bcp, remove_fast)
-				return
 			end
-			local np = {x = bcp.x, y = bcp.y + 1, z = bcp.z}
-			-- Check what's here
-			local n2 = core.get_node(np)
-			-- If it's not air or liquid, remove node and replace it with
-			-- it's drops
-				node_drop(np, remove_fast)
-			-- Create node and remove entity
-			if core.registered_nodes[self.node.name] then
-				core.add_node(np, self.node)
+		end
+
+		assert(moveresult)
+		if not moveresult.collides then
+			return -- Nothing to do :)
+		end
+
+		local bcp, bcn
+		local player_collision
+		if moveresult.touching_ground then
+			for _, info in ipairs(moveresult.collisions) do
+				if info.type == "object" then
+
+					-- merge with same leveled objects
+					local le = info.object:get_luaentity()
+					if le and le.node and self.node.name == le.node.name and le.node.level > 0 then
+						le.node.level = le.node.level + self.node.level
+						self.object:remove()
+						return
+					end
+
+					if info.axis == "y" and info.object:is_player() then
+						player_collision = info
+					end
+				elseif info.axis == "y" then
+					bcp = info.node_pos
+					bcn = core.get_node(bcp)
+					break
+				end
 			end
+		end
+
+		if not bcp then
+			-- We're colliding with something, but not the ground. Irrelevant to us.
+			if player_collision then
+				-- Continue falling through players by moving a little into
+				-- their collision box
+				-- TODO: this hack could be avoided in the future if objects
+				--       could choose who to collide with
+				local vel = self.object:get_velocity()
+				self.object:set_velocity(vector.new(
+					vel.x,
+					player_collision.old_velocity.y,
+					vel.z
+				))
+				self.object:set_pos(self.object:get_pos():offset(0, -0.5, 0))
+			end
+			return
+		elseif bcn.name == "ignore" then
+			-- Delete on contact with ignore at world edges
 			self.object:remove()
-			core.check_for_falling(np)
 			return
 		end
-		local vel = self.object:getvelocity()
-		if vector.equals(vel, {x = 0, y = 0, z = 0}) then
-			local npos = self.object:getpos()
-			self.object:setpos(vector.round(npos))
+
+		local failure = false
+
+		local pos = self.object:get_pos()
+		local distance = vector.apply(vector.subtract(pos, bcp), math.abs)
+		if distance.x >= 1 or distance.z >= 1 then
+			-- We're colliding with some part of a node that's sticking out
+			-- Since we don't want to visually teleport, drop as item
+			failure = true
+		elseif distance.y >= 2 then
+			-- Doors consist of a hidden top node and a bottom node that is
+			-- the actual door. Despite the top node being solid, the moveresult
+			-- almost always indicates collision with the bottom node.
+			-- Compensate for this by checking the top node
+			bcp.y = bcp.y + 1
+			bcn = core.get_node(bcp)
+			local def = core.registered_nodes[bcn.name]
+			if not (def and def.walkable) then
+				failure = true -- This is unexpected, fail
+			end
 		end
+
+		-- Try to actually place ourselves
+		if not failure then
+			failure = not self:try_place(bcp, bcn)
+		end
+
+		if failure then
+			local drops = core.get_node_drops(self.node, "")
+			for _, item in pairs(drops) do
+				core.add_item(pos, item)
+			end
+		end
+		self.object:remove()
 	end
 })
 
-local function spawn_falling_node(p, node)
-	return core.spawn_falling_node(p, node)
---[[
-local function spawn_falling_node(p, node)
-	local obj = core.add_entity(p, "__builtin:falling_node")
-	if obj then
-		obj:get_luaentity():set_node(node)
+local function convert_to_falling_node(pos, node)
+--	return core.spawn_falling_node(pos, node)
+
+-- --[[
+	local obj = core.add_entity(pos, "__builtin:falling_node")
+	if not obj then
+		return false
 	end
-]]
+	-- remember node level, the entities' set_node() uses this
+	node.level = core.get_node_level(pos)
+	local meta = core.get_meta(pos)
+	local metatable = meta and meta:to_table() or {}
+
+	local def = core.registered_nodes[node.name]
+	if def and def.sounds and def.sounds.fall then
+		core.sound_play(def.sounds.fall, {pos = pos}, true)
+	end
+
+	obj:get_luaentity():set_node(node, metatable)
+	core.remove_node(pos, remove_fast)
+	return true, obj
+-- ]]
 end
 
+-- --[[
+function core.spawn_falling_node(pos)
+	local node = core.get_node(pos)
+	if node.name == "air" or node.name == "ignore" then
+		return false
+	end
+	return convert_to_falling_node(pos, node)
+end
+-- ]]
+
 local function drop_attached_node(p)
-	local nn = core.get_node(p).name
+	local n = core.get_node(p)
+	local drops = core.get_node_drops(n, "")
+	local def = core.registered_items[n.name]
+	if def and def.preserve_metadata then
+		local oldmeta = core.get_meta(p):to_table().fields
+		-- Copy pos and node because the callback can modify them.
+		local pos_copy = vector.copy(p)
+		local node_copy = {name=n.name, param1=n.param1, param2=n.param2}
+		local drop_stacks = {}
+		for k, v in pairs(drops) do
+			drop_stacks[k] = ItemStack(v)
+		end
+		drops = drop_stacks
+		def.preserve_metadata(pos_copy, node_copy, oldmeta, drops)
+	end
+	if def and def.sounds and def.sounds.fall then
+		core.sound_play(def.sounds.fall, {pos = p}, true)
+	end
 	core.remove_node(p, remove_fast)
-	for _, item in pairs(core.get_node_drops(nn, "")) do
+	for _, item in pairs(drops) do
 		local pos = {
 			x = p.x + math.random()/2 - 0.25,
 			y = p.y + math.random()/2 - 0.25,
@@ -147,13 +507,14 @@ end
 
 function builtin_shared.check_attached_node(p, n)
 	local def = core.registered_nodes[n.name]
-	local d = {x = 0, y = 0, z = 0}
-	if def.paramtype2 == "wallmounted" then
+	local d = vector.zero()
+	if def.paramtype2 == "wallmounted" or
+			def.paramtype2 == "colorwallmounted" then
 		-- The fallback vector here is in case 'wallmounted to dir' is nil due
 		-- to voxelmanip placing a wallmounted node without resetting a
 		-- pre-existing param2 value that is out-of-range for wallmounted.
 		-- The fallback vector corresponds to param2 = 0.
-		d = core.wallmounted_to_dir(n.param2) or {x = 0, y = 1, z = 0}
+		d = core.wallmounted_to_dir(n.param2) or vector.new(0, 1, 0)
 	else
 		d.y = -1
 	end
@@ -171,26 +532,31 @@ end
 --
 
 function core.check_single_for_falling(p)
+--    return core.nodeupdate(p)
+-- --[[
 	local n = core.get_node(p)
 	if core.get_item_group(n.name, "falling_node") ~= 0 then
-		local p_bottom = {x = p.x, y = p.y - 1, z = p.z}
+		local p_bottom = vector.offset(p, 0, -1, 0)
 		-- Only spawn falling node if node below is loaded
 		local n_bottom = core.get_node_or_nil(p_bottom)
 		local d_bottom = n_bottom and core.registered_nodes[n_bottom.name]
-		if d_bottom and
-
-				(core.get_item_group(n.name, "float") == 0 or
-				d_bottom.liquidtype == "none") and
-
-				(n.name ~= n_bottom.name or (d_bottom.leveled and
-				core.get_node_level(p_bottom) <
-				core.get_node_max_level(p_bottom))) and
-
-				(not d_bottom.walkable or d_bottom.buildable_to) then
-			n.level = core.get_node_level(p)
-			core.remove_node(p, remove_fast)
-			spawn_falling_node(p, n)
-			return true
+		if d_bottom then
+			local same = n.name == n_bottom.name
+			-- Let leveled nodes fall if it can merge with the bottom node
+			if same and d_bottom.paramtype2 == "leveled" and
+					core.get_node_level(p_bottom) <
+					core.get_node_max_level(p_bottom) then
+				convert_to_falling_node(p, n)
+				return true
+			end
+			-- Otherwise only if the bottom node is considered "fall through"
+			if not same and
+					(not d_bottom.walkable or d_bottom.buildable_to) and
+					(core.get_item_group(n.name, "float") == 0 or
+					d_bottom.liquidtype == "none") then
+				convert_to_falling_node(p, n)
+				return true
+			end
 		end
 	end
 
@@ -202,6 +568,7 @@ function core.check_single_for_falling(p)
 	end
 
 	return false
+-- ]]
 end
 
 -- This table is specifically ordered.
@@ -209,20 +576,22 @@ end
 -- Down first as likely case, but always before self. The same with sides.
 -- Up must come last, so that things above self will also fall all at once.
 local check_for_falling_neighbors = {
-	{x = -1, y = -1, z = 0},
-	{x = 1, y = -1, z = 0},
-	{x = 0, y = -1, z = -1},
-	{x = 0, y = -1, z = 1},
-	{x = 0, y = -1, z = 0},
-	{x = -1, y = 0, z = 0},
-	{x = 1, y = 0, z = 0},
-	{x = 0, y = 0, z = 1},
-	{x = 0, y = 0, z = -1},
-	{x = 0, y = 0, z = 0},
-	{x = 0, y = 1, z = 0},
+	vector.new(-1, -1,  0),
+	vector.new( 1, -1,  0),
+	vector.new( 0, -1, -1),
+	vector.new( 0, -1,  1),
+	vector.new( 0, -1,  0),
+	vector.new(-1,  0,  0),
+	vector.new( 1,  0,  0),
+	vector.new( 0,  0,  1),
+	vector.new( 0,  0, -1),
+	vector.new( 0,  0,  0),
+	vector.new( 0,  1,  0),
 }
 
 function core.check_for_falling(p)
+--     return core.nodeupdate(p)
+-- --[[
 	-- Round p to prevent falling entities to get stuck.
 	p = vector.round(p)
 
@@ -270,6 +639,7 @@ function core.check_for_falling(p)
 			v = 1
 		end
 	end
+-- ]]
 end
 
 --
@@ -290,19 +660,3 @@ local function on_punchnode(p, node)
 	core.check_for_falling(p)
 end
 core.register_on_punchnode(on_punchnode)
-
---
--- Globally exported functions
---
-
--- TODO remove this function after the 0.4.15 release
-function nodeupdate(p)
-	core.log("deprecated", "nodeupdate: deprecated, please use core.check_for_falling instead")
-	core.check_for_falling(p)
-end
-
--- TODO remove this function after the 0.4.15 release
-function nodeupdate_single(p)
-	core.log("deprecated", "nodeupdate_single: deprecated, please use core.check_single_for_falling instead")
-	core.check_single_for_falling(p)
-end

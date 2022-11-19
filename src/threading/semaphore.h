@@ -16,26 +16,27 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef THREADING_SEMAPHORE_H
-#define THREADING_SEMAPHORE_H
+#pragma once
 
-#if defined(WIN32) || defined(_WIN32)
-	#define WIN32_LEAN_AND_MEAN
-	#include <windows.h>
+#if defined(_WIN32)
+#include <windows.h>
 #elif defined(__MACH__) && defined(__APPLE__)
-	#include <mach/semaphore.h>
+#include <mach/semaphore.h>
 #else
-	#include <semaphore.h>
+#include <semaphore.h>
 #endif
 
 #include "util/basic_macros.h"
 
-class Semaphore {
+class Semaphore
+{
 public:
-	Semaphore(int val=0);
+	Semaphore(int val = 0);
 	~Semaphore();
 
-	void post(unsigned int num=1);
+	DISABLE_CLASS_COPY(Semaphore);
+
+	void post(unsigned int num = 1);
 	void wait();
 	bool wait(unsigned int time_ms);
 
@@ -47,9 +48,4 @@ private:
 #else
 	sem_t semaphore;
 #endif
-
-	DISABLE_CLASS_COPY(Semaphore);
 };
-
-#endif
-

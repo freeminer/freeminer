@@ -20,16 +20,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+#include "remoteplayer.h"
+#include "scripting_server.h"
 #include "server.h"
 #include "log_types.h"
 
-#include "content_abm.h"
-#include "content_sao.h"
+//#include "../content_abm.h"
+//#include "content_sao.h"
 #include "emerge.h"
 #include "nodedef.h"
 #include "player.h"
 #include "rollback_interface.h"
-#include "scripting_game.h"
+//#include "scripting_game.h"
+#include "server/player_sao.h"
 #include "settings.h"
 #include "tool.h"
 #include "version.h"
@@ -67,7 +70,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 	std::string addr_s;
 	try {
 		addr_s = getPeerAddress(pkt->getPeerId()).serializeString();
-	} catch (std::exception &e) {
+	} catch (const std::exception &e) {
 		/*
 		 * no peer for this packet found
 		 * most common reason is peer timeout, e.g. peer didn't
@@ -309,11 +312,11 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 	RemotePlayer *player =
 	    static_cast<RemotePlayer*>(m_env->getPlayer(playername.c_str()));
 
-	if (player && player->peer_id != 0) {
+	if (player && player->getPeerId() != 0) {
 
 		if (given_password.size()) {
 			actionstream << "Server: " << playername << " rejoining" << std::endl;
-			DenyAccessVerCompliant(player->peer_id, player->protocol_version, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
+			DenyAccessVerCompliant(player->getPeerId(), player->protocol_version, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
 			player->getPlayerSAO()->removingFromEnvironment();
 			m_env->removePlayer(player);
 			player = nullptr;
@@ -331,7 +334,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 		Answer with a TOCLIENT_INIT
 	*/
 	{
-		MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 6);
+		MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 7);
 		PACK(TOCLIENT_INIT_DEPLOYED, deployed);
 		PACK(TOCLIENT_INIT_SEED, m_env->getServerMap().getSeed());
 		PACK(TOCLIENT_INIT_STEP, g_settings->getFloat("dedicated_server_step"));
@@ -343,6 +346,7 @@ void Server::handleCommand_Init_Legacy(NetworkPacket* pkt) {
 		m_emerge->mgparams->MapgenParams::writeParams(&params);
 		m_emerge->mgparams->writeParams(&params);
 		PACK(TOCLIENT_INIT_MAP_PARAMS, params);
+		PACK(TOCLIENT_INIT_GAMEID, m_gamespec.id);
 
 		PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
 
@@ -450,7 +454,7 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt) {
 		infostream << "Client sent message not expected by a "
 		           << "client using protocol version <= 22,"
 		           << "disconnecting peer_id: " << peer_id << std::endl;
-		m_con.DisconnectPeer(peer_id);
+		m_con->DisconnectPeer(peer_id);
 		return;
 	}
 
@@ -516,7 +520,7 @@ void Server::handleCommand_PlayerPos(NetworkPacket* pkt) {
 	u32 keyPressed = packet[TOSERVER_PLAYERPOS_KEY_PRESSED].as<u32>();
 	player->keyPressed = keyPressed;
 	{
-		std::lock_guard<Mutex> lock(player->control_mutex);
+		std::lock_guard<std::mutex> lock(player->control_mutex);
 		player->control.up = (bool)(keyPressed & 1);
 		player->control.down = (bool)(keyPressed & 2);
 		player->control.left = (bool)(keyPressed & 4);

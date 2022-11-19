@@ -20,103 +20,87 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SOUND_HEADER
-#define SOUND_HEADER
+#pragma once
 
-#include "irrlichttypes_bloated.h"
-#include <string>
 #include <set>
+#include <string>
+#include "util/serialize.h"
+#include "irrlichttypes_bloated.h"
+
+// fm:
 #include "msgpack_fix.h"
 #include "network/connection.h"
 #include "util/msgpack_serialize.h"
 
-class OnDemandSoundFetcher
-{
-public:
-	virtual void fetchSounds(const std::string &name,
-			std::set<std::string> &dst_paths,
-			std::set<std::string> &dst_datas) = 0;
-};
 
 enum {
 	SOUNDSPEC_NAME,
-	SOUNDSPEC_GAIN
+	SOUNDSPEC_GAIN,
+	SOUNDSPEC_PITCH,
+	SOUNDSPEC_FADE
 };
+
+
+// This class describes the basic sound information for playback.
+// Positional handling is done separately.
 
 struct SimpleSoundSpec
 {
-	std::string name;
-	float gain;
-	SimpleSoundSpec(std::string name="", float gain=1.0):
-		name(name),
-		gain(gain)
-	{}
-	bool exists() {return name != "";}
+	SimpleSoundSpec(const std::string &name = "", float gain = 1.0f,
+			bool loop = false, float fade = 0.0f, float pitch = 1.0f) :
+			name(name), gain(gain), fade(fade), pitch(pitch), loop(loop)
+	{
+	}
 
+	bool exists() const { return !name.empty(); }
+
+	void serialize(std::ostream &os, u16 protocol_version) const
+	{
+		os << serializeString16(name);
+		writeF32(os, gain);
+		writeF32(os, pitch);
+		writeF32(os, fade);
+	}
+
+	void deSerialize(std::istream &is, u16 protocol_version)
+	{
+		name = deSerializeString16(is);
+		gain = readF32(is);
+		pitch = readF32(is);
+		fade = readF32(is);
+	}
+
+	std::string name;
+	float gain = 1.0f;
+	float fade = 0.0f;
+	float pitch = 1.0f;
+
+//fm:
 	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const {
-		pk.pack_map(2);
+		pk.pack_map(4);
 		PACK(SOUNDSPEC_NAME, name);
 		PACK(SOUNDSPEC_GAIN, gain);
+		PACK(SOUNDSPEC_PITCH, pitch);
+		PACK(SOUNDSPEC_FADE, fade);
 	}
 	void msgpack_unpack(msgpack::object o) {
 		MsgpackPacket packet = o.as<MsgpackPacket>();
 		packet[SOUNDSPEC_NAME].convert(name);
 		packet[SOUNDSPEC_GAIN].convert(gain);
+		packet[SOUNDSPEC_PITCH].convert(pitch);
+		packet[SOUNDSPEC_FADE].convert(fade);
 	}
+
+
+
+
+	bool loop = false;
 };
 
-class ISoundManager
-{
-public:
-	virtual ~ISoundManager(){}
-	
-	// Multiple sounds can be loaded per name; when played, the sound
-	// should be chosen randomly from alternatives
-	// Return value determines success/failure
-	virtual bool loadSoundFile(const std::string &name,
-			const std::string &filepath) = 0;
-	virtual bool loadSoundData(const std::string &name,
-			const std::string &filedata) = 0;
 
-	virtual void updateListener(v3f pos, v3f vel, v3f at, v3f up) = 0;
-	virtual void setListenerGain(float gain) = 0;
-
-	// playSound functions return -1 on failure, otherwise a handle to the
-	// sound. If name=="", call should be ignored without error.
-	virtual int playSound(const std::string &name, bool loop,
-			float volume) = 0;
-	virtual int playSoundAt(const std::string &name, bool loop,
-			float volume, v3f pos) = 0;
-	virtual void stopSound(int sound) = 0;
-	virtual bool soundExists(int sound) = 0;
-	virtual void updateSoundPosition(int sound, v3f pos) = 0;
-
-	int playSound(const SimpleSoundSpec &spec, bool loop)
-		{ return playSound(spec.name, loop, spec.gain); }
-	int playSoundAt(const SimpleSoundSpec &spec, bool loop, v3f pos)
-		{ return playSoundAt(spec.name, loop, spec.gain, pos); }
+// The order must not be changed. This is sent over the network.
+enum class SoundLocation : u8 {
+	Local,
+	Position,
+	Object
 };
-
-class DummySoundManager: public ISoundManager
-{
-public:
-	virtual bool loadSoundFile(const std::string &name,
-			const std::string &filepath) {return true;}
-	virtual bool loadSoundData(const std::string &name,
-			const std::string &filedata) {return true;}
-	void updateListener(v3f pos, v3f vel, v3f at, v3f up) {}
-	void setListenerGain(float gain) {}
-	int playSound(const std::string &name, bool loop,
-			float volume) {return 0;}
-	int playSoundAt(const std::string &name, bool loop,
-			float volume, v3f pos) {return 0;}
-	void stopSound(int sound) {}
-	bool soundExists(int sound) {return false;}
-	void updateSoundPosition(int sound, v3f pos) {}
-};
-
-// Global DummySoundManager singleton
-extern DummySoundManager dummySoundManager;
-
-#endif
-

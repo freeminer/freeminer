@@ -17,8 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef AREA_STORE_H_
-#define AREA_STORE_H_
+#pragma once
 
 #include "irr_v3d.h"
 #include "noise.h" // for PcgRandom
@@ -38,9 +37,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 
 struct Area {
-	Area() : id(U32_MAX) {}
-	Area(const v3s16 &mine, const v3s16 &maxe) :
-		id(U32_MAX), minedge(mine), maxedge(maxe)
+	Area(u32 area_id) : id(area_id) {}
+
+	Area(const v3s16 &mine, const v3s16 &maxe, u32 area_id = U32_MAX) :
+		id(area_id), minedge(mine), maxedge(maxe)
 	{
 		sortBoxVerticies(minedge, maxedge);
 	}
@@ -54,13 +54,10 @@ struct Area {
 class AreaStore {
 public:
 	AreaStore() :
-		m_cache_enabled(true),
-		m_cacheblock_radius(64),
-		m_res_cache(1000, &cacheMiss, this),
-		m_next_id(0)
+		m_res_cache(1000, &cacheMiss, this)
 	{}
 
-	virtual ~AreaStore() {}
+	virtual ~AreaStore() = default;
 
 	static AreaStore *getOptimalImplementation();
 
@@ -112,7 +109,7 @@ protected:
 	virtual void getAreasForPosImpl(std::vector<Area *> *result, v3s16 pos) = 0;
 
 	/// Returns the next area ID and increments it.
-	u32 getNextId() { return m_next_id++; }
+	u32 getNextId() const;
 
 	// Note: This can't be an unordered_map, since all
 	// references would be invalidated on rehash.
@@ -123,13 +120,11 @@ private:
 	/// Called by the cache when a value isn't found in the cache.
 	static void cacheMiss(void *data, const v3s16 &mpos, std::vector<Area *> *dest);
 
-	bool m_cache_enabled;
+	bool m_cache_enabled = true;
 	/// Range, in nodes, of the getAreasForPos cache.
 	/// If you modify this, call invalidateCache()
-	u8 m_cacheblock_radius;
+	u8 m_cacheblock_radius = 64;
 	LRUCache<v3s16, std::vector<Area *> > m_res_cache;
-
-	u32 m_next_id;
 };
 
 
@@ -165,8 +160,8 @@ protected:
 	virtual void getAreasForPosImpl(std::vector<Area *> *result, v3s16 pos);
 
 private:
-	SpatialIndex::ISpatialIndex *m_tree;
-	SpatialIndex::IStorageManager *m_storagemanager;
+	SpatialIndex::ISpatialIndex *m_tree = nullptr;
+	SpatialIndex::IStorageManager *m_storagemanager = nullptr;
 
 	class VectorResultVisitor : public SpatialIndex::IVisitor {
 	public:
@@ -194,11 +189,9 @@ private:
 		}
 
 	private:
-		SpatialAreaStore *m_store;
-		std::vector<Area *> *m_result;
+		SpatialAreaStore *m_store = nullptr;
+		std::vector<Area *> *m_result = nullptr;
 	};
 };
 
 #endif // USE_SPATIAL
-
-#endif // AREA_STORE_H_

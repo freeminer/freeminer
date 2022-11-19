@@ -20,24 +20,28 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef FILESYS_HEADER
-#define FILESYS_HEADER
+#pragma once
 
+#include <set>
 #include <string>
 #include <vector>
 #include "exceptions.h"
 
-#ifdef _WIN32 // WINDOWS
+#ifdef _WIN32
 #define DIR_DELIM "\\"
 #define DIR_DELIM_CHAR '\\'
-#define FILESYS_CASE_INSENSITIVE 1
+#define FILESYS_CASE_INSENSITIVE true
 #define PATH_DELIM ";"
-#else // POSIX
+#else
 #define DIR_DELIM "/"
 #define DIR_DELIM_CHAR '/'
-#define FILESYS_CASE_INSENSITIVE 0
+#define FILESYS_CASE_INSENSITIVE false
 #define PATH_DELIM ":"
 #endif
+
+namespace irr { namespace io {
+class IFileSystem;
+}}
 
 namespace fs
 {
@@ -59,6 +63,11 @@ bool IsPathAbsolute(const std::string &path);
 
 bool IsDir(const std::string &path);
 
+inline bool IsFile(const std::string &path)
+{
+	return PathExists(path) && !IsDir(path);
+}
+
 bool IsDirDelimiter(char c);
 
 // Only pass full paths to this one. True on success.
@@ -70,13 +79,27 @@ bool DeleteSingleFileOrEmptyDirectory(const std::string &path);
 // Returns path to temp directory, can return "" on error
 std::string TempPath();
 
+// Returns path to securely-created temporary file (will already exist when this function returns)
+// can return "" on error
+std::string CreateTempFile();
+
+/* Returns a list of subdirectories, including the path itself, but excluding
+       hidden directories (whose names start with . or _)
+*/
+void GetRecursiveDirs(std::vector<std::string> &dirs, const std::string &dir);
+std::vector<std::string> GetRecursiveDirs(const std::string &dir);
+
 /* Multiplatform */
 
-// The path itself not included
-void GetRecursiveSubPaths(const std::string &path, std::vector<std::string> &dst);
-
-// Tries to delete all, returns false if any failed
-bool DeletePaths(const std::vector<std::string> &paths);
+/* The path itself not included, returns a list of all subpaths.
+   dst - vector that contains all the subpaths.
+   list files - include files in the list of subpaths.
+   ignore - paths that start with these charcters will not be listed.
+*/
+void GetRecursiveSubPaths(const std::string &path,
+		  std::vector<std::string> &dst,
+		  bool list_files,
+		  const std::set<char> &ignore = {});
 
 // Only pass full paths to this one. True on success.
 bool RecursiveDeleteContent(const std::string &path);
@@ -90,6 +113,10 @@ bool CopyFileContents(const std::string &source, const std::string &target);
 // Copy directory and all subdirectories
 // Omits files and subdirectories that start with a period
 bool CopyDir(const std::string &source, const std::string &target);
+
+// Move directory and all subdirectories
+// Behavior with files/subdirs that start with a period is undefined
+bool MoveDir(const std::string &source, const std::string &target);
 
 // Check if one path is prefix of another
 // For example, "/tmp" is a prefix of "/tmp" and "/tmp/file" but not "/tmp2"
@@ -118,9 +145,12 @@ const char *GetFilenameFromPath(const char *path);
 
 bool safeWriteToFile(const std::string &path, const std::string &content);
 
+#ifndef SERVER
+bool extractZipFile(irr::io::IFileSystem *fs, const char *filename, const std::string &destination);
+#endif
+
+bool ReadFile(const std::string &path, std::string &out);
+
 bool Rename(const std::string &from, const std::string &to);
 
 } // namespace fs
-
-#endif
-

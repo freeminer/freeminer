@@ -20,11 +20,12 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef S_ENV_H_
-#define S_ENV_H_
+#pragma once
 
 #include "cpp_api/s_base.h"
 #include "irr_v3d.h"
+#include "mapnode.h"
+#include <vector>
 
 class ServerEnvironment;
 struct ScriptCallbackState;
@@ -45,7 +46,8 @@ public:
 	void on_emerge_area_completion(v3s16 blockpos, int action,
 		ScriptCallbackState *state);
 
+	// Called after liquid transform changes
+	void on_liquid_transformed(const std::vector<std::pair<v3s16, MapNode>> &list);
+
 	void initializeEnvironment(ServerEnvironment *env);
 };
-
-#endif /* S_ENV_H_ */

@@ -5,8 +5,8 @@ local builtin_shared = ...
 local function copy_pointed_thing(pointed_thing)
 	return {
 		type  = pointed_thing.type,
-		above = vector.new(pointed_thing.above),
-		under = vector.new(pointed_thing.under),
+		above = pointed_thing.above and vector.copy(pointed_thing.above),
+		under = pointed_thing.under and vector.copy(pointed_thing.under),
 		ref   = pointed_thing.ref,
 	}
 end
@@ -14,15 +14,6 @@ end
 --
 -- Item definition helpers
 --
-
-function core.inventorycube(img1, img2, img3)
-	img2 = img2 or img1
-	img3 = img3 or img1
-	return "[inventorycube"
-			.. "{" .. img1:gsub("%^", "&")
-			.. "{" .. img2:gsub("%^", "&")
-			.. "{" .. img3:gsub("%^", "&")
-end
 
 function core.get_pointed_thing_position(pointed_thing, above)
 	if pointed_thing.type == "node" then
@@ -33,128 +24,47 @@ function core.get_pointed_thing_position(pointed_thing, above)
 		-- The position where a node would be dug
 		return pointed_thing.under
 	elseif pointed_thing.type == "object" then
-		return pointed_thing.ref and pointed_thing.ref:getpos()
+		return pointed_thing.ref and pointed_thing.ref:get_pos()
 	end
 end
 
-function core.dir_to_facedir(dir, is6d)
-	--account for y if requested
-	if is6d and math.abs(dir.y) > math.abs(dir.x) and math.abs(dir.y) > math.abs(dir.z) then
-
-		--from above
-		if dir.y < 0 then
-			if math.abs(dir.x) > math.abs(dir.z) then
-				if dir.x < 0 then
-					return 19
-				else
-					return 13
-				end
-			else
-				if dir.z < 0 then
-					return 10
-				else
-					return 4
-				end
-			end
-
-		--from below
-		else
-			if math.abs(dir.x) > math.abs(dir.z) then
-				if dir.x < 0 then
-					return 15
-				else
-					return 17
-				end
-			else
-				if dir.z < 0 then
-					return 6
-				else
-					return 8
-				end
-			end
-		end
-
-	--otherwise, place horizontally
-	elseif math.abs(dir.x) > math.abs(dir.z) then
-		if dir.x < 0 then
-			return 3
-		else
-			return 1
-		end
-	else
-		if dir.z < 0 then
-			return 2
-		else
-			return 0
+local function has_all_groups(tbl, required_groups)
+	if type(required_groups) == "string" then
+		return (tbl[required_groups] or 0) ~= 0
+	end
+	for _, group in ipairs(required_groups) do
+		if (tbl[group] or 0) == 0 then
+			return false
 		end
 	end
+	return true
 end
 
--- Table of possible dirs
-local facedir_to_dir = {
-	{x= 0, y=0,  z= 1},
-	{x= 1, y=0,  z= 0},
-	{x= 0, y=0,  z=-1},
-	{x=-1, y=0,  z= 0},
-	{x= 0, y=-1, z= 0},
-	{x= 0, y=1,  z= 0},
-}
--- Mapping from facedir value to index in facedir_to_dir.
-local facedir_to_dir_map = {
-	[0]=1, 2, 3, 4,
-	5, 2, 6, 4,
-	6, 2, 5, 4,
-	1, 5, 3, 6,
-	1, 6, 3, 5,
-	1, 4, 3, 2,
-}
-function core.facedir_to_dir(facedir)
-	return facedir_to_dir[facedir_to_dir_map[facedir]]
-end
-
-function core.dir_to_wallmounted(dir)
-	if math.abs(dir.y) > math.max(math.abs(dir.x), math.abs(dir.z)) then
-		if dir.y < 0 then
-			return 1
-		else
-			return 0
-		end
-	elseif math.abs(dir.x) > math.abs(dir.z) then
-		if dir.x < 0 then
-			return 3
-		else
-			return 2
-		end
-	else
-		if dir.z < 0 then
-			return 5
-		else
-			return 4
-		end
+function core.get_node_drops(node, toolname)
+	-- Compatibility, if node is string
+	local nodename = node
+	local param2 = 0
+	-- New format, if node is table
+	if (type(node) == "table") then
+		nodename = node.name
+		param2 = node.param2
 	end
-end
-
--- table of dirs in wallmounted order
-local wallmounted_to_dir = {
-	[0] = {x = 0, y = 1, z = 0},
-	{x =  0, y = -1, z =  0},
-	{x =  1, y =  0, z =  0},
-	{x = -1, y =  0, z =  0},
-	{x =  0, y =  0, z =  1},
-	{x =  0, y =  0, z = -1},
-}
-function core.wallmounted_to_dir(wallmounted)
-	return wallmounted_to_dir[wallmounted]
-end
-
-function core.get_node_drops(nodename, toolname)
-	local drop = ItemStack({name=nodename}):get_definition().drop
+	local def = core.registered_nodes[nodename]
+	local drop = def and def.drop
+	local ptype = def and def.paramtype2
+	-- get color, if there is color (otherwise nil)
+	local palette_index = core.strip_param2_color(param2, ptype)
 	if drop == nil then
 		-- default drop
+		if palette_index then
+			local stack = ItemStack(nodename)
+			stack:get_meta():set_int("palette_index", palette_index)
+			return {stack:to_string()}
+		end
 		return {nodename}
 	elseif type(drop) == "string" then
 		-- itemstring drop
-		return {drop}
+		return drop ~= "" and {drop} or {}
 	elseif drop.items == nil then
 		-- drop = {} to disable default drop
 		return {}
@@ -163,15 +73,16 @@ function core.get_node_drops(nodename, toolname)
 	-- Extended drop table
 	local got_items = {}
 	local got_count = 0
-	local _, item, tool
 	for _, item in ipairs(drop.items) do
 		local good_rarity = true
 		local good_tool = true
 		if item.rarity ~= nil then
 			good_rarity = item.rarity < 1 or math.random(item.rarity) == 1
 		end
-		if item.tools ~= nil then
+		if item.tools ~= nil or item.tool_groups ~= nil then
 			good_tool = false
+		end
+		if item.tools ~= nil and toolname then
 			for _, tool in ipairs(item.tools) do
 				if tool:sub(1, 1) == '~' then
 					good_tool = toolname:find(tool:sub(2)) ~= nil
@@ -182,10 +93,37 @@ function core.get_node_drops(nodename, toolname)
 					break
 				end
 			end
-        	end
+		end
+		if item.tool_groups ~= nil and toolname then
+			local tooldef = core.registered_items[toolname]
+			if tooldef ~= nil and type(tooldef.groups) == "table" then
+				if type(item.tool_groups) == "string" then
+					-- tool_groups can be a string which specifies the required group
+					good_tool = core.get_item_group(toolname, item.tool_groups) ~= 0
+				else
+					-- tool_groups can be a list of sufficient requirements.
+					-- i.e. if any item in the list can be satisfied then the tool is good
+					assert(type(item.tool_groups) == "table")
+					for _, required_groups in ipairs(item.tool_groups) do
+						-- required_groups can be either a string (a single group),
+						-- or an array of strings where all must be in tooldef.groups
+						good_tool = has_all_groups(tooldef.groups, required_groups)
+						if good_tool then
+							break
+						end
+					end
+				end
+			end
+		end
 		if good_rarity and good_tool then
 			got_count = got_count + 1
 			for _, add_item in ipairs(item.items) do
+				-- add color, if necessary
+				if item.inherit_color and palette_index then
+					local stack = ItemStack(add_item)
+					stack:get_meta():set_int("palette_index", palette_index)
+					add_item = stack:to_string()
+				end
 				got_items[#got_items+1] = add_item
 			end
 			if drop.max_items ~= nil and got_count == drop.max_items then
@@ -196,92 +134,117 @@ function core.get_node_drops(nodename, toolname)
 	return got_items
 end
 
-function core.item_place_node(itemstack, placer, pointed_thing, param2)
-	local item = itemstack:peek_item()
+local function user_name(user)
+	return user and user:get_player_name() or ""
+end
+
+-- Returns a logging function. For empty names, does not log.
+local function make_log(name)
+	return name ~= "" and core.log or function() end
+end
+
+function core.item_place_node(itemstack, placer, pointed_thing, param2,
+		prevent_after_place)
 	local def = itemstack:get_definition()
 	if def.type ~= "node" or pointed_thing.type ~= "node" then
-		return itemstack, false
+		return itemstack, nil
 	end
 
 	local under = pointed_thing.under
 	local oldnode_under = core.get_node_or_nil(under)
 	local above = pointed_thing.above
 	local oldnode_above = core.get_node_or_nil(above)
+	local playername = user_name(placer)
+	local log = make_log(playername)
 
 	if not oldnode_under or not oldnode_above then
-		core.log("info", placer:get_player_name() .. " tried to place"
+		log("info", playername .. " tried to place"
 			.. " node in unloaded position " .. core.pos_to_string(above))
-		return itemstack, false
+		return itemstack, nil
 	end
 
-	local olddef_under = ItemStack({name=oldnode_under.name}):get_definition()
+	local olddef_under = core.registered_nodes[oldnode_under.name]
 	olddef_under = olddef_under or core.nodedef_default
-	local olddef_above = ItemStack({name=oldnode_above.name}):get_definition()
+	local olddef_above = core.registered_nodes[oldnode_above.name]
 	olddef_above = olddef_above or core.nodedef_default
 
 	if not olddef_above.buildable_to and not olddef_under.buildable_to then
-		core.log("info", placer:get_player_name() .. " tried to place"
+		log("info", playername .. " tried to place"
 			.. " node in invalid position " .. core.pos_to_string(above)
 			.. ", replacing " .. oldnode_above.name)
-		return itemstack, false
+		return itemstack, nil
 	end
 
 	-- Place above pointed node
-	local place_to = {x = above.x, y = above.y, z = above.z}
+	local place_to = vector.copy(above)
 
 	-- If node under is buildable_to, place into it instead (eg. snow)
 	if olddef_under.buildable_to then
-		core.log("info", "node under is buildable to")
-		place_to = {x = under.x, y = under.y, z = under.z}
+		log("info", "node under is buildable to")
+		place_to = vector.copy(under)
 	end
 
-	if core.is_protected(place_to, placer:get_player_name()) and
-			not minetest.check_player_privs(placer, "protection_bypass") then
-		core.log("action", placer:get_player_name()
+	if core.is_protected(place_to, playername) then
+		log("action", playername
 				.. " tried to place " .. def.name
 				.. " at protected position "
 				.. core.pos_to_string(place_to))
-		core.record_protection_violation(place_to, placer:get_player_name())
-		return itemstack
+		core.record_protection_violation(place_to, playername)
+		return itemstack, nil
 	end
 
-	core.log("action", placer:get_player_name() .. " places node "
-		.. def.name .. " at " .. core.pos_to_string(place_to))
-
 	local oldnode = core.get_node(place_to)
-	local newnode = {name = def.name, param1 = 0, param2 = param2}
+	local newnode = {name = def.name, param1 = 0, param2 = param2 or 0}
 
 	-- Calculate direction for wall mounted stuff like torches and signs
 	if def.place_param2 ~= nil then
 		newnode.param2 = def.place_param2
-	elseif def.paramtype2 == 'wallmounted' and not param2 then
-		local dir = {
-			x = under.x - above.x,
-			y = under.y - above.y,
-			z = under.z - above.z
-		}
+	elseif (def.paramtype2 == "wallmounted" or
+			def.paramtype2 == "colorwallmounted") and not param2 then
+		local dir = vector.subtract(under, above)
 		newnode.param2 = core.dir_to_wallmounted(dir)
 	-- Calculate the direction for furnaces and chests and stuff
-	elseif def.paramtype2 == 'facedir' and not param2 then
-		local placer_pos = placer:getpos()
+	elseif (def.paramtype2 == "facedir" or
+			def.paramtype2 == "colorfacedir") and not param2 then
+		local placer_pos = placer and placer:get_pos()
 		if placer_pos then
-			local dir = {
-				x = above.x - placer_pos.x,
-				y = above.y - placer_pos.y,
-				z = above.z - placer_pos.z
-			}
+			local dir = vector.subtract(above, placer_pos)
 			newnode.param2 = core.dir_to_facedir(dir)
-			core.log("action", "facedir: " .. newnode.param2)
+			log("info", "facedir: " .. newnode.param2)
+		end
+	end
+
+	local metatable = itemstack:get_meta():to_table().fields
+
+	-- Transfer color information
+	if metatable.palette_index and not def.place_param2 then
+		local color_divisor = nil
+		if def.paramtype2 == "color" then
+			color_divisor = 1
+		elseif def.paramtype2 == "colorwallmounted" then
+			color_divisor = 8
+		elseif def.paramtype2 == "colorfacedir" then
+			color_divisor = 32
+		elseif def.paramtype2 == "colordegrotate" then
+			color_divisor = 32
+		end
+		if color_divisor then
+			local color = math.floor(metatable.palette_index / color_divisor)
+			local other = newnode.param2 % color_divisor
+			newnode.param2 = color * color_divisor + other
 		end
 	end
 
 	-- Check if the node is attached and if it can be placed there
 	if core.get_item_group(def.name, "attached_node") ~= 0 and
 		not builtin_shared.check_attached_node(place_to, newnode) then
-		core.log("action", "attached node " .. def.name ..
+		log("action", "attached node " .. def.name ..
 			" can not be placed at " .. core.pos_to_string(place_to))
-		return itemstack, false
+		return itemstack, nil
 	end
+
+	log("action", playername .. " places node "
+		.. def.name .. " at " .. core.pos_to_string(place_to))
 
 	-- Add node and update
 	local olddef = core.registered_nodes[oldnode.name]
@@ -296,12 +259,20 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2)
 		core.add_node(place_to, newnode)
 	end
 
+	-- Play sound if it was done by a player
+	if playername ~= "" and def.sounds and def.sounds.place then
+		core.sound_play(def.sounds.place, {
+			pos = place_to,
+			exclude_player = playername,
+		}, true)
+	end
+
 	local take_item = true
 
 	-- Run callback
-	if def.after_place_node then
+	if def.after_place_node and not prevent_after_place then
 		-- Deepcopy place_to and pointed_thing because callback can modify it
-		local place_to_copy = {x=place_to.x, y=place_to.y, z=place_to.z}
+		local place_to_copy = vector.copy(place_to)
 		local pointed_thing_copy = copy_pointed_thing(pointed_thing)
 		if def.after_place_node(place_to_copy, placer, itemstack,
 				pointed_thing_copy) then
@@ -310,10 +281,9 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2)
 	end
 
 	-- Run script hook
-	local _, callback
 	for _, callback in ipairs(core.registered_on_placenodes) do
 		-- Deepcopy pos, node and pointed_thing because callback can modify them
-		local place_to_copy = {x=place_to.x, y=place_to.y, z=place_to.z}
+		local place_to_copy = vector.copy(place_to)
 		local newnode_copy = {name=newnode.name, param1=newnode.param1, param2=newnode.param2}
 		local oldnode_copy = {name=oldnode.name, param1=oldnode.param1, param2=oldnode.param2}
 		local pointed_thing_copy = copy_pointed_thing(pointed_thing)
@@ -325,9 +295,10 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2)
 	if take_item then
 		itemstack:take_item()
 	end
-	return itemstack, true
+	return itemstack, place_to
 end
 
+-- deprecated, item_place does not call this
 function core.item_place_object(itemstack, placer, pointed_thing)
 	local pos = core.get_pointed_thing_position(pointed_thing, true)
 	if pos ~= nil then
@@ -345,14 +316,15 @@ function core.item_place(itemstack, placer, pointed_thing, param2)
 		local nn = n.name
 		if core.registered_nodes[nn] and core.registered_nodes[nn].on_rightclick then
 			return core.registered_nodes[nn].on_rightclick(pointed_thing.under, n,
-					placer, itemstack, pointed_thing) or itemstack, false
+					placer, itemstack, pointed_thing) or itemstack, nil
 		end
 	end
 
+	-- Place if node, otherwise do nothing
 	if itemstack:get_definition().type == "node" then
 		return core.item_place_node(itemstack, placer, pointed_thing, param2)
 	end
-	return itemstack
+	return itemstack, nil
 end
 
 function core.item_secondary_use(itemstack, placer)
@@ -360,29 +332,25 @@ function core.item_secondary_use(itemstack, placer)
 end
 
 function core.item_drop(itemstack, dropper, pos)
-	if dropper and dropper:is_player() then
-		local v = dropper:get_look_dir()
-		local p = {x=pos.x, y=pos.y+1.2, z=pos.z}
-		local cs = itemstack:get_count()
-		if dropper:get_player_control().sneak then
-			cs = 1
-		end
-		local item = itemstack:take_item(cs)
-		local obj = core.add_item(p, item)
-		if obj then
-			v.x = v.x*2
-			v.y = v.y*2 + 2
-			v.z = v.z*2
-			obj:setvelocity(v)
+	local dropper_is_player = dropper and dropper:is_player()
+	local p = table.copy(pos)
+	local cnt = itemstack:get_count()
+	if dropper_is_player then
+		p.y = p.y + 1.2
+	end
+	local item = itemstack:take_item(cnt)
+	local obj = core.add_item(p, item)
+	if obj then
+		if dropper_is_player then
+			local dir = dropper:get_look_dir()
+			dir.x = dir.x * 2.9
+			dir.y = dir.y * 2.9 + 2
+			dir.z = dir.z * 2.9
+			obj:set_velocity(dir)
 			obj:get_luaentity().dropped_by = dropper:get_player_name()
 			obj:get_luaentity().ttl = 86400 * 365 * 10; -- huge time for player drops
-			return itemstack
 		end
-
-	else
-		if core.add_item(pos, itemstack) then
-			return itemstack
-		end
+		return itemstack
 	end
 	-- If we reach this, adding the object to the
 	-- environment failed
@@ -395,30 +363,48 @@ function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed
 			return result
 		end
 	end
-	if itemstack:take_item() ~= nil then
-		user:set_hp(user:get_hp() + hp_change)
+	-- read definition before potentially emptying the stack
+	local def = itemstack:get_definition()
+	if itemstack:take_item():is_empty() then
+		return itemstack
+	end
 
-		if replace_with_item then
-			if itemstack:is_empty() then
-				itemstack:add_item(replace_with_item)
+	if def and def.sound and def.sound.eat then
+		core.sound_play(def.sound.eat, {
+			pos = user:get_pos(),
+			max_hear_distance = 16
+		}, true)
+	end
+
+	-- Changing hp might kill the player causing mods to do who-knows-what to the
+	-- inventory, so do this before set_hp().
+	if replace_with_item then
+		if itemstack:is_empty() then
+			itemstack:add_item(replace_with_item)
+		else
+			local inv = user:get_inventory()
+			-- Check if inv is null, since non-players don't have one
+			if inv and inv:room_for_item("main", {name=replace_with_item}) then
+				inv:add_item("main", replace_with_item)
 			else
-				local inv = user:get_inventory()
-				if inv:room_for_item("main", {name=replace_with_item}) then
-					inv:add_item("main", replace_with_item)
-				else
-					local pos = user:getpos()
-					pos.y = math.floor(pos.y + 0.5)
-					core.add_item(pos, replace_with_item)
-				end
+				local pos = user:get_pos()
+				pos.y = math.floor(pos.y + 0.5)
+				core.add_item(pos, replace_with_item)
 			end
 		end
 	end
-	return itemstack
+	user:set_wielded_item(itemstack)
+
+	user:set_hp(user:get_hp() + hp_change)
+
+	return nil -- don't overwrite wield item a second time
 end
 
 function core.item_eat(hp_change, replace_with_item)
 	return function(itemstack, user, pointed_thing)  -- closure
-		return core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
+		if user then
+			return core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
+		end
 	end
 end
 
@@ -426,7 +412,7 @@ function core.node_punch(pos, node, puncher, pointed_thing)
 	-- Run script hook
 	for _, callback in ipairs(core.registered_on_punchnodes) do
 		-- Copy pos and node because callback can modify them
-		local pos_copy = vector.new(pos)
+		local pos_copy = vector.copy(pos)
 		local node_copy = {name=node.name, param1=node.param1, param2=node.param2}
 		local pointed_thing_copy = pointed_thing and copy_pointed_thing(pointed_thing) or nil
 		callback(pos_copy, node_copy, puncher, pointed_thing_copy)
@@ -435,99 +421,146 @@ end
 
 function core.handle_node_drops(pos, drops, digger)
 	-- Add dropped items to object's inventory
-	if digger:get_inventory() then
-		local _, dropped_item
-		for _, dropped_item in ipairs(drops) do
-			local left = digger:get_inventory():add_item("main", dropped_item)
-			if not left:is_empty() then
-				local p = {
-					x = pos.x + math.random()/2-0.25,
-					y = pos.y + math.random()/2-0.25,
-					z = pos.z + math.random()/2-0.25,
-				}
-				core.add_item(p, left)
-			end
+	local inv = digger and digger:get_inventory()
+	local give_item
+	if inv then
+		give_item = function(item)
+			return inv:add_item("main", item)
+		end
+	else
+		give_item = function(item)
+			-- itemstring to ItemStack for left:is_empty()
+			return ItemStack(item)
+		end
+	end
+
+	for _, dropped_item in pairs(drops) do
+		local left = give_item(dropped_item)
+		if not left:is_empty() then
+			local p = vector.offset(pos,
+				math.random()/2-0.25,
+				math.random()/2-0.25,
+				math.random()/2-0.25
+			)
+			core.add_item(p, left)
 		end
 	end
 end
 
 function core.node_dig(pos, node, digger)
-	local def = ItemStack({name=node.name}):get_definition()
-	if not def.diggable or (def.can_dig and not def.can_dig(pos,digger)) then
-		core.log("info", digger:get_player_name() .. " tried to dig "
+	local diggername = user_name(digger)
+	local log = make_log(diggername)
+	local def = core.registered_nodes[node.name]
+	-- Copy pos because the callback could modify it
+	if def and (not def.diggable or
+			(def.can_dig and not def.can_dig(vector.copy(pos), digger))) then
+		log("info", diggername .. " tried to dig "
 			.. node.name .. " which is not diggable "
 			.. core.pos_to_string(pos))
-		return
+		return false
 	end
 
-	if core.is_protected(pos, digger:get_player_name()) and
-			not minetest.check_player_privs(digger, "protection_bypass") then
-		core.log("action", digger:get_player_name()
+	if core.is_protected(pos, diggername) then
+		log("action", diggername
 				.. " tried to dig " .. node.name
 				.. " at protected position "
 				.. core.pos_to_string(pos))
-		core.record_protection_violation(pos, digger:get_player_name())
-		return
+		core.record_protection_violation(pos, diggername)
+		return false
 	end
 
-	core.log('action', digger:get_player_name() .. " digs "
+	log('action', diggername .. " digs "
 		.. node.name .. " at " .. core.pos_to_string(pos))
 
-	local wielded = digger:get_wielded_item()
-	local drops = core.get_node_drops(node.name, wielded:get_name())
+	local wielded = digger and digger:get_wielded_item()
+	local drops = core.get_node_drops(node, wielded and wielded:get_name())
 
-	local wdef = wielded:get_definition()
-	local tp = wielded:get_tool_capabilities()
-	local dp = core.get_dig_params(def.groups, tp)
-	if wdef and wdef.after_use then
-		wielded = wdef.after_use(wielded, digger, node, dp) or wielded
-	else
-		-- Wear out tool
-		if not core.settings:get_bool("creative_mode") then
-			wielded:add_wear(dp.wear)
-			if wielded:get_count() == 0 and wdef.sound and wdef.sound.breaks then
-				core.sound_play(wdef.sound.breaks, {pos = pos, gain = 0.5})
+	if wielded then
+		local wdef = wielded:get_definition()
+		local tp = wielded:get_tool_capabilities()
+		local dp = core.get_dig_params(def and def.groups, tp, wielded:get_wear())
+		if wdef and wdef.after_use then
+			wielded = wdef.after_use(wielded, digger, node, dp) or wielded
+		else
+			-- Wear out tool
+			if not core.is_creative_enabled(diggername) then
+				wielded:add_wear(dp.wear)
+				if wielded:get_count() == 0 and wdef.sound and wdef.sound.breaks then
+					core.sound_play(wdef.sound.breaks, {
+						pos = pos,
+						gain = 0.5
+					}, true)
+				end
 			end
 		end
+		digger:set_wielded_item(wielded)
 	end
-	digger:set_wielded_item(wielded)
+
+	-- Check to see if metadata should be preserved.
+	if def and def.preserve_metadata then
+		local oldmeta = core.get_meta(pos):to_table().fields
+		-- Copy pos and node because the callback can modify them.
+		local pos_copy = vector.copy(pos)
+		local node_copy = {name=node.name, param1=node.param1, param2=node.param2}
+		local drop_stacks = {}
+		for k, v in pairs(drops) do
+			drop_stacks[k] = ItemStack(v)
+		end
+		drops = drop_stacks
+		def.preserve_metadata(pos_copy, node_copy, oldmeta, drops)
+	end
 
 	-- Handle drops
 	core.handle_node_drops(pos, drops, digger)
 
 	local oldmetadata = nil
-	if def.after_dig_node then
+	if def and def.after_dig_node then
 		oldmetadata = core.get_meta(pos):to_table()
 	end
 
 	-- Remove node and update
 	core.remove_node(pos)
 
+	-- Play sound if it was done by a player
+	if diggername ~= "" and def and def.sounds and def.sounds.dug then
+		core.sound_play(def.sounds.dug, {
+			pos = pos,
+			exclude_player = diggername,
+		}, true)
+	end
+
 	-- Run callback
-	if def.after_dig_node then
+	if def and def.after_dig_node then
 		-- Copy pos and node because callback can modify them
-		local pos_copy = {x=pos.x, y=pos.y, z=pos.z}
+		local pos_copy = vector.copy(pos)
 		local node_copy = {name=node.name, param1=node.param1, param2=node.param2}
 		def.after_dig_node(pos_copy, node_copy, oldmetadata, digger)
 	end
 
 	-- Run script hook
-	local _, callback
 	for _, callback in ipairs(core.registered_on_dignodes) do
 		local origin = core.callback_origins[callback]
-		if origin then
-			core.set_last_run_mod(origin.mod)
-			--print("Running " .. tostring(callback) ..
-			--	" (a " .. origin.name .. " callback in " .. origin.mod .. ")")
-		else
-			--print("No data associated with callback")
-		end
+		core.set_last_run_mod(origin.mod)
 
 		-- Copy pos and node because callback can modify them
-		local pos_copy = {x=pos.x, y=pos.y, z=pos.z}
+		local pos_copy = vector.copy(pos)
 		local node_copy = {name=node.name, param1=node.param1, param2=node.param2}
 		callback(pos_copy, node_copy, digger)
 	end
+
+	return true
+end
+
+function core.itemstring_with_palette(item, palette_index)
+	local stack = ItemStack(item) -- convert to ItemStack
+	stack:get_meta():set_int("palette_index", palette_index)
+	return stack:to_string()
+end
+
+function core.itemstring_with_color(item, colorstring)
+	local stack = ItemStack(item) -- convert to ItemStack
+	stack:get_meta():set_string("color", colorstring)
+	return stack:to_string()
 end
 
 -- This is used to allow mods to redefine core.item_place and so on
@@ -543,6 +576,8 @@ end
 -- Item definition defaults
 --
 
+local default_stack_max = tonumber(core.settings:get("default_stack_max")) or 99
+
 core.nodedef_default = {
 	-- Item properties
 	type="node",
@@ -551,8 +586,8 @@ core.nodedef_default = {
 	groups = {},
 	inventory_image = "",
 	wield_image = "",
-	wield_scale = {x=1,y=1,z=1},
-	stack_max = 99,
+	wield_scale = vector.new(1, 1, 1),
+	stack_max = default_stack_max,
 	usable = false,
 	liquids_pointable = false,
 	tool_capabilities = nil,
@@ -570,21 +605,11 @@ core.nodedef_default = {
 
 	on_receive_fields = nil,
 
-	on_metadata_inventory_move = core.node_metadata_inventory_move_allow_all,
-	on_metadata_inventory_offer = core.node_metadata_inventory_offer_allow_all,
-	on_metadata_inventory_take = core.node_metadata_inventory_take_allow_all,
-
 	-- Node properties
 	drawtype = "normal",
 	visual_scale = 1.0,
-	-- Don't define these because otherwise the old tile_images and
-	-- special_materials wouldn't be read
-	--tiles ={""},
-	--special_tiles = {
-	--	{name="", backface_culling=true},
-	--	{name="", backface_culling=true},
-	--},
-	alpha = 255,
+	tiles = nil,
+	special_tiles = nil,
 	post_effect_color = {a=0, r=0, g=0, b=0},
 	paramtype = "none",
 	paramtype2 = "none",
@@ -615,8 +640,8 @@ core.craftitemdef_default = {
 	groups = {},
 	inventory_image = "",
 	wield_image = "",
-	wield_scale = {x=1,y=1,z=1},
-	stack_max = 99,
+	wield_scale = vector.new(1, 1, 1),
+	stack_max = default_stack_max,
 	liquids_pointable = false,
 	tool_capabilities = nil,
 
@@ -634,7 +659,7 @@ core.tooldef_default = {
 	groups = {},
 	inventory_image = "",
 	wield_image = "",
-	wield_scale = {x=1,y=1,z=1},
+	wield_scale = vector.new(1, 1, 1),
 	stack_max = 1,
 	liquids_pointable = false,
 	tool_capabilities = nil,
@@ -653,8 +678,8 @@ core.noneitemdef_default = {  -- This is used for the hand and unknown items
 	groups = {},
 	inventory_image = "",
 	wield_image = "",
-	wield_scale = {x=1,y=1,z=1},
-	stack_max = 99,
+	wield_scale = vector.new(1, 1, 1),
+	stack_max = default_stack_max,
 	liquids_pointable = false,
 	tool_capabilities = nil,
 

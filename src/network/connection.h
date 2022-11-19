@@ -24,238 +24,37 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_SCTP
 #include "network/fm_connection_sctp.h"
-#elif !MINETEST_PROTO
+#elif USE_ENET
 #include "network/fm_connection.h"
 #else
 //Not used, keep for reduce MT merge conflicts
 
 
-#ifndef CONNECTION_HEADER
-#define CONNECTION_HEADER
+#pragma once
 
-#include "irrlichttypes_bloated.h"
+#include "irrlichttypes.h"
+#include "peerhandler.h"
 #include "socket.h"
-#include "exceptions.h"
 #include "constants.h"
-#include "network/networkpacket.h"
 #include "util/pointer.h"
 #include "util/container.h"
 #include "util/thread.h"
 #include "util/numeric.h"
+#include "networkprotocol.h"
 #include <iostream>
-#include <fstream>
-#include <list>
+#include <vector>
 #include <map>
 
-#include <fstream>
 
-extern std::ostream *dout_con_ptr;
-extern std::ostream *derr_con_ptr;
-#define dout_con (*dout_con_ptr)
-#define derr_con (*derr_con_ptr)
-
-
-class NetworkPacket;
-
-namespace con
-{
-
-/*
-	Exceptions
-*/
-class NotFoundException : public BaseException
-{
-public:
-	NotFoundException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class PeerNotFoundException : public BaseException
-{
-public:
-	PeerNotFoundException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ConnectionException : public BaseException
-{
-public:
-	ConnectionException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ConnectionBindFailed : public BaseException
-{
-public:
-	ConnectionBindFailed(const char *s):
-		BaseException(s)
-	{}
-};
-
-class InvalidIncomingDataException : public BaseException
-{
-public:
-	InvalidIncomingDataException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class InvalidOutgoingDataException : public BaseException
-{
-public:
-	InvalidOutgoingDataException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class NoIncomingDataException : public BaseException
-{
-public:
-	NoIncomingDataException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ProcessedSilentlyException : public BaseException
-{
-public:
-	ProcessedSilentlyException(const char *s):
-		BaseException(s)
-	{}
-};
-
-class ProcessedQueued : public BaseException
-{
-public:
-	ProcessedQueued(const char *s):
-		BaseException(s)
-	{}
-};
-
-class IncomingDataCorruption : public BaseException
-{
-public:
-	IncomingDataCorruption(const char *s):
-		BaseException(s)
-	{}
-};
-
-typedef enum MTProtocols {
-	MTP_PRIMARY,
-	MTP_UDP,
-	MTP_MINETEST_RELIABLE_UDP
-} MTProtocols;
-
-#define SEQNUM_MAX 65535
-inline bool seqnum_higher(u16 totest, u16 base)
-{
-	if (totest > base)
-	{
-		if ((totest - base) > (SEQNUM_MAX/2))
-			return false;
-		else
-			return true;
-	}
-	else
-	{
-		if ((base - totest) > (SEQNUM_MAX/2))
-			return true;
-		else
-			return false;
-	}
-}
-
-inline bool seqnum_in_window(u16 seqnum, u16 next,u16 window_size)
-{
-	u16 window_start = next;
-	u16 window_end   = ( next + window_size ) % (SEQNUM_MAX+1);
-
-	if (window_start < window_end)
-	{
-		return ((seqnum >= window_start) && (seqnum < window_end));
-	}
-	else
-	{
-		return ((seqnum < window_end) || (seqnum >= window_start));
-	}
-}
-
-struct BufferedPacket
-{
-	BufferedPacket(u8 *a_data, u32 a_size):
-		data(a_data, a_size), time(0.0), totaltime(0.0), absolute_send_time(-1),
-		resend_count(0)
-	{}
-	BufferedPacket(u32 a_size):
-		data(a_size), time(0.0), totaltime(0.0), absolute_send_time(-1),
-		resend_count(0)
-	{}
-	Buffer<u8> data; // Data of the packet, including headers
-	float time; // Seconds from buffering the packet or re-sending
-	float totaltime; // Seconds from buffering the packet
-	unsigned int absolute_send_time;
-	Address address; // Sender or destination
-	unsigned int resend_count;
-};
-
-// This adds the base headers to the data and makes a packet out of it
-BufferedPacket makePacket(Address &address, u8 *data, u32 datasize,
-		u32 protocol_id, u16 sender_peer_id, u8 channel);
-BufferedPacket makePacket(Address &address, SharedBuffer<u8> &data,
-		u32 protocol_id, u16 sender_peer_id, u8 channel);
-
-// Add the TYPE_ORIGINAL header to the data
-SharedBuffer<u8> makeOriginalPacket(
-		SharedBuffer<u8> data);
-
-// Split data in chunks and add TYPE_SPLIT headers to them
-std::list<SharedBuffer<u8> > makeSplitPacket(
-		SharedBuffer<u8> data,
-		u32 chunksize_max,
-		u16 seqnum);
-
-// Depending on size, make a TYPE_ORIGINAL or TYPE_SPLIT packet
-// Increments split_seqnum if a split packet is made
-std::list<SharedBuffer<u8> > makeAutoSplitPacket(
-		SharedBuffer<u8> data,
-		u32 chunksize_max,
-		u16 &split_seqnum);
-
-// Add the TYPE_RELIABLE header to the data
-SharedBuffer<u8> makeReliablePacket(
-		SharedBuffer<u8> data,
-		u16 seqnum);
-
-struct IncomingSplitPacket
-{
-	IncomingSplitPacket()
-	{
-		time = 0.0;
-		reliable = false;
-	}
-	// Key is chunk number, value is data without headers
-	std::map<u16, SharedBuffer<u8> > chunks;
-	u32 chunk_count;
-	float time; // Seconds from adding
-	bool reliable; // If true, isn't deleted on timeout
-
-	bool allReceived()
-	{
-		return (chunks.size() == chunk_count);
-	}
-};
+#define MAX_UDP_PEERS 65535
 
 /*
 === NOTES ===
 
 A packet is sent through a channel to a peer with a basic header:
-TODO: Should we have a receiver_peer_id also?
 	Header (7 bytes):
 	[0] u32 protocol_id
-	[4] u16 sender_peer_id
+	[4] session_t sender_peer_id
 	[6] u8 channel
 sender_peer_id:
 	Unique to each peer.
@@ -263,11 +62,11 @@ sender_peer_id:
 	value 1 (PEER_ID_SERVER) is reserved for server
 	these constants are defined in constants.h
 channel:
-	The lower the number, the higher the priority is.
-	Only channels 0, 1 and 2 exist.
+	Channel numbers have no intrinsic meaning. Currently only 0, 1, 2 exist.
 */
 #define BASE_HEADER_SIZE 7
 #define CHANNEL_COUNT 3
+
 /*
 Packet types:
 
@@ -280,18 +79,18 @@ controltype and data description:
 	CONTROLTYPE_ACK
 		[2] u16 seqnum
 	CONTROLTYPE_SET_PEER_ID
-		[2] u16 peer_id_new
+		[2] session_t peer_id_new
 	CONTROLTYPE_PING
 	- There is no actual reply, but this can be sent in a reliable
 	  packet to get a reply
 	CONTROLTYPE_DISCO
 */
-#define TYPE_CONTROL 0
-#define CONTROLTYPE_ACK 0
-#define CONTROLTYPE_SET_PEER_ID 1
-#define CONTROLTYPE_PING 2
-#define CONTROLTYPE_DISCO 3
-#define CONTROLTYPE_ENABLE_BIG_SEND_WINDOW 4
+enum ControlType : u8 {
+	CONTROLTYPE_ACK = 0,
+	CONTROLTYPE_SET_PEER_ID = 1,
+	CONTROLTYPE_PING = 2,
+	CONTROLTYPE_DISCO = 3,
+};
 
 /*
 ORIGINAL: This is a plain packet with no control and no error
@@ -300,8 +99,9 @@ checking at all.
 	Header (1 byte):
 	[0] u8 type
 */
-#define TYPE_ORIGINAL 1
+//#define TYPE_ORIGINAL 1
 #define ORIGINAL_HEADER_SIZE 1
+
 /*
 SPLIT: These are sequences of packets forming one bigger piece of
 data.
@@ -317,7 +117,8 @@ data.
 	[3] u16 chunk_count
 	[5] u16 chunk_num
 */
-#define TYPE_SPLIT 2
+//#define TYPE_SPLIT 2
+
 /*
 RELIABLE: Delivery of all RELIABLE packets shall be forced by ACKs,
 and they shall be delivered in the same order as sent. This is done
@@ -329,48 +130,169 @@ with a buffer in the receiving and transmitting end.
 	[1] u16 seqnum
 
 */
-#define TYPE_RELIABLE 3
+//#define TYPE_RELIABLE 3
 #define RELIABLE_HEADER_SIZE 3
 #define SEQNUM_INITIAL 65500
+#define SEQNUM_MAX 65535
+
+class NetworkPacket;
+
+namespace con
+{
+
+class ConnectionReceiveThread;
+class ConnectionSendThread;
+
+typedef enum MTProtocols {
+	MTP_PRIMARY,
+	MTP_UDP,
+	MTP_MINETEST_RELIABLE_UDP
+} MTProtocols;
+
+enum PacketType : u8 {
+	PACKET_TYPE_CONTROL = 0,
+	PACKET_TYPE_ORIGINAL = 1,
+	PACKET_TYPE_SPLIT = 2,
+	PACKET_TYPE_RELIABLE = 3,
+	PACKET_TYPE_MAX
+};
+
+inline bool seqnum_higher(u16 totest, u16 base)
+{
+	if (totest > base)
+	{
+		if ((totest - base) > (SEQNUM_MAX/2))
+			return false;
+
+		return true;
+	}
+
+	if ((base - totest) > (SEQNUM_MAX/2))
+		return true;
+
+	return false;
+}
+
+inline bool seqnum_in_window(u16 seqnum, u16 next,u16 window_size)
+{
+	u16 window_start = next;
+	u16 window_end   = ( next + window_size ) % (SEQNUM_MAX+1);
+
+	if (window_start < window_end) {
+		return ((seqnum >= window_start) && (seqnum < window_end));
+	}
+
+
+	return ((seqnum < window_end) || (seqnum >= window_start));
+}
+
+static inline float CALC_DTIME(u64 lasttime, u64 curtime)
+{
+	float value = ( curtime - lasttime) / 1000.0;
+	return MYMAX(MYMIN(value,0.1),0.0);
+}
+
+/*
+	Struct for all kinds of packets. Includes following data:
+		BASE_HEADER
+		u8[] packet data (usually copied from SharedBuffer<u8>)
+*/
+struct BufferedPacket {
+	BufferedPacket(u32 a_size)
+	{
+		m_data.resize(a_size);
+		data = &m_data[0];
+	}
+
+	DISABLE_CLASS_COPY(BufferedPacket)
+
+	u16 getSeqnum() const;
+
+	inline size_t size() const { return m_data.size(); }
+
+	u8 *data; // Direct memory access
+	float time = 0.0f; // Seconds from buffering the packet or re-sending
+	float totaltime = 0.0f; // Seconds from buffering the packet
+	u64 absolute_send_time = -1;
+	Address address; // Sender or destination
+	unsigned int resend_count = 0;
+
+private:
+	std::vector<u8> m_data; // Data of the packet, including headers
+};
+
+typedef std::shared_ptr<BufferedPacket> BufferedPacketPtr;
+
+
+// This adds the base headers to the data and makes a packet out of it
+BufferedPacketPtr makePacket(Address &address, const SharedBuffer<u8> &data,
+		u32 protocol_id, session_t sender_peer_id, u8 channel);
+
+// Depending on size, make a TYPE_ORIGINAL or TYPE_SPLIT packet
+// Increments split_seqnum if a split packet is made
+void makeAutoSplitPacket(const SharedBuffer<u8> &data, u32 chunksize_max,
+		u16 &split_seqnum, std::list<SharedBuffer<u8>> *list);
+
+// Add the TYPE_RELIABLE header to the data
+SharedBuffer<u8> makeReliablePacket(const SharedBuffer<u8> &data, u16 seqnum);
+
+struct IncomingSplitPacket
+{
+	IncomingSplitPacket(u32 cc, bool r):
+		chunk_count(cc), reliable(r) {}
+
+	IncomingSplitPacket() = delete;
+
+	float time = 0.0f; // Seconds from adding
+	u32 chunk_count;
+	bool reliable; // If true, isn't deleted on timeout
+
+	bool allReceived() const
+	{
+		return (chunks.size() == chunk_count);
+	}
+	bool insert(u32 chunk_num, SharedBuffer<u8> &chunkdata);
+	SharedBuffer<u8> reassemble();
+
+private:
+	// Key is chunk number, value is data without headers
+	std::map<u16, SharedBuffer<u8>> chunks;
+};
 
 /*
 	A buffer which stores reliable packets and sorts them internally
 	for fast access to the smallest one.
 */
 
-typedef std::list<BufferedPacket>::iterator RPBSearchResult;
+typedef std::list<BufferedPacketPtr>::iterator RPBSearchResult;
 
 class ReliablePacketBuffer
 {
 public:
-	ReliablePacketBuffer();
+	ReliablePacketBuffer() = default;
 
 	bool getFirstSeqnum(u16& result);
 
-	BufferedPacket popFirst();
-	BufferedPacket popSeqnum(u16 seqnum);
-	void insert(BufferedPacket &p,u16 next_expected);
+	BufferedPacketPtr popFirst();
+	BufferedPacketPtr popSeqnum(u16 seqnum);
+	void insert(BufferedPacketPtr &p_ptr, u16 next_expected);
 
 	void incrementTimeouts(float dtime);
-	std::list<BufferedPacket> getTimedOuts(float timeout,
-			unsigned int max_packets);
+	std::list<ConstSharedPtr<BufferedPacket>> getTimedOuts(float timeout, u32 max_packets);
 
 	void print();
 	bool empty();
-	bool containsPacket(u16 seqnum);
-	RPBSearchResult notFound();
 	u32 size();
 
 
 private:
-	RPBSearchResult findPacket(u16 seqnum);
+	RPBSearchResult findPacketNoLock(u16 seqnum);
 
-	std::list<BufferedPacket> m_list;
-	std::atomic_uint m_list_size;
+	std::list<BufferedPacketPtr> m_list;
 
 	u16 m_oldest_non_answered_ack;
 
-	Mutex m_list_mutex;
+	std::mutex m_list_mutex;
 };
 
 /*
@@ -385,7 +307,7 @@ public:
 		Returns a reference counted buffer of length != 0 when a full split
 		packet is constructed. If not, returns one of length 0.
 	*/
-	SharedBuffer<u8> insert(BufferedPacket &p, bool reliable);
+	SharedBuffer<u8> insert(BufferedPacketPtr &p_ptr, bool reliable);
 
 	void removeUnreliableTimedOuts(float dtime, float timeout);
 
@@ -393,26 +315,7 @@ private:
 	// Key is seqnum
 	std::map<u16, IncomingSplitPacket*> m_buf;
 
-	Mutex m_map_mutex;
-};
-
-struct OutgoingPacket
-{
-	u16 peer_id;
-	u8 channelnum;
-	SharedBuffer<u8> data;
-	bool reliable;
-	bool ack;
-
-	OutgoingPacket(u16 peer_id_, u8 channelnum_, SharedBuffer<u8> data_,
-			bool reliable_,bool ack_=false):
-		peer_id(peer_id_),
-		channelnum(channelnum_),
-		data(data_),
-		reliable(reliable_),
-		ack(ack_)
-	{
-	}
+	std::mutex m_map_mutex;
 };
 
 enum ConnectionCommandType{
@@ -424,80 +327,49 @@ enum ConnectionCommandType{
 	CONNCMD_SEND,
 	CONNCMD_SEND_TO_ALL,
 	CONCMD_ACK,
-	CONCMD_CREATE_PEER,
-	CONCMD_DISABLE_LEGACY
+	CONCMD_CREATE_PEER
 };
 
+struct ConnectionCommand;
+typedef std::shared_ptr<ConnectionCommand> ConnectionCommandPtr;
+
+// This is very similar to ConnectionEvent
 struct ConnectionCommand
 {
-	enum ConnectionCommandType type;
+	const ConnectionCommandType type;
 	Address address;
-	u16 peer_id;
-	u8 channelnum;
+	session_t peer_id = PEER_ID_INEXISTENT;
+	u8 channelnum = 0;
 	Buffer<u8> data;
-	bool reliable;
-	bool raw;
+	bool reliable = false;
+	bool raw = false;
 
-	ConnectionCommand(): type(CONNCMD_NONE), peer_id(PEER_ID_INEXISTENT), reliable(false), raw(false) {}
+	DISABLE_CLASS_COPY(ConnectionCommand);
 
-	void serve(Address address_)
-	{
-		type = CONNCMD_SERVE;
-		address = address_;
-	}
-	void connect(Address address_)
-	{
-		type = CONNCMD_CONNECT;
-		address = address_;
-	}
-	void disconnect()
-	{
-		type = CONNCMD_DISCONNECT;
-	}
-	void disconnect_peer(u16 peer_id_)
-	{
-		type = CONNCMD_DISCONNECT_PEER;
-		peer_id = peer_id_;
-	}
-	void send(u16 peer_id_, u8 channelnum_,
-			NetworkPacket* pkt, bool reliable_)
-	{
-		type = CONNCMD_SEND;
-		peer_id = peer_id_;
-		channelnum = channelnum_;
-		data = pkt->oldForgePacket();
-		reliable = reliable_;
-	}
+	static ConnectionCommandPtr serve(Address address);
+	static ConnectionCommandPtr connect(Address address);
+	static ConnectionCommandPtr disconnect();
+	static ConnectionCommandPtr disconnect_peer(session_t peer_id);
+	static ConnectionCommandPtr send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	static ConnectionCommandPtr ack(session_t peer_id, u8 channelnum, const Buffer<u8> &data);
+	static ConnectionCommandPtr createPeer(session_t peer_id, const Buffer<u8> &data);
 
-	void ack(u16 peer_id_, u8 channelnum_, SharedBuffer<u8> data_)
-	{
-		type = CONCMD_ACK;
-		peer_id = peer_id_;
-		channelnum = channelnum_;
-		data = data_;
-		reliable = false;
-	}
+private:
+	ConnectionCommand(ConnectionCommandType type_) :
+		type(type_) {}
 
-	void createPeer(u16 peer_id_, SharedBuffer<u8> data_)
-	{
-		type = CONCMD_CREATE_PEER;
-		peer_id = peer_id_;
-		data = data_;
-		channelnum = 0;
-		reliable = true;
-		raw = true;
-	}
-
-	void disableLegacy(u16 peer_id_, SharedBuffer<u8> data_)
-	{
-		type = CONCMD_DISABLE_LEGACY;
-		peer_id = peer_id_;
-		data = data_;
-		channelnum = 0;
-		reliable = true;
-		raw = true;
-	}
+	static ConnectionCommandPtr create(ConnectionCommandType type);
 };
+
+/* maximum window size to use, 0xFFFF is theoretical maximum. don't think about
+ * touching it, the less you're away from it the more likely data corruption
+ * will occur
+ */
+#define MAX_RELIABLE_WINDOW_SIZE 0x8000
+/* starting value for window size */
+#define START_RELIABLE_WINDOW_SIZE 0x400
+/* minimum value for window size */
+#define MIN_RELIABLE_WINDOW_SIZE 0x40
 
 class Channel
 {
@@ -521,15 +393,15 @@ public:
 	ReliablePacketBuffer outgoing_reliables_sent;
 
 	//queued reliable packets
-	std::queue<BufferedPacket> queued_reliables;
+	std::queue<BufferedPacketPtr> queued_reliables;
 
 	//queue commands prior splitting to packets
-	std::deque<ConnectionCommand> queued_commands;
+	std::deque<ConnectionCommandPtr> queued_commands;
 
 	IncomingSplitBuffer incoming_splits;
 
-	Channel();
-	~Channel();
+	Channel() = default;
+	~Channel() = default;
 
 	void UpdatePacketLossCounter(unsigned int count);
 	void UpdatePacketTooLateCounter();
@@ -537,105 +409,74 @@ public:
 	void UpdateBytesLost(unsigned int bytes);
 	void UpdateBytesReceived(unsigned int bytes);
 
-	void UpdateTimers(float dtime, bool legacy_peer);
+	void UpdateTimers(float dtime);
 
-	const float getCurrentDownloadRateKB()
+	float getCurrentDownloadRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return cur_kbps; };
-	const float getMaxDownloadRateKB()
+	float getMaxDownloadRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return max_kbps; };
 
-	const float getCurrentLossRateKB()
+	float getCurrentLossRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return cur_kbps_lost; };
-	const float getMaxLossRateKB()
+	float getMaxLossRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return max_kbps_lost; };
 
-	const float getCurrentIncomingRateKB()
+	float getCurrentIncomingRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return cur_incoming_kbps; };
-	const float getMaxIncomingRateKB()
+	float getMaxIncomingRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return max_incoming_kbps; };
 
-	const float getAvgDownloadRateKB()
+	float getAvgDownloadRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return avg_kbps; };
-	const float getAvgLossRateKB()
+	float getAvgLossRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return avg_kbps_lost; };
-	const float getAvgIncomingRateKB()
+	float getAvgIncomingRateKB()
 		{ MutexAutoLock lock(m_internal_mutex); return avg_incoming_kbps; };
 
-	const unsigned int getWindowSize() const { return window_size; };
+	u16 getWindowSize() const { return m_window_size; };
 
-	void setWindowSize(unsigned int size) { window_size = size; };
+	void setWindowSize(long size)
+	{
+		m_window_size = (u16)rangelim(size, MIN_RELIABLE_WINDOW_SIZE, MAX_RELIABLE_WINDOW_SIZE);
+	}
+
 private:
-	Mutex m_internal_mutex;
-	int window_size;
+	std::mutex m_internal_mutex;
+	u16 m_window_size = MIN_RELIABLE_WINDOW_SIZE;
 
-	u16 next_incoming_seqnum;
+	u16 next_incoming_seqnum = SEQNUM_INITIAL;
 
-	u16 next_outgoing_seqnum;
-	u16 next_outgoing_split_seqnum;
+	u16 next_outgoing_seqnum = SEQNUM_INITIAL;
+	u16 next_outgoing_split_seqnum = SEQNUM_INITIAL;
 
-	unsigned int current_packet_loss;
-	unsigned int current_packet_too_late;
-	unsigned int current_packet_successfull;
-	float packet_loss_counter;
+	unsigned int current_packet_loss = 0;
+	unsigned int current_packet_too_late = 0;
+	unsigned int current_packet_successful = 0;
+	float packet_loss_counter = 0.0f;
 
-	unsigned int current_bytes_transfered;
-	unsigned int current_bytes_received;
-	unsigned int current_bytes_lost;
-	float max_kbps;
-	float cur_kbps;
-	float avg_kbps;
-	float max_incoming_kbps;
-	float cur_incoming_kbps;
-	float avg_incoming_kbps;
-	float max_kbps_lost;
-	float cur_kbps_lost;
-	float avg_kbps_lost;
-	float bpm_counter;
+	unsigned int current_bytes_transfered = 0;
+	unsigned int current_bytes_received = 0;
+	unsigned int current_bytes_lost = 0;
+	float max_kbps = 0.0f;
+	float cur_kbps = 0.0f;
+	float avg_kbps = 0.0f;
+	float max_incoming_kbps = 0.0f;
+	float cur_incoming_kbps = 0.0f;
+	float avg_incoming_kbps = 0.0f;
+	float max_kbps_lost = 0.0f;
+	float cur_kbps_lost = 0.0f;
+	float avg_kbps_lost = 0.0f;
+	float bpm_counter = 0.0f;
 
-	unsigned int rate_samples;
+	unsigned int rate_samples = 0;
 };
 
 class Peer;
 
-enum PeerChangeType
-{
-	PEER_ADDED,
-	PEER_REMOVED
-};
-struct PeerChange
-{
-	PeerChangeType type;
-	u16 peer_id;
-	bool timeout;
-};
-
-class PeerHandler
-{
-public:
-
-	PeerHandler()
-	{
-	}
-	virtual ~PeerHandler()
-	{
-	}
-
-	/*
-		This is called after the Peer has been inserted into the
-		Connection's peer container.
-	*/
-	virtual void peerAdded(u16 peer_id) = 0;
-	/*
-		This is called before the Peer has been removed from the
-		Connection's peer container.
-	*/
-	virtual void deletingPeer(u16 peer_id, bool timeout) = 0;
-};
-
 class PeerHelper
 {
 public:
-	PeerHelper();
+	PeerHelper() = default;
 	PeerHelper(Peer* peer);
 	~PeerHelper();
 
@@ -646,19 +487,10 @@ public:
 	bool          operator!=(void* ptr);
 
 private:
-	Peer* m_peer;
+	Peer *m_peer = nullptr;
 };
 
 class Connection;
-
-typedef enum {
-	MIN_RTT,
-	MAX_RTT,
-	AVG_RTT,
-	MIN_JITTER,
-	MAX_JITTER,
-	AVG_JITTER
-} rtt_stat_type;
 
 typedef enum {
 	CUR_DL_RATE,
@@ -673,25 +505,12 @@ class Peer {
 	public:
 		friend class PeerHelper;
 
-		Peer(Address address_,u16 id_,Connection* connection) :
+		Peer(Address address_,session_t id_,Connection* connection) :
 			id(id_),
-			m_increment_packets_remaining(9),
-			m_increment_bytes_remaining(0),
-			m_pending_deletion(false),
 			m_connection(connection),
 			address(address_),
-			m_ping_timer(0.0),
-			m_last_rtt(-1.0),
-			m_usage(0),
-			m_timeout_counter(0.0),
 			m_last_timeout_check(porting::getTimeMs())
 		{
-			m_rtt.avg_rtt = -1.0;
-			m_rtt.jitter_avg = -1.0;
-			m_rtt.jitter_max = 0.0;
-			m_rtt.max_rtt = 0.0;
-			m_rtt.jitter_min = FLT_MAX;
-			m_rtt.min_rtt = FLT_MAX;
 		};
 
 		virtual ~Peer() {
@@ -700,11 +519,11 @@ class Peer {
 		};
 
 		// Unique id of the peer
-		u16 id;
+		const session_t id;
 
 		void Drop();
 
-		virtual void PutReliableSendCommand(ConnectionCommand &c,
+		virtual void PutReliableSendCommand(ConnectionCommandPtr &c,
 						unsigned int max_packet_size) {};
 
 		virtual bool getAddress(MTProtocols type, Address& toset) = 0;
@@ -713,22 +532,21 @@ class Peer {
 		{ MutexAutoLock lock(m_exclusive_access_mutex); return m_pending_deletion; };
 
 		void ResetTimeout()
-			{MutexAutoLock lock(m_exclusive_access_mutex); m_timeout_counter=0.0; };
+			{MutexAutoLock lock(m_exclusive_access_mutex); m_timeout_counter = 0.0; };
 
 		bool isTimedOut(float timeout);
 
-		unsigned int m_increment_packets_remaining;
-		unsigned int m_increment_bytes_remaining;
+		unsigned int m_increment_packets_remaining = 0;
 
 		virtual u16 getNextSplitSequenceNumber(u8 channel) { return 0; };
 		virtual void setNextSplitSequenceNumber(u8 channel, u16 seqnum) {};
-		virtual SharedBuffer<u8> addSpiltPacket(u8 channel,
-												BufferedPacket toadd,
-												bool reliable)
-				{
-					fprintf(stderr,"Peer: addSplitPacket called, this is supposed to be never called!\n");
-					return SharedBuffer<u8>(0);
-				};
+		virtual SharedBuffer<u8> addSplitPacket(u8 channel, BufferedPacketPtr &toadd,
+				bool reliable)
+		{
+			errorstream << "Peer::addSplitPacket called,"
+					<< " this is supposed to be never called!" << std::endl;
+			return SharedBuffer<u8>(0);
+		};
 
 		virtual bool Ping(float dtime, SharedBuffer<u8>& data) { return false; };
 
@@ -753,15 +571,15 @@ class Peer {
 		virtual void reportRTT(float rtt) {};
 
 		void RTTStatistics(float rtt,
-							std::string profiler_id="",
-							unsigned int num_samples=1000);
+							const std::string &profiler_id = "",
+							unsigned int num_samples = 1000);
 
 		bool IncUseCount();
 		void DecUseCount();
 
-		Mutex m_exclusive_access_mutex;
+		mutable std::mutex m_exclusive_access_mutex;
 
-		bool m_pending_deletion;
+		bool m_pending_deletion = false;
 
 		Connection* m_connection;
 
@@ -769,28 +587,30 @@ class Peer {
 		Address address;
 
 		// Ping timer
-		float m_ping_timer;
+		float m_ping_timer = 0.0f;
 	private:
 
 		struct rttstats {
-			float jitter_min;
-			float jitter_max;
-			float jitter_avg;
-			float min_rtt;
-			float max_rtt;
-			float avg_rtt;
+			float jitter_min = FLT_MAX;
+			float jitter_max = 0.0f;
+			float jitter_avg = -1.0f;
+			float min_rtt = FLT_MAX;
+			float max_rtt = 0.0f;
+			float avg_rtt = -1.0f;
+
+			rttstats() = default;
 		};
 
 		rttstats m_rtt;
-		float    m_last_rtt;
+		float m_last_rtt = -1.0f;
 
 		// current usage count
-		unsigned int m_usage;
+		unsigned int m_usage = 0;
 
 		// Seconds from last receive
-		float m_timeout_counter;
+		float m_timeout_counter = 0.0f;
 
-		u32 m_last_timeout_check;
+		u64 m_last_timeout_check;
 };
 
 class UDPPeer : public Peer
@@ -803,25 +623,18 @@ public:
 	friend class Connection;
 
 	UDPPeer(u16 a_id, Address a_address, Connection* connection);
-	virtual ~UDPPeer() {};
+	virtual ~UDPPeer() = default;
 
-	void PutReliableSendCommand(ConnectionCommand &c,
+	void PutReliableSendCommand(ConnectionCommandPtr &c,
 							unsigned int max_packet_size);
 
 	bool getAddress(MTProtocols type, Address& toset);
 
-	void setNonLegacyPeer();
-
-	bool getLegacyPeer()
-	{ return m_legacy_peer; }
-
 	u16 getNextSplitSequenceNumber(u8 channel);
 	void setNextSplitSequenceNumber(u8 channel, u16 seqnum);
 
-	SharedBuffer<u8> addSpiltPacket(u8 channel,
-									BufferedPacket toadd,
-									bool reliable);
-
+	SharedBuffer<u8> addSplitPacket(u8 channel, BufferedPacketPtr &toadd,
+		bool reliable);
 
 protected:
 	/*
@@ -843,23 +656,21 @@ protected:
 	bool Ping(float dtime,SharedBuffer<u8>& data);
 
 	Channel channels[CHANNEL_COUNT];
-	bool m_pending_disconnect;
+	bool m_pending_disconnect = false;
 private:
 	// This is changed dynamically
-	float resend_timeout;
+	float resend_timeout = 0.5;
 
 	bool processReliableSendCommand(
-					ConnectionCommand &c,
+					ConnectionCommandPtr &c_ptr,
 					unsigned int max_packet_size);
-
-	bool m_legacy_peer;
 };
 
 /*
 	Connection
 */
 
-enum ConnectionEventType{
+enum ConnectionEventType {
 	CONNEVENT_NONE,
 	CONNEVENT_DATA_RECEIVED,
 	CONNEVENT_PEER_ADDED,
@@ -867,155 +678,35 @@ enum ConnectionEventType{
 	CONNEVENT_BIND_FAILED,
 };
 
+struct ConnectionEvent;
+typedef std::shared_ptr<ConnectionEvent> ConnectionEventPtr;
+
+// This is very similar to ConnectionCommand
 struct ConnectionEvent
 {
-	enum ConnectionEventType type;
-	u16 peer_id;
+	const ConnectionEventType type;
+	session_t peer_id = 0;
 	Buffer<u8> data;
-	bool timeout;
+	bool timeout = false;
 	Address address;
 
-	ConnectionEvent(): type(CONNEVENT_NONE), peer_id(0),
-			timeout(false) {}
+	// We don't want to copy "data"
+	DISABLE_CLASS_COPY(ConnectionEvent);
 
-	std::string describe()
-	{
-		switch(type) {
-		case CONNEVENT_NONE:
-			return "CONNEVENT_NONE";
-		case CONNEVENT_DATA_RECEIVED:
-			return "CONNEVENT_DATA_RECEIVED";
-		case CONNEVENT_PEER_ADDED:
-			return "CONNEVENT_PEER_ADDED";
-		case CONNEVENT_PEER_REMOVED:
-			return "CONNEVENT_PEER_REMOVED";
-		case CONNEVENT_BIND_FAILED:
-			return "CONNEVENT_BIND_FAILED";
-		}
-		return "Invalid ConnectionEvent";
-	}
+	static ConnectionEventPtr create(ConnectionEventType type);
+	static ConnectionEventPtr dataReceived(session_t peer_id, const Buffer<u8> &data);
+	static ConnectionEventPtr peerAdded(session_t peer_id, Address address);
+	static ConnectionEventPtr peerRemoved(session_t peer_id, bool is_timeout, Address address);
+	static ConnectionEventPtr bindFailed();
 
-	void dataReceived(u16 peer_id_, SharedBuffer<u8> data_)
-	{
-		type = CONNEVENT_DATA_RECEIVED;
-		peer_id = peer_id_;
-		data = data_;
-	}
-	void peerAdded(u16 peer_id_, Address address_)
-	{
-		type = CONNEVENT_PEER_ADDED;
-		peer_id = peer_id_;
-		address = address_;
-	}
-	void peerRemoved(u16 peer_id_, bool timeout_, Address address_)
-	{
-		type = CONNEVENT_PEER_REMOVED;
-		peer_id = peer_id_;
-		timeout = timeout_;
-		address = address_;
-	}
-	void bindFailed()
-	{
-		type = CONNEVENT_BIND_FAILED;
-	}
-};
-
-class ConnectionSendThread : public Thread {
-
-public:
-	friend class UDPPeer;
-
-	ConnectionSendThread(unsigned int max_packet_size, float timeout);
-
-	void *run();
-
-	void Trigger();
-
-	void setParent(Connection* parent) {
-		assert(parent != NULL); // Pre-condition
-		m_connection = parent;
-	}
-
-	void setPeerTimeout(float peer_timeout)
-		{ m_timeout = peer_timeout; }
+	const char *describe() const;
 
 private:
-	void runTimeouts    (float dtime);
-	void rawSend        (const BufferedPacket &packet);
-	bool rawSendAsPacket(u16 peer_id, u8 channelnum,
-							SharedBuffer<u8> data, bool reliable);
-
-	void processReliableCommand (ConnectionCommand &c);
-	void processNonReliableCommand (ConnectionCommand &c);
-	void serve          (Address bind_address);
-	void connect        (Address address);
-	void disconnect     ();
-	void disconnect_peer(u16 peer_id);
-	void send           (u16 peer_id, u8 channelnum,
-							SharedBuffer<u8> data);
-	void sendReliable   (ConnectionCommand &c);
-	void sendToAll      (u8 channelnum,
-							SharedBuffer<u8> data);
-	void sendToAllReliable(ConnectionCommand &c);
-
-	void sendPackets    (float dtime);
-
-	void sendAsPacket   (u16 peer_id, u8 channelnum,
-							SharedBuffer<u8> data,bool ack=false);
-
-	void sendAsPacketReliable(BufferedPacket& p, Channel* channel);
-
-	bool packetsQueued();
-
-	Connection*           m_connection;
-	unsigned int          m_max_packet_size;
-	float                 m_timeout;
-	std::queue<OutgoingPacket> m_outgoing_queue;
-	Semaphore             m_send_sleep_semaphore;
-
-	unsigned int          m_iteration_packets_avaialble;
-	unsigned int          m_max_commands_per_iteration;
-	unsigned int          m_max_data_packets_per_iteration;
-	unsigned int          m_max_packets_requeued;
+	ConnectionEvent(ConnectionEventType type_) :
+		type(type_) {}
 };
 
-class ConnectionReceiveThread : public Thread {
-public:
-	ConnectionReceiveThread(unsigned int max_packet_size);
-
-	void *run();
-
-	void setParent(Connection *parent) {
-		assert(parent); // Pre-condition
-		m_connection = parent;
-	}
-
-private:
-	void receive();
-
-	// Returns next data from a buffer if possible
-	// If found, returns true; if not, false.
-	// If found, sets peer_id and dst
-	bool getFromBuffers(u16 &peer_id, SharedBuffer<u8> &dst);
-
-	bool checkIncomingBuffers(Channel *channel, u16 &peer_id,
-							SharedBuffer<u8> &dst);
-
-	/*
-		Processes a packet with the basic header stripped out.
-		Parameters:
-			packetdata: Data in packet (with no base headers)
-			peer_id: peer id of the sender of the packet in question
-			channelnum: channel on which the packet was sent
-			reliable: true if recursing into a reliable packet
-	*/
-	SharedBuffer<u8> processPacket(Channel *channel,
-							SharedBuffer<u8> packetdata, u16 peer_id,
-							u8 channelnum, bool reliable);
-
-
-	Connection*           m_connection;
-};
+class PeerHandler;
 
 class Connection
 {
@@ -1028,85 +719,90 @@ public:
 	~Connection();
 
 	/* Interface */
-	ConnectionEvent waitEvent(u32 timeout_ms);
-	void putCommand(ConnectionCommand &c);
+	ConnectionEventPtr waitEvent(u32 timeout_ms);
 
-	void SetTimeoutMs(int timeout) { m_bc_receive_timeout = timeout; }
+	void putCommand(ConnectionCommandPtr c);
+
+	void SetTimeoutMs(u32 timeout) { m_bc_receive_timeout = timeout; }
 	void Serve(Address bind_addr);
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(NetworkPacket* pkt, int timeout = 0);
-	void Send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
-	u16 GetPeerID() { return m_peer_id; }
-	Address GetPeerAddress(u16 peer_id);
-	float getPeerStat(u16 peer_id, rtt_stat_type type);
+	u32 Receive(NetworkPacket* pkt);
+	bool TryReceive(NetworkPacket *pkt);
+	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	session_t GetPeerID() const { return m_peer_id; }
+	Address GetPeerAddress(session_t peer_id);
+	float getPeerStat(session_t peer_id, rtt_stat_type type);
 	float getLocalStat(rate_stat_type type);
-	const u32 GetProtocolID() const { return m_protocol_id; };
+	u32 GetProtocolID() const { return m_protocol_id; };
 	const std::string getDesc();
-	void DisconnectPeer(u16 peer_id);
+	void DisconnectPeer(session_t peer_id);
 
 protected:
-	PeerHelper getPeer(u16 peer_id);
-	PeerHelper getPeerNoEx(u16 peer_id);
+	PeerHelper getPeerNoEx(session_t peer_id);
 	u16   lookupPeer(Address& sender);
 
 	u16 createPeer(Address& sender, MTProtocols protocol, int fd);
 	UDPPeer*  createServerPeer(Address& sender);
-	bool deletePeer(u16 peer_id, bool timeout);
+	bool deletePeer(session_t peer_id, bool timeout);
 
-	void SetPeerID(u16 id) { m_peer_id = id; }
+	void SetPeerID(session_t id) { m_peer_id = id; }
 
-	void sendAck(u16 peer_id, u8 channelnum, u16 seqnum);
+	void sendAck(session_t peer_id, u8 channelnum, u16 seqnum);
 
-	void PrintInfo(std::ostream &out);
-	void PrintInfo();
-
-	std::list<u16> getPeerIDs()
+	std::vector<session_t> getPeerIDs()
 	{
 		MutexAutoLock peerlock(m_peers_mutex);
 		return m_peer_ids;
 	}
 
 	UDPSocket m_udpSocket;
-	MutexedQueue<ConnectionCommand> m_command_queue;
+	// Command queue: user -> SendThread
+	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 
-	void putEvent(ConnectionEvent &e);
+public:
+	u32 Receive(NetworkPacket *pkt, u32 timeout);
+protected:
 
-	void TriggerSend()
-		{ m_sendThread.Trigger(); }
+	void putEvent(ConnectionEventPtr e);
+
+	void TriggerSend();
+
+	bool ConnectedToServer()
+	{
+		return getPeerNoEx(PEER_ID_SERVER) != nullptr;
+	}
 private:
-	std::list<Peer*> getPeers();
+	// Event queue: ReceiveThread -> user
+	MutexedQueue<ConnectionEventPtr> m_event_queue;
 
-	MutexedQueue<ConnectionEvent> m_event_queue;
-
-	std::atomic_ushort m_peer_id;
+	atomic_session_t m_peer_id = 0;
 	u32 m_protocol_id;
 
-	std::map<u16, Peer*> m_peers;
-	std::list<u16> m_peer_ids;
-	Mutex m_peers_mutex;
+	std::map<session_t, Peer *> m_peers;
+	std::vector<session_t> m_peer_ids;
+	std::mutex m_peers_mutex;
 
-	ConnectionSendThread m_sendThread;
-	ConnectionReceiveThread m_receiveThread;
+	std::unique_ptr<ConnectionSendThread> m_sendThread;
+	std::unique_ptr<ConnectionReceiveThread> m_receiveThread;
 
-	Mutex m_info_mutex;
+	mutable std::mutex m_info_mutex;
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
-	int m_bc_receive_timeout;
+	u32 m_bc_receive_timeout = 0;
 
-	bool m_shutting_down;
+	std::atomic_bool m_shutting_down = false;
 
-	u16 m_next_remote_peer_id;
+	session_t m_next_remote_peer_id = 2;
 
 //freeminer:
 public:
 	size_t events_size() { return m_event_queue.size(); }
+
 };
 
 } // namespace
-
-#endif
 
 #endif

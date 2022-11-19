@@ -20,87 +20,104 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PLAYER_HEADER
-#define PLAYER_HEADER
+#pragma once
 
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
-#include "constants.h" // BS
-#include "threading/mutex.h"
+#include "constants.h"
+#include "network/networkprotocol.h"
+#include "util/basic_macros.h"
+#include <atomic>
 #include <list>
 #include "threading/lock.h"
 #include "json/json.h"
+#include <mutex>
 
 #define PLAYERNAME_SIZE 20
 
 #define PLAYERNAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 #define PLAYERNAME_ALLOWED_CHARS_USER_EXPL "'a' to 'z', 'A' to 'Z', '0' to '9', '-', '_'"
 
+struct PlayerFovSpec
+{
+	f32 fov;
+
+	// Whether to multiply the client's FOV or to override it
+	bool is_multiplier;
+
+	// The time to be take to trasition to the new FOV value.
+	// Transition is instantaneous if omitted. Omitted by default.
+	f32 transition_time;
+};
+
 struct PlayerControl
 {
-	PlayerControl()
-	{
-		up = false;
-		down = false;
-		left = false;
-		right = false;
-		jump = false;
-		aux1 = false;
-		sneak = false;
-		LMB = false;
-		RMB = false;
-		pitch = 0;
-		yaw = 0;
-		sidew_move_joystick_axis = .0f;
-		forw_move_joystick_axis = .0f;
-	}
+	PlayerControl() = default;
 
 	PlayerControl(
-		bool a_up,
-		bool a_down,
-		bool a_left,
-		bool a_right,
-		bool a_jump,
-		bool a_aux1,
-		bool a_sneak,
+		bool a_up, bool a_down, bool a_left, bool a_right,
+		bool a_jump, bool a_aux1, bool a_sneak,
 		bool a_zoom,
-		bool a_LMB,
-		bool a_RMB,
-		float a_pitch,
-		float a_yaw,
-		float a_sidew_move_joystick_axis,
-		float a_forw_move_joystick_axis
+		bool a_dig, bool a_place,
+		float a_pitch, float a_yaw,
+		float a_movement_speed, float a_movement_direction
 	)
 	{
-		up = a_up;
-		down = a_down;
-		left = a_left;
-		right = a_right;
+		// Encode direction keys into a single value so nobody uses it accidentally
+		// as movement_{speed,direction} is supposed to be the source of truth.
+		direction_keys = (a_up&1) | ((a_down&1) << 1) |
+			((a_left&1) << 2) | ((a_right&1) << 3);
 		jump = a_jump;
 		aux1 = a_aux1;
 		sneak = a_sneak;
 		zoom = a_zoom;
-		LMB = a_LMB;
-		RMB = a_RMB;
+		dig = a_dig;
+		place = a_place;
 		pitch = a_pitch;
 		yaw = a_yaw;
-		sidew_move_joystick_axis = a_sidew_move_joystick_axis;
-		forw_move_joystick_axis = a_forw_move_joystick_axis;
+		movement_speed = a_movement_speed;
+		movement_direction = a_movement_direction;
 	}
-	bool up;
-	bool down;
-	bool left;
-	bool right;
-	bool jump;
-	bool aux1;
-	bool sneak;
-	bool zoom;
-	bool LMB;
-	bool RMB;
-	float pitch;
-	float yaw;
-	float sidew_move_joystick_axis;
-	float forw_move_joystick_axis;
+
+#ifndef SERVER
+	// For client use
+	u32 getKeysPressed() const;
+	inline bool isMoving() const { return movement_speed > 0.001f; }
+#endif
+
+	// For server use
+	void unpackKeysPressed(u32 keypress_bits);
+
+	u8 direction_keys = 0;
+	bool jump = false;
+	bool aux1 = false;
+	bool sneak = false;
+	bool zoom = false;
+	bool dig = false;
+	bool place = false;
+	// Note: These four are NOT available on the server
+	float pitch = 0.0f;
+	float yaw = 0.0f;
+	float movement_speed = 0.0f;
+	float movement_direction = 0.0f;
+};
+
+struct PlayerSettings
+{
+	bool free_move = false;
+	bool pitch_move = false;
+	bool fast_move = false;
+	bool continuous_forward = false;
+	bool always_fly_fast = false;
+	bool aux1_descends = false;
+	bool noclip = false;
+	bool autojump = false;
+
+	const std::string setting_names[8] = {
+		"free_move", "pitch_move", "fast_move", "continuous_forward", "always_fly_fast",
+		"aux1_descends", "noclip", "autojump"
+	};
+	void readGlobalSettings();
 };
 
 class Map;
@@ -108,16 +125,15 @@ struct CollisionInfo;
 struct HudElement;
 class Environment;
 
-// IMPORTANT:
-// Do *not* perform an assignment or copy operation on a Player or
-// RemotePlayer object!  This will copy the lock held for HUD synchronization
 class Player
-: public locker<>
+: public shared_locker
 {
 public:
 
 	Player(const std::string & name, IItemDefManager *idef);
 	virtual ~Player() = 0;
+
+	DISABLE_CLASS_COPY(Player);
 
 	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
 	{}
@@ -125,15 +141,15 @@ public:
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
-	v3f getSpeed()
+	v3f getSpeed() //const
 	{
-		auto lock = lock_shared_rec();
+		auto lock = lock_shared();
 		return m_speed;
 	}
 
 	void setSpeed(v3f speed)
 	{
-		auto lock = lock_unique_rec();
+		auto lock = lock_unique();
 		m_speed = speed;
 	}
 
@@ -225,20 +241,32 @@ public:
 	v2s32 local_animations[4];
 	float local_animation_speed;
 
-	//std::atomic_ushort hp;
-
-	std::atomic_short peer_id;
-
 	std::string inventory_formspec;
+	std::string formspec_prepend;
 
 	PlayerControl control;
-	Mutex control_mutex;
-	const PlayerControl& getPlayerControl() {
-		std::lock_guard<Mutex> lock(control_mutex);
+	std::mutex control_mutex;
+	const PlayerControl& getPlayerControl() { 
+				std::lock_guard<std::mutex> lock(control_mutex);
 		return control;
 	}
+	PlayerSettings &getPlayerSettings() { return m_player_settings; }
+	static void settingsChangedCallback(const std::string &name, void *data);
 
-	u32 keyPressed;
+	// Returns non-empty `selected` ItemStack. `hand` is a fallback, if specified
+	ItemStack &getWieldedItem(ItemStack *selected, ItemStack *hand) const;
+	void setWieldIndex(u16 index);
+	u16 getWieldIndex() const { return m_wield_index; }
+
+	void setFov(const PlayerFovSpec &spec)
+	{
+		m_fov_override_spec = spec;
+	}
+
+	const PlayerFovSpec &getFov() const
+	{
+		return m_fov_override_spec;
+	}
 
 	HudElement* getHud(u32 id);
 	u32         addHud(HudElement* hud);
@@ -248,23 +276,24 @@ public:
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
 
+    // fm:
 	std::string hotbar_image;
-	int hotbar_image_items;
+	int hotbar_image_items = 0;
 	std::string hotbar_selected_image;
 
 	std::string m_name;
+
 protected:
 	//char m_name[PLAYERNAME_SIZE];
 	v3f m_speed;
+	std::atomic_uint16_t m_wield_index {0};
+	PlayerFovSpec m_fov_override_spec = { 0.0f, false, 0.0f };
 
 	std::vector<HudElement *> hud;
 private:
 	// Protect some critical areas
 	// hud for example can be modified by EmergeThread
 	// and ServerThread
-	Mutex m_mutex;
+	std::mutex m_mutex;
+	PlayerSettings m_player_settings;
 };
-
-
-#endif
-

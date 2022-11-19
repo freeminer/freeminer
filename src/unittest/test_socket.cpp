@@ -20,8 +20,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "test.h"
 
 #include "log.h"
-#include "socket.h"
 #include "settings.h"
+#include "network/socket.h"
 
 #include "util/numeric.h"
 
@@ -132,7 +132,7 @@ void TestSocket::testIPv6Socket()
 
 	socket6.Bind(address6);
 
-	try {
+	{
 		socket6.Send(Address(&bytes, port), sendbuffer, sizeof(sendbuffer));
 
 		sleep_ms(50);
@@ -146,10 +146,8 @@ void TestSocket::testIPv6Socket()
 		}
 		//FIXME: This fails on some systems
 		UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer)) == 0);
+
 		UASSERT(memcmp(sender.getAddress6().sin6_addr.s6_addr,
 				Address(&bytes, 0).getAddress6().sin6_addr.s6_addr, 16) == 0);
-	} catch (SendFailedException &e) {
-		errorstream << "IPv6 support enabled but not available!"
-					<< std::endl;
 	}
 }

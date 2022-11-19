@@ -88,7 +88,7 @@ local function instrument(def)
 	if not def or not def.func then
 		return
 	end
-	def.mod = def.mod or get_current_modname()
+	def.mod = def.mod or get_current_modname() or "??"
 	local modname = def.mod
 	local instrument_name = generate_name(def)
 	local func = def.func
@@ -102,8 +102,9 @@ local function instrument(def)
 		-- also called https://en.wikipedia.org/wiki/Continuation_passing_style
 		-- Compared to table creation and unpacking it won't lose `nil` returns
 		-- and is expected to be faster
-		-- `measure` will be executed after time() and func(...)
-		return measure(modname, instrument_name, time(), func(...))
+		-- `measure` will be executed after func(...)
+		local start = time()
+		return measure(modname, instrument_name, start, func(...))
 	end
 end
 
@@ -117,7 +118,8 @@ end
 local function assert_can_be_called(func, func_name, level)
 	if not can_be_called(func) then
 		-- Then throw an *helpful* error, by pointing on our caller instead of us.
-		error(format("Invalid argument to %s. Expected function-like type instead of '%s'.", func_name, type(func)), level + 1)
+		error(format("Invalid argument to %s. Expected function-like type instead of '%s'.",
+				func_name, type(func)), level + 1)
 	end
 end
 
@@ -133,7 +135,7 @@ local function instrument_register(func, func_name)
 		return func(instrument {
 			func = callback,
 			func_name = register_name
-		}), ...
+		}, ...)
 	end
 end
 
@@ -159,9 +161,10 @@ local function init()
 		-- Simple iteration would ignore lookup via __index.
 		local entity_instrumentation = {
 			"on_activate",
+			"on_deactivate",
 			"on_step",
 			"on_punch",
-			"rightclick",
+			"on_rightclick",
 			"get_staticdata",
 		}
 		-- Wrap register_entity() to instrument them on registration.

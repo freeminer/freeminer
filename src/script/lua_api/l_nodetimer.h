@@ -20,18 +20,18 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_NODETIMER_H_
-#define L_NODETIMER_H_
+#pragma once
 
-#include "lua_api/l_base.h"
 #include "irr_v3d.h"
+#include "lua_api/l_base.h"
 
-class ServerEnvironment;
+class ServerMap;
 
-class NodeTimerRef : public ModApiBase {
+class NodeTimerRef : public ModApiBase
+{
 private:
 	v3s16 m_p;
-	ServerEnvironment *m_env;
+	ServerMap *m_map;
 
 	static const char className[];
 	static const luaL_Reg methods[];
@@ -53,18 +53,12 @@ private:
 	static int l_get_elapsed(lua_State *L);
 
 public:
-	NodeTimerRef(v3s16 p, ServerEnvironment *env);
-	~NodeTimerRef();
+	NodeTimerRef(v3s16 p, ServerMap *map) : m_p(p), m_map(map) {}
+	~NodeTimerRef() = default;
 
 	// Creates an NodeTimerRef and leaves it on top of stack
 	// Not callable from Lua; all references are created on the C side.
-	static void create(lua_State *L, v3s16 p, ServerEnvironment *env);
-
-	static void set_null(lua_State *L);
+	static void create(lua_State *L, v3s16 p, ServerMap *map);
 
 	static void Register(lua_State *L);
 };
-
-
-
-#endif /* L_NODETIMER_H_ */

@@ -9,6 +9,11 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 
 Changelog
 ======
+### 5.6.1.0 (?)
+  * auth_kv removed, use instead in world.mt:
+    auth_backend = leveldbfm
+    also supported: player_backend = leveldbfm
+
 
 ### 0.4.14.8 (May 16, 2016)
   * Stability and speed fixes

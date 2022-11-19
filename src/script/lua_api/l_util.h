@@ -20,14 +20,14 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_UTIL_H_
-#define L_UTIL_H_
+#pragma once
 
 #include "lua_api/l_base.h"
 
 class AsyncEngine;
 
-class ModApiUtil : public ModApiBase {
+class ModApiUtil : public ModApiBase
+{
 private:
 	/*
 		NOTE:
@@ -40,36 +40,12 @@ private:
 
 	// log([level,] text)
 	// Writes a line to the logger.
-	// The one-argument version logs to infostream.
+	// The one-argument version logs to LL_NONE.
 	// The two-argument version accepts a log level.
 	static int l_log(lua_State *L);
 
 	// get us precision time
 	static int l_get_us_time(lua_State *L);
-
-// fm old remove:
-/*
-	// setting_set(name, value)
-	static int l_setting_set(lua_State *L);
-
-	// setting_get(name)
-	static int l_setting_get(lua_State *L);
-
-	// setting_setbool(name, value)
-	static int l_setting_setbool(lua_State *L);
-
-	// setting_getbool(name)
-	static int l_setting_getbool(lua_State *L);
-
-	// setting_setjson(name, value)
-	static int l_setting_setjson(lua_State *L);
-
-	// setting_getjson(name[, nullvalue])
-	static int l_setting_getjson(lua_State *L);
-
-	// setting_save()
-	static int l_setting_save(lua_State *L);
-*/
 
 	// parse_json(str[, nullvalue])
 	static int l_parse_json(lua_State *L);
@@ -77,10 +53,13 @@ private:
 	// write_json(data[, styled])
 	static int l_write_json(lua_State *L);
 
-	// get_dig_params(groups, tool_capabilities[, time_from_last_punch])
+	// get_tool_wear_after_use(uses[, initial_wear])
+	static int l_get_tool_wear_after_use(lua_State *L);
+
+	// get_dig_params(groups, tool_capabilities[, wear])
 	static int l_get_dig_params(lua_State *L);
 
-	// get_hit_params(groups, tool_capabilities[, time_from_last_punch])
+	// get_hit_params(groups, tool_capabilities[, time_from_last_punch[, wear]])
 	static int l_get_hit_params(lua_State *L);
 
 	// check_password_entry(name, entry, password)
@@ -95,6 +74,9 @@ private:
 	// get_builtin_path()
 	static int l_get_builtin_path(lua_State *L);
 
+	// get_user_path()
+	static int l_get_user_path(lua_State *L);
+
 	// compress(data, method, ...)
 	static int l_compress(lua_State *L);
 
@@ -104,8 +86,20 @@ private:
 	// mkdir(path)
 	static int l_mkdir(lua_State *L);
 
+	// rmdir(path, recursive)
+	static int l_rmdir(lua_State *L);
+
+	// cpdir(source, destination, remove_source)
+	static int l_cpdir(lua_State *L);
+
+	// mvdir(source, destination)
+	static int l_mvdir(lua_State *L);
+
 	// get_dir_list(path, is_dir)
 	static int l_get_dir_list(lua_State *L);
+
+	// safe_file_write(path, content)
+	static int l_safe_file_write(lua_State *L);
 
 	// request_insecure_environment()
 	static int l_request_insecure_environment(lua_State *L);
@@ -119,13 +113,26 @@ private:
 	// get_version()
 	static int l_get_version(lua_State *L);
 
-public:
+	// sha1(string, raw)
+	static int l_sha1(lua_State *L);
 
+	// colorspec_to_colorstring(colorspec)
+	static int l_colorspec_to_colorstring(lua_State *L);
+
+	// colorspec_to_bytes(colorspec)
+	static int l_colorspec_to_bytes(lua_State *L);
+
+	// encode_png(w, h, data, level)
+	static int l_encode_png(lua_State *L);
+
+	// get_last_run_mod()
+	static int l_get_last_run_mod(lua_State *L);
+
+	// set_last_run_mod(modname)
+	static int l_set_last_run_mod(lua_State *L);
+
+public:
 	static void Initialize(lua_State *L, int top);
 	static void InitializeAsync(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);
-
 };
-
-#endif /* L_UTIL_H_ */
-

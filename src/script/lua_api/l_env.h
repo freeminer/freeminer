@@ -20,17 +20,21 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_ENV_H_
-#define L_ENV_H_
+#pragma once
 
 #include "lua_api/l_base.h"
-#include "environment.h"
+#include "serverenvironment.h"
+#include "raycast.h"
 
 class ModApiEnvMod : public ModApiBase {
 private:
 	// set_node(pos, node)
 	// pos = {x=num, y=num, z=num}
 	static int l_set_node(lua_State *L);
+
+	// bulk_set_node([pos1, pos2, ...], node)
+	// pos = {x=num, y=num, z=num}
+	static int l_bulk_set_node(lua_State *L);
 
 	static int l_add_node(lua_State *L);
 
@@ -54,6 +58,11 @@ private:
 	// pos = {x=num, y=num, z=num}
 	// timeofday: nil = current time, 0 = night, 0.5 = day
 	static int l_get_node_light(lua_State *L);
+
+	// get_natural_light(pos, timeofday)
+	// pos = {x=num, y=num, z=num}
+	// timeofday: nil = current time, 0 = night, 0.5 = day
+	static int l_get_natural_light(lua_State *L);
 
 	// place_node(pos, node)
 	// pos = {x=num, y=num, z=num}
@@ -103,11 +112,17 @@ private:
 	// pos = {x=num, y=num, z=num}
 	static int l_add_item(lua_State *L);
 
+	// get_connected_players()
+	static int l_get_connected_players(lua_State *L);
+
 	// get_player_by_name(name)
 	static int l_get_player_by_name(lua_State *L);
 
 	// get_objects_inside_radius(pos, radius)
 	static int l_get_objects_inside_radius(lua_State *L);
+
+	// get_objects_in_area(pos, minp, maxp)
+	static int l_get_objects_in_area(lua_State *L);
 
 	// set_timeofday(val)
 	// val = 0...1
@@ -122,7 +137,7 @@ private:
 	// get_day_count() -> int
 	static int l_get_day_count(lua_State *L);
 
-	// find_node_near(pos, radius, nodenames) -> pos or nil
+	// find_node_near(pos, radius, nodenames, search_center) -> pos or nil
 	// nodenames: eg. {"ignore", "group:tree"} or "default:dirt"
 	static int l_find_node_near(lua_State *L);
 
@@ -133,6 +148,12 @@ private:
 	// find_surface_nodes_in_area(minp, maxp, nodenames) -> list of positions
 	// nodenames: eg. {"ignore", "group:tree"} or "default:dirt"
 	static int l_find_nodes_in_area_under_air(lua_State *L);
+
+	// fix_light(p1, p2) -> true/false
+	static int l_fix_light(lua_State *L);
+
+	// load_area(p1)
+	static int l_load_area(lua_State *L);
 
 	// emerge_area(p1, p2)
 	static int l_emerge_area(lua_State *L);
@@ -159,8 +180,11 @@ private:
 	// spawn_tree(pos, treedef)
 	static int l_spawn_tree(lua_State *L);
 
-	// line_of_sight(pos1, pos2, stepsize) -> true/false
+	// line_of_sight(pos1, pos2) -> true/false
 	static int l_line_of_sight(lua_State *L);
+
+	// raycast(pos1, pos2, objects, liquids) -> Raycast
+	static int l_raycast(lua_State *L);
 
 	// find_path(pos1, pos2, searchdistance,
 	//     max_jump, max_drop, algorithm) -> table containing path
@@ -169,9 +193,6 @@ private:
 	// transforming_liquid_add(pos)
 	static int l_transforming_liquid_add(lua_State *L);
 
-	static int l_get_heat(lua_State *L);
-	static int l_get_humidity(lua_State *L);
-	
 	// freeminer.get_surface(basepos,yoffset,walkable_only=false)
 	static int l_get_surface(lua_State *L);
 
@@ -193,43 +214,59 @@ private:
 /*
 	static int l_make_explosion(lua_State *L);
 */
+	// compare_block_status(nodepos)
+	static int l_compare_block_status(lua_State *L);
+
+	// Get a string translated server side
+	static int l_get_translated_string(lua_State * L);
+
+	/* Helpers */
+
+	static void collectNodeIds(lua_State *L, int idx,
+		const NodeDefManager *ndef, std::vector<content_t> &filter);
 
 public:
 	static void Initialize(lua_State *L, int top);
+	static void InitializeClient(lua_State *L, int top);
 
-	static struct EnumString es_ClearObjectsMode[];
+	static const EnumString es_ClearObjectsMode[];
+	static const EnumString es_BlockStatusType[];
 };
 
 class LuaABM : public ActiveBlockModifier {
 private:
 	int m_id;
 
-	std::set<std::string> m_trigger_contents;
-	std::set<std::string> m_required_neighbors;
-	u32 m_neighbors_range;
+	u32 m_neighbors_range = 0;
+	std::vector<std::string> m_trigger_contents;
+	std::vector<std::string> m_required_neighbors;
 	float m_trigger_interval;
 	u32 m_trigger_chance;
 	bool m_simple_catch_up;
+	s16 m_min_y;
+	s16 m_max_y;
 public:
 	LuaABM(lua_State *L, int id,
-			const std::set<std::string> &trigger_contents,
-			const std::set<std::string> &required_neighbors,
+			const std::vector<std::string> &trigger_contents,
+			const std::vector<std::string> &required_neighbors,
 			int neighbors_range,
-			float trigger_interval, u32 trigger_chance, bool simple_catch_up):
+			float trigger_interval, u32 trigger_chance, bool simple_catch_up, s16 min_y, s16 max_y):
 		m_id(id),
+		m_neighbors_range(neighbors_range),
 		m_trigger_contents(trigger_contents),
 		m_required_neighbors(required_neighbors),
-		m_neighbors_range(neighbors_range),
 		m_trigger_interval(trigger_interval),
 		m_trigger_chance(trigger_chance),
-		m_simple_catch_up(simple_catch_up)
+		m_simple_catch_up(simple_catch_up),
+		m_min_y(min_y),
+		m_max_y(max_y)
 	{
 	}
-	virtual std::set<std::string> getTriggerContents()
+	virtual const std::vector<std::string> getTriggerContents() const
 	{
 		return m_trigger_contents;
 	}
-	virtual std::set<std::string> getRequiredNeighbors(bool activate)
+	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const
 	{
 		return m_required_neighbors;
 	}
@@ -248,6 +285,14 @@ public:
 	virtual bool getSimpleCatchUp()
 	{
 		return m_simple_catch_up;
+	}
+	virtual s16 getMinY()
+	{
+		return m_min_y;
+	}
+	virtual s16 getMaxY()
+	{
+		return m_max_y;
 	}
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate);
@@ -271,12 +316,51 @@ public:
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n);
 };
 
+//! Lua wrapper for RaycastState objects
+class LuaRaycast : public ModApiBase
+{
+private:
+	static const char className[];
+	static const luaL_Reg methods[];
+	//! Inner state
+	RaycastState state;
+
+	// Exported functions
+
+	// garbage collector
+	static int gc_object(lua_State *L);
+
+	/*!
+	 * Raycast:next() -> pointed_thing
+	 * Returns the next pointed thing on the ray.
+	 */
+	static int l_next(lua_State *L);
+public:
+	//! Constructor with the same arguments as RaycastState.
+	LuaRaycast(
+		const core::line3d<f32> &shootline,
+		bool objects_pointable,
+		bool liquids_pointable) :
+		state(shootline, objects_pointable, liquids_pointable)
+	{}
+
+	//! Creates a LuaRaycast and leaves it on top of the stack.
+	static int create_object(lua_State *L);
+
+	/*!
+	 * Returns the Raycast from the stack or throws an error.
+	 * @param narg location of the RaycastState in the stack
+	 */
+	static LuaRaycast *checkobject(lua_State *L, int narg);
+
+	//! Registers Raycast as a Lua userdata type.
+	static void Register(lua_State *L);
+};
+
 struct ScriptCallbackState {
-	GameScripting *script;
+	ServerScripting *script;
 	int callback_ref;
 	int args_ref;
 	unsigned int refcount;
 	std::string origin;
 };
-
-#endif /* L_ENV_H_ */

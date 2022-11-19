@@ -20,21 +20,25 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef UTIL_THREAD_HEADER
-#define UTIL_THREAD_HEADER
+#pragma once
 
-#include "../irrlichttypes.h"
-#include "../threading/thread.h"
-#include "../threading/mutex.h"
-#include "../threading/mutex_auto_lock.h"
+#include "irrlichttypes.h"
+#include "threading/thread.h"
+#include "threading/mutex_auto_lock.h"
 #include "porting.h"
 #include "log.h"
+#include "container.h"
+
+//fm:
 #include "../threading/thread_pool.h"
+#include "../fm_porting.h"
+
 
 template<typename T>
-class MutexedVariable {
+class MutexedVariable
+{
 public:
-	MutexedVariable(T value):
+	MutexedVariable(const T &value):
 		m_value(value)
 	{}
 
@@ -44,23 +48,16 @@ public:
 		return m_value;
 	}
 
-	void set(T value)
+	void set(const T &value)
 	{
 		MutexAutoLock lock(m_mutex);
 		m_value = value;
 	}
 
-	// You'll want to grab this in a SharedPtr
-	MutexAutoLock *getLock()
-	{
-		return new MutexAutoLock(m_mutex);
-	}
-
 	// You pretty surely want to grab the lock when accessing this
 	T m_value;
-
 private:
-	Mutex m_mutex;
+	std::mutex m_mutex;
 };
 
 /*
@@ -89,11 +86,11 @@ public:
 template<typename Key, typename T, typename Caller, typename CallerData>
 class GetRequest {
 public:
-	GetRequest() {}
-	~GetRequest() {}
+	GetRequest() = default;
+	~GetRequest() = default;
 
-	GetRequest(Key a_key) {
-		key = a_key;
+	GetRequest(const Key &a_key): key(a_key)
+	{
 	}
 
 	Key key;
@@ -115,7 +112,7 @@ public:
 		return m_queue.empty();
 	}
 
-	void add(Key key, Caller caller, CallerData callerdata,
+	void add(const Key &key, Caller caller, CallerData callerdata,
 		ResultQueue<Key, T, Caller, CallerData> *dest)
 	{
 		typename std::deque<GetRequest<Key, T, Caller, CallerData> >::iterator i;
@@ -200,7 +197,7 @@ class UpdateThread : public thread_pool
 {
 public:
 	UpdateThread(const std::string &name) : thread_pool(name + "Update") {}
-	~UpdateThread() {}
+	~UpdateThread() = default;
 
 	void deferUpdate() { m_update_sem.post(); }
 
@@ -216,7 +213,6 @@ public:
 	{
 		porting::setThreadPriority(30);
 
-		DSTACK(FUNCTION_NAME);
 		BEGIN_DEBUG_EXCEPTION_HANDLER
 
 		while (!stopRequested()) {
@@ -242,6 +238,3 @@ protected:
 private:
 	Semaphore m_update_sem;
 };
-
-#endif
-

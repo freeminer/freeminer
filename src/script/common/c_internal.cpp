@@ -21,43 +21,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "common/c_internal.h"
+#include "util/numeric.h"
 #include "debug.h"
 #include "log.h"
+#include "porting.h"
 #include "settings.h"
+#include <algorithm> // std::find
 
 std::string script_get_backtrace(lua_State *L)
 {
-	std::string s;
-	lua_getglobal(L, "debug");
-	if(lua_istable(L, -1)){
-		lua_getfield(L, -1, "traceback");
-		if(lua_isfunction(L, -1)) {
-			lua_call(L, 0, 1);
-			if(lua_isstring(L, -1)){
-				s = lua_tostring(L, -1);
-			}
-		}
-		lua_pop(L, 1);
-	}
+	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_BACKTRACE);
+	lua_call(L, 0, 1);
+	std::string result = luaL_checkstring(L, -1);
 	lua_pop(L, 1);
-	return s;
-}
-
-int script_error_handler(lua_State *L) {
-	lua_getglobal(L, "debug");
-	if (!lua_istable(L, -1)) {
-		lua_pop(L, 1);
-		return 1;
-	}
-	lua_getfield(L, -1, "traceback");
-	if (!lua_isfunction(L, -1)) {
-		lua_pop(L, 2);
-		return 1;
-	}
-	lua_pushvalue(L, 1);
-	lua_pushinteger(L, 2);
-	lua_call(L, 2, 1);
-	return 1;
+	return result;
 }
 
 int script_exception_wrapper(lua_State *L, lua_CFunction f)
@@ -75,7 +52,7 @@ int script_exception_wrapper(lua_State *L, lua_CFunction f)
 /*
  * Note that we can't get tracebacks for LUA_ERRMEM or LUA_ERRERR (without
  * hacking Lua internals).  For LUA_ERRMEM, this is because memory errors will
- * not execute the the error handler, and by the time lua_pcall returns the
+ * not execute the error handler, and by the time lua_pcall returns the
  * execution stack will have already been unwound.  For LUA_ERRERR, there was
  * another error while trying to generate a backtrace from a LUA_ERRRUN.  It is
  * presumed there is an error with the internal Lua state and thus not possible
@@ -113,7 +90,7 @@ void script_error(lua_State *L, int pcall_result, const char *mod, const char *f
 		err_descr = "<no description>";
 
 	char buf[256];
-	snprintf(buf, sizeof(buf), "%s error from mod '%s' in callback %s(): ",
+	porting::mt_snprintf(buf, sizeof(buf), "%s error from mod '%s' in callback %s(): ",
 		err_type, mod, fxn);
 
 	std::string err_msg(buf);
@@ -128,70 +105,82 @@ void script_error(lua_State *L, int pcall_result, const char *mod, const char *f
 	errorstream<<"lua exception: " << err_msg << std::endl;
 }
 
-// Push the list of callbacks (a lua table).
-// Then push nargs arguments.
-// Then call this function, which
-// - runs the callbacks
-// - replaces the table and arguments with the return value,
-//     computed depending on mode
-void script_run_callbacks_f(lua_State *L, int nargs,
-	RunCallbacksMode mode, const char *fxn)
+static void script_log_add_source(lua_State *L, std::string &message, int stack_depth)
 {
-	if (lua_gettop(L) < nargs + 1)
-		return;
+	lua_Debug ar;
 
-	// Insert error handler
-	PUSH_ERROR_HANDLER(L);
-	int error_handler = lua_gettop(L) - nargs - 1;
-	lua_insert(L, error_handler);
-
-	// Insert run_callbacks between error handler and table
-	lua_getglobal(L, "core");
-	lua_getfield(L, -1, "run_callbacks");
-	lua_remove(L, -2);
-	lua_insert(L, error_handler + 1);
-
-	// Insert mode after table
-	lua_pushnumber(L, (int) mode);
-	lua_insert(L, error_handler + 3);
-
-	// Stack now looks like this:
-	// ... <error handler> <run_callbacks> <table> <mode> <arg#1> <arg#2> ... <arg#n>
-
-	int result = lua_pcall(L, nargs + 2, 1, error_handler);
-	if (result != 0)
-		script_error(L, result, NULL, fxn);
-
-	lua_remove(L, error_handler);
+	if (lua_getstack(L, stack_depth, &ar)) {
+		FATAL_ERROR_IF(!lua_getinfo(L, "Sl", &ar), "lua_getinfo() failed");
+		message.append(" (at " + std::string(ar.short_src) + ":"
+			+ std::to_string(ar.currentline) + ")");
+	} else {
+		message.append(" (at ?:?)");
+	}
 }
 
-void log_deprecated(lua_State *L, const std::string &message)
+bool script_log_unique(lua_State *L, std::string message, std::ostream &log_to,
+	int stack_depth)
 {
-	static bool configured = false;
-	static bool do_log     = false;
-	static bool do_error   = false;
+	thread_local std::vector<u64> logged_messages;
+
+	script_log_add_source(L, message, stack_depth);
+	u64 hash = murmur_hash_64_ua(message.data(), message.length(), 0xBADBABE);
+
+	if (std::find(logged_messages.begin(), logged_messages.end(), hash)
+			== logged_messages.end()) {
+
+		logged_messages.emplace_back(hash);
+		log_to << message << std::endl;
+		return true;
+	}
+	return false;
+}
+
+DeprecatedHandlingMode get_deprecated_handling_mode()
+{
+	static thread_local bool configured = false;
+	static thread_local DeprecatedHandlingMode ret = DeprecatedHandlingMode::Ignore;
 
 	// Only read settings on first call
 	if (!configured) {
 		std::string value = g_settings->get("deprecated_lua_api_handling");
 		if (value == "log") {
-			do_log = true;
+			ret = DeprecatedHandlingMode::Log;
 		} else if (value == "error") {
-			do_log   = true;
-			do_error = true;
+			ret = DeprecatedHandlingMode::Error;
 		}
+		configured = true;
 	}
 
-	if (do_log) {
-		warningstream << message << std::endl;
-		// L can be NULL if we get called by log_deprecated(const std::string &msg)
-		// from scripting_game.cpp.
-		if (L) {
-			if (do_error)
-				script_error(L, LUA_ERRRUN, NULL, NULL);
-			else
-				infostream << script_get_backtrace(L) << std::endl;
-		}
-	}
+	return ret;
 }
 
+void log_deprecated(lua_State *L, std::string message, int stack_depth)
+{
+	DeprecatedHandlingMode mode = get_deprecated_handling_mode();
+	if (mode == DeprecatedHandlingMode::Ignore)
+		return;
+
+	script_log_add_source(L, message, stack_depth);
+	warningstream << message << std::endl;
+
+	if (mode == DeprecatedHandlingMode::Error)
+		script_error(L, LUA_ERRRUN, NULL, NULL);
+	else
+		infostream << script_get_backtrace(L) << std::endl;
+}
+
+void call_string_dump(lua_State *L, int idx)
+{
+	// Retrieve string.dump from insecure env to avoid it being tampered with
+	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_GLOBALS_BACKUP);
+	if (!lua_isnil(L, -1))
+		lua_getfield(L, -1, "string");
+	else
+		lua_getglobal(L, "string");
+	lua_getfield(L, -1, "dump");
+	lua_remove(L, -2); // remove _G
+	lua_remove(L, -2); // remove 'string' table
+	lua_pushvalue(L, idx);
+	lua_call(L, 1, 1);
+}

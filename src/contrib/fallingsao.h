@@ -19,7 +19,7 @@
 #ifndef __FALLINGSAO_H__
 #define __FALLINGSAO_H__
 
-#include "content_sao.h"
+#include "server/luaentity_sao.h"
 #include "mapnode.h"
 
 namespace epixel

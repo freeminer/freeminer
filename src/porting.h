@@ -24,8 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	Random portability stuff
 */
 
-#ifndef PORTING_HEADER
-#define PORTING_HEADER
+#pragma once
 
 #ifdef _WIN32
 	#ifdef _WIN32_WINNT
@@ -43,7 +42,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "constants.h"
 #include "gettime.h"
-#include "threads.h"
 #include <atomic>
 
 #ifdef _MSC_VER
@@ -64,11 +62,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #else
 	#include <unistd.h>
-	#include <stdint.h> //for uintptr_t
+	#include <cstdint> //for uintptr_t
 
 	// Use standard Posix macro for Linux
 	#if (defined(linux) || defined(__linux)) && !defined(__linux__)
-		#define __linux__ 
+		#define __linux__
 	#endif
 	#if (defined(__linux__) || defined(__GNU__)) && !defined(_GNU_SOURCE)
 		#define _GNU_SOURCE
@@ -76,7 +74,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 	#define sleep_ms(x) usleep(x*1000)
 
-	#define MAX_PACKET_SIZE_SINGLEPLAYER 8192
+	//fmtodo: #define MAX_PACKET_SIZE_SINGLEPLAYER 8192
+	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 #endif
 
 #ifdef _MSC_VER
@@ -122,27 +121,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifndef _WIN32 // Posix
 	#include <sys/time.h>
-	#include <time.h>
-	#if defined(__MACH__) && defined(__APPLE__)
+	#include <ctime>
+
+#if defined(__MACH__) && defined(__APPLE__)
 		#include <mach/clock.h>
 		#include <mach/mach.h>
 	#endif
-#endif
-
-#if defined(linux) || defined(__linux)
-	#include <sys/prctl.h>
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-	#include <pthread.h>
-	#include <pthread_np.h>
-#elif defined(__NetBSD__)
-	#include <pthread.h>
-#elif defined(__APPLE__)
-	#include <pthread.h>
-#endif
-
-#if defined(linux) || defined(__linux) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-	#define PORTING_USE_PTHREAD 1
-	#include <pthread.h>
 #endif
 
 namespace porting
@@ -152,12 +136,11 @@ namespace porting
 	Signal handler (grabs Ctrl-C on POSIX systems)
 */
 
-void signal_handler_init(void);
+void signal_handler_init();
 // Returns a pointer to a bool.
 // When the bool is true, program should quit.
-bool * signal_handler_killstatus(void);
+bool * signal_handler_killstatus();
 
-extern std::atomic_bool g_sighup, g_siginfo;
 /*
 	Path of static data directory.
 */
@@ -204,206 +187,106 @@ void initializePaths();
 */
 std::string get_sysinfo();
 
-void initIrrlicht(irr::IrrlichtDevice * );
 
-/*
-	Resolution is 10-20ms.
-	Remember to check for overflows.
-	Overflow can occur at any value higher than 10000000.
-*/
+// Monotonic counter getters.
+
 #ifdef _WIN32 // Windows
 
-	inline u32 getTimeS()
-	{
-		return GetTickCount() / 1000;
-	}
+extern double perf_freq;
 
-	inline u32 getTimeMs()
-	{
-		return GetTickCount();
-	}
+inline u64 os_get_time(double mult)
+{
+	LARGE_INTEGER t;
+	QueryPerformanceCounter(&t);
+	return static_cast<double>(t.QuadPart) / (perf_freq / mult);
+}
 
-	inline u32 getTimeUs()
-	{
-		LARGE_INTEGER freq, t;
-		QueryPerformanceFrequency(&freq);
-		QueryPerformanceCounter(&t);
-		return (double)(t.QuadPart) / ((double)(freq.QuadPart) / 1000000.0);
-	}
-
-	inline u32 getTimeNs()
-	{
-		LARGE_INTEGER freq, t;
-		QueryPerformanceFrequency(&freq);
-		QueryPerformanceCounter(&t);
-		return (double)(t.QuadPart) / ((double)(freq.QuadPart) / 1000000000.0);
-	}
+// Resolution is <1us.
+inline u64 getTimeS() { return os_get_time(1); }
+inline u64 getTimeMs() { return os_get_time(1000); }
+inline u64 getTimeUs() { return os_get_time(1000*1000); }
+inline u64 getTimeNs() { return os_get_time(1000*1000*1000); }
 
 #else // Posix
-	inline void _os_get_clock(struct timespec *ts)
-	{
+
+inline void os_get_clock(struct timespec *ts)
+{
 #if defined(__MACH__) && defined(__APPLE__)
-	// from http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
-	// OS X does not have clock_gettime, use clock_get_time
-		clock_serv_t cclock;
-		mach_timespec_t mts;
-		host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-		clock_get_time(cclock, &mts);
-		mach_port_deallocate(mach_task_self(), cclock);
-		ts->tv_sec = mts.tv_sec;
-		ts->tv_nsec = mts.tv_nsec;
+// From http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
+// OS X does not have clock_gettime, use clock_get_time
+	clock_serv_t cclock;
+	mach_timespec_t mts;
+	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+	clock_get_time(cclock, &mts);
+	mach_port_deallocate(mach_task_self(), cclock);
+	ts->tv_sec = mts.tv_sec;
+	ts->tv_nsec = mts.tv_nsec;
 #elif defined(CLOCK_MONOTONIC_RAW)
-		clock_gettime(CLOCK_MONOTONIC_RAW, ts);
+	clock_gettime(CLOCK_MONOTONIC_RAW, ts);
 #elif defined(_POSIX_MONOTONIC_CLOCK)
-		clock_gettime(CLOCK_MONOTONIC, ts);
+	clock_gettime(CLOCK_MONOTONIC, ts);
 #else
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		TIMEVAL_TO_TIMESPEC(&tv, ts);
-#endif // defined(__MACH__) && defined(__APPLE__)
-	}
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	TIMEVAL_TO_TIMESPEC(&tv, ts);
+#endif
+}
 
-	// Note: these clock functions do not return wall time, but
-	// generally a clock that starts at 0 when the process starts.
-	inline u32 getTimeS()
-	{
-		struct timespec ts;
-		_os_get_clock(&ts);
-		return ts.tv_sec;
-	}
+inline u64 getTimeS()
+{
+	struct timespec ts;
+	os_get_clock(&ts);
+	return ts.tv_sec;
+}
 
-	inline u32 getTimeMs()
-	{
-		struct timespec ts;
-		_os_get_clock(&ts);
-		return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-	}
+inline u64 getTimeMs()
+{
+	struct timespec ts;
+	os_get_clock(&ts);
+	return ((u64) ts.tv_sec) * 1000LL + ((u64) ts.tv_nsec) / 1000000LL;
+}
 
-	inline u32 getTimeUs()
-	{
-		struct timespec ts;
-		_os_get_clock(&ts);
-		return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-	}
+inline u64 getTimeUs()
+{
+	struct timespec ts;
+	os_get_clock(&ts);
+	return ((u64) ts.tv_sec) * 1000000LL + ((u64) ts.tv_nsec) / 1000LL;
+}
 
-	inline u32 getTimeNs()
-	{
-		struct timespec ts;
-		_os_get_clock(&ts);
-		return ts.tv_sec * 1000000000 + ts.tv_nsec;
-	}
+inline u64 getTimeNs()
+{
+	struct timespec ts;
+	os_get_clock(&ts);
+	return ((u64) ts.tv_sec) * 1000000000LL + ((u64) ts.tv_nsec);
+}
 
-	/*#include <sys/timeb.h>
-	inline u32 getTimeMs()
-	{
-		struct timeb tb;
-		ftime(&tb);
-		return tb.time * 1000 + tb.millitm;
-	}*/
 #endif
 
-inline u32 getTime(TimePrecision prec)
+inline u64 getTime(TimePrecision prec)
 {
 	switch (prec) {
-		case PRECISION_SECONDS:
-			return getTimeS();
-		case PRECISION_MILLI:
-			return getTimeMs();
-		case PRECISION_MICRO:
-			return getTimeUs();
-		case PRECISION_NANO:
-			return getTimeNs();
+	case PRECISION_SECONDS: return getTimeS();
+	case PRECISION_MILLI:   return getTimeMs();
+	case PRECISION_MICRO:   return getTimeUs();
+	case PRECISION_NANO:    return getTimeNs();
 	}
-	return 0;
+	FATAL_ERROR("Called getTime with invalid time precision");
 }
 
 /**
- * Delta calculation function taking two 32bit arguments.
- * @param old_time_ms old time for delta calculation (order is relevant!)
- * @param new_time_ms new time for delta calculation (order is relevant!)
- * @return positive 32bit delta value
+ * Delta calculation function arguments.
+ * @param old_time_ms old time for delta calculation
+ * @param new_time_ms new time for delta calculation
+ * @return positive delta value
  */
-inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
+inline u64 getDeltaMs(u64 old_time_ms, u64 new_time_ms)
 {
 	if (new_time_ms >= old_time_ms) {
 		return (new_time_ms - old_time_ms);
-	} else {
-		return (old_time_ms - new_time_ms);
 	}
+
+	return (old_time_ms - new_time_ms);
 }
-
-#if defined(linux) || defined(__linux)
-	inline void setThreadName(const char *name) {
-		/* It would be cleaner to do this with pthread_setname_np,
-		 * which was added to glibc in version 2.12, but some major
-		 * distributions are still runing 2.11 and previous versions.
-		 */
-		prctl(PR_SET_NAME, name);
-	}
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-	inline void setThreadName(const char *name) {
-		pthread_set_name_np(pthread_self(), name);
-	}
-#elif defined(__NetBSD__)
-	inline void setThreadName(const char *name) {
-		pthread_setname_np(pthread_self(), name);
-	}
-#elif defined(_MSC_VER)
-	typedef struct tagTHREADNAME_INFO {
-		DWORD dwType; // must be 0x1000
-		LPCSTR szName; // pointer to name (in user addr space)
-		DWORD dwThreadID; // thread ID (-1=caller thread)
-		DWORD dwFlags; // reserved for future use, must be zero
-	} THREADNAME_INFO;
-
-	inline void setThreadName(const char *name) {
-		THREADNAME_INFO info;
-		info.dwType = 0x1000;
-		info.szName = name;
-		info.dwThreadID = -1;
-		info.dwFlags = 0;
-		__try {
-			RaiseException(0x406D1388, 0, sizeof(info) / sizeof(DWORD), (ULONG_PTR *) &info);
-		} __except (EXCEPTION_CONTINUE_EXECUTION) {}
-	}
-#elif defined(__APPLE__)
-	inline void setThreadName(const char *name) {
-		pthread_setname_np(name);
-	}
-#elif defined(_WIN32) || defined(__GNU__)
-	inline void setThreadName(const char* name) {}
-#else
-	#warning "Unrecognized platform, thread names will not be available."
-	inline void setThreadName(const char* name) {}
-#endif
-
-	inline void setThreadPriority(int priority) {
-#if PORTING_USE_PTHREAD
-	// http://en.cppreference.com/w/cpp/thread/thread/native_handle
-		sched_param sch;
-		//int policy;
-		//pthread_getschedparam(pthread_self(), &policy, &sch);
-		sch.sched_priority = priority;
-		if(pthread_setschedparam(pthread_self(), SCHED_FIFO /*SCHED_RR*/, &sch)) {
-			//std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
-		}
-#endif
-	}
-
-#ifndef SERVER
-float getDisplayDensity();
-float get_dpi();
-int get_densityDpi();
-void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
-
-v2u32 getDisplaySize();
-v2u32 getWindowSize();
-
-std::vector<core::vector3d<u32> > getSupportedVideoModes();
-std::vector<irr::video::E_DRIVER_TYPE> getSupportedVideoDrivers();
-const char *getVideoDriverName(irr::video::E_DRIVER_TYPE type);
-const char *getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type);
-#endif
 
 inline const char *getPlatformName()
 {
@@ -435,6 +318,8 @@ inline const char *getPlatformName()
 	#else
 		"SunOS"
 	#endif
+#elif defined(__HAIKU__)
+	"Haiku"
 #elif defined(__CYGWIN__)
 	"Cygwin"
 #elif defined(__unix__) || defined(__unix)
@@ -449,24 +334,35 @@ inline const char *getPlatformName()
 	;
 }
 
-void setXorgClassHint(const video::SExposedVideoData &video_data,
-	const std::string &name);
-
-bool setXorgWindowIcon(IrrlichtDevice *device);
-
-bool setXorgWindowIconFromPath(IrrlichtDevice *device,
-	const std::string &icon_file);
-
-// This only needs to be called at the start of execution, since all future
-// threads in the process inherit this exception handler
-void setWin32ExceptionHandler();
-
 bool secure_rand_fill_buf(void *buf, size_t len);
+
+// This attaches to the parents process console, or creates a new one if it doesnt exist.
+void attachOrCreateConsole();
+
+int mt_snprintf(char *buf, const size_t buf_size, const char *fmt, ...);
+
+/**
+ * Opens URL in default web browser
+ *
+ * Must begin with http:// or https://, and not contain any new lines
+ *
+ * @param url The URL
+ * @return true on success, false on failure
+ */
+bool open_url(const std::string &url);
+
+/**
+ * Opens a directory in the default file manager
+ *
+ * The directory must exist.
+ *
+ * @param path Path to directory
+ * @return true on success, false on failure
+ */
+bool open_directory(const std::string &path);
+
 } // namespace porting
 
 #ifdef __ANDROID__
 #include "porting_android.h"
 #endif
-
-
-#endif // PORTING_HEADER

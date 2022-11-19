@@ -20,11 +20,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef S_INVENTORY_H_
-#define S_INVENTORY_H_
+#pragma once
 
 #include "cpp_api/s_base.h"
 
+struct MoveAction;
 struct ItemStack;
 
 class ScriptApiDetached
@@ -34,41 +34,29 @@ public:
 	/* Detached inventory callbacks */
 	// Return number of accepted items to be moved
 	int detached_inventory_AllowMove(
-			const std::string &name,
-			const std::string &from_list, int from_index,
-			const std::string &to_list, int to_index,
-			int count, ServerActiveObject *player);
+			const MoveAction &ma, int count,
+			ServerActiveObject *player);
 	// Return number of accepted items to be put
 	int detached_inventory_AllowPut(
-			const std::string &name,
-			const std::string &listname, int index, ItemStack &stack,
+			const MoveAction &ma, const ItemStack &stack,
 			ServerActiveObject *player);
 	// Return number of accepted items to be taken
 	int detached_inventory_AllowTake(
-			const std::string &name,
-			const std::string &listname, int index, ItemStack &stack,
+			const MoveAction &ma, const ItemStack &stack,
 			ServerActiveObject *player);
 	// Report moved items
 	void detached_inventory_OnMove(
-			const std::string &name,
-			const std::string &from_list, int from_index,
-			const std::string &to_list, int to_index,
-			int count, ServerActiveObject *player);
+			const MoveAction &ma, int count,
+			ServerActiveObject *player);
 	// Report put items
 	void detached_inventory_OnPut(
-			const std::string &name,
-			const std::string &listname, int index, ItemStack &stack,
+			const MoveAction &ma, const ItemStack &stack,
 			ServerActiveObject *player);
 	// Report taken items
 	void detached_inventory_OnTake(
-			const std::string &name,
-			const std::string &listname, int index, ItemStack &stack,
+			const MoveAction &ma, const ItemStack &stack,
 			ServerActiveObject *player);
 private:
 	bool getDetachedInventoryCallback(
 			const std::string &name, const char *callbackname);
 };
-
-
-
-#endif /* S_INVENTORY_H_ */

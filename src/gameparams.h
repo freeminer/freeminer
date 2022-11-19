@@ -17,18 +17,44 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef GAME_PARAMS_H
-#define GAME_PARAMS_H
+#pragma once
 
+#include <string>
+#include "content/subgames.h"
 #include "irrlichttypes.h"
+#include "content/subgames.h"
 
-struct SubgameSpec;
+// Information provided from "main"
+struct GameParams
+{
+	GameParams() = default;
 
-struct GameParams {
 	u16 socket_port;
 	std::string world_path;
 	SubgameSpec game_spec;
 	bool is_dedicated_server;
 };
 
-#endif
+enum class ELoginRegister {
+	Any = 0,
+	Login,
+	Register
+};
+
+// Information processed by main menu
+struct GameStartData : GameParams
+{
+	GameStartData() = default;
+
+	bool isSinglePlayer() const { return address.empty() && !local_server; }
+
+	std::string name;
+	std::string password;
+	std::string address;
+	bool local_server;
+
+	ELoginRegister allow_login_or_register = ELoginRegister::Any;
+
+	// "world_path" must be kept in sync!
+	WorldSpec world_spec;
+};

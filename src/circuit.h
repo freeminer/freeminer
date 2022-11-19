@@ -28,15 +28,15 @@
 #include "threading/lock.h"
 
 
-class INodeDefManager;
-class GameScripting;
+class NodeDefManager;
+class ServerScripting;
 class Map;
 class MapBlock;
 class KeyValueStorage;
 
 class Circuit {
 public:
-	Circuit(GameScripting* script, Map* map, INodeDefManager* ndef, std::string savedir);
+	Circuit(ServerScripting* script, Map* map, const NodeDefManager* ndef, const std::string & savedir);
 	~Circuit();
 	void addBlock(MapBlock* block);
 	void addNode(v3POS pos);
@@ -63,9 +63,9 @@ private:
 	std::map <v3POS, std::list<CircuitElement>::iterator> m_pos_to_iterator;
 	std::map <const unsigned char*, u32> m_func_to_id;
 
-	GameScripting* m_script;
+	ServerScripting* m_script;
 	Map* m_map;
-	INodeDefManager* m_ndef;
+	const NodeDefManager* m_ndef;
 
 	std::vector <v3POS> m_elements_queue;
 	float m_min_update_delay;
@@ -81,7 +81,7 @@ private:
 	KeyValueStorage *m_database;
 	KeyValueStorage *m_virtual_database;
 
-	locker<> m_elements_mutex;
+	shared_locker m_elements_mutex;
 
 	static const u32 circuit_simulator_version;
 	static const char elements_states_file[];

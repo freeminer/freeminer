@@ -20,18 +20,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef __CONVERT_JSON_H__
-#define __CONVERT_JSON_H__
+#pragma once
 
 #include <json/json.h>
+#include <ostream>
 
-struct ModStoreMod;
-struct ModStoreModDetails;
+void fastWriteJson(const Json::Value &value, std::ostream &to);
 
-std::vector<ModStoreMod>    readModStoreList(Json::Value& modlist);
-ModStoreModDetails          readModStoreModDetails(Json::Value& details);
-
-Json::Value                 fetchJsonValue(const std::string &url,
-                                           std::vector<std::string> *extra_headers);
-
-#endif
+std::string fastWriteJson(const Json::Value &value);

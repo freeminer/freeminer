@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef ENVIRONMENT_HEADER
-#define ENVIRONMENT_HEADER
+#pragma once
 
 /*
 	This class is the game's environment.
@@ -33,15 +32,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	- etc.
 */
 
-#include <set>
 #include <list>
 #include <queue>
 #include <map>
+#include <atomic>
+#include <mutex>
 #include "irr_v3d.h"
-#include "activeobject.h"
-#include "util/numeric.h"
-#include "mapnode.h"
-#include "mapblock.h"
 
 //fm:
 #include "network/connection.h"
@@ -56,22 +52,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 //--
 
-#include "threading/mutex.h"
-#include "threading/atomic.h"
 #include "network/networkprotocol.h" // for AccessDeniedCode
+#include "util/basic_macros.h"
 
-class ServerEnvironment;
-class ActiveBlockModifier;
-class ServerActiveObject;
-class ITextureSource;
 class IGameDef;
 class Map;
-class ServerMap;
-class ClientMap;
-class GameScripting;
-class Player;
-class RemotePlayer;
-class PlayerSAO;
+struct PointedThing;
+class RaycastState;
 
 struct ItemStack;
 class PlayerSAO;
@@ -86,8 +73,9 @@ class Environment
 {
 public:
 	// Environment will delete the map passed to the constructor
-	Environment();
-	virtual ~Environment();
+	Environment(IGameDef *gamedef);
+	virtual ~Environment() = default;
+	DISABLE_CLASS_COPY(Environment);
 
 	/*
 		Step everything in environment.
@@ -97,7 +85,7 @@ public:
 	*/
 	virtual void step(f32 dtime, float uptime, unsigned int max_cycle_ms) = 0;
 
-	virtual Map & getMap() = 0;
+	virtual Map &getMap() = 0;
 
 	u32 getDayNightRatio();
 
@@ -114,32 +102,63 @@ public:
 
 	u32 getDayCount();
 
+	/*!
+	 * Returns false if the given line intersects with a
+	 * non-air node, true otherwise.
+	 * \param pos1 start of the line
+	 * \param pos2 end of the line
+	 * \param p output, position of the first non-air node
+	 * the line intersects
+	 */
+	bool line_of_sight(v3f pos1, v3f pos2, v3s16 *p = nullptr);
+
+	/*!
+	 * Gets the objects pointed by the shootline as
+	 * pointed things.
+	 * If this is a client environment, the local player
+	 * won't be returned.
+	 * @param[in]  shootline_on_map the shootline for
+	 * the test in world coordinates
+	 *
+	 * @param[out] objects          found objects
+	 */
+	virtual void getSelectedActiveObjects(const core::line3d<f32> &shootline_on_map,
+			std::vector<PointedThing> &objects) = 0;
+
+	/*!
+	 * Returns the next node or object the shootline meets.
+	 * @param state current state of the raycast
+	 * @result output, will contain the next pointed thing
+	 */
+	void continueRaycast(RaycastState *state, PointedThing *result);
+
 	// counter used internally when triggering ABMs
 	std::atomic_uint m_added_objects;
 
-public:
-	GenericAtomic<float> m_time_of_day_speed;
+	IGameDef *getGameDef() { return m_gamedef; }
+
+	std::atomic<float> m_time_of_day_speed;
 protected:
 
 	/*
 	 * Below: values managed by m_time_lock
-	*/
-	// Time of day in milli-hours (0-23999); determines day and night
+	 */
+	// Time of day in milli-hours (0-23999), determines day and night
 	u32 m_time_of_day;
 	// Time of day in 0...1
-	float m_time_of_day_f;
+	//float m_time_of_day_f;
 	// Stores the skew created by the float -> u32 conversion
 	// to be applied at next conversion, so that there is no real skew.
-	float m_time_conversion_skew;
+	float m_time_conversion_skew = 0.0f;
 	// Overriding the day-night ratio is useful for custom sky visuals
-	bool m_enable_day_night_ratio_override;
-	u32 m_day_night_ratio_override;
+	bool m_enable_day_night_ratio_override = false;
+	u32 m_day_night_ratio_override = 0.0f;
 	// Days from the server start, accounts for time shift
 	// in game (e.g. /time or bed usage)
-	Atomic<u32> m_day_count;
+	std::atomic_uint32_t m_day_count {0};
 	/*
 	 * Above: values managed by m_time_lock
-	*/
+	 */
 
 	/* TODO: Add a callback function so these can be updated when a setting
 	 *       changes.  At this point in time it doesn't matter (e.g. /set
@@ -154,643 +173,10 @@ protected:
 	float m_cache_active_block_mgmt_interval;
 	float m_cache_abm_interval;
 	float m_cache_nodetimer_interval;
+	float m_cache_abm_time_budget;
 
-private:
-	Mutex m_time_lock;
-
-	DISABLE_CLASS_COPY(Environment);
-};
-
-/*
-	{Active, Loading} block modifier interface.
-
-	These are fed into ServerEnvironment at initialization time;
-	ServerEnvironment handles deleting them.
-*/
-
-class ActiveBlockModifier
-{
-public:
-	ActiveBlockModifier(){};
-	virtual ~ActiveBlockModifier(){};
-
-	// Set of contents to trigger on
-	virtual std::set<std::string> getTriggerContents()=0;
-	// Set of required neighbors (trigger doesn't happen if none are found)
-	// Empty = do not check neighbors
-	virtual std::set<std::string> getRequiredNeighbors(bool activate)
-	{ return std::set<std::string>(); }
-	// Maximum range to neighbors
-	virtual u32 getNeighborsRange()
-	{ return 1; };
-	// Trigger interval in seconds
-	virtual float getTriggerInterval() = 0;
-	// Random chance of (1 / return value), 0 is disallowed
-	virtual u32 getTriggerChance() = 0;
-	// Whether to modify chance to simulate time lost by an unnattended block
-	virtual bool getSimpleCatchUp() = 0;
-	// This is called usually at interval for 1/chance of the nodes
-	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
-	//virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n, MapNode neighbor){};
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate = false){};
-};
-
-struct ABMWithState
-{
-	ActiveBlockModifier *abm;
-	float interval;
-	float chance;
-	float timer;
-	int neighbors_range;
-	bool simple_catchup;
-	std::unordered_set<content_t> trigger_ids;
-	FMBitset required_neighbors, required_neighbors_activate;
-
-	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
-};
-
-struct LoadingBlockModifierDef
-{
-	// Set of contents to trigger on
-	std::set<std::string> trigger_contents;
-	std::string name;
-	bool run_at_every_load;
-
-	virtual ~LoadingBlockModifierDef() {}
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
-};
-
-struct LBMContentMapping
-{
-	typedef std::map<content_t, std::vector<LoadingBlockModifierDef *> > container_map;
-	container_map map;
-
-	std::vector<LoadingBlockModifierDef *> lbm_list;
-
-	// Needs to be separate method (not inside destructor),
-	// because the LBMContentMapping may be copied and destructed
-	// many times during operation in the lbm_lookup_map.
-	void deleteContents();
-	void addLBM(LoadingBlockModifierDef *lbm_def, IGameDef *gamedef);
-	const std::vector<LoadingBlockModifierDef *> *lookup(content_t c) const;
-};
-
-class LBMManager
-{
-public:
-	LBMManager():
-		m_query_mode(false)
-	{}
-
-	~LBMManager();
-
-	// Don't call this after loadIntroductionTimes() ran.
-	void addLBMDef(LoadingBlockModifierDef *lbm_def);
-
-	void loadIntroductionTimes(const std::string &times,
-		IGameDef *gamedef, u32 now);
-
-	// Don't call this before loadIntroductionTimes() ran.
-	std::string createIntroductionTimesString();
-
-	// Don't call this before loadIntroductionTimes() ran.
-	void applyLBMs(ServerEnvironment *env, MapBlock *block, u32 stamp);
-
-	// Warning: do not make this std::unordered_map, order is relevant here
-	typedef std::map<u32, LBMContentMapping> lbm_lookup_map;
-
-private:
-	// Once we set this to true, we can only query,
-	// not modify
-	bool m_query_mode;
-
-	// For m_query_mode == false:
-	// The key of the map is the LBM def's name.
-	// TODO make this std::unordered_map
-	std::map<std::string, LoadingBlockModifierDef *> m_lbm_defs;
-
-	// For m_query_mode == true:
-	// The key of the map is the LBM def's first introduction time.
-	lbm_lookup_map m_lbm_lookup;
-
-	// Returns an iterator to the LBMs that were introduced
-	// after the given time. This is guaranteed to return
-	// valid values for everything
-	lbm_lookup_map::const_iterator getLBMsIntroducedAfter(u32 time)
-	{ return m_lbm_lookup.lower_bound(time); }
-};
-
-/*
-	List of active blocks, used by ServerEnvironment
-*/
-
-class ActiveBlockList
-{
-public:
-	void update(std::vector<v3s16> &active_positions,
-			s16 radius,
-			std::set<v3s16> &blocks_removed,
-			std::set<v3s16> &blocks_added);
-
-	bool contains(v3s16 p){
-		return (m_list.find(p) != m_list.end());
-	}
-
-	void clear(){
-		m_list.clear();
-	}
-
-	maybe_concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_list;
-	std::set<v3s16> m_forceloaded_list;
-
-private:
-};
-
-struct ActiveABM
-{
-	ActiveABM()
-	{}
-	ABMWithState *abmws;
-	int chance;
-};
-
-class ABMHandler
-{
-private:
-	ServerEnvironment *m_env;
-	std::array<std::vector<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
-	std::list<std::vector<ActiveABM>*> m_aabms_list;
-	bool m_aabms_empty;
-public:
-	ABMHandler(ServerEnvironment *env);
-	void init(std::vector<ABMWithState> &abms);
-	~ABMHandler();
-	u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
-	void apply(MapBlock *block, bool activate = false);
-
-};
-
-/*
-	Operation mode for ServerEnvironment::clearObjects()
-*/
-enum ClearObjectsMode {
-	// Load and go through every mapblock, clearing objects
-	CLEAR_OBJECTS_MODE_FULL,
-
-	// Clear objects immediately in loaded mapblocks;
-	// clear objects in unloaded mapblocks only when the mapblocks are next activated.
-	CLEAR_OBJECTS_MODE_QUICK,
-};
-
-/*
-	The server-side environment.
-
-	This is not thread-safe. Server uses an environment mutex.
-*/
-
-/*
-typedef UNORDERED_MAP<u16, ServerActiveObject *> ActiveObjectMap;
-*/
-
-typedef maybe_concurrent_map<u16, ServerActiveObject*> ActiveObjectMap;
-
-class ServerEnvironment : public Environment
-{
-public:
-	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
-	                  IGameDef *gamedef, const std::string &path_world);
-	~ServerEnvironment();
-
-	Map & getMap();
-
-	ServerMap & getServerMap();
-
-	//TODO find way to remove this fct!
-	GameScripting* getScriptIface()
-		{ return m_script; }
-
-	IGameDef *getGameDef()
-		{ return m_gamedef; }
-
-	float getSendRecommendedInterval()
-		{ return m_recommended_send_interval; }
-
-	//Player * getPlayer(u16 peer_id) { return Environment::getPlayer(peer_id); };
-	//Player * getPlayer(const std::string &name);
-
-	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
-	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
-
-	void kickAllPlayers(AccessDeniedCode reason,
-		const std::string &str_reason, bool reconnect);
-	// Save players
-	void saveLoadedPlayers();
-	void savePlayer(RemotePlayer *player);
-	RemotePlayer *loadPlayer(const std::string &playername, PlayerSAO *sao);
-	void addPlayer(RemotePlayer *player);
-	void removePlayer(RemotePlayer *player);
-
-	/*
-		Save and load time of day and game timer
-	*/
-	void saveMeta();
-	void loadMeta();
-	// to be called instead of loadMeta if
-	// env_meta.txt doesn't exist (e.g. new world)
-	void loadDefaultMeta();
-
-	u32 addParticleSpawner(float exptime);
-	u32 addParticleSpawner(float exptime, u16 attached_id);
-	void deleteParticleSpawner(u32 id, bool remove_from_object = true);
-
-	/*
-		External ActiveObject interface
-		-------------------------------------------
-	*/
-
-	ServerActiveObject* getActiveObject(u16 id, bool removed = false);
-
-	/*
-		Add an active object to the environment.
-		Environment handles deletion of object.
-		Object may be deleted by environment immediately.
-		If id of object is 0, assigns a free id to it.
-		Returns the id of the object.
-		Returns 0 if not added and thus deleted.
-	*/
-	u16 addActiveObject(ServerActiveObject *object);
-
-	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
-			const ItemStack& items);
-
-	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3f pos,
-			const MapNode n, int fast = 2);
-
-	/*
-		Add an active object as a static object to the corresponding
-		MapBlock.
-		Caller allocates memory, ServerEnvironment frees memory.
-		Return value: true if succeeded, false if failed.
-		(note:  not used, pending removal from engine)
-	*/
-	//bool addActiveObjectAsStatic(ServerActiveObject *object);
-
-	/*
-		Find out what new objects have been added to
-		inside a radius around a position
-	*/
-	void getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
-			s16 player_radius,
-			maybe_concurrent_unordered_map<u16, bool> &current_objects,
-			std::queue<u16> &added_objects);
-
-	/*
-		Find out what new objects have been removed from
-		inside a radius around a position
-	*/
-	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
-			s16 player_radius,
-			maybe_concurrent_unordered_map<u16, bool> &current_objects,
-			std::queue<u16> &removed_objects);
-
-	/*
-		Get the next message emitted by some active object.
-		Returns a message with id=0 if no messages are available.
-	*/
-	ActiveObjectMessage getActiveObjectMessage();
-
-	/*
-		Activate objects and dynamically modify for the dtime determined
-		from timestamp and additional_dtime
-	*/
-	void activateBlock(MapBlock *block, u32 additional_dtime=0);
-
-	/*
-		{Active,Loading}BlockModifiers
-		-------------------------------------------
-	*/
-
-	void addActiveBlockModifier(ActiveBlockModifier *abm);
-	void addLoadingBlockModifierDef(LoadingBlockModifierDef *lbm);
-
-	/*
-		Other stuff
-		-------------------------------------------
-	*/
-
-	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0);
-	bool removeNode(v3s16 p, s16 fast = 0);
-	bool swapNode(v3s16 p, const MapNode &n);
-
-	// Find all active objects inside a radius around a point
-	void getObjectsInsideRadius(std::vector<u16> &objects, v3f pos, float radius);
-
-	// Clear objects, loading and going through every MapBlock
-	void clearObjects(ClearObjectsMode mode);
-
-	// This makes stuff happen
-	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
-
-	//check if there's a line of sight between two positions
-	bool line_of_sight(v3f pos1, v3f pos2, float stepsize=1.0, v3s16 *p=NULL);
-
-	u32 getGameTime() { return m_game_time; }
-
-	void reportMaxLagEstimate(float f) { std::unique_lock<Mutex> lock(m_max_lag_estimate_mutex); m_max_lag_estimate = f; }
-	float getMaxLagEstimate() { std::unique_lock<Mutex> lock(m_max_lag_estimate_mutex); return m_max_lag_estimate; }
-
-	// is weather active in this environment?
-	bool m_use_weather;
-	bool m_use_weather_biome;
-	bool m_more_threads;
-	ABMHandler m_abmhandler;
-	void analyzeBlock(MapBlock * block);
-	IntervalLimiter m_analyze_blocks_interval;
-	IntervalLimiter m_abm_random_interval;
-	std::list<v3POS> m_abm_random_blocks;
-	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
-
-	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
-
-	u32 m_game_time_start;
-
-	// Sets the static object status all the active objects in the specified block
-	// This is only really needed for deleting blocks from the map
-	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
-		bool static_exists, v3s16 static_block=v3s16(0,0,0));
-
-	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
-	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
-
-	RemotePlayer *getPlayer(const u16 peer_id);
-	RemotePlayer *getPlayer(const std::string &name);
-private:
-
-	/*
-		Internal ActiveObject interface
-		-------------------------------------------
-	*/
-
-	/*
-		Add an active object to the environment.
-
-		Called by addActiveObject.
-
-		Object may be deleted by environment immediately.
-		If id of object is 0, assigns a free id to it.
-		Returns the id of the object.
-		Returns 0 if not added and thus deleted.
-	*/
-	u16 addActiveObjectRaw(ServerActiveObject *object, bool set_changed, u32 dtime_s);
-
-	/*
-		Remove all objects that satisfy (m_removed && m_known_by_count==0)
-	*/
-	void removeRemovedObjects(unsigned int max_cycle_ms = 1000);
-
-	/*
-		Convert stored objects from block to active
-	*/
-	void activateObjects(MapBlock *block, u32 dtime_s);
-
-	/*
-		Convert objects that are not in active blocks to static.
-
-		If m_known_by_count != 0, active object is not deleted, but static
-		data is still updated.
-
-		If force_delete is set, active object is deleted nevertheless. It
-		shall only be set so in the destructor of the environment.
-	*/
-	void deactivateFarObjects(bool force_delete);
-
-
-/*
-	void contrib_player_globalstep(RemotePlayer *player, float dtime);
-	void contrib_lookupitemtogather(RemotePlayer* player, v3f playerPos,
-			Inventory* inv, ServerActiveObject* obj);
-*/
-	void contrib_globalstep(const float dtime);
-	bool checkAttachedNode(v3s16 pos, MapNode n, const ContentFeatures &f);
-/*
-	void explodeNode(const v3s16 pos);
-*/
-
-	std::deque<v3s16> m_nodeupdate_queue;
-	Mutex m_nodeupdate_queue_mutex;
-
-	/*
-		Member variables
-	*/
-
-	// The map
-	ServerMap *m_map;
-	// Lua state
-	GameScripting* m_script;
-	// Game definition
 	IGameDef *m_gamedef;
 
-	// Circuit manager
-	Circuit m_circuit;
-	// Key-value storage
-public:
-	std::unordered_map<std::string, KeyValueStorage> m_key_value_storage;
 private:
-
-	// World path
-	const std::string m_path_world;
-	// Active object list
-	ActiveObjectMap m_active_objects;
-
-	std::vector<u16> objects_to_remove;
-	std::vector<ServerActiveObject*> objects_to_delete;
-
-	// Outgoing network message buffer for active objects
-public:
-	Queue<ActiveObjectMessage> m_active_object_messages;
-private:
-	// Some timers
-	float m_send_recommended_timer;
-	IntervalLimiter m_object_management_interval;
-	// List of active blocks
-	ActiveBlockList m_active_blocks;
-	IntervalLimiter m_active_blocks_management_interval;
-	IntervalLimiter m_active_block_modifier_interval;
-	IntervalLimiter m_active_blocks_nodemetadata_interval;
-	//loop breakers
-	u32 m_active_objects_last;
-	u32 m_active_block_abm_last;
-	float m_active_block_abm_dtime;
-	float m_active_block_abm_dtime_counter;
-	u32 m_active_block_timer_last;
-	std::set<v3s16> m_blocks_added;
-	u32 m_blocks_added_last;
-	u32 m_active_block_analyzed_last;
-	// Time from the beginning of the game in seconds.
-	// Incremented in step().
-	std::atomic_uint m_game_time;
-	Mutex m_max_lag_estimate_mutex;
-	// A helper variable for incrementing the latter
-	float m_game_time_fraction_counter;
-	// Time of last clearObjects call (game time).
-	// When a mapblock older than this is loaded, its objects are cleared.
-	u32 m_last_clear_objects_time;
-	// Active block modifiers
-public:
-	std::vector<ABMWithState> m_abms;
-private:
-	LBMManager m_lbm_mgr;
-	// An interval for generally sending object positions and stuff
-	float m_recommended_send_interval;
-	// Estimate for general maximum lag as determined by server.
-	// Can raise to high values like 15s with eg. map generation mods.
-	float m_max_lag_estimate;
-
-	// peer_ids in here should be unique, except that there may be many 0s
-	concurrent_vector<RemotePlayer*> m_players;
-
-	// Particles
-	IntervalLimiter m_particle_management_interval;
-	UNORDERED_MAP<u32, float> m_particle_spawners;
-	UNORDERED_MAP<u32, u16> m_particle_spawner_attachments;
+	std::mutex m_time_lock;
 };
-
-#ifndef SERVER
-
-#include "clientobject.h"
-#include "content_cao.h"
-
-class ClientSimpleObject;
-
-/*
-	The client-side environment.
-
-	This is not thread-safe.
-	Must be called from main (irrlicht) thread (uses the SceneManager)
-	Client uses an environment mutex.
-*/
-
-enum ClientEnvEventType
-{
-	CEE_NONE,
-	CEE_PLAYER_DAMAGE,
-	CEE_PLAYER_BREATH
-};
-
-struct ClientEnvEvent
-{
-	ClientEnvEventType type;
-	union {
-		//struct{
-		//} none;
-		struct{
-			u8 amount;
-			bool send_to_server;
-		} player_damage;
-		struct{
-			u16 amount;
-		} player_breath;
-	};
-};
-
-class ClientEnvironment : public Environment
-{
-public:
-	ClientEnvironment(ClientMap *map, scene::ISceneManager *smgr,
-			ITextureSource *texturesource, IGameDef *gamedef,
-			IrrlichtDevice *device);
-	~ClientEnvironment();
-
-	Map & getMap();
-	ClientMap & getClientMap();
-
-	IGameDef *getGameDef()
-	{ return m_gamedef; }
-
-	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
-
-	virtual void setLocalPlayer(LocalPlayer *player);
-	LocalPlayer *getLocalPlayer() { return m_local_player; }
-
-	/*
-		ClientSimpleObjects
-	*/
-
-	void addSimpleObject(ClientSimpleObject *simple);
-
-	/*
-		ActiveObjects
-	*/
-
-	GenericCAO* getGenericCAO(u16 id);
-	ClientActiveObject* getActiveObject(u16 id);
-
-	/*
-		Adds an active object to the environment.
-		Environment handles deletion of object.
-		Object may be deleted by environment immediately.
-		If id of object is 0, assigns a free id to it.
-		Returns the id of the object.
-		Returns 0 if not added and thus deleted.
-	*/
-	u16 addActiveObject(ClientActiveObject *object);
-
-	void addActiveObject(u16 id, u8 type, const std::string &init_data);
-	void removeActiveObject(u16 id);
-
-	void processActiveObjectMessage(u16 id, const std::string &data);
-
-	/*
-		Callbacks for activeobjects
-	*/
-
-	void damageLocalPlayer(u8 damage, bool handle_hp=true);
-	void updateLocalPlayerBreath(u16 breath);
-
-	/*
-		Client likes to call these
-	*/
-
-	// Get all nearby objects
-	void getActiveObjects(v3f origin, f32 max_d,
-			std::vector<DistanceSortedActiveObject> &dest);
-
-	// Get event from queue. CEE_NONE is returned if queue is empty.
-	ClientEnvEvent getClientEvent();
-
-	u16 attachement_parent_ids[USHRT_MAX + 1];
-
-	const std::list<std::string> &getPlayerNames() { return m_player_names; }
-	void addPlayerName(const std::string &name) { m_player_names.push_back(name); }
-	void removePlayerName(const std::string &name) { m_player_names.remove(name); }
-	void updateCameraOffset(v3s16 camera_offset)
-	{ m_camera_offset = camera_offset; }
-	v3s16 getCameraOffset() const { return m_camera_offset; }
-private:
-	ClientMap *m_map;
-	LocalPlayer *m_local_player;
-	scene::ISceneManager *m_smgr;
-	ITextureSource *m_texturesource;
-	IGameDef *m_gamedef;
-	IrrlichtDevice *m_irr;
-	UNORDERED_MAP<u16, ClientActiveObject*> m_active_objects;
-
-	u32 m_active_objects_client_last;
-	u32 m_move_max_loop;
-
-	std::vector<ClientSimpleObject*> m_simple_objects;
-	std::queue<ClientEnvEvent> m_client_event_queue;
-	IntervalLimiter m_active_object_light_update_interval;
-	IntervalLimiter m_lava_hurt_interval;
-	IntervalLimiter m_drowning_interval;
-	IntervalLimiter m_breathing_interval;
-	std::list<std::string> m_player_names;
-	v3s16 m_camera_offset;
-};
-
-#endif
-
-#endif
-

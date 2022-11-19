@@ -8,7 +8,13 @@
 	<string>freeminer</string>
 	<key>CFBundleIconFile</key>
 	<string>freeminer-icon.icns</string>
+	<key>CFBundleName</key>
+	<string>Freeminer</string>
+	<key>CFBundleDisplayName</key>
+	<string>Freeminer</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.freeminer.freeminer</string>
+	<key>NSHighResolutionCapable</key>
+	<false/>
 </dict>
 </plist>

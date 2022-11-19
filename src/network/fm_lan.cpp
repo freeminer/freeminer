@@ -18,7 +18,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "fm_lan.h"
-#include "../socket.h"
+#include <cstdint>
+#include "convert_json.h"
+#include "socket.h"
 #include "../util/string.h"
 #include "../log_types.h"
 #include "../settings.h"
@@ -62,23 +64,22 @@ typedef int socket_t;
 const static unsigned short int adv_port = 29998;
 static std::string ask_str;
 
-lan_adv::lan_adv() { }
+lan_adv::lan_adv() : thread_pool("lan_adv") { }
 
 void lan_adv::ask() {
 	reanimate();
 
 	if (ask_str.empty()) {
-		Json::FastWriter writer;
 		Json::Value j;
 		j["cmd"] = "ask";
 		j["proto"] = g_settings->get("server_proto");
-		ask_str = writer.write(j);
+		ask_str = fastWriteJson(j);
 	}
 
 	send_string(ask_str);
 }
 
-void lan_adv::send_string(std::string str) {
+void lan_adv::send_string(const std::string& str) {
 	try {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
@@ -171,23 +172,22 @@ void * lan_adv::run() {
 	socket_recv.setTimeoutMs(200);
 	try {
 		socket_recv.Bind(Address(in6addr_any, adv_port));
-	} catch (std::exception &e) {
+	} catch (const std::exception &e) {
 		warningstream << m_name << ": cant bind ipv6 address [" << e.what() << "], trying ipv4. " << std::endl;
 		try {
 			socket_recv.Bind(Address((u32)INADDR_ANY, adv_port));
-		} catch (std::exception &e) {
+		} catch (const std::exception &e) {
 			warningstream << m_name << ": cant bind ipv4 too [" << e.what() << "]" << std::endl;
 			return nullptr;
 		}
 	}
-	std::unordered_map<std::string, unsigned int> limiter;
+	std::unordered_map<std::string, uint64_t> limiter;
 
 	const auto proto = g_settings->get("server_proto");
 
 	const unsigned int packet_maxsize = 16384;
 	char buffer [packet_maxsize];
 	Json::Reader reader;
-	Json::FastWriter writer;
 	std::string answer_str;
 	Json::Value server;
 	if (server_port) {
@@ -207,7 +207,7 @@ void * lan_adv::run() {
 		server["clients_max"]  = g_settings->getU16("max_users");
 		server["proto"]        = g_settings->get("server_proto");
 
-		send_string(writer.write(server));
+		send_string(fastWriteJson(server));
 	}
 	while(!stopRequested()) {
 		EXCEPTION_HANDLER_BEGIN;
@@ -228,7 +228,7 @@ void * lan_adv::run() {
 					(clients_num.load() ? infostream : actionstream) << "lan: want play " << addr_str << " " << p["proto"] << std::endl;
 
 					server["clients"] = clients_num.load();
-					answer_str = writer.write(server);
+					answer_str = fastWriteJson(server);
 
 					limiter[addr_str] = now + 3000;
 					UDPSocket socket_send(true);
@@ -249,7 +249,7 @@ void * lan_adv::run() {
 					} else if (p["proto"] == proto) {
 						if (!collected.count(key))
 							actionstream << "lan server start " << key << "\n";
-						collected.set(key, p);
+						collected.insert_or_assign(key, p);
 						fresh = true;
 					}
 				}
@@ -264,7 +264,7 @@ void * lan_adv::run() {
 		Json::Value answer_json;
 		answer_json["port"] = server_port;
 		answer_json["cmd"] = "shutdown";
-		send_string(writer.write(answer_json));
+		send_string(fastWriteJson(answer_json));
 	}
 
 	EXCEPTION_HANDLER_END;

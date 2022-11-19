@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "player.h"
 
+#include <cmath>
 #include "threading/mutex_auto_lock.h"
 #include "util/numeric.h"
 #include "hud.h"
@@ -35,19 +36,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 Player::Player(const std::string & name, IItemDefManager *idef):
-	inventory(idef),
-	peer_id(PEER_ID_INEXISTENT),
-	keyPressed(0),
-// protected
-	m_speed(0,0,0)
+	inventory(idef)
 {
-	peer_id = PEER_ID_INEXISTENT;
 	m_name = name;
 	hotbar_image_items = 0;
 
 	inventory.clear();
 	inventory.addList("main", PLAYER_INVENTORY_SIZE);
-	inventory.addList("hand", 1);
 	InventoryList *craft = inventory.addList("craft", 9);
 	craft->setWidth(3);
 	inventory.addList("craftpreview", 1);
@@ -76,20 +71,54 @@ Player::Player(const std::string & name, IItemDefManager *idef):
 	movement_liquid_fluidity_smooth = 0.5  * BS;
 	movement_liquid_sink            = 10   * BS;
 	movement_gravity                = 9.81 * BS;
-	movement_fall_aerodynamics      = 110;
+	movement_fall_aerodynamics      = 210  * BS;
 	local_animation_speed           = 0.0;
 
 	hud_flags =
 		HUD_FLAG_HOTBAR_VISIBLE    | HUD_FLAG_HEALTHBAR_VISIBLE |
 		HUD_FLAG_CROSSHAIR_VISIBLE | HUD_FLAG_WIELDITEM_VISIBLE |
-		HUD_FLAG_BREATHBAR_VISIBLE | HUD_FLAG_MINIMAP_VISIBLE;
+		HUD_FLAG_BREATHBAR_VISIBLE | HUD_FLAG_MINIMAP_VISIBLE   |
+		HUD_FLAG_MINIMAP_RADAR_VISIBLE | HUD_FLAG_BASIC_DEBUG;
 
 	hud_hotbar_itemcount = HUD_HOTBAR_ITEMCOUNT_DEFAULT;
+
+	m_player_settings.readGlobalSettings();
+	// Register player setting callbacks
+	for (const std::string &name : m_player_settings.setting_names)
+		g_settings->registerChangedCallback(name,
+			&Player::settingsChangedCallback, &m_player_settings);
 }
 
 Player::~Player()
 {
+	// m_player_settings becomes invalid, remove callbacks
+	for (const std::string &name : m_player_settings.setting_names)
+		g_settings->deregisterChangedCallback(name,
+			&Player::settingsChangedCallback, &m_player_settings);
 	clearHud();
+}
+
+void Player::setWieldIndex(u16 index)
+{
+	const InventoryList *mlist = inventory.getList("main");
+	m_wield_index = MYMIN(index, mlist ? mlist->getSize() : 0);
+}
+
+ItemStack &Player::getWieldedItem(ItemStack *selected, ItemStack *hand) const
+{
+	assert(selected);
+
+	const InventoryList *mlist = inventory.getList("main"); // TODO: Make this generic
+	const InventoryList *hlist = inventory.getList("hand");
+
+	if (mlist && m_wield_index < mlist->getSize())
+		*selected = mlist->getItem(m_wield_index);
+
+	if (hand && hlist)
+		*hand = hlist->getItem(0);
+
+	// Return effective tool item
+	return (hand && selected->name.empty()) ? *hand : *selected;
 }
 
 u32 Player::addHud(HudElement *toadd)
@@ -145,3 +174,79 @@ void Player::addSpeed(v3f speed) {
 }
 
 // end of freeminer
+
+
+#ifndef SERVER
+
+u32 PlayerControl::getKeysPressed() const
+{
+	u32 keypress_bits =
+		( (u32)(jump  & 1) << 4) |
+		( (u32)(aux1  & 1) << 5) |
+		( (u32)(sneak & 1) << 6) |
+		( (u32)(dig   & 1) << 7) |
+		( (u32)(place & 1) << 8) |
+		( (u32)(zoom  & 1) << 9)
+	;
+
+	// If any direction keys are pressed pass those through
+	if (direction_keys != 0)
+	{
+		keypress_bits |= direction_keys;
+	}
+	// Otherwise set direction keys based on joystick movement (for mod compatibility)
+	else if (isMoving())
+	{
+		float abs_d;
+
+		// (absolute value indicates forward / backward)
+		abs_d = abs(movement_direction);
+		if (abs_d < 3.0f / 8.0f * M_PI)
+			keypress_bits |= (u32)1; // Forward
+		if (abs_d > 5.0f / 8.0f * M_PI)
+			keypress_bits |= (u32)1 << 1; // Backward
+
+		// rotate entire coordinate system by 90 degree
+		abs_d = movement_direction + M_PI_2;
+		if (abs_d >= M_PI)
+			abs_d -= 2 * M_PI;
+		abs_d = abs(abs_d);
+		// (value now indicates left / right)
+		if (abs_d < 3.0f / 8.0f * M_PI)
+			keypress_bits |= (u32)1 << 2; // Left
+		if (abs_d > 5.0f / 8.0f * M_PI)
+			keypress_bits |= (u32)1 << 3; // Right
+	}
+
+	return keypress_bits;
+}
+
+#endif
+
+void PlayerControl::unpackKeysPressed(u32 keypress_bits)
+{
+	direction_keys = keypress_bits & 0xf;
+	jump  = keypress_bits & (1 << 4);
+	aux1  = keypress_bits & (1 << 5);
+	sneak = keypress_bits & (1 << 6);
+	dig   = keypress_bits & (1 << 7);
+	place = keypress_bits & (1 << 8);
+	zoom  = keypress_bits & (1 << 9);
+}
+
+void PlayerSettings::readGlobalSettings()
+{
+	free_move = g_settings->getBool("free_move");
+	pitch_move = g_settings->getBool("pitch_move");
+	fast_move = g_settings->getBool("fast_move");
+	continuous_forward = g_settings->getBool("continuous_forward");
+	always_fly_fast = g_settings->getBool("always_fly_fast");
+	aux1_descends = g_settings->getBool("aux1_descends");
+	noclip = g_settings->getBool("noclip");
+	autojump = g_settings->getBool("autojump");
+}
+
+void Player::settingsChangedCallback(const std::string &name, void *data)
+{
+	((PlayerSettings *)data)->readGlobalSettings();
+}

@@ -20,8 +20,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef L_ROLLBACK_H_
-#define L_ROLLBACK_H_
+#pragma once
 
 #include "lua_api/l_base.h"
 
@@ -37,5 +36,3 @@ private:
 public:
 	static void Initialize(lua_State *L, int top);
 };
-
-#endif /* L_ROLLBACK_H_ */

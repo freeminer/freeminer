@@ -15,8 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef THREADING_CONCURENT_UNORDERED_MAP_HEADER
-#define THREADING_CONCURENT_UNORDERED_MAP_HEADER
+#pragma once
 
 #include <unordered_map>
 
@@ -44,14 +43,46 @@ public:
 	typedef typename full_type::const_iterator                         const_iterator;
 	typedef typename full_type::iterator                               iterator;
 
-	mapped_type& get(const key_type& k) {
-		auto lock = LOCKER::lock_shared_rec();
-		return full_type::operator[](k);
+	template <typename... Args>
+	decltype(auto) operator=(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::operator=(std::forward<Args>(args)...);
 	}
 
-	void set(const key_type& k, const mapped_type& v) {
+	mapped_type nothing = {};
+
+	template <typename... Args>
+	mapped_type& get(Args &&...args)
+	{
+		auto lock = LOCKER::lock_shared_rec();
+
+		//if (!full_type::contains(std::forward<Args>(args)...))
+		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
+			return nothing;
+
+		return full_type::operator[](std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) assign(Args &&...args)
+	{
 		auto lock = LOCKER::lock_unique_rec();
-		full_type::operator[](k) = v;
+		return full_type::assign(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) emplace(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::emplace(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) insert_or_assign(Args &&...args)
+	{
+		auto lock = LOCKER::lock_unique_rec();
+		return full_type::insert_or_assign(std::forward<Args>(args)...);
 	}
 
 	bool      empty() {
@@ -59,7 +90,7 @@ public:
 		return full_type::empty();
 	}
 
-	size_type size() {
+	size_type size() const {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::size();
 	}
@@ -134,6 +165,10 @@ template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equ
           class Alloc = std::allocator<std::pair<const Key, T> > >
 using concurrent_unordered_map = concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>;
 
+template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
+          class Alloc = std::allocator<std::pair<const Key, T> > >
+using concurrent_shared_unordered_map = concurrent_unordered_map_<shared_locker, Key, T, Hash, Pred, Alloc>;
+
 #if ENABLE_THREADS
 
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
@@ -163,7 +198,5 @@ public:
 template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
            class Alloc = std::allocator<std::pair<const Key, T> >>
 using maybe_concurrent_unordered_map = not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
-
-#endif
 
 #endif

@@ -40,6 +40,7 @@ https://chromium.googlesource.com/external/webrtc/+/master/talk/media/sctp/sctpd
 
 #include "network/fm_connection_sctp.h"
 #include "external/usrsctp/usrsctplib/usrsctp.h"
+#include "network/networkprotocol.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
@@ -131,7 +132,150 @@ debug_printf(const char *format, ...) {
 }
 
 
-auto & cs = verbosestream; //errorstream; // remove after debug
+//auto & cs = verbosestream; //errorstream; // remove after debug
+#if SCTP_DEBUG
+auto & cs = errorstream; // remove after debug
+#else
+auto & cs = verbosestream; // remove after debug
+#endif
+
+
+/*
+	ConnectionCommand
+ */
+
+ConnectionCommandPtr ConnectionCommand::create(ConnectionCommandType type)
+{
+	return ConnectionCommandPtr(new ConnectionCommand(type));
+}
+
+ConnectionCommandPtr ConnectionCommand::serve(Address address)
+{
+	auto c = create(CONNCMD_SERVE);
+	c->address = address;
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::connect(Address address)
+{
+	auto c = create(CONNCMD_CONNECT);
+	c->address = address;
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::disconnect()
+{
+	return create(CONNCMD_DISCONNECT);
+}
+
+ConnectionCommandPtr ConnectionCommand::disconnect_peer(session_t peer_id)
+{
+	auto c = create(CONNCMD_DISCONNECT_PEER);
+	c->peer_id = peer_id;
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::send(session_t peer_id, u8 channelnum,
+	NetworkPacket *pkt, bool reliable)
+{
+	auto c = create(CONNCMD_SEND);
+	c->peer_id = peer_id;
+	c->channelnum = channelnum;
+	c->reliable = reliable;
+	c->data = pkt->oldForgePacket();
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::send(session_t peer_id, u8 channelnum,
+	SharedBuffer<u8> data, bool reliable)
+{
+	auto c = create(CONNCMD_SEND);
+	c->peer_id = peer_id;
+	c->channelnum = channelnum;
+	c->reliable = reliable;
+	c->data = data;
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::ack(session_t peer_id, u8 channelnum, const Buffer<u8> &data)
+{
+	auto c = create(CONCMD_ACK);
+	c->peer_id = peer_id;
+	c->channelnum = channelnum;
+	c->reliable = false;
+	data.copyTo(c->data);
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::createPeer(session_t peer_id, const Buffer<u8> &data)
+{
+	auto c = create(CONCMD_CREATE_PEER);
+	c->peer_id = peer_id;
+	c->channelnum = 0;
+	c->reliable = true;
+	c->raw = true;
+	data.copyTo(c->data);
+	return c;
+}
+
+const char *ConnectionEvent::describe() const
+{
+	switch(type) {
+	case CONNEVENT_NONE:
+		return "CONNEVENT_NONE";
+	case CONNEVENT_DATA_RECEIVED:
+		return "CONNEVENT_DATA_RECEIVED";
+	case CONNEVENT_PEER_ADDED:
+		return "CONNEVENT_PEER_ADDED";
+	case CONNEVENT_PEER_REMOVED:
+		return "CONNEVENT_PEER_REMOVED";
+	case CONNEVENT_BIND_FAILED:
+		return "CONNEVENT_BIND_FAILED";
+	case CONNEVENT_CONNECT_FAILED:
+		return "CONNEVENT_CONNECT_FAILED";
+	}
+	return "Invalid ConnectionEvent";
+}
+
+ConnectionEventPtr ConnectionEvent::create(ConnectionEventType type)
+{
+	return std::shared_ptr<ConnectionEvent>(new ConnectionEvent(type));
+}
+
+ConnectionEventPtr ConnectionEvent::dataReceived(session_t peer_id, const Buffer<u8> &data)
+{
+	auto e = create(CONNEVENT_DATA_RECEIVED);
+	e->peer_id = peer_id;
+	data.copyTo(e->data);
+	return e;
+}
+
+ConnectionEventPtr ConnectionEvent::peerAdded(session_t peer_id, Address address)
+{
+	auto e = create(CONNEVENT_PEER_ADDED);
+	e->peer_id = peer_id;
+	e->address = address;
+	return e;
+}
+
+ConnectionEventPtr ConnectionEvent::peerRemoved(session_t peer_id, bool is_timeout, Address address)
+{
+	auto e = create(CONNEVENT_PEER_REMOVED);
+	e->peer_id = peer_id;
+	e->timeout = is_timeout;
+	//e->address = address;
+	return e;
+}
+
+ConnectionEventPtr ConnectionEvent::bindFailed()
+{
+	return create(CONNEVENT_BIND_FAILED);
+}
+
+ConnectionEventPtr ConnectionEvent::connectFailed()
+{
+	return create(CONNEVENT_CONNECT_FAILED);
+}
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
                        bool ipv6, PeerHandler *peerhandler):
@@ -178,33 +322,38 @@ Connection::~Connection() {
 void * Connection::run() {
 	while(!stopRequested()) {
 		while(!m_command_queue.empty()) {
-			ConnectionCommand c = m_command_queue.pop_frontNoEx();
+			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
-		receive();
+		if (receive() <= 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
 
 	return nullptr;
 }
 
-void Connection::putEvent(ConnectionEvent &e) {
-	assert(e.type != CONNEVENT_NONE);
+/* Internal stuff */
+
+void Connection::putEvent(ConnectionEventPtr e)
+{
+	assert(e->type != CONNEVENT_NONE); // Pre-condition
 	m_event_queue.push_back(e);
 }
 
-void Connection::processCommand(ConnectionCommand &c) {
-	switch(c.type) {
+void Connection::processCommand(ConnectionCommandPtr c) {
+	switch(c->type) {
 	case CONNCMD_NONE:
 		dout_con << getDesc() << " processing CONNCMD_NONE" << std::endl;
 		return;
 	case CONNCMD_SERVE:
 		dout_con << getDesc() << " processing CONNCMD_SERVE port="
-		         << c.address.getPort() << std::endl;
-		serve(c.address);
+		         << c->address.getPort() << std::endl;
+		serve(c->address);
 		return;
 	case CONNCMD_CONNECT:
 		dout_con << getDesc() << " processing CONNCMD_CONNECT" << std::endl;
-		connect(c.address);
+		connect(c->address);
 		return;
 	case CONNCMD_DISCONNECT:
 		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
@@ -212,21 +361,22 @@ void Connection::processCommand(ConnectionCommand &c) {
 		return;
 	case CONNCMD_DISCONNECT_PEER:
 		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
-		deletePeer(c.peer_id, false); // its correct ?
+		deletePeer(c->peer_id, false); // its correct ?
 		//DisconnectPeer(c.peer_id);
 		return;
 	case CONNCMD_SEND:
 		dout_con << getDesc() << " processing CONNCMD_SEND" << std::endl;
-		send(c.peer_id, c.channelnum, c.data, c.reliable);
+		send(c->peer_id, c->channelnum, c->data, c->reliable);
 		return;
 	case CONNCMD_SEND_TO_ALL:
 		dout_con << getDesc() << " processing CONNCMD_SEND_TO_ALL" << std::endl;
-		sendToAll(c.channelnum, c.data, c.reliable);
+		sendToAll(c->channelnum, c->data, c->reliable);
 		return;
-	case CONNCMD_DELETE_PEER:
+/*	case CONNCMD_DELETE_PEER:
 		dout_con << getDesc() << " processing CONNCMD_DELETE_PEER" << std::endl;
 		deletePeer(c.peer_id, false);
 		return;
+*/
 	}
 }
 
@@ -242,13 +392,19 @@ void Connection::sctp_setup(u16 port) {
 	debug_func = debug_printf;
 #endif
 
+	cs << "sctp_setup(" << port << ")" << std::endl;
+
 	usrsctp_init(port, nullptr, debug_func);
+	//usrsctp_init_nothreads(port, nullptr, debug_func);
 
 #if SCTP_DEBUG
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE); // SCTP_DEBUG_ALL
+	//usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
+	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
+	usrsctp_sysctl_set_sctp_logging_level(0xffffffff);
 #endif
 
-	usrsctp_sysctl_set_sctp_multiple_asconfs(1);
+	//usrsctp_sysctl_set_sctp_multiple_asconfs(1);
+	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
 
 //#if __ANDROID__
 	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
@@ -261,33 +417,36 @@ void Connection::sctp_setup(u16 port) {
 
 	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
 
-	usrsctp_sysctl_set_sctp_max_retran_chunk(5);
-	usrsctp_sysctl_set_sctp_shutdown_guard_time_default(10);
+	//usrsctp_sysctl_set_sctp_max_retran_chunk(5); // def 30
+    usrsctp_sysctl_set_sctp_shutdown_guard_time_default(20); // def 180
 	usrsctp_sysctl_set_sctp_heartbeat_interval_default(10);
-	usrsctp_sysctl_set_sctp_init_rtx_max_default(5); //def 10
-	usrsctp_sysctl_set_sctp_assoc_rtx_max_default(5); //def 10
-	usrsctp_sysctl_set_sctp_max_retran_chunk(5); //30
+	//usrsctp_sysctl_set_sctp_init_rtx_max_default(5); //def 8
+	//usrsctp_sysctl_set_sctp_assoc_rtx_max_default(5); //def 10
+	//usrsctp_sysctl_set_sctp_max_retran_chunk(5); //30
 
-#if !defined(SCTP_WITH_NO_CSUM)
-	usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
-#endif
+//#if !defined(SCTP_WITH_NO_CSUM)
+	//usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
+//#endif
 
 }
 
 
 
 // Receive packets from the network and buffers and create ConnectionEvents
-void Connection::receive() {
-
+int Connection::receive() {
+	int n = 0;
 	{
-		auto lock = m_peers.lock_shared_rec();
-		for (auto & i : m_peers) {
-			recv(i.first, i.second);
+		auto lock = m_peers.lock_unique_rec();
+		for (const auto & i : m_peers) {
+			 const auto [nn, brk] = recv(i.first, i.second);
+			 n += nn;
+			 if (brk) break;
 		}
 	}
 
 	if (sock_connect && sock) {
-		recv(PEER_ID_SERVER, sock);
+		const auto [nn, brk] = recv(PEER_ID_SERVER, sock);
+		n += nn;
 	}
 
 	if (sock_listen && sock) {
@@ -300,10 +459,10 @@ void Connection::receive() {
 		if ((conn_sock = usrsctp_accept(sock, (struct sockaddr *) &remote_addr, &addr_len)) == NULL) {
 			if (errno == EWOULDBLOCK) {
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				return;
+				return n;
 			} else {
 				cs << "usrsctp_accept failed.  exiting...\n";
-				return;
+				return n;
 			}
 		}
 
@@ -327,15 +486,14 @@ void Connection::receive() {
 
 		cs << "receive() accepted " << conn_sock << " addr_len=" << addr_len << " id=" << peer_id << std::endl;
 
-		m_peers.set(peer_id, conn_sock);
-		m_peers_address.set(peer_id, Address(remote_addr.sin6_addr, remote_addr.sin6_port));
+		m_peers.insert_or_assign(peer_id, conn_sock);
+		Address sender(remote_addr.sin6_addr, remote_addr.sin6_port);
+		m_peers_address.insert_or_assign(peer_id, sender);
 
-		ConnectionEvent e;
-		e.peerAdded(peer_id);
-		putEvent(e);
-
+		putEvent(ConnectionEvent::peerAdded(peer_id, sender));
+		++n;
 	}
-
+	return n;
 }
 
 //static
@@ -465,22 +623,22 @@ handle_peer_address_change_event(const struct sctp_paddr_change *spc) {
 }
 
 
-int Connection::recv(u16 peer_id, struct socket *sock) {
+std::pair<int, bool> Connection::recv(session_t peer_id, struct socket *sock) {
 
 	if (!sock) {
-		return 0;
+		return {0, false};
 	}
 
 	usrsctp_set_non_blocking(sock, 1);
 
-	struct sockaddr_in6 addr;
+	struct sockaddr_in6 addr = {};
 	socklen_t from_len = (socklen_t)sizeof(addr);
 	int flags = 0;
-	struct sctp_rcvinfo rcv_info;
+	struct sctp_rcvinfo rcv_info = {};
 	socklen_t infolen = (socklen_t)sizeof(rcv_info);
-	unsigned int infotype;
+	unsigned int infotype = {};
 	char buffer[BUFFER_SIZE]; //move to class
-	ssize_t n = usrsctp_recvv(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *) &addr, &from_len, (void *)&rcv_info,
+	auto n = usrsctp_recvv(sock, (void*)buffer, BUFFER_SIZE, (struct sockaddr *) &addr, &from_len, (void *)&rcv_info,
 	                          &infolen, &infotype, &flags);
 	if (n > 0) {
 		//cs << "receive() ... " << __LINE__ << " n=" << n << " rcv_sid="<<(int)rcv_info.rcv_sid<< " rcv_assoc_id="<<rcv_info.rcv_assoc_id<< std::endl;
@@ -506,7 +664,7 @@ int Connection::recv(u16 peer_id, struct socket *sock) {
 							break;
 					*/
 					case SCTP_COMM_UP:
-						m_peers_address.set(peer_id, Address(addr.sin6_addr, addr.sin6_port));
+						m_peers_address.insert_or_assign(peer_id, Address(addr.sin6_addr, addr.sin6_port));
 						/*							ConnectionEvent e;
 													e.peerAdded(peer_id);
 													putEvent(e);*/
@@ -561,6 +719,7 @@ int Connection::recv(u16 peer_id, struct socket *sock) {
 			case SCTP_SHUTDOWN_EVENT:
 				cs << "SCTP_SHUTDOWN_EVENT" << std::endl;
 				deletePeer(peer_id,  false);
+				return {n, true};
 				break;
 			case SCTP_ADAPTATION_INDICATION:
 				cs << "SCTP_ADAPTATION_INDICATION" << std::endl;
@@ -628,11 +787,9 @@ int Connection::recv(u16 peer_id, struct socket *sock) {
 				//cs <<  "recieved data n="<< n << " peer="<<peer_id<<" sid="<<rcv_info.rcv_sid<< " flags="<<flags<<" complete="<<(flags & MSG_EOR)<< " buf="<<recv_buf[peer_id].size()<<" from sock="<<sock<<" hash="<<std::dec<<std::hash<std::string>()(std::string(buffer, n))<<std::endl;
 				if ((flags & MSG_EOR)) {
 //cs<<"recv: msg complete peer="<<peer_id<<" sid="<<rcv_info.rcv_sid<<" size="<<recv_buf[peer_id][rcv_info.rcv_sid].size()<<" hash="<<std::dec<<std::hash<std::string>()(recv_buf[peer_id][rcv_info.rcv_sid])<<std::endl;
-					ConnectionEvent e;
 					//SharedBuffer<u8> resultdata((const unsigned char*)buffer, n);
 					SharedBuffer<u8> resultdata((const unsigned char*)recv_buf[peer_id][rcv_info.rcv_sid].c_str(), recv_buf[peer_id][rcv_info.rcv_sid].size());
-					e.dataReceived(peer_id, resultdata);
-					putEvent(e);
+					putEvent(ConnectionEvent::dataReceived(peer_id, resultdata));
 					//recv_buf[rcv_info.rcv_sid].erase(peer_id);
 					recv_buf[peer_id][rcv_info.rcv_sid].clear();
 				}
@@ -640,18 +797,20 @@ int Connection::recv(u16 peer_id, struct socket *sock) {
 
 			}
 		}
+    } else if (n == 0 || errno == EINPROGRESS || errno == EAGAIN) {
+		// nothing
 	} else {
 
 		// drop peer here
-		cs<<"receive() ... drop "<<__LINE__<< " errno="<<errno << " EINPROGRESS="<<EINPROGRESS <<std::endl;
+		cs<<"receive() ... drop on" <<__LINE__<< " peer_id="<< peer_id << " sock="<< (long)sock<< " errno="<<errno << " EINPROGRESS="<<EINPROGRESS << " n=" << n <<std::endl;
 		//if (m_peers.count(peer_id)) { //ugly fix. todo: fix enet and remove
-//					deletePeer(peer_id,  false);
+			deletePeer(peer_id,  false);
 		//}
 		//break;
+		return {0, true};
 	}
 
-	return n;
-
+	return {0, false};
 }
 
 
@@ -668,7 +827,7 @@ static uint16_t event_types[] = {SCTP_ASSOC_CHANGE,
 
 
 
-void Connection::sock_setup(u16 peer_id, struct socket *sock) {
+void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock) {
 
 	struct sctp_event event = {};
 	event.se_assoc_id = SCTP_ALL_ASSOC;
@@ -679,6 +838,7 @@ void Connection::sock_setup(u16 peer_id, struct socket *sock) {
 			perror("setsockopt SCTP_EVENT");
 		}
 	}
+
 
 	const int one = 1;
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, &one, sizeof(one)) < 0) {
@@ -695,6 +855,7 @@ void Connection::sock_setup(u16 peer_id, struct socket *sock) {
 			perror("setsockopt SCTP_NODELAY");
 		}
 
+
 	/*
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REUSE_PORT, &on, sizeof(int)) < 0) {
 			perror("setsockopt SCTP_REUSE_PORT");
@@ -705,19 +866,18 @@ void Connection::sock_setup(u16 peer_id, struct socket *sock) {
 
 // host
 void Connection::serve(Address bind_addr) {
-	cs << "serve()" << bind_addr.serializeString() << " :" << bind_addr.getPort() << std::endl;
+	cs << "serve() " << bind_addr.serializeString() << " :" << bind_addr.getPort() << std::endl;
 	sctp_setup(bind_addr.getPort());
 
-
-	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
-		cs << ("usrsctp_socket") << std::endl;
-		ConnectionEvent ev(CONNEVENT_BIND_FAILED);
-		putEvent(ev);
+	if ((sock = usrsctp_socket(PF_INET6 , SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
+		cs << ("usrsctp_socket is NULL") << std::endl;
+		putEvent(ConnectionEvent::bindFailed());
+	    return;
 	}
 
-	sock_setup(0, sock);
+	sock_setup(/*0,*/ sock);
 
-	struct sockaddr_in6 addr;
+	struct sockaddr_in6 addr = {};
 
 	if (!bind_addr.isIPv6()) {
 		cs << "connect() transform to v6 " << __LINE__ << std::endl;
@@ -750,28 +910,26 @@ void Connection::serve(Address bind_addr) {
 void Connection::connect(Address addr) {
 	cs << "connect() " << addr.serializeString() << " :" << addr.getPort() << std::endl;
 
-	sctp_setup(addr.getPort() + myrand_range(1000, 10000));
+	sctp_setup(addr.getPort() + myrand_range(100, 1000));
 
 	m_last_recieved = porting::getTimeMs();
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if(node != m_peers.end()) {
 		//throw ConnectionException("Already connected to a server");
-		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::connectFailed());
 	}
 
 	struct socket *sock;
 
 	if ((sock = usrsctp_socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		cs << ("usrsctp_socket") << sock << std::endl;
-		ConnectionEvent ev(CONNEVENT_BIND_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::bindFailed());
 		return;
 	}
 
-	sock_setup(PEER_ID_SERVER, sock);
+	sock_setup(/*PEER_ID_SERVER,*/ sock);
 
-	m_peers.set(PEER_ID_SERVER, sock);
+	m_peers.insert_or_assign(PEER_ID_SERVER, sock);
 
 	cs << "connect() using encaps " << addr.getPort() << std::endl;
 
@@ -780,8 +938,7 @@ void Connection::connect(Address addr) {
 	encaps.sue_port = htons(addr.getPort());
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT, (const void*)&encaps, (socklen_t)sizeof(encaps)) < 0) {
 		cs << ("connect setsockopt fail") << std::endl;
-		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::connectFailed());
 	}
 
 	struct sockaddr_in6 addr6 = {};
@@ -847,13 +1004,12 @@ void Connection::disconnect() {
 }
 
 void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable) {
-	auto lock = m_peers.lock_shared_rec();
-	for (auto i = m_peers.begin();
-	        i != m_peers.end(); ++i)
-		send(i->first, channelnum, data, reliable);
+	auto lock = m_peers.lock_unique_rec();
+	for (const auto & i : m_peers)
+		send(i.first, channelnum, data, reliable);
 }
 
-void Connection::send(u16 peer_id, u8 channelnum,
+void Connection::send(session_t peer_id, u8 channelnum,
                       SharedBuffer<u8> data, bool reliable) {
 	//cs<<" === sending to peer_id="<<peer_id <<" channelnum="<<(int)channelnum<< " reliable="<<reliable<< " bytes="<<data.getSize()<<" hash=" <<std::dec<< std::hash<std::string>()(std::string((const char*)*data, data.getSize()))<<std::endl;
 	{
@@ -922,6 +1078,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 		if (errno == EWOULDBLOCK) {
 			cs << "send EWOULDBLOCK len=" << len << std::endl;
 			usrsctp_set_non_blocking(sock, 0);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 			continue;
 		}
@@ -942,7 +1099,7 @@ void Connection::send(u16 peer_id, u8 channelnum,
 }
 
 
-struct socket * Connection::getPeer(u16 peer_id) {
+struct socket * Connection::getPeer(session_t peer_id) {
 	auto node = m_peers.find(peer_id);
 
 	if(node == m_peers.end())
@@ -951,16 +1108,15 @@ struct socket * Connection::getPeer(u16 peer_id) {
 	return node->second;
 }
 
-bool Connection::deletePeer(u16 peer_id, bool timeout) {
+bool Connection::deletePeer(session_t peer_id, bool timeout) {
 	cs << "Connection::deletePeer " << peer_id << ", " << timeout << std::endl;
 	if (!peer_id) {
 		if (sock) {
 			usrsctp_close(sock);
 			sock = nullptr;
 
-			ConnectionEvent e;
-			e.peerRemoved(peer_id, timeout);
-			putEvent(e);
+			putEvent(ConnectionEvent::peerRemoved(peer_id, timeout));
+
 
 			return true;
 		} else {
@@ -971,9 +1127,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout) {
 		return false;
 
 	// Create event
-	ConnectionEvent e;
-	e.peerRemoved(peer_id, timeout);
-	putEvent(e);
+	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout));
 
 	{
 		auto lock = m_peers.lock_unique_rec();
@@ -989,7 +1143,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout) {
 }
 
 /* Interface */
-
+/*
 ConnectionEvent Connection::getEvent() {
 	if(m_event_queue.empty()) {
 		ConnectionEvent e;
@@ -998,32 +1152,35 @@ ConnectionEvent Connection::getEvent() {
 	}
 	return m_event_queue.pop_frontNoEx();
 }
+*/
 
-ConnectionEvent Connection::waitEvent(u32 timeout_ms) {
+ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
+{
 	try {
 		return m_event_queue.pop_front(timeout_ms);
-	} catch(ItemNotFoundException &ex) {
-		ConnectionEvent e;
-		e.type = CONNEVENT_NONE;
-		return e;
+	} catch(const ItemNotFoundException &ex) {
+		return ConnectionEvent::create(CONNEVENT_NONE);
 	}
 }
 
-void Connection::putCommand(ConnectionCommand &c) {
-	m_command_queue.push_back(c);
-	//processCommand(c);
+
+void Connection::putCommand(ConnectionCommandPtr c)
+{
+	//TODO? if (!m_shutting_down) 
+	{
+		m_command_queue.push_back(c);
+		//m_sendThread->Trigger();
+	}
 }
 
-void Connection::Serve(Address bind_address) {
-	ConnectionCommand c;
-	c.serve(bind_address);
-	putCommand(c);
+void Connection::Serve(Address bind_addr)
+{
+	putCommand(ConnectionCommand::serve(bind_addr));
 }
 
-void Connection::Connect(Address address) {
-	ConnectionCommand c;
-	c.connect(address);
-	putCommand(c);
+void Connection::Connect(Address address)
+{
+	putCommand(ConnectionCommand::connect(address));
 }
 
 bool Connection::Connected() {
@@ -1043,36 +1200,35 @@ bool Connection::Connected() {
 	return true;
 }
 
-void Connection::Disconnect() {
-	ConnectionCommand c;
-	c.disconnect();
-	putCommand(c);
+void Connection::Disconnect()
+{
+	putCommand(ConnectionCommand::disconnect());
 }
 
 u32 Connection::Receive(NetworkPacket* pkt, int timeout) {
 	for(;;) {
-		ConnectionEvent e = waitEvent(timeout);
-		if(e.type != CONNEVENT_NONE)
+		auto e = waitEvent(timeout);
+		if(e->type != CONNEVENT_NONE)
 			dout_con << getDesc() << ": Receive: got event: "
-			         << e.describe() << std::endl;
-		switch(e.type) {
+			         << e->describe() << std::endl;
+		switch(e->type) {
 		case CONNEVENT_NONE:
 			//throw NoIncomingDataException("No incoming data");
 			return 0;
 		case CONNEVENT_DATA_RECEIVED:
-			if (e.data.getSize() < 2) {
+			if (e->data.getSize() < 2) {
 				continue;
 			}
-			pkt->putRawPacket(*e.data, e.data.getSize(), e.peer_id);
-			return e.data.getSize();
+			pkt->putRawPacket(*e->data, e->data.getSize(), e->peer_id);
+			return e->data.getSize();
 		case CONNEVENT_PEER_ADDED: {
 			if(m_bc_peerhandler)
-				m_bc_peerhandler->peerAdded(e.peer_id);
+				m_bc_peerhandler->peerAdded(e->peer_id);
 			continue;
 		}
 		case CONNEVENT_PEER_REMOVED: {
 			if(m_bc_peerhandler)
-				m_bc_peerhandler->deletingPeer(e.peer_id, e.timeout);
+				m_bc_peerhandler->deletingPeer(e->peer_id, e->timeout);
 			continue;
 		}
 		case CONNEVENT_BIND_FAILED:
@@ -1086,6 +1242,12 @@ u32 Connection::Receive(NetworkPacket* pkt, int timeout) {
 	//throw NoIncomingDataException("No incoming data");
 }
 
+bool Connection::TryReceive(NetworkPacket *pkt)
+{
+	return Receive(pkt, 0);
+}
+
+/*
 void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable) {
 	assert(channelnum < CHANNEL_COUNT);
 
@@ -1093,32 +1255,44 @@ void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable) 
 	c.sendToAll(channelnum, data, reliable);
 	putCommand(c);
 }
+*/
 
-void Connection::Send(u16 peer_id, u8 channelnum,
-                      SharedBuffer<u8> data, bool reliable) {
-	assert(channelnum < CHANNEL_COUNT);
+void Connection::Send(session_t peer_id, u8 channelnum,
+		NetworkPacket *pkt, bool reliable)
+{
+	assert(channelnum < CHANNEL_COUNT); // Pre-condition
 
-	ConnectionCommand c;
-	c.send(peer_id, channelnum, data, reliable);
-	putCommand(c);
+	putCommand(ConnectionCommand::send(peer_id, channelnum, pkt, reliable));
 }
 
-void Connection::Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable) {
+void Connection::Send(session_t peer_id, u8 channelnum,
+		SharedBuffer<u8> data, bool reliable)
+{
+	assert(channelnum < CHANNEL_COUNT); // Pre-condition
+
+	putCommand(ConnectionCommand::send(peer_id, channelnum, data, reliable));
+}
+
+void Connection::Send(session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable) {
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	Send(peer_id, channelnum, data, reliable);
 }
 
-Address Connection::GetPeerAddress(u16 peer_id) {
+
+
+Address Connection::GetPeerAddress(session_t peer_id) {
 	if (!m_peers_address.count(peer_id))
 		return Address();
 	return m_peers_address.get(peer_id);
 }
 
+/*
 void Connection::DeletePeer(u16 peer_id) {
 	ConnectionCommand c;
 	c.deletePeer(peer_id);
 	putCommand(c);
 }
+*/
 
 void Connection::PrintInfo(std::ostream &out) {
 	out << getDesc() << ": ";
@@ -1132,15 +1306,14 @@ std::string Connection::getDesc() {
 	return "";
 	//return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
 }
-float Connection::getPeerStat(u16 peer_id, rtt_stat_type type) {
+float Connection::getPeerStat(session_t peer_id, rtt_stat_type type) {
 	return 0;
 }
 
-
-void Connection::DisconnectPeer(u16 peer_id) {
-	ConnectionCommand discon;
-	discon.disconnect_peer(peer_id);
-	putCommand(discon);
+void Connection::DisconnectPeer(session_t peer_id)
+{
+	putCommand(ConnectionCommand::disconnect_peer(peer_id));
 }
+
 
 } // namespace

@@ -1,0 +1,85 @@
+#include "map.h"
+#include "serverenvironment.h"
+#include "util/timetaker.h"
+
+int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
+	u32 n = 0, calls = 0;
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
+	if (m_active_block_analyzed_last || m_analyze_blocks_interval.step(dtime, 1.0)) {
+		//if (!m_active_block_analyzed_last) infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
+		TimeTaker timer("env: block analyze and abm apply from " + itos(m_active_block_analyzed_last));
+
+		std::set<v3POS> active_blocks_list;
+		//auto active_blocks_list = m_active_blocks.m_list;
+		{
+			auto lock = m_active_blocks.m_list.try_lock_shared_rec();
+			if (lock->owns_lock())
+				active_blocks_list = m_active_blocks.m_list;
+		}
+
+		for(const auto & p : active_blocks_list)
+		{
+			if (n++ < m_active_block_analyzed_last)
+				continue;
+			else
+				m_active_block_analyzed_last = 0;
+			++calls;
+
+			MapBlock *block = m_map->getBlock(p, true);
+			if(!block)
+				continue;
+
+			analyzeBlock(block);
+
+			if (porting::getTimeMs() > end_ms) {
+				m_active_block_analyzed_last = n;
+				break;
+			}
+		}
+		if (!calls)
+			m_active_block_analyzed_last = 0;
+	}
+
+
+	if (g_settings->getBool("abm_random") && (!m_abm_random_blocks.empty() || m_abm_random_interval.step(dtime, 10.0))) {
+		TimeTaker timer("env: random abm " + itos(m_abm_random_blocks.size()));
+
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms/10;
+
+		if (m_abm_random_blocks.empty()) {
+#if !ENABLE_THREADS
+			auto lock_map = m_map->m_nothread_locker.try_lock_shared_rec();
+			if (lock_map->owns_lock())
+#endif
+			{
+				auto lock = m_map->m_blocks.try_lock_shared_rec();
+				if (lock->owns_lock())
+				for (auto & ir : m_map->m_blocks) {
+					if (!ir.second || !ir.second->abm_triggers)
+						continue;
+					m_abm_random_blocks.emplace_back(ir.first);
+				}
+			}
+			//infostream<<"Start ABM random cycle s="<<m_abm_random_blocks.size()<<std::endl;
+		}
+
+		for (auto i = m_abm_random_blocks.begin(); i != m_abm_random_blocks.end(); ++i) {
+			MapBlock* block = m_map->getBlock(*i, true);
+			i = m_abm_random_blocks.erase(i);
+			//ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
+
+			if (!block)
+				continue;
+
+			if (!block->abm_triggers)
+				continue;
+			//ScopeProfiler sp354(g_profiler, "ABM random trigger blocks", SPT_ADD);
+			block->abmTriggersRun(this, m_game_time);
+			if (porting::getTimeMs() > end_ms) {
+				break;
+			}
+		}
+	}
+
+	return calls;
+}
