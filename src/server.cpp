@@ -275,7 +275,7 @@ Server::Server(
 		throw ServerError("Supplied empty world path");
 
 	if (!gamespec.isValid())
-		throw ServerError("Supplied invalid gamespec");
+		throw ServerError("Supplied invalid gamespec " + gamespec.id);
 
 #if USE_PROMETHEUS
 	m_metrics_backend = std::unique_ptr<MetricsBackend>(createPrometheusMetricsBackend());

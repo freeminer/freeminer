@@ -982,7 +982,7 @@ void Client::initLocalMapSaving(const Address &address,
 
 		gamespec = findSubgame(g_settings->get("default_game"));
 		if (!gamespec.isValid())
-			gamespec = findSubgame("minimal");
+			gamespec = findSubgame("devtest");
 		conf.set("gameid", gamespec.id); // Later rewrited from server data
 	} else {
 		gamespec = findWorldSubgame(world_path);
