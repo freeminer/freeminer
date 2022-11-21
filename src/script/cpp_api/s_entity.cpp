@@ -126,7 +126,7 @@ void ScriptApiEntity::luaentity_Deactivate(u16 id, bool removal)
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
-		errorstream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+		verbosestream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
 		return;
 	}
 
@@ -180,7 +180,7 @@ std::string ScriptApiEntity::luaentity_GetStaticdata(u16 id)
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
-		errorstream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+		verbosestream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
 		return {};
 	}
 
@@ -229,12 +229,12 @@ void ScriptApiEntity::luaentity_GetProperties(u16 id,
 	lua_pop(L, 1);
 }
 
-void ScriptApiEntity::luaentity_Step(u16 id, float dtime,
+bool ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	const collisionMoveResult *moveresult)
 {
 	RecursiveMutexAutoLock testscriptlock(m_luastackmutex, std::try_to_lock);
 	if (!testscriptlock.owns_lock())
-		return;
+		return true;
 
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -244,8 +244,8 @@ void ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
-		errorstream << "ScriptApiEntity::luaentity_Step(" << id << "): Wrong type=" << type << std::endl;
-		return;
+		verbosestream << "ScriptApiEntity::luaentity_Step(" << id << "): Wrong type=" << type << std::endl;
+		return false;
 	}
 
 	int object = lua_gettop(L);
@@ -254,7 +254,7 @@ void ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	lua_getfield(L, -1, "on_step");
 	if (lua_isnil(L, -1)) {
 		lua_pop(L, 2); // Pop on_step and entity
-		return;
+		return true;
 	}
 	luaL_checktype(L, -1, LUA_TFUNCTION);
 	lua_pushvalue(L, object); // self
@@ -269,6 +269,7 @@ void ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	PCALL_RES(lua_pcall(L, 3, 0, error_handler));
 
 	lua_pop(L, 2); // Pop object and error handler
+	return true;
 }
 
 // Calls entity:on_punch(ObjectRef puncher, time_from_last_punch,
