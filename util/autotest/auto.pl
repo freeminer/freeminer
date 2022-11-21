@@ -674,7 +674,8 @@ our $tasks = {
         }
     ],
     gdb => sub {
-        local $config->{runner} =
+        ++$g->{keep_config};
+        $config->{runner} =
             $config->{runner}
           . $config->{gdb}
           . q{ -ex 'run' -ex 't a a bt' }
@@ -779,8 +780,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     fly            => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                                    #'
     timelapse_fly  => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],                        #'
     timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1,no_exit', -options_bot => '',}, \'bot', 'timelapse_video'],  #'
-    bench => [{'-fixed_map_seed' => 1, '--autoexit' => 30, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly_forward'=>1, '---world_clear'=>1, '---world' => $script_path . 'world_bench',
-        '-static_spawnpoint'  => '(0,20,0)',}, 'fly'],
+    bench => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly_forward'=>1, '---world_clear'=>1, '---world' => $script_path . 'world_bench',
+        '-static_spawnpoint'  => '(0,25,0)',}, 'fly'],
 
     bench1 => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '---world_clear'=>1, '---world' => $script_path . 'world_bench1',
         -mg_name=>'math', '-static_spawnpoint'=>"(0,20000,0)",}, 'set_client', 'build', 'run_single'],

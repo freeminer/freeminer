@@ -12,7 +12,7 @@
 	url = https://github.com/open-source-parsers/jsoncpp.git
 [submodule "games/pixture"]
 	path = games/pixture
-	url = https://github.com/kaadmy/pixture.git
+	url = https://codeberg.org/Wuzzy/Repixture.git
 [submodule "src/external/msgpack-c"]
 	path = src/external/msgpack-c
 	url = https://github.com/msgpack/msgpack-c.git

@@ -546,16 +546,16 @@ function core.check_single_for_falling(p)
 			if same and d_bottom.paramtype2 == "leveled" and
 					core.get_node_level(p_bottom) <
 					core.get_node_max_level(p_bottom) then
-				convert_to_falling_node(p, n)
-				return true
+				return convert_to_falling_node(p, n)
+				-- return true
 			end
 			-- Otherwise only if the bottom node is considered "fall through"
 			if not same and
 					(not d_bottom.walkable or d_bottom.buildable_to) and
 					(core.get_item_group(n.name, "float") == 0 or
 					d_bottom.liquidtype == "none") then
-				convert_to_falling_node(p, n)
-				return true
+				return convert_to_falling_node(p, n)
+				--return true
 			end
 		end
 	end
@@ -606,6 +606,7 @@ function core.check_for_falling(p)
 	local v = 1
 
 	while true do
+		if n > 100 then return end
 		-- Push current pos onto the stack.
 		n = n + 1
 		s[n] = {p = p, v = v}
