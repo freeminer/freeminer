@@ -124,6 +124,12 @@ void ScriptApiEntity::luaentity_Deactivate(u16 id, bool removal)
 
 	// Get the entity
 	luaentity_get(L, id);
+
+	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
+		errorstream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+		return;
+	}
+
 	int object = lua_gettop(L);
 
 	// Get on_deactivate
@@ -172,6 +178,12 @@ std::string ScriptApiEntity::luaentity_GetStaticdata(u16 id)
 
 	// Get core.luaentities[id]
 	luaentity_get(L, id);
+
+	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
+		errorstream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+		return {};
+	}
+
 	int object = lua_gettop(L);
 
 	// Get get_staticdata function
@@ -230,6 +242,12 @@ void ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 
 	// Get core.luaentities[id]
 	luaentity_get(L, id);
+
+	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
+		errorstream << "ScriptApiEntity::luaentity_Step(" << id << "): Wrong type=" << type << std::endl;
+		return;
+	}
+
 	int object = lua_gettop(L);
 	// State: object is at top of stack
 	// Get step function
