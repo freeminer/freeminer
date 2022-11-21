@@ -209,7 +209,9 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		&& (getType() < ACTIVEOBJECT_TYPE_LUACREATURE
         || getType() > ACTIVEOBJECT_TYPE_LUAFALLING)
     ) {
-		m_env->getScriptIface()->luaentity_Step(m_id, dtime, moveresult_p);
+		if (!m_env->getScriptIface()->luaentity_Step(m_id, dtime, moveresult_p)) {
+			markForRemoval();
+		}
 	}
 
 	if (!send_recommended)
