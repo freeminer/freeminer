@@ -32,7 +32,7 @@ fi
 git pull
 
 #compile
-cmake .. -DENABLE_GLES=1 # -DIRRLICHT_INCLUDE_DIR=../irrlicht/include -DIRRLICHT_LIBRARY=../irrlicht/lib/Linux/libIrrlicht.a
+cmake .. -GNinja -DENABLE_GLES=1 # -DIRRLICHT_INCLUDE_DIR=../irrlicht/include -DIRRLICHT_LIBRARY=../irrlicht/lib/Linux/libIrrlicht.a
 nice cmake --build .
 
 # link dir with /Shaders/

@@ -1811,7 +1811,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 	}
 /* TODO
 	if (g_settings->getS32("farmesh5") && !m_localserver) {
-		m_localserver = new Server("farmesh", findSubgame("minimal"), false, {}, true);
+		m_localserver = new Server("farmesh", findSubgame("devtest"), false, {}, true);
 	}
 */
 	{
