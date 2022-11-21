@@ -1,5 +1,10 @@
 -- Craft recipes and textures are from mesecons mod
 
+default = default or {
+	node_sound_stone_defaults = function(table) end,
+	node_sound_wood_defaults = function(table) end,
+}
+
 minetest.register_node("circuit:gate_not", {
 	description = "NOT Gate",
 	circuit_states = {16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
