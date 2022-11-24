@@ -839,7 +839,7 @@ static void getTileInfo(
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
 
 	MapNode n0;
-	for(int find = 0; find < step; ++find) {
+		for(int find = step - 1; find >= 0; --find) {
 		n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p*step + find);
 		if (step <= 1 || (n0.getContent() != CONTENT_IGNORE && n0.getContent() != CONTENT_AIR))
 			break;
@@ -852,7 +852,7 @@ static void getTileInfo(
 	}
 
 	MapNode n1;
-	for(int find = 0; find < step; ++find) {
+		for(int find = step - 1; find >= 0; --find) {
 		n1 = vmanip.getNodeRefUnsafeCheckFlags(blockpos_nodes + p*step + face_dir*step + find);
 		if (step <= 1 || (n1.getContent() != CONTENT_IGNORE && n1.getContent() != CONTENT_AIR))
 			break;
