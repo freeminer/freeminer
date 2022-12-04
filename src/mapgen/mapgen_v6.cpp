@@ -53,6 +53,7 @@ FlagDesc flagdesc_mapgen_v6[] = {
 	{"snowbiomes", MGV6_SNOWBIOMES},
 	{"flat",       MGV6_FLAT},
 	{"trees",      MGV6_TREES},
+	{"floatlands", MGV6_FLOATLANDS},
 	{NULL,         0}
 };
 
@@ -655,11 +656,15 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 	if (flags & MG_ORES)
 		m_emerge->oremgr->placeAllOres(this, blockseed, node_min, node_max);
 
+	// Limit floatland shadows
+	bool propagate_shadow = !((spflags & MGV6_FLOATLANDS) &&
+		node_max.Y >= floatland_ymin - csize.Y * 2 && node_min.Y <= floatland_ymax);
+
 	// Calculate lighting
 	if (flags & MG_LIGHT)
 		calcLighting(node_min - v3s16(1, 1, 1) * MAP_BLOCKSIZE,
 			node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE,
-			full_node_min, full_node_max);
+			full_node_min, full_node_max, propagate_shadow);
 
 	this->generating = false;
 }

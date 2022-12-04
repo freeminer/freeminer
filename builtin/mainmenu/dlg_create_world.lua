@@ -37,6 +37,8 @@ local flag_checkboxes = {
 		{ "trees", fgettext("Trees and jungle grass") },
 		{ "flat", fgettext("Flat terrain") },
 		{ "mudflow", fgettext("Mud flow"), fgettext("Terrain surface erosion") },
+		{ "floatlands", fgettext("Floatlands (experimental)"),
+		fgettext("Floating landmasses in the sky") },
 		-- Biome settings are in mgv6_biomes below
 	},
 	math = {

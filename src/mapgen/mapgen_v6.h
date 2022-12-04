@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MGV6_SNOWBIOMES 0x08
 #define MGV6_FLAT       0x10
 #define MGV6_TREES      0x20
+#define MGV6_FLOATLANDS 0x40
 
 
 extern FlagDesc flagdesc_mapgen_v6[];
@@ -84,6 +85,10 @@ struct MapgenV6Params : public MapgenParams {
 
 
 class MapgenV6 : public Mapgen {
+protected:
+	s16 floatland_ymin;
+	s16 floatland_ymax;
+
 public:
 	EmergeParams *m_emerge;
 

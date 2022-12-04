@@ -186,6 +186,9 @@ local function parse_setting_line(settings, line, read_all, base_level, allow_se
 				persistence = values[8],
 				lacunarity = values[9],
 				flags = values[10]
+				,
+				farscale  = values[11],
+				farspread  = values[12],
 			},
 			values = values,
 			comment = current_comment,
