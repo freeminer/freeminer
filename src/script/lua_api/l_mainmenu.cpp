@@ -1018,9 +1018,39 @@ int ModApiMainMenu::l_do_async_callback(lua_State *L)
 	return 1;
 }
 
+int ModApiMainMenu::l_get_lan_servers(lua_State *L)
+{
+	lua_newtable(L);
+	int top = lua_gettop(L);
+	unsigned int index = 1;
+
+	for (const auto &server : ServerList::lan_adv_client.collected) {
+		lua_pushnumber(L, index);
+
+		lua_newtable(L);
+		int top_lvl2 = lua_gettop(L);
+
+		for (const auto &field_name : server.second.getMemberNames()) {
+			lua_pushstring(L, field_name.c_str());
+			if (server.second[field_name].isString())
+				lua_pushstring(L, server.second[field_name].asCString());
+			else // if (server.second[field_name].isNumeric())
+				lua_pushnumber(L, server.second[field_name].asDouble());
+			lua_settable(L, top_lvl2);
+		}
+
+		lua_settable(L, top);
+		++index;
+	}
+	return 1;
+}
+
 /******************************************************************************/
 void ModApiMainMenu::Initialize(lua_State *L, int top)
 {
+	//fm:
+    API_FCT(get_lan_servers);
+
 	API_FCT(update_formspec);
 	API_FCT(set_formspec_prepend);
 	API_FCT(set_clouds);
@@ -1070,6 +1100,9 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 /******************************************************************************/
 void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 {
+        //fm:
+        API_FCT(get_lan_servers);
+
 	API_FCT(get_worlds);
 	API_FCT(get_games);
 	API_FCT(get_mapgen_names);

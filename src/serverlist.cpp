@@ -138,20 +138,6 @@ void lan_get() {
 	lan_adv_client.ask();
 }
 
-void lan_apply(std::vector<Json::Value> & servers) {
-	auto lock = lan_adv_client.collected.lock_unique_rec();
-	if (lan_adv_client.collected.size()) {
-		if (servers.size()) {
-			Json::Value separator;
-			separator["name"] = "-----lan-servers-end-----";
-			servers.insert(servers.begin(), separator);
-		}
-		for (auto & i : lan_adv_client.collected) {
-			servers.insert(servers.begin(), i.second);
-		}
-	}
-}
-
 bool lan_fresh() {
 	auto result = lan_adv_client.fresh.load();
 	lan_adv_client.fresh = false;

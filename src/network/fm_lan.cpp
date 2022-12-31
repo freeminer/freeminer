@@ -89,8 +89,8 @@ void lan_adv::send_string(const std::string& str) {
 		int set_option_on = 1;
 		setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
 		socket_send.Send(Address(addr), str.c_str(), str.size());
-	} catch(std::exception &e) {
-		// errorstream << "udp broadcast send4 fail " << e.what() << "\n";
+	} catch(const std::exception &e) {
+		verbosestream << "udp broadcast send4 fail " << e.what() << "\n";
 	}
 
 	std::vector<uint32_t> scopes;
@@ -142,8 +142,8 @@ void lan_adv::send_string(const std::string& str) {
 					addr.sin6_scope_id = scope;
 					socket_send.Send(Address(addr), str.c_str(), str.size());
 				}
-			} catch(std::exception &e) {
-				// errorstream << "udp broadcast send6 fail " << e.what() << "\n";
+			} catch(const std::exception &e) {
+				verbosestream << "udp broadcast send6 fail " << e.what() << "\n";
 			}
 		}
 		freeaddrinfo(result);

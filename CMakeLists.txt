@@ -95,7 +95,7 @@ if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 		set(ENABLE_LEVELDB 0 CACHE BOOL "") # TODO: build via submodule
 		add_link_options(-stdlib=libc++)
 		add_compile_options(-stdlib=libc++)
-		message(STATUS "Using libc++ and lld linker")
+		message(STATUS "Using libc++ and lld linker: ${LIBCXX_LIBRARY}, ${LIBCXXABI_LIBRARY}")
 	endif()
 endif()
 

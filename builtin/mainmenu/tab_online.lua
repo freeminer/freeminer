@@ -22,6 +22,12 @@ local function get_sorted_servers()
 		incompatible = {}
 	}
 
+	servers.lan = core.get_lan_servers();
+	for _, server in ipairs(servers.lan) do
+		server.is_compatible = is_server_protocol_compat(server.proto_min, server.proto_max)
+	end
+
+
 	local favs = serverlistmgr.get_favorites()
 	local taken_favs = {}
 	local result = menudata.search_result or serverlistmgr.servers
@@ -153,11 +159,12 @@ local function get_formspec(tabview, name, tabdata)
 	local servers = get_sorted_servers()
 
 	local dividers = {
+		lan = "1,#00ff00," .. fgettext("Lan") .. ",,,0,0,,",
 		fav = "5,#ffff00," .. fgettext("Favorites") .. ",,,0,0,,",
 		public = "6,#4bdd42," .. fgettext("Public Servers") .. ",,,0,0,,",
 		incompatible = "7,"..mt_color_grey.."," .. fgettext("Incompatible Servers") .. ",,,0,0,,"
 	}
-	local order = {"fav", "public", "incompatible"}
+	local order = {"lan", "fav", "public", "incompatible"}
 
 	tabdata.lookup = {} -- maps row number to server
 	local rows = {}

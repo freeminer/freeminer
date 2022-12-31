@@ -34,7 +34,6 @@ namespace ServerList
 	//fm:
 	extern lan_adv lan_adv_client;
 	void lan_get();
-	void lan_apply(std::vector<Json::Value> & servers);
 	bool lan_fresh();
 
 enum AnnounceAction {AA_START, AA_UPDATE, AA_DELETE};
