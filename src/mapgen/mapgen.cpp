@@ -1033,8 +1033,8 @@ void MapgenParams::readParams(const Settings *settings)
 			mgtype = MAPGEN_DEFAULT;
 	}
 
-	settings->getPOSNoEx("water_level", water_level);
-	settings->getPOSNoEx("mapgen_limit", mapgen_limit);
+	settings->getPosNoEx("water_level", water_level);
+	settings->getPosNoEx("mapgen_limit", mapgen_limit);
 	settings->getS16NoEx("chunksize", chunksize);
 	settings->getFlagStrNoEx("mg_flags", flags, flagdesc_mapgen);
 
@@ -1053,8 +1053,8 @@ void MapgenParams::writeParams(Settings *settings) const
 {
 	settings->set("mg_name", Mapgen::getMapgenName(mgtype));
 	settings->setU64("seed", seed);
-	settings->setPOS("water_level", water_level);
-	settings->setPOS("mapgen_limit", mapgen_limit);
+	settings->setPos("water_level", water_level);
+	settings->setPos("mapgen_limit", mapgen_limit);
 	settings->setS16("chunksize", chunksize);
 	settings->setFlagStr("mg_flags", flags, flagdesc_mapgen);
 

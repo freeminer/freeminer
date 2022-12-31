@@ -958,7 +958,7 @@ void Server::AsyncRunStep(bool initial_step)
 				Set blocks not sent to far players
 			*/
 			if (!far_players.empty()) {
-				// Convert libst format to that wanted by SetBlocksNotSent
+				// Convert libs format to that wanted by SetBlocksNotSent
 				std::map<v3bpos_t, MapBlock*> modified_blocks2;
 				for (const v3bpos_t &modified_block : event->modified_blocks) {
 					modified_blocks2[modified_block] =

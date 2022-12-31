@@ -2354,7 +2354,7 @@ void Game::toggleUpdateCamera()
 
 void Game::increaseViewRange()
 {
-	pos_t range = g_settings->getPOS("viewing_range");
+	pos_t range = g_settings->getPos("viewing_range");
 	pos_t range_new = range + 10;
 
 	if (range_new > 4000) {
@@ -2371,7 +2371,7 @@ void Game::increaseViewRange()
 
 void Game::decreaseViewRange()
 {
-    pos_t range = g_settings->getPOS("viewing_range");
+    pos_t range = g_settings->getPos("viewing_range");
 	pos_t range_new = range - 10;
 
 	if (range_new < 20) {
