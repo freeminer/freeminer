@@ -108,14 +108,14 @@ void MapgenFractalParams::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgfractal_spflags", spflags, flagdesc_mapgen_fractal);
 	settings->getFloatNoEx("mgfractal_cave_width",         cave_width);
-	settings->getPOSNoEx("mgfractal_large_cave_depth",     large_cave_depth);
+	settings->getPosNoEx("mgfractal_large_cave_depth",     large_cave_depth);
 	settings->getU16NoEx("mgfractal_small_cave_num_min",   small_cave_num_min);
 	settings->getU16NoEx("mgfractal_small_cave_num_max",   small_cave_num_max);
 	settings->getU16NoEx("mgfractal_large_cave_num_min",   large_cave_num_min);
 	settings->getU16NoEx("mgfractal_large_cave_num_max",   large_cave_num_max);
 	settings->getFloatNoEx("mgfractal_large_cave_flooded", large_cave_flooded);
-	settings->getPOSNoEx("mgfractal_dungeon_ymin",         dungeon_ymin);
-	settings->getPOSNoEx("mgfractal_dungeon_ymax",         dungeon_ymax);
+	settings->getPosNoEx("mgfractal_dungeon_ymin",         dungeon_ymin);
+	settings->getPosNoEx("mgfractal_dungeon_ymax",         dungeon_ymax);
 	settings->getU16NoEx("mgfractal_fractal",              fractal);
 	settings->getU16NoEx("mgfractal_iterations",           iterations);
 	settings->getV3FNoEx("mgfractal_scale",                scale);
@@ -139,14 +139,14 @@ void MapgenFractalParams::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgfractal_spflags", spflags, flagdesc_mapgen_fractal);
 	settings->setFloat("mgfractal_cave_width",         cave_width);
-	settings->setPOS("mgfractal_large_cave_depth",     large_cave_depth);
+	settings->setPos("mgfractal_large_cave_depth",     large_cave_depth);
 	settings->setU16("mgfractal_small_cave_num_min",   small_cave_num_min);
 	settings->setU16("mgfractal_small_cave_num_max",   small_cave_num_max);
 	settings->setU16("mgfractal_large_cave_num_min",   large_cave_num_min);
 	settings->setU16("mgfractal_large_cave_num_max",   large_cave_num_max);
 	settings->setFloat("mgfractal_large_cave_flooded", large_cave_flooded);
-	settings->setPOS("mgfractal_dungeon_ymin",         dungeon_ymin);
-	settings->setPOS("mgfractal_dungeon_ymax",         dungeon_ymax);
+	settings->setPos("mgfractal_dungeon_ymin",         dungeon_ymin);
+	settings->setPos("mgfractal_dungeon_ymax",         dungeon_ymax);
 	settings->setU16("mgfractal_fractal",              fractal);
 	settings->setU16("mgfractal_iterations",           iterations);
 	settings->setV3F("mgfractal_scale",                scale);

@@ -528,7 +528,7 @@ s32 Settings::getS32(const std::string &name) const
 	return stoi(get(name));
 }
 
-pos_t Settings::getPOS(const std::string &name) const
+pos_t Settings::getPos(const std::string &name) const
 {
 	return stoi(get(name));
 }
@@ -791,7 +791,7 @@ bool Settings::getS32NoEx(const std::string &name, s32 &val) const
 }
 
 
-bool Settings::getPOSNoEx(const std::string &name, pos_t &val) const
+bool Settings::getPosNoEx(const std::string &name, pos_t &val) const
 {
 #if USE_POS32
 	return getS32NoEx(name, val);
@@ -935,7 +935,7 @@ bool Settings::setS32(const std::string &name, s32 value)
 	return set(name, itos(value));
 }
 
-bool Settings::setPOS(const std::string &name, pos_t value)
+bool Settings::setPos(const std::string &name, pos_t value)
 {
 	return set(name, itos(value));
 }

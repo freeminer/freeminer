@@ -203,7 +203,7 @@ MapDatabaseSQLite3::MapDatabaseSQLite3(const std::string &savedir):
 	MapDatabase()
 {
 #if USE_POS32
-	pos_t mapgen_limit = g_settings->getPOS("mapgen_limit");
+	pos_t mapgen_limit = g_settings->getPos("mapgen_limit");
 	if (mapgen_limit > 31000) {
 		throw DatabaseException("Database_SQLite3: mapgen_limit is too big (" + std::to_string(mapgen_limit) + "). Please set mapgen_limit = 31000");
 	}

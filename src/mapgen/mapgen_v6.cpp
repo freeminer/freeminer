@@ -186,8 +186,8 @@ void MapgenV6Params::readParams(const Settings *settings)
 	settings->getFlagStrNoEx("mgv6_spflags", spflags, flagdesc_mapgen_v6);
 	settings->getFloatNoEx("mgv6_freq_desert", freq_desert);
 	settings->getFloatNoEx("mgv6_freq_beach",  freq_beach);
-	settings->getPOSNoEx("mgv6_dungeon_ymin",  dungeon_ymin);
-	settings->getPOSNoEx("mgv6_dungeon_ymax",  dungeon_ymax);
+	settings->getPosNoEx("mgv6_dungeon_ymin",  dungeon_ymin);
+	settings->getPosNoEx("mgv6_dungeon_ymax",  dungeon_ymax);
 
 	settings->getNoiseParams("mgv6_np_terrain_base",   np_terrain_base);
 	settings->getNoiseParams("mgv6_np_terrain_higher", np_terrain_higher);
@@ -208,8 +208,8 @@ void MapgenV6Params::writeParams(Settings *settings) const
 	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6);
 	settings->setFloat("mgv6_freq_desert", freq_desert);
 	settings->setFloat("mgv6_freq_beach",  freq_beach);
-	settings->setPOS("mgv6_dungeon_ymin",  dungeon_ymin);
-	settings->setPOS("mgv6_dungeon_ymax",  dungeon_ymax);
+	settings->setPos("mgv6_dungeon_ymin",  dungeon_ymin);
+	settings->setPos("mgv6_dungeon_ymax",  dungeon_ymax);
 
 	settings->setNoiseParams("mgv6_np_terrain_base",   np_terrain_base);
 	settings->setNoiseParams("mgv6_np_terrain_higher", np_terrain_higher);

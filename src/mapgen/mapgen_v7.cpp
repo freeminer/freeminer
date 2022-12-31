@@ -172,26 +172,26 @@ MapgenV7Params::MapgenV7Params():
 void MapgenV7Params::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgv7_spflags", spflags, flagdesc_mapgen_v7);
-	settings->getPOSNoEx("mgv7_mount_zero_level",       mount_zero_level);
-	settings->getPOSNoEx("mgv7_floatland_ymin",         floatland_ymin);
-	settings->getPOSNoEx("mgv7_floatland_ymax",         floatland_ymax);
-	settings->getPOSNoEx("mgv7_floatland_taper",        floatland_taper);
+	settings->getPosNoEx("mgv7_mount_zero_level",       mount_zero_level);
+	settings->getPosNoEx("mgv7_floatland_ymin",         floatland_ymin);
+	settings->getPosNoEx("mgv7_floatland_ymax",         floatland_ymax);
+	settings->getPosNoEx("mgv7_floatland_taper",        floatland_taper);
 	settings->getFloatNoEx("mgv7_float_taper_exp",      float_taper_exp);
 	settings->getFloatNoEx("mgv7_floatland_density",    floatland_density);
-	settings->getPOSNoEx("mgv7_floatland_ywater",       floatland_ywater);
+	settings->getPosNoEx("mgv7_floatland_ywater",       floatland_ywater);
 
 	settings->getFloatNoEx("mgv7_cave_width",           cave_width);
-	settings->getPOSNoEx("mgv7_large_cave_depth",       large_cave_depth);
+	settings->getPosNoEx("mgv7_large_cave_depth",       large_cave_depth);
 	settings->getU16NoEx("mgv7_small_cave_num_min",     small_cave_num_min);
 	settings->getU16NoEx("mgv7_small_cave_num_max",     small_cave_num_max);
 	settings->getU16NoEx("mgv7_large_cave_num_min",     large_cave_num_min);
 	settings->getU16NoEx("mgv7_large_cave_num_max",     large_cave_num_max);
 	settings->getFloatNoEx("mgv7_large_cave_flooded",   large_cave_flooded);
-	settings->getPOSNoEx("mgv7_cavern_limit",           cavern_limit);
-	settings->getPOSNoEx("mgv7_cavern_taper",           cavern_taper);
+	settings->getPosNoEx("mgv7_cavern_limit",           cavern_limit);
+	settings->getPosNoEx("mgv7_cavern_taper",           cavern_taper);
 	settings->getFloatNoEx("mgv7_cavern_threshold",     cavern_threshold);
-	settings->getPOSNoEx("mgv7_dungeon_ymin",           dungeon_ymin);
-	settings->getPOSNoEx("mgv7_dungeon_ymax",           dungeon_ymax);
+	settings->getPosNoEx("mgv7_dungeon_ymin",           dungeon_ymin);
+	settings->getPosNoEx("mgv7_dungeon_ymax",           dungeon_ymax);
 
 	settings->getNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
 	settings->getNoiseParams("mgv7_np_terrain_alt",     np_terrain_alt);
@@ -213,26 +213,26 @@ void MapgenV7Params::readParams(const Settings *settings)
 void MapgenV7Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7);
-	settings->setPOS("mgv7_mount_zero_level",           mount_zero_level);
-	settings->setPOS("mgv7_floatland_ymin",             floatland_ymin);
-	settings->setPOS("mgv7_floatland_ymax",             floatland_ymax);
-	settings->setPOS("mgv7_floatland_taper",            floatland_taper);
+	settings->setPos("mgv7_mount_zero_level",           mount_zero_level);
+	settings->setPos("mgv7_floatland_ymin",             floatland_ymin);
+	settings->setPos("mgv7_floatland_ymax",             floatland_ymax);
+	settings->setPos("mgv7_floatland_taper",            floatland_taper);
 	settings->setFloat("mgv7_float_taper_exp",          float_taper_exp);
 	settings->setFloat("mgv7_floatland_density",        floatland_density);
-	settings->setPOS("mgv7_floatland_ywater",           floatland_ywater);
+	settings->setPos("mgv7_floatland_ywater",           floatland_ywater);
 
 	settings->setFloat("mgv7_cave_width",               cave_width);
-	settings->setPOS("mgv7_large_cave_depth",           large_cave_depth);
+	settings->setPos("mgv7_large_cave_depth",           large_cave_depth);
 	settings->setU16("mgv7_small_cave_num_min",         small_cave_num_min);
 	settings->setU16("mgv7_small_cave_num_max",         small_cave_num_max);
 	settings->setU16("mgv7_large_cave_num_min",         large_cave_num_min);
 	settings->setU16("mgv7_large_cave_num_max",         large_cave_num_max);
 	settings->setFloat("mgv7_large_cave_flooded",       large_cave_flooded);
-	settings->setPOS("mgv7_cavern_limit",               cavern_limit);
-	settings->setPOS("mgv7_cavern_taper",               cavern_taper);
+	settings->setPos("mgv7_cavern_limit",               cavern_limit);
+	settings->setPos("mgv7_cavern_taper",               cavern_taper);
 	settings->setFloat("mgv7_cavern_threshold",         cavern_threshold);
-	settings->setPOS("mgv7_dungeon_ymin",               dungeon_ymin);
-	settings->setPOS("mgv7_dungeon_ymax",               dungeon_ymax);
+	settings->setPos("mgv7_dungeon_ymin",               dungeon_ymin);
+	settings->setPos("mgv7_dungeon_ymax",               dungeon_ymax);
 
 	settings->setNoiseParams("mgv7_np_terrain_base",    np_terrain_base);
 	settings->setNoiseParams("mgv7_np_terrain_alt",     np_terrain_alt);
