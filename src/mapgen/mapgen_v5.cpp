@@ -103,17 +103,17 @@ void MapgenV5Params::readParams(const Settings *settings)
 {
 	settings->getFlagStrNoEx("mgv5_spflags", spflags, flagdesc_mapgen_v5);
 	settings->getFloatNoEx("mgv5_cave_width",         cave_width);
-	settings->getPOSNoEx("mgv5_large_cave_depth",     large_cave_depth);
+	settings->getPosNoEx("mgv5_large_cave_depth",     large_cave_depth);
 	settings->getU16NoEx("mgv5_small_cave_num_min",   small_cave_num_min);
 	settings->getU16NoEx("mgv5_small_cave_num_max",   small_cave_num_max);
 	settings->getU16NoEx("mgv5_large_cave_num_min",   large_cave_num_min);
 	settings->getU16NoEx("mgv5_large_cave_num_max",   large_cave_num_max);
 	settings->getFloatNoEx("mgv5_large_cave_flooded", large_cave_flooded);
-	settings->getPOSNoEx("mgv5_cavern_limit",         cavern_limit);
-	settings->getPOSNoEx("mgv5_cavern_taper",         cavern_taper);
+	settings->getPosNoEx("mgv5_cavern_limit",         cavern_limit);
+	settings->getPosNoEx("mgv5_cavern_taper",         cavern_taper);
 	settings->getFloatNoEx("mgv5_cavern_threshold",   cavern_threshold);
-	settings->getPOSNoEx("mgv5_dungeon_ymin",         dungeon_ymin);
-	settings->getPOSNoEx("mgv5_dungeon_ymax",         dungeon_ymax);
+	settings->getPosNoEx("mgv5_dungeon_ymin",         dungeon_ymin);
+	settings->getPosNoEx("mgv5_dungeon_ymax",         dungeon_ymax);
 
 	settings->getNoiseParams("mgv5_np_filler_depth", np_filler_depth);
 	settings->getNoiseParams("mgv5_np_factor",       np_factor);
@@ -130,17 +130,17 @@ void MapgenV5Params::writeParams(Settings *settings) const
 {
 	settings->setFlagStr("mgv5_spflags", spflags, flagdesc_mapgen_v5);
 	settings->setFloat("mgv5_cave_width",         cave_width);
-	settings->setPOS("mgv5_large_cave_depth",     large_cave_depth);
+	settings->setPos("mgv5_large_cave_depth",     large_cave_depth);
 	settings->setU16("mgv5_small_cave_num_min",   small_cave_num_min);
 	settings->setU16("mgv5_small_cave_num_max",   small_cave_num_max);
 	settings->setU16("mgv5_large_cave_num_min",   large_cave_num_min);
 	settings->setU16("mgv5_large_cave_num_max",   large_cave_num_max);
 	settings->setFloat("mgv5_large_cave_flooded", large_cave_flooded);
-	settings->setPOS("mgv5_cavern_limit",         cavern_limit);
-	settings->setPOS("mgv5_cavern_taper",         cavern_taper);
+	settings->setPos("mgv5_cavern_limit",         cavern_limit);
+	settings->setPos("mgv5_cavern_taper",         cavern_taper);
 	settings->setFloat("mgv5_cavern_threshold",   cavern_threshold);
-	settings->setPOS("mgv5_dungeon_ymin",         dungeon_ymin);
-	settings->setPOS("mgv5_dungeon_ymax",         dungeon_ymax);
+	settings->setPos("mgv5_dungeon_ymin",         dungeon_ymin);
+	settings->setPos("mgv5_dungeon_ymax",         dungeon_ymax);
 
 	settings->setNoiseParams("mgv5_np_filler_depth", np_filler_depth);
 	settings->setNoiseParams("mgv5_np_factor",       np_factor);
