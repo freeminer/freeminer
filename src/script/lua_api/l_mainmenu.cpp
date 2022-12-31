@@ -1018,6 +1018,12 @@ int ModApiMainMenu::l_do_async_callback(lua_State *L)
 	return 1;
 }
 
+int ModApiMainMenu::l_ask_lan_servers(lua_State *L)
+{
+	ServerList::lan_get();
+	return 1;
+}
+
 int ModApiMainMenu::l_get_lan_servers(lua_State *L)
 {
 	lua_newtable(L);
@@ -1049,6 +1055,7 @@ int ModApiMainMenu::l_get_lan_servers(lua_State *L)
 void ModApiMainMenu::Initialize(lua_State *L, int top)
 {
 	//fm:
+	API_FCT(ask_lan_servers);
     API_FCT(get_lan_servers);
 
 	API_FCT(update_formspec);
@@ -1100,8 +1107,9 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 /******************************************************************************/
 void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 {
-        //fm:
-        API_FCT(get_lan_servers);
+	// fm:
+	API_FCT(ask_lan_servers);
+	API_FCT(get_lan_servers);
 
 	API_FCT(get_worlds);
 	API_FCT(get_games);

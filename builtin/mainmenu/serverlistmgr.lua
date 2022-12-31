@@ -40,6 +40,8 @@ local public_downloading = false
 
 --------------------------------------------------------------------------------
 function serverlistmgr.sync()
+	core.ask_lan_servers()
+
 	if not serverlistmgr.servers then
 		serverlistmgr.servers = {{
 			name = fgettext("Loading..."),

@@ -65,6 +65,7 @@ private:
 
 
 	//fm:
+	static int l_ask_lan_servers(lua_State *L);
 	static int l_get_lan_servers(lua_State *L);
 
 	//api calls
