@@ -117,13 +117,13 @@ ABMHandler::ABMHandler(ServerEnvironment *env):
 		int heat_sum = 0;
 		int humidity_num = 0;
 
-		v3POS bpr = block->getPosRelative();
+		v3pos_t bpr = block->getPosRelative();
 		v3s16 p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
 		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
 		{
-			v3POS p = p0 + bpr;
+			v3pos_t p = p0 + bpr;
 #if ENABLE_THREADS
 			MapNode n = map->getNodeTry(p);
 #else
@@ -156,7 +156,7 @@ ABMHandler::ABMHandler(ServerEnvironment *env):
 			for(auto & ir: *(m_aabms[c])) {
 				auto i = &ir;
 				// Check neighbors
-				v3POS neighbor_pos;
+				v3pos_t neighbor_pos;
 				auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
 				if(required_neighbors.count() > 0)
 				{
@@ -252,7 +252,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		if (!dtime)
 			dtime = 1;
 
-		unordered_map_v3POS<int> active_object_added;
+		unordered_map_v3pos<int> active_object_added;
 
 		//infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
@@ -294,7 +294,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				continue;
 			}
 			//ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
-			v3POS blockpos = getNodeBlockPos(abm_trigger->pos);
+			v3pos_t blockpos = getNodeBlockPos(abm_trigger->pos);
 			int active_object_add = 0;
 			if (active_object_added.count(blockpos))
 				active_object_add = active_object_added[blockpos];

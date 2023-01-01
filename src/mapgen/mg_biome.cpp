@@ -305,7 +305,7 @@ Biome *BiomeGenOriginal::calcBiomeFromNoise(float heat, float humidity, v3s16 po
 }
 
 // Freeminer Weather
-s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
+s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 	//variant 1: full random
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
@@ -332,7 +332,7 @@ s16 BiomeManager::calcBlockHeat(v3POS p, uint64_t seed, float timeofday, float t
 	return heat;
 }
 
-s16 BiomeManager::calcBlockHumidity(v3POS p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
+s16 BiomeManager::calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
 	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
 	// auto humidity = calcHumidityAtPoint(p);

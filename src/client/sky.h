@@ -226,7 +226,7 @@ private:
 
 public:
 	irr::scene::ISceneNode * sun_moon_light = nullptr;
-	v3POS camera_offset;
+	v3pos_t camera_offset;
 	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
 private:
 };

@@ -39,15 +39,15 @@ public:
 	Circuit(ServerScripting* script, Map* map, const NodeDefManager* ndef, const std::string & savedir);
 	~Circuit();
 	void addBlock(MapBlock* block);
-	void addNode(v3POS pos);
-	void removeNode(v3POS pos, const MapNode& n_old);
-	void swapNode(v3POS pos, const MapNode& n_old, const MapNode& n_new);
-	void addElement(v3POS pos);
-	void removeElement(v3POS pos);
-	void addWire(v3POS pos);
-	void removeWire(v3POS pos);
+	void addNode(v3pos_t pos);
+	void removeNode(v3pos_t pos, const MapNode& n_old);
+	void swapNode(v3pos_t pos, const MapNode& n_old, const MapNode& n_new);
+	void addElement(v3pos_t pos);
+	void removeElement(v3pos_t pos);
+	void addWire(v3pos_t pos);
+	void removeWire(v3pos_t pos);
 	void update(float dtime);
-	void swapElement(const MapNode& n_old, const MapNode& n_new, v3POS pos);
+	void swapElement(const MapNode& n_old, const MapNode& n_new, v3pos_t pos);
 
 	void load();
 	void save();
@@ -60,14 +60,14 @@ private:
 	std::list <CircuitElement> m_elements;
 	std::list <CircuitElementVirtual> m_virtual_elements;
 
-	std::map <v3POS, std::list<CircuitElement>::iterator> m_pos_to_iterator;
+	std::map <v3pos_t, std::list<CircuitElement>::iterator> m_pos_to_iterator;
 	std::map <const unsigned char*, u32> m_func_to_id;
 
 	ServerScripting* m_script;
 	Map* m_map;
 	const NodeDefManager* m_ndef;
 
-	std::vector <v3POS> m_elements_queue;
+	std::vector <v3pos_t> m_elements_queue;
 	float m_min_update_delay;
 	float m_since_last_update;
 	float m_min_save_delay;

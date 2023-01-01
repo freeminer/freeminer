@@ -59,7 +59,7 @@ u8 CircuitElement::reverse_rotate_face[] = {
 	32, 4, 16, 8, 2, 2, 2, 2, 1, 1, 1, 1, 32, 4, 16, 8, 32, 4, 16, 8, 32, 4, 16, 8,
 };
 
-CircuitElement::CircuitElement(v3POS pos, u32 element_id, u8 delay) :
+CircuitElement::CircuitElement(v3pos_t pos, u32 element_id, u8 delay) :
 	m_pos(pos), m_prev_input_state(0), m_current_input_state(0),
 	m_next_input_state(0), m_current_output_state(0) {
 	m_element_id = element_id;
@@ -94,7 +94,7 @@ CircuitElement::CircuitElement(const CircuitElement& element) {
 }
 
 CircuitElement::CircuitElement(u32 element_id) :
-	m_pos(v3POS(0, 0, 0)), m_prev_input_state(0), m_current_input_state(0),
+	m_pos(v3pos_t(0, 0, 0)), m_prev_input_state(0), m_current_input_state(0),
 	m_next_input_state(0), m_current_output_state(0) {
 	m_element_id = element_id;
 	for(int i = 0; i < 6; ++i) {
@@ -221,22 +221,22 @@ void CircuitElement::getNeighbors(std::vector <std::list <CircuitElementVirtual>
 }
 
 void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<CircuitElement>::iterator, u8> >& connected,
-        Map* map, const NodeDefManager* ndef, v3POS pos, u8 face,
-        std::map<v3POS, std::list<CircuitElement>::iterator>& pos_to_iterator,
+        Map* map, const NodeDefManager* ndef, v3pos_t pos, u8 face,
+        std::map<v3pos_t, std::list<CircuitElement>::iterator>& pos_to_iterator,
         bool connected_faces[6]) {
-	static v3POS directions[6] = {v3POS(0, 1, 0),
-	                              v3POS(0, -1, 0),
-	                              v3POS(1, 0, 0),
-	                              v3POS(-1, 0, 0),
-	                              v3POS(0, 0, 1),
-	                              v3POS(0, 0, -1),
+	static v3pos_t directions[6] = {v3pos_t(0, 1, 0),
+	                              v3pos_t(0, -1, 0),
+	                              v3pos_t(1, 0, 0),
+	                              v3pos_t(-1, 0, 0),
+	                              v3pos_t(0, 0, 1),
+	                              v3pos_t(0, 0, -1),
 	                             };
 	// First - wire pos, second - acceptable faces
-	std::queue <std::pair <v3POS, u8> > q;
-	v3POS current_pos, next_pos;
+	std::queue <std::pair <v3pos_t, u8> > q;
+	v3pos_t current_pos, next_pos;
 	MapNode next_node, current_node;
 	// used[pos] = or of all faces, that are already processed
-	std::map <v3POS, u8> used;
+	std::map <v3pos_t, u8> used;
 	u8 face_id = FACE_TO_SHIFT(face);
 	connected_faces[face_id] = true;
 	used[pos] = face;
@@ -307,7 +307,7 @@ CircuitElementContainer CircuitElement::getFace(int id) const {
 	return m_faces[id];
 }
 
-v3POS CircuitElement::getPos() const {
+v3pos_t CircuitElement::getPos() const {
 	return m_pos;
 }
 

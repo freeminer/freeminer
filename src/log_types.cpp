@@ -19,7 +19,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "convert_json.h"
 #include "network/address.h"
 
-std::ostream &operator<<(std::ostream &s, const v2POS &p)
+std::ostream &operator<<(std::ostream &s, const v2pos_t &p)
 {
 	s << "(" << p.X << "," << p.Y << ")";
 	return s;
@@ -37,7 +37,7 @@ std::ostream &operator<<(std::ostream &s, const v2f &p)
 	return s;
 }
 
-std::ostream &operator<<(std::ostream &s, const v3POS &p)
+std::ostream &operator<<(std::ostream &s, const v3pos_t &p)
 {
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;
@@ -49,7 +49,7 @@ std::ostream &operator<<(std::ostream &s, const v3f &p)
 	return s;
 }
 
-std::ostream &operator<<(std::ostream &s, const std::map<v3POS, unsigned int> &p)
+std::ostream &operator<<(std::ostream &s, const std::map<v3pos_t, unsigned int> &p)
 {
 	for (auto &i : p)
 		s << i.first << "=" << i.second << " ";

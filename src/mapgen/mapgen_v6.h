@@ -159,13 +159,13 @@ public:
 	s16 find_stone_level(v2s16 p2d);
 	bool block_is_underground(u64 seed, v3s16 blockpos);
 
-	float getHumidity(v3POS p);
+	float getHumidity(v3pos_t p);
 	float getTreeAmount(v2s16 p);
 	bool getHaveAppleTree(v2s16 p);
 	float getMudAmount(int index);
 	bool getHaveBeach(int index);
-	BiomeV6Type getBiome(v3POS p);
-	BiomeV6Type getBiome(int index, v3POS p);
+	BiomeV6Type getBiome(v3pos_t p);
+	BiomeV6Type getBiome(int index, v3pos_t p);
 
 	u32 get_blockseed(u64 seed, v3s16 p);
 

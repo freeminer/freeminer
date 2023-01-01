@@ -151,8 +151,8 @@ public:
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
-	MapBlock * getBlockNoCreateNoEx(v3POS p, bool trylock = false, bool nocache = false);
-	MapBlockP getBlock(v3POS p, bool trylock = false, bool nocache = false);
+	MapBlock * getBlockNoCreateNoEx(v3pos_t p, bool trylock = false, bool nocache = false);
+	MapBlockP getBlock(v3pos_t p, bool trylock = false, bool nocache = false);
 	void getBlockCacheFlush();
 
 	/* Server overrides */
@@ -274,7 +274,7 @@ public:
 	virtual s16 getHumidity(const v3s16& p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3POS, MapBlockP, v3POSHash, v3POSEqual>
+	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3POSHash, v3POSEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
 	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
@@ -286,7 +286,7 @@ public:
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3POS, int, v3POSHash, v3POSEqual> m_db_miss;
+	concurrent_shared_unordered_map<v3pos_t, int, v3POSHash, v3POSEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -350,8 +350,8 @@ class ServerMap : public Map
 {
 public:
 //freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3POS &p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3POS & p, MapBlock *block = nullptr, unordered_map_v3POS<s16> *cache = nullptr);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr);
 
 	size_t transforming_liquid_size();
 	v3s16 transforming_liquid_pop();
@@ -372,24 +372,24 @@ public:
 
 	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
-	typedef unordered_map_v3POS<int> lighting_map_t;
+	typedef unordered_map_v3pos<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
-	std::map<v3POS, int> m_lighting_modified_blocks;
+	std::map<v3pos_t, int> m_lighting_modified_blocks;
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
-	void lighting_modified_add(const v3POS& pos, int range = 5);
+	void lighting_modified_add(const v3pos_t& pos, int range = 5);
 
 	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
 			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
 	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
 			std::map<v3s16, MapBlock *> &modified_blocks, uint64_t end_ms);
 
-	u32 updateLighting(concurrent_map<v3POS, MapBlock *> &a_blocks,
-			std::map<v3POS, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
-	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3POS<int> & processed, unsigned int max_cycle_ms = 0);
+	u32 updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
+			std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
+	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3pos<int> & processed, unsigned int max_cycle_ms = 0);
 	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
 
 	bool propagateSunlight(
-			const v3POS& pos, std::set<v3POS> &light_sources, bool remove_light = false);
+			const v3pos_t& pos, std::set<v3pos_t> &light_sources, bool remove_light = false);
 
 //end of freeminer
 
@@ -440,7 +440,7 @@ public:
 	void prepareBlock(MapBlock *block);
 
 	// Helper for placing objects on ground level
-	s16 findGroundLevel(v2POS p2d, bool cacheBlocks);
+	s16 findGroundLevel(v2pos_t p2d, bool cacheBlocks);
 
 	bool isBlockInQueue(v3s16 pos);
 
@@ -510,7 +510,7 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
-	concurrent_shared_unordered_map<v3POS, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
+	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
 private:
 
 	int m_map_compression_level;

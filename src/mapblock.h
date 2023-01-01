@@ -54,11 +54,11 @@ struct ActiveABM;
 static MapNode ignoreNode(CONTENT_IGNORE);
 struct abm_trigger_one {
 	ActiveABM * abm;
-	v3POS pos;
+	v3pos_t pos;
 	content_t content;
 	u32 active_object_count;
 	u32 active_object_count_wider;
-	v3POS neighbor_pos;
+	v3pos_t neighbor_pos;
 	bool activate;
 };
 
@@ -304,7 +304,7 @@ public:
 		return isValidPosition(p.X, p.Y, p.Z);
 	}
 
-	inline MapNode getNode(v3POS p, bool *valid_position)
+	inline MapNode getNode(v3pos_t p, bool *valid_position)
 	{
 		*valid_position = isValidPosition(p.X, p.Y, p.Z);
 
@@ -315,7 +315,7 @@ public:
 		return data[p.Z * zstride + p.Y * ystride + p.X];
 	}
 
-	MapNode getNodeNoEx(v3POS p);
+	MapNode getNodeNoEx(v3pos_t p);
 
 	MapNode getNode(v3s16 p)
 	{
@@ -347,7 +347,7 @@ public:
 
 	void setNode(v3s16 p, MapNode & n);
 
-	MapNode getNodeNoLock(v3POS p)
+	MapNode getNodeNoLock(v3pos_t p)
 	{
 		if (!data)
 			return ignoreNode;

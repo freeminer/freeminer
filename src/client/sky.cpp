@@ -128,7 +128,7 @@ void Sky::OnRegisterSceneNode()
 }
 
 void Sky::sky_rotate (const scene::ICameraSceneNode* camera, const SKY_ROTATE type, float wicked_time_of_day, v3f & Pos) {
-	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
+	v3pos_t player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
 	double shift = (double)player_position.Z / MAX_MAP_GENERATION_LIMIT;
 	double xz = 90;
 	double xy = wicked_time_of_day * 360 - 90;
@@ -229,7 +229,7 @@ void Sky::render()
 
 		video::SColor cloudyfogcolor = m_bgcolor;
 
-		v3POS player_position = floatToInt(camera->getPosition(), BS) + camera_offset;
+		v3pos_t player_position = floatToInt(camera->getPosition(), BS) + camera_offset;
 		float shift1 = -(float)player_position.Y / MAX_MAP_GENERATION_LIMIT;
 		float shifty = shift1 * 0.4;
 
@@ -419,7 +419,7 @@ void Sky::update(float time_of_day, float time_brightness,
 	}
 
 	scene::ICameraSceneNode* camera = SceneManager->getActiveCamera();
-	v3POS player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
+	v3pos_t player_position = floatToInt(camera->getPosition(), BS)+camera_offset;
 	float shifty = (float)player_position.Y / MAX_MAP_GENERATION_LIMIT;
 	float height_color = 1;
 	if (shifty > 0)

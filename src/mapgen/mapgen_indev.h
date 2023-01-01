@@ -55,19 +55,19 @@ public:
 	std::vector<MapNode> layers_node;
 	unsigned int layers_node_size = 0;
 	void layers_init(EmergeParams *emerge, const Json::Value & layersj);
-	void layers_prepare(const v3POS & node_min, const v3POS & node_max);
+	void layers_prepare(const v3pos_t & node_min, const v3pos_t & node_max);
 	MapNode layers_get(unsigned int index);
 
 	Noise *noise_float_islands1 = nullptr;
 	Noise *noise_float_islands2 = nullptr;
 	Noise *noise_float_islands3 = nullptr;
-	void float_islands_prepare(const v3POS & node_min, const v3POS & node_max, int min_y);
-	int float_islands_generate(const v3POS & node_min, const v3POS & node_max, int min_y, MMVManip *vm);
+	void float_islands_prepare(const v3pos_t & node_min, const v3pos_t & node_max, int min_y);
+	int float_islands_generate(const v3pos_t & node_min, const v3pos_t & node_max, int min_y, MMVManip *vm);
 
 	Noise *noise_cave_indev = nullptr;
 	int cave_noise_threshold = 0;
 	bool cave_noise_enabled = 0;
-	void cave_prepare(const v3POS & node_min, const v3POS & node_max, int max_y);
+	void cave_prepare(const v3pos_t & node_min, const v3pos_t & node_max, int max_y);
 
 };
 

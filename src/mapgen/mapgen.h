@@ -238,9 +238,9 @@ public:
 	//EmergeManager *m_emerge = nullptr;
 	EmergeParams *m_emerge = nullptr;
 	s16 liquid_pressure = 0;
-	unordered_map_v3POS<s16> heat_cache;
-	unordered_map_v3POS<s16> humidity_cache;
-	virtual bool visible(POS x, POS y, POS z) { return getGroundLevelAtPoint({x,z}) >= y; }
+	unordered_map_v3pos<s16> heat_cache;
+	unordered_map_v3pos<s16> humidity_cache;
+	virtual bool visible(pos_t x, pos_t y, pos_t z) { return getGroundLevelAtPoint({x,z}) >= y; }
 
 	// getSpawnLevelAtPoint() is a function within each mapgen that returns a
 	// suitable y co-ordinate for player spawn ('suitable' usually meaning
@@ -271,7 +271,7 @@ private:
 	void lightSpread(VoxelArea &a, std::queue<std::pair<v3s16, u8>> &queue,
 		const v3s16 &p, u8 light);
 
-		//, unordered_map_v3POS<u8> & skip, int r = 0
+		//, unordered_map_v3pos<u8> & skip, int r = 0
 
 
 	// isLiquidHorizontallyFlowable() is a helper function for updateLiquid()

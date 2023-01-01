@@ -9,7 +9,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms) {
 		//if (!m_active_block_analyzed_last) infostream<<"Start ABM analyze cycle s="<<m_active_blocks.m_list.size()<<std::endl;
 		TimeTaker timer("env: block analyze and abm apply from " + itos(m_active_block_analyzed_last));
 
-		std::set<v3POS> active_blocks_list;
+		std::set<v3pos_t> active_blocks_list;
 		//auto active_blocks_list = m_active_blocks.m_list;
 		{
 			auto lock = m_active_blocks.m_list.try_lock_shared_rec();

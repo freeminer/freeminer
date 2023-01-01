@@ -40,7 +40,7 @@ enum NeighborType {
 struct NodeNeighbor {
 	MapNode node;
 	NeighborType type;
-	v3POS pos;
+	v3pos_t pos;
 	content_t content;
 	bool liquid; //can liquid
 	bool infinity;
@@ -48,15 +48,15 @@ struct NodeNeighbor {
 	int drop; //drop by liquid
 };
 
-const v3POS liquid_flow_dirs[7] = {
+const v3pos_t liquid_flow_dirs[7] = {
 	// +right, +top, +back
-	v3POS( 0, -1, 0), // 0 bottom
-	v3POS( 0, 0, 0), // 1 self
-	v3POS( 0, 0, 1), // 2 back
-	v3POS( 0, 0, -1), // 3 front
-	v3POS( 1, 0, 0), // 4 right
-	v3POS(-1, 0, 0), // 5 left
-	v3POS( 0, 1, 0)  // 6 top
+	v3pos_t( 0, -1, 0), // 0 bottom
+	v3pos_t( 0, 0, 0), // 1 self
+	v3pos_t( 0, 0, 1), // 2 back
+	v3pos_t( 0, 0, -1), // 3 front
+	v3pos_t( 1, 0, 0), // 4 right
+	v3pos_t(-1, 0, 0), // 5 left
+	v3pos_t( 0, 1, 0)  // 6 top
 };
 
 // when looking around we must first check self node for correct type definitions
@@ -78,12 +78,12 @@ size_t ServerMap::transforming_liquid_size() {
 	return m_transforming_liquid.size();
 }
 
-void ServerMap::transforming_liquid_add(const v3POS &p) {
+void ServerMap::transforming_liquid_add(const v3pos_t &p) {
     	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
         m_transforming_liquid.push_back(p);
 }
 
-v3POS ServerMap::transforming_liquid_pop() {
+v3pos_t ServerMap::transforming_liquid_pop() {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 	auto front = m_transforming_liquid.front();
 	m_transforming_liquid.pop_front();
@@ -116,8 +116,8 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	//g_settings->getS16NoEx("liquid_pressure", liquid_pressure);
 
 	// list of nodes that due to viscosity have not reached their max level height
-	//unordered_map_v3POS<bool> must_reflow, must_reflow_second, must_reflow_third;
-	std::list<v3POS> must_reflow, must_reflow_second, must_reflow_third;
+	//unordered_map_v3pos<bool> must_reflow, must_reflow_second, must_reflow_third;
+	std::list<v3pos_t> must_reflow, must_reflow_second, must_reflow_third;
 	// List of MapBlocks that will require a lighting update (due to lava)
 	int falling = 0;
 	uint16_t loop_rand = myrand();
@@ -134,7 +134,7 @@ NEXT_LIQUID:
 		/*
 			Get a queued transforming liquid node
 		*/
-		v3POS p0;
+		v3pos_t p0;
 		{
 			//MutexAutoLock lock(m_transforming_liquid_mutex);
 			p0 = transforming_liquid_pop();
@@ -710,7 +710,7 @@ NEXT_LIQUID:
 			// If node emits light, MapBlock requires lighting update
 			// or if node removed
 			if (!(bool)liquid_levels[i] != !(bool)liquid_levels_want[i]) {
-				v3POS blockpos = getNodeBlockPos(neighbors[i].pos);
+				v3pos_t blockpos = getNodeBlockPos(neighbors[i].pos);
 				MapBlock *block = getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 				if(block) {
 					block->setLightingExpired(true);

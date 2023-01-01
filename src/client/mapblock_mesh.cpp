@@ -36,14 +36,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <algorithm>
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerblockpos, const v3POS & blockpos) {
+int getFarmeshStep(MapDrawControl& draw_control, const v3pos_t & playerblockpos, const v3pos_t & blockpos) {
 	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.farmesh) {
-		const POS nearest = 256/MAP_BLOCKSIZE;
-		if		(range >= std::min<POS>(nearest*8, draw_control.farmesh+draw_control.farmesh_step*4))	return 16;
-		else if (range >= std::min<POS>(nearest*4, draw_control.farmesh+draw_control.farmesh_step*2))	return 8;
-		else if (range >= std::min<POS>(nearest*2, draw_control.farmesh+draw_control.farmesh_step))	return 4;
-		else if (range >= std::min<POS>(nearest, draw_control.farmesh))								return 2;
+		const pos_t nearest = 256/MAP_BLOCKSIZE;
+		if		(range >= std::min<pos_t>(nearest*8, draw_control.farmesh+draw_control.farmesh_step*4))	return 16;
+		else if (range >= std::min<pos_t>(nearest*4, draw_control.farmesh+draw_control.farmesh_step*2))	return 8;
+		else if (range >= std::min<pos_t>(nearest*2, draw_control.farmesh+draw_control.farmesh_step))	return 4;
+		else if (range >= std::min<pos_t>(nearest, draw_control.farmesh))								return 2;
 	}
 	return 1;
 };

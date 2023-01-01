@@ -326,7 +326,7 @@ public:
 
 	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
 	// Including blocks at appropriate edges
-	void addUpdateMeshTaskWithEdge(v3POS blockpos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
 
 	void updateMeshTimestampWithEdge(v3s16 blockpos);

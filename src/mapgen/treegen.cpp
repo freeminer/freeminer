@@ -879,16 +879,16 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 	}
 }
 
-void make_cavetree(MMVManip &vmanip, v3POS p0,
+void make_cavetree(MMVManip &vmanip, v3pos_t p0,
 		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed)
 {
 	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));
 	MapNode leavesnode(ndef->getId(is_jungle_tree ? "mapgen_jungleleaves" : "mapgen_leaves"));
 
 	PseudoRandom pr(seed);
-	POS trunk_h = pr.range(2, pr.range(2, 5));
-	v3POS p1 = p0;
-	for (POS ii=0; ii<trunk_h; ii++) {
+	pos_t trunk_h = pr.range(2, pr.range(2, 5));
+	v3pos_t p1 = p0;
+	for (pos_t ii=0; ii<trunk_h; ii++) {
 		if (vmanip.m_area.contains(p1)) {
 			if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
 				return;

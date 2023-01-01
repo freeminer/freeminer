@@ -29,6 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 typedef core::vector2d<f32> v2f;
 typedef core::vector2d<s16> v2s16;
 typedef core::vector2d<s32> v2s32;
-typedef core::vector2d<POS> v2POS;
+typedef core::vector2d<pos_t> v2pos_t;
 typedef core::vector2d<u32> v2u32;
 typedef core::vector2d<f32> v2f32;

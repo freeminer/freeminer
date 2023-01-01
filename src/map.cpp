@@ -612,7 +612,7 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 		/*
 			Get a queued transforming liquid node
 		*/
-		v3POS p0 = transforming_liquid_pop();
+		v3pos_t p0 = transforming_liquid_pop();
 
 		MapNode n0 = getNode(p0);
 
@@ -1568,7 +1568,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	for (s16 x = bpmin.X; x <= bpmax.X; x++)
 	for (s16 z = bpmin.Z; z <= bpmax.Z; z++)
 	for (s16 y = bpmin.Y; y <= bpmax.Y; y++) {
-		v3POS p(x, y, z);
+		v3pos_t p(x, y, z);
 		MapBlock *block = getBlockNoCreateNoEx(p, false,true);
 		if (!block)
 			continue;
@@ -1718,7 +1718,7 @@ void ServerMap::prepareBlock(MapBlock *block) {
 	// Calculate weather conditions
 	//block->heat_last_update     = 0;
 	//block->humidity_last_update = 0;
-	v3POS p = block->getPos() *  MAP_BLOCKSIZE;
+	v3pos_t p = block->getPos() *  MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
 }

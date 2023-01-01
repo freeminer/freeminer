@@ -1873,7 +1873,7 @@ void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, int ste
 	m_mesh_update_thread.updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
 }
 
-void Client::addUpdateMeshTaskWithEdge(v3POS blockpos, bool ack_to_server, bool urgent)
+void Client::addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server, bool urgent)
 {
 	m_mesh_update_thread.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
 }
@@ -1901,7 +1901,7 @@ void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool ur
 		addUpdateMeshTask(blockpos + v3s16(0, 0, -1), false, urgent);
 }
 
-void Client::updateMeshTimestampWithEdge(v3POS blockpos) {
+void Client::updateMeshTimestampWithEdge(v3pos_t blockpos) {
 	for (const auto & dir : g_7dirs) {
 		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + dir);
 		if(!block)

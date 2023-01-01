@@ -614,7 +614,7 @@ int MapgenV7::generateTerrain()
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		cache_index = 0;
 		u32 vi = vm->m_area.index(x, node_min.Y - 1, z);

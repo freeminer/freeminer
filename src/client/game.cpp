@@ -4252,7 +4252,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			clouds->update(camera_node_position,
 					sky->getCloudColor(),
 					//client->getEnv().getClientMap().getHumidity(floatToInt(camera_node_position, BS), 1)
-					client->getEnv().getClientMap().getHumidity({pos_i.X, (POS)clouds->m_params.height, pos_i.Z}, 1)
+					client->getEnv().getClientMap().getHumidity({pos_i.X, (pos_t)clouds->m_params.height, pos_i.Z}, 1)
 			);
 			if (clouds->isCameraInsideCloud() && m_cache_enable_fog) {
 				// if inside clouds, and fog enabled, use that as sky

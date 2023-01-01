@@ -440,7 +440,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	u32 calls = 0;
 	const auto end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 
-	unordered_map_v3POS<bool> occlude_cache;
+	unordered_map_v3pos<bool> occlude_cache;
 
 	while (!draw_nearest.empty()) {
 		auto ir = draw_nearest.back();

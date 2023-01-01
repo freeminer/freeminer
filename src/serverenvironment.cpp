@@ -2360,7 +2360,7 @@ void ServerEnvironment::deactivateFarObjects(bool _force_delete)
 		// The block in which the object resides in
 		v3s16 blockpos_o = getNodeBlockPos(floatToInt(objectpos, BS));
 
-		v3POS static_block;
+		v3pos_t static_block;
 		{
 			auto lock = obj->try_lock_shared();
 			if (!lock->owns_lock())

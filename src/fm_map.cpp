@@ -32,11 +32,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if HAVE_THREAD_LOCAL
 thread_local MapBlockP m_block_cache = nullptr;
-thread_local v3POS m_block_cache_p;
+thread_local v3pos_t m_block_cache_p;
 #endif
 
 // TODO: REMOVE THIS func and use Map::getBlock
-MapBlock *Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
+MapBlock *Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
 {
 
 #ifndef NDEBUG
@@ -86,7 +86,7 @@ MapBlock *Map::getBlockNoCreateNoEx(v3POS p, bool trylock, bool nocache)
 	return block;
 }
 
-MapBlockP Map::getBlock(v3POS p, bool trylock, bool nocache)
+MapBlockP Map::getBlock(v3pos_t p, bool trylock, bool nocache)
 {
 	return getBlockNoCreateNoEx(p, trylock, nocache);
 }
@@ -99,13 +99,13 @@ void Map::getBlockCacheFlush()
 	m_block_cache = nullptr;
 }
 
-MapBlock *Map::createBlankBlockNoInsert(const v3POS &p)
+MapBlock *Map::createBlankBlockNoInsert(const v3pos_t &p)
 {
 	auto block = new MapBlock(this, p, m_gamedef);
 	return block;
 }
 
-MapBlock *Map::createBlankBlock(const v3POS &p)
+MapBlock *Map::createBlankBlock(const v3pos_t &p)
 {
 	m_db_miss.erase(p);
 
@@ -172,7 +172,7 @@ void Map::eraseBlock(const MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode Map::getNodeTry(const v3POS & p)
+MapNode Map::getNodeTry(const v3pos_t & p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
@@ -207,7 +207,7 @@ MapNode Map::getNodeNoLock(v3POS p) //dont use
 }
 */
 
-s16 Map::getHeat(const v3POS &p, bool no_random)
+s16 Map::getHeat(const v3pos_t &p, bool no_random)
 {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if (block != NULL) {
@@ -218,7 +218,7 @@ s16 Map::getHeat(const v3POS &p, bool no_random)
 	return 0;
 }
 
-s16 Map::getHumidity(const v3POS &p, bool no_random)
+s16 Map::getHumidity(const v3pos_t &p, bool no_random)
 {
 	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	if (block != NULL) {
@@ -230,7 +230,7 @@ s16 Map::getHumidity(const v3POS &p, bool no_random)
 }
 
 s16 ServerMap::updateBlockHeat(
-		ServerEnvironment *env, const v3POS &p, MapBlock *block, unordered_map_v3POS<s16> *cache)
+		ServerEnvironment *env, const v3pos_t &p, MapBlock *block, unordered_map_v3pos<s16> *cache)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
@@ -258,7 +258,7 @@ s16 ServerMap::updateBlockHeat(
 }
 
 s16 ServerMap::updateBlockHumidity(
-		ServerEnvironment *env, const v3POS &p, MapBlock *block, unordered_map_v3POS<s16> *cache)
+		ServerEnvironment *env, const v3pos_t &p, MapBlock *block, unordered_map_v3pos<s16> *cache)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
@@ -286,14 +286,14 @@ s16 ServerMap::updateBlockHumidity(
 	return value > 100 ? 100 : value;
 }
 
-int ServerMap::getSurface(const v3POS &basepos, int searchup, bool walkable_only)
+int ServerMap::getSurface(const v3pos_t &basepos, int searchup, bool walkable_only)
 {
 
 	s16 max = MYMIN(searchup + basepos.Y, 0x7FFF);
 
 	MapNode last_node = getNode(basepos);
 	MapNode node = last_node;
-	v3POS runpos = basepos;
+	v3pos_t runpos = basepos;
 	auto *nodemgr = m_gamedef->ndef();
 
 	bool last_was_walkable = nodemgr->get(node).walkable;
@@ -329,13 +329,13 @@ int ServerMap::getSurface(const v3POS &basepos, int searchup, bool walkable_only
 void Map::copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip)
 {
 
-	v3POS blockpos = block->getPos();
-	v3POS blockpos_nodes = blockpos * MAP_BLOCKSIZE;
+	v3pos_t blockpos = block->getPos();
+	v3pos_t blockpos_nodes = blockpos * MAP_BLOCKSIZE;
 
 	// Allocate this block + neighbors
 	vmanip.clear();
-	VoxelArea voxel_area(blockpos_nodes - v3POS(1, 1, 1) * MAP_BLOCKSIZE,
-			blockpos_nodes + v3POS(1, 1, 1) * MAP_BLOCKSIZE * 2 - v3POS(1, 1, 1));
+	VoxelArea voxel_area(blockpos_nodes - v3pos_t(1, 1, 1) * MAP_BLOCKSIZE,
+			blockpos_nodes + v3pos_t(1, 1, 1) * MAP_BLOCKSIZE * 2 - v3pos_t(1, 1, 1));
 	vmanip.addArea(voxel_area);
 
 	block->copyTo(vmanip);
@@ -343,7 +343,7 @@ void Map::copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip)
 	auto *map = block->getParent();
 
 	for (u16 i = 0; i < 26; i++) {
-		v3POS bp = blockpos + g_26dirs[i];
+		v3pos_t bp = blockpos + g_26dirs[i];
 		MapBlock *b = map->getBlockNoCreateNoEx(bp);
 		if (b)
 			b->copyTo(vmanip);
@@ -424,7 +424,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 					continue;
 				}
 				if (block->getUsageTimer() > unload_timeout) { // block->refGet() <= 0 &&
-					const v3POS p = block->getPos();
+					const v3pos_t p = block->getPos();
 					// infostream<<" deleting block p="<<p<<"
 					// ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<"
 					// inc="<<(uptime - block->m_uptime_timer_last)<<"
@@ -889,20 +889,20 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
 	}
 }
 
-u32 ServerMap::updateLighting(concurrent_map<v3POS, MapBlock *> &a_blocks,
-		std::map<v3POS, MapBlock *> &modified_blocks, unsigned int max_cycle_ms)
+u32 ServerMap::updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
+		std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms)
 {
 	lighting_map_t lighting_mblocks;
 	for (auto &i : a_blocks)
 		lighting_mblocks[i.first] = 0;
-	unordered_map_v3POS<int> processed;
+	unordered_map_v3pos<int> processed;
 	return updateLighting(lighting_mblocks, processed, max_cycle_ms);
 }
 
 u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
-		unordered_map_v3POS<int> &processed, unsigned int max_cycle_ms)
+		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms)
 {
-	std::map<v3POS, MapBlock *> modified_blocks;
+	std::map<v3pos_t, MapBlock *> modified_blocks;
 
 	auto *nodemgr = m_gamedef->ndef();
 
@@ -918,9 +918,9 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 	// std::unordered_set<v3POS, v3POSHash, v3POSEqual> light_sources;
 	// std::unordered_map<v3POS, u8, v3POSHash, v3POSEqual> unlight_from_day,
 	// unlight_from_night;
-	std::set<v3POS> light_sources;
-	std::map<v3POS, u8> unlight_from_day, unlight_from_night;
-	// unordered_map_v3POS<int> processed;
+	std::set<v3pos_t> light_sources;
+	std::map<v3pos_t, u8> unlight_from_day, unlight_from_night;
+	// unordered_map_v3pos<int> processed;
 
 	int num_bottom_invalid = 0;
 
@@ -962,7 +962,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 				if (!lock->owns_lock()) {
 					break; // may cause dark areas
 				}
-				v3POS pos = block->getPos();
+				v3pos_t pos = block->getPos();
 				// if (processed.count(pos)) infostream<<"Light: test pos" << pos << "
 				// pps="<<processed[pos] << " >= if="<< i->first.Y <<std::endl;
 
@@ -973,7 +973,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 				}
 				++loopcount;
 				processed[pos] = i->first.Y;
-				v3POS posnodes = block->getPosRelative();
+				v3pos_t posnodes = block->getPosRelative();
 				// modified_blocks[pos] = block;
 
 				block->setLightingExpired(true);
@@ -986,7 +986,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 				for (s16 z = 0; z < MAP_BLOCKSIZE; z++)
 					for (s16 x = 0; x < MAP_BLOCKSIZE; x++)
 						for (s16 y = 0; y < MAP_BLOCKSIZE; y++) {
-							v3POS p(x, y, z);
+							v3pos_t p(x, y, z);
 							bool is_valid_position;
 							MapNode n = block->getNode(p, &is_valid_position);
 							if (!is_valid_position) {
@@ -1008,7 +1008,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 							if (nodemgr->get(n).light_source)
 								light_sources.insert(p + posnodes);
 
-							v3POS p_map = p + posnodes;
+							v3pos_t p_map = p + posnodes;
 							// Collect borders for unlighting
 							if (x == 0 || x == MAP_BLOCKSIZE - 1 || y == 0 ||
 									y == MAP_BLOCKSIZE - 1 || z == 0 ||
@@ -1080,7 +1080,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 	return ret;
 }
 
-const v3POS g_4dirs[4] =
+const v3pos_t g_4dirs[4] =
 {
     // +right, +top, +back
     { 0, 0, 1}, // back
@@ -1090,7 +1090,7 @@ const v3POS g_4dirs[4] =
 };
 
 bool ServerMap::propagateSunlight(
-		const v3POS &pos, std::set<v3POS> &light_sources, bool remove_light)
+		const v3pos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
 {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
@@ -1104,7 +1104,7 @@ bool ServerMap::propagateSunlight(
 
 	const bool light_ambient = g_settings->getBool("light_ambient");
 
-	v3POS pos_relative = block->getPosRelative();
+	v3pos_t pos_relative = block->getPosRelative();
 
 	for (s16 x = 0; x < MAP_BLOCKSIZE; ++x) {
 		for (s16 z = 0; z < MAP_BLOCKSIZE; ++z) {
@@ -1112,7 +1112,7 @@ bool ServerMap::propagateSunlight(
 
 			// Check if node above block has sunlight
 
-			MapNode n = getNode(pos_relative + v3POS(x, MAP_BLOCKSIZE, z));
+			MapNode n = getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z));
 			if (n) {
 				if (n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN &&
 						!light_ambient) {
@@ -1125,7 +1125,7 @@ bool ServerMap::propagateSunlight(
 				if (block->getIsUnderground()) {
 					no_sunlight = true;
 				} else {
-					MapNode n = block->getNode(v3POS(x, MAP_BLOCKSIZE - 1, z));
+					MapNode n = block->getNode(v3pos_t(x, MAP_BLOCKSIZE - 1, z));
 					if (n && nodemgr->get(n).sunlight_propagates == false)
 						no_sunlight = true;
 				}
@@ -1142,7 +1142,7 @@ bool ServerMap::propagateSunlight(
 			u8 current_light = no_sunlight ? 0 : LIGHT_SUN;
 
 			for (; y >= 0; --y) {
-				v3POS pos(x, y, z);
+				v3pos_t pos(x, y, z);
 				MapNode n = block->getNode(pos);
 
 				if (current_light == 0) {
@@ -1195,7 +1195,7 @@ bool ServerMap::propagateSunlight(
 			*/
 
 			if (block_below_is_valid) {
-				MapNode n = getNode(pos_relative + v3POS(x, -1, z));
+				MapNode n = getNode(pos_relative + v3pos_t(x, -1, z));
 				if (n) {
 					if (nodemgr->get(n).light_propagates) {
 						if (n.getLight(LIGHTBANK_DAY, nodemgr) == LIGHT_SUN &&
@@ -1216,7 +1216,7 @@ bool ServerMap::propagateSunlight(
 }
 //#endif
 
-void ServerMap::lighting_modified_add(const v3POS &pos, int range)
+void ServerMap::lighting_modified_add(const v3pos_t &pos, int range)
 {
 	MutexAutoLock lock(m_lighting_modified_mutex);
 	if (m_lighting_modified_blocks.count(pos)) {
@@ -1233,7 +1233,7 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 {
 	unsigned int ret = 0;
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
-	unordered_map_v3POS<int> processed;
+	unordered_map_v3pos<int> processed;
 	for (;;) {
 		lighting_map_t blocks;
 		int range = 5;
@@ -1303,18 +1303,18 @@ MapNode Map::getNodeNoEx(v3s16 p) {
  * Get the ground level by searching for a non CONTENT_AIR node in a column from top to
  * bottom
  */
-s16 ServerMap::findGroundLevel(v2POS p2d, bool cacheBlocks)
+s16 ServerMap::findGroundLevel(v2pos_t p2d, bool cacheBlocks)
 {
 
-	POS level;
+	pos_t level;
 
 	// The reference height is the original mapgen height
-	POS referenceHeight = m_emerge->getGroundLevelAtPoint(p2d);
-	POS maxSearchHeight = 63 + referenceHeight;
-	POS minSearchHeight = -63 + referenceHeight;
-	v3POS probePosition(p2d.X, maxSearchHeight, p2d.Y);
-	v3POS blockPosition = getNodeBlockPos(probePosition);
-	v3POS prevBlockPosition = blockPosition;
+	pos_t referenceHeight = m_emerge->getGroundLevelAtPoint(p2d);
+	pos_t maxSearchHeight = 63 + referenceHeight;
+	pos_t minSearchHeight = -63 + referenceHeight;
+	v3pos_t probePosition(p2d.X, maxSearchHeight, p2d.Y);
+	v3pos_t blockPosition = getNodeBlockPos(probePosition);
+	v3pos_t prevBlockPosition = blockPosition;
 
 	MAP_NOTHREAD_LOCK(this);
 

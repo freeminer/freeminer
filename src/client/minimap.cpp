@@ -95,7 +95,7 @@ void MinimapUpdateThread::doUpdate()
 	QueuedMinimapUpdate update;
 
 	while (popBlockUpdate(&update)) {
-		getmap_cache.erase(v2POS(update.pos.X, update.pos.Z));
+		getmap_cache.erase(v2pos_t(update.pos.X, update.pos.Z));
 		if (update.data) {
 			// Swap two values in the map using single lookup
 			auto
@@ -792,9 +792,9 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 ///freeminer:
 void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 scan_height) {
 //void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
-	v3POS p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
+	v3pos_t p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 
-	v3POS blockpos_player, relpos;
+	v3pos_t blockpos_player, relpos;
 	getNodeBlockPosWithOffset(pos, blockpos_player, relpos);
 
 	for (s16 x = 0; x < size; x++)
@@ -803,15 +803,15 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 scan_height) {
 			mmpixel->air_count = 0;
 			mmpixel->n = CONTENT_AIR;
 
-			v3POS pos(p.X + x, p.Y, p.Z + z);
-			v3POS blockpos_max, blockpos_min;
-			getNodeBlockPosWithOffset(v3POS(pos.X, pos.Y - scan_height / 2, pos.Z), blockpos_min, relpos);
-			getNodeBlockPosWithOffset(v3POS(pos.X, pos.Y + scan_height / 2, pos.Z), blockpos_max, relpos);
+			v3pos_t pos(p.X + x, p.Y, p.Z + z);
+			v3pos_t blockpos_max, blockpos_min;
+			getNodeBlockPosWithOffset(v3pos_t(pos.X, pos.Y - scan_height / 2, pos.Z), blockpos_min, relpos);
+			getNodeBlockPosWithOffset(v3pos_t(pos.X, pos.Y + scan_height / 2, pos.Z), blockpos_max, relpos);
 
 			s16 pixel_height = 0;
 			s16 height = scan_height - MAP_BLOCKSIZE;
 
-			v2POS top_block_xz(blockpos_max.X, blockpos_max.Z);
+			v2pos_t top_block_xz(blockpos_max.X, blockpos_max.Z);
 
 			if (!getmap_cache.count(top_block_xz)) {
 				getmap_cache.emplace(std::piecewise_construct, std::forward_as_tuple(top_block_xz), std::forward_as_tuple());
@@ -827,13 +827,13 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 scan_height) {
 */
 				int c = 0;
 				for (auto i = blockpos_player.Y; i > blockpos_min.Y - 1; --i) {
-					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
+					auto it = m_blocks_cache.find(v3pos_t(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
 					vec.emplace(c++, it->second);
 				}
 				for (auto i = blockpos_max.Y; i > blockpos_player.Y; --i) {
-					auto it = m_blocks_cache.find(v3POS(blockpos_max.X, i, blockpos_max.Z));
+					auto it = m_blocks_cache.find(v3pos_t(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
 					vec.emplace(c++, it->second);

@@ -672,7 +672,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	}
 }
 
-	MapNode MapBlock::getNodeNoEx(v3POS p) {
+	MapNode MapBlock::getNodeNoEx(v3pos_t p) {
 #ifndef NDEBUG
 		ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
@@ -680,7 +680,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		return getNodeNoLock(p);
 	}
 
-	void MapBlock::setNode(v3POS p, MapNode & n)
+	void MapBlock::setNode(v3pos_t p, MapNode & n)
 	{
 #ifndef NDEBUG
 		g_profiler->add("Map: setNode", 1);

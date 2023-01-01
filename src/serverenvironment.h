@@ -211,7 +211,7 @@ public:
 	}
 
 	//std::set<v3s16> m_list;
-	maybe_concurrent_set<v3POS> m_list;
+	maybe_concurrent_set<v3pos_t> m_list;
 	std::set<v3s16> m_abm_list;
 	// list of blocks that are always active, not modified by this class
 	std::set<v3s16> m_forceloaded_list;
@@ -437,7 +437,7 @@ private:
 	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
-	std::list<v3POS> m_abm_random_blocks;
+	std::list<v3pos_t> m_abm_random_blocks;
 public:
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;

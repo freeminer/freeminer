@@ -597,7 +597,7 @@ MapNode MapgenMath::layers_get(float value, float max) {
 	return layers_node[layer_index];
 }
 
-std::pair<bool, double> MapgenMath::calc_point(POS x, POS y, POS z) {
+std::pair<bool, double> MapgenMath::calc_point(pos_t x, pos_t y, pos_t z) {
 				v3f vec = (v3f(x, y, z) - center) * scale ;
 				if (invert_xy)
 					std::swap(vec.X, vec.Y);
@@ -615,7 +615,7 @@ double d = 0;
 	return {(!invert && d > 0) || (invert && d == 0), d};
 }
 
-bool MapgenMath::visible(POS x, POS y, POS z) {
+bool MapgenMath::visible(pos_t x, pos_t y, pos_t z) {
 	auto [have, d] = calc_point(x,y,z);
 	return have;
 }
@@ -624,7 +624,7 @@ int MapgenMath::generateTerrain() {
 
 	MapNode n_ice(c_ice);
 	u32 index = 0;
-	v3POS em = vm->m_area.getExtent();
+	v3pos_t em = vm->m_area.getExtent();
 	auto zstride_1d = csize.X * (csize.Y + 1);
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
@@ -651,7 +651,7 @@ int MapgenMath::generateTerrain() {
 
 	for (s16 z = node_min.Z; z <= node_max.Z; z++) {
 		for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
-			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x, node_max.Y, z), nullptr, &heat_cache) : 0;
+			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, node_max.Y, z), nullptr, &heat_cache) : 0;
 
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (s16 y = node_min.Y; y <= node_max.Y; y++) {

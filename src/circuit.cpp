@@ -94,7 +94,7 @@ void Circuit::addBlock(MapBlock* block) {
 	// }
 }
 
-void Circuit::addNode(v3POS pos) {
+void Circuit::addNode(v3pos_t pos) {
 	MapNode n = m_map->getNode(pos);
 	const ContentFeatures& node_f = m_ndef->get(n);
 	if(node_f.is_wire || node_f.is_wire_connector) {
@@ -106,7 +106,7 @@ void Circuit::addNode(v3POS pos) {
 	}
 }
 
-void Circuit::removeNode(v3POS pos, const MapNode& n_old) {
+void Circuit::removeNode(v3pos_t pos, const MapNode& n_old) {
 	if(m_ndef->get(n_old).is_wire || m_ndef->get(n_old).is_wire_connector) {
 		removeWire(pos);
 	}
@@ -115,7 +115,7 @@ void Circuit::removeNode(v3POS pos, const MapNode& n_old) {
 	}
 }
 
-void Circuit::swapNode(v3POS pos, const MapNode& n_old, const MapNode& n_new) {
+void Circuit::swapNode(v3pos_t pos, const MapNode& n_old, const MapNode& n_new) {
 	const ContentFeatures& n_old_f = m_ndef->get(n_old);
 	const ContentFeatures& n_new_f = m_ndef->get(n_new);
 	if(n_new_f.is_circuit_element) {
@@ -139,7 +139,7 @@ void Circuit::swapNode(v3POS pos, const MapNode& n_old, const MapNode& n_new) {
 	}
 }
 
-void Circuit::addElement(v3POS pos) {
+void Circuit::addElement(v3pos_t pos) {
 	auto lock = m_elements_mutex.lock_unique_rec();
 
 	bool already_existed[6];
@@ -204,7 +204,7 @@ void Circuit::addElement(v3POS pos) {
 
 }
 
-void Circuit::removeElement(v3POS pos) {
+void Circuit::removeElement(v3pos_t pos) {
 	auto lock = m_elements_mutex.lock_unique_rec();
 
 	std::vector <std::list <CircuitElementVirtual>::iterator> virtual_elements_for_update;
@@ -234,7 +234,7 @@ void Circuit::removeElement(v3POS pos) {
 	m_pos_to_iterator.erase(pos);
 }
 
-void Circuit::addWire(v3POS pos) {
+void Circuit::addWire(v3pos_t pos) {
 	auto lock = m_elements_mutex.lock_unique_rec();
 
 	// This is used for converting elements of current_face_connected to their ids in all_connected.
@@ -314,7 +314,7 @@ void Circuit::addWire(v3POS pos) {
 	}
 }
 
-void Circuit::removeWire(v3POS pos) {
+void Circuit::removeWire(v3pos_t pos) {
 	auto lock = m_elements_mutex.lock_unique_rec();
 
 	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > current_face_connected;
@@ -421,7 +421,7 @@ void Circuit::update(float dtime) {
 }
 
 
-void Circuit::swapElement(const MapNode& n_old, const MapNode& n_new, v3POS pos) {
+void Circuit::swapElement(const MapNode& n_old, const MapNode& n_new, v3pos_t pos) {
 	auto lock = m_elements_mutex.lock_unique_rec();
 
 	const ContentFeatures& n_old_features = m_ndef->get(n_old);

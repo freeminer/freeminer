@@ -94,7 +94,7 @@ public:
 
 private:
 	//freeminer:
-	bool visible(POS x, POS y, POS z) override { return getSpawnLevelAtPoint({x, z}) >= y; }
+	bool visible(pos_t x, pos_t y, pos_t z) override { return getSpawnLevelAtPoint({x, z}) >= y; }
 
 
 	BiomeGenOriginal *m_bgen;

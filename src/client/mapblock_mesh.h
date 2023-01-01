@@ -43,7 +43,7 @@ class IShaderSource;
 	Mesh making stuff
 */
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3POS & playerblockpos, const v3POS & block_pos);
+int getFarmeshStep(MapDrawControl& draw_control, const v3pos_t & playerblockpos, const v3pos_t & block_pos);
 
 class MapBlock;
 struct MinimapMapblock;

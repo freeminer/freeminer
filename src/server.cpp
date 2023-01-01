@@ -4119,13 +4119,13 @@ v3f Server::findSpawnPos()
 	ServerMap &map = m_env->getServerMap();
 	v3f nodeposf;
 
-	POS find = 0;
+	pos_t find = 0;
 	g_settings->getS16NoEx("static_spawnpoint_find", find);
 	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
 		return nodeposf * BS;
 	}
 
-	POS min_air_height = 3;
+	pos_t min_air_height = 3;
 	g_settings->getS16NoEx("static_spawnpoint_find_height", min_air_height);
 
 	bool is_good = false;

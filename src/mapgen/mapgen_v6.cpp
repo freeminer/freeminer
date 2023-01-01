@@ -373,7 +373,7 @@ int MapgenV6::getSpawnLevelAtPoint(v2s16 p)
 //////////////////////// Noise functions
 
 
-BiomeV6Type MapgenV6::getBiome(v3POS p)
+BiomeV6Type MapgenV6::getBiome(v3pos_t p)
 {
 	int index = (p.Z - full_node_min.Z) * (ystride + 2 * MAP_BLOCKSIZE)
 			+ (p.X - full_node_min.X);
@@ -381,7 +381,7 @@ BiomeV6Type MapgenV6::getBiome(v3POS p)
 }
 
 
-float MapgenV6::getHumidity(v3POS p)
+float MapgenV6::getHumidity(v3pos_t p)
 {
 	/*double noise = noise2d_perlin(
 		0.5+(float)p.X/500, 0.5+(float)p.Y/500,
@@ -457,7 +457,7 @@ bool MapgenV6::getHaveBeach(int index)
 }
 
 
-BiomeV6Type MapgenV6::getBiome(int index, v3POS p)
+BiomeV6Type MapgenV6::getBiome(int index, v3pos_t p)
 {
 	// Just do something very simple as for now
 	/*double d = noise2d_perlin(
@@ -712,8 +712,8 @@ int MapgenV6::generateGround()
 		if (surface_y > stone_surface_max_y)
 			stone_surface_max_y = surface_y;
 
-		BiomeV6Type bt = getBiome(v3POS(x, node_min.Y, z));
-		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		BiomeV6Type bt = getBiome(v3pos_t(x, node_min.Y, z));
+		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		const v3s16 &em = vm->m_area.getExtent();
@@ -763,7 +763,7 @@ void MapgenV6::addMud()
 		if (surface_y == vm->m_area.MinEdge.Y - 1)
 			continue;
 
-		BiomeV6Type bt = getBiome(v3POS(x, surface_y, z));
+		BiomeV6Type bt = getBiome(v3pos_t(x, surface_y, z));
 		addnode = (bt == BT_DESERT) ? n_desert_sand : n_dirt;
 
 		if (bt == BT_DESERT && surface_y + mud_add_amount <= water_level + 1) {
@@ -999,10 +999,10 @@ void MapgenV6::placeTreesAndJungleGrass()
 		);
 
 		// Get biome at center position of part of division
-		BiomeV6Type bt = getBiome(v3POS(p2d_center.X, node_min.Y, p2d_center.Y));
+		BiomeV6Type bt = getBiome(v3pos_t(p2d_center.X, node_min.Y, p2d_center.Y));
 
 		// Amount of trees
-		float humidity = getHumidity(v3POS(p2d_center.X, node_max.Y, p2d_center.Y));
+		float humidity = getHumidity(v3pos_t(p2d_center.X, node_max.Y, p2d_center.Y));
 		s32 tree_count;
 		if (bt == BT_JUNGLE || bt == BT_TAIGA || bt == BT_NORMAL) {
 			tree_count = area * getTreeAmount(p2d_center) * ((humidity + 1)/2.0);
@@ -1119,11 +1119,11 @@ void MapgenV6::growGrass() // Add surface nodes
 			surface_y = (y >= full_node_min.Y) ? y : full_node_min.Y;
 		}
 
-		BiomeV6Type bt = getBiome(index, v3POS(x, surface_y, z));
+		BiomeV6Type bt = getBiome(index, v3pos_t(x, surface_y, z));
 		u32 i = vm->m_area.index(x, surface_y, z);
 		content_t c = vm->m_data[i].getContent();
 		if (m_emerge->env->m_use_weather && c == c_dirt) {
-			int heat = m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3POS(x, surface_y, z), nullptr, &heat_cache);
+			int heat = m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, surface_y, z), nullptr, &heat_cache);
 			vm->m_data[i] = (heat < -10 ? n_dirt_with_snow : (heat < -5 || heat > 50) ? n_dirt : n_dirt_with_grass);
 		} else
 		if (surface_y >= water_level - 20) {

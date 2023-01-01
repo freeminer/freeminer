@@ -72,7 +72,7 @@ namespace treegen {
 	void make_pine_tree(MMVManip &vmanip, v3s16 p0,
 		const NodeDefManager *ndef, s32 seed);
 
-	void make_cavetree(MMVManip &vmanip, v3POS p0,
+	void make_cavetree(MMVManip &vmanip, v3pos_t p0,
 		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed);
 
 

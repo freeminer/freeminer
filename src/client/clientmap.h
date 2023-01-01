@@ -160,7 +160,7 @@ public:
 	void renderPostFx(CameraMode cam_mode);
 
 	// For debugging the status and position of MapBlocks
-	void renderBlockBoundaries(const std::map<v3POS, MapBlock*> & blocks);
+	void renderBlockBoundaries(const std::map<v3pos_t, MapBlock*> & blocks);
 
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;
@@ -230,15 +230,15 @@ private:
 
 
 // fm:
-	v3POS m_camera_position_node;
-    using drawlist_map = std::map<v3POS, MapBlockP, MapBlockComparer>;
+	v3pos_t m_camera_position_node;
+    using drawlist_map = std::map<v3pos_t, MapBlockP, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic<drawlist_map *> m_drawlist {&m_drawlist_0};
 	int m_drawlist_current = 0;
-	std::vector<std::pair<v3POS, int>> draw_nearest;
+	std::vector<std::pair<v3pos_t, int>> draw_nearest;
 public:
 	std::atomic_uint m_drawlist_last {0};
-	std::map<v3POS, MapBlock*> m_block_boundary;
+	std::map<v3pos_t, MapBlock*> m_block_boundary;
 private:
 
 
@@ -256,4 +256,4 @@ private:
 
 bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, NodeDefManager *nodemgr,
-		unordered_map_v3POS<bool> & occlude_cache);
+		unordered_map_v3pos<bool> & occlude_cache);
