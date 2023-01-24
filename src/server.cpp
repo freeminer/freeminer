@@ -21,17 +21,23 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "server.h"
+#include <cstddef>
 #include <iostream>
 #include <queue>
 #include <algorithm>
+#include "irr_v2d.h"
+#include "irr_v3d.h"
 #include "network/connection.h"
+#include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/serveropcodes.h"
 #include "ban.h"
+#include "util/metricsbackend.h"
 #include "environment.h"
 #include "map.h"
 #include "threading/mutex_auto_lock.h"
 #include "constants.h"
+#include "util/numeric.h"
 #include "voxel.h"
 #include "config.h"
 #include "version.h"
@@ -171,7 +177,7 @@ v3f ServerPlayingSound::getPos(ServerEnvironment *env, bool *pos_exists) const
 				return v3f(0,0,0);
 			if (pos_exists)
 				*pos_exists = true;
-			return sao->getBasePosition();
+			return oposToV3f(sao->getBasePosition());
 		}
 	}
 
@@ -1096,7 +1102,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		// We'll log the amount of each
 		Profiler prof;
 
-		std::unordered_set<v3s16> node_meta_updates;
+		std::unordered_set<v3pos_t> node_meta_updates;
 
 		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 #if !ENABLE_THREADS
@@ -1145,7 +1151,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			case MEET_OTHER:
 				prof.add("MEET_OTHER", 1);
 /*
-				for (const v3s16 &modified_block : event->modified_blocks) {
+				for (const v3bpos_t &modified_block : event->modified_blocks) {
 					m_clients.markBlockposAsNotSent(modified_block);
 				}
 */				
@@ -1164,8 +1170,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			if (!far_players.empty()) {
 				// Convert list format to that wanted by SetBlocksNotSent
 /*
-				std::map<v3s16, MapBlock*> modified_blocks2;
-				for (const v3s16 &modified_block : event->modified_blocks) {
+				std::map<v3bpos_t, MapBlock*> modified_blocks2;
+				for (const v3bpos_t &modified_block : event->modified_blocks) {
 					modified_blocks2[modified_block] =
 							m_env->getMap().getBlockNoCreateNoEx(modified_block);
 				}
@@ -1484,8 +1490,9 @@ void Server::ProcessData(NetworkPacket *pkt)
 			return;
 		}
 
-		u8 peer_ser_ver = getClient(peer_id, CS_InitDone)->serialization_version;
-
+		RemoteClient * client = getClient(peer_id, CS_InitDone);
+		u8 peer_ser_ver = client->serialization_version;
+		pkt->setProtoVer(client->net_proto_version);
 		if(peer_ser_ver == SER_FMT_VER_INVALID) {
 			errorstream << "Server::ProcessData(): Cancelling: Peer"
 					" serialization format invalid or not initialized."
@@ -1536,7 +1543,7 @@ void Server::onMapEditEvent(const MapEditEvent &event)
 	m_unsent_map_edit_queue.push(new MapEditEvent(event));
 }
 
-void Server::SetBlocksNotSent(std::map<v3s16, MapBlock *>& block)
+void Server::SetBlocksNotSent(std::map<v3bpos_t, MapBlock *>& block)
 {
 	SetBlocksNotSent();
 }
@@ -1733,7 +1740,7 @@ void Server::SendDeathscreen(session_t peer_id, bool set_camera_point_target,
 void Server::SendItemDef(session_t peer_id,
 		IItemDefManager *itemdef, u16 protocol_version)
 {
-	NetworkPacket pkt(TOCLIENT_ITEMDEF, 0, peer_id);
+	NetworkPacket pkt(TOCLIENT_ITEMDEF, 0, peer_id, 0);
 
 	/*
 		u16 command
@@ -1756,7 +1763,7 @@ void Server::SendItemDef(session_t peer_id,
 void Server::SendNodeDef(session_t peer_id,
 	const NodeDefManager *nodedef, u16 protocol_version)
 {
-	NetworkPacket pkt(TOCLIENT_NODEDEF, 0, peer_id);
+	NetworkPacket pkt(TOCLIENT_NODEDEF, 0, peer_id, 0);
 
 	/*
 		u16 command
@@ -1855,7 +1862,7 @@ void Server::SendSpawnParticle(session_t peer_id, u16 protocol_version,
 
 	if (peer_id == PEER_ID_INEXISTENT) {
 		std::vector<session_t> clients = m_clients.getClientIDs();
-		const v3f pos = p.pos * BS;
+		const auto pos = p.pos * BS;
 		const float radius_sq = radius * radius;
 
 		for (const session_t client_id : clients) {
@@ -1877,7 +1884,7 @@ void Server::SendSpawnParticle(session_t peer_id, u16 protocol_version,
 	}
 	assert(protocol_version != 0);
 
-	NetworkPacket pkt(TOCLIENT_SPAWN_PARTICLE, 0, peer_id);
+	NetworkPacket pkt(TOCLIENT_SPAWN_PARTICLE, 0, peer_id, protocol_version);
 
 	{
 		// NetworkPacket and iostreams are incompatible...
@@ -1918,7 +1925,7 @@ void Server::SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
 				PlayerSAO *sao = player->getPlayerSAO();
 				if (!sao)
 					continue;
-				if (sao->getBasePosition().getDistanceFromSQ(pos) > radius_sq)
+				if (sao->getBasePosition().getDistanceFromSQ(v3fToOpos(pos)) > radius_sq)
 					continue;
 			}
 
@@ -1929,7 +1936,7 @@ void Server::SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
 	}
 	assert(protocol_version != 0);
 
-	NetworkPacket pkt(TOCLIENT_ADD_PARTICLESPAWNER, 100, peer_id);
+	NetworkPacket pkt(TOCLIENT_ADD_PARTICLESPAWNER, 100, peer_id, protocol_version);
 
 	pkt << p.amount << p.time;
 	{ // serialize legacy fields
@@ -2204,11 +2211,11 @@ void Server::SendMovePlayer(session_t peer_id)
 	// Send attachment updates instantly to the client prior updating position
 	sao->sendOutdatedData();
 
-	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof(v3f) + sizeof(f32) * 2, peer_id);
+	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof_v3opos(sao->getPlayer()->protocol_version) + sizeof(f32) * 2, peer_id, sao->getPlayer()->protocol_version);
 	pkt << sao->getBasePosition() << sao->getLookPitch() << sao->getRotation().Y;
 
 	{
-		v3f pos = sao->getBasePosition();
+		auto pos = sao->getBasePosition();
 		verbosestream << "Server: Sending TOCLIENT_MOVE_PLAYER"
 				<< " pos=(" << pos.X << "," << pos.Y << "," << pos.Z << ")"
 				<< " pitch=" << sao->getLookPitch()
@@ -2503,7 +2510,7 @@ s32 Server::playSound(ServerPlayingSound &params, bool ephemeral)
 				continue;
 
 			if (pos_exists) {
-				if(sao->getBasePosition().getDistanceFrom(pos) >
+				if(sao->getBasePosition().getDistanceFrom(v3fToOpos(pos)) >
 						params.max_hear_distance)
 					continue;
 			}
@@ -2578,15 +2585,12 @@ void Server::fadeSound(s32 handle, float step, float gain)
 		m_playing_sounds.erase(it);
 }
 
-void Server::sendRemoveNode(v3s16 p, std::unordered_set<u16> *far_players,
+void Server::sendRemoveNode(v3pos_t p, std::unordered_set<u16> *far_players,
 		float far_d_nodes)
 {
 	float maxd = far_d_nodes * BS;
-	v3f p_f = intToFloat(p, BS);
-	v3s16 block_pos = getNodeBlockPos(p);
-
-	NetworkPacket pkt(TOCLIENT_REMOVENODE, 6);
-	pkt << p;
+	v3opos_t p_f = posToOpos(p, BS);
+	v3bpos_t block_pos = getNodeBlockPos(p);
 
 	std::vector<session_t> clients = m_clients.getClientIDs();
 	ClientInterface::AutoLock clientlock(m_clients);
@@ -2608,22 +2612,20 @@ void Server::sendRemoveNode(v3s16 p, std::unordered_set<u16> *far_players,
 				client->SetBlockNotSent(block_pos);
 			continue;
 		}
+		NetworkPacket pkt(TOCLIENT_REMOVENODE, sizeof_v3pos(player->protocol_version), 0, player->protocol_version);
+		pkt << p;
 
 		// Send as reliable
 		m_clients.send(client_id, 0, &pkt, true);
 	}
 }
 
-void Server::sendAddNode(v3s16 p, MapNode n, std::unordered_set<u16> *far_players,
+void Server::sendAddNode(v3pos_t p, MapNode n, std::unordered_set<u16> *far_players,
 		float far_d_nodes, bool remove_metadata)
 {
 	float maxd = far_d_nodes * BS;
-	v3f p_f = intToFloat(p, BS);
-	v3s16 block_pos = getNodeBlockPos(p);
-
-	NetworkPacket pkt(TOCLIENT_ADDNODE, 6 + 2 + 1 + 1 + 1);
-	pkt << p << n.param0 << n.param1 << n.param2
-			<< (u8) (remove_metadata ? 0 : 1);
+	auto p_f = intToFloat(p, (opos_t)BS);
+	v3bpos_t block_pos = getNodeBlockPos(p);
 
 	std::vector<session_t> clients = m_clients.getClientIDs();
 	ClientInterface::AutoLock clientlock(m_clients);
@@ -2646,12 +2648,15 @@ void Server::sendAddNode(v3s16 p, MapNode n, std::unordered_set<u16> *far_player
 			continue;
 		}
 
+		NetworkPacket pkt(TOCLIENT_ADDNODE, sizeof_v3pos(player->protocol_version) + 2 + 1 + 1 + 1, 0, player->protocol_version);
+		pkt << p << n.param0 << n.param1 << n.param2 << (u8) (remove_metadata ? 0 : 1);
+
 		// Send as reliable
 		m_clients.send(client_id, 0, &pkt, true);
 	}
 }
 
-void Server::sendMetadataChanged(const std::unordered_set<v3s16> &positions, float far_d_nodes)
+void Server::sendMetadataChanged(const std::unordered_set<v3pos_t> &positions, float far_d_nodes)
 {
 	NodeMetadataList meta_updates_list(false);
 	std::ostringstream os(std::ios::binary);
@@ -2665,17 +2670,17 @@ void Server::sendMetadataChanged(const std::unordered_set<v3s16> &positions, flo
 			continue;
 
 		ServerActiveObject *player = getPlayerSAO(i);
-		v3s16 player_pos;
+		v3pos_t player_pos;
 		if (player)
 			player_pos = floatToInt(player->getBasePosition(), BS);
 
-		for (const v3s16 pos : positions) {
+		for (const v3pos_t pos : positions) {
 			NodeMetadata *meta = m_env->getMap().getNodeMetadata(pos);
 
 			if (!meta)
 				continue;
 
-			v3s16 block_pos = getNodeBlockPos(pos);
+			v3bpos_t block_pos = getNodeBlockPos(pos);
 			if (!client->isBlockSent(block_pos) ||
 					player_pos.getDistanceFrom(pos) > far_d_nodes) {
 				client->SetBlockNotSent(block_pos);
@@ -2726,7 +2731,7 @@ void Server::SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
 		sptr = &s;
 	}
 
-	NetworkPacket pkt(TOCLIENT_BLOCKDATA, 2 + 2 + 2 + sptr->size(), peer_id);
+	NetworkPacket pkt(TOCLIENT_BLOCKDATA, sizeof_v3pos(m_env->getPlayer(peer_id)->protocol_version) + sptr->size(), peer_id, m_env->getPlayer(peer_id)->protocol_version);
 	pkt << block->getPos();
 	pkt.putRawString(*sptr);
 	Send(&pkt);
@@ -2822,7 +2827,7 @@ int Server::SendBlocks(float dtime)
 	return total;
 }
 
-bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
+bool Server::SendBlock(session_t peer_id, const v3bpos_t &blockpos)
 {
 	MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
 	if (!block)
@@ -4114,19 +4119,19 @@ std::string Server::getBuiltinLuaPath()
 }
 
 #if 1
-v3f Server::findSpawnPos()
+v3opos_t Server::findSpawnPos()
 {
 	ServerMap &map = m_env->getServerMap();
-	v3f nodeposf;
+	v3opos_t nodeposf;
 
 	pos_t find = 0;
-	g_settings->getS16NoEx("static_spawnpoint_find", find);
+	g_settings->getPosNoEx("static_spawnpoint_find", find);
 	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
 		return nodeposf * BS;
 	}
 
 	pos_t min_air_height = 3;
-	g_settings->getS16NoEx("static_spawnpoint_find_height", min_air_height);
+	g_settings->getPosNoEx("static_spawnpoint_find_height", min_air_height);
 
 	bool is_good = false;
 	// Limit spawn range to mapgen edges (determined by 'mapgen_limit')
@@ -4136,20 +4141,20 @@ v3f Server::findSpawnPos()
 	for (s32 i = 0; i < 4000 && !is_good; i++) {
 		s32 range = MYMIN(1 + i, range_max);
 		// We're going to try to throw the player to this position
-		v2s16 nodepos2d = v2s16(
+		v2pos_t nodepos2d = v2pos_t(
 		    nodeposf.X
 			-range + myrand_range(0, range*2),
 		    nodeposf.Z
 			-range + myrand_range(0, range*2));
 		// Get spawn level at point
-		s16 spawn_level = nodeposf.Y ? nodeposf.Y : m_emerge->getSpawnLevelAtPoint(nodepos2d);
+		pos_t spawn_level = nodeposf.Y ? nodeposf.Y : m_emerge->getSpawnLevelAtPoint(nodepos2d);
 		// Continue if MAX_MAP_GENERATION_LIMIT was returned by the mapgen to
 		// signify an unsuitable spawn position, or if outside limits.
 		if (spawn_level >= MAX_MAP_GENERATION_LIMIT ||
 				spawn_level <= -MAX_MAP_GENERATION_LIMIT)
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
+		v3pos_t nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 		// Consecutive empty nodes
 		s32 air_count = 0;
 
@@ -4160,7 +4165,7 @@ v3f Server::findSpawnPos()
 		// the player may end up inside one.
 		for (s32 ii = (find > 0) ? 0 : find - 50;
 				ii < find; ii++) {
-			v3s16 blockpos = getNodeBlockPos(nodepos);
+			v3bpos_t blockpos = getNodeBlockPos(nodepos);
 			if (!map.emergeBlock(blockpos, false))
 				break;
 			content_t c = map.getNode(nodepos).getContent();
@@ -4172,7 +4177,7 @@ v3f Server::findSpawnPos()
 				if (air_count >= min_air_height) {
 					// Spawn in lower empty node
 					nodepos.Y--;
-					nodeposf = intToFloat(nodepos, BS);
+					nodeposf = posToOpos(nodepos, BS);
 					// Don't spawn the player outside map boundaries
 					if (objectpos_over_limit(nodeposf)) {
 						nodeposf = {0,0,0};
@@ -4198,7 +4203,7 @@ v3f Server::findSpawnPos()
 		return nodeposf;
 
 	// No suitable spawn point found, return fallback 0,0,0
-	return v3f(0.0f, 0.0f, 0.0f);
+	return v3opos_t(0.0f, 0.0f, 0.0f);
 }
 #endif
 

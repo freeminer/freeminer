@@ -47,9 +47,9 @@ static void push_area(lua_State *L, const Area *a,
 	}
 	lua_newtable(L);
 	if (include_corners) {
-		push_v3s16(L, a->minedge);
+		push_v3pos(L, a->minedge);
 		lua_setfield(L, -2, "min");
-		push_v3s16(L, a->maxedge);
+		push_v3pos(L, a->maxedge);
 		lua_setfield(L, -2, "max");
 	}
 	if (include_data) {
@@ -127,7 +127,7 @@ int LuaAreaStore::l_get_areas_for_pos(lua_State *L)
 	LuaAreaStore *o = checkobject(L, 1);
 	AreaStore *ast = o->as;
 
-	v3s16 pos = check_v3s16(L, 2);
+	v3pos_t pos = check_v3pos(L, 2);
 
 	bool include_corners = true;
 	bool include_data = false;
@@ -149,8 +149,8 @@ int LuaAreaStore::l_get_areas_in_area(lua_State *L)
 	LuaAreaStore *o = checkobject(L, 1);
 	AreaStore *ast = o->as;
 
-	v3s16 minp = check_v3s16(L, 2);
-	v3s16 maxp = check_v3s16(L, 3);
+	auto minp = check_v3pos(L, 2);
+	auto maxp = check_v3pos(L, 3);
 	sortBoxVerticies(minp, maxp);
 
 	bool include_corners = true;
@@ -176,7 +176,7 @@ int LuaAreaStore::l_insert_area(lua_State *L)
 	LuaAreaStore *o = checkobject(L, 1);
 	AreaStore *ast = o->as;
 
-	Area a(check_v3s16(L, 2), check_v3s16(L, 3));
+	Area a(check_v3pos(L, 2), check_v3pos(L, 3));
 
 	size_t d_len;
 	const char *data = luaL_checklstring(L, 4, &d_len);

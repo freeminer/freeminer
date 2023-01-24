@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "irr_v3d.h"
 #include "nodedef.h"
 #include "server.h"
 #include "environment.h"
@@ -105,7 +106,7 @@ struct EnumString ScriptApiNode::es_TextureAlphaMode[] =
 		{0, NULL},
 	};
 
-bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
+bool ScriptApiNode::node_on_punch(v3pos_t p, MapNode node,
 		ServerActiveObject *puncher, const PointedThing &pointed)
 {
 	SCRIPTAPI_PRECHECKHEADER
@@ -119,7 +120,7 @@ bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
 		return false;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	pushnode(L, node, ndef);
 	objectrefGetOrCreate(L, puncher);
 	pushPointedThing(pointed);
@@ -128,7 +129,7 @@ bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
 	return true;
 }
 
-bool ScriptApiNode::node_on_dig(v3s16 p, MapNode node,
+bool ScriptApiNode::node_on_dig(v3pos_t p, MapNode node,
 		ServerActiveObject *digger)
 {
 	SCRIPTAPI_PRECHECKHEADER
@@ -142,7 +143,7 @@ bool ScriptApiNode::node_on_dig(v3s16 p, MapNode node,
 		return false;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	pushnode(L, node, ndef);
 	objectrefGetOrCreate(L, digger);
 	PCALL_RES(lua_pcall(L, 3, 1, error_handler));
@@ -155,7 +156,7 @@ bool ScriptApiNode::node_on_dig(v3s16 p, MapNode node,
 	return result;
 }
 
-void ScriptApiNode::node_on_construct(v3s16 p, MapNode node)
+void ScriptApiNode::node_on_construct(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -168,12 +169,12 @@ void ScriptApiNode::node_on_construct(v3s16 p, MapNode node)
 		return;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
 }
 
-void ScriptApiNode::node_on_destruct(v3s16 p, MapNode node)
+void ScriptApiNode::node_on_destruct(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -186,12 +187,12 @@ void ScriptApiNode::node_on_destruct(v3s16 p, MapNode node)
 		return;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
 }
 
-bool ScriptApiNode::node_on_flood(v3s16 p, MapNode node, MapNode newnode)
+bool ScriptApiNode::node_on_flood(v3pos_t p, MapNode node, MapNode newnode)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -204,7 +205,7 @@ bool ScriptApiNode::node_on_flood(v3s16 p, MapNode node, MapNode newnode)
 		return false;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	pushnode(L, node, ndef);
 	pushnode(L, newnode, ndef);
 	PCALL_RES(lua_pcall(L, 3, 1, error_handler));
@@ -212,7 +213,7 @@ bool ScriptApiNode::node_on_flood(v3s16 p, MapNode node, MapNode newnode)
 	return readParam<bool>(L, -1, false);
 }
 
-void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
+void ScriptApiNode::node_after_destruct(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -225,13 +226,13 @@ void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
 		return;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	pushnode(L, node, ndef);
 	PCALL_RES(lua_pcall(L, 2, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
 }
 
-void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
+void ScriptApiNode::node_on_activate(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -245,12 +246,12 @@ void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
 		return;
 	}
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler
 }
 
-void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
+void ScriptApiNode::node_on_deactivate(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -263,12 +264,12 @@ void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
 		return;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler
 }
 
-bool ScriptApiNode::node_on_timer(v3s16 p, MapNode node, f32 dtime)
+bool ScriptApiNode::node_on_timer(v3pos_t p, MapNode node, f32 dtime)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -281,14 +282,14 @@ bool ScriptApiNode::node_on_timer(v3s16 p, MapNode node, f32 dtime)
 		return false;
 
 	// Call function
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	lua_pushnumber(L,dtime);
 	PCALL_RES(lua_pcall(L, 2, 1, error_handler));
 	lua_remove(L, error_handler);
 	return readParam<bool>(L, -1, false);
 }
 
-void ScriptApiNode::node_on_receive_fields(v3s16 p,
+void ScriptApiNode::node_on_receive_fields(v3pos_t p,
 		const std::string &formname,
 		const StringMap &fields,
 		ServerActiveObject *sender)
@@ -309,7 +310,7 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 		return;
 
 	// Call function
-	push_v3s16(L, p);                    // pos
+	push_v3pos(L, p);                    // pos
 	lua_pushstring(L, formname.c_str()); // formname
 	lua_newtable(L);                     // fields
 	StringMap::const_iterator it;
@@ -325,14 +326,14 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 	lua_pop(L, 1);  // Pop error handler
 }
 
-void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
+void ScriptApiNode::node_drop(v3pos_t p, int fast = 0)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
 	lua_getglobal(L, "node_drop");
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	lua_pushinteger(L, fast);
 	PCALL_RES(lua_pcall(L, 2, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler

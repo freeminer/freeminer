@@ -25,13 +25,13 @@ Dummy database class
 #include "remoteplayer.h"
 
 
-bool Database_Dummy::saveBlock(const v3s16 &pos, const std::string &data)
+bool Database_Dummy::saveBlock(const v3bpos_t &pos, const std::string &data)
 {
 	m_database.insert_or_assign(getBlockAsString(pos), data);
 	return true;
 }
 
-void Database_Dummy::loadBlock(const v3s16 &pos, std::string *block)
+void Database_Dummy::loadBlock(const v3bpos_t &pos, std::string *block)
 {
 	auto i = getBlockAsString(pos);
 	auto it = m_database.find(i);
@@ -43,13 +43,13 @@ void Database_Dummy::loadBlock(const v3s16 &pos, std::string *block)
 	*block = it->second;
 }
 
-bool Database_Dummy::deleteBlock(const v3s16 &pos)
+bool Database_Dummy::deleteBlock(const v3bpos_t &pos)
 {
 	m_database.erase(getBlockAsString(pos));
 	return true;
 }
 
-void Database_Dummy::listAllLoadableBlocks(std::vector<v3s16> &dst)
+void Database_Dummy::listAllLoadableBlocks(std::vector<v3bpos_t> &dst)
 {
 	dst.reserve(m_database.size());
 	for (auto x = m_database.begin();

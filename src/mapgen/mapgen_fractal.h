@@ -36,14 +36,14 @@ extern FlagDesc flagdesc_mapgen_fractal[];
 struct MapgenFractalParams : public MapgenParams
 {
 	float cave_width = 0.09f;
-	s16 large_cave_depth = -33;
+	pos_t large_cave_depth = -33;
 	u16 small_cave_num_min = 0;
 	u16 small_cave_num_max = 0;
 	u16 large_cave_num_min = 0;
 	u16 large_cave_num_max = 2;
 	float large_cave_flooded = 0.5f;
-	s16 dungeon_ymin = -31000;
-	s16 dungeon_ymax = 31000;
+	pos_t dungeon_ymin = -MAX_MAP_GENERATION_LIMIT;
+	pos_t dungeon_ymax = MAX_MAP_GENERATION_LIMIT;
 	u16 fractal = 1;
 	u16 iterations = 11;
 	v3f scale = v3f(4096.0, 1024.0, 4096.0);
@@ -78,9 +78,9 @@ public:
 	virtual MapgenType getType() const { return MAPGEN_FRACTAL; }
 
 	virtual void makeChunk(BlockMakeData *data);
-	int getSpawnLevelAtPoint(v2s16 p);
-	bool getFractalAtPoint(s16 x, s16 y, s16 z);
-	s16 generateTerrain();
+	int getSpawnLevelAtPoint(v2pos_t p);
+	bool getFractalAtPoint(pos_t x, pos_t y, pos_t z);
+	pos_t generateTerrain();
 
 	//freeminer:
 	bool visible(pos_t x, pos_t y, pos_t z) override { return getFractalAtPoint(x, y, z); }

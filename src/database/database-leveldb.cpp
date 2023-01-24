@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "config.h"
+#include "irr_v3d.h"
 
 #if USE_LEVELDB
 
@@ -58,10 +59,11 @@ Database_LevelDB::~Database_LevelDB()
 	delete m_database;
 }
 
-bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
+bool Database_LevelDB::saveBlock(const v3bpos_t &pos, const std::string &data)
 {
 	leveldb::Status status = m_database->Put(leveldb::WriteOptions(),
 			getBlockAsString(pos), data);
+			//getBlockAsStringCompatible(pos), data);
 	if (!status.ok()) {
 		warningstream << "saveBlock: LevelDB error saving block "
 			<< PP(pos) << ": " << status.ToString() << std::endl;
@@ -74,8 +76,7 @@ bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
 	return true;
 }
 
-
-void Database_LevelDB::loadBlock(const v3s16 &pos, std::string *block)
+void Database_LevelDB::loadBlock(const v3pos_t &pos, std::string *block)
 {
 	leveldb::Status status0 = m_database->Get(leveldb::ReadOptions(),
 		getBlockAsString(pos), block);
@@ -84,15 +85,19 @@ void Database_LevelDB::loadBlock(const v3s16 &pos, std::string *block)
 		return;
 
 	leveldb::Status status = m_database->Get(leveldb::ReadOptions(),
-		i64tos(getBlockAsInteger(pos)), block);
+		getBlockAsStringCompatible(pos), block);
 
 	if (!status.ok())
 		block->clear();
 }
 
-bool Database_LevelDB::deleteBlock(const v3s16 &pos)
+bool Database_LevelDB::deleteBlock(const v3bpos_t &pos)
 {
 	auto status = m_database->Delete(leveldb::WriteOptions(), getBlockAsString(pos));
+
+/*	leveldb::Status status = m_database->Delete(leveldb::WriteOptions(),
+			getBlockAsStringCompatible(pos));
+*/
 	if (!status.ok()) {
 		warningstream << "WARNING: deleteBlock: LevelDB error deleting block "
 			<< PP(pos) << ": " << status.ToString() << std::endl;
@@ -102,7 +107,7 @@ bool Database_LevelDB::deleteBlock(const v3s16 &pos)
 	return true;
 }
 
-void Database_LevelDB::listAllLoadableBlocks(std::vector<v3s16> &dst)
+void Database_LevelDB::listAllLoadableBlocks(std::vector<v3bpos_t> &dst)
 {
 	auto it = m_database->NewIterator(leveldb::ReadOptions());
 	if (!it)
@@ -152,7 +157,7 @@ void PlayerDatabaseLevelDB::savePlayer(RemotePlayer *player)
 	if (!sao)
 		return;
 	writeU16(os, sao->getHP());
-	writeV3F32(os, sao->getBasePosition());
+	writeV3F32(os, oposToV3f(sao->getBasePosition()));
 	writeF32(os, sao->getLookPitch());
 	writeF32(os, sao->getRotation().Y);
 	writeU16(os, sao->getBreath());
@@ -191,7 +196,7 @@ bool PlayerDatabaseLevelDB::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
 		return false;
 
 	sao->setHPRaw(readU16(is));
-	sao->setBasePosition(readV3F32(is));
+	sao->setBasePosition(v3fToOpos(readV3F32(is)));
 	sao->setLookPitch(readF32(is));
 	sao->setPlayerYaw(readF32(is));
 	sao->setBreath(readU16(is), false);

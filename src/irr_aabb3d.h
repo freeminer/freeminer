@@ -27,3 +27,4 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <aabbox3d.h>
 
 typedef core::aabbox3d<f32> aabb3f;
+typedef core::aabbox3d<opos_t> aabb3o;

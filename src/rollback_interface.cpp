@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 
 
-RollbackNode::RollbackNode(Map *map, v3s16 p, IGameDef *gamedef)
+RollbackNode::RollbackNode(Map *map, v3pos_t p, IGameDef *gamedef)
 {
 	const NodeDefManager *ndef = gamedef->ndef();
 	MapNode n = map->getNode(p);
@@ -104,7 +104,7 @@ bool RollbackAction::isImportant(IGameDef *gamedef) const
 }
 
 
-bool RollbackAction::getPosition(v3s16 *dst) const
+bool RollbackAction::getPosition(v3pos_t *dst) const
 {
 	switch (type) {
 	case TYPE_SET_NODE:

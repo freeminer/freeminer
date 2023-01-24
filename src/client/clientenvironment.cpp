@@ -161,7 +161,7 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 	bool is_climbing = lplayer->is_climbing;
 
 	f32 player_speed = lplayer->getSpeed().getLength();
-	v3f pf = lplayer->getPosition();
+	auto pf = lplayer->getPosition();
 
 	/*
 		Maximum position increment
@@ -344,7 +344,7 @@ void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
 		// (day: LIGHT_SUN, night: 0)
 		MapNode node_at_lplayer(CONTENT_AIR, 0x0f, 0);
 
-		v3s16 p = lplayer->getLightPosition();
+		v3pos_t p = lplayer->getLightPosition();
 		node_at_lplayer = m_map->getNode(p);
 
 		u16 light = getInteriorLight(node_at_lplayer, 0, m_client->ndef());
@@ -532,13 +532,13 @@ ClientEnvEvent ClientEnvironment::getClientEnvEvent()
 }
 
 void ClientEnvironment::getSelectedActiveObjects(
-	const core::line3d<f32> &shootline_on_map,
+	const core::line3d<opos_t> &shootline_on_map,
 	std::vector<PointedThing> &objects)
 {
 	std::vector<DistanceSortedActiveObject> allObjects;
 	getActiveObjects(shootline_on_map.start,
 		shootline_on_map.getLength() + 10.0f, allObjects);
-	const v3f line_vector = shootline_on_map.getVector();
+	const v3opos_t line_vector = shootline_on_map.getVector();
 
 	for (const auto &allObject : allObjects) {
 		ClientActiveObject *obj = allObject.obj;
@@ -546,12 +546,12 @@ void ClientEnvironment::getSelectedActiveObjects(
 		if (!obj->getSelectionBox(&selection_box))
 			continue;
 
-		const v3f &pos = obj->getPosition();
-		aabb3f offsetted_box(selection_box.MinEdge + pos,
-			selection_box.MaxEdge + pos);
+		const v3opos_t &pos = obj->getPosition();
+		aabb3o offsetted_box(v3fToOpos(selection_box.MinEdge) + pos,
+			v3fToOpos(selection_box.MaxEdge) + pos);
 
-		v3f current_intersection;
-		v3s16 current_normal;
+		v3opos_t current_intersection;
+		v3pos_t current_normal;
 		if (boxLineCollision(offsetted_box, shootline_on_map.start, line_vector,
 				&current_intersection, &current_normal)) {
 			objects.emplace_back((s16) obj->getId(), current_intersection, current_normal,

@@ -94,9 +94,9 @@ public:
 	std::string getClientInitializationData(u16 protocol_version) override;
 	void getStaticData(std::string *result) const override;
 	void step(float dtime, bool send_recommended) override;
-	void setBasePosition(v3f position);
-	void setPos(const v3f &pos) override;
-	void moveTo(v3f pos, bool continuous) override;
+	void setBasePosition(v3opos_t position);
+	void setPos(const v3opos_t &pos) override;
+	void moveTo(v3opos_t pos, bool continuous) override;
 	void setPlayerYaw(const float yaw);
 	// Data should not be sent at player initialization
 	void setPlayerYawAndSend(const float yaw);
@@ -150,7 +150,7 @@ public:
 
 	// Cheat prevention
 
-	v3f getLastGoodPosition() const { return m_last_good_position; }
+	v3opos_t getLastGoodPosition() const { return m_last_good_position; }
 	float resetTimeFromLastPunch()
 	{
 		auto lock = lock_unique_rec();
@@ -158,15 +158,15 @@ public:
 		m_time_from_last_punch = 0.0;
 		return r;
 	}
-	void noCheatDigStart(const v3s16 &p)
+	void noCheatDigStart(const v3pos_t &p)
 	{
 		auto lock = lock_unique_rec();
 		m_nocheat_dig_pos = p;
 		m_nocheat_dig_time = 0;
 	}
-	v3s16 getNoCheatDigPos() { return m_nocheat_dig_pos; }
+	v3pos_t getNoCheatDigPos() { return m_nocheat_dig_pos; }
 	float getNoCheatDigTime() { return m_nocheat_dig_time; }
-	void noCheatDigEnd() { m_nocheat_dig_pos = v3s16(32767, 32767, 32767); }
+	void noCheatDigEnd() { m_nocheat_dig_pos = v3pos_t(32767, 32767, 32767); }
 	LagPool &getDigPool() { return m_dig_pool; }
 	void setMaxSpeedOverride(const v3f &vel);
 	// Returns true if cheated
@@ -180,13 +180,13 @@ public:
 		m_is_singleplayer = is_singleplayer;
 	}
 
-	bool getCollisionBox(aabb3f *toset) const override;
+	bool getCollisionBox(aabb3o *toset) const override;
 	bool getSelectionBox(aabb3f *toset) const override;
 	bool collideWithObjects() const override { return true; }
 
 	void finalize(RemotePlayer *player, const std::set<std::string> &privs);
 
-	v3f getEyePosition() const { return getBasePosition() + getEyeOffset(); }
+	v3opos_t getEyePosition() const { return getBasePosition() + v3fToOpos(getEyeOffset()); }
 	v3f getEyeOffset() const;
 	float getZoomFOV() const;
 
@@ -204,11 +204,11 @@ private:
 	LagPool m_dig_pool;
 	LagPool m_move_pool;
 public:
-	v3f m_last_good_position;
+	v3opos_t m_last_good_position;
 	std::atomic_uint m_ms_from_last_respawn {10000}; //more than ignore move time (1)
 	float m_time_from_last_teleport = 0.0f;
 	float m_time_from_last_punch = 0.0f;
-	v3s16 m_nocheat_dig_pos = v3s16(32767, 32767, 32767);
+	v3pos_t m_nocheat_dig_pos = v3pos_t(32767, 32767, 32767);
 	float m_nocheat_dig_time = 0.0f;
 	float m_max_speed_override_time = 0.0f;
 	v3f m_max_speed_override = v3f(0.0f, 0.0f, 0.0f);

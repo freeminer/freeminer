@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "activeobject.h"
 #include "environment.h"
+#include "irr_v3d.h"
 #include "mapnode.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
@@ -79,14 +80,14 @@ public:
 	// Whether to modify chance to simulate time lost by an unnattended block
 	virtual bool getSimpleCatchUp() = 0;
 	// get min Y for apply abm
-	virtual s16 getMinY() = 0;
+	virtual pos_t getMinY() = 0;
 	// get max Y for apply abm
-	virtual s16 getMaxY() = 0;
+	virtual pos_t getMaxY() = 0;
 	// This is called usually at interval for 1/chance of the nodes
 /*
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
+	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n){};
 */
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
+	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 		u32 active_object_count, u32 active_object_count_wider
 		, MapNode neighbor, bool activate = false
 		){};
@@ -120,7 +121,7 @@ struct LoadingBlockModifierDef
 
 	virtual ~LoadingBlockModifierDef() = default;
 
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
+	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n){};
 };
 
 struct LBMContentMapping
@@ -190,10 +191,10 @@ public:
 	void update(std::vector<PlayerSAO*> &active_players,
 		s16 active_block_range,
 		s16 active_object_range,
-		std::set<v3s16> &blocks_removed,
-		std::set<v3s16> &blocks_added);
+		std::set<v3bpos_t> &blocks_removed,
+		std::set<v3bpos_t> &blocks_added);
 
-	bool contains(v3s16 p) const {
+	bool contains(v3bpos_t p) const {
 		return (m_list.find(p) != m_list.end());
 	}
 
@@ -205,16 +206,16 @@ public:
 		m_list.clear();
 	}
 
-	void remove(v3s16 p) {
+	void remove(v3bpos_t p) {
 		m_list.erase(p);
 		m_abm_list.erase(p);
 	}
 
-	//std::set<v3s16> m_list;
-	maybe_concurrent_set<v3pos_t> m_list;
-	std::set<v3s16> m_abm_list;
+	//std::set<v3bpos_t> m_list;
+	maybe_concurrent_set<v3bpos_t> m_list;
+	std::set<v3bpos_t> m_abm_list;
 	// list of blocks that are always active, not modified by this class
-	std::set<v3s16> m_forceloaded_list;
+	std::set<v3bpos_t> m_forceloaded_list;
 };
 
 /*
@@ -330,7 +331,7 @@ public:
 	bool getActiveObjectMessage(ActiveObjectMessage *dest);
 
 	virtual void getSelectedActiveObjects(
-		const core::line3d<f32> &shootline_on_map,
+		const core::line3d<opos_t> &shootline_on_map,
 		std::vector<PointedThing> &objects
 	);
 
@@ -354,22 +355,22 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0);
-	bool removeNode(v3s16 p, s16 fast = 0);
-	bool swapNode(v3s16 p, const MapNode &n);
+	bool setNode(v3pos_t p, const MapNode &n, s16 fast = 0);
+	bool removeNode(v3pos_t p, s16 fast = 0);
+	bool swapNode(v3pos_t p, const MapNode &n);
 
 	// Find the daylight value at pos with a Depth First Search
-	u8 findSunlight(v3s16 pos) const;
+	u8 findSunlight(v3pos_t pos) const;
 
 	// Find all active objects inside a radius around a point
-	void getObjectsInsideRadius(std::vector<ServerActiveObjectPtr> &objects, const v3f &pos, float radius,
+	void getObjectsInsideRadius(std::vector<ServerActiveObjectPtr> &objects, const v3opos_t &pos, float radius,
 			const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb)
 	{
 		return m_ao_manager.getObjectsInsideRadius(pos, radius, objects, include_obj_cb);
 	}
 
 	// Find all active objects inside a box
-	void getObjectsInArea(std::vector<ServerActiveObjectPtr> &objects, const aabb3f &box,
+	void getObjectsInArea(std::vector<ServerActiveObjectPtr> &objects, const aabb3o &box,
 			const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb)
 	{
 		return m_ao_manager.getObjectsInArea(box, objects, include_obj_cb);
@@ -386,7 +387,7 @@ public:
 	void reportMaxLagEstimate(float f) { m_max_lag_estimate = f; }
 	float getMaxLagEstimate() { return m_max_lag_estimate; }
 
-	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; }
+	std::set<v3bpos_t>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; }
 
 	// Sorted by how ready a mapblock is
 	enum BlockStatus {
@@ -395,12 +396,12 @@ public:
 		BS_LOADED,
 		BS_ACTIVE // always highest value
 	};
-	BlockStatus getBlockStatus(v3s16 blockpos);
+	BlockStatus getBlockStatus(v3bpos_t blockpos);
 
 	// Sets the static object status all the active objects in the specified block
 	// This is only really needed for deleting blocks from the map
-	void setStaticForActiveObjectsInBlock(v3s16 blockpos,
-		bool static_exists, v3s16 static_block=v3s16(0,0,0));
+	void setStaticForActiveObjectsInBlock(v3bpos_t blockpos,
+		bool static_exists, v3bpos_t static_block=v3bpos_t(0,0,0));
 
 	RemotePlayer *getPlayer(const session_t peer_id);
 	RemotePlayer *getPlayer(const std::string &name);
@@ -419,10 +420,10 @@ public:
 public:
 	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
 	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
-	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
+	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3opos_t pos,
 			const ItemStack& items);
 
-	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3f pos,
+	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3opos_t pos,
 			const MapNode n, int fast = 2);
 private:
 
@@ -442,7 +443,7 @@ public:
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:
-	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+	void nodeUpdate(const v3pos_t pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
 private:
 	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
 
@@ -452,12 +453,12 @@ private:
 			Inventory* inv, ServerActiveObject* obj);
 */
 	void contrib_globalstep(const float dtime);
-	bool checkAttachedNode(v3s16 pos, MapNode n, const ContentFeatures &f);
+	bool checkAttachedNode(v3pos_t pos, MapNode n, const ContentFeatures &f);
 /*
-	void explodeNode(const v3s16 pos);
+	void explodeNode(const v3pos_t pos);
 */
 
-	std::deque<v3s16> m_nodeupdate_queue;
+	std::deque<v3pos_t> m_nodeupdate_queue;
 	std::mutex m_nodeupdate_queue_mutex;
 	// Circuit manager
 	Circuit m_circuit;
@@ -473,7 +474,7 @@ private:
 	float m_active_block_abm_dtime = 0;
 	float m_active_block_abm_dtime_counter = 0;
 	u32 m_active_block_timer_last = 0;
-	std::set<v3s16> m_blocks_added;
+	std::set<v3bpos_t> m_blocks_added;
 	u32 m_blocks_added_last = 0;
 	u32 m_active_block_analyzed_last = 0;
 	std::mutex m_max_lag_estimate_mutex;
@@ -533,7 +534,7 @@ private:
 	*/
 	void deleteStaticFromBlock(
 			ServerActiveObject *obj, u16 id, u32 mod_reason, bool no_emerge);
-	bool saveStaticToBlock(v3s16 blockpos, u16 store_id,
+	bool saveStaticToBlock(v3bpos_t blockpos, u16 store_id,
 			ServerActiveObject *obj, const StaticObject &s_obj, u32 mod_reason);
 
 	/*
@@ -603,5 +604,5 @@ private:
 	MetricGaugePtr m_active_block_gauge;
 	MetricGaugePtr m_active_object_gauge;
 
-	ServerActiveObject* createSAO(ActiveObjectType type, v3f pos, const std::string &data);
+	ServerActiveObject* createSAO(ActiveObjectType type, v3opos_t pos, const std::string &data);
 };

@@ -123,7 +123,7 @@ void ServerParticleTexture::deSerialize(std::istream &is, u16 protocol_ver, bool
 
 void ParticleParameters::serialize(std::ostream &os, u16 protocol_ver) const
 {
-	writeV3F32(os, pos);
+	writeV3O(os, pos, protocol_ver);
 	writeV3F32(os, vel);
 	writeV3F32(os, acc);
 	writeF32(os, expirationtime);
@@ -156,7 +156,7 @@ inline bool streamEndsBeforeParam(T& val, std::istream& is)
 
 void ParticleParameters::deSerialize(std::istream &is, u16 protocol_ver)
 {
-	pos                = readV3F32(is);
+	pos                = readV3O(is, protocol_ver);
 	vel                = readV3F32(is);
 	acc                = readV3F32(is);
 	expirationtime     = readF32(is);

@@ -253,7 +253,7 @@ public:
 
 	void interact(InteractAction action, const PointedThing &pointed);
 
-	void sendNodemetaFields(v3s16 p, const std::string &formname,
+	void sendNodemetaFields(v3pos_t p, const std::string &formname,
 		const StringMap &fields);
 	void sendInventoryFields(const std::string &formname,
 		const StringMap &fields);
@@ -278,14 +278,14 @@ public:
 	const ModSpec* getModSpec(const std::string &modname) const override;
 
 	// Causes urgent mesh updates (unlike Map::add/removeNodeWithEvent)
-	void removeNode(v3s16 p, int fast = 0);
+	void removeNode(v3pos_t p, int fast = 0);
 
 	// helpers to enforce CSM restrictions
-	MapNode CSMGetNode(v3s16 p, bool *is_valid_position);
-	int CSMClampRadius(v3s16 pos, int radius);
-	v3s16 CSMClampPos(v3s16 pos);
+	MapNode CSMGetNode(v3pos_t p, bool *is_valid_position);
+	int CSMClampRadius(v3pos_t pos, int radius);
+	v3pos_t CSMClampPos(v3pos_t pos);
 
-	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
+	void addNode(v3pos_t p, MapNode n, bool remove_metadata = true, int fast = 0);
 
 	void setPlayerControl(PlayerControl &control);
 
@@ -308,8 +308,8 @@ public:
 	float getAnimationTime();
 
 	int getCrackLevel();
-	v3s16 getCrackPos();
-	void setCrack(int level, v3s16 pos);
+	v3pos_t getCrackPos();
+	void setCrack(int level, v3pos_t pos);
 
 	u16 getHP();
 
@@ -324,14 +324,14 @@ public:
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
+	void addUpdateMeshTask(v3bpos_t blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
 	// Including blocks at appropriate edges
-	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false, bool urgent=false);
-	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server=false, bool urgent=false);
 
-	void updateMeshTimestampWithEdge(v3s16 blockpos);
+	void updateMeshTimestampWithEdge(v3bpos_t blockpos);
 
-	void updateCameraOffset(v3s16 camera_offset)
+	void updateCameraOffset(v3pos_t camera_offset)
 	{ m_mesh_update_thread.m_camera_offset = camera_offset; }
 
 	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
@@ -484,8 +484,8 @@ private:
 
 	void sendInit(const std::string &playerName);
 	void startAuth(AuthMechanism chosen_auth_mechanism);
-	void sendDeletedBlocks(std::vector<v3s16> &blocks);
-	void sendGotBlocks(const std::vector<v3s16> &blocks);
+	void sendDeletedBlocks(std::vector<v3bpos_t> &blocks);
+	void sendGotBlocks(const std::vector<v3bpos_t> &blocks);
 	void sendRemovedSounds(std::vector<s32> &soundList);
 
 	// Helper function
@@ -539,7 +539,7 @@ private:
 	// Block mesh animation parameters
 	float m_animation_time = 0.0f;
 	std::atomic_int m_crack_level {-1};
-	v3s16 m_crack_pos;
+	v3pos_t m_crack_pos;
 	// 0 <= m_daynight_i < DAYNIGHT_CACHE_COUNT
 	//s32 m_daynight_i;
 	//u32 m_daynight_ratio;

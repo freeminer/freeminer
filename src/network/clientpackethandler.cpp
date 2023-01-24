@@ -148,7 +148,7 @@ void Client::handleCommand_AuthAccept(NetworkPacket* pkt)
 	// Set player position
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);
-	player->setPosition(playerpos);
+	player->setPosition(v3fToOpos(playerpos));
 
 	infostream << "Client: received map seed: " << m_map_seed << std::endl;
 	infostream << "Client: received recommended send interval "
@@ -244,27 +244,27 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 
 void Client::handleCommand_RemoveNode(NetworkPacket* pkt)
 {
-	if (pkt->getSize() < 6)
+	if (pkt->getSize() < sizeof(v3pos_t))
 		return;
 
-	v3s16 p;
+	v3pos_t p;
 	*pkt >> p;
 	removeNode(p, 2);
 }
 
 void Client::handleCommand_AddNode(NetworkPacket* pkt)
 {
-	if (pkt->getSize() < 6 + MapNode::serializedLength(m_server_ser_ver))
+	if (pkt->getSize() < sizeof(v3pos_t) + MapNode::serializedLength(m_server_ser_ver))
 		return;
 
-	v3s16 p;
+	v3pos_t p;
 	*pkt >> p;
 
 	MapNode n;
-	n.deSerialize(pkt->getU8Ptr(6), m_server_ser_ver);
+	n.deSerialize(pkt->getU8Ptr(sizeof(v3pos_t)), m_server_ser_ver);
 
 	bool remove_metadata = true;
-	u32 index = 6 + MapNode::serializedLength(m_server_ser_ver);
+	u32 index = sizeof(v3pos_t) + MapNode::serializedLength(m_server_ser_ver);
 	if ((pkt->getSize() >= index + 1) && pkt->getU8(index)) {
 		remove_metadata = false;
 	}
@@ -287,7 +287,7 @@ void Client::handleCommand_NodemetaChanged(NetworkPacket *pkt)
 	Map &map = m_env.getMap();
 	for (NodeMetadataMap::const_iterator i = meta_updates_list.begin();
 			i != meta_updates_list.end(); ++i) {
-		v3s16 pos = i->first;
+		v3pos_t pos = i->first;
 
 		if (map.isValidPosition(pos) &&
 				map.setNodeMetadata(pos, i->second))
@@ -301,18 +301,17 @@ void Client::handleCommand_NodemetaChanged(NetworkPacket *pkt)
 void Client::handleCommand_BlockData(NetworkPacket* pkt)
 {
 	// Ignore too small packet
-	if (pkt->getSize() < 6)
+	if (pkt->getSize() < sizeof_v3pos(pkt->getProtoVer()))
 		return;
 
-	v3s16 p;
+	v3bpos_t p;
 	*pkt >> p;
-
-	std::string datastring(pkt->getString(6), pkt->getSize() - 6);
+	std::string datastring(pkt->getString(sizeof_v3pos(pkt->getProtoVer())), pkt->getSize() - sizeof_v3pos(pkt->getProtoVer()));
 	std::istringstream istr(datastring, std::ios_base::binary);
 
 	MapBlock *block;
 
-	///v2s16 p2d(p.X, p.Z);
+	///v2bpos_t p2d(p.X, p.Z);
 	auto * sector = &m_env.getMap();
 
 	//assert(sector->getPos() == p2d);
@@ -628,14 +627,14 @@ void Client::handleCommand_MovePlayer(NetworkPacket* pkt)
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);
 
-	v3f pos;
+	v3opos_t pos;
 	f32 pitch, yaw;
 
 	*pkt >> pos >> pitch >> yaw;
 
 	player->setPosition(pos);
-
-	infostream << "Client got TOCLIENT_MOVE_PLAYER"
+	
+		infostream << "Client got TOCLIENT_MOVE_PLAYER"
 			<< " pos=(" << pos.X << "," << pos.Y << "," << pos.Z << ")"
 			<< " pitch=" << pitch
 			<< " yaw=" << yaw
@@ -869,7 +868,7 @@ void Client::handleCommand_PlaySound(NetworkPacket* pkt)
 		{
 			auto cao = m_env.getActiveObject(object_id);
 			if (cao)
-				pos = cao->getPosition();
+				pos = oposToV3f(cao->getPosition());
 			client_id = m_sound->playSoundAt(spec, pos);
 			break;
 		}
@@ -1181,7 +1180,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	event->hudadd->dir       = dir;
 	event->hudadd->align     = align;
 	event->hudadd->offset    = offset;
-	event->hudadd->world_pos = world_pos;
+	event->hudadd->world_pos = v3fToOpos(world_pos); //todo v3d
 	event->hudadd->size      = size;
 	event->hudadd->z_index   = z_index;
 	event->hudadd->text2     = text2;

@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
 #include "client/tile.h"
 #include "map.h"
@@ -55,8 +56,8 @@ struct MeshMakeData
 #else
 	VoxelManipulator m_vmanip;
 #endif
-	v3s16 m_blockpos = v3s16(-1337,-1337,-1337);
-	v3s16 m_crack_pos_relative = v3s16(-1337,-1337,-1337);
+	v3bpos_t m_blockpos = v3bpos_t(-1337,-1337,-1337);
+	v3pos_t m_crack_pos_relative = v3pos_t(-1337,-1337,-1337);
 	bool m_smooth_lighting = false;
 
 	Client *m_client;
@@ -81,8 +82,8 @@ struct MeshMakeData
 	/*
 		Copy block data manually (to allow optimizations by the caller)
 	*/
-	void fillBlockDataBegin(const v3s16 &blockpos);
-	void fillBlockData(const v3s16 &block_offset, MapNode *data);
+	void fillBlockDataBegin(const v3bpos_t &blockpos);
+	void fillBlockData(const v3pos_t &block_offset, MapNode *data);
 
 	/*
 		Copy central data directly from block, and other data from
@@ -94,7 +95,7 @@ struct MeshMakeData
 	/*
 		Set the (node) position of a crack
 	*/
-	void setCrack(int crack_level, v3s16 crack_pos);
+	void setCrack(int crack_level, v3pos_t crack_pos);
 
 	/*
 		Enable or disable smooth lighting
@@ -213,7 +214,7 @@ class MapBlockMesh
 {
 public:
 	// Builds the mesh given
-	MapBlockMesh(MeshMakeData *data, v3s16 camera_offset);
+	MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset);
 	~MapBlockMesh();
 
 	// Main animation function, parameters:
@@ -268,7 +269,7 @@ public:
 
 
 	/// update transparent buffers to render towards the camera
-	void updateTransparentBuffers(v3f camera_pos, v3s16 block_pos);
+	void updateTransparentBuffers(v3opos_t camera_pos, v3bpos_t block_pos);
 	void consolidateTransparentBuffers();
 
 	/// get the list of transparent buffers
@@ -341,10 +342,10 @@ video::SColor encode_light(u16 light, u8 emissive_light);
 
 // Compute light at node
 u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef);
-u16 getFaceLight(MapNode n, MapNode n2, const v3s16 &face_dir,
+u16 getFaceLight(MapNode n, MapNode n2, const v3pos_t &face_dir,
 	const NodeDefManager *ndef);
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data);
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data);
+u16 getSmoothLightSolid(const v3pos_t &p, const v3pos_t &face_dir, const v3pos_t &corner, MeshMakeData *data);
+u16 getSmoothLightTransparent(const v3pos_t &p, const v3pos_t &corner, MeshMakeData *data);
 
 /*!
  * Returns the sunlight's color from the current
@@ -376,5 +377,5 @@ void final_color_blend(video::SColor *result,
 // Adds MATERIAL_FLAG_CRACK if the node is cracked
 // TileSpec should be passed as reference due to the underlying TileFrame and its vector
 // TileFrame vector copy cost very much to client
-void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile);
-void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile);
+void getNodeTileN(MapNode mn, const v3pos_t &p, u8 tileindex, MeshMakeData *data, TileSpec &tile);
+void getNodeTile(MapNode mn, const v3pos_t &p, const v3pos_t &dir, MeshMakeData *data, TileSpec &tile);

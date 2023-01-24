@@ -119,7 +119,7 @@ private:
 	video::SMaterial m_material;
 	v2f m_texpos;
 	v2f m_texsize;
-	v3f m_pos;
+	v3opos_t m_pos;
 	v3f m_velocity;
 	v3f m_acceleration;
 	v3f m_drag;
@@ -136,7 +136,7 @@ private:
 	bool m_collision_removal;
 	bool m_object_collision;
 	bool m_vertical;
-	v3s16 m_camera_offset;
+	v3pos_t m_camera_offset;
 	struct TileAnimationParams m_animation;
 	float m_animation_time = 0.0f;
 	int m_animation_frame = 0;
@@ -194,10 +194,10 @@ public:
 	void handleParticleEvent(ClientEvent *event, Client *client,
 			LocalPlayer *player);
 
-	void addDiggingParticles(IGameDef *gamedef, LocalPlayer *player, v3s16 pos,
+	void addDiggingParticles(IGameDef *gamedef, LocalPlayer *player, v3pos_t pos,
 		const MapNode &n, const ContentFeatures &f);
 
-	void addNodeParticle(IGameDef *gamedef, LocalPlayer *player, v3s16 pos,
+	void addNodeParticle(IGameDef *gamedef, LocalPlayer *player, v3pos_t pos,
 		const MapNode &n, const ContentFeatures &f);
 
 	void reserveParticleSpace(size_t max_estimate);

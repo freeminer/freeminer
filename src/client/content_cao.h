@@ -91,12 +91,12 @@ private:
 	//fm merge? scene::IShadowVolumeSceneNode* m_shadownode = nullptr;
 	Nametag *m_nametag = nullptr;
 	MinimapMarker *m_marker = nullptr;
-	v3f m_position = v3f(0.0f, 10.0f * BS, 0);
+	v3opos_t m_position = v3opos_t(0.0f, 10.0f * BS, 0);
 	v3f m_velocity;
 	v3f m_acceleration;
 	v3f m_rotation;
 	u16 m_hp = 1;
-	SmoothTranslator<v3f> pos_translator;
+	SmoothTranslator<v3opos_t> pos_translator;
 	SmoothTranslatorWrappedv3f rot_translator;
 	// Spritesheet/animation stuff
 	v2f m_tx_size = v2f(1,1);
@@ -164,13 +164,13 @@ public:
 
 	void processInitData(const std::string &data);
 
-	bool getCollisionBox(aabb3f *toset) const;
+	bool getCollisionBox(aabb3o *toset) const;
 
 	bool collideWithObjects() const;
 
 	virtual bool getSelectionBox(aabb3f *toset) const;
 
-	const v3f getPosition() const;
+	const v3opos_t getPosition() const;
 
 	inline const v3f &getRotation() const { return m_rotation; }
 
@@ -252,7 +252,7 @@ public:
 	/* Get light position(s).
 	 * returns number of positions written into pos[], which must have space
 	 * for at least 3 vectors. */
-	u16 getLightPosition(v3s16 *pos);
+	u16 getLightPosition(v3pos_t *pos);
 
 	void updateNametag();
 

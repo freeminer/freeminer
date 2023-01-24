@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 Queue<ActiveObjectMessage> dummy_queue;
 
-ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
+ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
 	ActiveObject(0),
 
 

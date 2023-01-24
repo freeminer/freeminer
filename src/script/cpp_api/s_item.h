@@ -47,7 +47,7 @@ public:
 	 */
 
 	bool item_OnDrop(ItemStack &item,
-			ServerActiveObject *dropper, v3f pos);
+			ServerActiveObject *dropper, v3opos_t pos);
 	bool item_OnPlace(Optional<ItemStack> &item,
 			ServerActiveObject *placer, const PointedThing &pointed);
 	bool item_OnUse(Optional<ItemStack> &item,
@@ -63,7 +63,7 @@ protected:
 	friend class LuaItemStack;
 	friend class ModApiItemMod;
 
-	bool getItemCallback(const char *name, const char *callbackname, const v3s16 *p = nullptr);
+	bool getItemCallback(const char *name, const char *callbackname, const v3pos_t *p = nullptr);
 	/*!
 	 * Pushes a `pointed_thing` tabe to the stack.
 	 * \param hitpoint If true, the exact pointing location is also pushed

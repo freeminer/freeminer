@@ -56,8 +56,8 @@ void VoxelManipulator::clear()
 void VoxelManipulator::print(std::ostream &o, const NodeDefManager *ndef,
 	VoxelPrintMode mode)
 {
-	const v3s16 &em = m_area.getExtent();
-	v3s16 of = m_area.MinEdge;
+	const v3pos_t &em = m_area.getExtent();
+	v3pos_t of = m_area.MinEdge;
 	o<<"size: "<<em.X<<"x"<<em.Y<<"x"<<em.Z
 	 <<" offset: ("<<of.X<<","<<of.Y<<","<<of.Z<<")"<<std::endl;
 
@@ -215,7 +215,7 @@ void VoxelManipulator::addArea(const VoxelArea &area)
 }
 
 void VoxelManipulator::copyFrom(MapNode *src, const VoxelArea& src_area,
-		v3s16 from_pos, v3s16 to_pos, const v3s16 &size)
+		v3pos_t from_pos, v3pos_t to_pos, const v3pos_t &size)
 {
 	/* The reason for this optimised code is that we're a member function
 	 * and the data type/layout of m_data is know to us: it's stored as
@@ -263,7 +263,7 @@ void VoxelManipulator::copyFrom(MapNode *src, const VoxelArea& src_area,
 }
 
 void VoxelManipulator::copyTo(MapNode *dst, const VoxelArea& dst_area,
-		v3s16 dst_pos, v3s16 from_pos, const v3s16 &size)
+		v3pos_t dst_pos, v3pos_t from_pos, const v3pos_t &size)
 {
 	for(s16 z=0; z<size.Z; z++)
 	for(s16 y=0; y<size.Y; y++)
@@ -289,7 +289,7 @@ void VoxelManipulator::clearFlag(u8 flags)
 	// 0-1ms on moderate area
 	//TimeTaker timer("clearFlag", &clearflag_time);
 
-	//v3s16 s = m_area.getExtent();
+	//v3pos_t s = m_area.getExtent();
 
 	/*dstream<<"clearFlag clearing area of size "
 			<<""<<s.X<<"x"<<s.Y<<"x"<<s.Z<<""

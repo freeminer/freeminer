@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "irr_v3d.h"
 #include "log_types.h"
 #include "luaentity_sao.h"
 #include "collision.h"
@@ -26,8 +27,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "scripting_server.h"
 #include "server.h"
 #include "serverenvironment.h"
+#include "util/numeric.h"
 
-LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos, const std::string &data)
+LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3opos_t pos, const std::string &data)
 	: UnitSAO(env, pos)
 {
 	std::string name;
@@ -166,7 +168,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			box.MinEdge *= BS;
 			box.MaxEdge *= BS;
 			f32 pos_max_d = BS*0.25; // Distance per iteration
-			v3f p_pos = getBasePosition();
+			auto p_pos = getBasePosition();
 			v3f p_velocity = m_velocity;
 			v3f p_acceleration = m_acceleration;
 			moveresult = collisionMoveSimple(m_env, m_env->getGameDef(),
@@ -181,8 +183,8 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			m_acceleration = p_acceleration;
 		} else {
 			auto p_pos = getBasePosition();
-			p_pos += dtime * m_velocity + 0.5 * dtime
-					* dtime * m_acceleration;
+			p_pos += v3fToOpos(dtime * m_velocity + 0.5 * dtime
+					* dtime * m_acceleration);
 			setBasePosition(p_pos);
 			m_velocity += dtime * m_acceleration;
 		}
@@ -253,7 +255,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	os << serializeString16(""); // name
 	writeU8(os, 0); // is_player
 	writeU16(os, getId()); //id
-	writeV3F32(os, getBasePosition());
+	writeV3O(os, getBasePosition(), protocol_version);
 	writeV3F32(os, getRotation());
 	writeU16(os, m_hp);
 
@@ -378,7 +380,7 @@ void LuaEntitySAO::rightClick(ServerActiveObject *clicker)
 	m_env->getScriptIface()->luaentity_Rightclick(m_id, clicker);
 }
 
-void LuaEntitySAO::setPos(const v3f &pos)
+void LuaEntitySAO::setPos(const v3opos_t &pos)
 {
 	if(isAttached())
 		return;
@@ -386,7 +388,7 @@ void LuaEntitySAO::setPos(const v3f &pos)
 	sendPosition(false, true);
 }
 
-void LuaEntitySAO::moveTo(v3f pos, bool continuous)
+void LuaEntitySAO::moveTo(v3opos_t pos, bool continuous)
 {
 	if(isAttached())
 		return;
@@ -539,9 +541,9 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 		m_rotation,
 		do_interpolate,
 		is_movement_end,
-		update_interval
+		update_interval		
 	);
-	std::optional<v3f> skip;
+	std::optional<v3opos_t> skip;
 	if (!is_movement_end)
 		skip = getBasePosition();
 
@@ -549,13 +551,13 @@ void LuaEntitySAO::sendPosition(bool do_interpolate, bool is_movement_end)
 	m_messages_out.emplace(getId(), false, str, skip);
 }
 
-bool LuaEntitySAO::getCollisionBox(aabb3f *toset) const
+bool LuaEntitySAO::getCollisionBox(aabb3o *toset) const
 {
 	if (m_prop.physical)
 	{
 		//update collision box
-		toset->MinEdge = m_prop.collisionbox.MinEdge * BS;
-		toset->MaxEdge = m_prop.collisionbox.MaxEdge * BS;
+		toset->MinEdge = v3fToOpos(m_prop.collisionbox.MinEdge * BS);
+		toset->MaxEdge = v3fToOpos(m_prop.collisionbox.MaxEdge * BS);
 
 		const auto bpos = getBasePosition();
 		toset->MinEdge += bpos;

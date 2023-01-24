@@ -18,6 +18,7 @@
 
 #include "itemsao.h"
 #include "environment.h"
+#include "irr_v3d.h"
 #include "map.h"
 #include "nodedef.h"
 #include "scripting_server.h"
@@ -30,7 +31,7 @@
 namespace epixel
 {
 
-ItemSAO::ItemSAO(ServerEnvironment *env, v3f pos,
+ItemSAO::ItemSAO(ServerEnvironment *env, v3opos_t pos,
 		const std::string &name, const std::string &state):
 		LuaEntitySAO(env, pos, name, state),
 		m_timer_before_loot(1.0f), m_life_timer(600.0f), m_check_current_node_timer(1.8f)
@@ -57,7 +58,7 @@ ItemSAO::~ItemSAO()
 {
 }
 
-ServerActiveObject* ItemSAO::create(ServerEnvironment *env, v3f pos,
+ServerActiveObject* ItemSAO::create(ServerEnvironment *env, v3opos_t pos,
 		const std::string &data)
 {
 	std::string name;
@@ -130,7 +131,7 @@ void ItemSAO::step(float dtime, bool send_recommended)
 	// Check on which node is the SAO
 	if (m_check_current_node_timer <= 0.0f) {
 		const auto m_base_position = getBasePosition();
-		v3s16 p(m_base_position.X / BS, m_base_position.Y / BS, m_base_position.Z / BS);
+		v3pos_t p(m_base_position.X / BS, m_base_position.Y / BS, m_base_position.Z / BS);
 		MapNode node = m_env->getMap().getNode(p);
 		auto* ndef = ((Server*)m_env->getGameDef())->getNodeDefManager();
 		std::string nodeName = ndef->get(node).name;

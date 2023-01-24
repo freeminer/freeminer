@@ -51,7 +51,7 @@ enum ActiveObjectType {
 
 struct ActiveObjectMessage
 {
-	ActiveObjectMessage(u16 id_, bool reliable_=true, const std::string &data_ = "", std::optional<v3f> skip_by_pos_ = {}) :
+	ActiveObjectMessage(u16 id_, bool reliable_=true, const std::string &data_ = "", std::optional<v3opos_t> skip_by_pos_ = {}) :
 		id(id_),
 		reliable(reliable_),
 		datastring(data_)
@@ -62,7 +62,7 @@ struct ActiveObjectMessage
 	bool reliable;
 	std::string datastring;
 
-	std::optional<v3f> skip_by_pos; 
+	std::optional<v3opos_t> skip_by_pos; 
 };
 
 enum ActiveObjectCommand {
@@ -113,7 +113,7 @@ public:
 	 * The box's coordinates are world coordinates.
 	 * @returns true if the object has a collision box.
 	 */
-	virtual bool getCollisionBox(aabb3f *toset) const = 0;
+	virtual bool getCollisionBox(aabb3o *toset) const = 0;
 
 
 	/*!

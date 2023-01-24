@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include <fstream>
 #include "filesys.h"
 #include "util/container.h"
+#include "util/numeric.h"
 #include "util/thread.h"
 #include "settings.h"
 #include <ICameraSceneNode.h>

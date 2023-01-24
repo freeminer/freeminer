@@ -72,7 +72,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 	}
 }
 
-bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool urgent)
+bool MeshUpdateQueue::addBlock(Map *map, v3bpos_t p, bool ack_block_to_server, bool urgent)
 {
 	MutexAutoLock lock(m_mutex);
 
@@ -89,7 +89,7 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 		return false; // nothing to update
 	cached_blocks.reserve(3*3*3);
 	cached_blocks.push_back(cached_block);
-	for (v3s16 dp : g_26dirs)
+	for (v3bpos_t dp : g_26dirs)
 		cached_blocks.push_back(cacheBlock(map, p + dp,
 				SKIP_UPDATE_IF_ALREADY_CACHED,
 				&cache_hit_counter));
@@ -157,7 +157,7 @@ QueuedMeshUpdate *MeshUpdateQueue::pop()
 	return NULL;
 }
 
-CachedMapBlockData* MeshUpdateQueue::cacheBlock(Map *map, v3s16 p, UpdateMode mode,
+CachedMapBlockData* MeshUpdateQueue::cacheBlock(Map *map, v3bpos_t p, UpdateMode mode,
 			size_t *cache_hit_counter)
 {
 	CachedMapBlockData *cached_block = nullptr;
@@ -194,7 +194,7 @@ CachedMapBlockData* MeshUpdateQueue::cacheBlock(Map *map, v3s16 p, UpdateMode mo
 	return cached_block;
 }
 
-CachedMapBlockData* MeshUpdateQueue::getCachedBlock(const v3s16 &p)
+CachedMapBlockData* MeshUpdateQueue::getCachedBlock(const v3bpos_t &p)
 {
 	auto it = m_cache.find(p);
 	if (it != m_cache.end()) {
@@ -213,8 +213,8 @@ void MeshUpdateQueue::fillDataFromMapBlockCache(QueuedMeshUpdate *q)
 	std::time_t t_now = std::time(0);
 
 	// Collect data for 3*3*3 blocks from cache
-	for (v3s16 dp : g_27dirs) {
-		v3s16 p = q->p + dp;
+	for (v3pos_t dp : g_27dirs) {
+		v3bpos_t p = q->p + v3bpos_t(dp.X, dp.Y, dp.Z);
 		CachedMapBlockData *cached_block = getCachedBlock(p);
 		if (cached_block) {
 			cached_block->refcount_from_queue--;
@@ -283,7 +283,7 @@ MeshUpdateThread::MeshUpdateThread(Client *client):
 	m_generation_interval = rangelim(m_generation_interval, 0, 50);
 }
 
-void MeshUpdateThread::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
+void MeshUpdateThread::updateBlock(Map *map, v3bpos_t p, bool ack_block_to_server,
 		bool urgent, bool update_neighbors)
 {
 	static thread_local const bool many_neighbors =
@@ -296,10 +296,10 @@ void MeshUpdateThread::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
 	}
 	if (update_neighbors) {
 		if (many_neighbors) {
-			for (v3s16 dp : g_26dirs)
+			for (v3bpos_t dp : g_26dirs)
 				m_queue_in.addBlock(map, p + dp, false, urgent);
 		} else {
-			for (v3s16 dp : g_6dirs)
+			for (v3bpos_t dp : g_6dirs)
 				m_queue_in.addBlock(map, p + dp, false, urgent);
 		}
 	}

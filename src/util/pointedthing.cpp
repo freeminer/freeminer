@@ -22,12 +22,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "pointedthing.h"
 
+#include "gamedef.h"
 #include "serialize.h"
 #include "exceptions.h"
 #include <sstream>
 
-PointedThing::PointedThing(const v3s16 &under, const v3s16 &above,
-	const v3s16 &real_under, const v3f &point, const v3s16 &normal,
+PointedThing::PointedThing(const v3pos_t &under, const v3pos_t &above,
+	const v3pos_t &real_under, const v3opos_t &point, const v3pos_t &normal,
 	u16 box_id, f32 distSq):
 	type(POINTEDTHING_NODE),
 	node_undersurface(under),
@@ -39,7 +40,7 @@ PointedThing::PointedThing(const v3s16 &under, const v3s16 &above,
 	distanceSq(distSq)
 {}
 
-PointedThing::PointedThing(s16 id, const v3f &point, const v3s16 &normal,
+PointedThing::PointedThing(s16 id, const v3opos_t &point, const v3pos_t &normal,
 	f32 distSq) :
 	type(POINTEDTHING_OBJECT),
 	object_id(id),
@@ -57,8 +58,8 @@ std::string PointedThing::dump() const
 		break;
 	case POINTEDTHING_NODE:
 	{
-		const v3s16 &u = node_undersurface;
-		const v3s16 &a = node_abovesurface;
+		const v3pos_t &u = node_undersurface;
+		const v3pos_t &a = node_abovesurface;
 		os << "[node under=" << u.X << "," << u.Y << "," << u.Z << " above="
 			<< a.X << "," << a.Y << "," << a.Z << "]";
 	}
@@ -72,16 +73,18 @@ std::string PointedThing::dump() const
 	return os.str();
 }
 
-void PointedThing::serialize(std::ostream &os) const
+void PointedThing::serialize(std::ostream &os, const u16 proto_ver) const
 {
-	writeU8(os, 0); // version
+
+	const int version = proto_ver >= 41 ? 1 : 0;
+	writeU8(os, version); // version
 	writeU8(os, (u8)type);
 	switch (type) {
 	case POINTEDTHING_NOTHING:
 		break;
 	case POINTEDTHING_NODE:
-		writeV3S16(os, node_undersurface);
-		writeV3S16(os, node_abovesurface);
+		writeV3POS(os, node_undersurface, proto_ver);
+		writeV3POS(os, node_abovesurface, proto_ver);
 		break;
 	case POINTEDTHING_OBJECT:
 		writeS16(os, object_id);
@@ -92,15 +95,15 @@ void PointedThing::serialize(std::ostream &os) const
 void PointedThing::deSerialize(std::istream &is)
 {
 	int version = readU8(is);
-	if (version != 0) throw SerializationError(
+	if (version != 0 && version != 1) throw SerializationError(
 			"unsupported PointedThing version");
 	type = (PointedThingType) readU8(is);
 	switch (type) {
 	case POINTEDTHING_NOTHING:
 		break;
 	case POINTEDTHING_NODE:
-		node_undersurface = readV3S16(is);
-		node_abovesurface = readV3S16(is);
+		node_undersurface = readV3POS(is, version >= 1 ? 41 : 40);
+		node_abovesurface = readV3POS(is, version >= 1 ? 41 : 40);
 		break;
 	case POINTEDTHING_OBJECT:
 		object_id = readS16(is);

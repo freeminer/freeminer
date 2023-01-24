@@ -25,7 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/serveractiveobject.h"
 #include "log_types.h"
 
-StaticObject::StaticObject(const ServerActiveObject *s_obj, const v3f &pos_):
+StaticObject::StaticObject(const ServerActiveObject *s_obj, const v3opos_t &pos_):
 	type(s_obj->getType()),
 	pos(pos_)
 {
@@ -41,7 +41,11 @@ void StaticObject::serialize(std::ostream &os) const
 	// type
 	writeU8(os, type);
 	// pos
-	writeV3F1000(os, clampToF1000(pos));
+#if USE_OPOS64
+	writeV3O(os, pos);
+#else
+	writeV3F1000(os, clampToF1000(oposToV3f(pos)));
+#endif
 	// data
 	os<<serializeString16(data);
 }
@@ -51,7 +55,10 @@ bool StaticObject::deSerialize(std::istream &is, u8 version)
 	// type
 	type = readU8(is);
 	// pos
-	pos = readV3F1000(is);
+	if (version == 0)
+		pos = v3fToOpos(readV3F1000(is));
+	else		
+		pos = readV3O(is);
 	if (pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.X > MAX_MAP_GENERATION_LIMIT * BS || pos.Y > MAX_MAP_GENERATION_LIMIT * BS) {
 		errorstream << "deSerialize broken static object: type=" << (int)type << " p="<<pos<<std::endl;
 		return true;
@@ -87,7 +94,11 @@ void StaticObjectList::serialize(std::ostream &os)
 	}
 
 	// version
+#if USE_POS32
+	u8 version = 1;
+#else
 	u8 version = 0;
+#endif
 	writeU8(os, version);
 
 	// count

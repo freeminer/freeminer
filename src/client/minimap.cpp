@@ -21,6 +21,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cmath>
 #include "client.h"
 #include "clientmap.h"
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "settings.h"
 #include "shader.h"
 #include "mapblock.h"
@@ -46,7 +48,7 @@ MinimapUpdateThread::~MinimapUpdateThread()
 	}
 }
 
-bool MinimapUpdateThread::pushBlockUpdate(v3s16 pos, MinimapMapblock *data)
+bool MinimapUpdateThread::pushBlockUpdate(v3bpos_t pos, MinimapMapblock *data)
 {
 	MutexAutoLock lock(m_queue_mutex);
 
@@ -82,7 +84,7 @@ bool MinimapUpdateThread::popBlockUpdate(QueuedMinimapUpdate *update)
 	return true;
 }
 
-void MinimapUpdateThread::enqueueBlock(v3s16 pos, MinimapMapblock *data)
+void MinimapUpdateThread::enqueueBlock(v3bpos_t pos, MinimapMapblock *data)
 {
 	pushBlockUpdate(pos, data);
 	deferUpdate();
@@ -130,12 +132,12 @@ void MinimapUpdateThread::doUpdate()
 }
 
 #if 0
-void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
+void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, pos_t height)
 {
-	v3s16 pos_min(pos.X - size / 2, pos.Y - height / 2, pos.Z - size / 2);
-	v3s16 pos_max(pos_min.X + size - 1, pos.Y + height / 2, pos_min.Z + size - 1);
-	v3s16 blockpos_min = getNodeBlockPos(pos_min);
-	v3s16 blockpos_max = getNodeBlockPos(pos_max);
+	v3pos_t pos_min(pos.X - size / 2, pos.Y - height / 2, pos.Z - size / 2);
+	v3pos_t pos_max(pos_min.X + size - 1, pos.Y + height / 2, pos_min.Z + size - 1);
+	v3bpos_t blockpos_min = getNodeBlockPos(pos_min);
+	v3bpos_t blockpos_max = getNodeBlockPos(pos_max);
 
 // clear the map
 	for (int z = 0; z < size; z++)
@@ -147,7 +149,7 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 	}
 
 // draw the map
-	v3s16 blockpos;
+	v3bpos_t blockpos;
 	for (blockpos.Z = blockpos_min.Z; blockpos.Z <= blockpos_max.Z; ++blockpos.Z)
 	for (blockpos.Y = blockpos_min.Y; blockpos.Y <= blockpos_max.Y; ++blockpos.Y)
 	for (blockpos.X = blockpos_min.X; blockpos.X <= blockpos_max.X; ++blockpos.X) {
@@ -157,21 +159,21 @@ void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 height)
 			continue;
 		const MinimapMapblock &block = *pblock->second;
 
-		v3s16 block_node_min(blockpos * MAP_BLOCKSIZE);
-		v3s16 block_node_max(block_node_min + MAP_BLOCKSIZE - 1);
+		v3pos_t block_node_min = getBlockPosRelative(blockpos);
+		v3pos_t block_node_max(block_node_min + MAP_BLOCKSIZE - 1);
 		// clip
-		v3s16 range_min = componentwise_max(block_node_min, pos_min);
-		v3s16 range_max = componentwise_min(block_node_max, pos_max);
+		v3pos_t range_min = componentwise_max(block_node_min, pos_min);
+		v3pos_t range_max = componentwise_min(block_node_max, pos_max);
 
-		v3s16 pos;
+		v3pos_t pos;
 		pos.Y = range_min.Y;
 		for (pos.Z = range_min.Z; pos.Z <= range_max.Z; ++pos.Z)
 		for (pos.X = range_min.X; pos.X <= range_max.X; ++pos.X) {
-			v3s16 inblock_pos = pos - block_node_min;
+			v3pos_t inblock_pos = pos - block_node_min;
 			const MinimapPixel &in_pixel =
 				block.data[inblock_pos.Z * MAP_BLOCKSIZE + inblock_pos.X];
 
-			v3s16 inmap_pos = pos - pos_min;
+			v3pos_t inmap_pos = pos - pos_min;
 			MinimapPixel &out_pixel =
 				data->minimap_scan[inmap_pos.X + inmap_pos.Z * size];
 
@@ -284,7 +286,7 @@ Minimap::~Minimap()
 	delete m_minimap_update_thread;
 }
 
-void Minimap::addBlock(v3s16 pos, MinimapMapblock *data)
+void Minimap::addBlock(v3bpos_t pos, MinimapMapblock *data)
 {
 	m_minimap_update_thread->enqueueBlock(pos, data);
 }
@@ -421,7 +423,7 @@ void Minimap::nextMode()
 	setModeIndex(m_current_mode_index);
 }
 
-void Minimap::setPos(v3s16 pos)
+void Minimap::setPos(v3pos_t pos)
 {
 	bool do_update = false;
 
@@ -731,14 +733,14 @@ void Minimap::updateActiveMarkers()
 		data->minimap_mask_round : data->minimap_mask_square;
 
 	m_active_markers.clear();
-	v3f cam_offset = intToFloat(client->getCamera()->getOffset(), BS);
-	v3s16 pos_offset = data->pos - v3s16(data->mode.map_size / 2,
+	auto cam_offset = intToFloat(client->getCamera()->getOffset(), (opos_t)BS);
+	v3pos_t pos_offset = data->pos - v3pos_t(data->mode.map_size / 2,
 			data->mode.scan_height / 2,
 			data->mode.map_size / 2);
 
 	for (MinimapMarker *marker : m_markers) {
-		v3s16 pos = floatToInt(marker->parent_node->getAbsolutePosition() +
-			cam_offset, BS) - pos_offset;
+		v3pos_t pos = floatToInt(v3fToOpos(marker->parent_node->getAbsolutePosition()) +
+			cam_offset, (opos_t)BS) - pos_offset;
 		if (pos.X < 0 || pos.X > data->mode.map_size ||
 				pos.Y < 0 || pos.Y > data->mode.scan_height ||
 				pos.Z < 0 || pos.Z > data->mode.map_size) {
@@ -760,7 +762,7 @@ void Minimap::updateActiveMarkers()
 //// MinimapMapblock
 ////
 
-void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos)
+void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3pos_t &pos)
 {
 
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++)
@@ -770,7 +772,7 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 		MinimapPixel *mmpixel = &data[z * MAP_BLOCKSIZE + x];
 
 		for (s16 y = MAP_BLOCKSIZE -1; y >= 0; y--) {
-			v3s16 p(x, y, z);
+			v3pos_t p(x, y, z);
 			MapNode n = vmanip->getNodeNoEx(pos + p);
 			if (!surface_found && n.getContent() != CONTENT_AIR) {
 				mmpixel->height = y;
@@ -790,7 +792,7 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 
 
 ///freeminer:
-void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 scan_height) {
+void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, pos_t scan_height) {
 //void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
 	v3pos_t p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 

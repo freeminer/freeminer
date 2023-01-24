@@ -216,7 +216,7 @@ enum ClientStateEvent
 */
 struct PrioritySortedBlockTransfer
 {
-	PrioritySortedBlockTransfer(float a_priority, const v3s16 &a_pos, session_t a_peer_id)
+	PrioritySortedBlockTransfer(float a_priority, const v3bpos_t &a_pos, session_t a_peer_id)
 	{
 		priority = a_priority;
 		pos = a_pos;
@@ -227,7 +227,7 @@ struct PrioritySortedBlockTransfer
 		return priority < other.priority;
 	}
 	float priority;
-	v3s16 pos;
+	v3bpos_t pos;
 	session_t peer_id;
 };
 
@@ -282,12 +282,12 @@ public:
 	int GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
 			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime);
 
-	void SentBlock(v3s16 p, double time);
+	void SentBlock(v3bpos_t p, double time);
 
-	void SetBlockNotSent(v3s16 p);
-	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
+	void SetBlockNotSent(v3bpos_t p);
+	void SetBlocksNotSent(std::map<v3bpos_t, MapBlock*> &blocks);
 	void SetBlocksNotSent();
-	void SetBlockDeleted(v3s16 p);
+	void SetBlockDeleted(v3bpos_t p);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -295,7 +295,7 @@ public:
 	 * while modification is processed by server
 	 * @param p position of modified block
 	 */
-	void ResendBlockIfOnWire(v3s16 p);
+	void ResendBlockIfOnWire(v3bpos_t p);
 
 /*
 	u32 getSendingCount() const { return m_blocks_sending.size(); }
@@ -305,7 +305,7 @@ public:
     std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
 
 
-	bool isBlockSent(v3s16 p) const
+	bool isBlockSent(v3bpos_t p) const
 	{
 		return m_blocks_sent.find(p) != m_blocks_sent.end();
 	}
@@ -399,13 +399,13 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	unsigned int m_nearest_unsent_reset_want = 0;
-	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
+	concurrent_shared_unordered_map<v3bpos_t, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 
-	//std::set<v3s16> m_blocks_sent;
+	//std::set<v3bpos_t> m_blocks_sent;
 public:
 	std::atomic_int m_nearest_unsent_d {0};
 private:
-	v3s16 m_last_center;
+	v3bpos_t m_last_center;
 	v3f m_last_camera_dir;
 
 	const u16 m_max_simul_sends;
@@ -426,7 +426,7 @@ private:
 
 		List of block positions.
 	*/
-	//std::set<v3s16> m_blocks_modified;
+	//std::set<v3bpos_t> m_blocks_modified;
 
 	/*
 		Count of excess GotBlocks().
@@ -482,7 +482,7 @@ public:
 	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
 
 	/* mark block as not sent to active client sessions */
-	void markBlockposAsNotSent(const v3s16 &pos);
+	void markBlockposAsNotSent(const v3bpos_t &pos);
 
 	/* verify is server user limit was reached */
 	bool isUserLimitReached();

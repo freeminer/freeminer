@@ -172,16 +172,16 @@ u8 MapNode::getWallMounted(const NodeDefManager *nodemgr) const
 	return 0;
 }
 
-v3s16 MapNode::getWallMountedDir(const NodeDefManager *nodemgr) const
+v3pos_t MapNode::getWallMountedDir(const NodeDefManager *nodemgr) const
 {
 	switch(getWallMounted(nodemgr))
 	{
-	case 0: default: return v3s16(0,1,0);
-	case 1: return v3s16(0,-1,0);
-	case 2: return v3s16(1,0,0);
-	case 3: return v3s16(-1,0,0);
-	case 4: return v3s16(0,0,1);
-	case 5: return v3s16(0,0,-1);
+	case 0: default: return v3pos_t(0,1,0);
+	case 1: return v3pos_t(0,-1,0);
+	case 2: return v3pos_t(1,0,0);
+	case 3: return v3pos_t(-1,0,0);
+	case 4: return v3pos_t(0,0,1);
+	case 5: return v3pos_t(0,0,-1);
 	}
 }
 
@@ -404,15 +404,15 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 	}
 	else if(nodebox.type == NODEBOX_WALLMOUNTED)
 	{
-		v3s16 dir = n.getWallMountedDir(nodemgr);
+		v3pos_t dir = n.getWallMountedDir(nodemgr);
 
 		// top
-		if(dir == v3s16(0,1,0))
+		if(dir == v3pos_t(0,1,0))
 		{
 			boxes.push_back(nodebox.wall_top);
 		}
 		// bottom
-		else if(dir == v3s16(0,-1,0))
+		else if(dir == v3pos_t(0,-1,0))
 		{
 			boxes.push_back(nodebox.wall_bottom);
 		}
@@ -426,13 +426,13 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 			};
 
 			for (v3f &vertex : vertices) {
-				if(dir == v3s16(-1,0,0))
+				if(dir == v3pos_t(-1,0,0))
 					vertex.rotateXZBy(0);
-				if(dir == v3s16(1,0,0))
+				if(dir == v3pos_t(1,0,0))
 					vertex.rotateXZBy(180);
-				if(dir == v3s16(0,0,-1))
+				if(dir == v3pos_t(0,0,-1))
 					vertex.rotateXZBy(90);
-				if(dir == v3s16(0,0,1))
+				if(dir == v3pos_t(0,0,1))
 					vertex.rotateXZBy(-90);
 			}
 
@@ -554,7 +554,7 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 }
 
 static inline void getNeighborConnectingFace(
-	const v3s16 &p, const NodeDefManager *nodedef,
+	const v3pos_t &p, const NodeDefManager *nodedef,
 	Map *map, MapNode n, u8 bitmask, u8 *neighbors)
 {
 	MapNode n2 = map->getNode(p);
@@ -562,14 +562,14 @@ static inline void getNeighborConnectingFace(
 		*neighbors |= bitmask;
 }
 
-u8 MapNode::getNeighbors(v3s16 p, Map *map) const
+u8 MapNode::getNeighbors(v3pos_t p, Map *map) const
 {
 	const NodeDefManager *nodedef = map->getNodeDefManager();
 	u8 neighbors = 0;
 	const ContentFeatures &f = nodedef->get(*this);
 	// locate possible neighboring nodes to connect to
 	if (f.drawtype == NDT_NODEBOX && f.node_box.type == NODEBOX_CONNECTED) {
-		v3s16 p2 = p;
+		v3pos_t p2 = p;
 
 		p2.Y++;
 		getNeighborConnectingFace(p2, nodedef, map, *this, 1, &neighbors);

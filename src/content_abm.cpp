@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //#include "environment.h"
 #include "gamedef.h"
+#include "irrlichttypes.h"
 #include "nodedef.h"
 #include "settings.h"
 #include "mapblock.h" // For getNodeBlockPos
@@ -53,8 +54,8 @@ public:
 	{ return 20; }
 	virtual u32 getTriggerChance() override
 	{ return 10; }
-	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
-	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 
 	bool getSimpleCatchUp() override { return true; }
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
@@ -93,8 +94,8 @@ public:
 	{ return 10; }
 	virtual u32 getTriggerChance() override
 	{ return 10; }
-	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
-	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	bool getSimpleCatchUp() { return true; }
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
@@ -172,8 +173,8 @@ public:
 	virtual u32 getTriggerChance() override
 	{ return 10; }
 	bool getSimpleCatchUp() override { return true; }
-	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
-	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();
@@ -216,8 +217,8 @@ public:
 	virtual u32 getTriggerChance() override
 	{ return 5; }
 	bool getSimpleCatchUp() override { return true; }
-	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
-	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();
@@ -252,8 +253,8 @@ public:
 	virtual u32 getTriggerChance() override
 	{ return 4; }
 	bool getSimpleCatchUp() override { return true; }
-	virtual s16 getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
-	virtual s16 getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT;};
+	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT;};
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	                     u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate) override {
 		ServerMap *map = &env->getServerMap();

@@ -50,58 +50,58 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // sqrt(3.0) / 2.0 in literal form.
 static constexpr const f32 BLOCK_MAX_RADIUS = 0.866025403784f * MAP_BLOCKSIZE * BS;
 
-inline s16 getContainerPos(s16 p, s16 d)
+inline bpos_t getContainerPos(pos_t p, pos_t d)
 {
 	return (p >= 0 ? p : p - d + 1) / d;
 }
 
-inline v2s16 getContainerPos(v2s16 p, s16 d)
+inline v2bpos_t getContainerPos(v2pos_t p, pos_t d)
 {
-	return v2s16(
+	return v2bpos_t(
 		getContainerPos(p.X, d),
 		getContainerPos(p.Y, d)
 	);
 }
 
-inline v3s16 getContainerPos(v3s16 p, s16 d)
+inline v3bpos_t getContainerPos(v3pos_t p, pos_t d)
 {
-	return v3s16(
+	return v3bpos_t(
 		getContainerPos(p.X, d),
 		getContainerPos(p.Y, d),
 		getContainerPos(p.Z, d)
 	);
 }
 
-inline v2s16 getContainerPos(v2s16 p, v2s16 d)
+inline v2bpos_t getContainerPos(v2pos_t p, v2pos_t d)
 {
-	return v2s16(
+	return v2bpos_t(
 		getContainerPos(p.X, d.X),
 		getContainerPos(p.Y, d.Y)
 	);
 }
 
-inline v3s16 getContainerPos(v3s16 p, v3s16 d)
+inline v3bpos_t getContainerPos(v3pos_t p, v3pos_t d)
 {
-	return v3s16(
+	return v3bpos_t(
 		getContainerPos(p.X, d.X),
 		getContainerPos(p.Y, d.Y),
 		getContainerPos(p.Z, d.Z)
 	);
 }
 
-inline void getContainerPosWithOffset(s16 p, s16 d, s16 &container, s16 &offset)
+inline void getContainerPosWithOffset(pos_t p, pos_t d, bpos_t &container, pos_t &offset)
 {
 	container = (p >= 0 ? p : p - d + 1) / d;
 	offset = p & (d - 1);
 }
 
-inline void getContainerPosWithOffset(const v2s16 &p, s16 d, v2s16 &container, v2s16 &offset)
+inline void getContainerPosWithOffset(const v2pos_t &p, pos_t d, v2bpos_t &container, v2pos_t &offset)
 {
 	getContainerPosWithOffset(p.X, d, container.X, offset.X);
 	getContainerPosWithOffset(p.Y, d, container.Y, offset.Y);
 }
 
-inline void getContainerPosWithOffset(const v3s16 &p, s16 d, v3s16 &container, v3s16 &offset)
+inline void getContainerPosWithOffset(const v3pos_t &p, pos_t d, v3bpos_t &container, v3pos_t &offset)
 {
 	getContainerPosWithOffset(p.X, d, container.X, offset.X);
 	getContainerPosWithOffset(p.Y, d, container.Y, offset.Y);
@@ -109,7 +109,7 @@ inline void getContainerPosWithOffset(const v3s16 &p, s16 d, v3s16 &container, v
 }
 
 
-inline bool isInArea(v3s16 p, s16 d)
+inline bool isInArea(v3pos_t p, pos_t d)
 {
 	return (
 		p.X >= 0 && p.X < d &&
@@ -118,7 +118,7 @@ inline bool isInArea(v3s16 p, s16 d)
 	);
 }
 
-inline bool isInArea(v2s16 p, s16 d)
+inline bool isInArea(v2pos_t p, pos_t d)
 {
 	return (
 		p.X >= 0 && p.X < d &&
@@ -126,7 +126,7 @@ inline bool isInArea(v2s16 p, s16 d)
 	);
 }
 
-inline bool isInArea(v3s16 p, v3s16 d)
+inline bool isInArea(v3pos_t p, v3pos_t d)
 {
 	return (
 		p.X >= 0 && p.X < d.X &&
@@ -135,23 +135,34 @@ inline bool isInArea(v3s16 p, v3s16 d)
 	);
 }
 
-inline void sortBoxVerticies(v3s16 &p1, v3s16 &p2) {
+inline void sortBoxVerticies(v3pos_t &p1, v3pos_t &p2) {
 	if (p1.X > p2.X)
-		SWAP(s16, p1.X, p2.X);
+		SWAP(pos_t, p1.X, p2.X);
 	if (p1.Y > p2.Y)
-		SWAP(s16, p1.Y, p2.Y);
+		SWAP(pos_t, p1.Y, p2.Y);
 	if (p1.Z > p2.Z)
-		SWAP(s16, p1.Z, p2.Z);
+		SWAP(pos_t, p1.Z, p2.Z);
 }
 
-inline v3s16 componentwise_min(const v3s16 &a, const v3s16 &b)
+ /*
+inline void sortBoxVerticies(v3bpos_t &p1, v3bpos_t &p2) {
+	if (p1.X > p2.X)
+		SWAP(bpos_t, p1.X, p2.X);
+	if (p1.Y > p2.Y)
+		SWAP(bpos_t, p1.Y, p2.Y);
+	if (p1.Z > p2.Z)
+		SWAP(bpos_t, p1.Z, p2.Z);
+}
+ */
+
+inline v3pos_t componentwise_min(const v3pos_t &a, const v3pos_t &b)
 {
-	return v3s16(MYMIN(a.X, b.X), MYMIN(a.Y, b.Y), MYMIN(a.Z, b.Z));
+	return v3pos_t(MYMIN(a.X, b.X), MYMIN(a.Y, b.Y), MYMIN(a.Z, b.Z));
 }
 
-inline v3s16 componentwise_max(const v3s16 &a, const v3s16 &b)
+inline v3pos_t componentwise_max(const v3pos_t &a, const v3pos_t &b)
 {
-	return v3s16(MYMAX(a.X, b.X), MYMAX(a.Y, b.Y), MYMAX(a.Z, b.Z));
+	return v3pos_t(MYMAX(a.X, b.X), MYMAX(a.Y, b.Y), MYMAX(a.Z, b.Z));
 }
 
 
@@ -263,7 +274,7 @@ inline u32 calc_parity(u32 v)
 
 u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed);
 
-bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
+bool isBlockInSight(v3bpos_t blockpos_b, v3opos_t camera_pos, v3f camera_dir,
 		f32 camera_fov, f32 range, f32 *distance_ptr=NULL);
 
 s16 adjustDist(s16 dist, float zoom_fov);
@@ -285,9 +296,9 @@ inline constexpr f32 sqr(f32 f)
 /*
 	Returns integer position of node in given floating point position
 */
-inline v3s16 floatToInt(v3f p, f32 d)
+inline v3pos_t floatToInt(v3f p, f32 d)
 {
-	return v3s16(
+	return v3pos_t(
 		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
 		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
@@ -304,9 +315,35 @@ inline v3s16 doubleToInt(v3d p, double d)
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
 }
 
+inline v3pos_t doubleToPos(v3d p, double d)
+{
+	return v3pos_t(
+		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
+		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
+		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
+}
+
+inline v3pos_t floatToInt(v3d p, f32 d)
+{
+	return v3pos_t(
+		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
+		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
+		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
+}
+
+
+inline v3pos_t oposToPos(v3opos_t p, double d)
+{
+	return v3pos_t(
+		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
+		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
+		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
+}
+
 /*
 	Returns floating point position of node in given integer position
 */
+
 inline v3f intToFloat(v3s16 p, f32 d)
 {
 	return v3f(
@@ -316,8 +353,77 @@ inline v3f intToFloat(v3s16 p, f32 d)
 	);
 }
 
+#if USE_OPOS64 || USE_POS32
+inline v3opos_t intToFloat(const v3pos_t & p, const opos_t d)
+{
+	return v3opos_t(
+		(opos_t)p.X * d,
+		(opos_t)p.Y * d,
+		(opos_t)p.Z * d
+	);
+}
+#endif
+
+inline v3f posToFloat(const v3pos_t & p, f32 d)
+{
+	return v3f(
+		(f32)p.X * d,
+		(f32)p.Y * d,
+		(f32)p.Z * d
+	);
+}
+
+inline v3opos_t posToOpos(const v3pos_t & p, const opos_t d)
+{
+	return v3opos_t(
+		(opos_t)p.X * d,
+		(opos_t)p.Y * d,
+		(opos_t)p.Z * d
+	);
+}
+
+inline v3opos_t v3fToOpos(const v3f & p)
+{
+	return v3opos_t(p.X, p.Y, p.Z);
+}
+
+inline v3f oposToV3f(const v3opos_t & p)
+{
+	return v3f(p.X, p.Y, p.Z);
+}
+
+ /*
+inline v3f intToFloat(v3bpos_t p, f32 d)
+{
+	return v3f(
+		(f32)p.X * d,
+		(f32)p.Y * d,
+		(f32)p.Z * d
+	);
+}
+ */
+
+inline v3s16 posToS16(const v3pos_t & p)
+{
+#if USE_POS32
+	return v3s16(p.X, p.Y, p.Z);
+#else
+	return p;
+#endif
+}
+
+inline v3pos_t s16ToPos(const v3s16 & p)
+{
+#if USE_POS32
+	return v3pos_t(p.X, p.Y, p.Z);
+#else
+	return p;
+#endif
+}
+
+
 // Random helper. Usually d=BS
-inline aabb3f getNodeBox(v3s16 p, float d)
+inline aabb3f getNodeBox(v3pos_t p, float d)
 {
 	return aabb3f(
 		(float)p.X * d - 0.5f * d,
@@ -329,6 +435,19 @@ inline aabb3f getNodeBox(v3s16 p, float d)
 	);
 }
 
+#if USE_OPOS64
+inline aabb3o getNodeBox(v3pos_t p, opos_t d)
+{
+	return aabb3o(
+		(opos_t)p.X * d - 0.5f * d,
+		(opos_t)p.Y * d - 0.5f * d,
+		(opos_t)p.Z * d - 0.5f * d,
+		(opos_t)p.X * d + 0.5f * d,
+		(opos_t)p.Y * d + 0.5f * d,
+		(opos_t)p.Z * d + 0.5f * d
+	);
+}
+#endif
 
 class IntervalLimiter
 {
@@ -404,11 +523,11 @@ inline float cycle_shift(float value, float by = 0, float max = 1)
     return value + by;
 }
 
-inline int radius_box(const v3s16 & a, const v3s16 & b) {
+inline int radius_box(const v3pos_t & a, const v3pos_t & b) {
 	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
 }
 
-inline int radius_box(const v3f & a, const v3f & b) {
+inline int radius_box(const v3opos_t & a, const v3opos_t & b) {
 	return std::max(std::max(std::fabs(a.X - b.X), std::fabs(a.Y - b.Y)), std::fabs(a.Z - b.Z));
 }
 

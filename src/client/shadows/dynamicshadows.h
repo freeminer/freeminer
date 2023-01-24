@@ -17,6 +17,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "irrlichttypes_bloated.h"
 #include <matrix4.h>
 #include "util/basic_macros.h"
@@ -33,9 +34,9 @@ struct shadowFrustum
 	f32 radius{0.0f};
 	core::matrix4 ProjOrthMat;
 	core::matrix4 ViewMat;
-	v3f position;
+	v3opos_t position;
 	v3f player;
-	v3s16 camera_offset;
+	v3pos_t camera_offset;
 };
 
 class DirectionalLight
@@ -56,7 +57,7 @@ public:
 	v3f getDirection() const{
 		return direction;
 	};
-	v3f getPosition() const;
+	v3opos_t getPosition() const;
 	v3f getPlayerPos() const;
 	v3f getFuturePlayerPos() const;
 

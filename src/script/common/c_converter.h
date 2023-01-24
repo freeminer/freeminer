@@ -67,6 +67,8 @@ bool getintfield(lua_State *L, int table,
 // Retrieve an v3s16 where all components are optional (falls back to default)
 v3s16              getv3s16field_default(lua_State *L, int table,
                              const char *fieldname, v3s16 default_);
+v3pos_t            getv3pos_tfield_default(lua_State *L, int table,
+                             const char *fieldname, v3pos_t default_);
 
 bool               getstringfield(lua_State *L, int table,
                              const char *fieldname, std::string &result);
@@ -93,11 +95,23 @@ v3f                 checkFloatPos       (lua_State *L, int index);
 v2f                 check_v2f           (lua_State *L, int index);
 v3f                 check_v3f           (lua_State *L, int index);
 v3s16               check_v3s16         (lua_State *L, int index);
+v3pos_t             check_v3pos         (lua_State *L, int index);
+v3opos_t            check_v3o           (lua_State *L, int index);
+v3opos_t            checkOposPos        (lua_State *L, int index);
 
 v3f                 read_v3f            (lua_State *L, int index);
+v3opos_t            read_v3o            (lua_State *L, int index);
 v2f                 read_v2f            (lua_State *L, int index);
 v2s16               read_v2s16          (lua_State *L, int index);
 v2s32               read_v2s32          (lua_State *L, int index);
+inline v2pos_t      read_v2pos          (lua_State *L, int index) {
+	#if USE_POS32
+	return read_v2s32(L, index);
+	#else
+	return read_v2s16(L, index);
+	#endif
+}
+
 video::SColor       read_ARGB8          (lua_State *L, int index);
 bool                read_color          (lua_State *L, int index,
                                          video::SColor *color);
@@ -105,17 +119,38 @@ bool                is_color_table      (lua_State *L, int index);
 
 aabb3f              read_aabb3f         (lua_State *L, int index, f32 scale);
 v3s16               read_v3s16          (lua_State *L, int index);
+v3s32               read_v3s32          (lua_State *L, int index);
+v3pos_t             read_v3pos          (lua_State *L, int index);
+
 std::vector<aabb3f> read_aabb3f_vector  (lua_State *L, int index, f32 scale);
 size_t              read_stringlist     (lua_State *L, int index,
                                          std::vector<std::string> *result);
 
 void                push_v2s16          (lua_State *L, v2s16 p);
 void                push_v2s32          (lua_State *L, v2s32 p);
+inline void         push_v2pos          (lua_State *L, v2pos_t p) {
+	#if USE_POS32
+	return push_v2s32(L, p);
+	#else
+	return push_v2s16(L, p);
+	#endif
+}
+
 void                push_v3s16          (lua_State *L, v3s16 p);
+void                push_v3s32          (lua_State *L, v3s32 p);
+inline void         push_v3pos          (lua_State *L, v3pos_t p) {
+	#if USE_POS32
+	return push_v3s32(L, p);
+	#else
+	return push_v3s16(L, p);
+	#endif
+}
 void                push_aabb3f         (lua_State *L, aabb3f box);
 void                push_ARGB8          (lua_State *L, video::SColor color);
 void                pushFloatPos        (lua_State *L, v3f p);
+void                pushFloatPos        (lua_State *L, v3d p);
 void                push_v3f            (lua_State *L, v3f p);
+void                push_v3f            (lua_State *L, v3d p);
 void                push_v2f            (lua_State *L, v2f p);
 
 void                warn_if_field_exists(lua_State *L, int table,

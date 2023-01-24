@@ -48,8 +48,8 @@ namespace voxalgo
  */
 void update_lighting_nodes(
 	Map *map,
-	const std::vector<std::pair<v3s16, MapNode>> &oldnodes,
-	std::map<v3s16, MapBlock*> &modified_blocks);
+	const std::vector<std::pair<v3pos_t, MapNode>> &oldnodes,
+	std::map<v3bpos_t, MapBlock*> &modified_blocks);
 
 /*!
  * Updates borders of the given mapblock.
@@ -61,7 +61,7 @@ void update_lighting_nodes(
  * the function modified
  */
 void update_block_border_lighting(Map *map, MapBlock *block,
-	std::map<v3s16, MapBlock*> &modified_blocks);
+	std::map<v3bpos_t, MapBlock*> &modified_blocks);
 
 /*!
  * Copies back nodes from a voxel manipulator
@@ -72,7 +72,7 @@ void update_block_border_lighting(Map *map, MapBlock *block,
  * the function modified
  */
 void blit_back_with_light(ServerMap *map, MMVManip *vm,
-	std::map<v3s16, MapBlock*> *modified_blocks);
+	std::map<v3bpos_t, MapBlock*> *modified_blocks);
 
 /*!
  * Corrects the light in a map block.
@@ -81,7 +81,7 @@ void blit_back_with_light(ServerMap *map, MMVManip *vm,
  * \param block the block to update
  */
 void repair_block_light(ServerMap *map, MapBlock *block,
-	std::map<v3s16, MapBlock*> *modified_blocks);
+	std::map<v3bpos_t, MapBlock*> *modified_blocks);
 
 /*!
  * This class iterates trough voxels that intersect with
@@ -93,7 +93,7 @@ struct VoxelLineIterator
 {
 public:
 	//! Starting position of the line in world coordinates.
-	v3f m_start_position;
+	v3opos_t m_start_position;
 	//! Direction and length of the line in world coordinates.
 	v3f m_line_vector;
 	/*!
@@ -111,13 +111,13 @@ public:
 	 * Direction of the line. Each component can be -1 or 1 (if a
 	 * component of the line's vector is 0, then there will be 1).
 	 */
-	v3s16 m_step_directions { 1, 1, 1 };
+	v3pos_t m_step_directions { 1, 1, 1 };
 	//! Position of the current node.
-	v3s16 m_current_node_pos;
+	v3pos_t m_current_node_pos;
 	//! Index of the current node
 	s16 m_current_index = 0;
 	//! Position of the start node.
-	v3s16 m_start_node_pos;
+	v3pos_t m_start_node_pos;
 	//! Index of the last node
 	s16 m_last_index;
 
@@ -129,7 +129,7 @@ public:
 	 * line in voxel coordinates. start_position+line_vector
 	 * is the end of the line
 	 */
-	VoxelLineIterator(const v3f &start_position,const v3f &line_vector);
+	VoxelLineIterator(const v3opos_t &start_position,const v3f &line_vector);
 
 	/*!
 	 * Steps to the next voxel.
@@ -154,7 +154,7 @@ public:
 	 * If voxel does not intersect with the line,
 	 * the result is undefined.
 	 */
-	s16 getIndex(v3s16 voxel);
+	pos_t getIndex(v3pos_t voxel);
 };
 
 } // namespace voxalgo

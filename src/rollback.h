@@ -48,12 +48,12 @@ public:
 	std::string getActor();
 	bool isActorGuess();
 	void setActor(const std::string & actor, bool is_guess);
-	std::string getSuspect(v3s16 p, float nearness_shortcut,
+	std::string getSuspect(v3pos_t p, float nearness_shortcut,
 			float min_nearness);
 	void flush();
 
 	void addAction(const RollbackAction & action);
-	std::list<RollbackAction> getNodeActors(v3s16 pos, int range,
+	std::list<RollbackAction> getNodeActors(v3pos_t pos, int range,
 			time_t seconds, int limit);
 	std::list<RollbackAction> getRevertActions(
 			const std::string & actor_filter, time_t seconds);
@@ -76,15 +76,15 @@ private:
 			const std::list<ActionRow> & rows);
 	const std::list<ActionRow> getRowsSince(time_t firstTime,
 			const std::string & actor);
-	const std::list<ActionRow> getRowsSince_range(time_t firstTime, v3s16 p,
+	const std::list<ActionRow> getRowsSince_range(time_t firstTime, v3pos_t p,
 			int range, int limit);
-	const std::list<RollbackAction> getActionsSince_range(time_t firstTime, v3s16 p,
+	const std::list<RollbackAction> getActionsSince_range(time_t firstTime, v3pos_t p,
 			int range, int limit);
 	const std::list<RollbackAction> getActionsSince(time_t firstTime,
 			const std::string & actor = "");
 	void migrate(const std::string & filepath);
-	static float getSuspectNearness(bool is_guess, v3s16 suspect_p,
-		time_t suspect_t, v3s16 action_p, time_t action_t);
+	static float getSuspectNearness(bool is_guess, v3pos_t suspect_p,
+		time_t suspect_t, v3pos_t action_p, time_t action_t);
 
 
 	IGameDef *gamedef = nullptr;

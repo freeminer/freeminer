@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "voxelalgorithms.h"
 #include "util/pointedthing.h"
 
@@ -37,15 +38,15 @@ public:
 	 * @param objects_pointable if false, only nodes will be found
 	 * @param liquids pointable if false, liquid nodes won't be found
 	 */
-	RaycastState(const core::line3d<f32> &shootline, bool objects_pointable,
+	RaycastState(const core::line3d<opos_t> &shootline, bool objects_pointable,
 		bool liquids_pointable);
 
 	//! Shootline of the raycast.
-	core::line3d<f32> m_shootline;
+	core::line3d<opos_t> m_shootline;
 	//! Iterator to store the progress of the raycast.
 	voxalgo::VoxelLineIterator m_iterator;
 	//! Previous tested node during the raycast.
-	v3s16 m_previous_node;
+	v3pos_t m_previous_node;
 
 	/*!
 	 * This priority queue stores the found pointed things
@@ -57,7 +58,7 @@ public:
 	bool m_liquids_pointable;
 
 	//! The code needs to search these nodes around the center node.
-	core::aabbox3d<s16> m_search_range { 0, 0, 0, 0, 0, 0 };
+	core::aabbox3d<pos_t> m_search_range { 0, 0, 0, 0, 0, 0 };
 
 	//! If true, the Environment will initialize this state.
 	bool m_initialization_needed = true;
@@ -73,5 +74,5 @@ public:
  * outwards of the surface. If start is in the box, zero vector.
  * @returns true if a collision point was found
  */
-bool boxLineCollision(const aabb3f &box, const v3f &start, const v3f &dir,
-	v3f *collision_point, v3s16 *collision_normal);
+bool boxLineCollision(const aabb3o &box, const v3opos_t &start, const v3opos_t &dir,
+	v3opos_t *collision_point, v3pos_t *collision_normal);

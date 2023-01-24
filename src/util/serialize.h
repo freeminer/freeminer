@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "exceptions.h" // for SerializationError
 #include "debug.h" // for assert
 #include "ieee_float.h"
+#include "numeric.h"
 
 #include "config.h"
 #if HAVE_ENDIAN_H
@@ -216,6 +217,14 @@ inline f32 readF32(const u8 *data)
 	throw SerializationError("readF32: Unreachable code");
 }
 
+inline f64 readF64(const u8 *data)
+{
+	u64 u = readU64(data);
+	f64 f;
+	memcpy(&f, &u, 8);
+	return f;
+}
+
 inline video::SColor readARGB8(const u8 *data)
 {
 	video::SColor p(readU32(data));
@@ -282,6 +291,15 @@ inline v3f readV3F32(const u8 *data)
 	return p;
 }
 
+inline v3d readV3F64(const u8 *data)
+{
+	v3d p;
+	p.X = readF64(&data[0]);
+	p.Y = readF64(&data[8]);
+	p.Z = readF64(&data[16]);
+	return p;
+}
+
 /////////////// write routines ////////////////
 
 inline void writeU8(u8 *data, u8 i)
@@ -337,6 +355,13 @@ inline void writeF32(u8 *data, f32 i)
 	throw SerializationError("writeF32: Unreachable code");
 }
 
+inline void writeF64(u8 *data, double i)
+{
+	u64 u;
+	memcpy(&u, &i, 8);
+	return writeU64(data, u);
+}
+
 inline void writeARGB8(u8 *data, video::SColor p)
 {
 	writeU32(data, p.color);
@@ -388,6 +413,13 @@ inline void writeV3F32(u8 *data, v3f p)
 	writeF32(&data[8], p.Z);
 }
 
+inline void writeV3F64(u8 *data, v3d p)
+{
+	writeF64(&data[0], p.X);
+	writeF64(&data[8], p.Y);
+	writeF64(&data[16], p.Z);
+}
+
 ////
 //// Iostream wrapper for data read/write
 ////
@@ -425,6 +457,7 @@ MAKE_STREAM_READ_FXN(v3s32, V3S32,   12);
 MAKE_STREAM_READ_FXN(v3f,   V3F1000, 12);
 MAKE_STREAM_READ_FXN(v2f,   V2F32,    8);
 MAKE_STREAM_READ_FXN(v3f,   V3F32,   12);
+MAKE_STREAM_READ_FXN(v3d,   V3F64,   24);
 MAKE_STREAM_READ_FXN(video::SColor, ARGB8, 4);
 
 MAKE_STREAM_WRITE_FXN(u8,    U8,       1);
@@ -444,7 +477,68 @@ MAKE_STREAM_WRITE_FXN(v3s32, V3S32,   12);
 MAKE_STREAM_WRITE_FXN(v3f,   V3F1000, 12);
 MAKE_STREAM_WRITE_FXN(v2f,   V2F32,    8);
 MAKE_STREAM_WRITE_FXN(v3f,   V3F32,   12);
+MAKE_STREAM_WRITE_FXN(v3d,   V3F64,   24);
 MAKE_STREAM_WRITE_FXN(video::SColor, ARGB8, 4);
+
+inline pos_t readPOS(std::istream &is, const u16 proto_ver = 0) {
+#if USE_POS32
+	if (proto_ver >= 41)
+		return readS32(is);
+	return readS16(is);
+#else
+	return readS16(is);
+#endif
+}
+
+inline void writePOS(std::ostream &os, pos_t i, const u16 proto_ver = 0) {
+#if USE_POS32
+	if (proto_ver >= 41)
+		return writeS32(os, i);
+	return writeS16(os, i);
+#else
+	return writeS16(os, i);
+#endif
+}
+
+inline v3pos_t readV3POS(std::istream &is, const u16 proto_ver = 0) {
+#if USE_POS32
+	if (proto_ver >= 41)
+	    return readV3S32(is);
+    return s16ToPos(readV3S16(is));
+#else
+    return readV3S16(is);
+#endif
+}
+
+inline void writeV3POS(std::ostream &os, v3pos_t p, const u16 proto_ver = 0) {
+#if USE_POS32
+	if (proto_ver >= 41)
+	    return writeV3S32(os, p);
+    return writeV3S16(os, posToS16(p));
+#else
+    return writeV3S16(os, p);
+#endif
+}
+
+inline v3opos_t readV3O(std::istream &is, const u16 proto_ver = 0) {
+#if USE_OPOS64
+	if (proto_ver >= 41)
+	    return readV3F64(is);
+    return v3fToOpos(readV3F32(is));
+#else
+    return readV3F32(is);
+#endif
+}
+
+inline void writeV3O(std::ostream &os, v3opos_t p, const u16 proto_ver = 0) {
+#if USE_OPOS64
+	if (proto_ver >= 41)
+	    return writeV3F64(os, p);
+    return writeV3F32(os, oposToV3f(p));
+#else
+    return writeV3F32(os, p);
+#endif
+}
 
 ////
 //// More serialization stuff

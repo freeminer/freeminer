@@ -22,6 +22,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "config.h"
+
 /*
 	All kinds of constants.
 
@@ -67,7 +69,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // I really don't want to make every algorithm to check if it's going near
 // the limit or not, so this is lower.
 // This is the maximum value the setting map_generation_limit can be
+#if USE_POS32
+#define MAX_MAP_GENERATION_LIMIT (2147483008)
+#else
 #define MAX_MAP_GENERATION_LIMIT (31007)
+#endif
 
 // Size of node in floating-point units
 // The original idea behind this is to disallow plain casts between

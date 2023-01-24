@@ -619,7 +619,7 @@ const std::list<RollbackAction> RollbackManager::rollbackActionsFromActionRows(
 			break;
 
 		case RollbackAction::TYPE_SET_NODE:
-			action.p            = v3s16(row.x, row.y, row.z);
+			action.p            = v3pos_t(row.x, row.y, row.z);
 			action.n_old.name   = getNodeName(row.oldNode);
 			action.n_old.param1 = row.oldParam1;
 			action.n_old.param2 = row.oldParam2;
@@ -663,7 +663,7 @@ const std::list<ActionRow> RollbackManager::getRowsSince(time_t firstTime, const
 
 
 const std::list<ActionRow> RollbackManager::getRowsSince_range(
-		time_t start_time, v3s16 p, int range, int limit)
+		time_t start_time, v3pos_t p, int range, int limit)
 {
 #if USE_SQLITE3
 
@@ -688,7 +688,7 @@ const std::list<ActionRow> RollbackManager::getRowsSince_range(
 
 
 const std::list<RollbackAction> RollbackManager::getActionsSince_range(
-		time_t start_time, v3s16 p, int range, int limit)
+		time_t start_time, v3pos_t p, int range, int limit)
 {
 	return rollbackActionsFromActionRows(getRowsSince_range(start_time, p, range, limit));
 }
@@ -828,8 +828,8 @@ void RollbackManager::migrate(const std::string & file_path)
 
 // Get nearness factor for subject's action for this action
 // Return value: 0 = impossible, >0 = factor
-float RollbackManager::getSuspectNearness(bool is_guess, v3s16 suspect_p,
-		time_t suspect_t, v3s16 action_p, time_t action_t)
+float RollbackManager::getSuspectNearness(bool is_guess, v3pos_t suspect_p,
+		time_t suspect_t, v3pos_t action_p, time_t action_t)
 {
 	// Suspect cannot cause things in the past
 	if (action_t < suspect_t) {
@@ -838,7 +838,7 @@ float RollbackManager::getSuspectNearness(bool is_guess, v3s16 suspect_p,
 	// Start from 100
 	int f = 100;
 	// Distance (1 node = -x points)
-	f -= POINTS_PER_NODE * intToFloat(suspect_p, 1).getDistanceFrom(intToFloat(action_p, 1));
+	f -= POINTS_PER_NODE * intToFloat(suspect_p, (float)1).getDistanceFrom(intToFloat(action_p, (float)1));
 	// Time (1 second = -x points)
 	f -= 1 * (action_t - suspect_t);
 	// If is a guess, halve the points
@@ -868,7 +868,7 @@ void RollbackManager::reportAction(const RollbackAction &action_)
 	action.actor_is_guess = current_actor_is_guess;
 
 	if (action.actor.empty()) { // If actor is not known, find out suspect or cancel
-		v3s16 p;
+		v3pos_t p;
 		if (!action.getPosition(&p)) {
 			return;
 		}
@@ -900,7 +900,7 @@ void RollbackManager::setActor(const std::string & actor, bool is_guess)
 	current_actor_is_guess = is_guess;
 }
 
-std::string RollbackManager::getSuspect(v3s16 p, float nearness_shortcut,
+std::string RollbackManager::getSuspect(v3pos_t p, float nearness_shortcut,
 		float min_nearness)
 {
 	if (!current_actor.empty()) {
@@ -920,7 +920,7 @@ std::string RollbackManager::getSuspect(v3s16 p, float nearness_shortcut,
 			continue;
 		}
 		// Find position of suspect or continue
-		v3s16 suspect_p;
+		v3pos_t suspect_p;
 		if (!i->getPosition(&suspect_p)) {
 			continue;
 		}
@@ -977,7 +977,7 @@ void RollbackManager::addAction(const RollbackAction & action)
 	}
 }
 
-std::list<RollbackAction> RollbackManager::getNodeActors(v3s16 pos, int range,
+std::list<RollbackAction> RollbackManager::getNodeActors(v3pos_t pos, int range,
 		time_t seconds, int limit)
 {
 	flush();

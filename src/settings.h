@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "irrlichttypes_bloated.h"
 #include "util/string.h"
 #include "util/basic_macros.h"
@@ -173,10 +174,14 @@ public:
 	u32 getU32(const std::string &name) const;
 	s32 getS32(const std::string &name) const;
 	u64 getU64(const std::string &name) const;
+	pos_t getPos(const std::string &name) const;
 	float getFloat(const std::string &name) const;
 	float getFloat(const std::string &name, float min, float max) const;
 	v2f getV2F(const std::string &name) const;
 	v3f getV3F(const std::string &name) const;
+#if USE_OPOS64
+	v3opos_t getV3O(const std::string &name) const;
+#endif
 	u32 getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 			u32 *flagmask) const;
 	bool getNoiseParams(const std::string &name, NoiseParams &np) const;
@@ -203,10 +208,14 @@ public:
 	bool getS16NoEx(const std::string &name, s16 &val) const;
 	bool getU32NoEx(const std::string &name, u32 &val) const;
 	bool getS32NoEx(const std::string &name, s32 &val) const;
+	bool getPosNoEx(const std::string &name, pos_t &val) const;
 	bool getU64NoEx(const std::string &name, u64 &val) const;
 	bool getFloatNoEx(const std::string &name, float &val) const;
 	bool getV2FNoEx(const std::string &name, v2f &val) const;
 	bool getV3FNoEx(const std::string &name, v3f &val) const;
+#if USE_OPOS64
+	bool getV3FNoEx(const std::string &name, v3opos_t &val) const;
+#endif
 
 	// Like other getters, but handling each flag individualy:
 	// 1) Read default flags (or 0)
@@ -232,7 +241,8 @@ public:
 	bool setS16(const std::string &name, s16 value);
 	bool setU16(const std::string &name, u16 value);
 	bool setS32(const std::string &name, s32 value);
-	bool setU64(const std::string &name, uint64_t value);
+	bool setU64(const std::string &name, u64 value);
+	bool setPos(const std::string &name, pos_t value);
 	bool setFloat(const std::string &name, float value);
 	bool setV2F(const std::string &name, v2f value);
 	bool setV3F(const std::string &name, v3f value);

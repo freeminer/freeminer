@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "settings.h"
 #include "convert_json.h"
+#include "irr_v3d.h"
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
@@ -542,6 +543,11 @@ s32 Settings::getS32(const std::string &name) const
 	return stoi(get(name));
 }
 
+pos_t Settings::getPos(const std::string &name) const
+{
+	return stoi(get(name));
+}
+
 
 float Settings::getFloat(const std::string &name) const
 {
@@ -585,6 +591,18 @@ v3f Settings::getV3F(const std::string &name) const
 	return value;
 }
 
+#if USE_OPOS64
+v3opos_t Settings::getV3O(const std::string &name) const
+{
+	v3opos_t value;
+	Strfnd f(get(name));
+	f.next("(");
+	value.X = stod(f.next(","));
+	value.Y = stod(f.next(","));
+	value.Z = stod(f.next(")"));
+	return value;
+}
+#endif
 
 u32 Settings::getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 	u32 *flagmask) const
@@ -821,6 +839,15 @@ bool Settings::getS32NoEx(const std::string &name, s32 &val) const
 }
 
 
+bool Settings::getPosNoEx(const std::string &name, pos_t &val) const
+{
+#if USE_POS32
+	return getS32NoEx(name, val);
+#else
+	return getS16NoEx(name, val);
+#endif
+}
+
 bool Settings::getU64NoEx(const std::string &name, u64 &val) const
 {
 	try {
@@ -853,6 +880,17 @@ bool Settings::getV3FNoEx(const std::string &name, v3f &val) const
 	}
 }
 
+#if USE_OPOS64
+bool Settings::getV3FNoEx(const std::string &name, v3opos_t &val) const
+{
+	try {
+		val = getV3O(name);
+		return true;
+	} catch (SettingNotFoundException &e) {
+		return false;
+	}
+}
+#endif
 
 bool Settings::getFlagStrNoEx(const std::string &name, u32 &val,
 	const FlagDesc *flagdesc) const
@@ -952,6 +990,11 @@ bool Settings::setU16(const std::string &name, u16 value)
 
 
 bool Settings::setS32(const std::string &name, s32 value)
+{
+	return set(name, itos(value));
+}
+
+bool Settings::setPos(const std::string &name, pos_t value)
 {
 	return set(name, itos(value));
 }

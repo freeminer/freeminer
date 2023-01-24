@@ -135,7 +135,7 @@ void Clouds::render()
 	// The center point of drawing in the noise
 	v2f center_of_drawing_in_noise_f = -cloud_origin_from_camera_f;
 	// The integer center point of drawing in the noise
-	v2s16 center_of_drawing_in_noise_i(
+	v2pos_t center_of_drawing_in_noise_i(
 		std::floor(center_of_drawing_in_noise_f.X / cloud_size),
 		std::floor(center_of_drawing_in_noise_f.Y / cloud_size)
 	);
@@ -331,7 +331,7 @@ void Clouds::render()
 			}
 
 			v3f pos(p0.X, m_params.height * BS, p0.Y);
-			pos -= intToFloat(m_camera_offset, BS);
+			pos -= posToFloat(m_camera_offset, BS);
 
 			for (video::S3DVertex &vertex : v) {
 				vertex.Pos += pos;

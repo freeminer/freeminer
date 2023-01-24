@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/directiontables.h"
 #include "mapblock_mesh.h"
+#include "mapblock.h"
 #include "settings.h"
 #include "nodedef.h"
 #include "client/tile.h"
@@ -44,15 +45,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // Corresponding offsets are listed in g_27dirs
 #define FRAMED_NEIGHBOR_COUNT 18
 
-static const v3s16 light_dirs[8] = {
-	v3s16(-1, -1, -1),
-	v3s16(-1, -1,  1),
-	v3s16(-1,  1, -1),
-	v3s16(-1,  1,  1),
-	v3s16( 1, -1, -1),
-	v3s16( 1, -1,  1),
-	v3s16( 1,  1, -1),
-	v3s16( 1,  1,  1),
+static const v3pos_t light_dirs[8] = {
+	v3pos_t(-1, -1, -1),
+	v3pos_t(-1, -1,  1),
+	v3pos_t(-1,  1, -1),
+	v3pos_t(-1,  1,  1),
+	v3pos_t( 1, -1, -1),
+	v3pos_t( 1, -1,  1),
+	v3pos_t( 1,  1, -1),
+	v3pos_t( 1,  1,  1),
 };
 
 // Standard index set to make a quad on 4 vertices
@@ -66,7 +67,7 @@ MapblockMeshGenerator::MapblockMeshGenerator(MeshMakeData *input, MeshCollector 
 	collector(output),
 	nodedef(data->m_client->ndef()),
 	meshmanip(mm),
-	blockpos_nodes(data->m_blockpos * MAP_BLOCKSIZE)
+	blockpos_nodes(getBlockPosRelative(data->m_blockpos))
 {
 	enable_mesh_cache = g_settings->getBool("enable_mesh_cache") &&
 		!data->m_smooth_lighting; // Mesh cache is not supported with smooth lighting
@@ -94,7 +95,7 @@ void MapblockMeshGenerator::getTile(int index, TileSpec *tile)
 }
 
 // Returns a tile, ready for use, rotated according to the node facedir.
-void MapblockMeshGenerator::getTile(v3s16 direction, TileSpec *tile)
+void MapblockMeshGenerator::getTile(v3pos_t direction, TileSpec *tile)
 {
 	getNodeTile(n, p, direction, data, *tile);
 }
@@ -118,13 +119,13 @@ void MapblockMeshGenerator::getSpecialTile(int index, TileSpec *tile, bool apply
 		top_layer->material_flags |= MATERIAL_FLAG_CRACK;
 }
 
-void MapblockMeshGenerator::drawQuad(v3f *coords, const v3s16 &normal,
+void MapblockMeshGenerator::drawQuad(v3f *coords, const v3pos_t &normal,
 	float vertical_tiling)
 {
 	const v2f tcoords[4] = {v2f(0.0, 0.0), v2f(1.0, 0.0),
 		v2f(1.0, vertical_tiling), v2f(0.0, vertical_tiling)};
 	video::S3DVertex vertices[4];
-	bool shade_face = !f->light_source && (normal != v3s16(0, 0, 0));
+	bool shade_face = !f->light_source && (normal != v3pos_t(0, 0, 0));
 	v3f normal2(normal.X, normal.Y, normal.Z);
 	for (int j = 0; j < 4; j++) {
 		vertices[j].Pos = coords[j] + origin;
@@ -452,8 +453,8 @@ void MapblockMeshGenerator::prepareLiquidNodeDrawing()
 	getSpecialTile(0, &tile_liquid_top);
 	getSpecialTile(1, &tile_liquid);
 
-	MapNode ntop = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(p.X, p.Y + 1, p.Z));
-	MapNode nbottom = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(p.X, p.Y - 1, p.Z));
+	MapNode ntop = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3pos_t(p.X, p.Y + 1, p.Z));
+	MapNode nbottom = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3pos_t(p.X, p.Y - 1, p.Z));
 	c_flowing = f->liquid_alternative_flowing_id;
 	c_source = f->liquid_alternative_source_id;
 	top_is_same_liquid = (ntop.getContent() == c_flowing) || (ntop.getContent() == c_source);
@@ -488,7 +489,7 @@ void MapblockMeshGenerator::getLiquidNeighborhood()
 	for (int w = -1; w <= 1; w++)
 	for (int u = -1; u <= 1; u++) {
 		NeighborData &neighbor = liquid_neighbors[w + 1][u + 1];
-		v3s16 p2 = p + v3s16(u, 0, w);
+		auto p2 = p + v3pos_t(u, 0, w);
 		MapNode n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 		neighbor.content = n2.getContent();
 		neighbor.level = -0.5 * BS;
@@ -563,17 +564,17 @@ f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
 
 namespace {
 	struct LiquidFaceDesc {
-		v3s16 dir; // XZ
-		v3s16 p[2]; // XZ only; 1 means +, 0 means -
+		v3pos_t dir; // XZ
+		v3pos_t p[2]; // XZ only; 1 means +, 0 means -
 	};
 	struct UV {
 		int u, v;
 	};
 	static const LiquidFaceDesc liquid_base_faces[4] = {
-		{v3s16( 1, 0,  0), {v3s16(1, 0, 1), v3s16(1, 0, 0)}},
-		{v3s16(-1, 0,  0), {v3s16(0, 0, 0), v3s16(0, 0, 1)}},
-		{v3s16( 0, 0,  1), {v3s16(0, 0, 1), v3s16(1, 0, 1)}},
-		{v3s16( 0, 0, -1), {v3s16(1, 0, 0), v3s16(0, 0, 0)}},
+		{v3pos_t( 1, 0,  0), {v3pos_t(1, 0, 1), v3pos_t(1, 0, 0)}},
+		{v3pos_t(-1, 0,  0), {v3pos_t(0, 0, 0), v3pos_t(0, 0, 1)}},
+		{v3pos_t( 0, 0,  1), {v3pos_t(0, 0, 1), v3pos_t(1, 0, 1)}},
+		{v3pos_t( 0, 0, -1), {v3pos_t(1, 0, 0), v3pos_t(0, 0, 0)}},
 	};
 	static const UV liquid_base_vertices[4] = {
 		{0, 1},
@@ -606,7 +607,7 @@ void MapblockMeshGenerator::drawLiquidSides()
 		video::S3DVertex vertices[4];
 		for (int j = 0; j < 4; j++) {
 			const UV &vertex = liquid_base_vertices[j];
-			const v3s16 &base = face.p[vertex.u];
+			const v3pos_t &base = face.p[vertex.u];
 			float v = vertex.v;
 
 			v3f pos;
@@ -715,8 +716,8 @@ void MapblockMeshGenerator::drawGlasslikeNode()
 
 	for (int face = 0; face < 6; face++) {
 		// Check this neighbor
-		v3s16 dir = g_6dirs[face];
-		v3s16 neighbor_pos = blockpos_nodes + p + dir;
+		v3pos_t dir = g_6dirs[face];
+		v3pos_t neighbor_pos = blockpos_nodes + p + dir;
 		MapNode neighbor = data->m_vmanip.getNodeNoExNoEmerge(neighbor_pos);
 		// Don't make face if neighbor is of same type
 		if (neighbor.getContent() == n.getContent())
@@ -812,7 +813,7 @@ void MapblockMeshGenerator::drawGlasslikeFramedNode()
 		for (int i = 0; i < FRAMED_NEIGHBOR_COUNT; i++) {
 			if (!check_nb[i])
 				continue;
-			v3s16 n2p = blockpos_nodes + p + g_26dirs[i];
+			v3pos_t n2p = blockpos_nodes + p + g_26dirs[i];
 			MapNode n2 = data->m_vmanip.getNodeNoEx(n2p);
 			content_t n2c = n2.getContent();
 			if (n2c == current)
@@ -869,7 +870,7 @@ void MapblockMeshGenerator::drawGlasslikeFramedNode()
 					vertex.rotateXZBy(-90); break;
 			}
 		}
-		v3s16 dir = g_6dirs[face];
+		v3pos_t dir = g_6dirs[face];
 		drawQuad(vertices, dir);
 	}
 
@@ -1027,7 +1028,7 @@ void MapblockMeshGenerator::drawPlantlikeQuad(float rotation, float quad_offset,
 		}
 	}
 
-	drawQuad(vertices, v3s16(0, 0, 0), plant_height);
+	drawQuad(vertices, v3pos_t(0, 0, 0), plant_height);
 }
 
 void MapblockMeshGenerator::drawPlantlike(bool is_rooted)
@@ -1166,7 +1167,7 @@ void MapblockMeshGenerator::drawFirelikeNode()
 	bool neighbor[6] = {0, 0, 0, 0, 0, 0};
 	content_t current = n.getContent();
 	for (int i = 0; i < 6; i++) {
-		v3s16 n2p = blockpos_nodes + p + g_6dirs[i];
+		v3pos_t n2p = blockpos_nodes + p + g_6dirs[i];
 		MapNode n2 = data->m_vmanip.getNodeNoEx(n2p);
 		content_t n2c = n2.getContent();
 		if (n2c != CONTENT_IGNORE && n2c != CONTENT_AIR && n2c != current) {
@@ -1236,7 +1237,7 @@ void MapblockMeshGenerator::drawFencelikeNode()
 	tile = tile_nocrack;
 
 	// Now a section of fence, +X, if there's a post there
-	v3s16 p2 = p;
+	auto p2 = p;
 	p2.X++;
 	MapNode n2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p2);
 	const ContentFeatures *f2 = &nodedef->get(n2);
@@ -1280,7 +1281,7 @@ void MapblockMeshGenerator::drawFencelikeNode()
 	}
 }
 
-bool MapblockMeshGenerator::isSameRail(v3s16 dir)
+bool MapblockMeshGenerator::isSameRail(v3pos_t dir)
 {
 	MapNode node2 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p + dir);
 	if (node2.getContent() == n.getContent())
@@ -1291,11 +1292,11 @@ bool MapblockMeshGenerator::isSameRail(v3s16 dir)
 }
 
 namespace {
-	static const v3s16 rail_direction[4] = {
-		v3s16( 0, 0,  1),
-		v3s16( 0, 0, -1),
-		v3s16(-1, 0,  0),
-		v3s16( 1, 0,  0),
+	static const v3pos_t rail_direction[4] = {
+		v3pos_t( 0, 0,  1),
+		v3pos_t( 0, 0, -1),
+		v3pos_t(-1, 0,  0),
+		v3pos_t( 1, 0,  0),
 	};
 	static const int rail_slope_angle[4] = {0, 180, 90, -90};
 
@@ -1340,14 +1341,14 @@ void MapblockMeshGenerator::drawRaillikeNode()
 	int tile_index;
 	bool sloped = false;
 	for (int dir = 0; dir < 4; dir++) {
-		bool rail_above = isSameRail(rail_direction[dir] + v3s16(0, 1, 0));
+		bool rail_above = isSameRail(rail_direction[dir] + v3pos_t(0, 1, 0));
 		if (rail_above) {
 			sloped = true;
 			angle = rail_slope_angle[dir];
 		}
 		if (rail_above ||
 				isSameRail(rail_direction[dir]) ||
-				isSameRail(rail_direction[dir] + v3s16(0, -1, 0)))
+				isSameRail(rail_direction[dir] + v3pos_t(0, -1, 0)))
 			code |= 1 << dir;
 	}
 
@@ -1376,23 +1377,23 @@ void MapblockMeshGenerator::drawRaillikeNode()
 }
 
 namespace {
-	static const v3s16 nodebox_tile_dirs[6] = {
-		v3s16(0, 1, 0),
-		v3s16(0, -1, 0),
-		v3s16(1, 0, 0),
-		v3s16(-1, 0, 0),
-		v3s16(0, 0, 1),
-		v3s16(0, 0, -1)
+	static const v3pos_t nodebox_tile_dirs[6] = {
+		v3pos_t(0, 1, 0),
+		v3pos_t(0, -1, 0),
+		v3pos_t(1, 0, 0),
+		v3pos_t(-1, 0, 0),
+		v3pos_t(0, 0, 1),
+		v3pos_t(0, 0, -1)
 	};
 
 	// we have this order for some reason...
-	static const v3s16 nodebox_connection_dirs[6] = {
-		v3s16( 0,  1,  0), // top
-		v3s16( 0, -1,  0), // bottom
-		v3s16( 0,  0, -1), // front
-		v3s16(-1,  0,  0), // left
-		v3s16( 0,  0,  1), // back
-		v3s16( 1,  0,  0), // right
+	static const v3pos_t nodebox_connection_dirs[6] = {
+		v3pos_t( 0,  1,  0), // top
+		v3pos_t( 0, -1,  0), // bottom
+		v3pos_t( 0,  0, -1), // front
+		v3pos_t(-1,  0,  0), // left
+		v3pos_t( 0,  0,  1), // back
+		v3pos_t( 1,  0,  0), // right
 	};
 }
 
@@ -1419,7 +1420,7 @@ void MapblockMeshGenerator::drawNodeboxNode()
 	u8 sametype_neighbors = 0;
 	for (int dir = 0; dir != 6; dir++) {
 		u8 flag = 1 << dir;
-		v3s16 p2 = blockpos_nodes + p + nodebox_tile_dirs[dir];
+		v3pos_t p2 = blockpos_nodes + p + nodebox_tile_dirs[dir];
 		MapNode n2 = data->m_vmanip.getNodeNoEx(p2);
 
 		// mark neighbors that are the same node type
@@ -1590,7 +1591,7 @@ void MapblockMeshGenerator::drawNode()
 		default:
 			break;
 	}
-	origin = intToFloat(p, BS);
+	origin = posToFloat(p, BS);
 	if (data->m_smooth_lighting)
 		getSmoothLightFrame();
 	else

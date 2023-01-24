@@ -23,6 +23,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock_mesh.h"
 #include "client.h"
 #include "client/clientmap.h"
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapblock.h"
 #include "map.h"
 #include "profiler.h"
@@ -33,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "client/meshgen/collector.h"
 #include "client/renderingengine.h"
+#include "util/numeric.h"
 #include <array>
 #include <algorithm>
 
@@ -135,49 +138,49 @@ bool MeshMakeData::fill_data()
 }
 
 
-void MeshMakeData::fillBlockDataBegin(const v3s16 &blockpos)
+void MeshMakeData::fillBlockDataBegin(const v3bpos_t &blockpos)
 {
 	m_blockpos = blockpos;
 
-	v3s16 blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
+	v3pos_t blockpos_nodes = getBlockPosRelative(m_blockpos);
 
 	m_vmanip.clear();
-	VoxelArea voxel_area(blockpos_nodes - v3s16(1,1,1) * MAP_BLOCKSIZE,
-			blockpos_nodes + v3s16(1,1,1) * MAP_BLOCKSIZE*2-v3s16(1,1,1));
+	VoxelArea voxel_area(blockpos_nodes - v3pos_t(1,1,1) * MAP_BLOCKSIZE,
+			blockpos_nodes + v3pos_t(1,1,1) * MAP_BLOCKSIZE*2-v3pos_t(1,1,1));
 	m_vmanip.addArea(voxel_area);
 }
 
-void MeshMakeData::fillBlockData(const v3s16 &block_offset, MapNode *data)
+void MeshMakeData::fillBlockData(const v3pos_t &block_offset, MapNode *data)
 {
-	v3s16 data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
-	VoxelArea data_area(v3s16(0,0,0), data_size - v3s16(1,1,1));
+	v3pos_t data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
+	VoxelArea data_area(v3pos_t(0,0,0), data_size - v3pos_t(1,1,1));
 
-	v3s16 bp = m_blockpos + block_offset;
-	v3s16 blockpos_nodes = bp * MAP_BLOCKSIZE;
-	m_vmanip.copyFrom(data, data_area, v3s16(0,0,0), blockpos_nodes, data_size);
+	v3bpos_t bp = m_blockpos + v3bpos_t(block_offset.X, block_offset.Y, block_offset.Z);
+	v3pos_t blockpos_nodes = getBlockPosRelative(bp);
+	m_vmanip.copyFrom(data, data_area, v3pos_t(0,0,0), blockpos_nodes, data_size);
 }
 
 void MeshMakeData::fill(MapBlock *block)
 {
 	fillBlockDataBegin(block->getPos());
 
-	fillBlockData(v3s16(0,0,0), block->getData());
+	fillBlockData(v3pos_t(0,0,0), block->getData());
 
 	// Get map for reading neighbor blocks
 	Map *map = block->getParent();
 
-	for (const v3s16 &dir : g_26dirs) {
-		v3s16 bp = m_blockpos + dir;
+	for (const v3pos_t &dir : g_26dirs) {
+		v3bpos_t bp = m_blockpos + v3bpos_t(dir.X, dir.Y, dir.Z);
 		MapBlock *b = map->getBlockNoCreateNoEx(bp);
 		if(b)
 			fillBlockData(dir, b->getData());
 	}
 }
 
-void MeshMakeData::setCrack(int crack_level, v3s16 crack_pos)
+void MeshMakeData::setCrack(int crack_level, v3pos_t crack_pos)
 {
 	if (crack_level >= 0)
-		m_crack_pos_relative = crack_pos - m_blockpos*MAP_BLOCKSIZE;
+		m_crack_pos_relative = crack_pos - getBlockPosRelative(m_blockpos);
 }
 
 void MeshMakeData::setSmoothLighting(bool smooth_lighting)
@@ -218,7 +221,7 @@ u16 getInteriorLight(MapNode n, s32 increment, const NodeDefManager *ndef)
 	Single light bank.
 */
 static u8 getFaceLight(enum LightBank bank, MapNode n, MapNode n2,
-	v3s16 face_dir, const NodeDefManager *ndef)
+	v3pos_t face_dir, const NodeDefManager *ndef)
 {
 	u8 light;
 	u8 l1 = n.getLight(bank, ndef);
@@ -241,7 +244,7 @@ static u8 getFaceLight(enum LightBank bank, MapNode n, MapNode n2,
 	Calculate non-smooth lighting at face of node.
 	Both light banks.
 */
-u16 getFaceLight(MapNode n, MapNode n2, const v3s16 &face_dir,
+u16 getFaceLight(MapNode n, MapNode n2, const v3pos_t &face_dir,
 	const NodeDefManager *ndef)
 {
 	u16 day = getFaceLight(LIGHTBANK_DAY, n, n2, face_dir, ndef);
@@ -253,8 +256,8 @@ u16 getFaceLight(MapNode n, MapNode n2, const v3s16 &face_dir,
 	Calculate smooth lighting at the XYZ- corner of p.
 	Both light banks
 */
-static u16 getSmoothLightCombined(const v3s16 &p,
-	const std::array<v3s16,8> &dirs, MeshMakeData *data)
+static u16 getSmoothLightCombined(const v3pos_t &p,
+	const std::array<v3pos_t,8> &dirs, MeshMakeData *data)
 {
 	const NodeDefManager *ndef = data->m_client->ndef();
 
@@ -362,7 +365,7 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 	Both light banks.
 	Node at p is solid, and thus the lighting is face-dependent.
 */
-u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data)
+u16 getSmoothLightSolid(const v3pos_t &p, const v3pos_t &face_dir, const v3pos_t &corner, MeshMakeData *data)
 {
 	return getSmoothLightTransparent(p + face_dir, corner - 2 * face_dir, data);
 }
@@ -372,20 +375,20 @@ u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corn
 	Both light banks.
 	Node at p is not solid, and the lighting is not face-dependent.
 */
-u16 getSmoothLightTransparent(const v3s16 &p, const v3s16 &corner, MeshMakeData *data)
+u16 getSmoothLightTransparent(const v3pos_t &p, const v3pos_t &corner, MeshMakeData *data)
 {
-	const std::array<v3s16,8> dirs = {{
+	const std::array<v3pos_t,8> dirs = {{
 		// Always shine light
-		v3s16(0,0,0),
-		v3s16(corner.X,0,0),
-		v3s16(0,corner.Y,0),
-		v3s16(0,0,corner.Z),
+		v3pos_t(0,0,0),
+		v3pos_t(corner.X,0,0),
+		v3pos_t(0,corner.Y,0),
+		v3pos_t(0,0,corner.Z),
 
 		// Can be obstructed
-		v3s16(corner.X,corner.Y,0),
-		v3s16(corner.X,0,corner.Z),
-		v3s16(0,corner.Y,corner.Z),
-		v3s16(corner.X,corner.Y,corner.Z)
+		v3pos_t(corner.X,corner.Y,0),
+		v3pos_t(corner.X,0,corner.Z),
+		v3pos_t(0,corner.Y,corner.Z),
+		v3pos_t(corner.X,corner.Y,corner.Z)
 	}};
 	return getSmoothLightCombined(p, dirs, data);
 }
@@ -442,33 +445,33 @@ void final_color_blend(video::SColor *result,
 // This table is moved outside getNodeVertexDirs to avoid the compiler using
 // a mutex to initialize this table at runtime right in the hot path.
 // For details search the internet for "cxa_guard_acquire".
-static const v3s16 vertex_dirs_table[] = {
+static const v3pos_t vertex_dirs_table[] = {
 	// ( 1, 0, 0)
-	v3s16( 1,-1, 1), v3s16( 1,-1,-1),
-	v3s16( 1, 1,-1), v3s16( 1, 1, 1),
+	v3pos_t( 1,-1, 1), v3pos_t( 1,-1,-1),
+	v3pos_t( 1, 1,-1), v3pos_t( 1, 1, 1),
 	// ( 0, 1, 0)
-	v3s16( 1, 1,-1), v3s16(-1, 1,-1),
-	v3s16(-1, 1, 1), v3s16( 1, 1, 1),
+	v3pos_t( 1, 1,-1), v3pos_t(-1, 1,-1),
+	v3pos_t(-1, 1, 1), v3pos_t( 1, 1, 1),
 	// ( 0, 0, 1)
-	v3s16(-1,-1, 1), v3s16( 1,-1, 1),
-	v3s16( 1, 1, 1), v3s16(-1, 1, 1),
+	v3pos_t(-1,-1, 1), v3pos_t( 1,-1, 1),
+	v3pos_t( 1, 1, 1), v3pos_t(-1, 1, 1),
 	// invalid
-	v3s16(), v3s16(), v3s16(), v3s16(),
+	v3pos_t(), v3pos_t(), v3pos_t(), v3pos_t(),
 	// ( 0, 0,-1)
-	v3s16( 1,-1,-1), v3s16(-1,-1,-1),
-	v3s16(-1, 1,-1), v3s16( 1, 1,-1),
+	v3pos_t( 1,-1,-1), v3pos_t(-1,-1,-1),
+	v3pos_t(-1, 1,-1), v3pos_t( 1, 1,-1),
 	// ( 0,-1, 0)
-	v3s16( 1,-1, 1), v3s16(-1,-1, 1),
-	v3s16(-1,-1,-1), v3s16( 1,-1,-1),
+	v3pos_t( 1,-1, 1), v3pos_t(-1,-1, 1),
+	v3pos_t(-1,-1,-1), v3pos_t( 1,-1,-1),
 	// (-1, 0, 0)
-	v3s16(-1,-1,-1), v3s16(-1,-1, 1),
-	v3s16(-1, 1, 1), v3s16(-1, 1,-1)
+	v3pos_t(-1,-1,-1), v3pos_t(-1,-1, 1),
+	v3pos_t(-1, 1, 1), v3pos_t(-1, 1,-1)
 };
 
 /*
-	vertex_dirs: v3s16[4]
+	vertex_dirs: v3pos_t[4]
 */
-static void getNodeVertexDirs(const v3s16 &dir, v3s16 *vertex_dirs)
+static void getNodeVertexDirs(const v3pos_t &dir, v3pos_t *vertex_dirs)
 {
 	/*
 		If looked from outside the node towards the face, the corners are:
@@ -492,32 +495,32 @@ static void getNodeVertexDirs(const v3s16 &dir, v3s16 *vertex_dirs)
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #endif
 #endif
-	memcpy(vertex_dirs, &vertex_dirs_table[idx], 4 * sizeof(v3s16));
+	memcpy(vertex_dirs, &vertex_dirs_table[idx], 4 * sizeof(v3pos_t));
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 }
 
-static void getNodeTextureCoords(v3f base, const v3f &scale, const v3s16 &dir, float *u, float *v)
+static void getNodeTextureCoords(v3f base, const v3f &scale, const v3pos_t &dir, float *u, float *v)
 {
 	if (dir.X > 0 || dir.Y != 0 || dir.Z < 0)
 		base -= scale;
-	if (dir == v3s16(0,0,1)) {
+	if (dir == v3pos_t(0,0,1)) {
 		*u = -base.X;
 		*v = -base.Y;
-	} else if (dir == v3s16(0,0,-1)) {
+	} else if (dir == v3pos_t(0,0,-1)) {
 		*u = base.X + 1;
 		*v = -base.Y - 1;
-	} else if (dir == v3s16(1,0,0)) {
+	} else if (dir == v3pos_t(1,0,0)) {
 		*u = base.Z + 1;
 		*v = -base.Y - 1;
-	} else if (dir == v3s16(-1,0,0)) {
+	} else if (dir == v3pos_t(-1,0,0)) {
 		*u = -base.Z;
 		*v = -base.Y;
-	} else if (dir == v3s16(0,1,0)) {
+	} else if (dir == v3pos_t(0,1,0)) {
 		*u = base.X + 1;
 		*v = -base.Z - 1;
-	} else if (dir == v3s16(0,-1,0)) {
+	} else if (dir == v3pos_t(0,-1,0)) {
 		*u = base.X + 1;
 		*v = base.Z + 1;
 	}
@@ -536,7 +539,7 @@ struct FastFace
 };
 
 static void makeFastFace(const TileSpec &tile, u16 li0, u16 li1, u16 li2, u16 li3,
-	const v3f &tp, const v3f &p, const v3s16 &dir, const v3f &scale, std::vector<FastFace> &dest, int step)
+	const v3f &tp, const v3f &p, const v3pos_t &dir, const v3f &scale, std::vector<FastFace> &dest, int step)
 {
 	// Position is at the center of the cube.
 	v3f pos = p * BS;
@@ -547,12 +550,12 @@ static void makeFastFace(const TileSpec &tile, u16 li0, u16 li1, u16 li2, u16 li
 	float h = 1.0f;
 
 	v3f vertex_pos[4];
-	v3s16 vertex_dirs[4];
+	v3pos_t vertex_dirs[4];
 	getNodeVertexDirs(dir, vertex_dirs);
 	if (tile.world_aligned)
 		getNodeTextureCoords(tp, scale, dir, &x0, &y0);
 
-	v3s16 t;
+	v3pos_t t;
 	u16 t1;
 	switch (tile.rotation) {
 	case 0:
@@ -793,7 +796,7 @@ static u8 face_contents(content_t m1, content_t m2, bool *equivalent,
 /*
 	Gets nth node tile (0 <= n <= 5).
 */
-void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile)
+void getNodeTileN(MapNode mn, const v3pos_t &p, u8 tileindex, MeshMakeData *data, TileSpec &tile)
 {
 	const NodeDefManager *ndef = data->m_client->ndef();
 	const ContentFeatures &f = ndef->get(mn);
@@ -813,7 +816,7 @@ void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, 
 /*
 	Gets node tile given a face direction.
 */
-void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile)
+void getNodeTile(MapNode mn, const v3pos_t &p, const v3pos_t &dir, MeshMakeData *data, TileSpec &tile)
 {
 	const NodeDefManager *ndef = data->m_client->ndef();
 
@@ -877,12 +880,12 @@ void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *dat
 static void getTileInfo(
 		// Input:
 		MeshMakeData *data,
-		const v3s16 &p,
-		const v3s16 &face_dir,
+		const v3pos_t &p,
+		const v3pos_t &face_dir,
 		// Output:
 		bool &makes_face,
-		v3s16 &p_corrected,
-		v3s16 &face_dir_corrected,
+		v3pos_t &p_corrected,
+		v3pos_t &face_dir_corrected,
 		u16 *lights,
 		u8 &waving,
 		TileSpec &tile
@@ -891,7 +894,7 @@ static void getTileInfo(
 {
 	auto &vmanip = data->m_vmanip;
 	const NodeDefManager *ndef = data->m_client->ndef();
-	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
+	v3pos_t blockpos_nodes = getBlockPosRelative(data->m_blockpos);
 
 	//const MapNode &n0 = vmanip.getNodeRefUnsafe(blockpos_nodes + p);
 	MapNode n0;
@@ -961,10 +964,10 @@ static void getTileInfo(
 		lights[0] = lights[1] = lights[2] = lights[3] =
 				getFaceLight(n0, n1, face_dir, ndef);
 	} else {
-		v3s16 vertex_dirs[4];
+		v3pos_t vertex_dirs[4];
 		getNodeVertexDirs(face_dir_corrected, vertex_dirs);
 
-		v3s16 light_p = blockpos_nodes + p_corrected;
+		v3pos_t light_p = blockpos_nodes + p_corrected;
 		for (u16 i = 0; i < 4; i++)
 			lights[i] = getSmoothLightSolid(light_p, face_dir_corrected, vertex_dirs[i], data);
 	}
@@ -977,10 +980,10 @@ static void getTileInfo(
 */
 static void updateFastFaceRow(
 		MeshMakeData *data,
-		const v3s16 &&startpos,
-		v3s16 translate_dir,
+		const v3pos_t &&startpos,
+		v3pos_t translate_dir,
 		const v3f &&translate_dir_f,
-		const v3s16 &&face_dir,
+		const v3pos_t &&face_dir,
 		std::vector<FastFace> &dest,
 		int step)
 {
@@ -991,13 +994,13 @@ static void updateFastFaceRow(
 	static thread_local const bool force_not_tiling =
 			g_settings->getBool("enable_dynamic_shadows");
 
-	v3s16 p = startpos;
+	v3pos_t p = startpos;
 
 	u16 continuous_tiles_count = 1;
 
 	bool makes_face = false;
-	v3s16 p_corrected;
-	v3s16 face_dir_corrected;
+	v3pos_t p_corrected;
+	v3pos_t face_dir_corrected;
 	u16 lights[4] = {0, 0, 0, 0};
 	u8 waving = 0;
 	TileSpec tile;
@@ -1018,8 +1021,8 @@ static void updateFastFaceRow(
 		bool next_is_different = true;
 
 		bool next_makes_face = false;
-		v3s16 next_p_corrected;
-		v3s16 next_face_dir_corrected;
+		v3pos_t next_p_corrected;
+		v3pos_t next_face_dir_corrected;
 		u16 next_lights[4] = {0, 0, 0, 0};
 
 		// If at last position, there is nothing to compare to and
@@ -1097,10 +1100,10 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	for (s16 y = 0; y < to; y++)
 	for (s16 z = 0; z < to; z++)
 		updateFastFaceRow(data,
-				v3s16(0, y, z),
-				v3s16(1, 0, 0), //dir
+				v3pos_t(0, y, z),
+				v3pos_t(1, 0, 0), //dir
 				v3f  (1, 0, 0),
-				v3s16(0, 1, 0), //face dir
+				v3pos_t(0, 1, 0), //face dir
 				dest, step);
 
 	/*
@@ -1109,10 +1112,10 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	for (s16 x = 0; x < to; x++)
 	for (s16 y = 0; y < to; y++)
 		updateFastFaceRow(data,
-				v3s16(x, y, 0),
-				v3s16(0, 0, 1), //dir
+				v3pos_t(x, y, 0),
+				v3pos_t(0, 0, 1), //dir
 				v3f  (0, 0, 1),
-				v3s16(1, 0, 0), //face dir
+				v3pos_t(1, 0, 0), //face dir
 				dest, step);
 
 	/*
@@ -1121,10 +1124,10 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	for (s16 z = 0; z < to; z++)
 	for (s16 y = 0; y < to; y++)
 		updateFastFaceRow(data,
-				v3s16(0, y, z),
-				v3s16(1, 0, 0), //dir
+				v3pos_t(0, y, z),
+				v3pos_t(1, 0, 0), //dir
 				v3f  (1, 0, 0),
-				v3s16(0, 0, 1), //face dir
+				v3pos_t(0, 0, 1), //face dir
 				dest, step);
 }
 
@@ -1238,7 +1241,7 @@ s32 MapBlockBspTree::buildTree(v3f normal, v3f origin, float delta, const std::v
 
 	if (!front_list.empty()) {
 		v3f next_normal = candidate_normal;
-		v3f next_origin = origin + delta * normal;
+		auto next_origin = origin + delta * normal;
 		float next_delta = candidate_delta;
 		if (next_delta < 5) {
 			const MeshTriangle *candidate = findSplitCandidate(front_list, *triangles);
@@ -1319,7 +1322,7 @@ void PartialMeshBuffer::afterDraw() const
 	MapBlockMesh
 */
 
-MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
+MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 	step(data->step),
 	no_draw(data->no_draw),
 	m_minimap_mapblock(NULL),
@@ -1341,7 +1344,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	if (data->m_client->getMinimap()) {
 		m_minimap_mapblock = new MinimapMapblock;
 		m_minimap_mapblock->getMinimapNodes(
-			&data->m_vmanip, data->m_blockpos * MAP_BLOCKSIZE);
+			&data->m_vmanip, getBlockPosRelative(data->m_blockpos));
 	}
 
 	// 4-21ms for MAP_BLOCKSIZE=16  (NOTE: probably outdated)
@@ -1659,14 +1662,14 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 	return true;
 }
 
-void MapBlockMesh::updateTransparentBuffers(v3f camera_pos, v3s16 block_pos)
+void MapBlockMesh::updateTransparentBuffers(v3opos_t camera_pos, v3bpos_t block_pos)
 {
 	// nothing to do if the entire block is opaque
 	if (m_transparent_triangles.empty())
 		return;
 
-	v3f block_posf = intToFloat(block_pos * MAP_BLOCKSIZE, BS);
-	v3f rel_camera_pos = camera_pos - block_posf;
+	v3opos_t block_posf = intToFloat(block_pos * MAP_BLOCKSIZE, (opos_t)BS);
+	v3f rel_camera_pos = oposToV3f(camera_pos - block_posf);
 
 	std::vector<s32> triangle_refs;
 	m_bsp_tree.traverse(rel_camera_pos, triangle_refs);

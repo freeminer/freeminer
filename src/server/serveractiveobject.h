@@ -62,7 +62,7 @@ public:
 		NOTE: m_env can be NULL, but step() isn't called if it is.
 		Prototypes are used that way.
 	*/
-	ServerActiveObject(ServerEnvironment *env, v3f pos);
+	ServerActiveObject(ServerEnvironment *env, v3opos_t pos);
 	virtual ~ServerActiveObject() = default;
 
 	virtual ActiveObjectType getSendType() const
@@ -89,11 +89,11 @@ public:
 	/*
 		Some simple getters/setters
 	*/
-	v3f getBasePosition() const {
+	v3opos_t getBasePosition() const {
              std::lock_guard<std::mutex> lock(m_base_position_mutex);
 	     return m_base_position;
         }
-	void setBasePosition(v3f pos){
+	void setBasePosition(v3opos_t pos){
              std::lock_guard<std::mutex> lock(m_base_position_mutex);
              m_base_position = pos;
         }
@@ -103,10 +103,10 @@ public:
 		Some more dynamic interface
 	*/
 
-	virtual void setPos(const v3f &pos)
+	virtual void setPos(const v3opos_t &pos)
 		{ setBasePosition(pos); }
 	// continuous: if true, object does not stop immediately at pos
-	virtual void moveTo(v3f pos, bool continuous)
+	virtual void moveTo(v3opos_t pos, bool continuous)
 		{ setBasePosition(pos); }
 	// If object has moved less than this and data has not changed,
 	// saving to disk may be omitted
@@ -246,7 +246,7 @@ public:
 		The block from which the object was loaded from, and in which
 		a copy of the static data resides.
 	*/
-	v3s16 m_static_block = v3s16(1337,1337,1337);
+	v3bpos_t m_static_block = v3bpos_t(1337,1337,1337);
 
 protected:
 	virtual void onMarkedForDeactivation() {}
@@ -256,7 +256,7 @@ protected:
 	virtual void onDetach(int parent_id) {}
 
 	ServerEnvironment *m_env;
-	v3f m_base_position;
+	v3opos_t m_base_position;
 	mutable std::mutex m_base_position_mutex;
 	std::unordered_set<u32> m_attached_particle_spawners;
 

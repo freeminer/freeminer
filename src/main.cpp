@@ -1115,10 +1115,10 @@ static bool migrate_map_database(const GameParams &game_params, const Settings &
 	time_t last_update_time = 0;
 	bool &kill = *porting::signal_handler_killstatus();
 
-	std::vector<v3s16> blocks;
+	std::vector<v3bpos_t> blocks;
 	old_db->listAllLoadableBlocks(blocks);
 	new_db->beginSave();
-	for (std::vector<v3s16>::const_iterator it = blocks.begin(); it != blocks.end(); ++it) {
+	for (std::vector<v3bpos_t>::const_iterator it = blocks.begin(); it != blocks.end(); ++it) {
 		if (kill) return false;
 
 		/* old slow migrate, but better for future leveldb
@@ -1182,7 +1182,7 @@ static bool recompress_map_database(const GameParams &game_params, const Setting
 	const u8 serialize_as_ver = SER_FMT_VER_HIGHEST_WRITE;
 
 	// This is ok because the server doesn't actually run
-	std::vector<v3s16> blocks;
+	std::vector<v3bpos_t> blocks;
 	db->listAllLoadableBlocks(blocks);
 	db->beginSave();
 	std::istringstream iss(std::ios_base::binary);
@@ -1200,7 +1200,7 @@ static bool recompress_map_database(const GameParams &game_params, const Setting
 		iss.str(data);
 		iss.clear();
 
-		MapBlock mb(nullptr, v3s16(0,0,0), &server);
+		MapBlock mb(nullptr, v3bpos_t(0,0,0), &server);
 		u8 ver = readU8(iss);
 		mb.deSerialize(iss, ver, true);
 

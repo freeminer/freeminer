@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "objdef.h"
 #include "nodedef.h"
 #include "noise.h"
@@ -62,16 +63,16 @@ public:
 	content_t c_dungeon_alt;
 	content_t c_dungeon_stair;
 
-	s16 depth_top;
-	s16 depth_filler;
-	s16 depth_water_top;
-	s16 depth_riverbed;
+	pos_t depth_top;
+	pos_t depth_filler;
+	pos_t depth_water_top;
+	pos_t depth_riverbed;
 
-	v3s16 min_pos;
-	v3s16 max_pos;
+	v3pos_t min_pos;
+	v3pos_t max_pos;
 	float heat_point;
 	float humidity_point;
-	s16 vertical_blend;
+	pos_t vertical_blend;
 
 	//freeminer:
 	content_t c_ice;
@@ -108,7 +109,7 @@ public:
 	virtual BiomeGen *clone(BiomeManager *biomemgr) const = 0;
 
 	// Check that the internal chunk size is what the mapgen expects, just to be sure.
-	inline void assertChunkSize(v3s16 expect) const
+	inline void assertChunkSize(v3pos_t expect) const
 	{
 		FATAL_ERROR_IF(m_csize != expect, "Chunk size mismatches");
 	}
@@ -116,32 +117,32 @@ public:
 	// Calculates the biome at the exact position provided.  This function can
 	// be called at any time, but may be less efficient than the latter methods,
 	// depending on implementation.
-	virtual Biome *calcBiomeAtPoint(v3s16 pos) const = 0;
+	virtual Biome *calcBiomeAtPoint(v3pos_t pos) const = 0;
 
 	// Computes any intermediate results needed for biome generation.  Must be
 	// called before using any of: getBiomes, getBiomeAtPoint, or getBiomeAtIndex.
 	// Calling this invalidates the previous results stored in biomemap.
-	virtual void calcBiomeNoise(v3s16 pmin) = 0;
+	virtual void calcBiomeNoise(v3pos_t pmin) = 0;
 
 	// Gets all biomes in current chunk using each corresponding element of
 	// heightmap as the y position, then stores the results by biome index in
 	// biomemap (also returned)
-	virtual biome_t *getBiomes(s16 *heightmap, v3s16 pmin) = 0;
+	virtual biome_t *getBiomes(pos_t *heightmap, v3pos_t pmin) = 0;
 
 	// Gets a single biome at the specified position, which must be contained
 	// in the region formed by m_pmin and (m_pmin + m_csize - 1).
-	virtual Biome *getBiomeAtPoint(v3s16 pos) const = 0;
+	virtual Biome *getBiomeAtPoint(v3pos_t pos) const = 0;
 
 	// Same as above, but uses a raw numeric index correlating to the (x,z) position.
-	virtual Biome *getBiomeAtIndex(size_t index, v3s16 pos) const = 0;
+	virtual Biome *getBiomeAtIndex(size_t index, v3pos_t pos) const = 0;
 
 	// Result of calcBiomes bulk computation.
 	biome_t *biomemap = nullptr;
 
 protected:
 	BiomeManager *m_bmgr = nullptr;
-	v3s16 m_pmin;
-	v3s16 m_csize;
+	v3pos_t m_pmin;
+	v3pos_t m_csize;
 };
 
 
@@ -174,7 +175,7 @@ struct BiomeParamsOriginal : public BiomeParams {
 class BiomeGenOriginal : public BiomeGen {
 public:
 	BiomeGenOriginal(BiomeManager *biomemgr,
-		const BiomeParamsOriginal *params, v3s16 chunksize);
+		const BiomeParamsOriginal *params, v3pos_t chunksize);
 	virtual ~BiomeGenOriginal();
 
 	BiomeGenType getType() const { return BIOMEGEN_ORIGINAL; }
@@ -182,17 +183,17 @@ public:
 	BiomeGen *clone(BiomeManager *biomemgr) const;
 
 	// Slower, meant for Script API use
-	float calcHeatAtPoint(v3s16 pos) const;
-	float calcHumidityAtPoint(v3s16 pos) const;
-	Biome *calcBiomeAtPoint(v3s16 pos) const;
+	float calcHeatAtPoint(v3pos_t pos) const;
+	float calcHumidityAtPoint(v3pos_t pos) const;
+	Biome *calcBiomeAtPoint(v3pos_t pos) const;
 
-	void calcBiomeNoise(v3s16 pmin);
+	void calcBiomeNoise(v3pos_t pmin);
 
-	biome_t *getBiomes(s16 *heightmap, v3s16 pmin);
-	Biome *getBiomeAtPoint(v3s16 pos) const;
-	Biome *getBiomeAtIndex(size_t index, v3s16 pos) const;
+	biome_t *getBiomes(pos_t *heightmap, v3pos_t pmin);
+	Biome *getBiomeAtPoint(v3pos_t pos) const;
+	Biome *getBiomeAtIndex(size_t index, v3pos_t pos) const;
 
-	Biome *calcBiomeFromNoise(float heat, float humidity, v3s16 pos) const;
+	Biome *calcBiomeFromNoise(float heat, float humidity, v3pos_t pos) const;
 
 	float *heatmap;
 	float *humidmap;
@@ -241,11 +242,11 @@ public:
 	s32 weather_hot_core;
 
 	MapgenParams * mapgen_params = nullptr;
-	s16 calcBlockHeat(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
-	s16 calcBlockHumidity(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	s16 calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	s16 calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	//====
 
-	BiomeGen *createBiomeGen(BiomeGenType type, BiomeParams *params, v3s16 chunksize)
+	BiomeGen *createBiomeGen(BiomeGenType type, BiomeParams *params, v3pos_t chunksize)
 	{
 		switch (type) {
 		case BIOMEGEN_ORIGINAL:

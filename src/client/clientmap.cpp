@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "clientmap.h"
 #include "client.h"
+#include "irr_v3d.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
@@ -30,6 +31,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/basic_macros.h"
 #include <algorithm>
 #include "client/renderingengine.h"
+#include "util/numeric.h"
 
 // struct MeshBufListList
 void MeshBufListList::clear()
@@ -38,7 +40,7 @@ void MeshBufListList::clear()
 		list.clear();
 }
 
-void MeshBufListList::add(scene::IMeshBuffer *buf, v3s16 position, u8 layer)
+void MeshBufListList::add(scene::IMeshBuffer *buf, v3bpos_t position, u8 layer)
 {
 	// Append to the correct layer
 	std::vector<MeshBufList> &list = lists[layer];
@@ -81,10 +83,10 @@ ClientMap::ClientMap(
 	m_rendering_engine(rendering_engine),
 	m_control(control),
 	/*
-	m_drawlist(MapBlockComparer(v3s16(0,0,0)))
+	m_drawlist(MapBlockComparer(v3bpos_t(0,0,0)))
 	*/
- 	m_drawlist_0{MapBlockComparer(v3s16(0,0,0))},
- 	m_drawlist_1{MapBlockComparer(v3s16(0,0,0))}
+ 	m_drawlist_0{MapBlockComparer(v3bpos_t(0,0,0))},
+ 	m_drawlist_1{MapBlockComparer(v3bpos_t(0,0,0))}
 {
 
 	/*
@@ -111,20 +113,20 @@ ClientMap::ClientMap(
 
 }
 
-void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
+void ClientMap::updateCamera(v3opos_t pos, v3f dir, f32 fov, v3pos_t offset)
 {
-	//v3s16 previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
-	v3s16 previous_node = m_camera_position_node;
-	v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
+	//v3pos_t previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
+	v3pos_t previous_node = m_camera_position_node;
+	v3pos_t previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 
 	m_camera_position = pos;
 	m_camera_direction = dir;
 	m_camera_fov = fov;
 	m_camera_offset = offset;
 
-	v3s16 current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
+	v3pos_t current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
 	m_camera_position_node = current_node;
-	v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
+	v3pos_t current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
 	// reorder the blocks when camera crosses block boundary
 	if (previous_block != current_block)
@@ -136,7 +138,7 @@ void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
 }
 
 /*
-MapSector * ClientMap::emergeSector(v2s16 p2d)
+MapSector * ClientMap::emergeSector(v2bpos_t p2d)
 {
 	// Check that it doesn't exist already
 	MapSector *sector = getSectorNoGenerate(p2d);
@@ -168,15 +170,15 @@ void ClientMap::OnRegisterSceneNode()
 	}
 }
 
-void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
-		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range)
+void ClientMap::getBlocksInViewRange(v3pos_t cam_pos_nodes,
+		v3pos_t *p_blocks_min, v3pos_t *p_blocks_max, float range)
 {
 	if (range <= 0.0f)
 		range = m_control.wanted_range;
 
-	v3s16 box_nodes_d = range * v3s16(1, 1, 1);
+	v3pos_t box_nodes_d = range * v3pos_t(1, 1, 1);
 	// Define p_nodes_min/max as v3s32 because 'cam_pos_nodes -/+ box_nodes_d'
-	// can exceed the range of v3s16 when a large view range is used near the
+	// can exceed the range of v3pos_t when a large view range is used near the
 	// world edges.
 	v3s32 p_nodes_min(
 		cam_pos_nodes.X - box_nodes_d.X,
@@ -188,11 +190,11 @@ void ClientMap::getBlocksInViewRange(v3s16 cam_pos_nodes,
 		cam_pos_nodes.Z + box_nodes_d.Z);
 	// Take a fair amount as we will be dropping more out later
 	// Umm... these additions are a bit strange but they are needed.
-	*p_blocks_min = v3s16(
+	*p_blocks_min = v3pos_t(
 			p_nodes_min.X / MAP_BLOCKSIZE - 3,
 			p_nodes_min.Y / MAP_BLOCKSIZE - 3,
 			p_nodes_min.Z / MAP_BLOCKSIZE - 3);
-	*p_blocks_max = v3s16(
+	*p_blocks_max = v3pos_t(
 			p_nodes_max.X / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
@@ -212,18 +214,18 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	}
 	m_drawlist.clear();
 
-	const v3f camera_position = m_camera_position;
+	const auto camera_position = m_camera_position;
 	const v3f camera_direction = m_camera_direction;
 
 	// Use a higher fov to accomodate faster camera movements.
 	// Blocks are cropped better when they are drawn.
 	const f32 camera_fov = m_camera_fov * 1.1f;
 
-	//v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
-	v3s16 cam_pos_nodes = m_camera_position_node;
+	//v3pos_t cam_pos_nodes = floatToInt(camera_position, BS);
+	v3pos_t cam_pos_nodes = m_camera_position_node;
 
-	v3s16 p_blocks_min;
-	v3s16 p_blocks_max;
+	v3pos_t p_blocks_min;
+	v3pos_t p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
 
 	// Read the vision range, unless unlimited range is enabled.
@@ -244,7 +246,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			occlusion_culling_enabled = false;
 	}
 
-	v3s16 camera_block = getContainerPos(cam_pos_nodes, MAP_BLOCKSIZE);
+	v3bpos_t camera_block = getContainerPos(cam_pos_nodes, MAP_BLOCKSIZE);
 	m_drawlist = drawlist_map(MapBlockComparer(camera_block));
 
 	// Uncomment to debug occluded blocks in the wireframe mode
@@ -254,7 +256,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 /*
 	for (const auto &sector_it : m_sectors) {
 		MapSector *sector = sector_it.second;
-		v2s16 sp = sector->getPos();
+		v2bpos_t sp = sector->getPos();
 
 		blocks_loaded += sector->size();
 		if (!m_control.range_all) {
@@ -285,8 +287,8 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			}
 			*/
 
-			v3s16 block_coord = block->getPos();
-			v3s16 block_position = block->getPosRelative() + MAP_BLOCKSIZE / 2;
+			v3bpos_t block_coord = block->getPos();
+			v3pos_t block_position = block->getPosRelative() + MAP_BLOCKSIZE / 2;
 
 			// First, perform a simple distance check, with a padding of one extra block.
 			if (!m_control.range_all &&
@@ -352,7 +354,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	//camera_fov *= 1.2;
 
 	//v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
-	v3s16 cam_pos_nodes = m_camera_position_node;
+	v3pos_t cam_pos_nodes = m_camera_position_node;
 /*
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
@@ -655,7 +657,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	const int crack = m_client->getCrackLevel();
 	const u32 daynight_ratio = m_client->getEnv().getDayNightRatio();
 
-	const v3f camera_position = m_camera_position;
+	const auto camera_position = m_camera_position;
 
 	/*
 		Get all blocks and draw all visible ones
@@ -683,7 +685,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	video::SMaterial previous_material;
 
 	for (auto &i : m_drawlist) {
-		v3s16 block_pos = i.first;
+		v3bpos_t block_pos = i.first;
 		MapBlock *block = i.second;
 		//int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), block->getPos());
 		int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos());
@@ -693,7 +695,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		if (!mapBlockMesh)
 			continue;
 
-		v3f block_pos_r = intToFloat(block->getPosRelative() + MAP_BLOCKSIZE / 2, BS);
+		auto block_pos_r = posToOpos(block->getPosRelative() + MAP_BLOCKSIZE / 2, BS);
 		float d = camera_position.getDistanceFrom(block_pos_r);
 		d = MYMAX(0,d - BLOCK_MAX_RADIUS);
 
@@ -768,7 +770,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	draw.start();
 
 	core::matrix4 m; // Model matrix
-	v3f offset = intToFloat(m_camera_offset, BS);
+	auto offset = intToFloat(m_camera_offset, (opos_t)BS);
 	u32 material_swaps = 0;
 
 	// Render all mesh buffers in order
@@ -816,8 +818,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			material.TextureLayer[ShadowRenderer::TEXTURE_LAYER_SHADOW].Texture = nullptr;
 		}
 
-		v3f block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, BS);
-		m.setTranslation(block_wpos - offset);
+		auto block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, (opos_t)BS);
+		m.setTranslation(oposToV3f(block_wpos - offset));
 
 		driver->setTransform(video::ETS_WORLD, m);
 		descriptor.draw(driver);
@@ -840,7 +842,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	g_profiler->avg(prefix + "material swaps [#]", material_swaps);
 }
 
-static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
+static bool getVisibleBrightness(Map *map, const v3opos_t &p0, v3f dir, float step,
 	float step_multiplier, float start_distance, float end_distance,
 	const NodeDefManager *ndef, u32 daylight_factor, float sunlight_min_d,
 	int *result, bool *sunlight_seen)
@@ -849,15 +851,15 @@ static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	int brightness_count = 0;
 	float distance = start_distance;
 	dir.normalize();
-	v3f pf = p0;
-	pf += dir * distance;
+	auto pf = p0;
+	pf += v3fToOpos(dir * distance);
 	int noncount = 0;
 	bool nonlight_seen = false;
 	bool allow_allowing_non_sunlight_propagates = false;
 	bool allow_non_sunlight_propagates = false;
 	// Check content nearly at camera position
 	{
-		v3s16 p = floatToInt(p0 /*+ dir * 3*BS*/, BS);
+		v3pos_t p = floatToInt(p0 /*+ dir * 3*BS*/, BS);
 		MapNode n = map->getNode(p);
 		if(ndef->get(n).param_type == CPT_LIGHT &&
 				!ndef->get(n).sunlight_propagates)
@@ -865,21 +867,21 @@ static bool getVisibleBrightness(Map *map, const v3f &p0, v3f dir, float step,
 	}
 	// If would start at CONTENT_IGNORE, start closer
 	{
-		v3s16 p = floatToInt(pf, BS);
+		v3pos_t p = floatToInt(pf, BS);
 		MapNode n = map->getNode(p);
 		if(n.getContent() == CONTENT_IGNORE){
 			float newd = 2*BS;
-			pf = p0 + dir * 2*newd;
+			pf = p0 + v3fToOpos(dir * 2*newd);
 			distance = newd;
 			sunlight_min_d = 0;
 		}
 	}
 	for (int i=0; distance < end_distance; i++) {
-		pf += dir * step;
+		pf += v3fToOpos(dir * step);
 		distance += step;
 		step *= step_multiplier;
 
-		v3s16 p = floatToInt(pf, BS);
+		v3pos_t p = floatToInt(pf, BS);
 		MapNode n = map->getNode(p);
 		if (allow_allowing_non_sunlight_propagates && i == 0 &&
 				ndef->get(n).param_type == CPT_LIGHT &&
@@ -1063,7 +1065,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		if (count > high_bound)
 			break;
 
-		v3s16 block_pos = i.first;
+		v3bpos_t block_pos = i.first;
 		MapBlock *block = i.second;
 
 		// If the mesh of the block happened to get deleted, ignore it
@@ -1125,7 +1127,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	draw.start();
 
 	core::matrix4 m; // Model matrix
-	v3f offset = intToFloat(m_camera_offset, BS);
+	auto offset = intToFloat(m_camera_offset, (opos_t)BS);
 	u32 material_swaps = 0;
 
 	// Render all mesh buffers in order
@@ -1153,8 +1155,8 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 			++material_swaps;
 		}
 
-		v3f block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, BS);
-		m.setTranslation(block_wpos - offset);
+		auto block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, (opos_t)BS);
+		m.setTranslation(oposToV3f(block_wpos - offset));
 
 		driver->setTransform(video::ETS_WORLD, m);
 		descriptor.draw(driver);
@@ -1176,16 +1178,16 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 /*
 	Custom update draw list for the pov of shadow light.
 */
-void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length)
+void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_light_dir, float radius, float length)
 {
 	ScopeProfiler sp(g_profiler, "CM::updateDrawListShadow()", SPT_AVG);
 
-	v3s16 cam_pos_nodes = floatToInt(shadow_light_pos, BS);
-	v3s16 p_blocks_min;
-	v3s16 p_blocks_max;
+	v3pos_t cam_pos_nodes = floatToInt(shadow_light_pos, BS);
+	v3pos_t p_blocks_min;
+	v3pos_t p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max, radius + length);
 
-	std::vector<v2s16> blocks_in_range;
+	std::vector<v2pos_t> blocks_in_range;
 
 	for (auto &i : m_drawlist_shadow) {
 		MapBlock *block = i.second;
@@ -1225,8 +1227,8 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 				continue;
 			}
 
-			v3f block_pos = intToFloat(block->getPos() * MAP_BLOCKSIZE, BS);
-			v3f projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
+			v3opos_t block_pos = intToFloat(block->getPos() * MAP_BLOCKSIZE, BS);
+			v3opos_t projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
 			if (projection.getDistanceFrom(block_pos) > radius)
 				continue;
 
@@ -1268,8 +1270,8 @@ void ClientMap::updateTransparentMeshBuffers()
 		if (m_needs_update_transparent_meshes || 
 				mapBlockMesh->getTransparentBuffers().size() == 0) {
 
-			v3s16 block_pos = block->getPos();
-			v3f block_pos_f = intToFloat(block_pos * MAP_BLOCKSIZE + MAP_BLOCKSIZE / 2, BS);
+			v3bpos_t block_pos = block->getPos();
+			auto block_pos_f = intToFloat(block_pos * MAP_BLOCKSIZE + MAP_BLOCKSIZE / 2, BS);
 			f32 distance = m_camera_position.getDistanceFromSQ(block_pos_f);
 			if (distance <= sorting_distance_sq) {
 				mapBlockMesh->updateTransparentBuffers(m_camera_position, block_pos);

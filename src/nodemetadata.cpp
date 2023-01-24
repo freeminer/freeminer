@@ -135,15 +135,15 @@ void NodeMetadataList::serialize(std::ostream &os, u8 blockver, bool disk,
 	for (NodeMetadataMap::const_iterator
 			i = m_data.begin();
 			i != m_data.end(); ++i) {
-		v3s16 p = i->first;
+		v3pos_t p = i->first;
 		NodeMetadata *data = i->second;
 		if (!include_empty && data->empty())
 			continue;
 
 		if (absolute_pos) {
-			writeS16(os, p.X);
-			writeS16(os, p.Y);
-			writeS16(os, p.Z);
+			writePOS(os, p.X);
+			writePOS(os, p.Y);
+			writePOS(os, p.Z);
 		} else {
 			// Serialize positions within a mapblock
 			u16 p16 = (p.Z * MAP_BLOCKSIZE + p.Y) * MAP_BLOCKSIZE + p.X;
@@ -175,11 +175,11 @@ void NodeMetadataList::deSerialize(std::istream &is,
 	u16 count = readU16(is);
 
 	for (u16 i = 0; i < count; i++) {
-		v3s16 p;
+		v3pos_t p;
 		if (absolute_pos) {
-			p.X = readS16(is);
-			p.Y = readS16(is);
-			p.Z = readS16(is);
+			p.X = readPOS(is);
+			p.Y = readPOS(is);
+			p.Z = readPOS(is);
 		} else {
 			u16 p16 = readU16(is);
 			p.X = p16 & (MAP_BLOCKSIZE - 1);
@@ -206,9 +206,9 @@ NodeMetadataList::~NodeMetadataList()
 	clear();
 }
 
-std::vector<v3s16> NodeMetadataList::getAllKeys()
+std::vector<v3pos_t> NodeMetadataList::getAllKeys()
 {
-	std::vector<v3s16> keys;
+	std::vector<v3pos_t> keys;
 	keys.reserve(m_data.size());
 	for (const auto &it : m_data)
 		keys.push_back(it.first);
@@ -216,7 +216,7 @@ std::vector<v3s16> NodeMetadataList::getAllKeys()
 	return keys;
 }
 
-NodeMetadata *NodeMetadataList::get(v3s16 p)
+NodeMetadata *NodeMetadataList::get(v3pos_t p)
 {
 	NodeMetadataMap::const_iterator n = m_data.find(p);
 	if (n == m_data.end())
@@ -224,7 +224,7 @@ NodeMetadata *NodeMetadataList::get(v3s16 p)
 	return n->second;
 }
 
-void NodeMetadataList::remove(v3s16 p)
+void NodeMetadataList::remove(v3pos_t p)
 {
 	NodeMetadata *olddata = get(p);
 	if (olddata) {
@@ -234,7 +234,7 @@ void NodeMetadataList::remove(v3s16 p)
 	}
 }
 
-void NodeMetadataList::set(v3s16 p, NodeMetadata *d)
+void NodeMetadataList::set(v3pos_t p, NodeMetadata *d)
 {
 	remove(p);
 	m_data.emplace(p, d);

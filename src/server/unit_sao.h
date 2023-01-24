@@ -27,7 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 class UnitSAO : public ServerActiveObject
 {
 public:
-	UnitSAO(ServerEnvironment *env, v3f pos);
+	UnitSAO(ServerEnvironment *env, v3opos_t pos);
 	virtual ~UnitSAO() = default;
 
 	u16 getHP() const { return m_hp; }
@@ -38,7 +38,7 @@ public:
 	void setRotation(const v3f &rotation) {
 		std::unique_lock lock{m_rotation_mutex};
 		m_rotation = rotation; }
-	const v3f getRotation() {
+	const v3f getRotation() const {
 		std::shared_lock lock{m_rotation_mutex};
 		return m_rotation;
 	}
@@ -92,7 +92,7 @@ public:
 	std::string generateUpdateAnimationSpeedCommand() const;
 	std::string generateUpdateAnimationCommand() const;
 	std::string generateUpdateArmorGroupsCommand() const;
-	static std::string generateUpdatePositionCommand(const v3f &position,
+	static std::string generateUpdatePositionCommand(const v3opos_t &position,
 			const v3f &velocity, const v3f &acceleration, const v3f &rotation,
 			bool do_interpolate, bool is_movement_end, f32 update_interval);
 	std::string generateSetPropertiesCommand(const ObjectProperties &prop) const;
@@ -105,7 +105,7 @@ protected:
 
 	v3f m_rotation;
 
-	std::shared_mutex m_rotation_mutex;
+	mutable std::shared_mutex m_rotation_mutex;
 
 	ItemGroupList m_armor_groups;
 

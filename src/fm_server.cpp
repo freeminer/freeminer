@@ -1,6 +1,7 @@
 #include <cstdint>
 #include "database/database.h"
 #include "emerge.h"
+#include "irr_v3d.h"
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"
@@ -199,7 +200,7 @@ public:
 				m_server->getEnv().getMap().getBlockCacheFlush();
 				auto time_start = porting::getTimeMs();
 				m_server->getEnv().getMap().getBlockCacheFlush();
-				std::map<v3s16, MapBlock *> modified_blocks; // not used by fm
+				std::map<v3bpos_t, MapBlock *> modified_blocks; // not used by fm
 				m_server->getEnv().getServerMap().transformLiquids(
 						modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
 				auto time_spend = porting::getTimeMs() - time_start;
@@ -351,7 +352,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 				ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
 				// not all liquid was processed per step, forcing on next step
-				std::map<v3s16, MapBlock *> modified_blocks;
+				std::map<v3bpos_t, MapBlock *> modified_blocks;
 				if (m_env->getServerMap().transformLiquids(
 							modified_blocks, m_env, this, max_cycle_ms) > 0) {
 					m_liquid_transform_timer = m_liquid_transform_every /*  *0.8  */;

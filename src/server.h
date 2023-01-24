@@ -327,7 +327,7 @@ public:
 	bool showFormspec(const char *name, const std::string &formspec, const std::string &formname);
 	Map & getMap() { return m_env->getMap(); }
 	ServerEnvironment & getEnv() { return *m_env; }
-	v3f findSpawnPos();
+	v3opos_t findSpawnPos();
 
 	u32 hudAdd(RemotePlayer *player, HudElement *element);
 	bool hudRemove(RemotePlayer *player, u32 id);
@@ -393,7 +393,7 @@ public:
 	ModChannel *getModChannel(const std::string &channel);
 
 	// Send block to specific player only
-	bool SendBlock(session_t peer_id, const v3s16 &blockpos);
+	bool SendBlock(session_t peer_id, const v3bpos_t &blockpos);
 
 	// Get or load translations for a language
 	Translations *getTranslationLanguage(const std::string &lang_code);
@@ -447,12 +447,12 @@ private:
 
 	// The standard library does not implement std::hash for pairs so we have this:
 	struct SBCHash {
-		size_t operator() (const std::pair<v3s16, u16> &p) const {
-			return std::hash<v3s16>()(p.first) ^ p.second;
+		size_t operator() (const std::pair<v3bpos_t, u16> &p) const {
+			return std::hash<v3bpos_t>()(p.first) ^ p.second;
 		}
 	};
 
-	typedef std::unordered_map<std::pair<v3s16, u16>, std::string, SBCHash> SerializedBlockCache;
+	typedef std::unordered_map<std::pair<v3bpos_t, u16>, std::string, SBCHash> SerializedBlockCache;
 
 	void init();
 
@@ -469,7 +469,7 @@ private:
 		u16 protocol_version);
 
 	/* mark blocks not sent for all clients */
-	void SetBlocksNotSent(std::map<v3s16, MapBlock *>& block);
+	void SetBlocksNotSent(std::map<v3bpos_t, MapBlock *>& block);
 
 
 	virtual void SendChatMessage(session_t peer_id, const ChatMessage &message);
@@ -504,13 +504,13 @@ private:
 		far_d_nodes are ignored and their peer_ids are added to far_players
 	*/
 	// Envlock and conlock should be locked when calling these
-	void sendRemoveNode(v3s16 p, std::unordered_set<u16> *far_players = nullptr,
+	void sendRemoveNode(v3pos_t p, std::unordered_set<u16> *far_players = nullptr,
 			float far_d_nodes = 100);
-	void sendAddNode(v3s16 p, MapNode n,
+	void sendAddNode(v3pos_t p, MapNode n,
 			std::unordered_set<u16> *far_players = nullptr,
 			float far_d_nodes = 100, bool remove_metadata = true);
 
-	void sendMetadataChanged(const std::unordered_set<v3s16> &positions,
+	void sendMetadataChanged(const std::unordered_set<v3pos_t> &positions,
 			float far_d_nodes = 100);
 
 	// Environment and Connection must be locked when called
