@@ -1407,7 +1407,7 @@ PlayerSAO* Server::StageTwoClientInit(session_t peer_id)
 		std::string ip_str = getPeerAddress(player->getPeerId()).serializeString();
 		const auto &names = m_clients.getPlayerNames();
 
-		actionstream << player->getName() << " [" << ip_str << "] joins game. List of players: ";
+		actionstream << player->getName() << " [" << ip_str << "] (" << player->protocol_version << ") joins game. List of players: ";
 		for (const std::string &name : names)
 			actionstream << name << " ";
 		actionstream << player->getName() << std::endl;
