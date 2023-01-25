@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "exceptions.h" // for SerializationError
 #include "debug.h" // for assert
 #include "ieee_float.h"
+#include "network/networkprotocol.h"
 #include "numeric.h"
 
 #include "config.h"
@@ -471,7 +472,7 @@ MAKE_STREAM_WRITE_FXN(video::SColor, ARGB8, 4);
 
 inline pos_t readPOS(std::istream &is, const u16 proto_ver = 0) {
 #if USE_POS32
-	if (proto_ver >= 41)
+	if (proto_ver >= PROTOCOL_VERSION_32BIT)
 		return readS32(is);
 	return readS16(is);
 #else
@@ -481,7 +482,7 @@ inline pos_t readPOS(std::istream &is, const u16 proto_ver = 0) {
 
 inline void writePOS(std::ostream &os, pos_t i, const u16 proto_ver = 0) {
 #if USE_POS32
-	if (proto_ver >= 41)
+	if (proto_ver >= PROTOCOL_VERSION_32BIT)
 		return writeS32(os, i);
 	return writeS16(os, i);
 #else
@@ -489,9 +490,9 @@ inline void writePOS(std::ostream &os, pos_t i, const u16 proto_ver = 0) {
 #endif
 }
 
-inline v3pos_t readV3POS(std::istream &is, const u16 proto_ver = 0) {
+inline v3pos_t readV3Pos(std::istream &is, const u16 proto_ver = 0) {
 #if USE_POS32
-	if (proto_ver >= 41)
+	if (proto_ver >= PROTOCOL_VERSION_32BIT)
 	    return readV3S32(is);
     return s16ToPos(readV3S16(is));
 #else
@@ -499,9 +500,9 @@ inline v3pos_t readV3POS(std::istream &is, const u16 proto_ver = 0) {
 #endif
 }
 
-inline void writeV3POS(std::ostream &os, v3pos_t p, const u16 proto_ver = 0) {
+inline void writeV3Pos(std::ostream &os, v3pos_t p, const u16 proto_ver = 0) {
 #if USE_POS32
-	if (proto_ver >= 41)
+	if (proto_ver >= PROTOCOL_VERSION_32BIT)
 	    return writeV3S32(os, p);
     return writeV3S16(os, posToS16(p));
 #else
@@ -511,7 +512,7 @@ inline void writeV3POS(std::ostream &os, v3pos_t p, const u16 proto_ver = 0) {
 
 inline v3opos_t readV3O(std::istream &is, const u16 proto_ver = 0) {
 #if USE_OPOS64
-	if (proto_ver >= 41)
+	if (proto_ver >= PROTOCOL_VERSION_32BIT)
 	    return readV3F64(is);
     return v3fToOpos(readV3F32(is));
 #else
@@ -521,7 +522,7 @@ inline v3opos_t readV3O(std::istream &is, const u16 proto_ver = 0) {
 
 inline void writeV3O(std::ostream &os, v3opos_t p, const u16 proto_ver = 0) {
 #if USE_OPOS64
-	if (proto_ver >= 41)
+	if (proto_ver >= PROTOCOL_VERSION_32BIT)
 	    return writeV3F64(os, p);
     return writeV3F32(os, oposToV3f(p));
 #else

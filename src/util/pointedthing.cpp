@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "pointedthing.h"
 
 #include "gamedef.h"
+#include "network/networkprotocol.h"
 #include "serialize.h"
 #include "exceptions.h"
 #include <sstream>
@@ -72,16 +73,15 @@ std::string PointedThing::dump() const
 
 void PointedThing::serialize(std::ostream &os, const u16 proto_ver) const
 {
-
-	const int version = proto_ver >= 41 ? 1 : 0;
+	const int version = proto_ver >= PROTOCOL_VERSION_32BIT  ? 1 : 0;
 	writeU8(os, version); // version
 	writeU8(os, (u8)type);
 	switch (type) {
 	case POINTEDTHING_NOTHING:
 		break;
 	case POINTEDTHING_NODE:
-		writeV3POS(os, node_undersurface, proto_ver);
-		writeV3POS(os, node_abovesurface, proto_ver);
+		writeV3Pos(os, node_undersurface, proto_ver);
+		writeV3Pos(os, node_abovesurface, proto_ver);
 		break;
 	case POINTEDTHING_OBJECT:
 		writeS16(os, object_id);
@@ -99,8 +99,8 @@ void PointedThing::deSerialize(std::istream &is)
 	case POINTEDTHING_NOTHING:
 		break;
 	case POINTEDTHING_NODE:
-		node_undersurface = readV3POS(is, version >= 1 ? 41 : 40);
-		node_abovesurface = readV3POS(is, version >= 1 ? 41 : 40);
+		node_undersurface = readV3Pos(is, version >= 1 ? PROTOCOL_VERSION_32BIT : PROTOCOL_VERSION_32BIT - 1);
+		node_abovesurface = readV3Pos(is, version >= 1 ? PROTOCOL_VERSION_32BIT : PROTOCOL_VERSION_32BIT - 1);
 		break;
 	case POINTEDTHING_OBJECT:
 		object_id = readS16(is);

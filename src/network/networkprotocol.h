@@ -221,6 +221,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define LATEST_PROTOCOL_VERSION 41
 #endif
 
+// First version with 32bit support
+#define PROTOCOL_VERSION_32BIT 42
+
 #define LATEST_PROTOCOL_VERSION_STRING TOSTRING(LATEST_PROTOCOL_VERSION)
 
 // Server's supported network protocol range
