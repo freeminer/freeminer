@@ -18,6 +18,7 @@
 
 #include "environment.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #if 0
 #include "chathandler.h"
 #include "content_sao.h"
@@ -357,9 +358,9 @@ void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int f
 	ItemGroupList groups;
 
 	// update nodes around
-	for (s32 x = pos.X - 1; x <= pos.X + 1; x++) {
-		for (s32 y = pos.Y - 1; y <= pos.Y + 1; y++) {
-			for (s32 z = pos.Z - 1; z <= pos.Z + 1; z++) {
+	for (pos_t x = pos.X - 1; x <= pos.X + 1; x++) {
+		for (pos_t y = pos.Y - 1; y <= pos.Y + 1; y++) {
+			for (pos_t z = pos.Z - 1; z <= pos.Z + 1; z++) {
 				v3pos_t n_pos {x,y,z};
 
 				// If it's current node, ignore

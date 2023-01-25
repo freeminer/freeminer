@@ -50,11 +50,13 @@ std::ostream &operator<<(std::ostream &s, const v3f &p)
 	return s;
 }
 
+#if USE_OPOS64
 std::ostream &operator<<(std::ostream &s, const v3opos_t &p)
 {
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;
 }
+#endif
 
 std::ostream &operator<<(std::ostream &s, const std::map<v3pos_t, unsigned int> &p)
 {

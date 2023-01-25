@@ -125,6 +125,7 @@ Json::Value operator>>(Json::Value &json, v3f &v) {
 	return json;
 }
 
+#if USE_OPOS64
 Json::Value operator<<(Json::Value &json, v3opos_t &v) {
 	json["X"] = v.X;
 	json["Y"] = v.Y;
@@ -138,6 +139,7 @@ Json::Value operator>>(Json::Value &json, v3opos_t &v) {
 	v.Z = json["Z"].asFloat();
 	return json;
 }
+#endif
 
 Json::Value operator<<(Json::Value &json, RemotePlayer &player) {
 	auto playersao = player.getPlayerSAO();
