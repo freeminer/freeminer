@@ -32,12 +32,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 class MsgpackPacketSafe;
 
+
 inline size_t sizeof_v3opos(u16 proto_ver) {
-	return proto_ver >= 41 ? sizeof(v3opos_t) : sizeof(v3f);
+	return proto_ver >= PROTOCOL_VERSION_32BIT ? sizeof(v3opos_t) : sizeof(v3f);
 }
 
 inline size_t sizeof_v3pos(u16 proto_ver) {
-	return proto_ver >= 41 ? sizeof(v3pos_t) : sizeof(v3s16);
+	return proto_ver >= PROTOCOL_VERSION_32BIT ? sizeof(v3pos_t) : sizeof(v3s16);
 }
 
 class NetworkPacket
@@ -116,7 +117,7 @@ public:
 	NetworkPacket &operator>>(v3f &dst);
 	NetworkPacket &operator<<(v3f src);
 
-#if USE_POS32
+#if USE_OPOS64
 	NetworkPacket &operator>>(v3opos_t &dst);
 	NetworkPacket &operator<<(v3opos_t src);
 #endif

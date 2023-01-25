@@ -616,9 +616,6 @@ bool EmergeThread::popBlockEmerge(v3bpos_t *pos, BlockEmergeData *bedata)
 	return true;
 }
 
-
-
-
 EmergeAction EmergeThread::getBlockOrStartGen(
 	const v3bpos_t &pos, bool allow_gen, MapBlock **block, BlockMakeData *bmdata)
 {

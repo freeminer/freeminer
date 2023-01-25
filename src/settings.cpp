@@ -999,7 +999,6 @@ bool Settings::setPos(const std::string &name, pos_t value)
 	return set(name, itos(value));
 }
 
-
 bool Settings::setU64(const std::string &name, uint64_t value)
 {
 	std::ostringstream os;

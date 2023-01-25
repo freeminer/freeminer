@@ -75,8 +75,8 @@ void AreaStore::serialize(std::ostream &os) const
 	writeU16(os, areas_map.size());
 	for (const auto &it : areas_map) {
 		const Area &a = it.second;
-		writeV3POS(os, a.minedge);
-		writeV3POS(os, a.maxedge);
+		writeV3Pos(os, a.minedge);
+		writeV3Pos(os, a.maxedge);
 		writeU16(os, a.data.size());
 		os.write(a.data.data(), a.data.size());
 	}
@@ -99,8 +99,8 @@ void AreaStore::deserialize(std::istream &is)
 	areas.reserve(num_areas);
 	for (u32 i = 0; i < num_areas; ++i) {
 		Area a(U32_MAX);
-		a.minedge = readV3POS(is);
-		a.maxedge = readV3POS(is);
+		a.minedge = readV3Pos(is);
+		a.maxedge = readV3Pos(is);
 		u16 data_len = readU16(is);
 		a.data = std::string(data_len, '\0');
 		is.read(&a.data[0], data_len);

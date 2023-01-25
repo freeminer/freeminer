@@ -19,10 +19,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "networkpacket.h"
 #include <sstream>
+#include "log.h"
 #include "networkexceptions.h"
 #include "util/serialize.h"
 #include "networkprotocol.h"
-
 #include "config.h"
 
 
@@ -460,10 +460,10 @@ NetworkPacket& NetworkPacket::operator>>(v3f& dst)
 	return *this;
 }
 
-#if USE_POS32
+#if USE_OPOS64
 NetworkPacket& NetworkPacket::operator>>(v3opos_t& dst)
 {
-	if (m_proto_ver < 41) {
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
 		v3f tmp;
 		*this >> tmp;
 		dst = v3fToOpos(tmp);
@@ -544,7 +544,7 @@ v3s32 NetworkPacket::readV3S32()
 #if USE_POS32
 NetworkPacket& NetworkPacket::operator>>(v3pos_t& dst)
 {
-	if (m_proto_ver < 41) {
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
 		v3s16 tmp;
 		*this >> tmp;
 		dst = s16ToPos(tmp);
@@ -575,10 +575,10 @@ NetworkPacket& NetworkPacket::operator<<(v3f src)
 	return *this;
 }
 
-#if USE_POS32
+#if USE_OPOS64
 NetworkPacket& NetworkPacket::operator<<(v3opos_t src)
 {
-	if (m_proto_ver < 41) {
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
 		*this << oposToV3f(src);
 		return *this;
 	}
@@ -608,7 +608,7 @@ NetworkPacket& NetworkPacket::operator<<(v2s32 src)
 #if USE_POS32
 NetworkPacket& NetworkPacket::operator<<(v3pos_t src)
 {
-	if (m_proto_ver < 41) {
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
         *this << posToS16(src);
 		return *this;
 	}

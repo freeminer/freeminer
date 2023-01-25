@@ -26,7 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include "util/string.h"
 
-
 /****************
  * Black magic! *
  ****************
