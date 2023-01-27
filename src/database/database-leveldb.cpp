@@ -76,7 +76,7 @@ bool Database_LevelDB::saveBlock(const v3bpos_t &pos, const std::string &data)
 	return true;
 }
 
-void Database_LevelDB::loadBlock(const v3pos_t &pos, std::string *block)
+void Database_LevelDB::loadBlock(const v3bpos_t &pos, std::string *block)
 {
 	leveldb::Status status0 = m_database->Get(leveldb::ReadOptions(),
 		getBlockAsString(pos), block);

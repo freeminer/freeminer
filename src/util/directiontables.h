@@ -29,6 +29,7 @@ extern const v3pos_t g_6dirs[7];
 extern const v3bpos_t g_6dirs_b[6];
 
 extern const v3pos_t g_7dirs[7];
+extern const v3bpos_t g_7dirs_b[7];
 
 extern const v3pos_t g_26dirs[26];
 

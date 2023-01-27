@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "mesh_generator_thread.h"
 #include "client/clientmap.h"
+#include "irr_v3d.h"
 #include "settings.h"
 #include "profiler.h"
 #include "client.h"
@@ -89,8 +90,8 @@ bool MeshUpdateQueue::addBlock(Map *map, v3bpos_t p, bool ack_block_to_server, b
 		return false; // nothing to update
 	cached_blocks.reserve(3*3*3);
 	cached_blocks.push_back(cached_block);
-	for (v3bpos_t dp : g_26dirs)
-		cached_blocks.push_back(cacheBlock(map, p + dp,
+	for (auto dp : g_26dirs)
+		cached_blocks.push_back(cacheBlock(map, p + v3bpos_t(dp.X, dp.Y, dp.Z),
 				SKIP_UPDATE_IF_ALREADY_CACHED,
 				&cache_hit_counter));
 	g_profiler->avg("MeshUpdateQueue: MapBlocks from cache [%]",
@@ -296,10 +297,10 @@ void MeshUpdateThread::updateBlock(Map *map, v3bpos_t p, bool ack_block_to_serve
 	}
 	if (update_neighbors) {
 		if (many_neighbors) {
-			for (v3bpos_t dp : g_26dirs)
-				m_queue_in.addBlock(map, p + dp, false, urgent);
+			for (auto dp : g_26dirs)
+				m_queue_in.addBlock(map, p + v3bpos_t(dp.X, dp.Y, dp.Z), false, urgent);
 		} else {
-			for (v3bpos_t dp : g_6dirs)
+			for (v3bpos_t dp : g_6dirs_b)
 				m_queue_in.addBlock(map, p + dp, false, urgent);
 		}
 	}

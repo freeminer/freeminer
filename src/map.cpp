@@ -199,7 +199,7 @@ static void set_node_in_block(MapBlock *block, v3pos_t relpos, MapNode n)
 	if(n.getContent() == CONTENT_IGNORE){
 		const NodeDefManager *nodedef = block->getParent()->getNodeDefManager();
 		v3bpos_t blockpos = block->getPos();
-		v3pos_t p = blockpos * MAP_BLOCKSIZE + relpos;
+		v3pos_t p = getBlockPosRelative(blockpos) + relpos;
 		bool temp_bool;
 		errorstream<<"Not allowing to place CONTENT_IGNORE"
 				<<" while trying to replace \""
@@ -255,7 +255,7 @@ void Map::addNodeAndUpdate(v3pos_t p, MapNode n,
 	MapBlock *block = getBlockNoCreate(blockpos);
 	if (block->isDummy())
 		throw InvalidPositionException();
-	v3pos_t relpos = p - blockpos * MAP_BLOCKSIZE;
+	v3pos_t relpos = p - getBlockPosRelative(blockpos);
 
 	// This is needed for updating the lighting
 	MapNode oldnode = block->getNodeUnsafe(relpos);
@@ -1025,7 +1025,7 @@ std::vector<v3pos_t> Map::findNodesWithMetadata(v3pos_t p1, v3pos_t p2)
 NodeMetadata *Map::getNodeMetadata(v3pos_t p)
 {
 	v3bpos_t blockpos = getNodeBlockPos(p);
-	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t p_rel = p - getBlockPosRelative(blockpos);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::getNodeMetadata(): Need to emerge "
@@ -1044,7 +1044,7 @@ NodeMetadata *Map::getNodeMetadata(v3pos_t p)
 bool Map::setNodeMetadata(v3pos_t p, NodeMetadata *meta)
 {
 	v3bpos_t blockpos = getNodeBlockPos(p);
-	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t p_rel = p - getBlockPosRelative(blockpos);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::setNodeMetadata(): Need to emerge "
@@ -1063,7 +1063,7 @@ bool Map::setNodeMetadata(v3pos_t p, NodeMetadata *meta)
 void Map::removeNodeMetadata(v3pos_t p)
 {
 	v3bpos_t blockpos = getNodeBlockPos(p);
-	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t p_rel = p - getBlockPosRelative(blockpos);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(block == NULL)
 	{
@@ -1077,7 +1077,7 @@ void Map::removeNodeMetadata(v3pos_t p)
 NodeTimer Map::getNodeTimer(v3pos_t p)
 {
 	v3bpos_t blockpos = getNodeBlockPos(p);
-	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t p_rel = p - getBlockPosRelative(blockpos);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::getNodeTimer(): Need to emerge "
@@ -1098,7 +1098,7 @@ void Map::setNodeTimer(const NodeTimer &t)
 {
 	v3pos_t p = t.position;
 	v3bpos_t blockpos = getNodeBlockPos(p);
-	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t p_rel = p - getBlockPosRelative(blockpos);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::setNodeTimer(): Need to emerge "
@@ -1577,8 +1577,8 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 			continue;
 
 		block->setGenerated(true);
-		updateBlockHeat(senv, p * MAP_BLOCKSIZE, block);
-		updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block);
+		updateBlockHeat(senv, getBlockPosRelative(p), block);
+		updateBlockHumidity(senv, getBlockPosRelative(p), block);
 	}
 
 	/*
@@ -1720,7 +1720,7 @@ void ServerMap::prepareBlock(MapBlock *block) {
 	// Calculate weather conditions
 	//block->heat_last_update     = 0;
 	//block->humidity_last_update = 0;
-	v3pos_t p = block->getPos() *  MAP_BLOCKSIZE;
+	v3pos_t p = getBlockPosRelative(block->getPos());
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
 }

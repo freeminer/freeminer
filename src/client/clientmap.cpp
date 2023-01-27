@@ -117,7 +117,7 @@ void ClientMap::updateCamera(v3opos_t pos, v3f dir, f32 fov, v3pos_t offset)
 {
 	//v3pos_t previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
 	v3pos_t previous_node = m_camera_position_node;
-	v3pos_t previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
+	v3bpos_t previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 
 	m_camera_position = pos;
 	m_camera_direction = dir;
@@ -126,7 +126,7 @@ void ClientMap::updateCamera(v3opos_t pos, v3f dir, f32 fov, v3pos_t offset)
 
 	v3pos_t current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
 	m_camera_position_node = current_node;
-	v3pos_t current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
+	v3bpos_t current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
 	// reorder the blocks when camera crosses block boundary
 	if (previous_block != current_block)
@@ -417,7 +417,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			);
 */
 
-			f32 d = radius_box(bp*MAP_BLOCKSIZE, cam_pos_nodes); //blockpos_relative.getLength();
+			f32 d = radius_box(getBlockPosRelative(bp), cam_pos_nodes); //blockpos_relative.getLength();
 			if (d > range_max) {
 				if (d > range_max * 4 && ir.second) {
 					int mul = d / range_max;
@@ -818,7 +818,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			material.TextureLayer[ShadowRenderer::TEXTURE_LAYER_SHADOW].Texture = nullptr;
 		}
 
-		auto block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, (opos_t)BS);
+		auto block_wpos = posToOpos(getBlockPosRelative(descriptor.m_pos), (opos_t)BS);
 		m.setTranslation(oposToV3f(block_wpos - offset));
 
 		driver->setTransform(video::ETS_WORLD, m);
@@ -1127,7 +1127,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	draw.start();
 
 	core::matrix4 m; // Model matrix
-	auto offset = intToFloat(m_camera_offset, (opos_t)BS);
+	auto offset = posToOpos(m_camera_offset, (opos_t)BS);
 	u32 material_swaps = 0;
 
 	// Render all mesh buffers in order
@@ -1155,7 +1155,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 			++material_swaps;
 		}
 
-		auto block_wpos = intToFloat(descriptor.m_pos * MAP_BLOCKSIZE, (opos_t)BS);
+		auto block_wpos = intToFloat(getBlockPosRelative(descriptor.m_pos), (opos_t)BS);
 		m.setTranslation(oposToV3f(block_wpos - offset));
 
 		driver->setTransform(video::ETS_WORLD, m);
@@ -1227,7 +1227,7 @@ void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_
 				continue;
 			}
 
-			v3opos_t block_pos = intToFloat(block->getPos() * MAP_BLOCKSIZE, BS);
+			v3opos_t block_pos = intToFloat(getBlockPosRelative(block->getPos()), BS);
 			v3opos_t projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
 			if (projection.getDistanceFrom(block_pos) > radius)
 				continue;
@@ -1271,7 +1271,7 @@ void ClientMap::updateTransparentMeshBuffers()
 				mapBlockMesh->getTransparentBuffers().size() == 0) {
 
 			v3bpos_t block_pos = block->getPos();
-			auto block_pos_f = intToFloat(block_pos * MAP_BLOCKSIZE + MAP_BLOCKSIZE / 2, BS);
+			auto block_pos_f = posToOpos(getBlockPosRelative(block_pos) + MAP_BLOCKSIZE / 2, BS);
 			f32 distance = m_camera_position.getDistanceFromSQ(block_pos_f);
 			if (distance <= sorting_distance_sq) {
 				mapBlockMesh->updateTransparentBuffers(m_camera_position, block_pos);

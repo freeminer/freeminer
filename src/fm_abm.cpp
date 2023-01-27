@@ -253,7 +253,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		if (!dtime)
 			dtime = 1;
 
-		unordered_map_v3pos<int> active_object_added;
+		unordered_map_v3bpos<int> active_object_added;
 
 		//infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
@@ -295,7 +295,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				continue;
 			}
 			//ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
-			v3pos_t blockpos = getNodeBlockPos(abm_trigger->pos);
+			const auto blockpos = getNodeBlockPos(abm_trigger->pos);
 			int active_object_add = 0;
 			if (active_object_added.count(blockpos))
 				active_object_add = active_object_added[blockpos];

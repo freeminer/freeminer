@@ -1893,7 +1893,8 @@ void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool 
 */
 
 	v3bpos_t blockpos = getNodeBlockPos(nodepos);
-	v3pos_t blockpos_relative = blockpos * MAP_BLOCKSIZE;
+
+	v3pos_t blockpos_relative = getBlockPosRelative(blockpos);
 	m_mesh_update_thread.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
 	// Leading edge
 	if (nodepos.X == blockpos_relative.X)
@@ -1904,8 +1905,8 @@ void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool 
 		addUpdateMeshTask(blockpos + v3bpos_t(0, 0, -1), false, urgent);
 }
 
-void Client::updateMeshTimestampWithEdge(v3pos_t blockpos) {
-	for (const auto & dir : g_7dirs) {
+void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
+	for (const auto & dir : g_7dirs_b) {
 		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + dir);
 		if(!block)
 			continue;

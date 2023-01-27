@@ -144,7 +144,7 @@ inline void sortBoxVerticies(v3pos_t &p1, v3pos_t &p2) {
 		SWAP(pos_t, p1.Z, p2.Z);
 }
 
- /*
+/*
 inline void sortBoxVerticies(v3bpos_t &p1, v3bpos_t &p2) {
 	if (p1.X > p2.X)
 		SWAP(bpos_t, p1.X, p2.X);
@@ -153,7 +153,7 @@ inline void sortBoxVerticies(v3bpos_t &p1, v3bpos_t &p2) {
 	if (p1.Z > p2.Z)
 		SWAP(bpos_t, p1.Z, p2.Z);
 }
- */
+*/
 
 inline v3pos_t componentwise_min(const v3pos_t &a, const v3pos_t &b)
 {
@@ -526,6 +526,12 @@ inline float cycle_shift(float value, float by = 0, float max = 1)
 inline int radius_box(const v3pos_t & a, const v3pos_t & b) {
 	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
 }
+
+/*
+inline int radius_box(const v3bpos_t & a, const v3bpos_t & b) {
+	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
+}
+*/
 
 inline int radius_box(const v3opos_t & a, const v3opos_t & b) {
 	return std::max(std::max(std::fabs(a.X - b.X), std::fabs(a.Y - b.Y)), std::fabs(a.Z - b.Z));

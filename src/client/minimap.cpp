@@ -796,7 +796,8 @@ void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, pos_t scan_height) {
 //void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
 	v3pos_t p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 
-	v3pos_t blockpos_player, relpos;
+	v3bpos_t blockpos_player;
+	v3pos_t relpos;
 	getNodeBlockPosWithOffset(pos, blockpos_player, relpos);
 
 	for (s16 x = 0; x < size; x++)
@@ -806,7 +807,7 @@ void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, pos_t scan_height) {
 			mmpixel->n = CONTENT_AIR;
 
 			v3pos_t pos(p.X + x, p.Y, p.Z + z);
-			v3pos_t blockpos_max, blockpos_min;
+			v3bpos_t blockpos_max, blockpos_min;
 			getNodeBlockPosWithOffset(v3pos_t(pos.X, pos.Y - scan_height / 2, pos.Z), blockpos_min, relpos);
 			getNodeBlockPosWithOffset(v3pos_t(pos.X, pos.Y + scan_height / 2, pos.Z), blockpos_max, relpos);
 
@@ -829,13 +830,13 @@ void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, pos_t scan_height) {
 */
 				int c = 0;
 				for (auto i = blockpos_player.Y; i > blockpos_min.Y - 1; --i) {
-					auto it = m_blocks_cache.find(v3pos_t(blockpos_max.X, i, blockpos_max.Z));
+					auto it = m_blocks_cache.find(v3bpos_t(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
 					vec.emplace(c++, it->second);
 				}
 				for (auto i = blockpos_max.Y; i > blockpos_player.Y; --i) {
-					auto it = m_blocks_cache.find(v3pos_t(blockpos_max.X, i, blockpos_max.Z));
+					auto it = m_blocks_cache.find(v3bpos_t(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
 					vec.emplace(c++, it->second);

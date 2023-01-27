@@ -195,7 +195,7 @@ private:
 
 	// reference to a mesh buffer used when rendering the map.
 	struct DrawDescriptor {
-		v3pos_t m_pos;
+		v3bpos_t m_pos;
 		union {
 			scene::IMeshBuffer *m_buffer;
 			const PartialMeshBuffer *m_partial_buffer;
@@ -203,11 +203,11 @@ private:
 		bool m_reuse_material:1;
 		bool m_use_partial_buffer:1;
 
-		DrawDescriptor(v3pos_t pos, scene::IMeshBuffer *buffer, bool reuse_material) :
+		DrawDescriptor(v3bpos_t pos, scene::IMeshBuffer *buffer, bool reuse_material) :
 			m_pos(pos), m_buffer(buffer), m_reuse_material(reuse_material), m_use_partial_buffer(false)
 		{}
 
-		DrawDescriptor(v3pos_t pos, const PartialMeshBuffer *buffer) :
+		DrawDescriptor(v3bpos_t pos, const PartialMeshBuffer *buffer) :
 			m_pos(pos), m_partial_buffer(buffer), m_reuse_material(false), m_use_partial_buffer(true)
 		{}
 
@@ -236,7 +236,7 @@ private:
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic<drawlist_map *> m_drawlist {&m_drawlist_0};
 	int m_drawlist_current = 0;
-	std::vector<std::pair<v3pos_t, int>> draw_nearest;
+	std::vector<std::pair<v3bpos_t, int>> draw_nearest;
 public:
 	std::atomic_uint m_drawlist_last {0};
 	std::map<v3bpos_t, MapBlock*> m_block_boundary;

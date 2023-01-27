@@ -39,7 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <algorithm>
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3pos_t & playerblockpos, const v3pos_t & blockpos) {
+int getFarmeshStep(MapDrawControl& draw_control, const v3bpos_t & playerblockpos, const v3bpos_t & blockpos) {
 	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.farmesh) {
 		const pos_t nearest = 256/MAP_BLOCKSIZE;
@@ -1668,7 +1668,7 @@ void MapBlockMesh::updateTransparentBuffers(v3opos_t camera_pos, v3bpos_t block_
 	if (m_transparent_triangles.empty())
 		return;
 
-	v3opos_t block_posf = intToFloat(block_pos * MAP_BLOCKSIZE, (opos_t)BS);
+	v3opos_t block_posf = intToFloat(getBlockPosRelative(block_pos), (opos_t)BS);
 	v3f rel_camera_pos = oposToV3f(camera_pos - block_posf);
 
 	std::vector<s32> triangle_refs;
