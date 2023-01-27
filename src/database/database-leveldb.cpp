@@ -85,7 +85,8 @@ void Database_LevelDB::loadBlock(const v3bpos_t &pos, std::string *block)
 		return;
 
 	leveldb::Status status = m_database->Get(leveldb::ReadOptions(),
-		getBlockAsStringCompatible(pos), block);
+		std::to_string(getBlockAsInteger(pos)), block);
+	//		getBlockAsStringCompatible(pos), block);
 
 	if (!status.ok())
 		block->clear();
