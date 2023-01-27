@@ -641,6 +641,9 @@ void Server::start()
 #if USE_SCTP
 			<< " SCTP \t"
 #endif
+#if USE_POS32
+			<< " POS32 \t"
+#endif
 			<< " cpp=" <<__cplusplus << " \t"
 
 			<< " cores=";
