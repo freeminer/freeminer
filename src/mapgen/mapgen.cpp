@@ -885,7 +885,7 @@ void MapgenBasic::dustTopNodes()
 
 		//fm?: if (c == c_stone || c == biome->c_stone || c == c_desert_stone || c == c_sandstone || c == c_mossycobble || c == c_sandstonebrick)
 		const auto & cdef = ndef->get(c);
-		if (!cdef.waving && !cdef.buildable_to)
+		if (!cdef.waving && !cdef.buildable_to && c != c_ice)
 		if ((dtype == NDT_NORMAL ||
 				dtype == NDT_ALLFACES ||
 				dtype == NDT_ALLFACES_OPTIONAL ||
