@@ -364,6 +364,9 @@ ObjDef *Biome::clone() const
 
 	obj->flags = flags;
 
+	obj->c_top_cold = c_top_cold;
+	obj->c_ice = c_ice;
+
 	obj->c_top = c_top;
 	obj->c_filler = c_filler;
 	obj->c_stone = c_stone;
@@ -396,9 +399,9 @@ void Biome::resolveNodeNames()
 	getIdFromNrBacklog(&c_top,           "mapgen_stone",              CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_filler,        "mapgen_stone",              CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_stone,         "mapgen_stone",              CONTENT_AIR,    false);
-	getIdFromNrBacklog(&c_water_top,     "mapgen_water_source",       CONTENT_AIR,    false);
 	getIdFromNrBacklog(&c_water,         "mapgen_water_source",       CONTENT_AIR,    false);
-	getIdFromNrBacklog(&c_river_water,   "mapgen_river_water_source", CONTENT_AIR,    false);
+	getIdFromNrBacklog(&c_water_top,     "mapgen_water_source",       c_water,    false);
+	getIdFromNrBacklog(&c_river_water,   "mapgen_river_water_source", c_water,    false);
 
 	//freeminer:
 	getIdFromNrBacklog(&c_ice,           "mapgen_ice",                c_water,        false);
