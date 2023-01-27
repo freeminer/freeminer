@@ -631,7 +631,7 @@ void Camera::updateViewingRange()
 
 	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
 	if (m_draw_control.range_all) {
-		m_cameranode->setFarValue(MAX_MAP_GENERATION_LIMIT * 2 * BS);
+		m_cameranode->setFarValue(MAX_MAP_GENERATION_LIMIT * BS);
 		return;
 	}
 
@@ -646,7 +646,7 @@ void Camera::updateViewingRange()
 	f32 viewing_range_max = g_settings->getFloat("viewing_range_max");
 	viewing_range_max = MYMAX(viewing_range_min, viewing_range_max);
 	// vrange+position must be smaller than 32767
-	viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(std::abs(m_camera_position.X/BS), std::abs(m_camera_position.Y/BS)), std::abs(m_camera_position.Z/BS)));
+	//viewing_range_max = MYMIN(viewing_range_max, 32760 - MYMAX(MYMAX(std::abs(m_camera_position.X/BS), std::abs(m_camera_position.Y/BS)), std::abs(m_camera_position.Z/BS)));
 
 	f32 wanted_fps = m_cache_wanted_fps;
 	wanted_fps = MYMAX(wanted_fps, 1.0);

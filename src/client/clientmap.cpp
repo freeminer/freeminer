@@ -385,7 +385,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	//bool free_move = g_settings->getBool("free_move");
 
-	float range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range * (m_control.wanted_range > 200 ? 1.2 : 1.5);
+	opos_t range_max = m_control.range_all ? (opos_t)MAX_MAP_GENERATION_LIMIT : m_control.wanted_range * (m_control.wanted_range > 200 ? 1.2 : 1.5);
 
 	if (draw_nearest.empty()) {
 		//ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
@@ -417,7 +417,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			);
 */
 
-			f32 d = radius_box(getBlockPosRelative(bp), cam_pos_nodes); //blockpos_relative.getLength();
+			opos_t d = radius_box(getBlockPosRelative(bp), cam_pos_nodes); //blockpos_relative.getLength();
 			if (d > range_max) {
 				if (d > range_max * 4 && ir.second) {
 					int mul = d / range_max;
