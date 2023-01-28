@@ -103,7 +103,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 	for (const auto &d : dir9_center) {
 		const v3pos_t p = current_node + d;
 		const auto pf = intToFloat(p, BS);
-		const v2f diff(position.X - pf.X, position.Z - pf.Z);
+		const v2opos_t diff(position.X - pf.X, position.Z - pf.Z);
 		f32 distance_f = diff.getLength();
 
 		if (distance_f > min_distance_f ||
@@ -307,7 +307,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	// Add new collisions to the vector
 	if (collision_info && !free_move) {
 		auto diff = posToOpos(m_standing_node, BS) - position;
-		f32 distance = diff.getLength();
+		auto distance = diff.getLength();
 		// Force update each ClientEnvironment::step()
 		bool is_first = collision_info->empty();
 
@@ -322,7 +322,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			diff = posToOpos(colinfo.node_p, BS) - position;
 
 			// Find nearest colliding node
-			f32 len = diff.getLength();
+			auto len = diff.getLength();
 			if (is_first || len < distance) {
 				m_standing_node = colinfo.node_p;
 				distance = len;
@@ -359,7 +359,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 		const v3opos_t bmax = sn_f + v3fToOpos(m_sneak_node_bb_top.MaxEdge);
 		const v3opos_t old_pos = position;
 		const v3f old_speed = m_speed;
-		f32 y_diff = bmax.Y - position.Y;
+		const auto y_diff = bmax.Y - position.Y;
 		m_standing_node = m_sneak_node;
 
 		// (BS * 0.6f) is the basic stepheight while standing on ground
