@@ -620,16 +620,16 @@ bool PlayerSAO::checkMovementCheat()
 		player_max_jump = 0.0001f;
 
 	v3opos_t diff = (m_base_position - m_last_good_position);
-	float d_vert = diff.Y;
+	auto d_vert = diff.Y;
 	diff.Y = 0;
-	float d_horiz = diff.getLength();
-	float required_time = d_horiz / player_max_walk;
+	auto d_horiz = diff.getLength();
+	auto required_time = d_horiz / player_max_walk;
 
 	// FIXME: Checking downwards movement is not easily possible currently,
 	//        the server could calculate speed differences to examine the gravity
 	if (d_vert > 0) {
 		// In certain cases (water, ladders) walking speed is applied vertically
-		float s = MYMAX(player_max_jump, player_max_walk);
+		auto s = MYMAX(player_max_jump, player_max_walk);
 		required_time = MYMAX(required_time, d_vert / s);
 	}
 
