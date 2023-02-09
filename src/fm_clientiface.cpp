@@ -1,4 +1,5 @@
 #include "clientiface.h"
+#include "irr_v3d.h"
 #include "map.h"
 #include "profiler.h"
 #include "remoteplayer.h"
@@ -7,21 +8,22 @@
 #include "server.h"
 #include "emerge.h"
 #include "face_position_cache.h"
+#include "util/numeric.h"
 
 // VERY BAD COPYPASTE FROM clientmap.cpp!
-static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
+static bool isOccluded(Map *map, v3pos_t p0, v3pos_t p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, const NodeDefManager *nodemgr,
 		unordered_map_v3pos<bool> &occlude_cache)
 {
 	float d0 = (float)1 * p0.getDistanceFrom(p1);
-	v3s16 u0 = p1 - p0;
+	v3pos_t u0 = p1 - p0;
 	v3f uf = v3f(u0.X, u0.Y, u0.Z);
 	uf.normalize();
 	v3f p0f = v3f(p0.X, p0.Y, p0.Z);
 	u32 count = 0;
 	for (float s = start_off; s < d0 + end_off; s += step) {
 		v3f pf = p0f + uf * s;
-		v3s16 p = floatToInt(pf, 1);
+		v3pos_t p = floatToInt(pf, 1);
 		bool is_transparent = false;
 		bool cache = true;
 		if (occlude_cache.count(p)) {
@@ -90,7 +92,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		}
 	*/
 
-	v3f playerpos = sao->getBasePosition();
+	v3opos_t playerpos = sao->getBasePosition();
 	v3f playerspeed = player->getSpeed();
 	if (playerspeed.getLength() > 1000.0 * BS) // cheater or bug, ignore him
 		return 0;
@@ -98,14 +100,14 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	if (playerspeed.getLength() > 1.0 * BS)
 		playerspeeddir = playerspeed / playerspeed.getLength();
 	// Predict to next block
-	v3f playerpos_predicted = playerpos + playerspeeddir * MAP_BLOCKSIZE * BS;
+	v3opos_t playerpos_predicted = playerpos + v3fToOpos(playerspeeddir) * MAP_BLOCKSIZE * BS;
 
-	v3s16 center_nodepos = floatToInt(playerpos_predicted, BS);
+	v3pos_t center_nodepos = floatToInt(playerpos_predicted, BS);
 
-	v3s16 center = getNodeBlockPos(center_nodepos);
+	v3pos_t center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
-	v3f camera_pos = sao->getEyePosition();
+	v3opos_t camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0, 0, 1);
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);

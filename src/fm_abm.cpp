@@ -1,4 +1,5 @@
-	#include "map.h"
+	#include "irr_v3d.h"
+#include "map.h"
 #include "profiler.h"
 #include "server.h"
 #include "server/abmhandler.h"
@@ -53,7 +54,7 @@ ABMHandler::ABMHandler(ServerEnvironment *env):
 		for(s16 z=-1; z<=1; z++)
 		{
 			MapBlock *block2 = map->getBlockNoCreateNoEx(
-					block->getPos() + v3s16(x,y,z), true);
+					block->getPos() + v3bpos_t(x,y,z), true);
 			if(block2==NULL){
 				wider_unknown_count++;
 				continue;
@@ -118,7 +119,7 @@ ABMHandler::ABMHandler(ServerEnvironment *env):
 		int humidity_num = 0;
 
 		v3pos_t bpr = block->getPosRelative();
-		v3s16 p0;
+		v3pos_t p0;
 		for(p0.X=0; p0.X<MAP_BLOCKSIZE; p0.X++)
 		for(p0.Y=0; p0.Y<MAP_BLOCKSIZE; p0.Y++)
 		for(p0.Z=0; p0.Z<MAP_BLOCKSIZE; p0.Z++)
@@ -160,7 +161,7 @@ ABMHandler::ABMHandler(ServerEnvironment *env):
 				auto & required_neighbors = activate ? ir.abmws->required_neighbors_activate : ir.abmws->required_neighbors;
 				if(required_neighbors.count() > 0)
 				{
-					v3s16 p1;
+					v3pos_t p1;
 					int neighbors_range = i->abmws->neighbors_range;
 					for(p1.X = p.X - neighbors_range; p1.X <= p.X + neighbors_range; ++p1.X)
 					for(p1.Y = p.Y - neighbors_range; p1.Y <= p.Y + neighbors_range; ++p1.Y)
@@ -252,7 +253,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 		if (!dtime)
 			dtime = 1;
 
-		unordered_map_v3pos<int> active_object_added;
+		unordered_map_v3bpos<int> active_object_added;
 
 		//infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 		m_abm_timestamp = time;
@@ -294,7 +295,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate
 				continue;
 			}
 			//ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
-			v3pos_t blockpos = getNodeBlockPos(abm_trigger->pos);
+			const auto blockpos = getNodeBlockPos(abm_trigger->pos);
 			int active_object_add = 0;
 			if (active_object_added.count(blockpos))
 				active_object_add = active_object_added[blockpos];

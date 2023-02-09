@@ -47,6 +47,31 @@ struct v3POSEqual {
 	}
 };
 
+struct v2bPOSHash {
+	std::size_t operator()(const v2bpos_t& k) const {
+		return ( (std::hash<int>()(k.X) ^ (std::hash<int>()(k.Y) << 1)) >> 1);
+	}
+};
+
+struct v3bPOSHash {
+	std::size_t operator()(const v3bpos_t& k) const {
+		return ( (std::hash<int>()(k.X) ^ (std::hash<int>()(k.Y) << 1)) >> 1) ^ (std::hash<int>()(k.Z) << 1);
+	}
+};
+
+
+struct v2bPOSEqual {
+	bool operator()(const v2bpos_t& lhs, const v2bpos_t& rhs) const {
+		return lhs.X == rhs.X && lhs.Y == rhs.Y;
+	}
+};
+
+struct v3bPOSEqual {
+	bool operator()(const v3bpos_t& lhs, const v3bpos_t& rhs) const {
+		return lhs.X == rhs.X && lhs.Y == rhs.Y && lhs.Z == rhs.Z;
+	}
+};
+
 
 template <typename T>
 using unordered_map_v2pos = std::unordered_map<v2pos_t, T, v2POSHash, v2POSEqual>;
@@ -55,6 +80,9 @@ using unordered_set_v2pos = std::unordered_set<v2pos_t, v2POSHash, v2POSEqual>;
 template <typename T>
 using unordered_map_v3pos = std::unordered_map<v3pos_t, T, v3POSHash, v3POSEqual>;
 using unordered_set_v3pos = std::unordered_set<v3pos_t, v3POSHash, v3POSEqual>;
+
+template <typename T>
+using unordered_map_v3bpos = std::unordered_map<v3bpos_t, T, v3bPOSHash, v3bPOSEqual>;
 
 
 #endif

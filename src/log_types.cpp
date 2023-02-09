@@ -17,9 +17,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "log_types.h"
 #include "convert_json.h"
+#include "irr_v3d.h"
 #include "network/address.h"
 
-std::ostream &operator<<(std::ostream &s, const v2pos_t &p)
+std::ostream &operator<<(std::ostream &s, const v2s16 &p)
 {
 	s << "(" << p.X << "," << p.Y << ")";
 	return s;
@@ -48,6 +49,14 @@ std::ostream &operator<<(std::ostream &s, const v3f &p)
 	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
 	return s;
 }
+
+#if USE_OPOS64
+std::ostream &operator<<(std::ostream &s, const v3opos_t &p)
+{
+	s << "(" << p.X << "," << p.Y << "," << p.Z << ")";
+	return s;
+}
+#endif
 
 std::ostream &operator<<(std::ostream &s, const std::map<v3pos_t, unsigned int> &p)
 {

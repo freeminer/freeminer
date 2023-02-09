@@ -16,6 +16,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <cstdint>
+#include "irr_v3d.h"
 #include "map.h"
 #include "mapblock.h"
 #include "log_types.h"
@@ -36,7 +37,7 @@ thread_local v3pos_t m_block_cache_p;
 #endif
 
 // TODO: REMOVE THIS func and use Map::getBlock
-MapBlock *Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
+MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p, bool trylock, bool nocache)
 {
 
 #ifndef NDEBUG
@@ -142,7 +143,7 @@ bool Map::insertBlock(MapBlock *block)
 	return true;
 }
 
-MapBlock *ServerMap::createBlock(v3s16 p)
+MapBlock *ServerMap::createBlock(v3pos_t p)
 {
 	if (MapBlock *block = getBlockNoCreateNoEx(p, false, true)) {
 		return block;
@@ -351,7 +352,7 @@ void Map::copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip)
 }
 
 u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
-		std::vector<v3s16> *unloaded_blocks, unsigned int max_cycle_ms)
+		std::vector<v3bpos_t> *unloaded_blocks, unsigned int max_cycle_ms)
 {
 	bool save_before_unloading = maySaveBlocks();
 
@@ -424,7 +425,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 					continue;
 				}
 				if (block->getUsageTimer() > unload_timeout) { // block->refGet() <= 0 &&
-					const v3pos_t p = block->getPos();
+					const v3bpos_t p = block->getPos();
 					// infostream<<" deleting block p="<<p<<"
 					// ustimer="<<block->getUsageTimer() <<" to="<< unload_timeout<<"
 					// inc="<<(uptime - block->m_uptime_timer_last)<<"
@@ -538,6 +539,16 @@ inline u8 undiminish_light(u8 light)
 	return light + 1;
 }
 
+
+	const v3pos_t dirs6[6] = {
+			{0, 0, 1},	 // back
+			{0, 1, 0},	 // top
+			{1, 0, 0},	 // right
+			{0, 0, -1}, // front
+			{0, -1, 0}, // bottom
+			{-1, 0, 0}, // left
+	};
+
 /*
 	Goes recursively through the neighbours of the node.
 
@@ -555,39 +566,30 @@ inline u8 undiminish_light(u8 light)
 
 	values of from_nodes are lighting values.
 */
-void ServerMap::unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
-		std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks)
+void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
+		std::set<v3pos_t> &light_sources, std::map<v3bpos_t, MapBlock *> &modified_blocks)
 {
 	auto *nodemgr = m_gamedef->ndef();
-
-	v3s16 dirs[6] = {
-			v3s16(0, 0, 1),	 // back
-			v3s16(0, 1, 0),	 // top
-			v3s16(1, 0, 0),	 // right
-			v3s16(0, 0, -1), // front
-			v3s16(0, -1, 0), // bottom
-			v3s16(-1, 0, 0), // left
-	};
 
 	if (from_nodes.empty())
 		return;
 
 	u32 blockchangecount = 0;
 
-	std::map<v3s16, u8> unlighted_nodes;
+	std::map<v3pos_t, u8> unlighted_nodes;
 
 	/*
 		Initialize block cache
 	*/
-	v3s16 blockpos_last;
+	v3bpos_t blockpos_last;
 	MapBlock *block = NULL;
 	// Cache this a bit, too
 	bool block_checked_in_modified = false;
 
-	for (std::map<v3s16, u8>::iterator j = from_nodes.begin(); j != from_nodes.end();
+	for (auto j = from_nodes.begin(); j != from_nodes.end();
 			++j) {
-		v3s16 pos = j->first;
-		v3s16 blockpos = getNodeBlockPos(pos);
+		auto pos = j->first;
+		auto blockpos = getNodeBlockPos(pos);
 
 		// Only fetch a new block if the block position has changed
 		/*
@@ -622,10 +624,11 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nod
 		// Loop through 6 neighbors
 		for (u16 i = 0; i < 6; i++) {
 			// Get the position of the neighbor node
-			v3s16 n2pos = pos + dirs[i];
+			v3pos_t n2pos = pos + dirs6[i];
 
 			// Get the block where the node is located
-			v3s16 blockpos, relpos;
+			v3bpos_t blockpos;
+			v3pos_t relpos;
 			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
 
 			// Only fetch a new block if the block position has changed
@@ -732,38 +735,30 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nod
 	Lights neighbors of from_nodes, collects all them and then
 	goes on recursively.
 */
-void ServerMap::spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
-		std::map<v3s16, MapBlock *> &modified_blocks, uint64_t end_ms)
+void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
+		std::map<v3bpos_t, MapBlock *> &modified_blocks, uint64_t end_ms)
 {
 	auto *nodemgr = m_gamedef->ndef();
-
-	const v3s16 dirs[6] = {
-			v3s16(0, 0, 1),	 // back
-			v3s16(0, 1, 0),	 // top
-			v3s16(1, 0, 0),	 // right
-			v3s16(0, 0, -1), // front
-			v3s16(0, -1, 0), // bottom
-			v3s16(-1, 0, 0), // left
-	};
 
 	if (from_nodes.empty())
 		return;
 
 	u32 blockchangecount = 0;
 
-	std::set<v3s16> lighted_nodes;
+	std::set<v3pos_t> lighted_nodes;
 
 	/*
 		Initialize block cache
 	*/
-	v3s16 blockpos_last;
+	v3bpos_t blockpos_last;
 	MapBlock *block = NULL;
 	// Cache this a bit, too
 	bool block_checked_in_modified = false;
 
-	for (std::set<v3s16>::iterator j = from_nodes.begin(); j != from_nodes.end(); ++j) {
-		v3s16 pos = *j;
-		v3s16 blockpos, relpos;
+	for (auto j = from_nodes.begin(); j != from_nodes.end(); ++j) {
+		auto pos = *j;
+		v3bpos_t blockpos;
+		v3pos_t relpos;
 
 		getNodeBlockPosWithOffset(pos, blockpos, relpos);
 
@@ -802,10 +797,11 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
 		// Loop through 6 neighbors
 		for (u16 i = 0; i < 6; i++) {
 			// Get the position of the neighbor node
-			v3s16 n2pos = pos + dirs[i];
+			v3pos_t n2pos = pos + dirs6[i];
 
 			// Get the block where the node is located
-			v3s16 blockpos, relpos;
+			v3bpos_t blockpos;
+			v3pos_t relpos;
 			getNodeBlockPosWithOffset(n2pos, blockpos, relpos);
 
 			// Only fetch a new block if the block position has changed

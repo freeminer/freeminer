@@ -17,6 +17,7 @@
 **/
 
 #include "script/lua_api/l_env.h"
+#include "irr_v3d.h"
 #include "script/lua_api/l_internal.h"
 #include "script/lua_api/l_base.h"
 #include "script/common/c_converter.h"
@@ -60,7 +61,7 @@ int ModApiEnvMod::l_spawn_item_activeobject(lua_State *L)
 {
 	GET_ENV_PTR;
 	// pos
-	v3f pos = checkFloatPos(L, 1);
+	v3opos_t pos = checkOposPos(L, 1);
 	// item
 	std::string itemstring = lua_tostring(L, 2);
 
@@ -92,7 +93,7 @@ int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
 	auto *ndef = env->getGameDef()->ndef();
 
 	// pos
-	v3f pos = checkFloatPos(L, 1);
+	v3opos_t pos = checkOposPos(L, 1);
 	MapNode n = readnode(L, 2, ndef);
 
 	// Drop item on the floor

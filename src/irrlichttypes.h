@@ -29,13 +29,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 
 #include <irrTypes.h>
+#include "config.h"
 
 using namespace irr;
 
 #define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
-
-typedef s16 pos_t;
-// typedef s32 POS; far future
 
 namespace irr {
 
@@ -68,3 +66,23 @@ namespace core {
 #define U16_MAX 0xFFFF
 #define U32_MAX 0xFFFFFFFF
 #define U64_MAX 0xFFFFFFFFFFFFFFFF
+
+#if USE_POS32
+
+// Node position
+using pos_t = irr::s32;
+
+// Block position
+using bpos_t = irr::s32;
+
+#else
+using pos_t = irr::s16;
+using bpos_t = irr::s16;
+#endif
+
+#if USE_OPOS64
+// Object position
+using opos_t = double;
+#else
+using opos_t = float;
+#endif

@@ -17,6 +17,8 @@
 **/
 
 #include "environment.h"
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #if 0
 #include "chathandler.h"
 #include "content_sao.h"
@@ -118,7 +120,7 @@ void ServerEnvironment::contrib_globalstep(const float dtime)
 
 	// Differed nodeupdates
 	//if (m_nodeupdate_queue.size() > 0) {
-		std::deque<v3s16> nuqueue; 
+		std::deque<v3pos_t> nuqueue; 
 		int i = 0;
 		{
 			std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
@@ -189,7 +191,7 @@ void ServerEnvironment::contrib_lookupitemtogather(RemotePlayer* player, v3f pla
 #endif
 
 epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &itemName,
-		v3f pos, const ItemStack &items)
+		v3opos_t pos, const ItemStack &items)
 {
 	epixel::ItemSAO* obj = new epixel::ItemSAO(this, pos, "__builtin:item", "");
 		IItemDefManager* idef = m_gamedef->getItemDefManager();
@@ -216,7 +218,7 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 }
 
 epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
-		v3f pos, const MapNode n, int fast)
+		v3opos_t pos, const MapNode n, int fast)
 {
 	epixel::FallingSAO* obj = new epixel::FallingSAO(this, pos, "__builtin:falling_node", "", fast);
 		ObjectProperties* objProps = obj->accessObjectProperties();
@@ -335,7 +337,7 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
  * When node is modified, update node and directly
  * linked nodes
  */
-void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fast, bool destroy)
+void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int fast, bool destroy)
 {
 
 	// fmTODO remove:
@@ -356,10 +358,10 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 	ItemGroupList groups;
 
 	// update nodes around
-	for (s32 x = pos.X - 1; x <= pos.X + 1; x++) {
-		for (s32 y = pos.Y - 1; y <= pos.Y + 1; y++) {
-			for (s32 z = pos.Z - 1; z <= pos.Z + 1; z++) {
-				v3s16 n_pos = v3s16(x,y,z);
+	for (pos_t x = pos.X - 1; x <= pos.X + 1; x++) {
+		for (pos_t y = pos.Y - 1; y <= pos.Y + 1; y++) {
+			for (pos_t z = pos.Z - 1; z <= pos.Z + 1; z++) {
+				v3pos_t n_pos {x,y,z};
 
 				// If it's current node, ignore
 				if (x == 0 && y == 0 && z == 0) {
@@ -374,7 +376,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 
 				const ContentFeatures &f = ndef->get(n);
 				groups = f.groups;
-				n_bottom = m_map->getNode(v3s16(x, y - 1, z));
+				n_bottom = m_map->getNode(v3pos_t(x, y - 1, z));
 
 				// Check is the node is considered valid to fall
 				if (n_bottom.getContent() != CONTENT_IGNORE && (destroy || itemgroup_get(groups, "falling_node"))) {
@@ -385,7 +387,7 @@ void ServerEnvironment::nodeUpdate(const v3s16 pos, u16 recursion_limit, int fas
 							n_bottom.getLevel(ndef) < n_bottom.getMaxLevel(ndef))) &&
 						(!f_under.walkable || f_under.buildable_to)) {
 						removeNode(n_pos, fast);
-						spawnFallingActiveObject(f.name, intToFloat(v3s16(x,y,z),BS), n, fast);
+						spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast);
 						nodeUpdate(n_pos, recursion_limit, fast, destroy);
 					}
 				}
@@ -669,9 +671,9 @@ void ServerEnvironment::handleNodeDrops(const ContentFeatures &f, v3f pos, Playe
 
 #endif
 
-bool ServerEnvironment::checkAttachedNode(const v3s16 pos, MapNode n, const ContentFeatures &f)
+bool ServerEnvironment::checkAttachedNode(const v3pos_t pos, MapNode n, const ContentFeatures &f)
 {
-	v3s16 d(0,0,0);
+	v3pos_t d(0,0,0);
 	if (f.param_type_2 == CPT2_WALLMOUNTED) {
 		switch (n.param2) {
 			case 0: d.Y = 1; break;

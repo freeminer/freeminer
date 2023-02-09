@@ -304,6 +304,31 @@ inline v3s16 doubleToInt(v3d p, double d)
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
 }
 
+inline v3pos_t doubleToPos(v3d p, double d)
+{
+	return v3pos_t(
+		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
+		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
+		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
+}
+
+inline v3pos_t floatToInt(v3d p, f32 d)
+{
+	return v3pos_t(
+		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
+		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
+		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
+}
+
+
+inline v3pos_t oposToPos(v3opos_t p, double d)
+{
+	return v3pos_t(
+		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
+		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
+		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
+}
+
 /*
 	Returns floating point position of node in given integer position
 */
@@ -315,6 +340,75 @@ inline v3f intToFloat(v3s16 p, f32 d)
 		(f32)p.Z * d
 	);
 }
+
+#if USE_OPOS64 || USE_POS32
+inline v3opos_t intToFloat(const v3pos_t & p, const opos_t d)
+{
+	return v3opos_t(
+		(opos_t)p.X * d,
+		(opos_t)p.Y * d,
+		(opos_t)p.Z * d
+	);
+}
+#endif
+
+inline v3f posToFloat(const v3pos_t & p, f32 d)
+{
+	return v3f(
+		(f32)p.X * d,
+		(f32)p.Y * d,
+		(f32)p.Z * d
+	);
+}
+
+inline v3opos_t posToOpos(const v3pos_t & p, const opos_t d)
+{
+	return v3opos_t(
+		(opos_t)p.X * d,
+		(opos_t)p.Y * d,
+		(opos_t)p.Z * d
+	);
+}
+
+inline v3opos_t v3fToOpos(const v3f & p)
+{
+	return v3opos_t(p.X, p.Y, p.Z);
+}
+
+inline v3f oposToV3f(const v3opos_t & p)
+{
+	return v3f(p.X, p.Y, p.Z);
+}
+
+ /*
+inline v3f intToFloat(v3bpos_t p, f32 d)
+{
+	return v3f(
+		(f32)p.X * d,
+		(f32)p.Y * d,
+		(f32)p.Z * d
+	);
+}
+ */
+
+inline v3s16 posToS16(const v3pos_t & p)
+{
+#if USE_POS32
+	return v3s16(p.X, p.Y, p.Z);
+#else
+	return p;
+#endif
+}
+
+inline v3pos_t s16ToPos(const v3s16 & p)
+{
+#if USE_POS32
+	return v3pos_t(p.X, p.Y, p.Z);
+#else
+	return p;
+#endif
+}
+
 
 // Random helper. Usually d=BS
 inline aabb3f getNodeBox(v3s16 p, float d)
@@ -329,6 +423,19 @@ inline aabb3f getNodeBox(v3s16 p, float d)
 	);
 }
 
+#if USE_OPOS64
+inline aabb3o getNodeBox(v3pos_t p, opos_t d)
+{
+	return aabb3o(
+		(opos_t)p.X * d - 0.5f * d,
+		(opos_t)p.Y * d - 0.5f * d,
+		(opos_t)p.Z * d - 0.5f * d,
+		(opos_t)p.X * d + 0.5f * d,
+		(opos_t)p.Y * d + 0.5f * d,
+		(opos_t)p.Z * d + 0.5f * d
+	);
+}
+#endif
 
 class IntervalLimiter
 {
@@ -404,11 +511,17 @@ inline float cycle_shift(float value, float by = 0, float max = 1)
     return value + by;
 }
 
-inline int radius_box(const v3s16 & a, const v3s16 & b) {
+inline int radius_box(const v3pos_t & a, const v3pos_t & b) {
 	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
 }
 
-inline int radius_box(const v3f & a, const v3f & b) {
+/*
+inline int radius_box(const v3bpos_t & a, const v3bpos_t & b) {
+	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
+}
+*/
+
+inline int radius_box(const v3opos_t & a, const v3opos_t & b) {
 	return std::max(std::max(std::fabs(a.X - b.X), std::fabs(a.Y - b.Y)), std::fabs(a.Z - b.Z));
 }
 

@@ -19,6 +19,7 @@
 #ifndef __ITEMSAO_H__
 #define __ITEMSAO_H__
 
+#include "irr_v3d.h"
 #include "server/luaentity_sao.h"
 
 namespace epixel
@@ -26,14 +27,14 @@ namespace epixel
 
 class ItemSAO: public LuaEntitySAO {
 public:
-	ItemSAO(ServerEnvironment *env, v3f pos,
+	ItemSAO(ServerEnvironment *env, v3opos_t pos,
 			const std::string &name, const std::string &state);
 	~ItemSAO();
 
 	ActiveObjectType getType() const override
 	{ return ACTIVEOBJECT_TYPE_LUAITEM; }
 
-	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
+	static ServerActiveObject* create(ServerEnvironment *env, v3opos_t pos,
 			const std::string &data);
 
 	virtual void addedToEnvironment(u32 dtime_s) override;

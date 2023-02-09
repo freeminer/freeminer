@@ -18,6 +18,7 @@
 
 #include "fallingsao.h"
 #include "environment.h"
+#include "irr_v3d.h"
 #include "map.h"
 #include "mapnode.h"
 #include "nodedef.h"
@@ -32,7 +33,7 @@
 namespace epixel
 {
 
-FallingSAO::FallingSAO(ServerEnvironment *env, v3f pos,
+FallingSAO::FallingSAO(ServerEnvironment *env, v3opos_t pos,
 		const std::string &name, const std::string &state, int fast_):
 		LuaEntitySAO(env, pos, name, state)
 {
@@ -57,7 +58,7 @@ FallingSAO::~FallingSAO()
 {
 }
 
-ServerActiveObject* FallingSAO::create(ServerEnvironment *env, v3f pos,
+ServerActiveObject* FallingSAO::create(ServerEnvironment *env, v3opos_t pos,
 		const std::string &data)
 {
 	std::string name;
@@ -125,7 +126,7 @@ void FallingSAO::step(float dtime, bool send_recommended)
 	// Under node, center
 	const auto m_base_position = getBasePosition();
 	v3f p_under(m_base_position.X, m_base_position.Y - 7, m_base_position.Z);
-	v3s16 p = floatToInt(m_base_position, BS);
+	v3pos_t p = floatToInt(m_base_position, BS);
 /*
 	bool cur_exists = false, under_exists = false;
 */

@@ -32,4 +32,6 @@ typedef core::vector3d<s16> v3s16;
 typedef core::vector3d<u16> v3u16;
 typedef core::vector3d<s32> v3s32;
 
-typedef core::vector3d<pos_t> v3pos_t;
+using v3pos_t = core::vector3d<pos_t>;
+using v3bpos_t = core::vector3d<bpos_t>;
+using v3opos_t = core::vector3d<opos_t>;
