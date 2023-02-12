@@ -35,9 +35,6 @@ using namespace irr;
 
 #define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
 
-//typedef s16 pos_t;
-// typedef s32 POS; far future
-
 namespace irr {
 
 #if (IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR >= 9)
