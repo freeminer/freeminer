@@ -205,6 +205,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_season", "30");
 	settings->setDefault("weather_humidity_daily", "-12");
 	settings->setDefault("weather_humidity_width", "300");
+	settings->setDefault("weather_humidity_height", "-250");
 	settings->setDefault("weather_humidity_days", "2");
 
 	settings->setDefault("respawn_auto", "false");
