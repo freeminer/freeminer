@@ -767,14 +767,14 @@ void Noise::updateResults(float g, float *gmap,
 }
 
 float farscale(float scale, float z) {
-	return ( 1 + ( 1 - (MAX_MAP_GENERATION_LIMIT * 1 - (fabs(z))                     ) / (MAX_MAP_GENERATION_LIMIT * 1) ) * (scale - 1) );
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 1 - (fabs(z))                     ) / (FARSCALE_LIMIT * 1) ) * (scale - 1) );
 }
 
 float farscale(float scale, float x, float z) {
-	return ( 1 + ( 1 - (MAX_MAP_GENERATION_LIMIT * 2 - (fabs(x) + fabs(z))           ) / (MAX_MAP_GENERATION_LIMIT * 2) ) * (scale - 1) );
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 2 - (fabs(x) + fabs(z))           ) / (FARSCALE_LIMIT * 2) ) * (scale - 1) );
 }
 
 float farscale(float scale, float x, float y, float z) {
-	return ( 1 + ( 1 - (MAX_MAP_GENERATION_LIMIT * 3 - (fabs(x) + fabs(y) + fabs(z)) ) / (MAX_MAP_GENERATION_LIMIT * 3) ) * (scale - 1) );
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 3 - (fabs(x) + fabs(y) + fabs(z)) ) / (FARSCALE_LIMIT * 3) ) * (scale - 1) );
 }
 

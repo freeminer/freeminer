@@ -227,6 +227,8 @@ year_days () int 30
 weather_humidity_season () float 30
 weather_humidity_daily  () float -12
 weather_humidity_width  () float 300
+# Add 1% on every height (in nodes)  1000 = 1% per 1000 nodes
+weather_humidity_height () float -250
 
 # Humidity change amplitude
 weather_humidity_days  () float 2

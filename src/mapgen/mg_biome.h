@@ -238,6 +238,7 @@ public:
 	s32 weather_humidity_width;
 	s32 weather_humidity_daily;
 	s32 weather_humidity_days;
+	s32 weather_humidity_height;
 	s32 weather_hot_core;
 
 	MapgenParams * mapgen_params = nullptr;

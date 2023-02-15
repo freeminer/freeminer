@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "mg_biome.h"
+#include "constants.h"
 #include "mg_decoration.h"
 #include "emerge.h"
 #include "server.h"
@@ -90,6 +91,7 @@ BiomeManager::BiomeManager(Server *server) :
 	weather_humidity_daily = g_settings->getS16("weather_humidity_daily");
 	weather_humidity_width = g_settings->getS16("weather_humidity_width");
 	weather_humidity_days = g_settings->getS16("weather_humidity_days");
+	weather_humidity_height = g_settings->getS16("weather_humidity_height");
 	weather_hot_core = g_settings->getS16("weather_hot_core");
 
 	if (add(b) == OBJDEF_INVALID_HANDLE)
@@ -326,8 +328,8 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 	}
 	heat += p.Y / weather_heat_height; // upper=colder, lower=hotter, 3c per 1000
 
-	if (weather_hot_core && p.Y < -(MAX_MAP_GENERATION_LIMIT-weather_hot_core))
-		heat += 6000 * (1.0-((float)(p.Y - -MAX_MAP_GENERATION_LIMIT)/weather_hot_core)); //hot core, later via realms
+	if (weather_hot_core && p.Y < -(WEATHER_LIMIT-weather_hot_core))
+		heat += 6000 * (1.0-((float)(p.Y - -WEATHER_LIMIT)/weather_hot_core)); //hot core, later via realms
 
 	return heat;
 }
@@ -337,8 +339,6 @@ s16 BiomeManager::calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, f
 	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
 	// auto humidity = calcHumidityAtPoint(p);
 
-	humidity *= 1.0 - ((float)p.Y / MAX_MAP_GENERATION_LIMIT);
-
 	if (use_weather) {
 		f32 seasonv = totaltime;
 		seasonv /= 86400 * weather_humidity_days; // bad weather change speed (2 days)
@@ -346,6 +346,7 @@ s16 BiomeManager::calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, f
 		humidity += weather_humidity_season * sin(seasonv * M_PI);
 		humidity += weather_humidity_daily * (sin(cycle_shift(timeofday, -0.1) * M_PI) - 0.5);
 	}
+	humidity += p.Y / weather_humidity_height; // upper=dry, lower=wet, 3c per 1000
 
 	humidity = rangelim(humidity, 0, 100);
 

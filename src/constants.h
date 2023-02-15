@@ -69,6 +69,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // This is the maximum value the setting map_generation_limit can be
 #define MAX_MAP_GENERATION_LIMIT (31007)
 
+// fm 32bit prepare (keep 31k)
+#define WEATHER_LIMIT (31007)
+#define FARSCALE_LIMIT (31007)
+
 // Size of node in floating-point units
 // The original idea behind this is to disallow plain casts between
 // floating-point and integer positions, which potentially give wrong
