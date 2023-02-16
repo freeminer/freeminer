@@ -1098,9 +1098,9 @@ bool ServerMap::propagateSunlight(
 	// Whether the sunlight at the top of the bottom block is valid
 	bool block_below_is_valid = true;
 
-	const bool light_ambient = g_settings->getBool("light_ambient");
+	static thread_local const bool light_ambient = g_settings->getBool("light_ambient");
 
-	v3pos_t pos_relative = block->getPosRelative();
+	const v3pos_t pos_relative = block->getPosRelative();
 
 	for (s16 x = 0; x < MAP_BLOCKSIZE; ++x) {
 		for (s16 z = 0; z < MAP_BLOCKSIZE; ++z) {
@@ -1137,6 +1137,16 @@ bool ServerMap::propagateSunlight(
 
 			u8 current_light = no_sunlight ? 0 : LIGHT_SUN;
 
+			if (no_sunlight && !remove_light)
+				for (const auto &dir : g_4dirs) {
+					if (getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z) + dir)
+									.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) ==
+							LIGHT_SUN) {
+						current_light = LIGHT_SUN;
+						break;
+					}
+				}
+
 			for (; y >= 0; --y) {
 				v3pos_t pos(x, y, z);
 				MapNode n = block->getNode(pos);
@@ -1156,15 +1166,6 @@ bool ServerMap::propagateSunlight(
 					// Diminish light
 					current_light = diminish_light(current_light);
 				}
-
-                if (y == 0 && !remove_light /* && current_light == LIGHT_SUN - 1*/) {
-                    for (const auto &dir : g_4dirs) {
-                        if (getNode(pos + dir).getLight(LIGHTBANK_DAY,m_gamedef->ndef()) == LIGHT_SUN) {
-                            current_light = LIGHT_SUN;
-                            break;
-                        }
-                    }
-                }
 
 				u8 old_light = n.getLight(LIGHTBANK_DAY, nodemgr);
 
