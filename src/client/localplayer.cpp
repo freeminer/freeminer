@@ -654,7 +654,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			v3f move_direction = v3f(0, 0, 1);
 			move_direction.rotateXZBy(getYaw());
 
-			v3f rotate = move_direction * (speed / (movement_fall_aerodynamics));
+			v3f rotate = move_direction * (speed / movement_fall_aerodynamics);
 			if (control.direction_keys & (1 << 0) /* "up" */)
 				rotate = rotate.crossProduct(v3f(0, 1, 0));
 			if (control.direction_keys & (1 << 1) /* "down" */)
@@ -665,7 +665,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 			m_speed.rotateYZBy(rotate.X);
 			m_speed.rotateXZBy(rotate.Y);
 			m_speed.rotateXYBy(rotate.Z);
-			m_speed = m_speed.normalize() * speed * (1 - speed * 0.00001); // 0.998
+			m_speed = m_speed.normalize() * speed * (1 - speed * 0.000003); // 0.998
 			if (m_speed.Y)
 				return;
 		}
