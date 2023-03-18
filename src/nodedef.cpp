@@ -512,8 +512,6 @@ void ContentFeatures::reset()
 
 
 //freeminer:
-	solidness_far = 0;
-
 	freeze = "";
 	melt = "";
 	is_circuit_element = false;

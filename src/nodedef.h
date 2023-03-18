@@ -549,6 +549,7 @@ struct ContentFeatures
 
 // fm:
 	u8 solidness_far = 0;
+	float light_vertical_dimnish = 1;
 	bool is_wire;
 	bool is_wire_connector;
 	bool is_circuit_element;
