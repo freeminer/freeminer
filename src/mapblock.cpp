@@ -704,8 +704,11 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		raiseModified(MOD_STATE_WRITE_NEEDED, light);
 	}
 
-	void MapBlock::raiseModified(u32 mod, modified_light light)
+	void MapBlock::raiseModified(u32 mod, modified_light light, bool important)
 	{
+		static const thread_local auto save_changed_block = g_settings->getBool("save_changed_block");
+		if (save_changed_block || important || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED ) {
+
 		if(mod >= MOD_STATE_WRITE_NEEDED /*&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED*/) {
 			m_changed_timestamp = (unsigned int)m_parent->time_life;
 		}
@@ -713,6 +716,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			m_modified = mod;
 			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
 				m_disk_timestamp.store(m_timestamp);
+		}
 		}
 		if (light == modified_light_yes) {
 			setLightingComplete(0);

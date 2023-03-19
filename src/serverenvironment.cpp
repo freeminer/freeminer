@@ -1092,7 +1092,7 @@ void ServerEnvironment::addLoadingBlockModifierDef(LoadingBlockModifierDef *lbm)
 	m_lbm_mgr.addLBMDef(lbm);
 }
 
-bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
+bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast, bool important)
 {
 	const NodeDefManager *ndef = m_server->ndef();
 	MapNode n_old = m_map->getNode(p);
@@ -1113,13 +1113,12 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 				else if (p.Y > 0)
 					nn.param1 = 5; // will be recalculated by next light step
 			}
-			m_map->setNode(p, nn);
+			m_map->setNode(p, nn, important);
 		} catch(const InvalidPositionException &e) { }
 	} else {
 
-	if (!m_map->addNodeWithEvent(p, n))
+	if (!m_map->addNodeWithEvent(p, n, true, important))
 		return false;
-
 	}
 
 	m_circuit.addNode(p);
@@ -1142,7 +1141,7 @@ bool ServerEnvironment::setNode(v3s16 p, const MapNode &n, s16 fast)
 	return true;
 }
 
-bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
+bool ServerEnvironment::removeNode(v3s16 p, s16 fast, bool important)
 {
 	const NodeDefManager *ndef = m_server->ndef();
 	MapNode n_old = m_map->getNode(p);
@@ -1163,7 +1162,7 @@ bool ServerEnvironment::removeNode(v3s16 p, s16 fast)
 		} catch(const InvalidPositionException &e) { }
 	} else
 
-	if (!m_map->removeNodeWithEvent(p))
+	if (!m_map->removeNodeWithEvent(p, important))
 		return false;
 
 	m_circuit.removeNode(p, n_old);

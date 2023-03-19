@@ -190,7 +190,7 @@ MapNode Map::getNode(v3s16 p, bool *is_valid_position)
 	return node;
 }
 
-static void set_node_in_block(MapBlock *block, v3s16 relpos, MapNode n)
+static void set_node_in_block(MapBlock *block, v3s16 relpos, MapNode n, bool important = false)
 {
 	// Never allow placing CONTENT_IGNORE, it causes problems
 	if(n.getContent() == CONTENT_IGNORE){
@@ -204,21 +204,21 @@ static void set_node_in_block(MapBlock *block, v3s16 relpos, MapNode n)
 				<<"\" at "<<PP(p)<<" (block "<<PP(blockpos)<<")"<<std::endl;
 		return;
 	}
-	block->setNodeNoCheck(relpos, n);
+	block->setNodeNoCheck(relpos, n, important);
 }
 
 // throws InvalidPositionException if not found
-void Map::setNode(v3s16 p, MapNode & n)
+void Map::setNode(v3s16 p, MapNode & n, bool important)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreate(blockpos);
 	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
-	set_node_in_block(block, relpos, n);
+	set_node_in_block(block, relpos, n, important);
 }
 
 void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		std::map<v3s16, MapBlock*> &modified_blocks,
-		bool remove_metadata, int fast)
+		bool remove_metadata, int fast, bool important)
 {
 	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from old; 3: place, recalculate light and skip liquid queue
 		if (fast == 2 && !n.param1) {
@@ -240,7 +240,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		}
 		if (remove_metadata)
 			removeNodeMetadata(p);
-		setNode(p, n);
+		setNode(p, n, important);
 		return;
 	}
 
@@ -269,14 +269,14 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		// No light update needed, just copy over the old light.
 		n.setLight(LIGHTBANK_DAY, oldnode.getLightRaw(LIGHTBANK_DAY, oldcf), cf);
 		n.setLight(LIGHTBANK_NIGHT, oldnode.getLightRaw(LIGHTBANK_NIGHT, oldcf), cf);
-		set_node_in_block(block, relpos, n);
+		set_node_in_block(block, relpos, n, important);
 
 		modified_blocks[blockpos] = block;
 	} else {
 		// Ignore light (because calling voxalgo::update_lighting_nodes)
 		n.setLight(LIGHTBANK_DAY, 0, cf);
 		n.setLight(LIGHTBANK_NIGHT, 0, cf);
-		set_node_in_block(block, relpos, n);
+		set_node_in_block(block, relpos, n, important);
 
 		// Update lighting
 		std::vector<std::pair<v3s16, MapNode> > oldnodes;
@@ -299,12 +299,12 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 }
 
 void Map::removeNodeAndUpdate(v3s16 p,
-		std::map<v3s16, MapBlock*> &modified_blocks, int fast)
+		std::map<v3s16, MapBlock*> &modified_blocks, int fast, bool important)
 {
-	addNodeAndUpdate(p, MapNode(CONTENT_AIR), modified_blocks, true, fast);
+	addNodeAndUpdate(p, MapNode(CONTENT_AIR), modified_blocks, true, fast, important);
 }
 
-bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata)
+bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata, bool important)
 {
 	MapEditEvent event;
 	event.type = remove_metadata ? MEET_ADDNODE : MEET_SWAPNODE;
@@ -314,7 +314,7 @@ bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata)
 	bool succeeded = true;
 	try{
 		std::map<v3s16, MapBlock*> modified_blocks;
-		addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
+		addNodeAndUpdate(p, n, modified_blocks, remove_metadata, 0, important);
 
 		// Copy modified_blocks to event
 		for (auto &modified_block : modified_blocks) {
@@ -330,7 +330,7 @@ bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata)
 	return succeeded;
 }
 
-bool Map::removeNodeWithEvent(v3s16 p)
+bool Map::removeNodeWithEvent(v3s16 p, bool important)
 {
 	MapEditEvent event;
 	event.type = MEET_REMOVENODE;
@@ -339,7 +339,7 @@ bool Map::removeNodeWithEvent(v3s16 p)
 	bool succeeded = true;
 	try{
 		std::map<v3s16, MapBlock*> modified_blocks;
-		removeNodeAndUpdate(p, modified_blocks);
+		removeNodeAndUpdate(p, modified_blocks, 0, important);
 
 		// Copy modified_blocks to event
 		for (auto &modified_block : modified_blocks) {
@@ -1558,6 +1558,8 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		if (save_generated_block)
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
+		else
+			block->setLightingExpired(true);
 	}
 
 	/*
@@ -1731,9 +1733,9 @@ bool ServerMap::isBlockInQueue(v3s16 pos)
 void ServerMap::addNodeAndUpdate(v3s16 p, MapNode n,
 		std::map<v3s16, MapBlock*> &modified_blocks,
 		bool remove_metadata,
-		int fast)
+		int fast, bool important)
 {
-	Map::addNodeAndUpdate(p, n, modified_blocks, remove_metadata, fast);
+	Map::addNodeAndUpdate(p, n, modified_blocks, remove_metadata, fast, important);
 
 	/*
 		Add neighboring liquid nodes and this node to transform queue.
