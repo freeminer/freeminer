@@ -1617,7 +1617,7 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 			block->setTimestampNoChangedFlag(m_game_time);
 			// If time has changed much from the one on disk,
 			// set block to be saved when it is unloaded
-			if(block->getTimestamp() > block->getDiskTimestamp() + 60)
+			if(block->getDiskTimestamp() != BLOCK_TIMESTAMP_UNDEFINED && block->getTimestamp() > block->getDiskTimestamp() + 60)
 				block->raiseModified(MOD_STATE_WRITE_AT_UNLOAD,
 					MOD_REASON_BLOCK_EXPIRED);
 
@@ -2257,14 +2257,16 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 		<<" objects)"<<std::endl;
 #endif
 
-	bool large_amount = (block->m_static_objects.m_stored.size() > g_settings->getU16("max_objects_per_block"));
+	thread_local const auto max_objects_per_block = g_settings->getU16("max_objects_per_block");
+	bool large_amount = (block->m_static_objects.m_stored.size() > max_objects_per_block);
 	if (large_amount) {
 		errorstream<<"suspiciously large amount of objects detected: "
 			<<block->m_static_objects.m_stored.size()<<" in "
 			<<PP(block->getPos())
-			<<"; removing all of them."<<std::endl;
+			//<<"; removing all of them."
+			<<std::endl;
 		// Clear stored list
-		block->m_static_objects.m_stored.clear();
+		block->m_static_objects.m_stored.resize(max_objects_per_block);
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_TOO_MANY_OBJECTS);
 		return;
