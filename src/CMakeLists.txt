@@ -40,14 +40,8 @@ endif()
 
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
 if(MINETEST_PROTO)
-	set(MINETEST_PROTO 1)
 	set(MINETEST_TRANSPORT 1)
-	set(USE_ENET 0)
 	message(STATUS "Using minetest compatible networking (slow, some features missing)")
-else()
-	set(USE_ENET 1)
-	set(MINETEST_PROTO 0)
-	set(MINETEST_TRANSPORT 0)
 endif()
 
 #
@@ -614,11 +608,13 @@ add_subdirectory(util)
 add_subdirectory(irrlicht_changes)
 add_subdirectory(server)
 
-if(MINETEST_PROTO)
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
-else()
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+
+OPTION(USE_MULTI "Enable MT+SCTP networking" 0)
+if(USE_MULTI)
+	set(ENABLE_SCTP 1)
 endif()
+
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
 
 if(ENABLE_SCTP AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
     message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
@@ -633,7 +629,7 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(sctp_build_programs 0 CACHE INTERNAL "")
 	set(sctp_werror 0 CACHE INTERNAL "")
 	set(WERROR 0 CACHE INTERNAL "") #old
-	
+
 
 	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
 
@@ -641,16 +637,18 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(SCTP_LIBRARY usrsctp)
 
 	set(USE_SCTP 1)
-	set(USE_ENET 0)
-	set(MINETEST_TRANSPORT 0)
 
 	message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
 else()
 	set(USE_SCTP 0)
 endif()
 
+#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
+#    set(USE_ENET 1)
+#endif()
+
 if(USE_ENET)
-	if(NOT ENABLE_SYSTEM_ENET AND EXISTS ${PROJECT_SOURCE_DIR}/external/enet/include/enet/enet.h)
+	if(NOT ENABLE_SYSTEM_ENET AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
 		add_subdirectory(external/enet)
 		set(ENET_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/enet/include)
 		set(ENET_LIBRARY enet)

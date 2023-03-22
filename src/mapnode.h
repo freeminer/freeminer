@@ -52,7 +52,7 @@ typedef u16 content_t;
 */
 #define MAX_REGISTERED_CONTENT 0x7fffU
 
-#if MINETEST_PROTO && MINETEST_TRANSPORT
+#if MINETEST_PROTO
 /*
 	A solid walkable node with the texture unknown_node.png.
 

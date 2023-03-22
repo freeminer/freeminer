@@ -252,7 +252,7 @@ Server::Server(
 	m_simple_singleplayer_mode(simple_singleplayer_mode),
 	m_dedicated(dedicated),
 	m_async_fatal_error(""),
-	m_con(std::make_shared<con::Connection>(PROTOCOL_ID,
+	m_con(std::make_shared<con_use::Connection>(PROTOCOL_ID,
 			simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE,
 			CONNECTION_TIMEOUT,
 			m_bind_addr.isIPv6(),
@@ -629,8 +629,11 @@ void Server::start()
 #ifndef NDEBUG
 			<< " DEBUG \t"
 #endif
+#if USE_MULTI
+			<< " MULTI: \t"
+#endif
 #if MINETEST_PROTO && MINETEST_TRANSPORT
-			<< " MINETEST_PROTO \t"
+			<< " MINETEST_PROTO " << SERVER_PROTOCOL_VERSION_MIN << "-" << SERVER_PROTOCOL_VERSION_MAX << "\t"
 #endif
 #if USE_SCTP
 			<< " SCTP \t"

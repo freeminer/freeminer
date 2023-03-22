@@ -20,16 +20,6 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "config.h"
-
-#if USE_SCTP
-#include "network/fm_connection_sctp.cpp"
-#elif USE_ENET
-#include "network/fm_connection.cpp"
-#else
-//Not used, keep for reduce MT merge conflicts
-
-
 #include <iomanip>
 #include <cerrno>
 #include <algorithm>
@@ -529,6 +519,10 @@ void IncomingSplitBuffer::removeUnreliableTimedOuts(float dtime, float timeout)
 /*
 	ConnectionCommand
  */
+ConnectionEventPtr ConnectionEvent::connectFailed()
+{
+	return create(CONNEVENT_CONNECT_FAILED);
+}
 
 ConnectionCommandPtr ConnectionCommand::create(ConnectionCommandType type)
 {
@@ -1661,7 +1655,17 @@ UDPPeer* Connection::createServerPeer(Address& address)
 	return peer;
 }
 
+
+
+ConnectionCommandPtr ConnectionCommand::send(
+		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
+{
+	auto c = create(CONNCMD_SEND);
+	c->peer_id = peer_id;
+	c->channelnum = channelnum;
+	c->reliable = reliable;
+	c->data = data;
+	return c;
+}
+
 } // namespace
-
-
-#endif
