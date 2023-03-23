@@ -22,7 +22,7 @@ COPY textures /usr/src/minetest/textures
 WORKDIR /usr/src/minetest
 
 RUN apk add --no-cache git build-base cmake sqlite-dev curl-dev zlib-dev zstd-dev \
-		msgpack-c boost-dev libexecinfo-dev \
+		ninja ccache leveldb snappy msgpack-c boost-dev libexecinfo-dev \
 		gmp-dev jsoncpp-dev postgresql-dev ninja luajit-dev ca-certificates && \
 true
 #	git clone --depth=1 -b ${MINETEST_GAME_VERSION} https://github.com/minetest/minetest_game.git ./games/minetest_game && \
@@ -43,7 +43,7 @@ RUN git clone --depth=1 https://github.com/minetest/irrlicht/ -b ${IRRLICHT_VERS
 	cp -r irrlicht/include /usr/include/irrlichtmt
 
 WORKDIR /usr/src/minetest
-RUN cmake -B build \
+RUN cmake -G Ninja -B build \
         -DRUN_IN_PLACE=0 \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \

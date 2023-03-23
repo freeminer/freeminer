@@ -161,6 +161,9 @@ profiler_autostart () bool false
 # Save freshly generated but not changed block, disable it for reducing map size on big servers
 save_generated_block () bool 1
 
+# Save blocks changed by game
+save_changed_block () bool 1
+
 # Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
 time_taker_enabled () int 0
 

@@ -509,23 +509,27 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 }
 
 //#if TODO
-
-inline u8 diminish_light(u8 light)
+inline u8 diminish_light(u8 light, float amount = 1)
 {
 	if (light == 0)
 		return 0;
+	if (amount < 1) {
+		amount = myrand_range(0, 1) < amount;
+	}
 	if (light >= LIGHT_MAX)
-		return LIGHT_MAX - 1;
+		return LIGHT_MAX - amount;
 
-	return light - 1;
+	return light - amount;
 }
 
+/*
 inline u8 diminish_light(u8 light, u8 distance)
 {
 	if (distance >= light)
 		return 0;
 	return light - distance;
 }
+*/
 
 inline u8 undiminish_light(u8 light)
 {
@@ -1150,13 +1154,14 @@ bool ServerMap::propagateSunlight(
 			for (; y >= 0; --y) {
 				v3pos_t pos(x, y, z);
 				MapNode n = block->getNode(pos);
-
+				const auto &ndef = nodemgr->get(n);
 				if (current_light == 0) {
+					//break;
 					// Do nothing
 				} else if (current_light == LIGHT_SUN &&
-						   nodemgr->get(n).sunlight_propagates) {
+						   ndef.sunlight_propagates) {
 					// Do nothing: Sunlight is continued
-				} else if (nodemgr->get(n).light_propagates == false) {
+				} else if (ndef.light_propagates == false) {
 					// A solid object is on the way.
 					// stopped_to_solid_object = true;
 
@@ -1164,7 +1169,7 @@ bool ServerMap::propagateSunlight(
 					current_light = 0;
 				} else {
 					// Diminish light
-					current_light = diminish_light(current_light);
+					current_light = diminish_light(current_light, ndef.light_vertical_dimnish);
 				}
 
 				u8 old_light = n.getLight(LIGHTBANK_DAY, nodemgr);

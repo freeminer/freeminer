@@ -256,7 +256,7 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2,
 		if not level or level < 1 then level = 1 end
 		core.add_node_level(place_to, level, 1)
 	else
-		core.add_node(place_to, newnode)
+		core.add_node(place_to, newnode, 0, 1)
 	end
 
 	-- Play sound if it was done by a player
@@ -519,7 +519,7 @@ function core.node_dig(pos, node, digger)
 	end
 
 	-- Remove node and update
-	core.remove_node(pos)
+	core.remove_node(pos, 0, 1)
 
 	-- Play sound if it was done by a player
 	if diggername ~= "" and def and def.sounds and def.sounds.dug then

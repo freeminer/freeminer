@@ -164,7 +164,7 @@ public:
 	bool isValidPosition(v3s16 p);
 
 	// throws InvalidPositionException if not found
-	void setNode(v3s16 p, MapNode & n);
+	void setNode(v3s16 p, MapNode & n, bool important = false);
 
 	// Returns a CONTENT_IGNORE node if not found
 	// If is_valid_position is not NULL then this will be set to true if the
@@ -177,18 +177,18 @@ public:
 	virtual void addNodeAndUpdate(v3s16 p, MapNode n,
 			std::map<v3s16, MapBlock*> &modified_blocks,
 			bool remove_metadata = true,
-			int fast = 0
+			int fast = 0, bool important = false
 			);
 	void removeNodeAndUpdate(v3s16 p,
-			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0);
+			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0, bool important = false);
 
 	/*
 		Wrappers for the latter ones.
 		These emit events.
 		Return true if succeeded, false if not.
 	*/
-	bool addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata = true);
-	bool removeNodeWithEvent(v3s16 p);
+	bool addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata = true, bool important = false);
+	bool removeNodeWithEvent(v3s16 p, bool important);
 
 	// Call these before and after saving of many blocks
 	virtual void beginSave() {}
@@ -447,7 +447,7 @@ public:
 	void addNodeAndUpdate(v3s16 p, MapNode n,
 			std::map<v3s16, MapBlock*> &modified_blocks,
 			bool remove_metadata
-			, int fast = 0) override;
+			, int fast = 0, bool important = false) override;
 
 	/*
 		Database functions

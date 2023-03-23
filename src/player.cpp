@@ -71,7 +71,7 @@ Player::Player(const std::string & name, IItemDefManager *idef):
 	movement_liquid_fluidity_smooth = 0.5  * BS;
 	movement_liquid_sink            = 10   * BS;
 	movement_gravity                = 9.81 * BS;
-	movement_fall_aerodynamics      = 210  * BS;
+	movement_fall_aerodynamics      = 500  * BS;
 	local_animation_speed           = 0.0;
 
 	hud_flags =

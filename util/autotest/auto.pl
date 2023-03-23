@@ -493,7 +493,7 @@ our $tasks = {
     build_clang => [{-cmake_clang => 1,}, 'build'],
 
     (
-        map { $_ => [sub { $g->{build_name} .= '_' . $_; 0 }, {keep_config=>1, '---cmake_' . $_ => 1, },],
+        map { my $name = $_; $_ => [sub { $g->{build_name} .= '_' . $name; 0 }, {keep_config=>1, '---cmake_' . $_ => 1, },],
         'build_' . $_ => [$_, 'build',],
          } qw(tsan asan msan usan gperf debug)
     ),
@@ -686,7 +686,7 @@ our $tasks = {
     },
 
     server        => [{-options_add => 'no_exit'}, 'build_server', 'run_server'],
-    server_debug  => [{-options_add => 'no_exit'}, 'build_server_debug', 'run_server'],
+    #server_debug  => [{-options_add => 'no_exit'}, 'build_server_debug', 'run_server'],
     server_gdb    => [{-options_add => 'no_exit'}, ['gdb', 'server_debug']],
     server_gdb_nd => [{-options_add => 'no_exit'}, 'build_server', ['gdb', 'run_server']],
 
@@ -916,7 +916,7 @@ sub commands_run(@);
 
 sub commands_run(@) {
     my $name = shift;
-    # say "commands_run $name ", @_;
+    say "commands_run $name ", @_ if $config->{verbose};
     my $c = $commands->{$name} || $tasks->{$name};
     if ('SCALAR' eq ref $name) {
         commands_run($$name, @_);

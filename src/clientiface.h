@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "threading/concurrent_set.h"
 #include "threading/concurrent_unordered_map.h"
+#include "network/fm_connection_use.h"
 #include "util/unordered_map_hash.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
@@ -174,9 +175,7 @@ class EmergeManager;
                                                     +-----------------------------+
 
 */
-namespace con {
-	class Connection;
-}
+
 
 
 // Also make sure to update the ClientInterface::statenames
@@ -472,7 +471,7 @@ public:
 
 	friend class Server;
 
-	ClientInterface(const std::shared_ptr<con::Connection> &con);
+	ClientInterface(const std::shared_ptr<con_use::Connection> &con);
 	~ClientInterface();
 
 	/* run sync step */
@@ -571,7 +570,7 @@ private:
 	void UpdatePlayerList();
 
 	// Connection
-	std::shared_ptr<con::Connection> m_con;
+	std::shared_ptr<con_use::Connection> m_con;
 	//std::recursive_mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	RemoteClientMap m_clients;

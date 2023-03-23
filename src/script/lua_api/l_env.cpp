@@ -302,7 +302,7 @@ int ModApiEnvMod::l_set_node(lua_State *L)
 	v3s16 pos = read_v3s16(L, 1);
 	MapNode n = readnode(L, 2, ndef);
 	// Do it
-	bool succeeded = env->setNode(pos, n, lua_tonumber(L, 3));
+	bool succeeded = env->setNode(pos, n, lua_tonumber(L, 3), lua_tonumber(L, 4));
 	lua_pushboolean(L, succeeded);
 	return 1;
 }
@@ -345,7 +345,7 @@ int ModApiEnvMod::l_add_node(lua_State *L)
 	return l_set_node(L);
 }
 
-// remove_node(pos, fast)
+// remove_node(pos, fast, important)
 // pos = {x=num, y=num, z=num}
 int ModApiEnvMod::l_remove_node(lua_State *L)
 {
@@ -354,7 +354,7 @@ int ModApiEnvMod::l_remove_node(lua_State *L)
 	// parameters
 	v3s16 pos = read_v3s16(L, 1);
 	// Do it
-	bool succeeded = env->removeNode(pos, lua_tonumber(L, 2));
+	bool succeeded = env->removeNode(pos, lua_tonumber(L, 2), lua_tonumber(L, 3));
 	lua_pushboolean(L, succeeded);
 	return 1;
 }
