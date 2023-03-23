@@ -26,6 +26,7 @@ install_linux_deps() {
 install_macos_deps() {
 	local pkgs=(
 		cmake gettext freetype gmp jpeg-turbo jsoncpp leveldb
+		snappy
 		libogg libpng libvorbis luajit zstd
 	)
 	brew update
