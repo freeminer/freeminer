@@ -1209,6 +1209,8 @@ const char *ConnectionEvent::describe() const
 		return "CONNEVENT_PEER_REMOVED";
 	case CONNEVENT_BIND_FAILED:
 		return "CONNEVENT_BIND_FAILED";
+	case CONNEVENT_CONNECT_FAILED:
+		return "CONNEVENT_CONNECT_FAILED";
 	}
 	return "Invalid ConnectionEvent";
 }
@@ -1467,6 +1469,8 @@ u32 Connection::Receive(NetworkPacket *pkt, u32 timeout)
 		case CONNEVENT_BIND_FAILED:
 			throw ConnectionBindFailed("Failed to bind socket "
 					"(port already in use?)");
+		case CONNEVENT_CONNECT_FAILED:
+			throw ConnectionException("Failed to connect");
 		}
 	}
 	return 0;
