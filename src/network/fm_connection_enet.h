@@ -17,155 +17,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include "network/peerhandler.h"
-#include "socket.h"
-#include "exceptions.h"
-#include "constants.h"
-#include "network/networkpacket.h"
-#include "util/pointer.h"
-#include "util/container.h"
-#include "util/thread.h"
-#include <iostream>
-#include <fstream>
-#include <list>
-#include <map>
 #include "enet/enet.h"
-#include "msgpack_fix.h"
-#include "util/msgpack_serialize.h"
+#include "network/fm_connection_multi.h"
 #include "threading/concurrent_map.h"
 #include "threading/concurrent_unordered_map.h"
+#include "threading/thread_pool.h"
 
-#define CHANNEL_COUNT 3
+// #define CHANNEL_COUNT 3
 
 namespace con_enet
 {
-
-enum ConnectionEventType
-{
-	CONNEVENT_NONE,
-	CONNEVENT_DATA_RECEIVED,
-	CONNEVENT_PEER_ADDED,
-	CONNEVENT_PEER_REMOVED,
-	CONNEVENT_BIND_FAILED,
-	CONNEVENT_CONNECT_FAILED,
-};
-
-struct ConnectionEvent
-{
-	enum ConnectionEventType type;
-	u16 peer_id;
-	Buffer<u8> data;
-	bool timeout;
-	Address address;
-
-	ConnectionEvent(ConnectionEventType type_ = CONNEVENT_NONE) : type(type_) {}
-
-	std::string describe()
-	{
-		switch (type) {
-		case CONNEVENT_NONE:
-			return "CONNEVENT_NONE";
-		case CONNEVENT_DATA_RECEIVED:
-			return "CONNEVENT_DATA_RECEIVED";
-		case CONNEVENT_PEER_ADDED:
-			return "CONNEVENT_PEER_ADDED";
-		case CONNEVENT_PEER_REMOVED:
-			return "CONNEVENT_PEER_REMOVED";
-		case CONNEVENT_BIND_FAILED:
-			return "CONNEVENT_BIND_FAILED";
-		case CONNEVENT_CONNECT_FAILED:
-			return "CONNEVENT_CONNECT_FAILED";
-		}
-		return "Invalid ConnectionEvent";
-	}
-
-	void dataReceived(u16 peer_id_, SharedBuffer<u8> data_)
-	{
-		type = CONNEVENT_DATA_RECEIVED;
-		peer_id = peer_id_;
-		data = data_;
-	}
-	void peerAdded(u16 peer_id_)
-	{
-		type = CONNEVENT_PEER_ADDED;
-		peer_id = peer_id_;
-		// address = address_;
-	}
-	void peerRemoved(u16 peer_id_, bool timeout_)
-	{
-		type = CONNEVENT_PEER_REMOVED;
-		peer_id = peer_id_;
-		timeout = timeout_;
-		// address = address_;
-	}
-	void bindFailed() { type = CONNEVENT_BIND_FAILED; }
-};
-
-enum ConnectionCommandType
-{
-	CONNCMD_NONE,
-	CONNCMD_SERVE,
-	CONNCMD_CONNECT,
-	CONNCMD_DISCONNECT,
-	CONNCMD_DISCONNECT_PEER,
-	CONNCMD_SEND,
-	CONNCMD_SEND_TO_ALL,
-	CONNCMD_DELETE_PEER,
-};
-
-struct ConnectionCommand
-{
-	enum ConnectionCommandType type;
-	Address address;
-	u16 peer_id;
-	u8 channelnum;
-	Buffer<u8> data;
-	bool reliable;
-
-	ConnectionCommand() : type(CONNCMD_NONE) {}
-
-	void serve(Address address_)
-	{
-		type = CONNCMD_SERVE;
-		address = address_;
-	}
-	void connect(Address address_)
-	{
-		type = CONNCMD_CONNECT;
-		address = address_;
-	}
-	void disconnect() { type = CONNCMD_DISCONNECT; }
-	void send(u16 peer_id_, u8 channelnum_, SharedBuffer<u8> data_, bool reliable_)
-	{
-		type = CONNCMD_SEND;
-		peer_id = peer_id_;
-		channelnum = channelnum_;
-		data = data_;
-		reliable = reliable_;
-	}
-	void sendToAll(u8 channelnum_, SharedBuffer<u8> data_, bool reliable_)
-	{
-		type = CONNCMD_SEND_TO_ALL;
-		channelnum = channelnum_;
-		data = data_;
-		reliable = reliable_;
-	}
-	void deletePeer(u16 peer_id_)
-	{
-		type = CONNCMD_DELETE_PEER;
-		peer_id = peer_id_;
-	}
-	void disconnect_peer(u16 peer_id_)
-	{
-		type = CONNCMD_DISCONNECT_PEER;
-		peer_id = peer_id_;
-	}
-};
-
+using namespace con;
 class Connection : public thread_pool
 {
 public:
+	friend con_multi::Connection;
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 			con::PeerHandler *peerhandler = nullptr);
 	~Connection();
@@ -173,41 +39,53 @@ public:
 
 	/* Interface */
 
-	ConnectionEvent getEvent();
-	ConnectionEvent waitEvent(u32 timeout_ms);
-	void putCommand(ConnectionCommand &c);
+	// ConnectionEvent getEvent();
+	// ConnectionEvent waitEvent(u32 timeout_ms);
+	ConnectionEventPtr waitEvent(u32 timeout_ms);
+	void putCommand(ConnectionCommandPtr c);
 
 	void Serve(Address bind_addr);
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
 	u32 Receive(NetworkPacket *pkt, int timeout = 1);
+	bool TryReceive(NetworkPacket *pkt);
+
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
 	u16 GetPeerID() { return m_peer_id; }
 	void DeletePeer(u16 peer_id);
 	Address GetPeerAddress(u16 peer_id);
 	float getPeerStat(u16 peer_id, con::rtt_stat_type type);
+	float getLocalStat(con::rate_stat_type type);
+
 	void DisconnectPeer(u16 peer_id);
 	size_t events_size();
 
 private:
-	void putEvent(ConnectionEvent &e);
-	void processCommand(ConnectionCommand &c);
+	void putEvent(ConnectionEventPtr e);
+	// void putEvent(ConnectionEvent &e);
+	// void processCommand(ConnectionCommand &c);
+	void processCommand(ConnectionCommandPtr c);
 	void send(float dtime);
-	void receive();
+	int receive();
 	void runTimeouts(float dtime);
 	void serve(Address address);
 	void connect(Address address);
 	void disconnect();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+
+protected:
 	ENetPeer *getPeer(u16 peer_id);
+
+private:
 	bool deletePeer(u16 peer_id, bool timeout);
 
-	MutexedQueue<ConnectionEvent> m_event_queue;
-	MutexedQueue<ConnectionCommand> m_command_queue;
+	MutexedQueue<ConnectionEventPtr> m_event_queue;
+	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 
 	u32 m_protocol_id;
 	u32 m_max_packet_size;

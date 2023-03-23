@@ -612,6 +612,7 @@ add_subdirectory(server)
 OPTION(USE_MULTI "Enable MT+SCTP networking" 0)
 if(USE_MULTI)
 	set(ENABLE_SCTP 1)
+	set(USE_ENET 1)
 endif()
 
 OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)

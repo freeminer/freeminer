@@ -28,9 +28,13 @@ class NetworkPacket;
 
 namespace con
 {
-  class Connection;
+class Connection;
 }
 namespace con_sctp
+{
+class Connection;
+}
+namespace con_enet
 {
 class Connection;
 }
@@ -63,6 +67,9 @@ public:
 private:
 #if USE_SCTP
 	std::shared_ptr<con_sctp::Connection> m_con_sctp;
+#endif
+#if USE_ENET
+	std::shared_ptr<con_enet::Connection> m_con_enet;
 #endif
 #if MINETEST_TRANSPORT
 	std::shared_ptr<con::Connection> m_con;

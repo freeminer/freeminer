@@ -190,6 +190,8 @@ void *Connection::run()
 		}
 	}
 
+	disconnect();
+
 	return nullptr;
 }
 
@@ -1140,7 +1142,6 @@ u32 Connection::Receive(NetworkPacket *pkt, int timeout)
 		}
 	}
 	return 0;
-	// throw NoIncomingDataException("No incoming data");
 }
 
 bool Connection::TryReceive(NetworkPacket *pkt)
@@ -1215,6 +1216,7 @@ float Connection::getPeerStat(session_t peer_id, rtt_stat_type type)
 {
 	return 0;
 }
+
 float Connection::getLocalStat(con::rate_stat_type type)
 {
 	return 0;

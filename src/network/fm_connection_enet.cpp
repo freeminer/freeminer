@@ -16,18 +16,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "config.h"
-
 #if USE_ENET
 
 #include "fm_connection_enet.h"
-#include "serialization.h"
-#include "log.h"
-#include "porting.h"
-#include "util/serialize.h"
-#include "util/numeric.h"
-#include "util/string.h"
+#include "network/networkpacket.h"
+#include "network/peerhandler.h"
 #include "settings.h"
-#include "profiler.h"
 
 namespace con_enet
 {
@@ -114,7 +108,23 @@ Connection::~Connection()
 }
 
 /* Internal stuff */
+void *Connection::run()
+{
+	while (!stopRequested()) {
+		while (!m_command_queue.empty()) {
+			auto c = m_command_queue.pop_frontNoEx();
+			processCommand(c);
+		}
+		if (receive() <= 0) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
+	}
+	disconnect();
 
+	return nullptr;
+}
+
+/*
 void *Connection::run()
 {
 	while (!stopRequested()) {
@@ -130,28 +140,27 @@ void *Connection::run()
 	disconnect();
 
 	return nullptr;
-}
-
-void Connection::putEvent(ConnectionEvent &e)
+}*/
+void Connection::putEvent(ConnectionEventPtr e)
 {
-	// if(e.type == CONNEVENT_NONE) return;
+	assert(e->type != CONNEVENT_NONE); // Pre-condition
 	m_event_queue.push_back(e);
 }
 
-void Connection::processCommand(ConnectionCommand &c)
+void Connection::processCommand(ConnectionCommandPtr c)
 {
-	switch (c.type) {
+	switch (c->type) {
 	case CONNCMD_NONE:
 		dout_con << getDesc() << " processing CONNCMD_NONE" << std::endl;
 		return;
 	case CONNCMD_SERVE:
-		dout_con << getDesc() << " processing CONNCMD_SERVE port=" << c.address.getPort()
+		dout_con << getDesc() << " processing CONNCMD_SERVE port=" << c->address.getPort()
 				 << std::endl;
-		serve(c.address);
+		serve(c->address);
 		return;
 	case CONNCMD_CONNECT:
 		dout_con << getDesc() << " processing CONNCMD_CONNECT" << std::endl;
-		connect(c.address);
+		connect(c->address);
 		return;
 	case CONNCMD_DISCONNECT:
 		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
@@ -159,32 +168,38 @@ void Connection::processCommand(ConnectionCommand &c)
 		return;
 	case CONNCMD_DISCONNECT_PEER:
 		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
-		deletePeer(c.peer_id, false); // its correct ?
+		deletePeer(c->peer_id, false); // its correct ?
 		// DisconnectPeer(c.peer_id);
 		return;
 	case CONNCMD_SEND:
 		dout_con << getDesc() << " processing CONNCMD_SEND" << std::endl;
-		send(c.peer_id, c.channelnum, c.data, c.reliable);
+		send(c->peer_id, c->channelnum, c->data, c->reliable);
 		return;
 	case CONNCMD_SEND_TO_ALL:
 		dout_con << getDesc() << " processing CONNCMD_SEND_TO_ALL" << std::endl;
-		sendToAll(c.channelnum, c.data, c.reliable);
+		sendToAll(c->channelnum, c->data, c->reliable);
 		return;
+	/*
 	case CONNCMD_DELETE_PEER:
 		dout_con << getDesc() << " processing CONNCMD_DELETE_PEER" << std::endl;
-		deletePeer(c.peer_id, false);
+		deletePeer(c->peer_id, false);
 		return;
+	*/
+	case con::CONCMD_ACK:
+	case con::CONCMD_CREATE_PEER:
+		break;
 	}
 }
 
 // Receive packets from the network and buffers and create ConnectionEvents
-void Connection::receive()
+int Connection::receive()
 {
+	int ret = 0;
 	if (!m_enet_host) {
-		return;
+		return ret;
 	}
 	ENetEvent event;
-	int ret = enet_host_service(m_enet_host, &event, 10);
+	ret += enet_host_service(m_enet_host, &event, 10);
 	if (ret > 0) {
 		m_last_recieved = porting::getTimeMs();
 		m_last_recieved_warn = 0;
@@ -222,15 +237,13 @@ void Connection::receive()
 			*((u16 *)event.peer->data) = peer_id;
 
 			// Create peer addition event
-			ConnectionEvent e;
-			e.peerAdded(peer_id);
-			putEvent(e);
+			putEvent(ConnectionEvent::peerAdded(peer_id, addr));
+
 		} break;
 		case ENET_EVENT_TYPE_RECEIVE: {
-			ConnectionEvent e;
+			const auto peer_id = *(u16 *)event.peer->data;
 			SharedBuffer<u8> resultdata(event.packet->data, event.packet->dataLength);
-			e.dataReceived(*(u16 *)event.peer->data, resultdata);
-			putEvent(e);
+			putEvent(ConnectionEvent::dataReceived(peer_id, resultdata));
 		}
 
 			/* Clean up the packet now that we're done using it. */
@@ -280,6 +293,7 @@ void Connection::receive()
 			}
 		}
 	}
+	return ret;
 }
 
 // host
@@ -297,8 +311,7 @@ void Connection::serve(Address bind_addr)
 	m_enet_host = enet_host_create(
 			&address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
 	if (!m_enet_host) {
-		ConnectionEvent ev(CONNEVENT_BIND_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::bindFailed());
 	}
 }
 
@@ -310,15 +323,12 @@ void Connection::connect(Address addr)
 	// m_peers.lock_unique_rec();
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if (node != m_peers.end()) {
-		// throw ConnectionException("Already connected to a server");
-		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::connectFailed());
 	}
 
 	m_enet_host = enet_host_create(NULL, 1, 0, 0, 0);
 	if (!m_enet_host) {
-		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::connectFailed());
 		return;
 	}
 	ENetAddress address = {};
@@ -352,8 +362,7 @@ void Connection::connect(Address addr)
 	} else {
 		errorstream << "connect enet_host_service ret=" << ret
 					<< " event.type=" << event.type << std::endl;
-		ConnectionEvent ev(CONNEVENT_CONNECT_FAILED);
-		putEvent(ev);
+		putEvent(ConnectionEvent::connectFailed());
 
 		/* Either the 5 seconds are up or a disconnect event was */
 		/* received. Reset the peer in the event the 5 seconds   */
@@ -426,9 +435,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout)
 		return false;
 
 	// Create event
-	ConnectionEvent e;
-	e.peerRemoved(peer_id, timeout);
-	putEvent(e);
+	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
 
 	// delete m_peers[peer_id]; -- enet should handle this
 	m_peers.erase(peer_id);
@@ -437,7 +444,7 @@ bool Connection::deletePeer(u16 peer_id, bool timeout)
 }
 
 /* Interface */
-
+/*
 ConnectionEvent Connection::getEvent()
 {
 	if (m_event_queue.empty()) {
@@ -447,46 +454,42 @@ ConnectionEvent Connection::getEvent()
 	}
 	return m_event_queue.pop_frontNoEx();
 }
-
+*/
 size_t Connection::events_size()
 {
 	return m_event_queue.size();
 }
 
-ConnectionEvent Connection::waitEvent(u32 timeout_ms)
+ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 {
 	try {
 		return m_event_queue.pop_front(timeout_ms);
-	} catch (ItemNotFoundException &ex) {
-		ConnectionEvent e;
-		e.type = CONNEVENT_NONE;
-		return e;
+	} catch (const ItemNotFoundException &ex) {
+		return ConnectionEvent::create(CONNEVENT_NONE);
 	}
 }
 
-void Connection::putCommand(ConnectionCommand &c)
+void Connection::putCommand(ConnectionCommandPtr c)
 {
-	m_command_queue.push_back(c);
+	// TODO? if (!m_shutting_down)
+	{
+		m_command_queue.push_back(c);
+		// m_sendThread->Trigger();
+	}
 }
 
-void Connection::Serve(Address bind_address)
+void Connection::Serve(Address bind_addr)
 {
-	ConnectionCommand c;
-	c.serve(bind_address);
-	putCommand(c);
+	putCommand(ConnectionCommand::serve(bind_addr));
 }
 
 void Connection::Connect(Address address)
 {
-	ConnectionCommand c;
-	c.connect(address);
-	putCommand(c);
+	putCommand(ConnectionCommand::connect(address));
 }
 
 bool Connection::Connected()
 {
-	// MutexAutoLock peerlock(m_peers_mutex);
-
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if (node == m_peers.end())
 		return false;
@@ -503,36 +506,34 @@ bool Connection::Connected()
 
 void Connection::Disconnect()
 {
-	ConnectionCommand c;
-	c.disconnect();
-	putCommand(c);
+	putCommand(ConnectionCommand::disconnect());
 }
 
 u32 Connection::Receive(NetworkPacket *pkt, int timeout)
 {
 	for (;;) {
-		ConnectionEvent e = waitEvent(timeout);
-		if (e.type != CONNEVENT_NONE)
-			dout_con << getDesc() << ": Receive: got event: " << e.describe()
+		auto e = waitEvent(timeout);
+		if (e->type != CONNEVENT_NONE)
+			dout_con << getDesc() << ": Receive: got event: " << e->describe()
 					 << std::endl;
-		switch (e.type) {
+		switch (e->type) {
 		case CONNEVENT_NONE:
 			// throw NoIncomingDataException("No incoming data");
 			return 0;
 		case CONNEVENT_DATA_RECEIVED:
-			if (e.data.getSize() < 2) {
+			if (e->data.getSize() < 2) {
 				continue;
 			}
-			pkt->putRawPacket(*e.data, e.data.getSize(), e.peer_id);
-			return e.data.getSize();
+			pkt->putRawPacket(*e->data, e->data.getSize(), e->peer_id);
+			return e->data.getSize();
 		case CONNEVENT_PEER_ADDED: {
 			if (m_bc_peerhandler)
-				m_bc_peerhandler->peerAdded(e.peer_id);
+				m_bc_peerhandler->peerAdded(e->peer_id);
 			continue;
 		}
 		case CONNEVENT_PEER_REMOVED: {
 			if (m_bc_peerhandler)
-				m_bc_peerhandler->deletingPeer(e.peer_id, e.timeout);
+				m_bc_peerhandler->deletingPeer(e->peer_id, e->timeout);
 			continue;
 		}
 		case CONNEVENT_BIND_FAILED:
@@ -543,9 +544,14 @@ u32 Connection::Receive(NetworkPacket *pkt, int timeout)
 		}
 	}
 	return 0;
-	// throw NoIncomingDataException("No incoming data");
 }
 
+bool Connection::TryReceive(NetworkPacket *pkt)
+{
+	return Receive(pkt, 0);
+}
+
+/*
 void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	assert(channelnum < CHANNEL_COUNT);
@@ -554,14 +560,19 @@ void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 	c.sendToAll(channelnum, data, reliable);
 	putCommand(c);
 }
+*/
+
+void Connection::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
+{
+	assert(channelnum < CHANNEL_COUNT); // Pre-condition
+
+	putCommand(con::ConnectionCommand::send(peer_id, channelnum, pkt, reliable));
+}
 
 void Connection::Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	assert(channelnum < CHANNEL_COUNT);
-
-	ConnectionCommand c;
-	c.send(peer_id, channelnum, data, reliable);
-	putCommand(c);
+	putCommand(ConnectionCommand::send(peer_id, channelnum, data, reliable));
 }
 
 void Connection::Send(
@@ -587,12 +598,14 @@ Address Connection::GetPeerAddress(u16 peer_id)
 	*/
 }
 
+/*
 void Connection::DeletePeer(u16 peer_id)
 {
 	ConnectionCommand c;
 	c.deletePeer(peer_id);
 	putCommand(c);
 }
+*/
 
 void Connection::PrintInfo(std::ostream &out)
 {
@@ -615,11 +628,14 @@ float Connection::getPeerStat(u16 peer_id, con::rtt_stat_type type)
 	return 0;
 }
 
+float Connection::getLocalStat(con::rate_stat_type type)
+{
+	return 0;
+}
+
 void Connection::DisconnectPeer(u16 peer_id)
 {
-	ConnectionCommand discon;
-	discon.disconnect_peer(peer_id);
-	putCommand(discon);
+	putCommand(ConnectionCommand::disconnect_peer(peer_id));
 }
 
 } // namespace
