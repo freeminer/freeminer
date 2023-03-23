@@ -46,30 +46,36 @@ Connection::~Connection()
 {
 }
 
-void Connection::Serve(Address bind_addr)
+void Connection::Serve(Address bind_address)
 {
+	infostream << "Multi serving at " << bind_address.serializeString() << ":"
+			   << std::to_string(bind_address.getPort()) << std::endl;
+
 #if USE_SCTP
 	if (m_con_sctp) {
-		auto addr = bind_addr;
+		auto addr = bind_address;
 		addr.setPort(addr.getPort() + 100);
 		m_con_sctp->Serve(addr);
 	}
 #endif
-#if MINETEST_TRANSPORT
-	if (m_con)
-		m_con->Serve(bind_addr);
-#endif
 #if USE_ENET
 	if (m_con_enet) {
-		auto addr = bind_addr;
+		auto addr = bind_address;
 		addr.setPort(addr.getPort() + 200);
 		m_con_enet->Serve(addr);
 	}
+#endif
+#if MINETEST_TRANSPORT
+	if (m_con)
+		m_con->Serve(bind_address);
 #endif
 }
 
 void Connection::Connect(Address address)
 {
+	infostream << "Multi connect to " << address.serializeString() << ":"
+			   << std::to_string(address.getPort()) << std::endl;
+
 #if USE_SCTP
 	if (m_con_sctp)
 		m_con_sctp->Connect(address);

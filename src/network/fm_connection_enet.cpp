@@ -19,6 +19,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_ENET
 
 #include "fm_connection_enet.h"
+#include "log.h"
 #include "network/networkpacket.h"
 #include "network/peerhandler.h"
 #include "settings.h"
@@ -111,6 +112,7 @@ Connection::~Connection()
 void *Connection::run()
 {
 	while (!stopRequested()) {
+		EXCEPTION_HANDLER_BEGIN;
 		while (!m_command_queue.empty()) {
 			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
@@ -118,29 +120,13 @@ void *Connection::run()
 		if (receive() <= 0) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
+		EXCEPTION_HANDLER_END;
 	}
 	disconnect();
 
 	return nullptr;
 }
 
-/*
-void *Connection::run()
-{
-	while (!stopRequested()) {
-		EXCEPTION_HANDLER_BEGIN;
-		while (!m_command_queue.empty()) {
-			ConnectionCommand c = m_command_queue.pop_frontNoEx();
-			processCommand(c);
-		}
-		receive();
-		EXCEPTION_HANDLER_END;
-	}
-
-	disconnect();
-
-	return nullptr;
-}*/
 void Connection::putEvent(ConnectionEventPtr e)
 {
 	assert(e->type != CONNEVENT_NONE); // Pre-condition
@@ -297,16 +283,19 @@ int Connection::receive()
 }
 
 // host
-void Connection::serve(Address bind_addr)
+void Connection::serve(Address bind_address)
 {
+	infostream << getDesc() << "Enet UDP serving at " << bind_address.serializeString()
+			   << ":" << std::to_string(bind_address.getPort()) << std::endl;
+
 	ENetAddress address = {};
 #if defined(ENET_IPV6)
-	address.host = bind_addr.getAddress6().sin6_addr; // in6addr_any;
-	address.sin6_scope_id = bind_addr.getAddress6().sin6_scope_id;
+	address.host = bind_address.getAddress6().sin6_addr; // in6addr_any;
+	address.sin6_scope_id = bind_address.getAddress6().sin6_scope_id;
 #else
-	address.host = bind_addr.getAddress().sin_addr.s_addr; // ENET_HOST_ANY;
+	address.host = bind_address.getAddress().sin_addr.s_addr; // ENET_HOST_ANY;
 #endif
-	address.port = bind_addr.getPort(); // fmtodo
+	address.port = bind_address.getPort(); // fmtodo
 
 	m_enet_host = enet_host_create(
 			&address, g_settings->getU16("max_users"), CHANNEL_COUNT, 0, 0);
@@ -316,8 +305,11 @@ void Connection::serve(Address bind_addr)
 }
 
 // peer
-void Connection::connect(Address addr)
+void Connection::connect(Address address)
 {
+	infostream << getDesc() << "Enet connect to " << address.serializeString() << ":"
+			   << std::to_string(address.getPort()) << std::endl;
+
 	m_last_recieved = porting::getTimeMs();
 	// MutexAutoLock peerlock(m_peers_mutex);
 	// m_peers.lock_unique_rec();
@@ -331,13 +323,14 @@ void Connection::connect(Address addr)
 		putEvent(ConnectionEvent::connectFailed());
 		return;
 	}
-	ENetAddress address = {};
+	ENetAddress eaddress = {};
 #if defined(ENET_IPV6)
-	if (!addr.isIPv6()) {
-		inet_pton(AF_INET6, ("::ffff:" + addr.serializeString()).c_str(), &address.host);
+	if (!address.isIPv6()) {
+		inet_pton(AF_INET6, ("::ffff:" + address.serializeString()).c_str(),
+				&eaddress.host);
 	} else {
-		address.host = addr.getAddress6().sin6_addr;
-		address.sin6_scope_id = addr.getAddress6().sin6_scope_id;
+		eaddress.host = address.getAddress6().sin6_addr;
+		eaddress.sin6_scope_id = address.getAddress6().sin6_scope_id;
 	}
 #else
 	if (addr.isIPv6()) {
@@ -349,8 +342,8 @@ void Connection::connect(Address addr)
 	}
 #endif
 
-	address.port = addr.getPort();
-	ENetPeer *peer = enet_host_connect(m_enet_host, &address, CHANNEL_COUNT, 0);
+	eaddress.port = address.getPort();
+	ENetPeer *peer = enet_host_connect(m_enet_host, &eaddress, CHANNEL_COUNT, 0);
 	peer->data = new u16;
 	*((u16 *)peer->data) = PEER_ID_SERVER;
 
@@ -358,7 +351,7 @@ void Connection::connect(Address addr)
 	int ret = enet_host_service(m_enet_host, &event, /*CONNECTION_TIMEOUT*/ 10 * 1000);
 	if (ret > 0 && event.type == ENET_EVENT_TYPE_CONNECT) {
 		m_peers.emplace(PEER_ID_SERVER, peer);
-		m_peers_address.emplace(PEER_ID_SERVER, addr);
+		m_peers_address.emplace(PEER_ID_SERVER, address);
 	} else {
 		errorstream << "connect enet_host_service ret=" << ret
 					<< " event.type=" << event.type << std::endl;

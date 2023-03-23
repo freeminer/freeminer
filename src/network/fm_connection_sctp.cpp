@@ -745,11 +745,11 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 }
 
 // host
-void Connection::serve(Address bind_addr)
+void Connection::serve(Address bind_address)
 {
-	cs << "serve() " << bind_addr.serializeString() << " :" << bind_addr.getPort()
-	   << std::endl;
-	sctp_setup(bind_addr.getPort());
+	infostream << getDesc() << "SCTP serving at " << bind_address.serializeString() << ":" << std::to_string(bind_address.getPort()) << std::endl;
+
+	sctp_setup(bind_address.getPort());
 
 	if ((sock = usrsctp_socket(
 				 PF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
@@ -762,20 +762,20 @@ void Connection::serve(Address bind_addr)
 
 	struct sockaddr_in6 addr = {};
 
-	if (!bind_addr.isIPv6()) {
+	if (!bind_address.isIPv6()) {
 		cs << "connect() transform to v6 " << __LINE__ << std::endl;
 
-		inet_pton(AF_INET6, ("::ffff:" + bind_addr.serializeString()).c_str(),
+		inet_pton(AF_INET6, ("::ffff:" + bind_address.serializeString()).c_str(),
 				&addr.sin6_addr);
 	} else {
-		addr = bind_addr.getAddress6();
+		addr = bind_address.getAddress6();
 	}
 
 #ifdef HAVE_SIN6_LEN
 	addr.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	addr.sin6_family = AF_INET6;
-	addr.sin6_port = htons(bind_addr.getPort()); // htons(13);
+	addr.sin6_port = htons(bind_address.getPort()); // htons(13);
 	cs << "Waiting for connections on sctp port " << ntohs(addr.sin6_port) << "\n";
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
 		perror("usrsctp_bind");
@@ -790,11 +790,11 @@ void Connection::serve(Address bind_addr)
 }
 
 // peer
-void Connection::connect(Address addr)
+void Connection::connect(Address address)
 {
-	cs << "connect() " << addr.serializeString() << " :" << addr.getPort() << std::endl;
+	infostream << getDesc() << "SCTP connect to " << address.serializeString() << ":" << std::to_string(address.getPort()) << std::endl;
 
-	sctp_setup(addr.getPort() + myrand_range(100, 1000));
+	sctp_setup(address.getPort() + myrand_range(100, 1000));
 
 	m_last_recieved = porting::getTimeMs();
 	auto node = m_peers.find(PEER_ID_SERVER);
@@ -816,11 +816,11 @@ void Connection::connect(Address addr)
 
 	m_peers.insert_or_assign(PEER_ID_SERVER, sock);
 
-	cs << "connect() using encaps " << addr.getPort() << std::endl;
+	cs << "connect() using encaps " << address.getPort() << std::endl;
 
 	sctp_udpencaps encaps = {};
 	encaps.sue_address.ss_family = AF_INET6;
-	encaps.sue_port = htons(addr.getPort());
+	encaps.sue_port = htons(address.getPort());
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT,
 				(const void *)&encaps, (socklen_t)sizeof(encaps)) < 0) {
 		cs << ("connect setsockopt fail") << std::endl;
@@ -841,22 +841,22 @@ void Connection::connect(Address addr)
 
 	addr6 = {};
 
-	if (!addr.isIPv6()) {
-		cs << "connect() transform to v6 " << addr.serializeString() << std::endl;
-		if (addr.serializeString() == "127.0.0.1")
+	if (!address.isIPv6()) {
+		cs << "connect() transform to v6 " << address.serializeString() << std::endl;
+		if (address.serializeString() == "127.0.0.1")
 			addr6.sin6_addr = in6addr_loopback;
 		else
-			inet_pton(AF_INET6, ("::ffff:" + addr.serializeString()).c_str(),
+			inet_pton(AF_INET6, ("::ffff:" + address.serializeString()).c_str(),
 					&addr6.sin6_addr);
 	} else {
-		addr6 = addr.getAddress6();
+		addr6 = address.getAddress6();
 	}
 
 #ifdef HAVE_SIN6_LEN
 	addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
 	addr6.sin6_family = AF_INET6;
-	addr6.sin6_port = htons(addr.getPort());
+	addr6.sin6_port = htons(address.getPort());
 
 	usrsctp_set_non_blocking(sock, 1);
 
