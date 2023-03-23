@@ -617,7 +617,8 @@ private:
 
 public:
 	// server connection
-	std::shared_ptr<con::Connection> m_con;
+	std::shared_ptr<con_use::Connection> m_con;
+
 private:
 
 	// Ban checking

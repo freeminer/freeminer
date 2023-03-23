@@ -16,8 +16,6 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSI
   set(ENABLE_SYSTEM_MSGPACK 1)
 endif()
 
-
-# msgpack 1.2.0 recompiles all .h every cmake run - it cause recompile all freeminer src.
 if(NOT ENABLE_SYSTEM_MSGPACK AND NOT MSGPACK_LIBRARY)
 	FIND_PATH(MSGPACK_INCLUDE_DIR msgpack.hpp PATHS ${CMAKE_HOME_DIRECTORY}/src/external/msgpack-c/include NO_DEFAULT_PATH)
 	FIND_LIBRARY(MSGPACK_LIBRARY NAMES libmsgpackc.a msgpackc msgpack PATHS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/src/external/msgpack-c NO_DEFAULT_PATH)
@@ -50,14 +48,14 @@ elseif(NOT MSGPACK_LIBRARY)
 	set(MSGPACK_BUILD_TESTS OFF CACHE INTERNAL "")
 	set(MSGPACK_USE_BOOST 0 CACHE INTERNAL "")
 	set(MSGPACK_USE_STATIC_BOOST 1 CACHE INTERNAL "")
+	set(MSGPACK_BUILD_DOCS 0 CACHE INTERNAL "")
+
 	if(MSVC)
 		set(MSGPACK_ENABLE_SHARED OFF CACHE INTERNAL "")
 		set(GLOBAL MSGPACK_ENABLE_STATIC ON CACHE INTERNAL "")
 	endif()
 	add_subdirectory(${PROJECT_SOURCE_DIR}/external/msgpack-c)
-	#include_directories(${PROJECT_SOURCE_DIR}/src/external/msgpack-c/include)
-	#set(MSGPACK_LIBRARY msgpackc-static) # before 1.4.0 was msgpack-static
-	set(MSGPACK_LIBRARY msgpackc-cxx)
+	set(MSGPACK_LIBRARY msgpack-cxx)
 	set(MSGPACK_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/external/msgpack-c/include)
 	message(STATUS "Using bundled msgpack ${MSGPACK_INCLUDE_DIR} ${MSGPACK_LIBRARY}")
 endif()

@@ -67,6 +67,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "server.h"
 #include "emerge.h"
+#include "network/fm_connection_use.h"
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
@@ -134,7 +135,7 @@ Client::Client(
 		tsrc, this
 	),
 	m_particle_manager(&m_env),
-	m_con(new con::Connection(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this)),
+	m_con(new con_use::Connection(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this)),
 	m_address_name(address_name),
 	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
@@ -2060,21 +2061,13 @@ void Client::afterContentReceived()
 
 float Client::getRTT()
 {
-#if MINETEST_TRANSPORT
 	return m_con->getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
-#else
-	return 0;
-#endif
 }
 
 float Client::getCurRate()
 {
-#if MINETEST_TRANSPORT
 	return (m_con->getLocalStat(con::CUR_INC_RATE) +
 			m_con->getLocalStat(con::CUR_DL_RATE));
-#else
-	return 0;
-#endif
 }
 
 void Client::makeScreenshot(const std::string & name)

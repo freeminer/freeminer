@@ -40,6 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/thread_pool.h"
 #include "util/unordered_map_hash.h"
 #include "msgpack_fix.h"
+#include "network/fm_connection_use.h"
 
 #include "mapnode.h"
 #include "tileanimation.h"
@@ -76,9 +77,7 @@ class Minimap;
 struct MinimapMapblock;
 class Camera;
 class NetworkPacket;
-namespace con {
-class Connection;
-}
+
 
 enum LocalClientState {
 	LC_Created,
@@ -514,7 +513,7 @@ public:
 private:
 	ParticleManager m_particle_manager;
 public:
-	std::unique_ptr<con::Connection> m_con;
+	std::unique_ptr<con_use::Connection> m_con;
 private:
 	std::string m_address_name;
 	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;

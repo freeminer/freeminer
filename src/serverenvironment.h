@@ -355,8 +355,8 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3pos_t p, const MapNode &n, s16 fast = 0);
-	bool removeNode(v3pos_t p, s16 fast = 0);
+	bool setNode(v3pos_t p, const MapNode &n, s16 fast = 0, bool important = false);
+	bool removeNode(v3pos_t p, s16 fast = 0, bool important = false);
 	bool swapNode(v3pos_t p, const MapNode &n);
 
 	// Find the daylight value at pos with a Depth First Search

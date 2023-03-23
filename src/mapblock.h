@@ -128,7 +128,7 @@ public:
 	*/
 
 	enum modified_light {modified_light_no = 0, modified_light_yes};
-	void raiseModified(u32 mod, modified_light light = modified_light_no);
+	void raiseModified(u32 mod, modified_light light = modified_light_no, bool important = false);
 	
 	MapNode* getData()
 	{
@@ -138,9 +138,9 @@ public:
 	////
 	//// Modification tracking methods
 	////
-	void raiseModified(u32 mod, u32 reason)
+	void raiseModified(u32 mod, u32 reason, bool important = false)
 	{
-		raiseModified(mod, modified_light_no);
+		raiseModified(mod, modified_light_no, important);
 #ifdef WTFdebug
 		if (mod > m_modified) {
 			m_modified = mod;
@@ -402,7 +402,7 @@ public:
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK);
 	}
 
-	inline void setNodeNoCheck(v3pos_t p, MapNode & n)
+	inline void setNodeNoCheck(v3pos_t p, MapNode & n, bool important = false)
 	{
 /*
 		if (data == NULL)
@@ -412,7 +412,7 @@ public:
 		auto lock = lock_unique_rec();
 
 		data[p.Z * zstride + p.Y * ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK);
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
 	}
 
 	// These functions consult the parent container if the position

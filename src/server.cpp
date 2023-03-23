@@ -258,7 +258,7 @@ Server::Server(
 	m_simple_singleplayer_mode(simple_singleplayer_mode),
 	m_dedicated(dedicated),
 	m_async_fatal_error(""),
-	m_con(std::make_shared<con::Connection>(PROTOCOL_ID,
+	m_con(std::make_shared<con_use::Connection>(PROTOCOL_ID,
 			simple_singleplayer_mode ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE,
 			CONNECTION_TIMEOUT,
 			m_bind_addr.isIPv6(),
@@ -627,36 +627,43 @@ void Server::start()
 		<< "      \\/ \\/     \\/         \\/                  \\/   " << std::endl;
 */
 
-	 actionstream
-	 << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash << "\033[0m \t"
+	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash
+				 << "\033[0m \t"
 #if ENABLE_THREADS
-			<< " THREADS \t"
+				 << " threads \t"
 #endif
 #ifndef NDEBUG
-			<< " DEBUG \t"
+				 << " debug \t"
+#endif
+#if USE_MULTI
+				 << " multi: \t"
 #endif
 #if MINETEST_PROTO && MINETEST_TRANSPORT
-			<< " MINETEST_PROTO \t"
+				 << " mt " << SERVER_PROTOCOL_VERSION_MIN << "-"
+				 << SERVER_PROTOCOL_VERSION_MAX << "\t"
 #endif
 #if USE_SCTP
-			<< " SCTP \t"
+				 << " sctp \t"
+#endif
+#if USE_ENET
+				 << " enet \t"
 #endif
 #if USE_POS32
 			<< " POS32 \t"
 #endif
-			<< " cpp=" <<__cplusplus << " \t"
+				 << " cpp=" << __cplusplus << " \t"
 
-			<< " cores=";
-	auto cores_online = std::thread::hardware_concurrency(), cores_avail = Thread::getNumberOfProcessors();
+				 << " cores=";
+	auto cores_online = std::thread::hardware_concurrency(),
+		 cores_avail = Thread::getNumberOfProcessors();
 	if (cores_online != cores_avail)
 		actionstream << cores_online << "/";
 	actionstream << cores_avail
 
 #if __ANDROID__
-			<< " android=" << porting::android_version_sdk_int
+				 << " android=" << porting::android_version_sdk_int
 #endif
-			<< std::endl;
-
+				 << std::endl;
 
 	actionstream << "World at [" << m_path_world << "]" << std::endl;
 	actionstream << "Server for gameid=\"" << m_gamespec.id

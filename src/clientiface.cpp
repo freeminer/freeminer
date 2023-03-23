@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "clientiface.h"
 #include "irr_v3d.h"
 #include "log.h"
-#include "network/connection.h"
+#include "network/fm_connection_use.h"
 #include "network/serveropcodes.h"
 #include "remoteplayer.h"
 #include "settings.h"
@@ -668,7 +668,7 @@ u64 RemoteClient::uptime() const
 	return porting::getTimeS() - m_connection_time;
 }
 
-ClientInterface::ClientInterface(const std::shared_ptr<con::Connection> & con)
+ClientInterface::ClientInterface(const std::shared_ptr<con_use::Connection> & con)
 :
 	m_con(con),
 	m_env(NULL),
