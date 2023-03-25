@@ -8,7 +8,7 @@ local gamepath   = scriptpath .. "game".. DIR_DELIM
 local builtin_shared = {}
 
 dofile(gamepath .. "constants.lua")
-dofile(gamepath .. "item_s.lua")
+assert(loadfile(commonpath .. "item_s.lua"))(builtin_shared)
 assert(loadfile(gamepath .. "item.lua"))(builtin_shared)
 dofile(gamepath .. "register.lua")
 
@@ -42,5 +42,7 @@ dofile(gamepath.."stat.lua")
 if core.setting_getbool("mod_debugging") then
 	dofile(gamepath.."mod_debugging.lua")
 end
+
+core.after(0, builtin_shared.cache_content_ids)
 
 profiler = nil

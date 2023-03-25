@@ -627,7 +627,7 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 	// 1). Attempt to fetch block from memory
 	*block = m_map->getBlockNoCreateNoEx(pos, false, true);
 	}
-	if (*block && !(*block)->isDummy()) {
+	if (*block) {
 		if ((*block)->isGenerated())
 			return EMERGE_FROM_MEMORY;
 	}
@@ -780,8 +780,13 @@ void *EmergeThread::run()
 			verbosestream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
 		}
 
-		if (!modified_blocks.empty())
-			m_server->SetBlocksNotSent(/*modified_blocks*/);
+		if (!modified_blocks.empty()) {
+			MapEditEvent event;
+			event.type = MEET_OTHER;
+			event.setModifiedBlocks(modified_blocks);
+			//MutexAutoLock envlock(m_server->m_env_mutex);
+			m_map->dispatchEvent(event);
+		}
 		modified_blocks.clear();
 
 		if (m_mapgen->heat_cache.size() > 1000) {

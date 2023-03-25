@@ -51,7 +51,8 @@ struct ActiveABM;
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
 // fm:
-static MapNode ignoreNode(CONTENT_IGNORE);
+static MapNode ignoreNode{CONTENT_IGNORE};
+
 struct abm_trigger_one {
 	ActiveABM * abm;
 	v3pos_t pos;
@@ -96,7 +97,7 @@ class MapBlock
 : public locker<>
 {
 public:
-	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef, bool dummy=false);
+	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef);
 	~MapBlock();
 
 	/*virtual u16 nodeContainerId() const
@@ -112,14 +113,14 @@ public:
 	void reallocate()
 	{
 		auto lock = lock_unique_rec();
-		if(data != NULL)
-			delete data;
-		data = reinterpret_cast<MapNode*>( ::operator new(nodecount * sizeof(MapNode)));
+		//data = reinterpret_cast<MapNode*>( ::operator new(nodecount * sizeof(MapNode)));
 		if constexpr(!CONTENT_IGNORE)
 			memset(data, 0, nodecount * sizeof(MapNode));
 		else
 		for (u32 i = 0; i < nodecount; i++)
 			data[i] = ignoreNode;
+
+		//raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_REALLOCATE);
 	}
 
 	/*
@@ -170,18 +171,6 @@ public:
 	////
 	//// Flags
 	////
-
-	inline bool isDummy() const
-	{
-		return false;
-		//return !data;
-	}
-
-	inline void unDummify()
-	{
-		//assert(isDummy()); // Pre-condition
-		reallocate();
-	}
 
 	// is_underground getter/setter
 	inline bool getIsUnderground()
@@ -293,8 +282,7 @@ public:
 
 	inline bool isValidPosition(s16 x, s16 y, s16 z)
 	{
-		return data
-			&& x >= 0 && x < MAP_BLOCKSIZE
+		return x >= 0 && x < MAP_BLOCKSIZE
 			&& y >= 0 && y < MAP_BLOCKSIZE
 			&& z >= 0 && z < MAP_BLOCKSIZE;
 	}
@@ -335,7 +323,7 @@ public:
 	}
 
 /*
-	inline void setNode(s16 x, s16 y, s16 z, MapNode & n)
+	inline void setNode(s16 x, s16 y, s16 z, MapNode n)
 	{
 		if (!isValidPosition(x, y, z))
 			throw InvalidPositionException();
@@ -345,12 +333,10 @@ public:
 	}
 */
 
-	void setNode(v3s16 p, MapNode & n);
+	void setNode(v3s16 p, MapNode& n);
 
 	MapNode getNodeNoLock(v3pos_t p)
 	{
-		if (!data)
-			return ignoreNode;
 		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
 
@@ -358,56 +344,27 @@ public:
 	//// Non-checking variants of the above
 	////
 
-	inline MapNode getNodeNoCheck(s16 x, s16 y, s16 z, bool *valid_position)
+	inline MapNode getNodeNoCheck(s16 x, s16 y, s16 z)
 	{
-		*valid_position = data != nullptr;
-		if (!*valid_position)
-			return ignoreNode;
-
 		auto lock = lock_shared_rec();
 		return data[z * zstride + y * ystride + x];
 	}
 
-	inline MapNode getNodeNoCheck(v3s16 p, bool *valid_position)
+	inline MapNode getNodeNoCheck(v3s16 p)
 	{
-		return getNodeNoCheck(p.X, p.Y, p.Z, valid_position);
+		return getNodeNoCheck(p.X, p.Y, p.Z);
 	}
 
-	////
-	//// Non-checking, unsafe variants of the above
-	//// MapBlock must be loaded by another function in the same scope/function
-	//// Caller must ensure that this is not a dummy block (by calling isDummy())
-	////
-
-	inline const MapNode &getNodeUnsafe(s16 x, s16 y, s16 z)
+	inline void setNodeNoCheck(s16 x, s16 y, s16 z, MapNode n)
 	{
-		return data[z * zstride + y * ystride + x];
-	}
-
-	inline const MapNode &getNodeUnsafe(v3s16 &p)
-	{
-		return getNodeUnsafe(p.X, p.Y, p.Z);
-	}
-
-	inline void setNodeNoCheck(s16 x, s16 y, s16 z, MapNode & n)
-	{
-/*
-		if (!data)
-			throw InvalidPositionException();
-*/
         auto lock = lock_unique_rec();
 
 		data[z * zstride + y * ystride + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK);
 	}
 
-	inline void setNodeNoCheck(v3s16 p, MapNode & n, bool important = false)
+	inline void setNodeNoCheck(v3pos_t p, MapNode n, bool important = false)
 	{
-/*
-		if (data == NULL)
-			throw InvalidPositionException("setNodeNoCheck data=NULL");
-*/
-
 		auto lock = lock_unique_rec();
 
 		data[p.Z * zstride + p.Y * ystride + p.X] = n;
@@ -440,6 +397,11 @@ public:
 			actuallyUpdateDayNightDiff();
 		return m_day_night_differs;
 	}
+
+	bool onObjectsActivation();
+	bool saveStaticObject(u16 id, const StaticObject &obj, u32 reason);
+
+	void step(float dtime, const std::function<bool(v3s16, MapNode, f32)> &on_timer_cb);
 
 	////
 	//// Timestamp (see m_timestamp)
@@ -510,12 +472,12 @@ public:
 	//// Node Timers
 	////
 
-	inline NodeTimer getNodeTimer(const v3s16 &p)
+	inline NodeTimer getNodeTimer(v3s16 p)
 	{
 		return m_node_timers.get(p);
 	}
 
-	inline void removeNodeTimer(const v3s16 &p)
+	inline void removeNodeTimer(v3s16 p)
 	{
 		m_node_timers.remove(p);
 	}
@@ -552,11 +514,15 @@ public:
 	typedef std::shared_ptr<MapBlockMesh> mesh_type;
 
 #if BUILD_CLIENT // Only on client
-
 	MapBlock::mesh_type getMesh(int step);
 	void setMesh(MapBlock::mesh_type & rmesh);
 #endif
+//===
 
+
+	bool storeActiveObject(u16 id);
+	// clearObject and return removed objects count
+	u32 clearObjects();
 
 private:
 	/*
@@ -564,23 +530,6 @@ private:
 	*/
 
 	void deSerialize_pre22(std::istream &is, u8 version, bool disk);
-
-	/*
-		Used only internally, because changes can't be tracked
-	*/
-
-	inline MapNode &getNodeRef(s16 x, s16 y, s16 z)
-	{
-		if (!isValidPosition(x, y, z))
-			throw InvalidPositionException("getNodeRef InvalidPosition");
-
-		return data[z * zstride + y * ystride + x];
-	}
-
-	inline MapNode &getNodeRef(v3s16 &p)
-	{
-		return getNodeRef(p.X, p.Y, p.Z);
-	}
 
 public:
 	/*
@@ -598,7 +547,6 @@ public:
 #endif
 
 	NodeMetadataList m_node_metadata;
-	NodeTimerList m_node_timers;
 	StaticObjectList m_static_objects;
 	
 	std::atomic_short heat {0};
@@ -649,6 +597,8 @@ public:
 	std::atomic_bool contents_cached {false};
 	// True if we never want to cache content types for this block
 	bool do_not_cache_contents = false;
+	// marks the sides which are opaque: 00+Z-Z+Y-Y+X-X
+	u8 solid_sides {0};
 
 private:
 	/*
@@ -669,12 +619,6 @@ private:
 	v3s16 m_pos_relative;
 
 	IGameDef *m_gamedef;
-
-	/*
-		If NULL, block is a dummy block.
-		Dummy blocks are used for caching not-found-on-disk blocks.
-	*/
-	MapNode *data = nullptr;
 
 	/*
 		- On the server, this is used for telling whether the
@@ -740,6 +684,11 @@ private:
 		the list of blocks to be drawn.
 	*/
 	std::atomic_int m_refcount {0};
+
+	MapNode data[nodecount];
+
+public:
+	NodeTimerList m_node_timers;
 };
 
 typedef std::vector<MapBlock*> MapBlockVect;
@@ -769,7 +718,7 @@ inline bool blockpos_over_max_limit(v3s16 p)
 /*
 	Returns the position of the block where the node is located
 */
-inline v3s16 getNodeBlockPos(const v3s16 &p)
+inline v3s16 getNodeBlockPos(v3s16 p)
 {
 	return v3s16(p.X >> MAP_BLOCKP, p.Y >> MAP_BLOCKP, p.Z >> MAP_BLOCKP);
 /*
@@ -777,7 +726,7 @@ inline v3s16 getNodeBlockPos(const v3s16 &p)
 */
 }
 
-inline void getNodeBlockPosWithOffset(const v3s16 &p, v3s16 &block, v3s16 &offset)
+inline void getNodeBlockPosWithOffset(v3s16 p, v3s16 &block, v3s16 &offset)
 {
 	getContainerPosWithOffset(p, MAP_BLOCKSIZE, block, offset);
 }

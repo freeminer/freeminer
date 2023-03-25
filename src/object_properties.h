@@ -40,6 +40,7 @@ struct ObjectProperties : public shared_locker
 	// Values are BS=1
 	aabb3f collisionbox = aabb3f(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
 	aabb3f selectionbox = aabb3f(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
+	bool rotate_selectionbox = false;
 	bool pointable = true;
 	std::string visual = "sprite";
 	std::string mesh = "";

@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/container.h"
 
 class Map;
-class ServerMap;
 class MapBlock;
 class MMVManip;
 
@@ -71,7 +70,7 @@ void update_block_border_lighting(Map *map, MapBlock *block,
  * \param modified_blocks output, contains all map blocks that
  * the function modified
  */
-void blit_back_with_light(ServerMap *map, MMVManip *vm,
+void blit_back_with_light(Map *map, MMVManip *vm,
 	std::map<v3s16, MapBlock*> *modified_blocks);
 
 /*!
@@ -80,7 +79,7 @@ void blit_back_with_light(ServerMap *map, MMVManip *vm,
  *
  * \param block the block to update
  */
-void repair_block_light(ServerMap *map, MapBlock *block,
+void repair_block_light(Map *map, MapBlock *block,
 	std::map<v3s16, MapBlock*> *modified_blocks);
 
 /*!

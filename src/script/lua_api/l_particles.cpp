@@ -141,7 +141,7 @@ int ModApiParticles::l_add_particle(lua_State *L)
 
 		lua_getfield(L, 1, "node");
 		if (lua_istable(L, -1))
-			p.node = readnode(L, -1, getGameDef(L)->ndef());
+			p.node = readnode(L, -1);
 		lua_pop(L, 1);
 
 		p.node_tile = getintfield_default(L, 1, "node_tile", p.node_tile);
@@ -262,7 +262,7 @@ int ModApiParticles::l_add_particlespawner(lua_State *L)
 
 		lua_getfield(L, 1, "attached");
 		if (!lua_isnil(L, -1)) {
-			ObjectRef *ref = ObjectRef::checkobject(L, -1);
+			ObjectRef *ref = checkObject<ObjectRef>(L, -1);
 			lua_pop(L, 1);
 			attached = ObjectRef::getobject(ref);
 		}
@@ -292,7 +292,7 @@ int ModApiParticles::l_add_particlespawner(lua_State *L)
 
 		lua_getfield(L, 1, "node");
 		if (lua_istable(L, -1))
-			p.node = readnode(L, -1, getGameDef(L)->ndef());
+			p.node = readnode(L, -1);
 		lua_pop(L, 1);
 
 		p.node_tile = getintfield_default(L, 1, "node_tile", p.node_tile);

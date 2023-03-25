@@ -55,19 +55,16 @@ public:
 	void insert(u16 id, const StaticObject &obj)
 	{
 		auto lock = m_active.lock_unique_rec();
-		if(id == 0)
-		{
+		if (id == 0) {
 			m_stored.push_back(obj);
-		}
-		else
-		{
-			if(m_active.find(id) != m_active.end())
-			{
-				dstream<<"ERROR: StaticObjectList::insert(): "
-						<<"id already exists"<<std::endl;
+		} else {
+			if (m_active.find(id) != m_active.end()) {
+				dstream << "ERROR: StaticObjectList::insert(): "
+						<< "id already exists" << std::endl;
 				return;
+				//FATAL_ERROR("StaticObjectList::insert()");
 			}
-			m_active.emplace(id, obj);
+			setActive(id, obj);
 		}
 	}
 
@@ -76,12 +73,9 @@ public:
 		if (!id)
 			return;
 		auto lock = m_active.lock_shared_rec();
-		if(m_active.find(id) == m_active.end())
-		{
-			/*
-			warningstream<<"StaticObjectList::remove(): id="<<id
-					<<" not found"<<std::endl;
-			*/
+		if (m_active.find(id) == m_active.end()) {
+			verbosestream << "StaticObjectList::remove(): id=" << id << " not found"
+						  << std::endl;
 			return;
 		}
 		m_active.erase(id);
@@ -90,13 +84,34 @@ public:
 	void serialize(std::ostream &os);
 	void deSerialize(std::istream &is);
 
+	// Never permit to modify outside of here. Only this object is responsible of m_stored and m_active modifications
+	const std::vector<StaticObject>& getAllStored() const { return m_stored; }
+	const std::map<u16, StaticObject> &getAllActives() const { return m_active; }
+
+	inline void setActive(u16 id, const StaticObject &obj) { m_active.insert_or_assign(id, obj); }
+	inline size_t getActiveSize() const { return m_active.size(); }
+	inline size_t getStoredSize() const { return m_stored.size(); }
+	inline void clearStored() { m_stored.clear(); }
+	void pushStored(const StaticObject &obj) { m_stored.push_back(obj); }
+
+	bool storeActiveObject(u16 id);
+
+	inline void clear()
+	{
+		m_active.clear();
+		m_stored.clear();
+	}
+
+	inline size_t size()
+	{
+		return m_active.size() + m_stored.size();
+	}
+
+//private:
 	/*
 		NOTE: When an object is transformed to active, it is removed
 		from m_stored and inserted to m_active.
-		The caller directly manipulates these containers.
 	*/
 	std::vector<StaticObject> m_stored;
 	concurrent_map<u16, StaticObject> m_active;
-
-private:
 };
