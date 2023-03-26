@@ -138,12 +138,12 @@ int private_SHA256_Init(mt_SHA256_CTX *c);
 int mt_SHA224_Init(mt_SHA256_CTX *c);
 int mt_SHA224_Update(mt_SHA256_CTX *c, const void *data, size_t len);
 int mt_SHA224_Final(unsigned char *md, mt_SHA256_CTX *c);
-unsigned char *SHA224(const unsigned char *d, size_t n, unsigned char *md);
+unsigned char *mt_SHA224(const unsigned char *d, size_t n, unsigned char *md);
 int mt_SHA256_Init(mt_SHA256_CTX *c);
 int mt_SHA256_Update(mt_SHA256_CTX *c, const void *data, size_t len);
 int mt_SHA256_Final(unsigned char *md, mt_SHA256_CTX *c);
-unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md);
-void SHA256_Transform(mt_SHA256_CTX *c, const unsigned char *data);
+unsigned char *mt_SHA256(const unsigned char *d, size_t n, unsigned char *md);
+void mt_SHA256_Transform(mt_SHA256_CTX *c, const unsigned char *data);
 #endif
 
 #define SHA384_DIGEST_LENGTH 48

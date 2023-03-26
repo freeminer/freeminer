@@ -117,10 +117,10 @@ endif()
 
 
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-if (NOT NO_LTO AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
+if (NOT NO_LTO AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo") AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 	# include(CheckIPOSupported)
 	# check_ipo_supported(RESULT supported OUTPUT error)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+	#set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 	message(STATUS "Using lto")
 endif()
 
@@ -332,7 +332,7 @@ if(BUILD_CLIENT)
 	install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/textures/base/pack" DESTINATION "${SHAREDIR}/textures/base")
 	if(RUN_IN_PLACE)
 		install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/clientmods" DESTINATION "${SHAREDIR}")
-		install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/client/serverlist" DESTINATION "${SHAREDIR}/client")
+		#install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/client/serverlist" DESTINATION "${SHAREDIR}/client")
 	endif()
 endif()
 

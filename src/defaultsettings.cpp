@@ -94,17 +94,7 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Screen
 #if __ANDROID__ || __ARM_ARCH
-	settings->setDefault("enable_shaders", "0");
-#if defined(_IRR_COMPILE_WITH_OGLES1_)
-	settings->setDefault("video_driver", "ogles1");
-#elif defined(_IRR_COMPILE_WITH_OGLES2_)
-	settings->setDefault("video_driver", "ogles2");
-#else
-	settings->setDefault("video_driver", "opengl");
-#endif
-#else
-	settings->setDefault("video_driver", "opengl");
-	settings->setDefault("enable_shaders", "1");
+	//settings->setDefault("enable_shaders", "0");
 #endif
 //	settings->setDefault("chat_buffer_size", "6"); // todo re-enable
 	settings->setDefault("timelapse", "0");
