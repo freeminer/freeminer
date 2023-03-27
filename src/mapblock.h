@@ -113,9 +113,11 @@ public:
 	void reallocate()
 	{
 		auto lock = lock_unique_rec();
-		//data = reinterpret_cast<MapNode*>( ::operator new(nodecount * sizeof(MapNode)));
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wclass-memaccess"
 		if constexpr(!CONTENT_IGNORE)
 			memset(data, 0, nodecount * sizeof(MapNode));
+#pragma clang diagnostic pop
 		else
 		for (u32 i = 0; i < nodecount; i++)
 			data[i] = ignoreNode;

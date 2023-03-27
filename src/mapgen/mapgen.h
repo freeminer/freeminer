@@ -60,6 +60,7 @@ class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
 class Map;
+class ServerEnvironment;
 
 enum MapgenObject {
 	MGOBJ_VMANIP,
@@ -235,8 +236,7 @@ public:
 	virtual int getGroundLevelAtPoint(v2s16 p) { return 0; }
 
 	// freeminer:
-	//EmergeManager *m_emerge = nullptr;
-	EmergeParams *m_emerge = nullptr;
+	ServerEnvironment *env = nullptr;
 	s16 liquid_pressure = 0;
 	unordered_map_v3pos<s16> heat_cache;
 	unordered_map_v3pos<s16> humidity_cache;

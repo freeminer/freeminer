@@ -1489,6 +1489,7 @@ int ModApiMapgen::l_generate_ores(lua_State *L)
 		return 0;
 
 	Mapgen mg;
+	mg.env = emerge->env;
 	// Intentionally truncates to s32, see Mapgen::Mapgen()
 	mg.seed = (s32)emerge->mgparams->seed;
 	mg.vm   = checkObject<LuaVoxelManip>(L, 1)->vm;
@@ -1518,6 +1519,7 @@ int ModApiMapgen::l_generate_decorations(lua_State *L)
 		return 0;
 
 	Mapgen mg;
+	mg.env = emerge->env;
 	// Intentionally truncates to s32, see Mapgen::Mapgen()
 	mg.seed = (s32)emerge->mgparams->seed;
 	mg.vm   = checkObject<LuaVoxelManip>(L, 1)->vm;
