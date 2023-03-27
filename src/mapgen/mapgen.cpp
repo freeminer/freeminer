@@ -125,8 +125,7 @@ Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeParams *emerge) :
 	mapgen_limit = params->mapgen_limit;
 	flags        = params->flags;
 	csize        = v3s16(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
-
-	this->m_emerge = emerge;
+	env          = emerge->env;
 	liquid_pressure = params->liquid_pressure;
 
 	/*
@@ -388,6 +387,8 @@ inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s16 em)
 
 void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3pos_t nmin, v3pos_t nmax)
 {
+	if (!env)
+		return;
 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
 
 	bool rare = g_settings->getBool("liquid_real");
@@ -416,7 +417,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3pos_t nmin, v3pos_
 				bool ispushed = false;
 				if ((!rare || !(rarecnt++ % 36)) && isLiquidHorizontallyFlowable(vi, em)) {
 					//trans_liquid->push_back(v3s16(x, y, z));
-					m_emerge->env->getServerMap().transforming_liquid_add(v3pos_t(x, y, z));
+					env->getServerMap().transforming_liquid_add({x, y, z});
 					ispushed = true;
 				}
 				// Remember waschecked and waspushed to avoid repeated
@@ -431,8 +432,8 @@ void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3pos_t nmin, v3pos_
 						(!waschecked && isLiquidHorizontallyFlowable(vi_above, em)))) {
 					// Push back the lowest node in the column which is one
 					// node above this one
-					//trans_liquid->push_back(v3s16(x, y + 1, z));
-					m_emerge->env->getServerMap().transforming_liquid_add(v3pos_t(x, y + 1, z));
+					// trans_liquid->push_back(v3s16(x, y + 1, z));
+					env->getServerMap().transforming_liquid_add(v3pos_t(x, y + 1, z));
 				}
 			}
 

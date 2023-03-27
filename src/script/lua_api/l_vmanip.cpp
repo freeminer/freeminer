@@ -177,6 +177,7 @@ int LuaVoxelManip::l_update_liquids(lua_State *L)
 	MMVManip *vm = o->vm;
 
 	Mapgen mg;
+	mg.env  = env;
 	mg.vm   = vm;
 	mg.ndef = ndef;
 
@@ -213,6 +214,7 @@ int LuaVoxelManip::l_calc_lighting(lua_State *L)
 		throw LuaError("Specified voxel area out of VoxelManipulator bounds");
 
 	Mapgen mg;
+	mg.env         = emerge->env;
 	mg.vm          = vm;
 	mg.ndef        = ndef;
 	mg.water_level = emerge->mgparams->water_level;
