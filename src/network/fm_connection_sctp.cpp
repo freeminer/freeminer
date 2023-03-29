@@ -1,8 +1,4 @@
 /*
-fm_connection_sctp.cpp
-*/
-
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -338,7 +334,7 @@ int Connection::receive()
 		if (m_peers.size() > 0) {
 			for (int i = 0; i < 1000; ++i) {
 				if (last_try > 30000)
-					last_try = PEER_ID_SERVER + 0x3fff;
+					last_try = PEER_ID_SERVER + 10000;
 				++last_try;
 				if (!m_peers.count(last_try)) {
 					peer_id = last_try;

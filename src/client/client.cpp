@@ -71,6 +71,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
+#if BUILD_SERVER && !NDEBUG
+#include "network/serveropcodes.h"
+#endif
 #include "chat.h"
 
 
@@ -1107,6 +1110,14 @@ void Client::ProcessData(NetworkPacket *pkt)
 		//errorstream << "overload cmd=" << command << " n="<< toClientCommandTable[command].name << "\n";
 	}
 
+#if BUILD_SERVER && !NDEBUG
+		tracestream << "Client processing packet " << (int)command << " ["
+					<< toClientCommandTable[command].name
+					<< "] state=" << (int)toClientCommandTable[command].state
+					<< " size=" << pkt->getSize()
+					<< std::endl;
+#endif
+
 	/*
 	 * Those packets are handled before m_server_ser_ver is set, it's normal
 	 * But we must use the new ToClientConnectionState in the future,
@@ -1149,6 +1160,13 @@ void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 
 void Client::Send(NetworkPacket* pkt)
 {
+#if !NDEBUG
+	tracestream << "Client sending packet " << (int)pkt->getCommand() << " ["
+				<< toServerCommandTable[pkt->getCommand()].name
+				<< "] state=" << (int)toServerCommandTable[pkt->getCommand()].state
+				<< " size=" << pkt->getSize() << std::endl;
+#endif
+
 	g_profiler->add("Client::Send", 1);
 	m_con->Send(PEER_ID_SERVER,
 		serverCommandFactoryTable[pkt->getCommand()].channel,

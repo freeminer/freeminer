@@ -1,9 +1,4 @@
 /*
-connection.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -43,7 +38,8 @@ struct sctp_rcvinfo;
 struct sctp_assoc_change;
 class NetworkPacket;
 
-namespace con {
+namespace con
+{
 class PeerHandler;
 }
 namespace con_multi
