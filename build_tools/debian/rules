@@ -4,9 +4,7 @@
 version=$(shell uscan --report-status | head -2 | tail -1 | cut -d' ' -f7 | cut -d, -f1)
 tmpdir:=$(shell mktemp -d)
 wrkdir:=$(shell pwd)
-
-# parallel building
-parallel=$(shell echo $$DEB_BUILD_OPTIONS | grep parallel > /dev/null && echo -j$$(test -f /proc/cpuinfo && cat /proc/cpuinfo | (grep ^processor || echo 1) | wc -l))
+rootdir:=$(wrkdir)/..
 
 # build-hardening flags
 export DEB_BUILD_MAINT_OPTIONS="hardening=+all"
@@ -58,19 +56,24 @@ override_dh_auto_clean:
 
 override_dh_auto_configure:
 	CFLAGS="${CFLAGS}" \
-	    LDFLAGS="${LDFLAGS}" \
+	    LDFLAGS="${LDFLAGS} -Wl,--build-id=sha1" \
 	    CXXFLAGS="${CXXFLAGS} ${CPPFLAGS}" \
-	    cmake -DRUN_IN_PLACE=0 \
-	          -DENABLE_GETTEXT=1 \
+	    cmake -G Ninja \
+		  -DCMAKE_C_COMPILER=$(shell which clang) \
+		  -DCMAKE_CXX_COMPILER=$(shell which clang++) \
+		  -DRUN_IN_PLACE=0 \
+		  -DENABLE_GETTEXT=1 \
 		  -DENABLE_FREETYPE=1 \
 		  -DFREETYPE_INCLUDE_DIRS=/usr/include/freetype2 \
 		  -DFREETYPE_INCLUDE_DIR_ft2build=/usr/include \
 		  -DCUSTOM_LOCALEDIR=/usr/share/locale \
 		  -DCUSTOM_SHAREDIR=/usr/share/games/freeminer \
-		  -DCMAKE_INSTALL_PREFIX=/usr .
+		  -DCMAKE_INSTALL_PREFIX=/usr ..
 
 override_dh_auto_build:
-	make VERBOSE=1 ${parallel}
+	ninja -v
+
+override_dh_auto_test:
 	
 override_dh_install:
 	dh_install --list-missing -X.gitignore
@@ -80,21 +83,17 @@ override_dh_install:
 	done
 	# copy the logo
 	mkdir -p debian/freeminer/usr/share/icons/hicolor/24x24/apps/
-	cp misc/freeminer-24x24.png debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.png
+	cp $(rootdir)/misc/freeminer-24x24.png debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.png
 	convert debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.png \
 	        debian/freeminer/usr/share/icons/hicolor/24x24/apps/freeminer.xpm
-	mkdir -p debian/freeminer/usr/share/icons/hicolor/scalable/apps/
-	cp misc/freeminer.svg       debian/freeminer/usr/share/icons/hicolor/scalable/apps/freeminer.svg
+	mkdir -p $(wrkdir)/debian/freeminer/usr/share/icons/hicolor/scalable/apps/
+	cp $(rootdir)/misc/freeminer.svg       debian/freeminer/usr/share/icons/hicolor/scalable/apps/freeminer.svg
 	# take care of the fonts we need
 	mkdir -p debian/freeminer-data/usr/share/games/freeminer/fonts/
 	ln -s /usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf \
 	      debian/freeminer-data/usr/share/games/freeminer/fonts/liberationmono.ttf
 	ln -s /usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf \
 	      debian/freeminer-data/usr/share/games/freeminer/fonts/liberationsans.ttf
-	# Install the mapper script
-	mkdir -p debian/freeminer-data/usr/games
-	cp util/minetestmapper.py debian/freeminer-data/usr/games/minetest-mapper
-	cp util/colors.txt        debian/freeminer-data/usr/share/games/freeminer/minetestmapper-colors.txt
 
 override_dh_strip:
 	dh_strip --dbg-package=freeminer-dbg

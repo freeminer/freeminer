@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # install:
 # sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev

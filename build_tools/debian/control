@@ -8,11 +8,13 @@ Uploaders:
 Build-Depends:
  debhelper (>= 9),
  cmake,
+ ninja-build,
+ ccache,
+ clang,
  gettext,
  imagemagick,
- libcurl4-gnutls-dev,
+ libcurl4-openssl-dev,
  libfreetype6-dev,
- libirrlicht-dev (>= 1.7.0),
  libluajit-5.1-dev,
  zlib1g-dev,
  libsqlite3-dev,
@@ -20,6 +22,21 @@ Build-Depends:
  libvorbis-dev,
  libopenal-dev,
  libjsoncpp-dev,
+ libbz2-dev,
+ libzstd-dev,
+ libpng-dev,
+ libjpeg-dev,
+ libxxf86vm-dev,
+ libleveldb-dev,
+ libsnappy-dev,
+ libgettextpo0,
+ libmsgpack-dev,
+ libgl1-mesa-dev,
+ libgles2-mesa-dev,
+ libboost-system-dev,
+ libunwind-dev,
+ libc++-dev,
+ libc++abi-dev,
 Standards-Version: 3.9.4
 Homepage: http://freeminer.org/
 Vcs-Git: git://git.debian.org/git/pkg-games/freeminer-v04x.git
@@ -33,9 +50,9 @@ Depends:
  freeminer-data (= ${source:Version}),
 Suggests:
  freeminer-server,
- freeminer-mod-moreblocks,
- freeminer-mod-moreores,
- freeminer-mod-pipeworks,
+ minetest-mod-moreblocks,
+ minetest-mod-moreores,
+ minetest-mod-pipeworks,
 Description: Multiplayer infinite-world block sandbox
  freeminer is a minecraft-inspired game written from scratch and licensed
  under the LGPL (version 2.1 or later). It supports both survival and creative
@@ -76,7 +93,6 @@ Architecture: all
 Depends:
  ${misc:Depends},
  fonts-liberation,
- python, python-imaging,
 Description: Multiplayer infinite-world block sandbox (data files)
  Freeminer is a minecraft-inspired game written from scratch and licensed
  under the LGPL (version 2.1 or later). It supports both survival and creative
