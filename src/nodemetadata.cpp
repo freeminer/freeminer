@@ -41,10 +41,14 @@ NodeMetadata::NodeMetadata(IItemDefManager *item_def_mgr):
 NodeMetadata::~NodeMetadata()
 {
 	delete m_inventory;
+	m_inventory = nullptr;
 }
 
 void NodeMetadata::serialize(std::ostream &os, u8 version, bool disk) const
 {
+	if (!m_inventory)
+		return;
+
 	int num_vars = disk ? m_stringvars.size() : countNonPrivate();
 	writeU32(os, num_vars);
 	for (const auto &sv : m_stringvars) {
@@ -63,6 +67,9 @@ void NodeMetadata::serialize(std::ostream &os, u8 version, bool disk) const
 
 void NodeMetadata::deSerialize(std::istream &is, u8 version)
 {
+	if (!m_inventory)
+		return;
+
 	clear();
 	int num_vars = readU32(is);
 	for(int i=0; i<num_vars; i++){
@@ -80,6 +87,9 @@ void NodeMetadata::deSerialize(std::istream &is, u8 version)
 
 void NodeMetadata::clear()
 {
+	if (!m_inventory)
+		return;
+
 	SimpleMetadata::clear();
 	m_privatevars.clear();
 	m_inventory->clear();
@@ -243,9 +253,10 @@ void NodeMetadataList::set(v3s16 p, NodeMetadata *d)
 void NodeMetadataList::clear()
 {
 	if (m_is_metadata_owner) {
-		NodeMetadataMap::const_iterator it;
-		for (it = m_data.begin(); it != m_data.end(); ++it)
+		for (auto it = m_data.begin(); it != m_data.end(); ++it) {
 			delete it->second;
+			it->second = nullptr;
+		}
 	}
 	m_data.clear();
 }
