@@ -17,6 +17,7 @@
 #cmakedefine01 USE_ICONV
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_WEBSOCKET
+#cmakedefine01 USE_WEBSOCKET_SCTP
 #cmakedefine01 USE_MULTI
 #cmakedefine01 USE_UNWIND
 #cmakedefine01 LOCK_PROFILE

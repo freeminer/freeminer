@@ -545,7 +545,7 @@ int ModApiUtil::l_sha1(lua_State *L)
 	// Compute actual checksum of data
 	std::string data_sha1;
 	{
-		SHA1 ctx;
+		class SHA1 ctx;
 		ctx.addBytes(data, size);
 		unsigned char *data_tmpdigest = ctx.getDigest();
 		data_sha1.assign((char*) data_tmpdigest, 20);

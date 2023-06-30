@@ -114,7 +114,7 @@ public:
 	{
 		auto lock = lock_unique_rec();
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wclass-memaccess"
+//#pragma clang diagnostic ignored "-Wclass-memaccess"
 		if constexpr(!CONTENT_IGNORE)
 			memset(data, 0, nodecount * sizeof(MapNode));
 #pragma clang diagnostic pop

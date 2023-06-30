@@ -225,15 +225,13 @@ function is_server_protocol_compat_or_error(server_proto_min, server_proto_max, 
 	if not is_server_protocol_compat(server_proto_min, server_proto_max, proto) then
 		local server_prot_ver_info, client_prot_ver_info
 
-		if proto and core.setting_get("server_proto") ~= proto then 
-			server_prot_ver_info = fgettext_ne("Server supports protocol $1, but we can connect only to $2 ",
-				proto or '?', core.setting_get("server_proto") )
-		end
-
 		local s_p_min = server_proto_min
 		local s_p_max = server_proto_max
 
-		if s_p_min ~= s_p_max then
+		if proto and core.settings:get("server_proto") ~= proto then
+			server_prot_ver_info = fgettext_ne("Server supports protocol $1, but we can connect only to $2 ",
+				proto or '?', core.settings:get("server_proto") )
+		elseif s_p_min ~= s_p_max then
 			server_prot_ver_info = fgettext_ne("Server supports protocol versions between $1 and $2. ",
 				s_p_min, s_p_max)
 		else

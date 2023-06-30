@@ -139,7 +139,22 @@ if(NOT MSVC)
 	find_library(UNWIND_LIBRARY NAMES unwind)
 
 	if(UNWIND_LIBRARY)
-		set(USE_UNWIND 1)
+
+        CHECK_CXX_SOURCE_RUNS("
+       #include <execinfo.h> // for backtrace
+       int main(int argc, char *argv[]) {
+            void *callstack[128];
+            const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
+            char buf[1024];
+            int nFrames = backtrace(callstack, nMaxFrames);
+            return 0;
+       }
+       "
+        USE_UNWIND)
+        if(NOT USE_UNWIND)
+            set(USE_UNWIND 0)
+        endif()
+        # set(USE_UNWIND 1)
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
 		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
 	endif()
@@ -621,20 +636,36 @@ add_subdirectory(irrlicht_changes)
 add_subdirectory(server)
 
 
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
 OPTION(USE_MULTI "Enable MT+SCTP networking" 0)
 if(USE_MULTI)
 	set(ENABLE_SCTP 1)
-	set(USE_ENET 1)
+	set(ENABLE_ENET 1)
+	#set(ENABLE_WEBSOCKET_SCTP 1) # NOT FINISHED
+	set(ENABLE_WEBSOCKET 1)
 endif()
 
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+
+if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp/CMakeLists.txt)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp)
+	#add_subdirectory(external/websocketpp)
+	#set(WEBSOCKETPP_LIBRARY websocketpp::websocketpp)
+	message(STATUS "Using websocket: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp")
+	find_package(OpenSSL)
+	set(WEBSOCKETPP_LIBRARY ${WEBSOCKETPP_LIBRARY} OpenSSL::SSL)
+        set(USE_WEBSOCKET 1)
+	#TODO: set(USE_WEBSOCKET_SCTP 1)
+    endif()
+endif()
 
 if(ENABLE_SCTP AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
     message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
+    set(ENABLE_SCTP 0)
 endif()
 
-if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
-# from external/usrsctp/usrsctplib/CMakeLists.txt :
+if(ENABLE_SCTP)
+        # from external/usrsctp/usrsctplib/CMakeLists.txt :
 	if(SCTP_DEBUG)
 		set(sctp_debug 1 CACHE INTERNAL "")
 		add_definitions(-DSCTP_DEBUG=1)
@@ -642,7 +673,6 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(sctp_build_programs 0 CACHE INTERNAL "")
 	set(sctp_werror 0 CACHE INTERNAL "")
 	set(WERROR 0 CACHE INTERNAL "") #old
-
 
 	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
 
@@ -652,15 +682,11 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(USE_SCTP 1)
 
 	message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
-else()
-	set(USE_SCTP 0)
+#else()
+	#set(USE_SCTP 0)
 endif()
 
-#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
-#    set(USE_ENET 1)
-#endif()
-
-if(USE_ENET)
+if(ENABLE_ENET)
 	if(NOT ENABLE_SYSTEM_ENET AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
 		add_subdirectory(external/enet)
 		set(ENET_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/enet/include)
@@ -670,8 +696,11 @@ if(USE_ENET)
 		find_library(ENET_LIBRARY NAMES enet)
 		find_path(ENET_INCLUDE_DIR enet/enet.h)
 	endif()
-	include_directories(${ENET_INCLUDE_DIR})
-	message(STATUS "Using enet: ${ENET_INCLUDE_DIR} ${ENET_LIBRARY}")
+	if(ENET_LIBRARY AND ENET_INCLUDE_DIR)
+		include_directories(${ENET_INCLUDE_DIR})
+		message(STATUS "Using enet: ${ENET_INCLUDE_DIR} ${ENET_LIBRARY}")
+		set(USE_ENET 1)
+	endif()
 endif()
 
 set(FMcommon_SRCS ${FMcommon_SRCS}
@@ -917,6 +946,7 @@ if(BUILD_CLIENT)
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
 		${SCTP_LIBRARY}
+		${WEBSOCKETPP_LIBRARY}
 
 		${LUA_BIT_LIBRARY}
 		${FREETYPE_LIBRARY}
@@ -995,6 +1025,7 @@ if(BUILD_SERVER)
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
 		${SCTP_LIBRARY}
+		${WEBSOCKETPP_LIBRARY}
 
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}

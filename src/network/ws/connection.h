@@ -23,19 +23,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "irrlichttypes.h"
-#include "peerhandler.h"
-#include "socket.h"
+#include "network/connection.h"
+#include "network/wssocket.h"
+#include "network/networkexceptions.h"
+#include "../peerhandler.h"
+//#include "socket.h"
 #include "constants.h"
 #include "util/pointer.h"
 #include "util/container.h"
 #include "util/thread.h"
 #include "util/numeric.h"
-#include "networkprotocol.h"
+#include "../networkprotocol.h"
 #include <iostream>
 #include <vector>
 #include <map>
 
-namespace con_ws { class Connection; }
 
 #define MAX_UDP_PEERS 0x3fff
 
@@ -76,13 +78,14 @@ controltype and data description:
 	  packet to get a reply
 	CONTROLTYPE_DISCO
 */
+/*
 enum ControlType : u8 {
 	CONTROLTYPE_ACK = 0,
 	CONTROLTYPE_SET_PEER_ID = 1,
 	CONTROLTYPE_PING = 2,
 	CONTROLTYPE_DISCO = 3,
 };
-
+*/
 /*
 ORIGINAL: This is a plain packet with no control and no error
 checking at all.
@@ -128,12 +131,15 @@ with a buffer in the receiving and transmitting end.
 
 class NetworkPacket;
 
-namespace con
+namespace con_ws
 {
+using namespace con;
+
 
 class ConnectionReceiveThread;
 class ConnectionSendThread;
 
+#if 0
 typedef enum MTProtocols {
 	MTP_PRIMARY,
 	MTP_UDP,
@@ -465,6 +471,8 @@ private:
 	unsigned int rate_samples = 0;
 };
 
+#endif
+
 class Peer;
 
 class PeerHelper
@@ -486,6 +494,7 @@ private:
 
 class Connection;
 
+/*
 typedef enum {
 	CUR_DL_RATE,
 	AVG_DL_RATE,
@@ -494,7 +503,7 @@ typedef enum {
 	CUR_LOSS_RATE,
 	AVG_LOSS_RATE,
 } rate_stat_type;
-
+*/
 class Peer {
 	public:
 		friend class PeerHelper;
@@ -615,7 +624,6 @@ public:
 	friend class ConnectionReceiveThread;
 	friend class ConnectionSendThread;
 	friend class Connection;
-	friend class con_ws::Connection;
 
 	UDPPeer(u16 a_id, Address a_address, Connection* connection);
 	virtual ~UDPPeer() = default;
@@ -661,6 +669,7 @@ private:
 					unsigned int max_packet_size);
 };
 
+#if 0
 /*
 	Connection
 */
@@ -706,6 +715,8 @@ private:
 };
 
 class PeerHandler;
+
+#endif
 
 class Connection
 {
@@ -756,7 +767,8 @@ protected:
 		return m_peer_ids;
 	}
 
-	UDPSocket m_udpSocket;
+	//UDPSocket m_udpSocket;
+	WSSocket m_udpSocket;
 	// Command queue: user -> SendThread
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 
@@ -794,7 +806,7 @@ private:
 
 	std::atomic_bool m_shutting_down = false;
 
-	session_t m_next_remote_peer_id = PEER_MINETEST_MIN;
+	session_t m_next_remote_peer_id = PEER_WS_MIN;
 
 //freeminer:
 public:

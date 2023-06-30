@@ -169,7 +169,7 @@ Out & dump(Out & out, const char * name, T && x)
          }
     }
 
-    out << DUMP_DEMANGLE(typeid(x).name()) << " " << name << " = ";
+    out << DUMP_DEMANGLE(typeid(x).name()) << ' ' << name << " = ";
     dumpValue(out, x) << "; ";
     return out;
 }
@@ -178,26 +178,31 @@ Out & dump(Out & out, const char * name, T && x)
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 
-#if !defined(DUMP_STREAM)                                                   
+#if !defined(DUMP_STREAM)
     #define DUMP_STREAM std::cerr
-#endif                                                                      
-                                                                            
-#if !defined(DUMP_FILE)                                                     
-    #define DUMP_FILE << __FILE__ << ':' << __LINE__                        
-#endif                                                                      
-                                                                            
-#if !defined(DUMP_ENDL)                                                     
-    #define DUMP_ENDL << '\n'                                               
-#endif                                                                      
-                                                                            
-#if !defined(DUMP_THREAD)                                                   
-    #define DUMP_THREAD << " [ " << getThreadId() << " ] "     
-#endif                                                                      
-                                                                            
+#endif
+
+#if !defined(DUMP_FILE)
+    #define DUMP_FILE << __FILE__ << ':' << __LINE__ << ' '
+#endif
+
+#if !defined(DUMP_FUNCTION)
+    //#define DUMP_FUNCTION <<  __PRETTY_FUNCTION__ << ' '
+    #define DUMP_FUNCTION
+#endif
+
+#if !defined(DUMP_ENDL)
+    #define DUMP_ENDL << '\n'
+#endif
+
+#if !defined(DUMP_THREAD)
+    #define DUMP_THREAD << " [ " << getThreadId() << " ] "
+#endif
+
 #define DUMPVAR(VAR) ::dump(DUMP_STREAM, #VAR, (VAR));
-#define DUMPHEAD DUMP_STREAM DUMP_FILE DUMP_THREAD;           
-                                                              
-#define DUMPTAIL DUMP_STREAM DUMP_ENDL;                       
+#define DUMPHEAD DUMP_STREAM DUMP_FILE DUMP_THREAD DUMP_FUNCTION;
+
+#define DUMPTAIL DUMP_STREAM DUMP_ENDL;
 
 #define DUMP1(V1) do { DUMPHEAD DUMPVAR(V1) DUMPTAIL } while(0)
 #define DUMP2(V1, V2) do { DUMPHEAD DUMPVAR(V1) DUMPVAR(V2) DUMPTAIL } while(0)

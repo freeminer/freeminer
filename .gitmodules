@@ -19,3 +19,6 @@
 [submodule "lib/irrlichtmt"]
 	path = lib/irrlichtmt
 	url = https://github.com/minetest/irrlicht
+[submodule "src/external/websocketpp"]
+	path = src/external/websocketpp
+	url = https://github.com/zaphoyd/websocketpp.git

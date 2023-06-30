@@ -272,6 +272,9 @@ local function set_selected_server(tabdata, idx, server)
 	if address and port then
 		core.settings:set("address", address)
 		core.settings:set("remote_port", port)
+		if server.proto then
+			core.settings:set("remote_proto", server.proto)
+		end
 	end
 	tabdata.selected = idx
 end
@@ -295,6 +298,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 
 				gamedata.address    = server.address
 				gamedata.port       = server.port
+				gamedata.proto      = server.proto
 				gamedata.playername = fields.te_name
 				gamedata.selected_world = 0
 
@@ -308,6 +312,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				if gamedata.address and gamedata.port then
 					core.settings:set("address", gamedata.address)
 					core.settings:set("remote_port", gamedata.port)
+					core.settings:set("remote_proto", gamedata.proto)
 					core.start()
 				end
 				return true

@@ -1628,7 +1628,7 @@ void Client::handleCommand_MediaPush(NetworkPacket *pkt)
 		// Compute and check checksum of data
 		std::string computed_hash;
 		{
-			SHA1 ctx;
+			class SHA1 ctx;
 			ctx.addBytes(filedata.c_str(), filedata.size());
 			unsigned char *buf = ctx.getDigest();
 			computed_hash.assign((char*) buf, 20);

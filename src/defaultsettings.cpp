@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <IrrCompileConfig.h>
+#include "network/fm_connection_use.h"
 #include "settings.h"
 #include "porting.h"
 #include "filesys.h"
@@ -209,15 +210,11 @@ void fm_set_default_settings(Settings *settings) {
 
 #if !MINETEST_PROTO || !MINETEST_TRANSPORT
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
-#if USE_SCTP
-	settings->setDefault("server_proto", "fm_sctp");
-	settings->setDefault("serverlist_url", "servers2.freeminer.org");
-#elif USE_ENET
-	settings->setDefault("server_proto", "fm_enet");
+//#elif USE_SCTP
+//	settings->setDefault("serverlist_url", "servers2.freeminer.org");
 #endif
-#else
-	settings->setDefault("server_proto", "mt");
-#endif
+	settings->setDefault("server_proto", server_proto);
+	settings->setDefault("remote_proto", "");
 	settings->setDefault("timeout_mul", android ? "5" : "1");
 	settings->setDefault("default_game", "default"); // "minetest"
 	settings->setDefault("max_users", "100"); // "15"

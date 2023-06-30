@@ -19,16 +19,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "config.h"
+#if USE_WEBSOCKET
+
 
 #include <iomanip>
 #include <cerrno>
 #include <algorithm>
 #include <cmath>
 #include "connection.h"
+#include "network/connection.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
-#include "network/connectionthreads.h"
+#include "connectionthreads.h"
 #include "network/networkpacket.h"
 #include "network/peerhandler.h"
 #include "util/serialize.h"
@@ -37,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "profiler.h"
 
-namespace con
+namespace con_ws
 {
 
 /******************************************************************************/
@@ -53,7 +57,7 @@ namespace con
 #define LOG(a) a
 
 #define PING_TIMEOUT 5.0
-
+#if 0
 u16 BufferedPacket::getSeqnum() const
 {
 	if (size() < BASE_HEADER_SIZE + 3)
@@ -797,6 +801,7 @@ void Channel::UpdateTimers(float dtime)
 				cur_incoming_kbps * (1.0 - old_fraction);
 	}
 }
+#endif
 
 
 /*
@@ -1192,6 +1197,7 @@ SharedBuffer<u8> UDPPeer::addSplitPacket(u8 channel, BufferedPacketPtr &toadd,
 	return channels[channel].incoming_splits.insert(toadd, reliable);
 }
 
+#if 0
 /*
 	ConnectionEvent
 */
@@ -1250,6 +1256,8 @@ ConnectionEventPtr ConnectionEvent::bindFailed()
 {
 	return create(CONNEVENT_BIND_FAILED);
 }
+
+#endif
 
 /*
 	Connection
@@ -1390,6 +1398,7 @@ ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 void Connection::putCommand(ConnectionCommandPtr c)
 {
 	if (!m_shutting_down) {
+		if (c->type == CONNCMD_SEND || c->type == CONNCMD_SEND_TO_ALL) c->reliable = false;		
 		m_command_queue.push_back(c);
 		m_sendThread->Trigger();
 	}
@@ -1559,7 +1568,7 @@ u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
 
 	// Get a unique peer id (2 or higher)
 	session_t peer_id_new = m_next_remote_peer_id;
-	u16 overflow =  PEER_MINETEST_MAX;
+	u16 overflow = PEER_WS_MAX;
 
 	/*
 		Find an unused peer id
@@ -1593,7 +1602,7 @@ u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
 
 	m_next_remote_peer_id = (peer_id_new + 1);
 
-	if (m_next_remote_peer_id > overflow) m_next_remote_peer_id = PEER_MINETEST_MIN;
+	if (m_next_remote_peer_id > overflow) m_next_remote_peer_id = PEER_WS_MIN;
 
 	LOG(dout_con << getDesc()
 			<< "createPeer(): giving peer_id=" << peer_id_new << std::endl);
@@ -1661,7 +1670,7 @@ UDPPeer* Connection::createServerPeer(Address& address)
 	return peer;
 }
 
-
+#if 0
 
 ConnectionCommandPtr ConnectionCommand::send(
 		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
@@ -1674,4 +1683,8 @@ ConnectionCommandPtr ConnectionCommand::send(
 	return c;
 }
 
+#endif
+
 } // namespace
+
+#endif

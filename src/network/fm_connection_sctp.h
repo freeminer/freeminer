@@ -87,13 +87,13 @@ public:
 	void DisconnectPeer(session_t peer_id);
 	size_t events_size() { return m_event_queue.size(); }
 
-private:
+protected:
 	void putEvent(ConnectionEventPtr e);
 	void processCommand(ConnectionCommandPtr c);
 	void send(float dtime);
-	int receive();
+	virtual int receive();
 	void runTimeouts(float dtime);
-	void serve(Address address);
+	virtual void serve(Address address);
 	void connect(Address address);
 	void disconnect();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
@@ -102,8 +102,8 @@ private:
 protected:
 	struct socket *getPeer(session_t peer_id);
 
-private:
 	bool deletePeer(session_t peer_id, bool timeout = 0);
+private:
 
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
@@ -114,8 +114,11 @@ private:
 	// struct sctp_udpencaps encaps;
 	struct socket *sock = nullptr;
 	session_t m_peer_id;
+	session_t m_next_remote_peer_id = PEER_SCTP_MIN;
 
+protected:
 	concurrent_map<u16, struct socket *> m_peers;
+private:
 	concurrent_unordered_map<u16, Address> m_peers_address;
 
 	// Backwards compatibility
@@ -127,13 +130,23 @@ private:
 	u32 GetProtocolID() { return m_protocol_id; }
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
+
+protected:
 	std::string getDesc();
+private:
 
 	bool sock_listen = false, sock_connect = false, sctp_inited_by_me = false;
 	static bool sctp_inited;
+protected:
+	int domain = AF_INET6;
+	int (*sctp_conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df) = nullptr;
+	int (*server_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
+	int (*client_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
+
 	std::pair<int, bool> recv(session_t peer_id, struct socket *sock);
 	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
 	void sctp_setup(u16 port = 9899);
+private:
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
 
 	void handle_association_change_event(
