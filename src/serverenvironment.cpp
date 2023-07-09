@@ -1419,7 +1419,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 		<< " in " << num_blocks_cleared << " blocks" << std::endl;
 }
 
-void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_ms)
+void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_ms)
 {
 	ScopeProfiler sp2(g_profiler, "ServerEnv::step()", SPT_AVG);
 	const auto start_time = porting::getTimeUs();
@@ -1641,13 +1641,13 @@ void ServerEnvironment::step(float dtime, float uptime, unsigned int max_cycle_m
 					MOD_REASON_BLOCK_EXPIRED);
 
 			// Run node timers
+
 			if (!block->m_node_timers.m_uptime_last) // not very good place, but minimum modifications
 				block->m_node_timers.m_uptime_last = uptime - dtime;
-
-			std::vector<NodeTimer> elapsed_timers = block->m_node_timers.step(uptime - block->m_node_timers.m_uptime_last);
+			const auto dtime_s = uptime - block->m_node_timers.m_uptime_last;
 			block->m_node_timers.m_uptime_last = uptime;
 
-			block->step(dtime, [&](v3s16 p, MapNode n, f32 d) -> bool {
+			block->step(dtime_s, [&](v3s16 p, MapNode n, f32 d) -> bool {
 				return m_script->node_on_timer(p, n, d);
 			});
 

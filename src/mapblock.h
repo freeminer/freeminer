@@ -562,7 +562,7 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp {0};
-	u32 m_next_analyze_timestamp = 0;;
+	u32 m_next_analyze_timestamp = 0;
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;

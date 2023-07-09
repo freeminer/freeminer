@@ -391,7 +391,7 @@ public:
 	void clearObjects(ClearObjectsMode mode);
 
 	// This makes stuff happen
-	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
+	void step(f32 dtime, double uptime, unsigned int max_cycle_ms);
 
 	u32 getGameTime() const { return m_game_time; }
 

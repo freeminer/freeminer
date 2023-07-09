@@ -1160,7 +1160,7 @@ void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 
 void Client::Send(NetworkPacket* pkt)
 {
-#if !NDEBUG
+#if !NDEBUG && BUILD_SERVER
 	tracestream << "Client sending packet " << (int)pkt->getCommand() << " ["
 				<< toServerCommandTable[pkt->getCommand()].name
 				<< "] state=" << (int)toServerCommandTable[pkt->getCommand()].state

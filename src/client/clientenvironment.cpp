@@ -138,7 +138,7 @@ void ClientEnvironment::setLocalPlayer(LocalPlayer *player)
 	m_local_player = player;
 }
 
-void ClientEnvironment::step(f32 dtime, float uptime, unsigned int max_cycle_ms)
+void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms)
 {
 
 	TimeTaker timer0("ClientEnvironment::step()");
