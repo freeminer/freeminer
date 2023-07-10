@@ -2850,10 +2850,10 @@ void Game::increaseViewRange()
 
 	if (range_new > MAX_MAP_GENERATION_LIMIT) {
 		range_new = MAX_MAP_GENERATION_LIMIT;
-		std::wstring msg = fwgettext("Viewing range is at maximum: %d", range_new/MAP_BLOCKSIZE);
+		std::wstring msg = fwgettext("Viewing range is at maximum: %d", range_new);
 		m_game_ui->showStatusText(msg);
 	} else {
-		std::wstring msg = fwgettext("Viewing range changed to %d", range_new/MAP_BLOCKSIZE);
+		std::wstring msg = fwgettext("Viewing range changed to %d", range_new);
 		m_game_ui->showStatusText(msg);
 	}
 	g_settings->set("viewing_range", itos(range_new));

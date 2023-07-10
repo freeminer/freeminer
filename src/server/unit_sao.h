@@ -158,7 +158,7 @@ private:
 	bool m_animation_speed_sent = false;
 
 	// Bone positions
-	bool m_bone_position_sent = false;
+	std::atomic_bool m_bone_position_sent = false;
 
 	// Attachments
 	std::unordered_set<int> m_attachment_child_ids;
