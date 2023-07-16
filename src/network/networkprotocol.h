@@ -243,7 +243,7 @@ enum ToClientCommand
 	/*
 		Sent after TOSERVER_INIT.
 
-		u8 deployed serialisation version
+		u8 deployed serialization version
 		u16 deployed network compression mode
 		u16 deployed protocol version
 		u32 supported auth methods
@@ -830,6 +830,14 @@ enum ToClientCommand
 	TOCLIENT_SET_LIGHTING = 0x63,
 	/*
 		f32 shadow_intensity
+		f32 saturation
+		exposure parameters
+			f32 luminance_min
+			f32 luminance_max
+			f32 exposure_correction
+			f32 speed_dark_bright
+			f32 speed_bright_dark
+			f32 center_weight_power
 	*/
 
 	TOCLIENT_NUM_MSG_TYPES = 0x64,
@@ -841,7 +849,7 @@ enum ToServerCommand
 	/*
 		Sent first after connected.
 
-		u8 serialisation version (=SER_FMT_VER_HIGHEST_READ)
+		u8 serialization version (=SER_FMT_VER_HIGHEST_READ)
 		u16 supported network compression modes
 		u16 minimum supported network protocol version
 		u16 maximum supported network protocol version

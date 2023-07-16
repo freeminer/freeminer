@@ -10,10 +10,11 @@ end
 
 local meta = {}
 local declared = {}
--- Key is source file, line, and variable name; seperated by NULs
+-- Key is source file, line, and variable name; separated by NULs
 local warned = {}
 
 function meta:__newindex(name, value)
+	rawset(self, name, value)
 	if declared[name] then
 		return
 	end
@@ -25,7 +26,6 @@ function meta:__newindex(name, value)
 				:format(name, desc))
 		warned[warn_key] = true
 	end
-	rawset(self, name, value)
 	declared[name] = true
 end
 

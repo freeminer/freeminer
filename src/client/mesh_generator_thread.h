@@ -26,17 +26,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock_mesh.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/thread.h"
-
-struct CachedMapBlockData
-{
-	v3bpos_t p = v3bpos_t(-1337, -1337, -1337);
-	MapNode *data = nullptr; // A copy of the MapBlock's data member
-	int refcount_from_queue = 0;
-	std::time_t last_used_timestamp = std::time(0);
-
-	CachedMapBlockData() = default;
-	~CachedMapBlockData();
-};
+#include <vector>
+#include <memory>
 
 struct QueuedMeshUpdate
 {
@@ -45,6 +36,7 @@ struct QueuedMeshUpdate
 	int crack_level = -1;
 	v3pos_t crack_pos;
 	MeshMakeData *data = nullptr; // This is generated in MeshUpdateQueue::pop()
+	std::vector<MapBlock *> map_blocks;
 	bool urgent = false;
 
 	QueuedMeshUpdate() = default;
@@ -75,6 +67,9 @@ public:
 	// Returns NULL if queue is empty
 	QueuedMeshUpdate *pop();
 
+	// Marks a position as finished, unblocking the next update
+	void done(v3s16 pos);
+
 	u32 size()
 	{
 		MutexAutoLock lock(m_mutex);
@@ -85,8 +80,7 @@ private:
 	Client *m_client;
 	std::vector<QueuedMeshUpdate *> m_queue;
 	std::unordered_set<v3bpos_t> m_urgents;
-	std::unordered_map<v3bpos_t, CachedMapBlockData *> m_cache;
-	u64 m_next_cache_cleanup; // milliseconds
+	std::unordered_set<v3bpos_t> m_inflight_blocks;
 	std::mutex m_mutex;
 
 	// TODO: Add callback to update these when g_settings changes
@@ -94,10 +88,7 @@ private:
 	bool m_cache_smooth_lighting;
 	int m_meshgen_block_cache_size;
 
-	CachedMapBlockData *cacheBlock(Map *map, v3bpos_t p, UpdateMode mode,
-			size_t *cache_hit_counter = NULL);
-	CachedMapBlockData *getCachedBlock(const v3bpos_t &p);
-	void fillDataFromMapBlockCache(QueuedMeshUpdate *q);
+	void fillDataFromMapBlocks(QueuedMeshUpdate *q);
 	void cleanupCache();
 };
 
@@ -105,31 +96,61 @@ struct MeshUpdateResult
 {
 	v3bpos_t p = v3bpos_t(-1338, -1338, -1338);
 	MapBlockMesh *mesh = nullptr;
+	u8 solid_sides = 0;
 	bool ack_block_to_server = false;
 	bool urgent = false;
+	std::vector<MapBlock *> map_blocks;
 
 	MeshUpdateResult() = default;
 };
 
-class MeshUpdateThread : public UpdateThread
+class MeshUpdateManager;
+
+class MeshUpdateWorkerThread : public UpdateThread
 {
 public:
-	MeshUpdateThread(Client *client);
+	MeshUpdateWorkerThread(MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset);
+
+protected:
+	virtual void doUpdate();
+
+private:
+	MeshUpdateQueue *m_queue_in;
+	MeshUpdateManager *m_manager;
+	v3s16 *m_camera_offset;
+
+	// TODO: Add callback to update these when g_settings changes
+	int m_generation_interval;
+};
+
+class MeshUpdateManager
+{
+public:
+	MeshUpdateManager(Client *client);
 
 	// Caches the block at p and its neighbors (if needed) and queues a mesh
 	// update for the block at p
 	void updateBlock(Map *map, v3bpos_t p, bool ack_block_to_server, bool urgent,
 			bool update_neighbors = false);
+	void putResult(const MeshUpdateResult &r);
+	bool getNextResult(MeshUpdateResult &r);
+
 
 	v3pos_t m_camera_offset;
-	MutexedQueue<MeshUpdateResult> m_queue_out;
+
+	void start();
+	void stop();
+	void wait();
+
+	bool isRunning();
 
 private:
+	void deferUpdate();
+
+
 	MeshUpdateQueue m_queue_in;
+	MutexedQueue<MeshUpdateResult> m_queue_out;
+	MutexedQueue<MeshUpdateResult> m_queue_out_urgent;
 
-	// TODO: Add callback to update these when g_settings changes
-	int m_generation_interval;
-
-protected:
-	virtual void doUpdate();
+	std::vector<std::unique_ptr<MeshUpdateWorkerThread>> m_workers;
 };
