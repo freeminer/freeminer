@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
+#include "irr_v3d.h"
 #include "mapblock_mesh.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/thread.h"
@@ -68,7 +69,7 @@ public:
 	QueuedMeshUpdate *pop();
 
 	// Marks a position as finished, unblocking the next update
-	void done(v3s16 pos);
+	void done(v3pos_t pos);
 
 	u32 size()
 	{
@@ -109,7 +110,7 @@ class MeshUpdateManager;
 class MeshUpdateWorkerThread : public UpdateThread
 {
 public:
-	MeshUpdateWorkerThread(MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset);
+	MeshUpdateWorkerThread(MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3pos_t *camera_offset);
 
 protected:
 	virtual void doUpdate();
@@ -117,7 +118,7 @@ protected:
 private:
 	MeshUpdateQueue *m_queue_in;
 	MeshUpdateManager *m_manager;
-	v3s16 *m_camera_offset;
+	v3pos_t *m_camera_offset;
 
 	// TODO: Add callback to update these when g_settings changes
 	int m_generation_interval;

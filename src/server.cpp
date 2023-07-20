@@ -2276,7 +2276,7 @@ void Server::sendAddNode(v3pos_t p, MapNode n, std::unordered_set<u16> *far_play
 	sendNodeChangePkt(pkt, block_pos, p_f, far_d_nodes, far_players);
 }
 
-void Server::sendNodeChangePkt(NetworkPacket &pkt, v3s16 block_pos,
+void Server::sendNodeChangePkt(NetworkPacket &pkt, v3bpos_t block_pos,
 		v3f p, float far_d_nodes, std::unordered_set<u16> *far_players)
 {
 	float maxd = far_d_nodes * BS;

@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "mesh_generator_thread.h"
+#include "irr_v3d.h"
 #include "settings.h"
 #include "profiler.h"
 #include "client.h"
@@ -106,7 +107,7 @@ bool MeshUpdateQueue::addBlock(Map *map, v3bpos_t p, bool ack_block_to_server, b
 	cached_blocks.reserve(3*3*3);
 	cached_blocks.push_back(main_block);
 	main_block->refGrab();
-	for (v3s16 dp : g_26dirs) {
+	for (v3pos_t dp : g_26dirs) {
 		MapBlock *block = map->getBlockNoCreateNoEx(p + dp);
 		cached_blocks.push_back(block);
 		if (block)
@@ -185,7 +186,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 	MeshUpdateWorkerThread
 */
 
-MeshUpdateWorkerThread::MeshUpdateWorkerThread(MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset) :
+MeshUpdateWorkerThread::MeshUpdateWorkerThread(MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3pos_t *camera_offset) :
 		UpdateThread("Mesh"), m_queue_in(queue_in), m_manager(manager), m_camera_offset(camera_offset)
 {
 	m_generation_interval = g_settings->getU16("mesh_generation_interval");

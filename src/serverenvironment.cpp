@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include <algorithm>
+#include "irr_v3d.h"
 #include "serverenvironment.h"
 #include "settings.h"
 #include "log.h"
@@ -388,7 +389,7 @@ void ActiveBlockList::update(std::vector<PlayerSAO*> &active_players,
 void OnMapblocksChangedReceiver::onMapEditEvent(const MapEditEvent &event)
 {
 	assert(receiving);
-	for (const v3s16 &p : event.modified_blocks) {
+	for (const v3pos_t &p : event.modified_blocks) {
 		modified_blocks.insert(p);
 	}
 }
@@ -1590,7 +1591,7 @@ void ServerEnvironment::step(float dtime)
 	// Notify mods of modified mapblocks
 	if (m_on_mapblocks_changed_receiver.receiving &&
 			!m_on_mapblocks_changed_receiver.modified_blocks.empty()) {
-		std::unordered_set<v3s16> modified_blocks;
+		std::unordered_set<v3bpos_t> modified_blocks;
 		std::swap(modified_blocks, m_on_mapblocks_changed_receiver.modified_blocks);
 		m_script->on_mapblocks_changed(modified_blocks);
 	}

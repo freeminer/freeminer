@@ -18,11 +18,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "lua_api/l_mapgen.h"
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "lua_api/l_internal.h"
 #include "lua_api/l_vmanip.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "cpp_api/s_security.h"
+#include "server/player_sao.h"
 #include "util/serialize.h"
 #include "server.h"
 #include "environment.h"
@@ -821,7 +824,7 @@ int ModApiMapgen::l_get_mapgen_edges(lua_State *L)
 	// make mapgen settings immutable from then on. Mapgen settings should stay
 	// mutable until after mod loading ends.
 
-	s16 mapgen_limit;
+	pos_t mapgen_limit;
 	if (lua_isnumber(L, 1)) {
 		 mapgen_limit = lua_tointeger(L, 1);
 	} else {
@@ -839,9 +842,9 @@ int ModApiMapgen::l_get_mapgen_edges(lua_State *L)
 		chunksize = stoi(chunksize_str, -32768, 32767);
 	}
 
-	std::pair<s16, s16> edges = get_mapgen_edges(mapgen_limit, chunksize);
-	push_v3s16(L, v3s16(1, 1, 1) * edges.first);
-	push_v3s16(L, v3s16(1, 1, 1) * edges.second);
+	std::pair<pos_t, pos_t> edges = get_mapgen_edges(mapgen_limit, chunksize);
+	push_v3pos(L, v3pos_t(1, 1, 1) * edges.first);
+	push_v3pos(L, v3pos_t(1, 1, 1) * edges.second);
 	return 2;
 }
 

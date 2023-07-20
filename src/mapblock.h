@@ -329,7 +329,7 @@ public:
 	bool onObjectsActivation();
 	bool saveStaticObject(u16 id, const StaticObject &obj, u32 reason);
 
-	void step(float dtime, const std::function<bool(v3s16, MapNode, f32)> &on_timer_cb);
+	void step(float dtime, const std::function<bool(v3pos_t, MapNode, f32)> &on_timer_cb);
 
 	////
 	//// Timestamp (see m_timestamp)

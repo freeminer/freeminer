@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapblock.h"
 
 #include <sstream>
+#include "irr_v3d.h"
 #include "map.h"
 #include "light.h"
 #include "nodedef.h"
@@ -125,13 +126,13 @@ bool MapBlock::saveStaticObject(u16 id, const StaticObject &obj, u32 reason)
 }
 
 // This method is only for Server, don't call it on client
-void MapBlock::step(float dtime, const std::function<bool(v3s16, MapNode, f32)> &on_timer_cb)
+void MapBlock::step(float dtime, const std::function<bool(v3pos_t, MapNode, f32)> &on_timer_cb)
 {
 	// Run script callbacks for elapsed node_timers
 	std::vector<NodeTimer> elapsed_timers = m_node_timers.step(dtime);
 	if (!elapsed_timers.empty()) {
 		MapNode n;
-		v3s16 p;
+		v3pos_t p;
 		for (const NodeTimer &elapsed_timer : elapsed_timers) {
 			n = getNodeNoEx(elapsed_timer.position);
 			p = elapsed_timer.position + getPosRelative();
@@ -910,7 +911,7 @@ std::string analyze_block(MapBlock *block)
 	for(s16 y0=0; y0<MAP_BLOCKSIZE; y0++)
 	for(s16 x0=0; x0<MAP_BLOCKSIZE; x0++)
 	{
-		v3s16 p(x0,y0,z0);
+		v3pos_t p(x0,y0,z0);
 		MapNode n = block->getNodeNoEx(p);
 		content_t c = n.getContent();
 		if(c == CONTENT_IGNORE)

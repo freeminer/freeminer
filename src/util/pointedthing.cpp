@@ -19,11 +19,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "pointedthing.h"
 
+#include "irr_v3d.h"
 #include "serialize.h"
 #include "exceptions.h"
 #include <sstream>
 
-PointedThing::PointedThing(const v3s16 &under, const v3pos_t &above,
+PointedThing::PointedThing(const v3pos_t &under, const v3pos_t &above,
 	const v3pos_t &real_under, const v3f &point, const v3f &normal,
 	u16 box_id, f32 distSq):
 	type(POINTEDTHING_NODE),

@@ -83,14 +83,14 @@ struct MapEditEvent
 	MapEditEvent() = default;
 
 	// Sets the event's position and marks the block as modified.
-	void setPositionModified(v3s16 pos)
+	void setPositionModified(v3pos_t pos)
 	{
 		assert(modified_blocks.empty()); // only meant for initialization (once)
 		p = pos;
 		modified_blocks.push_back(getNodeBlockPos(pos));
 	}
 
-	void setModifiedBlocks(const std::map<v3s16, MapBlock *> blocks)
+	void setModifiedBlocks(const std::map<v3bpos_t, MapBlock *> blocks)
 	{
 		assert(modified_blocks.empty()); // only meant for initialization (once)
 		modified_blocks.reserve(blocks.size());
@@ -309,7 +309,7 @@ public:
 		}
 	}
 
-	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
+	bool isBlockOccluded(MapBlock *block, v3pos_t cam_pos_nodes);
 protected:
 	IGameDef *m_gamedef;
 

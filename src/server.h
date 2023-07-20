@@ -477,7 +477,7 @@ private:
 	void sendAddNode(v3pos_t p, MapNode n,
 			std::unordered_set<u16> *far_players = nullptr,
 			float far_d_nodes = 100, bool remove_metadata = true);
-	void sendNodeChangePkt(NetworkPacket &pkt, v3s16 block_pos,
+	void sendNodeChangePkt(NetworkPacket &pkt, v3bpos_t block_pos,
 			v3f p, float far_d_nodes, std::unordered_set<u16> *far_players);
 
 	void sendMetadataChanged(const std::unordered_set<v3pos_t> &positions,

@@ -35,7 +35,7 @@ extern const u8 wallmounted_to_facedir[6];
 
 extern const v3s16 wallmounted_dirs[8];
 
-extern const v3s16 facedir_dirs[32];
+extern const v3pos_t facedir_dirs[32];
 
 extern const v3s16 fourdir_dirs[4];
 

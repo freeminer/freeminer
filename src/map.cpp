@@ -529,7 +529,7 @@ void ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_blocks,
 
 	std::vector<std::pair<v3pos_t, MapNode> > changed_nodes;
 
-	std::vector<v3s16> check_for_falling;
+	std::vector<v3pos_t> check_for_falling;
 
 	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
 	u32 loop_max = liquid_loop_max;
@@ -843,7 +843,7 @@ void ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_blocks,
 
 	voxalgo::update_lighting_nodes(this, changed_nodes, modified_blocks);
 
-	for (const v3s16 &p : check_for_falling) {
+	for (const v3pos_t &p : check_for_falling) {
 		env->getScriptIface()->check_for_falling(p);
 	}
 

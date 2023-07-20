@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "activeobject.h"
 #include "environment.h"
+#include "irr_v3d.h"
 #include "map.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
@@ -195,7 +196,7 @@ public:
 	ServerEnvironment::m_on_mapblocks_changed_receiver
 */
 struct OnMapblocksChangedReceiver : public MapEventReceiver {
-	std::unordered_set<v3s16> modified_blocks;
+	std::unordered_set<v3bpos_t> modified_blocks;
 	bool receiving = false;
 
 	void onMapEditEvent(const MapEditEvent &event) override;

@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "clientmap.h"
 #include "client.h"
+#include "irr_v2d.h"
 #include "irr_v3d.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
@@ -169,7 +170,7 @@ void ClientMap::OnRegisterSceneNode()
 }
 
 void ClientMap::getBlocksInViewRange(v3pos_t cam_pos_nodes,
-		v3pos_t *p_blocks_min, v3pos_t *p_blocks_max, float range)
+		v3bpos_t *p_blocks_min, v3bpos_t *p_blocks_max, float range)
 {
 	if (range <= 0.0f)
 		range = m_control.wanted_range;
@@ -188,11 +189,11 @@ void ClientMap::getBlocksInViewRange(v3pos_t cam_pos_nodes,
 		cam_pos_nodes.Z + box_nodes_d.Z);
 	// Take a fair amount as we will be dropping more out later
 	// Umm... these additions are a bit strange but they are needed.
-	*p_blocks_min = v3pos_t(
+	*p_blocks_min = v3bpos_t(
 			p_nodes_min.X / MAP_BLOCKSIZE - 3,
 			p_nodes_min.Y / MAP_BLOCKSIZE - 3,
 			p_nodes_min.Z / MAP_BLOCKSIZE - 3);
-	*p_blocks_max = v3pos_t(
+	*p_blocks_max = v3bpos_t(
 			p_nodes_max.X / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
@@ -205,7 +206,7 @@ public:
 	static constexpr u16 CHUNK_MASK = CHUNK_EDGE - 1;
 	static constexpr std::size_t CHUNK_VOLUME = CHUNK_EDGE * CHUNK_EDGE * CHUNK_EDGE; // volume of a chunk
 
-	MapBlockFlags(v3s16 min_pos, v3s16 max_pos)
+	MapBlockFlags(v3bpos_t min_pos, v3bpos_t max_pos)
 			: min_pos(min_pos), volume((max_pos - min_pos) / CHUNK_EDGE + 1)
 	{
 		chunks.resize(volume.X * volume.Y * volume.Z);
@@ -214,14 +215,14 @@ public:
 	class Chunk
 	{
 	public:
-		inline u8 &getBits(v3s16 pos)
+		inline u8 &getBits(v3bpos_t pos)
 		{
 			std::size_t address = getAddress(pos);
 			return bits[address];
 		}
 
 	private:
-		inline std::size_t getAddress(v3s16 pos) {
+		inline std::size_t getAddress(v3bpos_t pos) {
 			std::size_t address = (pos.X & CHUNK_MASK) + (pos.Y & CHUNK_MASK) * CHUNK_EDGE + (pos.Z & CHUNK_MASK) * (CHUNK_EDGE * CHUNK_EDGE);
 			return address;
 		}
@@ -229,9 +230,9 @@ public:
 		std::array<u8, CHUNK_VOLUME> bits;
 	};
 
-	Chunk &getChunk(v3s16 pos)
+	Chunk &getChunk(v3bpos_t pos)
 	{
-		v3s16 delta = (pos - min_pos) / CHUNK_EDGE;
+		v3bpos_t delta = (pos - min_pos) / CHUNK_EDGE;
 		std::size_t address = delta.X + delta.Y * volume.X + delta.Z * volume.X * volume.Y;
 		Chunk *chunk = chunks[address].get();
 		if (!chunk) {
@@ -242,8 +243,8 @@ public:
 	}
 private:
 	std::vector<std::unique_ptr<Chunk>> chunks;
-	v3s16 min_pos;
-	v3s16 volume;
+	v3bpos_t min_pos;
+	v3bpos_t volume;
 };
 
 void ClientMap::updateDrawList()
@@ -289,7 +290,7 @@ void ClientMap::updateDrawList()
 	// if (occlusion_culling_enabled && m_control.show_wireframe)
 	// 	occlusion_culling_enabled = porting::getTimeS() & 1;
 
-	std::queue<v3s16> blocks_to_consider;
+	std::queue<v3bpos_t> blocks_to_consider;
 
 	// Bits per block:
 	// [ visited | 0 | 0 | 0 | 0 | Z visible | Y visible | X visible ]
@@ -302,7 +303,7 @@ void ClientMap::updateDrawList()
 	// Recursively walk the space and pick mapblocks for drawing
 	while (blocks_to_consider.size() > 0) {
 
-		v3s16 block_coord = blocks_to_consider.front();
+		v3bpos_t block_coord = blocks_to_consider.front();
 		blocks_to_consider.pop();
 
 		auto &flags = blocks_seen.getChunk(block_coord).getBits(block_coord);
@@ -315,7 +316,7 @@ void ClientMap::updateDrawList()
 		blocks_visited++;
 
 		// Get the sector, block and mesh
-		MapSector *sector = this->getSectorNoGenerate(v2s16(block_coord.X, block_coord.Z));
+		MapSector *sector = this->getSectorNoGenerate(v2bpos_t(block_coord.X, block_coord.Z));
 
 		if (!sector)
 			continue;
@@ -329,7 +330,7 @@ void ClientMap::updateDrawList()
 		v3f mesh_sphere_center;
 		f32 mesh_sphere_radius;
 
-		v3s16 block_pos_nodes = block_coord * MAP_BLOCKSIZE;
+		v3pos_t block_pos_nodes = block_coord * MAP_BLOCKSIZE;
 
 		if (mesh) {
 			mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -357,7 +358,7 @@ void ClientMap::updateDrawList()
 
 		// Calculate the vector from the camera block to the current block
 		// We use it to determine through which sides of the current block we can continue the search
-		v3s16 look = block_coord - camera_block;
+		v3bpos_t look = block_coord - camera_block;
 
 		// Occluded near sides will further occlude the far sides
 		u8 visible_outer_sides = flags & 0x07;
@@ -422,7 +423,7 @@ void ClientMap::updateDrawList()
 
 		// Calculate vector from camera to mapblock center. Because we only need relation between
 		// coordinates we scale by 2 to avoid precision loss.
-		v3s16 precise_look = 2 * (block_pos_nodes - cam_pos_nodes) + MAP_BLOCKSIZE - 1;
+		v3bpos_t precise_look = 2 * (block_pos_nodes - cam_pos_nodes) + MAP_BLOCKSIZE - 1;
 
 		// dominant axis flag
 		u8 dominant_axis = (abs(precise_look.X) > abs(precise_look.Y) && abs(precise_look.X) > abs(precise_look.Z)) |
@@ -448,7 +449,7 @@ void ClientMap::updateDrawList()
 				bool side_visible = ((near_transparency & adjacent_sides) | (near_transparency & my_side & dominant_axis)) != 0;
 				side_visible = side_visible && ((far_side_mask & transparent_sides) != 0);
 
-				v3s16 next_pos = block_coord;
+				v3bpos_t next_pos = block_coord;
 				next_pos[axis] += next_pos_offset;
 
 				// If a side is a see-through, mark the next block's side as visible, and queue
@@ -483,10 +484,10 @@ void ClientMap::updateDrawList()
 
 void ClientMap::touchMapBlocks()
 {
-	v3s16 cam_pos_nodes = floatToInt(m_camera_position, BS);
+	v3pos_t cam_pos_nodes = floatToInt(m_camera_position, BS);
 
-	v3s16 p_blocks_min;
-	v3s16 p_blocks_max;
+	v3bpos_t p_blocks_min;
+	v3bpos_t p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
 
 	// Number of blocks currently loaded by the client

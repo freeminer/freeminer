@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "cpp_api/s_env.h"
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
+#include "irr_v3d.h"
 #include "log.h"
 #include "environment.h"
 #include "mapgen/mapgen.h"
@@ -257,7 +258,7 @@ void ScriptApiEnv::on_emerge_area_completion(
 	}
 }
 
-void ScriptApiEnv::check_for_falling(v3s16 p)
+void ScriptApiEnv::check_for_falling(v3pos_t p)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -265,7 +266,7 @@ void ScriptApiEnv::check_for_falling(v3s16 p)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "check_for_falling");
 	luaL_checktype(L, -1, LUA_TFUNCTION);
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 }
 
@@ -300,7 +301,7 @@ void ScriptApiEnv::on_liquid_transformed(
 	runCallbacks(2, RUN_CALLBACKS_MODE_FIRST);
 }
 
-void ScriptApiEnv::on_mapblocks_changed(const std::unordered_set<v3s16> &set)
+void ScriptApiEnv::on_mapblocks_changed(const std::unordered_set<v3bpos_t> &set)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -312,7 +313,7 @@ void ScriptApiEnv::on_mapblocks_changed(const std::unordered_set<v3s16> &set)
 
 	// Convert the set to a set of position hashes
 	lua_createtable(L, 0, set.size());
-	for(const v3s16 &p : set) {
+	for(const v3bpos_t &p : set) {
 		lua_pushnumber(L, hash_node_position(p));
 		lua_pushboolean(L, true);
 		lua_rawset(L, -3);

@@ -44,13 +44,13 @@ public:
 	void on_emerge_area_completion(v3bpos_t blockpos, int action,
 		ScriptCallbackState *state);
 
-	void check_for_falling(v3s16 p);
+	void check_for_falling(v3pos_t p);
 
 	// Called after liquid transform changes
 	void on_liquid_transformed(const std::vector<std::pair<v3pos_t, MapNode>> &list);
 
 	// Called after mapblock changes
-	void on_mapblocks_changed(const std::unordered_set<v3s16> &set);
+	void on_mapblocks_changed(const std::unordered_set<v3bpos_t> &set);
 
 	// Determines whether there are any on_mapblocks_changed callbacks
 	bool has_on_mapblocks_changed();
