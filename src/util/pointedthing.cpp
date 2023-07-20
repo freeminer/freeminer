@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "pointedthing.h"
 
+#include "irr_v3d.h"
 #include "serialize.h"
 #include "exceptions.h"
 #include <sstream>

@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "noise.h"
 #include "nodedef.h"
 #include "util/string.h"
@@ -333,4 +334,4 @@ protected:
 
 // Calculate exact edges of the outermost mapchunks that are within the set
 // mapgen_limit. Returns the minimum and maximum edges in nodes in that order.
-std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize);
+std::pair<pos_t, pos_t> get_mapgen_edges(pos_t mapgen_limit, s16 chunksize);

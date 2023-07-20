@@ -234,7 +234,7 @@ public:
 
 	Chunk &getChunk(v3bpos_t pos)
 	{
-		v3pos_t delta = (pos - min_pos) / CHUNK_EDGE;
+		v3bpos_t delta = (pos - min_pos) / CHUNK_EDGE;
 		std::size_t address = delta.X + delta.Y * volume.X + delta.Z * volume.X * volume.Y;
 		Chunk *chunk = chunks[address].get();
 		if (!chunk) {
