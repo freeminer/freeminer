@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "irrlichttypes.h"
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h"
@@ -96,6 +97,18 @@ struct PlayerControl
 	float movement_direction = 0.0f;
 };
 
+struct PlayerPhysicsOverride
+{
+	float speed = 1.f;
+	float jump = 1.f;
+	float gravity = 1.f;
+
+	bool sneak = true;
+	bool sneak_glitch = false;
+	// "Temporary" option for old move code
+	bool new_move = true;
+};
+
 struct PlayerSettings
 {
 	bool free_move = false;
@@ -128,9 +141,9 @@ public:
 
 	DISABLE_CLASS_COPY(Player);
 
-	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
+	virtual void move(f32 dtime, Environment *env, opos_t pos_max_d)
 	{}
-	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
+	virtual void move(f32 dtime, Environment *env, opos_t pos_max_d,
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
@@ -182,6 +195,7 @@ public:
 
 	PlayerControl control;
 	const PlayerControl& getPlayerControl() { return control; }
+	PlayerPhysicsOverride physics_override;
 	PlayerSettings &getPlayerSettings() { return m_player_settings; }
 	static void settingsChangedCallback(const std::string &name, void *data);
 

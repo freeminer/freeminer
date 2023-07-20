@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "directiontables.h"
+#include "irr_v3d.h"
 
 const v3pos_t g_6dirs[6] =
 {
@@ -128,4 +129,53 @@ const u8 wallmounted_to_facedir[6] = {
 	12 + 3,
 	8,
 	4 + 2
+};
+
+const v3s16 wallmounted_dirs[8] = {
+	v3s16(0, 1, 0),
+	v3s16(0, -1, 0),
+	v3s16(1, 0, 0),
+	v3s16(-1, 0, 0),
+	v3s16(0, 0, 1),
+	v3s16(0, 0, -1),
+};
+
+const v3pos_t facedir_dirs[32] = {
+	//0
+	v3pos_t(0, 0, 1),
+	v3pos_t(1, 0, 0),
+	v3pos_t(0, 0, -1),
+	v3pos_t(-1, 0, 0),
+	//4
+	v3pos_t(0, -1, 0),
+	v3pos_t(1, 0, 0),
+	v3pos_t(0, 1, 0),
+	v3pos_t(-1, 0, 0),
+	//8
+	v3pos_t(0, 1, 0),
+	v3pos_t(1, 0, 0),
+	v3pos_t(0, -1, 0),
+	v3pos_t(-1, 0, 0),
+	//12
+	v3pos_t(0, 0, 1),
+	v3pos_t(0, -1, 0),
+	v3pos_t(0, 0, -1),
+	v3pos_t(0, 1, 0),
+	//16
+	v3pos_t(0, 0, 1),
+	v3pos_t(0, 1, 0),
+	v3pos_t(0, 0, -1),
+	v3pos_t(0, -1, 0),
+	//20
+	v3pos_t(0, 0, 1),
+	v3pos_t(-1, 0, 0),
+	v3pos_t(0, 0, -1),
+	v3pos_t(1, 0, 0),
+};
+
+const v3s16 fourdir_dirs[4] = {
+	v3s16(0, 0, 1),
+	v3s16(1, 0, 0),
+	v3s16(0, 0, -1),
+	v3s16(-1, 0, 0),
 };

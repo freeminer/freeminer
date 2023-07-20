@@ -117,7 +117,7 @@ bool Decoration::canPlaceDecoration(MMVManip *vm, v3pos_t p)
 		v3pos_t( 1, 1, -1)
 	};
 
-	// Check these 16 neighbouring nodes for enough spawnby nodes
+	// Check these 16 neighboring nodes for enough spawnby nodes
 	for (size_t i = 0; i != ARRLEN(dirs); i++) {
 		u32 index = vm->m_area.index(p + dirs[i]);
 		if (!vm->m_area.contains(index))
