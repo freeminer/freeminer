@@ -405,7 +405,7 @@ private:
 	std::mutex m_textureinfo_cache_mutex;
 
 	// Queued texture fetches (to be processed by the main thread)
-	RequestQueue<std::string, u32, u8, u8> m_get_texture_queue;
+	RequestQueue<std::string, u32, std::thread::id, u8> m_get_texture_queue;
 
 	// Textures that have been overwritten with other ones
 	// but can't be deleted because the ITexture* might still be used
@@ -491,15 +491,15 @@ u32 TextureSource::getTextureId(const std::string &name)
 	infostream<<"getTextureId(): Queued: name=\""<<name<<"\""<<std::endl;
 
 	// We're gonna ask the result to be put into here
-	static ResultQueue<std::string, u32, u8, u8> result_queue;
+	static thread_local ResultQueue<std::string, u32, std::thread::id, u8> result_queue;
 
 	// Throw a request in
-	m_get_texture_queue.add(name, 0, 0, &result_queue);
+	m_get_texture_queue.add(name, std::this_thread::get_id(), 0, &result_queue);
 
 	try {
 		while(true) {
-			// Wait result for a second
-			GetResult<std::string, u32, u8, u8>
+			// Wait for result for up to 1 seconds (empirical value)
+			GetResult<std::string, u32, std::thread::id, u8>
 				result = result_queue.pop_front(1000);
 
 			if (result.key == name) {
@@ -516,7 +516,7 @@ u32 TextureSource::getTextureId(const std::string &name)
 	return 0;
 }
 
-// Draw an image on top of an another one, using the alpha channel of the
+// Draw an image on top of another one, using the alpha channel of the
 // source image
 static void blit_with_alpha(video::IImage *src, video::IImage *dst,
 		v2s32 src_pos, v2s32 dst_pos, v2u32 size);
@@ -726,10 +726,10 @@ void TextureSource::processQueue()
 	/*
 		Fetch textures
 	*/
-	//NOTE this is only thread safe for ONE consumer thread!
-	if (!m_get_texture_queue.empty())
+	// NOTE: process outstanding requests from all mesh generation threads
+	while (!m_get_texture_queue.empty())
 	{
-		GetRequest<std::string, u32, u8, u8>
+		GetRequest<std::string, u32, std::thread::id, u8>
 				request = m_get_texture_queue.pop();
 
 		/*infostream<<"TextureSource::processQueue(): "
@@ -979,8 +979,9 @@ video::IImage* TextureSource::generateImage(const std::string &name)
 				<< std::endl;
 			return NULL;
 		}
-		core::dimension2d<u32> dim = tmp->getDimension();
+		
 		if (baseimg) {
+			core::dimension2d<u32> dim = tmp->getDimension();
 			blit_with_alpha(tmp, baseimg, v2s32(0, 0), v2s32(0, 0), dim);
 			tmp->drop();
 		} else {
@@ -1853,7 +1854,7 @@ static inline video::SColor blitPixel(const video::SColor &src_c, const video::S
 }
 
 /*
-	Draw an image on top of an another one, using the alpha channel of the
+	Draw an image on top of another one, using the alpha channel of the
 	source image
 
 	This exists because IImage::copyToWithAlpha() doesn't seem to always
@@ -1877,7 +1878,7 @@ static void blit_with_alpha(video::IImage *src, video::IImage *dst,
 }
 
 /*
-	Draw an image on top of an another one, using the alpha channel of the
+	Draw an image on top of another one, using the alpha channel of the
 	source image; only modify fully opaque pixels in destinaion
 */
 static void blit_with_alpha_overlay(video::IImage *src, video::IImage *dst,
@@ -1904,7 +1905,7 @@ static void blit_with_alpha_overlay(video::IImage *src, video::IImage *dst,
 // Feel free to re-enable if you find it handy.
 #if 0
 /*
-	Draw an image on top of an another one, using the specified ratio
+	Draw an image on top of another one, using the specified ratio
 	modify all partially-opaque pixels in the destination.
 */
 static void blit_with_interpolate_overlay(video::IImage *src, video::IImage *dst,

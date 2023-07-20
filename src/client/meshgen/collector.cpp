@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <stdexcept>
 #include "log.h"
 #include "client/mesh.h"
+#include "util/numeric.h"
 
 void MeshCollector::append(const TileSpec &tile, const video::S3DVertex *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices)
@@ -45,9 +46,12 @@ void MeshCollector::append(const TileLayer &layer, const video::S3DVertex *verti
 		scale = 1.0f / layer.scale;
 
 	u32 vertex_count = p.vertices.size();
-	for (u32 i = 0; i < numVertices; i++)
+	for (u32 i = 0; i < numVertices; i++) {
 		p.vertices.emplace_back(vertices[i].Pos, vertices[i].Normal,
 				vertices[i].Color, scale * vertices[i].TCoords);
+		m_bounding_radius_sq = std::max<f32>(m_bounding_radius_sq,
+				(v3fToOpos(vertices[i].Pos) - m_center_pos).getLengthSQ());
+	}
 
 	for (u32 i = 0; i < numIndices; i++)
 		p.indices.push_back(indices[i] + vertex_count);
@@ -81,8 +85,11 @@ void MeshCollector::append(const TileLayer &layer, const video::S3DVertex *verti
 		video::SColor color = c;
 		if (!light_source)
 			applyFacesShading(color, vertices[i].Normal);
-		p.vertices.emplace_back(vertices[i].Pos + pos, vertices[i].Normal, color,
+		auto vpos = vertices[i].Pos + pos;
+		p.vertices.emplace_back(vpos, vertices[i].Normal, color,
 				scale * vertices[i].TCoords);
+		m_bounding_radius_sq = std::max<f32>(m_bounding_radius_sq,
+				(v3fToOpos(vpos) - m_center_pos).getLengthSQ());
 	}
 
 	for (u32 i = 0; i < numIndices; i++)

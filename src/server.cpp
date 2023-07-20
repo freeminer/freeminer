@@ -72,6 +72,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server/serverinventorymgr.h"
 #include "translation.h"
 #include "database/database-sqlite3.h"
+#if USE_POSTGRESQL
+#include "database/database-postgresql.h"
+#endif
 #include "database/database-files.h"
 #include "database/database-dummy.h"
 #include "gameparams.h"
@@ -264,10 +267,13 @@ Server::Server(
 		throw ServerError("Supplied invalid gamespec");
 
 #if USE_PROMETHEUS
-	m_metrics_backend = std::unique_ptr<MetricsBackend>(createPrometheusMetricsBackend());
+	if (!simple_singleplayer_mode)
+		m_metrics_backend = std::unique_ptr<MetricsBackend>(createPrometheusMetricsBackend());
+	else
 #else
-	m_metrics_backend = std::make_unique<MetricsBackend>();
+	if (true)
 #endif
+		m_metrics_backend = std::make_unique<MetricsBackend>();
 
 	m_uptime_counter = m_metrics_backend->addCounter("minetest_core_server_uptime", "Server uptime (in seconds)");
 	m_player_gauge = m_metrics_backend->addGauge("minetest_core_player_number", "Number of connected players");
@@ -429,15 +435,11 @@ void Server::init()
 	m_mod_storage_database->beginSave();
 
 	m_modmgr = std::make_unique<ServerModManager>(m_path_world);
-	std::vector<ModSpec> unsatisfied_mods = m_modmgr->getUnsatisfiedMods();
 
 	// complain about mods with unsatisfied dependencies
 	if (!m_modmgr->isConsistent()) {
-		m_modmgr->printUnsatisfiedModsError();
-
-		warningstream
-			<< "You have unsatisfied dependencies, loading your world anyway. "
-			<< "This will become a fatal error in the future." << std::endl;
+		std::string error = m_modmgr->getUnsatisfiedModsError();
+		throw ServerError(error);
 	}
 
 	//lock environment
@@ -456,6 +458,7 @@ void Server::init()
 	m_inventory_mgr = std::make_unique<ServerInventoryManager>();
 
 	m_script->loadMod(getBuiltinLuaPath() + DIR_DELIM "init.lua", BUILTIN_MOD_NAME);
+	m_script->checkSetByBuiltin();
 
 	m_gamespec.checkAndLog();
 	m_modmgr->loadMods(m_script);
@@ -491,6 +494,7 @@ void Server::init()
 	m_startup_server_map = nullptr; // Ownership moved to ServerEnvironment
 	m_env = new ServerEnvironment(servermap, m_script, this,
 		m_path_world, m_metrics_backend.get());
+	m_env->init();
 
 	m_inventory_mgr->setEnv(m_env);
 	m_clients.setEnv(m_env);
@@ -700,11 +704,11 @@ void Server::AsyncRunStep(bool initial_step)
 		std::map<v3bpos_t, MapBlock*> modified_blocks;
 		m_env->getServerMap().transformLiquids(modified_blocks, m_env);
 
-		/*
-			Set the modified blocks unsent for all the clients
-		*/
 		if (!modified_blocks.empty()) {
-			SetBlocksNotSent(modified_blocks);
+			MapEditEvent event;
+			event.type = MEET_OTHER;
+			event.setModifiedBlocks(modified_blocks);
+			m_env->getMap().dispatchEvent(event);
 		}
 	}
 	m_clients.step(dtime);
@@ -1099,7 +1103,7 @@ PlayerSAO* Server::StageTwoClientInit(session_t peer_id)
 	if (!playersao || !player) {
 		if (player && player->getPeerId() != PEER_ID_INEXISTENT) {
 			actionstream << "Server: Failed to emerge player \"" << playername
-					<< "\" (player allocated to an another client)" << std::endl;
+					<< "\" (player allocated to another client)" << std::endl;
 			DenyAccess(peer_id, SERVER_ACCESSDENIED_ALREADY_CONNECTED);
 		} else {
 			errorstream << "Server: " << playername << ": Failed to emerge player"
@@ -1258,17 +1262,6 @@ void Server::onMapEditEvent(const MapEditEvent &event)
 	m_unsent_map_edit_queue.push(new MapEditEvent(event));
 }
 
-void Server::SetBlocksNotSent(std::map<v3bpos_t, MapBlock *>& block)
-{
-	std::vector<session_t> clients = m_clients.getClientIDs();
-	ClientInterface::AutoLock clientlock(m_clients);
-	// Set the modified blocks unsent for all the clients
-	for (const session_t client_id : clients) {
-			if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
-				client->SetBlocksNotSent(block);
-	}
-}
-
 void Server::peerAdded(con::Peer *peer)
 {
 	verbosestream<<"Server::peerAdded(): peer->id="
@@ -1369,8 +1362,6 @@ void Server::Send(session_t peer_id, NetworkPacket *pkt)
 
 void Server::SendMovement(session_t peer_id)
 {
-	std::ostringstream os(std::ios_base::binary);
-
 	NetworkPacket pkt(TOCLIENT_MOVEMENT, 12 * sizeof(float), peer_id);
 
 	pkt << g_settings->getFloat("movement_acceleration_default");
@@ -1880,8 +1871,16 @@ void Server::SendSetLighting(session_t peer_id, const Lighting &lighting)
 {
 	NetworkPacket pkt(TOCLIENT_SET_LIGHTING,
 			4, peer_id);
-	
+
 	pkt << lighting.shadow_intensity;
+	pkt << lighting.saturation;
+
+	pkt << lighting.exposure.luminance_min
+			<< lighting.exposure.luminance_max
+			<< lighting.exposure.exposure_correction
+			<< lighting.exposure.speed_dark_bright
+			<< lighting.exposure.speed_bright_dark
+			<< lighting.exposure.center_weight_power;
 
 	Send(&pkt);
 }
@@ -2261,45 +2260,21 @@ void Server::fadeSound(s32 handle, float step, float gain)
 void Server::sendRemoveNode(v3pos_t p, std::unordered_set<u16> *far_players,
 		float far_d_nodes)
 {
-	float maxd = far_d_nodes * BS;
-	v3opos_t p_f = posToOpos(p, BS);
-	v3bpos_t block_pos = getNodeBlockPos(p);
-
-	std::vector<session_t> clients = m_clients.getClientIDs();
-	ClientInterface::AutoLock clientlock(m_clients);
-
-	for (session_t client_id : clients) {
-		RemoteClient *client = m_clients.lockedGetClientNoEx(client_id);
-		if (!client)
-			continue;
-
-		RemotePlayer *player = m_env->getPlayer(client_id);
-		PlayerSAO *sao = player ? player->getPlayerSAO() : nullptr;
-
-		// If player is far away, only set modified blocks not sent
-		if (!client->isBlockSent(block_pos) || (sao &&
-				sao->getBasePosition().getDistanceFrom(p_f) > maxd)) {
-			if (far_players)
-				far_players->emplace(client_id);
-			else
-				client->SetBlockNotSent(block_pos);
-			continue;
-		}
-		NetworkPacket pkt(TOCLIENT_REMOVENODE, sizeof_v3pos(player->protocol_version), 0, player->protocol_version);
-		pkt << p;
-
-		// Send as reliable
-		m_clients.send(client_id, 0, &pkt, true);
-	}
+	sendNodeChangePkt(TOCLIENT_REMOVENODE, {}, p, far_d_nodes, far_players);
 }
 
 void Server::sendAddNode(v3pos_t p, MapNode n, std::unordered_set<u16> *far_players,
 		float far_d_nodes, bool remove_metadata)
 {
-	float maxd = far_d_nodes * BS;
-	auto p_f = intToFloat(p, (opos_t)BS);
-	v3bpos_t block_pos = getNodeBlockPos(p);
+	sendNodeChangePkt(TOCLIENT_ADDNODE, n, p, far_d_nodes, far_players, remove_metadata);
+}
 
+void Server::sendNodeChangePkt(u16 command, const MapNode& n, v3pos_t p_int, float far_d_nodes, std::unordered_set<u16> *far_players, bool remove_metadata)
+{
+	v3opos_t p = intToFloat(p_int, (opos_t)BS);
+	v3bpos_t block_pos = getNodeBlockPos(p_int);
+
+	float maxd = far_d_nodes * BS;
 	std::vector<session_t> clients = m_clients.getClientIDs();
 	ClientInterface::AutoLock clientlock(m_clients);
 
@@ -2313,7 +2288,7 @@ void Server::sendAddNode(v3pos_t p, MapNode n, std::unordered_set<u16> *far_play
 
 		// If player is far away, only set modified blocks not sent
 		if (!client->isBlockSent(block_pos) || (sao &&
-				sao->getBasePosition().getDistanceFrom(p_f) > maxd)) {
+				sao->getBasePosition().getDistanceFrom(p) > maxd)) {
 			if (far_players)
 				far_players->emplace(client_id);
 			else
@@ -2321,11 +2296,22 @@ void Server::sendAddNode(v3pos_t p, MapNode n, std::unordered_set<u16> *far_play
 			continue;
 		}
 
-		NetworkPacket pkt(TOCLIENT_ADDNODE, sizeof_v3pos(player->protocol_version) + 2 + 1 + 1 + 1, 0, player->protocol_version);
-		pkt << p << n.param0 << n.param1 << n.param2 << (u8) (remove_metadata ? 0 : 1);
+		if (command == TOCLIENT_ADDNODE) {
+			NetworkPacket pkt(TOCLIENT_ADDNODE,
+					sizeof_v3pos(player->protocol_version) + 2 + 1 + 1 + 1, 0,
+					player->protocol_version);
+			pkt << p << n.param0 << n.param1 << n.param2 << (u8)(remove_metadata ? 0 : 1);
 
-		// Send as reliable
-		m_clients.send(client_id, 0, &pkt, true);
+			// Send as reliable
+			m_clients.send(client_id, 0, &pkt, true);
+		} else if (command == TOCLIENT_REMOVENODE) {
+			NetworkPacket pkt(TOCLIENT_REMOVENODE, sizeof_v3pos(player->protocol_version),
+					0, player->protocol_version);
+			pkt << p;
+
+			// Send as reliable
+			m_clients.send(client_id, 0, &pkt, true);
+		}
 	}
 }
 
@@ -3893,25 +3879,6 @@ PlayerSAO* Server::emergePlayer(const char *name, session_t peer_id, u16 proto_v
 	return playersao;
 }
 
-bool Server::registerModStorage(ModMetadata *storage)
-{
-	if (m_mod_storages.find(storage->getModName()) != m_mod_storages.end()) {
-		errorstream << "Unable to register same mod storage twice. Storage name: "
-				<< storage->getModName() << std::endl;
-		return false;
-	}
-
-	m_mod_storages[storage->getModName()] = storage;
-	return true;
-}
-
-void Server::unregisterModStorage(const std::string &name)
-{
-	std::unordered_map<std::string, ModMetadata *>::const_iterator it = m_mod_storages.find(name);
-	if (it != m_mod_storages.end())
-		m_mod_storages.erase(name);
-}
-
 void dedicated_server_loop(Server &server, bool &kill)
 {
 	verbosestream<<"dedicated_server_loop()"<<std::endl;
@@ -4048,7 +4015,7 @@ Translations *Server::getTranslationLanguage(const std::string &lang_code)
 	return translations;
 }
 
-ModMetadataDatabase *Server::openModStorageDatabase(const std::string &world_path)
+ModStorageDatabase *Server::openModStorageDatabase(const std::string &world_path)
 {
 	std::string world_mt_path = world_path + DIR_DELIM + "world.mt";
 	Settings world_mt;
@@ -4066,14 +4033,22 @@ ModMetadataDatabase *Server::openModStorageDatabase(const std::string &world_pat
 	return openModStorageDatabase(backend, world_path, world_mt);
 }
 
-ModMetadataDatabase *Server::openModStorageDatabase(const std::string &backend,
+ModStorageDatabase *Server::openModStorageDatabase(const std::string &backend,
 		const std::string &world_path, const Settings &world_mt)
 {
 	if (backend == "sqlite3")
-		return new ModMetadataDatabaseSQLite3(world_path);
+		return new ModStorageDatabaseSQLite3(world_path);
+
+#if USE_POSTGRESQL
+	if (backend == "postgresql") {
+		std::string connect_string;
+		world_mt.getNoEx("pgsql_mod_storage_connection", connect_string);
+		return new ModStorageDatabasePostgreSQL(connect_string);
+	}
+#endif // USE_POSTGRESQL
 
 	if (backend == "files")
-		return new ModMetadataDatabaseFiles(world_path);
+		return new ModStorageDatabaseFiles(world_path);
 
 	if (backend == "dummy")
 		return new Database_Dummy();
@@ -4099,8 +4074,8 @@ bool Server::migrateModStorageDatabase(const GameParams &game_params, const Sett
 		return false;
 	}
 
-	ModMetadataDatabase *srcdb = nullptr;
-	ModMetadataDatabase *dstdb = nullptr;
+	ModStorageDatabase *srcdb = nullptr;
+	ModStorageDatabase *dstdb = nullptr;
 
 	bool succeeded = false;
 

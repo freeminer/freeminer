@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <fstream>
 #include "environment.h"
 #include "collision.h"
+#include "irr_v3d.h"
 #include "raycast.h"
 #include "scripting_server.h"
 #include "server.h"
@@ -45,7 +46,7 @@ Environment::Environment(IGameDef *gamedef):
 
 u32 Environment::getDayNightRatio()
 {
-	MutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(m_time_lock);
 	if (m_enable_day_night_ratio_override)
 		return m_day_night_ratio_override;
 	return time_to_daynight_ratio(m_time_of_day_f * 24000, m_cache_enable_shaders);
@@ -58,14 +59,14 @@ void Environment::setTimeOfDaySpeed(float speed)
 
 void Environment::setDayNightRatioOverride(bool enable, u32 value)
 {
-	MutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(m_time_lock);
 	m_enable_day_night_ratio_override = enable;
 	m_day_night_ratio_override = value;
 }
 
 void Environment::setTimeOfDay(u32 time)
 {
-	MutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(m_time_lock);
 	if (m_time_of_day > time)
 		++m_day_count;
 	m_time_of_day = time;
@@ -74,13 +75,13 @@ void Environment::setTimeOfDay(u32 time)
 
 u32 Environment::getTimeOfDay()
 {
-	MutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(m_time_lock);
 	return m_time_of_day;
 }
 
 float Environment::getTimeOfDayF()
 {
-	MutexAutoLock lock(this->m_time_lock);
+	MutexAutoLock lock(m_time_lock);
 	return m_time_of_day_f;
 }
 
@@ -203,22 +204,22 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 			// ID of the current box (loop counter)
 			u16 id = 0;
 
-			auto npf = posToOpos(np, BS);
-			// This loop translates the boxes to their in-world place.
-			for (aabb3f &boxf : boxes) {
-				aabb3o box(v3fToOpos(boxf.MinEdge), v3fToOpos(boxf.MaxEdge));
-				box.MinEdge += npf;
-				box.MaxEdge += npf;
-
+			// Do calculations relative to the node center
+			// to translate the ray rather than the boxes
+			v3opos_t npf = intToFloat(np, BS);
+			v3opos_t rel_start = state->m_shootline.start - npf;
+			for (aabb3f &box : boxes) {
+				//aabb3o box(v3fToOpos(boxf.MinEdge), v3fToOpos(boxf.MaxEdge));
 				v3opos_t intersection_point;
-				v3pos_t intersection_normal;
-				if (!boxLineCollision(box, state->m_shootline.start,
+				v3f intersection_normal;
+				if (!boxLineCollision(box, rel_start,
 						state->m_shootline.getVector(), &intersection_point,
 						&intersection_normal)) {
 					++id;
 					continue;
 				}
 
+				intersection_point += npf; // translate back to world coords
 				f32 distanceSq = (intersection_point
 					- state->m_shootline.start).getLengthSQ();
 				// If this is the nearest collision, save it
@@ -227,7 +228,7 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 					result.intersection_point = intersection_point;
 					result.intersection_normal = intersection_normal;
 					result.box_id = id;
-					found_boxcenter = box.getCenter();
+					found_boxcenter = v3fToOpos(box.getCenter());
 					is_colliding = true;
 				}
 				++id;
@@ -241,7 +242,8 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 			result.distanceSq = min_distance_sq;
 			// Set undersurface and abovesurface nodes
 			f32 d = 0.002 * BS;
-			auto fake_intersection = result.intersection_point;
+			v3opos_t fake_intersection = result.intersection_point;
+			found_boxcenter += npf; // translate back to world coords
 			// Move intersection towards its source block.
 			if (fake_intersection.X < found_boxcenter.X) {
 				fake_intersection.X += d;
@@ -261,7 +263,7 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 			result.node_real_undersurface = floatToInt(
 				fake_intersection, BS);
 			result.node_abovesurface = result.node_real_undersurface
-				+ result.intersection_normal;
+				+ floatToInt(result.intersection_normal, 1.0f);
 			// Push found PointedThing
 			state->m_found.push(result);
 			// If this is nearer than the old nearest object,

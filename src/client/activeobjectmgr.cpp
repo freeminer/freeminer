@@ -17,9 +17,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include <cmath>
 #include <log.h>
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "profiler.h"
 #include "activeobjectmgr.h"
+#include "util/numeric.h"
 
 namespace client
 {
@@ -103,6 +107,46 @@ void ActiveObjectMgr::getActiveObjects(const v3opos_t &origin, f32 max_d,
 			continue;
 
 		dest.emplace_back(obj, d2);
+	}
+}
+
+void ActiveObjectMgr::getActiveSelectableObjects(const core::line3d<opos_t> &shootline,
+		std::vector<DistanceSortedActiveObject> &dest)
+{
+	// Imagine a not-axis-aligned cuboid oriented into the direction of the shootline,
+	// with the width of the object's selection box radius * 2 and with length of the
+	// shootline (+selection box radius forwards and backwards). We check whether
+	// the selection box center is inside this cuboid.
+
+	f32 max_d = shootline.getLength();
+	v3opos_t dir = shootline.getVector().normalize();
+	v3opos_t dir_ortho1 = dir.crossProduct(dir + v3opos_t(1,0,0)).normalize();
+	v3opos_t dir_ortho2 = dir.crossProduct(dir_ortho1);
+
+	for (auto &ao_it : m_active_objects) {
+		ClientActiveObject *obj = ao_it.second;
+
+		aabb3f selection_box;
+		if (!obj->getSelectionBox(&selection_box))
+			continue;
+
+		// possible optimization: get rid of the sqrt here
+		f32 selection_box_radius = selection_box.getRadius();
+
+		v3opos_t pos_diff = obj->getPosition() + v3fToOpos(selection_box.getCenter()) - shootline.start;
+
+		f32 d = dir.dotProduct(pos_diff);
+
+		// backward- and far-plane
+		if (d + selection_box_radius < 0.0f || d - selection_box_radius > max_d)
+			continue;
+
+		// side-planes
+		if (std::fabs(dir_ortho1.dotProduct(pos_diff)) > selection_box_radius
+				|| std::fabs(dir_ortho2.dotProduct(pos_diff)) > selection_box_radius)
+			continue;
+
+		dest.emplace_back(obj, d);
 	}
 }
 

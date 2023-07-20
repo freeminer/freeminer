@@ -19,14 +19,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "pointedthing.h"
 
-#include "gamedef.h"
-#include "network/networkprotocol.h"
+#include "irr_v3d.h"
 #include "serialize.h"
 #include "exceptions.h"
 #include <sstream>
 
 PointedThing::PointedThing(const v3pos_t &under, const v3pos_t &above,
-	const v3pos_t &real_under, const v3opos_t &point, const v3pos_t &normal,
+	const v3pos_t &real_under, const v3opos_t &point, const v3f &normal,
 	u16 box_id, f32 distSq):
 	type(POINTEDTHING_NODE),
 	node_undersurface(under),
@@ -38,12 +37,13 @@ PointedThing::PointedThing(const v3pos_t &under, const v3pos_t &above,
 	distanceSq(distSq)
 {}
 
-PointedThing::PointedThing(s16 id, const v3opos_t &point, const v3pos_t &normal,
-	f32 distSq) :
+PointedThing::PointedThing(u16 id, const v3opos_t &point,
+  const v3f &normal, const v3f &raw_normal, f32 distSq) :
 	type(POINTEDTHING_OBJECT),
 	object_id(id),
 	intersection_point(point),
 	intersection_normal(normal),
+	raw_intersection_normal(raw_normal),
 	distanceSq(distSq)
 {}
 
@@ -84,7 +84,7 @@ void PointedThing::serialize(std::ostream &os, const u16 proto_ver) const
 		writeV3Pos(os, node_abovesurface, proto_ver);
 		break;
 	case POINTEDTHING_OBJECT:
-		writeS16(os, object_id);
+		writeU16(os, object_id);
 		break;
 	}
 }
@@ -103,7 +103,7 @@ void PointedThing::deSerialize(std::istream &is)
 		node_abovesurface = readV3Pos(is, version >= 1 ? PROTOCOL_VERSION_32BIT : PROTOCOL_VERSION_32BIT - 1);
 		break;
 	case POINTEDTHING_OBJECT:
-		object_id = readS16(is);
+		object_id = readU16(is);
 		break;
 	default:
 		throw SerializationError("unsupported PointedThingType");

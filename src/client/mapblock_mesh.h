@@ -101,7 +101,7 @@ public:
 };
 
 /**
- * Implements a binary space partitioning tree 
+ * Implements a binary space partitioning tree
  * See also: https://en.wikipedia.org/wiki/Binary_space_partitioning
  */
 class MapBlockBspTree
@@ -222,6 +222,12 @@ public:
 			m_animation_force_timer--;
 	}
 
+	/// Radius of the bounding-sphere, in BS-space.
+	f32 getBoundingRadius() const { return m_bounding_radius; }
+
+	/// Center of the bounding-sphere, in BS-space, relative to block pos.
+	v3opos_t getBoundingSphereCenter() const { return m_bounding_sphere_center; }
+
 	/// update transparent buffers to render towards the camera
 	void updateTransparentBuffers(v3opos_t camera_pos, v3bpos_t block_pos);
 	void consolidateTransparentBuffers();
@@ -243,6 +249,10 @@ private:
 	MinimapMapblock *m_minimap_mapblock;
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
+
+	f32 m_bounding_radius;
+	// MapblockMeshGenerator uses the same as mapblock center
+	v3opos_t m_bounding_sphere_center = v3opos_t((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
 
 	bool m_enable_shaders;
 	bool m_enable_vbo;
@@ -331,3 +341,8 @@ void final_color_blend(video::SColor *result,
 // TileFrame vector copy cost very much to client
 void getNodeTileN(MapNode mn, const v3pos_t &p, u8 tileindex, MeshMakeData *data, TileSpec &tile);
 void getNodeTile(MapNode mn, const v3pos_t &p, const v3pos_t &dir, MeshMakeData *data, TileSpec &tile);
+
+/// Return bitset of the sides of the mapblock that consist of solid nodes only
+/// Bits:
+/// 0 0 -Z +Z -X +X -Y +Y
+u8 get_solid_sides(MeshMakeData *data);
