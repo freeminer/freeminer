@@ -20,6 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+#include "config.h"
+
+
 #include <iomanip>
 #include <cerrno>
 #include <algorithm>
@@ -39,6 +43,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace con
 {
+
+#if MINETEST_TRANSPORT
 
 /******************************************************************************/
 /* defines used for debugging and profiling                                   */
@@ -516,6 +522,8 @@ void IncomingSplitBuffer::removeUnreliableTimedOuts(float dtime, float timeout)
 	}
 }
 
+#endif
+
 /*
 	ConnectionCommand
  */
@@ -586,6 +594,8 @@ ConnectionCommandPtr ConnectionCommand::createPeer(session_t peer_id, const Buff
 	data.copyTo(c->data);
 	return c;
 }
+
+#if MINETEST_TRANSPORT
 
 /*
 	Channel
@@ -1196,6 +1206,8 @@ SharedBuffer<u8> UDPPeer::addSplitPacket(u8 channel, BufferedPacketPtr &toadd,
 	ConnectionEvent
 */
 
+#endif
+
 const char *ConnectionEvent::describe() const
 {
 	switch(type) {
@@ -1250,6 +1262,8 @@ ConnectionEventPtr ConnectionEvent::bindFailed()
 {
 	return create(CONNEVENT_BIND_FAILED);
 }
+
+#if MINETEST_TRANSPORT
 
 /*
 	Connection
@@ -1661,9 +1675,9 @@ UDPPeer* Connection::createServerPeer(Address& address)
 	return peer;
 }
 
+#endif
 
-
-ConnectionCommandPtr ConnectionCommand::send(
+ConnectionCommandPtr ConnectionCommand::send_(
 		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	auto c = create(CONNCMD_SEND);

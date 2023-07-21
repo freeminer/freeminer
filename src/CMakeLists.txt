@@ -41,8 +41,11 @@ endif()
 
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
 if(MINETEST_PROTO)
-	set(MINETEST_TRANSPORT 1)
-	message(STATUS "Using minetest compatible networking (slow, some features missing)")
+	set(MINETEST_TRANSPORT 1 CACHE BOOL "")
+	message(STATUS "Using minetest compatible protocol (some features missing)")
+endif()
+if (MINETEST_TRANSPORT)
+	message(STATUS "Using minetest compatible transport (slow)")
 endif()
 
 #

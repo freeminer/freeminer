@@ -20,6 +20,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "network/fm_connection_use.h"
+
 #include "version.h"
 #include "config.h"
 
@@ -45,4 +47,27 @@ const char *g_build_info =
 #if USE_GETTEXT && defined(STATIC_LOCALEDIR)
 	"\n" "STATIC_LOCALEDIR=" STR(STATIC_LOCALEDIR)
 #endif
+
+#if	ENABLE_THREADS
+	"\n" "ENABLE_THREADS"
+#endif
+#if	USE_MULTI
+	"\n" "USE_MULTI"
+#endif
+#if	USE_ENET
+	"\n" "USE_ENET"
+#endif
+#if	USE_SCTP
+	"\n" "USE_SCTP"
+#endif
+#if	USE_WEBSOCKET
+	"\n" "USE_WEBSOCKET"
+#endif
+#if	MINETEST_PROTO
+	"\n" "MINETEST_PROTO"
+#endif
+#if	MINETEST_TRANSPORT
+	"\n" "MINETEST_TRANSPORT"
+#endif
+	"\n" "USE_TRANSPORT=" STR(USE_TRANSPORT)
 ;
