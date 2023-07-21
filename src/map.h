@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irr_v2d.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "irrlichttypes_bloated.h"
 #include "mapblock.h"
 #include "mapnode.h"
@@ -354,7 +355,7 @@ public:
 			for (pos_t z_block = minz_block; z_block <= maxz_block; z_block++)
 			for (pos_t y_block = miny_block; y_block <= maxy_block; y_block++)
 			for (pos_t x_block = minx_block; x_block <= maxx_block; x_block++) {
-				v3pos_t p = basep + v3pos_t(x_block, y_block, z_block);
+				v3bpos_t p = basep + v3pos_t(x_block, y_block, z_block);
 				MapNode n = block ?
 						block->getNodeNoCheck(x_block, y_block, z_block) :
 						MapNode(CONTENT_IGNORE);

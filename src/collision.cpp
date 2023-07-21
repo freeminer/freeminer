@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "nodedef.h"
 #include "gamedef.h"
+#include "util/numeric.h"
 #ifndef SERVER
 #include "client/clientenvironment.h"
 #include "client/localplayer.h"

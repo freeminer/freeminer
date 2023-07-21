@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <list>
 #include "util/Optional.h"
+#include "util/numeric.h"
 
 class LocalPlayer;
 struct MapDrawControl;

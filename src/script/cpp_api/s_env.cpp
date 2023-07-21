@@ -270,7 +270,7 @@ void ScriptApiEnv::on_emerge_area_completion(
 	}
 }
 
-void ScriptApiEnv::check_for_falling(v3s16 p)
+void ScriptApiEnv::check_for_falling(v3pos_t p)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -278,7 +278,7 @@ void ScriptApiEnv::check_for_falling(v3s16 p)
 	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "check_for_falling");
 	luaL_checktype(L, -1, LUA_TFUNCTION);
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
 }
 

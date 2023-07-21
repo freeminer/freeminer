@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "directiontables.h"
+#include "irr_v3d.h"
 
 const v3pos_t g_6dirs[7] =
 {

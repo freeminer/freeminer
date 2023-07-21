@@ -1599,12 +1599,6 @@ void Server::onMapEditEvent(const MapEditEvent &event)
 	m_unsent_map_edit_queue.push(new MapEditEvent(event));
 }
 
-/* delete:
-void Server::SetBlocksNotSent(std::map<v3bpos_t, MapBlock *>& block)
-{
-	SetBlocksNotSent();
-}
-*/
 
 void Server::SetBlocksNotSent()
 {

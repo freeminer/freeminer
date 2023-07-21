@@ -23,7 +23,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "localplayer.h"
 #include <cmath>
 #include "irr_aabb3d.h"
+#include "irr_v2d.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mtevent.h"
 #include "collision.h"
 #include "nodedef.h"
@@ -32,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "client.h"
 #include "content_cao.h"
+#include "util/numeric.h"
 
 #include "log_types.h"
 #include "util/numeric.h"
@@ -125,7 +128,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 			pf += v3fToOpos(getNodeBoundingBox(nodeboxes).getCenter());
 		}
 
-		const v2f diff(position.X - pf.X, position.Z - pf.Z);
+		const v2opos_t diff(position.X - pf.X, position.Z - pf.Z);
 		const f32 distance_sq = diff.getLengthSQ();
 
 		if (distance_sq > min_distance_sq ||
@@ -183,7 +186,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 	return true;
 }
 
-void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
+void LocalPlayer::move(f32 dtime, Environment *env, opos_t pos_max_d,
 		std::vector<CollisionInfo> *collision_info)
 {
 	// Node at feet position, update each ClientEnvironment::step()
@@ -336,7 +339,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	// Add new collisions to the vector
 	if (collision_info && !free_move) {
 		v3opos_t diff = intToFloat(m_standing_node, BS) - position;
-		f32 distance_sq = diff.getLengthSQ();
+		opos_t distance_sq = diff.getLengthSQ();
 		// Force update each ClientEnvironment::step()
 		bool is_first = collision_info->empty();
 
@@ -351,7 +354,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			diff = posToOpos(colinfo.node_p, BS) - position;
 
 			// Find nearest colliding node
-			f64 len_sq = diff.getLengthSQ();
+			opos_t len_sq = diff.getLengthSQ();
 			if (is_first || len_sq < distance_sq) {
 				m_standing_node = colinfo.node_p;
 				distance_sq = len_sq;
@@ -512,7 +515,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 	handleAutojump(dtime, env, result, initial_position, initial_speed, pos_max_d);
 }
 
-void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d)
+void LocalPlayer::move(f32 dtime, Environment *env, opos_t pos_max_d)
 {
 	move(dtime, env, pos_max_d, NULL);
 }
@@ -825,7 +828,7 @@ void LocalPlayer::accelerate(const v3f &target_speed, const f32 max_increase_H,
 }
 
 // Temporary option for old move code
-void LocalPlayer::old_move(f32 dtime, Environment *env, f32 pos_max_d,
+void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 	std::vector<CollisionInfo> *collision_info)
 {
 	Map *map = &env->getMap();

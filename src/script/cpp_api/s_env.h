@@ -47,7 +47,7 @@ public:
 	void on_emerge_area_completion(v3bpos_t blockpos, int action,
 		ScriptCallbackState *state);
 
-	void check_for_falling(v3s16 p);
+	void check_for_falling(v3pos_t p);
 
 	// Called after liquid transform changes
 	void on_liquid_transformed(const std::vector<std::pair<v3pos_t, MapNode>> &list);

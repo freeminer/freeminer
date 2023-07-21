@@ -70,15 +70,15 @@ public:
 
 	f32 gravity = 0; // total downwards acceleration
 
-	void move(f32 dtime, Environment *env, f32 pos_max_d);
-	void move(f32 dtime, Environment *env, f32 pos_max_d,
+	void move(f32 dtime, Environment *env, opos_t pos_max_d);
+	void move(f32 dtime, Environment *env, opos_t pos_max_d,
 			std::vector<CollisionInfo> *collision_info);
 
 	// fm:
 	bool canPlaceNode(const v3pos_t& p, const MapNode& node);
 
 	// Temporary option for old move code
-	void old_move(f32 dtime, Environment *env, f32 pos_max_d,
+	void old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 			std::vector<CollisionInfo> *collision_info);
 
 	void applyControl(float dtime, Environment *env);

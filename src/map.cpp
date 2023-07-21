@@ -931,7 +931,7 @@ size_t ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_block
 /*
 	voxalgo::update_lighting_nodes(this, changed_nodes, modified_blocks);
 
-	for (const v3s16 &p : check_for_falling) {
+	for (const v3pos_t &p : check_for_falling) {
 		env->getScriptIface()->check_for_falling(p);
 	}
 

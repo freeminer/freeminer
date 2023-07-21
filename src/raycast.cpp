@@ -22,7 +22,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irr_aabb3d.h"
 #include <quaternion.h>
 #include "constants.h"
+#include "irrlichttypes.h"
 #include "util/numeric.h"
+#include "vector3d.h"
 
 bool RaycastSort::operator() (const PointedThing &pt1,
 	const PointedThing &pt2) const

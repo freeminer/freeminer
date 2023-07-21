@@ -1149,7 +1149,7 @@ void MapgenParams::writeParams(Settings *settings) const
 s32 MapgenParams::getSpawnRangeMax()
 {
 	if (!m_mapgen_edges_calculated) {
-		std::pair<s16, s16> edges = get_mapgen_edges(mapgen_limit, chunksize);
+		std::pair<pos_t, pos_t> edges = get_mapgen_edges(mapgen_limit, chunksize);
 		mapgen_edge_min = edges.first;
 		mapgen_edge_max = edges.second;
 		m_mapgen_edges_calculated = true;
@@ -1159,7 +1159,7 @@ s32 MapgenParams::getSpawnRangeMax()
 }
 
 
-std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize)
+std::pair<pos_t, pos_t> get_mapgen_edges(pos_t mapgen_limit, s16 chunksize)
 {
 	// Central chunk offset, in blocks
 	s16 ccoff_b = -chunksize / 2;
@@ -1183,5 +1183,5 @@ std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize)
 	pos_t numcmin = MYMAX((ccfmin - mapgen_limit_min) / csize_n, 0);
 	pos_t numcmax = MYMAX((mapgen_limit_max - ccfmax) / csize_n, 0);
 	// Mapgen edges, in nodes
-	return std::pair<s16, s16>(ccmin - numcmin * csize_n, ccmax + numcmax * csize_n);
+	return std::pair<pos_t, pos_t>(ccmin - numcmin * csize_n, ccmax + numcmax * csize_n);
 }

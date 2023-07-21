@@ -3081,7 +3081,7 @@ static void pauseNodeAnimation(PausedNodesList &paused, scene::ISceneNode *node)
 	float speed = animated_node->getAnimationSpeed();
 	if (!speed)
 		return;
-	paused.push_back({grab(animated_node), speed});
+	paused.emplace_back(grab(animated_node), speed);
 	animated_node->setAnimationSpeed(0.0f);
 }
 
@@ -3758,7 +3758,7 @@ PointedThing Game::updatePointedThing(
 		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
 				runData.selected_object->getSelectionBox(&selection_box)) {
 			auto pos = runData.selected_object->getPosition();
-			selectionboxes->push_back(aabb3f(selection_box));
+			selectionboxes->push_back(selection_box);
 			hud->setSelectionPos(pos, camera_offset);
 			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object);
 			if (gcao != nullptr && gcao->getProperties().rotate_selectionbox)
@@ -3998,7 +3998,7 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 			predicted_f.param_type_2 == CPT2_COLORED_FACEDIR ||
 			predicted_f.param_type_2 == CPT2_4DIR ||
 			predicted_f.param_type_2 == CPT2_COLORED_4DIR) {
-		v3pos_t dir = nodepos - oposToPos(client->getEnv().getLocalPlayer()->getPosition(), BS);
+		v3pos_t dir = nodepos - floatToInt(client->getEnv().getLocalPlayer()->getPosition(), BS);
 
 		if (abs(dir.X) > abs(dir.Z)) {
 			predicted_node.setParam2(dir.X < 0 ? 3 : 1);

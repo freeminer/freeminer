@@ -19,7 +19,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "clientmap.h"
 #include "client.h"
+#include "irr_v2d.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
@@ -184,7 +186,7 @@ void ClientMap::OnRegisterSceneNode()
 }
 
 void ClientMap::getBlocksInViewRange(v3pos_t cam_pos_nodes,
-		v3pos_t *p_blocks_min, v3pos_t *p_blocks_max, float range)
+		v3bpos_t *p_blocks_min, v3bpos_t *p_blocks_max, float range)
 {
 	if (range <= 0.0f)
 		range = m_control.wanted_range;
@@ -203,11 +205,11 @@ void ClientMap::getBlocksInViewRange(v3pos_t cam_pos_nodes,
 		cam_pos_nodes.Z + box_nodes_d.Z);
 	// Take a fair amount as we will be dropping more out later
 	// Umm... these additions are a bit strange but they are needed.
-	*p_blocks_min = v3pos_t(
+	*p_blocks_min = v3bpos_t(
 			p_nodes_min.X / MAP_BLOCKSIZE - 3,
 			p_nodes_min.Y / MAP_BLOCKSIZE - 3,
 			p_nodes_min.Z / MAP_BLOCKSIZE - 3);
-	*p_blocks_max = v3pos_t(
+	*p_blocks_max = v3bpos_t(
 			p_nodes_max.X / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
@@ -334,7 +336,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 /*
 		// Get the sector, block and mesh
-		MapSector *sector = this->getSectorNoGenerate(v2s16(block_coord.X, block_coord.Z));
+		MapSector *sector = this->getSectorNoGenerate(v2bpos_t(block_coord.X, block_coord.Z));
 
 		if (!sector)
 			continue;
@@ -349,7 +351,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 		v3opos_t mesh_sphere_center;
 		f32 mesh_sphere_radius;
 
-		v3bpos_t block_pos_nodes = block_coord * MAP_BLOCKSIZE;
+		v3pos_t block_pos_nodes = block_coord * MAP_BLOCKSIZE;
 
 		if (mesh) {
 			mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -939,7 +941,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// (The one in updateDrawList is only coarse.)
 		v3opos_t mesh_sphere_center = intToFloat(block->getPosRelative(), BS)
 				+ block_mesh->getBoundingSphereCenter();
-		f32 mesh_sphere_radius = block_mesh->getBoundingRadius();
+		opos_t mesh_sphere_radius = block_mesh->getBoundingRadius();
 		if (is_frustum_culled(mesh_sphere_center, mesh_sphere_radius))
 			continue;
 

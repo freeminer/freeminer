@@ -290,7 +290,7 @@ void push_v3s16(lua_State *L, v3s16 p)
 	lua_call(L, 3, 1);
 }
 
-void push_v3s32(lua_State *L, v3s16 p)
+void push_v3s32(lua_State *L, v3s32 p)
 {
 	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_PUSH_VECTOR);
 	lua_pushinteger(L, p.X);

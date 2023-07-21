@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes.h"
 #include "profiler.h"
 #include "activeobjectmgr.h"
+#include "util/numeric.h"
 
 namespace client
 {

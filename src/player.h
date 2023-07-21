@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irrlichttypes.h"
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h"
@@ -147,9 +148,9 @@ public:
 
 	DISABLE_CLASS_COPY(Player);
 
-	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
+	virtual void move(f32 dtime, Environment *env, opos_t pos_max_d)
 	{}
-	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
+	virtual void move(f32 dtime, Environment *env, opos_t pos_max_d,
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
