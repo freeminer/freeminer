@@ -142,8 +142,7 @@ treegen::error spawn_ltree(ServerMap *map, v3pos_t p0,
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;
-	for (auto &modified_block : modified_blocks)
-		event.modified_blocks.insert(modified_block.first);
+	event.setModifiedBlocks(modified_blocks);
 	map->dispatchEvent(event);
 	return SUCCESS;
 }
@@ -813,7 +812,7 @@ void make_pine_tree(MMVManip &vmanip, v3pos_t p0, const NodeDefManager *ndef,
 		dev--;
 	}
 
-	// Centre top nodes
+	// Center top nodes
 	leaves_d[leaves_a.index(v3pos_t(0, 1, 0))] = 1;
 	leaves_d[leaves_a.index(v3pos_t(0, 2, 0))] = 1;
 	leaves_d[leaves_a.index(v3pos_t(0, 3, 0))] = 2;
@@ -892,7 +891,8 @@ void make_cavetree(MMVManip &vmanip, v3pos_t p0,
 		if (vmanip.m_area.contains(p1)) {
 			if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
 				return;
-			if (ii == 0 && vmanip.getNodeNoExNoEmerge(p1).getLight(LIGHTBANK_DAY, ndef) == LIGHT_SUN)
+			const ContentLightingFlags f = ndef->getLightingFlags(vmanip.getNodeNoExNoEmerge(p1));
+			if (ii == 0 && vmanip.getNodeNoExNoEmerge(p1).getLight(LIGHTBANK_DAY, f) == LIGHT_SUN)
 				return;
 			vmanip.m_data[vmanip.m_area.index(p1)] = treenode;
 		}

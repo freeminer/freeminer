@@ -84,7 +84,7 @@ function gamemgr.handle_new_game_buttons(fields)
 	return {
 		is_dialog = false,
 		show_buttons = true,
-		current_tab = core.setting_get("main_menu_tab")
+		current_tab = core.settings:get("main_menu_tab")
 		}
 end
 
@@ -97,7 +97,7 @@ function gamemgr.handle_edit_game_buttons(fields)
 		return {
 			is_dialog = false,
 			show_buttons = true,
-			current_tab = core.setting_get("main_menu_tab")
+			current_tab = core.settings:get("main_menu_tab")
 			}
 	end
 

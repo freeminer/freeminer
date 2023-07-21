@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiTable.h"
 #include "network/networkprotocol.h"
 #include "client/joystick_controller.h"
+#include "util/Optional.h"
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
@@ -355,13 +356,13 @@ protected:
 	video::SColor m_default_tooltip_color;
 
 private:
-	IFormSource        *m_form_src;
-	TextDest           *m_text_dst;
-	std::string         m_last_formname;
-	u16                 m_formspec_version = 1;
-	std::string         m_focused_element = "";
-	JoystickController *m_joystick;
-	bool m_show_debug = false;
+	IFormSource          *m_form_src;
+	TextDest             *m_text_dst;
+	std::string           m_last_formname;
+	u16                   m_formspec_version = 1;
+	Optional<std::string> m_focused_element = nullopt;
+	JoystickController   *m_joystick;
+	bool                  m_show_debug = false;
 
 	struct parserData {
 		bool explicit_size;
@@ -405,6 +406,8 @@ private:
 	fs_key_pending current_keys_pending;
 	std::string current_field_enter_pending = "";
 	std::vector<std::string> m_hovered_item_tooltips;
+
+	void removeAll();
 
 	void parseElement(parserData* data, const std::string &element);
 

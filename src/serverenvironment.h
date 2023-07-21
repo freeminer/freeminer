@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "environment.h"
 #include "irr_v3d.h"
 #include "mapnode.h"
+#include "map.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
 #include "threading/concurrent_set.h"
@@ -35,9 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server/abmhandler.h"
 
 class IGameDef;
-class ServerMap;
 struct GameParams;
-class MapBlock;
 class RemotePlayer;
 class PlayerDatabase;
 class AuthDatabase;
@@ -121,7 +120,8 @@ struct LoadingBlockModifierDef
 
 	virtual ~LoadingBlockModifierDef() = default;
 
-	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n){};
+	virtual void trigger(ServerEnvironment *env, v3pos_t p,
+			MapNode n, float dtime_s) {};
 };
 
 struct LBMContentMapping
@@ -155,7 +155,8 @@ public:
 	std::string createIntroductionTimesString();
 
 	// Don't call this before loadIntroductionTimes() ran.
-	void applyLBMs(ServerEnvironment *env, MapBlock *block, u32 stamp);
+	void applyLBMs(ServerEnvironment *env, MapBlock *block,
+			u32 stamp, float dtime_s);
 
 	// Warning: do not make this std::unordered_map, order is relevant here
 	typedef std::map<u32, LBMContentMapping> lbm_lookup_map;
@@ -219,6 +220,16 @@ public:
 };
 
 /*
+	ServerEnvironment::m_on_mapblocks_changed_receiver
+*/
+struct OnMapblocksChangedReceiver : public MapEventReceiver {
+	std::unordered_set<v3bpos_t> modified_blocks;
+	bool receiving = false;
+
+	void onMapEditEvent(const MapEditEvent &event) override;
+};
+
+/*
 	Operation mode for ServerEnvironment::clearObjects()
 */
 enum ClearObjectsMode {
@@ -230,12 +241,14 @@ enum ClearObjectsMode {
 		CLEAR_OBJECTS_MODE_QUICK,
 };
 
-class ServerEnvironment : public Environment
+class ServerEnvironment final : public Environment
 {
 public:
-	ServerEnvironment(ServerMap *map, ServerScripting *scriptIface,
+	ServerEnvironment(ServerMap *map, ServerScripting *script_iface,
 		Server *server, const std::string &path_world, MetricsBackend *mb);
 	~ServerEnvironment();
+
+	void init();
 
 	Map & getMap();
 
@@ -380,7 +393,7 @@ public:
 	void clearObjects(ClearObjectsMode mode);
 
 	// This makes stuff happen
-	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
+	void step(f32 dtime, double uptime, unsigned int max_cycle_ms);
 
 	u32 getGameTime() const { return m_game_time; }
 
@@ -549,6 +562,8 @@ private:
 	Server *m_server;
 	// Active Object Manager
 	server::ActiveObjectMgr m_ao_manager;
+	// on_mapblocks_changed map event receiver
+	OnMapblocksChangedReceiver m_on_mapblocks_changed_receiver;
 	// World path
 	const std::string m_path_world;
 	// Outgoing network message buffer for active objects
@@ -560,7 +575,7 @@ private:
 	IntervalLimiter m_object_management_interval;
 	// List of active blocks
 	ActiveBlockList m_active_blocks;
-	bool m_force_update_active_blocks = false;
+	int m_fast_active_block_divider = 1;
 	IntervalLimiter m_active_blocks_mgmt_interval;
 	IntervalLimiter m_active_block_modifier_interval;
 	IntervalLimiter m_active_blocks_nodemetadata_interval;

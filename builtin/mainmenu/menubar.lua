@@ -22,7 +22,7 @@ function menubar.handle_buttons(fields)
 	for i=1,#menubar.buttons,1 do
 		if fields[menubar.buttons[i].btn_name] ~= nil then
 			menu.last_game = menubar.buttons[i].index
-			core.setting_set("main_menu_last_game_idx",menu.last_game)
+			core.settings:set("main_menu_last_game_idx",menu.last_game)
 			menu.update_gametype()
 		end
 	end

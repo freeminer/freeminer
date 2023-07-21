@@ -1,8 +1,39 @@
-ARG DOCKER_IMAGE=alpine:3.14
+ARG DOCKER_IMAGE=alpine:3.16
 FROM $DOCKER_IMAGE AS builder
 
 ENV MINETEST_GAME_VERSION master
 ENV IRRLICHT_VERSION master
+ENV SPATIALINDEX_VERSION 1.9.3
+ENV LUAJIT_VERSION v2.1
+
+RUN apk add --no-cache git build-base cmake curl-dev zlib-dev zstd-dev \
+		sqlite-dev postgresql-dev hiredis-dev leveldb-dev \
+		gmp-dev jsoncpp-dev ninja ca-certificates
+
+WORKDIR /usr/src/
+RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp/ && \
+		cd prometheus-cpp && \
+		cmake -B build \
+			-DCMAKE_INSTALL_PREFIX=/usr/local \
+			-DCMAKE_BUILD_TYPE=Release \
+			-DENABLE_TESTING=0 \
+			-GNinja && \
+		cmake --build build && \
+		cmake --install build && \
+	cd /usr/src/ && \
+	git clone --recursive https://github.com/libspatialindex/libspatialindex -b ${SPATIALINDEX_VERSION} && \
+		cd libspatialindex && \
+		cmake -B build \
+			-DCMAKE_INSTALL_PREFIX=/usr/local && \
+		cmake --build build && \
+		cmake --install build && \
+	cd /usr/src/ && \
+	git clone --recursive https://luajit.org/git/luajit.git -b ${LUAJIT_VERSION} && \
+		cd luajit && \
+		make && make install && \
+	cd /usr/src/ && \
+	git clone --depth=1 https://github.com/minetest/irrlicht/ -b ${IRRLICHT_VERSION} && \
+		cp -r irrlicht/include /usr/include/irrlichtmt
 
 COPY mods /usr/src/minetest/mods
 COPY .git /usr/src/minetest/.git
@@ -20,45 +51,24 @@ COPY src /usr/src/minetest/src
 COPY textures /usr/src/minetest/textures
 
 WORKDIR /usr/src/minetest
+RUN git clone --depth=1 -b ${MINETEST_GAME_VERSION} https://github.com/minetest/minetest_game.git ./games/minetest_game && \
+		rm -fr ./games/minetest_game/.git && \
+		cmake -B build \
+			-DCMAKE_INSTALL_PREFIX=/usr/local \
+			-DCMAKE_BUILD_TYPE=Release \
+			-DBUILD_SERVER=TRUE \
+			-DENABLE_PROMETHEUS=TRUE \
+			-DBUILD_UNITTESTS=FALSE \
+			-DBUILD_CLIENT=FALSE \
+			-GNinja && \
+		cmake --build build && \
+		cmake --install build
 
-RUN apk add --no-cache git build-base cmake sqlite-dev curl-dev zlib-dev zstd-dev \
-		ninja ccache leveldb snappy msgpack-c boost-dev libexecinfo-dev \
-		gmp-dev jsoncpp-dev postgresql-dev ninja luajit-dev ca-certificates && \
-true
-#	git clone --depth=1 -b ${MINETEST_GAME_VERSION} https://github.com/minetest/minetest_game.git ./games/minetest_game && \
-#	rm -fr ./games/minetest_game/.git
-
-WORKDIR /usr/src/
-RUN git clone --recursive https://github.com/jupp0r/prometheus-cpp/ && \
-	cd prometheus-cpp && \
-	cmake -B build \
-		-DCMAKE_INSTALL_PREFIX=/usr/local \
-		-DCMAKE_BUILD_TYPE=Release \
-		-DENABLE_TESTING=0 \
-		-GNinja && \
-	cmake --build build && \
-	cmake --install build
-
-RUN git clone --depth=1 https://github.com/minetest/irrlicht/ -b ${IRRLICHT_VERSION} && \
-	cp -r irrlicht/include /usr/include/irrlichtmt
-
-WORKDIR /usr/src/minetest
-RUN cmake -G Ninja -B build \
-        -DRUN_IN_PLACE=0 \
-		-DCMAKE_INSTALL_PREFIX=/usr/local \
-		-DCMAKE_BUILD_TYPE=Release \
-		-DBUILD_SERVER=TRUE \
-		-DENABLE_PROMETHEUS=TRUE \
-		-DBUILD_UNITTESTS=FALSE \
-		-DBUILD_CLIENT=FALSE \
-		-GNinja && \
-	cmake --build build && \
-	cmake --install build
-
-ARG DOCKER_IMAGE=alpine:3.14
+ARG DOCKER_IMAGE=alpine:3.16
 FROM $DOCKER_IMAGE AS runtime
 
-RUN apk add --no-cache sqlite-libs curl gmp libstdc++ libgcc libpq luajit jsoncpp zstd-libs && \
+RUN apk add --no-cache curl gmp libstdc++ libgcc libpq jsoncpp zstd-libs \
+				sqlite-libs postgresql hiredis leveldb && \
 	adduser -D minetest --uid 30000 -h /var/lib/minetest && \
 	chown -R minetest:minetest /var/lib/minetest
 
@@ -67,9 +77,12 @@ WORKDIR /var/lib/minetest
 COPY --from=builder /usr/local/share/freeminer /usr/local/share/freeminer
 COPY --from=builder /usr/local/bin/freeminerserver /usr/local/bin/freeminerserver
 COPY --from=builder /usr/local/share/doc/freeminer/freeminer.conf.example /etc/freeminer/freeminer.conf
-
+COPY --from=builder /usr/local/lib/libspatialindex* /usr/local/lib/
+COPY --from=builder /usr/local/lib/libluajit* /usr/local/lib/
 USER minetest:minetest
 
 EXPOSE 30000/udp 30000/tcp
+VOLUME /var/lib/minetest/ /etc/minetest/
 
-CMD ["/usr/local/bin/freeminerserver", "--config", "/etc/freeminer/freeminer.conf"]
+ENTRYPOINT ["/usr/local/bin/freeminerserver"]
+CMD ["--config", "/etc/freeminer/freeminer.conf"]

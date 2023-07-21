@@ -94,7 +94,7 @@ void Client::handleCommand_Hello(NetworkPacket* pkt)
 
 	//TODO verify that username_legacy matches sent username, only
 	// differs in casing (make both uppercase and compare)
-	// This is only neccessary though when we actually want to add casing support
+	// This is only necessary though when we actually want to add casing support
 
 	if (m_chosen_auth_mech != AUTH_MECHANISM_NONE) {
 		// we received a TOCLIENT_HELLO while auth was already going on
@@ -160,7 +160,7 @@ void Client::handleCommand_AuthAccept(NetworkPacket* pkt)
 	language code (e.g. "de" for German). */
 	std::string lang = gettext("LANG_CODE");
 	if (lang == "LANG_CODE")
-		lang = "";
+		lang.clear();
 
 	NetworkPacket resp_pkt(TOSERVER_INIT2, sizeof(u16) + lang.size());
 	resp_pkt << lang;
@@ -194,7 +194,7 @@ void Client::handleCommand_DenySudoMode(NetworkPacket* pkt)
 void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 {
 	// The server didn't like our password. Note, this needs
-	// to be processed even if the serialisation format has
+	// to be processed even if the serialization format has
 	// not been agreed yet, the same as TOCLIENT_INIT.
 	m_access_denied = true;
 	m_access_denied_reason = "Unknown";
@@ -331,16 +331,12 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		/*
 			Create a new block
 		*/
-		block = new MapBlock(&m_env.getMap(), p, this);
-		if(!block->deSerialize(istr, m_server_ser_ver, false)){
+		block = sector->createBlankBlock(p);
+		if (!block->deSerialize(istr, m_server_ser_ver, false)){
 			delete block;
 			return;
-		}
+		};
 		block->deSerializeNetworkSpecific(istr);
-		if (!sector->insertBlock(block)) {
-			delete block;
-			return;
-		}
 	}
 
 	if (m_localdb) {
@@ -695,7 +691,7 @@ void Client::handleCommand_AnnounceMedia(NetworkPacket* pkt)
 
 	// Mesh update thread must be stopped while
 	// updating content definitions
-	sanity_check(!m_mesh_update_thread.isRunning());
+	sanity_check(!m_mesh_update_manager.isRunning());
 
 	for (u16 i = 0; i < num_files; i++) {
 		std::string name, sha1_base64;
@@ -755,7 +751,7 @@ void Client::handleCommand_Media(NetworkPacket* pkt)
 	if (init_phase) {
 		// Mesh update thread must be stopped while
 		// updating content definitions
-		sanity_check(!m_mesh_update_thread.isRunning());
+		sanity_check(!m_mesh_update_manager.isRunning());
 	}
 
 	for (u32 i = 0; i < num_files; i++) {
@@ -792,7 +788,7 @@ void Client::handleCommand_NodeDef(NetworkPacket* pkt)
 
 	// Mesh update thread must be stopped while
 	// updating content definitions
-	sanity_check(!m_mesh_update_thread.isRunning());
+	sanity_check(!m_mesh_update_manager.isRunning());
 
 	// Decompress node definitions
 	std::istringstream tmp_is(pkt->readLongString(), std::ios::binary);
@@ -811,7 +807,7 @@ void Client::handleCommand_ItemDef(NetworkPacket* pkt)
 
 	// Mesh update thread must be stopped while
 	// updating content definitions
-	sanity_check(!m_mesh_update_thread.isRunning());
+	sanity_check(!m_mesh_update_manager.isRunning());
 
 	// Decompress item definitions
 	std::istringstream tmp_is(pkt->readLongString(), std::ios::binary);
@@ -1631,7 +1627,7 @@ void Client::handleCommand_MediaPush(NetworkPacket *pkt)
 		// Compute and check checksum of data
 		std::string computed_hash;
 		{
-			SHA1 ctx;
+			class SHA1 ctx;
 			ctx.addBytes(filedata.c_str(), filedata.size());
 			unsigned char *buf = ctx.getDigest();
 			computed_hash.assign((char*) buf, 20);
@@ -1789,6 +1785,16 @@ void Client::handleCommand_SetLighting(NetworkPacket *pkt)
 
 	if (pkt->getRemainingBytes() >= 4)
 		*pkt >> lighting.shadow_intensity;
+	if (pkt->getRemainingBytes() >= 4)
+		*pkt >> lighting.saturation;
+	if (pkt->getRemainingBytes() >= 24) {
+		*pkt >> lighting.exposure.luminance_min
+				>> lighting.exposure.luminance_max
+				>> lighting.exposure.exposure_correction
+				>> lighting.exposure.speed_dark_bright
+				>> lighting.exposure.speed_bright_dark
+				>> lighting.exposure.center_weight_power;
+	}
 }
 
 
@@ -1846,6 +1852,8 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 					new MapSettingsManager(m_world_path + DIR_DELIM + "map_meta");
 			m_settings_mgr->mapgen_params = params;
 			m_settings_mgr->saveMapMeta();
+		} else {
+			delete params;
 		}
 	}
 

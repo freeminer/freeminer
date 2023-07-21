@@ -3,6 +3,10 @@ set(common_network_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_multi.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_enet.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_sctp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_websocket_sctp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/wssocket.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws/connection.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws/connectionthreads.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/address.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/connection.cpp

@@ -2,12 +2,14 @@
 #include "stacktrace.h"
 #include "config.h"
 
+#if USE_UNWIND
 #include <execinfo.h> // for backtrace
 #include <dlfcn.h>	  // for dladdr
 #include <cxxabi.h>	  // for __cxa_demangle
+#include <sstream>
+#endif
 
 #include <string>
-#include <sstream>
 
 // https://gist.github.com/fmela/591333/0e8f9f123c87c1f234cd3050b2dac9c76185bdf1
 // A C++ function that will produce a stack trace with demangled function and method

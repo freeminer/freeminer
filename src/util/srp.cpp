@@ -329,7 +329,7 @@ static unsigned char *hash(SRP_HashAlgorithm alg, const unsigned char *d, size_t
 		case SRP_SHA224: return SHA224( d, n, md );
 		*/
 #ifdef CSRP_USE_SHA256
-		case SRP_SHA256: return SHA256(d, n, md);
+		case SRP_SHA256: return mt_SHA256(d, n, md);
 #endif
 		/*
 		case SRP_SHA384: return SHA384( d, n, md );

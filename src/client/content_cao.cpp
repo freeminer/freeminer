@@ -572,7 +572,8 @@ void GenericCAO::removeFromScene(bool permanent)
 	}
 
 	if (auto shadow = RenderingEngine::get_shadow_renderer())
-		shadow->removeNodeFromShadowList(getSceneNode());
+		if (auto node = getSceneNode())
+			shadow->removeNodeFromShadowList(node);
 
 	if (m_meshnode) {
 		m_meshnode->remove();
@@ -872,7 +873,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			oss << "GenericCAO::addToScene(): Model "
 				<< m_prop.mesh << " loaded with " << mat_count
 				<< " mesh buffers but only " << m_prop.textures.size()
-				<< " texture(s) specifed, this is deprecated.";
+				<< " texture(s) specified, this is deprecated.";
 			logOnce(oss, warningstream);
 
 			video::ITexture *last = m_animated_meshnode->getMaterial(0).TextureLayer[0].Texture;
@@ -901,7 +902,8 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 		bool this_ok;
 		MapNode n = m_env->getMap().getNode(pos[i], &this_ok);
 		if (this_ok) {
-			u16 this_light = getInteriorLight(n, 0, m_client->ndef());
+			// Get light level at the position plus the entity glow
+			u16 this_light = getInteriorLight(n, m_prop.glow, m_client->ndef());
 			u8 this_light_intensity = MYMAX(this_light & 0xFF, this_light >> 8);
 			if (this_light_intensity > light_at_pos_intensity) {
 				light_at_pos = this_light;
@@ -913,8 +915,14 @@ void GenericCAO::updateLight(u32 day_night_ratio)
 	if (!pos_ok)
 		light_at_pos = LIGHT_SUN;
 
-	video::SColor light = encode_light(light_at_pos, decode_light(m_prop.glow));
-	if (!m_enable_shaders)
+	// Initialize with full alpha, otherwise entity won't be visible
+	video::SColor light{0xFFFFFFFF};
+
+	// Encode light into color, adding a small boost
+	// based on the entity glow.
+	if (m_enable_shaders)
+		light = encode_light(light_at_pos, m_prop.glow);
+	else
 		final_color_blend(&light, light_at_pos, day_night_ratio);
 
 	if (light != m_last_light) {
@@ -1795,7 +1803,7 @@ void GenericCAO::processMessage(const std::string &data)
 	} else if (cmd == AO_CMD_SET_TEXTURE_MOD) {
 		std::string mod = deSerializeString16(is);
 
-		// immediately reset a engine issued texture modifier if a mod sends a different one
+		// immediately reset an engine issued texture modifier if a mod sends a different one
 		if (m_reset_textures_timer > 0) {
 			m_reset_textures_timer = -1;
 			updateTextures(m_previous_texture_modifier);
@@ -1818,21 +1826,20 @@ void GenericCAO::processMessage(const std::string &data)
 		float override_speed = readF32(is);
 		float override_jump = readF32(is);
 		float override_gravity = readF32(is);
-		// these are sent inverted so we get true when the server sends nothing
+		// MT 0.4.10 legacy: send inverted for detault `true` if the server sends nothing
 		bool sneak = !readU8(is);
 		bool sneak_glitch = !readU8(is);
 		bool new_move = !readU8(is);
 
 
-		if(m_is_local_player)
-		{
-			LocalPlayer *player = m_env->getLocalPlayer();
-			player->physics_override_speed = override_speed;
-			player->physics_override_jump = override_jump;
-			player->physics_override_gravity = override_gravity;
-			player->physics_override_sneak = sneak;
-			player->physics_override_sneak_glitch = sneak_glitch;
-			player->physics_override_new_move = new_move;
+		if (m_is_local_player) {
+			auto &phys = m_env->getLocalPlayer()->physics_override;
+			phys.speed = override_speed;
+			phys.jump = override_jump;
+			phys.gravity = override_gravity;
+			phys.sneak = sneak;
+			phys.sneak_glitch = sneak_glitch;
+			phys.new_move = new_move;
 		}
 	} else if (cmd == AO_CMD_SET_ANIMATION) {
 		// TODO: change frames send as v2s32 value

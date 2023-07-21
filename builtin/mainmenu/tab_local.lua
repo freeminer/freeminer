@@ -215,6 +215,10 @@ local function main_button_handler(this, fields, name, tabdata)
 
 	assert(name == "local")
 
+	if this.dlg_create_world_closed_at == nil then
+		this.dlg_create_world_closed_at = 0
+	end
+
 	local world_doubleclick = false
 
 	if fields["sp_worlds"] ~= nil then
@@ -269,6 +273,12 @@ local function main_button_handler(this, fields, name, tabdata)
 	end
 
 	if fields["play"] ~= nil or world_doubleclick or fields["key_enter"] then
+		local enter_key_duration = core.get_us_time() - this.dlg_create_world_closed_at
+		if world_doubleclick and enter_key_duration <= 200000 then -- 200 ms
+			this.dlg_create_world_closed_at = 0
+			return true
+		end
+
 		local selected = core.get_textlist_index("sp_worlds")
 		gamedata.selected_world = menudata.worldlist:get_raw_index(selected)
 
@@ -316,6 +326,7 @@ local function main_button_handler(this, fields, name, tabdata)
 	end
 
 	if fields["world_create"] ~= nil then
+		this.dlg_create_world_closed_at = 0
 		local create_world_dlg = create_create_world_dlg()
 		create_world_dlg:set_parent(this)
 		this:hide()
@@ -379,7 +390,10 @@ local function on_change(type, old_tab, new_tab)
 			gamebar:hide()
 		end
 		core.set_topleft_text("")
-		mm_game_theme.update(new_tab,nil)
+		-- If new_tab is nil, a dialog is being shown; avoid resetting the theme
+		if new_tab then
+			mm_game_theme.update(new_tab,nil)
+		end
 	end
 end
 

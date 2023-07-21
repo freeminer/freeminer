@@ -473,7 +473,7 @@ void MapblockMeshGenerator::prepareLiquidNodeDrawing()
 		// it at what it emits, for an increased effect
 		u8 e = decode_light(f->light_source);
 		light = LightPair(std::max(e, light.lightDay), std::max(e, light.lightNight));
-	} else if (nodedef->get(ntop).param_type == CPT_LIGHT) {
+	} else if (nodedef->getLightingFlags(ntop).has_light) {
 		// Otherwise, use the light of the node on top if possible
 		light = LightPair(getInteriorLight(ntop, 0, nodedef));
 	}
@@ -788,7 +788,7 @@ void MapblockMeshGenerator::drawGlasslikeFramedNode()
 		aabb3f(-a,  b, -a,  a,  a, -b), // z-
 	};
 
-	// tables of neighbour (connect if same type and merge allowed),
+	// tables of neighbor (connect if same type and merge allowed),
 	// checked with g_26dirs
 
 	// 1 = connect, 0 = face visible
@@ -803,7 +803,7 @@ void MapblockMeshGenerator::drawGlasslikeFramedNode()
 		{1,1,1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1};
 	const bool *check_nb = check_nb_all;
 
-	// neighbours checks for frames visibility
+	// neighbors checks for frames visibility
 	if (H_merge || V_merge) {
 		if (!H_merge)
 			check_nb = check_nb_vertical; // vertical-only merge
@@ -1132,7 +1132,7 @@ void MapblockMeshGenerator::drawPlantlikeRootedNode()
 		getSmoothLightFrame();
 	} else {
 		MapNode ntop = data->m_vmanip.getNodeNoEx(blockpos_nodes + p);
-		light = LightPair(getInteriorLight(ntop, 1, nodedef));
+		light = LightPair(getInteriorLight(ntop, 0, nodedef));
 	}
 	drawPlantlike(true);
 	p.Y--;
@@ -1511,7 +1511,9 @@ void MapblockMeshGenerator::drawMeshNode()
 	int degrotate = 0;
 
 	if (f->param_type_2 == CPT2_FACEDIR ||
-			f->param_type_2 == CPT2_COLORED_FACEDIR) {
+			f->param_type_2 == CPT2_COLORED_FACEDIR ||
+			f->param_type_2 == CPT2_4DIR ||
+			f->param_type_2 == CPT2_COLORED_4DIR) {
 		facedir = n.getFaceDir(nodedef);
 	} else if (f->param_type_2 == CPT2_WALLMOUNTED ||
 			f->param_type_2 == CPT2_COLORED_WALLMOUNTED) {
@@ -1595,7 +1597,7 @@ void MapblockMeshGenerator::drawNode()
 	if (data->m_smooth_lighting)
 		getSmoothLightFrame();
 	else
-		light = LightPair(getInteriorLight(n, 1, nodedef));
+		light = LightPair(getInteriorLight(n, 0, nodedef));
 	switch (f->drawtype) {
 		case NDT_FLOWINGLIQUID:     drawLiquidNode(); break;
 		case NDT_GLASSLIKE:         drawGlasslikeNode(); break;

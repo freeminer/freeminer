@@ -91,7 +91,7 @@ struct MapgenDesc {
 //// Built-in mapgens
 ////
 
-// Order used here defines the order of appearence in mainmenu.
+// Order used here defines the order of appearance in mainmenu.
 // v6 always last to discourage selection.
 // Special mapgens flat, fractal, singlenode, next to last. Of these, singlenode
 // last to discourage selection.
@@ -127,8 +127,7 @@ Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeParams *emerge) :
 	mapgen_limit = params->mapgen_limit;
 	flags        = params->flags;
 	csize        = v3pos_t(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
-
-	this->m_emerge = emerge;
+	env          = emerge->env;
 	liquid_pressure = params->liquid_pressure;
 
 	/*
@@ -390,6 +389,8 @@ inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3pos_t em)
 
 void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3pos_t nmax)
 {
+	if (!env)
+		return;
 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
 
 	bool rare = g_settings->getBool("liquid_real");
@@ -418,7 +419,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3po
 				bool ispushed = false;
 				if ((!rare || !(rarecnt++ % 36)) && isLiquidHorizontallyFlowable(vi, em)) {
 					//trans_liquid->push_back(v3s16(x, y, z));
-					m_emerge->env->getServerMap().transforming_liquid_add(v3pos_t(x, y, z));
+					env->getServerMap().transforming_liquid_add({x, y, z});
 					ispushed = true;
 				}
 				// Remember waschecked and waspushed to avoid repeated
@@ -433,8 +434,8 @@ void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3po
 						(!waschecked && isLiquidHorizontallyFlowable(vi_above, em)))) {
 					// Push back the lowest node in the column which is one
 					// node above this one
-					//trans_liquid->push_back(v3pos_t(x, y + 1, z));
-					m_emerge->env->getServerMap().transforming_liquid_add(v3pos_t(x, y + 1, z));
+					// trans_liquid->push_back(v3s16(x, y + 1, z));
+					env->getServerMap().transforming_liquid_add(v3pos_t(x, y + 1, z));
 				}
 			}
 
@@ -483,7 +484,7 @@ void Mapgen::lightSpread(VoxelArea &a, std::queue<std::pair<v3pos_t, u8>> &queue
 	// we hit a solid block that light cannot pass through.
 	if ((light_day  <= (n.param1 & 0x0F) &&
 			light_night <= (n.param1 & 0xF0)) ||
-			!ndef->get(n).light_propagates)
+			!ndef->getLightingFlags(n).light_propagates)
 		return;
 
 	// MYMAX still needed here because we only exit early if both banks have
@@ -548,7 +549,7 @@ void Mapgen::propagateSunlight(v3pos_t nmin, v3pos_t nmax, bool propagate_shadow
 
 			for (int y = a.MaxEdge.Y; y >= a.MinEdge.Y; y--) {
 				MapNode &n = vm->m_data[i];
-				if (!ndef->get(n).sunlight_propagates)
+				if (!ndef->getLightingFlags(n).sunlight_propagates)
 					break;
 				n.param1 = LIGHT_SUN;
 				VoxelArea::add_y(em, i, -1);
@@ -573,7 +574,7 @@ void Mapgen::spreadLight(const v3pos_t &nmin, const v3pos_t &nmax)
 				if (n.getContent() == CONTENT_IGNORE)
 					continue;
 
-				const ContentFeatures &cf = ndef->get(n);
+				ContentLightingFlags cf = ndef->getLightingFlags(n);
 				if (!cf.light_propagates)
 					continue;
 
@@ -815,7 +816,7 @@ void MapgenBasic::generateBiomes()
 				nplaced = 0;  // Enable top/filler placement for next surface
 				air_above = true;
 				water_above = false;
-			} else {  // Possible various nodes overgenerated from neighbouring mapchunks
+			} else {  // Possible various nodes overgenerated from neighboring mapchunks
 				nplaced = U16_MAX;  // Disable top/filler placement
 				air_above = false;
 				water_above = false;
@@ -1145,9 +1146,20 @@ void MapgenParams::writeParams(Settings *settings) const
 }
 
 
-// Calculate exact edges of the outermost mapchunks that are within the
-// set 'mapgen_limit'.
-void MapgenParams::calcMapgenEdges()
+s32 MapgenParams::getSpawnRangeMax()
+{
+	if (!m_mapgen_edges_calculated) {
+		std::pair<s16, s16> edges = get_mapgen_edges(mapgen_limit, chunksize);
+		mapgen_edge_min = edges.first;
+		mapgen_edge_max = edges.second;
+		m_mapgen_edges_calculated = true;
+	}
+
+	return MYMIN(-mapgen_edge_min, mapgen_edge_max);
+}
+
+
+std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize)
 {
 	// Central chunk offset, in blocks
 	s16 ccoff_b = -chunksize / 2;
@@ -1171,17 +1183,5 @@ void MapgenParams::calcMapgenEdges()
 	pos_t numcmin = MYMAX((ccfmin - mapgen_limit_min) / csize_n, 0);
 	pos_t numcmax = MYMAX((mapgen_limit_max - ccfmax) / csize_n, 0);
 	// Mapgen edges, in nodes
-	mapgen_edge_min = ccmin - numcmin * csize_n;
-	mapgen_edge_max = ccmax + numcmax * csize_n;
-
-	m_mapgen_edges_calculated = true;
-}
-
-
-s32 MapgenParams::getSpawnRangeMax()
-{
-	if (!m_mapgen_edges_calculated)
-		calcMapgenEdges();
-
-	return MYMIN(-mapgen_edge_min, mapgen_edge_max);
+	return std::pair<s16, s16>(ccmin - numcmin * csize_n, ccmax + numcmax * csize_n);
 }

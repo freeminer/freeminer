@@ -71,6 +71,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
+#if BUILD_SERVER && !NDEBUG
+#include "network/serveropcodes.h"
+#endif
 #include "chat.h"
 
 
@@ -129,7 +132,7 @@ Client::Client(
 	m_sound(sound),
 	m_event(event),
 	m_rendering_engine(rendering_engine),
-	m_mesh_update_thread(this),
+	m_mesh_update_manager(this),
 	m_env(
 		new ClientMap(this, rendering_engine, control, 666),
 		tsrc, this
@@ -152,7 +155,7 @@ Client::Client(
 
 	// Make the mod storage database and begin the save for later
 	m_mod_storage_database =
-		new ModMetadataDatabaseSQLite3(porting::path_user + DIR_DELIM + "client");
+			new ModStorageDatabaseSQLite3(porting::path_user + DIR_DELIM + "client");
 	m_mod_storage_database->beginSave();
 
 	if (g_settings->getBool("enable_minimap")) {
@@ -169,7 +172,7 @@ void Client::migrateModStorage()
 	if (fs::IsDir(old_mod_storage)) {
 		infostream << "Migrating client mod storage to SQLite3 database" << std::endl;
 		{
-			ModMetadataDatabaseFiles files_db(mod_storage_dir);
+			ModStorageDatabaseFiles files_db(mod_storage_dir);
 			std::vector<std::string> mod_list;
 			files_db.listMods(&mod_list);
 			for (const std::string &modname : mod_list) {
@@ -214,6 +217,7 @@ void Client::loadMods()
 	// Load builtin
 	scanModIntoMemory(BUILTIN_MOD_NAME, getBuiltinLuaPath());
 	m_script->loadModFromMemory(BUILTIN_MOD_NAME);
+	m_script->checkSetByBuiltin();
 
 	ModConfiguration modconf;
 	{
@@ -231,9 +235,10 @@ void Client::loadMods()
 	}
 
 	m_mods = modconf.getMods();
+
 	// complain about mods with unsatisfied dependencies
 	if (!modconf.isConsistent()) {
-		modconf.printUnsatisfiedModsError();
+		errorstream << modconf.getUnsatisfiedModsError() << std::endl;
 		return;
 	}
 
@@ -328,7 +333,7 @@ void Client::Stop()
 	if (m_mods_loaded)
 		m_script->on_shutdown();
 	//request all client managed threads to stop
-	m_mesh_update_thread.stop();
+	m_mesh_update_manager.stop();
 	// Save local server map
 	if (m_localdb) {
 		actionstream << "Local map saving ended" << std::endl;
@@ -347,7 +352,7 @@ void Client::Stop()
 
 bool Client::isShutdown()
 {
-	return m_shutdown || !m_mesh_update_thread.isRunning();
+	return m_shutdown || !m_mesh_update_manager.isRunning();
 }
 
 Client::~Client()
@@ -357,15 +362,17 @@ Client::~Client()
 
 	deleteAuthData();
 
-	m_mesh_update_thread.stop();
-	m_mesh_update_thread.wait();
-/*
-	while (!m_mesh_update_thread.m_queue_out.empty()) {
-		MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
+	m_mesh_update_manager.stop();
+	m_mesh_update_manager.wait();
+/*	
+	MeshUpdateResult r;
+	while (m_mesh_update_manager.getNextResult(r)) {
+		for (auto block : r.map_blocks)
+			if (block)
+				block->refDrop();
 		delete r.mesh;
 	}
 */
-
 	delete m_inventory_from_server;
 
 	// Delete detached inventories
@@ -591,21 +598,23 @@ void Client::step(float dtime)
 		auto end_ms = porting::getTimeMs() + 10;
 		std::vector<v3bpos_t> blocks_to_ack;
 
-		auto qsize = m_mesh_update_thread.m_queue_out.size();
+		auto qsize = m_mesh_update_manager.m_queue_out.size();
 		if (qsize > 1000)
 			end_ms += 200;
 
 		bool force_update_shadows = false;
-		while (!m_mesh_update_thread.m_queue_out.empty_try())
+		MeshUpdateResult r;
+		while (m_mesh_update_manager.getNextResult(r))
 		{
+
 			num_processed_meshes++;
+
+			if (!r.mesh)
+				continue;
 
 			MinimapMapblock *minimap_mapblock = NULL;
 			bool do_mapper_update = true;
 
-			MeshUpdateResult r = m_mesh_update_thread.m_queue_out.pop_frontNoEx();
-			if (!r.mesh)
-				continue;
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 
 			if (block) {
@@ -617,6 +626,7 @@ void Client::step(float dtime)
 				block->setMesh(r.mesh);
 
 				if (r.mesh) {
+					block->solid_sides = r.solid_sides;
 					minimap_mapblock = r.mesh->moveMinimapMapblock();
 					if (minimap_mapblock == NULL)
 						do_mapper_update = false;
@@ -658,6 +668,10 @@ void Client::step(float dtime)
 			if (porting::getTimeMs() > end_ms)
 				break;
 
+
+			for (auto block : r.map_blocks)
+				if (block)
+					block->refDrop();
 		}
 /*
 		if (blocks_to_ack.size() > 0) {
@@ -1097,6 +1111,14 @@ void Client::ProcessData(NetworkPacket *pkt)
 		//errorstream << "overload cmd=" << command << " n="<< toClientCommandTable[command].name << "\n";
 	}
 
+#if BUILD_SERVER && !NDEBUG
+		tracestream << "Client processing packet " << (int)command << " ["
+					<< toClientCommandTable[command].name
+					<< "] state=" << (int)toClientCommandTable[command].state
+					<< " size=" << pkt->getSize()
+					<< std::endl;
+#endif
+
 	/*
 	 * Those packets are handled before m_server_ser_ver is set, it's normal
 	 * But we must use the new ToClientConnectionState in the future,
@@ -1139,6 +1161,13 @@ void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 
 void Client::Send(NetworkPacket* pkt)
 {
+#if !NDEBUG && BUILD_SERVER
+	tracestream << "Client sending packet " << (int)pkt->getCommand() << " ["
+				<< toServerCommandTable[pkt->getCommand()].name
+				<< "] state=" << (int)toServerCommandTable[pkt->getCommand()].state
+				<< " size=" << pkt->getSize() << std::endl;
+#endif
+
 	g_profiler->add("Client::Send", 1);
 	m_con->Send(PEER_ID_SERVER,
 		serverCommandFactoryTable[pkt->getCommand()].channel,
@@ -1874,12 +1903,12 @@ void Client::addUpdateMeshTask(v3bpos_t p, bool ack_to_server, bool urgent, int 
 	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
 == == ===
 #endif
-	m_mesh_update_thread.updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
+	m_mesh_update_manager.updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
 }
 
 void Client::addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server, bool urgent)
 {
-	m_mesh_update_thread.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
+	m_mesh_update_manager.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
 }
 
 void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool urgent)
@@ -1894,9 +1923,8 @@ void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool 
 */
 
 	v3bpos_t blockpos = getNodeBlockPos(nodepos);
-
-	v3pos_t blockpos_relative = getBlockPosRelative(blockpos);
-	m_mesh_update_thread.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
+	v3pos_t blockpos_relative = blockpos * MAP_BLOCKSIZE;
+	m_mesh_update_manager.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
 	// Leading edge
 	if (nodepos.X == blockpos_relative.X)
 		addUpdateMeshTask(blockpos + v3bpos_t(-1, 0, 0), false, urgent);
@@ -1953,7 +1981,7 @@ void Client::showUpdateProgressTexture(void *args, u32 progress, u32 max_progres
 		TextureUpdateArgs* targs = (TextureUpdateArgs*) args;
 		u16 cur_percent = ceil(progress / (double) max_progress * 100.);
 
-		// update the loading menu -- if neccessary
+		// update the loading menu -- if necessary
 		bool do_draw = false;
 		u64 time_ms = targs->last_time_ms;
 		if (cur_percent != targs->last_percent) {
@@ -2034,16 +2062,11 @@ void Client::afterContentReceived()
 	delete[] tu_args.text_base;
 	}
 
-	if (!headless_optimize) {
-		// Start mesh update thread after setting up content definitions
-		int threads = !g_settings->getBool("more_threads")
-							  ? 1
-							  : std::max<uint16_t>(
-										8, Thread::getNumberOfProcessors() -
-												   (m_simple_singleplayer_mode ? 3 : 1));
-		infostream << "- Starting mesh update threads = " << threads << std::endl;
-		m_mesh_update_thread.start(threads < 1 ? 1 : threads);
-	}
+   if (!headless_optimize) {
+	// Start mesh update thread after setting up content definitions
+	infostream<<"- Starting mesh update thread"<<std::endl;
+	m_mesh_update_manager.start();
+   }
 
 	m_state = LC_Ready;
 	sendReady();
@@ -2245,26 +2268,6 @@ const std::string* Client::getModFile(std::string filename)
 	if (it == m_mod_vfs.end())
 		return nullptr;
 	return &it->second;
-}
-
-bool Client::registerModStorage(ModMetadata *storage)
-{
-	if (m_mod_storages.find(storage->getModName()) != m_mod_storages.end()) {
-		errorstream << "Unable to register same mod storage twice. Storage name: "
-				<< storage->getModName() << std::endl;
-		return false;
-	}
-
-	m_mod_storages[storage->getModName()] = storage;
-	return true;
-}
-
-void Client::unregisterModStorage(const std::string &name)
-{
-	std::unordered_map<std::string, ModMetadata *>::const_iterator it =
-		m_mod_storages.find(name);
-	if (it != m_mod_storages.end())
-		m_mod_storages.erase(name);
 }
 
 /*

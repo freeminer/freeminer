@@ -60,7 +60,7 @@ fips_md_init(mt_SHA256)
     return 1;
 }
 
-unsigned char *SHA224(const unsigned char *d, size_t n, unsigned char *md)
+unsigned char *mt_SHA224(const unsigned char *d, size_t n, unsigned char *md)
 {
     mt_SHA256_CTX c;
     static unsigned char m[SHA224_DIGEST_LENGTH];
@@ -74,7 +74,7 @@ unsigned char *SHA224(const unsigned char *d, size_t n, unsigned char *md)
     return (md);
 }
 
-unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md)
+unsigned char *mt_SHA256(const unsigned char *d, size_t n, unsigned char *md)
 {
     mt_SHA256_CTX c;
     static unsigned char m[SHA256_DIGEST_LENGTH];
@@ -133,7 +133,7 @@ int mt_SHA224_Final(unsigned char *md, mt_SHA256_CTX *c)
         } while (0)
 
 # define HASH_UPDATE             mt_SHA256_Update
-# define HASH_TRANSFORM          SHA256_Transform
+# define HASH_TRANSFORM          mt_SHA256_Transform
 # define HASH_FINAL              mt_SHA256_Final
 # define HASH_BLOCK_DATA_ORDER   sha256_block_data_order
 # ifndef SHA256_ASM

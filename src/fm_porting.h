@@ -65,7 +65,10 @@ extern std::atomic_bool g_sighup, g_siginfo;
 #elif defined(_WIN32) || defined(__GNU__)
 	inline void setThreadName(const char* name) {}
 #else
+#ifndef __EMSCRIPTEN__
 	#warning "Unrecognized platform, thread names will not be available."
+#endif
+
 	inline void setThreadName(const char* name) {}
 #endif
 

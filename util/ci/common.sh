@@ -3,7 +3,7 @@
 # Linux build only
 install_linux_deps() {
 	local pkgs=(
-		cmake gettext
+		cmake gettext postgresql
 		libleveldb-dev libsnappy-dev libboost-system-dev libunwind-dev
 		libpng-dev libjpeg-dev libxi-dev libgl1-mesa-dev
 		libsqlite3-dev libhiredis-dev libogg-dev libgmp-dev libvorbis-dev
@@ -20,6 +20,12 @@ install_linux_deps() {
 
 	sudo apt-get update
 	sudo apt-get install -y --no-install-recommends "${pkgs[@]}" "$@"
+
+	sudo systemctl start postgresql.service
+	sudo -u postgres psql <<<"
+		CREATE USER minetest WITH PASSWORD 'minetest';
+		CREATE DATABASE minetest;
+	"
 }
 
 # macOS build only

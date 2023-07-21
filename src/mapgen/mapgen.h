@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "util/string.h"
 #include "util/container.h"
+#include <utility>
 
 #define MAPGEN_DEFAULT MAPGEN_V7
 #define MAPGEN_DEFAULT_NAME "v7"
@@ -60,6 +61,7 @@ class VoxelManipulator;
 struct BlockMakeData;
 class VoxelArea;
 class Map;
+class ServerEnvironment;
 
 enum MapgenObject {
 	MGOBJ_VMANIP,
@@ -147,7 +149,6 @@ struct MapgenParams {
 	s32 getSpawnRangeMax();
 
 private:
-	void calcMapgenEdges();
 	bool m_mapgen_edges_calculated = false;
 };
 
@@ -236,8 +237,7 @@ public:
 	virtual int getGroundLevelAtPoint(v2pos_t p) { return 0; }
 
 	// freeminer:
-	//EmergeManager *m_emerge = nullptr;
-	EmergeParams *m_emerge = nullptr;
+	ServerEnvironment *env = nullptr;
 	s16 liquid_pressure = 0;
 	unordered_map_v3pos<s16> heat_cache;
 	unordered_map_v3pos<s16> humidity_cache;
@@ -349,3 +349,7 @@ protected:
 	pos_t dungeon_ymin;
 	pos_t dungeon_ymax;
 };
+
+// Calculate exact edges of the outermost mapchunks that are within the set
+// mapgen_limit. Returns the minimum and maximum edges in nodes in that order.
+std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize);

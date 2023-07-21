@@ -22,23 +22,41 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_MULTI
 #include "fm_connection_multi.h"
+constexpr auto server_proto = "mt";
 namespace con_use
 {
 using namespace con_multi;
 }
+#elif USE_WEBSOCKET
+#include "ws/connection.h"
+constexpr auto server_proto = "mt_ws";
+namespace con_use
+{
+using namespace con_ws;
+}
+#elif USE_WEBSOCKET_SCTP
+constexpr auto server_proto = "mt_ws_sctp";
+#include "fm_connection_websocket_sctp.h"
+namespace con_use
+{
+using namespace con_ws_sctp;
+}
 #elif USE_SCTP
+constexpr auto server_proto = "mt_sctp";
 #include "fm_connection_sctp.h"
 namespace con_use
 {
 using namespace con_sctp;
 }
 #elif USE_ENET
+constexpr auto server_proto = "mt_enet";
 #include "fm_connection_enet.h"
 namespace con_use
 {
 using namespace con_enet;
 }
 #else
+constexpr auto server_proto = "mt";
 #include "connection.h"
 namespace con_use
 {

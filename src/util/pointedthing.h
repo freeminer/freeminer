@@ -72,7 +72,7 @@ struct PointedThing
 	 * Only valid if type is POINTEDTHING_OBJECT.
 	 * The ID of the object the ray hit.
 	 */
-	s16 object_id = -1;
+	u16 object_id = 0;
 	/*!
 	 * Only valid if type isn't POINTEDTHING_NONE.
 	 * First intersection point of the ray and the nodebox in irrlicht
@@ -85,7 +85,12 @@ struct PointedThing
 	 * This is perpendicular to the face the ray hits,
 	 * points outside of the box and it's length is 1.
 	 */
-	v3pos_t intersection_normal;
+ 	v3f intersection_normal;
+	/*!
+	 * Only valid if type is POINTEDTHING_OBJECT.
+	 * Raw normal vector of the intersection before applying rotation.
+	 */
+	v3f raw_intersection_normal;
 	/*!
 	 * Only valid if type isn't POINTEDTHING_NONE.
 	 * Indicates which selection box is selected, if there are more of them.
@@ -101,10 +106,10 @@ struct PointedThing
 	PointedThing() = default;
 	//! Constructor for POINTEDTHING_NODE
 	PointedThing(const v3pos_t &under, const v3pos_t &above,
-		const v3pos_t &real_under, const v3opos_t &point, const v3pos_t &normal,
+		const v3pos_t &real_under, const v3opos_t &point, const v3f &normal,
 		u16 box_id, f32 distSq);
 	//! Constructor for POINTEDTHING_OBJECT
-	PointedThing(s16 id, const v3opos_t &point, const v3pos_t &normal, f32 distSq);
+	PointedThing(u16 id, const v3opos_t &point, const v3f &normal, const v3f &raw_normal, f32 distSq);
 	std::string dump() const;
 	void serialize(std::ostream &os, const u16 proto_ver) const;
 	void deSerialize(std::istream &is);

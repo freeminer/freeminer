@@ -82,6 +82,8 @@ void FontEngine::cleanCache()
 	for (auto &font_cache_it : m_font_cache) {
 
 		for (auto &font_it : font_cache_it) {
+            if (!font_it.second)
+                continue;
 			font_it.second->drop();
 			font_it.second = nullptr;
 		}

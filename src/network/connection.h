@@ -35,6 +35,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <map>
 
+namespace con_ws { class Connection; }
+
 #define MAX_UDP_PEERS 0x3fff
 
 /*
@@ -370,7 +372,7 @@ public:
 	u16 readNextIncomingSeqNum();
 	u16 incNextIncomingSeqNum();
 
-	u16 getOutgoingSequenceNumber(bool& successfull);
+	u16 getOutgoingSequenceNumber(bool& successful);
 	u16 readOutgoingSequenceNumber();
 	bool putBackSequenceNumber(u16);
 
@@ -613,6 +615,7 @@ public:
 	friend class ConnectionReceiveThread;
 	friend class ConnectionSendThread;
 	friend class Connection;
+	friend class con_ws::Connection;
 
 	UDPPeer(u16 a_id, Address a_address, Connection* connection);
 	virtual ~UDPPeer() = default;
@@ -791,7 +794,7 @@ private:
 
 	std::atomic_bool m_shutting_down = false;
 
-	session_t m_next_remote_peer_id = 2;
+	session_t m_next_remote_peer_id = PEER_MINETEST_MIN;
 
 //freeminer:
 public:

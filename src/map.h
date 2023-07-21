@@ -27,6 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <set>
 #include <map>
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "util/unordered_map_hash.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_set.h"
@@ -35,6 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v2d.h"
 #include "irr_v3d.h"
 #include "irrlichttypes_bloated.h"
+#include "mapblock.h"
 #include "mapnode.h"
 #include "constants.h"
 #include "voxel.h"
@@ -49,6 +52,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include <sys/types.h>
 #include <unordered_set>
+#include <vector>
 #include "config.h"
 
 class Settings;
@@ -88,26 +92,35 @@ struct MapEditEvent
 	MapEditEventType type = MEET_OTHER;
 	v3pos_t p;
 	MapNode n = CONTENT_AIR;
-	std::set<v3bpos_t> modified_blocks;
+	std::vector<v3bpos_t> modified_blocks; // Represents a set
 	bool is_private_change = false;
 
 	MapEditEvent() = default;
+
+	// Sets the event's position and marks the block as modified.
+	void setPositionModified(v3pos_t pos)
+	{
+		assert(modified_blocks.empty()); // only meant for initialization (once)
+		p = pos;
+		modified_blocks.push_back(getNodeBlockPos(pos));
+	}
+
+	void setModifiedBlocks(const std::map<v3bpos_t, MapBlock *> blocks)
+	{
+		assert(modified_blocks.empty()); // only meant for initialization (once)
+		modified_blocks.reserve(blocks.size());
+		for (const auto &block : blocks)
+			modified_blocks.push_back(block.first);
+	}
 
 	VoxelArea getArea() const
 	{
 		switch(type){
 		case MEET_ADDNODE:
-			return VoxelArea(p);
 		case MEET_REMOVENODE:
-			return VoxelArea(p);
 		case MEET_SWAPNODE:
-			return VoxelArea(p);
 		case MEET_BLOCK_NODE_METADATA_CHANGED:
-		{
-			v3pos_t np1 = p*MAP_BLOCKSIZE;
-			v3pos_t np2 = np1 + v3pos_t(1,1,1)*MAP_BLOCKSIZE - v3pos_t(1,1,1);
-			return VoxelArea(np1, np2);
-		}
+			return VoxelArea(p);
 		case MEET_OTHER:
 		{
 			VoxelArea a;
@@ -168,7 +181,7 @@ public:
 	bool isValidPosition(v3pos_t p);
 
 	// throws InvalidPositionException if not found
-	void setNode(v3pos_t p, MapNode & n, bool important = false);
+	void setNode(v3pos_t p, MapNode n, bool important = false);
 
 	// Returns a CONTENT_IGNORE node if not found
 	// If is_valid_position is not NULL then this will be set to true if the
@@ -263,7 +276,7 @@ public:
 	void removeNodeTimer(v3pos_t p);
 
 	/*
-		Variables
+		Utilities
 	*/
 
 
@@ -317,6 +330,39 @@ public:
 
 
 public:
+	// Iterates through all nodes in the area in an unspecified order.
+	// The given callback takes the position as its first argument and the node
+	// as its second. If it returns false, forEachNodeInArea returns early.
+	template<typename F>
+	void forEachNodeInArea(v3pos_t minp, v3pos_t maxp, F func)
+	{
+		v3bpos_t bpmin = getNodeBlockPos(minp);
+		v3bpos_t bpmax = getNodeBlockPos(maxp);
+		for (bpos_t bz = bpmin.Z; bz <= bpmax.Z; bz++)
+		for (bpos_t bx = bpmin.X; bx <= bpmax.X; bx++)
+		for (bpos_t by = bpmin.Y; by <= bpmax.Y; by++) {
+			// y is iterated innermost to make use of the sector cache.
+			v3bpos_t bp(bx, by, bz);
+			MapBlock *block = getBlockNoCreateNoEx(bp);
+			v3pos_t basep = bp * MAP_BLOCKSIZE;
+			pos_t minx_block = rangelim(minp.X - basep.X, 0, MAP_BLOCKSIZE - 1);
+			pos_t miny_block = rangelim(minp.Y - basep.Y, 0, MAP_BLOCKSIZE - 1);
+			pos_t minz_block = rangelim(minp.Z - basep.Z, 0, MAP_BLOCKSIZE - 1);
+			pos_t maxx_block = rangelim(maxp.X - basep.X, 0, MAP_BLOCKSIZE - 1);
+			pos_t maxy_block = rangelim(maxp.Y - basep.Y, 0, MAP_BLOCKSIZE - 1);
+			pos_t maxz_block = rangelim(maxp.Z - basep.Z, 0, MAP_BLOCKSIZE - 1);
+			for (pos_t z_block = minz_block; z_block <= maxz_block; z_block++)
+			for (pos_t y_block = miny_block; y_block <= maxy_block; y_block++)
+			for (pos_t x_block = minx_block; x_block <= maxx_block; x_block++) {
+				v3pos_t p = basep + v3pos_t(x_block, y_block, z_block);
+				MapNode n = block ?
+						block->getNodeNoCheck(x_block, y_block, z_block) :
+						MapNode(CONTENT_IGNORE);
+				if (!func(p, n))
+					return;
+			}
+		}
+	}
 
 	bool isBlockOccluded(MapBlock *block, v3pos_t cam_pos_nodes);
 protected:

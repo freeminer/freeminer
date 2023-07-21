@@ -109,10 +109,10 @@ void LuaABM::trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	luaL_checktype(L, -1, LUA_TFUNCTION);
 	lua_remove(L, -2); // Remove registered_abms[m_id]
 	push_v3pos(L, p);
-	pushnode(L, n, env->getGameDef()->ndef());
+	pushnode(L, n);
 	lua_pushnumber(L, active_object_count);
 	lua_pushnumber(L, active_object_count_wider);
-	pushnode(L, neighbor, env->getGameDef()->ndef());
+	pushnode(L, neighbor);
 	lua_pushboolean(L, activate);
 
 	int result = lua_pcall(L, 6, 0, error_handler);
@@ -122,7 +122,8 @@ void LuaABM::trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	lua_pop(L, 1); // Pop error handler
 }
 
-void LuaLBM::trigger(ServerEnvironment *env, v3pos_t p, MapNode n)
+void LuaLBM::trigger(ServerEnvironment *env, v3pos_t p,
+	const MapNode n, const float dtime_s)
 {
 	ServerScripting *scriptIface = env->getScriptIface();
 	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex, std::try_to_lock);
@@ -161,9 +162,10 @@ void LuaLBM::trigger(ServerEnvironment *env, v3pos_t p, MapNode n)
 	luaL_checktype(L, -1, LUA_TFUNCTION);
 	lua_remove(L, -2); // Remove registered_lbms[m_id]
 	push_v3pos(L, p);
-	pushnode(L, n, env->getGameDef()->ndef());
+	pushnode(L, n);
+	lua_pushnumber(L, dtime_s);
 
-	int result = lua_pcall(L, 2, 0, error_handler);
+	int result = lua_pcall(L, 3, 0, error_handler);
 	if (result)
 		scriptIface->scriptError(result, "LuaLBM::trigger");
 
@@ -179,7 +181,7 @@ int LuaRaycast::l_next(lua_State *L)
 	csm = getClient(L) != nullptr;
 #endif
 
-	LuaRaycast *o = checkobject(L, 1);
+	LuaRaycast *o = checkObject<LuaRaycast>(L, 1);
 	PointedThing pointed;
 	env->continueRaycast(&o->state, &pointed);
 	if (pointed.type == POINTEDTHING_NOTHING)
@@ -215,17 +217,6 @@ int LuaRaycast::create_object(lua_State *L)
 	return 1;
 }
 
-LuaRaycast *LuaRaycast::checkobject(lua_State *L, int narg)
-{
-	NO_MAP_LOCK_REQUIRED;
-
-	luaL_checktype(L, narg, LUA_TUSERDATA);
-	void *ud = luaL_checkudata(L, narg, className);
-	if (!ud)
-		luaL_typerror(L, narg, className);
-	return *(LuaRaycast **) ud;
-}
-
 int LuaRaycast::gc_object(lua_State *L)
 {
 	LuaRaycast *o = *(LuaRaycast **) (lua_touserdata(L, 1));
@@ -235,31 +226,12 @@ int LuaRaycast::gc_object(lua_State *L)
 
 void LuaRaycast::Register(lua_State *L)
 {
-	lua_newtable(L);
-	int methodtable = lua_gettop(L);
-	luaL_newmetatable(L, className);
-	int metatable = lua_gettop(L);
-
-	lua_pushliteral(L, "__metatable");
-	lua_pushvalue(L, methodtable);
-	lua_settable(L, metatable);
-
-	lua_pushliteral(L, "__index");
-	lua_pushvalue(L, methodtable);
-	lua_settable(L, metatable);
-
-	lua_pushliteral(L, "__gc");
-	lua_pushcfunction(L, gc_object);
-	lua_settable(L, metatable);
-
-	lua_pushliteral(L, "__call");
-	lua_pushcfunction(L, l_next);
-	lua_settable(L, metatable);
-
-	lua_pop(L, 1);
-
-	luaL_register(L, nullptr, methods);
-	lua_pop(L, 1);
+	static const luaL_Reg metamethods[] = {
+		{"__call", l_next},
+		{"__gc", gc_object},
+		{0, 0}
+	};
+	registerClass(L, className, methods, metamethods);
 
 	lua_register(L, className, create_object);
 }
@@ -298,10 +270,9 @@ int ModApiEnvMod::l_set_node(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	// parameters
 	v3pos_t pos = read_v3pos(L, 1);
-	MapNode n = readnode(L, 2, ndef);
+	MapNode n = readnode(L, 2);
 	// Do it
 	bool succeeded = env->setNode(pos, n, lua_tonumber(L, 3), lua_tonumber(L, 4));
 	lua_pushboolean(L, succeeded);
@@ -314,7 +285,6 @@ int ModApiEnvMod::l_bulk_set_node(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	// parameters
 	if (!lua_istable(L, 1)) {
 		return 0;
@@ -326,7 +296,7 @@ int ModApiEnvMod::l_bulk_set_node(lua_State *L)
 		return 1;
 	}
 
-	MapNode n = readnode(L, 2, ndef);
+	MapNode n = readnode(L, 2);
 
 	// Do it
 	bool succeeded = true;
@@ -366,10 +336,9 @@ int ModApiEnvMod::l_swap_node(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	// parameters
 	v3pos_t pos = read_v3pos(L, 1);
-	MapNode n = readnode(L, 2, ndef);
+	MapNode n = readnode(L, 2);
 	// Do it
 	bool succeeded = env->swapNode(pos, n);
 	lua_pushboolean(L, succeeded);
@@ -387,7 +356,7 @@ int ModApiEnvMod::l_get_node(lua_State *L)
 	// Do it
 	MapNode n = env->getMap().getNode(pos);
 	// Return node
-	pushnode(L, n, env->getGameDef()->ndef());
+	pushnode(L, n);
 	return 1;
 }
 
@@ -404,7 +373,7 @@ int ModApiEnvMod::l_get_node_or_nil(lua_State *L)
 	MapNode n = env->getMap().getNode(pos, &pos_ok);
 	if (pos_ok) {
 		// Return node
-		pushnode(L, n, env->getGameDef()->ndef());
+		pushnode(L, n);
 	} else {
 		lua_pushnil(L);
 	}
@@ -430,7 +399,7 @@ int ModApiEnvMod::l_get_node_light(lua_State *L)
 	MapNode n = env->getMap().getNode(pos, &is_position_ok);
 	if (is_position_ok) {
 		const NodeDefManager *ndef = env->getGameDef()->ndef();
-		lua_pushinteger(L, n.getLightBlend(dnr, ndef));
+		lua_pushinteger(L, n.getLightBlend(dnr, ndef->getLightingFlags(n)));
 	} else {
 		lua_pushnil(L);
 	}
@@ -489,7 +458,7 @@ int ModApiEnvMod::l_place_node(lua_State *L)
 	IItemDefManager *idef = server->idef();
 
 	v3pos_t pos = read_v3pos(L, 1);
-	MapNode n = readnode(L, 2, ndef);
+	MapNode n = readnode(L, 2);
 
 	// Don't attempt to load non-loaded area as of now
 	MapNode n_old = env->getMap().getNode(pos);
@@ -996,11 +965,8 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 		for (u32 i = 0; i < filter.size(); i++)
 			lua_newtable(L);
 
-		v3pos_t p;
-		for (p.X = minp.X; p.X <= maxp.X; p.X++)
-		for (p.Y = minp.Y; p.Y <= maxp.Y; p.Y++)
-		for (p.Z = minp.Z; p.Z <= maxp.Z; p.Z++) {
-			content_t c = map.getNode(p).getContent();
+		map.forEachNodeInArea(minp, maxp, [&](v3pos_t p, MapNode n) -> bool {
+			content_t c = n.getContent();
 
 			auto it = std::find(filter.begin(), filter.end(), c);
 			if (it != filter.end()) {
@@ -1009,7 +975,9 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 				push_v3pos(L, p);
 				lua_rawseti(L, base + 1 + filt_index, ++idx[filt_index]);
 			}
-		}
+
+			return true;
+		});
 
 		// last filter table is at top of stack
 		u32 i = filter.size() - 1;
@@ -1031,11 +999,8 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 
 		lua_newtable(L);
 		u32 i = 0;
-		v3pos_t p;
-		for (p.X = minp.X; p.X <= maxp.X; p.X++)
-		for (p.Y = minp.Y; p.Y <= maxp.Y; p.Y++)
-		for (p.Z = minp.Z; p.Z <= maxp.Z; p.Z++) {
-			content_t c = env->getMap().getNode(p).getContent();
+		map.forEachNodeInArea(minp, maxp, [&](v3pos_t p, MapNode n) -> bool {
+			content_t c = n.getContent();
 
 			auto it = std::find(filter.begin(), filter.end(), c);
 			if (it != filter.end()) {
@@ -1045,7 +1010,9 @@ int ModApiEnvMod::l_find_nodes_in_area(lua_State *L)
 				u32 filt_index = it - filter.begin();
 				individual_count[filt_index]++;
 			}
-		}
+
+			return true;
+		});
 
 		lua_createtable(L, 0, filter.size());
 		for (u32 i = 0; i < filter.size(); i++) {
@@ -1228,8 +1195,7 @@ int ModApiEnvMod::l_fix_light(lua_State *L)
 	if (!modified_blocks.empty()) {
 		MapEditEvent event;
 		event.type = MEET_OTHER;
-		for (auto &modified_block : modified_blocks)
-			event.modified_blocks.insert(modified_block.first);
+		event.setModifiedBlocks(modified_blocks);
 
 		map.dispatchEvent(event);
 	}
@@ -1335,7 +1301,7 @@ int ModApiEnvMod::l_delete_area(lua_State *L)
 		v3bpos_t bp(x, y, z);
 		if (map.deleteBlock(bp)) {
 			env->setStaticForActiveObjectsInBlock(bp, false);
-			//event.modified_blocks.insert(bp);
+			event.modified_blocks.push_back(bp);
 		} else {
 			success = false;
 		}

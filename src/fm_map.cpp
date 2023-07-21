@@ -614,7 +614,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 				}
 		*/
 
-		if (!block || block->isDummy())
+		if (!block)
 			continue;
 
 		// Calculate relative position in block
@@ -642,7 +642,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 			if (block == NULL || blockpos != blockpos_last) {
 				block = getBlockNoCreateNoEx(blockpos);
 
-				if (!block || block->isDummy())
+				if (!block)
 					continue;
 
 				blockpos_last = blockpos;
@@ -662,6 +662,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
 			if (!is_valid_position)
 				continue;
+			const auto & f2 = nodemgr->getLightingFlags(n2);
 
 			bool changed = false;
 
@@ -671,18 +672,18 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 				If the neighbor is dimmer than what was specified
 				as oldlight (the light of the previous node)
 			*/
-			if (n2.getLight(bank, nodemgr) < oldlight) {
+			if (n2.getLight(bank, f2) < oldlight) {
 				/*
 					And the neighbor is transparent and it has some light
 				*/
 				if (nodemgr->get(n2).light_propagates &&
-						n2.getLight(bank, nodemgr) != 0) {
+						n2.getLight(bank, f2) != 0) {
 					/*
 						Set light to 0 and add to queue
 					*/
 
-					u8 current_light = n2.getLight(bank, nodemgr);
-					n2.setLight(bank, 0, nodemgr);
+					u8 current_light = n2.getLight(bank, f2);
+					n2.setLight(bank, 0, f2);
 					block->setNode(relpos, n2);
 
 					unlighted_nodes[n2pos] = current_light;
@@ -782,9 +783,6 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			blockchangecount++;
 		}
 
-		if (block->isDummy())
-			continue;
-
 		// auto lock = block->try_lock_unique_rec();
 		// if (!lock->owns_lock())
 		//	continue;
@@ -794,8 +792,9 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 		MapNode n = block->getNode(relpos, &is_valid_position);
 		if (n.getContent() == CONTENT_IGNORE)
 			continue;
+		const auto& f = nodemgr->getLightingFlags(n);
 
-		u8 oldlight = is_valid_position ? n.getLight(bank, nodemgr) : 0;
+		u8 oldlight = is_valid_position ? n.getLight(bank, f) : 0;
 		u8 newlight = diminish_light(oldlight);
 
 		// Loop through 6 neighbors
@@ -830,13 +829,14 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
 			if (!is_valid_position)
 				continue;
+    		const auto & f2 = nodemgr->getLightingFlags(n);
 
 			bool changed = false;
 			/*
 				If the neighbor is brighter than the current node,
 				add to list (it will light up this node on its turn)
 			*/
-			if (n2.getLight(bank, nodemgr) > undiminish_light(oldlight)) {
+			if (n2.getLight(bank, f2) > undiminish_light(oldlight)) {
 				lighted_nodes.insert(n2pos);
 				changed = true;
 			}
@@ -844,9 +844,9 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 				If the neighbor is dimmer than how much light this node
 				would spread on it, add to list
 			*/
-			if (n2.getLight(bank, nodemgr) < newlight) {
+			if (n2.getLight(bank, f2) < newlight) {
 				if (nodemgr->get(n2).light_propagates) {
-					n2.setLight(bank, newlight, nodemgr);
+					n2.setLight(bank, newlight, f2);
 					block->setNode(relpos, n2);
 					lighted_nodes.insert(n2pos);
 					changed = true;
@@ -954,7 +954,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 			*/
 			for (;;) {
 				// Don't bother with dummy blocks.
-				if (!block || block->isDummy() || !block->isGenerated()) {
+				if (!block || !block->isGenerated()) {
 					i = a_blocks.erase(i);
 					goto ablocks_end;
 				}
@@ -997,10 +997,12 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 										   << std::endl;
 								continue;
 							}
-							u8 oldlight_day = n.getLight(LIGHTBANK_DAY, nodemgr);
-							u8 oldlight_night = n.getLight(LIGHTBANK_NIGHT, nodemgr);
-							n.setLight(LIGHTBANK_DAY, 0, nodemgr);
-							n.setLight(LIGHTBANK_NIGHT, 0, nodemgr);
+							const auto & f = nodemgr->getLightingFlags(n);
+
+							u8 oldlight_day = n.getLight(LIGHTBANK_DAY, f);
+							u8 oldlight_night = n.getLight(LIGHTBANK_NIGHT, f);
+							n.setLight(LIGHTBANK_DAY, 0, f);
+							n.setLight(LIGHTBANK_NIGHT, 0, f);
 							block->setNode(p, n);
 
 							// If node sources light, add to list
@@ -1113,8 +1115,10 @@ bool ServerMap::propagateSunlight(
 			// Check if node above block has sunlight
 
 			MapNode n = getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z));
+			const auto &  f = nodemgr->getLightingFlags(n);
+
 			if (n) {
-				if (n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN &&
+				if (n.getLight(LIGHTBANK_DAY, f) != LIGHT_SUN &&
 						!light_ambient) {
 					no_sunlight = true;
 				}
@@ -1143,9 +1147,10 @@ bool ServerMap::propagateSunlight(
 
 			if (no_sunlight && !remove_light)
 				for (const auto &dir : g_4dirs) {
-					if (getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z) + dir)
-									.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) ==
-							LIGHT_SUN) {
+					const auto n = getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z) + dir);
+					const auto &f = nodemgr->getLightingFlags(n);
+
+					if (n.getLight(LIGHTBANK_DAY, f) == LIGHT_SUN) {
 						current_light = LIGHT_SUN;
 						break;
 					}
@@ -1154,6 +1159,8 @@ bool ServerMap::propagateSunlight(
 			for (; y >= 0; --y) {
 				v3pos_t pos(x, y, z);
 				MapNode n = block->getNode(pos);
+				const auto & f = nodemgr->getLightingFlags(n);
+
 				const auto &ndef = nodemgr->get(n);
 				if (current_light == 0) {
 					//break;
@@ -1172,10 +1179,10 @@ bool ServerMap::propagateSunlight(
 					current_light = diminish_light(current_light, ndef.light_vertical_dimnish);
 				}
 
-				u8 old_light = n.getLight(LIGHTBANK_DAY, nodemgr);
+				u8 old_light = n.getLight(LIGHTBANK_DAY, f);
 
 				if (current_light > old_light || remove_light) {
-					n.setLight(LIGHTBANK_DAY, current_light, nodemgr);
+					n.setLight(LIGHTBANK_DAY, current_light, f);
 					block->setNode(pos, n);
 				}
 
@@ -1198,12 +1205,14 @@ bool ServerMap::propagateSunlight(
 
 			if (block_below_is_valid) {
 				MapNode n = getNode(pos_relative + v3pos_t(x, -1, z));
+				const auto &f = nodemgr->getLightingFlags(n);
+
 				if (n) {
 					if (nodemgr->get(n).light_propagates) {
-						if (n.getLight(LIGHTBANK_DAY, nodemgr) == LIGHT_SUN &&
+						if (n.getLight(LIGHTBANK_DAY, f) == LIGHT_SUN &&
 								sunlight_should_go_down == false)
 							block_below_is_valid = false;
-						else if (n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN &&
+						else if (n.getLight(LIGHTBANK_DAY, f) != LIGHT_SUN &&
 								 sunlight_should_go_down == true)
 							block_below_is_valid = false;
 					}

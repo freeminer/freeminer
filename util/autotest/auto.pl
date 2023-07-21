@@ -164,6 +164,8 @@ sub init_config () {
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
     map { /^----(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
     map { /^-D(\w+)(?:=(.*))?/   and $config->{cmake_opt}{$1} = defined $2 ? $2 : 1; } @ARGV;
+
+    $config->{world} = $config->{logdir} . '/world' if $config->{world_local};
 }
 init_config();
 

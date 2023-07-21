@@ -190,7 +190,7 @@ public:
 	v3f getEyeOffset() const;
 	float getZoomFOV() const;
 
-	inline Metadata &getMeta() { return m_meta; }
+	inline SimpleMetadata &getMeta() { return m_meta; }
 
 private:
 	std::string getPropertyPacket();
@@ -229,15 +229,9 @@ public:
 	std::atomic<f32> m_fov {0.0f};
 	std::atomic_short m_wanted_range {0};
 
-	Metadata m_meta;
+	SimpleMetadata m_meta;
 
 public:
-	float m_physics_override_speed = 1.0f;
-	float m_physics_override_jump = 1.0f;
-	float m_physics_override_gravity = 1.0f;
-	bool m_physics_override_sneak = true;
-	bool m_physics_override_sneak_glitch = false;
-	bool m_physics_override_new_move = true;
 	std::atomic_bool m_physics_override_sent {false};
 };
 

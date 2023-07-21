@@ -1138,7 +1138,7 @@ SharedBuffer<u8> ConnectionReceiveThread::handlePacketType_Control(Channel *chan
 				// Get round trip time
 				u64 current_time = porting::getTimeMs();
 
-				// a overflow is quite unlikely but as it'd result in major
+				// an overflow is quite unlikely but as it'd result in major
 				// rtt miscalculation we handle it here
 				if (current_time > p->absolute_send_time) {
 					float rtt = (current_time - p->absolute_send_time) / 1000.0;
@@ -1285,7 +1285,7 @@ SharedBuffer<u8> ConnectionReceiveThread::handlePacketType_Reliable(Channel *cha
 			throw ProcessedSilentlyException(
 				"Received packet newer then expected, not sending ack");
 
-		/* seems like our ack was lost, send another one for a old packet */
+		/* seems like our ack was lost, send another one for an old packet */
 		if (is_old_packet) {
 			LOG(dout_con << m_connection->getDesc()
 				<< "RE-SENDING ACK: peer_id: " << peer->id
