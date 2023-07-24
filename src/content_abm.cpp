@@ -477,7 +477,7 @@ public:
 	}
 	// u32 getNeighborsRange() override { return 3; }
 	virtual float getTriggerInterval() override { return grow_debug_fast ? 0.1 : 10; }
-	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 10; }
+	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 2; }
 	bool getSimpleCatchUp() override { return true; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
@@ -788,7 +788,7 @@ public:
 	}
 	u32 getNeighborsRange() override { return 1; }
 	virtual float getTriggerInterval() override { return grow_debug_fast ? 0.1 : 10; }
-	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 10; }
+	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 3; }
 	bool getSimpleCatchUp() override { return true; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
@@ -864,7 +864,6 @@ public:
 					!cf.groups.contains("liquid")) {
 				// if (grow_debug) DUMP("lv->lv  ", p.Y, n_water_level,
 				// n_water_level_orig, l, ndef->get(c_dir).name);
-				// TODO: apples sometimes
 				map->setNode(p_dir, {c, n_dir.getParam1(), 1});
 				--n_water_level;
 

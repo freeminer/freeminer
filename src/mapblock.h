@@ -113,15 +113,18 @@ public:
 	void reallocate()
 	{
 		auto lock = lock_unique_rec();
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
+#if __GNUC__ > 7
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
 #endif
 		if constexpr(!CONTENT_IGNORE) {
 			memset(data, 0, nodecount * sizeof(MapNode));
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
 		} else
 		for (u32 i = 0; i < nodecount; i++)
 			data[i] = ignoreNode;
