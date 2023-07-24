@@ -85,9 +85,8 @@ public:
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
 */
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider
-		, MapNode neighbor, bool activate = false
-		){};
+			u32 active_object_count, u32 active_object_count_wider
+			, v3pos_t neighbor_pos, bool activate = false){};
 };
 
 struct ABMWithState

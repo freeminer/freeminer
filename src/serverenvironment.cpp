@@ -798,7 +798,11 @@ void ServerEnvironment::loadMeta()
 		m_game_time = args.getU64("game_time");
 	} catch (SettingNotFoundException &e) {
 		// Getting this is crucial, otherwise timestamps are useless
+
+		errorstream << "Couldn't load env meta game_time" << std::endl;
+/*
 		throw SerializationError("Couldn't load env meta game_time");
+*/
 	}
 
 	setTimeOfDay(args.exists("time_of_day") ?

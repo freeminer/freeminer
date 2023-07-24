@@ -83,6 +83,6 @@ using unordered_set_v3pos = std::unordered_set<v3pos_t, v3POSHash, v3POSEqual>;
 
 template <typename T>
 using unordered_map_v3bpos = std::unordered_map<v3bpos_t, T, v3bPOSHash, v3bPOSEqual>;
-
+using unordered_set_v3bpos = std::unordered_set<v3bpos_t, v3bPOSHash, v3bPOSEqual>;
 
 #endif

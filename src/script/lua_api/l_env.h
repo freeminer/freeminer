@@ -295,7 +295,8 @@ public:
 		return m_max_y;
 	}
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor, bool activate);
+			u32 active_object_count, u32 active_object_count_wider, 
+			v3pos_t neighbor_pos, bool activate);
 };
 
 class LuaLBM : public LoadingBlockModifierDef

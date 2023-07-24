@@ -1677,7 +1677,7 @@ UDPPeer* Connection::createServerPeer(Address& address)
 
 #endif
 
-ConnectionCommandPtr ConnectionCommand::send_(
+ConnectionCommandPtr ConnectionCommand::send(
 		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	auto c = create(CONNCMD_SEND);
