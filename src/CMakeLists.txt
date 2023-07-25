@@ -720,6 +720,7 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
     fm_abm.cpp
     fm_clientiface.cpp
     content_abm.cpp
+    content_abm_grow_tree.cpp
     fm_serverenvironment.cpp
 )
 #	FMColoredString.cpp
