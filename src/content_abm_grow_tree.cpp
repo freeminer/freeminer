@@ -24,6 +24,13 @@ inline void set_leaves_water_level(MapNode &n, const uint8_t level)
 	n.setParam2(level);
 }
 
+inline auto getLight(const auto &ndef, const auto &n)
+{
+	const auto lightingFlags = ndef->getLightingFlags(n);
+	return std::max(n.getLight(LIGHTBANK_DAY, lightingFlags),
+			n.getLight(LIGHTBANK_NIGHT, lightingFlags));
+}
+
 const v3pos_t leaves_grow_dirs[] = {
 		// +right, +top, +back
 		v3pos_t{0, 1, 0},  // 1 top
@@ -42,7 +49,8 @@ struct GrowParams
 	int tree_grow_heat_max = 35;
 	int tree_grow_light_max = 12;		   // grow more leaves around before grow tree up
 	int tree_get_water_from_humidity = 70; // rain start
-	int leaves_water_max = 20;			   // todo: depend on humidity 2-20
+	int tree_grow_chance = 10;
+	int leaves_water_max = 20; // todo: depend on humidity 2-20
 	int leaves_grow_light_min = 8;
 	int leaves_grow_water_min_top = 3;
 	int leaves_grow_water_min_bottom = 4;
@@ -53,14 +61,14 @@ struct GrowParams
 	int leaves_die_light_max = 7; // 8
 	int leaves_die_heat_max = -1;
 	int leaves_die_heat_min = 55;
-	int leaves_die_chance = 10;
+	int leaves_die_chance = 5;
 	int leaves_die_from_liquid = 1;
 	int leaves_to_fruit_water_min = 8;
 	int leaves_to_fruit_heat_min = 15;
 	int leaves_to_fruit_light_min = 9;
 	int leaves_to_fruit_chance = 10;
 
-	GrowParams(const ContentFeatures &cf)
+	GrowParams(const ContentFeatures &cf, bool grow_debug_fast = false)
 	{
 		if (cf.groups.contains("tree_water_max"))
 			tree_water_max = cf.groups.at("tree_water_max");
@@ -72,6 +80,8 @@ struct GrowParams
 			tree_grow_heat_max = cf.groups.at("tree_grow_heat_max");
 		if (cf.groups.contains("tree_grow_light_max"))
 			tree_grow_light_max = cf.groups.at("tree_grow_light_max");
+		if (cf.groups.contains("tree_grow_chance"))
+			tree_grow_chance = grow_debug_fast ? 0 : cf.groups.at("tree_grow_chance");
 		if (cf.groups.contains("tree_get_water_from_humidity_min"))
 			tree_get_water_from_humidity =
 					cf.groups.at("tree_get_water_from_humidity_min");
@@ -98,7 +108,7 @@ struct GrowParams
 		if (cf.groups.contains("leaves_die_heat_min"))
 			leaves_die_heat_min = cf.groups.at("leaves_die_heat_min");
 		if (cf.groups.contains("leaves_die_chance"))
-			leaves_die_chance = cf.groups.at("leaves_die_chance");
+			leaves_die_chance = grow_debug_fast ? 0 : cf.groups.at("leaves_die_chance");
 		if (cf.groups.contains("leaves_die_from_liquid"))
 			leaves_die_from_liquid = cf.groups.at("leaves_die_from_liquid");
 		if (cf.groups.contains("leaves_to_fruit_water_min"))
@@ -129,7 +139,7 @@ public:
 		ndef->getIds("group:grow_tree", ids);
 		for (const auto &id : ids) {
 			const auto &cf = ndef->get(id);
-			type_params.emplace(id, GrowParams(cf));
+			type_params.emplace(id, GrowParams(cf, grow_debug_fast));
 			if (!cf.liquid_alternative_source.empty())
 				tree_to_leaves[id] = ndef->getId(cf.liquid_alternative_source);
 		}
@@ -144,8 +154,8 @@ public:
 		return {};
 	}
 	// u32 getNeighborsRange() override { return 3; }
-	virtual float getTriggerInterval() override { return grow_debug_fast ? 0.1 : 10; }
-	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 15; }
+	virtual float getTriggerInterval() override { return grow_debug_fast ? 0.1 : 5; }
+	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 5; }
 	bool getSimpleCatchUp() override { return true; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
@@ -200,10 +210,7 @@ public:
 
 			auto c_dir = n_dir.getContent();
 			const auto &cf = ndef->get(c_dir);
-
-			const auto light_dir =
-					n_dir.getLight(LIGHTBANK_DAY, ndef->getLightingFlags(n_dir));
-
+			const auto light_dir = getLight(ndef, n_dir);
 			bool top = !i;
 			bool bottom = i + 1 == sizeof(leaves_grow_dirs) / sizeof(leaves_grow_dirs[0]);
 
@@ -252,7 +259,9 @@ public:
 									//&& c_dir == CONTENT_AIR
 									&& cf.groups.contains("soil"))
 #endif
-									)) {
+									)
+					&& !myrand_range(0, params.tree_grow_chance)
+			) {
 				// dont grow too deep in liquid
 				if (bottom && is_liquid && light_dir <= 0)
 					continue;
@@ -483,27 +492,13 @@ public:
 		int n_water_level = get_leaves_water_level(n);
 		const auto n_water_level_orig = n_water_level;
 
-		const auto l = n.getLight(LIGHTBANK_DAY, ndef->getLightingFlags(n));
-		// TODO: very rand and slow (then remove with light 0 too)
-
-		if (n_water_level >= 1 && // dont touch old static trees
-				((l < params.leaves_die_light_max &&
-						 (l > 0 || !myrand_range(0, params.leaves_die_chance))) ||
-						((params.leaves_die_heat_max &&
-								 heat < params.leaves_die_heat_max) ||
-								(params.leaves_die_heat_min &&
-										heat > params.leaves_die_heat_min)))) {
-			map->removeNodeWithEvent(p, false);
-			// todo: return water?
-			// if (grow_debug) DUMP("lv rem light", p.X, p.Y, p.Z, l, n_water_level,
-			// heat);
-			return;
-		}
+		const auto l = getLight(ndef, n);
 
 		uint8_t i = 0;
 
 		bool top_is_full_liquid = false;
 		bool have_tree_or_soil = false;
+		bool have_air = false;
 		bool allow_grow_fruit = leaves_to_fruit.contains(c);
 		const content_t c_fruit =
 				allow_grow_fruit ? leaves_to_fruit.at(c) : CONTENT_IGNORE;
@@ -514,6 +509,7 @@ public:
 			if (!n_dir) {
 				have_tree_or_soil = true; // dont remove when map busy
 				allow_grow_fruit = false;
+				have_air = false;
 				continue;
 			}
 			auto c_dir = n_dir.getContent();
@@ -541,6 +537,9 @@ public:
 			if (!have_tree_or_soil)
 				have_tree_or_soil =
 						is_tree || is_leaves || cf.groups.contains("soil") || is_liquid;
+			if (!have_air)
+				have_air = c_dir == CONTENT_AIR;
+
 			if ((!params.leaves_grow_heat_min || heat >= params.leaves_grow_heat_min) &&
 					(!params.leaves_grow_heat_max ||
 							heat <= params.leaves_grow_heat_max) &&
@@ -558,8 +557,7 @@ public:
 				}
 
 			} else if (c_dir == c) {
-				const auto l_dir =
-						n.getLight(LIGHTBANK_DAY, ndef->getLightingFlags(n_dir));
+				const auto l_dir = getLight(ndef, n_dir);
 
 				auto wl_dir = get_leaves_water_level(n_dir);
 				if (n_water_level > 1 && wl_dir < params.leaves_water_max && l_dir >= l &&
@@ -597,9 +595,18 @@ public:
 				l >= params.leaves_to_fruit_light_min &&
 				(grow_debug_fast || !myrand_range(0, params.leaves_to_fruit_chance))) {
 			map->setNode(p, {c_fruit});
-		} else if ((!have_tree_or_soil ||
+		} else if (
+				(n_water_level >= 1 && // dont touch old static trees
+						have_air &&
+						((l < params.leaves_die_light_max &&
+								 (l > 0 || !myrand_range(0, params.leaves_die_chance))) ||
+								((params.leaves_die_heat_max &&
+										 heat < params.leaves_die_heat_max) ||
+										(params.leaves_die_heat_min &&
+												heat > params.leaves_die_heat_min)))) ||
+				((!have_tree_or_soil ||
 						   (params.leaves_die_from_liquid && top_is_full_liquid)) &&
-				   !myrand_range(0, 10)) {
+						!myrand_range(0, 10))) {
 			map->removeNodeWithEvent(p, false);
 		}
 	}
