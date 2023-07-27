@@ -120,7 +120,9 @@ void ActiveObjectMgr::getActiveSelectableObjects(const core::line3d<opos_t> &sho
 
 	f32 max_d = shootline.getLength();
 	v3opos_t dir = shootline.getVector().normalize();
-	v3opos_t dir_ortho1 = dir.crossProduct(dir + v3opos_t(1,0,0)).normalize();
+	// arbitrary linearly independent vector and orthogonal dirs
+	v3opos_t li2dir = dir + (std::fabs(dir.X) < 0.5f ? v3opos_t(1,0,0) : v3opos_t(0,1,0));
+	v3opos_t dir_ortho1 = dir.crossProduct(li2dir).normalize();
 	v3opos_t dir_ortho2 = dir.crossProduct(dir_ortho1);
 
 	for (auto &ao_it : m_active_objects) {

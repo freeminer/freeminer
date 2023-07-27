@@ -23,7 +23,7 @@ set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
-set(DEVELOPMENT_BUILD TRUE)
+set(DEVELOPMENT_BUILD FALSE)
 
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 if(VERSION_EXTRA)
@@ -127,7 +127,7 @@ if(BUILD_CLIENT AND TARGET IrrlichtMt::IrrlichtMt)
 	endif()
 	message(STATUS "Found IrrlichtMt ${IrrlichtMt_VERSION}")
 
-	set(TARGET_VER_S 1.9.0mt9)
+	set(TARGET_VER_S 1.9.0mt10)
 	string(REPLACE "mt" "." TARGET_VER ${TARGET_VER_S})
 	if(IrrlichtMt_VERSION VERSION_LESS ${TARGET_VER})
 		message(FATAL_ERROR "At least IrrlichtMt ${TARGET_VER_S} is required to build")
