@@ -136,6 +136,7 @@ inline void         push_v2pos          (lua_State *L, v2pos_t p) {
 	#endif
 }
 
+void                push_v2u32          (lua_State *L, v2u32 p);
 void                push_v3s16          (lua_State *L, v3s16 p);
 void                push_v3s32          (lua_State *L, v3s32 p);
 inline void         push_v3pos          (lua_State *L, v3pos_t p) {

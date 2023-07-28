@@ -35,11 +35,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/address.h"
 #include "porting.h"
 #include "threading/mutex_auto_lock.h"
+#include "clientdynamicinfo.h"
 
 #include <atomic>
 #include <list>
 #include <vector>
 #include <set>
+#include <unordered_set>
 #include <memory>
 #include <mutex>
 
@@ -302,6 +304,8 @@ public:
 //fm:
 	u32 getSendingCount() const { return 0; }
     std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
+	v3f   m_last_direction;
+	float m_nearest_unsent_reset_timer;
 
 
 	bool isBlockSent(v3s16 p) const
@@ -375,6 +379,9 @@ public:
 	void setCachedAddress(const Address &addr) { m_addr = addr; }
 	const Address &getAddress() const { return m_addr; }
 
+	void setDynamicInfo(const ClientDynamicInfo &info) { m_dynamic_info = info; }
+	const ClientDynamicInfo &getDynamicInfo() const { return m_dynamic_info; }
+
 private:
 	// Version is stored in here after INIT before INIT2
 	u8 m_pending_serialization_version = SER_FMT_VER_INVALID;
@@ -385,8 +392,11 @@ private:
 	// Cached here so retrieval doesn't have to go to connection API
 	Address m_addr;
 
-	// Client sent language code
+	// Client-sent language code
 	std::string m_lang_code;
+
+	// Client-sent dynamic info
+	ClientDynamicInfo m_dynamic_info{};
 
 	/*
 		Blocks that have been sent to client.
@@ -400,10 +410,16 @@ private:
 	unsigned int m_nearest_unsent_reset_want = 0;
 	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
 
-	//std::set<v3s16> m_blocks_sent;
-public:
-	std::atomic_int m_nearest_unsent_d {0};
-private:
+	//std::unordered_set<v3s16> m_blocks_sent;
+
+	/*
+		Cache of blocks that have been occlusion culled at the current distance.
+		As GetNextBlocks traverses the same distance multiple times, this saves
+		significant CPU time.
+	 */
+	std::unordered_set<v3s16> m_blocks_occ;
+
+	std::atomic_short m_nearest_unsent_d = 0;
 	v3s16 m_last_center;
 	v3f m_last_camera_dir;
 
@@ -414,8 +430,15 @@ private:
 	const s16 m_max_gen_distance;
 	const bool m_occ_cull;
 
-	v3f   m_last_direction;
-	float m_nearest_unsent_reset_timer;
+	/*
+		Blocks that are currently on the line.
+		This is used for throttling the sending of blocks.
+		- The size of this list is limited to some value
+		Block is added when it is sent with BLOCKDATA.
+		Block is removed when GOTBLOCKS is received.
+		Value is time from sending. (not used at the moment)
+	*/
+	//std::unordered_map<v3s16, float> m_blocks_sending;
 
 	/*
 		Blocks that have been modified since blocks were
@@ -425,7 +448,7 @@ private:
 
 		List of block positions.
 	*/
-	//std::set<v3s16> m_blocks_modified;
+	//std::unordered_set<v3s16> m_blocks_modified;
 
 	/*
 		Count of excess GotBlocks().
@@ -438,6 +461,9 @@ private:
 
 	// CPU usage optimization
 	float m_nothing_to_send_pause_timer = 0.0f;
+
+	// measure how long it takes the server to send the complete map
+	float m_map_send_completion_timer = 0.0f;
 
 	/*
 		name of player using this client
