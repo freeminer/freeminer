@@ -61,10 +61,10 @@ static aabb3f getNodeBoundingBox(const std::vector<aabb3f> &nodeboxes)
 
 
 bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
-	const v3f &sneak_max)
+	const v3opos_t &sneak_max)
 {
 	// Acceptable distance to node center
-	constexpr f32 allowed_range = (0.5f + 0.1f) * BS;
+	constexpr opos_t allowed_range = (0.5f + 0.1f) * BS;
 	static const v3pos_t dir9_center[9] = {
 		v3pos_t( 0, 0,  0),
 		v3pos_t( 1, 0,  0),
@@ -83,7 +83,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 	bool new_sneak_node_exists = m_sneak_node_exists;
 
 	// We want the top of the sneak node to be below the players feet
-	f32 position_y_mod = 0.02f * BS;
+	opos_t position_y_mod = 0.02f * BS;
 	if (m_sneak_node_exists)
 		position_y_mod = m_sneak_node_bb_top.MaxEdge.Y - position_y_mod;
 
@@ -104,7 +104,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 
 	// Get new sneak node
 	m_sneak_ladder_detected = false;
-	f32 min_distance_sq = HUGE_VALF;
+	opos_t min_distance_sq = HUGE_VALF;
 
 	for (const auto &d : dir9_center) {
 		const v3pos_t p = current_node + d;
@@ -122,7 +122,7 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 		}
 
 		const v2opos_t diff(position.X - pf.X, position.Z - pf.Z);
-		const f32 distance_sq = diff.getLengthSQ();
+		const opos_t distance_sq = diff.getLengthSQ();
 
 		if (distance_sq > min_distance_sq ||
 				std::fabs(diff.X) > allowed_range + sneak_max.X ||
@@ -356,11 +356,11 @@ void LocalPlayer::move(f32 dtime, Environment *env, opos_t pos_max_d,
 
 	// Max. distance (X, Z) over border for sneaking determined by collision box
 	// * 0.49 to keep the center just barely on the node
-	v3f sneak_max = m_collisionbox.getExtent() * 0.49f;
+	v3opos_t sneak_max = v3fToOpos(m_collisionbox.getExtent()) * 0.49f;
 
 	if (m_sneak_ladder_detected) {
 		// restore legacy behavior (this makes the m_speed.Y hack necessary)
-		sneak_max = v3f(0.4f * BS, 0.0f, 0.4f * BS);
+		sneak_max = v3opos_t(0.4f * BS, 0.0f, 0.4f * BS);
 	}
 
 	/*
@@ -885,13 +885,13 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 		Collision uncertainty radius
 		Make it a bit larger than the maximum distance of movement
 	*/
-	//f32 d = pos_max_d * 1.1;
+	//opos_t d = pos_max_d * 1.1;
 	// A fairly large value in here makes moving smoother
-	f32 d = 0.15f * BS;
+	opos_t d = 0.15f * BS;
 	// This should always apply, otherwise there are glitches
 	sanity_check(d > pos_max_d);
 	// Maximum distance over border for sneaking
-	f32 sneak_max = BS * 0.4f;
+	opos_t sneak_max = BS * 0.4f;
 
 	/*
 		If sneaking, keep in range from the last walked node and don't
@@ -900,14 +900,14 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 	if (control.sneak && m_sneak_node_exists &&
 			!(fly_allowed && player_settings.free_move) && !in_liquid &&
 			physics_override.sneak) {
-		f32 maxd = 0.5f * BS + sneak_max;
+		opos_t maxd = 0.5f * BS + sneak_max;
 		auto lwn_f = intToFloat(m_sneak_node, BS);
 		position.X = rangelim(position.X, lwn_f.X - maxd, lwn_f.X + maxd);
 		position.Z = rangelim(position.Z, lwn_f.Z - maxd, lwn_f.Z + maxd);
 
 		if (!is_climbing) {
 			// Move up if necessary
-			f32 new_y = (lwn_f.Y - 0.5f * BS) + m_sneak_node_bb_ymax;
+			opos_t new_y = (lwn_f.Y - 0.5f * BS) + m_sneak_node_bb_ymax;
 			if (position.Y < new_y)
 				position.Y = new_y;
 			/*
@@ -953,7 +953,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 		player is sneaking from, if any. If the node from under
 		the player has been removed, the player falls.
 	*/
-	f32 position_y_mod = 0.05f * BS;
+	opos_t position_y_mod = 0.05f * BS;
 	if (m_sneak_node_bb_ymax > 0.0f)
 		position_y_mod = m_sneak_node_bb_ymax - position_y_mod;
 	v3pos_t current_node = floatToInt(position - v3opos_t(0.0f, position_y_mod, 0.0f), BS);
@@ -973,17 +973,17 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 	if (m_need_to_get_new_sneak_node && physics_override.sneak) {
 		m_sneak_node_bb_ymax = 0.0f;
 		v3pos_t pos_i_bottom = floatToInt(position - v3opos_t(0.0f, position_y_mod, 0.0f), BS);
-		v2f player_p2df(position.X, position.Z);
-		f32 min_distance_f = 100000.0f * BS;
+		v2opos_t player_p2df(position.X, position.Z);
+		opos_t min_distance_f = 100000.0f * BS;
 		// If already seeking from some node, compare to it.
 		v3pos_t new_sneak_node = m_sneak_node;
 		for (s16 x= -1; x <= 1; x++)
 		for (s16 z= -1; z <= 1; z++) {
 			v3pos_t p = pos_i_bottom + v3pos_t(x, 0, z);
 			auto pf = intToFloat(p, BS);
-			v2f node_p2df(pf.X, pf.Z);
-			f32 distance_f = player_p2df.getDistanceFrom(node_p2df);
-			f32 max_axis_distance_f = MYMAX(
+			v2opos_t node_p2df(pf.X, pf.Z);
+			opos_t distance_f = player_p2df.getDistanceFrom(node_p2df);
+			opos_t max_axis_distance_f = MYMAX(
 				std::fabs(player_p2df.X - node_p2df.X),
 				std::fabs(player_p2df.Y - node_p2df.Y));
 
@@ -1135,7 +1135,7 @@ float LocalPlayer::getSlipFactor(Environment *env, const v3f &speedH)
 
 void LocalPlayer::handleAutojump(f32 dtime, Environment *env,
 	const collisionMoveResult &result, const v3opos_t &initial_position,
-	const v3f &initial_speed, f32 pos_max_d)
+	const v3f &initial_speed, opos_t pos_max_d)
 {
 	PlayerSettings &player_settings = getPlayerSettings();
 	if (!player_settings.autojump)
@@ -1186,7 +1186,7 @@ void LocalPlayer::handleAutojump(f32 dtime, Environment *env,
 
 	float jumpspeed = movement_speed_jump * physics_override.jump;
 	float peak_dtime = jumpspeed / gravity; // at the peak of the jump v = gt <=> t = v / g
-	float jump_height = (jumpspeed - 0.5f * gravity * peak_dtime) * peak_dtime; // s = vt - 1/2 gt^2
+	opos_t jump_height = (jumpspeed - 0.5f * gravity * peak_dtime) * peak_dtime; // s = vt - 1/2 gt^2
 	v3opos_t jump_pos = initial_position + v3opos_t(0.0f, jump_height, 0.0f);
 	v3f jump_speed = initial_speed;
 
