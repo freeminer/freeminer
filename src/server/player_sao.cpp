@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "player_sao.h"
+#include "irrlichttypes.h"
 #include "nodedef.h"
 #include "remoteplayer.h"
 #include "scripting_server.h"
@@ -595,7 +596,7 @@ bool PlayerSAO::checkMovementCheat()
 		too, and much more lightweight.
 	*/
 
-	float override_max_H, override_max_V;
+	opos_t override_max_H, override_max_V;
 	if (m_max_speed_override_time > 0.0f) {
 		override_max_H = MYMAX(fabs(m_max_speed_override.X), fabs(m_max_speed_override.Z));
 		override_max_V = fabs(m_max_speed_override.Y);
@@ -603,8 +604,8 @@ bool PlayerSAO::checkMovementCheat()
 		override_max_H = override_max_V = 0.0f;
 	}
 
-	float player_max_walk = 0; // horizontal movement
-	float player_max_jump = 0; // vertical upwards movement
+	opos_t player_max_walk = 0; // horizontal movement
+	opos_t player_max_jump = 0; // vertical upwards movement
 
 	if (m_privs.count("fast") != 0)
 		player_max_walk = m_player->movement_speed_fast; // Fast speed

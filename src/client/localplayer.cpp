@@ -212,7 +212,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, opos_t pos_max_d,
 	bool free_move = player_settings.free_move && fly_allowed;
 
 	if (noclip && free_move) {
-		position += v3fToOpos(m_speed * dtime);
+		position += v3fToOpos(m_speed) * dtime;
 		setPosition(position);
 
 		touching_ground = false;
@@ -296,7 +296,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, opos_t pos_max_d,
 	*/
 	//f32 d = pos_max_d * 1.1;
 	// A fairly large value in here makes moving smoother
-	f32 d = 0.15f * BS;
+	opos_t d = 0.15f * BS;
 
 	// This should always apply, otherwise there are glitches
 	sanity_check(d > pos_max_d);
@@ -980,7 +980,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 		for (s16 x= -1; x <= 1; x++)
 		for (s16 z= -1; z <= 1; z++) {
 			v3pos_t p = pos_i_bottom + v3pos_t(x, 0, z);
-			auto pf = intToFloat(p, BS);
+			v3opos_t pf = intToFloat(p, BS);
 			v2opos_t node_p2df(pf.X, pf.Z);
 			opos_t distance_f = player_p2df.getDistanceFrom(node_p2df);
 			opos_t max_axis_distance_f = MYMAX(
@@ -1016,7 +1016,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, opos_t pos_max_d,
 		m_sneak_node_exists = sneak_node_found;
 
 		if (sneak_node_found) {
-			f32 cb_max = 0.0f;
+			opos_t cb_max = 0.0f;
 			MapNode n = map->getNode(m_sneak_node);
 			std::vector<aabb3f> nodeboxes;
 			n.getCollisionBoxes(nodemgr, &nodeboxes);
