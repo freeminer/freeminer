@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "collision.h"
 #include <cmath>
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapblock.h"
 #include "map.h"
 #include "nodedef.h"
@@ -236,7 +237,7 @@ static inline void getNeighborConnectingFace(const v3pos_t &p,
 }
 
 collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
-		f32 pos_max_d, const aabb3f &box_0,
+		opos_t pos_max_d, const aabb3f &box_0,
 		f32 stepheight, f32 dtime,
 		v3opos_t *pos_f, v3f *speed_f,
 		v3f accel_f, ActiveObject *self,
@@ -265,12 +266,12 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		time_notification_done = false;
 	}
 
-	v3f dpos_f = (*speed_f + accel_f * 0.5f * dtime) * dtime;
-	v3opos_t newpos_f = *pos_f + v3fToOpos(dpos_f);
+	v3opos_t dpos_f = (v3fToOpos(*speed_f + accel_f) * 0.5f * dtime) * dtime;
+	v3opos_t newpos_f = *pos_f + dpos_f;
 	*speed_f += accel_f * dtime;
 
 	// If the object is static, there are no collisions
-	if (dpos_f == v3f())
+	if (dpos_f == v3opos_t())
 		return result;
 
 	// Limit speed for avoiding hangs
@@ -390,7 +391,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		ClientEnvironment *c_env = dynamic_cast<ClientEnvironment*>(env);
 		if (c_env != 0) {
 			// Calculate distance by speed, add own extent and 1.5m of tolerance
-			f32 distance = speed_f->getLength() * dtime +
+			opos_t distance = speed_f->getLength() * dtime +
 				box_0.getExtent().getLength() + 1.5f * BS;
 			std::vector<DistanceSortedActiveObject> clientobjects;
 			c_env->getActiveObjects(*pos_f, distance, clientobjects);

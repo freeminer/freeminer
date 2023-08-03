@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "player.h"
 #include "environment.h"
@@ -159,12 +160,12 @@ public:
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
 		const f32 max_increase_V, const bool use_pitch);
-	bool updateSneakNode(Map *map, const v3opos_t &position, const v3f &sneak_max);
+	bool updateSneakNode(Map *map, const v3opos_t &position, const v3opos_t &sneak_max);
 	float getSlipFactor(Environment *env, const v3f &speedH);
 	void handleAutojump(f32 dtime, Environment *env,
 		const collisionMoveResult &result,
 		const v3opos_t &position_before_move, const v3f &speed_before_move,
-		f32 pos_max_d);
+		opos_t pos_max_d);
 
 	v3opos_t m_position;
 	v3pos_t m_standing_node;
@@ -180,7 +181,7 @@ private:
 
 	// ***** Variables for temporary option of the old move code *****
 	// Stores the max player uplift by m_sneak_node
-	f32 m_sneak_node_bb_ymax = 0.0f;
+	opos_t m_sneak_node_bb_ymax = 0.0f;
 	// Whether recalculation of m_sneak_node and its top bbox is needed
 	bool m_need_to_get_new_sneak_node = true;
 	// Node below player, used to determine whether it has been removed,
