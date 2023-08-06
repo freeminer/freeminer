@@ -1696,6 +1696,10 @@ bool Game::createClient(const GameStartData &start_data)
 	*/
 	//=========
 
+	if (const static thread_local auto timelapse = g_settings->getFloat("timelapse"); timelapse >= 1) {
+		client->getEnv().setDayNightRatioOverride(true, 1000);
+	}
+
 	return true;
 }
 

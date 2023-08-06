@@ -72,9 +72,13 @@ $0 ----world_sand
 
 $0 ---cmake_minetest=1 ---build_name=_minetest ----headless ----headless_optimize --address=cool.server.org --port=30001 ---clients_num=25 clients
 
-# timelapse video
-$0 timelapse
-
+# timelapse video (every 10 seconds)
+$0 -timelapse=10 timelapse
+$0 -timelapse=10 -fixed_map_seed=123 ---world_local=1 timelapse_stay
+# continue timelapse:
+$0 -timelapse=10 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---world=`pwd`/logs.2023-08-03T15-52-09.timelapse_stay/world timelapse_stay
+# remake drom dir
+$0 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---ffmpeg_add_i='-r 120' ---ffmpeg_add_o='-r 120' timelapse_video
 #fly
 $0 ----server_optimize ----far fly
 $0 -farmesh=1 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint=(10000,30030,-22700) fly
@@ -191,14 +195,14 @@ our $options = {
         default_privs_creative  => 'interact, shout, teleport, settime, privs, fly, noclip, fast, debug',
     },
     no_exit => {
-        autoexit => 0,
+        '--autoexit' => 0,
     },
     info => {
-        -info => 1,
+        '--info' => 1,
     },
     verbose => {
         #debug_log_level          => 'verbose',
-        -verbose => 1,
+        '--verbose' => 1,
         #enable_mapgen_debug_info => 1,
     },
     bot => {
@@ -227,38 +231,44 @@ our $options = {
         video_driver => 'software',
     },
     timelapse => {
-        timelapse                   => 1,
+        timelapse                   => 10,
         enable_fog                  => 0,
         enable_particles            => 0,
         active_block_range          => 8,
         max_block_generate_distance => 8,
         max_block_send_distance     => 8,
         weather_biome               => 1,
+        farmesh                     => 0,
+        enable_dynamic_shadows      => 0,
+        enable_clouds               => 0,
+        enable_waving_water         => 0,
+        enable_waving_leaves        => 0,
+        enable_waving_plants        => 0,
         screenshot_path             => $config->{autotest_dir_rel} . $config->{screenshot_dir},
     },
     world_water => {
-        -world    => $script_path . 'world_water',
+        '--world'    => $script_path . 'world_water',
         mg_name   => 'math',
         mg_params => {"layers"    => [{"name" => "default:water_source"}]},
         mg_math   => {"generator" => "mengersponge"},
     },
     world_sand => {
-        -world    => $script_path . 'world_sand',
+        '--world'    => $script_path . 'world_sand',
         mg_name   => 'math',
         mg_params => {"layers"    => [{"name" => "default:sand"}]},
         mg_math   => {"generator" => "mengersponge"},
     },
     world_torch => {
-        -world    => $script_path . 'world_torch',
+        '--world'    => $script_path . 'world_torch',
         mg_params => {"layers" => [{"name" => "default:torch"}, {"name" => "default:glass"}]},
     },
     world_rooms => {
-        #-world    => $script_path . 'world_rooms',
+        #--world    => $script_path . 'world_rooms',
         mg_name => 'math',
         mg_math => {"generator" => "rooms"},
     },
     mg_math_tglag => {
-        -world            => $script_path . 'world_math_tglad',
+        '--world'            => $script_path . 'world_math_tglad',
         mg_name           => 'math',
         mg_math           => {"N" => 30, "generator" => "tglad", "mandelbox_scale" => 1.5, "scale" => 0.000333333333,},
         static_spawnpoint => '(30010,30010,-30010)',
@@ -266,7 +276,7 @@ our $options = {
         mg_flags          => '',                                                                                          # "trees",
     },
     fall1 => {
-        -world            => $script_path . 'world_fall1',
+        '--world'            => $script_path . 'world_fall1',
         mg_name           => 'math',
         mg_math           => {"generator" => "menger_sponge"},
         static_spawnpoint => '(-70,20020,-190)',
@@ -276,6 +286,7 @@ our $options = {
     far => {
         max_block_generate_distance => 50,
         max_block_send_distance     => 50,
+        viewing_range               => 50*16,
     },
     server_optimize => {
         chunksize                  => 3,
@@ -297,16 +308,18 @@ our $options = {
         noclip        => 1,
         enable_damage => 0,
     },
-    fly_forward => {
+    forward => {
+        continuous_forward => 1,
+    },
+    fly => {
         crosshair_alpha    => 0,
-        time_speed         => 0,
+        #time_speed         => 0,
         enable_minimap     => 0,
         random_input       => 0,
         static_spawnpoint  => '(0,50,0)',
         creative_mode      => 1,
-        free_move          => 1,
         enable_damage      => 0,
-        continuous_forward => 1,
+        free_move          => 1,
     },
     fps1 => {
         fps_max       => 2,
@@ -464,7 +477,8 @@ qq(sudo sh -c "mkdir -p /sys/fs/cgroup/memory/0; echo $$ > /sys/fs/cgroup/memory
     },
     timelapse_video => sub {
         sy
-qq{ cat ../$config->{autotest_dir_rel}$config->{screenshot_dir}/*.png | ffmpeg -f image2pipe -i - -vcodec libx264 ../$config->{autotest_dir_rel}timelapse-$config->{date}.mp4 };
+qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{autotest_dir_rel}$config->{screenshot_dir}/timelapse_*.png' -vcodec libx264 $config->{ffmpeg_add_o} ../$config->{autotest_dir_rel}$config->{screenshot_dir}/timelapse-$config->{date}.mp4 };
+
     },
     sleep => sub {
         say 'sleep ', $_[0];
@@ -779,13 +793,16 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
 
     play           => [{-no_build_server => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],                                    #'
     timelapse_play => [{-options_int => 'timelapse',}, \'play', 'timelapse_video'],                                                       #'
-    fly            => [{-options_int => 'fly_forward', -options_bot => '',}, \'bot',],                                                    #'
-    timelapse_fly  => [{-options_int => 'timelapse,fly_forward', -options_bot => '',}, \'bot', 'timelapse_video'],                        #'
-    timelapse_stay => [{-options_int => 'timelapse,fly_forward,stay,far,fps1,no_exit', -options_bot => '',}, \'bot', 'timelapse_video'],  #'
-    bench => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly_forward'=>1, '---world_clear'=>1, '---world' => $script_path . 'world_bench',
+    fly            => [{-options_int => 'fly,forward', -options_bot => '',}, \'bot',],                                                    #'
+    timelapse_fly  => [{-options_int => 'timelapse,fly,forward', -options_bot => '',}, \'bot', 'timelapse_video'],                        #'
+    timelapse_stay => [{'----timelapse'=>1, '----fly'=>1, '----stay'=>1, '----far'=>10,'----fps1'=>1, '----no_exit'=>1,
+'-show_basic_debug' => 0, '-show_profiler_graph' => 0, '-profiler_page'=>0,    
+
+}, \'build', \'run_single', 'timelapse_video'],  #'
+    bench => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '----fly'=>1, '----forward'=>1, '---world_clear'=>1, '---world' => $script_path . 'world_bench',
         '-static_spawnpoint'  => '(0,25,0)',}, 'fly'],
 
-    bench1 => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '---world_clear'=>1, '---world' => $script_path . 'world_bench1',
+    bench1 => [{'-fixed_map_seed' => 1, '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100, '-max_block_send_distance' => 100, '---world_clear'=>1, '--world' => $script_path . 'world_bench1',
         -mg_name=>'math', '-static_spawnpoint'=>"(0,20000,0)",}, 'set_client', 'build', 'run_single'],
     up             => sub {
         my $cwd = Cwd::cwd();
@@ -857,12 +874,12 @@ sub options_make(;$$) {
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
     $m ||= [
         map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display},    #$config->{options_bot},
-        $config->{options_int}, $config->{options_add}, $config->{options_arr}, 'opt', sort(keys %{$config->{options_use}})
+        $config->{options_int}, $config->{options_add}, $config->{options_arr}, (sort { $config->{options_use}{$a} <=> $config->{options_use}{$b}} keys %{$config->{options_use}}), 'opt',
     ];
     for my $name (array(@$m)) {
         $rm->{$_} = $options->{$name}{$_} for sort keys %{$options->{$name}};
         for my $k (sort keys %$rm) {
-            if ($k =~ /^-/) {
+            if ($k =~ /^--/) {
                 $rmm->{$'} = $rm->{$k};
                 delete $rm->{$k};
                 next;

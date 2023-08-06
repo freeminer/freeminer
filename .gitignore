@@ -130,6 +130,7 @@ auto_*
 util/autotest/logs.*
 util/autotest/auto.json
 util/autotest/world
+util/autotest/screenshot*
 client/favoriteservers.json
 client/servers_public.json
 
