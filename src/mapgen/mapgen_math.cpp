@@ -651,7 +651,7 @@ int MapgenMath::generateTerrain() {
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
 		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
-			s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, node_max.Y, z), nullptr, &heat_cache) : 0;
+			const auto heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, node_max.Y, z), nullptr, &heat_cache) : 0;
 
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {

@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <atomic>
 
+#include "constants.h"
 #include "irr_v3d.h"
 #include "exceptions.h"
 #include "util/string.h"
@@ -38,9 +39,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 extern FlagDesc flagdesc_noiseparams[];
 
-float farscale(float scale, float z);
-float farscale(float scale, float x, float z);
-float farscale(float scale, float x, float y, float z);
+template <typename type_scale, typename type_coord>
+inline type_scale farscale(type_scale scale, type_coord z) {
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 1 - (fabs(z))                     ) / (FARSCALE_LIMIT * 1) ) * (scale - 1) );
+}
+
+template <typename type_scale, typename type_coord>
+inline type_scale farscale(type_scale scale, type_coord x, type_coord z) {
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 2 - (fabs(x) + fabs(z))           ) / (FARSCALE_LIMIT * 2) ) * (scale - 1) );
+}
+
+template <typename type_scale, typename type_coord>
+inline type_scale farscale(type_scale scale, type_coord x, type_coord y, type_coord z) {
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 3 - (fabs(x) + fabs(y) + fabs(z)) ) / (FARSCALE_LIMIT * 3) ) * (scale - 1) );
+}
+
 
 // Note: this class is not polymorphic so that its high level of
 // optimizability may be preserved in the common use case
@@ -123,10 +136,10 @@ struct NoiseParams {
 	u32 flags = NOISE_FLAG_DEFAULTS;
 
 // fm:
-	float far_scale = 1;
-	float far_spread = 1;
-	float far_persist = 1;
-	float far_lacunarity = 1;
+	opos_t far_scale = 1;
+	opos_t far_spread = 1;
+	opos_t far_persist = 1;
+	opos_t far_lacunarity = 1;
 
 	NoiseParams() = default;
 

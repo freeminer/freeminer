@@ -242,12 +242,12 @@ void MapgenIndevParams::readParams(const Settings *settings) {
 		paramsj = mg_params;
 	//settings->getS16NoEx("mg_float_islands", float_islands);
 
-	settings->getS16NoEx("mgindev_floatland_ymin",         floatland_ymin);
-	settings->getS16NoEx("mgindev_floatland_ymax",         floatland_ymax);
-	settings->getS16NoEx("mgindev_floatland_taper",        floatland_taper);
+	settings->getPosNoEx("mgindev_floatland_ymin",         floatland_ymin);
+	settings->getPosNoEx("mgindev_floatland_ymax",         floatland_ymax);
+	settings->getPosNoEx("mgindev_floatland_taper",        floatland_taper);
 	settings->getFloatNoEx("mgindev_float_taper_exp",      float_taper_exp);
 	settings->getFloatNoEx("mgindev_floatland_density",    floatland_density);
-	settings->getS16NoEx("mgindev_floatland_ywater",       floatland_ywater);
+	settings->getPosNoEx("mgindev_floatland_ywater",       floatland_ywater);
 
 	settings->getNoiseParamsFromGroup("mgindev_np_terrain_base",   np_terrain_base);
 	settings->getNoiseParamsFromGroup("mgindev_np_terrain_higher", np_terrain_higher);
@@ -271,12 +271,12 @@ void MapgenIndevParams::writeParams(Settings *settings) const {
 
 	//settings->setS16("mg_float_islands", float_islands);
 
-	settings->setS16("mgindev_floatland_ymin",             floatland_ymin);
-	settings->setS16("mgindev_floatland_ymax",             floatland_ymax);
-	settings->setS16("mgindev_floatland_taper",            floatland_taper);
+	settings->setPos("mgindev_floatland_ymin",             floatland_ymin);
+	settings->setPos("mgindev_floatland_ymax",             floatland_ymax);
+	settings->setPos("mgindev_floatland_taper",            floatland_taper);
 	settings->setFloat("mgindev_float_taper_exp",          float_taper_exp);
 	settings->setFloat("mgindev_floatland_density",        floatland_density);
-	settings->setS16("mgindev_floatland_ywater",           floatland_ywater);
+	settings->setPos("mgindev_floatland_ywater",           floatland_ywater);
 
 	settings->setNoiseParams("mgindev_np_terrain_base",   np_terrain_base);
 	settings->setNoiseParams("mgindev_np_terrain_higher", np_terrain_higher);
@@ -318,7 +318,7 @@ void MapgenIndev::generateCaves(int max_stone_y) {
 	u32 bruises_count = 1;
 	PseudoRandom ps(blockseed + 21343);
 	PseudoRandom ps2(blockseed + 1032);
-	
+
 	if (ps.range(1, 6) == 1)
 		bruises_count = ps.range(0, ps.range(0, 2));
 	
@@ -419,7 +419,7 @@ int Mapgen_features::float_islands_generate(const v3pos_t & node_min, const v3po
 	int generated = 0;
 	if (node_min.Y < min_y) return generated;
 	// originally from http://forum.minetest.net/viewtopic.php?id=4776
-	float RAR = 0.8 * farscale(0.4, node_min.Y); // 0.4; // Island rarity in chunk layer. -0.4 = thick layer with holes, 0 = 50%, 0.4 = desert rarity, 0.7 = very rare.
+	float RAR = 0.8 * farscale(0.4f, node_min.Y); // 0.4; // Island rarity in chunk layer. -0.4 = thick layer with holes, 0 = 50%, 0.4 = desert rarity, 0.7 = very rare.
 	float AMPY = 24; // 24; // Amplitude of island centre y variation.
 	float TGRAD = 24; // 24; // Noise gradient to create top surface. Tallness of island top.
 	float BGRAD = 24; // 24; // Noise gradient to create bottom surface. Tallness of island bottom.
@@ -478,8 +478,8 @@ int MapgenIndev::generateGround() {
 	bool gen_floatlands = false;
 	u8 cache_index = 0;
 	// Y values where floatland tapering starts
-	s16 float_taper_ymax = floatland_ymax - floatland_taper;
-	s16 float_taper_ymin = floatland_ymin + floatland_taper;
+	pos_t float_taper_ymax = floatland_ymax - floatland_taper;
+	pos_t float_taper_ymin = floatland_ymin + floatland_taper;
 
 	if ((spflags & MGV6_FLOATLANDS) &&
 			node_max.Y >= floatland_ymin && node_min.Y <= floatland_ymax) {
@@ -488,7 +488,7 @@ int MapgenIndev::generateGround() {
 		noise_floatland->perlinMap3D(node_min.X, node_min.Y - 1, node_min.Z);
 
 		// Cache floatland noise offset values, for floatland tapering
-		for (s16 y = node_min.Y - 1; y <= node_max.Y + 1; y++, cache_index++) {
+		for (pos_t y = node_min.Y - 1; y <= node_max.Y + 1; y++, cache_index++) {
 			float float_offset = 0.0f;
 			if (y > float_taper_ymax) {
 				float_offset = std::pow((y - float_taper_ymax) / (float)floatland_taper,
@@ -505,10 +505,10 @@ int MapgenIndev::generateGround() {
 	int stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
 	u32 index = 0;
 
-	for (s16 z = node_min.Z; z <= node_max.Z; z++)
-	for (s16 x = node_min.X; x <= node_max.X; x++, index++) {
+	for (pos_t z = node_min.Z; z <= node_max.Z; z++)
+	for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
 		// Surface height
-		s16 surface_y = (s16)baseTerrainLevelFromMap(index);
+		pos_t surface_y = (pos_t)baseTerrainLevelFromMap(index);
 
 		// Log it
 		if (surface_y > stone_surface_max_y)
@@ -516,7 +516,7 @@ int MapgenIndev::generateGround() {
 
 		auto bt = getBiome(index, v3pos_t(x, surface_y, z));
 
-		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		const auto heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		v3pos_t em = vm->m_area.getExtent();
@@ -525,7 +525,7 @@ int MapgenIndev::generateGround() {
 		cache_index = 0;
 		u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
 
-		for (s16 y = node_min.Y; y <= node_max.Y;
+		for (pos_t y = node_min.Y; y <= node_max.Y;
 				y++, index3d += ystride, cache_index++) {
 			if (!vm->m_data[i]) {
 

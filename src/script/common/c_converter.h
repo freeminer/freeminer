@@ -81,6 +81,8 @@ bool               getboolfield(lua_State *L, int table,
                              const char *fieldname, bool &result);
 bool               getfloatfield(lua_State *L, int table,
                              const char *fieldname, float &result);
+bool               getfloatfield(lua_State *L, int table,
+                             const char *fieldname, double &result);
 
 void               setstringfield(lua_State *L, int table,
                              const char *fieldname, const std::string &value);

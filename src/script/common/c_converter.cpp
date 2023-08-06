@@ -562,6 +562,20 @@ bool getfloatfield(lua_State *L, int table,
 	return got;
 }
 
+bool getfloatfield(lua_State *L, int table,
+		const char *fieldname, double &result)
+{
+	lua_getfield(L, table, fieldname);
+	bool got = false;
+
+	if (check_field_or_nil(L, -1, LUA_TNUMBER, fieldname)) {
+		result = lua_tonumber(L, -1);
+		got = true;
+	}
+	lua_pop(L, 1);
+	return got;
+}
+
 bool getboolfield(lua_State *L, int table,
 		const char *fieldname, bool &result)
 {
