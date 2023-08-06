@@ -31,6 +31,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/thread.h"
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 struct QueuedMeshUpdate
 {
@@ -40,7 +41,7 @@ struct QueuedMeshUpdate
 
 
 	v3bpos_t p = v3bpos_t(-1337, -1337, -1337);
-	bool ack_block_to_server = false;
+	std::vector<v3bpos_t> ack_list;
 	int crack_level = -1;
 	v3pos_t crack_pos;
 	MeshMakeData *data = nullptr; // This is generated in MeshUpdateQueue::pop()
@@ -103,10 +104,10 @@ private:
 struct MeshUpdateResult
 {
 	v3bpos_t p = v3bpos_t(-1338, -1338, -1338);
-	MapBlock::mesh_type mesh;
 	//MapBlockMesh *mesh = nullptr;
+	MapBlock::mesh_type mesh;
 	u8 solid_sides = 0;
-	bool ack_block_to_server = false;
+	std::vector<v3bpos_t> ack_list;
 	bool urgent = false;
 	std::vector<MapBlock *> map_blocks;
 

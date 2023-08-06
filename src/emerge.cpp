@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <queue>
 
 #include "irr_v2d.h"
-#include "irr_v3d.h"
 #include "util/container.h"
 #include "util/thread.h"
 #include "threading/event.h"

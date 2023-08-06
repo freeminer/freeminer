@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
 
-
 class ServerEnvironment;
 class NodeDefManager;
 
@@ -29,4 +28,4 @@ class NodeDefManager;
 	Legacy ActiveBlockModifiers
 */
 
-void add_legacy_abms(ServerEnvironment *env, NodeDefManager *nodedef);
+void add_fast_abms(ServerEnvironment *env, NodeDefManager *nodedef);

@@ -16,7 +16,7 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(HAVE_SHARED_MUTEX 1)
 
@@ -41,8 +41,11 @@ endif()
 
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
 if(MINETEST_PROTO)
-	set(MINETEST_TRANSPORT 1)
-	message(STATUS "Using minetest compatible networking (slow, some features missing)")
+	set(MINETEST_TRANSPORT 1 CACHE BOOL "")
+	message(STATUS "Using minetest compatible protocol (some features missing)")
+endif()
+if (MINETEST_TRANSPORT)
+	message(STATUS "Using minetest compatible transport (slow)")
 endif()
 
 #
@@ -719,6 +722,7 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
     fm_abm.cpp
     fm_clientiface.cpp
     content_abm.cpp
+    content_abm_grow_tree.cpp
     fm_serverenvironment.cpp
 )
 #	FMColoredString.cpp

@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 #include <algorithm>
-#include "irr_v2d.h"
 #include "irr_v3d.h"
 #include "network/connection.h"
 #include "network/networkpacket.h"
@@ -582,7 +581,7 @@ void Server::init()
 	m_env->loadMeta();
 
 	// Add some test ActiveBlockModifiers to environment
-	add_legacy_abms(m_env, m_nodedef);
+	add_fast_abms(m_env, m_nodedef);
 
 	m_env->m_abmhandler.init(m_env->m_abms); // uses result of add_legacy_abms and m_script->initializeEnvironment
 	m_liquid_send_interval = g_settings->getFloat("liquid_send");
@@ -858,6 +857,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			-1);
 	}
 */
+
+	/*
+		Note: Orphan MapBlock ptrs become dangling after this call.
+	*/
+	m_env->getServerMap().step();
 
 	/*
 		Listen to the admin chat, if available
@@ -1659,6 +1663,17 @@ bool Server::getClientInfo(session_t peer_id, ClientInfo &ret)
 	return true;
 }
 
+const ClientDynamicInfo *Server::getClientDynamicInfo(session_t peer_id)
+{
+	ClientInterface::AutoLock clientlock(m_clients);
+	RemoteClient *client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
+
+	if (!client)
+		return nullptr;
+
+	return &client->getDynamicInfo();
+}
+
 void Server::handlePeerChanges()
 {
 	while(!m_peer_change_queue.empty())
@@ -1897,10 +1912,13 @@ void Server::SendShowFormspecMessage(session_t peer_id, const std::string &forms
 {
 	NetworkPacket pkt(TOCLIENT_SHOW_FORMSPEC, 0, peer_id);
 	if (formspec.empty()){
-		//the client should close the formspec
-		//but make sure there wasn't another one open in meantime
+		// The client should close the formspec
+		// But make sure there wasn't another one open in meantime
+		// If the formname is empty, any open formspec will be closed so the
+		// form name should always be erased from the state.
 		const auto it = m_formspec_state_data.find(peer_id);
-		if (it != m_formspec_state_data.end() && it->second == formname) {
+		if (it != m_formspec_state_data.end() &&
+				(it->second == formname || formname.empty())) {
 			m_formspec_state_data.erase(peer_id);
 		}
 		pkt.putLongString("");
@@ -1999,7 +2017,18 @@ void Server::SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
 	NetworkPacket pkt(TOCLIENT_ADD_PARTICLESPAWNER, 100, peer_id, protocol_version);
 
 	pkt << p.amount << p.time;
-	{ // serialize legacy fields
+
+	if (protocol_version >= 42) {
+		// Serialize entire thing
+		std::ostringstream os(std::ios_base::binary);
+		p.pos.serialize(os);
+		p.vel.serialize(os);
+		p.acc.serialize(os);
+		p.exptime.serialize(os);
+		p.size.serialize(os);
+		pkt.putRawString(os.str());
+	} else {
+		// serialize legacy fields only (compatibility)
 		std::ostringstream os(std::ios_base::binary);
 		p.pos.start.legacySerialize(os);
 		p.vel.start.legacySerialize(os);
@@ -2022,21 +2051,23 @@ void Server::SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
 	pkt << p.node.param0 << p.node.param2 << p.node_tile;
 
 	{ // serialize new fields
-		// initial bias for older properties
-		pkt << p.pos.start.bias
-			<< p.vel.start.bias
-			<< p.acc.start.bias
-			<< p.exptime.start.bias
-			<< p.size.start.bias;
-
 		std::ostringstream os(std::ios_base::binary);
+		if (protocol_version < 42) {
+			// initial bias for older properties
+			pkt << p.pos.start.bias
+				<< p.vel.start.bias
+				<< p.acc.start.bias
+				<< p.exptime.start.bias
+				<< p.size.start.bias;
 
-		// final tween frames of older properties
-		p.pos.end.serialize(os);
-		p.vel.end.serialize(os);
-		p.acc.end.serialize(os);
-		p.exptime.end.serialize(os);
-		p.size.end.serialize(os);
+			// final tween frames of older properties
+			p.pos.end.serialize(os);
+			p.vel.end.serialize(os);
+			p.acc.end.serialize(os);
+			p.exptime.end.serialize(os);
+			p.size.end.serialize(os);
+		}
+		// else: fields are already written by serialize() very early
 
 		// properties for legacy texture field
 		p.texture.serialize(os, protocol_version, true);
@@ -2177,6 +2208,8 @@ void Server::SendSetSky(session_t peer_id, const SkyboxParams &params)
 				<< params.sky_color.night_sky << params.sky_color.night_horizon
 				<< params.sky_color.indoors;
 		}
+
+		pkt << params.body_orbit_tilt;
 	}
 
 	Send(&pkt);
@@ -3682,14 +3715,14 @@ std::string Server::getBanDescription(const std::string &ip_or_name)
 	return m_banmanager->getBanDescription(ip_or_name);
 }
 
-void Server::notifyPlayer(const char *name, const std::string &msg)
+void Server::notifyPlayer(const char *name, const std::wstring &msg)
 {
 	// m_env will be NULL if the server is initializing
 	if (!m_env)
 		return;
 
 	if (m_admin_nick == name && !m_admin_nick.empty()) {
-		m_admin_chat->outgoing_queue.push_back(new ChatEventChat("", utf8_to_wide(msg)));
+		m_admin_chat->outgoing_queue.push_back(new ChatEventChat("", msg));
 	}
 
 	RemotePlayer *player = m_env->getPlayer(name);
@@ -4312,7 +4345,7 @@ v3f Server::findSpawnPos()
 			*/
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
+		v3pos_t nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 
 		s32 air_count = 0;
 		for (s32 ii = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50;

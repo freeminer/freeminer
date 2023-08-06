@@ -234,43 +234,6 @@ void ScriptApiNode::node_after_destruct(v3pos_t p, MapNode node)
 	lua_pop(L, 1);  // Pop error handler
 }
 
-void ScriptApiNode::node_on_activate(v3pos_t p, MapNode node)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	auto *ndef = getServer()->ndef();
-
-	// Push callback function on stack
-	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
-	{
-		return;
-	}
-	// Call function
-	push_v3pos(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
-	lua_pop(L, 1); // Pop error handler
-}
-
-void ScriptApiNode::node_on_deactivate(v3pos_t p, MapNode node)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	auto *ndef = getServer()->ndef();
-
-	// Push callback function on stack
-	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))
-		return;
-
-	// Call function
-	push_v3pos(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
-	lua_pop(L, 1); // Pop error handler
-}
-
 bool ScriptApiNode::node_on_timer(v3pos_t p, MapNode node, f32 dtime)
 {
 	SCRIPTAPI_PRECHECKHEADER
@@ -326,6 +289,44 @@ void ScriptApiNode::node_on_receive_fields(v3pos_t p,
 	objectrefGetOrCreate(L, sender);        // player
 	PCALL_RES(lua_pcall(L, 4, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
+}
+
+//fm:
+void ScriptApiNode::node_on_activate(v3pos_t p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	int error_handler = PUSH_ERROR_HANDLER(L);
+
+	auto *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
+	{
+		return;
+	}
+	// Call function
+	push_v3pos(L, p);
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
+	lua_pop(L, 1); // Pop error handler
+}
+
+void ScriptApiNode::node_on_deactivate(v3pos_t p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	int error_handler = PUSH_ERROR_HANDLER(L);
+
+	auto *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))
+		return;
+
+	// Call function
+	push_v3pos(L, p);
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
+	lua_pop(L, 1); // Pop error handler
 }
 
 void ScriptApiNode::node_drop(v3pos_t p, int fast = 0)

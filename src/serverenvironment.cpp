@@ -322,6 +322,11 @@ void LBMManager::applyLBMs(ServerEnvironment *env, MapBlock *block,
 						continue;
 					for (auto lbmdef : *lbm_list) {
 						lbmdef->trigger(env, pos + pos_of_block, n, dtime_s);
+						if (block->isOrphan())
+							return;
+						n = block->getNodeNoCheck(pos);
+						if (n.getContent() != c)
+							break; // The node was changed and the LBMs no longer apply
 					}
 				}
 	}
@@ -799,7 +804,11 @@ void ServerEnvironment::loadMeta()
 		m_game_time = args.getU64("game_time");
 	} catch (SettingNotFoundException &e) {
 		// Getting this is crucial, otherwise timestamps are useless
+
+		errorstream << "Couldn't load env meta game_time" << std::endl;
+/*
 		throw SerializationError("Couldn't load env meta game_time");
+*/
 	}
 
 	setTimeOfDay(args.exists("time_of_day") ?
@@ -1043,6 +1052,9 @@ public:
 				aabm.abm->trigger(m_env, p, n,
 					active_object_count, active_object_count_wider);
 
+				if (block->isOrphan())
+					return;
+
 				// Count surrounding objects again if the abms added any
 				if(m_env->m_added_objects > 0) {
 					active_object_count = countObjects(block, map, active_object_count_wider);
@@ -1095,13 +1107,17 @@ void ServerEnvironment::activateBlock(MapBlock *block, u32 additional_dtime)
 
 	// Activate stored objects
 	activateObjects(block, dtime_s);
+	if (block->isOrphan())
+		return;
 
 	/* Handle LoadingBlockModifiers */
 	m_lbm_mgr.applyLBMs(this, block, stamp, (float)dtime_s);
+	if (block->isOrphan())
+		return;
 
 	// Run node timers
 	block->step((float)dtime_s, [&](v3pos_t p, MapNode n, f32 d) -> bool {
-		return m_script->node_on_timer(p, n, d);
+		return !block->isOrphan() && m_script->node_on_timer(p, n, d);
 	});
 }
 
@@ -1523,7 +1539,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 					continue;
 				if(props->force_load){
 					v3f objectpos = obj->getBasePosition();
-					v3s16 blockpos = getNodeBlockPos(
+					v3bpos_t blockpos = getNodeBlockPos(
 					floatToInt(objectpos, BS));
 					players_blockpos.push_back(blockpos);
 				}
@@ -2307,6 +2323,8 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 #endif
 		// This will also add the object to the active static list
 		addActiveObjectRaw(obj, false, dtime_s);
+		if (block->isOrphan())
+			return;
 	}
 
 	// Clear stored list

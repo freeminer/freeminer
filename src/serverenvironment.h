@@ -22,7 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "activeobject.h"
 #include "environment.h"
 #include "irr_v3d.h"
-#include "mapnode.h"
 #include "map.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
@@ -87,9 +86,8 @@ public:
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n){};
 */
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider
-		, MapNode neighbor, bool activate = false
-		){};
+			u32 active_object_count, u32 active_object_count_wider
+			, v3pos_t neighbor_pos, bool activate = false){};
 };
 
 struct ABMWithState

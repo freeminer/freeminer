@@ -22,10 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "localplayer.h"
 #include <cmath>
-#include "irr_aabb3d.h"
-#include "irr_v2d.h"
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "mtevent.h"
 #include "collision.h"
 #include "nodedef.h"

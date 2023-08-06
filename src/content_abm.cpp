@@ -21,17 +21,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "content_abm.h"
-#include <vector>
-
-#include "gamedef.h"
-#include "irrlichttypes.h"
-#include "nodedef.h"
-#include "settings.h"
-#include "mapblock.h" // For getNodeBlockPos
-#include "map.h"
-#include "log_types.h"
-#include "serverenvironment.h"
 #include "server.h"
+#include "serverenvironment.h"
+
 
 class LiquidDropABM : public ActiveBlockModifier
 {
@@ -59,7 +51,7 @@ public:
 
 	bool getSimpleCatchUp() override { return true; }
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor,
+			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
 			bool activate) override
 	{
 		ServerMap *map = &env->getServerMap();
@@ -102,9 +94,9 @@ public:
 	virtual u32 getTriggerChance() override { return 10; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
-	bool getSimpleCatchUp() { return true; }
+	bool getSimpleCatchUp() override { return true; }
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor,
+			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
 			bool activate) override
 	{
 		static const int water_level = g_settings->getS16("water_level");
@@ -173,7 +165,7 @@ public:
 					n.freeze_melt(ndef, -1);
 					map->setNode(p, n);
 				}
-			} else if (!activate && c_top == CONTENT_AIR || n.getContent() == c_top) {
+			} else if (!activate && (c_top == CONTENT_AIR || n.getContent() == c_top)) {
 				// icicle
 				const v3pos_t dir_up{0, 1, 0};
 				for (const auto &dir_look : {
@@ -237,7 +229,7 @@ public:
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor,
+			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
 			bool activate) override
 	{
 		ServerMap *map = &env->getServerMap();
@@ -282,11 +274,12 @@ public:
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor,
+			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
 			bool activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		auto *ndef = env->getGameDef()->ndef();
+		const auto &neighbor = map->getNodeTry(neighbor_pos);
 		const int hot = ((ItemGroupList)ndef->get(neighbor).groups)["hot"];
 		const int melt = ((ItemGroupList)ndef->get(n).groups)["melt"];
 		if (hot > melt) {
@@ -317,11 +310,12 @@ public:
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, MapNode neighbor,
+			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
 			bool activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		auto *ndef = env->getGameDef()->ndef();
+		const auto &neighbor = map->getNodeTry(neighbor_pos);
 		const int cold = ((ItemGroupList)ndef->get(neighbor).groups)["cold"];
 		const int freeze = ((ItemGroupList)ndef->get(n).groups)["freeze"];
 		if (cold < freeze) {
@@ -331,7 +325,9 @@ public:
 	}
 };
 
-void add_legacy_abms(ServerEnvironment *env, NodeDefManager *nodedef)
+void add_abm_grow_tree(ServerEnvironment *env, NodeDefManager *nodedef);
+
+void add_fast_abms(ServerEnvironment *env, NodeDefManager *nodedef)
 {
 	if (g_settings->getBool("liquid_real")) {
 		env->addActiveBlockModifier(new LiquidDropABM(env, nodedef));
@@ -342,4 +338,5 @@ void add_legacy_abms(ServerEnvironment *env, NodeDefManager *nodedef)
 			env->addActiveBlockModifier(new MeltWeather(env, nodedef));
 		}
 	}
+	add_abm_grow_tree(env, nodedef);
 }

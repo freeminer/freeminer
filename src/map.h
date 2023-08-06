@@ -292,10 +292,10 @@ public:
 	virtual s16 getHumidity(const v3pos_t& p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3bPOSHash, v3bPOSEqual>
+	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
-	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
+	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
 	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
 	MapBlock *createBlankBlock(const v3bpos_t &p);
 	bool insertBlock(MapBlock *block);
@@ -304,7 +304,7 @@ public:
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3bpos_t, int, v3bPOSHash, v3bPOSEqual> m_db_miss;
+	concurrent_shared_unordered_map<v3bpos_t, int, v3posHash, v3posEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -401,8 +401,8 @@ class ServerMap : public Map
 {
 public:
 //freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
@@ -421,7 +421,7 @@ public:
 	}
 */
 
-	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	//concurrent_unordered_map<v3POS, bool, v3posHash, v3posEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
 	typedef unordered_map_v3pos<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
@@ -533,7 +533,14 @@ public:
 	void loadBlock(std::string *blob, v3bpos_t p3d, MapSector *sector, bool save_after_load=false);
 */
 
+	// Blocks are removed from the map but not deleted from memory until
+	// deleteDetachedBlocks() is called, since pointers to them may still exist
+	// when deleteBlock() is called.
 	bool deleteBlock(v3bpos_t blockpos) override;
+
+	void deleteDetachedBlocks();
+
+	void step();
 
 	void updateVManip(v3pos_t pos);
 
@@ -575,12 +582,15 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
-	concurrent_shared_unordered_map<v3bpos_t, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
+	concurrent_shared_unordered_map<v3bpos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
 private:
 
 	int m_map_compression_level;
 
 	concurrent_set<v3bpos_t> m_chunks_in_progress;
+
+	// used by deleteBlock() and deleteDetachedBlocks()
+	MapBlockVect m_detached_blocks;
 
 	// Queued transforming water nodes
 	UniqueQueue<v3pos_t> m_transforming_liquid;

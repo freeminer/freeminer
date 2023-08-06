@@ -22,7 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client.h"
 #include "clientmap.h"
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "settings.h"
 #include "shader.h"
 #include "mapblock.h"

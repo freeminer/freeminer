@@ -21,7 +21,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include <cmath>
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"

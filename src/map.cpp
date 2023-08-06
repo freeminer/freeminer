@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "map.h"
+#include "irr_v3d.h"
 #include "log.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -382,6 +383,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
+	u32 locked_blocks = 0;
 
 	const auto start_time = porting::getTimeUs();
 	beginSave();
@@ -453,8 +455,10 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 
 			MapBlock *block = b.block;
 
-			if (block->refGet() != 0)
+			if (block->refGet() != 0) {
+				locked_blocks++;
 				continue;
+			}
 
 			v3bpos_t p = block->getPos();
 
@@ -499,7 +503,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 				<<" blocks from memory";
 		if(save_before_unloading)
 			infostream<<", of which "<<saved_blocks_count<<" were written";
-		infostream<<", "<<block_count_all<<" blocks in memory";
+		infostream<<", "<<block_count_all<<" blocks in memory, " << locked_blocks << " locked";
 		infostream<<"."<<std::endl;
 		if(saved_blocks_count != 0){
 			PrintInfo(infostream); // ServerMap/ClientMap:
@@ -1413,6 +1417,8 @@ ServerMap::~ServerMap()
 	*/
 	delete dbase;
 	delete dbase_ro;
+
+	deleteDetachedBlocks();
 }
 
 MapgenParams *ServerMap::getMapgenParams()
@@ -2080,8 +2086,7 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 			//Modified lighting, send event
 			MapEditEvent event;
 			event.type = MEET_OTHER;
-			std::map<v3bpos_t, MapBlock *>::iterator it;
-			for (it = modified_blocks.begin();
+			for (auto it = modified_blocks.begin();
 					it != modified_blocks.end(); ++it)
 				event.modified_blocks.push_back(it->first);
 			dispatchEvent(event);
@@ -2224,11 +2229,30 @@ bool ServerMap::deleteBlock(v3bpos_t blockpos)
 		MapSector *sector = getSectorNoGenerate(p2d);
 		if (!sector)
 			return false;
-		sector->deleteBlock(block);
+		// It may not be safe to delete the block from memory at the moment
+		// (pointers to it could still be in use)
+		sector->detachBlock(block);
 */
+		m_detached_blocks.push_back(block);
 	}
 
 	return true;
+}
+
+void ServerMap::deleteDetachedBlocks()
+{
+	for (MapBlock *block : m_detached_blocks) {
+		assert(block->isOrphan());
+		delete block;
+	}
+	m_detached_blocks.clear();
+}
+
+void ServerMap::step()
+{
+	// Delete from memory blocks removed by deleteBlocks() only when pointers
+	// to them are (probably) no longer in use
+	deleteDetachedBlocks();
 }
 
 void ServerMap::PrintInfo(std::ostream &out)

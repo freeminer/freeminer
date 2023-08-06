@@ -20,7 +20,6 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "IrrCompileConfig.h"
 #include "guiChatConsole.h"
 #include "chat.h"
 #include "client/client.h"
@@ -739,13 +738,11 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 			}
 		}
 	}
-#if (IRRLICHT_VERSION_MT_REVISION >= 2)
 	else if(event.EventType == EET_STRING_INPUT_EVENT)
 	{
 		prompt.input(std::wstring(event.StringInput.Str->c_str()));
 		return true;
 	}
-#endif
 
 	return Parent ? Parent->OnEvent(event) : false;
 }

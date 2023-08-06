@@ -1138,7 +1138,7 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 	if (bind_addr.isIPv6() && !g_settings->getBool("enable_ipv6")) {
 		errorstream << "Unable to listen on "
 		            << bind_addr.serializeString()
-		            << L" because IPv6 is disabled" << std::endl;
+		            << " because IPv6 is disabled" << std::endl;
 		return false;
 	}
 

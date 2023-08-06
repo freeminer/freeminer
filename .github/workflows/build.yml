@@ -37,6 +37,7 @@ jobs:
   gcc_5:
     if: ${{ false }}
     runs-on: ubuntu-18.04
+    if: "false" # FIXME
     steps:
       - uses: actions/checkout@v3
         with:
@@ -86,6 +87,7 @@ jobs:
   clang_3_9:
     if: ${{ false }}
     runs-on: ubuntu-18.04
+    if: "false" # FIXME
     steps:
       - uses: actions/checkout@v3
         with:

@@ -75,7 +75,7 @@ public:
 	}
 
 private:
-	std::unordered_set<Value, v3POSHash, v3POSEqual> m_set;
+	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
 	std::queue<Value> m_queue;
 };
 

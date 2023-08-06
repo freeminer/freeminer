@@ -106,20 +106,40 @@ public:
 		return NODECONTAINER_ID_MAPBLOCK;
 	}*/
 
-	Map * getParent()
+	Map *getParent()
 	{
 		return m_parent;
+	}
+
+	// Any server-modding code can "delete" arbitrary blocks (i.e. with
+	// core.delete_area), which makes them orphan. Avoid using orphan blocks for
+	// anything.
+	bool isOrphan() const
+	{
+		return !m_parent;
+	}
+
+	void makeOrphan()
+	{
+		m_parent = nullptr;
 	}
 
 	void reallocate()
 	{
 		auto lock = lock_unique_rec();
-#pragma clang diagnostic push
-//#pragma clang diagnostic ignored "-Wclass-memaccess"
-		if constexpr(!CONTENT_IGNORE)
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#if __GNUC__ > 7
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
+#endif
+		if constexpr(!CONTENT_IGNORE) {
 			memset(data, 0, nodecount * sizeof(MapNode));
-#pragma clang diagnostic pop
-		else
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+		} else
 		for (u32 i = 0; i < nodecount; i++)
 			data[i] = ignoreNode;
 

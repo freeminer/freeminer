@@ -46,14 +46,17 @@ public:
 	void node_on_destruct(v3pos_t p, MapNode node);
 	bool node_on_flood(v3pos_t p, MapNode node, MapNode newnode);
 	void node_after_destruct(v3pos_t p, MapNode node);
-	void node_on_activate(v3pos_t p, MapNode node);
-	void node_on_deactivate(v3pos_t p, MapNode node);
 	bool node_on_timer(v3pos_t p, MapNode node, f32 dtime);
 	void node_on_receive_fields(v3pos_t p,
 			const std::string &formname,
 			const StringMap &fields,
 			ServerActiveObject *sender);
+
+//fm:
+	void node_on_activate(v3pos_t p, MapNode node);
+	void node_on_deactivate(v3pos_t p, MapNode node);
 	void node_drop(v3pos_t p, int fast);
+
 public:
 	static struct EnumString es_DrawType[];
 	static struct EnumString es_ContentParamType[];
