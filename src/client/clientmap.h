@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
 #include "map.h"
 #include "camera.h"
@@ -266,6 +267,6 @@ private:
 	bool m_enable_raytraced_culling;
 };
 
-bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
+bool isOccluded(Map *map, v3pos_t p0, v3pos_t p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, NodeDefManager *nodemgr,
 		unordered_map_v3pos<bool> & occlude_cache);

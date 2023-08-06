@@ -280,7 +280,7 @@ public:
 	//// Position stuff
 	////
 
-	inline v3s16 getPos() const
+	inline v3bpos_t getPos() const
 	{
 		return m_pos;
 	}
@@ -327,12 +327,12 @@ public:
 
 	MapNode getNodeNoEx(v3pos_t p);
 
-	MapNode getNode(v3s16 p)
+	MapNode getNode(v3pos_t p)
 	{
 		return getNodeNoEx(p);
 	}
 
-	MapNode getNodeTry(v3s16 p)
+	MapNode getNodeTry(v3pos_t p)
 	{
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
@@ -355,7 +355,7 @@ public:
 	}
 */
 
-	void setNode(v3s16 p, MapNode& n);
+	void setNode(v3pos_t p, MapNode& n);
 
 	MapNode getNodeNoLock(v3pos_t p)
 	{
@@ -742,7 +742,7 @@ inline bool blockpos_over_max_limit(v3s16 p)
 */
 inline v3s16 getNodeBlockPos(v3s16 p)
 {
-	return v3s16(p.X >> MAP_BLOCKP, p.Y >> MAP_BLOCKP, p.Z >> MAP_BLOCKP);
+	return v3bpos_t(p.X >> MAP_BLOCKP, p.Y >> MAP_BLOCKP, p.Z >> MAP_BLOCKP);
 /*
 	return getContainerPos(p, MAP_BLOCKSIZE);
 */

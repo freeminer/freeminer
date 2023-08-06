@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sstream>
 #include "clientiface.h"
+#include "irr_v3d.h"
 #include "log.h"
 #include "network/fm_connection_use.h"
 #include "network/serveropcodes.h"
@@ -480,7 +481,7 @@ void RemoteClient::GotBlock(v3s16 p)
 }
 */
 
-void RemoteClient::SentBlock(v3s16 p, double time)
+void RemoteClient::SentBlock(v3bpos_t p, double time)
 {
 	m_blocks_sent.insert_or_assign(p, time);
 }
@@ -530,7 +531,7 @@ void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 */
 }
 
-void RemoteClient::SetBlockDeleted(v3s16 p) {
+void RemoteClient::SetBlockDeleted(v3bpos_t p) {
 	m_blocks_sent.erase(p);
 }
 

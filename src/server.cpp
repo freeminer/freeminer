@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 #include <algorithm>
+#include "irr_v3d.h"
 #include "network/connection.h"
 #include "network/networkprotocol.h"
 #include "network/serveropcodes.h"
@@ -4235,7 +4236,7 @@ v3f Server::findSpawnPos()
 				spawn_level <= -MAX_MAP_GENERATION_LIMIT)
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
+		v3pos_t nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 		// Consecutive empty nodes
 		s32 air_count = 0;
 
@@ -4246,7 +4247,7 @@ v3f Server::findSpawnPos()
 		// the player may end up inside one.
 		for (s32 ii = (find > 0) ? 0 : find - 50;
 				ii < find; ii++) {
-			v3s16 blockpos = getNodeBlockPos(nodepos);
+			v3bpos_t blockpos = getNodeBlockPos(nodepos);
 			if (!map.emergeBlock(blockpos, false))
 				break;
 			content_t c = map.getNode(nodepos).getContent();
@@ -4337,7 +4338,7 @@ v3f Server::findSpawnPos()
 			*/
 			continue;
 
-		v3s16 nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
+		v3pos_t nodepos(nodepos2d.X, nodeposf.Y ? nodeposf.Y : spawn_level, nodepos2d.Y);
 
 		s32 air_count = 0;
 		for (s32 ii = (vertical_spawn_range > 0) ? 0 : vertical_spawn_range - 50;

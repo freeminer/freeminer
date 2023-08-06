@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 
+#include "irr_v2d.h"
 #include "util/container.h"
 #include "util/thread.h"
 #include "threading/event.h"
@@ -419,7 +420,7 @@ int EmergeManager::getSpawnLevelAtPoint(v2s16 p)
 	return m_mapgens[0]->getSpawnLevelAtPoint(p);
 }
 
-int EmergeManager::getGroundLevelAtPoint(v2s16 p)
+int EmergeManager::getGroundLevelAtPoint(v2pos_t p)
 {
        if (m_mapgens.empty() || !m_mapgens[0]) {
                errorstream << "EmergeManager: getGroundLevelAtPoint() called"

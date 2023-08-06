@@ -66,7 +66,7 @@ void make_tree(MMVManip &vmanip, v3s16 p0, bool is_apple_tree,
 	p1.Y -= 1;
 
 	s16 size = pr.range(2, 3);
-	VoxelArea leaves_a(v3s16(-size, -pr.range(2, 3), -size), v3s16(size, pr.range(2, 3), size));
+	VoxelArea leaves_a(v3pos_t(-size, -pr.range(2, 3), -size), v3pos_t(size, pr.range(2, 3), size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
@@ -698,7 +698,7 @@ void make_jungletree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 	p1.Y -= 1;
 
 	s16 size = pr.range(2, 4);
-	VoxelArea leaves_a(v3s16(-size, -pr.range(2, 4), -size), v3s16(size, pr.range(2, 4), size));
+	VoxelArea leaves_a(v3pos_t(-size, -pr.range(2, 4), -size), v3pos_t(size, pr.range(2, 4), size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
@@ -789,7 +789,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 	p1.Y -= 1;
 
 	u16 size = pr.range(2, 4);
-	VoxelArea leaves_a(v3s16(-4, -4*2, -4), v3s16(4, 4, 4));
+	VoxelArea leaves_a(v3pos_t(-4, -4*2, -4), v3pos_t(4, 4, 4));
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
 		leaves_d[i] = 0;

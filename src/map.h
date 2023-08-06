@@ -168,7 +168,7 @@ public:
 	void getBlockCacheFlush();
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=false)
+	virtual MapBlock * emergeBlock(v3bpos_t p, bool create_blank=false)
 	{ return getBlockNoCreateNoEx(p); }
 
 	inline const NodeDefManager * getNodeDefManager() { return m_nodedef; }
@@ -192,15 +192,15 @@ public:
 			int fast = 0, bool important = false
 			);
 	void removeNodeAndUpdate(v3s16 p,
-			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0, bool important = false);
+			std::map<v3bpos_t, MapBlock*> &modified_blocks, int fast = 0, bool important = false);
 
 	/*
 		Wrappers for the latter ones.
 		These emit events.
 		Return true if succeeded, false if not.
 	*/
-	bool addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata = true, bool important = false);
-	bool removeNodeWithEvent(v3s16 p, bool important);
+	bool addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata = true, bool important = false);
+	bool removeNodeWithEvent(v3pos_t p, bool important);
 
 	// Call these before and after saving of many blocks
 	virtual void beginSave() {}
@@ -223,7 +223,7 @@ public:
 		Saves modified blocks before unloading if possible.
 	*/
 	u32 timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
-			std::vector<v3s16> *unloaded_blocks=NULL
+			std::vector<v3bpos_t> *unloaded_blocks=NULL
 			, unsigned int max_cycle_ms = 100
 			);
 
@@ -277,28 +277,28 @@ public:
 
 
 //freeminer:
-	MapNode getNodeTry(const v3s16 & p);
+	MapNode getNodeTry(const v3pos_t & p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
 	std::atomic_uint m_liquid_step_flow {0};
 
-	virtual s16 getHeat(const v3s16 &p, bool no_random = 0);
-	virtual s16 getHumidity(const v3s16& p, bool no_random = 0);
+	virtual s16 getHeat(const v3pos_t &p, bool no_random = 0);
+	virtual s16 getHumidity(const v3pos_t& p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3POSHash, v3POSEqual>
+	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
-	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
-	MapBlock *createBlankBlockNoInsert(const v3s16 &p);
-	MapBlock *createBlankBlock(const v3s16 &p);
+	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
+	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
+	MapBlock *createBlankBlock(const v3bpos_t &p);
 	bool insertBlock(MapBlock *block);
 	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3pos_t, int, v3POSHash, v3POSEqual> m_db_miss;
+	concurrent_shared_unordered_map<v3pos_t, int, v3posHash, v3posEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -399,8 +399,8 @@ public:
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
 
 	size_t transforming_liquid_size();
-	v3s16 transforming_liquid_pop();
-	void transforming_liquid_add(const v3s16 &p);
+	v3pos_t transforming_liquid_pop();
+	void transforming_liquid_add(const v3pos_t &p);
 	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
@@ -408,14 +408,14 @@ public:
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	//int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-	virtual int getSurface(const v3s16& basepos, int searchup, bool walkable_only);
+	virtual int getSurface(const v3pos_t& basepos, int searchup, bool walkable_only);
 /*
 	{
 		return basepos.Y - 1;
 	}
 */
 
-	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	//concurrent_unordered_map<v3POS, bool, v3posHash, v3posEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
 	typedef unordered_map_v3pos<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
@@ -423,10 +423,10 @@ public:
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
 	void lighting_modified_add(const v3pos_t& pos, int range = 5);
 
-	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
-			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
-	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
-			std::map<v3s16, MapBlock *> &modified_blocks, uint64_t end_ms);
+	void unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
+			std::set<v3pos_t> &light_sources, std::map<v3bpos_t, MapBlock *> &modified_blocks);
+	void spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
+			std::map<v3bpos_t, MapBlock *> &modified_blocks, uint64_t end_ms);
 
 	u32 updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
 			std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
@@ -471,7 +471,7 @@ public:
 		- Create blank filled with CONTENT_IGNORE
 
 	*/
-	MapBlock *emergeBlock(v3s16 p, bool create_blank=false) override;
+	MapBlock *emergeBlock(v3bpos_t p, bool create_blank=false) override;
 
 	/*
 		Try to get a block.
@@ -541,7 +541,7 @@ public:
 	bool repairBlockLight(v3s16 blockpos,
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
-	size_t transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
+	size_t transformLiquids(std::map<v3bpos_t, MapBlock*> & modified_blocks,
 			ServerEnvironment *env
             , Server *m_server, unsigned int max_cycle_ms			
 			);
@@ -562,12 +562,12 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
-	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
+	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
 private:
 
 	int m_map_compression_level;
 
-	concurrent_set<v3s16> m_chunks_in_progress;
+	concurrent_set<v3bpos_t> m_chunks_in_progress;
 
 	// used by deleteBlock() and deleteDetachedBlocks()
 	MapBlockVect m_detached_blocks;

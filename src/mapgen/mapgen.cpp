@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include <cmath>
+#include "irr_v3d.h"
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -385,7 +386,7 @@ inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s16 em)
 	return false;
 }
 
-void Mapgen::updateLiquid(UniqueQueue<v3s16> *trans_liquid, v3pos_t nmin, v3pos_t nmax)
+void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3pos_t nmax)
 {
 	if (!env)
 		return;

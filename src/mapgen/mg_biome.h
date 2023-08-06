@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "objdef.h"
 #include "nodedef.h"
 #include "noise.h"
@@ -242,8 +243,8 @@ public:
 	s32 weather_hot_core;
 
 	MapgenParams * mapgen_params = nullptr;
-	s16 calcBlockHeat(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
-	s16 calcBlockHumidity(v3s16 p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	s16 calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	s16 calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	//====
 
 	BiomeGen *createBiomeGen(BiomeGenType type, BiomeParams *params, v3s16 chunksize)

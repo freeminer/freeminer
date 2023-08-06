@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "map.h"
+#include "irr_v3d.h"
 #include "log.h"
 #include "mapblock.h"
 #ifndef SERVER
@@ -189,7 +190,7 @@ MapNode Map::getNode(v3s16 p, bool *is_valid_position)
 	return node;
 }
 
-static void set_node_in_block(MapBlock *block, v3s16 relpos, MapNode n, bool important = false)
+static void set_node_in_block(MapBlock *block, v3pos_t relpos, MapNode n, bool important = false)
 {
 	// Never allow placing CONTENT_IGNORE, it causes problems
 	if(n.getContent() == CONTENT_IGNORE){
@@ -206,7 +207,7 @@ static void set_node_in_block(MapBlock *block, v3s16 relpos, MapNode n, bool imp
 }
 
 // throws InvalidPositionException if not found
-void Map::setNode(v3s16 p, MapNode n, bool important)
+void Map::setNode(v3pos_t p, MapNode n, bool important)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreate(blockpos);
@@ -298,12 +299,12 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 }
 
 void Map::removeNodeAndUpdate(v3s16 p,
-		std::map<v3s16, MapBlock*> &modified_blocks, int fast, bool important)
+		std::map<v3bpos_t, MapBlock*> &modified_blocks, int fast, bool important)
 {
 	addNodeAndUpdate(p, MapNode(CONTENT_AIR), modified_blocks, true, fast, important);
 }
 
-bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata, bool important)
+bool Map::addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata, bool important)
 {
 	MapEditEvent event;
 	event.type = remove_metadata ? MEET_ADDNODE : MEET_SWAPNODE;
@@ -326,7 +327,7 @@ bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata, bool import
 	return succeeded;
 }
 
-bool Map::removeNodeWithEvent(v3s16 p, bool important)
+bool Map::removeNodeWithEvent(v3pos_t p, bool important)
 {
 	MapEditEvent event;
 	event.type = MEET_REMOVENODE;
@@ -570,7 +571,7 @@ struct NodeNeighbor {
 	{ }
 };
 
-size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+size_t ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_blocks,
 		ServerEnvironment *env
 		, Server *m_server, unsigned int max_cycle_ms
 		)
@@ -2005,7 +2006,7 @@ bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db, int compression_leve
 	return ret;
 }
 
-MapBlock * ServerMap::loadBlock(v3s16 p3d)
+MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 {
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
@@ -2076,15 +2077,14 @@ MapBlock * ServerMap::loadBlock(v3s16 p3d)
 
 	//MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (created_new && (block != NULL)) {
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3bpos_t, MapBlock*> modified_blocks;
 		// Fix lighting if necessary
 		voxalgo::update_block_border_lighting(this, block, modified_blocks);
 		if (!modified_blocks.empty()) {
 			//Modified lighting, send event
 			MapEditEvent event;
 			event.type = MEET_OTHER;
-			std::map<v3s16, MapBlock *>::iterator it;
-			for (it = modified_blocks.begin();
+			for (auto it = modified_blocks.begin();
 					it != modified_blocks.end(); ++it)
 				event.modified_blocks.push_back(it->first);
 			dispatchEvent(event);

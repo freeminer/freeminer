@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <IFileSystem.h>
 #include "client.h"
+#include "irr_v3d.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
 #include "network/networkpacket.h"
@@ -1681,7 +1682,7 @@ v3s16 Client::CSMClampPos(v3s16 pos)
 	);
 }
 
-void Client::addNode(v3s16 p, MapNode n, bool remove_metadata, int fast)
+void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 {
 	//TimeTaker timer1("Client::addNode()");
 
@@ -1888,7 +1889,7 @@ void Client::typeChatMessage(const std::wstring &message)
 	sendChatMessage(message);
 }
 
-void Client::addUpdateMeshTask(v3s16 p, bool ack_to_server, bool urgent, int step)
+void Client::addUpdateMeshTask(v3bpos_t p, bool ack_to_server, bool urgent, int step)
 {
 	// Check if the block exists to begin with. In the case when a non-existing
 	// neighbor is automatically added, it may not. In that case we don't want
@@ -1964,7 +1965,7 @@ void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool ur
 		addUpdateMeshTask(blockpos + v3s16(0, 0, -1), false, urgent);
 }
 
-void Client::updateMeshTimestampWithEdge(v3pos_t blockpos) {
+void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
 	for (const auto & dir : g_7dirs) {
 		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + dir);
 		if(!block)

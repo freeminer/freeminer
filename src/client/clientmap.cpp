@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "clientmap.h"
 #include "client.h"
+#include "irr_v3d.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
 #include <matrix4.h>
@@ -88,8 +89,8 @@ ClientMap::ClientMap(
 	/*
 	m_drawlist(MapBlockComparer(v3s16(0,0,0)))
 	*/
- 	m_drawlist_0{MapBlockComparer(v3s16(0,0,0))},
- 	m_drawlist_1{MapBlockComparer(v3s16(0,0,0))}
+ 	m_drawlist_0{MapBlockComparer(v3pos_t(0,0,0))},
+ 	m_drawlist_1{MapBlockComparer(v3pos_t(0,0,0))}
 {
 
 	/*
@@ -136,7 +137,7 @@ ClientMap::~ClientMap()
 void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
 {
 	//v3s16 previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
-	v3s16 previous_node = m_camera_position_node;
+	v3pos_t previous_node = m_camera_position_node;
 	v3s16 previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 
 	m_camera_position = pos;
@@ -144,7 +145,7 @@ void ClientMap::updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset)
 	m_camera_fov = fov;
 	m_camera_offset = offset;
 
-	v3s16 current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
+	v3pos_t current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
 	m_camera_position_node = current_node;
 	v3s16 current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
@@ -286,8 +287,8 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	//const v3s16 cam_pos_nodes = floatToInt(m_camera_position, BS);
 	v3pos_t cam_pos_nodes = m_camera_position_node;
 
-	v3s16 p_blocks_min;
-	v3s16 p_blocks_max;
+	v3pos_t p_blocks_min;
+	v3pos_t p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
 
 	// Number of blocks occlusion culled
@@ -748,10 +749,10 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	//camera_fov *= 1.2;
 
 	//v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
-	v3s16 cam_pos_nodes = m_camera_position_node;
+	v3pos_t cam_pos_nodes = m_camera_position_node;
 /*
-	v3s16 p_blocks_min;
-	v3s16 p_blocks_max;
+	v3pos_t p_blocks_min;
+	v3pos_t p_blocks_max;
 	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max);
 */
 
@@ -802,9 +803,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				continue;
 		}
 
-			v3s16 blockpos_nodes = bp * MAP_BLOCKSIZE;
+			v3pos_t blockpos_nodes = bp * MAP_BLOCKSIZE;
 			// Block center position
-			v3f blockpos(
+			v3opos_t blockpos(
 				((float)blockpos_nodes.X + MAP_BLOCKSIZE/2) * BS,
 				((float)blockpos_nodes.Y + MAP_BLOCKSIZE/2) * BS,
 				((float)blockpos_nodes.Z + MAP_BLOCKSIZE/2) * BS
@@ -886,8 +887,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			*/
 
 /* old todo make cache in new
-			v3POS cpn = bp * MAP_BLOCKSIZE;
-			cpn += v3s16(MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
+			v3pos_t cpn = bp * MAP_BLOCKSIZE;
+			cpn += v3pos_t(MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
 			float step = BS * 1;
 			float stepfac = 1.2;
 			float startoff = BS * 1;
@@ -897,7 +898,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			// of a mapblock, because we must consider all view angles.
 			// sqrt(1^2 + 1^2 + 1^2) = 1.732
 			float endoff = -BS * MAP_BLOCKSIZE * 1.732050807569;
-			v3s16 spn = cam_pos_nodes;
+			v3pos_t spn = cam_pos_nodes;
 			s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
 			// to reduce the likelihood of falsely occluded blocks
 			// require at least two solid blocks
@@ -908,21 +909,21 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					// For the central point of the mapblock 'endoff' can be halved
 					isOccluded(this, spn, cpn,
 						step, stepfac, startoff, endoff / 2.0f, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(bs2,bs2,bs2),
+					isOccluded(this, spn, cpn + v3pos_t(bs2,bs2,bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(bs2,bs2,-bs2),
+					isOccluded(this, spn, cpn + v3pos_t(bs2,bs2,-bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(bs2,-bs2,bs2),
+					isOccluded(this, spn, cpn + v3pos_t(bs2,-bs2,bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(bs2,-bs2,-bs2),
+					isOccluded(this, spn, cpn + v3pos_t(bs2,-bs2,-bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(-bs2,bs2,bs2),
+					isOccluded(this, spn, cpn + v3pos_t(-bs2,bs2,bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(-bs2,bs2,-bs2),
+					isOccluded(this, spn, cpn + v3pos_t(-bs2,bs2,-bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(-bs2,-bs2,bs2),
+					isOccluded(this, spn, cpn + v3pos_t(-bs2,-bs2,bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3s16(-bs2,-bs2,-bs2),
+					isOccluded(this, spn, cpn + v3pos_t(-bs2,-bs2,-bs2),
 						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)) {
 				blocks_occlusion_culled++;
 				continue;

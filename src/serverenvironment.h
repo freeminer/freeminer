@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "activeobject.h"
 #include "environment.h"
+#include "irr_v3d.h"
 #include "map.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
@@ -365,8 +366,8 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0, bool important = false);
-	bool removeNode(v3s16 p, s16 fast = 0, bool important = false);
+	bool setNode(v3pos_t p, const MapNode &n, s16 fast = 0, bool important = false);
+	bool removeNode(v3pos_t p, s16 fast = 0, bool important = false);
 	bool swapNode(v3s16 p, const MapNode &n);
 
 	// Find the daylight value at pos with a Depth First Search
@@ -453,7 +454,7 @@ public:
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:
-	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+	void nodeUpdate(const v3pos_t pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
 private:
 	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
 
@@ -463,12 +464,12 @@ private:
 			Inventory* inv, ServerActiveObject* obj);
 */
 	void contrib_globalstep(const float dtime);
-	bool checkAttachedNode(v3s16 pos, MapNode n, const ContentFeatures &f);
+	bool checkAttachedNode(v3pos_t pos, MapNode n, const ContentFeatures &f);
 /*
 	void explodeNode(const v3s16 pos);
 */
 
-	std::deque<v3s16> m_nodeupdate_queue;
+	std::deque<v3pos_t> m_nodeupdate_queue;
 	std::mutex m_nodeupdate_queue_mutex;
 	// Circuit manager
 	Circuit m_circuit;
@@ -484,7 +485,7 @@ private:
 	float m_active_block_abm_dtime = 0;
 	float m_active_block_abm_dtime_counter = 0;
 	u32 m_active_block_timer_last = 0;
-	std::set<v3s16> m_blocks_added;
+	std::set<v3bpos_t> m_blocks_added;
 	u32 m_blocks_added_last = 0;
 	u32 m_active_block_analyzed_last = 0;
 	std::mutex m_max_lag_estimate_mutex;

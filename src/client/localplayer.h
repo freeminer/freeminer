@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "player.h"
 #include "environment.h"
 #include "constants.h"
@@ -74,7 +75,7 @@ public:
 			std::vector<CollisionInfo> *collision_info);
 
 	// fm:
-	bool canPlaceNode(const v3s16& p, const MapNode& node);
+	bool canPlaceNode(const v3pos_t& p, const MapNode& node);
 
 	// Temporary option for old move code
 	void old_move(f32 dtime, Environment *env, f32 pos_max_d,
