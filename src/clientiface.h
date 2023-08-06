@@ -283,12 +283,12 @@ public:
 	int GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
 			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime);
 
-	void SentBlock(v3s16 p, double time);
+	void SentBlock(v3bpos_t p, double time);
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
 	void SetBlocksNotSent();
-	void SetBlockDeleted(v3s16 p);
+	void SetBlockDeleted(v3bpos_t p);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -408,7 +408,7 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	unsigned int m_nearest_unsent_reset_want = 0;
-	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3POSHash, v3POSEqual> m_blocks_sent;
+	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_blocks_sent;
 
 	//std::unordered_set<v3s16> m_blocks_sent;
 

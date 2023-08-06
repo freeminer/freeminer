@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "localplayer.h"
 #include <cmath>
+#include "irr_v3d.h"
 #include "mtevent.h"
 #include "collision.h"
 #include "nodedef.h"
@@ -1180,7 +1181,7 @@ float LocalPlayer::getSlipFactor(Environment *env, const v3f &speedH)
 	return 1.0f;
 }
 
-bool LocalPlayer::canPlaceNode(const v3s16& p, const MapNode& n)
+bool LocalPlayer::canPlaceNode(const v3pos_t& p, const MapNode& n)
 {
 	bool noclip = m_client->checkLocalPrivilege("noclip") &&
 		g_settings->getBool("noclip");

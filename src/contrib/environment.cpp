@@ -100,7 +100,7 @@ void ServerEnvironment::contrib_globalstep(const float dtime)
 
 	u16 explosion_limit = (m_explosion_queue.size() >= 10 ? 10 : m_explosion_queue.size());
 	for (s16 i = 0; i < explosion_limit && !m_explosion_queue.empty(); i++) {
-		v3s16 pos = m_explosion_queue.front();
+		v3pos_t pos = m_explosion_queue.front();
 		m_explosion_queue.pop_front();
 
 		MapNode n = m_map->getNode(pos);

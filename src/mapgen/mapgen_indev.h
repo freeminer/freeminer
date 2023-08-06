@@ -75,12 +75,12 @@ public:
 struct MapgenIndevParams : public MapgenV6Params {
 	//s16 float_islands;
 
-	s16 floatland_ymin = 1024;
-	s16 floatland_ymax =  mapgen_limit;
-	s16 floatland_taper = 256;
+  	pos_t floatland_ymin = 1024;
+	pos_t floatland_ymax =  mapgen_limit;
+	pos_t floatland_taper = 256;
 	float float_taper_exp = 2.0f;
 	float floatland_density = -0.6f;
-	s16 floatland_ywater = 10000;
+	pos_t floatland_ywater = 10000;
 
 
 /*	NoiseParams np_float_islands1;
@@ -103,10 +103,10 @@ struct MapgenIndevParams : public MapgenV6Params {
 
 class MapgenIndev : public MapgenV6, public Mapgen_features {
 	Noise *noise_floatland = nullptr;
-	s16 floatland_taper;
+	pos_t floatland_taper;
 	float float_taper_exp;
 	float floatland_density;
-	s16 floatland_ywater;
+	pos_t floatland_ywater;
 
 	float *float_offset_cache = nullptr;
 

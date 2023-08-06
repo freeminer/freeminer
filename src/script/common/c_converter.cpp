@@ -299,7 +299,7 @@ void push_v3s16(lua_State *L, v3s16 p)
 	lua_call(L, 3, 1);
 }
 
-void push_v3s32(lua_State *L, v3s16 p)
+void push_v3s32(lua_State *L, v3s32 p)
 {
 	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_PUSH_VECTOR);
 	lua_pushinteger(L, p.X);
@@ -550,6 +550,20 @@ bool getstringfield(lua_State *L, int table,
 
 bool getfloatfield(lua_State *L, int table,
 		const char *fieldname, float &result)
+{
+	lua_getfield(L, table, fieldname);
+	bool got = false;
+
+	if (check_field_or_nil(L, -1, LUA_TNUMBER, fieldname)) {
+		result = lua_tonumber(L, -1);
+		got = true;
+	}
+	lua_pop(L, 1);
+	return got;
+}
+
+bool getfloatfield(lua_State *L, int table,
+		const char *fieldname, double &result)
 {
 	lua_getfield(L, table, fieldname);
 	bool got = false;

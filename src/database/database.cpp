@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "database.h"
+#include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include <sstream>
 #include "util/string.h"
@@ -72,15 +73,15 @@ v3s16 MapDatabase::getIntegerAsBlock(s64 i)
 	return pos;
 }
 
-std::string MapDatabase::getBlockAsString(const v3s16 &pos) const {
+std::string MapDatabase::getBlockAsString(const v3bpos_t &pos) const {
 	std::ostringstream os;
 	os << "a" << pos.X << "," << pos.Y << "," << pos.Z;
 	return os.str().c_str();
 }
 
-v3s16 MapDatabase::getStringAsBlock(const std::string &i) const {
+v3bpos_t MapDatabase::getStringAsBlock(const std::string &i) const {
 	std::istringstream is(i);
-	v3s16 pos;
+	v3bpos_t pos;
 	char c;
 	if (i[0] == 'a') {
 		is >> c; // 'a'

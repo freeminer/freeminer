@@ -152,7 +152,7 @@ MapBlock *ServerMap::createBlock(v3pos_t p)
 }
 
 /*
-bool Map::eraseBlock(v3s16 blockpos)
+bool Map::eraseBlock(v3pos_t blockpos)
 {
 	auto block = getBlockNoCreateNoEx(blockpos);
 	if (!block)
@@ -621,7 +621,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 			continue;
 
 		// Calculate relative position in block
-		// v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
+		// v3pos_t relpos = pos - blockpos_last * MAP_BLOCKSIZE;
 
 		// Get node straight from the block
 		// MapNode n = block->getNode(relpos);
@@ -917,8 +917,8 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 	// bool debug=true;
 	// u32 count_was = modified_blocks.size();
 
-	// std::unordered_set<v3POS, v3POSHash, v3POSEqual> light_sources;
-	// std::unordered_map<v3POS, u8, v3POSHash, v3POSEqual> unlight_from_day,
+	// std::unordered_set<v3POS, v3posHash, v3posEqual> light_sources;
+	// std::unordered_map<v3POS, u8, v3posHash, v3posEqual> unlight_from_day,
 	// unlight_from_night;
 	std::set<v3pos_t> light_sources;
 	std::map<v3pos_t, u8> unlight_from_day, unlight_from_night;
@@ -1296,17 +1296,17 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 }
 
 /*
-MapNode Map::getNodeNoEx(v3s16 p) {
+MapNode Map::getNodeNoEx(v3pos_t p) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
 
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3bpos_t blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (!block)
 		return ignoreNode;
 
-	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
+	v3pos_t relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNode(relpos);
 }
 */

@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "clientenvironment.h"
+#include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
 #include <ostream>
 #include <map>
@@ -280,14 +281,14 @@ public:
 	const ModSpec* getModSpec(const std::string &modname) const override;
 
 	// Causes urgent mesh updates (unlike Map::add/removeNodeWithEvent)
-	void removeNode(v3s16 p, int fast = 0);
+	void removeNode(v3pos_t p, int fast = 0);
 
 	// helpers to enforce CSM restrictions
 	MapNode CSMGetNode(v3s16 p, bool *is_valid_position);
 	int CSMClampRadius(v3s16 pos, int radius);
 	v3s16 CSMClampPos(v3s16 pos);
 
-	void addNode(v3s16 p, MapNode n, bool remove_metadata = true, int fast = 0);
+	void addNode(v3pos_t p, MapNode n, bool remove_metadata = true, int fast = 0);
 
 	void setPlayerControl(PlayerControl &control);
 
@@ -326,12 +327,12 @@ public:
 
 	u64 getMapSeed(){ return m_map_seed; }
 
-	void addUpdateMeshTask(v3s16 blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
+	void addUpdateMeshTask(v3bpos_t blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
 
-	void updateMeshTimestampWithEdge(v3s16 blockpos);
+	void updateMeshTimestampWithEdge(v3bpos_t blockpos);
 
 	void updateCameraOffset(v3s16 camera_offset)
 	{ m_mesh_update_manager.m_camera_offset = camera_offset; }
