@@ -172,7 +172,7 @@ struct MeshGrid {
 	u32 getCellVolume() const { return cell_size * cell_size * cell_size; }
 
 	/// @brief returns coordinate of mesh cell given coordinate of a map block
-	pos_t getCellPos(pos_t p) const
+	bpos_t getCellPos(bpos_t p) const
 	{
 		return (p - (p < 0) * (cell_size - 1)) / cell_size;
 	}

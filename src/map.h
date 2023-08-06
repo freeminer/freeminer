@@ -542,7 +542,7 @@ public:
 
 	void step();
 
-	void updateVManip(v3pos_t pos);
+	void updateVManip(v3bpos_t pos);
 
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;

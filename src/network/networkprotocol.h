@@ -211,22 +211,24 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	PROTOCOL VERSION 41:
 		Added new particlespawner parameters
 		[scheduled bump for 5.6.0]
-
 	PROTOCOL VERSION 42:
 		TOSERVER_UPDATE_CLIENT_INFO added
 		new fields for TOCLIENT_SET_LIGHTING and TOCLIENT_SET_SKY
 		Send forgotten TweenedParameter properties
 		[scheduled bump for 5.7.0]
+	PROTOCOL VERSION 43:
+		Convert coordinates to s16->s32 and float->double
 */
 
+// First version with 32bit support
+#define PROTOCOL_VERSION_32BIT 43
+
 #if USE_POS32
-#define LATEST_PROTOCOL_VERSION 42
+#define LATEST_PROTOCOL_VERSION 43
 #else
-#define LATEST_PROTOCOL_VERSION 41
+#define LATEST_PROTOCOL_VERSION 42
 #endif
 
-// First version with 32bit support
-#define PROTOCOL_VERSION_32BIT 42
 
 #define LATEST_PROTOCOL_VERSION_STRING TOSTRING(LATEST_PROTOCOL_VERSION)
 

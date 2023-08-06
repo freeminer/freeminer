@@ -286,7 +286,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	m_keeplist.clear();
 
 	//const v3s16 cam_pos_nodes = floatToInt(m_camera_position, BS);
-	v3pos_t cam_pos_nodes = m_camera_position_node;
+	const v3pos_t cam_pos_nodes = m_camera_position_node;
 
 	v3pos_t p_blocks_min;
 	v3pos_t p_blocks_max;
@@ -344,7 +344,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 		for (auto &sector_it : m_sectors) {
 			MapSector *sector = sector_it.second;
-			v2s16 sp = sector->getPos();
+			v2bpos_t sp = sector->getPos();
 
 			blocks_loaded += sector->size();
 			if (!m_control.range_all) {
@@ -352,9 +352,6 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 						sp.Y < p_blocks_min.Z || sp.Y > p_blocks_max.Z)
 					continue;
 			}
-
-
-
 
 			sectorblocks.clear();
 			sector->getBlocks(sectorblocks);
@@ -368,7 +365,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 				v3opos_t mesh_sphere_center;
 				f32 mesh_sphere_radius;
 
-				v3pos_t block_pos_nodes = block->getPos() * MAP_BLOCKSIZE;
+				v3pos_t block_pos_nodes = block->getPosRelative();
 
 				if (mesh) {
 					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -451,7 +448,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			v3bpos_t block_coord = blocks_to_consider.front();
 			blocks_to_consider.pop();
 
-			v3pos_t cell_coord = mesh_grid.getCellPos(block_coord);
+			v3bpos_t cell_coord = mesh_grid.getCellPos(block_coord);
 			auto &flags = meshes_seen.getChunk(cell_coord).getBits(cell_coord);
 
 			// Only visit each block once (it may have been queued up to three times)
@@ -463,7 +460,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 			// Get the sector, block and mesh
 /*
-			MapSector *sector = this->getSectorNoGenerate(v2s16(block_coord.X, block_coord.Z));
+			MapSector *sector = this->getSectorNoGenerate(v2bpos_t(block_coord.X, block_coord.Z));
 
 			MapBlock *block = sector ? sector->getBlockNoCreateNoEx(block_coord.Y) : nullptr;
 
@@ -477,7 +474,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			v3opos_t mesh_sphere_center;
 			f32 mesh_sphere_radius;
 
-			v3pos_t block_pos_nodes = block_coord * MAP_BLOCKSIZE;
+			v3pos_t block_pos_nodes = getBlockPosRelative(block_coord);
 
 			if (mesh) {
 				mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -697,7 +694,7 @@ void ClientMap::touchMapBlocks()
 			v3opos_t mesh_sphere_center;
 			f32 mesh_sphere_radius;
 
-			v3bpos_t block_pos_nodes = block->getPos() * MAP_BLOCKSIZE;
+			v3pos_t block_pos_nodes = block->getPosRelative();
 
 			if (mesh) {
 				mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -1174,7 +1171,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	draw.start();
 
 	core::matrix4 m; // Model matrix
-	auto offset = intToFloat(m_camera_offset, (opos_t)BS);
+	v3opos_t offset = intToFloat(m_camera_offset, (opos_t)BS);
 	u32 material_swaps = 0;
 
 	// Render all mesh buffers in order

@@ -89,7 +89,7 @@ struct MeshMakeData
 		Copy block data manually (to allow optimizations by the caller)
 	*/
 	void fillBlockDataBegin(const v3bpos_t &blockpos);
-	void fillBlockData(const v3pos_t &bp, MapNode *data);
+	void fillBlockData(const v3bpos_t &bp, MapNode *data);
 
 	/*
 		Set the (node) position of a crack

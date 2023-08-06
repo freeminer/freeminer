@@ -151,8 +151,8 @@ void MeshMakeData::fillBlockDataBegin(const v3bpos_t &blockpos)
 	v3pos_t blockpos_nodes = getBlockPosRelative(m_blockpos);
 
 	m_vmanip.clear();
-	VoxelArea voxel_area(blockpos_nodes - v3pos_t(1,1,1) * MAP_BLOCKSIZE,
-			blockpos_nodes + v3pos_t(1,1,1) * (side_length + MAP_BLOCKSIZE /* extra layer of blocks around the mesh */) - v3pos_t(1,1,1));
+	VoxelArea voxel_area(blockpos_nodes - v3bpos_t(1,1,1) * MAP_BLOCKSIZE,
+			blockpos_nodes + v3bpos_t(1,1,1) * (side_length + MAP_BLOCKSIZE /* extra layer of blocks around the mesh */) - v3bpos_t(1,1,1));
 	m_vmanip.addArea(voxel_area);
 }
 
@@ -163,23 +163,6 @@ void MeshMakeData::fillBlockData(const v3bpos_t &bp, MapNode *data)
 
 	v3pos_t blockpos_nodes = getBlockPosRelative(bp);
 	m_vmanip.copyFrom(data, data_area, v3pos_t(0,0,0), blockpos_nodes, data_size);
-}
-
-void MeshMakeData::fill(MapBlock *block)
-{
-	fillBlockDataBegin(block->getPos());
-
-	fillBlockData(v3pos_t(0,0,0), block->getData());
-
-	// Get map for reading neighbor blocks
-	Map *map = block->getParent();
-
-	for (const v3pos_t &dir : g_26dirs) {
-		v3bpos_t bp = m_blockpos + v3bpos_t(dir.X, dir.Y, dir.Z);
-		MapBlock *b = map->getBlockNoCreateNoEx(bp);
-		if(b)
-			fillBlockData(dir, b->getData());
-	}
 }
 
 void MeshMakeData::setCrack(int crack_level, v3pos_t crack_pos)
@@ -1347,7 +1330,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 	if (step == 1) // || !data->block->getMesh())
 	if (data->m_mesh_grid.isMeshPos(bp) && data->m_client->getMinimap()) {
 		m_minimap_mapblocks.resize(data->m_mesh_grid.getCellVolume(), nullptr);
-		v3pos_t ofs;
+		v3bpos_t ofs;
 
 		// See also client.cpp for the code that reads the array of minimap blocks.
 		for (ofs.Z = 0; ofs.Z < data->m_mesh_grid.cell_size; ofs.Z++)
@@ -1392,8 +1375,8 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 		Convert FastFaces to MeshCollector
 	*/
 
-	v3opos_t offset = intToFloat((data->m_blockpos - data->m_mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
-	MeshCollector collector(m_bounding_sphere_center, oposToV3f(offset));
+	v3f offset = posToFloat((data->m_blockpos - data->m_mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
+	MeshCollector collector(m_bounding_sphere_center, offset);
 
 	{
 		// avg 0ms (100ms spikes when loading textures the first time)

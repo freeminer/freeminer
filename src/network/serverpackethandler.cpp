@@ -26,6 +26,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #else //TODO
 
 #include "chatmessage.h"
+#include "irr_v3d.h"
 #include "server.h"
 #include "log.h"
 #include "emerge.h"

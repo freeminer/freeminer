@@ -47,7 +47,7 @@ void MeshCollector::append(const TileLayer &layer, const video::S3DVertex *verti
 
 	u32 vertex_count = p.vertices.size();
 	for (u32 i = 0; i < numVertices; i++) {
-		p.vertices.emplace_back(vertices[i].Pos + offset, vertices[i].Normal,
+		p.vertices.emplace_back( vertices[i].Pos + offset, vertices[i].Normal,
 				vertices[i].Color, scale * vertices[i].TCoords);
 		m_bounding_radius_sq = std::max<f32>(m_bounding_radius_sq,
 				(v3fToOpos(vertices[i].Pos) - m_center_pos).getLengthSQ());

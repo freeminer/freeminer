@@ -119,7 +119,7 @@ void MapSector::deleteBlock(MapBlock *block)
 
 void MapSector::detachBlock(MapBlock *block)
 {
-	s16 block_y = block->getPos().Y;
+	bpos_t block_y = block->getPos().Y;
 
 	// Clear from cache
 	m_block_cache = nullptr;

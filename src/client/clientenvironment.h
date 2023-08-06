@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "../environment.h"
 #include <ISceneManager.h>
 #include "clientobject.h"
+#include "irrlichttypes.h"
 #include "util/numeric.h"
 #include "activeobjectmgr.h"
 
@@ -126,7 +127,7 @@ public:
 	*/
 
 	// Get all nearby objects
-	void getActiveObjects(const v3opos_t &origin, f32 max_d,
+	void getActiveObjects(const v3opos_t &origin, opos_t max_d,
 		std::vector<DistanceSortedActiveObject> &dest)
 	{
 		return m_ao_manager.getActiveObjects(origin, max_d, dest);

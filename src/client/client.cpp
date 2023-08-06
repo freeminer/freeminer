@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <IFileSystem.h>
 #include "client.h"
+#include "irr_v2d.h"
 #include "irr_v3d.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
@@ -617,9 +618,9 @@ void Client::step(float dtime)
 
 			std::vector<MinimapMapblock*> minimap_mapblocks;
 			bool do_mapper_update = true;
-
 /*
-			MapSector *sector = m_env.getMap().emergeSector(v2s16(r.p.X, r.p.Z));
+			MapSector *sector = m_env.getMap().emergeSector(v2bpos_t(r.p.X, r.p.Z));
+
 			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
 			// The block in question is not visible (perhaps it is culled at the server),
 			// create a blank block just to hold the chunk's mesh.
