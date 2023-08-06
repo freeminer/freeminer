@@ -714,7 +714,7 @@ int MapgenV6::generateGround()
 			stone_surface_max_y = surface_y;
 
 		BiomeV6Type bt = getBiome(v3pos_t(x, node_min.Y, z));
-		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), nullptr, &heat_cache) : 0;
+		const auto heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), nullptr, &heat_cache) : 0;
 
 		// Fill ground with stone
 		const v3pos_t &em = vm->m_area.getExtent();
@@ -1124,7 +1124,7 @@ void MapgenV6::growGrass() // Add surface nodes
 		u32 i = vm->m_area.index(x, surface_y, z);
 		content_t c = vm->m_data[i].getContent();
 		if (m_emerge->env->m_use_weather && c == c_dirt) {
-			int heat = m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, surface_y, z), nullptr, &heat_cache);
+			const auto heat = m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, surface_y, z), nullptr, &heat_cache);
 			vm->m_data[i] = (heat < -10 ? n_dirt_with_snow : (heat < -5 || heat > 50) ? n_dirt : n_dirt_with_grass);
 		} else
 		if (surface_y >= water_level - 20) {

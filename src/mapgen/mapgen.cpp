@@ -714,7 +714,7 @@ void MapgenBasic::generateBiomes()
 		// nplaced to stone level by setting a number exceeding any possible filler depth.
 		u16 nplaced = (air_above || water_above) ? 0 : U16_MAX;
 
-		s16 heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), NULL, &heat_cache) : 0;
+		const auto heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x,node_max.Y,z), NULL, &heat_cache) : 0;
 
 		for (pos_t y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[vi].getContent();

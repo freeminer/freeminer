@@ -796,6 +796,16 @@ bool Settings::getFloatNoEx(const std::string &name, float &val) const
 	}
 }
 
+bool Settings::getFloatNoEx(const std::string &name, double &val) const
+{
+	try {
+		val = getFloat(name);
+		return true;
+	} catch (SettingNotFoundException &e) {
+		return false;
+	}
+}
+
 
 bool Settings::getU16NoEx(const std::string &name, u16 &val) const
 {
@@ -837,7 +847,6 @@ bool Settings::getS32NoEx(const std::string &name, s32 &val) const
 		return false;
 	}
 }
-
 
 bool Settings::getPosNoEx(const std::string &name, pos_t &val) const
 {

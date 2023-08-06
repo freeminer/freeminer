@@ -211,6 +211,7 @@ public:
 	bool getPosNoEx(const std::string &name, pos_t &val) const;
 	bool getU64NoEx(const std::string &name, u64 &val) const;
 	bool getFloatNoEx(const std::string &name, float &val) const;
+	bool getFloatNoEx(const std::string &name, double &val) const;
 	bool getV2FNoEx(const std::string &name, v2f &val) const;
 	bool getV3FNoEx(const std::string &name, v3f &val) const;
 #if USE_OPOS64
