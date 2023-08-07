@@ -941,10 +941,10 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 */
 
 				// Calculate the coordinates for range and frustum culling
-				v3f mesh_sphere_center;
+				v3opos_t mesh_sphere_center;
 				f32 mesh_sphere_radius;
 
-				v3s16 block_pos_nodes = block->getPos() * MAP_BLOCKSIZE;
+				v3pos_t block_pos_nodes = block->getPosRelative();
 
 				if (mesh) {
 					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -952,7 +952,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					mesh_sphere_radius = mesh->getBoundingRadius();
 				} else {
 					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
-							+ v3f((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
+							+ v3opos_t((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
 					mesh_sphere_radius = 0.0f;
 				}
 
