@@ -166,6 +166,7 @@ Client::Client(
 
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 	m_mesh_grid = { g_settings->getU16("client_mesh_chunk") };
+	control.cell_size = m_mesh_grid.cell_size;
 }
 
 void Client::migrateModStorage()

@@ -37,9 +37,10 @@ struct MapDrawControl
 // freeminer:
 	float farmesh = 0;
 	int farmesh_step = 1;
+	int cell_size = 1;
 
 	float fps = 30;
-	float fps_avg =30;
+	float fps_avg = 30;
 	float fps_wanted = 30;
 	float drawtime_avg = 30;
 
