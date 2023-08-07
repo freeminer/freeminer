@@ -70,6 +70,9 @@ ShadowRenderer::~ShadowRenderer()
 		delete m_shadow_mix_cb;
 	m_shadow_node_array.clear();
 	m_light_list.clear();
+
+	if (m_screen_quad)
+		delete m_screen_quad;
 }
 
 void ShadowRenderer::disable()

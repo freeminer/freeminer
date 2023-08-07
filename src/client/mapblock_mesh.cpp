@@ -36,19 +36,27 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <algorithm>
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3pos_t & playerblockpos, const v3pos_t & blockpos) {
-
-
-return 1; // TODO FIX MESHMAKE
-
-
+int getFarmeshStep(MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &blockpos)
+{
 	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.farmesh) {
-		const pos_t nearest = 256/MAP_BLOCKSIZE;
-		if		(range >= std::min<pos_t>(nearest*8, draw_control.farmesh+draw_control.farmesh_step*4))	return 16;
-		else if (range >= std::min<pos_t>(nearest*4, draw_control.farmesh+draw_control.farmesh_step*2))	return 8;
-		else if (range >= std::min<pos_t>(nearest*2, draw_control.farmesh+draw_control.farmesh_step))	return 4;
-		else if (range >= std::min<pos_t>(nearest, draw_control.farmesh))								return 2;
+
+		const pos_t nearest = std::max(draw_control.cell_size * 2, 256 / MAP_BLOCKSIZE);
+		// DUMP(draw_control.farmesh, range, nearest, draw_control.cell_size, draw_control.farmesh + draw_control.farmesh_step * 4, draw_control.farmesh + draw_control.farmesh_step * 2, draw_control.farmesh + draw_control.farmesh_step, draw_control.farmesh);
+		const auto farmesh_cells = std::max<int>(draw_control.cell_size * 2,
+				draw_control.farmesh / draw_control.cell_size);
+		if (range >= std::min<pos_t>(
+							 nearest * 8, farmesh_cells + draw_control.farmesh_step * 4))
+			return 16;
+		else if (range >= std::min<pos_t>(nearest * 4,
+								  farmesh_cells + draw_control.farmesh_step * 2))
+			return 8;
+		else if (range >=
+				 std::min<pos_t>(nearest * 2, farmesh_cells + draw_control.farmesh_step))
+			return 4;
+		else if (range >= std::min<pos_t>(nearest, farmesh_cells))
+			return 2;
 	}
 	return 1;
 };
@@ -63,6 +71,7 @@ MeshMakeData::MeshMakeData(Client *client, bool use_shaders, int step):
 	m_client(client),
 	m_use_shaders(use_shaders)
 
+	, side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size)
 	, step{step}
 //, map{map_}, draw_control{draw_control_}
 /*#if defined(MESH_ZEROCOPY)
@@ -149,7 +158,7 @@ void MeshMakeData::fillBlockDataBegin(const v3s16 &blockpos)
 
 	m_vmanip.clear();
 	VoxelArea voxel_area(blockpos_nodes - v3s16(1,1,1) * MAP_BLOCKSIZE,
-			blockpos_nodes + v3s16(1,1,1) * (side_length + MAP_BLOCKSIZE /* extra layer of blocks around the mesh */) - v3s16(1,1,1));
+			blockpos_nodes + v3s16(1,1,1) * (side_length_data + MAP_BLOCKSIZE /* extra layer of blocks around the mesh */) - v3s16(1,1,1));
 	m_vmanip.addArea(voxel_area);
 }
 
@@ -1306,10 +1315,10 @@ void PartialMeshBuffer::afterDraw() const
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	step(data->step),
-	no_draw(data->no_draw),
+	//no_draw(data->no_draw),
 	m_tsrc(data->m_client->getTextureSource()),
 	m_shdrsrc(data->m_client->getShaderSource()),
-	m_bounding_sphere_center((data->side_length * 0.5f - 0.5f) * BS),
+	m_bounding_sphere_center((data->side_length_data * 0.5f - 0.5f) * BS),
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
 	m_last_daynight_ratio((u32) -1)
