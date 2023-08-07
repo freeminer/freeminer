@@ -221,10 +221,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 // First version with 32bit support
-#define PROTOCOL_VERSION_32BIT 43
+#define PROTOCOL_VERSION_32BIT 143  // change to actual in future
 
 #if USE_POS32
-#define LATEST_PROTOCOL_VERSION 43
+#define LATEST_PROTOCOL_VERSION 143 // change to actual in future
 #else
 #define LATEST_PROTOCOL_VERSION 42
 #endif

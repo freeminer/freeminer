@@ -333,8 +333,6 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 		u32 blocks_in_range_with_mesh = 0;
 
 
-
-		{
 			for (auto & [block_coord, block] : m_blocks) {
 				//auto block = getBlockNoCreateNoEx(block_coord);
 				int mesh_step = getFarmeshStep(m_control, getNodeBlockPos(cam_pos_nodes), block_coord);
@@ -360,6 +358,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			for (MapBlock *block : sectorblocks) {
 				MapBlockMesh *mesh = block->mesh;
 */
+			{
 
 				// Calculate the coordinates for range and frustum culling
 				v3opos_t mesh_sphere_center;
@@ -738,6 +737,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	if (!max_cycle_ms)
 		max_cycle_ms = 300/getControl().fps_wanted;
 
+	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
+
 	//v3f camera_position = m_camera_position;
 	//f32 camera_fov = m_camera_fov;
 
@@ -825,7 +826,16 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	const int maxq = 1000;
 
-	bool occlusion_culling_enabled = true;
+
+	// Number of blocks frustum culled
+	u32 blocks_frustum_culled = 0;
+
+	MeshGrid mesh_grid = m_client->getMeshGrid();
+	// No occlusion culling when free_move is on and camera is inside ground
+	// No occlusion culling for chunk sizes of 4 and above
+	//   because the current occlusion culling test is highly inefficient at these sizes
+	bool occlusion_culling_enabled = mesh_grid.cell_size < 4;
+
 	if (m_control.allow_noclip) {
 		MapNode n = getNode(cam_pos_nodes);
 		if (n.getContent() == CONTENT_IGNORE || m_nodedef->get(n).solidness == 2)
@@ -858,7 +868,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			*/
 
 			auto mesh = block->getMesh(mesh_step);
-
+			{
 			blocks_in_range++;
 
 			const int smesh_size = block->getMeshSize(mesh_step);
@@ -875,7 +885,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					continue;
 				}
 				if(mesh_step == mesh->step && block->getTimestamp() <= mesh->timestamp && !smesh_size) {
-					blocks_in_range_without_mesh++;
+					++blocks_in_range_without_mesh;
 					continue;
 				}
 			}
@@ -927,13 +937,54 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				continue;
 			}
 */
-			// Occlusion culling
-			if ((!m_control.range_all && d > m_control.wanted_range * BS) ||
-					(occlusion_culling_enabled && isBlockOccluded(block, cam_pos_nodes))) {
-				blocks_occlusion_culled++;
-			    continue;
-			}
 
+				// Calculate the coordinates for range and frustum culling
+				v3opos_t mesh_sphere_center;
+				f32 mesh_sphere_radius;
+
+				v3pos_t block_pos_nodes = block->getPosRelative();
+
+				if (mesh) {
+					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
+							+ mesh->getBoundingSphereCenter();
+					mesh_sphere_radius = mesh->getBoundingRadius();
+				} else {
+					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
+							+ v3opos_t((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
+					mesh_sphere_radius = 0.0f;
+				}
+
+				// First, perform a simple distance check.
+				if (!m_control.range_all &&
+					mesh_sphere_center.getDistanceFrom(m_camera_position) >
+						m_control.wanted_range * BS + mesh_sphere_radius)
+					continue; // Out of range, skip.
+
+				// Keep the block alive as long as it is in range.
+				block->resetUsageTimer();
+				blocks_in_range_with_mesh++;
+
+				/*
+
+				// Frustum culling
+				// Only do coarse culling here, to account for fast camera movement.
+				// This is needed because this function is not called every frame.
+				float frustum_cull_extra_radius = 300.0f;
+				if (is_frustum_culled(mesh_sphere_center,
+						mesh_sphere_radius + frustum_cull_extra_radius)) {
+					blocks_frustum_culled++;
+					continue;
+				}
+
+				*/
+
+				// Raytraced occlusion culling - send rays from the camera to the block's corners
+				if (!m_control.range_all && occlusion_culling_enabled && m_enable_raytraced_culling &&
+						mesh &&
+						isMeshOccluded(block, mesh_grid.cell_size, cam_pos_nodes)) {
+					blocks_occlusion_culled++;
+					continue;
+				}
 
 
 			// This block is in range. Reset usage timer.
@@ -977,6 +1028,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		if (porting::getTimeMs() > end_ms) {
 			break;
 		}
+			}
 
 	}
 	m_drawlist_last = draw_nearest.size();

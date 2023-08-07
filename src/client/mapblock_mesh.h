@@ -67,6 +67,7 @@ struct MeshMakeData
 	bool m_use_shaders;
 
     // fm:
+	u16 side_length_data;
 	int step = 1;
 	int range = 1;
 	bool no_draw = false;
@@ -262,7 +263,7 @@ public:
 	}
 
 	int step = 1;
-	bool no_draw = 0;
+	//bool no_draw = 0;
 	unsigned int timestamp = 0;
 	u32 m_usage_timer = 0;
 // ===
