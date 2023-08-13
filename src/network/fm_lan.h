@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2016 proller
+Copyright (C) 2016 proller <proler@gmail.com>
 
 This file is part of Freeminer.
 
