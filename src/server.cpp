@@ -4248,8 +4248,10 @@ v3f Server::findSpawnPos()
 		for (s32 ii = (find > 0) ? 0 : find - 50;
 				ii < find; ii++) {
 			v3bpos_t blockpos = getNodeBlockPos(nodepos);
-			if (!map.emergeBlock(blockpos, false))
+			if (!map.emergeBlock(blockpos, false)) {
+				nodeposf = intToFloat(nodepos, BS);
 				break;
+			}
 			content_t c = map.getNode(nodepos).getContent();
 
 			// In generated mapblocks allow spawn in all 'airlike' drawtype nodes.
