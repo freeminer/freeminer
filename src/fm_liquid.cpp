@@ -330,7 +330,7 @@ NEXT_LIQUID:;
 #endif
 						goto NEXT_LIQUID;
 					}
-				} catch (InvalidPositionException &e) {
+				} catch (const InvalidPositionException &e) {
 					verbosestream
 							<< "transformLiquidsReal: weight: setNode() failed:" << nb.pos
 							<< ":" << e.what() << std::endl;
