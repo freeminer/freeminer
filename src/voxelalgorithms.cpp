@@ -294,8 +294,14 @@ void unspread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 			} else {
 				neighbor_block = current.block;
 			}
+
+			auto lock = neighbor_block->try_lock_unique_rec();
+			if (!lock->owns_lock()) {
+				continue; // may cause dark areas
+			}
+
 			// Get the neighbor itself
-			MapNode neighbor = neighbor_block->getNodeNoCheck(neighbor_rel_pos);
+			MapNode neighbor = neighbor_block->getNodeNoLock(neighbor_rel_pos);
 			ContentLightingFlags neighbor_f = nodemgr->getLightingFlags(
 				neighbor.getContent());
 			u8 neighbor_light = neighbor.getLightRaw(bank, neighbor_f);
@@ -306,7 +312,7 @@ void unspread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				// Unlight, but only if the node has light.
 				if (neighbor_light > 0) {
 					neighbor.setLight(bank, 0, neighbor_f);
-					neighbor_block->setNodeNoCheck(neighbor_rel_pos, neighbor);
+					neighbor_block->setNodeNoLock(neighbor_rel_pos, neighbor);
 					from_nodes.push(neighbor_light, neighbor_rel_pos,
 						neighbor_block_pos, neighbor_block, i);
 					// The current node was modified earlier, so its block
@@ -381,15 +387,21 @@ void spread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 			} else {
 				neighbor_block = current.block;
 			}
+
+			auto lock = neighbor_block->try_lock_unique_rec();
+			if (!lock->owns_lock()) {
+				continue; // may cause dark areas
+			}
+
 			// Get the neighbor itself
-			MapNode neighbor = neighbor_block->getNodeNoCheck(neighbor_rel_pos);
+			MapNode neighbor = neighbor_block->getNodeNoLock(neighbor_rel_pos);
 			ContentLightingFlags f = nodemgr->getLightingFlags(neighbor);
 			if (f.light_propagates) {
 				// Light up the neighbor, if it has less light than it should.
 				u8 neighbor_light = neighbor.getLightRaw(bank, f);
 				if (neighbor_light < spreading_light) {
 					neighbor.setLight(bank, spreading_light, f);
-					neighbor_block->setNodeNoCheck(neighbor_rel_pos, neighbor);
+					neighbor_block->setNodeNoLock(neighbor_rel_pos, neighbor);
 					light_sources.push(spreading_light, neighbor_rel_pos,
 						neighbor_block_pos, neighbor_block, i);
 					// The current node was modified earlier, so its block
@@ -855,6 +867,18 @@ void is_sunlight_above_block(Map *map, mapblock_v3 pos,
 			MapNode above = source_block->getNodeNoCheck(x, 0, z);
 			ContentLightingFlags above_f = ndef->getLightingFlags(above);
 			light[z][x] = above.getLight(LIGHTBANK_DAY, above_f) == LIGHT_SUN;
+
+			if (light[z][x]) {
+				if (z > 0)
+				light[z - 1][x] = true;
+				if (x > 0)
+				light[z][x - 1] = true;
+				if (z < MAP_BLOCKSIZE - 1)
+				light[z + 1][x] = true;
+				if (x < MAP_BLOCKSIZE - 1)
+				light[z][x + 1] = true;
+			}
+
 		}
 	}
 }
@@ -880,6 +904,12 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 		data->data.clear();
 		return false;
 	}
+
+	auto lock = block->try_lock_unique_rec();
+	if (!lock->owns_lock()) {
+		return false; // may cause dark areas
+	}
+
 	// For each changing column of nodes:
 	size_t index;
 	for (index = 0; index < data->data.size(); index++) {
@@ -891,13 +921,13 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 			// Propagate sunlight.
 			// For each node downwards:
 			for (; current_pos.Y >= 0; current_pos.Y--) {
-				MapNode n = block->getNodeNoCheck(current_pos);
+				MapNode n = block->getNodeNoLock(current_pos);
 				ContentLightingFlags f = ndef->getLightingFlags(n);
 				if (n.getLightRaw(LIGHTBANK_DAY, f) < LIGHT_SUN
 						&& f.sunlight_propagates) {
 					// This node gets sunlight.
 					n.setLight(LIGHTBANK_DAY, LIGHT_SUN, f);
-					block->setNodeNoCheck(current_pos, n);
+					block->setNodeNoLock(current_pos, n);
 					modified = true;
 					relight->push(LIGHT_SUN, current_pos, data->target_block,
 						block, 4);
@@ -910,12 +940,12 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 			// Propagate shadow.
 			// For each node downwards:
 			for (; current_pos.Y >= 0; current_pos.Y--) {
-				MapNode n = block->getNodeNoCheck(current_pos);
+				MapNode n = block->getNodeNoLock(current_pos);
 				ContentLightingFlags f = ndef->getLightingFlags(n);
 				if (n.getLightRaw(LIGHTBANK_DAY, f) == LIGHT_SUN) {
 					// The sunlight is no longer valid.
 					n.setLight(LIGHTBANK_DAY, 0, f);
-					block->setNodeNoCheck(current_pos, n);
+					block->setNodeNoLock(current_pos, n);
 					modified = true;
 					unlight->push(LIGHT_SUN, current_pos, data->target_block,
 						block, 4);
@@ -1157,7 +1187,7 @@ void fill_with_sunlight(MapBlock *block, const NodeDefManager *ndef,
 		bool lig = light[z][x];
 		// For each node, downwards:
 		for (s16 y = MAP_BLOCKSIZE - 1; y >= 0; y--) {
-			MapNode n = block->getNodeNoCheck(x, y, z);
+			MapNode n = block->getNodeNoLock({x, y, z});
 			// Ignore IGNORE nodes, these are not generated yet.
 			if (n.getContent() == CONTENT_IGNORE)
 				continue;
@@ -1169,18 +1199,18 @@ void fill_with_sunlight(MapBlock *block, const NodeDefManager *ndef,
 			// Reset light
 			n.setLight(LIGHTBANK_DAY, lig ? 15 : 0, f);
 			n.setLight(LIGHTBANK_NIGHT, 0, f);
-			block->setNodeNoCheck(x, y, z, n);
+			block->setNodeNoLock({x, y, z}, n);
 		}
 		// Output outgoing light.
 		light[z][x] = lig;
 	}
 }
 
-void repair_block_light(Map *map, MapBlock *block,
+bool repair_block_light(Map *map, MapBlock *block,
 	std::map<v3s16, MapBlock*> *modified_blocks)
 {
 	if (!block)
-		return;
+		return false;
 	const NodeDefManager *ndef = map->getNodeDefManager();
 	// First queue is for day light, second is for night light.
 	UnlightQueue unlight[] = { UnlightQueue(256), UnlightQueue(256) };
@@ -1196,8 +1226,16 @@ void repair_block_light(Map *map, MapBlock *block,
 	// For each map block:
 	// Extract sunlight above.
 	is_sunlight_above_block(map, blockpos, ndef, lights);
+
+  {
+	auto lock = block->try_lock_unique_rec();
+	if (!lock->owns_lock()) {
+		return true; // may cause dark areas
+	}
+
 	// Reset the voxel manipulator.
 	fill_with_sunlight(block, ndef, lights);
+  }
 	// Copy sunlight data
 	data.target_block = v3s16(blockpos.X, blockpos.Y - 1, blockpos.Z);
 	for (s16 z = 0; z < MAP_BLOCKSIZE; z++)
@@ -1214,6 +1252,13 @@ void repair_block_light(Map *map, MapBlock *block,
 		data.target_block.Y--;
 	}
 
+
+  {
+	auto lock = block->try_lock_unique_rec();
+	if (!lock->owns_lock()) {
+		return true; // may cause dark areas
+	}
+
 	// --- STEP 2: Get nodes from borders to unlight
 
 	// For each border of the block:
@@ -1225,7 +1270,7 @@ void repair_block_light(Map *map, MapBlock *block,
 		for (relpos.Y = a.MinEdge.Y; relpos.Y <= a.MaxEdge.Y; relpos.Y++) {
 
 			// Get node
-			MapNode node = block->getNodeNoCheck(relpos);
+			MapNode node = block->getNodeNoLock(relpos);
 			ContentLightingFlags f = ndef->getLightingFlags(node);
 			// For each light bank
 			for (size_t b = 0; b < 2; b++) {
@@ -1243,11 +1288,13 @@ void repair_block_light(Map *map, MapBlock *block,
 			} // end of banks
 		} // end of nodes
 	} // end of borders
-
+  }
 	// STEP 3: Remove and spread light
 
 	finish_bulk_light_update(map, blockpos, blockpos, unlight, relight,
 		modified_blocks);
+
+	return false;
 }
 
 VoxelLineIterator::VoxelLineIterator(const v3f &start_position, const v3f &line_vector) :

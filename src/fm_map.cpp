@@ -877,9 +877,12 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if (!lighted_nodes.empty() &&
-			(!end_ms || porting::getTimeMs() <= end_ms)) { // maybe 32 too small
-														   /*
+	if (end_ms && porting::getTimeMs() > end_ms) {
+		return;
+	}
+
+	if (!lighted_nodes.empty()) {
+		/*
 																   infostream<<"spreadLight(): recursive("<<recursive<<"): changed="
 															  <<blockchangecount
 																	   <<" from="<<from_nodes.size()
@@ -901,6 +904,7 @@ u32 ServerMap::updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
 	return updateLighting(lighting_mblocks, processed, max_cycle_ms);
 }
 
+#if OLD_
 u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms)
 {
@@ -940,20 +944,6 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 			// infostream<<"Light: start col if=" << i->first << std::endl;
 			auto block = getBlockNoCreateNoEx(i->first);
 
-			// TOdo:
-			/*
-						if (!block)
-							continue;
-						auto lock = block->try_lock_unique_rec();
-						if (!lock->owns_lock()) {
-							continue; // may cause dark areas
-						}
-
-						++loopcount;
-
-						voxalgo::repair_block_light(this, block,&modified_blocks);
-						continue;
-			*/
 			for (;;) {
 				// Don't bother with dummy blocks.
 				if (!block || !block->isGenerated()) {
@@ -995,7 +985,8 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 								/* This would happen when dealing with a
 								   dummy block.
 								*/
-								infostream << "updateLighting(): InvalidPositionException"
+								infostream << "updateLighting(): "
+											  "InvalidPositionException"
 										   << std::endl;
 								continue;
 							}
@@ -1078,7 +1069,41 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 		// block->lighting_broken = 0;
 	}
 	// infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
+	g_profiler->add("Server: light blocks", loopcount);
 
+	return ret;
+}
+#endif
+
+u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
+		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms)
+{
+	std::map<v3pos_t, MapBlock *> modified_blocks;
+
+	int ret = 0;
+	int loopcount = 0;
+
+	TimeTaker timer("updateLighting");
+
+	for (auto i = a_blocks.begin(); i != a_blocks.end();) {
+		auto block = getBlockNoCreateNoEx(i->first);
+		if (!block) {
+			i = a_blocks.erase(i);
+			continue;
+		}
+		if (!voxalgo::repair_block_light(this, block, &modified_blocks)) {
+			processed[block->getPos()] = block->getPos().Y;
+		}
+		++loopcount;
+		++i;
+	}
+
+	for (const auto &i : modified_blocks) {
+		a_blocks.erase(i.first);
+	}
+	for (const auto &i : processed) {
+		a_blocks.erase(i.first);
+	}
 	g_profiler->add("Server: light blocks", loopcount);
 
 	return ret;
@@ -1231,7 +1256,7 @@ bool ServerMap::propagateSunlight(
 void ServerMap::lighting_modified_add(const v3pos_t &pos, int range)
 {
 	MutexAutoLock lock(m_lighting_modified_mutex);
-	if (m_lighting_modified_blocks.count(pos)) {
+	if (m_lighting_modified_blocks.contains(pos)) {
 		auto old_range = m_lighting_modified_blocks[pos];
 		if (old_range <= range)
 			return;
@@ -1257,9 +1282,7 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 			++loopcount;
 			range = r->first;
 			blocks = r->second;
-			// infostream <<" go light range="<< r->first << " size="<<blocks.size()<< "
-			// ranges="<<m_lighting_modified_blocks_range.size()<<" total
-			// blk"<<m_lighting_modified_blocks.size()<< std::endl;
+			// infostream <<" go light range="<< r->first << " size="<<blocks.size()<< " ranges="<<m_lighting_modified_blocks_range.size()<<" total blk"<<m_lighting_modified_blocks.size()<< std::endl;
 			m_lighting_modified_blocks_range.erase(r);
 			for (auto &i : blocks)
 				m_lighting_modified_blocks.erase(i.first);

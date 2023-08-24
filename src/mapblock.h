@@ -362,6 +362,12 @@ public:
 		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
 
+	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
+	{
+		data[p.Z * zstride + p.Y * ystride + p.X] = n;
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
+	}
+
 	////
 	//// Non-checking variants of the above
 	////

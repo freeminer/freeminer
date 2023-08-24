@@ -79,7 +79,7 @@ void blit_back_with_light(Map *map, MMVManip *vm,
  *
  * \param block the block to update
  */
-void repair_block_light(Map *map, MapBlock *block,
+bool repair_block_light(Map *map, MapBlock *block,
 	std::map<v3s16, MapBlock*> *modified_blocks);
 
 /*!
