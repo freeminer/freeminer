@@ -241,6 +241,7 @@ public:
 			bool is_any_leaves{false};
 			bool is_fruit{false};
 			bool is_tree{false};
+			bool is_other_tree{false};
 			bool is_soil{false};
 			bool side{false};
 			bool top{false};
@@ -274,8 +275,11 @@ public:
 				nb.bottom = i == D_BOTTOM;
 				nb.side = !nb.bottom && !nb.top;
 				nb.self = i == D_SELF;
-				nb.is_tree = is_self || nbh[D_SELF].content == nb.content ||
-							 nb.cf->groups.contains("tree");
+				nb.is_tree = is_self || nbh[D_SELF].content == nb.content;
+
+				if (!nb.is_tree) {
+					nb.is_tree = nb.is_other_tree = nb.cf->groups.contains("tree");
+				}
 
 				if (is_self) {
 					leaves_content = tree_to_leaves.contains(nb.content)
@@ -478,7 +482,7 @@ public:
 			if (tree_grow())
 				break;
 
-			if (((!nb.top && !nb.bottom && nb.content == content &&
+			if ((((!nb.top || nb.is_other_tree) && !nb.bottom && nb.is_tree &&
 						 !around_all_is_tree) ||
 						nb.is_my_leaves)) {
 				auto water_level = nb.content == leaves_content
@@ -491,7 +495,7 @@ public:
 
 					if (water_level < (nb.is_my_leaves ? params.leaves_water_max
 													   : params.tree_water_max) &&
-							self_water_level > water_level
+							self_water_level > water_level + (nb.top ? 1 : 0)
 							/* !!!
 												n_water_level > wl_dir
 						   + (top ? -1 :bottom ? 1 : 0)
