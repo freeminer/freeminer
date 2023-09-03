@@ -117,8 +117,15 @@ endif()
 
 
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-if (NOT NO_LTO AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")) # AND NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten"
-	# include(CheckIPOSupported)
+
+if(NOT NO_LTO AND NOT DEVELOPMENT_BUILD AND(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
+	option(USE_LTO "Use LTO" ON)
+else()
+	option(USE_LTO "Use LTO" OFF)
+endif()
+
+if (USE_LTO)
+    # include(CheckIPOSupported)
 	# check_ipo_supported(RESULT supported OUTPUT error)
 	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 	message(STATUS "Using lto")

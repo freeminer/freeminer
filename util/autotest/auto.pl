@@ -376,7 +376,7 @@ our $commands = {
         $D{USE_LIBCXX}         = $config->{cmake_libcxx}      if defined $config->{cmake_libcxx};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
         $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
-        $D{NO_LTO}             = $config->{cmake_no_lto} // 1;
+        $D{USE_LTO}            = $config->{cmake_lto}         if defined $config->{cmake_lto};
         $D{EXCEPTION_DEBUG}    = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
         $D{USE_DEBUG_HELPERS}  = 1; 
 
