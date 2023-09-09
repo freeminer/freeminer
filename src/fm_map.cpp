@@ -718,7 +718,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 								{
 				*/
 				//++block->lighting_broken;
-				block->setLightingExpired(true);
+				block->setLightingComplete(0);
 
 				modified_blocks[blockpos] = block;
 				/*

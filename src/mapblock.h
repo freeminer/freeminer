@@ -250,17 +250,6 @@ public:
 		return (m_lighting_complete & (1 << direction)) != 0;
 	}
 
-	inline void setLightingExpired(bool expired)
-	{
-		m_lighting_expired = expired;
-	}
-
-	inline bool getLightingExpired() const
-	{
-		return m_lighting_expired;
-	}
-
-
 	inline bool isGenerated()
 	{
 		return m_generated;

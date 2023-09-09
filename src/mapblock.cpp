@@ -753,7 +753,6 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		}
 		if (light == modified_light_yes) {
 			setLightingComplete(0);
-			setLightingExpired(true);
 		}
 	}
 

@@ -847,7 +847,7 @@ NEXT_LIQUID:;
 				getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 		if (!block)
 			continue;
-		block->setLightingExpired(true);
+		block->setLightingComplete(0);
 		// modified_blocks[blockpos] = block;
 		// if(!nodemgr->get(neighbors[i].node).light_propagates ||
 		// nodemgr->get(neighbors[i].node).light_source) // better to update always

@@ -364,8 +364,8 @@ public:
 		};
 
 		if (params.tree_get_water_from_humidity &&
-				self_water_level < params.tree_get_water_max_from_humidity && near_soil &&
-				self_allow_grow_by_rotation && !near_liquid) {
+				self_water_level < params.tree_get_water_max_from_humidity - 1 &&
+				near_soil && self_allow_grow_by_rotation && !near_liquid) {
 			float humidity = map->updateBlockHumidity(env, pos);
 			if (humidity >= params.tree_get_water_from_humidity) {
 				if (grow_debug_fast) {
@@ -387,7 +387,7 @@ public:
 
 			// Absorb water from near water blocks, leave one level
 			// DUMP("absorb?", nb.pos.Y, self_water_level, params.tree_water_max, (int)near_soil, (int)near_liquid, allow_grow_up_by_rotation, nb.is_liquid);
-			if (self_water_level < params.tree_water_max && near_soil &&
+			if (self_water_level < params.tree_water_max - 1 && near_soil &&
 					self_allow_grow_by_rotation && nb.is_liquid) {
 				// TODO: cached and random
 				auto level = nb.node.getLevel(ndef);
@@ -563,7 +563,7 @@ public:
 				map->setNode(nb.pos, {leaves_content, nb.node.param1, 1});
 
 				if (const auto block = map->getBlock(getNodeBlockPos(nb.pos)); block) {
-					block->setLightingExpired(true);
+					block->setLightingComplete(0);
 				}
 				return true;
 			};
@@ -828,7 +828,7 @@ public:
 
 				if (!myrand_range(0, 10))
 					if (const auto block = map->getBlock(getNodeBlockPos(p_dir)); block) {
-						block->setLightingExpired(true);
+						block->setLightingComplete(0);
 					}
 
 			} else if (c_dir == c) {

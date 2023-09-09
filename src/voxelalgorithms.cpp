@@ -388,10 +388,7 @@ void spread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				neighbor_block = current.block;
 			}
 
-			auto lock = neighbor_block->try_lock_unique_rec();
-			if (!lock->owns_lock()) {
-				continue; // may cause dark areas
-			}
+			auto lock = neighbor_block->lock_unique_rec();
 
 			// Get the neighbor itself
 			MapNode neighbor = neighbor_block->getNodeNoLock(neighbor_rel_pos);
@@ -647,7 +644,7 @@ void update_lighting_nodes(Map *map,
 	}
 
 	for (const auto & block : modified_blocks) {
-		block.second->setLightingExpired(false);
+		block.second->setLightingComplete(static_cast<short>(0xFFFF));
 	}
 }
 
@@ -770,7 +767,7 @@ void update_block_border_lighting(Map *map, MapBlock *block,
 	}
 
 	for (const auto & block : modified_blocks) {
-		block.second->setLightingExpired(false);
+		block.second->setLightingComplete(static_cast<short>(0xFFFF));
 	}
 }
 
@@ -868,17 +865,37 @@ void is_sunlight_above_block(Map *map, mapblock_v3 pos,
 			ContentLightingFlags above_f = ndef->getLightingFlags(above);
 			light[z][x] = above.getLight(LIGHTBANK_DAY, above_f) == LIGHT_SUN;
 
-			if (light[z][x]) {
+			if (!light[z][x]) {
+				auto p = source_block->getPosRelative();
+				bool go = false;
+				if (x == 0) {
+					p += v3pos_t(x - 1, 0, z);
+					go = true;
+				} else if (z == 0) {
+					p += v3pos_t(x, 0, z - 1);
+					go = true;
+				} else if (z == MAP_BLOCKSIZE - 1) {
+					p += v3pos_t(x, 0, z + 1);
+					go = true;
+				} else if (x == MAP_BLOCKSIZE - 1) {
+					p += v3pos_t(x + 1, 0, z);
+					go = true;
+				}
+				if (go) {
+					const auto n = map->getNode(p);
+					if (n.getLight(LIGHTBANK_DAY, ndef->getLightingFlags(n)) == LIGHT_SUN)
+						light[z][x] = true;
+				}
+			} else {
 				if (z > 0)
-				light[z - 1][x] = true;
+					light[z - 1][x] = true;
 				if (x > 0)
-				light[z][x - 1] = true;
+					light[z][x - 1] = true;
 				if (z < MAP_BLOCKSIZE - 1)
-				light[z + 1][x] = true;
+					light[z + 1][x] = true;
 				if (x < MAP_BLOCKSIZE - 1)
-				light[z][x + 1] = true;
+					light[z][x + 1] = true;
 			}
-
 		}
 	}
 }
@@ -905,10 +922,7 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 		return false;
 	}
 
-	auto lock = block->try_lock_unique_rec();
-	if (!lock->owns_lock()) {
-		return false; // may cause dark areas
-	}
+	auto lock = block->lock_unique_rec();
 
 	// For each changing column of nodes:
 	size_t index;
@@ -1066,7 +1080,7 @@ void finish_bulk_light_update(Map *map, mapblock_v3 minblock,
 	}
 
 	for (const auto & block : *modified_blocks) {
-		block.second->setLightingExpired(false);
+		block.second->setLightingComplete(static_cast<short>(0xFFFF));
 	}
 }
 
@@ -1228,10 +1242,8 @@ bool repair_block_light(Map *map, MapBlock *block,
 	is_sunlight_above_block(map, blockpos, ndef, lights);
 
   {
-	auto lock = block->try_lock_unique_rec();
-	if (!lock->owns_lock()) {
-		return true; // may cause dark areas
-	}
+
+	auto lock = block->lock_unique_rec();
 
 	// Reset the voxel manipulator.
 	fill_with_sunlight(block, ndef, lights);
@@ -1254,10 +1266,7 @@ bool repair_block_light(Map *map, MapBlock *block,
 
 
   {
-	auto lock = block->try_lock_unique_rec();
-	if (!lock->owns_lock()) {
-		return true; // may cause dark areas
-	}
+	auto lock = block->lock_shared_rec();
 
 	// --- STEP 2: Get nodes from borders to unlight
 
