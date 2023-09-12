@@ -866,23 +866,23 @@ void is_sunlight_above_block(Map *map, mapblock_v3 pos,
 			light[z][x] = above.getLight(LIGHTBANK_DAY, above_f) == LIGHT_SUN;
 
 			if (!light[z][x]) {
-				auto p = source_block->getPosRelative();
+				v3pos_t p;
 				bool go = false;
 				if (x == 0) {
-					p += v3pos_t(x - 1, 0, z);
+					p = v3pos_t(x - 1, 0, z);
 					go = true;
 				} else if (z == 0) {
-					p += v3pos_t(x, 0, z - 1);
+					p = v3pos_t(x, 0, z - 1);
 					go = true;
 				} else if (z == MAP_BLOCKSIZE - 1) {
-					p += v3pos_t(x, 0, z + 1);
+					p = v3pos_t(x, 0, z + 1);
 					go = true;
 				} else if (x == MAP_BLOCKSIZE - 1) {
-					p += v3pos_t(x + 1, 0, z);
+					p = v3pos_t(x + 1, 0, z);
 					go = true;
 				}
 				if (go) {
-					const auto n = map->getNode(p);
+					const auto n = map->getNode(p + source_block->getPosRelative());
 					if (n.getLight(LIGHTBANK_DAY, ndef->getLightingFlags(n)) == LIGHT_SUN)
 						light[z][x] = true;
 				}
