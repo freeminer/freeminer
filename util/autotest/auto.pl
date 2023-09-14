@@ -413,7 +413,7 @@ qq{cmake .. $ninja $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee
         sy qq{$config->{env} $config->{runner} @_ ./freeminer --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log } . options_make([qw(verbose trace)]);
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1},
-    run_bot         => ['set_bot', 'run_single'],
+    run_bot         => ['set_bot', 'set_client', 'run_single'],
     run_single_tsan => sub {
         local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{cmake_leveldb} //= 0          if $config->{tsan_leveldb_fix};
@@ -488,8 +488,8 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     fail => sub {
         warn 'fail:', join ' ', @_;
     },
-    set_client   => [{-no_build_client => 0, -no_build_server => 1,}],
-    set_server      => [{-no_build_client => 1, -no_build_server => 0, -options_add => 'no_exit'}],
+    set_client   => [{'---no_build_client' => 0, '---no_build_server' => 1,}],
+    set_server      => [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit'}],
 };
 
 our $tasks = {

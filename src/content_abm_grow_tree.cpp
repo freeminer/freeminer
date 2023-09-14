@@ -162,7 +162,7 @@ struct GrowParams
 
 class GrowTree : public ActiveBlockModifier
 {
-	std::unordered_map<content_t, content_t> tree_to_leaves, tree_to_fruit;
+	std::unordered_map<content_t, content_t> tree_to_leaves; //, tree_to_fruit;
 	std::unordered_map<content_t, GrowParams> type_params;
 
 	bool grow_debug_fast = false;
@@ -184,9 +184,8 @@ public:
 
 				const auto &cf_leaves = ndef->get(id_leaves);
 				type_params.emplace(id_leaves, GrowParams(cf_leaves));
-				if (!cf_leaves.liquid_alternative_source.empty())
-					tree_to_fruit[id_tree] =
-							ndef->getId(cf_leaves.liquid_alternative_source);
+				// if (!cf_leaves.liquid_alternative_source.empty())
+				//	tree_to_fruit[id_tree] = ndef->getId(cf_leaves.liquid_alternative_source);
 			}
 		}
 	}
@@ -220,7 +219,7 @@ public:
 		int8_t near_soil{0};
 		int8_t near_liquid{0};
 		content_t leaves_content{CONTENT_IGNORE};
-		content_t fruit_content{CONTENT_IGNORE};
+		//content_t fruit_content{CONTENT_IGNORE};
 
 		struct Neighbor
 		{
@@ -229,7 +228,7 @@ public:
 			bool is_liquid{false};
 			bool is_my_leaves{false};
 			bool is_any_leaves{false};
-			bool is_fruit{false};
+			//bool is_fruit{false};
 			bool is_tree{false};
 			bool is_other_tree{false};
 			bool is_soil{false};
@@ -275,9 +274,7 @@ public:
 					leaves_content = tree_to_leaves.contains(nb.content)
 											 ? tree_to_leaves.at(nb.content)
 											 : CONTENT_IGNORE;
-					fruit_content = tree_to_fruit.contains(nb.content)
-											? tree_to_fruit.at(nb.content)
-											: CONTENT_IGNORE;
+					//fruit_content = tree_to_fruit.contains(nb.content) ? tree_to_fruit.at(nb.content) : CONTENT_IGNORE;
 				}
 				//DUMP(is_self, leaves_content);
 
@@ -288,7 +285,7 @@ public:
 					nb.is_my_leaves = nb.content == leaves_content;
 					nb.is_any_leaves =
 							nb.is_my_leaves || nb.cf->groups.contains("leaves");
-					nb.is_fruit = nb.content == fruit_content;
+					//nb.is_fruit = nb.content == fruit_content;
 					// DUMP(is_self, nb.is_leaves, "=", nb.content, "==", (int)leaves_content);
 					nb.is_liquid = nb.cf->groups.contains("liquid");
 					near_liquid += nb.is_liquid;
@@ -431,8 +428,10 @@ public:
 				if (!nb.allow_grow_by_rotation)
 					return false;
 
-				if (!(nb.is_any_leaves || nb.is_fruit || nb.cf->buildable_to ||
-							nb.is_liquid || nb.is_soil || nb.cf->groups.contains("sand")))
+				if (!(nb.is_any_leaves || nb.cf->buildable_to || nb.is_liquid ||
+							nb.is_soil || nb.cf->groups.contains("sand") ||
+							nb.cf->groups.contains("fruit")))
+					// || nb.is_fruit
 					return false;
 
 				if (nb.top) {
@@ -615,8 +614,12 @@ top    = ceil(avg - 1)
 					const auto float_avg_level = (float)total_level / have_liquid;
 					const auto avg_level = prefer ? floor(float_avg_level + 1)
 												  : ceil(float_avg_level - 1);
-					const auto want_level =
-							std::min<uint8_t>(avg_level, params.tree_water_max);
+					auto want_level = std::min<uint8_t>(avg_level, params.tree_water_max);
+
+					// dont grow down
+					if (want_level > nbh[D_BOTTOM].water_level) {
+						want_level = nbh[D_BOTTOM].water_level;
+					}
 
 					total_level -= want_level;
 					--have_liquid;
