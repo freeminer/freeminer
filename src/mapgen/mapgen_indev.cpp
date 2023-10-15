@@ -165,10 +165,10 @@ MapgenIndev::MapgenIndev(MapgenIndevParams *params, EmergeParams *emerge)
 	floatland_ywater   = params->floatland_ywater;
 
 
-	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_layers          = new Noise(&sp->np_layers,         seed, csize.X, csize.Y + y_offset * 2 + 2, csize.Z);
 	layers_init(emerge, sp->paramsj);
 
-	noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2 + 2, csize.Z);
 
 	if (spflags & MGV6_FLOATLANDS) {
 

@@ -312,7 +312,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				if gamedata.address and gamedata.port then
 					core.settings:set("address", gamedata.address)
 					core.settings:set("remote_port", gamedata.port)
-					core.settings:set("remote_proto", gamedata.proto)
+					core.settings:set("remote_proto", gamedata.proto or "mt")
 					core.start()
 				end
 				return true

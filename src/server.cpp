@@ -264,7 +264,6 @@ Server::Server(
 			CONNECTION_TIMEOUT,
 			m_bind_addr.isIPv6(),
 			this)),
-	stat(path_world),
 	m_itemdef(createItemDefManager()),
 	m_nodedef(createNodeDefManager()),
 	m_craftdef(createCraftDefManager()),
@@ -272,6 +271,7 @@ Server::Server(
 	m_clients(m_con),
 	m_admin_chat(iface),
 	m_on_shutdown_errmsg(on_shutdown_errmsg),
+	stat(path_world),
 	m_modchannel_mgr(new ModChannelMgr())
 {
 #if ENABLE_THREADS

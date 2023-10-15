@@ -693,6 +693,7 @@ our $tasks = {
         ++$g->{keep_config};
         $config->{runner} =
             $config->{runner}
+          . ' ASAN_OPTIONS=abort_on_error=1 '
           . $config->{gdb}
           . q{ -ex 'run' -ex 't a a bt' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })

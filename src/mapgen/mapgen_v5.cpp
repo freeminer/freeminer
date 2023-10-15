@@ -78,7 +78,7 @@ MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	noise_float_islands3  = new Noise(&params->np_float_islands3, seed, csize.X, csize.Z);
 
-	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2, csize.Z);
+	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2 + 2, csize.Z);
 	layers_init(emerge, params->paramsj);
 
 	//noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
