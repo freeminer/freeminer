@@ -1703,7 +1703,7 @@ void read_groups(lua_State *L, int index, ItemGroupList &result)
 		std::string name = luaL_checkstring(L, -2);
 		int rating = luaL_checkinteger(L, -1);
 		// zero rating indicates not in the group
-		if (rating != 0)
+		//fm: wtf? if (rating != 0)
 			result[name] = rating;
 		// removes value, keeps key for next iteration
 		lua_pop(L, 1);
