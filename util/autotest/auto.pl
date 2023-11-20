@@ -206,7 +206,8 @@ our $options = {
         #enable_mapgen_debug_info => 1,
     },
     bot => {
-        fps_max => 30,
+        fps_max => 10,
+        fps_max_unfocused => 10,
     },
     bot_random => {
         random_input       => 1,
@@ -224,7 +225,8 @@ our $options = {
         enable_shaders   => 0,
     },
     headless_optimize => {
-        fps_max           => 10,
+        fps_max           => 5,
+        fps_max_unfocused => 5,
         headless_optimize => 1,
     },
     software => {
@@ -323,6 +325,7 @@ our $options = {
     },
     fps1 => {
         fps_max       => 2,
+        fps_max_unfocused => 2,
         viewing_range => 1000,
         #viewing_range_max => 1000,
         wanted_fps => 1,

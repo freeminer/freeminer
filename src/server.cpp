@@ -4250,6 +4250,7 @@ v3f Server::findSpawnPos()
 			v3bpos_t blockpos = getNodeBlockPos(nodepos);
 			if (!map.emergeBlock(blockpos, false)) {
 				nodeposf = intToFloat(nodepos, BS);
+				is_good = true;
 				break;
 			}
 			content_t c = map.getNode(nodepos).getContent();
