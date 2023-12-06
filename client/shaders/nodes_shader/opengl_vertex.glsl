@@ -68,7 +68,7 @@ void main(void)
 
 #if (MATERIAL_TYPE == TILE_MATERIAL_LIQUID_TRANSPARENT || MATERIAL_TYPE == TILE_MATERIAL_LIQUID_OPAQUE) && ENABLE_WAVING_WATER
 	vec4 pos = gl_Vertex;
-	pos.y -= 2.0;
+	pos.y -= 2.0*(BS/10);
 	float posYbuf = (pos.z / WATER_WAVE_LENGTH + animationTimer * WATER_WAVE_SPEED * WATER_WAVE_LENGTH);
 	pos.y -= sin(posYbuf) * WATER_WAVE_HEIGHT + sin(posYbuf / 7.0) * WATER_WAVE_HEIGHT;
 	gl_Position = mWorldViewProj * pos;
