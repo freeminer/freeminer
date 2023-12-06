@@ -92,24 +92,31 @@ public:
 	}
 
 	template <typename... Args>
-	decltype(auto) empty(Args &&...args)
+	decltype(auto) empty(Args &&...args) const noexcept
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	decltype(auto) size(Args &&...args)
+	decltype(auto) size(Args &&...args) const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::size(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	decltype(auto) count(Args &&...args)
+	decltype(auto) count(Args &&...args) const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::count(std::forward<Args>(args)...);
+	}
+
+	template <typename... Args>
+	decltype(auto) contains(Args &&...args) const
+	{
+		auto lock = LOCKER::lock_shared_rec();
+		return full_type::contains(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>

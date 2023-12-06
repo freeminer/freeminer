@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cmath>
 #include "client.h"
 #include "clientmap.h"
+#include "irr_v3d.h"
 #include "settings.h"
 #include "shader.h"
 #include "mapblock.h"
@@ -354,7 +355,7 @@ void Minimap::addMode(MinimapModeDef mode)
 	int zoom = -1;
 
 	// Build a default standard label
-	if (mode.label == "") {
+	if (mode.label.empty()) {
 		switch (mode.type) {
 			case MINIMAP_TYPE_OFF:
 				mode.label = gettext("Minimap hidden");
@@ -388,8 +389,8 @@ void Minimap::addMode(MinimapModeDef mode)
 	m_modes.push_back(mode);
 }
 
-void Minimap::addMode(MinimapType type, u16 size, std::string label,
-		std::string texture, u16 scale)
+void Minimap::addMode(MinimapType type, u16 size, const std::string &label,
+		const std::string &texture, u16 scale)
 {
 	MinimapModeDef mode;
 	mode.type = type;
@@ -790,7 +791,7 @@ void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos
 
 
 ///freeminer:
-void MinimapUpdateThread::getMap(v3s16 pos, s16 size, s16 scan_height) {
+void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, s16 scan_height) {
 //void MinimapUpdateThread::getMap(v3POS pos, s16 size, s16 scan_height, bool is_radar) {
 	v3pos_t p(pos.X - size / 2, pos.Y, pos.Z - size / 2);
 

@@ -217,9 +217,10 @@ void Particle::step(float dtime)
 		}
 		m_pos = p_pos / BS;
 	} else {
-		// apply acceleration
+		// apply velocity and acceleration to position
+		m_pos += (m_velocity + m_acceleration * 0.5f * dtime) * dtime;
+		// apply acceleration to velocity
 		m_velocity += m_acceleration * dtime;
-		m_pos += m_velocity * dtime;
 	}
 
 	if (m_animation.type != TAT_NONE) {
@@ -263,7 +264,8 @@ void Particle::updateLight()
 	);
 	MapNode n = m_env->getClientMap().getNodeTry(p);
 	if (n.getContent() != CONTENT_IGNORE)
-		light = n.getLightBlend(m_env->getDayNightRatio(), m_gamedef->ndef());
+		light = n.getLightBlend(m_env->getDayNightRatio(),
+				m_gamedef->ndef()->getLightingFlags(n));
 	else
 		light = blend_light(m_env->getDayNightRatio(), LIGHT_SUN, 0);
 
@@ -879,7 +881,7 @@ void ParticleManager::addNodeParticle(IGameDef *gamedef,
 	);
 	p.acc = v3f(
 		0.0f,
-		-player->movement_gravity * player->physics_override_gravity / BS,
+		-player->movement_gravity * player->physics_override.gravity / BS,
 		0.0f
 	);
 	p.pos = v3f(

@@ -23,6 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <atomic>
 #include "object_properties.h"
 #include "serveractiveobject.h"
+#include <quaternion.h>
+#include "util/numeric.h"
 
 class UnitSAO : public ServerActiveObject
 {
@@ -35,16 +37,35 @@ public:
 	bool isDead() const { return m_hp == 0; }
 
 	// Rotation
-	void setRotation(const v3f &rotation) {
+	void setRotation(v3f rotation)
+	{
 		std::unique_lock lock{m_rotation_mutex};
-		m_rotation = rotation; }
-	const v3f getRotation() {
+		m_rotation = rotation;
+	}
+	const v3f &getRotation() const
+	{
 		std::shared_lock lock{m_rotation_mutex};
 		return m_rotation;
 	}
-	v3f getRadRotation() {
-		 std::shared_lock lock{m_rotation_mutex};
-		 return m_rotation * core::DEGTORAD;
+	const v3f getTotalRotation() const
+	{
+		// This replicates what happens clientside serverside
+		core::matrix4 rot;
+      {
+		std::shared_lock lock{m_rotation_mutex};
+		setPitchYawRoll(rot, -m_rotation);
+	  }
+		v3f res;
+		// First rotate by m_rotation, then rotate by the automatic rotate yaw
+		(core::quaternion(v3f(0, -m_rotation_add_yaw * core::DEGTORAD, 0))
+				* core::quaternion(rot.getRotationDegrees() * core::DEGTORAD))
+				.toEuler(res);
+		return res * core::RADTODEG;
+	}
+	v3f getRadRotation()
+	{
+		std::shared_lock lock{m_rotation_mutex};
+		return m_rotation * core::DEGTORAD;
 	}
 
 	// Deprecated
@@ -104,8 +125,9 @@ protected:
 	std::atomic_uint16_t m_hp {1};
 
 	v3f m_rotation;
+	f32 m_rotation_add_yaw = 0;
 
-	std::shared_mutex m_rotation_mutex;
+	mutable std::shared_mutex m_rotation_mutex;
 
 	ItemGroupList m_armor_groups;
 
@@ -136,7 +158,7 @@ private:
 	bool m_animation_speed_sent = false;
 
 	// Bone positions
-	bool m_bone_position_sent = false;
+	std::atomic_bool m_bone_position_sent = false;
 
 	// Attachments
 	std::unordered_set<int> m_attachment_child_ids;

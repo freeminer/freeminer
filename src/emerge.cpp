@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <queue>
 
+#include "irr_v2d.h"
 #include "util/container.h"
 #include "util/thread.h"
 #include "threading/event.h"
@@ -419,7 +420,7 @@ int EmergeManager::getSpawnLevelAtPoint(v2s16 p)
 	return m_mapgens[0]->getSpawnLevelAtPoint(p);
 }
 
-int EmergeManager::getGroundLevelAtPoint(v2s16 p)
+int EmergeManager::getGroundLevelAtPoint(v2pos_t p)
 {
        if (m_mapgens.empty() || !m_mapgens[0]) {
                errorstream << "EmergeManager: getGroundLevelAtPoint() called"
@@ -627,7 +628,7 @@ EmergeAction EmergeThread::getBlockOrStartGen(
 	// 1). Attempt to fetch block from memory
 	*block = m_map->getBlockNoCreateNoEx(pos, false, true);
 	}
-	if (*block && !(*block)->isDummy()) {
+	if (*block) {
 		if ((*block)->isGenerated())
 			return EMERGE_FROM_MEMORY;
 	}
@@ -780,8 +781,13 @@ void *EmergeThread::run()
 			verbosestream<<"nothing generated at "<<pos<< " emerge action="<< action <<std::endl;
 		}
 
-		if (!modified_blocks.empty())
-			m_server->SetBlocksNotSent(/*modified_blocks*/);
+		if (!modified_blocks.empty()) {
+			MapEditEvent event;
+			event.type = MEET_OTHER;
+			event.setModifiedBlocks(modified_blocks);
+			//MutexAutoLock envlock(m_server->m_env_mutex);
+			m_map->dispatchEvent(event);
+		}
 		modified_blocks.clear();
 
 		if (m_mapgen->heat_cache.size() > 1000) {

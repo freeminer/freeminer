@@ -56,6 +56,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 
 RenderingEngine *RenderingEngine::s_singleton = nullptr;
+const float RenderingEngine::BASE_BLOOM_STRENGTH = 1.0f;
 
 
 static gui::GUISkin *createSkin(gui::IGUIEnvironment *environment,
@@ -97,9 +98,6 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	bool vsync = g_settings->getBool("vsync");
 	u16 fsaa = g_settings->getU16("fsaa");
 
-	// stereo buffer required for pageflip stereo
-	bool stereo_buffer = g_settings->get("3d_mode") == "pageflip";
-
 	// Determine driver
 	video::E_DRIVER_TYPE driverType = video::EDT_OPENGL;
 	const std::string &driverstring = g_settings->get("video_driver");
@@ -127,7 +125,6 @@ RenderingEngine::RenderingEngine(IEventReceiver *receiver)
 	params.AntiAlias = fsaa;
 	params.Fullscreen = fullscreen;
 	params.Stencilbuffer = false;
-	params.Stereobuffer = stereo_buffer;
 	params.Vsync = vsync;
 	params.EventReceiver = receiver;
 	params.HighPrecisionFPU = true;
@@ -466,8 +463,8 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 #ifndef __ANDROID__
 			const core::dimension2d<u32> &img_size =
 					progress_img_bg->getSize();
-			u32 imgW = rangelim(img_size.Width, 200, 600);
-			u32 imgH = rangelim(img_size.Height, 24, 72);
+			u32 imgW = rangelim(img_size.Width, 200, 600) * getDisplayDensity();
+			u32 imgH = rangelim(img_size.Height, 24, 72) * getDisplayDensity();
 #else
 			const core::dimension2d<u32> img_size(256, 48);
 			float imgRatio = (float)img_size.Height / img_size.Width;
@@ -545,7 +542,6 @@ void RenderingEngine::initialize(Client *client, Hud *hud)
 {
 	const std::string &draw_mode = g_settings->get("3d_mode");
 	core.reset(createRenderingCore(draw_mode, m_device, client, hud));
-	core->initialize();
 }
 
 void RenderingEngine::finalize()

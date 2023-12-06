@@ -1,6 +1,8 @@
 /*
-Copyright (C) 2016 proller
+Copyright (C) 2016 proller <proler@gmail.com>
+*/
 
+/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

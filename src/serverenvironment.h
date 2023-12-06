@@ -21,7 +21,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "activeobject.h"
 #include "environment.h"
-#include "mapnode.h"
+#include "irr_v3d.h"
+#include "map.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
 #include "threading/concurrent_set.h"
@@ -34,9 +35,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "server/abmhandler.h"
 
 class IGameDef;
-class ServerMap;
 struct GameParams;
-class MapBlock;
 class RemotePlayer;
 class PlayerDatabase;
 class AuthDatabase;
@@ -87,9 +86,8 @@ public:
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
 */
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider
-		, MapNode neighbor, bool activate = false
-		){};
+			u32 active_object_count, u32 active_object_count_wider
+			, v3pos_t neighbor_pos, bool activate = false){};
 };
 
 struct ABMWithState
@@ -120,7 +118,8 @@ struct LoadingBlockModifierDef
 
 	virtual ~LoadingBlockModifierDef() = default;
 
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
+	virtual void trigger(ServerEnvironment *env, v3s16 p,
+			MapNode n, float dtime_s) {};
 };
 
 struct LBMContentMapping
@@ -154,7 +153,8 @@ public:
 	std::string createIntroductionTimesString();
 
 	// Don't call this before loadIntroductionTimes() ran.
-	void applyLBMs(ServerEnvironment *env, MapBlock *block, u32 stamp);
+	void applyLBMs(ServerEnvironment *env, MapBlock *block,
+			u32 stamp, float dtime_s);
 
 	// Warning: do not make this std::unordered_map, order is relevant here
 	typedef std::map<u32, LBMContentMapping> lbm_lookup_map;
@@ -218,6 +218,16 @@ public:
 };
 
 /*
+	ServerEnvironment::m_on_mapblocks_changed_receiver
+*/
+struct OnMapblocksChangedReceiver : public MapEventReceiver {
+	std::unordered_set<v3s16> modified_blocks;
+	bool receiving = false;
+
+	void onMapEditEvent(const MapEditEvent &event) override;
+};
+
+/*
 	Operation mode for ServerEnvironment::clearObjects()
 */
 enum ClearObjectsMode {
@@ -229,12 +239,14 @@ enum ClearObjectsMode {
 		CLEAR_OBJECTS_MODE_QUICK,
 };
 
-class ServerEnvironment : public Environment
+class ServerEnvironment final : public Environment
 {
 public:
-	ServerEnvironment(ServerMap *map, ServerScripting *scriptIface,
+	ServerEnvironment(ServerMap *map, ServerScripting *script_iface,
 		Server *server, const std::string &path_world, MetricsBackend *mb);
 	~ServerEnvironment();
+
+	void init();
 
 	Map & getMap();
 
@@ -354,8 +366,8 @@ public:
 	*/
 
 	// Script-aware node setters
-	bool setNode(v3s16 p, const MapNode &n, s16 fast = 0, bool important = false);
-	bool removeNode(v3s16 p, s16 fast = 0, bool important = false);
+	bool setNode(v3pos_t p, const MapNode &n, s16 fast = 0, bool important = false);
+	bool removeNode(v3pos_t p, s16 fast = 0, bool important = false);
 	bool swapNode(v3s16 p, const MapNode &n);
 
 	// Find the daylight value at pos with a Depth First Search
@@ -379,7 +391,7 @@ public:
 	void clearObjects(ClearObjectsMode mode);
 
 	// This makes stuff happen
-	void step(f32 dtime, float uptime, unsigned int max_cycle_ms);
+	void step(f32 dtime, double uptime, unsigned int max_cycle_ms);
 
 	u32 getGameTime() const { return m_game_time; }
 
@@ -442,7 +454,7 @@ public:
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:
-	void nodeUpdate(const v3s16 pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+	void nodeUpdate(const v3pos_t pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
 private:
 	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
 
@@ -452,12 +464,12 @@ private:
 			Inventory* inv, ServerActiveObject* obj);
 */
 	void contrib_globalstep(const float dtime);
-	bool checkAttachedNode(v3s16 pos, MapNode n, const ContentFeatures &f);
+	bool checkAttachedNode(v3pos_t pos, MapNode n, const ContentFeatures &f);
 /*
 	void explodeNode(const v3s16 pos);
 */
 
-	std::deque<v3s16> m_nodeupdate_queue;
+	std::deque<v3pos_t> m_nodeupdate_queue;
 	std::mutex m_nodeupdate_queue_mutex;
 	// Circuit manager
 	Circuit m_circuit;
@@ -473,7 +485,7 @@ private:
 	float m_active_block_abm_dtime = 0;
 	float m_active_block_abm_dtime_counter = 0;
 	u32 m_active_block_timer_last = 0;
-	std::set<v3s16> m_blocks_added;
+	std::set<v3bpos_t> m_blocks_added;
 	u32 m_blocks_added_last = 0;
 	u32 m_active_block_analyzed_last = 0;
 	std::mutex m_max_lag_estimate_mutex;
@@ -548,6 +560,8 @@ private:
 	Server *m_server;
 	// Active Object Manager
 	server::ActiveObjectMgr m_ao_manager;
+	// on_mapblocks_changed map event receiver
+	OnMapblocksChangedReceiver m_on_mapblocks_changed_receiver;
 	// World path
 	const std::string m_path_world;
 	// Outgoing network message buffer for active objects
@@ -559,7 +573,7 @@ private:
 	IntervalLimiter m_object_management_interval;
 	// List of active blocks
 	ActiveBlockList m_active_blocks;
-	bool m_force_update_active_blocks = false;
+	int m_fast_active_block_divider = 1;
 	IntervalLimiter m_active_blocks_mgmt_interval;
 	IntervalLimiter m_active_block_modifier_interval;
 	IntervalLimiter m_active_blocks_nodemetadata_interval;

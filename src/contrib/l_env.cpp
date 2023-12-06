@@ -94,7 +94,7 @@ int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
 
 	// pos
 	v3opos_t pos = checkOposPos(L, 1);
-	MapNode n = readnode(L, 2, ndef);
+	MapNode n = readnode(L, 2);
 
 	// Drop item on the floor
 	env->spawnFallingActiveObject(ndef->get(n).name, pos, n);

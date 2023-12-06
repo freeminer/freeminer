@@ -1,5 +1,5 @@
 /*
-fm_connection_sctp.cpp
+Copyright (C) 2023 proller <proler@gmail.com>
 */
 
 /*
@@ -149,7 +149,6 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 		m_timeout(timeout), sock(nullptr), m_peer_id(0), m_bc_peerhandler(peerhandler),
 		m_last_recieved(0), m_last_recieved_warn(0)
 {
-
 	start();
 }
 
@@ -261,7 +260,7 @@ void Connection::sctp_setup(u16 port)
 
 	cs << "sctp_setup(" << port << ")" << std::endl;
 
-	usrsctp_init(port, nullptr, debug_func);
+	usrsctp_init(port, sctp_conn_output, debug_func);
 	// usrsctp_init_nothreads(port, nullptr, debug_func);
 
 #if SCTP_DEBUG
@@ -333,23 +332,20 @@ int Connection::receive()
 			}
 		}
 
-		u16 peer_id = 0;
-		static u16 last_try = PEER_ID_SERVER + 1;
+		u16 peer_id = m_next_remote_peer_id;
 		if (m_peers.size() > 0) {
 			for (int i = 0; i < 1000; ++i) {
-				if (last_try > 30000)
-					last_try = PEER_ID_SERVER + 0x3fff;
-				++last_try;
-				if (!m_peers.count(last_try)) {
-					peer_id = last_try;
+				if (peer_id > PEER_SCTP_MAX)
+					peer_id = PEER_SCTP_MIN;
+				++peer_id;
+				if (!m_peers.count(peer_id)) {
 					break;
 				}
 			}
-		} else {
-			peer_id = last_try;
 		}
-		if (!peer_id)
-			last_try = peer_id = m_peers.rbegin()->first + 1;
+		m_next_remote_peer_id = peer_id + 1;
+		if (m_next_remote_peer_id > PEER_SCTP_MAX)
+			m_next_remote_peer_id = PEER_SCTP_MIN;
 
 		cs << "receive() accepted " << conn_sock << " addr_len=" << addr_len
 		   << " id=" << peer_id << std::endl;
@@ -747,12 +743,13 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 // host
 void Connection::serve(Address bind_address)
 {
-	infostream << getDesc() << "SCTP serving at " << bind_address.serializeString() << ":" << std::to_string(bind_address.getPort()) << std::endl;
+	infostream << getDesc() << "SCTP serving at " << bind_address.serializeString() << ":"
+			   << std::to_string(bind_address.getPort()) << std::endl;
 
 	sctp_setup(bind_address.getPort());
 
-	if ((sock = usrsctp_socket(
-				 PF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
+	if ((sock = usrsctp_socket(domain, SOCK_STREAM, IPPROTO_SCTP, NULL, server_send_cb, 0,
+				 NULL)) == NULL) {
 		cs << ("usrsctp_socket is NULL") << std::endl;
 		putEvent(ConnectionEvent::bindFailed());
 		return;
@@ -792,7 +789,8 @@ void Connection::serve(Address bind_address)
 // peer
 void Connection::connect(Address address)
 {
-	infostream << getDesc() << "SCTP connect to " << address.serializeString() << ":" << std::to_string(address.getPort()) << std::endl;
+	infostream << getDesc() << "SCTP connect to " << address.serializeString() << ":"
+			   << std::to_string(address.getPort()) << std::endl;
 
 	sctp_setup(address.getPort() + myrand_range(100, 1000));
 
@@ -805,8 +803,8 @@ void Connection::connect(Address address)
 
 	struct socket *sock;
 
-	if ((sock = usrsctp_socket(
-				 AF_INET6, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
+	if ((sock = usrsctp_socket(domain, SOCK_STREAM, IPPROTO_SCTP, NULL, client_send_cb, 0,
+				 NULL)) == NULL) {
 		cs << ("usrsctp_socket=") << sock << std::endl;
 		putEvent(ConnectionEvent::bindFailed());
 		return;

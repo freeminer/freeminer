@@ -511,7 +511,7 @@ public:
 
 	//freeminer:
 	// for Map compatibility:
-	const MapNode & getNodeTry(const v3s16 &p) {
+	const MapNode & getNodeTry(const v3pos_t &p) {
 		if (m_area.contains(p))
 			return getNodeRefUnsafe(p);
 		return ContentIgnoreNode;

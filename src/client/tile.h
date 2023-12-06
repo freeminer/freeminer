@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
 #include <ITexture.h>
+#include <set>
 #include <string>
 #include <vector>
 #include <SMaterial.h>
@@ -88,19 +89,28 @@ struct TextureInfo
 {
 	std::string name;
 	video::ITexture *texture;
+	std::set<std::string> sourceImages;
 
 	TextureInfo(
 			const std::string &name_,
-			video::ITexture *texture_=NULL,
-			video::IImage *img=nullptr
+			video::ITexture *texture_=NULL
 		):
 		name(name_),
 		texture(texture_)
 	{
 	}
+
+	TextureInfo(
+			const std::string &name_,
+			video::ITexture *texture_,
+			std::set<std::string> &sourceImages_
+		):
+		name(name_),
+		texture(texture_),
+		sourceImages(sourceImages_)
+	{
+	}
 };
-
-
 
 /*
 	TextureSource creates and caches textures.

@@ -66,7 +66,7 @@ void make_tree(MMVManip &vmanip, v3s16 p0, bool is_apple_tree,
 	p1.Y -= 1;
 
 	s16 size = pr.range(2, 3);
-	VoxelArea leaves_a(v3s16(-size, -pr.range(2, 3), -size), v3s16(size, pr.range(2, 3), size));
+	VoxelArea leaves_a(v3pos_t(-size, -pr.range(2, 3), -size), v3pos_t(size, pr.range(2, 3), size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
@@ -142,8 +142,7 @@ treegen::error spawn_ltree(ServerMap *map, v3s16 p0,
 
 	MapEditEvent event;
 	event.type = MEET_OTHER;
-	for (auto &modified_block : modified_blocks)
-		event.modified_blocks.insert(modified_block.first);
+	event.setModifiedBlocks(modified_blocks);
 	map->dispatchEvent(event);
 	return SUCCESS;
 }
@@ -699,7 +698,7 @@ void make_jungletree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 	p1.Y -= 1;
 
 	s16 size = pr.range(2, 4);
-	VoxelArea leaves_a(v3s16(-size, -pr.range(2, 4), -size), v3s16(size, pr.range(2, 4), size));
+	VoxelArea leaves_a(v3pos_t(-size, -pr.range(2, 4), -size), v3pos_t(size, pr.range(2, 4), size));
 	//SharedPtr<u8> leaves_d(new u8[leaves_a.getVolume()]);
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
@@ -790,7 +789,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 	p1.Y -= 1;
 
 	u16 size = pr.range(2, 4);
-	VoxelArea leaves_a(v3s16(-4, -4*2, -4), v3s16(4, 4, 4));
+	VoxelArea leaves_a(v3pos_t(-4, -4*2, -4), v3pos_t(4, 4, 4));
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (s32 i = 0; i < leaves_a.getVolume(); i++)
 		leaves_d[i] = 0;
@@ -813,7 +812,7 @@ void make_pine_tree(MMVManip &vmanip, v3s16 p0, const NodeDefManager *ndef,
 		dev--;
 	}
 
-	// Centre top nodes
+	// Center top nodes
 	leaves_d[leaves_a.index(v3s16(0, 1, 0))] = 1;
 	leaves_d[leaves_a.index(v3s16(0, 2, 0))] = 1;
 	leaves_d[leaves_a.index(v3s16(0, 3, 0))] = 2;
@@ -892,7 +891,8 @@ void make_cavetree(MMVManip &vmanip, v3pos_t p0,
 		if (vmanip.m_area.contains(p1)) {
 			if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
 				return;
-			if (ii == 0 && vmanip.getNodeNoExNoEmerge(p1).getLight(LIGHTBANK_DAY, ndef) == LIGHT_SUN)
+			const ContentLightingFlags f = ndef->getLightingFlags(vmanip.getNodeNoExNoEmerge(p1));
+			if (ii == 0 && vmanip.getNodeNoExNoEmerge(p1).getLight(LIGHTBANK_DAY, f) == LIGHT_SUN)
 				return;
 			vmanip.m_data[vmanip.m_area.index(p1)] = treenode;
 		}

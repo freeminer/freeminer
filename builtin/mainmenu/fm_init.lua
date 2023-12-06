@@ -28,7 +28,7 @@ local worldlist = nil
 
 function asyncOnlineFavourites()
 	if not menudata.public_known then
-		local file = io.open( core.setting_get("serverlist_cache"), "r" )
+		local file = io.open( core.settings:get("serverlist_cache"), "r" )
 		if file then
 			local data = file:read("*all")
 			menudata.public_known = core.parse_json( data )
@@ -64,7 +64,7 @@ function asyncOnlineFavourites()
 				menudata.favorites = menudata.public_known
 				menudata.favorites_is_public = true
 
-					local file = io.open( core.setting_get("serverlist_cache"), "w" )
+					local file = io.open( core.settings:get("serverlist_cache"), "w" )
 					if file then
 						file:write( core.write_json( favs ) )
 						file:close()
@@ -127,7 +127,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 
 		if oldidx ~= nil and oldidx > 1 then
 			local newidx = oldidx -1
-			core.setting_set(settingname,
+			core.settings:set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
 		end
 	end
@@ -137,7 +137,7 @@ function menu.handle_key_up_down(fields,textlist,settingname)
 
 		if oldidx ~= nil and oldidx < filterlist.size(worldlist) then
 			local newidx = oldidx + 1
-			core.setting_set(settingname,
+			core.settings:set(settingname,
 				filterlist.get_raw_index(worldlist,newidx))
 		end
 	end
@@ -317,7 +317,7 @@ function tabbuilder.handle_tab_buttons(fields)
 		tabbuilder.last_tab_index = index
 		tabbuilder.current_tab = tabbuilder.current_buttons[index].name
 
-		core.setting_set("main_menu_tab",tabbuilder.current_tab)
+		core.settings:set("main_menu_tab",tabbuilder.current_tab)
 	end
 
 	--handle tab changes
@@ -340,8 +340,8 @@ end
 function tabbuilder.dialog_create_world()
 	local mapgens = core.get_mapgen_names()
 
-	local current_seed = core.setting_get("fixed_map_seed") or ""
-	local current_mg   = core.setting_get("mg_name")
+	local current_seed = core.settings:get("fixed_map_seed") or ""
+	local current_mg   = core.settings:get("mg_name")
 
 	local mglist = ""
 	local selindex = 1
@@ -392,22 +392,22 @@ function tabbuilder.handle_create_world_buttons(fields)
 			local message = nil
 
 			if not filterlist.uid_exists_raw(worldlist,worldname) then
-				core.setting_set("mg_name",fields["dd_mapgen"])
+				core.settings:set("mg_name",fields["dd_mapgen"])
 				message = core.create_world(worldname,gameindex)
 			else
 				message = fgettext("A world named \"$1\" already exists", worldname)
 			end
 
-			core.setting_set("fixed_map_seed", fields["te_seed"])
+			core.settings:set("fixed_map_seed", fields["te_seed"])
 
 			if message ~= nil then
 				gamedata.errormessage = message
 			else
 				menu.last_game = gameindex
-				core.setting_set("main_menu_last_game_idx",gameindex)
+				core.settings:set("main_menu_last_game_idx",gameindex)
 
 				filterlist.refresh(worldlist)
-				core.setting_set("mainmenu_last_selected_world",
+				core.settings:set("mainmenu_last_selected_world",
 									filterlist.raw_index_by_uid(worldlist,worldname))
 			end
 		else
@@ -424,7 +424,7 @@ function tabbuilder.handle_create_world_buttons(fields)
 	--close dialog
 	tabbuilder.is_dialog = false
 	tabbuilder.show_buttons = true
-	tabbuilder.current_tab = core.setting_get("main_menu_tab")
+	tabbuilder.current_tab = core.settings:get("main_menu_tab")
 end
 
 --------------------------------------------------------------------------------
@@ -449,7 +449,7 @@ function tabbuilder.handle_delete_world_buttons(fields)
 
 	tabbuilder.is_dialog = false
 	tabbuilder.show_buttons = true
-	tabbuilder.current_tab = core.setting_get("main_menu_tab")
+	tabbuilder.current_tab = core.settings:get("main_menu_tab")
 end
 
 
@@ -460,7 +460,7 @@ function tabbuilder.tab_singleplayer()
 	local gameidx = ''
 	local formspec = ''
 	local index = filterlist.get_current_index(worldlist,
-				tonumber(core.setting_get("mainmenu_last_selected_world"))
+				tonumber(core.settings:get("mainmenu_last_selected_world"))
 				)
 	if menu.lastgame() then
 		gameidx = menu.lastgame().id
@@ -497,7 +497,7 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 		end
 
 		if event.type == "CHG" then
-			core.setting_set("mainmenu_last_selected_world",
+			core.settings:set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,core.get_textlist_index("sp_worlds")))
 		end
 	end
@@ -505,11 +505,11 @@ function tabbuilder.handle_singleplayer_buttons(fields)
 	menu.handle_key_up_down(fields,"sp_worlds","mainmenu_last_selected_world")
 
 	if fields["cb_creative_mode"] then
-		core.setting_set("creative_mode", fields["cb_creative_mode"])
+		core.settings:set("creative_mode", fields["cb_creative_mode"])
 	end
 
 	if fields["cb_enable_damage"] then
-		core.setting_set("enable_damage", fields["cb_enable_damage"])
+		core.settings:set("enable_damage", fields["cb_enable_damage"])
 	end
 
 	if fields["play"] ~= nil or
@@ -576,8 +576,8 @@ local selected_server = {}
 function tabbuilder.tab_multiplayer()
 	local e = core.formspec_escape
 	local retval =
-		"field[7.35,9;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..core.setting_get("address") .."]" ..
-		"field[14.05,9;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..core.setting_get("remote_port") .."]" ..
+		"field[7.35,9;6.75,0.5;te_address;" .. fgettext("Address") .. ";" ..core.settings:get("address") .."]" ..
+		"field[14.05,9;2.3,0.5;te_port;" .. fgettext("Port") .. ";" ..core.settings:get("remote_port") .."]" ..
 		"checkbox[7.1,-0.43;cb_public_serverlist;".. fgettext("Public Serverlist") .. ";" ..
 		dump(core.setting_getbool("public_serverlist")) .. "]"
 
@@ -588,7 +588,7 @@ function tabbuilder.tab_multiplayer()
 
 	retval = retval ..
 		"button[13.35,11;2.75,0.5;btn_mp_connect;".. fgettext("Connect") .. "]" ..
-		"field[7.35,10.4;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..(selected_server.playername or  core.setting_get("name")) .."]" ..
+		"field[7.35,10.4;5.5,0.5;te_name;" .. fgettext("Name") .. ";" ..(selected_server.playername or  core.settings:get("name")) .."]" ..
 		"pwdfield[12.9,10.4;3.45,0.5;te_pwd;" .. fgettext("Password") ..(selected_server.playerpassword and (";"..selected_server.playerpassword) or "").. "]" ..
 		"textarea[7.35,6.5;8.8,2.5;;"
 	if menu.fav_selected ~= nil and
@@ -637,7 +637,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 	if fields["te_name"] ~= nil then
 		gamedata.playername = fields["te_name"]
-		core.setting_set("name", fields["te_name"])
+		core.settings:set("name", fields["te_name"])
 	end
 
 	if fields["favourites"] ~= nil then
@@ -662,8 +662,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 				if gamedata.address ~= nil and
 					gamedata.port ~= nil then
-					core.setting_set("address",gamedata.address)
-					core.setting_set("remote_port",gamedata.port)
+					core.settings:set("address",gamedata.address)
+					core.settings:set("remote_port",gamedata.port)
 					core.start()
 				end
 			end
@@ -677,8 +677,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 				if address ~= nil and
 					port ~= nil then
-					core.setting_set("address",address)
-					core.setting_set("remote_port",port)
+					core.settings:set("address",address)
+					core.settings:set("remote_port",port)
 				end
 
 				menu.fav_selected = event.index
@@ -704,8 +704,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 
 			if address ~= nil and
 				port ~= nil then
-				core.setting_set("address",address)
-				core.setting_set("remote_port",port)
+				core.settings:set("address",address)
+				core.settings:set("remote_port",port)
 			end
 
 		end
@@ -715,7 +715,7 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 	end
 
 	if fields["cb_public_serverlist"] ~= nil then
-		core.setting_set("public_serverlist", fields["cb_public_serverlist"])
+		core.settings:set("public_serverlist", fields["cb_public_serverlist"])
 
 		if core.setting_getbool("public_serverlist") then
 			asyncOnlineFavourites()
@@ -733,8 +733,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		menu.favorites = core.get_favorites()
 		menu.fav_selected = nil
 
-		core.setting_set("address","")
-		core.setting_set("remote_port","30000")
+		core.settings:set("address","")
+		core.settings:set("remote_port","30000")
 
 		return
 	end
@@ -765,8 +765,8 @@ function tabbuilder.handle_multiplayer_buttons(fields)
 		gamedata.selected_world = 0
 
 		if fields["te_address"] and fields["te_port"] then
-			core.setting_set("address", fields["te_address"])
-			core.setting_set("remote_port", fields["te_port"])
+			core.settings:set("address", fields["te_address"])
+			core.settings:set("remote_port", fields["te_port"])
 		end
 
 		core.start()
@@ -780,7 +780,7 @@ end
 function tabbuilder.tab_server()
 
 	local index = filterlist.get_current_index(worldlist,
-				tonumber(core.setting_get("mainmenu_last_selected_world"))
+				tonumber(core.settings:get("mainmenu_last_selected_world"))
 				)
 
 	local retval =
@@ -796,21 +796,21 @@ function tabbuilder.tab_server()
 		"checkbox[12.3,7.5;cb_server_announce;".. fgettext("Public") .. ";" ..
 		dump(core.setting_getbool("server_announce")) .. "]"..
 		"field[7.3,9;4.5,0.5;te_playername;".. fgettext("Name") .. ";" ..
-		core.setting_get("name") .. "]" ..
+		core.settings:get("name") .. "]" ..
 		"pwdfield[11.8,9;3.3,0.5;te_passwd;".. fgettext("Password") .. "]"
 		
 -- TODO !!!!
-	local bind_addr = core.setting_get("bind_address")
+	local bind_addr = core.settings:get("bind_address")
 	if bind_addr ~= nil and bind_addr ~= "" then
 		retval = retval ..
 			"field[7.3,10.3;2.25,0.5;te_serveraddr;".. fgettext("Bind Address") .. ";" ..
-			core.setting_get("bind_address") .."]" ..
+			core.settings:get("bind_address") .."]" ..
 			"field[11.8,10.3;1.25,0.5;te_serverport;".. fgettext("Port") .. ";" ..
-			core.setting_get("port") .."]"
+			core.settings:get("port") .."]"
 	else
 		retval = retval ..
 			"field[7.3,10.3;3,0.5;te_serverport;".. fgettext("Server Port") .. ";" ..
-			core.setting_get("port") .."]"
+			core.settings:get("port") .."]"
 	end
 	
 	retval = retval ..
@@ -818,9 +818,9 @@ function tabbuilder.tab_server()
 		menu.render_world_list() ..
 		";" .. index .. "]"
 
-	if not core.setting_get("menu_last_game") then
-		local default_game = core.setting_get("default_game") or "default"
-		core.setting_set("menu_last_game", default_game )
+	if not core.settings:get("menu_last_game") then
+		local default_game = core.settings:get("default_game") or "default"
+		core.settings:set("menu_last_game", default_game )
 	end
 	return retval
 end
@@ -837,7 +837,7 @@ function tabbuilder.handle_server_buttons(fields)
 			world_doubleclick = true
 		end
 		if event.type == "CHG" then
-			core.setting_set("mainmenu_last_selected_world",
+			core.settings:set("mainmenu_last_selected_world",
 				filterlist.get_raw_index(worldlist,core.get_textlist_index("srv_worlds")))
 		end
 	end
@@ -845,15 +845,15 @@ function tabbuilder.handle_server_buttons(fields)
 	menu.handle_key_up_down(fields,"srv_worlds","mainmenu_last_selected_world")
 
 	if fields["cb_creative_mode"] then
-		core.setting_set("creative_mode", fields["cb_creative_mode"])
+		core.settings:set("creative_mode", fields["cb_creative_mode"])
 	end
 
 	if fields["cb_enable_damage"] then
-		core.setting_set("enable_damage", fields["cb_enable_damage"])
+		core.settings:set("enable_damage", fields["cb_enable_damage"])
 	end
 
 	if fields["cb_server_announce"] then
-		core.setting_set("server_announce", fields["cb_server_announce"])
+		core.settings:set("server_announce", fields["cb_server_announce"])
 	end
 
 	if fields["start_server"] ~= nil or
@@ -867,9 +867,9 @@ function tabbuilder.handle_server_buttons(fields)
 			gamedata.address		= ""
 			gamedata.selected_world	= filterlist.get_raw_index(worldlist,selected)
 
-			core.setting_set("port",gamedata.port)
+			core.settings:set("port",gamedata.port)
 			if fields["te_serveraddr"] ~= nil then
-				core.setting_set("bind_address",fields["te_serveraddr"])
+				core.settings:set("bind_address",fields["te_serveraddr"])
 			end
 
 			menu.update_last_game(gamedata.selected_world)
@@ -923,9 +923,9 @@ function tabbuilder.tab_texture_packs()
 	local retval = "label[7.1,-0.25;".. fgettext("Select texture pack:") .. "]"..
 			"textlist[7.1,0.25;7.5,5.0;TPs;"
 
-	local current_texture_path = core.setting_get("texture_path")
+	local current_texture_path = core.settings:get("texture_path")
 	local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
-	local index = tonumber(core.setting_get("mainmenu_last_selected_TP"))
+	local index = tonumber(core.settings:get("mainmenu_last_selected_TP"))
 
 	if index == nil then index = 1 end
 
@@ -966,7 +966,7 @@ function tabbuilder.handle_texture_pack_buttons(fields)
 		local event = core.explode_textlist_event(fields["TPs"])
 		if event.type == "CHG" or event.type == "DCL" then
 			local index = core.get_textlist_index("TPs")
-			core.setting_set("mainmenu_last_selected_TP",
+			core.settings:set("mainmenu_last_selected_TP",
 				index)
 			local list = filter_texture_pack_list(core.get_dir_list(core.get_texturepath(), true))
 			local current_index = core.get_textlist_index("TPs")
@@ -974,7 +974,7 @@ function tabbuilder.handle_texture_pack_buttons(fields)
 				local new_path = core.get_texturepath()..DIR_DELIM..list[current_index]
 				if list[current_index] == "None" then new_path = "" end
 
-				core.setting_set("texture_path", new_path)
+				core.settings:set("texture_path", new_path)
 			end
 		end
 	end
@@ -1074,87 +1074,87 @@ function tabbuilder.handle_settings_buttons(fields)
 	-- TODO: refactor this
 
 	if fields["cb_fancy_trees"] then
-		core.setting_set("new_style_leaves", fields["cb_fancy_trees"])
+		core.settings:set("new_style_leaves", fields["cb_fancy_trees"])
 	end
 	if fields["cb_smooth_lighting"] then
-		core.setting_set("smooth_lighting", fields["cb_smooth_lighting"])
+		core.settings:set("smooth_lighting", fields["cb_smooth_lighting"])
 	end
 	if fields["cb_enable_node_highlighting"] then
-		core.setting_set("enable_node_highlighting", fields["cb_enable_node_highlighting"])
+		core.settings:set("enable_node_highlighting", fields["cb_enable_node_highlighting"])
 	end
 	if fields["cb_3d_clouds"] then
-		core.setting_set("enable_3d_clouds", fields["cb_3d_clouds"])
+		core.settings:set("enable_3d_clouds", fields["cb_3d_clouds"])
 	end
 	if fields["cb_opaque_water"] then
-		core.setting_set("opaque_water", fields["cb_opaque_water"])
+		core.settings:set("opaque_water", fields["cb_opaque_water"])
 	end
 	if fields["cb_connected_glass"] then
-		core.setting_set("connected_glass", fields["cb_connected_glass"])
+		core.settings:set("connected_glass", fields["cb_connected_glass"])
 	end
 	if fields["cb_farmesh"] then
 		if fields["cb_farmesh"] == "true" then
-			core.setting_set("farmesh", 3)
+			core.settings:set("farmesh", 3)
 		else
-			core.setting_set("farmesh", 0)
+			core.settings:set("farmesh", 0)
 		end
 	end
 
 	if fields["cb_mipmapping"] then
-		core.setting_set("mip_map", fields["cb_mipmapping"])
+		core.settings:set("mip_map", fields["cb_mipmapping"])
 	end
 	if fields["cb_anisotrophic"] then
-		core.setting_set("anisotropic_filter", fields["cb_anisotrophic"])
+		core.settings:set("anisotropic_filter", fields["cb_anisotrophic"])
 	end
 	if fields["cb_bilinear"] then
-		core.setting_set("bilinear_filter", fields["cb_bilinear"])
+		core.settings:set("bilinear_filter", fields["cb_bilinear"])
 	end
 	if fields["cb_trilinear"] then
-		core.setting_set("trilinear_filter", fields["cb_trilinear"])
+		core.settings:set("trilinear_filter", fields["cb_trilinear"])
 	end
 
 	if fields["cb_shaders"] then
-		if (core.setting_get("video_driver") == "direct3d8" or core.setting_get("video_driver") == "direct3d9") then
-			core.setting_set("enable_shaders", "false")
+		if (core.settings:get("video_driver") == "direct3d8" or core.settings:get("video_driver") == "direct3d9") then
+			core.settings:set("enable_shaders", "false")
 			gamedata.errormessage = fgettext("To enable shaders the OpenGL driver needs to be used.")
 		else
-			core.setting_set("enable_shaders", fields["cb_shaders"])
+			core.settings:set("enable_shaders", fields["cb_shaders"])
 		end
 	end
 	if fields["cb_particles"] then
-		core.setting_set("enable_particles", fields["cb_particles"])
+		core.settings:set("enable_particles", fields["cb_particles"])
 	end
 	if fields["cb_liquid_real"] then
-		core.setting_set("liquid_real", fields["cb_liquid_real"])
+		core.settings:set("liquid_real", fields["cb_liquid_real"])
 	end
 	if fields["cb_weather"] then
-		core.setting_set("weather", fields["cb_weather"])
+		core.settings:set("weather", fields["cb_weather"])
 	end
 	if fields["cb_hotbar_cycling"] then
-		core.setting_set("hotbar_cycling", fields["cb_hotbar_cycling"])
+		core.settings:set("hotbar_cycling", fields["cb_hotbar_cycling"])
 	end
 	if fields["cb_enable_minimap"] then
-		core.setting_set("enable_minimap", fields["cb_enable_minimap"])
+		core.settings:set("enable_minimap", fields["cb_enable_minimap"])
 	end
 	if fields["cb_minimap_shape_round"] then
-		core.setting_set("minimap_shape_round", fields["cb_minimap_shape_round"])
+		core.settings:set("minimap_shape_round", fields["cb_minimap_shape_round"])
 	end
 	if fields["cb_bumpmapping"] then
-		core.setting_set("enable_bumpmapping", fields["cb_bumpmapping"])
+		core.settings:set("enable_bumpmapping", fields["cb_bumpmapping"])
 	end
 	if fields["cb_parallax"] then
-		core.setting_set("enable_parallax_occlusion", fields["cb_parallax"])
+		core.settings:set("enable_parallax_occlusion", fields["cb_parallax"])
 	end
 	if fields["cb_generate_normalmaps"] then
-		core.setting_set("generate_normalmaps", fields["cb_generate_normalmaps"])
+		core.settings:set("generate_normalmaps", fields["cb_generate_normalmaps"])
 	end
 	if fields["cb_waving_water"] then
-		core.setting_set("enable_waving_water", fields["cb_waving_water"])
+		core.settings:set("enable_waving_water", fields["cb_waving_water"])
 	end
 	if fields["cb_waving_leaves"] then
-		core.setting_set("enable_waving_leaves", fields["cb_waving_leaves"])
+		core.settings:set("enable_waving_leaves", fields["cb_waving_leaves"])
 	end
 	if fields["cb_waving_plants"] then
-		core.setting_set("enable_waving_plants", fields["cb_waving_plants"])
+		core.settings:set("enable_waving_plants", fields["cb_waving_plants"])
 	end
 	if fields["btn_change_keys"] ~= nil then
 		core.show_keys_menu()
@@ -1223,7 +1223,7 @@ end
 function menu.update_last_game()
 
 	local current_world = filterlist.get_raw_element(worldlist,
-							core.setting_get("mainmenu_last_selected_world")
+							core.settings:get("mainmenu_last_selected_world")
 							)
 
 	if current_world == nil then
@@ -1233,7 +1233,7 @@ function menu.update_last_game()
 	local gamespec, i = gamemgr.find_by_gameid(current_world.gameid)
 	if i ~= nil then
 		menu.last_game = i
-		core.setting_set("main_menu_last_game_idx",menu.last_game)
+		core.settings:set("main_menu_last_game_idx",menu.last_game)
 	end
 end
 
@@ -1268,7 +1268,7 @@ function menu.init()
 	--init menu data
 	gamemgr.update_gamelist()
 
-	menu.last_game	= tonumber(core.setting_get("main_menu_last_game_idx"))
+	menu.last_game	= tonumber(core.settings:get("main_menu_last_game_idx"))
 
 	if type(menu.last_game) ~= "number" then
 		menu.last_game = 1
@@ -1305,12 +1305,12 @@ function tabbuilder.init()
 		dialog_delete_world = {width=12, height=5.2}
 	}
 
-	tabbuilder.current_tab = core.setting_get("main_menu_tab")
+	tabbuilder.current_tab = core.settings:get("main_menu_tab")
 
 	if tabbuilder.current_tab == nil or
 		tabbuilder.current_tab == "" then
 		tabbuilder.current_tab = "singleplayer"
-		core.setting_set("main_menu_tab",tabbuilder.current_tab)
+		core.settings:set("main_menu_tab",tabbuilder.current_tab)
 	end
 
 	--initialize tab buttons
@@ -1446,7 +1446,7 @@ core.event_handler = function(event)
 
 			tabbuilder.is_dialog = false
 			tabbuilder.show_buttons = true
-			tabbuilder.current_tab = core.setting_get("main_menu_tab")
+			tabbuilder.current_tab = core.settings:get("main_menu_tab")
 			menu.update_gametype()
 			menu.update()
 		else

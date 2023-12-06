@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Thai (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-07-20 21:43+0200\n"
+"POT-Creation-Date: 2023-03-09 15:54+0100\n"
 "PO-Revision-Date: 2022-03-18 01:05+0000\n"
 "Last-Translator: Thomas Wiegand <weblate.org@wiegand.info>\n"
 "Language-Team: Thai <https://hosted.weblate.org/projects/minetest/minetest/"
@@ -113,31 +113,6 @@ msgid "The server has requested a reconnect:"
 msgstr "เซิร์ฟเวอร์ได้ร้องขอการเชื่อมต่อใหม่:"
 
 #: builtin/mainmenu/common.lua
-msgid "A new $1 version is available"
-msgstr ""
-
-#: builtin/mainmenu/common.lua
-#, fuzzy
-msgid "Client Mods"
-msgstr "เลือก Mods"
-
-#: builtin/mainmenu/common.lua
-msgid ""
-"Installed version: $1\n"
-"New version: $2\n"
-"Visit $3 to find out how to get the newest version and stay up to date with "
-"features and bugfixes."
-msgstr ""
-
-#: builtin/mainmenu/common.lua
-msgid "Later"
-msgstr ""
-
-#: builtin/mainmenu/common.lua
-msgid "Never"
-msgstr ""
-
-#: builtin/mainmenu/common.lua
 msgid "Protocol version mismatch. "
 msgstr "เวอร์ชันโปรโทคอลไม่ตรงกัน "
 
@@ -148,10 +123,6 @@ msgstr "เซิร์ฟเวอร์บังคับใช้โปรโ
 #: builtin/mainmenu/common.lua
 msgid "Server supports protocol versions between $1 and $2. "
 msgstr "เซิร์ฟเวอร์ที่สนับสนุนเวอร์ชันโพรโทคอลระหว่าง $1 และ $2 "
-
-#: builtin/mainmenu/common.lua
-msgid "Visit website"
-msgstr ""
 
 #: builtin/mainmenu/common.lua
 msgid "We only support protocol version $1."
@@ -310,8 +281,22 @@ msgid "Downloading..."
 msgstr "โหลด ..."
 
 #: builtin/mainmenu/dlg_contentstore.lua
+msgid "Error installing \"$1\": $2"
+msgstr ""
+
+#: builtin/mainmenu/dlg_contentstore.lua
+#, fuzzy
+msgid "Failed to download \"$1\""
+msgstr "ไม่สามารถดาวน์โหลด $1"
+
+#: builtin/mainmenu/dlg_contentstore.lua
 msgid "Failed to download $1"
 msgstr "ไม่สามารถดาวน์โหลด $1"
+
+#: builtin/mainmenu/dlg_contentstore.lua
+#, fuzzy
+msgid "Failed to extract \"$1\" (unsupported file type or broken archive)"
+msgstr "ติดตั้ง: ประเภทไฟล์ที่ไม่รองรับหรือไฟล์เก็บถาวรที่ใช้งานไม่ได้"
 
 #: builtin/mainmenu/dlg_contentstore.lua
 msgid "Games"
@@ -328,10 +313,6 @@ msgstr "ติดตั้ง $1"
 #: builtin/mainmenu/dlg_contentstore.lua
 msgid "Install missing dependencies"
 msgstr "ไฟล์อ้างอิงที่เลือกใช้ได้"
-
-#: builtin/mainmenu/dlg_contentstore.lua
-msgid "Install: Unsupported file type or broken archive"
-msgstr "ติดตั้ง: ประเภทไฟล์ที่ไม่รองรับหรือไฟล์เก็บถาวรที่ใช้งานไม่ได้"
 
 #: builtin/mainmenu/dlg_contentstore.lua
 msgid "Mods"
@@ -665,6 +646,11 @@ msgstr "เรียกดู"
 
 #: builtin/mainmenu/dlg_settings_advanced.lua
 #, fuzzy
+msgid "Client Mods"
+msgstr "เลือก Mods"
+
+#: builtin/mainmenu/dlg_settings_advanced.lua
+#, fuzzy
 msgid "Content: Games"
 msgstr "เนื้อหา"
 
@@ -789,6 +775,30 @@ msgstr "เริ่มต้น"
 msgid "eased"
 msgstr "ความนุ่มนวลของพื้นผิวบนทางลาด"
 
+#: builtin/mainmenu/dlg_version_info.lua
+msgid "A new $1 version is available"
+msgstr ""
+
+#: builtin/mainmenu/dlg_version_info.lua
+msgid ""
+"Installed version: $1\n"
+"New version: $2\n"
+"Visit $3 to find out how to get the newest version and stay up to date with "
+"features and bugfixes."
+msgstr ""
+
+#: builtin/mainmenu/dlg_version_info.lua
+msgid "Later"
+msgstr ""
+
+#: builtin/mainmenu/dlg_version_info.lua
+msgid "Never"
+msgstr ""
+
+#: builtin/mainmenu/dlg_version_info.lua
+msgid "Visit website"
+msgstr ""
+
 #: builtin/mainmenu/pkgmgr.lua
 msgid "$1 (Enabled)"
 msgstr "$1 (เปิดใช้งาน)"
@@ -802,32 +812,23 @@ msgid "Failed to install $1 to $2"
 msgstr "ไม่สามารถติดตั้ง $1 ถึง $2"
 
 #: builtin/mainmenu/pkgmgr.lua
-msgid "Install Mod: Unable to find real mod name for: $1"
-msgstr "ติดตั้ง Mod: ไม่สามารถค้นหาชื่อจริงของ mod: $1"
-
-#: builtin/mainmenu/pkgmgr.lua
-msgid "Install Mod: Unable to find suitable folder name for modpack $1"
+#, fuzzy
+msgid "Install: Unable to find suitable folder name for $1"
 msgstr "ติดตั้ง Mod: ไม่สามารถค้นหาชื่อของโฟลเดอร์ที่เหมาะสมสำหรับ modpack $1"
 
 #: builtin/mainmenu/pkgmgr.lua
-msgid "Unable to find a valid mod or modpack"
+#, fuzzy
+msgid "Unable to find a valid mod, modpack, or game"
 msgstr "ค้าหาไม่พบ mod หรือ modpack"
+
+#: builtin/mainmenu/pkgmgr.lua
+#, fuzzy
+msgid "Unable to install a $1 as a $2"
+msgstr "ไม่สามารถติดตั้ง mod $1"
 
 #: builtin/mainmenu/pkgmgr.lua
 msgid "Unable to install a $1 as a texture pack"
 msgstr "ไม่สามารถติดตั้งพื้นผิว Texture $1"
-
-#: builtin/mainmenu/pkgmgr.lua
-msgid "Unable to install a game as a $1"
-msgstr "ไม่สามารถติดตั้งเกม $1"
-
-#: builtin/mainmenu/pkgmgr.lua
-msgid "Unable to install a mod as a $1"
-msgstr "ไม่สามารถติดตั้ง mod $1"
-
-#: builtin/mainmenu/pkgmgr.lua
-msgid "Unable to install a modpack as a $1"
-msgstr "ไม่สามารถติดตั้ง modpack ที่ $1"
 
 #: builtin/mainmenu/serverlistmgr.lua src/client/game.cpp
 msgid "Loading..."
@@ -856,6 +857,10 @@ msgstr "ตัวแสดงผลที่ใช้งานอยู่:"
 #: builtin/mainmenu/tab_about.lua
 msgid "Core Developers"
 msgstr "นักพัฒนาหลัก"
+
+#: builtin/mainmenu/tab_about.lua
+msgid "Core Team"
+msgstr ""
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Open User Data Directory"
@@ -1682,6 +1687,11 @@ msgid "ok"
 msgstr "ตกลง"
 
 #: src/client/gameui.cpp
+#, fuzzy
+msgid "Chat currently disabled by game or mod"
+msgstr "ซูมถูกปิดใช้งานในปัจจุบันโดยเกมหรือตัวดัดแปลง"
+
+#: src/client/gameui.cpp
 msgid "Chat hidden"
 msgstr "สนทนาซ่อนอยู่"
 
@@ -1983,6 +1993,28 @@ msgstr "แผนที่ย่อในโหมด surface, ซูม x%d"
 msgid "Minimap in texture mode"
 msgstr "แผนที่ย่อในโหมดพื้นผิว"
 
+#. ~ Error when a mod is missing dependencies. Ex: "Mod Title is missing: mod1, mod2, mod3"
+#: src/content/mod_configuration.cpp
+#, c-format
+msgid "%s is missing:"
+msgstr ""
+
+#: src/content/mod_configuration.cpp
+msgid ""
+"Install and enable the required mods, or disable the mods causing errors."
+msgstr ""
+
+#: src/content/mod_configuration.cpp
+msgid ""
+"Note: this may be caused by a dependency cycle, in which case try updating "
+"the mods."
+msgstr ""
+
+#: src/content/mod_configuration.cpp
+#, fuzzy
+msgid "Some mods have unsatisfied dependencies:"
+msgstr "ไม่มีการอ้างอิง"
+
 #: src/gui/guiChatConsole.cpp
 msgid "Failed to open webpage"
 msgstr "ไม่สามารถเปิดหน้าเว็บ"
@@ -2099,7 +2131,7 @@ msgstr "รายการก่อนหน้า"
 msgid "Range select"
 msgstr "ช่วงเลือก"
 
-#: src/gui/guiKeyChangeMenu.cpp src/settings_translation_file.cpp
+#: src/gui/guiKeyChangeMenu.cpp
 msgid "Screenshot"
 msgstr "ภาพหน้าจอ"
 
@@ -2326,6 +2358,7 @@ msgid "3D noise that determines number of dungeons per mapchunk."
 msgstr "เสียง 3 มิติที่กำหนดจำนวนดันเจี้ยนต่อแมปชังค์."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "3D support.\n"
 "Currently supported:\n"
@@ -2335,7 +2368,6 @@ msgid ""
 "-    topbottom: split screen top/bottom.\n"
 "-    sidebyside: split screen side by side.\n"
 "-    crossview: Cross-eyed 3d\n"
-"-    pageflip: quadbuffer based 3d.\n"
 "Note that the interlaced mode requires shaders to be enabled."
 msgstr ""
 "รองรับ 3D\n"
@@ -2554,10 +2586,6 @@ msgid "Audio"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "Automatic forward key"
-msgstr "ปุ่มส่งต่ออัตโนมัติ"
-
-#: src/settings_translation_file.cpp
 msgid "Automatically jump up single-node obstacles."
 msgstr "กระโดดขึ้นอุปสรรคเดียวโหน โดยอัตโนมัติ."
 
@@ -2574,16 +2602,8 @@ msgid "Autoscaling mode"
 msgstr "โหมดปรับอัตโนมัติ"
 
 #: src/settings_translation_file.cpp
-msgid "Aux1 key"
-msgstr "ปุ่มกระโดด"
-
-#: src/settings_translation_file.cpp
 msgid "Aux1 key for climbing/descending"
 msgstr "คีย์พิเศษสำหรับการปีนขึ้น/ลง"
-
-#: src/settings_translation_file.cpp
-msgid "Backward key"
-msgstr "ปุ่มย้อนกลับ"
 
 #: src/settings_translation_file.cpp
 msgid "Base ground level"
@@ -2625,6 +2645,23 @@ msgstr "เสียงไบโอม"
 #: src/settings_translation_file.cpp
 msgid "Block send optimize distance"
 msgstr "บล็อกส่งระยะทางเพิ่มประสิทธิภาพ"
+
+#: src/settings_translation_file.cpp
+msgid "Bloom"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Bloom Intensity"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Bloom Radius"
+msgstr "รัศมีเมฆ"
+
+#: src/settings_translation_file.cpp
+msgid "Bloom Strength Factor"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Bobbing"
@@ -2678,10 +2715,6 @@ msgstr "กล้องเรียบ"
 #: src/settings_translation_file.cpp
 msgid "Camera smoothing in cinematic mode"
 msgstr "กล้องที่ปรับในโหมดภาพยนตร์"
-
-#: src/settings_translation_file.cpp
-msgid "Camera update toggle key"
-msgstr "ปุ่มสลับการอัพเดตกล้อง"
 
 #: src/settings_translation_file.cpp
 msgid "Cave noise"
@@ -2748,10 +2781,6 @@ msgid "Chat font size"
 msgstr "ขนาดฟอนต์ในแชท"
 
 #: src/settings_translation_file.cpp
-msgid "Chat key"
-msgstr "รหัสแชท"
-
-#: src/settings_translation_file.cpp
 msgid "Chat log level"
 msgstr "ปุ่มสลับการแชท"
 
@@ -2772,10 +2801,6 @@ msgid "Chat message max length"
 msgstr "ความยาวสูงสุดของข้อความแชท"
 
 #: src/settings_translation_file.cpp
-msgid "Chat toggle key"
-msgstr "ปุ่มสลับการแชท"
-
-#: src/settings_translation_file.cpp
 msgid "Chat weblinks"
 msgstr "สนทนาแสดง"
 
@@ -2786,10 +2811,6 @@ msgstr "ขนาดก้อน"
 #: src/settings_translation_file.cpp
 msgid "Cinematic mode"
 msgstr "โหมดภาพยนตร์"
-
-#: src/settings_translation_file.cpp
-msgid "Cinematic mode key"
-msgstr "ปุ่มโหมดโรงภาพยนตร์"
 
 #: src/settings_translation_file.cpp
 msgid "Clean transparent textures"
@@ -2804,6 +2825,10 @@ msgstr "เว็บลิงก์ที่คลิกได้ (คลิก�
 #: src/settings_translation_file.cpp
 msgid "Client"
 msgstr "ไคลเอนต์"
+
+#: src/settings_translation_file.cpp
+msgid "Client Mesh Chunksize"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Client and Server"
@@ -2887,10 +2912,6 @@ msgstr ""
 "รายการที่คั่นด้วยเครื่องหมายจุลภาคของม็อดที่เชื่อถือได้ซึ่งได้รับอนุญาตให้เข้าถึงที่ไม่ปลอดภัย\n"
 "ทำงานแม้ในขณะที่การรักษาความปลอดภัย mod เปิดอยู่ (ผ่าน "
 "request_insecure_environment())."
-
-#: src/settings_translation_file.cpp
-msgid "Command key"
-msgstr "คีย์คำสั่ง"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3048,10 +3069,6 @@ msgid "Damage"
 msgstr "ความเสียหาย"
 
 #: src/settings_translation_file.cpp
-msgid "Debug info toggle key"
-msgstr "แก้ไขคีย์การสลับข้อมูล"
-
-#: src/settings_translation_file.cpp
 msgid "Debug log file size threshold"
 msgstr "เกณฑ์ขนาดไฟล์บันทึกการดีบัก"
 
@@ -3062,10 +3079,6 @@ msgstr "ระดับบันทึกดีบัก"
 #: src/settings_translation_file.cpp
 msgid "Debugging"
 msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Dec. volume key"
-msgstr "ลดระดับเสียงที่สำคัญ"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
@@ -3086,6 +3099,13 @@ msgid ""
 msgstr ""
 "เกมเริ่มต้นเมื่อสร้างโลกใหม่.\n"
 "สิ่งนี้จะถูกแทนที่เมื่อสร้างโลกจากเมนูหลัก."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid ""
+"Default maximum number of forceloaded mapblocks.\n"
+"Set this to -1 to disable the limit."
+msgstr "จำนวนสูงสุดของ mapblock ที่ถูกบังคับ."
 
 #: src/settings_translation_file.cpp
 msgid "Default password"
@@ -3134,6 +3154,13 @@ msgid "Defines full size of caverns, smaller values create larger caverns."
 msgstr "กำหนดขนาดเต็มของถ้ำ ค่าที่น้อยกว่าจะสร้างถ้ำที่ใหญ่ขึ้น."
 
 #: src/settings_translation_file.cpp
+msgid ""
+"Defines how much bloom is applied to the rendered image\n"
+"Smaller values make bloom more subtle\n"
+"Range: from 0.01 to 1.0, default: 0.05"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Defines large-scale river channel structure."
 msgstr "กำหนดโครงสร้างช่องน้ำขนาดใหญ่."
 
@@ -3148,6 +3175,12 @@ msgstr "กำหนดระดับพื้นดินฐาน."
 #: src/settings_translation_file.cpp
 msgid "Defines the depth of the river channel."
 msgstr "กำหนดความลึกของช่องแม่น้ำ."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Defines the magnitude of bloom overexposure.\n"
+"Range: from 0.1 to 10.0, default: 1.0"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Defines the maximal player transfer distance in blocks (0 = unlimited)."
@@ -3221,10 +3254,6 @@ msgid "Developer Options"
 msgstr "ของตกแต่ง"
 
 #: src/settings_translation_file.cpp
-msgid "Dig key"
-msgstr "ปุ่มขวา"
-
-#: src/settings_translation_file.cpp
 msgid "Digging particles"
 msgstr "ขุดอนุภาค"
 
@@ -3259,10 +3288,6 @@ msgid "Double-tapping the jump key toggles fly mode."
 msgstr "สำเร็จกระโดดปุ่มสลับโหมดการบิน."
 
 #: src/settings_translation_file.cpp
-msgid "Drop item key"
-msgstr "วางรหัสรายการ"
-
-#: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
 msgstr "ดัมพ์ข้อมูลการดีบัก mapgen."
 
@@ -3277,6 +3302,19 @@ msgstr "ดันเจี้ยนขั้นต่ำ Y"
 #: src/settings_translation_file.cpp
 msgid "Dungeon noise"
 msgstr "เสียงดันเจี้ยน"
+
+#: src/settings_translation_file.cpp
+msgid "Enable Automatic Exposure"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Enable Bloom"
+msgstr "เปิดใช้งานทั้งหมด"
+
+#: src/settings_translation_file.cpp
+msgid "Enable Bloom Debug"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3302,6 +3340,18 @@ msgid ""
 msgstr ""
 "เปิดใช้งานการกรองดิสก์ปัวซอง.\n"
 "บนทรูใช้ดิสก์ปัวซองเพื่อสร้าง \"เงาอ่อน\" มิฉะนั้นจะใช้การกรอง PCF."
+
+#: src/settings_translation_file.cpp
+msgid "Enable Raytraced Culling"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Enable automatic exposure correction\n"
+"When enabled, the post-processing engine will\n"
+"automatically adjust to the brightness of the scene,\n"
+"simulating the behavior of human eye."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3462,8 +3512,9 @@ msgid "Entity methods"
 msgstr "วิธีการนิติบุคคล"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
-"Exponent of the floatland tapering. Alters the tapering behaviour.\n"
+"Exponent of the floatland tapering. Alters the tapering behavior.\n"
 "Value = 1.0 creates a uniform, linear tapering.\n"
 "Values > 1.0 create a smooth tapering suitable for the default separated\n"
 "floatlands.\n"
@@ -3476,6 +3527,10 @@ msgstr ""
 "ทุ่นลอยน้ำ.\n"
 "ค่า < 1.0 (เช่น 0.25) สร้างระดับพื้นผิวที่กำหนดมากขึ้นด้วย\n"
 "ที่ราบลุ่มที่ราบเรียบเหมาะสำหรับชั้นทุ่นลอยน้ำที่เป็นของแข็ง."
+
+#: src/settings_translation_file.cpp
+msgid "Exposure compensation"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "FPS"
@@ -3500,10 +3555,6 @@ msgstr "ตกปัจจัยผลุบๆโผล่ๆ"
 #: src/settings_translation_file.cpp
 msgid "Fallback font path"
 msgstr "แบบอักษรสำรอง"
-
-#: src/settings_translation_file.cpp
-msgid "Fast key"
-msgstr "ปุ่มลัด"
 
 #: src/settings_translation_file.cpp
 msgid "Fast mode acceleration"
@@ -3616,10 +3667,6 @@ msgid "Floatland water level"
 msgstr "ระดับน้ำลอยน้ำ"
 
 #: src/settings_translation_file.cpp
-msgid "Fly key"
-msgstr "ปุ่มบิน"
-
-#: src/settings_translation_file.cpp
 msgid "Flying"
 msgstr "บิน"
 
@@ -3630,10 +3677,6 @@ msgstr "หมอก"
 #: src/settings_translation_file.cpp
 msgid "Fog start"
 msgstr "หมอกเริ่มต้น"
-
-#: src/settings_translation_file.cpp
-msgid "Fog toggle key"
-msgstr "ปุ่มสลับ Fog"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -3739,10 +3782,6 @@ msgstr "Formspec สีพื้นหลังแบบเต็มหน้า
 #: src/settings_translation_file.cpp
 msgid "Formspec full-screen background opacity (between 0 and 255)."
 msgstr "ความทึบของพื้นหลังแบบเต็มหน้าจอ Formspec (ระหว่าง 0 ถึง 255)"
-
-#: src/settings_translation_file.cpp
-msgid "Forward key"
-msgstr "ปุ่มส่งต่อ"
 
 #: src/settings_translation_file.cpp
 msgid "Fourth of 4 2D noises that together define hill/mountain range height."
@@ -3884,10 +3923,6 @@ msgid "HUD scaling"
 msgstr "การปรับขนาด GUI"
 
 #: src/settings_translation_file.cpp
-msgid "HUD toggle key"
-msgstr "ปุ่มสลับ HUD"
-
-#: src/settings_translation_file.cpp
 msgid ""
 "Handling for deprecated Lua API calls:\n"
 "-    none: Do not log deprecated calls\n"
@@ -3984,142 +4019,6 @@ msgid ""
 msgstr ""
 "การเร่งความเร็วในแนวนอนและแนวตั้งบนพื้นดินหรือเมื่อปีนเขา,\n"
 "ในโหนดต่อวินาทีต่อวินาที."
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar next key"
-msgstr "ปุ่มลัดต่อไป Hotbar"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar previous key"
-msgstr "คีย์ก่อนหน้าของ Hotbar"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 1 key"
-msgstr "Hotbar สล็อต 1 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 10 key"
-msgstr "Hotbar สล็อต 10 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 11 key"
-msgstr "Hotbar สล็อต 11 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 12 key"
-msgstr "Hotbar สล็อต 12 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 13 key"
-msgstr "Hotbar สล็อต 13 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 14 key"
-msgstr "Hotbar สล็อต 14 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 15 key"
-msgstr "Hotbar สล็อต 15 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 16 key"
-msgstr "Hotbar สล็อต 16 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 17 key"
-msgstr "Hotbar สล็อต 17 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 18 key"
-msgstr "Hotbar สล็อต 18 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 19 key"
-msgstr "Hotbar สล็อต 19 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 2 key"
-msgstr "Hotbar สล็อต 2 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 20 key"
-msgstr "Hotbar สล็อต 20 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 21 key"
-msgstr "Hotbar สล็อต 21 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 22 key"
-msgstr "Hotbar สล็อต 22 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 23 key"
-msgstr "Hotbar สล็อต 23 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 24 key"
-msgstr "Hotbar สล็อต 24 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 25 key"
-msgstr "Hotbar สล็อต 25 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 26 key"
-msgstr "Hotbar สล็อต 26 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 27 key"
-msgstr "Hotbar สล็อต 27 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 28 key"
-msgstr "Hotbar สล็อต 28 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 29 key"
-msgstr "Hotbar สล็อต 29 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 3 key"
-msgstr "Hotbar สล็อต 3 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 30 key"
-msgstr "Hotbar สล็อต 30 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 31 key"
-msgstr "Hotbar สล็อต 31 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 32 key"
-msgstr "Hotbar สล็อต 32 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 4 key"
-msgstr "Hotbar สล็อต 4 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 5 key"
-msgstr "Hotbar สล็อต 5 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 6 key"
-msgstr "Hotbar สล็อต 6 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 7 key"
-msgstr "Hotbar สล็อต 7 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 8 key"
-msgstr "Hotbar สล็อต 8 สำคัญ"
-
-#: src/settings_translation_file.cpp
-msgid "Hotbar slot 9 key"
-msgstr "Hotbar สล็อต 9 สำคัญ"
 
 #: src/settings_translation_file.cpp
 msgid "How deep to make rivers."
@@ -4324,10 +4223,6 @@ msgid "In-game chat console height, between 0.1 (10%) and 1.0 (100%)."
 msgstr "ความสูงของแชทคอนโซลในเกมระหว่าง 0.1 (10%) และ 1.0 (100%)"
 
 #: src/settings_translation_file.cpp
-msgid "Inc. volume key"
-msgstr "เพิ่มปุ่มปรับระดับเสียง"
-
-#: src/settings_translation_file.cpp
 msgid "Initial vertical speed when jumping, in nodes per second."
 msgstr "ความเร็วแนวตั้งเริ่มต้นเมื่อกระโดด เป็นโหนดต่อวินาที."
 
@@ -4377,10 +4272,6 @@ msgstr "ช่วงเวลาในการส่งช่วงเวลา
 #: src/settings_translation_file.cpp
 msgid "Inventory items animations"
 msgstr "ภาพเคลื่อนไหวรายการสินค้าคงคลัง"
-
-#: src/settings_translation_file.cpp
-msgid "Inventory key"
-msgstr "รหัสสินค้าคงคลัง"
 
 #: src/settings_translation_file.cpp
 msgid "Invert mouse"
@@ -4505,727 +4396,8 @@ msgid "Julia z"
 msgstr "Julia z"
 
 #: src/settings_translation_file.cpp
-msgid "Jump key"
-msgstr "ปุ่มกระโดด"
-
-#: src/settings_translation_file.cpp
 msgid "Jumping speed"
 msgstr "ความเร็วในการกระโดด"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for decreasing the viewing range.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับลดช่วงการรับชม.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for decreasing the volume.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับลดระดับเสียง.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for digging.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำหรับการกระโดด.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for dropping the currently selected item.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการวางรายการที่เลือกในปัจจุบัน.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for increasing the viewing range.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเพิ่มช่วงการรับชม.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for increasing the volume.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มกดสำหรับเพิ่มระดับเสียง.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for jumping.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำหรับการกระโดด.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for moving fast in fast mode.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มกดสำหรับการเคลื่อนที่อย่างรวดเร็วในโหมดเร็ว.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for moving the player backward.\n"
-"Will also disable autoforward, when active.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มกดสำหรับเลื่อนเครื่องเล่นถอยหลัง.\n"
-"จะปิดใช้งานการป้อนอัตโนมัติอัตโนมัติเมื่อเปิดใช้งาน.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for moving the player forward.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญสำหรับการย้ายผู้เล่นไปข้างหน้า.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for moving the player left.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับย้ายผู้เล่นไปทางซ้าย.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for moving the player right.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มกดสำหรับเลื่อนเครื่องเล่นไปทางขวา.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for muting the game.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำหรับการปิดเสียงเกม.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for opening the chat window to type commands.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเปิดหน้าต่างแชทเพื่อพิมพ์คำสั่ง.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for opening the chat window to type local commands.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเปิดหน้าต่างแชทเพื่อพิมพ์คำสั่งในเครื่อง.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for opening the chat window.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"รหัสสำหรับเปิดหน้าต่างแชท.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for opening the inventory.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการเปิดสินค้าคงคลัง.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for placing.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำหรับการกระโดด.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 11th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 11.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 12th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 12.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 13th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 13.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 14th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 14.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 15th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 15.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 16th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 16.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 17th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 17.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 18th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 18.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 19th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 19.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 20th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 20.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 21st hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 21.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 22nd hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 22.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 23rd hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 23.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 24th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 24.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 25th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 25.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 26th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 26.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 27th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 27.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 28th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 28.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 29th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 29.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 30th hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 30.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 31st hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 31.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the 32nd hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ 32.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the eighth hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่แปด.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the fifth hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่ห้า.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the first hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar แรก.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the fourth hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่สี่.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the next item in the hotbar.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"แป้นสำหรับเลือกรายการถัดไปในแถบร้อน.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the ninth hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่เก้า.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the previous item in the hotbar.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"แป้นสำหรับเลือกรายการก่อนหน้าในแถบร้อน.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the second hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่สอง.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the seventh hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"คีย์สำหรับการเลือกสล็อต hotbar ที่เจ็ด.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the sixth hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่หก.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the tenth hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกช่องเสียบที่สิบ.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for selecting the third hotbar slot.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับเลือกสล็อต hotbar ที่สาม.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for sneaking.\n"
-"Also used for climbing down and descending in water if aux1_descends is "
-"disabled.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ที่สำคัญสำหรับการด้อม.\n"
-"นอกจากนี้ยังใช้สำหรับการปีนลงและลงไปในน้ำหากปิดการใช้งาน aux1_descends.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for switching between first- and third-person camera.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับสลับระหว่างกล้องตัวแรกและตัวที่สาม.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for taking screenshots.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญสำหรับการจับภาพหน้าจอ.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling autoforward.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับ autoforward.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling cinematic mode.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับสลับโหมดโรงภาพยนตร์.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling display of minimap.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับการแสดงผลของแผนที่ย่อ.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling fast mode.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับสลับโหมดอย่างรวดเร็ว.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling flying.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับการบิน.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling noclip mode.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"คีย์สำหรับสลับโหมด noclip.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling pitch move mode.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับโหมด pitch.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the camera update. Only used for development\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับสลับการอัปเดตกล้อง ใช้สำหรับการพัฒนาเท่านั้น\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the display of chat.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับการแสดงผลของการแชท.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the display of debug info.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"คีย์สำหรับสลับการแสดงข้อมูลการดีบัก.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the display of fog.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับการแสดงผลของหมอก.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the display of the HUD.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับการแสดงผลของ HUD.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the display of the large chat console.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับสลับการแสดงผลของแชทคอนโซลขนาดใหญ่.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling the display of the profiler. Used for development.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"ปุ่มสำหรับสลับการแสดงผลของตัวสร้างโปรไฟล์ ใช้สำหรับการพัฒนา.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key for toggling unlimited view range.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการสลับช่วงมุมมองไม่ จำกัด.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Key to use view zoom when possible.\n"
-"See http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
-msgstr ""
-"กุญแจสำคัญในการใช้มุมมองซูมเมื่อเป็นไปได้.\n"
-"ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
-"html#a54da2a0e231901735e3da1b0edf72eb3"
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
@@ -5264,8 +4436,13 @@ msgid "Large cave proportion flooded"
 msgstr "น้ำท่วมสัดส่วนถ้ำใหญ่"
 
 #: src/settings_translation_file.cpp
-msgid "Large chat console key"
-msgstr "คีย์คอนโซลแชทขนาดใหญ่"
+msgid "Last known version update"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Last update check"
+msgstr "ติ๊กอัพเดทของเหลว"
 
 #: src/settings_translation_file.cpp
 msgid "Leaves style"
@@ -5282,10 +4459,6 @@ msgstr ""
 "-   แฟนซี: มองเห็นใบหน้าทั้งหมดได้\n"
 "-   ง่าย: มีเพียงใบหน้าด้านนอกหากกำหนด special_tiles ไว้\n"
 "-   ทึบแสง: ปิดการใช้งานความโปร่งใส"
-
-#: src/settings_translation_file.cpp
-msgid "Left key"
-msgstr "ปุ่มซ้าย"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5445,6 +4618,13 @@ msgid "Loading Block Modifiers"
 msgstr "กำลังโหลดตัวดัดแปลงบล็อก"
 
 #: src/settings_translation_file.cpp
+msgid ""
+"Logical value that controls how far the bloom effect spreads\n"
+"from the bright objects.\n"
+"Range: from 0.1 to 8, default: 1"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Lower Y limit of dungeons."
 msgstr "ขีด จำกัด Y ล่างของดันเจี้ยน."
 
@@ -5562,6 +4742,11 @@ msgstr "ข้อ จำกัด Mapblock"
 
 #: src/settings_translation_file.cpp
 msgid "Mapblock mesh generation delay"
+msgstr "การสร้างตาข่าย Mapblock ล่าช้า"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Mapblock mesh generation threads"
 msgstr "การสร้างตาข่าย Mapblock ล่าช้า"
 
 #: src/settings_translation_file.cpp
@@ -5732,10 +4917,6 @@ msgstr ""
 "ควรต่ำกว่า curl_parallel_limit."
 
 #: src/settings_translation_file.cpp
-msgid "Maximum number of forceloaded mapblocks."
-msgstr "จำนวนสูงสุดของ mapblock ที่ถูกบังคับ."
-
-#: src/settings_translation_file.cpp
 msgid ""
 "Maximum number of mapblocks for client to be kept in memory.\n"
 "Set to -1 for unlimited amount."
@@ -5836,10 +5017,6 @@ msgid "Minimap"
 msgstr "แผนที่ขนาดเล็ก"
 
 #: src/settings_translation_file.cpp
-msgid "Minimap key"
-msgstr "คีย์แผนที่ย่อ"
-
-#: src/settings_translation_file.cpp
 msgid "Minimap scan height"
 msgstr "ความสูงการสแกนแผนที่ขั้นต่ำ"
 
@@ -5930,10 +5107,6 @@ msgstr ""
 "ตัวอย่างเช่น: 0 ที่ไม่มีการสั่น 1.0 สำหรับปกติ 2.0 สำหรับสองเท่า"
 
 #: src/settings_translation_file.cpp
-msgid "Mute key"
-msgstr "ปุ่มปิดเสียง"
-
-#: src/settings_translation_file.cpp
 msgid "Mute sound"
 msgstr "ปิดเสียง"
 
@@ -5990,10 +5163,6 @@ msgid "Noclip"
 msgstr "โนคลิป (ทะลุผ่านบล็อก)"
 
 #: src/settings_translation_file.cpp
-msgid "Noclip key"
-msgstr "คีย์ Noclip"
-
-#: src/settings_translation_file.cpp
 #, fuzzy
 msgid "Node and Entity Highlighting"
 msgstr "โหนที่เน้น"
@@ -6047,6 +5216,13 @@ msgstr ""
 "จำนวนบล็อกพิเศษที่สามารถโหลดได้โดย /clear ออบเจ็กต์ในครั้งเดียว.\n"
 "นี่คือการแลกเปลี่ยนระหว่างโอเวอร์เฮดของธุรกรรม SQLite และ\n"
 "การใช้หน่วยความจำ (4096=100MB ตามหลักการทั่วไป)."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Number of threads to use for mesh generation.\n"
+"Value of 0 (default) will let Minetest autodetect the number of available "
+"threads."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Opaque liquids"
@@ -6130,16 +5306,8 @@ msgid "Physics"
 msgstr "ฟิสิกส์"
 
 #: src/settings_translation_file.cpp
-msgid "Pitch move key"
-msgstr "ปุ่มเลื่อนระดับเสียง"
-
-#: src/settings_translation_file.cpp
 msgid "Pitch move mode"
 msgstr "โหมดย้ายสนาม"
-
-#: src/settings_translation_file.cpp
-msgid "Place key"
-msgstr "ปุ่มวาง"
 
 #: src/settings_translation_file.cpp
 msgid "Place repetition interval"
@@ -6174,6 +5342,10 @@ msgstr ""
 "โปรดทราบว่าฟิลด์พอร์ตในเมนูหลักจะแทนที่การตั้งค่านี้"
 
 #: src/settings_translation_file.cpp
+msgid "Post processing"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid ""
 "Prevent digging and placing from repeating when holding the mouse buttons.\n"
 "Enable this when you dig or place too often by accident."
@@ -6200,10 +5372,6 @@ msgstr "สิทธิพิเศษที่ผู้เล่นที่ม
 #: src/settings_translation_file.cpp
 msgid "Profiler"
 msgstr "ผู้สร้างโปรไฟล์"
-
-#: src/settings_translation_file.cpp
-msgid "Profiler toggle key"
-msgstr "ปุ่มสลับ Profiler"
 
 #: src/settings_translation_file.cpp
 msgid "Prometheus listener address"
@@ -6241,10 +5409,6 @@ msgstr "ยกระดับภูมิประเทศให้เป็น
 #: src/settings_translation_file.cpp
 msgid "Random input"
 msgstr "อินพุตสุ่ม"
-
-#: src/settings_translation_file.cpp
-msgid "Range select key"
-msgstr "ปุ่มเลือกช่วง"
 
 #: src/settings_translation_file.cpp
 msgid "Recent Chat Messages"
@@ -6317,10 +5481,6 @@ msgstr "เสียงใต้น้ำของสันเขา"
 #: src/settings_translation_file.cpp
 msgid "Ridged mountain size noise"
 msgstr "เสียงดังขนาดสันเขา"
-
-#: src/settings_translation_file.cpp
-msgid "Right key"
-msgstr "ปุ่มขวา"
 
 #: src/settings_translation_file.cpp
 msgid "River channel depth"
@@ -6565,6 +5725,13 @@ msgstr "ไฟล์เซิร์ฟเวอร์รายการ"
 
 #: src/settings_translation_file.cpp
 msgid ""
+"Set the exposure compensation in EV units.\n"
+"Value of 0.0 (default) means no exposure compensation.\n"
+"Range: from -1 to 1.0"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
 "Set the language. Leave empty to use the system language.\n"
 "A restart is required after changing this."
 msgstr ""
@@ -6600,21 +5767,17 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Set the tilt of Sun/Moon orbit in degrees.\n"
-"Value of 0 means no tilt / vertical orbit.\n"
-"Minimum value: 0.0; maximum value: 60.0"
-msgstr ""
-"ตั้งค่าความเอียงของวงโคจรของดวงอาทิตย์/ดวงจันทร์เป็นองศา.\n"
-"ค่า 0 หมายถึงไม่มีวงโคจรเอียง/แนวตั้ง.\n"
-"ค่าต่ำสุด: 0.0; ค่าสูงสุด: 60.0"
-
-#: src/settings_translation_file.cpp
-msgid ""
 "Set to true to enable Shadow Mapping.\n"
 "Requires shaders to be enabled."
 msgstr ""
 "ตั้งค่าเป็นจริงช่วยให้ใบโบก.\n"
 "ต้องมี shaders เพื่อเปิดใช้งาน."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Set to true to enable bloom effect.\n"
+"Bright colors will bleed over the neighboring objects."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6639,6 +5802,14 @@ msgid ""
 msgstr ""
 "การตั้งค่าเป็นจริงช่วยให้พืชโบก.\n"
 "ต้องมี shaders เพื่อเปิดใช้งาน."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Set to true to render debugging breakdown of the bloom effect.\n"
+"In debug mode, the screen is split into 4 quadrants:\n"
+"top-left - processed base image, top-right - final image\n"
+"bottom-left - raw base image, bottom-right - bloom texture."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6722,6 +5893,15 @@ msgstr "ข้อความปิดเครื่อง"
 
 #: src/settings_translation_file.cpp
 msgid ""
+"Side length of a cube of map blocks that the client will consider together\n"
+"when generating meshes.\n"
+"Larger values increase the utilization of the GPU by reducing the number of\n"
+"draw calls, benefiting especially high-end GPUs.\n"
+"Systems with a low-end GPU (or no GPU) would benefit from smaller values."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
 "Size of mapchunks generated by mapgen, stated in mapblocks (16 nodes).\n"
 "WARNING!: There is no benefit, and there are several dangers, in\n"
 "increasing this value above 5.\n"
@@ -6745,10 +5925,6 @@ msgstr ""
 "ขนาดของแคช MapBlock ของตัวสร้างตาข่าย การเพิ่มความประสงค์นี้\n"
 "เพิ่มแคชการเข้าชม% ลดการคัดลอกข้อมูลจากหลัก\n"
 "ด้ายจึงลดกระวนกระวายใจ"
-
-#: src/settings_translation_file.cpp
-msgid "Sky Body Orbit Tilt"
-msgstr "วงโคจรของท้องฟ้าเอียง"
 
 #: src/settings_translation_file.cpp
 msgid "Slice w"
@@ -6793,10 +5969,6 @@ msgstr "มากการหมุนของกล้องในโหมด
 #: src/settings_translation_file.cpp
 msgid "Smooths rotation of camera. 0 to disable."
 msgstr "มากการหมุนของกล้อง 0 เพื่อปิดใช้งาน"
-
-#: src/settings_translation_file.cpp
-msgid "Sneak key"
-msgstr "กุญแจแอบ"
 
 #: src/settings_translation_file.cpp
 msgid "Sneaking speed"
@@ -7082,13 +6254,12 @@ msgstr ""
 "ควรกำหนดค่านี้ร่วมกับ active_object_send_range_blocks."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "The rendering back-end.\n"
-"A restart is required after changing this.\n"
-"Note: On Android, stick with OGLES1 if unsure! App may fail to start "
-"otherwise.\n"
-"On other platforms, OpenGL is recommended.\n"
-"Shaders are supported by OpenGL (desktop only) and OGLES2 (experimental)"
+"Note: A restart is required after changing this!\n"
+"OpenGL is the default for desktop, and OGLES2 for Android.\n"
+"Shaders are supported by OpenGL and OGLES2 (experimental)."
 msgstr ""
 "แบ็กเอนด์การเรนเดอร์.\n"
 "จำเป็นต้องรีสตาร์ทหลังจากเปลี่ยนแปลงสิ่งนี้.\n"
@@ -7204,10 +6375,6 @@ msgstr ""
 "สิ่งนี้จะกำหนดระยะเวลาที่จะชะลอตัวลงหลังจากทำการวางหรือลบโหนด."
 
 #: src/settings_translation_file.cpp
-msgid "Toggle camera mode key"
-msgstr "สลับปุ่มโหมดกล้อง"
-
-#: src/settings_translation_file.cpp
 msgid "Tooltip delay"
 msgstr "เคล็ดลับเครื่องมือล่าช้า"
 
@@ -7251,6 +6418,11 @@ msgid "Trusted mods"
 msgstr "ม็อดที่เชื่อถือได้"
 
 #: src/settings_translation_file.cpp
+msgid ""
+"URL to JSON file which provides information about the newest Minetest release"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "URL to the server list displayed in the Multiplayer Tab."
 msgstr "URL ไปยังรายการเซิร์ฟเวอร์ที่แสดงในแท็บผู้เล่นหลายคน."
 
@@ -7272,12 +6444,22 @@ msgstr ""
 "ค่าที่สูงขึ้นส่งผลให้ภาพมีรายละเอียดน้อยลง"
 
 #: src/settings_translation_file.cpp
+msgid ""
+"Unix timestamp (integer) of when the client last checked for an update\n"
+"Set this value to \"disabled\" to never check for updates."
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Unlimited player transfer distance"
 msgstr "ระยะถ่ายโอนผู้เล่นไม่ จำกัด"
 
 #: src/settings_translation_file.cpp
 msgid "Unload unused server data"
 msgstr "ยกเลิกการโหลดข้อมูลเซิร์ฟเวอร์ที่ไม่ได้ใช้"
+
+#: src/settings_translation_file.cpp
+msgid "Update information URL"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Upper Y limit of dungeons."
@@ -7302,6 +6484,16 @@ msgstr "ใช้ตัวกรอง anisotropic เมื่อดูที�
 #: src/settings_translation_file.cpp
 msgid "Use bilinear filtering when scaling textures."
 msgstr "ใช้การกรอง bilinear เมื่อปรับขนาดพื้นผิว"
+
+#: src/settings_translation_file.cpp
+msgid "Use crosshair for touch screen"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Use crosshair to select object instead of whole screen.\n"
+"If enabled, a crosshair will be shown and will be used for selecting object."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7330,6 +6522,12 @@ msgstr ""
 "ช่องว่างที่มองเห็นได้ปรากฏขึ้นระหว่างโหนดเมื่อปิดใช้ shaders.\n"
 "หากตั้งค่าเป็น 0 MSAA จะถูกปิดใช้งาน.\n"
 "จำเป็นต้องรีสตาร์ทหลังจากเปลี่ยนตัวเลือกนี้."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Use raytraced occlusion culling in the new culler.\n"
+"This flag enables use of raytraced occlusion culling test"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Use trilinear filtering when scaling textures."
@@ -7400,6 +6598,14 @@ msgid "Varies steepness of cliffs."
 msgstr "ความชันของหน้าผาแตกต่างกันไป."
 
 #: src/settings_translation_file.cpp
+msgid ""
+"Version number which was last seen during an update check.\n"
+"\n"
+"Representation: MMMIIIPPP, where M=Major, I=Minor, P=Patch\n"
+"Ex: 5.5.0 is 005005000"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Vertical climbing speed, in nodes per second."
 msgstr "ความเร็วในการปีนแนวตั้ง เป็นโหนดต่อวินาที."
 
@@ -7418,18 +6624,6 @@ msgstr "ดูปัจจัยผลุบๆโผล่ๆ"
 #: src/settings_translation_file.cpp
 msgid "View distance in nodes."
 msgstr "ดูระยะทางในโหนด"
-
-#: src/settings_translation_file.cpp
-msgid "View range decrease key"
-msgstr "ปุ่มลดช่วงการมอง"
-
-#: src/settings_translation_file.cpp
-msgid "View range increase key"
-msgstr "ปุ่มเพิ่มช่วงการมอง"
-
-#: src/settings_translation_file.cpp
-msgid "View zoom key"
-msgstr "ดูปุ่มซูม"
 
 #: src/settings_translation_file.cpp
 msgid "Viewing range"
@@ -7763,8 +6957,17 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Are you sure to reset your singleplayer world?"
 #~ msgstr "การตั้งค่าของคุณโลก singleplayer แน่ใจหรือไม่?"
 
+#~ msgid "Automatic forward key"
+#~ msgstr "ปุ่มส่งต่ออัตโนมัติ"
+
+#~ msgid "Aux1 key"
+#~ msgstr "ปุ่มกระโดด"
+
 #~ msgid "Back"
 #~ msgstr "หลัง"
+
+#~ msgid "Backward key"
+#~ msgstr "ปุ่มย้อนกลับ"
 
 #~ msgid "Basic"
 #~ msgstr "ขั้นพื้นฐาน"
@@ -7779,8 +6982,23 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Bumpmapping"
 #~ msgstr "Bumpmapping"
 
+#~ msgid "Camera update toggle key"
+#~ msgstr "ปุ่มสลับการอัพเดตกล้อง"
+
 #~ msgid "Center of light curve mid-boost."
 #~ msgstr "กึ่งกลางของเส้นโค้งแสง - กลางเพิ่ม"
+
+#~ msgid "Chat key"
+#~ msgstr "รหัสแชท"
+
+#~ msgid "Chat toggle key"
+#~ msgstr "ปุ่มสลับการแชท"
+
+#~ msgid "Cinematic mode key"
+#~ msgstr "ปุ่มโหมดโรงภาพยนตร์"
+
+#~ msgid "Command key"
+#~ msgstr "คีย์คำสั่ง"
 
 #~ msgid "Config mods"
 #~ msgstr "กำหนดค่าวัยรุ่น"
@@ -7806,6 +7024,12 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Darkness sharpness"
 #~ msgstr "ความมืดมิด"
 
+#~ msgid "Debug info toggle key"
+#~ msgstr "แก้ไขคีย์การสลับข้อมูล"
+
+#~ msgid "Dec. volume key"
+#~ msgstr "ลดระดับเสียงที่สำคัญ"
+
 #~ msgid ""
 #~ "Defines sampling step of texture.\n"
 #~ "A higher value results in smoother normal maps."
@@ -7816,6 +7040,9 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Del. Favorite"
 #~ msgstr "ลบรายการโปรด"
 
+#~ msgid "Dig key"
+#~ msgstr "ปุ่มขวา"
+
 #~ msgid "Download a game, such as Minetest Game, from minetest.net"
 #~ msgstr "ดาวน์โหลดเกม อย่างเช่น ไมน์เทสต์เกม ได้จาก minetest.net"
 
@@ -7824,6 +7051,9 @@ msgstr "cURL ขีด จำกัด ขนาน"
 
 #~ msgid "Downloading and installing $1, please wait..."
 #~ msgstr "ดาวน์โหลด และติดตั้ง $1 กรุณารอสักครู่..."
+
+#~ msgid "Drop item key"
+#~ msgstr "วางรหัสรายการ"
 
 #~ msgid "Enable VBO"
 #~ msgstr "ทำให้สามารถ VBO"
@@ -7880,11 +7110,23 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Fallback font size"
 #~ msgstr "ขนาดตัวอักษรทางเลือก"
 
+#~ msgid "Fast key"
+#~ msgstr "ปุ่มลัด"
+
 #~ msgid "Filtering"
 #~ msgstr "กรอง"
 
+#~ msgid "Fly key"
+#~ msgstr "ปุ่มบิน"
+
+#~ msgid "Fog toggle key"
+#~ msgstr "ปุ่มสลับ Fog"
+
 #~ msgid "Font shadow alpha (opaqueness, between 0 and 255)."
 #~ msgstr "ตัวอักษรเงาอัลฟา (ความทึบระหว่าง 0 และ 255)."
+
+#~ msgid "Forward key"
+#~ msgstr "ปุ่มส่งต่อ"
 
 #~ msgid "FreeType fonts"
 #~ msgstr "แบบอักษรประเภท FreeType"
@@ -7907,8 +7149,119 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "HUD scale factor"
 #~ msgstr "เครื่องชั่ง HUD"
 
+#~ msgid "HUD toggle key"
+#~ msgstr "ปุ่มสลับ HUD"
+
+#~ msgid "Hotbar next key"
+#~ msgstr "ปุ่มลัดต่อไป Hotbar"
+
+#~ msgid "Hotbar previous key"
+#~ msgstr "คีย์ก่อนหน้าของ Hotbar"
+
+#~ msgid "Hotbar slot 1 key"
+#~ msgstr "Hotbar สล็อต 1 สำคัญ"
+
+#~ msgid "Hotbar slot 10 key"
+#~ msgstr "Hotbar สล็อต 10 สำคัญ"
+
+#~ msgid "Hotbar slot 11 key"
+#~ msgstr "Hotbar สล็อต 11 สำคัญ"
+
+#~ msgid "Hotbar slot 12 key"
+#~ msgstr "Hotbar สล็อต 12 สำคัญ"
+
+#~ msgid "Hotbar slot 13 key"
+#~ msgstr "Hotbar สล็อต 13 สำคัญ"
+
+#~ msgid "Hotbar slot 14 key"
+#~ msgstr "Hotbar สล็อต 14 สำคัญ"
+
+#~ msgid "Hotbar slot 15 key"
+#~ msgstr "Hotbar สล็อต 15 สำคัญ"
+
+#~ msgid "Hotbar slot 16 key"
+#~ msgstr "Hotbar สล็อต 16 สำคัญ"
+
+#~ msgid "Hotbar slot 17 key"
+#~ msgstr "Hotbar สล็อต 17 สำคัญ"
+
+#~ msgid "Hotbar slot 18 key"
+#~ msgstr "Hotbar สล็อต 18 สำคัญ"
+
+#~ msgid "Hotbar slot 19 key"
+#~ msgstr "Hotbar สล็อต 19 สำคัญ"
+
+#~ msgid "Hotbar slot 2 key"
+#~ msgstr "Hotbar สล็อต 2 สำคัญ"
+
+#~ msgid "Hotbar slot 20 key"
+#~ msgstr "Hotbar สล็อต 20 สำคัญ"
+
+#~ msgid "Hotbar slot 21 key"
+#~ msgstr "Hotbar สล็อต 21 สำคัญ"
+
+#~ msgid "Hotbar slot 22 key"
+#~ msgstr "Hotbar สล็อต 22 สำคัญ"
+
+#~ msgid "Hotbar slot 23 key"
+#~ msgstr "Hotbar สล็อต 23 สำคัญ"
+
+#~ msgid "Hotbar slot 24 key"
+#~ msgstr "Hotbar สล็อต 24 สำคัญ"
+
+#~ msgid "Hotbar slot 25 key"
+#~ msgstr "Hotbar สล็อต 25 สำคัญ"
+
+#~ msgid "Hotbar slot 26 key"
+#~ msgstr "Hotbar สล็อต 26 สำคัญ"
+
+#~ msgid "Hotbar slot 27 key"
+#~ msgstr "Hotbar สล็อต 27 สำคัญ"
+
+#~ msgid "Hotbar slot 28 key"
+#~ msgstr "Hotbar สล็อต 28 สำคัญ"
+
+#~ msgid "Hotbar slot 29 key"
+#~ msgstr "Hotbar สล็อต 29 สำคัญ"
+
+#~ msgid "Hotbar slot 3 key"
+#~ msgstr "Hotbar สล็อต 3 สำคัญ"
+
+#~ msgid "Hotbar slot 30 key"
+#~ msgstr "Hotbar สล็อต 30 สำคัญ"
+
+#~ msgid "Hotbar slot 31 key"
+#~ msgstr "Hotbar สล็อต 31 สำคัญ"
+
+#~ msgid "Hotbar slot 32 key"
+#~ msgstr "Hotbar สล็อต 32 สำคัญ"
+
+#~ msgid "Hotbar slot 4 key"
+#~ msgstr "Hotbar สล็อต 4 สำคัญ"
+
+#~ msgid "Hotbar slot 5 key"
+#~ msgstr "Hotbar สล็อต 5 สำคัญ"
+
+#~ msgid "Hotbar slot 6 key"
+#~ msgstr "Hotbar สล็อต 6 สำคัญ"
+
+#~ msgid "Hotbar slot 7 key"
+#~ msgstr "Hotbar สล็อต 7 สำคัญ"
+
+#~ msgid "Hotbar slot 8 key"
+#~ msgstr "Hotbar สล็อต 8 สำคัญ"
+
+#~ msgid "Hotbar slot 9 key"
+#~ msgstr "Hotbar สล็อต 9 สำคัญ"
+
 #~ msgid "In-Game"
 #~ msgstr "ในเกมส์"
+
+#~ msgid "Inc. volume key"
+#~ msgstr "เพิ่มปุ่มปรับระดับเสียง"
+
+#~ msgid "Install Mod: Unable to find real mod name for: $1"
+#~ msgstr "ติดตั้ง Mod: ไม่สามารถค้นหาชื่อจริงของ mod: $1"
 
 #~ msgid "Install: file: \"$1\""
 #~ msgstr "ติดตั้ง: ไฟล์:  \"$1\""
@@ -7916,9 +7269,665 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Instrumentation"
 #~ msgstr "เครื่องมือวัด"
 
+#~ msgid "Inventory key"
+#~ msgstr "รหัสสินค้าคงคลัง"
+
+#~ msgid "Jump key"
+#~ msgstr "ปุ่มกระโดด"
+
+#~ msgid ""
+#~ "Key for decreasing the viewing range.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับลดช่วงการรับชม.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for decreasing the volume.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับลดระดับเสียง.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for digging.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำหรับการกระโดด.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for dropping the currently selected item.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการวางรายการที่เลือกในปัจจุบัน.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for increasing the viewing range.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเพิ่มช่วงการรับชม.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for increasing the volume.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มกดสำหรับเพิ่มระดับเสียง.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for jumping.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำหรับการกระโดด.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for moving fast in fast mode.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มกดสำหรับการเคลื่อนที่อย่างรวดเร็วในโหมดเร็ว.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for moving the player backward.\n"
+#~ "Will also disable autoforward, when active.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มกดสำหรับเลื่อนเครื่องเล่นถอยหลัง.\n"
+#~ "จะปิดใช้งานการป้อนอัตโนมัติอัตโนมัติเมื่อเปิดใช้งาน.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for moving the player forward.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญสำหรับการย้ายผู้เล่นไปข้างหน้า.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for moving the player left.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับย้ายผู้เล่นไปทางซ้าย.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for moving the player right.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มกดสำหรับเลื่อนเครื่องเล่นไปทางขวา.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for muting the game.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำหรับการปิดเสียงเกม.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for opening the chat window to type commands.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเปิดหน้าต่างแชทเพื่อพิมพ์คำสั่ง.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for opening the chat window to type local commands.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเปิดหน้าต่างแชทเพื่อพิมพ์คำสั่งในเครื่อง.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for opening the chat window.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "รหัสสำหรับเปิดหน้าต่างแชท.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for opening the inventory.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการเปิดสินค้าคงคลัง.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for placing.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำหรับการกระโดด.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 11th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 11.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 12th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 12.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 13th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 13.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 14th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 14.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 15th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 15.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 16th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 16.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 17th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 17.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 18th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 18.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 19th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 19.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 20th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 20.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 21st hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 21.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 22nd hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 22.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 23rd hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 23.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 24th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 24.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 25th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 25.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 26th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 26.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 27th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 27.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 28th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 28.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 29th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 29.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 30th hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 30.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 31st hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 31.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the 32nd hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ 32.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the eighth hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่แปด.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the fifth hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่ห้า.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the first hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar แรก.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the fourth hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่สี่.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the next item in the hotbar.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "แป้นสำหรับเลือกรายการถัดไปในแถบร้อน.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the ninth hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่เก้า.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the previous item in the hotbar.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "แป้นสำหรับเลือกรายการก่อนหน้าในแถบร้อน.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the second hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่สอง.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the seventh hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "คีย์สำหรับการเลือกสล็อต hotbar ที่เจ็ด.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the sixth hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่หก.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the tenth hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกช่องเสียบที่สิบ.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for selecting the third hotbar slot.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับเลือกสล็อต hotbar ที่สาม.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for sneaking.\n"
+#~ "Also used for climbing down and descending in water if aux1_descends is "
+#~ "disabled.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ที่สำคัญสำหรับการด้อม.\n"
+#~ "นอกจากนี้ยังใช้สำหรับการปีนลงและลงไปในน้ำหากปิดการใช้งาน aux1_descends.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for switching between first- and third-person camera.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับสลับระหว่างกล้องตัวแรกและตัวที่สาม.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for taking screenshots.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญสำหรับการจับภาพหน้าจอ.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling autoforward.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับ autoforward.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling cinematic mode.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับสลับโหมดโรงภาพยนตร์.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling display of minimap.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับการแสดงผลของแผนที่ย่อ.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling fast mode.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับสลับโหมดอย่างรวดเร็ว.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling flying.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับการบิน.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling noclip mode.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "คีย์สำหรับสลับโหมด noclip.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling pitch move mode.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับโหมด pitch.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the camera update. Only used for development\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับสลับการอัปเดตกล้อง ใช้สำหรับการพัฒนาเท่านั้น\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the display of chat.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับการแสดงผลของการแชท.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the display of debug info.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "คีย์สำหรับสลับการแสดงข้อมูลการดีบัก.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the display of fog.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับการแสดงผลของหมอก.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the display of the HUD.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับการแสดงผลของ HUD.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the display of the large chat console.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับสลับการแสดงผลของแชทคอนโซลขนาดใหญ่.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling the display of the profiler. Used for development.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "ปุ่มสำหรับสลับการแสดงผลของตัวสร้างโปรไฟล์ ใช้สำหรับการพัฒนา.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key for toggling unlimited view range.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการสลับช่วงมุมมองไม่ จำกัด.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
+#~ msgid ""
+#~ "Key to use view zoom when possible.\n"
+#~ "See http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+#~ msgstr ""
+#~ "กุญแจสำคัญในการใช้มุมมองซูมเมื่อเป็นไปได้.\n"
+#~ "ดู http://irrlicht.sourceforge.net/docu/namespaceirr."
+#~ "html#a54da2a0e231901735e3da1b0edf72eb3"
+
 #~ msgid ""
 #~ "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
 #~ msgstr "โหวต. (ถ้าเมนูนี้สกรูขึ้น เอาข้อมูลจาก minetest.conf)"
+
+#~ msgid "Large chat console key"
+#~ msgstr "คีย์คอนโซลแชทขนาดใหญ่"
+
+#~ msgid "Left key"
+#~ msgstr "ปุ่มซ้าย"
 
 #~ msgid "Lightness sharpness"
 #~ msgstr "ความคมชัดของแสง"
@@ -7943,6 +7952,12 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Minimap in surface mode, Zoom x4"
 #~ msgstr "แผนที่ย่อในโหมด surface, ซูม x4"
 
+#~ msgid "Minimap key"
+#~ msgstr "คีย์แผนที่ย่อ"
+
+#~ msgid "Mute key"
+#~ msgstr "ปุ่มปิดเสียง"
+
 #~ msgid "Name / Password"
 #~ msgstr "ชื่อ / รหัสผ่าน"
 
@@ -7951,6 +7966,9 @@ msgstr "cURL ขีด จำกัด ขนาน"
 
 #~ msgid "No"
 #~ msgstr "ไม่"
+
+#~ msgid "Noclip key"
+#~ msgstr "คีย์ Noclip"
 
 #~ msgid "Normalmaps sampling"
 #~ msgstr "การสุ่มตัวอย่าง Normalmaps"
@@ -7998,8 +8016,17 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Path to save screenshots at."
 #~ msgstr "พา ธ เพื่อบันทึกภาพหน้าจอที่ ..."
 
+#~ msgid "Pitch move key"
+#~ msgstr "ปุ่มเลื่อนระดับเสียง"
+
+#~ msgid "Place key"
+#~ msgstr "ปุ่มวาง"
+
 #~ msgid "Player name"
 #~ msgstr "ชื่อผู้เล่น"
+
+#~ msgid "Profiler toggle key"
+#~ msgstr "ปุ่มสลับ Profiler"
 
 #~ msgid "Profiling"
 #~ msgstr "โปรไฟล์"
@@ -8007,8 +8034,18 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "PvP enabled"
 #~ msgstr "PvP เปิดใช้งาน"
 
+#~ msgid "Range select key"
+#~ msgstr "ปุ่มเลือกช่วง"
+
 #~ msgid "Reset singleplayer world"
 #~ msgstr "รีเซ็ต singleplayer โลก"
+
+#~ msgid "Right key"
+#~ msgstr "ปุ่มขวา"
+
+#, fuzzy
+#~ msgid "Saturation"
+#~ msgstr "การทำซ้ำ"
 
 #~ msgid "Select Package File:"
 #~ msgstr "เลือกแฟ้มแพคเกจ:"
@@ -8016,11 +8053,26 @@ msgstr "cURL ขีด จำกัด ขนาน"
 #~ msgid "Server / Singleplayer"
 #~ msgstr "เซิร์ฟเวอร์ / ผู้เล่นเดี่ยว"
 
+#~ msgid ""
+#~ "Set the tilt of Sun/Moon orbit in degrees.\n"
+#~ "Value of 0 means no tilt / vertical orbit.\n"
+#~ "Minimum value: 0.0; maximum value: 60.0"
+#~ msgstr ""
+#~ "ตั้งค่าความเอียงของวงโคจรของดวงอาทิตย์/ดวงจันทร์เป็นองศา.\n"
+#~ "ค่า 0 หมายถึงไม่มีวงโคจรเอียง/แนวตั้ง.\n"
+#~ "ค่าต่ำสุด: 0.0; ค่าสูงสุด: 60.0"
+
 #, fuzzy
 #~ msgid ""
 #~ "Shadow offset (in pixels) of the fallback font. If 0, then shadow will "
 #~ "not be drawn."
 #~ msgstr "เงาแบบอักษรชดเชยถ้า 0 แล้วเงาจะไม่ถูกวาด."
+
+#~ msgid "Sky Body Orbit Tilt"
+#~ msgstr "วงโคจรของท้องฟ้าเอียง"
+
+#~ msgid "Sneak key"
+#~ msgstr "กุญแจแอบ"
 
 #~ msgid "Special"
 #~ msgstr "พิเศษ"
@@ -8045,6 +8097,24 @@ msgstr "cURL ขีด จำกัด ขนาน"
 
 #~ msgid "Toggle Cinematic"
 #~ msgstr "สลับโรงภาพยนตร์"
+
+#~ msgid "Toggle camera mode key"
+#~ msgstr "สลับปุ่มโหมดกล้อง"
+
+#~ msgid "Unable to install a game as a $1"
+#~ msgstr "ไม่สามารถติดตั้งเกม $1"
+
+#~ msgid "Unable to install a modpack as a $1"
+#~ msgstr "ไม่สามารถติดตั้ง modpack ที่ $1"
+
+#~ msgid "View range decrease key"
+#~ msgstr "ปุ่มลดช่วงการมอง"
+
+#~ msgid "View range increase key"
+#~ msgstr "ปุ่มเพิ่มช่วงการมอง"
+
+#~ msgid "View zoom key"
+#~ msgstr "ดูปุ่มซูม"
 
 #~ msgid "Waving Water"
 #~ msgstr "น้ำโบก"

@@ -37,6 +37,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define PEER_ID_INEXISTENT 0
 #define PEER_ID_SERVER 1
 
+
+#define PEER_MINETEST_MIN 2
+#define PEER_MINETEST_MAX 9999
+#define PEER_WS_MIN 10002
+#define PEER_WS_MAX 19999
+#define PEER_ENET_MIN 20002
+#define PEER_ENET_MAX 29999
+#define PEER_SCTP_MIN 30002
+#define PEER_SCTP_MAX 39999
+
 // Define for simulating the quirks of sending through internet.
 // Causes the socket class to deliberately drop random packets.
 // This disables unit testing of socket and connection.

@@ -679,7 +679,7 @@ function modmgr.handle_rename_modpack_buttons(fields)
 	return {
 		is_dialog = false,
 		show_buttons = true,
-		current_tab = core.setting_get("main_menu_tab")
+		current_tab = core.settings:get("main_menu_tab")
 		}
 end
 --------------------------------------------------------------------------------
@@ -785,7 +785,7 @@ function modmgr.handle_configure_world_buttons(fields)
 		return {
 			is_dialog = false,
 			show_buttons = true,
-			current_tab = core.setting_get("main_menu_tab")
+			current_tab = core.settings:get("main_menu_tab")
 		}
 	end
 
@@ -796,7 +796,7 @@ function modmgr.handle_configure_world_buttons(fields)
 		return {
 			is_dialog = false,
 			show_buttons = true,
-			current_tab = core.setting_get("main_menu_tab")
+			current_tab = core.settings:get("main_menu_tab")
 		}
 	end
 
@@ -859,7 +859,7 @@ function modmgr.handle_delete_mod_buttons(fields)
 	return {
 		is_dialog = false,
 		show_buttons = true,
-		current_tab = core.setting_get("main_menu_tab")
+		current_tab = core.settings:get("main_menu_tab")
 		}
 end
 

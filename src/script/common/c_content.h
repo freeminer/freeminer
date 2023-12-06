@@ -42,7 +42,7 @@ extern "C" {
 #include "itemgroup.h"
 #include "itemdef.h"
 #include "c_types.h"
-// We do a explicit path include because by default c_content.h include src/client/hud.h
+// We do an explicit path include because by default c_content.h include src/client/hud.h
 // prior to the src/hud.h, which is not good on server only build
 #include "../../hud.h"
 #include "content/mods.h"
@@ -88,7 +88,7 @@ void               push_palette              (lua_State *L,
                                               const std::vector<video::SColor> *palette);
 
 TileDef            read_tiledef              (lua_State *L, int index,
-                                              u8 drawtype);
+                                              u8 drawtype, bool special);
 
 void               read_soundspec            (lua_State *L, int index,
                                               SimpleSoundSpec &spec);
@@ -132,10 +132,8 @@ void               read_inventory_list       (lua_State *L, int tableindex,
                                               Inventory *inv, const char *name,
                                               IGameDef *gdef, int forcesize=-1);
 
-MapNode            readnode                  (lua_State *L, int index,
-                                              const NodeDefManager *ndef);
-void               pushnode                  (lua_State *L, const MapNode &n,
-                                              const NodeDefManager *ndef);
+MapNode            readnode                  (lua_State *L, int index);
+void               pushnode                  (lua_State *L, const MapNode &n);
 
 
 void               read_groups               (lua_State *L, int index,

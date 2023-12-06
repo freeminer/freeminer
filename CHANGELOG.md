@@ -9,6 +9,13 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 
 Changelog
 ======
+### 5.7.0.0 (?)
+  * Tree growth
+  * Weather tuned
+  * Multi protocol network: `cmake -DUSE_MULTI=1` one server for minetest/websocket/enet/sctp clients
+  * Added websocket protocol for serve emscripten builds without proxy `cmake -DENABLE_WEBSOCKET=1`
+
+
 ### 5.6.1.0 (?)
   * auth_kv removed, use instead in world.mt:
     auth_backend = leveldbfm

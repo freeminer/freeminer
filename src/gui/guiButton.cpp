@@ -329,10 +329,9 @@ void GUIButton::draw()
 
 	if (SpriteBank)
 	{
-		core::position2di pos(buttonCenter);
-
 		if (isEnabled())
 		{
+			core::position2di pos(buttonCenter);
 			// pressed / unpressed animation
 			EGUI_BUTTON_STATE state = Pressed ? EGBS_BUTTON_DOWN : EGBS_BUTTON_UP;
 			drawSprite(state, ClickTime, pos);
@@ -500,12 +499,10 @@ video::SColor GUIButton::getOverrideColor() const
 	return OverrideColor;
 }
 
-#if IRRLICHT_VERSION_MAJOR == 1 && IRRLICHT_VERSION_MINOR > 8
 video::SColor GUIButton::getActiveColor() const
 {
 	return video::SColor(0,0,0,0); // unused?
 }
-#endif
 
 void GUIButton::enableOverrideColor(bool enable)
 {

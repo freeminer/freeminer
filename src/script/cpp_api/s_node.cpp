@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "irr_v3d.h"
 #include "nodedef.h"
 #include "server.h"
 #include "environment.h"
@@ -69,6 +70,8 @@ struct EnumString ScriptApiNode::es_ContentParamType2[] =
 		{CPT2_COLORED_WALLMOUNTED, "colorwallmounted"},
 		{CPT2_GLASSLIKE_LIQUID_LEVEL, "glasslikeliquidlevel"},
 		{CPT2_COLORED_DEGROTATE, "colordegrotate"},
+		{CPT2_4DIR, "4dir"},
+		{CPT2_COLORED_4DIR, "color4dir"},
 		{0, NULL},
 	};
 
@@ -120,7 +123,7 @@ bool ScriptApiNode::node_on_punch(v3s16 p, MapNode node,
 
 	// Call function
 	push_v3s16(L, p);
-	pushnode(L, node, ndef);
+	pushnode(L, node);
 	objectrefGetOrCreate(L, puncher);
 	pushPointedThing(pointed);
 	PCALL_RES(lua_pcall(L, 4, 0, error_handler));
@@ -143,7 +146,7 @@ bool ScriptApiNode::node_on_dig(v3s16 p, MapNode node,
 
 	// Call function
 	push_v3s16(L, p);
-	pushnode(L, node, ndef);
+	pushnode(L, node);
 	objectrefGetOrCreate(L, digger);
 	PCALL_RES(lua_pcall(L, 3, 1, error_handler));
 
@@ -205,8 +208,8 @@ bool ScriptApiNode::node_on_flood(v3s16 p, MapNode node, MapNode newnode)
 
 	// Call function
 	push_v3s16(L, p);
-	pushnode(L, node, ndef);
-	pushnode(L, newnode, ndef);
+	pushnode(L, node);
+	pushnode(L, newnode);
 	PCALL_RES(lua_pcall(L, 3, 1, error_handler));
 	lua_remove(L, error_handler);
 	return readParam<bool>(L, -1, false);
@@ -226,46 +229,9 @@ void ScriptApiNode::node_after_destruct(v3s16 p, MapNode node)
 
 	// Call function
 	push_v3s16(L, p);
-	pushnode(L, node, ndef);
+	pushnode(L, node);
 	PCALL_RES(lua_pcall(L, 2, 0, error_handler));
 	lua_pop(L, 1);  // Pop error handler
-}
-
-void ScriptApiNode::node_on_activate(v3s16 p, MapNode node)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	auto *ndef = getServer()->ndef();
-
-	// Push callback function on stack
-	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
-	{
-		return;
-	}
-	// Call function
-	push_v3s16(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
-	lua_pop(L, 1); // Pop error handler
-}
-
-void ScriptApiNode::node_on_deactivate(v3s16 p, MapNode node)
-{
-	SCRIPTAPI_PRECHECKHEADER
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	auto *ndef = getServer()->ndef();
-
-	// Push callback function on stack
-	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))
-		return;
-
-	// Call function
-	push_v3s16(L, p);
-	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
-	lua_pop(L, 1); // Pop error handler
 }
 
 bool ScriptApiNode::node_on_timer(v3s16 p, MapNode node, f32 dtime)
@@ -325,14 +291,52 @@ void ScriptApiNode::node_on_receive_fields(v3s16 p,
 	lua_pop(L, 1);  // Pop error handler
 }
 
-void ScriptApiNode::node_drop(v3s16 p, int fast = 0)
+//fm:
+void ScriptApiNode::node_on_activate(v3pos_t p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	int error_handler = PUSH_ERROR_HANDLER(L);
+
+	auto *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
+	{
+		return;
+	}
+	// Call function
+	push_v3pos(L, p);
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
+	lua_pop(L, 1); // Pop error handler
+}
+
+void ScriptApiNode::node_on_deactivate(v3pos_t p, MapNode node)
+{
+	SCRIPTAPI_PRECHECKHEADER
+
+	int error_handler = PUSH_ERROR_HANDLER(L);
+
+	auto *ndef = getServer()->ndef();
+
+	// Push callback function on stack
+	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))
+		return;
+
+	// Call function
+	push_v3pos(L, p);
+	PCALL_RES(lua_pcall(L, 1, 0, error_handler));
+	lua_pop(L, 1); // Pop error handler
+}
+
+void ScriptApiNode::node_drop(v3pos_t p, int fast = 0)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
 	lua_getglobal(L, "node_drop");
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	lua_pushinteger(L, fast);
 	PCALL_RES(lua_pcall(L, 2, 0, error_handler));
 	lua_pop(L, 1); // Pop error handler

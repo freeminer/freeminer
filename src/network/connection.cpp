@@ -20,6 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+#include "config.h"
+
+
 #include <iomanip>
 #include <cerrno>
 #include <algorithm>
@@ -39,6 +43,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace con
 {
+
+#if MINETEST_TRANSPORT
 
 /******************************************************************************/
 /* defines used for debugging and profiling                                   */
@@ -67,7 +73,7 @@ BufferedPacketPtr makePacket(Address &address, const SharedBuffer<u8> &data,
 {
 	u32 packet_size = data.getSize() + BASE_HEADER_SIZE;
 
-	BufferedPacketPtr p(new BufferedPacket(packet_size));
+	auto p = std::make_shared<BufferedPacket>(packet_size);
 	p->address = address;
 
 	writeU32(&p->data[0], protocol_id);
@@ -495,10 +501,10 @@ SharedBuffer<u8> IncomingSplitBuffer::insert(BufferedPacketPtr &p_ptr, bool reli
 
 void IncomingSplitBuffer::removeUnreliableTimedOuts(float dtime, float timeout)
 {
-	std::deque<u16> remove_queue;
+	std::vector<u16> remove_queue;
 	{
 		MutexAutoLock listlock(m_map_mutex);
-		for (auto &i : m_buf) {
+		for (const auto &i : m_buf) {
 			IncomingSplitPacket *p = i.second;
 			// Reliable ones are not removed by timeout
 			if (p->reliable)
@@ -515,6 +521,8 @@ void IncomingSplitBuffer::removeUnreliableTimedOuts(float dtime, float timeout)
 		m_buf.erase(j);
 	}
 }
+
+#endif
 
 /*
 	ConnectionCommand
@@ -586,6 +594,8 @@ ConnectionCommandPtr ConnectionCommand::createPeer(session_t peer_id, const Buff
 	data.copyTo(c->data);
 	return c;
 }
+
+#if MINETEST_TRANSPORT
 
 /*
 	Channel
@@ -1196,6 +1206,8 @@ SharedBuffer<u8> UDPPeer::addSplitPacket(u8 channel, BufferedPacketPtr &toadd,
 	ConnectionEvent
 */
 
+#endif
+
 const char *ConnectionEvent::describe() const
 {
 	switch(type) {
@@ -1250,6 +1262,8 @@ ConnectionEventPtr ConnectionEvent::bindFailed()
 {
 	return create(CONNEVENT_BIND_FAILED);
 }
+
+#if MINETEST_TRANSPORT
 
 /*
 	Connection
@@ -1559,7 +1573,7 @@ u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
 
 	// Get a unique peer id (2 or higher)
 	session_t peer_id_new = m_next_remote_peer_id;
-	u16 overflow =  MAX_UDP_PEERS;
+	u16 overflow =  PEER_MINETEST_MAX;
 
 	/*
 		Find an unused peer id
@@ -1591,7 +1605,9 @@ u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
 	m_peers[peer->id] = peer;
 	m_peer_ids.push_back(peer->id);
 
-	m_next_remote_peer_id = (peer_id_new +1 ) % MAX_UDP_PEERS;
+	m_next_remote_peer_id = (peer_id_new + 1);
+
+	if (m_next_remote_peer_id > overflow) m_next_remote_peer_id = PEER_MINETEST_MIN;
 
 	LOG(dout_con << getDesc()
 			<< "createPeer(): giving peer_id=" << peer_id_new << std::endl);
@@ -1659,7 +1675,7 @@ UDPPeer* Connection::createServerPeer(Address& address)
 	return peer;
 }
 
-
+#endif
 
 ConnectionCommandPtr ConnectionCommand::send(
 		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)

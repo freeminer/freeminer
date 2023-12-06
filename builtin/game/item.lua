@@ -205,7 +205,9 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2,
 		newnode.param2 = core.dir_to_wallmounted(dir)
 	-- Calculate the direction for furnaces and chests and stuff
 	elseif (def.paramtype2 == "facedir" or
-			def.paramtype2 == "colorfacedir") and not param2 then
+			def.paramtype2 == "colorfacedir" or
+			def.paramtype2 == "4dir" or
+			def.paramtype2 == "color4dir") and not param2 then
 		local placer_pos = placer and placer:get_pos()
 		if placer_pos then
 			local dir = vector.subtract(above, placer_pos)
@@ -225,6 +227,8 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2,
 			color_divisor = 8
 		elseif def.paramtype2 == "colorfacedir" then
 			color_divisor = 32
+		elseif def.paramtype2 == "color4dir" then
+			color_divisor = 4
 		elseif def.paramtype2 == "colordegrotate" then
 			color_divisor = 32
 		end
@@ -236,10 +240,11 @@ function core.item_place_node(itemstack, placer, pointed_thing, param2,
 	end
 
 	-- Check if the node is attached and if it can be placed there
-	if core.get_item_group(def.name, "attached_node") ~= 0 and
-		not builtin_shared.check_attached_node(place_to, newnode) then
+	local an = core.get_item_group(def.name, "attached_node")
+	if an ~= 0 and
+		not builtin_shared.check_attached_node(place_to, newnode, an) then
 		log("action", "attached node " .. def.name ..
-			" can not be placed at " .. core.pos_to_string(place_to))
+			" cannot be placed at " .. core.pos_to_string(place_to))
 		return itemstack, nil
 	end
 
@@ -356,8 +361,26 @@ function core.item_drop(itemstack, dropper, pos)
 	-- environment failed
 end
 
+function core.item_pickup(itemstack, picker, pointed_thing, ...)
+	itemstack = ItemStack(itemstack)
+	-- Invoke global on_item_pickup callbacks.
+	for _, callback in ipairs(core.registered_on_item_pickups) do
+		local result = callback(itemstack, picker, pointed_thing, ...)
+		if result then
+			return ItemStack(result)
+		end
+	end
+
+	-- Pickup item.
+	local inv = picker and picker:get_inventory()
+	if inv then
+		return inv:add_item("main", itemstack)
+	end
+	return itemstack
+end
+
 function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed_thing)
-	for _, callback in pairs(core.registered_on_item_eats) do
+	for _, callback in ipairs(core.registered_on_item_eats) do
 		local result = callback(hp_change, replace_with_item, itemstack, user, pointed_thing)
 		if result then
 			return result
@@ -378,22 +401,20 @@ function core.do_item_eat(hp_change, replace_with_item, itemstack, user, pointed
 
 	-- Changing hp might kill the player causing mods to do who-knows-what to the
 	-- inventory, so do this before set_hp().
-	if replace_with_item then
-		if itemstack:is_empty() then
-			itemstack:add_item(replace_with_item)
-		else
-			local inv = user:get_inventory()
-			-- Check if inv is null, since non-players don't have one
-			if inv and inv:room_for_item("main", {name=replace_with_item}) then
-				inv:add_item("main", replace_with_item)
-			else
-				local pos = user:get_pos()
-				pos.y = math.floor(pos.y + 0.5)
-				core.add_item(pos, replace_with_item)
-			end
+	replace_with_item = itemstack:add_item(replace_with_item)
+	user:set_wielded_item(itemstack)
+	if not replace_with_item:is_empty() then
+		local inv = user:get_inventory()
+		-- Check if inv is null, since non-players don't have one
+		if inv then
+			replace_with_item = inv:add_item("main", replace_with_item)
 		end
 	end
-	user:set_wielded_item(itemstack)
+	if not replace_with_item:is_empty() then
+		local pos = user:get_pos()
+		pos.y = math.floor(pos.y + 0.5)
+		core.add_item(pos, replace_with_item)
+	end
 
 	user:set_hp(user:get_hp() + hp_change)
 
@@ -596,6 +617,7 @@ core.nodedef_default = {
 	-- Interaction callbacks
 	on_place = redef_wrapper(core, 'item_place'), -- core.item_place
 	on_drop = redef_wrapper(core, 'item_drop'), -- core.item_drop
+	on_pickup = redef_wrapper(core, 'item_pickup'), -- core.item_pickup
 	on_use = nil,
 	can_dig = nil,
 
@@ -648,6 +670,7 @@ core.craftitemdef_default = {
 	-- Interaction callbacks
 	on_place = redef_wrapper(core, 'item_place'), -- core.item_place
 	on_drop = redef_wrapper(core, 'item_drop'), -- core.item_drop
+	on_pickup = redef_wrapper(core, 'item_pickup'), -- core.item_pickup
 	on_secondary_use = redef_wrapper(core, 'item_secondary_use'),
 	on_use = nil,
 }
@@ -668,6 +691,7 @@ core.tooldef_default = {
 	on_place = redef_wrapper(core, 'item_place'), -- core.item_place
 	on_secondary_use = redef_wrapper(core, 'item_secondary_use'),
 	on_drop = redef_wrapper(core, 'item_drop'), -- core.item_drop
+	on_pickup = redef_wrapper(core, 'item_pickup'), -- core.item_pickup
 	on_use = nil,
 }
 
@@ -684,8 +708,9 @@ core.noneitemdef_default = {  -- This is used for the hand and unknown items
 	tool_capabilities = nil,
 
 	-- Interaction callbacks
-	on_place = redef_wrapper(core, 'item_place'),
+	on_place = redef_wrapper(core, 'item_place'), -- core.item_place
 	on_secondary_use = redef_wrapper(core, 'item_secondary_use'),
+	on_pickup = redef_wrapper(core, 'item_pickup'), -- core.item_pickup
 	on_drop = nil,
 	on_use = nil,
 }

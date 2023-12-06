@@ -253,7 +253,7 @@ std::string ItemStack::getItemString(bool include_meta) const
 	return os.str();
 }
 
-std::string ItemStack::getDescription(IItemDefManager *itemdef) const
+std::string ItemStack::getDescription(const IItemDefManager *itemdef) const
 {
 	std::string desc = metadata.getString("description");
 	if (desc.empty())
@@ -261,7 +261,7 @@ std::string ItemStack::getDescription(IItemDefManager *itemdef) const
 	return desc.empty() ? name : desc;
 }
 
-std::string ItemStack::getShortDescription(IItemDefManager *itemdef) const
+std::string ItemStack::getShortDescription(const IItemDefManager *itemdef) const
 {
 	std::string desc = metadata.getString("short_description");
 	if (desc.empty())

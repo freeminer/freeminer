@@ -130,23 +130,7 @@ GUIFormSpecMenu::GUIFormSpecMenu(JoystickController *joystick,
 
 GUIFormSpecMenu::~GUIFormSpecMenu()
 {
-	removeAllChildren();
-	removeTooltip();
-
-	for (auto &table_it : m_tables)
-		table_it.second->drop();
-	for (auto &inventorylist_it : m_inventorylists)
-		inventorylist_it->drop();
-	for (auto &checkbox_it : m_checkboxes)
-		checkbox_it.second->drop();
-	for (auto &scrollbar_it : m_scrollbars)
-		scrollbar_it.second->drop();
-	for (auto &tooltip_rect_it : m_tooltip_rects)
-		tooltip_rect_it.first->drop();
-	for (auto &clickthrough_it : m_clickthrough_elements)
-		clickthrough_it->drop();
-	for (auto &scroll_container_it : m_scroll_containers)
-		scroll_container_it.second->drop();
+	removeAll();
 
 	delete m_selected_item;
 	delete m_form_src;
@@ -703,7 +687,7 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 	e->setMax(max);
 	e->setMin(min);
 
-	e->setPos(stoi(parts[4]));
+	e->setPos(stoi(value));
 
 	e->setSmallStep(data->scrollbar_options.small_step);
 	e->setLargeStep(data->scrollbar_options.large_step);
@@ -1189,7 +1173,6 @@ void GUIFormSpecMenu::parseTable(parserData* data, const std::string &element)
 	std::string name = parts[2];
 	std::vector<std::string> items = split(parts[3],',');
 	std::string str_initial_selection;
-	std::string str_transparent = "false";
 
 	if (parts.size() >= 5)
 		str_initial_selection = parts[4];
@@ -2273,7 +2256,7 @@ void GUIFormSpecMenu::parseBackgroundColor(parserData* data, const std::string &
 	}
 
 	// bgcolor
-	if (parameter_count >= 1 && parts[0] != "")
+	if (parameter_count >= 1 && !parts[0].empty())
 		parseColorString(parts[0], m_bgcolor, false);
 
 	// fullscreen
@@ -2284,14 +2267,14 @@ void GUIFormSpecMenu::parseBackgroundColor(parserData* data, const std::string &
 		} else if (parts[1] == "neither") {
 			m_bgnonfullscreen = false;
 			m_bgfullscreen = false;
-		} else if (parts[1] != "" || m_formspec_version < 3) {
+		} else if (!parts[1].empty() || m_formspec_version < 3) {
 			m_bgfullscreen = is_yes(parts[1]);
 			m_bgnonfullscreen = !m_bgfullscreen;
 		}
 	}
 
 	// fbgcolor
-	if (parameter_count >= 3 && parts[2] != "")
+	if (parameter_count >= 3 && !parts[2].empty())
 		parseColorString(parts[2], m_fullscreen_bgcolor, false);
 }
 
@@ -2817,6 +2800,28 @@ void GUIFormSpecMenu::parseModel(parserData *data, const std::string &element)
 	m_fields.push_back(spec);
 }
 
+void GUIFormSpecMenu::removeAll()
+{
+	// Remove children
+	removeAllChildren();
+	removeTooltip();
+
+	for (auto &table_it : m_tables)
+		table_it.second->drop();
+	for (auto &inventorylist_it : m_inventorylists)
+		inventorylist_it->drop();
+	for (auto &checkbox_it : m_checkboxes)
+		checkbox_it.second->drop();
+	for (auto &scrollbar_it : m_scrollbars)
+		scrollbar_it.second->drop();
+	for (auto &tooltip_rect_it : m_tooltip_rects)
+		tooltip_rect_it.first->drop();
+	for (auto &clickthrough_it : m_clickthrough_elements)
+		clickthrough_it->drop();
+	for (auto &scroll_container_it : m_scroll_containers)
+		scroll_container_it.second->drop();
+}
+
 void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 {
 	//some prechecks
@@ -3058,27 +3063,10 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		}
 	} else {
 		// Don't keep old focus value
-		m_focused_element = "";
+		m_focused_element = nullopt;
 	}
 
-	// Remove children
-	removeAllChildren();
-	removeTooltip();
-
-	for (auto &table_it : m_tables)
-		table_it.second->drop();
-	for (auto &inventorylist_it : m_inventorylists)
-		inventorylist_it->drop();
-	for (auto &checkbox_it : m_checkboxes)
-		checkbox_it.second->drop();
-	for (auto &scrollbar_it : m_scrollbars)
-		scrollbar_it.second->drop();
-	for (auto &tooltip_rect_it : m_tooltip_rects)
-		tooltip_rect_it.first->drop();
-	for (auto &clickthrough_it : m_clickthrough_elements)
-		clickthrough_it->drop();
-	for (auto &scroll_container_it : m_scroll_containers)
-		scroll_container_it.second->drop();
+	removeAll();
 
 	mydata.size = v2s32(100, 100);
 	mydata.screensize = screensize;
@@ -3529,10 +3517,10 @@ GUIInventoryList::ItemSpec GUIFormSpecMenu::getItemAtPos(v2s32 p) const
 		s32 item_index = e->getItemIndexAtPos(p);
 		if (item_index != -1)
 			return GUIInventoryList::ItemSpec(e->getInventoryloc(), e->getListname(),
-					item_index);
+					item_index, e->getSlotSize());
 	}
 
-	return GUIInventoryList::ItemSpec(InventoryLocation(), "", -1);
+	return GUIInventoryList::ItemSpec(InventoryLocation(), "", -1, {0,0});
 }
 
 void GUIFormSpecMenu::drawSelectedItem()
@@ -3556,7 +3544,8 @@ void GUIFormSpecMenu::drawSelectedItem()
 	ItemStack stack = list->getItem(m_selected_item->i);
 	stack.count = m_selected_amount;
 
-	core::rect<s32> imgrect(0,0,imgsize.X,imgsize.Y);
+	v2s32 slotsize = m_selected_item->slotsize;
+	core::rect<s32> imgrect(0, 0, slotsize.X, slotsize.Y);
 	core::rect<s32> rect = imgrect + (m_pointer - imgrect.getCenter());
 	rect.constrainTo(driver->getViewPort());
 	drawItemStack(driver, m_font, stack, rect, NULL, m_client, IT_ROT_DRAGGED);
@@ -3810,6 +3799,7 @@ void GUIFormSpecMenu::updateSelectedItem()
 			m_selected_item->inventoryloc = e->getInventoryloc();
 			m_selected_item->listname = "craftresult";
 			m_selected_item->i = 0;
+			m_selected_item->slotsize = e->getSlotSize();
 			m_selected_amount = item.count;
 			m_selected_dragging = false;
 			break;
@@ -3891,7 +3881,7 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode)
 
 		if (!current_field_enter_pending.empty()) {
 			fields["key_enter_field"] = current_field_enter_pending;
-			current_field_enter_pending = "";
+			current_field_enter_pending.clear();
 		}
 
 		if (current_keys_pending.key_escape) {
@@ -4708,7 +4698,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				} else if (s.ftype == f_ScrollBar) {
 					s.fdefault = L"Changed";
 					acceptInput(quit_mode_no);
-					s.fdefault = L"";
+					s.fdefault.clear();
 				} else if (s.ftype == f_Unknown || s.ftype == f_HyperText) {
 					if (!s.sound.empty() && m_sound_manager)
 						m_sound_manager->playSound(SimpleSoundSpec(s.sound, 1.0f));

@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
 #include "map.h"
 #include "camera.h"
@@ -36,9 +37,10 @@ struct MapDrawControl
 // freeminer:
 	float farmesh = 0;
 	int farmesh_step = 1;
+	int cell_size = 1;
 
 	float fps = 30;
-	float fps_avg =30;
+	float fps_avg = 30;
 	float fps_wanted = 30;
 	float drawtime_avg = 30;
 
@@ -103,7 +105,7 @@ public:
 			s32 id
 	);
 
-	virtual ~ClientMap() = default;
+	virtual ~ClientMap();
 
 	bool maySaveBlocks() override
 	{
@@ -146,6 +148,8 @@ public:
 		v3s16 *p_blocks_min, v3s16 *p_blocks_max, float range=-1.0f);
 	void updateDrawList(float dtime, unsigned int max_cycle_ms = 0);
 	void updateDrawListFm(float dtime, unsigned int max_cycle_ms = 0);
+	// @brief Calculate statistics about the map and keep the blocks alive
+	void touchMapBlocks();
 	void updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length);
 	// Returns true if draw list needs updating before drawing the next frame.
 	bool needsUpdateDrawList() { return m_needs_update_drawlist; }
@@ -169,10 +173,16 @@ public:
 	f32 getWantedRange() const { return m_control.wanted_range; }
 	f32 getCameraFov() const { return m_camera_fov; }
 
+	void onSettingChanged(const std::string &name);
+
+protected:
+	void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) override;
 private:
+	bool isMeshOccluded(MapBlock *mesh_block, u16 mesh_size, v3s16 cam_pos_nodes);
 
 	// update the vertex order in transparent mesh buffers
 	void updateTransparentMeshBuffers();
+
 
 	// Orders blocks by distance to the camera
 	class MapBlockComparer
@@ -243,17 +253,21 @@ private:
 
 
 	//std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
+	std::vector<MapBlock*> m_keeplist;
 	std::map<v3s16, MapBlock*> m_drawlist_shadow;
 	bool m_needs_update_drawlist;
+
 	std::set<v2s16> m_last_drawn_sectors;
 
 	bool m_cache_trilinear_filter;
 	bool m_cache_bilinear_filter;
 	bool m_cache_anistropic_filter;
-	bool m_added_to_shadow_renderer{false};
 	u16 m_cache_transparency_sorting_distance;
+
+	bool m_loops_occlusion_culler;
+	bool m_enable_raytraced_culling;
 };
 
-bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
+bool isOccluded(Map *map, v3pos_t p0, v3pos_t p1, float step, float stepfac,
 		float start_off, float end_off, u32 needed_count, NodeDefManager *nodemgr,
 		unordered_map_v3pos<bool> & occlude_cache);

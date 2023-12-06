@@ -29,11 +29,15 @@ on:
       - 'Dockerfile'
       - '.dockerignore'
 
+env:
+  MINETEST_POSTGRESQL_CONNECT_STRING: 'host=localhost user=minetest password=minetest dbname=minetest'
+
 jobs:
   # Older gcc version (should be close to our minimum supported version)
   gcc_5:
     if: ${{ false }}
     runs-on: ubuntu-18.04
+    if: "false" # FIXME
     steps:
       - uses: actions/checkout@v3
         with:
@@ -83,6 +87,7 @@ jobs:
   clang_3_9:
     if: ${{ false }}
     runs-on: ubuntu-18.04
+    if: "false" # FIXME
     steps:
       - uses: actions/checkout@v3
         with:

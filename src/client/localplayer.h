@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "player.h"
 #include "environment.h"
 #include "constants.h"
@@ -67,20 +68,14 @@ public:
 	bool swimming_vertical = false;
 	bool swimming_pitch = false;
 
-	float physics_override_speed = 1.0f;
-	float physics_override_jump = 1.0f;
-	float physics_override_gravity = 1.0f;
-	bool physics_override_sneak = true;
-	bool physics_override_sneak_glitch = false;
-	// Temporary option for old move code
-	bool physics_override_new_move = true;
+	f32 gravity = 0; // total downwards acceleration
 
 	void move(f32 dtime, Environment *env, f32 pos_max_d);
 	void move(f32 dtime, Environment *env, f32 pos_max_d,
 			std::vector<CollisionInfo> *collision_info);
 
 	// fm:
-	bool canPlaceNode(const v3s16& p, const MapNode& node);
+	bool canPlaceNode(const v3pos_t& p, const MapNode& node);
 
 	// Temporary option for old move code
 	void old_move(f32 dtime, Environment *env, f32 pos_max_d,
@@ -174,7 +169,7 @@ public:
 
 	inline void addVelocity(const v3f &vel)
 	{
-		added_velocity += vel;
+		m_added_velocity += vel;
 	}
 
 	inline Lighting& getLighting() { return m_lighting; }
@@ -226,8 +221,7 @@ private:
 	bool m_autojump = false;
 	float m_autojump_time = 0.0f;
 
-	v3f added_velocity = v3f(0.0f); // cleared on each move()
-	// TODO: Rename to adhere to convention: added_velocity --> m_added_velocity
+	v3f m_added_velocity = v3f(0.0f); // in BS-space; cleared on each move()
 
 	GenericCAO *m_cao = nullptr;
 	Client *m_client;

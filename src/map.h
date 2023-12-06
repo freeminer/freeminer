@@ -27,18 +27,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <set>
 #include <map>
+#include "irr_v3d.h"
 #include "util/unordered_map_hash.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_set.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
+#include "mapblock.h"
 #include "mapnode.h"
 #include "constants.h"
 #include "voxel.h"
 #include "modifiedstate.h"
 #include "util/container.h"
 #include "util/metricsbackend.h"
+#include "util/numeric.h"
 #include "nodetimer.h"
 #include "map_settings_manager.h"
 #include "debug.h"
@@ -85,26 +88,35 @@ struct MapEditEvent
 	MapEditEventType type = MEET_OTHER;
 	v3s16 p;
 	MapNode n = CONTENT_AIR;
-	std::set<v3s16> modified_blocks;
+	std::vector<v3s16> modified_blocks; // Represents a set
 	bool is_private_change = false;
 
 	MapEditEvent() = default;
+
+	// Sets the event's position and marks the block as modified.
+	void setPositionModified(v3s16 pos)
+	{
+		assert(modified_blocks.empty()); // only meant for initialization (once)
+		p = pos;
+		modified_blocks.push_back(getNodeBlockPos(pos));
+	}
+
+	void setModifiedBlocks(const std::map<v3s16, MapBlock *> blocks)
+	{
+		assert(modified_blocks.empty()); // only meant for initialization (once)
+		modified_blocks.reserve(blocks.size());
+		for (const auto &block : blocks)
+			modified_blocks.push_back(block.first);
+	}
 
 	VoxelArea getArea() const
 	{
 		switch(type){
 		case MEET_ADDNODE:
-			return VoxelArea(p);
 		case MEET_REMOVENODE:
-			return VoxelArea(p);
 		case MEET_SWAPNODE:
-			return VoxelArea(p);
 		case MEET_BLOCK_NODE_METADATA_CHANGED:
-		{
-			v3s16 np1 = p*MAP_BLOCKSIZE;
-			v3s16 np2 = np1 + v3s16(1,1,1)*MAP_BLOCKSIZE - v3s16(1,1,1);
-			return VoxelArea(np1, np2);
-		}
+			return VoxelArea(p);
 		case MEET_OTHER:
 		{
 			VoxelArea a;
@@ -156,7 +168,7 @@ public:
 	void getBlockCacheFlush();
 
 	/* Server overrides */
-	virtual MapBlock * emergeBlock(v3s16 p, bool create_blank=false)
+	virtual MapBlock * emergeBlock(v3bpos_t p, bool create_blank=false)
 	{ return getBlockNoCreateNoEx(p); }
 
 	inline const NodeDefManager * getNodeDefManager() { return m_nodedef; }
@@ -164,7 +176,7 @@ public:
 	bool isValidPosition(v3s16 p);
 
 	// throws InvalidPositionException if not found
-	void setNode(v3s16 p, MapNode & n, bool important = false);
+	void setNode(v3pos_t p, MapNode n, bool important = false);
 
 	// Returns a CONTENT_IGNORE node if not found
 	// If is_valid_position is not NULL then this will be set to true if the
@@ -180,15 +192,15 @@ public:
 			int fast = 0, bool important = false
 			);
 	void removeNodeAndUpdate(v3s16 p,
-			std::map<v3s16, MapBlock*> &modified_blocks, int fast = 0, bool important = false);
+			std::map<v3bpos_t, MapBlock*> &modified_blocks, int fast = 0, bool important = false);
 
 	/*
 		Wrappers for the latter ones.
 		These emit events.
 		Return true if succeeded, false if not.
 	*/
-	bool addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata = true, bool important = false);
-	bool removeNodeWithEvent(v3s16 p, bool important);
+	bool addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata = true, bool important = false);
+	bool removeNodeWithEvent(v3pos_t p, bool important);
 
 	// Call these before and after saving of many blocks
 	virtual void beginSave() {}
@@ -211,7 +223,7 @@ public:
 		Saves modified blocks before unloading if possible.
 	*/
 	u32 timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
-			std::vector<v3s16> *unloaded_blocks=NULL
+			std::vector<v3bpos_t> *unloaded_blocks=NULL
 			, unsigned int max_cycle_ms = 100
 			);
 
@@ -259,34 +271,34 @@ public:
 	void removeNodeTimer(v3s16 p);
 
 	/*
-		Variables
+		Utilities
 	*/
 
 
 
 //freeminer:
-	MapNode getNodeTry(const v3s16 & p);
+	MapNode getNodeTry(const v3pos_t & p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
 	std::atomic_uint m_liquid_step_flow {0};
 
-	virtual s16 getHeat(const v3s16 &p, bool no_random = 0);
-	virtual s16 getHumidity(const v3s16& p, bool no_random = 0);
+	virtual s16 getHeat(const v3pos_t &p, bool no_random = 0);
+	virtual s16 getHumidity(const v3pos_t& p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3POSHash, v3POSEqual>
+	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
-	// MapBlock * getBlockNoCreateNoEx(v3s16 & p);
-	MapBlock *createBlankBlockNoInsert(const v3s16 &p);
-	MapBlock *createBlankBlock(const v3s16 &p);
+	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
+	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
+	MapBlock *createBlankBlock(const v3bpos_t &p);
 	bool insertBlock(MapBlock *block);
 	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3pos_t, int, v3POSHash, v3POSEqual> m_db_miss;
+	concurrent_shared_unordered_map<v3pos_t, int, v3posHash, v3posEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -313,6 +325,39 @@ public:
 
 
 public:
+	// Iterates through all nodes in the area in an unspecified order.
+	// The given callback takes the position as its first argument and the node
+	// as its second. If it returns false, forEachNodeInArea returns early.
+	template<typename F>
+	void forEachNodeInArea(v3s16 minp, v3s16 maxp, F func)
+	{
+		v3s16 bpmin = getNodeBlockPos(minp);
+		v3s16 bpmax = getNodeBlockPos(maxp);
+		for (s16 bz = bpmin.Z; bz <= bpmax.Z; bz++)
+		for (s16 bx = bpmin.X; bx <= bpmax.X; bx++)
+		for (s16 by = bpmin.Y; by <= bpmax.Y; by++) {
+			// y is iterated innermost to make use of the sector cache.
+			v3s16 bp(bx, by, bz);
+			MapBlock *block = getBlockNoCreateNoEx(bp);
+			v3s16 basep = bp * MAP_BLOCKSIZE;
+			s16 minx_block = rangelim(minp.X - basep.X, 0, MAP_BLOCKSIZE - 1);
+			s16 miny_block = rangelim(minp.Y - basep.Y, 0, MAP_BLOCKSIZE - 1);
+			s16 minz_block = rangelim(minp.Z - basep.Z, 0, MAP_BLOCKSIZE - 1);
+			s16 maxx_block = rangelim(maxp.X - basep.X, 0, MAP_BLOCKSIZE - 1);
+			s16 maxy_block = rangelim(maxp.Y - basep.Y, 0, MAP_BLOCKSIZE - 1);
+			s16 maxz_block = rangelim(maxp.Z - basep.Z, 0, MAP_BLOCKSIZE - 1);
+			for (s16 z_block = minz_block; z_block <= maxz_block; z_block++)
+			for (s16 y_block = miny_block; y_block <= maxy_block; y_block++)
+			for (s16 x_block = minx_block; x_block <= maxx_block; x_block++) {
+				v3s16 p = basep + v3s16(x_block, y_block, z_block);
+				MapNode n = block ?
+						block->getNodeNoCheck(x_block, y_block, z_block) :
+						MapNode(CONTENT_IGNORE);
+				if (!func(p, n))
+					return;
+			}
+		}
+	}
 
 	bool isBlockOccluded(MapBlock *block, v3s16 cam_pos_nodes);
 protected:
@@ -350,12 +395,12 @@ class ServerMap : public Map
 {
 public:
 //freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr);
+	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
 
 	size_t transforming_liquid_size();
-	v3s16 transforming_liquid_pop();
-	void transforming_liquid_add(const v3s16 &p);
+	v3pos_t transforming_liquid_pop();
+	void transforming_liquid_add(const v3pos_t &p);
 	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
@@ -363,14 +408,14 @@ public:
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	//int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-	virtual int getSurface(const v3s16& basepos, int searchup, bool walkable_only);
+	virtual int getSurface(const v3pos_t& basepos, int searchup, bool walkable_only);
 /*
 	{
 		return basepos.Y - 1;
 	}
 */
 
-	//concurrent_unordered_map<v3POS, bool, v3POSHash, v3POSEqual> m_transforming_liquid;
+	//concurrent_unordered_map<v3POS, bool, v3posHash, v3posEqual> m_transforming_liquid;
 	std::mutex m_transforming_liquid_mutex;
 	typedef unordered_map_v3pos<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
@@ -378,10 +423,10 @@ public:
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
 	void lighting_modified_add(const v3pos_t& pos, int range = 5);
 
-	void unspreadLight(enum LightBank bank, std::map<v3s16, u8> &from_nodes,
-			std::set<v3s16> &light_sources, std::map<v3s16, MapBlock *> &modified_blocks);
-	void spreadLight(enum LightBank bank, std::set<v3s16> &from_nodes,
-			std::map<v3s16, MapBlock *> &modified_blocks, uint64_t end_ms);
+	void unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
+			std::set<v3pos_t> &light_sources, std::map<v3bpos_t, MapBlock *> &modified_blocks);
+	void spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
+			std::map<v3bpos_t, MapBlock *> &modified_blocks, uint64_t end_ms);
 
 	u32 updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
 			std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
@@ -426,7 +471,7 @@ public:
 		- Create blank filled with CONTENT_IGNORE
 
 	*/
-	MapBlock *emergeBlock(v3s16 p, bool create_blank=false) override;
+	MapBlock *emergeBlock(v3bpos_t p, bool create_blank=false) override;
 
 	/*
 		Try to get a block.
@@ -468,7 +513,14 @@ public:
 	static bool saveBlock(MapBlock *block, MapDatabase *db, int compression_level = -1);
 	MapBlock* loadBlock(v3s16 p);
 
+	// Blocks are removed from the map but not deleted from memory until
+	// deleteDetachedBlocks() is called, since pointers to them may still exist
+	// when deleteBlock() is called.
 	bool deleteBlock(v3s16 blockpos) override;
+
+	void deleteDetachedBlocks();
+
+	void step();
 
 	void updateVManip(v3s16 pos);
 
@@ -489,7 +541,7 @@ public:
 	bool repairBlockLight(v3s16 blockpos,
 		std::map<v3s16, MapBlock *> *modified_blocks);
 
-	size_t transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
+	size_t transformLiquids(std::map<v3bpos_t, MapBlock*> & modified_blocks,
 			ServerEnvironment *env
             , Server *m_server, unsigned int max_cycle_ms			
 			);
@@ -510,12 +562,15 @@ public:
 	std::string m_savedir;
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
-	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3POSHash, v3POSEqual> m_mapgen_process;
+	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
 private:
 
 	int m_map_compression_level;
 
-	concurrent_set<v3s16> m_chunks_in_progress;
+	concurrent_set<v3bpos_t> m_chunks_in_progress;
+
+	// used by deleteBlock() and deleteDetachedBlocks()
+	MapBlockVect m_detached_blocks;
 
 	// Queued transforming water nodes
 	UniqueQueue<v3s16> m_transforming_liquid;

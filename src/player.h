@@ -102,6 +102,18 @@ struct PlayerControl
 	float movement_direction = 0.0f;
 };
 
+struct PlayerPhysicsOverride
+{
+	float speed = 1.f;
+	float jump = 1.f;
+	float gravity = 1.f;
+
+	bool sneak = true;
+	bool sneak_glitch = false;
+	// "Temporary" option for old move code
+	bool new_move = true;
+};
+
 struct PlayerSettings
 {
 	bool free_move = false;
@@ -155,55 +167,6 @@ public:
 
 	void addSpeed(v3f speed);
 
-/* DELETE! merge...
-	v3f getPosition()
-	{
-		auto lock = lock_shared_rec();
-		return m_position;
-	}
-
-	v3s16 getLightPosition() const;
-
- 	v3f getEyeOffset()
-	{
-		float eye_height = camera_barely_in_ceiling ? 1.5f : 1.625f;
-		return v3f(0, BS * eye_height, 0);
-	}
-
-	v3f getEyePosition()
-	{
-		auto lock = lock_shared_rec();
-		return m_position + getEyeOffset();
-	}
-
-	virtual void setPosition(const v3f &position)
-	{
-		auto lock = lock_unique_rec();
-		m_position = position;
-	}
-
-	virtual void setPitch(f32 pitch)
-	{
-		auto lock = lock_unique_rec();
-		m_pitch = pitch;
-	}
-
-	virtual void setYaw(f32 yaw)
-	{
-		auto lock = lock_unique_rec();
-		m_yaw = yaw;
-	}
-
-	f32 getPitch() { auto lock = lock_shared_rec(); return m_pitch; }
-	f32 getYaw() { auto lock = lock_shared_rec(); return m_yaw; }
-	u16 getBreath() { auto lock = lock_shared_rec(); return m_breath; }
-
-	virtual void setBreath(u16 breath) { m_breath = breath; }
-
-	f32 getRadPitch() const { return m_pitch * core::DEGTORAD; }
-	f32 getRadYaw() const { return m_yaw * core::DEGTORAD; }
-	aabb3f getCollisionbox() const { return m_collisionbox; }
-*/
 /*
 	const char *getName() const { return m_name; }
 */
@@ -246,10 +209,10 @@ public:
 
 	PlayerControl control;
 	std::mutex control_mutex;
-	const PlayerControl& getPlayerControl() { 
-				std::lock_guard<std::mutex> lock(control_mutex);
-		return control;
-	}
+	const PlayerControl& getPlayerControl() {
+   		 std::lock_guard<std::mutex> lock(control_mutex);
+		 return control; }
+	PlayerPhysicsOverride physics_override;
 	PlayerSettings &getPlayerSettings() { return m_player_settings; }
 	static void settingsChangedCallback(const std::string &name, void *data);
 

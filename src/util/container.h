@@ -75,7 +75,7 @@ public:
 	}
 
 private:
-	std::unordered_set<Value, v3POSHash, v3POSEqual> m_set;
+	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
 	std::queue<Value> m_queue;
 };
 
@@ -276,7 +276,7 @@ public:
 		m_signal.post();
 	}
 
-	/* this version of pop_front returns a empty element of T on timeout.
+	/* this version of pop_front returns an empty element of T on timeout.
 	* Make sure default constructor of T creates a recognizable "empty" element
 	*/
 	T pop_frontNoEx(u32 wait_time_max_ms)
@@ -329,7 +329,7 @@ public:
 		throw ItemNotFoundException("MutexedQueue: queue is empty");
 	}
 
-	/* this version of pop_back returns a empty element of T on timeout.
+	/* this version of pop_back returns an empty element of T on timeout.
 	* Make sure default constructor of T creates a recognizable "empty" element
 	*/
 	T pop_backNoEx(u32 wait_time_max_ms)

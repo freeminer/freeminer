@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "clientenvironment.h"
 #include "client.h"
 #include "map.h"
+#include "nodedef.h"
 
 class SmokePuffCSO: public ClientSimpleObject
 {
@@ -53,7 +54,7 @@ public:
 		bool pos_ok;
 		MapNode n = env->getMap().getNode(floatToInt(pos, BS), &pos_ok);
 		light = pos_ok ? decode_light(n.getLightBlend(env->getDayNightRatio(),
-							env->getGameDef()->ndef()))
+							env->getGameDef()->ndef()->getLightingFlags(n)))
 		               : 64;
 		video::SColor color(255,light,light,light);
 		m_spritenode->setColor(color);

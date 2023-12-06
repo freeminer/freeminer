@@ -8,7 +8,7 @@
     #include <syscall.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
     #include <pthread_np.h>
-#else
+#elif !defined(__EMSCRIPTEN__)
     #include <pthread.h>
     #include <stdexcept>
 #endif
@@ -29,7 +29,7 @@ uint64_t getThreadId()
         // On Solaris-derived systems, this returns the ID of the LWP, analogous
         // to a thread.
         current_tid = static_cast<uint64_t>(pthread_self());
-#else
+#elif !defined(__EMSCRIPTEN__)
         if (0 != pthread_threadid_np(nullptr, &current_tid))
             throw std::logic_error("pthread_threadid_np returned error");
 #endif

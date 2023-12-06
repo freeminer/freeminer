@@ -778,6 +778,16 @@ bool Settings::getFloatNoEx(const std::string &name, float &val) const
 	}
 }
 
+bool Settings::getFloatNoEx(const std::string &name, double &val) const
+{
+	try {
+		val = getFloat(name);
+		return true;
+	} catch (SettingNotFoundException &e) {
+		return false;
+	}
+}
+
 
 bool Settings::getU16NoEx(const std::string &name, u16 &val) const
 {
@@ -820,6 +830,14 @@ bool Settings::getS32NoEx(const std::string &name, s32 &val) const
 	}
 }
 
+bool Settings::getPosNoEx(const std::string &name, pos_t &val) const
+{
+#if USE_POS32
+	return getS32NoEx(name, val);
+#else
+	return getS16NoEx(name, val);
+#endif
+}
 
 bool Settings::getU64NoEx(const std::string &name, u64 &val) const
 {
@@ -956,6 +974,10 @@ bool Settings::setS32(const std::string &name, s32 value)
 	return set(name, itos(value));
 }
 
+bool Settings::setPos(const std::string &name, pos_t value)
+{
+	return set(name, itos(value));
+}
 
 bool Settings::setU64(const std::string &name, uint64_t value)
 {

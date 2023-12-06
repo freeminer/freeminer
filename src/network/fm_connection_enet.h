@@ -109,6 +109,8 @@ private:
 	void PrintInfo();
 	std::string getDesc();
 	unsigned int timeout_mul;
+
+	session_t m_next_remote_peer_id = PEER_ENET_MIN;
 };
 
 } // namespace

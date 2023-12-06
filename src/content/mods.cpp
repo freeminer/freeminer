@@ -220,29 +220,44 @@ std::vector<ModSpec> flattenMods(const std::map<std::string, ModSpec> &mods)
 }
 
 
-ModMetadata::ModMetadata(const std::string &mod_name, ModMetadataDatabase *database):
+ModStorage::ModStorage(const std::string &mod_name, ModStorageDatabase *database):
 	m_mod_name(mod_name), m_database(database)
 {
-	m_database->getModEntries(m_mod_name, &m_stringvars);
 }
 
-void ModMetadata::clear()
+void ModStorage::clear()
 {
-	for (const auto &pair : m_stringvars) {
-		m_database->removeModEntry(m_mod_name, pair.first);
-	}
-	Metadata::clear();
+	m_database->removeModEntries(m_mod_name);
 }
 
-bool ModMetadata::setString(const std::string &name, const std::string &var)
+bool ModStorage::contains(const std::string &name) const
 {
-	if (Metadata::setString(name, var)) {
-		if (var.empty()) {
-			m_database->removeModEntry(m_mod_name, name);
-		} else {
-			m_database->setModEntry(m_mod_name, name, var);
-		}
-		return true;
-	}
-	return false;
+	return m_database->hasModEntry(m_mod_name, name);
+}
+
+bool ModStorage::setString(const std::string &name, const std::string &var)
+{
+	if (var.empty())
+		return m_database->removeModEntry(m_mod_name, name);
+	else
+		return m_database->setModEntry(m_mod_name, name, var);
+}
+
+const StringMap &ModStorage::getStrings(StringMap *place) const
+{
+	place->clear();
+	m_database->getModEntries(m_mod_name, place);
+	return *place;
+}
+
+const std::vector<std::string> &ModStorage::getKeys(std::vector<std::string> *place) const
+{
+	place->clear();
+	m_database->getModKeys(m_mod_name, place);
+	return *place;
+}
+
+const std::string *ModStorage::getStringRaw(const std::string &name, std::string *place) const
+{
+	return m_database->getModEntry(m_mod_name, name, place) ? place : nullptr;
 }

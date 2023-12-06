@@ -55,11 +55,11 @@ void GameUI::init()
 {
 	// First line of debug text
 	m_guitext = gui::StaticText::add(guienv, utf8_to_wide(PROJECT_NAME_C).c_str(),
-		core::rect<s32>(0, 0, 0, 0), false, false, guiroot);
+		core::rect<s32>(0, 0, 0, 0), false, true, guiroot);
 
 	// Second line of debug text
 	m_guitext2 = gui::StaticText::add(guienv, L"", core::rect<s32>(0, 0, 0, 0), false,
-		false, guiroot);
+		true, guiroot);
 
 	// Chat text
 	m_guitext_chat = gui::StaticText::add(guienv, L"", core::rect<s32>(0, 0, 0, 0),
@@ -110,6 +110,10 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 {
 	v2u32 screensize = RenderingEngine::getWindowSize();
 
+	LocalPlayer *player = client->getEnv().getLocalPlayer();
+
+	s32 minimal_debug_height = 0;
+
 	// Minimal debug text must only contain info that can't give a gameplay advantage
 	if (m_flags.show_minimal_debug) {
 		const u16 fps = 1.0 / stats.dtime_jitter.avg;
@@ -140,10 +144,11 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 			<< " | RTT: " << (client->getRTT() * 1000.0f) << "ms";
 #endif
 
+		m_guitext->setRelativePosition(core::rect<s32>(5, 5, screensize.X, screensize.Y));
+
 		setStaticText(m_guitext, utf8_to_wide(os.str()).c_str());
 
-		m_guitext->setRelativePosition(core::rect<s32>(5, 5, screensize.X,
-			5 + g_fontengine->getTextHeight()));
+		minimal_debug_height = m_guitext->getTextHeight();
 	}
 
 	// Finally set the guitext visible depending on the flag
@@ -151,7 +156,6 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 
 	// Basic debug text also shows info that might give a gameplay advantage
 	if (m_flags.show_basic_debug) {
-		LocalPlayer *player = client->getEnv().getLocalPlayer();
 		v3f player_position = player->getPosition();
 
 		std::ostringstream os(std::ios_base::binary);
@@ -182,16 +186,15 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 				} else {
 					os << ", pointed: " << nodedef->get(n).name;
 				}
-				os << ", param2: " << (u64) n.getParam2();
+				os << ", p1: " << (u64) n.getParam1();
+				os << ", p2: " << (u64) n.getParam2();
 			}
 		}
 
-		setStaticText(m_guitext2, utf8_to_wide(os.str()).c_str());
+		m_guitext2->setRelativePosition(core::rect<s32>(5, 5 + minimal_debug_height,
+				screensize.X, screensize.Y));
 
-		m_guitext2->setRelativePosition(core::rect<s32>(5,
-			5 + g_fontengine->getTextHeight(), screensize.X,
-			5 + g_fontengine->getTextHeight() * 2
-		));
+		setStaticText(m_guitext2, utf8_to_wide(os.str()).c_str());
 	}
 
 	m_guitext2->setVisible(m_flags.show_basic_debug);
@@ -231,8 +234,8 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 		m_guitext_status->enableOverrideColor(true);
 	}
 
-	// Hide chat when console is visible
-	m_guitext_chat->setVisible(isChatVisible() && !chat_console->isVisible());
+	// Hide chat when disabled by server or when console is visible
+	m_guitext_chat->setVisible(isChatVisible() && !chat_console->isVisible() && (player->hud_flags & HUD_FLAG_CHAT_VISIBLE));
 }
 
 void GameUI::initFlags()
@@ -270,9 +273,9 @@ void GameUI::updateChatSize()
 	s32 chat_y = 5;
 
 	if (m_flags.show_minimal_debug)
-		chat_y += g_fontengine->getLineHeight();
+		chat_y += m_guitext->getTextHeight();
 	if (m_flags.show_basic_debug)
-		chat_y += g_fontengine->getLineHeight();
+		chat_y += m_guitext2->getTextHeight();
 
 	const v2u32 &window_size = RenderingEngine::getWindowSize();
 
@@ -303,7 +306,7 @@ void GameUI::updateProfiler()
 
 		core::dimension2d<u32> size = m_guitext_profiler->getOverrideFont()->
 				getDimension(str.c_str());
-		core::position2di upper_left(6, 50);
+		core::position2di upper_left(6, m_guitext->getTextHeight() * 2.5f);
 		core::position2di lower_right = upper_left;
 		lower_right.X += size.Width + 10;
 		lower_right.Y += size.Height;
@@ -314,13 +317,18 @@ void GameUI::updateProfiler()
 	m_guitext_profiler->setVisible(m_profiler_current_page != 0);
 }
 
-void GameUI::toggleChat()
+void GameUI::toggleChat(Client *client)
 {
-	m_flags.show_chat = !m_flags.show_chat;
-	if (m_flags.show_chat)
-		showTranslatedStatusText("Chat shown");
-	else
-		showTranslatedStatusText("Chat hidden");
+	if (client->getEnv().getLocalPlayer()->hud_flags & HUD_FLAG_CHAT_VISIBLE) {
+		m_flags.show_chat = !m_flags.show_chat;
+		if (m_flags.show_chat)
+			showTranslatedStatusText("Chat shown");
+		else
+			showTranslatedStatusText("Chat hidden");
+	} else {
+		showTranslatedStatusText("Chat currently disabled by game or mod");
+	}
+
 }
 
 void GameUI::toggleHud()

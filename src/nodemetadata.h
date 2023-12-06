@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class Inventory;
 class IItemDefManager;
 
-class NodeMetadata : public Metadata
+class NodeMetadata : public SimpleMetadata
 {
 public:
 	NodeMetadata(IItemDefManager *item_def_mgr);

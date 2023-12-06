@@ -81,6 +81,8 @@ bool               getboolfield(lua_State *L, int table,
                              const char *fieldname, bool &result);
 bool               getfloatfield(lua_State *L, int table,
                              const char *fieldname, float &result);
+bool               getfloatfield(lua_State *L, int table,
+                             const char *fieldname, double &result);
 
 void               setstringfield(lua_State *L, int table,
                              const char *fieldname, const std::string &value);
@@ -136,6 +138,7 @@ inline void         push_v2pos          (lua_State *L, v2pos_t p) {
 	#endif
 }
 
+void                push_v2u32          (lua_State *L, v2u32 p);
 void                push_v3s16          (lua_State *L, v3s16 p);
 void                push_v3s32          (lua_State *L, v3s32 p);
 inline void         push_v3pos          (lua_State *L, v3pos_t p) {
@@ -160,7 +163,17 @@ void                warn_if_field_exists(lua_State *L, int table,
 size_t write_array_slice_float(lua_State *L, int table_index, float *data,
 	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);
 
-v3pos_t               check_v3pos         (lua_State *L, int index);
-v2pos_t               read_v2pos          (lua_State *L, int index);
-v3pos_t               read_v3pos          (lua_State *L, int index);
-void                push_v3pos          (lua_State *L, v3pos_t p);
+v3pos_t               check_v3pos       (lua_State *L, int index);
+v2pos_t               read_v2pos        (lua_State *L, int index);
+v3pos_t               read_v3pos        (lua_State *L, int index);
+void                  push_v3pos        (lua_State *L, v3pos_t p);
+
+
+// This must match the implementation in builtin/game/misc_s.lua
+// Note that this returns a floating point result as Lua integers are 32-bit
+inline lua_Number hash_node_position(v3s16 pos)
+{
+	return (((s64)pos.Z + 0x8000L) << 32)
+			| (((s64)pos.Y + 0x8000L) << 16)
+			| ((s64)pos.X + 0x8000L);
+}

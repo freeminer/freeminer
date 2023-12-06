@@ -56,8 +56,8 @@ public:
 	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
 	Address(const sockaddr_in & sai) { m_address.ipv4 = sai; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
 
-	bool operator==(const Address &address);
-	bool operator!=(const Address &address) { return !(*this == address); }
+	bool operator==(const Address &address) const;
+	bool operator!=(const Address &address) const { return !(*this == address); }
 
 	struct sockaddr_in getAddress() const;
 	struct sockaddr_in6 getAddress6() const;

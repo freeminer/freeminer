@@ -1,4 +1,8 @@
 /*
+Copyright (C) 2023 proller <proler@gmail.com>
+*/
+
+/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -22,26 +26,50 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if USE_MULTI
 #include "fm_connection_multi.h"
+constexpr auto server_proto = "mt";
 namespace con_use
 {
 using namespace con_multi;
 }
+#define USE_TRANSPORT "multi";
+#elif USE_WEBSOCKET
+#include "ws/connection.h"
+constexpr auto server_proto = "mt_ws";
+namespace con_use
+{
+using namespace con_ws;
+}
+#define USE_TRANSPORT  "ws";
+#elif USE_WEBSOCKET_SCTP
+constexpr auto server_proto = "mt_ws_sctp";
+#include "fm_connection_websocket_sctp.h"
+namespace con_use
+{
+using namespace con_ws_sctp;
+}
+#define USE_TRANSPORT  "ws_sctp";
 #elif USE_SCTP
+constexpr auto server_proto = "mt_sctp";
 #include "fm_connection_sctp.h"
 namespace con_use
 {
 using namespace con_sctp;
 }
+#define USE_TRANSPORT  "sctp";
 #elif USE_ENET
+constexpr auto server_proto = "mt_enet";
 #include "fm_connection_enet.h"
 namespace con_use
 {
 using namespace con_enet;
 }
+#define USE_TRANSPORT  "enet";
 #else
+constexpr auto server_proto = "mt";
 #include "connection.h"
 namespace con_use
 {
 using namespace con;
 }
+#define USE_TRANSPORT "mt";
 #endif

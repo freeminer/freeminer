@@ -49,10 +49,9 @@ void android_main(android_app *app)
 
 	Thread::setName("Main");
 
+	char *argv[] = {strdup(PROJECT_NAME), strdup("--verbose"), nullptr};
 	try {
-		char *argv[] = {strdup(PROJECT_NAME), nullptr};
 		main(ARRLEN(argv) - 1, argv);
-		free(argv[0]);
 #if !EXCEPTION_DEBUG
 	} catch (std::exception &e) {
 		errorstream << "Uncaught exception in main thread: " << e.what() << std::endl;
@@ -64,6 +63,8 @@ void android_main(android_app *app)
 	} catch (int) { // impossible
 #endif
 	}
+	free(argv[0]);
+	free(argv[1]);
 
 	porting::cleanupAndroid();
 	infostream << "Shutting down." << std::endl;

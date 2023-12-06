@@ -466,14 +466,8 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				block->resetUsageTimer();
 
 				const auto complete = block->getLightingComplete();
-				if (block->getLightingExpired()) {
-					// env->getServerMap().lighting_modified_blocks.set(p, nullptr);
-					if (complete) // complete = 0 means lighting calc in progress
-						env->getServerMap().lighting_modified_add(p, d);
-					if (!complete) {
-						continue;
-					}
-
+				if (!complete){
+					env->getServerMap().lighting_modified_add(p, d);
 					if (block_sent && can_skip) {
 						continue;
 					}

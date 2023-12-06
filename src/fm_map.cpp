@@ -152,7 +152,7 @@ MapBlock *ServerMap::createBlock(v3pos_t p)
 }
 
 /*
-bool Map::eraseBlock(v3s16 blockpos)
+bool Map::eraseBlock(v3pos_t blockpos)
 {
 	auto block = getBlockNoCreateNoEx(blockpos);
 	if (!block)
@@ -173,7 +173,7 @@ void Map::eraseBlock(const MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode Map::getNodeTry(const v3pos_t & p)
+MapNode Map::getNodeTry(const v3pos_t &p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
@@ -230,42 +230,46 @@ s16 Map::getHumidity(const v3pos_t &p, bool no_random)
 	return 0;
 }
 
-s16 ServerMap::updateBlockHeat(
-		ServerEnvironment *env, const v3pos_t &p, MapBlock *block, unordered_map_v3pos<s16> *cache)
+s16 ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block,
+		unordered_map_v3pos<s16> *cache, bool block_add)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
 	if (block) {
-		if (gametime < block->heat_last_update)
-			return block->heat + block->heat_add + myrand_range(0, 1);
+		if (gametime < block->heat_last_update) {
+			return block->heat +
+				   (block_add ? (short)block->heat_add : 0); // + myrand_range(0, 1);
+		}
 	} else if (!cache) {
 		block = getBlockNoCreateNoEx(bp, true);
 	}
-	if (cache && cache->count(bp))
-		return cache->at(bp) + myrand_range(0, 1);
-
+	if (cache && cache->contains(bp)) {
+		return cache->at(bp); // + myrand_range(0, 1);
+	}
 	auto value = m_emerge->biomemgr->calcBlockHeat(p, getSeed(), env->getTimeOfDayF(),
 			gametime * env->m_time_of_day_speed, env->m_use_weather);
 
 	if (block) {
 		block->heat = value;
 		block->heat_last_update = env->m_use_weather ? gametime + 30 : -1;
-
-		value += block->heat_add; // in cache stored total value
+		if (block_add)
+			value += block->heat_add; // in cache stored total value
 	}
-	if (cache)
+	if (cache) {
 		(*cache)[bp] = value;
-	return value + myrand_range(0, 1);
+	}
+	return value; // + myrand_range(0, 1);
 }
 
-s16 ServerMap::updateBlockHumidity(
-		ServerEnvironment *env, const v3pos_t &p, MapBlock *block, unordered_map_v3pos<s16> *cache)
+s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
+		MapBlock *block, unordered_map_v3pos<s16> *cache, bool block_add)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
 	if (block) {
 		if (gametime < block->humidity_last_update)
-			return block->humidity + block->humidity_add + myrand_range(0, 1);
+			return block->humidity +
+				   (block_add ? (short)block->humidity_add : 0); //+ myrand_range(0, 1);
 	} else if (!cache) {
 		block = getBlockNoCreateNoEx(bp, true);
 	}
@@ -278,8 +282,8 @@ s16 ServerMap::updateBlockHumidity(
 	if (block) {
 		block->humidity = value;
 		block->humidity_last_update = env->m_use_weather ? gametime + 30 : -1;
-
-		value += block->humidity_add;
+		if (block_add)
+			value += block->humidity_add;
 	}
 	if (cache)
 		(*cache)[bp] = value;
@@ -369,7 +373,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
-		const thread_local static auto block_delete_time = g_settings->getS16("block_delete_time");
+		const thread_local static auto block_delete_time =
+				g_settings->getS16("block_delete_time");
 		m_blocks_delete_time = porting::getTimeMs() + block_delete_time * 1000;
 	}
 
@@ -410,7 +415,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 				continue;
 			}
 
-			if (block->refGet() ) {
+			if (block->refGet()) {
 				continue;
 			}
 
@@ -543,15 +548,14 @@ inline u8 undiminish_light(u8 light)
 	return light + 1;
 }
 
-
-	const v3pos_t dirs6[6] = {
-			{0, 0, 1},	 // back
-			{0, 1, 0},	 // top
-			{1, 0, 0},	 // right
-			{0, 0, -1}, // front
-			{0, -1, 0}, // bottom
-			{-1, 0, 0}, // left
-	};
+const v3pos_t dirs6[6] = {
+		{0, 0, 1},	// back
+		{0, 1, 0},	// top
+		{1, 0, 0},	// right
+		{0, 0, -1}, // front
+		{0, -1, 0}, // bottom
+		{-1, 0, 0}, // left
+};
 
 /*
 	Goes recursively through the neighbours of the node.
@@ -590,8 +594,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 	// Cache this a bit, too
 	bool block_checked_in_modified = false;
 
-	for (auto j = from_nodes.begin(); j != from_nodes.end();
-			++j) {
+	for (auto j = from_nodes.begin(); j != from_nodes.end(); ++j) {
 		auto pos = j->first;
 		auto blockpos = getNodeBlockPos(pos);
 
@@ -614,11 +617,11 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 				}
 		*/
 
-		if (!block || block->isDummy())
+		if (!block)
 			continue;
 
 		// Calculate relative position in block
-		// v3s16 relpos = pos - blockpos_last * MAP_BLOCKSIZE;
+		// v3pos_t relpos = pos - blockpos_last * MAP_BLOCKSIZE;
 
 		// Get node straight from the block
 		// MapNode n = block->getNode(relpos);
@@ -642,7 +645,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 			if (block == NULL || blockpos != blockpos_last) {
 				block = getBlockNoCreateNoEx(blockpos);
 
-				if (!block || block->isDummy())
+				if (!block)
 					continue;
 
 				blockpos_last = blockpos;
@@ -662,6 +665,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
 			if (!is_valid_position)
 				continue;
+			const auto &f2 = nodemgr->getLightingFlags(n2);
 
 			bool changed = false;
 
@@ -671,18 +675,17 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 				If the neighbor is dimmer than what was specified
 				as oldlight (the light of the previous node)
 			*/
-			if (n2.getLight(bank, nodemgr) < oldlight) {
+			if (n2.getLight(bank, f2) < oldlight) {
 				/*
 					And the neighbor is transparent and it has some light
 				*/
-				if (nodemgr->get(n2).light_propagates &&
-						n2.getLight(bank, nodemgr) != 0) {
+				if (nodemgr->get(n2).light_propagates && n2.getLight(bank, f2) != 0) {
 					/*
 						Set light to 0 and add to queue
 					*/
 
-					u8 current_light = n2.getLight(bank, nodemgr);
-					n2.setLight(bank, 0, nodemgr);
+					u8 current_light = n2.getLight(bank, f2);
+					n2.setLight(bank, 0, f2);
 					block->setNode(relpos, n2);
 
 					unlighted_nodes[n2pos] = current_light;
@@ -715,7 +718,7 @@ void ServerMap::unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_n
 								{
 				*/
 				//++block->lighting_broken;
-				block->setLightingExpired(true);
+				block->setLightingComplete(0);
 
 				modified_blocks[blockpos] = block;
 				/*
@@ -782,9 +785,6 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			blockchangecount++;
 		}
 
-		if (block->isDummy())
-			continue;
-
 		// auto lock = block->try_lock_unique_rec();
 		// if (!lock->owns_lock())
 		//	continue;
@@ -794,8 +794,9 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 		MapNode n = block->getNode(relpos, &is_valid_position);
 		if (n.getContent() == CONTENT_IGNORE)
 			continue;
+		const auto &f = nodemgr->getLightingFlags(n);
 
-		u8 oldlight = is_valid_position ? n.getLight(bank, nodemgr) : 0;
+		u8 oldlight = is_valid_position ? n.getLight(bank, f) : 0;
 		u8 newlight = diminish_light(oldlight);
 
 		// Loop through 6 neighbors
@@ -830,13 +831,14 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			MapNode n2 = block->getNode(relpos, &is_valid_position);
 			if (!is_valid_position)
 				continue;
+			const auto &f2 = nodemgr->getLightingFlags(n);
 
 			bool changed = false;
 			/*
 				If the neighbor is brighter than the current node,
 				add to list (it will light up this node on its turn)
 			*/
-			if (n2.getLight(bank, nodemgr) > undiminish_light(oldlight)) {
+			if (n2.getLight(bank, f2) > undiminish_light(oldlight)) {
 				lighted_nodes.insert(n2pos);
 				changed = true;
 			}
@@ -844,9 +846,9 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 				If the neighbor is dimmer than how much light this node
 				would spread on it, add to list
 			*/
-			if (n2.getLight(bank, nodemgr) < newlight) {
+			if (n2.getLight(bank, f2) < newlight) {
 				if (nodemgr->get(n2).light_propagates) {
-					n2.setLight(bank, newlight, nodemgr);
+					n2.setLight(bank, newlight, f2);
 					block->setNode(relpos, n2);
 					lighted_nodes.insert(n2pos);
 					changed = true;
@@ -875,9 +877,12 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			<<" for "<<from_nodes.size()<<" nodes"
 			<<std::endl;*/
 
-	if (!lighted_nodes.empty() &&
-			(!end_ms || porting::getTimeMs() <= end_ms)) { // maybe 32 too small
-														   /*
+	if (end_ms && porting::getTimeMs() > end_ms) {
+		return;
+	}
+
+	if (!lighted_nodes.empty()) {
+		/*
 																   infostream<<"spreadLight(): recursive("<<recursive<<"): changed="
 															  <<blockchangecount
 																	   <<" from="<<from_nodes.size()
@@ -899,6 +904,7 @@ u32 ServerMap::updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
 	return updateLighting(lighting_mblocks, processed, max_cycle_ms);
 }
 
+#if OLD_
 u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms)
 {
@@ -915,8 +921,8 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 	// bool debug=true;
 	// u32 count_was = modified_blocks.size();
 
-	// std::unordered_set<v3POS, v3POSHash, v3POSEqual> light_sources;
-	// std::unordered_map<v3POS, u8, v3POSHash, v3POSEqual> unlight_from_day,
+	// std::unordered_set<v3POS, v3posHash, v3posEqual> light_sources;
+	// std::unordered_map<v3POS, u8, v3posHash, v3posEqual> unlight_from_day,
 	// unlight_from_night;
 	std::set<v3pos_t> light_sources;
 	std::map<v3pos_t, u8> unlight_from_day, unlight_from_night;
@@ -938,23 +944,9 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 			// infostream<<"Light: start col if=" << i->first << std::endl;
 			auto block = getBlockNoCreateNoEx(i->first);
 
-			// TOdo:
-			/*
-						if (!block)
-							continue;
-						auto lock = block->try_lock_unique_rec();
-						if (!lock->owns_lock()) {
-							continue; // may cause dark areas
-						}
-
-						++loopcount;
-
-						voxalgo::repair_block_light(this, block,&modified_blocks);
-						continue;
-			*/
 			for (;;) {
 				// Don't bother with dummy blocks.
-				if (!block || block->isDummy() || !block->isGenerated()) {
+				if (!block || !block->isGenerated()) {
 					i = a_blocks.erase(i);
 					goto ablocks_end;
 				}
@@ -993,14 +985,17 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 								/* This would happen when dealing with a
 								   dummy block.
 								*/
-								infostream << "updateLighting(): InvalidPositionException"
+								infostream << "updateLighting(): "
+											  "InvalidPositionException"
 										   << std::endl;
 								continue;
 							}
-							u8 oldlight_day = n.getLight(LIGHTBANK_DAY, nodemgr);
-							u8 oldlight_night = n.getLight(LIGHTBANK_NIGHT, nodemgr);
-							n.setLight(LIGHTBANK_DAY, 0, nodemgr);
-							n.setLight(LIGHTBANK_NIGHT, 0, nodemgr);
+							const auto &f = nodemgr->getLightingFlags(n);
+
+							u8 oldlight_day = n.getLight(LIGHTBANK_DAY, f);
+							u8 oldlight_night = n.getLight(LIGHTBANK_NIGHT, f);
+							n.setLight(LIGHTBANK_DAY, 0, f);
+							n.setLight(LIGHTBANK_NIGHT, 0, f);
 							block->setNode(p, n);
 
 							// If node sources light, add to list
@@ -1074,19 +1069,52 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 		// block->lighting_broken = 0;
 	}
 	// infostream<< " ablocks_aft="<<a_blocks.size()<<std::endl;
+	g_profiler->add("Server: light blocks", loopcount);
 
+	return ret;
+}
+#endif
+
+u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
+		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms)
+{
+	std::map<v3pos_t, MapBlock *> modified_blocks;
+
+	int ret = 0;
+	int loopcount = 0;
+
+	TimeTaker timer("updateLighting");
+
+	for (auto i = a_blocks.begin(); i != a_blocks.end();) {
+		auto block = getBlockNoCreateNoEx(i->first);
+		if (!block) {
+			i = a_blocks.erase(i);
+			continue;
+		}
+		if (!voxalgo::repair_block_light(this, block, &modified_blocks)) {
+			processed[block->getPos()] = block->getPos().Y;
+		}
+		++loopcount;
+		++i;
+	}
+
+	for (const auto &i : modified_blocks) {
+		a_blocks.erase(i.first);
+	}
+	for (const auto &i : processed) {
+		a_blocks.erase(i.first);
+	}
 	g_profiler->add("Server: light blocks", loopcount);
 
 	return ret;
 }
 
-const v3pos_t g_4dirs[4] =
-{
-    // +right, +top, +back
-    { 0, 0, 1}, // back
-    { 1, 0, 0}, // right
-    { 0, 0,-1}, // front
-    {-1, 0, 0}, // left
+const v3pos_t g_4dirs[4] = {
+		// +right, +top, +back
+		{0, 0, 1},	// back
+		{1, 0, 0},	// right
+		{0, 0, -1}, // front
+		{-1, 0, 0}, // left
 };
 
 bool ServerMap::propagateSunlight(
@@ -1113,9 +1141,10 @@ bool ServerMap::propagateSunlight(
 			// Check if node above block has sunlight
 
 			MapNode n = getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z));
+			const auto &f = nodemgr->getLightingFlags(n);
+
 			if (n) {
-				if (n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN &&
-						!light_ambient) {
+				if (n.getLight(LIGHTBANK_DAY, f) != LIGHT_SUN && !light_ambient) {
 					no_sunlight = true;
 				}
 			} else {
@@ -1143,9 +1172,11 @@ bool ServerMap::propagateSunlight(
 
 			if (no_sunlight && !remove_light)
 				for (const auto &dir : g_4dirs) {
-					if (getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z) + dir)
-									.getLight(LIGHTBANK_DAY, m_gamedef->ndef()) ==
-							LIGHT_SUN) {
+					const auto n =
+							getNode(pos_relative + v3pos_t(x, MAP_BLOCKSIZE, z) + dir);
+					const auto &f = nodemgr->getLightingFlags(n);
+
+					if (n.getLight(LIGHTBANK_DAY, f) == LIGHT_SUN) {
 						current_light = LIGHT_SUN;
 						break;
 					}
@@ -1154,12 +1185,13 @@ bool ServerMap::propagateSunlight(
 			for (; y >= 0; --y) {
 				v3pos_t pos(x, y, z);
 				MapNode n = block->getNode(pos);
+				const auto &f = nodemgr->getLightingFlags(n);
+
 				const auto &ndef = nodemgr->get(n);
 				if (current_light == 0) {
 					//break;
 					// Do nothing
-				} else if (current_light == LIGHT_SUN &&
-						   ndef.sunlight_propagates) {
+				} else if (current_light == LIGHT_SUN && ndef.sunlight_propagates) {
 					// Do nothing: Sunlight is continued
 				} else if (ndef.light_propagates == false) {
 					// A solid object is on the way.
@@ -1169,13 +1201,14 @@ bool ServerMap::propagateSunlight(
 					current_light = 0;
 				} else {
 					// Diminish light
-					current_light = diminish_light(current_light, ndef.light_vertical_dimnish);
+					current_light =
+							diminish_light(current_light, ndef.light_vertical_dimnish);
 				}
 
-				u8 old_light = n.getLight(LIGHTBANK_DAY, nodemgr);
+				u8 old_light = n.getLight(LIGHTBANK_DAY, f);
 
 				if (current_light > old_light || remove_light) {
-					n.setLight(LIGHTBANK_DAY, current_light, nodemgr);
+					n.setLight(LIGHTBANK_DAY, current_light, f);
 					block->setNode(pos, n);
 				}
 
@@ -1198,12 +1231,14 @@ bool ServerMap::propagateSunlight(
 
 			if (block_below_is_valid) {
 				MapNode n = getNode(pos_relative + v3pos_t(x, -1, z));
+				const auto &f = nodemgr->getLightingFlags(n);
+
 				if (n) {
 					if (nodemgr->get(n).light_propagates) {
-						if (n.getLight(LIGHTBANK_DAY, nodemgr) == LIGHT_SUN &&
+						if (n.getLight(LIGHTBANK_DAY, f) == LIGHT_SUN &&
 								sunlight_should_go_down == false)
 							block_below_is_valid = false;
-						else if (n.getLight(LIGHTBANK_DAY, nodemgr) != LIGHT_SUN &&
+						else if (n.getLight(LIGHTBANK_DAY, f) != LIGHT_SUN &&
 								 sunlight_should_go_down == true)
 							block_below_is_valid = false;
 					}
@@ -1221,7 +1256,7 @@ bool ServerMap::propagateSunlight(
 void ServerMap::lighting_modified_add(const v3pos_t &pos, int range)
 {
 	MutexAutoLock lock(m_lighting_modified_mutex);
-	if (m_lighting_modified_blocks.count(pos)) {
+	if (m_lighting_modified_blocks.contains(pos)) {
 		auto old_range = m_lighting_modified_blocks[pos];
 		if (old_range <= range)
 			return;
@@ -1247,9 +1282,7 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 			++loopcount;
 			range = r->first;
 			blocks = r->second;
-			// infostream <<" go light range="<< r->first << " size="<<blocks.size()<< "
-			// ranges="<<m_lighting_modified_blocks_range.size()<<" total
-			// blk"<<m_lighting_modified_blocks.size()<< std::endl;
+			// infostream <<" go light range="<< r->first << " size="<<blocks.size()<< " ranges="<<m_lighting_modified_blocks_range.size()<<" total blk"<<m_lighting_modified_blocks.size()<< std::endl;
 			m_lighting_modified_blocks_range.erase(r);
 			for (auto &i : blocks)
 				m_lighting_modified_blocks.erase(i.first);
@@ -1286,17 +1319,17 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 }
 
 /*
-MapNode Map::getNodeNoEx(v3s16 p) {
+MapNode Map::getNodeNoEx(v3pos_t p) {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
 
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3bpos_t blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (!block)
 		return ignoreNode;
 
-	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
+	v3pos_t relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNode(relpos);
 }
 */

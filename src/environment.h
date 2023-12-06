@@ -83,7 +83,7 @@ public:
 		- Step mobs
 		- Run timers of map
 	*/
-	virtual void step(f32 dtime, float uptime, unsigned int max_cycle_ms) = 0;
+	virtual void step(f32 dtime, double uptime, unsigned int max_cycle_ms) = 0;
 
 	virtual Map &getMap() = 0;
 

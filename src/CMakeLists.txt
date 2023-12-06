@@ -1,5 +1,6 @@
 project(freeminer)
 
+INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
 
@@ -15,7 +16,7 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(HAVE_SHARED_MUTEX 1)
 
@@ -40,8 +41,11 @@ endif()
 
 option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
 if(MINETEST_PROTO)
-	set(MINETEST_TRANSPORT 1)
-	message(STATUS "Using minetest compatible networking (slow, some features missing)")
+	set(MINETEST_TRANSPORT 1 CACHE BOOL "")
+	message(STATUS "Using minetest compatible protocol (some features missing)")
+endif()
+if (MINETEST_TRANSPORT)
+	message(STATUS "Using minetest compatible transport (slow)")
 endif()
 
 #
@@ -138,7 +142,22 @@ if(NOT MSVC)
 	find_library(UNWIND_LIBRARY NAMES unwind)
 
 	if(UNWIND_LIBRARY)
-		set(USE_UNWIND 1)
+
+        CHECK_CXX_SOURCE_RUNS("
+       #include <execinfo.h> // for backtrace
+       int main(int argc, char *argv[]) {
+            void *callstack[128];
+            const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
+            char buf[1024];
+            int nFrames = backtrace(callstack, nMaxFrames);
+            return 0;
+       }
+       "
+        USE_UNWIND)
+        if(NOT USE_UNWIND)
+            set(USE_UNWIND 0)
+        endif()
+        # set(USE_UNWIND 1)
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
 		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
 	endif()
@@ -155,6 +174,16 @@ endif()
 
 
 
+
+check_type_size(int SIZEOF_INT BUILTIN_TYPES_ONLY LANGUAGE CXX)
+if(SIZEOF_INT LESS 4)
+	message(FATAL_ERROR "Minetest will not work with int less than 32 bits wide.")
+endif()
+
+check_type_size(size_t SIZEOF_SIZE_T LANGUAGE CXX)
+if(SIZEOF_SIZE_T LESS 4)
+	message(FATAL_ERROR "Minetest will not work with size_t less than 32 bits wide.")
+endif()
 
 # Add custom SemiDebug build mode
 set(CMAKE_CXX_FLAGS_SEMIDEBUG "-O1 -g -Wall" CACHE STRING
@@ -511,6 +540,10 @@ endif()
 # Use cmake_config.h
 add_definitions(-DUSE_CMAKE_CONFIG_H)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+set(PLATFORM_LIBS Threads::Threads)
+
 if(WIN32)
 	# Windows
 	if(MSVC) # MSVC Specifics
@@ -519,10 +552,8 @@ if(WIN32)
 		add_definitions ( /D "_CRT_SECURE_NO_DEPRECATE" /W1 )
 		# Get M_PI to work
 		add_definitions(/D "_USE_MATH_DEFINES")
-		# Dont define min/max macros in minwindef.h
+		# Don't define min/max macros in minwindef.h
 		add_definitions(/D "NOMINMAX")
-	else() # Probably MinGW = GCC
-		set(PLATFORM_LIBS winmm.lib ${PLATFORM_LIBS})
 	endif()
 	set(PLATFORM_LIBS ws2_32.lib version.lib shlwapi.lib winmm.lib ${PLATFORM_LIBS})
 
@@ -552,7 +583,7 @@ else()
 		endif(NOT HAIKU AND NOT APPLE)
 	endif()
 
-	set(PLATFORM_LIBS ${PLATFORM_LIBS} Threads::Threads ${CMAKE_DL_LIBS})
+	set(PLATFORM_LIBS ${PLATFORM_LIBS} ${CMAKE_DL_LIBS})
 	if(APPLE)
 		set(PLATFORM_LIBS "-framework CoreFoundation" ${PLATFORM_LIBS})
 	else()
@@ -562,16 +593,15 @@ else()
 		endif(HAVE_LIBRT)
 	endif(APPLE)
 
-	# Prefer local iconv if installed
 	find_library(ICONV_LIBRARY iconv)
 	mark_as_advanced(ICONV_LIBRARY)
 	if (ICONV_LIBRARY)
 		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${ICONV_LIBRARY})
 	endif()
-	if (HAIKU)
-		set(PLATFORM_LIBS ${PLATFORM_LIBS} intl network)
-	endif()
 
+	if (HAIKU)
+		set(PLATFORM_LIBS ${PLATFORM_LIBS} network)
+	endif()
 endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
@@ -609,20 +639,36 @@ add_subdirectory(irrlicht_changes)
 add_subdirectory(server)
 
 
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
 OPTION(USE_MULTI "Enable MT+SCTP networking" 0)
 if(USE_MULTI)
 	set(ENABLE_SCTP 1)
-	set(USE_ENET 1)
+	set(ENABLE_ENET 1)
+	#set(ENABLE_WEBSOCKET_SCTP 1) # NOT FINISHED
+	set(ENABLE_WEBSOCKET 1)
 endif()
 
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+
+if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp/CMakeLists.txt)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp)
+	#add_subdirectory(external/websocketpp)
+	#set(WEBSOCKETPP_LIBRARY websocketpp::websocketpp)
+	message(STATUS "Using websocket: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp")
+	find_package(OpenSSL)
+	set(WEBSOCKETPP_LIBRARY ${WEBSOCKETPP_LIBRARY} OpenSSL::SSL)
+        set(USE_WEBSOCKET 1)
+	#TODO: set(USE_WEBSOCKET_SCTP 1)
+    endif()
+endif()
 
 if(ENABLE_SCTP AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
     message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
+    set(ENABLE_SCTP 0)
 endif()
 
-if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
-# from external/usrsctp/usrsctplib/CMakeLists.txt :
+if(ENABLE_SCTP)
+        # from external/usrsctp/usrsctplib/CMakeLists.txt :
 	if(SCTP_DEBUG)
 		set(sctp_debug 1 CACHE INTERNAL "")
 		add_definitions(-DSCTP_DEBUG=1)
@@ -630,7 +676,6 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(sctp_build_programs 0 CACHE INTERNAL "")
 	set(sctp_werror 0 CACHE INTERNAL "")
 	set(WERROR 0 CACHE INTERNAL "") #old
-
 
 	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
 
@@ -640,15 +685,11 @@ if(ENABLE_SCTP AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctpli
 	set(USE_SCTP 1)
 
 	message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
-else()
-	set(USE_SCTP 0)
+#else()
+	#set(USE_SCTP 0)
 endif()
 
-#if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
-#    set(USE_ENET 1)
-#endif()
-
-if(USE_ENET)
+if(ENABLE_ENET)
 	if(NOT ENABLE_SYSTEM_ENET AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
 		add_subdirectory(external/enet)
 		set(ENET_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/enet/include)
@@ -658,8 +699,11 @@ if(USE_ENET)
 		find_library(ENET_LIBRARY NAMES enet)
 		find_path(ENET_INCLUDE_DIR enet/enet.h)
 	endif()
-	include_directories(${ENET_INCLUDE_DIR})
-	message(STATUS "Using enet: ${ENET_INCLUDE_DIR} ${ENET_LIBRARY}")
+	if(ENET_LIBRARY AND ENET_INCLUDE_DIR)
+		include_directories(${ENET_INCLUDE_DIR})
+		message(STATUS "Using enet: ${ENET_INCLUDE_DIR} ${ENET_LIBRARY}")
+		set(USE_ENET 1)
+	endif()
 endif()
 
 set(FMcommon_SRCS ${FMcommon_SRCS}
@@ -676,6 +720,7 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
     fm_abm.cpp
     fm_clientiface.cpp
     content_abm.cpp
+    content_abm_grow_tree.cpp
     fm_serverenvironment.cpp
 )
 #	FMColoredString.cpp
@@ -711,6 +756,7 @@ set(common_SRCS
 	itemdef.cpp
 	itemstackmetadata.cpp
 	light.cpp
+	lighting.cpp
 	log.cpp
 	main.cpp
 	map.cpp
@@ -904,6 +950,7 @@ if(BUILD_CLIENT)
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
 		${SCTP_LIBRARY}
+		${WEBSOCKETPP_LIBRARY}
 
 		${LUA_BIT_LIBRARY}
 		${FREETYPE_LIBRARY}
@@ -982,6 +1029,7 @@ if(BUILD_SERVER)
 		${MSGPACK_LIBRARY}
 		${ENET_LIBRARY}
 		${SCTP_LIBRARY}
+		${WEBSOCKETPP_LIBRARY}
 
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}
@@ -1065,6 +1113,41 @@ endif()
 # Set some optimizations and tweaks
 
 include(CheckCSourceCompiles)
+include(CheckSymbolExists)
+
+set(CMAKE_REQUIRED_INCLUDES ${LUA_INCLUDE_DIR})
+if(USE_LUAJIT)
+	set(CMAKE_REQUIRED_LIBRARIES ${LUA_LIBRARY})
+	# LuaJIT provides exactly zero ways to determine how recent it is (the version
+	# is unchanged since 2017), however it happens that string buffers were added
+	# after the changes which we care about so that works as an indicator.
+	# (https://github.com/LuaJIT/LuaJIT/commit/4c6b669 March 2021)
+	unset(HAVE_RECENT_LJ CACHE)
+	check_symbol_exists(luaopen_string_buffer "lualib.h" HAVE_RECENT_LJ)
+	if(NOT HAVE_RECENT_LJ)
+		string(CONCAT explanation_msg
+			"You are using a relatively old version of LuaJIT. We recommend "
+			"running a recent version (from git) as older ones are known not "
+			"to build/work correctly in all cases.\n"
+			"THIS APPLIES ESPECIALLY ON macOS OR Linux/aarch64!")
+		message(WARNING ${explanation_msg})
+	endif()
+elseif(NOT MSVC)
+	set(CMAKE_REQUIRED_LIBRARIES "")
+	unset(HAVE_ATCCALL CACHE)
+	# Note: we need to check the function without having the library
+	#       available for linking, so check_symbol_exists won't work.
+	# Incidentally this doesn't seem to work on MSVC...
+	check_c_source_compiles("#include <lua.h>\nint main(){return sizeof(lua_atccall);}" HAVE_ATCCALL)
+	if(NOT HAVE_ATCCALL)
+		string(CONCAT explanation_msg
+			"It looks like you're trying to build Minetest using a system-wide "
+			"Lua installation. This is no longer supported because PUC Lua "
+			"cannot interoperate with C++ correctly. Read src/unittest/test_lua.cpp "
+			" for technical details.")
+		message(FATAL_ERROR ${explanation_msg})
+	endif()
+endif()
 
 if(MSVC)
 	# Visual Studio
@@ -1114,26 +1197,6 @@ else()
 		set(RELEASE_WARNING_FLAGS "")
 	endif()
 
-	if(APPLE AND USE_LUAJIT)
-		# required per http://luajit.org/install.html
-		SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pagezero_size 10000 -image_base 100000000")
-	elseif(UNIX AND USE_LUAJIT)
-		check_c_source_compiles("#ifndef __aarch64__\n#error\n#endif\nint main(){}" IS_AARCH64)
-		if(IS_AARCH64)
-			# Move text segment below LuaJIT's 47-bit limit (see issue #9367)
-			if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
-				# FreeBSD uses lld, and lld does not support -Ttext-segment, suggesting
-				# --image-base instead. Not sure if it's equivalent change for the purpose
-				# but at least if fixes build on FreeBSD/aarch64
-				# XXX: the condition should also be changed to check for lld regardless of
-				# os, bit CMake doesn't have anything like CMAKE_LINKER_IS_LLD yet
-				SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--image-base=0x200000000")
-			else()
-				SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Ttext-segment=0x200000000")
-			endif()
-		endif()
-	endif()
-
 	if(MINGW)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32_LEAN_AND_MEAN")
@@ -1141,8 +1204,8 @@ else()
 
 	# Use a safe subset of flags to speed up math calculations:
 	# - we don't need errno or math exceptions
-	# - we don't deal with Inf/NaN or signed zero
-	set(MATH_FLAGS "-fno-math-errno -fno-trapping-math -ffinite-math-only -fno-signed-zeros")
+	# - we don't deal with signed zero
+	set(MATH_FLAGS "-fno-math-errno -fno-trapping-math -fno-signed-zeros")
 
 	# Enable SSE for floating point math on 32-bit x86 by default
 	# reasoning see minetest issue #11810 and https://gcc.gnu.org/wiki/FloatingPointMath
@@ -1154,23 +1217,22 @@ else()
 		endif()
 	endif()
 
-	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${OTHER_FLAGS} -pipe -funroll-loops")
-	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os")
+	set(CMAKE_CXX_FLAGS_RELEASE "${STD_FLAGS} -DNDEBUG ${RELEASE_WARNING_FLAGS} ${OTHER_FLAGS} -pipe -funroll-loops -O3 -fomit-frame-pointer")
+	if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
+			AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
+			AND CMAKE_CXX_COMPILER_VERSION MATCHES "^9\\.")
+		# Clang 9 has broken -ffast-math on glibc
 	else()
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -fomit-frame-pointer")
-		if(CMAKE_SYSTEM_NAME STREQUAL "Linux"
-				AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-				AND CMAKE_CXX_COMPILER_VERSION MATCHES "^9\\.")
-			# Clang 9 has broken -ffast-math on glibc
-		else()
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MATH_FLAGS}")
-		endif()
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${MATH_FLAGS}")
 	endif()
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELEASE} -g")
 	set(CMAKE_CXX_FLAGS_SEMIDEBUG "${STD_FLAGS} -g -O1 ${WARNING_FLAGS} ${OTHER_FLAGS}")
 	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
+	if(UNIX)
+		# enable assertions for libstdc++ or libc++
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wp,-D_GLIBCXX_ASSERTIONS -Wp,-D_LIBCPP_ENABLE_ASSERTIONS=1")
+	endif()
 	if(USE_GPROF)
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg")
 	endif()

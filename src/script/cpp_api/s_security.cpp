@@ -100,7 +100,6 @@ void ScriptApiSecurity::initializeSecurity()
 		"type",
 		"unpack",
 		"_VERSION",
-		"vector",
 		"xpcall",
 	};
 	static const char *whitelist_tables[] = {
@@ -255,10 +254,6 @@ void ScriptApiSecurity::initializeSecurity()
 	lua_pushnil(L);
 	lua_setfield(L, old_globals, "core");
 
-	// 'vector' as well.
-	lua_pushnil(L);
-	lua_setfield(L, old_globals, "vector");
-
 	lua_pop(L, 1); // Pop globals_backup
 
 
@@ -294,14 +289,13 @@ void ScriptApiSecurity::initializeSecurityClient()
 		"rawset",
 		"select",
 		"setfenv",
-		// getmetatable can be used to escape the sandbox <- ???
+		"getmetatable",
 		"setmetatable",
 		"tonumber",
 		"tostring",
 		"type",
 		"unpack",
 		"_VERSION",
-		"vector",
 		"xpcall",
 		// Completely safe libraries
 		"coroutine",
@@ -465,11 +459,10 @@ bool ScriptApiSecurity::safeLoadFile(lua_State *L, const char *path, const char 
 	size_t start = 0;
 	int c = std::getc(fp);
 	if (c == '#') {
-		// Skip the first line
-		while ((c = std::getc(fp)) != EOF && c != '\n') {}
-		if (c == '\n')
-			std::getc(fp);
-		start = std::ftell(fp);
+		// Skip the shebang line (but keep line-ending)
+		while (c != EOF && c != '\n')
+			c = std::getc(fp);
+		start = std::ftell(fp) - 1;
 	}
 
 	// Read the file
@@ -586,6 +579,17 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 		}
 	}
 	lua_pop(L, 1);  // Pop mod name
+
+	// Allow read-only access to game directory
+	if (!write_required) {
+		const SubgameSpec *game_spec = gamedef->getGameSpec();
+		if (game_spec && !game_spec->path.empty()) {
+			str = fs::AbsolutePath(game_spec->path);
+			if (!str.empty() && fs::PathStartsWith(abs_path, str)) {
+				return true;
+			}
+		}
+	}
 
 	// Allow read-only access to all mod directories
 	if (!write_required) {
