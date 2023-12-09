@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_base.h"
 #include "lua_api/l_http.h"
 #include "lua_api/l_mainmenu.h"
-#include "lua_api/l_sound.h"
+#include "lua_api/l_mainmenu_sound.h"
 #include "lua_api/l_util.h"
 #include "lua_api/l_settings.h"
 #include "log.h"
@@ -69,7 +69,7 @@ void MainMenuScripting::initializeModApi(lua_State *L, int top)
 	// Initialize mod API modules
 	ModApiMainMenu::Initialize(L, top);
 	ModApiUtil::Initialize(L, top);
-	ModApiSound::Initialize(L, top);
+	ModApiMainMenuSound::Initialize(L, top);
 	ModApiHttp::Initialize(L, top);
 
 	asyncEngine.registerStateInitializer(registerLuaClasses);
@@ -86,6 +86,7 @@ void MainMenuScripting::initializeModApi(lua_State *L, int top)
 void MainMenuScripting::registerLuaClasses(lua_State *L, int top)
 {
 	LuaSettings::Register(L);
+	MainMenuSoundHandle::Register(L);
 }
 
 /******************************************************************************/

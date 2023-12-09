@@ -210,7 +210,7 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		objProps->automatic_rotate = 3.1415 * 0.5;
 		obj->notifyObjectPropertiesModified();
 		obj->attachItems(items);
-	if (addActiveObject(obj)) {
+	if (addActiveObject(std::unique_ptr<ServerActiveObject>{obj})) {
 		return obj;
 	}
 	delete obj;
@@ -230,7 +230,7 @@ epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::strin
 		objProps->collideWithObjects = false;
 		obj->notifyObjectPropertiesModified();
 		obj->attachNode(n);
-	if (addActiveObject(obj)) {
+	if (addActiveObject(std::unique_ptr<ServerActiveObject>{obj})) {
 		return obj;
 	}
 	delete obj;

@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "unit_sao.h"
 #include "scripting_server.h"
 #include "serverenvironment.h"
+#include "util/serialize.h"
 
 UnitSAO::UnitSAO(ServerEnvironment *env, v3f pos) : ServerActiveObject(env, pos)
 {

@@ -26,14 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#ifdef _WIN32
-	#ifdef _WIN32_WINNT
-		#undef _WIN32_WINNT
-	#endif
-	#define _WIN32_WINNT 0x0501 // We need to do this before any other headers
-		// because those might include sdkddkver.h which defines _WIN32_WINNT if not already set
-#endif
-
 #include <string>
 #include <vector>
 #include "irrlicht.h"
@@ -60,6 +52,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#define sleep_ms(x) Sleep(x)
 
 	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
+	#define sleep_us(x) Sleep((x)/1000)
 #else
 	#include <unistd.h>
 	#include <cstdint> //for uintptr_t
@@ -72,10 +65,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 		#define _GNU_SOURCE
 	#endif
 
-	#define sleep_ms(x) usleep(x*1000)
-
 	//fmtodo: #define MAX_PACKET_SIZE_SINGLEPLAYER 8192
 	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
+
+	#define sleep_ms(x) usleep((x)*1000)
+	#define sleep_us(x) usleep(x)
 #endif
 
 #ifdef _MSC_VER

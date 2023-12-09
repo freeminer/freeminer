@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include <string>
 #include <iostream>
+#include <optional>
 #include <set>
 #include "itemgroup.h"
 #include "sound.h"
@@ -103,16 +104,16 @@ struct ItemDefinition
 	// May be NULL. If non-NULL, deleted by destructor
 	ToolCapabilities *tool_capabilities;
 	ItemGroupList groups;
-	SimpleSoundSpec sound_place;
-	SimpleSoundSpec sound_place_failed;
-	SimpleSoundSpec sound_use, sound_use_air;
+	SoundSpec sound_place;
+	SoundSpec sound_place_failed;
+	SoundSpec sound_use, sound_use_air;
 	f32 range;
 
 	// Client shall immediately place this node when player places the item.
 	// Server will update the precise end result a moment later.
 	// "" = no prediction
 	std::string node_placement_prediction;
-	u8 place_param2;
+	std::optional<u8> place_param2;
 
 	/*
 		Some helpful methods
@@ -150,14 +151,16 @@ public:
 	virtual bool isKnown(const std::string &name) const=0;
 #ifndef SERVER
 	// Get item inventory texture
-	virtual video::ITexture* getInventoryTexture(const std::string &name,
-			Client *client) const=0;
-	// Get item wield mesh
-	virtual ItemMesh* getWieldMesh(const std::string &name,
-		Client *client) const=0;
+	virtual video::ITexture* getInventoryTexture(const ItemStack &item, Client *client) const=0;
+
+	/**
+	 * Get wield mesh
+	 *
+	 * Returns nullptr if there is an inventory image
+	 */
+	virtual ItemMesh* getWieldMesh(const ItemStack &item, Client *client) const = 0;
 	// Get item palette
-	virtual Palette* getPalette(const std::string &name,
-		Client *client) const = 0;
+	virtual Palette* getPalette(const ItemStack &item, Client *client) const = 0;
 	// Returns the base color of an item stack: the color of all
 	// tiles that do not define their own color.
 	virtual video::SColor getItemstackColor(const ItemStack &stack,
@@ -177,23 +180,6 @@ public:
 
 	virtual ~IWritableItemDefManager() = default;
 
-	// Get item definition
-	virtual const ItemDefinition& get(const std::string &name) const=0;
-	// Get alias definition
-	virtual const std::string &getAlias(const std::string &name) const=0;
-	// Get set of all defined item names and aliases
-	virtual void getAll(std::set<std::string> &result) const=0;
-	// Check if item is known
-	virtual bool isKnown(const std::string &name) const=0;
-#ifndef SERVER
-	// Get item inventory texture
-	virtual video::ITexture* getInventoryTexture(const std::string &name,
-			Client *client) const=0;
-	// Get item wield mesh
-	virtual ItemMesh* getWieldMesh(const std::string &name,
-		Client *client) const=0;
-#endif
-
 	// Replace the textures of registered nodes with the ones specified in
 	// the texture pack's override.txt files
 	virtual void applyTextureOverrides(const std::vector<TextureOverride> &overrides)=0;
@@ -210,11 +196,7 @@ public:
 	virtual void registerAlias(const std::string &name,
 			const std::string &convert_to)=0;
 
-	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
 	virtual void deSerialize(std::istream &is, u16 protocol_version)=0;
-
-	// Do stuff asked by threads that can only be done in the main thread
-	virtual void processQueue(IGameDef *gamedef)=0;
 };
 
 IWritableItemDefManager* createItemDefManager();

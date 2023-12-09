@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "clientenvironment.h"
 #include "clientsimpleobject.h"
 #include "clientmap.h"
+#include "localplayer.h"
 #include "scripting_client.h"
 #include "mapblock_mesh.h"
 #include "mtevent.h"
@@ -230,7 +231,7 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 					!lplayer->swimming_vertical &&
 					!lplayer->swimming_pitch)
 				// HACK the factor 2 for gravity is arbitrary and should be removed eventually
-				lplayer->gravity = 2 * lplayer->movement_liquid_sink;
+				lplayer->gravity = 2 * lplayer->movement_liquid_sink * lplayer->physics_override.liquid_sink;
 
 			// Movement resistance
 			if (lplayer->move_resistance > 0) {
@@ -239,23 +240,30 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 				// How much the node's move_resistance blocks movement, ranges
 				// between 0 and 1. Should match the scale at which liquid_viscosity
 				// increase affects other liquid attributes.
+				//static const f32 resistance_factor = 0.3f;
+				float fluidity = lplayer->movement_liquid_fluidity;
+				fluidity *= MYMAX(1.0f, lplayer->physics_override.liquid_fluidity);
+				fluidity = MYMAX(0.001f, fluidity); // prevent division by 0
+				float fluidity_smooth = lplayer->movement_liquid_fluidity_smooth;
+				fluidity_smooth *= lplayer->physics_override.liquid_fluidity_smooth;
+				fluidity_smooth = MYMAX(0.0f, fluidity_smooth);
 
 				v3f d_wanted;
 				bool in_liquid_stable = lplayer->in_liquid_stable || lplayer->in_liquid;
-				if (in_liquid_stable) {
+				if (in_liquid_stable)
 					resistance_factor = 0.3;
-					d_wanted = -speed / lplayer->movement_liquid_fluidity;
-				} else {
+				if (in_liquid_stable)
+					d_wanted = -speed / fluidity;
+				else
 					d_wanted = -speed / BS;
-				}
 				f32 dl = d_wanted.getLength();
-				if (in_liquid_stable) {
-					if (dl > lplayer->movement_liquid_fluidity_smooth)
-						dl = lplayer->movement_liquid_fluidity_smooth;
-				}
+				if (in_liquid_stable)
+					dl = MYMIN(dl, fluidity_smooth);
+
 
 				if (lplayer->move_resistance < 1) // rewrite this shit
 					dl /= 2;
+
 
 				dl *= (lplayer->move_resistance * resistance_factor) +
 					(1 - resistance_factor);
@@ -404,26 +412,26 @@ GenericCAO* ClientEnvironment::getGenericCAO(u16 id)
 	return NULL;
 }
 
-u16 ClientEnvironment::addActiveObject(ClientActiveObject *object)
+u16 ClientEnvironment::addActiveObject(std::shared_ptr<ClientActiveObject> object)
 {
+	auto obj = object.get();
 	// Register object. If failed return zero id
-	if (!m_ao_manager.registerObject(object))
+	if (!m_ao_manager.registerObject(std::move(object)))
 		return 0;
 
-	object->addToScene(m_texturesource, m_client->getSceneManager());
+	obj->addToScene(m_texturesource, m_client->getSceneManager());
 
 	// Update lighting immediately
-	object->updateLight(getDayNightRatio());
-	return object->getId();
+	obj->updateLight(getDayNightRatio());
+	return obj->getId();
 }
 
 void ClientEnvironment::addActiveObject(u16 id, u8 type,
 	const std::string &init_data)
 {
-	ClientActiveObject* obj =
+	std::unique_ptr<ClientActiveObject> obj =
 		ClientActiveObject::create((ActiveObjectType) type, m_client, this);
-	if(obj == NULL)
-	{
+	if (!obj) {
 		infostream<<"ClientEnvironment::addActiveObject(): "
 			<<"id="<<id<<" type="<<type<<": Couldn't create object"
 			<<std::endl;
@@ -432,12 +440,9 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 
 	obj->setId(id);
 
-	try
-	{
+	try {
 		obj->initialize(init_data);
-	}
-	catch(SerializationError &e)
-	{
+	} catch(SerializationError &e) {
 		errorstream<<"ClientEnvironment::addActiveObject():"
 			<<" id="<<id<<" type="<<type
 			<<": SerializationError in initialize(): "
@@ -445,16 +450,16 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 			<<": init_data="<<serializeJsonString(init_data)
 			<<std::endl;
 
-			delete obj;
+			//delete obj;
 			return;
 	}
 
-	u16 new_id = addActiveObject(obj);
+	u16 new_id = addActiveObject(std::move(obj));
 	// Object initialized:
-	if ((obj = getActiveObject(new_id))) {
+	if (ClientActiveObject *obj2 = getActiveObject(new_id)) {
 		// Final step is to update all children which are already known
 		// Data provided by AO_CMD_SPAWN_INFANT
-		const auto &children = obj->getAttachmentChildIds();
+		const auto &children = obj2->getAttachmentChildIds();
 		for (auto c_id : children) {
 			if (auto o = getActiveObject(c_id))
 				o->updateAttachments();
@@ -540,8 +545,7 @@ void ClientEnvironment::getSelectedActiveObjects(
 	const core::line3d<f32> &shootline_on_map,
 	std::vector<PointedThing> &objects)
 {
-	std::vector<DistanceSortedActiveObject> allObjects;
-	m_ao_manager.getActiveSelectableObjects(shootline_on_map, allObjects);
+	auto allObjects = m_ao_manager.getActiveSelectableObjects(shootline_on_map);
 	const v3f line_vector = shootline_on_map.getVector();
 
 	for (const auto &allObject : allObjects) {
@@ -554,7 +558,7 @@ void ClientEnvironment::getSelectedActiveObjects(
 		v3f current_normal, current_raw_normal;
 		const v3f rel_pos = shootline_on_map.start - obj->getPosition();
 		bool collision;
-		GenericCAO* gcao = dynamic_cast<GenericCAO*>(obj);
+		GenericCAO* gcao = dynamic_cast<GenericCAO*>(obj.get());
 		if (gcao != nullptr && gcao->getProperties().rotate_selectionbox) {
 			gcao->getSceneNode()->updateAbsolutePosition();
 			const v3f deg = obj->getSceneNode()->getAbsoluteTransformation().getRotationDegrees();

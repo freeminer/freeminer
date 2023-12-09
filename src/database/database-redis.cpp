@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "log.h"
 #include "exceptions.h"
+#include "irrlicht_changes/printing.h"
 #include "util/string.h"
 
 #include <hiredis.h>
@@ -96,13 +97,13 @@ bool Database_Redis::saveBlock(const v3s16 &pos, const std::string &data)
 			hash.c_str(), tmp.c_str(), data.c_str(), data.size()));
 	if (!reply) {
 		warningstream << "saveBlock: redis command 'HSET' failed on "
-			"block " << PP(pos) << ": " << ctx->errstr << std::endl;
+			"block " << pos << ": " << ctx->errstr << std::endl;
 		freeReplyObject(reply);
 		return false;
 	}
 
 	if (reply->type == REDIS_REPLY_ERROR) {
-		warningstream << "saveBlock: saving block " << PP(pos)
+		warningstream << "saveBlock: saving block " << pos
 			<< " failed: " << std::string(reply->str, reply->len) << std::endl;
 		freeReplyObject(reply);
 		return false;
@@ -132,7 +133,7 @@ void Database_Redis::loadBlock(const v3s16 &pos, std::string *block)
 	case REDIS_REPLY_ERROR: {
 		std::string errstr(reply->str, reply->len);
 		freeReplyObject(reply);
-		errorstream << "loadBlock: loading block " << PP(pos)
+		errorstream << "loadBlock: loading block " << pos
 			<< " failed: " << errstr << std::endl;
 		throw DatabaseException(std::string(
 			"Redis command 'HGET %s %s' errored: ") + errstr);
@@ -144,7 +145,7 @@ void Database_Redis::loadBlock(const v3s16 &pos, std::string *block)
 	}
 	}
 
-	errorstream << "loadBlock: loading block " << PP(pos)
+	errorstream << "loadBlock: loading block " << pos
 		<< " returned invalid reply type " << reply->type
 		<< ": " << std::string(reply->str, reply->len) << std::endl;
 	freeReplyObject(reply);
@@ -162,7 +163,7 @@ bool Database_Redis::deleteBlock(const v3s16 &pos)
 		throw DatabaseException(std::string(
 			"Redis command 'HDEL %s %s' failed: ") + ctx->errstr);
 	} else if (reply->type == REDIS_REPLY_ERROR) {
-		warningstream << "deleteBlock: deleting block " << PP(pos)
+		warningstream << "deleteBlock: deleting block " << pos
 			<< " failed: " << std::string(reply->str, reply->len) << std::endl;
 		freeReplyObject(reply);
 		return false;

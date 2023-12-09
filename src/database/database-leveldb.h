@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_LEVELDB
 
 #include <json/reader.h>
+#include <memory>
 #include <string>
 #include "database.h"
 #include "leveldb/db.h"
@@ -35,7 +36,7 @@ class Database_LevelDB : public MapDatabase
 {
 public:
 	Database_LevelDB(const std::string &savedir);
-	~Database_LevelDB();
+	~Database_LevelDB() = default;
 
 	/* fmtodo?:
 	void open() { m_database->open(); };
@@ -51,14 +52,14 @@ public:
 	void endSave() {}
 
 private:
-	leveldb::DB *m_database;
+	std::unique_ptr<leveldb::DB> m_database;
 };
 
 class PlayerDatabaseLevelDB : public PlayerDatabase
 {
 public:
 	PlayerDatabaseLevelDB(const std::string &savedir, const std::string &name = "players.db");
-	~PlayerDatabaseLevelDB();
+	~PlayerDatabaseLevelDB() = default;
 
 	void savePlayer(RemotePlayer *player);
 	bool loadPlayer(RemotePlayer *player, PlayerSAO *sao);
@@ -66,14 +67,14 @@ public:
 	void listPlayers(std::vector<std::string> &res);
 
 protected:
-	leveldb::DB *m_database;
+	std::unique_ptr<leveldb::DB> m_database;
 };
 
 class AuthDatabaseLevelDB : public AuthDatabase
 {
 public:
 	AuthDatabaseLevelDB(const std::string &savedir, const std::string &name = "auth.db");
-	virtual ~AuthDatabaseLevelDB();
+	virtual ~AuthDatabaseLevelDB() = default;
 
 	virtual bool getAuth(const std::string &name, AuthEntry &res);
 	virtual bool saveAuth(const AuthEntry &authEntry);
@@ -83,7 +84,7 @@ public:
 	virtual void reload();
 
 protected:
-	leveldb::DB *m_database;
+	std::unique_ptr<leveldb::DB> m_database;
 };
 
 

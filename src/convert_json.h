@@ -22,7 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <json/json.h>
+#include "json-forwards.h"
 #include <ostream>
 
 void fastWriteJson(const Json::Value &value, std::ostream &to);

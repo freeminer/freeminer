@@ -34,7 +34,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "wieldmesh.h"
 #include "noise.h"         // easeCurve
-#include "sound.h"
 #include "mtevent.h"
 #include "nodedef.h"
 #include "util/numeric.h"
@@ -388,10 +387,19 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	// Calculate and translate the head SceneNode offsets
 	{
 		v3f eye_offset = player->getEyeOffset();
-		if (m_camera_mode == CAMERA_MODE_FIRST)
+		switch(m_camera_mode) {
+		case CAMERA_MODE_FIRST:
 			eye_offset += player->eye_offset_first;
-		else
+			break;
+		case CAMERA_MODE_THIRD:
 			eye_offset += player->eye_offset_third;
+			break;
+		case CAMERA_MODE_THIRD_FRONT:
+			eye_offset.X += player->eye_offset_third_front.X;
+			eye_offset.Y += player->eye_offset_third_front.Y;
+			eye_offset.Z -= player->eye_offset_third_front.Z;
+			break;
+		}
 
 		// Set head node transformation
 		eye_offset.Y += cameratilt * -player->hurt_tilt_strength + fall_bobbing;
@@ -627,13 +635,7 @@ void Camera::updateViewingRange()
 {
 	const f32 viewing_range = g_settings->getFloat("viewing_range");
 
-	// Ignore near_plane setting on all other platforms to prevent abuse
-#if ENABLE_GLES
-	m_cameranode->setNearValue(rangelim(
-		g_settings->getFloat("near_plane"), 0.0f, 0.25f) * BS);
-#else
 	m_cameranode->setNearValue(0.1f * BS);
-#endif
 
 	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), 4000);
 	if (m_draw_control.range_all) {
@@ -829,7 +831,7 @@ void Camera::drawNametags()
 
 Nametag *Camera::addNametag(scene::ISceneNode *parent_node,
 		const std::string &text, video::SColor textcolor,
-		Optional<video::SColor> bgcolor, const v3f &pos)
+		std::optional<video::SColor> bgcolor, const v3f &pos)
 {
 
     std::string new_text;

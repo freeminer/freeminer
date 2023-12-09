@@ -19,11 +19,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <map>
 #include <memory>
-
-#include <functional>
-#include <unordered_map>
+#include <vector>
+#include "debug.h"
 #include "irrlichttypes.h"
+#include "util/basic_macros.h"
 #include "threading/concurrent_unordered_map.h"
 
 class TestClientActiveObjectMgr;
@@ -37,16 +38,42 @@ class ActiveObjectMgr
 
 public:
 	using TPtr = std::shared_ptr<T>;
+
+	ActiveObjectMgr() = default;
+	DISABLE_CLASS_COPY(ActiveObjectMgr);
+
+	virtual ~ActiveObjectMgr()
+	{
+		SANITY_CHECK(m_active_objects.empty());
+		// Note: Do not call clear() here. The derived class is already half
+		// destructed.
+	}
+
 	virtual void step(float dtime, const std::function<void(const TPtr&)> &f) = 0;
-	virtual bool registerObject(T *obj) = 0;
+	virtual bool registerObject(std::shared_ptr<T> obj) = 0;
 	virtual void removeObject(u16 id) = 0;
+
+	void clear()
+	{
+		while (!m_active_objects.empty())
+			removeObject(m_active_objects.begin()->first);
+	}
 
 	TPtr getActiveObject(u16 id)
 	{
 		auto lock = m_active_objects.lock_unique_rec(); //prelock
-		const auto &n =
-				m_active_objects.find(id);
-		return (n != m_active_objects.end() ? n->second : nullptr);
+		auto it = m_active_objects.find(id);
+		return it != m_active_objects.end() ? it->second : nullptr;
+	}
+
+	std::vector<u16> getAllIds() const
+	{
+		std::vector<u16> ids;
+		ids.reserve(m_active_objects.size());
+		for (auto &it : m_active_objects) {
+			ids.push_back(it.first);
+		}
+		return ids;
 	}
 
 protected:
@@ -69,5 +96,9 @@ protected:
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 
+	// ordered to fix #10985
+	// Note: ActiveObjects can access the ActiveObjectMgr. Only erase objects using
+	// removeObject()!
+	//std::map<u16, std::unique_ptr<T>> m_active_objects;
 	concurrent_unordered_map<u16, std::shared_ptr<T>> m_active_objects;
 };

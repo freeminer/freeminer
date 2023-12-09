@@ -23,8 +23,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "config.h" // for USE_GETTEXT
-#include <string>
 #include "porting.h"
+#include "util/string.h"
 
 #if USE_GETTEXT
 	#include <libintl.h>
@@ -51,16 +51,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 void init_gettext(const char *path, const std::string &configured_language,
 	int argc, char *argv[]);
 
-extern wchar_t *utf8_to_wide_c(const char *str);
-
-// The returned string must be freed using delete[]
-inline const wchar_t *wgettext(const char *str)
-{
-	// We must check here that is not an empty string to avoid trying to translate it
-	return str[0] ? utf8_to_wide_c(mygettext(str)) : utf8_to_wide_c("");
-}
-
-
+/*
 inline std::wstring wstrgettext(const std::string &text)
 {
 	//return narrow_to_wide(mygettext(text.c_str()));
@@ -69,10 +60,27 @@ inline std::wstring wstrgettext(const std::string &text)
 	delete[] tmp;
 	return retval;
 }
+*/
 
-inline std::string strgettext(const std::string &text)
+inline std::string strgettext(const char *str)
 {
-	return text.empty() ? "" : mygettext(text.c_str());
+	// We must check here that is not an empty string to avoid trying to translate it
+	return str[0] ? mygettext(str) : "";
+}
+
+inline std::string strgettext(const std::string &str)
+{
+	return strgettext(str.c_str());
+}
+
+inline std::wstring wstrgettext(const char *str)
+{
+	return utf8_to_wide(strgettext(str));
+}
+
+inline std::wstring wstrgettext(const std::string &str)
+{
+	return wstrgettext(str.c_str());
 }
 
 /**
@@ -87,9 +95,8 @@ template <typename ...Args>
 inline std::wstring fwgettext(const char *src, Args&&... args)
 {
 	wchar_t buf[255];
-	const wchar_t* str = wgettext(src);
-	swprintf(buf, sizeof(buf) / sizeof(wchar_t), str, std::forward<Args>(args)...);
-	delete[] str;
+	swprintf(buf, sizeof(buf) / sizeof(wchar_t), wstrgettext(src).c_str(),
+			std::forward<Args>(args)...);
 	return std::wstring(buf);
 }
 

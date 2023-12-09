@@ -391,9 +391,9 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 
 			for (auto &clientobject : clientobjects) {
 				// Do collide with everything but itself and the parent CAO
-				if (!self || (self != clientobject.obj &&
+				if (!self || (self != clientobject.obj.get() &&
 						self != clientobject.obj->getParent())) {
-					objects.push_back((ActiveObject*) clientobject.obj);
+					objects.push_back((ActiveObject*) clientobject.obj.get());
 				}
 			}
 		}

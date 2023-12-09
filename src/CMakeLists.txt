@@ -299,14 +299,6 @@ if(ENABLE_SOUND AND BUILD_CLIENT)
 	endif()
 endif()
 
-# TODO: this should be removed one day, we can enable it unconditionally
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm")
-option(ENABLE_GLES "Enable extra support code for OpenGL ES" TRUE)
-else()
-option(ENABLE_GLES "Enable extra support code for OpenGL ES" FALSE)
-mark_as_advanced(ENABLE_GLES)
-endif()
-
 option(ENABLE_TOUCH "Enable Touchscreen support" FALSE)
 if(ENABLE_TOUCH)
 	add_definitions(-DHAVE_TOUCHSCREENGUI)
@@ -577,12 +569,6 @@ if(WIN32)
 	endif()
 else()
 	# Unix probably
-	if(BUILD_CLIENT AND NOT NO_BUILD)
-		if(NOT HAIKU AND NOT APPLE)
-			find_package(X11 REQUIRED)
-		endif(NOT HAIKU AND NOT APPLE)
-	endif()
-
 	set(PLATFORM_LIBS ${PLATFORM_LIBS} ${CMAKE_DL_LIBS})
 	if(APPLE)
 		set(PLATFORM_LIBS "-framework CoreFoundation" ${PLATFORM_LIBS})
@@ -601,6 +587,14 @@ else()
 
 	if (HAIKU)
 		set(PLATFORM_LIBS ${PLATFORM_LIBS} network)
+	endif()
+
+	if (ANDROID)
+		include_directories(${ANDROID_NDK}/sources/android/native_app_glue)
+		add_library(native_app_glue OBJECT ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
+		set(PLATFORM_LIBS ${PLATFORM_LIBS} native_app_glue)
+
+		set(PLATFORM_LIBS ${PLATFORM_LIBS} android log)
 	endif()
 endif()
 
@@ -805,6 +799,10 @@ set(common_SRCS
 	${DEBUG_SRCS}
 )
 
+if(ANDROID)
+	set(common_SRCS ${common_SRCS} porting_android.cpp)
+endif()
+
 if(BUILD_UNITTESTS)
 	set(common_SRCS ${common_SRCS} ${UNITTEST_SRCS})
 endif()
@@ -910,7 +908,6 @@ if(BUILD_CLIENT)
 	include_directories(SYSTEM
 		${FREETYPE_INCLUDE_DIRS}
 		${SOUND_INCLUDE_DIRS}
-		${X11_INCLUDE_DIR}
 	)
 endif()
 
@@ -934,14 +931,17 @@ else()
 endif()
 
 if(BUILD_CLIENT)
-	add_executable(${PROJECT_NAME} ${client_SRCS} ${extra_windows_SRCS})
+	if(ANDROID)
+		add_library(${PROJECT_NAME} SHARED ${client_SRCS})
+	else()
+		add_executable(${PROJECT_NAME} ${client_SRCS} ${extra_windows_SRCS})
+	endif()
 	add_dependencies(${PROJECT_NAME} GenerateVersion)
 	target_link_libraries(
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
 		IrrlichtMt::IrrlichtMt
 		${ZSTD_LIBRARY}
-		${X11_LIBRARIES}
 		${SOUND_LIBRARIES}
 		${LUA_LIBRARY}
 		${GMP_LIBRARY}
@@ -1083,17 +1083,9 @@ if(BUILD_SERVER)
 	target_link_libraries(${PROJECT_NAME}server ${PLATFORM_LIBS})
 endif(BUILD_SERVER)
 
-# Blacklisted locales that don't work.
-# see issue #4638
-set(GETTEXT_BLACKLISTED_LOCALES
-	ar
-	dv
-	he
-	hi
-	kn
-	ms_Arab
-	th
-)
+# See issue #4638
+FILE(READ "${CMAKE_SOURCE_DIR}/src/unsupported_language_list.txt" GETTEXT_BLACKLISTED_LOCALES)
+STRING(REGEX REPLACE "\n" ";" GETTEXT_BLACKLISTED_LOCALES "${GETTEXT_BLACKLISTED_LOCALES}")
 
 option(APPLY_LOCALE_BLACKLIST "Use a blacklist to avoid known broken locales" TRUE)
 
@@ -1151,7 +1143,7 @@ endif()
 
 if(MSVC)
 	# Visual Studio
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D WIN32_LEAN_AND_MEAN")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D _WIN32_WINNT=0x0601 /D WIN32_LEAN_AND_MEAN")
 	# EHa enables SEH exceptions (used for catching segfaults)
 	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /MD /GS- /Zi /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0")
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -1190,7 +1182,7 @@ if(MSVC)
 else()
 	# GCC or compatible compilers such as Clang
 	set(WARNING_FLAGS "-Wall -Wextra")
-	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-parameter -Wno-implicit-fallthrough")
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-parameter")
 	if(WARN_ALL)
 		set(RELEASE_WARNING_FLAGS "${WARNING_FLAGS}")
 	else()
@@ -1199,7 +1191,7 @@ else()
 
 	if(MINGW)
 		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32_LEAN_AND_MEAN")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32_WINNT=0x0601 -DWIN32_LEAN_AND_MEAN")
 	endif()
 
 	# Use a safe subset of flags to speed up math calculations:
@@ -1311,7 +1303,7 @@ if(WIN32 AND NOT STATIC_BUILD)
 	endif()
 endif()
 
-if(BUILD_CLIENT)
+if(BUILD_CLIENT AND NOT ANDROID)
 	install(TARGETS ${PROJECT_NAME}
 		RUNTIME DESTINATION ${BINDIR}
 		LIBRARY DESTINATION ${BINDIR}
@@ -1337,13 +1329,16 @@ if(BUILD_CLIENT)
 
 	install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../fonts" DESTINATION "${SHAREDIR}"
 			FILES_MATCHING PATTERN "*.ttf" PATTERN "*.txt")
-endif(BUILD_CLIENT)
+endif()
 
 if(BUILD_SERVER)
 	install(TARGETS ${PROJECT_NAME}server DESTINATION ${BINDIR})
 endif()
 
-if (USE_GETTEXT)
+if (ANDROID)
+	# Android does this manually in app/build.gradle -> prepareAssets
+	# for now!
+elseif (USE_GETTEXT)
 	set(MO_FILES)
 
 	foreach(LOCALE ${GETTEXT_USED_LOCALES})

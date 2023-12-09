@@ -57,7 +57,7 @@ int ModApiEnvMod::l_add_creature(lua_State *L)
 
 #endif
 
-int ModApiEnvMod::l_spawn_item_activeobject(lua_State *L)
+int ModApiEnv::l_spawn_item_activeobject(lua_State *L)
 {
 	GET_ENV_PTR;
 	// pos
@@ -86,7 +86,7 @@ int ModApiEnvMod::l_spawn_item_activeobject(lua_State *L)
 	return 1;
 }
 
-int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
+int ModApiEnv::l_spawn_falling_node(lua_State *L)
 {
 	GET_ENV_PTR;
 
@@ -108,7 +108,7 @@ int ModApiEnvMod::l_spawn_falling_node(lua_State *L)
  *
  * Trigger a node update on selected position
  */
-int ModApiEnvMod::l_nodeupdate(lua_State *L)
+int ModApiEnv::l_nodeupdate(lua_State *L)
 {
 	GET_ENV_PTR;
 

@@ -44,7 +44,6 @@ void cleanupAndroid();
 
 /**
  * Initializes path_* variables for Android
- * @param env Android JNI environment
  */
 void initializePathsAndroid();
 
@@ -88,4 +87,6 @@ void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);
 float getDisplayDensity();
 v2u32 getDisplaySize();
 #endif
+
+std::string getLanguageAndroid();
 }

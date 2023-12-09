@@ -506,9 +506,6 @@ void ContentFeatures::reset()
 	waving = 0;
 	legacy_facedir_simple = false;
 	legacy_wallmounted = false;
-	sound_footstep = SimpleSoundSpec();
-	sound_dig = SimpleSoundSpec("__group");
-	sound_dug = SimpleSoundSpec();
 
 
 //freeminer:
@@ -528,6 +525,9 @@ void ContentFeatures::reset()
 	circuit_element_delay = 0;
 
 
+	sound_footstep = SoundSpec();
+	sound_dig = SoundSpec("__group");
+	sound_dug = SoundSpec();
 	connects_to.clear();
 	connects_to_ids.clear();
 	connect_sides = 0;
@@ -537,6 +537,7 @@ void ContentFeatures::reset()
 	node_dig_prediction = "air";
 	move_resistance = 0;
 	liquid_move_physics = false;
+	post_effect_color_shaded = false;
 }
 
 void ContentFeatures::setAlphaFromLegacy(u8 legacy_alpha)
@@ -651,9 +652,9 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	collision_box.serialize(os, protocol_version);
 
 	// sound
-	sound_footstep.serialize(os, protocol_version);
-	sound_dig.serialize(os, protocol_version);
-	sound_dug.serialize(os, protocol_version);
+	sound_footstep.serializeSimple(os, protocol_version);
+	sound_dig.serializeSimple(os, protocol_version);
+	sound_dug.serializeSimple(os, protocol_version);
 
 	// legacy
 	writeU8(os, legacy_facedir_simple);
@@ -665,6 +666,7 @@ void ContentFeatures::serialize(std::ostream &os, u16 protocol_version) const
 	writeU8(os, alpha);
 	writeU8(os, move_resistance);
 	writeU8(os, liquid_move_physics);
+	writeU8(os, post_effect_color_shaded);
 }
 
 void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
@@ -748,9 +750,9 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 	collision_box.deSerialize(is);
 
 	// sounds
-	sound_footstep.deSerialize(is, protocol_version);
-	sound_dig.deSerialize(is, protocol_version);
-	sound_dug.deSerialize(is, protocol_version);
+	sound_footstep.deSerializeSimple(is, protocol_version);
+	sound_dig.deSerializeSimple(is, protocol_version);
+	sound_dug.deSerializeSimple(is, protocol_version);
 
 	// read legacy properties
 	legacy_facedir_simple = readU8(is);
@@ -778,6 +780,11 @@ void ContentFeatures::deSerialize(std::istream &is, u16 protocol_version)
 		if (is.eof())
 			throw SerializationError("");
 		liquid_move_physics = tmp;
+
+		tmp = readU8(is);
+		if (is.eof())
+			throw SerializationError("");
+		post_effect_color_shaded = tmp;
 	} catch(SerializationError &e) {};
 }
 
@@ -2126,22 +2133,46 @@ bool NodeDefManager::nodeboxConnects(MapNode from, MapNode to,
 				f2.param_type_2 == CPT2_4DIR ||
 				f2.param_type_2 == CPT2_COLORED_4DIR)
 				&& (connect_face >= 4)) {
-			static const u8 rot[33 * 4] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 4, 32, 16, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, // 4 - back
-				8, 4, 32, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, // 8 - right
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 8, 4, 32, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, // 16 - front
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 32, 16, 8, 4 // 32 - left
-				};
+			static const u8 rot[33 * 4] = {
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				4, 32, 16, 8, // 4 - back
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				8, 4, 32, 16, // 8 - right
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				16, 8, 4, 32, // 16 - front
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				32, 16, 8, 4 // 32 - left
+			};
 			if (f2.param_type_2 == CPT2_FACEDIR ||
 					f2.param_type_2 == CPT2_COLORED_FACEDIR) {
+				// FIXME: support arbitrary rotations (to.param2 & 0x1F) (#7696)
 				return (f2.connect_sides
-					& rot[(connect_face * 4) + (to.param2 & 0x1F)]);
+					& rot[(connect_face * 4) + (to.param2 & 0x03)]);
 			} else if (f2.param_type_2 == CPT2_4DIR ||
 					f2.param_type_2 == CPT2_COLORED_4DIR) {
 				return (f2.connect_sides

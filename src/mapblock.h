@@ -37,7 +37,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/numeric.h" // getContainerPos
 #include "threading/lock.h"
 #include "settings.h"
-#include "mapgen/mapgen.h"
 
 class Map;
 class NodeMetadataList;

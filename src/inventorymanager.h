@@ -22,10 +22,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "inventory.h"
+#include "irr_v3d.h"
 #include <iostream>
 #include <string>
+#include <vector>
+
 class ServerActiveObject;
+struct ItemStack;
+class Inventory;
+class IGameDef;
 
 struct InventoryLocation
 {
@@ -34,7 +39,7 @@ struct InventoryLocation
 		CURRENT_PLAYER,
 		PLAYER,
 		NODEMETA,
-        DETACHED,
+		DETACHED,
 	} type;
 
 	std::string name; // PLAYER, DETACHED
@@ -113,9 +118,9 @@ public:
 
 	// Get an inventory (server and client)
 	virtual Inventory* getInventory(const InventoryLocation &loc){return NULL;}
-    // Set modified (will be saved and sent over network; only on server)
+	// Set modified (will be saved and sent over network; only on server)
 	virtual void setInventoryModified(const InventoryLocation &loc) {}
-    // Send inventory action to server (only on client)
+	// Send inventory action to server (only on client)
 	virtual void inventoryAction(InventoryAction *a){}
 };
 

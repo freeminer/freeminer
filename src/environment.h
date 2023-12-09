@@ -31,14 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	- The current time in the game
 	- etc.
 */
-
-#include <list>
-#include <queue>
-#include <map>
-#include <atomic>
-#include <mutex>
-#include "irr_v3d.h"
-
 //fm:
 #include "network/connection.h"
 #include "fm_bitset.h"
@@ -52,8 +44,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_set>
 //--
 
-#include "network/networkprotocol.h" // for AccessDeniedCode
+#include <list>
+#include <queue>
+#include <map>
+#include <atomic>
+#include <mutex>
+#include "irr_v3d.h"
 #include "util/basic_macros.h"
+#include "line3d.h"
 
 class IGameDef;
 class Map;

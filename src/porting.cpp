@@ -62,7 +62,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #if defined(__HAIKU__)
-        #include <FindDirectory.h>
+	#include <FindDirectory.h>
 #endif
 
 #include "config.h"

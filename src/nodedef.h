@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 class Client;
 #include "itemgroup.h"
-#include "sound.h" // SimpleSoundSpec
+#include "sound.h" // SoundSpec
 #include "constants.h" // BS
 
 #include "texture_override.h" // TextureOverride
@@ -400,7 +400,7 @@ struct ContentFeatureDrops
 
 struct ContentFeatures
 {
-	// PROTOCOL_VERSION >= 37. This is legacy and should not be increased anymore, 
+	// PROTOCOL_VERSION >= 37. This is legacy and should not be increased anymore,
 	// write checks that depend directly on the protocol version instead.
 	static const u8 CONTENTFEATURES_VERSION = 13;
 
@@ -469,6 +469,7 @@ struct ContentFeatures
 	std::vector<content_t> connects_to_ids;
 	// Post effect color, drawn when the camera is inside the node.
 	video::SColor post_effect_color;
+	bool post_effect_color_shaded;
 	// Flowing liquid or leveled nodebox, value = default level
 	u8 leveled;
 	// Maximum value for leveled nodes
@@ -542,9 +543,9 @@ struct ContentFeatures
 
 	// --- SOUND PROPERTIES ---
 
-	SimpleSoundSpec sound_footstep;
-	SimpleSoundSpec sound_dig;
-	SimpleSoundSpec sound_dug;
+	SoundSpec sound_footstep;
+	SoundSpec sound_dig;
+	SoundSpec sound_dug;
 
 	// --- LEGACY ---
 

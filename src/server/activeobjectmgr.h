@@ -20,28 +20,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include <functional>
+#include <set>
 #include <vector>
 #include "../activeobjectmgr.h"
 #include "serveractiveobject.h"
 
 namespace server
 {
-class ActiveObjectMgr : public ::ActiveObjectMgr<ServerActiveObject>
+class ActiveObjectMgr final : public ::ActiveObjectMgr<ServerActiveObject>
 {
+//fm:
+public:
+	void deferDelete(const ServerActiveObjectPtr& obj);
+private:
+
 
     std::vector<ServerActiveObjectPtr> m_objects_to_delete, m_objects_to_delete_2;
 	std::vector<u16> objects_to_remove;
 public:
-	~ActiveObjectMgr();
+	~ActiveObjectMgr() override;
 
-
-public:
-	void deferDelete(ServerActiveObjectPtr obj);
-
-	void clear(const std::function<bool(const ServerActiveObjectPtr&, u16)> &cb);
+	// If cb returns true, the obj will be deleted
+	void clearIf(const std::function<bool(const ServerActiveObjectPtr&, u16)> &cb);
 	void step(float dtime,
 			const std::function<void(const ServerActiveObjectPtr&)> &f) override;
-	bool registerObject(ServerActiveObject *obj) override;
+	bool registerObject(std::shared_ptr<ServerActiveObject> obj) override;
 	void removeObject(u16 id) override;
 
 	void getObjectsInsideRadius(const v3f &pos, float radius,

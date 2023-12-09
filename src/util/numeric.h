@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_aabb3d.h"
 #include "SColor.h"
 #include <matrix4.h>
+#include <cmath>
 
 //fm:
 #include <algorithm>
@@ -183,7 +184,7 @@ struct MeshGrid {
 	{
 		return v3s16(getMeshPos(p.X), getMeshPos(p.Y), getMeshPos(p.Z));
 	}
-	
+
 	/// @brief Returns true if p is an origin of a cell in the grid.
 	bool isMeshPos(v3s16 &p) const
 	{
@@ -204,30 +205,10 @@ struct MeshGrid {
  *
  *  \note This is also used in cases where degrees wrapped to the range [0, 360]
  *  is innapropriate (e.g. pitch needs negative values)
- *
- *  \internal functionally equivalent -- although precision may vary slightly --
- *  to fmodf((f), 360.0f) however empirical tests indicate that this approach is
- *  faster.
  */
 inline float modulo360f(float f)
 {
-	int sign;
-	int whole;
-	float fraction;
-
-	if (f < 0) {
-		f = -f;
-		sign = -1;
-	} else {
-		sign = 1;
-	}
-
-	whole = f;
-
-	fraction = f - whole;
-	whole %= 360;
-
-	return sign * (whole + fraction);
+	return fmodf(f, 360.0f);
 }
 
 

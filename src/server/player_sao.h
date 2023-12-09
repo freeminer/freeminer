@@ -22,7 +22,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <atomic>
+#include <set>
 #include "constants.h"
+#include "metadata.h"
 #include "network/networkprotocol.h"
 #include "unit_sao.h"
 #include "util/numeric.h"
@@ -111,6 +113,8 @@ public:
 	f32 getFov() const { return m_fov; }
 	void setWantedRange(const s16 range);
 	s16 getWantedRange() const { return m_wanted_range; }
+	void setCameraInverted(bool camera_inverted) { m_camera_inverted = camera_inverted; }
+	bool getCameraInverted() const { return m_camera_inverted; }
 
 	/*
 		Interaction interface
@@ -229,6 +233,8 @@ public:
 	std::atomic<f32> m_fov {0.0f};
 	std::atomic_short m_wanted_range {0};
 
+	bool m_camera_inverted = false; // this is not store in the player db
+
 	SimpleMetadata m_meta;
 
 public:
@@ -256,6 +262,7 @@ struct PlayerHPChangeReason
 	ServerActiveObject *object = nullptr;
 	// For NODE_DAMAGE
 	std::string node;
+	v3s16 node_pos;
 
 	inline bool hasLuaReference() const { return lua_reference >= 0; }
 
@@ -307,5 +314,5 @@ struct PlayerHPChangeReason
 	{
 	}
 
-	PlayerHPChangeReason(Type type, std::string node) : type(type), node(node) {}
+	PlayerHPChangeReason(Type type, std::string node, v3s16 node_pos) : type(type), node(node), node_pos(node_pos) {}
 };

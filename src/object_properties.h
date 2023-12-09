@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <optional>
 #include <string>
 #include "irrlichttypes_bloated.h"
 #include <iostream>
@@ -29,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include "threading/concurrent_vector.h"
 #include "threading/lock.h"
-#include "util/Optional.h"
 
 struct ObjectProperties : public shared_locker 
 {
@@ -61,7 +61,7 @@ struct ObjectProperties : public shared_locker
 	s8 glow = 0;
 	std::string nametag = "";
 	video::SColor nametag_color = video::SColor(255, 255, 255, 255);
-	Optional<video::SColor> nametag_bgcolor = nullopt;
+	std::optional<video::SColor> nametag_bgcolor = std::nullopt;
 	f32 automatic_face_movement_max_rotation_per_sec = -1.0f;
 	std::string infotext;
 	//! For dropped items, this contains item information.

@@ -61,26 +61,35 @@ struct LightFrame {
 class MapblockMeshGenerator
 {
 public:
-	MeshMakeData *data;
-	MeshCollector *collector;
+	MapblockMeshGenerator(MeshMakeData *input, MeshCollector *output,
+			scene::IMeshManipulator *mm);
+	void generate();
+	void renderSingle(content_t node, u8 param2 = 0x00);
 
-	const NodeDefManager *nodedef;
-	scene::IMeshManipulator *meshmanip;
+private:
+	MeshMakeData *const data;
+	MeshCollector *const collector;
+
+	const NodeDefManager *const nodedef;
+	scene::IMeshManipulator *const meshmanip;
+
+	const v3s16 blockpos_nodes;
 
 // options
-	bool enable_mesh_cache;
+	const bool enable_mesh_cache;
 
 // current node
-	v3s16 blockpos_nodes;
-	v3s16 p;
-	v3f origin;
-	MapNode n;
-	const ContentFeatures *f;
-	LightPair light;
-	LightFrame frame;
-	video::SColor color;
-	TileSpec tile;
-	float scale;
+	struct {
+		v3s16 p;
+		v3f origin;
+		MapNode n;
+		const ContentFeatures *f;
+		LightPair light;
+		LightFrame frame;
+		video::SColor color;
+		TileSpec tile;
+		f32 scale;
+	} cur_node;
 
 // lighting
 	void getSmoothLightFrame();
@@ -99,29 +108,32 @@ public:
 		float vertical_tiling = 1.0);
 
 // cuboid drawing!
-	void drawCuboid(const aabb3f &box, TileSpec *tiles, int tilecount,
-		const LightInfo *lights , const f32 *txc, u8 mask = 0);
+	template <typename Fn>
+	void drawCuboid(const aabb3f &box, TileSpec *tiles, int tilecount, const f32 *txc, u8 mask, Fn &&face_lighter);
 	void generateCuboidTextureCoords(aabb3f const &box, f32 *coords);
-	void drawAutoLightedCuboid(aabb3f box, const f32 *txc = NULL,
-		TileSpec *tiles = NULL, int tile_count = 0, u8 mask = 0);
+	void drawAutoLightedCuboid(aabb3f box, f32 const *txc = nullptr, TileSpec *tiles = nullptr, int tile_count = 0, u8 mask = 0);
 	u8 getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 sametype_neighbors) const;
 
 // liquid-specific
-	bool top_is_same_liquid;
-	bool draw_liquid_bottom;
-	TileSpec tile_liquid;
-	TileSpec tile_liquid_top;
-	content_t c_flowing;
-	content_t c_source;
-	video::SColor color_liquid_top;
-	struct NeighborData {
-		f32 level;
-		content_t content;
-		bool is_same_liquid;
+	struct LiquidData {
+		struct NeighborData {
+			f32 level;
+			content_t content;
+			bool is_same_liquid;
+			bool top_is_same_liquid;
+		};
+
 		bool top_is_same_liquid;
+		bool draw_bottom;
+		TileSpec tile;
+		TileSpec tile_top;
+		content_t c_flowing;
+		content_t c_source;
+		video::SColor color_top;
+		NeighborData neighbors[3][3];
+		f32 corner_levels[2][2];
 	};
-	NeighborData liquid_neighbors[3][3];
-	f32 corner_levels[2][2];
+	LiquidData cur_liquid;
 
 	void prepareLiquidNodeDrawing();
 	void getLiquidNeighborhood();
@@ -134,16 +146,22 @@ public:
 // raillike-specific
 	// name of the group that enables connecting to raillike nodes of different kind
 	static const std::string raillike_groupname;
-	int raillike_group;
+	struct RaillikeData {
+		int raillike_group;
+	};
+	RaillikeData cur_rail;
 	bool isSameRail(v3s16 dir);
 
 // plantlike-specific
-	PlantlikeStyle draw_style;
-	v3f offset;
-	float rotate_degree;
-	bool random_offset_Y;
-	int face_num;
-	float plant_height;
+	struct PlantlikeData {
+		PlantlikeStyle draw_style;
+		v3f offset;
+		float rotate_degree;
+		bool random_offset_Y;
+		int face_num;
+		float plant_height;
+	};
+	PlantlikeData cur_plant;
 
 	void drawPlantlikeQuad(float rotation, float quad_offset = 0,
 		bool offset_top_only = false);
@@ -154,6 +172,7 @@ public:
 		float offset_h, float offset_v = 0.0);
 
 // drawtypes
+	void drawSolidNode();
 	void drawLiquidNode();
 	void drawGlasslikeNode();
 	void drawGlasslikeFramedNode();
@@ -171,10 +190,4 @@ public:
 // common
 	void errorUnknownDrawtype();
 	void drawNode();
-
-public:
-	MapblockMeshGenerator(MeshMakeData *input, MeshCollector *output,
-			scene::IMeshManipulator *mm);
-	void generate();
-	void renderSingle(content_t node, u8 param2 = 0x00);
 };

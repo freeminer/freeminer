@@ -19,6 +19,7 @@
 #ifndef __ITEMSAO_H__
 #define __ITEMSAO_H__
 
+#include "inventory.h"
 #include "irr_v3d.h"
 #include "server/luaentity_sao.h"
 

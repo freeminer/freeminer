@@ -20,31 +20,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <log.h>
 #include "mapblock.h"
 #include "profiler.h"
+#include "server/serveractiveobject.h"
 #include "activeobjectmgr.h"
 
 namespace server
 {
 
-
-void ActiveObjectMgr::deferDelete(ServerActiveObjectPtr obj) {
+void ActiveObjectMgr::deferDelete(const ServerActiveObjectPtr& obj) {
 	obj->markForRemoval();
 	m_objects_to_delete.emplace_back(obj);
 }
 
-ActiveObjectMgr::~ActiveObjectMgr() {
-/*
-	for (auto & obj : m_objects_to_delete)
-		delete obj;
-	for (auto & obj : m_objects_to_delete_2)
-		delete obj;
-		*/
+ActiveObjectMgr::~ActiveObjectMgr()
+{
+	if (!m_active_objects.empty()) {
+		warningstream << "server::ActiveObjectMgr::~ActiveObjectMgr(): not cleared."
+				<< std::endl;
+		clear();
+	}
 }
 
-void ActiveObjectMgr::clear(const std::function<bool(const ServerActiveObjectPtr&, u16)> &cb)
+void ActiveObjectMgr::clearIf(const std::function<bool(const ServerActiveObjectPtr&, u16)> &cb)
 {
-
-	//std::vector<u16> objects_to_remove;
-
 	decltype(m_active_objects)::full_type active_objects;
 
 	{
@@ -55,25 +52,46 @@ void ActiveObjectMgr::clear(const std::function<bool(const ServerActiveObjectPtr
 		active_objects = m_active_objects;
 	}
 
-	for (auto &it : active_objects) {
-		if (cb(it.second, it.first)) {
-			// Id to be removed from m_active_objects
-			objects_to_remove.push_back(it.first);
+	for (auto &[id, it] : active_objects) {
+		if (cb(it, id)) {
+			// erase by id, `it` can be invalid now
+			//removeObject(id);
+			objects_to_remove.emplace_back(id);
 		}
 	}
-
 	if (objects_to_remove.empty())
 		return;
 
+   {
 	auto lock = m_active_objects.try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return;
 
 	// Remove references from m_active_objects
 	for (u16 i : objects_to_remove) {
-		m_active_objects.erase(i);
+		//m_active_objects.erase(i);
+		removeObject(i);
 	}
+   }
 	objects_to_remove.clear();
+
+	return;
+
+	// Make a defensive copy of the ids in case the passed callback changes the
+	// set of active objects.
+	// The callback is called for newly added objects iff they happen to reuse
+	// an old id.
+	std::vector<u16> ids = getAllIds();
+
+	for (u16 id : ids) {
+		auto it = m_active_objects.find(id);
+		if (it == m_active_objects.end())
+			continue; // obj was already removed
+		if (cb(it->second, id)) {
+			// erase by id, `it` can be invalid now
+			removeObject(id);
+		}
+	}
 }
 
 void ActiveObjectMgr::step(
@@ -99,10 +117,24 @@ void ActiveObjectMgr::step(
 	for (const auto &ao_it : active_objects) {
 		f(ao_it);
 	}
+
+#if 0
+	g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
+
+	// See above.
+	std::vector<u16> ids = getAllIds();
+
+	for (u16 id : ids) {
+		auto it = m_active_objects.find(id);
+		if (it == m_active_objects.end())
+			continue; // obj was removed
+		f(it->second.get());
+	}
+#endif
 }
 
 // clang-format off
-bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
+bool ActiveObjectMgr::registerObject(std::shared_ptr<ServerActiveObject> obj)
 {
 	if (!obj) return false; // Pre-condition
 	if (obj->getId() == 0) {
@@ -110,8 +142,6 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 		if (new_id == 0) {
 			errorstream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 					<< "no free id available" << std::endl;
-			if (obj->environmentDeletes())
-				delete obj;
 			return false;
 		}
 		obj->setId(new_id);
@@ -123,8 +153,6 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 	if (!isFreeId(obj->getId())) {
 		errorstream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 				<< "id is not free (" << obj->getId() << ")" << std::endl;
-		if (obj->environmentDeletes())
-			delete obj;
 		return false;
 	}
 
@@ -133,15 +161,16 @@ bool ActiveObjectMgr::registerObject(ServerActiveObject *obj)
 		warningstream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 				<< "object position (" << p.X << "," << p.Y << "," << p.Z
 				<< ") outside maximum range" << std::endl;
-		if (obj->environmentDeletes())
-			delete obj;
 		return false;
 	}
 
-	m_active_objects.insert_or_assign(obj->getId(), ServerActiveObjectPtr{obj});
+	auto obj_p = obj.get();
+	m_active_objects.insert_or_assign(obj->getId(), obj);
+	//m_active_objects[obj->getId()] = std::move(obj);
+
 #if !NDEBUG
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
-			<< "Added id=" << obj->getId() << "; there are now "
+			<< "Added id=" << obj_p->getId() << "; there are now "
 			<< m_active_objects.size() << " active objects." << std::endl;
 #endif
 	return true;
@@ -159,8 +188,11 @@ void ActiveObjectMgr::removeObject(u16 id)
 	}
 
     deferDelete(m_active_objects.get(id));
-	m_active_objects.erase(id);
-	//delete obj;
+
+	// Delete the obj before erasing, as the destructor may indirectly access
+	// m_active_objects.
+	//it->second.reset();
+	m_active_objects.erase(id); // `it` can be invalid now
 }
 
 // clang-format on
@@ -181,9 +213,8 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 	}
 
 	float r2 = radius * radius;
-
 	for (auto &obj : active_objects) {
-		//ServerActiveObject *obj = activeObject.second;
+		//ServerActiveObject *obj = activeObject.second.get();
 		const v3f &objectpos = obj->getBasePosition();
 		if (objectpos.getDistanceFromSQ(pos) > r2)
 			continue;
@@ -247,7 +278,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		u16 id = ao_it.first;
 
 		// Get object
-		auto object = ao_it.second;
+		ServerActiveObject *object = ao_it.second.get();
 		if (!object)
 			continue;
 

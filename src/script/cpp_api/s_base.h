@@ -64,7 +64,7 @@ extern "C" {
 	setOriginFromTableRaw(index, __FUNCTION__)
 
 enum class ScriptingType: u8 {
-	Async,
+	Async, // either mainmenu (client) or ingame (server)
 	Client,
 	MainMenu,
 	Server
@@ -106,9 +106,10 @@ public:
 	void addObjectReference(ServerActiveObject *cobj);
 	void removeObjectReference(ServerActiveObject *cobj);
 
+	ScriptingType getType() { return m_type; }
+
 	IGameDef *getGameDef() { return m_gamedef; }
 	Server* getServer();
-	ScriptingType getType() { return m_type; }
 #ifndef SERVER
 	Client* getClient();
 #endif
@@ -131,7 +132,7 @@ protected:
 	friend class ObjectRef;
 	friend class NodeMetaRef;
 	friend class ModApiBase;
-	friend class ModApiEnvMod;
+	friend class ModApiEnv;
 	friend class LuaVoxelManip;
 
 	/*

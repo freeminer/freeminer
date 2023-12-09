@@ -112,6 +112,14 @@ struct PlayerPhysicsOverride
 	bool sneak_glitch = false;
 	// "Temporary" option for old move code
 	bool new_move = true;
+
+	float speed_climb = 1.f;
+	float speed_crouch = 1.f;
+	float liquid_fluidity = 1.f;
+	float liquid_fluidity_smooth = 1.f;
+	float liquid_sink = 1.f;
+	float acceleration_default = 1.f;
+	float acceleration_air = 1.f;
 };
 
 struct PlayerSettings
@@ -153,12 +161,14 @@ public:
 			std::vector<CollisionInfo> *collision_info)
 	{}
 
-	v3f getSpeed() //const
+	// in BS-space
+	v3f getSpeed() const
 	{
 		auto lock = lock_shared();
 		return m_speed;
 	}
 
+	// in BS-space
 	void setSpeed(v3f speed)
 	{
 		auto lock = lock_unique();
@@ -184,6 +194,7 @@ public:
 
 	v3f eye_offset_first;
 	v3f eye_offset_third;
+	v3f eye_offset_third_front;
 
 	Inventory inventory;
 
@@ -248,7 +259,7 @@ public:
 
 protected:
 	//char m_name[PLAYERNAME_SIZE];
-	v3f m_speed;
+	v3f m_speed; // velocity; in BS-space
 	std::atomic_uint16_t m_wield_index {0};
 	PlayerFovSpec m_fov_override_spec = { 0.0f, false, 0.0f };
 
