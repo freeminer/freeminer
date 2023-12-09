@@ -421,7 +421,7 @@ void MapblockMeshGenerator::drawSolidNode()
 	u16 lights[6];
 	content_t n1 = cur_node.n.getContent();
 	for (int face = 0; face < 6; face++) {
-		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face];
+		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face] * data->step;
 		MapNode neighbor = data->m_vmanip.getNodeNoEx(p2);
 		content_t n2 = neighbor.getContent();
 		bool backface_culling = cur_node.f->drawtype == NDT_NORMAL;
@@ -456,6 +456,10 @@ void MapblockMeshGenerator::drawSolidNode()
 	u8 mask = faces ^ 0b0011'1111; // k-th bit is set if k-th face is to be *omitted*, as expected by cuboid drawing functions.
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
+
+	box.MinEdge *= data->step;
+	box.MaxEdge *= data->step;
+
 	f32 texture_coord_buf[24];
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
@@ -1703,6 +1707,12 @@ void MapblockMeshGenerator::drawNode()
 		default:
 			break;
 	}
+
+	if (data->step > 1) {
+		drawSolidNode();
+		return;
+	}
+
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	if (data->m_smooth_lighting)
 		getSmoothLightFrame();
@@ -1728,9 +1738,9 @@ void MapblockMeshGenerator::drawNode()
 
 void MapblockMeshGenerator::generate()
 {
-	for (cur_node.p.Z = 0; cur_node.p.Z < data->side_length; cur_node.p.Z++)
-	for (cur_node.p.Y = 0; cur_node.p.Y < data->side_length; cur_node.p.Y++)
-	for (cur_node.p.X = 0; cur_node.p.X < data->side_length; cur_node.p.X++) {
+	for (cur_node.p.Z = 0; cur_node.p.Z < data->side_length_data; cur_node.p.Z+=data->step)
+	for (cur_node.p.Y = 0; cur_node.p.Y < data->side_length_data; cur_node.p.Y+=data->step)
+	for (cur_node.p.X = 0; cur_node.p.X < data->side_length_data; cur_node.p.X+=data->step) {
 		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		cur_node.f = &nodedef->get(cur_node.n);
 		drawNode();

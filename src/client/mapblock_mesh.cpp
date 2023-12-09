@@ -362,7 +362,7 @@ static u16 getSmoothLightCombined(const v3s16 &p,
 */
 u16 getSmoothLightSolid(const v3s16 &p, const v3s16 &face_dir, const v3s16 &corner, MeshMakeData *data)
 {
-	return getSmoothLightTransparent(p + face_dir, corner - 2 * face_dir, data);
+	return getSmoothLightTransparent(p + face_dir * data->step, corner - 2 * face_dir, data);
 }
 
 /*
@@ -791,7 +791,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 		- whatever
 	*/
 
-	if(step <= 1)
+	//if(step <= 1)
 	{
 		MapblockMeshGenerator(data, &collector,
 			data->m_client->getSceneManager()->getMeshManipulator()).generate();
@@ -925,11 +925,13 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 		}
 
+/* for old fastfaces
 		if (step > 1) {
 			translateMesh(m_mesh[layer], v3f(HBS, 0, HBS));
 			scaleMesh(m_mesh[layer], v3f(step, step, step));
 			translateMesh(m_mesh[layer], v3f(-HBS, -HBS*step + HBS + BS, -HBS));
 		}
+*/
 
 		if (m_mesh[layer]) {
 			// Use VBO for mesh (this just would set this for ever buffer)
