@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "objdef.h"
 #include "noise.h"
 #include "nodedef.h"
+#include "irr_v3d.h"
 
 typedef u16 biome_t;  // copy from mg_biome.h to avoid an unnecessary include
 

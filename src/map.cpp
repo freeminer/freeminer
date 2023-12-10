@@ -34,7 +34,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "nodedef.h"
 #include "gamedef.h"
 #include "util/directiontables.h"
-#include "util/basic_macros.h"
 #include "rollback_interface.h"
 #include "environment.h"
 #include "reflowscan.h"
@@ -47,6 +46,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
 #include "script/scripting_server.h"
+#include "irrlicht_changes/printing.h"
 #include <deque>
 #include <queue>
 #if USE_LEVELDB
@@ -118,22 +118,22 @@ MapSector * Map::getSectorNoGenerateNoLock(v2bpos_t p)
 	return sector;
 }
 
-MapSector * Map::getSectorNoGenerate(v2bpos_t p)
+MapSector *Map::getSectorNoGenerate(v2bpos_t p)
 {
 	return getSectorNoGenerateNoLock(p);
 }
 
-MapBlock * Map::getBlockNoCreateNoEx(v3bpos_t p3d)
+MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p3d)
 {
 	v2bpos_t p2d(p3d.X, p3d.Z);
-	MapSector * sector = getSectorNoGenerate(p2d);
-	if(sector == NULL)
-		return NULL;
+	MapSector *sector = getSectorNoGenerate(p2d);
+	if (!sector)
+		return nullptr;
 	MapBlock *block = sector->getBlockNoCreateNoEx(p3d.Y);
 	return block;
 }
 
-MapBlock * Map::getBlockNoCreate(v3bpos_t p3d)
+MapBlock *Map::getBlockNoCreate(v3bpos_t p3d)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p3d);
 	if(block == NULL)
@@ -176,7 +176,7 @@ static void set_node_in_block(MapBlock *block, v3pos_t relpos, MapNode n)
 		errorstream<<"Not allowing to place CONTENT_IGNORE"
 				<<" while trying to replace \""
 				<<nodedef->get(block->getNodeNoCheck(relpos)).name
-				<<"\" at "<<PP(p)<<" (block "<<PP(blockpos)<<")"<<std::endl;
+				<<"\" at "<<p<<" (block "<<blockpos<<")"<<std::endl;
 		return;
 	}
 	block->setNodeNoCheck(relpos, n);
@@ -515,7 +515,7 @@ struct NodeNeighbor {
 };
 
 void ServerMap::transforming_liquid_add(v3pos_t p) {
-        m_transforming_liquid.push_back(p);
+		m_transforming_liquid.push_back(p);
 }
 
 void ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_blocks,
@@ -919,7 +919,7 @@ std::vector<v3pos_t> Map::findNodesWithMetadata(v3pos_t p1, v3pos_t p2)
 		MapBlock *block = getBlockNoCreateNoEx(blockpos);
 		if (!block) {
 			verbosestream << "Map::getNodeMetadata(): Need to emerge "
-				<< PP(blockpos) << std::endl;
+				<< blockpos << std::endl;
 			block = emergeBlock(blockpos, false);
 		}
 		if (!block) {
@@ -949,7 +949,7 @@ NodeMetadata *Map::getNodeMetadata(v3pos_t p)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(!block){
 		infostream<<"Map::getNodeMetadata(): Need to emerge "
-				<<PP(blockpos)<<std::endl;
+				<<blockpos<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
@@ -968,7 +968,7 @@ bool Map::setNodeMetadata(v3pos_t p, NodeMetadata *meta)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(!block){
 		infostream<<"Map::setNodeMetadata(): Need to emerge "
-				<<PP(blockpos)<<std::endl;
+				<<blockpos<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
@@ -1001,7 +1001,7 @@ NodeTimer Map::getNodeTimer(v3pos_t p)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(!block){
 		infostream<<"Map::getNodeTimer(): Need to emerge "
-				<<PP(blockpos)<<std::endl;
+				<<blockpos<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
@@ -1022,7 +1022,7 @@ void Map::setNodeTimer(const NodeTimer &t)
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(!block){
 		infostream<<"Map::setNodeTimer(): Need to emerge "
-				<<PP(blockpos)<<std::endl;
+				<<blockpos<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
 	if(!block){
@@ -1353,7 +1353,7 @@ bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 		return false;
 
 	bool enable_mapgen_debug_info = m_emerge->enable_mapgen_debug_info;
-	EMERGE_DBG_OUT("initBlockMake(): " PP(bpmin) " - " PP(bpmax));
+	EMERGE_DBG_OUT("initBlockMake(): " << bpmin << " - " << bpmax);
 
 	v3bpos_t extra_borders(1, 1, 1);
 	v3bpos_t full_bpmin = bpmin - extra_borders;
@@ -1415,7 +1415,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	v3bpos_t bpmax = data->blockpos_max;
 
 	bool enable_mapgen_debug_info = m_emerge->enable_mapgen_debug_info;
-	EMERGE_DBG_OUT("finishBlockMake(): " PP(bpmin) " - " PP(bpmax));
+	EMERGE_DBG_OUT("finishBlockMake(): " << bpmin << " - " << bpmax);
 
 	/*
 		Blit generated stuff to map
@@ -1800,21 +1800,23 @@ void ServerMap::loadBlock(std::string *blob, v3bpos_t p3d, MapSector *sector, bo
 			throw SerializationError("ServerMap::loadBlock(): Failed"
 					" to read MapBlock version");
 
-		MapBlock *block = NULL;
-		bool created_new = false;
+		MapBlock *block = nullptr;
+		std::unique_ptr<MapBlock> block_created_new;
 		block = sector->getBlockNoCreateNoEx(p3d.Y);
-		if(block == NULL)
-		{
-			block = sector->createBlankBlockNoInsert(p3d.Y);
-			created_new = true;
+		if (!block) {
+			block_created_new = sector->createBlankBlockNoInsert(p3d.Y);
+			block = block_created_new.get();
 		}
 
+		{
+		ScopeProfiler sp(g_profiler, "ServerMap: deSer block", SPT_AVG);
 		// Read basic data
 		block->deSerialize(is, version, true);
+		}
 
 		// If it's a new block, insert it to the map
-		if (created_new) {
-			sector->insertBlock(block);
+		if (block_created_new) {
+			sector->insertBlock(std::move(block_created_new));
 			ReflowScan scanner(this, m_emerge->ndef);
 			scanner.scan(block, &m_transforming_liquid);
 		}
@@ -1851,6 +1853,7 @@ void ServerMap::loadBlock(std::string *blob, v3bpos_t p3d, MapSector *sector, bo
 
 MapBlock* ServerMap::loadBlock(v3bpos_t blockpos)
 {
+	ScopeProfiler sp(g_profiler, "ServerMap: load block", SPT_AVG);
 	bool created_new = (getBlockNoCreateNoEx(blockpos) == NULL);
 
 	v2bpos_t p2d(blockpos.X, blockpos.Z);
@@ -1897,8 +1900,7 @@ bool ServerMap::deleteBlock(v3bpos_t blockpos)
 			return false;
 		// It may not be safe to delete the block from memory at the moment
 		// (pointers to it could still be in use)
-		sector->detachBlock(block);
-		m_detached_blocks.push_back(block);
+		m_detached_blocks.push_back(sector->detachBlock(block));
 	}
 
 	return true;
@@ -1906,10 +1908,11 @@ bool ServerMap::deleteBlock(v3bpos_t blockpos)
 
 void ServerMap::deleteDetachedBlocks()
 {
-	for (MapBlock *block : m_detached_blocks) {
+	for (const auto &block : m_detached_blocks) {
 		assert(block->isOrphan());
-		delete block;
+		(void)block; // silence unused-variable warning in release builds
 	}
+
 	m_detached_blocks.clear();
 }
 

@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "unit_sao.h"
 #include "scripting_server.h"
 #include "serverenvironment.h"
+#include "util/serialize.h"
 
 UnitSAO::UnitSAO(ServerEnvironment *env, v3opos_t pos) : ServerActiveObject(env, pos)
 {
