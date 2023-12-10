@@ -123,20 +123,17 @@ movement_fov () bool true
 # FOV when using zoom, default 15
 zoom_fov () int 15
 
-# [dev] Shadows from objects
-shadows () bool 0
-
 # Increase performance of headless client ( video_driver = null )
-headless_optimize () bool 0
+headless_optimize () bool false
 
 # Disable death screen, respawn automaticaly
 respawn_auto () bool false
 
 #Save password for every server in favorites (in plaintext)
-password_save () bool 1
+password_save () bool true
 
 # Show cmd console on Windows
-console_enabled () bool 0
+console_enabled () bool false
 
 #    Path for screenshots
 screenshot_path () string screenshots
@@ -150,11 +147,11 @@ selectionbox_color () string (0,0,0)
 android_keyboard () enum 0 0,1,2
 
 #Androud: use touchscreen gui
-touchscreen () bool 1
+touchscreen () bool true
 
 [*Server]
 # Lan udp announce
-serverlist_lan () bool 1
+serverlist_lan () bool true
 
 # If true, blocks are cached (and generated if not before) before a player is spawned.
 cache_block_before_spawn () bool true
@@ -164,7 +161,7 @@ max_spawn_height () int 50
 
 # Allow players with any symbols in names
 # WARNING!!! SECURITY RISK WITH SOME MODULES
-enable_any_name () bool 0
+enable_any_name () bool false
 
 # Report broken recipes in mods
 mod_debugging () bool false
@@ -178,19 +175,19 @@ enable_force_load () bool true
 profiler_autostart () bool false
 
 # Save freshly generated but not changed block, disable it for reducing map size on big servers
-save_generated_block () bool 1
+save_generated_block () bool true
 
 # Save blocks changed by game
-save_changed_block () bool 1
+save_changed_block () bool true
 
 # Cpu-eating debug timing tool (also automatically enabled with debug_log_level>=3)
 time_taker_enabled () int 0
 
 # Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
-more_threads () bool 1
+more_threads () bool true
 
 # Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
-abm_random () bool 0
+abm_random () bool false
 
 # Default privs in creative mode
 default_privs_creative () string interact, shout, fly, fast
@@ -240,7 +237,7 @@ weather_hot_core        () float 1000
 weather_heat_height     () float -333
 
 # Bind biomes to weather map in mapgen v6 and indev
-weather_biome () bool 0
+weather_biome () bool false
 
 # Length of year in days for seasons change. With default time_speed 365 days = 5 real days for year. 30 days = 10 real hours
 year_days () int 30
