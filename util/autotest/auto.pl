@@ -206,7 +206,8 @@ our $options = {
         #enable_mapgen_debug_info => 1,
     },
     bot => {
-        fps_max => 30,
+        fps_max => 10,
+        fps_max_unfocused => 10,
     },
     bot_random => {
         random_input       => 1,
@@ -224,7 +225,8 @@ our $options = {
         enable_shaders   => 0,
     },
     headless_optimize => {
-        fps_max           => 10,
+        fps_max           => 5,
+        fps_max_unfocused => 5,
         headless_optimize => 1,
     },
     software => {
@@ -323,6 +325,7 @@ our $options = {
     },
     fps1 => {
         fps_max       => 2,
+        fps_max_unfocused => 2,
         viewing_range => 1000,
         #viewing_range_max => 1000,
         wanted_fps => 1,
@@ -376,7 +379,7 @@ our $commands = {
         $D{USE_LIBCXX}         = $config->{cmake_libcxx}      if defined $config->{cmake_libcxx};
         $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen} if defined $config->{cmake_touchscreen};
         $D{USE_GPERF}          = $config->{cmake_gperf}       if defined $config->{cmake_gperf};
-        $D{NO_LTO}             = $config->{cmake_no_lto} // 1;
+        $D{USE_LTO}            = $config->{cmake_lto}         if defined $config->{cmake_lto};
         $D{EXCEPTION_DEBUG}    = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
         $D{USE_DEBUG_HELPERS}  = 1; 
 
@@ -413,7 +416,7 @@ qq{cmake .. $ninja $D @_ $config->{cmake_int} $config->{cmake_add} $config->{tee
         sy qq{$config->{env} $config->{runner} @_ ./freeminer --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log } . options_make([qw(verbose trace)]);
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1},
-    run_bot         => ['set_bot', 'run_single'],
+    run_bot         => ['set_bot', 'set_client', 'run_single'],
     run_single_tsan => sub {
         local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
         local $config->{cmake_leveldb} //= 0          if $config->{tsan_leveldb_fix};
@@ -488,8 +491,8 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     fail => sub {
         warn 'fail:', join ' ', @_;
     },
-    set_client   => [{-no_build_client => 0, -no_build_server => 1,}],
-    set_server      => [{-no_build_client => 1, -no_build_server => 0, -options_add => 'no_exit'}],
+    set_client   => [{'---no_build_client' => 0, '---no_build_server' => 1,}],
+    set_server      => [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit'}],
 };
 
 our $tasks = {
@@ -693,6 +696,7 @@ our $tasks = {
         ++$g->{keep_config};
         $config->{runner} =
             $config->{runner}
+          . ' ASAN_OPTIONS=abort_on_error=1 '
           . $config->{gdb}
           . q{ -ex 'run' -ex 't a a bt' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })

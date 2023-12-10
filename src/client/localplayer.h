@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "player.h"
 #include "environment.h"
 #include "constants.h"

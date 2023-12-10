@@ -251,17 +251,6 @@ public:
 		return (m_lighting_complete & (1 << direction)) != 0;
 	}
 
-	inline void setLightingExpired(bool expired)
-	{
-		m_lighting_expired = expired;
-	}
-
-	inline bool getLightingExpired() const
-	{
-		return m_lighting_expired;
-	}
-
-
 	inline bool isGenerated()
 	{
 		return m_generated;
@@ -361,6 +350,12 @@ public:
 	MapNode getNodeNoLock(v3pos_t p)
 	{
 		return data[p.Z*zstride + p.Y*ystride + p.X];
+	}
+
+	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
+	{
+		data[p.Z * zstride + p.Y * ystride + p.X] = n;
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
 	}
 
 	////

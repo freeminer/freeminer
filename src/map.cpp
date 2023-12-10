@@ -1578,7 +1578,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
 			MOD_REASON_EXPIRE_DAYNIGHTDIFF);
 		else
-			block->setLightingExpired(true);
+			block->setLightingComplete(0);
 	}
 
 	/*

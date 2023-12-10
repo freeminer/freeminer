@@ -6,6 +6,7 @@
 #include "getThreadId.h"
 #include "magic_enum.hpp"
 #include <cstring>
+#include <string_view>
 #include <type_traits>
 #include <tuple>
 #include <iomanip>
@@ -87,8 +88,12 @@ dumpImpl(Out & out, T && x)
 /// string and const char * - output not as container or pointer.
 
 template <int priority, typename Out, typename T>
-std::enable_if_t<priority == 3 && (std::is_same_v<std::decay_t<T>, std::string> || std::is_same_v<std::decay_t<T>, const char *>), Out> &
-dumpImpl(Out & out, T && x)
+std::enable_if_t<priority == 3 &&
+						 (std::is_same_v<std::decay_t<T>, std::string> ||
+								 std::is_same_v<std::decay_t<T>, std::string_view> ||
+								 std::is_same_v<std::decay_t<T>, const char *>),
+		Out> &
+dumpImpl(Out &out, T &&x)
 {
     out << std::quoted(x);
     return out;

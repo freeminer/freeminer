@@ -27,7 +27,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <IFileSystem.h>
 #include "client.h"
-#include "irr_v2d.h"
 #include "irr_v3d.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"

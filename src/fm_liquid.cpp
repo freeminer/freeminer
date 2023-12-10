@@ -1,4 +1,8 @@
 /*
+Copyright (C) 2013-2023 proller <proler@gmail.com>
+*/
+
+/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -326,7 +330,7 @@ NEXT_LIQUID:;
 #endif
 						goto NEXT_LIQUID;
 					}
-				} catch (InvalidPositionException &e) {
+				} catch (const InvalidPositionException &e) {
 					verbosestream
 							<< "transformLiquidsReal: weight: setNode() failed:" << nb.pos
 							<< ":" << e.what() << std::endl;
@@ -843,7 +847,7 @@ NEXT_LIQUID:;
 				getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 		if (!block)
 			continue;
-		block->setLightingExpired(true);
+		block->setLightingComplete(0);
 		// modified_blocks[blockpos] = block;
 		// if(!nodemgr->get(neighbors[i].node).light_propagates ||
 		// nodemgr->get(neighbors[i].node).light_source) // better to update always
