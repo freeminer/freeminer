@@ -34,22 +34,21 @@ env:
 
 jobs:
   # Older gcc version (should be close to our minimum supported version)
-  gcc_5:
-    runs-on: ubuntu-18.04
-    if: "false" # FIXME
+  gcc_7:
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: Install deps
         run: |
           source ./util/ci/common.sh
-          install_linux_deps g++-5
+          install_linux_deps g++-7
 
       - name: Build
         run: |
           ./util/ci/build.sh
         env:
-          CC: gcc-5
-          CXX: g++-5
+          CC: gcc-7
+          CXX: g++-7
 
       - name: Test
         run: |
@@ -77,22 +76,21 @@ jobs:
           ./bin/minetest --run-unittests
 
   # Older clang version (should be close to our minimum supported version)
-  clang_3_9:
-    runs-on: ubuntu-18.04
-    if: "false" # FIXME
+  clang_7:
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: Install deps
         run: |
           source ./util/ci/common.sh
-          install_linux_deps clang-3.9 valgrind
+          install_linux_deps clang-7 valgrind
 
       - name: Build
         run: |
           ./util/ci/build.sh
         env:
-          CC: clang-3.9
-          CXX: clang++-3.9
+          CC: clang-7
+          CXX: clang++-7
 
       - name: Unittest
         run: |
@@ -179,7 +177,6 @@ jobs:
         run: |
            EXISTING_MINETEST_DIR=$PWD ./util/buildbot/buildwin32.sh winbuild
         env:
-          NO_MINETEST_GAME: 1
           NO_PACKAGE: 1
 
   win64:
@@ -197,15 +194,14 @@ jobs:
         run: |
           EXISTING_MINETEST_DIR=$PWD ./util/buildbot/buildwin64.sh winbuild
         env:
-          NO_MINETEST_GAME: 1
           NO_PACKAGE: 1
 
   msvc:
     name: VS 2019 ${{ matrix.config.arch }}-${{ matrix.type }}
     runs-on: windows-2019
     env:
-      VCPKG_VERSION: 5cf60186a241e84e8232641ee973395d4fde90e1
-      # 2022.02
+      VCPKG_VERSION: 8eb57355a4ffb410a2e94c07b4dca2dffbee8e50
+      # 2023.10.19
       vcpkg_packages: zlib zstd curl[winssl] openal-soft libvorbis libogg libjpeg-turbo sqlite3 freetype luajit gmp jsoncpp opengl-registry
     strategy:
       fail-fast: false
@@ -249,6 +245,8 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"  `
           -DCMAKE_BUILD_TYPE=Release  `
           -DENABLE_POSTGRESQL=OFF  `
+          -DENABLE_LUAJIT=TRUE  `
+          -DREQUIRE_LUAJIT=TRUE  `
           -DRUN_IN_PLACE=${{ contains(matrix.type, 'portable') }} .
 
       - name: Build Minetest

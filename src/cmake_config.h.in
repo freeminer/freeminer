@@ -27,10 +27,10 @@
 #cmakedefine01 USE_PROMETHEUS
 #cmakedefine01 USE_SPATIAL
 #cmakedefine01 USE_SYSTEM_GMP
+#cmakedefine01 USE_SYSTEM_JSONCPP
 #cmakedefine01 USE_REDIS
 #cmakedefine01 USE_POS32
 #cmakedefine01 USE_OPOS64
-#cmakedefine01 ENABLE_GLES
 #cmakedefine01 HAVE_ENDIAN_H
 #cmakedefine01 CURSES_HAVE_CURSES_H
 #cmakedefine01 CURSES_HAVE_NCURSES_H

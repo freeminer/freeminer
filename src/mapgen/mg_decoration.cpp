@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "mg_decoration.h"
+#include "irr_v3d.h"
 #include "mg_schematic.h"
 #include "mapgen.h"
 #include "noise.h"
@@ -87,6 +88,9 @@ void Decoration::resolveNodeNames()
 
 bool Decoration::canPlaceDecoration(MMVManip *vm, v3pos_t p)
 {
+	// Note that `p` refers to the node the decoration will be placed ontop of,
+	// not to the decoration itself.
+
 	// Check if the decoration can be placed on this node
 	u32 vi = vm->m_area.index(p);
 	if (!CONTAINS(c_place_on, vm->m_data[vi].getContent()))
@@ -97,16 +101,7 @@ bool Decoration::canPlaceDecoration(MMVManip *vm, v3pos_t p)
 		return true;
 
 	int nneighs = 0;
-	static const v3pos_t dirs[16] = {
-		v3pos_t( 0, 0,  1),
-		v3pos_t( 0, 0, -1),
-		v3pos_t( 1, 0,  0),
-		v3pos_t(-1, 0,  0),
-		v3pos_t( 1, 0,  1),
-		v3pos_t(-1, 0,  1),
-		v3pos_t(-1, 0, -1),
-		v3pos_t( 1, 0, -1),
-
+	static const v3pos_t dirs[8] = {
 		v3pos_t( 0, 1,  1),
 		v3pos_t( 0, 1, -1),
 		v3pos_t( 1, 1,  0),
@@ -116,6 +111,7 @@ bool Decoration::canPlaceDecoration(MMVManip *vm, v3pos_t p)
 		v3pos_t(-1, 1, -1),
 		v3pos_t( 1, 1, -1)
 	};
+
 
 	// Check these 16 neighboring nodes for enough spawnby nodes
 	for (size_t i = 0; i != ARRLEN(dirs); i++) {
@@ -127,6 +123,19 @@ bool Decoration::canPlaceDecoration(MMVManip *vm, v3pos_t p)
 			nneighs++;
 	}
 
+	if (check_offset != 0) {
+		const v3pos_t dir_offset(0, check_offset,  0);
+
+		for (size_t i = 0; i != ARRLEN(dirs); i++) {
+			u32 index = vm->m_area.index(p + dirs[i] + dir_offset);
+			if (!vm->m_area.contains(index))
+				continue;
+
+			if (CONTAINS(c_spawnby, vm->m_data[index].getContent()))
+				nneighs++;
+		}
+
+	}
 	if (nneighs < nspawnby)
 		return false;
 
@@ -280,6 +289,7 @@ void Decoration::cloneTo(Decoration *def) const
 	def->flags = flags;
 	def->mapseed = mapseed;
 	def->c_place_on = c_place_on;
+	def->check_offset = check_offset;
 	def->sidelen = sidelen;
 	def->y_min = y_min;
 	def->y_max = y_max;
