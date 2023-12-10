@@ -89,7 +89,7 @@ public:
 		ISceneNode::drop(); // calls destructor
 	}
 
-	void updateCamera(v3f pos, v3f dir, f32 fov, v3pos_t offset);
+	void updateCamera(v3f pos, v3f dir, f32 fov, v3pos_t offset, video::SColor light_color);
 
 	/*
 		Forcefully get a sector from somewhere
@@ -202,6 +202,7 @@ private:
 	v3f m_camera_direction = v3f(0,0,1);
 	f32 m_camera_fov = M_PI;
 	v3pos_t m_camera_offset;
+	video::SColor m_camera_light_color = video::SColor(0xFFFFFFFF);
 	bool m_needs_update_transparent_meshes = true;
 
 	std::map<v3bpos_t, MapBlock*, MapBlockComparer> m_drawlist;

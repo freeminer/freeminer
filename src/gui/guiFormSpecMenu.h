@@ -19,12 +19,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
+#include <optional>
 #include <utility>
 #include <stack>
 #include <unordered_set>
 
 #include "irrlichttypes_extrabloated.h"
 #include "irr_ptr.h"
+#include "inventory.h"
 #include "inventorymanager.h"
 #include "modalMenu.h"
 #include "guiInventoryList.h"
@@ -32,7 +34,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiTable.h"
 #include "network/networkprotocol.h"
 #include "client/joystick_controller.h"
-#include "util/Optional.h"
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
@@ -61,6 +62,19 @@ enum FormspecQuitMode {
 	quit_mode_no,
 	quit_mode_accept,
 	quit_mode_cancel
+};
+
+enum ButtonEventType : u8
+{
+	BET_LEFT,
+	BET_RIGHT,
+	BET_MIDDLE,
+	BET_WHEEL_UP,
+	BET_WHEEL_DOWN,
+	BET_UP,
+	BET_DOWN,
+	BET_MOVE,
+	BET_OTHER
 };
 
 struct TextDest
@@ -257,6 +271,8 @@ public:
 	void updateSelectedItem();
 	ItemStack verifySelectedItem();
 
+	s16 getNextInventoryRing(const InventoryLocation &inventoryloc, const std::string &listname);
+
 	void acceptInput(FormspecQuitMode quitmode=quit_mode_no);
 	bool preprocessEvent(const SEvent& event);
 	bool OnEvent(const SEvent& event);
@@ -265,6 +281,9 @@ public:
 
 	GUITable* getTable(const std::string &tablename);
 	std::vector<std::string>* getDropDownValues(const std::string &name);
+
+	// This will only return a meaningful value if called after drawMenu().
+	core::rect<s32> getAbsoluteRect();
 
 #ifdef __ANDROID__
 	bool getAndroidUIInput();
@@ -315,6 +334,7 @@ protected:
 
 	std::vector<GUIInventoryList *> m_inventorylists;
 	std::vector<ListRingSpec> m_inventory_rings;
+	std::unordered_map<std::string, bool> field_enter_after_edit;
 	std::unordered_map<std::string, bool> field_close_on_enter;
 	std::unordered_map<std::string, bool> m_dropdown_index_event;
 	std::vector<FieldSpec> m_fields;
@@ -331,6 +351,13 @@ protected:
 	u16 m_selected_amount = 0;
 	bool m_selected_dragging = false;
 	ItemStack m_selected_swap;
+	ButtonEventType m_held_mouse_button = BET_OTHER;
+	bool m_shift_move_after_craft = false;
+
+	u16 m_left_drag_amount = 0;
+	ItemStack m_left_drag_stack;
+	std::vector<std::pair<GUIInventoryList::ItemSpec, ItemStack>> m_left_drag_stacks;
+	bool m_left_dragging = false;
 
 	gui::IGUIStaticText *m_tooltip_element = nullptr;
 
@@ -338,8 +365,6 @@ protected:
 	bool m_tooltip_append_itemname;
 	u64 m_hovered_time = 0;
 	s32 m_old_tooltip_id = -1;
-
-	bool m_auto_place = false;
 
 	bool m_allowclose = true;
 	bool m_lock = false;
@@ -353,13 +378,13 @@ protected:
 	video::SColor m_default_tooltip_color;
 
 private:
-	IFormSource          *m_form_src;
-	TextDest             *m_text_dst;
-	std::string           m_last_formname;
-	u16                   m_formspec_version = 1;
-	Optional<std::string> m_focused_element = nullopt;
-	JoystickController   *m_joystick;
-	bool                  m_show_debug = false;
+	IFormSource               *m_form_src;
+	TextDest                  *m_text_dst;
+	std::string                m_last_formname;
+	u16                        m_formspec_version = 1;
+	std::optional<std::string> m_focused_element = std::nullopt;
+	JoystickController        *m_joystick;
+	bool                       m_show_debug = false;
 
 	struct parserData {
 		bool explicit_size;
@@ -427,6 +452,7 @@ private:
 	void parseTable(parserData* data, const std::string &element);
 	void parseTextList(parserData* data, const std::string &element);
 	void parseDropDown(parserData* data, const std::string &element);
+	void parseFieldEnterAfterEdit(parserData *data, const std::string &element);
 	void parseFieldCloseOnEnter(parserData *data, const std::string &element);
 	void parsePwdField(parserData* data, const std::string &element);
 	void parseField(parserData* data, const std::string &element, const std::string &type);
@@ -476,6 +502,9 @@ private:
 
 	int m_btn_height;
 	gui::IGUIFont *m_font = nullptr;
+
+	// used by getAbsoluteRect
+	s32 m_tabheader_upper_edge = 0;
 };
 
 class FormspecFormSource: public IFormSource

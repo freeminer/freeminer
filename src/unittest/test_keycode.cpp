@@ -111,7 +111,7 @@ void TestKeycode::testCompare()
 {
 	// Basic comparison
 	UASSERT(KeyPress("5") == KeyPress("KEY_KEY_5"));
-	UASSERT(!(KeyPress("5") == KeyPress("KEY_NUMPAD_5")));
+	UASSERT(!(KeyPress("5") == KeyPress("KEY_NUMPAD5")));
 
 	// Matching char suffices
 	// note: This is a real-world example, Irrlicht maps XK_equal to irr::KEY_PLUS on Linux

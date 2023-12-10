@@ -28,11 +28,17 @@ gtags.files
 # Visual Studio Code & plugins
 .vscode/
 build/.cmake/
-.cache
+# Fleet
+.fleet
 # Gradle
 .gradle
 # Clang
 .cache
+# AppImage
+*.AppImage
+*.zsync
+appimage-build
+AppDir
 
 ## Files related to Minetest development cycle
 /*.patch
