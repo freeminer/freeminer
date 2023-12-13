@@ -1015,7 +1015,7 @@ public:
 		}
 
 		// Slowly evaporate water and kill leaves with water_level==1
-		const auto can_decay = !have_not_leaves && nbh[D_SELF].light < LIGHT_SUN - 1;
+		const auto can_decay = have_not_leaves && nbh[D_SELF].light < LIGHT_SUN - 1;
 		if (n_water_level > 1 && can_decay &&
 				(!myrand_range(0, 10 * (grow_debug_fast ? 1 : 10)))) {
 			float humidity = map->updateBlockHumidity(env, pos);
@@ -1034,7 +1034,7 @@ public:
 				(n_water_level == 1 && can_decay &&
 						(!myrand_range(0, 30 * (grow_debug_fast ? 1 : 10)))) ||
 				(n_water_level >= 1 && // dont touch old static trees
-						!have_not_leaves &&
+						have_not_leaves &&
 						((nbh[D_SELF].light < params.leaves_die_light_max &&
 								 (nbh[D_SELF].light > 0 || activate ||
 										 !myrand_range(0, params.leaves_die_chance))) ||
