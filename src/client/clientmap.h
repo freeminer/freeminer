@@ -163,9 +163,6 @@ public:
 
 	void renderPostFx(CameraMode cam_mode);
 
-	// For debugging the status and position of MapBlocks
-	void renderBlockBoundaries(const std::map<v3pos_t, MapBlock*> & blocks);
-
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;
 
