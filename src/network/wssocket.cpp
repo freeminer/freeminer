@@ -95,11 +95,15 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 
 		std::string path_serve;
 
-		const auto uri = con->get_request().get_uri();
+		auto uri = con->get_request().get_uri();
+		if (const auto f = uri.find('?'); f != std::string::npos) {
+			uri.resize(f);
+		}
 		if (uri == "/") {
-			path_serve = http_root + DIR_DELIM + "index.html";
-			con->append_header("Access-Control-Allow-Origin", "*");
-		} else if (uri == "/favicon.ico") {
+			uri = "index.html";
+		}
+
+		if (uri == "/favicon.ico") {
 			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
 						 PROJECT_NAME + ".ico";
 		} else if (!uri.empty()) {
@@ -112,9 +116,10 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 		}
 
 		if (!path_serve.empty()) {
+			con->append_header("Access-Control-Allow-Origin", "*");
 			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
 			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
-            con->defer_http_response();
+			con->defer_http_response();
 			std::ifstream t(path_serve);
 			std::stringstream buffer;
 			buffer << t.rdbuf();
@@ -221,7 +226,7 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 	server.set_pong_timeout(timeouts);
 	server.set_listen_backlog(100);
 	server.init_asio();
-
+	
 	server.set_reuse_addr(true);
 	server.set_open_handler(websocketpp::lib::bind(
 			&WSSocket::on_open, this, websocketpp::lib::placeholders::_1));
