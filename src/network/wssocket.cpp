@@ -94,11 +94,19 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 		const auto uri = con->get_request().get_uri();
 		if (uri == "/") {
 			path_serve = http_root + DIR_DELIM + "index.html";
+			con->append_header("Access-Control-Allow-Origin", "*");
+			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
+			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
 		} else if (uri == "/favicon.ico") {
 			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
 						 PROJECT_NAME + ".ico";
 		} else if (!uri.empty()) {
 			path_serve = http_root + uri;
+			if (uri.ends_with(".wasm")) {
+				con->append_header("Content-Type", "application/wasm");
+			} else if (uri.ends_with(".js")) {
+				con->append_header("Content-Type", "application/javascript");
+			}
 		}
 
 		if (!path_serve.empty()) {
