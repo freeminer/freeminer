@@ -968,7 +968,7 @@ sub task_start(@) {
     say "task start $name ", @_;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name}  = $name;
-    local $g->{build_name} = $config->{build_name};
+    local $g->{build_name} = $config->{build_name} if $config->{build_name};
     #task_run($name, @_);
     commands_run($name, @_);
 }

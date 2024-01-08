@@ -61,7 +61,7 @@ public:
 #if USE_SSL
 	using ws_server_t = websocketpp::server<websocketpp::config::asio_tls>;
 	//typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
-typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
+	typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 
 #else
 	using ws_server_t = websocketpp::server<websocketpp::config::asio>;
@@ -78,7 +78,6 @@ typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 	void on_open(const websocketpp::connection_hdl &hdl);
 	void on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg);
 	context_ptr on_tls_init(const websocketpp::connection_hdl &hdl);
-
 
 private:
 	struct queue_item
