@@ -26,6 +26,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "wssocket.h"
 #include "constants.h"
+#include "filesys.h"
+#include "porting.h"
+#include "settings.h"
 #include "iostream_debug_helpers.h"
 #include "log.h"
 #include "util/numeric.h"
@@ -55,8 +58,6 @@ typedef int socklen_t;
 #define SOCKET_ERR_STR(e) strerror(e)
 #endif
 
-#include <websocketpp/config/debug_asio_no_tls.hpp>
-
 // Custom logger
 #include <websocketpp/logger/syslog.hpp>
 #include <websocketpp/server.hpp>
@@ -69,54 +70,6 @@ auto &cs = errorstream; // remove after debug
 auto &cs = tracestream; // remove after debug
 #endif
 
-////////////////////////////////////////////////////////////////////////////////
-///////////////// Custom Config for debugging custom policies //////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-struct debug_custom : public websocketpp::config::debug_asio
-{
-	typedef debug_custom type;
-	typedef debug_asio base;
-
-	typedef base::concurrency_type concurrency_type;
-
-	typedef base::request_type request_type;
-	typedef base::response_type response_type;
-
-	typedef base::message_type message_type;
-	typedef base::con_msg_manager_type con_msg_manager_type;
-	typedef base::endpoint_msg_manager_type endpoint_msg_manager_type;
-
-	/// Custom Logging policies
-	/*typedef websocketpp::log::syslog<concurrency_type,
-		websocketpp::log::elevel> elog_type;
-	typedef websocketpp::log::syslog<concurrency_type,
-		websocketpp::log::alevel> alog_type;
-	*/
-	typedef base::alog_type alog_type;
-	typedef base::elog_type elog_type;
-
-	typedef base::rng_type rng_type;
-
-	struct transport_config : public base::transport_config
-	{
-		typedef type::concurrency_type concurrency_type;
-		typedef type::alog_type alog_type;
-		typedef type::elog_type elog_type;
-		typedef type::request_type request_type;
-		typedef type::response_type response_type;
-		typedef websocketpp::transport::asio::basic_socket::endpoint socket_type;
-	};
-
-	typedef websocketpp::transport::asio::endpoint<transport_config> transport_type;
-
-	static const long timeout_open_handshake = 0;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-typedef websocketpp::server<debug_custom> server;
-
 void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 {
 	ws_server_t::connection_ptr con = server.get_con_from_hdl(hdl);
@@ -125,7 +78,42 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 
 	std::stringstream ss;
 	ss << "got HTTP request with " << res.size() << " bytes of body data.";
-	cs << ss.str() << std::endl;
+	cs << ss.str() << '\n';
+	std::string http_root = porting::path_share + DIR_DELIM + "http_root" + DIR_DELIM;
+	g_settings->getNoEx("http_root", http_root);
+
+	if (con->get_request().get_method() == "GET") {
+
+		if (con->get_request().get_uri().find("..") != std::string::npos) {
+			con->set_status(websocketpp::http::status_code::bad_request);
+			return;
+		}
+
+		std::string path_serve;
+
+		const auto uri = con->get_request().get_uri();
+		if (uri == "/") {
+			path_serve = http_root + DIR_DELIM + "index.html";
+		} else if (uri == "/favicon.ico") {
+			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
+						 PROJECT_NAME + ".ico";
+		} else if (!uri.empty()) {
+			path_serve = http_root + uri;
+		}
+
+		if (!path_serve.empty()) {
+            con->defer_http_response();
+			std::ifstream t(path_serve);
+			std::stringstream buffer;
+			buffer << t.rdbuf();
+			con->set_body(buffer.str());
+			con->set_status(websocketpp::http::status_code::ok);
+			con->send_http_response();
+			// TODO: serve log here?
+			return;
+		}
+	}
+	// DUMP(con->get_request().get_method(), con->get_request().get_version(), con->get_request().get_uri(), con->get_request().get_headers(), res);
 
 	con->set_body(ss.str());
 	con->set_status(websocketpp::http::status_code::ok);
