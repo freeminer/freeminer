@@ -99,8 +99,6 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 		if (uri == "/") {
 			path_serve = http_root + DIR_DELIM + "index.html";
 			con->append_header("Access-Control-Allow-Origin", "*");
-			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
-			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
 		} else if (uri == "/favicon.ico") {
 			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
 						 PROJECT_NAME + ".ico";
@@ -114,6 +112,8 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 		}
 
 		if (!path_serve.empty()) {
+			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
+			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
             con->defer_http_response();
 			std::ifstream t(path_serve);
 			std::stringstream buffer;
