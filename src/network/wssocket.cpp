@@ -62,8 +62,6 @@ typedef int socklen_t;
 #define SOCKET_ERR_STR(e) strerror(e)
 #endif
 
-#include <websocketpp/config/debug_asio_no_tls.hpp>
-
 // Custom logger
 #include <websocketpp/logger/syslog.hpp>
 #include <websocketpp/server.hpp>
@@ -75,54 +73,6 @@ auto &cs = errorstream; // remove after debug
 #else
 auto &cs = tracestream; // remove after debug
 #endif
-
-////////////////////////////////////////////////////////////////////////////////
-///////////////// Custom Config for debugging custom policies //////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-struct debug_custom : public websocketpp::config::debug_asio
-{
-	typedef debug_custom type;
-	typedef debug_asio base;
-
-	typedef base::concurrency_type concurrency_type;
-
-	typedef base::request_type request_type;
-	typedef base::response_type response_type;
-
-	typedef base::message_type message_type;
-	typedef base::con_msg_manager_type con_msg_manager_type;
-	typedef base::endpoint_msg_manager_type endpoint_msg_manager_type;
-
-	/// Custom Logging policies
-	/*typedef websocketpp::log::syslog<concurrency_type,
-		websocketpp::log::elevel> elog_type;
-	typedef websocketpp::log::syslog<concurrency_type,
-		websocketpp::log::alevel> alog_type;
-	*/
-	typedef base::alog_type alog_type;
-	typedef base::elog_type elog_type;
-
-	typedef base::rng_type rng_type;
-
-	struct transport_config : public base::transport_config
-	{
-		typedef type::concurrency_type concurrency_type;
-		typedef type::alog_type alog_type;
-		typedef type::elog_type elog_type;
-		typedef type::request_type request_type;
-		typedef type::response_type response_type;
-		typedef websocketpp::transport::asio::basic_socket::endpoint socket_type;
-	};
-
-	typedef websocketpp::transport::asio::endpoint<transport_config> transport_type;
-
-	static const long timeout_open_handshake = 0;
-};
-
-////////////////////////////////////////////////////////////////////////////////
-
-typedef websocketpp::server<debug_custom> server;
 
 void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 {
@@ -156,13 +106,14 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 		}
 
 		if (!path_serve.empty()) {
+            con->defer_http_response();
 			std::ifstream t(path_serve);
 			std::stringstream buffer;
 			buffer << t.rdbuf();
 			con->set_body(buffer.str());
 			con->set_status(websocketpp::http::status_code::ok);
-
-			// TODO: serve log here
+			con->send_http_response();
+			// TODO: serve log here?
 			return;
 		}
 	}
