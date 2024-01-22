@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include <cstdint>
+#include "light.h"
 #include "mapnode.h"
 #include "nodedef.h"
 #include "server.h"
@@ -397,7 +398,8 @@ public:
 		for (int i = D_SELF + 1; i <= D_BOTTOM; ++i) {
 			auto &nb = nbh[i];
 			const bool allow_grow_by_light =
-					!nb.top || nb.light <= params.tree_grow_light_max;
+					(!nb.top || (nb.light <= params.tree_grow_light_max &&
+										!myrand_range(0, LIGHT_MAX - nb.light)));
 			bool up_all_leaves = true;
 			//DUMP("gr", i, nb.top, nb.bottom, allow_grow_by_light, nb.water_level, nb.is_leaves, nb.is_tree, nb.is_liquid, nb.is_soil);
 
