@@ -653,18 +653,16 @@ int MapgenMath::generateTerrain() {
 		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
 			const auto heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, node_max.Y, z), nullptr, &heat_cache) : 0;
 
+			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
 			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {
+			for (pos_t y = node_min.Y; y <= node_max.Y; y++, index3d += ystride) {
 			auto [have, d] = calc_point(x,y,z);
 				if ((!invert && d > 0) || (invert && d == 0)  ) {
 					if (!vm->m_data[i]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert || !no_layers) {
-							int index3 = (z - node_min.Z) * zstride_1d +
-							             (y - node_min.Y) * ystride +
-							             (x - node_min.X);
-							vm->m_data[i] = Mapgen_features::layers_get(index3);
+							vm->m_data[i] = Mapgen_features::layers_get(index3d);
 						} else {
 							vm->m_data[i] = layers_get(d, result_max);
 						}
@@ -695,8 +693,8 @@ void MapgenMath::calculateNoise() {
 	int z = node_min.Z;
 
 	if (flags & MG_CAVES) {
-		noise_cave1->perlinMap3D(x, y, z);
-		noise_cave2->perlinMap3D(x, y, z);
+		noise_cave1->perlinMap3D(x, y - 1, z);
+		noise_cave2->perlinMap3D(x, y - 1, z);
 	}
 
 	noise_filler_depth->perlinMap2D(x, z);

@@ -69,7 +69,7 @@ void Mapgen_features::layers_prepare(const v3pos_t & node_min, const v3pos_t & n
 	int y = node_min.Y - y_offset;
 	int z = node_min.Z;
 
-	noise_layers->perlinMap3D(x, y, z);
+	noise_layers->perlinMap3D(x, y - 1, z);
 
 	noise_layers_width = ((noise_layers->np.offset+noise_layers->np.scale) - (noise_layers->np.offset-noise_layers->np.scale));
 
@@ -101,8 +101,8 @@ void Mapgen_features::float_islands_prepare(const v3pos_t & node_min, const v3po
 	int x = node_min.X;
 	int y = node_min.Y - y_offset;
 	int z = node_min.Z;
-	noise_float_islands1->perlinMap3D(x, y, z);
-	noise_float_islands2->perlinMap3D(x, y, z);
+	noise_float_islands1->perlinMap3D(x, y - 1, z);
+	noise_float_islands2->perlinMap3D(x, y - 1, z);
 	noise_float_islands3->perlinMap2D(x, z);
 }
 
@@ -114,7 +114,7 @@ void Mapgen_features::cave_prepare(const v3pos_t & node_min, const v3pos_t & nod
 	int x = node_min.X;
 	int y = node_min.Y - y_offset;
 	int z = node_min.Z;
-	noise_cave_indev->perlinMap3D(x, y, z);
+	noise_cave_indev->perlinMap3D(x, y - 1, z);
 	cave_noise_threshold = 800;
 }
 
@@ -530,13 +530,12 @@ int MapgenIndev::generateGround() {
 			if (!vm->m_data[i]) {
 
 				if (y <= surface_y) {
-					int index3 = (z - node_min.Z) * zstride + (y - node_min.Y) * csize.X + (x - node_min.X) * 1;
-					if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold) {
+					if (cave_noise_threshold && noise_cave_indev->result[index3d] > cave_noise_threshold) {
 						vm->m_data[i] = n_air;
 					} else { 
-						auto n = (y > water_level - surface_y && bt == BT_DESERT) ? n_desert_stone : layers_get(index3);
+						auto n = (y > water_level - surface_y && bt == BT_DESERT) ? n_desert_stone : layers_get(index3d);
 						bool protect = n.getContent() != CONTENT_AIR;
-						if (cave_noise_threshold && noise_cave_indev->result[index3] > cave_noise_threshold - 50) {
+						if (cave_noise_threshold && noise_cave_indev->result[index3d] > cave_noise_threshold - 50) {
 							vm->m_data[i] = protect ? n_stone : n; //cave shell without layers
 							protect = true;
 						} else {

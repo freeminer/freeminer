@@ -636,18 +636,15 @@ int MapgenV7::generateTerrain()
 
 				//  freeminer huge caves
 				const auto &i = vi;
-				// int index3 = (z - node_min.Z) * zstride + (y - node_min.Y) * ystride +
-				// (x - node_min.X) * 1;
-				const auto &index3 = index3d;
 				if (cave_noise_threshold &&
-						noise_cave_indev->result[index3] > cave_noise_threshold) {
+						noise_cave_indev->result[index3d] > cave_noise_threshold) {
 					vm->m_data[i] = n_air;
 				} else {
 					auto n = /* (y > water_level - surface_y && bt == BT_DESERT) ?
 								n_desert_stone :*/
-							layers_get(index3);
+							layers_get(index3d);
 					bool protect = n.getContent() != CONTENT_AIR;
-					if (cave_noise_threshold && noise_cave_indev->result[index3] >
+					if (cave_noise_threshold && noise_cave_indev->result[index3d] >
 														cave_noise_threshold - 50) {
 						vm->m_data[i] = protect ? n_stone : n; // cave shell without
 															   // layers
