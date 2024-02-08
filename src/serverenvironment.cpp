@@ -714,7 +714,7 @@ PlayerSAO *ServerEnvironment::loadPlayer(RemotePlayer *player, bool *new_player,
 		// Set player position
 		infostream << "Server: Finding spawn place for player \""
 			<< player->getName() << "\"" << std::endl;
-		playersao->setBasePosition(m_server->findSpawnPos());
+		playersao->setBasePosition(m_server->findSpawnPos(player->getName()));
 
 		// Make sure the player is saved
 		player->setModified(true);
@@ -725,7 +725,7 @@ PlayerSAO *ServerEnvironment::loadPlayer(RemotePlayer *player, bool *new_player,
 		if (objectpos_over_limit(playersao->getBasePosition())) {
 			actionstream << "Respawn position for player \""
 				<< player->getName() << "\" outside limits, resetting" << std::endl;
-			playersao->setBasePosition(m_server->findSpawnPos());
+			playersao->setBasePosition(m_server->findSpawnPos(player->getName()));
 		}
 	}
 

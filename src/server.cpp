@@ -3308,7 +3308,7 @@ void Server::RespawnPlayer(session_t peer_id)
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if (!repositioned) {
 		// setPos will send the new position to client
-		playersao->setPos(findSpawnPos());
+		playersao->setPos(findSpawnPos(playersao->getPlayer()->getName()));
 	}
 
 	playersao->m_ms_from_last_respawn = 0;
@@ -4247,7 +4247,7 @@ void Server::addShutdownError(const ModError &e)
 }
 
 #if 1
-v3f Server::findSpawnPos()
+v3f Server::findSpawnPos(const std::string &player_name)
 {
 	ServerMap &map = m_env->getServerMap();
 	v3f nodeposf;
@@ -4255,6 +4255,8 @@ v3f Server::findSpawnPos()
 	pos_t find = 0;
 	g_settings->getS16NoEx("static_spawnpoint_find", find);
 	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
+		return nodeposf * BS;
+	} else if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposf) && !find) {
 		return nodeposf * BS;
 	}
 
