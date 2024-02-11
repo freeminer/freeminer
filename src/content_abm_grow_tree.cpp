@@ -399,7 +399,7 @@ public:
 			auto &nb = nbh[i];
 			const bool allow_grow_by_light =
 					(!nb.top || (nb.light <= params.tree_grow_light_max &&
-										myrand_range(0, LIGHT_MAX - nb.light) <= 3));
+										myrand_range(0, LIGHT_SUN - nb.light) <= 3));
 			bool up_all_leaves = true;
 			//DUMP("gr", i, nb.top, nb.bottom, allow_grow_by_light, nb.water_level, nb.is_leaves, nb.is_tree, nb.is_liquid, nb.is_soil);
 
