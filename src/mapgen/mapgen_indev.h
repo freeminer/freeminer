@@ -113,7 +113,8 @@ class MapgenIndev : public MapgenV6, public Mapgen_features {
 public:
 	MapgenIndevParams *sp;
 
-	int xstride, ystride, zstride;
+	int ystride;
+	int zstride;
 	int zstride_1u1d;
 
 

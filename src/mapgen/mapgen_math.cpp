@@ -699,7 +699,7 @@ int MapgenMath::generateTerrain()
 
 			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
 			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (pos_t y = node_min.Y; y <= node_max.Y; y++, index3d += ystride) {
+			for (pos_t y = node_min.Y - 1; y <= node_max.Y + 1; y++, index3d += ystride) {
 				auto [have, d] = calc_point(x, y, z);
 				if ((!invert && d > 0) || (invert && d == 0)) {
 					if (!vm->m_data[i]) {

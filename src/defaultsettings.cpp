@@ -112,7 +112,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("enable_split_login_register", "false");
 
 	// Game Speed
-	settings->setDefault("pause_fps_max", "10"); // "20"
+	settings->setDefault("fps_max_unfocused", "10"); // "20"
 	settings->setDefault("static_viewing_range", "false");
 
 	// Debugging stuff

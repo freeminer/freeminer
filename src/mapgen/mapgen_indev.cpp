@@ -169,10 +169,17 @@ MapgenIndev::MapgenIndev(MapgenIndevParams *params, EmergeParams *emerge) :
 	//sp = (MapgenIndevParams *)params->sparams;
 	sp = params;
 
-	xstride = 1;
-	ystride = csize.X * xstride;
-	zstride = csize.Y * ystride;
-	zstride_1u1d = csize.X * (csize.Y + 2);
+	// Number of elements to skip to get to the next Y coordinate
+	this->ystride = csize.X;
+
+	// Number of elements to skip to get to the next Z coordinate
+	this->zstride = csize.X * csize.Y;
+
+	// Z-stride value for maps oversized for 1-down overgeneration
+	//this->zstride_1d = csize.X * (csize.Y + 1);
+
+	// Z-stride value for maps oversized for 1-up 1-down overgeneration
+	this->zstride_1u1d = csize.X * (csize.Y + 2);
 
 	/*noise_float_islands1  = new Noise(&sp->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	noise_float_islands2  = new Noise(&sp->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
@@ -578,7 +585,7 @@ int MapgenIndev::generateGround()
 			cache_index = 0;
 			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
 
-			for (pos_t y = node_min.Y; y <= node_max.Y;
+			for (pos_t y = node_min.Y - 1; y <= node_max.Y + 1;
 					y++, index3d += ystride, cache_index++) {
 				if (!vm->m_data[i]) {
 

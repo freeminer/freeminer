@@ -124,7 +124,7 @@ MapgenV7::MapgenV7(MapgenV7Params *params, EmergeParams *emerge)
 
 	//freeminer:
 	sp = params;
-	y_offset = 1;
+	//y_offset = 1;
 
 	//float_islands = params->float_islands;
 	//noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);

@@ -72,7 +72,7 @@ MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	noise_ground = new Noise(&params->np_ground, seed, csize.X, csize.Y + 2, csize.Z);
 
 	//freeminer:
-	y_offset = 1;
+	//y_offset = 1;
 	float_islands = params->float_islands;
 	noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
