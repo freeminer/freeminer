@@ -144,7 +144,7 @@ auto &cs = verbosestream; // remove after debug
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 		PeerHandler *peerhandler) :
-		thread_pool("Connection"),
+		thread_vector("Connection"),
 		m_protocol_id(protocol_id), m_max_packet_size(max_packet_size),
 		m_timeout(timeout), sock(nullptr), m_peer_id(0), m_bc_peerhandler(peerhandler),
 		m_last_recieved(0), m_last_recieved_warn(0)

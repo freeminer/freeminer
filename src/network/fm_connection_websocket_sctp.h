@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/peerhandler.h"
 #include "threading/concurrent_map.h"
 #include "threading/concurrent_unordered_map.h"
-#include "threading/thread_pool.h"
+#include "threading/thread_vector.h"
 #include "util/container.h"
 #include "util/pointer.h"
 

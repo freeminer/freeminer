@@ -21,14 +21,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/fm_connection_multi.h"
 #include "threading/concurrent_map.h"
 #include "threading/concurrent_unordered_map.h"
-#include "threading/thread_pool.h"
+#include "threading/thread_vector.h"
 
 // #define CHANNEL_COUNT 3
 
 namespace con_enet
 {
 using namespace con;
-class Connection : public thread_pool
+class Connection : public thread_vector
 {
 public:
 	friend con_multi::Connection;

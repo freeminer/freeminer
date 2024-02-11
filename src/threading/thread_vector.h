@@ -1,19 +1,17 @@
-#ifndef THREADING_THREAD_POOL_HEADER
-#define THREADING_THREAD_POOL_HEADER
+#pragma once
 
 #include <atomic>
 #include <thread>
-#include <chrono>
 #include <vector>
 #include <string>
 
-class thread_pool {
+class thread_vector {
 public:
 	std::vector<std::thread> workers;
 	std::atomic_bool request_stop;
 
-	thread_pool(const std::string &name = "Unnamed", int priority = 0);
-	virtual ~thread_pool();
+	thread_vector(const std::string &name = "Unnamed", int priority = 0);
+	virtual ~thread_vector();
 
 	virtual void func();
 
@@ -37,6 +35,3 @@ protected:
 	std::string m_name;
 	int m_priority = 0;
 };
-
-
-#endif

@@ -92,7 +92,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "msgpack_fix.h"
 #include <chrono>
 #include <sys/types.h>
-#include "threading/thread_pool.h"
+#include "threading/thread_vector.h"
 #include "key_value_storage.h"
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"

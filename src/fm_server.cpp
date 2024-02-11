@@ -14,10 +14,10 @@
 #include "debug/stacktrace.h"
 #include "util/timetaker.h"
 
-class ServerThread : public thread_pool
+class ServerThread : public thread_vector
 {
 public:
-	ServerThread(Server *server) : thread_pool("Server", 40), m_server(server) {}
+	ServerThread(Server *server) : thread_vector("Server", 40), m_server(server) {}
 
 	void *run();
 
@@ -116,12 +116,12 @@ void *ServerThread::run()
 	return NULL;
 }
 
-class MapThread : public thread_pool
+class MapThread : public thread_vector
 {
 	Server *m_server;
 
 public:
-	MapThread(Server *server) : thread_pool("Map", 15), m_server(server) {}
+	MapThread(Server *server) : thread_vector("Map", 15), m_server(server) {}
 
 	void *run()
 	{
@@ -153,12 +153,12 @@ public:
 	}
 };
 
-class SendBlocksThread : public thread_pool
+class SendBlocksThread : public thread_vector
 {
 	Server *m_server;
 
 public:
-	SendBlocksThread(Server *server) : thread_pool("SendBlocks", 30), m_server(server) {}
+	SendBlocksThread(Server *server) : thread_vector("SendBlocks", 30), m_server(server) {}
 
 	void *run()
 	{
@@ -192,12 +192,12 @@ public:
 	}
 };
 
-class LiquidThread : public thread_pool
+class LiquidThread : public thread_vector
 {
 	Server *m_server;
 
 public:
-	LiquidThread(Server *server) : thread_pool("Liquid", 4), m_server(server) {}
+	LiquidThread(Server *server) : thread_vector("Liquid", 4), m_server(server) {}
 
 	void *run()
 	{
@@ -234,12 +234,12 @@ public:
 	}
 };
 
-class EnvThread : public thread_pool
+class EnvThread : public thread_vector
 {
 	Server *m_server;
 
 public:
-	EnvThread(Server *server) : thread_pool("Env", 20), m_server(server) {}
+	EnvThread(Server *server) : thread_vector("Env", 20), m_server(server) {}
 
 	void *run()
 	{
@@ -272,12 +272,12 @@ public:
 	}
 };
 
-class AbmThread : public thread_pool
+class AbmThread : public thread_vector
 {
 	Server *m_server;
 
 public:
-	AbmThread(Server *server) : thread_pool("Abm", 20), m_server(server) {}
+	AbmThread(Server *server) : thread_vector("Abm", 20), m_server(server) {}
 
 	void *run()
 	{
@@ -311,12 +311,12 @@ public:
 	}
 };
 
-class AbmWorldThread : public thread_pool
+class AbmWorldThread : public thread_vector
 {
 	Server *m_server;
 
 public:
-	AbmWorldThread(Server *server) : thread_pool("AbmWorld", 20), m_server(server) {}
+	AbmWorldThread(Server *server) : thread_vector("AbmWorld", 20), m_server(server) {}
 
 	void *run()
 	{

@@ -49,9 +49,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "settings.h"
 #include "voxel.h"
 
-#include "threading/thread_pool.h"
+#include "threading/thread_vector.h"
 
-class EmergeThread : public thread_pool {
+class EmergeThread : public thread_vector {
 public:
 	bool enable_mapgen_debug_info;
 	int id;

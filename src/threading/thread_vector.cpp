@@ -1,26 +1,26 @@
-#include "thread_pool.h"
+#include "thread_vector.h"
 #include "fm_porting.h"
 #include "log.h"
 #include "porting.h"
 
-thread_pool::thread_pool(const std::string &name, int priority) :
+thread_vector::thread_vector(const std::string &name, int priority) :
 		m_name(name), m_priority(priority)
 {
 	request_stop = false;
 };
 
-thread_pool::~thread_pool()
+thread_vector::~thread_vector()
 {
 	join();
 };
 
-void thread_pool::func()
+void thread_vector::func()
 {
 	reg();
 	run();
 };
 
-void thread_pool::reg(const std::string &name, int priority)
+void thread_vector::reg(const std::string &name, int priority)
 {
 	if (!name.empty())
 		m_name = name;
@@ -34,23 +34,23 @@ void thread_pool::reg(const std::string &name, int priority)
 		porting::setThreadPriority(m_priority);
 };
 
-void thread_pool::start(const size_t n)
+void thread_vector::start(const size_t n)
 {
 #if !NDEBUG
 	infostream << "start thread " << m_name << " n=" << n << std::endl;
 #endif
 	request_stop = false;
 	for (size_t i = 0; i < n; ++i) {
-		workers.emplace_back(&thread_pool::func, this);
+		workers.emplace_back(&thread_vector::func, this);
 	}
 }
 
-void thread_pool::stop()
+void thread_vector::stop()
 {
 	request_stop = true;
 }
 
-void thread_pool::join()
+void thread_vector::join()
 {
 	stop();
 	for (auto &worker : workers) {
@@ -64,19 +64,19 @@ void thread_pool::join()
 	workers.clear();
 }
 
-void thread_pool::restart(size_t n)
+void thread_vector::restart(size_t n)
 {
 	join();
 	start(n);
 }
-void thread_pool::reanimate(size_t n)
+void thread_vector::reanimate(size_t n)
 {
 	if (workers.empty()) {
 		start(n);
 	}
 }
 
-void thread_pool::sleep(const int seconds)
+void thread_vector::sleep(const int seconds)
 {
 	for (int i = 0; i <= seconds; ++i) {
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -87,28 +87,28 @@ void thread_pool::sleep(const int seconds)
 }
 
 // JThread compat:
-bool thread_pool::stopRequested()
+bool thread_vector::stopRequested()
 {
 	return request_stop;
 }
-bool thread_pool::isRunning()
+bool thread_vector::isRunning()
 {
 	return !workers.empty();
 }
-void thread_pool::wait()
+void thread_vector::wait()
 {
 	join();
 };
-void thread_pool::kill()
+void thread_vector::kill()
 {
 	join();
 };
-void *thread_pool::run()
+void *thread_vector::run()
 {
 	return nullptr;
 };
 
-bool thread_pool::isCurrentThread()
+bool thread_vector::isCurrentThread()
 {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
 	for (auto &worker : workers)

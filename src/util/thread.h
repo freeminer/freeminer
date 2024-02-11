@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "container.h"
 
 //fm:
-#include "../threading/thread_pool.h"
+#include "../threading/thread_vector.h"
 #include "../fm_porting.h"
 
 
@@ -193,17 +193,17 @@ private:
 	MutexedQueue<GetRequest<Key, T, Caller, CallerData> > m_queue;
 };
 
-class UpdateThread : public thread_pool
+class UpdateThread : public thread_vector
 {
 public:
-	UpdateThread(const std::string &name) : thread_pool(name + "Update") {}
+	UpdateThread(const std::string &name) : thread_vector(name + "Update") {}
 	~UpdateThread() = default;
 
 	void deferUpdate() { m_update_sem.post(); }
 
 	void stop()
 	{
-		thread_pool::stop();
+		thread_vector::stop();
 
 		// give us a nudge
 		m_update_sem.post();

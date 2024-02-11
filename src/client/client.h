@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //fm:
 #include "map_settings_manager.h"
-#include "threading/thread_pool.h"
+#include "threading/thread_vector.h"
 #include "util/unordered_map_hash.h"
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
