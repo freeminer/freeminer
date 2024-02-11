@@ -756,6 +756,10 @@ void ServerEnvironment::saveMeta()
 	std::ostringstream ss(std::ios_base::binary);
 
 	Settings args("EnvArgsEnd");
+
+	if (abm_world_last)
+		args.setU64("abm_world_last", abm_world_last);
+
 	args.setU64("game_time", m_game_time);
 	args.setU64("time_of_day", getTimeOfDay());
 	args.setU64("last_clear_objects_time", m_last_clear_objects_time);
@@ -806,6 +810,8 @@ void ServerEnvironment::loadMeta()
 			"EnvArgsEnd not found!");
 */	
 	}
+
+	if (args.exists("abm_world_last")) {abm_world_last = args.getU64("abm_world_last");}
 
 	try {
 		m_game_time_start =

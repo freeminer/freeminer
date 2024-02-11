@@ -9,6 +9,9 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 
 Changelog
 ======
+### 5.8.0.0 (?)
+  * Run abm's in whole world: to enable: abm_world=1
+
 ### 5.7.0.0 (?)
   * Tree growth
   * Weather tuned

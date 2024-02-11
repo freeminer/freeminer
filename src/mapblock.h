@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 #include <set>
@@ -580,8 +581,8 @@ public:
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
-	void abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
-	u32 m_abm_timestamp = 0;;
+	size_t abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
+	u32 m_abm_timestamp = 0;
 
 	u32 getActualTimestamp() {
 		u32 block_timestamp = 0;
