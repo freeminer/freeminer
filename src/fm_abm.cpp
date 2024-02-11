@@ -1,4 +1,7 @@
 #include <cstddef>
+#include <sstream>
+#include <string>
+#include <strstream>
 #include "irr_v3d.h"
 #include "map.h"
 #include "profiler.h"
@@ -185,7 +188,8 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 					std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
 
 					if (!block->abm_triggers)
-						block->abm_triggers = std::make_unique<MapBlock::abm_triggers_type>();
+						block->abm_triggers =
+								std::make_unique<MapBlock::abm_triggers_type>();
 
 					block->abm_triggers->emplace_back(
 							abm_trigger_one{i, p, c, active_object_count,
@@ -334,6 +338,13 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activat
 	}
 	if (abm_triggers->empty())
 		abm_triggers.reset();
+
+	if (triggers_count) {
+		std::stringstream key;
+		key << "a" << getPos().X << "," << getPos().Y << "," << getPos().Z;
+		m_env->blocks_with_abm.put(key.str(), std::to_string(time));
+	}
+
 	return triggers_count;
 }
 

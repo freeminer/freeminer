@@ -1339,6 +1339,8 @@ int Server::save(float dtime, float dedicated_server_step, bool breakable) {
 			m_env->saveMeta();
 
 			stat.save();
+			m_env->blocks_with_abm.save();
+
 		}
 		save_break:;
 

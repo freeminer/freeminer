@@ -1,6 +1,8 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <unistd.h>
+#include "database/database.h"
 #include "emerge.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
@@ -327,6 +329,8 @@ public:
 				return nullptr;
 		}
 
+		int16_t abm_world_load_all = -1; // -1 : auto;  0 : disable;   1 : force
+		g_settings->getS16NoEx("abm_world_load_all", abm_world_load_all);
 		u64 abm_world_throttle = m_server->isSingleplayer() ? 10 : 0;
 		g_settings->getU64NoEx("abm_world_throttle", abm_world_throttle);
 		u64 abm_world_max_clients = m_server->isSingleplayer() ? 1 : 0;
@@ -345,24 +349,44 @@ public:
 
 			if (!can_work()) {
 				tracestream << "Abm world wait" << '\n';
-
-				std::this_thread::sleep_for(std::chrono::seconds(10));
+				sleep(10);
 				continue;
 			}
 
-			std::vector<v3pos_t> loadable_blocks;
-
-			TimeTaker bll("Block list load", nullptr);
-
-			m_server->getEnv().getServerMap().listAllLoadableBlocks(loadable_blocks);
-			const auto loadable_blocks_size = loadable_blocks.size();
-			infostream << "Abm world blocks " << loadable_blocks_size << " per "
-					   << bll.getTimerTime() << " from " << abm_world_last
-					   << " max_clients " << abm_world_max_clients << " throttle "
-					   << abm_world_throttle << '\n';
-			size_t cur_n = 0, processed = 0, triggers_total = 0;
+			std::vector<v3bpos_t> loadable_blocks;
 
 			auto time_start = porting::getTimeMs();
+
+			if (abm_world_load_all <= 0) {
+#if USE_LEVELDB
+				if (const auto it = m_server->getEnv()
+											.blocks_with_abm.database.new_iterator();
+						it) {
+					for (it->SeekToFirst(); it->Valid(); it->Next()) {
+						const auto key = it->key().ToString();
+						if (key.starts_with("a")) {
+							const v3bpos_t pos = MapDatabase::getStringAsBlock(key);
+							loadable_blocks.emplace_back(pos);
+						}
+					}
+				}
+#endif
+			}
+
+			// Load whole world firts time, fill blocks_with_abm
+			if (abm_world_load_all && loadable_blocks.empty()) {
+				actionstream << "Abm world full load" << '\n';
+				m_server->getEnv().getServerMap().listAllLoadableBlocks(loadable_blocks);
+			}
+
+			const auto loadable_blocks_size = loadable_blocks.size();
+			infostream << "Abm world blocks " << loadable_blocks_size << " per "
+					   << (porting::getTimeMs() - time_start) / 1000 << " from "
+					   << abm_world_last << " max_clients " << abm_world_max_clients
+					   << " throttle " << abm_world_throttle << '\n';
+			size_t cur_n = 0, processed = 0, triggers_total = 0;
+
+			time_start = porting::getTimeMs();
 
 			const auto printstat = [&]() {
 				auto time = porting::getTimeMs();
@@ -442,7 +466,7 @@ public:
 			printstat();
 			abm_world_last = 0;
 
-			std::this_thread::sleep_for(std::chrono::seconds(60));
+			sleep(60);
 		}
 		END_DEBUG_EXCEPTION_HANDLER
 		return nullptr;
@@ -554,6 +578,7 @@ void Server::maintenance_start()
 	m_env->getServerMap().m_map_loading_enabled = false;
 	// fmtodo: m_env->getServerMap().dbase->close();
 	m_env->m_key_value_storage.clear();
+	m_env->blocks_with_abm.close();
 	stat.close();
 	actionstream << "Server: Starting maintenance: bases closed now." << std::endl;
 };
@@ -562,6 +587,7 @@ void Server::maintenance_end()
 {
 	// fmtodo:m_env->getServerMap().dbase->open();
 	stat.open();
+	m_env->blocks_with_abm.open();
 	m_env->getServerMap().m_map_saving_enabled = true;
 	m_env->getServerMap().m_map_loading_enabled = true;
 	m_emerge->startThreads();

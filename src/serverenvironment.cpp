@@ -455,6 +455,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 
 	m_abmhandler(this),
 	m_circuit(script_iface, map, server->ndef(), path_world),
+	blocks_with_abm(path_world, "abm_world"),
 
 	m_map(map),
 	m_script(script_iface),

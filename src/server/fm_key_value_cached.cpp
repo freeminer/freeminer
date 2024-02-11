@@ -15,89 +15,65 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <ctime>
+//#include <ctime>
 
-#include "stat.h"
-#include "gettime.h"
+//#include "stat.h"
+//#include "gettime.h"
+//#include "log.h"
 
-Stat::Stat(const std::string &savedir) : database(savedir, "stat")
-{
-	update_time();
-};
+#include "fm_key_value_cached.h"
 
-Stat::~Stat()
+KeyValueCached::KeyValueCached(const std::string &savedir, const std::string &name) :
+		database(savedir, name){};
+
+KeyValueCached::~KeyValueCached()
 {
 	save();
 };
 
-void Stat::save()
+void KeyValueCached::save()
 {
 	std::lock_guard<std::mutex> lock(mutex);
 	for (const auto &ir : stats) {
 		//errorstream<<"stat saving: "<<ir.first<< " = "<< ir.second<<std::endl;
-		if (ir.second)
+		if (ir.second.empty()) {
+			database.del(ir.first);
+		} else {
 			database.put(ir.first, ir.second);
+		}
 	}
-	update_time();
 }
 
-void Stat::unload()
+void KeyValueCached::unload()
 {
 	save();
 	std::lock_guard<std::mutex> lock(mutex);
 	stats.clear();
 }
 
-void Stat::open()
+void KeyValueCached::open()
 {
 	database.open();
 }
 
-void Stat::close()
+void KeyValueCached::close()
 {
 	unload();
 	database.close();
 }
 
-const Stat::stat_value &Stat::get(const std::string &key)
+const std::string & KeyValueCached::get(const std::string &key)
 {
 	std::lock_guard<std::mutex> lock(mutex);
-	if (!stats.count(key))
+	if (!stats.contains(key))
 		database.get(key, stats[key]);
 	//errorstream<<"stat get: "<<key<<" = "<< stats[key]<<std::endl;
 	return stats[key];
 }
 
-const Stat::stat_value &Stat::write_one(const std::string &key, const stat_value &value)
+const std::string & KeyValueCached::put(const std::string &key, const std::string &value)
 {
 	//errorstream<<"stat one: "<<key<< " = "<< value<<std::endl;
-	get(key);
 	std::lock_guard<std::mutex> lock(mutex);
-	return stats[key] += value;
-}
-
-const Stat::stat_value &Stat::add(
-		const std::string &key, const std::string &player, stat_value value)
-{
-	//errorstream<<"stat adding: "<<key<< " player="<<player<<" = "<< value<<std::endl;
-	stat_value ret = write_one("total|" + key, value);
-	write_one("day|" + key + "|" + day, value);
-	write_one("week|" + key + "|" + week, value);
-	write_one("month|" + key + "|" + month, value);
-	if (!player.empty())
-		ret = write_one("player|" + key + "|" + player, value);
-	return ret;
-}
-
-void Stat::update_time()
-{
-	//auto t = time(NULL);
-	const auto tm = mt_localtime(); //localtime_safe(&t);
-	char cs[20];
-	strftime(cs, 20, "%Y_%m", &tm);
-	month = cs;
-	strftime(cs, 20, "%Y_%W", &tm);
-	week = cs;
-	strftime(cs, 20, "%Y_%j", &tm);
-	day = cs;
+	return stats[key] = value;
 }

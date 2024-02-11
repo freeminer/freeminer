@@ -73,13 +73,13 @@ v3s16 MapDatabase::getIntegerAsBlock(s64 i)
 	return pos;
 }
 
-std::string MapDatabase::getBlockAsString(const v3bpos_t &pos) const {
+std::string MapDatabase::getBlockAsString(const v3bpos_t &pos) {
 	std::ostringstream os;
 	os << "a" << pos.X << "," << pos.Y << "," << pos.Z;
 	return os.str().c_str();
 }
 
-v3bpos_t MapDatabase::getStringAsBlock(const std::string &i) const {
+v3bpos_t MapDatabase::getStringAsBlock(const std::string &i) {
 	std::istringstream is(i);
 	v3bpos_t pos;
 	char c;
