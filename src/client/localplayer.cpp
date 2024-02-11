@@ -545,7 +545,7 @@ void LocalPlayer::applyControl(float dtime, Environment *env)
 	bool fast_allowed = m_client->checkLocalPrivilege("fast");
 
 	bool free_move = fly_allowed && player_settings.free_move;
-	bool fast_move = fast_allowed && player_settings.fast_move;
+	bool fast_move = fast_allowed && (player_settings.fast_move || control.aux1);
 	bool pitch_move = (free_move || in_liquid) && player_settings.pitch_move;
 	// When aux1_descends is enabled the fast key is used to go down, so fast isn't possible
 	bool fast_climb = fast_move && control.aux1 && !player_settings.aux1_descends;
