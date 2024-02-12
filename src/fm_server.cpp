@@ -14,6 +14,7 @@
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"
+#include "util/directiontables.h"
 #include "util/timetaker.h"
 
 class ServerThread : public thread_vector
@@ -436,17 +437,27 @@ public:
 					return nullptr;
 				}
 				try {
-					auto *block =
-							m_server->getEnv().getServerMap().getBlockNoCreateNoEx(pos);
-					if (block) {
-						continue;
-					}
-					block = m_server->getEnv().getServerMap().emergeBlock(pos);
-					if (!block) {
-						continue;
-					}
-					if (!block->isGenerated()) {
-						continue;
+					const auto load_block = [&](const v3pos_t &pos) -> MapBlock * {
+						auto *block =
+								m_server->getEnv().getServerMap().getBlockNoCreateNoEx(
+										pos);
+						if (block) {
+							return nullptr;
+						}
+						block = m_server->getEnv().getServerMap().emergeBlock(pos);
+						if (!block) {
+							return nullptr;
+						}
+						if (!block->isGenerated()) {
+							return nullptr;
+						}
+						return block;
+					};
+					auto *block = load_block(pos);
+
+					// Load neighbours for better liquids flows
+					for (const auto &dir : g_6dirs) {
+						load_block(pos + dir);
 					}
 
 					g_profiler->add("Server: Abm world blocks", 1);
