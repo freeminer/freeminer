@@ -585,8 +585,7 @@ int MapgenIndev::generateGround()
 			cache_index = 0;
 			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
 
-			for (pos_t y = node_min.Y - 1; y <= node_max.Y + 1;
-					y++, index3d += ystride, cache_index++) {
+			for (pos_t y = node_min.Y; y <= node_max.Y; y++, index3d += ystride, cache_index++) {
 				if (!vm->m_data[i]) {
 
 					if (y <= surface_y) {
