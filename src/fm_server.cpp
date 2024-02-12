@@ -454,6 +454,9 @@ public:
 						return block;
 					};
 					auto *block = load_block(pos);
+					if (!block) {
+						continue;
+					}
 
 					// Load neighbours for better liquids flows
 					for (const auto &dir : g_6dirs) {
