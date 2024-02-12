@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 #include <sys/socket.h>
-#include "debug/iostream_debug_helpers.h"
 
 #include "config.h"
 

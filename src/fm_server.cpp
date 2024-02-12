@@ -2,10 +2,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <unistd.h>
+#include <unordered_map>
 #include "database/database.h"
 #include "emerge.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "log.h"
 #include "mapblock.h"
 #include "mapnode.h"
@@ -158,7 +160,9 @@ class SendBlocksThread : public thread_vector
 	Server *m_server;
 
 public:
-	SendBlocksThread(Server *server) : thread_vector("SendBlocks", 30), m_server(server) {}
+	SendBlocksThread(Server *server) : thread_vector("SendBlocks", 30), m_server(server)
+	{
+	}
 
 	void *run()
 	{
@@ -345,7 +349,10 @@ public:
 					m_server->getMap().m_blocks.size() <= abm_world_max_blocks);
 		};
 
+		int32_t run = 0;
+
 		while (!stopRequested()) {
+			++run;
 
 			if (!can_work()) {
 				tracestream << "Abm world wait" << '\n';
@@ -379,12 +386,29 @@ public:
 				m_server->getEnv().getServerMap().listAllLoadableBlocks(loadable_blocks);
 			}
 
+			std::unordered_map<pos_t,
+					std::unordered_map<pos_t, std::unordered_set<pos_t>>>
+					volume;
+
+			size_t cur_n = 0;
+
+			/* TODO randomize directions
+			for (const auto &pos : loadable_blocks) {
+				++cur_n;
+				if (cur_n < abm_world_last) {
+					continue;
+				}
+				volume[pos.X][pos.Y].emplace(pos.Z);
+			}
+			*/
+
 			const auto loadable_blocks_size = loadable_blocks.size();
-			infostream << "Abm world blocks " << loadable_blocks_size << " per "
-					   << (porting::getTimeMs() - time_start) / 1000 << " from "
-					   << abm_world_last << " max_clients " << abm_world_max_clients
-					   << " throttle " << abm_world_throttle << '\n';
-			size_t cur_n = 0, processed = 0, triggers_total = 0;
+			infostream << "Abm world run " << run << " blocks " << loadable_blocks_size
+					   << " per " << (porting::getTimeMs() - time_start) / 1000
+					   << "s from " << abm_world_last << " max_clients "
+					   << abm_world_max_clients << " throttle " << abm_world_throttle
+					   << '\n';
+			size_t processed = 0, triggers_total = 0;
 
 			time_start = porting::getTimeMs();
 
@@ -397,6 +421,8 @@ public:
 						   << " per " << (time - time_start) / 1000 << " speed "
 						   << processed / (((time - time_start) / 1000) ?: 1) << '\n';
 			};
+			cur_n = 0;
+			//for (const auto &x : volume) for (const auto &y : x.second) for (const auto &z : y.second) { v3pos_t pos{x.first, y.first, z};
 
 			for (const auto &pos : loadable_blocks) {
 				++cur_n;

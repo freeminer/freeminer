@@ -1,7 +1,6 @@
 #include <cstddef>
 #include <sstream>
 #include <string>
-#include <strstream>
 #include "irr_v3d.h"
 #include "map.h"
 #include "profiler.h"
