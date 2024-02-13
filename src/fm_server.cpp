@@ -467,6 +467,7 @@ public:
 
 					++processed;
 
+					m_server->getEnv().activateBlock(block);
 					const auto activate = m_server->getEnv().analyzeBlock(block);
 
 					//const auto wasats = block->getActualTimestamp();
