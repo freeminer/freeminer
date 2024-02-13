@@ -366,12 +366,13 @@ public:
 			auto time_start = porting::getTimeMs();
 
 			if (abm_world_load_all <= 0) {
+// Yes, very bad 
 #if USE_LEVELDB
 				if (const auto it = m_server->getEnv()
 											.blocks_with_abm.database.new_iterator();
 						it) {
 					for (it->SeekToFirst(); it->Valid(); it->Next()) {
-						const auto key = it->key().ToString();
+						const auto &key = it->key().ToString();
 						if (key.starts_with("a")) {
 							const v3bpos_t pos = MapDatabase::getStringAsBlock(key);
 							loadable_blocks.emplace_back(pos);
@@ -442,7 +443,7 @@ public:
 								m_server->getEnv().getServerMap().getBlockNoCreateNoEx(
 										pos);
 						if (block) {
-							return nullptr;
+							return block;
 						}
 						block = m_server->getEnv().getServerMap().emergeBlock(pos);
 						if (!block) {
@@ -453,6 +454,7 @@ public:
 						}
 						return block;
 					};
+
 					auto *block = load_block(pos);
 					if (!block) {
 						continue;
@@ -467,8 +469,11 @@ public:
 
 					++processed;
 
-					m_server->getEnv().activateBlock(block);
+					//m_server->getEnv().activateBlock(block);
+
 					const auto activate = m_server->getEnv().analyzeBlock(block);
+
+ 					m_server->getEnv().blockStep(block);
 
 					//const auto wasats = block->getActualTimestamp();
 					//const auto wasts = block->getTimestamp();
@@ -476,7 +481,7 @@ public:
 							m_server->getEnv().getGameTime(), activate);
 					triggers_total += triggers;
 
-					//DUMP("ok", pos, cur_n, m_server->getMap().m_blocks.size(), wasts, block->getTimestamp(), wasats, block->getActualTimestamp(), m_server->getEnv().getGameTime(), triggers);
+					//DUMP("ok", pos, cur_n, m_server->getMap().m_blocks.size(), block->getTimestamp(), block->getActualTimestamp(), m_server->getEnv().getGameTime(), triggers);
 
 					if (!(cur_n % 10000)) {
 						printstat();
