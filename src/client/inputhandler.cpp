@@ -231,6 +231,9 @@ struct RandomInputHandlerSimData {
 void RandomInputHandler::step(float dtime)
 {
 	static RandomInputHandlerSimData rnd_data[] = {
+		{ "keymap_sneak", 0.0f, 45 },
+		{ "keymap_right", 0.0f, 10 },
+
 		{ "keymap_jump", 0.0f, 40 },
 		{ "keymap_aux1", 0.0f, 40 },
 		{ "keymap_forward", 0.0f, 40 },

@@ -417,7 +417,7 @@ public:
 			const auto printstat = [&]() {
 				auto time = porting::getTimeMs();
 
-				infostream << "Abm world " << cur_n << "/" << loadable_blocks_size
+				infostream << "Abm world run " << run << " " << cur_n << "/" << loadable_blocks_size
 						   << " blocks loaded " << m_server->getMap().m_blocks.size()
 						   << " processed " << processed << " triggers " << triggers_total
 						   << " per " << (time - time_start) / 1000 << " speed "
