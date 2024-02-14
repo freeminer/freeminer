@@ -227,7 +227,7 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 	// infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
 }
 
-size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activate)
+size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate)
 {
 	ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
@@ -268,7 +268,7 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activat
 		// ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
 		auto &aabm = *abm_trigger->abm;
 		if (!abm_trigger->abm || !aabm.abmws || !aabm.abmws->interval) {
-			infostream << "remove strange abm trigger dtime=" << dtime << std::endl;
+			infostream << "remove strange abm trigger dtime=" << dtime << '\n';
 			abm_trigger = abm_triggers->erase(abm_trigger);
 			continue;
 		}
@@ -286,8 +286,7 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activat
 			intervals = 1;
 
 		if (!intervals) {
-			verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime
-						  << std::endl;
+			verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime << '\n';
 			intervals = 1;
 		}
 		int chance = (aabm.abmws->chance / intervals);

@@ -51,7 +51,7 @@ public:
 	bool getSimpleCatchUp() override { return true; }
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			bool activate) override
+			int8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		if (map->transforming_liquid_size() > map->m_liquid_step_flow)
@@ -96,7 +96,7 @@ public:
 	bool getSimpleCatchUp() override { return true; }
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			bool activate) override
+			int8_t activate) override
 	{
 		static const int water_level = g_settings->getS16("water_level");
 		// Try avoid flying square freezed blocks
@@ -229,7 +229,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			bool activate) override
+			int8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();
@@ -274,7 +274,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			bool activate) override
+			int8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		auto *ndef = env->getGameDef()->ndef();
@@ -310,7 +310,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			bool activate) override
+			int8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		auto *ndef = env->getGameDef()->ndef();

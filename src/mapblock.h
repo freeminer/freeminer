@@ -581,7 +581,7 @@ public:
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
-	size_t abmTriggersRun(ServerEnvironment * m_env, u32 time, bool activate = false);
+	size_t abmTriggersRun(ServerEnvironment * m_env, u32 time, uint8_t activate = 0);
 	u32 m_abm_timestamp = 0;
 
 	u32 getActualTimestamp() {

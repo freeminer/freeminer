@@ -4,12 +4,11 @@
 #include "serverenvironment.h"
 #include "util/timetaker.h"
 
-void ServerEnvironment::blockStep(MapBlock *block, float dtime)
+size_t ServerEnvironment::blockStep(MapBlock *block, float dtime, uint8_t activate)
 {
 	if (!block)
-		return;
+		return {};
 
-	//u32 dtime_s = 0;
 	u32 stamp = block->getTimestamp();
 	if (!dtime && m_game_time > stamp && stamp != BLOCK_TIMESTAMP_UNDEFINED)
 		dtime = m_game_time - stamp;
@@ -26,16 +25,18 @@ void ServerEnvironment::blockStep(MapBlock *block, float dtime)
 
 	m_lbm_mgr.applyLBMs(this, block, stamp, (float)dtime_n);
 	if (block->isOrphan())
-		return;
+		return {};
 
 	block->step((float)dtime, [&](v3pos_t p, MapNode n, f32 d) -> bool {
 		return !block->isOrphan() && m_script->node_on_timer(p, n, d);
 	});
 
+	size_t triggers_run = 0;
 	if (block->abm_triggers) {
 		//ScopeProfiler sp354(g_profiler, "ABM random trigger blocks", SPT_ADD);
-		block->abmTriggersRun(this, m_game_time);
+		triggers_run = block->abmTriggersRun(this, m_game_time, activate);
 	}
+	return triggers_run;
 }
 
 int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
@@ -105,7 +106,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 			i = m_abm_random_blocks.erase(i);
 			//ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
 
-			blockStep(block, dtime);
+			blockStep(block, dtime, 1 << 1);
 
 			if (porting::getTimeMs() > end_ms) {
 				break;

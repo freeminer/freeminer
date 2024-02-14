@@ -226,7 +226,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t pos, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t,
-			bool activate) override
+			int8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();
@@ -841,7 +841,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t pos, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t,
-			bool activate) override
+			int8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();

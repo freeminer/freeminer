@@ -73,7 +73,7 @@ const EnumString ModApiEnvBase::es_BlockStatusType[] =
 
 void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 		u32 active_object_count, u32 active_object_count_wider, 
-		v3pos_t neighbor_pos, bool activate)
+		v3pos_t neighbor_pos, int8_t activate)
 {
 	ServerScripting *scriptIface = env->getScriptIface();
 	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex, std::try_to_lock);
@@ -115,7 +115,7 @@ void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 	lua_pushnumber(L, active_object_count_wider);
 	const auto & neighbor = env->getServerMap().getNodeTry(neighbor_pos);
 	pushnode(L, neighbor);
-	lua_pushboolean(L, activate);
+	lua_pushnumber(L, activate);
 
 	int result = lua_pcall(L, 6, 0, error_handler);
 	if (result)

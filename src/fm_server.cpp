@@ -471,14 +471,10 @@ public:
 
 					//m_server->getEnv().activateBlock(block);
 
-					const auto activate = m_server->getEnv().analyzeBlock(block);
-
- 					m_server->getEnv().blockStep(block);
-
-					//const auto wasats = block->getActualTimestamp();
-					//const auto wasts = block->getTimestamp();
-					const auto triggers = block->abmTriggersRun(&m_server->getEnv(),
-							m_server->getEnv().getGameTime(), activate);
+					const auto activate =
+							(1 << 2) | m_server->getEnv().analyzeBlock(block);
+					const auto triggers =
+							m_server->getEnv().blockStep(block, 0, activate);
 					triggers_total += triggers;
 
 					//DUMP("ok", pos, cur_n, m_server->getMap().m_blocks.size(), block->getTimestamp(), block->getActualTimestamp(), m_server->getEnv().getGameTime(), triggers);
