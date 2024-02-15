@@ -22,3 +22,9 @@
 [submodule "src/external/websocketpp"]
 	path = src/external/websocketpp
 	url = https://github.com/zaphoyd/websocketpp.git
+[submodule "src/external/leveldb"]
+	path = src/external/leveldb
+	url = https://github.com/google/leveldb
+[submodule "src/external/snappy"]
+	path = src/external/snappy
+	url = https://github.com/google/snappy

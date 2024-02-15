@@ -99,7 +99,6 @@ if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	find_library (LIBCXX_LIBRARY c++)      
 	find_library (LIBCXXABI_LIBRARY c++abi)
 	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
-		set(ENABLE_LEVELDB 0 CACHE BOOL "") # TODO: build via submodule
 		add_link_options(-stdlib=libc++)
 		add_compile_options(-stdlib=libc++)
 		message(STATUS "Using libc++ and lld linker: ${LIBCXX_LIBRARY}, ${LIBCXXABI_LIBRARY}")

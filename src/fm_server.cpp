@@ -340,7 +340,7 @@ public:
 		g_settings->getU64NoEx("abm_world_throttle", abm_world_throttle);
 		u64 abm_world_max_clients = m_server->isSingleplayer() ? 1 : 0;
 		g_settings->getU64NoEx("abm_world_max_clients", abm_world_max_clients);
-		u64 abm_world_max_blocks = 20000;
+		u64 abm_world_max_blocks = 10000;
 		g_settings->getU64NoEx("abm_world_max_blocks", abm_world_max_blocks);
 
 		auto &abm_world_last = m_server->getEnv().abm_world_last;
