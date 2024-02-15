@@ -60,28 +60,6 @@ else()
 	set(STATIC_BUILD 0)
 endif()
 
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
-    set(USE_DEBUG_HELPERS ON CACHE BOOL "")
-endif()
-
-if (USE_DEBUG_HELPERS)
-    #get_target_property(MAGIC_ENUM_INCLUDE_DIR ch_contrib::magic_enum INTERFACE_INCLUDE_DIRECTORIES)
-    # CMake generator expression will do insane quoting when it encounters special character like quotes, spaces, etc.
-    # Prefixing "SHELL:" will force it to use the original text.
-    #set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${MAGIC_ENUM_INCLUDE_DIR}\" -include \"${ClickHouse_SOURCE_DIR}/base/base/iostream_debug_helpers.h\"")
-    set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${CMAKE_CURRENT_SOURCE_DIR}/debug/\" -include \"${CMAKE_CURRENT_SOURCE_DIR}/debug/iostream_debug_helpers.h\"")
-    #set (INCLUDE_DEBUG_HELPERS "SHELL:-include \"${CMAKE_CURRENT_SOURCE_DIR}/util/iostream_debug_helpers.h\"")
-    # Use generator expression as we don't want to pollute CMAKE_CXX_FLAGS, which will interfere with CMake check system.
-    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${INCLUDE_DEBUG_HELPERS}>)
-	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-		add_definitions(-DDUMP_STREAM=actionstream)
-	else()
-		add_definitions(-DDUMP_STREAM=verbosestream)
-	endif()
-endif ()
-
-
 if(NOT MSVC)
         # FM: TODO: REMOVE:
 	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
@@ -712,6 +690,26 @@ if(ENABLE_ENET)
 	endif()
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
+    set(USE_DEBUG_HELPERS ON CACHE BOOL "")
+endif()
+
+if (USE_DEBUG_HELPERS)
+    #get_target_property(MAGIC_ENUM_INCLUDE_DIR ch_contrib::magic_enum INTERFACE_INCLUDE_DIRECTORIES)
+    # CMake generator expression will do insane quoting when it encounters special character like quotes, spaces, etc.
+    # Prefixing "SHELL:" will force it to use the original text.
+    #set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${MAGIC_ENUM_INCLUDE_DIR}\" -include \"${ClickHouse_SOURCE_DIR}/base/base/iostream_debug_helpers.h\"")
+    set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${CMAKE_CURRENT_SOURCE_DIR}/debug/\" -include \"${CMAKE_CURRENT_SOURCE_DIR}/debug/iostream_debug_helpers.h\"")
+    #set (INCLUDE_DEBUG_HELPERS "SHELL:-include \"${CMAKE_CURRENT_SOURCE_DIR}/util/iostream_debug_helpers.h\"")
+    # Use generator expression as we don't want to pollute CMAKE_CXX_FLAGS, which will interfere with CMake check system.
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${INCLUDE_DEBUG_HELPERS}>)
+	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+		add_definitions(-DDUMP_STREAM=actionstream)
+	else()
+		add_definitions(-DDUMP_STREAM=verbosestream)
+	endif()
+endif ()
+
 set(FMcommon_SRCS ${FMcommon_SRCS}
 	circuit.cpp
 	circuit_element.cpp
@@ -729,7 +727,6 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
     content_abm_grow_tree.cpp
     fm_serverenvironment.cpp
 )
-#	FMColoredString.cpp
 
 
 set(common_SRCS
