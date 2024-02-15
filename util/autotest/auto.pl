@@ -274,7 +274,6 @@ our $options = {
         mg_name           => 'math',
         mg_math           => {"N" => 30, "generator" => "tglad", "mandelbox_scale" => 1.5, "scale" => 0.000333333333,},
         static_spawnpoint => '(30010,30010,-30010)',
-        mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
     fall1 => {
@@ -282,7 +281,6 @@ our $options = {
         mg_name           => 'math',
         mg_math           => {"generator" => "menger_sponge"},
         static_spawnpoint => '(-70,20020,-190)',
-        mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
     far => {

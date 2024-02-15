@@ -124,16 +124,12 @@ MapgenV7::MapgenV7(MapgenV7Params *params, EmergeParams *emerge)
 
 	//freeminer:
 	sp = params;
-	//y_offset = 1;
+	y_oversize_down = 1;
+	y_oversize_up = 1;
 
-	//float_islands = params->float_islands;
-	//noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	//noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	//noise_float_islands3  = new Noise(&params->np_float_islands3, seed, csize.X, csize.Z);
-
-	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2 + 2, csize.Z);
+	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_oversize_down + y_oversize_up, csize.Z);
 	layers_init(emerge, params->paramsj);
-	noise_cave_indev      = new Noise(&params->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2 + 2, csize.Z);
+	noise_cave_indev      = new Noise(&params->np_cave_indev,     seed, csize.X, csize.Y + y_oversize_down + y_oversize_up, csize.Z);
 	//==========
 
 
@@ -192,24 +188,12 @@ MapgenV7Params::MapgenV7Params():
 	np_layers            (500,  500, v3f(100, 100,  100), 3663, 5, 0.6,  2.0, NOISE_FLAG_DEFAULTS, 1,   1.1,   0.5),
 	np_cave_indev        (0,   1000, v3f(500, 500, 500), 3664,  4, 0.8,  2.0, NOISE_FLAG_DEFAULTS, 4,   1,   1)
 {
-//freeminer:
-	//float_islands = 500;
-	//np_float_islands1  = NoiseParams(0,    1,   v3f(256, 256, 256), 3683,  6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
-	//np_float_islands2  = NoiseParams(0,    1,   v3f(8,   8,   8  ), 9292,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   1.5);
-	//np_float_islands3  = NoiseParams(0,    1,   v3f(256, 256, 256), 6412,  2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1,   0.5);
-	//np_layers          = NoiseParams(500,  500, v3f(100, 100,  100), 3663, 5, 0.6,  2.0, NOISE_FLAG_DEFAULTS, 1,   1.1,   0.5);
-	//np_cave_indev      = NoiseParams(0,   1000, v3f(500, 500, 500), 3664,  4, 0.8,  2.0, NOISE_FLAG_DEFAULTS, 4,   1,   1);
-//----------
 }
 
 
 void MapgenV7Params::readParams(const Settings *settings)
 {
 //freeminer:
-	//settings->getS16NoEx("mg_float_islands", float_islands);
-	//settings->getNoiseParamsFromGroup("mg_np_float_islands1", np_float_islands1);
-	//settings->getNoiseParamsFromGroup("mg_np_float_islands2", np_float_islands2);
-	//settings->getNoiseParamsFromGroup("mg_np_float_islands3", np_float_islands3);
 	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
 //----------
@@ -256,10 +240,6 @@ void MapgenV7Params::readParams(const Settings *settings)
 void MapgenV7Params::writeParams(Settings *settings) const
 {
 //freeminer:
-	//settings->setS16("mg_float_islands", float_islands);
-	//settings->setNoiseParams("mg_np_float_islands1", np_float_islands1);
-	//settings->setNoiseParams("mg_np_float_islands2", np_float_islands2);
-	//settings->setNoiseParams("mg_np_float_islands3", np_float_islands3);
 	settings->setNoiseParams("mg_np_layers",         np_layers);
 	settings->setJson("mg_params", paramsj);
 //----------
@@ -386,10 +366,6 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 	blockseed = getBlockSeed2(full_node_min, seed);
 
 	//freeminer:
-	//if (float_islands && node_max.Y >= float_islands) {
-	//	float_islands_prepare(node_min, node_max, float_islands);
-	//}
-
 	layers_prepare(node_min, node_max);
 	cave_prepare(node_min, node_max, sp->paramsj.get("cave_indev", -100).asInt());
 	//==========
@@ -692,8 +668,5 @@ int MapgenV7::generateTerrain()
 
 /*
 void MapgenV7::generateExperimental() {
-	if (float_islands)
-		if (float_islands_generate(node_min, node_max, float_islands, vm))
-			dustTopNodes();
 }
 */

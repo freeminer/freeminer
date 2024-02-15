@@ -54,12 +54,7 @@ struct MapgenV5Params : public MapgenParams
 	NoiseParams np_cavern;
 	NoiseParams np_dungeons;
 
-	s16 float_islands = 500;
-	NoiseParams np_float_islands1;
-	NoiseParams np_float_islands2;
-	NoiseParams np_float_islands3;
 	NoiseParams np_layers;
-	//NoiseParams np_cave_indev;
 	Json::Value paramsj;
 
 	MapgenV5Params();
@@ -87,8 +82,4 @@ private:
 	Noise *noise_factor;
 	Noise *noise_height;
 	Noise *noise_ground;
-
-	//freeminer:
-	s16 float_islands;
-
 };

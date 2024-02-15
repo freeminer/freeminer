@@ -256,9 +256,6 @@ weather_humidity_days  () float 2
 #mgindev_np_terrain_higher () string 20,   16,  (500, 500, 500), 85039, 5, 0.6,  10,  10
 #mgindev_np_steepness      () string 0.85, 0.5, (125, 125, 125), -932,  5, 0.7,  2,   10
 #mgindev_np_mud            () string 4,    2,   (200, 200, 200), 91013, 3, 0.55, 1,   1
-#mgindev_np_float_islands1 () string 0,    1,   (64,  64,  64 ), 3683,  5, 0.5,  1,   1.5
-#mgindev_np_float_islands2 () string 0,    1,   (8,   8,   8  ), 9292,  2, 0.5,  1,   1.5
-#mgindev_np_float_islands3 () string 0,    1,   (256, 256, 256), 6412,  2, 0.5,  1,   0.5
 #mgindev_np_biome          () string 0,    1,   (250, 250, 250), 9130,  3, 0.50, 1,   10
 
 
@@ -306,9 +303,6 @@ mgindev_floatland_taper (Floatland tapering distance) int 256 0 32767
 mgindev_float_taper_exp (Floatland taper exponent) float 2.0
 mgindev_floatland_density (Floatland density) float -0.6
 mgindev_floatland_ywater (Floatland water level) int 10000 -31000 31000
-
-# Float islands starts from height, 0 to disable
-#mgindev_float_islands () int 500
 
 # Params for math mapgen in json format. generators supported: sphere, mandelbox, mengersponge, ...      dont forget to lower water_level = -30000
 mg_math () string {"generator":"sphere"}

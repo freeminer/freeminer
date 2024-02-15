@@ -47,7 +47,9 @@ public:
 	Mapgen_features(MapgenParams *params, EmergeParams *emerge);
 	~Mapgen_features();
 
-	int y_offset = 0;
+    // 0 for v6/indev, 1 for v7/math
+	int y_oversize_down = 0;
+	int y_oversize_up = 0;
 	MapNode n_stone;
 	Noise *noise_layers = nullptr;
 	float noise_layers_width = 0;
@@ -58,12 +60,6 @@ public:
 	void layers_prepare(const v3pos_t & node_min, const v3pos_t & node_max);
 	MapNode layers_get(unsigned int index);
 
-	Noise *noise_float_islands1 = nullptr;
-	Noise *noise_float_islands2 = nullptr;
-	Noise *noise_float_islands3 = nullptr;
-	void float_islands_prepare(const v3pos_t & node_min, const v3pos_t & node_max, int min_y);
-	int float_islands_generate(const v3pos_t & node_min, const v3pos_t & node_max, int min_y, MMVManip *vm);
-
 	Noise *noise_cave_indev = nullptr;
 	int cave_noise_threshold = 0;
 	bool cave_noise_enabled = 0;
@@ -73,8 +69,6 @@ public:
 
 
 struct MapgenIndevParams : public MapgenV6Params {
-	//s16 float_islands;
-
   	pos_t floatland_ymin = 1024;
 	pos_t floatland_ymax =  mapgen_limit;
 	pos_t floatland_taper = 256;
@@ -83,9 +77,6 @@ struct MapgenIndevParams : public MapgenV6Params {
 	pos_t floatland_ywater = 10000;
 
 
-/*	NoiseParams np_float_islands1;
-	NoiseParams np_float_islands2;
-	NoiseParams np_float_islands3;*/
 	NoiseParams np_floatland;
 	NoiseParams np_layers;
 	NoiseParams np_cave_indev;
@@ -115,7 +106,6 @@ public:
 
 	int ystride;
 	int zstride;
-	int zstride_1u1d;
 
 
 	virtual MapgenType getType() const { return MAPGEN_INDEV; }

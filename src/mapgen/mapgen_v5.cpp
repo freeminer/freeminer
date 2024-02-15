@@ -72,16 +72,8 @@ MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	noise_ground = new Noise(&params->np_ground, seed, csize.X, csize.Y + 2, csize.Z);
 
 	//freeminer:
-	//y_offset = 1;
-	float_islands = params->float_islands;
-	noise_float_islands1  = new Noise(&params->np_float_islands1, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	noise_float_islands2  = new Noise(&params->np_float_islands2, seed, csize.X, csize.Y + y_offset * 2, csize.Z);
-	noise_float_islands3  = new Noise(&params->np_float_islands3, seed, csize.X, csize.Z);
-
-	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_offset * 2 + 2, csize.Z);
+	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_oversize_down + y_oversize_up, csize.Z);
 	layers_init(emerge, params->paramsj);
-
-	//noise_cave_indev      = new Noise(&sp->np_cave_indev,     seed, csize.X, csize.Y + y_offset * 2, csize.Z);
 	//=========
 
 	// 1 down overgeneration
@@ -113,9 +105,6 @@ MapgenV5Params::MapgenV5Params():
 
 	//freeminer:
     ,
-	np_float_islands1  (0,    1,   v3f(256, 256, 256), 3683, 6, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5),
-	np_float_islands2  (0,    1,   v3f(8,   8,   8  ), 9292, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.5),
-	np_float_islands3  (0,    1,   v3f(256, 256, 256), 6412, 2, 0.5, 2.0, NOISE_FLAG_DEFAULTS, 1, 0.5),
 	np_layers          (500,  500, v3f(100, 100, 100), 3663, 5, 0.6, 2.0, NOISE_FLAG_DEFAULTS, 1, 1.1,   0.5)
 {
 }
@@ -146,10 +135,6 @@ void MapgenV5Params::readParams(const Settings *settings)
 	
 	
 	//freeminer:
-	settings->getS16NoEx("mg_float_islands", float_islands);
-	settings->getNoiseParamsFromGroup("mg_np_float_islands1", np_float_islands1);
-	settings->getNoiseParamsFromGroup("mg_np_float_islands2", np_float_islands2);
-	settings->getNoiseParamsFromGroup("mg_np_float_islands3", np_float_islands3);
 	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
 	//
@@ -183,10 +168,6 @@ void MapgenV5Params::writeParams(Settings *settings) const
 	settings->setNoiseParams("mgv5_np_cave2",        np_cave2);
 
 	//freeminer:
-	settings->setS16("mg_float_islands", float_islands);
-	settings->setNoiseParams("mg_np_float_islands1", np_float_islands1);
-	settings->setNoiseParams("mg_np_float_islands2", np_float_islands2);
-	settings->setNoiseParams("mg_np_float_islands3", np_float_islands3);
 	settings->setNoiseParams("mg_np_layers",         np_layers);
 	settings->setJson("mg_params", paramsj);
     //
@@ -261,10 +242,6 @@ void MapgenV5::makeChunk(BlockMakeData *data)
 
 
 	//freeminer:
-	if (float_islands && node_max.Y >= float_islands) {
-		float_islands_prepare(node_min, node_max, float_islands);
-	}
-
 	layers_prepare(node_min, node_max);
 	//==========
 

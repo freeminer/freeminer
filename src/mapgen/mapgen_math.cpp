@@ -665,7 +665,6 @@ int MapgenMath::generateTerrain()
 	MapNode n_ice(c_ice);
 	u32 index = 0;
 	v3pos_t em = vm->m_area.getExtent();
-	auto zstride_1d = csize.X * (csize.Y + 1);
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
 	errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z
@@ -699,7 +698,7 @@ int MapgenMath::generateTerrain()
 
 			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
 			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (pos_t y = node_min.Y - 1; y <= node_max.Y + 1; y++, index3d += ystride) {
+			for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up; y++, index3d += ystride) {
 				auto [have, d] = calc_point(x, y, z);
 				if ((!invert && d > 0) || (invert && d == 0)) {
 					if (!vm->m_data[i]) {
