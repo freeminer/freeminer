@@ -340,7 +340,7 @@ public:
 		g_settings->getU64NoEx("abm_world_throttle", abm_world_throttle);
 		u64 abm_world_max_clients = m_server->isSingleplayer() ? 1 : 0;
 		g_settings->getU64NoEx("abm_world_max_clients", abm_world_max_clients);
-		u64 abm_world_max_blocks = 10000;
+		u64 abm_world_max_blocks = m_server->isSingleplayer() ? 2000 : 10000;
 		g_settings->getU64NoEx("abm_world_max_blocks", abm_world_max_blocks);
 
 		auto &abm_world_last = m_server->getEnv().abm_world_last;
@@ -417,10 +417,11 @@ public:
 			const auto printstat = [&]() {
 				auto time = porting::getTimeMs();
 
-				infostream << "Abm world run " << run << " " << cur_n << "/" << loadable_blocks_size
-						   << " blocks loaded " << m_server->getMap().m_blocks.size()
-						   << " processed " << processed << " triggers " << triggers_total
-						   << " per " << (time - time_start) / 1000 << " speed "
+				infostream << "Abm world run " << run << " " << cur_n << "/"
+						   << loadable_blocks_size << " blocks loaded "
+						   << m_server->getMap().m_blocks.size() << " processed "
+						   << processed << " triggers " << triggers_total << " per "
+						   << (time - time_start) / 1000 << " speed "
 						   << processed / (((time - time_start) / 1000) ?: 1) << '\n';
 			};
 			cur_n = 0;

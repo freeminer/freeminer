@@ -36,5 +36,5 @@ public:
 	void init(std::vector<ABMWithState> &abms);
 	~ABMHandler();
 	u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
-	void apply(MapBlock *block, bool activate = false);
+	void apply(MapBlock *block, uint8_t activate = 0);
 };

@@ -60,7 +60,7 @@ struct abm_trigger_one {
 	u32 active_object_count;
 	u32 active_object_count_wider;
 	v3pos_t neighbor_pos;
-	bool activate;
+	uint8_t activate;
 };
 
 ////

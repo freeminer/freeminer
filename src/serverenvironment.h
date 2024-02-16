@@ -30,6 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include "util/metricsbackend.h"
 #include <set>
@@ -74,7 +75,7 @@ public:
 	virtual const std::vector<std::string> getTriggerContents() const = 0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const = 0;
+	virtual const std::vector<std::string> getRequiredNeighbors(uint8_t activate) const = 0;
 	// Trigger interval in seconds
 	virtual float getTriggerInterval() = 0;
 	// Random chance of (1 / return value), 0 is disallowed
@@ -91,7 +92,7 @@ public:
 */
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider
-			, v3pos_t neighbor_pos, int8_t activate = 0){};
+			, v3pos_t neighbor_pos, uint8_t activate = 0){};
 };
 
 struct ABMWithState
@@ -449,7 +450,7 @@ public:
 	bool m_more_threads = true;
 public:
 	ABMHandler m_abmhandler;
-	bool analyzeBlock(MapBlock * block);
+	uint8_t analyzeBlock(MapBlock * block);
 private:
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;

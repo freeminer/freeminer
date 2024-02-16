@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdint>
 #include <sstream>
 #include <string>
 #include "irr_v3d.h"
@@ -70,7 +71,7 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 	return active_object_count;
 }
 
-void ABMHandler::apply(MapBlock *block, bool activate)
+void ABMHandler::apply(MapBlock *block, uint8_t activate)
 {
 	if (m_aabms_empty)
 		return;
@@ -157,7 +158,7 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 					// Check neighbors
 					v3pos_t neighbor_pos;
 					auto &required_neighbors =
-							activate ? ir.abmws->required_neighbors_activate
+							activate == 1 ? ir.abmws->required_neighbors_activate
 									 : ir.abmws->required_neighbors;
 					if (required_neighbors.count() > 0) {
 						v3pos_t p1;
@@ -346,7 +347,7 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 	return triggers_count;
 }
 
-bool ServerEnvironment::analyzeBlock(MapBlock *block)
+uint8_t ServerEnvironment::analyzeBlock(MapBlock *block)
 {
 	u32 block_timestamp = block->getActualTimestamp();
 	if (block->m_next_analyze_timestamp > block_timestamp) {
@@ -356,7 +357,7 @@ bool ServerEnvironment::analyzeBlock(MapBlock *block)
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	if (!block->analyzeContent())
 		return {};
-	bool activate = block_timestamp - block->m_next_analyze_timestamp > 3600;
+	uint8_t activate = block_timestamp - block->m_next_analyze_timestamp > 3600 ? 1 : 0;
 	m_abmhandler.apply(block, activate);
 	// infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
 	block->m_next_analyze_timestamp = block_timestamp + 2;

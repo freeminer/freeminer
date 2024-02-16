@@ -214,7 +214,7 @@ public:
 		return {"group:grow_tree"};
 	}
 	virtual const std::vector<std::string> getRequiredNeighbors(
-			bool activate) const override
+			uint8_t activate) const override
 	{
 		return {};
 	}
@@ -226,7 +226,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t pos, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t,
-			int8_t activate) override
+			uint8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();
@@ -426,7 +426,6 @@ public:
 					}
 
 					self_water_level += amount;
-
 				}
 			}
 
@@ -829,7 +828,7 @@ public:
 		return {"group:grow_leaves"};
 	}
 	virtual const std::vector<std::string> getRequiredNeighbors(
-			bool activate) const override
+			uint8_t activate) const override
 	{
 		return {};
 	}
@@ -841,7 +840,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t pos, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t,
-			int8_t activate) override
+			uint8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();
