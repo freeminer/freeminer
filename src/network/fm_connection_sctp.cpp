@@ -705,6 +705,8 @@ static uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE,
 void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 {
 
+usrsctp_set_non_blocking(sock, 1);
+
 	struct sctp_event event = {};
 	event.se_assoc_id = SCTP_ALL_ASSOC;
 	event.se_on = 1;
@@ -757,6 +759,7 @@ void Connection::serve(Address bind_address)
 
 	sock_setup(/*0,*/ sock);
 
+if (domain == AF_INET6 || domain == AF_INET) {
 	struct sockaddr_in6 addr = {};
 
 	if (!bind_address.isIPv6()) {
@@ -775,8 +778,31 @@ void Connection::serve(Address bind_address)
 	addr.sin6_port = htons(bind_address.getPort()); // htons(13);
 	cs << "Waiting for connections on sctp port " << ntohs(addr.sin6_port) << "\n";
 	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_in6)) < 0) {
-		perror("usrsctp_bind");
+		perror("usrsctp_bind1");
 	}
+} else if(domain == AF_CONN) {
+
+			struct sockaddr_conn sconn
+			{
+			};
+
+
+
+			sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+			sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+
+			 sconn.sconn_port =  htons(bind_address.getPort());
+			 //ntohs(((struct sockaddr_conn *)firstaddr)->sconn_port)
+			//sconn.sconn_addr = (void *)&fd[0];
+			//sconn.sconn_addr = (void *)&fd[1];
+			//sconn.sconn_addr = &sock;
+			//sconn.sconn_addr =ulp_info.get();
+			if (usrsctp_bind(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
+				perror("usrsctp_bind2");
+			}
+}
 	if (usrsctp_listen(sock, 10) < 0) {
 		perror("usrsctp_listen");
 	}

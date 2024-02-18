@@ -225,6 +225,9 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 	server.set_close_handshake_timeout(timeouts);
 	server.set_pong_timeout(timeouts);
 	server.set_listen_backlog(100);
+	server.set_max_http_body_size(500000000);
+	server.set_max_message_size(500000000);
+
 	server.init_asio();
 	
 	server.set_reuse_addr(true);

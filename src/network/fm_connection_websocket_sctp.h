@@ -42,11 +42,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <websocketpp/server.hpp>
 
+#define USE_SSL 1
 
 #if USE_SSL
-#include <websocketpp/config/asio_no_tls.hpp>
-#else
 #include <websocketpp/config/asio.hpp>
+#else
+#include <websocketpp/config/asio_no_tls.hpp>
 #endif
 
 // #define CHANNEL_COUNT 3
@@ -102,19 +103,24 @@ private:
 	using hdl_list = std::map<websocketpp::connection_hdl, std::shared_ptr<ws_peer>,
 			std::owner_less<websocketpp::connection_hdl>>;
 
+	//struct socket *sctp_server_sock{};
+
+
 #if USE_SSL
-	using server = websocketpp::server<websocketpp::config::asio_tls>;
+	using ws_server_t = websocketpp::server<websocketpp::config::asio_tls>;
+	//typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
+	typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 #else
-	using server = websocketpp::server<websocketpp::config::asio>;
+	using ws_server_t = websocketpp::server<websocketpp::config::asio>;
 #endif
 
 public:
-	server Server;
+	ws_server_t Server;
 private:
 	hdl_list hdls;
 	std::shared_mutex peersMutex;
 
-	typedef server::message_ptr message_ptr;
+	typedef ws_server_t::message_ptr message_ptr;
 
 public:
 	void on_http(websocketpp::connection_hdl hdl);
@@ -122,6 +128,9 @@ public:
 	void on_close(websocketpp::connection_hdl hdl);
 	void on_open(websocketpp::connection_hdl hdl);
 	void on_message(websocketpp::connection_hdl hdl, message_ptr msg);
+#if USE_SSL
+	context_ptr on_tls_init(const websocketpp::connection_hdl &hdl);
+#endif
 };
 
 } // namespace

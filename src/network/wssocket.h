@@ -76,7 +76,9 @@ public:
 	void on_close(const websocketpp::connection_hdl &hdl);
 	void on_open(const websocketpp::connection_hdl &hdl);
 	void on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg);
+#if USE_SSL
 	context_ptr on_tls_init(const websocketpp::connection_hdl &hdl);
+#endif
 
 private:
 	struct queue_item

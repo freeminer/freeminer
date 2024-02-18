@@ -116,7 +116,9 @@ private:
 	u32 m_max_packet_size;
 	float m_timeout = 0;
 	// struct sctp_udpencaps encaps;
+protected:
 	struct socket *sock = nullptr;
+private:
 	session_t m_peer_id;
 	session_t m_next_remote_peer_id = PEER_SCTP_MIN;
 
@@ -150,6 +152,7 @@ protected:
 	std::pair<int, bool> recv(session_t peer_id, struct socket *sock);
 	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
 	void sctp_setup(u16 port = 9899);
+	struct socket *sctp_server_sock{};
 private:
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
 
