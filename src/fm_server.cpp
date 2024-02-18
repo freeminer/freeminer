@@ -1,6 +1,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <unistd.h>
 #include <unordered_map>
 #include "database/database.h"
@@ -351,6 +352,7 @@ public:
 		};
 
 		int32_t run = 0;
+		size_t pos_dir; // random start
 
 		while (!stopRequested()) {
 			++run;
@@ -366,7 +368,7 @@ public:
 			auto time_start = porting::getTimeMs();
 
 			if (abm_world_load_all <= 0) {
-// Yes, very bad 
+// Yes, very bad
 #if USE_LEVELDB
 				if (const auto it = m_server->getEnv()
 											.blocks_with_abm.database.new_iterator();
@@ -388,28 +390,18 @@ public:
 				m_server->getEnv().getServerMap().listAllLoadableBlocks(loadable_blocks);
 			}
 
-			std::unordered_map<pos_t,
-					std::unordered_map<pos_t, std::unordered_set<pos_t>>>
+			std::unordered_map<bpos_t,
+					std::unordered_map<bpos_t, std::unordered_set<bpos_t>>>
 					volume;
 
 			size_t cur_n = 0;
-
-			/* TODO randomize directions
-			for (const auto &pos : loadable_blocks) {
-				++cur_n;
-				if (cur_n < abm_world_last) {
-					continue;
-				}
-				volume[pos.X][pos.Y].emplace(pos.Z);
-			}
-			*/
 
 			const auto loadable_blocks_size = loadable_blocks.size();
 			infostream << "Abm world run " << run << " blocks " << loadable_blocks_size
 					   << " per " << (porting::getTimeMs() - time_start) / 1000
 					   << "s from " << abm_world_last << " max_clients "
 					   << abm_world_max_clients << " throttle " << abm_world_throttle
-					   << '\n';
+					   << " vxs " << volume.size() << '\n';
 			size_t processed = 0, triggers_total = 0;
 
 			time_start = porting::getTimeMs();
@@ -422,12 +414,71 @@ public:
 						   << m_server->getMap().m_blocks.size() << " processed "
 						   << processed << " triggers " << triggers_total << " per "
 						   << (time - time_start) / 1000 << " speed "
-						   << processed / (((time - time_start) / 1000) ?: 1) << '\n';
+						   << processed / (((time - time_start) / 1000) ?: 1) << " vxs "
+						   << volume.size() << '\n';
 			};
 			cur_n = 0;
-			//for (const auto &x : volume) for (const auto &y : x.second) for (const auto &z : y.second) { v3pos_t pos{x.first, y.first, z};
 
+#if 1
 			for (const auto &pos : loadable_blocks) {
+				++cur_n;
+				if (cur_n < abm_world_last) {
+					continue;
+				}
+				volume[pos.X][pos.Y].emplace(pos.Z);
+			}
+
+			const auto contains = [&](const v3bpos_t &pos) -> bool {
+				if (!volume.contains(pos.X))
+					return false;
+				if (!volume[pos.X].contains(pos.Y))
+					return false;
+				return volume[pos.X][pos.Y].contains(pos.Z);
+			};
+
+			const auto erase = [&](const v3bpos_t &pos) {
+				if (!volume.contains(pos.X))
+					return;
+				if (!volume[pos.X].contains(pos.Y))
+					return;
+				if (!volume[pos.X][pos.Y].contains(pos.Z))
+					return;
+				volume[pos.X][pos.Y].erase(pos.Z);
+				if (volume[pos.X][pos.Y].empty())
+					volume[pos.X].erase(pos.Y);
+				if (volume[pos.X].empty())
+					volume.erase(pos.X);
+			};
+
+			std::optional<v3bpos_t> pos_opt;
+			while (!volume.empty()) {
+				if (pos_opt.has_value()) {
+					const auto pos_old = pos_opt.value();
+					pos_opt.reset();
+					// Random better
+					for (size_t dirs = 0; dirs < 6; ++dirs, ++pos_dir) {
+						const auto pos_new = pos_old + g_6dirs[pos_dir % sizeof(g_6dirs)];
+						//DUMP(dirs, pos_new, pos_dir);
+						if (contains(pos_new)) {
+							//DUMP("ok", dirs, pos_opt, "->", pos_new);
+							pos_opt = pos_new;
+							break;
+						}
+					}
+				}
+
+				if (!pos_opt.has_value()) {
+					pos_opt = {volume.begin()->first,
+							volume.begin()->second.begin()->first,
+							*volume.begin()->second.begin()->second.begin()};
+					//DUMP("new", pos_opt);
+				}
+				const auto pos = pos_opt.value();
+				erase(pos);
+
+#else
+			for (const auto &pos : loadable_blocks) {
+#endif
 				++cur_n;
 
 				if (cur_n < abm_world_last) {
@@ -439,7 +490,7 @@ public:
 					return nullptr;
 				}
 				try {
-					const auto load_block = [&](const v3pos_t &pos) -> MapBlock * {
+					const auto load_block = [&](const v3bpos_t &pos) -> MapBlock * {
 						auto *block =
 								m_server->getEnv().getServerMap().getBlockNoCreateNoEx(
 										pos);
