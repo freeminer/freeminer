@@ -390,9 +390,7 @@ public:
 				m_server->getEnv().getServerMap().listAllLoadableBlocks(loadable_blocks);
 			}
 
-			std::unordered_map<bpos_t,
-					std::unordered_map<bpos_t, std::unordered_set<bpos_t>>>
-					volume;
+			std::map<bpos_t, std::map<bpos_t, std::set<bpos_t>>> volume;
 
 			size_t cur_n = 0;
 
@@ -417,14 +415,9 @@ public:
 						   << processed / (((time - time_start) / 1000) ?: 1) << " vxs "
 						   << volume.size() << '\n';
 			};
-			cur_n = 0;
 
 #if 1
 			for (const auto &pos : loadable_blocks) {
-				++cur_n;
-				if (cur_n < abm_world_last) {
-					continue;
-				}
 				volume[pos.X][pos.Y].emplace(pos.Z);
 			}
 
@@ -468,23 +461,33 @@ public:
 				}
 
 				if (!pos_opt.has_value()) {
-					pos_opt = {volume.begin()->first,
-							volume.begin()->second.begin()->first,
-							*volume.begin()->second.begin()->second.begin()};
-					//DUMP("new", pos_opt);
+					// always first: pos_opt = {volume.begin()->first,volume.begin()->second.begin()->first,*volume.begin()->second.begin()->second.begin()};
+
+					auto xend = volume.end();
+					--xend;
+					const auto xi = pos_dir & 1 ? volume.begin() : xend;
+					auto yend = xi->second.end();
+					--yend;
+					const auto yi = pos_dir & 2 ? xi->second.begin() : yend;
+					auto zend = yi->second.end();
+					--zend;
+					const auto zi = pos_dir & 4 ? yi->second.begin() : zend;
+					pos_opt = {xi->first, yi->first, *zi};
 				}
 				const auto pos = pos_opt.value();
 				erase(pos);
+				++cur_n;
 
 #else
+			cur_n = 0;
 			for (const auto &pos : loadable_blocks) {
-#endif
 				++cur_n;
 
 				if (cur_n < abm_world_last) {
 					continue;
 				}
 				abm_world_last = cur_n;
+#endif
 
 				if (stopRequested()) {
 					return nullptr;
