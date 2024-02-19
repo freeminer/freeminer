@@ -76,7 +76,7 @@ const Stat::stat_value &Stat::write_one(const std::string &key, const stat_value
 	return stats[key] += value;
 }
 
-const Stat::stat_value &Stat::add(
+Stat::stat_value Stat::add(
 		const std::string &key, const std::string &player, stat_value value)
 {
 	//errorstream<<"stat adding: "<<key<< " player="<<player<<" = "<< value<<std::endl;

@@ -33,6 +33,7 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 #include "constants.h"
 #include "filesys.h"
 #include "log.h"
+#include "serverlist.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "util/string.h"
@@ -63,7 +64,7 @@ typedef int socklen_t;
 #endif
 
 // Custom logger
-#include <websocketpp/logger/syslog.hpp>
+//#include <websocketpp/logger/syslog.hpp>
 #include <websocketpp/server.hpp>
 
 #define WS_DEBUG 0
@@ -106,6 +107,7 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 		if (uri == "/favicon.ico") {
 			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
 						 PROJECT_NAME + ".ico";
+			con->append_header("Content-Type", "image/x-icon");
 		} else if (!uri.empty()) {
 			path_serve = http_root + uri;
 			if (uri.ends_with(".wasm")) {
@@ -115,25 +117,51 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 			}
 		}
 
-		if (!path_serve.empty()) {
+		std::string body;
+		if (uri == "/status.json") {
+			path_serve = {};
+			body = ServerList::last_status;
+			con->append_header("Content-Type", "application/json; charset=utf-8");
+		}
+
+		bool defered = false;
+		if (!path_serve.empty() && body.empty()) {
 			con->append_header("Access-Control-Allow-Origin", "*");
 			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
 			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
 			con->defer_http_response();
+			defered = true;
 			std::ifstream t(path_serve);
 			std::stringstream buffer;
 			buffer << t.rdbuf();
-			con->set_body(buffer.str());
+			body = buffer.str();
+		}
+
+		actionstream << con->get_request().get_version() << " "
+					 << con->get_request().get_method() << " "
+					 << con->get_request().get_uri()
+					 //<< " " << res.size()
+					 << " " << body.size() 
+					 << "\n";
+
+		if (!body.empty()) {
+			con->set_body(std::move(body));
 			con->set_status(websocketpp::http::status_code::ok);
-			con->send_http_response();
+			websocketpp::lib::error_code ec;
+			if (defered) {
+				con->send_http_response(ec);
+				if (ec.value())
+					errorstream << "http send error:" << ec.category().name() << " "
+								<< ec.value() << " " << ec.message() << "\n";
+			}
 			// TODO: serve log here?
 			return;
 		}
 	}
 	// DUMP(con->get_request().get_method(), con->get_request().get_version(), con->get_request().get_uri(), con->get_request().get_headers(), res);
 
-	con->set_body(ss.str());
 	con->set_status(websocketpp::http::status_code::not_found);
+	con->set_body(ss.str());
 }
 
 void WSSocket::on_fail(const websocketpp::connection_hdl &hdl)
@@ -229,7 +257,7 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 	server.set_max_message_size(500000000);
 
 	server.init_asio();
-	
+
 	server.set_reuse_addr(true);
 	server.set_open_handler(websocketpp::lib::bind(
 			&WSSocket::on_open, this, websocketpp::lib::placeholders::_1));

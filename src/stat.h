@@ -42,7 +42,7 @@ public:
 
 	const stat_value &get(const std::string &key);
 	const stat_value &write_one(const std::string &key, const stat_value &value);
-	const stat_value &add(
+	stat_value add(
 			const std::string &key, const std::string &player = "", stat_value value = 1);
 
 	void update_time();
