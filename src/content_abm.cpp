@@ -319,9 +319,9 @@ public:
 		ServerMap *map = &env->getServerMap();
 		const auto heat = map->updateBlockHeat(env, p);
 
-		if (heat < 1000 - flammable * 200)
+		if (heat < 600 - flammable * 50)
 			return;
-DUMP("fire", p, n);
+
 		map->setNode(p, ndef->getId("fire:basic_flame"));
 		env->nodeUpdate(p, 2);
 	}
