@@ -287,7 +287,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 			)
 			){
 				m_rendering_engine->get_scene_manager()->clear();
-				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << std::endl;
+				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << '\n';
 			}
 
 		} //try

@@ -663,7 +663,7 @@ int MapgenMath::generateTerrain()
 {
 
 	MapNode n_ice(c_ice);
-	u32 index = 0;
+	//u32 index = 0;
 	v3pos_t em = vm->m_area.getExtent();
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
@@ -689,7 +689,7 @@ int MapgenMath::generateTerrain()
 #endif
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
-		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
+		for (pos_t x = node_min.X; x <= node_max.X; x++) {
 			const auto heat =
 					m_emerge->env->m_use_weather
 							? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env,
@@ -697,27 +697,31 @@ int MapgenMath::generateTerrain()
 							: 0;
 
 			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
-			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up; y++, index3d += ystride) {
+			u32 vi = vm->m_area.index(x, node_min.Y - y_oversize_down, z);
+			for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up;
+					y++, index3d += ystride, VoxelArea::add_y(em, vi, 1)
+					//cache_index++
+			) {
+				//for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up; y++, index3d += ystride) {
 				auto [have, d] = calc_point(x, y, z);
 				if ((!invert && d > 0) || (invert && d == 0)) {
-					if (!vm->m_data[i]) {
+					if (!vm->m_data[vi]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert || !no_layers) {
-							vm->m_data[i] = Mapgen_features::layers_get(index3d);
+							vm->m_data[vi] = Mapgen_features::layers_get(index3d);
 						} else {
-							vm->m_data[i] = layers_get(d, result_max);
+							vm->m_data[vi] = layers_get(d, result_max);
 						}
 						//						vm->m_data[i] = (y > water_level + biome->filler) ?
 						//						     MapNode(biome->c_filler) : layers_get(d, result_max);
 					}
 				} else if (y <= water_level) {
-					vm->m_data[i] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
+					vm->m_data[vi] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
 				} else {
-					vm->m_data[i] = n_air;
+					vm->m_data[vi] = n_air;
 				}
-				vm->m_area.add_y(em, i, 1);
+				//vm->m_area.add_y(em, i, 1);
 			}
 		}
 	}

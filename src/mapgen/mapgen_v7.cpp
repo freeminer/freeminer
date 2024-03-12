@@ -557,7 +557,7 @@ int MapgenV7::generateTerrain()
 		noise_floatland->perlinMap3D(node_min.X, node_min.Y - 1, node_min.Z);
 
 		// Cache floatland noise offset values, for floatland tapering
-		for (s16 y = node_min.Y - 1; y <= node_max.Y + 1; y++, cache_index++) {
+		for (s16 y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up; y++, cache_index++) {
 			float float_offset = 0.0f;
 			if (y > float_taper_ymax) {
 				float_offset = std::pow((y - float_taper_ymax) / (float)floatland_taper,
@@ -611,10 +611,9 @@ int MapgenV7::generateTerrain()
 
 
 				//  freeminer huge caves
-				const auto &i = vi;
 				if (cave_noise_threshold &&
 						noise_cave_indev->result[index3d] > cave_noise_threshold) {
-					vm->m_data[i] = n_air;
+					vm->m_data[vi] = n_air;
 				} else {
 					auto n = /* (y > water_level - surface_y && bt == BT_DESERT) ?
 								n_desert_stone :*/
@@ -622,14 +621,14 @@ int MapgenV7::generateTerrain()
 					bool protect = n.getContent() != CONTENT_AIR;
 					if (cave_noise_threshold && noise_cave_indev->result[index3d] >
 														cave_noise_threshold - 50) {
-						vm->m_data[i] = protect ? n_stone : n; // cave shell without
+						vm->m_data[vi] = protect ? n_stone : n; // cave shell without
 															   // layers
 						protect = true;
 					} else {
-						vm->m_data[i] = n;
+						vm->m_data[vi] = n;
 					}
 					if (protect)
-						vm->m_flags[i] |= VOXELFLAG_CHECKED2; // no cave liquid
+						vm->m_flags[vi] |= VOXELFLAG_CHECKED2; // no cave liquid
 				}
 				// =====
 

@@ -48,6 +48,8 @@ void ActiveObjectMgr::step(
 			continue; // obj was removed
 		f(it->second);
 	}
+
+	m_active_objects_deleted.clear();
 }
 
 // clang-format off
@@ -91,6 +93,8 @@ void ActiveObjectMgr::removeObject(u16 id)
 	m_active_objects.erase(id);
 
 	obj->removeFromScene(true);
+	
+	m_active_objects_deleted.emplace_back(std::move(obj));
 }
 
 // clang-format on

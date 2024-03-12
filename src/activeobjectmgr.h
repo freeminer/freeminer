@@ -101,4 +101,5 @@ protected:
 	// removeObject()!
 	//std::map<u16, std::unique_ptr<T>> m_active_objects;
 	concurrent_unordered_map<u16, std::shared_ptr<T>> m_active_objects;
+	std::vector<std::shared_ptr<T>> m_active_objects_deleted;
 };
