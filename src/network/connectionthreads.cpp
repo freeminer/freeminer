@@ -115,9 +115,11 @@ void *ConnectionSendThread::run()
 		/* translate commands to packets */
 		auto c = m_connection->m_command_queue.pop_frontNoEx(0);
 		while (c && c->type != CONNCMD_NONE) {
+#ifndef __EMSCRIPTEN__
 			if (c->reliable)
 				processReliableCommand(c);
 			else
+#endif
 				processNonReliableCommand(c);
 
 			c = m_connection->m_command_queue.pop_frontNoEx(0);
@@ -314,6 +316,10 @@ void ConnectionSendThread::sendAsPacketReliable(BufferedPacketPtr &p, Channel *c
 bool ConnectionSendThread::rawSendAsPacket(session_t peer_id, u8 channelnum,
 	const SharedBuffer<u8> &data, bool reliable)
 {
+#ifdef __EMSCRIPTEN__
+	reliable = false;
+#endif
+
 	PeerHelper peer = m_connection->getPeerNoEx(peer_id);
 	if (!peer) {
 		LOG(errorstream << m_connection->getDesc()

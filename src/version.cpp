@@ -63,6 +63,9 @@ const char *g_build_info =
 #if	USE_WEBSOCKET
 	"\n" "USE_WEBSOCKET"
 #endif
+#if	USE_WEBSOCKET_SCTP
+	"\n" "USE_WEBSOCKET_SCTP"
+#endif
 #if	MINETEST_PROTO
 	"\n" "MINETEST_PROTO"
 #endif

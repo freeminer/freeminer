@@ -506,7 +506,14 @@ bool ClientLauncher::launch_game(std::string &error_message,
 	if (!start_data.isSinglePlayer() && start_data.name.empty()) {
 		error_message = gettext("Please choose a name!");
 		errorstream << error_message << std::endl;
+
+#ifdef __EMSCRIPTEN__
+       	start_data.name = std::string("Guest") + itos(myrand_range(100000, 999999));
+		//resolve(false);
+		//return;
+#else
 		return false;
+#endif
 	}
 
 	// If using simple singleplayer mode, override

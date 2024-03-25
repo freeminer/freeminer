@@ -375,6 +375,12 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("touchscreen_threshold","20");
 #endif
 
+#ifdef __EMSCRIPTEN__
+	settings->setDefault("viewing_range", "500");
+	settings->setDefault("client_mesh_chunk", "4");
+#endif
+
+
 }
 
 

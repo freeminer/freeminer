@@ -34,6 +34,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "log.h"
 
+#ifdef __EMSCRIPTEN__
+//#include <emsocket.h>
+#include <mainloop.h>
+#endif
+
 #ifdef _WIN32
 // Without this some of the network functions are not found on mingw
 #ifndef _WIN32_WINNT
