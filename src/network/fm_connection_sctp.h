@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/container.h"
 #include "util/pointer.h"
 
+
 #define CHANNEL_COUNT 3
 
 struct socket;
@@ -97,8 +98,9 @@ protected:
 	void send(float dtime);
 	virtual int receive();
 	void runTimeouts(float dtime);
-	virtual void serve(Address address);
-	void connect(Address address);
+	virtual void serve(const Address & address);
+	void connect_addr(const Address & address);
+	void connect_conn(const Address & address);
 	void disconnect();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
@@ -123,9 +125,10 @@ private:
 	session_t m_next_remote_peer_id = PEER_SCTP_MIN;
 
 protected:
-	concurrent_map<u16, struct socket *> m_peers;
+	concurrent_map<session_t, struct socket *> m_peers;
 private:
-	concurrent_unordered_map<u16, Address> m_peers_address;
+	concurrent_unordered_map<session_t, Address> m_peers_address;
+	concurrent_unordered_map<session_t, int[2]> m_peers_fd;
 
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
@@ -144,7 +147,19 @@ private:
 	bool sock_listen = false, sock_connect = false, sctp_inited_by_me = false;
 	static bool sctp_inited;
 protected:
+/*
+#ifdef __EMSCRIPTEN__
+	const int domain = AF_CONN;
+	//using sockaddr_t = sockaddr_conn;
+#else
 	int domain = AF_INET6;
+	//using sockaddr_t = sockaddr_in6;
+#endif
+*/
+	std::thread handle_packets_thread;
+
+	int domain = AF_INET6;
+	//bool use_conn = false;
 	int (*sctp_conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df) = nullptr;
 	int (*server_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
 	int (*client_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
