@@ -91,6 +91,7 @@ public:
 	void setChatText(const EnrichedString &chat_text, u32 recent_chat_count);
 	void updateChatSize();
 
+	EnrichedString str_profiler;
 	void updateProfiler();
 
 	void toggleChat(Client *client);

@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include "../hud.h"
+#include "fm_nodecontainer.h"
 #include "irrlichttypes_extrabloated.h"
 #include "util/thread.h"
 #include "voxel.h"
@@ -65,7 +66,7 @@ struct MinimapPixel {
 };
 
 struct MinimapMapblock {
-	void getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos);
+	void getMinimapNodes(NodeContainer *vmanip, const v3s16 &pos);
 
 	MinimapPixel data[MAP_BLOCKSIZE * MAP_BLOCKSIZE];
 };

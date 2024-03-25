@@ -107,6 +107,15 @@ public:
 
 	virtual int generateTerrain();
 
+
+	//freeminer:
+	bool visible(const v3pos_t &p)
+	{
+		// TODO: add more height features
+		return visible_only_water(p) || baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
+	}
+
+
 private:
 	s16 mount_zero_level;
 	s16 floatland_ymin;

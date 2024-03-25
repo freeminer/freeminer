@@ -52,6 +52,8 @@ struct ActiveABM;
 
 // fm:
 static MapNode ignoreNode{CONTENT_IGNORE};
+constexpr auto FARMESH_STEP_MAX {16};
+
 
 struct abm_trigger_one {
 	ActiveABM * abm;
@@ -321,7 +323,7 @@ public:
 		return getNodeNoEx(p);
 	}
 
-	MapNode getNodeTry(v3pos_t p)
+	MapNode &getNodeTry(v3pos_t p)
 	{
 		auto lock = try_lock_shared_rec();
 		if (!lock->owns_lock())
@@ -346,7 +348,7 @@ public:
 
 	void setNode(v3pos_t p, MapNode& n);
 
-	MapNode getNodeNoLock(v3pos_t p)
+	MapNode &getNodeNoLock(v3pos_t p)
 	{
 		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
@@ -531,8 +533,10 @@ public:
 	typedef std::shared_ptr<MapBlockMesh> mesh_type;
 
 #if BUILD_CLIENT // Only on client
-	MapBlock::mesh_type getMesh(int step);
-	void setMesh(MapBlock::mesh_type & rmesh);
+	MapBlock::mesh_type getLodMesh(int step, bool allow_other = false);
+	void setLodMesh(const MapBlock::mesh_type & rmesh);
+	MapBlock::mesh_type getFarMesh(int step);
+	void setFarMesh(const MapBlock::mesh_type & rmesh);
 #endif
 //===
 
@@ -555,12 +559,10 @@ public:
 
 #if BUILD_CLIENT // Only on client
 private:
-	mesh_type mesh = nullptr;
-	mesh_type mesh2 = nullptr, mesh4 = nullptr, mesh8 = nullptr, mesh16 = nullptr;
-	int16_t m_mesh_size_16 = -1, m_mesh_size_8 = -1, m_mesh_size_4 = -1, m_mesh_size_2 = -1, m_mesh_size = -1;
+	std::array<MapBlock::mesh_type, 5> m_lod_mesh;
+	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX> m_far_mesh;
+	MapBlock::mesh_type delete_mesh;
 public:	
-	mesh_type mesh_old = nullptr;
-	//std::atomic_int mesh_size {-1};
 #endif
 
 	NodeMetadataList m_node_metadata;
@@ -598,9 +600,6 @@ public:
 	std::atomic<content_t> content_only = CONTENT_IGNORE;
 	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
-	//std::atomic_short lighting_broken {0};
-	void setMeshSize(int step, int32_t size);
-	int32_t getMeshSize(int step);
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;

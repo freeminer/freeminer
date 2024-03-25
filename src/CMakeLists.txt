@@ -846,6 +846,7 @@ endif()
 
 set(FMclient_SRCS
 	guiTextInputMenu.cpp
+	fm_farmesh.cpp
 )
 	#gui/intlGUIEditBox.cpp
 	#FMStaticText.cpp

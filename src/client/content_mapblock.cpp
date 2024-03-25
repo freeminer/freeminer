@@ -421,22 +421,23 @@ void MapblockMeshGenerator::drawSolidNode()
 	u16 lights[6];
 	content_t n1 = cur_node.n.getContent();
 	for (int face = 0; face < 6; face++) {
-		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face] * data->step;
+		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face] * data->fscale;
 		MapNode neighbor = data->m_vmanip.getNodeNoEx(p2);
 		content_t n2 = neighbor.getContent();
-		bool backface_culling = cur_node.f->drawtype == NDT_NORMAL;
+		bool backface_culling = cur_node.f->drawtype == NDT_NORMAL || data->fscale > 1;
 		if (n2 == n1)
 			continue;
 		if (n2 == CONTENT_IGNORE)
 			continue;
 		if (n2 != CONTENT_AIR) {
 			const ContentFeatures &f2 = nodedef->get(n2);
-			if (f2.solidness == 2)
+			if (data->fscale > 1 ? f2.solidness_far == 2 : f2.solidness == 2)
 				continue;
+		   if (data->fscale <= 1)
 			if (cur_node.f->drawtype == NDT_LIQUID) {
 				if (cur_node.f->sameLiquidRender(f2))
 					continue;
-				backface_culling = f2.solidness || f2.visual_solidness;
+				backface_culling = f2.solidness || f2.visual_solidness || (data->fscale > 1 && f2.solidness_far);
 			}
 		}
 		faces |= 1 << face;
@@ -455,10 +456,15 @@ void MapblockMeshGenerator::drawSolidNode()
 		return;
 	u8 mask = faces ^ 0b0011'1111; // k-th bit is set if k-th face is to be *omitted*, as expected by cuboid drawing functions.
 	cur_node.origin = intToFloat(cur_node.p, BS);
-	auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
-
-	box.MinEdge *= data->step;
-	box.MaxEdge *= data->step;
+	auto box = aabb3f(v3f(-0.5 * BS ), v3f(0.5 * BS));
+	if (data->lod_step) {
+		box.MinEdge *= data->fscale;
+		box.MaxEdge *= data->fscale;
+	}
+	if (data->far_step) {
+		box.MinEdge *= data->fscale;
+		box.MaxEdge *= data->fscale;
+	}
 
 	f32 texture_coord_buf[24];
 	box.MinEdge += cur_node.origin;
@@ -523,6 +529,7 @@ u8 MapblockMeshGenerator::getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 same
 			(box.MinEdge.Z == -NODE_BOUNDARY ? 32 : 0);
 
 	u8 sametype_mask = 0;
+   if (data->fscale <= 1)
 	if (cur_node.f->alpha == AlphaMode::ALPHAMODE_OPAQUE) {
 		// In opaque nodeboxes, faces on opposite sides can cancel
 		// each other out if there is a matching neighbor of the same type
@@ -1708,7 +1715,7 @@ void MapblockMeshGenerator::drawNode()
 			break;
 	}
 
-	if (data->step > 1) {
+	if (data->fscale > 1) {
 		drawSolidNode();
 		return;
 	}
@@ -1738,9 +1745,12 @@ void MapblockMeshGenerator::drawNode()
 
 void MapblockMeshGenerator::generate()
 {
-	for (cur_node.p.Z = 0; cur_node.p.Z < data->side_length_data; cur_node.p.Z+=data->step)
-	for (cur_node.p.Y = 0; cur_node.p.Y < data->side_length_data; cur_node.p.Y+=data->step)
-	for (cur_node.p.X = 0; cur_node.p.X < data->side_length_data; cur_node.p.X+=data->step) {
+	const auto step = data->lod_step ? data->fscale : 1;
+	const auto fstep = data->far_step ? data->fscale : 1;
+	for (cur_node.pf.Z = cur_node.pr.Z = 0; cur_node.pr.Z < data->side_length_data; cur_node.pr.Z+=step, cur_node.pf.Z+=fstep)
+	for (cur_node.pf.Y = cur_node.pr.Y = 0; cur_node.pr.Y < data->side_length_data; cur_node.pr.Y+=step, cur_node.pf.Y+=fstep)
+	for (cur_node.pf.X = cur_node.pr.X = 0; cur_node.pr.X < data->side_length_data; cur_node.pr.X+=step, cur_node.pf.X+=fstep) {
+		cur_node.p = (data->far_step ? cur_node.pf : cur_node.pr);
 		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		cur_node.f = &nodedef->get(cur_node.n);
 		drawNode();
@@ -1749,6 +1759,7 @@ void MapblockMeshGenerator::generate()
 
 void MapblockMeshGenerator::renderSingle(content_t node, u8 param2)
 {
+	cur_node.pf = 
 	cur_node.p = {0, 0, 0};
 	cur_node.n = MapNode(node, 0xff, param2);
 	cur_node.f = &nodedef->get(cur_node.n);

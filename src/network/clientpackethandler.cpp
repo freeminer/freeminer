@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "config.h"
+#include "server.h"
 
 #if !MINETEST_PROTO
 #include "network/fm_clientpackethandler.cpp"
@@ -1846,11 +1847,13 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 		conf.set("gameid", gameid);
 		conf.updateConfigFile(conf_path.c_str());
 	}
-/* TODO
-	if (g_settings->getS32("farmesh5") && !m_localserver) {
+
+	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
+
+	if (farmesh_range && !m_localserver) {
 		m_localserver = new Server("farmesh", findSubgame("devtest"), false, {}, true);
 	}
-*/
+
 	{
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
@@ -1871,20 +1874,18 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 		params->MapgenParams::readParams(&settings);
 		params->readParams(&settings);
 
-/*
-		if (g_settings->getS32("farmesh5")) {
+		if (!m_simple_singleplayer_mode && farmesh_range) {
 			m_emerge = new EmergeManager(
 					m_localserver, m_localserver->m_metrics_backend.get());
 			m_emerge->initMapgens(params);
 		}
-*/
 
 		if (!m_world_path.empty()) {
 			m_settings_mgr =
 					new MapSettingsManager(m_world_path + DIR_DELIM + "map_meta");
 			m_settings_mgr->mapgen_params = params;
 			m_settings_mgr->saveMapMeta();
-		} else {
+		} else if (!m_emerge) {
 			delete params;
 		}
 	}

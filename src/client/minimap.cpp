@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cmath>
 #include "client.h"
 #include "clientmap.h"
+#include "fm_nodecontainer.h"
 #include "irr_v3d.h"
 #include "settings.h"
 #include "shader.h"
@@ -759,7 +760,7 @@ void Minimap::updateActiveMarkers()
 //// MinimapMapblock
 ////
 
-void MinimapMapblock::getMinimapNodes(VoxelManipulator *vmanip, const v3s16 &pos)
+void MinimapMapblock::getMinimapNodes(NodeContainer *vmanip, const v3s16 &pos)
 {
 
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++)

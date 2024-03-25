@@ -1,4 +1,8 @@
 /*
+Copyright (C) 2024 proller <proler@gmail.com>
+*/
+
+/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -98,6 +102,13 @@ public:
 	size_type count(const key_type& k) {
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::count(k);
+	}
+
+	template <typename... Args>
+	decltype(auto) contains(Args &&...args)
+	{
+		auto lock = LOCKER::lock_shared_rec();
+		return full_type::contains(std::forward<Args>(args)...);
 	}
 
 	iterator find(const key_type& k) {

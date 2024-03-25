@@ -92,10 +92,17 @@ public:
 	virtual void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2s16 p);
 
-private:
 	//freeminer:
-	bool visible(pos_t x, pos_t y, pos_t z) override { return getSpawnLevelAtPoint({x, z}) >= y; }
+	bool visible(const v3pos_t &p) override
+	{
+		if (visible_only_water(p))
+			return true;
+		// TODO: Make faster and more features
+		const auto sl = getSpawnLevelAtPoint({p.X, p.Z});
+		return (sl >= p.Y && sl < MAX_MAP_GENERATION_LIMIT);
+	}
 
+private:
 
 	BiomeGenOriginal *m_bgen;
 
@@ -111,4 +118,5 @@ private:
 	Noise *noise_valley_profile;
 
 	virtual int generateTerrain();
+
 };

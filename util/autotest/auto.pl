@@ -325,7 +325,6 @@ our $options = {
         fps_max       => 2,
         fps_max_unfocused => 2,
         viewing_range => 1000,
-        #viewing_range_max => 1000,
         wanted_fps => 1,
     },
     stay => {
@@ -533,6 +532,8 @@ our $tasks = {
             $g->{build_name} .= '_asan';
             0;
         }, {
+            -cmake_clang=>1,
+            -cmake_libcxx=>1,
             -cmake_asan => 1,
             #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
         },
@@ -543,6 +544,8 @@ our $tasks = {
             $g->{build_name} .= '_msan';
             0;
         }, {
+            -cmake_clang=>1,
+            -cmake_libcxx=>1,
             -cmake_msan => 1,
         },
         'build_debug',
@@ -552,6 +555,8 @@ our $tasks = {
             $g->{build_name} .= '_usan';
             0;
         }, {
+            -cmake_clang=>1,
+            -cmake_libcxx=>1,
             -cmake_usan => 1,
         },
         'build_debug',
@@ -693,8 +698,8 @@ our $tasks = {
     gdb => sub {
         ++$g->{keep_config};
         $config->{runner} =
-            $config->{runner}
-          . ' env ASAN_OPTIONS=abort_on_error=1 '
+           ' env ASAN_OPTIONS=abort_on_error=1 '
+          . $config->{runner}
           . $config->{gdb}
           . q{ -ex 'run' -ex 't a a bt' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })

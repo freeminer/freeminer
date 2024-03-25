@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "fm_nodecontainer.h"
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
 #include <iostream>
@@ -380,7 +381,7 @@ enum VoxelPrintMode
 	VOXELPRINT_LIGHT_DAY,
 };
 
-class VoxelManipulator
+class VoxelManipulator : public NodeContainer
 {
 public:
 	VoxelManipulator() = default;

@@ -1,4 +1,8 @@
 /*
+Copyright (C) 2024 proller <proler@gmail.com>
+*/
+
+/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify

@@ -134,9 +134,13 @@ build/android/.gradle
 
 freeminer.conf
 auto_*
+build_a*
+build_t*
+build_d*
+build_m*
 util/autotest/logs.*
 util/autotest/auto.json
-util/autotest/world
+util/autotest/world*
 util/autotest/screenshot*
 client/favoriteservers.json
 client/servers_public.json

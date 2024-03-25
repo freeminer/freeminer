@@ -33,10 +33,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 struct QueuedMeshUpdate
 {
-	//fm:
-	int step = 0;
-	//int range = 1;
-
 
 	v3s16 p = v3s16(-1337, -1337, -1337);
 	std::vector<v3s16> ack_list;

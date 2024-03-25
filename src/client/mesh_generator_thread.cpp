@@ -193,9 +193,8 @@ void MeshUpdateQueue::done(v3s16 pos)
 void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 
-    const auto step = q->step ? q->step : getFarmeshStep(m_client->m_env.getClientMap().getControl(), getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)), q->p);
-
-    MeshMakeData * data = new MeshMakeData(m_client, m_cache_enable_shaders, step);
+    const auto lod_step = getLodStep(m_client->m_env.getClientMap().getControl(), getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)), q->p);
+    MeshMakeData * data = new MeshMakeData(m_client, m_cache_enable_shaders, lod_step, 0);
 	q->data = data;
 
 	data->fillBlockDataBegin(q->p);
@@ -217,10 +216,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 	data->setCrack(q->crack_level, q->crack_pos);
 	data->setSmoothLighting(m_cache_smooth_lighting);
 
-    data->step = step;
 	data->range = getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(q->p);
-	if (q->step)
-		data->no_draw = true;
 }
 
 /*

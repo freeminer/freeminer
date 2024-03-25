@@ -102,13 +102,10 @@
 #    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
 wanted_fps (Wanted FPS) int 30
 
-#    The allowed adjustment range for the automatic rendering range adjustment.
-#    Set this to be equal to viewing range minimum to disable the auto-adjustment algorithm.
-viewing_range_max (Viewing range maximum) int 10000
-
-#Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
-farmesh () int 0
-farmesh_step () int 2
+# Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
+lodmesh () int 4
+# Client-side landscape render
+farmesh () int 30000
 
 # Set to true to disable wield light (enabled by default, requires shaders)
 disable_wieldlight () bool false

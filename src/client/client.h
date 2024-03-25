@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //fm:
 #include "map_settings_manager.h"
+#include "threading/concurrent_unordered_map.h"
 #include "threading/thread_vector.h"
 #include "util/unordered_map_hash.h"
 #include "msgpack_fix.h"
@@ -611,10 +612,10 @@ private:
 
 
 //fm:
-	double m_uptime = 0;
 	bool is_simple_singleplayer_game = 0;
 	float m_timelapse_timer = -1;
 public:
+	double m_uptime = 0;
 	bool use_weather = false;
 	unsigned int overload = 0;
 
@@ -625,6 +626,8 @@ public:
 	std::string m_world_path;
 	EmergeManager *m_emerge = nullptr;
 	MapSettingsManager *m_settings_mgr = nullptr;
+	concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
+	f32 fog_range = 0;
 
 private:	
 

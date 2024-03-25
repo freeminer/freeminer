@@ -653,7 +653,7 @@ void Client::step(float dtime)
 				delete block->mesh;
 				block->mesh = nullptr;
 */
-				block->setMesh(r.mesh);
+				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 
 				if (r.mesh) {
@@ -1721,6 +1721,10 @@ void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 	}
 	catch(InvalidPositionException &e) {
 	}
+
+	if (p.getDistanceFrom(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)) > MAP_BLOCKSIZE*2)
+		return;
+
 	addUpdateMeshTaskForNode(p, true);
 
 	for (const auto &modified_block : modified_blocks) {
@@ -2002,6 +2006,16 @@ void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
 			continue;
 		block->setTimestampNoChangedFlag(m_uptime);
 	}
+
+	int to = FARMESH_STEP_MAX;
+	for (int step = 1; step <= to; ++step) {
+		v3pos_t actualpos = getFarmeshActual(blockpos, step);
+		auto *block = m_env.getMap().getBlockNoCreateNoEx(actualpos); // todo maybe update bp1 too if differ
+		if(!block)
+			continue;
+		block->setTimestampNoChangedFlag(m_uptime);
+	}
+
 }
 
 void Client::updateCameraOffset(v3s16 camera_offset)
