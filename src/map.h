@@ -290,7 +290,7 @@ public:
 	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
-	typedef concurrent_unordered_map<v3pos_t, std::shared_ptr<MapBlock>, v3posHash,
+	typedef concurrent_shared_unordered_map<v3pos_t, std::shared_ptr<MapBlock>, v3posHash,
 			v3posEqual>
 			m_far_blocks_type;
 	m_far_blocks_type m_far_blocks;
@@ -298,6 +298,7 @@ public:
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current = false;
 
+	uint32_t m_far_blocks_use_timestamp = 0;
 	uint32_t m_far_blocks_clean_timestamp = 0;
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
 	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);

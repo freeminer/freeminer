@@ -52,6 +52,7 @@ struct ActiveABM;
 
 // fm:
 static MapNode ignoreNode{CONTENT_IGNORE};
+constexpr auto LODMESH_STEP_MAX {8}; // 4+1
 constexpr auto FARMESH_STEP_MAX {16};
 
 
@@ -559,8 +560,8 @@ public:
 
 #if BUILD_CLIENT // Only on client
 private:
-	std::array<MapBlock::mesh_type, 5> m_lod_mesh;
-	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX> m_far_mesh;
+	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX+1> m_lod_mesh;
+	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX+1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 public:	
 #endif

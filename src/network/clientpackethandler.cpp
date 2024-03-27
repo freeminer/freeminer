@@ -1875,9 +1875,12 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 		params->readParams(&settings);
 
 		if (!m_simple_singleplayer_mode && farmesh_range) {
+			const auto num_emerge_threads = g_settings->get("num_emerge_threads");
+			g_settings->set("num_emerge_threads", "1");
 			m_emerge = new EmergeManager(
 					m_localserver, m_localserver->m_metrics_backend.get());
 			m_emerge->initMapgens(params);
+			g_settings->set("num_emerge_threads", num_emerge_threads);
 		}
 
 		if (!m_world_path.empty()) {

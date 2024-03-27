@@ -44,7 +44,7 @@ public:
 class FarMesh
 {
 public:
-	FarMesh( Client *client, Server *server);
+	FarMesh(Client *client, Server *server);
 
 	~FarMesh();
 
@@ -65,7 +65,7 @@ private:
 	f32 m_camera_pitch;
 	f32 m_camera_yaw;
 	Client *m_client;
-	pos_t distance_min = 8 * MAP_BLOCKSIZE;
+	static constexpr pos_t distance_min = 8 * MAP_BLOCKSIZE;
 	v3pos_t m_camera_offset;
 	float m_speed;
 	constexpr static uint16_t grid_size_max_y = 64;
@@ -81,7 +81,8 @@ private:
 
 	struct ray_cache
 	{
-		unsigned int finished = {}; /// last depth, -1 if visible
+		unsigned int finished =
+				distance_min - MAP_BLOCKSIZE; /// last depth, -1 if visible
 		content_t visible = {};
 		size_t step_num = {};
 	};
@@ -98,7 +99,7 @@ private:
 	int go_direction(const size_t dir_n);
 	std::array<async_step_runner, 6> async;
 	int timestamp_complete = 0;
-	int timestamp_clean = 0;
+	//int timestamp_clean = 0;
 	bool complete_set = false;
 	int planes_processed_last = 0;
 };

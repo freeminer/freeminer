@@ -1076,17 +1076,19 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 																: m_far_blocks_delete_2;
 		m_far_blocks_delete.clear();
 
+		auto lock = m_far_blocks.lock_unique_rec();
 		for (auto it = m_far_blocks.begin(); it != m_far_blocks.end();) {
 			if (m_far_blocks_clean_timestamp > 0 &&
 					it->second->getTimestamp() < m_far_blocks_clean_timestamp) {
 				m_far_blocks_delete.emplace_back(it->second);
 				it = m_far_blocks.erase(it);
-			} else {
+			} else if (it->second->getTimestamp() >= m_far_blocks_use_timestamp) {
 				if (!blocks_skip_farmesh.contains(it->first)) {
 					int mesh_step = getFarmeshStep(m_control,
 							getNodeBlockPos(m_far_blocks_last_cam_pos),
 							it->first); // m_camera_position_node
-					if (mesh_step > 1 && !inFarmeshGrid(it->first, mesh_step)) {
+					if (mesh_step > 1 &&
+							!inFarmeshGrid(it->first, mesh_step, m_control.cell_size)) {
 					} else {
 						const auto mesh = it->second->getFarMesh(mesh_step);
 						if (!mesh) {
@@ -1096,6 +1098,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 						}
 					}
 				}
+				++it;
+			} else {
 				++it;
 			}
 		}
@@ -1204,6 +1208,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 		// If the mesh of the block happened to get deleted, ignore it
 		auto block_mesh = block->getLodMesh(mesh_step, true);
+		bool is_far = false;
 		// If the mesh of the block happened to get deleted, ignore it
 
 		if (!block_mesh) {
@@ -1211,10 +1216,11 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 			fmesh_step = getFarmeshStep(
 					m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos());
-			if (fmesh_step > 1 && !inFarmeshGrid(block_pos, fmesh_step)) {
+			if (fmesh_step > 1 && !inFarmeshGrid(block_pos, fmesh_step, m_control.cell_size)) {
 				continue;
 			}
 			block_mesh = block->getFarMesh(fmesh_step);
+			is_far = true;
 		}
 		
 		if (!block_mesh)
@@ -1225,6 +1231,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		v3f mesh_sphere_center = intToFloat(block->getPosRelative(), BS)
 				+ block_mesh->getBoundingSphereCenter();
 		f32 mesh_sphere_radius = block_mesh->getBoundingRadius();
+	  if (!is_far)
 		if (is_frustum_culled(mesh_sphere_center, mesh_sphere_radius))
 			continue;
 

@@ -43,15 +43,16 @@ public:
 	inline bool valid() { return future.valid(); }
 
 	template <class Func, typename... Args>
-	void step(Func func, Args &&...args)
+	bool step(Func func, Args &&...args)
 	{
 		if (future.valid()) {
 			auto res = future.wait_for(std::chrono::milliseconds(0));
 			if (res == std::future_status::timeout) {
-				return;
+				return true;
 			}
 		}
 
 		future = std::async(std::launch::async, func, std::forward<Args>(args)...);
+		return future.valid();
 	}
 };

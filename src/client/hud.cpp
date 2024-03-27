@@ -914,7 +914,9 @@ void Hud::drawBlockBounds()
 		s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
 
 		v3f halfNode = v3f(BS, BS, BS) / 2.0f;
-
+ 
+		auto lock = client->getEnv().getClientMap().m_far_blocks.try_lock_shared_rec();
+		if (lock->owns_lock())
 		for (const auto &block : client->getEnv().getClientMap().m_far_blocks) {
 			const auto &blockPos = block.first;
 			const auto mesh_step = getFarmeshStep(

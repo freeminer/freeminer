@@ -174,7 +174,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("light_ambient", "false");
 	//settings->setDefault("enable_dynamic_shadows", "1");
 	settings->setDefault("enable_bloom", "true");
-	//settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
+	//TODO: settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
 	settings->setDefault("client_mesh_chunk", "1");
 
 	// Liquid

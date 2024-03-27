@@ -43,15 +43,28 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 {
 	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.lodmesh) {
-		const auto farmesh_cells = std::max<int>(draw_control.cell_size * 2,
+		const auto cells = std::max<int>(draw_control.cell_size * 2,
 				draw_control.lodmesh / draw_control.cell_size);
-		if (range >= farmesh_cells + draw_control.lodmesh * 4)
+		// for (int i = 8; i >= 0; --i) {
+		// 	if (range >= cells + draw_control.lodmesh * pow(2, i))
+		// 		return i;
+		// }
+
+		if (range >= cells + draw_control.lodmesh * 64)
+			return 8;
+		if (range >= cells + draw_control.lodmesh * 32)
+			return 7;
+		if (range >= cells + draw_control.lodmesh * 16)
+			return 6;
+		if (range >= cells + draw_control.lodmesh * 8)
+			return 5;
+		if (range >= cells + draw_control.lodmesh * 4)
 			return 4;
-		else if (range >= farmesh_cells + draw_control.lodmesh * 2)
+		else if (range >= cells + draw_control.lodmesh * 2)
 			return 3;
-		else if (range >= farmesh_cells + draw_control.lodmesh)
+		else if (range >= cells + draw_control.lodmesh)
 			return 2;
-		else if (range >= farmesh_cells)
+		else if (range >= cells)
 			return 1;
 	}
 	return 0;
@@ -72,6 +85,7 @@ int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblo
 		return 1;
 
 	int skip = log(range) / log(2);
+	//skip += log(draw_control.cell_size) / log(2);
 	range = radius_box(v3pos_t((playerblockpos.X >> skip) << skip,
 							   (playerblockpos.Y >> skip) << skip,
 							   (playerblockpos.Z >> skip) << skip),
@@ -79,26 +93,27 @@ int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblo
 					(blockpos.Z >> skip) << skip));
 	range >>= next_step; // TODO: configurable
 	range >>= 1;
-	if (range <= 1)
-		return skip;
-
+	if (range > 1) {
 	skip = log(range) / log(2);
+     	//skip += log(draw_control.cell_size) / log(2);
+	}
 	if (skip > FARMESH_STEP_MAX)
 		skip = FARMESH_STEP_MAX;
 	return skip;
 };
 
-bool inFarmeshGrid(const v3bpos_t &blockpos, int step)
+bool inFarmeshGrid(const v3bpos_t &blockpos, int step, int cell_size)
 {
-	return getFarmeshActual(blockpos, step) == blockpos;
+	return getFarmeshActual(blockpos, step, cell_size) == blockpos;
 /*
 	int skip = pow(2, step - 1);
 	return !(blockpos.X % skip || blockpos.Y % skip || blockpos.Z % skip);
 */
 }
 
-v3bpos_t getFarmeshActual(v3bpos_t blockpos, int step)
+v3bpos_t getFarmeshActual(v3bpos_t blockpos, int step, int cell_size)
 {
+	step += log(cell_size) / log(2);
 	blockpos.X >>= step;
 	blockpos.X <<= step;
 	blockpos.Y >>= step;

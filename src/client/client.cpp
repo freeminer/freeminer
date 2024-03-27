@@ -2007,14 +2007,14 @@ void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
 		block->setTimestampNoChangedFlag(m_uptime);
 	}
 
-	int to = FARMESH_STEP_MAX;
+	/*int to = FARMESH_STEP_MAX;
 	for (int step = 1; step <= to; ++step) {
 		v3pos_t actualpos = getFarmeshActual(blockpos, step);
 		auto *block = m_env.getMap().getBlockNoCreateNoEx(actualpos); // todo maybe update bp1 too if differ
 		if(!block)
 			continue;
 		block->setTimestampNoChangedFlag(m_uptime);
-	}
+	}*/
 
 }
 

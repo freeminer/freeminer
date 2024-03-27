@@ -45,7 +45,7 @@ fi
 [ -s ../src/CMakeLists.txt ] && mkdir -p ../build && cd ../build
 
 #update if second+ run
-git pull --rebase
+git pull --rebase ||:
 
 #compile
 cmake .. -GNinja -DENABLE_GLES=1 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` # -DIRRLICHT_INCLUDE_DIR=../irrlicht/include -DIRRLICHT_LIBRARY=../irrlicht/lib/Linux/libIrrlicht.a
