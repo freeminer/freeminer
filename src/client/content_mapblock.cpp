@@ -1750,11 +1750,11 @@ void MapblockMeshGenerator::drawNode()
 
 void MapblockMeshGenerator::generate()
 {
-	const auto step = data->lod_step ? data->fscale : 1;
+	const auto lstep = data->lod_step ? data->fscale : 1;
 	const auto fstep = data->far_step ? data->fscale : 1;
-	for (cur_node.pf.Z = cur_node.pr.Z = 0; cur_node.pr.Z < data->side_length_data; cur_node.pr.Z+=step, cur_node.pf.Z+=fstep)
-	for (cur_node.pf.Y = cur_node.pr.Y = 0; cur_node.pr.Y < data->side_length_data; cur_node.pr.Y+=step, cur_node.pf.Y+=fstep)
-	for (cur_node.pf.X = cur_node.pr.X = 0; cur_node.pr.X < data->side_length_data; cur_node.pr.X+=step, cur_node.pf.X+=fstep) {
+	for (cur_node.pf.Z = cur_node.pr.Z = 0; cur_node.pr.Z < data->side_length_data; cur_node.pr.Z+=lstep, cur_node.pf.Z+=fstep)
+	for (cur_node.pf.Y = cur_node.pr.Y = 0; cur_node.pr.Y < data->side_length_data; cur_node.pr.Y+=lstep, cur_node.pf.Y+=fstep)
+	for (cur_node.pf.X = cur_node.pr.X = 0; cur_node.pr.X < data->side_length_data; cur_node.pr.X+=lstep, cur_node.pf.X+=fstep) {
 		cur_node.p = (data->far_step ? cur_node.pf : cur_node.pr);
 		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		cur_node.f = &nodedef->get(cur_node.n);

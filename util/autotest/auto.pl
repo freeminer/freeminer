@@ -343,8 +343,9 @@ my $child;
 
 our $commands = {
     init    => sub { init_config(); 0 },
-    prepare => sub {
+    cmake_prepare => sub {
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
+        $config->{cmake_libcxx} //= 1 if $config->{cmake_clang};
         $g->{build_name} .= $config->{clang_version}      if $config->{cmake_clang};
         my $build_dir = "$config->{root_prefix}$config->{build_prefix}$g->{build_name}";
         chdir $config->{root_path};
@@ -357,6 +358,8 @@ our $commands = {
     },
     cmake => sub {
         return if $config->{no_cmake};
+        my $r = commands_run('cmake_prepare');
+        return $r if $r;
         my %D;
         #$D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
@@ -493,10 +496,10 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
 };
 
 our $tasks = {
-    build_normal    => ['prepare', 'cmake', 'make',],
+    build_normal    => ['cmake', 'make',],
     build           => [\'build_normal'],                                                                                   #'
-    build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
-    build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
+    build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,},  'cmake', 'make',],
+    build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server    => ['set_server', 'build_normal',],
     (
         map { ("build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_", 'run_server']) }
@@ -568,7 +571,6 @@ our $tasks = {
         }, {
             -cmake_gperf => 1,
         },
-        'prepare',
         'cmake',
         'make',
     ],
@@ -613,7 +615,7 @@ our $tasks = {
         map {
             'valgrind_' . $_ => [
                 {build_name => ''},
-                #{build_name => 'debug'}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
+                #{build_name => 'debug'}, ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
                 \'build_debug',    #'
                 ['valgrind', '--tool=' . $_],
             ],
