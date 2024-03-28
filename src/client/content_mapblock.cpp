@@ -462,8 +462,13 @@ void MapblockMeshGenerator::drawSolidNode()
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	auto box = aabb3f(v3f(-0.5 * BS ), v3f(0.5 * BS));
 	if (data->fscale > 1) {
-		box.MinEdge *= data->fscale;
-		box.MaxEdge *= data->fscale;
+		// TODO: maybe possibe make simpler?/
+		box.MinEdge += v3f(HBS, 0, HBS);
+		box.MinEdge *= v3f(data->fscale, data->fscale, data->fscale);
+		box.MinEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+		box.MaxEdge += v3f(HBS, 0, HBS);
+		box.MaxEdge *= v3f(data->fscale, data->fscale, data->fscale);
+		box.MaxEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
 	}
 
 	f32 texture_coord_buf[24];
