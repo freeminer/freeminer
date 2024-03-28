@@ -430,10 +430,14 @@ void MapblockMeshGenerator::drawSolidNode()
 		if (n2 == CONTENT_IGNORE)
 			continue;
 		if (n2 != CONTENT_AIR) {
+
+			if (data->far_step)
+				continue; // Maybe skip too much
+			// TODO: always draw corner block faces for far and maybe lod for closing step-change-holes
+
 			const ContentFeatures &f2 = nodedef->get(n2);
 			if (data->fscale > 1 ? f2.solidness_far == 2 : f2.solidness == 2)
 				continue;
-		   if (data->fscale <= 1)
 			if (cur_node.f->drawtype == NDT_LIQUID) {
 				if (cur_node.f->sameLiquidRender(f2))
 					continue;
@@ -457,11 +461,7 @@ void MapblockMeshGenerator::drawSolidNode()
 	u8 mask = faces ^ 0b0011'1111; // k-th bit is set if k-th face is to be *omitted*, as expected by cuboid drawing functions.
 	cur_node.origin = intToFloat(cur_node.p, BS);
 	auto box = aabb3f(v3f(-0.5 * BS ), v3f(0.5 * BS));
-	if (data->lod_step) {
-		box.MinEdge *= data->fscale;
-		box.MaxEdge *= data->fscale;
-	}
-	if (data->far_step) {
+	if (data->fscale > 1) {
 		box.MinEdge *= data->fscale;
 		box.MaxEdge *= data->fscale;
 	}

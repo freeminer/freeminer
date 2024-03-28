@@ -917,19 +917,20 @@ void Hud::drawBlockBounds()
  
 		auto lock = client->getEnv().getClientMap().m_far_blocks.try_lock_shared_rec();
 		if (lock->owns_lock())
-		for (const auto &block : client->getEnv().getClientMap().m_far_blocks) {
-			const auto &blockPos = block.first;
+		for (const auto &[blockPos, block] : client->getEnv().getClientMap().m_far_blocks) {
 			const auto mesh_step = getFarmeshStep(
 					client->getEnv().getClientMap().getControl(),
 					getNodeBlockPos(floatToInt(
 							client->getEnv().getLocalPlayer()->getPosition(), BS)),
 					blockPos);
 
-			if (!block.second)
+			if (!block)
 				continue;
-			const auto &mesh = block.second->getFarMesh(mesh_step);
+			const auto &mesh = block->getFarMesh(mesh_step);
 			//const auto &mesh = block.second->getLodMesh(mesh_step);
 			if (!mesh)
+				continue;
+			if (!mesh->getMesh())
 				continue;
 			if (!mesh->getMesh()->getMeshBufferCount())
 				continue;

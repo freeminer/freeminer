@@ -239,11 +239,23 @@ int FarMesh::go_direction(const size_t dir_n)
 
 			const auto pos = dir_l * depth * BS + m_camera_pos;
 			pos_last = pos;
-			if (pos.X > MAX_MAP_GENERATION_LIMIT * BS ||
+
+#if !USE_POS32
+			const auto block_step_real =
+					getFarmeshStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
+							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
+			const auto step_width_real =
+					MAP_BLOCKSIZE *
+					pow(2, block_step_real + log(draw_control.cell_size) / log(2));
+#else
+			const auto step_width_real = step_width;
+#endif
+
+			if (pos.X + step_width_real * BS > MAX_MAP_GENERATION_LIMIT * BS ||
 					pos.X < -MAX_MAP_GENERATION_LIMIT * BS ||
-					pos.Y > MAX_MAP_GENERATION_LIMIT * BS ||
+					pos.Y + step_width_real * BS > MAX_MAP_GENERATION_LIMIT * BS ||
 					pos.Y < -MAX_MAP_GENERATION_LIMIT * BS ||
-					pos.Z > MAX_MAP_GENERATION_LIMIT * BS ||
+					pos.Z + step_width_real * BS > MAX_MAP_GENERATION_LIMIT * BS ||
 					pos.Z < -MAX_MAP_GENERATION_LIMIT * BS) {
 				ray_cache.finished = -1;
 				break;

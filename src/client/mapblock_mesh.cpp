@@ -50,7 +50,7 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 		// 		return i;
 		// }
 
-		if (range >= cells + draw_control.lodmesh * 64)
+		if (range >= cells + draw_control.lodmesh * 64) // cell_size = 4
 			return 8;
 		if (range >= cells + draw_control.lodmesh * 32)
 			return 7;
@@ -91,11 +91,9 @@ int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblo
 							   (playerblockpos.Z >> skip) << skip),
 			v3pos_t((blockpos.X >> skip) << skip, (blockpos.Y >> skip) << skip,
 					(blockpos.Z >> skip) << skip));
-	range >>= next_step; // TODO: configurable
-	range >>= 1;
+	range >>= next_step + int(log(draw_control.cell_size) / log(2)); // TODO: configurable
 	if (range > 1) {
-	skip = log(range) / log(2);
-     	//skip += log(draw_control.cell_size) / log(2);
+		skip = log(range) / log(2);
 	}
 	if (skip > FARMESH_STEP_MAX)
 		skip = FARMESH_STEP_MAX;
@@ -954,6 +952,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	}
 
 	//std::cout<<"added "<<fastfaces.getSize()<<" faces."<<std::endl;
+  if (data->lod_step <= 0)
 	m_bsp_tree.buildTree(&m_transparent_triangles, data->side_length);
 
 	// Check if animation is required for this mesh

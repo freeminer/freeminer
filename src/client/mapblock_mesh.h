@@ -48,8 +48,8 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 		const v3bpos_t &block_pos);
 int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
-bool inFarmeshGrid(const v3pos_t &blockpos, int step, int cell_size);
-v3pos_t getFarmeshActual(v3pos_t blockpos, int step, int cell_size);
+bool inFarmeshGrid(const v3bpos_t &blockpos, int step, int cell_size);
+v3bpos_t getFarmeshActual(v3bpos_t blockpos, int step, int cell_size);
 
 class MapBlock;
 struct MinimapMapblock;

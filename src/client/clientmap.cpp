@@ -885,11 +885,16 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		if (!block)
 			continue;
 
-		blocks_skip_farmesh.insert(bp);
-
 		int mesh_step =
 				getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp);
+		{
+			int fmesh_step = getFarmeshStep(
+					m_control, getNodeBlockPos(m_camera_position_node), bp);
 
+			//blocks_skip_farmesh.insert(bp);
+			blocks_skip_farmesh.insert(
+					getFarmeshActual(bp, fmesh_step, m_control.cell_size));
+		}
 			/*
 				Compare block position to camera position, skip
 				if not seen on display
