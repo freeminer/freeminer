@@ -76,6 +76,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 	}
 	const auto &block = far_blocks.at(blockpos_actual);
 	block->setTimestamp(timestamp_complete);
+	const auto lock = std::lock_guard(block->far_mutex);
 	if (!block->getFarMesh(step)) {
 		MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
 		mdat.block = block.get();

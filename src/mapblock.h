@@ -538,6 +538,7 @@ public:
 	void setLodMesh(const MapBlock::mesh_type & rmesh);
 	MapBlock::mesh_type getFarMesh(int step);
 	void setFarMesh(const MapBlock::mesh_type & rmesh);
+	std::mutex far_mutex;
 #endif
 //===
 
