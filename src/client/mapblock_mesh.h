@@ -46,10 +46,10 @@ class IShaderSource;
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
-int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
-bool inFarmeshGrid(const v3bpos_t &blockpos, int step, int cell_size);
-v3bpos_t getFarmeshActual(v3bpos_t blockpos, int step, int cell_size);
+bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size);
+v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size);
 
 class MapBlock;
 struct MinimapMapblock;

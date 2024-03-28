@@ -340,7 +340,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 						m_control, getNodeBlockPos(cam_pos_nodes), block_coord);
 				auto mesh = block ? block->getLodMesh(mesh_step, true) : nullptr;
 				if (!mesh && block) {
-					int fmesh_step = getFarmeshStep(
+					int fmesh_step = getFarStep(
 							m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block_coord);
 					mesh = block->getFarMesh(fmesh_step);
 				}
@@ -483,7 +483,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 					getLodStep(m_control, getNodeBlockPos(cam_pos_nodes), block_coord);
 			auto mesh = block ? block->getLodMesh(mesh_step, true) : nullptr;
 			if (!mesh && block) {
-				int fmesh_step = getFarmeshStep(
+				int fmesh_step = getFarStep(
 						m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block_coord);
 				mesh = block->getFarMesh(fmesh_step);
 			}
@@ -888,12 +888,12 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		int mesh_step =
 				getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp);
 		{
-			int fmesh_step = getFarmeshStep(
+			int fmesh_step = getFarStep(
 					m_control, getNodeBlockPos(m_camera_position_node), bp);
 
 			//blocks_skip_farmesh.insert(bp);
 			blocks_skip_farmesh.insert(
-					getFarmeshActual(bp, fmesh_step, m_control.cell_size));
+					getFarActual(bp, fmesh_step, m_control.cell_size));
 		}
 			/*
 				Compare block position to camera position, skip
@@ -1089,11 +1089,11 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				it = m_far_blocks.erase(it);
 			} else if (it->second->getTimestamp() >= m_far_blocks_use_timestamp) {
 				if (!blocks_skip_farmesh.contains(it->first)) {
-					int mesh_step = getFarmeshStep(m_control,
+					int mesh_step = getFarStep(m_control,
 							getNodeBlockPos(m_far_blocks_last_cam_pos),
 							it->first); // m_camera_position_node
 					if (mesh_step > 1 &&
-							!inFarmeshGrid(it->first, mesh_step, m_control.cell_size)) {
+							!inFarGrid(it->first, mesh_step, m_control.cell_size)) {
 					} else {
 						const auto mesh = it->second->getFarMesh(mesh_step);
 						if (!mesh) {
@@ -1219,9 +1219,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		if (!block_mesh) {
 			int &fmesh_step = mesh_step;
 
-			fmesh_step = getFarmeshStep(
+			fmesh_step = getFarStep(
 					m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos());
-			if (fmesh_step > 1 && !inFarmeshGrid(block_pos, fmesh_step, m_control.cell_size)) {
+			if (fmesh_step > 1 && !inFarGrid(block_pos, fmesh_step, m_control.cell_size)) {
 				continue;
 			}
 			block_mesh = block->getFarMesh(fmesh_step);
@@ -1613,7 +1613,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		auto mapBlockMesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()), false);
 
 		if (mapBlockMesh)
-			mapBlockMesh = block->getFarMesh(getFarmeshStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos()));
+			mapBlockMesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos()));
 
 		if (!mapBlockMesh)
 			continue;

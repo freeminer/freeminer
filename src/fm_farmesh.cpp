@@ -60,10 +60,10 @@ MapNode FarContainer::getNodeNoEx(const v3pos_t &p)
 
 void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 {
-	const auto step = getFarmeshStep(m_client->getEnv().getClientMap().getControl(),
+	const auto step = getFarStep(m_client->getEnv().getClientMap().getControl(),
 			getNodeBlockPos(m_camera_pos_aligned), blockpos);
 
-	const auto blockpos_actual = getFarmeshActual(
+	const auto blockpos_actual = getFarActual(
 			blockpos, step, m_client->getEnv().getClientMap().getControl().cell_size);
 	auto &far_blocks = m_client->getEnv().getClientMap().m_far_blocks;
 	{
@@ -225,7 +225,7 @@ int FarMesh::go_direction(const size_t dir_n)
 		for (size_t steps = 0; steps < 200; ++ray_cache.step_num, ++steps) {
 			//const auto dstep = ray_cache.step_num; // + 1;
 			const auto block_step =
-					getFarmeshStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
+					getFarStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
 							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
 			const auto step_width =
 					MAP_BLOCKSIZE * pow(2, block_step - block_step_reduce);
@@ -233,8 +233,8 @@ int FarMesh::go_direction(const size_t dir_n)
 			const unsigned int depth = ray_cache.finished;
 
 			//if (depth > last_distance_max) {
-				//ray_cache.finished = distance_min + step_width;// * (dstep - 1);
-				//break;
+			//ray_cache.finished = distance_min + step_width;// * (dstep - 1);
+			//break;
 			//}
 
 			const auto pos = dir_l * depth * BS + m_camera_pos;
@@ -242,7 +242,7 @@ int FarMesh::go_direction(const size_t dir_n)
 
 #if !USE_POS32
 			const auto block_step_real =
-					getFarmeshStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
+					getFarStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
 							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
 			const auto step_width_real =
 					MAP_BLOCKSIZE *

@@ -70,7 +70,7 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 	return 0;
 };
 
-int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
 	if (!draw_control.farmesh)
@@ -100,16 +100,16 @@ int getFarmeshStep(const MapDrawControl &draw_control, const v3bpos_t &playerblo
 	return skip;
 };
 
-bool inFarmeshGrid(const v3bpos_t &blockpos, int step, int cell_size)
+bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size)
 {
-	return getFarmeshActual(blockpos, step, cell_size) == blockpos;
+	return getFarActual(blockpos, step, cell_size) == blockpos;
 /*
 	int skip = pow(2, step - 1);
 	return !(blockpos.X % skip || blockpos.Y % skip || blockpos.Z % skip);
 */
 }
 
-v3bpos_t getFarmeshActual(v3bpos_t blockpos, int step, int cell_size)
+v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size)
 {
 	step += log(cell_size) / log(2);
 	blockpos.X >>= step;
