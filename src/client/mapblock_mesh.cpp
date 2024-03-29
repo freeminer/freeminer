@@ -70,6 +70,7 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 	return 0;
 };
 
+#if 0
 int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
@@ -99,6 +100,44 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 		skip = FARMESH_STEP_MAX;
 	return skip;
 };
+#endif
+
+auto align(auto pos, const int amount)
+{
+	(pos.X >>= amount) <<= amount;
+	(pos.Y >>= amount) <<= amount;
+	(pos.Z >>= amount) <<= amount;
+	return pos;
+}
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &blockpos)
+{
+	if (!draw_control.farmesh)
+		return 1;
+	const auto csp = int(log(draw_control.cell_size) / log(2));
+	int range = radius_box(align(playerblockpos, csp), align(blockpos, csp));
+	const auto next_step = draw_control.cell_size <= 1
+								   ? 1
+								   : int(log(draw_control.cell_size) / log(2)); //1;
+	range >>= next_step; // TODO: configurable
+	if (range <= 1)
+		return 1;
+
+	int skip = log(range) / log(2);
+	int range_end = radius_box(align(playerblockpos, csp),
+			align(blockpos + v3bpos_t(1) * pow(2, skip), csp));
+	range_end >>= next_step;
+	int skip_end = skip;
+	if (range_end > 1) {
+		skip_end = log(range_end) / log(2);
+	}
+	if (skip > skip_end)
+		skip = skip_end;
+
+	if (skip > FARMESH_STEP_MAX)
+		skip = FARMESH_STEP_MAX;
+	return skip;
+}
 
 bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size)
 {
