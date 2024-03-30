@@ -333,7 +333,14 @@ void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
 		direction_caches_pos = m_camera_pos_aligned;
 		direction_caches.fill({});
 		plane_processed.fill({});
+
+		// maybe buggy
+		if (m_client->getEnv().getClientMap().m_far_fast)
+			m_client->getEnv().getClientMap().m_far_blocks_use_timestamp =
+					timestamp_complete; // m_client->m_uptime ?
+
 		timestamp_complete = m_client->m_uptime;
+
 	} else if (last_distance_max < distance_max) {
 		plane_processed.fill({});
 		last_distance_max = distance_max; // * 1.1;
@@ -357,9 +364,11 @@ void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
 
 		if (planes_processed) {
 			complete_set = false;
-		} else if (m_camera_pos_aligned != camera_pos_aligned_int) {
+		} //? else
+		if (m_camera_pos_aligned != camera_pos_aligned_int) {
 			m_client->getEnv().getClientMap().m_far_blocks_last_cam_pos =
-					m_camera_pos_aligned;
+					m_client->getEnv().getClientMap().m_far_fast ? camera_pos_aligned_int
+																 : m_camera_pos_aligned;
 			m_camera_pos_aligned = camera_pos_aligned_int;
 		}
 		if (!planes_processed && !complete_set) {
