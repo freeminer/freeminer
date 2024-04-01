@@ -130,7 +130,7 @@ void Connection::Connect(Address address)
 {
 	const auto remote_proto = g_settings->get("remote_proto");
 
-	infostream << "Multi connect to " << address.serializeString() << ":"
+	actionstream << "Multi connect to " << address.serializeString() << ":"
 			   << std::to_string(address.getPort()) << " with " << remote_proto << '\n';
 
 #if USE_SCTP
