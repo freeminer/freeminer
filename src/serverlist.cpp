@@ -81,6 +81,49 @@ Json::Value MakeReport(AnnounceAction action,
 		if (!gameid.empty())
 			server["gameid"] = gameid;
 		server["proto"]        = g_settings->get("server_proto");
+
+
+#if USE_MULTI
+		server["proto_multi"]["mt"] = port;
+#if USE_SCTP
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_sctp", port_multi)) {
+				port_multi = port + 100;
+			}
+			server["proto_multi"]["sctp"] = port_multi;
+		}
+#endif
+#if USE_WEBSOCKET
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_wss", port_multi)) {
+				port_multi = port;
+			}
+			server["proto_multi"]["wss"] = port_multi;
+		}
+#endif
+#if USE_WEBSOCKET_SCTP
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_sctp_wss", port_multi)) {
+				port_multi = port + 100;
+			}
+			server["proto_multi"]["sctp_wss"] = port_multi;
+		}
+#endif
+#if USE_ENET
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_enet", port_multi)) {
+				port_multi = port + 200;
+			}
+			server["proto_multi"]["enet"] = port_multi;
+		}
+#endif
+#endif
+
+
 	}
 
 	if (action == AA_START) {

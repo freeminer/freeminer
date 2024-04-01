@@ -273,7 +273,12 @@ local function set_selected_server(tabdata, idx, server)
 	if address and port then
 		core.settings:set("address", address)
 		core.settings:set("remote_port", port)
-		if server.proto then
+
+		if server.proto_multi and server.proto_multi.enet then
+			core.settings:set("remote_proto", server.proto_multi.enet)
+		elseif server.proto_multi and server.proto_multi.sctp then
+			core.settings:set("remote_proto", server.proto_multi.sctp)
+		elseif server.proto then
 			core.settings:set("remote_proto", server.proto)
 		end
 	end
@@ -313,7 +318,14 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				if gamedata.address and gamedata.port then
 					core.settings:set("address", gamedata.address)
 					core.settings:set("remote_port", gamedata.port)
-					core.settings:set("remote_proto", gamedata.proto or "mt")
+
+					if server.proto_multi and gamedata.proto_multi.enet then
+						core.settings:set("remote_proto", gamedata.proto_multi.enet)
+					elseif server.proto_multi and gamedata.proto_multi.sctp then
+						core.settings:set("remote_proto", gamedata.proto_multi.sctp)
+					elseif server.proto then
+						core.settings:set("remote_proto", gamedata.proto or "mt")
+		  		    end
 					core.start()
 				end
 				return true
