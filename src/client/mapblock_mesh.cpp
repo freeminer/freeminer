@@ -109,48 +109,20 @@ auto align(auto pos, const int amount)
 	(pos.Z >>= amount) <<= amount;
 	return pos;
 }
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &blockpos)
-{
-	if (!draw_control.farmesh)
-		return 1;
-	const auto csp = int(log(draw_control.cell_size) / log(2));
-	int range = radius_box(align(playerblockpos, csp), align(blockpos, csp));
-	const auto next_step = draw_control.cell_size <= 1
-								   ? 1
-								   : int(log(draw_control.cell_size) / log(2)); //1;
-	range >>= next_step; // TODO: configurable
-	if (range <= 1)
-		return 1;
 
-	int skip = log(range) / log(2);
-	int range_end = radius_box(align(playerblockpos, csp),
-			align(blockpos + v3bpos_t(1) * pow(2, skip), csp));
-	range_end >>= next_step;
-	int skip_end = skip;
-	if (range_end > 1) {
-		skip_end = log(range_end) / log(2);
-	}
-	if (skip > skip_end)
-		skip = skip_end;
-
-	if (skip > FARMESH_STEP_MAX)
-		skip = FARMESH_STEP_MAX;
-	return skip;
-}
-constexpr auto addStep = 1;
 v3bpos_t playerBlockAlign(
 		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos)
 {
-	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + addStep;
+	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + draw_control.farmesh_quality;
 	return align(playerblockpos, step_pow2) + draw_control.cell_size / 2;
 }
+
 int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
 	if (!draw_control.farmesh)
 		return 0;
-	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + addStep;
+	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + draw_control.farmesh_quality;
 	const auto player_aligned = playerBlockAlign(draw_control, playerblockpos);
 	const auto block_aligned = align(blockpos, step_pow2);
 
@@ -172,6 +144,8 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 	if (step > FARMESH_STEP_MAX)
 		step = FARMESH_STEP_MAX;
 	return step;
+}
+
 bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size)
 {
 	return getFarActual(blockpos, step, cell_size) == blockpos;
@@ -202,6 +176,7 @@ MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
 		lod_step{lod_step},
 		far_step{far_step},
 		fscale(pow(2, far_step + lod_step))
+{}
 
 bool MeshMakeData::fill_data()
 {

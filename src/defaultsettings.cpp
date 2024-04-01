@@ -64,7 +64,6 @@ const bool win64 =
 
 const bool win = win32 || win64;
 
-
 const bool android =
 #if defined(__ANDROID__)
     true
@@ -88,7 +87,15 @@ const bool threads =
     false
 #endif
     ;
+const bool emscripten = 
+#ifdef __EMSCRIPTEN__
+    true
+#else
+    false
+#endif
+;
 
+const bool slow = android || emscripten;
 
 void fm_set_default_settings(Settings *settings) {
 
@@ -165,9 +172,10 @@ void fm_set_default_settings(Settings *settings) {
 	// Clouds, water, glass, leaves, fog
 	settings->setDefault("cloud_height", "300"); // "120"
 	settings->setDefault("enable_zoom_cinematic", "true");
-	settings->setDefault("wanted_fps", android ? "25" : "30");
-	settings->setDefault("lodmesh", android ? "2" : "4");
-	settings->setDefault("farmesh", android ? "5000" : itos(MAX_MAP_GENERATION_LIMIT*2));
+	settings->setDefault("wanted_fps", slow ? "25" : "30");
+	settings->setDefault("lodmesh", slow ? "2" : "4");
+	settings->setDefault("farmesh", slow ? "5000" : itos(MAX_MAP_GENERATION_LIMIT*2));
+	settings->setDefault("farmesh_quality", slow ? "0" : "0");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 	//settings->setDefault("enable_vbo", win ? "false" : "true");
@@ -198,7 +206,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_days", "2");
 
 	settings->setDefault("respawn_auto", "false");
-	settings->setDefault("autojump", android ? "1" : "0");
+	settings->setDefault("autojump", android || emscripten ? "1" : "0");
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies

@@ -69,7 +69,9 @@ private:
 	static constexpr pos_t distance_min = 8 * MAP_BLOCKSIZE;
 	v3pos_t m_camera_offset;
 	float m_speed;
-	constexpr static uint16_t grid_size_max_y = 64;
+	//constexpr static uint16_t grid_size_max_y = 64;
+	//constexpr static uint16_t grid_size_max_y = 32;
+	constexpr static uint16_t grid_size_max_y = 48;
 	//constexpr static uint16_t grid_size_max_y = 128;
 	//constexpr static uint16_t grid_size_max_y = 256;
 	constexpr static uint16_t grid_size_max_x = grid_size_max_y;
