@@ -535,18 +535,20 @@ inline float cycle_shift(float value, float by = 0, float max = 1)
     return value + by;
 }
 
-inline int radius_box(const v3pos_t & a, const v3pos_t & b) {
-	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
+inline int radius_box(const v3pos_t &a, const v3pos_t &b)
+{
+	return std::max({std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y), std::abs((float)a.Z - b.Z)});
 }
 
 /*
 inline int radius_box(const v3bpos_t & a, const v3bpos_t & b) {
-	return std::max(std::max(std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y)), std::abs((float)a.Z - b.Z));
+	return std::max([std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y), std::abs((float)a.Z - b.Z)});
 }
 */
 
-inline int radius_box(const v3opos_t & a, const v3opos_t & b) {
-	return std::max(std::max(std::fabs(a.X - b.X), std::fabs(a.Y - b.Y)), std::fabs(a.Z - b.Z));
+inline int radius_box(const v3opos_t &a, const v3opos_t &b)
+{
+	return std::max({std::fabs(a.X - b.X), std::fabs(a.Y - b.Y), std::fabs(a.Z - b.Z)});
 }
 
 inline bool is_power_of_two(u32 n)

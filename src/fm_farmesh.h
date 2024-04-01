@@ -44,7 +44,7 @@ public:
 class FarMesh
 {
 public:
-	FarMesh(Client *client, Server *server);
+	FarMesh(Client *client, Server *server, MapDrawControl *m_control);
 
 	~FarMesh();
 
@@ -65,6 +65,7 @@ private:
 	f32 m_camera_pitch;
 	f32 m_camera_yaw;
 	Client *m_client;
+	MapDrawControl *m_control;
 	static constexpr pos_t distance_min = 8 * MAP_BLOCKSIZE;
 	v3pos_t m_camera_offset;
 	float m_speed;

@@ -138,48 +138,70 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 		skip = FARMESH_STEP_MAX;
 	return skip;
 }
+constexpr auto addStep = 1;
+v3bpos_t playerBlockAlign(
+		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos)
+{
+	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + addStep;
+	return align(playerblockpos, step_pow2) + draw_control.cell_size / 2;
+}
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &blockpos)
+{
+	if (!draw_control.farmesh)
+		return 0;
+	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + addStep;
+	const auto player_aligned = playerBlockAlign(draw_control, playerblockpos);
+	const auto block_aligned = align(blockpos, step_pow2);
 
+	auto calc_step = [&](const auto &player_aligned, const auto &block_aligned) {
+		const auto len_vec = player_aligned - block_aligned;
+		const auto distance = std::max({abs(len_vec.X), abs(len_vec.Y), abs(len_vec.Z)});
+		auto step = int(log(distance >> step_pow2) / log(2));
+		return step;
+	};
+
+	auto step = calc_step(player_aligned, block_aligned);
+
+	// bug here, but where?
+	// maybe need check distance of block end, or some neighbor block with next step
+
+
+	if (step < 0)
+		step = 0;
+	if (step > FARMESH_STEP_MAX)
+		step = FARMESH_STEP_MAX;
+	return step;
 bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size)
 {
 	return getFarActual(blockpos, step, cell_size) == blockpos;
-/*
-	int skip = pow(2, step - 1);
-	return !(blockpos.X % skip || blockpos.Y % skip || blockpos.Z % skip);
-*/
 }
 
 v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size)
 {
 	step += log(cell_size) / log(2);
-	blockpos.X >>= step;
-	blockpos.X <<= step;
-	blockpos.Y >>= step;
-	blockpos.Y <<= step;
-	blockpos.Z >>= step;
-	blockpos.Z <<= step;
-	return blockpos;
+	const auto blockpos_aligned = align(blockpos, step);
+	return blockpos_aligned;
 }
-
 
 /*
 	MeshMakeData
 */
 
 MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
-	int lod_step, int far_step, 
-	NodeContainer *nodecontainer) :
-	m_vmanip{nodecontainer ? *nodecontainer : m_vmanip_store},
+		int lod_step, int far_step,
+		NodeContainer *nodecontainer) :
+
 	m_mesh_grid(client->getMeshGrid()),
 	side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) / (pow(2, lod_step))),
 	m_client(client),
 	m_use_shaders(use_shaders)
-	,
-	side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size),
-	lod_step{lod_step},
-	far_step{far_step},
-	fscale(pow(2,  far_step + lod_step))
-
-{}
+		,
+		m_vmanip{nodecontainer ? *nodecontainer : m_vmanip_store},
+		side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size),
+		lod_step{lod_step},
+		far_step{far_step},
+		fscale(pow(2, far_step + lod_step))
 
 bool MeshMakeData::fill_data()
 {

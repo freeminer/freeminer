@@ -76,6 +76,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 	}
 	const auto &block = far_blocks.at(blockpos_actual);
 	block->setTimestamp(timestamp_complete);
+	{
 	const auto lock = std::lock_guard(block->far_mutex);
 	if (!block->getFarMesh(step)) {
 		MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
@@ -83,6 +84,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 		mdat.m_blockpos = blockpos_actual;
 		auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, m_client->m_uptime);
+	}
 	}
 }
 
@@ -151,9 +153,8 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos)
 }
 #endif
 
-FarMesh::FarMesh(Client *client, Server *server) :
-		m_camera_pos{-1337, -1337, -1337}, m_client{client}
-
+FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
+		m_camera_pos{-1337, -1337, -1337}, m_client{client}, m_control{control}
 {
 
 	EmergeManager *emerge_use = server			   ? server->getEmergeManager()
@@ -305,8 +306,8 @@ void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
 	if (!mg)
 		return;
 
-	auto camera_pos_aligned_int = floatToInt(
-			intToFloat(floatToInt(camera_pos, BS * 16), BS * 16), BS); // todo optimize
+	const auto camera_pos_aligned_int =
+			playerBlockAlign(*m_control, floatToInt(camera_pos, BS * 16)) * MAP_BLOCKSIZE;
 	const auto distance_max =
 			(std::min<unsigned int>(render_range, 1.2 * m_client->fog_range / BS) >> 7)
 			<< 7;
@@ -372,12 +373,13 @@ void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
 			m_camera_pos_aligned = camera_pos_aligned_int;
 		}
 		if (!planes_processed && !complete_set) {
+			auto &clientMap = m_client->getEnv().getClientMap();
 			constexpr auto clean_old_time = 30;
-			m_client->getEnv().getClientMap().m_far_blocks_use_timestamp =
+			clientMap.m_far_blocks_use_timestamp =
 					timestamp_complete;
 
 			if (timestamp_complete - clean_old_time > 0)
-				m_client->getEnv().getClientMap().m_far_blocks_clean_timestamp =
+				clientMap.m_far_blocks_clean_timestamp =
 						timestamp_complete - clean_old_time;
 			//timestamp_complete = m_client->m_uptime;
 			complete_set = true;

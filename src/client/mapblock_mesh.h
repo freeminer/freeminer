@@ -50,6 +50,7 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 		const v3bpos_t &block_pos);
 bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size);
 v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size);
+v3bpos_t playerBlockAlign(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos);
 
 class MapBlock;
 struct MinimapMapblock;
@@ -57,8 +58,6 @@ struct MinimapMapblock;
 struct MeshMakeData
 {
 	VoxelManipulator m_vmanip_store;
-	NodeContainer & m_vmanip;
-
 	v3s16 m_blockpos = v3s16(-1337,-1337,-1337);
 	v3s16 m_crack_pos_relative = v3s16(-1337,-1337,-1337);
 	bool m_smooth_lighting = false;
@@ -69,6 +68,7 @@ struct MeshMakeData
 	bool m_use_shaders;
 
     // fm:
+	NodeContainer & m_vmanip;
 	u16 side_length_data;
 	int lod_step;
 	int far_step;
