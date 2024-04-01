@@ -1673,7 +1673,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (g_settings->getS32("farmesh")) {
-		farmesh.reset(new FarMesh(client, server));
+		farmesh.reset(new FarMesh(client, server, draw_control));
 	}
 
 	//freeminer:
