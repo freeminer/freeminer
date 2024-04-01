@@ -1236,6 +1236,19 @@ bool Game::startup(bool *kill,
 	runData.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	runData.connected = false;
 	runData.reconnect = false;
+	
+	if (start_data.local_server || start_data.isSinglePlayer()) {
+/* todo
+#if USE_ENET
+		g_settings->set("remote_proto", "enet");
+#elif USE_SCTP
+		g_settings->set("remote_proto", "sctp");
+#else
+		g_settings->set("remote_proto", "");
+#endif
+*/
+		g_settings->set("remote_proto", "");
+	}
 	//=========
 
 	m_first_loop_after_window_activation = true;
