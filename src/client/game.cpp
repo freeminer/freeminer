@@ -1766,10 +1766,14 @@ bool Game::connectToServer(const GameStartData &start_data,
 		if (!g_settings->getU16NoEx("port_enet", port)) {
 			port = connect_address.getPort() + 200;
 		}
+		g_settings->set("remote_proto", "enet");
 #elif USE_SCTP
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
 			port = connect_address.getPort() + 100;
 		}
+		g_settings->set("remote_proto", "sctp");
+#else
+		g_settings->set("remote_proto", "mt");
 #endif
 		if (port)
 			connect_address.setPort(port);
