@@ -1236,19 +1236,6 @@ bool Game::startup(bool *kill,
 	runData.no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	runData.connected = false;
 	runData.reconnect = false;
-	
-	if (start_data.local_server || start_data.isSinglePlayer()) {
-/* todo
-#if USE_ENET
-		g_settings->set("remote_proto", "enet");
-#elif USE_SCTP
-		g_settings->set("remote_proto", "sctp");
-#else
-		g_settings->set("remote_proto", "");
-#endif
-*/
-		g_settings->set("remote_proto", "");
-	}
 	//=========
 
 	m_first_loop_after_window_activation = true;
@@ -1771,6 +1758,23 @@ bool Game::connectToServer(const GameStartData &start_data,
 		errorstream << *error_message << std::endl;
 		return false;
 	}
+
+#if USE_MULTI
+	if (simple_singleplayer_mode || local_server_mode) {
+		u16 port = 0;
+#if USE_ENET
+		if (!g_settings->getU16NoEx("port_enet", port)) {
+			port = connect_address.getPort() + 200;
+		}
+#elif USE_SCTP
+		if (!g_settings->getU16NoEx("port_sctp", port)) {
+			port = connect_address.getPort() + 100;
+		}
+#endif
+		if (port)
+			connect_address.setPort(port);
+	}
+#endif
 
 	try {
 		client = new Client(

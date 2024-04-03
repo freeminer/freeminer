@@ -77,14 +77,14 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 	const auto &block = far_blocks.at(blockpos_actual);
 	block->setTimestamp(timestamp_complete);
 	{
-	const auto lock = std::lock_guard(block->far_mutex);
-	if (!block->getFarMesh(step)) {
-		MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
-		mdat.block = block.get();
-		mdat.m_blockpos = blockpos_actual;
-		auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
-		block->setFarMesh(mbmsh, m_client->m_uptime);
-	}
+		const auto lock = std::lock_guard(block->far_mutex);
+		if (!block->getFarMesh(step)) {
+			MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
+			mdat.block = block.get();
+			mdat.m_blockpos = blockpos_actual;
+			auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
+			block->setFarMesh(mbmsh, m_client->m_uptime);
+		}
 	}
 }
 
@@ -329,19 +329,20 @@ void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
 	m_camera_yaw = camera_yaw;
 	m_camera_offset = camera_offset;
 	m_speed = speed;
-	if (direction_caches_pos != m_camera_pos_aligned && !planes_processed_last) {
-		//timestamp_clean = m_client->m_uptime - 1;
-		direction_caches_pos = m_camera_pos_aligned;
-		direction_caches.fill({});
-		plane_processed.fill({});
-
+	if (direction_caches_pos != m_camera_pos_aligned) {
 		// maybe buggy
 		if (m_client->getEnv().getClientMap().m_far_fast)
 			m_client->getEnv().getClientMap().m_far_blocks_use_timestamp =
 					timestamp_complete; // m_client->m_uptime ?
 
-		timestamp_complete = m_client->m_uptime;
+		if (!planes_processed_last) {
+			//timestamp_clean = m_client->m_uptime - 1;
+			direction_caches_pos = m_camera_pos_aligned;
+			direction_caches.fill({});
+			plane_processed.fill({});
 
+			timestamp_complete = m_client->m_uptime;
+		}
 	} else if (last_distance_max < distance_max) {
 		plane_processed.fill({});
 		last_distance_max = distance_max; // * 1.1;
@@ -375,8 +376,7 @@ void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
 		if (!planes_processed && !complete_set) {
 			auto &clientMap = m_client->getEnv().getClientMap();
 			constexpr auto clean_old_time = 30;
-			clientMap.m_far_blocks_use_timestamp =
-					timestamp_complete;
+			clientMap.m_far_blocks_use_timestamp = timestamp_complete;
 
 			if (timestamp_complete - clean_old_time > 0)
 				clientMap.m_far_blocks_clean_timestamp =
