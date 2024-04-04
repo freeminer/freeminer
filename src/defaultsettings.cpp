@@ -216,9 +216,8 @@ void fm_set_default_settings(Settings *settings) {
 
 #if !MINETEST_PROTO || !MINETEST_TRANSPORT
 	settings->setDefault("serverlist_url", "servers.freeminer.org");
-//#elif USE_SCTP
-//	settings->setDefault("serverlist_url", "servers2.freeminer.org");
 #endif
+	settings->setDefault("serverlist_url_freeminer", "servers.freeminer.org");
 	settings->setDefault("server_proto", server_proto);
 	settings->setDefault("remote_proto", "");
 	settings->setDefault("timeout_mul", android ? "5" : "1");
