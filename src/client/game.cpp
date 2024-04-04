@@ -1672,7 +1672,7 @@ bool Game::createClient(const GameStartData &start_data)
 	if (mapper && client->modsLoaded())
 		client->getScript()->on_minimap_ready(mapper);
 
-	if (g_settings->getS32("farmesh")) {
+	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
 		farmesh.reset(new FarMesh(client, server, draw_control));
 	}
 
@@ -4513,7 +4513,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (clouds)
 		updateClouds(dtime);
 
-	if (!runData.headless_optimize && farmesh) {
+	if (farmesh) {
 		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
 		farmesh_async.step([&, farmesh_range = farmesh_range, yaw = player->getYaw(),
 								   pitch = player->getPitch(),
