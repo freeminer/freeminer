@@ -209,6 +209,14 @@ void sendAnnounce(AnnounceAction action,
 #endif
 
 	httpfetch_async(fetch_request);
+
+	std::string serverlist;
+	if (g_settings->getNoEx("serverlist_url_freeminer", serverlist) && !serverlist.empty()) {
+		infostream << "Announcing " << aa_names[action] << " to " << serverlist << '\n';
+		fetch_request.url = serverlist + std::string("/announce");
+		httpfetch_async(fetch_request);
+	}
+
 #endif
 }
 

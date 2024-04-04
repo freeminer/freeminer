@@ -922,40 +922,39 @@ void Hud::drawBlockBounds()
 				if (block->getTimestamp() <
 						client->getEnv().getClientMap().m_far_blocks_use_timestamp)
 					continue;
-			const auto mesh_step = getFarStep(
-					client->getEnv().getClientMap().getControl(),
+				const auto mesh_step = getFarStep(
+						client->getEnv().getClientMap().getControl(),
 						getNodeBlockPos(
 								client->getEnv()
 										.getClientMap()
 										.m_far_blocks_last_cam_pos),
-					blockPos);
+						blockPos);
 
 				if (!inFarGrid(blockPos, mesh_step,
 							client->getEnv().getClientMap().getControl().cell_size))
 					continue;
 
-		int fscale = 1;
-		int lod_step = 0;
-		int far_step = 0;
-		int b = 0;
-			if (!block)
-				continue;
-			const auto &mesh = block->getFarMesh(mesh_step);
-			//const auto &mesh = block.second->getLodMesh(mesh_step);
-		if (!mesh || !mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount()) {
-			b = 50;
-		}
-		if (mesh) {
-			fscale = mesh->fscale;
-			lod_step = mesh->lod_step;
-			far_step = mesh->far_step;
-		}
+				int fscale = 1;
+				int lod_step = 0;
+				int far_step = 0;
+				int b = 0;
+				if (!block)
+					continue;
+				const auto &mesh = block->getFarMesh(mesh_step);
+				if (!mesh || !mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount()) {
+					b = 50;
+				}
+				if (mesh) {
+					fscale = mesh->fscale;
+					lod_step = mesh->lod_step;
+					far_step = mesh->far_step;
+				}
 				aabb3f box(
 						intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1,
 						intToFloat(
 								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE * fscale - 1),
-							BS) -
-							offset + halfNode - 1);
+								BS) -
+								offset + halfNode - 1);
 				driver->draw3DBox(box, video::SColor(200 + b, 255 - lod_step * 10 + b,
 											   255 - far_step * 10, fscale * 20));
 			}

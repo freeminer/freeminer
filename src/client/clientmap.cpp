@@ -888,8 +888,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		int mesh_step =
 				getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp);
 		{
-			int fmesh_step = getFarStep(
-					m_control, getNodeBlockPos(m_camera_position_node), bp);
+			int fmesh_step = getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
 
 			//blocks_skip_farmesh.insert(bp);
 			blocks_skip_farmesh.insert(
