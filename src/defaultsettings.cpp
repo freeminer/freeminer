@@ -174,8 +174,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "2" : "4");
-	//Future: settings->setDefault("farmesh", slow ? "5000" : itos(MAX_MAP_GENERATION_LIMIT*2));
-        settings->setDefault("farmesh", "0");
+	settings->setDefault("farmesh", slow ? "5000" : itos(MAX_MAP_GENERATION_LIMIT*2));
 	settings->setDefault("farmesh_quality", slow ? "0" : "0");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
