@@ -1404,6 +1404,9 @@ ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 void Connection::putCommand(ConnectionCommandPtr c)
 {
 	if (!m_shutting_down) {
+#ifdef __EMSCRIPTEN__
+		if (c->type == CONNCMD_SEND || c->type == CONNCMD_SEND_TO_ALL) c->reliable = false;
+#endif
 		m_command_queue.push_back(c);
 		m_sendThread->Trigger();
 	}

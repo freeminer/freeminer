@@ -38,11 +38,14 @@ cmake . -DENABLE_SCTP=1
 https://chromium.googlesource.com/external/webrtc/+/master/talk/media/sctp/sctpdataengine.cc
 */
 
+#include <cerrno>
+#include <string_view>
+#include <sys/socket.h>
+#include <unistd.h>
 #include "config.h"
 
 #if USE_SCTP
 
-#include "external/usrsctp/usrsctplib/usrsctp.h"
 #include "log.h"
 #include "network/fm_connection_sctp.h"
 #include "network/networkpacket.h"
@@ -55,6 +58,12 @@ https://chromium.googlesource.com/external/webrtc/+/master/talk/media/sctp/sctpd
 #include "util/serialize.h"
 #include "util/string.h"
 #include <cstdarg>
+
+#include "external/usrsctp/usrsctplib/usrsctp.h"
+
+#ifdef __EMSCRIPTEN__
+#include <emsocket.h>
+#endif
 
 namespace con_sctp
 {
@@ -142,13 +151,79 @@ auto &cs = errorstream; // remove after debug
 auto &cs = verbosestream; // remove after debug
 #endif
 
+static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
+{
+	DUMP((long)addr, (long)buf, length, tos, set_df);
+
+	char *dump_buf;
+	int *fdp;
+
+	fdp = (int *)addr;
+
+	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
+		fprintf(stderr, "%s", dump_buf);
+		DUMP("Out", dump_buf);
+		usrsctp_freedumpbuffer(dump_buf);
+	}
+	if (send(*fdp, buf, length, 0) < 0) {
+		return (errno);
+	} else {
+		return (0);
+	}
+}
+
+#define MAX_PACKET_SIZE (1 << 16)
+#define BUFFER_SIZE 80
+#define DISCARD_PPID 39
+
+static void *handle_packets(void *arg)
+{
+DUMP("handle_packets thrd", MAX_PACKET_SIZE, arg);
+	int *fdp;
+	char *dump_buf;
+	ssize_t length;
+	char buf[MAX_PACKET_SIZE];
+
+	fdp = (int *)arg;
+	for (;;) {
+		DUMP("recv call", fdp);
+		length = recv(*fdp, buf, MAX_PACKET_SIZE, 0);
+		//DUMP("recv In", length, std::string(buf, length));
+		DUMP("recv In", length );
+		if (length < 0) { return NULL; }
+
+		if (length > 0) {
+			if ((dump_buf = usrsctp_dumppacket(buf, (size_t)length, SCTP_DUMP_INBOUND)) !=
+					NULL) {
+				fprintf(stderr, "%s", dump_buf);
+				//DUMP(dump_buf);
+				usrsctp_freedumpbuffer(dump_buf);
+			}
+		DUMP("go usrsctp_conninput", length );
+			usrsctp_conninput(fdp, buf, (size_t)length, 0);
+		}
+	}
+	return (NULL);
+}
+
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 		PeerHandler *peerhandler) :
 		thread_pool("Connection"),
 		m_protocol_id(protocol_id), m_max_packet_size(max_packet_size),
 		m_timeout(timeout), sock(nullptr), m_peer_id(0), m_bc_peerhandler(peerhandler),
 		m_last_recieved(0), m_last_recieved_warn(0)
+
+#ifdef __EMSCRIPTEN__
+		, domain{AF_CONN}
+#endif
 {
+
+	if (domain == AF_CONN) {
+		sctp_conn_output = conn_output;
+		// domain = AF_CONN;
+	}
+	// #endif
+
 	start();
 }
 
@@ -215,7 +290,7 @@ void Connection::processCommand(ConnectionCommandPtr c)
 		return;
 	case CONNCMD_CONNECT:
 		dout_con << getDesc() << " processing CONNCMD_CONNECT" << std::endl;
-		connect(c->address);
+		connect_addr(c->address);
 		return;
 	case CONNCMD_DISCONNECT:
 		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
@@ -259,7 +334,7 @@ void Connection::sctp_setup(u16 port)
 #endif
 
 	cs << "sctp_setup(" << port << ")" << std::endl;
-
+	DUMP("sctp_conn_output", (long)sctp_conn_output);
 	usrsctp_init(port, sctp_conn_output, debug_func);
 	// usrsctp_init_nothreads(port, nullptr, debug_func);
 
@@ -269,19 +344,24 @@ void Connection::sctp_setup(u16 port)
 	usrsctp_sysctl_set_sctp_logging_level(0xffffffff);
 #endif
 
-	// usrsctp_sysctl_set_sctp_multiple_asconfs(1);
-	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
+#ifdef __EMSCRIPTEN__
+	usrsctp_sysctl_set_sctp_auto_asconf(0);
+	// usrsctp_sysctl_set_sctp_multiple_asconfs(0);
+	usrsctp_sysctl_set_sctp_ecn_enable(0);
+	usrsctp_sysctl_set_sctp_asconf_enable(0);
+#endif
 
 	// #if __ANDROID__
+#ifndef __EMSCRIPTEN__
 	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
 	usrsctp_sysctl_set_sctp_mobility_base(1);
-	// #endif
+
+	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
+#endif
 
 	usrsctp_sysctl_set_sctp_cmt_on_off(1); // SCTP_CMT_MAX
 	usrsctp_sysctl_set_sctp_cmt_use_dac(1);
 	usrsctp_sysctl_set_sctp_buffer_splitting(1);
-
-	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
 
 	// usrsctp_sysctl_set_sctp_max_retran_chunk(5); // def 30
 	usrsctp_sysctl_set_sctp_shutdown_guard_time_default(20); // def 180
@@ -302,7 +382,7 @@ int Connection::receive()
 	{
 		auto lock = m_peers.lock_unique_rec();
 		for (const auto &i : m_peers) {
-			const auto [nn, brk] = recv(i.first, i.second);
+			const auto [nn, brk] = recv_(i.first, i.second);
 			n += nn;
 			if (brk)
 				break;
@@ -741,7 +821,7 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 }
 
 // host
-void Connection::serve(Address bind_address)
+void Connection::serve(const Address &bind_address)
 {
 	infostream << getDesc() << "SCTP serving at " << bind_address.serializeString() << ":"
 			   << std::to_string(bind_address.getPort()) << std::endl;
@@ -787,7 +867,7 @@ void Connection::serve(Address bind_address)
 }
 
 // peer
-void Connection::connect(Address address)
+void Connection::connect_addr(const Address &address)
 {
 	infostream << getDesc() << "SCTP connect to " << address.serializeString() << ":"
 			   << std::to_string(address.getPort()) << std::endl;
@@ -801,10 +881,26 @@ void Connection::connect(Address address)
 		putEvent(ConnectionEvent::connectFailed());
 	}
 
-	struct socket *sock;
+	// void * ulp_info = nullptr;
 
-	if ((sock = usrsctp_socket(domain, SOCK_STREAM, IPPROTO_SCTP, NULL, client_send_cb, 0,
-				 NULL)) == NULL) {
+	if (domain == AF_CONN) {
+		return connect_conn(address);
+	}
+	//struct socket *sock = nullptr;
+
+	/*
+		if (domain == AF_CONN) {
+			//if (!(sock = conn_socket(address))) {
+	if (!(sock = usrsctp_socket(domain, SOCK_STREAM, IPPROTO_SCTP, NULL,
+							 client_send_cb, 0, NULL))) {
+				putEvent(ConnectionEvent::bindFailed());
+				return;
+			}
+
+		} else
+	*/
+	if (!(sock = usrsctp_socket(
+				  domain, SOCK_STREAM, IPPROTO_SCTP, NULL, client_send_cb, 0, nullptr))) {
 		cs << ("usrsctp_socket=") << sock << std::endl;
 		putEvent(ConnectionEvent::bindFailed());
 		return;
@@ -825,46 +921,239 @@ void Connection::connect(Address address)
 		putEvent(ConnectionEvent::connectFailed());
 	}
 
-	struct sockaddr_in6 addr6 = {};
+	// #define SCTP_V4 1
 
+#if SCTP_V4
+	struct sockaddr_in addr = {};
+#ifdef HAVE_SIN_LEN
+	addr6.sin_len = sizeof(struct sockaddr_in);
+#endif
+	addr.sin_family = AF_INET6;
+	addr.sin_addr.s_addr = INADDR_ANY;
+#else
+	struct sockaddr_in6 addr = {};
 #ifdef HAVE_SIN6_LEN
 	addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	addr6.sin6_family = AF_INET6;
-	addr6.sin6_addr = in6addr_any;
+	addr.sin6_family = domain;
+	addr.sin6_addr = in6addr_any;
+	// addr.sin6_port = 65000;
+// addr6.sin6_addr = in6addr_loopback;
+#endif
 
-	if (usrsctp_bind(sock, (struct sockaddr *)&addr6, sizeof(struct sockaddr_in6)) < 0) {
+	if (usrsctp_bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("usrsctp_bind");
 	}
 
-	addr6 = {};
+	addr = {};
 
+#if SCTP_V4
+	addr = address.getAddress();
+#else
 	if (!address.isIPv6()) {
 		cs << "connect() transform to v6 " << address.serializeString() << std::endl;
 		if (address.serializeString() == "127.0.0.1")
-			addr6.sin6_addr = in6addr_loopback;
+			addr.sin6_addr = in6addr_loopback;
 		else
 			inet_pton(AF_INET6, ("::ffff:" + address.serializeString()).c_str(),
-					&addr6.sin6_addr);
+					&addr.sin6_addr);
 	} else {
-		addr6 = address.getAddress6();
+		addr = address.getAddress6();
 	}
-
-#ifdef HAVE_SIN6_LEN
-	addr6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
-	addr6.sin6_family = AF_INET6;
-	addr6.sin6_port = htons(address.getPort());
+
+#if SCTP_V4
+#ifdef HAVE_SIN6_LEN
+	addr.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(address.getPort());
+#else
+#ifdef HAVE_SIN6_LEN
+	addr.sin6_len = sizeof(struct sockaddr_in6);
+#endif
+	addr.sin6_family = domain;
+	addr.sin6_port = htons(address.getPort());
+#endif
 
 	usrsctp_set_non_blocking(sock, 1);
 
-	cs << "connect() ... " << __LINE__ << " scope=" << addr6.sin6_scope_id << std::endl;
+	cs << "connect() ... " << __LINE__
+#if !SCTP_V4
+	   << " scope=" << addr.sin6_scope_id
+#endif
+	   << std::endl;
 	if (auto connect_result =
-					usrsctp_connect(sock, (struct sockaddr *)&addr6, sizeof(addr6)) < 0) {
+					usrsctp_connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		if (connect_result < 0 && errno != EINPROGRESS) {
 			perror("usrsctp_connect fail");
 			sock = nullptr;
 		}
+	}
+
+	cs << "connect() ok sock=" << sock << std::endl;
+
+	sock_connect = true;
+}
+
+static int receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
+		size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
+{
+
+	if (data) {
+		if (flags & MSG_NOTIFICATION) {
+			printf("Notification of length %d received.\n", (int)datalen);
+		} else {
+			printf("Msg of length %d received via %p:%u on stream %u with SSN %u and TSN "
+				   "%u, PPID %u, context %u.\n",
+					(int)datalen, addr.sconn.sconn_addr, ntohs(addr.sconn.sconn_port),
+					rcv.rcv_sid, rcv.rcv_ssn, rcv.rcv_tsn, (uint32_t)ntohl(rcv.rcv_ppid),
+					rcv.rcv_context);
+		}
+		free(data);
+	} else {
+		usrsctp_deregister_address(ulp_info);
+		usrsctp_close(sock);
+	}
+	return (1);
+}
+
+void Connection::connect_conn(const Address &address)
+{
+	// struct socket *sock = nullptr;
+
+	/*
+		if (domain == AF_CONN) {
+			//if (!(sock = conn_socket(address))) {
+	if (!(sock = usrsctp_socket(domain, SOCK_STREAM, IPPROTO_SCTP, NULL,
+							 client_send_cb, 0, NULL))) {
+				putEvent(ConnectionEvent::bindFailed());
+				return;
+			}
+
+		} else
+	*/
+	int fd = 0;
+	// struct socket *s;
+	// struct sockaddr_in sin;
+
+	// if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+	if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		perror("socket");
+		putEvent(ConnectionEvent::connectFailed());
+		DUMP("no sock", fd);
+	}
+	DUMP(fd);
+	/*
+		memset(&sin, 0, sizeof(struct sockaddr_in));
+		sin.sin_family = AF_INET;
+	#ifdef HAVE_SIN_LEN
+		sin.sin_len = sizeof(struct sockaddr_in);
+	#endif
+		sin.sin_port = htons(atoi(argv[2]));
+		if (!inet_pton(AF_INET, argv[1], &sin.sin_addr.s_addr)){
+			fprintf(stderr, "error: invalid address\n");
+			exit(EXIT_FAILURE);
+		}
+		if (bind(fd, (struct sockaddr *)&sin, sizeof(struct sockaddr_in)) < 0) {
+			perror("bind");
+			exit(EXIT_FAILURE);
+		}
+		*/
+	/*
+		memset(&sin, 0, sizeof(struct sockaddr_in));
+		sin.sin_family = AF_INET;
+	#ifdef HAVE_SIN_LEN
+		sin.sin_len = sizeof(struct sockaddr_in);
+	#endif
+		sin.sin_port = htons(address.getPort());
+		if (!inet_pton(AF_INET, address., &sin.sin_addr.s_addr)){
+			printf("error: invalid address\n");
+			exit(EXIT_FAILURE);
+		}
+	*/
+	auto sina = address.getAddress();
+	sina.sin_family = AF_INET;
+	// sina.sin_port =address.getPort();
+	sina.sin_port = htons(address.getPort());
+
+	DUMP(sina);
+	if (connect(fd, (struct sockaddr *)&sina, sizeof(sina)) < 0) {
+		perror("connect");
+		putEvent(ConnectionEvent::connectFailed());
+		DUMP(fd);
+		return;
+	}
+	// std::string t {"TESTFIRST"};
+	// DUMP(write(fd, t.c_str(), t.size()));
+
+	usrsctp_sysctl_set_sctp_ecn_enable(0);
+	usrsctp_register_address((void *)&fd);
+	int rc = 0;
+	DUMP(fd);
+	pthread_t tid{};
+DUMP("creating handle_packets thrd");
+/*
+	if ((rc = pthread_create(&tid, NULL, &handle_packets, (void *)&fd)) != 0) {
+		fprintf(stderr, "pthread_create: %s\n", strerror(rc));
+		exit(EXIT_FAILURE);
+	}
+*/
+//std::thread t1(handle_packets, (void *)&fd);
+handle_packets_thread =  std::thread {handle_packets, (void *)&fd};
+
+DUMP("created handle_packets thrd", rc);
+
+
+
+	if ((sock = usrsctp_socket(
+				 AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd)) == NULL) {
+		perror("usrsctp_socket");
+		putEvent(ConnectionEvent::connectFailed());
+		DUMP((long)sock);
+		return;
+	}
+
+	/*
+		if (!(sock = usrsctp_socket(domain, SOCK_STREAM, IPPROTO_SCTP, NULL,
+							 client_send_cb, 0, nullptr))) {
+			cs << ("usrsctp_socket=") << sock << std::endl;
+			putEvent(ConnectionEvent::bindFailed());
+			return;
+		}
+	*/
+	// sock_setup(/*PEER_ID_SERVER,*/ sock);
+
+	m_peers.insert_or_assign(PEER_ID_SERVER, sock);
+
+	struct sockaddr_conn sconn = {};
+	/*
+		// memset(&sconn, 0, sizeof(struct sockaddr_conn));
+		sconn.sconn_family = AF_CONN;
+	#ifdef HAVE_SCONN_LEN
+		sconn.sconn_len = sizeof(struct sockaddr_conn);
+	#endif
+		sconn.sconn_port = htons(0);
+		sconn.sconn_addr = NULL;
+		if (usrsctp_bind(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
+			perror("usrsctp_bind");
+			putEvent(ConnectionEvent::bindFailed());
+			return;
+		}
+	*/
+	usrsctp_set_non_blocking(sock, 1);
+
+	sconn = {};
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = htons(address.getPort());
+	sconn.sconn_addr = &fd;
+	if (usrsctp_connect(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
+		perror("usrsctp_connect");
+		putEvent(ConnectionEvent::connectFailed());
+		return;
 	}
 
 	cs << "connect() ok sock=" << sock << std::endl;
