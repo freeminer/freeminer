@@ -90,8 +90,6 @@ protected:
 	s16 floatland_ymax;
 
 public:
-	EmergeParams *m_emerge;
-
 	int ystride;
 	u32 spflags;
 

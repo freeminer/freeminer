@@ -33,8 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 MapgenSinglenode::MapgenSinglenode(MapgenParams *params, EmergeParams *emerge)
 	: Mapgen(MAPGEN_SINGLENODE, params, emerge)
 {
-	const NodeDefManager *ndef = emerge->ndef;
-
 	c_node = ndef->getId("mapgen_singlenode");
 	if (c_node == CONTENT_IGNORE)
 		c_node = CONTENT_AIR;
@@ -77,8 +75,8 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data)
 		}
 	}
 
-	// Add top and bottom side of water to transforming_liquid queue
-	updateLiquid(&data->transforming_liquid, node_min, node_max);
+	if (ndef->get(n_node).isLiquid())
+		updateLiquid(&data->transforming_liquid, node_min, node_max);
 
 	// Set lighting
 	if ((flags & MG_LIGHT) && set_light == LIGHT_SUN)

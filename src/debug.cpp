@@ -37,6 +37,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _MSC_VER
 	#include <dbghelp.h>
+	#include <windows.h>
+	#include <eh.h>
 	#include "version.h"
 	#include "filesys.h"
 #endif
@@ -84,6 +86,13 @@ void fatal_error_fn(const char *msg, const char *file,
 #ifndef __ANDROID__
 	abort();
 #endif
+}
+
+std::string debug_describe_exc(const std::exception &e)
+{
+	if (dynamic_cast<const std::bad_alloc*>(&e))
+		return "C++ out of memory";
+	return std::string("\"").append(e.what()).append("\"");
 }
 
 #ifdef _MSC_VER

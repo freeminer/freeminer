@@ -65,7 +65,6 @@ FlagDesc flagdesc_mapgen_v6[] = {
 MapgenV6::MapgenV6(MapgenV6Params *params, EmergeParams *emerge)
 	: Mapgen(MAPGEN_V6, params, emerge)
 {
-	m_emerge = emerge;
 	ystride = csize.X;
 
 	heightmap = new pos_t[csize.X * csize.Z];
@@ -173,8 +172,6 @@ MapgenV6::~MapgenV6()
 	delete noise_humidity;
 
 	delete[] heightmap;
-
-	delete m_emerge; // our responsibility
 }
 
 

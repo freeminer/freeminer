@@ -26,13 +26,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "inventory.h"
 #include "client/tile.h"
+#include "client/localplayer.h"
 #include <ICameraSceneNode.h>
 #include <ISceneNode.h>
 #include <plane3d.h>
 #include <array>
 #include <list>
-#include "util/Optional.h"
-#include "util/numeric.h"
+#include <optional>
 
 class LocalPlayer;
 struct MapDrawControl;
@@ -45,13 +45,13 @@ struct Nametag
 	scene::ISceneNode *parent_node;
 	std::string text;
 	video::SColor textcolor;
-	Optional<video::SColor> bgcolor;
+	std::optional<video::SColor> bgcolor;
 	v3f pos;
 
 	Nametag(scene::ISceneNode *a_parent_node,
 			const std::string &text,
 			const video::SColor &textcolor,
-			const Optional<video::SColor> &bgcolor,
+			const std::optional<video::SColor> &bgcolor,
 			const v3f &pos):
 		parent_node(a_parent_node),
 		text(text),
@@ -205,7 +205,7 @@ public:
 
 	Nametag *addNametag(scene::ISceneNode *parent_node,
 		const std::string &text, video::SColor textcolor,
-		Optional<video::SColor> bgcolor, const v3f &pos);
+		std::optional<video::SColor> bgcolor, const v3f &pos);
 
 	void removeNametag(Nametag *nametag);
 

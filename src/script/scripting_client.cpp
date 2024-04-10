@@ -30,13 +30,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "lua_api/l_modchannels.h"
 #include "lua_api/l_particles_local.h"
 #include "lua_api/l_storage.h"
-#include "lua_api/l_sound.h"
 #include "lua_api/l_util.h"
 #include "lua_api/l_item.h"
 #include "lua_api/l_nodemeta.h"
 #include "lua_api/l_localplayer.h"
 #include "lua_api/l_camera.h"
 #include "lua_api/l_settings.h"
+#include "lua_api/l_client_sound.h"
 
 ClientScripting::ClientScripting(Client *client):
 	ScriptApiBase(ScriptingType::Client)
@@ -76,14 +76,16 @@ void ClientScripting::InitializeModApi(lua_State *L, int top)
 	LuaCamera::Register(L);
 	ModChannelRef::Register(L);
 	LuaSettings::Register(L);
+	ClientSoundHandle::Register(L);
 
 	ModApiUtil::InitializeClient(L, top);
 	ModApiClient::Initialize(L, top);
-	ModApiItemMod::InitializeClient(L, top);
+	ModApiItem::InitializeClient(L, top);
 	ModApiStorage::Initialize(L, top);
-	ModApiEnvMod::InitializeClient(L, top);
+	ModApiEnv::InitializeClient(L, top);
 	ModApiChannels::Initialize(L, top);
 	ModApiParticlesLocal::Initialize(L, top);
+	ModApiClientSound::Initialize(L, top);
 }
 
 void ClientScripting::on_client_ready(LocalPlayer *localplayer)

@@ -26,6 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../irrlichttypes_extrabloated.h"
 #include "activeobject.h"
+#include "irrlichttypes.h"
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -52,7 +54,8 @@ public:
 	virtual bool getCollisionBox(aabb3o *toset) const { return false; }
 	virtual bool getSelectionBox(aabb3f *toset) const { return false; }
 	virtual bool collideWithObjects() const { return false; }
-	virtual const v3opos_t getPosition() const { return v3opos_t(0.0f); }
+	virtual const v3opos_t getPosition() const { return v3opos_t(0.0f); } // in BS-space
+	virtual const v3f getVelocity() const { return v3f(0.0f); } // in BS-space
 	virtual scene::ISceneNode *getSceneNode() const
 	{ return NULL; }
 	virtual scene::IAnimatedMeshSceneNode *getAnimatedMeshSceneNode() const
@@ -82,8 +85,8 @@ public:
 	virtual void initialize(const std::string &data) {}
 
 	// Create a certain type of ClientActiveObject
-	static ClientActiveObject *create(ActiveObjectType type, Client *client,
-		ClientEnvironment *env);
+	static std::unique_ptr<ClientActiveObject> create(ActiveObjectType type,
+			Client *client, ClientEnvironment *env);
 
 	// If returns true, punch will not be sent to the server
 	virtual bool directReportPunch(v3f dir, const ItemStack *punchitem = nullptr,
@@ -91,7 +94,7 @@ public:
 
 protected:
 	// Used for creating objects based on type
-	typedef ClientActiveObject *(*Factory)(Client *client, ClientEnvironment *env);
+	typedef std::unique_ptr<ClientActiveObject> (*Factory)(Client *client, ClientEnvironment *env);
 	static void registerType(u16 type, Factory f);
 	Client *m_client;
 	ClientEnvironment *m_env;
@@ -100,12 +103,14 @@ private:
 	static std::unordered_map<u16, Factory> m_types;
 };
 
+using ClientActiveObjectPtr = std::shared_ptr<ClientActiveObject>;
+
 class DistanceSortedActiveObject
 {
 public:
-	ClientActiveObject *obj;
+	ClientActiveObjectPtr obj;
 
-	DistanceSortedActiveObject(ClientActiveObject *a_obj, f32 a_d)
+	DistanceSortedActiveObject(ClientActiveObjectPtr a_obj, opos_t a_d)
 	{
 		obj = a_obj;
 		d = a_d;
@@ -117,7 +122,6 @@ public:
 	}
 
 private:
-	f32 d;
+	opos_t d;
 };
 
-using ClientActiveObjectPtr = std::shared_ptr<ClientActiveObject>;

@@ -24,9 +24,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "exceptions.h"
 #include "gamedef.h"
 #include "inventory.h"
+#include "irrlicht_changes/printing.h"
 #include "log.h"
 #include "util/serialize.h"
-#include "util/basic_macros.h"
 #include "constants.h" // MAP_BLOCKSIZE
 #include <sstream>
 
@@ -200,7 +200,7 @@ void NodeMetadataList::deSerialize(std::istream &is,
 		}
 		if (m_data.find(p) != m_data.end()) {
 			warningstream << "NodeMetadataList::deSerialize(): "
-					<< "already set data at position " << PP(p)
+					<< "already set data at position " << p
 					<< ": Ignoring." << std::endl;
 			continue;
 		}
@@ -238,7 +238,17 @@ void NodeMetadataList::remove(v3pos_t p)
 {
 	NodeMetadata *olddata = get(p);
 	if (olddata) {
+    if (0)
+		if (m_is_metadata_owner) {
+			// clearing can throw an exception due to the invlist resize lock,
+			// which we don't want to happen in the noexcept destructor
+			// => call clear before
+			olddata->clear();
+			delete olddata;
+		}
+
 		m_data.erase(p);
+
 		if (m_is_metadata_owner)
 			delete olddata;
 	}

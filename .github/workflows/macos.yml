@@ -21,14 +21,9 @@ on:
       - 'cmake/Modules/**'
       - '.github/workflows/macos.yml'
 
-env:
-  MINETEST_GAME_REPO: https://github.com/minetest/minetest_game.git
-  MINETEST_GAME_BRANCH: master
-  MINETEST_GAME_NAME: minetest_game
-
 jobs:
   build:
-    runs-on: macos-11
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
         with:
@@ -51,7 +46,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=../build/macos/ \
             -DRUN_IN_PLACE=FALSE -DENABLE_GETTEXT=TRUE \
             -DINSTALL_DEVTEST=TRUE
-          make -j2
+          cmake --build . -j$(sysctl -n hw.logicalcpu)
           make install
 
       - name: Test

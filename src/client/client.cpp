@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <cmath>
 #include <IFileSystem.h>
+#include <json/json.h>
 #include "client.h"
 #include "irr_v3d.h"
 #include "network/clientopcodes.h"
@@ -37,6 +38,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/renderingengine.h"
 #include "client/sound.h"
 #include "client/tile.h"
+#include "client/mesh_generator_thread.h"
+#include "client/particles.h"
+#include "client/localplayer.h"
 #include "util/auth.h"
 #include "util/directiontables.h"
 #include "util/pointedthing.h"
@@ -65,6 +69,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "chatmessage.h"
 #include "translation.h"
 #include "content/mod_configuration.h"
+#include "mapnode.h"
 
 #include "database/database.h"
 #include "server.h"
@@ -134,12 +139,12 @@ Client::Client(
 	m_sound(sound),
 	m_event(event),
 	m_rendering_engine(rendering_engine),
-	m_mesh_update_manager(this),
+	m_mesh_update_manager(std::make_unique<MeshUpdateManager>(this)),
 	m_env(
 		new ClientMap(this, rendering_engine, control, 666),
 		tsrc, this
 	),
-	m_particle_manager(&m_env),
+	m_particle_manager(std::make_unique<ParticleManager>(&m_env)),
 	m_con(new con_use::Connection(PROTOCOL_ID, is_simple_singleplayer_game ? MAX_PACKET_SIZE_SINGLEPLAYER : MAX_PACKET_SIZE, CONNECTION_TIMEOUT, ipv6, this)),
 	m_address_name(address_name),
 	m_allow_login_or_register(allow_login_or_register),
@@ -337,7 +342,7 @@ void Client::Stop()
 	if (m_mods_loaded)
 		m_script->on_shutdown();
 	//request all client managed threads to stop
-	m_mesh_update_manager.stop();
+	m_mesh_update_manager->stop();
 	// Save local server map
 	if (m_localdb) {
 		actionstream << "Local map saving ended" << std::endl;
@@ -356,7 +361,7 @@ void Client::Stop()
 
 bool Client::isShutdown()
 {
-	return m_shutdown || !m_mesh_update_manager.isRunning();
+	return m_shutdown || !m_mesh_update_manager->isRunning();
 }
 
 Client::~Client()
@@ -366,11 +371,11 @@ Client::~Client()
 
 	deleteAuthData();
 
-	m_mesh_update_manager.stop();
-	m_mesh_update_manager.wait();
-/*	
+	m_mesh_update_manager->stop();
+	m_mesh_update_manager->wait();
+/*
 	MeshUpdateResult r;
-	while (m_mesh_update_manager.getNextResult(r)) {
+	while (m_mesh_update_manager->getNextResult(r)) {
 		for (auto block : r.map_blocks)
 			if (block)
 				block->refDrop();
@@ -403,6 +408,11 @@ Client::~Client()
 	if (m_settings_mgr)
 		delete m_settings_mgr;
 	m_settings_mgr = nullptr;
+
+	// Free sound ids
+	for (auto &csp : m_sounds_client_to_server)
+		m_sound->freeId(csp.first);
+	m_sounds_client_to_server.clear();
 }
 
 void Client::connect(Address address, bool is_local_server)
@@ -602,13 +612,13 @@ void Client::step(float dtime)
 		auto end_ms = porting::getTimeMs() + 10;
 		std::vector<v3bpos_t> blocks_to_ack;
 
-		auto qsize = m_mesh_update_manager.m_queue_out.size();
+		auto qsize = m_mesh_update_manager->m_queue_out.size();
 		if (qsize > 1000)
 			end_ms += 200;
 
 		bool force_update_shadows = false;
 		MeshUpdateResult r;
-		while (m_mesh_update_manager.getNextResult(r))
+		while (m_mesh_update_manager->getNextResult(r))
 		{
 
 			num_processed_meshes++;
@@ -753,7 +763,7 @@ void Client::step(float dtime)
 		the local inventory (so the player notices the lag problem
 		and knows something is wrong).
 	*/
-	if (m_inventory_from_server) {
+	if (m_inventory_from_server && !inhibit_inventory_revert) {
 		float interval = 10.0f;
 		float count_before = std::floor(m_inventory_from_server_age / interval);
 
@@ -774,12 +784,13 @@ void Client::step(float dtime)
 	*/
 	{
 		for (auto &m_sounds_to_object : m_sounds_to_objects) {
-			int client_id = m_sounds_to_object.first;
+			sound_handle_t client_id = m_sounds_to_object.first;
 			u16 object_id = m_sounds_to_object.second;
 			const auto cao = m_env.getActiveObject(object_id);
 			if (!cao)
 				continue;
-			m_sound->updateSoundPosition(client_id, oposToV3f(cao->getPosition()));
+			m_sound->updateSoundPosVel(client_id, oposToV3f(cao->getPosition() * (1.0f/BS)),
+					cao->getVelocity() * (1.0f/BS));
 		}
 	}
 
@@ -790,22 +801,24 @@ void Client::step(float dtime)
 	if(m_removed_sounds_check_timer >= 2.32) {
 		m_removed_sounds_check_timer = 0;
 		// Find removed sounds and clear references to them
+		std::vector<sound_handle_t> removed_client_ids = m_sound->pollRemovedSounds();
 		std::vector<s32> removed_server_ids;
-		for (std::unordered_map<s32, int>::iterator i = m_sounds_server_to_client.begin();
-				i != m_sounds_server_to_client.end();) {
-			s32 server_id = i->first;
-			int client_id = i->second;
-			++i;
-			if(!m_sound->soundExists(client_id)) {
+		for (sound_handle_t client_id : removed_client_ids) {
+			auto client_to_server_id_it = m_sounds_client_to_server.find(client_id);
+			if (client_to_server_id_it == m_sounds_client_to_server.end())
+				continue;
+			s32 server_id = client_to_server_id_it->second;
+			m_sound->freeId(client_id);
+			m_sounds_client_to_server.erase(client_to_server_id_it);
+			if (server_id != -1) {
 				m_sounds_server_to_client.erase(server_id);
-				m_sounds_client_to_server.erase(client_id);
-				m_sounds_to_objects.erase(client_id);
 				removed_server_ids.push_back(server_id);
 			}
+			m_sounds_to_objects.erase(client_id);
 		}
 
 		// Sync to server
-		if(!removed_server_ids.empty()) {
+		if (!removed_server_ids.empty()) {
 			sendRemovedSounds(removed_server_ids);
 		}
 	}
@@ -848,7 +861,6 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 
 	const char *image_ext[] = {
 		".png", ".jpg", ".bmp", ".tga",
-		".pcx", ".ppm", ".psd", ".wal", ".rgb",
 		NULL
 	};
 	name = removeStringEnd(filename, image_ext);
@@ -886,13 +898,17 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 	};
 	name = removeStringEnd(filename, sound_ext);
 	if (!name.empty()) {
-		TRACESTREAM(<< "Client: Attempting to load sound "
-			<< "file \"" << filename << "\"" << std::endl);
-		return m_sound->loadSoundData(name, data);
+		TRACESTREAM(<< "Client: Attempting to load sound file \""
+				<< filename << "\"" << std::endl);
+		if (!m_sound->loadSoundData(filename, std::string(data)))
+			return false;
+		// "name[.num].ogg" is in group "name"
+		m_sound->addSoundToGroup(filename, name);
+		return true;
 	}
 
 	const char *model_ext[] = {
-		".x", ".b3d", ".md2", ".obj",
+		".x", ".b3d", ".obj",
 		NULL
 	};
 	name = removeStringEnd(filename, model_ext);
@@ -1202,8 +1218,8 @@ void Client::Send(NetworkPacket* pkt)
 }
 #endif
 
-// Will fill up 12 + 12 + 4 + 4 + 4 bytes
-void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *pkt)
+// Will fill up 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1 bytes
+void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *pkt, bool camera_inverted)
 {
 	v3opos_t pf      = myplayer->getPosition() * 100;
 	v3f sf           = myplayer->getSpeed() * 100;
@@ -1211,9 +1227,9 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 	s32 yaw          = myplayer->getYaw() * 100;
 	u32 keyPressed   = myplayer->control.getKeysPressed();
 	// scaled by 80, so that pi can fit into a u8
-	u8 fov           = clientMap->getCameraFov() * 80;
-	u8 wanted_range  = MYMIN(255,
-			std::ceil(clientMap->getControl().wanted_range / MAP_BLOCKSIZE));
+	u8 fov           = std::fmin(255.0f, clientMap->getCameraFov() * 80.0f);
+	u8 wanted_range  = std::fmin(255.0f,
+			std::ceil(clientMap->getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
 
 	v3s32 position(pf.X, pf.Y, pf.Z);
 	v3s32 speed(sf.X, sf.Y, sf.Z);
@@ -1227,11 +1243,13 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 		[12+12+4+4] u32 keyPressed
 		[12+12+4+4+4] u8 fov*80
 		[12+12+4+4+4+1] u8 ceil(wanted_range / MAP_BLOCKSIZE)
+		[12+12+4+4+4+1+1] u8 camera_inverted (bool)
 	*/
 	pkt->writeV3S32(position);
 	pkt->writeV3S32(speed); 
 	*pkt << pitch << yaw << keyPressed;
 	*pkt << fov << wanted_range;
+	*pkt << camera_inverted;
 }
 
 #if MINETEST_PROTO
@@ -1267,7 +1285,7 @@ void Client::interact(InteractAction action, const PointedThing& pointed)
 
 	pkt.putLongString(tmp_os.str());
 
-	writePlayerPos(myplayer, &m_env.getClientMap(), &pkt);
+	writePlayerPos(myplayer, &m_env.getClientMap(), &pkt, m_camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT);
 
 	Send(&pkt);
 }
@@ -1324,12 +1342,14 @@ void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 {
 	m_chosen_auth_mech = chosen_auth_mechanism;
 
+	std::string playername = m_env.getLocalPlayer()->getName();
+
 	switch (chosen_auth_mechanism) {
 		case AUTH_MECHANISM_FIRST_SRP: {
 			// send srp verifier to server
 			std::string verifier;
 			std::string salt;
-			generate_srp_verifier_and_salt(getPlayerName(), m_password,
+			generate_srp_verifier_and_salt(playername, m_password,
 				&verifier, &salt);
 
 			NetworkPacket resp_pkt(TOSERVER_FIRST_SRP, 0);
@@ -1343,13 +1363,13 @@ void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 			u8 based_on = 1;
 
 			if (chosen_auth_mechanism == AUTH_MECHANISM_LEGACY_PASSWORD) {
-				m_password = translate_password(getPlayerName(), m_password);
+				m_password = translate_password(playername, m_password);
 				based_on = 0;
 			}
 
-			std::string playername_u = lowercase(getPlayerName());
+			std::string playername_u = lowercase(playername);
 			m_auth_data = srp_user_new(SRP_SHA256, SRP_NG_2048,
-				getPlayerName().c_str(), playername_u.c_str(),
+				playername.c_str(), playername_u.c_str(),
 				(const unsigned char *) m_password.c_str(),
 				m_password.length(), NULL, NULL);
 			char *bytes_A = 0;
@@ -1392,7 +1412,7 @@ void Client::sendGotBlocks(const std::vector<v3bpos_t> &blocks)
 	Send(&pkt);
 }
 
-void Client::sendRemovedSounds(std::vector<s32> &soundList)
+void Client::sendRemovedSounds(const std::vector<s32> &soundList)
 {
 	size_t server_ids = soundList.size();
 	assert(server_ids <= 0xFFFF);
@@ -1493,9 +1513,7 @@ void Client::sendChatMessage(const std::wstring &message)
 		m_chat_message_allowance -= 1.0f;
 
 		NetworkPacket pkt(TOSERVER_CHAT_MESSAGE, 2 + message.size() * sizeof(u16));
-
 		pkt << message;
-
 		Send(&pkt);
 	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size < 0) {
 		m_out_chat_queue.push(wide_to_utf8(message));
@@ -1570,32 +1588,36 @@ void Client::sendPlayerPos()
 		return;
 
 	ClientMap &map = m_env.getClientMap();
-	u8 camera_fov   = map.getCameraFov();
-	u8 wanted_range = map.getControl().wanted_range;
+	u8 camera_fov   = std::fmin(255.0f, map.getCameraFov() * 80.0f);
+	u8 wanted_range = std::fmin(255.0f,
+			std::ceil(map.getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
 
 	u32 keyPressed = player->control.getKeysPressed();
+	bool camera_inverted = m_camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT;
 
 	if (
-			player->last_position     == player->getPosition() &&
-			player->last_speed        == player->getSpeed()    &&
-			player->last_pitch        == player->getPitch()    &&
-			player->last_yaw          == player->getYaw()      &&
-			player->last_keyPressed   == keyPressed            &&
-			player->last_camera_fov   == camera_fov            &&
-			player->last_wanted_range == wanted_range)
+			player->last_position        == player->getPosition() &&
+			player->last_speed           == player->getSpeed()    &&
+			player->last_pitch           == player->getPitch()    &&
+			player->last_yaw             == player->getYaw()      &&
+			player->last_keyPressed      == keyPressed            &&
+			player->last_camera_fov      == camera_fov            &&
+			player->last_camera_inverted == camera_inverted       &&
+			player->last_wanted_range    == wanted_range)
 		return;
 
-	player->last_position     = player->getPosition();
-	player->last_speed        = player->getSpeed();
-	player->last_pitch        = player->getPitch();
-	player->last_yaw          = player->getYaw();
-	player->last_keyPressed   = keyPressed;
-	player->last_camera_fov   = camera_fov;
-	player->last_wanted_range = wanted_range;
+	player->last_position        = player->getPosition();
+	player->last_speed           = player->getSpeed();
+	player->last_pitch           = player->getPitch();
+	player->last_yaw             = player->getYaw();
+	player->last_keyPressed      = keyPressed;
+	player->last_camera_fov      = camera_fov;
+	player->last_camera_inverted = camera_inverted;
+	player->last_wanted_range    = wanted_range;
 
-	NetworkPacket pkt(TOSERVER_PLAYERPOS, 12 + 12 + 4 + 4 + 4 + 1 + 1);
+	NetworkPacket pkt(TOSERVER_PLAYERPOS, 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1);
 
-	writePlayerPos(player, &map, &pkt);
+	writePlayerPos(player, &map, &pkt, camera_inverted);
 
 	Send(&pkt);
 }
@@ -1885,8 +1907,11 @@ void Client::typeChatMessage(const std::wstring &message)
 	if (message.empty())
 		return;
 
+	auto message_utf8 = wide_to_utf8(message);
+	infostream << "Typed chat message: \"" << message_utf8 << "\"" << std::endl;
+
 	// If message was consumed by script API, don't send it to server
-	if (m_mods_loaded && m_script->on_sending_message(wide_to_utf8(message)))
+	if (m_mods_loaded && m_script->on_sending_message(message_utf8))
 		return;
 
 	// Send to others
@@ -1938,12 +1963,12 @@ void Client::addUpdateMeshTask(v3bpos_t p, bool ack_to_server, bool urgent, int 
 	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
 == == ===
 #endif
-	m_mesh_update_manager.updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
+	m_mesh_update_manager->updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
 }
 
 void Client::addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server, bool urgent)
 {
-	m_mesh_update_manager.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
+	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
 }
 
 void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool urgent)
@@ -1959,7 +1984,7 @@ void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool 
 
 	v3bpos_t blockpos = getNodeBlockPos(nodepos);
 	v3pos_t blockpos_relative = blockpos * MAP_BLOCKSIZE;
-	m_mesh_update_manager.updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
+	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
 	// Leading edge
 	if (nodepos.X == blockpos_relative.X)
 		addUpdateMeshTask(blockpos + v3bpos_t(-1, 0, 0), false, urgent);
@@ -1976,6 +2001,11 @@ void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
 			continue;
 		block->setTimestampNoChangedFlag(m_uptime);
 	}
+}
+
+void Client::updateCameraOffset(v3pos_t camera_offset)
+{
+	m_mesh_update_manager->m_camera_offset = camera_offset;
 }
 
 ClientEvent *Client::getClientEvent()
@@ -2007,7 +2037,7 @@ struct TextureUpdateArgs {
 	gui::IGUIEnvironment *guienv;
 	u64 last_time_ms;
 	u16 last_percent;
-	const wchar_t* text_base;
+	std::wstring text_base;
 	ITextureSource *tsrc;
 };
 
@@ -2031,7 +2061,7 @@ void Client::showUpdateProgressTexture(void *args, u32 progress, u32 max_progres
 			std::wostringstream strm;
 			strm << targs->text_base << L" " << targs->last_percent << L"%...";
 			m_rendering_engine->draw_load_screen(strm.str(), targs->guienv, targs->tsrc, 0,
-				72 + (u16) ((18. / 100.) * (double) targs->last_percent), true);
+				72 + (u16) ((18. / 100.) * (double) targs->last_percent));
 		}
 
 #ifdef __ANDROID__
@@ -2048,8 +2078,6 @@ void Client::afterContentReceived()
 	static auto headless_optimize = g_settings->getBool("headless_optimize"); //device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 	//bool no_output = device->getVideoDriver()->getDriverType() == video::EDT_NULL;
 
-	const wchar_t* text = wgettext("Loading textures...");
-
 	// Clear cached pre-scaled 2D GUI images, as this cache
 	// might have images with the same name but different
 	// content from previous sessions.
@@ -2058,22 +2086,21 @@ void Client::afterContentReceived()
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
 	if (!headless_optimize)
-	m_rendering_engine->draw_load_screen(text, guienv, m_tsrc, 0, 70);
+	m_rendering_engine->draw_load_screen(wstrgettext("Loading textures..."),
+			guienv, m_tsrc, 0, 70);
 	m_tsrc->rebuildImagesAndTextures();
-	delete[] text;
 
 	// Rebuild shaders
 	infostream<<"- Rebuilding shaders"<<std::endl;
-	text = wgettext("Rebuilding shaders...");
-	m_rendering_engine->draw_load_screen(text, guienv, m_tsrc, 0, 71);
 	if (!headless_optimize)
+	m_rendering_engine->draw_load_screen(wstrgettext("Rebuilding shaders..."),
+			guienv, m_tsrc, 0, 71);
 	m_shsrc->rebuildShaders();
-	delete[] text;
 
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
-	text = wgettext("Initializing nodes...");
-	m_rendering_engine->draw_load_screen(text, guienv, m_tsrc, 0, 72);
+	m_rendering_engine->draw_load_screen(wstrgettext("Initializing nodes..."),
+			guienv, m_tsrc, 0, 72);
 	m_nodedef->updateAliases(m_itemdef);
 	for (const auto &path : getTextureDirs()) {
 		TextureOverrideSource override_source(path + DIR_DELIM + "override.txt");
@@ -2082,7 +2109,6 @@ void Client::afterContentReceived()
 	}
 	m_nodedef->setNodeRegistrationStatus(true);
 	m_nodedef->runNodeResolveCallbacks();
-	delete[] text;
 
 	if (!headless_optimize) {
 	// Update node textures and assign shaders to each tile
@@ -2091,16 +2117,15 @@ void Client::afterContentReceived()
 	tu_args.guienv = guienv;
 	tu_args.last_time_ms = porting::getTimeMs();
 	tu_args.last_percent = 0;
-	tu_args.text_base = wgettext("Initializing nodes");
+	tu_args.text_base = wstrgettext("Initializing nodes");
 	tu_args.tsrc = m_tsrc;
 	m_nodedef->updateTextures(this, &tu_args);
-	delete[] tu_args.text_base;
 	}
 
    if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
 	infostream<<"- Starting mesh update thread"<<std::endl;
-	m_mesh_update_manager.start();
+	m_mesh_update_manager->start();
    }
 
 	m_state = LC_Ready;
@@ -2109,12 +2134,10 @@ void Client::afterContentReceived()
 	if (m_mods_loaded)
 		m_script->on_client_ready(m_env.getLocalPlayer());
 
-	text = wgettext("Done!");
-	m_rendering_engine->draw_load_screen(text, guienv, m_tsrc, 0, 100);
 #if !NDEBUG
-	infostream<<"Client::afterContentReceived() done"<<std::endl;
+	m_rendering_engine->draw_load_screen(wstrgettext("Done!"), guienv, m_tsrc, 0, 100);
 #endif
-	delete[] text;
+	infostream<<"Client::afterContentReceived() done"<<std::endl;
 }
 
 float Client::getRTT()
@@ -2257,7 +2280,7 @@ MtEventManager* Client::getEventManager()
 
 ParticleManager* Client::getParticleManager()
 {
-	return &m_particle_manager;
+	return m_particle_manager.get();
 }
 
 scene::IAnimatedMesh* Client::getMesh(const std::string &filename, bool cache)
@@ -2357,4 +2380,9 @@ bool Client::sendModChannelMessage(const std::string &channel, const std::string
 ModChannel* Client::getModChannel(const std::string &channel)
 {
 	return m_modchannel_mgr->getModChannel(channel);
+}
+
+const std::string &Client::getFormspecPrepend() const
+{
+	return m_env.getLocalPlayer()->formspec_prepend;
 }

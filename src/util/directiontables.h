@@ -25,25 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
 
-extern const v3pos_t g_6dirs[7];
-extern const v3bpos_t g_6dirs_b[6];
-
-extern const v3pos_t g_7dirs[7];
-extern const v3bpos_t g_7dirs_b[7];
-
-extern const v3pos_t g_26dirs[26];
-
-// 26th is (0,0,0)
-extern const v3pos_t g_27dirs[27];
-
-extern const u8 wallmounted_to_facedir[6];
-
-extern const v3s16 wallmounted_dirs[8];
-
-extern const v3pos_t facedir_dirs[32];
-
-extern const v3s16 fourdir_dirs[4];
-
 /// Direction in the 6D format. g_27dirs contains corresponding vectors.
 /// Here P means Positive, N stands for Negative.
 enum Direction6D {
@@ -97,4 +78,25 @@ enum DirectionWallmounted {
 	DWM_XN,
 	DWM_ZP,
 	DWM_ZN,
+	DWM_COUNT,
 };
+
+extern const v3bpos_t g_6dirs_b[6];
+extern const v3bpos_t g_7dirs_b[7];
+
+extern const v3pos_t g_6dirs[DWM_COUNT];
+
+extern const v3pos_t g_7dirs[7];
+
+extern const v3pos_t g_26dirs[26];
+
+// 26th is (0,0,0)
+extern const v3pos_t g_27dirs[27];
+
+extern const u8 wallmounted_to_facedir[6];
+
+extern const v3s16 wallmounted_dirs[8];
+
+extern const v3pos_t facedir_dirs[32];
+
+extern const v3s16 fourdir_dirs[4];

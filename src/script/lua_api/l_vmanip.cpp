@@ -21,18 +21,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <map>
+#include "emerge.h"
 #include "irr_v3d.h"
 #include "lua_api/l_vmanip.h"
+#include "lua_api/l_mapgen.h"
 #include "lua_api/l_internal.h"
 #include "common/c_content.h"
 #include "common/c_converter.h"
 #include "common/c_packer.h"
-#include "emerge.h"
 #include "environment.h"
 #include "map.h"
 #include "mapblock.h"
-#include "server.h"
 #include "mapgen/mapgen.h"
+#include "server.h"
 #include "voxelalgorithms.h"
 
 // garbage collector
@@ -115,12 +116,14 @@ int LuaVoxelManip::l_set_data(lua_State *L)
 
 int LuaVoxelManip::l_write_to_map(lua_State *L)
 {
-	MAP_LOCK_REQUIRED;
+	GET_ENV_PTR;
 
 	LuaVoxelManip *o = checkObject<LuaVoxelManip>(L, 1);
 	bool update_light = !lua_isboolean(L, 2) || readParam<bool>(L, 2);
 
-	GET_ENV_PTR;
+	if (o->vm->isOrphan())
+		return 0;
+
 	ServerMap *map = &(env->getServerMap());
 
 	std::map<v3bpos_t, MapBlock*> modified_blocks;
@@ -164,23 +167,9 @@ int LuaVoxelManip::l_set_node_at(lua_State *L)
 
 int LuaVoxelManip::l_update_liquids(lua_State *L)
 {
-	GET_ENV_PTR;
-
 	LuaVoxelManip *o = checkObject<LuaVoxelManip>(L, 1);
 
-	ServerMap *map = &(env->getServerMap());
-	const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
-	MMVManip *vm = o->vm;
-
-	Mapgen mg;
-	mg.env  = env;
-	mg.vm   = vm;
-	mg.ndef = ndef;
-
-	mg.updateLiquid(&map->m_transforming_liquid,
-			vm->m_area.MinEdge, vm->m_area.MaxEdge);
-
-	return 0;
+	return ModApiMapgen::update_liquids(L, o->vm);
 }
 
 int LuaVoxelManip::l_calc_lighting(lua_State *L)
@@ -189,41 +178,41 @@ int LuaVoxelManip::l_calc_lighting(lua_State *L)
 
 	LuaVoxelManip *o = checkObject<LuaVoxelManip>(L, 1);
 	if (!o->is_mapgen_vm) {
-		warningstream << "VoxelManip:calc_lighting called for a non-mapgen "
-			"VoxelManip object" << std::endl;
+		log_deprecated(L, "calc_lighting called for a non-mapgen "
+			"VoxelManip object");
 		return 0;
 	}
 
-	const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
-	EmergeManager *emerge = getServer(L)->getEmergeManager();
 	MMVManip *vm = o->vm;
 
-	v3pos_t yblock = v3pos_t(0, 1, 0) * MAP_BLOCKSIZE;
-	v3pos_t fpmin  = vm->m_area.MinEdge;
-	v3pos_t fpmax  = vm->m_area.MaxEdge;
-	v3pos_t pmin   = lua_istable(L, 2) ? check_v3pos(L, 2) : fpmin + yblock;
-	v3pos_t pmax   = lua_istable(L, 3) ? check_v3pos(L, 3) : fpmax - yblock;
+	v3pos_t yblock = v3bpos_t(0, 1, 0) * MAP_BLOCKSIZE;
+	v3pos_t pmin = lua_istable(L, 2) ? check_v3pos(L, 2) : vm->m_area.MinEdge + yblock;
+	v3pos_t pmax = lua_istable(L, 3) ? check_v3pos(L, 3) : vm->m_area.MaxEdge - yblock;
 	bool propagate_shadow = !lua_isboolean(L, 4) || readParam<bool>(L, 4);
 
 	sortBoxVerticies(pmin, pmax);
 	if (!vm->m_area.contains(VoxelArea(pmin, pmax)))
 		throw LuaError("Specified voxel area out of VoxelManipulator bounds");
 
+/*
+	return ModApiMapgen::calc_lighting(L, vm, pmin, pmax, propagate_shadow);
+*/
+    const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
+    EmergeManager *emerge = getServer(L)->getEmergeManager();
 	Mapgen mg;
 	mg.env         = emerge->env;
 	mg.vm          = vm;
 	mg.ndef        = ndef;
 	mg.water_level = emerge->mgparams->water_level;
 
-	mg.calcLighting(pmin, pmax, fpmin, fpmax, propagate_shadow);
+	//mg.calcLighting(pmin, pmax, fpmin, fpmax, propagate_shadow);
+	mg.calcLighting(pmin, pmax, pmin, pmax, propagate_shadow);
 
 	return 0;
 }
 
 int LuaVoxelManip::l_set_lighting(lua_State *L)
 {
-	NO_MAP_LOCK_REQUIRED;
-
 	LuaVoxelManip *o = checkObject<LuaVoxelManip>(L, 1);
 	if (!o->is_mapgen_vm) {
 		warningstream << "VoxelManip:set_lighting called for a non-mapgen "
@@ -231,8 +220,7 @@ int LuaVoxelManip::l_set_lighting(lua_State *L)
 		return 0;
 	}
 
-	if (!lua_istable(L, 2))
-		throw LuaError("VoxelManip:set_lighting called with missing parameter");
+	luaL_checktype(L, 2, LUA_TTABLE);
 
 	u8 light;
 	light  = (getintfield_default(L, 2, "day",   0) & 0x0F);
@@ -248,12 +236,7 @@ int LuaVoxelManip::l_set_lighting(lua_State *L)
 	if (!vm->m_area.contains(VoxelArea(pmin, pmax)))
 		throw LuaError("Specified voxel area out of VoxelManipulator bounds");
 
-	Mapgen mg;
-	mg.vm = vm;
-
-	mg.setLighting(light, pmin, pmax);
-
-	return 0;
+	return ModApiMapgen::set_lighting(L, vm, pmin, pmax, light);
 }
 
 int LuaVoxelManip::l_get_light_data(lua_State *L)
@@ -426,6 +409,14 @@ int LuaVoxelManip::create_object(lua_State *L)
 	return 1;
 }
 
+void LuaVoxelManip::create(lua_State *L, MMVManip *mmvm, bool is_mapgen_vm)
+{
+	LuaVoxelManip *o = new LuaVoxelManip(mmvm, is_mapgen_vm);
+	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
+	luaL_getmetatable(L, className);
+	lua_setmetatable(L, -2);
+}
+
 void *LuaVoxelManip::packIn(lua_State *L, int idx)
 {
 	LuaVoxelManip *o = checkObject<LuaVoxelManip>(L, idx);
@@ -448,10 +439,7 @@ void LuaVoxelManip::packOut(lua_State *L, void *ptr)
 	if (env)
 		vm->reparent(&(env->getMap()));
 
-	LuaVoxelManip *o = new LuaVoxelManip(vm, false);
-	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
-	luaL_getmetatable(L, className);
-	lua_setmetatable(L, -2);
+	create(L, vm, false);
 }
 
 void LuaVoxelManip::Register(lua_State *L)

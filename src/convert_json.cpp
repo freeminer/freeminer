@@ -20,11 +20,13 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "convert_json.h"
+
+#include <json/json.h>
+
 #include <iostream>
 #include <sstream>
 #include <memory>
-
-#include "convert_json.h"
 
 void fastWriteJson(const Json::Value &value, std::ostream &to)
 {

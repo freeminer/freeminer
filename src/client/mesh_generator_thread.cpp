@@ -243,7 +243,11 @@ void MeshUpdateWorkerThread::doUpdate()
 			sleep_ms(m_generation_interval);
 		ScopeProfiler sp(g_profiler, "Client: Mesh making (sum)");
 
+		//MapBlockMesh *mesh_new = new MapBlockMesh(q->data, *m_camera_offset);
 		MapBlock::mesh_type mesh_new = std::make_shared<MapBlockMesh>(q->data, *m_camera_offset);
+
+
+
 		MeshUpdateResult r;
 		r.p = q->p;
 		r.mesh = mesh_new;
@@ -270,7 +274,7 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 	// Automatically use 33% of the system cores for mesh generation, max 4
 	if (number_of_threads == 0)
 		number_of_threads = MYMIN(8, Thread::getNumberOfProcessors() / 3);
-	
+
 	// use at least one thread
 	number_of_threads = MYMAX(1, number_of_threads);
 	infostream << "MeshUpdateManager: using " << number_of_threads << " threads" << std::endl;

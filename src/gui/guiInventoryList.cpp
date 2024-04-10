@@ -99,6 +99,7 @@ void GUIInventoryList::draw()
 				(i / m_geom.X) * m_slot_spacing.Y);
 		core::rect<s32> rect = imgrect + base_pos + p;
 		ItemStack item = ilist->getItem(item_i);
+		ItemStack orig_item = item;
 
 		bool selected = selected_item
 			&& m_invmgr->getInventory(selected_item->inventoryloc) == inv
@@ -147,13 +148,19 @@ void GUIInventoryList::draw()
 			// Draw item stack
 			drawItemStack(driver, m_font, item, rect, &AbsoluteClippingRect,
 					client, rotation_kind);
-			// Add hovering tooltip
-			if (hovering && !selected_item) {
-				std::string tooltip = item.getDescription(client->idef());
-				if (m_fs_menu->doTooltipAppendItemname())
-					tooltip += "\n[" + item.name + "]";
-				m_fs_menu->addHoveredItemTooltip(tooltip);
-			}
+		}
+
+		// Add hovering tooltip
+		bool show_tooltip = !item.empty() && hovering && !selected_item;
+#ifdef HAVE_TOUCHSCREENGUI
+		// Make it possible to see item tooltips on touchscreens
+		show_tooltip |= hovering && selected && m_fs_menu->getSelectedAmount() != 0;
+#endif
+		if (show_tooltip) {
+			std::string tooltip = orig_item.getDescription(client->idef());
+			if (m_fs_menu->doTooltipAppendItemname())
+				tooltip += "\n[" + orig_item.name + "]";
+			m_fs_menu->addHoveredItemTooltip(tooltip);
 		}
 	}
 
@@ -217,8 +224,8 @@ s32 GUIInventoryList::getItemIndexAtPos(v2s32 p) const
 	v2s32 base_pos = AbsoluteRect.UpperLeftCorner;
 
 	// instead of looping through each slot, we look where p would be in the grid
-	s32 i = (p.X - base_pos.X) / (s32)m_slot_spacing.X
-			+ m_geom.X * ((p.Y - base_pos.Y) / (s32)m_slot_spacing.Y);
+	s32 i = static_cast<s32>((p.X - base_pos.X) / m_slot_spacing.X)
+			+ static_cast<s32>((p.Y - base_pos.Y) / m_slot_spacing.Y) * m_geom.X;
 
 	v2s32 p0((i % m_geom.X) * m_slot_spacing.X,
 			(i / m_geom.X) * m_slot_spacing.Y);

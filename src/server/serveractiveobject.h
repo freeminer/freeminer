@@ -22,12 +22,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <memory>
-
+#include <cassert>
 #include <unordered_set>
 #include "irrlichttypes_bloated.h"
 #include "activeobject.h"
-#include "inventorymanager.h"
 #include "itemgroup.h"
 #include "util/container.h"
 #include "threading/lock.h"
@@ -53,6 +51,8 @@ struct ItemStack;
 struct ToolCapabilities;
 struct ObjectProperties;
 struct PlayerHPChangeReason;
+class Inventory;
+struct InventoryLocation;
 
 class ServerActiveObject : public ActiveObject
 , public shared_locker
@@ -72,10 +72,6 @@ public:
 	virtual void addedToEnvironment(u32 dtime_s){};
 	// Called before removing from environment
 	virtual void removingFromEnvironment(){};
-	// Returns true if object's deletion is the job of the
-	// environment
-	virtual bool environmentDeletes() const
-	{ return true; }
 
 	// Safely mark the object for removal or deactivation
 	void markForRemoval();
@@ -197,8 +193,7 @@ public:
 	// Inventory and wielded item
 	virtual Inventory *getInventory() const
 	{ return NULL; }
-	virtual InventoryLocation getInventoryLocation() const
-	{ return InventoryLocation(); }
+	virtual InventoryLocation getInventoryLocation() const;
 	virtual void setInventoryModified()
 	{}
 	virtual std::string getWieldList() const

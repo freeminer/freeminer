@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <string>
 #include <map>
-#include <json/json.h>
+#include "json-forwards.h"
 #include <unordered_set>
 #include "util/basic_macros.h"
 #include "config.h"

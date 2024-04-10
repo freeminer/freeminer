@@ -29,6 +29,8 @@ typedef u16 biome_t;  // copy from mg_biome.h to avoid an unnecessary include
 
 class GenerateNotifier;
 
+class BiomeGen;
+
 /*
 	CavesNoiseIntersection is a cave digging algorithm that carves smooth,
 	web-like, continuous tunnels at points where the density of the intersection
@@ -45,7 +47,7 @@ class CavesNoiseIntersection
 {
 public:
 	CavesNoiseIntersection(const NodeDefManager *nodedef,
-		BiomeManager *biomemgr, v3pos_t chunksize, NoiseParams *np_cave1,
+		BiomeManager *biomemgr, BiomeGen *biomegen, v3pos_t chunksize, NoiseParams *np_cave1,
 		NoiseParams *np_cave2, s32 seed, float cave_width);
 	~CavesNoiseIntersection();
 
@@ -54,6 +56,8 @@ public:
 private:
 	const NodeDefManager *m_ndef;
 	BiomeManager *m_bmgr;
+
+	BiomeGen *m_bmgn;
 
 	// configurable parameters
 	v3pos_t m_csize;

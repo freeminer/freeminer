@@ -66,6 +66,7 @@ public:
 
 	void add(const std::string &name, float value);
 	void avg(const std::string &name, float value);
+	void max(const std::string &name, float value);
 	void clear();
 
 	float getValue(const std::string &name) const;
@@ -113,7 +114,8 @@ private:
 enum ScopeProfilerType{
 	SPT_ADD,
 	SPT_AVG,
-	SPT_GRAPH_ADD
+	SPT_GRAPH_ADD,
+	SPT_MAX
 };
 
 class ScopeProfiler

@@ -21,6 +21,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "irr_v3d.h"
 #include "util/numeric.h"
 #include <cmath>
 #include "map.h"
@@ -42,14 +43,16 @@ static NoiseParams nparams_caveliquids(0, 1, v3f(150.0, 150.0, 150.0), 776, 3, 0
 ////
 
 CavesNoiseIntersection::CavesNoiseIntersection(
-	const NodeDefManager *nodedef, BiomeManager *biomemgr, v3pos_t chunksize,
+	const NodeDefManager *nodedef, BiomeManager *biomemgr, BiomeGen *biomegen, v3pos_t chunksize,
 	NoiseParams *np_cave1, NoiseParams *np_cave2, s32 seed, float cave_width)
 {
 	assert(nodedef);
 	assert(biomemgr);
+	assert(biomegen);
 
 	m_ndef = nodedef;
 	m_bmgr = biomemgr;
+	m_bmgn = biomegen;
 
 	m_csize = chunksize;
 	m_cave_width = cave_width;
@@ -84,6 +87,8 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 	const v3pos_t &em = vm->m_area.getExtent();
 	u32 index2d = 0;  // Biomemap index
 
+	s16 *biome_transitions = m_bmgn->getBiomeTransitions();
+
 	for (pos_t z = nmin.Z; z <= nmax.Z; z++)
 	for (pos_t x = nmin.X; x <= nmax.X; x++, index2d++) {
 		bool column_is_open = false;  // Is column open to overground
@@ -100,6 +105,10 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 		u16 base_filler = depth_top + biome->depth_filler;
 		u16 depth_riverbed = biome->depth_riverbed;
 		u16 nplaced = 0;
+
+		int cur_biome_depth = 0;
+		s16 biome_y_min = biome_transitions[cur_biome_depth];
+
 		// Don't excavate the overgenerated stone at nmax.Y + 1,
 		// this creates a 'roof' over the tunnel, preventing light in
 		// tunnels at mapchunk borders when generating mapchunks upwards.
@@ -107,6 +116,20 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 		for (pos_t y = nmax.Y; y >= nmin.Y - 1; y--,
 				index3d -= m_ystride,
 				VoxelArea::add_y(em, vi, -1)) {
+			// We need this check to make sure that biomes don't generate too far down
+			if (y < biome_y_min) {
+				biome = m_bmgn->getBiomeAtIndex(index2d, v3pos_t(x, y, z));
+
+				// Finding the height of the next biome
+				// On first iteration this may loop a couple times after than it should just run once
+				while (y < biome_y_min) {
+					biome_y_min = biome_transitions[++cur_biome_depth];
+				}
+
+				/*if (x == nmin.X && z == nmin.Z)
+					printf("Cave: check @ %i -> %s -> again at %i\n", y, biome->name.c_str(), biome_y_min);*/
+			}
+
 			content_t c = vm->m_data[vi].getContent();
 
 			if (c == CONTENT_AIR || c == biome->c_water_top ||

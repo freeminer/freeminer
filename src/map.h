@@ -406,7 +406,7 @@ public:
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
-	void transforming_liquid_add(const v3pos_t &p);
+	void transforming_liquid_add(v3pos_t p);
 	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
@@ -573,7 +573,7 @@ protected:
 	void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) override;
 
 private:
-	friend class LuaVoxelManip;
+	friend class ModApiMapgen; // for m_transforming_liquid
 
 	// Emerge manager
 	EmergeManager *m_emerge;
@@ -590,7 +590,7 @@ private:
 	concurrent_set<v3bpos_t> m_chunks_in_progress;
 
 	// used by deleteBlock() and deleteDetachedBlocks()
-	MapBlockVect m_detached_blocks;
+	std::vector<std::unique_ptr<MapBlock>> m_detached_blocks;
 
 	// Queued transforming water nodes
 	UniqueQueue<v3pos_t> m_transforming_liquid;

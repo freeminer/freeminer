@@ -34,7 +34,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "constants.h"
 #include "environment.h"
-#include "log_types.h"
+#include "irrlicht_changes/printing.h"
+#include "log.h"
 #include "map.h"
 #include "mapblock.h"
 #include "mapgen/mg_biome.h"
@@ -165,8 +166,8 @@ EmergeManager::EmergeManager(Server *server, MetricsBackend *mb)
 
 	enable_mapgen_debug_info = g_settings->getBool("enable_mapgen_debug_info");
 
-	STATIC_ASSERT(ARRLEN(emergeActionStrs) == ARRLEN(m_completed_emerge_counter),
-		enum_size_mismatches);
+	static_assert(ARRLEN(emergeActionStrs) == ARRLEN(m_completed_emerge_counter),
+		"enum size mismatches");
 	for (u32 i = 0; i < ARRLEN(m_completed_emerge_counter); i++) {
 		std::string help_str("Number of completed emerges with status ");
 		help_str.append(emergeActionStrs[i]);
@@ -678,7 +679,7 @@ MapBlock *EmergeThread::finishGen(v3bpos_t pos, BlockMakeData *bmdata,
 	MapBlock *block = m_map->getBlockNoCreateNoEx(pos, false, true);
 	if (!block) {
 		errorstream << "EmergeThread::finishGen: Couldn't grab block we "
-			"just generated: " << PP(pos) << std::endl;
+			"just generated: " << pos << std::endl;
 		return NULL;
 	}
 
@@ -754,7 +755,7 @@ void *EmergeThread::run()
 			continue;
 
 		bool allow_gen = bedata.flags & BLOCK_EMERGE_ALLOW_GEN;
-		EMERGE_DBG_OUT("pos=" PP(pos) " allow_gen=" << allow_gen);
+		EMERGE_DBG_OUT("pos=" << pos << " allow_gen=" << allow_gen);
 
 		action = getBlockOrStartGen(pos, allow_gen, &block, &bmdata);
 		if (action == EMERGE_GENERATED) {
@@ -794,7 +795,7 @@ void *EmergeThread::run()
 	}
 	} catch (VersionMismatchException &e) {
 		std::ostringstream err;
-		err << "World data version mismatch in MapBlock " << PP(pos) << std::endl
+		err << "World data version mismatch in MapBlock " << pos << std::endl
 			<< "----" << std::endl
 			<< "\"" << e.what() << "\"" << std::endl
 			<< "See debug.txt." << std::endl
@@ -803,7 +804,7 @@ void *EmergeThread::run()
 		m_server->setAsyncFatalError(err.str());
 	} catch (SerializationError &e) {
 		std::ostringstream err;
-		err << "Invalid data in MapBlock " << PP(pos) << std::endl
+		err << "Invalid data in MapBlock " << pos << std::endl
 			<< "----" << std::endl
 			<< "\"" << e.what() << "\"" << std::endl
 			<< "See debug.txt." << std::endl

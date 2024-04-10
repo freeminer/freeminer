@@ -30,18 +30,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "config.h"
 
-#ifdef _WIN32
-	#ifndef _WIN32_WINNT
-		#define _WIN32_WINNT 0x0501
-	#endif
-	#include <windows.h>
-	#ifdef _MSC_VER
-		#include <eh.h>
-	#endif
-	#define NORETURN __declspec(noreturn)
+#ifdef _MSC_VER
 	#define FUNCTION_NAME __FUNCTION__
 #else
-	#define NORETURN __attribute__ ((__noreturn__))
 	#define FUNCTION_NAME __PRETTY_FUNCTION__
 #endif
 
@@ -56,10 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Abort program execution immediately
  */
-#ifndef __ANDROID__
-NORETURN
-#endif
-extern void fatal_error_fn(
+[[noreturn]] extern void fatal_error_fn(
 		const char *msg, const char *file,
 		unsigned int line, const char *function);
 
@@ -77,10 +65,7 @@ extern void fatal_error_fn(
 	defined)
 */
 
-#ifndef __ANDROID__
-NORETURN
-#endif
-extern void sanity_check_fn(
+[[noreturn]] extern void sanity_check_fn(
 		const char *assertion, const char *file,
 		unsigned int line, const char *function);
 
@@ -91,6 +76,7 @@ extern void sanity_check_fn(
 
 #define sanity_check(expr) SANITY_CHECK(expr)
 
+std::string debug_describe_exc(const std::exception &e);
 
 void debug_set_exception_handler();
 
@@ -101,10 +87,11 @@ void debug_set_exception_handler();
 #if CATCH_UNHANDLED_EXCEPTIONS == 1
 	#define BEGIN_DEBUG_EXCEPTION_HANDLER try {
 	#define END_DEBUG_EXCEPTION_HANDLER                        \
-		} catch (const std::exception &e) {                    \
+		} catch (const std::exception &e) {                          \
+			std::string e_descr = debug_describe_exc(e);       \
 			errorstream << "An unhandled exception occurred: " \
-				<< e.what() << std::endl << stacktrace() << std::endl; \
-			FATAL_ERROR(e.what());                             \
+				<< e_descr << std::endl << stacktrace() << std::endl;                       \
+			FATAL_ERROR(e_descr.c_str());                      \
 		} catch (...) {                    \
 			errorstream << "An unknown unhandled exception occurred at " \
 				<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl << stacktrace() << std::endl; \

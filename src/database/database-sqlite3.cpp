@@ -37,6 +37,7 @@ SQLite format specification:
 #include "porting.h"
 #include "util/string.h"
 #include "remoteplayer.h"
+#include "irrlicht_changes/printing.h"
 #include "server/player_sao.h"
 
 #include <cassert>
@@ -263,7 +264,7 @@ bool MapDatabaseSQLite3::deleteBlock(const v3bpos_t &pos)
 
 	if (!good) {
 		warningstream << "deleteBlock: Block failed to delete "
-			<< PP(pos) << ": " << sqlite3_errmsg(m_database) << std::endl;
+			<< pos << ": " << sqlite3_errmsg(m_database) << std::endl;
 	}
 	return good;
 }

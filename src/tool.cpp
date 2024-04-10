@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "convert_json.h"
 #include "util/serialize.h"
 #include "util/numeric.h"
+#include <json/json.h>
 
 void ToolGroupCap::toJson(Json::Value &object) const
 {

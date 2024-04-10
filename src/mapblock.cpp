@@ -30,7 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "nodemetadata.h"
 #include "gamedef.h"
-#include "log_types.h"
+#include "irrlicht_changes/printing.h"
+#include "log.h"
 #include "nameidmapping.h"
 #include "content_mapnode.h"  // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
@@ -112,18 +113,17 @@ bool MapBlock::onObjectsActivation()
 	if (m_static_objects.getAllStored().empty())
 		return false;
 
-#if !NDEBUG
+	const auto count = m_static_objects.getStoredSize();
 	verbosestream << "MapBlock::onObjectsActivation(): "
-			<< "activating objects of block " << PP(getPos()) << " ("
-			<< m_static_objects.getStoredSize() << " objects)" << std::endl;
-#endif
+			<< "activating " << count << "objects in block " << getPos()
+			<< std::endl;
 
 	thread_local const auto max_objects_per_block = g_settings->getU16("max_objects_per_block");
-	if (m_static_objects.getStoredSize() > max_objects_per_block) {
+	if (count > max_objects_per_block) {
 		errorstream << "suspiciously large amount of objects detected: "
-			<< m_static_objects.getStoredSize() << " in "
-			<< PP(getPos()) << std::endl;
-			// << PP(getPos()) << "; removing all of them." << std::endl;
+			//<< count << " in " << getPos() << "; removing all of them."
+			<< count << " in " << getPos()
+			<< std::endl;
 		// Clear stored list
 		//m_static_objects.clearStored();
 		m_static_objects.m_stored.resize(max_objects_per_block);
@@ -138,7 +138,7 @@ bool MapBlock::saveStaticObject(u16 id, const StaticObject &obj, u32 reason)
 {
 	if (m_static_objects.getStoredSize() >= g_settings->getU16("max_objects_per_block")) {
 		warningstream << "MapBlock::saveStaticObject(): Trying to store id = " << id
-				<< " statically but block " << PP(getPos()) << " already contains "
+				<< " statically but block " << getPos() << " already contains "
 				<< m_static_objects.getStoredSize() << " objects."
 				<< std::endl;
 		return false;
@@ -535,7 +535,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 
-	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())<<std::endl);
+	TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()<<std::endl);
 
 	m_day_night_differs_expired = false;
 
@@ -563,13 +563,13 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 	NameIdMapping nimap;
 	if (disk && version >= 29) {
 		// Timestamp
-		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+		TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 				<<": Timestamp"<<std::endl);
 		setTimestampNoChangedFlag(readU32(is));
 		m_disk_timestamp.store(m_timestamp);
 
 		// Node/id mapping
-		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+		TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 				<<": NameIdMapping"<<std::endl);
 		nimap.deSerialize(is);
 	}
@@ -587,10 +587,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 		return true;
 	}
 
-	/*
-		Bulk node data
-	*/
-	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+	TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 			<<": Bulk node data"<<std::endl);
 	u8 content_width = readU8(is);
 	u8 params_width = readU8(is);
@@ -615,7 +612,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 	/*
 		NodeMetadata
 	*/
-	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+	TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 			<<": Node metadata"<<std::endl);
 	if (version >= 29) {
 		m_node_metadata.deSerialize(is, m_gamedef->idef());
@@ -634,7 +631,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 		} catch(const std::exception &e) {
 			warningstream<<"MapBlock::deSerialize(): Ignoring an error"
 					<<" while deserializing node metadata at ("
-					<<PP(getPos())<<": "<<e.what()<<std::endl;
+					<<getPos()<<": "<<e.what()<<std::endl;
 		}
 	}
 
@@ -648,26 +645,26 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 			readU8(is);
 		}
 		if (version == 24) {
-			TRACESTREAM(<< "MapBlock::deSerialize " << PP(getPos())
+			TRACESTREAM(<< "MapBlock::deSerialize " << getPos()
 						<< ": Node timers (ver==24)" << std::endl);
 			m_node_timers.deSerialize(is, version);
 		}
 
 		// Static objects
-		TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+		TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 				<<": Static objects"<<std::endl);
 		m_static_objects.deSerialize(is);
 
 		if (version < 29) {
 			// Timestamp
-			TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+			TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 				    <<": Timestamp"<<std::endl);
 			setTimestampNoChangedFlag(readU32(is));
 			m_disk_timestamp.store(m_timestamp);
 			m_changed_timestamp = (unsigned int)m_timestamp != BLOCK_TIMESTAMP_UNDEFINED ? (unsigned int)m_timestamp : 0;
 
 			// Node/id mapping
-			TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+			TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 				    <<": NameIdMapping"<<std::endl);
 			nimap.deSerialize(is);
 		}
@@ -676,7 +673,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 		correctBlockNodeIds(&nimap, data, m_gamedef);
 
 		if(version >= 25){
-			TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+			TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 					<<": Node timers (ver>=25)"<<std::endl);
 			m_node_timers.deSerialize(is, version);
 		}
@@ -684,7 +681,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 		analyzeContent();
 	}
 
-	TRACESTREAM(<<"MapBlock::deSerialize "<<PP(getPos())
+	TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 			<<": Done."<<std::endl);
 	return true;
 }

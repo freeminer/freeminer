@@ -82,12 +82,6 @@ size_t ServerMap::transforming_liquid_size()
 	return m_transforming_liquid.size();
 }
 
-void ServerMap::transforming_liquid_add(const v3pos_t &p)
-{
-	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-	m_transforming_liquid.push_back(p);
-}
-
 v3pos_t ServerMap::transforming_liquid_pop()
 {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);

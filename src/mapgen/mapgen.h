@@ -173,6 +173,9 @@ public:
 	int id = -1;
 
 	MMVManip *vm = nullptr;
+	// Note that this contains various things the mapgens *can* use, so biomegen
+	// might be NULL while m_emerge->biomegen is not.
+	EmergeParams *m_emerge = nullptr;
 	const NodeDefManager *ndef = nullptr;
 
 	u32 blockseed;
@@ -185,7 +188,7 @@ public:
 
 	Mapgen() = default;
 	Mapgen(int mapgenid, MapgenParams *params, EmergeParams *emerge);
-	virtual ~Mapgen() = default;
+	virtual ~Mapgen();
 	DISABLE_CLASS_COPY(Mapgen);
 
 	virtual MapgenType getType() const { return MAPGEN_INVALID; }
@@ -309,7 +312,6 @@ public:
 	virtual void generateDungeons(pos_t max_stone_y);
 
 protected:
-	EmergeParams *m_emerge;
 	BiomeManager *m_bmgr;
 
 	Noise *noise_filler_depth;

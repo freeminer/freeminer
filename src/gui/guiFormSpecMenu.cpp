@@ -256,6 +256,14 @@ std::vector<std::string>* GUIFormSpecMenu::getDropDownValues(const std::string &
 	return NULL;
 }
 
+// This will only return a meaningful value if called after drawMenu().
+core::rect<s32> GUIFormSpecMenu::getAbsoluteRect()
+{
+	core::rect<s32> rect = AbsoluteRect;
+	rect.UpperLeftCorner.Y += m_tabheader_upper_edge;
+	return rect;
+}
+
 v2s32 GUIFormSpecMenu::getElementBasePos(const std::vector<std::string> *v_pos)
 {
 	v2f32 pos_f = v2f32(padding.X, padding.Y) + pos_offset * spacing;
@@ -675,7 +683,7 @@ void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &elemen
 	spec.ftype = f_ScrollBar;
 	spec.send  = true;
 	GUIScrollBar *e = new GUIScrollBar(Environment, data->current_parent,
-			spec.fid, rect, is_horizontal, true);
+			spec.fid, rect, is_horizontal, true, m_tsrc);
 
 	auto style = getDefaultStyleForElement("scrollbar", name);
 	e->setNotClipped(style.getBool(StyleSpec::NOCLIP, false));
@@ -1110,17 +1118,18 @@ void GUIFormSpecMenu::parseBackground(parserData* data, const std::string &eleme
 		258 + m_fields.size()
 	);
 
-	core::rect<s32> rect;
+	core::rect<s32> rect{};
+	v2s32 autoclip_offset{};
 	if (!clip) {
 		// no auto_clip => position like normal image
 		rect = core::rect<s32>(pos, pos + geom);
 	} else {
-		// it will be auto-clipped when drawing
-		rect = core::rect<s32>(-pos, pos);
+		// element will be auto-clipped when drawing
+		autoclip_offset = pos;
 	}
 
 	GUIBackgroundImage *e = new GUIBackgroundImage(Environment, data->background_parent.get(),
-			spec.fid, rect, name, middle, m_tsrc, clip);
+			spec.fid, rect, name, middle, m_tsrc, clip, autoclip_offset);
 
 	FATAL_ERROR_IF(!e, "Failed to create background formspec element");
 
@@ -1387,6 +1396,15 @@ void GUIFormSpecMenu::parseDropDown(parserData* data, const std::string &element
 	}
 }
 
+void GUIFormSpecMenu::parseFieldEnterAfterEdit(parserData *data, const std::string &element)
+{
+	std::vector<std::string> parts;
+	if (!precheckElement("field_enter_after_edit", element, 2, 2, parts))
+		return;
+
+	field_enter_after_edit[parts[0]] = is_yes(parts[1]);
+}
+
 void GUIFormSpecMenu::parseFieldCloseOnEnter(parserData *data, const std::string &element)
 {
 	std::vector<std::string> parts;
@@ -1501,7 +1519,7 @@ void GUIFormSpecMenu::createTextField(parserData *data, FieldSpec &spec,
 	gui::IGUIEditBox *e = nullptr;
 	if (is_multiline) {
 		e = new GUIEditBoxWithScrollBar(spec.fdefault.c_str(), true, Environment,
-				data->current_parent, spec.fid, rect, is_editable, true);
+				data->current_parent, spec.fid, rect, m_tsrc, is_editable, true);
 	} else if (is_editable) {
 		e = Environment->addEditBox(spec.fdefault.c_str(), rect, true,
 				data->current_parent, spec.fid);
@@ -1678,8 +1696,6 @@ void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
 
 void GUIFormSpecMenu::parseHyperText(parserData *data, const std::string &element)
 {
-	MY_CHECKCLIENT("hypertext");
-
 	std::vector<std::string> parts;
 	if (!precheckElement("hypertext", element, 4, 4, parts))
 		return;
@@ -2105,6 +2121,7 @@ void GUIFormSpecMenu::parseTabHeader(parserData* data, const std::string &elemen
 		e->setActiveTab(tab_index);
 
 	m_fields.push_back(spec);
+	m_tabheader_upper_edge = MYMIN(m_tabheader_upper_edge, rect.UpperLeftCorner.Y);
 }
 
 void GUIFormSpecMenu::parseItemImageButton(parserData* data, const std::string &element)
@@ -2913,6 +2930,11 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 		return;
 	}
 
+	if (type == "field_enter_after_edit") {
+		parseFieldEnterAfterEdit(data, description);
+		return;
+	}
+
 	if (type == "field_close_on_enter") {
 		parseFieldCloseOnEnter(data, description);
 		return;
@@ -3063,7 +3085,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		}
 	} else {
 		// Don't keep old focus value
-		m_focused_element = nullopt;
+		m_focused_element = std::nullopt;
 	}
 
 	removeAll();
@@ -3094,6 +3116,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	theme_by_name.clear();
 	theme_by_type.clear();
 	m_clickthrough_elements.clear();
+	field_enter_after_edit.clear();
 	field_close_on_enter.clear();
 	m_dropdown_index_event.clear();
 
@@ -3101,16 +3124,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	m_bgfullscreen = false;
 
 	m_formspec_version = 1;
-
-	{
-		v3f formspec_bgcolor = g_settings->getV3F("formspec_default_bg_color");
-		m_bgcolor = video::SColor(
-			(u8) clamp_u8(g_settings->getS32("formspec_default_bg_opacity")),
-			clamp_u8(myround(formspec_bgcolor.X)),
-			clamp_u8(myround(formspec_bgcolor.Y)),
-			clamp_u8(myround(formspec_bgcolor.Z))
-		);
-	}
+	m_bgcolor = video::SColor(140, 0, 0, 0);
+	m_tabheader_upper_edge = 0;
 
 	{
 		v3f formspec_bgcolor = g_settings->getV3F("formspec_fullscreen_bg_color");
@@ -3418,9 +3433,8 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 					size.X / 2 - 70,       pos.Y,
 					size.X / 2 - 70 + 140, pos.Y + m_btn_height * 2
 			);
-			const wchar_t *text = wgettext("Proceed");
-			GUIButton::addButton(Environment, mydata.rect, m_tsrc, this, 257, text);
-			delete[] text;
+			GUIButton::addButton(Environment, mydata.rect, m_tsrc, this, 257,
+					wstrgettext("Proceed").c_str());
 		}
 	}
 
@@ -3504,8 +3518,23 @@ bool GUIFormSpecMenu::getAndroidUIInput()
 		if (!element || element->getType() != irr::gui::EGUIET_EDIT_BOX)
 			return false;
 
+		gui::IGUIEditBox *editbox = (gui::IGUIEditBox *)element;
 		std::string text = porting::getInputDialogValue();
-		((gui::IGUIEditBox *)element)->setText(utf8_to_wide(text).c_str());
+		editbox->setText(utf8_to_wide(text).c_str());
+
+		bool enter_after_edit = false;
+		auto iter = field_enter_after_edit.find(fieldname);
+		if (iter != field_enter_after_edit.end()) {
+			enter_after_edit = iter->second;
+		}
+		if (enter_after_edit && editbox->getParent()) {
+			SEvent enter;
+			enter.EventType = EET_GUI_EVENT;
+			enter.GUIEvent.Caller = editbox;
+			enter.GUIEvent.Element = nullptr;
+			enter.GUIEvent.EventType = gui::EGET_EDITBOX_ENTER;
+			editbox->getParent()->OnEvent(enter);
+		}
 	}
 	return false;
 }
@@ -3632,7 +3661,7 @@ void GUIFormSpecMenu::drawMenu()
 
 	gui::IGUIElement::draw();
 
-/* TODO find way to show tooltips on touchscreen */
+	// On touchscreens, m_pointer is set by GUIModalMenu::preprocessEvent instead.
 #ifndef HAVE_TOUCHSCREENGUI
 	m_pointer = RenderingEngine::get_raw_device()->getCursorControl()->getPosition();
 #endif
@@ -3773,10 +3802,15 @@ void GUIFormSpecMenu::showTooltip(const std::wstring &text,
 
 void GUIFormSpecMenu::updateSelectedItem()
 {
+	// Don't update when dragging an item
+	if (m_selected_item && (m_selected_dragging || m_left_dragging))
+		return;
+
 	verifySelectedItem();
 
-	// If craftresult is nonempty and nothing else is selected, select it now.
-	if (!m_selected_item) {
+	// If craftresult is not empty and nothing else is selected,
+	// try to move it somewhere or select it now
+	if (!m_selected_item || m_shift_move_after_craft) {
 		for (const GUIInventoryList *e : m_inventorylists) {
 			if (e->getListname() != "craftpreview")
 				continue;
@@ -3794,14 +3828,48 @@ void GUIFormSpecMenu::updateSelectedItem()
 			if (item.empty())
 				continue;
 
-			// Grab selected item from the crafting result list
-			m_selected_item = new GUIInventoryList::ItemSpec;
-			m_selected_item->inventoryloc = e->getInventoryloc();
-			m_selected_item->listname = "craftresult";
-			m_selected_item->i = 0;
-			m_selected_item->slotsize = e->getSlotSize();
-			m_selected_amount = item.count;
-			m_selected_dragging = false;
+			GUIInventoryList::ItemSpec s = GUIInventoryList::ItemSpec();
+			s.inventoryloc = e->getInventoryloc();
+			s.listname = "craftresult";
+			s.i = 0;
+			s.slotsize = e->getSlotSize();
+
+			if (m_shift_move_after_craft) {
+				// Try to shift-move the crafted item to the next list in the ring after the "craft" list.
+				// We don't look for the "craftresult" list because it's a hidden list,
+				// and shouldn't be part of the formspec, thus it won't be in the list ring.
+				do {
+					s16 r = getNextInventoryRing(s.inventoryloc, "craft");
+					if (r < 0) // Not found
+						break;
+
+					const ListRingSpec &to_ring = m_inventory_rings[r];
+					Inventory *inv_to = m_invmgr->getInventory(to_ring.inventoryloc);
+					if (!inv_to)
+						break;
+					InventoryList *list_to = inv_to->getList(to_ring.listname);
+					if (!list_to)
+						break;
+
+					IMoveAction *a = new IMoveAction();
+					a->count = item.count;
+					a->from_inv = s.inventoryloc;
+					a->from_list = s.listname;
+					a->from_i = s.i;
+					a->to_inv = to_ring.inventoryloc;
+					a->to_list = to_ring.listname;
+					a->move_somewhere = true;
+					m_invmgr->inventoryAction(a);
+				} while (0);
+
+				m_shift_move_after_craft = false;
+
+			} else {
+				// Grab selected item from the crafting result list
+				m_selected_item = new GUIInventoryList::ItemSpec(s);
+				m_selected_amount = item.count;
+				m_selected_dragging = false;
+			}
 			break;
 		}
 	}
@@ -3846,6 +3914,25 @@ ItemStack GUIFormSpecMenu::verifySelectedItem()
 		m_selected_dragging = false;
 	}
 	return ItemStack();
+}
+
+s16 GUIFormSpecMenu::getNextInventoryRing(
+		const InventoryLocation &inventoryloc, const std::string &listname)
+{
+	u16 rings = m_inventory_rings.size();
+	if (rings < 2)
+		return -1;
+	// Look for the source ring
+	s16 index = -1;
+	for (u16 i = 0; i < rings; i++) {
+		ListRingSpec &lr = m_inventory_rings[i];
+		if (lr.inventoryloc == inventoryloc && lr.listname == listname) {
+			// Set the index to the next ring
+			index = (i + 1) % rings;
+			break;
+		}
+	}
+	return index;
 }
 
 void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode)
@@ -4083,19 +4170,6 @@ void GUIFormSpecMenu::tryClose()
 	}
 }
 
-enum ButtonEventType : u8
-{
-	BET_LEFT,
-	BET_RIGHT,
-	BET_MIDDLE,
-	BET_WHEEL_UP,
-	BET_WHEEL_DOWN,
-	BET_UP,
-	BET_DOWN,
-	BET_MOVE,
-	BET_OTHER
-};
-
 bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 {
 	if (event.EventType==EET_KEY_INPUT_EVENT) {
@@ -4216,13 +4290,16 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 	}
 
 	/* Mouse event other than movement, or crossing the border of inventory
-	  field while holding right mouse button
+	   field while holding left, right, or middle mouse button
+	   or touch event (for touch screen devices)
 	 */
-	if (event.EventType == EET_MOUSE_INPUT_EVENT &&
+	if ((event.EventType == EET_MOUSE_INPUT_EVENT &&
 			(event.MouseInput.Event != EMIE_MOUSE_MOVED ||
-			 (event.MouseInput.Event == EMIE_MOUSE_MOVED &&
-			  event.MouseInput.isRightPressed() &&
-			  getItemAtPos(m_pointer).i != getItemAtPos(m_old_pointer).i))) {
+				((event.MouseInput.isLeftPressed() ||
+					event.MouseInput.isRightPressed() ||
+					event.MouseInput.isMiddlePressed()) &&
+				getItemAtPos(m_pointer).i != getItemAtPos(m_old_pointer).i))) ||
+			event.EventType == EET_TOUCH_INPUT_EVENT) {
 
 		// Get selected item and hovered/clicked item (s)
 
@@ -4231,13 +4308,17 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		GUIInventoryList::ItemSpec s = getItemAtPos(m_pointer);
 
 		Inventory *inv_selected = NULL;
+		InventoryList *list_selected = NULL;
 		Inventory *inv_s = NULL;
 		InventoryList *list_s = NULL;
 
 		if (m_selected_item) {
 			inv_selected = m_invmgr->getInventory(m_selected_item->inventoryloc);
-			//sanity_check(inv_selected);
-			//sanity_check(inv_selected->getList(m_selected_item->listname) != NULL);
+		   if (!inv_selected) return false;
+			sanity_check(inv_selected);
+			list_selected = inv_selected->getList(m_selected_item->listname);
+		   if (!list_selected) return false;
+			sanity_check(list_selected);
 		}
 
 		u32 s_count = 0;
@@ -4273,43 +4354,65 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			s_count = list_s->getItem(s.i).count;
 		} while(0);
 
-		bool identical = m_selected_item && s.isValid() &&
-			(inv_selected == inv_s) &&
-			(m_selected_item->listname == s.listname) &&
-			(m_selected_item->i == s.i);
+		// True if the hovered slot is the selected slot
+		bool identical = m_selected_item && s.isValid() && (*m_selected_item == s);
 
-		ButtonEventType button = BET_LEFT;
-		ButtonEventType updown = BET_OTHER;
-		switch (event.MouseInput.Event) {
-		case EMIE_LMOUSE_PRESSED_DOWN:
-			button = BET_LEFT; updown = BET_DOWN;
-			break;
-		case EMIE_RMOUSE_PRESSED_DOWN:
-			button = BET_RIGHT; updown = BET_DOWN;
-			break;
-		case EMIE_MMOUSE_PRESSED_DOWN:
-			button = BET_MIDDLE; updown = BET_DOWN;
-			break;
-		case EMIE_MOUSE_WHEEL:
-			button = (event.MouseInput.Wheel > 0) ?
-				BET_WHEEL_UP : BET_WHEEL_DOWN;
-			updown = BET_DOWN;
-			break;
-		case EMIE_LMOUSE_LEFT_UP:
-			button = BET_LEFT; updown = BET_UP;
-			break;
-		case EMIE_RMOUSE_LEFT_UP:
-			button = BET_RIGHT; updown = BET_UP;
-			break;
-		case EMIE_MMOUSE_LEFT_UP:
-			button = BET_MIDDLE; updown = BET_UP;
-			break;
-		case EMIE_MOUSE_MOVED:
-			updown = BET_MOVE;
-			break;
-		default:
-			break;
+		// True if the hovered slot is empty
+		bool empty = s.isValid() && list_s->getItem(s.i).empty();
+
+		// True if the hovered item would stack with the selected item
+		bool matching = false;
+		if (m_selected_item && s.isValid()) {
+			ItemStack a = list_selected->getItem(m_selected_item->i);
+			ItemStack b = list_s->getItem(s.i);
+			matching = a.stacksWith(b);
 		}
+
+		ButtonEventType button = BET_OTHER;
+		ButtonEventType updown = BET_OTHER;
+		bool mouse_shift = false;
+		if (event.EventType == EET_MOUSE_INPUT_EVENT) {
+			mouse_shift = event.MouseInput.Shift;
+			switch (event.MouseInput.Event) {
+			case EMIE_LMOUSE_PRESSED_DOWN:
+				button = BET_LEFT; updown = BET_DOWN;
+				break;
+			case EMIE_RMOUSE_PRESSED_DOWN:
+				button = BET_RIGHT; updown = BET_DOWN;
+				break;
+			case EMIE_MMOUSE_PRESSED_DOWN:
+				button = BET_MIDDLE; updown = BET_DOWN;
+				break;
+			case EMIE_MOUSE_WHEEL:
+				button = (event.MouseInput.Wheel > 0) ?
+					BET_WHEEL_UP : BET_WHEEL_DOWN;
+				updown = BET_DOWN;
+				break;
+			case EMIE_LMOUSE_LEFT_UP:
+				button = BET_LEFT; updown = BET_UP;
+				break;
+			case EMIE_RMOUSE_LEFT_UP:
+				button = BET_RIGHT; updown = BET_UP;
+				break;
+			case EMIE_MMOUSE_LEFT_UP:
+				button = BET_MIDDLE; updown = BET_UP;
+				break;
+			case EMIE_MOUSE_MOVED:
+				updown = BET_MOVE;
+				break;
+			default:
+				break;
+			}
+		}
+
+#ifdef HAVE_TOUCHSCREENGUI
+		// The second touch (see GUIModalMenu::preprocessEvent() function)
+		ButtonEventType touch = BET_OTHER;
+		if (event.EventType == EET_TOUCH_INPUT_EVENT) {
+			if (event.TouchInput.Event == ETIE_LEFT_UP)
+				touch = BET_RIGHT;
+		}
+#endif
 
 		// Set this number to a positive value to generate a move action
 		// from m_selected_item to s.
@@ -4319,6 +4422,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		// from s to the next inventory ring.
 		u32 shift_move_amount = 0;
 
+		// Set this number to a positive value to generate a move action
+		// from s to m_selected_item.
+		u32 pickup_amount = 0;
+
 		// Set this number to a positive value to generate a drop action
 		// from m_selected_item.
 		u32 drop_amount = 0;
@@ -4327,92 +4434,153 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		u32 craft_amount = 0;
 
 		switch (updown) {
-		case BET_DOWN:
+		case BET_DOWN: {
 			// Some mouse button has been pressed
 
-			//infostream << "Mouse button " << button << " pressed at p=("
-			//	<< event.MouseInput.X << "," << event.MouseInput.Y << ")"
-			//	<< std::endl;
+			if (m_held_mouse_button != BET_OTHER)
+				break;
 
-			m_selected_dragging = false;
+			if (button == BET_LEFT || button == BET_RIGHT || button == BET_MIDDLE)
+				m_held_mouse_button = button;
 
-			if (s.isValid() && s.listname == "craftpreview") {
-				// Craft preview has been clicked: craft
-				craft_amount = (button == BET_MIDDLE ? 10 : 1);
-			} else if (!m_selected_item) {
-				if (s_count && button != BET_WHEEL_UP) {
-					// Non-empty stack has been clicked: select or shift-move it
-					m_selected_item = new GUIInventoryList::ItemSpec(s);
-
-					u32 count;
-					if (button == BET_RIGHT)
-						count = (s_count + 1) / 2;
-					else if (button == BET_MIDDLE)
-						count = MYMIN(s_count, 10);
-					else if (button == BET_WHEEL_DOWN)
-						count = 1;
-					else  // left
-						count = s_count;
-
-					if (!event.MouseInput.Shift) {
-						// no shift: select item
-						m_selected_amount = count;
-						m_selected_dragging = button != BET_WHEEL_DOWN;
-						m_auto_place = false;
-					} else {
-						// shift pressed: move item, right click moves 1
-						shift_move_amount = button == BET_RIGHT ? 1 : count;
-					}
-				}
-			} else { // m_selected_item != NULL
-				//assert(m_selected_amount >= 1);
-
-				if (s.isValid()) {
-					// Clicked a slot: move
-					if (button == BET_RIGHT || button == BET_WHEEL_UP)
-						move_amount = 1;
-					else if (button == BET_MIDDLE)
-						move_amount = MYMIN(m_selected_amount, 10);
-					else if (button == BET_LEFT)
-						move_amount = m_selected_amount;
-					// else wheeldown
-
-					if (identical) {
-						if (button == BET_WHEEL_DOWN) {
-							if (m_selected_amount < s_count)
-								++m_selected_amount;
-						} else {
-							if (move_amount >= m_selected_amount)
-								m_selected_amount = 0;
-							else
-								m_selected_amount -= move_amount;
-							move_amount = 0;
-						}
-					}
-				} else if (!getAbsoluteClippingRect().isPointInside(m_pointer)
-						&& button != BET_WHEEL_DOWN) {
+			if (!s.isValid()) {
+				if (m_selected_item && !getAbsoluteClippingRect().isPointInside(m_pointer)) {
 					// Clicked outside of the window: drop
 					if (button == BET_RIGHT || button == BET_WHEEL_UP)
 						drop_amount = 1;
 					else if (button == BET_MIDDLE)
 						drop_amount = MYMIN(m_selected_amount, 10);
-					else  // left
+					else if (button == BET_LEFT)
 						drop_amount = m_selected_amount;
 				}
+				break;
 			}
-		break;
-		case BET_UP:
+			if (s.listname == "craftpreview") {
+				// Craft preview has been clicked: craft
+				if (button == BET_MIDDLE)
+					craft_amount = 10;
+				else if (mouse_shift && button == BET_LEFT)
+					craft_amount = list_s->getItem(s.i).getStackMax(m_client->idef());
+				else
+					craft_amount = 1;
+
+				// Holding shift moves the crafted item to the inventory
+				m_shift_move_after_craft = mouse_shift;
+
+			} else if (!m_selected_item && button != BET_WHEEL_UP && !empty) {
+				// Non-empty stack has been clicked: select or shift-move it
+				u32 count = 0;
+				if (button == BET_RIGHT)
+					count = (s_count + 1) / 2;
+				else if (button == BET_MIDDLE)
+					count = MYMIN(s_count, 10);
+				else if (button == BET_WHEEL_DOWN)
+					count = 1;
+				else if (button == BET_LEFT)
+					count = s_count;
+
+				if (mouse_shift) {
+					// Shift pressed: move item, right click moves 1
+					shift_move_amount = button == BET_RIGHT ? 1 : count;
+				} else {
+					// No shift: select item
+					m_selected_item = new GUIInventoryList::ItemSpec(s);
+					m_selected_amount = count;
+					m_selected_dragging = button != BET_WHEEL_DOWN;
+				}
+
+			} else if (m_selected_item) {
+				// Clicked a slot: move
+				if (button == BET_RIGHT || button == BET_WHEEL_UP)
+					move_amount = 1;
+				else if (button == BET_WHEEL_DOWN)
+					pickup_amount = MYMIN(s_count, 1);
+				else if (button == BET_MIDDLE)
+					move_amount = MYMIN(m_selected_amount, 10);
+				else if (button == BET_LEFT)
+					move_amount = m_selected_amount;
+
+				if (mouse_shift && !identical && matching) {
+					// Shift-move all items the same as the selected item to the next list
+					move_amount = 0;
+
+					// Try to find somewhere to move the items to
+					s16 r = getNextInventoryRing(s.inventoryloc, s.listname);
+					if (r < 0) // Not found
+						break;
+
+					const ListRingSpec &to_ring = m_inventory_rings[r];
+					Inventory *inv_to = m_invmgr->getInventory(to_ring.inventoryloc);
+					if (!inv_to)
+						break;
+					InventoryList *list_to = inv_to->getList(to_ring.listname);
+					if (!list_to)
+						break;
+
+					ItemStack slct = list_selected->getItem(m_selected_item->i);
+
+					for (s32 i = 0; i < (s32)list_s->getSize(); i++) {
+						// Skip the selected slot
+						if (i == m_selected_item->i)
+							continue;
+						ItemStack item = list_s->getItem(i);
+
+						if (slct.stacksWith(item)) {
+							IMoveAction *a = new IMoveAction();
+							a->count = item.count;
+							a->from_inv = s.inventoryloc;
+							a->from_list = s.listname;
+							a->from_i = i;
+							a->to_inv = to_ring.inventoryloc;
+							a->to_list = to_ring.listname;
+							a->move_somewhere = true;
+							m_invmgr->inventoryAction(a);
+						}
+					}
+				} else if (button == BET_LEFT && (empty || matching)) {
+					// We don't know if the user is left-dragging, just moving
+					// the item, or doing a pickup-all via doubleclick, so assume
+					// that they are left-dragging, and wait for the next event
+					// before moving the item, or doing a pickup-all
+					m_left_dragging = true;
+					m_client->inhibit_inventory_revert = true;
+					m_left_drag_stack = list_selected->getItem(m_selected_item->i);
+					m_left_drag_amount = m_selected_amount;
+					m_left_drag_stacks.emplace_back(s, list_s->getItem(s.i));
+					move_amount = 0;
+
+				} else if (identical) {
+					// Change the selected amount instead of moving
+					if (button == BET_WHEEL_DOWN) {
+						if (m_selected_amount < s_count)
+							++m_selected_amount;
+					} else if (button == BET_WHEEL_UP) {
+						if (m_selected_amount > 0)
+							--m_selected_amount;
+					} else {
+						if (move_amount >= m_selected_amount)
+							m_selected_amount = 0;
+						else
+							m_selected_amount -= move_amount;
+					}
+					move_amount = 0;
+					pickup_amount = 0;
+				}
+			}
+			break;
+		}
+		case BET_UP: {
 			// Some mouse button has been released
 
-			//infostream<<"Mouse button "<<button<<" released at p=("
-			//	<<p.X<<","<<p.Y<<")"<<std::endl;
+			if (m_held_mouse_button != BET_OTHER && m_held_mouse_button != button)
+				break;
+			m_held_mouse_button = BET_OTHER;
 
 			if (m_selected_dragging && m_selected_item) {
-				if (s.isValid()) {
-					if (!identical) {
-						// Dragged to different slot: move all selected
-						move_amount = m_selected_amount;
-					}
+				if (s.isValid() && !identical && (empty || matching)) {
+					// Dragged to different slot: move all selected
+					move_amount = m_selected_amount;
+
 				} else if (!getAbsoluteClippingRect().isPointInside(m_pointer)) {
 					// Dragged outside of window: drop all selected
 					drop_amount = m_selected_amount;
@@ -4420,36 +4588,232 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 
 			m_selected_dragging = false;
-			// Keep track of whether the mouse button be released
-			// One click is drag without dropping. Click + release
-			// + click changes to drop item when moved mode
-			if (m_selected_item)
-				m_auto_place = true;
-		break;
-		case BET_MOVE:
-			// Mouse has been moved and rmb is down and mouse pointer just
-			// entered a new inventory field (checked in the entry-if, this
-			// is the only action here that is generated by mouse movement)
-			if (m_selected_item && s.isValid() && s.listname != "craftpreview") {
-				// Move 1 item
-				// TODO: middle mouse to move 10 items might be handy
-				if (m_auto_place && inv_selected) {
-					// Only move an item if the destination slot is empty
-					// or contains the same item type as what is going to be
-					// moved
-					InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-					InventoryList *list_to = list_s;
-					if (!(list_from && list_to))
-						return false;
-					ItemStack stack_from = list_from->getItem(m_selected_item->i);
-					ItemStack stack_to = list_to->getItem(s.i);
-					if (stack_to.empty() || stack_to.name == stack_from.name)
-						move_amount = 1;
+
+			if (m_left_dragging && button == BET_LEFT) {
+				m_left_dragging = false;
+				m_client->inhibit_inventory_revert = false;
+
+				if (m_left_drag_stacks.size() > 1) {
+					// Finalize the left-dragging
+					for (auto &ds : m_left_drag_stacks) {
+						if (ds.first == *m_selected_item) {
+							// This entry is needed to properly calculate the stack sizes.
+							// The stack already exists, hence no further action needed here.
+							continue;
+						}
+
+						// Check how many items we should move to this slot,
+						// it may be less than the full split
+						Inventory *inv_to = m_invmgr->getInventory(ds.first.inventoryloc);
+						InventoryList *list_to = inv_to->getList(ds.first.listname);
+						ItemStack stack_to = list_to->getItem(ds.first.i);
+						u16 amount = stack_to.count - ds.second.count;
+
+						IMoveAction *a = new IMoveAction();
+						a->count = amount;
+						a->from_inv = m_selected_item->inventoryloc;
+						a->from_list = m_selected_item->listname;
+						a->from_i = m_selected_item->i;
+						a->to_inv = ds.first.inventoryloc;
+						a->to_list = ds.first.listname;
+						a->to_i = ds.first.i;
+						m_invmgr->inventoryAction(a);
+					}
+
+				} else if (identical) {
+					// Put the selected item back where it came from
+					m_selected_amount = 0;
+				} else if (s.isValid()) {
+					// Move the selected item
+					move_amount = m_selected_amount;
+				}
+
+				m_left_drag_stacks.clear();
+			}
+			break;
+		}
+		case BET_MOVE: {
+			// Mouse button is down and mouse pointer entered a new inventory field
+
+			if (!s.isValid() || s.listname == "craftpreview")
+				break;
+
+			if (!m_selected_item && mouse_shift) {
+				// Shift-move items while dragging
+				if (m_held_mouse_button == BET_RIGHT)
+					shift_move_amount = 1;
+				else if (m_held_mouse_button == BET_MIDDLE)
+					shift_move_amount = MYMIN(s_count, 10);
+				else if (m_held_mouse_button == BET_LEFT)
+					shift_move_amount = s_count;
+
+			} else if (m_selected_item) {
+				if (m_held_mouse_button != BET_LEFT) {
+					// Move items if the destination slot is empty
+					// or contains the same item type as what is going to be moved
+					if (!m_selected_dragging && (empty || matching)) {
+						if (m_held_mouse_button == BET_RIGHT)
+							move_amount = 1;
+						else if (m_held_mouse_button == BET_MIDDLE)
+							move_amount = MYMIN(m_selected_amount, 10);
+					}
+
+				} else if (m_left_dragging && (empty || matching) &&
+						m_left_drag_amount > m_left_drag_stacks.size()) {
+					// Add the slot to the left-drag list if it doesn't exist
+					bool found = false;
+					for (auto &ds : m_left_drag_stacks) {
+						if (s == ds.first) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+						m_left_drag_stacks.emplace_back(s, list_s->getItem(s.i));
+					}
+
+				} else if (m_selected_dragging && matching && !identical) {
+					// Pickup items of the same type while dragging
+					pickup_amount = s_count;
+				}
+
+			} else if (m_held_mouse_button == BET_LEFT) {
+				// Start picking up items
+				m_selected_item = new GUIInventoryList::ItemSpec(s);
+				m_selected_amount = s_count;
+				m_selected_dragging = true;
+			}
+			break;
+		}
+		case BET_OTHER: {
+			// Some other mouse event has occured
+			// Currently only left-double-click should trigger this
+			if (!s.isValid() || event.EventType != EET_MOUSE_INPUT_EVENT ||
+					event.MouseInput.Event != EMIE_LMOUSE_DOUBLE_CLICK)
+				break;
+
+			// Only do the pickup all thing when putting down an item.
+			// Doubleclick events are triggered after press-down events, so if
+			// m_left_dragging is true here, the user just put down an itemstack,
+			// but didn't yet release the button to make it happen.
+			if (!m_left_dragging)
+				break;
+
+			// Abort left-dragging
+			m_left_dragging = false;
+			m_client->inhibit_inventory_revert = false;
+			m_left_drag_stacks.clear();
+
+			// Both the selected item and the hovered item need to be checked
+			// because we don't know exactly when the double-click happened
+			ItemStack slct;
+			if (!m_selected_item && !empty)
+				slct = list_s->getItem(s.i);
+			else if (m_selected_item && (identical || empty))
+				slct = list_selected->getItem(m_selected_item->i);
+
+			// Pickup all of the item from the list
+			if (slct.count > 0) {
+				for (s32 i = 0; i < (s32)list_s->getSize(); i++) {
+					// Skip the selected slot
+					if (i == s.i)
+						continue;
+
+					ItemStack item = list_s->getItem(i);
+
+					if (slct.stacksWith(item)) {
+						// Found a match, check if we can pick it up
+						bool full = false;
+						u16 amount = item.count;
+						ItemStack leftover = slct.addItem(item, m_client->idef());
+						if (!leftover.empty()) {
+							amount -= leftover.count;
+							full = true;
+						}
+
+						if (amount > 0) {
+							IMoveAction *a = new IMoveAction();
+							a->count = amount;
+							a->from_inv = s.inventoryloc;
+							a->from_list = s.listname;
+							a->from_i = i;
+							a->to_inv = s.inventoryloc;
+							a->to_list = s.listname;
+							a->to_i = s.i;
+							m_invmgr->inventoryAction(a);
+
+							if (m_selected_item)
+								m_selected_amount += amount;
+						}
+
+						if (full) // Stack is full, stop
+							break;
+					}
 				}
 			}
-		break;
+			break;
+		}
 		default:
 			break;
+		}
+
+#ifdef HAVE_TOUCHSCREENGUI
+		if (touch == BET_RIGHT && m_selected_item && !m_left_dragging) {
+			if (!s.isValid()) {
+				// Not a valid slot
+				if (!getAbsoluteClippingRect().isPointInside(m_pointer))
+					// Is outside the menu
+					drop_amount = 1;
+			} else {
+				// Over a valid slot
+				move_amount = 1;
+				if (identical) {
+					// Change the selected amount instead of moving
+					if (move_amount >= m_selected_amount)
+						m_selected_amount = 0;
+					else
+						m_selected_amount -= move_amount;
+					move_amount = 0;
+				}
+			}
+		}
+#endif
+
+		// Update left-dragged slots
+		if (m_left_dragging && m_left_drag_stacks.size() > 1) {
+			// The split amount will always at least one, because the number
+			// of slots will never be greater than the selected amount
+			u16 split_amount = m_left_drag_amount / m_left_drag_stacks.size();
+			u16 split_remaining = m_left_drag_amount % m_left_drag_stacks.size();
+
+			ItemStack stack_from = m_left_drag_stack;
+			m_selected_amount = m_left_drag_amount;
+
+			for (auto &ds : m_left_drag_stacks) {
+				Inventory *inv_to = m_invmgr->getInventory(ds.first.inventoryloc);
+				InventoryList *list_to = inv_to->getList(ds.first.listname);
+
+				if (ds.first == *m_selected_item) {
+					// Adding to the source stack, just change the selected amount
+					m_selected_amount -= split_amount + split_remaining;
+
+				} else {
+					// Reset the stack to its original state
+					list_to->changeItem(ds.first.i, ds.second);
+
+					// Add the new split to the stack
+					ItemStack add_stack = stack_from;
+					add_stack.count = split_amount;
+					ItemStack leftover = list_to->addItem(ds.first.i, add_stack);
+
+					// Remove the split items from the source stack
+					u16 moved = split_amount - leftover.count;
+					m_selected_amount -= moved;
+					stack_from.count -= moved;
+				}
+			}
+			// Save the adjusted source stack
+			list_selected->changeItem(m_selected_item->i, stack_from);
 		}
 
 		// Possibly send inventory action to server
@@ -4460,24 +4824,23 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				return false;
 			if (!s.isValid())
 				return false;
-
-			//assert(inv_selected && inv_s);
-			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-			InventoryList *list_to = list_s;
-			if (!(list_from && list_to))
+			if (!(list_selected && list_s))
 				return false;
-			ItemStack stack_from = list_from->getItem(m_selected_item->i);
-			ItemStack stack_to = list_to->getItem(s.i);
+
+			assert(m_selected_item && m_selected_item->isValid());
+			assert(s.isValid());
+			assert(list_selected && list_s);
+
+			ItemStack stack_from = list_selected->getItem(m_selected_item->i);
+			ItemStack stack_to = list_s->getItem(s.i);
 
 			// Check how many items can be moved
 			move_amount = stack_from.count = MYMIN(move_amount, stack_from.count);
 			ItemStack leftover = stack_to.addItem(stack_from, m_client->idef());
-			bool move = true;
+
 			// If source stack cannot be added to destination stack at all,
 			// they are swapped
-			if (leftover.count == stack_from.count &&
-					leftover.name == stack_from.name) {
-
+			if (leftover.count == stack_from.count && leftover.name == stack_from.name) {
 				if (m_selected_swap.empty()) {
 					m_selected_amount = stack_to.count;
 					m_selected_dragging = false;
@@ -4486,7 +4849,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					// Skip next validation checks due async inventory calls
 					m_selected_swap = stack_to;
 				} else {
-					move = false;
+					move_amount = 0;
 				}
 			}
 			// Source stack goes fully into destination stack
@@ -4499,7 +4862,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				m_selected_amount -= move_amount;
 			}
 
-			if (move) {
+			if (move_amount > 0) {
 				infostream << "Handing IAction::Move to manager" << std::endl;
 				IMoveAction *a = new IMoveAction();
 				a->count = move_amount;
@@ -4511,31 +4874,63 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				a->to_i = s.i;
 				m_invmgr->inventoryAction(a);
 			}
-		} else if (shift_move_amount > 0) {
-			u32 mis = m_inventory_rings.size();
-			u32 i = 0;
-			for (; i < mis; i++) {
-				const ListRingSpec &sp = m_inventory_rings[i];
-				if (sp.inventoryloc == s.inventoryloc
-						&& sp.listname == s.listname)
-					break;
+		} else if (pickup_amount > 0) {
+			// Send IAction::Move
+
+			assert(m_selected_item && m_selected_item->isValid());
+			assert(s.isValid());
+			assert(list_selected && list_s);
+
+			ItemStack stack_from = list_s->getItem(s.i);
+			ItemStack stack_to = list_selected->getItem(m_selected_item->i);
+
+			// Only move if the items are exactly the same,
+			// we shouldn't attempt to pickup different items
+			if (matching) {
+				// Check how many items can be moved
+				pickup_amount = stack_from.count = MYMIN(pickup_amount, stack_from.count);
+				ItemStack leftover = stack_to.addItem(stack_from, m_client->idef());
+				pickup_amount -= leftover.count;
+			} else {
+				pickup_amount = 0;
 			}
+
+			if (pickup_amount > 0) {
+				m_selected_amount += pickup_amount;
+
+				infostream << "Handing IAction::Move to manager" << std::endl;
+				IMoveAction *a = new IMoveAction();
+				a->count = pickup_amount;
+				a->from_inv = s.inventoryloc;
+				a->from_list = s.listname;
+				a->from_i = s.i;
+				a->to_inv = m_selected_item->inventoryloc;
+				a->to_list = m_selected_item->listname;
+				a->to_i = m_selected_item->i;
+				m_invmgr->inventoryAction(a);
+			}
+		} else if (shift_move_amount > 0) {
+			// Try to shift-move the item
 			do {
-				if (i >= mis) // if not found
+				s16 r = getNextInventoryRing(s.inventoryloc, s.listname);
+				if (r < 0) // Not found
 					break;
-				u32 to_inv_ind = (i + 1) % mis;
-				const ListRingSpec &to_inv_sp = m_inventory_rings[to_inv_ind];
+
+				const ListRingSpec &to_ring = m_inventory_rings[r];
 				InventoryList *list_from = list_s;
 				if (!s.isValid())
 					break;
-				Inventory *inv_to = m_invmgr->getInventory(to_inv_sp.inventoryloc);
+				Inventory *inv_to = m_invmgr->getInventory(to_ring.inventoryloc);
 				if (!inv_to)
 					break;
-				InventoryList *list_to = inv_to->getList(to_inv_sp.listname);
+				InventoryList *list_to = inv_to->getList(to_ring.listname);
 				if (!list_to)
 					break;
+
+				// Check how many items can be moved
 				ItemStack stack_from = list_from->getItem(s.i);
-				if(!(shift_move_amount <= stack_from.count))
+				shift_move_amount = MYMIN(shift_move_amount, stack_from.count);
+				if (shift_move_amount == 0)
 					break;
 
 				infostream << "Handing IAction::Move to manager" << std::endl;
@@ -4544,22 +4939,22 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				a->from_inv = s.inventoryloc;
 				a->from_list = s.listname;
 				a->from_i = s.i;
-				a->to_inv = to_inv_sp.inventoryloc;
-				a->to_list = to_inv_sp.listname;
+				a->to_inv = to_ring.inventoryloc;
+				a->to_list = to_ring.listname;
 				a->move_somewhere = true;
 				m_invmgr->inventoryAction(a);
 			} while (0);
+
 		} else if (drop_amount > 0) {
 			// Send IAction::Drop
 
 			if (!(m_selected_item && m_selected_item->isValid()))
 				return false;
-			if (!inv_selected)
+			if (!list_selected)
 				return false;
-			InventoryList *list_from = inv_selected->getList(m_selected_item->listname);
-			if (!list_from)
-				return false;
-			ItemStack stack_from = list_from->getItem(m_selected_item->i);
+			assert(m_selected_item && m_selected_item->isValid());
+			assert(list_selected);
+			ItemStack stack_from = list_selected->getItem(m_selected_item->i);
 
 			// Check how many items can be dropped
 			drop_amount = stack_from.count = MYMIN(drop_amount, stack_from.count);
@@ -4574,10 +4969,14 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			a->from_list = m_selected_item->listname;
 			a->from_i = m_selected_item->i;
 			m_invmgr->inventoryAction(a);
+
 		} else if (craft_amount > 0) {
 			if(!s.isValid())
 				return false;
-			// if there are no items selected or the selected item
+
+			assert(s.isValid());
+
+			// If there are no items selected or the selected item
 			// belongs to craftresult list, proceed with crafting
 			if (!m_selected_item ||
 					!m_selected_item->isValid() || m_selected_item->listname == "craftresult") {
@@ -4594,8 +4993,9 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-		// If m_selected_amount has been decreased to zero, deselect
-		if (m_selected_amount == 0) {
+		// If m_selected_amount has been decreased to zero,
+		// and we are not left-dragging, deselect
+		if (m_selected_amount == 0 && !m_left_dragging) {
 			m_selected_swap.clear();
 			delete m_selected_item;
 			m_selected_item = nullptr;
@@ -4613,7 +5013,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				if ((s.ftype == f_TabHeader) &&
 						(s.fid == event.GUIEvent.Caller->getID())) {
 					if (!s.sound.empty() && m_sound_manager)
-						m_sound_manager->playSound(SimpleSoundSpec(s.sound, 1.0f));
+						m_sound_manager->playSound(0, SoundSpec(s.sound, 1.0f));
 					s.send = true;
 					acceptInput();
 					s.send = false;
@@ -4658,7 +5058,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 
 				if (s.ftype == f_Button || s.ftype == f_CheckBox) {
 					if (!s.sound.empty() && m_sound_manager)
-						m_sound_manager->playSound(SimpleSoundSpec(s.sound, 1.0f));
+						m_sound_manager->playSound(0, SoundSpec(s.sound, 1.0f));
 
 					s.send = true;
 					if (s.is_exit) {
@@ -4683,7 +5083,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						}
 					}
 					if (!s.sound.empty() && m_sound_manager)
-						m_sound_manager->playSound(SimpleSoundSpec(s.sound, 1.0f));
+						m_sound_manager->playSound(0, SoundSpec(s.sound, 1.0f));
 					s.send = true;
 					acceptInput(quit_mode_no);
 
@@ -4701,7 +5101,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 					s.fdefault.clear();
 				} else if (s.ftype == f_Unknown || s.ftype == f_HyperText) {
 					if (!s.sound.empty() && m_sound_manager)
-						m_sound_manager->playSound(SimpleSoundSpec(s.sound, 1.0f));
+						m_sound_manager->playSound(0, SoundSpec(s.sound, 1.0f));
 					s.send = true;
 					acceptInput();
 					s.send = false;
@@ -4761,6 +5161,11 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 	}
+
+#ifdef HAVE_TOUCHSCREENGUI
+	if (m_second_touch)
+		return true; // Stop propagating the event
+#endif
 
 	return Parent ? Parent->OnEvent(event) : false;
 }

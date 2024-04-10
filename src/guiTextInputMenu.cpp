@@ -129,10 +129,9 @@ void GUITextInputMenu::regenerateGui(v2u32 screensize)
 	{
 		core::rect<s32> rect(0, 0, 140, 30);
 		rect = rect + v2s32(size.X/2-140/2, size.Y/2-30/2+25);
-		const wchar_t* text = wgettext("Proceed");
+		const auto text = wstrgettext("Proceed");
 		Environment->addButton(rect, this, 257,
-			text);
-		delete[] text;
+			text.c_str());
 	}
 }
 

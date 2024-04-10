@@ -100,7 +100,6 @@ Thread::~Thread()
 	// Make sure start finished mutex is unlocked before it's destroyed
 	if (m_start_finished_mutex.try_lock())
 		m_start_finished_mutex.unlock();
-
 }
 
 
@@ -114,7 +113,8 @@ bool Thread::start()
 	m_request_stop = false;
 
 	// The mutex may already be locked if the thread is being restarted
-	m_start_finished_mutex.try_lock();
+	// FIXME: what if this fails, or if already locked by same thread?
+	MutexAutoLock sf_lock(m_start_finished_mutex, std::try_to_lock);
 
 	try {
 		m_thread_obj = new std::thread(threadProc, this);
@@ -126,7 +126,7 @@ bool Thread::start()
 		sleep_ms(1);
 
 	// Allow spawned thread to continue
-	m_start_finished_mutex.unlock();
+	sf_lock.unlock();
 
 	m_joinable = true;
 
@@ -184,7 +184,7 @@ void Thread::threadProc(Thread *thr)
 
 	// Wait for the thread that started this one to finish initializing the
 	// thread handle so that getThreadId/getThreadHandle will work.
-	thr->m_start_finished_mutex.lock();
+	MutexAutoLock sf_lock(thr->m_start_finished_mutex);
 
 	thr->m_retval = thr->run();
 
@@ -192,7 +192,7 @@ void Thread::threadProc(Thread *thr)
 	// Unlock m_start_finished_mutex to prevent data race condition on Windows.
 	// On Windows with VS2017 build TerminateThread is called and this mutex is not
 	// released. We try to unlock it from caller thread and it's refused by system.
-	thr->m_start_finished_mutex.unlock();
+	sf_lock.unlock();
 	g_logger.deregisterThread();
 }
 

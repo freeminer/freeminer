@@ -18,6 +18,7 @@
 
 #include "fallingsao.h"
 #include "environment.h"
+#include "inventory.h"
 #include "irr_v3d.h"
 #include "map.h"
 #include "mapnode.h"

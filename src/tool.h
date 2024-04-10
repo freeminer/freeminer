@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <iostream>
 #include "itemgroup.h"
-#include <json/json.h>
+#include "json-forwards.h"
 
 struct ItemDefinition;
 
