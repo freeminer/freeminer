@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "client/camera.h"
 #include "fm_nodecontainer.h"
+#include "irr_v3d.h"
 #include "threading/async.h"
 
 class Client;
@@ -48,7 +49,7 @@ public:
 
 	~FarMesh();
 
-	void update(v3f camera_pos, v3f camera_dir, f32 camera_fov, CameraMode camera_mode,
+	void update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov, CameraMode camera_mode,
 			f32 camera_pitch, f32 camera_yaw, v3pos_t m_camera_offset, float brightness,
 			int render_range, float speed);
 	void makeFarBlock(const v3bpos_t &blockpos);
@@ -58,7 +59,7 @@ public:
 private:
 	std::vector<v3bpos_t> m_make_far_blocks_list;
 
-	v3f m_camera_pos = {-1337, -1337, -1337};
+	v3opos_t m_camera_pos = {-1337, -1337, -1337};
 	v3pos_t m_camera_pos_aligned;
 	v3f m_camera_dir;
 	f32 m_camera_fov;

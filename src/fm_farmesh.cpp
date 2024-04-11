@@ -26,19 +26,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/mapblock_mesh.h"
 #include "constants.h"
 #include "emerge.h"
+#include "irr_v3d.h"
 #include "mapnode.h"
 #include "profiler.h"
 #include "server.h"
 #include "util/directiontables.h"
+#include "util/numeric.h"
 #include "util/timetaker.h"
-const v3f g_6dirsf[6] = {
+const v3opos_t g_6dirsf[6] = {
 		// +right, +top, +back
-		v3f(0, 0, 1),  // back
-		v3f(0, 1, 0),  // top
-		v3f(1, 0, 0),  // right
-		v3f(0, 0, -1), // front
-		v3f(0, -1, 0), // bottom
-		v3f(-1, 0, 0), // left
+		v3opos_t(0, 0, 1),  // back
+		v3opos_t(0, 1, 0),  // top
+		v3opos_t(1, 0, 0),  // right
+		v3opos_t(0, 0, -1), // front
+		v3opos_t(0, -1, 0), // bottom
+		v3opos_t(-1, 0, 0), // left
 };
 
 FarContainer::FarContainer(){};
@@ -209,7 +211,7 @@ int FarMesh::go_direction(const size_t dir_n)
 		uint16_t y = uint16_t(i / grid_size_x);
 		uint16_t x = i % grid_size_x;
 
-		v3f dir_first = dir * distance_min / 2;
+		auto dir_first = dir * distance_min / 2;
 		auto pos_center = dir_first + m_camera_pos;
 
 		if (!dir.X)
@@ -220,9 +222,9 @@ int FarMesh::go_direction(const size_t dir_n)
 			dir_first.Z +=
 					distance_min / grid_size_x * ((!dir.Y ? x : y) - grid_size_x / 2);
 
-		v3f dir_l = dir_first.normalize();
+		auto dir_l = dir_first.normalize();
 
-		v3f pos_last = pos_center;
+		auto pos_last = pos_center;
 		++ray_cache.step_num;
 		for (size_t steps = 0; steps < 200; ++ray_cache.step_num, ++steps) {
 			//const auto dstep = ray_cache.step_num; // + 1;
@@ -299,7 +301,7 @@ int FarMesh::go_direction(const size_t dir_n)
 	return processed;
 }
 
-void FarMesh::update(v3f camera_pos, v3f camera_dir, f32 camera_fov,
+void FarMesh::update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov,
 		CameraMode camera_mode, f32 camera_pitch, f32 camera_yaw, v3pos_t camera_offset,
 		float brightness, int render_range, float speed)
 {
