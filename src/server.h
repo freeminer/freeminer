@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "chatmessage.h"
 #include "sound.h"
 #include "translation.h"
+#include <memory>
 #include <string>
 #include <list>
 #include <map>
@@ -58,6 +59,7 @@ class SendBlocksThread;
 class LiquidThread;
 class EnvThread;
 class AbmThread;
+class AbmWorldThread;
 
 
 class ClientNotFoundException : public BaseException
@@ -333,7 +335,7 @@ public:
 	bool showFormspec(const char *name, const std::string &formspec, const std::string &formname);
 	Map & getMap() { return m_env->getMap(); }
 	ServerEnvironment & getEnv() { return *m_env; }
-	v3opos_t findSpawnPos();
+	v3opos_t findSpawnPos(const std::string &player_name);
 
 	u32 hudAdd(RemotePlayer *player, HudElement *element);
 	bool hudRemove(RemotePlayer *player, u32 id);
@@ -776,14 +778,12 @@ public:
 	void handleCommand_Drawcontrol(NetworkPacket* pkt);
 	Stat stat;
 
-	MapThread *m_map_thread = nullptr;
-	SendBlocksThread *m_sendblocks = nullptr;
-	LiquidThread *m_liquid = nullptr;
-	EnvThread *m_envthread = nullptr;
-	AbmThread *m_abmthread = nullptr;
-
-
-
+	std::unique_ptr<MapThread> m_map_thread;
+	std::unique_ptr<SendBlocksThread> m_sendblocks_thead;
+	std::unique_ptr<LiquidThread> m_liquid;
+	std::unique_ptr<EnvThread> m_env_thread;
+	std::unique_ptr<AbmThread> m_abm_thread;
+	std::unique_ptr<AbmWorldThread> m_abm_world_thread;
 
 	// CSM restrictions byteflag
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;

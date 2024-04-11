@@ -23,11 +23,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "environment.h"
 #include "irr_v3d.h"
 #include "map.h"
+#include "server/fm_key_value_cached.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
 #include "threading/concurrent_set.h"
 #include "util/numeric.h"
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include "util/metricsbackend.h"
 #include <set>
@@ -72,7 +75,7 @@ public:
 	virtual const std::vector<std::string> getTriggerContents() const = 0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const = 0;
+	virtual const std::vector<std::string> getRequiredNeighbors(uint8_t activate) const = 0;
 	// Trigger interval in seconds
 	virtual float getTriggerInterval() = 0;
 	// Random chance of (1 / return value), 0 is disallowed
@@ -89,7 +92,7 @@ public:
 */
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider
-			, v3pos_t neighbor_pos, bool activate = false){};
+			, v3pos_t neighbor_pos, uint8_t activate = 0){};
 };
 
 struct ABMWithState
@@ -306,7 +309,7 @@ public:
 		Returns the id of the object.
 		Returns 0 if not added and thus deleted.
 	*/
-	u16 addActiveObject(std::unique_ptr<ServerActiveObject> object);
+	u16 addActiveObject(std::shared_ptr<ServerActiveObject> object);
 
 	/*
 		Add an active object as a static object to the corresponding
@@ -370,7 +373,7 @@ public:
 	// Script-aware node setters
 	bool setNode(v3pos_t p, const MapNode &n, s16 fast = 0, bool important = false);
 	bool removeNode(v3pos_t p, s16 fast = 0, bool important = false);
-	bool swapNode(v3pos_t p, const MapNode &n);
+	bool swapNode(v3pos_t p, const MapNode &n, s16 fast = 0);
 
 	// Find the daylight value at pos with a Depth First Search
 	u8 findSunlight(v3pos_t pos) const;
@@ -447,12 +450,13 @@ public:
 	bool m_more_threads = true;
 public:
 	ABMHandler m_abmhandler;
+	uint8_t analyzeBlock(MapBlock * block);
 private:
-	void analyzeBlock(MapBlock * block);
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3pos_t> m_abm_random_blocks;
 public:
+	size_t blockStep(MapBlock *block, float dtime = 0, uint8_t activate = 0);
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:
@@ -491,6 +495,9 @@ private:
 	u32 m_blocks_added_last = 0;
 	u32 m_active_block_analyzed_last = 0;
 	std::mutex m_max_lag_estimate_mutex;
+public:
+	KeyValueCached blocks_with_abm;
+	size_t abm_world_last = 0;
 //end of freeminer
 
 
@@ -519,7 +526,7 @@ private:
 		Returns the id of the object.
 		Returns 0 if not added and thus deleted.
 	*/
-	u16 addActiveObjectRaw(std::unique_ptr<ServerActiveObject> object,
+	u16 addActiveObjectRaw(std::shared_ptr<ServerActiveObject> object,
 			bool set_changed, u32 dtime_s);
 
 	/*

@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include <cstddef>
 #include <iostream>
+#include <memory>
 #include <queue>
 #include <algorithm>
 #include "irr_v3d.h"
@@ -95,7 +96,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "msgpack_fix.h"
 #include <chrono>
 #include <sys/types.h>
-#include "threading/thread_pool.h"
+#include "threading/thread_vector.h"
 #include "key_value_storage.h"
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
@@ -401,12 +402,6 @@ Server::~Server()
 		delete m_thread;
 	}
 
-	delete m_liquid;
-	delete m_sendblocks;
-	delete m_map_thread;
-	delete m_abmthread;
-	delete m_envthread;
-
 	// Write any changes before deletion.
 	if (m_mod_storage_database)
 		m_mod_storage_database->endSave();
@@ -459,11 +454,12 @@ void Server::init()
 	m_emerge = new EmergeManager(this, m_metrics_backend.get());
 
 	if (m_more_threads) {
-		m_map_thread = new MapThread(this);
-		m_sendblocks = new SendBlocksThread(this);
-		m_liquid = new LiquidThread(this);
-		m_envthread = new EnvThread(this);
-		m_abmthread = new AbmThread(this);
+		m_map_thread =  std::make_unique<MapThread>(this);
+		m_sendblocks_thead = std::make_unique<SendBlocksThread>(this);
+		m_liquid = std::make_unique<LiquidThread>(this);
+		m_env_thread = std::make_unique<EnvThread>(this);
+		m_abm_thread = std::make_unique< AbmThread>(this);
+		m_abm_world_thread = std::make_unique<AbmWorldThread>(this);
 	}
 
 	// Create world if it doesn't exist
@@ -610,14 +606,16 @@ void Server::start()
 	m_thread->restart();
 	if (m_map_thread)
 		m_map_thread->restart();
-	if (m_sendblocks)
-		m_sendblocks->restart();
+	if (m_sendblocks_thead)
+		m_sendblocks_thead->restart();
 	if (m_liquid)
 		m_liquid->restart();
-	if(m_envthread)
-		m_envthread->restart();
-	if(m_abmthread)
-		m_abmthread->restart();
+	if(m_env_thread)
+		m_env_thread->restart();
+	if(m_abm_thread)
+		m_abm_thread->restart();
+	if(m_abm_world_thread)
+		m_abm_world_thread->restart();
 
 	if (!m_simple_singleplayer_mode && g_settings->getBool("serverlist_lan"))
 		lan_adv_server.serve(m_bind_addr.getPort());
@@ -634,6 +632,7 @@ void Server::start()
 */
 	};
 
+   if(0)
 	if (!m_admin_chat) {
 		// we're not printing to rawstream to avoid it showing up in the logs.
 		// however it would then mess up the ncurses terminal (m_admin_chat),
@@ -641,6 +640,8 @@ void Server::start()
 		for (auto line : art)
 			std::cerr << line << std::endl;
 	}
+
+
 
 // == fm:
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash
@@ -689,6 +690,8 @@ void Server::start()
 // ==
 
 
+
+
 	actionstream << "World at [" << m_path_world << "]" << std::endl;
 	actionstream << "Server for gameid=\"" << m_gamespec.id
 			<< "\" mapgen=\"" << Mapgen::getMapgenName(m_emerge->mgparams->mgtype)
@@ -706,14 +709,16 @@ void Server::stop()
 
 	if (m_liquid)
 		m_liquid->stop();
-	if (m_sendblocks)
-		m_sendblocks->stop();
+	if (m_sendblocks_thead)
+		m_sendblocks_thead->stop();
 	if (m_map_thread)
 		m_map_thread->stop();
-	if(m_abmthread)
-		m_abmthread->stop();
-	if(m_envthread)
-		m_envthread->stop();
+	if(m_abm_thread)
+		m_abm_thread->stop();
+	if(m_abm_world_thread)
+		m_abm_world_thread->stop();
+	if(m_env_thread)
+		m_env_thread->stop();
 
 
 	m_thread->wait();
@@ -721,14 +726,16 @@ void Server::stop()
 
 	if (m_liquid)
 		m_liquid->join();
-	if (m_sendblocks)
-		m_sendblocks->join();
+	if (m_sendblocks_thead)
+		m_sendblocks_thead->join();
 	if (m_map_thread)
 		m_map_thread->join();
-	if(m_abmthread)
-		m_abmthread->join();
-	if(m_envthread)
-		m_envthread->join();
+	if(m_abm_thread)
+		m_abm_thread->join();
+	if(m_abm_world_thread)
+		m_abm_world_thread->join();
+	if(m_env_thread)
+		m_env_thread->join();
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }
@@ -767,7 +774,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	}
 */
 
-	if (!m_sendblocks)
+	if (!m_sendblocks_thead)
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
@@ -1344,6 +1351,8 @@ int Server::save(float dtime, float dedicated_server_step, bool breakable) {
 			m_env->saveMeta();
 
 			stat.save();
+			m_env->blocks_with_abm.save();
+
 		}
 		save_break:;
 
@@ -3315,7 +3324,7 @@ void Server::RespawnPlayer(session_t peer_id)
 	bool repositioned = m_script->on_respawnplayer(playersao);
 	if (!repositioned) {
 		// setPos will send the new position to client
-		playersao->setPos(findSpawnPos());
+		playersao->setPos(findSpawnPos(playersao->getPlayer()->getName()));
 	}
 
 	playersao->m_ms_from_last_respawn = 0;
@@ -4151,7 +4160,7 @@ bool Server::rollbackRevertActions(const std::list<RollbackAction> &actions,
 	// Fail if no actions to handle
 	if (actions.empty()) {
 		assert(log);
-		log->push_back("Nothing to do.");
+		log->emplace_back("Nothing to do.");
 		return false;
 	}
 
@@ -4254,7 +4263,7 @@ void Server::addShutdownError(const ModError &e)
 }
 
 #if 1
-v3opos_t Server::findSpawnPos()
+v3opos_t Server::findSpawnPos(const std::string &player_name)
 {
 	ServerMap &map = m_env->getServerMap();
 	v3opos_t nodeposf;
@@ -4262,6 +4271,8 @@ v3opos_t Server::findSpawnPos()
 	pos_t find = 0;
 	g_settings->getPosNoEx("static_spawnpoint_find", find);
 	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
+		return nodeposf * BS;
+	} else if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposf) && !find) {
 		return nodeposf * BS;
 	}
 

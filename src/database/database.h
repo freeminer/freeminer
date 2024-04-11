@@ -47,9 +47,9 @@ public:
 	static s64 getBlockAsInteger(const v3bpos_t &pos);
 	static v3bpos_t getIntegerAsBlock(s64 i);
 	
-	std::string getBlockAsString(const v3bpos_t &pos) const;
-	std::string getBlockAsStringCompatible(const v3bpos_t &pos) const;
-	v3bpos_t getStringAsBlock(const std::string &i) const;
+	static std::string getBlockAsString(const v3bpos_t &pos);
+	static std::string getBlockAsStringCompatible(const v3bpos_t &pos);
+	static v3bpos_t getStringAsBlock(const std::string &i);
 
 	virtual void listAllLoadableBlocks(std::vector<v3bpos_t> &dst) = 0;
 };

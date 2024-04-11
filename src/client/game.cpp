@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_cao.h"
 #include "content/subgames.h"
 #include "client/event_manager.h"
+#include "fm_farmesh.h"
 #include "fontengine.h"
 #include "irr_v3d.h"
 #include "itemdef.h"
@@ -80,8 +81,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "hud.h"
 #include "clientdynamicinfo.h"
 
+#include "threading/async.h"
 #include <future>
-#include <netinet/in.h>
+#include <memory>
 
 
 #if USE_SOUND
@@ -557,7 +559,7 @@ public:
 		}
 
 		services->setPixelShaderConstant(services->getPixelShaderConstantID("sunPosition"), (irr::f32 *)&sun_moon_position, 3);
-        services->setVertexShaderConstant(services->getPixelShaderConstantID("sunPosition"), (irr::f32 *)&sun_moon_position, 3);
+		services->setVertexShaderConstant(services->getPixelShaderConstantID("sunPosition"), (irr::f32 *)&sun_moon_position, 3);
 
 		//FMTODO!!
 		if (m_local_inventory) {
@@ -724,6 +726,7 @@ struct GameRunData {
 	bool show_block_boundaries = false;
 	bool connected = false;
 	bool reconnect = false;
+	bool enable_fog = false;
     //==
 
 
@@ -929,10 +932,10 @@ private:
 	//freeminer:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
-#if ENABLE_THREADS && HAVE_FUTURE
-	std::future<void> updateDrawList_future;
-#endif
+    async_step_runner updateDrawList_async;
 	bool m_cinematic = false;
+	std::unique_ptr<FarMesh> farmesh;
+    async_step_runner farmesh_async;
 	// minetest:
 
 
@@ -1134,6 +1137,10 @@ Game::Game() :
 
 Game::~Game()
 {
+	farmesh.reset();
+	farmesh_async.wait();
+	updateDrawList_async.wait();
+	
 	delete client;
 	delete soundmaker;
 	sound_manager.reset();
@@ -1315,6 +1322,8 @@ void Game::run()
 			g_gamecallback->shutdown_requested = 1;
 // ==
 
+
+
 		// Prepare render data for next iteration
 
 		updateStats(&stats, draw_times, dtime);
@@ -1389,10 +1398,6 @@ void Game::shutdown()
 
 	showOverlayMessage(N_("Shutting down..."), 0, 0, false);
 
-#if ENABLE_THREADS && HAVE_FUTURE
-	if (updateDrawList_future.valid())
-		updateDrawList_future.wait_for(std::chrono::seconds(10));
-#endif
 
 	if (clouds)
 		clouds->drop();
@@ -1514,6 +1519,10 @@ bool Game::createSingleplayerServer(const std::string &map_dir,
 		// Make the simple singleplayer server only accept connections from localhost,
 		// which also makes Windows Defender not show a warning.
 		bind_str = "127.0.0.1";
+
+		if (g_settings->getBool("ipv6_server"))
+			bind_str = "::1";
+
 	} else {
 		bind_str = g_settings->get("bind_address");
 	}
@@ -1666,6 +1675,9 @@ bool Game::createClient(const GameStartData &start_data)
 	if (mapper && client->modsLoaded())
 		client->getScript()->on_minimap_ready(mapper);
 
+	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
+		farmesh.reset(new FarMesh(client, server, draw_control));
+	}
 
 	//freeminer:
 /* todo?
@@ -1750,6 +1762,27 @@ bool Game::connectToServer(const GameStartData &start_data,
 		errorstream << *error_message << std::endl;
 		return false;
 	}
+
+#if USE_MULTI
+	if (simple_singleplayer_mode || local_server_mode) {
+		u16 port = 0;
+#if USE_ENET
+		if (!g_settings->getU16NoEx("port_enet", port)) {
+			port = connect_address.getPort() + 200;
+		}
+		g_settings->set("remote_proto", "enet");
+#elif USE_SCTP
+		if (!g_settings->getU16NoEx("port_sctp", port)) {
+			port = connect_address.getPort() + 100;
+		}
+		g_settings->set("remote_proto", "sctp");
+#else
+		g_settings->set("remote_proto", "mt");
+#endif
+		if (port)
+			connect_address.setPort(port);
+	}
+#endif
 
 	try {
 		client = new Client(
@@ -2781,6 +2814,8 @@ void Game::toggleFog()
 		m_game_ui->showTranslatedStatusText("Fog disabled");
 	else
 		m_game_ui->showTranslatedStatusText("Fog enabled");
+
+	runData.enable_fog = !fog_enabled;
 }
 
 
@@ -2853,22 +2888,22 @@ void Game::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags
 }*/
 void Game::increaseViewRange()
 {
-	pos_t range = g_settings->getPos("viewing_range");
-	pos_t range_new = range + 10;
+	pos_t range = g_settings->getS16("viewing_range");
+	int range_new = range + 10;
+	pos_t server_limit = sky->getFogDistance();
 
-	if (g_settings->getS32("farmesh")) {
-		range_new = range * 1.5;
-	} else {
-		range_new = range + MAP_BLOCKSIZE;
+	{ //fm:
+		if (g_settings->getS32("farmesh")) {
+			range_new = range * 1.5;
+		} else {
+			range_new = range + MAP_BLOCKSIZE;
+		}
+
+		// it's < 0 if it's outside the range of s16
+		// and increase it directly from 1 to 16 for less key pressing
+		if (range_new < MAP_BLOCKSIZE)
+			range_new = MAP_BLOCKSIZE;
 	}
-
-	// it's < 0 if it's outside the range of s16
-	// and increase it directly from 1 to 16 for less key pressing
-	if (range_new < MAP_BLOCKSIZE)
-		range_new = MAX_MAP_GENERATION_LIMIT;
-
-
-	s16 server_limit = sky->getFogDistance();
 
 	if (range_new >= MAX_MAP_GENERATION_LIMIT) {
 		range_new = MAX_MAP_GENERATION_LIMIT;
@@ -2888,20 +2923,20 @@ void Game::increaseViewRange()
 
 void Game::decreaseViewRange()
 {
-    pos_t range = g_settings->getPos("viewing_range");
+	pos_t range = g_settings->getS16("viewing_range");
 	pos_t range_new = range - 10;
+	pos_t server_limit = sky->getFogDistance();
 
-	if (g_settings->getS32("farmesh")) {
-		range_new = range / 1.5;
-	} else {
-		range_new = range - MAP_BLOCKSIZE;
+	{ //fm:
+		if (g_settings->getS32("farmesh")) {
+			range_new = range / 1.5;
+		} else {
+			range_new = range - MAP_BLOCKSIZE;
+		}
 	}
 
-
-	s16 server_limit = sky->getFogDistance();
-
-	if (range_new <= 20) {
-		range_new = 20;
+	if (range_new <= MAP_BLOCKSIZE) {
+		range_new = MAP_BLOCKSIZE;
 		std::wstring msg = server_limit >= 0 && range_new > server_limit ?
 				fwgettext("Viewing changed to %d (the minimum), but limited to %d by game or mod", range_new, server_limit) :
 				fwgettext("Viewing changed to %d (the minimum)", range_new);
@@ -3828,8 +3863,8 @@ PointedThing Game::updatePointedThing(
 		aabb3f selection_box;
 		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
 				runData.selected_object->getSelectionBox(&selection_box)) {
-			auto pos = runData.selected_object->getPosition();
-			selectionboxes->push_back(selection_box);
+			v3opos_t pos = runData.selected_object->getPosition();
+			selectionboxes->emplace_back(selection_box);
 			hud->setSelectionPos(pos, camera_offset);
 			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object);
 			if (gcao != nullptr && gcao->getProperties().rotate_selectionbox)
@@ -4382,26 +4417,36 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		Fog range
 	*/
 
-	auto player_position = player->getPosition();
-	auto pos_i = floatToInt(player_position, BS);
+	if (sky->getFogDistance() >= 0) {
+		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance());
+	}
+
+
+	const auto player_position = player->getPosition();
+	const auto pos_i = floatToInt(player_position, BS);
 	if (!runData.headless_optimize) {
 
 	auto fog_was = runData.fog_range;
 
-	if (sky->getFogDistance() >= 0) {
-		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance());
-	}
 	if (draw_control->range_all && sky->getFogDistance() < 0) {
 		runData.fog_range = 100000 * BS;
 	} else if (!runData.headless_optimize) {
 		runData.fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
+		thread_local static const auto farmesh = g_settings->getS32("farmesh");
+		if (runData.fog_range < farmesh) {
+			runData.fog_range = farmesh;
+		}
+
 		if (client->use_weather) {
 			auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
 			runData.fog_range *= (1.55 - 1.4*(float)humidity/100);
 		}
 
+		if (!runData.enable_fog)
+			runData.fog_range = FARSCALE_LIMIT * BS;
+		else
 		runData.fog_range = MYMIN(
 				runData.fog_range,
 				//(draw_control->farthest_drawn + 20)
@@ -4415,6 +4460,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		runData.fog_range = draw_control->wanted_range * BS;
 */
 	}
+
+	client->fog_range = runData.fog_range;
 
 	/*
 		Calculate general brightness
@@ -4468,6 +4515,17 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	*/
 	if (clouds)
 		updateClouds(dtime);
+
+	if (farmesh) {
+		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
+		farmesh_async.step([&, farmesh_range = farmesh_range, yaw = player->getYaw(),
+								   pitch = player->getPitch(),
+								   speed = player->getSpeed().getLength()]() {
+			farmesh->update(camera->getPosition(), camera->getDirection(),
+					camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
+					camera->getOffset(), sky->getBrightness(), farmesh_range, speed);
+		});
+	}
 
 	/*
 		Update particles
@@ -4546,7 +4604,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	runData.update_draw_list_timer += dtime;
 	runData.touch_blocks_timer += dtime;
 
-	float update_draw_list_delta = 0.5f;
+	float update_draw_list_delta = 0.2f;
 
 /* mt dir */
 #if !USE_ASYNC_DRAWLIST_UPDATE
@@ -4555,7 +4613,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	// call only one of updateDrawList, touchMapBlocks, or updateShadow per frame
 	// (the else-ifs below are intentional)
-  if (!runData.headless_optimize)
+   if (!runData.headless_optimize)
 	if (runData.update_draw_list_timer >= update_draw_list_delta
 			|| runData.update_draw_list_last_cam_dir.getDistanceFrom(camera_direction) > 0.2
 			|| m_camera_offset_changed
@@ -4583,22 +4641,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			bool allow = true;
 #if ENABLE_THREADS && HAVE_FUTURE
 			if (g_settings->getBool("more_threads")) {
-				bool allow = true;
-				if (updateDrawList_future.valid()) {
-					auto res =
-							updateDrawList_future.wait_for(std::chrono::milliseconds(0));
-					if (res == std::future_status::timeout)
-						allow = false;
-				}
-				if (allow) {
-					updateDrawList_future = std::async(
-							std::launch::async,
-							[=](float dtime) {
-								client->getEnv().getClientMap().updateDrawListFm(
-										dtime, 10000);
-							},
-							runData.update_draw_list_timer);
-				}
+			updateDrawList_async.step([&](const float dtime) {
+				client->getEnv().getClientMap().updateDrawListFm(dtime, 10000);
+			},
+					runData.update_draw_list_timer);
 			} else
 #endif
 
@@ -4614,6 +4660,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	} else if (RenderingEngine::get_shadow_renderer()) {
 		updateShadows();
 	}
+
 
 	m_game_ui->update(*stats, client, draw_control, cam, runData.pointed_old, gui_chat_console, dtime);
 
@@ -4872,6 +4919,8 @@ void Game::readSettings()
 	m_invert_hotbar_mouse_wheel = g_settings->getBool("invert_hotbar_mouse_wheel");
 
 	m_does_lost_focus_pause_game = g_settings->getBool("pause_on_lost_focus");
+
+	runData.enable_fog = m_cache_enable_fog;
 }
 
 

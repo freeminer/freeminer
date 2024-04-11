@@ -45,6 +45,7 @@ set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
 set(BUILD_BENCHMARKS FALSE CACHE BOOL "Build benchmarks")
 set(BUILD_DOCUMENTATION TRUE CACHE BOOL "Build documentation")
 
+set(DEFAULT_RUN_IN_PLACE FALSE)
 set(DEFAULT_RUN_IN_PLACE TRUE)
 if(WIN32)
 	set(DEFAULT_RUN_IN_PLACE TRUE)
@@ -53,7 +54,9 @@ set(RUN_IN_PLACE ${DEFAULT_RUN_IN_PLACE} CACHE BOOL
 	"Run directly in source directory structure")
 
 
-# == fm:
+
+# == freeminer:
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 if(WIN32 OR APPLE)
@@ -95,7 +98,6 @@ if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	find_library (LIBCXX_LIBRARY c++)      
 	find_library (LIBCXXABI_LIBRARY c++abi)
 	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
-		set(ENABLE_LEVELDB 0 CACHE BOOL "") # TODO: build via submodule
 		add_link_options(-stdlib=libc++)
 		add_compile_options(-stdlib=libc++)
 		message(STATUS "Using libc++ and lld linker: ${LIBCXX_LIBRARY}, ${LIBCXXABI_LIBRARY}")
@@ -109,7 +111,7 @@ endif()
 option (USE_STATIC_LIBRARIES "Set to FALSE to use shared libraries" ON)
 # ==
 
-
+#============
 
 message(STATUS "*** Will build version ${VERSION_STRING} ***")
 message(STATUS "BUILD_CLIENT: " ${BUILD_CLIENT})

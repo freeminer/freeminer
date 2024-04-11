@@ -561,7 +561,7 @@ void InventoryList::deSerialize(std::istream &is)
 
 InventoryList & InventoryList::operator = (const InventoryList &other)
 {
-	//checkResizeLock();
+	checkResizeLock();
 
 	//m_items = other.m_items;
 	m_items.assign(other.m_items.begin(), other.m_items.end());

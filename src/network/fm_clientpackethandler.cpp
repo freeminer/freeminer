@@ -114,12 +114,11 @@ void Client::handleCommand_InitLegacy(NetworkPacket* pkt)   {
         MapgenParams *params = Mapgen::createMapgenParams(mgtype);
         params->MapgenParams::readParams(&settings);
         params->readParams(&settings);
-/*
-		if (g_settings->getS32("farmesh5")) {
+
+		if (g_settings->getS32("farmesh")) {
 	 	    m_emerge = new EmergeManager(this);
         	m_emerge->initMapgens(params);
 		}
-*/
 
         if (!m_world_path.empty()) {
             m_settings_mgr = new MapSettingsManager(g_settings, m_world_path + DIR_DELIM + "map_meta");

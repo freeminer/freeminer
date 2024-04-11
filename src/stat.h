@@ -15,25 +15,24 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef STAT_H
-#define STAT_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
 
 #include "key_value_storage.h"
-#include "log.h"
 
-typedef float stat_value;
-
-class Stat {
+class Stat
+{
 public:
+	using stat_value = float;
+
 	KeyValueStorage database;
 	std::unordered_map<std::string, stat_value> stats; // todo: make shared
 
 	std::string day, week, month;
 
-	Stat(std::string savedir);
+	Stat(const std::string &savedir);
 	~Stat();
 
 	void save();
@@ -41,13 +40,13 @@ public:
 	void open();
 	void close();
 
-	stat_value get(const std::string & key);
-	stat_value write_one(const std::string & key, const stat_value & value);
-	stat_value add(const std::string & key, const std::string & player = "", stat_value value = 1);
+	const stat_value &get(const std::string &key);
+	const stat_value &write_one(const std::string &key, const stat_value &value);
+	stat_value add(
+			const std::string &key, const std::string &player = "", stat_value value = 1);
 
 	void update_time();
+
 private:
 	std::mutex mutex;
 };
-
-#endif

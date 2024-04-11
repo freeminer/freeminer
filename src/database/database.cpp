@@ -72,14 +72,14 @@ v3bpos_t MapDatabase::getIntegerAsBlock(s64 i)
 	return pos;
 }
 
-std::string MapDatabase::getBlockAsString(const v3bpos_t &pos) const {
+std::string MapDatabase::getBlockAsString(const v3bpos_t &pos) {
     // 'a' is like version marker. In future other letters or words can be used.
 	std::ostringstream os;
 	os << "a" << pos.X << "," << pos.Y << "," << pos.Z;
 	return os.str().c_str();
 }
 
-std::string MapDatabase::getBlockAsStringCompatible(const v3bpos_t &pos) const
+std::string MapDatabase::getBlockAsStringCompatible(const v3bpos_t &pos)
 {
 #if USE_POS32	
 	const bpos_t max_limit_bp = 31000 / MAP_BLOCKSIZE;
@@ -96,7 +96,7 @@ std::string MapDatabase::getBlockAsStringCompatible(const v3bpos_t &pos) const
 #endif
 }
 
-v3bpos_t MapDatabase::getStringAsBlock(const std::string &i) const {
+v3bpos_t MapDatabase::getStringAsBlock(const std::string &i) {
 #if USE_POS32	
 	std::istringstream is(i);
 	v3bpos_t pos;

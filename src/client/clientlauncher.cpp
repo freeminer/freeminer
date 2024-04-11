@@ -172,10 +172,9 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 				skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, sprite_id);
 		}
 	}
-/*
+
 	g_fontengine = new FontEngine(guienv);
 	FATAL_ERROR_IF(g_fontengine == NULL, "Font engine creation failed.");
-*/
 
 	// Irrlicht 1.8 input colours
 	skin->setColor(gui::EGDC_EDITABLE, video::SColor(255, 128, 128, 128));
@@ -288,7 +287,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 			)
 			){
 				m_rendering_engine->get_scene_manager()->clear();
-				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << std::endl;
+				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << '\n';
 			}
 
 		} //try
@@ -517,6 +516,11 @@ bool ClientLauncher::launch_game(std::string &error_message,
 		start_data.name = "singleplayer";
 		start_data.password = "";
 		start_data.socket_port = myrand_range(49152, 65535);
+
+#if USE_MULTI
+		start_data.socket_port -= 200; //max diffport
+#endif
+
 	} else {
 		g_settings->set("name", start_data.name);
 	}

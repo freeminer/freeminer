@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 #include <sys/socket.h>
-#include "debug/iostream_debug_helpers.h"
 
 #include "config.h"
 
@@ -35,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
+#include "filesys.h"
 #include "porting.h"
 #include "profiler.h"
 #include "serialization.h"
@@ -43,7 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/serialize.h"
 #include "util/string.h"
 #include <cstdarg>
-
+//#include "netinet/sctp_os.h"
 #include <websocketpp/server.hpp>
 
 #include <websocketpp/config/debug_asio_no_tls.hpp>
@@ -56,6 +56,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <websocketpp/server.hpp>
 
 // #include <iostream>
+
+//extern int sctpconn_attach(struct socket *so, int proto, uint32_t vrf_id);
+
 
 namespace con_ws_sctp
 {
@@ -116,23 +119,116 @@ struct debug_custom : public websocketpp::config::debug_asio
 
 typedef websocketpp::server<debug_custom> server;
 
+#if USE_SSL
+Connection::context_ptr Connection::on_tls_init(const websocketpp::connection_hdl & /* hdl */)
+{
+	namespace asio = websocketpp::lib::asio;
+	context_ptr ctx = websocketpp::lib::make_shared<asio::ssl::context>(
+			// asio::ssl::context::tlsv13
+			asio::ssl::context::tlsv13_server);
+	try {
+		ctx->set_options(asio::ssl::context::default_workarounds |
+						 asio::ssl::context::no_sslv2 | asio::ssl::context::no_sslv3 |
+						 asio::ssl::context::single_dh_use);
+		ctx->set_password_callback(std::bind([&]() {
+			return ""; /*GetSSLPassword();*/
+		}));
+
+		std::string chain = "fullchain.pem";
+		std::string key = "privkey.pem";
+		g_settings->getNoEx("https_chain", chain);
+		g_settings->getNoEx("https_key", key);
+		ctx->use_certificate_chain_file(chain /*GetSSLCertificateChain()*/);
+		ctx->use_private_key_file(key /*GetSSLPrivateKey()*/, asio::ssl::context::pem);
+		std::string ciphers; // = GetSSLCiphers();
+		if (ciphers.empty())
+			ciphers = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:"
+					  "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:"
+					  "DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+"
+					  "AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:"
+					  "ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-"
+					  "AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-"
+					  "SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-"
+					  "AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:"
+					  "DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!"
+					  "EXPORT:!DES:!RC4:!3DES:!MD5:!PSK";
+
+		if (SSL_CTX_set_cipher_list(ctx->native_handle(), ciphers.c_str()) != 1) {
+			warningstream << "Error setting cipher list";
+		}
+	} catch (const std::exception &e) {
+		errorstream << "Exception: " << e.what();
+	}
+	return ctx;
+}
+#endif
+
+
 void Connection::on_http(websocketpp::connection_hdl hdl)
 {
-	server::connection_ptr con = Server.get_con_from_hdl(hdl);
+	ws_server_t::connection_ptr con = Server.get_con_from_hdl(hdl);
 
 	std::string res = con->get_request_body();
 
 	std::stringstream ss;
 	ss << "got HTTP request with " << res.size() << " bytes of body data.";
-	cs << ss.str() << std::endl;
+	cs << ss.str() << '\n';
+	std::string http_root = porting::path_share + DIR_DELIM + "http_root" + DIR_DELIM;
+	g_settings->getNoEx("http_root", http_root);
+
+	if (con->get_request().get_method() == "GET") {
+
+		if (con->get_request().get_uri().find("..") != std::string::npos) {
+			con->set_status(websocketpp::http::status_code::bad_request);
+			return;
+		}
+
+		std::string path_serve;
+
+		auto uri = con->get_request().get_uri();
+		if (const auto f = uri.find('?'); f != std::string::npos) {
+			uri.resize(f);
+		}
+		if (uri == "/") {
+			uri = "index.html";
+		}
+
+		if (uri == "/favicon.ico") {
+			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
+						 PROJECT_NAME + ".ico";
+		} else if (!uri.empty()) {
+			path_serve = http_root + uri;
+			if (uri.ends_with(".wasm")) {
+				con->append_header("Content-Type", "application/wasm");
+			} else if (uri.ends_with(".js")) {
+				con->append_header("Content-Type", "application/javascript");
+			}
+		}
+
+		if (!path_serve.empty()) {
+			con->append_header("Access-Control-Allow-Origin", "*");
+			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
+			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
+			con->defer_http_response();
+			std::ifstream t(path_serve);
+			std::stringstream buffer;
+			buffer << t.rdbuf();
+			con->set_body(buffer.str());
+			con->set_status(websocketpp::http::status_code::ok);
+			con->send_http_response();
+			// TODO: serve log here?
+			return;
+		}
+	}
+	// DUMP(con->get_request().get_method(), con->get_request().get_version(), con->get_request().get_uri(), con->get_request().get_headers(), res);
 
 	con->set_body(ss.str());
-	con->set_status(websocketpp::http::status_code::ok);
+	con->set_status(websocketpp::http::status_code::not_found);
 }
 
 void Connection::on_fail(websocketpp::connection_hdl hdl)
 {
-	server::connection_ptr con = Server.get_con_from_hdl(hdl);
+	ws_server_t::connection_ptr con = Server.get_con_from_hdl(hdl);
 
 	cs << "Fail handler: " << con->get_ec() << " " << con->get_ec().message()
 	   << std::endl;
@@ -214,9 +310,68 @@ static int send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info)
 // Define a callback to handle incoming messages
 void Connection::on_message(websocketpp::connection_hdl hdl, message_ptr msg)
 {
+{
+
+if (0)
+if (!sctp_server_sock) {
+usrsctp_register_address((void *)&sctp_server_sock);
+
+DUMP("makesssock");
+			if ((sctp_server_sock = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb,
+						 send_cb, 0, 
+						 //ulp_info.get()
+						 //&fd[1]
+						 //&sctp_server_sock
+						 NULL
+						 )) == NULL) {
+//				DUMP( (long)sctp_server_sock, fd);
+				perror("usrsctp_socket");
+				return;
+			}
+//usrsctp_register_address((void *)&sctp_server_sock);
+
+
+			struct sockaddr_conn sconn
+			{
+			};
+
+
+if (0){
+			sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+			sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+
+			 //sconn.sconn_port = htons(60101 + peer_id);
+			 //ntohs(((struct sockaddr_conn *)firstaddr)->sconn_port)
+			//sconn.sconn_addr = (void *)&fd[0];
+			//sconn.sconn_addr = (void *)&fd[1];
+			//sconn.sconn_addr = &sock;
+			sconn.sconn_addr = &sctp_server_sock;
+DUMP("bindssock");
+
+			if (usrsctp_bind(sctp_server_sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
+				perror("usrsctp_bind");
+			}
+}
+
+	if (usrsctp_listen(sctp_server_sock, 1) < 0) {
+		perror("usrsctp_listen");
+	}
+
+
+} 
+//DUMP("coninp", (long)&sctp_server_sock, msg->get_payload().size());
+//		usrsctp_conninput(sctp_server_sock, (void *)msg->get_payload().data(), msg->get_payload().size(), 0);
+DUMP("coninp", (long)&sock,(long)&sock, msg->get_payload().size());
+		usrsctp_conninput(sock, (void *)msg->get_payload().data(), msg->get_payload().size(), 0);
+
+}
+
+return;
 
 	cs << "on_message called with hdl: " << hdl.lock().get()
-	   << " and message: " << msg->get_payload().size() << " " << msg->get_payload()
+	   << " and message: " << msg->get_payload().size() //<< " " << msg->get_payload()
 	   << std::endl;
 
 	if (!hdls.count(hdl)) {
@@ -250,44 +405,86 @@ void Connection::on_message(websocketpp::connection_hdl hdl, message_ptr msg)
 				return;
 			}
 			auto ulp_info = std::make_unique<ulp_info_holder>(ulp_info_holder{this, hdl});
-			// DUMP((long)ulp_info.get());
+			 DUMP((long)ulp_info.get(), &fd[0], &fd[1]);
 
+
+			usrsctp_sysctl_set_sctp_ecn_enable(0); 
 			usrsctp_register_address(ulp_info.get());
+
+			usrsctp_register_address(&fd[0]);
+			usrsctp_register_address(&fd[1]);
+
+DUMP("mattach");
+		        //sctpconn_attach(ulp_info.get(), IPPROTO_SCTP, SCTP_DEFAULT_VRFID);
+		        //sctpconn_attach((struct socket *)ulp_info.get(), IPPROTO_SCTP, 0);
 
 			struct socket *sock = nullptr;
 			if ((sock = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb,
-						 send_cb, 0, ulp_info.get())) == NULL) {
+						 send_cb, 0, 
+						 ulp_info.get()
+						 //&fd[1]
+						 )) == NULL) {
 				DUMP(peer_id, (long)sock, fd);
 				perror("usrsctp_socket");
 				return;
 			}
 
+
+usrsctp_set_non_blocking(sock, 1);
+
+
 			struct sockaddr_conn sconn
 			{
 			};
+
+
 
 			sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN
 			sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 
-			// sconn.sconn_port = htons(PORT);
-			sconn.sconn_addr = (void *)&fd;
+			 sconn.sconn_port = htons(60101 + peer_id);
+			 //ntohs(((struct sockaddr_conn *)firstaddr)->sconn_port)
+			//sconn.sconn_addr = (void *)&fd[0];
+			//sconn.sconn_addr = (void *)&fd[1];
+			//sconn.sconn_addr = &sock;
+			sconn.sconn_addr =ulp_info.get();
 			if (usrsctp_bind(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
 				perror("usrsctp_bind");
 			}
-			if (usrsctp_listen(sock, 1) < 0) {
+
+
+{ //?
+sconn = {};
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = 0; //htons(5001);
+	//sconn.sconn_addr = &fd;
+	sconn.sconn_addr =ulp_info.get();
+	if (usrsctp_connect(sock, (struct sockaddr *)&sconn, sizeof(struct sockaddr_conn)) < 0) {
+		perror("usrsctp_connect");
+	}
+}
+			/*?if (usrsctp_listen(sock, 1) < 0) {
 				perror("usrsctp_listen");
-			}
+			}*/
+
+//DUMP("manuall attach");
+		        //sctpconn_attach(sock, IPPROTO_SCTP, SCTP_DEFAULT_VRFID);
+		        //sctpconn_attach(sock, IPPROTO_SCTP, 0);
 
 			DUMP(peer_id, (long)sock, fd);
-			m_peers.insert_or_assign(peer_id, sock);
+
+//!			m_peers.insert_or_assign(peer_id, sock);
 
 			hdls.emplace(hdl, std::make_shared<ws_peer>(ws_peer{.peer_id = peer_id,
 									  .fd{fd[0], fd[1]},
 									  .sock = sock,
 									  .ulp_info{std::move(ulp_info)}}));
-			putEvent(ConnectionEvent::peerAdded(peer_id, {}));
+//!			putEvent(ConnectionEvent::peerAdded(peer_id, {}));
 		}
 
 		try {
@@ -297,7 +494,7 @@ void Connection::on_message(websocketpp::connection_hdl hdl, message_ptr msg)
 			cs << "Echo failed because: "
 			   << "(" << e.what() << ")" << std::endl;
 		}
-	} else
+	} //else
 
 	//	if (hdls.count(hdl))
 	{
@@ -307,12 +504,13 @@ void Connection::on_message(websocketpp::connection_hdl hdl, message_ptr msg)
 		// msg->get_payload().size(), 0);
 		// auto sr = write(wsp->fd[0], msg->get_payload().data(),
 		// msg->get_payload().size());
-		DUMP("usrsctp_conninput:", wsp->fd[1]);
+		DUMP("usrsctp_conninput:", &wsp->fd[1], (long)wsp->ulp_info.get());
 		//		usrsctp_conninput((void*)wsp->fd[1], (void*)msg->get_payload().data(),
 		// msg->get_payload().size(), 0); 		usrsctp_conninput((void*)ulp_info.get(),
 		//(void*)msg->get_payload().data(), msg->get_payload().size(), 0);
-		usrsctp_conninput((void *)wsp->ulp_info.get(), (void *)msg->get_payload().data(),
-				msg->get_payload().size(), 0);
+		usrsctp_conninput((void *)wsp->ulp_info.get(), (void *)msg->get_payload().data(), msg->get_payload().size(), 0);
+		//usrsctp_conninput((void *)wsp->sock, (void *)msg->get_payload().data(), msg->get_payload().size(), 0);
+		//usrsctp_conninput(&wsp->fd[1], (void *)msg->get_payload().data(), msg->get_payload().size(), 0);
 
 		// DUMP(sr);
 		//  const auto reret = con_sctp::Connection::recv(wsp->peer_id, wsp->sock);
@@ -410,13 +608,14 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 		Server.set_http_handler(websocketpp::lib::bind(
 				&Connection::on_http, this, websocketpp::lib::placeholders::_1));
 #if USE_SSL
-		Server.set_tls_init_handler(bind(&broadcast_server::on_tls_init, this,
-				websocketpp::lib::placeholders::_1));
+		//Server.set_tls_init_handler(bind(&broadcast_server::on_tls_init, this,				websocketpp::lib::placeholders::_1));
+		Server.set_tls_init_handler(
+			bind(&Connection::on_tls_init, this, websocketpp::lib::placeholders::_1));
 #endif
 		// Server.set_timer(long duration, timer_handler callback);
 		//}
 
-#if USE_SSL
+#if 0 && USE_SSL
 		context_ptr on_tls_init(websocketpp::connection_hdl /* hdl */)
 		{
 			namespace asio = websocketpp::lib::asio;

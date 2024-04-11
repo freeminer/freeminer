@@ -81,6 +81,9 @@ private:
 
 // current node
 	struct {
+		v3pos_t pf;
+		v3pos_t pr;
+
 		v3pos_t p;
 		v3f origin;
 		MapNode n;

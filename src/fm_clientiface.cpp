@@ -94,7 +94,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 	v3opos_t playerpos = sao->getBasePosition();
 	v3f playerspeed = player->getSpeed();
-	if (playerspeed.getLength() > 1000.0 * BS) // cheater or bug, ignore him
+	if (playerspeed.getLength() > 120.0 * BS) // cheater or bug, ignore him
 		return 0;
 	v3f playerspeeddir(0, 0, 0);
 	if (playerspeed.getLength() > 1.0 * BS)
@@ -233,7 +233,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	s32 nearest_sent_d = -1;
 	// bool queue_is_full = false;
 
-	f32 speed_in_blocks = (playerspeed / (MAP_BLOCKSIZE * BS)).getLength();
+	const f32 speed_in_blocks = (playerspeed / (MAP_BLOCKSIZE * BS)).getLength();
 
 	int num_blocks_air = 0;
 	int blocks_occlusion_culled = 0;

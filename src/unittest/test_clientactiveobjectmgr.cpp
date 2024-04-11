@@ -19,7 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "client/activeobjectmgr.h"
 #include <algorithm>
-#include "irr_v3d.h"
+#include <memory>
 #include "test.h"
 
 #include "profiler.h"

@@ -1,32 +1,28 @@
-#ifndef THREADING_THREAD_POOL_HEADER
-#define THREADING_THREAD_POOL_HEADER
+#pragma once
 
 #include <atomic>
 #include <thread>
-#include <chrono>
 #include <vector>
 #include <string>
 
-class thread_pool {
+class thread_vector {
 public:
-
-	//std::mutex queue_mutex;
-	//std::condition_variable condition;
 	std::vector<std::thread> workers;
-	std::atomic_bool requeststop;
+	std::atomic_bool request_stop;
 
-	thread_pool(const std::string &name = "Unnamed", int priority = 0);
-	virtual ~thread_pool();
+	thread_vector(const std::string &name = "Unnamed", int priority = 0);
+	virtual ~thread_vector();
 
 	virtual void func();
 
 	void reg (const std::string &name = "", int priority = 0);
-	void start (int n = 1);
-	void restart (int n = 1);
-	void reanimate (int n = 1);
+	void start (const size_t n = 1);
+	void restart (const size_t n = 1);
+	void reanimate (const size_t n = 1);
 	void stop ();
 	void join ();
 
+	void sleep(const int second);
 // Thread compat:
 
 	bool stopRequested();
@@ -39,6 +35,3 @@ protected:
 	std::string m_name;
 	int m_priority = 0;
 };
-
-
-#endif

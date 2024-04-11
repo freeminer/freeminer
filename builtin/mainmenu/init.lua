@@ -87,6 +87,16 @@ local function init_globals()
 	menudata.worldlist:add_sort_mechanism("alphabetic", sort_worlds_alphabetic)
 	menudata.worldlist:set_sortmode("alphabetic")
 
+--[[ //del?
+	local gameid = core.settings:get("menu_last_game")
+	local game = gameid and pkgmgr.find_by_gameid(gameid)
+	if not game then
+		gameid = core.settings:get("default_game") or "default"
+		game = pkgmgr.find_by_gameid(gameid)
+		core.settings:set("menu_last_game", gameid)
+	end
+]]
+
 	mm_game_theme.init()
 	mm_game_theme.set_engine() -- This is just a fallback.
 

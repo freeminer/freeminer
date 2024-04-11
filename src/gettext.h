@@ -51,12 +51,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 void init_gettext(const char *path, const std::string &configured_language,
 	int argc, char *argv[]);
 
-inline std::string strgettext(const char *str)
-{
-	// We must check here that is not an empty string to avoid trying to translate it
-	return str[0] ? mygettext(str) : "";
-}
-
 /*
 inline std::wstring wstrgettext(const std::string &text)
 {
@@ -67,6 +61,13 @@ inline std::wstring wstrgettext(const std::string &text)
 	return retval;
 }
 */
+
+inline std::string strgettext(const char *str)
+{
+	// We must check here that is not an empty string to avoid trying to translate it
+	return str[0] ? mygettext(str) : "";
+}
+
 
 inline std::string strgettext(const std::string &str)
 {

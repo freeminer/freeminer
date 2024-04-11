@@ -13,12 +13,12 @@
 #cmakedefine01 MINETEST_PROTO
 #cmakedefine01 MINETEST_TRANSPORT
 #cmakedefine01 USE_ENET
-#cmakedefine01 STATIC_BUILD
-#cmakedefine01 USE_ICONV
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_WEBSOCKET
 #cmakedefine01 USE_WEBSOCKET_SCTP
 #cmakedefine01 USE_MULTI
+#cmakedefine01 STATIC_BUILD
+#cmakedefine01 USE_ICONV
 #cmakedefine01 USE_UNWIND
 #cmakedefine01 LOCK_PROFILE
 #cmakedefine01 BUILD_CLIENT

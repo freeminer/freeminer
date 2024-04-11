@@ -9,6 +9,11 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 
 Changelog
 ======
+### 5.8.0.0 (?)
+  * Farmesh alpha
+  * Multi protocol network: Auto use enet for freeminer servers and mt for minetest
+  * Run abm's in whole world: to enable: abm_world=1
+
 ### 5.7.0.0 (?)
   * Tree growth
   * Weather tuned

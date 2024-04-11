@@ -31,7 +31,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace ServerList
 {
+
 	//fm:
+	extern std::string last_status;
 	extern lan_adv lan_adv_client;
 	void lan_get();
 	bool lan_fresh();

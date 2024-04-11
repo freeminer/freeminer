@@ -87,6 +87,16 @@ public:
 	virtual void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2pos_t p);
 
+	//freeminer:
+	bool visible(const v3pos_t &p)
+	{
+		if (visible_only_water(p))
+			return true;
+		// TODO: Make faster and more features
+		const auto sl = getSpawnLevelAtPoint({p.X, p.Z});
+		return (sl >= p.Y && sl < MAX_MAP_GENERATION_LIMIT);
+	}
+
 private:
 	float base_level;
 	float river_width;

@@ -238,7 +238,7 @@ void NodeMetadataList::remove(v3pos_t p)
 {
 	NodeMetadata *olddata = get(p);
 	if (olddata) {
-    if (0)
+		m_data.erase(p);
 		if (m_is_metadata_owner) {
 			// clearing can throw an exception due to the invlist resize lock,
 			// which we don't want to happen in the noexcept destructor
@@ -246,11 +246,7 @@ void NodeMetadataList::remove(v3pos_t p)
 			olddata->clear();
 			delete olddata;
 		}
-
-		m_data.erase(p);
-
-		if (m_is_metadata_owner)
-			delete olddata;
+		//m_data.erase(p);
 	}
 }
 

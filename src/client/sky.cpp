@@ -269,8 +269,8 @@ void Sky::render()
 		if (m_visible) {
 			driver->setMaterial(m_materials[1]);
 			for (u32 j = 0; j < 4; j++) {
-				vertices[0] = video::S3DVertex(-1, -0.02, -1, 0, 0, 1, m_bgcolor, t, t);
-				vertices[1] = video::S3DVertex( 1, -0.02, -1, 0, 0, 1, m_bgcolor, o, t);
+				vertices[0] = video::S3DVertex(-1, -0.02 +shifty, -1, 0, 0, 1, m_bgcolor, t, t);
+				vertices[1] = video::S3DVertex( 1, -0.02 + shifty, -1, 0, 0, 1, m_bgcolor, o, t);
 				vertices[2] = video::S3DVertex( 1, 0.45 + shifty, -1, 0, 0, 1, m_skycolor, o, o);
 				vertices[3] = video::S3DVertex(-1, 0.45 + shifty, -1, 0, 0, 1, m_skycolor, t, o);
 				for (video::S3DVertex &vertex : vertices) {
@@ -308,8 +308,8 @@ void Sky::render()
 			float y = -(1.0 - a) * 0.22;
 			vertices[0] = video::S3DVertex(-1, -0.05 + y + shifty, -1, 0, 0, 1, c, t, t);
 			vertices[1] = video::S3DVertex( 1, -0.05 + y + shifty, -1, 0, 0, 1, c, o, t);
-			vertices[2] = video::S3DVertex( 1,   0.2 + y + shifty, -1, 0, 0, 1, c, o, o);
-			vertices[3] = video::S3DVertex(-1,   0.2 + y + shifty, -1, 0, 0, 1, c, t, o);
+			vertices[2] = video::S3DVertex( 1,   0.2 + y, -1, 0, 0, 1, c, o, o);
+			vertices[3] = video::S3DVertex(-1,   0.2 + y, -1, 0, 0, 1, c, t, o);
 			for (video::S3DVertex &vertex : vertices) {
 				if (wicked_time_of_day < 0.5)
 					// Switch from -Z (south) to +X (east)
@@ -360,8 +360,8 @@ void Sky::render()
 
 			for (u32 j = 0; j < 4; j++) {
 				video::SColor c = cloudyfogcolor;
-				vertices[0] = video::S3DVertex(-1, -1.0,  -1, 0, 0, 1, c, t, t);
-				vertices[1] = video::S3DVertex( 1, -1.0,  -1, 0, 0, 1, c, o, t);
+				vertices[0] = video::S3DVertex(-1, -1.0 + shifty, -1, 0, 0, 1, c, t, t);
+				vertices[1] = video::S3DVertex( 1, -1.0 + shifty, -1, 0, 0, 1, c, o, t);
 				vertices[2] = video::S3DVertex( 1, -0.02 + shifty, -1, 0, 0, 1, c, o, o);
 				vertices[3] = video::S3DVertex(-1, -0.02 + shifty, -1, 0, 0, 1, c, t, o);
 				for (video::S3DVertex &vertex : vertices) {
@@ -383,10 +383,10 @@ void Sky::render()
 
 			// Draw bottom far cloudy fog thing in front of sun, moon and stars
 			video::SColor c = cloudyfogcolor;
-			vertices[0] = video::S3DVertex(-1, -1.0, -1, 0, 1, 0, c, t, t);
-			vertices[1] = video::S3DVertex( 1, -1.0, -1, 0, 1, 0, c, o, t);
-			vertices[2] = video::S3DVertex( 1, -1.0, 1, 0, 1, 0, c, o, o);
-			vertices[3] = video::S3DVertex(-1, -1.0, 1, 0, 1, 0, c, t, o);
+			vertices[0] = video::S3DVertex(-1, -1.0 + shifty, -1, 0, 1, 0, c, t, t);
+			vertices[1] = video::S3DVertex( 1, -1.0 + shifty, -1, 0, 1, 0, c, o, t);
+			vertices[2] = video::S3DVertex( 1, -1.0 + shifty, 1, 0, 1, 0, c, o, o);
+			vertices[3] = video::S3DVertex(-1, -1.0 + shifty, 1, 0, 1, 0, c, t, o);
 			driver->drawIndexedTriangleList(&vertices[0], 4, indices, 2);
 		}
 

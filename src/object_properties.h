@@ -30,6 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <map>
 #include <vector>
+#include "threading/concurrent_vector.h"
+#include "threading/lock.h"
 
 struct ObjectProperties : public shared_locker 
 {

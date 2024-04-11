@@ -91,7 +91,7 @@ void Connection::Serve(Address bind_address)
 	if (m_con_ws) {
 		auto addr = bind_address;
 		u16 port = 0;
-		if (!g_settings->getU16NoEx("port_ws", port)) {
+		if (!g_settings->getU16NoEx("port_wss", port)) {
 			port = addr.getPort();
 		}
 		addr.setPort(port); // same tcp
@@ -102,7 +102,7 @@ void Connection::Serve(Address bind_address)
 	if (m_con_ws_sctp) {
 		auto addr = bind_address;
 		u16 port = 0;
-		if (!g_settings->getU16NoEx("port_sctp_ws", port)) {
+		if (!g_settings->getU16NoEx("port_sctp_wss", port)) {
 			port = addr.getPort() + 100;
 		}
 		addr.setPort(port); // same tcp
@@ -130,9 +130,8 @@ void Connection::Connect(Address address)
 {
 	const auto remote_proto = g_settings->get("remote_proto");
 
-	infostream << "Multi connect to " << address.serializeString() << ":"
-			   << std::to_string(address.getPort()) << " with " << remote_proto
-			   << std::endl;
+	actionstream << "Multi connect to " << address.serializeString() << ":"
+			   << std::to_string(address.getPort()) << " with " << remote_proto << '\n';
 
 #if USE_SCTP
 	if (m_con_sctp && remote_proto == "sctp")

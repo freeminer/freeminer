@@ -35,8 +35,9 @@ struct MapDrawControl
 {
 
 // freeminer:
-	float farmesh = 0;
-	int farmesh_step = 1;
+	int32_t farmesh = 30000;
+	uint16_t farmesh_quality = 0;
+	int32_t lodmesh = 4;
 	int cell_size = 1;
 
 	float fps = 30;
@@ -162,9 +163,6 @@ public:
 			int oldvalue, bool *sunlight_seen_result);
 
 	void renderPostFx(CameraMode cam_mode);
-
-	// For debugging the status and position of MapBlocks
-	void renderBlockBoundaries(const std::map<v3pos_t, MapBlock*> & blocks);
 
 	// For debug printing
 	void PrintInfo(std::ostream &out) override;

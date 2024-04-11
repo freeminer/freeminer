@@ -110,7 +110,7 @@ class DistanceSortedActiveObject
 public:
 	ClientActiveObjectPtr obj;
 
-	DistanceSortedActiveObject(ClientActiveObjectPtr a_obj, opos_t a_d)
+	DistanceSortedActiveObject(const ClientActiveObjectPtr& a_obj, opos_t a_d)
 	{
 		obj = a_obj;
 		d = a_d;
@@ -124,4 +124,3 @@ public:
 private:
 	opos_t d;
 };
-

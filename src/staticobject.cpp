@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "staticobject.h"
+#include "constants.h"
 #include "util/serialize.h"
 #include "server/serveractiveobject.h"
 #include "log_types.h"

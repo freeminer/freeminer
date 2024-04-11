@@ -99,7 +99,7 @@ void TestServerActiveObjectMgr::testRegisterObject()
 	sao = sao_u.get();
 	UASSERT(saomgr.registerObject(std::move(sao_u)));
 	UASSERT(saomgr.getActiveObject(sao->getId()).get() == sao);
-	UASSERT(saomgr.getActiveObject(sao->getId()) != saoToCompare);
+	UASSERT(saomgr.getActiveObject(sao->getId()).get() != saoToCompare.get());
 
 	saomgr.clear();
 }

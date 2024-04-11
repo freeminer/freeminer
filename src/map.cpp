@@ -582,8 +582,8 @@ void ServerMap::transforming_liquid_add(v3pos_t p) {
 
 size_t ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_blocks,
 		ServerEnvironment *env
-				, Server *m_server, unsigned int max_cycle_ms
-)
+		, Server *m_server, unsigned int max_cycle_ms
+		)
 {
 	g_profiler->avg("Server: liquids queue", transforming_liquid_size());
 
@@ -2240,9 +2240,10 @@ bool ServerMap::deleteBlock(v3bpos_t blockpos)
 			return false;
 		// It may not be safe to delete the block from memory at the moment
 		// (pointers to it could still be in use)
+		sector->detachBlock(block);
 		m_detached_blocks.push_back(sector->detachBlock(block));
 */
-		m_detached_blocks.push_back(std::unique_ptr<MapBlock>(block));
+		m_detached_blocks.push_back(std::unique_ptr<MapBlock>{block});
 	}
 
 	return true;

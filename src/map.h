@@ -53,7 +53,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include <sys/types.h>
 #include <unordered_set>
-#include <vector>
+#include "fm_nodecontainer.h"
 #include "config.h"
 
 class Settings;
@@ -146,7 +146,7 @@ public:
 	virtual void onMapEditEvent(const MapEditEvent &event) = 0;
 };
 
-class Map /*: public NodeContainer*/
+class Map : public NodeContainer
 {
 public:
 	Map(IGameDef *gamedef);
@@ -283,18 +283,30 @@ public:
 
 
 //freeminer:
-	MapNode getNodeTry(const v3pos_t & p);
+	MapNode &getNodeTry(const v3pos_t &p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
-	std::atomic_uint m_liquid_step_flow {0};
+	std::atomic_uint m_liquid_step_flow{0};
 
 	virtual s16 getHeat(const v3pos_t &p, bool no_random = 0);
-	virtual s16 getHumidity(const v3pos_t& p, bool no_random = 0);
+	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
 	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
+	typedef concurrent_shared_unordered_map<v3pos_t, std::shared_ptr<MapBlock>, v3posHash,
+			v3posEqual>
+			m_far_blocks_type;
+	m_far_blocks_type m_far_blocks;
+	v3pos_t m_far_blocks_last_cam_pos;
+	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
+	bool m_far_blocks_delete_current = false;
+
+	static constexpr bool m_far_fast =
+			true; // show generated far farmesh stable(0) or instant(1)
+	uint32_t m_far_blocks_use_timestamp = 0;
+	uint32_t m_far_blocks_clean_timestamp = 0;
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
 	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
 	MapBlock *createBlankBlock(const v3bpos_t &p);
@@ -325,7 +337,14 @@ protected:
 public:
 	std::atomic_uint time_life {0};
 
-//end of freeminer
+	inline MapNode getNodeNoEx(const v3pos_t &p) override { return getNodeTry(p); };
+	inline MapNode getNodeNoExNoEmerge(const v3pos_t &p) override
+	{
+		return getNodeTry(p);
+	};
+	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeTry(p); }
+
+	//end of freeminer
 
 
 

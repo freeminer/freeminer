@@ -707,7 +707,6 @@ void ParticleManager::clearAll()
    }
    {
 	MutexAutoLock lock2(m_particle_list_lock);
-
 	// clear particles
 	for (std::unique_ptr<Particle> &p : m_particles) {
 		// remove scene node

@@ -96,7 +96,6 @@ bool MapSettingsManager::setMapSettingNoiseParams(
 
 bool MapSettingsManager::loadMapMeta()
 {
-
 	if (m_map_settings->readJsonFile(m_map_meta_path + ".json")) {
 		return true;
 	}

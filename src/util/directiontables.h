@@ -42,7 +42,7 @@ enum Direction6D {
 	D6D_YP_ZN,
 	D6D_XN_ZP,
 	D6D_XP_ZP,
-	D6D_XN_ZN,
+	D6D_XN_ZN, 
 	D6D_XP_ZN,
 	D6D_XN_YN,
 	D6D_XP_YN,

@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include <cstdint>
+#include "light.h"
 #include "mapnode.h"
 #include "nodedef.h"
 #include "server.h"
@@ -213,7 +214,7 @@ public:
 		return {"group:grow_tree"};
 	}
 	virtual const std::vector<std::string> getRequiredNeighbors(
-			bool activate) const override
+			uint8_t activate) const override
 	{
 		return {};
 	}
@@ -225,7 +226,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t pos, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t,
-			bool activate) override
+			uint8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();
@@ -397,7 +398,8 @@ public:
 		for (int i = D_SELF + 1; i <= D_BOTTOM; ++i) {
 			auto &nb = nbh[i];
 			const bool allow_grow_by_light =
-					!nb.top || nb.light <= params.tree_grow_light_max;
+					(!nb.top || (nb.light <= params.tree_grow_light_max &&
+										myrand_range(0, LIGHT_SUN - nb.light) <= 3));
 			bool up_all_leaves = true;
 			//DUMP("gr", i, nb.top, nb.bottom, allow_grow_by_light, nb.water_level, nb.is_leaves, nb.is_tree, nb.is_liquid, nb.is_soil);
 
@@ -424,7 +426,6 @@ public:
 					}
 
 					self_water_level += amount;
-
 				}
 			}
 
@@ -827,7 +828,7 @@ public:
 		return {"group:grow_leaves"};
 	}
 	virtual const std::vector<std::string> getRequiredNeighbors(
-			bool activate) const override
+			uint8_t activate) const override
 	{
 		return {};
 	}
@@ -839,7 +840,7 @@ public:
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
 	virtual void trigger(ServerEnvironment *env, v3pos_t pos, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t,
-			bool activate) override
+			uint8_t activate) override
 	{
 		ServerMap *map = &env->getServerMap();
 		const auto *ndef = env->getGameDef()->ndef();
@@ -1015,7 +1016,7 @@ public:
 		}
 
 		// Slowly evaporate water and kill leaves with water_level==1
-		const auto can_decay = !have_not_leaves && nbh[D_SELF].light < LIGHT_SUN - 1;
+		const auto can_decay = have_not_leaves && nbh[D_SELF].light < LIGHT_SUN - 1;
 		if (n_water_level > 1 && can_decay &&
 				(!myrand_range(0, 10 * (grow_debug_fast ? 1 : 10)))) {
 			float humidity = map->updateBlockHumidity(env, pos);
@@ -1034,7 +1035,7 @@ public:
 				(n_water_level == 1 && can_decay &&
 						(!myrand_range(0, 30 * (grow_debug_fast ? 1 : 10)))) ||
 				(n_water_level >= 1 && // dont touch old static trees
-						!have_not_leaves &&
+						have_not_leaves &&
 						((nbh[D_SELF].light < params.leaves_die_light_max &&
 								 (nbh[D_SELF].light > 0 || activate ||
 										 !myrand_range(0, params.leaves_die_chance))) ||

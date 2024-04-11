@@ -525,6 +525,24 @@ void ContentFeatures::reset()
 	legacy_facedir_simple = false;
 	legacy_wallmounted = false;
 
+
+//freeminer:
+	freeze = "";
+	melt = "";
+	is_circuit_element = false;
+	is_wire = false;
+	is_wire_connector = false;
+	for(int i = 0; i < 6; ++i)
+	{
+		wire_connections[i] = 0;
+	}
+	for(int i = 0; i < 64; ++i)
+	{
+		circuit_element_func[i] = 0;
+	}
+	circuit_element_delay = 0;
+
+
 	sound_footstep = SoundSpec();
 	sound_dig = SoundSpec("__group");
 	sound_dug = SoundSpec();

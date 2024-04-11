@@ -43,14 +43,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mandelbulber/fractal.cpp"
 #endif
 
-
 void MapgenMathParams::setDefaultSettings(Settings *settings)
 {
 	settings->setDefault("mgmath_spflags", flagdesc_mapgen_v7,
-		MGV7_FLOATLANDS |
-		MGV7_MOUNTAINS | MGV7_RIDGES | MGV7_CAVERNS);
+			MGV7_FLOATLANDS | MGV7_MOUNTAINS | MGV7_RIDGES | MGV7_CAVERNS);
 }
-
 
 /* TODO:
 http://k3dsurf.s4.bizhat.com/k3dsurf-ftopic119-0-asc-15.html
@@ -87,8 +84,8 @@ z: [-2.0 , 2.0]
 
 */
 
-
-inline double mandelbox(double x, double y, double z, double d, int nn = 10, int seed = 1) {
+inline double mandelbox(double x, double y, double z, double d, int nn = 10, int seed = 1)
+{
 	int s = 7;
 	x *= s;
 	y *= s;
@@ -144,10 +141,11 @@ inline double mandelbox(double x, double y, double z, double d, int nn = 10, int
 	}
 	r = sqrt(x * x + y * y + z * z);
 	return ((r / fabs(dr)) < d);
-
 }
 
-inline double mengersponge(double x, double y, double z, double d, int MI = 10, int seed = 1) {
+inline double mengersponge(
+		double x, double y, double z, double d, int MI = 10, int seed = 1)
+{
 	double r = x * x + y * y + z * z;
 	double scale = 3;
 	int i = 0;
@@ -184,26 +182,26 @@ inline double mengersponge(double x, double y, double z, double d, int MI = 10, 
 	return ((sqrt(r)) * pow(scale, (-i)) < d);
 }
 
-inline double sphere(double x, double y, double z, double d, int ITR = 1, int seed = 1) {
+inline double sphere(double x, double y, double z, double d, int ITR = 1, int seed = 1)
+{
 	return v3f(x, y, z).getLength() < d;
 }
-
 
 const unsigned FNV_32_PRIME = 0x01000193;
 unsigned int fnv_32_buf(char *buf, size_t len = 0)
 {
-    unsigned int hval = 0x811c9dc5;
+	unsigned int hval = 0x811c9dc5;
 
-    while (len-- != 0) {
-        hval *= FNV_32_PRIME;
-        hval ^= (unsigned int)*buf++;
-    }
+	while (len-- != 0) {
+		hval *= FNV_32_PRIME;
+		hval ^= (unsigned int)*buf++;
+	}
 
-  return hval;
+	return hval;
 }
 
-
-inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int seed = 1) {
+inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int seed = 1)
+{
 	int x = dx, y = dy, z = dz;
 	// if (x < y && x < z) return 0; // debug slice
 	const auto rooms_pow_min = 2, rooms_pow_max = 9;
@@ -214,12 +212,15 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 
 	const auto rooms_limit = (MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) << rooms_pow_max;
 	// errorstream << " t "<<" x=" << x << " y="<< y << " x="<<z << " pw="<<pw<< " every="<<every<< " ty="<<((int)y%every)<<"\n";
-	const int cxi = (x >> rooms_pow_max), cyi = (y >> rooms_pow_max), czi = (z >> rooms_pow_max);
+	const int cxi = (x >> rooms_pow_max), cyi = (y >> rooms_pow_max),
+			  czi = (z >> rooms_pow_max);
 	int cx = cxi << rooms_pow_max, cy = cyi << rooms_pow_max, cz = czi << rooms_pow_max;
-	int room_n = cxi + (cyi * MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) + (czi * (MAX_MAP_GENERATION_LIMIT >> (rooms_pow_max - 1)));
+	int room_n = cxi + (cyi * MAX_MAP_GENERATION_LIMIT >> rooms_pow_max) +
+				 (czi * (MAX_MAP_GENERATION_LIMIT >> (rooms_pow_max - 1)));
 	int wall = 0;
 
-	if (x > rooms_limit || y > rooms_limit || z > rooms_limit || x < -rooms_limit || y < -rooms_limit || z < -rooms_limit)
+	if (x > rooms_limit || y > rooms_limit || z > rooms_limit || x < -rooms_limit ||
+			y < -rooms_limit || z < -rooms_limit)
 		return 0;
 
 	for (int pw2 = rooms_pow_max; pw2 >= rooms_pow_min; --pw2) {
@@ -237,9 +238,10 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 
 		// errorstream << " fill "<<" x=" << x << " y="<< y << " z="<<z << " room_n=" << room_n << " cx=" << cx << " cy=" << cy << " cz=" << cz << " lv=" << lv << " pw2="<<pw2<< " seed=" << seed << " room_n_hash_1=" << room_n_hash_1 << " fnv=" << fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_1), sizeof(room_n_hash_1)) << " sz=" << sizeof(room_n_hash_1) << "\n";
 
-		if ( pw2 < rooms_pow_fill_max &&
-		        !( fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_1), sizeof(room_n_hash_1)) % room_fill_every)
-		   ) {
+		if (pw2 < rooms_pow_fill_max &&
+				!(fnv_32_buf(reinterpret_cast<char *>(&room_n_hash_1),
+						  sizeof(room_n_hash_1)) %
+						room_fill_every)) {
 			// errorstream << " pw=" << pw  << " room_n="<<room_n<< " hash="<< fnv_32_buf(&room_n_hash_1, sizeof(room_n_hash_1))<<"\n";
 			return pw2;
 		}
@@ -249,11 +251,15 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 
 		// errorstream << " space "<<" x=" << x << " y=" << y << " z="<< z << " pw2=" << pw2 << " room_n=" << room_n << " seed=" << seed << " room_n_hash_2=" << room_n_hash_2 << " fnv=" << fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_2), sizeof(room_n_hash_2))<< " sz=" << sizeof(room_n_hash_2) << "\n";
 
-		if (pw2 <= rooms_pow_cut_max && !( fnv_32_buf(reinterpret_cast<char*>(&room_n_hash_2), sizeof(room_n_hash_2)) % room_big_every)) {
+		if (pw2 <= rooms_pow_cut_max &&
+				!(fnv_32_buf(reinterpret_cast<char *>(&room_n_hash_2),
+						  sizeof(room_n_hash_2)) %
+						room_big_every)) {
 			int pw3 = pw2 + 1;
 			// errorstream << " cutt "<<" x=" << x << " y="<< y << " z="<<z << " every="<< every<<" room_n=" << room_n  << " pw2="<<pw2<< " pw3" << pw3 << "(x >> pw3)="<<(x >> pw3)  << " == " << "((x - 1) >> pw3)=" <<  ((x - 1) >> pw3) << "\n";
 			// errorstream << " x>>pw2" << (x>>pw2)  << " (x-1)>>pw2" << ((x-1)>>pw2) << " y>>pw2" << (y>>pw2)  << " (y-1)>>pw2" << ((y-1)>>pw2) << " z>>pw2" << (z>>pw2)  << " (z-1)>>pw2" << ((z-1)>>pw2) << "\n";
-			if ((x >> pw3) == (x - 1) >> pw3 && (y >> pw3) == (y - 1) >> pw3 && (z >> pw3) == (z - 1) >> pw3) {
+			if ((x >> pw3) == (x - 1) >> pw3 && (y >> pw3) == (y - 1) >> pw3 &&
+					(z >> pw3) == (z - 1) >> pw3) {
 				return 0;
 			}
 		}
@@ -273,50 +279,60 @@ inline double rooms(double dx, double dy, double dz, double d, int ITR = 1, int 
 
 //////////////////////// Mapgen Math parameter read/write
 
-void MapgenMathParams::readParams(const Settings *settings) {
+void MapgenMathParams::readParams(const Settings *settings)
+{
 	try {
 		MapgenV7Params::readParams(settings);
-	} catch (...) {}
+	} catch (...) {
+	}
 	auto mg_math = settings->getJson("mg_math");
 	if (!mg_math.isNull())
 		params = mg_math;
 }
 
-void MapgenMathParams::writeParams(Settings *settings) const {
+void MapgenMathParams::writeParams(Settings *settings) const
+{
 	settings->setJson("mg_math", params);
 	try {
 		MapgenV7Params::writeParams(settings);
-	} catch (...) {}
+	} catch (...) {
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
-	MapgenV7((MapgenV7Params *)params_, emerge) {
+		MapgenV7((MapgenV7Params *)params_, emerge)
+{
 	ndef = emerge->ndef;
 	//mg_params = (MapgenMathParams *)params_->sparams;
 	mg_params = params_;
 
-	Json::Value & params = mg_params->params;
+	Json::Value &params = mg_params->params;
 
 	if (params.get("light", 0).asBool())
 		this->flags &= ~MG_LIGHT;
 
-	n_air		= MapNode(ndef->getId(params.get("air", "air").asString()), LIGHT_SUN);
-	n_water	= MapNode(ndef->getId(params.get("water_source", "mapgen_water_source").asString()), LIGHT_SUN);
-	n_stone		= MapNode(ndef->getId(params.get("stone", "mapgen_stone").asString()), LIGHT_SUN);
+	n_air = MapNode(ndef->getId(params.get("air", "air").asString()), LIGHT_SUN);
+	n_water = MapNode(
+			ndef->getId(params.get("water_source", "mapgen_water_source").asString()),
+			LIGHT_SUN);
+	n_stone = MapNode(
+			ndef->getId(params.get("stone", "mapgen_stone").asString()), LIGHT_SUN);
 
 	if (params["generator"].empty()) {
 		params["generator"] = "menger_sponge";
 	}
 
-	invert = params.get("invert", 1).asBool(); //params["invert"].empty()?1:params["invert"].asBool();
+	invert = params.get("invert", 1)
+					 .asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	invert_yz = params.get("invert_yz", 1).asBool();
 	invert_xy = params.get("invert_xy", 0).asBool();
 	size = params.get("size", (MAX_MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
 	if (params.get("center", Json::Value()).isObject())
-		center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(), params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
-	iterations = params.get("N", 15).asInt(); //10;
+		center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(),
+				params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
+	iterations = params.get("N", 15).asInt();	   //10;
 
 	result_max = params.get("result_max", 1.0).asDouble();
 
@@ -331,7 +347,8 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 		//scale = params.get("scale", 1.0 / size).asDouble();
 		iterations = params.get("N", 13).asInt();
 		//if(!center.getLength()) center = v3f(-size, -size, -size);
-		if(!center.getLength()) center = v3f(-size / 3, -size / 3, -size / 3);
+		if (!center.getLength())
+			center = v3f(-size / 3, -size / 3, -size / 3);
 	} else if (params["generator"].asString() == "mandelbox") {
 		internal = 1;
 		func = &mandelbox;
@@ -340,7 +357,8 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 		//scale = params.get("scale", 1.0 / size).asDouble();
 		invert = params.get("invert", 0).asBool();
 		//if(!center.getLength()) center = v3f(size * 0.3, -size * 0.6, size * 0.5);
-		if(!center.getLength()) center = v3f(size * 0.333333, -size * 0.666666, size * 0.5);
+		if (!center.getLength())
+			center = v3f(size * 0.333333, -size * 0.666666, size * 0.5);
 	} else if (params["generator"].asString() == "sphere") {
 		internal = 1;
 		func = &sphere;
@@ -355,21 +373,20 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 		size = params.get("size", 1).asDouble();
 	}
 
-
 #if USE_MANDELBULBER
-	sFractal & par = mg_params->par;
+	sFractal &par = mg_params->par;
 	//par.minN = params.get("minN", 1).asInt();
 
-	par.limits_enabled  = params.get("limits_enabled", 0).asBool();
-	par.iterThresh  = params.get("iteration_threshold_mode", 0).asBool();
-	par.analitycDE  = params.get("analityc_DE_mode", 0).asBool();
-	par.juliaMode  = params.get("julia_mode", 0).asBool();
-	par.tgladFoldingMode  = params.get("tglad_folding_mode", 0).asBool();
-	par.sphericalFoldingMode  = params.get("spherical_folding_mode", 0).asBool();
-	par.interiorMode  = params.get("interior_mode", 0).asBool();
-	par.hybridCyclic  = params.get("hybrid_cyclic", 0).asBool();
-	par.linearDEmode  = params.get("linear_DE_mode", 0).asBool();
-	par.constantDEThreshold  = params.get("constant_DE_threshold", 0).asBool();
+	par.limits_enabled = params.get("limits_enabled", 0).asBool();
+	par.iterThresh = params.get("iteration_threshold_mode", 0).asBool();
+	par.analitycDE = params.get("analityc_DE_mode", 0).asBool();
+	par.juliaMode = params.get("julia_mode", 0).asBool();
+	par.tgladFoldingMode = params.get("tglad_folding_mode", 0).asBool();
+	par.sphericalFoldingMode = params.get("spherical_folding_mode", 0).asBool();
+	par.interiorMode = params.get("interior_mode", 0).asBool();
+	par.hybridCyclic = params.get("hybrid_cyclic", 0).asBool();
+	par.linearDEmode = params.get("linear_DE_mode", 0).asBool();
+	par.constantDEThreshold = params.get("constant_DE_threshold", 0).asBool();
 
 	par.frameNo = params.get("frameNo", 1).asInt();
 	par.itersOut = params.get("itersOut", 1).asInt();
@@ -378,8 +395,10 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 	par.doubles.N = params.get("N", iterations).asDouble();
 	par.doubles.constantFactor = params.get("fractal_constant_factor", 1.0).asDouble();
 	par.doubles.FoldingIntPowZfactor = params.get("FoldingIntPow_z_factor", 1).asDouble();
-	par.doubles.FoldingIntPowFoldFactor = params.get("FoldingIntPow_folding_factor", 1).asDouble();
-	par.doubles.foldingSphericalFixed = params.get("foldingSphericalFixed", 1.0).asDouble();
+	par.doubles.FoldingIntPowFoldFactor =
+			params.get("FoldingIntPow_folding_factor", 1).asDouble();
+	par.doubles.foldingSphericalFixed =
+			params.get("foldingSphericalFixed", 1.0).asDouble();
 	par.doubles.foldingSphericalMin = params.get("foldingSphericalMin", 0.5).asDouble();
 	par.doubles.detailSize = params.get("detailSize", 1).asDouble();
 	par.doubles.power = params.get("power", 9.0).asDouble();
@@ -390,10 +409,14 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 	par.doubles.foldingLimit = params.get("folding_limit", 1.0).asDouble();
 	par.doubles.foldingValue = params.get("folding_value", 2.0).asDouble();
 	par.mandelbox.doubles.scale = params.get("mandelbox_scale", 2).asDouble();
-	par.mandelbox.doubles.foldingLimit = params.get("mandelbox_folding_limit", 1.0).asDouble();
-	par.mandelbox.doubles.foldingValue = params.get("mandelbox_folding_value", 2.0).asDouble();
-	par.mandelbox.doubles.foldingSphericalMin = params.get("mandelbox_folding_min_radius", 0.5).asDouble();
-	par.mandelbox.doubles.foldingSphericalFixed = params.get("mandelbox_folding_fixed_radius", 1.0).asDouble();
+	par.mandelbox.doubles.foldingLimit =
+			params.get("mandelbox_folding_limit", 1.0).asDouble();
+	par.mandelbox.doubles.foldingValue =
+			params.get("mandelbox_folding_value", 2.0).asDouble();
+	par.mandelbox.doubles.foldingSphericalMin =
+			params.get("mandelbox_folding_min_radius", 0.5).asDouble();
+	par.mandelbox.doubles.foldingSphericalFixed =
+			params.get("mandelbox_folding_fixed_radius", 1.0).asDouble();
 	par.mandelbox.doubles.sharpness = params.get("mandelbox_sharpness", 3).asDouble();
 	par.mandelbox.doubles.offset.x = params.get("mandelbox_offset_X", 0).asDouble();
 	par.mandelbox.doubles.offset.y = params.get("mandelbox_offset_Y", 0).asDouble();
@@ -402,15 +425,19 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 	par.mandelbox.doubles.colorFactorY = params.get("mandelbox_color_Y", 0.05).asDouble();
 	par.mandelbox.doubles.colorFactorZ = params.get("mandelbox_color_Z", 0.07).asDouble();
 	par.mandelbox.doubles.colorFactorR = params.get("mandelbox_color_R", 0).asDouble();
-	par.mandelbox.doubles.colorFactorSp1 = params.get("mandelbox_color_Sp1", 0.2).asDouble();
-	par.mandelbox.doubles.colorFactorSp2 = params.get("mandelbox_color_Sp2", 1).asDouble();
+	par.mandelbox.doubles.colorFactorSp1 =
+			params.get("mandelbox_color_Sp1", 0.2).asDouble();
+	par.mandelbox.doubles.colorFactorSp2 =
+			params.get("mandelbox_color_Sp2", 1).asDouble();
 	par.mandelbox.doubles.solid = params.get("mandelbox_solid", 1).asDouble();
 	par.mandelbox.doubles.melt = params.get("mandelbox_melt", 0).asDouble();
-	par.mandelbox.rotationsEnabled  = params.get("mandelbox_rotation_enabled", 0).asBool();
-	par.mandelbox.doubles.vary4D.scaleVary =  params.get("mandelbox_vary_scale_vary", 0.1).asDouble();
+	par.mandelbox.rotationsEnabled = params.get("mandelbox_rotation_enabled", 0).asBool();
+	par.mandelbox.doubles.vary4D.scaleVary =
+			params.get("mandelbox_vary_scale_vary", 0.1).asDouble();
 	par.mandelbox.doubles.vary4D.fold = params.get("mandelbox_vary_fold", 1).asDouble();
 	par.mandelbox.doubles.vary4D.minR = params.get("mandelbox_vary_minr", 0.5).asDouble();
-	par.mandelbox.doubles.vary4D.rPower = params.get("mandelbox_vary_rpower", 1).asDouble();
+	par.mandelbox.doubles.vary4D.rPower =
+			params.get("mandelbox_vary_rpower", 1).asDouble();
 	par.mandelbox.doubles.vary4D.wadd = params.get("mandelbox_vary_wadd", 0).asDouble();
 	//par.formulaSequence = params.get("formulaSequence", 1).asDouble();
 	//vector3 par.IFS.doubles.offset = params.get("IFS.doubles.offset", 1).asDouble();
@@ -543,7 +570,8 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 	char parameterName[100];
 	for (int i = 1; i <= HYBRID_COUNT; ++i) {
 		sprintf(parameterName, "hybrid_formula_%d", i);
-		par.hybridFormula[i - 1] = (enumFractalFormula)params.get(parameterName, i == 5 ? 2 : 0).asInt();
+		par.hybridFormula[i - 1] =
+				(enumFractalFormula)params.get(parameterName, i == 5 ? 2 : 0).asInt();
 		sprintf(parameterName, "hybrid_iterations_%d", i);
 		par.hybridIters[i - 1] = params.get(parameterName, 1).asDouble();
 		sprintf(parameterName, "hybrid_power_%d", i);
@@ -559,14 +587,16 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 		invert = params.get("invert", 1).asBool();
 		//size = params.get("size", (MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
 		//if(!center.getLength()) center = v3f(-1.0 / scale / 2, -1.0 / scale + (-2 * -(int)invert), 2);
-		size = params.get("size", 15000 ).asDouble();
+		size = params.get("size", 15000).asDouble();
 		//scale = params.get("scale", 1.0 / size).asDouble(); //(double)1 / size;
-		if(!center.getLength()) center = v3f(5000 - 5, 5000 + 5, 5000 - 5);
+		if (!center.getLength())
+			center = v3f(5000 - 5, 5000 + 5, 5000 - 5);
 		//par.doubles.N = params.get("N", 4).asInt();
 	}
 
 	if (params["generator"].asString() == "mandelbulb2") {
-		if(!center.getLength()) center = v3f(5, -1.0 / (1.0 / size) - 5, 0); //ok
+		if (!center.getLength())
+			center = v3f(5, -1.0 / (1.0 / size) - 5, 0); //ok
 	}
 	if (params["generator"].asString() == "hypercomplex") {
 		par.doubles.N = params.get("N", 20).asInt();
@@ -580,52 +610,63 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 		s = params.get("scale", 1.0 / size).asDouble();
 		scale = v3f(s, s, s);
 	} else if (params.get("scale", Json::Value()).isObject())
-		scale = v3f(params["scale"].get("x", 1.0 / size).asDouble(), params["scale"].get("y", 1.0 / size).asDouble(), params["scale"].get("z", 1.0 / size).asDouble());
+		scale = v3f(params["scale"].get("x", 1.0 / size).asDouble(),
+				params["scale"].get("y", 1.0 / size).asDouble(),
+				params["scale"].get("z", 1.0 / size).asDouble());
 
 	auto center_auto_top = params.get("center_auto_top", Json::Value(false));
-	if (center_auto_top.isBool() && center_auto_top.asBool() && !params.get("center", Json::Value()).isObject() && !center.getLength()) center = v3f(3, -1.0 / (1.0 / size) + (-5 - (-(int)invert * 10)), 3);
+	if (center_auto_top.isBool() && center_auto_top.asBool() &&
+			!params.get("center", Json::Value()).isObject() && !center.getLength())
+		center = v3f(3, -1.0 / (1.0 / size) + (-5 - (-(int)invert * 10)), 3);
 }
 
-MapgenMath::~MapgenMath() {
+MapgenMath::~MapgenMath()
+{
 }
 
 //////////////////////// Map generator
 
-MapNode MapgenMath::layers_get(float value, float max) {
-	auto layer_index = rangelim((unsigned int)myround((value / max) * layers_node_size), 0, layers_node_size - 1);
+MapNode MapgenMath::layers_get(float value, float max)
+{
+	auto layer_index = rangelim((unsigned int)myround((value / max) * layers_node_size),
+			0, layers_node_size - 1);
 	//errorstream<<"lsM: "<< " layer_index="<<layer_index<< " value="<<value<<" max="<< max<<" noise_layers_width="<<noise_layers_width<<" layers_node_size="<<layers_node_size<<std::endl;
 	return layers_node[layer_index];
 }
 
-std::pair<bool, double> MapgenMath::calc_point(pos_t x, pos_t y, pos_t z) {
-				v3f vec = (v3f(x, y, z) - center) * scale ;
-				if (invert_xy)
-					std::swap(vec.X, vec.Y);
-				if (invert_yz)
-					std::swap(vec.Y, vec.Z);
-double d = 0;
+std::pair<bool, double> MapgenMath::calc_point(pos_t x, pos_t y, pos_t z)
+{
+	v3f vec = (v3f(x, y, z) - center) * scale;
+	if (invert_xy)
+		std::swap(vec.X, vec.Y);
+	if (invert_yz)
+		std::swap(vec.Y, vec.Z);
+	double d = 0;
 #if USE_MANDELBULBER
-				if (!internal)
-					d = Compute<normal_mode>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
-				else
+	if (!internal)
+		d = Compute<normal_mode>(CVector3(vec.X, vec.Y, vec.Z), mg_params->par);
+	else
 #endif
-					if (internal)
-						d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations, mg_params->seed);
+			if (internal)
+		d = (*func)(vec.X, vec.Y, vec.Z, scale.X, iterations, mg_params->seed);
 
 	return {(!invert && d > 0) || (invert && d == 0), d};
 }
 
-bool MapgenMath::visible(pos_t x, pos_t y, pos_t z) {
-	auto [have, d] = calc_point(x,y,z);
+bool MapgenMath::visible(const v3pos_t &p)
+{
+	if (p.Y < water_level)
+		return true;
+	auto [have, d] = calc_point(p.X, p.Y, p.Z);
 	return have;
 }
 
-int MapgenMath::generateTerrain() {
+int MapgenMath::generateTerrain()
+{
 
 	MapNode n_ice(c_ice);
-	u32 index = 0;
+	//u32 index = 0;
 	v3pos_t em = vm->m_area.getExtent();
-	auto zstride_1d = csize.X * (csize.Y + 1);
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
 	errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z
@@ -650,43 +691,51 @@ int MapgenMath::generateTerrain() {
 #endif
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
-		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
-			const auto heat = m_emerge->env->m_use_weather ? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env, v3pos_t(x, node_max.Y, z), nullptr, &heat_cache) : 0;
+		for (pos_t x = node_min.X; x <= node_max.X; x++) {
+			const auto heat =
+					m_emerge->env->m_use_weather
+							? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env,
+									  v3pos_t(x, node_max.Y, z), nullptr, &heat_cache)
+							: 0;
 
-			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {
-			auto [have, d] = calc_point(x,y,z);
-				if ((!invert && d > 0) || (invert && d == 0)  ) {
-					if (!vm->m_data[i]) {
+			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
+			u32 vi = vm->m_area.index(x, node_min.Y - y_oversize_down, z);
+			for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up;
+					y++, index3d += ystride, VoxelArea::add_y(em, vi, 1)
+					//cache_index++
+			) {
+				//for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up; y++, index3d += ystride) {
+				auto [have, d] = calc_point(x, y, z);
+				if ((!invert && d > 0) || (invert && d == 0)) {
+					if (!vm->m_data[vi]) {
 						//vm->m_data[i] = (y > water_level + biome->filler) ?
 						//     MapNode(biome->c_filler) : n_stone;
 						if (invert || !no_layers) {
-							int index3 = (z - node_min.Z) * zstride_1d +
-							             (y - node_min.Y) * ystride +
-							             (x - node_min.X);
-							vm->m_data[i] = Mapgen_features::layers_get(index3);
+							vm->m_data[vi] = Mapgen_features::layers_get(index3d);
 						} else {
-							vm->m_data[i] = layers_get(d, result_max);
+							vm->m_data[vi] = layers_get(d, result_max);
 						}
-//						vm->m_data[i] = (y > water_level + biome->filler) ?
-//						     MapNode(biome->c_filler) : layers_get(d, result_max);
-
+						//						vm->m_data[i] = (y > water_level + biome->filler) ?
+						//						     MapNode(biome->c_filler) : layers_get(d, result_max);
 					}
 				} else if (y <= water_level) {
-					vm->m_data[i] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
+					vm->m_data[vi] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
 				} else {
-					vm->m_data[i] = n_air;
+					vm->m_data[vi] = n_air;
 				}
-				vm->m_area.add_y(em, i, 1);
+				//vm->m_area.add_y(em, i, 1);
 			}
 		}
 	}
 	return 0;
 }
 
-void MapgenMath::generateRidgeTerrain() { }
+void MapgenMath::generateRidgeTerrain()
+{
+}
 
-void MapgenMath::calculateNoise() {
+void MapgenMath::calculateNoise()
+{
 //delete after merge?
 #if 0
 	//TimeTaker t("calculateNoise", NULL, PRECISION_MICRO);
@@ -695,8 +744,8 @@ void MapgenMath::calculateNoise() {
 	int z = node_min.Z;
 
 	if (flags & MG_CAVES) {
-		noise_cave1->perlinMap3D(x, y, z);
-		noise_cave2->perlinMap3D(x, y, z);
+		noise_cave1->perlinMap3D(x, y - 1, z);
+		noise_cave2->perlinMap3D(x, y - 1, z);
 	}
 
 	noise_filler_depth->perlinMap2D(x, z);

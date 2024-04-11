@@ -83,6 +83,8 @@ video::ITexture *MenuTextureSource::getTexture(const std::string &name, u32 *id)
 	if (name.empty())
 		return NULL;
 
+	porting::irr_device_wait_egl();
+
 	// return if already loaded
 	video::ITexture *retval = m_driver->findTexture(name.c_str());
 	if (retval)

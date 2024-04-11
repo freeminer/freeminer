@@ -36,7 +36,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace ServerList
 {
-void sendAnnounce(AnnounceAction action,
+
+static const char *aa_names[] = {"start", "update", "delete"};
+
+Json::Value MakeReport(AnnounceAction action,
 		const u16 port,
 		const std::vector<std::string> &clients_names,
 		const double uptime,
@@ -47,8 +50,6 @@ void sendAnnounce(AnnounceAction action,
 		const std::vector<ModSpec> &mods,
 		bool dedicated)
 {
-#if USE_CURL
-	static const char *aa_names[] = {"start", "update", "delete"};
 	Json::Value server;
 	server["action"] = aa_names[action];
 	server["port"] = port;
@@ -80,6 +81,49 @@ void sendAnnounce(AnnounceAction action,
 		if (!gameid.empty())
 			server["gameid"] = gameid;
 		server["proto"]        = g_settings->get("server_proto");
+
+
+#if USE_MULTI
+		server["proto_multi"]["mt"] = port;
+#if USE_SCTP
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_sctp", port_multi)) {
+				port_multi = port + 100;
+			}
+			server["proto_multi"]["sctp"] = port_multi;
+		}
+#endif
+#if USE_WEBSOCKET
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_wss", port_multi)) {
+				port_multi = port;
+			}
+			server["proto_multi"]["wss"] = port_multi;
+		}
+#endif
+#if USE_WEBSOCKET_SCTP
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_sctp_wss", port_multi)) {
+				port_multi = port + 100;
+			}
+			server["proto_multi"]["sctp_wss"] = port_multi;
+		}
+#endif
+#if USE_ENET
+		{
+			u16 port_multi = 0;
+			if (!g_settings->getU16NoEx("port_enet", port_multi)) {
+				port_multi = port + 200;
+			}
+			server["proto_multi"]["enet"] = port_multi;
+		}
+#endif
+#endif
+
+
 	}
 
 	if (action == AA_START) {
@@ -98,6 +142,45 @@ void sendAnnounce(AnnounceAction action,
 		if (lag)
 			server["lag"] = lag;
 	}
+
+	return server;
+}
+
+std::string MakeReportString(AnnounceAction action,
+		const u16 port,
+		const std::vector<std::string> &clients_names,
+		const double uptime,
+		const u32 game_time,
+		const float lag,
+		const std::string &gameid,
+		const std::string &mg_name,
+		const std::vector<ModSpec> &mods,
+		bool dedicated)
+{
+	return fastWriteJson(MakeReport(action, port, clients_names, uptime, game_time, lag,
+			gameid, mg_name, mods, dedicated));
+}
+	std::string last_status;
+
+void sendAnnounce(AnnounceAction action,
+		const u16 port,
+		const std::vector<std::string> &clients_names,
+		const double uptime,
+		const u32 game_time,
+		const float lag,
+		const std::string &gameid,
+		const std::string &mg_name,
+		const std::vector<ModSpec> &mods,
+		bool dedicated)
+{
+
+	last_status = MakeReportString(action, port, clients_names, uptime, game_time, lag,
+			gameid, mg_name, mods, dedicated);
+
+#if USE_CURL
+
+	auto server = MakeReport(action, port, clients_names, uptime, game_time, lag, gameid,
+			mg_name, mods, dedicated);
 
 	if (action == AA_START) {
 		actionstream << "Announcing " << aa_names[action] << " to " <<
@@ -126,6 +209,14 @@ void sendAnnounce(AnnounceAction action,
 #endif
 
 	httpfetch_async(fetch_request);
+
+	std::string serverlist;
+	if (g_settings->getNoEx("serverlist_url_freeminer", serverlist) && !serverlist.empty()) {
+		infostream << "Announcing " << aa_names[action] << " to " << serverlist << '\n';
+		fetch_request.url = serverlist + std::string("/announce");
+		httpfetch_async(fetch_request);
+	}
+
 #endif
 }
 

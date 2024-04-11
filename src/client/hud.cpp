@@ -23,6 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <iostream>
 #include <cmath>
+#include "client/mapblock_mesh.h"
+#include "irr_v3d.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "log.h"
@@ -39,6 +41,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "wieldmesh.h"
 #include "client/renderingengine.h"
 #include "client/minimap.h"
+#include "client/clientmap.h"
 
 #ifdef HAVE_TOUCHSCREENGUI
 #include "gui/touchscreengui.h"
@@ -906,6 +909,59 @@ void Hud::drawBlockBounds()
 
 	v3pos_t pos = player->getStandingNodePos();
 
+	if (m_block_bounds_mode == BLOCK_BOUNDS_FAR) {
+		auto offset = intToFloat(client->getCamera()->getOffset(), BS);
+
+		s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
+
+		v3opos_t halfNode = v3opos_t(BS, BS, BS) / 2.0f;
+ 
+		auto lock = client->getEnv().getClientMap().m_far_blocks.try_lock_shared_rec();
+		if (lock->owns_lock()) {
+			for (const auto &[blockPos, block] :
+					client->getEnv().getClientMap().m_far_blocks) {
+				if (block->getTimestamp() <
+						client->getEnv().getClientMap().m_far_blocks_use_timestamp)
+					continue;
+				const auto mesh_step = getFarStep(
+						client->getEnv().getClientMap().getControl(),
+						getNodeBlockPos(
+								client->getEnv()
+										.getClientMap()
+										.m_far_blocks_last_cam_pos),
+						blockPos);
+
+				if (!inFarGrid(blockPos, mesh_step,
+							client->getEnv().getClientMap().getControl().cell_size))
+					continue;
+
+				int fscale = 1;
+				int lod_step = 0;
+				int far_step = 0;
+				int b = 0;
+				if (!block)
+					continue;
+				const auto &mesh = block->getFarMesh(mesh_step);
+				if (!mesh || !mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount()) {
+					b = 50;
+				}
+				if (mesh) {
+					fscale = mesh->fscale;
+					lod_step = mesh->lod_step;
+					far_step = mesh->far_step;
+				}
+				aabb3f box(
+						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
+						oposToV3f(intToFloat(
+								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE * fscale - 1),
+								BS) -
+								offset + halfNode - 1));
+				driver->draw3DBox(box, video::SColor(200 + b, 255 - lod_step * 10 + b,
+											   255 - far_step * 10, fscale * 20));
+			}
+		}
+	} else {
+
 	v3pos_t blockPos(
 		floorf((float) pos.X / MAP_BLOCKSIZE),
 		floorf((float) pos.Y / MAP_BLOCKSIZE),
@@ -930,6 +986,8 @@ void Hud::drawBlockBounds()
 
 		driver->draw3DBox(box, video::SColor(255, 255, 0, 0));
 	}
+
+  }
 
 	driver->setMaterial(old_material);
 }

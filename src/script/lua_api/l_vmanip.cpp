@@ -194,21 +194,7 @@ int LuaVoxelManip::l_calc_lighting(lua_State *L)
 	if (!vm->m_area.contains(VoxelArea(pmin, pmax)))
 		throw LuaError("Specified voxel area out of VoxelManipulator bounds");
 
-/*
 	return ModApiMapgen::calc_lighting(L, vm, pmin, pmax, propagate_shadow);
-*/
-    const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
-    EmergeManager *emerge = getServer(L)->getEmergeManager();
-	Mapgen mg;
-	mg.env         = emerge->env;
-	mg.vm          = vm;
-	mg.ndef        = ndef;
-	mg.water_level = emerge->mgparams->water_level;
-
-	//mg.calcLighting(pmin, pmax, fpmin, fpmax, propagate_shadow);
-	mg.calcLighting(pmin, pmax, pmin, pmax, propagate_shadow);
-
-	return 0;
 }
 
 int LuaVoxelManip::l_set_lighting(lua_State *L)

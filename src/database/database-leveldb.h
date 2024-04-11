@@ -26,8 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 
 #if USE_LEVELDB
-#include <json/reader.h>
 
+#include <json/reader.h>
 #include <memory>
 #include <string>
 #include "database.h"

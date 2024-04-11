@@ -843,25 +843,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 	updateAnimation();
 	updateBonePosition();
 	updateAttachments();
-/*
-#if (IRRLICHT_VERSION_MAJOR >= 1 && IRRLICHT_VERSION_MINOR >= 8) || IRRLICHT_VERSION_MAJOR >= 2
-	const static float shadowinf = 5 * BS;
-	if (g_settings->getBool("shadows")) {
-		if (m_wield_meshnode && m_wield_meshnode->m_meshnode)
-			m_shadownode = m_wield_meshnode->m_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
-		if(m_animated_meshnode)
-			m_shadownode = m_animated_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
-		else if(m_meshnode)
-			m_shadownode = m_meshnode->addShadowVolumeSceneNode(nullptr, 0, true, shadowinf);
-		if (m_shadownode) {
-			m_shadownode->setMaterialFlag(video::EMF_FOG_ENABLE, true);
-			m_shadownode->setMaterialFlag(video::EMF_LIGHTING, false);
-			m_shadownode->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
-		}
-	}
 
-#endif
-*/
 	setNodeLight(m_last_light);
 	updateMeshCulling();
 

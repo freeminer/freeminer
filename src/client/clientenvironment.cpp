@@ -413,7 +413,7 @@ GenericCAO* ClientEnvironment::getGenericCAO(u16 id)
 	return NULL;
 }
 
-u16 ClientEnvironment::addActiveObject(std::unique_ptr<ClientActiveObject> object)
+u16 ClientEnvironment::addActiveObject(std::shared_ptr<ClientActiveObject> object)
 {
 	auto obj = object.get();
 	// Register object. If failed return zero id

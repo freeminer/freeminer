@@ -31,8 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	- The current time in the game
 	- etc.
 */
-
-
 //fm:
 #include "network/connection.h"
 #include "fm_bitset.h"
@@ -45,7 +43,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "key_value_storage.h"
 #include <unordered_set>
 //--
-
 
 #include <list>
 #include <queue>

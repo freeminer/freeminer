@@ -163,7 +163,7 @@ public:
 	{}
 
 	// in BS-space
-	v3f getSpeed() //const
+	v3f getSpeed() const
 	{
 		auto lock = lock_shared();
 		return m_speed;

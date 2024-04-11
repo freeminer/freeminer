@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # install:
 # sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev
@@ -81,7 +81,7 @@ $0 -timelapse=10 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---world=`pwd`
 $0 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---ffmpeg_add_i='-r 120' ---ffmpeg_add_o='-r 120' timelapse_video
 #fly
 $0 ----server_optimize ----far fly
-$0 -farmesh=1 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint=(10000,30030,-22700) fly
+$0 -farmesh=1 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(10000,30030,-22700)' fly
 $0 ---options_bot=fall1 -continuous_forward=1 bot
 };
 
@@ -274,7 +274,6 @@ our $options = {
         mg_name           => 'math',
         mg_math           => {"N" => 30, "generator" => "tglad", "mandelbox_scale" => 1.5, "scale" => 0.000333333333,},
         static_spawnpoint => '(30010,30010,-30010)',
-        mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
     fall1 => {
@@ -282,7 +281,6 @@ our $options = {
         mg_name           => 'math',
         mg_math           => {"generator" => "menger_sponge"},
         static_spawnpoint => '(-70,20020,-190)',
-        mg_float_islands  => 0,
         mg_flags          => '',                                                                                          # "trees",
     },
     far => {
@@ -327,7 +325,6 @@ our $options = {
         fps_max       => 2,
         fps_max_unfocused => 2,
         viewing_range => 1000,
-        #viewing_range_max => 1000,
         wanted_fps => 1,
     },
     stay => {
@@ -346,8 +343,9 @@ my $child;
 
 our $commands = {
     init    => sub { init_config(); 0 },
-    prepare => sub {
+    cmake_prepare => sub {
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
+        $config->{cmake_libcxx} //= 1 if $config->{cmake_clang};
         $g->{build_name} .= $config->{clang_version}      if $config->{cmake_clang};
         my $build_dir = "$config->{root_prefix}$config->{build_prefix}$g->{build_name}";
         chdir $config->{root_path};
@@ -360,6 +358,8 @@ our $commands = {
     },
     cmake => sub {
         return if $config->{no_cmake};
+        my $r = commands_run('cmake_prepare');
+        return $r if $r;
         my %D;
         #$D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
@@ -496,10 +496,10 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
 };
 
 our $tasks = {
-    build_normal    => ['prepare', 'cmake', 'make',],
+    build_normal    => ['cmake', 'make',],
     build           => [\'build_normal'],                                                                                   #'
-    build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'prepare', 'cmake', 'make',],
-    build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, 'prepare', ['cmake', $config->{cmake_nothreads}], 'make',],
+    build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,},  'cmake', 'make',],
+    build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server    => ['set_server', 'build_normal',],
     (
         map { ("build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_", 'run_server']) }
@@ -535,6 +535,8 @@ our $tasks = {
             $g->{build_name} .= '_asan';
             0;
         }, {
+            -cmake_clang=>1,
+            -cmake_libcxx=>1,
             -cmake_asan => 1,
             #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
         },
@@ -545,6 +547,8 @@ our $tasks = {
             $g->{build_name} .= '_msan';
             0;
         }, {
+            -cmake_clang=>1,
+            -cmake_libcxx=>1,
             -cmake_msan => 1,
         },
         'build_debug',
@@ -554,6 +558,8 @@ our $tasks = {
             $g->{build_name} .= '_usan';
             0;
         }, {
+            -cmake_clang=>1,
+            -cmake_libcxx=>1,
             -cmake_usan => 1,
         },
         'build_debug',
@@ -565,7 +571,6 @@ our $tasks = {
         }, {
             -cmake_gperf => 1,
         },
-        'prepare',
         'cmake',
         'make',
     ],
@@ -610,7 +615,7 @@ our $tasks = {
         map {
             'valgrind_' . $_ => [
                 {build_name => ''},
-                #{build_name => 'debug'}, 'prepare', ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
+                #{build_name => 'debug'}, ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
                 \'build_debug',    #'
                 ['valgrind', '--tool=' . $_],
             ],
@@ -695,8 +700,8 @@ our $tasks = {
     gdb => sub {
         ++$g->{keep_config};
         $config->{runner} =
-            $config->{runner}
-          . ' ASAN_OPTIONS=abort_on_error=1 '
+           ' env ASAN_OPTIONS=abort_on_error=1 '
+          . $config->{runner}
           . $config->{gdb}
           . q{ -ex 'run' -ex 't a a bt' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
@@ -968,7 +973,7 @@ sub task_start(@) {
     say "task start $name ", @_;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name}  = $name;
-    local $g->{build_name} = $config->{build_name};
+    local $g->{build_name} = $config->{build_name} if $config->{build_name};
     #task_run($name, @_);
     commands_run($name, @_);
 }

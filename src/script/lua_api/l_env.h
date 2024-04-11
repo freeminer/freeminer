@@ -290,7 +290,7 @@ public:
 	{
 		return m_trigger_contents;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(bool activate) const
+	virtual const std::vector<std::string> getRequiredNeighbors(uint8_t activate) const
 	{
 		return m_required_neighbors;
 	}
@@ -320,7 +320,7 @@ public:
 	}
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 			u32 active_object_count, u32 active_object_count_wider, 
-			v3pos_t neighbor_pos, bool activate);
+			v3pos_t neighbor_pos, uint8_t activate);
 };
 
 class LuaLBM : public LoadingBlockModifierDef

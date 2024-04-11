@@ -74,7 +74,7 @@ const EnumString ModApiEnvBase::es_BlockStatusType[] =
 
 void LuaABM::trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 		u32 active_object_count, u32 active_object_count_wider, 
-		v3pos_t neighbor_pos, bool activate)
+		v3pos_t neighbor_pos, uint8_t activate)
 {
 	ServerScripting *scriptIface = env->getScriptIface();
 	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex, std::try_to_lock);
@@ -116,7 +116,7 @@ void LuaABM::trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
 	lua_pushnumber(L, active_object_count_wider);
 	const auto & neighbor = env->getServerMap().getNodeTry(neighbor_pos);
 	pushnode(L, neighbor);
-	lua_pushboolean(L, activate);
+	lua_pushnumber(L, activate);
 
 	int result = lua_pcall(L, 6, 0, error_handler);
 	if (result)
@@ -629,6 +629,31 @@ int ModApiEnv::l_freeze_melt(lua_State *L)
 	//env->swapNode(pos, n);
 	return 1;
 }
+
+// get_surface(basepos,yoffset,walkable_only=false)
+int ModApiEnv::l_get_surface(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	v3pos_t basepos = read_v3pos(L, 1);
+	int max_y = luaL_checkint(L, 2);
+	bool walkable_only = false;
+
+	if (!lua_isnil(L,3)) {
+		walkable_only = lua_toboolean(L, -1);
+	}
+
+	int result = env->getServerMap().getSurface(basepos, max_y, walkable_only);
+
+	if (result >= basepos.Y) {
+		lua_pushnumber(L,result);
+		return 1;
+	}
+
+	lua_pushnil(L);
+	return 1;
+}
+
 
 // find_nodes_with_meta(pos1, pos2)
 int ModApiEnv::l_find_nodes_with_meta(lua_State *L)
@@ -1378,30 +1403,6 @@ int ModApiEnv::l_find_path(lua_State *L)
 	return 0;
 }
 
-// get_surface(basepos,yoffset,walkable_only=false)
-int ModApiEnv::l_get_surface(lua_State *L)
-{
-	GET_ENV_PTR;
-
-	v3pos_t basepos = read_v3pos(L, 1);
-	int max_y = luaL_checkint(L, 2);
-	bool walkable_only = false;
-
-	if (!lua_isnil(L,3)) {
-		walkable_only = lua_toboolean(L, -1);
-	}
-
-	int result = env->getServerMap().getSurface(basepos, max_y, walkable_only);
-
-	if (result >= basepos.Y) {
-		lua_pushnumber(L,result);
-		return 1;
-	}
-
-	lua_pushnil(L);
-	return 1;
-}
-
 static bool read_tree_def(lua_State *L, int idx,
 	const NodeDefManager *ndef, treegen::TreeDef &tree_def)
 {
@@ -1551,7 +1552,6 @@ void ModApiEnv::Initialize(lua_State *L, int top)
 	API_FCT(get_node_level);
 	API_FCT(set_node_level);
 	API_FCT(add_node_level);
-	API_FCT(freeze_melt);
 	API_FCT(add_entity);
 	API_FCT(find_nodes_with_meta);
 	API_FCT(get_meta);
@@ -1580,10 +1580,11 @@ void ModApiEnv::Initialize(lua_State *L, int top)
 	API_FCT(line_of_sight);
 	API_FCT(raycast);
 	API_FCT(transforming_liquid_add);
-	API_FCT(get_surface);
 	API_FCT(forceload_block);
 	API_FCT(forceload_free_block);
 
+	API_FCT(get_surface);
+	API_FCT(freeze_melt);
 //epixel:
 	API_FCT(spawn_item_activeobject);
 	API_FCT(spawn_falling_node);

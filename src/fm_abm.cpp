@@ -1,3 +1,7 @@
+#include <cstddef>
+#include <cstdint>
+#include <sstream>
+#include <string>
 #include "irr_v3d.h"
 #include "map.h"
 #include "profiler.h"
@@ -67,13 +71,12 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 	return active_object_count;
 }
 
-void ABMHandler::apply(MapBlock *block, bool activate)
+void ABMHandler::apply(MapBlock *block, uint8_t activate)
 {
 	if (m_aabms_empty)
 		return;
 
-	// infostream<<"ABMHandler::apply p="<<block->getPos()<<"
-	// block->abm_triggers="<<block->abm_triggers<<std::endl;
+	// infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
 	{
 		std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
 		if (block->abm_triggers)
@@ -155,7 +158,7 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 					// Check neighbors
 					v3pos_t neighbor_pos;
 					auto &required_neighbors =
-							activate ? ir.abmws->required_neighbors_activate
+							activate == 1 ? ir.abmws->required_neighbors_activate
 									 : ir.abmws->required_neighbors;
 					if (required_neighbors.count() > 0) {
 						v3pos_t p1;
@@ -186,10 +189,7 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 
 					if (!block->abm_triggers)
 						block->abm_triggers =
-								std::unique_ptr<MapBlock::abm_triggers_type>(
-										new MapBlock::abm_triggers_type); // c++14:
-																		  // make_unique
-																		  // here
+								std::make_unique<MapBlock::abm_triggers_type>();
 
 					block->abm_triggers->emplace_back(
 							abm_trigger_one{i, p, c, active_object_count,
@@ -209,9 +209,7 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 		} else {
 			block->heat_add = heat_add;
 		}
-		// infostream<<"heat_num=" << heat_num << " heat_sum="<<heat_sum<<"
-		// heat_add="<<heat_add << " bheat_add"<<block->heat_add<< " heat_avg="<<heat_avg
-		// << " heatnow="<<block->heat<< " magic="<<magic << std::endl;
+		// infostream<<"heat_num=" << heat_num << " heat_sum="<<heat_sum<<" heat_add="<<heat_add << " bheat_add"<<block->heat_add<< " heat_avg="<<heat_avg  << " heatnow="<<block->heat<< " magic="<<magic << std::endl;
 	}
 
 	const float max_effect = 70;
@@ -224,25 +222,22 @@ void ABMHandler::apply(MapBlock *block, bool activate)
 		} else {
 			block->humidity_add = humidity_add;
 		}
-		// infostream<<"humidity_num=" << humidity_num <<" humidity_add="<<humidity_add <<
-		// " bhumidity_add"<<block->humidity_add<< " humiditynow="<<block->humidity<<
-		// std::endl;
+		// infostream<<"humidity_num=" << humidity_num <<" humidity_add="<<humidity_add << " bhumidity_add"<<block->humidity_add<< " humiditynow="<<block->humidity<< std::endl;
 	}
 
-	// infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<<
-	// (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
+	// infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
 }
 
-void MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activate)
+size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate)
 {
 	ScopeProfiler sp(g_profiler, "ABM trigger blocks", SPT_ADD);
 
 	std::unique_lock<std::mutex> lock(abm_triggers_mutex, std::try_to_lock);
 	if (!lock.owns_lock())
-		return;
+		return {};
 
 	if (!abm_triggers)
-		return;
+		return {};
 
 	ServerMap *map = &m_env->getServerMap();
 
@@ -264,19 +259,17 @@ void MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activate)
 	}
 	if (!dtime)
 		dtime = 1;
-
+	size_t triggers_count = 0;
 	unordered_map_v3bpos<int> active_object_added;
 
-	// infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<"
-	// size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<"
-	// activate="<<activate<<std::endl;
+	// infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
 	m_abm_timestamp = time;
 	for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end();
 			++abm_trigger) {
 		// ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
 		auto &aabm = *abm_trigger->abm;
 		if (!abm_trigger->abm || !aabm.abmws || !aabm.abmws->interval) {
-			infostream << "remove strange abm trigger dtime=" << dtime << std::endl;
+			infostream << "remove strange abm trigger dtime=" << dtime << '\n';
 			abm_trigger = abm_triggers->erase(abm_trigger);
 			continue;
 		}
@@ -294,8 +287,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activate)
 			intervals = 1;
 
 		if (!intervals) {
-			verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime
-						  << std::endl;
+			verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime << '\n';
 			intervals = 1;
 		}
 		int chance = (aabm.abmws->chance / intervals);
@@ -323,6 +315,7 @@ void MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activate)
 				abm_trigger->active_object_count + active_object_add,
 				abm_trigger->active_object_count_wider + active_object_add,
 				abm_trigger->neighbor_pos, activate);
+		++triggers_count;
 		// Count surrounding objects again if the abms added any
 		// infostream<<" m_env->m_added_objects="<<m_env->m_added_objects<<"
 		// add="<<active_object_add<<"
@@ -344,25 +337,29 @@ void MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, bool activate)
 	}
 	if (abm_triggers->empty())
 		abm_triggers.reset();
+
+	if (triggers_count) {
+		std::stringstream key;
+		key << "a" << getPos().X << "," << getPos().Y << "," << getPos().Z;
+		m_env->blocks_with_abm.put(key.str(), std::to_string(time));
+	}
+
+	return triggers_count;
 }
 
-void ServerEnvironment::analyzeBlock(MapBlock *block)
+uint8_t ServerEnvironment::analyzeBlock(MapBlock *block)
 {
 	u32 block_timestamp = block->getActualTimestamp();
 	if (block->m_next_analyze_timestamp > block_timestamp) {
-		// infostream<<"not anlalyzing: "<< block->getPos()
-		// <<"ats="<<block->m_next_analyze_timestamp<< " bts="<<
-		// block_timestamp<<std::endl;
-		return;
+		// infostream<<"not anlalyzing: "<< block->getPos() <<"ats="<<block->m_next_analyze_timestamp<< " bts="<< block_timestamp<<std::endl;
+		return {};
 	}
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	if (!block->analyzeContent())
-		return;
-	bool activate = block_timestamp - block->m_next_analyze_timestamp > 3600;
+		return {};
+	uint8_t activate = block_timestamp - block->m_next_analyze_timestamp > 3600 ? 1 : 0;
 	m_abmhandler.apply(block, activate);
-	// infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< "
-	// tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<"
-	// co="<<block->content_only <<" triggers="<<(block->abm_triggers ?
-	// block->abm_triggers->size() : -1) <<std::endl;
+	// infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
 	block->m_next_analyze_timestamp = block_timestamp + 2;
+	return activate;
 }

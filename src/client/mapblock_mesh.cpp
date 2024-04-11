@@ -41,52 +41,148 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <cmath>
 
-int getFarmeshStep(MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
 	int range = radius_box(playerblockpos, blockpos);
-	if (draw_control.farmesh) {
+	if (draw_control.lodmesh) {
+		const auto cells = std::max<int>(draw_control.cell_size * 2,
+				draw_control.lodmesh / draw_control.cell_size);
+		// for (int i = 8; i >= 0; --i) {
+		// 	if (range >= cells + draw_control.lodmesh * pow(2, i))
+		// 		return i;
+		// }
 
-		const pos_t nearest = std::max(draw_control.cell_size * 2, 256 / MAP_BLOCKSIZE);
-		// DUMP(draw_control.farmesh, range, nearest, draw_control.cell_size, draw_control.farmesh + draw_control.farmesh_step * 4, draw_control.farmesh + draw_control.farmesh_step * 2, draw_control.farmesh + draw_control.farmesh_step, draw_control.farmesh);
-		const auto farmesh_cells = std::max<int>(draw_control.cell_size * 2,
-				draw_control.farmesh / draw_control.cell_size);
-		if (range >= std::min<pos_t>(
-							 nearest * 8, farmesh_cells + draw_control.farmesh_step * 4))
-			return 16;
-		else if (range >= std::min<pos_t>(nearest * 4,
-								  farmesh_cells + draw_control.farmesh_step * 2))
+		if (range >= cells + draw_control.lodmesh * 64) // cell_size = 4
 			return 8;
-		else if (range >=
-				 std::min<pos_t>(nearest * 2, farmesh_cells + draw_control.farmesh_step))
+		if (range >= cells + draw_control.lodmesh * 32)
+			return 7;
+		if (range >= cells + draw_control.lodmesh * 16)
+			return 6;
+		if (range >= cells + draw_control.lodmesh * 8)
+			return 5;
+		if (range >= cells + draw_control.lodmesh * 4)
 			return 4;
-		else if (range >= std::min<pos_t>(nearest, farmesh_cells))
+		else if (range >= cells + draw_control.lodmesh * 2)
+			return 3;
+		else if (range >= cells + draw_control.lodmesh)
 			return 2;
+		else if (range >= cells)
+			return 1;
 	}
-	return 1;
+	return 0;
 };
+
+#if 0
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &blockpos)
+{
+	if (!draw_control.farmesh)
+		return 1;
+
+	int range = radius_box(playerblockpos, blockpos);
+
+	const auto next_step = 1;
+	range >>= next_step; // TODO: configurable
+
+	if (range <= 1)
+		return 1;
+
+	int skip = log(range) / log(2);
+	//skip += log(draw_control.cell_size) / log(2);
+	range = radius_box(v3pos_t((playerblockpos.X >> skip) << skip,
+							   (playerblockpos.Y >> skip) << skip,
+							   (playerblockpos.Z >> skip) << skip),
+			v3pos_t((blockpos.X >> skip) << skip, (blockpos.Y >> skip) << skip,
+					(blockpos.Z >> skip) << skip));
+	range >>= next_step + int(log(draw_control.cell_size) / log(2)); // TODO: configurable
+	if (range > 1) {
+		skip = log(range) / log(2);
+	}
+	if (skip > FARMESH_STEP_MAX)
+		skip = FARMESH_STEP_MAX;
+	return skip;
+};
+#endif
+
+auto align(auto pos, const int amount)
+{
+	(pos.X >>= amount) <<= amount;
+	(pos.Y >>= amount) <<= amount;
+	(pos.Z >>= amount) <<= amount;
+	return pos;
+}
+
+v3bpos_t playerBlockAlign(
+		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos)
+{
+	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + draw_control.farmesh_quality;
+	return align(playerblockpos, step_pow2) + draw_control.cell_size / 2;
+}
+
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &blockpos)
+{
+	if (!draw_control.farmesh)
+		return 0;
+	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + draw_control.farmesh_quality;
+	const auto player_aligned = playerBlockAlign(draw_control, playerblockpos);
+	const auto block_aligned = align(blockpos, step_pow2);
+
+	auto calc_step = [&](const auto &player_aligned, const auto &block_aligned) {
+		const auto len_vec = player_aligned - block_aligned;
+		const auto distance = std::max({abs(len_vec.X), abs(len_vec.Y), abs(len_vec.Z)});
+		auto step = int(log(distance >> step_pow2) / log(2));
+		return step;
+	};
+
+	auto step = calc_step(player_aligned, block_aligned);
+
+	// bug here, but where?
+	// maybe need check distance of block end, or some neighbor block with next step
+
+
+	if (step < 0)
+		step = 0;
+	if (step > FARMESH_STEP_MAX)
+		step = FARMESH_STEP_MAX;
+	return step;
+}
+
+bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size)
+{
+	return getFarActual(blockpos, step, cell_size) == blockpos;
+}
+
+v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size)
+{
+	step += log(cell_size) / log(2);
+	const auto blockpos_aligned = align(blockpos, step);
+	return blockpos_aligned;
+}
 
 /*
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(Client *client, bool use_shaders, int step):
+MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
+		int lod_step, int far_step,
+		NodeContainer *nodecontainer) :
+
 	m_mesh_grid(client->getMeshGrid()),
-	side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) / step),
+	side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) / (pow(2, lod_step))),
 	m_client(client),
 	m_use_shaders(use_shaders)
-
-	, side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size)
-	, step{step}
-//, map{map_}, draw_control{draw_control_}
-/*#if defined(MESH_ZEROCOPY)
-	m_vmanip(map_),
-#endif*/
+		,
+		m_vmanip{nodecontainer ? *nodecontainer : m_vmanip_store},
+		side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size),
+		lod_step{lod_step},
+		far_step{far_step},
+		fscale(pow(2, far_step + lod_step))
 {}
 
 bool MeshMakeData::fill_data()
 {
-
 	if (filled)
 		return filled;
 
@@ -98,59 +194,6 @@ bool MeshMakeData::fill_data()
 	filled = true;
 	timestamp = block->getTimestamp();
 
-	return filled;
-
-
-#if !defined(MESH_ZEROCOPY)
-	ScopeProfiler sp(g_profiler, "Client: Mesh data fill");
-
-	m_client->m_env.getClientMap().copy_27_blocks_to_vm(block, m_vmanip);
-
-#if 0
-	v3POS blockpos_nodes = m_blockpos*MAP_BLOCKSIZE;
-
-	/*
-		Copy data
-	*/
-
-	// Allocate this block + neighbors
-	m_vmanip.clear();
-	VoxelArea voxel_area(blockpos_nodes - v3pos_t(1,1,1) * MAP_BLOCKSIZE,
-			blockpos_nodes + v3pos_t(1,1,1) * MAP_BLOCKSIZE*2-v3pos_t(1,1,1));
-	m_vmanip.addArea(voxel_area);
-
-	{
-		//TimeTaker timer("copy central block data");
-		// 0ms
-
-		// Copy our data
-		block->copyTo(m_vmanip);
-	}
-	{
-		//TimeTaker timer("copy neighbor block data");
-		// 0ms
-
-		/*
-			Copy neighbors. This is lightning fast.
-			Copying only the borders would be *very* slow.
-		*/
-
-		// Get map
-		Map *map = block->getParent();
-
-		for(u16 i=0; i<26; i++)
-		{
-			const v3pos_t &dir = g_26dirs[i];
-			v3pos_t bp = m_blockpos + dir;
-			MapBlock *b = map->getBlockNoCreateNoEx(bp);
-			if(b)
-				b->copyTo(m_vmanip);
-		}
-	}
-
-#endif
-
-#endif
 	return filled;
 }
 
@@ -365,7 +408,15 @@ static u16 getSmoothLightCombined(const v3pos_t &p,
 */
 u16 getSmoothLightSolid(const v3pos_t &p, const v3pos_t &face_dir, const v3pos_t &corner, MeshMakeData *data)
 {
-	return getSmoothLightTransparent(p + face_dir, corner - 2 * face_dir, data);
+	if (data->fscale > 1) {
+		const auto r = getSmoothLightTransparent(
+				p + face_dir * data->fscale, corner - 2 * face_dir, data);
+		if (r)
+			return r;
+		return  getSmoothLightTransparent(p + face_dir, corner - 2 * face_dir, data);
+	}
+	
+	return getSmoothLightTransparent(p + face_dir * data->fscale, corner - 2 * face_dir, data);
 }
 
 /*
@@ -747,11 +798,14 @@ void PartialMeshBuffer::afterDraw() const
 */
 
 MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
-	step(data->step),
+	far_step{data->far_step},
+	lod_step{data->lod_step},
+    fscale{data->fscale},
+
 	//no_draw(data->no_draw),
 	m_tsrc(data->m_client->getTextureSource()),
 	m_shdrsrc(data->m_client->getShaderSource()),
-	m_bounding_sphere_center((data->side_length_data * 0.5f - 0.5f) * BS),
+	m_bounding_sphere_center((fscale * data->side_length_data * 0.5f - 0.5f) * BS), // TODO: why _data? 
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
 	m_last_daynight_ratio((u32) -1)
@@ -761,12 +815,13 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 	m_enable_shaders = data->m_use_shaders;
 	m_enable_vbo = g_settings->getBool("enable_vbo");
 
-	if (!data->fill_data())
+	if (!data->fill_data()) {
 		return;
+	}
 
 	v3bpos_t bp = data->m_blockpos;
 	// Only generate minimap mapblocks at even coordinates.
-	if (step == 1) // || !data->block->getMesh())
+	if (fscale<=1) // || !data->block->getMesh())
 	if (data->m_mesh_grid.isMeshPos(bp) && data->m_client->getMinimap()) {
 		m_minimap_mapblocks.resize(data->m_mesh_grid.getCellVolume(), nullptr);
 		v3bpos_t ofs;
@@ -794,7 +849,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 		- whatever
 	*/
 
-	if(step <= 1)
 	{
 		MapblockMeshGenerator(data, &collector,
 			data->m_client->getSceneManager()->getMeshManipulator()).generate();
@@ -891,6 +945,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 				tex.MagFilter = video::ETMAGF_NEAREST;
 			});
 
+		  if (data->far_step <= 0)
 			if (m_enable_shaders) {
 				material.MaterialType = m_shdrsrc->getShaderInfo(
 						p.layer.shader_id).material;
@@ -906,7 +961,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 
 			scene::SMeshBuffer *buf = new scene::SMeshBuffer();
 			buf->Material = material;
-			if (p.layer.isTransparent()) {
+			if (p.layer.isTransparent() && data->far_step <= 0) {
 				buf->append(&p.vertices[0], p.vertices.size(), nullptr, 0);
 
 				MeshTriangle t;
@@ -928,12 +983,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 
 		}
 
-		if (step > 1) {
-			translateMesh(m_mesh[layer], v3f(HBS, 0, HBS));
-			scaleMesh(m_mesh[layer], v3f(step, step, step));
-			translateMesh(m_mesh[layer], v3f(-HBS, -HBS*step + HBS + BS, -HBS));
-		}
-
 		if (m_mesh[layer]) {
 			// Use VBO for mesh (this just would set this for ever buffer)
 			if (m_enable_vbo)
@@ -942,6 +991,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 	}
 
 	//std::cout<<"added "<<fastfaces.getSize()<<" faces."<<std::endl;
+  if (data->lod_step <= 0)
 	m_bsp_tree.buildTree(&m_transparent_triangles, data->side_length);
 
 	// Check if animation is required for this mesh
@@ -954,7 +1004,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 MapBlockMesh::~MapBlockMesh()
 {
 	for (scene::IMesh *m : m_mesh) {
+		if (m)
 		m->drop();
+		m = nullptr;
 	}
 	for (MinimapMapblock *block : m_minimap_mapblocks)
 		delete block;
@@ -974,10 +1026,10 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 	m_animation_force_timer = myrand_range(5, 100);
 #endif
 
-	m_animation_force_timer *= step;
+	m_animation_force_timer *= fscale;
 
 	// Cracks
-   if (step <= 1)
+   if (fscale <= 1)
 	if (crack != m_last_crack) {
 		for (auto &crack_material : m_crack_materials) {
 			scene::IMeshBuffer *buf = m_mesh[crack_material.first.first]->
@@ -1005,7 +1057,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 	}
 
 	// Texture animation
-   if (step <= 1)
+   if (fscale <= 1)
 	for (auto &it : m_animation_info) {
 		const TileLayer &tile = it.second.tile;
 		// Figure out current frame
@@ -1042,6 +1094,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 				getMeshBuffer(daynight_diff.first.second);
 			buf->setDirty(irr::scene::EBT_VERTEX);
 			video::S3DVertex *vertices = (video::S3DVertex *)buf->getVertices();
+		   if(vertices)
 			for (const auto &j : daynight_diff.second)
 				final_color_blend(&(vertices[j.first].Color), j.second,
 						day_color);

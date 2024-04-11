@@ -45,18 +45,20 @@ class IShaderSource;
 	Mesh making stuff
 */
 
-int getFarmeshStep(MapDrawControl& draw_control, const v3bpos_t & playerblockpos, const v3bpos_t & block_pos);
+int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &block_pos);
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &block_pos);
+bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size);
+v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size);
+v3bpos_t playerBlockAlign(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos);
 
 class MapBlock;
 struct MinimapMapblock;
 
 struct MeshMakeData
 {
-#if defined(MESH_ZEROCOPY)
-	Map & m_vmanip;
-#else
-	VoxelManipulator m_vmanip;
-#endif
+	VoxelManipulator m_vmanip_store;
 	v3bpos_t m_blockpos = v3bpos_t(-1337,-1337,-1337);
 	v3pos_t m_crack_pos_relative = v3pos_t(-1337,-1337,-1337);
 	bool m_smooth_lighting = false;
@@ -67,8 +69,12 @@ struct MeshMakeData
 	bool m_use_shaders;
 
     // fm:
+	NodeContainer & m_vmanip;
 	u16 side_length_data;
-	int step = 1;
+	int lod_step;
+	int far_step;
+	const int fscale;
+
 	int range = 1;
 	bool no_draw = false;
 	unsigned int timestamp = 0;
@@ -80,10 +86,10 @@ struct MeshMakeData
 	void fill(MapBlock *block_);
 	bool fill_data();
 
-	MeshMakeData(Client *client, bool use_shaders
-			, int step = 1
-			//Map & map_ = {nullptr},
-			 //MapDrawControl& draw_control_ = {}
+	explicit MeshMakeData(Client *client, bool use_shaders
+			, int lod_step = 0
+			, int far_step = 0
+			, NodeContainer * nodecontainer = nullptr
 			 );
 
 	/*
@@ -262,7 +268,9 @@ public:
 		m_usage_timer += dtime;
 	}
 
-	int step = 1;
+	const int far_step;
+	const int lod_step;
+	const int fscale;
 	//bool no_draw = 0;
 	unsigned int timestamp = 0;
 	u32 m_usage_timer = 0;

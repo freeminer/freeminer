@@ -66,7 +66,7 @@ typedef int socket_t;
 const static unsigned short int adv_port = 29998;
 static std::string ask_str;
 
-lan_adv::lan_adv() : thread_pool("lan_adv") { }
+lan_adv::lan_adv() : thread_vector("lan_adv") { }
 
 void lan_adv::ask() {
 	reanimate();

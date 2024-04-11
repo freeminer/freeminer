@@ -455,6 +455,7 @@ ServerEnvironment::ServerEnvironment(ServerMap *map,
 
 	m_abmhandler(this),
 	m_circuit(script_iface, map, server->ndef(), path_world),
+	blocks_with_abm(path_world, "abm_world"),
 
 	m_map(map),
 	m_script(script_iface),
@@ -714,7 +715,7 @@ PlayerSAO *ServerEnvironment::loadPlayer(RemotePlayer *player, bool *new_player,
 		// Set player position
 		infostream << "Server: Finding spawn place for player \""
 			<< player->getName() << "\"" << std::endl;
-		playersao->setBasePosition(m_server->findSpawnPos());
+		playersao->setBasePosition(m_server->findSpawnPos(player->getName()));
 
 		// Make sure the player is saved
 		player->setModified(true);
@@ -725,7 +726,7 @@ PlayerSAO *ServerEnvironment::loadPlayer(RemotePlayer *player, bool *new_player,
 		if (objectpos_over_limit(playersao->getBasePosition())) {
 			actionstream << "Respawn position for player \""
 				<< player->getName() << "\" outside limits, resetting" << std::endl;
-			playersao->setBasePosition(m_server->findSpawnPos());
+			playersao->setBasePosition(m_server->findSpawnPos(player->getName()));
 		}
 	}
 
@@ -756,6 +757,10 @@ void ServerEnvironment::saveMeta()
 	std::ostringstream ss(std::ios_base::binary);
 
 	Settings args("EnvArgsEnd");
+
+	if (abm_world_last)
+		args.setU64("abm_world_last", abm_world_last);
+
 	args.setU64("game_time", m_game_time);
 	args.setU64("time_of_day", getTimeOfDay());
 	args.setU64("last_clear_objects_time", m_last_clear_objects_time);
@@ -806,6 +811,8 @@ void ServerEnvironment::loadMeta()
 			"EnvArgsEnd not found!");
 */	
 	}
+
+	if (args.exists("abm_world_last")) {abm_world_last = args.getU64("abm_world_last");}
 
 	try {
 		m_game_time_start =
@@ -1225,10 +1232,30 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 	return true;
 }
 
-bool ServerEnvironment::swapNode(v3pos_t p, const MapNode &n)
+bool ServerEnvironment::swapNode(v3pos_t p, const MapNode &n, s16 fast)
 {
-	if (!m_map->addNodeWithEvent(p, n, false))
-		return false;
+	if (fast) {
+		try {
+			MapNode nn = n;
+			if (fast == 2 && !nn.param1) {
+				MapNode n_old = m_map->getNode(p);
+
+				if (n_old.param1)
+					nn.param1 = n_old.param1;
+				else if (p.Y > 0)
+					nn.param1 = 5; // will be recalculated by next light step
+			}
+			m_map->setNode(p, nn);
+		} catch (const InvalidPositionException &e) {
+		}
+	} else {
+
+		if (!m_map->addNodeWithEvent(p, n, false))
+			return false;
+
+	}
+
+	m_circuit.addNode(p);
 
 	// Update active VoxelManipulator if a mapgen thread
 	m_map->updateVManip(p);
@@ -1945,12 +1972,12 @@ void ServerEnvironment::deleteParticleSpawner(u32 id, bool remove_from_object)
 	}
 }
 
-u16 ServerEnvironment::addActiveObject(std::unique_ptr<ServerActiveObject> object)
+u16 ServerEnvironment::addActiveObject(std::shared_ptr<ServerActiveObject> object)
 {
 	if (!object)
 		return 0;
 	m_added_objects++;
-	u16 id = addActiveObjectRaw(std::move(object), true, 0);
+	u16 id = addActiveObjectRaw(object, true, 0);
 	return id;
 }
 
@@ -2122,11 +2149,11 @@ void ServerEnvironment::getSelectedActiveObjects(
 	************ Private methods *************
 */
 
-u16 ServerEnvironment::addActiveObjectRaw(std::unique_ptr<ServerActiveObject> object_u,
+u16 ServerEnvironment::addActiveObjectRaw(std::shared_ptr<ServerActiveObject> object_u,
 	bool set_changed, u32 dtime_s)
 {
 	auto object = object_u.get();
-	if (!m_ao_manager.registerObject(std::move(object_u))) {
+	if (!m_ao_manager.registerObject(object_u)) {
 		return 0;
 	}
 

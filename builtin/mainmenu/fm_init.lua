@@ -1093,7 +1093,7 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_farmesh"] then
 		if fields["cb_farmesh"] == "true" then
-			core.settings:set("farmesh", 3)
+			core.settings:set("farmesh", 30000)
 		else
 			core.settings:set("farmesh", 0)
 		end

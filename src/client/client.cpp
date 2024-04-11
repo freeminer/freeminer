@@ -172,6 +172,7 @@ Client::Client(
 	m_cache_save_interval = g_settings->getU16("server_map_save_interval");
 	m_mesh_grid = { g_settings->getU16("client_mesh_chunk") };
 	control.cell_size = m_mesh_grid.cell_size;
+	control.farmesh_quality = g_settings->getU16("farmesh_quality");
 }
 
 void Client::migrateModStorage()
@@ -373,7 +374,8 @@ Client::~Client()
 
 	m_mesh_update_manager->stop();
 	m_mesh_update_manager->wait();
-/*
+
+/*	
 	MeshUpdateResult r;
 	while (m_mesh_update_manager->getNextResult(r)) {
 		for (auto block : r.map_blocks)
@@ -408,6 +410,8 @@ Client::~Client()
 	if (m_settings_mgr)
 		delete m_settings_mgr;
 	m_settings_mgr = nullptr;
+
+
 
 	// Free sound ids
 	for (auto &csp : m_sounds_client_to_server)
@@ -649,7 +653,7 @@ void Client::step(float dtime)
 				delete block->mesh;
 				block->mesh = nullptr;
 */
-				block->setMesh(r.mesh);
+				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 
 				if (r.mesh) {
@@ -1720,6 +1724,10 @@ void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 	}
 	catch(InvalidPositionException &e) {
 	}
+
+	if (p.getDistanceFrom(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)) > MAP_BLOCKSIZE*2)
+		return;
+
 	addUpdateMeshTaskForNode(p, true);
 
 	for (const auto &modified_block : modified_blocks) {
@@ -2001,6 +2009,16 @@ void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
 			continue;
 		block->setTimestampNoChangedFlag(m_uptime);
 	}
+
+	/*int to = FARMESH_STEP_MAX;
+	for (int step = 1; step <= to; ++step) {
+		v3pos_t actualpos = getFarmeshActual(blockpos, step);
+		auto *block = m_env.getMap().getBlockNoCreateNoEx(actualpos); // todo maybe update bp1 too if differ
+		if(!block)
+			continue;
+		block->setTimestampNoChangedFlag(m_uptime);
+	}*/
+
 }
 
 void Client::updateCameraOffset(v3pos_t camera_offset)
@@ -2083,6 +2101,8 @@ void Client::afterContentReceived()
 	// content from previous sessions.
 	guiScalingCacheClear();
 
+   if (!headless_optimize) {
+
 	// Rebuild inherited images and recreate textures
 	infostream<<"- Rebuilding images and textures"<<std::endl;
 	if (!headless_optimize)
@@ -2097,6 +2117,7 @@ void Client::afterContentReceived()
 			guienv, m_tsrc, 0, 71);
 	m_shsrc->rebuildShaders();
 
+   }
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
 	m_rendering_engine->draw_load_screen(wstrgettext("Initializing nodes..."),
@@ -2110,7 +2131,7 @@ void Client::afterContentReceived()
 	m_nodedef->setNodeRegistrationStatus(true);
 	m_nodedef->runNodeResolveCallbacks();
 
-	if (!headless_optimize) {
+   if (!headless_optimize) {
 	// Update node textures and assign shaders to each tile
 	infostream<<"- Updating node textures"<<std::endl;
 	TextureUpdateArgs tu_args;
@@ -2120,14 +2141,13 @@ void Client::afterContentReceived()
 	tu_args.text_base = wstrgettext("Initializing nodes");
 	tu_args.tsrc = m_tsrc;
 	m_nodedef->updateTextures(this, &tu_args);
-	}
+   }
 
    if (!headless_optimize) {
 	// Start mesh update thread after setting up content definitions
 	infostream<<"- Starting mesh update thread"<<std::endl;
 	m_mesh_update_manager->start();
    }
-
 	m_state = LC_Ready;
 	sendReady();
 

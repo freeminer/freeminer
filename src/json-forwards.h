@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 
+// FM TODO (fix with submodule)
 #if 1 || USE_SYSTEM_JSONCPP
 #include <json/version.h>
 #include <json/allocator.h>

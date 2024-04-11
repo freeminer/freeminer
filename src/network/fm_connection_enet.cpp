@@ -88,7 +88,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 		con::PeerHandler *peerhandler) :
-		thread_pool("Connection", 90),
+		thread_vector("Connection", 90),
 		m_protocol_id(protocol_id), m_max_packet_size(max_packet_size),
 		m_timeout(timeout), m_enet_host(nullptr), m_peer_id(0),
 		m_bc_peerhandler(peerhandler), m_last_recieved(0), m_last_recieved_warn(0),

@@ -389,7 +389,10 @@ void spread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				neighbor_block = current.block;
 			}
 
-			auto lock = neighbor_block->lock_unique_rec();
+			auto lock = neighbor_block->try_lock_unique_rec();
+			if (!lock->owns_lock()) {
+				continue; // may cause dark areas
+			}
 
 			// Get the neighbor itself
 			MapNode neighbor = neighbor_block->getNodeNoLock(neighbor_rel_pos);
@@ -923,7 +926,10 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 		return false;
 	}
 
-	auto lock = block->lock_unique_rec();
+	auto lock = block->try_lock_unique_rec();
+	if (!lock->owns_lock()) {
+		return false; // may cause dark areas
+	}
 
 	// For each changing column of nodes:
 	size_t index;
@@ -1247,7 +1253,10 @@ bool repair_block_light(Map *map, MapBlock *block,
 
   {
 
-	auto lock = block->lock_unique_rec();
+	auto lock = block->try_lock_unique_rec();
+	if (!lock->owns_lock()) {
+		return true; // may cause dark areas
+	}
 
 	// Reset the voxel manipulator.
 	fill_with_sunlight(block, ndef, lights);
