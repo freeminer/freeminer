@@ -25,18 +25,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
 #include "client/tile.h"
-#include "map.h"
 #include "voxel.h"
 #include <array>
 #include <map>
 #include <unordered_map>
-
-
-// fm:
-//#define MESH_ZEROCOPY //Exprimental, slower, needed for next farmesh
-struct MapDrawControl;
-class Map;
-
 
 class Client;
 class IShaderSource;
@@ -45,13 +37,6 @@ class IShaderSource;
 	Mesh making stuff
 */
 
-int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &block_pos);
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &block_pos);
-bool inFarGrid(const v3bpos_t &blockpos, int step, int cell_size);
-v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size);
-v3bpos_t playerBlockAlign(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos);
 
 class MapBlock;
 struct MinimapMapblock;

@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "client/client.h"
 #include "client/clientmap.h"
+#include "client/fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "constants.h"
 #include "emerge.h"
@@ -33,11 +34,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "util/numeric.h"
 #include "util/timetaker.h"
-const v3opos_t g_6dirsf[6] = {
+const v3opos_t g_6dirso[6] = {
 		// +right, +top, +back
-		v3opos_t(0, 0, 1),  // back
-		v3opos_t(0, 1, 0),  // top
-		v3opos_t(1, 0, 0),  // right
+		v3opos_t(0, 0, 1),	// back
+		v3opos_t(0, 1, 0),	// top
+		v3opos_t(1, 0, 0),	// right
 		v3opos_t(0, 0, -1), // front
 		v3opos_t(0, -1, 0), // bottom
 		v3opos_t(-1, 0, 0), // left
@@ -65,8 +66,9 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 	const auto step = getFarStep(m_client->getEnv().getClientMap().getControl(),
 			getNodeBlockPos(m_camera_pos_aligned), blockpos);
 
-	const auto blockpos_actual = getFarActual(
-			blockpos, step, m_client->getEnv().getClientMap().getControl().cell_size);
+	const auto blockpos_actual =
+			getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
+					m_client->getEnv().getClientMap().getControl().cell_size);
 	auto &far_blocks = m_client->getEnv().getClientMap().m_far_blocks;
 	{
 		const auto lock = far_blocks.lock_unique_rec();
@@ -197,7 +199,7 @@ int FarMesh::go_direction(const size_t dir_n)
 
 	auto &draw_control = m_client->getEnv().getClientMap().getControl();
 
-	const auto dir = g_6dirsf[dir_n];
+	const auto dir = g_6dirso[dir_n];
 	const auto grid_size_xy = grid_size_x * grid_size_y;
 
 	int processed = 0;
@@ -352,7 +354,7 @@ void FarMesh::update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov,
 
 	{
 		size_t planes_processed = 0;
-		for (size_t i = 0; i < sizeof(g_6dirsf) / sizeof(g_6dirsf[0]); ++i) {
+		for (size_t i = 0; i < sizeof(g_6dirso) / sizeof(g_6dirso[0]); ++i) {
 			if (!plane_processed[i].processed)
 				continue;
 			++planes_processed;

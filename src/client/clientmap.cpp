@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "clientmap.h"
 #include "client.h"
+#include "client/fm_far_calc.h"
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
@@ -890,7 +891,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 			//blocks_skip_farmesh.insert(bp);
 			blocks_skip_farmesh.insert(
-					getFarActual(bp, fmesh_step, m_control.cell_size));
+					getFarActual(bp, getNodeBlockPos(m_far_blocks_last_cam_pos), fmesh_step, m_control.cell_size));
 		}
 			/*
 				Compare block position to camera position, skip
@@ -1090,7 +1091,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 							getNodeBlockPos(m_far_blocks_last_cam_pos),
 							it->first); // m_camera_position_node
 					if (mesh_step > 1 &&
-							!inFarGrid(it->first, mesh_step, m_control.cell_size)) {
+							!inFarGrid(it->first, getNodeBlockPos(m_far_blocks_last_cam_pos), mesh_step, m_control.cell_size)) {
 					} else {
 						const auto mesh = it->second->getFarMesh(mesh_step);
 						if (!mesh) {
@@ -1218,7 +1219,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 			fmesh_step = getFarStep(
 					m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos());
-			if (fmesh_step > 1 && !inFarGrid(block_pos, fmesh_step, m_control.cell_size)) {
+			if (fmesh_step > 1 && !inFarGrid(block_pos, getNodeBlockPos(m_far_blocks_last_cam_pos), fmesh_step, m_control.cell_size)) {
 				continue;
 			}
 			block_mesh = block->getFarMesh(fmesh_step);
