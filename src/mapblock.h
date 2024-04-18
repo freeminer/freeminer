@@ -53,7 +53,7 @@ struct ActiveABM;
 // fm:
 static MapNode ignoreNode{CONTENT_IGNORE};
 constexpr auto LODMESH_STEP_MAX {8}; // 4+1
-constexpr auto FARMESH_STEP_MAX {15};
+constexpr auto FARMESH_STEP_MAX {16};
 
 
 struct abm_trigger_one {
@@ -563,7 +563,6 @@ public:
 private:
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
 	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
-	std::array<uint32_t, FARMESH_STEP_MAX + 1> m_far_mesh_times;
 	MapBlock::mesh_type delete_mesh;
 
 public:	

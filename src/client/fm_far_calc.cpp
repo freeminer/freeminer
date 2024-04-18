@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fm_far_calc.h"
 
 #include "client/clientmap.h"
+#include "irr_v3d.h"
 #include "mapblock.h"
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
@@ -157,12 +158,12 @@ bool inFarGrid(
 class OctoTree
 {
 	v3bpos_t for_player_block_pos = {-1337, -1337, -1337};
-	const v3bpos_t pos;
+	const v3s32 pos;
 	const int32_t size;
 	std::optional<std::array<std::unique_ptr<OctoTree>, 8>> children;
 
 public:
-	OctoTree(const v3bpos_t &pos, const int32_t size) : pos{pos}, size{size} {}
+	OctoTree(const v3s32 &pos, const int32_t size) : pos{pos}, size{size} {}
 
 	bool isLeaf() { return !children.has_value(); }
 
@@ -172,23 +173,22 @@ public:
 			const auto childSize = size >> 1;
 			children = {std::make_unique<OctoTree>(pos, childSize),
 					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y, pos.Z), childSize),
+							v3s32(pos.X + childSize, pos.Y, pos.Z), childSize),
 					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X, pos.Y + childSize, pos.Z), childSize),
+							v3s32(pos.X, pos.Y + childSize, pos.Z), childSize),
 					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y + childSize, pos.Z),
+							v3s32(pos.X + childSize, pos.Y + childSize, pos.Z),
 							childSize),
 					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X, pos.Y, pos.Z + childSize), childSize),
+							v3s32(pos.X, pos.Y, pos.Z + childSize), childSize),
 					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y, pos.Z + childSize),
+							v3s32(pos.X + childSize, pos.Y, pos.Z + childSize),
 							childSize),
 					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X, pos.Y + childSize, pos.Z + childSize),
+							v3s32(pos.X, pos.Y + childSize, pos.Z + childSize),
 							childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y + childSize,
-									pos.Z + childSize),
+					std::make_unique<OctoTree>(v3s32(pos.X + childSize, pos.Y + childSize,
+													   pos.Z + childSize),
 							childSize)};
 		}
 	}
@@ -201,7 +201,7 @@ public:
 		}
 
 		if (isLeaf()) {
-			return {{pos, size}};
+			return {{v3bpos_t(pos.X, pos.Y, pos.Z), size}};
 		} else {
 			for (const auto &child : children.value()) {
 				const auto res = child->find(p);

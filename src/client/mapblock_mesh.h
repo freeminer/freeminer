@@ -244,19 +244,19 @@ public:
 
 
 // fm:
-	u32 getUsageTimer() {
+	/*u32 getUsageTimer() {
 		return m_usage_timer;
 	}
 	void incrementUsageTimer(float dtime) {
 		m_usage_timer += dtime;
-	}
+	}*/
 
 	const int far_step;
 	const int lod_step;
 	const int fscale;
 	//bool no_draw = 0;
 	unsigned int timestamp = 0;
-	u32 m_usage_timer = 0;
+	//u32 m_usage_timer = 0;
 // ===
 
 

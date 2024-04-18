@@ -79,7 +79,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 		}
 	}
 	const auto &block = far_blocks.at(blockpos_actual);
-	block->setTimestamp(timestamp_complete);
+	block->setTimestampNoChangedFlag(timestamp_complete);
 	{
 		const auto lock = std::lock_guard(block->far_mutex);
 		if (!block->getFarMesh(step)) {

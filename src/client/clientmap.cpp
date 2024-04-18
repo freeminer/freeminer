@@ -852,7 +852,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 
 	// Number of blocks frustum culled
-	u32 blocks_frustum_culled = 0;
+	//u32 blocks_frustum_culled = 0;
 
 	MeshGrid mesh_grid = m_client->getMeshGrid();
 	// No occlusion culling when free_move is on and camera is inside ground
@@ -866,7 +866,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			occlusion_culling_enabled = false;
 	}
 
-	u32 calls = 0;
 	const auto end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 	std::unordered_set<v3bpos_t> blocks_skip_farmesh;
 
@@ -879,17 +878,16 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		int range = ir.second;
 		const auto d = range;
 		draw_nearest.pop_back();
-		++calls;
 
 		//auto block = getBlockNoCreateNoEx(bp);
 		auto block = m_blocks.get(bp);
 		if (!block)
 			continue;
 
-		int mesh_step =
+		const auto mesh_step =
 				getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp);
 		{
-			int fmesh_step = getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
+			const auto fmesh_step = getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
 
 			//blocks_skip_farmesh.insert(bp);
 			blocks_skip_farmesh.insert(
@@ -900,7 +898,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				if not seen on display
 			*/
 
-		auto mesh = block->getLodMesh(mesh_step, true);
+		const auto mesh = block->getLodMesh(mesh_step, true);
 			{
 			blocks_in_range++;
 
@@ -996,8 +994,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					continue; // Out of range, skip.
 
 				// Keep the block alive as long as it is in range.
-				block->resetUsageTimer();
-				blocks_in_range_with_mesh++;
+				//block->resetUsageTimer();
+				//blocks_in_range_with_mesh++;
 
 				/*
 
@@ -1048,7 +1046,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			if(!smesh_size)
 				continue;
 
-			mesh->incrementUsageTimer(dtime);
+			//mesh->incrementUsageTimer(dtime);
 
 			// Add to set
 			//block->refGrab();

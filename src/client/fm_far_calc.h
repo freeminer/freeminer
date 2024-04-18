@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irr_v3d.h"
 
-class MapDrawControl;
+struct MapDrawControl;
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
