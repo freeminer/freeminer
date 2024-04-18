@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <string>
 #include <iostream>
 #include <cmath>
+#include "client/fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "settings.h"
 #include "util/numeric.h"
@@ -930,7 +931,10 @@ void Hud::drawBlockBounds()
 										.m_far_blocks_last_cam_pos),
 						blockPos);
 
-				if (!inFarGrid(blockPos, mesh_step,
+				if (!inFarGrid(blockPos, getNodeBlockPos(
+								client->getEnv()
+										.getClientMap()
+										.m_far_blocks_last_cam_pos), mesh_step,
 							client->getEnv().getClientMap().getControl().cell_size))
 					continue;
 

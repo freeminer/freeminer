@@ -19,6 +19,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "mesh_generator_thread.h"
 #include "client/clientmap.h"
+#include "client/fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "settings.h"
 #include "profiler.h"

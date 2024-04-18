@@ -39,6 +39,7 @@ struct MapDrawControl
 	uint16_t farmesh_quality = 0;
 	int32_t lodmesh = 4;
 	int cell_size = 1;
+	int cell_size_pow = 0;
 
 	float fps = 30;
 	float fps_avg = 30;

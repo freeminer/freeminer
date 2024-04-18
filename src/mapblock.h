@@ -53,7 +53,7 @@ struct ActiveABM;
 // fm:
 static MapNode ignoreNode{CONTENT_IGNORE};
 constexpr auto LODMESH_STEP_MAX {8}; // 4+1
-constexpr auto FARMESH_STEP_MAX {16};
+constexpr auto FARMESH_STEP_MAX {15};
 
 
 struct abm_trigger_one {
