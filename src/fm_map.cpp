@@ -421,6 +421,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 				continue;
 			}
 
+			/*
 			if (block->refGet()) {
 				continue;
 			}

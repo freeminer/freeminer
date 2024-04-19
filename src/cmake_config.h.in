@@ -24,7 +24,6 @@
 #cmakedefine01 BUILD_CLIENT
 #cmakedefine01 BUILD_SERVER
 #cmakedefine01 EXCEPTION_DEBUG
-#define USE_ASYNC_DRAWLIST_UPDATE 1
 
 
 #define PROJECT_NAME "@PROJECT_NAME@"

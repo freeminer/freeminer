@@ -886,13 +886,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 		const auto mesh_step =
 				getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp);
-		{
-			const auto fmesh_step = getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
+	
 
-			//blocks_skip_farmesh.insert(bp);
-			blocks_skip_farmesh.insert(
-					getFarActual(bp, getNodeBlockPos(m_far_blocks_last_cam_pos), fmesh_step, m_control.cell_size));
-		}
 			/*
 				Compare block position to camera position, skip
 				if not seen on display
@@ -1046,7 +1041,13 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			if(!smesh_size)
 				continue;
 
-			//mesh->incrementUsageTimer(dtime);
+			{
+				const auto fmesh_step = getFarStep(
+						m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
+				blocks_skip_farmesh.insert(
+						getFarActual(bp, getNodeBlockPos(m_far_blocks_last_cam_pos),
+								fmesh_step, m_control.cell_size));
+			}
 
 			// Add to set
 			//block->refGrab();
