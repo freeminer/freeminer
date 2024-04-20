@@ -1281,7 +1281,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	{
 		if (porting::g_sighup) {
 			porting::g_sighup = false;
-			if(!maintenance_status) {
+			if (!maintenance_status) {
 				maintenance_status = 1;
 				maintenance_start();
 				maintenance_status = 2;

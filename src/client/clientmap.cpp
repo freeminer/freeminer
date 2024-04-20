@@ -1609,9 +1609,9 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		MapBlock *block = i.second;
 
 		// If the mesh of the block happened to get deleted, ignore it
-		auto mapBlockMesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()), false);
+		auto mapBlockMesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()), true);
 
-		if (mapBlockMesh)
+		if (!mapBlockMesh)
 			mapBlockMesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos()));
 
 		if (!mapBlockMesh)
