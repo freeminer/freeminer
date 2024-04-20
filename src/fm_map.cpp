@@ -177,9 +177,9 @@ void Map::eraseBlock(const MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode dummy {CONTENT_IGNORE};
+MapNode dummy{CONTENT_IGNORE};
 
-MapNode& Map::getNodeTry(const v3pos_t &p)
+MapNode &Map::getNodeTry(const v3pos_t &p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");

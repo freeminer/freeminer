@@ -34,9 +34,9 @@ Build-Depends:
  libgl1-mesa-dev,
  libgles2-mesa-dev,
  libboost-system-dev,
- libunwind-dev,
- libc++-dev,
- libc++abi-dev,
+ libunwind-15-dev,
+ libc++-15-dev,
+ libc++abi-15-dev,
 Standards-Version: 3.9.4
 Homepage: http://freeminer.org/
 Vcs-Git: git://git.debian.org/git/pkg-games/freeminer-v04x.git
