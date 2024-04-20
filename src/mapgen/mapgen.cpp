@@ -1213,24 +1213,26 @@ std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize)
 	return std::pair<s16, s16>(ccmin - numcmin * csize_n, ccmax + numcmax * csize_n);
 }
 
-bool Mapgen::visible_only_water(const v3pos_t &p)
+bool Mapgen::visible_water_level(const v3pos_t &p)
 {
-	return p.Y <= water_level;
+	return p.Y < water_level;
 }
 
 bool Mapgen::visible(const v3pos_t &p)
 {
-	return visible_only_water(p) || getGroundLevelAtPoint({p.X, p.Z}) > p.Y;
+	return getGroundLevelAtPoint({p.X, p.Z}) >= p.Y;
 }
 
 const MapNode &Mapgen::visible_content(const v3pos_t &p)
 {
-	if (!visible(p))
+	const auto v = visible(p);
+	const auto vw = visible_water_level(p);
+	if (!v && !vw)
 		return visible_transparent;
 	const auto heat = m_emerge->biomemgr->calcBlockHeat(p, seed,
 			env ? env->getTimeOfDay() * env->m_time_of_day_speed : 0,
 			env ? env->getGameTime() : 0, !!env && env->m_use_weather);
-	if (p.Y <= water_level)
+	if (!v && p.Y < water_level)
 		return heat < 0 ? visible_ice : visible_water;
 	const auto humidity = m_emerge->biomemgr->calcBlockHumidity(p, seed,
 			env ? env->getTimeOfDay() * env->m_time_of_day_speed : 0,

@@ -254,7 +254,7 @@ public:
 	MapNode visible_transparent = {CONTENT_AIR, LIGHT_SUN};
 
 	virtual bool visible(const v3pos_t &p);
-	virtual bool visible_only_water(const v3pos_t &p);
+	virtual bool visible_water_level(const v3pos_t &p);
 	const MapNode &visible_content(const v3pos_t &p);
 
 	// getSpawnLevelAtPoint() is a function within each mapgen that returns a

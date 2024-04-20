@@ -83,10 +83,7 @@ public:
 	s16 generateTerrain();
 
 	//freeminer:
-	bool visible(const v3pos_t &p) override
-	{
-		return p.Y <= water_level || getFractalAtPoint(p.X, p.Y, p.Z);
-	}
+	bool visible(const v3pos_t &p) override { return getFractalAtPoint(p.X, p.Y, p.Z); }
 
 private:
 	u16 formula;

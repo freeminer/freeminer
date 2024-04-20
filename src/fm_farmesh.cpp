@@ -282,7 +282,7 @@ int FarMesh::go_direction(const size_t dir_n)
 				if (const auto &it = mg_cache.find(pos_int); it != mg_cache.end()) {
 					visible = it->second;
 				} else {
-					visible = mg->visible(pos_int);
+					visible = mg->visible(pos_int) || mg->visible_water_level(pos_int);
 					mg_cache[pos_int] = visible;
 				}
 			}
