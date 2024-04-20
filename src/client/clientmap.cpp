@@ -1611,8 +1611,8 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		// If the mesh of the block happened to get deleted, ignore it
 		auto mapBlockMesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()), true);
 
-		if (!mapBlockMesh)
-			mapBlockMesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos()));
+		//if (!mapBlockMesh)
+		//	mapBlockMesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos()));
 
 		if (!mapBlockMesh)
 			continue;
@@ -1754,10 +1754,10 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 		/*
 			Loop through blocks in sector
 		*/
-		for (auto & [key, block] : m_blocks) {
+		for (const auto & [key, block] : m_blocks) {
 			++blocks_loaded;
 			
-			const auto mesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()), false);
+			const auto mesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos()), true);
 /*
 		for (MapBlock *block : sectorblocks) {
 			MapBlockMesh *mesh = block->mesh;

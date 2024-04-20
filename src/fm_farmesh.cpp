@@ -158,7 +158,7 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos)
 #endif
 
 FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
-		m_camera_pos{-1337, -1337, -1337}, m_client{client}, m_control{control}
+		m_client{client}, m_control{control}
 {
 
 	EmergeManager *emerge_use = server			   ? server->getEmergeManager()
@@ -303,9 +303,14 @@ int FarMesh::go_direction(const size_t dir_n)
 	return processed;
 }
 
-void FarMesh::update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov,
-		CameraMode camera_mode, f32 camera_pitch, f32 camera_yaw, v3pos_t camera_offset,
-		float brightness, int render_range, float speed)
+void FarMesh::update(v3opos_t camera_pos,
+		//v3f camera_dir,
+		//f32 camera_fov,
+		//CameraMode camera_mode,
+		//f32 camera_pitch, f32 camera_yaw,
+		v3pos_t camera_offset,
+		//float brightness,
+		int render_range, float speed)
 {
 	if (!mg)
 		return;
@@ -315,6 +320,11 @@ void FarMesh::update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov,
 	const auto distance_max =
 			(std::min<unsigned int>(render_range, 1.2 * m_client->fog_range / BS) >> 7)
 			<< 7;
+
+	const auto far_fast =
+			//m_client->getEnv().getClientMap().m_far_fast && 
+			m_speed > 200 * BS ||
+			m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000;
 
 	if (!timestamp_complete) {
 		if (!m_camera_pos_aligned.X && !m_camera_pos_aligned.Y && !m_camera_pos_aligned.Z)
@@ -327,15 +337,15 @@ void FarMesh::update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov,
 
 	m_camera_pos = intToFloat(m_camera_pos_aligned, BS);
 
-	m_camera_dir = camera_dir;
+	/*m_camera_dir = camera_dir;
 	m_camera_fov = camera_fov;
 	m_camera_pitch = camera_pitch;
-	m_camera_yaw = camera_yaw;
+	m_camera_yaw = camera_yaw;*/
 	m_camera_offset = camera_offset;
 	m_speed = speed;
 	if (direction_caches_pos != m_camera_pos_aligned) {
 		// maybe buggy
-		if (m_client->getEnv().getClientMap().m_far_fast)
+		if (far_fast)
 			m_client->getEnv().getClientMap().m_far_blocks_use_timestamp =
 					timestamp_complete; // m_client->m_uptime ?
 
@@ -373,8 +383,7 @@ void FarMesh::update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov,
 		} //? else
 		if (m_camera_pos_aligned != camera_pos_aligned_int) {
 			m_client->getEnv().getClientMap().m_far_blocks_last_cam_pos =
-					m_client->getEnv().getClientMap().m_far_fast ? camera_pos_aligned_int
-																 : m_camera_pos_aligned;
+					far_fast ? camera_pos_aligned_int : m_camera_pos_aligned;
 			m_camera_pos_aligned = camera_pos_aligned_int;
 		}
 		if (!planes_processed && !complete_set) {

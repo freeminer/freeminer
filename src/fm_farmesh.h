@@ -49,8 +49,10 @@ public:
 
 	~FarMesh();
 
-	void update(v3opos_t camera_pos, v3f camera_dir, f32 camera_fov, CameraMode camera_mode,
-			f32 camera_pitch, f32 camera_yaw, v3pos_t m_camera_offset, float brightness,
+	void update(v3opos_t camera_pos,
+			//v3f camera_dir, f32 camera_fov, CameraMode camera_mode, f32 camera_pitch, f32 camera_yaw,
+			v3pos_t m_camera_offset,
+			//float brightness,
 			int render_range, float speed);
 	void makeFarBlock(const v3bpos_t &blockpos);
 	void makeFarBlock7(const v3bpos_t &blockpos, size_t step);
@@ -61,10 +63,10 @@ private:
 
 	v3opos_t m_camera_pos = {-1337, -1337, -1337};
 	v3pos_t m_camera_pos_aligned;
-	v3f m_camera_dir;
+	/*v3f m_camera_dir;
 	f32 m_camera_fov;
 	f32 m_camera_pitch;
-	f32 m_camera_yaw;
+	f32 m_camera_yaw;*/
 	Client *m_client;
 	MapDrawControl *m_control;
 	static constexpr pos_t distance_min = 8 * MAP_BLOCKSIZE;

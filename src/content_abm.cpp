@@ -21,7 +21,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "content_abm.h"
 #include <cstdint>
-#include "debug/iostream_debug_helpers.h"
 #include "server.h"
 #include "serverenvironment.h"
 
