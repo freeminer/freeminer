@@ -303,8 +303,7 @@ public:
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current = false;
 
-	static constexpr bool m_far_fast =
-			true; // show generated far farmesh stable(0) or instant(1)
+	//static constexpr bool m_far_fast =			true; // show generated far farmesh stable(0) or instant(1)
 	uint32_t m_far_blocks_use_timestamp = 0;
 	uint32_t m_far_blocks_clean_timestamp = 0;
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);

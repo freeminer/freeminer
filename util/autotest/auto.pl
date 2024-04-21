@@ -10,7 +10,7 @@ $0 [-config_variables] [--freeminer_params] [---this_script_params] [----presets
 $0 valgrind_massif
 
 # run one task with headless config
-$0 ---headless gdb
+$0 ----headless gdb
 
 # pass options to app
 $0 -num_emerge_threads=1 bot_tsan

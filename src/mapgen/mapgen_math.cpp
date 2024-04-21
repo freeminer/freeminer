@@ -655,9 +655,7 @@ std::pair<bool, double> MapgenMath::calc_point(pos_t x, pos_t y, pos_t z)
 
 bool MapgenMath::visible(const v3pos_t &p)
 {
-	if (p.Y < water_level)
-		return true;
-	auto [have, d] = calc_point(p.X, p.Y, p.Z);
+	const auto [have, d] = calc_point(p.X, p.Y, p.Z);
 	return have;
 }
 

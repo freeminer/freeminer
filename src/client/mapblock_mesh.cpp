@@ -682,6 +682,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 	far_step{data->far_step},
 	lod_step{data->lod_step},
     fscale{data->fscale},
+    timestamp{data->timestamp},
 
 	//no_draw(data->no_draw),
 	m_tsrc(data->m_client->getTextureSource()),

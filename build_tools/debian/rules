@@ -61,6 +61,7 @@ override_dh_auto_configure:
 	    cmake -G Ninja \
 		  -DCMAKE_C_COMPILER=$(shell which clang) \
 		  -DCMAKE_CXX_COMPILER=$(shell which clang++) \
+		  -DBUILD_SERVER=1 \
 		  -DRUN_IN_PLACE=0 \
 		  -DENABLE_GETTEXT=1 \
 		  -DENABLE_FREETYPE=1 \

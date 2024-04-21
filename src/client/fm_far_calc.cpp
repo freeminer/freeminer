@@ -20,9 +20,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "fm_far_calc.h"
+#include <cstdint>
 
 #include "client/clientmap.h"
-#include "mapblock.h"
+#include "irr_v3d.h"
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
@@ -103,47 +104,15 @@ v3bpos_t playerBlockAlign(
 	return align(playerblockpos, step_pow2) + (draw_control.cell_size >> 1);
 }
 
-#if 0
-// Fast math but not finised
+#if 1
 
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &blockpos)
-{
-	if (!draw_control.farmesh)
-		return 0;
-	const auto step_pow2 = int(log(draw_control.cell_size) / log(2)) + draw_control.farmesh_quality;
-	const auto player_aligned = playerBlockAlign(draw_control, playerblockpos);
-	const auto block_aligned = align(blockpos, step_pow2);
-
-	auto calc_step = [&](const auto &player_aligned, const auto &block_aligned) {
-		const auto len_vec = player_aligned - block_aligned;
-		const auto distance = std::max({abs(len_vec.X), abs(len_vec.Y), abs(len_vec.Z)});
-		auto step = int(log(distance >> step_pow2) / log(2));
-		return step;
-	};
-
-	auto step = calc_step(player_aligned, block_aligned);
-
-	// bug here, but where?
-	// maybe need check distance of block end, or some neighbor block with next step
-
-
-	if (step < 0)
-		step = 0;
-	if (step > FARMESH_STEP_MAX)
-		step = FARMESH_STEP_MAX;
-	return step;
-}
-
-
-v3bpos_t getFarActual(v3bpos_t blockpos, int step, int cell_size)
-{
-	step += log(cell_size) / log(2);
-	const auto blockpos_aligned = align(blockpos, step);
-	return blockpos_aligned;
-}
+#if USE_POS32
+using tpos_t = bpos_t;
+using v3tpos_t = v3bpos_t;
+#else
+using tpos_t = int32_t;
+using v3tpos_t = v3s32;
 #endif
-
 bool inFarGrid(
 		const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step, int cell_size)
 {
@@ -151,120 +120,138 @@ bool inFarGrid(
 	return act == blockpos;
 }
 
-#if 1
-// slower using tree
-
-class OctoTree
+struct child_t
 {
-	v3bpos_t for_player_block_pos = {-1337, -1337, -1337};
-	const v3bpos_t pos;
-	const int32_t size;
-	std::optional<std::array<std::unique_ptr<OctoTree>, 8>> children;
-
-public:
-	OctoTree(const v3bpos_t &pos, const int32_t size) : pos{pos}, size{size} {}
-
-	bool isLeaf() { return !children.has_value(); }
-
-	void ensureChildren()
-	{
-		if (isLeaf()) {
-			const auto childSize = size >> 1;
-			children = {std::make_unique<OctoTree>(pos, childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y, pos.Z), childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X, pos.Y + childSize, pos.Z), childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y + childSize, pos.Z),
-							childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X, pos.Y, pos.Z + childSize), childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y, pos.Z + childSize),
-							childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X, pos.Y + childSize, pos.Z + childSize),
-							childSize),
-					std::make_unique<OctoTree>(
-							v3bpos_t(pos.X + childSize, pos.Y + childSize,
-									pos.Z + childSize),
-							childSize)};
-		}
-	}
-
-	std::optional<std::pair<v3bpos_t, bpos_t>> find(const v3bpos_t &p)
-	{
-		if (!(p.X >= pos.X && p.X < pos.X + size && p.Y >= pos.Y && p.Y < pos.Y + size &&
-					p.Z >= pos.Z && p.Z < pos.Z + size)) {
-			return {};
-		}
-
-		if (isLeaf()) {
-			return {{pos, size}};
-		} else {
-			for (const auto &child : children.value()) {
-				const auto res = child->find(p);
-				if (res)
-					return res;
-			}
-		}
-		return {};
-	}
-
-	void rasterizeByDistance(const v3bpos_t &from, int cell_size_pow)
-	{
-		// TODO: lru cache with 10 size here
-		if (for_player_block_pos == from)
-			return;
-		for_player_block_pos = from;
-		if (size < (1 << (1 + cell_size_pow)))
-			return;
-		auto distance = std::max({std::abs(from.X - pos.X - (size >> 1)),
-				std::abs(from.Y - pos.Y - (size >> 1)),
-				std::abs(from.Z - pos.Z - (size >> 1))});
-		//distance>>=1; // farmesh_quality
-
-		if (distance >= size) {
-			children = {};
-		} else {
-			ensureChildren();
-			for (const auto &child : children.value()) {
-				child->rasterizeByDistance(from, cell_size_pow);
-			}
-		}
-	}
+	v3tpos_t pos;
+	tpos_t size;
 };
 
-const auto sz = 1 << FARMESH_STEP_MAX;
-const auto start_pos = -(sz >> 1);
-thread_local auto tree = OctoTree({start_pos, start_pos, start_pos}, sz);
+std::optional<child_t> find(const v3bpos_t &block_pos, const v3bpos_t &player_pos,
+		const child_t &child, const int cell_size_pow)
+{
+	if (!(block_pos.X >= child.pos.X && block_pos.X < child.pos.X + child.size &&
+				block_pos.Y >= child.pos.Y && block_pos.Y < child.pos.Y + child.size &&
+				block_pos.Z >= child.pos.Z && block_pos.Z < child.pos.Z + child.size))
+		return {};
 
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+	if (child.size < (1 << (1 + cell_size_pow)))
+		return child;
+
+	auto distance = std::max({std::abs(player_pos.X - child.pos.X - (child.size >> 1)),
+			std::abs(player_pos.Y - child.pos.Y - (child.size >> 1)),
+			std::abs(player_pos.Z - child.pos.Z - (child.size >> 1))});
+
+	//distance /= 1.5; // farmesh_quality
+	if (distance >= child.size) {
+		return child;
+	}
+	const tpos_t childSize = child.size >> 1;
+	for (const auto &child : {
+				 child_t{.pos{child.pos}, .size = childSize},
+				 child_t{.pos = v3tpos_t(
+								 child.pos.X + childSize, child.pos.Y, child.pos.Z),
+				 .size = childSize},
+				 child_t{.pos = v3tpos_t(
+								 child.pos.X, child.pos.Y + childSize, child.pos.Z),
+				 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X + childSize, child.pos.Y + childSize,
+								 child.pos.Z),
+				 .size = childSize},
+				 child_t{.pos = v3tpos_t(
+								 child.pos.X, child.pos.Y, child.pos.Z + childSize),
+				 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X + childSize, child.pos.Y,
+								 child.pos.Z + childSize),
+				 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X, child.pos.Y + childSize,
+								 child.pos.Z + childSize),
+				 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X + childSize, child.pos.Y + childSize,
+								 child.pos.Z + childSize),
+				 .size = childSize},
+		 }) {
+		const auto res = find(block_pos, player_pos, child, cell_size_pow);
+		if (res) {
+			return res;
+		}
+	}
+	return {};
+}
+
+#if USE_POS32
+const auto tree_pow = FARMESH_STEP_MAX;
+#else
+const auto tree_pow = 12;
+#endif
+const auto tree_size = 1 << tree_pow;
+const auto tree_align = tree_pow - 1;
+const auto tree_align_size = 1 << (tree_align);
+const auto external_pow = tree_pow - 2;
+
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos)
 {
 	const auto blockpos_aligned_cell = align(blockpos, draw_control.cell_size_pow);
 
-	tree.rasterizeByDistance(playerblockpos, draw_control.cell_size_pow);
-	const auto res = tree.find(blockpos_aligned_cell);
-	if (!res) {
-		return {};
+	const auto start = child_t{
+			.pos = v3tpos_t(
+					((ppos.X >> tree_align) << tree_align) - (tree_align_size >> 1),
+					((ppos.Y >> tree_align) << tree_align) - (tree_align_size >> 1),
+					((ppos.Z >> tree_align) << tree_align) - (tree_align_size >> 1)),
+			.size = tree_size};
+	const auto res = find(blockpos_aligned_cell, ppos, start, draw_control.cell_size_pow);
+	if (res) {
+		/*
+#if !USE_POS32
+		if (res->pos.X > MAX_MAP_GENERATION_LIMIT ||
+				res->pos.X < -MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Y > MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Y < -MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Z > MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Z < -MAX_MAP_GENERATION_LIMIT)
+			return {};
+#endif
+*/
+		const auto step = int(log(res->size) / log(2)) - draw_control.cell_size_pow;
+		return step;
 	}
-	const auto step = log(res->second) / log(2) - draw_control.cell_size_pow;
-	return step;
+	return 0; // TODO! fix intersection with cell_size_pow
+			  //return external_pow; //+ draw_control.cell_size_pow;
 }
 
-v3bpos_t getFarActual(
-		v3bpos_t blockpos, const v3bpos_t &playerblockpos, int step, int cell_size)
+v3bpos_t getFarActual(v3bpos_t blockpos, const v3bpos_t &ppos, int step, int cell_size)
 {
 	const auto cell_size_pow = int(log(cell_size) / log(2));
 	const auto blockpos_aligned_cell = align(blockpos, cell_size_pow);
-	tree.rasterizeByDistance(playerblockpos, cell_size_pow);
-	const auto res = tree.find(blockpos_aligned_cell);
-	if (!res) {
-		return {};
+
+	const auto start = child_t{
+			.pos = v3tpos_t(
+					((ppos.X >> tree_align) << tree_align) - (tree_align_size >> 1),
+					((ppos.Y >> tree_align) << tree_align) - (tree_align_size >> 1),
+					((ppos.Z >> tree_align) << tree_align) - (tree_align_size >> 1)),
+			.size = tree_size};
+	const auto res = find(blockpos_aligned_cell, ppos, start, cell_size_pow);
+	if (res) {
+#if USE_POS32
+		return res->pos;
+#else
+		/*
+		const auto szw = 1 << (res->size + cell_size_pow);
+		if (res->pos.X + szw > MAX_MAP_GENERATION_LIMIT ||
+				res->pos.X - szw< -MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Y + szw > MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Y - szw< -MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Z + szw > MAX_MAP_GENERATION_LIMIT ||
+				res->pos.Z - szw< -MAX_MAP_GENERATION_LIMIT)
+			return {};
+*/
+		return v3bpos_t(res->pos.X, res->pos.Y, res->pos.Z);
+#endif
 	}
-	return res->first;
+	const auto ext_align = external_pow; // + cell_size_pow;
+	return v3bpos_t((blockpos.X >> ext_align) << ext_align,
+			(blockpos.Y >> ext_align) << ext_align,
+			(blockpos.Z >> ext_align) << ext_align);
 }
 
 #endif

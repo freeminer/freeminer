@@ -168,7 +168,7 @@ bool Map::eraseBlock(v3pos_t blockpos)
 
 void Map::eraseBlock(const MapBlockP block)
 {
-	auto block_p = block->getPos();
+	const auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
@@ -177,9 +177,9 @@ void Map::eraseBlock(const MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode dummy {CONTENT_IGNORE};
+MapNode dummy{CONTENT_IGNORE};
 
-MapNode& Map::getNodeTry(const v3pos_t &p)
+MapNode &Map::getNodeTry(const v3pos_t &p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
@@ -372,7 +372,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 	if (porting::getTimeMs() > m_blocks_delete_time) {
 		m_blocks_delete = (m_blocks_delete == &m_blocks_delete_1 ? &m_blocks_delete_2
 																 : &m_blocks_delete_1);
-		if (m_blocks_delete->size())
+		if (!m_blocks_delete->empty())
 			verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
 		for (auto &ir : *m_blocks_delete) {
 			delete ir.first;
@@ -421,9 +421,11 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 				continue;
 			}
 
+			/*
 			if (block->refGet()) {
 				continue;
 			}
+			*/
 
 			if (!block->isGenerated()) {
 				blocks_delete.emplace_back(block);

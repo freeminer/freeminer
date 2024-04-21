@@ -1,5 +1,5 @@
 #usr/share/doc/freeminer/mapformat.txt usr/share/doc/freeminer-data
-usr/share/doc/freeminer/lua_api.txt   usr/share/doc/freeminer-data
+usr/share/doc/freeminer/lua_api.md    usr/share/doc/freeminer-data
 usr/share/doc/freeminer/README.md     usr/share/doc/freeminer-data
 usr/share/doc/freeminer/freeminer.conf.example usr/share/doc/freeminer-data
 

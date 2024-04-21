@@ -4518,12 +4518,15 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	if (farmesh) {
 		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-		farmesh_async.step([&, farmesh_range = farmesh_range, yaw = player->getYaw(),
-								   pitch = player->getPitch(),
+		farmesh_async.step([&, farmesh_range = farmesh_range, 
+								   //yaw = player->getYaw(),
+								   //pitch = player->getPitch(),
 								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera->getPosition(), camera->getDirection(),
-					camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera->getOffset(), sky->getBrightness(), farmesh_range, speed);
+			farmesh->update(camera->getPosition(),
+					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
+					camera->getOffset(), 
+					//sky->getBrightness(), 
+					farmesh_range, speed);
 		});
 	}
 
@@ -4607,8 +4610,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	float update_draw_list_delta = 0.2f;
 
 /* mt dir */
-#if !USE_ASYNC_DRAWLIST_UPDATE
-
+#if 0
 	v3f camera_direction = camera->getDirection();
 
 	// call only one of updateDrawList, touchMapBlocks, or updateShadow per frame
@@ -4628,10 +4630,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 #endif
 /* */
 
-// /* TODO:
-#if USE_ASYNC_DRAWLIST_UPDATE
-// fm pos:
-	auto camera_position = camera->getPosition();
+#if 1
+	const auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize) {
 		if (client->getEnv().getClientMap().m_drawlist_last ||
 				runData.update_draw_list_timer >= update_draw_list_delta ||
@@ -4639,25 +4639,27 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 						MAP_BLOCKSIZE * BS * 2 ||
 				m_camera_offset_changed) {
 			bool allow = true;
-#if ENABLE_THREADS && HAVE_FUTURE
-			if (g_settings->getBool("more_threads")) {
-			updateDrawList_async.step([&](const float dtime) {
-				client->getEnv().getClientMap().updateDrawListFm(dtime, 10000);
-			},
-					runData.update_draw_list_timer);
+			static const auto thread_local more_threads =
+					g_settings->getBool("more_threads");
+			if (more_threads) {
+				updateDrawList_async.step(
+						[&](const float dtime) {
+							client->getEnv().getClientMap().updateDrawListFm(
+									dtime, 10000);
+						},
+						runData.update_draw_list_timer);
 			} else
-#endif
-
 				client->getEnv().getClientMap().updateDrawListFm(
 						runData.update_draw_list_timer);
 			runData.update_draw_list_timer = 0;
-			// runData.update_draw_list_last_cam_dir = camera_direction;
-			if (allow)
+			if (allow) {
 				runData.update_draw_list_last_cam_pos = camera->getPosition();
+			}
 		}
+	}
 #endif
-
-	} else if (RenderingEngine::get_shadow_renderer()) {
+   if (!runData.headless_optimize)
+	if (RenderingEngine::get_shadow_renderer()) {
 		updateShadows();
 	}
 

@@ -112,7 +112,7 @@ public:
 	bool visible(const v3pos_t &p)
 	{
 		// TODO: add more height features
-		return visible_only_water(p) || baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
+		return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
 	}
 
 

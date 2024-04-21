@@ -95,8 +95,6 @@ public:
 	//freeminer:
 	bool visible(const v3pos_t &p) override
 	{
-		if (visible_only_water(p))
-			return true;
 		// TODO: Make faster and more features
 		const auto sl = getSpawnLevelAtPoint({p.X, p.Z});
 		return (sl >= p.Y && sl < MAX_MAP_GENERATION_LIMIT);

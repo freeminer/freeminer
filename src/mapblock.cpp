@@ -805,7 +805,6 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			delete_mesh = m_far_mesh[ms];
 		}
 		m_far_mesh[ms] = rmesh;
-		m_far_mesh_times[ms] = time;
 	}
 
 /*

@@ -1293,11 +1293,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 	{
 		if (porting::g_sighup) {
 			porting::g_sighup = false;
-			if(!maintenance_status) {
+			if (!maintenance_status) {
 				maintenance_status = 1;
 				maintenance_start();
 				maintenance_status = 2;
-			} else if(maintenance_status == 2) {
+			} else if (maintenance_status == 2) {
 				maintenance_status = 3;
 				maintenance_end();
 				maintenance_status = 0;
@@ -1306,7 +1306,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		if (porting::g_siginfo) {
 			// todo: add here more info
 			porting::g_siginfo = false;
-			infostream<<"uptime="<< (int)m_uptime_counter->get()<<std::endl;
+			infostream << "uptime=" << (int)m_uptime_counter->get() << '\n';
 			m_clients.UpdatePlayerList(); //print list
 			g_profiler->print(infostream);
 			g_profiler->clear();
