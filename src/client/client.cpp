@@ -707,13 +707,15 @@ void Client::step(float dtime)
 				blocks_to_ack.emplace_back(p);
 			}
 */		
-			if (porting::getTimeMs() > end_ms)
-				break;
 
 
 			for (auto block : r.map_blocks)
 				if (block)
 					block->refDrop();
+
+			if (porting::getTimeMs() > end_ms)
+				break;
+
 		}
 /*
 		if (blocks_to_ack.size() > 0) {

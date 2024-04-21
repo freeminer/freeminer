@@ -245,7 +245,7 @@ private:
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic<drawlist_map *> m_drawlist {&m_drawlist_0};
 	std::atomic_bool m_drawlist_current = 0;
-	std::vector<std::pair<v3pos_t, int>> draw_nearest;
+	std::vector<std::pair<v3bpos_t, int>> draw_nearest;
 public:
 	std::atomic_uint m_drawlist_last {0};
 	std::map<v3pos_t, MapBlock*> m_block_boundary;
