@@ -71,7 +71,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 					m_client->getEnv().getClientMap().getControl().cell_size);
 	auto &far_blocks = m_client->getEnv().getClientMap().m_far_blocks;
 	{
-		const auto lock = far_blocks.lock_unique_rec();
+		//const auto lock = far_blocks->lock_unique_rec();
 		if (!far_blocks.contains(blockpos_actual)) {
 			far_blocks.emplace(blockpos_actual,
 					std::make_shared<MapBlock>(

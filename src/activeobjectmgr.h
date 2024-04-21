@@ -100,6 +100,6 @@ protected:
 	// Note: ActiveObjects can access the ActiveObjectMgr. Only erase objects using
 	// removeObject()!
 	//std::map<u16, std::unique_ptr<T>> m_active_objects;
-	concurrent_unordered_map<u16, std::shared_ptr<T>> m_active_objects;
+	concurrent_shared_unordered_map<u16, std::shared_ptr<T>> m_active_objects;
 	std::vector<std::shared_ptr<T>> m_active_objects_deleted;
 };
