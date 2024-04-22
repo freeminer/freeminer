@@ -217,10 +217,10 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 	return nullptr;
 }
 
-epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
+bool ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
 		v3opos_t pos, const MapNode n, int fast)
 {
-	epixel::FallingSAO* obj = new epixel::FallingSAO(this, pos, "__builtin:falling_node", "", fast);
+	auto obj = std::make_shared<epixel::FallingSAO>(this, pos, "__builtin:falling_node", "", fast);
 		ObjectProperties* objProps = obj->accessObjectProperties();
 		objProps->is_visible = true;
 		objProps->visual = "wielditem";
@@ -230,11 +230,7 @@ epixel::FallingSAO* ServerEnvironment::spawnFallingActiveObject(const std::strin
 		objProps->collideWithObjects = false;
 		obj->notifyObjectPropertiesModified();
 		obj->attachNode(n);
-	if (addActiveObject(std::unique_ptr<ServerActiveObject>{obj})) {
-		return obj;
-	}
-	delete obj;
-	return nullptr;
+		return addActiveObject(obj);
 }
 
 #if 0
@@ -340,9 +336,6 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
 void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int fast, bool destroy)
 {
 
-	// fmTODO remove:
-	return;
-
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
 		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
@@ -386,9 +379,10 @@ void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int f
 						(f.name.compare(f_under.name) != 0 || (f_under.leveled &&
 							n_bottom.getLevel(ndef) < n_bottom.getMaxLevel(ndef))) &&
 						(!f_under.walkable || f_under.buildable_to)) {
-						removeNode(n_pos, fast);
-						spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast);
-						nodeUpdate(n_pos, recursion_limit, fast, destroy);
+						if (spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast)) {
+							removeNode(n_pos, fast);
+							nodeUpdate(n_pos, recursion_limit, fast, destroy);
+						}
 					}
 				}
 

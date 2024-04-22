@@ -439,7 +439,7 @@ public:
 	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
 			const ItemStack& items);
 
-	epixel::FallingSAO *spawnFallingActiveObject(const std::string &nodeName, v3f pos,
+	bool spawnFallingActiveObject(const std::string &nodeName, v3f pos,
 			const MapNode n, int fast = 2);
 private:
 

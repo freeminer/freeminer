@@ -403,8 +403,8 @@ NEXT_LIQUID:;
 			if (falling++ < 100 && !liquid_levels[D_BOTTOM] &&
 					((ItemGroupList)nodemgr->get(liquid_kind).groups)["falling_node"]) {
 				fall_down = true;
-				// m_server->getEnv().nodeUpdate(neighbors[D_SELF].pos, 2);
-				// goto NEXT_LIQUID;
+ 				m_server->getEnv().nodeUpdate(neighbors[D_SELF].pos, 2);
+				goto NEXT_LIQUID;
 			}
 
 			liquid_levels_want[D_BOTTOM] = level_avg > level_max	 ? level_avg
