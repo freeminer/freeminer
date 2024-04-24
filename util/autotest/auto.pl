@@ -83,7 +83,7 @@ $0 -timelapse=10 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---world=`pwd`
 $0 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---ffmpeg_add_i='-r 120' ---ffmpeg_add_o='-r 120' timelapse_video
 #fly
 $0 ----server_optimize ----far fly
-$0 -farmesh=1 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(10000,30030,-22700)' fly
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(10000,30030,-22700)' fly
 $0 ---options_bot=fall1 -continuous_forward=1 bot
 };
 
@@ -815,8 +815,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
 
     play           => [{'---no_build_server' => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],                #'
     timelapse_play => [{'---options_int' => 'timelapse',}, \'play', 'timelapse_video'],                                   #'
-    fly            => [{'---options_int' => 'fly,forward', -options_bot => '',}, \'bot',],                                #'
-    timelapse_fly  => [{'---options_int' => 'timelapse,fly,forward', -options_bot => '',}, \'bot', 'timelapse_video'],    #'
+    fly            => [{'---options_int' => 'fly,forward', }, \'build_client', \'run_single'],                                #'
+    timelapse_fly  => [{'---options_int' => 'timelapse,fly,forward', }, \'build_client', \'run_single', 'timelapse_video'],    #'
     timelapse_stay => [{
             '----timelapse'     => 1, '----fly'              => 1, '----stay' => 1, '----far' => 10, '----fps1' => 1, '----no_exit' => 1,
             '-show_basic_debug' => 0, '-show_profiler_graph' => 0, '-profiler_page' => 0,

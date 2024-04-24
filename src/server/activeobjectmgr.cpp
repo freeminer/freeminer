@@ -164,11 +164,11 @@ bool ActiveObjectMgr::registerObject(std::shared_ptr<ServerActiveObject> obj)
 		return false;
 	}
 
-	auto obj_p = obj.get();
 	m_active_objects.insert_or_assign(obj->getId(), obj);
 	//m_active_objects[obj->getId()] = std::move(obj);
 
 #if !NDEBUG
+	auto obj_p = obj.get();
 	verbosestream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 			<< "Added id=" << obj_p->getId() << "; there are now "
 			<< m_active_objects.size() << " active objects." << std::endl;
@@ -301,7 +301,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		added_objects.push(id);
 
 
-		if (++count > 20)
+		if (++count > 10)
 			break;   
 	
 	}

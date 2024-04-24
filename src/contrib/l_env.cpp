@@ -63,7 +63,10 @@ int ModApiEnv::l_spawn_item_activeobject(lua_State *L)
 	// pos
 	v3opos_t pos = checkOposPos(L, 1);
 	// item
-	std::string itemstring = lua_tostring(L, 2);
+	//std::string itemstring = lua_tostring(L, 2);
+	ItemStack item = read_item(L, 2,getServer(L)->idef());
+	if(item.empty() || !item.isKnown(getServer(L)->idef()))
+		return 0;
 
 	u16 stacksize = 1;
 	if (lua_isnumber(L, 3)) {
@@ -75,12 +78,14 @@ int ModApiEnv::l_spawn_item_activeobject(lua_State *L)
 		v = checkFloatPos(L, 4);
 	}
 
+	/*
 	ItemStack item;
 	item.deSerialize(itemstring);
+	*/
 	item.add(stacksize - 1);
 
 	// Drop item on the floor
-	if (epixel::ItemSAO* obj = env->spawnItemActiveObject(itemstring, pos, item)) {
+	if (auto obj = env->spawnItemActiveObject(item.getItemString(), pos, item)) {
 		obj->setVelocity(v);
 	}
 	return 1;

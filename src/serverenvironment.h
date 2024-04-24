@@ -436,11 +436,11 @@ public:
 public:
 	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
 	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
-	epixel::ItemSAO* spawnItemActiveObject(const std::string &itemName, v3f pos,
+	std::shared_ptr<epixel::ItemSAO> spawnItemActiveObject(const std::string &itemName, v3opos_t pos,
 			const ItemStack& items);
 
-	bool spawnFallingActiveObject(const std::string &nodeName, v3f pos,
-			const MapNode n, int fast = 2);
+	std::shared_ptr<epixel::FallingSAO> spawnFallingActiveObject(const std::string &nodeName, v3opos_t pos,
+			const MapNode &n, int fast = 2);
 private:
 
 	// is weather active in this environment?

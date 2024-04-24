@@ -190,10 +190,10 @@ void ServerEnvironment::contrib_lookupitemtogather(RemotePlayer* player, v3f pla
 }
 #endif
 
-epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &itemName,
+std::shared_ptr<epixel::ItemSAO> ServerEnvironment::spawnItemActiveObject(const std::string &itemName,
 		v3opos_t pos, const ItemStack &items)
 {
-	epixel::ItemSAO* obj = new epixel::ItemSAO(this, pos, "__builtin:item", "");
+	auto obj = std::make_shared<epixel::ItemSAO>(this, pos, "__builtin:item", "");
 		IItemDefManager* idef = m_gamedef->getItemDefManager();
 		float s = 0.2 + 0.1 * (items.count / items.getStackMax(idef));
 		ObjectProperties* objProps = obj->accessObjectProperties();
@@ -210,15 +210,14 @@ epixel::ItemSAO* ServerEnvironment::spawnItemActiveObject(const std::string &ite
 		objProps->automatic_rotate = 3.1415 * 0.5;
 		obj->notifyObjectPropertiesModified();
 		obj->attachItems(items);
-	if (addActiveObject(std::unique_ptr<ServerActiveObject>{obj})) {
+	if (addActiveObject(obj)) {
 		return obj;
 	}
-	delete obj;
-	return nullptr;
+	return {};
 }
 
-bool ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
-		v3opos_t pos, const MapNode n, int fast)
+std::shared_ptr<epixel::FallingSAO> ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
+		v3opos_t pos, const MapNode& n, int fast)
 {
 	auto obj = std::make_shared<epixel::FallingSAO>(this, pos, "__builtin:falling_node", "", fast);
 		ObjectProperties* objProps = obj->accessObjectProperties();
@@ -230,7 +229,10 @@ bool ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
 		objProps->collideWithObjects = false;
 		obj->notifyObjectPropertiesModified();
 		obj->attachNode(n);
-		return addActiveObject(obj);
+		if (addActiveObject(obj)) {
+			return obj;
+		}
+		return {};
 }
 
 #if 0
