@@ -6,7 +6,7 @@ ENV SPATIALINDEX_VERSION 1.9.3
 ENV LUAJIT_VERSION v2.1
 
 RUN apk add --no-cache git build-base cmake curl-dev zlib-dev zstd-dev \
-		sqlite-dev postgresql-dev hiredis-dev leveldb-dev \
+		sqlite-dev postgresql-dev hiredis-dev leveldb-dev boost-dev ccache \
 		gmp-dev jsoncpp-dev ninja ca-certificates
 
 WORKDIR /usr/src/
@@ -52,6 +52,8 @@ COPY po /usr/src/minetest/po
 COPY src /usr/src/minetest/src
 COPY textures /usr/src/minetest/textures
 
+COPY games/default /usr/src/minetest/games/default
+
 WORKDIR /usr/src/minetest
 RUN cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -60,6 +62,7 @@ RUN cmake -B build \
 		-DENABLE_PROMETHEUS=TRUE \
 		-DBUILD_UNITTESTS=FALSE \
 		-DBUILD_CLIENT=FALSE \
+        -DRUN_IN_PLACE=0 \
 		-GNinja && \
 	cmake --build build && \
 	cmake --install build
@@ -81,6 +84,7 @@ COPY --from=builder /usr/local/lib/libspatialindex* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libluajit* /usr/local/lib/
 USER minetest:minetest
 
+EXPOSE 30200/udp
 EXPOSE 30000/udp 30000/tcp
 VOLUME /var/lib/minetest/ /etc/minetest/
 
