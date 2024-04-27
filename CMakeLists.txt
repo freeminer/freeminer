@@ -110,6 +110,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR SANITIZE_ADDRESS OR SANITIZE_THREAD OR 
 endif()
 
 option (USE_STATIC_LIBRARIES "Set to FALSE to use shared libraries" ON)
+if (USE_STATIC_LIBRARIES)
+    set(BUILD_SHARED_LIBS OFF)
+endif()
 
 #============
 

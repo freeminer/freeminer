@@ -525,7 +525,7 @@ add_definitions(-DUSE_CMAKE_CONFIG_H)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-set(PLATFORM_LIBS Threads::Threads)
+set(PLATFORM_LIBS ${PLATFORM_LIBS} Threads::Threads)
 
 if(WIN32)
 	# Windows
