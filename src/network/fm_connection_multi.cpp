@@ -131,7 +131,7 @@ void Connection::Connect(Address address)
 	const auto remote_proto = g_settings->get("remote_proto");
 
 	actionstream << "Multi connect to " << address.serializeString() << ":"
-			   << std::to_string(address.getPort()) << " with " << remote_proto << '\n';
+				 << std::to_string(address.getPort()) << " with " << remote_proto << '\n';
 
 #if USE_SCTP
 	if (m_con_sctp && remote_proto == "sctp")
@@ -290,24 +290,37 @@ Address Connection::GetPeerAddress(session_t peer_id)
 		return m_con_sctp->GetPeerAddress(peer_id);
 #endif
 #if USE_WEBSOCKET
-	if (m_con_ws && ((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
-							peer_id == PEER_ID_SERVER))
-		return m_con_ws->GetPeerAddress(peer_id);
+	try {
+		if (m_con_ws && ((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
+								peer_id == PEER_ID_SERVER))
+			return m_con_ws->GetPeerAddress(peer_id);
+	} catch (...) {
+	}
 #endif
 #if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp && m_con_ws_sctp->getPeer(peer_id).lock().get())
-		return m_con_ws_sctp->GetPeerAddress(peer_id);
+	try {
+		if (m_con_ws_sctp && m_con_ws_sctp->getPeer(peer_id).lock().get())
+			return m_con_ws_sctp->GetPeerAddress(peer_id);
+	} catch (...) {
+	}
 #endif
 #if USE_ENET
-	if (m_con_enet && ((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
-							  peer_id == PEER_ID_SERVER))
-		return m_con_enet->GetPeerAddress(peer_id);
+	try {
+		if (m_con_enet && ((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
+								  peer_id == PEER_ID_SERVER))
+			return m_con_enet->GetPeerAddress(peer_id);
+	} catch (...) {
+	}
 #endif
 #if MINETEST_TRANSPORT
-	if (m_con && ((peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
-						 peer_id == PEER_ID_SERVER))
-		return m_con->GetPeerAddress(peer_id);
+	try {
+		if (m_con && ((peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
+							 peer_id == PEER_ID_SERVER))
+			return m_con->GetPeerAddress(peer_id);
+	} catch (...) {
+	}
 #endif
+	//TODO: throw PeerNotFoundException("No address for peer found! " + std::to_string(peer_id));
 	return {};
 }
 

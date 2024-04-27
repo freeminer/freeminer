@@ -23,7 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <future>
 #include <chrono>
 
-#if DUMP_STREAM
+#if defined(DUMP_STREAM)
 #include "log.h"
 #endif
 
@@ -31,7 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class async_step_runner
 {
 	std::future<void> future;
-#if DUMP_STREAM
+#if defined(DUMP_STREAM)
 	int runs = 0;
 	int skips = 0;
 #endif
@@ -40,7 +40,7 @@ public:
 	~async_step_runner()
 	{
 		wait();
-#if DUMP_STREAM
+#if defined(DUMP_STREAM)
 		DUMP("Async steps end", (long)this, runs, skips);
 #endif
 	}
@@ -63,7 +63,7 @@ public:
 		if (future.valid()) {
 			auto res = future.wait_for(std::chrono::milliseconds(0));
 			if (res == std::future_status::timeout) {
-#if DUMP_STREAM
+#if defined(DUMP_STREAM)
 				++skips;
 #endif
 				return true;
@@ -71,7 +71,7 @@ public:
 		}
 
 		future = std::async(std::launch::async, func, std::forward<Args>(args)...);
-#if DUMP_STREAM
+#if defined(DUMP_STREAM)
 		++runs;
 #endif
 		return future.valid();
