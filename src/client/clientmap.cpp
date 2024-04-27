@@ -711,7 +711,7 @@ void ClientMap::touchMapBlocks()
 		for (auto & [key, block] : m_blocks) {
 		//for (MapBlock *block : sectorblocks) {
 		//	MapBlockMesh *mesh = block->mesh;
-			const auto mesh = block->getLodMesh(1, true);
+			const auto mesh = block->getLodMesh(0, true);
 
 			// Calculate the coordinates for range and frustum culling
 			v3f mesh_sphere_center;

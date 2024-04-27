@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # install:
-# sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev
+# sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev kcachegrind
 
 our $help = qq{
 $0 [-config_variables] [--freeminer_params] [---this_script_params] [---verbose] [----presets] [cmds]
@@ -42,12 +42,15 @@ $0 stress_tsan ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----
 
 $0 ---cgroup=10g bot_tsan --address=192.168.0.1 --port=30005
 
+# Maybe some features should be disabled for run some sanitizers
+$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DHAVE_TCMALLOC=0  tsan bot
+$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
+$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
+
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
 $0 ---build_name="_touch_asan" ---cmake_touchscreen=1 ---cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1" -touchscreen=0 play_asan
 
-# sometimes *san + debug doesnt work with leveldb
-$0 ---cmake_leveldb=0
-#or buid and use custom leveldb
+# build and use custom leveldb
 $0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
 
 $0 usan bot ---cmake_clang=1 -DUSE_WEBSOCKET=0 ---cmake_leveldb=0
@@ -356,7 +359,12 @@ our $commands = {
         rename qw(CMakeCache.txt CMakeCache.txt.backup);
         rename qw(src/cmake_config.h src/cmake_config.backup);
         sy qq{mkdir -p $build_dir $config->{logdir}};
-        file_append("$config->{logdir}/run.sh", qq{cd "$build_dir"}, "\n");
+        file_append("$config->{logdir}/run.sh", 
+            join "\n", 
+            qq{# } . join(' ', $0, @ARGV), 
+            qq{cd "$build_dir"},
+            ""
+        );
         chdir $build_dir;
         rename $config->{config} => $config->{config} . '.old';
         return 0;
@@ -504,7 +512,7 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
 };
 
 our $tasks = {
-    deps => sub { sy "sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev" }, # TODO: other os
+    deps => sub { sy "sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev kcachegrind" }, # TODO: other os
     build_normal    => ['cmake', 'make',],
     build           => [\'build_normal'],                                                                        #'
     build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'cmake', 'make',],
@@ -763,7 +771,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
 
     gperf => sub {
         my $flags;
-        $flags .= " MALLOCSTATS=9 ";
+        $flags .= " MALLOCSTATS=9 " if $config->{gperf_heapprofile};
         $flags .= " HEAPCHECK=normal "                       if $config->{gperf_heapcheck};
         $flags .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
         $flags .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
@@ -773,7 +781,12 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         for (@_) { my $r = commands_run($_); return $r if $r; }
     },
 
-    prepare_gperf => sub { $ENV{PPROF_PATH} = `which google-pprof pprof`; 0; },
+    prepare_gperf => sub {  
+        ($config->{PPROF_PATH}) = `which google-pprof pprof` ; 
+        $config->{PPROF_PATH} =~ s{\s+$}{}s;
+        $ENV{PPROF_PATH} = $config->{PPROF_PATH};
+        0;
+    },
     bot_gperf     => [{'---no_build_server'  => 1,}, 'prepare_gperf', 'build_gperf', ['gperf', 'run_single'], 'report_gperf'],
     play_gperf    =>
       [{'---no_build_server'  => 1,}, 'prepare_gperf', [\'play_task', 'build_gperf', [\'gperf', $config->{run_task}], 'report_gperf']],
@@ -787,8 +800,14 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     ],
 
     report_gperf => sub {
-        sytee 'env | grep PPROF_PATH', "$config->{logdir}/tmp";
-        sytee qq{google-pprof $config->{gperf_mode} ./freeminer $config->{logdir}/heap.out*}, "$config->{logdir}/gperf.out";
+        # sytee 'env | grep PPROF_PATH', "$config->{logdir}/tmp";
+        sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} ./freeminer $config->{logdir}/heap.out*}, "$config->{logdir}/gperf.heap.out" if $config->{gperf_heapprofile};
+        if ($config->{gperf_cpuprofile}) {
+            sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} ./freeminer $config->{logdir}/cpu.out }, "$config->{logdir}/gperf.cpu.out";
+            sy qq{$config->{PPROF_PATH} --callgrind ./freeminer $config->{logdir}/cpu.out > $config->{logdir}/pprof.callgrind } ;
+            say qq{kcachegrind $config->{logdir}/pprof.callgrind};
+        }
+        return 0;
     },
 
     play_task => sub {
@@ -1052,7 +1071,7 @@ sub task_start(@) {
     say "task start $name ", @_;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name} = $name;
-    local $g->{build_name} = $config->{build_name} ? $config->{build_name} : undef;
+    local $g->{build_name} = $config->{build_name} if $config->{build_name};
     #task_run($name, @_);
     commands_run($name, @_);
 }

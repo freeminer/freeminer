@@ -62,7 +62,7 @@ RUN cmake -B build \
 		-DENABLE_PROMETHEUS=TRUE \
 		-DBUILD_UNITTESTS=FALSE \
 		-DBUILD_CLIENT=FALSE \
-        -DRUN_IN_PLACE=0 \
+		-DRUN_IN_PLACE=0 \
 		-GNinja && \
 	cmake --build build && \
 	cmake --install build

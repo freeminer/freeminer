@@ -291,7 +291,9 @@ int FarMesh::go_direction(const size_t dir_n)
 				const auto blockpos = getNodeBlockPos(pos_int);
 				TimeTaker timer_step("makeFarBlock");
 				g_profiler->add("Client makeFarBlock", 1);
-				makeFarBlock7(blockpos, pow(2, block_step));
+				makeFarBlock(blockpos);
+				// less holes, more unused meshes:
+				//makeFarBlock7(blockpos, pow(2, block_step));
 				break;
 			}
 			if (depth >= last_distance_max) {
