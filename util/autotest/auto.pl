@@ -348,7 +348,7 @@ map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
 
 my $child;
 
-our $commands = {
+our $commands; $commands = {
     init          => sub { init_config(); 0 },
     cmake_prepare => sub {
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
@@ -415,18 +415,19 @@ our $commands = {
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
         return sytee qq{nice cmake --build . -- -j $config->{makej}}, qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
+    env => sub { return join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}}; },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         sy qq{rm -rf $config->{world} }          if $config->{world_clear} and $config->{world};
         return sytee
-          qq{$config->{env} $config->{runner} @_ ./freeminer $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+          $commands->{env}() . qq{ $config->{runner} @_ ./freeminer $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world address port config autoexit verbose trace)])
           . qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
         0;
     },
     run_test => sub {
         sy
-          qq{$config->{env} $config->{runner} @_ ./freeminer --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log }
+          $commands->{env}() . qq{ $config->{runner} @_ ./freeminer --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log }
           . options_make([qw(verbose trace)]);
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1},
@@ -447,13 +448,13 @@ our $commands = {
     },
     run_server_simple => sub {
         my $fork = $config->{server_bg} ? '&' : '';
-        sytee qq{$config->{env} $config->{runner} @_ ./freeminerserver $fork},
+        sytee $commands->{env}() . qq{ $config->{runner} @_ ./freeminerserver $fork},
           qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server => sub {
         #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
         my $cmd =
-            qq{$config->{env} $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+            $commands->{env}() . qq{ $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world port config autoexit verbose)])
           . qq{ $config->{run_add}};
         if ($config->{server_bg}) {
@@ -474,7 +475,7 @@ our $commands = {
                 sleep $config->{clients_spawn_sleep} // 0.2;
 
                 sf
-qq{$config->{env} $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+                  $commands->{env}() . qq{ $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
                   . options_make([qw( address gameid world address port config verbose)])
                   . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
@@ -509,6 +510,10 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     },
     set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,}],
     set_server => [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit'}],
+    set_asan => sub {
+        $config->{envs}{asan} = " ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer$config->{clang_version}`";
+        0;
+    },
 };
 
 our $tasks = {
@@ -531,7 +536,7 @@ our $tasks = {
     (
         map {
             my $name = $_;
-            $_ => [sub { $g->{build_name} .= '_' . $name; 0 }, {keep_config => 1, '---cmake_' . $_ => 1,},],
+            $_ => ['set_' . $_,  sub { $g->{build_name} .= '_' . $name; 0 }, {keep_config => 1, '---cmake_' . $_ => 1,},],
               'build_' . $_ => [$_, 'build',],
         } qw(tsan asan msan usan gperf debug)
     ),
@@ -557,7 +562,6 @@ our $tasks = {
             '---cmake_clang'  => 1,
             '---cmake_libcxx' => 1,
             '---cmake_asan'   => 1,
-            #-env=>'ASAN_OPTIONS=symbolize=1 ASAN_SYMBOLIZER_PATH=llvm-symbolizer$config->{clang_version}',
         },
         'build_debug',
     ],
@@ -687,7 +691,7 @@ our $tasks = {
                 {-server_bg => 1,},
                 'cgroup', "server_$_", ['sleep', 10], {build_name => '', "-cmake_$_" => 0,}, 'clients',
             ]
-        } qw( tsan asan msan usan gperf debug gdb)
+        } qw(tsan asan msan usan gperf debug gdb)
     ),
 
     (
@@ -1100,7 +1104,7 @@ unless (@ARGV) {
 }
 
 for my $task (@$task_run) {
-    init_config() unless $g->{keep_config}--;
+    init_config() if $g->{keep_config}-- <= 0;
     warn "task failed [$task] = [$_]" if $_ = task_start($task);
     last if $signal ~~ [2, 3];
 }

@@ -28,6 +28,7 @@ Build-Depends:
  libjpeg-dev,
  libxxf86vm-dev,
  libleveldb-dev,
+ libhiredis-dev,
  libsnappy-dev,
  libgettextpo0,
  libmsgpack-dev,
