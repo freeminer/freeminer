@@ -2083,7 +2083,8 @@ void Client::showUpdateProgressTexture(void *args, u32 progress, u32 max_progres
 				72 + (u16) ((18. / 100.) * (double) targs->last_percent));
 		}
 
-#ifdef __ANDROID__
+//#ifdef __ANDROID__
+#if 0 // old fm?
 		else {
 			targs->device->run();
 		}
