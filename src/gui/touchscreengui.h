@@ -18,8 +18,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-#include "fm_touchscreengui.h"
-#if 0
+//#include "fm_touchscreengui.h"
+#if 1
 
 #include "irrlichttypes.h"
 #include <IEventReceiver.h>

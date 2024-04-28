@@ -630,7 +630,9 @@ if(USE_MULTI)
 	#set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
 	set(ENABLE_ENET 1 CACHE BOOL "")
 	#set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
-	set(ENABLE_WEBSOCKET 1 CACHE BOOL "")
+        if (NOT ANDROID)
+	    	set(ENABLE_WEBSOCKET 1 CACHE BOOL "")
+        endif()
 endif()
 
 
@@ -854,7 +856,6 @@ set(FMclient_SRCS
 
 if (USE_TOUCHSCREENGUI)
 	add_definitions(-DHAVE_TOUCHSCREENGUI)
-	set(FMclient_SRCS ${FMclient_SRCS} touchscreengui.cpp)
 endif()
 
 # Client sources

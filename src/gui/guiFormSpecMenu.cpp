@@ -142,7 +142,7 @@ void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 	TextDest *txt_dest, const std::string &formspecPrepend, ISoundManager *sound_manager)
 {
 
-#ifdef HAVE_TOUCHSCREENGUI
+#ifdef HAVE_TOUCHSCREENGUI_FM
 	if (g_touchscreengui)
 		g_touchscreengui->reset_pressed();
 #endif

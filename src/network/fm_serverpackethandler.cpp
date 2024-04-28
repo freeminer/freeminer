@@ -1509,7 +1509,7 @@ void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) {
 	auto lock = client->lock_unique_rec();
 	client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<u32>();
 	client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<u32>();
-	client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u8>();
+	client->farmesh  = packet[TOSERVER_DRAWCONTROL_FARMESH].as<u32>();
 	client->fov  = packet[TOSERVER_DRAWCONTROL_FOV].as<f32>();
 	//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
 

@@ -714,16 +714,18 @@ void initializePaths()
 
 #ifndef SERVER
 
+/*
 float get_dpi() {
 	return g_settings->getFloat("screen_dpi");
 }
 
 int get_densityDpi() { return 0; }
+*/
 
 void irr_device_wait_egl (irr::IrrlichtDevice *dev) {
-#ifdef __ANDROID__
+#if 0 //TODO fm?  #ifdef __ANDROID__
 	if (!dev)
-		dev = device;
+		dev = device; // move to renderengine?
 	if (!dev)
 		return;
 	int i = 0;

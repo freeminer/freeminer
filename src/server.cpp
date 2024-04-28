@@ -4095,7 +4095,7 @@ bool Server::dynamicAddMedia(std::string filepath,
 			if (client->getState() < CS_Active)
 				continue;
 
-			const ushort proto_ver = client->net_proto_version;
+			const unsigned short proto_ver = client->net_proto_version;
 			if (proto_ver < 39)
 				continue;
 

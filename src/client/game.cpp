@@ -2599,7 +2599,7 @@ void Game::openConsole(float scale, const wchar_t *line)
 #ifdef __ANDROID__
 	} else {
 		int type = 2;
-		porting::showInputDialog(_("ok"), "", wide_to_narrow(gui_chat_console->getText()), type);
+		porting::showInputDialog(_("ok"), "", wide_to_utf8(gui_chat_console->getText()), type);
 
 /*
 	porting::showInputDialog(_("ok"), "", "", 2);

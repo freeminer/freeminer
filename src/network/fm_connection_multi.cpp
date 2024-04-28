@@ -320,8 +320,7 @@ Address Connection::GetPeerAddress(session_t peer_id)
 	} catch (...) {
 	}
 #endif
-	//TODO: throw PeerNotFoundException("No address for peer found! " + std::to_string(peer_id));
-	return {};
+	throw con::PeerNotFoundException("No address for peer found!");
 }
 
 float Connection::getPeerStat(session_t peer_id, con::rtt_stat_type type)

@@ -48,7 +48,7 @@ $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
-$0 ---build_name="_touch_asan" ---cmake_touchscreen=1 ---cmake_add="-DIRRLICHT_INCLUDE_DIR=../../irrlicht/include -DIRRLICHT_LIBRARY=../../irrlicht/lib/Linux/libIrrlicht.a -DENABLE_GLES=1" -touchscreen=0 play_asan
+$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 play_asan
 
 # build and use custom leveldb
 $0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
@@ -390,7 +390,7 @@ our $commands; $commands = {
         $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}         if defined $config->{cmake_leveldb};
         $D{ENABLE_SCTP}        = $config->{cmake_sctp}            if defined $config->{cmake_sctp};
         $D{USE_LIBCXX}         = $config->{cmake_libcxx}          if defined $config->{cmake_libcxx};
-        $D{USE_TOUCHSCREENGUI} = $config->{cmake_touchscreen}     if defined $config->{cmake_touchscreen};
+        $D{ENABLE_TOUCH}       = $config->{cmake_touch}           if defined $config->{cmake_touch};
         $D{USE_GPERF}          = $config->{cmake_gperf}           if defined $config->{cmake_gperf};
         $D{USE_LTO}            = $config->{cmake_lto}             if defined $config->{cmake_lto};
         $D{EXCEPTION_DEBUG}    = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};

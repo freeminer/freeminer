@@ -36,7 +36,6 @@ extern android_app *app_global;
 // java <-> c++ interaction interface
 extern JNIEnv *jnienv;
 
-extern int android_version_sdk_int;
 // do initialization required on android only
 void initAndroid();
 
@@ -79,9 +78,11 @@ int getInputDialogState();
  */
 std::string getInputDialogValue();
 
+extern int android_version_sdk_int;
 int canKeyboard();
 void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);
-
+float get_dpi();
+int get_densityDpi();
 
 #ifndef SERVER
 float getDisplayDensity();

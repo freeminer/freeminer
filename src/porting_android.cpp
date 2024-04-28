@@ -28,7 +28,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "config.h"
 #include "filesys.h"
 #include "log.h"
-#include "stacktrace.h"
+#include "debug/stacktrace.h"
 
 #include <sstream>
 #include <exception>
@@ -394,7 +394,7 @@ void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv) {
     if (pShow) {
         // Runs lInputMethodManager.showSoftInput(...).
         jmethodID MethodShowSoftInput = lJNIEnv->GetMethodID(ClassInputMethodManager, "showSoftInput","(Landroid/view/View;I)Z");
-        jboolean lResult = lJNIEnv->CallBooleanMethod(lInputMethodManager, MethodShowSoftInput,lDecorView, lFlags);
+        [[maybe_unused]] jboolean lResult = lJNIEnv->CallBooleanMethod(lInputMethodManager, MethodShowSoftInput,lDecorView, lFlags);
     } else {
         // Runs lWindow.getViewToken()
         jclass ClassView = lJNIEnv->FindClass("android/view/View");
@@ -403,7 +403,7 @@ void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv) {
 
         // lInputMethodManager.hideSoftInput(...).
         jmethodID MethodHideSoftInput = lJNIEnv->GetMethodID(ClassInputMethodManager, "hideSoftInputFromWindow","(Landroid/os/IBinder;I)Z");
-        jboolean lRes = lJNIEnv->CallBooleanMethod(lInputMethodManager, MethodHideSoftInput,lBinder, lFlags);
+        [[maybe_unused]] jboolean lRes = lJNIEnv->CallBooleanMethod(lInputMethodManager, MethodHideSoftInput,lBinder, lFlags);
     }
 }
 
