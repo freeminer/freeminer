@@ -432,14 +432,14 @@ bool GUIChatConsole::getAndroidUIInput() {
 #ifdef __ANDROID__
 	if (porting::getInputDialogState() == 0) {
 		std::string text = porting::getInputDialogValue();
-		std::wstring wtext = narrow_to_wide(text);
+		std::wstring wtext = utf8_to_wide(text);
 		//errorstream<<"GUIChatConsole::getAndroidUIInput() text=["<<text<<"] "<<std::endl;
 		m_chat_backend->getPrompt().input(wtext);
 		//std::wstring wrtext = .submit();
 		//m_client->typeChatMessage(wide_to_narrow(wrtext));
 		auto & prompt = m_chat_backend->getPrompt();
 		prompt.addToHistory(prompt.getLine());
-		m_client->typeChatMessage(wide_to_utf8(prompt.replace(L"")));
+		m_client->typeChatMessage(prompt.replace(L""));
 
 		if (m_close_on_enter) {
 			closeConsole();

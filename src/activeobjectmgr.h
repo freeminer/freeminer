@@ -61,9 +61,9 @@ public:
 
 	TPtr getActiveObject(u16 id)
 	{
-		auto lock = m_active_objects.lock_unique_rec(); //prelock
-		auto it = m_active_objects.find(id);
-		return it != m_active_objects.end() ? it->second : nullptr;
+		const auto lock = m_active_objects.lock_shared_rec(); //prelock
+		const auto it = m_active_objects.find(id);
+		return it != m_active_objects.end() ? it->second : TPtr{};
 	}
 
 	std::vector<u16> getAllIds() const
@@ -92,7 +92,7 @@ protected:
 
 	bool isFreeId(u16 id) const
 	{
-		auto lock = m_active_objects.lock_unique_rec(); // prelock
+		const auto lock = m_active_objects.lock_shared_rec(); // prelock
 		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
 	}
 
@@ -100,6 +100,7 @@ protected:
 	// Note: ActiveObjects can access the ActiveObjectMgr. Only erase objects using
 	// removeObject()!
 	//std::map<u16, std::unique_ptr<T>> m_active_objects;
-	concurrent_shared_unordered_map<u16, std::shared_ptr<T>> m_active_objects;
-	std::vector<std::shared_ptr<T>> m_active_objects_deleted;
+
+	concurrent_unordered_map<u16, TPtr> m_active_objects;
+	std::vector<TPtr> m_active_objects_deleted;
 };

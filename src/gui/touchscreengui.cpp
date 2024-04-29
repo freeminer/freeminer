@@ -18,8 +18,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "fm_touchscreengui.cpp"
-#if 0
+//#include "fm_touchscreengui.cpp"
+#if 1
 
 #include "touchscreengui.h"
 
@@ -193,11 +193,13 @@ void AutoHideButtonBar::clear()
 		}
 	}
 
+/* FM: del?
 	for (auto i : m_buttons) {
 		i->guibutton->drop();
 		delete i;
 	}
 	m_buttons.clear();
+*/
 
 }
 

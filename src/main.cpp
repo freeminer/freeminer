@@ -1087,7 +1087,8 @@ static bool determine_subgame(GameParams *game_params)
 				            << "Check out https://content.minetest.net for a selection of games to pick from and download." << std::endl;
 			}
 
-			return false;
+			gamespec = findSubgame("default");
+			//return false;
 		}
 	} else { // World exists
 		std::string world_gameid = getWorldGameId(game_params->world_path, false);

@@ -88,8 +88,6 @@ extern std::atomic_bool g_sighup, g_siginfo;
 
 #ifndef SERVER
 
-float get_dpi();
-int get_densityDpi();
 void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
 
 #endif

@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <algorithm>
 #include <stack>
 #include "serverenvironment.h"
+#include "activeobject.h"
 #include "settings.h"
 #include "log.h"
 #include "mapblock.h"
@@ -2302,6 +2303,10 @@ std::unique_ptr<ServerActiveObject> ServerEnvironment::createSAO(ActiveObjectTyp
 	switch (type) {
 		case ACTIVEOBJECT_TYPE_LUAENTITY:
 			return std::make_unique<LuaEntitySAO>(this, pos, data);
+		case ACTIVEOBJECT_TYPE_LUAFALLING:
+			return std::unique_ptr<ServerActiveObject>(epixel::FallingSAO::create(this, pos, data));
+		case ACTIVEOBJECT_TYPE_LUAITEM:
+			return std::unique_ptr<ServerActiveObject>(epixel::ItemSAO::create(this, pos, data));
 		default:
 			warningstream << "ServerActiveObject: No factory for type=" << type << std::endl;
 	}

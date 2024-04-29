@@ -26,33 +26,27 @@ if [ -z "$NO_DEPS" ]; then
 fi
 
 
-
-if [ -n "" ]; then
-#2. get and compile irrlicht with oppengl es support:
-
-#svn checkout svn://svn.code.sf.net/p/irrlicht/code/branches/ogl-es irrlicht
-#OR using git:
-git clone --recursive -b ogl-es  https://github.com/zaki/irrlicht.git irrlicht 
-#TODO FIXME REMOVEME: (latest working revision)
-git --git-dir=irrlicht/.git --work-tree=irrlicht/ checkout 63c2864
-
-#compile irrlicht:
-nice make -j $(nproc || sysctl -n hw.ncpu || echo 2) -C irrlicht/source/Irrlicht
+#3. get freeminer
+if [ -d freeminer/build ]; then
+    cd freeminer/build
+elif [ -d freeminer ]; then
+    mkdir -p freeminer/build
+    cd freeminer/build
+elif [ ! -s ../src/CMakeLists.txt ]; then
+    git clone --depth 1 --recursive https://github.com/freeminer/freeminer.git && mkdir -p freeminer/build && cd freeminer/build
+elif [ -s ../src/CMakeLists.txt ]; then
+    mkdir -p ../build && cd ../build
 fi
 
-#3. get freeminer
-[ ! -s ../src/CMakeLists.txt ] && git clone --depth 1 --recursive https://github.com/freeminer/freeminer.git && mkdir -p freeminer/build && cd freeminer/build
-[ -s ../src/CMakeLists.txt ] && mkdir -p ../build && cd ../build
 
 #update if second+ run
 git pull --rebase ||:
+git submodule update --init --recursive ||:
 
 #compile
-cmake .. -GNinja -DENABLE_GLES=1 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` # -DIRRLICHT_INCLUDE_DIR=../irrlicht/include -DIRRLICHT_LIBRARY=../irrlicht/lib/Linux/libIrrlicht.a
+cmake .. -GNinja -DENABLE_GLES=1 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++`
 nice cmake --build .
 
-# link dir with /Shaders/
-#ln -s ../irrlicht/media ./
 
 #run!
 ./freeminer
