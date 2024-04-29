@@ -94,6 +94,16 @@ private:
 	std::shared_ptr<con::Connection> m_con;
 #endif
 	bool dummy;
+	enum class proto_name
+	{
+		none = 0,
+		minetest,
+		sctp,
+		websocket,
+		websocket_stcp,
+		enet,
+	};
+	proto_name connected_to = proto_name::none;
 };
 
 } // namespace
