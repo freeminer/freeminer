@@ -935,7 +935,7 @@ void Hud::drawBlockBounds()
 								client->getEnv()
 										.getClientMap()
 										.m_far_blocks_last_cam_pos), mesh_step,
-							client->getEnv().getClientMap().getControl().cell_size))
+							client->getEnv().getClientMap().getControl()))
 					continue;
 
 				int fscale = 1;

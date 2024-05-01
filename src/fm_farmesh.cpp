@@ -68,7 +68,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 
 	const auto blockpos_actual =
 			getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
-					m_client->getEnv().getClientMap().getControl().cell_size);
+					m_client->getEnv().getClientMap().getControl());
 	auto &far_blocks = m_client->getEnv().getClientMap().m_far_blocks;
 	{
 		//const auto lock = far_blocks->lock_unique_rec();
@@ -291,9 +291,9 @@ int FarMesh::go_direction(const size_t dir_n)
 				const auto blockpos = getNodeBlockPos(pos_int);
 				TimeTaker timer_step("makeFarBlock");
 				g_profiler->add("Client makeFarBlock", 1);
-				makeFarBlock(blockpos);
+				//makeFarBlock(blockpos);
 				// less holes, more unused meshes:
-				//makeFarBlock7(blockpos, pow(2, block_step));
+				makeFarBlock7(blockpos, pow(2, block_step));
 				break;
 			}
 			if (depth >= last_distance_max) {
@@ -324,13 +324,17 @@ void FarMesh::update(v3opos_t camera_pos,
 			<< 7;
 
 	const auto far_fast =
+			!m_control->farmesh_stable &&
+			(
 			//m_client->getEnv().getClientMap().m_far_fast && 
 			m_speed > 200 * BS ||
-			m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000;
+					m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000);
 
 	if (!timestamp_complete) {
-		if (!m_camera_pos_aligned.X && !m_camera_pos_aligned.Y && !m_camera_pos_aligned.Z)
+		if (!m_camera_pos_aligned.X && !m_camera_pos_aligned.Y &&
+				!m_camera_pos_aligned.Z) {
 			m_camera_pos_aligned = camera_pos_aligned_int;
+		}
 		m_client->getEnv().getClientMap().m_far_blocks_last_cam_pos =
 				m_camera_pos_aligned;
 		if (!last_distance_max)
@@ -382,10 +386,13 @@ void FarMesh::update(v3opos_t camera_pos,
 
 		if (planes_processed) {
 			complete_set = false;
-		} //? else
+		} else if (!far_fast) {
+			m_camera_pos_aligned = camera_pos_aligned_int;
+		}
 		if (m_camera_pos_aligned != camera_pos_aligned_int) {
 			m_client->getEnv().getClientMap().m_far_blocks_last_cam_pos =
 					far_fast ? camera_pos_aligned_int : m_camera_pos_aligned;
+			if (far_fast)
 			m_camera_pos_aligned = camera_pos_aligned_int;
 		}
 		if (!planes_processed && !complete_set) {

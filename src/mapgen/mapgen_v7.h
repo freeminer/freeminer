@@ -82,8 +82,11 @@ struct MapgenV7Params : public MapgenParams {
 	MapgenV7Params();
 	~MapgenV7Params() = default;
 
+	virtual
 	void readParams(const Settings *settings);
+	virtual
 	void writeParams(Settings *settings) const;
+	virtual
 	void setDefaultSettings(Settings *settings);
 };
 
@@ -109,7 +112,7 @@ public:
 
 
 	//freeminer:
-	bool visible(const v3pos_t &p)
+	virtual bool visible(const v3pos_t &p)
 	{
 		// TODO: add more height features
 		return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;

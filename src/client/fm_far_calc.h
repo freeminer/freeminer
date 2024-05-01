@@ -30,8 +30,8 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
 bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,
-		int cell_size);
-v3bpos_t getFarActual(
-		v3bpos_t blockpos, const v3bpos_t &playerblockpos, int step, int cell_size);
+		const MapDrawControl &draw_control);
+v3bpos_t getFarActual(v3bpos_t blockpos, const v3bpos_t &playerblockpos, int step,
+		const MapDrawControl &draw_control);
 v3bpos_t playerBlockAlign(
 		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos);

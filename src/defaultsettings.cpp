@@ -176,6 +176,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("lodmesh", slow ? "2" : "4");
 	settings->setDefault("farmesh", slow ? "5000" : itos(FARSCALE_LIMIT*2));
 	settings->setDefault("farmesh_quality", slow ? "0" : "0");
+	settings->setDefault("farmesh_stable", "0");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 	//settings->setDefault("enable_vbo", win ? "false" : "true");

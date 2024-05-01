@@ -4518,10 +4518,12 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		farmesh_async.step([&, farmesh_range = farmesh_range, 
 								   //yaw = player->getYaw(),
 								   //pitch = player->getPitch(),
+								   camera_pos = camera->getPosition(),
+								   camera_offset = camera->getOffset(),
 								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera->getPosition(),
+			farmesh->update(camera_pos,
 					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera->getOffset(), 
+					camera_offset,
 					//sky->getBrightness(), 
 					farmesh_range, speed);
 		});
