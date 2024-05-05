@@ -178,16 +178,18 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "2" : "4");
-	settings->setDefault("farmesh", slow ? "5000" : itos(FARSCALE_LIMIT*2));
+	settings->setDefault("farmesh", slow ? "3000" : itos(FARSCALE_LIMIT*2));
 	settings->setDefault("farmesh_quality", slow ? "0" : "0");
 	settings->setDefault("farmesh_stable", "0");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 	//settings->setDefault("enable_vbo", win ? "false" : "true");
 	settings->setDefault("light_ambient", "false");
-	settings->setDefault("enable_dynamic_shadows", "true");
-	settings->setDefault("shadow_map_color", "true");
-    settings->setDefault("enable_bloom", "true");
+	if (!slow) {
+		settings->setDefault("enable_dynamic_shadows", "true");
+		settings->setDefault("shadow_map_color", "true");
+		settings->setDefault("enable_bloom", "true");
+	}
 	settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
 
 	// Liquid

@@ -31,6 +31,10 @@ class Mapgen;
 class Server;
 constexpr size_t FARMESH_MATERIAL_COUNT = 2;
 
+#ifdef __EMSCRIPTEN__
+#define FARMESH_FAST 1
+#endif
+
 class FarContainer : public NodeContainer
 {
 
@@ -62,7 +66,7 @@ private:
 	std::vector<v3bpos_t> m_make_far_blocks_list;
 
 	v3opos_t m_camera_pos = {-1337, -1337, -1337};
-	v3pos_t m_camera_pos_aligned {0,0,0};
+	v3pos_t m_camera_pos_aligned{0, 0, 0};
 	/*v3f m_camera_dir;
 	f32 m_camera_fov;
 	f32 m_camera_pitch;
@@ -72,8 +76,13 @@ private:
 	static constexpr pos_t distance_min = 8 * MAP_BLOCKSIZE;
 	v3pos_t m_camera_offset;
 	float m_speed;
+
+#if FARMESH_FAST
+	constexpr static uint16_t grid_size_max_y = 32;
+#else
 	constexpr static uint16_t grid_size_max_y = 64;
-	//constexpr static uint16_t grid_size_max_y = 32;
+#endif
+
 	//constexpr static uint16_t grid_size_max_y = 48;
 	//constexpr static uint16_t grid_size_max_y = 128;
 	//constexpr static uint16_t grid_size_max_y = 256;
