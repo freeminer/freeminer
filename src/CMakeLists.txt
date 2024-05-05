@@ -849,14 +849,7 @@ endif()
 
 set(FMclient_SRCS
 	guiTextInputMenu.cpp
-	fm_farmesh.cpp
 )
-	#gui/intlGUIEditBox.cpp
-	#FMStaticText.cpp
-
-if (USE_TOUCHSCREENGUI)
-	add_definitions(-DHAVE_TOUCHSCREENGUI)
-endif()
 
 # Client sources
 if (BUILD_CLIENT)
