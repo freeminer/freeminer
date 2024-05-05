@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_cao.h"
 #include "content/subgames.h"
 #include "client/event_manager.h"
-#include "fm_farmesh.h"
+#include "client/fm_farmesh.h"
 #include "fontengine.h"
 #include "itemdef.h"
 #include "log.h"
