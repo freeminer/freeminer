@@ -349,6 +349,10 @@ map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
 my $child;
 
 our $commands; $commands = {
+    build_name => sub { join '_', $g->{build_name}, 
+    (map { $config->{build_names}{$_} } sort keys %{$config->{build_names}}),
+    (map { $g->{build_names}{$_} } sort keys %{$g->{build_names}}), },
+    env => sub { join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}} },
     init          => sub { init_config(); 0 },
     cmake_prepare => sub {
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
@@ -415,7 +419,6 @@ our $commands; $commands = {
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
         return sytee qq{nice cmake --build . -- -j $config->{makej}}, qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
-    env => sub { return join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}}; },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         sy qq{rm -rf $config->{world} }          if $config->{world_clear} and $config->{world};
@@ -521,7 +524,7 @@ our $tasks = {
     build_normal    => ['cmake', 'make',],
     build           => [\'build_normal'],                                                                        #'
     build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'cmake', 'make',],
-    build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, ['cmake', $config->{cmake_nothreads}], 'make',],
+    #build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, ['cmake', $config->{cmake_nothreads}], 'make',],
     build_server    => ['set_server', 'build_normal',],
     (
         map { ("build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_", 'run_server']) }
@@ -604,11 +607,11 @@ our $tasks = {
         $config->{run_task},
         'symbolize',
     ],
-    bot_asannta => sub {
-        $g->{build_name} .= '_nta';
-        local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads_a};
-        commands_run('bot_asan');
-    },
+    #bot_asannta => sub {
+    #    $g->{build_name} .= '_nta';
+    #    local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads_a};
+    #    commands_run('bot_asan');
+    #},
     bot_msan => [
         'set_bot',
         {'---no_build_server'  => 1,},
@@ -633,7 +636,7 @@ our $tasks = {
 
     #(map { 'bot_valgrind_'.$_ => ["valgrind_$_"], } @{$config->{valgrind_tools}}),
 
-    nothreads => [{'---no_build_server'  => 1,}, \'build_nothreads', $config->{run_task},],    #'
+    #nothreads => [{'---no_build_server'  => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
         map {
             'valgrind_' . $_ => [
@@ -676,7 +679,7 @@ our $tasks = {
                         commands_run($config->{run_task});
                     }
                 },
-                (map { "bot_${buildname}_" . $_ => [['bot_' . $buildname, $_,]] } qw(tsan tsannt asan usan gdb debug)),
+                (map { "bot_${buildname}_" . $_ => [['bot_' . $buildname, $_,]] } qw(tsan asan usan gdb debug)), # tsannt
             )
         } qw(minetest sctp)
     ),

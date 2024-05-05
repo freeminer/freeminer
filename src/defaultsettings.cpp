@@ -32,6 +32,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 // freeminer part:
+#ifdef __ANDROID__
+#include "porting_android.h"
+#endif
+
 #include "network/connection.h" // ENET_IPV6
 #ifndef SERVER // Only on client
 #include "hud.h"

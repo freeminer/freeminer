@@ -141,7 +141,8 @@ std::optional<child_t> find(const v3bpos_t &block_pos, const v3bpos_t &player_po
 			std::abs(player_pos.Y - child.pos.Y - (child.size >> 1)),
 			std::abs(player_pos.Z - child.pos.Z - (child.size >> 1))});
 
-	distance /= farmesh_quality; // farmesh_quality
+	if (farmesh_quality)
+		distance /= farmesh_quality;
 	if (distance >= child.size) {
 		return child;
 	}
