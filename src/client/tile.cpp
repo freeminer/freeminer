@@ -630,7 +630,7 @@ u32 TextureSource::generateTexture(const std::string &name)
 		// Create texture from resulting image
 		tex = driver->addTexture(name.c_str(), img);
 		guiScalingCache(io::path(name.c_str()), driver, img);
-		//img->drop();
+		img->drop();
 	}
 
 	/*

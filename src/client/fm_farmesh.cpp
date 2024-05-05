@@ -162,7 +162,7 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 {
 
 	EmergeManager *emerge_use = server			   ? server->getEmergeManager()
-								: client->m_emerge ? client->m_emerge
+								: client->m_emerge ? client->m_emerge.get()
 												   : nullptr;
 	if (emerge_use) {
 		if (emerge_use->mgparams)

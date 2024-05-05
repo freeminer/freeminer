@@ -1851,7 +1851,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
 
 	if (farmesh_range && !m_localserver) {
-		m_localserver = new Server("farmesh", findSubgame("devtest"), false, {}, true);
+		m_localserver = std::make_unique<Server>("farmesh", findSubgame("devtest"), false, Address{}, true);
 	}
 
 	{
@@ -1870,26 +1870,25 @@ void Client::handleCommand_FreeminerInit(NetworkPacket* pkt) {
 			mgtype = MAPGEN_DEFAULT;
 		}
 
-		MapgenParams *params = Mapgen::createMapgenParams(mgtype);
-		params->MapgenParams::readParams(&settings);
-		params->readParams(&settings);
+		m_mapgen_params = std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
+		m_mapgen_params->MapgenParams::readParams(&settings);
+		m_mapgen_params->readParams(&settings);
 
 		if (!m_simple_singleplayer_mode && farmesh_range) {
 			const auto num_emerge_threads = g_settings->get("num_emerge_threads");
 			g_settings->set("num_emerge_threads", "1");
-			m_emerge = new EmergeManager(
-					m_localserver, m_localserver->m_metrics_backend.get());
-			m_emerge->initMapgens(params);
+			m_emerge = std::make_unique<EmergeManager>(
+					m_localserver.get(), m_localserver->m_metrics_backend.get());
+			m_emerge->initMapgens(m_mapgen_params.get());
 			g_settings->set("num_emerge_threads", num_emerge_threads);
 		}
 
 		if (!m_world_path.empty()) {
-			m_settings_mgr =
-					new MapSettingsManager(m_world_path + DIR_DELIM + "map_meta");
-			m_settings_mgr->mapgen_params = params;
+			m_settings_mgr = std::make_unique<MapSettingsManager>(m_world_path + DIR_DELIM + "map_meta");
+			m_settings_mgr->mapgen_params = m_mapgen_params.release();;
 			m_settings_mgr->saveMapMeta();
 		} else if (!m_emerge) {
-			delete params;
+			m_mapgen_params.reset();
 		}
 	}
 

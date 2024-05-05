@@ -619,10 +619,11 @@ public:
 	void handleCommand_FreeminerInit(NetworkPacket* pkt);
 	void sendDrawControl();
 
-	Server *m_localserver = nullptr;
+	std::unique_ptr<Server> m_localserver;
 	std::string m_world_path;
-	EmergeManager *m_emerge = nullptr;
-	MapSettingsManager *m_settings_mgr = nullptr;
+	std::unique_ptr<EmergeManager> m_emerge;
+	std::unique_ptr<MapgenParams> m_mapgen_params;
+	std::unique_ptr<MapSettingsManager> m_settings_mgr;
 	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
 	f32 fog_range = 0;
 

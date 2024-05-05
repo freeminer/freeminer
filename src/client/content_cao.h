@@ -89,7 +89,6 @@ private:
 	WieldMeshSceneNode *m_wield_meshnode = nullptr;
 	scene::IBillboardSceneNode *m_spritenode = nullptr;
 	scene::IDummyTransformationSceneNode *m_matrixnode = nullptr;
-	//fm merge? scene::IShadowVolumeSceneNode* m_shadownode = nullptr;
 	Nametag *m_nametag = nullptr;
 	MinimapMarker *m_marker = nullptr;
 	v3f m_position = v3f(0.0f, 10.0f * BS, 0);
