@@ -13,13 +13,13 @@ $0 valgrind_massif
 $0 ----headless gdb
 
 # pass options to app
-$0 -num_emerge_threads=1 bot_tsan
+$0 -num_emerge_threads=1 tsan bot
 
 #run all tasks except interactive
 $0 all
 
 #manual play with gdb trace if segfault
-$0 play_gdb
+$0 gdb play
 
 #normal play
 $0 play
@@ -30,17 +30,17 @@ $0 ---cmake_clang=1 ---cmake_libcxx=1 play
 $0 ---cmake_clang=-3.8 play
 
 # run server with debug in gdb
-$0 server_gdb
+$0 gdb server
 
 # run server without debug in gdb
 $0 server_gdb_nd
 
 # with periodic profiler
-$0 stress ----headless ----headless_optimize ----info ---clients_num=10 -profiler_print_interval=5
+$0 ----headless ----headless_optimize ----info ---clients_num=10 -profiler_print_interval=5 stress
 
-$0 stress_tsan ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----headless
+$0 ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----headless tsan stress
 
-$0 ---cgroup=10g bot_tsan --address=192.168.0.1 --port=30005
+$0 ---cgroup=10g --address=192.168.0.1 --port=30005 tsan bot
 
 # Maybe some features should be disabled for run some sanitizers
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DHAVE_TCMALLOC=0  tsan bot
@@ -48,25 +48,25 @@ $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
-$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 play_asan
+$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 asan play
 
 # build and use custom leveldb
 $0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
 
-$0 usan bot ---cmake_clang=1 -DUSE_WEBSOCKET=0 ---cmake_leveldb=0
+$0 ---cmake_clang=1 -DUSE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 
 # sctp debug
-VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 ---cmake_add="-DSCTP_DEBUG=1" server_gdb
-VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 --address=localhost --port=60001 ---cmake_add="-DSCTP_DEBUG=1" bot_gdb
+VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 ---cmake_add="-DSCTP_DEBUG=1" gdb server
+VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 --address=localhost --port=60001 ---cmake_add="-DSCTP_DEBUG=1" gdb bot
 
 #if you have installed Intel(R) VTune(TM) Amplifier
-$0 play_vtune ---vtune_gui=1
-$0 bot_vtune --autoexit=60 ---vtune_gui=1
-$0 bot_vtune --autoexit=60
+$0 ---vtune_gui=1 play_vtune
+$0 --autoexit=60 ---vtune_gui=1 bot_vtune
+$0 --autoexit=60 bot_vtune 
 $0 stress_vtune
 
 # google-perftools https://github.com/gperftools/gperftools
-$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 bot_gperf
+$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 gperf bot
 $0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 ----headless ----headless_optimize ----info ---clients_num=50 -profiler_print_interval=10 stress_gperf
 
 # stress test of flowing liquid
@@ -120,56 +120,60 @@ my @ar         = grep { !/^-/ } @ARGV;
 my $logdir_add = (@ar == 1 and $ar[0] =~ /^\w+$/) ? '.' . $ar[0] : '';
 our $config = {};
 our $g      = {date => POSIX::strftime("%Y-%m-%dT%H-%M-%S", localtime()),};
+my $task_run = [grep { !/^-/ } @ARGV];
 
 sub init_config () {
+    say "Config reset $g->{keep_config}" if $config->{verbose};
     $config = {
-        #address           => '::1',
-        port          => 60001,
-        clients_start => 0,
-        clients_num   => 5,
-        autoexit      => 600,
-        clang_version => `bash -c "compgen -c clang | grep 'clang[-]*[[:digit:]]' | sort --version-sort --reverse | head -n1"` =~
-          s/(?:^clang)|(?:\s+$)//rg,    #"" "-3.6" "15"
+        # address           => '::1',
+        autoexit         => 600,
         autotest_dir_rel => 'util/autotest/',
         build_name       => '',
-        root_prefix      => $root_path,
         build_prefix     => 'build',
-        root_path        => $root_path,
-        date             => $g->{date},
-        world            => $script_path . 'world',
-        config           => $script_path . 'auto.json',
-        logdir           => $script_path . 'logs.' . $g->{date} . $logdir_add,
-        screenshot_dir   => 'screenshot.' . $g->{date},
-        env              => 'OPENSSL_armcap=0',
-        gdb_stay         => 0,                                                   # dont exit from gdb
-        gdb              => `bash -c 'compgen -c gdb' | grep 'gdb[-]*[[:digit:]]*\$' | sort --version-sort --reverse | head -n1` =~
-          s/\s+$//rg,                                                            # 'gdb' 'gdb112'
-        runner            => 'nice ',
-        name              => 'bot',
-        go                => '--go',
-        gameid            => 'default',
-        tsan_opengl_fix   => 1,
-        tsan_leveldb_fix  => 1,
-        options_display   => ($ENV{DISPLAY} ? '' : 'headless'),
-        options_bot       => 'bot,bot_random',
-        makej             => '$(nproc || sysctl -n hw.ncpu || echo 2)',
-        cmake_minetest    => undef,
+        cache_clear      => 0,                              # remove cache dir before start client
+        cgroup           => ($^O ~~ 'linux' ? 1 : undef),
+        clang_version    => `bash -c "compgen -c clang | grep 'clang[-]*[[:digit:]]' | sort --version-sort --reverse | head -n1"` =~
+          s/(?:^clang)|(?:\s+$)//rg,                        #"" "-3.6" "15"
+        clients_num   => 5,
+        clients_start => 0,
+        # cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
         cmake_leveldb     => undef,
+        cmake_minetest    => undef,
         cmake_nothreads   => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=0 -DHAVE_FUTURE=0',
         cmake_nothreads_a => '-DENABLE_THREADS=0 -DHAVE_THREAD_LOCAL=1 -DHAVE_FUTURE=0',
         cmake_opts        => [qw(CMAKE_C_COMPILER CMAKE_CXX_COMPILER CMAKE_C_COMPILER_LAUNCHER CMAKE_CXX_COMPILER_LAUNCHER)],
-        valgrind_tools    => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
-        cgroup            => ($^O ~~ 'linux' ? 1 : undef),
-        tee               => '2>&1 | tee -a ',
-        run_task          => 'run_single',
-        cache_clear       => 0,    # remove cache dir before start client
-        world_clear       => 0,    # remove old world before start client
-            #cmake_add     => '', # '-DIRRLICHT_INCLUDE_DIR=~/irrlicht/include -DIRRLICHT_LIBRARY=~/irrlicht/lib/Linux/libIrrlicht.a',
-            #make_add     => '',
-            #run_add       => '',
+        config            => $script_path . 'auto.json',
+        date              => $g->{date},
+        env               => 'OPENSSL_armcap=0',
+        executable_name   => 'freeminer',
+        gameid            => 'default',
+        gdb               => `bash -c 'compgen -c gdb' | grep 'gdb[-]*[[:digit:]]*\$' | sort --version-sort --reverse | head -n1` =~
+          s/\s+$//rg,    # 'gdb' 'gdb112'
+        gdb_stay   => 0,                                                   # dont exit from gdb
+        go         => '--go',
+        gperf_mode => '--text',
+        logdir     => $script_path . 'logs.' . $g->{date} . $logdir_add,
+        # make_add     => '',
+        makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
+        name            => 'bot',
+        options_bot     => 'bot,bot_random',
+        options_display => ($ENV{DISPLAY} ? '' : 'headless'),
+        port            => 60001,
+        root_path       => $root_path,
+        root_prefix     => $root_path,
+        # run_add       => '',
+        run_task         => 'run_single',
+        runner           => 'nice ',
+        screenshot_dir   => 'screenshot.' . $g->{date},
+        tee              => '2>&1 | tee -a ',
+        tsan_leveldb_fix => 1,
+        tsan_opengl_fix  => 1,
+        valgrind_tools   => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
+        # verbose         => 1,
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
-        gperf_mode      => '--text',
+        world           => $script_path . 'world',
+        world_clear     => 0,                                     # remove old world before start client
     };
 
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
@@ -348,24 +352,34 @@ map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
 
 my $child;
 
-our $commands; $commands = {
-    build_name => sub { join '_', $g->{build_name}, 
-    (map { $config->{build_names}{$_} } sort keys %{$config->{build_names}}),
-    (map { $g->{build_names}{$_} } sort keys %{$g->{build_names}}), },
-    env => sub { join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}} },
+our $commands;
+$commands = {
+    build_name => sub {
+        join '_', $g->{build_name},
+          (map { $config->{build_names}{$_} } sort keys %{$config->{build_names}}),
+          (map { $g->{build_names}{$_} } sort keys %{$g->{build_names}});
+    },
+    env => sub {
+        join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}};
+    },
+    build_dir  => sub { "$config->{root_prefix}$config->{build_prefix}" . $commands->{build_name}() },
+    executable => sub { $commands->{build_dir}() . "/" . $config->{executable_name} },
+
     init          => sub { init_config(); 0 },
+    '---'         => 'init',
     cmake_prepare => sub {
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
         $config->{cmake_libcxx} //= 1                     if $config->{cmake_clang};
-        $g->{build_name} .= $config->{clang_version}      if $config->{cmake_clang};
-        my $build_dir = "$config->{root_prefix}$config->{build_prefix}$g->{build_name}";
+        $g->{build_names}{x_clang} = $config->{clang_version} if $config->{cmake_clang};
+        my $build_dir = $commands->{build_dir}();
         chdir $config->{root_path};
         rename qw(CMakeCache.txt CMakeCache.txt.backup);
         rename qw(src/cmake_config.h src/cmake_config.backup);
         sy qq{mkdir -p $build_dir $config->{logdir}};
-        file_append("$config->{logdir}/run.sh", 
-            join "\n", 
-            qq{# } . join(' ', $0, @ARGV), 
+        file_append(
+            "$config->{logdir}/run.sh",
+            join "\n",
+            qq{# } . join(' ', $0, @ARGV),
             qq{cd "$build_dir"},
             ""
         );
@@ -384,21 +398,20 @@ our $commands; $commands = {
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1,
           if $config->{cmake_msan};
         local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
-
           if $config->{cmake_usan};
 
-        $D{ENABLE_LUAJIT}      = 0                                if $config->{cmake_debug} and !$config->{keep_luajit};
-        $D{ENABLE_LUAJIT}      = $config->{cmake_luajit}          if defined $config->{cmake_luajit};
-        $D{CMAKE_BUILD_TYPE}   = 'Debug'                          if $config->{cmake_debug};
-        $D{MINETEST_PROTO}     = $config->{cmake_minetest}        if defined $config->{cmake_minetest};
-        $D{ENABLE_LEVELDB}     = $config->{cmake_leveldb}         if defined $config->{cmake_leveldb};
-        $D{ENABLE_SCTP}        = $config->{cmake_sctp}            if defined $config->{cmake_sctp};
-        $D{USE_LIBCXX}         = $config->{cmake_libcxx}          if defined $config->{cmake_libcxx};
-        $D{ENABLE_TOUCH}       = $config->{cmake_touch}           if defined $config->{cmake_touch};
-        $D{USE_GPERF}          = $config->{cmake_gperf}           if defined $config->{cmake_gperf};
-        $D{USE_LTO}            = $config->{cmake_lto}             if defined $config->{cmake_lto};
-        $D{EXCEPTION_DEBUG}    = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
-        $D{USE_DEBUG_HELPERS}  = 1;
+        $D{ENABLE_LUAJIT}     = 0                                if $config->{cmake_debug} and !$config->{keep_luajit};
+        $D{ENABLE_LUAJIT}     = $config->{cmake_luajit}          if defined $config->{cmake_luajit};
+        $D{CMAKE_BUILD_TYPE}  = 'Debug'                          if $config->{cmake_debug};
+        $D{MINETEST_PROTO}    = $config->{cmake_minetest}        if defined $config->{cmake_minetest};
+        $D{ENABLE_LEVELDB}    = $config->{cmake_leveldb}         if defined $config->{cmake_leveldb};
+        $D{ENABLE_SCTP}       = $config->{cmake_sctp}            if defined $config->{cmake_sctp};
+        $D{USE_LIBCXX}        = $config->{cmake_libcxx}          if defined $config->{cmake_libcxx};
+        $D{ENABLE_TOUCH}      = $config->{cmake_touch}           if defined $config->{cmake_touch};
+        $D{USE_GPERF}         = $config->{cmake_gperf}           if defined $config->{cmake_gperf};
+        $D{USE_LTO}           = $config->{cmake_lto}             if defined $config->{cmake_lto};
+        $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
+        $D{USE_DEBUG_HELPERS} = 1;
 
         $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version}`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
@@ -411,7 +424,8 @@ our $commands; $commands = {
         my $D     = join ' ', map { '-D' . $_ . '=' . ($D{$_} =~ /\s/ ? qq{"$D{$_}"} : $D{$_}) } sort keys %D;
         my $ninja = `ninja --version` ? '-GNinja' : '';
         unlink("CMakeCache.txt");
-        return sytee qq{cmake .. $ninja $D @_ $config->{cmake_int} $config->{cmake_add}}, qq{$config->{logdir}/autotest.$g->{task_name}.cmake.log};
+        return sytee qq{cmake .. $ninja $D @_ $config->{cmake_int} $config->{cmake_add}},
+          qq{$config->{logdir}/autotest.$g->{task_name}.cmake.log};
     },
     make => sub {
         local $config->{make_add} = $config->{make_add};
@@ -422,18 +436,23 @@ our $commands; $commands = {
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         sy qq{rm -rf $config->{world} }          if $config->{world_clear} and $config->{world};
-        return sytee
-          $commands->{env}() . qq{ $config->{runner} @_ ./freeminer $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+        return
+            sytee $commands->{env}()
+          . qq{ $config->{runner} @_ }
+          . $commands->{executable}()
+          . qq{ $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world address port config autoexit verbose trace)])
           . qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
         0;
     },
     run_test => sub {
-        sy
-          $commands->{env}() . qq{ $config->{runner} @_ ./freeminer --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log }
+        sy $commands->{env}()
+          . qq{ $config->{runner} @_ }
+          . $commands->{executable}()
+          . qq{ --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log }
           . options_make([qw(verbose trace)]);
     },
-    set_bot         => {'----bot' => 1, '----bot_random' => 1},
+    set_bot         => {'----bot' => 1, '----bot_random' => 1,},
     run_bot         => ['set_bot', 'set_client', 'run_single'],
     run_single_tsan => sub {
         local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
@@ -441,7 +460,7 @@ our $commands; $commands = {
         local $config->{env} = $config->{env} . " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
         local $options->{opt}{enable_minimap} = 0;    # too unsafe
                                                       # FATAL: ThreadSanitizer: unexpected memory mapping :
-                                                      # sudo sysctl vm.mmap_rnd_bits=28
+        sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
         commands_run($config->{run_task});
     },
 
@@ -451,19 +470,21 @@ our $commands; $commands = {
     },
     run_server_simple => sub {
         my $fork = $config->{server_bg} ? '&' : '';
-        sytee $commands->{env}() . qq{ $config->{runner} @_ ./freeminerserver $fork},
+        sytee $commands->{env}() . qq{ $config->{runner} @_ } . $commands->{executable}() . qq{ $fork},
           qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server => sub {
-        #my $args = join ' ', map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw(gameid world port config autoexit);
         my $cmd =
-            $commands->{env}() . qq{ $config->{runner} @_ ./freeminerserver --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+            $commands->{env}()
+          . qq{ $config->{runner} @_ }
+          . $commands->{executable}()
+          . qq{ --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
           . options_make([qw(gameid world port config autoexit verbose)])
           . qq{ $config->{run_add}};
         if ($config->{server_bg}) {
-            sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
+            return sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
         } else {
-            sytee $cmd, qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
+            return sytee $cmd, qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
         }
     },
     run_clients => sub {
@@ -471,14 +492,12 @@ our $commands; $commands = {
         for (0 .. ($config->{clients_runs} || 0)) {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             local $config->{address} = '::1' if not $config->{address};
-            #my $args = join ' ',
-            #  map { '--' . $_ . ' ' . $config->{$_} } grep { $config->{$_} } qw( address gameid world address port config);
             for ($config->{clients_start} .. $config->{clients_num}) {
-
                 sleep $config->{clients_spawn_sleep} // 0.2;
-
-                sf
-                  $commands->{env}() . qq{ $config->{runner} @_ ./freeminer --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
+                sf $commands->{env}()
+                  . qq{ $config->{runner} @_ }
+                  . $commands->{executable}()
+                  . qq{ --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
                   . options_make([qw( address gameid world address port config verbose)])
                   . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
@@ -511,200 +530,108 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     fail => sub {
         warn 'fail:', join ' ', @_;
     },
-    set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,}],
-    set_server => [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit'}],
-    set_asan => sub {
-        $config->{envs}{asan} = " ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer$config->{clang_version}`";
-        0;
-    },
+    set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,, '---executable_name' => 'freeminer',}],
+    set_server =>
+      [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit', '---executable_name' => 'freeminerserver',}],
 };
 
 our $tasks = {
-    deps => sub { sy "sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev kcachegrind" }, # TODO: other os
-    build_normal    => ['cmake', 'make',],
-    build           => [\'build_normal'],                                                                        #'
-    build_debug     => [sub { $g->{build_name} .= '_debug'; 0 }, {-cmake_debug => 1,}, 'cmake', 'make',],
-    #build_nothreads => [sub { $g->{build_name} .= '_nt'; 0 }, ['cmake', $config->{cmake_nothreads}], 'make',],
-    build_server    => ['set_server', 'build_normal',],
-    (
-        map { ("build_server_$_" => ['set_server', "build_$_",], "server_$_" => ["build_server_$_", 'run_server']) }
-          qw(debug asan tsan usan msan gperf)
-    ),
-    build_client => ['set_client', 'build_normal',],
-    (map { ("build_client_$_" => ['set_client', "build_$_",]) } qw(debug asan tsan usan msan gperf)),
-    #bot                => [{'----bot'=>1, '----bot_random'=>1}, 'set_client', 'build_normal', 'run_single'],
-    bot         => ['set_client', 'build_normal', 'run_bot'],
-    build_clang => [{-cmake_clang => 1,}, 'build'],
+    deps  => sub { sy "sudo apt install -y clang valgrind google-perftools libgoogle-perftools-dev kcachegrind" },    # TODO: other os
+    build => ['cmake', 'make'],    # "test1", "test2","test3",],
+                                   #build        => [\'build_normal'],    #'
+    debug => [
+        sub {
+            $g->{keep_config} = 1;
+            $g->{build_names}{debug} = 'debug';
+            0;
+        },
+        {'---cmake_debug' => 1,}
+    ],
+    build_client => ['set_client',   'build',],
+    bot          => ['build_client', 'run_bot'],
+    clang        => {
+        '---cmake_clang'  => 1,
+        '---cmake_libcxx' => 1,
+    },
 
-    (
-        map {
-            my $name = $_;
-            $_ => ['set_' . $_,  sub { $g->{build_name} .= '_' . $name; 0 }, {keep_config => 1, '---cmake_' . $_ => 1,},],
-              'build_' . $_ => [$_, 'build',],
-        } qw(tsan asan msan usan gperf debug)
-    ),
+    asan => [
+        sub {
+            $g->{keep_config}      = 1;
+            $g->{build_names}{san} = 'asan';
+            $config->{envs}{asan}  = " ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer$config->{clang_version}`";
+            0;
+        },
+        'clang', 'debug',
 
-    bot_tsan   => ['set_bot', {'---no_build_server'  => 1,}, 'build_tsan', 'cgroup', 'run_single_tsan',],
-    # bot_tsannt => sub {
-    #     $g->{build_name} .= '_nt';
-    #     local $config->{no_build_server} = 1;
-    #     local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_nothreads};
-    #     commands_run('bot_tsan');
-    # },
-    # bot_tsannta => sub {
-    #     $g->{build_name} .= '_nta';
-    #     local $config->{no_build_server} = 1;
-    #     local $config->{cmake_int}       = $config->{cmake_int} . $config->{cmake_nothreads_a};
-    #     commands_run('bot_tsan');
-    # },
-    build_asan => [
-        sub {
-            $g->{build_name} .= '_asan';
-            0;
-        }, {
-            '---cmake_clang'  => 1,
-            '---cmake_libcxx' => 1,
-            '---cmake_asan'   => 1,
+        {
+            '---cmake_asan' => 1,
         },
-        'build_debug',
     ],
-    build_msan => [
+    tsan => [
         sub {
-            $g->{build_name} .= '_msan';
+            $g->{keep_config}          = 1;
+            $g->{build_names}{san}     = 'tsan';
+            $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
+            $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
+            $config->{envs}{tsan} = " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
+            #? local $options->{opt}{enable_minimap} = 0;    # too unsafe
+            # FATAL: ThreadSanitizer: unexpected memory mapping :
+            sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
             0;
-        }, {
-            '---cmake_clang'  => 1,
-            '---cmake_libcxx' => 1,
-            '---cmake_msan'   => 1,
         },
-        'build_debug',
+        'clang', 'debug',
+        {
+            '---cmake_tsan' => 1,
+        },
+        'cgroup',
     ],
-    build_usan => [
+    msan => [
         sub {
-            $g->{build_name} .= '_usan';
+            $g->{keep_config} = 1;
+            $g->{build_names}{san} = 'msan';
             0;
-        }, {
-            '---cmake_clang'  => 1,
-            '---cmake_libcxx' => 1,
-            '---cmake_usan'   => 1,
         },
-        'build_debug',
+        'clang', 'debug',
+        {
+            '---cmake_msan' => 1,
+        },
     ],
-    build_gperf => [
+    usan => [
         sub {
-            $g->{build_name} .= '_gperf';
+            $g->{keep_config} = 1;
+            $g->{build_names}{san} = 'usan';
+            0;
+        },
+        'clang', 'debug',
+        {
+            '---cmake_usan' => 1,
+        },
+    ],
+    gperf => [
+        sub {
+            $g->{keep_config} = 1;
+            $g->{build_names}{san} = 'gperf';
             0;
         }, {
             '---cmake_gperf' => 1,
         },
-        'cmake',
-        'make',
     ],
-    bot_asan => [
-        'set_bot',
-        {'---no_build_server'  => 1,},
-        'build_asan',
-        $config->{run_task},
-        'symbolize',
-    ],
-    #bot_asannta => sub {
-    #    $g->{build_name} .= '_nta';
-    #    local $config->{cmake_int} = $config->{cmake_int} . $config->{cmake_nothreads_a};
-    #    commands_run('bot_asan');
-    #},
-    bot_msan => [
-        'set_bot',
-        {'---no_build_server'  => 1,},
-        'build_msan',
-        $config->{run_task},
-        'symbolize',
-    ],
-    bot_usan => [
-        'set_bot',
-        {'---no_build_server'  => 1, -env => 'UBSAN_OPTIONS=print_stacktrace=1',},
-        'build_usan',
-        $config->{run_task},
-        'symbolize',
-    ],
-    #debug     => ['build_client_debug', $config->{run_task},],
-    bot_debug => ['set_bot', 'build_client_debug', $config->{run_task},],
-
-    #valgrind => sub {
-    #    local $config->{runner} = $config->{runner} . q{'valgrind'};
-    #    for (@_) { my $r = commands_run($_); return $r if $r; }
-    #},
-
-    #(map { 'bot_valgrind_'.$_ => ["valgrind_$_"], } @{$config->{valgrind_tools}}),
-
-    #nothreads => [{'---no_build_server'  => 1,}, \'build_nothreads', $config->{run_task},],    #'
     (
         map {
             'valgrind_' . $_ => [
-                {build_name => ''},
-                #{build_name => 'debug'}, ['cmake', qw(-DBUILD_SERVER=0 -DENABLE_LUAJIT=0 -DDEBUG=1)], 'make',
-                \'build_debug',    #'
+                'debug', 'build',
                 ['valgrind', '--tool=' . $_],
             ],
         } @{$config->{valgrind_tools}}
     ),
 
-    (
-        map {
-            my $buildname = $_;
-            (
-                $buildname => sub {
-                    return 1 if $config->{all_run};
-                    local $g->{build_name} = $g->{build_name} . '_' . $buildname;
-                    local $config->{'cmake_' . $buildname} = 1;
-                    @_ = ('build') if !@_;
-                    for (@_) { my $r = commands_run($_); return $r if $r; }
-                },
+    stress => ['build', {'---server_bg' => 1,}, 'run_server', ['sleep', 10], 'clients_run', ['sleep', $config->{autoexit}]],
 
-                (
-                    #map { $buildname . '_' . $_ => [[\$buildname, $_]] }
-                    map { $_ . '_' . $buildname => [[\$buildname, $_]] }
-                      qw(build build_client build_client_debug build_server build_server_debug play server stress)
-                ),    # '
-
-                'bot_' . $buildname => sub {
-                    my $name = shift;
-                    local $config->{no_build_server} = 1;
-                    local $config->{'cmake_' . $buildname} = 1;
-                    #local $config->{cmake_int}       = $config->{cmake_int} . $config->{'cmake_' . $buildname};
-                    if ($name) {
-                        $g->{build_name} .= '_' . $buildname;
-                        commands_run('bot_' . $name);
-                    } else {
-                        commands_run('build_client_' . $buildname);
-                        commands_run($config->{run_task});
-                    }
-                },
-                (map { "bot_${buildname}_" . $_ => [['bot_' . $buildname, $_,]] } qw(tsan asan usan gdb debug)), # tsannt
-            )
-        } qw(minetest sctp)
-    ),
-    stress => ['build_normal', {-server_bg => 1,}, 'run_server', ['sleep', 10], 'clients_run', ['sleep', $config->{autoexit}]],
-
-    clients_run => ['set_bot', {build_name => ''}, 'run_clients'],
-    clients     => ['build_client', 'clients_run'],
-
-    (
-        map {
-            'stress_' . $_ => [
-                {-server_bg => 1,},
-                'cgroup', "server_$_", ['sleep', 10], {build_name => '', "-cmake_$_" => 0,}, 'clients',
-            ]
-        } qw(tsan asan msan usan gperf debug gdb)
-    ),
-
-    (
-        map {
-            'gdb_stress_' . $_ => [
-                {-server_bg => 1,},
-                'cgroup', "gdb_server_$_", ['sleep', 10], {build_name => '', "-cmake_$_" => 0,}, 'clients',
-            ]
-        } qw( tsan asan msan usan gperf debug)
-    ),
+    clients_run => [
+        'set_bot',    #{build_name => ''},
+        'run_clients'
+    ],
+    clients => ['build_client', 'clients_run'],
 
     stress_massif => [
         'build_client',
@@ -724,7 +651,7 @@ our $tasks = {
         }
     ],
     gdb => sub {
-        ++$g->{keep_config};
+        $g->{keep_config} = 1;
         $config->{runner} =
             ' env ASAN_OPTIONS=abort_on_error=1 '
           . $config->{runner}
@@ -732,17 +659,12 @@ our $tasks = {
           . q{ -ex 'run' -ex 't a a bt' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
           . q{ --args };
-        @_ = ('debug') if !@_;
+        #@_ = ('debug') if !@_;
         for (@_) { my $r = commands_run($_); return $r if $r; }
+        0;
     },
 
-    server => [{-options_add => 'no_exit'}, 'build_server', 'run_server'],
-    #server_debug  => [{-options_add => 'no_exit'}, 'build_server_debug', 'run_server'],
-    server_gdb    => [{-options_add => 'no_exit'}, ['gdb', 'server_debug']],
-    server_gdb_nd => [{-options_add => 'no_exit'}, 'build_server', ['gdb', 'run_server']],
-
-    bot_gdb    => ['set_bot', 'build_client_debug', ['gdb', 'run_single']],
-    bot_gdb_nd => ['set_bot', 'build_client',       ['gdb', 'run_single']],
+    server => [{-options_add => 'no_exit'}, 'set_server', 'build', 'run_server'],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
@@ -763,94 +685,97 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             }
         }
     },
-    bot_vtune    => ['set_bot', 'build_client_debug', ['vtune', 'run_single'], 'vtune_report'],
     stress_vtune => [
         #'build_debug',sub { commands_run('vtune', 'run_server');}, ['sleep', 10], 'clients_run',
         {    #-no_build_client => 1, '---no_build_server'  => 0,
-            -server_bg => 1,
+            '---server_bg' => 1,
         },
-        'build_debug',
+        'debug', 'build',
         [\'vtune', 'run_server'],
         ['sleep',  10],
         #{build_name => '_normal'}, # '
         'clients',
     ],
 
-    gperf => sub {
-        my $flags;
-        $flags .= " MALLOCSTATS=9 " if $config->{gperf_heapprofile};
-        $flags .= " HEAPCHECK=normal "                       if $config->{gperf_heapcheck};
-        $flags .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
-        $flags .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
-        local $config->{runner} = $flags . ' ' . $config->{runner};
-        local $config->{run_add} = $config->{run_add} . " ||:";
-        @_ = ('debug') if !@_;
-        for (@_) { my $r = commands_run($_); return $r if $r; }
-    },
-
-    prepare_gperf => sub {  
-        ($config->{PPROF_PATH}) = `which google-pprof pprof` ; 
-        $config->{PPROF_PATH} =~ s{\s+$}{}s;
-        $ENV{PPROF_PATH} = $config->{PPROF_PATH};
-        0;
-    },
-    bot_gperf     => [{'---no_build_server'  => 1,}, 'prepare_gperf', 'build_gperf', ['gperf', 'run_single'], 'report_gperf'],
-    play_gperf    =>
-      [{'---no_build_server'  => 1,}, 'prepare_gperf', [\'play_task', 'build_gperf', [\'gperf', $config->{run_task}], 'report_gperf']],
-
-    stress_gperf => [
-        #{-no_build_client => 1, '---no_build_server'  => 0, -server_bg => 1,}, 'build_gperf',
-        'prepare_gperf',
-        'build_server_gperf',
-        ['gperf', 'run_server'], ['sleep', 10], {build_name => '', -cmake_gperf => 0,}, 'clients',
-        'report_gperf',
+    gperf => [
+        'gperf_prepare',
+        sub {
+            $g->{keep_config} = 1;
+            push @$task_run, 'gperf_report';
+            0;
+        }
     ],
 
-    report_gperf => sub {
+    gperf_prepare => [
+        {'---cmake_gperf' => 1,},
+        sub {
+            $g->{keep_config} = 1;
+            $g->{build_names}{san} = 'gperf';
+            ($config->{PPROF_PATH}) = `which google-pprof pprof`;
+            $config->{PPROF_PATH} =~ s{\s+$}{}s;
+            $ENV{PPROF_PATH} = $config->{PPROF_PATH};
+            my $flags;
+            $flags .= " MALLOCSTATS=9 "                          if $config->{gperf_heapprofile};
+            $flags .= " HEAPCHECK=normal "                       if $config->{gperf_heapcheck};
+            $flags .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
+            $flags .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
+            $config->{runner}  = $flags . ' ' . $config->{runner};
+            $config->{run_add} = $config->{run_add} . " ||:";
+            0;
+        }
+    ],
+
+    stress_gperf => [
+        {'---server_bg' => 1,},
+        'gperf',
+        'server',
+        ['sleep', 10], {'---cmake_gperf' => 0,}, 'clients', 'gperf_report',
+    ],
+
+    gperf_report => sub {
         # sytee 'env | grep PPROF_PATH', "$config->{logdir}/tmp";
-        sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} ./freeminer $config->{logdir}/heap.out*}, "$config->{logdir}/gperf.heap.out" if $config->{gperf_heapprofile};
+        sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} } . $commands->{executable}() . qq{ $config->{logdir}/heap.out*},
+          "$config->{logdir}/gperf.heap.out"
+          if $config->{gperf_heapprofile};
         if ($config->{gperf_cpuprofile}) {
-            sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} ./freeminer $config->{logdir}/cpu.out }, "$config->{logdir}/gperf.cpu.out";
-            sy qq{$config->{PPROF_PATH} --callgrind ./freeminer $config->{logdir}/cpu.out > $config->{logdir}/pprof.callgrind } ;
+            sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} } . $commands->{executable}() . qq{ $config->{logdir}/cpu.out },
+              "$config->{logdir}/gperf.cpu.out";
+            sy qq{$config->{PPROF_PATH} --callgrind }
+              . $commands->{executable}()
+              . qq{ $config->{logdir}/cpu.out > $config->{logdir}/pprof.callgrind };
             say qq{kcachegrind $config->{logdir}/pprof.callgrind};
         }
         return 0;
     },
 
-    play_task => sub {
-        return 1 if $config->{all_run};
-        local $config->{no_build_server} = 1;
-        local $config->{go}              = undef;
-        local $config->{autoexit}        = undef;
-        for (@_) { my $r = commands_run($_); return $r if $r; }
-    },
-
-    (
-        map { 'play_' . $_ => [{'---no_build_server'  => 1,}, [\'play_task', 'bot_' . $_]] }
-          qw(tsan asan msan usan gperf asannta minetest minetest_debug)
-    ), (
-        map { 'play_' . $_ => [{'---no_build_server'  => 1,}, [\'play_task', $_]] } qw(debug gdb nothreads vtune),
-        #map { 'valgrind_' . $_ } @{$config->{valgrind_tools}},
-    ),
-
-    (
-        map { 'gdb_' . $_ => [[\'gdb', $_]] }
-        map { $_, 'bot_' . $_, 'play_' . $_, 'server_' . $_ } qw(debug tsan asan msan usan gperf asannta minetest minetest_debug)
-    ),
-    (map { 'gdb_' . $_ => [[\'gdb', $_]] } map {$_} qw(server)),
-
-    play           => [{'---no_build_server' => 1,}, [\'play_task', 'build_normal', $config->{run_task}]],                #'
-    timelapse_play => [{'---options_int' => 'timelapse',}, \'play', 'timelapse_video'],                                   #'
-    fly            => [{'---options_int' => 'fly,forward', }, \'build_client', \'run_single'],                                #'
-    timelapse_fly  => [{'---options_int' => 'timelapse,fly,forward', }, \'build_client', \'run_single', 'timelapse_video'],    #'
-    timelapse_stay => [{
-            '----timelapse'     => 1, '----fly'              => 1, '----stay' => 1, '----far' => 10, '----fps1' => 1, '----no_exit' => 1,
+    play => [
+        'set_client',
+        {
+            '---go'       => undef,
+            '---autoexit' => undef,
+        },
+        'build',
+        $config->{run_task}
+    ],   
+    fly            => [{'---options_int' => 'fly,forward',}, 'build_client', 'run_single'],
+    timelapse_stay => [
+        'timelapse', {
+            '----fly'           => 1, '----stay'             => 1, '----far'        => 10, '----fps1' => 1, '----no_exit' => 1,
             '-show_basic_debug' => 0, '-show_profiler_graph' => 0, '-profiler_page' => 0,
         },
-        \'build',
-        \'run_single',
-        'timelapse_video'
-    ],                                                                                                                #'
+        'build_client',
+        'run_single',
+    ],    
+
+    timelapse => [
+        {'---options_int' => 'timelapse',},
+        sub {
+            $g->{keep_config} = 1;
+            push @$task_run, 'timelapse_video';
+            0;
+        }
+    ],
+
     bench => [{
             '-fixed_map_seed'          => 1,   '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100,
             '-max_block_send_distance' => 100, '----fly'    => 1, '----forward' => 1, '---world_clear' => 1,
@@ -878,14 +803,20 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         return 0;
     },
 
-    kill_client => sub {
-        sy qq{killall freeminer};
-        return 0;
-    },
-    kill_server => sub {
-        sy qq{killall freeminerserver};
-        return 0;
-    },
+    kill_client => [
+        'set_client',
+        sub {
+            sy qq{killall } . $config->{executable_name};
+            return 0;
+        }
+    ],
+    kill_server => [
+        'set_server',
+        sub {
+            sy qq{killall } . $config->{executable_name};
+            return 0;
+        }
+    ],
     kill    => ['kill_client', 'kill_server'],
     install => [
         sub { $config->{cmake_opt}{CMAKE_INSTALL_PREFIX} = $config->{logdir} . '/install'; 0 }, 'build',
@@ -977,7 +908,7 @@ sub json (@) {
         $_[0] =~ s/\\/\\\\/g, s/"/\\"/g for $_[0];
         return $_[0] + 0 eq $_[0] ? $_[0] : '"' . $_[0] . '"';
     };
-    return \(Data::Dumper->new(\@_)->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Dump());
+    return \(Data::Dumper->new(\@_)->Pair(':')->Terse(1)->Indent(0)->Useqq(1)->Useperl(1)->Deparse($config->{verbose} > 1 ? 1 : 0)->Dump());
 }
 
 sub options_make(;$$) {
@@ -1011,10 +942,11 @@ sub options_make(;$$) {
 sub command_run(@);
 
 sub command_run(@) {
-    my $cmd = shift;
-    say "command_run $cmd ", @_ if $config->{verbose};
+    my @p   = @_;
+    my $cmd = shift @p;
+    say join ' ', "command_run", ${json($cmd)}, '(', @p, ')', " g=", ${json($g)} if $config->{verbose};
     if ('CODE' eq ref $cmd) {
-        return $cmd->(@_);
+        return $cmd->(@p);
     } elsif ('HASH' eq ref $cmd) {
         for my $k (sort keys %$cmd) {
             if ($k =~ /^----(.+)/) {
@@ -1033,12 +965,11 @@ sub command_run(@) {
         }
     } elsif ('ARRAY' eq ref $cmd) {
         #for (@{$cmd}) {
-        my $r = command_run(array $cmd, @_);
+        my $r = command_run(array $cmd, @p);
         warn("command $_ returned $r"), return $r if $r;
         #}
     } elsif ($cmd) {
-        #return sy $cmd, @_;
-        return commands_run($cmd, @_);
+        return commands_run($cmd, @p);
     } else {
         warn 'unknown command ', $cmd;
         return 0;
@@ -1048,20 +979,22 @@ sub command_run(@) {
 sub commands_run(@);
 
 sub commands_run(@) {
-    my $name = shift;
-    say "commands_run $name ", @_ if $config->{verbose};
+    my @p    = @_;
+    my $name = shift @p;
+    say join ' ', "commands_run", $name, @p if $config->{verbose};
+
     my $c = $commands->{$name} || $tasks->{$name};
     if ('SCALAR' eq ref $name) {
-        commands_run($$name, @_);
+        return commands_run($$name, @p);
     } elsif ('ARRAY' eq ref $c) {
-        for (@{$c}) {
-            my $r = command_run $_, @_;
+        for my $co (@{$c}) {
+            my $r = command_run $co, @p;
             warn("command $_ returned $r"), return $r if $r;
         }
     } elsif ($c) {
-        return command_run $c, @_;
+        return command_run $c, @p;
     } elsif (ref $name) {
-        return command_run $name, @_;
+        return command_run $name, @p;
         #} elsif ($options->{$name}) {
         #    $config->{options_add} .= ',' . $name;
         #    #command_run({-options_add => $name});
@@ -1073,20 +1006,21 @@ sub commands_run(@) {
 }
 
 sub task_start(@) {
-    my $name = shift;
-    $name = $1, unshift @_, $2 if $name =~ /^(.*?)=(.*)$/;
-    say "task start $name ", @_;
+    my @p    = @_;
+    my $name = shift @p;
+    $name = $1, unshift @p, $2 if $name =~ /^(.*?)=(.*)$/;
+    say "task start $name ", @p;
     #$g = {task_name => $name, build_name => $name,};
     $g->{task_name} = $name;
     local $g->{build_name} = $config->{build_name} if $config->{build_name};
+    say ${json $g} if $config->{verbose};
     #task_run($name, @_);
-    commands_run($name, @_);
+    commands_run($name, @p);
 }
 
-my $task_run = [grep { !/^-/ } @ARGV];
 $task_run = [
     @$task_run,
-    qw(test bot_tsan bot_asan bot_usan bot_gperf valgrind_memcheck) #  bot_minetest_tsan bot_minetest_tsannt bot_minetest_asan bot_minetest_usan  bot_tsannt bot_tsannta
+    qw(test  tsan bot  asan bot  usan bot  gperf  bot  valgrind_memcheck)
   ]
   if !@$task_run or 'default' ~~ $task_run;
 if ('all' ~~ $task_run) {
@@ -1106,8 +1040,9 @@ unless (@ARGV) {
     sleep 1;
 }
 
-for my $task (@$task_run) {
-    init_config() if $g->{keep_config}-- <= 0;
+while (@$task_run) {
+    my $task = shift @$task_run;
+    init_config()                     if $g->{keep_config}-- <= 0;
     warn "task failed [$task] = [$_]" if $_ = task_start($task);
-    last if $signal ~~ [2, 3];
+    last                              if $signal ~~ [2, 3];
 }
