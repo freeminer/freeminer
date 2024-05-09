@@ -174,6 +174,7 @@ Client::Client(
 	control.cell_size = m_mesh_grid.cell_size;
 	control.cell_size_pow =	log(control.cell_size) / log(2);
 	control.farmesh_quality = g_settings->getU16("farmesh_quality");
+	control.farmesh_stable = g_settings->getU16("farmesh_stable");
 }
 
 void Client::migrateModStorage()
@@ -354,9 +355,6 @@ void Client::Stop()
 	if (m_mods_loaded)
 		delete m_script;
 
-	if(m_localserver)
-		delete m_localserver;
-
 	if (m_localdb)
 		delete m_localdb;
 }
@@ -406,13 +404,6 @@ Client::~Client()
 	if (m_mod_storage_database)
 		m_mod_storage_database->endSave();
 	delete m_mod_storage_database;
-	
-	//freeminer:
-	if (m_settings_mgr)
-		delete m_settings_mgr;
-	m_settings_mgr = nullptr;
-
-
 
 	// Free sound ids
 	for (auto &csp : m_sounds_client_to_server)

@@ -38,6 +38,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <vector>
 #include <map>
 
+/*
+namespace con_ws { class Connection; }
+*/
 
 #define MAX_UDP_PEERS 0x3fff
 
@@ -624,6 +627,9 @@ public:
 	friend class ConnectionReceiveThread;
 	friend class ConnectionSendThread;
 	friend class Connection;
+/*
+	friend class con_ws::Connection;
+*/
 
 	UDPPeer(u16 a_id, Address a_address, Connection* connection);
 	virtual ~UDPPeer() = default;

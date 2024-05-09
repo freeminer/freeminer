@@ -19,6 +19,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+
 #include "config.h"
 #if USE_WEBSOCKET
 
@@ -1398,7 +1400,10 @@ ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 void Connection::putCommand(ConnectionCommandPtr c)
 {
 	if (!m_shutting_down) {
-		if (c->type == CONNCMD_SEND || c->type == CONNCMD_SEND_TO_ALL) c->reliable = false;		
+//#ifdef __EMSCRIPTEN__
+		//if (c->type == CONNCMD_SEND || c->type == CONNCMD_SEND_TO_ALL)
+		c->reliable = false;
+//#endif
 		m_command_queue.push_back(c);
 		m_sendThread->Trigger();
 	}

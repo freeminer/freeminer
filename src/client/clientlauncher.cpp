@@ -195,9 +195,6 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	wait_data();
 #endif
 
-	g_fontengine = new FontEngine(guienv);
-	FATAL_ERROR_IF(g_fontengine == NULL, "Font engine creation failed.");
-
 	/*
 		GUI stuff
 	*/

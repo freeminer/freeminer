@@ -41,7 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_cao.h"
 #include "content/subgames.h"
 #include "client/event_manager.h"
-#include "fm_farmesh.h"
+#include "client/fm_farmesh.h"
 #include "fontengine.h"
 #include "irr_v3d.h"
 #include "itemdef.h"
@@ -4521,10 +4521,12 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		farmesh_async.step([&, farmesh_range = farmesh_range, 
 								   //yaw = player->getYaw(),
 								   //pitch = player->getPitch(),
+								   camera_pos = camera->getPosition(),
+								   camera_offset = camera->getOffset(),
 								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera->getPosition(),
+			farmesh->update(camera_pos,
 					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera->getOffset(), 
+					camera_offset,
 					//sky->getBrightness(), 
 					farmesh_range, speed);
 		});
