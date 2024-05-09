@@ -64,6 +64,8 @@ hgt *hgts::get(hgt::ll_t lat, hgt::ll_t lon)
 	return &map[lat][lon].value();
 }
 
+std::mutex hgt::mutex;
+
 hgt::hgt(const std::string &folder, ll_t lat, ll_t lon) : folder{folder}
 {
 	const int lat_dec = (int)floor(lat);
@@ -202,7 +204,7 @@ bool hgt::load(int lat_dec, int lon_dec)
 
 			actionstream << req.url << " " << res.succeeded << " " << res.response_code
 						 << " " << res.data.size() << "\n";
-			if (!res.succeeded)
+			if (!res.succeeded || res.response_code >= 300)
 				return uintmax_t{0};
 
 			if (!res.data.size())

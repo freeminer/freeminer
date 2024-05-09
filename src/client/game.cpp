@@ -4445,7 +4445,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		}
 
 		if (!runData.enable_fog)
-			runData.fog_range = FARSCALE_LIMIT * BS;
+			runData.fog_range = FARMESH_LIMIT * BS;
 		else
 		runData.fog_range = MYMIN(
 				runData.fog_range,
