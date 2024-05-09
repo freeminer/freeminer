@@ -40,7 +40,7 @@ private:
 	int lon_loaded = 200;
 	int lat_loading = 200;
 	int lon_loading = 200;
-	std::mutex mutex; //, mutex2;
+	static std::mutex mutex; 
 	std::vector<int16_t> heights;
 
 	bool load(int lat_dec, int lon_dec);

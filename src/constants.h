@@ -78,6 +78,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // the limit or not, so this is lower.
 // This is the maximum value the setting map_generation_limit can be
 #define MAX_MAP_GENERATION_LIMIT (31007)
+#define FARMESH_LIMIT (31007)
 
 // fm 32bit prepare (keep 31k)
 #define WEATHER_LIMIT (31007)
