@@ -14,6 +14,7 @@ Freeminer  is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
+
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -106,7 +107,7 @@ long double distance(
 
 MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		MapgenV7((MapgenV7Params *)params_, emerge),
-		hgt_reader(porting::path_share + DIR_DELIM + "earth")
+		hgt_reader(porting::path_cache + DIR_DELIM + "earth")
 {
 	ndef = emerge->ndef;
 	// mg_params = (MapgenEarthParams *)params_->sparams;

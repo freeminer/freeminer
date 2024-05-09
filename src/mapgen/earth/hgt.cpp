@@ -188,7 +188,7 @@ bool hgt::load(int lat_dec, int lon_dec)
 			if (1) {
 				// TODO: why sync does not work?
 				req.caller = HTTPFETCH_SYNC;
-			httpfetch_sync(req, res);
+				httpfetch_sync(req, res);
 			} else {
 				req.caller = httpfetch_caller_alloc();
 				httpfetch_async(req);
@@ -217,11 +217,11 @@ bool hgt::load(int lat_dec, int lon_dec)
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
 		static concurrent_set<std::string> http_failed;
 		if (!http_failed.contains(zipfile))
-			if (!http_to_file("http://build.freeminer.org/earth/" + zipfile, zipfull))
-				if (!http_to_file(
-							"https://viewfinderpanoramas.org/dem1/" + zipfile, zipfull))
-					if (!http_to_file("https://viewfinderpanoramas.org/dem3/" + zipfile,
-								zipfull)) {
+			if (!http_to_file("http://build.freeminer.org/earth/" + zipfile, zipfull) &&
+					!http_to_file(
+							"https://viewfinderpanoramas.org/dem1/" + zipfile, zipfull) &&
+					!http_to_file(
+							"https://viewfinderpanoramas.org/dem3/" + zipfile, zipfull)) {
 				errorstream << "Not found " << zipfile << "\n"
 							<< "try to download manually: \n"
 							<< "curl -o " << zipfull
