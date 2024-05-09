@@ -62,7 +62,7 @@ public:
 	~MapgenEarth();
 
 	virtual int generateTerrain() override;
-	int getSpawnLevelAtPoint(v2s16 p) override;
+	int getSpawnLevelAtPoint(v2pos_t p) override;
 
 	v3d scale{1, 1, 1};
 	v3d center{0, 0, 0};
