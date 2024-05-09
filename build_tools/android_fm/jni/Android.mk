@@ -188,6 +188,8 @@ LOCAL_SRC_FILES +=                                \
 		jni/src/log_types.cpp                     \
 		jni/src/mapgen_indev.cpp                  \
 		jni/src/mapgen_math.cpp                   \
+		jni/src/mapgen_earth.cpp                  \
+		jni/src/earth/hgt.cpp                     \
 		jni/src/threading/lock.cpp                \
 		jni/src/threading/thread_vector.cpp       \
 		jni/src/circuit.cpp                       \

@@ -117,6 +117,7 @@ enum MapgenType {
 
 	MAPGEN_INDEV,
 	MAPGEN_MATH,
+	MAPGEN_EARTH,
 
 	MAPGEN_INVALID,
 };

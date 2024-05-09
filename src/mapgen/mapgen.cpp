@@ -57,6 +57,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log_types.h"
 #include "mapgen_indev.h"
 #include "mapgen_math.h"
+#include "mapgen_earth.h"
 #include "serverenvironment.h"
 
 
@@ -108,6 +109,7 @@ static MapgenDesc g_reg_mapgens[] = {
 
 	{"indev",      true},
 	{"math",       true},
+	{"earth",       true},
 };
 
 static_assert(
@@ -186,6 +188,8 @@ Mapgen *Mapgen::createMapgen(MapgenType mgtype, MapgenParams *params,
 		return new MapgenIndev((MapgenIndevParams *)params, emerge);
 	case MAPGEN_MATH:
 		return new MapgenMath((MapgenMathParams *)params, emerge);
+	case MAPGEN_EARTH:
+		return new MapgenEarth((MapgenEarthParams *)params, emerge);
 
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathian((MapgenCarpathianParams *)params, emerge);
@@ -217,6 +221,8 @@ MapgenParams *Mapgen::createMapgenParams(MapgenType mgtype)
 		return new MapgenIndevParams;
 	case MAPGEN_MATH:
 		return new MapgenMathParams;
+	case MAPGEN_EARTH:
+		return new MapgenEarthParams;
 
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathianParams;
