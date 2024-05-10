@@ -77,24 +77,25 @@ hgt::hgt(const std::string &folder, ll_t lat, ll_t lon) : folder{folder}
 	}
 }
 
-std::basic_string<uint8_t> exec_to_string(const std::string &cmd)
+std::string exec_to_string(const std::string &cmd)
 {
 	std::array<uint8_t, 1000000> buffer;
-	std::basic_stringstream<uint8_t> result;
+	std::stringstream result;
 	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
 	if (!pipe) {
 		throw std::runtime_error("popen() failed!");
 	}
 	size_t sz = 0;
 	while ((sz = read(pipe.get()->
-#if defined(__FreeBSD__)  || defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-	_file // TODO: testme
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) ||             \
+		defined(__OpenBSD__)
+					  _file // TODO: testme
 #else
-	_fileno
+					  _fileno
 #endif
-	, buffer.data(),
-					static_cast<int>(buffer.size()))) > 0) {
-		result << std::basic_string<uint8_t>{buffer.data(), sz};
+					,
+					buffer.data(), static_cast<int>(buffer.size()))) > 0) {
+		result << std::string{(char *)buffer.data(), sz};
 	}
 	return result.str();
 }
@@ -167,7 +168,7 @@ bool hgt::load(int lat_dec, int lon_dec)
 	std::string filefull = folder + "/" + filename;
 	// DUMP(lat_dec, lon_dec, filename, zipname, zipfull);
 
-	std::basic_string<uint8_t> srtmTile;
+	std::string srtmTile;
 	size_t filesize = 0;
 
 	auto set_ratio = [&]() {
@@ -298,7 +299,8 @@ bool hgt::load(int lat_dec, int lon_dec)
 
 	heights.resize(filesize >> 1);
 	for (uint32_t i = 0; i < filesize >> 1; ++i) {
-		int16_t height = (srtmTile[i << 1] << 8) | (srtmTile[(i << 1) + 1]);
+		int16_t height =
+				((uint8_t)srtmTile[i << 1] << 8) | ((uint8_t)srtmTile[(i << 1) + 1]);
 		if (height == -32768) {
 			height = 0;
 		}
