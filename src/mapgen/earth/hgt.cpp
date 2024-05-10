@@ -86,7 +86,13 @@ std::basic_string<uint8_t> exec_to_string(const std::string &cmd)
 		throw std::runtime_error("popen() failed!");
 	}
 	size_t sz = 0;
-	while ((sz = read(pipe.get()->_fileno, buffer.data(),
+	while ((sz = read(pipe.get()->
+#if defined(__FreeBSD__)  || defined(__NetBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+	_file // TODO: testme
+#else
+	_fileno
+#endif
+	, buffer.data(),
 					static_cast<int>(buffer.size()))) > 0) {
 		result << std::basic_string<uint8_t>{buffer.data(), sz};
 	}
@@ -176,6 +182,8 @@ bool hgt::load(int lat_dec, int lon_dec)
 		side_length = sqrt(filesize >> 1);
 	};
 
+// TODO: because unzip
+#if !defined(_WIN32)
 	// DUMP(filefull, zipfull);
 	if (!std::filesystem::exists(filefull) && !std::filesystem::exists(zipfull)) {
 		const auto http_to_file = [](const std::string &url, const std::string &zipfull) {
@@ -250,6 +258,8 @@ bool hgt::load(int lat_dec, int lon_dec)
 			set_ratio();
 		}
 	}
+#endif
+
 	// TODO: first try load unpached file, then unpack zip
 	if (srtmTile.empty()) {
 
