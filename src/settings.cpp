@@ -542,6 +542,10 @@ s32 Settings::getS32(const std::string &name) const
 	return stoi(get(name));
 }
 
+pos_t Settings::getPos(const std::string &name) const
+{
+	return stoi(get(name));
+}
 
 float Settings::getFloat(const std::string &name) const
 {

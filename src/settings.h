@@ -173,6 +173,7 @@ public:
 	u32 getU32(const std::string &name) const;
 	s32 getS32(const std::string &name) const;
 	u64 getU64(const std::string &name) const;
+	pos_t getPos(const std::string &name) const;
 	float getFloat(const std::string &name) const;
 	float getFloat(const std::string &name, float min, float max) const;
 	v2f getV2F(const std::string &name) const;

@@ -700,6 +700,21 @@ if(ENABLE_ENET)
 	endif()
 endif()
 
+#set(TinyTIFF_BUILD_TESTS 0 CACHE INTERNAL "")
+#add_subdirectory(external/TinyTIFF/src)
+#set(TINYTIFF_LIRARY TinyTIFF)
+
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeLists.txt)
+	set(tiff-tools 0 CACHE INTERNAL "")
+	set(tiff-tests 0 CACHE INTERNAL "")
+	set(tiff-docs 0 CACHE INTERNAL "")
+	add_subdirectory(external/libtiff)
+	set(TIFF_LIRARY TIFF::tiff)
+	set(TIFF_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/libtiff/libtiff)
+	include_directories(${TIFF_INCLUDE_DIR})
+	set(USE_TIFF 1)
+endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
     set(USE_DEBUG_HELPERS ON CACHE BOOL "")
 endif()
@@ -963,6 +978,7 @@ if(BUILD_CLIENT)
 		${ENET_LIBRARY}
 		${SCTP_LIBRARY}
 		${WEBSOCKETPP_LIBRARY}
+		${TIFF_LIRARY}
 
 		${LUA_BIT_LIBRARY}
 		${FREETYPE_LIBRARY}
