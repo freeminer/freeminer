@@ -98,7 +98,7 @@ public:
 			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
 			uint8_t activate) override
 	{
-		static const int water_level = g_settings->getS16("water_level");
+		static const auto water_level = g_settings->getPos("water_level");
 		// Try avoid flying square freezed blocks
 		if (p.Y > water_level && activate)
 			return;

@@ -426,9 +426,9 @@ inline wstring to_wstring(T val)
 #endif
 
 /// Returns a string representing the decimal value of the 32-bit value \p i.
-inline std::string itos(s32 i) { return std::to_string(i); }
+inline std::string itos(u32 i) { return std::to_string(i); }
 /// Returns a string representing the decimal value of the 64-bit value \p i.
-inline std::string i64tos(s64 i) { return std::to_string(i); }
+inline std::string i64tos(u64 i) { return std::to_string(i); }
 
 /// Returns a string representing the exact decimal value of the float value \p f.
 inline std::string ftos(float f)
