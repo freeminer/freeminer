@@ -28,3 +28,6 @@
 [submodule "src/external/snappy"]
 	path = src/external/snappy
 	url = https://github.com/google/snappy
+[submodule "src/external/libtiff"]
+	path = src/external/libtiff
+	url = https://gitlab.com/libtiff/libtiff.git

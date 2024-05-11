@@ -548,7 +548,6 @@ pos_t Settings::getPos(const std::string &name) const
 	return stoi(get(name));
 }
 
-
 float Settings::getFloat(const std::string &name) const
 {
 	return stof(get(name));
