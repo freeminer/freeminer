@@ -2884,7 +2884,7 @@ void Game::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags
 }*/
 void Game::increaseViewRange()
 {
-	s16 range = g_settings->getS16("viewing_range");
+	pos_t range = g_settings->getPos("viewing_range");
 	int range_new = range + 10;
 	s16 server_limit = sky->getFogDistance();
 
@@ -2919,9 +2919,9 @@ void Game::increaseViewRange()
 
 void Game::decreaseViewRange()
 {
-	s16 range = g_settings->getS16("viewing_range");
-	s16 range_new = range - 10;
-	s16 server_limit = sky->getFogDistance();
+	pos_t range = g_settings->getPos("viewing_range");
+	pos_t range_new = range - 10;
+	pos_t server_limit = sky->getFogDistance();
 
 	{ //fm:
 		if (g_settings->getS32("farmesh")) {
@@ -3468,7 +3468,7 @@ void Game::handleClientEvent_SetSky(ClientEvent *event, CameraOrientation *cam)
 
 	// if the fog distance is reset, switch back to the client's viewing_range
 	if (event->set_sky->fog_distance < 0)
-		draw_control->wanted_range = g_settings->getS16("viewing_range");
+		draw_control->wanted_range = g_settings->getPos("viewing_range");
 
 	if (event->set_sky->fog_start >= 0)
 		sky->setFogStart(rangelim(event->set_sky->fog_start, 0.0f, 0.99f));

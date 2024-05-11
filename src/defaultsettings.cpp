@@ -178,7 +178,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "2" : "4");
-	settings->setDefault("farmesh", slow ? "3000" : itos(FARMESH_LIMIT*2));
+	settings->setDefault("farmesh", slow ? "3000" : std::to_string(FARMESH_LIMIT*2));
 	settings->setDefault("farmesh_quality", slow ? "0" : "0");
 	settings->setDefault("farmesh_stable", "0");
 	settings->setDefault("headless_optimize", "false");

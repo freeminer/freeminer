@@ -85,14 +85,14 @@ BiomeManager::BiomeManager(Server *server) :
 	year_days = g_settings->getS16("year_days");
 	weather_heat_season = g_settings->getS16("weather_heat_season");
 	weather_heat_daily = g_settings->getS16("weather_heat_daily");
-	weather_heat_width = g_settings->getS16("weather_heat_width");
-	weather_heat_height = g_settings->getS16("weather_heat_height");
+	weather_heat_width = g_settings->getPos("weather_heat_width");
+	weather_heat_height = g_settings->getPos("weather_heat_height");
 	weather_humidity_season = g_settings->getS16("weather_humidity_season");
 	weather_humidity_daily = g_settings->getS16("weather_humidity_daily");
-	weather_humidity_width = g_settings->getS16("weather_humidity_width");
+	weather_humidity_width = g_settings->getPos("weather_humidity_width");
 	weather_humidity_days = g_settings->getS16("weather_humidity_days");
 	weather_humidity_height = g_settings->getS16("weather_humidity_height");
-	weather_hot_core = g_settings->getS16("weather_hot_core");
+	weather_hot_core = g_settings->getPos("weather_hot_core");
 	if (add(b) == OBJDEF_INVALID_HANDLE)
 		delete b;
 }
