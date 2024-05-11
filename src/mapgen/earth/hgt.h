@@ -42,7 +42,7 @@ protected:
 
 public:
 	using ll_t = float;
-	virtual bool load(int lat_dec, int lon_dec) = 0;
+	virtual bool load(int lat_dec, int lon_dec) {};
 	bool ok(int lat_dec, int lon_dec);
 	float get(ll_t lat, ll_t lon);
 };
@@ -67,6 +67,13 @@ class height_tif : public height
 public:
 	height_tif(const std::string &folder, ll_t lat, ll_t lon);
 	bool load(int lat_dec, int lon_dec) override;
+};
+
+class height_dummy : public height
+{
+
+public:
+	//height_dummy(ll_t lat, ll_t lon);
 };
 
 class hgts

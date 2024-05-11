@@ -80,9 +80,10 @@ height *hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 		}
 	}
 	{
+		DUMP(map[lat].contains(lon));
 		//map[lat][lon]->get(lat, lon);
 		auto hgt = std::make_unique<height_tif>(folder, lat, lon);
-		DUMP("load tif");
+		DUMP("load tif", lat, lon);
 		// TODO: actual pos check here!
 		if (!hgt->load(lat_dec, lon_dec)) {
 			//if (hgt->ok(lat_dec, lon_dec))
@@ -90,7 +91,13 @@ height *hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 			return map[lat][lon].get();
 		}
 	}
-	return {};
+	{
+		DUMP("place dummy", lat, lon);
+		auto hgt = std::make_unique<height_dummy>();
+		map[lat][lon] = std::move(hgt);
+		DUMP(lat, lon, map[lat].contains(lon));
+		return map[lat][lon].get();
+	}
 }
 
 std::mutex height::mutex;
@@ -226,7 +233,7 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 		//DUMP(lat_dec, lon_dec);
 		return true;
 	}
-	// DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
+	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
 	TimeTaker timer("hgt load");
 
 	lat_loading = lat_dec;
@@ -361,7 +368,8 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 	}
 	lat_loaded = lat_dec;
 	lon_loaded = lon_dec;
-	// DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname, filename, seconds_per_px, get(lat_dec, lon_dec));
+	DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname,
+			filename, seconds_per_px, get(lat_dec, lon_dec));
 	return false;
 }
 
