@@ -129,7 +129,8 @@ std::string exec_to_string(const std::string &cmd)
 	size_t sz = 0;
 	while ((sz = read(pipe.get()->
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) ||             \
-		defined(__OpenBSD__)
+		defined(__OpenBSD__) || defined(__ANDROID__)
+
 					  _file // TODO: testme
 #else
 					  _fileno
