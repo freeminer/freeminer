@@ -710,8 +710,8 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeLists.txt)
 	set(tiff-docs 0 CACHE INTERNAL "")
 	add_subdirectory(external/libtiff)
 	set(TIFF_LIRARY TIFF::tiff)
-	set(TIFF_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/libtiff/libtiff)
-	include_directories(${TIFF_INCLUDE_DIR})
+	set(TIFF_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/libtiff/libtiff ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/libtiff)
+	include_directories(BEFORE SYSTEM ${TIFF_INCLUDE_DIR})
 	set(USE_TIFF 1)
 endif()
 
@@ -1058,6 +1058,7 @@ if(BUILD_SERVER)
 		${ENET_LIBRARY}
 		${SCTP_LIBRARY}
 		${WEBSOCKETPP_LIBRARY}
+		${TIFF_LIRARY}
 
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}
