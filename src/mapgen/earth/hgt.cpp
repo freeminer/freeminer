@@ -72,7 +72,7 @@ height *hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 	// DUMP("insert", (long)this, lat, lon, folder, map.size(), map[lat].size());
 	{
 		auto hgt = std::make_unique<height_hgt>(folder, lat, lon);
-		if (!hgt->load(lat_dec, lon_dec)) {
+		if (hgt->load(lat_dec, lon_dec)) {
 			//if (hgt->ok(lat_dec, lon_dec))
 			map[lat][lon] = std::move(hgt);
 			DUMP("hgt ok", lat, lon);
@@ -85,7 +85,7 @@ height *hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 		auto hgt = std::make_unique<height_tif>(folder, lat, lon);
 		DUMP("load tif", lat, lon);
 		// TODO: actual pos check here!
-		if (!hgt->load(lat_dec, lon_dec)) {
+		if (hgt->load(lat_dec, lon_dec)) {
 			//if (hgt->ok(lat_dec, lon_dec))
 			map[lat][lon] = std::move(hgt);
 			return map[lat][lon].get();
@@ -120,27 +120,21 @@ height_tif::height_tif(const std::string &folder, ll_t lat, ll_t lon) : folder{f
 
 std::string exec_to_string(const std::string &cmd)
 {
-	std::array<uint8_t, 1000000> buffer;
-	std::stringstream result;
 	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
 	if (!pipe) {
-		throw std::runtime_error("popen() failed!");
+		DUMP("Cmd failed: ", cmd);
+		return {};
 	}
-	size_t sz = 0;
-	while ((sz = read(pipe.get()->
-#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) ||             \
-		defined(__OpenBSD__) || defined(__ANDROID__)
 
-					  _file // TODO: testme
-#else
-					  _fileno
-#endif
-					,
-					buffer.data(), static_cast<int>(buffer.size()))) > 0) {
+	std::array<uint8_t, 1000000> buffer;
+	std::stringstream result;
+	size_t sz = 0;
+	while ((sz = fread((char *)buffer.data(), 1, buffer.size(), pipe.get())) > 0) {
 		result << std::string{(char *)buffer.data(), sz};
 	}
 	return result.str();
 }
+
 const auto http_to_file = [](const std::string &url, const std::string &zipfull) {
 	HTTPFetchRequest req;
 	req.url = url;
@@ -223,16 +217,16 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 {
 	//DUMP(lat_dec, lon_dec);
 	if (ok(lat_dec, lon_dec)) {
-		return false;
+		return true;
 	}
 	auto lock = std::unique_lock(mutex);
 	//DUMP(lat_dec, lon_dec);
 	if (ok(lat_dec, lon_dec)) {
-		return false;
+		return true;
 	}
 	if (lat_loading == lat_dec && lon_loading == lon_dec) {
 		//DUMP(lat_dec, lon_dec);
-		return true;
+		return false;
 	}
 	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
 	TimeTaker timer("hgt load");
@@ -324,14 +318,13 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 
 	// TODO: first try load unpached file, then unpack zip
 	if (srtmTile.empty()) {
-
 		if (!std::filesystem::exists(filename)) {
 			static thread_local auto once = 0;
 			if (!once++) {
 				std::cerr << "Missing file " << filename << " for " << lat_dec << ","
 						  << lon_dec << std::endl;
 			}
-			return true;
+			return false;
 		}
 
 		filesize = std::filesystem::file_size(filename);
@@ -342,7 +335,7 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 
 		if (!istrm.good()) {
 			std::cerr << "Error opening " << filename << std::endl;
-			return true;
+			return false;
 		}
 
 		srtmTile.resize(filesize);
@@ -355,7 +348,7 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 			std::cerr << "Missing file " << filename << " " << zipname << " for "
 					  << lat_dec << "," << lon_dec << std::endl;
 		}
-		return true;
+		return false;
 	}
 
 	heights.resize(filesize >> 1);
@@ -371,7 +364,7 @@ bool height_hgt::load(int lat_dec, int lon_dec)
 	lon_loaded = lon_dec;
 	DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname,
 			filename, seconds_per_px, get(lat_dec, lon_dec));
-	return false;
+	return true;
 }
 
 const auto gen_zip_name_15 = [](int lat_dec, int lon_dec) {
@@ -396,16 +389,16 @@ bool height_tif::load(int lat_dec, int lon_dec)
 
 	//DUMP(lat_dec, lon_dec);
 	if (ok(lat_dec, lon_dec)) {
-		return false;
+		return true;
 	}
 	auto lock = std::unique_lock(mutex);
 	//DUMP(lat_dec, lon_dec);
 	if (ok(lat_dec, lon_dec)) {
-		return false;
+		return true;
 	}
 	if (lat_loading == lat_dec && lon_loading == lon_dec) {
 		//DUMP(lat_dec, lon_dec);
-		return true;
+		return false;
 	}
 	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
 	TimeTaker timer("hgt load");
@@ -444,7 +437,7 @@ bool height_tif::load(int lat_dec, int lon_dec)
 				TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
 				size_t npixels = w * h;
 				if (!npixels)
-					return true;
+					return false;
 
 				if (auto raster = (uint32_t *)_TIFFmalloc(npixels * sizeof(uint32_t));
 						raster) {
@@ -495,7 +488,7 @@ bool height_tif::load(int lat_dec, int lon_dec)
 					DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded,
 							zipname, tifname, seconds_per_px, get(lat_dec, lon_dec));
 
-					return false;
+					return true;
 				}
 			}
 		}
@@ -506,7 +499,7 @@ bool height_tif::load(int lat_dec, int lon_dec)
 	//lat_loaded = lat_dec;
 	//lon_loaded = lon_dec;
 	// DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname, filename, seconds_per_px, get(lat_dec, lon_dec));
-	return true;
+	return false;
 }
 
 /** Pixel idx from left bottom corner (0-1200) */
