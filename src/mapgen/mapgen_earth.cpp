@@ -219,19 +219,23 @@ ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z)
 	constexpr double EQUATOR_LEN{40075696.0};
 	const auto lon = ((ll_t)x * scale.X) / (EQUATOR_LEN / 360) + center.X;
 	const auto lat = ((ll_t)z * scale.Z) / (EQUATOR_LEN / 360) + center.Z;
-	return {(ll_t)lat, (ll_t)lon};
+	if (lat < 90 && lat > -90 && lon < 180 && lon > -180) {
+		return {(ll_t)lat, (ll_t)lon};
+	} else {
+		return {89.9999, 0};
+	}
 }
 
 pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 {
 	const auto tc = pos_to_ll(x, z);
-	auto y = hgt_reader.get(tc.lat, tc.lon)->get(tc.lat, tc.lon);
-	return y * scale.Y - center.Y;
+	auto y = hgt_reader.get(tc.lat, tc.lon);
+	return y / scale.Y - center.Y;
 }
 
 int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
-	return get_height(p.X, p.Y) + 2;
+	return std::max(2, get_height(p.X, p.Y) + 2);
 }
 
 int MapgenEarth::generateTerrain()
@@ -239,7 +243,6 @@ int MapgenEarth::generateTerrain()
 	MapNode n_ice(c_ice);
 	u32 index = 0;
 	v3pos_t em = vm->m_area.getExtent();
-	//auto zstride_1d = csize.X * (csize.Y + 1);
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
 		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
@@ -251,9 +254,7 @@ int MapgenEarth::generateTerrain()
 			auto height = get_height(x, z);
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {
-				// auto [have, d] = calc_point(x,y,z);
 				bool underground = height >= y;
-
 				if (underground) {
 					if (!vm->m_data[i]) {
 						vm->m_data[i] = layers_get(0, 1);

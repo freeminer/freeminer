@@ -84,6 +84,8 @@ public:
 
 	//freeminer:
 	bool visible(const v3pos_t &p) override { return getFractalAtPoint(p.X, p.Y, p.Z); }
+	bool surface_2d() override { return false; };
+
 
 private:
 	u16 formula;

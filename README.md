@@ -64,7 +64,7 @@ Install dependencies. Here's an example for
 Debian/Ubuntu:
 ```sh
 sudo apt-get install build-essential libirrlicht-dev cmake libbz2-dev libgettextpo0 \
-libsqlite3-dev libleveldb-dev libsnappy-dev libcurl4-openssl-dev libluajit-5.1-dev libgmp-dev libspatialindex-dev \
+libsqlite3-dev libleveldb-dev libsnappy-dev libcurl4-openssl-dev libluajit-5.1-dev libgmp-dev libspatialindex-dev libboost-system-dev \
 libpng12-dev libjpeg-dev libfreetype6-dev libxxf86vm-dev libgl1-mesa-dev libvorbis-dev libopenal-dev
 # First  - needed always
 # Second - recommended for servers and singleplayer
@@ -113,14 +113,14 @@ cd freeminer
 
 Build it (GNU/Linux):
 ```sh
-mkdir _build && cd _build
+mkdir -p build && cd build
 cmake ..
 nice make -j $(nproc || sysctl -n hw.ncpu || echo 2)
 ```
 
 or for debian based:
 ```sh
-curl https://raw.githubusercontent.com/freeminer/freeminer/master/build_tools/debian_ogles.sh | sh
+curl https://raw.githubusercontent.com/freeminer/freeminer/master/build_tools/build.sh | sh
 ```
 
 Build it (OS X):

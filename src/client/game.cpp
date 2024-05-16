@@ -4518,7 +4518,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	if (farmesh) {
 		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-		farmesh_async.step([&, farmesh_range = farmesh_range, 
+		farmesh_async.step([&, farmesh_range = farmesh_range,
 								   //yaw = player->getYaw(),
 								   //pitch = player->getPitch(),
 								   camera_pos = camera->getPosition(),
@@ -4527,7 +4527,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			farmesh->update(camera_pos,
 					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
 					camera_offset,
-					//sky->getBrightness(), 
+					//sky->getBrightness(),
 					farmesh_range, speed);
 		});
 	}

@@ -37,6 +37,7 @@ namespace ServerList
 	extern lan_adv lan_adv_client;
 	void lan_get();
 	bool lan_fresh();
+	void addMultiProto(Json::Value &server, const u16 port);
 
 enum AnnounceAction {AA_START, AA_UPDATE, AA_DELETE};
 void sendAnnounce(AnnounceAction, u16 port,
