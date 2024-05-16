@@ -330,7 +330,7 @@ void FarMesh::update(v3opos_t camera_pos,
 			!m_control->farmesh_stable &&
 			(
 			//m_client->getEnv().getClientMap().m_far_fast && 
-			m_speed > 200 * BS ||
+					m_speed > 200 * BS ||
 					m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000);
 
 	if (!timestamp_complete) {
@@ -396,7 +396,7 @@ void FarMesh::update(v3opos_t camera_pos,
 			m_client->getEnv().getClientMap().m_far_blocks_last_cam_pos =
 					far_fast ? camera_pos_aligned_int : m_camera_pos_aligned;
 			if (far_fast)
-			m_camera_pos_aligned = camera_pos_aligned_int;
+				m_camera_pos_aligned = camera_pos_aligned_int;
 		}
 		if (!planes_processed && !complete_set) {
 			auto &clientMap = m_client->getEnv().getClientMap();

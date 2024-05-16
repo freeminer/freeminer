@@ -23,11 +23,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include "convert_json.h"
 #include "socket.h"
-#include "../util/string.h"
 #include "../log_types.h"
 #include "../settings.h"
 #include "../version.h"
 #include "networkprotocol.h"
+#include "serverlist.h"
 
 //copypaste from ../socket.cpp
 #ifdef _WIN32
@@ -62,13 +62,15 @@ typedef int socklen_t;
 typedef int socket_t;
 #endif
 
-
 const static unsigned short int adv_port = 29998;
 static std::string ask_str;
 
-lan_adv::lan_adv() : thread_vector("lan_adv") { }
+lan_adv::lan_adv() : thread_vector("lan_adv")
+{
+}
 
-void lan_adv::ask() {
+void lan_adv::ask()
+{
 	reanimate();
 
 	if (ask_str.empty()) {
@@ -81,7 +83,8 @@ void lan_adv::ask() {
 	send_string(ask_str);
 }
 
-void lan_adv::send_string(const std::string& str) {
+void lan_adv::send_string(const std::string &str)
+{
 	try {
 		sockaddr_in addr = {};
 		addr.sin_family = AF_INET;
@@ -89,9 +92,10 @@ void lan_adv::send_string(const std::string& str) {
 		addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 		UDPSocket socket_send(false);
 		int set_option_on = 1;
-		setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
+		setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST,
+				(const char *)&set_option_on, sizeof(set_option_on));
 		socket_send.Send(Address(addr), str.c_str(), str.size());
-	} catch(const std::exception &e) {
+	} catch (const std::exception &e) {
 		verbosestream << "udp broadcast send4 fail " << e.what() << "\n";
 	}
 
@@ -107,7 +111,7 @@ void lan_adv::send_string(const std::string& str) {
 			if (ifa->ifa_addr->sa_family != AF_INET6)
 				continue;
 
-			auto sa = *((struct sockaddr_in6*)ifa->ifa_addr);
+			auto sa = *((struct sockaddr_in6 *)ifa->ifa_addr);
 			if (sa.sin6_scope_id)
 				scopes.push_back(sa.sin6_scope_id);
 
@@ -122,7 +126,9 @@ void lan_adv::send_string(const std::string& str) {
 	if (scopes.empty())
 		scopes.push_back(0);
 
-	struct addrinfo hints { };
+	struct addrinfo hints
+	{
+	};
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
@@ -130,21 +136,22 @@ void lan_adv::send_string(const std::string& str) {
 	if (!getaddrinfo("ff02::1", nullptr, &hints, &result)) {
 		for (auto info = result; info; info = info->ai_next) {
 			try {
-				sockaddr_in6 addr = *((struct sockaddr_in6*)info->ai_addr);
+				sockaddr_in6 addr = *((struct sockaddr_in6 *)info->ai_addr);
 				addr.sin6_port = htons(adv_port);
 				UDPSocket socket_send(true);
 				int set_option_on = 1;
-				setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
+				setsockopt(socket_send.GetHandle(), SOL_SOCKET, SO_BROADCAST,
+						(const char *)&set_option_on, sizeof(set_option_on));
 				auto use_scopes = scopes;
 				if (addr.sin6_scope_id) {
 					use_scopes.clear();
 					use_scopes.push_back(addr.sin6_scope_id);
 				}
-				for (auto & scope : use_scopes) {
+				for (auto &scope : use_scopes) {
 					addr.sin6_scope_id = scope;
 					socket_send.Send(Address(addr), str.c_str(), str.size());
 				}
-			} catch(const std::exception &e) {
+			} catch (const std::exception &e) {
 				verbosestream << "udp broadcast send6 fail " << e.what() << "\n";
 			}
 		}
@@ -152,12 +159,14 @@ void lan_adv::send_string(const std::string& str) {
 	}
 }
 
-void lan_adv::serve(unsigned short port) {
+void lan_adv::serve(unsigned short port)
+{
 	server_port = port;
 	restart();
 }
 
-void * lan_adv::run() {
+void *lan_adv::run()
+{
 
 	EXCEPTION_HANDLER_BEGIN;
 
@@ -165,21 +174,27 @@ void * lan_adv::run() {
 
 	UDPSocket socket_recv(true);
 	int set_option_off = 0, set_option_on = 1;
-	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_REUSEADDR, (const char*) &set_option_on, sizeof(set_option_on));
+	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_REUSEADDR,
+			(const char *)&set_option_on, sizeof(set_option_on));
 #ifdef SO_REUSEPORT
-	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_REUSEPORT, (const char*) &set_option_on, sizeof(set_option_on));
+	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_REUSEPORT,
+			(const char *)&set_option_on, sizeof(set_option_on));
 #endif
-	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_BROADCAST, (const char*) &set_option_on, sizeof(set_option_on));
-	setsockopt(socket_recv.GetHandle(), IPPROTO_IPV6, IPV6_V6ONLY, (const char*) &set_option_off, sizeof(set_option_off));
+	setsockopt(socket_recv.GetHandle(), SOL_SOCKET, SO_BROADCAST,
+			(const char *)&set_option_on, sizeof(set_option_on));
+	setsockopt(socket_recv.GetHandle(), IPPROTO_IPV6, IPV6_V6ONLY,
+			(const char *)&set_option_off, sizeof(set_option_off));
 	socket_recv.setTimeoutMs(200);
 	try {
 		socket_recv.Bind(Address(in6addr_any, adv_port));
 	} catch (const std::exception &e) {
-		warningstream << m_name << ": cant bind ipv6 address [" << e.what() << "], trying ipv4. " << std::endl;
+		warningstream << m_name << ": cant bind ipv6 address [" << e.what()
+					  << "], trying ipv4. " << std::endl;
 		try {
 			socket_recv.Bind(Address((u32)INADDR_ANY, adv_port));
 		} catch (const std::exception &e) {
-			warningstream << m_name << ": cant bind ipv4 too [" << e.what() << "]" << std::endl;
+			warningstream << m_name << ": cant bind ipv4 too [" << e.what() << "]"
+						  << std::endl;
 			return nullptr;
 		}
 	}
@@ -188,76 +203,83 @@ void * lan_adv::run() {
 	const auto proto = g_settings->get("server_proto");
 
 	const unsigned int packet_maxsize = 16384;
-	char buffer [packet_maxsize];
+	char buffer[packet_maxsize];
 	Json::Reader reader;
 	std::string answer_str;
 	Json::Value server;
 	if (server_port) {
-		server["name"]         = g_settings->get("server_name");
-		server["description"]  = g_settings->get("server_description");
-		server["version"]      = g_version_string;
+		server["name"] = g_settings->get("server_name");
+		server["description"] = g_settings->get("server_description");
+		server["version"] = g_version_string;
 		bool strict_checking = g_settings->getBool("strict_protocol_version_checking");
-		server["proto_min"]    = strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MIN;
-		server["proto_max"]    = strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MAX;
-		server["url"]          = g_settings->get("server_url");
-		server["creative"]     = g_settings->getBool("creative_mode");
-		server["damage"]       = g_settings->getBool("enable_damage");
-		server["password"]     = g_settings->getBool("disallow_empty_password");
-		server["pvp"]          = g_settings->getBool("enable_pvp");
-		server["port"]         = server_port;
-		server["clients"]      = clients_num.load();
-		server["clients_max"]  = g_settings->getU16("max_users");
-		server["proto"]        = g_settings->get("server_proto");
+		server["proto_min"] =
+				strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MIN;
+		server["proto_max"] =
+				strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MAX;
+		server["url"] = g_settings->get("server_url");
+		server["creative"] = g_settings->getBool("creative_mode");
+		server["damage"] = g_settings->getBool("enable_damage");
+		server["password"] = g_settings->getBool("disallow_empty_password");
+		server["pvp"] = g_settings->getBool("enable_pvp");
+		server["port"] = server_port;
+		server["clients"] = clients_num.load();
+		server["clients_max"] = g_settings->getU16("max_users");
+		server["proto"] = g_settings->get("server_proto");
+
+		ServerList::addMultiProto(server, server_port);
 
 		send_string(fastWriteJson(server));
 	}
-	while(!stopRequested()) {
+	while (!stopRequested()) {
 		EXCEPTION_HANDLER_BEGIN;
-			Address addr;
-			int rlen = socket_recv.Receive(addr, buffer, packet_maxsize);
-			if (rlen <= 0)
-				continue;
-			Json::Value p;
-			if (!reader.parse(std::string(buffer, rlen), p)) {
-				//errorstream << "cant parse "<< s << "\n";
-				continue;
+		Address addr;
+		int rlen = socket_recv.Receive(addr, buffer, packet_maxsize);
+		if (rlen <= 0)
+			continue;
+		Json::Value p;
+		if (!reader.parse(std::string(buffer, rlen), p)) {
+			//errorstream << "cant parse "<< s << "\n";
+			continue;
+		}
+		auto addr_str = addr.serializeString();
+		auto now = porting::getTimeMs();
+		//errorstream << " a=" << addr.serializeString() << " : " << addr.getPort() << " l=" << rlen << " b=" << p << " ;  server=" << server_port << "\n";
+		if (server_port) {
+			if (p["cmd"] == "ask" && limiter[addr_str] < now) {
+				(clients_num.load() ? infostream : actionstream)
+						<< "lan: want play " << addr_str << " " << p["proto"]
+						<< std::endl;
+
+				server["clients"] = clients_num.load();
+				answer_str = fastWriteJson(server);
+
+				limiter[addr_str] = now + 3000;
+				UDPSocket socket_send(true);
+				addr.setPort(adv_port);
+				socket_send.Send(addr, answer_str.c_str(), answer_str.size());
 			}
-			auto addr_str = addr.serializeString();
-			auto now = porting::getTimeMs();
-			//errorstream << " a=" << addr.serializeString() << " : " << addr.getPort() << " l=" << rlen << " b=" << p << " ;  server=" << server_port << "\n";
-			if (server_port) {
-				if (p["cmd"] == "ask" && limiter[addr_str] < now) {
-					(clients_num.load() ? infostream : actionstream) << "lan: want play " << addr_str << " " << p["proto"] << std::endl;
-
-					server["clients"] = clients_num.load();
-					answer_str = fastWriteJson(server);
-
-					limiter[addr_str] = now + 3000;
-					UDPSocket socket_send(true);
-					addr.setPort(adv_port);
-					socket_send.Send(addr, answer_str.c_str(), answer_str.size());
-				}
-			} else {
-				if (p["cmd"] == "ask") {
-					actionstream << "lan: want play " << addr_str << " " << p["proto"] << std::endl;
-				}
-				if (p["port"].isInt()) {
-					p["address"] = addr_str;
-					auto key = addr_str + ":" + p["port"].asString();
-					if (p["cmd"].asString() == "shutdown") {
-						//infostream << "server shutdown " << key << "\n";
-						collected.erase(key);
-						fresh = true;
-					} else if (p["proto"] == proto) {
-						if (!collected.count(key))
-							actionstream << "lan server start " << key << "\n";
-						collected.insert_or_assign(key, p);
-						fresh = true;
-					}
-				}
-
-				//errorstream<<" current list: ";for (auto & i : collected) {errorstream<< i.first <<" ; ";}errorstream<<std::endl;
+		} else {
+			if (p["cmd"] == "ask") {
+				actionstream << "lan: want play " << addr_str << " " << p["proto"]
+							 << std::endl;
 			}
+			if (p["port"].isInt()) {
+				p["address"] = addr_str;
+				auto key = addr_str + ":" + p["port"].asString();
+				if (p["cmd"].asString() == "shutdown") {
+					//infostream << "server shutdown " << key << "\n";
+					collected.erase(key);
+					fresh = true;
+				} else if (p["proto"] == proto) {
+					if (!collected.count(key))
+						actionstream << "lan server start " << key << "\n";
+					collected.insert_or_assign(key, p);
+					fresh = true;
+				}
+			}
+
+			//errorstream<<" current list: ";for (auto & i : collected) {errorstream<< i.first <<" ; ";}errorstream<<std::endl;
+		}
 
 		EXCEPTION_HANDLER_END;
 	}

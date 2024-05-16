@@ -97,12 +97,10 @@ if(NOT MSVC)
         set(ENABLE_SYSTEM_JSONCPP 0)
 	endif()
 
-	if(USE_GPERF)
-		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+	option(ENABLE_TCMALLOC "Enable tcmalloc" 1)
 
-		# find_library(TCMALLOC_LIBRARY NAMES libtcmalloc.a tcmalloc)
-		# find_library(PROFILER_LIBRARY NAMES libprofiler.a profiler)
-		# find_library(UNWIND_LIBRARY NAMES libunwind.a unwind)
+	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
+		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
@@ -110,17 +108,21 @@ if(NOT MSVC)
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
 		endif()
 
-		find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
+		if(ENABLE_GPERF)
+			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
+		endif()
 
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY})
-		SET(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-		message(STATUS "Build with gperf ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY}")
+		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY})
+		if (TCMALLOC_LIBRARY)
+			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+		endif()
+
+		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
 	endif()
 
 	find_library(UNWIND_LIBRARY NAMES unwind)
 
 	if(UNWIND_LIBRARY)
-
         CHECK_CXX_SOURCE_RUNS("
        #include <execinfo.h> // for backtrace
        int main(int argc, char *argv[]) {

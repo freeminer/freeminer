@@ -75,6 +75,11 @@ $0 ----world_water
 # stress test of falling sand
 $0 ----world_sand
 
+# earth
+$0 -mg_name=earth -mg_earth='{"center":{"z":36.822183, "y":0, "x":30.583390}}' bot
+#$0 -mg_name=earth -mg_earth='{"scale":{"z":10000, "y":0.01, "x":10000}}' bot
+$0 -mg_name=earth -mg_earth='{"scale":{"z":10000, "y":100, "x":10000}}' bot
+
 $0 ---cmake_minetest=1 ---build_name=_minetest ----headless ----headless_optimize --address=cool.server.org --port=30001 ---clients_num=25 clients
 
 # timelapse video (every 10 seconds)
@@ -172,15 +177,13 @@ sub init_config () {
         # verbose         => 1,
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
-        world           => $script_path . 'world',
+        #world           => $script_path . 'world',
         world_clear     => 0,                                     # remove old world before start client
     };
 
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
     map { /^----(\w+)(?:=(.*))?/ and push @{$config->{options_arr}}, $1; } @ARGV;
     map { /^-D(\w+)(?:=(.*))?/   and $config->{cmake_opt}{$1} = defined $2 ? $2 : 1; } @ARGV;
-
-    $config->{world} = $config->{logdir} . '/world' if $config->{world_local};
 }
 init_config();
 
@@ -276,7 +279,7 @@ our $options = {
         mg_params => {"layers" => [{"name" => "default:torch"}, {"name" => "default:glass"}]},
     },
     world_rooms => {
-        #--world    => $script_path . 'world_rooms',
+        '--world'    => $script_path . 'world_rooms',
         mg_name => 'math',
         mg_math => {"generator" => "rooms"},
     },
@@ -364,6 +367,15 @@ $commands = {
     },
     build_dir  => sub { "$config->{root_prefix}$config->{build_prefix}" . $commands->{build_name}() },
     executable => sub { $commands->{build_dir}() . "/" . $config->{executable_name} },
+    world_name => sub {
+        return $config->{world} if defined $config->{world};
+    	my $name = 'world';
+    	$name .= '_' . $options->{opt}{mg_name} if $options->{opt}{mg_name};
+	    $name .= '_' .$config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math}{generator};
+    	$config->{world} = $script_path . $name;
+    	$config->{world} = $config->{logdir} . '/' . $name if $config->{world_local};
+    	$config->{world};
+    },
 
     init          => sub { init_config(); 0 },
     '---'         => 'init',
@@ -379,7 +391,7 @@ $commands = {
         file_append(
             "$config->{logdir}/run.sh",
             join "\n",
-            qq{# } . join(' ', $0, @ARGV),
+            qq{# } . join(' ', $0, map{/[\s"]/ ? "'" . $_ . "'" : $_} @ARGV),
             qq{cd "$build_dir"},
             ""
         );
@@ -408,7 +420,8 @@ $commands = {
         $D{ENABLE_SCTP}       = $config->{cmake_sctp}            if defined $config->{cmake_sctp};
         $D{USE_LIBCXX}        = $config->{cmake_libcxx}          if defined $config->{cmake_libcxx};
         $D{ENABLE_TOUCH}      = $config->{cmake_touch}           if defined $config->{cmake_touch};
-        $D{USE_GPERF}         = $config->{cmake_gperf}           if defined $config->{cmake_gperf};
+        $D{ENABLE_GPERF}      = $config->{cmake_gperf}           if defined $config->{cmake_gperf};
+        $D{ENABLE_TCMALLOC}   = $config->{cmake_tcmalloc}        if defined $config->{cmake_tcmalloc};
         $D{USE_LTO}           = $config->{cmake_lto}             if defined $config->{cmake_lto};
         $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
         $D{USE_DEBUG_HELPERS} = 1;
@@ -435,6 +448,7 @@ $commands = {
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
+	    $commands->{world_name}();
         sy qq{rm -rf $config->{world} }          if $config->{world_clear} and $config->{world};
         return
             sytee $commands->{env}()
