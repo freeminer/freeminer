@@ -112,8 +112,12 @@ if(NOT MSVC)
 			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
 		endif()
 
-		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY} ${TCMALLOC_LIBRARY})
+		if (PROFILER_LIBRARY)
+			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY})
+		endif()
+
 		if (TCMALLOC_LIBRARY)
+    		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
 			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 		endif()
 
