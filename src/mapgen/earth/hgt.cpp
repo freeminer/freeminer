@@ -385,7 +385,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		std::string bzipfull = folder + "/" + bzipfile;
 		multi_http_to_file(bzipfile,
 				{
-						"http://build.freeminer.org/earth/" + bzipfile,
+						"http://cdn.freeminer.org/earth/" + bzipfile,
 				},
 				bzipfull);
 		if (std::filesystem::exists(bzipfull) && std::filesystem::file_size(bzipfull)) {
@@ -409,7 +409,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
 
 		multi_http_to_file(zipfile,
-				{"http://build.freeminer.org/earth/" + zipfile,
+				{"http://cdn.freeminer.org/earth/" + zipfile,
 						"http://viewfinderpanoramas.org/dem1/" + zipfile,
 						"http://viewfinderpanoramas.org/dem3/" + zipfile},
 				zipfull);
@@ -545,7 +545,7 @@ bool height_tif::load(ll_t lat, ll_t lon)
 		if (!std::filesystem::exists(tifname) && !std::filesystem::exists(zipfull)) {
 			DUMP("dl", zipfile);
 			multi_http_to_file(zipfile,
-					{"http://build.freeminer.org/earth/" + zipfile,
+					{"http://cdn.freeminer.org/earth/" + zipfile,
 							"http://www.viewfinderpanoramas.org/DEM/TIF15/" + zipfile},
 					zipfull);
 		}
