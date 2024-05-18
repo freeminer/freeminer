@@ -371,6 +371,11 @@ void FarMesh::update(v3opos_t camera_pos,
 		last_distance_max = distance_max; // * 1.1;
 	}
 
+	/*
+	if (mg->surface_2d()) {
+		// TODO: use fast simple quadtree based direct mesh create
+	} else 
+    */
 	{
 		size_t planes_processed = 0;
 		for (size_t i = 0; i < sizeof(g_6dirso) / sizeof(g_6dirso[0]); ++i) {
