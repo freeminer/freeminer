@@ -230,7 +230,7 @@ pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 {
 	const auto tc = pos_to_ll(x, z);
 	auto y = hgt_reader.get(tc.lat, tc.lon);
-	return y / scale.Y - center.Y;
+	return ceil(y / scale.Y) - center.Y;
 }
 
 int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)

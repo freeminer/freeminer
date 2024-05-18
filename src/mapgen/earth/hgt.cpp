@@ -379,10 +379,32 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		DUMP("sides", side_length_x, side_length_y, seconds_per_px_x, seconds_per_px_y);
 	};
 
+	// bz2 has best compression
+	if (srtmTile.empty()) {
+		const auto bzipfile = zipname + ".tar.bz2";
+		std::string bzipfull = folder + "/" + bzipfile;
+		multi_http_to_file(bzipfile,
+				{
+						"http://build.freeminer.org/earth/" + bzipfile,
+				},
+				bzipfull);
+		if (std::filesystem::exists(bzipfull) && std::filesystem::file_size(bzipfull)) {
+			std::string cmd{"tar -jOxvf " + bzipfull + " " + zipname + "/" + filename};
+			actionstream << "Unpack: " << cmd << "\n";
+			srtmTile = exec_to_string(cmd);
+			filesize = srtmTile.size();
+			if (filesize) {
+				set_ratio(filesize);
+			}
+		}
+	}
+
 	// TODO: because unzip
 	//#if 1 //!defined(_WIN32)
 	// DUMP(filefull, zipfull);
-	if (!std::filesystem::exists(filefull) && !std::filesystem::exists(zipfull)) {
+
+	if (srtmTile.empty() && !std::filesystem::exists(filefull) &&
+			!std::filesystem::exists(zipfull)) {
 
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
 
@@ -393,8 +415,8 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 				zipfull);
 	}
 
-	if (!std::filesystem::exists(filefull) && std::filesystem::exists(zipfull) &&
-			std::filesystem::file_size(zipfull)) {
+	if (srtmTile.empty() && !std::filesystem::exists(filefull) &&
+			std::filesystem::exists(zipfull) && std::filesystem::file_size(zipfull)) {
 
 		// TODO: use some available in server and client zip lib to extract files
 
@@ -402,6 +424,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		//bool ok = fs::extractZipFile(fs, zipfile, destination);
 
 		std::string cmd{"unzip -C -b -p " + zipfull + " " + zipname + "/" + filename};
+		actionstream << "Unpack: " << cmd << "\n";
 
 		srtmTile = exec_to_string(cmd);
 		filesize = srtmTile.size();
@@ -458,7 +481,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	lat_loaded = lat_dec;
 	lon_loaded = lon_dec;
 	DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname,
-			filename, seconds_per_px_x, get(lat_dec, lon_dec), heights[0], heights[0],
+			filename, seconds_per_px_x, get(lat_dec, lon_dec), heights[0], heights.back(),
 			heights[side_length_x]);
 	return true;
 }

@@ -1080,8 +1080,10 @@ int ModApiMainMenu::l_get_lan_servers(lua_State *L)
 			lua_pushstring(L, field_name.c_str());
 			if (server.second[field_name].isString())
 				lua_pushstring(L, server.second[field_name].asCString());
-			else // if (server.second[field_name].isNumeric())
+			else if (server.second[field_name].isConvertibleTo(Json::realValue)) 
 				lua_pushnumber(L, server.second[field_name].asDouble());
+			else
+			 	lua_pushnil(L);
 			lua_settable(L, top_lvl2);
 		}
 
