@@ -471,7 +471,18 @@ void ConnectionSendThread::processNonReliableCommand(ConnectionCommandPtr &c_ptr
 			sendAsPacket(c.peer_id, c.channelnum, c.data, true);
 			return;
 		case CONCMD_CREATE_PEER:
+		/*
 			FATAL_ERROR("Got command that should be reliable as unreliable command");
+		*/
+			LOG(dout_con << m_connection->getDesc()
+				<< "UDP processing reliable CONCMD_CREATE_PEER" << std::endl);
+			if (!rawSendAsPacket(c.peer_id, c.channelnum, c.data, c.reliable)) {
+				/* put to queue if we couldn't send it immediately */
+				send(c.peer_id, c.channelnum, c.data);
+				//sendReliable(c);
+			}
+			return;
+		
 		default:
 			LOG(dout_con << m_connection->getDesc()
 				<< " Invalid command type: " << c.type << std::endl);
