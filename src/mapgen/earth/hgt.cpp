@@ -245,6 +245,10 @@ const auto multi_http_to_file = [](const auto &zipfile,
 	static concurrent_set<std::string> http_failed;
 	if (http_failed.contains(zipfile))
 		return std::filesystem::file_size(zipfull);
+
+	if (std::filesystem::exists(zipfull))
+		return std::filesystem::file_size(zipfull);
+
 	for (const auto &uri : links) {
 		if (http_to_file(uri, zipfull))
 			return std::filesystem::file_size(zipfull);
@@ -403,8 +407,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	//#if 1 //!defined(_WIN32)
 	// DUMP(filefull, zipfull);
 
-	if (srtmTile.empty() && !std::filesystem::exists(filefull) &&
-			!std::filesystem::exists(zipfull)) {
+	if (srtmTile.empty() && !std::filesystem::exists(filefull)) {
 
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
 
@@ -542,8 +545,7 @@ bool height_tif::load(ll_t lat, ll_t lon)
 		const auto zipfull = folder + "/" + zipname;
 		const auto tifname = folder + "/" + zipname + ".tif";
 		DUMP(zipname, zipfile, tifname);
-		if (!std::filesystem::exists(tifname) && !std::filesystem::exists(zipfull)) {
-			DUMP("dl", zipfile);
+		if (!std::filesystem::exists(tifname)) {
 			multi_http_to_file(zipfile,
 					{"http://cdn.freeminer.org/earth/" + zipfile,
 							"http://www.viewfinderpanoramas.org/DEM/TIF15/" + zipfile},
@@ -761,7 +763,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 		{
 			std::string zipfile = "gebco_2023_sub_ice_topo_geotiff.zip";
 			std::string zipfull = folder + "/" + zipfile;
-			if (!std::filesystem::exists(tifname) && !std::filesystem::exists(zipfull)) {
+			if (!std::filesystem::exists(tifname)) {
 				if (multi_http_to_file(zipfile,
 							{"https://www.bodc.ac.uk/data/open_download/gebco/gebco_2023_sub_ice_topo/geotiff/"},
 							zipfull)) {
