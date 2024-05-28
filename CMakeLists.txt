@@ -180,9 +180,9 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt")
 	message(STATUS "Using user-provided IrrlichtMt at subdirectory 'lib/irrlichtmt'")
 	if(BUILD_CLIENT)
 		# tell IrrlichtMt to create a static library
-		set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared library" FORCE)
+		#set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared library" FORCE)
 		add_subdirectory(lib/irrlichtmt EXCLUDE_FROM_ALL)
-		unset(BUILD_SHARED_LIBS CACHE)
+		#unset(BUILD_SHARED_LIBS CACHE)
 
 		if(NOT TARGET IrrlichtMt)
 			message(FATAL_ERROR "IrrlichtMt project is missing a CMake target?!")

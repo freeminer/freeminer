@@ -622,9 +622,12 @@ our $tasks = {
         },
     ],
     gperf => [
+        'gperf_prepare',
         sub {
             $g->{keep_config} = 1;
             $g->{build_names}{san} = 'gperf';
+            $config->{envs}{gperf} = "MALLOCSTATS=9 PERFTOOLS_VERBOSE=9";
+            push @$task_run, 'gperf_report';
             0;
         }, {
             '---cmake_gperf' => 1,
@@ -712,14 +715,6 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         'clients',
     ],
 
-    gperf => [
-        'gperf_prepare',
-        sub {
-            $g->{keep_config} = 1;
-            push @$task_run, 'gperf_report';
-            0;
-        }
-    ],
 
     gperf_prepare => [
         'debug',

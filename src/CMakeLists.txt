@@ -102,14 +102,23 @@ if(NOT MSVC)
 	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
 		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+		if (NOT BUILD_SHARED_LIBS)
+			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+		endif()
+
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
 		else()
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
 		endif()
 
+
 		if(ENABLE_GPERF)
 			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
+		endif()
+
+		if (NOT BUILD_SHARED_LIBS)
+    		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
 		endif()
 
 		if (PROFILER_LIBRARY)
@@ -117,8 +126,8 @@ if(NOT MSVC)
 		endif()
 
 		if (TCMALLOC_LIBRARY)
-    		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
-			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
+			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -Wl,--as-needed")
 		endif()
 
 		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
