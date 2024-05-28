@@ -60,6 +60,9 @@ $0 ---cmake_clang=1 -DUSE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 ---cmake_add="-DSCTP_DEBUG=1" gdb server
 VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 --address=localhost --port=60001 ---cmake_add="-DSCTP_DEBUG=1" gdb bot
 
+# build debug
+$0 ---verbose -DCMAKE_VERBOSE_MAKEFILE=1 build
+
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 ---vtune_gui=1 play_vtune
 $0 --autoexit=60 ---vtune_gui=1 bot_vtune
@@ -363,7 +366,7 @@ $commands = {
           (map { $g->{build_names}{$_} } sort keys %{$g->{build_names}});
     },
     env => sub {
-        join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}};
+        'env ' . join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}};
     },
     build_dir  => sub { "$config->{root_prefix}$config->{build_prefix}" . $commands->{build_name}() },
     executable => sub { $commands->{build_dir}() . "/" . $config->{executable_name} },
@@ -444,27 +447,30 @@ $commands = {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
-        return sytee qq{nice cmake --build . -- -j $config->{makej}}, qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
+        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej}},
+          qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         $commands->{world_name}();
         sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
         return
-            sytee $commands->{env}()
-          . qq{ $config->{runner} @_ }
-          . $commands->{executable}()
-          . qq{ $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-          . options_make([qw(gameid world address port config autoexit verbose trace)])
-          . qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
+          sytee $config->{runner},
+          $commands->{env}(),
+          qq{@_},
+          $commands->{executable}(),
+          qq{$config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
+          options_make([qw(gameid world address port config autoexit verbose trace)]),
+          qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
         0;
     },
     run_test => sub {
-        sy $commands->{env}()
-          . qq{ $config->{runner} @_ }
-          . $commands->{executable}()
-          . qq{ --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log }
-          . options_make([qw(verbose trace)]);
+        sy $config->{runner},
+          $commands->{env}(),
+          qq{@_},
+          $commands->{executable}(),
+          qq{--run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log},
+          options_make([qw(verbose trace)]);
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1,},
     run_bot         => ['set_bot', 'set_client', 'run_single'],
@@ -484,17 +490,19 @@ $commands = {
     },
     run_server_simple => sub {
         my $fork = $config->{server_bg} ? '&' : '';
-        sytee $commands->{env}() . qq{ $config->{runner} @_ } . $commands->{executable}() . qq{ $fork},
+        sytee $config->{runner}, $commands->{env}(), qq{@_}, $commands->{executable}(), $fork,
           qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server => sub {
-        my $cmd =
-            $commands->{env}()
-          . qq{ $config->{runner} @_ }
-          . $commands->{executable}()
-          . qq{ --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-          . options_make([qw(gameid world port config autoexit verbose)])
-          . qq{ $config->{run_add}};
+        my $cmd = join ' ',
+          $config->{runner},
+          $commands->{env}(),
+          qq{@_},
+          $commands->{executable}(),
+          qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
+          options_make([qw(gameid world port config autoexit verbose)]),
+          qq{$config->{run_add}};
+
         if ($config->{server_bg}) {
             return sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
         } else {
@@ -508,12 +516,14 @@ $commands = {
             local $config->{address} = '::1' if not $config->{address};
             for ($config->{clients_start} .. $config->{clients_num}) {
                 sleep $config->{clients_spawn_sleep} // 0.2;
-                sf $commands->{env}()
-                  . qq{ $config->{runner} @_ }
-                  . $commands->{executable}()
-                  . qq{ --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-                  . options_make([qw( address gameid world address port config verbose)])
-                  . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
+                sf
+                  $config->{runner},
+                  $commands->{env}(),
+                  qq{@_},
+                  $commands->{executable}(),
+                  qq{--name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
+                  options_make([qw( address gameid world address port config verbose)]),
+                  qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
             sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
         }
@@ -621,18 +631,6 @@ our $tasks = {
             '---cmake_usan' => 1,
         },
     ],
-    gperf => [
-        'gperf_prepare',
-        sub {
-            $g->{keep_config} = 1;
-            $g->{build_names}{san} = 'gperf';
-            $config->{envs}{gperf} = "MALLOCSTATS=9 PERFTOOLS_VERBOSE=9";
-            push @$task_run, 'gperf_report';
-            0;
-        }, {
-            '---cmake_gperf' => 1,
-        },
-    ],
     (
         map {
             'valgrind_' . $_ => [
@@ -715,7 +713,6 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         'clients',
     ],
 
-
     gperf_prepare => [
         'debug',
         {'---cmake_gperf' => 1,},
@@ -734,6 +731,22 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             $config->{run_add} = $config->{run_add} . " ||:";
             0;
         }
+    ],
+
+    gperf => [
+        'gperf_prepare',
+        sub {
+            #$g->{keep_config}      = 1;
+            #$g->{build_names}{san} = 'gperf';
+            my ($libprofiler) = `ls -1 /usr/lib/*/libprofiler.so | head -n1`;
+            $libprofiler =~ s/\s+$//;
+            if ($libprofiler and -f $libprofiler) {
+                $config->{envs}{gperf} .= " LD_PRELOAD=$libprofiler";
+            }
+            push @$task_run, 'gperf_report';
+            0;
+        }, 
+        # {'---cmake_gperf' => 1,},
     ],
 
     stress_gperf => [
