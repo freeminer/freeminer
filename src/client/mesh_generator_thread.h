@@ -153,6 +153,7 @@ private:
 
 
 	MeshUpdateQueue m_queue_in;
+	MeshUpdateQueue m_queue_in_urgent;
 
 public:
 	MutexedQueue<MeshUpdateResult> m_queue_out;

@@ -263,6 +263,7 @@ void MeshUpdateWorkerThread::doUpdate()
 
 MeshUpdateManager::MeshUpdateManager(Client *client):
 	m_queue_in(client)
+	, m_queue_in_urgent(client)
 {
 	int number_of_threads = rangelim(g_settings->getS32("mesh_generation_threads"), 0, 8);
 
@@ -276,6 +277,8 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 
 	for (int i = 0; i < number_of_threads; i++)
 		m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(&m_queue_in, this, &m_camera_offset));
+
+	m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(&m_queue_in_urgent, this, &m_camera_offset));
 }
 
 void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
@@ -284,7 +287,7 @@ void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
 	static thread_local const bool many_neighbors =
 			g_settings->getBool("smooth_lighting")
 			&& !g_settings->getFlag("performance_tradeoffs");
-	if (!m_queue_in.addBlock(map, p, ack_block_to_server, urgent)) {
+	if (!(urgent ? m_queue_in_urgent : m_queue_in).addBlock(map, p, ack_block_to_server, urgent)) {
 		warningstream << "Update requested for non-existent block at ("
 				<< p.X << ", " << p.Y << ", " << p.Z << ")" << std::endl;
 		return;

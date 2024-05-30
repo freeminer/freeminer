@@ -605,12 +605,12 @@ void Client::step(float dtime)
 		TimeTaker timer_step("Client: Replace updated meshes");
 
 		int num_processed_meshes = 0;
-		auto end_ms = porting::getTimeMs() + 10;
+		auto end_ms = porting::getTimeMs() + 5;
 		std::vector<v3s16> blocks_to_ack;
 
 		auto qsize = m_mesh_update_manager->m_queue_out.size();
 		if (qsize > 1000)
-			end_ms += 100;
+			end_ms += 30;
 
 		bool force_update_shadows = false;
 		MeshUpdateResult r;
@@ -1716,13 +1716,15 @@ void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 	catch(InvalidPositionException &e) {
 	}
 
-	if (p.getDistanceFrom(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)) > MAP_BLOCKSIZE*2)
+	const auto disance = p.getDistanceFrom(floatToInt(m_env.getLocalPlayer()->getPosition(), BS));
+	if (disance > MAP_BLOCKSIZE*2)
 		return;
 
-	addUpdateMeshTaskForNode(p, true);
+	addUpdateMeshTaskForNode(p, true, disance <= MAP_BLOCKSIZE);
+	modified_blocks.erase(getNodeBlockPos(p));
 
 	for (const auto &modified_block : modified_blocks) {
-		addUpdateMeshTaskWithEdge(modified_block.first, false, true);
+		addUpdateMeshTaskWithEdge(modified_block.first, false, false);
 	}
 }
 
