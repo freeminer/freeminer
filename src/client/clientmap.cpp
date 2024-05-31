@@ -68,6 +68,10 @@ void MapDrawControl::fm_init()
 {
 	g_settings->getS32NoEx("farmesh", farmesh);
 	g_settings->getS32NoEx("lodmesh", lodmesh);
+	static const auto headless_optimize = g_settings->getBool("headless_optimize");
+	if (headless_optimize)
+		lodmesh = 0;
+
 	fov_want = fov = g_settings->getFloat("fov");
 }
 
