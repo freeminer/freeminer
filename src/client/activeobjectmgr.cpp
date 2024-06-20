@@ -89,12 +89,13 @@ void ActiveObjectMgr::removeObject(u16 id)
 		return;
 	}
 
+	m_active_objects_deleted.emplace_back(obj);
+
 	//std::unique_ptr<ClientActiveObject> obj = std::move(it->second);
 	m_active_objects.erase(id);
 
 	obj->removeFromScene(true);
 	
-	m_active_objects_deleted.emplace_back(std::move(obj));
 }
 
 // clang-format on

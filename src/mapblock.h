@@ -539,6 +539,7 @@ public:
 	MapBlock::mesh_type getFarMesh(int step);
 	void setFarMesh(const MapBlock::mesh_type & rmesh, uint32_t time);
 	std::mutex far_mutex;
+	u32 mesh_requested_timestamp = 0;
 #endif
 //===
 

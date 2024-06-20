@@ -209,6 +209,11 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 		if (block) {
 			auto lock = block->lock_shared_rec();
 			data->fillBlockData(pos, block->getData());
+
+			if (const auto bts = block->getTimestamp();
+					bts != BLOCK_TIMESTAMP_UNDEFINED) {
+				data->timestamp = std::max(data->timestamp, bts);
+			}
 		} else {
 			data->fillBlockData(pos, block_placeholder.data);
 		}
