@@ -69,6 +69,10 @@ void MapDrawControl::fm_init()
 {
 	g_settings->getS32NoEx("farmesh", farmesh);
 	g_settings->getS32NoEx("lodmesh", lodmesh);
+	static const auto headless_optimize = g_settings->getBool("headless_optimize");
+	if (headless_optimize)
+		lodmesh = 0;
+
 	fov_want = fov = g_settings->getFloat("fov");
 }
 
@@ -901,16 +905,21 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				Ignore if mesh doesn't exist
 			*/
 			{
-				if((!mesh && smesh_size < 0) || mesh_step != mesh->lod_step) {
+				if ((!mesh && smesh_size < 0) || mesh_step != mesh->lod_step) {
 					blocks_in_range_without_mesh++;
 					if (m_mesh_queued < maxq || range <= 1) {
+						const auto bts = block->getTimestamp();
+						if (block->mesh_requested_timestamp < bts) {
+							block->mesh_requested_timestamp = bts;
 						m_client->addUpdateMeshTask(bp, false);
 						++m_mesh_queued;
+						}
 					}
 					if (!mesh)
 						continue;
 				}
-				if(mesh_step == mesh->lod_step && block->getTimestamp() <= mesh->timestamp && !smesh_size) {
+				if (mesh_step == mesh->lod_step &&
+						block->getTimestamp() <= mesh->timestamp && !smesh_size) {
 					++blocks_in_range_without_mesh;
 					continue;
 				}
@@ -1025,10 +1034,17 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				continue;
 */
 
-			if (mesh_step != mesh->lod_step && smesh_size < 0 && (m_mesh_queued < maxq*1.2 || range <= 2)) {
+			if (mesh_step != mesh->lod_step && smesh_size < 0 &&
+					(m_mesh_queued < maxq * 1.2 || range <= 2)) {
 				m_client->addUpdateMeshTask(bp);
 				++m_mesh_queued;
-			} else if (block->getTimestamp() > mesh->timestamp + (smesh_size ? 0 : range >= 1 ? 60 : 5) && (m_mesh_queued < maxq*1.5 || range <= 2)) {
+			} else if (const auto bts = block->getTimestamp();
+					   bts != BLOCK_TIMESTAMP_UNDEFINED &&
+					   block->getTimestamp() > mesh->timestamp + (smesh_size ? 0
+																		 : range >= 1
+																				 ? 60
+																				 : 5) &&
+					   (m_mesh_queued < maxq * 1.5 || range <= 2)) {
 				if (mesh_step > 1)
 					m_client->addUpdateMeshTask(bp);
 				else

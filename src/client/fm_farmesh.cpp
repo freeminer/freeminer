@@ -84,7 +84,6 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 		const auto lock = std::lock_guard(block->far_mutex);
 		if (!block->getFarMesh(step)) {
 			MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
-			mdat.block = block.get();
 			mdat.m_blockpos = blockpos_actual;
 			auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 			block->setFarMesh(mbmsh, m_client->m_uptime);

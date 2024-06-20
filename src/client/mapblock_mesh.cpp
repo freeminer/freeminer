@@ -62,23 +62,6 @@ MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
 		fscale(pow(2, far_step + lod_step))
 {}
 
-bool MeshMakeData::fill_data()
-{
-	if (filled)
-		return filled;
-
-	if (!block)
-		block = m_client->m_env.getClientMap().getBlockNoCreateNoEx(m_blockpos);
-
-	if (!block)
-		return filled;
-	filled = true;
-	timestamp = block->getTimestamp();
-
-	return filled;
-}
-
-
 void MeshMakeData::fillBlockDataBegin(const v3bpos_t &blockpos)
 {
 	m_blockpos = blockpos;
@@ -696,10 +679,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3pos_t camera_offset):
 		m = new scene::SMesh();
 	m_enable_shaders = data->m_use_shaders;
 	m_enable_vbo = g_settings->getBool("enable_vbo");
-
-	if (!data->fill_data()) {
-		return;
-	}
 
 	v3bpos_t bp = data->m_blockpos;
 	// Only generate minimap mapblocks at even coordinates.

@@ -46,6 +46,7 @@ $0 ---cgroup=10g --address=192.168.0.1 --port=30005 tsan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DHAVE_TCMALLOC=0  tsan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
+$0 ---cmake_clang=1 -DENABLE_TIFF=0                        gperf bot
 
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
 $0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 asan play
@@ -58,6 +59,9 @@ $0 ---cmake_clang=1 -DUSE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 # sctp debug
 VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 ---cmake_add="-DSCTP_DEBUG=1" gdb server
 VERBOSE=1 $0 ---cmake_sctp=1 ---cmake_clang=1 --address=localhost --port=60001 ---cmake_add="-DSCTP_DEBUG=1" gdb bot
+
+# build debug
+$0 ---verbose -DCMAKE_VERBOSE_MAKEFILE=1 build
 
 #if you have installed Intel(R) VTune(TM) Amplifier
 $0 ---vtune_gui=1 play_vtune
@@ -177,7 +181,6 @@ sub init_config () {
         # verbose         => 1,
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
-        #world           => $script_path . 'world',
         world_clear     => 0,                                     # remove old world before start client
     };
 
@@ -279,9 +282,9 @@ our $options = {
         mg_params => {"layers" => [{"name" => "default:torch"}, {"name" => "default:glass"}]},
     },
     world_rooms => {
-        '--world'    => $script_path . 'world_rooms',
-        mg_name => 'math',
-        mg_math => {"generator" => "rooms"},
+        '--world' => $script_path . 'world_rooms',
+        mg_name   => 'math',
+        mg_math   => {"generator" => "rooms"},
     },
     mg_math_tglag => {
         '--world'         => $script_path . 'world_math_tglad',
@@ -363,23 +366,24 @@ $commands = {
           (map { $g->{build_names}{$_} } sort keys %{$g->{build_names}});
     },
     env => sub {
-        join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}};
+        'env ' . join ' ', $config->{env}, map { $config->{envs}{$_} } sort keys %{$config->{envs}};
     },
     build_dir  => sub { "$config->{root_prefix}$config->{build_prefix}" . $commands->{build_name}() },
     executable => sub { $commands->{build_dir}() . "/" . $config->{executable_name} },
     world_name => sub {
         return $config->{world} if defined $config->{world};
-    	my $name = 'world';
-    	$name .= '_' . $options->{opt}{mg_name} if $options->{opt}{mg_name};
-	    $name .= '_' .$config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math}{generator};
-    	$config->{world} = $script_path . $name;
-    	$config->{world} = $config->{logdir} . '/' . $name if $config->{world_local};
-    	$config->{world};
+        my $name = 'world';
+        $name .= '_' . $options->{opt}{mg_name}                   if $options->{opt}{mg_name};
+        $name .= '_' . $config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math}{generator};
+        $config->{world} = $script_path . $name;
+        $config->{world} = $config->{logdir} . '/' . $name if $config->{world_local};
+        $config->{world};
     },
 
     init          => sub { init_config(); 0 },
     '---'         => 'init',
     cmake_prepare => sub {
+        $config->{cmake_clang} //= 1 if $config->{clang_version};
         $config->{clang_version} = $config->{cmake_clang} if $config->{cmake_clang} and $config->{cmake_clang} ne '1';
         $config->{cmake_libcxx} //= 1                     if $config->{cmake_clang};
         $g->{build_names}{x_clang} = $config->{clang_version} if $config->{cmake_clang};
@@ -391,7 +395,7 @@ $commands = {
         file_append(
             "$config->{logdir}/run.sh",
             join "\n",
-            qq{# } . join(' ', $0, map{/[\s"]/ ? "'" . $_ . "'" : $_} @ARGV),
+            qq{# } . join(' ', $0, map { /[\s"]/ ? "'" . $_ . "'" : $_ } @ARGV),
             qq{cd "$build_dir"},
             ""
         );
@@ -444,27 +448,30 @@ $commands = {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
-        return sytee qq{nice cmake --build . -- -j $config->{makej}}, qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
+        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej}},
+          qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
-	    $commands->{world_name}();
-        sy qq{rm -rf $config->{world} }          if $config->{world_clear} and $config->{world};
+        $commands->{world_name}();
+        sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
         return
-            sytee $commands->{env}()
-          . qq{ $config->{runner} @_ }
-          . $commands->{executable}()
-          . qq{ $config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-          . options_make([qw(gameid world address port config autoexit verbose trace)])
-          . qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
+          sytee $config->{runner},
+          $commands->{env}(),
+          qq{@_},
+          $commands->{executable}(),
+          qq{$config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
+          options_make([qw(gameid world address port config autoexit verbose trace)]),
+          qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
         0;
     },
     run_test => sub {
-        sy $commands->{env}()
-          . qq{ $config->{runner} @_ }
-          . $commands->{executable}()
-          . qq{ --run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log }
-          . options_make([qw(verbose trace)]);
+        sy $config->{runner},
+          $commands->{env}(),
+          qq{@_},
+          $commands->{executable}(),
+          qq{--run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log},
+          options_make([qw(verbose trace)]);
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1,},
     run_bot         => ['set_bot', 'set_client', 'run_single'],
@@ -484,17 +491,19 @@ $commands = {
     },
     run_server_simple => sub {
         my $fork = $config->{server_bg} ? '&' : '';
-        sytee $commands->{env}() . qq{ $config->{runner} @_ } . $commands->{executable}() . qq{ $fork},
+        sytee $config->{runner}, $commands->{env}(), qq{@_}, $commands->{executable}(), $fork,
           qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server => sub {
-        my $cmd =
-            $commands->{env}()
-          . qq{ $config->{runner} @_ }
-          . $commands->{executable}()
-          . qq{ --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-          . options_make([qw(gameid world port config autoexit verbose)])
-          . qq{ $config->{run_add}};
+        my $cmd = join ' ',
+          $config->{runner},
+          $commands->{env}(),
+          qq{@_},
+          $commands->{executable}(),
+          qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
+          options_make([qw(gameid world port config autoexit verbose)]),
+          qq{$config->{run_add}};
+
         if ($config->{server_bg}) {
             return sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
         } else {
@@ -508,12 +517,14 @@ $commands = {
             local $config->{address} = '::1' if not $config->{address};
             for ($config->{clients_start} .. $config->{clients_num}) {
                 sleep $config->{clients_spawn_sleep} // 0.2;
-                sf $commands->{env}()
-                  . qq{ $config->{runner} @_ }
-                  . $commands->{executable}()
-                  . qq{ --name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log }
-                  . options_make([qw( address gameid world address port config verbose)])
-                  . qq{ $config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
+                sf
+                  $config->{runner},
+                  $commands->{env}(),
+                  qq{@_},
+                  $commands->{executable}(),
+                  qq{--name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
+                  options_make([qw( address gameid world address port config verbose)]),
+                  qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
             sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
         }
@@ -621,15 +632,6 @@ our $tasks = {
             '---cmake_usan' => 1,
         },
     ],
-    gperf => [
-        sub {
-            $g->{keep_config} = 1;
-            $g->{build_names}{san} = 'gperf';
-            0;
-        }, {
-            '---cmake_gperf' => 1,
-        },
-    ],
     (
         map {
             'valgrind_' . $_ => [
@@ -670,6 +672,7 @@ our $tasks = {
             ' env ASAN_OPTIONS=abort_on_error=1 '
           . $config->{runner}
           . $config->{gdb}
+          . q{ -ex 'set debuginfod enabled on' }
           . q{ -ex 'run' -ex 't a a bt' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
           . q{ --args };
@@ -711,16 +714,8 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         'clients',
     ],
 
-    gperf => [
-        'gperf_prepare',
-        sub {
-            $g->{keep_config} = 1;
-            push @$task_run, 'gperf_report';
-            0;
-        }
-    ],
-
     gperf_prepare => [
+        'debug',
         {'---cmake_gperf' => 1,},
         sub {
             $g->{keep_config} = 1;
@@ -739,6 +734,22 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         }
     ],
 
+    gperf => [
+        'gperf_prepare',
+        sub {
+            #$g->{keep_config}      = 1;
+            #$g->{build_names}{san} = 'gperf';
+            my ($libprofiler) = `ls -1 /usr/lib/*/libprofiler.so | head -n1`;
+            $libprofiler =~ s/\s+$//;
+            if ($libprofiler and -f $libprofiler) {
+                $config->{envs}{gperf} .= " LD_PRELOAD=$libprofiler";
+            }
+            push @$task_run, 'gperf_report';
+            0;
+        }, 
+        # {'---cmake_gperf' => 1,},
+    ],
+
     stress_gperf => [
         {'---server_bg' => 1,},
         'gperf',
@@ -746,21 +757,24 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         ['sleep', 10], {'---cmake_gperf' => 0,}, 'clients', 'gperf_report',
     ],
 
-    gperf_report => sub {
-        # sytee 'env | grep PPROF_PATH', "$config->{logdir}/tmp";
-        sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} } . $commands->{executable}() . qq{ $config->{logdir}/heap.out*},
-          "$config->{logdir}/gperf.heap.out"
-          if $config->{gperf_heapprofile};
-        if ($config->{gperf_cpuprofile}) {
-            sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} } . $commands->{executable}() . qq{ $config->{logdir}/cpu.out },
-              "$config->{logdir}/gperf.cpu.out";
-            sy qq{$config->{PPROF_PATH} --callgrind }
-              . $commands->{executable}()
-              . qq{ $config->{logdir}/cpu.out > $config->{logdir}/pprof.callgrind };
-            say qq{kcachegrind $config->{logdir}/pprof.callgrind};
+    gperf_report => [
+        'gperf_prepare',
+        sub {
+            # sytee 'env | grep PPROF_PATH', "$config->{logdir}/tmp";
+            sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} } . $commands->{executable}() . qq{ $config->{logdir}/heap.out*},
+              "$config->{logdir}/gperf.heap.out"
+              if $config->{gperf_heapprofile};
+            if ($config->{gperf_cpuprofile}) {
+                sytee qq{$config->{PPROF_PATH} $config->{gperf_mode} } . $commands->{executable}() . qq{ $config->{logdir}/cpu.out },
+                  "$config->{logdir}/gperf.cpu.out";
+                sy qq{$config->{PPROF_PATH} --callgrind }
+                  . $commands->{executable}()
+                  . qq{ $config->{logdir}/cpu.out > $config->{logdir}/pprof.callgrind };
+                say qq{kcachegrind $config->{logdir}/pprof.callgrind};
+            }
+            return 0;
         }
-        return 0;
-    },
+    ],
 
     play => [
         'set_client',
@@ -770,7 +784,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         },
         'build',
         $config->{run_task}
-    ],   
+    ],
     fly            => [{'---options_int' => 'fly,forward',}, 'build_client', 'run_single'],
     timelapse_stay => [
         'timelapse', {
@@ -779,7 +793,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         },
         'build_client',
         'run_single',
-    ],    
+    ],
 
     timelapse => [
         {'---options_int' => 'timelapse',},

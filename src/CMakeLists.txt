@@ -102,22 +102,32 @@ if(NOT MSVC)
 	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
 		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+		if (NOT BUILD_SHARED_LIBS)
+			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+		endif()
+
 		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
 		else()
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
 		endif()
 
+
 		if(ENABLE_GPERF)
 			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
 		endif()
 
+		if (NOT BUILD_SHARED_LIBS)
+			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+		endif()
+
 		if (PROFILER_LIBRARY)
+			# set(PLATFORM_LIBS ${PLATFORM_LIBS} -Wl,--no-as-needed ${PROFILER_LIBRARY} -Wl,--as-needed)
 			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY})
 		endif()
 
 		if (TCMALLOC_LIBRARY)
-    		set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
+			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
 			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 		endif()
 
@@ -377,6 +387,7 @@ if(ENABLE_LEVELDB)
 		set(SNAPPY_BUILD_TESTS 0 CACHE INTERNAL "")
 		set(SNAPPY_BUILD_BENCHMARKS 0 CACHE INTERNAL "")
 		set(SNAPPY_INSTALL 0 CACHE INTERNAL "")
+		set(HAVE_TCMALLOC 0 CACHE INTERNAL "")
 
 		add_subdirectory(${PROJECT_SOURCE_DIR}/external/snappy)
 		set(SNAPPY_LIBRARY snappy)
@@ -712,7 +723,8 @@ endif()
 #add_subdirectory(external/TinyTIFF/src)
 #set(TINYTIFF_LIRARY TinyTIFF)
 
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeLists.txt)
+option(ENABLE_TIFF "Enable tiff (feotiff for mapgen earth)" 1)
+if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeLists.txt)
 	set(tiff-tools 0 CACHE INTERNAL "")
 	set(tiff-tests 0 CACHE INTERNAL "")
 	set(tiff-docs 0 CACHE INTERNAL "")

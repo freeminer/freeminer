@@ -54,6 +54,9 @@ const char *g_build_info =
 #if	ENABLE_THREADS
 	"\n" "ENABLE_THREADS"
 #endif
+#if	USE_GPERF
+	"\n" "USE_GPERF"
+#endif
 #if	USE_MULTI
 	"\n" "USE_MULTI"
 #endif

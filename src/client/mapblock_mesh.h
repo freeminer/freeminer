@@ -63,13 +63,7 @@ struct MeshMakeData
 	int range = 1;
 	bool no_draw = false;
 	unsigned int timestamp = 0;
-	MapBlock * block = nullptr;
-	//Map & map;
-	//MapDrawControl& draw_control;
 	bool debug = false;
-	bool filled = false;
-	void fill(MapBlock *block_);
-	bool fill_data();
 
 	explicit MeshMakeData(Client *client, bool use_shaders
 			, int lod_step = 0

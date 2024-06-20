@@ -15,6 +15,7 @@
 #cmakedefine01 MINETEST_TRANSPORT
 #cmakedefine01 STATIC_BUILD
 #cmakedefine01 USE_ENET
+#cmakedefine01 USE_GPERF
 #cmakedefine01 USE_ICONV
 #cmakedefine01 USE_IPV4_DEFAULT
 #cmakedefine01 USE_MANDELBULBER

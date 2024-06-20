@@ -641,9 +641,6 @@ void Server::start()
 			std::cerr << line << std::endl;
 	}
 
-
-
-// == fm:
 	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash
 				 << "\033[0m \t"
 #if ENABLE_THREADS
@@ -651,6 +648,24 @@ void Server::start()
 #endif
 #ifndef NDEBUG
 				 << " debug \t"
+#endif
+#if USE_GPERF
+				<< " gperf \t"
+#endif
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+				<< " asan \t"
+#endif
+#endif
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+				<< " tsan \t"
+#endif
+#endif
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+				<< " msan \t"
+#endif
 #endif
 #if USE_MULTI
 				 << " multi: \t"
