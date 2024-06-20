@@ -1038,7 +1038,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 			if (mesh_step != mesh->lod_step && smesh_size < 0 &&
 					(m_mesh_queued < maxq * 1.2 || range <= 2)) {
-				DUMP(bp, mesh_step, mesh->lod_step, range);
 				m_client->addUpdateMeshTask(bp);
 				++m_mesh_queued;
 			} else if (const auto bts = block->getTimestamp();
