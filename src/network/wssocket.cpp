@@ -141,8 +141,7 @@ void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 					 << con->get_request().get_method() << " "
 					 << con->get_request().get_uri()
 					 //<< " " << res.size()
-					 << " " << body.size() 
-					 << "\n";
+					 << " " << body.size() << "\n";
 
 		if (!body.empty()) {
 			con->set_body(std::move(body));
@@ -217,8 +216,8 @@ void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_
 		websocketpp::lib::error_code ec;
 		server.send(hdl, "PROXY OK", msg->get_opcode(), ec);
 		if (ec) {
-			cs << "Echo failed because: "
-			   << "(" << ec.value() << ":" << ec.message() << ")" << '\n';
+			cs << "Echo failed because: " << "(" << ec.value() << ":" << ec.message()
+			   << ")" << '\n';
 		}
 		return;
 	}
@@ -465,8 +464,10 @@ void WSSocket::setTimeoutMs(int timeout_ms)
 
 bool WSSocket::WaitData(int timeout_ms)
 {
-	if (!ws_serve)
+	if (!ws_serve) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(m_timeout_ms));
 		return false;
+	}
 	for (int ms = 0; ms < timeout_ms; ++ms) {
 		if (server.poll_one())
 			server.run_one();
