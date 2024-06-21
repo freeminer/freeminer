@@ -888,6 +888,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		if (!block)
 			continue;
 
+		block->resetUsageTimer();
+
 		const auto mesh_step =
 				getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp);
 	
@@ -1023,9 +1025,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					continue;
 				}
 
-
-			// This block is in range. Reset usage timer.
-			block->resetUsageTimer();
 
 			// Limit block count in case of a sudden increase
 			blocks_in_range_with_mesh++;
