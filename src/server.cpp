@@ -4275,10 +4275,12 @@ v3f Server::findSpawnPos(const std::string &player_name)
 
 	pos_t find = 0;
 	g_settings->getS16NoEx("static_spawnpoint_find", find);
-	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
-		return nodeposf * BS;
-	} else if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposf) && !find) {
-		return nodeposf * BS;
+	if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposf)) {
+		if (!find)
+			return nodeposf * BS;
+	} else if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf)) {
+		if (!find)
+			return nodeposf * BS;
 	}
 
 	pos_t min_air_height = 3;
