@@ -732,6 +732,7 @@ if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeList
 	set(TIFF_LIRARY TIFF::tiff)
 	set(TIFF_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/libtiff/libtiff ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/libtiff)
 	include_directories(BEFORE SYSTEM ${TIFF_INCLUDE_DIR})
+	message(STATUS "Using tiff: ${TIFF_INCLUDE_DIR} ${TIFF_LIRARY}")
 	set(USE_TIFF 1)
 endif()
 
