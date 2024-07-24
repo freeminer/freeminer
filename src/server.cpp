@@ -641,13 +641,13 @@ void Server::start()
 			std::cerr << line << std::endl;
 	}
 
-	actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash
-				 << "\033[0m \t"
+   actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash
+				<< "\033[0m \t"
 #if ENABLE_THREADS
-				 << " threads \t"
+				<< " threads \t"
 #endif
 #ifndef NDEBUG
-				 << " debug \t"
+				<< " debug \t"
 #endif
 #if USE_GPERF
 				<< " gperf \t"
@@ -668,51 +668,47 @@ void Server::start()
 #endif
 #endif
 #if USE_MULTI
-				 << " multi: \t"
+				<< " multi: \t"
 #endif
 #if MINETEST_PROTO && MINETEST_TRANSPORT
-				 << " mt " << SERVER_PROTOCOL_VERSION_MIN << "-"
-				 << SERVER_PROTOCOL_VERSION_MAX << "\t"
+				<< " mt " << SERVER_PROTOCOL_VERSION_MIN << "-"
+				<< SERVER_PROTOCOL_VERSION_MAX << "\t"
 #endif
 #if USE_SCTP
-				 << " sctp \t"
+				<< " sctp \t"
 #endif
 #if USE_ENET
-				 << " enet \t"
+				<< " enet \t"
 #endif
 #if USE_POS32
 			<< " POS32 \t"
 #endif
 #if USE_WEBSOCKET
-				 << " ws \t"
+				<< " ws \t"
 #endif
 #if USE_WEBSOCKET_SCTP
-				 << " wssctp \t"
+				<< " wssctp \t"
 #endif
-				 << " cpp=" << __cplusplus << " \t"
+				<< " cpp=" << __cplusplus << " \t"
 
-				 << " cores=";
-	auto cores_online = std::thread::hardware_concurrency(),
-		 cores_avail = Thread::getNumberOfProcessors();
-	if (cores_online != cores_avail)
-		actionstream << cores_online << "/";
-	actionstream << cores_avail
+				<< " cores=";
+   auto cores_online = std::thread::hardware_concurrency(),
+		cores_avail = Thread::getNumberOfProcessors();
+   if (cores_online != cores_avail)
+	   actionstream << cores_online << "/";
+   actionstream << cores_avail
 
 #if __ANDROID__
-				 << " android=" << porting::android_version_sdk_int
+				<< " android=" << porting::android_version_sdk_int
 #endif
-				 << std::endl;
-// ==
+				<< std::endl;
 
-
-
-
-	actionstream << "World at [" << m_path_world << "]" << std::endl;
-	actionstream << "Server for gameid=\"" << m_gamespec.id
-			<< "\" mapgen=\"" << Mapgen::getMapgenName(m_emerge->mgparams->mgtype)
-			<< "\" listening on ";
-	m_bind_addr.print(actionstream);
-	actionstream << "." << std::endl;
+   actionstream << "World at [" << m_path_world << "]" << std::endl;
+   actionstream << "Server for gameid=\"" << m_gamespec.id << "\" mapgen=\""
+				<< Mapgen::getMapgenName(m_emerge->mgparams->mgtype)
+				<< "\" listening on ";
+   m_bind_addr.print(actionstream);
+   actionstream << "." << std::endl;
 }
 
 void Server::stop()
@@ -4286,10 +4282,12 @@ v3opos_t Server::findSpawnPos(const std::string &player_name)
 
 	pos_t find = 0;
 	g_settings->getPosNoEx("static_spawnpoint_find", find);
-	if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf) && !find) {
-		return nodeposf * BS;
-	} else if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposf) && !find) {
-		return nodeposf * BS;
+	if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposf)) {
+		if (!find)
+			return nodeposf * BS;
+	} else if (g_settings->getV3FNoEx("static_spawnpoint", nodeposf)) {
+		if (!find)
+			return nodeposf * BS;
 	}
 
 	pos_t min_air_height = 3;
