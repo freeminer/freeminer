@@ -126,7 +126,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	// unordered_map_v3pos<bool> must_reflow, must_reflow_second, must_reflow_third;
 	std::list<v3pos_t> must_reflow, must_reflow_second, must_reflow_third;
 	// List of MapBlocks that will require a lighting update (due to lava)
-	int falling = 0;
+	std::map<v3bpos_t, size_t> falling;
 	uint16_t loop_rand = myrand();
 
 	unordered_set_v3bpos blocks_lighting_update;
@@ -400,11 +400,16 @@ NEXT_LIQUID:;
 
 		// fill bottom block
 		if (neighbors[D_BOTTOM].liquid) {
-			if (falling++ < 100 && !liquid_levels[D_BOTTOM] &&
+			const auto bpos = getNodeBlockPos(neighbors[D_SELF].pos);
+			if (falling[bpos] <= 10 && !liquid_levels[D_BOTTOM] &&
 					((ItemGroupList)nodemgr->get(liquid_kind).groups)["falling_node"]) {
+				++falling[bpos];
 				fall_down = true;
- 				m_server->getEnv().nodeUpdate(neighbors[D_SELF].pos, 2);
-				goto NEXT_LIQUID;
+				if (m_server->getEnv().nodeUpdate(neighbors[D_SELF].pos, 2)) {
+					goto NEXT_LIQUID;
+				} else {
+					falling[bpos] += 100;
+				}
 			}
 
 			liquid_levels_want[D_BOTTOM] = level_avg > level_max	 ? level_avg
@@ -430,8 +435,7 @@ NEXT_LIQUID:;
 				total_level < relax_want && can_liquid_same_level >= relax + 1) {
 			regenerated += relax_want - total_level;
 #if LIQUID_DEBUG
-			infostream << " relax_up: "
-					   << " total_level=" << (int)total_level << " to=> "
+			infostream << " relax_up: " << " total_level=" << (int)total_level << " to=> "
 					   << int(relax_want) << std::endl;
 #endif
 			total_level = relax_want;
@@ -442,8 +446,8 @@ NEXT_LIQUID:;
 				!neighbors[D_BOTTOM].node && !(loopcount % 3)) {
 			--total_level;
 #if LIQUID_DEBUG
-			infostream << " above unloaded fix: "
-					   << " total_level=" << (int)total_level << std::endl;
+			infostream << " above unloaded fix: " << " total_level=" << (int)total_level
+					   << std::endl;
 #endif
 		}
 
@@ -473,9 +477,8 @@ NEXT_LIQUID:;
 				want_level <= 0 && total_level <= (can_liquid_same_level - relax) &&
 				can_liquid_same_level >= relax + 1) {
 #if LIQUID_DEBUG
-			infostream << " relax_down: "
-					   << " total_level WAS=" << (int)total_level << " to => 0"
-					   << std::endl;
+			infostream << " relax_down: " << " total_level WAS=" << (int)total_level
+					   << " to => 0" << std::endl;
 #endif
 			regenerated -= total_level;
 			total_level = 0;
@@ -566,8 +569,8 @@ NEXT_LIQUID:;
 				--liquid_levels_want[D_TOP];
 				++liquid_levels_want[D_BOTTOM];
 #if LIQUID_DEBUG
-				infostream << " bottom1 pressure+: "
-						   << " bot=" << (int)liquid_levels_want[D_BOTTOM]
+				infostream << " bottom1 pressure+: " << " bot="
+						   << (int)liquid_levels_want[D_BOTTOM]
 						   << " slf=" << (int)liquid_levels_want[D_SELF]
 						   << " top=" << (int)liquid_levels_want[D_TOP]
 						   << " total_level=" << (int)total_level << std::endl;
@@ -580,8 +583,8 @@ NEXT_LIQUID:;
 					--liquid_levels_want[D_SELF];
 					++liquid_levels_want[D_BOTTOM];
 #if LIQUID_DEBUG
-					infostream << " bottom2 pressure+: "
-							   << " bot=" << (int)liquid_levels_want[D_BOTTOM]
+					infostream << " bottom2 pressure+: " << " bot="
+							   << (int)liquid_levels_want[D_BOTTOM]
 							   << " slf=" << (int)liquid_levels_want[D_SELF]
 							   << " top=" << (int)liquid_levels_want[D_TOP]
 							   << " total_level=" << (int)total_level << std::endl;
@@ -594,8 +597,8 @@ NEXT_LIQUID:;
 					--liquid_levels_want[D_TOP];
 					++liquid_levels_want[D_SELF];
 #if LIQUID_DEBUG
-					infostream << " bottom3 pressure+: "
-							   << " bot=" << (int)liquid_levels_want[D_BOTTOM]
+					infostream << " bottom3 pressure+: " << " bot="
+							   << (int)liquid_levels_want[D_BOTTOM]
 							   << " slf=" << (int)liquid_levels_want[D_SELF]
 							   << " top=" << (int)liquid_levels_want[D_TOP]
 							   << " total_level=" << (int)total_level << std::endl;
@@ -606,9 +609,9 @@ NEXT_LIQUID:;
 			if (liquid_levels_want[D_TOP] > level_max && relax && total_level <= 0 &&
 					level_avg > level_max && liquid_levels_want[D_TOP] < level_avg) {
 #if LIQUID_DEBUG
-				infostream << " top pressure relax: "
-						   << " top=" << (int)liquid_levels_want[D_TOP] << " to=>"
-						   << level_avg << std::endl;
+				infostream << " top pressure relax: " << " top="
+						   << (int)liquid_levels_want[D_TOP] << " to=>" << level_avg
+						   << std::endl;
 #endif
 
 				// regenerated += level_avg - liquid_levels_want[D_TOP];
@@ -620,8 +623,7 @@ NEXT_LIQUID:;
 
 #if LIQUID_DEBUG
 		if (total_level > 0)
-			infostream << " rest 1: "
-					   << " wtop=" << (int)liquid_levels_want[D_TOP]
+			infostream << " rest 1: " << " wtop=" << (int)liquid_levels_want[D_TOP]
 					   << " total_level=" << (int)total_level << std::endl;
 #endif
 
@@ -643,8 +645,7 @@ NEXT_LIQUID:;
 							: total_level;
 #if LIQUID_DEBUG
 			if (total_level > 0)
-				infostream << " rest 2: "
-						   << " wself=" << (int)liquid_levels_want[D_SELF]
+				infostream << " rest 2: " << " wself=" << (int)liquid_levels_want[D_SELF]
 						   << " total_level=" << (int)total_level << " add=" << (int)add
 						   << std::endl;
 #endif
@@ -655,8 +656,7 @@ NEXT_LIQUID:;
 
 #if LIQUID_DEBUG
 		if (total_level > 0)
-			infostream << " rest 3: "
-					   << " total_level=" << (int)total_level << std::endl;
+			infostream << " rest 3: " << " total_level=" << (int)total_level << std::endl;
 #endif
 
 		for (uint8_t ii = 0; ii < 7; ii++) { // infinity and cave flood optimization
@@ -701,8 +701,7 @@ NEXT_LIQUID:;
 
 #if LIQUID_DEBUG
 		if (debug)
-			infostream << " dpress="
-					   << " bot=" << (int)liquid_levels_want[D_BOTTOM]
+			infostream << " dpress=" << " bot=" << (int)liquid_levels_want[D_BOTTOM]
 					   << " slf=" << (int)liquid_levels_want[D_SELF]
 					   << " top=" << (int)liquid_levels_want[D_TOP] << std::endl;
 #endif
@@ -781,7 +780,7 @@ NEXT_LIQUID:;
 		}
 
 		if (fall_down) {
-			m_server->getEnv().nodeUpdate(neighbors[D_BOTTOM].pos, 1);
+			//? m_server->getEnv().nodeUpdate(neighbors[D_BOTTOM].pos, 1);
 		}
 
 #if LIQUID_DEBUG

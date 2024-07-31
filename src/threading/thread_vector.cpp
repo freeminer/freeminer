@@ -1,4 +1,6 @@
 #include "thread_vector.h"
+#include <mutex>
+#include <shared_mutex>
 #include "fm_porting.h"
 #include "log.h"
 #include "porting.h"
@@ -53,14 +55,18 @@ void thread_vector::stop()
 void thread_vector::join()
 {
 	stop();
-	for (auto &worker : workers) {
-		try {
-			if (worker.joinable()) {
-				worker.join();
+	{
+		const auto lock = std::shared_lock(workers_mutex);
+		for (auto &worker : workers) {
+			try {
+				if (worker.joinable()) {
+					worker.join();
+				}
+			} catch (...) {
 			}
-		} catch (...) {
 		}
 	}
+	const auto lock = std::unique_lock(workers_mutex);
 	workers.clear();
 }
 
@@ -71,6 +77,7 @@ void thread_vector::restart(size_t n)
 }
 void thread_vector::reanimate(size_t n)
 {
+	const auto lock = std::shared_lock(workers_mutex);
 	if (workers.empty()) {
 		start(n);
 	}
@@ -91,26 +98,32 @@ bool thread_vector::stopRequested()
 {
 	return request_stop;
 }
+
 bool thread_vector::isRunning()
 {
+	const auto lock = std::shared_lock(workers_mutex);
 	return !workers.empty();
 }
+
 void thread_vector::wait()
 {
 	join();
-};
+}
+
 void thread_vector::kill()
 {
 	join();
-};
+}
+
 void *thread_vector::run()
 {
 	return nullptr;
-};
+}
 
 bool thread_vector::isCurrentThread()
 {
 	auto thread_me = std::hash<std::thread::id>()(std::this_thread::get_id());
+	const auto lock = std::shared_lock(workers_mutex);
 	for (auto &worker : workers)
 		if (thread_me == std::hash<std::thread::id>()(worker.get_id()))
 			return true;

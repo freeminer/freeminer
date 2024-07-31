@@ -43,10 +43,18 @@ void ActiveObjectMgr::step(
 	std::vector<u16> ids = getAllIds();
 
 	for (u16 id : ids) {
+		auto it = getActiveObject(id);
+		if (!it) {
+			continue;
+		}
+		f(it);
+
+		/*
 		auto it = m_active_objects.find(id);
 		if (it == m_active_objects.end())
 			continue; // obj was removed
 		f(it->second);
+		*/
 	}
 
 	m_active_objects_deleted.clear();

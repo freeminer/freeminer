@@ -68,6 +68,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
 		m_nothing_to_send_pause_timer = 0;
+		m_nearest_unsent_d = 0;
 	}
 
 	if (m_nothing_to_send_pause_timer >= 0)

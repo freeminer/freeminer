@@ -374,7 +374,7 @@ $commands = {
         return $config->{world} if defined $config->{world};
         my $name = 'world';
         $name .= '_' . $options->{opt}{mg_name}                   if $options->{opt}{mg_name};
-        $name .= '_' . $config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math}{generator};
+        $name .= '_' . $config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math} && $config->{config_pass}{mg_math}{generator};
         $config->{world} = $script_path . $name;
         $config->{world} = $config->{logdir} . '/' . $name if $config->{world_local};
         $config->{world};
@@ -475,16 +475,6 @@ $commands = {
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1,},
     run_bot         => ['set_bot', 'set_client', 'run_single'],
-    run_single_tsan => sub {
-        local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-        local $config->{cmake_leveldb} //= 0          if $config->{tsan_leveldb_fix};
-        local $config->{env} = $config->{env} . " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
-        local $options->{opt}{enable_minimap} = 0;    # too unsafe
-                                                      # FATAL: ThreadSanitizer: unexpected memory mapping :
-        sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
-        commands_run($config->{run_task});
-    },
-
     valgrind => sub {
         local $config->{runner} = $config->{runner} . " valgrind @_";
         commands_run($config->{run_task});
@@ -596,7 +586,7 @@ our $tasks = {
         sub {
             $g->{keep_config}          = 1;
             $g->{build_names}{san}     = 'tsan';
-            $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
+            #$config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
             $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
             $config->{envs}{tsan} = " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
             #? local $options->{opt}{enable_minimap} = 0;    # too unsafe
@@ -963,7 +953,7 @@ sub options_make(;$$) {
         }
     }
     $rmm->{$_} = $options->{pass}{$_}       for sort keys %{$options->{pass}};
-    $rm->{$_}  = $config->{config_pass}{$_} for sort keys %{$config->{config_pass}};
+    $rm->{$_}  = ref $config->{config_pass}{$_} ? "'" . ${json($config->{config_pass}{$_})} . "'" : $config->{config_pass}{$_} for sort keys %{$config->{config_pass}};
     return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_='$rm->{$_}'"} sort keys %$rm);
 }
 

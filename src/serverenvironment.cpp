@@ -577,6 +577,10 @@ ServerEnvironment::~ServerEnvironment()
 		deactivateFarObjects(true);
 	} catch (ModError &e) {
 		m_server->addShutdownError(e);
+	} catch (const std::exception & ex) {
+		errorstream << "Shutdown exception: " << ex.what() << "\n";
+	} catch (...) {
+		errorstream << "Shutdown unknown exception: " << "\n";
 	}
 
 
