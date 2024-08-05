@@ -96,7 +96,7 @@ $0 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---ffmpeg_add_i='-r 120' ---
 #fly
 $0 ----server_optimize ----far fly
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(10000,30030,-22700)' fly
-$0 ---options_bot=fall1 -continuous_forward=1 bot
+$0 ----fall1 -continuous_forward=1 bot
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -165,7 +165,6 @@ sub init_config () {
         # make_add     => '',
         makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
         name            => 'bot',
-        options_bot     => 'bot,bot_random',
         options_display => ($ENV{DISPLAY} ? '' : 'headless'),
         port            => 60001,
         root_path       => $root_path,

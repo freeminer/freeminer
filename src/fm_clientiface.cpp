@@ -64,16 +64,14 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	m_nearest_unsent_reset_timer += dtime;
 	m_time_from_building += dtime;
 
+/*
 	if (m_nearest_unsent_reset) {
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
 		m_nothing_to_send_pause_timer = 0;
 		m_nearest_unsent_d = 0;
 	}
-
-	if (m_nothing_to_send_pause_timer >= 0)
-		return 0;
-
+*/
 	RemotePlayer *player = env->getPlayer(peer_id);
 	// This can happen sometimes; clients and players are not in perfect sync.
 	if (player == NULL)
@@ -101,7 +99,8 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	if (playerspeed.getLength() > 1.0 * BS)
 		playerspeeddir = playerspeed / playerspeed.getLength();
 	// Predict to next block
-	v3opos_t playerpos_predicted = playerpos + v3fToOpos(playerspeeddir) * MAP_BLOCKSIZE * BS;
+	v3opos_t playerpos_predicted =
+			playerpos + v3fToOpos(playerspeeddir) * MAP_BLOCKSIZE * BS;
 
 	v3pos_t center_nodepos = floatToInt(playerpos_predicted, BS);
 
@@ -123,12 +122,15 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	if (m_last_center != center) {
 		m_last_center = center;
 		m_nearest_unsent_reset_timer = 999;
+		m_nothing_to_send_pause_timer = -1;
 	}
 
-	if (m_last_direction.getDistanceFrom(camera_dir) > 0.4) { // 1 = 90deg
+	/*
+	if (m_last_direction.getDistanceFrom(camera_dir) > 0.4) { // 1 = 90degm_nothing_to_send_pause_timer
 		m_last_direction = camera_dir;
 		m_nearest_unsent_reset_timer = 999;
 	}
+    */
 
 	/*infostream<<"m_nearest_unsent_reset_timer="
 			<<m_nearest_unsent_reset_timer<<std::endl;*/
@@ -141,8 +143,12 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		// infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
 
+	if (m_nothing_to_send_pause_timer >= 0) {
+		return 0;
+	}
+
 	// s16 last_nearest_unsent_d = m_nearest_unsent_d;
-	s16 d_start = m_nearest_unsent_d;
+	auto d_start = m_nearest_unsent_d.load();
 
 	// infostream<<"d_start="<<d_start<<std::endl;
 
@@ -155,6 +161,8 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 		Decrease send rate if player is building stuff.
 	*/
+
+#if 0
 	thread_local static const auto full_block_send_enable_min_time_from_building =
 			g_settings->getFloat("full_block_send_enable_min_time_from_building");
 	if (m_time_from_building < full_block_send_enable_min_time_from_building) {
@@ -170,7 +178,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		m_nearest_unsent_reset_timer = 999; // magical number more than ^ other number 120
 											// - need to reset d on next iteration
 	}
-
+#endif
 	/*
 		Number of blocks sending + number of blocks selected for sending
 	*/
@@ -257,9 +265,12 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		occlusion_culling_enabled = false;
 
 	unordered_map_v3pos<bool> occlude_cache;
-
 	s16 d;
-	for (d = d_start; d <= d_max; d++) {
+	size_t block_skip_retry = 0;
+	s16 first_skipped_d = 0;
+	constexpr auto always_first_ds = 1;
+	for (d = 0; d <= d_max;
+			(d_start > always_first_ds && d == always_first_ds) ? d = d_start : ++d) {
 		/*errorstream<<"checking d="<<d<<" for "
 				<<server->getPlayerName(peer_id)<<std::endl;*/
 		// infostream<<"RemoteClient::SendBlocks(): d="<<d<<" d_start="<<d_start<<"
@@ -351,26 +362,24 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				FIXME This only works if the client uses a small enough
 				FOV setting. The default of 72 degrees is fine.
 			*/
-
+			/*
 			if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
 									d_blocks_in_sight) == false) {
 				// DUMP(p, can_skip, "nosight");
 				continue;
 			}
-
+			*/
 			/*
 				Don't send already sent blocks
 			*/
-			unsigned int block_sent = 0;
+			double block_sent = 0;
 			{
-				auto lock = m_blocks_sent.lock_unique_rec();
-				block_sent = m_blocks_sent.find(p) != m_blocks_sent.end()
-									 ? m_blocks_sent.get(p)
-									 : 0;
+				auto lock = m_blocks_sent.lock_shared_rec();
+				block_sent = m_blocks_sent.contains(p) ? m_blocks_sent.get(p) : 0;
 			}
 
-			if (block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent +
-												  (d <= 2 ? 1 : d * d * d) >
+			if (block_sent > 0 &&
+					(/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d * d) >
 										  m_uptime)) {
 				// DUMP(p, block_sent, d, "ddd");
 				continue;
@@ -382,13 +391,13 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 			MapBlock *block;
 			{
-#if !ENABLE_THREADS
-				auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
 				auto lock = env->getMap().m_blocks.try_lock_shared_rec();
-				if (!lock->owns_lock())
+				if (!lock->owns_lock()) {
+					++block_skip_retry;
+					if (!first_skipped_d && d > always_first_ds)
+						first_skipped_d = d;
 					continue;
-
+				}
 				block = env->getMap().getBlockNoCreateNoEx(p);
 			}
 
@@ -413,7 +422,8 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 					// No occlusion culling when free_move is on and camera is
 					// inside ground
-					cpn += v3pos_t(MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
+					cpn += v3pos_t(
+							MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
 
 					float step = 1;
 					float stepfac = 1.3;
@@ -439,21 +449,25 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, -bs2, bs2),
 									step, stepfac, startoff, endoff, needed_count,
 									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, -bs2, -bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
+							isOccluded(&env->getMap(), spn,
+									cpn + v3pos_t(bs2, -bs2, -bs2), step, stepfac,
+									startoff, endoff, needed_count, nodemgr,
+									occlude_cache) &&
 							isOccluded(&env->getMap(), spn, cpn + v3pos_t(-bs2, bs2, bs2),
 									step, stepfac, startoff, endoff, needed_count,
 									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(-bs2, bs2, -bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(-bs2, -bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(-bs2, -bs2, -bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache)) {
+							isOccluded(&env->getMap(), spn,
+									cpn + v3pos_t(-bs2, bs2, -bs2), step, stepfac,
+									startoff, endoff, needed_count, nodemgr,
+									occlude_cache) &&
+							isOccluded(&env->getMap(), spn,
+									cpn + v3pos_t(-bs2, -bs2, bs2), step, stepfac,
+									startoff, endoff, needed_count, nodemgr,
+									occlude_cache) &&
+							isOccluded(&env->getMap(), spn,
+									cpn + v3pos_t(-bs2, -bs2, -bs2), step, stepfac,
+									startoff, endoff, needed_count, nodemgr,
+									occlude_cache)) {
 						// infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<"
 						// block="<<cpn<<"
 						// total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
@@ -467,7 +481,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				block->resetUsageTimer();
 
 				const auto complete = block->getLightingComplete();
-				if (!complete){
+				if (!complete) {
 					env->getServerMap().lighting_modified_add(p, d);
 					if (block_sent && can_skip) {
 						continue;
@@ -545,7 +559,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				continue;
 			}
 
-			if (nearest_sent_d == -1)
+			if (nearest_sent_d == -1 && d >= d_start)
 				nearest_sent_d = d;
 
 			/*
@@ -571,6 +585,15 @@ queue_full_break:
 	// "+"<<num_blocks_sending << " air="<<num_blocks_air<< " culled=" <<
 	// blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
 	num_blocks_selected += num_blocks_sending;
+	if (block_skip_retry) {
+		if (first_skipped_d) {
+			DUMP(first_skipped_d, nearest_emerged_d, nearest_emergefull_d);
+			m_nearest_unsent_d = first_skipped_d;
+		}
+		if (d >= d_max) {
+			m_nothing_to_send_pause_timer = 1;
+		}
+	} else {
 	if (!num_blocks_selected && !num_blocks_air && d_start <= d) {
 		// new_nearest_unsent_d = 0;
 		m_nothing_to_send_pause_timer = 1.0;
@@ -596,6 +619,7 @@ queue_full_break:
 
 	if (new_nearest_unsent_d != -1) {
 		m_nearest_unsent_d = new_nearest_unsent_d;
+		}
 	}
 
 	return num_blocks_selected - num_blocks_sending;
