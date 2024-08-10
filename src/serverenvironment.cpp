@@ -1730,7 +1730,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 */
 
 		int blocks_scanned = 0;
-		int abms_run = 0;
+		//int abms_run = 0;
 		int blocks_cached = 0;
 
 

@@ -107,7 +107,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	v3pos_t center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
-	v3opos_t camera_pos = sao->getEyePosition();
+	//v3opos_t camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0, 0, 1);
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);
@@ -140,6 +140,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
 		m_nearest_unsent_reset = 0;
+		m_nothing_to_send_pause_timer = -1;
 		// infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
 
@@ -277,11 +278,13 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		// d_max="<<d_max<<" d_max_gen="<<d_max_gen<<std::endl;
 
 		std::vector<v3pos_t> list;
+		/*
 		if (d > 2 && d == d_start && !m_nearest_unsent_reset_want &&
 				m_nearest_unsent_reset_timer !=
 						999) { // oops, again magic number from up ^
 			list.emplace_back(0, 0, 0);
 		}
+        */
 
 		bool can_skip = d > 1;
 		// Fast fall/move optimize. speed_in_blocks now limited to 6.4
@@ -390,7 +393,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			*/
 
 			MapBlock *block;
-			{
+			if (0) {
 				auto lock = env->getMap().m_blocks.try_lock_shared_rec();
 				if (!lock->owns_lock()) {
 					++block_skip_retry;
@@ -400,6 +403,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				}
 				block = env->getMap().getBlockNoCreateNoEx(p);
 			}
+			block = env->getMap().getBlockNoCreateNoEx(p);
 
 			// bool surely_not_found_on_disk = false;
 			// bool block_is_invalid = false;
@@ -587,7 +591,6 @@ queue_full_break:
 	num_blocks_selected += num_blocks_sending;
 	if (block_skip_retry) {
 		if (first_skipped_d) {
-			DUMP(first_skipped_d, nearest_emerged_d, nearest_emergefull_d);
 			m_nearest_unsent_d = first_skipped_d;
 		}
 		if (d >= d_max) {

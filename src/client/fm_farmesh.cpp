@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "util/numeric.h"
 #include "util/timetaker.h"
+
 const v3opos_t g_6dirso[6] = {
 		// +right, +top, +back
 		v3opos_t(0, 0, 1),	// back
@@ -45,6 +46,7 @@ const v3opos_t g_6dirso[6] = {
 };
 
 FarContainer::FarContainer(){};
+
 const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &p)
 {
 	const auto &v = m_mg->visible_content(p);
@@ -52,20 +54,19 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &p)
 		return v;
 	return m_mg->visible_transparent;
 };
+
 MapNode FarContainer::getNodeNoExNoEmerge(const v3pos_t &p)
 {
 	return getNodeRefUnsafe(p);
 };
+
 MapNode FarContainer::getNodeNoEx(const v3pos_t &p)
 {
 	return getNodeRefUnsafe(p);
 };
 
-void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
+void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step)
 {
-	const auto step = getFarStep(m_client->getEnv().getClientMap().getControl(),
-			getNodeBlockPos(m_camera_pos_aligned), blockpos);
-
 	const auto blockpos_actual =
 			getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
 					m_client->getEnv().getClientMap().getControl());
@@ -93,8 +94,9 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos)
 
 void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, size_t step)
 {
+	const auto step_width = pow(2, step);
 	for (const auto &dir : g_7dirs) {
-		makeFarBlock(blockpos + dir * step);
+		makeFarBlock(blockpos + dir * step_width, step);
 	}
 }
 
@@ -232,8 +234,8 @@ int FarMesh::go_direction(const size_t dir_n)
 			const auto block_step =
 					getFarStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
 							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
-			const auto step_width =
-					MAP_BLOCKSIZE * pow(2, block_step - block_step_reduce);
+			const auto block_step_pow = pow(2, block_step - block_step_reduce);
+			const auto step_width = MAP_BLOCKSIZE * block_step_pow;
 			ray_cache.finished += step_width;
 			const unsigned int depth = ray_cache.finished;
 
@@ -246,12 +248,10 @@ int FarMesh::go_direction(const size_t dir_n)
 			pos_last = pos;
 
 #if !USE_POS32
-			const auto block_step_real =
-					getFarStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
-							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
+
 			const auto step_width_real =
 					MAP_BLOCKSIZE *
-					pow(2, block_step_real + log(draw_control.cell_size) / log(2));
+					pow(2, block_step + log(draw_control.cell_size) / log(2));
 #else
 			const auto step_width_real = step_width;
 #endif
@@ -291,10 +291,10 @@ int FarMesh::go_direction(const size_t dir_n)
 				TimeTaker timer_step("makeFarBlock");
 				g_profiler->add("Client makeFarBlock", 1);
 #if FARMESH_FAST
-				makeFarBlock(blockpos);
+					makeFarBlock(blockpos, block_step);
 #else
 				// less holes, more unused meshes:
-				makeFarBlock7(blockpos, pow(2, block_step));
+					makeFarBlock7(blockpos, block_step);
 #endif
 				break;
 			}

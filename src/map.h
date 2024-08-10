@@ -287,10 +287,10 @@ public:
 	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3pos_t, MapBlockP, v3posHash, v3posEqual>
+	typedef concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
-	typedef concurrent_shared_unordered_map<v3pos_t, std::shared_ptr<MapBlock>, v3posHash,
+	typedef concurrent_shared_unordered_map<v3bpos_t, std::shared_ptr<MapBlock>, v3posHash,
 			v3posEqual>
 			m_far_blocks_type;
 	m_far_blocks_type m_far_blocks;
@@ -310,7 +310,7 @@ public:
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3pos_t, int, v3posHash, v3posEqual> m_db_miss;
+	concurrent_shared_unordered_map<v3bpos_t, int, v3posHash, v3posEqual> m_db_miss;
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;

@@ -880,7 +880,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 		auto bp = ir.first;
 		int range = ir.second;
-		const auto d = range;
+		//const auto d = range;
 		draw_nearest.pop_back();
 
 		//auto block = getBlockNoCreateNoEx(bp);
@@ -911,7 +911,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			{
 				if ((!mesh && smesh_size < 0) || mesh_step != mesh->lod_step) {
 					blocks_in_range_without_mesh++;
-					if (m_mesh_queued < maxq || range <= 1) {
+					if (m_mesh_queued < maxq || range <= 2) {
 						const auto bts = block->getTimestamp();
 						if (block->mesh_requested_timestamp < bts) {
 							block->mesh_requested_timestamp = bts;
@@ -1042,9 +1042,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			} else if (const auto bts = block->getTimestamp();
 					   bts != BLOCK_TIMESTAMP_UNDEFINED &&
 					   block->getTimestamp() > mesh->timestamp + (smesh_size ? 0
-																		 : range >= 1
+																		 : range >= 2
 																				 ? 60
-																				 : 5) &&
+																				 : 0) &&
 					   (m_mesh_queued < maxq * 1.5 || range <= 2)) {
 				if (mesh_step > 1)
 					m_client->addUpdateMeshTask(bp);
@@ -1059,7 +1059,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			{
 				const auto fmesh_step = getFarStep(
 						m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
-				blocks_skip_farmesh.insert(
+				blocks_skip_farmesh.emplace(
 						getFarActual(bp, getNodeBlockPos(m_far_blocks_last_cam_pos),
 								fmesh_step, m_control));
 			}
@@ -1107,7 +1107,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 							getNodeBlockPos(m_far_blocks_last_cam_pos),
 							it->first); // m_camera_position_node
 					if (mesh_step > 1 &&
-							!inFarGrid(it->first, getNodeBlockPos(m_far_blocks_last_cam_pos), mesh_step, m_control)) {
+							!inFarGrid(it->first,
+									getNodeBlockPos(m_far_blocks_last_cam_pos), mesh_step,
+									m_control)) {
 					} else {
 						const auto mesh = it->second->getFarMesh(mesh_step);
 						if (!mesh) {

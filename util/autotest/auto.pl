@@ -96,6 +96,9 @@ $0 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---ffmpeg_add_i='-r 120' ---
 #fly
 $0 ----server_optimize ----far fly
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(10000,30030,-22700)' fly
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24110,24110,-30000)' fly
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24600,30000,0)'
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24100,30000,24100)'
 $0 ----fall1 -continuous_forward=1 bot
 };
 
@@ -140,7 +143,7 @@ sub init_config () {
         build_name       => '',
         build_prefix     => 'build',
         cache_clear      => 0,                              # remove cache dir before start client
-        cgroup           => ($^O ~~ 'linux' ? 1 : undef),
+        cgroup           => ($^O eq 'linux' ? 1 : undef),
         clang_version    => `bash -c "compgen -c clang | grep 'clang[-]*[[:digit:]]' | sort --version-sort --reverse | head -n1"` =~
           s/(?:^clang)|(?:\s+$)//rg,                        #"" "-3.6" "15"
         clients_num   => 5,
@@ -505,7 +508,7 @@ $commands = {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             local $config->{address} = '::1' if not $config->{address};
             for ($config->{clients_start} .. $config->{clients_num}) {
-                sleep $config->{clients_spawn_sleep} // 0.2;
+                Time::HiRes::sleep($config->{clients_spawn_sleep} // 0.2);
                 sf
                   $config->{runner},
                   $commands->{env}(),
@@ -515,7 +518,7 @@ $commands = {
                   options_make([qw( address gameid world address port config verbose)]),
                   qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
-            sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
+            Time::HiRes::sleep($config->{clients_sleep} || 1) if $config->{clients_runs};
         }
     },
     symbolize => sub {
@@ -538,7 +541,7 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     },
     sleep => sub {
         say 'sleep ', $_[0];
-        sleep $_[0] || 1;
+        Time::HiRes::sleep($_[0] || 1);
         0;
     },
     fail => sub {

@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <atomic>
 #include "client/camera.h"
 #include "fm_nodecontainer.h"
 #include "irr_v3d.h"
@@ -58,7 +59,7 @@ public:
 			v3pos_t m_camera_offset,
 			//float brightness,
 			int render_range, float speed);
-	void makeFarBlock(const v3bpos_t &blockpos);
+	void makeFarBlock(const v3bpos_t &blockpos, size_t step);
 	void makeFarBlock7(const v3bpos_t &blockpos, size_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
@@ -110,7 +111,7 @@ private:
 		int processed = -1;
 	};
 	std::array<plane_cache, 6> plane_processed;
-	unsigned int last_distance_max = 0;
+ 	std::atomic_uint last_distance_max = 0;
 	int go_direction(const size_t dir_n);
 	std::array<async_step_runner, 6> async;
 	int timestamp_complete = 0;
