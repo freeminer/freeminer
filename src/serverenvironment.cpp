@@ -1746,7 +1746,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 	   
 		int i = 0;
 		// determine the time budget for ABMs
-		u32 n = 0, calls = 0; // end_ms = porting::getTimeMs() + max_cycle_ms; 
+		u32 calls = 0; // end_ms = porting::getTimeMs() + max_cycle_ms; 
 		u32 max_time_ms = m_cache_abm_interval * 1000 * m_cache_abm_time_budget;
 		for (const v3s16 &p : output) {
 /*

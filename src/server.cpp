@@ -1224,8 +1224,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				for (const v3s16 &modified_block : event->modified_blocks) {
 					m_clients.markBlockposAsNotSent(modified_block);
 				}
-*/				
 				SetBlocksNotSent(); //fmtodo
+*/				
 				break;
 			default:
 				prof.add("unknown", 1);
@@ -1247,10 +1247,12 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				}
 */
 				// Set blocks not sent
+#if 0
 				for (const u16 far_player : far_players) {
 					if (RemoteClient *client = getClient(far_player))
 						client->SetBlocksNotSent(/*modified_blocks2*/);
 				}
+#endif
 			}
 
 			//delete event;
