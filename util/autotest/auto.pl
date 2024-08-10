@@ -96,7 +96,10 @@ $0 ---screenshot_dir=screenshot.2023-08-03T15-52-09 ---ffmpeg_add_i='-r 120' ---
 #fly
 $0 ----server_optimize ----far fly
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(10000,30030,-22700)' fly
-$0 ---options_bot=fall1 -continuous_forward=1 bot
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24110,24110,-30000)' fly
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24600,30000,0)'
+$0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24100,30000,24100)'
+$0 ----fall1 -continuous_forward=1 bot
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -140,7 +143,7 @@ sub init_config () {
         build_name       => '',
         build_prefix     => 'build',
         cache_clear      => 0,                              # remove cache dir before start client
-        cgroup           => ($^O ~~ 'linux' ? 1 : undef),
+        cgroup           => ($^O eq 'linux' ? 1 : undef),
         clang_version    => `bash -c "compgen -c clang | grep 'clang[-]*[[:digit:]]' | sort --version-sort --reverse | head -n1"` =~
           s/(?:^clang)|(?:\s+$)//rg,                        #"" "-3.6" "15"
         clients_num   => 5,
@@ -165,7 +168,6 @@ sub init_config () {
         # make_add     => '',
         makej           => '$(nproc || sysctl -n hw.ncpu || echo 2)',
         name            => 'bot',
-        options_bot     => 'bot,bot_random',
         options_display => ($ENV{DISPLAY} ? '' : 'headless'),
         port            => 60001,
         root_path       => $root_path,
@@ -374,7 +376,7 @@ $commands = {
         return $config->{world} if defined $config->{world};
         my $name = 'world';
         $name .= '_' . $options->{opt}{mg_name}                   if $options->{opt}{mg_name};
-        $name .= '_' . $config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math}{generator};
+        $name .= '_' . $config->{config_pass}{mg_math}{generator} if $config->{config_pass}{mg_math} && $config->{config_pass}{mg_math}{generator};
         $config->{world} = $script_path . $name;
         $config->{world} = $config->{logdir} . '/' . $name if $config->{world_local};
         $config->{world};
@@ -475,16 +477,6 @@ $commands = {
     },
     set_bot         => {'----bot' => 1, '----bot_random' => 1,},
     run_bot         => ['set_bot', 'set_client', 'run_single'],
-    run_single_tsan => sub {
-        local $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-        local $config->{cmake_leveldb} //= 0          if $config->{tsan_leveldb_fix};
-        local $config->{env} = $config->{env} . " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
-        local $options->{opt}{enable_minimap} = 0;    # too unsafe
-                                                      # FATAL: ThreadSanitizer: unexpected memory mapping :
-        sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
-        commands_run($config->{run_task});
-    },
-
     valgrind => sub {
         local $config->{runner} = $config->{runner} . " valgrind @_";
         commands_run($config->{run_task});
@@ -516,7 +508,7 @@ $commands = {
             my $autoexit = $config->{clients_autoexit} || $config->{autoexit};
             local $config->{address} = '::1' if not $config->{address};
             for ($config->{clients_start} .. $config->{clients_num}) {
-                sleep $config->{clients_spawn_sleep} // 0.2;
+                Time::HiRes::sleep($config->{clients_spawn_sleep} // 0.2);
                 sf
                   $config->{runner},
                   $commands->{env}(),
@@ -526,7 +518,7 @@ $commands = {
                   options_make([qw( address gameid world address port config verbose)]),
                   qq{$config->{run_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.$config->{name}$_.err.log};
             }
-            sleep $config->{clients_sleep} || 1 if $config->{clients_runs};
+            Time::HiRes::sleep($config->{clients_sleep} || 1) if $config->{clients_runs};
         }
     },
     symbolize => sub {
@@ -549,7 +541,7 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     },
     sleep => sub {
         say 'sleep ', $_[0];
-        sleep $_[0] || 1;
+        Time::HiRes::sleep($_[0] || 1);
         0;
     },
     fail => sub {
@@ -596,7 +588,7 @@ our $tasks = {
         sub {
             $g->{keep_config}          = 1;
             $g->{build_names}{san}     = 'tsan';
-            $config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
+            #$config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
             $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
             $config->{envs}{tsan} = " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
             #? local $options->{opt}{enable_minimap} = 0;    # too unsafe
@@ -963,7 +955,7 @@ sub options_make(;$$) {
         }
     }
     $rmm->{$_} = $options->{pass}{$_}       for sort keys %{$options->{pass}};
-    $rm->{$_}  = $config->{config_pass}{$_} for sort keys %{$config->{config_pass}};
+    $rm->{$_}  = ref $config->{config_pass}{$_} ? "'" . ${json($config->{config_pass}{$_})} . "'" : $config->{config_pass}{$_} for sort keys %{$config->{config_pass}};
     return join ' ', (map {"--$_ $rmm->{$_}"} sort keys %$rmm), (map {"-$_='$rm->{$_}'"} sort keys %$rm);
 }
 

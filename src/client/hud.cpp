@@ -913,14 +913,14 @@ void Hud::drawBlockBounds()
 	if (m_block_bounds_mode == BLOCK_BOUNDS_FAR) {
 		auto offset = intToFloat(client->getCamera()->getOffset(), BS);
 
-		s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
+		//s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
 
 		v3opos_t halfNode = v3opos_t(BS, BS, BS) / 2.0f;
- 
-		auto lock = client->getEnv().getClientMap().m_far_blocks.try_lock_shared_rec();
+ 		auto & far_blocks = client->getEnv().getClientMap().m_far_blocks;
+		auto lock = far_blocks.try_lock_shared_rec();
 		if (lock->owns_lock()) {
 			for (const auto &[blockPos, block] :
-					client->getEnv().getClientMap().m_far_blocks) {
+					far_blocks) {
 				if (block->getTimestamp() <
 						client->getEnv().getClientMap().m_far_blocks_use_timestamp)
 					continue;

@@ -335,14 +335,14 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
  * When node is modified, update node and directly
  * linked nodes
  */
-void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int fast, bool destroy)
+size_t ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int fast, bool destroy)
 {
 
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
 		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
 		m_nodeupdate_queue.push_back(pos);
-		return;
+		return 1;
 	}
 
 	auto* ndef = m_gamedef->getNodeDefManager();
@@ -351,7 +351,7 @@ void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int f
 	ContentFeatures f;
 #endif
 	ItemGroupList groups;
-
+	size_t ret = 0;
 	// update nodes around
 	for (pos_t x = pos.X - 1; x <= pos.X + 1; x++) {
 		for (pos_t y = pos.Y - 1; y <= pos.Y + 1; y++) {
@@ -378,12 +378,13 @@ void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int f
 					const ContentFeatures &f_under = ndef->get(n_bottom);
 
 					if ((itemgroup_get(groups, "float") == 0 || f_under.liquid_type == LIQUID_NONE) &&
+						(f_under.liquid_type == LIQUID_NONE || f.liquid_type == LIQUID_NONE) &&
 						(f.name.compare(f_under.name) != 0 || (f_under.leveled &&
 							n_bottom.getLevel(ndef) < n_bottom.getMaxLevel(ndef))) &&
 						(!f_under.walkable || f_under.buildable_to)) {
 						if (spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast)) {
 							removeNode(n_pos, fast);
-							nodeUpdate(n_pos, recursion_limit, fast, destroy);
+							ret += 1 + nodeUpdate(n_pos, recursion_limit, fast, destroy);
 						}
 					}
 				}
@@ -399,6 +400,7 @@ void ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int f
 			}
 		}
 	}
+	return ret;
 }
 
 #if 0

@@ -427,7 +427,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 			}
 			*/
 
-			if (!block->isGenerated()) {
+			if (!block->isGenerated() && !block->getLodMesh(0, true)) {
 				blocks_delete.emplace_back(block);
 				continue;
 			}

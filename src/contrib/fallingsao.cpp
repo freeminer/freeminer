@@ -126,13 +126,13 @@ void FallingSAO::step(float dtime, bool send_recommended)
 	setAcceleration(v3f(0,-10*BS,0));
 	// Under node, center
 	const auto m_base_position = getBasePosition();
-	v3f p_under(m_base_position.X, m_base_position.Y - 7, m_base_position.Z);
 	v3pos_t p = floatToInt(m_base_position, BS);
+	v3pos_t p_under(p.X, p.Y - 1, p.Z);
 /*
 	bool cur_exists = false, under_exists = false;
 */
 	MapNode n = m_env->getMap().getNode(p),
-			n_under = m_env->getMap().getNode(floatToInt(p_under, BS));
+			n_under = m_env->getMap().getNode(p_under);
 	const ContentFeatures &f = ndef->get(n), &f_under = ndef->get(n_under);
 
 	bool cur_exists = n, under_exists = n_under;
@@ -143,26 +143,33 @@ void FallingSAO::step(float dtime, bool send_recommended)
 	}
 
 	if ((f_under.walkable || (itemgroup_get(f_under.groups, "float") &&
-			f_under.liquid_type == LIQUID_NONE))) {
+			f_under.liquid_type == LIQUID_NONE))||
+			(f_under.isLiquid() && f.isLiquid())
+			) {
 		const std::string & n_name = ndef->get(m_node).name;
-		if (f_under.leveled && f_under.name.compare(n_name) == 0) {
+		if (f_under.leveled && 
+		(n_under.getContent() == m_node.getContent() || f_under.liquid_alternative_flowing_id == m_node.getContent() || f_under.liquid_alternative_source_id == m_node.getContent())
+		) {
 			u8 addLevel = m_node.getLevel(ndef);
-			addLevel = n_under.addLevel(ndef, addLevel);
+			const auto compress = f.isLiquid();
+			addLevel = n_under.addLevel(ndef, addLevel, compress);
 			if (addLevel) {
-				m_node.setLevel(ndef, addLevel);
+				m_node.setLevel(ndef, addLevel, compress);
 				m_env->setNode(p, m_node, fast);
 			}
-			m_env->setNode(floatToInt(p_under, BS), n_under, fast);
+			m_env->setNode(p_under, n_under, fast);
 			m_pending_removal = true;
+			m_env->getServerMap().transforming_liquid_add(p_under);
 			return;
 		}
+/*
 		else if (f_under.buildable_to &&
 				(itemgroup_get(f.groups,"float") == 0 ||
 				 f_under.liquid_type == LIQUID_NONE)) {
-			m_env->removeNode(floatToInt(p_under, BS), fast);
-			return;
+			m_env->removeNode(p_under, fast);
+			//return;
 		}
-
+*/
 		if (n.getContent() != CONTENT_AIR &&
 				(f.liquid_type == LIQUID_NONE)) {
 			m_env->removeNode(p);
@@ -170,11 +177,13 @@ void FallingSAO::step(float dtime, bool send_recommended)
 				ItemStack stack;
 				stack.deSerialize(n_name);
 				m_env->spawnItemActiveObject(n_name, m_base_position, stack);
+				m_pending_removal = true;
+				return;
 			}
 		}
 		m_env->setNode(p, m_node, fast);
 		m_pending_removal = true;
-		m_env->nodeUpdate(p, 2, fast);
+		m_env->nodeUpdate(p, 1, fast);
 		return;
 	}
 }

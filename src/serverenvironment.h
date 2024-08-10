@@ -460,7 +460,7 @@ public:
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:
-	void nodeUpdate(const v3pos_t pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+	size_t nodeUpdate(const v3pos_t pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
 private:
 	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
 
