@@ -419,6 +419,8 @@ void MapgenV7::makeChunk(BlockMakeData *data)
 	if (flags & MG_BIOMES)
 		dustTopNodes();
 
+	generateBuildings();
+
 	// Update liquids
 	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 

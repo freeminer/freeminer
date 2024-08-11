@@ -40,6 +40,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverenvironment.h"
 #include "mg_biome.h"
 #include "log_types.h"
+#if USE_OSMIUM
+#include <filesystem>
+#include <osmium/area/assembler.hpp>
+#include <osmium/area/multipolygon_manager.hpp>
+#include <osmium/dynamic_handler.hpp>
+#include <osmium/handler/node_locations_for_ways.hpp>
+#include <osmium/index/map/sparse_mem_array.hpp>
+#include <osmium/io/file.hpp>
+#include <osmium/osm/entity_bits.hpp>
+#include <osmium/osm/node.hpp>
+#include <osmium/osm/way.hpp>
+#include <osmium/tags/tags_filter.hpp>
+#endif
 
 void MapgenEarthParams::setDefaultSettings(Settings *settings)
 {
@@ -176,6 +189,15 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	}
 	hgt_reader.debug = 0;
 */
+
+#if USE_OSMIUM
+#include "earth/osmium-inl.h"
+	const auto path_name =
+			porting::path_cache + DIR_DELIM + "earth" + DIR_DELIM + "map.pbf";
+	if (std::filesystem::exists(path_name)) {
+		handler = std::make_unique<hdl>(this, path_name);
+	}
+#endif
 }
 
 MapgenEarth::~MapgenEarth()
@@ -214,9 +236,9 @@ const MapNode &MapgenEarth::visible_content(const v3pos_t &p)
 					   : visible_surface_hot;
 }
 
+constexpr double EQUATOR_LEN{40075696.0};
 ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z)
 {
-	constexpr double EQUATOR_LEN{40075696.0};
 	const auto lon = ((ll_t)x * scale.X) / (EQUATOR_LEN / 360) + center.X;
 	const auto lat = ((ll_t)z * scale.Z) / (EQUATOR_LEN / 360) + center.Z;
 	if (lat < 90 && lat > -90 && lon < 180 && lon > -180) {
@@ -224,6 +246,12 @@ ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z)
 	} else {
 		return {89.9999, 0};
 	}
+}
+
+v2pos_t MapgenEarth::ll_to_pos(const ll &l)
+{
+	return v2pos_t((l.lon / scale.X - center.X) * (EQUATOR_LEN / 360),
+			(l.lat / scale.Z - center.Z) * (EQUATOR_LEN / 360));
 }
 
 pos_t MapgenEarth::get_height(pos_t x, pos_t z)
@@ -236,6 +264,69 @@ pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
 	return std::max(2, get_height(p.X, p.Y) + 2);
+}
+
+//  https://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
+void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, pos_t y,
+		pos_t h, const MapNode &n)
+{
+	pos_t delta_x(x2 - x1);
+	// if x1 == x2, then it does not matter what we set here
+	const int8_t ix((delta_x > 0) - (delta_x < 0));
+	delta_x = std::abs(delta_x) << 1;
+
+	pos_t delta_y(y2 - y1);
+	// if y1 == y2, then it does not matter what we set here
+	const int8_t iy((delta_y > 0) - (delta_y < 0));
+	delta_y = std::abs(delta_y) << 1;
+
+	if (vm->exists({x1, y, y1})) {
+		for (pos_t yi = y; yi <= y + h; ++yi) {
+			vm->setNode({x1, yi, y1}, n);
+		}
+	}
+
+	if (delta_x >= delta_y) {
+		// error may go below zero
+		pos_t error(delta_y - (delta_x >> 1));
+
+		while (x1 != x2) {
+			// reduce error, while taking into account the corner case of error == 0
+			if ((error > 0) || (!error && (ix > 0))) {
+				error -= delta_x;
+				y1 += iy;
+			}
+
+			error += delta_y;
+			x1 += ix;
+
+			if (vm->exists({x1, y, y1})) {
+				for (pos_t yi = y; yi <= y + h; ++yi) {
+					vm->setNode({x1, yi, y1}, n);
+				}
+			}
+		}
+	} else {
+		// error may go below zero
+		int error(delta_x - (delta_y >> 1));
+
+		while (y1 != y2) {
+			// reduce error, while taking into account the corner case of error == 0
+			if ((error > 0) || (!error && (iy > 0))) {
+				error -= delta_y;
+				x1 += ix;
+			}
+
+			error += delta_x;
+			y1 += iy;
+
+			if (vm->exists({x1, y, y1})) {
+				for (pos_t yi = y; yi <= y + h; ++yi) {
+					vm->setNode({x1, yi, y1}, n);
+				}
+			}
+		}
+	}
 }
 
 int MapgenEarth::generateTerrain()
@@ -269,4 +360,12 @@ int MapgenEarth::generateTerrain()
 		}
 	}
 	return 0;
+}
+
+void MapgenEarth::generateBuildings()
+{
+
+	if (handler)
+		handler->apply();
+
 }

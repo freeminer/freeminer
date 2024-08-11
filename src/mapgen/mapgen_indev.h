@@ -108,14 +108,14 @@ public:
 	int zstride;
 
 
-	virtual MapgenType getType() const { return MAPGEN_INDEV; }
+	virtual MapgenType getType() const override { return MAPGEN_INDEV; }
 	MapgenIndev(MapgenIndevParams *params, EmergeParams *emerge);
 	~MapgenIndev();
 
-	virtual void calculateNoise();
-	int generateGround();
-	void generateCaves(int max_stone_y);
-	void generateExperimental();
+	void calculateNoise() override;
+	int generateGround() override;
+	void generateCaves(int max_stone_y) override;
+	void generateExperimental() override;
 	bool getFloatlandTerrainFromMap(int idx_xyz, float float_offset);
 };
 

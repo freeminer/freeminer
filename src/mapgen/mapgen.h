@@ -323,6 +323,8 @@ public:
 	virtual bool generateCavernsNoise(s16 max_stone_y);
 	virtual void generateDungeons(s16 max_stone_y);
 
+	virtual void generateBuildings() {};
+
 protected:
 	BiomeManager *m_bmgr;
 

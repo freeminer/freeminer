@@ -21,18 +21,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <memory>
 #include "config.h"
 #include "mapgen/earth/hgt.h"
 #include "mapgen/mapgen.h"
 #include "mapgen/mapgen_v7.h"
 #include "json/json.h"
 
-using ll_t = float;
+//using ll_t = float;
+using ll_t = double;
 struct ll
 {
 	ll_t lat = 0;
 	ll_t lon = 0;
 };
+
 inline std::ostream &operator<<(std::ostream &s, const ll &p)
 {
 	s << "(" << p.lat << "," << p.lon << ")";
@@ -41,7 +44,6 @@ inline std::ostream &operator<<(std::ostream &s, const ll &p)
 
 struct MapgenEarthParams : public MapgenV7Params
 {
-
 	MapgenEarthParams(){};
 	~MapgenEarthParams(){};
 
@@ -52,16 +54,27 @@ struct MapgenEarthParams : public MapgenV7Params
 	void setDefaultSettings(Settings *settings) override;
 };
 
+class MapgenEarth;
+
+class handler_i
+{
+public:
+	virtual void apply() = 0;
+};
+
 class MapgenEarth : public MapgenV7
 {
 public:
 	MapgenEarthParams *mg_params;
 
+	std::unique_ptr<handler_i> handler;
+
 	virtual MapgenType getType() const override { return MAPGEN_EARTH; }
 	MapgenEarth(MapgenEarthParams *mg_params, EmergeParams *emerge);
 	~MapgenEarth();
 
-	virtual int generateTerrain() override;
+	int generateTerrain() override;
+	void generateBuildings() override;
 	int getSpawnLevelAtPoint(v2pos_t p) override;
 
 	v3d scale{1, 1, 1};
@@ -78,4 +91,7 @@ public:
 
 	pos_t get_height(pos_t x, pos_t z);
 	ll pos_to_ll(pos_t x, pos_t z);
+	v2pos_t ll_to_pos(const ll &l);
+	void bresenham(
+			pos_t xa, pos_t za, pos_t xb, pos_t zb, pos_t y, pos_t h, const MapNode &n);
 };
