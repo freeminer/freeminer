@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlicht_changes/printing.h"
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h"
+#include "log.h"
 #include "util/serialize.h"
 #include <sstream>
 
@@ -32,7 +33,7 @@ ObjectProperties::ObjectProperties()
 	colors.emplace_back(255,255,255,255);
 }
 
-std::string ObjectProperties::dump()
+std::string ObjectProperties::dump() const
 {
 	std::ostringstream os(std::ios::binary);
 	os << "hp_max=" << hp_max;
@@ -73,7 +74,7 @@ std::string ObjectProperties::dump()
 
 	os << ", selectionbox=" << selectionbox.MinEdge << "," << selectionbox.MaxEdge;
 	os << ", rotate_selectionbox=" << rotate_selectionbox;
-	os << ", pointable=" << pointable;
+	os << ", pointable=" << Pointabilities::toStringPointabilityType(pointable);
 	os << ", static_save=" << static_save;
 	os << ", eye_height=" << eye_height;
 	os << ", zoom_fov=" << zoom_fov;
@@ -127,7 +128,7 @@ void ObjectProperties::serialize(std::ostream &os) const
 	writeV3F32(os, collisionbox.MaxEdge);
 	writeV3F32(os, selectionbox.MinEdge);
 	writeV3F32(os, selectionbox.MaxEdge);
-	writeU8(os, pointable);
+	Pointabilities::serializePointabilityType(os, pointable);
 	os << serializeString16(visual);
 	writeV3F32(os, visual_size);
 	writeU16(os, textures.size());
@@ -188,7 +189,7 @@ void ObjectProperties::deSerialize(std::istream &is)
 	collisionbox.MaxEdge = readV3F32(is);
 	selectionbox.MinEdge = readV3F32(is);
 	selectionbox.MaxEdge = readV3F32(is);
-	pointable = readU8(is);
+	pointable = Pointabilities::deSerializePointabilityType(is);
 	visual = deSerializeString16(is);
 	visual_size = readV3F32(is);
 	textures.clear();

@@ -30,6 +30,7 @@ local core_developers = {
 	"Desour/DS",
 	"srifqi",
 	"Gregor Parzefall (grorp)",
+	"Lars Müller (luatic)",
 }
 
 -- currently only https://github.com/orgs/minetest/teams/triagers/members
@@ -43,19 +44,24 @@ local core_team = {
 -- For updating active/previous contributors, see the script in ./util/gather_git_credits.py
 
 local active_contributors = {
-	"Wuzzy [Features, translations, documentation]",
-	"numzero [Optimizations, work on OpenGL driver]",
-	"ROllerozxa [Bugfixes, Mainmenu]",
-	"Lars Müller [Bugfixes]",
-	"AFCMS [Documentation]",
-	"savilli [Bugfixes]",
-	"fluxionary [Bugfixes]",
-	"Bradley Pierce (Thresher) [Documentation]",
-	"Stvk imension [Android]",
-	"JosiahWI [Code cleanups]",
-	"OgelGames [UI, Bugfixes]",
-	"ndren [Bugfixes]",
-	"Abdou-31 [Documentation]",
+	"cx384",
+	"numzero",
+	"AFCMS",
+	"sfence",
+	"Wuzzy",
+	"ROllerozxa",
+	"JosiahWI",
+	"OgelGames",
+	"David Heidelberg",
+	"1F616EMO",
+	"HybridDog",
+	"Bradley Pierce (Thresher)",
+	"savilli",
+	"Stvk imension",
+	"y5nw",
+	"chmodsayshello",
+	"jordan4ibanez",
+	"superfloh247",
 }
 
 local previous_core_developers = {
@@ -158,7 +164,7 @@ return {
 			"style[label_button;border=false]" ..
 			"button[0.1,3.4;5.3,0.5;label_button;" ..
 			core.formspec_escape(version.project .. " " .. version.string) .. "]" ..
-			"button[1.5,4.1;2.5,0.8;homepage;minetest.net]" ..
+			"button_url[1.5,4.1;2.5,0.8;homepage;minetest.net;https://www.minetest.net/]" ..
 			"hypertext[5.5,0.25;9.75,6.6;credits;" .. minetest.formspec_escape(hypertext) .. "]"
 
 		-- Render information
@@ -188,10 +194,6 @@ return {
 	end,
 
 	cbf_button_handler = function(this, fields, name, tabdata)
-		if fields.homepage then
-			core.open_url("https://www.minetest.net")
-		end
-
 		if fields.share_debug then
 			local path = core.get_user_path() .. DIR_DELIM .. "debug.txt"
 			core.share_file(path)

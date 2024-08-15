@@ -50,32 +50,30 @@ void TestVoxelAlgorithms::runTests(IGameDef *gamedef)
 void TestVoxelAlgorithms::testVoxelLineIterator()
 {
 	// Test some lines
-	// Do not test lines that start or end on the border of
-	// two voxels as rounding errors can make the test fail!
-	std::vector<core::line3d<opos_t> > lines;
-	for (opos_t x = -9.1; x < 9; x += 3.124) {
-	for (opos_t y = -9.2; y < 9; y += 3.123) {
-	for (opos_t z = -9.3; z < 9; z += 3.122) {
+	std::vector<core::line3d<opos_t>> lines;
+	for (opos_t x = -9.1f; x < 9.0f; x += 3.124f)
+	for (opos_t y = -9.2f; y < 9.0f; y += 3.123f)
+	for (opos_t z = -9.3f; z < 9.0f; z += 3.122f) {
 		lines.emplace_back(-x, -y, -z, x, y, z);
 	}
+	for (f32 x = -3.0f; x < 3.1f; x += 0.5f)
+	for (f32 y = -3.0f; y < 3.1f; y += 0.5f)
+	for (f32 z = -3.0f; z < 3.1f; z += 0.5f) {
+		lines.emplace_back(-x, -y, -z, x, y, z);
 	}
-	}
-	lines.emplace_back(0, 0, 0, 0, 0, 0);
+	lines.emplace_back(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	// Test every line
-	std::vector<core::line3d<opos_t> >::iterator it = lines.begin();
-	for (; it < lines.end(); it++) {
-		core::line3d<opos_t> l = *it;
-
+	for (auto l : lines) {
 		// Initialize test
 		voxalgo::VoxelLineIterator iterator(l.start, oposToV3f(l.getVector()));
 
 		//Test the first voxel
-		v3pos_t start_voxel = floatToInt(l.start, 1);
+		auto start_voxel = floatToInt(l.start, 1.0f);
 		UASSERT(iterator.m_current_node_pos == start_voxel);
 
 		// Values for testing
-		v3pos_t end_voxel = floatToInt(l.end, 1);
-		v3pos_t voxel_vector = end_voxel - start_voxel;
+		auto end_voxel = floatToInt(l.end, 1.0f);
+		auto voxel_vector = end_voxel - start_voxel;
 		int nodecount = abs(voxel_vector.X) + abs(voxel_vector.Y)
 			+ abs(voxel_vector.Z);
 		int actual_nodecount = 0;
@@ -88,9 +86,10 @@ void TestVoxelAlgorithms::testVoxelLineIterator()
 			// This must be a neighbor of the old voxel
 			UASSERTEQ(f32, (new_voxel - old_voxel).getLengthSQ(), 1);
 			// The line must intersect with the voxel
-			v3opos_t voxel_center = posToOpos(iterator.m_current_node_pos, (f32)1);
-			aabb3o box(voxel_center - v3opos_t(0.5, 0.5, 0.5),
-				voxel_center + v3opos_t(0.5, 0.5, 0.5));
+			v3opos_t voxel_center = intToFloat(iterator.m_current_node_pos, 1);
+			constexpr opos_t eps = 1.0e-5f;
+			aabb3o box(voxel_center - v3opos_t(0.5f + eps),
+				voxel_center + v3opos_t(0.5f + eps));
 			UASSERT(box.intersectsWithLine(l));
 			// Update old voxel
 			old_voxel = new_voxel;

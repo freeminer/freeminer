@@ -392,7 +392,7 @@ bool ItemStack::itemFits(ItemStack newitem,
 	return newitem.empty();
 }
 
-bool ItemStack::stacksWith(ItemStack other) const
+bool ItemStack::stacksWith(const ItemStack &other) const
 {
 	return (this->name == other.name &&
 			this->wear == other.wear &&
@@ -601,8 +601,10 @@ ItemStack InventoryList::changeItem(u32 i, const ItemStack &newitem)
 		return newitem;
 
 	ItemStack olditem = m_items[i];
-	m_items[i] = newitem;
-	setModified();
+	if (olditem != newitem) {
+		m_items[i] = newitem;
+		setModified();
+	}
 	return olditem;
 }
 
@@ -756,55 +758,54 @@ void InventoryList::moveItemSomewhere(u32 i, InventoryList *dest, u32 count)
 
 	if (!leftover.empty()) {
 		// Add the remaining part back to the source item
-		addItem(i, leftover);
+		// do NOT use addItem to allow oversized stacks!
+		leftover.add(getItem(i).count);
+		changeItem(i, leftover);
 	}
 }
 
-u32 InventoryList::moveItem(u32 i, InventoryList *dest, u32 dest_i,
+ItemStack InventoryList::moveItem(u32 i, InventoryList *dest, u32 dest_i,
 		u32 count, bool swap_if_needed, bool *did_swap)
 {
+	ItemStack moved;
 	if (this == dest && i == dest_i)
-		return count;
+		return moved;
 
 	// Take item from source list
-	ItemStack item1;
 	if (count == 0)
-		item1 = changeItem(i, ItemStack());
+		moved = changeItem(i, ItemStack());
 	else
-		item1 = takeItem(i, count);
-
-	if (item1.empty())
-		return 0;
+		moved = takeItem(i, count);
 
 	// Try to add the item to destination list
-	u32 oldcount = item1.count;
-	item1 = dest->addItem(dest_i, item1);
+	ItemStack leftover = dest->addItem(dest_i, moved);
 
 	// If something is returned, the item was not fully added
-	if (!item1.empty()) {
-		// If olditem is returned, nothing was added.
-		bool nothing_added = (item1.count == oldcount);
+	if (!leftover.empty()) {
+		// Keep track of how many we actually moved
+		moved.remove(leftover.count);
 
-		// If something else is returned, part of the item was left unadded.
-		// Add the other part back to the source item
-		addItem(i, item1);
+		// Add any leftover stack back to the source stack.
+		leftover.add(getItem(i).count); // leftover + source count
+		changeItem(i, leftover); // do NOT use addItem to allow oversized stacks!
+		leftover.clear();
 
-		// If olditem is returned, nothing was added.
-		// Swap the items
-		if (nothing_added && swap_if_needed) {
+		// Swap if no items could be moved
+		if (moved.empty() && swap_if_needed) {
 			// Tell that we swapped
 			if (did_swap != NULL) {
 				*did_swap = true;
 			}
 			// Take item from source list
-			item1 = changeItem(i, ItemStack());
+			moved = changeItem(i, ItemStack());
 			// Adding was not possible, swap the items.
-			ItemStack item2 = dest->changeItem(dest_i, item1);
+			ItemStack item2 = dest->changeItem(dest_i, moved);
 			// Put item from destination list to the source list
 			changeItem(i, item2);
 		}
 	}
-	return (oldcount - item1.count);
+
+	return moved;
 }
 
 void InventoryList::checkResizeLock()

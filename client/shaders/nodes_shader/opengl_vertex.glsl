@@ -1,10 +1,9 @@
 uniform mat4 mWorld;
 // Color of the light emitted by the sun.
 uniform vec3 dayLight;
-uniform vec3 eyePosition;
 
 // The cameraOffset is the current center of the visible world.
-uniform vec3 cameraOffset;
+uniform highp vec3 cameraOffset;
 uniform float animationTimer;
 
 varying vec3 vNormal;
@@ -44,7 +43,7 @@ centroid varying vec2 varTexCoord;
 
 varying float area_enable_parallax;
 
-varying vec3 eyeVec;
+varying highp vec3 eyeVec;
 varying float nightRatio;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
@@ -242,7 +241,7 @@ void main(void)
 		if (f_normal_length > 0.0) {
 			nNormal = normalize(vNormal);
 			cosLight = max(1e-5, dot(nNormal, -v_LightDirection));
-			float sinLight = pow(1 - pow(cosLight, 2.0), 0.5);
+			float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
 			normalOffsetScale = 2.0 * pFactor * pFactor * sinLight * min(f_shadowfar, 500.0) /
 					xyPerspectiveBias1 / f_textureresolution;
 			z_bias = 1.0 * sinLight / cosLight;
@@ -250,7 +249,7 @@ void main(void)
 		else {
 			nNormal = vec3(0.0);
 			cosLight = clamp(dot(v_LightDirection, normalize(vec3(v_LightDirection.x, 0.0, v_LightDirection.z))), 1e-2, 1.0);
-			float sinLight = pow(1 - pow(cosLight, 2.0), 0.5);
+			float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
 			normalOffsetScale = 0.0;
 			z_bias = 3.6e3 * sinLight / cosLight;
 		}

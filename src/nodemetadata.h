@@ -20,7 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include <unordered_set>
-#include "irr_v3d.h"
+#include <map>
 #include "metadata.h"
 
 /*

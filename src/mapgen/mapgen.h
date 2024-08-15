@@ -78,29 +78,41 @@ enum GenNotifyType {
 	GENNOTIFY_LARGECAVE_BEGIN,
 	GENNOTIFY_LARGECAVE_END,
 	GENNOTIFY_DECORATION,
+	GENNOTIFY_CUSTOM, // user-defined data
 	NUM_GENNOTIFY_TYPES
-};
-
-struct GenNotifyEvent {
-	GenNotifyType type;
-	v3pos_t pos;
-	u32 id;
 };
 
 class GenerateNotifier {
 public:
+	struct GenNotifyEvent {
+		GenNotifyType type;
+		v3pos_t pos;
+		u32 id; // for GENNOTIFY_DECORATION
+	};
+
 	// Use only for temporary Mapgen objects with no map generation!
 	GenerateNotifier() = default;
-	GenerateNotifier(u32 notify_on, const std::set<u32> *notify_on_deco_ids);
+	// normal constructor
+	GenerateNotifier(u32 notify_on, const std::set<u32> *notify_on_deco_ids,
+		const std::set<std::string> *notify_on_custom);
 
-	bool addEvent(GenNotifyType type, v3pos_t pos, u32 id=0);
-	void getEvents(std::map<std::string, std::vector<v3pos_t> > &event_map);
+	bool addEvent(GenNotifyType type, v3pos_t pos);
+	bool addDecorationEvent(v3pos_t pos, u32 deco_id);
+	bool setCustom(const std::string &key, const std::string &value);
+	void getEvents(std::map<std::string, std::vector<v3pos_t>> &map) const;
+	const StringMap &getCustomData() const { return m_notify_custom; }
 	void clearEvents();
 
 private:
 	u32 m_notify_on = 0;
 	const std::set<u32> *m_notify_on_deco_ids = nullptr;
+	const std::set<std::string> *m_notify_on_custom = nullptr;
 	std::list<GenNotifyEvent> m_notify_events;
+	StringMap m_notify_custom;
+
+	inline bool shouldNotifyOn(GenNotifyType type) const {
+		return m_notify_on & (1 << type);
+	}
 };
 
 // Order must match the order of 'static MapgenDesc g_reg_mapgens[]' in mapgen.cpp
@@ -157,6 +169,7 @@ private:
 */
 class Mapgen {
 public:
+	// Seed used for noises (truncated from the map seed)
 	s32 seed = 0;
 	int water_level = 0;
 	int mapgen_limit = 0;
@@ -170,6 +183,7 @@ public:
 	EmergeParams *m_emerge = nullptr;
 	const NodeDefManager *ndef = nullptr;
 
+	// Chunk-specific seed used to place ores and decorations
 	u32 blockseed;
 	pos_t *heightmap = nullptr;
 	biome_t *biomemap = nullptr;
