@@ -17,7 +17,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include "benchmark_setup.h"
+#include "catch.h"
 #include "voxelalgorithms.h"
 #include "dummygamedef.h"
 #include "dummymap.h"
@@ -27,9 +27,9 @@ TEST_CASE("benchmark_lighting")
 	DummyGameDef gamedef;
 	NodeDefManager *ndef = gamedef.getWritableNodeDefManager();
 
-	v3s16 pmin(-16, -16, -16);
-	v3s16 pmax(15, 15, 15);
-	v3s16 bpmin = getNodeBlockPos(pmin), bpmax = getNodeBlockPos(pmax);
+	v3pos_t pmin(-16, -16, -16);
+	v3pos_t pmax(15, 15, 15);
+	auto bpmin = getNodeBlockPos(pmin), bpmax = getNodeBlockPos(pmax);
 	DummyMap map(&gamedef, bpmin, bpmax);
 
 	content_t content_wall;

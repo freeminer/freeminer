@@ -219,11 +219,6 @@ void GameUI::initFlags()
 	m_flags.show_minimal_debug = g_settings->getBool("show_debug");
 }
 
-void GameUI::showMinimap(bool show)
-{
-	m_flags.show_minimap = show;
-}
-
 void GameUI::showTranslatedStatusText(const char *str)
 {
 	showStatusText(wstrgettext(str));
@@ -333,4 +328,37 @@ void GameUI::deleteFormspec()
 	}
 
 	m_formname.clear();
+}
+
+void GameUI::clearText()
+{
+	if (m_guitext_chat) {
+		m_guitext_chat->remove();
+		m_guitext_chat = nullptr;
+	}
+
+	if (m_guitext) {
+		m_guitext->remove();
+		m_guitext = nullptr;
+	}
+
+	if (m_guitext2) {
+		m_guitext2->remove();
+		m_guitext2 = nullptr;
+	}
+
+	if (m_guitext_info) {
+		m_guitext_info->remove();
+		m_guitext_info = nullptr;
+	}
+
+	if (m_guitext_status) {
+		m_guitext_status->remove();
+		m_guitext_status = nullptr;
+	}
+
+	if (m_guitext_profiler) {
+		m_guitext_profiler->remove();
+		m_guitext_profiler = nullptr;
+	}
 }

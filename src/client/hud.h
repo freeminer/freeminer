@@ -40,7 +40,6 @@ public:
 		BLOCK_BOUNDS_OFF,
 		BLOCK_BOUNDS_CURRENT,
 		BLOCK_BOUNDS_NEAR,
-		BLOCK_BOUNDS_MAX
 	} m_block_bounds_mode = BLOCK_BOUNDS_OFF;
 
 	video::SColor crosshair_argb;
@@ -57,6 +56,7 @@ public:
 
 	Hud(Client *client, LocalPlayer *player,
 			Inventory *inventory);
+	void readScalingSetting();
 	~Hud();
 
 	enum BlockBoundsMode toggleBlockBounds();

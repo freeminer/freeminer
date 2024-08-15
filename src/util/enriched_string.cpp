@@ -59,10 +59,11 @@ void EnrichedString::clear()
 	m_background = irr::video::SColor(0, 0, 0, 0);
 }
 
-void EnrichedString::operator=(const wchar_t *str)
+EnrichedString &EnrichedString::operator=(const wchar_t *str)
 {
 	clear();
 	addAtEnd(translate_string(std::wstring(str)), m_default_color);
+	return *this;
 }
 
 void EnrichedString::addAtEnd(const std::wstring &s, SColor initial_color)
@@ -163,6 +164,21 @@ void EnrichedString::operator+=(const EnrichedString &other)
 		m_default_length += other.m_default_length;
 		updateDefaultColor();
 	}
+}
+
+EnrichedString EnrichedString::getNextLine(size_t *pos) const
+{
+	size_t str_pos = *pos;
+
+	// Split per line
+	size_t str_nl = getString().find(L'\n', str_pos);
+	if (str_nl == std::wstring::npos)
+		str_nl = getString().size();
+	EnrichedString line = substr(str_pos, str_nl - str_pos);
+	str_pos += line.size() + 1;
+
+	*pos = str_pos;
+	return line;
 }
 
 EnrichedString EnrichedString::substr(size_t pos, size_t len) const

@@ -33,19 +33,19 @@ protected:
 
 	static void checkArea(v3pos_t &minp, v3pos_t &maxp);
 
-	// F must be (v3s16 pos) -> MapNode
+	// F must be (v3pos_t pos) -> MapNode
 	template <typename F>
 	static int findNodeNear(lua_State *L, v3pos_t pos, int radius,
 		const std::vector<content_t> &filter, int start_radius, F &&getNode);
 
 	// F must be (G callback) -> void
-	// with G being (v3s16 p, MapNode n) -> bool
+	// with G being (v3pos_t p, MapNode n) -> bool
 	// and behave like Map::forEachNodeInArea
 	template <typename F>
 	static int findNodesInArea(lua_State *L,  const NodeDefManager *ndef,
 		const std::vector<content_t> &filter, bool grouped, F &&iterate);
 
-	// F must be (v3s16 pos) -> MapNode
+	// F must be (v3pos_t pos) -> MapNode
 	template <typename F>
 	static int findNodesInAreaUnderAir(lua_State *L, v3pos_t minp, v3pos_t maxp,
 		const std::vector<content_t> &filter, F &&getNode);
@@ -75,13 +75,10 @@ private:
 	// pos = {x=num, y=num, z=num}
 	static int l_swap_node(lua_State *L);
 
-	// get_node(pos)
-	// pos = {x=num, y=num, z=num}
-	static int l_get_node(lua_State *L);
-
-	// get_node_or_nil(pos)
-	// pos = {x=num, y=num, z=num}
-	static int l_get_node_or_nil(lua_State *L);
+	// get_node_raw(x, y, z) -> content, param1, param2, pos_ok
+	// Used to implement get_node and get_node_or_nil in lua.
+	// This is still faster than doing it from C++ even with optimized pushnode.
+	static int l_get_node_raw(lua_State *L);
 
 	// get_node_light(pos, timeofday)
 	// pos = {x=num, y=num, z=num}
@@ -93,15 +90,15 @@ private:
 	// timeofday: nil = current time, 0 = night, 0.5 = day
 	static int l_get_natural_light(lua_State *L);
 
-	// place_node(pos, node)
+	// place_node(pos, node, [placer])
 	// pos = {x=num, y=num, z=num}
 	static int l_place_node(lua_State *L);
 
-	// dig_node(pos)
+	// dig_node(pos, [digger])
 	// pos = {x=num, y=num, z=num}
 	static int l_dig_node(lua_State *L);
 
-	// punch_node(pos)
+	// punch_node(pos, [puncher])
 	// pos = {x=num, y=num, z=num}
 	static int l_punch_node(lua_State *L);
 
@@ -120,6 +117,12 @@ private:
 	// add_node_level(pos)
 	// pos = {x=num, y=num, z=num}
 	static int l_add_node_level(lua_State *L);
+
+	// get_node_boxes(box_type, pos, [node]) -> table
+	// box_type = string
+	// pos = {x=num, y=num, z=num}
+	// node = {name=string, param1=num, param2=num} or nil
+	static int l_get_node_boxes(lua_State *L);
 
 	// find_nodes_with_meta(pos1, pos2)
 	static int l_find_nodes_with_meta(lua_State *L);
@@ -238,6 +241,47 @@ public:
 	static void InitializeClient(lua_State *L, int top);
 };
 
+/*
+ * Duplicates of certain env APIs that operate not on the global
+ * map but on a VoxelManipulator. This is for emerge scripting.
+ */
+class ModApiEnvVM : public ModApiEnvBase {
+private:
+
+	// get_node_or_nil(pos)
+	static int l_get_node_or_nil(lua_State *L);
+
+	// get_node_max_level(pos)
+	static int l_get_node_max_level(lua_State *L);
+
+	// get_node_level(pos)
+	static int l_get_node_level(lua_State *L);
+
+	// set_node_level(pos)
+	static int l_set_node_level(lua_State *L);
+
+	// add_node_level(pos)
+	static int l_add_node_level(lua_State *L);
+
+	// find_node_near(pos, radius, nodenames, [search_center])
+	static int l_find_node_near(lua_State *L);
+
+	// find_nodes_in_area(minp, maxp, nodenames, [grouped])
+	static int l_find_nodes_in_area(lua_State *L);
+
+	// find_surface_nodes_in_area(minp, maxp, nodenames)
+	static int l_find_nodes_in_area_under_air(lua_State *L);
+
+	// spawn_tree(pos, treedef)
+	static int l_spawn_tree(lua_State *L);
+
+	// Helper: get the vmanip we're operating on
+	static MMVManip *getVManip(lua_State *L);
+
+public:
+	static void InitializeEmerge(lua_State *L, int top);
+};
+
 class LuaABM : public ActiveBlockModifier {
 private:
 	int m_id;
@@ -337,8 +381,9 @@ public:
 	LuaRaycast(
 		const core::line3d<f32> &shootline,
 		bool objects_pointable,
-		bool liquids_pointable) :
-		state(shootline, objects_pointable, liquids_pointable)
+		bool liquids_pointable,
+		const std::optional<Pointabilities> &pointabilities) :
+		state(shootline, objects_pointable, liquids_pointable, pointabilities)
 	{}
 
 	//! Creates a LuaRaycast and leaves it on top of the stack.

@@ -38,7 +38,7 @@ public:
 	void beginSave();
 	void endSave();
 
-	bool saveBlock(const v3bpos_t &pos, const std::string &data);
+	bool saveBlock(const v3bpos_t &pos, std::string_view data);
 	void loadBlock(const v3bpos_t &pos, std::string *block);
 	bool deleteBlock(const v3bpos_t &pos);
 	void listAllLoadableBlocks(std::vector<v3bpos_t> &dst);
