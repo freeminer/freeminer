@@ -34,7 +34,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/gameui.h"
 #include "client/renderingengine.h"
 #include "client/sound.h"
-#include "client/tile.h"
+#include "client/texturepaths.h"
 #include "client/mesh_generator_thread.h"
 #include "client/particles.h"
 #include "client/localplayer.h"
@@ -85,8 +85,10 @@ u32 PacketCounter::sum() const
 void PacketCounter::print(std::ostream &o) const
 {
 	for (const auto &it : m_packets) {
-		auto name = it.first >= TOCLIENT_NUM_MSG_TYPES ? "?"
+		auto name = it.first >= TOCLIENT_NUM_MSG_TYPES ? nullptr
 			: toClientCommandTable[it.first].name;
+		if (!name)
+			name = "?";
 		o << "cmd " << it.first << " (" << name << ") count "
 			<< it.second << std::endl;
 	}
@@ -99,7 +101,6 @@ void PacketCounter::print(std::ostream &o) const
 Client::Client(
 		const char *playername,
 		const std::string &password,
-		const std::string &address_name,
 		MapDrawControl &control,
 		IWritableTextureSource *tsrc,
 		IWritableShaderSource *shsrc,
@@ -108,7 +109,6 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		RenderingEngine *rendering_engine,
-		bool ipv6,
 		GameUI *game_ui,
 		ELoginRegister allow_login_or_register
 ):
@@ -125,8 +125,6 @@ Client::Client(
 		tsrc, this
 	),
 	m_particle_manager(std::make_unique<ParticleManager>(&m_env)),
-	m_con(new con::Connection(PROTOCOL_ID, 512, CONNECTION_TIMEOUT, ipv6, this)),
-	m_address_name(address_name),
 	m_allow_login_or_register(allow_login_or_register),
 	m_server_ser_ver(SER_FMT_VER_INVALID),
 	m_last_chat_message_sent(time(NULL)),
@@ -282,9 +280,7 @@ void Client::scanModSubfolder(const std::string &mod_name, const std::string &mo
 				<< "\" as \"" << vfs_path << "\"." << std::endl;
 
 		std::string contents;
-		if (!fs::ReadFile(real_path, contents)) {
-			errorstream << "Client::scanModSubfolder(): Can't read file \""
-					<< real_path << "\"." << std::endl;
+		if (!fs::ReadFile(real_path, contents, true)) {
 			continue;
 		}
 
@@ -340,7 +336,8 @@ bool Client::isShutdown()
 Client::~Client()
 {
 	m_shutdown = true;
-	m_con->Disconnect();
+	if (m_con)
+		m_con->Disconnect();
 
 	deleteAuthData();
 
@@ -383,20 +380,39 @@ Client::~Client()
 	m_sounds_client_to_server.clear();
 }
 
-void Client::connect(Address address, bool is_local_server)
+void Client::connect(const Address &address, const std::string &address_name,
+	bool is_local_server)
 {
-	initLocalMapSaving(address, m_address_name, is_local_server);
+	if (m_con) {
+		// can't do this if the connection has entered auth phase
+		sanity_check(m_state == LC_Created && m_proto_ver == 0);
+		infostream << "Client connection will be recreated" << std::endl;
+
+		m_access_denied = false;
+		m_access_denied_reconnect = false;
+		m_access_denied_reason.clear();
+	}
+
+	m_address_name = address_name;
+	m_con.reset(new con::Connection(PROTOCOL_ID, 512, CONNECTION_TIMEOUT,
+		address.isIPv6(), this));
+
+	infostream << "Connecting to server at ";
+	address.print(infostream);
+	infostream << std::endl;
 
 	// Since we use TryReceive() a timeout here would be ineffective anyway
 	m_con->SetTimeoutMs(0);
 	m_con->Connect(address);
+
+	initLocalMapSaving(address, m_address_name, is_local_server);
 }
 
 void Client::step(float dtime)
 {
 	// Limit a bit
-	if (dtime > 2.0)
-		dtime = 2.0;
+	if (dtime > DTIME_LIMIT)
+		dtime = DTIME_LIMIT;
 
 	m_animation_time += dtime;
 	if(m_animation_time > 60.0)
@@ -783,7 +799,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 		video::IVideoDriver *vdrv = m_rendering_engine->get_video_driver();
 
 		io::IReadFile *rfile = irrfs->createMemoryReadFile(
-				data.c_str(), data.size(), "_tempreadfile");
+				data.c_str(), data.size(), filename.c_str());
 
 		FATAL_ERROR_IF(!rfile, "Could not create irrlicht memory file.");
 
@@ -910,6 +926,10 @@ void Client::initLocalMapSaving(const Address &address,
 	if (!g_settings->getBool("enable_local_map_saving") || is_local_server) {
 		return;
 	}
+	if (m_localdb) {
+		infostream << "Local map saving already running" << std::endl;
+		return;
+	}
 
 	std::string world_path;
 #define set_world_path(hostname) \
@@ -937,6 +957,8 @@ void Client::ReceiveAll()
 	NetworkPacket pkt;
 	u64 start_ms = porting::getTimeMs();
 	const u64 budget = 10;
+
+	FATAL_ERROR_IF(!m_con, "Networking not initialized");
 	for(;;) {
 		// Limit time even if there would be huge amounts of data to
 		// process
@@ -972,27 +994,25 @@ inline void Client::handleCommand(NetworkPacket* pkt)
 void Client::ProcessData(NetworkPacket *pkt)
 {
 	ToClientCommand command = (ToClientCommand) pkt->getCommand();
-	u32 sender_peer_id = pkt->getPeerId();
 
-	//infostream<<"Client: received command="<<command<<std::endl;
-	m_packetcounter.add((u16)command);
+	m_packetcounter.add(static_cast<u16>(command));
 	g_profiler->graphAdd("client_received_packets", 1);
 
 	/*
 		If this check is removed, be sure to change the queue
 		system to know the ids
 	*/
-	if(sender_peer_id != PEER_ID_SERVER) {
+	if (pkt->getPeerId() != PEER_ID_SERVER) {
 		infostream << "Client::ProcessData(): Discarding data not "
-			"coming from server: peer_id=" << sender_peer_id << " command=" << pkt->getCommand()
-			<< std::endl;
+			"coming from server: peer_id=" << static_cast<int>(pkt->getPeerId())
+			<< " command=" << static_cast<unsigned>(command) << std::endl;
 		return;
 	}
 
 	// Command must be handled into ToClientCommandHandler
 	if (command >= TOCLIENT_NUM_MSG_TYPES) {
 		infostream << "Client: Ignoring unknown command "
-			<< command << std::endl;
+			<< static_cast<unsigned>(command) << std::endl;
 		return;
 	}
 
@@ -1001,31 +1021,26 @@ void Client::ProcessData(NetworkPacket *pkt)
 	 * But we must use the new ToClientConnectionState in the future,
 	 * as a byte mask
 	 */
-	if(toClientCommandTable[command].state == TOCLIENT_STATE_NOT_CONNECTED) {
+	if (toClientCommandTable[command].state == TOCLIENT_STATE_NOT_CONNECTED) {
 		handleCommand(pkt);
 		return;
 	}
 
-	if(m_server_ser_ver == SER_FMT_VER_INVALID) {
+	if (m_server_ser_ver == SER_FMT_VER_INVALID) {
 		infostream << "Client: Server serialization"
-				" format invalid or not initialized."
-				" Skipping incoming command=" << command << std::endl;
+				" format invalid. Skipping incoming command "
+				<< static_cast<unsigned>(command) << std::endl;
 		return;
 	}
-
-	/*
-	  Handle runtime commands
-	*/
 
 	handleCommand(pkt);
 }
 
 void Client::Send(NetworkPacket* pkt)
 {
-	m_con->Send(PEER_ID_SERVER,
-		serverCommandFactoryTable[pkt->getCommand()].channel,
-		pkt,
-		serverCommandFactoryTable[pkt->getCommand()].reliable);
+	auto &scf = serverCommandFactoryTable[pkt->getCommand()];
+	FATAL_ERROR_IF(!scf.name, "packet type missing in table");
+	m_con->Send(PEER_ID_SERVER, scf.channel, pkt, scf.reliable);
 }
 
 // Will fill up 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1 bytes
@@ -1444,6 +1459,7 @@ void Client::sendUpdateClientInfo(const ClientDynamicInfo& info)
 	pkt << info.real_gui_scaling;
 	pkt << info.real_hud_scaling;
 	pkt << (f32)info.max_fs_size.X << (f32)info.max_fs_size.Y;
+	pkt << info.touch_controls;
 
 	Send(&pkt);
 }
@@ -1771,7 +1787,7 @@ ClientEvent *Client::getClientEvent()
 
 const Address Client::getServerAddress()
 {
-	return m_con->GetPeerAddress(PEER_ID_SERVER);
+	return m_con ? m_con->GetPeerAddress(PEER_ID_SERVER) : Address();
 }
 
 float Client::mediaReceiveProgress()
@@ -1780,6 +1796,11 @@ float Client::mediaReceiveProgress()
 		return m_media_downloader->getProgress();
 
 	return 1.0; // downloader only exists when not yet done
+}
+
+void Client::drawLoadScreen(const std::wstring &text, float dtime, int percent) {
+	m_rendering_engine->run();
+	m_rendering_engine->draw_load_screen(text, guienv, m_tsrc, dtime, percent);
 }
 
 struct TextureUpdateArgs {
@@ -1793,7 +1814,7 @@ struct TextureUpdateArgs {
 void Client::showUpdateProgressTexture(void *args, u32 progress, u32 max_progress)
 {
 		TextureUpdateArgs* targs = (TextureUpdateArgs*) args;
-		u16 cur_percent = ceil(progress / (double) max_progress * 100.);
+		u16 cur_percent = std::ceil(progress / max_progress * 100.f);
 
 		// update the loading menu -- if necessary
 		bool do_draw = false;
@@ -1877,11 +1898,13 @@ void Client::afterContentReceived()
 
 float Client::getRTT()
 {
+	assert(m_con);
 	return m_con->getPeerStat(PEER_ID_SERVER,con::AVG_RTT);
 }
 
 float Client::getCurRate()
 {
+	assert(m_con);
 	return (m_con->getLocalStat(con::CUR_INC_RATE) +
 			m_con->getLocalStat(con::CUR_DL_RATE));
 }
@@ -1925,8 +1948,7 @@ void Client::makeScreenshot()
 
 	while (serial < SCREENSHOT_MAX_SERIAL_TRIES) {
 		filename = filename_base + (serial > 0 ? ("_" + itos(serial)) : "") + filename_ext;
-		std::ifstream tmp(filename.c_str());
-		if (!tmp.good())
+		if (!fs::PathExists(filename))
 			break;	// File did not apparently exist, we'll go with it
 		serial++;
 	}
@@ -1956,19 +1978,9 @@ void Client::makeScreenshot()
 	raw_image->drop();
 }
 
-bool Client::shouldShowMinimap() const
-{
-	return !m_minimap_disabled_by_server;
-}
-
 void Client::pushToEventQueue(ClientEvent *event)
 {
 	m_client_event_queue.push(event);
-}
-
-void Client::showMinimap(const bool show)
-{
-	m_game_ui->showMinimap(show);
 }
 
 // IGameDef interface

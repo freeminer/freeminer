@@ -1,10 +1,7 @@
 uniform mat4 mWorld;
 uniform vec3 dayLight;
-uniform vec3 eyePosition;
 uniform float animationTimer;
-uniform vec4 emissiveColor;
-uniform vec3 cameraOffset;
-
+uniform lowp vec4 emissiveColor;
 
 varying vec3 vNormal;
 varying vec3 vPosition;
@@ -33,7 +30,7 @@ centroid varying vec2 varTexCoord;
 	varying float perspective_factor;
 #endif
 
-varying vec3 eyeVec;
+varying highp vec3 eyeVec;
 varying float nightRatio;
 // Color of the light emitted by the light sources.
 const vec3 artificialLight = vec3(1.04, 1.04, 1.04);
@@ -147,7 +144,7 @@ void main(void)
 		if (f_normal_length > 0.0) {
 			nNormal = normalize(vNormal);
 			cosLight = max(1e-5, dot(nNormal, -v_LightDirection));
-			float sinLight = pow(1 - pow(cosLight, 2.0), 0.5);
+			float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
 			normalOffsetScale = 0.1 * pFactor * pFactor * sinLight * min(f_shadowfar, 500.0) /
 					xyPerspectiveBias1 / f_textureresolution;
 			z_bias = 1e3 * sinLight / cosLight * (0.5 + f_textureresolution / 1024.0);
@@ -155,7 +152,7 @@ void main(void)
 		else {
 			nNormal = vec3(0.0);
 			cosLight = clamp(dot(v_LightDirection, normalize(vec3(v_LightDirection.x, 0.0, v_LightDirection.z))), 1e-2, 1.0);
-			float sinLight = pow(1 - pow(cosLight, 2.0), 0.5);
+			float sinLight = pow(1.0 - pow(cosLight, 2.0), 0.5);
 			normalOffsetScale = 0.0;
 			z_bias = 3.6e3 * sinLight / cosLight;
 		}

@@ -36,8 +36,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "network/peerhandler.h"
 #include "gameparams.h"
 #include "clientdynamicinfo.h"
-#include <fstream>
 #include "util/numeric.h"
+
+#ifdef SERVER
+#error Do not include in server builds
+#endif
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
@@ -122,7 +125,6 @@ public:
 	Client(
 			const char *playername,
 			const std::string &password,
-			const std::string &address_name,
 			MapDrawControl &control,
 			IWritableTextureSource *tsrc,
 			IWritableShaderSource *shsrc,
@@ -131,7 +133,6 @@ public:
 			ISoundManager *sound,
 			MtEventManager *event,
 			RenderingEngine *rendering_engine,
-			bool ipv6,
 			GameUI *game_ui,
 			ELoginRegister allow_login_or_register
 	);
@@ -155,11 +156,8 @@ public:
 
 	bool isShutdown();
 
-	/*
-		The name of the local player should already be set when
-		calling this, as it is sent in the initialization.
-	*/
-	void connect(Address address, bool is_local_server);
+	void connect(const Address &address, const std::string &address_name,
+		bool is_local_server);
 
 	/*
 		Stuff that references the environment is valid only as
@@ -196,6 +194,7 @@ public:
 	void handleCommand_HP(NetworkPacket* pkt);
 	void handleCommand_Breath(NetworkPacket* pkt);
 	void handleCommand_MovePlayer(NetworkPacket* pkt);
+	void handleCommand_MovePlayerRel(NetworkPacket* pkt);
 	void handleCommand_DeathScreen(NetworkPacket* pkt);
 	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
 	void handleCommand_Media(NetworkPacket* pkt);
@@ -350,26 +349,29 @@ public:
 	bool activeObjectsReceived() const
 	{ return m_activeobjects_received; }
 
-	u16 getProtoVersion()
+	u16 getProtoVersion() const
 	{ return m_proto_ver; }
 
 	bool m_simple_singleplayer_mode;
 
 	float mediaReceiveProgress();
 
+	void drawLoadScreen(const std::wstring &text, float dtime, int percent);
 	void afterContentReceived();
 	void showUpdateProgressTexture(void *args, u32 progress, u32 max_progress);
 
 	float getRTT();
 	float getCurRate();
+	// has the server ever replied to us, used for connection retry/fallback
+	bool hasServerReplied() const {
+		return getProtoVersion() != 0; // (set in TOCLIENT_HELLO)
+	}
 
 	Minimap* getMinimap() { return m_minimap; }
 	void setCamera(Camera* camera) { m_camera = camera; }
 
 	Camera* getCamera () { return m_camera; }
 	scene::ISceneManager *getSceneManager();
-
-	bool shouldShowMinimap() const;
 
 	// IGameDef interface
 	IItemDefManager* getItemDefManager() override;
@@ -412,10 +414,10 @@ public:
 
 	void pushToEventQueue(ClientEvent *event);
 
-	void showMinimap(bool show = true);
-
+	// IP and port we're connected to
 	const Address getServerAddress();
 
+	// Hostname of the connected server (but can also be a numerical IP)
 	const std::string &getAddressName() const
 	{
 		return m_address_name;
@@ -496,7 +498,6 @@ private:
 	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
 	Camera *m_camera = nullptr;
 	Minimap *m_minimap = nullptr;
-	bool m_minimap_disabled_by_server = false;
 
 	// Server serialization version
 	u8 m_server_ser_ver;

@@ -32,8 +32,6 @@
 
 #include <irrlicht.h>
 #include <iostream>
-#include <codecvt>
-#include <locale>
 #include "CGUITTFont.h"
 
 namespace irr
@@ -242,37 +240,6 @@ CGUITTFont* CGUITTFont::createTTFont(IGUIEnvironment *env, const io::path& filen
 	return font;
 }
 
-CGUITTFont* CGUITTFont::createTTFont(IrrlichtDevice *device, const io::path& filename, const u32 size, const bool antialias, const bool transparency)
-{
-	if (!c_libraryLoaded)
-	{
-		if (FT_Init_FreeType(&c_library))
-			return 0;
-		c_libraryLoaded = true;
-	}
-
-	CGUITTFont* font = new CGUITTFont(device->getGUIEnvironment());
-	font->Device = device;
-	bool ret = font->load(filename, size, antialias, transparency);
-	if (!ret)
-	{
-		font->drop();
-		return 0;
-	}
-
-	return font;
-}
-
-CGUITTFont* CGUITTFont::create(IGUIEnvironment *env, const io::path& filename, const u32 size, const bool antialias, const bool transparency)
-{
-	return CGUITTFont::createTTFont(env, filename, size, antialias, transparency);
-}
-
-CGUITTFont* CGUITTFont::create(IrrlichtDevice *device, const io::path& filename, const u32 size, const bool antialias, const bool transparency)
-{
-	return CGUITTFont::createTTFont(device, filename, size, antialias, transparency);
-}
-
 //////////////////////
 
 //! Constructor.
@@ -306,6 +273,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 
 	io::IFileSystem* filesystem = Environment->getFileSystem();
 	irr::ILogger* logger = (Device != 0 ? Device->getLogger() : 0);
+	// FIXME: this is always null ^
 	this->size = size;
 	this->filename = filename;
 
@@ -316,7 +284,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 
 	// Log.
 	if (logger)
-		logger->log(L"CGUITTFont", core::stringw(core::stringw(L"Creating new font: ") + core::stringw(filename) + L" " + core::stringc(size) + L"pt " + (antialias ? L"+antialias " : L"-antialias ") + (transparency ? L"+transparency" : L"-transparency")).c_str(), irr::ELL_INFORMATION);
+		logger->log("CGUITTFont", (core::stringc(L"Creating new font: ") + filename + " " + core::stringc(size) + "pt " + (antialias ? "+antialias " : "-antialias ") + (transparency ? "+transparency" : "-transparency")).c_str(), irr::ELL_INFORMATION);
 
 	// Grab the face.
 	SGUITTFace* face = 0;
@@ -332,7 +300,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 			io::IReadFile* file = filesystem->createAndOpenFile(filename);
 			if (file == 0)
 			{
-				if (logger) logger->log(L"CGUITTFont", L"Failed to open the file.", irr::ELL_INFORMATION);
+				if (logger) logger->log("CGUITTFont", "Failed to open the file.", irr::ELL_INFORMATION);
 
 				c_faces.erase(filename);
 				delete face;
@@ -347,7 +315,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 			// Create the face.
 			if (FT_New_Memory_Face(c_library, face->face_buffer, face->face_buffer_size, 0, &face->face))
 			{
-				if (logger) logger->log(L"CGUITTFont", L"FT_New_Memory_Face failed.", irr::ELL_INFORMATION);
+				if (logger) logger->log("CGUITTFont", "FT_New_Memory_Face failed.", irr::ELL_INFORMATION);
 
 				c_faces.erase(filename);
 				delete face;
@@ -359,7 +327,7 @@ bool CGUITTFont::load(const io::path& filename, const u32 size, const bool antia
 		{
 			if (FT_New_Face(c_library, reinterpret_cast<const char*>(filename.c_str()), 0, &face->face))
 			{
-				if (logger) logger->log(L"CGUITTFont", L"FT_New_Face failed.", irr::ELL_INFORMATION);
+				if (logger) logger->log("CGUITTFont", "FT_New_Face failed.", irr::ELL_INFORMATION);
 
 				c_faces.erase(filename);
 				delete face;
@@ -1078,6 +1046,7 @@ void CGUITTFont::createSharedPlane()
 	buf->append(vertices, 4, indices, 6);
 
 	shared_plane_.addMeshBuffer( buf );
+	shared_plane_.setHardwareMappingHint(EHM_STATIC);
 
 	shared_plane_ptr_ = &shared_plane_;
 	buf->drop(); //the addMeshBuffer method will grab it, so we can drop this ptr.
@@ -1251,21 +1220,31 @@ std::u32string CGUITTFont::convertWCharToU32String(const wchar_t* const charArra
 {
 	static_assert(sizeof(wchar_t) == 2 || sizeof(wchar_t) == 4, "unexpected wchar size");
 
-	if (sizeof(wchar_t) == 4) // Systems where wchar_t is UTF-32
+	if (sizeof(wchar_t) == 4) // wchar_t is UTF-32
 		return std::u32string(reinterpret_cast<const char32_t*>(charArray));
 
-	// Systems where wchar_t is UTF-16:
-	// First, convert to UTF-8
-	std::u16string utf16String(reinterpret_cast<const char16_t*>(charArray));
-	std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter1;
-	std::string utf8String = converter1.to_bytes(utf16String);
+	// wchar_t is UTF-16 and we need to convert.
+	// std::codecvt could do this for us but aside from being deprecated,
+	// it turns out that it's laughably slow on MSVC. Thanks Microsoft.
 
-	// Next, convert to UTF-32
-	std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> converter2;
-	return converter2.from_bytes(utf8String);
-
-	// This is inefficient, but importantly it is _correct_, rather than a hand-rolled UTF-16 to
-	// UTF-32 converter which may or may not be correct.
+	std::u32string ret;
+	ret.reserve(wcslen(charArray));
+	const wchar_t *p = charArray;
+	while (*p) {
+		char32_t c = *p;
+		if (c >= 0xD800 && c < 0xDC00) {
+			p++;
+			char32_t c2 = *p;
+			if (!c2)
+				break;
+			else if (c2 < 0xDC00 || c2 > 0xDFFF)
+				continue; // can't find low surrogate, skip
+			c = 0x10000 + ( ((c & 0x3ff) << 10) | (c2 & 0x3ff) );
+		}
+		ret.push_back(c);
+		p++;
+	}
+	return ret;
 }
 
 

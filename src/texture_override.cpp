@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "texture_override.h"
 
 #include "log.h"
+#include "filesys.h"
 #include "util/string.h"
 #include <algorithm>
 #include <fstream>
@@ -46,9 +47,9 @@ static const std::map<std::string, OverrideTarget> override_LUT = {
 	{ "*", OverrideTarget::ALL_FACES }
 };
 
-TextureOverrideSource::TextureOverrideSource(std::string filepath)
+TextureOverrideSource::TextureOverrideSource(const std::string &filepath)
 {
-	std::ifstream infile(filepath.c_str());
+	auto infile = open_ifstream(filepath.c_str(), false);
 	std::string line;
 	int line_index = 0;
 	while (std::getline(infile, line)) {
@@ -115,7 +116,7 @@ TextureOverrideSource::TextureOverrideSource(std::string filepath)
 }
 
 //! Get all overrides that apply to item definitions
-std::vector<TextureOverride> TextureOverrideSource::getItemTextureOverrides()
+std::vector<TextureOverride> TextureOverrideSource::getItemTextureOverrides() const
 {
 	std::vector<TextureOverride> found_overrides;
 
@@ -128,7 +129,7 @@ std::vector<TextureOverride> TextureOverrideSource::getItemTextureOverrides()
 }
 
 //! Get all overrides that apply to node definitions
-std::vector<TextureOverride> TextureOverrideSource::getNodeTileOverrides()
+std::vector<TextureOverride> TextureOverrideSource::getNodeTileOverrides() const
 {
 	std::vector<TextureOverride> found_overrides;
 

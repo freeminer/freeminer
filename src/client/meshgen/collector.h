@@ -48,7 +48,6 @@ struct MeshCollector
 	// offset: offset added to vertices
 	MeshCollector(const v3opos_t center_pos, v3f offset = v3f()) : m_center_pos(center_pos), offset(offset) {}
 
-	// clang-format off
 	void append(const TileSpec &material,
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);
@@ -56,10 +55,8 @@ struct MeshCollector
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices,
 			v3f pos, video::SColor c, u8 light_source);
-	// clang-format on
 
 private:
-	// clang-format off
 	void append(const TileLayer &material,
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices,
@@ -69,7 +66,6 @@ private:
 			const u16 *indices, u32 numIndices,
 			v3f pos, video::SColor c, u8 light_source,
 			u8 layernum, bool use_scale = false);
-	// clang-format on
 
 	PreMeshBuffer &findBuffer(const TileLayer &layer, u8 layernum, u32 numVertices);
 };

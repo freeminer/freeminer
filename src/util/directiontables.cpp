@@ -31,17 +31,6 @@ const v3pos_t g_6dirs[6] =
 	v3pos_t(-1, 0, 0) // left
 };
 
-const v3bpos_t g_6dirs_b[6] =
-{
-	// +right, +top, +back
-	v3bpos_t( 0, 0, 1), // back
-	v3bpos_t( 0, 1, 0), // top
-	v3bpos_t( 1, 0, 0), // right
-	v3bpos_t( 0, 0,-1), // front
-	v3bpos_t( 0,-1, 0), // bottom
-	v3bpos_t(-1, 0, 0) // left
-};
-
 const v3pos_t g_7dirs[7] =
 {
 	v3pos_t(0,0,1), // back
@@ -122,13 +111,15 @@ const v3pos_t g_27dirs[27] =
 	v3pos_t(0,0,0),
 };
 
-const u8 wallmounted_to_facedir[6] = {
+const u8 wallmounted_to_facedir[8] = {
 	20,
 	0,
 	16 + 1,
 	12 + 3,
 	8,
-	4 + 2
+	4 + 2,
+	20 + 1, // special 1
+	0 + 1 // special 2
 };
 
 const v3s16 wallmounted_dirs[8] = {

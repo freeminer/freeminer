@@ -90,7 +90,7 @@
 #    Smooths rotation of camera, also called look or mouse smoothing. 0 to disable.
 camera_smoothing (Camera smoothing) float 0.0 0.0 0.99
 
-#    Smooths rotation of camera when in cinematic mode, 0 to disable. Enter cinematic mode by using the key set in Change Keys.
+#    Smooths rotation of camera when in cinematic mode, 0 to disable. Enter cinematic mode by using the key set in Controls.
 #
 #    Requires: keyboard_mouse
 cinematic_camera_smoothing (Camera smoothing in cinematic mode) float 0.7 0.0 0.99
@@ -114,7 +114,11 @@ always_fly_fast (Always fly fast) bool true
 #    the place button.
 #
 #    Requires: keyboard_mouse
-repeat_place_time (Place repetition interval) float 0.25 0.16 2
+repeat_place_time (Place repetition interval) float 0.25 0.16 2.0
+
+#    The minimum time in seconds it takes between digging nodes when holding
+#    the dig button.
+repeat_dig_time (Minimum dig repetition interval) float 0.0 0.0 2.0
 
 #    Automatically jump up single-node obstacles.
 autojump (Automatic jumping) bool false
@@ -148,15 +152,25 @@ invert_hotbar_mouse_wheel (Hotbar: Invert mouse wheel direction) bool false
 
 [*Touchscreen]
 
-#    The length in pixels it takes for touchscreen interaction to start.
+#    Enables touchscreen mode, allowing you to play the game with a touchscreen.
 #
-#    Requires: touchscreen_gui
-touchscreen_threshold (Touchscreen threshold) int 20 0 100
+#    Requires: !android
+enable_touch (Enable touchscreen) bool true
 
 #    Touchscreen sensitivity multiplier.
 #
 #    Requires: touchscreen_gui
 touchscreen_sensitivity (Touchscreen sensitivity) float 0.2 0.001 10.0
+
+#    The length in pixels after which a touch interaction is considered movement.
+#
+#    Requires: touchscreen_gui
+touchscreen_threshold (Movement threshold) int 20 0 100
+
+#    The delay in milliseconds after which a touch interaction is considered a long tap.
+#
+#    Requires: touchscreen_gui
+touch_long_tap_delay (Threshold for long taps) int 400 100 1000
 
 #    Use crosshair to select object instead of whole screen.
 #    If enabled, a crosshair will be shown and will be used for selecting object.
@@ -175,6 +189,19 @@ fixed_virtual_joystick (Fixed virtual joystick) bool false
 #
 #    Requires: touchscreen_gui
 virtual_joystick_triggers_aux1 (Virtual joystick triggers Aux1 button) bool false
+
+#    The gesture for punching players/entities.
+#    This can be overridden by games and mods.
+#
+#    * short_tap
+#      Easy to use and well-known from other games that shall not be named.
+#
+#    * long_tap
+#      Known from the classic Minetest mobile controls.
+#      Combat is more or less impossible.
+#
+#    Requires: touchscreen_gui
+touch_punch_gesture (Punch gesture) enum short_tap short_tap,long_tap
 
 
 [Graphics and Audio]
@@ -240,8 +267,8 @@ undersampling (Undersampling) int 1 1 8
 
 [**Graphics Effects]
 
-#    Makes all liquids opaque
-opaque_water (Opaque liquids) bool false
+#    Allows liquids to be translucent.
+translucent_liquids (Translucent liquids) bool true
 
 #    Leaves style:
 #    -   Fancy:  all faces visible
@@ -401,7 +428,8 @@ anisotropic_filter (Anisotropic filtering) bool false
 #
 #    * None - No antialiasing (default)
 #
-#    * FSAA - Hardware-provided full-screen antialiasing (incompatible with shaders)
+#    * FSAA - Hardware-provided full-screen antialiasing
+#             (incompatible with Post Processing and Undersampling)
 #             A.K.A multi-sample antialiasing (MSAA)
 #             Smoothens out block edges but does not affect the insides of textures.
 #             A restart is required to change this option.
@@ -440,7 +468,6 @@ enable_raytraced_culling (Enable Raytraced Culling) bool true
 
 #    Shaders allow advanced visual effects and may increase performance on some video
 #    cards.
-#    This only works with the OpenGL video backend.
 #
 #    Requires: shaders_support
 enable_shaders (Shaders) bool true
@@ -557,12 +584,17 @@ shadow_sky_body_orbit_tilt (Sky Body Orbit Tilt) float 0.0 -60.0 60.0
 
 [**Post Processing]
 
+#    Enables the post processing pipeline.
+#
+#    Requires: shaders
+enable_post_processing (Enable Post Processing) bool true
+
 #    Enables Hable's 'Uncharted 2' filmic tone mapping.
 #    Simulates the tone curve of photographic film and how this approximates the
 #    appearance of high dynamic range images. Mid-range contrast is slightly
 #    enhanced, highlights and shadows are gradually compressed.
 #
-#    Requires: shaders
+#    Requires: shaders, enable_post_processing
 tone_mapping (Filmic tone mapping) bool false
 
 #    Enable automatic exposure correction
@@ -570,22 +602,33 @@ tone_mapping (Filmic tone mapping) bool false
 #    automatically adjust to the brightness of the scene,
 #    simulating the behavior of human eye.
 #
-#    Requires: shaders
+#    Requires: shaders, enable_post_processing
 enable_auto_exposure (Enable Automatic Exposure) bool false
 
 #    Set the exposure compensation in EV units.
 #    Value of 0.0 (default) means no exposure compensation.
 #    Range: from -1 to 1.0
 #
-#    Requires: shaders, enable_auto_exposure
+#    Requires: shaders, enable_post_processing, enable_auto_exposure
 exposure_compensation (Exposure compensation) float 0.0 -1.0 1.0
+
+#    Apply dithering to reduce color banding artifacts.
+#    Dithering significantly increases the size of losslessly-compressed
+#    screenshots and it works incorrectly if the display or operating system
+#    performs additional dithering or if the color channels are not quantized
+#    to 8 bits.
+#    With OpenGL ES, dithering only works if the shader supports high
+#    floating-point precision and it may have a higher performance impact.
+#
+#    Requires: shaders, enable_post_processing
+debanding (Enable Debanding) bool true
 
 [**Bloom]
 
 #    Set to true to enable bloom effect.
 #    Bright colors will bleed over the neighboring objects.
 #
-#    Requires: shaders
+#    Requires: shaders, enable_post_processing
 enable_bloom (Enable Bloom) bool false
 
 #    Set to true to render debugging breakdown of the bloom effect.
@@ -593,35 +636,42 @@ enable_bloom (Enable Bloom) bool false
 #    top-left - processed base image, top-right - final image
 #    bottom-left - raw base image, bottom-right - bloom texture.
 #
-#    Requires: shaders, enable_bloom
+#    Requires: shaders, enable_post_processing, enable_bloom
 enable_bloom_debug (Enable Bloom Debug) bool false
 
 #    Defines how much bloom is applied to the rendered image
 #    Smaller values make bloom more subtle
 #    Range: from 0.01 to 1.0, default: 0.05
 #
-#    Requires: shaders, enable_bloom
+#    Requires: shaders, enable_post_processing, enable_bloom
 bloom_intensity (Bloom Intensity) float 0.05 0.01 1.0
 
 #    Defines the magnitude of bloom overexposure.
 #    Range: from 0.1 to 10.0, default: 1.0
 #
-#    Requires: shaders, enable_bloom
+#    Requires: shaders, enable_post_processing, enable_bloom
 bloom_strength_factor (Bloom Strength Factor) float 1.0 0.1 10.0
 
 #    Logical value that controls how far the bloom effect spreads
 #    from the bright objects.
 #    Range: from 0.1 to 8, default: 1
 #
-#    Requires: shaders, enable_bloom
+#    Requires: shaders, enable_post_processing, enable_bloom
 bloom_radius (Bloom Radius) float 1 0.1 8
 
+#    Set to true to enable volumetric lighting effect (a.k.a. "Godrays").
+#
+#    Requires: shaders, enable_post_processing, enable_bloom
+enable_volumetric_lighting (Volumetric lighting) bool false
 
 [*Audio]
 
 #    Volume of all sounds.
 #    Requires the sound system to be enabled.
 sound_volume (Volume) float 0.8 0.0 1.0
+
+#    Volume multiplier when the window is unfocused.
+sound_volume_unfocused (Volume when unfocused) float 0.3 0.0 1.0
 
 #    Whether to mute sounds. You can unmute sounds at any time, unless the
 #    sound system is disabled (enable_sound=false).
@@ -631,7 +681,7 @@ mute_sound (Mute sound) bool false
 
 [*User Interfaces]
 
-#    Set the language. Leave empty to use the system language.
+#    Set the language. By default, the system language is used.
 #    A restart is required after changing this.
 language (Language) enum   ,be,bg,ca,cs,da,de,el,en,eo,es,et,eu,fi,fr,gd,gl,hu,id,it,ja,jbo,kk,ko,lt,lv,ms,nb,nl,nn,pl,pt,pt_BR,ro,ru,sk,sl,sr_Cyrl,sr_Latn,sv,sw,tr,uk,vi,zh_CN,zh_TW
 
@@ -716,6 +766,10 @@ chat_font_size (Chat font size) int 0 0 72
 #    The URL for the content repository
 contentdb_url (ContentDB URL) string https://content.minetest.net
 
+#    If enabled and you have ContentDB packages installed, Minetest may contact ContentDB to
+#    check for package updates when opening the mainmenu.
+contentdb_enable_updates_indicator (Enable updates available indicator on content tab) bool true
+
 #    Comma-separated list of flags to hide in the content repository.
 #    "nonfree" can be used to hide packages which do not qualify as 'free software',
 #    as defined by the Free Software Foundation.
@@ -743,7 +797,8 @@ serverlist_url (Serverlist URL) string servers.minetest.net
 #    If disabled, new accounts will be registered automatically when logging in.
 enable_split_login_register (Enable split login/register) bool true
 
-#    URL to JSON file which provides information about the newest Minetest release
+#    URL to JSON file which provides information about the newest Minetest release.
+#    If this is empty the engine will never check for updates.
 update_information_url (Update information URL) string https://www.minetest.net/release_info.json
 
 [*Server]
@@ -795,6 +850,14 @@ bind_address (Bind address) string
 #    Older clients are compatible in the sense that they will not crash when connecting
 #    to new servers, but they may not support all new features that you are expecting.
 strict_protocol_version_checking (Strict protocol checking) bool false
+
+#    Define the oldest clients allowed to connect.
+#    Older clients are compatible in the sense that they will not crash when connecting
+#    to new servers, but they may not support all new features that you are expecting.
+#    This allows for more fine-grained control than strict_protocol_version_checking.
+#    Minetest still enforces its own internal minimum, and enabling
+#    strict_protocol_version_checking will effectively override this.
+protocol_version_min (Protocol version minimum) int 1 1 65535
 
 #    Specifies URL from which client fetches media instead of using UDP.
 #    $filename should be accessible from $remote_media$filename via cURL
@@ -1043,7 +1106,8 @@ mgv5_np_dungeons (Dungeon noise) noise_params_3d 0.9, 0.5, (500, 500, 500), 0, 2
 #    The 'snowbiomes' flag enables the new 5 biome system.
 #    When the 'snowbiomes' flag is enabled jungles are automatically enabled and
 #    the 'jungles' flag is ignored.
-mgv6_spflags (Mapgen V6 specific flags) flags jungles,biomeblend,mudflow,snowbiomes,noflat,trees jungles,biomeblend,mudflow,snowbiomes,flat,trees,nojungles,nobiomeblend,nomudflow,nosnowbiomes,noflat,notrees
+#    The 'temples' flag disables generation of desert temples. Normal dungeons will appear instead.
+mgv6_spflags (Mapgen V6 specific flags) flags jungles,biomeblend,mudflow,snowbiomes,noflat,trees,temples jungles,biomeblend,mudflow,snowbiomes,flat,trees,temples,nojungles,nobiomeblend,nomudflow,nosnowbiomes,noflat,notrees,notemples
 
 #    Deserts occur when np_biome exceeds this value.
 #    When the 'snowbiomes' flag is enabled, this is ignored.
@@ -1702,6 +1766,9 @@ deprecated_lua_api_handling (Deprecated Lua API handling) enum log none,log,erro
 #    Enable random user input (only used for testing).
 random_input (Random input) bool false
 
+#    Enable random mod loading (mainly used for testing).
+random_mod_load_order (Random mod load order) bool false
+
 #    Enable mod channels support.
 enable_mod_channels (Mod channels) bool false
 
@@ -1772,16 +1839,12 @@ shader_path (Shader path) path
 #    The rendering back-end.
 #    Note: A restart is required after changing this!
 #    OpenGL is the default for desktop, and OGLES2 for Android.
-#    Shaders are supported by OpenGL and OGLES2 (experimental).
-video_driver (Video driver) enum  ,opengl,ogles1,ogles2
+#    Shaders are supported by everything but OGLES1.
+video_driver (Video driver) enum  ,opengl,opengl3,ogles1,ogles2
 
 #    Distance in nodes at which transparency depth sorting is enabled
 #    Use this to limit the performance impact of transparency depth sorting
 transparency_sorting_distance (Transparency Sorting Distance) int 16 0 128
-
-#    Enable vertex buffer objects.
-#    This should greatly improve graphics performance.
-enable_vbo (VBO) bool true
 
 #    Radius of cloud area stated in number of 64 node cloud squares.
 #    Values larger than 26 will start to produce sharp cutoffs at cloud area corners.
@@ -1800,11 +1863,6 @@ mesh_generation_interval (Mapblock mesh generation delay) int 0 0 50
 #    Number of threads to use for mesh generation.
 #    Value of 0 (default) will let Minetest autodetect the number of available threads.
 mesh_generation_threads (Mapblock mesh generation threads) int 0 0 8
-
-#    Size of the MapBlock cache of the mesh generator. Increasing this will
-#    increase the cache hit %, reducing the data being copied from the main
-#    thread, thus reducing jitter.
-meshgen_block_cache_size (Mapblock mesh generator's MapBlock cache size in MB) int 20 0 1000
 
 #    True = 256
 #    False = 128
@@ -1843,6 +1901,14 @@ texture_min_size (Base texture size) int 64 1 32768
 #    draw calls, benefiting especially high-end GPUs.
 #    Systems with a low-end GPU (or no GPU) would benefit from smaller values.
 client_mesh_chunk (Client Mesh Chunksize) int 1 1 16
+
+#    Enables debug and error-checking in the OpenGL driver.
+opengl_debug (OpenGL debug) bool false
+
+[**Sound]
+#    Comma-separated list of AL and ALC extensions that should not be used.
+#    Useful for testing. See al_extensions.[h,cpp] for details.
+sound_extensions_blacklist (Sound Extensions Blacklist) string
 
 [**Font]
 
@@ -1982,9 +2048,10 @@ ask_reconnect_on_crash (Ask to reconnect after crash) bool false
 
 [**Server/Env Performance]
 
-#    Length of a server tick and the interval at which objects are generally updated over
-#    network, stated in seconds.
-dedicated_server_step (Dedicated server step) float 0.09 0.0
+#    Length of a server tick (the interval at which everything is generally updated),
+#    stated in seconds.
+#    Does not apply to sessions hosted from the client menu.
+dedicated_server_step (Dedicated server step) float 0.09 0.0 1.0
 
 #    Whether players are shown to clients without any range limit.
 #    Deprecated, use the setting player_transfer_distance instead.
@@ -2054,18 +2121,24 @@ liquid_update (Liquid update tick) float 1.0 0.001
 #    At this distance the server will aggressively optimize which blocks are sent to
 #    clients.
 #    Small values potentially improve performance a lot, at the expense of visible
-#    rendering glitches (some blocks will not be rendered under water and in caves,
-#    as well as sometimes on land).
+#    rendering glitches (some blocks might not be rendered correctly in caves).
 #    Setting this to a value greater than max_block_send_distance disables this
 #    optimization.
-#    Stated in mapblocks (16 nodes).
-block_send_optimize_distance (Block send optimize distance) int 4 2 32767
+#    Stated in MapBlocks (16 nodes).
+block_send_optimize_distance (Block send optimize distance) int 4 2 2047
 
 #    If enabled, the server will perform map block occlusion culling based on
 #    on the eye position of the player. This can reduce the number of blocks
 #    sent to the client by 50-80%. Clients will no longer receive most
 #    invisible blocks, so that the utility of noclip mode is reduced.
 server_side_occlusion_culling (Server-side occlusion culling) bool true
+
+#    At this distance the server will perform a simpler and cheaper occlusion check.
+#    Smaller values potentially improve performance, at the expense of temporarily visible
+#    rendering glitches (missing blocks).
+#    This is especially useful for very large viewing range (upwards of 500).
+#    Stated in MapBlocks (16 nodes).
+block_cull_optimize_distance (Block cull optimize distance) int 25 2 2047
 
 [**Mapgen]
 
@@ -2119,9 +2192,6 @@ curl_parallel_limit (cURL parallel limit) int 8 1 2147483647
 curl_file_download_timeout (cURL file download timeout) int 300000 5000 2147483647
 
 [**Miscellaneous]
-
-#    Adjust dpi configuration to your screen (non X11/Android only) e.g. for 4k screens.
-screen_dpi (DPI) int 72 1
 
 #    Adjust the detected display density, used for scaling UI elements.
 display_density_factor (Display Density Scaling Factor) float 1 0.5 5.0
@@ -2247,20 +2317,6 @@ show_advanced (Show advanced settings) bool false
 #    Changing this setting requires a restart.
 enable_sound (Sound) bool true
 
-#    Unix timestamp (integer) of when the client last checked for an update
-#    Set this value to "disabled" to never check for updates.
-update_last_checked (Last update check) string
-
-#    Version number which was last seen during an update check.
-#
-#    Representation: MMMIIIPPP, where M=Major, I=Minor, P=Patch
-#    Ex: 5.5.0 is 005005000
-update_last_known (Last known version update) int 0
-
-#    If this is set to true, the user will never (again) be shown the
-#    "reinstall Minetest Game" notification.
-no_mtg_notification (Don't show "reinstall Minetest Game" notification) bool false
-
 #    Key for moving the player forward.
 keymap_forward (Forward key) key KEY_KEY_W
 
@@ -2345,6 +2401,9 @@ keymap_minimap (Minimap key) key KEY_KEY_V
 
 #    Key for taking screenshots.
 keymap_screenshot (Screenshot) key KEY_F12
+
+#    Key for toggling fullscreen mode.
+keymap_fullscreen (Fullscreen key) key KEY_F11
 
 #    Key for dropping the currently selected item.
 keymap_drop (Drop item key) key KEY_KEY_Q
@@ -2458,9 +2517,9 @@ keymap_toggle_chat (Chat toggle key) key KEY_F2
 keymap_console (Large chat console key) key KEY_F10
 
 #    Key for toggling the display of fog.
-keymap_toggle_force_fog_off (Fog toggle key) key KEY_F3
+keymap_toggle_fog (Fog toggle key) key KEY_F3
 
-#    Key for toggling the camera update. Only used for development
+#    Key for toggling the camera update. Only usable with 'debug' privilege.
 keymap_toggle_update_camera (Camera update toggle key) key
 
 #    Key for toggling the display of debug info.
@@ -2468,6 +2527,9 @@ keymap_toggle_debug (Debug info toggle key) key KEY_F5
 
 #    Key for toggling the display of the profiler. Used for development.
 keymap_toggle_profiler (Profiler toggle key) key KEY_F6
+
+#    Key for toggling the display of mapblock boundaries.
+keymap_toggle_block_bounds (Block bounds toggle key) key
 
 #    Key for switching between first- and third-person camera.
 keymap_camera_mode (Toggle camera mode key) key KEY_KEY_C

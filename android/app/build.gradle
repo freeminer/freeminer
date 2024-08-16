@@ -1,15 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion 33
-	buildToolsVersion '33.0.2'
 	ndkVersion "$ndk_version"
 	defaultConfig {
 		applicationId 'net.minetest.minetest'
 		minSdkVersion 21
-		targetSdkVersion 33
+		compileSdk 34
+		targetSdkVersion 34
 		versionName "${versionMajor}.${versionMinor}.${versionPatch}"
 		versionCode project.versionCode
+	}
+
+	buildFeatures {
+		buildConfig true
 	}
 
 	// load properties
@@ -49,6 +52,7 @@ android {
 		sourceCompatibility JavaVersion.VERSION_1_8
 		targetCompatibility JavaVersion.VERSION_1_8
 	}
+	namespace 'net.minetest.minetest'
 }
 
 task prepareAssets() {
@@ -75,7 +79,7 @@ task prepareAssets() {
 			from "${projRoot}/client/shaders" into "${assetsFolder}/client/shaders"
 		}
 		copy {
-			from "../native/deps/armeabi-v7a/Irrlicht/Shaders" into "${assetsFolder}/client/shaders/Irrlicht"
+			from "${projRoot}/irr/media/Shaders" into "${assetsFolder}/client/shaders/Irrlicht"
 		}
 		copy {
 			from "${projRoot}/fonts" include "*.ttf" into "${assetsFolder}/fonts"
@@ -107,6 +111,10 @@ task prepareAssets() {
 
 preBuild.dependsOn zipAssets
 prepareAssets.dependsOn ':native:getDeps'
+
+clean {
+	delete new File("src/main/assets", "Minetest.zip")
+}
 
 // Map for the version code that gives each ABI a value.
 import com.android.build.OutputFile

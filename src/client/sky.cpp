@@ -77,6 +77,7 @@ Sky::Sky(s32 id, RenderingEngine *rendering_engine, ITextureSource *tsrc, IShade
 	// Create materials
 
 	m_materials[0] = baseMaterial();
+	// FIXME: shouldn't this check m_enable_shaders?
 	m_materials[0].MaterialType = ssrc->getShaderInfo(ssrc->getShader("stars_shader", TILE_MATERIAL_ALPHA)).material;
 	m_materials[0].Lighting = true;
 	m_materials[0].ColorMaterial = video::ECM_NONE;
@@ -121,7 +122,7 @@ void Sky::render()
 	if (!camera || !driver)
 		return;
 
-	ScopeProfiler sp(g_profiler, "Sky::render()", SPT_AVG);
+	ScopeProfiler sp(g_profiler, "Sky::render()", SPT_AVG, PRECISION_MICRO);
 
 	// Draw perspective skybox
 
@@ -489,9 +490,9 @@ void Sky::update(float time_of_day, float time_brightness,
 				);
 			} else {
 				pointcolor_moon_f = video::SColorf(
-					(m_sky_params.fog_moon_tint.getRed() / 255) * pointcolor_light,
-					(m_sky_params.fog_moon_tint.getGreen() / 255) * pointcolor_light,
-					(m_sky_params.fog_moon_tint.getBlue() / 255) * pointcolor_light,
+					(m_sky_params.fog_moon_tint.getRed() / 255.0f) * pointcolor_light,
+					(m_sky_params.fog_moon_tint.getGreen() / 255.0f) * pointcolor_light,
+					(m_sky_params.fog_moon_tint.getBlue() / 255.0f) * pointcolor_light,
 					1
 				);
 			}
@@ -680,14 +681,15 @@ void Sky::draw_stars(video::IVideoDriver * driver, float wicked_time_of_day)
 
 	float tod = wicked_time_of_day < 0.5f ? wicked_time_of_day : (1.0f - wicked_time_of_day);
 	float day_opacity = clamp(m_star_params.day_opacity, 0.0f, 1.0f);
-	float starbrightness = (0.25f - fabs(tod)) * 20.0f;
+	float starbrightness = (0.25f - std::abs(tod)) * 20.0f;
 	float alpha = clamp(starbrightness, day_opacity, 1.0f);
 
-	m_star_color = m_star_params.starcolor;
-	m_star_color.a *= alpha;
-	if (m_star_color.a <= 0.0f) // Stars are only drawn when not fully transparent
+	video::SColorf color(m_star_params.starcolor);
+	color.a *= alpha;
+	if (color.a <= 0.0f) // Stars are only drawn when not fully transparent
 		return;
-	m_materials[0].DiffuseColor = m_materials[0].EmissiveColor = m_star_color.toSColor();
+	m_materials[0].EmissiveColor = color.toSColor();
+
 	auto sky_rotation = core::matrix4().setRotationAxisRadians(2.0f * M_PI * (wicked_time_of_day - 0.25f), v3f(0.0f, 0.0f, 1.0f));
 	auto world_matrix = driver->getTransform(video::ETS_WORLD);
 	driver->setTransform(video::ETS_WORLD, world_matrix * sky_rotation);
