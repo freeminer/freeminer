@@ -565,6 +565,7 @@ our $tasks = {
         {'---cmake_debug' => 1,}
     ],
     build_client => ['set_client',   'build',],
+    build_server => ['set_server',   'build',],
     bot          => ['build_client', 'run_bot'],
     clang        => {
         '---cmake_clang'  => 1,
@@ -673,7 +674,7 @@ our $tasks = {
         0;
     },
 
-    server => [{-options_add => 'no_exit'}, 'set_server', 'build', 'run_server'],
+    server => [{-options_add => 'no_exit'}, 'build_server', 'run_server'],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';

@@ -287,7 +287,7 @@ public:
 	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
+	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
 	typedef concurrent_shared_unordered_map<v3bpos_t, std::shared_ptr<MapBlock>, v3posHash,
