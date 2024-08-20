@@ -433,8 +433,8 @@ $commands = {
         $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
         $D{USE_DEBUG_HELPERS} = 1;
 
-        $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version}`},
-          $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
+        $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version} clang | head -n1`},
+          $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version} clang++ | head -n1`}
           if $config->{cmake_clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
