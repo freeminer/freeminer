@@ -103,6 +103,7 @@ $0 ----fall1 -continuous_forward=1 bot
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
+no if $] >= 5.038, warnings => 'deprecated::smartmatch';
 use strict;
 use feature      qw(say);
 use Data::Dumper ();

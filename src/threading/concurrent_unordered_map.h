@@ -25,27 +25,29 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lock.h"
 
-template < class LOCKER, class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-           class Alloc = std::allocator<std::pair<const Key, T> > >
-class concurrent_unordered_map_: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
-	public LOCKER {
+template <class LOCKER, class Key, class T, class Hash = std::hash<Key>,
+		class Pred = std::equal_to<Key>,
+		class Alloc = std::allocator<std::pair<const Key, T>>>
+class concurrent_unordered_map_ : public std::unordered_map<Key, T, Hash, Pred, Alloc>,
+								  public LOCKER
+{
 public:
-	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc>     full_type;
-	typedef Key                                                        key_type;
-	typedef T                                                          mapped_type;
-	typedef Hash                                                       hasher;
-	typedef Pred                                                       key_equal;
-	typedef Alloc                                                      allocator_type;
-	typedef std::pair<const key_type, mapped_type>                     value_type;
-	typedef value_type&                                                reference;
-	typedef const value_type&                                          const_reference;
-	typedef typename full_type::pointer                                pointer;
-	typedef typename full_type::const_pointer                          const_pointer;
-	typedef typename full_type::size_type                              size_type;
-	typedef typename full_type::difference_type                        difference_type;
+	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc> full_type;
+	typedef Key key_type;
+	typedef T mapped_type;
+	typedef Hash hasher;
+	typedef Pred key_equal;
+	typedef Alloc allocator_type;
+	typedef std::pair<const key_type, mapped_type> value_type;
+	typedef value_type &reference;
+	typedef const value_type &const_reference;
+	typedef typename full_type::pointer pointer;
+	typedef typename full_type::const_pointer const_pointer;
+	typedef typename full_type::size_type size_type;
+	typedef typename full_type::difference_type difference_type;
 
-	typedef typename full_type::const_iterator                         const_iterator;
-	typedef typename full_type::iterator                               iterator;
+	typedef typename full_type::const_iterator const_iterator;
+	typedef typename full_type::iterator iterator;
 
 	template <typename... Args>
 	decltype(auto) operator=(Args &&...args)
@@ -57,7 +59,7 @@ public:
 	mapped_type nothing = {};
 
 	template <typename... Args>
-	mapped_type& get(Args &&...args)
+	mapped_type &get(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();
 
@@ -89,17 +91,20 @@ public:
 		return full_type::insert_or_assign(std::forward<Args>(args)...);
 	}
 
-	bool      empty() {
+	bool empty()
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty();
 	}
 
-	size_type size() const {
+	size_type size() const
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::size();
 	}
 
-	size_type count(const key_type& k) {
+	size_type count(const key_type &k)
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::count(k);
 	}
@@ -111,103 +116,126 @@ public:
 		return full_type::contains(std::forward<Args>(args)...);
 	}
 
-	iterator find(const key_type& k) {
+	iterator find(const key_type &k)
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::find(k);
 	};
 
-	const_iterator find(const key_type& k) const {
+	const_iterator find(const key_type &k) const
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::find(k);
 	};
 
-	iterator begin() {
+	iterator begin()
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
-	const_iterator begin()   const {
+	const_iterator begin() const
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
-	iterator end() {
+	iterator end()
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
-	const_iterator end()   const {
+	const_iterator end() const
+	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
-	mapped_type& operator[](const key_type& k) = delete;
+	template <typename... Args>
+	decltype(auto) at(Args &&...args)
+	{
+		auto lock = LOCKER::lock_shared_rec();
+		return full_type::at(std::forward<Args>(args)...);
+	}
 
-	mapped_type& operator[](key_type&& k) = delete;
+	mapped_type &operator[](const key_type &k) = delete;
 
-	typename full_type::iterator  erase(const_iterator position) {
+	mapped_type &operator[](key_type &&k) = delete;
+
+	typename full_type::iterator erase(const_iterator position)
+	{
 		auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(position);
 	}
 
-	typename full_type::iterator  erase(iterator position) {
+	typename full_type::iterator erase(iterator position)
+	{
 		auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(position);
 	}
 
-	size_type erase(const key_type& k) {
+	size_type erase(const key_type &k)
+	{
 		auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(k);
 	}
 
-	typename full_type::iterator  erase(const_iterator first, const_iterator last) {
+	typename full_type::iterator erase(const_iterator first, const_iterator last)
+	{
 		auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(first, last);
 	}
 
-	void clear() {
+	void clear()
+	{
 		auto lock = LOCKER::lock_unique_rec();
 		full_type::clear();
 	}
-
 };
 
-template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-          class Alloc = std::allocator<std::pair<const Key, T> > >
-using concurrent_unordered_map = concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>;
+template <class Key, class T, class Hash = std::hash<Key>,
+		class Pred = std::equal_to<Key>,
+		class Alloc = std::allocator<std::pair<const Key, T>>>
+using concurrent_unordered_map =
+		concurrent_unordered_map_<locker<>, Key, T, Hash, Pred, Alloc>;
 
-template <class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-          class Alloc = std::allocator<std::pair<const Key, T> > >
-using concurrent_shared_unordered_map = concurrent_unordered_map_<shared_locker, Key, T, Hash, Pred, Alloc>;
+template <class Key, class T, class Hash = std::hash<Key>,
+		class Pred = std::equal_to<Key>,
+		class Alloc = std::allocator<std::pair<const Key, T>>>
+using concurrent_shared_unordered_map =
+		concurrent_unordered_map_<shared_locker, Key, T, Hash, Pred, Alloc>;
 
 #if ENABLE_THREADS
 
-template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-           class Alloc = std::allocator<std::pair<const Key, T> >>
-using maybe_concurrent_unordered_map = concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
+template <class Key, class T, class Hash = std::hash<Key>,
+		class Pred = std::equal_to<Key>,
+		class Alloc = std::allocator<std::pair<const Key, T>>>
+using maybe_concurrent_unordered_map =
+		concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
 
 #else
 
-template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-           class Alloc = std::allocator<std::pair<const Key, T> >>
-class not_concurrent_unordered_map: public std::unordered_map<Key, T, Hash, Pred, Alloc>,
-	public dummy_locker {
+template <class Key, class T, class Hash = std::hash<Key>,
+		class Pred = std::equal_to<Key>,
+		class Alloc = std::allocator<std::pair<const Key, T>>>
+class not_concurrent_unordered_map : public std::unordered_map<Key, T, Hash, Pred, Alloc>,
+									 public dummy_locker
+{
 public:
-	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc>     full_type;
-	typedef Key                                                        key_type;
-	typedef T                                                          mapped_type;
+	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc> full_type;
+	typedef Key key_type;
+	typedef T mapped_type;
 
-	mapped_type& get(const key_type& k) {
-		return full_type::operator[](k);
-	}
+	mapped_type &get(const key_type &k) { return full_type::operator[](k); }
 
-	void set(const key_type& k, const mapped_type& v) {
-		full_type::operator[](k) = v;
-	}
+	void set(const key_type &k, const mapped_type &v) { full_type::operator[](k) = v; }
 };
 
-template < class Key, class T, class Hash = std::hash<Key>, class Pred = std::equal_to<Key>,
-           class Alloc = std::allocator<std::pair<const Key, T> >>
-using maybe_concurrent_unordered_map = not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
+template <class Key, class T, class Hash = std::hash<Key>,
+		class Pred = std::equal_to<Key>,
+		class Alloc = std::allocator<std::pair<const Key, T>>>
+using maybe_concurrent_unordered_map =
+		not_concurrent_unordered_map<Key, T, Hash, Pred, Alloc>;
 
 #endif

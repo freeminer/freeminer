@@ -772,13 +772,13 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	MapBlock::mesh_type MapBlock::getLodMesh(int step, bool allow_other)
 	{
 
-		if (m_lod_mesh[step] || !allow_other)
+		if (m_lod_mesh[step].load(std::memory_order::relaxed) || !allow_other)
 			return m_lod_mesh[step];
 
 		for (int inc = 1; inc < 4; ++inc) {
-			if (step + inc < m_lod_mesh.size() && m_lod_mesh[step + inc])
+			if (step + inc < m_lod_mesh.size() && m_lod_mesh[step + inc].load(std::memory_order::relaxed))
 				return m_lod_mesh[step + inc];
-			if (step - inc >= 0 && m_lod_mesh[step - inc])
+			if (step - inc >= 0 && m_lod_mesh[step - inc].load(std::memory_order::relaxed))
 				return m_lod_mesh[step - inc];
 		}
 		return {};
@@ -799,8 +799,8 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, uint32_t time)
 	{
 		const auto ms = rmesh->far_step;
-		if (m_far_mesh[ms]) {
-			delete_mesh = m_far_mesh[ms];
+		if (const auto mesh = m_far_mesh[ms].load(std::memory_order::relaxed)) {
+			delete_mesh = mesh;
 		}
 		m_far_mesh[ms] = rmesh;
 	}

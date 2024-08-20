@@ -562,8 +562,8 @@ public:
 
 #if BUILD_CLIENT // Only on client
 private:
-	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
-	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
+	std::array<std::atomic<MapBlock::mesh_type>, LODMESH_STEP_MAX + 1> m_lod_mesh;
+	std::array<std::atomic<MapBlock::mesh_type>, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 
 public:	
@@ -577,7 +577,7 @@ public:
 	std::atomic_short heat_add {0};
 	std::atomic_short humidity_add {0};
 	std::atomic_ulong heat_last_update {0};
-	u32 humidity_last_update = 0;
+	std::atomic_uint32_t humidity_last_update = 0;
 	float m_uptime_timer_last = 0;
 	std::atomic_short usage_timer_multiplier {1};
 
@@ -646,7 +646,7 @@ private:
 		- On the client, this is used for nothing.
 	*/
 	std::atomic_uint8_t m_modified = MOD_STATE_CLEAN;
-	u32 m_modified_reason = MOD_REASON_INITIAL;
+	std::atomic_uint32_t m_modified_reason = MOD_REASON_INITIAL;
 
 	/*
 		When propagating sunlight and the above block doesn't exist,
