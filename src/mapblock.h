@@ -26,6 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
+#include "threading/lock.h"
+
 #include <set>
 #include "irr_v3d.h"
 #include "mapnode.h"
@@ -36,17 +38,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodetimer.h"
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
-#include "threading/lock.h"
 #include "settings.h"
+
+class Circuit;
+class ServerEnvironment;
+struct ActiveABM;
 
 class Map;
 class NodeMetadataList;
 class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
-class Circuit;
-class ServerEnvironment;
-struct ActiveABM;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -148,13 +150,6 @@ public:
 		//raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_REALLOCATE);
 	}
 
-	/*
-		Flags
-	*/
-
-	enum modified_light {modified_light_no = 0, modified_light_yes};
-	void raiseModified(u32 mod, modified_light light = modified_light_no, bool important = false);
-	
 	MapNode* getData()
 	{
 		return data;
@@ -529,9 +524,17 @@ public:
 
 
 //fm:
+	/*
+		Flags
+	*/
+
+	enum modified_light {modified_light_no = 0, modified_light_yes};
+	void raiseModified(u32 mod, modified_light light = modified_light_no, bool important = false);
+
+
 	void pushElementsToCircuit(Circuit* circuit);
 
-	typedef std::shared_ptr<MapBlockMesh> mesh_type;
+	using mesh_type = std::shared_ptr<MapBlockMesh>;
 
 #if BUILD_CLIENT // Only on client
 	MapBlock::mesh_type getLodMesh(int step, bool allow_other = false);
@@ -540,38 +543,15 @@ public:
 	void setFarMesh(const MapBlock::mesh_type & rmesh, uint32_t time);
 	std::mutex far_mutex;
 	u32 mesh_requested_timestamp = 0;
-#endif
-//===
-
-
-	bool storeActiveObject(u16 id);
-	// clearObject and return removed objects count
-	u32 clearObjects();
 
 private:
-	/*
-		Private methods
-	*/
-
-	void deSerialize_pre22(std::istream &is, u8 version, bool disk);
-
-public:
-	/*
-		Public member variables
-	*/
-
-#if BUILD_CLIENT // Only on client
-private:
-	std::array<std::atomic<MapBlock::mesh_type>, LODMESH_STEP_MAX + 1> m_lod_mesh;
-	std::array<std::atomic<MapBlock::mesh_type>, FARMESH_STEP_MAX + 1> m_far_mesh;
+	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
+	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 
 public:	
 #endif
 
-	NodeMetadataList m_node_metadata;
-	StaticObjectList m_static_objects;
-	
 	std::atomic_short heat {0};
 	std::atomic_short humidity {0};
 	std::atomic_short heat_add {0};
@@ -604,6 +584,39 @@ public:
 	std::atomic<content_t> content_only = CONTENT_IGNORE;
 	u8 content_only_param1 = 0, content_only_param2 = 0;
 	bool analyzeContent();
+	std::mutex m_usage_timer_mutex;
+
+	/*
+		Set to true if changes has been made that make the old lighting
+		values wrong but the lighting hasn't been actually updated.
+
+		If this is false, lighting is exactly right.
+		If this is true, lighting might be wrong or right.
+	*/
+
+	std::atomic_bool m_lighting_expired {false};
+
+//===
+
+
+	bool storeActiveObject(u16 id);
+	// clearObject and return removed objects count
+	u32 clearObjects();
+
+private:
+	/*
+		Private methods
+	*/
+
+	void deSerialize_pre22(std::istream &is, u8 version, bool disk);
+
+public:
+	/*
+		Public member variables
+	*/
+
+	NodeMetadataList m_node_metadata;
+	StaticObjectList m_static_objects;
 
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
@@ -658,16 +671,6 @@ private:
 	*/
 	std::atomic_bool is_underground = false;
 
-	/*
-		Set to true if changes has been made that make the old lighting
-		values wrong but the lighting hasn't been actually updated.
-
-		If this is false, lighting is exactly right.
-		If this is true, lighting might be wrong or right.
-	*/
-
-	std::atomic_bool m_lighting_expired {false};
-
 	/*!
 	 * Each bit indicates if light spreading was finished
 	 * in a direction. (Because the neighbor could also be unloaded.)
@@ -696,7 +699,6 @@ private:
 		When the block is accessed, this is set to 0.
 		Map will unload the block when this reaches a timeout.
 	*/
-	std::mutex m_usage_timer_mutex;
 	float m_usage_timer = 0;
 
 	/*

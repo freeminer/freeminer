@@ -43,7 +43,7 @@ $0 ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----headless tsa
 $0 ---cgroup=10g --address=192.168.0.1 --port=30005 tsan bot
 
 # Maybe some features should be disabled for run some sanitizers
-$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DHAVE_TCMALLOC=0  tsan bot
+$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DENABLE_TCMALLOC=0 tsan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 $0 ---cmake_clang=1 -DENABLE_TIFF=0                        gperf bot
@@ -178,8 +178,8 @@ sub init_config () {
         runner           => 'nice ',
         screenshot_dir   => 'screenshot.' . $g->{date},
         tee              => '2>&1 | tee -a ',
-        tsan_leveldb_fix => 1,
-        tsan_opengl_fix  => 1,
+        #tsan_leveldb_fix => 1,
+        #tsan_opengl_fix  => 1,
         valgrind_tools   => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         # verbose         => 1,
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
@@ -451,7 +451,7 @@ $commands = {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
-        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej}},
+        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej} $config->{makev}},
           qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
@@ -494,7 +494,7 @@ $commands = {
           qq{@_},
           $commands->{executable}(),
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
-          options_make([qw(gameid world port config autoexit verbose)]),
+          options_make($options->{pass}{config} ? () : [qw(gameid world port config autoexit verbose)]),
           qq{$config->{run_add}};
 
         if ($config->{server_bg}) {
@@ -591,7 +591,7 @@ our $tasks = {
             $g->{keep_config}          = 1;
             $g->{build_names}{san}     = 'tsan';
             #$config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-            $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
+            #$config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
             $config->{envs}{tsan} = " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
             #? local $options->{opt}{enable_minimap} = 0;    # too unsafe
             # FATAL: ThreadSanitizer: unexpected memory mapping :

@@ -131,6 +131,10 @@ if(NOT MSVC)
 		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
 	endif()
 
+	if(USE_STATIC_LIBRARIES)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
 	find_library(UNWIND_LIBRARY NAMES unwind)
 
 	if(UNWIND_LIBRARY)
