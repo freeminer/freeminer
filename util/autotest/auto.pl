@@ -412,11 +412,10 @@ $commands = {
         return $r if $r;
         my %D;
         #$D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1,
-          if $config->{cmake_msan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
+    	local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
+	    local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
+	    local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1, if $config->{cmake_msan};
+	    local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
           if $config->{cmake_usan};
 
         $D{ENABLE_LUAJIT}     = 0                                if $config->{cmake_debug} and !$config->{keep_luajit};
@@ -550,7 +549,7 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     },
     set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,, '---executable_name' => 'freeminer',}],
     set_server =>
-      [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit', '---executable_name' => 'freeminerserver',}],
+      [{'---no_build_client' => 1, '---no_build_server' => 0, '----no_exit'=>1, '---executable_name' => 'freeminerserver',}],
 };
 
 our $tasks = {
@@ -567,7 +566,7 @@ our $tasks = {
     ],
     build_client => ['set_client',   'build',],
     build_server => ['set_server',   'build',],
-    bot          => ['build_client', 'run_bot'],
+    bot          => [{'----default' => 1, '----' . $config->{options_display} => 1}, 'build_client', 'run_bot'],
     clang        => {
         '---cmake_clang'  => 1,
         '---cmake_libcxx' => 1,
@@ -580,7 +579,7 @@ our $tasks = {
             $config->{envs}{asan}  = " ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer$config->{clang_version}`";
             0;
         },
-        'clang', 'debug',
+    	'debug',
 
         {
             '---cmake_asan' => 1,
@@ -598,7 +597,7 @@ our $tasks = {
             sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
             0;
         },
-        'clang', 'debug',
+    	'debug',
         {
             '---cmake_tsan' => 1,
         },
@@ -610,7 +609,7 @@ our $tasks = {
             $g->{build_names}{san} = 'msan';
             0;
         },
-        'clang', 'debug',
+	    'debug',
         {
             '---cmake_msan' => 1,
         },
@@ -621,7 +620,7 @@ our $tasks = {
             $g->{build_names}{san} = 'usan';
             0;
         },
-        'clang', 'debug',
+	    'debug',
         {
             '---cmake_usan' => 1,
         },
@@ -675,7 +674,7 @@ our $tasks = {
         0;
     },
 
-    server => [{-options_add => 'no_exit'}, 'build_server', 'run_server'],
+    server => ['set_server', 'build_server', 'run_server'],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
@@ -939,7 +938,8 @@ sub options_make(;$$) {
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
     $m ||= [
-        map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display},    #$config->{options_bot},
+        map { split /[,;]+/ } map { array($_) } 
+        #'default',  $config->{options_display},    #$config->{options_bot},
         $config->{options_int}, $config->{options_add}, $config->{options_arr},
         (sort { $config->{options_use}{$a} <=> $config->{options_use}{$b} } keys %{$config->{options_use}}), 'opt',
     ];
