@@ -111,7 +111,7 @@ private:
 		int processed = -1;
 	};
 	std::array<plane_cache, 6> plane_processed;
- 	std::atomic_uint last_distance_max = 0;
+	std::atomic_uint last_distance_max = 0;
 	int go_direction(const size_t dir_n);
 	std::array<async_step_runner, 6> async;
 	int timestamp_complete = 0;

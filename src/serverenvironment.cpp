@@ -1217,11 +1217,11 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 		try {
 			if (fast == 2)
 				n.param1 = n_old.param1;
-			m_map->setNode(p, n);
+			m_map->setNode(p, n, important);
 		} catch(const InvalidPositionException &e) { }
 	} else
 
-	if (!m_map->removeNodeWithEvent(p, important))
+	if (!m_map->removeNodeWithEvent(p, fast, important))
 		return false;
 
 	m_circuit.removeNode(p, n_old);

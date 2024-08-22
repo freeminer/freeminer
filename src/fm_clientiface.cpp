@@ -139,7 +139,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	if (m_nearest_unsent_reset_timer > 120.0) {
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
-		m_nearest_unsent_reset = 0;
+		//m_nearest_unsent_reset = 0;
 		m_nothing_to_send_pause_timer = -1;
 		// infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
@@ -366,11 +366,11 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				FOV setting. The default of 72 degrees is fine.
 			*/
 			/*
-			if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
-									d_blocks_in_sight) == false) {
-				// DUMP(p, can_skip, "nosight");
-				continue;
-			}
+				if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
+										d_blocks_in_sight) == false) {
+					// DUMP(p, can_skip, "nosight");
+					continue;
+				}
 			*/
 			/*
 				Don't send already sent blocks
@@ -597,10 +597,10 @@ queue_full_break:
 			m_nothing_to_send_pause_timer = 1;
 		}
 	} else {
-	if (!num_blocks_selected && !num_blocks_air && d_start <= d) {
-		// new_nearest_unsent_d = 0;
-		m_nothing_to_send_pause_timer = 1.0;
-	}
+		if (!num_blocks_selected && !num_blocks_air && d_start <= d) {
+			// new_nearest_unsent_d = 0;
+			m_nothing_to_send_pause_timer = 1.0;
+		}
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
@@ -620,8 +620,8 @@ queue_full_break:
 		}
 	}
 
-	if (new_nearest_unsent_d != -1) {
-		m_nearest_unsent_d = new_nearest_unsent_d;
+		if (new_nearest_unsent_d != -1) {
+			m_nearest_unsent_d = new_nearest_unsent_d;
 		}
 	}
 

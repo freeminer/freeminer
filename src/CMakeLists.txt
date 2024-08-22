@@ -131,6 +131,10 @@ if(NOT MSVC)
 		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
 	endif()
 
+
+	option(ENABLE_UNWIND "Enable unwind" 1)
+	if(ENABLE_UNWIND)
+
 	if(USE_STATIC_LIBRARIES)
 		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
 	endif()
@@ -155,6 +159,13 @@ if(NOT MSVC)
         # set(USE_UNWIND 1)
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
 		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
+	endif()
+
+
+	if(USE_STATIC_LIBRARIES)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
 	endif()
 
 	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")

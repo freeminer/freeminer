@@ -201,7 +201,7 @@ public:
 		Return true if succeeded, false if not.
 	*/
 	bool addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata = true, bool important = false);
-	bool removeNodeWithEvent(v3pos_t p, bool important);
+	bool removeNodeWithEvent(v3pos_t p, int fast, bool important);
 
 	// Call these before and after saving of many blocks
 	virtual void beginSave() {}

@@ -247,7 +247,7 @@ public:
 
 	//fm:
 	u16 net_proto_version_fm = 0;
-	std::atomic_int m_nearest_unsent_reset {0};
+	//std::atomic_int m_nearest_unsent_reset {0};
 	std::atomic_uint wanted_range {10 };
 	std::atomic_int range_all {0};
 	std::atomic_int farmesh = {0};
@@ -408,7 +408,7 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	unsigned int m_nearest_unsent_reset_want = 0;
-	concurrent_shared_unordered_map<v3pos_t, double, v3posHash, v3posEqual> m_blocks_sent;
+	concurrent_shared_unordered_map<v3bpos_t, double, v3posHash, v3posEqual> m_blocks_sent;
 
 	//std::unordered_set<v3s16> m_blocks_sent;
 

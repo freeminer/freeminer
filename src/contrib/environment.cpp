@@ -383,7 +383,7 @@ size_t ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int
 							n_bottom.getLevel(ndef) < n_bottom.getMaxLevel(ndef))) &&
 						(!f_under.walkable || f_under.buildable_to)) {
 						if (spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast)) {
-							removeNode(n_pos, fast);
+							removeNode(n_pos, fast, false);
 							ret += 1 + nodeUpdate(n_pos, recursion_limit, fast, destroy);
 						}
 					}
