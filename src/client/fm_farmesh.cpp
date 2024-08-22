@@ -293,7 +293,7 @@ int FarMesh::go_direction(const size_t dir_n)
 #if FARMESH_FAST
 					makeFarBlock(blockpos, block_step);
 #else
-				// less holes, more unused meshes:
+					// less holes, more unused meshes:
 					makeFarBlock7(blockpos, block_step);
 #endif
 				break;
@@ -328,7 +328,7 @@ void FarMesh::update(v3opos_t camera_pos,
 	const auto far_fast =
 			!m_control->farmesh_stable &&
 			(
-			//m_client->getEnv().getClientMap().m_far_fast && 
+					//m_client->getEnv().getClientMap().m_far_fast &&
 					m_speed > 200 * BS ||
 					m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000);
 

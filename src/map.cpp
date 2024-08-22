@@ -247,6 +247,7 @@ void Map::addNodeAndUpdate(v3pos_t p, MapNode n,
 		if (remove_metadata)
 			removeNodeMetadata(p);
 		setNode(p, n, important);
+		modified_blocks[getNodeBlockPos(p)] = nullptr;
 		return;
 	}
 
@@ -331,7 +332,7 @@ bool Map::addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata, bool impo
 	return succeeded;
 }
 
-bool Map::removeNodeWithEvent(v3pos_t p, bool important)
+bool Map::removeNodeWithEvent(v3pos_t p, int fast, bool important)
 {
 	MapEditEvent event;
 	event.type = MEET_REMOVENODE;
@@ -340,7 +341,7 @@ bool Map::removeNodeWithEvent(v3pos_t p, bool important)
 	bool succeeded = true;
 	try{
 		std::map<v3bpos_t, MapBlock*> modified_blocks;
-		removeNodeAndUpdate(p, modified_blocks, 0, important);
+		removeNodeAndUpdate(p, modified_blocks, fast, important);
 
 		event.setModifiedBlocks(modified_blocks);
 	}

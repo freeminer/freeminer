@@ -731,16 +731,15 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	void MapBlock::raiseModified(u32 mod, modified_light light, bool important)
 	{
 		static const thread_local auto save_changed_block = g_settings->getBool("save_changed_block");
-		if (save_changed_block || important || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED ) {
 
 		if(mod >= MOD_STATE_WRITE_NEEDED /*&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED*/) {
 			m_changed_timestamp = (unsigned int)m_parent->time_life;
 		}
 		if(mod > m_modified){
+    	    if (save_changed_block || important) // || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED )
 			m_modified = mod;
 			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
 				m_disk_timestamp.store(m_timestamp);
-		}
 		}
 		if (light == modified_light_yes) {
 			setLightingComplete(0);
@@ -773,7 +772,6 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 #if BUILD_CLIENT
 	MapBlock::mesh_type MapBlock::getLodMesh(int step, bool allow_other)
 	{
-
 		if (m_lod_mesh[step] || !allow_other)
 			return m_lod_mesh[step];
 
@@ -801,8 +799,8 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, uint32_t time)
 	{
 		const auto ms = rmesh->far_step;
-		if (m_far_mesh[ms]) {
-			delete_mesh = m_far_mesh[ms];
+		if (const auto mesh = m_far_mesh[ms]) {
+			delete_mesh = mesh;
 		}
 		m_far_mesh[ms] = rmesh;
 	}

@@ -206,7 +206,7 @@ public:
 		Return true if succeeded, false if not.
 	*/
 	bool addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata = true, bool important = false);
-	bool removeNodeWithEvent(v3pos_t p, bool important);
+	bool removeNodeWithEvent(v3pos_t p, int fast, bool important);
 
 	// Call these before and after saving of many blocks
 	virtual void beginSave() {}
@@ -292,7 +292,7 @@ public:
 	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
+	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
 			m_blocks_type;
 	m_blocks_type m_blocks;
 	typedef concurrent_shared_unordered_map<v3bpos_t, std::shared_ptr<MapBlock>, v3posHash,

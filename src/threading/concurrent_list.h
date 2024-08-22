@@ -104,7 +104,6 @@ public:
 		return full_type::rend(std::forward<Args>(args)...);
 	}
 
-
 	template <typename... Args>
 	decltype(auto) erase(Args &&...args)
 	{

@@ -52,12 +52,12 @@ public:
 	//typedef typename full_type::node_type node_type;				   // C++17
 	//typedef typename full_type::insert_return_type insert_return_type; // C++17
 
-	typedef typename std::pair<iterator,bool> insert_return_type_old;
+	typedef typename std::pair<iterator, bool> insert_return_type_old;
 
 	mapped_type nothing = {};
 
 	template <typename... Args>
-	mapped_type& get(Args &&...args)
+	mapped_type &get(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();
 
@@ -182,6 +182,13 @@ public:
 		return full_type::rend();
 	};
 
+	template <typename... Args>
+	decltype(auto) at(Args &&...args)
+	{
+		auto lock = LOCKER::lock_shared_rec();
+		return full_type::at(std::forward<Args>(args)...);
+	}
+
 	mapped_type &operator[](const key_type &k) = delete;
 
 	mapped_type &operator[](key_type &&k) = delete;
@@ -192,7 +199,7 @@ public:
 		return full_type::erase(position);
 	}
 
-/*
+	/*
 	typename full_type::iterator erase(iterator position)
 	{
 		auto lock = LOCKER::lock_unique_rec();
@@ -224,15 +231,14 @@ public:
 		auto lock = LOCKER::lock_unique_rec();
 		return full_type::operator=(std::forward<Args>(args)...);
 	}
-
-
 };
 
 template <class Key, class Compare = std::less<Key>,
 		class Allocator = std::allocator<Key>>
 using concurrent_set = concurrent_set_<locker<>, Key, Compare, Allocator>;
 
-template <class Key, class Compare = std::less<Key>, class Allocator = std::allocator<Key>>
+template <class Key, class Compare = std::less<Key>,
+		class Allocator = std::allocator<Key>>
 using concurrent_shared_set = concurrent_set_<shared_locker, Key, Compare, Allocator>;
 
 #if ENABLE_THREADS
@@ -268,4 +274,3 @@ template <class Key, class Compare = std::less<Key>,
 using maybe_concurrent_set = not_concurrent_set<Key, Compare, Allocator>;
 
 #endif
-

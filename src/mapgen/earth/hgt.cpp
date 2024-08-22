@@ -895,10 +895,10 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 	return false;
 }
 
-std::tuple<size_t, size_t, ll_t, ll_t> height_gebco_tif::ll_to_xy(ll_t lat, ll_t lon)
+std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_gebco_tif::ll_to_xy(ll_t lat, ll_t lon)
 {
-	const ll_t lat_seconds = (lat_loaded - lat) * 60 * 60;
-	const ll_t lon_seconds = (lon - lon_loaded) * 60 * 60;
+	const height::ll_t lat_seconds = (lat_loaded - lat) * 60 * 60;
+	const height::ll_t lon_seconds = (lon - lon_loaded) * 60 * 60;
 
 	const size_t y = ((lat_loaded - lat) * pixel_per_deg_y) - 1;
 	const size_t x = (lon - lon_loaded) * pixel_per_deg_x;
@@ -921,17 +921,17 @@ int16_t height_gebco_tif::read(uint16_t y, uint16_t x)
 	return heights[pos];
 }
 
-std::tuple<size_t, size_t, ll_t, ll_t> height_hgt::ll_to_xy(ll_t lat, ll_t lon)
+std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_hgt::ll_to_xy(height::ll_t lat, height::ll_t lon)
 {
 
-	const ll_t lat_seconds = (lat - (ll_t)lat_loaded) * 60 * 60;
-	const ll_t lon_seconds = (lon - (ll_t)lon_loaded) * 60 * 60;
+	const height::ll_t lat_seconds = (lat - (ll_t)lat_loaded) * 60 * 60;
+	const height::ll_t lon_seconds = (lon - (ll_t)lon_loaded) * 60 * 60;
 	const int y = lat_seconds / seconds_per_px_y;
 	const int x = lon_seconds / seconds_per_px_x;
 	return {x, y, lat_seconds, lon_seconds};
 }
 
-std::tuple<size_t, size_t, ll_t, ll_t> height_tif::ll_to_xy(ll_t lat, ll_t lon)
+std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_tif::ll_to_xy(height::ll_t lat, height::ll_t lon)
 {
 	const ll_t lat_seconds = (lat - (ll_t)lat_loaded) * 60 * 60;
 	const ll_t lon_seconds = (lon - (ll_t)lon_loaded) * 60 * 60;

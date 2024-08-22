@@ -20,6 +20,7 @@
 #cmakedefine01 USE_IPV4_DEFAULT
 #cmakedefine01 USE_MANDELBULBER
 #cmakedefine01 USE_MULTI
+#cmakedefine01 USE_OSMIUM
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_SQLITE3
 #cmakedefine01 USE_TIFF

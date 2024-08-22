@@ -179,7 +179,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD", 0, true }, // 0x31
 	{ "TOCLIENT_ACTIVE_OBJECT_MESSAGES",   0, true }, // 0x32 (may be sent as unrel over channel 1 too)
 	{ "TOCLIENT_HP",                       0, true }, // 0x33
-	{ "TOCLIENT_MOVE_PLAYER",              0, true }, // 0x34
+	{ "TOCLIENT_MOVE_PLAYER",              0, false }, // 0x34
 	null_command_factory, // 0x35
 	{ "TOCLIENT_FOV",                      0, true }, // 0x36
 	{ "TOCLIENT_DEATHSCREEN",              0, true }, // 0x37
@@ -196,8 +196,8 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_INVENTORY_FORMSPEC",       0, true }, // 0x42
 	{ "TOCLIENT_DETACHED_INVENTORY",       0, true }, // 0x43
 	{ "TOCLIENT_SHOW_FORMSPEC",            0, true }, // 0x44
-	{ "TOCLIENT_MOVEMENT",                 0, true }, // 0x45
-	{ "TOCLIENT_SPAWN_PARTICLE",           0, true }, // 0x46
+	{ "TOCLIENT_MOVEMENT",                 0, false }, // 0x45
+	{ "TOCLIENT_SPAWN_PARTICLE",           0, false }, // 0x46
 	{ "TOCLIENT_ADD_PARTICLESPAWNER",      0, true }, // 0x47
 	null_command_factory, // 0x48
 	{ "TOCLIENT_HUDADD",                   1, true }, // 0x49

@@ -55,13 +55,13 @@ class MapgenMath : public MapgenV7
 public:
 	MapgenMathParams *mg_params;
 
-	virtual MapgenType getType() const override { return MAPGEN_MATH; }
+	MapgenType getType() const override { return MAPGEN_MATH; }
 	MapgenMath(MapgenMathParams *mg_params, EmergeParams *emerge);
 	~MapgenMath();
 
-	virtual void calculateNoise();
-	virtual int generateTerrain() override;
-	virtual void generateRidgeTerrain();
+	void calculateNoise();
+	int generateTerrain() override;
+	void generateRidgeTerrain();
 	//int getGroundLevelAtPoint(v2POS p);
 
 	bool internal;

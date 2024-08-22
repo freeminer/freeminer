@@ -43,7 +43,7 @@ $0 ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----headless tsa
 $0 ---cgroup=10g --address=192.168.0.1 --port=30005 tsan bot
 
 # Maybe some features should be disabled for run some sanitizers
-$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DHAVE_TCMALLOC=0  tsan bot
+$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DENABLE_TCMALLOC=0 tsan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 $0 ---cmake_clang=1 -DENABLE_TIFF=0                        gperf bot
@@ -103,6 +103,7 @@ $0 ----fall1 -continuous_forward=1 bot
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
+no if $] >= 5.038, warnings => 'deprecated::smartmatch';
 use strict;
 use feature      qw(say);
 use Data::Dumper ();
@@ -177,8 +178,8 @@ sub init_config () {
         runner           => 'nice ',
         screenshot_dir   => 'screenshot.' . $g->{date},
         tee              => '2>&1 | tee -a ',
-        tsan_leveldb_fix => 1,
-        tsan_opengl_fix  => 1,
+        #tsan_leveldb_fix => 1,
+        #tsan_opengl_fix  => 1,
         valgrind_tools   => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         # verbose         => 1,
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
@@ -411,11 +412,10 @@ $commands = {
         return $r if $r;
         my %D;
         #$D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1,
-          if $config->{cmake_msan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
+    	local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
+	    local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
+	    local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1, if $config->{cmake_msan};
+	    local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
           if $config->{cmake_usan};
 
         $D{ENABLE_LUAJIT}     = 0                                if $config->{cmake_debug} and !$config->{keep_luajit};
@@ -432,8 +432,8 @@ $commands = {
         $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
         $D{USE_DEBUG_HELPERS} = 1;
 
-        $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version}`},
-          $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
+        $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version} clang | head -n1`},
+          $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version} clang++ | head -n1`}
           if $config->{cmake_clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
@@ -450,7 +450,7 @@ $commands = {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
-        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej}},
+        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej} $config->{makev}},
           qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
@@ -493,7 +493,7 @@ $commands = {
           qq{@_},
           $commands->{executable}(),
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
-          options_make([qw(gameid world port config autoexit verbose)]),
+          options_make($options->{pass}{config} ? () : [qw(gameid world port config autoexit verbose)]),
           qq{$config->{run_add}};
 
         if ($config->{server_bg}) {
@@ -549,7 +549,7 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     },
     set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,, '---executable_name' => 'freeminer',}],
     set_server =>
-      [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit', '---executable_name' => 'freeminerserver',}],
+      [{'---no_build_client' => 1, '---no_build_server' => 0, '----no_exit'=>1, '---executable_name' => 'freeminerserver',}],
 };
 
 our $tasks = {
@@ -565,7 +565,8 @@ our $tasks = {
         {'---cmake_debug' => 1,}
     ],
     build_client => ['set_client',   'build',],
-    bot          => ['build_client', 'run_bot'],
+    build_server => ['set_server',   'build',],
+    bot          => [{'----default' => 1, '----' . $config->{options_display} => 1}, 'build_client', 'run_bot'],
     clang        => {
         '---cmake_clang'  => 1,
         '---cmake_libcxx' => 1,
@@ -578,7 +579,7 @@ our $tasks = {
             $config->{envs}{asan}  = " ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer$config->{clang_version}`";
             0;
         },
-        'clang', 'debug',
+    	'debug',
 
         {
             '---cmake_asan' => 1,
@@ -589,14 +590,14 @@ our $tasks = {
             $g->{keep_config}          = 1;
             $g->{build_names}{san}     = 'tsan';
             #$config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-            $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
+            #$config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
             $config->{envs}{tsan} = " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
             #? local $options->{opt}{enable_minimap} = 0;    # too unsafe
             # FATAL: ThreadSanitizer: unexpected memory mapping :
             sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
             0;
         },
-        'clang', 'debug',
+    	'debug',
         {
             '---cmake_tsan' => 1,
         },
@@ -608,7 +609,7 @@ our $tasks = {
             $g->{build_names}{san} = 'msan';
             0;
         },
-        'clang', 'debug',
+	    'debug',
         {
             '---cmake_msan' => 1,
         },
@@ -619,7 +620,7 @@ our $tasks = {
             $g->{build_names}{san} = 'usan';
             0;
         },
-        'clang', 'debug',
+	    'debug',
         {
             '---cmake_usan' => 1,
         },
@@ -673,7 +674,7 @@ our $tasks = {
         0;
     },
 
-    server => [{-options_add => 'no_exit'}, 'set_server', 'build', 'run_server'],
+    server => ['set_server', 'build_server', 'run_server'],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
@@ -937,7 +938,8 @@ sub options_make(;$$) {
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
     $m ||= [
-        map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display},    #$config->{options_bot},
+        map { split /[,;]+/ } map { array($_) } 
+        #'default',  $config->{options_display},    #$config->{options_bot},
         $config->{options_int}, $config->{options_add}, $config->{options_arr},
         (sort { $config->{options_use}{$a} <=> $config->{options_use}{$b} } keys %{$config->{options_use}}), 'opt',
     ];

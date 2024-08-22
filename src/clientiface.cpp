@@ -509,8 +509,8 @@ void RemoteClient::SentBlock(v3bpos_t p)
 
 void RemoteClient::SetBlockNotSent(v3bpos_t p)
 {
-	++m_nearest_unsent_reset;
 /*
+	++m_nearest_unsent_reset;
 	m_nothing_to_send_pause_timer = 0;
 
 	// remove the block from sending and sent sets,
@@ -522,13 +522,16 @@ void RemoteClient::SetBlockNotSent(v3bpos_t p)
 
 void RemoteClient::SetBlocksNotSent()
 {
+/*	
 	++m_nearest_unsent_reset;
+*/
 }
 
 void RemoteClient::SetBlocksNotSent(std::map<v3bpos_t, MapBlock*> &blocks)
 {
-	++m_nearest_unsent_reset;
 /*
+	++m_nearest_unsent_reset;
+
 	m_nothing_to_send_pause_timer = 0;
 
 	for (auto &block : blocks) {
