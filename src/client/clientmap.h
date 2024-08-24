@@ -248,7 +248,6 @@ private:
 	std::atomic_bool m_drawlist_current = 0;
 	std::vector<std::pair<v3bpos_t, int>> draw_nearest;
 public:
-	std::atomic_uint m_drawlist_last {0};
 	std::map<v3pos_t, MapBlock*> m_block_boundary;
 private:
 

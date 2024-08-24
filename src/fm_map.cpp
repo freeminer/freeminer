@@ -1392,3 +1392,66 @@ s16 ServerMap::findGroundLevel(v2pos_t p2d, bool cacheBlocks)
 
 	return level;
 }
+
+// Copypaste of isBlockOccluded working without block data
+
+inline core::aabbox3d<s16> getBox(const v3bpos_t &pos)
+{
+	return core::aabbox3d<s16>(pos,
+			pos + v3s16(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE) - v3s16(1, 1, 1));
+}
+
+bool Map::isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes)
+{
+	// Check occlusion for center and all 8 corners of the mapblock
+	// Overshoot a little for less flickering
+	static const pos_t bs2 = MAP_BLOCKSIZE / 2 + 1;
+	static const v3pos_t dir9[9] = {
+			v3pos_t(0, 0, 0),
+			v3pos_t(1, 1, 1) * bs2,
+			v3pos_t(1, 1, -1) * bs2,
+			v3pos_t(1, -1, 1) * bs2,
+			v3pos_t(1, -1, -1) * bs2,
+			v3pos_t(-1, 1, 1) * bs2,
+			v3pos_t(-1, 1, -1) * bs2,
+			v3pos_t(-1, -1, 1) * bs2,
+			v3pos_t(-1, -1, -1) * bs2,
+	};
+
+	auto pos_blockcenter = pos + (MAP_BLOCKSIZE / 2);
+
+	// Starting step size, value between 1m and sqrt(3)m
+	float step = BS * 1.2f;
+	// Multiply step by each iteraction by 'stepfac' to reduce checks in distance
+	float stepfac = 1.05f;
+
+	float start_offset = BS * 1.0f;
+
+	// The occlusion search of 'isOccluded()' must stop short of the target
+	// point by distance 'end_offset' to not enter the target mapblock.
+	// For the 8 mapblock corners 'end_offset' must therefore be the maximum
+	// diagonal of a mapblock, because we must consider all view angles.
+	// sqrt(1^2 + 1^2 + 1^2) = 1.732
+	float end_offset = -BS * MAP_BLOCKSIZE * 1.732f;
+
+	// to reduce the likelihood of falsely occluded blocks
+	// require at least two solid blocks
+	// this is a HACK, we should think of a more precise algorithm
+	u32 needed_count = 2;
+
+	// Additional occlusion check, see comments in that function
+	v3pos_t check;
+	if (determineAdditionalOcclusionCheck(cam_pos_nodes, getBox(pos), check)) {
+		// node is always on a side facing the camera, end_offset can be lower
+		if (!isOccluded(cam_pos_nodes, check, step, stepfac, start_offset, -1.0f,
+					needed_count))
+			return false;
+	}
+
+	for (const auto &dir : dir9) {
+		if (!isOccluded(cam_pos_nodes, pos_blockcenter + dir, step, stepfac, start_offset,
+					end_offset, needed_count))
+			return false;
+	}
+	return true;
+}

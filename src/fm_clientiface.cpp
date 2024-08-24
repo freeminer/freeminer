@@ -10,48 +10,6 @@
 #include "face_position_cache.h"
 #include "util/numeric.h"
 
-// VERY BAD COPYPASTE FROM clientmap.cpp!
-static bool isOccluded(Map *map, v3pos_t p0, v3pos_t p1, float step, float stepfac,
-		float start_off, float end_off, u32 needed_count, const NodeDefManager *nodemgr,
-		unordered_map_v3pos<bool> &occlude_cache)
-{
-	float d0 = (float)1 * p0.getDistanceFrom(p1);
-	v3pos_t u0 = p1 - p0;
-	v3f uf = v3f(u0.X, u0.Y, u0.Z);
-	uf.normalize();
-	v3f p0f = v3f(p0.X, p0.Y, p0.Z);
-	u32 count = 0;
-	for (float s = start_off; s < d0 + end_off; s += step) {
-		v3f pf = p0f + uf * s;
-		v3pos_t p = floatToInt(pf, 1);
-		bool is_transparent = false;
-		bool cache = true;
-		if (occlude_cache.count(p)) {
-			cache = false;
-			is_transparent = occlude_cache[p];
-		} else {
-			MapNode n = map->getNodeTry(p);
-			if (!n) {
-				return true; // ONE DIFFERENCE FROM clientmap.cpp
-			}
-			const ContentFeatures &f = nodemgr->get(n);
-			if (f.solidness == 0)
-				is_transparent = (f.visual_solidness != 2);
-			else
-				is_transparent = (f.solidness != 2);
-		}
-		if (cache)
-			occlude_cache[p] = is_transparent;
-		if (!is_transparent) {
-			if (count == needed_count)
-				return true;
-			count++;
-		}
-		step *= stepfac;
-	}
-	return false;
-}
-
 int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
 {
@@ -209,7 +167,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			g_settings->getS16("max_block_send_distance");
 	s16 full_d_max = max_block_send_distance;
 	if (wanted_range) {
-		s16 wanted_blocks = wanted_range /* / MAP_BLOCKSIZE */ + 1;
+		s16 wanted_blocks = wanted_range; // /* / MAP_BLOCKSIZE */ + 1;
 		if (wanted_blocks < full_d_max)
 			full_d_max = wanted_blocks;
 	}
@@ -253,17 +211,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 	auto cam_pos_nodes = floatToInt(playerpos, BS);
 
-	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n;
-	{
-#if !ENABLE_THREADS
-		auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-		n = env->getMap().getNodeTry(cam_pos_nodes);
-	}
-
-	if (n && nodemgr->get(n).solidness == 2)
-		occlusion_culling_enabled = false;
+	//const auto *nodemgr = env->getGameDef()->getNodeDefManager();
 
 	unordered_map_v3pos<bool> occlude_cache;
 	s16 d;
@@ -325,7 +273,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		}
 
 		for (auto li = list.begin(); li != list.end(); ++li) {
-			v3pos_t p = *li + center;
+			const v3pos_t p = *li + center;
 
 			/*
 				Send throttling
@@ -388,6 +336,27 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				continue;
 			}
 
+			if (d > 2 && can_skip && occlusion_culling_enabled) {
+				const auto visible = [&](const v3pos_t &p) {
+					ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
+					auto cpn = p * MAP_BLOCKSIZE;
+
+					cpn += v3pos_t(
+							MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
+
+					v3pos_t spn = cam_pos_nodes + v3pos_t(0, 0, 0);
+					if (env->getServerMap().isBlockOccluded(p * MAP_BLOCKSIZE, spn)) {
+						g_profiler->add("SMap: Occlusion skip", 1);
+						++blocks_occlusion_culled;
+						return false;
+					}
+					return true;
+				};
+				if (!visible(p)) {
+					continue;
+				}
+			}
+
 			/*
 				Check if map has this block
 			*/
@@ -417,68 +386,6 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 					// DUMP(p, block_sent, block->m_changed_timestamp,
 					// block->getDiskTimestamp(), block->getActualTimestamp(), "ch");
 					continue;
-				}
-
-				if (occlusion_culling_enabled) {
-					ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
-					// Occlusion culling
-					auto cpn = p * MAP_BLOCKSIZE;
-
-					// No occlusion culling when free_move is on and camera is
-					// inside ground
-					cpn += v3pos_t(
-							MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
-
-					float step = 1;
-					float stepfac = 1.3;
-					float startoff = 5;
-					float endoff = -MAP_BLOCKSIZE;
-					v3pos_t spn = cam_pos_nodes + v3pos_t(0, 0, 0);
-					s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
-					u32 needed_count = 1;
-#if !ENABLE_THREADS
-					auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-					// VERY BAD COPYPASTE FROM clientmap.cpp!
-					if (can_skip && occlusion_culling_enabled &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(0, 0, 0), step,
-									stepfac, startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, bs2, -bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, -bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(bs2, -bs2, -bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(-bs2, bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(-bs2, bs2, -bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(-bs2, -bs2, bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(-bs2, -bs2, -bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache)) {
-						// infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<"
-						// block="<<cpn<<"
-						// total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
-						g_profiler->add("SMap: Occlusion skip", 1);
-						blocks_occlusion_culled++;
-						continue;
-					}
 				}
 
 				// Reset usage timer, this block will be of use in the future.
