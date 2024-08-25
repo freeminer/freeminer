@@ -378,9 +378,9 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			// bool block_is_invalid = false;
 			if (block) {
 
-				/*if (d > 3 && block->content_only == CONTENT_AIR) {
+				if (d > 2 && block->content_only == CONTENT_AIR) {
 					continue;
-				}*/
+				}
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
 					// DUMP(p, block_sent, block->m_changed_timestamp,
