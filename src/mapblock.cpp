@@ -790,15 +790,16 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	void MapBlock::setLodMesh(const MapBlock::mesh_type &rmesh)
 	{
 		const auto ms = rmesh->lod_step;
-		delete_mesh = std::move(m_lod_mesh[ms]);
+		if (auto mesh = std::move(m_lod_mesh[ms]))
+			delete_mesh = std::move(mesh);
 		m_lod_mesh[ms] = rmesh;
 	}
 
 	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, uint32_t time)
 	{
 		const auto ms = rmesh->far_step;
-		if (const auto mesh = m_far_mesh[ms]) {
-			delete_mesh = mesh;
+		if (const auto mesh = std::move(m_far_mesh[ms])) {
+			delete_mesh = std::move(mesh);
 		}
 		m_far_mesh[ms] = rmesh;
 	}

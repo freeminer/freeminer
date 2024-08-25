@@ -626,6 +626,7 @@ public:
 	std::unique_ptr<MapSettingsManager> m_settings_mgr;
 	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
 	f32 fog_range = 0;
+	size_t m_new_meshes = 0;
 
 private:	
 

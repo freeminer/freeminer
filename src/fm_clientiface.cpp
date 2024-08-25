@@ -179,7 +179,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	   MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
 	*/
 
-	const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
+	//const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
 	// infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max <<
 	// std::endl;
 
@@ -337,7 +337,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				continue;
 			}
 
-			if (d > 2 && can_skip && occlusion_culling_enabled) {
+			if (d >= 2 && can_skip && occlusion_culling_enabled) {
 				const auto visible = [&](const v3pos_t &p) {
 					ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
 					auto cpn = p * MAP_BLOCKSIZE;
@@ -378,7 +378,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			// bool surely_not_found_on_disk = false;
 			// bool block_is_invalid = false;
 			if (block) {
-				if (d > 2 && block->content_only == CONTENT_AIR) {
+				if (d >= 2 && block->content_only == CONTENT_AIR) {
 					uint8_t not_air = 0;
 					for (const auto &dir : g_6dirs) {
 						if (const auto *block_near =

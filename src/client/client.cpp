@@ -645,6 +645,9 @@ void Client::step(float dtime)
 				delete block->mesh;
 				block->mesh = nullptr;
 */
+				if (!block->getLodMesh(r.mesh->lod_step)) {
+					++m_new_meshes;
+				}
 				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 

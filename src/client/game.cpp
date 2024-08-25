@@ -4632,27 +4632,20 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 #if 1
 	const auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize) {
-		if (//client->getEnv().getClientMap().m_drawlist_last ||
-				runData.update_draw_list_timer >= update_draw_list_delta ||
+		if (client->m_new_meshes ||
+				//runData.update_draw_list_timer >= update_draw_list_delta ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
-						MAP_BLOCKSIZE * BS * 2 ||
+						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-			bool allow = true;
-			static const auto thread_local more_threads =
-					g_settings->getBool("more_threads");
-			if (more_threads) {
-				updateDrawList_async.step(
+			if (updateDrawList_async.step(
 						[&](const float dtime) {
 							client->getEnv().getClientMap().updateDrawListFm(
 									dtime, 10000);
 						},
-						runData.update_draw_list_timer);
-			} else
-				client->getEnv().getClientMap().updateDrawListFm(
-						runData.update_draw_list_timer);
+						runData.update_draw_list_timer)) {
+				client->m_new_meshes = 0;
 			runData.update_draw_list_timer = 0;
-			if (allow) {
-				runData.update_draw_list_last_cam_pos = camera->getPosition();
+				runData.update_draw_list_last_cam_pos = camera_position;
 			}
 		}
 	}
