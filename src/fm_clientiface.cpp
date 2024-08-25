@@ -8,6 +8,7 @@
 #include "server.h"
 #include "emerge.h"
 #include "face_position_cache.h"
+#include "util/directiontables.h"
 #include "util/numeric.h"
 
 int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
