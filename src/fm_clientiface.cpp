@@ -377,9 +377,21 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			// bool surely_not_found_on_disk = false;
 			// bool block_is_invalid = false;
 			if (block) {
-
 				if (d > 2 && block->content_only == CONTENT_AIR) {
+					uint8_t not_air = 0;
+					for (const auto &dir : g_6dirs) {
+						if (const auto *block_near =
+										env->getMap().getBlockNoCreateNoEx(p + dir)) {
+							if (block_near->content_only &&
+									block_near->content_only != CONTENT_AIR) {
+								++not_air;
+								break;
+							}
+						}
+					}
+					if (!not_air) {
 					continue;
+					}
 				}
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
