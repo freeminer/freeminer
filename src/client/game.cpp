@@ -3124,7 +3124,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			else
 				disableCinematic();
 		}
-		draw_control.fov_want = player->zoom ? g_settings->getFloat("zoom_fov") : g_settings->getFloat("fov");
+		draw_control.fov_want = player->zoom ? player->getZoomFOV() : g_settings->getFloat("fov");
 		client->sendDrawControl();
 	}
 	draw_control.fov -= (draw_control.fov - draw_control.fov_want)/7;

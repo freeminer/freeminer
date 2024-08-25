@@ -117,9 +117,6 @@ enable_vbo () bool false
 # Reduce FOV when speed increases
 movement_fov () bool true
 
-# FOV when using zoom, default 15
-zoom_fov () int 15
-
 # Increase performance of headless client ( video_driver = null )
 headless_optimize () bool false
 
