@@ -4632,7 +4632,6 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 #endif
 /* */
 
-#if 1
 	const auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize)
 		if ((client->m_new_meshes &&
