@@ -331,7 +331,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			}
 
 			if (block_sent > 0 &&
-					(/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d * d) >
+					(/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d * d * d) >
 										  m_uptime)) {
 				// DUMP(p, block_sent, d, "ddd");
 				continue;

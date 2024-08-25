@@ -4609,7 +4609,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	runData.update_draw_list_timer += dtime;
 	runData.touch_blocks_timer += dtime;
 
-	float update_draw_list_delta = 0.2f;
+	float update_draw_list_delta = 0.5f;
 
 /* mt dir */
 #if 0
@@ -4634,25 +4634,23 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 #if 1
 	const auto camera_position = camera->getPosition();
-	if (!runData.headless_optimize) {
-		if (client->m_new_meshes ||
-				//runData.update_draw_list_timer >= update_draw_list_delta ||
+	if (!runData.headless_optimize)
+		if ((client->m_new_meshes &&
+					runData.update_draw_list_timer >= update_draw_list_delta) ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-			if (updateDrawList_async.step(
+							 updateDrawList_async.step(
 						[&](const float dtime) {
-							client->getEnv().getClientMap().updateDrawListFm(
-									dtime, 10000);
+										 client->m_new_meshes = 0;
+										 runData.update_draw_list_timer = 0;
+						runData.update_draw_list_last_cam_pos = camera_position;
+						client->getEnv().getClientMap().updateDrawListFm(dtime, 10000);
 						},
-						runData.update_draw_list_timer)) {
-				client->m_new_meshes = 0;
-			runData.update_draw_list_timer = 0;
-				runData.update_draw_list_last_cam_pos = camera_position;
-			}
+									 runData.update_draw_list_timer);
+
 		}
-	}
-#endif
+
    if (!runData.headless_optimize)
 	if (RenderingEngine::get_shadow_renderer()) {
 		updateShadows();
