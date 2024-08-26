@@ -412,6 +412,7 @@ void FarMesh::update(v3opos_t camera_pos,
 						timestamp_complete - clean_old_time;
 			//timestamp_complete = m_client->m_uptime;
 			complete_set = true;
+			++m_client->m_new_meshes;
 		}
 	}
 }

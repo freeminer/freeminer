@@ -430,12 +430,12 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 
 			if (!block->isGenerated())
 #if BUILD_CLIENT
-			if (!block->getLodMesh(0, true))
+				if (!block->getLodMesh(0, true))
 #endif
-			{
-				blocks_delete.emplace_back(block);
-				continue;
-			}
+				{
+					blocks_delete.emplace_back(block);
+					continue;
+				}
 
 			{
 				auto lock = block->try_lock_unique_rec();
@@ -1398,8 +1398,9 @@ s16 ServerMap::findGroundLevel(v2pos_t p2d, bool cacheBlocks)
 
 inline core::aabbox3d<bpos_t> getBox(const v3bpos_t &pos)
 {
-	return core::aabbox3d<bpos_t>(pos,
-			pos + v3bpos_t(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE) - v3bpos_t(1, 1, 1));
+	return core::aabbox3d<bpos_t>(
+			pos, pos + v3bpos_t(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE) -
+						 v3bpos_t(1, 1, 1));
 }
 
 bool Map::isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes)
