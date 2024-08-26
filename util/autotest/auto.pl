@@ -19,15 +19,15 @@ $0 -num_emerge_threads=1 tsan bot
 $0 all
 
 #manual play with gdb trace if segfault
-$0 gdb play
+$0 gdb go
 
 #normal play
-$0 play
+$0 go
 
 #build with latests installed clang and play
-$0 ---cmake_clang=1 ---cmake_libcxx=1 play
+$0 ---cmake_clang=1 ---cmake_libcxx=1 go
 #build with clang-3.8 and play
-$0 ---cmake_clang=-3.8 play
+$0 ---cmake_clang=-3.8 go
 
 # run server with debug in gdb
 $0 gdb server
@@ -49,7 +49,7 @@ $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 $0 ---cmake_clang=1 -DENABLE_TIFF=0                        gperf bot
 
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
-$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 asan play
+$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 asan go
 
 # build and use custom leveldb
 $0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
@@ -70,8 +70,8 @@ $0 --autoexit=60 bot_vtune
 $0 stress_vtune
 
 # google-perftools https://github.com/gperftools/gperftools
-$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 gperf bot
-$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 ----headless ----headless_optimize ----info ---clients_num=50 -profiler_print_interval=10 stress_gperf
+$0 ---gperf_heapprofile=1 ---gperf_cpuprofile=1 gperf bot
+$0 ---gperf_heapprofile=1 ---gperf_cpuprofile=1 ----headless ----headless_optimize ----info ---clients_num=50 -profiler_print_interval=10 stress_gperf
 
 # stress test of flowing liquid
 $0 ----world_water
@@ -716,13 +716,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             ($config->{PPROF_PATH}) = `which google-pprof pprof`;
             $config->{PPROF_PATH} =~ s{\s+$}{}s;
             $ENV{PPROF_PATH} = $config->{PPROF_PATH};
-            my $flags;
-            $flags .= " MALLOCSTATS=9 "                          if $config->{gperf_heapprofile};
-            $flags .= " HEAPCHECK=normal "                       if $config->{gperf_heapcheck};
-            $flags .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
-            $flags .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
-            $config->{runner}  = $flags . ' ' . $config->{runner};
-            $config->{run_add} = $config->{run_add} . " ||:";
+            $config->{envs}{gperf} .= " MALLOCSTATS=9 PERFTOOLS_VERBOSE=9 "      if $config->{gperf_heapprofile};
+            $config->{envs}{gperf} .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
+            $config->{envs}{gperf} .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
             0;
         }
     ],
@@ -769,7 +765,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         }
     ],
 
-    play => [
+    go => [
         'set_client',
         {
             '---go'       => undef,

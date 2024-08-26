@@ -2362,12 +2362,15 @@ void Game::processKeyInput()
 	} else if (wasKeyDown(KeyType::INCREASE_VIEWING_RANGE)) {
 		increaseViewRange();
 		client->sendDrawControl();
+		++client->m_new_meshes;
 	} else if (wasKeyDown(KeyType::DECREASE_VIEWING_RANGE)) {
 		decreaseViewRange();
 		client->sendDrawControl();
+		++client->m_new_meshes;
 	} else if (wasKeyPressed(KeyType::RANGESELECT)) {
 		toggleFullViewRange();
 		client->sendDrawControl();
+		++client->m_new_meshes;
 	} else if (wasKeyDown(KeyType::ZOOM)) {
 		checkZoomEnabled();
 		client->sendDrawControl();
@@ -2893,16 +2896,16 @@ void Game::increaseViewRange()
 	pos_t server_limit = sky->getFogDistance();
 
 	{ //fm:
-		if (g_settings->getS32("farmesh")) {
+		if (g_settings->getS32("lodmesh")) {
 			range_new = range * 1.5;
 		} else {
-			range_new = range + MAP_BLOCKSIZE;
+			range_new = range + MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 		}
 
 		// it's < 0 if it's outside the range of s16
 		// and increase it directly from 1 to 16 for less key pressing
-		if (range_new < MAP_BLOCKSIZE)
-			range_new = MAP_BLOCKSIZE;
+		if (range_new < MAP_BLOCKSIZE * client->getMeshGrid().cell_size)
+			range_new = MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 	}
 
 	if (range_new >= MAX_MAP_GENERATION_LIMIT) {
@@ -2928,15 +2931,15 @@ void Game::decreaseViewRange()
 	pos_t server_limit = sky->getFogDistance();
 
 	{ //fm:
-		if (g_settings->getS32("farmesh")) {
+		if (g_settings->getS32("lodmesh")) {
 			range_new = range / 1.5;
 		} else {
-			range_new = range - MAP_BLOCKSIZE;
+			range_new = range - MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 		}
 	}
 
-	if (range_new <= MAP_BLOCKSIZE) {
-		range_new = MAP_BLOCKSIZE;
+	if (range_new <= MAP_BLOCKSIZE * client->getMeshGrid().cell_size) {
+		range_new = MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 		std::wstring msg = server_limit >= 0 && range_new > server_limit ?
 				fwgettext("Viewing changed to %d (the minimum), but limited to %d by game or mod", range_new, server_limit) :
 				fwgettext("Viewing changed to %d (the minimum)", range_new);
@@ -3125,7 +3128,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			else
 				disableCinematic();
 		}
-		draw_control.fov_want = player->zoom ? g_settings->getFloat("zoom_fov") : g_settings->getFloat("fov");
+		draw_control.fov_want = player->zoom ? player->getZoomFOV() : g_settings->getFloat("fov");
 		client->sendDrawControl();
 	}
 	draw_control.fov -= (draw_control.fov - draw_control.fov_want)/7;
@@ -4609,7 +4612,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	runData.update_draw_list_timer += dtime;
 	runData.touch_blocks_timer += dtime;
 
-	float update_draw_list_delta = 0.2f;
+	float update_draw_list_delta = 0.5f;
 
 /* mt dir */
 #if 0
@@ -4632,34 +4635,24 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 #endif
 /* */
 
-#if 1
 	const auto camera_position = camera->getPosition();
-	if (!runData.headless_optimize) {
-		if (client->getEnv().getClientMap().m_drawlist_last ||
-				runData.update_draw_list_timer >= update_draw_list_delta ||
+	if (!runData.headless_optimize)
+		if ((client->m_new_meshes &&
+					runData.update_draw_list_timer >= update_draw_list_delta) ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
-						MAP_BLOCKSIZE * BS * 2 ||
+						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-			bool allow = true;
-			static const auto thread_local more_threads =
-					g_settings->getBool("more_threads");
-			if (more_threads) {
-				updateDrawList_async.step(
+							 updateDrawList_async.step(
 						[&](const float dtime) {
-							client->getEnv().getClientMap().updateDrawListFm(
-									dtime, 10000);
+										 client->m_new_meshes = 0;
+										 runData.update_draw_list_timer = 0;
+						runData.update_draw_list_last_cam_pos = camera_position;
+						client->getEnv().getClientMap().updateDrawListFm(dtime, 10000);
 						},
-						runData.update_draw_list_timer);
-			} else
-				client->getEnv().getClientMap().updateDrawListFm(
-						runData.update_draw_list_timer);
-			runData.update_draw_list_timer = 0;
-			if (allow) {
-				runData.update_draw_list_last_cam_pos = camera->getPosition();
-			}
+									 runData.update_draw_list_timer);
+
 		}
-	}
-#endif
+
    if (!runData.headless_optimize)
 	if (RenderingEngine::get_shadow_renderer()) {
 		updateShadows();

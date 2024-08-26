@@ -756,14 +756,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	bool drawlist_current_write = !m_drawlist_current;
 	auto & drawlist = drawlist_current_write ? m_drawlist_1 : m_drawlist_0;
 
-	if (!m_drawlist_last) {
 		drawlist.clear();
-	}
 
-	if (!max_cycle_ms)
-		max_cycle_ms = 300/getControl().fps_wanted;
-
-	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
+	//auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
 
 	//v3f camera_position = m_camera_position;
 	//f32 camera_fov = m_camera_fov;
@@ -794,7 +789,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	// Number of blocks in rendering range but don't have a mesh
 	u32 blocks_in_range_without_mesh = 0;
 	// Blocks that were drawn and had a mesh
-	u32 blocks_drawn = 0;
+	//u32 blocks_drawn = 0;
 	// Blocks which had a corresponding meshbuffer for this pass
 	//u32 blocks_had_pass_meshbuf = 0;
 	// Blocks from which stuff was actually drawn
@@ -805,50 +800,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	//bool free_move = g_settings->getBool("free_move");
 
-	opos_t range_max = m_control.range_all ? (opos_t)MAX_MAP_GENERATION_LIMIT : m_control.wanted_range * (m_control.wanted_range > 200 ? 1.2 : 1.5);
-
-	if (draw_nearest.empty()) {
-		//ScopeProfiler sp(g_profiler, "CM::updateDrawList() make list", SPT_AVG);
-		TimeTaker timer_step("ClientMap::updateDrawList make list");
-
-		auto lock = m_blocks.try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return;
-
-		draw_nearest.clear();
-
-		for(auto & ir : m_blocks) {
-			auto bp = ir.first;
-
-/*
-		if (m_control.range_all == false) {
-			if (bp.X < p_blocks_min.X || bp.X > p_blocks_max.X
-			|| bp.Z > p_blocks_max.Z || bp.Z < p_blocks_min.Z
-			|| bp.Y < p_blocks_min.Y || bp.Y > p_blocks_max.Y)
-				continue;
-		}
-
-			v3pos_t blockpos_nodes = bp * MAP_BLOCKSIZE;
-			// Block center position
-			v3opos_t blockpos(
-				((float)blockpos_nodes.X + MAP_BLOCKSIZE/2) * BS,
-				((float)blockpos_nodes.Y + MAP_BLOCKSIZE/2) * BS,
-				((float)blockpos_nodes.Z + MAP_BLOCKSIZE/2) * BS
-			);
-*/
-
-			opos_t d = radius_box(bp*MAP_BLOCKSIZE, m_camera_position_node); //blockpos_relative.getLength();
-			if (d > range_max) {
-				if (d > range_max * 4 && ir.second) {
-					int mul = d / range_max;
-					ir.second->usage_timer_multiplier = mul;
-				}
-				continue;
-			}
-			int range = d / MAP_BLOCKSIZE;
-			draw_nearest.emplace_back(bp, range);
-		}
-	}
+	float range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range;
 
 	const int maxq = 1000;
 
@@ -868,23 +820,25 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			occlusion_culling_enabled = false;
 	}
 
-	const auto end_ms = porting::getTimeMs() + u32(max_cycle_ms);
 	std::unordered_set<v3bpos_t> blocks_skip_farmesh;
 
 	unordered_map_v3pos<bool> occlude_cache;
 
-	while (!draw_nearest.empty()) {
-		auto ir = draw_nearest.back();
 
-		auto bp = ir.first;
-		int range = ir.second;
-		//const auto d = range;
-		draw_nearest.pop_back();
+	for(const auto & [bp, block] : m_blocks) {
 
-		//auto block = getBlockNoCreateNoEx(bp);
-		auto block = m_blocks.get(bp);
 		if (!block)
 			continue;
+
+			f32 d = radius_box(bp*MAP_BLOCKSIZE, m_camera_position_node); //blockpos_relative.getLength();
+			if (d > range_max + m_client->getMeshGrid().cell_size * MAP_BLOCKSIZE) {
+				if (d > range_max * 4) {
+					int mul = d / range_max;
+					block->usage_timer_multiplier = mul;
+				}
+				continue;
+			}
+			int range_blocks = d / MAP_BLOCKSIZE;
 
 		block->resetUsageTimer();
 
@@ -899,7 +853,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 		const auto mesh = block->getLodMesh(mesh_step, true);
 			{
-			blocks_in_range++;
+			++blocks_in_range;
 
 			const int smesh_size = !mesh ? -1 : mesh->getMesh()->getMeshBufferCount();
 
@@ -909,7 +863,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			{
 				if ((!mesh && smesh_size < 0) || mesh_step != mesh->lod_step) {
 					blocks_in_range_without_mesh++;
-					if (m_mesh_queued < maxq || range <= 2) {
+					if (m_mesh_queued < maxq || range_blocks <= 2) {
 						const auto bts = block->getTimestamp();
 						if (block->mesh_requested_timestamp < bts) {
 							block->mesh_requested_timestamp = bts;
@@ -975,27 +929,29 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			}
 */
 
+			if (m_client->getMeshGrid().cell_size > 1) {
 				// Calculate the coordinates for range and frustum culling
 				v3opos_t mesh_sphere_center;
+
 				f32 mesh_sphere_radius;
 
 				v3pos_t block_pos_nodes = block->getPosRelative();
-
 				if (mesh) {
-					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
-							+ mesh->getBoundingSphereCenter();
+					mesh_sphere_center = intToFloat(block_pos_nodes, BS) +
+										 mesh->getBoundingSphereCenter();
 					mesh_sphere_radius = mesh->getBoundingRadius();
 				} else {
-					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
-							+ v3opos_t((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
+					mesh_sphere_center = intToFloat(block_pos_nodes, BS) +
+										 v3opos_t((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
 					mesh_sphere_radius = 0.0f;
 				}
 
 				// First, perform a simple distance check.
 				if (!m_control.range_all &&
-					mesh_sphere_center.getDistanceFrom(m_camera_position) >
+						radius_box(mesh_sphere_center, m_camera_position) >
 						m_control.wanted_range * BS + mesh_sphere_radius)
 					continue; // Out of range, skip.
+			}
 
 				// Keep the block alive as long as it is in range.
 				//block->resetUsageTimer();
@@ -1016,6 +972,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				*/
 
 				// Raytraced occlusion culling - send rays from the camera to the block's corners
+				if (range_blocks>3)
 				if (!m_control.range_all && occlusion_culling_enabled && m_enable_raytraced_culling &&
 						mesh &&
 						isMeshOccluded(block, mesh_grid.cell_size, m_camera_position_node)) {
@@ -1034,16 +991,16 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 */
 
 			if (mesh_step != mesh->lod_step && smesh_size < 0 &&
-					(m_mesh_queued < maxq * 1.2 || range <= 2)) {
+					(m_mesh_queued < maxq * 1.2 || range_blocks <= 2)) {
 				m_client->addUpdateMeshTask(bp);
 				++m_mesh_queued;
 			} else if (const auto bts = block->getTimestamp();
 					   bts != BLOCK_TIMESTAMP_UNDEFINED &&
 					   block->getTimestamp() > mesh->timestamp + (smesh_size ? 0
-																		 : range >= 2
+																		 : range_blocks >= 2
 																				 ? 60
 																				 : 0) &&
-					   (m_mesh_queued < maxq * 1.5 || range <= 2)) {
+					   (m_mesh_queued < maxq * 1.5 || range_blocks <= 2)) {
 				if (mesh_step > 1)
 					m_client->addUpdateMeshTask(bp);
 				else
@@ -1067,24 +1024,20 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			//block->resetUsageTimer();
 			drawlist.insert_or_assign(bp, block);
 
-			blocks_drawn++;
+			//blocks_drawn++;
 
-			if(range * MAP_BLOCKSIZE > farthest_drawn)
-				farthest_drawn = range * MAP_BLOCKSIZE;
-
-		if (porting::getTimeMs() > end_ms) {
-			break;
-		}
+			if(range_blocks * MAP_BLOCKSIZE > farthest_drawn)
+				farthest_drawn = range_blocks * MAP_BLOCKSIZE;
 			}
 
 	}
-	m_drawlist_last = draw_nearest.size();
+	//m_drawlist_last = draw_nearest.size();
 
 	//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<" occache="<<occlude_cache.size()<<std::endl;
 
-	if (m_drawlist_last) {
-		return;
-	}
+	//if (m_drawlist_last) {
+	//	return;
+	//}
 
 	{
 		//if (m_client->farmesh_remake.empty())

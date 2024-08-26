@@ -645,6 +645,9 @@ void Client::step(float dtime)
 				delete block->mesh;
 				block->mesh = nullptr;
 */
+				if (!block->getLodMesh(r.mesh->lod_step)) {
+					++m_new_meshes;
+				}
 				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 
@@ -703,7 +706,8 @@ void Client::step(float dtime)
 				if (block)
 					block->refDrop();
 
-			if (porting::getTimeMs() > end_ms)
+			if (num_processed_meshes > 5 && num_processed_meshes > qsize / 10 &&
+					porting::getTimeMs() > end_ms)
 				break;
 
 		}
