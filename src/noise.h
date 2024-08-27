@@ -40,7 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 extern FlagDesc flagdesc_noiseparams[];
 
 
-#if FARSCALE_LIMIT > 32768
+#if MAX_MAP_GENERATION_LIMIT > FARSCALE_LIMIT
 
 template <typename type_scale, typename type_coord>
 inline type_scale farscale(type_scale scale, type_coord z) {

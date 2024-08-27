@@ -99,7 +99,7 @@ struct abm_trigger_one {
 ////
 
 class MapBlock
-: public locker<>
+: public shared_locker
 {
 public:
 	MapBlock(Map *parent, v3s16 pos, IGameDef *gamedef);

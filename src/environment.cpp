@@ -292,7 +292,12 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 		// Next node
 		state->m_previous_node = state->m_iterator.m_current_node_pos;
 		state->m_iterator.next();
+
+		if (state->end_ms && porting::getTimeMs() > state->end_ms) {
+			return;
+		}
 	}
+	state->finished = true;
 	// Return empty PointedThing if nothing left on the ray
 	if (state->m_found.empty()) {
 		result->type = POINTEDTHING_NOTHING;
