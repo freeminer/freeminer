@@ -24,7 +24,7 @@ local function get_sorted_servers()
 
 	servers.lan = core.get_lan_servers();
 	for _, server in ipairs(servers.lan) do
-		server.is_compatible = is_server_protocol_compat(server.proto_min, server.proto_max, server.proto)
+		server.is_compatible = is_server_protocol_compat(server.proto_min, server.proto_max)
 	end
 
 
@@ -40,7 +40,7 @@ local function get_sorted_servers()
 				break
 			end
 		end
-		server.is_compatible = is_server_protocol_compat(server.proto_min, server.proto_max, server.proto)
+		server.is_compatible = is_server_protocol_compat(server.proto_min, server.proto_max)
 		if server.is_favorite then
 			table.insert(servers.fav, server)
 		elseif server.is_compatible then
@@ -275,16 +275,17 @@ local function set_selected_server(tabdata, idx, server)
 		core.settings:set("remote_port", port)
 
 		if server.proto_multi and server.proto_multi.enet then
+			gamedata.proto = "enet"
 			core.settings:set("remote_port", server.proto_multi.enet)
-			core.settings:set("remote_proto", "enet")
 		elseif server.proto_multi and server.proto_multi.sctp then
+			gamedata.proto = "sctp"
 			core.settings:set("remote_port", server.proto_multi.sctp)
-			core.settings:set("remote_proto", "sctp")
 		elseif server.proto then
-			core.settings:set("remote_proto", server.proto)
+			gamedata.proto = server.proto
 		else
-			core.settings:set("remote_proto", "mt")
+			gamedata.proto = "mt"
 		end
+		core.settings:set("remote_proto", gamedata.proto)
 	end
 	tabdata.selected = idx
 end
@@ -302,7 +303,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		if server then
 			if event.type == "DCL" then
 				if not is_server_protocol_compat_or_error(
-							server.proto_min, server.proto_max, server.proto) then
+							server.proto_min, server.proto_max) then
 					return true
 				end
 
@@ -404,7 +405,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			gamedata.serverdescription = server.description
 
 			if not is_server_protocol_compat_or_error(
-						server.proto_min, server.proto_max, server.proto) then
+						server.proto_min, server.proto_max) then
 				return true
 			end
 		else
@@ -414,6 +415,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 			serverlistmgr.add_favorite({
 				address = gamedata.address,
 				port = gamedata.port,
+				proto = gamedata.proto
 			})
 		end
 
@@ -432,7 +434,7 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		end
 
 		if server and not is_server_protocol_compat_or_error(
-					server.proto_min, server.proto_max, server.proto) then
+					server.proto_min, server.proto_max) then
 			return true
 		end
 

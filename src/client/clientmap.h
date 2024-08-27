@@ -244,8 +244,11 @@ private:
 	v3pos_t m_camera_position_node;
     using drawlist_map = std::map<v3bpos_t, MapBlockP, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
-	std::atomic<drawlist_map *> m_drawlist {&m_drawlist_0};
-	std::atomic_bool m_drawlist_current = 0;
+	std::atomic_bool m_drawlist_current = false;
+    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockP>;
+	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
+	std::atomic_bool m_drawlist_shadow_current = false;
+
 public:
 	std::map<v3pos_t, MapBlock*> m_block_boundary;
 private:
@@ -253,7 +256,9 @@ private:
 
 	//std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
 	std::vector<MapBlock*> m_keeplist;
+/*
 	std::map<v3s16, MapBlock*> m_drawlist_shadow;
+*/	
 	bool m_needs_update_drawlist;
 
 	std::set<v2s16> m_last_drawn_sectors;

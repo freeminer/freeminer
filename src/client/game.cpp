@@ -41,7 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_cao.h"
 #include "content/subgames.h"
 #include "client/event_manager.h"
-#include "client/fm_farmesh.h"
 #include "fontengine.h"
 #include "itemdef.h"
 #include "log.h"
@@ -70,7 +69,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "translation.h"
 #include "util/basic_macros.h"
 #include "util/directiontables.h"
-#include "util/numeric.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
 #include "irrlicht_changes/static_text.h"
@@ -80,7 +78,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "hud.h"
 #include "clientdynamicinfo.h"
 
+
+#include "client/fm_farmesh.h"
 #include "threading/async.h"
+#include "util/numeric.h"
 #include <future>
 #include <memory>
 
@@ -1389,13 +1390,11 @@ void Game::shutdown()
 	if (formspec)
 		formspec->quitMenu();
 
-
 #ifdef HAVE_TOUCHSCREENGUI
 	g_touchscreengui->hide();
 #endif
 
 	showOverlayMessage(N_("Shutting down..."), 0, 0, false);
-
 
 	if (clouds)
 		clouds->drop();
@@ -2178,7 +2177,6 @@ void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
 		jp->max = 0.0;
 		jp->min = 0.0;
 	}
-
 }
 
 
@@ -2497,7 +2495,7 @@ void Game::processItemSelection(u16 *new_playeritem)
 				*new_playeritem = client->getPreviousPlayerItem();
 			else
 */
-				*new_playeritem = i;
+			*new_playeritem = i;
 			break;
 		}
 	}
@@ -3256,6 +3254,7 @@ void Game::handleClientEvent_Deathscreen(ClientEvent *event, CameraOrientation *
 			client->sendRespawn();
 		} else {
 		showDeathFormspec();
+
 		}
 	}
 	/* Handle visualization */
@@ -3853,16 +3852,19 @@ PointedThing Game::updatePointedThing(
 	runData.selected_object = NULL;
 	hud->pointing_at_object = false;
 
+    /*
 	RaycastState s(shootline, look_for_object, liquids_pointable);
+	*/
 	PointedThing result;
 
 	if (!pointedRaycastState || pointedRaycastState->finished) {
 		pointedRaycastState = std::make_unique<RaycastState>(
 				shootline, look_for_object, liquids_pointable);
 	}
-	pointedRaycastState->end_ms = porting::getTimeMs() + 3;
+	pointedRaycastState->end_ms = porting::getTimeMs() + 2;
+	auto & s = *pointedRaycastState;
 
-	env.continueRaycast(pointedRaycastState.get(), &result);
+	env.continueRaycast(&s, &result);
 
 	if (!pointedRaycastState->finished) {
 		result = pointed;
@@ -4933,8 +4935,6 @@ void Game::readSettings()
 	runData.enable_fog = m_cache_enable_fog;
 }
 
-
-
 /****************************************************************************/
 /****************************************************************************
  Shutdown / cleanup
@@ -5064,6 +5064,7 @@ void Game::showPauseMenu()
 	} else {
 		os << mode << strgettext("Singleplayer") << "\n";
 	}
+	os << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
 	if (simple_singleplayer_mode || address.empty()) {
 		static const std::string on = strgettext("On");
 		static const std::string off = strgettext("Off");
@@ -5157,5 +5158,5 @@ bool the_game(bool *kill,
 	}
 	game.shutdown();
 
-	return started && game.runData.reconnect; 
+	return started && game.runData.reconnect;
 }

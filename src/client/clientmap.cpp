@@ -755,8 +755,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	TimeTaker timer_step("ClientMap::updateDrawList");
 
-	bool drawlist_current_write = !m_drawlist_current;
-	auto & drawlist = drawlist_current_write ? m_drawlist_1 : m_drawlist_0;
+	auto &drawlist = !m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 
 		drawlist.clear();
 
@@ -1084,9 +1083,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	m_drawlist_current = !m_drawlist_current;
 
-	//auto m_drawlist_old = !m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
-	m_drawlist = m_drawlist_current ? &m_drawlist_1 : &m_drawlist_0;
-
 /*
 	m_control.blocks_would_have_drawn = blocks_would_have_drawn;
 	m_control.blocks_drawn = blocks_drawn;
@@ -1110,7 +1106,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	g_profiler->avg("MapBlock meshes in range [#]", blocks_in_range_with_mesh);
 	g_profiler->avg("MapBlocks occlusion culled [#]", blocks_occlusion_culled);
-	g_profiler->avg("MapBlocks drawn [#]", (*m_drawlist).size());
+	g_profiler->avg("MapBlocks drawn [#]", drawlist.size());
 	//g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
 	g_profiler->avg("MapBlocks loaded [#]", m_blocks.size());
 }
@@ -1121,7 +1117,6 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 {
 
 	auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
-
 	bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
 
 	std::string prefix;
@@ -1542,6 +1537,9 @@ void ClientMap::PrintInfo(std::ostream &out)
 void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		const video::SMaterial &material, s32 pass, int frame, int total_frames)
 {
+	auto &m_drawlist_shadow =
+			m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
+
 	bool is_transparent_pass = pass != scene::ESNRP_SOLID;
 	std::string prefix;
 	if (is_transparent_pass)
@@ -1692,6 +1690,11 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 */
 void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir, float radius, float length)
 {
+
+	auto &m_drawlist_shadow =
+			!m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
+
+
 	ScopeProfiler sp(g_profiler, "CM::updateDrawListShadow()", SPT_AVG);
 
 	v3s16 cam_pos_nodes = floatToInt(shadow_light_pos, BS);
@@ -1752,6 +1755,8 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 				block->refGrab();
 			}
 		}
+
+	m_drawlist_shadow_current = !m_drawlist_shadow_current;
 
 	g_profiler->avg("SHADOW MapBlock meshes in range [#]", blocks_in_range_with_mesh);
 	g_profiler->avg("SHADOW MapBlocks drawn [#]", m_drawlist_shadow.size());

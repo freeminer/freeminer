@@ -142,7 +142,7 @@ protected:
 	 * Below: values managed by m_time_lock
 	 */
 	// Time of day in milli-hours (0-23999), determines day and night
-	u32 m_time_of_day;
+	std::atomic_uint32_t m_time_of_day;
 	// Time of day in 0...1
 	//float m_time_of_day_f;
 	// Stores the skew created by the float -> u32 conversion
@@ -176,5 +176,5 @@ protected:
 	IGameDef *m_gamedef;
 
 private:
-	std::mutex m_time_lock;
+	//std::mutex m_time_lock;
 };
