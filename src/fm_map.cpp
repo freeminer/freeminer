@@ -178,19 +178,33 @@ void Map::eraseBlock(const MapBlockP block)
 	m_block_cache = nullptr;
 }
 
-MapNode dummy{CONTENT_IGNORE};
-
-MapNode &Map::getNodeTry(const v3pos_t &p)
+MapNode Map::getNodeTry(const v3pos_t &p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
 #endif
 	auto blockpos = getNodeBlockPos(p);
 	auto block = getBlockNoCreateNoEx(blockpos, true);
-	if (!block)
-		return dummy; // MapNode(CONTENT_IGNORE);
+	if (!block) {
+		return {CONTENT_IGNORE};
+	}
 	auto relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNodeTry(relpos);
+}
+
+MapNode &Map::getNodeRef(const v3pos_t &p)
+{
+#ifndef NDEBUG
+	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
+#endif
+	auto blockpos = getNodeBlockPos(p);
+	auto block = getBlockNoCreateNoEx(blockpos, true);
+	if (!block) {
+		static thread_local MapNode dummy{CONTENT_IGNORE};
+		return dummy;
+	}
+	auto relpos = p - blockpos * MAP_BLOCKSIZE;
+	return block->getNodeRef(relpos);
 }
 
 /*

@@ -278,7 +278,7 @@ public:
 
 
 //freeminer:
-	MapNode &getNodeTry(const v3pos_t &p);
+	MapNode getNodeTry(const v3pos_t &p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
 	std::atomic_uint m_liquid_step_flow{0};
@@ -311,6 +311,7 @@ public:
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_shared_unordered_map<v3bpos_t, int, v3posHash, v3posEqual> m_db_miss;
+	MapNode &getNodeRef(const v3pos_t &p);
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -336,7 +337,7 @@ public:
 	{
 		return getNodeTry(p);
 	};
-	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeTry(p); }
+	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeRef(p); }
 
 	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t & cam_pos_nodes);
 

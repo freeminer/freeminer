@@ -399,7 +399,6 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 
 void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int compression_level, bool use_content_only)
 {
-	auto lock = lock_shared_rec();
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 
@@ -418,6 +417,8 @@ void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int
 		flags |= 0x08;
 		infostream<<" serialize not generated block"<<std::endl;
 	}
+
+	auto lock = lock_shared_rec();
 
 	writeU8(os, flags);
 	if (version >= 27) {
