@@ -585,7 +585,7 @@ size_t ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_block
 {
 	g_profiler->avg("Server: liquids queue", transforming_liquid_size());
 
-	if (g_settings->getBool("liquid_real"))
+	if (thread_local const auto static liquid_real = g_settings->getBool("liquid_real"); liquid_real)
 		return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
 
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;

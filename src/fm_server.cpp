@@ -240,8 +240,10 @@ public:
 				m_server->getEnv().getServerMap().transformLiquids(
 						modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
 				auto time_spend = porting::getTimeMs() - time_start;
+
+				thread_local const auto static liquid_step = g_settings->getBool("liquid_step");
 				std::this_thread::sleep_for(std::chrono::milliseconds(
-						time_spend > 300 ? 1 : 300 - time_spend));
+						time_spend > liquid_step ? 1 : liquid_step - time_spend));
 
 #if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {

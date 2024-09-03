@@ -194,10 +194,11 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");
+    settings->setDefault("liquid_step", "100");
 	settings->setDefault("liquid_send", android ? "3.0" : "1.0");
 	settings->setDefault("liquid_relax", android ? "1" : "2");
 	settings->setDefault("liquid_fast_flood", "-200");
-
+	
 	// Weather
 	settings->setDefault("weather", threads ? "true" : "false");
 	settings->setDefault("weather_biome", "false");
