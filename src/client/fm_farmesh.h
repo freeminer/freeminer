@@ -22,10 +22,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <atomic>
+#include <cstdint>
 #include "client/camera.h"
 #include "fm_nodecontainer.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "threading/async.h"
+#include "threading/concurrent_unordered_map.h"
+#include "threading/concurrent_unordered_set.h"
 
 class Client;
 class Mapgen;
@@ -59,12 +63,12 @@ public:
 			v3pos_t m_camera_offset,
 			//float brightness,
 			int render_range, float speed);
-	void makeFarBlock(const v3bpos_t &blockpos, size_t step);
+	void makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near = false);
 	void makeFarBlock7(const v3bpos_t &blockpos, size_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
 private:
-	std::vector<v3bpos_t> m_make_far_blocks_list;
+	//std::vector<v3bpos_t> m_make_far_blocks_list;
 
 	v3opos_t m_camera_pos = {-1337, -1337, -1337};
 	v3pos_t m_camera_pos_aligned{0, 0, 0};
@@ -118,4 +122,6 @@ private:
 	//int timestamp_clean = 0;
 	bool complete_set = false;
 	int planes_processed_last = 0;
+	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
+			far_blocks_list;
 };

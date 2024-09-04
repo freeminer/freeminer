@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "threading/concurrent_set.h"
 #include "threading/concurrent_unordered_map.h"
+#include "threading/concurrent_unordered_set.h"
 #include "network/fm_connection_use.h"
 #include "util/unordered_map_hash.h"
 #include "network/networkpacket.h"
@@ -333,8 +334,7 @@ public:
 	/*
 		List of active objects that the client knows of.
 	*/
-	//maybe_concurrent_unordered_map<u16, bool> m_known_objects;
-	maybe_concurrent_set<u16> m_known_objects;
+	concurrent_set<u16> m_known_objects;
 
 	ClientState getState() const { return m_state; }
 

@@ -2025,7 +2025,7 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 			dbase_ro->loadBlock(p3d, &blob);
 		}
 		if (!blob.length()) {
-			m_db_miss.emplace(p3d, 1);
+			m_db_miss.emplace(p3d);
 			return nullptr;
 		}
 

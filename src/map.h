@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "irr_v3d.h"
+#include "threading/concurrent_unordered_set.h"
 #include "util/unordered_map_hash.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_set.h"
@@ -310,7 +311,7 @@ public:
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3bpos_t, int, v3posHash, v3posEqual> m_db_miss;
+	concurrent_shared_unordered_set<v3bpos_t, v3posHash, v3posEqual> m_db_miss;
 	MapNode &getNodeRef(const v3pos_t &p);
 
 #if !ENABLE_THREADS

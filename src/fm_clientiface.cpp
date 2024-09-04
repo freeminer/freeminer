@@ -463,7 +463,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				// infostream<<"start gen d="<<d<<" p="<<p<<"
 				// notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<"
 				// block="<<block<<" generate="<<generate<<std::endl;
-				if (generate || !env->getServerMap().m_db_miss.count(p)) {
+				if (generate || !env->getServerMap().m_db_miss.contains(p)) {
 
 					if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 						if (nearest_emerged_d == -1)

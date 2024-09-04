@@ -327,7 +327,7 @@ public:
 	void getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
 		//std::set<u16>  &current_objects,
-		maybe_concurrent_set<u16> &current_objects,
+		concurrent_set<u16> &current_objects,
 		std::queue<u16> &added_objects);
 
 	/*
@@ -337,7 +337,7 @@ public:
 	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
 		//std::set<u16> &current_objects,
-		maybe_concurrent_set<u16> &current_objects,
+		concurrent_set<u16> &current_objects,
 		std::queue<u16> &removed_objects);
 
 	/*

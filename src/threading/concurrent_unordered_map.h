@@ -63,8 +63,7 @@ public:
 	{
 		auto lock = LOCKER::lock_shared_rec();
 
-		//if (!full_type::contains(std::forward<Args>(args)...))
-		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
+		if (!full_type::contains(std::forward<Args>(args)...))
 			return nothing;
 
 		return full_type::operator[](std::forward<Args>(args)...);

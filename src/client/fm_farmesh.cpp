@@ -65,12 +65,14 @@ MapNode FarContainer::getNodeNoEx(const v3pos_t &p)
 	return getNodeRefUnsafe(p);
 };
 
-void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step)
+void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near)
 {
 	const auto blockpos_actual =
-			getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
-					m_client->getEnv().getClientMap().getControl());
-	auto &far_blocks = m_client->getEnv().getClientMap().m_far_blocks;
+			near ? blockpos
+				 : getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
+						   m_client->getEnv().getClientMap().getControl());
+	auto &far_blocks = //near ? m_client->getEnv().getClientMap().m_far_near_blocks :
+			m_client->getEnv().getClientMap().m_far_blocks;
 	{
 		//const auto lock = far_blocks->lock_unique_rec();
 		if (!far_blocks.contains(blockpos_actual)) {
@@ -290,12 +292,53 @@ int FarMesh::go_direction(const size_t dir_n)
 				const auto blockpos = getNodeBlockPos(pos_int);
 				TimeTaker timer_step("makeFarBlock");
 				g_profiler->add("Client makeFarBlock", 1);
+
+				//DUMP(block_step_pow, block_step);
+				//DUMP(blockpos, m_client->getEnv().getClientMap().blocks_skip_farmesh);
+
+				// /* todo
+
+// TODO: glue between blocks and far blocks
+#if 0
+				const auto actual_blockpos = getFarActual(blockpos,
+						m_camera_pos_aligned / MAP_BLOCKSIZE, block_step, *m_control);
+				//DUMP(actual_blockpos, blockpos, m_camera_pos_aligned/MAP_BLOCKSIZE, block_step);
+				if (m_client->getEnv().getClientMap().blocks_skip_farmesh.contains(
+							actual_blockpos)) {
+					//const auto block_step_m1 = block_step - 1;
+					//makeFarBlock(blockpos + v3bpos_t{0, 0, 0}, block_step_m1);
+					//DUMP(actual_blockpos, blockpos, blocks);
+					//for (const auto bp : seven_blocks)
+					const bpos_t blocks =
+							pow(2, block_step + log(draw_control.cell_size) / log(2));
+					//const bpos_t blocks =					pow(2, block_step);
+					DUMP("mis", actual_blockpos, blockpos, pos_int, block_step,
+							/*block_step_m1,*/ blocks);
+					for (bpos_t x = 0; x < blocks; ++x)
+						for (bpos_t y = 0; y < blocks; ++y)
+							for (bpos_t z = 0; z < blocks; ++z) {
+								makeFarBlock(
+										actual_blockpos + v3bpos_t{x, y, z}, 0, true);
+							}
+					/*
+					makeFarBlock(blockpos + v3bpos_t{1, 0, 0}, block_step_m1);
+					makeFarBlock(blockpos + v3bpos_t{0, 1, 0}, block_step_m1);
+					makeFarBlock(blockpos + v3bpos_t{1, 1, 0}, block_step_m1);
+					makeFarBlock(blockpos + v3bpos_t{0, 0, 1}, block_step_m1);
+					makeFarBlock(blockpos + v3bpos_t{1, 0, 1}, block_step_m1);
+					makeFarBlock(blockpos + v3bpos_t{0, 1, 1}, block_step_m1);
+					makeFarBlock(blockpos + v3bpos_t{1, 1, 1}, block_step_m1);
+					*/
+				} //else
+#endif
+				{
 #if FARMESH_FAST
 					makeFarBlock(blockpos, block_step);
 #else
 					// less holes, more unused meshes:
 					makeFarBlock7(blockpos, block_step);
 #endif
+				}
 				break;
 			}
 			if (depth >= last_distance_max) {

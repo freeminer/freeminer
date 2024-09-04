@@ -2016,7 +2016,7 @@ void ServerEnvironment::getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 */
 void ServerEnvironment::getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 	s16 player_radius,
-	maybe_concurrent_set<u16> &current_objects,
+	concurrent_set<u16> &current_objects,
 	std::queue<u16> &removed_objects)
 {
 	f32 radius_f = radius * BS;
