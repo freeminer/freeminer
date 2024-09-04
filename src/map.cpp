@@ -85,12 +85,14 @@ Map::Map(IGameDef *gamedef):
 Map::~Map()
 {
 	auto lock = m_blocks.lock_unique_rec();
+/*
 	for (auto & ir : m_blocks_delete_1)
 		delete ir.first;
 	for (auto & ir : m_blocks_delete_2)
 		delete ir.first;
 	for(auto & ir : m_blocks)
 		delete ir.second;
+*/		
 	getBlockCacheFlush();
 #if WTF
 	/*
@@ -588,7 +590,7 @@ size_t ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_block
 {
 	g_profiler->avg("Server: liquids queue", transforming_liquid_size());
 
-	if (g_settings->getBool("liquid_real"))
+	if (thread_local const auto static liquid_real = g_settings->getBool("liquid_real"); liquid_real)
 		return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
 
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
@@ -1870,7 +1872,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 				if (!lock->owns_lock())
 					continue;
 
-				saveBlock(block);
+				saveBlock(block.get());
 				block_count++;
 			}
 			if (breakable && porting::getTimeMs() > end_ms) {
@@ -2027,7 +2029,7 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 			dbase_ro->loadBlock(p3d, &blob);
 		}
 		if (!blob.length()) {
-			m_db_miss.emplace(p3d, 1);
+			m_db_miss.emplace(p3d);
 			return nullptr;
 		}
 

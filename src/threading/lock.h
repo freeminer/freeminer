@@ -162,3 +162,14 @@ using maybe_locker = dummy_locker;
 using maybe_shared_locker = dummy_locker;
 
 #endif
+
+#define LOCK_PROXY(CLASS, METHOD, LOCK) \
+	template <typename... Args> \
+	decltype(auto) METHOD(Args &&...args) \
+	{ \
+		const auto lock = LOCK(); \
+		return CLASS::METHOD(std::forward<Args>(args)...); \
+	} \
+
+#define LOCK_UNIQUE_PROXY(CLASS, METHOD) LOCK_PROXY(CLASS, METHOD, LOCKER::lock_unique_rec)
+#define LOCK_SHARED_PROXY(CLASS, METHOD) LOCK_PROXY(CLASS, METHOD, LOCKER::lock_shared_rec)

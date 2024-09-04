@@ -327,7 +327,7 @@ public:
 	void getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
 		//std::set<u16>  &current_objects,
-		maybe_concurrent_set<u16> &current_objects,
+		concurrent_set<u16> &current_objects,
 		std::queue<u16> &added_objects);
 
 	/*
@@ -337,7 +337,7 @@ public:
 	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
 		//std::set<u16> &current_objects,
-		maybe_concurrent_set<u16> &current_objects,
+		concurrent_set<u16> &current_objects,
 		std::queue<u16> &removed_objects);
 
 	/*
@@ -450,13 +450,13 @@ public:
 	bool m_more_threads = true;
 public:
 	ABMHandler m_abmhandler;
-	uint8_t analyzeBlock(MapBlock * block);
+	uint8_t analyzeBlock(MapBlockP block);
 private:
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3pos_t> m_abm_random_blocks;
 public:
-	size_t blockStep(MapBlock *block, float dtime = 0, uint8_t activate = 0);
+	size_t blockStep(MapBlockP block, float dtime = 0, uint8_t activate = 0);
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:

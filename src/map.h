@@ -29,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "threading/concurrent_unordered_set.h"
 #include "util/unordered_map_hash.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_set.h"
@@ -283,7 +284,7 @@ public:
 
 
 //freeminer:
-	MapNode &getNodeTry(const v3pos_t &p);
+	MapNode getNodeTry(const v3pos_t &p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
 	std::atomic_uint m_liquid_step_flow{0};
@@ -315,7 +316,8 @@ public:
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time = 0;
 	// void getBlocks(std::list<MapBlock*> &dest);
-	concurrent_shared_unordered_map<v3bpos_t, int, v3posHash, v3posEqual> m_db_miss;
+	concurrent_shared_unordered_set<v3bpos_t, v3posHash, v3posEqual> m_db_miss;
+	MapNode &getNodeRef(const v3pos_t &p);
 
 #if !ENABLE_THREADS
 	locker<> m_nothread_locker;
@@ -341,7 +343,7 @@ public:
 	{
 		return getNodeTry(p);
 	};
-	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeTry(p); }
+	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeRef(p); }
 
 	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t & cam_pos_nodes);
 
@@ -364,7 +366,7 @@ public:
 		for (bpos_t by = bpmin.Y; by <= bpmax.Y; by++) {
 			// y is iterated innermost to make use of the sector cache.
 			v3bpos_t bp(bx, by, bz);
-			MapBlock *block = getBlockNoCreateNoEx(bp);
+			auto block = getBlockNoCreateNoEx(bp);
 			v3pos_t basep = bp * MAP_BLOCKSIZE;
 			pos_t minx_block = rangelim(minp.X - basep.X, 0, MAP_BLOCKSIZE - 1);
 			pos_t miny_block = rangelim(minp.Y - basep.Y, 0, MAP_BLOCKSIZE - 1);

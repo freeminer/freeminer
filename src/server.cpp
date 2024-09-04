@@ -1002,6 +1002,12 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				if (!playersao)
 					continue;
 
+				// TODO: only for minetest clients
+#if MINETEST_PROTO
+                if (client->getState() < CS_Active || client->uptime() < 2)
+                    continue;
+#endif
+
 				SendActiveObjectRemoveAdd(client.get(), playersao);
 			}
 		}

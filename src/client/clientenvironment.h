@@ -66,6 +66,10 @@ public:
 // fm:
 	u32 m_active_objects_client_last = 0;
 	u32 m_move_max_loop = 3;
+	ClientActiveObjectPtr getActiveObjectPtr(u16 id)
+	{
+		return m_ao_manager.getActiveObject(id);
+	}
 // --
 
 

@@ -192,6 +192,9 @@ movement_fall_aerodynamics () int 110
 # Constant volume liquids
 liquid_real () bool false
 
+# Minimal liquid step in ms
+liquid_step () int 100
+
 # Update liquids every .. recommend for finite: 0.2
 liquid_update () float 0.4
 

@@ -391,7 +391,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 						}
 					}
 					if (!not_air) {
-					continue;
+						continue;
 					}
 				}
 
@@ -463,7 +463,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				// infostream<<"start gen d="<<d<<" p="<<p<<"
 				// notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<"
 				// block="<<block<<" generate="<<generate<<std::endl;
-				if (generate || !env->getServerMap().m_db_miss.count(p)) {
+				if (generate || !env->getServerMap().m_db_miss.contains(p)) {
 
 					if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 						if (nearest_emerged_d == -1)
@@ -522,23 +522,23 @@ queue_full_break:
 			m_nothing_to_send_pause_timer = 1.0;
 		}
 
-	// If nothing was found for sending and nothing was queued for
-	// emerging, continue next time browsing from here
-	if (nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d) {
-		new_nearest_unsent_d = nearest_emerged_d;
-	} else if (nearest_emergefull_d != -1) {
-		new_nearest_unsent_d = nearest_emergefull_d;
-	} else {
-		if (d > full_d_max) {
-			new_nearest_unsent_d = 0;
-			m_nothing_to_send_pause_timer = 10.0;
+		// If nothing was found for sending and nothing was queued for
+		// emerging, continue next time browsing from here
+		if (nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d) {
+			new_nearest_unsent_d = nearest_emerged_d;
+		} else if (nearest_emergefull_d != -1) {
+			new_nearest_unsent_d = nearest_emergefull_d;
 		} else {
-			if (nearest_sent_d != -1)
-				new_nearest_unsent_d = nearest_sent_d;
-			else
-				new_nearest_unsent_d = d;
+			if (d > full_d_max) {
+				new_nearest_unsent_d = 0;
+				m_nothing_to_send_pause_timer = 10.0;
+			} else {
+				if (nearest_sent_d != -1)
+					new_nearest_unsent_d = nearest_sent_d;
+				else
+					new_nearest_unsent_d = d;
+			}
 		}
-	}
 
 		if (new_nearest_unsent_d != -1) {
 			m_nearest_unsent_d = new_nearest_unsent_d;

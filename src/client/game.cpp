@@ -41,7 +41,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_cao.h"
 #include "content/subgames.h"
 #include "client/event_manager.h"
-#include "client/fm_farmesh.h"
 #include "fontengine.h"
 #include "irr_v3d.h"
 #include "itemdef.h"
@@ -71,7 +70,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "translation.h"
 #include "util/basic_macros.h"
 #include "util/directiontables.h"
-#include "util/numeric.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
 #include "irrlicht_changes/static_text.h"
@@ -81,7 +79,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "hud.h"
 #include "clientdynamicinfo.h"
 
+
+#include "client/fm_farmesh.h"
 #include "threading/async.h"
+#include "util/numeric.h"
 #include <future>
 #include <memory>
 
@@ -717,8 +718,6 @@ struct GameRunData {
 	v3opos_t update_draw_list_last_cam_pos;
 	unsigned int autoexit = 0;
 	bool profiler_state = false;
-//
-	//freeminer:
 	bool headless_optimize = false;
 	bool no_output = false;
 	float dedicated_server_step = 0.1;
@@ -746,7 +745,7 @@ struct GameRunData {
 	float repeat_place_timer;
 	float object_hit_delay_timer;
 	float time_from_last_punch;
-	ClientActiveObject *selected_object;
+	ClientActiveObjectPtr selected_object;
 
 	float jump_timer_up;          // from key up until key down
 	float jump_timer_down;        // since last key down
@@ -933,9 +932,12 @@ private:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
     async_step_runner updateDrawList_async;
+    async_step_runner update_shadows_async;
 	bool m_cinematic = false;
 	std::unique_ptr<FarMesh> farmesh;
     async_step_runner farmesh_async;
+	std::unique_ptr<RaycastState> pointedRaycastState;
+	PointedThing pointed;
 	// minetest:
 
 
@@ -1137,10 +1139,11 @@ Game::Game() :
 
 Game::~Game()
 {
-	farmesh.reset();
 	farmesh_async.wait();
 	updateDrawList_async.wait();
-	
+	update_shadows_async.wait();
+	farmesh.reset();
+
 	delete client;
 	delete soundmaker;
 	sound_manager.reset();
@@ -1391,13 +1394,11 @@ void Game::shutdown()
 	if (formspec)
 		formspec->quitMenu();
 
-
 #ifdef HAVE_TOUCHSCREENGUI
 	g_touchscreengui->hide();
 #endif
 
 	showOverlayMessage(N_("Shutting down..."), 0, 0, false);
-
 
 	if (clouds)
 		clouds->drop();
@@ -2181,7 +2182,6 @@ void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
 		jp->max = 0.0;
 		jp->min = 0.0;
 	}
-
 }
 
 
@@ -2500,7 +2500,7 @@ void Game::processItemSelection(u16 *new_playeritem)
 				*new_playeritem = client->getPreviousPlayerItem();
 			else
 */
-				*new_playeritem = i;
+			*new_playeritem = i;
 			break;
 		}
 	}
@@ -3259,6 +3259,7 @@ void Game::handleClientEvent_Deathscreen(ClientEvent *event, CameraOrientation *
 			client->sendRespawn();
 		} else {
 		showDeathFormspec();
+
 		}
 	}
 	/* Handle visualization */
@@ -3732,7 +3733,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 	}
 #endif
 
-	PointedThing pointed = updatePointedThing(shootline,
+	updatePointedThing(shootline,
 			selected_def.liquids_pointable,
 			!runData.btn_down_for_dig,
 			camera_offset);
@@ -3856,20 +3857,37 @@ PointedThing Game::updatePointedThing(
 	runData.selected_object = NULL;
 	hud->pointing_at_object = false;
 
+    /*
 	RaycastState s(shootline, look_for_object, liquids_pointable);
+	*/
 	PointedThing result;
+
+	if (!pointedRaycastState || pointedRaycastState->finished) {
+		pointedRaycastState = std::make_unique<RaycastState>(
+				shootline, look_for_object, liquids_pointable);
+	}
+	pointedRaycastState->end_ms = porting::getTimeMs() + 2;
+	auto & s = *pointedRaycastState;
+
 	env.continueRaycast(&s, &result);
+
+	if (!pointedRaycastState->finished) {
+		result = pointed;
+	} else {
+		pointed = result;
+	}
+
 	if (result.type == POINTEDTHING_OBJECT) {
 		hud->pointing_at_object = true;
 
-		runData.selected_object = client->getEnv().getActiveObject(result.object_id);
+		runData.selected_object = client->getEnv().getActiveObjectPtr(result.object_id);
 		aabb3f selection_box;
 		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
 				runData.selected_object->getSelectionBox(&selection_box)) {
 			v3opos_t pos = runData.selected_object->getPosition();
 			selectionboxes->emplace_back(selection_box);
 			hud->setSelectionPos(pos, camera_offset);
-			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object);
+			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object.get());
 			if (gcao != nullptr && gcao->getProperties().rotate_selectionbox)
 				hud->setSelectionRotation(gcao->getSceneNode()->getAbsoluteTransformation().getRotationDegrees());
 			else
@@ -4642,20 +4660,21 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-							 updateDrawList_async.step(
-						[&](const float dtime) {
-										 client->m_new_meshes = 0;
-										 runData.update_draw_list_timer = 0;
+			updateDrawList_async.step(
+					[camera_position, this](const float dtime) {
+						client->m_new_meshes = 0;
+						runData.update_draw_list_timer = 0;
 						runData.update_draw_list_last_cam_pos = camera_position;
 						client->getEnv().getClientMap().updateDrawListFm(dtime, 10000);
-						},
-									 runData.update_draw_list_timer);
-
+					},
+					runData.update_draw_list_timer);
 		}
 
-   if (!runData.headless_optimize)
+	if (!runData.headless_optimize)
 	if (RenderingEngine::get_shadow_renderer()) {
+			update_shadows_async.step([&]() {
 		updateShadows();
+			});
 	}
 
 
@@ -4920,8 +4939,6 @@ void Game::readSettings()
 	runData.enable_fog = m_cache_enable_fog;
 }
 
-
-
 /****************************************************************************/
 /****************************************************************************
  Shutdown / cleanup
@@ -5051,6 +5068,11 @@ void Game::showPauseMenu()
 	} else {
 		os << mode << strgettext("Singleplayer") << "\n";
 	}
+
+	if (!g_settings->get("remote_proto").empty()) {
+		os << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
+	}
+
 	if (simple_singleplayer_mode || address.empty()) {
 		static const std::string on = strgettext("On");
 		static const std::string off = strgettext("Off");
@@ -5144,5 +5166,5 @@ bool the_game(bool *kill,
 	}
 	game.shutdown();
 
-	return started && game.runData.reconnect; 
+	return started && game.runData.reconnect;
 }

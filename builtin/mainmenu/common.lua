@@ -212,8 +212,7 @@ function text2textlist(xpos, ypos, width, height, tl_name, textlen, text, transp
 	return retval
 end
 
-function is_server_protocol_compat(server_proto_min, server_proto_max, proto)
-	if proto and core.settings:get("server_proto") ~= proto then return false end
+function is_server_protocol_compat(server_proto_min, server_proto_max)
 	if (not server_proto_min) or (not server_proto_max) then
 		-- There is no info. Assume the best and act as if we would be compatible.
 		return true
@@ -221,17 +220,13 @@ function is_server_protocol_compat(server_proto_min, server_proto_max, proto)
 	return tonumber(min_supp_proto) <= tonumber(server_proto_max) and tonumber(max_supp_proto) >= tonumber(server_proto_min)
 end
 
-function is_server_protocol_compat_or_error(server_proto_min, server_proto_max, proto)
-	if not is_server_protocol_compat(server_proto_min, server_proto_max, proto) then
+function is_server_protocol_compat_or_error(server_proto_min, server_proto_max)
+	if not is_server_protocol_compat(server_proto_min, server_proto_max) then
 		local server_prot_ver_info, client_prot_ver_info
-
 		local s_p_min = server_proto_min
 		local s_p_max = server_proto_max
 
-		if proto and core.settings:get("server_proto") ~= proto then
-			server_prot_ver_info = fgettext_ne("Server supports protocol $1, but we can connect only to $2 ",
-				proto or '?', core.settings:get("server_proto") )
-		elseif s_p_min ~= s_p_max then
+		if s_p_min ~= s_p_max then
 			server_prot_ver_info = fgettext_ne("Server supports protocol versions between $1 and $2. ",
 				s_p_min, s_p_max)
 		else

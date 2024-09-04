@@ -100,7 +100,7 @@ struct abm_trigger_one {
 ////
 
 class MapBlock
-: public locker<>
+: public locker<> // TODO: find all deadlocks and change to shared_locker
 {
 public:
 	MapBlock(Map *parent, v3bpos_t pos, IGameDef *gamedef);
@@ -180,6 +180,13 @@ public:
 	{
 		return m_modified;
 	}
+
+/*
+	inline u32 getModifiedReason()
+	{
+		return m_modified_reason;
+	}
+*/
 
 	std::string getModifiedReasonString();
 
@@ -320,18 +327,6 @@ public:
 		return getNodeNoEx(p);
 	}
 
-	MapNode &getNodeTry(v3pos_t p)
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return ignoreNode;
-		return getNodeNoLock(p);
-/*
-		bool is_valid;
-		return getNode(p.X, p.Y, p.Z, &is_valid);
-*/
-	}
-
 /*
 	inline void setNode(s16 x, s16 y, s16 z, MapNode n)
 	{
@@ -344,17 +339,6 @@ public:
 */
 
 	void setNode(v3pos_t p, MapNode& n);
-
-	MapNode &getNodeNoLock(v3pos_t p)
-	{
-		return data[p.Z*zstride + p.Y*ystride + p.X];
-	}
-
-	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
-	{
-		data[p.Z * zstride + p.Y * ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
-	}
 
 	////
 	//// Non-checking variants of the above
@@ -597,6 +581,33 @@ public:
 
 	std::atomic_bool m_lighting_expired {false};
 
+	inline MapNode getNodeTry(const v3pos_t &p)
+	{
+		auto lock = try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return ignoreNode;
+		return getNodeNoLock(p);
+	}
+
+	inline MapNode& getNodeRef(const v3pos_t &p)
+	{
+		auto lock = try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return ignoreNode;
+		return getNodeNoLock(p);
+	}
+
+	MapNode &getNodeNoLock(v3pos_t p)
+	{
+		return data[p.Z*zstride + p.Y*ystride + p.X];
+	}
+
+	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
+	{
+		data[p.Z * zstride + p.Y * ystride + p.X] = n;
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
+	}
+
 //===
 
 
@@ -614,6 +625,12 @@ private:
 public:
 	/*
 		Public member variables
+*/
+
+/*
+#ifndef SERVER // Only on client
+       MapBlockMesh *mesh = nullptr;
+#endif
 	*/
 
 	NodeMetadataList m_node_metadata;
@@ -777,6 +794,6 @@ inline v3pos_t getBlockPosRelative(const v3bpos_t &p)
 */
 std::string analyze_block(MapBlock *block);
 
-//typedef std::shared_ptr<MapBlock> MapBlockP;
-typedef MapBlock * MapBlockP;
+using MapBlockP = std::shared_ptr<MapBlock>;
+// using MapBlockP = MapBlock *;
 
