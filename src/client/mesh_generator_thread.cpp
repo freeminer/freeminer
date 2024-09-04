@@ -289,6 +289,12 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
 		bool urgent, bool update_neighbors)
 {
+	if (static thread_local const bool headless_optimize =
+					g_settings->getBool("headless_optimize");
+			headless_optimize) {
+		return;
+	}
+
 	static thread_local const bool many_neighbors =
 			g_settings->getBool("smooth_lighting")
 			&& !g_settings->getFlag("performance_tradeoffs");
