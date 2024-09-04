@@ -42,7 +42,7 @@ thread_local v3pos_t m_block_cache_p;
 #endif
 
 // TODO: REMOVE THIS func and use Map::getBlock
-MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p, bool trylock, bool nocache)
+MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 {
 
 #ifndef NDEBUG
@@ -92,9 +92,9 @@ MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p, bool trylock, bool nocache)
 	return block;
 }
 
-MapBlockP Map::getBlock(v3pos_t p, bool trylock, bool nocache)
+MapBlock* Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
 {
-	return getBlockNoCreateNoEx(p, trylock, nocache);
+	return getBlock(p, trylock, nocache).get();
 }
 
 void Map::getBlockCacheFlush()
@@ -116,17 +116,17 @@ MapBlock *Map::createBlankBlock(const v3pos_t &p)
 	m_db_miss.erase(p);
 
 	auto lock = m_blocks.lock_unique_rec();
-	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
+	auto block = getBlock(p, false, true);
 	if (block != NULL) {
 		infostream << "Block already created p=" << block->getPos() << std::endl;
-		return block;
+		return block.get();
 	}
 
-	block = createBlankBlockNoInsert(p);
+	block.reset(createBlankBlockNoInsert(p));
 
 	m_blocks.insert_or_assign(p, block);
 
-	return block;
+	return block.get();
 }
 
 bool Map::insertBlock(MapBlock *block)
@@ -137,14 +137,14 @@ bool Map::insertBlock(MapBlock *block)
 
 	auto lock = m_blocks.lock_unique_rec();
 
-	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
+	auto block2 = getBlock(block_p, false, true);
 	if (block2) {
 		verbosestream << "Block already exists " << block_p << std::endl;
 		return false;
 	}
 
 	// Insert into container
-	m_blocks.insert_or_assign(block_p, block);
+	m_blocks.insert_or_assign(block_p, MapBlockP{block});
 	return true;
 }
 
@@ -390,7 +390,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 		if (!m_blocks_delete->empty())
 			verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
 		for (auto &ir : *m_blocks_delete) {
-			delete ir.first;
+			//delete ir.first;
 		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
@@ -468,7 +468,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 						// modprofiler.add(block->getModifiedReasonString(), 1);
 						if (!save_started++)
 							beginSave();
-						if (!saveBlock(block)) {
+						if (!saveBlock(block.get())) {
 							continue;
 						}
 						saved_blocks_count++;

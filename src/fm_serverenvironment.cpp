@@ -4,7 +4,7 @@
 #include "serverenvironment.h"
 #include "util/timetaker.h"
 
-size_t ServerEnvironment::blockStep(MapBlock *block, float dtime, uint8_t activate)
+size_t ServerEnvironment::blockStep(MapBlockP block, float dtime, uint8_t activate)
 {
 	if (!block)
 		return {};
@@ -23,7 +23,7 @@ size_t ServerEnvironment::blockStep(MapBlock *block, float dtime, uint8_t activa
 	block->m_node_timers.m_uptime_last = m_game_time;
 	// DUMP("abm random ", block->getPos(), dtime_s, dtime_n,, stamp, block->getTimestamp(), block->m_node_timers.m_uptime_last, m_game_time);
 
-	m_lbm_mgr.applyLBMs(this, block, stamp, (float)dtime_n);
+	m_lbm_mgr.applyLBMs(this, block.get(), stamp, (float)dtime_n);
 	if (block->isOrphan())
 		return {};
 
@@ -63,7 +63,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 				m_active_block_analyzed_last = 0;
 			++calls;
 
-			MapBlock *block = m_map->getBlock(p, true);
+			auto block = m_map->getBlock(p, true);
 			if (!block)
 				continue;
 
@@ -102,7 +102,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 		}
 
 		for (auto i = m_abm_random_blocks.begin(); i != m_abm_random_blocks.end(); ++i) {
-			MapBlock *block = m_map->getBlock(*i, true);
+			auto block = m_map->getBlock(*i, true);
 			i = m_abm_random_blocks.erase(i);
 			//ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
 

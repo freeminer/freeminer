@@ -361,7 +361,7 @@ public:
 		for (s16 by = bpmin.Y; by <= bpmax.Y; by++) {
 			// y is iterated innermost to make use of the sector cache.
 			v3s16 bp(bx, by, bz);
-			MapBlock *block = getBlockNoCreateNoEx(bp);
+			auto block = getBlockNoCreateNoEx(bp);
 			v3s16 basep = bp * MAP_BLOCKSIZE;
 			s16 minx_block = rangelim(minp.X - basep.X, 0, MAP_BLOCKSIZE - 1);
 			s16 miny_block = rangelim(minp.Y - basep.Y, 0, MAP_BLOCKSIZE - 1);

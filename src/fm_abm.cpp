@@ -321,11 +321,11 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 		// add="<<active_object_add<<"
 		// bp="<<getNodeBlockPos(abm_trigger->pos)<<std::endl;
 		if (m_env->m_added_objects > 0) {
-			MapBlock *block = map->getBlock(blockpos);
+			auto block = map->getBlock(blockpos);
 			if (block) {
 				auto was = abm_trigger->active_object_count;
 				abm_trigger->active_object_count = m_env->m_abmhandler.countObjects(
-						block, map, abm_trigger->active_object_count_wider);
+						block.get(), map, abm_trigger->active_object_count_wider);
 				// infostream<<" was="<<was<<" now
 				// abm_trigger->active_object_count="<<abm_trigger->active_object_count<<std::endl;
 				if (abm_trigger->active_object_count > was)
@@ -347,7 +347,7 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 	return triggers_count;
 }
 
-uint8_t ServerEnvironment::analyzeBlock(MapBlock *block)
+uint8_t ServerEnvironment::analyzeBlock(MapBlockP block)
 {
 	u32 block_timestamp = block->getActualTimestamp();
 	if (block->m_next_analyze_timestamp > block_timestamp) {
@@ -358,7 +358,7 @@ uint8_t ServerEnvironment::analyzeBlock(MapBlock *block)
 	if (!block->analyzeContent())
 		return {};
 	uint8_t activate = block_timestamp - block->m_next_analyze_timestamp > 3600 ? 1 : 0;
-	m_abmhandler.apply(block, activate);
+	m_abmhandler.apply(block.get(), activate);
 	// infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
 	block->m_next_analyze_timestamp = block_timestamp + 2;
 	return activate;

@@ -81,12 +81,14 @@ Map::Map(IGameDef *gamedef):
 Map::~Map()
 {
 	auto lock = m_blocks.lock_unique_rec();
+/*
 	for (auto & ir : m_blocks_delete_1)
 		delete ir.first;
 	for (auto & ir : m_blocks_delete_2)
 		delete ir.first;
 	for(auto & ir : m_blocks)
 		delete ir.second;
+*/		
 	getBlockCacheFlush();
 #if WTF
 	/*
@@ -1868,7 +1870,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 				if (!lock->owns_lock())
 					continue;
 
-				saveBlock(block);
+				saveBlock(block.get());
 				block_count++;
 			}
 			if (breakable && porting::getTimeMs() > end_ms) {

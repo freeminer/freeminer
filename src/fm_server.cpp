@@ -516,14 +516,14 @@ public:
 					return nullptr;
 				}
 				try {
-					const auto load_block = [&](const v3bpos_t &pos) -> MapBlock * {
-						auto *block =
-								m_server->getEnv().getServerMap().getBlockNoCreateNoEx(
+					const auto load_block = [&](const v3bpos_t &pos) -> MapBlockP {
+						auto block =
+								m_server->getEnv().getServerMap().getBlock(
 										pos);
 						if (block) {
 							return block;
 						}
-						block = m_server->getEnv().getServerMap().emergeBlock(pos);
+						block.reset(m_server->getEnv().getServerMap().emergeBlock(pos));
 						if (!block) {
 							return nullptr;
 						}
@@ -533,7 +533,7 @@ public:
 						return block;
 					};
 
-					auto *block = load_block(pos);
+					auto block = load_block(pos);
 					if (!block) {
 						continue;
 					}
