@@ -1137,10 +1137,11 @@ Game::Game() :
 
 Game::~Game()
 {
-	farmesh.reset();
 	farmesh_async.wait();
 	updateDrawList_async.wait();
-	
+	update_shadows_async.wait();
+	farmesh.reset();
+
 	delete client;
 	delete soundmaker;
 	sound_manager.reset();
@@ -4657,7 +4658,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
 			updateDrawList_async.step(
-					[&](const float dtime) {
+					[camera_position, this](const float dtime) {
 						client->m_new_meshes = 0;
 						runData.update_draw_list_timer = 0;
 						runData.update_draw_list_last_cam_pos = camera_position;

@@ -110,7 +110,7 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 			for (pos.Z = q->p.Z - 1; pos.Z <= q->p.Z + mesh_grid.cell_size; pos.Z++)
 			for (pos.Y = q->p.Y - 1; pos.Y <= q->p.Y + mesh_grid.cell_size; pos.Y++) {
 				if (!q->map_blocks[i]) {
-					MapBlock *block = map->getBlockNoCreateNoEx(pos);
+					auto block = map->getBlock(pos);
 					if (block) {
 						block->refGrab();
 						q->map_blocks[i] = block;
@@ -125,13 +125,13 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 	/*
 		Make a list of blocks necessary for mesh generation and lock the blocks in memory.
 	*/
-	std::vector<MapBlock *> map_blocks;
+	std::vector<MapBlockP> map_blocks;
 	map_blocks.reserve((mesh_grid.cell_size+2)*(mesh_grid.cell_size+2)*(mesh_grid.cell_size+2));
 	v3s16 pos;
 	for (pos.X = mesh_position.X - 1; pos.X <= mesh_position.X + mesh_grid.cell_size; pos.X++)
 	for (pos.Z = mesh_position.Z - 1; pos.Z <= mesh_position.Z + mesh_grid.cell_size; pos.Z++)
 	for (pos.Y = mesh_position.Y - 1; pos.Y <= mesh_position.Y + mesh_grid.cell_size; pos.Y++) {
-		MapBlock *block = map->getBlockNoCreateNoEx(pos);
+		auto block = map->getBlock(pos);
 		map_blocks.push_back(block);
 		if (block)
 			block->refGrab();
@@ -205,7 +205,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 	for (pos.X = q->p.X - 1; pos.X <= q->p.X + data->m_mesh_grid.cell_size; pos.X++)
 	for (pos.Z = q->p.Z - 1; pos.Z <= q->p.Z + data->m_mesh_grid.cell_size; pos.Z++)
 	for (pos.Y = q->p.Y - 1; pos.Y <= q->p.Y + data->m_mesh_grid.cell_size; pos.Y++) {
-		MapBlock *block = q->map_blocks[i++];
+		auto block = q->map_blocks[i++];
 		if (block) {
 			auto lock = block->lock_shared_rec();
 			data->fillBlockData(pos, block->getData());

@@ -44,7 +44,7 @@ public:
 		DUMP("Async steps end", (long)this, runs, skips);
 #endif
 	}
-	int wait(const int ms = 10000, const int step_ms = 100)
+	int wait(const int ms = 60000, const int step_ms = 100)
 	{
 		int i = 0;
 		for (; i < ms / step_ms; ++i) { // 10s max
