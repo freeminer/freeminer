@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 struct MapDrawControl;
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &block_pos);
+		const v3bpos_t &block_pos, const pos_t speedf);
 int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
 bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,

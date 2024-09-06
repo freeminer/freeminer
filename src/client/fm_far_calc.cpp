@@ -23,13 +23,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 
 #include "client/clientmap.h"
+#include "constants.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &blockpos)
+		const v3bpos_t &blockpos, const pos_t speedf)
 {
-	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.lodmesh) {
+		int range = radius_box(playerblockpos, blockpos);
+		const auto speed_blocks = speedf / (BS * MAP_BLOCKSIZE);
+		if (static auto i = 0; !(++i % 1000))
+		if (range > 1 && speed_blocks > 1) {
+			range += speed_blocks;
+		}
+
 		const auto cells = std::max<int>(draw_control.cell_size * 2,
 				draw_control.lodmesh / draw_control.cell_size);
 		// for (int i = 8; i >= 0; --i) {

@@ -527,6 +527,7 @@ public:
 	void setFarMesh(const MapBlock::mesh_type & rmesh, uint32_t time);
 	std::mutex far_mutex;
 	u32 mesh_requested_timestamp = 0;
+	uint8_t mesh_requested_step = 0;
 
 private:
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;

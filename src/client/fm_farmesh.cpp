@@ -67,6 +67,8 @@ MapNode FarContainer::getNodeNoEx(const v3pos_t &p)
 
 void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near)
 {
+	g_profiler->add("Client: Farmesh make", 1);
+
 	const auto blockpos_actual =
 			near ? blockpos
 				 : getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
@@ -194,6 +196,9 @@ FarMesh::~FarMesh()
 
 int FarMesh::go_direction(const size_t dir_n)
 {
+	TimeTaker time("Cleint: Farmesh [ms]");
+	time.start();
+
 	constexpr auto block_step_reduce = 1;
 	constexpr auto align_reduce = 1;
 
@@ -232,6 +237,9 @@ int FarMesh::go_direction(const size_t dir_n)
 		auto pos_last = pos_center;
 		++ray_cache.step_num;
 		for (size_t steps = 0; steps < 200; ++ray_cache.step_num, ++steps) {
+#if !NDEBUG
+			g_profiler->avg("Client: Farmesh processed", 1);
+#endif
 			//const auto dstep = ray_cache.step_num; // + 1;
 			const auto block_step =
 					getFarStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
@@ -291,7 +299,6 @@ int FarMesh::go_direction(const size_t dir_n)
 				ray_cache.finished = -1;
 				const auto blockpos = getNodeBlockPos(pos_int);
 				TimeTaker timer_step("makeFarBlock");
-				g_profiler->add("Client makeFarBlock", 1);
 
 				//DUMP(block_step_pow, block_step);
 				//DUMP(blockpos, m_client->getEnv().getClientMap().blocks_skip_farmesh);
@@ -346,6 +353,9 @@ int FarMesh::go_direction(const size_t dir_n)
 			}
 		}
 	}
+
+	g_profiler->avg("Client: Farmesh [ms]", time.stop(true));
+	// g_profiler->avg("Client: Farmesh processed", processed);
 
 	return processed;
 }

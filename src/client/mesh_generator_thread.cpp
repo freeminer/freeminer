@@ -194,8 +194,11 @@ void MeshUpdateQueue::done(v3s16 pos)
 void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 
-    const auto lod_step = getLodStep(m_client->m_env.getClientMap().getControl(), getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)), q->p);
-    MeshMakeData * data = new MeshMakeData(m_client, m_cache_enable_shaders, lod_step, 0);
+	const auto lod_step = getLodStep(m_client->m_env.getClientMap().getControl(),
+			getNodeBlockPos(
+					floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)),
+			q->p, m_client->getEnv().getLocalPlayer()->getSpeed().getLength());
+	MeshMakeData * data = new MeshMakeData(m_client, m_cache_enable_shaders, lod_step, 0);
 	q->data = data;
 
 	data->fillBlockDataBegin(q->p);

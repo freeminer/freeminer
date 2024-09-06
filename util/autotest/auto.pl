@@ -248,6 +248,7 @@ our $options = {
         fps_max           => 5,
         fps_max_unfocused => 5,
         headless_optimize => 1,
+        viewing_range     => 32,
     },
     software => {
         video_driver => 'software',
