@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "fm_server.h"
+
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -39,16 +41,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "util/timetaker.h"
 
-class ServerThread : public thread_vector
+ServerThread::ServerThread(Server *server) : thread_vector("Server", 40), m_server(server)
 {
-public:
-	ServerThread(Server *server) : thread_vector("Server", 40), m_server(server) {}
-
-	void *run();
-
-private:
-	Server *m_server;
-};
+}
 
 void *ServerThread::run()
 {
@@ -140,459 +135,184 @@ void *ServerThread::run()
 
 	return NULL;
 }
-
-class MapThread : public thread_vector
+MapThread::MapThread(Server *server) : thread_vector("Map", 15), m_server(server)
 {
-	Server *m_server;
+}
 
-public:
-	MapThread(Server *server) : thread_vector("Map", 15), m_server(server) {}
+void *MapThread::run()
+{
+	auto time = porting::getTimeMs();
+	while (!stopRequested()) {
+		auto time_now = porting::getTimeMs();
+		try {
+			m_server->getEnv().getMap().getBlockCacheFlush();
+			if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f, 1))
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			else
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+#if !EXCEPTION_DEBUG
+		} catch (const std::exception &e) {
+			errorstream << m_name << ": exception: " << e.what() << std::endl
+						<< stacktrace() << std::endl;
+		} catch (...) {
+			errorstream << m_name << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
+						<< stacktrace() << std::endl;
+#else
+		} catch (int) { // nothing
+#endif
+		}
+		time = time_now;
+	}
+	// END_DEBUG_EXCEPTION_HANDLER
+	return nullptr;
+}
 
-	void *run()
-	{
-		auto time = porting::getTimeMs();
-		while (!stopRequested()) {
+SendBlocksThread::SendBlocksThread(Server *server) :
+		thread_vector("SendBlocks", 30), m_server(server)
+{
+}
+
+void *SendBlocksThread::run()
+{
+	BEGIN_DEBUG_EXCEPTION_HANDLER
+
+	auto time = porting::getTimeMs();
+	while (!stopRequested()) {
+		// infostream<<"S run d="<<m_server->m_step_dtime<< "
+		// myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
+		try {
+			m_server->getEnv().getMap().getBlockCacheFlush();
 			auto time_now = porting::getTimeMs();
-			try {
-				m_server->getEnv().getMap().getBlockCacheFlush();
-				if (!m_server->AsyncRunMapStep((time_now - time) / 1000.0f, 1))
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-				else
-					std::this_thread::sleep_for(std::chrono::milliseconds(10));
-#if !EXCEPTION_DEBUG
-			} catch (const std::exception &e) {
-				errorstream << m_name << ": exception: " << e.what() << std::endl
-							<< stacktrace() << std::endl;
-			} catch (...) {
-				errorstream << m_name << ": Unknown unhandled exception at "
-							<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
-							<< stacktrace() << std::endl;
-#else
-			} catch (int) { // nothing
-#endif
-			}
+			auto sent = m_server->SendBlocks((time_now - time) / 1000.0f);
 			time = time_now;
-		}
-		// END_DEBUG_EXCEPTION_HANDLER
-		return nullptr;
-	}
-};
-
-class SendBlocksThread : public thread_vector
-{
-	Server *m_server;
-
-public:
-	SendBlocksThread(Server *server) : thread_vector("SendBlocks", 30), m_server(server)
-	{
-	}
-
-	void *run()
-	{
-		BEGIN_DEBUG_EXCEPTION_HANDLER
-
-		auto time = porting::getTimeMs();
-		while (!stopRequested()) {
-			// infostream<<"S run d="<<m_server->m_step_dtime<< "
-			// myt="<<(porting::getTimeMs() - time)/1000.0f<<std::endl;
-			try {
-				m_server->getEnv().getMap().getBlockCacheFlush();
-				auto time_now = porting::getTimeMs();
-				auto sent = m_server->SendBlocks((time_now - time) / 1000.0f);
-				time = time_now;
-				std::this_thread::sleep_for(std::chrono::milliseconds(sent ? 5 : 100));
+			std::this_thread::sleep_for(std::chrono::milliseconds(sent ? 5 : 100));
 #if !EXCEPTION_DEBUG
-			} catch (const std::exception &e) {
-				errorstream << m_name << ": exception: " << e.what() << std::endl
-							<< stacktrace() << std::endl;
-			} catch (...) {
-				errorstream << m_name << ": Unknown unhandled exception at "
-							<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
-							<< stacktrace() << std::endl;
+		} catch (const std::exception &e) {
+			errorstream << m_name << ": exception: " << e.what() << std::endl
+						<< stacktrace() << std::endl;
+		} catch (...) {
+			errorstream << m_name << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
+						<< stacktrace() << std::endl;
 #else
-			} catch (int) { // nothing
+		} catch (int) { // nothing
 #endif
-			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER
-		return nullptr;
 	}
-};
+	END_DEBUG_EXCEPTION_HANDLER
+	return nullptr;
+}
 
-class LiquidThread : public thread_vector
+LiquidThread::LiquidThread(Server *server) : thread_vector("Liquid", 4), m_server(server)
 {
-	Server *m_server;
+}
 
-public:
-	LiquidThread(Server *server) : thread_vector("Liquid", 4), m_server(server) {}
+void *LiquidThread::run()
+{
+	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	void *run()
-	{
-		BEGIN_DEBUG_EXCEPTION_HANDLER
+	unsigned int max_cycle_ms = 1000;
+	while (!stopRequested()) {
+		try {
+			const auto time_start = porting::getTimeMs();
+			m_server->getEnv().getMap().getBlockCacheFlush();
+			std::map<v3bpos_t, MapBlock *> modified_blocks; // not used by fm
+			const auto processed = m_server->getEnv().getServerMap().transformLiquids(
+					modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
+			const auto time_spend = porting::getTimeMs() - time_start;
 
-		unsigned int max_cycle_ms = 1000;
-		while (!stopRequested()) {
-			try {
-				m_server->getEnv().getMap().getBlockCacheFlush();
-				const auto time_start = porting::getTimeMs();
-				m_server->getEnv().getMap().getBlockCacheFlush();
-				std::map<v3bpos_t, MapBlock *> modified_blocks; // not used by fm
-				const auto processed = m_server->getEnv().getServerMap().transformLiquids(
-						modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
-				const auto time_spend = porting::getTimeMs() - time_start;
-
-				thread_local const auto static liquid_step =
-						g_settings->getBool("liquid_step");
-				const auto sleep =
-						(processed < 10 ? 100 : 3) +
-						(time_spend > liquid_step ? 1 : liquid_step - time_spend);
-				std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
+			thread_local const auto static liquid_step =
+					g_settings->getBool("liquid_step");
+			const auto sleep = (processed < 10 ? 100 : 3) +
+							   (time_spend > liquid_step ? 1 : liquid_step - time_spend);
+			std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
 
 #if !EXCEPTION_DEBUG
-			} catch (const std::exception &e) {
-				errorstream << m_name << ": exception: " << e.what() << std::endl
-							<< stacktrace() << std::endl;
-			} catch (...) {
-				errorstream << m_name << ": Unknown unhandled exception at "
-							<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
-							<< stacktrace() << std::endl;
+		} catch (const std::exception &e) {
+			errorstream << m_name << ": exception: " << e.what() << std::endl
+						<< stacktrace() << std::endl;
+		} catch (...) {
+			errorstream << m_name << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
+						<< stacktrace() << std::endl;
 #else
-			} catch (int) { // nothing
+		} catch (int) { // nothing
 #endif
-			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER
-		return nullptr;
 	}
-};
+	END_DEBUG_EXCEPTION_HANDLER
+	return nullptr;
+}
 
-class EnvThread : public thread_vector
+EnvThread::EnvThread(Server *server) : thread_vector("Env", 20), m_server(server)
 {
-	Server *m_server;
+}
 
-public:
-	EnvThread(Server *server) : thread_vector("Env", 20), m_server(server) {}
-
-	void *run()
-	{
-		unsigned int max_cycle_ms = 1000;
-		auto time = porting::getTimeMs();
-		while (!stopRequested()) {
-			try {
-				m_server->getEnv().getMap().getBlockCacheFlush();
-				auto ctime = porting::getTimeMs();
-				auto dtimems = ctime - time;
-				time = ctime;
-				m_server->getEnv().step(dtimems / 1000.0f,
-						m_server->m_uptime_counter->get(), max_cycle_ms);
-				std::this_thread::sleep_for(
-						std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
-#if !EXCEPTION_DEBUG
-			} catch (const std::exception &e) {
-				errorstream << m_name << ": exception: " << e.what() << std::endl
-							<< stacktrace() << std::endl;
-			} catch (...) {
-				errorstream << m_name << ": Unknown unhandled exception at "
-							<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
-							<< stacktrace() << std::endl;
-#else
-			} catch (int) { // nothing
-#endif
-			}
-		}
-		return nullptr;
-	}
-};
-
-class AbmThread : public thread_vector
+void *EnvThread::run()
 {
-	Server *m_server;
-
-public:
-	AbmThread(Server *server) : thread_vector("Abm", 20), m_server(server) {}
-
-	void *run()
-	{
-		BEGIN_DEBUG_EXCEPTION_HANDLER
-
-		unsigned int max_cycle_ms = 10000;
-		auto time = porting::getTimeMs();
-		while (!stopRequested()) {
-			try {
-				auto ctime = porting::getTimeMs();
-				auto dtimems = ctime - time;
-				time = ctime;
-				m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
-				std::this_thread::sleep_for(
-						std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
+	unsigned int max_cycle_ms = 1000;
+	auto time = porting::getTimeMs();
+	while (!stopRequested()) {
+		try {
+			m_server->getEnv().getMap().getBlockCacheFlush();
+			auto ctime = porting::getTimeMs();
+			auto dtimems = ctime - time;
+			time = ctime;
+			m_server->getEnv().step(
+					dtimems / 1000.0f, m_server->m_uptime_counter->get(), max_cycle_ms);
+			std::this_thread::sleep_for(
+					std::chrono::milliseconds(dtimems > 100 ? 1 : 100 - dtimems));
 #if !EXCEPTION_DEBUG
-			} catch (const std::exception &e) {
-				errorstream << m_name << ": exception: " << e.what() << '\n'
-							<< stacktrace() << '\n';
-			} catch (...) {
-				errorstream << m_name << ": Unknown unhandled exception at "
-							<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
-							<< stacktrace() << '\n';
+		} catch (const std::exception &e) {
+			errorstream << m_name << ": exception: " << e.what() << std::endl
+						<< stacktrace() << std::endl;
+		} catch (...) {
+			errorstream << m_name << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
+						<< stacktrace() << std::endl;
 #else
-			} catch (int) { // nothing
+		} catch (int) { // nothing
 #endif
-			}
 		}
-		END_DEBUG_EXCEPTION_HANDLER
-		return nullptr;
 	}
-};
+	return nullptr;
+}
 
-class AbmWorldThread : public thread_vector
+AbmThread::AbmThread(Server *server) : thread_vector("Abm", 20), m_server(server)
 {
-	Server *m_server;
+}
 
-public:
-	AbmWorldThread(Server *server) : thread_vector("AbmWorld", 20), m_server(server) {}
+void *AbmThread::run()
+{
+	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	void *run()
-	{
-		BEGIN_DEBUG_EXCEPTION_HANDLER
-
-		{
-			u64 abm_world = 0;
-			g_settings->getU64NoEx("abm_world", abm_world);
-			if (!abm_world)
-				return nullptr;
-		}
-
-		int16_t abm_world_load_all = -1; // -1 : auto;  0 : disable;   1 : force
-		g_settings->getS16NoEx("abm_world_load_all", abm_world_load_all);
-		u64 abm_world_throttle = m_server->isSingleplayer() ? 10 : 0;
-		g_settings->getU64NoEx("abm_world_throttle", abm_world_throttle);
-		u64 abm_world_max_clients = m_server->isSingleplayer() ? 1 : 0;
-		g_settings->getU64NoEx("abm_world_max_clients", abm_world_max_clients);
-		u64 abm_world_max_blocks = m_server->isSingleplayer() ? 2000 : 10000;
-		g_settings->getU64NoEx("abm_world_max_blocks", abm_world_max_blocks);
-
-		auto &abm_world_last = m_server->getEnv().abm_world_last;
-
-		auto can_work = [&]() {
-			return (m_server->getEnv().getPlayerCount() <= abm_world_max_clients &&
-					m_server->getMap().m_blocks.size() <= abm_world_max_blocks);
-		};
-
-		int32_t run = 0;
-		size_t pos_dir; // random start
-
-		while (!stopRequested()) {
-			++run;
-
-			if (!can_work()) {
-				tracestream << "Abm world wait" << '\n';
-				sleep(10);
-				continue;
-			}
-
-			std::vector<v3bpos_t> loadable_blocks;
-
-			auto time_start = porting::getTimeMs();
-
-			if (abm_world_load_all <= 0) {
-// Yes, very bad
-#if USE_LEVELDB
-				if (const auto it = m_server->getEnv()
-											.blocks_with_abm.database.new_iterator();
-						it) {
-					for (it->SeekToFirst(); it->Valid(); it->Next()) {
-						const auto &key = it->key().ToString();
-						if (key.starts_with("a")) {
-							const v3bpos_t pos = MapDatabase::getStringAsBlock(key);
-							loadable_blocks.emplace_back(pos);
-						}
-					}
-				}
-#endif
-			}
-
-			// Load whole world firts time, fill blocks_with_abm
-			if (abm_world_load_all && loadable_blocks.empty()) {
-				actionstream << "Abm world full load" << '\n';
-				m_server->getEnv().getServerMap().listAllLoadableBlocks(loadable_blocks);
-			}
-
-			std::map<bpos_t, std::map<bpos_t, std::set<bpos_t>>> volume;
-
-			size_t cur_n = 0;
-
-			const auto loadable_blocks_size = loadable_blocks.size();
-			infostream << "Abm world run " << run << " blocks " << loadable_blocks_size
-					   << " per " << (porting::getTimeMs() - time_start) / 1000
-					   << "s from " << abm_world_last << " max_clients "
-					   << abm_world_max_clients << " throttle " << abm_world_throttle
-					   << " vxs " << volume.size() << '\n';
-			size_t processed = 0, triggers_total = 0;
-
-			time_start = porting::getTimeMs();
-
-			const auto printstat = [&]() {
-				auto time = porting::getTimeMs();
-
-				infostream << "Abm world run " << run << " " << cur_n << "/"
-						   << loadable_blocks_size << " blocks loaded "
-						   << m_server->getMap().m_blocks.size() << " processed "
-						   << processed << " triggers " << triggers_total << " per "
-						   << (time - time_start) / 1000 << " speed "
-						   << processed / (((time - time_start) / 1000) ?: 1) << " vxs "
-						   << volume.size() << '\n';
-			};
-
-#if 1
-			for (const auto &pos : loadable_blocks) {
-				volume[pos.X][pos.Y].emplace(pos.Z);
-			}
-
-			const auto contains = [&](const v3bpos_t &pos) -> bool {
-				if (!volume.contains(pos.X))
-					return false;
-				if (!volume[pos.X].contains(pos.Y))
-					return false;
-				return volume[pos.X][pos.Y].contains(pos.Z);
-			};
-
-			const auto erase = [&](const v3bpos_t &pos) {
-				if (!volume.contains(pos.X))
-					return;
-				if (!volume[pos.X].contains(pos.Y))
-					return;
-				if (!volume[pos.X][pos.Y].contains(pos.Z))
-					return;
-				volume[pos.X][pos.Y].erase(pos.Z);
-				if (volume[pos.X][pos.Y].empty())
-					volume[pos.X].erase(pos.Y);
-				if (volume[pos.X].empty())
-					volume.erase(pos.X);
-			};
-
-			std::optional<v3bpos_t> pos_opt;
-			while (!volume.empty()) {
-				if (pos_opt.has_value()) {
-					const auto pos_old = pos_opt.value();
-					pos_opt.reset();
-					// Random better
-					for (size_t dirs = 0; dirs < 6; ++dirs, ++pos_dir) {
-						const auto pos_new = pos_old + g_6dirs[pos_dir % sizeof(g_6dirs)];
-						//DUMP(dirs, pos_new, pos_dir);
-						if (contains(pos_new)) {
-							//DUMP("ok", dirs, pos_opt, "->", pos_new);
-							pos_opt = pos_new;
-							break;
-						}
-					}
-				}
-
-				if (!pos_opt.has_value()) {
-					// always first: pos_opt = {volume.begin()->first,volume.begin()->second.begin()->first,*volume.begin()->second.begin()->second.begin()};
-
-					auto xend = volume.end();
-					--xend;
-					const auto xi = pos_dir & 1 ? volume.begin() : xend;
-					auto yend = xi->second.end();
-					--yend;
-					const auto yi = pos_dir & 2 ? xi->second.begin() : yend;
-					auto zend = yi->second.end();
-					--zend;
-					const auto zi = pos_dir & 4 ? yi->second.begin() : zend;
-					pos_opt = {xi->first, yi->first, *zi};
-				}
-				const auto pos = pos_opt.value();
-				erase(pos);
-				++cur_n;
-
-#else
-			cur_n = 0;
-			for (const auto &pos : loadable_blocks) {
-				++cur_n;
-
-				if (cur_n < abm_world_last) {
-					continue;
-				}
-				abm_world_last = cur_n;
-#endif
-
-				if (stopRequested()) {
-					return nullptr;
-				}
-				try {
-					const auto load_block = [&](const v3bpos_t &pos) -> MapBlockP {
-						auto block = m_server->getEnv().getServerMap().getBlock(pos);
-						if (block) {
-							return block;
-						}
-						block.reset(m_server->getEnv().getServerMap().emergeBlock(pos));
-						if (!block) {
-							return nullptr;
-						}
-						if (!block->isGenerated()) {
-							return nullptr;
-						}
-						return block;
-					};
-
-					auto block = load_block(pos);
-					if (!block) {
-						continue;
-					}
-
-					// Load neighbours for better liquids flows
-					for (const auto &dir : g_6dirs) {
-						load_block(pos + dir);
-					}
-
-					g_profiler->add("Server: Abm world blocks", 1);
-
-					++processed;
-
-					//m_server->getEnv().activateBlock(block);
-
-					const auto activate =
-							(1 << 2) | m_server->getEnv().analyzeBlock(block);
-					const auto triggers =
-							m_server->getEnv().blockStep(block, 0, activate);
-					triggers_total += triggers;
-
-					//DUMP("ok", pos, cur_n, m_server->getMap().m_blocks.size(), block->getTimestamp(), block->getActualTimestamp(), m_server->getEnv().getGameTime(), triggers);
-
-					if (!(cur_n % 10000)) {
-						printstat();
-					}
-
-					if (!can_work()) {
-						tracestream << "Abm world throttle" << '\n';
-
-						std::this_thread::sleep_for(std::chrono::seconds(1));
-					} else if (abm_world_throttle) {
-						std::this_thread::sleep_for(
-								std::chrono::milliseconds(abm_world_throttle));
-					}
-
+	unsigned int max_cycle_ms = 10000;
+	auto time = porting::getTimeMs();
+	while (!stopRequested()) {
+		try {
+			auto ctime = porting::getTimeMs();
+			auto dtimems = ctime - time;
+			time = ctime;
+			m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
+			std::this_thread::sleep_for(
+					std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
 #if !EXCEPTION_DEBUG
-				} catch (const std::exception &e) {
-					errorstream << m_name << ": exception: " << e.what() << "\n"
-								<< stacktrace() << '\n';
-				} catch (...) {
-					errorstream << m_name << ": Unknown unhandled exception at "
-								<< __PRETTY_FUNCTION__ << ":" << __LINE__ << '\n'
-								<< stacktrace() << '\n';
+		} catch (const std::exception &e) {
+			errorstream << m_name << ": exception: " << e.what() << '\n'
+						<< stacktrace() << '\n';
+		} catch (...) {
+			errorstream << m_name << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
+						<< stacktrace() << '\n';
 #else
-				} catch (int) { // nothing
+		} catch (int) { // nothing
 #endif
-				}
-			}
-			printstat();
-			abm_world_last = 0;
-
-			sleep(60);
 		}
-		END_DEBUG_EXCEPTION_HANDLER
-		return nullptr;
 	}
-};
+	END_DEBUG_EXCEPTION_HANDLER
+	return nullptr;
+}
 
 int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async)
 {

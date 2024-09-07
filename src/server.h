@@ -60,6 +60,7 @@ class LiquidThread;
 class EnvThread;
 class AbmThread;
 class AbmWorldThread;
+class WorldMergeThread;
 
 
 class ClientNotFoundException : public BaseException
@@ -784,6 +785,7 @@ public:
 	std::unique_ptr<EnvThread> m_env_thread;
 	std::unique_ptr<AbmThread> m_abm_thread;
 	std::unique_ptr<AbmWorldThread> m_abm_world_thread;
+	std::unique_ptr<WorldMergeThread> m_world_merge_thread;
 
 	// CSM restrictions byteflag
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;

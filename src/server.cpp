@@ -94,11 +94,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include "threading/thread_vector.h"
 #include "key_value_storage.h"
+#include "fm_server.h"
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
 #endif
-
-#include "fm_server.cpp"
 
 #if 0
 
@@ -456,6 +455,7 @@ void Server::init()
 		m_env_thread = std::make_unique<EnvThread>(this);
 		m_abm_thread = std::make_unique< AbmThread>(this);
 		m_abm_world_thread = std::make_unique<AbmWorldThread>(this);
+		m_world_merge_thread = std::make_unique<WorldMergeThread>(this);
 	}
 
 	// Create world if it doesn't exist
