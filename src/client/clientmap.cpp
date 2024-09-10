@@ -1184,6 +1184,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
 
 	const MeshGrid mesh_grid = m_client->getMeshGrid();
+    draw_order.reserve(m_drawlist.size());
 	for (auto &i : m_drawlist) {
 		v3s16 block_pos = i.first;
 		auto block = i.second;
