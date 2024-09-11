@@ -19,21 +19,20 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "emerge.h"
+#include "gamedef.h"
+#include "irr_v3d.h"
+#include "log_types.h"
+#include "map.h"
+#include "nodedef.h"
+#include "profiler.h"
+#include "scripting_server.h"
+#include "server.h"
+#include "settings.h"
+#include "util/unordered_map_hash.h"
 #include <cstddef>
 #include <cstdint>
 #include <unordered_set>
-#include "irr_v3d.h"
-#include "map.h"
-#include "gamedef.h"
-#include "scripting_server.h"
-#include "settings.h"
-#include "nodedef.h"
-#include "log_types.h"
-#include "server.h"
-// #include "scripting_game.h"
-#include "profiler.h"
-#include "emerge.h"
-#include "util/unordered_map_hash.h"
 
 #define LIQUID_DEBUG 0
 
@@ -190,9 +189,8 @@ NEXT_LIQUID:;
 			nb.drop = 0;
 
 			if (!nb.node) {
-				// if (i == D_SELF && (loopcount % 2) && initial_size < m_liquid_step_flow
-				// * 3) 	must_reflow_third[nb.pos] = 1;
-				//	must_reflow_third.push_back(nb.pos);
+				//if (i == D_SELF && (loopcount % 8) && initial_size < m_liquid_step_flow * 3)	// must_reflow_third[nb.pos] = 1;
+				//	must_reflow_third.emplace_back(nb.pos);
 				continue;
 			}
 
@@ -296,8 +294,8 @@ NEXT_LIQUID:;
 						setNode(neighbors[D_BOTTOM].pos, neighbors[D_SELF].node);
 						// must_reflow_second[neighbors[D_SELF].pos] = 1;
 						// must_reflow_second[neighbors[D_BOTTOM].pos] = 1;
-						must_reflow_second.push_back(neighbors[D_SELF].pos);
-						must_reflow_second.push_back(neighbors[D_BOTTOM].pos);
+						must_reflow_second.emplace_back(neighbors[D_SELF].pos);
+						must_reflow_second.emplace_back(neighbors[D_BOTTOM].pos);
 #if LIQUID_DEBUG
 						infostream << "Liquid swap1" << neighbors[D_SELF].pos
 								   << nodemgr->get(neighbors[D_SELF].node).name
@@ -316,8 +314,8 @@ NEXT_LIQUID:;
 						setNode(neighbors[D_TOP].pos, neighbors[D_SELF].node);
 						// must_reflow_second[neighbors[D_SELF].pos] = 1;
 						// must_reflow_second[neighbors[D_TOP].pos] = 1;
-						must_reflow_second.push_back(neighbors[D_SELF].pos);
-						must_reflow_second.push_back(neighbors[D_TOP].pos);
+						must_reflow_second.emplace_back(neighbors[D_SELF].pos);
+						must_reflow_second.emplace_back(neighbors[D_TOP].pos);
 #if LIQUID_DEBUG
 						infostream << "Liquid swap2" << neighbors[D_TOP].pos
 								   << nodemgr->get(neighbors[D_TOP].node).name
@@ -740,7 +738,7 @@ NEXT_LIQUID:;
 				for (uint8_t ir = D_SELF + 1; ir < D_TOP; ++ir) { // only same level
 					uint8_t ii = liquid_random_map[(loopcount + loop_rand + 5) % 4][ir];
 					if (neighbors[ii].liquid)
-						must_reflow_second.push_back(
+						must_reflow_second.emplace_back(
 								neighbors[i].pos + liquid_flow_dirs[ii]);
 					// must_reflow_second[neighbors[i].pos + liquid_flow_dirs[ii]] = 1;
 				}
@@ -775,8 +773,9 @@ NEXT_LIQUID:;
 				blocks_lighting_update.emplace(blockpos);
 			}
 			// fmtodo: make here random %2 or..
-			if (total_level < level_max * can_liquid)
-				must_reflow.push_back(neighbors[i].pos);
+			if (total_level < level_max * can_liquid) {
+				must_reflow.emplace_back(neighbors[i].pos);
+			}
 		}
 
 		if (fall_down) {
@@ -842,7 +841,7 @@ NEXT_LIQUID:;
 	}
 
 	for (const auto &blockpos : blocks_lighting_update) {
-		MapBlock *block =
+		auto block =
 				getBlockNoCreateNoEx(blockpos, true); // remove true if light bugs
 		if (!block)
 			continue;

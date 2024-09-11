@@ -73,7 +73,6 @@ Map::Map(IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	m_liquid_step_flow = 1000;
 	time_life = 0;
 	getBlockCacheFlush();
 }

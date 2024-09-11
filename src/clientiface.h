@@ -311,6 +311,7 @@ public:
 
 	bool isBlockSent(v3s16 p) const
 	{
+		const auto lock = m_blocks_sent.lock_shared_rec();
 		return m_blocks_sent.find(p) != m_blocks_sent.end();
 	}
 
@@ -408,7 +409,7 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	unsigned int m_nearest_unsent_reset_want = 0;
-	concurrent_shared_unordered_map<v3bpos_t, double, v3posHash, v3posEqual> m_blocks_sent;
+	concurrent_unordered_map<v3bpos_t, double, v3posHash, v3posEqual> m_blocks_sent;
 
 	//std::unordered_set<v3s16> m_blocks_sent;
 
