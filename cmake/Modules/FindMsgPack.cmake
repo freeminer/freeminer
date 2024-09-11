@@ -55,7 +55,7 @@ elseif(NOT MSGPACK_LIBRARY)
 	endif()
 	add_subdirectory(external/msgpack-c)
 	#include_directories(${PROJECT_SOURCE_DIR}/external/msgpack-c/include)
-	set(MSGPACK_LIBRARY msgpackc-static) # before 1.4.0 was msgpack-static
+	set(MSGPACK_LIBRARY msgpack-cxx) # before 1.4.0 was msgpack-static
 	set(MSGPACK_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/external/msgpack-c/include)
 	message(STATUS "Using bundled msgpack ${MSGPACK_INCLUDE_DIR} ${MSGPACK_LIBRARY}")
 endif()
