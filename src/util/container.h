@@ -74,7 +74,7 @@ public:
 		return m_queue.size();
 	}
 
-private:
+//private:
 	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
 	std::queue<Value> m_queue;
 };

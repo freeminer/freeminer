@@ -234,16 +234,19 @@ public:
 		while (!stopRequested()) {
 			try {
 				m_server->getEnv().getMap().getBlockCacheFlush();
-				auto time_start = porting::getTimeMs();
+				const auto time_start = porting::getTimeMs();
 				m_server->getEnv().getMap().getBlockCacheFlush();
 				std::map<v3bpos_t, MapBlock *> modified_blocks; // not used by fm
-				m_server->getEnv().getServerMap().transformLiquids(
+				const auto processed = m_server->getEnv().getServerMap().transformLiquids(
 						modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
-				auto time_spend = porting::getTimeMs() - time_start;
+				const auto time_spend = porting::getTimeMs() - time_start;
 
-				thread_local const auto static liquid_step = g_settings->getBool("liquid_step");
-				std::this_thread::sleep_for(std::chrono::milliseconds(
-						time_spend > liquid_step ? 1 : liquid_step - time_spend));
+				thread_local const auto static liquid_step =
+						g_settings->getBool("liquid_step");
+				const auto sleep =
+						(processed < 10 ? 100 : 3) +
+						(time_spend > liquid_step ? 1 : liquid_step - time_spend);
+				std::this_thread::sleep_for(std::chrono::milliseconds(sleep));
 
 #if !EXCEPTION_DEBUG
 			} catch (const std::exception &e) {
@@ -517,9 +520,7 @@ public:
 				}
 				try {
 					const auto load_block = [&](const v3bpos_t &pos) -> MapBlockP {
-						auto block =
-								m_server->getEnv().getServerMap().getBlock(
-										pos);
+						auto block = m_server->getEnv().getServerMap().getBlock(pos);
 						if (block) {
 							return block;
 						}
