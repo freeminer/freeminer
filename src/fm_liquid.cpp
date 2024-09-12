@@ -78,7 +78,7 @@ constexpr auto D_SELF = 1;
 size_t ServerMap::transforming_liquid_size()
 {
 	std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-	return m_transforming_liquid.size();
+	return m_transforming_liquid.size() + m_transforming_liquid_local_size;
 }
 
 void ServerMap::transforming_liquid_add(const v3pos_t &p)
@@ -107,7 +107,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 	// TimeTaker timer("transformLiquidsReal()");
 	size_t loopcount = 0;
-	const auto initial_size = transforming_liquid_size();
+	const auto initial_size = transforming_liquid_size() - m_transforming_liquid_local_size;
 
 	size_t regenerated = 0;
 
@@ -865,6 +865,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 			uniq.emplace(p);
 		}
 		must_reflow_third.clear();
+		m_transforming_liquid_local_size = m_transforming_liquid_local.size();
 	}
 
 	for (const auto &blockpos : blocks_lighting_update) {
@@ -885,7 +886,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 		if (loopcount < initial_size)
 			g_profiler->add("Server: liquids queue", initial_size);
 	*/
-	g_profiler->avg("Server: liquids queue internal", m_transforming_liquid_local.size());
+	// g_profiler->avg("Server: liquids queue internal", m_transforming_liquid_local_size);
 
 	return loopcount;
 }
