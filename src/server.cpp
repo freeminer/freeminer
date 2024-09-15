@@ -2864,6 +2864,7 @@ void Server::SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
 	NetworkPacket pkt(TOCLIENT_BLOCKDATA, 2 + 2 + 2 + sptr->size(), peer_id);
 	pkt << block->getPos();
 	pkt.putRawString(*sptr);
+	pkt << block->far_step;
 	Send(&pkt);
 
 	// Store away in cache

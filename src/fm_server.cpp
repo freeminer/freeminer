@@ -35,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "mapblock.h"
 #include "mapnode.h"
+#include "network/fm_networkprotocol.h"
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"
@@ -475,4 +476,19 @@ void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 				  << "): size=" << pkt.getSize() << std::endl;
 
 	Send(&pkt);
+}
+
+void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
+{
+}
+
+void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
+{
+	if (!pkt->packet_unpack())
+		return;
+	auto client = m_clients.getClient(pkt->getPeerId());
+	if (!client)
+		return;
+	auto &packet = *(pkt->packet);
+	packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(client->far_blocks_requested);
 }

@@ -1999,25 +1999,6 @@ void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool ur
 		addUpdateMeshTask(blockpos + v3s16(0, 0, -1), false, urgent);
 }
 
-void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
-	for (const auto & dir : g_7dirs) {
-		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + dir);
-		if(!block)
-			continue;
-		block->setTimestampNoChangedFlag(m_uptime);
-	}
-
-	/*int to = FARMESH_STEP_MAX;
-	for (int step = 1; step <= to; ++step) {
-		v3pos_t actualpos = getFarmeshActual(blockpos, step);
-		auto *block = m_env.getMap().getBlockNoCreateNoEx(actualpos); // todo maybe update bp1 too if differ
-		if(!block)
-			continue;
-		block->setTimestampNoChangedFlag(m_uptime);
-	}*/
-
-}
-
 void Client::updateCameraOffset(v3s16 camera_offset)
 {
 	m_mesh_update_manager->m_camera_offset = camera_offset;

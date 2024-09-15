@@ -357,6 +357,11 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	}
 
 	sendGotBlocks({p});
+
+    try {
+	    *pkt >> block->far_step;
+    } catch (...) {}
+
 }
 
 void Client::handleCommand_Inventory(NetworkPacket* pkt)

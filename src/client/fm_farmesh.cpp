@@ -94,6 +94,8 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near)
 			block->setFarMesh(mbmsh, m_client->m_uptime);
 		}
 	}
+	m_client->getEnv().getClientMap().m_far_blocks_fill->insert_or_assign(
+			blockpos_actual, step);
 }
 
 void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, size_t step)
@@ -466,6 +468,16 @@ void FarMesh::update(v3opos_t camera_pos,
 			//timestamp_complete = m_client->m_uptime;
 			complete_set = true;
 			++m_client->m_new_meshes;
+			if (clientMap.m_far_blocks_use != clientMap.m_far_blocks_fill)
+				clientMap.m_far_blocks_use = clientMap.m_far_blocks_currrent
+													 ? &clientMap.m_far_blocks_1
+													 : &clientMap.m_far_blocks_2;
+			clientMap.m_far_blocks_fill = clientMap.m_far_blocks_currrent
+												  ? &clientMap.m_far_blocks_2
+												  : &clientMap.m_far_blocks_1;
+			clientMap.m_far_blocks_currrent = !clientMap.m_far_blocks_currrent;
+			clientMap.m_far_blocks_fill->clear();
+			clientMap.m_far_blocks_created = m_client->m_uptime;
 		}
 	}
 }

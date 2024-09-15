@@ -936,6 +936,7 @@ private:
     async_step_runner farmesh_async;
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
+	float far_blocks_send_timer = 5;
 	// minetest:
 
 
@@ -1316,13 +1317,19 @@ void Game::run()
 			}
 		}
 
-
+		{
+			if (draw_control->farmesh && far_blocks_send_timer > 0.0f) {
+				far_blocks_send_timer -= dtime;
+				if (far_blocks_send_timer <= 0.0f) {
+					client->sendGetBlocks();
+					far_blocks_send_timer = 2;
+				}
+			}
 
 		run_time += dtime;
 		if (runData.autoexit && run_time > runData.autoexit)
 			g_gamecallback->shutdown_requested = 1;
-
-
+		}
 
 		// Prepare render data for next iteration
 

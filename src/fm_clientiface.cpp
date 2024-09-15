@@ -545,5 +545,16 @@ queue_full_break:
 		}
 	}
 
+/* TODO:
+	{
+		for (const auto &[bp, step] : far_blocks_requested) {
+			if (far_blocks_sent.contains(bp))
+				continue;
+
+		far_blocks_sent.emplace(bp);
+		}
+	}
+*/
+
 	return num_blocks_selected - num_blocks_sending;
 }

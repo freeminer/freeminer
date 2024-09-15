@@ -28,10 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "irr_v3d.h"
+#include "threading/concurrent_set.h"
+#include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
 #include "util/unordered_map_hash.h"
-#include "threading/concurrent_unordered_map.h"
-#include "threading/concurrent_set.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
@@ -296,6 +296,12 @@ public:
 			v3posEqual>
 			m_far_blocks_type;
 	m_far_blocks_type m_far_blocks;
+	bool m_far_blocks_currrent = false;
+	using far_blocks_list_type = concurrent_shared_unordered_map<v3bpos_t, uint8_t>;
+	far_blocks_list_type m_far_blocks_1, m_far_blocks_2;
+	far_blocks_list_type *m_far_blocks_use = &m_far_blocks_1,
+						 *m_far_blocks_fill = &m_far_blocks_1;
+	double m_far_blocks_created = 0, m_far_blocks_sent = 0; 
 	v3pos_t m_far_blocks_last_cam_pos;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current = false;

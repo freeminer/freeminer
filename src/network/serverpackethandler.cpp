@@ -1933,8 +1933,6 @@ void Server::handleCommand_HaveMedia(NetworkPacket *pkt)
 	}
 }
 
-void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) { }
-
 void Server::handleCommand_UpdateClientInfo(NetworkPacket *pkt)
 {
 	ClientDynamicInfo info;

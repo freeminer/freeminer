@@ -143,7 +143,7 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 	null_command_factory, // 0x00
 	null_command_factory, // 0x01
 	{ "TOSERVER_INIT",               1, false }, // 0x02
-	null_command_factory, // 0x03
+	{ "TOSERVER_GET_BLOCKS",         0, false }, // 0x03
 	null_command_factory, // 0x04
 	null_command_factory, // 0x05
 	null_command_factory, // 0x06

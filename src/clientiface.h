@@ -255,8 +255,17 @@ public:
 	float fov = 72;
 	//bool block_overflow;
 	ServerEnvironment *m_env = nullptr;
-
+	u32 getSendingCount() const { return 0; }
+    std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
+	v3f   m_last_direction;
+	float m_nearest_unsent_reset_timer;
+	std::unordered_map<v3bpos_t, uint8_t> blocks;
 	std::atomic_ushort net_proto_version = {0};
+	void SetBlocksNotSent();
+	void SetBlockDeleted(v3bpos_t p);
+    std::unordered_map<v3bpos_t, uint8_t> far_blocks_requested;
+    std::unordered_set<v3bpos_t> far_blocks_sent;
+// ==
 
 	/* Authentication information */
 	std::string enc_pwd = "";
@@ -288,8 +297,6 @@ public:
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
-	void SetBlocksNotSent();
-	void SetBlockDeleted(v3bpos_t p);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -302,12 +309,6 @@ public:
 /*
 	u32 getSendingCount() const { return m_blocks_sending.size(); }
 */
-//fm:
-	u32 getSendingCount() const { return 0; }
-    std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
-	v3f   m_last_direction;
-	float m_nearest_unsent_reset_timer;
-
 
 	bool isBlockSent(v3s16 p) const
 	{

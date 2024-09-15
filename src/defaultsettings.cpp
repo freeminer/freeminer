@@ -99,7 +99,7 @@ const bool emscripten =
 #endif
 ;
 
-const bool slow = android || emscripten;
+const bool slow = debug || android || emscripten;
 
 void fm_set_default_settings(Settings *settings) {
 
@@ -179,7 +179,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "4" : "6");
 	settings->setDefault("farmesh", slow ? "3000" : std::to_string(FARMESH_LIMIT*2));
-	settings->setDefault("farmesh_quality", slow ? "0" : "2");
+	settings->setDefault("farmesh_quality", slow ? "0" : "1");
 	settings->setDefault("farmesh_stable", "0");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");

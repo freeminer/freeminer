@@ -475,8 +475,14 @@ enum
 	TOSERVER_CLIENT_READY_VERSION_TWEAK
 };
 
-// freeminer only packet
-#define TOSERVER_DRAWCONTROL 0x44
+// freeminer only packets
+#define TOSERVER_GET_BLOCKS 0x03
+enum
+{
+	TOSERVER_GET_BLOCKS_BLOCKS
+};
+
+#define TOSERVER_DRAWCONTROL 0x04
 enum
 {
 	TOSERVER_DRAWCONTROL_WANTED_RANGE,

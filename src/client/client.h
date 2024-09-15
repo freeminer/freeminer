@@ -127,6 +127,34 @@ class GameUI;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
+
+private:
+	//fm:
+	bool is_simple_singleplayer_game = 0;
+	float m_timelapse_timer = -1;
+
+public:
+	double m_uptime = 0;
+	bool use_weather = false;
+	unsigned int overload = 0;
+
+	void handleCommand_FreeminerInit(NetworkPacket *pkt);
+	void sendDrawControl();
+	void sendGetBlocks();
+	void updateMeshTimestampWithEdge(const v3bpos_t &blockpos);
+
+	std::unique_ptr<Server> m_localserver;
+	std::string m_world_path;
+	std::unique_ptr<EmergeManager> m_emerge;
+	std::unique_ptr<MapgenParams> m_mapgen_params;
+	std::unique_ptr<MapSettingsManager> m_settings_mgr;
+	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
+	f32 fog_range = 0;
+	size_t m_new_meshes = 0;
+	ChatBackend *chat_backend = nullptr;
+
+// ==
+
 public:
 	/*
 		NOTE: Nothing is thread-safe here.
@@ -335,8 +363,6 @@ public:
 	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
 
-	void updateMeshTimestampWithEdge(v3bpos_t blockpos);
-
 	void updateCameraOffset(v3s16 camera_offset);
 
 	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
@@ -423,8 +449,6 @@ public:
 	LocalClientState getState() { return m_state; }
 
 	void makeScreenshot(const std::string & name = "screenshot_");
-
-	ChatBackend *chat_backend;
 
 	inline void pushToChatQueue(ChatMessage *cec)
 	{
@@ -606,30 +630,6 @@ private:
 	// Detached inventories
 	// key = name
 	std::unordered_map<std::string, Inventory*> m_detached_inventories;
-
-
-//fm:
-	bool is_simple_singleplayer_game = 0;
-	float m_timelapse_timer = -1;
-public:
-	double m_uptime = 0;
-	bool use_weather = false;
-	unsigned int overload = 0;
-
-	void handleCommand_FreeminerInit(NetworkPacket* pkt);
-	void sendDrawControl();
-
-	std::unique_ptr<Server> m_localserver;
-	std::string m_world_path;
-	std::unique_ptr<EmergeManager> m_emerge;
-	std::unique_ptr<MapgenParams> m_mapgen_params;
-	std::unique_ptr<MapSettingsManager> m_settings_mgr;
-	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
-	f32 fog_range = 0;
-	size_t m_new_meshes = 0;
-
-private:	
-
 
 	// Storage for mesh data for creating multiple instances of the same mesh
 	StringMap m_mesh_data;

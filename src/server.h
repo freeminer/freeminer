@@ -777,6 +777,7 @@ public:
 	void SendPunchPlayer(session_t peer_id, v3f speed);
 
 	void handleCommand_Drawcontrol(NetworkPacket* pkt);
+	void handleCommand_GetBlocks(NetworkPacket* pkt);
 	Stat stat;
 
 	std::unique_ptr<MapThread> m_map_thread;
@@ -786,6 +787,7 @@ public:
 	std::unique_ptr<AbmThread> m_abm_thread;
 	std::unique_ptr<AbmWorldThread> m_abm_world_thread;
 	std::unique_ptr<WorldMergeThread> m_world_merge_thread;
+// ==
 
 	// CSM restrictions byteflag
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;
