@@ -117,11 +117,11 @@ private:
 	std::array<plane_cache, 6> plane_processed;
 	std::atomic_uint last_distance_max = 0;
 	int go_direction(const size_t dir_n);
-	std::array<async_step_runner, 6> async;
 	int timestamp_complete = 0;
 	//int timestamp_clean = 0;
 	bool complete_set = false;
 	int planes_processed_last = 0;
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;
+	std::array<async_step_runner, 6> async;
 };

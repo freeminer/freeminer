@@ -329,12 +329,13 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				const auto lock = m_blocks_sent.lock_shared_rec();
 				block_sent = m_blocks_sent.contains(p) ? m_blocks_sent.get(p) : 0;
 			}
-
-			if (block_sent > 0 &&
-					(/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d * d * d) >
-										  m_uptime)) {
-				// DUMP(p, block_sent, d, "ddd");
-				continue;
+			{
+				auto dspd = d / (speed_in_blocks ? speed_in_blocks : 1);
+				if (block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + 1 +
+													  (d <= 2 ? 0 : dspd * dspd * dspd) >
+											  m_uptime)) {
+					continue;
+				}
 			}
 
 			if (d >= 2 && can_skip && occlusion_culling_enabled) {
