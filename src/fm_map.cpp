@@ -92,7 +92,7 @@ MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 	return block;
 }
 
-MapBlock* Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
+MapBlock *Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
 {
 	return getBlock(p, trylock, nocache).get();
 }

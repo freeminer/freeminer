@@ -1571,7 +1571,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 					<< "] state=" << (int)toServerCommandTable[command].state
 					<< " size=" << pkt->getSize()
 					<< " from=" << peer_id
-					<< std::endl;
+					<< "\n";
 #endif
 
 		if (toServerCommandTable[command].state == TOSERVER_STATE_NOT_CONNECTED) {
@@ -1760,7 +1760,7 @@ void Server::Send(session_t peer_id, NetworkPacket *pkt)
 				<< "] state=" << (int)toClientCommandTable[pkt->getCommand()].state
 				<< " size=" << pkt->getSize() 
 				<< " to=" << peer_id
-				<< std::endl;
+				<< "\n";
 #endif
 
 	g_profiler->add("Server: Packets sent", 1);

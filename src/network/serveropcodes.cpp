@@ -30,11 +30,11 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_INIT",                     TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Init }, // 0x02
 
 // fm:
-	{ "TOSERVER_GET_BLOCKS",               TOSERVER_STATE_INGAME,  &Server::handleCommand_GetBlocks}, // 0x03
-	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x04
+	{ "TOSERVER_INIT_FM",                  TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_InitFm }, // 0x03
+	{ "TOSERVER_GET_BLOCKS",               TOSERVER_STATE_INGAME,  &Server::handleCommand_GetBlocks}, // 0x04
+	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x05
 // ==
 
-	null_command_handler, // 0x05
 	null_command_handler, // 0x06
 	null_command_handler, // 0x07
 	null_command_handler, // 0x08

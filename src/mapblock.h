@@ -537,8 +537,8 @@ private:
 public:	
 #endif
 
-	using blosk_step_t = uint8_t;
-	blosk_step_t far_step = 0;
+	using block_step_t = uint8_t;
+	block_step_t far_step = 0;
 	std::atomic_short heat {0};
 	std::atomic_short humidity {0};
 	std::atomic_short heat_add {0};

@@ -331,6 +331,7 @@ public:
 				<<"m_blocks_sent.size()="<<m_blocks_sent.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
 				<<", wanted_range="<<wanted_range * MAP_BLOCKSIZE
+				<< ", v=" << net_proto_version << ":" << net_proto_version_fm
 				<<std::endl;
 	}
 

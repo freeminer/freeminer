@@ -90,7 +90,7 @@ public:
 		return full_type::insert_or_assign(std::forward<Args>(args)...);
 	}
 
-	bool empty()
+	bool empty() const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty();

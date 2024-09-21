@@ -471,6 +471,8 @@ void Client::step(float dtime)
 			FATAL_ERROR_IF(myplayer == NULL, "Local player not found in environment.");
 
 			sendInit(myplayer->getName());
+
+			sendInitFm();
 		}
 
 		// Not connected, return
@@ -1159,7 +1161,7 @@ void Client::ProcessData(NetworkPacket *pkt)
 					<< toClientCommandTable[command].name
 					<< "] state=" << (int)toClientCommandTable[command].state
 					<< " size=" << pkt->getSize()
-					<< std::endl;
+					<< "\n";
 #endif
 
 	/*

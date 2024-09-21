@@ -965,6 +965,7 @@ void ClientInterface::CreateClient(session_t peer_id)
 
 	// Create client
 	auto client = std::shared_ptr<RemoteClient>(new RemoteClient());
+    client->m_env = m_env;
 	client->peer_id = peer_id;
 	m_clients.insert_or_assign(client->peer_id, client);
 }

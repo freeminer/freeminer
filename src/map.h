@@ -594,10 +594,10 @@ public:
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
 	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
-private:
 
 	int m_map_compression_level;
 
+private:
 	concurrent_set<v3bpos_t> m_chunks_in_progress;
 
 	// used by deleteBlock() and deleteDetachedBlocks()

@@ -778,6 +778,7 @@ public:
 
 	void handleCommand_Drawcontrol(NetworkPacket* pkt);
 	void handleCommand_GetBlocks(NetworkPacket* pkt);
+	void handleCommand_InitFm(NetworkPacket* pkt);
 	Stat stat;
 
 	std::unique_ptr<MapThread> m_map_thread;

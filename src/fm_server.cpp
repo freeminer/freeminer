@@ -28,7 +28,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <unordered_map>
 #include "database/database.h"
+#include "debug/iostream_debug_helpers.h"
 #include "emerge.h"
+#include "filesys.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -40,6 +42,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "debug/stacktrace.h"
 #include "util/directiontables.h"
+#include "util/hex.h"
 #include "util/timetaker.h"
 
 ServerThread::ServerThread(Server *server) : thread_vector("Server", 40), m_server(server)
@@ -478,6 +481,17 @@ void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 	Send(&pkt);
 }
 
+void Server::handleCommand_InitFm(NetworkPacket *pkt)
+{
+	if (!pkt->packet_unpack())
+		return;
+	auto &packet = *(pkt->packet);
+
+	session_t peer_id = pkt->getPeerId();
+	RemoteClient *client = getClient(peer_id, CS_Created);
+	packet[TOSERVER_INIT_FM_VERSION].convert(client->net_proto_version_fm);
+}
+
 void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
 {
 }
@@ -491,4 +505,5 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 		return;
 	auto &packet = *(pkt->packet);
 	packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(client->far_blocks_requested);
+	DUMP(client->far_blocks_requested.size());
 }
