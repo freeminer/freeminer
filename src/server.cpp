@@ -2898,7 +2898,12 @@ int Server::SendBlocks(float dtime)
 
 			//total_sending += client->getSendingCount();
 			const auto old_count = queue.size();
-			total += client->GetNextBlocks(m_env,m_emerge, dtime, queue, m_uptime_counter->get() + m_env->m_game_time_start);
+			if (client->net_proto_version_fm) {
+				total += client->GetNextBlocksFm(m_env, m_emerge, dtime, queue,
+						m_uptime_counter->get() + m_env->m_game_time_start);
+			} else {
+				total += client->GetNextBlocks(m_env, m_emerge, dtime, queue);
+			}
 			//total_sending += queue.size();
 			unique_clients += queue.size() > old_count ? 1 : 0;
 		}

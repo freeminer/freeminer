@@ -11,7 +11,7 @@
 #include "util/directiontables.h"
 #include "util/numeric.h"
 
-int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
+int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
 {
 	auto lock = try_lock_unique_rec();
