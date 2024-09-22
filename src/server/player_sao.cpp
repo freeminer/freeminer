@@ -415,6 +415,7 @@ void PlayerSAO::setPos(const v3f &pos)
 	auto lock = lock_unique_rec();
 	// Movement caused by this command is always valid
 	m_last_good_position = getBasePosition();
+	m_last_stat_position = m_last_good_position;
 	}
 	m_move_pool.empty();
 	m_time_from_last_teleport = 0.0;
@@ -431,6 +432,7 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 	auto lock = lock_unique_rec();
 	// Movement caused by this command is always valid
 	m_last_good_position = getBasePosition();
+	m_last_stat_position = m_last_good_position;
 	}
 	m_move_pool.empty();
 	m_time_from_last_teleport = 0.0;
