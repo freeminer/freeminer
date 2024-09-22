@@ -3608,6 +3608,8 @@ std::wstring Server::handleChat(const std::string &name,
 	*/
 	actionstream << "CHAT: " << wide_to_utf8(unescape_enriched(line)) << std::endl;
 
+    stat.add("chat", name);
+
 	ChatMessage chatmsg(line);
 
 	std::vector<session_t> clients = m_clients.getClientIDs();

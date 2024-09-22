@@ -1249,11 +1249,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 			// Try getting the time from pool
 			else if (playersao->getDigPool().grab(params.time)) {
 				// All is good
-			
-				stat.add("dig", player->getName());
-				stat.add("dig_"+ m_nodedef->get(n).name , player->getName());
 				m_env->nodeUpdate(p_under, 5, 0);
-
 			}
 			// Dig not possible
 			else {
@@ -1264,6 +1260,11 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 				// Call callbacks
 				m_script->on_cheat(playersao, "dug_too_fast");
 			}
+		}
+
+		if (is_valid_dig) {
+			stat.add("dig", player->getName());
+			stat.add("dig_" + m_nodedef->get(n).name, player->getName());
 		}
 
 		/* Actually dig node */

@@ -300,7 +300,7 @@ void Client::sendPlayerItem(u16 item)
 
 
 void Client::sendDrawControl() {
-	MSGPACK_PACKET_INIT((int)TOSERVER_DRAWCONTROL, 5);
+	MSGPACK_PACKET_INIT((int)TOSERVER_DRAWCONTROL, 6);
 	const auto & draw_control = m_env.getClientMap().getControl();
 	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)draw_control.wanted_range);
 	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)draw_control.range_all);
