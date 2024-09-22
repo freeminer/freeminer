@@ -77,6 +77,8 @@ void ISoundManager::reportRemovedSound(sound_handle_t id)
 
 sound_handle_t ISoundManager::allocateId(u32 num_owners)
 {
+	const auto lock = m_occupied_ids.lock_unique_rec();
+
 	while (m_occupied_ids.find(m_next_id) != m_occupied_ids.end()
 			|| m_next_id == SOUND_HANDLE_T_MAX) {
 		m_next_id = static_cast<sound_handle_t>(
@@ -89,6 +91,8 @@ sound_handle_t ISoundManager::allocateId(u32 num_owners)
 
 void ISoundManager::freeId(sound_handle_t id, u32 num_owners)
 {
+	const auto lock = m_occupied_ids.lock_unique_rec();
+
 	auto it = m_occupied_ids.find(id);
 	if (it == m_occupied_ids.end())
 		return;

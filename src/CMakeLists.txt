@@ -132,7 +132,8 @@ if(NOT MSVC)
 		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
 	endif()
 
-	option(ENABLE_UNWIND "Enable unwind" 1)
+    # too noisy
+	option(ENABLE_UNWIND "Enable unwind" 0)
 	if(ENABLE_UNWIND)
 
 	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)

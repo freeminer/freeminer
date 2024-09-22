@@ -305,6 +305,7 @@ void Client::sendDrawControl() {
 	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (u32)draw_control.wanted_range);
 	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, (u32)draw_control.range_all);
 	PACK(TOSERVER_DRAWCONTROL_FARMESH, (u8)draw_control.farmesh);
+	PACK(TOSERVER_DRAWCONTROL_LODMESH, (u8)draw_control.lodmesh);
 	PACK(TOSERVER_DRAWCONTROL_FOV, draw_control.fov);
 	PACK(TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW, false /*draw_control.block_overflow*/);
 
