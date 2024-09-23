@@ -534,9 +534,12 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	}
 	// copypaste from fm_serverpackethandler.cpp
 	else if (playersao->m_ms_from_last_respawn > 3000) {
-		const auto dist = (position / BS).getDistanceFrom(playersao->m_last_stat_position / BS);
-		if (dist && dist < 50)
+		const auto dist =
+				(position / BS).getDistanceFrom(playersao->m_last_stat_position / BS);
+		// distance per step (1/10s)
+		if (dist && dist < 8) {
 			stat.add("move", playersao->getPlayer()->getName(), dist);
+		}
 		playersao->m_last_stat_position = position;
 	}
 
