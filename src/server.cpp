@@ -1566,7 +1566,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 		}
 
 #if BUILD_CLIENT && !NDEBUG
-		tracestream << "Server processing packet" << (int)command << " ["
+		tracestream << "Server processing packet " << (int)command << " ["
 					<< toServerCommandTable[command].name
 					<< "] state=" << (int)toServerCommandTable[command].state
 					<< " size=" << pkt->getSize()

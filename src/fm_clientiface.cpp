@@ -23,7 +23,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	m_nearest_unsent_reset_timer += dtime;
 	m_time_from_building += dtime;
 
-/*
+	/*
 	if (m_nearest_unsent_reset) {
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
@@ -50,7 +50,8 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		}
 	*/
 
-	v3opos_t playerpos = sao->getBasePosition();
+	auto playerpos = sao->getBasePosition();
+
 	v3f playerspeed = player->getSpeed();
 	if (playerspeed.getLength() > 120.0 * BS) // cheater or bug, ignore him
 		return 0;
@@ -66,7 +67,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	v3pos_t center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
-	//v3opos_t camera_pos = sao->getEyePosition();
+	auto camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0, 0, 1);
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);
@@ -155,7 +156,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	s32 new_nearest_unsent_d = -1;
 
 	// get view range and camera fov from the client
-	s16 wanted_range = sao->getWantedRange();
+	auto wanted_range = sao->getWantedRange();
 	float camera_fov = sao->getFov();
 	// if FOV, wanted_range are not available (old client), fall back to old default
 	/*
@@ -179,7 +180,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	   MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
 	*/
 
-	//const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
+	const opos_t d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
 	// infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max <<
 	// std::endl;
 
@@ -309,30 +310,32 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 
 			// infostream<<"d="<<d<<std::endl;
 
+			double block_sent = 0;
+			{
+				const auto lock = m_blocks_sent.lock_shared_rec();
+				if (const auto it = m_blocks_sent.find(p); it != m_blocks_sent.end()) {
+					block_sent = it->second;
+				}
+			}
+
 			/*
 				Don't generate or send if not in sight
 				FIXME This only works if the client uses a small enough
 				FOV setting. The default of 72 degrees is fine.
 			*/
-			/*
-				if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
-										d_blocks_in_sight) == false) {
-					// DUMP(p, can_skip, "nosight");
-					continue;
-				}
-			*/
+			if (block_sent > 0 && can_skip &&
+					isBlockInSight(p, camera_pos, camera_dir, camera_fov,
+							d_blocks_in_sight) == false) {
+				// DUMP(p, can_skip, block_sent, "nosight");
+				continue;
+			}
 			/*
 				Don't send already sent blocks
 			*/
-			double block_sent = 0;
-			{
-				const auto lock = m_blocks_sent.lock_shared_rec();
-				block_sent = m_blocks_sent.contains(p) ? m_blocks_sent.get(p) : 0;
-			}
 			{
 				auto dspd = d / (speed_in_blocks ? speed_in_blocks : 1);
 				if (block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + 1 +
-													  (d <= 2 ? 0 : dspd * dspd * dspd) >
+													  (d <= 2 ? 0 : dspd * dspd) >
 											  m_uptime)) {
 					continue;
 				}

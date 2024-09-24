@@ -614,7 +614,7 @@ int NetworkPacket::packet_unpack() {
 	if(datasize < 2)
 		return 0;
 
-	int command;
+	int command {};
 	if (!packet)
 		packet = new MsgpackPacketSafe;
 	if (!packet_unpacked)

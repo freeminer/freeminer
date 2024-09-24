@@ -311,7 +311,7 @@ public:
 	uint32_t m_far_blocks_clean_timestamp = 0;
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
 	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
-	MapBlock *createBlankBlock(const v3bpos_t &p);
+	MapBlockP createBlankBlock(const v3bpos_t &p);
 	bool insertBlock(MapBlock *block);
 	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;

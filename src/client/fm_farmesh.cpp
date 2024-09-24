@@ -94,8 +94,9 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near)
 			block->setFarMesh(mbmsh, m_client->m_uptime);
 		}
 	}
-	m_client->getEnv().getClientMap().m_far_blocks_fill->insert_or_assign(
-			blockpos_actual, step);
+	if (step) // TODO WHY 0 here???
+		m_client->getEnv().getClientMap().m_far_blocks_fill->insert_or_assign(
+				blockpos_actual, step);
 }
 
 void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, size_t step)

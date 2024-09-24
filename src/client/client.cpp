@@ -639,7 +639,7 @@ void Client::step(float dtime)
 
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 			if (!block && r.mesh)
-				block = m_env.getMap().createBlankBlock(r.p);
+				block = m_env.getMap().createBlankBlock(r.p).get();
 
 			if (block) {
 				// Delete the old mesh

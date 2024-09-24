@@ -245,16 +245,12 @@ public:
 
 	bool empty() const
 	{
-		//try_shared_lock lock(m_mutex);
 		MutexAutoLock lock(m_mutex);
 		return m_queue.empty();
 	}
 	bool empty_try()
 	{
-		//try_shared_lock lock(m_mutex, std::try_to_lock);
 		MutexAutoLock lock(m_mutex);
-		//if (!lock.owns_lock())
-		//	return 1;
 		return m_queue.empty();
 	}
 	size_t size() {
