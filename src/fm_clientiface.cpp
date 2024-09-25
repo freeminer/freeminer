@@ -12,11 +12,14 @@
 #include "util/numeric.h"
 
 int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
-		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
+		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
+		u64 max_ms)
 {
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
+
+	auto end_ms = porting::getTimeMs() + max_ms;
 
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
@@ -503,6 +506,10 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 			else
 				num_blocks_selected += 1;
 		}
+
+		if (porting::getTimeMs() > end_ms) {
+			break;
+		}
 	}
 queue_full_break:
 
@@ -549,7 +556,7 @@ queue_full_break:
 		}
 	}
 
-/* TODO:
+	/* TODO:
 	{
 		for (const auto &[bp, step] : far_blocks_requested) {
 			if (far_blocks_sent.contains(bp))

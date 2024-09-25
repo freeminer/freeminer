@@ -103,8 +103,11 @@ int RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
-		std::vector<PrioritySortedBlockTransfer> &dest)
+		std::vector<PrioritySortedBlockTransfer> &dest,
+		u64 max_ms)
 {
+	auto end_ms = porting::getTimeMs() + max_ms;
+	
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 	m_map_send_completion_timer += dtime;
@@ -406,6 +409,10 @@ int RemoteClient::GetNextBlocks (
 			dest.push_back(q);
 
 			num_blocks_selected += 1;
+		}
+
+		if (porting::getTimeMs() > end_ms) {
+			break;
 		}
 	}
 queue_full_break:

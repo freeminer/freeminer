@@ -2889,6 +2889,9 @@ int Server::SendBlocks(float dtime)
 
 		std::vector<session_t> clients = m_clients.getClientIDs();
 
+		const auto clients_size = clients.size();
+		const auto max_ms = 1000 / (clients_size ? clients.size() : 1);
+
 		ClientInterface::AutoLock clientlock(m_clients);
 		for (const session_t client_id : clients) {
 			auto client = m_clients.getClient(client_id, CS_Active);
@@ -2900,9 +2903,9 @@ int Server::SendBlocks(float dtime)
 			const auto old_count = queue.size();
 			if (client->net_proto_version_fm) {
 				total += client->GetNextBlocksFm(m_env, m_emerge, dtime, queue,
-						m_uptime_counter->get() + m_env->m_game_time_start);
+						m_uptime_counter->get() + m_env->m_game_time_start, max_ms);
 			} else {
-				total += client->GetNextBlocks(m_env, m_emerge, dtime, queue);
+				total += client->GetNextBlocks(m_env, m_emerge, dtime, queue, max_ms);
 			}
 			//total_sending += queue.size();
 			unique_clients += queue.size() > old_count ? 1 : 0;

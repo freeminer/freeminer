@@ -267,7 +267,7 @@ public:
     std::unordered_map<v3bpos_t, uint8_t> far_blocks_requested;
     std::unordered_set<v3bpos_t> far_blocks_sent;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager* emerge,
-			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime);
+			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
 
 // ==
 
@@ -295,7 +295,7 @@ public:
 		dtime is used for resetting send radius at slow interval
 	*/
 	int GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
-			float dtime, std::vector<PrioritySortedBlockTransfer> &dest);
+			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, u64 max_ms);
 
 	void SentBlock(v3bpos_t p, double time);
 
