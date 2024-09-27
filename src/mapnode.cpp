@@ -691,7 +691,7 @@ s16 MapNode::addLevel(const NodeDefManager *nodemgr, s16 add, bool compress)
 }
 
 int MapNode::freeze_melt(const NodeDefManager *ndef, int direction) {
-	content_t to = ndef->getId(direction < 0 ? ndef->get(*this).freeze : ndef->get(*this).melt);
+	content_t to = direction < 0 ? ndef->get(*this).freeze_id : ndef->get(*this).melt_id;
 	if (to == CONTENT_IGNORE)
 		return 0;
 	s16 level_was_max = this->getMaxLevel(ndef);

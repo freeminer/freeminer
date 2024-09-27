@@ -51,7 +51,7 @@ void Client::sendGetBlocks()
 
 	MSGPACK_PACKET_INIT((int)TOSERVER_GET_BLOCKS, 1);
 
-	DUMP("send", far_blocks.size());
+	//DUMP("send", far_blocks.size());
 	PACK(TOSERVER_GET_BLOCKS_BLOCKS,
 			static_cast<std::remove_reference_t<decltype(far_blocks)>::full_type>(
 					far_blocks));

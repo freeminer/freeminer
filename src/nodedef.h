@@ -528,7 +528,9 @@ struct ContentFeatures
 	bool liquid_renewable;
 	// Ice for water, water for ice
 	std::string freeze;
+	content_t freeze_id {};
 	std::string melt;
+	content_t melt_id {};
 	// Number of flowing liquids surrounding source
 	u8 liquid_range;
 	u8 drowning;

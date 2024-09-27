@@ -326,10 +326,10 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 					if (liquid_kind_flowing == CONTENT_IGNORE)
 						liquid_kind_flowing = liquid_kind;
 					if (melt_kind == CONTENT_IGNORE)
-						melt_kind = nodemgr->getId(f.melt);
+						melt_kind = f.melt_id;
 					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = nodemgr->get(nodemgr->getId(f.melt))
-													.liquid_alternative_flowing_id;
+						melt_kind_flowing =
+								nodemgr->get(f.melt_id).liquid_alternative_flowing_id;
 					if (melt_kind_flowing == CONTENT_IGNORE)
 						melt_kind_flowing = melt_kind;
 					if (nb.content == liquid_kind) {
@@ -351,10 +351,9 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 					if (liquid_kind == CONTENT_IGNORE)
 						liquid_kind = liquid_kind_flowing;
 					if (melt_kind_flowing == CONTENT_IGNORE)
-						melt_kind_flowing = nodemgr->getId(f.melt);
+						melt_kind_flowing = f.melt_id;
 					if (melt_kind == CONTENT_IGNORE)
-						melt_kind = nodemgr->get(nodemgr->getId(f.melt))
-											.liquid_alternative_source_id;
+						melt_kind = nodemgr->get(f.melt_id).liquid_alternative_source_id;
 					if (melt_kind == CONTENT_IGNORE)
 						melt_kind = melt_kind_flowing;
 					if (nb.content == liquid_kind_flowing) {
