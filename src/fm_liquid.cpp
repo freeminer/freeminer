@@ -179,7 +179,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 	// list of nodes that due to viscosity have not reached their max level height
 	// unordered_map_v3pos<bool> must_reflow, must_reflow_second, must_reflow_third;
-	std::unordered_set<v3bpos_t> node_update;
+	std::unordered_set<v3bpos_t> node_update, node_drop;
 	std::list<v3pos_t> must_reflow, must_reflow_second; //, must_reflow_third;
 	std::unordered_map<v3bpos_t, std::list<v3pos_t>> fast_reflow;
 	const auto reflow = [&must_reflow, &fast_reflow](const v3pos_t &pos) {
@@ -864,7 +864,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 				}
 
 				if (neighbors[i].drop) { // && level_max > 1 && total_level >= level_max - 1
-					m_server->getEnv().getScriptIface()->node_drop(neighbors[i].pos, 2);
+					node_drop.emplace(neighbors[i].pos);
 				}
 
 				neighbors[i].node.setContent(liquid_kind_flowing);
@@ -965,6 +965,10 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 		}
 
 		m_transforming_liquid_local_size = m_transforming_liquid_local.size();
+	}
+
+	for (const auto &pos : node_drop) {
+    	m_server->getEnv().getScriptIface()->node_drop(pos, 2);
 	}
 
 	for (const auto &pos : node_update) {
