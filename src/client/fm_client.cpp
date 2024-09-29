@@ -139,7 +139,6 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 }
 
-
 void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 {
 	const auto str = std::string{pkt->getString(0), pkt->getSize()};
@@ -171,7 +170,23 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 	packet.convert_safe(
 			TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
 
+	if (block->content_only == CONTENT_IGNORE) {
+		try {
 	block->deSerialize(istr, m_server_ser_ver, false);
+		} catch (const std::exception &ex) {
+			errorstream << "fm block deSerialize fail " << bpos << " " << block->far_step
+						<< " : " << ex.what() << " : " << pkt->getSize() << " "
+						<< packet.size() << " v=" << (short)m_server_ser_ver << "\n";
+#if !NDEBUG
+			errorstream << "bad data " << istr.str().size() << " : " << istr.str()
+						<< "\n";
+#endif
+			return;
+		}
+	} else {
+		block->fill({block->content_only, block->content_only_param1,
+				block->content_only_param2});
+	}
 	s32 h = 0; // for convert to atomic
 	packet[TOCLIENT_BLOCKDATA_HEAT].convert(h);
 	block->heat = h;

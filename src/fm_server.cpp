@@ -590,8 +590,6 @@ void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
 	thread_local const int net_compression_level =
 			rangelim(g_settings->getS16("map_compression_level_net"), -1, 9);
 
-	bool reliable = 1;
-
 	g_profiler->add("Connection: blocks sent", 1);
 
 	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATAS, 8);
@@ -610,6 +608,7 @@ void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
 
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
+
 	NetworkPacket pkt(TOCLIENT_BLOCKDATAS, buffer.size(), peer_id);
 	pkt.putLongString({buffer.data(), buffer.size()});
 	auto s = std::string{pkt.getString(0), pkt.getSize()};

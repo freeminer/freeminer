@@ -518,6 +518,11 @@ public:
 
 	void pushElementsToCircuit(Circuit* circuit);
 
+	void fill(const MapNode & n) {
+		for (u32 i = 0; i < nodecount; ++i)
+			data[i] = n;
+	}
+
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
 	using block_step_t = uint8_t;
 
