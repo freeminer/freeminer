@@ -757,6 +757,7 @@ private:
 	void SetBlocksNotSent();
 	void SendFreeminerInit(session_t peer_id, u16 protocol_version);
 	void SendActiveObjectMessages(session_t peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+	void SendBlockFm(session_t peer_id, MapBlockP block, u8 ver, u16 net_proto_version, SerializedBlockCache *cache = nullptr);
 
 	float m_liquid_send_timer = 0 ;
 	float m_liquid_send_interval = 1;
@@ -779,6 +780,10 @@ public:
 	void handleCommand_Drawcontrol(NetworkPacket* pkt);
 	void handleCommand_GetBlocks(NetworkPacket* pkt);
 	void handleCommand_InitFm(NetworkPacket* pkt);
+	std::array<std::shared_ptr<MapDatabase>, FARMESH_STEP_MAX> far_dbases;
+	MapDatabase *GetFarDatabase(MapBlock::block_step_t step /*, MapDatabase *zero_db = {}, const std::string &world_path = {}*/);
+    MapBlockP loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &pos);
+
 	Stat stat;
 
 	std::unique_ptr<MapThread> m_map_thread;

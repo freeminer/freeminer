@@ -504,6 +504,114 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	if (!client)
 		return;
 	auto &packet = *(pkt->packet);
-	packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(client->far_blocks_requested);
-	DUMP(client->far_blocks_requested.size());
+	WITH_UNIQUE_LOCK(client->far_blocks_requested_mutex)
+	{
+		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(client->far_blocks_requested);
+	}
+}
+
+MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
+{
+	auto *m_server = this;
+	auto &dbases = m_server->far_dbases;
+	if (step <= 0) {
+		if (m_server->getEnv().m_map) {
+			return m_server->getEnv().m_map->dbase;
+		}
+	}
+	if (step >= dbases.size()) {
+		return {};
+	}
+	if (const auto dbase = dbases[step].get()) {
+		return dbase;
+	}
+	const auto &savedir = m_server->getEnv().getServerMap().m_savedir;
+	// Determine which database backend to use
+	std::string conf_path = savedir + DIR_DELIM + "world.mt";
+	Settings conf;
+	bool succeeded = conf.readConfigFile(conf_path.c_str());
+	if (!succeeded || !conf.exists("backend")) {
+// fall back to sqlite3
+#if USE_LEVELDB
+		conf.set("backend", "leveldb");
+#elif USE_SQLITE3
+		conf.set("backend", "sqlite3");
+#elif USE_REDIS
+		conf.set("backend", "redis");
+#endif
+	}
+	std::string backend = conf.get("backend");
+	auto path = savedir + DIR_DELIM + "merge_" + std::to_string(step);
+
+	if (!fs::PathExists(path)) {
+		fs::CreateDir(path);
+	}
+
+	dbases[step].reset(
+			m_server->getEnv().getServerMap().createDatabase(backend, path, conf));
+	return dbases[step].get();
+};
+
+MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &pos)
+{
+	auto *m_server = this;
+	try {
+		auto block =
+				std::make_shared<MapBlock>(nullptr, pos, m_server); // &m_server->getMap()
+		std::string blob;
+		dbase->loadBlock(pos, &blob);
+		if (!blob.length()) {
+			return {};
+		}
+
+		std::istringstream is(blob, std::ios_base::binary);
+
+		u8 version = SER_FMT_VER_INVALID;
+		is.read((char *)&version, 1);
+
+		if (is.fail()) {
+			return {};
+		}
+
+		// Read basic data
+		if (!block->deSerialize(is, version, true)) {
+			return {};
+		}
+		return block;
+	} catch (const std::exception &ex) {
+		errorstream << "Block load fail " << pos << " : " << ex.what() << "\n";
+	}
+	return {};
+}
+
+void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
+		u16 net_proto_version, SerializedBlockCache *cache)
+{
+	thread_local const int net_compression_level =
+			rangelim(g_settings->getS16("map_compression_level_net"), -1, 9);
+
+	bool reliable = 1;
+
+	g_profiler->add("Connection: blocks sent", 1);
+
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATAS, 8);
+	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
+
+	std::ostringstream os(std::ios_base::binary);
+	block->serialize(os, ver, false, net_compression_level, net_proto_version >= 1);
+	block->serializeNetworkSpecific(os);
+
+	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
+	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)(block->heat + block->heat_add));
+	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)(block->humidity + block->humidity_add));
+	PACK(TOCLIENT_BLOCKDATA_STEP, block->far_step);
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY,
+			block->content_only.load(std::memory_order_relaxed));
+
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
+	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
+	NetworkPacket pkt(TOCLIENT_BLOCKDATAS, buffer.size(), peer_id);
+	pkt.putLongString({buffer.data(), buffer.size()});
+	auto s = std::string{pkt.getString(0), pkt.getSize()};
+	Send(&pkt);
 }

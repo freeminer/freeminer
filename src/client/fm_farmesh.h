@@ -24,9 +24,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <atomic>
 #include <cstdint>
 #include "client/camera.h"
-#include "fm_nodecontainer.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "mapblock.h"
 #include "threading/async.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
@@ -34,22 +34,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class Client;
 class Mapgen;
 class Server;
-constexpr size_t FARMESH_MATERIAL_COUNT = 2;
 
 #ifdef __EMSCRIPTEN__
 #define FARMESH_FAST 1
 #endif
-
-class FarContainer : public NodeContainer
-{
-
-public:
-	FarContainer();
-	const MapNode &getNodeRefUnsafe(const v3pos_t &p) override;
-	MapNode getNodeNoExNoEmerge(const v3pos_t &p) override;
-	MapNode getNodeNoEx(const v3pos_t &p) override;
-	Mapgen *m_mg;
-};
 
 class FarMesh
 {
@@ -63,8 +51,9 @@ public:
 			v3pos_t m_camera_offset,
 			//float brightness,
 			int render_range, float speed);
-	void makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near = false);
-	void makeFarBlock7(const v3bpos_t &blockpos, size_t step);
+	void makeFarBlock(
+			const v3bpos_t &blockpos, MapBlock::block_step_t step, bool near = false);
+	void makeFarBlock7(const v3bpos_t &blockpos, MapBlock::block_step_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
 private:
@@ -96,8 +85,6 @@ private:
 	static constexpr uint16_t grid_size_y = grid_size_max_y;
 	static constexpr uint16_t grid_size_xy = grid_size_x * grid_size_y;
 	Mapgen *mg = nullptr;
-
-	FarContainer farcontainer;
 
 	struct ray_cache
 	{

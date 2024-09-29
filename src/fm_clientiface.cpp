@@ -8,6 +8,7 @@
 #include "server.h"
 #include "emerge.h"
 #include "face_position_cache.h"
+#include "threading/lock.h"
 #include "util/directiontables.h"
 #include "util/numeric.h"
 
@@ -556,16 +557,26 @@ queue_full_break:
 		}
 	}
 
-	/* TODO:
+	TRY_SHARED_LOCK(far_blocks_requested_mutex)
 	{
 		for (const auto &[bp, step] : far_blocks_requested) {
-			if (far_blocks_sent.contains(bp))
+			if (far_blocks_sent.contains(bp)) {
 				continue;
-
-		far_blocks_sent.emplace(bp);
+			}
+			const auto dbase = m_env->m_server->GetFarDatabase(step);
+			if (!dbase) {
+				continue;
+			}
+			const auto block = m_env->m_server->loadBlockNoStore(dbase, bp);
+			if (!block) {
+				continue;
+			}
+			block->far_step = step;
+			m_env->m_server->SendBlockFm(
+					peer_id, block, serialization_version, net_proto_version);
+			far_blocks_sent.emplace(bp);
 		}
 	}
-*/
 
 	return num_blocks_selected - num_blocks_sending;
 }

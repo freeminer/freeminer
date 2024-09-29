@@ -769,7 +769,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 
 
 #if BUILD_CLIENT
-	MapBlock::mesh_type MapBlock::getLodMesh(int step, bool allow_other)
+	MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_other)
 	{
 		if (m_lod_mesh[step] || !allow_other)
 			return m_lod_mesh[step];
@@ -783,7 +783,7 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		return {};
 	}
 
-	MapBlock::mesh_type MapBlock::getFarMesh(int step)
+	MapBlock::mesh_type MapBlock::getFarMesh(block_step_t step)
 	{
 		return m_far_mesh[step];
 	}
@@ -796,13 +796,12 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		m_lod_mesh[ms] = rmesh;
 	}
 
-	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, uint32_t time)
+	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step, uint32_t time)
 	{
-		const auto ms = rmesh->far_step;
-		if (const auto mesh = std::move(m_far_mesh[ms])) {
+		if (const auto mesh = std::move(m_far_mesh[step])) {
 			delete_mesh = std::move(mesh);
 		}
-		m_far_mesh[ms] = rmesh;
+		m_far_mesh[step] = rmesh;
 	}
 
 /*

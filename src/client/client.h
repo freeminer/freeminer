@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 //fm:
+#include "client/fm_far_container.h"
 #include "map_settings_manager.h"
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
@@ -139,6 +140,7 @@ public:
 	unsigned int overload = 0;
 
 	void handleCommand_FreeminerInit(NetworkPacket *pkt);
+    void handleCommand_BlockDatas(NetworkPacket *pkt);
 	void sendInitFm();
 	void sendDrawControl();
 	void sendGetBlocks();
@@ -153,6 +155,7 @@ public:
 	f32 fog_range = 0;
 	size_t m_new_meshes = 0;
 	ChatBackend *chat_backend = nullptr;
+	FarContainer far_container;
 
 // ==
 

@@ -1057,11 +1057,12 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		size_t farblocks_drawn = 0;
 		auto lock = m_far_blocks.lock_unique_rec();
 		for (auto it = m_far_blocks.begin(); it != m_far_blocks.end();) {
+			const auto &block = it->second;
 			if (m_far_blocks_clean_timestamp > 0 &&
-					it->second->getTimestamp() < m_far_blocks_clean_timestamp) {
-				m_far_blocks_delete.emplace_back(it->second);
+					block->getTimestamp() < m_far_blocks_clean_timestamp) {
+				m_far_blocks_delete.emplace_back(block);
 				it = m_far_blocks.erase(it);
-			} else if (it->second->getTimestamp() >= m_far_blocks_use_timestamp) {
+			} else if (block->getTimestamp() >= m_far_blocks_use_timestamp) {
 				if (!blocks_skip_farmesh.contains(it->first)) {
 					int mesh_step = getFarStep(m_control,
 							getNodeBlockPos(m_far_blocks_last_cam_pos),
@@ -1071,11 +1072,11 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 									getNodeBlockPos(m_far_blocks_last_cam_pos), mesh_step,
 									m_control)) {
 					} else {
-						const auto mesh = it->second->getFarMesh(mesh_step);
+						const auto mesh = block->getFarMesh(mesh_step);
 						if (!mesh) {
 							//m_client->farmesh_remake.insert_or_assign(it->first, false);
 						} else {
-							drawlist.emplace(it->first, it->second);
+							drawlist.emplace(it->first, block);
 							++farblocks_drawn;
 						}
 					}

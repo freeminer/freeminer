@@ -612,6 +612,8 @@ void Server::start()
 		m_abm_thread->restart();
 	if(m_abm_world_thread)
 		m_abm_world_thread->restart();
+	if(m_world_merge_thread)
+		m_world_merge_thread->restart();
 
 	if (!m_simple_singleplayer_mode && g_settings->getBool("serverlist_lan"))
 		lan_adv_server.serve(m_bind_addr.getPort());
@@ -719,6 +721,8 @@ void Server::stop()
 		m_abm_thread->stop();
 	if(m_abm_world_thread)
 		m_abm_world_thread->stop();
+	if(m_world_merge_thread)
+		m_world_merge_thread->stop();
 	if(m_env_thread)
 		m_env_thread->stop();
 
@@ -736,6 +740,8 @@ void Server::stop()
 		m_abm_thread->join();
 	if(m_abm_world_thread)
 		m_abm_world_thread->join();
+	if(m_world_merge_thread)
+		m_world_merge_thread->join();
 	if(m_env_thread)
 		m_env_thread->join();
 

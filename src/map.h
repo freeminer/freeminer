@@ -467,6 +467,8 @@ public:
 	bool propagateSunlight(
 			const v3pos_t& pos, std::set<v3pos_t> &light_sources, bool remove_light = false);
 
+	MapBlockP loadBlockNoStore(const v3bpos_t & p3d);
+
 //end of freeminer
 
 

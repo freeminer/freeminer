@@ -519,12 +519,13 @@ public:
 	void pushElementsToCircuit(Circuit* circuit);
 
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
+	using block_step_t = uint8_t;
 
 #if BUILD_CLIENT // Only on client
-	MapBlock::mesh_type getLodMesh(int step, bool allow_other = false);
+	MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
 	void setLodMesh(const MapBlock::mesh_type & rmesh);
-	MapBlock::mesh_type getFarMesh(int step);
-	void setFarMesh(const MapBlock::mesh_type & rmesh, uint32_t time);
+	MapBlock::mesh_type getFarMesh(block_step_t step);
+	void setFarMesh(const MapBlock::mesh_type & rmesh, block_step_t step, uint32_t time);
 	std::mutex far_mutex;
 	u32 mesh_requested_timestamp = 0;
 	uint8_t mesh_requested_step = 0;
@@ -537,7 +538,6 @@ private:
 public:	
 #endif
 
-	using block_step_t = uint8_t;
 	block_step_t far_step = 0;
 	std::atomic_short heat {0};
 	std::atomic_short humidity {0};

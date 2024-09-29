@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IFileSystem.h>
 #include <json/json.h>
 #include "client.h"
+#include "client/fm_far_container.h"
 #include "irr_v3d.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
@@ -131,6 +132,8 @@ Client::Client(
 		GameUI *game_ui,
 		ELoginRegister allow_login_or_register
 ):
+	far_container{this},
+
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_tsrc(tsrc),
 	m_shsrc(shsrc),

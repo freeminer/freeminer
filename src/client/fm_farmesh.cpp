@@ -45,27 +45,8 @@ const v3opos_t g_6dirso[6] = {
 		v3opos_t(-1, 0, 0), // left
 };
 
-FarContainer::FarContainer(){};
-
-const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &p)
-{
-	const auto &v = m_mg->visible_content(p);
-	if (v.getContent())
-		return v;
-	return m_mg->visible_transparent;
-};
-
-MapNode FarContainer::getNodeNoExNoEmerge(const v3pos_t &p)
-{
-	return getNodeRefUnsafe(p);
-};
-
-MapNode FarContainer::getNodeNoEx(const v3pos_t &p)
-{
-	return getNodeRefUnsafe(p);
-};
-
-void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near)
+void FarMesh::makeFarBlock(
+		const v3bpos_t &blockpos, MapBlock::block_step_t step, bool near)
 {
 	g_profiler->add("Client: Farmesh make", 1);
 
@@ -85,21 +66,23 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step, bool near)
 	}
 	const auto &block = far_blocks.at(blockpos_actual);
 	block->setTimestampNoChangedFlag(timestamp_complete);
+	const auto have_block_data =
+			m_client->far_container.far_blocks[step].contains(blockpos_actual);
 	{
 		const auto lock = std::lock_guard(block->far_mutex);
 		if (!block->getFarMesh(step)) {
-			MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
+			MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
 			mdat.m_blockpos = blockpos_actual;
 			auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
-			block->setFarMesh(mbmsh, m_client->m_uptime);
+			block->setFarMesh(mbmsh, step, m_client->m_uptime);
 		}
 	}
-	if (step) // TODO WHY 0 here???
+	if (step && !have_block_data) // TODO WHY 0 here???
 		m_client->getEnv().getClientMap().m_far_blocks_fill->insert_or_assign(
 				blockpos_actual, step);
 }
 
-void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, size_t step)
+void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, MapBlock::block_step_t step)
 {
 	const auto step_width = pow(2, step);
 	for (const auto &dir : g_7dirs) {
@@ -176,7 +159,7 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 		if (emerge_use->mgparams)
 			mg = emerge_use->getFirstMapgen();
 
-		farcontainer.m_mg = mg;
+		m_client->far_container.m_mg = mg;
 		const auto &ndef = m_client->getNodeDefManager();
 		mg->visible_surface = ndef->getId("default:stone");
 		mg->visible_water = ndef->getId("default:water_source");

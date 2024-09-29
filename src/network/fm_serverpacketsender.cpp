@@ -674,37 +674,6 @@ void Server::sendAddNode(v3s16 p, MapNode n, u16 ignore_id,
 	}
 }
 
-void Server::SendBlockNoLock(u16 peer_id, MapBlock *block, u8 ver, u16 net_proto_version)
-{
-	bool reliable = 1;
-
-	g_profiler->add("Connection: blocks sent", 1);
-
-	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATA, 8);
-	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
-
-	std::ostringstream os(std::ios_base::binary);
-
-	auto client = m_clients.getClient(peer_id);
-	if (!client)
-		return;
-	block->serialize(os, ver, false, client->net_proto_version_fm >= 1);
-	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
-
-	PACK(TOCLIENT_BLOCKDATA_HEAT, (s16)(block->heat + block->heat_add));
-	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, (s16)(block->humidity + block->humidity_add));
-	PACK(TOCLIENT_BLOCKDATA_STEP, (s8)1);
-	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY, block->content_only);
-	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
-	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
-
-	//MutexAutoLock lock(m_env_mutex);
-	/*
-		Send packet
-	*/
-	m_clients.send(peer_id, 2, buffer, reliable);
-}
-
 void Server::sendMediaAnnouncement(u16 peer_id)
 {
 	MediaAnnounceList announce_list;

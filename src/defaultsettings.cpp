@@ -181,6 +181,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh", slow ? "3000" : std::to_string(FARMESH_LIMIT*2));
 	settings->setDefault("farmesh_quality", slow ? "0" : "1");
 	settings->setDefault("farmesh_stable", "0");
+	settings->setDefault("farmesh_server", "1");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 	//settings->setDefault("enable_vbo", win ? "false" : "true");

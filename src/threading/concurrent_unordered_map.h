@@ -109,7 +109,7 @@ public:
 	}
 
 	template <typename... Args>
-	decltype(auto) contains(Args &&...args)
+	decltype(auto) contains(Args &&...args) const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::contains(std::forward<Args>(args)...);

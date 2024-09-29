@@ -44,6 +44,11 @@ void Client::sendInitFm()
 
 void Client::sendGetBlocks()
 {
+
+	static thread_local const auto farmesh_server = g_settings->getU16("farmesh_server");
+	if (!farmesh_server)
+		return;
+
 	const auto &far_blocks = *m_env.getClientMap().m_far_blocks_use;
 	if (far_blocks.empty()) {
 		return;
@@ -63,7 +68,6 @@ void Client::sendGetBlocks()
 
 void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 {
-	if (!pkt->packet)
 		if (!pkt->packet_unpack())
 			return;
 
@@ -134,3 +138,68 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 }
 
+
+void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
+{
+	const auto str = std::string{pkt->getString(0), pkt->getSize()};
+	if (!pkt->packet_unpack()) {
+		return;
+	}
+	auto &packet = *(pkt->packet);
+	v3bpos_t bpos = packet[TOCLIENT_BLOCKDATA_POS].as<v3bpos_t>();
+	MapBlock::block_step_t step = 0;
+	packet[TOCLIENT_BLOCKDATA_STEP].convert(step);
+	std::istringstream istr(
+			packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
+
+	MapBlockP block{};
+	if (step) {
+		block.reset(m_env.getMap().createBlankBlockNoInsert(bpos));
+	} else {
+		block = m_env.getMap().getBlock(bpos);
+		if (!block)
+			block = m_env.getMap().createBlankBlock(bpos);
+	}
+	const auto lock = block->lock_unique_rec();
+	block->far_step = step;
+	content_t content_only;
+	packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, content_only);
+	block->content_only = content_only;
+	packet.convert_safe(
+			TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
+	packet.convert_safe(
+			TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
+
+	block->deSerialize(istr, m_server_ser_ver, false);
+	s32 h = 0; // for convert to atomic
+	packet[TOCLIENT_BLOCKDATA_HEAT].convert(h);
+	block->heat = h;
+	h = 0;
+	packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
+	block->humidity = h;
+
+	if (!step) {
+
+		if (m_localdb) {
+			ServerMap::saveBlock(block.get(), m_localdb);
+		}
+		updateMeshTimestampWithEdge(bpos);
+		if (!overload && block->content_only != CONTENT_IGNORE &&
+				block->content_only != CONTENT_AIR) {
+			if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS))
+							.getDistanceFrom(bpos) <= 1)
+				addUpdateMeshTaskWithEdge(bpos);
+		}
+	} else {
+		static thread_local const auto farmesh_server =
+				g_settings->getU16("farmesh_server");
+		if (farmesh_server) {
+			far_container.far_blocks[step].insert_or_assign(bpos, block);
+			auto &far_blocks = getEnv().getClientMap().m_far_blocks;
+			if (far_blocks.contains(bpos)) {
+				const auto &block = far_blocks.at(bpos);
+				block->setFarMesh({}, step, 0);
+		}
+	}
+	}
+	}
