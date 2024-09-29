@@ -198,8 +198,8 @@ const auto tree_align = tree_pow - 1;
 const auto tree_align_size = 1 << (tree_align);
 const auto external_pow = tree_pow - 2;
 
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
-		const v3bpos_t &blockpos)
+int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		const v3bpos_t &blockpos, uint8_t cell_size_pow)
 {
 	const auto blockpos_aligned_cell = align(blockpos, draw_control.cell_size_pow);
 
