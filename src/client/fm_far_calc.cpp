@@ -230,6 +230,12 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 			  //return external_pow; //+ draw_control.cell_size_pow;
 }
 
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		const v3bpos_t &blockpos)
+{
+	return getFarStepCellSize(draw_control, ppos, blockpos, draw_control.cell_size_pow);
+}
+
 v3bpos_t getFarActual(v3bpos_t blockpos, const v3bpos_t &ppos, int step,
 		const MapDrawControl &draw_control)
 {

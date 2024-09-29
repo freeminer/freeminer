@@ -27,6 +27,8 @@ struct MapDrawControl;
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos, const pos_t speedf);
+int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		const v3bpos_t &blockpos, uint8_t cell_size_pow);
 int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
 bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,

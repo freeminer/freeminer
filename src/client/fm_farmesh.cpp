@@ -70,7 +70,8 @@ void FarMesh::makeFarBlock(
 			m_client->far_container.far_blocks[step].contains(blockpos_actual);
 	{
 		const auto lock = std::lock_guard(block->far_mutex);
-		if (!block->getFarMesh(step)) {
+		if (!block->getFarMesh(step) || block->want_remake_farmesh) {
+			block->want_remake_farmesh = false;
 			MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
 			mdat.m_blockpos = blockpos_actual;
 			auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
