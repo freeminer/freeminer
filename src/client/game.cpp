@@ -926,7 +926,7 @@ private:
 	};
 
 
-	//freeminer:
+	// fm:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
     async_step_runner updateDrawList_async;
@@ -936,8 +936,7 @@ private:
     async_step_runner farmesh_async;
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
-	float far_blocks_send_timer = 1;
-	// minetest:
+	// ==:
 
 
 
@@ -1318,8 +1317,11 @@ void Game::run()
 		}
 
 		{
-			if (draw_control->farmesh && far_blocks_send_timer > 0.0f) {
+			if (draw_control->farmesh) {
+				auto &far_blocks_send_timer =
+						client->getEnv().getClientMap().far_blocks_sent_timer;
 				far_blocks_send_timer -= dtime;
+
 				if (far_blocks_send_timer <= 0.0f) {
 					client->sendGetBlocks();
 					far_blocks_send_timer = 2;

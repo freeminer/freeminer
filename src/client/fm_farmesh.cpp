@@ -463,6 +463,7 @@ void FarMesh::update(v3opos_t camera_pos,
 			clientMap.m_far_blocks_currrent = !clientMap.m_far_blocks_currrent;
 			clientMap.m_far_blocks_fill->clear();
 			clientMap.m_far_blocks_created = m_client->m_uptime;
+			clientMap.far_blocks_sent_timer = 0;
 		}
 	}
 }

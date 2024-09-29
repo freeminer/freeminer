@@ -302,6 +302,7 @@ public:
 	far_blocks_list_type *m_far_blocks_use = &m_far_blocks_1,
 						 *m_far_blocks_fill = &m_far_blocks_1;
 	double m_far_blocks_created = 0, m_far_blocks_sent = 0; 
+	float far_blocks_sent_timer = 1;
 	v3pos_t m_far_blocks_last_cam_pos;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current = false;
