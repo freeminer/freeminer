@@ -560,21 +560,28 @@ queue_full_break:
 	TRY_SHARED_LOCK(far_blocks_requested_mutex)
 	{
 		for (const auto &[bp, step] : far_blocks_requested) {
-			if (far_blocks_sent.contains(bp)) {
+			if (step >= FARMESH_STEP_MAX - 1) {
+				// DUMP("too step requested", step);
+				continue;
+			}
+			if (far_blocks_sent[step].contains(bp)) {
+				// DUMP("already sent", step, bp);
 				continue;
 			}
 			const auto dbase = m_env->m_server->GetFarDatabase(step);
 			if (!dbase) {
+				// DUMP("no far dbase", step);
 				continue;
 			}
 			const auto block = m_env->m_server->loadBlockNoStore(dbase, bp);
 			if (!block) {
+				// if (step <= 3) DUMP("no far block", bp, step);
 				continue;
 			}
 			block->far_step = step;
 			m_env->m_server->SendBlockFm(
 					peer_id, block, serialization_version, net_proto_version);
-			far_blocks_sent.emplace(bp);
+			far_blocks_sent[step].emplace(bp);
 		}
 	}
 

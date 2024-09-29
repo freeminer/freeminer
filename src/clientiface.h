@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "mapblock.h"
 #include "threading/concurrent_set.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
@@ -266,7 +267,7 @@ public:
 	void SetBlockDeleted(v3bpos_t p);
     std::unordered_map<v3bpos_t, uint8_t> far_blocks_requested;
 	std::shared_mutex far_blocks_requested_mutex;
-    std::unordered_set<v3bpos_t> far_blocks_sent;
+	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> far_blocks_sent;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager* emerge,
 			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
 

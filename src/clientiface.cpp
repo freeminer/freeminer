@@ -785,8 +785,6 @@ void ClientInterface::UpdatePlayerList()
 	}
 }
 
-
-
 #if !MINETEST_PROTO
 void ClientInterface::send(u16 peer_id,u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)

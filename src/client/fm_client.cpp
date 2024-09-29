@@ -56,7 +56,8 @@ void Client::sendGetBlocks()
 
 	MSGPACK_PACKET_INIT((int)TOSERVER_GET_BLOCKS, 1);
 
-	//DUMP("send", far_blocks.size());
+	// DUMP("ask far blocks", far_blocks.size());
+	
 	PACK(TOSERVER_GET_BLOCKS_BLOCKS,
 			static_cast<std::remove_reference_t<decltype(far_blocks)>::full_type>(
 					far_blocks));
@@ -68,8 +69,8 @@ void Client::sendGetBlocks()
 
 void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 {
-		if (!pkt->packet_unpack())
-			return;
+	if (!pkt->packet_unpack())
+		return;
 
 	auto &packet = *(pkt->packet);
 
@@ -199,7 +200,7 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 			if (far_blocks.contains(bpos)) {
 				const auto &block = far_blocks.at(bpos);
 				block->setFarMesh({}, step, 0);
+			}
 		}
-	}
 	}
 	}

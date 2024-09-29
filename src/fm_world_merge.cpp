@@ -249,13 +249,14 @@ void *WorldMergeThread::run()
 											if (c == CONTENT_AIR) {
 												maybe_air = true;
 												air = n;
-												continue;
+												top_c[c] += 1;
+												// continue;
+											} else {
+												top_c[c] += 2;
 											}
-
-											++top_c[c];
 											if (!dir.getLengthSQ()) {
 												// main node priority TODO: tune 2
-												top_c[c] += 2;
+												top_c[c] += 4;
 											}
 											nodes[c] = n;
 										}
