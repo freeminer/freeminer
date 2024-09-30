@@ -214,7 +214,7 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 			auto &far_blocks = getEnv().getClientMap().m_far_blocks;
 			if (far_blocks.contains(bpos)) {
 				const auto &block = far_blocks.at(bpos);
-				block->farmesh_need_remake = true;
+				block->farmesh_need_remake = m_uptime;
 			}
 		}
 	}
