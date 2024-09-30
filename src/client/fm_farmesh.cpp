@@ -229,7 +229,7 @@ int FarMesh::go_direction(const size_t dir_n)
 
 		auto dir_l = dir_first.normalize();
 
-		auto pos_last = pos_center;
+		auto pos_last = dir_l * ray_cache.finished * BS + pos_center;
 		++ray_cache.step_num;
 		for (size_t steps = 0; steps < 200; ++ray_cache.step_num, ++steps) {
 #if !NDEBUG
@@ -239,6 +239,10 @@ int FarMesh::go_direction(const size_t dir_n)
 			const auto block_step =
 					getFarStep(draw_control, m_camera_pos_aligned / MAP_BLOCKSIZE,
 							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
+			if (!block_step) {
+				// TODO: FIXME, should be not zero
+				break;
+			}
 			const auto block_step_pow = pow(2, block_step - block_step_reduce);
 			const auto step_width = MAP_BLOCKSIZE * block_step_pow;
 			ray_cache.finished += step_width;
