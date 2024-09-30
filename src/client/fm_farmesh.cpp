@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapnode.h"
 #include "profiler.h"
 #include "server.h"
+#include "threading/lock.h"
 #include "util/directiontables.h"
 #include "util/numeric.h"
 #include "util/timetaker.h"
@@ -66,21 +67,28 @@ void FarMesh::makeFarBlock(
 	}
 	const auto &block = far_blocks.at(blockpos_actual);
 	block->setTimestampNoChangedFlag(timestamp_complete);
+	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
+	const auto block_server_step = step;
+	const auto blockpos_server = blockpos_actual;
 	const auto have_block_data =
-			m_client->far_container.far_blocks[step].contains(blockpos_actual);
+			m_client->far_container.far_blocks[block_server_step].contains(
+					blockpos_server);
+	if (block_server_step && !have_block_data) // TODO WHY 0 here???
+		m_client->getEnv().getClientMap().m_far_blocks_fill->insert_or_assign(
+				blockpos_server, block_server_step);
+	WITH_UNIQUE_LOCK(block->far_mutex)
 	{
-		const auto lock = std::lock_guard(block->far_mutex);
-		if (!block->getFarMesh(step) || block->want_remake_farmesh) {
-			block->want_remake_farmesh = false;
+		if (const auto mesh = block->getFarMesh(step);
+				!mesh.get() ||
+				(block->farmesh_need_remake &&
+						block->farmesh_need_remake > block->farmesh_created)) {
+			block->farmesh_created = block->farmesh_need_remake = m_client->m_uptime;
 			MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
 			mdat.m_blockpos = blockpos_actual;
 			auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 			block->setFarMesh(mbmsh, step, m_client->m_uptime);
 		}
 	}
-	if (step && !have_block_data) // TODO WHY 0 here???
-		m_client->getEnv().getClientMap().m_far_blocks_fill->insert_or_assign(
-				blockpos_actual, step);
 }
 
 void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, MapBlock::block_step_t step)

@@ -768,8 +768,9 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	}
 
 
+const MapBlock::mesh_type empty_mesh;
 #if BUILD_CLIENT
-	MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_other)
+	const MapBlock::mesh_type &MapBlock::getLodMesh(block_step_t step, bool allow_other)
 	{
 		if (m_lod_mesh[step] || !allow_other)
 			return m_lod_mesh[step];
@@ -780,10 +781,10 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			if (step - inc >= 0 && m_lod_mesh[step - inc])
 				return m_lod_mesh[step - inc];
 		}
-		return {};
+		return empty_mesh;
 	}
 
-	MapBlock::mesh_type MapBlock::getFarMesh(block_step_t step)
+	const MapBlock::mesh_type& MapBlock::getFarMesh(block_step_t step)
 	{
 		return m_far_mesh[step];
 	}
