@@ -557,7 +557,7 @@ queue_full_break:
 		}
 	}
 
-	TRY_SHARED_LOCK(far_blocks_requested_mutex)
+	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
 		for (const auto &[bp, step] : far_blocks_requested) {
 			if (step >= FARMESH_STEP_MAX - 1) {
@@ -583,6 +583,7 @@ queue_full_break:
 					peer_id, block, serialization_version, net_proto_version);
 			far_blocks_sent[step].emplace(bp);
 		}
+		far_blocks_requested.clear();
 	}
 
 	return num_blocks_selected - num_blocks_sending;

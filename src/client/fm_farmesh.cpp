@@ -461,6 +461,10 @@ void FarMesh::update(v3opos_t camera_pos,
 			//timestamp_complete = m_client->m_uptime;
 			complete_set = true;
 			++m_client->m_new_meshes;
+		}
+		/*
+			{
+			auto &clientMap = m_client->getEnv().getClientMap();
 			if (clientMap.m_far_blocks_use != clientMap.m_far_blocks_fill)
 				clientMap.m_far_blocks_use = clientMap.m_far_blocks_currrent
 													 ? &clientMap.m_far_blocks_1
@@ -471,7 +475,8 @@ void FarMesh::update(v3opos_t camera_pos,
 			clientMap.m_far_blocks_currrent = !clientMap.m_far_blocks_currrent;
 			clientMap.m_far_blocks_fill->clear();
 			clientMap.m_far_blocks_created = m_client->m_uptime;
-			clientMap.far_blocks_sent_timer = 0;
+			//clientMap.far_blocks_sent_timer = 0;
 		}
+*/
 	}
 }

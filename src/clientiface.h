@@ -266,7 +266,7 @@ public:
 	void SetBlocksNotSent();
 	void SetBlockDeleted(v3bpos_t p);
     std::unordered_map<v3bpos_t, uint8_t> far_blocks_requested;
-	std::shared_mutex far_blocks_requested_mutex;
+	std::mutex far_blocks_requested_mutex;
 	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> far_blocks_sent;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager* emerge,
 			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);

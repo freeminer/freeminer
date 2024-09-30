@@ -506,7 +506,11 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	auto &packet = *(pkt->packet);
 	WITH_UNIQUE_LOCK(client->far_blocks_requested_mutex)
 	{
-		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(client->far_blocks_requested);
+		std::unordered_map<v3bpos_t, MapBlock::block_step_t> blocks;
+		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(blocks);
+		for (const auto &[bpos, step] : blocks) {
+			client->far_blocks_requested.insert_or_assign(bpos, step);
+		}
 	}
 }
 

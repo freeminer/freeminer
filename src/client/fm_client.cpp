@@ -1,3 +1,4 @@
+#include <exception>
 #include "client.h"
 #include "clientmap.h"
 #include "emerge.h"
@@ -9,6 +10,7 @@
 #include "map.h"
 #include "mapgen/mapgen.h"
 #include "network/networkpacket.h"
+#include "threading/lock.h"
 #include "util/directiontables.h"
 #include "util/hex.h"
 
@@ -49,7 +51,9 @@ void Client::sendGetBlocks()
 	if (!farmesh_server)
 		return;
 
-	const auto &far_blocks = *m_env.getClientMap().m_far_blocks_use;
+	auto &far_blocks = *m_env.getClientMap().m_far_blocks_use;
+	const auto lock = far_blocks.lock_unique_rec();
+
 	if (far_blocks.empty()) {
 		return;
 	}
@@ -61,6 +65,8 @@ void Client::sendGetBlocks()
 	PACK(TOSERVER_GET_BLOCKS_BLOCKS,
 			static_cast<std::remove_reference_t<decltype(far_blocks)>::full_type>(
 					far_blocks));
+	far_blocks.clear();
+	lock->unlock();
 
 	NetworkPacket pkt(TOSERVER_GET_BLOCKS, buffer.size());
 	pkt.putLongString({buffer.data(), buffer.size()});
@@ -172,7 +178,7 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 
 	if (block->content_only == CONTENT_IGNORE) {
 		try {
-	block->deSerialize(istr, m_server_ser_ver, false);
+			block->deSerialize(istr, m_server_ser_ver, false);
 		} catch (const std::exception &ex) {
 			errorstream << "fm block deSerialize fail " << bpos << " " << block->far_step
 						<< " : " << ex.what() << " : " << pkt->getSize() << " "
@@ -218,4 +224,4 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 			}
 		}
 	}
-	}
+}
