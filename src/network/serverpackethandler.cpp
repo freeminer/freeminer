@@ -433,6 +433,8 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 
 	stat.add("join", playersao->getPlayer()->getName());
 
+	playersao->last_time_online = m_uptime_counter->get();
+
 	// Send shutdown timer if shutdown has been scheduled
 	if (m_shutdown_state.isTimerRunning())
 		SendChatMessage(peer_id, m_shutdown_state.getShutdownTimerMessage());

@@ -89,6 +89,7 @@ public:
 	void addSpeed(v3f);
 	std::atomic_uint m_ms_from_last_respawn {10000}; //more than ignore move time (1)
 	v3f m_last_stat_position {};
+	double last_time_online = 0;
 
 
 	void addedToEnvironment(u32 dtime_s) override;

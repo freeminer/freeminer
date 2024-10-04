@@ -3451,6 +3451,12 @@ void Server::DeleteClient(session_t peer_id, ClientDeletionReason reason)
 			m_script->on_leaveplayer(playersao, reason == CDR_TIMEOUT);
 
 			playersao->disconnected();
+			{
+				// TODO also make periodic (on save player)
+				const auto online = m_uptime_counter->get() - playersao->last_time_online;
+				stat.add("online", player_name, online);
+				playersao->last_time_online = m_uptime_counter->get();
+			}
 		}
 
 		/*
