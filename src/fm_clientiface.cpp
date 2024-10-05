@@ -559,31 +559,29 @@ queue_full_break:
 
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
-		for (const auto &[bp, step] : far_blocks_requested) {
-			if (step >= FARMESH_STEP_MAX - 1) {
-				// DUMP("too step requested", step);
-				continue;
+		for (auto &far_blocks : far_blocks_requested) {
+			for (auto &[bpos, step_sent] : far_blocks) {
+				auto &[step, sent] = step_sent;
+				if (sent) {
+					continue;
+				}
+				if (step >= FARMESH_STEP_MAX - 1) {
+					continue;
+				}
+				const auto dbase = m_env->m_server->GetFarDatabase(step);
+				if (!dbase) {
+					continue;
+				}
+				const auto block = m_env->m_server->loadBlockNoStore(dbase, bpos);
+				if (!block) {
+					continue;
+				}
+				block->far_step = step;
+				step_sent.second = true;
+				m_env->m_server->SendBlockFm(
+						peer_id, block, serialization_version, net_proto_version);
 			}
-			if (far_blocks_sent[step].contains(bp)) {
-				// DUMP("already sent", step, bp);
-				continue;
-			}
-			const auto dbase = m_env->m_server->GetFarDatabase(step);
-			if (!dbase) {
-				// DUMP("no far dbase", step);
-				continue;
-			}
-			const auto block = m_env->m_server->loadBlockNoStore(dbase, bp);
-			if (!block) {
-				// if (step <= 3) DUMP("no far block", bp, step);
-				continue;
-			}
-			block->far_step = step;
-			m_env->m_server->SendBlockFm(
-					peer_id, block, serialization_version, net_proto_version);
-			far_blocks_sent[step].emplace(bp);
 		}
-		far_blocks_requested.clear();
 	}
 
 	return num_blocks_selected - num_blocks_sending;

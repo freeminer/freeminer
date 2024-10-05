@@ -4235,6 +4235,10 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 void Game::handlePointingAtObject(const PointedThing &pointed,
 		const ItemStack &tool_item, const v3f &player_position, bool show_debug)
 {
+	if (!runData.selected_object) {
+		return;
+	}
+
 	std::wstring infotext = unescape_translate(
 		utf8_to_wide(runData.selected_object->infoText()));
 
@@ -4661,7 +4665,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	const auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize)
-		if ((client->m_new_meshes &&
+		if ((client->m_new_meshes ||
 					runData.update_draw_list_timer >= update_draw_list_delta) ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||

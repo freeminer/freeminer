@@ -296,11 +296,13 @@ public:
 			v3posEqual>
 			m_far_blocks_type;
 	m_far_blocks_type m_far_blocks;
+	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
 	bool m_far_blocks_currrent = false;
 	using far_blocks_list_type = concurrent_shared_unordered_map<v3bpos_t, uint8_t>;
 	far_blocks_list_type m_far_blocks_1, m_far_blocks_2;
 	far_blocks_list_type *m_far_blocks_use = &m_far_blocks_1,
 						 *m_far_blocks_fill = &m_far_blocks_1;
+    std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX> far_blocks_storage;
 	//double m_far_blocks_created = 0;
 	//double m_far_blocks_sent = 0; 
 	float far_blocks_sent_timer = 1;

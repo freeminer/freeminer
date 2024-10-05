@@ -37,17 +37,8 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	}
 
 	const auto &v = m_mg->visible_content(pos);
-	if (v.getContent())
+	if (v.getContent()) {
 		return v;
+	}
 	return m_mg->visible_transparent;
-};
-
-MapNode FarContainer::getNodeNoExNoEmerge(const v3pos_t &p)
-{
-	return getNodeRefUnsafe(p);
-};
-
-MapNode FarContainer::getNodeNoEx(const v3pos_t &p)
-{
-	return getNodeRefUnsafe(p);
 };

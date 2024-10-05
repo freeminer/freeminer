@@ -144,6 +144,8 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_console", "KEY_F10");
 #endif
 
+	if (debug)
+		settings->setDefault("keymap_toggle_block_bounds", "KEY_F9");
 
 	// Fonts
 	settings->setDefault("freetype", "true"); // "false"
@@ -191,7 +193,8 @@ void fm_set_default_settings(Settings *settings) {
 		settings->setDefault("shadow_map_color", "true");
 		settings->setDefault("enable_bloom", "true");
 	}
-	settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
+	//settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
+	settings->setDefault("client_mesh_chunk","1");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");

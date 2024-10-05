@@ -140,11 +140,12 @@ public:
 	unsigned int overload = 0;
 
 	void handleCommand_FreeminerInit(NetworkPacket *pkt);
-    void handleCommand_BlockDatas(NetworkPacket *pkt);
+	void handleCommand_BlockDatas(NetworkPacket *pkt);
 	void sendInitFm();
 	void sendDrawControl();
 	void sendGetBlocks();
 	void updateMeshTimestampWithEdge(const v3bpos_t &blockpos);
+	void createFarMesh(MapBlockP &block);
 
 	std::unique_ptr<Server> m_localserver;
 	std::string m_world_path;
@@ -154,10 +155,11 @@ public:
 	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
 	f32 fog_range = 0;
 	size_t m_new_meshes = 0;
+	size_t m_new_farmeshes = 0;
 	ChatBackend *chat_backend = nullptr;
 	FarContainer far_container;
 
-// ==
+	// ==
 
 public:
 	/*

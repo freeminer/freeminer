@@ -799,7 +799,7 @@ const MapBlock::mesh_type empty_mesh;
 
 	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step, uint32_t time)
 	{
-		if (const auto mesh = std::move(m_far_mesh[step])) {
+		if (auto mesh = std::move(m_far_mesh[step])) {
 			delete_mesh = std::move(mesh);
 		}
 		m_far_mesh[step] = rmesh;

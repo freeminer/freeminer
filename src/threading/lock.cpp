@@ -74,12 +74,12 @@ locker<mutex, unique_lock, shared_lock>::locker() {
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<unique_lock> locker<mutex, unique_lock, shared_lock>::lock_unique() {
+std::unique_ptr<unique_lock> locker<mutex, unique_lock, shared_lock>::lock_unique() const {
 	return std::make_unique<unique_lock>(mtx);
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<unique_lock> locker<mutex, unique_lock, shared_lock>::try_lock_unique() {
+std::unique_ptr<unique_lock> locker<mutex, unique_lock, shared_lock>::try_lock_unique() const {
 	SCOPE_PROFILE("locker::try_lock_unique");
 	return std::make_unique<unique_lock>(mtx, std::try_to_lock);
 }
@@ -91,7 +91,7 @@ std::unique_ptr<shared_lock> locker<mutex, unique_lock, shared_lock>::lock_share
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<shared_lock> locker<mutex, unique_lock, shared_lock>::try_lock_shared() {
+std::unique_ptr<shared_lock> locker<mutex, unique_lock, shared_lock>::try_lock_shared() const {
 	SCOPE_PROFILE("locker::try_lock_shared");
 	return std::make_unique<shared_lock>(mtx, std::try_to_lock);
 }
@@ -103,7 +103,7 @@ std::unique_ptr<recursive_lock<unique_lock, mutex>> locker<mutex, unique_lock, s
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<recursive_lock<unique_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_unique_rec() {
+std::unique_ptr<recursive_lock<unique_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_unique_rec() const {
 	SCOPE_PROFILE("locker::try_lock_unique_rec");
 	return std::make_unique<lock_rec_unique>(mtx, thread_id, true);
 }
@@ -115,7 +115,7 @@ std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, s
 }
 
 template<class mutex, class unique_lock, class shared_lock>
-std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_shared_rec() {
+std::unique_ptr<recursive_lock<shared_lock, mutex>> locker<mutex, unique_lock, shared_lock>::try_lock_shared_rec() const {
 	SCOPE_PROFILE("locker::try_lock_shared_rec");
 	return std::make_unique<lock_rec_shared>(mtx, thread_id, true);
 }

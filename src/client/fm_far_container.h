@@ -18,6 +18,4 @@ public:
 
 	FarContainer(Client *client);
 	const MapNode &getNodeRefUnsafe(const v3pos_t &p) override;
-	MapNode getNodeNoExNoEmerge(const v3pos_t &p) override;
-	MapNode getNodeNoEx(const v3pos_t &p) override;
 };

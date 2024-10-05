@@ -546,6 +546,7 @@ public:
 #endif
 
 	block_step_t far_step = 0;
+	std::atomic_bool creating_far_mesh {0};
 	std::atomic_short heat {0};
 	std::atomic_short humidity {0};
 	std::atomic_short heat_add {0};

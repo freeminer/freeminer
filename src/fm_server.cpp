@@ -509,7 +509,13 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 		std::unordered_map<v3bpos_t, MapBlock::block_step_t> blocks;
 		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(blocks);
 		for (const auto &[bpos, step] : blocks) {
-			client->far_blocks_requested.insert_or_assign(bpos, step);
+			if (step >= FARMESH_STEP_MAX - 1) {
+				continue;
+			}
+			if (client->far_blocks_requested.size() < step) {
+				client->far_blocks_requested.resize(step);
+			}
+			client->far_blocks_requested[step][bpos].first = step;
 		}
 	}
 }

@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "emerge.h"
 #include "irr_v3d.h"
+#include "mapblock.h"
 #include "mapnode.h"
 #include "profiler.h"
 #include "server.h"
@@ -39,11 +40,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 const v3opos_t g_6dirso[6] = {
 		// +right, +top, +back
 		v3opos_t(0, 0, 1),	// back
-		v3opos_t(0, 1, 0),	// top
 		v3opos_t(1, 0, 0),	// right
 		v3opos_t(0, 0, -1), // front
-		v3opos_t(0, -1, 0), // bottom
 		v3opos_t(-1, 0, 0), // left
+		v3opos_t(0, -1, 0), // bottom
+		v3opos_t(0, 1, 0),	// top
 };
 
 void FarMesh::makeFarBlock(
@@ -91,10 +92,18 @@ void FarMesh::makeFarBlock(
 	}
 }
 
-void FarMesh::makeFarBlock7(const v3bpos_t &blockpos, MapBlock::block_step_t step)
+void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t step)
 {
 	const auto step_width = pow(2, step);
-	for (const auto &dir : g_7dirs) {
+	for (const auto &dir : {
+				 v3pos_t(0, 0, 0),	// self
+				 v3pos_t(0, 0, 1),	// back
+				 v3pos_t(1, 0, 0),	// right
+				 v3pos_t(0, 0, -1), // front
+				 v3pos_t(-1, 0, 0), // left
+				 v3pos_t(0, 1, 0),	// top
+				 v3pos_t(0, -1, 0), // bottom
+		 }) {
 		makeFarBlock(blockpos + dir * step_width, step);
 	}
 }
@@ -207,10 +216,10 @@ int FarMesh::go_direction(const size_t dir_n)
 
 	int processed = 0;
 	for (uint16_t i = 0; i < grid_size_xy; ++i) {
-
 		auto &ray_cache = cache[i];
-		if (ray_cache.finished > last_distance_max)
+		if (ray_cache.finished > last_distance_max) {
 			continue;
+		}
 		//uint16_t y = uint16_t(process_order[i] / grid_size_x);
 		//uint16_t x = process_order[i] % grid_size_x;
 		uint16_t y = uint16_t(i / grid_size_x);
@@ -241,7 +250,10 @@ int FarMesh::go_direction(const size_t dir_n)
 							floatToInt(pos_last, BS) / MAP_BLOCKSIZE);
 			if (!block_step) {
 				// TODO: FIXME, should be not zero
-				break;
+				if (ray_cache.finished > 1000) {
+					//DUMP("fixme wrong step", ray_cache.finished, m_camera_pos_aligned, pos_last);
+					break;
+				}
 			}
 			const auto block_step_pow = pow(2, block_step - block_step_reduce);
 			const auto step_width = MAP_BLOCKSIZE * block_step_pow;
@@ -284,7 +296,7 @@ int FarMesh::go_direction(const size_t dir_n)
 					(pos_int_raw.Y / step_aligned) * step_aligned,
 					(pos_int_raw.Z / step_aligned) * step_aligned);
 
-			auto &visible = ray_cache.visible;
+			content_t visible = 0;
 
 			{
 				if (const auto &it = mg_cache.find(pos_int); it != mg_cache.end()) {
@@ -294,8 +306,15 @@ int FarMesh::go_direction(const size_t dir_n)
 					mg_cache[pos_int] = visible;
 				}
 			}
+
+			if (depth > MAP_BLOCKSIZE * 8) {
+				ray_cache.visible = visible;
+			}
+
 			if (visible) {
-				ray_cache.finished = -1;
+				if (depth > MAP_BLOCKSIZE * 8) {
+					ray_cache.finished = -1;
+				}
 				const auto blockpos = getNodeBlockPos(pos_int);
 				TimeTaker timer_step("makeFarBlock");
 
@@ -342,12 +361,15 @@ int FarMesh::go_direction(const size_t dir_n)
 					makeFarBlock(blockpos, block_step);
 #else
 					// less holes, more unused meshes:
-					makeFarBlock7(blockpos, block_step);
+					makeFarBlocks(blockpos, block_step);
 #endif
 				}
-				break;
+				if (ray_cache.finished == -1) {
+					break;
+				}
 			}
-			if (depth >= last_distance_max) {
+
+			if (radius_box(pos_int, m_camera_pos_aligned) > last_distance_max) {
 				break;
 			}
 		}
@@ -420,6 +442,10 @@ void FarMesh::update(v3opos_t camera_pos,
 	} else if (last_distance_max < distance_max) {
 		plane_processed.fill({});
 		last_distance_max = distance_max; // * 1.1;
+	}
+	if (m_client->m_new_farmeshes) {
+		m_client->m_new_farmeshes = 0;
+		plane_processed.fill({});
 	}
 
 	/*

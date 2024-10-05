@@ -37,7 +37,6 @@ const auto try_to_lock = std::try_to_lock;
 
 typedef std::mutex use_mutex;
 
-
 #if USE_BOOST // not finished
 
 //#include <ctime>
@@ -62,13 +61,12 @@ const auto try_to_lock = std::try_to_lock;
 #else
 
 using try_shared_mutex = use_mutex;
-using maybe_shared_lock = std::unique_lock<try_shared_mutex> ;
-using unique_lock = std::unique_lock<try_shared_mutex> ;
+using maybe_shared_lock = std::unique_lock<try_shared_mutex>;
+using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
 #endif
 
 #endif
-
 
 // http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads
 /* uncomment when need
@@ -96,19 +94,23 @@ public:
 };
 */
 
-template<class GUARD, class MUTEX = use_mutex>
-class recursive_lock {
+template <class GUARD, class MUTEX = use_mutex>
+class recursive_lock
+{
 public:
-	GUARD * lock;
-	std::atomic<std::size_t> & thread_id;
-	recursive_lock(MUTEX & mtx, std::atomic<std::size_t> & thread_id_, bool try_lock = false);
+	GUARD *lock;
+	std::atomic<std::size_t> &thread_id;
+	recursive_lock(
+			MUTEX &mtx, std::atomic<std::size_t> &thread_id_, bool try_lock = false);
 	~recursive_lock();
 	bool owns_lock();
 	void unlock();
 };
 
-template<class mutex = use_mutex, class unique_lock = std::unique_lock<mutex> , class shared_lock = std::unique_lock<mutex> >
-class locker {
+template <class mutex = use_mutex, class unique_lock = std::unique_lock<mutex>,
+		class shared_lock = std::unique_lock<mutex>>
+class locker
+{
 public:
 	using lock_rec_shared = recursive_lock<shared_lock, mutex>;
 	using lock_rec_unique = recursive_lock<unique_lock, mutex>;
@@ -117,28 +119,30 @@ public:
 	mutable std::atomic<std::size_t> thread_id;
 
 	locker();
-	std::unique_ptr<unique_lock> lock_unique();
-	std::unique_ptr<unique_lock> try_lock_unique();
+	std::unique_ptr<unique_lock> lock_unique() const;
+	std::unique_ptr<unique_lock> try_lock_unique() const;
 	std::unique_ptr<shared_lock> lock_shared() const;
-	std::unique_ptr<shared_lock> try_lock_shared();
+	std::unique_ptr<shared_lock> try_lock_shared() const;
 	std::unique_ptr<lock_rec_unique> lock_unique_rec() const;
-	std::unique_ptr<lock_rec_unique> try_lock_unique_rec();
+	std::unique_ptr<lock_rec_unique> try_lock_unique_rec() const;
 	std::unique_ptr<lock_rec_shared> lock_shared_rec() const;
-	std::unique_ptr<lock_rec_shared> try_lock_shared_rec();
+	std::unique_ptr<lock_rec_shared> try_lock_shared_rec() const;
 };
 
 using shared_locker = locker<try_shared_mutex, unique_lock, maybe_shared_lock>;
 
-class dummy_lock {
+class dummy_lock
+{
 public:
-	~dummy_lock() {}; //no unused variable warning
-	bool owns_lock() {return true;}
-	bool operator!() {return true;}
-	dummy_lock * operator->() {return this; }
+	~dummy_lock(){}; //no unused variable warning
+	bool owns_lock() { return true; }
+	bool operator!() { return true; }
+	dummy_lock *operator->() { return this; }
 	void unlock() {};
 };
 
-class dummy_locker {
+class dummy_locker
+{
 public:
 	dummy_lock lock_unique() { return {}; };
 	dummy_lock try_lock_unique() { return {}; };
@@ -149,7 +153,6 @@ public:
 	dummy_lock lock_shared_rec() { return {}; };
 	dummy_lock try_lock_shared_rec() { return {}; };
 };
-
 
 #if ENABLE_THREADS
 
@@ -163,18 +166,24 @@ using maybe_shared_locker = dummy_locker;
 
 #endif
 
-#define LOCK_PROXY(CLASS, METHOD, LOCK) \
-	template <typename... Args> \
-	decltype(auto) METHOD(Args &&...args) \
-	{ \
-		const auto lock = LOCK(); \
-		return CLASS::METHOD(std::forward<Args>(args)...); \
-	} \
+#define LOCK_PROXY(CLASS, METHOD, LOCK)                                                  \
+	template <typename... Args>                                                          \
+	decltype(auto) METHOD(Args &&...args)                                                \
+	{                                                                                    \
+		const auto lock = LOCK();                                                        \
+		return CLASS::METHOD(std::forward<Args>(args)...);                               \
+	}
 
-#define LOCK_UNIQUE_PROXY(CLASS, METHOD) LOCK_PROXY(CLASS, METHOD, LOCKER::lock_unique_rec)
-#define LOCK_SHARED_PROXY(CLASS, METHOD) LOCK_PROXY(CLASS, METHOD, LOCKER::lock_shared_rec)
+#define LOCK_UNIQUE_PROXY(CLASS, METHOD)                                                 \
+	LOCK_PROXY(CLASS, METHOD, LOCKER::lock_unique_rec)
+#define LOCK_SHARED_PROXY(CLASS, METHOD)                                                 \
+	LOCK_PROXY(CLASS, METHOD, LOCKER::lock_shared_rec)
 
 #define WITH_UNIQUE_LOCK(LOCK) if (const auto lock___ = std::unique_lock(LOCK); true)
 #define WITH_SHARED_LOCK(LOCK) if (const auto lock___ = std::shared_lock(LOCK); true)
-#define TRY_UNIQUE_LOCK(LOCK) if (const auto lock___ = std::unique_lock(LOCK, std::try_to_lock); lock___.owns_lock())
-#define TRY_SHARED_LOCK(LOCK) if (const auto lock___ = std::shared_lock(LOCK, std::try_to_lock); lock___.owns_lock())
+#define TRY_UNIQUE_LOCK(LOCK)                                                            \
+	if (const auto lock___ = std::unique_lock(LOCK, std::try_to_lock);                   \
+			lock___.owns_lock())
+#define TRY_SHARED_LOCK(LOCK)                                                            \
+	if (const auto lock___ = std::shared_lock(LOCK, std::try_to_lock);                   \
+			lock___.owns_lock())

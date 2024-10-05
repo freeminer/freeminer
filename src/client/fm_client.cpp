@@ -1,5 +1,6 @@
 #include <exception>
 #include "client.h"
+#include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"
 #include "irr_v3d.h"
@@ -12,7 +13,6 @@
 #include "network/networkpacket.h"
 #include "threading/lock.h"
 #include "util/directiontables.h"
-#include "util/hex.h"
 
 void Client::updateMeshTimestampWithEdge(const v3bpos_t &blockpos)
 {
@@ -61,7 +61,7 @@ void Client::sendGetBlocks()
 	MSGPACK_PACKET_INIT((int)TOSERVER_GET_BLOCKS, 1);
 
 	// DUMP("ask far blocks", far_blocks.size());
-	
+
 	PACK(TOSERVER_GET_BLOCKS_BLOCKS,
 			static_cast<std::remove_reference_t<decltype(far_blocks)>::full_type>(
 					far_blocks));
@@ -145,6 +145,21 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
 }
 
+void Client::createFarMesh(MapBlockP &block)
+{
+	if (bool cmp = false; block->creating_far_mesh.compare_exchange_weak(cmp, true)) {
+		const auto &m_client = this;
+		const auto &blockpos_actual = block->getPos();
+		const auto &m_camera_offset = m_camera->getOffset();
+		const auto step = block->far_step;
+		MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
+		mdat.m_blockpos = blockpos_actual;
+		auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
+		block->setFarMesh(mbmsh, step, m_client->m_uptime);
+		block->creating_far_mesh = false;
+	}
+}
+
 void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 {
 	const auto str = std::string{pkt->getString(0), pkt->getSize()};
@@ -221,6 +236,7 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 			if (far_blocks.contains(bpos)) {
 				const auto &block = far_blocks.at(bpos);
 				block->farmesh_need_remake = m_uptime;
+				//block->setTimestampNoChangedFlag(-2);
 			}
 		}
 	}

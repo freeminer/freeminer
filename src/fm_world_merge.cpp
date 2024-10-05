@@ -258,6 +258,9 @@ void *WorldMergeThread::run()
 												// main node priority TODO: tune 2
 												top_c[c] += 4;
 											}
+
+											// TODO: find average or max light of 7 neibhours
+
 											nodes[c] = n;
 										}
 

@@ -249,29 +249,29 @@ public:
 	//
 	std::atomic_ushort net_proto_version = 0;
 
-	//fm:
+	// fm:
 	u16 net_proto_version_fm = 0;
 	//std::atomic_int m_nearest_unsent_reset {0};
-	std::atomic_uint wanted_range {10 };
-	std::atomic_int range_all {0};
+	std::atomic_uint wanted_range{10};
+	std::atomic_int range_all{0};
 	std::atomic_int farmesh = {0};
 	float fov = 72;
 	//bool block_overflow;
 	ServerEnvironment *m_env = nullptr;
 	u32 getSendingCount() const { return 0; }
-    std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
-	v3f   m_last_direction;
+	std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
+	v3f m_last_direction;
 	float m_nearest_unsent_reset_timer;
 	std::unordered_map<v3bpos_t, uint8_t> blocks;
 	void SetBlocksNotSent();
 	void SetBlockDeleted(v3bpos_t p);
-    std::unordered_map<v3bpos_t, uint8_t> far_blocks_requested;
+	std::vector<std::unordered_map<v3bpos_t, std::pair<uint8_t, bool>>>
+			far_blocks_requested{FARMESH_STEP_MAX};
 	std::mutex far_blocks_requested_mutex;
-	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> far_blocks_sent;
-	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager* emerge,
-			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
+	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
+			std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
 
-// ==
+	// ==
 
 	/* Authentication information */
 	std::string enc_pwd = "";

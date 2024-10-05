@@ -53,7 +53,7 @@ public:
 			int render_range, float speed);
 	void makeFarBlock(
 			const v3bpos_t &blockpos, MapBlock::block_step_t step, bool near = false);
-	void makeFarBlock7(const v3bpos_t &blockpos, MapBlock::block_step_t step);
+	void makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
 private:
@@ -67,7 +67,7 @@ private:
 	f32 m_camera_yaw;*/
 	Client *m_client;
 	MapDrawControl *m_control;
-	static constexpr pos_t distance_min = 8 * MAP_BLOCKSIZE;
+	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	v3pos_t m_camera_offset;
 	float m_speed;
 
@@ -88,8 +88,7 @@ private:
 
 	struct ray_cache
 	{
-		unsigned int finished =
-				distance_min - MAP_BLOCKSIZE; /// last depth, -1 if visible
+		unsigned int finished = 0; // last depth, -1 if visible
 		content_t visible = {};
 		size_t step_num = {};
 	};

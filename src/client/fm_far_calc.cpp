@@ -109,8 +109,8 @@ auto align(auto pos, const auto amount)
 v3bpos_t playerBlockAlign(
 		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos)
 {
-	const auto step_pow2 = draw_control.cell_size_pow + draw_control.farmesh_quality;
-	return align(playerblockpos, step_pow2) + (draw_control.cell_size >> 1);
+	const auto step_pow2 = draw_control.cell_size_pow + draw_control.farmesh_quality_pow;
+	return align(playerblockpos, step_pow2) + (step_pow2 >> 1);
 }
 
 #if 1
@@ -243,7 +243,7 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 	return getFarStepCellSize(draw_control, ppos, blockpos, draw_control.cell_size_pow);
 }
 
-v3bpos_t getFarActual(const v3bpos_t& blockpos, const v3bpos_t &ppos, int step,
+v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, int step,
 		const MapDrawControl &draw_control)
 {
 	const auto cell_size_pow = int(log(draw_control.cell_size) / log(2));
