@@ -4555,11 +4555,14 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 								   camera_pos = camera->getPosition(),
 								   camera_offset = camera->getOffset(),
 								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera_pos,
+			const auto processed = farmesh->update(camera_pos,
 					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
 					camera_offset,
 					//sky->getBrightness(),
 					farmesh_range, speed);
+			if (!processed) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(300));
+			}
 		});
 	}
 

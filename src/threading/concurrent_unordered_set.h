@@ -33,6 +33,8 @@ class concurrent_unordered_set_ : public std::unordered_set<Value, Hash, Pred, A
 public:
 	using full_type = std::unordered_set<Value, Hash, Pred, Alloc>;
 
+	~concurrent_unordered_set_() { clear(); }
+
 	template <typename... Args>
 	Value &at_or(Args &&...args, const Value &nothing = {})
 	{

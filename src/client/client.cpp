@@ -177,7 +177,7 @@ Client::Client(
 	control.cell_size = m_mesh_grid.cell_size;
 	control.cell_size_pow =	log(control.cell_size) / log(2);
 	control.farmesh_quality = g_settings->getU16("farmesh_quality");
-	control.farmesh_quality_pow =   log(control.farmesh_quality) / log(2);
+	control.farmesh_quality_pow = log(control.farmesh_quality) / log(2);
 	control.farmesh_stable = g_settings->getU16("farmesh_stable");
 }
 

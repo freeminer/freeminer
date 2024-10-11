@@ -31,6 +31,8 @@ int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos, uint8_t cell_size_pow);
 int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
+int getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+		const v3bpos_t &block_pos);
 bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,
 		const MapDrawControl &draw_control);
 v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,

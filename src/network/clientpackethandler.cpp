@@ -342,6 +342,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 			return;
 		};
 		block->deSerializeNetworkSpecific(istr);
+		++m_new_meshes;
 	}
 
 	if (m_localdb) {

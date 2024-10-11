@@ -24,16 +24,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <unistd.h>
 #include <unordered_map>
+#include <utility>
 #include "database/database.h"
 #include "debug/iostream_debug_helpers.h"
 #include "emerge.h"
 #include "filesys.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "log.h"
 #include "mapblock.h"
 #include "mapnode.h"
@@ -41,8 +40,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"
-#include "util/directiontables.h"
-#include "util/hex.h"
 #include "util/timetaker.h"
 
 ServerThread::ServerThread(Server *server) : thread_vector("Server", 40), m_server(server)
@@ -506,9 +503,10 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	auto &packet = *(pkt->packet);
 	WITH_UNIQUE_LOCK(client->far_blocks_requested_mutex)
 	{
-		std::unordered_map<v3bpos_t, MapBlock::block_step_t> blocks;
+		ServerMap::far_blocks_req_t blocks;
 		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(blocks);
-		for (const auto &[bpos, step] : blocks) {
+		for (const auto &[bpos, step_ts] : blocks) {
+			const auto &[step, ts] = step_ts;
 			if (step >= FARMESH_STEP_MAX - 1) {
 				continue;
 			}
@@ -516,6 +514,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 				client->far_blocks_requested.resize(step);
 			}
 			client->far_blocks_requested[step][bpos].first = step;
+			client->far_blocks_requested[step][bpos].second = ts;
 		}
 	}
 }

@@ -1,5 +1,7 @@
 #include <exception>
+#include <future>
 #include "client.h"
+#include "client/fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"
@@ -51,7 +53,7 @@ void Client::sendGetBlocks()
 	if (!farmesh_server)
 		return;
 
-	auto &far_blocks = *m_env.getClientMap().m_far_blocks_use;
+	auto &far_blocks = m_env.getClientMap().m_far_blocks_ask;
 	const auto lock = far_blocks.lock_unique_rec();
 
 	if (far_blocks.empty()) {
@@ -151,7 +153,7 @@ void Client::createFarMesh(MapBlockP &block)
 		const auto &m_client = this;
 		const auto &blockpos_actual = block->getPos();
 		const auto &m_camera_offset = m_camera->getOffset();
-		const auto step = block->far_step;
+		const auto &step = block->far_step;
 		MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
 		auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
@@ -216,7 +218,6 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 	block->humidity = h;
 
 	if (!step) {
-
 		if (m_localdb) {
 			ServerMap::saveBlock(block.get(), m_localdb);
 		}
@@ -230,14 +231,40 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 	} else {
 		static thread_local const auto farmesh_server =
 				g_settings->getU16("farmesh_server");
-		if (farmesh_server) {
-			far_container.far_blocks[step].insert_or_assign(bpos, block);
-			auto &far_blocks = getEnv().getClientMap().m_far_blocks;
-			if (far_blocks.contains(bpos)) {
-				const auto &block = far_blocks.at(bpos);
-				block->farmesh_need_remake = m_uptime;
-				//block->setTimestampNoChangedFlag(-2);
+		if (!farmesh_server)
+			return;
+
+		auto &far_blocks_storage = getEnv().getClientMap().far_blocks_storage[step];
+		{
+			const auto lock = far_blocks_storage.lock_unique_rec();
+			if (far_blocks_storage.find(bpos) != far_blocks_storage.end()) {
+				return;
 			}
 		}
+		far_blocks_storage.insert_or_assign(block->getPos(), block);
+		++m_new_farmeshes;
+
+		//todo: step ordered thread pool
+		std::async(std::launch::async, [this, block]() mutable {
+			createFarMesh(block);
+			auto &client_map = getEnv().getClientMap();
+			const auto &control = client_map.getControl();
+			const auto bpos = block->getPos();
+			int fmesh_step_ = getFarStep(control,
+					getNodeBlockPos(client_map.m_far_blocks_last_cam_pos),
+					block->getPos());
+			if (!inFarGrid(block->getPos(),
+						getNodeBlockPos(client_map.m_far_blocks_last_cam_pos),
+						fmesh_step_, control)) {
+				return;
+			}
+			auto &far_blocks = client_map.m_far_blocks;
+			if (const auto &it = far_blocks.find(bpos); it != far_blocks.end()) {
+				if (it->second->far_step != block->far_step) {
+					return;
+				}
+				far_blocks.at(bpos) = block;
+			}
+		});
 	}
 }

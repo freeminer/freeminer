@@ -1,6 +1,11 @@
+#include <cstdint>
+#include <ranges>
 #include "clientiface.h"
+#include "constants.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "map.h"
+#include "mapblock.h"
 #include "profiler.h"
 #include "remoteplayer.h"
 #include "server/player_sao.h"
@@ -559,10 +564,11 @@ queue_full_break:
 
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
+		std::multimap<int32_t, MapBlockP> ordered;
 		for (auto &far_blocks : far_blocks_requested) {
 			for (auto &[bpos, step_sent] : far_blocks) {
-				auto &[step, sent] = step_sent;
-				if (sent) {
+				auto &[step, sent_ts] = step_sent;
+				if (!sent_ts) {
 					continue;
 				}
 				if (step >= FARMESH_STEP_MAX - 1) {
@@ -577,10 +583,13 @@ queue_full_break:
 					continue;
 				}
 				block->far_step = step;
-				step_sent.second = true;
-				m_env->m_server->SendBlockFm(
-						peer_id, block, serialization_version, net_proto_version);
+				step_sent.second = 0;
+				ordered.emplace(sent_ts - step, block);
 			}
+		}
+		for (const auto &[key, block] : std::views::reverse(ordered)) {
+			m_env->m_server->SendBlockFm(
+					peer_id, block, serialization_version, net_proto_version);
 		}
 	}
 

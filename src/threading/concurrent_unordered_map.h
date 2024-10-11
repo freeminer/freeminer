@@ -49,6 +49,8 @@ public:
 	typedef typename full_type::const_iterator const_iterator;
 	typedef typename full_type::iterator iterator;
 
+	~concurrent_unordered_map_() { clear(); }
+
 	template <typename... Args>
 	decltype(auto) operator=(Args &&...args)
 	{

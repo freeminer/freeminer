@@ -13,9 +13,6 @@ class FarContainer : public NodeContainer
 public:
 	Mapgen *m_mg{};
 
-	std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX>
-			far_blocks;
-
 	FarContainer(Client *client);
 	const MapNode &getNodeRefUnsafe(const v3pos_t &p) override;
 };

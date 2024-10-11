@@ -840,7 +840,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         sub { $config->{cmake_opt}{CMAKE_INSTALL_PREFIX} = $config->{logdir} . '/install'; 0 }, 'build',
         sub { sy qq{nice cmake --install .}; },
     ],
-    test => ['build', {'---show_profiler_graph' => 0, -show_profiler_graph => 0}, 'run_test'],
+    test => ['build_client', {'---show_profiler_graph' => 0, -show_profiler_graph => 0}, 'run_test'],
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }
@@ -892,7 +892,7 @@ sub sig(;$$) {
 sub sy (@) {
     say 'running ', join ' ', @_;
     file_append("$config->{logdir}/run.sh", join(' ', @_), "\n");
-    return sig(system @_);
+    return sig system 'bash', '-c', join ' ', @_;
 }
 
 sub sytee (@) {

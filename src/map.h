@@ -289,25 +289,21 @@ public:
 	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
-			m_blocks_type;
+	using m_blocks_type = concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
 	m_blocks_type m_blocks;
-	typedef concurrent_shared_unordered_map<v3bpos_t, std::shared_ptr<MapBlock>, v3posHash,
-			v3posEqual>
-			m_far_blocks_type;
+	using m_far_blocks_type = concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash,v3posEqual>;
 	m_far_blocks_type m_far_blocks;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
 	bool m_far_blocks_currrent = false;
-	using far_blocks_list_type = concurrent_shared_unordered_map<v3bpos_t, uint8_t>;
-	far_blocks_list_type m_far_blocks_1, m_far_blocks_2;
-	far_blocks_list_type *m_far_blocks_use = &m_far_blocks_1,
-						 *m_far_blocks_fill = &m_far_blocks_1;
+    using far_blocks_req_t =              std::unordered_map<v3bpos_t, std::pair<MapBlock::block_step_t, uint32_t>>; // server
+	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t, std::pair<MapBlock::block_step_t, uint32_t>>; // client
+	far_blocks_ask_t m_far_blocks_ask;
     std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX> far_blocks_storage;
 	//double m_far_blocks_created = 0;
 	//double m_far_blocks_sent = 0; 
 	float far_blocks_sent_timer = 1;
 	v3pos_t m_far_blocks_last_cam_pos;
-	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
+	std::vector<MapBlockP> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current = false;
 
 	//static constexpr bool m_far_fast =			true; // show generated far farmesh stable(0) or instant(1)

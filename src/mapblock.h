@@ -534,8 +534,6 @@ public:
 	std::mutex far_mutex;
 	u32 mesh_requested_timestamp = 0;
 	uint8_t mesh_requested_step = 0;
-	uint32_t farmesh_need_remake {};
-	uint32_t farmesh_created {};
 
 private:
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;

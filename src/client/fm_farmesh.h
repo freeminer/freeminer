@@ -39,6 +39,10 @@ class Server;
 #define FARMESH_FAST 1
 #endif
 
+// #define FARMESH_FAST 1
+// #define FARMESH_DEBUG 1 // One dirction, one thread, no neighborhoods
+
+
 class FarMesh
 {
 public:
@@ -46,7 +50,7 @@ public:
 
 	~FarMesh();
 
-	void update(v3opos_t camera_pos,
+	uint8_t update(v3opos_t camera_pos,
 			//v3f camera_dir, f32 camera_fov, CameraMode camera_mode, f32 camera_pitch, f32 camera_yaw,
 			v3pos_t m_camera_offset,
 			//float brightness,
@@ -68,29 +72,29 @@ private:
 	Client *m_client;
 	MapDrawControl *m_control;
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
-	v3pos_t m_camera_offset;
+	//v3pos_t m_camera_offset;
 	float m_speed;
 
 #if FARMESH_FAST
-	constexpr static uint16_t grid_size_max_y = 32;
+	constexpr static uint16_t grid_size_max_y{32};
 #else
-	constexpr static uint16_t grid_size_max_y = 64;
+	constexpr static uint16_t grid_size_max_y{64};
 #endif
 
 	//constexpr static uint16_t grid_size_max_y = 48;
 	//constexpr static uint16_t grid_size_max_y = 128;
 	//constexpr static uint16_t grid_size_max_y = 256;
-	constexpr static uint16_t grid_size_max_x = grid_size_max_y;
-	static constexpr uint16_t grid_size_x = grid_size_max_x;
-	static constexpr uint16_t grid_size_y = grid_size_max_y;
-	static constexpr uint16_t grid_size_xy = grid_size_x * grid_size_y;
-	Mapgen *mg = nullptr;
+	constexpr static uint16_t grid_size_max_x{grid_size_max_y};
+	static constexpr uint16_t grid_size_x{grid_size_max_x};
+	static constexpr uint16_t grid_size_y{grid_size_max_y};
+	static constexpr uint16_t grid_size_xy{grid_size_x * grid_size_y};
+	Mapgen *mg{};
 
 	struct ray_cache
 	{
-		unsigned int finished = 0; // last depth, -1 if visible
-		content_t visible = {};
-		size_t step_num = {};
+		unsigned int finished{MAP_BLOCKSIZE * 2}; // last depth, -1 if visible
+		content_t visible{};
+		size_t step_num{};
 	};
 	using direction_cache = std::array<ray_cache, grid_size_xy>;
 	std::array<direction_cache, 6> direction_caches;
@@ -98,15 +102,14 @@ private:
 	std::array<unordered_map_v3pos<bool>, 6> mg_caches;
 	struct plane_cache
 	{
-		int processed = -1;
+		int processed{-1};
 	};
 	std::array<plane_cache, 6> plane_processed;
-	std::atomic_uint last_distance_max = 0;
+	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
-	int timestamp_complete = 0;
-	//int timestamp_clean = 0;
+	uint32_t timestamp_complete{};
 	bool complete_set = false;
-	int planes_processed_last = 0;
+	uint8_t planes_processed_last{};
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;
 	std::array<async_step_runner, 6> async;

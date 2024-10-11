@@ -22,8 +22,9 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift,
 			(bpos.Z >> shift) << shift);
 
-	if (const auto &it = far_blocks[fmesh_step].find(bpos_aligned);
-			it != far_blocks[fmesh_step].end()) {
+	const auto &storage =
+			m_client->getEnv().getClientMap().far_blocks_storage[fmesh_step];
+	if (const auto &it = storage.find(bpos_aligned); it != storage.end()) {
 		const auto &block = it->second;
 		v3pos_t relpos = pos - bpos_aligned * MAP_BLOCKSIZE;
 

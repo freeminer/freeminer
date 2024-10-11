@@ -938,7 +938,10 @@ void Hud::drawBlockBounds()
 										.getClientMap()
 										.m_far_blocks_last_cam_pos), mesh_step,
 							client->getEnv().getClientMap().getControl()))
-					continue;
+					{
+						// DUMP("Not in grid", blockPos,  block->far_step, mesh_step, block->getTimestamp(), client->getEnv() .getClientMap() .m_far_blocks_last_cam_pos);
+						// continue;
+					}
 
 				int fscale = 1;
 				int lod_step = 0;
@@ -966,9 +969,10 @@ void Hud::drawBlockBounds()
 	} else if (m_block_bounds_mode == BLOCK_BOUNDS_FAR_REQUEST) {
 		const auto offset = intToFloat(client->getCamera()->getOffset(), BS);
 		const auto halfNode = v3f(BS, BS, BS) / 2.0f;
-		const auto &far_blocks = *client->getEnv().getClientMap().m_far_blocks_use;
+		const auto &far_blocks = client->getEnv().getClientMap().m_far_blocks_ask;
 		{
-			for (const auto &[blockPos, mesh_step] : far_blocks) {
+			for (const auto &[blockPos, step_ts] : far_blocks) {
+			    const auto &[mesh_step, ts] = step_ts;
 				int fscale = pow(2, mesh_step - 1);
 				int lod_step = 0;
 				int far_step = 0;

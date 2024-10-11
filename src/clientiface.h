@@ -265,7 +265,7 @@ public:
 	std::unordered_map<v3bpos_t, uint8_t> blocks;
 	void SetBlocksNotSent();
 	void SetBlockDeleted(v3bpos_t p);
-	std::vector<std::unordered_map<v3bpos_t, std::pair<uint8_t, bool>>>
+	std::vector<std::unordered_map<v3bpos_t, std::pair<uint8_t, uint32_t>>>
 			far_blocks_requested{FARMESH_STEP_MAX};
 	std::mutex far_blocks_requested_mutex;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
