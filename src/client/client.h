@@ -140,7 +140,7 @@ public:
 	unsigned int overload = 0;
 
 	void handleCommand_FreeminerInit(NetworkPacket *pkt);
-	void handleCommand_BlockDatas(NetworkPacket *pkt);
+	void handleCommand_BlockDataFm(NetworkPacket *pkt);
 	void sendInitFm();
 	void sendDrawControl();
 	void sendGetBlocks();

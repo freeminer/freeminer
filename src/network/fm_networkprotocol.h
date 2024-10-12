@@ -27,7 +27,7 @@ enum
 	TOCLIENT_INIT_GAMEID,
 };
 
-#define TOCLIENT_BLOCKDATAS 0x12
+#define TOCLIENT_BLOCKDATA_FM 0x12
 
 enum
 {

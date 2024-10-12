@@ -505,8 +505,8 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	{
 		ServerMap::far_blocks_req_t blocks;
 		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(blocks);
-		for (const auto &[bpos, step_ts] : blocks) {
-			const auto &[step, ts] = step_ts;
+		for (const auto &[bpos, step_iteration] : blocks) {
+			const auto &[step, iteation] = step_iteration;
 			if (step >= FARMESH_STEP_MAX - 1) {
 				continue;
 			}
@@ -514,7 +514,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 				client->far_blocks_requested.resize(step);
 			}
 			client->far_blocks_requested[step][bpos].first = step;
-			client->far_blocks_requested[step][bpos].second = ts;
+			client->far_blocks_requested[step][bpos].second = iteation;
 		}
 	}
 }
@@ -601,7 +601,7 @@ void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATAS, 8);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATA_FM, 8);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -618,7 +618,7 @@ void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
 
-	NetworkPacket pkt(TOCLIENT_BLOCKDATAS, buffer.size(), peer_id);
+	NetworkPacket pkt(TOCLIENT_BLOCKDATA_FM, buffer.size(), peer_id);
 	pkt.putLongString({buffer.data(), buffer.size()});
 	auto s = std::string{pkt.getString(0), pkt.getSize()};
 	Send(&pkt);

@@ -565,6 +565,8 @@ queue_full_break:
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
 		std::multimap<int32_t, MapBlockP> ordered;
+		constexpr uint16_t send_max = 50;
+		uint16_t sent_cnt = 0;
 		for (auto &far_blocks : far_blocks_requested) {
 			for (auto &[bpos, step_sent] : far_blocks) {
 				auto &[step, sent_ts] = step_sent;
@@ -585,6 +587,10 @@ queue_full_break:
 				block->far_step = step;
 				step_sent.second = 0;
 				ordered.emplace(sent_ts - step, block);
+
+				if (++sent_cnt > send_max) {
+					break;
+				}
 			}
 		}
 		for (const auto &[key, block] : std::views::reverse(ordered)) {
