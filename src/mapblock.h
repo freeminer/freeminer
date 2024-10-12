@@ -543,27 +543,29 @@ private:
 public:	
 #endif
 
-	block_step_t far_step = 0;
-	std::atomic_bool creating_far_mesh {0};
-	std::atomic_short heat {0};
-	std::atomic_short humidity {0};
-	std::atomic_short heat_add {0};
-	std::atomic_short humidity_add {0};
-	std::atomic_ulong heat_last_update {0};
-	std::atomic_uint32_t humidity_last_update = 0;
-	float m_uptime_timer_last = 0;
-	std::atomic_short usage_timer_multiplier {1};
+	block_step_t far_step{};
+	uint32_t far_iteration{};
+	std::atomic_bool creating_far_mesh{};
+	std::atomic_short heat{};
+	std::atomic_short humidity{};
+	std::atomic_short heat_add{};
+	std::atomic_short humidity_add{};
+	std::atomic_ulong heat_last_update{};
+	std::atomic_uint32_t humidity_last_update{};
+	float m_uptime_timer_last{};
+	std::atomic_short usage_timer_multiplier{1};
 
 	// Last really changed time (need send to client)
-	std::atomic_uint m_changed_timestamp {0};
-	u32 m_next_analyze_timestamp = 0;
+	std::atomic_uint m_changed_timestamp{};
+	u32 m_next_analyze_timestamp{};
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
-	size_t abmTriggersRun(ServerEnvironment * m_env, u32 time, uint8_t activate = 0);
+	size_t abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate = 0);
 	u32 m_abm_timestamp = 0;
 
-	u32 getActualTimestamp() {
+	u32 getActualTimestamp()
+	{
 		u32 block_timestamp = 0;
 		if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
 			block_timestamp = m_changed_timestamp;
@@ -574,8 +576,8 @@ public:
 	}
 
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
-	std::atomic<content_t> content_only = CONTENT_IGNORE;
-	u8 content_only_param1 = 0, content_only_param2 = 0;
+	std::atomic<content_t> content_only{CONTENT_IGNORE};
+	u8 content_only_param1{}, content_only_param2{};
 	bool analyzeContent();
 	std::mutex m_usage_timer_mutex;
 

@@ -276,39 +276,42 @@ public:
 		Utilities
 	*/
 
-
-
-//freeminer:
+	//freeminer:
 	MapNode getNodeTry(const v3pos_t &p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
 	std::atomic_size_t m_liquid_step_flow{1000};
-	std::atomic_size_t m_transforming_liquid_local_size {0};
+	std::atomic_size_t m_transforming_liquid_local_size{0};
 
 	virtual s16 getHeat(const v3pos_t &p, bool no_random = 0);
 	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
-	using m_blocks_type = concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
+	using m_blocks_type =
+			concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
 	m_blocks_type m_blocks;
-	using m_far_blocks_type = concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash,v3posEqual>;
+	using m_far_blocks_type =
+			concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
 	m_far_blocks_type m_far_blocks;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
-	bool m_far_blocks_currrent = false;
-    using far_blocks_req_t =              std::unordered_map<v3bpos_t, std::pair<MapBlock::block_step_t, uint32_t>>; // server
-	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t, std::pair<MapBlock::block_step_t, uint32_t>>; // client
+	bool m_far_blocks_currrent {};
+	//using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t, MapBlock::block_step_t>;
+	using far_blocks_req_t = std::unordered_map<v3bpos_t,
+			std::pair<MapBlock::block_step_t, uint32_t>>; // server
+	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t,
+			std::pair<MapBlock::block_step_t, uint32_t>>; // client
 	far_blocks_ask_t m_far_blocks_ask;
-    std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX> far_blocks_storage;
+	std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX>
+			far_blocks_storage;
 	//double m_far_blocks_created = 0;
-	//double m_far_blocks_sent = 0; 
-	float far_blocks_sent_timer = 1;
-	v3pos_t m_far_blocks_last_cam_pos;
+	float far_blocks_sent_timer{1};
+	v3pos_t far_blocks_last_cam_pos;
 	std::vector<MapBlockP> m_far_blocks_delete_1, m_far_blocks_delete_2;
-	bool m_far_blocks_delete_current = false;
+	bool m_far_blocks_delete_current {};
 
 	//static constexpr bool m_far_fast =			true; // show generated far farmesh stable(0) or instant(1)
-	uint32_t m_far_blocks_use_timestamp = 0;
-	uint32_t m_far_blocks_clean_timestamp = 0;
+	uint32_t far_iteration_use{};
+	uint32_t far_iteration_clean{};
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
 	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
 	MapBlockP createBlankBlock(const v3bpos_t &p);
@@ -316,7 +319,7 @@ public:
 	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
-	uint64_t m_blocks_delete_time = 0;
+	uint64_t m_blocks_delete_time{};
 	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_shared_unordered_set<v3bpos_t, v3posHash, v3posEqual> m_db_miss;
 	MapNode &getNodeRef(const v3pos_t &p);
@@ -334,11 +337,11 @@ public:
 	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 
 protected:
-	u32 m_blocks_update_last = 0;
-	u32 m_blocks_save_last = 0;
+	u32 m_blocks_update_last{};
+	u32 m_blocks_save_last{};
 
 public:
-	std::atomic_uint time_life {0};
+	std::atomic_uint time_life{};
 
 	inline MapNode getNodeNoEx(const v3pos_t &p) override { return getNodeTry(p); };
 	inline MapNode getNodeNoExNoEmerge(const v3pos_t &p) override
@@ -347,7 +350,7 @@ public:
 	};
 	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeRef(p); }
 
-	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t & cam_pos_nodes);
+	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes);
 
 	//end of freeminer
 

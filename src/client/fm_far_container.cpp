@@ -15,7 +15,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	auto bpos = getNodeBlockPos(pos);
 
 	int fmesh_step = getFarStep(m_client->getEnv().getClientMap().getControl(),
-			getNodeBlockPos(m_client->getEnv().getClientMap().m_far_blocks_last_cam_pos),
+			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
 			bpos);
 
 	const auto &shift = fmesh_step; // + cell_size_pow;

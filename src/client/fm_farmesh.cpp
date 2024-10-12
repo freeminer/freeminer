@@ -69,7 +69,7 @@ void FarMesh::makeFarBlock(
 			if (const auto &fbit = far_blocks.find(blockpos_actual);
 					fbit != far_blocks.end()) {
 				if (fbit->second.get() == block.get()) {
-						block->setTimestampNoChangedFlag(timestamp_complete);
+					block->far_iteration = far_iteration_complete;
 					return;
 				}
 				client_map.m_far_blocks_delete.emplace_back(fbit->second);
@@ -77,7 +77,7 @@ void FarMesh::makeFarBlock(
 			far_blocks.insert_or_assign(blockpos_actual, block);
 			++m_client->m_new_meshes;
 		}
-		block->setTimestampNoChangedFlag(timestamp_complete);
+		block->far_iteration = far_iteration_complete;
 		return;
 	}
 	MapBlockP block;
@@ -90,7 +90,7 @@ void FarMesh::makeFarBlock(
 		} else {
 			if (!block) {
 				m_client->getEnv().getClientMap().m_far_blocks_ask.emplace(
-						blockpos_actual, std::make_pair(step, timestamp_complete));
+						blockpos_actual, std::make_pair(step, far_iteration_complete));
 
 				new_block = true;
 				block = std::make_shared<MapBlock>(
@@ -99,9 +99,9 @@ void FarMesh::makeFarBlock(
 				far_blocks.insert_or_assign(blockpos_actual, block);
 				++m_client->m_new_meshes;
 			}
-		block->setTimestampNoChangedFlag(timestamp_complete);
 		}
 	}
+	block->far_iteration = far_iteration_complete;
 	if (new_block) {
 		std::async(std::launch::async, [this, block]() mutable {
 			m_client->createFarMesh(block);
@@ -113,11 +113,14 @@ void FarMesh::makeFarBlock(
 void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t step)
 {
 #if FARMESH_DEBUG || FARMESH_FAST || 1
-
-	auto block_step_correct = getFarStep(m_client->getEnv().getClientMap().getControl(),
-			getNodeBlockPos(m_camera_pos_aligned), blockpos);
-
-	return makeFarBlock(blockpos, block_step_correct);
+	{
+		auto block_step_correct =
+				getFarStep(m_client->getEnv().getClientMap().getControl(),
+						getNodeBlockPos(m_camera_pos_aligned), blockpos);
+		if (!block_step_correct)
+			return;
+		return makeFarBlock(blockpos, block_step_correct);
+	}
 #endif
 
 	// TODO: fix finding correct near blocks respecting their steps and enable:
@@ -141,6 +144,8 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t ste
 		auto block_step_correct =
 				getFarStep(m_client->getEnv().getClientMap().getControl(),
 						getNodeBlockPos(m_camera_pos_aligned), bpos);
+		if (!block_step_correct)
+			continue;
 		makeFarBlock(bpos, block_step_correct);
 	}
 }
@@ -428,20 +433,18 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 			<< 7;
 
 	auto &clientMap = m_client->getEnv().getClientMap();
-	const auto far_fast = false;
-
-/*
 	const auto far_fast =
 			!m_control->farmesh_stable &&
 			(
 					//m_client->getEnv().getClientMap().m_far_fast &&
 					m_speed > 200 * BS ||
 					m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000);
-*/
 
 	const auto set_new_cam_pos = [&]() {
 		if (m_camera_pos_aligned == camera_pos_aligned_int)
-			return;
+			return false;
+
+		++far_iteration_complete;
 
 		m_camera_pos_aligned = camera_pos_aligned_int;
 		m_camera_pos = intToFloat(m_camera_pos_aligned, BS);
@@ -449,14 +452,15 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 
 		direction_caches.fill({});
 		direction_caches_pos = m_camera_pos_aligned;
+		return true;
 	};
 
-	if (!timestamp_complete) {
+	if (!far_iteration_complete) {
 		if (!m_camera_pos_aligned.X && !m_camera_pos_aligned.Y &&
 				!m_camera_pos_aligned.Z) {
 			set_new_cam_pos();
 		}
-		clientMap.m_far_blocks_last_cam_pos = m_camera_pos_aligned;
+		clientMap.far_blocks_last_cam_pos = m_camera_pos_aligned;
 		if (!last_distance_max)
 			last_distance_max = distance_max;
 	}
@@ -498,31 +502,19 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 
 		if (planes_processed) {
 			complete_set = false;
-		} else if (!far_fast) {
-			set_new_cam_pos();
 		}
-		if (m_camera_pos_aligned != camera_pos_aligned_int) {
-			clientMap.m_far_blocks_last_cam_pos =
-					far_fast ? camera_pos_aligned_int : m_camera_pos_aligned;
-			if (far_fast) {
-				set_new_cam_pos();
-			}
-		}
-		if (!planes_processed && !complete_set) {
-			clientMap.m_far_blocks_last_cam_pos = m_camera_pos_aligned;
-			clientMap.m_far_blocks_use_timestamp = timestamp_complete;
+		if (!set_new_cam_pos()) {
 
-// TODO: test correct times
-#if FARMESH_DEBUG
-			constexpr auto clean_old_time = 2;
-#else
-			constexpr auto clean_old_time = 30;
-#endif
-			if (timestamp_complete > clean_old_time)
-				clientMap.m_far_blocks_clean_timestamp =
-						timestamp_complete - clean_old_time;
-			timestamp_complete = m_client->m_uptime;
-			complete_set = true;
+			if (!planes_processed && !complete_set) {
+				clientMap.far_blocks_last_cam_pos = m_camera_pos_aligned;
+				clientMap.far_iteration_use = far_iteration_complete;
+
+				if (far_iteration_complete)
+					clientMap.far_iteration_clean = far_iteration_complete - 1;
+				complete_set = true;
+			}
+		} else if (far_fast) {
+			clientMap.far_blocks_last_cam_pos = m_camera_pos_aligned;
 		}
 		/*
 			{

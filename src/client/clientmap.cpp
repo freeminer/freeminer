@@ -347,7 +347,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 				auto mesh = block ? block->getLodMesh(mesh_step, true) : nullptr;
 				if (!mesh && block) {
 					int fmesh_step = getFarStep(
-							m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block_coord);
+							m_control, getNodeBlockPos(far_blocks_last_cam_pos), block_coord);
 					mesh = block->getFarMesh(fmesh_step);
 				}
 				if (!mesh)
@@ -490,7 +490,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			auto mesh = block ? block->getLodMesh(mesh_step, true) : nullptr;
 			if (!mesh && block) {
 				int fmesh_step = getFarStep(
-						m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block_coord);
+						m_control, getNodeBlockPos(far_blocks_last_cam_pos), block_coord);
 				mesh = block->getFarMesh(fmesh_step);
 			}
 			//if (!mesh)
@@ -1031,9 +1031,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 			{
 				const auto fmesh_step = getFarStep(
-						m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), bp);
+						m_control, getNodeBlockPos(far_blocks_last_cam_pos), bp);
 				blocks_skip_farmesh.emplace(
-						getFarActual(bp, getNodeBlockPos(m_far_blocks_last_cam_pos),
+						getFarActual(bp, getNodeBlockPos(far_blocks_last_cam_pos),
 								fmesh_step, m_control));
 			}
 
@@ -1066,11 +1066,11 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		const auto lock = m_far_blocks.lock_unique_rec();
 		for (auto it = m_far_blocks.begin(); it != m_far_blocks.end();) {
 			const auto &block = it->second;
-			if (m_far_blocks_clean_timestamp > 0 &&
-					block->getTimestamp() < m_far_blocks_clean_timestamp) {
+			if (far_iteration_clean  &&
+					block->far_iteration < far_iteration_clean) {
 				m_far_blocks_delete.emplace_back(block);
 				it = m_far_blocks.erase(it);
-			} else if (block->getTimestamp() >= m_far_blocks_use_timestamp) {
+			} else if (block->far_iteration >= far_iteration_use) {
 				if (!blocks_skip_farmesh.contains(it->first)) {
 					drawlist.emplace(it->first, block);
 					++farblocks_drawn;
@@ -1196,10 +1196,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			int &fmesh_step = mesh_step;
 
 			fmesh_step = getFarStep(
-					m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos());
-			if (fmesh_step > 1 && !inFarGrid(block_pos, getNodeBlockPos(m_far_blocks_last_cam_pos), fmesh_step, m_control)) {
-				continue;
-			}
+					m_control, getNodeBlockPos(far_blocks_last_cam_pos), block->getPos());
 			block_mesh = block->getFarMesh(fmesh_step);
 			is_far = true;
 		}

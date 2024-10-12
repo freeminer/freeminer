@@ -251,11 +251,10 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 			const auto &control = client_map.getControl();
 			const auto bpos = block->getPos();
 			int fmesh_step_ = getFarStep(control,
-					getNodeBlockPos(client_map.m_far_blocks_last_cam_pos),
-					block->getPos());
+					getNodeBlockPos(client_map.far_blocks_last_cam_pos), block->getPos());
 			if (!inFarGrid(block->getPos(),
-						getNodeBlockPos(client_map.m_far_blocks_last_cam_pos),
-						fmesh_step_, control)) {
+						getNodeBlockPos(client_map.far_blocks_last_cam_pos), fmesh_step_,
+						control)) {
 				return;
 			}
 			auto &far_blocks = client_map.m_far_blocks;
@@ -263,8 +262,56 @@ void Client::handleCommand_BlockDatas(NetworkPacket *pkt)
 				if (it->second->far_step != block->far_step) {
 					return;
 				}
+				block->far_iteration = it->second->far_iteration;
 				far_blocks.at(bpos) = block;
 			}
 		});
+
+// if decide to generate empty areas on server:
+#if 0
+				class BlockContainer : public NodeContainer
+				{
+					MapBlockP block;
+
+				public:
+					Mapgen *m_mg{};
+					BlockContainer(Client *client, MapBlockP block_) :
+							//m_client{client},
+							block{std::move(block_)} {};
+					const MapNode &getNodeRefUnsafe(const v3pos_t &pos) override
+					{
+						auto bpos = getNodeBlockPos(pos);
+						const auto fmesh_step = block->far_step;
+						const auto &shift = fmesh_step; // + cell_size_pow;
+						v3bpos_t bpos_aligned((bpos.X >> shift) << shift,
+								(bpos.Y >> shift) << shift, (bpos.Z >> shift) << shift);
+
+						v3pos_t relpos = pos - bpos_aligned * MAP_BLOCKSIZE;
+
+						const auto &relpos_shift = fmesh_step; // + 1;
+						auto relpos_shifted = v3pos_t(relpos.X >> relpos_shift,
+								relpos.Y >> relpos_shift, relpos.Z >> relpos_shift);
+
+						const auto &n = block->getNodeNoLock(relpos_shifted);
+						return n;
+					};
+				};
+
+				BlockContainer bc{this, block};
+
+				const auto &m_client = this;
+				const auto &blockpos_actual = bpos;
+				MeshMakeData mdat(m_client, false, 0, step, &bc);
+				mdat.m_blockpos = blockpos_actual;
+				const auto m_camera_offset = getCamera()->getOffset();
+				auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
+				block->setFarMesh(mbmsh, step, m_client->m_uptime);
+				block->setTimestampNoChangedFlag(
+						getEnv().getClientMap().m_far_blocks_use_timestamp);
+				getEnv().getClientMap().far_blocks_storage[step].insert_or_assign(
+						bpos, block);
+				++m_client->m_new_meshes;
+			}
+#endif
 	}
 }

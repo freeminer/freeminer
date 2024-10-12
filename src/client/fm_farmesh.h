@@ -107,7 +107,7 @@ private:
 	std::array<plane_cache, 6> plane_processed;
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
-	uint32_t timestamp_complete{};
+	uint32_t far_iteration_complete {};
 	bool complete_set = false;
 	uint8_t planes_processed_last{};
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>

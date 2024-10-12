@@ -59,6 +59,7 @@ struct MapDrawControl
 	MapDrawControl() {
 		fm_init();
 	}
+// == 
 
 	// Wanted drawing range
 	float wanted_range = 0.0f;

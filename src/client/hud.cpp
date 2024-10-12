@@ -915,15 +915,18 @@ void Hud::drawBlockBounds()
 		//s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
 
 		v3f halfNode = v3f(BS, BS, BS) / 2.0f;
- 		const auto & far_blocks = client->getEnv().getClientMap().m_far_blocks;
+		const auto &client_map = client->getEnv().getClientMap();
+ 		const auto & far_blocks = client_map.m_far_blocks;
+
 		if (const auto lock = far_blocks.try_lock_shared_rec(); lock->owns_lock()) {
 			for (const auto &[blockPos, block] :
 					far_blocks) {
 				if (!block)
 					continue;
-				if (block->getTimestamp() <
-						client->getEnv().getClientMap().m_far_blocks_use_timestamp)
+				if (block->far_iteration <
+						client_map.far_iteration_use)
 					continue;
+/*					
 				const auto mesh_step_ = getFarStep(
 						client->getEnv().getClientMap().getControl(),
 						getNodeBlockPos(
@@ -931,16 +934,18 @@ void Hud::drawBlockBounds()
 										.getClientMap()
 										.m_far_blocks_last_cam_pos),
 						blockPos);
+*/
 						const auto &mesh_step = block->far_step;
+				int g = 0;
 
 				if (!inFarGrid(blockPos, getNodeBlockPos(
-								client->getEnv()
-										.getClientMap()
-										.m_far_blocks_last_cam_pos), mesh_step,
-							client->getEnv().getClientMap().getControl()))
+								client_map
+										.far_blocks_last_cam_pos), mesh_step,
+							client_map.getControl()))
 					{
 						// DUMP("Not in grid", blockPos,  block->far_step, mesh_step, block->getTimestamp(), client->getEnv() .getClientMap() .m_far_blocks_last_cam_pos);
 						// continue;
+						g+=50;
 					}
 
 				int fscale = 1;
@@ -963,7 +968,7 @@ void Hud::drawBlockBounds()
 								BS) -
 								offset + halfNode - 1);
 				driver->draw3DBox(box, video::SColor(200 + b, 255 - lod_step * 10 + b,
-											   255 - far_step * 10, fscale * 20));
+											   255 -g - far_step * 10, fscale * 20));
 			}
 		}
 	} else if (m_block_bounds_mode == BLOCK_BOUNDS_FAR_REQUEST) {
