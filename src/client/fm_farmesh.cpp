@@ -112,7 +112,7 @@ void FarMesh::makeFarBlock(
 
 void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t step)
 {
-#if FARMESH_DEBUG || FARMESH_FAST || 1
+#if FARMESH_DEBUG || FARMESH_FAST
 	{
 		auto block_step_correct =
 				getFarStep(m_client->getEnv().getClientMap().getControl(),
@@ -138,14 +138,14 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t ste
 			v3pos_t(0, -1, 0), // bottom
 	};
 	const auto &use_dirs = near;
-	const auto step_width = 1 << step;
+	const auto step_width = 1 << (step - 1);
 	for (const auto &dir : use_dirs) {
-		const auto bpos = blockpos + dir * step_width;
+		const auto bpos_dir = blockpos + dir * step_width;
+		const auto &control = m_client->getEnv().getClientMap().getControl();
+		const auto bpos = getFarActual(
+				bpos_dir, getNodeBlockPos(m_camera_pos_aligned), step, control);
 		auto block_step_correct =
-				getFarStep(m_client->getEnv().getClientMap().getControl(),
-						getNodeBlockPos(m_camera_pos_aligned), bpos);
-		if (!block_step_correct)
-			continue;
+				getFarStep(control, getNodeBlockPos(m_camera_pos_aligned), bpos);
 		makeFarBlock(bpos, block_step_correct);
 	}
 }
@@ -465,15 +465,17 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 			last_distance_max = distance_max;
 	}
 
-	if (last_distance_max < distance_max) {
-		plane_processed.fill({});
-		last_distance_max = distance_max; // * 1.1;
-	}
-	if (m_client->m_new_farmeshes) {
-		m_client->m_new_farmeshes = 0;
-		plane_processed.fill({});
-	}
+	if (complete_set) {
+		if (last_distance_max < distance_max) {
+			plane_processed.fill({});
+			last_distance_max = distance_max; // * 1.1;
+		}
 
+		if (m_client->m_new_farmeshes) {
+			m_client->m_new_farmeshes = 0;
+			plane_processed.fill({});
+		}
+	}
 	/*
 	if (mg->surface_2d()) {
 		// TODO: use fast simple quadtree based direct mesh create
