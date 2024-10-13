@@ -562,30 +562,41 @@ queue_full_break:
 		}
 	}
 
+	return num_blocks_selected - num_blocks_sending;
+}
+
+uint32_t RemoteClient::SendFarBlocks()
+{
+	uint16_t sent_cnt{};
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
 		std::multimap<int32_t, MapBlockP> ordered;
-		constexpr uint16_t send_max = 50;
-		uint16_t sent_cnt = 0;
+		constexpr uint16_t send_max{50};
 		for (auto &far_blocks : far_blocks_requested) {
 			for (auto &[bpos, step_sent] : far_blocks) {
 				auto &[step, sent_ts] = step_sent;
-				if (!sent_ts) {
+				if (sent_ts <= 0) {
 					continue;
 				}
 				if (step >= FARMESH_STEP_MAX - 1) {
+					sent_ts = -1;
 					continue;
 				}
 				const auto dbase = m_env->m_server->GetFarDatabase(step);
 				if (!dbase) {
+					sent_ts = -1;
 					continue;
 				}
 				const auto block = m_env->m_server->loadBlockNoStore(dbase, bpos);
 				if (!block) {
+					sent_ts = -1;
 					continue;
 				}
+
+				g_profiler->add("Server: Far blocks sent", 1);
+
 				block->far_step = step;
-				step_sent.second = 0;
+				sent_ts = 0;
 				ordered.emplace(sent_ts - step, block);
 
 				if (++sent_cnt > send_max) {
@@ -593,11 +604,26 @@ queue_full_break:
 				}
 			}
 		}
+
+		// First with larger iteration and smaller step
+
 		for (const auto &[key, block] : std::views::reverse(ordered)) {
 			m_env->m_server->SendBlockFm(
 					peer_id, block, serialization_version, net_proto_version);
 		}
 	}
+	return sent_cnt;
+}
 
-	return num_blocks_selected - num_blocks_sending;
+RemoteClientVector ClientInterface::getClientList()
+{
+	auto lock = m_clients.lock_unique_rec();
+	RemoteClientVector clients;
+	for (const auto &ir : m_clients) {
+		const auto &c = ir.second;
+		if (!c)
+			continue;
+		clients.emplace_back(c);
+	}
+	return clients;
 }

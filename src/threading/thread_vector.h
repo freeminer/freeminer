@@ -1,7 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <mutex>
 #include <shared_mutex>
 #include <thread>
 #include <vector>
@@ -38,5 +37,5 @@ public:
 
 protected:
 	std::string m_name;
-	int m_priority = 0;
+	int m_priority{};
 };

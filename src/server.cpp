@@ -451,9 +451,10 @@ void Server::init()
 	if (m_more_threads) {
 		m_map_thread =  std::make_unique<MapThread>(this);
 		m_sendblocks_thead = std::make_unique<SendBlocksThread>(this);
+		m_sendfarblocks_thead = std::make_unique<SendFarBlocksThread>(this);
 		m_liquid = std::make_unique<LiquidThread>(this);
 		m_env_thread = std::make_unique<EnvThread>(this);
-		m_abm_thread = std::make_unique< AbmThread>(this);
+		m_abm_thread = std::make_unique<AbmThread>(this);
 		m_abm_world_thread = std::make_unique<AbmWorldThread>(this);
 		m_world_merge_thread = std::make_unique<WorldMergeThread>(this);
 	}
@@ -604,6 +605,8 @@ void Server::start()
 		m_map_thread->restart();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->restart();
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->restart();
 	if (m_liquid)
 		m_liquid->restart();
 	if(m_env_thread)
@@ -715,6 +718,8 @@ void Server::stop()
 		m_liquid->stop();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->stop();
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->stop();
 	if (m_map_thread)
 		m_map_thread->stop();
 	if(m_abm_thread)
@@ -734,6 +739,8 @@ void Server::stop()
 		m_liquid->join();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->join();
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->join();
 	if (m_map_thread)
 		m_map_thread->join();
 	if(m_abm_thread)

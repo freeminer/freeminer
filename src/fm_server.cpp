@@ -42,7 +42,46 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug/stacktrace.h"
 #include "util/timetaker.h"
 
-ServerThread::ServerThread(Server *server) : thread_vector("Server", 40), m_server(server)
+ServerThreadBase::ServerThreadBase(Server *server, const std::string &name,
+		int priority) : thread_vector{name, 2}, m_server{server}
+{
+}
+
+void *ServerThreadBase::run()
+{
+	// If something wrong with init order
+	std::this_thread::sleep_for(std::chrono::milliseconds(sleep_start));
+
+	BEGIN_DEBUG_EXCEPTION_HANDLER
+
+	auto time_last = porting::getTimeMs();
+
+	while (!stopRequested()) {
+		DUMP("");
+		try {
+			const auto time_now = porting::getTimeMs();
+			const auto result = step(time_now - time_last);
+			time_last = time_now;
+			std::this_thread::sleep_for(
+					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
+#if !EXCEPTION_DEBUG
+		} catch (const std::exception &e) {
+			errorstream << m_name << ": exception: " << e.what() << std::endl
+						<< stacktrace() << std::endl;
+		} catch (...) {
+			errorstream << m_name << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << std::endl
+						<< stacktrace() << std::endl;
+#else
+		} catch (int) { // nothing
+#endif
+		}
+	}
+	END_DEBUG_EXCEPTION_HANDLER
+	return nullptr;
+}
+
+ServerThread::ServerThread(Server *server) : thread_vector{"Server", 40}, m_server{server}
 {
 }
 
@@ -169,8 +208,18 @@ void *MapThread::run()
 	return nullptr;
 }
 
+SendFarBlocksThread::SendFarBlocksThread(Server *server) :
+		ServerThreadBase(server, "SendFarBlocks", 1)
+{
+}
+
+size_t SendFarBlocksThread::step(float dtime)
+{
+	return m_server->SendFarBlocks(dtime);
+}
+
 SendBlocksThread::SendBlocksThread(Server *server) :
-		thread_vector("SendBlocks", 30), m_server(server)
+		thread_vector{"SendBlocks", 30}, m_server{server}
 {
 }
 
@@ -622,4 +671,16 @@ void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
 	pkt.putLongString({buffer.data(), buffer.size()});
 	auto s = std::string{pkt.getString(0), pkt.getSize()};
 	Send(&pkt);
+}
+
+uint32_t Server::SendFarBlocks(float dtime)
+{
+	ScopeProfiler sp(g_profiler, "Server send far blocks");
+	uint32_t sent{};
+	for (const auto &client : m_clients.getClientList()) {
+		if (!client)
+			continue;
+		sent += client->SendFarBlocks();
+	}
+	return sent;
 }

@@ -250,27 +250,27 @@ public:
 	std::atomic_ushort net_proto_version = 0;
 
 	// fm:
-	u16 net_proto_version_fm = 0;
+	u16 net_proto_version_fm{};
 	//std::atomic_int m_nearest_unsent_reset {0};
 	std::atomic_uint wanted_range{10};
-	std::atomic_int range_all{0};
-	std::atomic_int farmesh = {0};
-	float fov = 72;
+	std::atomic_int range_all{};
+	std::atomic_int farmesh = {};
+	float fov{72};
 	//bool block_overflow;
-	ServerEnvironment *m_env = nullptr;
+	ServerEnvironment *m_env{};
 	u32 getSendingCount() const { return 0; }
 	std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
 	v3f m_last_direction;
-	float m_nearest_unsent_reset_timer;
+	float m_nearest_unsent_reset_timer{};
 	std::unordered_map<v3bpos_t, uint8_t> blocks;
 	void SetBlocksNotSent();
-	void SetBlockDeleted(v3bpos_t p);
-	std::vector<std::unordered_map<v3bpos_t, std::pair<uint8_t, uint32_t>>>
+	void SetBlockDeleted(const v3bpos_t &p);
+	std::vector<std::unordered_map<v3bpos_t, std::pair<uint8_t, int32_t>>>
 			far_blocks_requested{FARMESH_STEP_MAX};
 	std::mutex far_blocks_requested_mutex;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
 			std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
-
+	uint32_t SendFarBlocks();
 	// ==
 
 	/* Authentication information */
@@ -513,16 +513,7 @@ public:
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
 	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
 	RemoteClientPtr getClient(u16 peer_id, ClientState state_min = CS_Active);
-	RemoteClientVector getClientList() {
-		RemoteClientVector clients;
-		auto lock = m_clients.lock_unique_rec();
-		for(auto & ir : m_clients) {
-			auto c = ir.second;
-			if (c)
-				clients.emplace_back(c);
-		}
-		return clients;
-	}
+	RemoteClientVector getClientList();
 	// ==
 
 

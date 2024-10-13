@@ -426,8 +426,8 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 
 	m_speed = speed;
 
-	const auto camera_pos_aligned_int =
-			playerBlockAlign(*m_control, floatToInt(camera_pos, BS * 16)) * MAP_BLOCKSIZE;
+	//const auto camera_pos_aligned_int = playerBlockAlign(*m_control, floatToInt(camera_pos, BS * 16)) * MAP_BLOCKSIZE;
+	const auto camera_pos_aligned_int = floatToInt(camera_pos, BS); // no aligned
 	const auto distance_max =
 			(std::min<unsigned int>(render_range, 1.2 * m_client->fog_range / BS) >> 7)
 			<< 7;

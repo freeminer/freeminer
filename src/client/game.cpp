@@ -4549,21 +4549,23 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	if (farmesh) {
 		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-		farmesh_async.step([&, farmesh_range = farmesh_range,
-								   //yaw = player->getYaw(),
-								   //pitch = player->getPitch(),
-								   camera_pos = camera->getPosition(),
-								   camera_offset = camera->getOffset(),
-								   speed = player->getSpeed().getLength()]() {
-			const auto processed = farmesh->update(camera_pos,
-					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera_offset,
-					//sky->getBrightness(),
-					farmesh_range, speed);
-			if (!processed) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(300));
-			}
-		});
+		thread_local static uint8_t processed{};
+		thread_local static u64 next_run_time{};
+		if (processed || porting::getTimeMs() > next_run_time) {
+			next_run_time = porting::getTimeMs() + 300;
+			farmesh_async.step([&, farmesh_range = farmesh_range,
+									   //yaw = player->getYaw(),
+									   //pitch = player->getPitch(),
+									   camera_pos = camera->getPosition(),
+									   camera_offset = camera->getOffset(),
+									   speed = player->getSpeed().getLength()]() {
+				processed = farmesh->update(camera_pos,
+						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
+						camera_offset,
+						//sky->getBrightness(),
+						farmesh_range, speed);
+			});
+		}
 	}
 
 	/*

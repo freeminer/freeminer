@@ -25,6 +25,23 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Server;
 
+class ServerThreadBase : public thread_vector
+{
+protected:
+	Server *const m_server;
+
+public:
+	int sleep_start{1000};
+	int sleep_result{10};
+	int sleep_nothing{1000};
+
+	ServerThreadBase(
+			Server *server, const std::string &name = "Unnamed", int priority = 0);
+	void *run();
+
+	virtual size_t step(float dtime) = 0;
+};
+
 class ServerThread : public thread_vector
 {
 public:
@@ -33,12 +50,12 @@ public:
 	void *run();
 
 private:
-	Server *m_server;
+	Server *const m_server;
 };
 
 class MapThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	MapThread(Server *server);
@@ -48,7 +65,7 @@ public:
 
 class SendBlocksThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	SendBlocksThread(Server *server);
@@ -56,9 +73,19 @@ public:
 	void *run();
 };
 
+class SendFarBlocksThread : public ServerThreadBase
+{
+public:
+	//using ServerThreadBase::ServerThreadBase;
+	SendFarBlocksThread(Server *server);
+
+private:
+	size_t step(float dtime) override;
+};
+
 class LiquidThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	LiquidThread(Server *server);
@@ -68,7 +95,7 @@ public:
 
 class EnvThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	EnvThread(Server *server);
@@ -78,7 +105,7 @@ public:
 
 class AbmThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	AbmThread(Server *server);
@@ -88,7 +115,7 @@ public:
 
 class AbmWorldThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	AbmWorldThread(Server *server);
@@ -98,7 +125,7 @@ public:
 
 class WorldMergeThread : public thread_vector
 {
-	Server *m_server;
+	Server *const m_server;
 
 public:
 	WorldMergeThread(Server *server);
