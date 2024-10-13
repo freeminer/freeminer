@@ -50,6 +50,152 @@ std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueTyp
 			[](const pairtype &p1, const pairtype &p2) { return p1.second < p2.second; });
 }
 
+static const auto load_block = [](Server *m_server, MapDatabase *dbase,
+									   const v3bpos_t &pos) -> MapBlockP {
+	auto block = m_server->loadBlockNoStore(dbase, pos);
+	if (!block) {
+		return {};
+	}
+	if (!block->isGenerated()) {
+		return {};
+	}
+	return block;
+};
+
+void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up,
+		const v3bpos_t &bpos_aligned, MapBlock::block_step_t step)
+{
+	const auto step_pow = 1;
+	const auto step_size = 1 << step_pow;
+	std::unordered_map<v3bpos_t, MapBlockP> blocks;
+	uint32_t timestamp = 0;
+	{
+		for (bpos_t x = 0; x < step_size; ++x)
+			for (bpos_t y = 0; y < step_size; ++y)
+				for (bpos_t z = 0; z < step_size; ++z) {
+					const v3pos_t rpos(x, y, z);
+					const v3bpos_t nbpos(bpos_aligned.X + (x << step),
+							bpos_aligned.Y + (y << step), bpos_aligned.Z + (z << step));
+					auto nblock = load_block(m_server, dbase, nbpos);
+					if (!nblock) {
+						continue;
+					}
+					if (const auto ts = nblock->getActualTimestamp(); ts > timestamp)
+						timestamp = ts;
+					blocks[rpos] = nblock;
+				}
+	}
+	if (!timestamp)
+		timestamp = m_server->getEnv().getGameTime();
+
+	MapBlockP block_new{m_server->getMap().createBlankBlockNoInsert(bpos_aligned)};
+	block_new->setTimestampNoChangedFlag(timestamp);
+	size_t not_empty_nodes{};
+	{
+		const auto block_size = MAP_BLOCKSIZE;
+		for (pos_t x = 0; x < block_size; ++x)
+			for (pos_t y = 0; y < block_size; ++y)
+				for (pos_t z = 0; z < block_size; ++z) {
+					const v3pos_t npos(x, y, z);
+					const v3pos_t bbpos(x >> (4 - step_pow), y >> (4 - step_pow),
+							z >> (4 - step_pow));
+
+					const auto &block = blocks[bbpos];
+					if (!block) {
+						continue;
+					}
+					const v3pos_t lpos((x << step_pow) % MAP_BLOCKSIZE,
+							(y << step_pow) % MAP_BLOCKSIZE,
+							(z << step_pow) % MAP_BLOCKSIZE);
+					// TODO: smart node select (top priority? content priority?)
+					std::unordered_map<content_t, uint8_t> top_c;
+					std::vector<uint8_t> top_light_night;
+					std::unordered_map<content_t, MapNode> nodes;
+
+					// TODO: tune block selector
+
+#if 0
+// Simple grid aligned
+										auto n = block->getNodeNoLock(lpos);
+#else
+					// Top content count
+
+					bool maybe_air = false;
+					MapNode air;
+					for (const auto &dir : {
+								 v3pos_t{0, 1, 0},
+								 v3pos_t{1, 0, 0},
+								 v3pos_t{0, 0, 1},
+								 v3pos_t{0, 0, 0},
+								 v3pos_t{1, 1, 0},
+								 v3pos_t{0, 1, 1},
+								 v3pos_t{1, 0, 1},
+								 v3pos_t{1, 1, 1},
+						 }) {
+						const auto &n = block->getNodeNoLock(lpos + dir);
+						const auto c = n.getContent();
+						if (c == CONTENT_IGNORE) {
+							continue;
+						}
+						if (c == CONTENT_AIR) {
+							maybe_air = true;
+							air = n;
+							top_c[c] += 1;
+							// continue;
+						} else {
+							top_c[c] += 2;
+						}
+						if (!dir.getLengthSQ()) {
+							// main node priority TODO: tune 2
+							top_c[c] += 4;
+						}
+
+						if (const auto light_night = n.getLightRaw(LIGHTBANK_NIGHT,
+									m_server->getNodeDefManager()->getLightingFlags(n));
+								light_night) {
+							top_light_night.emplace_back(light_night);
+						}
+
+						nodes[c] = n;
+					}
+
+					if (top_c.empty()) {
+						if (maybe_air) {
+							++not_empty_nodes;
+							block_new->setNodeNoLock(npos, air);
+						}
+						continue;
+					}
+					const auto &max = get_max(top_c);
+					auto n = nodes[max.first];
+
+					if (!top_light_night.empty()) {
+						auto max_light = *max_element(
+								std::begin(top_light_night), std::end(top_light_night));
+						n.setLight(LIGHTBANK_NIGHT, max_light,
+								m_server->getNodeDefManager()->getLightingFlags(n));
+					}
+#endif
+
+					if ( //n.getContent() == CONTENT_AIR ||
+							n.getContent() == CONTENT_IGNORE)
+						continue;
+					// TODO better check
+					++not_empty_nodes;
+
+					block_new->setNodeNoLock(npos, n);
+				}
+	}
+	// TODO: skip full air;
+
+	if (!not_empty_nodes) {
+		return;
+	}
+	block_new->setGenerated(true);
+	m_server->getEnv().getServerMap().saveBlock(block_new.get(), dbase_up,
+			m_server->getEnv().getServerMap().m_map_compression_level);
+}
+
 void *WorldMergeThread::run()
 {
 	BEGIN_DEBUG_EXCEPTION_HANDLER
@@ -94,8 +240,8 @@ void *WorldMergeThread::run()
 		for (MapBlock::block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
 			std::vector<v3bpos_t> loadable_blocks;
 
-			auto dbase = m_server->GetFarDatabase(step);
-			auto dbase_up = m_server->GetFarDatabase(step + 1);
+			auto *dbase = m_server->GetFarDatabase(step);
+			auto *dbase_up = m_server->GetFarDatabase(step + 1);
 
 			if (world_merge_load_all && loadable_blocks.empty()) {
 				actionstream << "World merge full load " << (short)step << '\n';
@@ -110,11 +256,9 @@ void *WorldMergeThread::run()
 			const auto loadable_blocks_size = loadable_blocks.size();
 			infostream << "World merge run " << run << " step " << (short)step
 					   << " blocks " << loadable_blocks_size << " per "
-					   << (porting::getTimeMs() - time_start) / 1000
-					   << "s"
+					   << (porting::getTimeMs() - time_start) / 1000 << "s"
 					   << " max_clients " << world_merge_max_clients << " throttle "
-					   << world_merge_throttle
-					   << '\n';
+					   << world_merge_throttle << '\n';
 			size_t processed = 0;
 
 			time_start = porting::getTimeMs();
@@ -125,9 +269,8 @@ void *WorldMergeThread::run()
 				infostream << "World merge run " << run << " " << cur_n << "/"
 						   << loadable_blocks_size << " blocks loaded "
 						   << m_server->getMap().m_blocks.size() << " processed "
-						   << processed
-						   << " per " << (time - time_start) / 1000 << " speed "
-						   << processed / (((time - time_start) / 1000) ?: 1)
+						   << processed << " per " << (time - time_start) / 1000
+						   << " speed " << processed / (((time - time_start) / 1000) ?: 1)
 						   << '\n';
 			};
 
@@ -149,154 +292,12 @@ void *WorldMergeThread::run()
 				if (stopRequested()) {
 					return nullptr;
 				}
+				++processed;
+				g_profiler->add("Server: World merge blocks", 1);
+
 				try {
-					const auto load_block = [&](const v3bpos_t &pos) -> MapBlockP {
-						auto block = m_server->loadBlockNoStore(dbase, pos);
-						if (!block) {
-							return {};
-						}
-						if (!block->isGenerated()) {
-							return {};
-						}
-						return block;
-					};
 
-					g_profiler->add("Server: World merge blocks", 1);
-
-					++processed;
-
-					{
-						const auto step_pow = 1;
-						const auto step_size = 1 << step_pow;
-						std::unordered_map<v3bpos_t, MapBlockP> blocks;
-						uint32_t timestamp = 0;
-						{
-							for (bpos_t x = 0; x < step_size; ++x)
-								for (bpos_t y = 0; y < step_size; ++y)
-									for (bpos_t z = 0; z < step_size; ++z) {
-										const v3pos_t rpos(
-												x, y, z);
-										const v3bpos_t nbpos(bpos_aligned.X + (x << step),
-												bpos_aligned.Y + (y << step),
-												bpos_aligned.Z + (z << step));
-										auto nblock = load_block(nbpos);
-										if (!nblock) {
-											continue;
-										}
-										if (const auto ts = nblock->getActualTimestamp();
-												ts > timestamp)
-											timestamp = ts;
-										blocks[rpos] = nblock;
-									}
-						}
-						if (!timestamp)
-							timestamp = m_server->getEnv().getGameTime();
-
-						MapBlockP block_new{m_server->getMap().createBlankBlockNoInsert(
-								bpos_aligned)};
-						block_new->setTimestampNoChangedFlag(timestamp);
-						size_t not_empty_nodes{};
-						{
-							const auto block_size = MAP_BLOCKSIZE;
-							for (pos_t x = 0; x < block_size; ++x)
-								for (pos_t y = 0; y < block_size; ++y)
-									for (pos_t z = 0; z < block_size; ++z) {
-										const v3pos_t npos(
-												x, y, z);
-										const v3pos_t bbpos(
-												x >> (4 - step_pow), y >> (4 - step_pow),
-												z >> (4 - step_pow));
-
-										const auto &block = blocks[bbpos];
-										if (!block) {
-											continue;
-										}
-										const v3pos_t lpos(
-												(x << step_pow) % MAP_BLOCKSIZE,
-												(y << step_pow) % MAP_BLOCKSIZE,
-												(z << step_pow) % MAP_BLOCKSIZE
-										);
-										// TODO: smart node select (top priority? content priority?)
-										std::unordered_map<content_t, uint8_t> top_c;
-										std::unordered_map<content_t, MapNode> nodes;
-
-										// TODO: tune block selector
-
-#if 0
-// Simple grid aligned
-										auto n = block->getNodeNoLock(lpos);
-#else
-										// Top content count
-
-										bool maybe_air = false;
-										MapNode air;
-										for (const auto &dir : {
-													 v3pos_t{0, 1, 0},
-													 v3pos_t{1, 0, 0},
-													 v3pos_t{0, 0, 1},
-													 v3pos_t{0, 0, 0},
-													 v3pos_t{1, 1, 0},
-													 v3pos_t{0, 1, 1},
-													 v3pos_t{1, 0, 1},
-													 v3pos_t{1, 1, 1},
-											 }) {
-											const auto &n =
-													block->getNodeNoLock(lpos + dir);
-											const auto c = n.getContent();
-											if (c == CONTENT_IGNORE) {
-												continue;
-											}
-											if (c == CONTENT_AIR) {
-												maybe_air = true;
-												air = n;
-												top_c[c] += 1;
-												// continue;
-											} else {
-												top_c[c] += 2;
-											}
-											if (!dir.getLengthSQ()) {
-												// main node priority TODO: tune 2
-												top_c[c] += 4;
-											}
-
-											// TODO: find average or max light of 7 neibhours
-
-											nodes[c] = n;
-										}
-
-										if (top_c.empty()) {
-											if (maybe_air) {
-												++not_empty_nodes;
-												block_new->setNodeNoLock(npos, air);
-											}
-											continue;
-										}
-										const auto &max = get_max(top_c);
-										const auto &n = nodes[max.first];
-#endif
-
-										if ( //n.getContent() == CONTENT_AIR ||
-												n.getContent() == CONTENT_IGNORE)
-											continue;
-										// TODO better check
-										++not_empty_nodes;
-
-										block_new->setNodeNoLock(npos, n);
-
-									}
-						}
-						// TODO: skip full air;
-
-						if (!not_empty_nodes) {
-							continue;
-						}
-						block_new->setGenerated(true);
-						m_server->getEnv().getServerMap().saveBlock(block_new.get(),
-								dbase_up,
-								m_server->getEnv()
-										.getServerMap()
-										.m_map_compression_level);
-					}
+					merge_one_block(m_server, dbase, dbase_up, bpos_aligned, step);
 
 					if (!(cur_n % 10000)) {
 						printstat();
