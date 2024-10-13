@@ -527,24 +527,24 @@ public:
 	using block_step_t = uint8_t;
 
 #if BUILD_CLIENT // Only on client
-	const MapBlock::mesh_type &getLodMesh(block_step_t step, bool allow_other = false);
+	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
 	void setLodMesh(const MapBlock::mesh_type &rmesh);
-	const MapBlock::mesh_type &getFarMesh(block_step_t step);
-	void setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step, uint32_t time);
+	const MapBlock::mesh_type getFarMesh(block_step_t step);
+	void setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step);
 	std::mutex far_mutex;
-	u32 mesh_requested_timestamp = 0;
-	uint8_t mesh_requested_step = 0;
+	u32 mesh_requested_timestamp {};
+	uint8_t mesh_requested_step {};
 
 private:
-	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
-	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
+	std::array<std::atomic<MapBlock::mesh_type>, LODMESH_STEP_MAX + 1> m_lod_mesh;
+	std::array<std::atomic<MapBlock::mesh_type>, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 
 public:	
 #endif
 
 	block_step_t far_step{};
-	uint32_t far_iteration{};
+	std::atomic_uint32_t far_iteration{};
 	std::atomic_bool creating_far_mesh{};
 	std::atomic_short heat{};
 	std::atomic_short humidity{};

@@ -157,7 +157,7 @@ void Client::createFarMesh(MapBlockP &block)
 		MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
 		auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
-		block->setFarMesh(mbmsh, step, m_client->m_uptime);
+		block->setFarMesh(mbmsh, step);
 		block->creating_far_mesh = false;
 	}
 }
@@ -262,7 +262,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 				if (it->second->far_step != block->far_step) {
 					return;
 				}
-				block->far_iteration = it->second->far_iteration;
+				block->far_iteration = it->second->far_iteration.load(std::memory_order::relaxed);
 				far_blocks.at(bpos) = block;
 			}
 		});

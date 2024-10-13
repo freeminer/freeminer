@@ -23,6 +23,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
+#include <atomic>
 #include <matrix4.h>
 #include "mapsector.h"
 #include "mapblock.h"
@@ -802,7 +803,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	//bool free_move = g_settings->getBool("free_move");
 
-	float range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range;
+	auto range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range.load(std::memory_order::relaxed);
 
 	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
 

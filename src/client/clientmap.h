@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "map.h"
 #include "camera.h"
+#include <atomic>
 #include <set>
 #include <unordered_set>
 #include <vector>
@@ -62,7 +63,7 @@ struct MapDrawControl
 // == 
 
 	// Wanted drawing range
-	float wanted_range = 0.0f;
+	std::atomic_int32_t wanted_range = 0.0f;
 	// Overrides limits by drawing everything
 	bool range_all = false;
 	// Allow rendering out of bounds

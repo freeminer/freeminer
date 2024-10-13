@@ -32,6 +32,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "clientenvironment.h"
 #include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
+#include <atomic>
 #include <ostream>
 #include <map>
 #include <memory>
@@ -131,13 +132,13 @@ class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 
 private:
 	//fm:
-	bool is_simple_singleplayer_game = 0;
-	float m_timelapse_timer = -1;
+	bool is_simple_singleplayer_game {};
+	float m_timelapse_timer {-1};
 
 public:
-	double m_uptime = 0;
-	bool use_weather = false;
-	unsigned int overload = 0;
+	std::atomic<double> m_uptime {};
+	bool use_weather {};
+	unsigned int overload {};
 
 	void handleCommand_FreeminerInit(NetworkPacket *pkt);
 	void handleCommand_BlockDataFm(NetworkPacket *pkt);
@@ -153,10 +154,10 @@ public:
 	std::unique_ptr<MapgenParams> m_mapgen_params;
 	std::unique_ptr<MapSettingsManager> m_settings_mgr;
 	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
-	f32 fog_range = 0;
-	size_t m_new_meshes = 0;
-	size_t m_new_farmeshes = 0;
-	ChatBackend *chat_backend = nullptr;
+	f32 fog_range {};
+	std::atomic_size_t m_new_meshes {};
+	size_t m_new_farmeshes {};
+	ChatBackend *chat_backend {};
 	FarContainer far_container;
 
 	// ==
