@@ -278,6 +278,10 @@ void *WorldMergeThread::run()
 
 			cur_n = 0;
 			for (const auto &bpos : loadable_blocks) {
+				if (stopRequested()) {
+					return nullptr;
+				}
+
 				++cur_n;
 
 				const bpos_t shift = step + 1;
@@ -289,9 +293,6 @@ void *WorldMergeThread::run()
 				}
 				blocks_processed.emplace(bpos_aligned);
 
-				if (stopRequested()) {
-					return nullptr;
-				}
 				++processed;
 				g_profiler->add("Server: World merge blocks", 1);
 
