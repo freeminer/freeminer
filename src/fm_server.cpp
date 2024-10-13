@@ -57,7 +57,6 @@ void *ServerThreadBase::run()
 	auto time_last = porting::getTimeMs();
 
 	while (!stopRequested()) {
-		DUMP("");
 		try {
 			const auto time_now = porting::getTimeMs();
 			const auto result = step(time_now - time_last);

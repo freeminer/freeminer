@@ -103,9 +103,8 @@ void FarMesh::makeFarBlock(
 	}
 	block->far_iteration = far_iteration_complete;
 	if (new_block) {
-		std::async(std::launch::async, [this, block]() mutable {
-			m_client->createFarMesh(block);
-		});
+		std::async(std::launch::async,
+				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
 	return;
 }
@@ -334,8 +333,7 @@ int FarMesh::go_direction(const size_t dir_n)
 			const auto pos_int = align_shift(
 					floatToInt(pos, BS), step_aligned_pow > 0 ? step_aligned_pow : 0);
 
-			if (radius_box(pos_int, m_camera_pos_aligned) > last_distance_max)
-			{
+			if (radius_box(pos_int, m_camera_pos_aligned) > last_distance_max) {
 				break;
 			}
 
@@ -352,7 +350,6 @@ int FarMesh::go_direction(const size_t dir_n)
 						mg_cache[pos_int] = visible;
 					}
 				}
-
 			}
 			if (ray_cache.visible) {
 				if (depth > MAP_BLOCKSIZE * 8) {
@@ -505,8 +502,11 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 		if (planes_processed) {
 			complete_set = false;
 		}
-		if (!set_new_cam_pos()) {
 
+		bool cam_pos_updated{};
+		if (far_fast || !planes_processed)
+			cam_pos_updated = set_new_cam_pos();
+		if (!cam_pos_updated) {
 			if (!planes_processed && !complete_set) {
 				clientMap.far_blocks_last_cam_pos = m_camera_pos_aligned;
 				clientMap.far_iteration_use = far_iteration_complete;
