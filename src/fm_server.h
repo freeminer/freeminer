@@ -63,14 +63,13 @@ public:
 	void *run();
 };
 
-class SendBlocksThread : public thread_vector
+class SendBlocksThread : public ServerThreadBase
 {
-	Server *const m_server;
-
 public:
 	SendBlocksThread(Server *server);
 
-	void *run();
+private:
+	size_t step(float dtime) override;
 };
 
 class SendFarBlocksThread : public ServerThreadBase

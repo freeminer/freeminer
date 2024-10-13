@@ -100,6 +100,8 @@ $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24110,2411
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24600,30000,0)'
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24100,30000,24100)'
 $0 ----fall1 -continuous_forward=1 bot
+
+ASAN_OPTIONS=detect_container_overflow=0 $0 ---cmake_leveldb=0 -DENABLE_SYSTEM_JSONCPP=0 -DENABLE_WEBSOCKET=0 -keymap_toggle_block_bounds=KEY_F9 ----fall2 set_client asan build_client run_single
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -356,6 +358,7 @@ our $options = {
     },
     unload => {server_unload_unused_data_timeout => 20, client_unload_unused_data_timeout => 15,},
 };
+$options->{fall2} = { %{$options->{fall1}}, static_spawnpoint => '(10,21000,10)',};
 
 map { /^-(\w+)(?:=(.*))?/  and $options->{opt}{$1}  = $2; } @ARGV;
 map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
