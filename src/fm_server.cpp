@@ -650,7 +650,7 @@ void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
 
 uint32_t Server::SendFarBlocks(float dtime)
 {
-	ScopeProfiler sp(g_profiler, "Server send far blocks");
+	ScopeProfiler sp(g_profiler, "Server: Far blocks send");
 	uint32_t sent{};
 	for (const auto &client : m_clients.getClientList()) {
 		if (!client)

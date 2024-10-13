@@ -1,5 +1,4 @@
 #include <cstdint>
-#include <ranges>
 #include "clientiface.h"
 #include "constants.h"
 #include "irr_v3d.h"
@@ -607,9 +606,10 @@ uint32_t RemoteClient::SendFarBlocks()
 
 		// First with larger iteration and smaller step
 
-		for (const auto &[key, block] : std::views::reverse(ordered)) {
+		for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
+			//	for (const auto &[key, block] : std::views::reverse(ordered)) {
 			m_env->m_server->SendBlockFm(
-					peer_id, block, serialization_version, net_proto_version);
+					peer_id, it->second, serialization_version, net_proto_version);
 		}
 	}
 	return sent_cnt;
