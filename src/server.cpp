@@ -393,6 +393,7 @@ Server::~Server()
 
 	// Stop threads
 	if (m_thread) {
+		if (m_env) m_env->getServerMap().save(MOD_STATE_WRITE_AT_UNLOAD); // save before merge thread exit
 		stop();
 		delete m_thread;
 	}
