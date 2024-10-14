@@ -58,23 +58,26 @@ public:
 		return full_type::operator=(std::forward<Args>(args)...);
 	}
 
-	mapped_type nothing = {};
+	const mapped_type nothing{};
 
 	template <typename... Args>
-	mapped_type &get(Args &&...args)
+	const mapped_type &get(Args &&...args) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 
-		if (!full_type::contains(std::forward<Args>(args)...))
-			return nothing;
-
-		return full_type::operator[](std::forward<Args>(args)...);
+		if (const auto &it = full_type::find(std::forward<Args>(args)...);
+				it != full_type::end()) {
+			return it->second;
+		}
+		return nothing;
 	}
 
-	const mapped_type &at_or(const key_type &k, const mapped_type &nothing = {}) const
+	template <typename... Args>
+	const mapped_type &at_or(Args &&...args) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
-		if (const auto it = full_type::find(k); it != full_type::end()) {
+		const auto lock = LOCKER::lock_shared_rec();
+		if (const auto &it = full_type::find(std::forward<Args>(args)...);
+				it != full_type::end()) {
 			return it->second;
 		}
 		return nothing;
