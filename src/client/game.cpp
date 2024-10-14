@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "game.h"
 
+#include <atomic>
 #include <iomanip>
 #include <cmath>
 #include "client/renderingengine.h"
@@ -928,7 +929,7 @@ private:
 	};
 
 
-	//freeminer:
+	// fm:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
     async_step_runner updateDrawList_async;
@@ -938,7 +939,7 @@ private:
     async_step_runner farmesh_async;
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
-	// minetest:
+	// ==:
 
 
 
@@ -1318,14 +1319,22 @@ void Game::run()
 			}
 		}
 
+		{
+			if (draw_control->farmesh) {
+				auto &far_blocks_send_timer =
+						client->getEnv().getClientMap().far_blocks_sent_timer;
+				far_blocks_send_timer -= dtime;
 
-// == fm:
+				if (far_blocks_send_timer <= 0.0f) {
+					client->sendGetBlocks();
+					far_blocks_send_timer = 2;
+				}
+			}
+
 		run_time += dtime;
 		if (runData.autoexit && run_time > runData.autoexit)
 			g_gamecallback->shutdown_requested = 1;
-// ==
-
-
+		}
 
 		// Prepare render data for next iteration
 
@@ -4230,6 +4239,10 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 void Game::handlePointingAtObject(const PointedThing &pointed,
 		const ItemStack &tool_item, const v3opos_t &player_position, bool show_debug)
 {
+	if (!runData.selected_object) {
+		return;
+	}
+
 	std::wstring infotext = unescape_translate(
 		utf8_to_wide(runData.selected_object->infoText()));
 
@@ -4439,7 +4452,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	*/
 
 	if (sky->getFogDistance() >= 0) {
-		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance());
+		draw_control->wanted_range = MYMIN(draw_control->wanted_range.load(std::memory_order::relaxed), sky->getFogDistance());
 	}
 
 
@@ -4539,18 +4552,23 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	if (farmesh) {
 		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-		farmesh_async.step([&, farmesh_range = farmesh_range,
-								   //yaw = player->getYaw(),
-								   //pitch = player->getPitch(),
-								   camera_pos = camera->getPosition(),
-								   camera_offset = camera->getOffset(),
-								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera_pos,
-					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera_offset,
-					//sky->getBrightness(),
-					farmesh_range, speed);
-		});
+		thread_local static uint8_t processed{};
+		thread_local static u64 next_run_time{};
+		if (processed || porting::getTimeMs() > next_run_time) {
+			next_run_time = porting::getTimeMs() + 300;
+			farmesh_async.step([&, farmesh_range = farmesh_range,
+									   //yaw = player->getYaw(),
+									   //pitch = player->getPitch(),
+									   camera_pos = camera->getPosition(),
+									   camera_offset = camera->getOffset(),
+									   speed = player->getSpeed().getLength()]() {
+				processed = farmesh->update(camera_pos,
+						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
+						camera_offset,
+						//sky->getBrightness(),
+						farmesh_range, speed);
+			});
+		}
 	}
 
 	/*
@@ -4655,7 +4673,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	const auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize)
-		if ((client->m_new_meshes &&
+		if ((client->m_new_meshes ||
 					runData.update_draw_list_timer >= update_draw_list_delta) ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||
@@ -4769,9 +4787,9 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (!runData.headless_optimize)
 		driver->endScene();
 
-	/*
+	if (m_game_ui->m_flags.show_profiler_graph)
 	stats->drawtime = tt_draw.stop(true);
-	*/
+	
 	g_profiler->graphAdd("Draw scene [us]", stats->drawtime);
 	g_profiler->avg("Game::updateFrame(): update frame [ms]", tt_update.stop(true));
 }

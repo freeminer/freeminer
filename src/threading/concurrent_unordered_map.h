@@ -49,6 +49,8 @@ public:
 	typedef typename full_type::const_iterator const_iterator;
 	typedef typename full_type::iterator iterator;
 
+	~concurrent_unordered_map_() { clear(); }
+
 	template <typename... Args>
 	decltype(auto) operator=(Args &&...args)
 	{
@@ -90,7 +92,7 @@ public:
 		return full_type::insert_or_assign(std::forward<Args>(args)...);
 	}
 
-	bool empty()
+	bool empty() const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty();
@@ -109,7 +111,7 @@ public:
 	}
 
 	template <typename... Args>
-	decltype(auto) contains(Args &&...args)
+	decltype(auto) contains(Args &&...args) const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::contains(std::forward<Args>(args)...);

@@ -20,6 +20,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #pragma once
 
 #include "irr_v3d.h"
+#include "threading/concurrent_unordered_map.h"
 #include <limits>
 #include <string>
 #include <unordered_map>
@@ -55,7 +56,7 @@ constexpr sound_handle_t SOUND_HANDLE_T_MAX = std::numeric_limits<sound_handle_t
 class ISoundManager
 {
 private:
-	std::unordered_map<sound_handle_t, u32> m_occupied_ids;
+	concurrent_unordered_map<sound_handle_t, u32> m_occupied_ids;
 	sound_handle_t m_next_id = 1;
 	std::vector<sound_handle_t> m_removed_sounds;
 

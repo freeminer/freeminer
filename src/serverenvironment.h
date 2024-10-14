@@ -498,6 +498,7 @@ private:
 public:
 	KeyValueCached blocks_with_abm;
 	size_t abm_world_last = 0;
+	size_t world_merge_last = 0;
 //end of freeminer
 
 

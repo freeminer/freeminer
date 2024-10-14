@@ -23,13 +23,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 
 #include "client/clientmap.h"
+#include "constants.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 
 int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &blockpos)
+		const v3bpos_t &blockpos, const pos_t speedf)
 {
-	int range = radius_box(playerblockpos, blockpos);
 	if (draw_control.lodmesh) {
+		int range = radius_box(playerblockpos, blockpos);
+		/* todo: make stable, depend on speed increase/decrease
+		const auto speed_blocks = speedf / (BS * MAP_BLOCKSIZE);
+		if (range > 1 && speed_blocks > 1) {
+			range += speed_blocks;
+		}
+		*/
+
 		const auto cells = std::max<int>(draw_control.cell_size * 2,
 				draw_control.lodmesh / draw_control.cell_size);
 		// for (int i = 8; i >= 0; --i) {
@@ -57,8 +66,7 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 	return 0;
 };
 
-#if 0
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+int getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
 	if (!draw_control.farmesh)
@@ -87,9 +95,8 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 		skip = FARMESH_STEP_MAX;
 	return skip;
 };
-#endif
 
-auto align(auto pos, const int amount)
+auto align_shift(auto pos, const auto amount)
 {
 	(pos.X >>= amount) <<= amount;
 	(pos.Y >>= amount) <<= amount;
@@ -100,8 +107,8 @@ auto align(auto pos, const int amount)
 v3bpos_t playerBlockAlign(
 		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos)
 {
-	const auto step_pow2 = draw_control.cell_size_pow + draw_control.farmesh_quality;
-	return align(playerblockpos, step_pow2) + (draw_control.cell_size >> 1);
+	const auto step_pow2 = draw_control.cell_size_pow + draw_control.farmesh_quality_pow;
+	return align_shift(playerblockpos, step_pow2) + (step_pow2 >> 1);
 }
 
 #if 1
@@ -126,24 +133,32 @@ struct child_t
 	tpos_t size;
 };
 
-std::optional<child_t> find(const v3bpos_t &block_pos, const v3bpos_t &player_pos,
-		const child_t &child, const int cell_size_pow, uint16_t farmesh_quality)
+std::optional<child_t> find(const v3tpos_t &block_pos, const v3tpos_t &player_pos,
+		const child_t &child, const int cell_size_pow, uint16_t farmesh_quality,
+		uint16_t depth = 0)
 {
 	if (!(block_pos.X >= child.pos.X && block_pos.X < child.pos.X + child.size &&
 				block_pos.Y >= child.pos.Y && block_pos.Y < child.pos.Y + child.size &&
-				block_pos.Z >= child.pos.Z && block_pos.Z < child.pos.Z + child.size))
-		return {};
-
-	if (child.size < (1 << (1 + cell_size_pow)))
+				block_pos.Z >= child.pos.Z && block_pos.Z < child.pos.Z + child.size)) {
+		if (depth) {
+			return {};
+		} else {
+			return child;
+		}
+	}
+	if (child.size < (1 << (cell_size_pow))) {
 		return child;
+	}
 
-	auto distance = std::max({std::abs(player_pos.X - child.pos.X - (child.size >> 1)),
-			std::abs(player_pos.Y - child.pos.Y - (child.size >> 1)),
-			std::abs(player_pos.Z - child.pos.Z - (child.size >> 1))});
+	auto distance =
+			std::max({std::abs((tpos_t)player_pos.X - child.pos.X - (child.size >> 1)),
+					std::abs((tpos_t)player_pos.Y - child.pos.Y - (child.size >> 1)),
+					std::abs((tpos_t)player_pos.Z - child.pos.Z - (child.size >> 1))});
 
-	if (farmesh_quality)
+	if (farmesh_quality) {
 		distance /= farmesh_quality;
-	if (distance >= child.size) {
+	}
+	if (distance > child.size) {
 		return child;
 	}
 	const tpos_t childSize = child.size >> 1;
@@ -171,8 +186,8 @@ std::optional<child_t> find(const v3bpos_t &block_pos, const v3bpos_t &player_po
 								 child.pos.Z + childSize),
 						 .size = childSize},
 		 }) {
-		const auto res =
-				find(block_pos, player_pos, child, cell_size_pow, farmesh_quality);
+		const auto res = find(
+				block_pos, player_pos, child, cell_size_pow, farmesh_quality, depth + 1);
 		if (res) {
 			return res;
 		}
@@ -190,19 +205,23 @@ const auto tree_align = tree_pow - 1;
 const auto tree_align_size = 1 << (tree_align);
 const auto external_pow = tree_pow - 2;
 
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
-		const v3bpos_t &blockpos)
+int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		const v3bpos_t &blockpos, uint8_t cell_size_pow)
 {
-	const auto blockpos_aligned_cell = align(blockpos, draw_control.cell_size_pow);
+	const auto blockpos_aligned_cell = align_shift(blockpos, cell_size_pow);
 
-	const auto start = child_t{
-			.pos = v3tpos_t(
-					((ppos.X >> tree_align) << tree_align) - (tree_align_size >> 1),
-					((ppos.Y >> tree_align) << tree_align) - (tree_align_size >> 1),
-					((ppos.Z >> tree_align) << tree_align) - (tree_align_size >> 1)),
+	const auto start = child_t{.pos = v3tpos_t(
+									   // TODO: cast to type larger than pos_t_type
+									   (((tpos_t)ppos.X >> tree_align) << tree_align) -
+											   (tree_align_size >> 1),
+									   (((tpos_t)ppos.Y >> tree_align) << tree_align) -
+											   (tree_align_size >> 1),
+									   (((tpos_t)ppos.Z >> tree_align) << tree_align) -
+											   (tree_align_size >> 1)),
 			.size = tree_size};
-	const auto res = find(blockpos_aligned_cell, ppos, start, draw_control.cell_size_pow,
-			draw_control.farmesh_quality);
+	const auto res = find(
+			{blockpos_aligned_cell.X, blockpos_aligned_cell.Y, blockpos_aligned_cell.Z},
+			{ppos.X, ppos.Y, ppos.Z}, start, cell_size_pow, draw_control.farmesh_quality);
 	if (res) {
 		/*
 #if !USE_POS32
@@ -215,27 +234,37 @@ int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 			return {};
 #endif
 */
-		const auto step = int(log(res->size) / log(2)) - draw_control.cell_size_pow;
+		const auto step = int(log(res->size) / log(2)) - cell_size_pow;
 		return step;
 	}
 	return 0; // TODO! fix intersection with cell_size_pow
 			  //return external_pow; //+ draw_control.cell_size_pow;
 }
 
-v3bpos_t getFarActual(v3bpos_t blockpos, const v3bpos_t &ppos, int step,
+int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		const v3bpos_t &blockpos)
+{
+	return getFarStepCellSize(draw_control, ppos, blockpos, draw_control.cell_size_pow);
+}
+
+v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, int step,
 		const MapDrawControl &draw_control)
 {
-	const auto cell_size_pow = int(log(draw_control.cell_size) / log(2));
-	const auto blockpos_aligned_cell = align(blockpos, cell_size_pow);
+	const auto blockpos_aligned_cell = align_shift(blockpos, draw_control.cell_size_pow);
 
-	const auto start = child_t{
-			.pos = v3tpos_t(
-					((ppos.X >> tree_align) << tree_align) - (tree_align_size >> 1),
-					((ppos.Y >> tree_align) << tree_align) - (tree_align_size >> 1),
-					((ppos.Z >> tree_align) << tree_align) - (tree_align_size >> 1)),
-			.size = tree_size};
-	const auto res = find(blockpos_aligned_cell, ppos, start, cell_size_pow,
+	const auto start =
+			child_t{.pos = v3tpos_t((((tpos_t)ppos.X >> tree_align) << tree_align) -
+											(tree_align_size >> 1),
+							(((tpos_t)ppos.Y >> tree_align) << tree_align) -
+									(tree_align_size >> 1),
+							(((tpos_t)ppos.Z >> tree_align) << tree_align) -
+									(tree_align_size >> 1)),
+					.size = tree_size};
+	const auto res = find(
+			{blockpos_aligned_cell.X, blockpos_aligned_cell.Y, blockpos_aligned_cell.Z},
+			{ppos.X, ppos.Y, ppos.Z}, start, draw_control.cell_size_pow,
 			draw_control.farmesh_quality);
+
 	if (res) {
 #if USE_POS32
 		return res->pos;

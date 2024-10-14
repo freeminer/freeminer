@@ -180,11 +180,11 @@ public:
 					const auto &n_up_cf = ndef->get(n_up.getContent());
 					if (n_look.getContent() == CONTENT_AIR &&
 							((n_up_cf.walkable && !n_up_cf.buildable_to) ||
-									n_up_cf.name == nndef.freeze)) {
+									n_up.getContent() == nndef.freeze_id)) {
 						map->setNode(p, n_look); // swap to old air
 						n.freeze_melt(ndef, -1);
 						map->setNode(p_new, n);
-					} else if (look_cf.name == nndef.freeze) {
+					} else if (n_look.getContent() == nndef.freeze_id) {
 						const auto freezed_level = n_look.getLevel(ndef);
 						const auto can_freeze =
 								n_look.getMaxLevel(ndef, true) - freezed_level;

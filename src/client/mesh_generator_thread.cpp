@@ -195,8 +195,11 @@ void MeshUpdateQueue::done(v3bpos_t pos)
 void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 
-    const auto lod_step = getLodStep(m_client->m_env.getClientMap().getControl(), getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)), q->p);
-    MeshMakeData * data = new MeshMakeData(m_client, m_cache_enable_shaders, lod_step, 0);
+	const auto lod_step = getLodStep(m_client->m_env.getClientMap().getControl(),
+			getNodeBlockPos(
+					floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)),
+			q->p, m_client->getEnv().getLocalPlayer()->getSpeed().getLength());
+	MeshMakeData * data = new MeshMakeData(m_client, m_cache_enable_shaders, lod_step, 0);
 	q->data = data;
 
 	data->fillBlockDataBegin(q->p);
@@ -290,6 +293,12 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 void MeshUpdateManager::updateBlock(Map *map, v3bpos_t p, bool ack_block_to_server,
 		bool urgent, bool update_neighbors)
 {
+	if (static thread_local const bool headless_optimize =
+					g_settings->getBool("headless_optimize");
+			headless_optimize) {
+		return;
+	}
+
 	static thread_local const bool many_neighbors =
 			g_settings->getBool("smooth_lighting")
 			&& !g_settings->getFlag("performance_tradeoffs");

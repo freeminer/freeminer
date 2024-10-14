@@ -56,7 +56,7 @@ MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 
 	if (!nocache) {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-		auto lock = try_shared_lock(m_block_cache_mutex, try_to_lock);
+		auto lock = maybe_shared_lock(m_block_cache_mutex, try_to_lock);
 		if (lock.owns_lock())
 #endif
 			if (m_block_cache && p == m_block_cache_p) {
@@ -92,7 +92,7 @@ MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 	return block;
 }
 
-MapBlock* Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
+MapBlock *Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
 {
 	return getBlock(p, trylock, nocache).get();
 }
@@ -111,7 +111,7 @@ MapBlock *Map::createBlankBlockNoInsert(const v3pos_t &p)
 	return block;
 }
 
-MapBlock *Map::createBlankBlock(const v3pos_t &p)
+MapBlockP Map::createBlankBlock(const v3pos_t &p)
 {
 	m_db_miss.erase(p);
 
@@ -119,14 +119,14 @@ MapBlock *Map::createBlankBlock(const v3pos_t &p)
 	auto block = getBlock(p, false, true);
 	if (block != NULL) {
 		infostream << "Block already created p=" << block->getPos() << std::endl;
-		return block.get();
+		return block;
 	}
 
 	block.reset(createBlankBlockNoInsert(p));
 
 	m_blocks.insert_or_assign(p, block);
 
-	return block.get();
+	return block;
 }
 
 bool Map::insertBlock(MapBlock *block)
@@ -153,7 +153,7 @@ MapBlock *ServerMap::createBlock(v3pos_t p)
 	if (MapBlock *block = getBlockNoCreateNoEx(p, false, true)) {
 		return block;
 	}
-	return createBlankBlock(p);
+	return createBlankBlock(p).get();
 }
 
 /*
@@ -422,7 +422,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 
 		auto m_blocks_size = m_blocks.size();
 
-		for (auto ir : m_blocks) {
+		for (const auto &ir : m_blocks) {
 			if (n++ < m_blocks_update_last) {
 				continue;
 			} else {
@@ -1139,7 +1139,7 @@ const v3pos_t g_4dirs[4] = {
 };
 
 bool ServerMap::propagateSunlight(
-		const v3pos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
+		const v3bpos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
 {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 

@@ -3659,7 +3659,7 @@ void GUIFormSpecMenu::drawMenu()
 			NULL, m_client, IT_ROT_HOVERED);
 	}
 
-	gui::IGUIElement::draw();
+	// gui::IGUIElement::draw();
 
 	// On touchscreens, m_pointer is set by GUIModalMenu::preprocessEvent instead.
 #ifndef HAVE_TOUCHSCREENGUI

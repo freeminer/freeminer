@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IFileSystem.h>
 #include <json/json.h>
 #include "client.h"
+#include "client/fm_far_container.h"
 #include "irr_v3d.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
@@ -131,6 +132,8 @@ Client::Client(
 		GameUI *game_ui,
 		ELoginRegister allow_login_or_register
 ):
+	far_container{this},
+
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_tsrc(tsrc),
 	m_shsrc(shsrc),
@@ -174,6 +177,7 @@ Client::Client(
 	control.cell_size = m_mesh_grid.cell_size;
 	control.cell_size_pow =	log(control.cell_size) / log(2);
 	control.farmesh_quality = g_settings->getU16("farmesh_quality");
+	control.farmesh_quality_pow = log(control.farmesh_quality) / log(2);
 	control.farmesh_stable = g_settings->getU16("farmesh_stable");
 }
 
@@ -471,6 +475,8 @@ void Client::step(float dtime)
 			FATAL_ERROR_IF(myplayer == NULL, "Local player not found in environment.");
 
 			sendInit(myplayer->getName());
+
+			sendInitFm();
 		}
 
 		// Not connected, return
@@ -637,7 +643,7 @@ void Client::step(float dtime)
 
 			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
 			if (!block && r.mesh)
-				block = m_env.getMap().createBlankBlock(r.p);
+				block = m_env.getMap().createBlankBlock(r.p).get();
 
 			if (block) {
 				// Delete the old mesh
@@ -1160,7 +1166,7 @@ void Client::ProcessData(NetworkPacket *pkt)
 					<< toClientCommandTable[command].name
 					<< "] state=" << (int)toClientCommandTable[command].state
 					<< " size=" << pkt->getSize()
-					<< std::endl;
+					<< "\n";
 #endif
 
 	/*
@@ -2000,25 +2006,6 @@ void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool 
 		addUpdateMeshTask(blockpos + v3bpos_t(0, -1, 0), false, urgent);
 	if (nodepos.Z == blockpos_relative.Z)
 		addUpdateMeshTask(blockpos + v3bpos_t(0, 0, -1), false, urgent);
-}
-
-void Client::updateMeshTimestampWithEdge(v3bpos_t blockpos) {
-	for (const auto & dir : g_7dirs_b) {
-		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + dir);
-		if(!block)
-			continue;
-		block->setTimestampNoChangedFlag(m_uptime);
-	}
-
-	/*int to = FARMESH_STEP_MAX;
-	for (int step = 1; step <= to; ++step) {
-		v3pos_t actualpos = getFarmeshActual(blockpos, step);
-		auto *block = m_env.getMap().getBlockNoCreateNoEx(actualpos); // todo maybe update bp1 too if differ
-		if(!block)
-			continue;
-		block->setTimestampNoChangedFlag(m_uptime);
-	}*/
-
 }
 
 void Client::updateCameraOffset(v3pos_t camera_offset)
