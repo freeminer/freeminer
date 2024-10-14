@@ -156,7 +156,7 @@ void Client::createFarMesh(MapBlockP &block)
 		const auto &step = block->far_step;
 		MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
-		auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
+		const auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, step);
 		block->creating_far_mesh = false;
 	}

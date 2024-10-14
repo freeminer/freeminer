@@ -712,6 +712,8 @@ void Server::stop()
 {
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
+	if (m_env) m_env->getServerMap().save(MOD_STATE_WRITE_AT_UNLOAD);
+
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->stop();
 
