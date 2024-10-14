@@ -36,7 +36,7 @@ public:
 	~concurrent_unordered_set_() { clear(); }
 
 	template <typename... Args>
-	Value &at_or(Args &&...args, const Value &nothing = {})
+	const Value &at_or(Args &&...args, const Value &nothing = {}) const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		if (const auto it = full_type::find(std::forward<Args>(args)...);
