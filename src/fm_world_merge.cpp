@@ -409,7 +409,7 @@ void *WorldMergeThread::run()
 			continue;
 		}
 		if (merger.merge_server_diff()) {
-			return {};
+			break;
 		}
 
 		sleep(60);
