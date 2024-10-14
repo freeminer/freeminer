@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <atomic>
 #include <set>
 #include "constants.h"
+#include "irr_v3d.h"
 #include "metadata.h"
 #include "network/networkprotocol.h"
 #include "unit_sao.h"
@@ -88,7 +89,7 @@ public:
 //fm:
 	void addSpeed(v3f);
 	std::atomic_uint m_ms_from_last_respawn {10000}; //more than ignore move time (1)
-	v3f m_last_stat_position {};
+	v3opos_t m_last_stat_position {};
 	double last_time_online = 0;
 
 

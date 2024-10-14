@@ -71,6 +71,15 @@ public:
 		return full_type::operator[](std::forward<Args>(args)...);
 	}
 
+	const mapped_type &at_or(const key_type &k, const mapped_type &nothing = {}) const
+	{
+		auto lock = LOCKER::lock_shared_rec();
+		if (const auto it = full_type::find(k); it != full_type::end()) {
+			return it->second;
+		}
+		return nothing;
+	}
+
 	template <typename... Args>
 	decltype(auto) assign(Args &&...args)
 	{
