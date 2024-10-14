@@ -585,14 +585,13 @@ MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
 	return dbases[step].get();
 };
 
-MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &pos)
+MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &bpos)
 {
 	auto *m_server = this;
 	try {
-		auto block =
-				std::make_shared<MapBlock>(nullptr, pos, m_server); // &m_server->getMap()
+		MapBlockP block{m_server->getEnv().getServerMap().createBlankBlockNoInsert(bpos)};
 		std::string blob;
-		dbase->loadBlock(pos, &blob);
+		dbase->loadBlock(bpos, &blob);
 		if (!blob.length()) {
 			return {};
 		}
@@ -612,7 +611,7 @@ MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &pos)
 		}
 		return block;
 	} catch (const std::exception &ex) {
-		errorstream << "Block load fail " << pos << " : " << ex.what() << "\n";
+		errorstream << "Block load fail " << bpos << " : " << ex.what() << "\n";
 	}
 	return {};
 }

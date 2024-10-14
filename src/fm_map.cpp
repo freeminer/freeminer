@@ -422,7 +422,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 
 		auto m_blocks_size = m_blocks.size();
 
-		for (auto ir : m_blocks) {
+		for (const auto &ir : m_blocks) {
 			if (n++ < m_blocks_update_last) {
 				continue;
 			} else {
@@ -1139,7 +1139,7 @@ const v3pos_t g_4dirs[4] = {
 };
 
 bool ServerMap::propagateSunlight(
-		const v3pos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
+		const v3bpos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
 {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 

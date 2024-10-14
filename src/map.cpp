@@ -1983,6 +1983,8 @@ void ServerMap::endSave()
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
+	changed_blocks_for_merge.emplace(block->getPos());
+
 	return saveBlock(block, dbase, m_map_compression_level);
 }
 

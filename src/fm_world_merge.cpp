@@ -21,25 +21,22 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdint>
 #include <cstdlib>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include "constants.h"
-#include "debug/iostream_debug_helpers.h"
 #include "database/database.h"
 #include "debug.h"
 #include "fm_server.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "log.h"
 #include "mapblock.h"
 #include "mapnode.h"
 #include "profiler.h"
 #include "server.h"
 #include "settings.h"
-
-WorldMergeThread::WorldMergeThread(Server *server) :
-		thread_vector("WorldMerge", 20), m_server(server)
-{
-}
+#include "fm_world_merge.h"
 
 //  https://stackoverflow.com/a/34937216
 template <typename KeyType, typename ValueType>
@@ -62,7 +59,7 @@ static const auto load_block = [](Server *m_server, MapDatabase *dbase,
 	return block;
 };
 
-void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up,
+void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 		const v3bpos_t &bpos_aligned, MapBlock::block_step_t step)
 {
 	const auto step_pow = 1;
@@ -88,8 +85,16 @@ void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up
 	if (!timestamp)
 		timestamp = m_server->getEnv().getGameTime();
 
-	MapBlockP block_new{m_server->getMap().createBlankBlockNoInsert(bpos_aligned)};
-	block_new->setTimestampNoChangedFlag(timestamp);
+	MapBlockP block_up;
+
+	if (partial) {
+		block_up = load_block(m_server, dbase_up, bpos_aligned);
+	}
+	if (!block_up) {
+		block_up.reset(
+				m_server->getEnv().getServerMap().createBlankBlockNoInsert(bpos_aligned));
+	}
+	block_up->setTimestampNoChangedFlag(timestamp);
 	size_t not_empty_nodes{};
 	{
 		const auto block_size = MAP_BLOCKSIZE;
@@ -120,7 +125,7 @@ void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up
 #else
 					// Top content count
 
-					bool maybe_air = false;
+					bool maybe_air{};
 					MapNode air;
 					for (const auto &dir : {
 								 v3pos_t{0, 1, 0},
@@ -162,7 +167,7 @@ void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up
 					if (top_c.empty()) {
 						if (maybe_air) {
 							++not_empty_nodes;
-							block_new->setNodeNoLock(npos, air);
+							block_up->setNodeNoLock(npos, air);
 						}
 						continue;
 					}
@@ -183,7 +188,7 @@ void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up
 					// TODO better check
 					++not_empty_nodes;
 
-					block_new->setNodeNoLock(npos, n);
+					block_up->setNodeNoLock(npos, n);
 				}
 	}
 	// TODO: skip full air;
@@ -191,147 +196,227 @@ void merge_one_block(Server *m_server, MapDatabase *dbase, MapDatabase *dbase_up
 	if (!not_empty_nodes) {
 		return;
 	}
-	block_new->setGenerated(true);
-	m_server->getEnv().getServerMap().saveBlock(block_new.get(), dbase_up,
+	block_up->setGenerated(true);
+	m_server->getEnv().getServerMap().saveBlock(block_up.get(), dbase_up,
 			m_server->getEnv().getServerMap().m_map_compression_level);
+}
+
+bool WorldMerger::merge_one_step(
+		MapBlock::block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo)
+{
+
+	auto *dbase = m_server->GetFarDatabase(step);
+	auto *dbase_up = m_server->GetFarDatabase(step + 1);
+
+	if (world_merge_load_all && blocks_todo.empty()) {
+		actionstream << "World merge full load " << (short)step << '\n';
+		std::vector<v3bpos_t> loadable_blocks;
+		dbase->listAllLoadableBlocks(loadable_blocks);
+		for (const auto &bpos : loadable_blocks) {
+			blocks_todo.emplace(bpos);
+		}
+	}
+
+	if (blocks_todo.empty()) {
+		infostream << "World merge step " << (short)step << " nothing to do " << '\n';
+		return false;
+	}
+
+	size_t cur_n = 0;
+
+	const auto blocks_size = blocks_todo.size();
+	infostream << "World merge "
+			   //<< "run " << run
+			   << " step " << (short)step << " blocks "
+			   << blocks_size
+			   //<< " per " << (porting::getTimeMs() - time_start) / 1000 << "s"
+			   << " max_clients " << world_merge_max_clients << " throttle "
+			   << world_merge_throttle << '\n';
+	size_t processed = 0;
+
+	const auto time_start = porting::getTimeMs();
+
+	const auto printstat = [&]() {
+		const auto time = porting::getTimeMs();
+
+		infostream << "World merge "
+				   // << "run " << run
+				   << " " << cur_n << "/" << blocks_size << " blocks loaded "
+				   << m_server->getMap().m_blocks.size() << " processed " << processed
+				   << " per " << (time - time_start) / 1000 << " speed "
+				   << processed / (((time - time_start) / 1000) ?: 1) << '\n';
+	};
+
+	std::unordered_set<v3bpos_t> blocks_processed;
+
+	cur_n = 0;
+	for (const auto &bpos : blocks_todo) {
+		if (stop()) {
+			return true;
+		}
+
+		++cur_n;
+
+		const bpos_t shift = step + 1;
+
+		v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift,
+				(bpos.Z >> shift) << shift);
+		if (blocks_processed.contains(bpos_aligned)) {
+			continue;
+		}
+		blocks_processed.emplace(bpos_aligned);
+
+		++processed;
+		g_profiler->add("Server: World merge blocks", 1);
+
+		try {
+
+			merge_one_block(dbase, dbase_up, bpos_aligned, step);
+
+			if (!(cur_n % 10000)) {
+				printstat();
+			}
+
+			if (throttle()) {
+				tracestream << "World merge throttle" << '\n';
+
+				std::this_thread::sleep_for(std::chrono::seconds(1));
+			} else if (world_merge_throttle) {
+				std::this_thread::sleep_for(
+						std::chrono::milliseconds(world_merge_throttle));
+			}
+
+#if !EXCEPTION_DEBUG
+		} catch (const std::exception &e) {
+			errorstream << "world merge" << ": exception: " << e.what() << "\n"
+						<< stacktrace() << '\n';
+		} catch (...) {
+			errorstream << "world merge" << ": Unknown unhandled exception at "
+						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << '\n'
+						<< stacktrace() << '\n';
+#else
+		} catch (int) { // nothing
+#endif
+		}
+	}
+	if (world_merge_load_all == 1) {
+		blocks_todo.clear();
+	} else {
+		blocks_todo = blocks_processed;
+	}
+
+	printstat();
+
+	return false;
+}
+
+bool WorldMerger::merge_list(std::unordered_set<v3bpos_t> &blocks_todo)
+{
+	for (MapBlock::block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
+		if (merge_one_step(step, blocks_todo)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool WorldMerger::merge_all()
+{
+	std::unordered_set<v3bpos_t> blocks_todo;
+	return merge_list(blocks_todo);
+}
+
+bool WorldMerger::merge_server_diff()
+{
+	std::unordered_set<v3bpos_t> changed_blocks_for_merge;
+	{
+		const auto lock = m_server->getEnv()
+								  .getServerMap()
+								  .changed_blocks_for_merge.try_lock_unique_rec();
+		changed_blocks_for_merge =
+				m_server->getEnv().getServerMap().changed_blocks_for_merge;
+		m_server->getEnv().getServerMap().changed_blocks_for_merge.clear();
+	}
+
+	if (!changed_blocks_for_merge.empty()) {
+		return merge_list(changed_blocks_for_merge);
+	}
+
+	return false;
+}
+
+WorldMergeThread::WorldMergeThread(Server *server) :
+		thread_vector("WorldMerge", 20), m_server(server)
+{
 }
 
 void *WorldMergeThread::run()
 {
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	{
-		u64 world_merge = 0;
-		g_settings->getU64NoEx("world_merge", world_merge);
-		if (!world_merge)
-			return nullptr;
+	u64 world_merge = 1;
+	g_settings->getU64NoEx("world_merge", world_merge);
+	if (!world_merge) {
+		return {};
 	}
 
-	int16_t world_merge_load_all = -1; // -1 : auto;  0 : disable;   1 : force
-	g_settings->getS16NoEx("world_merge_load_all", world_merge_load_all);
-	u64 world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
-	g_settings->getU64NoEx("world_merge_throttle", world_merge_throttle);
-	u64 world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
-	g_settings->getU64NoEx("world_merge_max_clients", world_merge_max_clients);
-	//		u64 abm_world_max_blocks = m_server->isSingleplayer() ? 2000 : 10000;
-	//		g_settings->getU64NoEx("abm_world_max_blocks", abm_world_max_blocks);
+	std::this_thread::sleep_for(std::chrono::seconds(3));
 
-	//auto &world_merge_last = m_server->getEnv().world_merge_last;
-	const auto can_work = [&]() {
-		return (m_server->getEnv().getPlayerCount() <= world_merge_max_clients
-				//&& m_server->getMap().m_blocks.size() <= abm_world_max_blocks
-		);
+	WorldMerger merger{
+			.m_server{m_server},
+			.stop_func{[this]() { return stopRequested(); }},
+			.throttle_func{[&]() {
+				return (m_server->getEnv().getPlayerCount() >
+						merger.world_merge_max_clients);
+			}},
 	};
+	{
+		g_settings->getU64NoEx("world_merge_throttle", merger.world_merge_throttle);
+		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
+		g_settings->getU64NoEx("world_merge_max_clients", merger.world_merge_max_clients);
 
-	int32_t run = 0;
-	//size_t pos_dir; // random start
+		{
+			merger.world_merge_load_all = -1;
+			g_settings->getS16NoEx("world_merge_load_all", merger.world_merge_load_all);
+			merger.world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
+			u64 world_merge_all = 0;
+			g_settings->getU64NoEx("world_merge_all", world_merge_all);
+			if (world_merge_all) {
+				merger.merge_all();
+			}
+		}
+	}
+	merger.world_merge_load_all = 0;
+	merger.partial = true;
 
 	while (!stopRequested()) {
-		++run;
-
-		if (!can_work()) {
-			tracestream << "Abm world wait" << '\n';
+		if (merger.throttle()) {
+			tracestream << "World merge wait" << '\n';
 			sleep(10);
 			continue;
 		}
-
-		auto time_start = porting::getTimeMs();
-
-		for (MapBlock::block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
-			std::vector<v3bpos_t> loadable_blocks;
-
-			auto *dbase = m_server->GetFarDatabase(step);
-			auto *dbase_up = m_server->GetFarDatabase(step + 1);
-
-			if (world_merge_load_all && loadable_blocks.empty()) {
-				actionstream << "World merge full load " << (short)step << '\n';
-				dbase->listAllLoadableBlocks(loadable_blocks);
-			}
-			if (loadable_blocks.empty()) {
-				break;
-			}
-
-			size_t cur_n = 0;
-
-			const auto loadable_blocks_size = loadable_blocks.size();
-			infostream << "World merge run " << run << " step " << (short)step
-					   << " blocks " << loadable_blocks_size << " per "
-					   << (porting::getTimeMs() - time_start) / 1000 << "s"
-					   << " max_clients " << world_merge_max_clients << " throttle "
-					   << world_merge_throttle << '\n';
-			size_t processed = 0;
-
-			time_start = porting::getTimeMs();
-
-			const auto printstat = [&]() {
-				auto time = porting::getTimeMs();
-
-				infostream << "World merge run " << run << " " << cur_n << "/"
-						   << loadable_blocks_size << " blocks loaded "
-						   << m_server->getMap().m_blocks.size() << " processed "
-						   << processed << " per " << (time - time_start) / 1000
-						   << " speed " << processed / (((time - time_start) / 1000) ?: 1)
-						   << '\n';
-			};
-
-			std::unordered_set<v3bpos_t> blocks_processed;
-
-			cur_n = 0;
-			for (const auto &bpos : loadable_blocks) {
-				if (stopRequested()) {
-					return nullptr;
-				}
-
-				++cur_n;
-
-				const bpos_t shift = step + 1;
-
-				v3bpos_t bpos_aligned((bpos.X >> shift) << shift,
-						(bpos.Y >> shift) << shift, (bpos.Z >> shift) << shift);
-				if (blocks_processed.contains(bpos_aligned)) {
-					continue;
-				}
-				blocks_processed.emplace(bpos_aligned);
-
-				++processed;
-				g_profiler->add("Server: World merge blocks", 1);
-
-				try {
-
-					merge_one_block(m_server, dbase, dbase_up, bpos_aligned, step);
-
-					if (!(cur_n % 10000)) {
-						printstat();
-					}
-
-					if (!can_work()) {
-						tracestream << "World merge throttle" << '\n';
-
-						std::this_thread::sleep_for(std::chrono::seconds(1));
-					} else if (world_merge_throttle) {
-						std::this_thread::sleep_for(
-								std::chrono::milliseconds(world_merge_throttle));
-					}
-
-#if !EXCEPTION_DEBUG
-				} catch (const std::exception &e) {
-					errorstream << m_name << ": exception: " << e.what() << "\n"
-								<< stacktrace() << '\n';
-				} catch (...) {
-					errorstream << m_name << ": Unknown unhandled exception at "
-								<< __PRETTY_FUNCTION__ << ":" << __LINE__ << '\n'
-								<< stacktrace() << '\n';
-#else
-				} catch (int) { // nothing
-#endif
-				}
-			}
-			printstat();
+		if (merger.merge_server_diff()) {
+			return {};
 		}
 
 		sleep(60);
-		break;
 	}
-	END_DEBUG_EXCEPTION_HANDLER
-	return nullptr;
+
+	{
+		// unbreakable at max speed
+		merger.stop_func = {};
+		merger.throttle_func = {};
+		merger.world_merge_throttle = 0;
+
+		if (!m_server->getEnv().getServerMap().changed_blocks_for_merge.empty()) {
+			actionstream
+					<< "Merge last changed blocks "
+					<< m_server->getEnv().getServerMap().changed_blocks_for_merge.size()
+					<< "\n";
+		}
+		merger.merge_server_diff();
+	}
+
+	END_DEBUG_EXCEPTION_HANDLER;
+	return {};
 }
