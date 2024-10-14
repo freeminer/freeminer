@@ -86,7 +86,7 @@ private:
 	aabb3f m_selection_box = aabb3f(-BS/3.,-BS/3.,-BS/3., BS/3.,BS/3.,BS/3.);
 	scene::IMeshSceneNode *m_meshnode = nullptr;
 	scene::IAnimatedMeshSceneNode *m_animated_meshnode = nullptr;
-	WieldMeshSceneNode *m_wield_meshnode = nullptr;
+	std::shared_ptr<WieldMeshSceneNode> m_wield_meshnode;
 	scene::IBillboardSceneNode *m_spritenode = nullptr;
 	scene::IDummyTransformationSceneNode *m_matrixnode = nullptr;
 	Nametag *m_nametag = nullptr;

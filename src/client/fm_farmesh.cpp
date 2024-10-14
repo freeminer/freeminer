@@ -93,8 +93,7 @@ void FarMesh::makeFarBlock(
 						blockpos_actual, std::make_pair(step, far_iteration_complete));
 
 				new_block = true;
-				block = std::make_shared<MapBlock>(
-						&client_map, blockpos_actual, m_client);
+				block.reset(client_map.createBlankBlockNoInsert(blockpos_actual));
 				block->far_step = step;
 				far_blocks.insert_or_assign(blockpos_actual, block);
 				++m_client->m_new_meshes;

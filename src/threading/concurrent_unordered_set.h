@@ -35,17 +35,6 @@ public:
 
 	~concurrent_unordered_set_() { clear(); }
 
-	template <typename... Args>
-	const Value &at_or(Args &&...args, const Value &nothing = {}) const
-	{
-		auto lock = LOCKER::lock_shared_rec();
-		if (const auto it = full_type::find(std::forward<Args>(args)...);
-				it != full_type::end()) {
-			return *it;
-		}
-		return nothing;
-	}
-
 	LOCK_UNIQUE_PROXY(full_type, operator=);
 	LOCK_SHARED_PROXY(full_type, empty);
 	LOCK_SHARED_PROXY(full_type, size);

@@ -453,7 +453,7 @@ scene::ISceneNode *GenericCAO::getSceneNode() const
 	}
 
 	if (m_wield_meshnode) {
-		return m_wield_meshnode;
+		return m_wield_meshnode.get();
 	}
 
 	if (m_spritenode) {
@@ -585,7 +585,7 @@ void GenericCAO::removeFromScene(bool permanent)
 		m_animated_meshnode = nullptr;
 	} else if (m_wield_meshnode) {
 		m_wield_meshnode->remove();
-		m_wield_meshnode->drop();
+		//m_wield_meshnode->drop();
 		m_wield_meshnode = nullptr;
 	} else if (m_spritenode) {
 		m_spritenode->remove();
@@ -814,7 +814,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 */
 			item.deSerialize(m_prop.wield_item, m_client->idef());
 		}
-		m_wield_meshnode = new WieldMeshSceneNode(m_smgr, -1);
+		m_wield_meshnode.reset(new WieldMeshSceneNode(m_smgr, -1));
 		m_wield_meshnode->setItem(item, m_client,
 			(m_prop.visual == "wielditem"));
 
