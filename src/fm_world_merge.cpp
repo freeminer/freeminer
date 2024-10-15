@@ -82,19 +82,31 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					blocks[rpos] = nblock;
 				}
 	}
-	if (!timestamp)
+	
+	if (!timestamp) {
 		timestamp = m_server->getEnv().getGameTime();
+	}
 
 	MapBlockP block_up;
 
 	if (partial) {
 		block_up = load_block(m_server, dbase_up, bpos_aligned);
+		if (block_up && lazy_up) {
+			// actionstream << "s=" << step <<" at=" << block_up->getActualTimestamp() << " t=" << block_up->getTimestamp() <<  " myts=" << timestamp << "\n";
+			const auto up_ts = block_up->getActualTimestamp();
+			if (timestamp < up_ts + lazy_up) {
+				return;
+			}
+		}
 	}
+
 	if (!block_up) {
 		block_up.reset(
 				m_server->getEnv().getServerMap().createBlankBlockNoInsert(bpos_aligned));
 	}
+
 	block_up->setTimestampNoChangedFlag(timestamp);
+
 	size_t not_empty_nodes{};
 	{
 		const auto block_size = MAP_BLOCKSIZE;
@@ -371,9 +383,10 @@ void *WorldMergeThread::run()
 			}},
 	};
 	{
-		g_settings->getU64NoEx("world_merge_throttle", merger.world_merge_throttle);
+		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);
 		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
-		g_settings->getU64NoEx("world_merge_max_clients", merger.world_merge_max_clients);
+		g_settings->getU32NoEx("world_merge_max_clients", merger.world_merge_max_clients);
+		g_settings->getU32NoEx("world_merge_lazy_up", merger.lazy_up);
 
 		{
 			merger.world_merge_load_all = -1;
@@ -396,7 +409,7 @@ void *WorldMergeThread::run()
 			continue;
 		}
 		if (merger.merge_server_diff()) {
-			return {};
+			break;
 		}
 
 		sleep(60);

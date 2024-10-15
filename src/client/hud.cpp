@@ -911,11 +911,11 @@ void Hud::drawBlockBounds()
 	v3pos_t pos = player->getStandingNodePos();
 
 	if (m_block_bounds_mode == BLOCK_BOUNDS_FAR_DRAWN) {
-		auto offset = intToFloat(client->getCamera()->getOffset(), BS);
+	    const auto offset = posToOpos(client->getCamera()->getOffset(), BS);
 
 		//s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
 
-		v3opos_t halfNode = v3opos_t(BS, BS, BS) / 2.0f;
+		const auto halfNode = v3opos_t(BS, BS, BS) / 2.0f;
 		const auto &client_map = client->getEnv().getClientMap();
  		const auto & far_blocks = client_map.m_far_blocks;
 
@@ -962,8 +962,8 @@ void Hud::drawBlockBounds()
 					lod_step = mesh->lod_step;
 					far_step = mesh->far_step;
 				}
-				aabb3f box(
-					oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
+				const aabb3f box(
+						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
 						oposToV3f(intToFloat(
 								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE * fscale - fscale),
 								BS) -
@@ -983,7 +983,7 @@ void Hud::drawBlockBounds()
 				int lod_step = 0;
 				int far_step = 0;
 				int b = 0;
-				aabb3f box(
+				const aabb3f box(
 						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
 						oposToV3f(intToFloat(
 								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE << mesh_step ) - (1 << mesh_step), // - 1
@@ -1007,7 +1007,7 @@ void Hud::drawBlockBounds()
 				int lod_step = 0;
 				int far_step = 0;
 				int b = 0;
-				aabb3f box(
+				const aabb3f box(
 						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
 						oposToV3f(intToFloat(
 								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE << (mesh_step) ) - (1 << mesh_step), ///// -1 ?
