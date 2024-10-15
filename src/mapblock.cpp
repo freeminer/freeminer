@@ -773,34 +773,34 @@ const MapBlock::mesh_type empty_mesh;
 #if BUILD_CLIENT
 	const MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_other)
 	{
-		if (m_lod_mesh[step].load(std::memory_order::relaxed) || !allow_other)
-			return m_lod_mesh[step].load(std::memory_order::relaxed);
+		if (m_lod_mesh[step] || !allow_other)
+			return m_lod_mesh[step];
 
 		for (int inc = 1; inc < 4; ++inc) {
-			if (step + inc < m_lod_mesh.size() && m_lod_mesh[step + inc].load(std::memory_order::relaxed))
-				return m_lod_mesh[step + inc].load(std::memory_order::relaxed);
-			if (step - inc >= 0 && m_lod_mesh[step - inc].load(std::memory_order::relaxed))
-				return m_lod_mesh[step - inc].load(std::memory_order::relaxed);
+			if (step + inc < m_lod_mesh.size() && m_lod_mesh[step + inc])
+				return m_lod_mesh[step + inc];
+			if (step - inc >= 0 && m_lod_mesh[step - inc])
+				return m_lod_mesh[step - inc];
 		}
 		return empty_mesh;
 	}
 
 	const MapBlock::mesh_type MapBlock::getFarMesh(block_step_t step)
 	{
-		return m_far_mesh[step].load(std::memory_order::relaxed);
+		return m_far_mesh[step];
 	}
 
 	void MapBlock::setLodMesh(const MapBlock::mesh_type &rmesh)
 	{
 		const auto ms = rmesh->lod_step;
-		if (auto mesh = std::move(m_lod_mesh[ms].load(std::memory_order::relaxed)))
+		if (auto mesh = std::move(m_lod_mesh[ms]))
 			delete_mesh = std::move(mesh);
 		m_lod_mesh[ms] = rmesh;
 	}
 
 	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step)
 	{
-		if (auto mesh = std::move(m_far_mesh[step].load(std::memory_order::relaxed))) {
+		if (auto mesh = std::move(m_far_mesh[step])) {
 			delete_mesh = std::move(mesh);
 		}
 		m_far_mesh[step] = rmesh;
