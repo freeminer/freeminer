@@ -4461,14 +4461,14 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 
 	if (draw_control->range_all && sky->getFogDistance() < 0) {
-		runData.fog_range = 100000 * BS;
+		runData.fog_range = FARMESH_LIMIT * BS;
 	} else if (!runData.headless_optimize) {
 		runData.fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		thread_local static const auto farmesh = g_settings->getS32("farmesh");
-		if (runData.fog_range < farmesh) {
-			runData.fog_range = farmesh;
+		thread_local static const auto farmesh_bs = g_settings->getS32("farmesh") * BS;
+		if (runData.fog_range < farmesh_bs) {
+			runData.fog_range = farmesh_bs ;
 		}
 
 		if (client->use_weather) {

@@ -240,8 +240,8 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 			if (far_blocks_storage.find(bpos) != far_blocks_storage.end()) {
 				return;
 			}
+			far_blocks_storage.insert_or_assign(block->getPos(), block);
 		}
-		far_blocks_storage.insert_or_assign(block->getPos(), block);
 		++m_new_farmeshes;
 
 		//todo: step ordered thread pool
@@ -262,7 +262,8 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 				if (it->second->far_step != block->far_step) {
 					return;
 				}
-				block->far_iteration = it->second->far_iteration.load(std::memory_order::relaxed);
+				block->far_iteration =
+						it->second->far_iteration.load(std::memory_order::relaxed);
 				far_blocks.at(bpos) = block;
 			}
 		});

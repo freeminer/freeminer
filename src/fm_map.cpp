@@ -24,9 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "map.h"
 #include "mapblock.h"
-#include "log_types.h"
 #include "profiler.h"
-
 #include "nodedef.h"
 #include "environment.h"
 #include "emerge.h"
@@ -37,8 +35,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxelalgorithms.h"
 
 #if HAVE_THREAD_LOCAL
-thread_local MapBlockP m_block_cache = nullptr;
-thread_local v3pos_t m_block_cache_p;
+namespace
+{
+thread_local MapBlockP block_cache{};
+thread_local v3bpos_t block_cache_p;
+}
 #endif
 
 // TODO: REMOVE THIS func and use Map::getBlock
@@ -59,11 +60,11 @@ MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 		auto lock = maybe_shared_lock(m_block_cache_mutex, try_to_lock);
 		if (lock.owns_lock())
 #endif
-			if (m_block_cache && p == m_block_cache_p) {
+			if (block_cache && p == block_cache_p) {
 #ifndef NDEBUG
 				g_profiler->add("Map: getBlock cache hit", 1);
 #endif
-				return m_block_cache;
+				return block_cache;
 			}
 	}
 
@@ -84,8 +85,8 @@ MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 		if (lock.owns_lock())
 #endif
 		{
-			m_block_cache_p = p;
-			m_block_cache = block;
+			block_cache_p = p;
+			block_cache = block;
 		}
 	}
 
@@ -102,7 +103,7 @@ void Map::getBlockCacheFlush()
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
-	m_block_cache = nullptr;
+	block_cache = nullptr;
 }
 
 MapBlock *Map::createBlankBlockNoInsert(const v3pos_t &p)
@@ -175,7 +176,7 @@ void Map::eraseBlock(const MapBlockP block)
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
-	m_block_cache = nullptr;
+	block_cache = nullptr;
 }
 
 MapNode Map::getNodeTry(const v3pos_t &p)
