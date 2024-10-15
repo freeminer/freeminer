@@ -64,7 +64,6 @@ public:
 	const mapped_type &get(Args &&...args) const
 	{
 		const auto lock = LOCKER::lock_shared_rec();
-
 		if (const auto &it = full_type::find(std::forward<Args>(args)...);
 				it != full_type::end()) {
 			return it->second;
@@ -73,14 +72,14 @@ public:
 	}
 
 	template <typename... Args>
-	const mapped_type &at_or(Args &&...args) const
+	const mapped_type &at_or(Args &&...args, const mapped_type &def) const
 	{
 		const auto lock = LOCKER::lock_shared_rec();
 		if (const auto &it = full_type::find(std::forward<Args>(args)...);
 				it != full_type::end()) {
 			return it->second;
 		}
-		return nothing;
+		return def;
 	}
 
 	template <typename... Args>
