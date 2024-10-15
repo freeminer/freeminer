@@ -336,12 +336,14 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		/*
 			Create a new block
 		*/
-		block = sector->createBlankBlock(p).get();
+		block = sector->createBlankBlockNoInsert(p);
 		if (!block->deSerialize(istr, m_server_ser_ver, false)){
 			delete block;
 			return;
-		};
+		}
 		block->deSerializeNetworkSpecific(istr);
+	
+		sector->insertBlock(block);
 		++m_new_meshes;
 	}
 
