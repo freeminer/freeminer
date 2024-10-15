@@ -4548,8 +4548,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (clouds)
 		updateClouds(dtime);
 
+	thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
 	if (farmesh) {
-		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
 		thread_local static uint8_t processed{};
 		thread_local static u64 next_run_time{};
 		if (processed || porting::getTimeMs() > next_run_time) {
@@ -4591,8 +4591,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		driver->setFog(
 				sky->getBgColor(),
 				video::EFT_FOG_LINEAR,
-				100000 * BS,
-				110000 * BS,
+				std::max(farmesh_range, 100000) * BS,
+				(std::max(farmesh_range, 100000)+10000) * BS,
 				0.01f,
 				false, // pixel fog
 				false // range fog

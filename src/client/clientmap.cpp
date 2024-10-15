@@ -1222,7 +1222,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// Mesh animation
 		if (pass == scene::ESNRP_SOLID) {
 			// Pretty random but this should work somewhat nicely
-			bool faraway = d >= BS * 50;
+			bool faraway = false; //d >= BS * 50;
 			if (block_mesh->isAnimationForced() || !faraway ||
 					mesh_animate_count < (m_control.range_all ? 200 : 50)) {
 
