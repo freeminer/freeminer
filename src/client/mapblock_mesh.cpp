@@ -806,6 +806,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 #if !FARMESH_SHADOWS
 		 if (data->far_step <= 0)
 #endif
+			if (m_enable_shaders) {
 				material.MaterialType = m_shdrsrc->getShaderInfo(
 						p.layer.shader_id).material;
 				p.layer.applyMaterialOptionsWithShaders(material);
