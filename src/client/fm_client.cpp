@@ -154,7 +154,9 @@ void Client::createFarMesh(MapBlockP &block)
 		const auto &blockpos_actual = block->getPos();
 		const auto &m_camera_offset = m_camera->getOffset();
 		const auto &step = block->far_step;
-		MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
+		static const auto m_cache_enable_shaders = g_settings->getBool("enable_shaders");
+
+		MeshMakeData mdat(m_client, m_cache_enable_shaders, 0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
 		const auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, step);

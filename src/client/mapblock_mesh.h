@@ -54,15 +54,15 @@ struct MeshMakeData
 
     // fm:
 	NodeContainer & m_vmanip;
-	u16 side_length_data;
-	int lod_step;
-	int far_step;
+	const u16 side_length_data;
+	const int lod_step;
+	const int far_step;
 	const int fscale;
 
-	int range = 1;
-	bool no_draw = false;
-	unsigned int timestamp = 0;
-	bool debug = false;
+	int range  {1};
+	bool no_draw {};
+	unsigned int timestamp {};
+	bool debug {};
 
 	explicit MeshMakeData(Client *client, bool use_shaders
 			, int lod_step = 0
