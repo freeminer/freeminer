@@ -595,17 +595,10 @@ MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases
 	return far_dbases[step].get();
 };
 
-MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
+MapBlockP loadBlockNoStore(ServerMap *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 {
-	return ::GetFarDatabase(
-			this->getEnv().m_map, far_dbases, this->getEnv().m_map->m_savedir, step);
-}
-
-MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &bpos)
-{
-	auto *m_server = this;
 	try {
-		MapBlockP block{m_server->getEnv().getServerMap().createBlankBlockNoInsert(bpos)};
+		MapBlockP block{smap->createBlankBlockNoInsert(bpos)};
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);
 		if (!blob.length()) {

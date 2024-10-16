@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <unordered_set>
+#include "map.h"
 #include "mapblock.h"
 
 class Server;
@@ -29,10 +30,9 @@ class MapDatabase;
 
 struct WorldMerger
 {
-	Server *m_server{};
-
 	std::function<bool(void)> stop_func;
 	std::function<bool(void)> throttle_func;
+	std::function<uint32_t(void)> get_time_func;
 
 	bool stop()
 	{
@@ -53,6 +53,9 @@ struct WorldMerger
 	int16_t world_merge_load_all{}; // -1 : auto;  0 : disable;   1 : force
 	bool partial{};
 	uint32_t lazy_up{};
+	const NodeDefManager *ndef{};
+	ServerMap *smap{};
+	ServerMap::far_dbases_t &far_dbases;
 
 	void merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 			const v3bpos_t &bpos_aligned, MapBlock::block_step_t step);

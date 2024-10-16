@@ -224,9 +224,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	block->humidity = h;
 
 	if (m_localdb) {
-		//if (!step && !far_dbases[step])far_dbases[step].reset(m_localdb);
-		const auto db = GetFarDatabase({}, far_dbases, far_world_path, step);
-		if (db) {
+		if (const auto db = GetFarDatabase({}, far_dbases, far_world_path, step); db) {
 			ServerMap::saveBlock(block.get(), db);
 		}
 	}

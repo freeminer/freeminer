@@ -785,9 +785,6 @@ public:
 	void handleCommand_GetBlocks(NetworkPacket *pkt);
 	void handleCommand_InitFm(NetworkPacket *pkt);
 	ServerMap::far_dbases_t far_dbases;
-	MapDatabase *GetFarDatabase(MapBlock::block_step_t
-					step /*, MapDatabase *zero_db = {}, const std::string &world_path = {}*/);
-	MapBlockP loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &pos);
 	uint32_t SendFarBlocks(float dtime);
 
 	Stat stat;
@@ -838,5 +835,5 @@ void dedicated_server_loop(Server &server, bool &kill);
 
 // fm:
 MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases, std::string savedir, MapBlock::block_step_t step);
-
+MapBlockP loadBlockNoStore(ServerMap * smap, MapDatabase *dbase, const v3bpos_t &pos);
 // ==

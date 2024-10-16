@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "log.h"
+#include "map.h"
 #include "mapblock.h"
 #include "mapnode.h"
 #include "profiler.h"
@@ -47,9 +48,9 @@ std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueTyp
 			[](const pairtype &p1, const pairtype &p2) { return p1.second < p2.second; });
 }
 
-static const auto load_block = [](Server *m_server, MapDatabase *dbase,
+static const auto load_block = [](ServerMap *smap, MapDatabase *dbase,
 									   const v3bpos_t &pos) -> MapBlockP {
-	auto block = m_server->loadBlockNoStore(dbase, pos);
+	auto block = loadBlockNoStore(smap, dbase, pos);
 	if (!block) {
 		return {};
 	}
@@ -73,7 +74,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					const v3pos_t rpos(x, y, z);
 					const v3bpos_t nbpos(bpos_aligned.X + (x << step),
 							bpos_aligned.Y + (y << step), bpos_aligned.Z + (z << step));
-					auto nblock = load_block(m_server, dbase, nbpos);
+					auto nblock = load_block(smap, dbase, nbpos);
 					if (!nblock) {
 						continue;
 					}
@@ -82,15 +83,15 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					blocks[rpos] = nblock;
 				}
 	}
-	
-	if (!timestamp) {
-		timestamp = m_server->getEnv().getGameTime();
+
+	if (!timestamp && get_time_func) {
+		timestamp = get_time_func();
 	}
 
 	MapBlockP block_up;
 
 	if (partial) {
-		block_up = load_block(m_server, dbase_up, bpos_aligned);
+		block_up = load_block(smap, dbase_up, bpos_aligned);
 		if (block_up && lazy_up) {
 			// actionstream << "s=" << step <<" at=" << block_up->getActualTimestamp() << " t=" << block_up->getTimestamp() <<  " myts=" << timestamp << "\n";
 			const auto up_ts = block_up->getActualTimestamp();
@@ -101,8 +102,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 	}
 
 	if (!block_up) {
-		block_up.reset(
-				m_server->getEnv().getServerMap().createBlankBlockNoInsert(bpos_aligned));
+		block_up.reset(smap->createBlankBlockNoInsert(bpos_aligned));
 	}
 
 	block_up->setTimestampNoChangedFlag(timestamp);
@@ -167,8 +167,8 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 							top_c[c] += 4;
 						}
 
-						if (const auto light_night = n.getLightRaw(LIGHTBANK_NIGHT,
-									m_server->getNodeDefManager()->getLightingFlags(n));
+						if (const auto light_night = n.getLightRaw(
+									LIGHTBANK_NIGHT, ndef->getLightingFlags(n));
 								light_night) {
 							top_light_night.emplace_back(light_night);
 						}
@@ -189,8 +189,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					if (!top_light_night.empty()) {
 						auto max_light = *max_element(
 								std::begin(top_light_night), std::end(top_light_night));
-						n.setLight(LIGHTBANK_NIGHT, max_light,
-								m_server->getNodeDefManager()->getLightingFlags(n));
+						n.setLight(LIGHTBANK_NIGHT, max_light, ndef->getLightingFlags(n));
 					}
 #endif
 
@@ -209,16 +208,15 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 		return;
 	}
 	block_up->setGenerated(true);
-	m_server->getEnv().getServerMap().saveBlock(block_up.get(), dbase_up,
-			m_server->getEnv().getServerMap().m_map_compression_level);
+	smap->saveBlock(block_up.get(), dbase_up, smap->m_map_compression_level);
 }
 
 bool WorldMerger::merge_one_step(
 		MapBlock::block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo)
 {
 
-	auto *dbase = m_server->GetFarDatabase(step);
-	auto *dbase_up = m_server->GetFarDatabase(step + 1);
+	auto *dbase = GetFarDatabase(smap, far_dbases, {}, step);
+	auto *dbase_up = GetFarDatabase(smap, far_dbases, {}, step + 1);
 
 	if (world_merge_load_all && blocks_todo.empty()) {
 		actionstream << "World merge full load " << (short)step << '\n';
@@ -253,10 +251,12 @@ bool WorldMerger::merge_one_step(
 
 		infostream << "World merge "
 				   // << "run " << run
-				   << " " << cur_n << "/" << blocks_size << " blocks loaded "
-				   << m_server->getMap().m_blocks.size() << " processed " << processed
-				   << " per " << (time - time_start) / 1000 << " speed "
-				   << processed / (((time - time_start) / 1000) ?: 1) << '\n';
+				   << " " << cur_n << "/"
+				   << blocks_size
+				   //<< " blocks loaded " << m_server->getMap().m_blocks.size()
+				   << " processed " << processed << " per " << (time - time_start) / 1000
+				   << " speed " << processed / (((time - time_start) / 1000) ?: 1)
+				   << '\n';
 	};
 
 	std::unordered_set<v3bpos_t> blocks_processed;
@@ -342,12 +342,9 @@ bool WorldMerger::merge_server_diff()
 {
 	std::unordered_set<v3bpos_t> changed_blocks_for_merge;
 	{
-		const auto lock = m_server->getEnv()
-								  .getServerMap()
-								  .changed_blocks_for_merge.try_lock_unique_rec();
-		changed_blocks_for_merge =
-				m_server->getEnv().getServerMap().changed_blocks_for_merge;
-		m_server->getEnv().getServerMap().changed_blocks_for_merge.clear();
+		const auto lock = smap->changed_blocks_for_merge.try_lock_unique_rec();
+		changed_blocks_for_merge = smap->changed_blocks_for_merge;
+		smap->changed_blocks_for_merge.clear();
 	}
 
 	if (!changed_blocks_for_merge.empty()) {
@@ -375,12 +372,15 @@ void *WorldMergeThread::run()
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
 	WorldMerger merger{
-			.m_server{m_server},
 			.stop_func{[this]() { return stopRequested(); }},
 			.throttle_func{[&]() {
 				return (m_server->getEnv().getPlayerCount() >
 						merger.world_merge_max_clients);
 			}},
+			.get_time_func{[this]() { return m_server->getEnv().getGameTime(); }},
+			.ndef{m_server->getNodeDefManager()},
+			.smap{m_server->getEnv().m_map},
+			.far_dbases{m_server->far_dbases},
 	};
 	{
 		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);
