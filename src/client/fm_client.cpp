@@ -159,7 +159,8 @@ void Client::createFarMesh(MapBlockP &block)
 #else
 		static const auto m_cache_enable_shaders = false;
 #endif
-		MeshMakeData mdat(m_client, m_cache_enable_shaders, 0, step, &m_client->far_container);
+		MeshMakeData mdat(
+				m_client, m_cache_enable_shaders, 0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
 		const auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, step);
@@ -222,10 +223,15 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
 	block->humidity = h;
 
-	if (!step) {
-		if (m_localdb) {
-			ServerMap::saveBlock(block.get(), m_localdb);
+	if (m_localdb) {
+		//if (!step && !far_dbases[step])far_dbases[step].reset(m_localdb);
+		const auto db = GetFarDatabase({}, far_dbases, far_world_path, step);
+		if (db) {
+			ServerMap::saveBlock(block.get(), db);
 		}
+	}
+
+	if (!step) {
 		updateMeshTimestampWithEdge(bpos);
 		if (!overload && block->content_only != CONTENT_IGNORE &&
 				block->content_only != CONTENT_AIR) {

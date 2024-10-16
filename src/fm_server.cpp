@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrTypes.h"
 #include "irr_v3d.h"
 #include "log.h"
+#include "map.h"
 #include "mapblock.h"
 #include "mapnode.h"
 #include "network/fm_networkprotocol.h"
@@ -543,22 +544,32 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	}
 }
 
-MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
+MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases,
+		std::string savedir, MapBlock::block_step_t step)
 {
-	auto *m_server = this;
-	auto &dbases = m_server->far_dbases;
 	if (step <= 0) {
-		if (m_server->getEnv().m_map) {
-			return m_server->getEnv().m_map->dbase;
+		if (smap) {
+			return smap->dbase;
 		}
 	}
-	if (step >= dbases.size()) {
+
+	if (step >= far_dbases.size()) {
 		return {};
 	}
-	if (const auto dbase = dbases[step].get()) {
+
+	if (const auto dbase = far_dbases[step].get()) {
 		return dbase;
 	}
-	const auto &savedir = m_server->getEnv().getServerMap().m_savedir;
+
+	if (savedir.empty() && smap) {
+		savedir = smap->m_savedir;
+	}
+
+	if (savedir.empty()) {
+		errorstream << "No path for save database with step " << step << "\n";
+		return {};
+	}
+
 	// Determine which database backend to use
 	std::string conf_path = savedir + DIR_DELIM + "world.mt";
 	Settings conf;
@@ -580,10 +591,15 @@ MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
 		fs::CreateDir(path);
 	}
 
-	dbases[step].reset(
-			m_server->getEnv().getServerMap().createDatabase(backend, path, conf));
-	return dbases[step].get();
+	far_dbases[step].reset(ServerMap::createDatabase(backend, path, conf));
+	return far_dbases[step].get();
 };
+
+MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
+{
+	return ::GetFarDatabase(
+			this->getEnv().m_map, far_dbases, this->getEnv().m_map->m_savedir, step);
+}
 
 MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &bpos)
 {

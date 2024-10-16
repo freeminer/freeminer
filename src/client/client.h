@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //fm:
 #include "client/fm_far_container.h"
+#include "map.h"
 #include "map_settings_manager.h"
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
@@ -159,7 +160,8 @@ public:
 	size_t m_new_farmeshes {};
 	ChatBackend *chat_backend {};
 	FarContainer far_container;
-
+	ServerMap::far_dbases_t far_dbases;
+	std::string far_world_path;
 	// ==
 
 public:

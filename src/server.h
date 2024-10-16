@@ -784,7 +784,7 @@ public:
 	void handleCommand_Drawcontrol(NetworkPacket *pkt);
 	void handleCommand_GetBlocks(NetworkPacket *pkt);
 	void handleCommand_InitFm(NetworkPacket *pkt);
-	std::array<std::shared_ptr<MapDatabase>, FARMESH_STEP_MAX> far_dbases;
+	ServerMap::far_dbases_t far_dbases;
 	MapDatabase *GetFarDatabase(MapBlock::block_step_t
 					step /*, MapDatabase *zero_db = {}, const std::string &world_path = {}*/);
 	MapBlockP loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &pos);
@@ -801,6 +801,8 @@ public:
 	std::unique_ptr<AbmWorldThread> m_abm_world_thread;
 	std::unique_ptr<WorldMergeThread> m_world_merge_thread;
 	// ==
+
+
 
 	// CSM restrictions byteflag
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;
@@ -832,3 +834,9 @@ public:
 	Shuts down when kill is set to true.
 */
 void dedicated_server_loop(Server &server, bool &kill);
+
+
+// fm:
+MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases, std::string savedir, MapBlock::block_step_t step);
+
+// ==

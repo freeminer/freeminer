@@ -1062,6 +1062,9 @@ void Client::initLocalMapSaving(const Address &address,
 
 	m_localdb->beginSave();
 	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
+
+	far_world_path = world_path;
+	far_dbases[0].reset(m_localdb);
 }
 
 void Client::ReceiveAll()
