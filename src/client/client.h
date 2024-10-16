@@ -127,6 +127,7 @@ private:
 
 class ClientScripting;
 class GameUI;
+class WorldMerger;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
@@ -162,6 +163,7 @@ public:
 	FarContainer far_container;
 	ServerMap::far_dbases_t far_dbases;
 	std::string far_world_path;
+	std::unique_ptr<WorldMerger> merger;
 	// ==
 
 public:

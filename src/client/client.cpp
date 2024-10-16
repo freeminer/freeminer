@@ -75,6 +75,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "server.h"
 #include "emerge.h"
+#include "fm_world_merge.h"
+
 #include "network/fm_connection_use.h"
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"

@@ -28,25 +28,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class Server;
 class MapDatabase;
 
-struct WorldMerger
+class WorldMerger
 {
+public:
 	std::function<bool(void)> stop_func;
 	std::function<bool(void)> throttle_func;
 	std::function<uint32_t(void)> get_time_func;
-
-	bool stop()
-	{
-		if (stop_func)
-			return stop_func();
-		return false;
-	}
-
-	bool throttle()
-	{
-		if (throttle_func)
-			return throttle_func();
-		return false;
-	}
 
 	uint32_t world_merge_throttle{};
 	uint32_t world_merge_max_clients{};
@@ -56,6 +43,11 @@ struct WorldMerger
 	const NodeDefManager *ndef{};
 	ServerMap *smap{};
 	ServerMap::far_dbases_t &far_dbases;
+	std::unordered_set<v3bpos_t> changed_blocks_for_merge;
+
+	~WorldMerger();
+	bool stop();
+	bool throttle();
 
 	void merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 			const v3bpos_t &bpos_aligned, MapBlock::block_step_t step);
@@ -64,5 +56,8 @@ struct WorldMerger
 			MapBlock::block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo);
 	bool merge_list(std::unordered_set<v3bpos_t> &blocks_todo);
 	bool merge_all();
-	bool merge_server_diff();
+	bool merge_changed();
+	bool merge_server_diff(
+			concurrent_unordered_set<v3bpos_t> &smap_changed_blocks_for_merge);
+	bool add_changed(const v3bpos_t &bpos);
 };
