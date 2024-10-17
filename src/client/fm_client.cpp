@@ -147,7 +147,6 @@ void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
 		m_settings_mgr = std::make_unique<MapSettingsManager>(
 				m_world_path + DIR_DELIM + "map_meta");
 		m_settings_mgr->mapgen_params = m_mapgen_params.release();
-		;
 		m_settings_mgr->saveMapMeta();
 	} else if (!m_emerge) {
 		m_mapgen_params.reset();
@@ -230,10 +229,8 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
 	block->humidity = h;
 
-	if (m_localdb
-			//&& !is_simple_singleplayer_game
-	) {
-		if (const auto db = GetFarDatabase({}, far_dbases, far_world_path, step); db) {
+	if (m_localdb && !is_simple_singleplayer_game) {
+		if (const auto db = GetFarDatabase({}, far_dbases,  m_world_path, step); db) {
 			ServerMap::saveBlock(block.get(), db);
 
 			if (!step) {

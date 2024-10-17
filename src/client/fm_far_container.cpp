@@ -42,7 +42,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 
 	const auto loadBlock = [this](const auto &bpos, const auto step) -> MapBlockP {
 		auto *dbase =
-				GetFarDatabase({}, m_client->far_dbases, m_client->far_world_path, step);
+				GetFarDatabase({}, m_client->far_dbases, m_client->m_world_path, step);
 		if (!dbase) {
 			return {};
 		}

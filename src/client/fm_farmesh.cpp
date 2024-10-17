@@ -221,8 +221,8 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 		MapgenType mgtype = FARMESH_DEFAULT_MAPGEN;
 		settings.set("mg_name", Mapgen::getMapgenName(mgtype));
 		m_client->MakeEmerge(settings, mgtype);
+		emerge_use = m_client->m_emerge.get();
 	}
-	emerge_use = m_client->m_emerge.get();
 
 	if (emerge_use) {
 		if (emerge_use->mgparams) {

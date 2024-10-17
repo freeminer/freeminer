@@ -165,7 +165,6 @@ public:
 	ChatBackend *chat_backend {};
 	FarContainer far_container;
 	ServerMap::far_dbases_t far_dbases;
-	std::string far_world_path;
 	std::unique_ptr<WorldMerger> merger;
 	// ==
 

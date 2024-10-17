@@ -1067,8 +1067,7 @@ void Client::initLocalMapSaving(const Address &address,
 	m_localdb->beginSave();
 	actionstream << "Local map saving started, map will be saved at '" << world_path << "'" << std::endl;
 
-	{
-		far_world_path = world_path;
+	if (!m_simple_singleplayer_mode) {
 		far_dbases[0].reset(m_localdb, [](auto) {});
 		if (!merger) {
 			merger = std::make_unique<WorldMerger>(WorldMerger{
@@ -1080,7 +1079,7 @@ void Client::initLocalMapSaving(const Address &address,
 					.smap{&getEnv().getClientMap()},
 					.far_dbases{far_dbases},
 					.dbase{m_localdb},
-					.save_dir{far_world_path},
+					.save_dir{m_world_path},
 			});
 		}
 	}

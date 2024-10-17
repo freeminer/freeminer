@@ -348,7 +348,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		++m_new_meshes;
 	}
 
-	if (m_localdb) {
+	if (m_localdb && !is_simple_singleplayer_game) {
 		ServerMap::saveBlock(block, m_localdb);
 		merger->add_changed(p);
 	}
