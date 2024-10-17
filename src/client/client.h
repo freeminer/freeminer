@@ -22,13 +22,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-//fm:
+// fm:
 #include "client/fm_far_container.h"
 #include "map.h"
 #include "map_settings_manager.h"
+#include "mapgen/mapgen.h"
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
-
+constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
+// ==
 
 #include "clientenvironment.h"
 #include "irr_v3d.h"
@@ -148,6 +150,7 @@ public:
 	void sendDrawControl();
 	void sendGetBlocks();
 	void updateMeshTimestampWithEdge(const v3bpos_t &blockpos);
+	void MakeEmerge(const Settings &settings, const MapgenType& mgtype);
 	void createFarMesh(MapBlockP &block);
 
 	std::unique_ptr<Server> m_localserver;

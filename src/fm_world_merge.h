@@ -21,13 +21,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <cstdint>
 #include <unordered_set>
 #include "map.h"
 #include "mapblock.h"
 
 class Server;
 class MapDatabase;
-
 class WorldMerger
 {
 public:
@@ -40,12 +40,15 @@ public:
 	int16_t world_merge_load_all{}; // -1 : auto;  0 : disable;   1 : force
 	bool partial{};
 	uint32_t lazy_up{};
-	const NodeDefManager *ndef{};
-	ServerMap *smap{};
+	const NodeDefManager *const ndef{};
+	Map * const smap{};
 	ServerMap::far_dbases_t &far_dbases;
 	std::unordered_set<v3bpos_t> changed_blocks_for_merge;
-
+	int16_t m_map_compression_level{7};
+	MapDatabase *const dbase{};
+	std::string save_dir;
 	~WorldMerger();
+	void init();
 	bool stop();
 	bool throttle();
 

@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_map>
 #include "constants.h"
 #include "database/database.h"
+#include "debug/iostream_debug_helpers.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "log.h"
@@ -45,7 +46,7 @@ std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueTyp
 			[](const pairtype &p1, const pairtype &p2) { return p1.second < p2.second; });
 }
 
-static const auto load_block = [](ServerMap *smap, MapDatabase *dbase,
+static const auto load_block = [](Map *smap, MapDatabase *dbase,
 									   const v3bpos_t &pos) -> MapBlockP {
 	auto block = loadBlockNoStore(smap, dbase, pos);
 	if (!block) {
@@ -210,20 +211,22 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 		return;
 	}
 	block_up->setGenerated(true);
-	ServerMap::saveBlock(block_up.get(), dbase_up, smap->m_map_compression_level);
+	ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level);
 }
 
 bool WorldMerger::merge_one_step(
 		MapBlock::block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo)
 {
-
-	auto *dbase = GetFarDatabase(smap, far_dbases, {}, step);
-	auto *dbase_up = GetFarDatabase(smap, far_dbases, {}, step + 1);
-
+	auto *dbase_current = GetFarDatabase(dbase, far_dbases, save_dir, step);
+	auto *dbase_up = GetFarDatabase({}, far_dbases, save_dir, step + 1);
+	if (!dbase_up) {
+		errorstream << "World merge: No database up for step " << (short)step << "\n";
+		return true;
+	}
 	if (world_merge_load_all && blocks_todo.empty()) {
 		actionstream << "World merge full load " << (short)step << '\n';
 		std::vector<v3bpos_t> loadable_blocks;
-		dbase->listAllLoadableBlocks(loadable_blocks);
+		dbase_current->listAllLoadableBlocks(loadable_blocks);
 		for (const auto &bpos : loadable_blocks) {
 			blocks_todo.emplace(bpos);
 		}
@@ -285,7 +288,7 @@ bool WorldMerger::merge_one_step(
 
 		try {
 
-			merge_one_block(dbase, dbase_up, bpos_aligned, step);
+			merge_one_block(dbase_current, dbase_up, bpos_aligned, step);
 
 			if (!(cur_n % 10000)) {
 				printstat();
@@ -342,6 +345,7 @@ bool WorldMerger::merge_all()
 
 bool WorldMerger::merge_changed()
 {
+	DUMP("wantmerge", changed_blocks_for_merge.size());
 	if (!changed_blocks_for_merge.empty()) {
 		const auto res = merge_list(changed_blocks_for_merge);
 		changed_blocks_for_merge.clear();
@@ -378,9 +382,16 @@ bool WorldMerger::throttle()
 bool WorldMerger::add_changed(const v3bpos_t &bpos)
 {
 	changed_blocks_for_merge.emplace(bpos);
-	if (changed_blocks_for_merge.size() > 1000) {
+
+	// TODO: async
+	if (changed_blocks_for_merge.size() > 300) {
 		merge_changed();
 		return true;
 	}
 	return false;
 }
+void WorldMerger::init()
+{
+	m_map_compression_level =
+			rangelim(g_settings->getS16("map_compression_level_disk"), -1, 9);
+};

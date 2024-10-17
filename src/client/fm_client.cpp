@@ -1,10 +1,13 @@
+#include <atomic>
 #include <exception>
 #include <future>
+#include <memory>
 #include "client.h"
 #include "client/fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"
+#include "fm_world_merge.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
 #include "network/fm_networkprotocol.h"
@@ -82,7 +85,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 
 	auto &packet = *(pkt->packet);
 
-	if (!m_world_path.empty() && packet.count(TOCLIENT_INIT_GAMEID)) {
+	if (!m_world_path.empty() && packet.contains(TOCLIENT_INIT_GAMEID)) {
 		std::string gameid;
 		packet[TOCLIENT_INIT_GAMEID].convert(gameid);
 		std::string conf_path = m_world_path + DIR_DELIM + "world.mt";
@@ -92,13 +95,6 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		conf.updateConfigFile(conf_path.c_str());
 	}
 
-	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
-
-	if (farmesh_range && !m_localserver) {
-		m_localserver = std::make_unique<Server>(
-				"farmesh", findSubgame("devtest"), false, Address{}, true);
-	}
-
 	{
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
@@ -106,45 +102,56 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		std::string mg_name;
 		MapgenType mgtype = settings.getNoEx("mg_name", mg_name)
 									? Mapgen::getMapgenType(mg_name)
-									: MAPGEN_DEFAULT;
+									: FARMESH_DEFAULT_MAPGEN;
 
 		if (mgtype == MAPGEN_INVALID) {
 			errorstream << "Client map save: mapgen '" << mg_name
 						<< "' not valid; falling back to "
-						<< Mapgen::getMapgenName(MAPGEN_DEFAULT) << std::endl;
-			mgtype = MAPGEN_DEFAULT;
+						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << std::endl;
+			mgtype = FARMESH_DEFAULT_MAPGEN;
 		}
 
-		m_mapgen_params =
-				std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
-		m_mapgen_params->MapgenParams::readParams(&settings);
-		m_mapgen_params->readParams(&settings);
-
-		if (!m_simple_singleplayer_mode && farmesh_range) {
-			const auto num_emerge_threads = g_settings->get("num_emerge_threads");
-			g_settings->set("num_emerge_threads", "1");
-			m_emerge = std::make_unique<EmergeManager>(
-					m_localserver.get(), m_localserver->m_metrics_backend.get());
-			m_emerge->initMapgens(m_mapgen_params.get());
-			g_settings->set("num_emerge_threads", num_emerge_threads);
-		}
-
-		if (!m_world_path.empty()) {
-			m_settings_mgr = std::make_unique<MapSettingsManager>(
-					m_world_path + DIR_DELIM + "map_meta");
-			m_settings_mgr->mapgen_params = m_mapgen_params.release();
-			;
-			m_settings_mgr->saveMapMeta();
-		} else if (!m_emerge) {
-			m_mapgen_params.reset();
-		}
+		MakeEmerge(settings, mgtype);
 	}
 
-	if (packet.count(TOCLIENT_INIT_WEATHER))
+	if (packet.contains(TOCLIENT_INIT_WEATHER)) {
 		packet[TOCLIENT_INIT_WEATHER].convert(use_weather);
+	}
 
 	//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
 	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
+}
+
+void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
+{
+	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
+
+	if (farmesh_range && !m_localserver) {
+		m_localserver = std::make_unique<Server>(
+				"farmesh", findSubgame("devtest"), false, Address{}, true);
+	}
+	m_mapgen_params = std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
+	m_mapgen_params->MapgenParams::readParams(&settings);
+	m_mapgen_params->readParams(&settings);
+
+	if (!m_simple_singleplayer_mode && farmesh_range) {
+		const auto num_emerge_threads = g_settings->get("num_emerge_threads");
+		g_settings->set("num_emerge_threads", "1");
+		m_emerge = std::make_unique<EmergeManager>(
+				m_localserver.get(), m_localserver->m_metrics_backend.get());
+		m_emerge->initMapgens(m_mapgen_params.get());
+		g_settings->set("num_emerge_threads", num_emerge_threads);
+	}
+
+	if (!m_world_path.empty()) {
+		m_settings_mgr = std::make_unique<MapSettingsManager>(
+				m_world_path + DIR_DELIM + "map_meta");
+		m_settings_mgr->mapgen_params = m_mapgen_params.release();
+		;
+		m_settings_mgr->saveMapMeta();
+	} else if (!m_emerge) {
+		m_mapgen_params.reset();
+	}
 }
 
 void Client::createFarMesh(MapBlockP &block)
@@ -223,9 +230,15 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
 	block->humidity = h;
 
-	if (m_localdb) {
+	if (m_localdb
+			//&& !is_simple_singleplayer_game
+	) {
 		if (const auto db = GetFarDatabase({}, far_dbases, far_world_path, step); db) {
 			ServerMap::saveBlock(block.get(), db);
+
+			if (!step) {
+				merger->add_changed(bpos);
+			}
 		}
 	}
 

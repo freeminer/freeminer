@@ -349,6 +349,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 
 	if (m_localdb) {
 		ServerMap::saveBlock(block, m_localdb);
+		merger->add_changed(p);
 	}
 
 	/*

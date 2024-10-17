@@ -473,7 +473,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	if (name.empty()) {
 		name = "key_value_storage";
 	}
-	if (!m_key_value_storage.count(name)) {
+	if (!m_key_value_storage.contains(name)) {
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name),
 				std::forward_as_tuple(m_path_world, name));
 	}
@@ -545,12 +545,12 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	}
 }
 
-MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases,
-		std::string savedir, MapBlock::block_step_t step)
+MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
+		const std::string &savedir, MapBlock::block_step_t step)
 {
 	if (step <= 0) {
-		if (smap) {
-			return smap->dbase;
+		if (dbase) {
+			return dbase;
 		}
 	}
 
@@ -562,12 +562,8 @@ MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases
 		return dbase;
 	}
 
-	if (savedir.empty() && smap) {
-		savedir = smap->m_savedir;
-	}
-
 	if (savedir.empty()) {
-		errorstream << "No path for save database with step " << step << "\n";
+		errorstream << "No path for save database with step " << (short)step << "\n";
 		return {};
 	}
 
@@ -596,7 +592,7 @@ MapDatabase *GetFarDatabase(ServerMap *smap, ServerMap::far_dbases_t &far_dbases
 	return far_dbases[step].get();
 };
 
-MapBlockP loadBlockNoStore(ServerMap *smap, MapDatabase *dbase, const v3bpos_t &bpos)
+MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 {
 	try {
 		MapBlockP block{smap->createBlankBlockNoInsert(bpos)};
@@ -696,6 +692,8 @@ void *WorldMergeThread::run()
 			.ndef{m_server->getNodeDefManager()},
 			.smap{m_server->getEnv().m_map},
 			.far_dbases{m_server->far_dbases},
+			.dbase{m_server->getEnv().m_map->dbase},
+			.save_dir{m_server->getEnv().m_map->m_savedir},
 	};
 	{
 		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);

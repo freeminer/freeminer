@@ -2,7 +2,6 @@
 #include "client.h"
 #include "client/clientmap.h"
 #include "client/fm_far_calc.h"
-#include "database/database.h"
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
 #include "mapnode.h"
@@ -40,36 +39,37 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		block = storage.get(bpos_aligned);
 	}
 
-	auto loadBlock = [this](const auto &bpos, const auto step) -> MapBlockP {
-		if (const auto dbase = GetFarDatabase(
-					{}, m_client->far_dbases, m_client->far_world_path, step)) {
-			MapBlockP block{
-					m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos)};
-
-			std::string blob;
-			dbase->loadBlock(bpos, &blob);
-			if (!blob.length()) {
-				return {};
-			}
-
-			std::istringstream is(blob, std::ios_base::binary);
-
-			u8 version = SER_FMT_VER_INVALID;
-			is.read((char *)&version, 1);
-
-			if (is.fail()) {
-				return {};
-			}
-
-			// Read basic data
-			if (!block->deSerialize(is, version, true)) {
-				return {};
-			}
-			return block;
+	const auto loadBlock = [this](const auto &bpos, const auto step) -> MapBlockP {
+		auto *dbase =
+				GetFarDatabase({}, m_client->far_dbases, m_client->far_world_path, step);
+		if (!dbase) {
+			return {};
 		}
+		MapBlockP block{m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos)};
+
+		std::string blob;
+		dbase->loadBlock(bpos, &blob);
+		if (!blob.length()) {
+			return {};
+		}
+
+		std::istringstream is(blob, std::ios_base::binary);
+
+		u8 version = SER_FMT_VER_INVALID;
+		is.read((char *)&version, 1);
+
+		if (is.fail()) {
+			return {};
+		}
+
+		// Read basic data
+		if (!block->deSerialize(is, version, true)) {
+			return {};
+		}
+		return block;
 	};
 
-	if (!block) {
+	if (!block && !m_client->m_simple_singleplayer_mode) {
 		block = loadBlock(bpos, step);
 	}
 
