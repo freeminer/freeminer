@@ -1,8 +1,10 @@
 #include "fm_far_container.h"
+#include <unordered_map>
 #include "client.h"
 #include "client/clientmap.h"
 #include "client/fm_far_calc.h"
 #include "database/database.h"
+#include "irr_v3d.h"
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
 #include "mapnode.h"
@@ -71,7 +73,13 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	};
 
 	if (!block && !m_client->m_simple_singleplayer_mode) {
-		block = loadBlock(bpos, step);
+		thread_local static std::unordered_set<v3bpos_t> miss_cache;
+		if (!miss_cache.contains(bpos)) {
+			block = loadBlock(bpos, step);
+			if (!block) {
+				miss_cache.emplace(bpos);
+			}
+		}
 	}
 
 	if (block) {
