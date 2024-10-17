@@ -109,6 +109,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 						<< "' not valid; falling back to "
 						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << std::endl;
 			mgtype = FARMESH_DEFAULT_MAPGEN;
+			far_container.use_weather = false;
 		}
 
 		MakeEmerge(settings, mgtype);
@@ -230,7 +231,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	block->humidity = h;
 
 	if (m_localdb && !is_simple_singleplayer_game) {
-		if (const auto db = GetFarDatabase({}, far_dbases,  m_world_path, step); db) {
+		if (const auto db = GetFarDatabase({}, far_dbases, m_world_path, step); db) {
 			ServerMap::saveBlock(block.get(), db);
 
 			if (!step) {

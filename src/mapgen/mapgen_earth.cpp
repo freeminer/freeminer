@@ -218,12 +218,16 @@ bool MapgenEarth::visible(const v3pos_t &p)
 	return p.Y < get_height(p.X, p.Z);
 }
 
-const MapNode &MapgenEarth::visible_content(const v3pos_t &p)
+const MapNode &MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 {
 	const auto v = visible(p);
 	const auto vw = visible_water_level(p);
-	if (!v && !vw)
+	if (!v && !vw) {
 		return visible_transparent;
+	}
+	if (!use_weather) {
+		return visible_surface_green;
+	}
 	auto heat = 10;
 	heat += p.Y / -100; // upper=colder, lower=hotter, 3c per 1000
 

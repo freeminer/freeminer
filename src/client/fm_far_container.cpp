@@ -89,7 +89,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		block_cache = block;
 	}
 
-	if (const auto &v = m_mg->visible_content(pos); v.getContent()) {
+	if (const auto &v = m_mg->visible_content(pos, use_weather); v.getContent()) {
 		return v;
 	}
 

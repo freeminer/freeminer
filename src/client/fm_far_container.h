@@ -12,7 +12,7 @@ class FarContainer : public NodeContainer
 
 public:
 	Mapgen *m_mg{};
-
+	bool use_weather {true};
 	FarContainer(Client *client);
 	const MapNode &getNodeRefUnsafe(const v3pos_t &p) override;
 };

@@ -222,6 +222,7 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 		settings.set("mg_name", Mapgen::getMapgenName(mgtype));
 		m_client->MakeEmerge(settings, mgtype);
 		emerge_use = m_client->m_emerge.get();
+		m_client->far_container.use_weather = false;
 	}
 
 	if (emerge_use) {

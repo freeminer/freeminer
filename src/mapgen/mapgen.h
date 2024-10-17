@@ -256,7 +256,7 @@ public:
 
 	virtual bool visible(const v3pos_t &p);
 	virtual bool visible_water_level(const v3pos_t &p);
-	virtual const MapNode &visible_content(const v3pos_t &p);
+	virtual const MapNode &visible_content(const v3pos_t &p, bool use_weather);
 	virtual bool surface_2d() { return true; };
 
 	// getSpawnLevelAtPoint() is a function within each mapgen that returns a
