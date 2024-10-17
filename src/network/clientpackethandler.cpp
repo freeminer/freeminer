@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "config.h"
+#include "fm_world_merge.h"
 #include "server.h"
 
 #if !MINETEST_PROTO
