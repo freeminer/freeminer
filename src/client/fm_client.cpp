@@ -1,10 +1,13 @@
+#include <atomic>
 #include <exception>
 #include <future>
+#include <memory>
 #include "client.h"
 #include "client/fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"
+#include "fm_world_merge.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
 #include "network/fm_networkprotocol.h"
@@ -82,7 +85,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 
 	auto &packet = *(pkt->packet);
 
-	if (!m_world_path.empty() && packet.count(TOCLIENT_INIT_GAMEID)) {
+	if (!m_world_path.empty() && packet.contains(TOCLIENT_INIT_GAMEID)) {
 		std::string gameid;
 		packet[TOCLIENT_INIT_GAMEID].convert(gameid);
 		std::string conf_path = m_world_path + DIR_DELIM + "world.mt";
@@ -92,59 +95,64 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		conf.updateConfigFile(conf_path.c_str());
 	}
 
+	{
+		Settings settings;
+		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
+		std::string mg_name;
+		MapgenType mgtype = settings.getNoEx("mg_name", mg_name)
+									? Mapgen::getMapgenType(mg_name)
+									: FARMESH_DEFAULT_MAPGEN;
+
+		if (mgtype == MAPGEN_INVALID) {
+			errorstream << "Client map save: mapgen '" << mg_name
+						<< "' not valid; falling back to "
+						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << std::endl;
+			mgtype = FARMESH_DEFAULT_MAPGEN;
+			far_container.use_weather = false;
+		} else {
+			far_container.have_params = true;
+		}
+
+		MakeEmerge(settings, mgtype);
+	}
+
+	if (packet.contains(TOCLIENT_INIT_WEATHER)) {
+		packet[TOCLIENT_INIT_WEATHER].convert(use_weather);
+	}
+
+	//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
+	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
+}
+
+void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
+{
 	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
 
 	if (farmesh_range && !m_localserver) {
 		m_localserver = std::make_unique<Server>(
 				"farmesh", findSubgame("devtest"), false, Address{}, true);
 	}
+	m_mapgen_params = std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
+	m_mapgen_params->MapgenParams::readParams(&settings);
+	m_mapgen_params->readParams(&settings);
 
-	{
-		Settings settings;
-		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
-
-		std::string mg_name;
-		MapgenType mgtype = settings.getNoEx("mg_name", mg_name)
-									? Mapgen::getMapgenType(mg_name)
-									: MAPGEN_DEFAULT;
-
-		if (mgtype == MAPGEN_INVALID) {
-			errorstream << "Client map save: mapgen '" << mg_name
-						<< "' not valid; falling back to "
-						<< Mapgen::getMapgenName(MAPGEN_DEFAULT) << std::endl;
-			mgtype = MAPGEN_DEFAULT;
-		}
-
-		m_mapgen_params =
-				std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
-		m_mapgen_params->MapgenParams::readParams(&settings);
-		m_mapgen_params->readParams(&settings);
-
-		if (!m_simple_singleplayer_mode && farmesh_range) {
-			const auto num_emerge_threads = g_settings->get("num_emerge_threads");
-			g_settings->set("num_emerge_threads", "1");
-			m_emerge = std::make_unique<EmergeManager>(
-					m_localserver.get(), m_localserver->m_metrics_backend.get());
-			m_emerge->initMapgens(m_mapgen_params.get());
-			g_settings->set("num_emerge_threads", num_emerge_threads);
-		}
-
-		if (!m_world_path.empty()) {
-			m_settings_mgr = std::make_unique<MapSettingsManager>(
-					m_world_path + DIR_DELIM + "map_meta");
-			m_settings_mgr->mapgen_params = m_mapgen_params.release();
-			;
-			m_settings_mgr->saveMapMeta();
-		} else if (!m_emerge) {
-			m_mapgen_params.reset();
-		}
+	if (!m_simple_singleplayer_mode && farmesh_range) {
+		const auto num_emerge_threads = g_settings->get("num_emerge_threads");
+		g_settings->set("num_emerge_threads", "1");
+		m_emerge = std::make_unique<EmergeManager>(
+				m_localserver.get(), m_localserver->m_metrics_backend.get());
+		m_emerge->initMapgens(m_mapgen_params.get());
+		g_settings->set("num_emerge_threads", num_emerge_threads);
 	}
 
-	if (packet.count(TOCLIENT_INIT_WEATHER))
-		packet[TOCLIENT_INIT_WEATHER].convert(use_weather);
-
-	//if (packet.count(TOCLIENT_INIT_PROTOCOL_VERSION_FM))
-	//	packet[TOCLIENT_INIT_PROTOCOL_VERSION_FM].convert( not used );
+	if (!m_world_path.empty()) {
+		m_settings_mgr = std::make_unique<MapSettingsManager>(
+				m_world_path + DIR_DELIM + "map_meta");
+		m_settings_mgr->mapgen_params = m_mapgen_params.release();
+		m_settings_mgr->saveMapMeta();
+	} else if (!m_emerge) {
+		m_mapgen_params.reset();
+	}
 }
 
 void Client::createFarMesh(MapBlockP &block)
@@ -154,7 +162,13 @@ void Client::createFarMesh(MapBlockP &block)
 		const auto &blockpos_actual = block->getPos();
 		const auto &m_camera_offset = m_camera->getOffset();
 		const auto &step = block->far_step;
-		MeshMakeData mdat(m_client, false, 0, step, &m_client->far_container);
+#if FARMESH_SHADOWS
+		static const auto m_cache_enable_shaders = g_settings->getBool("enable_shaders");
+#else
+		static const auto m_cache_enable_shaders = false;
+#endif
+		MeshMakeData mdat(
+				m_client, m_cache_enable_shaders, 0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
 		const auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, step);
@@ -217,10 +231,17 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
 	block->humidity = h;
 
-	if (!step) {
-		if (m_localdb) {
-			ServerMap::saveBlock(block.get(), m_localdb);
+	if (m_localdb && !is_simple_singleplayer_game) {
+		if (const auto db = GetFarDatabase({}, far_dbases, m_world_path, step); db) {
+			ServerMap::saveBlock(block.get(), db);
+
+			if (!step && !far_container.have_params) {
+				merger->add_changed(bpos);
+			}
 		}
+	}
+
+	if (!step) {
 		updateMeshTimestampWithEdge(bpos);
 		if (!overload && block->content_only != CONTENT_IGNORE &&
 				block->content_only != CONTENT_AIR) {
@@ -245,7 +266,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 		++m_new_farmeshes;
 
 		//todo: step ordered thread pool
-		std::async(std::launch::async, [this, block]() mutable {
+		last_async = std::async(std::launch::async, [this, block]() mutable {
 			createFarMesh(block);
 			auto &client_map = getEnv().getClientMap();
 			const auto &control = client_map.getControl();

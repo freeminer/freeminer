@@ -1220,7 +1220,11 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// Mesh animation
 		if (pass == scene::ESNRP_SOLID) {
 			// Pretty random but this should work somewhat nicely
-			bool faraway = false; //d >= BS * 50;
+			bool faraway = d >= BS * 50;
+
+			if (is_far)
+				faraway = false;
+
 			if (block_mesh->isAnimationForced() || !faraway ||
 					mesh_animate_count < (m_control.range_all ? 200 : 50)) {
 
@@ -1589,10 +1593,13 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		auto block = i.second;
 
 		// If the mesh of the block happened to get deleted, ignore it
-		auto mapBlockMesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf), true);
+		auto mapBlockMesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block_pos, speedf), true);
 
-		//if (!mapBlockMesh)
-		//	mapBlockMesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(m_far_blocks_last_cam_pos), block->getPos()));
+#if FARMESH_SHADOWS
+		if (!mapBlockMesh) {
+			mapBlockMesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(far_blocks_last_cam_pos), block_pos ));
+		}
+#endif
 
 		if (!mapBlockMesh)
 			continue;
@@ -1768,6 +1775,18 @@ void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_
 			}
 		}
 
+#if FARMESH_SHADOWS
+	{
+		const auto lock = m_far_blocks.lock_shared_rec();
+		for (const auto &[pos, block] : m_far_blocks) {
+			if (far_iteration_clean && block->far_iteration < far_iteration_clean) {
+			} else if (block->far_iteration >= far_iteration_use) {
+				m_drawlist_shadow.emplace(pos, block);
+			}
+		}
+	}
+#endif
+
 	m_drawlist_shadow_current = !m_drawlist_shadow_current;
 
 	g_profiler->avg("SHADOW MapBlock meshes in range [#]", blocks_in_range_with_mesh);
@@ -1794,7 +1813,14 @@ void ClientMap::updateTransparentMeshBuffers()
 	// Update the order of transparent mesh buffers in each mesh
 	for (auto it = m_drawlist.begin(); it != m_drawlist.end(); it++) {
 		auto block = it->second;
-		const auto block_mesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf));
+		auto block_mesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf));
+
+#if FARMESH_SHADOWS
+		if (!block_mesh) {
+			block_mesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(far_blocks_last_cam_pos), block->getPos()));
+		}
+#endif
+
 		if (!block_mesh)
 			continue;
 

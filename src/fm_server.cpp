@@ -30,9 +30,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "emerge.h"
 #include "filesys.h"
+#include "fm_world_merge.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
 #include "log.h"
+#include "map.h"
 #include "mapblock.h"
 #include "mapnode.h"
 #include "network/fm_networkprotocol.h"
@@ -471,7 +473,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	if (name.empty()) {
 		name = "key_value_storage";
 	}
-	if (!m_key_value_storage.count(name)) {
+	if (!m_key_value_storage.contains(name)) {
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name),
 				std::forward_as_tuple(m_path_world, name));
 	}
@@ -543,22 +545,28 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	}
 }
 
-MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
+MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
+		const std::string &savedir, MapBlock::block_step_t step)
 {
-	auto *m_server = this;
-	auto &dbases = m_server->far_dbases;
 	if (step <= 0) {
-		if (m_server->getEnv().m_map) {
-			return m_server->getEnv().m_map->dbase;
+		if (dbase) {
+			return dbase;
 		}
 	}
-	if (step >= dbases.size()) {
+
+	if (step >= far_dbases.size()) {
 		return {};
 	}
-	if (const auto dbase = dbases[step].get()) {
+
+	if (const auto dbase = far_dbases[step].get()) {
 		return dbase;
 	}
-	const auto &savedir = m_server->getEnv().getServerMap().m_savedir;
+
+	if (savedir.empty()) {
+		errorstream << "No path for save database with step " << (short)step << "\n";
+		return {};
+	}
+
 	// Determine which database backend to use
 	std::string conf_path = savedir + DIR_DELIM + "world.mt";
 	Settings conf;
@@ -580,16 +588,14 @@ MapDatabase *Server::GetFarDatabase(MapBlock::block_step_t step)
 		fs::CreateDir(path);
 	}
 
-	dbases[step].reset(
-			m_server->getEnv().getServerMap().createDatabase(backend, path, conf));
-	return dbases[step].get();
+	far_dbases[step].reset(ServerMap::createDatabase(backend, path, conf));
+	return far_dbases[step].get();
 };
 
-MapBlockP Server::loadBlockNoStore(MapDatabase *dbase, const v3bpos_t &bpos)
+MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 {
-	auto *m_server = this;
 	try {
-		MapBlockP block{m_server->getEnv().getServerMap().createBlankBlockNoInsert(bpos)};
+		MapBlockP block{smap->createBlankBlockNoInsert(bpos)};
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);
 		if (!blob.length()) {
@@ -657,4 +663,88 @@ uint32_t Server::SendFarBlocks(float dtime)
 		sent += client->SendFarBlocks();
 	}
 	return sent;
+}
+
+WorldMergeThread::WorldMergeThread(Server *server) :
+		thread_vector("WorldMerge", 20), m_server(server)
+{
+}
+
+void *WorldMergeThread::run()
+{
+	BEGIN_DEBUG_EXCEPTION_HANDLER
+
+	u64 world_merge = 1;
+	g_settings->getU64NoEx("world_merge", world_merge);
+	if (!world_merge) {
+		return {};
+	}
+
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+
+	WorldMerger merger{
+			.stop_func{[this]() { return stopRequested(); }},
+			.throttle_func{[&]() {
+				return (m_server->getEnv().getPlayerCount() >
+						merger.world_merge_max_clients);
+			}},
+			.get_time_func{[this]() { return m_server->getEnv().getGameTime(); }},
+			.ndef{m_server->getNodeDefManager()},
+			.smap{m_server->getEnv().m_map},
+			.far_dbases{m_server->far_dbases},
+			.dbase{m_server->getEnv().m_map->dbase},
+			.save_dir{m_server->getEnv().m_map->m_savedir},
+	};
+	{
+		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);
+		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
+		g_settings->getU32NoEx("world_merge_max_clients", merger.world_merge_max_clients);
+		g_settings->getU32NoEx("world_merge_lazy_up", merger.lazy_up);
+
+		{
+			merger.world_merge_load_all = -1;
+			g_settings->getS16NoEx("world_merge_load_all", merger.world_merge_load_all);
+			merger.world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
+			u64 world_merge_all = 0;
+			g_settings->getU64NoEx("world_merge_all", world_merge_all);
+			if (world_merge_all) {
+				merger.merge_all();
+			}
+		}
+	}
+	merger.world_merge_load_all = 0;
+	merger.partial = true;
+
+	while (!stopRequested()) {
+		if (merger.throttle()) {
+			tracestream << "World merge wait" << '\n';
+			sleep(10);
+			continue;
+		}
+		if (merger.merge_server_diff(
+					m_server->getEnv().getServerMap().changed_blocks_for_merge)) {
+			break;
+		}
+
+		sleep(60);
+	}
+
+	{
+		// unbreakable at max speed
+		merger.stop_func = {};
+		merger.throttle_func = {};
+		merger.world_merge_throttle = 0;
+
+		if (!m_server->getEnv().getServerMap().changed_blocks_for_merge.empty()) {
+			actionstream
+					<< "Merge last changed blocks "
+					<< m_server->getEnv().getServerMap().changed_blocks_for_merge.size()
+					<< "\n";
+		}
+		merger.merge_server_diff(
+				m_server->getEnv().getServerMap().changed_blocks_for_merge);
+	}
+
+	END_DEBUG_EXCEPTION_HANDLER;
+	return {};
 }

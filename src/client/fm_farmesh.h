@@ -41,7 +41,7 @@ class Server;
 
 // #define FARMESH_FAST 1
 // #define FARMESH_DEBUG 1 // One dirction, one thread, no neighborhoods
-
+// #define FARMESH_SHADOWS 1 // Unfinished
 
 class FarMesh
 {
@@ -113,4 +113,6 @@ private:
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;
 	std::array<async_step_runner, 6> async;
+
+	std::future<void> last_async;
 };

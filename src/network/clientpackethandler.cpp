@@ -18,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "config.h"
+#include "fm_world_merge.h"
 #include "server.h"
 
 #if !MINETEST_PROTO
@@ -346,8 +347,11 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		++m_new_meshes;
 	}
 
-	if (m_localdb) {
+	if (m_localdb && !is_simple_singleplayer_game) {
 		ServerMap::saveBlock(block, m_localdb);
+		if (!far_container.have_params) {
+			merger->add_changed(p);
+		}
 	}
 
 	/*

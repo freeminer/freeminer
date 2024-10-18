@@ -31,10 +31,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
+#include "mapgen/mapgen.h"
 #include "mapnode.h"
 #include "profiler.h"
 #include "server.h"
-#include "threading/lock.h"
 #include "util/numeric.h"
 #include "util/timetaker.h"
 
@@ -102,7 +102,7 @@ void FarMesh::makeFarBlock(
 	}
 	block->far_iteration = far_iteration_complete;
 	if (new_block) {
-		std::async(std::launch::async,
+		last_async = std::async(std::launch::async,
 				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
 	return;
@@ -212,10 +212,23 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 
 	EmergeManager *emerge_use = server			   ? server->getEmergeManager()
 								: client->m_emerge ? client->m_emerge.get()
+
 												   : nullptr;
+
+	if (!emerge_use) {
+		// Non freeminer server without mapgen params
+		Settings settings;
+		MapgenType mgtype = FARMESH_DEFAULT_MAPGEN;
+		settings.set("mg_name", Mapgen::getMapgenName(mgtype));
+		m_client->MakeEmerge(settings, mgtype);
+		emerge_use = m_client->m_emerge.get();
+		m_client->far_container.use_weather = false;
+	}
+
 	if (emerge_use) {
-		if (emerge_use->mgparams)
+		if (emerge_use->mgparams) {
 			mg = emerge_use->getFirstMapgen();
+		}
 
 		m_client->far_container.m_mg = mg;
 		const auto &ndef = m_client->getNodeDefManager();
@@ -236,6 +249,7 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 
 FarMesh::~FarMesh()
 {
+	last_async.wait();
 }
 
 auto align_shift(auto pos, const auto amount)

@@ -581,12 +581,13 @@ uint32_t RemoteClient::SendFarBlocks()
 					sent_ts = -1;
 					continue;
 				}
-				const auto dbase = m_env->m_server->GetFarDatabase(step);
+				const auto dbase = GetFarDatabase(m_env->m_map->dbase,
+						m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
 				if (!dbase) {
 					sent_ts = -1;
 					continue;
 				}
-				const auto block = m_env->m_server->loadBlockNoStore(dbase, bpos);
+				const auto block = loadBlockNoStore(m_env->m_map, dbase, bpos);
 				if (!block) {
 					sent_ts = -1;
 					continue;
