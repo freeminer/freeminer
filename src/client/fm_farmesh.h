@@ -113,6 +113,4 @@ private:
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;
 	std::array<async_step_runner, 6> async;
-
-	std::future<void> last_async;
 };

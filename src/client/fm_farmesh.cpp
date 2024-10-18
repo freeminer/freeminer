@@ -102,7 +102,7 @@ void FarMesh::makeFarBlock(
 	}
 	block->far_iteration = far_iteration_complete;
 	if (new_block) {
-		last_async = std::async(std::launch::async,
+		std::async(std::launch::async,
 				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
 	return;
@@ -249,7 +249,6 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 
 FarMesh::~FarMesh()
 {
-	last_async.wait();
 }
 
 auto align_shift(auto pos, const auto amount)
@@ -431,8 +430,9 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 		//float brightness,
 		int render_range, float speed)
 {
-	if (!mg)
+	if (!mg) {
 		return {};
+	}
 
 	m_speed = speed;
 
@@ -451,8 +451,9 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 					m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned_int) > 1000);
 
 	const auto set_new_cam_pos = [&]() {
-		if (m_camera_pos_aligned == camera_pos_aligned_int)
+		if (m_camera_pos_aligned == camera_pos_aligned_int) {
 			return false;
+		}
 
 		++far_iteration_complete;
 
@@ -471,8 +472,9 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 			set_new_cam_pos();
 		}
 		clientMap.far_blocks_last_cam_pos = m_camera_pos_aligned;
-		if (!last_distance_max)
+		if (!last_distance_max) {
 			last_distance_max = distance_max;
+		}
 	}
 
 	if (complete_set) {
@@ -499,8 +501,9 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 				break;
 			}
 #endif
-			if (!plane_processed[i].processed)
+			if (!plane_processed[i].processed) {
 				continue;
+			}
 			++planes_processed;
 			async[i].step([this, i = i]() {
 				//for (int depth = 0; depth < 100; ++depth) {
@@ -517,15 +520,17 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 		}
 
 		bool cam_pos_updated{};
-		if (far_fast || !planes_processed)
+		if (far_fast || !planes_processed) {
 			cam_pos_updated = set_new_cam_pos();
+		}
 		if (!cam_pos_updated) {
 			if (!planes_processed && !complete_set) {
 				clientMap.far_blocks_last_cam_pos = m_camera_pos_aligned;
 				clientMap.far_iteration_use = far_iteration_complete;
 
-				if (far_iteration_complete)
+				if (far_iteration_complete) {
 					clientMap.far_iteration_clean = far_iteration_complete - 1;
+				}
 				complete_set = true;
 			}
 		} else if (far_fast) {

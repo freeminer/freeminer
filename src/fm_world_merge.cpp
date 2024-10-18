@@ -345,7 +345,6 @@ bool WorldMerger::merge_all()
 
 bool WorldMerger::merge_changed()
 {
-	DUMP("wantmerge", changed_blocks_for_merge.size());
 	if (!changed_blocks_for_merge.empty()) {
 		const auto res = merge_list(changed_blocks_for_merge);
 		changed_blocks_for_merge.clear();
