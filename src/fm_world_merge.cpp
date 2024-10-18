@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+#include <future>
 #include <string>
 #include <unordered_map>
 #include "constants.h"
@@ -382,12 +383,14 @@ bool WorldMerger::add_changed(const v3bpos_t &bpos)
 {
 	changed_blocks_for_merge.emplace(bpos);
 
-	// TODO: async
-	if (changed_blocks_for_merge.size() > 300) {
-		merge_changed();
-		return true;
+	if (changed_blocks_for_merge.size() < 1000) {
+		return false;
 	}
-	return false;
+	//last_async =
+	std::async(std::launch::async, [copy = std::move(changed_blocks_for_merge),
+										   this]() mutable { merge_list(copy); });
+	changed_blocks_for_merge.clear();
+	return true;
 }
 void WorldMerger::init()
 {

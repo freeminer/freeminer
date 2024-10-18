@@ -72,7 +72,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		return block;
 	};
 
-	if (!block && !m_client->m_simple_singleplayer_mode) {
+	if (!block && !m_client->m_simple_singleplayer_mode && !m_client->far_container.have_params) {
 		thread_local static std::unordered_set<v3bpos_t> miss_cache;
 		if (!miss_cache.contains(bpos)) {
 			block = loadBlock(bpos, step);

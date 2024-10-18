@@ -102,7 +102,7 @@ void FarMesh::makeFarBlock(
 	}
 	block->far_iteration = far_iteration_complete;
 	if (new_block) {
-		std::async(std::launch::async,
+		last_async = std::async(std::launch::async,
 				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
 	return;
@@ -249,6 +249,7 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 
 FarMesh::~FarMesh()
 {
+	last_async.wait();
 }
 
 auto align_shift(auto pos, const auto amount)
