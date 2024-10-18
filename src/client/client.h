@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 // fm:
+#include <future>
 #include "client/fm_far_container.h"
 #include "map.h"
 #include "map_settings_manager.h"
@@ -166,6 +167,7 @@ public:
 	FarContainer far_container;
 	ServerMap::far_dbases_t far_dbases;
 	std::unique_ptr<WorldMerger> merger;
+	std::future<void> last_async;
 	// ==
 
 public:

@@ -266,7 +266,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 		++m_new_farmeshes;
 
 		//todo: step ordered thread pool
-		std::async(std::launch::async, [this, block]() mutable {
+		last_async = std::async(std::launch::async, [this, block]() mutable {
 			createFarMesh(block);
 			auto &client_map = getEnv().getClientMap();
 			const auto &control = client_map.getControl();
