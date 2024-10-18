@@ -98,7 +98,6 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 	{
 		Settings settings;
 		packet[TOCLIENT_INIT_MAP_PARAMS].convert(settings);
-
 		std::string mg_name;
 		MapgenType mgtype = settings.getNoEx("mg_name", mg_name)
 									? Mapgen::getMapgenType(mg_name)
@@ -110,6 +109,8 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << std::endl;
 			mgtype = FARMESH_DEFAULT_MAPGEN;
 			far_container.use_weather = false;
+		} else {
+			far_container.have_params = true;
 		}
 
 		MakeEmerge(settings, mgtype);
@@ -234,7 +235,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 		if (const auto db = GetFarDatabase({}, far_dbases, m_world_path, step); db) {
 			ServerMap::saveBlock(block.get(), db);
 
-			if (!step) {
+			if (!step && !far_container.have_params) {
 				merger->add_changed(bpos);
 			}
 		}

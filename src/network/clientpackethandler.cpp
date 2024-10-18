@@ -350,7 +350,9 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 
 	if (m_localdb && !is_simple_singleplayer_game) {
 		ServerMap::saveBlock(block, m_localdb);
-		merger->add_changed(p);
+		if (!far_container.have_params) {
+			merger->add_changed(p);
+		}
 	}
 
 	/*
