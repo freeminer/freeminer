@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <atomic>
 #include <cstdint>
+#include <future>
 #include "client/camera.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -74,6 +75,7 @@ private:
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
 	float m_speed;
+	std::future<void> last_async;
 
 #if FARMESH_FAST
 	constexpr static uint16_t grid_size_max_y{32};
@@ -107,7 +109,7 @@ private:
 	std::array<plane_cache, 6> plane_processed;
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
-	uint32_t far_iteration_complete {};
+	uint32_t far_iteration_complete{};
 	bool complete_set = false;
 	uint8_t planes_processed_last{};
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>

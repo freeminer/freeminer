@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <cstdint>
+#include <future>
 #include <unordered_set>
 #include "map.h"
 #include "mapblock.h"
@@ -47,6 +48,7 @@ public:
 	int16_t m_map_compression_level{7};
 	MapDatabase *const dbase{};
 	std::string save_dir;
+	std::future<void> last_async;
 	~WorldMerger();
 	void init();
 	bool stop();

@@ -60,6 +60,9 @@ static const auto load_block = [](Map *smap, MapDatabase *dbase,
 
 WorldMerger::~WorldMerger()
 {
+	if (last_async.valid()) {
+		last_async.wait();
+	}
 	merge_changed();
 }
 
@@ -385,9 +388,9 @@ bool WorldMerger::add_changed(const v3bpos_t &bpos)
 	if (changed_blocks_for_merge.size() < 1000) {
 		return false;
 	}
-	//last_async =
-	std::async(std::launch::async, [copy = std::move(changed_blocks_for_merge),
-										   this]() mutable { merge_list(copy); });
+	last_async =
+			std::async(std::launch::async, [copy = std::move(changed_blocks_for_merge),
+												   this]() mutable { merge_list(copy); });
 	changed_blocks_for_merge.clear();
 	return true;
 }

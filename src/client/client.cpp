@@ -1074,7 +1074,7 @@ void Client::initLocalMapSaving(const Address &address,
 	if (!m_simple_singleplayer_mode) {
 		far_dbases[0].reset(m_localdb, [](auto) {});
 		if (!merger) {
-			merger = std::make_unique<WorldMerger>(WorldMerger{
+			merger.reset(new WorldMerger{
 					.get_time_func{[this]() {
 						return m_uptime.load(std::memory_order::relaxed);
 					}}, // find client game time == server time?
