@@ -60,7 +60,7 @@ void *ServerThreadBase::run()
 	while (!stopRequested()) {
 		try {
 			const auto time_now = porting::getTimeMs();
-			const auto result = step(time_now - time_last);
+			const auto result = step((time_now - time_last)/1000.0);
 			time_last = time_now;
 			std::this_thread::sleep_for(
 					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
