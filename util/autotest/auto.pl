@@ -187,6 +187,7 @@ sub init_config () {
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
         world_clear     => 0,                                     # remove old world before start client
+        pid_path        => '/tmp/',
     };
 
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
@@ -461,7 +462,7 @@ $commands = {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         $commands->{world_name}();
         sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
-        $config->{pidfile} = $config->{pidpath} . ($options->{pass}{name} || 'freeminer') . '.pid';
+        $config->{pid_file} = $config->{pid_path} . ($options->{pass}{name} || 'freeminer') . '.pid';
         return
           sytee $config->{runner},
           $commands->{env}(),
@@ -500,7 +501,7 @@ $commands = {
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
           options_make($options->{pass}{config} ? () : [qw(gameid world port config autoexit verbose)]),
           qq{$config->{run_add}};
-        $config->{pidfile} = $config->{pidpath} . ($options->{pass}{worldname} || 'freeminerserver') . '.pid';
+        $config->{pid_file} = $config->{pid_path} . ($options->{pass}{worldname} || 'freeminerserver') . '.pid';
         if ($config->{server_bg}) {
             return sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
         } else {
@@ -904,18 +905,18 @@ sub sytee (@) {
     say 'running ', join ' ', @_;
     file_append("$config->{logdir}/run.sh", join(' ', @_), "\n");
     my $pid = open my $fh, "-|", "@_ 2>&1" or return "can't open @_: $!";
-warn $config->{pidfile}, $pid;
-    if ($config->{pidfile}) {
-        unlink $config->{pidfile};
-        file_append($config->{pidfile}, $pid);
+warn $config->{pid_file}, $pid;
+    if ($config->{pid_file}) {
+        unlink $config->{pid_file};
+        file_append($config->{pid_file}, $pid);
     }
     while (defined($_ = <$fh>)) {
         print $_;
         file_append($tee, $_);
     }
     close($fh);
-    if ($config->{pidfile}) {
-        unlink $config->{pidfile};
+    if ($config->{pid_file}) {
+        unlink $config->{pid_file};
     }
     return sig(undef, $pid);
 }
