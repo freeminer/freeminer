@@ -14,19 +14,20 @@
 		{{? !master.no_flags}}<th>Flags</th>{{?}}
 		{{? !master.no_uptime}}<th>Uptime, Age</th>{{?}}
 		{{? !master.no_ping}}<th>Ping, Lag</th>{{?}}
+		{{? !master.no_play}}<th>Play</th>{{?}}
 	</tr></thead>
 	<tbody>
 	{{~it.list :server:index}}
 	{{ if (master.limit && index + 1 > master.limit) break;}}
 	{{ if (master.min_clients && server.clients < master.min_clients) continue;}}
 	<tr>
-		{{? !master.no_address}}
+		{{? !master.no_address }}
 		<td class ="address">
 			{{=addressString(server)}}
 		</td>{{?}}
-		{{? !master.no_clients}}
+		{{? !master.no_clients }}
 		<td class="clients{{? server.clients_list && server.clients_list.length > 0}} mts_hover_list_text{{?}}">
-			{{=server.clients}}/{{=server.clients_max}}{{? !master.no_avgtop}} &nbsp;&nbsp;{{=Math.floor(server.pop_v)}}/{{=server.clients_top}}{{?}}
+			{{=server.clients}}/{{=server.clients_max}}{{? !master.no_avgtop }} &nbsp;&nbsp;{{=Math.floor(server.pop_v)}}/{{=server.clients_top}}{{?}}
 			{{=hoverList("Clients", server.clients_list)}}
 		</td>{{?}}
 		{{? !master.no_version}}
@@ -35,15 +36,15 @@
 			{{=escapeHTML(server.mapgen || '?')}}
 			{{=hoverList("Mods", server.mods)}}
 		</td>{{?}}
-		{{? !master.no_name}}
+		{{? !master.no_name }}
 		<td class="name">
-			{{? server.url}}
+			{{? server.url }}
 				<a href="{{=escapeHTML(server.url)}}">{{=tooltipString(server.name, 25)}}</a>
 			{{??}}
 				{{=tooltipString(server.name, 25)}}
 			{{?}}
 		</td>{{?}}
-		{{? !master.no_description}}
+		{{? !master.no_description }}
 		<td class="description">
 			{{=tooltipString(server.description, 50)}}
 		</td>{{?}}
@@ -59,14 +60,18 @@
 			{{=server.rollback ? 'Rol ' : ''}}
 			{{=server.can_see_far_names ? 'Far ' : ''}}
 		</td>{{?}}
-		{{? !master.no_uptime}}
+		{{? !master.no_uptime }}
 		<td class="uptime">
 			{{=humanTime(server.uptime)}}, {{=humanTime(server.game_time)}}
 			{{? server.first}} {{=hoverString("First seen", humanTime(+new Date()/1000 -server.first))}} {{?}}
 		</td>{{?}}
-		{{? !master.no_ping}}
+		{{? !master.no_ping }}
 		<td class="ping">
 			{{=Math.floor(server.ping * 1000)}}{{? server.lag}}, {{= Math.floor(server.lag * 1000)}}{{?}}
+		</td>{{?}}
+		{{? !master.no_play }}
+		<td class="play">
+			{{? server.proto_multi && server.proto_multi.wss }}<a href="{{= master.play_root }}?go=1&address={{= addressEscaped(server.address) + "&port=" + parseInt(server.proto_multi.wss) }}&name=">Play</a>{{?}}
 		</td>{{?}}
 	</tr>
 	{{~}}
