@@ -20,7 +20,7 @@ if [ -z "$NO_DEPS" ]; then
         sudo apt install -y $PACKAGE ||:
     done
   elif [ -e /etc/arch-release ]; then
-    sudo pacman --needed --noconfirm -S git subversion cmake ninja ccache bzip2 zstd libjpeg-turbo freetype2 libxxf86vm libxi sqlite3 hiredis libvorbis openal curl luajit gettext msgpack-cxx boost  clang lld llvm libc++ libc++abi libpng12 libpng libunwind
+    sudo pacman --needed --noconfirm -S git subversion cmake ninja ccache bzip2 zstd libjpeg-turbo freetype2 glfw-x11 libxxf86vm libxi sqlite3 hiredis libvorbis openal curl luajit gettext msgpack-cxx boost  clang lld llvm libc++ libc++abi libpng12 libpng libunwind
     echo Todo
   fi
 fi
