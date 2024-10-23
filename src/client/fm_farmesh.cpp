@@ -212,7 +212,6 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 
 	EmergeManager *emerge_use = server			   ? server->getEmergeManager()
 								: client->m_emerge ? client->m_emerge.get()
-
 												   : nullptr;
 
 	if (!emerge_use) {
@@ -261,6 +260,30 @@ auto align_shift(auto pos, const auto amount)
 	(pos.Z >>= amount) <<= amount;
 	return pos;
 }
+int FarMesh::go_flat()
+{
+	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
+
+	auto &dcache = direction_caches[0][0];
+	auto &last_range = dcache.step_num;
+	// todo: slowly increase range here
+	if (last_range > 0) {
+		return 0;
+	}
+	last_range = 1;
+
+	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
+
+	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, 1,
+			[this, &draw_control](const v3bpos_t &bpos, const bpos_t &size) -> bool {
+				const auto stp = int(log(size) / log(2)) - draw_control.cell_size_pow;
+				// DUMP(bpos, size, stp);
+				makeFarBlocks(bpos, stp);
+				return false;
+			});
+
+	return last_range;
+}
 
 int FarMesh::go_direction(const size_t dir_n)
 {
@@ -273,7 +296,7 @@ int FarMesh::go_direction(const size_t dir_n)
 	auto &cache = direction_caches[dir_n];
 	auto &mg_cache = mg_caches[dir_n];
 
-	auto &draw_control = m_client->getEnv().getClientMap().getControl();
+	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
 
 	const auto dir = g_6dirso[dir_n];
 	const auto grid_size_xy = grid_size_x * grid_size_y;
@@ -491,30 +514,29 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 			plane_processed.fill({});
 		}
 	}
-	/*
-	if (mg->surface_2d()) {
-		// TODO: use fast simple quadtree based direct mesh create
-	} else 
-    */
+
 	{
-		uint8_t planes_processed = 0;
-		for (uint8_t i = 0; i < sizeof(g_6dirso) / sizeof(g_6dirso[0]); ++i) {
+		uint8_t planes_processed{};
+		if (mg->surface_2d()) {
+			if (plane_processed[0].processed) {
+				++planes_processed;
+				async[0].step([this]() { plane_processed[0].processed = go_flat(); });
+			}
+		} else {
+			for (uint8_t i = 0; i < sizeof(g_6dirso) / sizeof(g_6dirso[0]); ++i) {
 #if FARMESH_DEBUG
-			if (i) {
-				break;
-			}
+				if (i) {
+					break;
+				}
 #endif
-			if (!plane_processed[i].processed) {
-				continue;
+				if (!plane_processed[i].processed) {
+					continue;
+				}
+				++planes_processed;
+				async[i].step([this, i = i]() {
+					plane_processed[i].processed = go_direction(i);
+				});
 			}
-			++planes_processed;
-			async[i].step([this, i = i]() {
-				//for (int depth = 0; depth < 100; ++depth) {
-				plane_processed[i].processed = go_direction(i);
-				//	if (!plane_processed[i].processed)
-				//		break;
-				//}
-			});
 		}
 		planes_processed_last = planes_processed;
 

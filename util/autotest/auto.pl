@@ -905,7 +905,6 @@ sub sytee (@) {
     say 'running ', join ' ', @_;
     file_append("$config->{logdir}/run.sh", join(' ', @_), "\n");
     my $pid = open my $fh, "-|", "@_ 2>&1" or return "can't open @_: $!";
-warn $config->{pid_file}, $pid;
     if ($config->{pid_file}) {
         unlink $config->{pid_file};
         file_append($config->{pid_file}, $pid);

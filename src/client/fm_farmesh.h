@@ -109,6 +109,7 @@ private:
 	std::array<plane_cache, 6> plane_processed;
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
+	int go_flat();
 	uint32_t far_iteration_complete{};
 	bool complete_set = false;
 	uint8_t planes_processed_last{};
