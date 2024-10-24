@@ -74,7 +74,6 @@ private:
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
 	float m_speed{};
-	std::future<void> last_async;
 
 #if FARMESH_FAST
 	constexpr static uint16_t grid_size_max_y{32};

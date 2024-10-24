@@ -254,9 +254,6 @@ FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
 
 FarMesh::~FarMesh()
 {
-	if (last_async.valid()) {
-		last_async.wait();
-	}
 }
 
 auto align_shift(auto pos, const auto amount)
@@ -279,6 +276,7 @@ int FarMesh::go_flat()
 
 	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
 
+	// todo: maybe save blocks while cam pos not changed
 	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> blocks;
 	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, cbpos.Y ?: 1,
 			[this, &draw_control, &blocks](
