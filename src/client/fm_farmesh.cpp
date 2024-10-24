@@ -18,7 +18,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <unordered_set>
 #include <utility>
 
 #include "fm_farmesh.h"
@@ -30,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "emerge.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
 #include "mapnode.h"
@@ -274,13 +278,33 @@ int FarMesh::go_flat()
 
 	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
 
+	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> blocks;
 	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, 1,
-			[this, &draw_control](const v3bpos_t &bpos, const bpos_t &size) -> bool {
-				const auto stp = int(log(size) / log(2)) - draw_control.cell_size_pow;
-				// DUMP(bpos, size, stp);
-				makeFarBlocks(bpos, stp);
+			[this, &draw_control, &blocks](
+					const v3bpos_t &bpos, const bpos_t &size) -> bool {
+				for (const auto &add : {
+							 v2bpos_t(0, 0), v2bpos_t(0, size - 1), v2bpos_t(size - 1, 0),
+							 v2bpos_t(size - 1, size - 1), v2bpos_t(size >> 1, size >> 1),
+					 }) {
+					v3bpos_t bpos_new(bpos.X + add.X, 0, bpos.Z + add.Y);
+
+					bpos_new.Y = mg->getGroundLevelAtPoint(
+										 v2pos_t((bpos_new.X << MAP_BLOCKP) - 1,
+												 (bpos_new.Z << MAP_BLOCKP) - 1)) >>
+								 MAP_BLOCKP;
+
+					auto step_new = getFarStep(draw_control,
+							getNodeBlockPos(m_camera_pos_aligned), bpos_new);
+					blocks[step_new].emplace(bpos_new);
+				}
 				return false;
 			});
+
+	for (size_t step = 0; step < blocks.size(); ++step) {
+		for (const auto &bpos : blocks[step]) {
+			makeFarBlocks(bpos, step);
+		}
+	}
 
 	return last_range;
 }

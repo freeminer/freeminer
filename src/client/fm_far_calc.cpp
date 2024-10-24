@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "client/clientmap.h"
 #include "constants.h"
-#include "debug/iostream_debug_helpers.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 
