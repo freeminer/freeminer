@@ -67,7 +67,7 @@ WorldMerger::~WorldMerger()
 }
 
 void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
-		const v3bpos_t &bpos_aligned, MapBlock::block_step_t step)
+		const v3bpos_t &bpos_aligned, block_step_t step)
 {
 	const auto step_pow = 1;
 	const auto step_size = 1 << step_pow;
@@ -218,7 +218,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 }
 
 bool WorldMerger::merge_one_step(
-		MapBlock::block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo)
+		block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo)
 {
 	auto *dbase_current = GetFarDatabase(dbase, far_dbases, save_dir, step);
 	auto *dbase_up = GetFarDatabase({}, far_dbases, save_dir, step + 1);
@@ -332,7 +332,7 @@ bool WorldMerger::merge_one_step(
 
 bool WorldMerger::merge_list(std::unordered_set<v3bpos_t> &blocks_todo)
 {
-	for (MapBlock::block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
+	for (block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
 		if (merge_one_step(step, blocks_todo)) {
 			return true;
 		}

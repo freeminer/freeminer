@@ -184,7 +184,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	}
 	auto &packet = *(pkt->packet);
 	v3bpos_t bpos = packet[TOCLIENT_BLOCKDATA_POS].as<v3bpos_t>();
-	MapBlock::block_step_t step = 0;
+	block_step_t step = 0;
 	packet[TOCLIENT_BLOCKDATA_STEP].convert(step);
 	std::istringstream istr(
 			packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);

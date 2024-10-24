@@ -52,8 +52,7 @@ const v3opos_t g_6dirso[6] = {
 		v3opos_t(0, 1, 0),	// top
 };
 
-void FarMesh::makeFarBlock(
-		const v3bpos_t &blockpos, MapBlock::block_step_t step, bool near)
+void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool near)
 {
 	g_profiler->add("Client: Farmesh make", 1);
 
@@ -85,7 +84,6 @@ void FarMesh::makeFarBlock(
 		return;
 	}
 	MapBlockP block;
-	bool new_block = false;
 	{
 		const auto lock = far_blocks.lock_unique_rec();
 		if (const auto &it = far_blocks.find(blockpos_actual);
@@ -96,23 +94,27 @@ void FarMesh::makeFarBlock(
 				m_client->getEnv().getClientMap().m_far_blocks_ask.emplace(
 						blockpos_actual, std::make_pair(step, far_iteration_complete));
 
-				new_block = true;
 				block.reset(client_map.createBlankBlockNoInsert(blockpos_actual));
 				block->far_step = step;
+				block->far_make_mesh_timestamp =
+						m_client->m_uptime + wait_server_far_bock;
 				far_blocks.insert_or_assign(blockpos_actual, block);
 				++m_client->m_new_meshes;
 			}
 		}
 	}
 	block->far_iteration = far_iteration_complete;
-	if (new_block) {
+
+	if (block->far_make_mesh_timestamp &&
+			m_client->m_uptime >= block->far_make_mesh_timestamp) {
+		block->far_make_mesh_timestamp = 0;
 		m_client->mesh_thread_pool.enqueue(
 				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
 	return;
 }
 
-void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t step)
+void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, block_step_t step)
 {
 #if FARMESH_DEBUG || FARMESH_FAST
 	{

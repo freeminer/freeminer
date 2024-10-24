@@ -546,7 +546,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 }
 
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
-		const std::string &savedir, MapBlock::block_step_t step)
+		const std::string &savedir, block_step_t step)
 {
 	if (step <= 0) {
 		if (dbase) {

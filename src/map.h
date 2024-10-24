@@ -295,11 +295,11 @@ public:
 	m_far_blocks_type m_far_blocks;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
 	bool m_far_blocks_currrent {};
-	//using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t, MapBlock::block_step_t>;
+	//using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t, block_step_t>;
 	using far_blocks_req_t = std::unordered_map<v3bpos_t,
-			std::pair<MapBlock::block_step_t, uint32_t>>; // server
+			std::pair<block_step_t, uint32_t>>; // server
 	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t,
-			std::pair<MapBlock::block_step_t, uint32_t>>; // client
+			std::pair<block_step_t, uint32_t>>; // client
 	far_blocks_ask_t m_far_blocks_ask;
 	std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX>
 			far_blocks_storage;

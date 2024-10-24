@@ -835,6 +835,6 @@ void dedicated_server_loop(Server &server, bool &kill);
 
 // fm:
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
-		const std::string &savedir, MapBlock::block_step_t step);
+		const std::string &savedir, block_step_t step);
 MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &pos);
 // ==

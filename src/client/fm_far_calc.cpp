@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 
-int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos, const pos_t speedf)
 {
 	if (draw_control.lodmesh) {
@@ -66,7 +66,7 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 	return 0;
 };
 
-int getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
 	if (!draw_control.farmesh)
@@ -120,7 +120,7 @@ using v3tpos_t = v3bpos_t;
 using tpos_t = int32_t;
 using v3tpos_t = v3s32;
 #endif
-bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,
+bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, block_step_t step,
 		const MapDrawControl &draw_control)
 {
 	const auto act = getFarActual(blockpos, playerblockpos, step, draw_control);
@@ -206,7 +206,7 @@ const auto tree_align = tree_pow - 1;
 const auto tree_align_size = 1 << (tree_align);
 const auto external_pow = tree_pow - 2;
 
-int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+block_step_t getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos, uint8_t cell_size_pow)
 {
 	const auto blockpos_aligned_cell = align_shift(blockpos, cell_size_pow);
@@ -242,13 +242,13 @@ int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 			  //return external_pow; //+ draw_control.cell_size_pow;
 }
 
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+block_step_t getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos)
 {
 	return getFarStepCellSize(draw_control, ppos, blockpos, draw_control.cell_size_pow);
 }
 
-v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, int step,
+v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, block_step_t step,
 		const MapDrawControl &draw_control)
 {
 	const auto blockpos_aligned_cell = align_shift(blockpos, draw_control.cell_size_pow);

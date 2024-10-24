@@ -524,7 +524,6 @@ public:
 	}
 
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
-	using block_step_t = uint8_t;
 
 #if BUILD_CLIENT // Only on client
 	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
@@ -532,18 +531,19 @@ public:
 	const MapBlock::mesh_type getFarMesh(block_step_t step);
 	void setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step);
 	std::mutex far_mutex;
-	u32 mesh_requested_timestamp {};
-	uint8_t mesh_requested_step {};
+	uint32_t mesh_requested_timestamp{};
+	block_step_t mesh_requested_step{};
 
 private:
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
 	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 
-public:	
+public:
 #endif
 
 	block_step_t far_step{};
+	uint32_t far_make_mesh_timestamp{};
 	std::atomic_uint32_t far_iteration{};
 	std::atomic_bool creating_far_mesh{};
 	std::atomic_short heat{};
@@ -557,12 +557,12 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp{};
-	u32 m_next_analyze_timestamp{};
+	uint32_t m_next_analyze_timestamp{};
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
 	size_t abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate = 0);
-	u32 m_abm_timestamp = 0;
+	uint32_t m_abm_timestamp{};
 
 	u32 getActualTimestamp()
 	{

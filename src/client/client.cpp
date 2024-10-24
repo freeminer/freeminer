@@ -135,6 +135,7 @@ Client::Client(
 		ELoginRegister allow_login_or_register
 ):
 	far_container{this},
+	mesh_thread_pool(rangelim(rangelim(g_settings->getS32("mesh_generation_threads"), 0, 8) ?: Thread::getNumberOfProcessors()/2, 2,8)),
 
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_tsrc(tsrc),
