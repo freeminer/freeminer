@@ -667,7 +667,36 @@ int MapgenV7::generateTerrain()
 	return stone_surface_max_y;
 }
 
+// fm:
 /*
 void MapgenV7::generateExperimental() {
 }
 */
+bool MapgenV7::visible(const v3pos_t &p)
+{
+	// return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
+
+	// from getSpawnLevelAtPoint
+
+	auto y = baseTerrainLevelAtPoint(p.X, p.Z);
+
+	// If mountains are disabled, terrain level is base terrain level.
+	// Avoids mid-air spawn where mountain terrain would have been.
+	if (!(spflags & MGV7_MOUNTAINS)) {
+		return y + 1 >= p.Y;
+	}
+
+	// todo: make faster
+	int iters = 256;
+	while (iters > 0) {
+		if (!getMountainTerrainAtPoint(p.X, y + 1, p.Z)) {
+			return y + 1 >= p.Y;
+		}
+		y++;
+		iters--;
+	}
+
+	return true;
+}
+
+// == 

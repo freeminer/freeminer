@@ -104,8 +104,15 @@ wanted_fps (Wanted FPS) int 30
 
 # Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
 lodmesh () int 4
-# Client-side landscape render
+
+# Farmesh max distance, 0 for disable
 farmesh () int 30000
+
+# Farmesh quality (0 .. 4)
+farmesh_quality () int 2
+
+# Farmesh map data from server
+farmesh_server () bool true
 
 # Set to true to disable wield light (enabled by default, requires shaders)
 disable_wieldlight () bool false
@@ -123,7 +130,7 @@ headless_optimize () bool false
 # Disable death screen, respawn automaticaly
 respawn_auto () bool false
 
-#Save password for every server in favorites (in plaintext)
+# Save password for every server in favorites (in plaintext)
 password_save () bool true
 
 # Show cmd console on Windows
@@ -137,11 +144,12 @@ chat_buffer_size () int 6
 #    Selection box border color (R,G,B)
 selectionbox_color () string (0,0,0)
 
-#Android only: use better keyboard. glitchy on <4.4 versions
+# Android only: use better keyboard. glitchy on <4.4 versions
 android_keyboard () enum 0 0,1,2
 
-#Androud: use touchscreen gui
+# Androud: use touchscreen gui
 touchscreen () bool true
+
 
 [*Server]
 # Lan udp announce
@@ -190,7 +198,7 @@ default_privs_creative () string interact, shout, fly, fast
 movement_fall_aerodynamics () int 110
 
 # Constant volume liquids
-liquid_real () bool false
+liquid_real () bool true
 
 # Minimal liquid step in ms
 liquid_step () int 100
