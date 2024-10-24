@@ -279,7 +279,7 @@ int FarMesh::go_flat()
 	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
 
 	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> blocks;
-	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, 1,
+	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, cbpos.Y ?: 1,
 			[this, &draw_control, &blocks](
 					const v3bpos_t &bpos, const bpos_t &size) -> bool {
 				for (const auto &add : {
