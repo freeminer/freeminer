@@ -106,7 +106,7 @@ void FarMesh::makeFarBlock(
 	}
 	block->far_iteration = far_iteration_complete;
 	if (new_block) {
-		last_async = std::async(std::launch::async,
+		m_client->mesh_thread_pool.enqueue(
 				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
 	return;

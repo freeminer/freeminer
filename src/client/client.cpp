@@ -358,10 +358,11 @@ void Client::Stop()
 		m_localdb->endSave();
 	}
 
+	merger.reset(); // before m_localdb
+	mesh_thread_pool.wait_until_empty();
+
 	if (m_mods_loaded)
 		delete m_script;
-
-	merger.reset(); // before m_localdb
 
 	if (m_localdb)
 		delete m_localdb;
@@ -417,10 +418,6 @@ Client::~Client()
 	for (auto &csp : m_sounds_client_to_server)
 		m_sound->freeId(csp.first);
 	m_sounds_client_to_server.clear();
-	
-	if (last_async.valid()) {
-		last_async.wait();
-	}
 }
 
 void Client::connect(Address address, bool is_local_server)
