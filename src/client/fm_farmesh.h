@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <atomic>
 #include <cstdint>
+#include <future>
 #include "client/camera.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -55,9 +56,8 @@ public:
 			v3pos_t m_camera_offset,
 			//float brightness,
 			int render_range, float speed);
-	void makeFarBlock(
-			const v3bpos_t &blockpos, MapBlock::block_step_t step, bool near = false);
-	void makeFarBlocks(const v3bpos_t &blockpos, MapBlock::block_step_t step);
+	void makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool near = false);
+	void makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
 private:
@@ -69,11 +69,11 @@ private:
 	f32 m_camera_fov;
 	f32 m_camera_pitch;
 	f32 m_camera_yaw;*/
-	Client *m_client;
-	MapDrawControl *m_control;
+	Client *m_client{};
+	MapDrawControl *m_control{};
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
-	float m_speed;
+	float m_speed{};
 
 #if FARMESH_FAST
 	constexpr static uint16_t grid_size_max_y{32};
@@ -88,6 +88,10 @@ private:
 	static constexpr uint16_t grid_size_x{grid_size_max_x};
 	static constexpr uint16_t grid_size_y{grid_size_max_y};
 	static constexpr uint16_t grid_size_xy{grid_size_x * grid_size_y};
+
+	static constexpr uint8_t wait_server_far_block{
+			3}; // minimum 1 ; maybe make dynamic depend on avg server ask/response time, or on fast mode
+
 	Mapgen *mg{};
 
 	struct ray_cache
@@ -107,8 +111,10 @@ private:
 	std::array<plane_cache, 6> plane_processed;
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
-	uint32_t far_iteration_complete {};
-	bool complete_set = false;
+	int go_flat();
+	uint32_t far_iteration_complete{};
+	bool complete_set{};
+	uint32_t collect_reset_timestamp{static_cast<uint32_t>(-1)};
 	uint8_t planes_processed_last{};
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;

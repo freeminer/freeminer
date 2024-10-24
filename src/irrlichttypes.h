@@ -85,3 +85,5 @@ using opos_t = double;
 #else
 using opos_t = float;
 #endif
+
+using block_step_t = uint8_t;

@@ -146,7 +146,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		scale = {params["scale"]["x"].asDouble(), params["scale"]["y"].asDouble(),
 				params["scale"]["z"].asDouble()};
 
-	/* todomake test
+		/* todomake test
 	static bool shown = 0;
 	if (!shown) {
 		shown = true;
@@ -168,7 +168,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		}
 	}
 	*/
-	/*
+		/*
 	hgt_reader.debug = 1;
 	std::vector<std::pair<int, int>> a{
 			{0, 0}, {-30000, -30000}, {-30000, 30000}, {30000, -30000}, {30000, 30000}};
@@ -268,6 +268,11 @@ pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
 	return std::max(2, get_height(p.X, p.Y) + 2);
+}
+
+int MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
+{
+	return get_height(p.X, p.Y); // + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
 //  https://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
@@ -371,5 +376,4 @@ void MapgenEarth::generateBuildings()
 
 	if (handler)
 		handler->apply();
-
 }

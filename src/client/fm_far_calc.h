@@ -22,20 +22,24 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 
 struct MapDrawControl;
 
-int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos, const pos_t speedf);
-int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+block_step_t getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos, uint8_t cell_size_pow);
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getFarStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
-int getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &block_pos);
-bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,
+bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, block_step_t step,
 		const MapDrawControl &draw_control);
-v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,
+v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, block_step_t step,
 		const MapDrawControl &draw_control);
 v3bpos_t playerBlockAlign(
 		const MapDrawControl &draw_control, const v3bpos_t &playerblockpos);
+void runFarAll(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		uint8_t cell_size_pow, pos_t two_d,
+		const std::function<bool(const v3bpos_t &, const bpos_t &)> &func);

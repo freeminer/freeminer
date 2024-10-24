@@ -187,6 +187,7 @@ sub init_config () {
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
         world_clear     => 0,                                     # remove old world before start client
+        pid_path        => '/tmp/',
     };
 
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
@@ -461,6 +462,7 @@ $commands = {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         $commands->{world_name}();
         sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
+        $config->{pid_file} = $config->{pid_path} . ($options->{pass}{name} || 'freeminer') . '.pid';
         return
           sytee $config->{runner},
           $commands->{env}(),
@@ -499,7 +501,7 @@ $commands = {
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
           options_make($options->{pass}{config} ? () : [qw(gameid world port config autoexit verbose)]),
           qq{$config->{run_add}};
-
+        $config->{pid_file} = $config->{pid_path} . ($options->{pass}{worldname} || 'freeminerserver') . '.pid';
         if ($config->{server_bg}) {
             return sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
         } else {
@@ -551,7 +553,7 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     fail => sub {
         warn 'fail:', join ' ', @_;
     },
-    set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,, '---executable_name' => 'freeminer',}],
+    set_client => [{'---no_build_client' => 0, '---no_build_server' => 1, '---executable_name' => 'freeminer',}],
     set_server =>
       [{'---no_build_client' => 1, '---no_build_server' => 0, '----no_exit'=>1, '---executable_name' => 'freeminerserver',}],
 };
@@ -903,11 +905,18 @@ sub sytee (@) {
     say 'running ', join ' ', @_;
     file_append("$config->{logdir}/run.sh", join(' ', @_), "\n");
     my $pid = open my $fh, "-|", "@_ 2>&1" or return "can't open @_: $!";
+    if ($config->{pid_file}) {
+        unlink $config->{pid_file};
+        file_append($config->{pid_file}, $pid);
+    }
     while (defined($_ = <$fh>)) {
         print $_;
         file_append($tee, $_);
     }
     close($fh);
+    if ($config->{pid_file}) {
+        unlink $config->{pid_file};
+    }
     return sig(undef, $pid);
 }
 
@@ -1003,6 +1012,12 @@ sub commands_run(@);
 sub commands_run(@) {
     my @p    = @_;
     my $name = shift @p;
+
+    if ($config->{'no_' . $name}) {
+        warn 'command disabled ', $name;
+        return undef;
+    }
+
     say join ' ', "commands_run", $name, @p if $config->{verbose};
 
     my $c = $commands->{$name} || $tasks->{$name};

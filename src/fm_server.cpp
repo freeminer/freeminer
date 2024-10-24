@@ -60,7 +60,7 @@ void *ServerThreadBase::run()
 	while (!stopRequested()) {
 		try {
 			const auto time_now = porting::getTimeMs();
-			const auto result = step(time_now - time_last);
+			const auto result = step((time_now - time_last)/1000.0);
 			time_last = time_now;
 			std::this_thread::sleep_for(
 					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
@@ -546,7 +546,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 }
 
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
-		const std::string &savedir, MapBlock::block_step_t step)
+		const std::string &savedir, block_step_t step)
 {
 	if (step <= 0) {
 		if (dbase) {

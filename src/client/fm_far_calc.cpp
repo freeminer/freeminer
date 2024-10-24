@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 
-int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos, const pos_t speedf)
 {
 	if (draw_control.lodmesh) {
@@ -66,7 +66,7 @@ int getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpo
 	return 0;
 };
 
-int getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
+block_step_t getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
 		const v3bpos_t &blockpos)
 {
 	if (!draw_control.farmesh)
@@ -120,7 +120,7 @@ using v3tpos_t = v3bpos_t;
 using tpos_t = int32_t;
 using v3tpos_t = v3s32;
 #endif
-bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, int step,
+bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, block_step_t step,
 		const MapDrawControl &draw_control)
 {
 	const auto act = getFarActual(blockpos, playerblockpos, step, draw_control);
@@ -186,9 +186,10 @@ std::optional<child_t> find(const v3tpos_t &block_pos, const v3tpos_t &player_po
 								 child.pos.Z + childSize),
 						 .size = childSize},
 		 }) {
-		const auto res = find(
-				block_pos, player_pos, child, cell_size_pow, farmesh_quality, depth + 1);
-		if (res) {
+
+		if (const auto res = find(block_pos, player_pos, child, cell_size_pow,
+					farmesh_quality, depth + 1);
+				res) {
 			return res;
 		}
 	}
@@ -205,7 +206,7 @@ const auto tree_align = tree_pow - 1;
 const auto tree_align_size = 1 << (tree_align);
 const auto external_pow = tree_pow - 2;
 
-int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+block_step_t getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos, uint8_t cell_size_pow)
 {
 	const auto blockpos_aligned_cell = align_shift(blockpos, cell_size_pow);
@@ -241,17 +242,16 @@ int getFarStepCellSize(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 			  //return external_pow; //+ draw_control.cell_size_pow;
 }
 
-int getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+block_step_t getFarStep(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 		const v3bpos_t &blockpos)
 {
 	return getFarStepCellSize(draw_control, ppos, blockpos, draw_control.cell_size_pow);
 }
 
-v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, int step,
+v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, block_step_t step,
 		const MapDrawControl &draw_control)
 {
 	const auto blockpos_aligned_cell = align_shift(blockpos, draw_control.cell_size_pow);
-
 	const auto start =
 			child_t{.pos = v3tpos_t((((tpos_t)ppos.X >> tree_align) << tree_align) -
 											(tree_align_size >> 1),
@@ -286,6 +286,106 @@ v3bpos_t getFarActual(const v3bpos_t &blockpos, const v3bpos_t &ppos, int step,
 	return v3bpos_t((blockpos.X >> ext_align) << ext_align,
 			(blockpos.Y >> ext_align) << ext_align,
 			(blockpos.Z >> ext_align) << ext_align);
+}
+
+struct each_param_t
+{
+	const v3tpos_t &player_pos;
+	const int cell_size_pow;
+	const uint16_t farmesh_quality;
+	const std::function<bool(const child_t &)> &func;
+	const bool two_d{false};
+};
+
+void each(const each_param_t &param, const child_t &child)
+{
+	auto distance = std::max({std::abs((tpos_t)param.player_pos.X - child.pos.X -
+									   (child.size >> 1)),
+			std::abs((tpos_t)param.player_pos.Y - child.pos.Y - (child.size >> 1)),
+			std::abs((tpos_t)param.player_pos.Z - child.pos.Z - (child.size >> 1))});
+
+	if (param.farmesh_quality) {
+		distance /= param.farmesh_quality;
+	}
+
+	if (distance > child.size) {
+		param.func(child);
+		return;
+	}
+
+	const tpos_t childSize = child.size >> 1;
+	uint8_t i{0};
+	for (const auto &child : {
+				 // first with unchanged Y for 2d
+				 child_t{.pos{child.pos}, .size = childSize},
+				 child_t{.pos = v3tpos_t(
+								 child.pos.X + childSize, child.pos.Y, child.pos.Z),
+						 .size = childSize},
+				 child_t{.pos = v3tpos_t(
+								 child.pos.X, child.pos.Y, child.pos.Z + childSize),
+						 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X + childSize, child.pos.Y,
+								 child.pos.Z + childSize),
+						 .size = childSize},
+
+				 // two_d ends here
+
+				 child_t{.pos = v3tpos_t(
+								 child.pos.X, child.pos.Y + childSize, child.pos.Z),
+						 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X + childSize, child.pos.Y + childSize,
+								 child.pos.Z),
+						 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X, child.pos.Y + childSize,
+								 child.pos.Z + childSize),
+						 .size = childSize},
+				 child_t{.pos = v3tpos_t(child.pos.X + childSize, child.pos.Y + childSize,
+								 child.pos.Z + childSize),
+						 .size = childSize},
+		 }) {
+
+		if (param.two_d && i++ >= 4) {
+			break;
+		}
+
+		if (child.size < (1 << (param.cell_size_pow))) {
+			if (param.func(child)) {
+				return;
+			}
+			continue;
+		}
+
+		each(param, child);
+	}
+}
+
+void runFarAll(const MapDrawControl &draw_control, const v3bpos_t &ppos,
+		uint8_t cell_size_pow, pos_t two_d,
+		const std::function<bool(const v3bpos_t &, const bpos_t &)> &func)
+{
+
+	const auto start =
+			child_t{.pos = v3tpos_t((((tpos_t)ppos.X >> tree_align) << tree_align) -
+											(tree_align_size >> 1),
+							two_d
+									?: (((tpos_t)(ppos.Y) >> tree_align) << tree_align) -
+											   (tree_align_size >> 1),
+							(((tpos_t)(ppos.Z) >> tree_align) << tree_align) -
+									(tree_align_size >> 1)),
+					.size{tree_size}};
+
+	const auto func_convert = [&func](const child_t &child) {
+		return func(v3bpos_t(child.pos.X, child.pos.Y, child.pos.Z), child.size);
+	};
+
+	// DUMP(start.pos, start.size, tree_align);
+
+	each({.player_pos{ppos.X, ppos.Y, ppos.Z},
+				 .cell_size_pow{cell_size_pow},
+				 .farmesh_quality{draw_control.farmesh_quality},
+				 .func{func_convert},
+				 .two_d{static_cast<bool>(two_d)}},
+			start);
 }
 
 #endif

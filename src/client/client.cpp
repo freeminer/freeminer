@@ -135,6 +135,7 @@ Client::Client(
 		ELoginRegister allow_login_or_register
 ):
 	far_container{this},
+	mesh_thread_pool(rangelim(rangelim(g_settings->getS32("mesh_generation_threads"), 0, 8) ?: Thread::getNumberOfProcessors()/2, 2,8)),
 
 	m_simple_singleplayer_mode(is_simple_singleplayer_game),
 	m_tsrc(tsrc),
@@ -358,10 +359,11 @@ void Client::Stop()
 		m_localdb->endSave();
 	}
 
+	merger.reset(); // before m_localdb
+	mesh_thread_pool.wait_until_empty();
+
 	if (m_mods_loaded)
 		delete m_script;
-
-	merger.reset(); // before m_localdb
 
 	if (m_localdb)
 		delete m_localdb;
@@ -417,7 +419,6 @@ Client::~Client()
 	for (auto &csp : m_sounds_client_to_server)
 		m_sound->freeId(csp.first);
 	m_sounds_client_to_server.clear();
-    last_async.wait();
 }
 
 void Client::connect(Address address, bool is_local_server)
@@ -1071,7 +1072,7 @@ void Client::initLocalMapSaving(const Address &address,
 	if (!m_simple_singleplayer_mode) {
 		far_dbases[0].reset(m_localdb, [](auto) {});
 		if (!merger) {
-			merger = std::make_unique<WorldMerger>(WorldMerger{
+			merger.reset(new WorldMerger{
 					.get_time_func{[this]() {
 						return m_uptime.load(std::memory_order::relaxed);
 					}}, // find client game time == server time?

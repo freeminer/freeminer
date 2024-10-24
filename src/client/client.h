@@ -23,13 +23,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 // fm:
-#include <future>
 #include "client/fm_far_container.h"
 #include "map.h"
 #include "map_settings_manager.h"
 #include "mapgen/mapgen.h"
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
+#include "threading/ThreadPool.h"
 constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 // ==
 
@@ -167,7 +167,7 @@ public:
 	FarContainer far_container;
 	ServerMap::far_dbases_t far_dbases;
 	std::unique_ptr<WorldMerger> merger;
-	std::future<void> last_async;
+	progschj::ThreadPool mesh_thread_pool;
 	// ==
 
 public:

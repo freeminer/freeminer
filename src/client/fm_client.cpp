@@ -184,7 +184,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	}
 	auto &packet = *(pkt->packet);
 	v3bpos_t bpos = packet[TOCLIENT_BLOCKDATA_POS].as<v3bpos_t>();
-	MapBlock::block_step_t step = 0;
+	block_step_t step = 0;
 	packet[TOCLIENT_BLOCKDATA_STEP].convert(step);
 	std::istringstream istr(
 			packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
@@ -266,7 +266,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 		++m_new_farmeshes;
 
 		//todo: step ordered thread pool
-		last_async = std::async(std::launch::async, [this, block]() mutable {
+		mesh_thread_pool.enqueue([this, block]() mutable {
 			createFarMesh(block);
 			auto &client_map = getEnv().getClientMap();
 			const auto &control = client_map.getControl();
