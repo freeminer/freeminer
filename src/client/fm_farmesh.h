@@ -69,11 +69,11 @@ private:
 	f32 m_camera_fov;
 	f32 m_camera_pitch;
 	f32 m_camera_yaw;*/
-	Client *m_client;
-	MapDrawControl *m_control;
+	Client *m_client{};
+	MapDrawControl *m_control{};
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
-	float m_speed;
+	float m_speed{};
 	std::future<void> last_async;
 
 #if FARMESH_FAST
@@ -90,8 +90,8 @@ private:
 	static constexpr uint16_t grid_size_y{grid_size_max_y};
 	static constexpr uint16_t grid_size_xy{grid_size_x * grid_size_y};
 
-	static constexpr uint8_t wait_server_far_bock{
-			5}; // minimum 1 ; maybe make dynamic depend on avg server ask/response time, or on fast mode
+	static constexpr uint8_t wait_server_far_block{
+			3}; // minimum 1 ; maybe make dynamic depend on avg server ask/response time, or on fast mode
 
 	Mapgen *mg{};
 
@@ -115,7 +115,7 @@ private:
 	int go_flat();
 	uint32_t far_iteration_complete{};
 	bool complete_set{};
-	uint32_t reset_timestamp{static_cast<uint32_t>(-1)};
+	uint32_t collect_reset_timestamp{static_cast<uint32_t>(-1)};
 	uint8_t planes_processed_last{};
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;

@@ -390,9 +390,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 																 : &m_blocks_delete_1);
 		if (!m_blocks_delete->empty())
 			verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
-		for (auto &ir : *m_blocks_delete) {
-			//delete ir.first;
-		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
 		const thread_local static auto block_delete_time =

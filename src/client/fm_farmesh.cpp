@@ -96,8 +96,8 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 
 				block.reset(client_map.createBlankBlockNoInsert(blockpos_actual));
 				block->far_step = step;
-				reset_timestamp = block->far_make_mesh_timestamp =
-						m_client->m_uptime + wait_server_far_bock;
+				collect_reset_timestamp = block->far_make_mesh_timestamp =
+						m_client->m_uptime + wait_server_far_block + step;
 				far_blocks.insert_or_assign(blockpos_actual, block);
 				++m_client->m_new_meshes;
 			}
@@ -543,8 +543,8 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 			m_client->m_new_farmeshes = 0;
 			plane_processed.fill({});
 		}
-		if (m_client->m_uptime > reset_timestamp) {
-			reset_timestamp = -1;
+		if (m_client->m_uptime > collect_reset_timestamp) {
+			collect_reset_timestamp = -1;
 			plane_processed.fill({});
 			direction_caches.fill({});
 		}

@@ -803,7 +803,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             '-fixed_map_seed'          => 1,   '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100,
             '-max_block_send_distance' => 100, '----fly'    => 1, '----forward' => 1, '---world_clear' => 1,
             '---world'                 => $script_path . 'world_bench',
-            '-static_spawnpoint'       => '(0,25,0)',
+            '-static_spawnpoint'       => '(0,60,0)',
+            '-fps_max'                 => 120,
+            '-fps_max_unfocused'       => 120,
         },
         'fly'
     ],
@@ -811,7 +813,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     bench1 => [{
             '-fixed_map_seed'          => 1,      '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100,
             '-max_block_send_distance' => 100,    '---world_clear'     => 1, '--world' => $script_path . 'world_bench1',
-            -mg_name                   => 'math', '-static_spawnpoint' => "(0,20000,0)",
+            -mg_name                   => 'math', '-static_spawnpoint' => "(0,20202,0)",
+            '-fps_max'                 => 120,
+            '-fps_max_unfocused'       => 120,
         },
         'set_client',
         'build',
