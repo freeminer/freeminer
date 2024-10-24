@@ -543,7 +543,7 @@ public:
 #endif
 
 	block_step_t far_step{};
-	uint32_t far_make_mesh_timestamp{};
+	uint32_t far_make_mesh_timestamp{static_cast<uint32_t>(-1)};
 	std::atomic_uint32_t far_iteration{};
 	std::atomic_bool creating_far_mesh{};
 	std::atomic_short heat{};

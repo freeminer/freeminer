@@ -114,7 +114,8 @@ private:
 	int go_direction(const size_t dir_n);
 	int go_flat();
 	uint32_t far_iteration_complete{};
-	bool complete_set = false;
+	bool complete_set{};
+	uint32_t reset_timestamp{static_cast<uint32_t>(-1)};
 	uint8_t planes_processed_last{};
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;

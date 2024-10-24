@@ -96,18 +96,18 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 
 				block.reset(client_map.createBlankBlockNoInsert(blockpos_actual));
 				block->far_step = step;
-				block->far_make_mesh_timestamp =
+				reset_timestamp = block->far_make_mesh_timestamp =
 						m_client->m_uptime + wait_server_far_bock;
 				far_blocks.insert_or_assign(blockpos_actual, block);
 				++m_client->m_new_meshes;
 			}
 		}
 	}
+	
 	block->far_iteration = far_iteration_complete;
 
-	if (block->far_make_mesh_timestamp &&
-			m_client->m_uptime >= block->far_make_mesh_timestamp) {
-		block->far_make_mesh_timestamp = 0;
+	if (m_client->m_uptime >= block->far_make_mesh_timestamp) {
+		block->far_make_mesh_timestamp = -1;
 		m_client->mesh_thread_pool.enqueue(
 				[this, block]() mutable { m_client->createFarMesh(block); });
 	}
@@ -271,12 +271,11 @@ int FarMesh::go_flat()
 	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
 
 	auto &dcache = direction_caches[0][0];
-	auto &last_range = dcache.step_num;
+	auto &last_step = dcache.step_num;
 	// todo: slowly increase range here
-	if (last_range > 0) {
+	if (last_step > 0) {
 		return 0;
 	}
-	last_range = 1;
 
 	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
 
@@ -302,13 +301,18 @@ int FarMesh::go_flat()
 				return false;
 			});
 
-	for (size_t step = 0; step < blocks.size(); ++step) {
-		for (const auto &bpos : blocks[step]) {
-			makeFarBlocks(bpos, step);
+	for (; last_step < blocks.size(); ++last_step) {
+		for (const auto &bpos : blocks[last_step]) {
+			// just first suggestion
+			if (1 << (last_step + MAP_BLOCKP) > draw_control.farmesh &&
+					radius_box(bpos, cbpos) << MAP_BLOCKP > last_distance_max) {
+				return last_step;
+			}
+			makeFarBlocks(bpos, last_step);
 		}
 	}
 
-	return last_range;
+	return last_step;
 }
 
 int FarMesh::go_direction(const size_t dir_n)
@@ -538,6 +542,11 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 		if (m_client->m_new_farmeshes) {
 			m_client->m_new_farmeshes = 0;
 			plane_processed.fill({});
+		}
+		if (m_client->m_uptime > reset_timestamp) {
+			reset_timestamp = -1;
+			plane_processed.fill({});
+			direction_caches.fill({});
 		}
 	}
 
