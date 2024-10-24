@@ -25,12 +25,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lock.h"
 
-template <class LOCKER, class T, class Allocator = std::allocator<T> >
+template <class LOCKER, class T, class Allocator = std::allocator<T>>
 class concurrent_list_ : public std::list<T, Allocator>, public LOCKER
 {
 public:
 	typedef typename std::list<T, Allocator> full_type;
 	typedef T mapped_type;
+
+	~concurrent_list_() { clear(); }
 
 	template <typename... Args>
 	decltype(auto) assign(Args &&...args)
@@ -119,26 +121,25 @@ public:
 	}
 };
 
-template <class T, class Allocator = std::allocator<T> >
+template <class T, class Allocator = std::allocator<T>>
 using concurrent_list = concurrent_list_<locker<>, T, Allocator>;
 
 #if ENABLE_THREADS
 
-template <class T, class Allocator = std::allocator<T> >
+template <class T, class Allocator = std::allocator<T>>
 using maybe_concurrent_list = concurrent_list<T, Allocator>;
 
 #else
 
-template <class T, class Allocator = std::allocator<T> >
-class not_concurrent_list : public std::list<T, Allocator>,
-						   public dummy_locker
+template <class T, class Allocator = std::allocator<T>>
+class not_concurrent_list : public std::list<T, Allocator>, public dummy_locker
 {
 public:
 	typedef typename std::list<T, Allocator> full_type;
 	typedef T mapped_type;
 };
 
-template <class T, class Allocator = std::allocator<T> >
+template <class T, class Allocator = std::allocator<T>>
 using maybe_concurrent_list = not_concurrent_list<T, Allocator>;
 
 #endif

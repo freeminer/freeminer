@@ -750,7 +750,7 @@ void Sky::draw_stars(video::IVideoDriver * driver, float wicked_time_of_day)
 	// to time 4000.
 
 	float tod = wicked_time_of_day < 0.5f ? wicked_time_of_day : (1.0f - wicked_time_of_day);
-	float day_opacity = clamp(m_star_params.day_opacity, 0.0f, 1.0f);
+	float day_opacity = clamp<f32>(m_star_params.day_opacity, 0.0f, 1.0f);
 	float starbrightness = (0.25f - fabs(tod)) * 20.0f;
 	float alpha = clamp(starbrightness, day_opacity, 1.0f);
 

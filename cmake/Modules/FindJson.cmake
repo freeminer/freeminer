@@ -1,7 +1,9 @@
 # Look for JsonCpp, with fallback to bundeled version
 
 mark_as_advanced(JSON_LIBRARY JSON_INCLUDE_DIR)
+if (NOT USE_LIBCXX)
 option(ENABLE_SYSTEM_JSONCPP "Enable using a system-wide JsonCpp" TRUE)
+endif()
 set(USE_SYSTEM_JSONCPP FALSE)
 
 if(ENABLE_SYSTEM_JSONCPP)

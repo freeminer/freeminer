@@ -158,14 +158,14 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 		}
 	}
 	{
-		auto hgt = std::make_unique<height_dummy>();
-		const auto lat_dec = hgt->lat_start(lat);
-		const auto lon_dec = hgt->lon_start(lon);
-		// DUMP("place dummy", lat, lon, lat_dec, lon_dec, map1[lat_dec].contains(lon_dec));
+		const static auto hgt_dummy = std::make_shared<height_dummy>();
+		const auto lat_dec = hgt_dummy->lat_start(lat);
+		const auto lon_dec = hgt_dummy->lon_start(lon);
+		DUMP("place dummy", lat, lon, lat_dec, lon_dec, map1[lat_dec].contains(lon_dec));
 		if (!map1[lat_dec].contains(lon_dec))
-			map1[lat_dec][lon_dec] = std::move(hgt);
+			map1[lat_dec][lon_dec] = hgt_dummy;
 		if (!map90[lat90].contains(lon90))
-			map90[lat90][lon90] = std::make_unique<height_dummy>();
+			map90[lat90][lon90] = hgt_dummy;
 		return map1[lat_dec][lon_dec]->get(lat, lon);
 	}
 }
@@ -895,7 +895,8 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 	return false;
 }
 
-std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_gebco_tif::ll_to_xy(ll_t lat, ll_t lon)
+std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_gebco_tif::ll_to_xy(
+		ll_t lat, ll_t lon)
 {
 	const height::ll_t lat_seconds = (lat_loaded - lat) * 60 * 60;
 	const height::ll_t lon_seconds = (lon - lon_loaded) * 60 * 60;
@@ -921,7 +922,8 @@ int16_t height_gebco_tif::read(uint16_t y, uint16_t x)
 	return heights[pos];
 }
 
-std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_hgt::ll_to_xy(height::ll_t lat, height::ll_t lon)
+std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_hgt::ll_to_xy(
+		height::ll_t lat, height::ll_t lon)
 {
 
 	const height::ll_t lat_seconds = (lat - (ll_t)lat_loaded) * 60 * 60;
@@ -931,7 +933,8 @@ std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_hgt::ll_to_xy(heig
 	return {x, y, lat_seconds, lon_seconds};
 }
 
-std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_tif::ll_to_xy(height::ll_t lat, height::ll_t lon)
+std::tuple<size_t, size_t, height::ll_t, height::ll_t> height_tif::ll_to_xy(
+		height::ll_t lat, height::ll_t lon)
 {
 	const ll_t lat_seconds = (lat - (ll_t)lat_loaded) * 60 * 60;
 	const ll_t lon_seconds = (lon - (ll_t)lon_loaded) * 60 * 60;

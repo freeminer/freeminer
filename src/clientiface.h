@@ -22,15 +22,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "irr_v3d.h"                   // for irrlicht datatypes
-
-#include "constants.h"
-#include "serialization.h"             // for SER_FMT_VER_INVALID
+#include "mapblock.h"
 #include "threading/concurrent_set.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
 #include "network/fm_connection_use.h"
 #include "util/unordered_map_hash.h"
+#include <atomic>
+#include "msgpack_fix.h"
+
+
+#include "irr_v3d.h"                   // for irrlicht datatypes
+
+#include "constants.h"
+#include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/address.h"
@@ -38,15 +43,12 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/mutex_auto_lock.h"
 #include "clientdynamicinfo.h"
 
-#include <atomic>
 #include <list>
 #include <vector>
 #include <set>
 #include <unordered_set>
 #include <memory>
 #include <mutex>
-
-#include "msgpack_fix.h"
 
 class MapBlock;
 class ServerEnvironment;
@@ -245,18 +247,31 @@ public:
 	// The serialization version to use with the client
 	u8 serialization_version = SER_FMT_VER_INVALID;
 	//
+	std::atomic_ushort net_proto_version = 0;
 
-	//fm:
-	u16 net_proto_version_fm = 0;
+	// fm:
+	u16 net_proto_version_fm{};
 	//std::atomic_int m_nearest_unsent_reset {0};
-	std::atomic_uint wanted_range {10 };
-	std::atomic_int range_all {0};
-	std::atomic_int farmesh = {0};
-	float fov = 72;
+	std::atomic_uint wanted_range{10};
+	std::atomic_int range_all{};
+	std::atomic_int farmesh = {};
+	float fov{72};
 	//bool block_overflow;
-	ServerEnvironment *m_env = nullptr;
-
-	std::atomic_ushort net_proto_version = {0};
+	ServerEnvironment *m_env{};
+	u32 getSendingCount() const { return 0; }
+	std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
+	v3f m_last_direction;
+	float m_nearest_unsent_reset_timer{};
+	std::unordered_map<v3bpos_t, uint8_t> blocks;
+	void SetBlocksNotSent();
+	void SetBlockDeleted(const v3bpos_t &p);
+	std::vector<std::unordered_map<v3bpos_t, std::pair<uint8_t, int32_t>>>
+			far_blocks_requested{FARMESH_STEP_MAX};
+	std::mutex far_blocks_requested_mutex;
+	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
+			std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
+	uint32_t SendFarBlocks();
+	// ==
 
 	/* Authentication information */
 	std::string enc_pwd = "";
@@ -282,14 +297,12 @@ public:
 		dtime is used for resetting send radius at slow interval
 	*/
 	int GetNextBlocks(ServerEnvironment *env, EmergeManager* emerge,
-			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime);
+			float dtime, std::vector<PrioritySortedBlockTransfer> &dest, u64 max_ms);
 
 	void SentBlock(v3bpos_t p, double time);
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
-	void SetBlocksNotSent();
-	void SetBlockDeleted(v3bpos_t p);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -302,15 +315,10 @@ public:
 /*
 	u32 getSendingCount() const { return m_blocks_sending.size(); }
 */
-//fm:
-	u32 getSendingCount() const { return 0; }
-    std::map<uint16_t, std::pair<double, int32_t>> m_objects_last_pos_sent;
-	v3f   m_last_direction;
-	float m_nearest_unsent_reset_timer;
-
 
 	bool isBlockSent(v3s16 p) const
 	{
+		const auto lock = m_blocks_sent.lock_shared_rec();
 		return m_blocks_sent.find(p) != m_blocks_sent.end();
 	}
 
@@ -325,6 +333,7 @@ public:
 				<<"m_blocks_sent.size()="<<m_blocks_sent.size()
 				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
 				<<", wanted_range="<<wanted_range * MAP_BLOCKSIZE
+				<< ", v=" << net_proto_version << ":" << net_proto_version_fm
 				<<std::endl;
 	}
 
@@ -408,7 +417,7 @@ private:
 		No MapBlock* is stored here because the blocks can get deleted.
 	*/
 	unsigned int m_nearest_unsent_reset_want = 0;
-	concurrent_shared_unordered_map<v3bpos_t, double, v3posHash, v3posEqual> m_blocks_sent;
+	concurrent_unordered_map<v3bpos_t, double, v3posHash, v3posEqual> m_blocks_sent;
 
 	//std::unordered_set<v3s16> m_blocks_sent;
 
@@ -438,7 +447,7 @@ private:
 		Block is removed when GOTBLOCKS is received.
 		Value is time from sending. (not used at the moment)
 	*/
-	//std::unordered_map<v3s16, float> m_blocks_sending;
+	std::unordered_map<v3s16, float> m_blocks_sending;
 
 	/*
 		Blocks that have been modified since blocks were
@@ -448,7 +457,7 @@ private:
 
 		List of block positions.
 	*/
-	//std::unordered_set<v3s16> m_blocks_modified;
+	std::unordered_set<v3s16> m_blocks_modified;
 
 	/*
 		Count of excess GotBlocks().
@@ -495,6 +504,19 @@ using RemoteClientVector = std::vector<std::shared_ptr<RemoteClient>>;
 class ClientInterface {
 public:
 
+// fm:
+	/* send message to client */
+	void send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &data, bool reliable);
+
+	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data,
+			bool reliable); //todo: delete
+	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
+	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
+	RemoteClientPtr getClient(u16 peer_id, ClientState state_min = CS_Active);
+	RemoteClientVector getClientList();
+	// ==
+
+
 	friend class Server;
 
 	ClientInterface(const std::shared_ptr<con_use::Connection> &con);
@@ -518,14 +540,7 @@ public:
 	/* send message to client */
 	void send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
 
-	/* send message to client */
-	void send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &data, bool reliable);
-
-	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable); //todo: delete
-
 	/* send to all clients */
-	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
-	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
 	void sendToAll(NetworkPacket *pkt);
 
 	/* delete a client */
@@ -533,8 +548,6 @@ public:
 
 	/* create client */
 	void CreateClient(session_t peer_id);
-
-	RemoteClientPtr getClient(u16 peer_id,  ClientState state_min=CS_Active);
 
 	/* get a client by peer_id */
 	RemoteClient *getClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
@@ -578,18 +591,6 @@ protected:
 /*
 	RemoteClientMap& getClientList() { return m_clients; }
 */
-
-public:
-	RemoteClientVector getClientList() {
-		RemoteClientVector clients;
-		auto lock = m_clients.lock_unique_rec();
-		for(auto & ir : m_clients) {
-			auto c = ir.second;
-			if (c)
-				clients.emplace_back(c);
-		}
-		return clients;
-	}
 
 private:
 	/* update internal player list */

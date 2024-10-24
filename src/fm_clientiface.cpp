@@ -1,6 +1,10 @@
+#include <cstdint>
 #include "clientiface.h"
+#include "constants.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "map.h"
+#include "mapblock.h"
 #include "profiler.h"
 #include "remoteplayer.h"
 #include "server/player_sao.h"
@@ -8,22 +12,26 @@
 #include "server.h"
 #include "emerge.h"
 #include "face_position_cache.h"
+#include "threading/lock.h"
 #include "util/directiontables.h"
 #include "util/numeric.h"
 
-int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
-		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
+int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
+		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
+		u64 max_ms)
 {
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
+
+	auto end_ms = porting::getTimeMs() + max_ms;
 
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 	m_nearest_unsent_reset_timer += dtime;
 	m_time_from_building += dtime;
 
-/*
+	/*
 	if (m_nearest_unsent_reset) {
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
@@ -50,7 +58,8 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		}
 	*/
 
-	v3opos_t playerpos = sao->getBasePosition();
+	auto playerpos = sao->getBasePosition();
+
 	v3f playerspeed = player->getSpeed();
 	if (playerspeed.getLength() > 120.0 * BS) // cheater or bug, ignore him
 		return 0;
@@ -66,7 +75,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	v3pos_t center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
-	//v3opos_t camera_pos = sao->getEyePosition();
+	auto camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0, 0, 1);
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);
@@ -155,7 +164,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	s32 new_nearest_unsent_d = -1;
 
 	// get view range and camera fov from the client
-	s16 wanted_range = sao->getWantedRange();
+	auto wanted_range = sao->getWantedRange();
 	float camera_fov = sao->getFov();
 	// if FOV, wanted_range are not available (old client), fall back to old default
 	/*
@@ -179,7 +188,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	   MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
 	*/
 
-	//const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
+	const opos_t d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
 	// infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max <<
 	// std::endl;
 
@@ -309,32 +318,35 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 			// infostream<<"d="<<d<<std::endl;
 
+			double block_sent = 0;
+			{
+				const auto lock = m_blocks_sent.lock_shared_rec();
+				if (const auto it = m_blocks_sent.find(p); it != m_blocks_sent.end()) {
+					block_sent = it->second;
+				}
+			}
+
 			/*
 				Don't generate or send if not in sight
 				FIXME This only works if the client uses a small enough
 				FOV setting. The default of 72 degrees is fine.
 			*/
-			/*
-				if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
-										d_blocks_in_sight) == false) {
-					// DUMP(p, can_skip, "nosight");
-					continue;
-				}
-			*/
+			if (block_sent > 0 && can_skip &&
+					isBlockInSight(p, camera_pos, camera_dir, camera_fov,
+							d_blocks_in_sight) == false) {
+				// DUMP(p, can_skip, block_sent, "nosight");
+				continue;
+			}
 			/*
 				Don't send already sent blocks
 			*/
-			double block_sent = 0;
 			{
-				auto lock = m_blocks_sent.lock_shared_rec();
-				block_sent = m_blocks_sent.contains(p) ? m_blocks_sent.get(p) : 0;
-			}
-
-			if (block_sent > 0 &&
-					(/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d * d * d) >
-										  m_uptime)) {
-				// DUMP(p, block_sent, d, "ddd");
-				continue;
+				auto dspd = d / (speed_in_blocks ? speed_in_blocks : 1);
+				if (block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + 1 +
+													  (d <= 2 ? 0 : dspd * dspd) >
+											  m_uptime)) {
+					continue;
+				}
 			}
 
 			if (d >= 2 && can_skip && occlusion_culling_enabled) {
@@ -499,6 +511,10 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			else
 				num_blocks_selected += 1;
 		}
+
+		if (porting::getTimeMs() > end_ms) {
+			break;
+		}
 	}
 queue_full_break:
 
@@ -546,4 +562,69 @@ queue_full_break:
 	}
 
 	return num_blocks_selected - num_blocks_sending;
+}
+
+uint32_t RemoteClient::SendFarBlocks()
+{
+	uint16_t sent_cnt{};
+	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
+	{
+		std::multimap<int32_t, MapBlockP> ordered;
+		constexpr uint16_t send_max{50};
+		for (auto &far_blocks : far_blocks_requested) {
+			for (auto &[bpos, step_sent] : far_blocks) {
+				auto &[step, sent_ts] = step_sent;
+				if (sent_ts <= 0) {
+					continue;
+				}
+				if (step >= FARMESH_STEP_MAX - 1) {
+					sent_ts = -1;
+					continue;
+				}
+				const auto dbase = GetFarDatabase(m_env->m_map->dbase,
+						m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
+				if (!dbase) {
+					sent_ts = -1;
+					continue;
+				}
+				const auto block = loadBlockNoStore(m_env->m_map, dbase, bpos);
+				if (!block) {
+					sent_ts = -1;
+					continue;
+				}
+
+				g_profiler->add("Server: Far blocks sent", 1);
+
+				block->far_step = step;
+				sent_ts = 0;
+				ordered.emplace(sent_ts - step, block);
+
+				if (++sent_cnt > send_max) {
+					break;
+				}
+			}
+		}
+
+		// First with larger iteration and smaller step
+
+		for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
+			//	for (const auto &[key, block] : std::views::reverse(ordered)) {
+			m_env->m_server->SendBlockFm(
+					peer_id, it->second, serialization_version, net_proto_version);
+		}
+	}
+	return sent_cnt;
+}
+
+RemoteClientVector ClientInterface::getClientList()
+{
+	auto lock = m_clients.lock_unique_rec();
+	RemoteClientVector clients;
+	for (const auto &ir : m_clients) {
+		const auto &c = ir.second;
+		if (!c)
+			continue;
+		clients.emplace_back(c);
+	}
+	return clients;
 }

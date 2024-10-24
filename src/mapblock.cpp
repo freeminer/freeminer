@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mapblock.h"
 
+#include <atomic>
 #include <sstream>
 #include "map.h"
 #include "light.h"
@@ -768,8 +769,9 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	}
 
 
+const MapBlock::mesh_type empty_mesh;
 #if BUILD_CLIENT
-	MapBlock::mesh_type MapBlock::getLodMesh(int step, bool allow_other)
+	const MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_other)
 	{
 		if (m_lod_mesh[step] || !allow_other)
 			return m_lod_mesh[step];
@@ -780,10 +782,10 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 			if (step - inc >= 0 && m_lod_mesh[step - inc])
 				return m_lod_mesh[step - inc];
 		}
-		return {};
+		return empty_mesh;
 	}
 
-	MapBlock::mesh_type MapBlock::getFarMesh(int step)
+	const MapBlock::mesh_type MapBlock::getFarMesh(block_step_t step)
 	{
 		return m_far_mesh[step];
 	}
@@ -796,13 +798,12 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		m_lod_mesh[ms] = rmesh;
 	}
 
-	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, uint32_t time)
+	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step)
 	{
-		const auto ms = rmesh->far_step;
-		if (const auto mesh = std::move(m_far_mesh[ms])) {
+		if (auto mesh = std::move(m_far_mesh[step])) {
 			delete_mesh = std::move(mesh);
 		}
-		m_far_mesh[ms] = rmesh;
+		m_far_mesh[step] = rmesh;
 	}
 
 /*

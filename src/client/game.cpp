@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "game.h"
 
+#include <atomic>
 #include <iomanip>
 #include <cmath>
 #include "client/renderingengine.h"
@@ -926,7 +927,7 @@ private:
 	};
 
 
-	//freeminer:
+	// fm:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
     async_step_runner updateDrawList_async;
@@ -936,7 +937,7 @@ private:
     async_step_runner farmesh_async;
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
-	// minetest:
+	// ==:
 
 
 
@@ -1316,13 +1317,22 @@ void Game::run()
 			}
 		}
 
+		{
+			if (draw_control->farmesh) {
+				auto &far_blocks_send_timer =
+						client->getEnv().getClientMap().far_blocks_sent_timer;
+				far_blocks_send_timer -= dtime;
 
+				if (far_blocks_send_timer <= 0.0f) {
+					client->sendGetBlocks();
+					far_blocks_send_timer = 2;
+				}
+			}
 
 		run_time += dtime;
 		if (runData.autoexit && run_time > runData.autoexit)
 			g_gamecallback->shutdown_requested = 1;
-
-
+		}
 
 		// Prepare render data for next iteration
 
@@ -1674,7 +1684,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
-		farmesh.reset(new FarMesh(client, server, draw_control));
+		farmesh = std::make_unique<FarMesh>(client, server, draw_control);
 	}
 
 	//freeminer:
@@ -4226,6 +4236,10 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 void Game::handlePointingAtObject(const PointedThing &pointed,
 		const ItemStack &tool_item, const v3f &player_position, bool show_debug)
 {
+	if (!runData.selected_object) {
+		return;
+	}
+
 	std::wstring infotext = unescape_translate(
 		utf8_to_wide(runData.selected_object->infoText()));
 
@@ -4435,7 +4449,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	*/
 
 	if (sky->getFogDistance() >= 0) {
-		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance());
+		draw_control->wanted_range = MYMIN(draw_control->wanted_range.load(std::memory_order::relaxed), sky->getFogDistance());
 	}
 
 
@@ -4447,14 +4461,14 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 
 	if (draw_control->range_all && sky->getFogDistance() < 0) {
-		runData.fog_range = 100000 * BS;
+		runData.fog_range = FARMESH_LIMIT * BS;
 	} else if (!runData.headless_optimize) {
 		runData.fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		thread_local static const auto farmesh = g_settings->getS32("farmesh");
-		if (runData.fog_range < farmesh) {
-			runData.fog_range = farmesh;
+		thread_local static const auto farmesh_bs = g_settings->getS32("farmesh") * BS;
+		if (runData.fog_range < farmesh_bs) {
+			runData.fog_range = farmesh_bs ;
 		}
 
 		if (client->use_weather) {
@@ -4534,20 +4548,25 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (clouds)
 		updateClouds(dtime);
 
+	thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
 	if (farmesh) {
-		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-		farmesh_async.step([&, farmesh_range = farmesh_range,
-								   //yaw = player->getYaw(),
-								   //pitch = player->getPitch(),
-								   camera_pos = camera->getPosition(),
-								   camera_offset = camera->getOffset(),
-								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera_pos,
-					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera_offset,
-					//sky->getBrightness(),
-					farmesh_range, speed);
-		});
+		thread_local static uint8_t processed{};
+		thread_local static u64 next_run_time{};
+		if (processed || porting::getTimeMs() > next_run_time) {
+			next_run_time = porting::getTimeMs() + 300;
+			farmesh_async.step([&, farmesh_range = farmesh_range,
+									   //yaw = player->getYaw(),
+									   //pitch = player->getPitch(),
+									   camera_pos = camera->getPosition(),
+									   camera_offset = camera->getOffset(),
+									   speed = player->getSpeed().getLength()]() {
+				processed = farmesh->update(camera_pos,
+						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
+						camera_offset,
+						//sky->getBrightness(),
+						farmesh_range, speed);
+			});
+		}
 	}
 
 	/*
@@ -4572,8 +4591,8 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		driver->setFog(
 				sky->getBgColor(),
 				video::EFT_FOG_LINEAR,
-				100000 * BS,
-				110000 * BS,
+				std::max(farmesh_range, 100000) * BS,
+				(std::max(farmesh_range, 100000)+10000) * BS,
 				0.01f,
 				false, // pixel fog
 				false // range fog
@@ -4652,7 +4671,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	const auto camera_position = camera->getPosition();
 	if (!runData.headless_optimize)
-		if ((client->m_new_meshes &&
+		if ((client->m_new_meshes ||
 					runData.update_draw_list_timer >= update_draw_list_delta) ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||
@@ -4766,9 +4785,9 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (!runData.headless_optimize)
 		driver->endScene();
 
-	/*
+	if (m_game_ui->m_flags.show_profiler_graph)
 	stats->drawtime = tt_draw.stop(true);
-	*/
+	
 	g_profiler->graphAdd("Draw scene [us]", stats->drawtime);
 	g_profiler->avg("Game::updateFrame(): update frame [ms]", tt_update.stop(true));
 }

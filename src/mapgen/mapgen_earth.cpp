@@ -146,7 +146,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		scale = {params["scale"]["x"].asDouble(), params["scale"]["y"].asDouble(),
 				params["scale"]["z"].asDouble()};
 
-	/* todomake test
+		/* todomake test
 	static bool shown = 0;
 	if (!shown) {
 		shown = true;
@@ -168,7 +168,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		}
 	}
 	*/
-	/*
+		/*
 	hgt_reader.debug = 1;
 	std::vector<std::pair<int, int>> a{
 			{0, 0}, {-30000, -30000}, {-30000, 30000}, {30000, -30000}, {30000, 30000}};
@@ -218,12 +218,16 @@ bool MapgenEarth::visible(const v3pos_t &p)
 	return p.Y < get_height(p.X, p.Z);
 }
 
-const MapNode &MapgenEarth::visible_content(const v3pos_t &p)
+const MapNode &MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 {
 	const auto v = visible(p);
 	const auto vw = visible_water_level(p);
-	if (!v && !vw)
+	if (!v && !vw) {
 		return visible_transparent;
+	}
+	if (!use_weather) {
+		return visible_surface_green;
+	}
 	auto heat = 10;
 	heat += p.Y / -100; // upper=colder, lower=hotter, 3c per 1000
 
@@ -264,6 +268,11 @@ pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
 	return std::max(2, get_height(p.X, p.Y) + 2);
+}
+
+int MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
+{
+	return get_height(p.X, p.Y); // + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
 //  https://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
@@ -367,5 +376,4 @@ void MapgenEarth::generateBuildings()
 
 	if (handler)
 		handler->apply();
-
 }

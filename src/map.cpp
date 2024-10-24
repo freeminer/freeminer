@@ -73,7 +73,6 @@ Map::Map(IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	m_liquid_step_flow = 1000;
 	time_life = 0;
 	getBlockCacheFlush();
 }
@@ -1715,7 +1714,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 	}
 
 	if (create_blank) {
-        return this->createBlankBlock(p);
+        return this->createBlankBlock(p).get();
 /*
 		MapSector *sector = createSector(v2s16(p.X, p.Z));
 		MapBlock *block = sector->createBlankBlock(p.Y);
@@ -1984,6 +1983,8 @@ void ServerMap::endSave()
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
+	changed_blocks_for_merge.emplace(block->getPos());
+
 	return saveBlock(block, dbase, m_map_compression_level);
 }
 

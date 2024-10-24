@@ -49,6 +49,8 @@ public:
 	typedef typename full_type::const_iterator const_iterator;
 	typedef typename full_type::iterator iterator;
 
+	~concurrent_unordered_map_() { clear(); }
+
 	template <typename... Args>
 	decltype(auto) operator=(Args &&...args)
 	{
@@ -56,17 +58,28 @@ public:
 		return full_type::operator=(std::forward<Args>(args)...);
 	}
 
-	mapped_type nothing = {};
+	const mapped_type nothing{};
 
 	template <typename... Args>
-	mapped_type &get(Args &&...args)
+	const mapped_type &get(Args &&...args) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
+		if (const auto &it = full_type::find(std::forward<Args>(args)...);
+				it != full_type::end()) {
+			return it->second;
+		}
+		return nothing;
+	}
 
-		if (!full_type::contains(std::forward<Args>(args)...))
-			return nothing;
-
-		return full_type::operator[](std::forward<Args>(args)...);
+	template <typename... Args>
+	const mapped_type &at_or(Args &&...args, const mapped_type &def) const
+	{
+		const auto lock = LOCKER::lock_shared_rec();
+		if (const auto &it = full_type::find(std::forward<Args>(args)...);
+				it != full_type::end()) {
+			return it->second;
+		}
+		return def;
 	}
 
 	template <typename... Args>
@@ -90,7 +103,7 @@ public:
 		return full_type::insert_or_assign(std::forward<Args>(args)...);
 	}
 
-	bool empty()
+	bool empty() const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty();
@@ -109,7 +122,7 @@ public:
 	}
 
 	template <typename... Args>
-	decltype(auto) contains(Args &&...args)
+	decltype(auto) contains(Args &&...args) const
 	{
 		auto lock = LOCKER::lock_shared_rec();
 		return full_type::contains(std::forward<Args>(args)...);

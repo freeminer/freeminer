@@ -94,11 +94,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include "threading/thread_vector.h"
 #include "key_value_storage.h"
+#include "fm_server.h"
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
 #endif
-
-#include "fm_server.cpp"
 
 #if 0
 
@@ -394,6 +393,7 @@ Server::~Server()
 
 	// Stop threads
 	if (m_thread) {
+		if (m_env) m_env->getServerMap().save(MOD_STATE_WRITE_AT_UNLOAD); // save before merge thread exit
 		stop();
 		delete m_thread;
 	}
@@ -452,10 +452,12 @@ void Server::init()
 	if (m_more_threads) {
 		m_map_thread =  std::make_unique<MapThread>(this);
 		m_sendblocks_thead = std::make_unique<SendBlocksThread>(this);
+		m_sendfarblocks_thead = std::make_unique<SendFarBlocksThread>(this);
 		m_liquid = std::make_unique<LiquidThread>(this);
 		m_env_thread = std::make_unique<EnvThread>(this);
-		m_abm_thread = std::make_unique< AbmThread>(this);
+		m_abm_thread = std::make_unique<AbmThread>(this);
 		m_abm_world_thread = std::make_unique<AbmWorldThread>(this);
+		m_world_merge_thread = std::make_unique<WorldMergeThread>(this);
 	}
 
 	// Create world if it doesn't exist
@@ -604,6 +606,8 @@ void Server::start()
 		m_map_thread->restart();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->restart();
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->restart();
 	if (m_liquid)
 		m_liquid->restart();
 	if(m_env_thread)
@@ -612,6 +616,8 @@ void Server::start()
 		m_abm_thread->restart();
 	if(m_abm_world_thread)
 		m_abm_world_thread->restart();
+	if(m_world_merge_thread)
+		m_world_merge_thread->restart();
 
 	if (!m_simple_singleplayer_mode && g_settings->getBool("serverlist_lan"))
 		lan_adv_server.serve(m_bind_addr.getPort());
@@ -706,6 +712,8 @@ void Server::stop()
 {
 	infostream<<"Server: Stopping and waiting threads"<<std::endl;
 
+	if (m_env) m_env->getServerMap().save(MOD_STATE_WRITE_AT_UNLOAD);
+
 	// Stop threads (set run=false first so both start stopping)
 	m_thread->stop();
 
@@ -713,12 +721,16 @@ void Server::stop()
 		m_liquid->stop();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->stop();
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->stop();
 	if (m_map_thread)
 		m_map_thread->stop();
 	if(m_abm_thread)
 		m_abm_thread->stop();
 	if(m_abm_world_thread)
 		m_abm_world_thread->stop();
+	if(m_world_merge_thread)
+		m_world_merge_thread->stop();
 	if(m_env_thread)
 		m_env_thread->stop();
 
@@ -730,12 +742,16 @@ void Server::stop()
 		m_liquid->join();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->join();
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->join();
 	if (m_map_thread)
 		m_map_thread->join();
 	if(m_abm_thread)
 		m_abm_thread->join();
 	if(m_abm_world_thread)
 		m_abm_world_thread->join();
+	if(m_world_merge_thread)
+		m_world_merge_thread->join();
 	if(m_env_thread)
 		m_env_thread->join();
 
@@ -1566,12 +1582,12 @@ void Server::ProcessData(NetworkPacket *pkt)
 		}
 
 #if BUILD_CLIENT && !NDEBUG
-		tracestream << "Server processing packet" << (int)command << " ["
+		tracestream << "Server processing packet " << (int)command << " ["
 					<< toServerCommandTable[command].name
 					<< "] state=" << (int)toServerCommandTable[command].state
 					<< " size=" << pkt->getSize()
 					<< " from=" << peer_id
-					<< std::endl;
+					<< "\n";
 #endif
 
 		if (toServerCommandTable[command].state == TOSERVER_STATE_NOT_CONNECTED) {
@@ -1760,7 +1776,7 @@ void Server::Send(session_t peer_id, NetworkPacket *pkt)
 				<< "] state=" << (int)toClientCommandTable[pkt->getCommand()].state
 				<< " size=" << pkt->getSize() 
 				<< " to=" << peer_id
-				<< std::endl;
+				<< "\n";
 #endif
 
 	g_profiler->add("Server: Packets sent", 1);
@@ -2864,6 +2880,7 @@ void Server::SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
 	NetworkPacket pkt(TOCLIENT_BLOCKDATA, 2 + 2 + 2 + sptr->size(), peer_id);
 	pkt << block->getPos();
 	pkt.putRawString(*sptr);
+	pkt << block->far_step;
 	Send(&pkt);
 
 	// Store away in cache
@@ -2888,6 +2905,9 @@ int Server::SendBlocks(float dtime)
 
 		std::vector<session_t> clients = m_clients.getClientIDs();
 
+		const auto clients_size = clients.size();
+		const auto max_ms = 1000 / (clients_size ? clients.size() : 1);
+
 		ClientInterface::AutoLock clientlock(m_clients);
 		for (const session_t client_id : clients) {
 			auto client = m_clients.getClient(client_id, CS_Active);
@@ -2897,7 +2917,12 @@ int Server::SendBlocks(float dtime)
 
 			//total_sending += client->getSendingCount();
 			const auto old_count = queue.size();
-			total += client->GetNextBlocks(m_env,m_emerge, dtime, queue, m_uptime_counter->get() + m_env->m_game_time_start);
+			if (client->net_proto_version_fm) {
+				total += client->GetNextBlocksFm(m_env, m_emerge, dtime, queue,
+						m_uptime_counter->get() + m_env->m_game_time_start, max_ms);
+			} else {
+				total += client->GetNextBlocks(m_env, m_emerge, dtime, queue, max_ms);
+			}
 			//total_sending += queue.size();
 			unique_clients += queue.size() > old_count ? 1 : 0;
 		}
@@ -3436,6 +3461,12 @@ void Server::DeleteClient(session_t peer_id, ClientDeletionReason reason)
 			m_script->on_leaveplayer(playersao, reason == CDR_TIMEOUT);
 
 			playersao->disconnected();
+			{
+				// TODO also make periodic (on save player)
+				const auto online = m_uptime_counter->get() - playersao->last_time_online;
+				stat.add("online", player_name, online);
+				playersao->last_time_online = m_uptime_counter->get();
+			}
 		}
 
 		/*
@@ -3601,6 +3632,8 @@ std::wstring Server::handleChat(const std::string &name,
 		Send the message to others
 	*/
 	actionstream << "CHAT: " << wide_to_utf8(unescape_enriched(line)) << std::endl;
+
+    stat.add("chat", name);
 
 	ChatMessage chatmsg(line);
 

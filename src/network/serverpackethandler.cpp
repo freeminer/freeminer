@@ -433,6 +433,8 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 
 	stat.add("join", playersao->getPlayer()->getName());
 
+	playersao->last_time_online = m_uptime_counter->get();
+
 	// Send shutdown timer if shutdown has been scheduled
 	if (m_shutdown_state.isTimerRunning())
 		SendChatMessage(peer_id, m_shutdown_state.getShutdownTimerMessage());
@@ -532,13 +534,18 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 		m_script->on_cheat(playersao, "moved_too_fast");
 		SendMovePlayer(pkt->getPeerId());
 	}
-// copypaste from fm_serverpackethandler.cpp
-		else if (playersao->m_ms_from_last_respawn > 3000) {
-			auto dist = (position/BS).getDistanceFrom(playersao->m_last_good_position/BS);
-			if (dist)
-				stat.add("move", playersao->getPlayer()->getName(), dist);
+	// copypaste from fm_serverpackethandler.cpp
+	else if (playersao->m_ms_from_last_respawn > 3000) {
+		const auto dist =
+				(position / BS).getDistanceFrom(playersao->m_last_stat_position / BS);
+		// distance per step (1/10s)
+		if (dist && dist < 8) {
+			stat.add("move", playersao->getPlayer()->getName(), dist);
 		}
+		playersao->m_last_stat_position = position;
+	}
 
+	/*
 		if (playersao->m_ms_from_last_respawn > 2000) {
 			auto obj = playersao; // copypasted from server step:
 			auto uptime = m_uptime_counter->get();
@@ -549,9 +556,8 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 				obj->m_uptime_last = uptime;
 			}
 		}
-//copypaste end
-
-
+*/
+	//copypaste end
 }
 
 void Server::handleCommand_PlayerPos(NetworkPacket* pkt)
@@ -1248,11 +1254,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 			// Try getting the time from pool
 			else if (playersao->getDigPool().grab(params.time)) {
 				// All is good
-			
-				stat.add("dig", player->getName());
-				stat.add("dig_"+ m_nodedef->get(n).name , player->getName());
 				m_env->nodeUpdate(p_under, 5, 0);
-
 			}
 			// Dig not possible
 			else {
@@ -1263,6 +1265,11 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 				// Call callbacks
 				m_script->on_cheat(playersao, "dug_too_fast");
 			}
+		}
+
+		if (is_valid_dig) {
+			stat.add("dig", player->getName());
+			stat.add("dig_" + m_nodedef->get(n).name, player->getName());
 		}
 
 		/* Actually dig node */
@@ -1932,8 +1939,6 @@ void Server::handleCommand_HaveMedia(NetworkPacket *pkt)
 		}
 	}
 }
-
-void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) { }
 
 void Server::handleCommand_UpdateClientInfo(NetworkPacket *pkt)
 {

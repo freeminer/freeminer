@@ -510,7 +510,9 @@ void ContentFeatures::reset()
 
 //freeminer:
 	freeze = "";
+	freeze_id = CONTENT_IGNORE;
 	melt = "";
+	melt_id = CONTENT_IGNORE;
 	is_circuit_element = false;
 	is_wire = false;
 	is_wire_connector = false;
@@ -2092,6 +2094,14 @@ static void removeDupes(std::vector<content_t> &list)
 void NodeDefManager::resolveCrossrefs()
 {
 	for (ContentFeatures &f : m_content_features) {
+		if (!f.freeze.empty()) {
+			f.freeze_id = getId(f.freeze);
+		}
+
+		if (!f.melt.empty()) {
+			f.melt_id = getId(f.melt);
+		}
+
 		//if (f.isLiquid() || f.isLiquidRender()) {
 		if (!f.liquid_alternative_flowing.empty() || !f.liquid_alternative_source.empty()) {
 			f.liquid_alternative_flowing_id = getId(f.liquid_alternative_flowing);

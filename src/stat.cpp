@@ -62,8 +62,9 @@ void Stat::close()
 const Stat::stat_value &Stat::get(const std::string &key)
 {
 	std::lock_guard<std::mutex> lock(mutex);
-	if (!stats.count(key))
+	if (!stats.contains(key)) {
 		database.get(key, stats[key]);
+	}
 	//errorstream<<"stat get: "<<key<<" = "<< stats[key]<<std::endl;
 	return stats[key];
 }

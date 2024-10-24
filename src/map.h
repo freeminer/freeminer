@@ -28,10 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <set>
 #include <map>
 #include "irr_v3d.h"
+#include "threading/concurrent_set.h"
+#include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
 #include "util/unordered_map_hash.h"
-#include "threading/concurrent_unordered_map.h"
-#include "threading/concurrent_set.h"
 #include <list>
 
 #include "irrlichttypes_bloated.h"
@@ -276,40 +276,50 @@ public:
 		Utilities
 	*/
 
-
-
-//freeminer:
+	//freeminer:
 	MapNode getNodeTry(const v3pos_t &p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
-	std::atomic_uint m_liquid_step_flow{0};
+	std::atomic_size_t m_liquid_step_flow{1000};
+	std::atomic_size_t m_transforming_liquid_local_size{0};
 
 	virtual s16 getHeat(const v3pos_t &p, bool no_random = 0);
 	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
 
 	// from old mapsector:
-	typedef concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>
-			m_blocks_type;
+	using m_blocks_type =
+			concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
 	m_blocks_type m_blocks;
-	typedef concurrent_shared_unordered_map<v3bpos_t, std::shared_ptr<MapBlock>, v3posHash,
-			v3posEqual>
-			m_far_blocks_type;
+	using m_far_blocks_type =
+			concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
 	m_far_blocks_type m_far_blocks;
-	v3pos_t m_far_blocks_last_cam_pos;
-	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete_1, m_far_blocks_delete_2;
-	bool m_far_blocks_delete_current = false;
+	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
+	bool m_far_blocks_currrent {};
+	//using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t, block_step_t>;
+	using far_blocks_req_t = std::unordered_map<v3bpos_t,
+			std::pair<block_step_t, uint32_t>>; // server
+	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t,
+			std::pair<block_step_t, uint32_t>>; // client
+	far_blocks_ask_t m_far_blocks_ask;
+	std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX>
+			far_blocks_storage;
+	//double m_far_blocks_created = 0;
+	float far_blocks_sent_timer{1};
+	v3pos_t far_blocks_last_cam_pos;
+	std::vector<MapBlockP> m_far_blocks_delete_1, m_far_blocks_delete_2;
+	bool m_far_blocks_delete_current {};
 
 	//static constexpr bool m_far_fast =			true; // show generated far farmesh stable(0) or instant(1)
-	uint32_t m_far_blocks_use_timestamp = 0;
-	uint32_t m_far_blocks_clean_timestamp = 0;
+	uint32_t far_iteration_use{};
+	uint32_t far_iteration_clean{};
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
 	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
-	MapBlock *createBlankBlock(const v3bpos_t &p);
+	MapBlockP createBlankBlock(const v3bpos_t &p);
 	bool insertBlock(MapBlock *block);
 	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
-	uint64_t m_blocks_delete_time = 0;
+	uint64_t m_blocks_delete_time{};
 	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_shared_unordered_set<v3bpos_t, v3posHash, v3posEqual> m_db_miss;
 	MapNode &getNodeRef(const v3pos_t &p);
@@ -327,11 +337,11 @@ public:
 	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 
 protected:
-	u32 m_blocks_update_last = 0;
-	u32 m_blocks_save_last = 0;
+	u32 m_blocks_update_last{};
+	u32 m_blocks_save_last{};
 
 public:
-	std::atomic_uint time_life {0};
+	std::atomic_uint time_life{};
 
 	inline MapNode getNodeNoEx(const v3pos_t &p) override { return getNodeTry(p); };
 	inline MapNode getNodeNoExNoEmerge(const v3pos_t &p) override
@@ -340,7 +350,10 @@ public:
 	};
 	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeRef(p); }
 
-	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t & cam_pos_nodes);
+	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes);
+
+	concurrent_unordered_set<v3bpos_t> changed_blocks_for_merge;
+	using far_dbases_t = std::array<std::shared_ptr<MapDatabase>, FARMESH_STEP_MAX>;
 
 	//end of freeminer
 
@@ -417,22 +430,28 @@ protected:
 class ServerMap : public Map
 {
 public:
-//freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
+
+    // freeminer:
+	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
+			bool block_add = true);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
+			bool block_add = true);
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
 	void transforming_liquid_add(const v3pos_t &p);
 	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
+	std::vector<v3pos_t> m_transforming_liquid_local;
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	//int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-	virtual int getSurface(const v3pos_t& basepos, int searchup, bool walkable_only);
-/*
+	virtual int getSurface(const v3pos_t &basepos, int searchup, bool walkable_only);
+	/*
 	{
 		return basepos.Y - 1;
 	}
@@ -442,24 +461,28 @@ public:
 	std::mutex m_transforming_liquid_mutex;
 	typedef unordered_map_v3pos<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
-	std::map<v3pos_t, int> m_lighting_modified_blocks;
+	std::map<v3bpos_t, int> m_lighting_modified_blocks;
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
-	void lighting_modified_add(const v3pos_t& pos, int range = 5);
+	void lighting_modified_add(const v3pos_t &pos, int range = 5);
 
 	void unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
-			std::set<v3pos_t> &light_sources, std::map<v3bpos_t, MapBlock *> &modified_blocks);
+			std::set<v3pos_t> &light_sources,
+			std::map<v3bpos_t, MapBlock *> &modified_blocks);
 	void spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			std::map<v3bpos_t, MapBlock *> &modified_blocks, uint64_t end_ms);
 
-	u32 updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
-			std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
-	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3pos<int> & processed, unsigned int max_cycle_ms = 0);
-	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
+	u32 updateLighting(concurrent_map<v3bpos_t, MapBlock *> &a_blocks,
+			std::map<v3bpos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
+	u32 updateLighting(lighting_map_t &a_blocks, unordered_map_v3pos<int> &processed,
+			unsigned int max_cycle_ms = 0);
+	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int &loopcount);
 
-	bool propagateSunlight(
-			const v3pos_t& pos, std::set<v3pos_t> &light_sources, bool remove_light = false);
+	bool propagateSunlight(const v3bpos_t &pos, std::set<v3pos_t> &light_sources,
+			bool remove_light = false);
 
-//end of freeminer
+	MapBlockP loadBlockNoStore(const v3bpos_t &p3d);
+
+	// == end of freeminer
 
 
 
@@ -586,10 +609,10 @@ public:
 	bool m_map_saving_enabled;
 	bool m_map_loading_enabled;
 	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
-private:
 
 	int m_map_compression_level;
 
+private:
 	concurrent_set<v3bpos_t> m_chunks_in_progress;
 
 	// used by deleteBlock() and deleteDetachedBlocks()

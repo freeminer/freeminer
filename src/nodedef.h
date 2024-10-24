@@ -89,6 +89,48 @@ enum {
 	CONTENTFEATURES_CONNECT_TO_IDS,
 	CONTENTFEATURES_CONNECT_SIDES,
   };
+// _S_ is serialized, added to make sure collisions with NodeBoxType never happen
+enum {
+	NODEBOX_S_TYPE,
+	NODEBOX_S_FIXED,
+	NODEBOX_S_WALL_TOP,
+	NODEBOX_S_WALL_BOTTOM,
+	NODEBOX_S_WALL_SIDE,
+
+	NODEBOX_S_CONNECTED_TOP,
+	NODEBOX_S_CONNECTED_BOTTOM,
+	NODEBOX_S_CONNECTED_FRONT,
+	NODEBOX_S_CONNECTED_LEFT,
+	NODEBOX_S_CONNECTED_BACK,
+	NODEBOX_S_CONNECTED_RIGHT,
+};
+
+enum {
+	TILEDEF_NAME,
+	TILEDEF_ANIMATION_TYPE,
+	TILEDEF_ANIMATION_ASPECT_W,
+	TILEDEF_ANIMATION_ASPECT_H,
+	TILEDEF_ANIMATION_LENGTH,
+	TILEDEF_BACKFACE_CULLING,
+	TILEDEF_TILEABLE_HORIZONTAL,
+	TILEDEF_TILEABLE_VERTICAL
+};
+
+struct ContentFeatureSingleDrop
+{
+	std::string item;
+	u16 rarity;
+	u16 min_items;
+	u16 max_items;
+};
+
+struct ContentFeatureDrops
+{
+	u8 max_items;
+	std::vector<ContentFeatureSingleDrop> items;
+};
+
+// ==
 
 
 class IItemDefManager;
@@ -155,22 +197,6 @@ enum NodeBoxType
 	NODEBOX_CONNECTED, // optionally draws nodeboxes if a neighbor node attaches
 };
 
-// _S_ is serialized, added to make sure collisions with NodeBoxType never happen
-enum {
-	NODEBOX_S_TYPE,
-	NODEBOX_S_FIXED,
-	NODEBOX_S_WALL_TOP,
-	NODEBOX_S_WALL_BOTTOM,
-	NODEBOX_S_WALL_SIDE,
-
-	NODEBOX_S_CONNECTED_TOP,
-	NODEBOX_S_CONNECTED_BOTTOM,
-	NODEBOX_S_CONNECTED_FRONT,
-	NODEBOX_S_CONNECTED_LEFT,
-	NODEBOX_S_CONNECTED_BACK,
-	NODEBOX_S_CONNECTED_RIGHT,
-};
-
 struct NodeBoxConnected
 {
 	std::vector<aabb3f> connect_top;
@@ -191,6 +217,12 @@ struct NodeBoxConnected
 
 struct NodeBox
 {
+
+// fm
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
+// ==
+
 	enum NodeBoxType type;
 	// NODEBOX_REGULAR (no parameters)
 	// NODEBOX_FIXED
@@ -220,9 +252,6 @@ struct NodeBox
 	void reset();
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
-
-	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
-	void msgpack_unpack(msgpack::object o);
 };
 
 struct MapNode;
@@ -339,19 +368,14 @@ enum AlphaMode : u8 {
 /*
 	Stand-alone definition of a TileSpec (basically a server-side TileSpec)
 */
-enum {
-	TILEDEF_NAME,
-	TILEDEF_ANIMATION_TYPE,
-	TILEDEF_ANIMATION_ASPECT_W,
-	TILEDEF_ANIMATION_ASPECT_H,
-	TILEDEF_ANIMATION_LENGTH,
-	TILEDEF_BACKFACE_CULLING,
-	TILEDEF_TILEABLE_HORIZONTAL,
-	TILEDEF_TILEABLE_VERTICAL
-};
 
 struct TileDef
 {
+// fm:
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
+// ==
+
 	std::string name = "";
 	bool backface_culling = true; // Takes effect only in special cases
 	bool tileable_horizontal = true;
@@ -370,25 +394,8 @@ struct TileDef
 		animation.type = TAT_NONE;
 	}
 
-	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
-	void msgpack_unpack(msgpack::object o);
-
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is, NodeDrawType drawtype, u16 protocol_version);
-};
-
-struct ContentFeatureSingleDrop
-{
-	std::string item;
-	u16 rarity;
-	u16 min_items;
-	u16 max_items;
-};
-
-struct ContentFeatureDrops
-{
-	u8 max_items;
-	std::vector<ContentFeatureSingleDrop> items;
 };
 
 // Defines the number of special tiles per nodedef
@@ -400,6 +407,40 @@ struct ContentFeatureDrops
 
 struct ContentFeatures
 {
+// fm:
+	bool has_on_activate;
+	bool has_on_deactivate;
+
+	// Ice for water, water for ice
+	std::string freeze;
+	content_t freeze_id {};
+	std::string melt;
+	content_t melt_id {};
+
+	u8 solidness_far = 0;
+	float light_vertical_dimnish = 1;
+	bool is_wire;
+	bool is_wire_connector;
+	bool is_circuit_element;
+	u8 wire_connections[6];
+	u8 circuit_element_func[64];
+	u8 circuit_element_delay;
+
+	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+	void msgpack_unpack(msgpack::object o);
+
+	u8 getMaxLevel(bool compress = 0) const{
+		//if(param_type_2 == CPT2_LEVELED /* && liquid_type == LIQUID_FLOWING*/ && leveled)
+		//	return(compress ? LEVELED_MAX : leveled);
+		if(leveled || param_type_2 == CPT2_LEVELED)
+			return compress ? LEVELED_MAX : leveled ? leveled : LEVELED_MAX;
+		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type
+			return LIQUID_LEVEL_SOURCE;
+		return 0;
+	}
+
+// ==
+
 	// PROTOCOL_VERSION >= 37. This is legacy and should not be increased anymore,
 	// write checks that depend directly on the protocol version instead.
 	static const u8 CONTENTFEATURES_VERSION = 13;
@@ -424,8 +465,6 @@ struct ContentFeatures
 	bool has_on_construct;
 	bool has_on_destruct;
 	bool has_after_destruct;
-	bool has_on_activate;
-	bool has_on_deactivate;
 
 	// "float" group
 	bool floats;
@@ -526,9 +565,6 @@ struct ContentFeatures
 	u8 liquid_viscosity;
 	// Is liquid renewable (new liquid source will be created between 2 existing)
 	bool liquid_renewable;
-	// Ice for water, water for ice
-	std::string freeze;
-	std::string melt;
 	// Number of flowing liquids surrounding source
 	u8 liquid_range;
 	u8 drowning;
@@ -555,16 +591,6 @@ struct ContentFeatures
 	// Set to true if wall_mounted used to be set to true
 	bool legacy_wallmounted;
 
-// fm:
-	u8 solidness_far = 0;
-	float light_vertical_dimnish = 1;
-	bool is_wire;
-	bool is_wire_connector;
-	bool is_circuit_element;
-	u8 wire_connections[6];
-	u8 circuit_element_func[64];
-	u8 circuit_element_delay;
-
 	/*
 		Methods
 	*/
@@ -572,12 +598,8 @@ struct ContentFeatures
 	ContentFeatures();
 	~ContentFeatures();
 	void reset();
-
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is, u16 protocol_version);
-
-	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
-	void msgpack_unpack(msgpack::object o);
 
 	/*
 		Some handy methods
@@ -643,15 +665,6 @@ struct ContentFeatures
 	int getGroup(const std::string &group) const
 	{
 		return itemgroup_get(groups, group);
-	}
-	u8 getMaxLevel(bool compress = 0) const{
-		//if(param_type_2 == CPT2_LEVELED /* && liquid_type == LIQUID_FLOWING*/ && leveled)
-		//	return(compress ? LEVELED_MAX : leveled);
-		if(leveled || param_type_2 == CPT2_LEVELED)
-			return compress ? LEVELED_MAX : leveled ? leveled : LEVELED_MAX;
-		if(param_type_2 == CPT2_FLOWINGLIQUID || liquid_type == LIQUID_FLOWING) //remove liquid_type
-			return LIQUID_LEVEL_SOURCE;
-		return 0;
 	}
 
 //#ifndef SERVER

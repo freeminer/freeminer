@@ -33,16 +33,7 @@ class concurrent_unordered_set_ : public std::unordered_set<Value, Hash, Pred, A
 public:
 	using full_type = std::unordered_set<Value, Hash, Pred, Alloc>;
 
-	template <typename... Args>
-	Value &at_or(Args &&...args, const Value &nothing = {})
-	{
-		auto lock = LOCKER::lock_shared_rec();
-		if (const auto it = full_type::find(std::forward<Args>(args)...);
-				it != full_type::end()) {
-			return *it;
-		}
-		return nothing;
-	}
+	~concurrent_unordered_set_() { clear(); }
 
 	LOCK_UNIQUE_PROXY(full_type, operator=);
 	LOCK_SHARED_PROXY(full_type, empty);

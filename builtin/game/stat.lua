@@ -24,6 +24,7 @@ end
 		dig = "Digged",
 		drop = "Dropped",
 		join = "Join",
+		online = "Online",
 		move = "Traveled",
 		place = "Placed",
 		punch = "Punches",
