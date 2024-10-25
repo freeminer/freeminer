@@ -696,7 +696,7 @@ bool MapgenV7::visible(const v3pos_t &p)
 		iters--;
 	}
 
-	return true;
+	return false;
 }
 
 // == 
