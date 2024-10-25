@@ -1,5 +1,4 @@
 #include "fm_far_container.h"
-#include <unordered_map>
 #include "client.h"
 #include "client/clientmap.h"
 #include "client/fm_far_calc.h"
@@ -72,12 +71,14 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		return block;
 	};
 
-	if (!block && !m_client->m_simple_singleplayer_mode && !m_client->far_container.have_params) {
-		thread_local static std::unordered_set<v3bpos_t> miss_cache;
-		if (!miss_cache.contains(bpos)) {
-			block = loadBlock(bpos, step);
+	if (!block && !m_client->m_simple_singleplayer_mode &&
+			!m_client->far_container.have_params) {
+		thread_local static std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX>
+				miss_cache;
+		if (!miss_cache[step].contains(bpos_aligned)) {
+			block = loadBlock(bpos_aligned, step);
 			if (!block) {
-				miss_cache.emplace(bpos);
+				miss_cache[step].emplace(bpos_aligned);
 			}
 		}
 	}
