@@ -16,7 +16,7 @@ FarContainer::FarContainer(Client *client) : m_client{client}
 namespace
 {
 thread_local MapBlockP block_cache{};
-thread_local v3bpos_t block_cache_p;
+thread_local std::pair<block_step_t, v3bpos_t> block_cache_p;
 }
 
 const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
@@ -26,12 +26,13 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
 			bpos);
 	const auto &shift = step; // + cell_size_pow;
-	const v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift,
-			(bpos.Z >> shift) << shift);
+	const v3bpos_t bpos_aligned = getFarActual(bpos,
+			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
+			step, m_client->getEnv().getClientMap().getControl());
 
 	MapBlockP block;
-
-	if (block_cache && bpos_aligned == block_cache_p) {
+	const auto step_block_pos = std::make_pair(step, bpos_aligned);
+	if (block_cache && step_block_pos == block_cache_p) {
 		block = block_cache;
 	}
 
@@ -94,7 +95,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 			return n;
 		}
 
-		block_cache_p = bpos_aligned;
+		block_cache_p = step_block_pos;
 		block_cache = block;
 	}
 

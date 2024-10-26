@@ -193,6 +193,7 @@ MapgenV7Params::MapgenV7Params():
 
 void MapgenV7Params::readParams(const Settings *settings)
 {
+
 //freeminer:
 	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
@@ -239,10 +240,12 @@ void MapgenV7Params::readParams(const Settings *settings)
 
 void MapgenV7Params::writeParams(Settings *settings) const
 {
+
 //freeminer:
 	settings->setNoiseParams("mg_np_layers",         np_layers);
 	settings->setJson("mg_params", paramsj);
 //----------
+
 	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7);
 	settings->setS16("mgv7_mount_zero_level",           mount_zero_level);
 	settings->setS16("mgv7_floatland_ymin",             floatland_ymin);
