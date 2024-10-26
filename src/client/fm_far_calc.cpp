@@ -27,8 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 
-block_step_t getLodStep(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &blockpos, const pos_t speedf)
+block_step_t getLodStep(const MapDrawControl &draw_control,
+		const v3bpos_t &playerblockpos, const v3bpos_t &blockpos, const pos_t speedf)
 {
 	if (draw_control.lodmesh) {
 		int range = radius_box(playerblockpos, blockpos);
@@ -66,8 +66,8 @@ block_step_t getLodStep(const MapDrawControl &draw_control, const v3bpos_t &play
 	return 0;
 };
 
-block_step_t getFarStepBad(const MapDrawControl &draw_control, const v3bpos_t &playerblockpos,
-		const v3bpos_t &blockpos)
+block_step_t getFarStepBad(const MapDrawControl &draw_control,
+		const v3bpos_t &playerblockpos, const v3bpos_t &blockpos)
 {
 	if (!draw_control.farmesh)
 		return 1;
@@ -120,8 +120,8 @@ using v3tpos_t = v3bpos_t;
 using tpos_t = int32_t;
 using v3tpos_t = v3s32;
 #endif
-bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos, block_step_t step,
-		const MapDrawControl &draw_control)
+bool inFarGrid(const v3bpos_t &blockpos, const v3bpos_t &playerblockpos,
+		block_step_t step, const MapDrawControl &draw_control)
 {
 	const auto act = getFarActual(blockpos, playerblockpos, step, draw_control);
 	return act == blockpos;

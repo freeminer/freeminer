@@ -1,6 +1,7 @@
 var master;
 if (!master) master = {};
-if (typeof(master.root) == 'undefined')	master.root = "http://servers.freeminer.org/";
+if (typeof(master.root) == 'undefined')	master.root = "//servers.freeminer.org/";
+if (!master.play_root) master.play_root = '//play.freeminer.org/';
 if (!master.output)	master.output = '#server_list';
 if (!master.list)	master.list = "list";
 if (!master.list_root)	master.list_root = master.root;
@@ -29,6 +30,16 @@ function escapeHTML(str) {
 	return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function addressEscaped(address, port) {
+	var isIPv6 = address.indexOf(":") != -1;
+	var addrStr = (isIPv6 ? '[' : '') +
+		escapeHTML(address) +
+		(isIPv6 ? ']' : '');
+	if (port)
+		addrStr += ':' + parseInt(port);
+	return addrStr;
+}
+
 function addressString(server) {
 	var isIPv6 = server.address.indexOf(":") != -1;
 	var addrStr = (isIPv6 ? '[' : '') +
@@ -42,7 +53,7 @@ function addressString(server) {
 		str += ' class="mts_tooltip" title="' + addrStr + '"'
 	}
 	if (server.port != 30000)
-		shortStr += ':' + server.port;
+		shortStr += ':' + parseInt(server.port);
 	return str + '>' + shortStr + '</span>';
 }
 
@@ -86,9 +97,14 @@ function get() {
 	jQuery.getJSON(master.list_url, draw);
 }
 
+function maybeGet() {
+	if (!document.hidden)
+		get();
+}
+
 function loaded(){
 	if (!master.no_refresh) {
-		setInterval(get, 60 * 1000);
+		setInterval(maybeGet, 60 * 1000);
 	}
 	get();
 }
@@ -100,6 +116,6 @@ toast(master.root + 'style.css', master.root + 'servers.js', function() {
 	if (typeof(jQuery) != 'undefined')
 		return loaded();
 	else
-		toast('//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js', loaded);
+		toast('//ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js', loaded);
 });
 

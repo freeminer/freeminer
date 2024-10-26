@@ -51,7 +51,7 @@ MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
 		NodeContainer *nodecontainer) :
 
 	m_mesh_grid(client->getMeshGrid()),
-	side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) / (pow(2, lod_step))),
+	side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) >> lod_step),
 	m_client(client),
 	m_use_shaders(use_shaders)
 		,
@@ -59,7 +59,7 @@ MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
 		side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size),
 		lod_step{lod_step},
 		far_step{far_step},
-		fscale(pow(2, far_step + lod_step))
+		fscale(1<<(far_step + lod_step))
 {}
 
 void MeshMakeData::fillBlockDataBegin(const v3bpos_t &blockpos)

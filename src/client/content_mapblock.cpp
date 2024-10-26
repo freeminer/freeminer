@@ -1752,8 +1752,8 @@ void MapblockMeshGenerator::drawNode()
 
 void MapblockMeshGenerator::generate()
 {
-	const auto lstep = data->lod_step ? data->fscale : 1;
-	const auto fstep = data->far_step ? data->fscale : 1;
+	const auto lstep = 1 << data->lod_step;
+	const auto fstep = 1 << data->far_step;
 	for (cur_node.pf.Z = cur_node.pr.Z = 0; cur_node.pr.Z < data->side_length_data; cur_node.pr.Z+=lstep, cur_node.pf.Z+=fstep)
 	for (cur_node.pf.Y = cur_node.pr.Y = 0; cur_node.pr.Y < data->side_length_data; cur_node.pr.Y+=lstep, cur_node.pf.Y+=fstep)
 	for (cur_node.pf.X = cur_node.pr.X = 0; cur_node.pr.X < data->side_length_data; cur_node.pr.X+=lstep, cur_node.pf.X+=fstep) {

@@ -58,6 +58,7 @@ no strict qw(refs);
 use warnings "NONFATAL" => "all";
 no warnings qw(uninitialized);
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
+no if $] >= 5.038, warnings => 'deprecated::smartmatch';
 use utf8;
 use Socket;
 BEGIN {
@@ -106,7 +107,7 @@ our %config = (
     #debug        => 1,
     list_full    => $root_path . 'list_full',
     list_pub     => $root_path . 'list',
-    log          => $root_path . 'log.log',
+    log          => $root_path . '../log/master.log',
     time_purge   => 86400 * 1,
     time_alive   => 650,
     source_check => 1,
@@ -309,7 +310,7 @@ sub request (;$) {
                     $param->{ping} = $duration if $pingret;
                     printlog " PING t=$config{ping_timeout}, $param->{address}:$param->{port} = ( $pingret, $duration, $ip )" if $config{debug};
                 }
-                return if !$param->{ping};
+                return if !$param->{ping} and !($param->{ip} ~~ $config{trusted});
             }
             my $list = read_json($config{list_full}) || {};
             printlog "readed[$config{list_full}] list size=", scalar @{$list->{list}} if $config{debug};
@@ -337,7 +338,7 @@ sub request (;$) {
 
             $list->{list} = [
                 sort { $b->{clients} <=> $a->{clients} || $a->{start} <=> $b->{start} }
-                  grep { $_->{time} > time - $config{time_alive} and !$_->{off} and (!$config{ping} or !$config{pingable} or $_->{ping}) }
+                  grep { $_->{time} > time - $config{time_alive} and !$_->{off} and (!$config{ping} or !$config{pingable} or $_->{ping} or ($param->{ip} ~~ $config{trusted})) }
                   @{$list_full}
             ];
             $list->{total} = {clients => 0, servers => 0};
