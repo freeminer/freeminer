@@ -120,13 +120,14 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 			for (pos_t y = 0; y < block_size; ++y)
 				for (pos_t z = 0; z < block_size; ++z) {
 					const v3pos_t npos(x, y, z);
-					const v3pos_t bbpos(x >> (4 - step_pow), y >> (4 - step_pow),
-							z >> (4 - step_pow));
+					const v3pos_t bbpos(x >> (MAP_BLOCKP - step_pow),
+							y >> (MAP_BLOCKP - step_pow), z >> (MAP_BLOCKP - step_pow));
 
 					const auto &block = blocks[bbpos];
 					if (!block) {
 						continue;
 					}
+					
 					const v3pos_t lpos((x << step_pow) % MAP_BLOCKSIZE,
 							(y << step_pow) % MAP_BLOCKSIZE,
 							(z << step_pow) % MAP_BLOCKSIZE);
@@ -394,6 +395,7 @@ bool WorldMerger::add_changed(const v3bpos_t &bpos)
 	changed_blocks_for_merge.clear();
 	return true;
 }
+
 void WorldMerger::init()
 {
 	m_map_compression_level =
