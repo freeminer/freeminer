@@ -26,14 +26,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <mutex>
 
-enum TimePrecision
-{
-	PRECISION_SECONDS,
-	PRECISION_MILLI,
-	PRECISION_MICRO,
-	PRECISION_NANO
-};
-
 inline struct tm mt_localtime()
 {
 	// initialize the time zone on first invocation

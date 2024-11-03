@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "util/directiontables.h"
 #include "util/timetaker.h"
+#include "porting.h"
 #include <cstring>  // memcpy, memset
 
 /*
@@ -43,14 +44,17 @@ VoxelManipulator::~VoxelManipulator()
 
 void VoxelManipulator::clear()
 {
-	// Reset area to volume=0
-	m_area = VoxelArea();
+	// Reset area to empty volume
+	VoxelArea old;
+	std::swap(m_area, old);
    if(m_data)
-	delete m_data;
+	delete[] m_data;
 	m_data = nullptr;
    if (m_flags)
 	delete[] m_flags;
 	m_flags = nullptr;
+
+	porting::TrackFreedMemory((sizeof(*m_data) + sizeof(*m_flags)) * old.getVolume());
 }
 
 void VoxelManipulator::print(std::ostream &o, const NodeDefManager *ndef,

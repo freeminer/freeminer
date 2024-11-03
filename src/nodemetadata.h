@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <unordered_set>
+#include <map>
 #include "metadata.h"
 
 /*

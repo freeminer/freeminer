@@ -36,7 +36,7 @@ public:
 	void testFlagDesc();
 
 	static const char *config_text_before;
-	static const std::string config_text_after;
+	static const char *config_text_after;
 };
 
 static TestSettings g_test_instance;
@@ -76,7 +76,7 @@ const char *TestSettings::config_text_before =
 	"zoop = true\n"
 	"[dummy_eof_end_tag]\n";
 
-const std::string TestSettings::config_text_after =
+const char *TestSettings::config_text_after =
 	"leet = 1337\n"
 	"leetleet = 13371337\n"
 	"leetleet_neg = -13371337\n"
@@ -107,7 +107,7 @@ const std::string TestSettings::config_text_after =
 	"	scale = 40\n"
 	"	seed = 12341\n"
 	"	spread = (250,250,250)\n"
- 	"   farlacunarity = 1\n"
+	"   farlacunarity = 1\n"
 	"	farpersist = 1\n"
 	"	farscale = 1\n"
 	"	farspread = 1\n"

@@ -28,21 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 unsigned int g_time_taker_enabled = 0;
 
-void TimeTaker::start() {
-	if (!m_time1)
-		m_time1 = porting::getTime(m_precision);
-};
-
-TimeTaker::TimeTaker(const std::string &name, u64 *result, TimePrecision prec)
+void TimeTaker::start()
 {
-	m_name = name;
-	m_result = result;
-	m_precision = prec;
-	if (!g_time_taker_enabled) {
-		m_running = false;
-		return;
-	}
-	m_time1 = porting::getTime(prec);
+	if (!m_time1)
+	m_time1 = porting::getTime(m_precision);
 }
 
 u64 TimeTaker::stop(bool quiet)
@@ -53,15 +42,8 @@ u64 TimeTaker::stop(bool quiet)
 			(*m_result) += dtime;
 		} else {
 			if (!quiet && dtime >= g_time_taker_enabled) {
-				static const char* const units[] = {
-					"s"  /* PRECISION_SECONDS */,
-					"ms" /* PRECISION_MILLI */,
-					"us" /* PRECISION_MICRO */,
-					"ns" /* PRECISION_NANO */,
-				};
 				verbosestream << m_name << " took "
-				           << dtime << units[m_precision]
-					   << std::endl;
+					<< dtime << TimePrecision_units[m_precision] << std::endl;
 			}
 		}
 		m_running = false;

@@ -37,7 +37,7 @@ extern "C" {
 class Client;
 class GUIEngine;
 #endif
-
+class EmergeThread;
 class ScriptApiBase;
 class Server;
 class Environment;
@@ -52,6 +52,7 @@ public:
 	static Client*          getClient(lua_State *L);
 	static GUIEngine*       getGuiEngine(lua_State *L);
 	#endif // !SERVER
+	static EmergeThread*    getEmergeThread(lua_State *L);
 
 	static IGameDef*        getGameDef(lua_State *L);
 

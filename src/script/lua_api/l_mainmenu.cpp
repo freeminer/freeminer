@@ -29,13 +29,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "gui/guiMainMenu.h"
 #include "gui/guiKeyChangeMenu.h"
 #include "gui/guiPathSelectMenu.h"
+#include "server/serverlist.h"
 #include "version.h"
 #include "porting.h"
 #include "filesys.h"
 #include "convert_json.h"
 #include "content/content.h"
 #include "content/subgames.h"
-#include "serverlist.h"
 #include "mapgen/mapgen.h"
 #include "settings.h"
 #include "client/client.h"
@@ -47,7 +47,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /******************************************************************************/
-std::string ModApiMainMenu::getTextData(lua_State *L, std::string name)
+std::string ModApiMainMenu::getTextData(lua_State *L, const std::string &name)
 {
 	lua_getglobal(L, "gamedata");
 
@@ -60,7 +60,7 @@ std::string ModApiMainMenu::getTextData(lua_State *L, std::string name)
 }
 
 /******************************************************************************/
-int ModApiMainMenu::getIntegerData(lua_State *L, std::string name,bool& valid)
+int ModApiMainMenu::getIntegerData(lua_State *L, const std::string &name, bool& valid)
 {
 	lua_getglobal(L, "gamedata");
 
@@ -69,14 +69,14 @@ int ModApiMainMenu::getIntegerData(lua_State *L, std::string name,bool& valid)
 	if(lua_isnil(L, -1)) {
 		valid = false;
 		return -1;
-		}
+	}
 
 	valid = true;
 	return luaL_checkinteger(L, -1);
 }
 
 /******************************************************************************/
-int ModApiMainMenu::getBoolData(lua_State *L, std::string name,bool& valid)
+int ModApiMainMenu::getBoolData(lua_State *L, const std::string &name, bool& valid)
 {
 	lua_getglobal(L, "gamedata");
 
@@ -85,7 +85,7 @@ int ModApiMainMenu::getBoolData(lua_State *L, std::string name,bool& valid)
 	if(lua_isnil(L, -1)) {
 		valid = false;
 		return false;
-		}
+	}
 
 	valid = true;
 	return readParam<bool>(L, -1);
@@ -368,6 +368,9 @@ int ModApiMainMenu::l_get_content_info(lua_State *L)
 	lua_pushstring(L, spec.name.c_str());
 	lua_setfield(L, -2, "name");
 
+	lua_pushstring(L, spec.title.c_str());
+	lua_setfield(L, -2, "title");
+
 	lua_pushstring(L, spec.type.c_str());
 	lua_setfield(L, -2, "type");
 
@@ -387,6 +390,9 @@ int ModApiMainMenu::l_get_content_info(lua_State *L)
 
 	lua_pushstring(L, spec.path.c_str());
 	lua_setfield(L, -2, "path");
+
+	lua_pushstring(L, spec.textdomain.c_str());
+	lua_setfield(L, -2, "textdomain");
 
 	if (spec.type == "mod") {
 		ModSpec spec;
@@ -447,8 +453,7 @@ int ModApiMainMenu::l_check_mod_configuration(lua_State *L)
 		// Ignore non-string keys
 		if (lua_type(L, -2) != LUA_TSTRING) {
 			throw LuaError(
-					"Unexpected non-string key in table passed to "
-					"core.check_mod_configuration");
+				"Unexpected non-string key in table passed to core.check_mod_configuration");
 		}
 
 		std::string modpath = luaL_checkstring(L, -1);
@@ -487,7 +492,6 @@ int ModApiMainMenu::l_check_mod_configuration(lua_State *L)
 		return 1;
 	}
 
-
 	lua_newtable(L);
 
 	lua_pushboolean(L, modmgr.isConsistent());
@@ -515,7 +519,25 @@ int ModApiMainMenu::l_check_mod_configuration(lua_State *L)
 		index++;
 	}
 	lua_setfield(L, -2, "satisfied_mods");
+	return 1;
+}
 
+/******************************************************************************/
+int ModApiMainMenu::l_get_content_translation(lua_State *L)
+{
+	GUIEngine* engine = getGuiEngine(L);
+	sanity_check(engine != NULL);
+
+	std::string path = luaL_checkstring(L, 1);
+	std::string domain = luaL_checkstring(L, 2);
+	std::string string = luaL_checkstring(L, 3);
+	std::string lang = gettext("LANG_CODE");
+	if (lang == "LANG_CODE")
+		lang = "";
+
+	auto *translations = engine->getContentTranslations(path, domain, lang);
+	string = wide_to_utf8(translate_string(utf8_to_wide(string), translations));
+	lua_pushstring(L, string.c_str());
 	return 1;
 }
 
@@ -567,7 +589,7 @@ int ModApiMainMenu::l_create_world(lua_State *L)
 	// Set the settings for world creation
 	// this is a bad hack but the best we have right now..
 	StringMap backup;
-	for (auto it : use_settings) {
+	for (auto &it : use_settings) {
 		if (g_settings->existsLocal(it.first))
 			backup[it.first] = g_settings->get(it.first);
 		g_settings->set(it.first, it.second);
@@ -583,7 +605,7 @@ int ModApiMainMenu::l_create_world(lua_State *L)
 	}
 
 	// Restore previous settings
-	for (auto it : use_settings) {
+	for (auto &it : use_settings) {
 		auto it2 = backup.find(it.first);
 		if (it2 == backup.end())
 			g_settings->remove(it.first); // wasn't set before
@@ -722,7 +744,7 @@ int ModApiMainMenu::l_get_cache_path(lua_State *L)
 int ModApiMainMenu::l_get_temp_path(lua_State *L)
 {
 	if (lua_isnoneornil(L, 1) || !lua_toboolean(L, 1))
-		lua_pushstring(L, fs::TempPath().c_str());
+		lua_pushstring(L, fs::CreateTempDir().c_str());
 	else
 		lua_pushstring(L, fs::CreateTempFile().c_str());
 	return 1;
@@ -927,6 +949,17 @@ int ModApiMainMenu::l_get_video_drivers(lua_State *L)
 }
 
 /******************************************************************************/
+int ModApiMainMenu::l_get_language(lua_State *L)
+{
+	std::string lang = gettext("LANG_CODE");
+	if (lang == "LANG_CODE")
+		lang = "";
+
+	lua_pushstring(L, lang.c_str());
+	return 1;
+}
+
+/******************************************************************************/
 int ModApiMainMenu::l_gettext(lua_State *L)
 {
 	const char *srctext = luaL_checkstring(L, 1);
@@ -960,6 +993,10 @@ int ModApiMainMenu::l_get_window_info(lua_State *L)
 	lua_pushnumber(L, info.real_hud_scaling);
 	lua_settable(L, top);
 
+	lua_pushstring(L, "touch_controls");
+	lua_pushboolean(L, info.touch_controls);
+	lua_settable(L, top);
+
 	return 1;
 }
 
@@ -974,7 +1011,7 @@ int ModApiMainMenu::l_get_active_driver(lua_State *L)
 
 int ModApiMainMenu::l_get_active_renderer(lua_State *L)
 {
-	lua_pushstring(L, wide_to_utf8(RenderingEngine::get_video_driver()->getName()).c_str());
+	lua_pushstring(L, RenderingEngine::get_video_driver()->getName());
 	return 1;
 }
 
@@ -1094,44 +1131,6 @@ int ModApiMainMenu::l_get_lan_servers(lua_State *L)
 }
 
 /******************************************************************************/
-// this is intentionally a global and not part of MainMenuScripting or such
-namespace {
-	std::unordered_map<std::string, std::string> once_values;
-	std::mutex once_mutex;
-}
-
-int ModApiMainMenu::l_set_once(lua_State *L)
-{
-	std::string key = readParam<std::string>(L, 1);
-	if (lua_isnil(L, 2))
-		return 0;
-	std::string value = readParam<std::string>(L, 2);
-
-	{
-		MutexAutoLock lock(once_mutex);
-		once_values[key] = value;
-	}
-
-	return 0;
-}
-
-int ModApiMainMenu::l_get_once(lua_State *L)
-{
-	std::string key = readParam<std::string>(L, 1);
-
-	{
-		MutexAutoLock lock(once_mutex);
-		auto it = once_values.find(key);
-		if (it == once_values.end())
-			lua_pushnil(L);
-		else
-			lua_pushstring(L, it->second.c_str());
-	}
-
-	return 1;
-}
-
-/******************************************************************************/
 void ModApiMainMenu::Initialize(lua_State *L, int top)
 {
 	//fm:
@@ -1147,6 +1146,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_games);
 	API_FCT(get_content_info);
 	API_FCT(check_mod_configuration);
+	API_FCT(get_content_translation);
 	API_FCT(start);
 	API_FCT(close);
 	API_FCT(show_keys_menu);
@@ -1173,6 +1173,7 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(get_mainmenu_path);
 	API_FCT(show_path_select_dialog);
 	API_FCT(download_file);
+	API_FCT(get_language);
 	API_FCT(gettext);
 	API_FCT(get_video_drivers);
 	API_FCT(get_window_info);
@@ -1185,8 +1186,6 @@ void ModApiMainMenu::Initialize(lua_State *L, int top)
 	API_FCT(open_dir);
 	API_FCT(share_file);
 	API_FCT(do_async_callback);
-	API_FCT(set_once);
-	API_FCT(get_once);
 }
 
 /******************************************************************************/
@@ -1217,6 +1216,7 @@ void ModApiMainMenu::InitializeAsync(lua_State *L, int top)
 	API_FCT(download_file);
 	API_FCT(get_min_supp_proto);
 	API_FCT(get_max_supp_proto);
+	API_FCT(get_language);
 	API_FCT(gettext);
 }
 

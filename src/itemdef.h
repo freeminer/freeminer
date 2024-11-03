@@ -35,11 +35,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "msgpack_fix.h"
 
 #include "texture_override.h" // TextureOverride
+#include "tool.h"
+#include "util/pointabilities.h"
+#include "util/pointedthing.h"
+
 class IGameDef;
 class Client;
 struct ToolCapabilities;
 #ifndef SERVER
-#include "client/tile.h"
+#include "client/texturesource.h"
 struct ItemMesh;
 struct ItemStack;
 #endif
@@ -48,12 +52,35 @@ struct ItemStack;
 	Base item definition
 */
 
-enum ItemType
+enum ItemType : u8
 {
 	ITEM_NONE,
 	ITEM_NODE,
 	ITEM_CRAFT,
 	ITEM_TOOL,
+	ItemType_END // Dummy for validity check
+};
+
+enum TouchInteractionMode : u8
+{
+	LONG_DIG_SHORT_PLACE,
+	SHORT_DIG_LONG_PLACE,
+	TouchInteractionMode_USER, // Meaning depends on client-side settings
+	TouchInteractionMode_END, // Dummy for validity check
+};
+
+struct TouchInteraction
+{
+	TouchInteractionMode pointed_nothing;
+	TouchInteractionMode pointed_node;
+	TouchInteractionMode pointed_object;
+
+	TouchInteraction();
+	// Returns the right mode for the pointed thing and resolves any occurrence
+	// of TouchInteractionMode_USER into an actual mode.
+	TouchInteractionMode getMode(PointedThingType pointed_type) const;
+	void serialize(std::ostream &os) const;
+	void deSerialize(std::istream &is);
 };
 
 enum {
@@ -101,8 +128,13 @@ struct ItemDefinition
 	u16 stack_max;
 	bool usable;
 	bool liquids_pointable;
-	// May be NULL. If non-NULL, deleted by destructor
+	std::optional<Pointabilities> pointabilities;
+
+	// They may be NULL. If non-NULL, deleted by destructor
 	ToolCapabilities *tool_capabilities;
+
+	std::optional<WearBarParams> wear_bar_params;
+
 	ItemGroupList groups;
 	SoundSpec sound_place;
 	SoundSpec sound_place_failed;
@@ -114,6 +146,9 @@ struct ItemDefinition
 	// "" = no prediction
 	std::string node_placement_prediction;
 	std::optional<u8> place_param2;
+	bool wallmounted_rotate_vertical;
+
+	TouchInteraction touch_interaction;
 
 	/*
 		Some helpful methods

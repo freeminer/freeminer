@@ -1,4 +1,4 @@
-#include "clientiface.h"
+#include "server/clientiface.h"
 #include "irr_v3d.h"
 #include "map.h"
 #include "profiler.h"

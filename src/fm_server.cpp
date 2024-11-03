@@ -725,7 +725,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	}
 	if (!m_key_value_storage.count(name)) {
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name),
-				std::forward_as_tuple(m_path_world, name));
+				std::forward_as_tuple( getGameDef()->m_path_world, name));
 	}
 	return m_key_value_storage.at(name);
 }

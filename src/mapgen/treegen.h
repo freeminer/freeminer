@@ -24,9 +24,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <matrix4.h>
+#include <string>
+#include "irr_v3d.h"
+#include "nodedef.h"
 #include "mapnode.h"
-#include "noise.h"
 
 class MMVManip;
 class NodeDefManager;
@@ -39,7 +40,16 @@ namespace treegen {
 		UNBALANCED_BRACKETS
 	};
 
-	struct TreeDef {
+	struct TreeDef : public NodeResolver {
+		TreeDef() :
+			// Initialize param1 and param2
+			trunknode(CONTENT_IGNORE),
+			leavesnode(CONTENT_IGNORE),
+			leaves2node(CONTENT_IGNORE),
+			fruitnode(CONTENT_IGNORE)
+		{}
+		virtual void resolveNodeNames();
+
 		std::string initial_axiom;
 		std::string rules_a;
 		std::string rules_b;
@@ -75,25 +85,8 @@ namespace treegen {
 	void make_cavetree(MMVManip &vmanip, v3pos_t p0,
 		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed);
 
-
-	// Add L-Systems tree (used by engine)
-	treegen::error make_ltree(MMVManip &vmanip, v3s16 p0,
-		const NodeDefManager *ndef, TreeDef tree_definition);
-	// Spawn L-systems tree from LUA
-	treegen::error spawn_ltree (ServerMap *map, v3s16 p0,
-		const NodeDefManager *ndef, const TreeDef &tree_definition);
-
-	// L-System tree gen helper functions
-	void tree_trunk_placement(MMVManip &vmanip, v3f p0,
-		TreeDef &tree_definition);
-	void tree_leaves_placement(MMVManip &vmanip, v3f p0,
-		PseudoRandom ps, TreeDef &tree_definition);
-	void tree_single_leaves_placement(MMVManip &vmanip, v3f p0,
-		PseudoRandom ps, TreeDef &tree_definition);
-	void tree_fruit_placement(MMVManip &vmanip, v3f p0,
-		TreeDef &tree_definition);
-	irr::core::matrix4 setRotationAxisRadians(irr::core::matrix4 M, double angle, v3f axis);
-
-	v3f transposeMatrix(irr::core::matrix4 M ,v3f v);
-
+	// Spawn L-Systems tree on VManip
+	treegen::error make_ltree(MMVManip &vmanip, v3s16 p0, const TreeDef &def);
+	// Helper to spawn it directly on map
+	treegen::error spawn_ltree(ServerMap *map, v3s16 p0, const TreeDef &def);
 }; // namespace treegen

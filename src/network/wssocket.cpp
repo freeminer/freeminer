@@ -27,13 +27,14 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 */
 
 #include "config.h"
+#include "server/serverlist.h"
 #if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
 
 #include "wssocket.h"
 #include "constants.h"
 #include "filesys.h"
 #include "log.h"
-#include "serverlist.h"
+//#include "../server/serverlist.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "util/string.h"

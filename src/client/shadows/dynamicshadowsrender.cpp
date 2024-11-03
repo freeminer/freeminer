@@ -121,20 +121,29 @@ void ShadowRenderer::disable()
 		});
 }
 
+void ShadowRenderer::preInit(IWritableShaderSource *shsrc)
+{
+	if (g_settings->getBool("enable_shaders") &&
+			g_settings->getBool("enable_dynamic_shadows")) {
+		shsrc->addShaderConstantSetterFactory(new ShadowConstantSetterFactory());
+	}
+}
+
 void ShadowRenderer::initialize()
 {
 	auto *gpu = m_driver->getGPUProgrammingServices();
 
 	// we need glsl
-	if (m_shadows_supported && gpu && m_driver->queryFeature(video::EVDF_ARB_GLSL)) {
-		createShaders();
-	} else {
+	if (!m_shadows_supported || !gpu || !m_driver->queryFeature(video::EVDF_ARB_GLSL)) {
 		m_shadows_supported = false;
 
 		warningstream << "Shadows: GLSL Shader not supported on this system."
 			<< std::endl;
 		return;
 	}
+
+	createShaders();
+	
 
 	m_texture_format = m_shadow_map_texture_32bit
 					   ? video::ECOLOR_FORMAT::ECF_R32F
@@ -174,8 +183,8 @@ f32 ShadowRenderer::getMaxShadowFar() const
 
 void ShadowRenderer::setShadowIntensity(float shadow_intensity)
 {
-	m_shadow_strength = pow(shadow_intensity, 1.0f / m_shadow_strength_gamma);
-	if (m_shadow_strength > 1E-2)
+	m_shadow_strength = std::pow(shadow_intensity, 1.0f / m_shadow_strength_gamma);
+	if (m_shadow_strength > 1e-2f)
 		enable();
 	else
 		disable();
@@ -186,8 +195,7 @@ void ShadowRenderer::addNodeToShadowList(
 {
 	m_shadow_node_array.emplace_back(node, shadowMode);
 	// node should never be ClientMap
-	assert(strcmp(node->getName(), "ClientMap") != 0);
-
+	assert(!node->getName().has_value() || *node->getName() != "ClientMap");
 	node->forEachMaterial([this] (auto &mat) {
 		mat.setTexture(TEXTURE_LAYER_SHADOW, shadowMapTextureFinal);
 	});
@@ -705,7 +713,8 @@ std::string ShadowRenderer::readShaderFile(const std::string &path)
 	prefix.append("#line 0\n");
 
 	std::string content;
-	fs::ReadFile(path, content);
+	if (!fs::ReadFile(path, content, true))
+		return "";
 
 	return prefix + content;
 }

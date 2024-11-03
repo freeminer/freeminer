@@ -61,12 +61,13 @@ enum {
 	CUSTOM_RIDX_HTTP_API_LUA,
 	CUSTOM_RIDX_METATABLE_MAP,
 
-	// The following four functions are implemented in Lua because LuaJIT can
+	// The following functions are implemented in Lua because LuaJIT can
 	// trace them and optimize tables/string better than from the C API.
 	CUSTOM_RIDX_READ_VECTOR,
 	CUSTOM_RIDX_PUSH_VECTOR,
 	CUSTOM_RIDX_READ_NODE,
 	CUSTOM_RIDX_PUSH_NODE,
+	CUSTOM_RIDX_PUSH_MOVERESULT1,
 };
 
 
@@ -152,8 +153,9 @@ DeprecatedHandlingMode get_deprecated_handling_mode();
  * @param message The deprecation method
  * @param stack_depth How far on the stack to the first user function
  *        (ie: not builtin or core). -1 to disabled.
+ * @param once Log the deprecation warning only once per callsite.
  */
-void log_deprecated(lua_State *L, std::string message, int stack_depth = 1);
+void log_deprecated(lua_State *L, std::string message, int stack_depth = 1, bool once = false);
 
 // Safely call string.dump on a function value
 // (does not pop, leaves one value on stack)

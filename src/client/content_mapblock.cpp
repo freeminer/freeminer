@@ -77,7 +77,7 @@ MapblockMeshGenerator::MapblockMeshGenerator(MeshMakeData *input, MeshCollector 
 		scene::IMeshManipulator *mm):
 	data(input),
 	collector(output),
-	nodedef(data->m_client->ndef()),
+	nodedef(data->nodedef),
 	meshmanip(mm),
 	blockpos_nodes(data->m_blockpos * MAP_BLOCKSIZE),
 	enable_mesh_cache(g_settings->getBool("enable_mesh_cache") &&
@@ -534,7 +534,7 @@ u8 MapblockMeshGenerator::getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 same
 			(box.MinEdge.Z == -NODE_BOUNDARY ? 32 : 0);
 
 	u8 sametype_mask = 0;
-   if (data->fscale <= 1)
+  if (data->fscale <= 1)
 	if (cur_node.f->alpha == AlphaMode::ALPHAMODE_OPAQUE) {
 		// In opaque nodeboxes, faces on opposite sides can cancel
 		// each other out if there is a matching neighbor of the same type
@@ -633,14 +633,14 @@ void MapblockMeshGenerator::calculateCornerLevels()
 		cur_liquid.corner_levels[k][i] = getCornerLevel(i, k);
 }
 
-f32 MapblockMeshGenerator::getCornerLevel(int i, int k)
+f32 MapblockMeshGenerator::getCornerLevel(int i, int k) const
 {
 	float sum = 0;
 	int count = 0;
 	int air_count = 0;
 	for (int dk = 0; dk < 2; dk++)
 	for (int di = 0; di < 2; di++) {
-		LiquidData::NeighborData &neighbor_data = cur_liquid.neighbors[k + dk][i + di];
+		const LiquidData::NeighborData &neighbor_data = cur_liquid.neighbors[k + dk][i + di];
 		content_t content = neighbor_data.content;
 
 		// If top is liquid, draw starting from top of node
@@ -1024,7 +1024,9 @@ void MapblockMeshGenerator::drawTorchlikeNode()
 	switch (wall) {
 		case DWM_YP: tileindex = 1; break; // ceiling
 		case DWM_YN: tileindex = 0; break; // floor
-		default:     tileindex = 2; // side (or invalid—should we care?)
+		case DWM_S1: tileindex = 1; break; // ceiling, but rotated
+		case DWM_S2: tileindex = 0; break; // floor, but rotated
+		default: tileindex = 2; // side (or invalid, shouldn't happen)
 	}
 	useTile(tileindex, MATERIAL_FLAG_CRACK_OVERLAY, MATERIAL_FLAG_BACKFACE_CULLING);
 
@@ -1060,6 +1062,17 @@ void MapblockMeshGenerator::drawTorchlikeNode()
 			case DWM_ZN:
 				vertex.X += -size + BS/2;
 				vertex.rotateXZBy(-90);
+				break;
+			case DWM_S1:
+				// same as DWM_YP, but rotated 90°
+				vertex.Y += -size + BS/2;
+				vertex.rotateXZBy(45);
+				break;
+			case DWM_S2:
+				// same as DWM_YN, but rotated -90°
+				vertex.Y += size - BS/2;
+				vertex.rotateXZBy(-45);
+				break;
 		}
 	}
 	drawQuad(vertices);
@@ -1093,6 +1106,10 @@ void MapblockMeshGenerator::drawSignlikeNode()
 				vertex.rotateXZBy( 90); break;
 			case DWM_ZN:
 				vertex.rotateXZBy(-90); break;
+			case DWM_S1:
+				vertex.rotateXYBy( 90); vertex.rotateXZBy(90); break;
+			case DWM_S2:
+				vertex.rotateXYBy(-90); vertex.rotateXZBy(-90); break;
 		}
 	}
 	drawQuad(vertices);
@@ -1533,8 +1550,10 @@ void MapblockMeshGenerator::drawNodeboxNode()
 	bool param2_is_rotation =
 			cur_node.f->param_type_2 == CPT2_COLORED_FACEDIR ||
 			cur_node.f->param_type_2 == CPT2_COLORED_WALLMOUNTED ||
+			cur_node.f->param_type_2 == CPT2_COLORED_4DIR ||
 			cur_node.f->param_type_2 == CPT2_FACEDIR ||
-			cur_node.f->param_type_2 == CPT2_WALLMOUNTED;
+			cur_node.f->param_type_2 == CPT2_WALLMOUNTED ||
+			cur_node.f->param_type_2 == CPT2_4DIR;
 
 	bool param2_is_level =
 			cur_node.f->param_type_2 == CPT2_LEVELED;

@@ -55,11 +55,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CONNECTION_TIMEOUT 30
 
-#define RESEND_TIMEOUT_MIN 0.1
-#define RESEND_TIMEOUT_MAX 3.0
-// resend_timeout = avg_rtt * this
-#define RESEND_TIMEOUT_FACTOR 8
-
 /*
     Server
 */
@@ -68,6 +63,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS 0
 // Override for the previous one when distance of block is very low
 #define BLOCK_SEND_DISABLE_LIMITS_MAX_D 1
+
+/*
+    Client/Server
+*/
+
+// Limit maximum dtime in client/server step(...) and for collision detection
+#define DTIME_LIMIT 2.5f
 
 /*
     Map-related things

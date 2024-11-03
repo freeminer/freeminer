@@ -22,10 +22,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "exceptions.h"
 #include "irrlichttypes.h"
-#include "Keycodes.h"
+#include <Keycodes.h>
 #include <IEventReceiver.h>
 #include <string>
+
+class UnknownKeycode : public BaseException
+{
+public:
+	UnknownKeycode(const char *s) :
+		BaseException(s) {};
+};
 
 /* A key press, consisting of either an Irrlicht keycode
    or an actual char */
@@ -63,11 +71,17 @@ extern const KeyPress RControlKey;
 extern const KeyPress LShiftKey;
 extern const KeyPress RShiftKey;
 
+
+// Global defines for convenience
+
 extern const KeyPress EscapeKey;
-extern const KeyPress CancelKey;
+
+extern const KeyPress LMBKey;
+extern const KeyPress MMBKey; // Middle Mouse Button
+extern const KeyPress RMBKey;
 
 // Key configuration getter
-KeyPress getKeySetting(const char *settingname);
+const KeyPress &getKeySetting(const char *settingname);
 
 // Clear fast lookup cache
 void clearKeyCache();

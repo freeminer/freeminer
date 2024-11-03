@@ -190,10 +190,10 @@ void Connection::Disconnect()
 	connected_to = proto_name::none;
 }
 
-u32 Connection::Receive(NetworkPacket *pkt, int want_timeout)
+u32 Connection::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
 	u32 ret = 0;
-	for (const auto &timeout : {0, want_timeout}) {
+	for (const auto &timeout : {u32(0), timeout_ms}) {
 #if USE_SCTP
 		if (m_con_sctp)
 			ret += m_con_sctp->Receive(pkt, timeout);
@@ -220,7 +220,7 @@ u32 Connection::Receive(NetworkPacket *pkt, int want_timeout)
 #endif
 #if MINETEST_TRANSPORT
 		if (m_con)
-			ret += m_con->Receive(pkt, timeout);
+			ret += m_con->ReceiveTimeoutMs(pkt, timeout);
 #endif
 		if (ret)
 			return ret;
@@ -230,7 +230,7 @@ u32 Connection::Receive(NetworkPacket *pkt, int want_timeout)
 
 bool Connection::TryReceive(NetworkPacket *pkt)
 {
-	return Receive(pkt, 0);
+	return ReceiveTimeoutMs(pkt, 0);
 }
 
 void Connection::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)

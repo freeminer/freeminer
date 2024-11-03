@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
 
-void ScriptApiMainMenu::setMainMenuData(MainMenuDataForScript *data)
+void ScriptApiMainMenu::setMainMenuData(const MainMenuDataForScript *data)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -41,7 +41,7 @@ void ScriptApiMainMenu::setMainMenuData(MainMenuDataForScript *data)
 	lua_pop(L, 1);
 }
 
-void ScriptApiMainMenu::handleMainMenuEvent(std::string text)
+void ScriptApiMainMenu::handleMainMenuEvent(const std::string &text)
 {
 	SCRIPTAPI_PRECHECKHEADER
 

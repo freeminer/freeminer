@@ -45,6 +45,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "version.h"
 #include "util/hex.h"
 #include "util/sha1.h"
+#include "my_sha256.h"
 #include "util/png.h"
 #include <cstdio>
 
@@ -321,8 +322,7 @@ int ModApiUtil::l_compress(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+	auto data = readParam<std::string_view>(L, 1);
 
 	LuaCompressMethod method = get_compress_method(L, 2);
 
@@ -333,13 +333,13 @@ int ModApiUtil::l_compress(lua_State *L)
 		if (!lua_isnoneornil(L, 3))
 			level = readParam<int>(L, 3);
 
-		compressZlib(reinterpret_cast<const u8 *>(data), size, os, level);
+		compressZlib(data, os, level);
 	} else if (method == LUA_COMPRESS_METHOD_ZSTD) {
 		int level = ZSTD_CLEVEL_DEFAULT;
 		if (!lua_isnoneornil(L, 3))
 			level = readParam<int>(L, 3);
 
-		compressZstd(reinterpret_cast<const u8 *>(data), size, os, level);
+		compressZstd(data, os, level);
 	}
 
 	std::string out = os.str();
@@ -353,12 +353,12 @@ int ModApiUtil::l_decompress(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+	auto data = readParam<std::string_view>(L, 1);
 
 	LuaCompressMethod method = get_compress_method(L, 2);
 
-	std::istringstream is(std::string(data, size), std::ios_base::binary);
+	// FIXME: zero copy possible in c++26 or with custom rdbuf
+	std::istringstream is(std::string(data), std::ios_base::binary);
 	std::ostringstream os(std::ios_base::binary);
 
 	if (method == LUA_COMPRESS_METHOD_DEFLATE) {
@@ -378,10 +378,9 @@ int ModApiUtil::l_encode_base64(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+	auto data = readParam<std::string_view>(L, 1);
 
-	std::string out = base64_encode((const unsigned char *)(data), size);
+	std::string out = base64_encode(data);
 
 	lua_pushlstring(L, out.data(), out.size());
 	return 1;
@@ -392,9 +391,7 @@ int ModApiUtil::l_decode_base64(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *d = luaL_checklstring(L, 1, &size);
-	const std::string data = std::string(d, size);
+	auto data = readParam<std::string_view>(L, 1);
 
 	if (!base64_is_valid(data)) {
 		lua_pushnil(L);
@@ -490,12 +487,11 @@ int ModApiUtil::l_safe_file_write(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char *path = luaL_checkstring(L, 1);
-	size_t size;
-	const char *content = luaL_checklstring(L, 2, &size);
+	auto content = readParam<std::string_view>(L, 2);
 
 	CHECK_SECURE_PATH(L, path, true);
 
-	bool ret = fs::safeWriteToFile(path, std::string(content, size));
+	bool ret = fs::safeWriteToFile(path, content);
 	lua_pushboolean(L, ret);
 
 	return 1;
@@ -552,18 +548,16 @@ int ModApiUtil::l_get_version(lua_State *L)
 int ModApiUtil::l_sha1(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+
+	auto data = readParam<std::string_view>(L, 1);
 	bool hex = !lua_isboolean(L, 2) || !readParam<bool>(L, 2);
 
 	// Compute actual checksum of data
 	std::string data_sha1;
 	{
 		class SHA1 ctx;
-		ctx.addBytes(data, size);
-		unsigned char *data_tmpdigest = ctx.getDigest();
-		data_sha1.assign((char*) data_tmpdigest, 20);
-		free(data_tmpdigest);
+		ctx.addBytes(data);
+		data_sha1 = ctx.getDigest();
 	}
 
 	if (hex) {
@@ -571,6 +565,27 @@ int ModApiUtil::l_sha1(lua_State *L)
 		lua_pushstring(L, sha1_hex.c_str());
 	} else {
 		lua_pushlstring(L, data_sha1.data(), data_sha1.size());
+	}
+
+	return 1;
+}
+
+int ModApiUtil::l_sha256(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	auto data = readParam<std::string_view>(L, 1);
+	bool hex = !lua_isboolean(L, 2) || !readParam<bool>(L, 2);
+
+	std::string data_sha256;
+	data_sha256.resize(SHA256_DIGEST_LENGTH);
+	mt_SHA256(reinterpret_cast<const unsigned char*>(data.data()), data.size(),
+		reinterpret_cast<unsigned char *>(data_sha256.data()));
+
+	if (hex) {
+		lua_pushstring(L, hex_encode(data_sha256).c_str());
+	} else {
+		lua_pushlstring(L, data_sha256.data(), data_sha256.size());
 	}
 
 	return 1;
@@ -635,12 +650,10 @@ int ModApiUtil::l_get_last_run_mod(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
-	std::string current_mod = readParam<std::string>(L, -1, "");
-	if (current_mod.empty()) {
-		lua_pop(L, 1);
-		lua_pushstring(L, getScriptApiBase(L)->getOrigin().c_str());
-	}
+	std::string current_mod = ScriptApiBase::getCurrentModNameInsecure(L);
+	if (current_mod.empty())
+		current_mod = getScriptApiBase(L)->getOrigin();
+	lua_pushstring(L, current_mod.c_str());
 	return 1;
 }
 
@@ -659,8 +672,8 @@ int ModApiUtil::l_urlencode(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	const char *value = luaL_checkstring(L, 1);
-	lua_pushstring(L, urlencode(value).c_str());
+	auto s = readParam<std::string_view>(L, 1);
+	lua_pushstring(L, urlencode(s).c_str());
 	return 1;
 }
 
@@ -702,6 +715,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 
 	API_FCT(get_version);
 	API_FCT(sha1);
+	API_FCT(sha256);
 	API_FCT(colorspec_to_colorstring);
 	API_FCT(colorspec_to_bytes);
 
@@ -735,8 +749,12 @@ void ModApiUtil::InitializeClient(lua_State *L, int top)
 
 	API_FCT(get_version);
 	API_FCT(sha1);
+	API_FCT(sha256);
 	API_FCT(colorspec_to_colorstring);
 	API_FCT(colorspec_to_bytes);
+
+	API_FCT(get_last_run_mod);
+	API_FCT(set_last_run_mod);
 
 	API_FCT(urlencode);
 
@@ -768,13 +786,14 @@ void ModApiUtil::InitializeAsync(lua_State *L, int top)
 	API_FCT(get_dir_list);
 	API_FCT(safe_file_write);
 
-	API_FCT(request_insecure_environment);
+	// no request_insecure_environment here! mod origins are not tracked securely here.
 
 	API_FCT(encode_base64);
 	API_FCT(decode_base64);
 
 	API_FCT(get_version);
 	API_FCT(sha1);
+	API_FCT(sha256);
 	API_FCT(colorspec_to_colorstring);
 	API_FCT(colorspec_to_bytes);
 

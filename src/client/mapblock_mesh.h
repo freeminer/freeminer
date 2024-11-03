@@ -22,7 +22,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "../irrlichttypes_extrabloated.h"
+#include "util/numeric.h"
 #include "client/tile.h"
 #include "voxel.h"
 #include <array>
@@ -30,7 +31,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unordered_map>
 
 class Client;
+class NodeDefManager;
 class IShaderSource;
+class ITextureSource;
 
 /*
 	Mesh making stuff
@@ -46,28 +49,28 @@ struct MeshMakeData
 	v3s16 m_blockpos = v3s16(-1337,-1337,-1337);
 	v3s16 m_crack_pos_relative = v3s16(-1337,-1337,-1337);
 	bool m_smooth_lighting = false;
-	MeshGrid m_mesh_grid;
 	u16 side_length;
 
-	Client *m_client;
+	const NodeDefManager *nodedef;
 	bool m_use_shaders;
 
-    // fm:
-	NodeContainer & m_vmanip;
-	u16 side_length_data;
-	int lod_step;
-	int far_step;
+	// fm:
+	NodeContainer &m_vmanip;
+	const u16 side_length_data;
+	const int lod_step;
+	const int far_step;
 	const int fscale;
 
-	int range = 1;
-	bool no_draw = false;
-	unsigned int timestamp = 0;
-	bool debug = false;
+	int range{};
+	bool no_draw{};
+	unsigned int timestamp{};
+	bool debug{};
+	// ==
 
-	explicit MeshMakeData(Client *client, bool use_shaders
+	explicit MeshMakeData(const NodeDefManager *ndef, u16 side_length, bool use_shaders
 			, int lod_step = 0
 			, int far_step = 0
-			, NodeContainer * nodecontainer = nullptr
+			, NodeContainer * nodecontainer = {}
 			 );
 
 	/*
@@ -198,7 +201,7 @@ class MapBlockMesh
 {
 public:
 	// Builds the mesh given
-	MapBlockMesh(MeshMakeData *data, v3s16 camera_offset);
+	MapBlockMesh(Client *client, MeshMakeData *data, v3s16 camera_offset);
 	~MapBlockMesh();
 
 	// Main animation function, parameters:
@@ -287,7 +290,6 @@ private:
 	v3f m_bounding_sphere_center;
 
 	bool m_enable_shaders;
-	bool m_enable_vbo;
 
 	// Must animate() be called before rendering?
 	bool m_has_animation;

@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cerrno>
 #include <algorithm>
 #include <cmath>
-#include "connection.h"
+#include "connection_internal.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
@@ -58,7 +58,16 @@ namespace con
 // TODO: Clean this up.
 #define LOG(a) a
 
-#define PING_TIMEOUT 5.0
+#define PING_TIMEOUT 5.0f
+
+// exponent base
+#define RESEND_SCALE_BASE 1.5f
+
+// since spacing is exponential the numbers here shouldn't be too high
+// (it's okay to start out quick)
+#define RESEND_TIMEOUT_MIN 0.1f
+#define RESEND_TIMEOUT_MAX 2.0f
+#define RESEND_TIMEOUT_FACTOR 4
 
 u16 BufferedPacket::getSeqnum() const
 {
@@ -68,7 +77,7 @@ u16 BufferedPacket::getSeqnum() const
 	return readU16(&data[BASE_HEADER_SIZE + 1]);
 }
 
-BufferedPacketPtr makePacket(Address &address, const SharedBuffer<u8> &data,
+BufferedPacketPtr makePacket(const Address &address, const SharedBuffer<u8> &data,
 		u32 protocol_id, session_t sender_peer_id, u8 channel)
 {
 	u32 packet_size = data.getSize() + BASE_HEADER_SIZE;
@@ -103,12 +112,10 @@ void makeSplitPacket(const SharedBuffer<u8> &data, u32 chunksize_max, u16 seqnum
 		std::list<SharedBuffer<u8>> *chunks)
 {
 	// Chunk packets, containing the TYPE_SPLIT header
-	u32 chunk_header_size = 7;
-	u32 maximum_data_size = chunksize_max - chunk_header_size;
-	u32 start = 0;
-	u32 end = 0;
-	u32 chunk_num = 0;
-	u16 chunk_count = 0;
+	const u32 chunk_header_size = 7;
+	const u32 maximum_data_size = chunksize_max - chunk_header_size;
+	u32 start = 0, end = 0;
+	u16 chunk_num = 0;
 	do {
 		end = start + maximum_data_size - 1;
 		if (end > data.getSize() - 1)
@@ -126,16 +133,16 @@ void makeSplitPacket(const SharedBuffer<u8> &data, u32 chunksize_max, u16 seqnum
 		memcpy(&chunk[chunk_header_size], &data[start], payload_size);
 
 		chunks->push_back(chunk);
-		chunk_count++;
 
 		start = end + 1;
+		sanity_check(chunk_num < 0xFFFF); // overflow
 		chunk_num++;
 	}
 	while (end != data.getSize() - 1);
 
-	for (SharedBuffer<u8> &chunk : *chunks) {
+	for (auto &chunk : *chunks) {
 		// Write chunk_count
-		writeU16(&(chunk[3]), chunk_count);
+		writeU16(&chunk[3], chunk_num);
 	}
 }
 
@@ -194,7 +201,7 @@ u32 ReliablePacketBuffer::size()
 	return m_list.size();
 }
 
-RPBSearchResult ReliablePacketBuffer::findPacketNoLock(u16 seqnum)
+ReliablePacketBuffer::FindResult ReliablePacketBuffer::findPacketNoLock(u16 seqnum)
 {
 	for (auto it = m_list.begin(); it != m_list.end(); ++it) {
 		if ((*it)->getSeqnum() == seqnum)
@@ -232,7 +239,7 @@ BufferedPacketPtr ReliablePacketBuffer::popFirst()
 BufferedPacketPtr ReliablePacketBuffer::popSeqnum(u16 seqnum)
 {
 	MutexAutoLock listlock(m_list_mutex);
-	RPBSearchResult r = findPacketNoLock(seqnum);
+	auto r = findPacketNoLock(seqnum);
 	if (r == m_list.end()) {
 		LOG(dout_con<<"Sequence number: " << seqnum
 				<< " not found in reliable buffer"<<std::endl);
@@ -325,15 +332,21 @@ void ReliablePacketBuffer::insert(BufferedPacketPtr &p_ptr, u16 next_expected)
 			)
 		{
 			/* if this happens your maximum transfer window may be to big */
-			fprintf(stderr,
+			char buf[200];
+			snprintf(buf, sizeof(buf),
 					"Duplicated seqnum %d non matching packet detected:\n",
 					seqnum);
-			fprintf(stderr, "Old: seqnum: %05d size: %04zu, address: %s\n",
+			warningstream << buf;
+			snprintf(buf, sizeof(buf),
+					"Old: seqnum: %05d size: %04zu, address: %s\n",
 					i->getSeqnum(), i->size(),
 					i->address.serializeString().c_str());
-			fprintf(stderr, "New: seqnum: %05d size: %04zu, address: %s\n",
+			warningstream << buf;
+			snprintf(buf, sizeof(buf),
+					"New: seqnum: %05d size: %04zu, address: %s\n",
 					p.getSeqnum(), p.size(),
 					p.address.serializeString().c_str());
+			warningstream << buf << std::flush;
 			throw IncomingDataCorruption("duplicated packet isn't same as original one");
 		}
 	}
@@ -357,13 +370,27 @@ void ReliablePacketBuffer::incrementTimeouts(float dtime)
 	}
 }
 
-std::list<ConstSharedPtr<BufferedPacket>>
-	ReliablePacketBuffer::getTimedOuts(float timeout, u32 max_packets)
+u32 ReliablePacketBuffer::getTimedOuts(float timeout)
 {
 	MutexAutoLock listlock(m_list_mutex);
-	std::list<ConstSharedPtr<BufferedPacket>> timed_outs;
+	u32 count = 0;
 	for (auto &packet : m_list) {
-		if (packet->time < timeout)
+		if (packet->totaltime >= timeout)
+			count++;
+	}
+	return count;
+}
+
+std::vector<ConstSharedPtr<BufferedPacket>>
+	ReliablePacketBuffer::getResend(float timeout, u32 max_packets)
+{
+	MutexAutoLock listlock(m_list_mutex);
+	std::vector<ConstSharedPtr<BufferedPacket>> timed_outs;
+	for (auto &packet : m_list) {
+		// resend time scales exponentially with each cycle
+		const float pkt_timeout = timeout * powf(RESEND_SCALE_BASE, packet->resend_count);
+
+		if (packet->time < pkt_timeout)
 			continue;
 
 		// caller will resend packet so reset time and increase counter
@@ -501,9 +528,9 @@ SharedBuffer<u8> IncomingSplitBuffer::insert(BufferedPacketPtr &p_ptr, bool reli
 
 void IncomingSplitBuffer::removeUnreliableTimedOuts(float dtime, float timeout)
 {
+	MutexAutoLock listlock(m_map_mutex);
 	std::vector<u16> remove_queue;
 	{
-		MutexAutoLock listlock(m_map_mutex);
 		for (const auto &i : m_buf) {
 			IncomingSplitPacket *p = i.second;
 			// Reliable ones are not removed by timeout
@@ -515,10 +542,10 @@ void IncomingSplitBuffer::removeUnreliableTimedOuts(float dtime, float timeout)
 		}
 	}
 	for (u16 j : remove_queue) {
-		MutexAutoLock listlock(m_map_mutex);
 		LOG(dout_con<<"NOTE: Removing timed out unreliable split packet"<<std::endl);
-		delete m_buf[j];
-		m_buf.erase(j);
+		auto it = m_buf.find(j);
+		delete it->second;
+		m_buf.erase(it);
 	}
 }
 
@@ -560,6 +587,15 @@ ConnectionCommandPtr ConnectionCommand::disconnect_peer(session_t peer_id)
 {
 	auto c = create(CONNCMD_DISCONNECT_PEER);
 	c->peer_id = peer_id;
+	return c;
+}
+
+ConnectionCommandPtr ConnectionCommand::resend_one(session_t peer_id)
+{
+	auto c = create(CONNCMD_RESEND_ONE);
+	c->peer_id = peer_id;
+	c->channelnum = 0; // must be same as createPeer
+	c->reliable = true;
 	return c;
 }
 
@@ -813,13 +849,6 @@ void Channel::UpdateTimers(float dtime)
 	Peer
 */
 
-PeerHelper::PeerHelper(Peer* peer) :
-	m_peer(peer)
-{
-	if (peer && !peer->IncUseCount())
-		m_peer = nullptr;
-}
-
 PeerHelper::~PeerHelper()
 {
 	if (m_peer)
@@ -830,30 +859,12 @@ PeerHelper::~PeerHelper()
 
 PeerHelper& PeerHelper::operator=(Peer* peer)
 {
+	if (m_peer)
+		m_peer->DecUseCount();
 	m_peer = peer;
 	if (peer && !peer->IncUseCount())
 		m_peer = nullptr;
 	return *this;
-}
-
-Peer* PeerHelper::operator->() const
-{
-	return m_peer;
-}
-
-Peer* PeerHelper::operator&() const
-{
-	return m_peer;
-}
-
-bool PeerHelper::operator!()
-{
-	return ! m_peer;
-}
-
-bool PeerHelper::operator!=(void* ptr)
-{
-	return ((void*) m_peer != ptr);
 }
 
 bool Peer::IncUseCount()
@@ -929,17 +940,22 @@ void Peer::RTTStatistics(float rtt, const std::string &profiler_id,
 	m_last_rtt = rtt;
 }
 
-bool Peer::isTimedOut(float timeout)
+bool Peer::isTimedOut(float timeout, std::string &reason)
 {
 	MutexAutoLock lock(m_exclusive_access_mutex);
-	u64 current_time = porting::getTimeMs();
 
-	float dtime = CALC_DTIME(m_last_timeout_check,current_time);
-	m_last_timeout_check = current_time;
+	{
+		u64 current_time = porting::getTimeMs();
+		float dtime = CALC_DTIME(m_last_timeout_check, current_time);
+		m_last_timeout_check = current_time;
+		m_timeout_counter += dtime;
+	}
+	if (m_timeout_counter > timeout) {
+		reason = "timeout counter";
+		return true;
+	}
 
-	m_timeout_counter += dtime;
-
-	return m_timeout_counter > timeout;
+	return false;
 }
 
 void Peer::Drop()
@@ -963,19 +979,26 @@ void Peer::Drop()
 	delete this;
 }
 
-UDPPeer::UDPPeer(u16 a_id, Address a_address, Connection* connection) :
-	Peer(a_address,a_id,connection)
+UDPPeer::UDPPeer(session_t id, const Address &address, Connection *connection) :
+	Peer(id, address, connection)
 {
 	for (Channel &channel : channels)
 		channel.setWindowSize(START_RELIABLE_WINDOW_SIZE);
 }
 
-bool UDPPeer::getAddress(MTProtocols type,Address& toset)
+bool UDPPeer::isTimedOut(float timeout, std::string &reason)
 {
-	if ((type == MTP_UDP) || (type == MTP_MINETEST_RELIABLE_UDP) || (type == MTP_PRIMARY))
-	{
-		toset = address;
+	if (Peer::isTimedOut(timeout, reason))
 		return true;
+
+	MutexAutoLock lock(m_exclusive_access_mutex);
+
+	for (int i = 0; i < CHANNEL_COUNT; i++) {
+		Channel &channel = channels[i];
+		if (channel.outgoing_reliables_sent.getTimedOuts(timeout) > 0) {
+			reason = "outgoing reliables channel=" + itos(i);
+			return true;
+		}
 	}
 
 	return false;
@@ -988,25 +1011,25 @@ void UDPPeer::reportRTT(float rtt)
 	}
 	RTTStatistics(rtt,"rudp",MAX_RELIABLE_WINDOW_SIZE*10);
 
+	// use this value to decide the resend timeout
 	float timeout = getStat(AVG_RTT) * RESEND_TIMEOUT_FACTOR;
 	if (timeout < RESEND_TIMEOUT_MIN)
 		timeout = RESEND_TIMEOUT_MIN;
 	if (timeout > RESEND_TIMEOUT_MAX)
 		timeout = RESEND_TIMEOUT_MAX;
 
-	MutexAutoLock usage_lock(m_exclusive_access_mutex);
-	resend_timeout = timeout;
+	setResendTimeout(timeout);
 }
 
 bool UDPPeer::Ping(float dtime,SharedBuffer<u8>& data)
 {
 	m_ping_timer += dtime;
-	if (m_ping_timer >= PING_TIMEOUT)
+	if (!isHalfOpen() && m_ping_timer >= PING_TIMEOUT)
 	{
 		// Create and send PING packet
 		writeU8(&data[0], PACKET_TYPE_CONTROL);
 		writeU8(&data[1], CONTROLTYPE_PING);
-		m_ping_timer = 0.0;
+		m_ping_timer = 0.0f;
 		return true;
 	}
 	return false;
@@ -1053,26 +1076,26 @@ bool UDPPeer::processReliableSendCommand(
 	const auto &c = *c_ptr;
 	Channel &chan = channels[c.channelnum];
 
-	u32 chunksize_max = max_packet_size
+	const u32 chunksize_max = max_packet_size
 							- BASE_HEADER_SIZE
 							- RELIABLE_HEADER_SIZE;
 
-	sanity_check(c.data.getSize() < MAX_RELIABLE_WINDOW_SIZE*512);
-
 	std::list<SharedBuffer<u8>> originals;
-	u16 split_sequence_number = chan.readNextSplitSeqNum();
 
 	if (c.raw) {
 		originals.emplace_back(c.data);
 	} else {
-		makeAutoSplitPacket(c.data, chunksize_max,split_sequence_number, &originals);
-		chan.setNextSplitSeqNum(split_sequence_number);
+		u16 split_seqnum = chan.readNextSplitSeqNum();
+		makeAutoSplitPacket(c.data, chunksize_max, split_seqnum, &originals);
+		chan.setNextSplitSeqNum(split_seqnum);
 	}
+
+	sanity_check(originals.size() < MAX_RELIABLE_WINDOW_SIZE);
 
 	bool have_sequence_number = false;
 	bool have_initial_sequence_number = false;
 	std::queue<BufferedPacketPtr> toadd;
-	volatile u16 initial_sequence_number = 0;
+	u16 initial_sequence_number = 0;
 
 	for (SharedBuffer<u8> &original : originals) {
 		u16 seqnum = chan.getOutgoingSequenceNumber(have_sequence_number);
@@ -1112,7 +1135,7 @@ bool UDPPeer::processReliableSendCommand(
 		return true;
 	}
 
-	volatile u16 packets_available = toadd.size();
+	u16 packets_available = toadd.size();
 	/* we didn't get a single sequence number no need to fill queue */
 	if (!have_initial_sequence_number) {
 		LOG(derr_con << m_connection->getDesc() << "Ran out of sequence numbers!" << std::endl);
@@ -1130,8 +1153,6 @@ bool UDPPeer::processReliableSendCommand(
 		FATAL_ERROR_IF(!successfully_put_back_sequence_number, "error");
 	}
 
-	// DO NOT REMOVE n_queued! It avoids a deadlock of async locked
-	// 'log_message_mutex' and 'm_list_mutex'.
 	u32 n_queued = chan.outgoing_reliables_sent.size();
 
 	LOG(dout_con<<m_connection->getDesc()
@@ -1150,16 +1171,13 @@ bool UDPPeer::processReliableSendCommand(
 
 void UDPPeer::RunCommandQueues(
 							unsigned int max_packet_size,
-							unsigned int maxcommands,
 							unsigned int maxtransfer)
 {
 
 	for (Channel &channel : channels) {
-		unsigned int commands_processed = 0;
 
 		if ((!channel.queued_commands.empty()) &&
-				(channel.queued_reliables.size() < maxtransfer) &&
-				(commands_processed < maxcommands)) {
+				(channel.queued_reliables.size() < maxtransfer)) {
 			try {
 				ConnectionCommandPtr c = channel.queued_commands.front();
 
@@ -1274,7 +1292,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
 	m_udpSocket(ipv6),
 	m_protocol_id(protocol_id),
 	m_sendThread(new ConnectionSendThread(max_packet_size, timeout)),
-	m_receiveThread(new ConnectionReceiveThread(max_packet_size)),
+	m_receiveThread(new ConnectionReceiveThread()),
 	m_bc_peerhandler(peerhandler)
 
 {
@@ -1341,27 +1359,34 @@ PeerHelper Connection::getPeerNoEx(session_t peer_id)
 }
 
 /* find peer_id for address */
-u16 Connection::lookupPeer(Address& sender)
+session_t Connection::lookupPeer(const Address& sender)
 {
 	MutexAutoLock peerlock(m_peers_mutex);
-	std::map<u16, Peer*>::iterator j;
-	j = m_peers.begin();
-	for(; j != m_peers.end(); ++j)
-	{
-		Peer *peer = j->second;
+	for (auto &it: m_peers) {
+		Peer *peer = it.second;
 		if (peer->isPendingDeletion())
 			continue;
 
-		Address tocheck;
-
-		if ((peer->getAddress(MTP_MINETEST_RELIABLE_UDP, tocheck)) && (tocheck == sender))
-			return peer->id;
-
-		if ((peer->getAddress(MTP_UDP, tocheck)) && (tocheck == sender))
+		if (peer->getAddress() == sender)
 			return peer->id;
 	}
 
 	return PEER_ID_INEXISTENT;
+}
+
+u32 Connection::getActiveCount()
+{
+	MutexAutoLock peerlock(m_peers_mutex);
+	u32 count = 0;
+	for (auto &it : m_peers) {
+		Peer *peer = it.second;
+		if (peer->isPendingDeletion())
+			continue;
+		if (peer->isHalfOpen())
+			continue;
+		count++;
+	}
+	return count;
 }
 
 bool Connection::deletePeer(session_t peer_id, bool timeout)
@@ -1379,12 +1404,8 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 		m_peer_ids.erase(it);
 	}
 
-	Address peer_address;
-	//any peer has a primary address this never fails!
-	peer->getAddress(MTP_PRIMARY, peer_address);
-
 	// Create event
-	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, peer_address));
+	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, peer->getAddress()));
 
 	peer->Drop();
 	return true;
@@ -1444,7 +1465,7 @@ void Connection::Disconnect()
 	putCommand(ConnectionCommand::disconnect());
 }
 
-u32 Connection::Receive(NetworkPacket *pkt, u32 timeout)
+u32 Connection::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
 	/*
 		Note that this function can potentially wait infinitely if non-data
@@ -1452,7 +1473,7 @@ u32 Connection::Receive(NetworkPacket *pkt, u32 timeout)
 		This is not considered to be a problem (is it?)
 	*/
 	for(;;) {
-		ConnectionEventPtr e_ptr = waitEvent(timeout);
+		ConnectionEventPtr e_ptr = waitEvent(timeout_ms);
 		const ConnectionEvent &e = *e_ptr;
 
 		if (e.type != CONNEVENT_NONE) {
@@ -1495,7 +1516,7 @@ u32 Connection::Receive(NetworkPacket *pkt, u32 timeout)
 
 u32 Connection::Receive(NetworkPacket *pkt)
 {
-	auto any = Receive(pkt, m_bc_receive_timeout);
+	auto any = ReceiveTimeoutMs(pkt, m_bc_receive_timeout);
 	if (!any)
 		throw NoIncomingDataException("No incoming data");
 	return any;
@@ -1503,13 +1524,22 @@ u32 Connection::Receive(NetworkPacket *pkt)
 
 bool Connection::TryReceive(NetworkPacket *pkt)
 {
-	return Receive(pkt, 0);
+	return ReceiveTimeoutMs(pkt, 0);
 }
 
 void Connection::Send(session_t peer_id, u8 channelnum,
 		NetworkPacket *pkt, bool reliable)
 {
 	assert(channelnum < CHANNEL_COUNT); // Pre-condition
+
+	// approximate check similar to UDPPeer::processReliableSendCommand()
+	// to get nicer errors / backtraces if this happens.
+	if (reliable && pkt->getSize() > MAX_RELIABLE_WINDOW_SIZE*512) {
+		std::ostringstream oss;
+		oss << "Packet too big for window, peer_id=" << peer_id
+			<< " command=" << pkt->getCommand() << " size=" << pkt->getSize();
+		FATAL_ERROR(oss.str().c_str());
+	}
 
 	putCommand(ConnectionCommand::send(peer_id, channelnum, pkt, reliable));
 }
@@ -1520,15 +1550,14 @@ Address Connection::GetPeerAddress(session_t peer_id)
 
 	if (!peer)
 		throw PeerNotFoundException("No address for peer found!");
-	Address peer_address;
-	peer->getAddress(MTP_PRIMARY, peer_address);
-	return peer_address;
+	return peer->getAddress();
 }
 
 float Connection::getPeerStat(session_t peer_id, rtt_stat_type type)
 {
 	PeerHelper peer = getPeerNoEx(peer_id);
-	if (!peer) return -1;
+	if (!peer)
+		return -1;
 	return peer->getStat(type);
 }
 
@@ -1541,7 +1570,7 @@ float Connection::getLocalStat(rate_stat_type type)
 
 	FATAL_ERROR_IF(!peer, "Connection::getLocalStat we couldn't get our own peer? are you serious???");
 
-	float retval = 0.0;
+	float retval = 0;
 
 	for (Channel &channel : dynamic_cast<UDPPeer *>(&peer)->channels) {
 		switch(type) {
@@ -1570,33 +1599,26 @@ float Connection::getLocalStat(rate_stat_type type)
 	return retval;
 }
 
-u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
+session_t Connection::createPeer(const Address &sender, int fd)
 {
 	// Somebody wants to make a new connection
 
-	// Get a unique peer id (2 or higher)
-	session_t peer_id_new = m_next_remote_peer_id;
-	u16 overflow =  PEER_MINETEST_MAX;
+	// Get a unique peer id
+	const session_t minimum = PEER_MINETEST_MIN;
+	const session_t overflow = PEER_MINETEST_MAX;
 
 	/*
 		Find an unused peer id
 	*/
+
 	MutexAutoLock lock(m_peers_mutex);
-	bool out_of_ids = false;
-	for(;;) {
-		// Check if exists
+	session_t peer_id_new;
+	for (int tries = 0; tries < 100; tries++) {
+		peer_id_new = myrand_range(minimum, overflow - 1);
 		if (m_peers.find(peer_id_new) == m_peers.end())
-
 			break;
-		// Check for overflow
-		if (peer_id_new == overflow) {
-			out_of_ids = true;
-			break;
-		}
-		peer_id_new++;
 	}
-
-	if (out_of_ids) {
+	if (m_peers.find(peer_id_new) != m_peers.end()) {
 		errorstream << getDesc() << " ran out of peer ids" << std::endl;
 		return PEER_ID_INEXISTENT;
 	}
@@ -1607,10 +1629,6 @@ u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
 
 	m_peers[peer->id] = peer;
 	m_peer_ids.push_back(peer->id);
-
-	m_next_remote_peer_id = (peer_id_new + 1);
-
-	if (m_next_remote_peer_id > overflow) m_next_remote_peer_id = PEER_MINETEST_MIN;
 
 	LOG(dout_con << getDesc()
 			<< "createPeer(): giving peer_id=" << peer_id_new << std::endl);
@@ -1642,6 +1660,12 @@ void Connection::DisconnectPeer(session_t peer_id)
 	putCommand(ConnectionCommand::disconnect_peer(peer_id));
 }
 
+void Connection::doResendOne(session_t peer_id)
+{
+	assert(peer_id != PEER_ID_INEXISTENT);
+	putCommand(ConnectionCommand::resend_one(peer_id));
+}
+
 void Connection::sendAck(session_t peer_id, u8 channelnum, u16 seqnum)
 {
 	assert(channelnum < CHANNEL_COUNT); // Pre-condition
@@ -1660,14 +1684,13 @@ void Connection::sendAck(session_t peer_id, u8 channelnum, u16 seqnum)
 	m_sendThread->Trigger();
 }
 
-UDPPeer* Connection::createServerPeer(Address& address)
+UDPPeer* Connection::createServerPeer(const Address &address)
 {
 	if (ConnectedToServer())
-	{
 		throw ConnectionException("Already connected to a server");
-	}
 
 	UDPPeer *peer = new UDPPeer(PEER_ID_SERVER, address, this);
+	peer->SetFullyOpen();
 
 	{
 		MutexAutoLock lock(m_peers_mutex);

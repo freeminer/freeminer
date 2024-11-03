@@ -37,7 +37,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 inline bool isGroupRecipeStr(const std::string &rec_name)
 {
-	return str_starts_with(rec_name, std::string("group:"));
+	return str_starts_with(rec_name, "group:");
 }
 
 static bool hasGroupItem(const std::vector<std::string> &recipe)

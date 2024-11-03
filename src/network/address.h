@@ -56,18 +56,26 @@ public:
 	bool operator==(const Address &address) const;
 	bool operator!=(const Address &address) const { return !(*this == address); }
 
-	struct sockaddr_in getAddress() const;
-	struct sockaddr_in6 getAddress6() const;
-	u16 getPort() const;
 	int getFamily() const { return m_addr_family; }
+	bool isValid() const { return m_addr_family != 0; }
 	bool isIPv6() const { return m_addr_family == AF_INET6; }
-	bool isZero() const;
+	struct sockaddr_in getAddress() const { return m_address.ipv4; }
+	struct sockaddr_in6 getAddress6() const { return m_address.ipv6; }
+	u16 getPort() const { return m_port; }
+
 	void print(std::ostream &s) const;
 	std::string serializeString() const;
+
+	// Is this an address that binds to all interfaces (like INADDR_ANY)?
+	bool isAny() const;
+	// Is this an address referring to the local host?
 	bool isLocalhost() const;
 
-	// Resolve() may throw ResolveError (address is unchanged in this case)
-	void Resolve(const char *name);
+	// `name`: hostname or numeric IP
+	// `fallback`: fallback IP to try gets written here
+	// any empty name resets the IP to the "any address"
+	// may throw ResolveError (address is unchanged in this case)
+	void Resolve(const char *name, Address *fallback = nullptr);
 
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
@@ -82,5 +90,6 @@ private:
 		struct sockaddr_in ipv4;
 		struct sockaddr_in6 ipv6;
 	} m_address = {};
-	u16 m_port = 0; // Port is separate from sockaddr structures
+	// port is separate from in_addr structures
+	u16 m_port = 0;
 };

@@ -99,15 +99,11 @@ bool MapSettingsManager::loadMapMeta()
 	if (m_map_settings->readJsonFile(m_map_meta_path + ".json")) {
 		return true;
 	}
-	auto map_meta_path = m_map_meta_path + ".txt";
+	const auto map_meta_path = m_map_meta_path + ".txt";
 
-	std::ifstream is(map_meta_path.c_str(), std::ios_base::binary);
-
-	if (!is.good()) {
-		errorstream << "loadMapMeta: could not open "
-			<< map_meta_path << std::endl;
+	auto is = open_ifstream(map_meta_path.c_str(), true);
+	if (!is.good())
 		return false;
-	}
 
 	if (!m_map_settings->parseConfigLines(is)) {
 		errorstream << "loadMapMeta: Format error. '[end_of_params]' missing?" << std::endl;

@@ -69,25 +69,6 @@ struct MapDrawControl
 	bool show_wireframe = false;
 };
 
-struct MeshBufList
-{
-	video::SMaterial m;
-	std::vector<std::pair<v3s16,scene::IMeshBuffer*>> bufs;
-};
-
-struct MeshBufListList
-{
-	/*!
-	 * Stores the mesh buffers of the world.
-	 * The array index is the material's layer.
-	 * The vector part groups vertices by material.
-	 */
-	std::vector<MeshBufList> lists[MAX_TILE_LAYERS];
-
-	void clear();
-	void add(scene::IMeshBuffer *buf, v3s16 position, u8 layer);
-};
-
 class Client;
 class ITextureSource;
 class PartialMeshBuffer;
@@ -108,16 +89,9 @@ public:
 			s32 id
 	);
 
-	virtual ~ClientMap();
-
 	bool maySaveBlocks() override
 	{
 		return false;
-	}
-
-	void drop() override
-	{
-		ISceneNode::drop(); // calls destructor
 	}
 
 	void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, video::SColor light_color);
@@ -176,6 +150,9 @@ public:
 	void onSettingChanged(const std::string &name);
 
 protected:
+	// use drop() instead
+	virtual ~ClientMap();
+
 	void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) override;
 private:
 	bool isMeshOccluded(MapBlock *mesh_block, u16 mesh_size, v3s16 cam_pos_nodes);

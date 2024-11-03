@@ -30,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <vector>
-#include <unordered_map>
+#include <string_view>
 
 #include "irrlichttypes_bloated.h"
 #include "common/c_types.h"
@@ -72,11 +72,11 @@ v3pos_t            getv3pos_tfield_default(lua_State *L, int table,
 
 bool               getstringfield(lua_State *L, int table,
                              const char *fieldname, std::string &result);
+bool               getstringfield(lua_State *L, int table,
+                             const char *fieldname, std::string_view &result);
 size_t             getstringlistfield(lua_State *L, int table,
                              const char *fieldname,
                              std::vector<std::string> *result);
-void               read_groups(lua_State *L, int index,
-                             std::unordered_map<std::string, int> &result);
 bool               getboolfield(lua_State *L, int table,
                              const char *fieldname, bool &result);
 bool               getfloatfield(lua_State *L, int table,
@@ -148,17 +148,20 @@ inline void         push_v3pos          (lua_State *L, v3pos_t p) {
 	return push_v3s16(L, p);
 	#endif
 }
-void                push_aabb3f         (lua_State *L, aabb3f box);
+void                push_aabb3f         (lua_State *L, aabb3f box, f32 divisor = 1.0f);
 void                push_ARGB8          (lua_State *L, video::SColor color);
 void                pushFloatPos        (lua_State *L, v3f p);
 void                pushFloatPos        (lua_State *L, v3d p);
 void                push_v3f            (lua_State *L, v3f p);
 void                push_v3f            (lua_State *L, v3d p);
 void                push_v2f            (lua_State *L, v2f p);
+void                push_aabb3f_vector  (lua_State *L, const std::vector<aabb3f> &boxes,
+                                         f32 divisor = 1.0f);
 
 void                warn_if_field_exists(lua_State *L, int table,
                                          const char *fieldname,
-                                         const std::string &message);
+                                         std::string_view name,
+                                         std::string_view message);
 
 size_t write_array_slice_float(lua_State *L, int table_index, float *data,
 	v3u16 data_size, v3u16 slice_offset, v3u16 slice_size);

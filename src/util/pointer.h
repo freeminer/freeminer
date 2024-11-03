@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h" // For assert()
 #include <cstring>
 #include <memory> // std::shared_ptr
+#include <string_view>
 
 
 template<typename T> class ConstSharedPtr {
@@ -134,6 +135,13 @@ public:
 	unsigned int getSize() const
 	{
 		return m_size;
+	}
+
+	operator std::string_view() const
+	{
+		if (!data)
+			return std::string_view();
+		return std::string_view(reinterpret_cast<char*>(data), m_size);
 	}
 
 private:

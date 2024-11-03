@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../settings.h"
 #include "../version.h"
 #include "networkprotocol.h"
-#include "serverlist.h"
+#include "../server/serverlist.h"
 
 //copypaste from ../socket.cpp
 #ifdef _WIN32

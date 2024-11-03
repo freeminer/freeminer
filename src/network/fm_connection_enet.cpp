@@ -16,6 +16,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "config.h"
+#include "network/connection_internal.h"
 #if USE_ENET
 
 #include "fm_connection_enet.h"
@@ -173,6 +174,8 @@ void Connection::processCommand(ConnectionCommandPtr c)
 	*/
 	case con::CONCMD_ACK:
 	case con::CONCMD_CREATE_PEER:
+		break;
+	case con::CONNCMD_RESEND_ONE:
 		break;
 	}
 }

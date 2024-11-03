@@ -1567,7 +1567,7 @@ float Connection::getLocalStat(rate_stat_type type)
 	return retval;
 }
 
-u16 Connection::createPeer(Address& sender, MTProtocols protocol, int fd)
+session_t Connection::createPeer(Address& sender, int fd)
 {
 	// Somebody wants to make a new connection
 

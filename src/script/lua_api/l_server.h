@@ -42,6 +42,9 @@ private:
 	// get_worldpath()
 	static int l_get_worldpath(lua_State *L);
 
+	// get_mod_data_path()
+	static int l_get_mod_data_path(lua_State *L);
+
 	// is_singleplayer()
 	static int l_is_singleplayer(lua_State *L);
 
@@ -120,6 +123,9 @@ private:
 
 	// register_async_dofile(path)
 	static int l_register_async_dofile(lua_State *L);
+
+	// register_mapgen_script(path)
+	static int l_register_mapgen_script(lua_State *L);
 
 	// serialize_roundtrip(obj)
 	static int l_serialize_roundtrip(lua_State *L);

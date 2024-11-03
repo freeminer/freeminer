@@ -49,13 +49,13 @@ public:
 
 	void getObjectsInsideRadius(const v3f &pos, float radius,
 			std::vector<ServerActiveObjectPtr> &result,
-			const std::function<bool(ServerActiveObjectPtr &obj)> &include_obj_cb);
+			const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb);
 	void getObjectsInArea(const aabb3f &box,
 			std::vector<ServerActiveObjectPtr> &result,
-			const std::function<bool(ServerActiveObjectPtr &obj)> &include_obj_cb);
+			const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb);
 
-	void getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 radius,
-			f32 player_radius, std::set<u16> &current_objects,
-			std::queue<u16> &added_objects);
+	void getAddedActiveObjectsAroundPos(v3f player_pos, f32 radius,
+			f32 player_radius, const std::set<u16> &current_objects,
+			std::vector<u16> &added_objects);
 };
 } // namespace server

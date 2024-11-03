@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/container.h"
 #include "threading/lock.h"
 
+
 /*
 
 Some planning
@@ -77,11 +78,6 @@ public:
 	void markForRemoval();
 	void markForDeactivation();
 
-	// Create a certain type of ServerActiveObject
-	static ServerActiveObject* create(ActiveObjectType type,
-			ServerEnvironment *env, u16 id, v3f pos,
-			const std::string &data);
-
 	/*
 		Some simple getters/setters
 	*/
@@ -101,6 +97,8 @@ public:
 
 	virtual void setPos(const v3f &pos)
 		{ setBasePosition(pos); }
+	virtual void addPos(const v3f &added_pos)
+		{ setBasePosition(m_base_position + added_pos); }
 	// continuous: if true, object does not stop immediately at pos
 	virtual void moveTo(v3f pos, bool continuous)
 		{ setBasePosition(pos); }
@@ -178,14 +176,16 @@ public:
 	{}
 	virtual void setAnimationSpeed(float frame_speed)
 	{}
-	virtual void setBonePosition(const std::string &bone, v3f position, v3f rotation)
+	virtual void setBoneOverride(const std::string &bone, const BoneOverride &props)
 	{}
-	virtual void getBonePosition(const std::string &bone, v3f *position, v3f *lotation)
-	{}
+	virtual BoneOverride getBoneOverride(const std::string &bone)
+	{ BoneOverride props; return props; }
+	virtual const BoneOverrideMap &getBoneOverrides() const
+	{ static BoneOverrideMap rv; return rv; }
 	virtual const std::unordered_set<int> &getAttachmentChildIds() const
 	{ static std::unordered_set<int> rv; return rv; }
 	virtual ServerActiveObject *getParent() const { return nullptr; }
-	virtual ObjectProperties* accessObjectProperties()
+	virtual ObjectProperties *accessObjectProperties()
 	{ return NULL; }
 	virtual void notifyObjectPropertiesModified()
 	{}
@@ -235,6 +235,10 @@ public:
 
 	/*
 		Whether the object's static data has been stored to a block
+
+		Note that `!isStaticAllowed() && m_static_exists` is a valid state
+		(though it usually doesn't persist long) and you need to be careful
+		about handling it.
 	*/
 	bool m_static_exists = false;
 	/*

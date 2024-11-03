@@ -88,7 +88,7 @@ extern std::atomic_bool g_sighup, g_siginfo;
 
 #ifndef SERVER
 
-void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
+//void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
 
 #endif
 

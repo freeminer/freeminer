@@ -37,30 +37,16 @@ ActiveObjectMgr::~ActiveObjectMgr()
 void ActiveObjectMgr::step(
 		float dtime, const std::function<void(const ClientActiveObjectPtr&)> &f)
 {
-	g_profiler->avg("ActiveObjectMgr: CAO count [#]", m_active_objects.size());
-
-	// Same as in server activeobjectmgr.
-	std::vector<u16> ids = getAllIds();
-
-	for (u16 id : ids) {
-		auto it = getActiveObject(id);
-		if (!it) {
+	size_t count = 0;
+	for (auto &ao_it : m_active_objects.iter()) {
+		if (!ao_it.second)
 			continue;
-		}
-		f(it);
-
-		/*
-		auto it = m_active_objects.find(id);
-		if (it == m_active_objects.end())
-			continue; // obj was removed
-		f(it->second);
-		*/
+		count++;
+		f(ao_it.second);
 	}
-
-	m_active_objects_deleted.clear();
+	g_profiler->avg("ActiveObjectMgr: CAO count [#]", count);
 }
 
-// clang-format off
 bool ActiveObjectMgr::registerObject(std::shared_ptr<ClientActiveObject> obj)
 {
 	assert(obj); // Pre-condition
@@ -82,7 +68,7 @@ bool ActiveObjectMgr::registerObject(std::shared_ptr<ClientActiveObject> obj)
 	}
 	infostream << "Client::ActiveObjectMgr::registerObject(): "
 			<< "added (id=" << obj->getId() << ")" << std::endl;
-	m_active_objects.insert_or_assign(obj->getId(), obj);
+	m_active_objects.put(obj->getId(), std::move(obj));
 	return true;
 }
 
@@ -90,29 +76,25 @@ void ActiveObjectMgr::removeObject(u16 id)
 {
 	verbosestream << "Client::ActiveObjectMgr::removeObject(): "
 			<< "id=" << id << std::endl;
-	auto obj = getActiveObject(id);
+
+	auto obj = m_active_objects.take(id);
 	if (!obj) {
 		infostream << "Client::ActiveObjectMgr::removeObject(): "
 				<< "id=" << id << " not found" << std::endl;
 		return;
 	}
 
-	m_active_objects_deleted.emplace_back(obj);
-
-	//std::unique_ptr<ClientActiveObject> obj = std::move(it->second);
-	m_active_objects.erase(id);
-
 	obj->removeFromScene(true);
-	
 }
 
-// clang-format on
 void ActiveObjectMgr::getActiveObjects(const v3f &origin, f32 max_d,
 		std::vector<DistanceSortedActiveObject> &dest)
 {
 	f32 max_d2 = max_d * max_d;
-	for (auto &ao_it : m_active_objects) {
-		const auto obj = ao_it.second;
+	for (auto &ao_it : m_active_objects.iter()) {
+		auto obj = ao_it.second;
+		if (!obj)
+			continue;
 
 		f32 d2 = (obj->getPosition() - origin).getLengthSQ();
 
@@ -129,8 +111,10 @@ std::vector<DistanceSortedActiveObject> ActiveObjectMgr::getActiveSelectableObje
 	f32 max_d = shootline.getLength();
 	v3f dir = shootline.getVector().normalize();
 
-	for (auto &ao_it : m_active_objects) {
+	for (auto &ao_it : m_active_objects.iter()) {
 		auto obj = ao_it.second;
+		if (!obj)
+			continue;
 
 		aabb3f selection_box;
 		if (!obj->getSelectionBox(&selection_box))

@@ -20,7 +20,7 @@ CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "minetest.exe.manifest"
 #endif
 
 LANGUAGE 0, SUBLANG_NEUTRAL
-130        ICON         "freeminer.ico"
+130        ICON         "minetest-icon.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -49,8 +49,8 @@ BEGIN
         VALUE "FileDescription", PROJECT_NAME_C " engine"
         VALUE "FileVersion", VERSION_STRING
         VALUE "InternalName", PROJECT_NAME
-        VALUE "LegalCopyright", "(c) 2014-2015"
-        VALUE "LegalTrademarks", """Freeminer"" is the property of the Minetest community, don't use it without permission!"
+        VALUE "LegalCopyright", "(c) 2011-2015"
+        VALUE "LegalTrademarks", """Freeminer"" is the property of the Freeminer community, don't use it without permission!"
         VALUE "OriginalFilename", "freeminer.exe"
         VALUE "PrivateBuild", VERSION_EXTRA
         VALUE "ProductName", PROJECT_NAME_C

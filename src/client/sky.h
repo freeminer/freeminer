@@ -68,12 +68,12 @@ public:
 
 	float getBrightness() { return m_brightness; }
 
-	const video::SColor &getBgColor() const
+	video::SColor getBgColor() const
 	{
 		return m_visible ? m_bgcolor : m_fallback_bg_color;
 	}
 
-	const video::SColor &getSkyColor() const
+	video::SColor getSkyColor() const
 	{
 		return m_visible ? m_skycolor : m_fallback_bg_color;
 	}
@@ -104,6 +104,7 @@ public:
 	const video::SColorf &getCloudColor() const { return m_cloudcolor_f; }
 
 	void setVisible(bool visible) { m_visible = visible; }
+
 	// Set only from set_sky API
 	void setCloudsEnabled(bool clouds_enabled) { m_clouds_enabled = clouds_enabled; }
 	void setFallbackBgColor(video::SColor fallback_bg_color)
@@ -125,14 +126,22 @@ public:
 		const std::string &use_sun_tint);
 	void setInClouds(bool clouds) { m_in_clouds = clouds; }
 	void clearSkyboxTextures() { m_sky_params.textures.clear(); }
-	void addTextureToSkybox(const  std::string &texture, int material_id,
+	void addTextureToSkybox(const std::string &texture, int material_id,
 		ITextureSource *tsrc);
-	const video::SColorf &getCurrentStarColor() const { return m_star_color; }
+
+	// Note: the Sky class doesn't use these values. It just stores them.
 	void setFogDistance(s16 fog_distance) { m_sky_params.fog_distance = fog_distance; }
 	s16 getFogDistance() const { return m_sky_params.fog_distance; }
 
 	void setFogStart(float fog_start) { m_sky_params.fog_start = fog_start; }
 	float getFogStart() const { return m_sky_params.fog_start; }
+
+	void setFogColor(video::SColor v) { m_sky_params.fog_color = v; }
+	video::SColor getFogColor() const {
+		if (m_sky_params.fog_color.getAlpha() > 0)
+			return m_sky_params.fog_color;
+		return getBgColor();
+	}
 
 private:
 	aabb3f m_box;
@@ -214,7 +223,6 @@ private:
 
 	u64 m_seed = 0;
 	irr_ptr<scene::SMeshBuffer> m_stars;
-	video::SColorf m_star_color;
 
 	video::ITexture *m_sun_texture;
 	video::ITexture *m_moon_texture;

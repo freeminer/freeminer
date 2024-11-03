@@ -22,7 +22,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include <iostream>
 #include <exception>
 #include <cassert>
 #include "gettime.h"

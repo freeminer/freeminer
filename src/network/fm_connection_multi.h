@@ -64,7 +64,8 @@ public:
 	void Connect(Address address);
 	bool Connected();
 	void Disconnect();
-	u32 Receive(NetworkPacket *pkt, int timeout = 1);
+	u32 ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms);
+	u32 Receive(NetworkPacket *pkt);
 	bool TryReceive(NetworkPacket *pkt);
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer,

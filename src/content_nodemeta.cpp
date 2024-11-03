@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodetimer.h"
 #include "inventory.h"
 #include "log.h"
+#include "debug.h"
 #include "serialization.h"
 #include "util/serialize.h"
 #include "util/string.h"

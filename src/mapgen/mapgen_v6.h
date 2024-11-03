@@ -41,7 +41,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define MGV6_SNOWBIOMES 0x08
 #define MGV6_FLAT       0x10
 #define MGV6_TREES      0x20
-#define MGV6_FLOATLANDS 0x40
+#define MGV6_TEMPLES    0x40
+#define MGV6_FLOATLANDS 0x80
 
 
 extern FlagDesc flagdesc_mapgen_v6[];

@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes.h"
 #include "network/connection.h"
+#include "network/connection_internal.h"
 #include "network/wssocket.h"
 #include "network/networkexceptions.h"
 #include "../peerhandler.h"
@@ -532,7 +533,8 @@ class Peer {
 		virtual void PutReliableSendCommand(ConnectionCommandPtr &c,
 						unsigned int max_packet_size) {};
 
-		virtual bool getAddress(MTProtocols type, Address& toset) = 0;
+		//virtual bool getAddress(MTProtocols type, Address& toset) = 0;
+		virtual bool getAddress() = 0;
 
 		bool isPendingDeletion()
 		{ MutexAutoLock lock(m_exclusive_access_mutex); return m_pending_deletion; };
@@ -637,7 +639,8 @@ public:
 	void PutReliableSendCommand(ConnectionCommandPtr &c,
 							unsigned int max_packet_size);
 
-	bool getAddress(MTProtocols type, Address& toset);
+	//bool getAddress(MTProtocols type, Address& toset);
+	bool getAddress();
 
 	u16 getNextSplitSequenceNumber(u8 channel);
 	void setNextSplitSequenceNumber(u8 channel, u16 seqnum);
@@ -759,7 +762,7 @@ public:
 protected:
 	u16   lookupPeer(Address& sender);
 
-	u16 createPeer(Address& sender, MTProtocols protocol, int fd);
+	session_t createPeer(Address& sender, int fd);
 	UDPPeer*  createServerPeer(Address& sender);
 	bool deletePeer(session_t peer_id, bool timeout);
 

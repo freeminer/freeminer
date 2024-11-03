@@ -100,7 +100,7 @@ private:
 
 	Connection *m_connection = nullptr;
 	unsigned int m_max_packet_size;
-	std::atomic<float> m_timeout;
+	float m_timeout;
 	std::queue<OutgoingPacket> m_outgoing_queue;
 	Semaphore m_send_sleep_semaphore;
 

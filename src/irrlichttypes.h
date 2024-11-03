@@ -28,43 +28,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <cstdint>
 
-#include <irrTypes.h>
+#include "irrTypes.h"
 #include "config.h"
 
 using namespace irr;
 
 #define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
+#define S8_MIN  INT8_MIN
+#define S16_MIN INT16_MIN
+#define S32_MIN INT32_MIN
+#define S64_MIN INT64_MIN
 
-namespace irr {
+#define S8_MAX  INT8_MAX
+#define S16_MAX INT16_MAX
+#define S32_MAX INT32_MAX
+#define S64_MAX INT64_MAX
 
-// Define missing constant for vector math with 16-bit numbers
-namespace core {
-	template <typename T>
-	inline T roundingError();
+#define U8_MAX  UINT8_MAX
+#define U16_MAX UINT16_MAX
+#define U32_MAX UINT32_MAX
+#define U64_MAX UINT64_MAX
 
-	template <>
-	inline s16 roundingError()
-	{
-		return 0;
-	}
-}
 
-}
-
-#define S8_MIN  (-0x7F - 1)
-#define S16_MIN (-0x7FFF - 1)
-#define S32_MIN (-0x7FFFFFFF - 1)
-#define S64_MIN (-0x7FFFFFFFFFFFFFFF - 1)
-
-#define S8_MAX  0x7F
-#define S16_MAX 0x7FFF
-#define S32_MAX 0x7FFFFFFF
-#define S64_MAX 0x7FFFFFFFFFFFFFFF
-
-#define U8_MAX  0xFF
-#define U16_MAX 0xFFFF
-#define U32_MAX 0xFFFFFFFF
-#define U64_MAX 0xFFFFFFFFFFFFFFFF
 
 #if USE_POS32
 

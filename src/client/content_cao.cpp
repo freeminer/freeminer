@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/client.h"
 #include "client/renderingengine.h"
 #include "client/sound.h"
-#include "client/tile.h"
+#include "client/texturesource.h"
 #include "client/mapblock_mesh.h"
 #include "util/basic_macros.h"
 #include "util/numeric.h"
@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "camera.h" // CameraModes
 #include "collision.h"
 #include "content_cso.h"
+#include "clientobject.h"
 #include "environment.h"
 #include "itemdef.h"
 #include "localplayer.h"
@@ -49,6 +50,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include "client/shader.h"
 #include "client/minimap.h"
+#include <quaternion.h>
 
 class Settings;
 struct ToolCapabilities;
@@ -220,14 +222,15 @@ private:
 };
 
 // Prototype
-TestCAO proto_TestCAO(NULL, NULL);
+static TestCAO proto_TestCAO(nullptr, nullptr);
 
 TestCAO::TestCAO(Client *client, ClientEnvironment *env):
 	ClientActiveObject(0, client, env),
 	m_node(NULL),
 	m_position(v3f(0,10*BS,0))
 {
-	ClientActiveObject::registerType(getType(), create);
+	if (!client)
+		ClientActiveObject::registerType(getType(), create);
 }
 
 std::unique_ptr<ClientActiveObject> TestCAO::create(Client *client, ClientEnvironment *env)
@@ -325,8 +328,6 @@ void TestCAO::processMessage(const std::string &data)
 	GenericCAO
 */
 
-#include "clientobject.h"
-
 GenericCAO::GenericCAO(Client *client, ClientEnvironment *env):
 		ClientActiveObject(0, client, env)
 {
@@ -414,8 +415,7 @@ GenericCAO::~GenericCAO()
 
 bool GenericCAO::getSelectionBox(aabb3f *toset) const
 {
-	if (!m_prop.is_visible || !m_is_visible || m_is_local_player
-			|| !m_prop.pointable) {
+	if (!m_prop.is_visible || !m_is_visible || m_is_local_player) {
 		return false;
 	}
 	*toset = m_selection_box;
@@ -625,6 +625,8 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 
 	infostream << "GenericCAO::addToScene(): " << m_prop.visual << std::endl;
 
+	m_material_type_param = 0.5f; // May cut off alpha < 128 depending on m_material_type
+
 	if (m_enable_shaders) {
 		IShaderSource *shader_source = m_client->getShaderSource();
 		MaterialType material_type;
@@ -639,8 +641,12 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 		u32 shader_id = shader_source->getShader("object_shader", material_type, NDT_NORMAL);
 		m_material_type = shader_source->getShaderInfo(shader_id).material;
 	} else {
-		m_material_type = (m_prop.use_texture_alpha) ?
-			video::EMT_TRANSPARENT_ALPHA_CHANNEL : video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+		if (m_prop.use_texture_alpha) {
+			m_material_type = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+			m_material_type_param = 1.0f / 256.f; // minimal alpha for texture rendering
+		} else {
+			m_material_type = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+		}
 	}
 
 	auto grabMatrixNode = [this] {
@@ -819,10 +825,21 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			(m_prop.visual == "wielditem"));
 
 		m_wield_meshnode->setScale(m_prop.visual_size / 2.0f);
-		m_wield_meshnode->setColor(video::SColor(0xFFFFFFFF));
 	} else {
 		warningstream<<"GenericCAO::addToScene(): \""<<m_prop.visual
 				<<"\" not supported"<<std::endl;
+	}
+
+	/* Set VBO hint */
+	// - if shaders are disabled we modify the mesh often
+	// - sprites are also modified often
+	// - the wieldmesh sets its own hint
+	// - bone transformations do not need to modify the vertex data
+	if (m_enable_shaders && (m_meshnode || m_animated_meshnode)) {
+		if (m_meshnode)
+			m_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
+		if (m_animated_meshnode)
+			m_animated_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
 	}
 
 	/* don't update while punch texture modifier is active */
@@ -841,7 +858,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 	updateMarker();
 	updateNodePos();
 	updateAnimation();
-	updateBonePosition();
+	updateBones(.0f);
 	updateAttachments();
 
 	setNodeLight(m_last_light);
@@ -1229,7 +1246,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 		}
 	}
 
-	if (node && fabs(m_prop.automatic_rotate) > 0.001f) {
+	if (node && std::abs(m_prop.automatic_rotate) > 0.001f) {
 		// This is the child node's rotation. It is only used for automatic_rotate.
 		v3f local_rot = node->getRotation();
 		local_rot.Y = modulo360f(local_rot.Y - dtime * core::RADTODEG *
@@ -1273,7 +1290,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 			updatePositionRecursive(m_matrixnode);
 		m_animated_meshnode->updateAbsolutePosition();
 		m_animated_meshnode->animateJoints();
-		updateBonePosition();
+		updateBones(dtime);
 	}
 }
 
@@ -1367,7 +1384,7 @@ void GenericCAO::updateTextures(std::string mod)
 
 			video::SMaterial &material = m_spritenode->getMaterial(0);
 			material.MaterialType = m_material_type;
-			material.MaterialTypeParam = 0.5f;
+			material.MaterialTypeParam = m_material_type_param;
 			material.setTexture(0, tsrc->getTextureForMesh(texturestring));
 
 			// This allows setting per-material colors. However, until a real lighting
@@ -1403,7 +1420,7 @@ void GenericCAO::updateTextures(std::string mod)
 				// Set material flags and texture
 				video::SMaterial &material = m_animated_meshnode->getMaterial(i);
 				material.MaterialType = m_material_type;
-				material.MaterialTypeParam = 0.5f;
+				material.MaterialTypeParam = m_material_type_param;
 				material.TextureLayers[0].Texture = texture;
 				material.Lighting = true;
 				material.BackfaceCulling = m_prop.backface_culling;
@@ -1447,7 +1464,7 @@ void GenericCAO::updateTextures(std::string mod)
 				// Set material flags and texture
 				video::SMaterial &material = m_meshnode->getMaterial(i);
 				material.MaterialType = m_material_type;
-				material.MaterialTypeParam = 0.5f;
+				material.MaterialTypeParam = m_material_type_param;
 				material.Lighting = false;
 				material.setTexture(0, tsrc->getTextureForMesh(texturestring));
 				material.getTextureMatrix(0).makeIdentity();
@@ -1556,19 +1573,28 @@ void GenericCAO::updateAnimationSpeed()
 	m_animated_meshnode->setAnimationSpeed(m_animation_speed);
 }
 
-void GenericCAO::updateBonePosition()
+void GenericCAO::updateBones(f32 dtime)
 {
-	if (m_bone_position.empty() || !m_animated_meshnode)
+	if (!m_animated_meshnode)
 		return;
+	if (m_bone_override.empty()) {
+		m_animated_meshnode->setJointMode(scene::EJUOR_NONE);
+		return;
+	}
 
 	m_animated_meshnode->setJointMode(scene::EJUOR_CONTROL); // To write positions to the mesh on render
-	for (auto &it : m_bone_position) {
+	for (auto &it : m_bone_override) {
 		std::string bone_name = it.first;
 		scene::IBoneSceneNode* bone = m_animated_meshnode->getJointNode(bone_name.c_str());
-		if (bone) {
-			bone->setPosition(it.second.X);
-			bone->setRotation(it.second.Y);
-		}
+		if (!bone)
+			continue;
+
+		BoneOverride &props = it.second;
+		props.dtime_passed += dtime;
+
+		bone->setPosition(props.getPosition(bone->getPosition()));
+		bone->setRotation(props.getRotationEulerDeg(bone->getRotation()));
+		bone->setScale(props.getScale(bone->getScale()));
 	}
 
 	// search through bones to find mistakenly rotated bones due to bug in Irrlicht
@@ -1579,7 +1605,7 @@ void GenericCAO::updateBonePosition()
 
 		//If bone is manually positioned there is no need to perform the bug check
 		bool skip = false;
-		for (auto &it : m_bone_position) {
+		for (auto &it : m_bone_override) {
 			if (it.first == bone->getName()) {
 				skip = true;
 				break;
@@ -1814,6 +1840,7 @@ void GenericCAO::processMessage(const std::string &data)
 		bool sneak_glitch = !readU8(is);
 		bool new_move = !readU8(is);
 
+		// new overrides since 5.8.0
 		float override_speed_climb = readF32(is);
 		float override_speed_crouch = readF32(is);
 		float override_liquid_fluidity = readF32(is);
@@ -1821,7 +1848,6 @@ void GenericCAO::processMessage(const std::string &data)
 		float override_liquid_sink = readF32(is);
 		float override_acceleration_default = readF32(is);
 		float override_acceleration_air = readF32(is);
-		// fallback for new overrides (since 5.8.0)
 		if (is.eof()) {
 			override_speed_climb = 1.0f;
 			override_speed_crouch = 1.0f;
@@ -1830,6 +1856,16 @@ void GenericCAO::processMessage(const std::string &data)
 			override_liquid_sink = 1.0f;
 			override_acceleration_default = 1.0f;
 			override_acceleration_air = 1.0f;
+		}
+
+		// new overrides since 5.9.0
+		float override_speed_fast = readF32(is);
+		float override_acceleration_fast = readF32(is);
+		float override_speed_walk = readF32(is);
+		if (is.eof()) {
+			override_speed_fast = 1.0f;
+			override_acceleration_fast = 1.0f;
+			override_speed_walk = 1.0f;
 		}
 
 		if (m_is_local_player) {
@@ -1847,6 +1883,9 @@ void GenericCAO::processMessage(const std::string &data)
 			phys.liquid_sink = override_liquid_sink;
 			phys.acceleration_default = override_acceleration_default;
 			phys.acceleration_air = override_acceleration_air;
+			phys.speed_fast = override_speed_fast;
+			phys.acceleration_fast = override_acceleration_fast;
+			phys.speed_walk = override_speed_walk;
 		}
 	} else if (cmd == AO_CMD_SET_ANIMATION) {
 		// TODO: change frames send as v2s32 value
@@ -1888,11 +1927,46 @@ void GenericCAO::processMessage(const std::string &data)
 		updateAnimationSpeed();
 	} else if (cmd == AO_CMD_SET_BONE_POSITION) {
 		std::string bone = deSerializeString16(is);
-		v3f position = readV3F32(is);
-		v3f rotation = readV3F32(is);
-		m_bone_position[bone] = core::vector2d<v3f>(position, rotation);
-
-		// updateBonePosition(); now called every step
+		auto it = m_bone_override.find(bone);
+		BoneOverride props;
+		if (it != m_bone_override.end()) {
+			props = it->second;
+			// Reset timer
+			props.dtime_passed = 0;
+			// Save previous values for interpolation
+			props.position.previous = props.position.vector;
+			props.rotation.previous = props.rotation.next;
+			props.scale.previous = props.scale.vector;
+		} else {
+			// Disable interpolation
+			props.position.interp_timer = 0.0f;
+			props.rotation.interp_timer = 0.0f;
+			props.scale.interp_timer = 0.0f;
+		}
+		// Read new values
+		props.position.vector = readV3F32(is);
+		props.rotation.next = core::quaternion(readV3F32(is) * core::DEGTORAD);
+		props.scale.vector = readV3F32(is); // reads past end of string on older cmds
+		if (is.eof()) {
+			// Backwards compatibility
+			props.scale.vector = v3f(1, 1, 1); // restore the scale which was not sent
+			props.position.absolute = true;
+			props.rotation.absolute = true;
+		} else {
+			props.position.interp_timer = readF32(is);
+			props.rotation.interp_timer = readF32(is);
+			props.scale.interp_timer = readF32(is);
+			u8 absoluteFlag = readU8(is);
+			props.position.absolute = (absoluteFlag & 1) > 0;
+			props.rotation.absolute = (absoluteFlag & 2) > 0;
+			props.scale.absolute = (absoluteFlag & 4) > 0;
+		}
+		if (props.isIdentity()) {
+			m_bone_override.erase(bone);
+		} else {
+			m_bone_override[bone] = props;
+		}
+		// updateBones(); now called every step
 	} else if (cmd == AO_CMD_ATTACH_TO) {
 		u16 parent_id = readS16(is);
 		std::string bone = deSerializeString16(is);
@@ -2057,4 +2131,4 @@ void GenericCAO::updateMeshCulling()
 }
 
 // Prototype
-GenericCAO proto_GenericCAO(NULL, NULL);
+static GenericCAO proto_GenericCAO(nullptr, nullptr);

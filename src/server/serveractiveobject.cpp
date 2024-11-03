@@ -32,8 +32,6 @@ Queue<ActiveObjectMessage> dummy_queue;
 
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	ActiveObject(0),
-
-
 	m_env(env),
 	m_base_position(pos)
 

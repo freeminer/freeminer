@@ -69,6 +69,11 @@ RemotePlayer::RemotePlayer(const std::string &name, IItemDefManager *idef):
 	m_star_params   = SkyboxDefaults::getStarDefaults();
 }
 
+RemotePlayer::~RemotePlayer()
+{
+	if (m_sao)
+		m_sao->setPlayer(nullptr);
+}
 
 RemotePlayerChatResult RemotePlayer::canSendChatMessage()
 {

@@ -21,7 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "string.h"
-#include "pointer.h"
+#include "serialize.h" // BYTE_ORDER
 #include "numeric.h"
 
 #include <cctype>
@@ -153,79 +153,92 @@ std::string wide_to_narrow(const std::wstring &input) {
 #include <iomanip>
 #include <unordered_map>
 
-/*
 #ifndef _WIN32
 	#include <iconv.h>
 #else
 	#include <windows.h>
 #endif
 
-*/
-
 std::wstring utf8_to_wide(const std::string &input) { return narrow_to_wide(input); };
 std::string wide_to_utf8(const std::wstring &input) { return wide_to_narrow(input); };
 
-/*
 #ifndef _WIN32
 
-static bool convert(const char *to, const char *from, char *outbuf,
-		size_t *outbuf_size, char *inbuf, size_t inbuf_size)
+namespace {
+	class IconvSmartPointer {
+		iconv_t m_cd;
+		static const iconv_t null_value;
+	public:
+		IconvSmartPointer() : m_cd(null_value) {}
+		~IconvSmartPointer() { reset(); }
+
+		DISABLE_CLASS_COPY(IconvSmartPointer)
+		ALLOW_CLASS_MOVE(IconvSmartPointer)
+
+		iconv_t get() const { return m_cd; }
+		operator bool() const { return m_cd != null_value; }
+		void reset(iconv_t cd = null_value) {
+			if (m_cd != null_value)
+				iconv_close(m_cd);
+			m_cd = cd;
+		}
+	};
+
+	// note that this can't be constexpr if iconv_t is a pointer
+	const iconv_t IconvSmartPointer::null_value = (iconv_t) -1;
+}
+
+static bool convert(iconv_t cd, char *outbuf, size_t *outbuf_size,
+	char *inbuf, size_t inbuf_size)
 {
-	iconv_t cd = iconv_open(to, from);
+	// reset conversion state
+	iconv(cd, nullptr, nullptr, nullptr, nullptr);
 
 	char *inbuf_ptr = inbuf;
 	char *outbuf_ptr = outbuf;
 
-	size_t *inbuf_left_ptr = &inbuf_size;
-
 	const size_t old_outbuf_size = *outbuf_size;
 	size_t old_size = inbuf_size;
 	while (inbuf_size > 0) {
-		iconv(cd, &inbuf_ptr, inbuf_left_ptr, &outbuf_ptr, outbuf_size);
+		iconv(cd, &inbuf_ptr, &inbuf_size, &outbuf_ptr, outbuf_size);
 		if (inbuf_size == old_size) {
-			iconv_close(cd);
 			return false;
 		}
 		old_size = inbuf_size;
 	}
 
-	iconv_close(cd);
 	*outbuf_size = old_outbuf_size - *outbuf_size;
 	return true;
 }
 
-#ifdef __ANDROID__
-// On Android iconv disagrees how big a wchar_t is for whatever reason
-const char *DEFAULT_ENCODING = "UTF-32LE";
-#elif defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-	// NetBSD does not allow "WCHAR_T" as a charset input to iconv.
-	#include <sys/endian.h>
-	#if BYTE_ORDER == BIG_ENDIAN
-	const char *DEFAULT_ENCODING = "UTF-32BE";
-	#else
-	const char *DEFAULT_ENCODING = "UTF-32LE";
-	#endif
-#else
-const char *DEFAULT_ENCODING = "WCHAR_T";
-#endif
+// select right encoding for wchar_t size
+constexpr auto DEFAULT_ENCODING = ([] () -> const char* {
+	constexpr auto sz = sizeof(wchar_t);
+	static_assert(sz == 2 || sz == 4, "Unexpected wide char size");
+	if constexpr (sz == 2) {
+		return (BYTE_ORDER == BIG_ENDIAN) ? "UTF-16BE" : "UTF-16LE";
+	} else {
+		return (BYTE_ORDER == BIG_ENDIAN) ? "UTF-32BE" : "UTF-32LE";
+	}
+})();
 
-std::wstring utf8_to_wide(const std::string &input)
+std::wstring utf8_to_wide(std::string_view input)
 {
+	thread_local IconvSmartPointer cd;
+	if (!cd)
+		cd.reset(iconv_open(DEFAULT_ENCODING, "UTF-8"));
+
 	const size_t inbuf_size = input.length();
 	// maximum possible size, every character is sizeof(wchar_t) bytes
 	size_t outbuf_size = input.length() * sizeof(wchar_t);
 
 	char *inbuf = new char[inbuf_size]; // intentionally NOT null-terminated
-	memcpy(inbuf, input.c_str(), inbuf_size);
+	memcpy(inbuf, input.data(), inbuf_size);
 	std::wstring out;
 	out.resize(outbuf_size / sizeof(wchar_t));
 
-#if defined(__ANDROID__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-	static_assert(sizeof(wchar_t) == 4, "Unexpected wide char size");
-#endif
-
 	char *outbuf = reinterpret_cast<char*>(&out[0]);
-	if (!convert(DEFAULT_ENCODING, "UTF-8", outbuf, &outbuf_size, inbuf, inbuf_size)) {
+	if (!convert(cd.get(), outbuf, &outbuf_size, inbuf, inbuf_size)) {
 		infostream << "Couldn't convert UTF-8 string 0x" << hex_encode(input)
 			<< " into wstring" << std::endl;
 		delete[] inbuf;
@@ -237,18 +250,22 @@ std::wstring utf8_to_wide(const std::string &input)
 	return out;
 }
 
-std::string wide_to_utf8(const std::wstring &input)
+std::string wide_to_utf8(std::wstring_view input)
 {
+	thread_local IconvSmartPointer cd;
+	if (!cd)
+		cd.reset(iconv_open("UTF-8", DEFAULT_ENCODING));
+
 	const size_t inbuf_size = input.length() * sizeof(wchar_t);
 	// maximum possible size: utf-8 encodes codepoints using 1 up to 4 bytes
 	size_t outbuf_size = input.length() * 4;
 
 	char *inbuf = new char[inbuf_size]; // intentionally NOT null-terminated
-	memcpy(inbuf, input.c_str(), inbuf_size);
+	memcpy(inbuf, input.data(), inbuf_size);
 	std::string out;
 	out.resize(outbuf_size);
 
-	if (!convert("UTF-8", DEFAULT_ENCODING, &out[0], &outbuf_size, inbuf, inbuf_size)) {
+	if (!convert(cd.get(), &out[0], &outbuf_size, inbuf, inbuf_size)) {
 		infostream << "Couldn't convert wstring 0x" << hex_encode(inbuf, inbuf_size)
 			<< " into UTF-8 string" << std::endl;
 		delete[] inbuf;
@@ -262,24 +279,24 @@ std::string wide_to_utf8(const std::wstring &input)
 
 #else // _WIN32
 
-std::wstring utf8_to_wide(const std::string &input)
+std::wstring utf8_to_wide(std::string_view input)
 {
 	size_t outbuf_size = input.size() + 1;
 	wchar_t *outbuf = new wchar_t[outbuf_size];
 	memset(outbuf, 0, outbuf_size * sizeof(wchar_t));
-	MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.size(),
+	MultiByteToWideChar(CP_UTF8, 0, input.data(), input.size(),
 		outbuf, outbuf_size);
 	std::wstring out(outbuf);
 	delete[] outbuf;
 	return out;
 }
 
-std::string wide_to_utf8(const std::wstring &input)
+std::string wide_to_utf8(std::wstring_view input)
 {
 	size_t outbuf_size = (input.size() + 1) * 6;
 	char *outbuf = new char[outbuf_size];
 	memset(outbuf, 0, outbuf_size);
-	WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.size(),
+	WideCharToMultiByte(CP_UTF8, 0, input.data(), input.size(),
 		outbuf, outbuf_size, NULL, NULL);
 	std::string out(outbuf);
 	delete[] outbuf;
@@ -287,12 +304,10 @@ std::string wide_to_utf8(const std::wstring &input)
 }
 
 #endif // _WIN32
-*/
 
-
-std::string urlencode(const std::string &str)
+std::string urlencode(std::string_view str)
 {
-	// Encodes non-unreserved URI characters by a percent sign
+	// Encodes reserved URI characters by a percent sign
 	// followed by two hex digits. See RFC 3986, section 2.3.
 	static const char url_hex_chars[] = "0123456789ABCDEF";
 	std::ostringstream oss(std::ios::binary);
@@ -308,7 +323,7 @@ std::string urlencode(const std::string &str)
 	return oss.str();
 }
 
-std::string urldecode(const std::string &str)
+std::string urldecode(std::string_view str)
 {
 	// Inverse of urlencode
 	std::ostringstream oss(std::ios::binary);
@@ -385,7 +400,7 @@ std::string writeFlagString(u32 flags, const FlagDesc *flagdesc, u32 flagmask)
 	return result;
 }
 
-size_t mystrlcpy(char *dst, const char *src, size_t size)
+size_t mystrlcpy(char *dst, const char *src, size_t size) noexcept
 {
 	size_t srclen  = strlen(src) + 1;
 	size_t copylen = MYMIN(srclen, size);
@@ -398,7 +413,7 @@ size_t mystrlcpy(char *dst, const char *src, size_t size)
 	return srclen;
 }
 
-char *mystrtok_r(char *s, const char *sep, char **lasts)
+char *mystrtok_r(char *s, const char *sep, char **lasts) noexcept
 {
 	char *t;
 
@@ -753,9 +768,57 @@ bool parseColorString(const std::string &value, video::SColor &color, bool quiet
 	return success;
 }
 
+std::string encodeHexColorString(video::SColor color)
+{
+	std::string color_string = "#";
+	const char red = color.getRed();
+	const char green = color.getGreen();
+	const char blue = color.getBlue();
+	const char alpha = color.getAlpha();
+	color_string += hex_encode(&red, 1);
+	color_string += hex_encode(&green, 1);
+	color_string += hex_encode(&blue, 1);
+	color_string += hex_encode(&alpha, 1);
+	return color_string;
+}
+
 void str_replace(std::string &str, char from, char to)
 {
 	std::replace(str.begin(), str.end(), from, to);
+}
+
+std::string wrap_rows(std::string_view from, unsigned row_len, bool has_color_codes)
+{
+	std::string to;
+	to.reserve(from.size());
+	std::string last_color_code;
+
+	unsigned character_idx = 0;
+	bool inside_colorize = false;
+	for (size_t i = 0; i < from.size(); i++) {
+		if (!IS_UTF8_MULTB_INNER(from[i])) {
+			if (inside_colorize) {
+				last_color_code += from[i];
+				if (from[i] == ')') {
+					inside_colorize = false;
+				} else {
+					// keep reading
+				}
+			} else if (has_color_codes && from[i] == '\x1b') {
+				inside_colorize = true;
+				last_color_code = "\x1b";
+			} else {
+				// Wrap string after last inner byte of char
+				if (character_idx > 0 && character_idx % row_len == 0) {
+					to += '\n' + last_color_code;
+				}
+				character_idx++;
+			}
+		}
+		to += from[i];
+	}
+
+	return to;
 }
 
 /* Translated strings have the following format:
@@ -780,10 +843,10 @@ void str_replace(std::string &str, char from, char to)
  * before filling it again.
  */
 
-void translate_all(const std::wstring &s, size_t &i,
+static void translate_all(const std::wstring &s, size_t &i,
 		Translations *translations, std::wstring &res);
 
-void translate_string(const std::wstring &s, Translations *translations,
+static void translate_string(const std::wstring &s, Translations *translations,
 		const std::wstring &textdomain, size_t &i, std::wstring &res)
 {
 	std::wostringstream output;
@@ -897,14 +960,15 @@ void translate_string(const std::wstring &s, Translations *translations,
 	res = result.str();
 }
 
-void translate_all(const std::wstring &s, size_t &i,
+static void translate_all(const std::wstring &s, size_t &i,
 		Translations *translations, std::wstring &res)
 {
-	std::wostringstream output;
+	res.clear();
+	res.reserve(s.length());
 	while (i < s.length()) {
 		// Not an escape sequence: just add the character.
 		if (s[i] != '\x1b') {
-			output.put(s[i]);
+			res.append(1, s[i]);
 			++i;
 			continue;
 		}
@@ -912,7 +976,7 @@ void translate_all(const std::wstring &s, size_t &i,
 		// We have an escape sequence: locate it and its data
 		// It is either a single character, or it begins with '('
 		// and extends up to the following ')', with '\' as an escape character.
-		size_t escape_start = i;
+		const size_t escape_start = i;
 		++i;
 		size_t start_index = i;
 		size_t length;
@@ -949,14 +1013,12 @@ void translate_all(const std::wstring &s, size_t &i,
 				textdomain = parts[1];
 			std::wstring translated;
 			translate_string(s, translations, textdomain, i, translated);
-			output << translated;
+			res.append(translated);
 		} else {
 			// Another escape sequence, such as colors. Preserve it.
-			output << std::wstring(s, escape_start, i - escape_start);
+			res.append(&s[escape_start], i - escape_start);
 		}
 	}
-
-	res = output.str();
 }
 
 // Translate string server side
@@ -978,7 +1040,7 @@ std::wstring translate_string(const std::wstring &s)
 #endif
 }
 
-static const std::array<std::wstring, 30> disallowed_dir_names = {
+static const std::array<std::wstring_view, 30> disallowed_dir_names = {
 	// Problematic filenames from here:
 	// https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#file-and-directory-names
 	// Plus undocumented values from here:
@@ -1018,14 +1080,14 @@ static const std::array<std::wstring, 30> disallowed_dir_names = {
 /**
  * List of characters that are blacklisted from created directories
  */
-static const std::wstring disallowed_path_chars = L"<>:\"/\\|?*.";
+static const std::wstring_view disallowed_path_chars = L"<>:\"/\\|?*.";
 
 
-std::string sanitizeDirName(const std::string &str, const std::string &optional_prefix)
+std::string sanitizeDirName(std::string_view str, std::string_view optional_prefix)
 {
 	std::wstring safe_name = utf8_to_wide(str);
 
-	for (std::wstring disallowed_name : disallowed_dir_names) {
+	for (auto &disallowed_name : disallowed_dir_names) {
 		if (str_equal(safe_name, disallowed_name, true)) {
 			safe_name = utf8_to_wide(optional_prefix) + safe_name;
 			break;
@@ -1062,7 +1124,7 @@ std::string sanitizeDirName(const std::string &str, const std::string &optional_
 }
 
 
-void safe_print_string(std::ostream &os, const std::string &str)
+void safe_print_string(std::ostream &os, std::string_view str)
 {
 	std::ostream::fmtflags flags = os.flags();
 	os << std::hex;
@@ -1078,7 +1140,7 @@ void safe_print_string(std::ostream &os, const std::string &str)
 }
 
 
-v3f str_to_v3f(const std::string &str)
+v3f str_to_v3f(std::string_view str)
 {
 	v3f value;
 	Strfnd f(str);

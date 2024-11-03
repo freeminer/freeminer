@@ -33,9 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "threading/mutex_auto_lock.h"
 #include <thread>
 #include <mutex>
-#if !defined(_WIN32)  // POSIX
-	#include <unistd.h>
-#endif
 #include "threading/mutex_auto_lock.h"
 #include "util/basic_macros.h"
 #include "util/stream.h"
@@ -82,10 +79,14 @@ public:
 	void logRaw(LogLevel lev, const std::string &text);
 
 	static LogLevel stringToLevel(const std::string &name);
-	static const std::string getLevelLabel(LogLevel lev);
+	static const char *getLevelLabel(LogLevel lev);
 
 	bool hasOutput(LogLevel level) {
 		return m_has_outputs[level].load(std::memory_order_relaxed);
+	}
+
+	bool isLevelSilenced(LogLevel level) {
+		return m_silenced_levels[level].load(std::memory_order_relaxed);
 	}
 
 	static LogColor color_mode;
@@ -96,15 +97,11 @@ private:
 		const std::string &time, const std::string &thread_name,
 		const std::string &payload_text);
 
-	const std::string getThreadName();
+	const std::string &getThreadName();
 
 	std::vector<ILogOutput *> m_outputs[LL_MAX];
 	std::atomic<bool> m_has_outputs[LL_MAX];
-
-	// Should implement atomic loads and stores (even though it's only
-	// written to when one thread has access currently).
-	// Works on all known architectures (x86, ARM, MIPS).
-	volatile bool m_silenced_levels[LL_MAX];
+	std::atomic<bool> m_silenced_levels[LL_MAX];
 	std::map<std::thread::id, std::string> m_thread_names;
 protected:
 	mutable std::mutex m_mutex;
@@ -130,16 +127,7 @@ public:
 
 class StreamLogOutput : public ICombinedLogOutput {
 public:
-	StreamLogOutput(std::ostream &stream) :
-		m_stream(stream)
-	{
-#if !defined(_WIN32)
-		if (&stream == &std::cout)
-			is_tty = isatty(STDOUT_FILENO);
-		else if (&stream == &std::cerr)
-			is_tty = isatty(STDERR_FILENO);
-#endif
-	}
+	StreamLogOutput(std::ostream &stream);
 
 	void logRaw(LogLevel lev, const std::string &line);
 

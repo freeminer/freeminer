@@ -37,23 +37,25 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <algorithm>
 #include <cmath>
-
+#include "client/texturesource.h"
 
 /*
 	MeshMakeData
 */
 
-MeshMakeData::MeshMakeData(Client *client, bool use_shaders,
-		int lod_step, int far_step,
+MeshMakeData::MeshMakeData(const NodeDefManager *ndef, u16 side_length, bool use_shaders
+		, int lod_step, int far_step,
 		NodeContainer *nodecontainer) :
-
-	m_mesh_grid(client->getMeshGrid()),
-	side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) / (pow(2, lod_step))),
-	m_client(client),
+	//side_length((MAP_BLOCKSIZE * m_mesh_grid.cell_size) >> lod_step)
+	side_length(side_length >> lod_step)
+    ,
+	//side_length(side_length),
+	nodedef(ndef),
 	m_use_shaders(use_shaders)
 		,
 		m_vmanip{nodecontainer ? *nodecontainer : m_vmanip_store},
-		side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size),
+		//side_length_data(MAP_BLOCKSIZE * m_mesh_grid.cell_size),
+		side_length_data{side_length},
 		lod_step{lod_step},
 		far_step{far_step},
 		fscale(pow(2, far_step + lod_step))
@@ -161,7 +163,7 @@ u16 getFaceLight(MapNode n, MapNode n2, const NodeDefManager *ndef)
 static u16 getSmoothLightCombined(const v3s16 &p,
 	const std::array<v3s16,8> &dirs, MeshMakeData *data)
 {
-	const NodeDefManager *ndef = data->m_client->ndef();
+	const NodeDefManager *ndef = data->nodedef;
 
 	u16 ambient_occlusion = 0;
 	u16 light_count = 0;
@@ -352,38 +354,12 @@ void final_color_blend(video::SColor *result,
 	Mesh generation helpers
 */
 
-// This table is moved outside getNodeVertexDirs to avoid the compiler using
-// a mutex to initialize this table at runtime right in the hot path.
-// For details search the internet for "cxa_guard_acquire".
-static const v3s16 vertex_dirs_table[] = {
-	// ( 1, 0, 0)
-	v3s16( 1,-1, 1), v3s16( 1,-1,-1),
-	v3s16( 1, 1,-1), v3s16( 1, 1, 1),
-	// ( 0, 1, 0)
-	v3s16( 1, 1,-1), v3s16(-1, 1,-1),
-	v3s16(-1, 1, 1), v3s16( 1, 1, 1),
-	// ( 0, 0, 1)
-	v3s16(-1,-1, 1), v3s16( 1,-1, 1),
-	v3s16( 1, 1, 1), v3s16(-1, 1, 1),
-	// invalid
-	v3s16(), v3s16(), v3s16(), v3s16(),
-	// ( 0, 0,-1)
-	v3s16( 1,-1,-1), v3s16(-1,-1,-1),
-	v3s16(-1, 1,-1), v3s16( 1, 1,-1),
-	// ( 0,-1, 0)
-	v3s16( 1,-1, 1), v3s16(-1,-1, 1),
-	v3s16(-1,-1,-1), v3s16( 1,-1,-1),
-	// (-1, 0, 0)
-	v3s16(-1,-1,-1), v3s16(-1,-1, 1),
-	v3s16(-1, 1, 1), v3s16(-1, 1,-1)
-};
-
 /*
 	Gets nth node tile (0 <= n <= 5).
 */
 void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, TileSpec &tile)
 {
-	const NodeDefManager *ndef = data->m_client->ndef();
+	const NodeDefManager *ndef = data->nodedef;
 	const ContentFeatures &f = ndef->get(mn);
 	tile = f.tiles[tileindex];
 	bool has_crack = p == data->m_crack_pos_relative;
@@ -403,7 +379,7 @@ void getNodeTileN(MapNode mn, const v3s16 &p, u8 tileindex, MeshMakeData *data, 
 */
 void getNodeTile(MapNode mn, const v3s16 &p, const v3s16 &dir, MeshMakeData *data, TileSpec &tile)
 {
-	const NodeDefManager *ndef = data->m_client->ndef();
+	const NodeDefManager *ndef = data->nodedef;
 
 	// Direction must be (1,0,0), (-1,0,0), (0,1,0), (0,-1,0),
 	// (0,0,1), (0,0,-1) or (0,0,0)
@@ -658,16 +634,15 @@ void PartialMeshBuffer::afterDraw() const
 	MapBlockMesh
 */
 
-MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
-	far_step{data->far_step},
-	lod_step{data->lod_step},
-    fscale{data->fscale},
-    timestamp{data->timestamp},
+MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3s16 camera_offset) :
 
-	//no_draw(data->no_draw),
-	m_tsrc(data->m_client->getTextureSource()),
-	m_shdrsrc(data->m_client->getShaderSource()),
-	m_bounding_sphere_center((fscale * data->side_length_data * 0.5f - 0.5f) * BS), // TODO: why _data? 
+		far_step{data->far_step},
+		lod_step{data->lod_step},
+		fscale{data->fscale},
+		timestamp{data->timestamp},
+
+		m_tsrc(client->getTextureSource()), m_shdrsrc(client->getShaderSource()),
+		m_bounding_sphere_center((fscale * data->side_length * 0.5f - 0.5f) * BS),
 	m_animation_force_timer(0), // force initial animation
 	m_last_crack(-1),
 	m_last_daynight_ratio((u32) -1)
@@ -675,29 +650,29 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	for (auto &m : m_mesh)
 		m = new scene::SMesh();
 	m_enable_shaders = data->m_use_shaders;
-	m_enable_vbo = g_settings->getBool("enable_vbo");
 
+	auto mesh_grid = client->getMeshGrid();
 	v3s16 bp = data->m_blockpos;
 	// Only generate minimap mapblocks at even coordinates.
 	if (fscale<=1) // || !data->block->getMesh())
-	if (data->m_mesh_grid.isMeshPos(bp) && data->m_client->getMinimap()) {
-		m_minimap_mapblocks.resize(data->m_mesh_grid.getCellVolume(), nullptr);
+	if (mesh_grid.isMeshPos(bp) && client->getMinimap()) {
+		m_minimap_mapblocks.resize(mesh_grid.getCellVolume(), nullptr);
 		v3s16 ofs;
 
 		// See also client.cpp for the code that reads the array of minimap blocks.
-		for (ofs.Z = 0; ofs.Z < data->m_mesh_grid.cell_size; ofs.Z++)
-		for (ofs.Y = 0; ofs.Y < data->m_mesh_grid.cell_size; ofs.Y++)
-		for (ofs.X = 0; ofs.X < data->m_mesh_grid.cell_size; ofs.X++) {
+		for (ofs.Z = 0; ofs.Z < mesh_grid.cell_size; ofs.Z++)
+		for (ofs.Y = 0; ofs.Y < mesh_grid.cell_size; ofs.Y++)
+		for (ofs.X = 0; ofs.X < mesh_grid.cell_size; ofs.X++) {
 			v3s16 p = (bp + ofs) * MAP_BLOCKSIZE;
 			if (data->m_vmanip.getNodeNoEx(p).getContent() != CONTENT_IGNORE) {
 				MinimapMapblock *block = new MinimapMapblock;
-				m_minimap_mapblocks[data->m_mesh_grid.getOffsetIndex(ofs)] = block;
+				m_minimap_mapblocks[mesh_grid.getOffsetIndex(ofs)] = block;
 				block->getMinimapNodes(&data->m_vmanip, p);
 			}
 		}
 	}
 
-	v3f offset = intToFloat((data->m_blockpos - data->m_mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
+	v3f offset = intToFloat((data->m_blockpos - mesh_grid.getMeshPos(data->m_blockpos)) * MAP_BLOCKSIZE, BS);
 	MeshCollector collector(m_bounding_sphere_center, offset);
 	/*
 		Add special graphics:
@@ -709,7 +684,7 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 	{
 		MapblockMeshGenerator(data, &collector,
-			data->m_client->getSceneManager()->getMeshManipulator()).generate();
+			client->getSceneManager()->getMeshManipulator()).generate();
 	}
 
 	/*
@@ -722,6 +697,8 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_bounding_radius = std::sqrt(collector.m_bounding_radius_sq);
 
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
+		scene::SMesh *mesh = (scene::SMesh *)m_mesh[layer];
+
 		for(u32 i = 0; i < collector.prebuffers[layer].size(); i++)
 		{
 			PreMeshBuffer &p = collector.prebuffers[layer][i];
@@ -815,8 +792,6 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 				p.layer.applyMaterialOptions(material);
 			}
 
-			scene::SMesh *mesh = (scene::SMesh *)m_mesh[layer];
-
 			scene::SMeshBuffer *buf = new scene::SMeshBuffer();
 			buf->Material = material;
 			if (p.layer.isTransparent() && data->far_step <= 0) {
@@ -841,10 +816,9 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 		}
 
-		if (m_mesh[layer]) {
+		if (mesh) {
 			// Use VBO for mesh (this just would set this for ever buffer)
-			if (m_enable_vbo)
-				m_mesh[layer]->setHardwareMappingHint(scene::EHM_STATIC);
+			mesh->setHardwareMappingHint(scene::EHM_STATIC);
 		}
 	}
 
@@ -861,13 +835,18 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 
 MapBlockMesh::~MapBlockMesh()
 {
+	size_t sz = 0;
 	for (scene::IMesh *m : m_mesh) {
+		for (u32 i = 0; i < m->getMeshBufferCount(); i++)
+			sz += m->getMeshBuffer(i)->getSize();
 		if (m)
 		m->drop();
 		m = nullptr;
 	}
 	for (MinimapMapblock *block : m_minimap_mapblocks)
 		delete block;
+
+	porting::TrackFreedMemory(sz);
 }
 
 bool MapBlockMesh::animate(bool faraway, float time, int crack,
@@ -940,15 +919,13 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 
 	// Day-night transition
 	if (!m_enable_shaders && (daynight_ratio != m_last_daynight_ratio)) {
-		// Force reload mesh to VBO
-		if (m_enable_vbo)
-			for (scene::IMesh *m : m_mesh)
-				m->setDirty();
 		video::SColorf day_color;
 		get_sunlight_color(&day_color, daynight_ratio);
 
 		for (auto &daynight_diff : m_daynight_diffs) {
-			scene::IMeshBuffer *buf = m_mesh[daynight_diff.first.first]->
+			auto *mesh = m_mesh[daynight_diff.first.first];
+			mesh->setDirty(scene::EBT_VERTEX); // force reload to VBO
+			scene::IMeshBuffer *buf = mesh->
 				getMeshBuffer(daynight_diff.first.second);
 			buf->setDirty(irr::scene::EBT_VERTEX);
 			video::S3DVertex *vertices = (video::S3DVertex *)buf->getVertices();
@@ -1055,9 +1032,8 @@ video::SColor encode_light(u16 light, u8 emissive_light)
 u8 get_solid_sides(MeshMakeData *data)
 {
 	std::unordered_map<v3s16, u8> results;
-	v3s16 ofs;
 	v3s16 blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
-	const NodeDefManager *ndef = data->m_client->ndef();
+	const NodeDefManager *ndef = data->nodedef;
 
 	u8 result = 0x3F; // all sides solid;
 

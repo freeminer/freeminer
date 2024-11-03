@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lua_api/l_object.h"
 #include <cmath>
+#include <lua.h>
 #include "lua_api/l_internal.h"
 #include "lua_api/l_inventory.h"
 #include "lua_api/l_item.h"
@@ -37,6 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
 #include "server/serverinventorymgr.h"
+#include "server/unit_sao.h"
 
 /*
 	ObjectRef
@@ -114,6 +116,13 @@ int ObjectRef::l_remove(lua_State *L)
 	return 0;
 }
 
+// is_valid(self)
+int ObjectRef::l_is_valid(lua_State *L)
+{
+	lua_pushboolean(L, getobject(checkObject<ObjectRef>(L, 1)) != nullptr);
+	return 1;
+}
+
 // get_pos(self)
 int ObjectRef::l_get_pos(lua_State *L)
 {
@@ -142,6 +151,21 @@ int ObjectRef::l_set_pos(lua_State *L)
 	return 0;
 }
 
+// add_pos(self, pos)
+int ObjectRef::l_add_pos(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
+	ServerActiveObject *sao = getobject(ref);
+	if (sao == nullptr)
+		return 0;
+
+	v3f pos = checkFloatPos(L, 2);
+
+	sao->addPos(pos);
+	return 0;
+}
+
 // move_to(self, pos, continuous)
 int ObjectRef::l_move_to(lua_State *L)
 {
@@ -163,16 +187,21 @@ int ObjectRef::l_punch(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
-	ObjectRef *puncher_ref = checkObject<ObjectRef>(L, 2);
+	ObjectRef *puncher_ref = lua_isnoneornil(L, 2) ? nullptr : checkObject<ObjectRef>(L, 2);
 	ServerActiveObject *sao = getobject(ref);
-	ServerActiveObject *puncher = getobject(puncher_ref);
-	if (sao == nullptr || puncher == nullptr)
+	ServerActiveObject *puncher = puncher_ref ? getobject(puncher_ref) : nullptr;
+	if (sao == nullptr)
 		return 0;
 
 	float time_from_last_punch = readParam<float>(L, 3, 1000000.0f);
 	ToolCapabilities toolcap = read_tool_capabilities(L, 4);
-	v3f dir = readParam<v3f>(L, 5, sao->getBasePosition() - puncher->getBasePosition());
-	dir.normalize();
+	v3f dir;
+	if (puncher) {
+		dir = readParam<v3f>(L, 5, sao->getBasePosition() - puncher->getBasePosition());
+		dir.normalize();
+	} else {
+		dir = readParam<v3f>(L, 5, v3f(0));
+	}
 
 	u32 wear = sao->punch(dir, &toolcap, puncher, time_from_last_punch);
 	lua_pushnumber(L, wear);
@@ -319,7 +348,7 @@ int ObjectRef::l_set_wielded_item(lua_State *L)
 
 	bool success = sao->setWieldedItem(item);
 	if (success && sao->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
-		getServer(L)->SendInventory((PlayerSAO *)sao, true);
+		getServer(L)->SendInventory(((PlayerSAO *)sao)->getPlayer(), true);
 	}
 	lua_pushboolean(L, success);
 	return 1;
@@ -527,16 +556,25 @@ int ObjectRef::l_set_animation_frame_speed(lua_State *L)
 int ObjectRef::l_set_bone_position(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
+
+	log_deprecated(L, "Deprecated call to set_bone_position, use set_bone_override instead", 1, true);
+
 	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
 	ServerActiveObject *sao = getobject(ref);
 	if (sao == nullptr)
 		return 0;
 
-	std::string bone = readParam<std::string>(L, 2, "");
-	v3f position = readParam<v3f>(L, 3, v3f(0, 0, 0));
-	v3f rotation = readParam<v3f>(L, 4, v3f(0, 0, 0));
-
-	sao->setBonePosition(bone, position, rotation);
+	std::string bone;
+	if (!lua_isnoneornil(L, 2))
+		bone = readParam<std::string>(L, 2);
+	BoneOverride props;
+	if (!lua_isnoneornil(L, 3))
+		props.position.vector = check_v3f(L, 3);
+	if (!lua_isnoneornil(L, 4))
+		props.rotation.next = core::quaternion(check_v3f(L, 4) * core::DEGTORAD);
+	props.position.absolute = true;
+	props.rotation.absolute = true;
+	sao->setBoneOverride(bone, props);
 	return 0;
 }
 
@@ -544,20 +582,142 @@ int ObjectRef::l_set_bone_position(lua_State *L)
 int ObjectRef::l_get_bone_position(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
+
+	log_deprecated(L, "Deprecated call to get_bone_position, use get_bone_override instead", 1, true);
+
 	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
 	ServerActiveObject *sao = getobject(ref);
 	if (sao == nullptr)
 		return 0;
 
 	std::string bone = readParam<std::string>(L, 2, "");
-
-	v3f position = v3f(0, 0, 0);
-	v3f rotation = v3f(0, 0, 0);
-	sao->getBonePosition(bone, &position, &rotation);
-
-	push_v3f(L, position);
-	push_v3f(L, rotation);
+	BoneOverride props = sao->getBoneOverride(bone);
+	push_v3f(L, props.position.vector);
+	v3f euler_rot;
+	props.rotation.next.toEuler(euler_rot);
+	push_v3f(L, euler_rot * core::RADTODEG);
 	return 2;
+}
+
+// set_bone_override(self, bone, override)
+int ObjectRef::l_set_bone_override(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
+	ServerActiveObject *sao = getobject(ref);
+	if (sao == NULL)
+		return 0;
+
+	std::string bone = readParam<std::string>(L, 2);
+
+	BoneOverride props;
+	if (lua_isnoneornil(L, 3)) {
+		sao->setBoneOverride(bone, props);
+		return 0;
+	}
+
+	auto read_prop_attrs = [L](auto &prop) {
+		lua_getfield(L, -1, "absolute");
+		prop.absolute = lua_toboolean(L, -1);
+		lua_pop(L, 1);
+
+		lua_getfield(L, -1, "interpolation");
+		if (lua_isnumber(L, -1))
+			prop.interp_timer = lua_tonumber(L, -1);
+		lua_pop(L, 1);
+	};
+
+	lua_getfield(L, 3, "position");
+	if (!lua_isnil(L, -1)) {
+		lua_getfield(L, -1, "vec");
+		if (!lua_isnil(L, -1))
+			props.position.vector = check_v3f(L, -1);
+		lua_pop(L, 1);
+
+		read_prop_attrs(props.position);
+	}
+	lua_pop(L, 1);
+
+	lua_getfield(L, 3, "rotation");
+	if (!lua_isnil(L, -1)) {
+		lua_getfield(L, -1, "vec");
+		if (!lua_isnil(L, -1))
+			props.rotation.next = core::quaternion(check_v3f(L, -1));
+		lua_pop(L, 1);
+
+		read_prop_attrs(props.rotation);
+	}
+	lua_pop(L, 1);
+
+	lua_getfield(L, 3, "scale");
+	if (!lua_isnil(L, -1)) {
+		lua_getfield(L, -1, "vec");
+		props.scale.vector = lua_isnil(L, -1) ? v3f(1) : check_v3f(L, -1);
+		lua_pop(L, 1);
+
+		read_prop_attrs(props.scale);
+	}
+	lua_pop(L, 1);
+
+	sao->setBoneOverride(bone, props);
+	return 0;
+}
+
+static void push_bone_override(lua_State *L, const BoneOverride &props)
+{
+	lua_newtable(L);
+
+	auto push_prop = [L](const char *name, const auto &prop, v3f vec) {
+		lua_newtable(L);
+		push_v3f(L, vec);
+		lua_setfield(L, -2, "vec");
+		lua_pushnumber(L, prop.interp_timer);
+		lua_setfield(L, -2, "interpolation");
+		lua_pushboolean(L, prop.absolute);
+		lua_setfield(L, -2, "absolute");
+		lua_setfield(L, -2, name);
+	};
+
+	push_prop("position", props.position, props.position.vector);
+
+	v3f euler_rot;
+	props.rotation.next.toEuler(euler_rot);
+	push_prop("rotation", props.rotation, euler_rot);
+
+	push_prop("scale", props.scale, props.scale.vector);
+
+	// leave only override table on top of the stack
+}
+
+// get_bone_override(self, bone)
+int ObjectRef::l_get_bone_override(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
+	ServerActiveObject *sao = getobject(ref);
+	if (sao == NULL)
+		return 0;
+
+	std::string bone = readParam<std::string>(L, 2);
+
+	push_bone_override(L, sao->getBoneOverride(bone));
+	return 1;
+}
+
+// get_bone_overrides(self)
+int ObjectRef::l_get_bone_overrides(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
+	ServerActiveObject *co = getobject(ref);
+	if (co == NULL)
+		return 0;
+	lua_newtable(L);
+	for (const auto &bone_pos : co->getBoneOverrides()) {
+		push_bone_override(L, bone_pos.second);
+		lua_setfield(L, -2, bone_pos.first.c_str());
+	}
+	return 1;
 }
 
 // set_attach(self, parent, bone, position, rotation, force_visible)
@@ -670,13 +830,16 @@ int ObjectRef::l_set_properties(lua_State *L)
 
 	auto lock = sao->lock_unique_rec();
 	
-	ObjectProperties *prop = sao->accessObjectProperties();
+	auto *prop = sao->accessObjectProperties();
 	if (prop == nullptr)
 		return 0;
 
+	const auto old = *prop;
 	read_object_properties(L, 2, sao, prop, getServer(L)->idef());
-	prop->validate();
-	sao->notifyObjectPropertiesModified();
+	if (*prop != old) {
+		prop->validate();
+		sao->notifyObjectPropertiesModified();
+	}
 	return 0;
 }
 
@@ -990,7 +1153,7 @@ int ObjectRef::l_get_entity_name(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
 	LuaEntitySAO *entitysao = getluaobject(ref);
-	log_deprecated(L,"Deprecated call to \"get_entity_name");
+	log_deprecated(L, "Deprecated call to \"get_entity_name\"");
 	if (entitysao == nullptr)
 		return 0;
 
@@ -1189,13 +1352,14 @@ int ObjectRef::l_set_fov(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	float degrees = static_cast<f32>(luaL_checknumber(L, 2));
-	bool is_multiplier = readParam<bool>(L, 3, false);
-	float transition_time = lua_isnumber(L, 4) ?
-		static_cast<f32>(luaL_checknumber(L, 4)) : 0.0f;
+	PlayerFovSpec s;
+	s.fov = readParam<float>(L, 2);
+	s.is_multiplier = readParam<bool>(L, 3, false);
+	if (lua_isnumber(L, 4))
+		s.transition_time = readParam<float>(L, 4);
 
-	player->setFov({degrees, is_multiplier, transition_time});
-	getServer(L)->SendPlayerFov(player->getPeerId());
+	if (player->setFov(s))
+		getServer(L)->SendPlayerFov(player->getPeerId());
 	return 0;
 }
 
@@ -1208,7 +1372,7 @@ int ObjectRef::l_get_fov(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	PlayerFovSpec fov_spec = player->getFov();
+	const auto &fov_spec = player->getFov();
 
 	lua_pushnumber(L, fov_spec.fov);
 	lua_pushboolean(L, fov_spec.is_multiplier);
@@ -1312,10 +1476,12 @@ int ObjectRef::l_set_inventory_formspec(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	std::string formspec = luaL_checkstring(L, 2);
+	auto formspec = readParam<std::string_view>(L, 2);
 
-	player->inventory_formspec = formspec;
-	getServer(L)->reportInventoryFormspecModified(player->getName());
+	if (formspec != player->inventory_formspec) {
+		player->inventory_formspec = formspec;
+		getServer(L)->reportInventoryFormspecModified(player->getName());
+	}
 	return 0;
 }
 
@@ -1328,7 +1494,7 @@ int ObjectRef::l_get_inventory_formspec(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	std::string formspec = player->inventory_formspec;
+	auto &formspec = player->inventory_formspec;
 
 	lua_pushlstring(L, formspec.c_str(), formspec.size());
 	return 1;
@@ -1343,10 +1509,12 @@ int ObjectRef::l_set_formspec_prepend(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	std::string formspec = luaL_checkstring(L, 2);
+	auto formspec = readParam<std::string_view>(L, 2);
 
-	player->formspec_prepend = formspec;
-	getServer(L)->reportFormspecPrependModified(player->getName());
+	if (player->formspec_prepend != formspec) {
+		player->formspec_prepend = formspec;
+		getServer(L)->reportFormspecPrependModified(player->getName());
+	}
 	return 0;
 }
 
@@ -1359,7 +1527,7 @@ int ObjectRef::l_get_formspec_prepend(lua_State *L)
 	if (player == nullptr)
 		 return 0;
 
-	std::string formspec = player->formspec_prepend;
+	auto &formspec = player->formspec_prepend;
 
 	lua_pushlstring(L, formspec.c_str(), formspec.size());
 	return 1;
@@ -1372,7 +1540,7 @@ int ObjectRef::l_get_player_control(lua_State *L)
 	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
 	RemotePlayer *player = getplayer(ref);
 
-	lua_newtable(L);
+	lua_createtable(L, 0, 12);
 	if (player == nullptr)
 		return 1;
 
@@ -1446,41 +1614,29 @@ int ObjectRef::l_set_physics_override(lua_State *L)
 	RemotePlayer *player = playersao->getPlayer();
 	auto &phys = player->physics_override;
 
-	if (lua_istable(L, 2)) {
-		bool modified = false;
-		modified |= getfloatfield(L, 2, "speed", phys.speed);
-		modified |= getfloatfield(L, 2, "jump", phys.jump);
-		modified |= getfloatfield(L, 2, "gravity", phys.gravity);
-		modified |= getboolfield(L, 2, "sneak", phys.sneak);
-		modified |= getboolfield(L, 2, "sneak_glitch", phys.sneak_glitch);
-		modified |= getboolfield(L, 2, "new_move", phys.new_move);
-		modified |= getfloatfield(L, 2, "speed_climb", phys.speed_climb);
-		modified |= getfloatfield(L, 2, "speed_crouch", phys.speed_crouch);
-		modified |= getfloatfield(L, 2, "liquid_fluidity", phys.liquid_fluidity);
-		modified |= getfloatfield(L, 2, "liquid_fluidity_smooth", phys.liquid_fluidity_smooth);
-		modified |= getfloatfield(L, 2, "liquid_sink", phys.liquid_sink);
-		modified |= getfloatfield(L, 2, "acceleration_default", phys.acceleration_default);
-		modified |= getfloatfield(L, 2, "acceleration_air", phys.acceleration_air);
-		if (modified)
-			playersao->m_physics_override_sent = false;
-	} else {
-		// old, non-table format
-		// TODO: Remove this code after version 5.4.0
-		log_deprecated(L, "Deprecated use of set_physics_override(num, num, num)");
+	const PlayerPhysicsOverride old = phys;
 
-		if (!lua_isnil(L, 2)) {
-			phys.speed = lua_tonumber(L, 2);
-			playersao->m_physics_override_sent = false;
-		}
-		if (!lua_isnil(L, 3)) {
-			phys.jump = lua_tonumber(L, 3);
-			playersao->m_physics_override_sent = false;
-		}
-		if (!lua_isnil(L, 4)) {
-			phys.gravity = lua_tonumber(L, 4);
-			playersao->m_physics_override_sent = false;
-		}
-	}
+	luaL_checktype(L, 2, LUA_TTABLE);
+
+	getfloatfield(L, 2, "speed", phys.speed);
+	getfloatfield(L, 2, "jump", phys.jump);
+	getfloatfield(L, 2, "gravity", phys.gravity);
+	getboolfield(L, 2, "sneak", phys.sneak);
+	getboolfield(L, 2, "sneak_glitch", phys.sneak_glitch);
+	getboolfield(L, 2, "new_move", phys.new_move);
+	getfloatfield(L, 2, "speed_climb", phys.speed_climb);
+	getfloatfield(L, 2, "speed_crouch", phys.speed_crouch);
+	getfloatfield(L, 2, "liquid_fluidity", phys.liquid_fluidity);
+	getfloatfield(L, 2, "liquid_fluidity_smooth", phys.liquid_fluidity_smooth);
+	getfloatfield(L, 2, "liquid_sink", phys.liquid_sink);
+	getfloatfield(L, 2, "acceleration_default", phys.acceleration_default);
+	getfloatfield(L, 2, "acceleration_air", phys.acceleration_air);
+	getfloatfield(L, 2, "speed_fast", phys.speed_fast);
+	getfloatfield(L, 2, "acceleration_fast", phys.acceleration_fast);
+	getfloatfield(L, 2, "speed_walk", phys.speed_walk);
+
+	if (phys != old)
+		playersao->m_physics_override_sent = false;
 	return 0;
 }
 
@@ -1521,6 +1677,12 @@ int ObjectRef::l_get_physics_override(lua_State *L)
 	lua_setfield(L, -2, "acceleration_default");
 	lua_pushnumber(L, phys.acceleration_air);
 	lua_setfield(L, -2, "acceleration_air");
+	lua_pushnumber(L, phys.speed_fast);
+	lua_setfield(L, -2, "speed_fast");
+	lua_pushnumber(L, phys.acceleration_fast);
+	lua_setfield(L, -2, "acceleration_fast");
+	lua_pushnumber(L, phys.speed_walk);
+	lua_setfield(L, -2, "speed_walk");
 	return 1;
 }
 
@@ -1583,6 +1745,7 @@ int ObjectRef::l_hud_change(lua_State *L)
 	void *value = nullptr;
 	bool ok = read_hud_change(L, stat, elem, &value);
 
+	// FIXME: only send when actually changed
 	if (ok)
 		getServer(L)->hudChange(player, id, stat, value);
 
@@ -1606,6 +1769,28 @@ int ObjectRef::l_hud_get(lua_State *L)
 		return 0;
 
 	push_hud_element(L, elem);
+	return 1;
+}
+
+// hud_get_all(self)
+int ObjectRef::l_hud_get_all(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
+	RemotePlayer *player = getplayer(ref);
+	if (player == nullptr)
+		return 0;
+
+	lua_newtable(L);
+	player->hudApply([&](const std::vector<HudElement*>& hud) {
+		for (std::size_t id = 0; id < hud.size(); ++id) {
+			HudElement *elem = hud[id];
+			if (elem != nullptr) {
+				push_hud_element(L, elem);
+				lua_rawseti(L, -2, id);
+			}
+		}
+	});
 	return 1;
 }
 
@@ -1680,7 +1865,7 @@ int ObjectRef::l_hud_get_hotbar_itemcount(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	lua_pushnumber(L, player->getHotbarItemcount());
+	lua_pushinteger(L, player->getHotbarItemcount());
 	return 1;
 }
 
@@ -1841,15 +2026,21 @@ int ObjectRef::l_set_sky(lua_State *L)
 			if (!lua_isnil(L, -1))
 				sky_params.fog_tint_type = luaL_checkstring(L, -1);
 			lua_pop(L, 1);
-
-			// pop "sky_color" table
-			lua_pop(L, 1);
 		}
+		lua_pop(L, 1);
+
 		lua_getfield(L, 2, "fog");
 		if (lua_istable(L, -1)) {
-			sky_params.fog_distance = getintfield_default(L, -1,  "fog_distance", sky_params.fog_distance);
-			sky_params.fog_start = getfloatfield_default(L, -1,  "fog_start", sky_params.fog_start);
+			sky_params.fog_distance = getintfield_default(L, -1,
+				"fog_distance", sky_params.fog_distance);
+			sky_params.fog_start = getfloatfield_default(L, -1,
+				"fog_start", sky_params.fog_start);
+
+			lua_getfield(L, -1, "fog_color");
+			read_color(L, -1, &sky_params.fog_color);
+			lua_pop(L, 1);
 		}
+		lua_pop(L, 1);
 	} else {
 		// Handle old set_sky calls, and log deprecated:
 		log_deprecated(L, "Deprecated call to set_sky, please check lua_api.md");
@@ -2378,7 +2569,14 @@ int ObjectRef::l_set_lighting(lua_State *L)
 			lighting.exposure.center_weight_power = getfloatfield_default(L, -1, "center_weight_power", lighting.exposure.center_weight_power);
 		}
 		lua_pop(L, 1); // exposure
-	}
+
+		lua_getfield(L, 2, "volumetric_light");
+		if (lua_istable(L, -1)) {
+			getfloatfield(L, -1, "strength", lighting.volumetric_light_strength);
+			lighting.volumetric_light_strength = rangelim(lighting.volumetric_light_strength, 0.0f, 1.0f);
+		}
+		lua_pop(L, 1); // volumetric_light
+}
 
 	getServer(L)->setLighting(player, lighting);
 	return 0;
@@ -2416,6 +2614,10 @@ int ObjectRef::l_get_lighting(lua_State *L)
 	lua_pushnumber(L, lighting.exposure.center_weight_power);
 	lua_setfield(L, -2, "center_weight_power");
 	lua_setfield(L, -2, "exposure");
+	lua_newtable(L); // "volumetric_light"
+	lua_pushnumber(L, lighting.volumetric_light_strength);
+	lua_setfield(L, -2, "strength");
+	lua_setfield(L, -2, "volumetric_light");
 	return 1;
 }
 
@@ -2467,8 +2669,10 @@ const char ObjectRef::className[] = "ObjectRef";
 luaL_Reg ObjectRef::methods[] = {
 	// ServerActiveObject
 	luamethod(ObjectRef, remove),
+	luamethod(ObjectRef, is_valid),
 	luamethod_aliased(ObjectRef, get_pos, getpos),
 	luamethod_aliased(ObjectRef, set_pos, setpos),
+	luamethod(ObjectRef, add_pos),
 	luamethod_aliased(ObjectRef, move_to, moveto),
 	luamethod(ObjectRef, punch),
 	luamethod(ObjectRef, right_click),
@@ -2486,6 +2690,9 @@ luaL_Reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, set_animation_frame_speed),
 	luamethod(ObjectRef, set_bone_position),
 	luamethod(ObjectRef, get_bone_position),
+	luamethod(ObjectRef, set_bone_override),
+	luamethod(ObjectRef, get_bone_override),
+	luamethod(ObjectRef, get_bone_overrides),
 	luamethod(ObjectRef, set_attach),
 	luamethod(ObjectRef, get_attach),
 	luamethod(ObjectRef, get_children),
@@ -2544,6 +2751,7 @@ luaL_Reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, hud_remove),
 	luamethod(ObjectRef, hud_change),
 	luamethod(ObjectRef, hud_get),
+	luamethod(ObjectRef, hud_get_all),
 	luamethod(ObjectRef, hud_set_flags),
 	luamethod(ObjectRef, hud_get_flags),
 	luamethod(ObjectRef, hud_set_hotbar_itemcount),

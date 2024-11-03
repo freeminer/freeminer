@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "inventory.h"
 #include "irrlicht_changes/printing.h"
 #include "log.h"
+#include "debug.h"
 #include "util/serialize.h"
 #include "constants.h" // MAP_BLOCKSIZE
 #include <sstream>

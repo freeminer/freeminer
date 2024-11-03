@@ -56,10 +56,12 @@ Database_LevelDB::Database_LevelDB(const std::string &savedir)
 	m_database.reset(db);
 }
 
-bool Database_LevelDB::saveBlock(const v3s16 &pos, const std::string &data)
+bool Database_LevelDB::saveBlock(const v3s16 &pos, std::string_view data)
 {
+	leveldb::Slice data_s(data.data(), data.size());
 	leveldb::Status status = m_database->Put(leveldb::WriteOptions(),
-			getBlockAsString(pos), data);
+			getBlockAsString(pos), data_s);
+			//i64tos(getBlockAsInteger(pos)), data_s);
 	if (!status.ok()) {
 		warningstream << "saveBlock: LevelDB error saving block "
 			<< pos << ": " << status.ToString() << std::endl;

@@ -75,8 +75,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step)
 		//const auto lock = far_blocks->lock_unique_rec();
 		if (!far_blocks.contains(blockpos_actual)) {
 			far_blocks.emplace(blockpos_actual,
-					std::make_shared<MapBlock>(
-							&m_client->getEnv().getClientMap(), blockpos, m_client));
+					std::make_shared<MapBlock>(blockpos, m_client));
 		}
 	}
 	const auto &block = far_blocks.at(blockpos_actual);
@@ -84,9 +83,10 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, size_t step)
 	{
 		const auto lock = std::lock_guard(block->far_mutex);
 		if (!block->getFarMesh(step)) {
-			MeshMakeData mdat(m_client, false, 0, step, &farcontainer);
+			const auto mesh_grid = m_client->getMeshGrid();
+			MeshMakeData mdat(m_client->ndef(), MAP_BLOCKSIZE * mesh_grid.cell_size, false, 0, step, &farcontainer);
 			mdat.m_blockpos = blockpos_actual;
-			auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
+			const auto mbmsh = std::make_shared<MapBlockMesh>(m_client, &mdat, m_camera_offset);
 			block->setFarMesh(mbmsh, m_client->m_uptime);
 		}
 	}

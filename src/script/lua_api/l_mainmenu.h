@@ -37,7 +37,7 @@ private:
 	 * @param name name of variable to read
 	 * @return string value of requested variable
 	 */
-	static std::string getTextData(lua_State *L, std::string name);
+	static std::string getTextData(lua_State *L, const std::string &name);
 
 	/**
 	 * read an integer variable from gamedata table within lua stack
@@ -45,7 +45,7 @@ private:
 	 * @param name name of variable to read
 	 * @return integer value of requested variable
 	 */
-	static int getIntegerData(lua_State *L, std::string name,bool& valid);
+	static int getIntegerData(lua_State *L, const std::string &name, bool& valid);
 
 	/**
 	 * read a bool variable from gamedata table within lua stack
@@ -53,7 +53,7 @@ private:
 	 * @param name name of variable to read
 	 * @return bool value of requested variable
 	 */
-	static int getBoolData(lua_State *L, std::string name,bool& valid);
+	static int getBoolData(lua_State *L, const std::string &name ,bool& valid);
 
 	/**
 	 * Checks if a path may be modified. Paths in the temp directory or the user
@@ -82,6 +82,8 @@ private:
 
 	static int l_get_mapgen_names(lua_State *L);
 
+	static int l_get_language(lua_State *L);
+
 	static int l_gettext(lua_State *L);
 
 	//packages
@@ -91,6 +93,8 @@ private:
 	static int l_get_content_info(lua_State *L);
 
 	static int l_check_mod_configuration(lua_State *L);
+
+	static int l_get_content_translation(lua_State *L);
 
 	//gui
 
@@ -169,10 +173,6 @@ private:
 	static int l_open_dir(lua_State *L);
 
 	static int l_share_file(lua_State *L);
-
-	static int l_set_once(lua_State *L);
-
-	static int l_get_once(lua_State *L);
 
 	// async
 	static int l_do_async_callback(lua_State *L);

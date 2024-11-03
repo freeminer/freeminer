@@ -29,10 +29,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class BaseException : public std::exception
 {
 public:
-	BaseException(const std::string &s) throw(): m_s(s) {}
+	BaseException(const std::string &s) noexcept: m_s(s) {}
 	~BaseException() throw() = default;
 
-	virtual const char * what() const throw()
+	virtual const char * what() const noexcept
 	{
 		return m_s.c_str();
 	}
@@ -100,6 +100,11 @@ public:
 class PrngException : public BaseException {
 public:
 	PrngException(const std::string &s): BaseException(s) {}
+};
+
+class ShaderException : public BaseException {
+public:
+	ShaderException(const std::string &s): BaseException(s) {}
 };
 
 class ModError : public BaseException {

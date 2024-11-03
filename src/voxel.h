@@ -455,7 +455,7 @@ public:
 			!(getFlagsRefUnsafe(p) & VOXELFLAG_NO_DATA);
 	}
 
-	void setNode(const v3s16 &p, const MapNode &n)
+	void setNode(const v3s16 &p, const MapNode &n, bool important = false)
 	{
 		VoxelArea voxel_area(p);
 		addArea(voxel_area);

@@ -19,10 +19,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #pragma once
 
-#include <map>
 #include <memory>
-#include <vector>
 #include "debug.h"
+#include "util/container.h"
 #include "irrlichttypes.h"
 #include "util/basic_macros.h"
 #include "threading/concurrent_unordered_map.h"
@@ -33,7 +32,6 @@ class TestServerActiveObjectMgr;
 template <typename T>
 class ActiveObjectMgr
 {
-	friend class ::TestClientActiveObjectMgr;
 	friend class ::TestServerActiveObjectMgr;
 
 public:
@@ -55,25 +53,20 @@ public:
 
 	void clear()
 	{
-		while (!m_active_objects.empty())
-			removeObject(m_active_objects.begin()->first);
+		// on_destruct could add new objects so this has to be a loop
+		do {
+			for (auto &it : m_active_objects.iter()) {
+				if (!it.second)
+					continue;
+				m_active_objects.remove(it.first);
+			}
+		} while (!m_active_objects.empty());
 	}
 
 	TPtr getActiveObject(u16 id)
 	{
-		const auto lock = m_active_objects.lock_shared_rec(); //prelock
-		const auto it = m_active_objects.find(id);
-		return it != m_active_objects.end() ? it->second : TPtr{};
-	}
-
-	std::vector<u16> getAllIds() const
-	{
-		std::vector<u16> ids;
-		ids.reserve(m_active_objects.size());
-		for (auto &it : m_active_objects) {
-			ids.push_back(it.first);
-		}
-		return ids;
+		//const auto lock = m_active_objects.lock_shared_rec(); //prelock
+		return m_active_objects.get(id);
 	}
 
 protected:
@@ -92,15 +85,15 @@ protected:
 
 	bool isFreeId(u16 id) const
 	{
-		const auto lock = m_active_objects.lock_shared_rec(); // prelock
-		return id != 0 && m_active_objects.find(id) == m_active_objects.end();
+		//const auto lock = m_active_objects.lock_shared_rec(); // prelock
+		return id != 0 && !m_active_objects.get(id);
 	}
 
-	// ordered to fix #10985
-	// Note: ActiveObjects can access the ActiveObjectMgr. Only erase objects using
-	// removeObject()!
-	//std::map<u16, std::unique_ptr<T>> m_active_objects;
+	// Note that this is ordered to fix #10985
+	ModifySafeMap<u16, std::shared_ptr<T>> m_active_objects;
 
-	concurrent_shared_unordered_map<u16, TPtr> m_active_objects;
+
+//	concurrent_shared_unordered_map<u16, TPtr> m_active_objects;
 	std::vector<TPtr> m_active_objects_deleted;
+
 };

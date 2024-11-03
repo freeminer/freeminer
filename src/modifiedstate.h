@@ -22,7 +22,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-enum ModifiedState
+#include "irrlichttypes.h"
+
+enum ModifiedState : u16
 {
 	// Has not been modified.
 	MOD_STATE_CLEAN = 0,

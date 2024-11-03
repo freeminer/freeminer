@@ -28,7 +28,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "settings.h"
 #include "lighting.h"
-#include <list>
 
 class Client;
 class Environment;
@@ -45,14 +44,33 @@ enum class LocalPlayerAnimation
 	NO_ANIM,
 	WALK_ANIM,
 	DIG_ANIM,
-	WD_ANIM
-}; // no local animation, walking, digging, both
+	WD_ANIM // walking + digging
+};
+
+struct PlayerSettings
+{
+	bool free_move = false;
+	bool pitch_move = false;
+	bool fast_move = false;
+	bool continuous_forward = false;
+	bool always_fly_fast = false;
+	bool aux1_descends = false;
+	bool noclip = false;
+	bool autojump = false;
+
+	void readGlobalSettings();
+	void registerSettingsCallback();
+	void deregisterSettingsCallback();
+
+private:
+	static void settingsChangedCallback(const std::string &name, void *data);
+};
 
 class LocalPlayer : public Player
 {
 public:
 	LocalPlayer(Client *client, const char *name);
-	virtual ~LocalPlayer() = default;
+	virtual ~LocalPlayer();
 
 	// Initialize hp to 0, so that no hearts will be shown if server
 	// doesn't support health points
@@ -148,6 +166,11 @@ public:
 		m_position = position;
 		m_sneak_node_exists = false;
 	}
+	inline void addPosition(const v3f &added_pos)
+	{
+		m_position += added_pos;
+		m_sneak_node_exists = false;
+	}
 
 	v3f getPosition() const { auto lock = lock_shared(); return m_position; }
 
@@ -174,6 +197,8 @@ public:
 	}
 
 	inline Lighting& getLighting() { return m_lighting; }
+
+	inline PlayerSettings &getPlayerSettings() { return m_player_settings; }
 
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
@@ -227,5 +252,7 @@ private:
 
 	GenericCAO *m_cao = nullptr;
 	Client *m_client;
+
+	PlayerSettings m_player_settings;
 	Lighting m_lighting;
 };

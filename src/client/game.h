@@ -25,6 +25,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include <string>
 
+#ifdef SERVER
+#error Do not include in server builds
+#endif
+
 class InputHandler;
 class ChatBackend;
 class RenderingEngine;
@@ -46,6 +50,8 @@ struct CameraOrientation {
 	f32 camera_pitch;  // "up/down"
 };
 
+#define GAME_FALLBACK_TIMEOUT 1.8f
+#define GAME_CONNECTION_TIMEOUT 10.0f
 
 bool the_game(bool *kill,
 		InputHandler *input,
