@@ -1,23 +1,22 @@
 /*
-serverlist.h
 Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
 
-/*
-This file is part of Freeminer.
+Minetest
+Copyright (C) 2022 sfan5 <sfan5@live.de>
 
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or
 (at your option) any later version.
 
-Freeminer  is distributed in the hope that it will be useful,
+This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Lesser General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
 #include "config.h"
@@ -41,6 +40,7 @@ namespace ServerList
 	bool lan_fresh();
 	void addMultiProto(Json::Value &server, const u16 port);
 
+#if USE_CURL
 enum AnnounceAction {AA_START, AA_UPDATE, AA_DELETE};
 void sendAnnounce(AnnounceAction, u16 port,
 		const std::vector<std::string> &clients_names = std::vector<std::string>(),
@@ -48,5 +48,6 @@ void sendAnnounce(AnnounceAction, u16 port,
 		const std::string &gameid = "", const std::string &mg_name = "",
 		const std::vector<ModSpec> &mods = std::vector<ModSpec>(),
 		bool dedicated = false);
+#endif
 
 }
