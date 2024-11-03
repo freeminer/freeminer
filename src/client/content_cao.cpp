@@ -830,18 +830,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 				<<"\" not supported"<<std::endl;
 	}
 
-	/* Set VBO hint */
-	// - if shaders are disabled we modify the mesh often
-	// - sprites are also modified often
-	// - the wieldmesh sets its own hint
-	// - bone transformations do not need to modify the vertex data
-	if (m_enable_shaders && (m_meshnode || m_animated_meshnode)) {
-		if (m_meshnode)
-			m_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
-		if (m_animated_meshnode)
-			m_animated_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
-	}
-
 	/* don't update while punch texture modifier is active */
 	if (m_reset_textures_timer < 0)
 		updateTextures(m_current_texture_modifier);
@@ -1294,6 +1282,16 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 	}
 }
 
+static void setMeshBufferTextureCoords(scene::IMeshBuffer *buf, const v2f *uv, u32 count)
+{
+	assert(buf->getVertexType() == video::EVT_STANDARD);
+	assert(buf->getVertexCount() == count);
+	auto *vertices = static_cast<video::S3DVertex *>(buf->getVertices());
+	for (u32 i = 0; i < count; i++)
+		vertices[i].TCoords = uv[i];
+	buf->setDirty(scene::EBT_VERTEX);
+}
+
 void GenericCAO::updateTexturePos()
 {
 	if(m_spritenode)
@@ -1555,9 +1553,8 @@ void GenericCAO::updateAnimation()
 	if (!m_animated_meshnode)
 		return;
 
-	if (m_animated_meshnode->getStartFrame() != m_animation_range.X ||
-		m_animated_meshnode->getEndFrame() != m_animation_range.Y)
-			m_animated_meshnode->setFrameLoop(m_animation_range.X, m_animation_range.Y);
+	// Note: This sets the current frame as well, (re)starting the animation.
+	m_animated_meshnode->setFrameLoop(m_animation_range.X, m_animation_range.Y);
 	if (m_animated_meshnode->getAnimationSpeed() != m_animation_speed)
 		m_animated_meshnode->setAnimationSpeed(m_animation_speed);
 	m_animated_meshnode->setTransitionTime(m_animation_blend);

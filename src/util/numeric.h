@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "SColor.h"
 #include <matrix4.h>
 #include <cmath>
+#include <algorithm>
 
 //fm:
 #include <algorithm>

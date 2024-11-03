@@ -97,9 +97,8 @@ private:
 struct MeshUpdateResult
 {
 	v3s16 p = v3s16(-1338, -1338, -1338);
-	//MapBlockMesh *mesh = nullptr;
 	MapBlock::mesh_type mesh;
-	u8 solid_sides = 0;
+	u8 solid_sides;
 	std::vector<v3s16> ack_list;
 	bool urgent = false;
 	std::vector<MapBlock *> map_blocks;

@@ -28,8 +28,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "networkexceptions.h"
 
-extern bool socket_enable_debug_output;
-
 void sockets_init();
 void sockets_cleanup();
 

@@ -1573,7 +1573,7 @@ void Game::copyServerClientCache()
 {
 	// It would be possible to let the client directly read the media files
 	// from where the server knows they are. But aside from being more complicated
-	// it would also *not* fill the media cache and cause slower joining of 
+	// it would also *not* fill the media cache and cause slower joining of
 	// remote servers.
 	// (Imagine that you launch a game once locally and then connect to a server.)
 
@@ -3782,8 +3782,12 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 		infostream << "Pointing at " << pointed.dump() << std::endl;
 
 	if (g_touchscreengui) {
-		auto mode = selected_def.touch_interaction.getMode(pointed.type);
+		auto mode = selected_def.touch_interaction.getMode(selected_def, pointed.type);
 		g_touchscreengui->applyContextControls(mode);
+		// applyContextControls may change dig/place input.
+		// Update again so that TOSERVER_INTERACT packets have the correct controls set.
+		player->control.dig = isKeyDown(KeyType::DIG);
+		player->control.place = isKeyDown(KeyType::PLACE);
 	}
 
 	// Note that updating the selection mesh every frame is not particularly efficient,
