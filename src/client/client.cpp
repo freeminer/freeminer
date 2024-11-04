@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <IFileSystem.h>
 #include <json/json.h>
+#include <string>
 #include "client.h"
 #include "client/fm_far_container.h"
 #include "irr_v3d.h"
@@ -1259,7 +1260,7 @@ void Client::Send(NetworkPacket* pkt)
 	g_profiler->add("Client::Send", 1);
 
 	auto &scf = serverCommandFactoryTable[pkt->getCommand()];
-	FATAL_ERROR_IF(!scf.name, "packet type missing in table");
+	FATAL_ERROR_IF(!scf.name, ("packet type missing in table " + std::to_string(pkt->getCommand())).c_str());
 	m_con->Send(PEER_ID_SERVER, scf.channel, pkt, scf.reliable);
 }
 #endif

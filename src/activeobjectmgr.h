@@ -56,8 +56,10 @@ public:
 		// on_destruct could add new objects so this has to be a loop
 		do {
 			for (auto &it : m_active_objects.iter()) {
+/*
 				if (!it.second)
 					continue;
+*/
 				m_active_objects.remove(it.first);
 			}
 		} while (!m_active_objects.empty());

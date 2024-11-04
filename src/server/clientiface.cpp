@@ -847,7 +847,7 @@ void ClientInterface::send(u16 peer_id,u8 channelnum,
 void ClientInterface::send(session_t peer_id, NetworkPacket *pkt)
 {
 	auto &ccf = clientCommandFactoryTable[pkt->getCommand()];
-	FATAL_ERROR_IF(!ccf.name, "packet type missing in table");
+	FATAL_ERROR_IF(!ccf.name, ("packet type missing in table " + std::to_string(pkt->getCommand())).c_str());
 
 	m_con->Send(peer_id, ccf.channel, pkt, ccf.reliable);
 }
@@ -856,7 +856,7 @@ void ClientInterface::sendCustom(session_t peer_id, u8 channel, NetworkPacket *p
 {
 	// check table anyway to prevent mistakes
 	FATAL_ERROR_IF(!clientCommandFactoryTable[pkt->getCommand()].name,
-		"packet type missing in table");
+		("packet type missing in table " + std::to_string(pkt->getCommand())).c_str());
 
 	m_con->Send(peer_id, channel, pkt, reliable);
 }
