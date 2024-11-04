@@ -56,6 +56,33 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <optional>
 #include <string_view>
 
+
+//fm:
+#include "stat.h"
+#include "network/fm_lan.h"
+#include <unordered_set>
+class Circuit;
+class Stat;
+class MapThread;
+class SendBlocksThread;
+class SendFarBlocksThread;
+class LiquidThread;
+class EnvThread;
+class AbmThread;
+class AbmWorldThread;
+class WorldMergeThread;
+
+
+class ClientNotFoundException : public BaseException
+{
+public:
+	ClientNotFoundException(const char *s):
+		BaseException(s)
+	{}
+};
+// ==
+
+
 class ChatEvent;
 struct ChatEventChat;
 struct ChatInterface;
@@ -86,26 +113,6 @@ class ServerInventoryManager;
 struct PackedValue;
 struct ParticleParameters;
 struct ParticleSpawnerParameters;
-
-
-// fm:
-class Circuit;
-class Stat;
-class MapThread;
-class SendBlocksThread;
-class LiquidThread;
-class EnvThread;
-class AbmThread;
-class AbmWorldThread;
-
-class ClientNotFoundException : public BaseException
-{
-public:
-	ClientNotFoundException(const char *s):
-		BaseException(s)
-	{}
-};
-// ==
 
 enum ClientDeletionReason {
 	CDR_LEAVE,
@@ -781,40 +788,56 @@ private:
 private:
 	int save(float dtime, float dedicated_server_step = 0.1, bool breakable = false);
 
-    //fmtodo: remove:
+	//fmtodo: remove:
 	void DenyAccess(session_t peer_id, const std::string &reason);
 
 	void SetBlocksNotSent();
 	void SendFreeminerInit(session_t peer_id, u16 protocol_version);
-	void SendActiveObjectMessages(session_t peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+	void SendActiveObjectMessages(
+			session_t peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+public:
+	void SendBlockFm(session_t peer_id, MapBlockP block, u8 ver, u16 net_proto_version,
+			SerializedBlockCache *cache = nullptr);
+private:
 
-	float m_liquid_send_timer = 0 ;
-	float m_liquid_send_interval = 1;
+	float m_liquid_send_timer{};
+	float m_liquid_send_interval{1};
 
 public:
 	lan_adv lan_adv_server;
-	int m_autoexit = 0;
+	int m_autoexit{};
 	//concurrent_map<v3POS, MapBlock*> m_modified_blocks;
 	//concurrent_map<v3POS, MapBlock*> m_lighting_modified_blocks;
-	bool m_more_threads = false;
-	unsigned int overload = 0;
+	bool m_more_threads{};
+	unsigned int overload{};
 
-	int AsyncRunMapStep(float dtime, float dedicated_server_step = 0.1, bool async=true);
+	int AsyncRunMapStep(
+			float dtime, float dedicated_server_step = 0.1, bool async = true);
 	void deleteDetachedInventory(const std::string &name);
 	void maintenance_start();
 	void maintenance_end();
-	int maintenance_status = 0;
+	int maintenance_status{};
 	void SendPunchPlayer(session_t peer_id, v3f speed);
 
-	void handleCommand_Drawcontrol(NetworkPacket* pkt);
+	void handleCommand_Drawcontrol(NetworkPacket *pkt);
+	void handleCommand_GetBlocks(NetworkPacket *pkt);
+	void handleCommand_InitFm(NetworkPacket *pkt);
+	ServerMap::far_dbases_t far_dbases;
+	uint32_t SendFarBlocks(float dtime);
+
 	Stat stat;
 
 	std::unique_ptr<MapThread> m_map_thread;
 	std::unique_ptr<SendBlocksThread> m_sendblocks_thead;
+	std::unique_ptr<SendFarBlocksThread> m_sendfarblocks_thead;
 	std::unique_ptr<LiquidThread> m_liquid;
 	std::unique_ptr<EnvThread> m_env_thread;
 	std::unique_ptr<AbmThread> m_abm_thread;
 	std::unique_ptr<AbmWorldThread> m_abm_world_thread;
+	std::unique_ptr<WorldMergeThread> m_world_merge_thread;
+	// ==
+
+
 
 	// CSM restrictions byteflag
 	u64 m_csm_restriction_flags = CSMRestrictionFlags::CSM_RF_NONE;
@@ -846,3 +869,10 @@ public:
 	Shuts down when kill is set to true.
 */
 void dedicated_server_loop(Server &server, bool &kill);
+
+
+// fm:
+MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
+		const std::string &savedir, block_step_t step);
+MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &pos);
+// ==

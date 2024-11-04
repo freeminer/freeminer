@@ -94,12 +94,14 @@ if(NOT MSVC)
         set(ENABLE_SYSTEM_JSONCPP 0)
 	endif()
 
-	# FMTODO option(ENABLE_TCMALLOC "Enable tcmalloc" 1)
+	if (NOT (SANITIZE_ADDRESS OR SANITIZE_THREAD OR SANITIZE_MEMORY OR SANITIZE_UNDEFINED))
+		option(ENABLE_TCMALLOC "Enable tcmalloc" 1)
+	endif()
 
 	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
 		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-		if (NOT BUILD_SHARED_LIBS)
+		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
 			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
 		endif()
 
@@ -109,12 +111,11 @@ if(NOT MSVC)
 			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
 		endif()
 
-
 		if(ENABLE_GPERF)
 			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
 		endif()
 
-		if (NOT BUILD_SHARED_LIBS)
+		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
 			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
 		endif()
 
@@ -131,7 +132,19 @@ if(NOT MSVC)
 		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
 	endif()
 
+    # too noisy
+	option(ENABLE_UNWIND "Enable unwind" 0)
+	if(ENABLE_UNWIND)
+
+	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
 	find_library(UNWIND_LIBRARY NAMES unwind)
+
+	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
 
 	if(UNWIND_LIBRARY)
         CHECK_CXX_SOURCE_RUNS("
@@ -151,6 +164,8 @@ if(NOT MSVC)
         # set(USE_UNWIND 1)
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
 		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
+	endif()
+
 	endif()
 
 	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
@@ -369,27 +384,29 @@ option(ENABLE_LEVELDB "Enable LevelDB backend" TRUE)
 set(USE_LEVELDB FALSE)
 
 if(ENABLE_LEVELDB)
-	if(USE_STATIC_LIBRARIES)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
 
 	if (LIBCXX_LIBRARY)
 		set(SYSTEM_LEVELDB 0 CACHE BOOL "")
 	endif()
 
    if (SYSTEM_LEVELDB)
+    if(USE_STATIC_LIBRARIES AND LEVELDB_STATIC)
+	   list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
 	find_library(LEVELDB_LIBRARY NAMES leveldb libleveldb)
 	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
 	find_library(SNAPPY_LIBRARY snappy)
 	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
+
+	if(USE_STATIC_LIBRARIES AND LEVELDB_STATIC)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
    endif()
 
 	message (STATUS "Snappy library: ${SNAPPY_LIBRARY} : ${SNAPPY_INCLUDE_DIR}")
 	message (STATUS "Leveldb library: ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
-
-	if(USE_STATIC_LIBRARIES)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
 
 	if (NOT SNAPPY_INCLUDE_DIR OR NOT SNAPPY_LIBRARY)
 		find_path(SNAPPY_INCLUDE_DIR snappy.h ${PROJECT_SOURCE_DIR}/external/snappy NO_DEFAULT_PATH)
@@ -815,22 +832,25 @@ if (USE_DEBUG_HELPERS)
 endif ()
 
 set(FMcommon_SRCS ${FMcommon_SRCS}
-	circuit.cpp
-	circuit_element.cpp
 	circuit_element_virtual.cpp
-	key_value_storage.cpp
+	circuit_element.cpp
+	circuit.cpp
+	fm_abm_world.cpp
 	fm_bitset.cpp
+	fm_liquid.cpp
+	fm_map.cpp
+	fm_server.cpp
+	fm_world_merge.cpp
+	key_value_storage.cpp
 	log_types.cpp
 	profiler.cpp
 	stat.cpp
-	fm_liquid.cpp
-	fm_map.cpp
+    content_abm_grow_tree.cpp
+    content_abm.cpp
     fm_abm.cpp
     fm_clientiface.cpp
-    content_abm.cpp
-    content_abm_grow_tree.cpp
     fm_serverenvironment.cpp
-)
+	)
 
 
 set(common_SRCS

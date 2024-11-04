@@ -76,6 +76,7 @@ public:
 	int generateTerrain() override;
 	void generateBuildings() override;
 	int getSpawnLevelAtPoint(v2pos_t p) override;
+	int getGroundLevelAtPoint(v2pos_t p) override;
 
 	v3d scale{1, 1, 1};
 	v3d center{0, 0, 0};
@@ -85,7 +86,7 @@ public:
 
 	MapNode layers_get(float value, float max);
 	bool visible(const v3pos_t &p) override;
-	const MapNode &visible_content(const v3pos_t &p) override;
+	const MapNode &visible_content(const v3pos_t &p, bool use_weather) override;
 
 	hgts hgt_reader;
 

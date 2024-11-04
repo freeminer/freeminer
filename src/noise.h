@@ -39,6 +39,26 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 extern FlagDesc flagdesc_noiseparams[];
 
+
+#if MAX_MAP_GENERATION_LIMIT > FARSCALE_LIMIT
+
+template <typename type_scale, typename type_coord>
+inline type_scale farscale(type_scale scale, type_coord z) {
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 1 - (fmod(fabs(z), FARSCALE_LIMIT))                     ) / (FARSCALE_LIMIT * 1) ) * (scale - 1) );
+}
+
+template <typename type_scale, typename type_coord>
+inline type_scale farscale(type_scale scale, type_coord x, type_coord z) {
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 2 - fmod(fabs(x) + fabs(z), FARSCALE_LIMIT*2)           ) / (FARSCALE_LIMIT * 2) ) * (scale - 1) );
+}
+
+template <typename type_scale, typename type_coord>
+inline type_scale farscale(type_scale scale, type_coord x, type_coord y, type_coord z) {
+	return ( 1 + ( 1 - (FARSCALE_LIMIT * 3 - fmod(fabs(x) + fabs(y) + fabs(z), FARSCALE_LIMIT*3) ) / (FARSCALE_LIMIT * 3) ) * (scale - 1) );
+}
+
+#else
+
 template <typename type_scale, typename type_coord>
 inline type_scale farscale(type_scale scale, type_coord z) {
 	return ( 1 + ( 1 - (FARSCALE_LIMIT * 1 - (fabs(z) % FARSCALE_LIMIT)                     ) / (FARSCALE_LIMIT * 1) ) * (scale - 1) );
@@ -53,6 +73,8 @@ template <typename type_scale, typename type_coord>
 inline type_scale farscale(type_scale scale, type_coord x, type_coord y, type_coord z) {
 	return ( 1 + ( 1 - (FARSCALE_LIMIT * 3 - int(fabs(x) + fabs(y) + fabs(z)) % FARSCALE_LIMIT*3 ) / (FARSCALE_LIMIT * 3) ) * (scale - 1) );
 }
+
+#endif
 
 
 // Note: this class is not polymorphic so that its high level of

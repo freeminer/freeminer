@@ -1,6 +1,8 @@
 #include "server/clientiface.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "map.h"
+#include "mapblock.h"
 #include "profiler.h"
 #include "remoteplayer.h"
 #include "server/player_sao.h"
@@ -8,63 +10,28 @@
 #include "server.h"
 #include "emerge.h"
 #include "face_position_cache.h"
+#include "threading/lock.h"
+#include "util/directiontables.h"
 #include "util/numeric.h"
+#include "util/unordered_map_hash.h"
 
-// VERY BAD COPYPASTE FROM clientmap.cpp!
-static bool isOccluded(Map *map, v3pos_t p0, v3pos_t p1, float step, float stepfac,
-		float start_off, float end_off, u32 needed_count, const NodeDefManager *nodemgr,
-		unordered_map_v3pos<bool> &occlude_cache)
-{
-	float d0 = (float)1 * p0.getDistanceFrom(p1);
-	v3pos_t u0 = p1 - p0;
-	v3f uf = v3f(u0.X, u0.Y, u0.Z);
-	uf.normalize();
-	v3f p0f = v3f(p0.X, p0.Y, p0.Z);
-	u32 count = 0;
-	for (float s = start_off; s < d0 + end_off; s += step) {
-		v3f pf = p0f + uf * s;
-		v3pos_t p = floatToInt(pf, 1);
-		bool is_transparent = false;
-		bool cache = true;
-		if (occlude_cache.count(p)) {
-			cache = false;
-			is_transparent = occlude_cache[p];
-		} else {
-			MapNode n = map->getNodeTry(p);
-			if (!n) {
-				return true; // ONE DIFFERENCE FROM clientmap.cpp
-			}
-			const ContentFeatures &f = nodemgr->get(n);
-			if (f.solidness == 0)
-				is_transparent = (f.visual_solidness != 2);
-			else
-				is_transparent = (f.solidness != 2);
-		}
-		if (cache)
-			occlude_cache[p] = is_transparent;
-		if (!is_transparent) {
-			if (count == needed_count)
-				return true;
-			count++;
-		}
-		step *= stepfac;
-	}
-	return false;
-}
 
-int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
-		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime)
+int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
+		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
+		u64 max_ms)
 {
 	auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
+
+	auto end_ms = porting::getTimeMs() + max_ms;
 
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 	m_nearest_unsent_reset_timer += dtime;
 	m_time_from_building += dtime;
 
-/*
+	/*
 	if (m_nearest_unsent_reset) {
 		m_nearest_unsent_reset = 0;
 		m_nearest_unsent_reset_timer = 999;
@@ -91,7 +58,8 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		}
 	*/
 
-	v3opos_t playerpos = sao->getBasePosition();
+	auto playerpos = sao->getBasePosition();
+
 	v3f playerspeed = player->getSpeed();
 	if (playerspeed.getLength() > 120.0 * BS) // cheater or bug, ignore him
 		return 0;
@@ -107,7 +75,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	v3pos_t center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
-	//v3opos_t camera_pos = sao->getEyePosition();
+	auto camera_pos = sao->getEyePosition();
 	v3f camera_dir = v3f(0, 0, 1);
 	camera_dir.rotateYZBy(sao->getLookPitch());
 	camera_dir.rotateXZBy(sao->getRotation().Y);
@@ -139,7 +107,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	if (m_nearest_unsent_reset_timer > 120.0) {
 		m_nearest_unsent_reset_timer = 0;
 		m_nearest_unsent_d = 0;
-		m_nearest_unsent_reset = 0;
+		//m_nearest_unsent_reset = 0;
 		m_nothing_to_send_pause_timer = -1;
 		// infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
@@ -196,7 +164,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	s32 new_nearest_unsent_d = -1;
 
 	// get view range and camera fov from the client
-	s16 wanted_range = sao->getWantedRange();
+	auto wanted_range = sao->getWantedRange();
 	float camera_fov = sao->getFov();
 	// if FOV, wanted_range are not available (old client), fall back to old default
 	/*
@@ -209,7 +177,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			g_settings->getS16("max_block_send_distance");
 	s16 full_d_max = max_block_send_distance;
 	if (wanted_range) {
-		s16 wanted_blocks = wanted_range /* / MAP_BLOCKSIZE */ + 1;
+		s16 wanted_blocks = wanted_range; // /* / MAP_BLOCKSIZE */ + 1;
 		if (wanted_blocks < full_d_max)
 			full_d_max = wanted_blocks;
 	}
@@ -220,7 +188,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 	   MYMIN(g_settings->getS16("block_send_optimize_distance"), wanted_range);
 	*/
 
-	const s16 d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
+	const opos_t d_blocks_in_sight = full_d_max * BS * MAP_BLOCKSIZE;
 	// infostream << "Fov from client " << camera_fov << " full_d_max " << full_d_max <<
 	// std::endl;
 
@@ -253,17 +221,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 	auto cam_pos_nodes = floatToInt(playerpos, BS);
 
-	auto nodemgr = env->getGameDef()->getNodeDefManager();
-	MapNode n;
-	{
-#if !ENABLE_THREADS
-		auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-		n = env->getMap().getNodeTry(cam_pos_nodes);
-	}
-
-	if (n && nodemgr->get(n).solidness == 2)
-		occlusion_culling_enabled = false;
+	//const auto *nodemgr = env->getGameDef()->getNodeDefManager();
 
 	unordered_map_v3pos<bool> occlude_cache;
 	s16 d;
@@ -325,7 +283,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 		}
 
 		for (auto li = list.begin(); li != list.end(); ++li) {
-			v3pos_t p = *li + center;
+			const v3pos_t p = *li + center;
 
 			/*
 				Send throttling
@@ -360,32 +318,56 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 
 			// infostream<<"d="<<d<<std::endl;
 
+			double block_sent = 0;
+			{
+				const auto lock = m_blocks_sent.lock_shared_rec();
+				if (const auto it = m_blocks_sent.find(p); it != m_blocks_sent.end()) {
+					block_sent = it->second;
+				}
+			}
+
 			/*
 				Don't generate or send if not in sight
 				FIXME This only works if the client uses a small enough
 				FOV setting. The default of 72 degrees is fine.
 			*/
-			/*
-			if (can_skip && isBlockInSight(p, camera_pos, camera_dir, camera_fov,
-									d_blocks_in_sight) == false) {
-				// DUMP(p, can_skip, "nosight");
+			if (block_sent > 0 && can_skip &&
+					isBlockInSight(p, camera_pos, camera_dir, camera_fov,
+							d_blocks_in_sight) == false) {
+				// DUMP(p, can_skip, block_sent, "nosight");
 				continue;
 			}
-			*/
 			/*
 				Don't send already sent blocks
 			*/
-			double block_sent = 0;
 			{
-				auto lock = m_blocks_sent.lock_shared_rec();
-				block_sent = m_blocks_sent.contains(p) ? m_blocks_sent.get(p) : 0;
+				auto dspd = d / (speed_in_blocks ? speed_in_blocks : 1);
+				if (block_sent > 0 && (/* (block_overflow && d>1) || */ block_sent + 1 +
+													  (d <= 2 ? 0 : dspd * dspd) >
+											  m_uptime)) {
+					continue;
+				}
 			}
 
-			if (block_sent > 0 &&
-					(/* (block_overflow && d>1) || */ block_sent + (d <= 2 ? 1 : d * d) >
-										  m_uptime)) {
-				// DUMP(p, block_sent, d, "ddd");
-				continue;
+			if (d >= 2 && can_skip && occlusion_culling_enabled) {
+				const auto visible = [&](const v3pos_t &p) {
+					ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
+					auto cpn = p * MAP_BLOCKSIZE;
+
+					cpn += v3pos_t(
+							MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
+
+					v3pos_t spn = cam_pos_nodes + v3pos_t(0, 0, 0);
+					if (env->getMap().isBlockOccluded(p * MAP_BLOCKSIZE, spn)) {
+						g_profiler->add("SMap: Occlusion skip", 1);
+						++blocks_occlusion_culled;
+						return false;
+					}
+					return true;
+				};
+				if (!visible(p)) {
+					continue;
+				}
 			}
 
 			/*
@@ -408,77 +390,27 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			// bool surely_not_found_on_disk = false;
 			// bool block_is_invalid = false;
 			if (block) {
-
-				/*if (d > 3 && block->content_only == CONTENT_AIR) {
-					continue;
-				}*/
+				if (d >= 2 && block->content_only == CONTENT_AIR) {
+					uint8_t not_air = 0;
+					for (const auto &dir : g_6dirs) {
+						if (const auto *block_near =
+										env->getMap().getBlockNoCreateNoEx(p + dir)) {
+							if (block_near->content_only &&
+									block_near->content_only != CONTENT_AIR) {
+								++not_air;
+								break;
+							}
+						}
+					}
+					if (!not_air) {
+						continue;
+					}
+				}
 
 				if (block_sent > 0 && block_sent >= block->m_changed_timestamp) {
 					// DUMP(p, block_sent, block->m_changed_timestamp,
 					// block->getDiskTimestamp(), block->getActualTimestamp(), "ch");
 					continue;
-				}
-
-				if (occlusion_culling_enabled) {
-					ScopeProfiler sp(g_profiler, "SMap: Occusion calls");
-					// Occlusion culling
-					auto cpn = p * MAP_BLOCKSIZE;
-
-					// No occlusion culling when free_move is on and camera is
-					// inside ground
-					cpn += v3pos_t(
-							MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
-
-					float step = 1;
-					float stepfac = 1.3;
-					float startoff = 5;
-					float endoff = -MAP_BLOCKSIZE;
-					v3pos_t spn = cam_pos_nodes + v3pos_t(0, 0, 0);
-					s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
-					u32 needed_count = 1;
-#if !ENABLE_THREADS
-					auto lock = env->getServerMap().m_nothread_locker.lock_shared_rec();
-#endif
-					// VERY BAD COPYPASTE FROM clientmap.cpp!
-					if (can_skip && occlusion_culling_enabled &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(0, 0, 0), step,
-									stepfac, startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, bs2, -bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(bs2, -bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(bs2, -bs2, -bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn, cpn + v3pos_t(-bs2, bs2, bs2),
-									step, stepfac, startoff, endoff, needed_count,
-									nodemgr, occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(-bs2, bs2, -bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(-bs2, -bs2, bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache) &&
-							isOccluded(&env->getMap(), spn,
-									cpn + v3pos_t(-bs2, -bs2, -bs2), step, stepfac,
-									startoff, endoff, needed_count, nodemgr,
-									occlude_cache)) {
-						// infostream<<" occlusion player="<<cam_pos_nodes<<" d="<<d<<"
-						// block="<<cpn<<"
-						// total="<<blocks_occlusion_culled<<"/"<<num_blocks_selected<<std::endl;
-						g_profiler->add("SMap: Occlusion skip", 1);
-						blocks_occlusion_culled++;
-						continue;
-					}
 				}
 
 				// Reset usage timer, this block will be of use in the future.
@@ -543,7 +475,7 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 				// infostream<<"start gen d="<<d<<" p="<<p<<"
 				// notfound="<<surely_not_found_on_disk<<" invalid="<< block_is_invalid<<"
 				// block="<<block<<" generate="<<generate<<std::endl;
-				if (generate || !env->getServerMap().m_db_miss.count(p)) {
+				if (generate || !env->getServerMap().m_db_miss.contains(p)) {
 
 					if (emerge->enqueueBlockEmerge(peer_id, p, generate)) {
 						if (nearest_emerged_d == -1)
@@ -579,6 +511,10 @@ int RemoteClient::GetNextBlocks(ServerEnvironment *env, EmergeManager *emerge,
 			else
 				num_blocks_selected += 1;
 		}
+
+		if (porting::getTimeMs() > end_ms) {
+			break;
+		}
 	}
 queue_full_break:
 
@@ -597,33 +533,99 @@ queue_full_break:
 			m_nothing_to_send_pause_timer = 1;
 		}
 	} else {
-	if (!num_blocks_selected && !num_blocks_air && d_start <= d) {
-		// new_nearest_unsent_d = 0;
-		m_nothing_to_send_pause_timer = 1.0;
-	}
-
-	// If nothing was found for sending and nothing was queued for
-	// emerging, continue next time browsing from here
-	if (nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d) {
-		new_nearest_unsent_d = nearest_emerged_d;
-	} else if (nearest_emergefull_d != -1) {
-		new_nearest_unsent_d = nearest_emergefull_d;
-	} else {
-		if (d > full_d_max) {
-			new_nearest_unsent_d = 0;
-			m_nothing_to_send_pause_timer = 10.0;
-		} else {
-			if (nearest_sent_d != -1)
-				new_nearest_unsent_d = nearest_sent_d;
-			else
-				new_nearest_unsent_d = d;
+		if (!num_blocks_selected && !num_blocks_air && d_start <= d) {
+			// new_nearest_unsent_d = 0;
+			m_nothing_to_send_pause_timer = 1.0;
 		}
-	}
 
-	if (new_nearest_unsent_d != -1) {
-		m_nearest_unsent_d = new_nearest_unsent_d;
+		// If nothing was found for sending and nothing was queued for
+		// emerging, continue next time browsing from here
+		if (nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d) {
+			new_nearest_unsent_d = nearest_emerged_d;
+		} else if (nearest_emergefull_d != -1) {
+			new_nearest_unsent_d = nearest_emergefull_d;
+		} else {
+			if (d > full_d_max) {
+				new_nearest_unsent_d = 0;
+				m_nothing_to_send_pause_timer = 10.0;
+			} else {
+				if (nearest_sent_d != -1)
+					new_nearest_unsent_d = nearest_sent_d;
+				else
+					new_nearest_unsent_d = d;
+			}
+		}
+
+		if (new_nearest_unsent_d != -1) {
+			m_nearest_unsent_d = new_nearest_unsent_d;
 		}
 	}
 
 	return num_blocks_selected - num_blocks_sending;
 }
+
+uint32_t RemoteClient::SendFarBlocks()
+{
+	uint16_t sent_cnt{};
+	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
+	{
+		std::multimap<int32_t, MapBlockP> ordered;
+		constexpr uint16_t send_max{50};
+		for (auto &far_blocks : far_blocks_requested) {
+			for (auto &[bpos, step_sent] : far_blocks) {
+				auto &[step, sent_ts] = step_sent;
+				if (sent_ts <= 0) {
+					continue;
+				}
+				if (step >= FARMESH_STEP_MAX - 1) {
+					sent_ts = -1;
+					continue;
+				}
+				const auto dbase = GetFarDatabase(m_env->m_map->dbase,
+						m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
+				if (!dbase) {
+					sent_ts = -1;
+					continue;
+				}
+				const auto block = loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
+				if (!block) {
+					sent_ts = -1;
+					continue;
+				}
+
+				g_profiler->add("Server: Far blocks sent", 1);
+
+				block->far_step = step;
+				sent_ts = 0;
+				ordered.emplace(sent_ts - step, block);
+
+				if (++sent_cnt > send_max) {
+					break;
+				}
+			}
+		}
+
+		// First with larger iteration and smaller step
+
+		for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
+			//	for (const auto &[key, block] : std::views::reverse(ordered)) {
+			m_env->m_server->SendBlockFm(
+					peer_id, it->second, serialization_version, net_proto_version);
+		}
+	}
+	return sent_cnt;
+}
+/*
+RemoteClientVector ClientInterface::getClientList()
+{
+	auto lock = m_clients.lock_unique_rec();
+	RemoteClientVector clients;
+	for (const auto &ir : m_clients) {
+		const auto &c = ir.second;
+		if (!c)
+			continue;
+		clients.emplace_back(c);
+	}
+	return clients;
+}
+*/

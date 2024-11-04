@@ -36,17 +36,17 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodetimer.h"
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
-#include "threading/lock.h"
 #include "settings.h"
+
+class Circuit;
+class ServerEnvironment;
+struct ActiveABM;
 
 class Map;
 class NodeMetadataList;
 class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
-class Circuit;
-class ServerEnvironment;
-struct ActiveABM;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -97,7 +97,7 @@ enum ModReason : u32 {
 ////
 
 class MapBlock
- : public locker<>
+: public locker<> // TODO: find all deadlocks and change to shared_locker
 {
 public:
 	MapBlock(v3s16 pos, IGameDef *gamedef);
@@ -138,13 +138,6 @@ public:
 		//raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_REALLOCATE);
 	}
 
-	/*
-		Flags
-	*/
-
-	//enum modified_light {modified_light_no = 0, modified_light_yes};
-	//void raiseModified(u32 mod, modified_light light = modified_light_no, bool important = false);
-	
 	MapNode* getData()
 	{
 		return data;
@@ -175,10 +168,12 @@ public:
 		return m_modified;
 	}
 
+/*
 	inline u32 getModifiedReason()
 	{
 		return m_modified_reason;
 	}
+*/
 
 	std::string getModifiedReasonString();
 
@@ -338,6 +333,8 @@ public:
 		setNode(p.X, p.Y, p.Z, n);
 	}
 */
+
+	void setNode(const v3pos_t& p, const MapNode& n, bool important = false);
 
 	////
 	//// Non-checking variants of the above
@@ -519,7 +516,6 @@ public:
 	}
 
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
-	using block_step_t = uint8_t;
 
 #if BUILD_CLIENT // Only on client
 	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
@@ -527,18 +523,19 @@ public:
 	const MapBlock::mesh_type getFarMesh(block_step_t step);
 	void setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step);
 	std::mutex far_mutex;
-	u32 mesh_requested_timestamp {};
-	uint8_t mesh_requested_step {};
+	uint32_t mesh_requested_timestamp{};
+	block_step_t mesh_requested_step{};
 
 private:
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
 	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 
-public:	
+public:
 #endif
 
 	block_step_t far_step{};
+	uint32_t far_make_mesh_timestamp{static_cast<uint32_t>(-1)};
 	std::atomic_uint32_t far_iteration{};
 	std::atomic_bool creating_far_mesh{};
 	std::atomic_short heat{};
@@ -552,12 +549,12 @@ public:
 
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp{};
-	u32 m_next_analyze_timestamp{};
+	uint32_t m_next_analyze_timestamp{};
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
 	size_t abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate = 0);
-	u32 m_abm_timestamp = 0;
+	uint32_t m_abm_timestamp{};
 
 	u32 getActualTimestamp()
 	{
@@ -602,14 +599,12 @@ public:
 		return getNodeNoLock(p);
 	}
 
-	void setNode(const v3pos_t &p, MapNode &n, bool important = false);
-
-	MapNode &getNodeNoLock(const v3pos_t &p)
+	MapNode &getNodeNoLock(v3pos_t p)
 	{
-		return data[p.Z * zstride + p.Y * ystride + p.X];
+		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
 
-	inline void setNodeNoLock(const v3pos_t & p, MapNode n, bool important = false)
+	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
 	{
 		data[p.Z * zstride + p.Y * ystride + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE, important);
@@ -792,6 +787,6 @@ inline void getNodeBlockPosWithOffset(v3s16 p, v3s16 &block, v3s16 &offset)
 */
 std::string analyze_block(MapBlock *block);
 
-//typedef std::shared_ptr<MapBlock> MapBlockP;
-typedef MapBlock * MapBlockP;
+using MapBlockP = std::shared_ptr<MapBlock>;
+// using MapBlockP = MapBlock *;
 

@@ -20,6 +20,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "network/fm_connection_use.h"
+
 #include <sstream>
 #include "clientiface.h"
 #include "debug.h"
@@ -34,7 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
-#include "log_types.h"
+#include "log.h"
 #include "util/srp.h"
 #include "util/string.h"
 #include "face_position_cache.h"
@@ -106,15 +108,15 @@ LuaEntitySAO *getAttachedObject(PlayerSAO *sao, ServerEnvironment *env)
 	return dynamic_cast<LuaEntitySAO *>(ao);
 }
 
-#if WTF
 int RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
 		std::vector<PrioritySortedBlockTransfer> &dest,
-		double m_uptime
-)
+		u64 max_ms)
 {
+	auto end_ms = porting::getTimeMs() + max_ms;
+	
 	// Increment timers
 	m_nothing_to_send_pause_timer -= dtime;
 	m_map_send_completion_timer += dtime;
@@ -130,24 +132,22 @@ int RemoteClient::GetNextBlocks (
 	}
 
 	if (m_nothing_to_send_pause_timer >= 0)
-		return;
+		return 0;
 
 	RemotePlayer *player = env->getPlayer(peer_id);
 	// This can happen sometimes; clients and players are not in perfect sync.
 	if (!player)
-		return;
+		return 0;
 
 	PlayerSAO *sao = player->getPlayerSAO();
 	if (!sao)
-		return;
+		return 0;
 
-/*
 	// Won't send anything if already sending
 	if (m_blocks_sending.size() >= m_max_simul_sends) {
 		//infostream<<"Not sending any blocks, Queue full."<<std::endl;
-		return;
+		return 0;
 	}
-*/
 
 	v3f playerpos = sao->getBasePosition();
 	// if the player is attached, get the velocity from the attached object
@@ -183,20 +183,12 @@ int RemoteClient::GetNextBlocks (
 	if (m_time_from_building < m_min_time_from_building) {
 		max_simul_sends_usually
 			= LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS;
-		*/
-		if(d_start<=1)
-			d_start=2;
-		++m_nearest_unsent_reset_want;
-	} else if (m_nearest_unsent_reset_want) {
-		m_nearest_unsent_reset_want = 0;
-		m_nearest_unsent_reset_timer = 999; //magical number more than ^ other number 120 - need to reset d on next iteration
 	}
 
 	/*
 		Number of blocks sending + number of blocks selected for sending
 	*/
-	u32 num_blocks_selected = 0;
-	u32 num_blocks_sending = 0;
+	u32 num_blocks_selected = m_blocks_sending.size();
 
 	/*
 		next time d will be continued from the d from which the nearest
@@ -234,7 +226,7 @@ int RemoteClient::GetNextBlocks (
 	if (m_nearest_unsent_d > 0) {
 		// make sure any blocks modified since the last time we sent blocks are resent
 		for (const v3s16 &p : m_blocks_modified) {
-			m_nearest_unsent_d = std::min(m_nearest_unsent_d, center.getDistanceFrom(p));
+			m_nearest_unsent_d = std::min(m_nearest_unsent_d.load(std::memory_order::relaxed), center.getDistanceFrom(p));
 		}
 	}
 	m_blocks_modified.clear();
@@ -267,10 +259,6 @@ int RemoteClient::GetNextBlocks (
 	s16 max_d_increment_at_time = 2;
 	if (d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
-	/*if(d_max_gen > d_start+2)
-		d_max_gen = d_start+2;*/
-
-	//infostream<<"Starting from "<<d_start<<std::endl;
 
 	// cos(angle between velocity and camera) * |velocity|
 	// Limit to 0.0f in case player moves backwards.
@@ -321,8 +309,6 @@ int RemoteClient::GetNextBlocks (
 
 			// If this is true, inexistent block will be made from scratch
 			bool generate = d <= d_max_gen;
-
-			//infostream<<"d="<<d<<std::endl;
 
 			/*
 				Don't generate or send if not in sight
@@ -395,7 +381,6 @@ int RemoteClient::GetNextBlocks (
 				m_blocks_occ.insert(p);
 				continue;
 			}
-			*/
 
 			/*
 				Add inexistent block to emerge queue.
@@ -408,9 +393,6 @@ int RemoteClient::GetNextBlocks (
 					if (nearest_emergefull_d == -1)
 						nearest_emergefull_d = d;
 					goto queue_full_break;
-				}
-				} else {
-					//infostream << "skip tryload " << p << "\n";
 				}
 
 				// get next one.
@@ -427,21 +409,14 @@ int RemoteClient::GetNextBlocks (
 
 			dest.push_back(q);
 
-			if (block->content_only == CONTENT_AIR)
-				++num_blocks_air;
-			else
 			num_blocks_selected += 1;
+		}
+
+		if (porting::getTimeMs() > end_ms) {
+			break;
 		}
 	}
 queue_full_break:
-
-	//infostream<<"Stopped at "<<d<<" d_start="<<d_start<< " d_max="<<d_max<<" nearest_emerged_d="<<nearest_emerged_d<<" nearest_emergefull_d="<<nearest_emergefull_d<< " new_nearest_unsent_d="<<new_nearest_unsent_d<< " sel="<<num_blocks_selected<< "+"<<num_blocks_sending << " air="<<num_blocks_air<< " culled=" << blocks_occlusion_culled <<" cEN="<<occlusion_culling_enabled<<std::endl;
-	num_blocks_selected += num_blocks_sending;
-	if(!num_blocks_selected && !num_blocks_air && d_start <= d) {
-		//new_nearest_unsent_d = 0;
-		m_nothing_to_send_pause_timer = 1.0;
-	}
-		
 
 	// If nothing was found for sending and nothing was queued for
 	// emerging, continue next time browsing from here
@@ -470,10 +445,8 @@ queue_full_break:
 		// if the distance has changed, clear the occlusion cache
 		m_blocks_occ.clear();
 	}
-	return num_blocks_selected - num_blocks_sending;
+	return num_blocks_selected;
 }
-
-#endif
 
 /*
 void RemoteClient::GotBlock(v3s16 p)
@@ -507,8 +480,8 @@ void RemoteClient::SentBlock(v3s16 p)
 
 void RemoteClient::SetBlockNotSent(v3s16 p)
 {
-	++m_nearest_unsent_reset;
 /*
+	++m_nearest_unsent_reset;
 	m_nothing_to_send_pause_timer = 0;
 
 	// remove the block from sending and sent sets,
@@ -520,13 +493,16 @@ void RemoteClient::SetBlockNotSent(v3s16 p)
 
 void RemoteClient::SetBlocksNotSent()
 {
+/*	
 	++m_nearest_unsent_reset;
+*/
 }
 
 void RemoteClient::SetBlocksNotSent(const std::vector<v3s16> &blocks)
 {
-	++m_nearest_unsent_reset;
 /*
+	++m_nearest_unsent_reset;
+
 	m_nothing_to_send_pause_timer = 0;
 
 	for (v3s16 p : blocks) {
@@ -538,7 +514,7 @@ void RemoteClient::SetBlocksNotSent(const std::vector<v3s16> &blocks)
 */
 }
 
-void RemoteClient::SetBlockDeleted(v3bpos_t p) {
+void RemoteClient::SetBlockDeleted(const v3bpos_t & p) {
 	m_blocks_sent.erase(p);
 }
 
@@ -852,8 +828,6 @@ void ClientInterface::UpdatePlayerList()
 	}
 }
 
-
-
 #if !MINETEST_PROTO
 void ClientInterface::send(u16 peer_id,u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
@@ -1050,6 +1024,7 @@ void ClientInterface::CreateClient(session_t peer_id)
 
 	// Create client
 	auto client = std::shared_ptr<RemoteClient>(new RemoteClient());
+    client->m_env = m_env;
 	client->peer_id = peer_id;
 	m_clients.insert_or_assign(client->peer_id, client);
 }

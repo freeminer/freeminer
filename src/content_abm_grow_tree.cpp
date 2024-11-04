@@ -1048,7 +1048,7 @@ public:
 						(activate || !myrand_range(0, 10)))) {
 			//if (grow_debug) DUMP("lv die", p.X, p.Y, p.Z, have_tree_or_soil, n_water_level, l, heat);
 			//if (!grow_debug_no_die)
-			map->removeNodeWithEvent(pos, false);
+			map->removeNodeWithEvent(pos, true, false);
 		} else if (n_water_level != n_water_level_orig) {
 			// save if self level changed
 			set_leaves_water_level(n, n_water_level);

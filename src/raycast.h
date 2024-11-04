@@ -32,6 +32,12 @@ struct RaycastSort
 class RaycastState
 {
 public:
+
+	// fm:
+	bool finished = false;
+	uint64_t end_ms = 0;
+	// ==
+
 	/*!
 	 * Creates a raycast.
 	 * @param objects_pointable if false, only nodes will be found

@@ -29,9 +29,13 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	null_command_handler, // 0x00 (never use this)
 	null_command_handler, // 0x01
 	{ "TOSERVER_INIT",                     TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Init }, // 0x02
-	null_command_handler, // 0x03
-	null_command_handler, // 0x04
-	null_command_handler, // 0x05
+
+// fm:
+	{ "TOSERVER_INIT_FM",                  TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_InitFm }, // 0x03
+	{ "TOSERVER_GET_BLOCKS",               TOSERVER_STATE_INGAME,  &Server::handleCommand_GetBlocks}, // 0x04
+	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x05
+// ==
+
 	null_command_handler, // 0x06
 	null_command_handler, // 0x07
 	null_command_handler, // 0x08
@@ -94,9 +98,7 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_HAVE_MEDIA",               TOSERVER_STATE_INGAME, &Server::handleCommand_HaveMedia }, // 0x41
 	null_command_handler, // 0x42
 	{ "TOSERVER_CLIENT_READY",             TOSERVER_STATE_STARTUP, &Server::handleCommand_ClientReady }, // 0x43
-
-	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x44
-
+	null_command_handler, // 0x44
 	null_command_handler, // 0x45
 	null_command_handler, // 0x46
 	null_command_handler, // 0x47
@@ -146,7 +148,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	null_command_factory, // 0x0F
 	null_command_factory, // 0x10
 	null_command_factory, // 0x11
-	null_command_factory, // 0x12
+	{ "TOCLIENT_BLOCKDATA_FM",                2, true }, // 0x20
 	null_command_factory, // 0x13
 	null_command_factory, // 0x14
 	null_command_factory, // 0x15
@@ -180,7 +182,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD", 0, true }, // 0x31
 	{ "TOCLIENT_ACTIVE_OBJECT_MESSAGES",   0, true }, // 0x32 (may be sent as unrel over channel 1 too)
 	{ "TOCLIENT_HP",                       0, true }, // 0x33
-	{ "TOCLIENT_MOVE_PLAYER",              0, true }, // 0x34
+	{ "TOCLIENT_MOVE_PLAYER",              0, false }, // 0x34
 	null_command_factory, // 0x35
 	{ "TOCLIENT_FOV",                      0, true }, // 0x36
 	{ "TOCLIENT_DEATHSCREEN",              0, true }, // 0x37
@@ -197,8 +199,8 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_INVENTORY_FORMSPEC",       0, true }, // 0x42
 	{ "TOCLIENT_DETACHED_INVENTORY",       0, true }, // 0x43
 	{ "TOCLIENT_SHOW_FORMSPEC",            0, true }, // 0x44
-	{ "TOCLIENT_MOVEMENT",                 0, true }, // 0x45
-	{ "TOCLIENT_SPAWN_PARTICLE",           0, true }, // 0x46
+	{ "TOCLIENT_MOVEMENT",                 0, false }, // 0x45
+	{ "TOCLIENT_SPAWN_PARTICLE",           0, false }, // 0x46
 	{ "TOCLIENT_ADD_PARTICLESPAWNER",      0, true }, // 0x47
 	null_command_factory, // 0x48
 	{ "TOCLIENT_HUDADD",                   1, true }, // 0x49

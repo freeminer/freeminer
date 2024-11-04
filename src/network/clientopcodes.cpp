@@ -44,7 +44,7 @@ const ToClientCommandHandler toClientCommandTable[TOCLIENT_NUM_MSG_TYPES] =
 	null_command_handler, // 0x0F
 	null_command_handler, // 0x10
 	{ "TOCLIENT_PUNCH_PLAYER",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_PunchPlayer }, // 0x11
-	null_command_handler,
+	{ "TOCLIENT_BLOCKDATA_FM",             TOCLIENT_STATE_CONNECTED, &Client::handleCommand_BlockDataFm }, // 0x12
 	null_command_handler,
 	null_command_handler,
 	null_command_handler,
@@ -145,7 +145,7 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 	null_command_factory, // 0x00
 	null_command_factory, // 0x01
 	{ "TOSERVER_INIT",               1, false }, // 0x02
-	null_command_factory, // 0x03
+	{ "TOSERVER_GET_BLOCKS",         0, false }, // 0x03
 	null_command_factory, // 0x04
 	null_command_factory, // 0x05
 	null_command_factory, // 0x06

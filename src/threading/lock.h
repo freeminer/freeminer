@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../threading/mutex.h"
 using use_mutex = std::mutex;
 using try_shared_mutex = use_mutex;
-using try_shared_lock = std::unique_lock<try_shared_mutex>;
+using maybe_shared_lock = std::unique_lock<try_shared_mutex>;
 using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
 
@@ -43,7 +43,7 @@ typedef std::mutex use_mutex;
 #include <boost/thread.hpp>
 //#include <boost/thread/locks.hpp>
 typedef boost::shared_mutex try_shared_mutex;
-typedef boost::shared_lock<try_shared_mutex> try_shared_lock;
+typedef boost::shared_lock<try_shared_mutex> maybe_shared_lock;
 typedef boost::unique_lock<try_shared_mutex> unique_lock;
 const auto try_to_lock = boost::try_to_lock;
 #define LOCK_TWO 1
@@ -53,7 +53,7 @@ const auto try_to_lock = boost::try_to_lock;
 
 #include <shared_mutex>
 using try_shared_mutex = std::shared_mutex;
-using try_shared_lock = std::shared_lock<try_shared_mutex>;
+using maybe_shared_lock = std::shared_lock<try_shared_mutex>;
 using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
 #define LOCK_TWO 1
@@ -61,7 +61,7 @@ const auto try_to_lock = std::try_to_lock;
 #else
 
 using try_shared_mutex = use_mutex;
-using try_shared_lock = std::unique_lock<try_shared_mutex>;
+using maybe_shared_lock = std::unique_lock<try_shared_mutex>;
 using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
 #endif
@@ -129,7 +129,7 @@ public:
 	std::unique_ptr<lock_rec_shared> try_lock_shared_rec() const;
 };
 
-using shared_locker = locker<try_shared_mutex, unique_lock, try_shared_lock>;
+using shared_locker = locker<try_shared_mutex, unique_lock, maybe_shared_lock>;
 
 class dummy_lock
 {

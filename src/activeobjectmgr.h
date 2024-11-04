@@ -92,8 +92,7 @@ protected:
 	// Note that this is ordered to fix #10985
 	ModifySafeMap<u16, std::shared_ptr<T>> m_active_objects;
 
-
-//	concurrent_shared_unordered_map<u16, TPtr> m_active_objects;
+	//concurrent_unordered_map<u16, TPtr> m_active_objects;
 	std::vector<TPtr> m_active_objects_deleted;
 
 };

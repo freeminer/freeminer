@@ -1,0 +1,46 @@
+buildType:
+  default: debug
+  choices:
+    RelWithDebInfo:
+      short: RelWithDebInfo
+      long: Fast and debugable
+      buildType: RelWithDebInfo
+    debug:
+      short: Debug
+      long: Emit debug information
+      buildType: Debug
+    release:
+      short: Release
+      long: Optimize generated code
+      buildType: Release
+
+    asan:
+      short: Asan
+      long: Instrument with Address Sanitizer
+      buildType: Debug
+      settings:
+        SANITIZE_ADDRESS: ON
+    tsan:
+      short: Tsan
+      long: Instrument with Thread Sanitizer
+      buildType: Debug
+      settings:
+        SANITIZE_THREAD: ON
+    msan:
+      short: Msan
+      long: Instrument with Memory Sanitizer
+      buildType: Debug
+      settings:
+        SANITIZE_MEMORY: ON
+    usan:
+      short: Ubsan
+      long: Instrument with UB Sanitizer
+      buildType: Debug
+      settings:
+        SANITIZE_UNDEFINED: ON
+    gperf:
+      short: Gperf
+      long: Gperf
+      buildType: Debug
+      settings:
+        ENABLE_GPERF: ON

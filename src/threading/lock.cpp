@@ -141,7 +141,7 @@ locker<mutex, unique_lock, shared_lock>::try_lock_shared_rec() const
 template class recursive_lock<std::unique_lock<use_mutex>>;
 template class locker<>;
 #if LOCK_TWO
-template class recursive_lock<try_shared_lock, try_shared_mutex>;
+template class recursive_lock<maybe_shared_lock, try_shared_mutex>;
 template class recursive_lock<std::unique_lock<try_shared_mutex>, try_shared_mutex>;
 
 template class locker<try_shared_mutex, std::unique_lock<try_shared_mutex>,

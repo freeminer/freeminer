@@ -946,41 +946,49 @@ void Hud::drawBlockBounds()
 
 	v3s16 pos = player->getStandingNodePos();
 
-	if (m_block_bounds_mode == BLOCK_BOUNDS_FAR) {
-		v3f offset = intToFloat(client->getCamera()->getOffset(), BS);
+	if (m_block_bounds_mode == BLOCK_BOUNDS_FAR_DRAWN) {
+	    const auto offset = posToOpos(client->getCamera()->getOffset(), BS);
 
 		//s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
 
-		v3f halfNode = v3f(BS, BS, BS) / 2.0f;
- 		auto & far_blocks = client->getEnv().getClientMap().m_far_blocks;
-		auto lock = far_blocks.try_lock_shared_rec();
-		if (lock->owns_lock()) {
+		const auto halfNode = v3opos_t(BS, BS, BS) / 2.0f;
+		const auto &client_map = client->getEnv().getClientMap();
+ 		const auto & far_blocks = client_map.m_far_blocks;
+
+		if (const auto lock = far_blocks.try_lock_shared_rec(); lock->owns_lock()) {
 			for (const auto &[blockPos, block] :
 					far_blocks) {
-				if (block->getTimestamp() <
-						client->getEnv().getClientMap().m_far_blocks_use_timestamp)
+				if (!block)
 					continue;
-				const auto mesh_step = getFarStep(
+				if (block->far_iteration <
+						client_map.far_iteration_use)
+					continue;
+/*					
+				const auto mesh_step_ = getFarStep(
 						client->getEnv().getClientMap().getControl(),
 						getNodeBlockPos(
 								client->getEnv()
 										.getClientMap()
 										.m_far_blocks_last_cam_pos),
 						blockPos);
+*/
+						const auto &mesh_step = block->far_step;
+				int g = 0;
 
 				if (!inFarGrid(blockPos, getNodeBlockPos(
-								client->getEnv()
-										.getClientMap()
-										.m_far_blocks_last_cam_pos), mesh_step,
-							client->getEnv().getClientMap().getControl()))
-					continue;
+								client_map
+										.far_blocks_last_cam_pos), mesh_step,
+							client_map.getControl()))
+					{
+						// DUMP("Not in grid", blockPos,  block->far_step, mesh_step, block->getTimestamp(), client->getEnv() .getClientMap() .m_far_blocks_last_cam_pos);
+						// continue;
+						g+=50;
+					}
 
 				int fscale = 1;
 				int lod_step = 0;
 				int far_step = 0;
 				int b = 0;
-				if (!block)
-					continue;
 				const auto &mesh = block->getFarMesh(mesh_step);
 				if (!mesh || !mesh->getMesh() || !mesh->getMesh()->getMeshBufferCount()) {
 					b = 50;
@@ -990,14 +998,59 @@ void Hud::drawBlockBounds()
 					lod_step = mesh->lod_step;
 					far_step = mesh->far_step;
 				}
-				aabb3f box(
-						intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1,
-						intToFloat(
-								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE * fscale - 1),
+				const aabb3f box(
+						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
+						oposToV3f(intToFloat(
+								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE * fscale - fscale),
 								BS) -
-								offset + halfNode - 1);
+								offset + halfNode - 1));
+				driver->draw3DBox(box, video::SColor(200 + b, 255 - lod_step * 10 + b,
+											   255 -g - far_step * 10, fscale * 20));
+			}
+		}
+	} else if (m_block_bounds_mode == BLOCK_BOUNDS_FAR_REQUEST) {
+		const auto offset = intToFloat(client->getCamera()->getOffset(), BS);
+		const auto halfNode = v3opos_t(BS, BS, BS) / 2.0f;
+		const auto &far_blocks = client->getEnv().getClientMap().m_far_blocks_ask;
+		{
+			for (const auto &[blockPos, step_ts] : far_blocks) {
+			    const auto &[mesh_step, ts] = step_ts;
+				int fscale = pow(2, mesh_step - 1);
+				int lod_step = 0;
+				int far_step = 0;
+				int b = 0;
+				const aabb3f box(
+						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
+						oposToV3f(intToFloat(
+								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE << mesh_step ) - (1 << mesh_step), // - 1
+								BS) -
+								offset + halfNode - 1));
 				driver->draw3DBox(box, video::SColor(200 + b, 255 - lod_step * 10 + b,
 											   255 - far_step * 10, fscale * 20));
+			}
+		}
+	} else if (m_block_bounds_mode == Hud::BLOCK_BOUNDS_FAR_STORAGE) {
+		const auto offset = intToFloat(client->getCamera()->getOffset(), BS);
+		const auto halfNode = v3opos_t(BS, BS, BS) / 2.0f;
+		const auto &far_blocks = client->getEnv().getClientMap().far_blocks_storage;
+
+		for (size_t step = 0; step < far_blocks.size(); ++step) {
+			const auto &blocks = far_blocks[step];
+			const auto mesh_step = step;
+			for (const auto &[blockPos, block] : blocks) {
+				const auto has_mesh = !!block->getFarMesh(mesh_step);
+				int fscale = pow(2, mesh_step );
+				int lod_step = 0;
+				int far_step = 0;
+				int b = 0;
+				const aabb3f box(
+						oposToV3f(intToFloat((blockPos)*MAP_BLOCKSIZE, BS) - offset - halfNode + 1),
+						oposToV3f(intToFloat(
+								((blockPos)*MAP_BLOCKSIZE) + (MAP_BLOCKSIZE << (mesh_step) ) - (1 << mesh_step), ///// -1 ?
+								BS) -
+								offset + (halfNode - 1)));
+				driver->draw3DBox(box, video::SColor(200 + b, 255 - lod_step * 10 + b,
+											   255 - far_step * 10, fscale * 20 + 20*has_mesh));
 			}
 		}
 	} else {

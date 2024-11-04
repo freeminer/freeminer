@@ -22,11 +22,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include "database/database.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "map.h"
 #include "mapblock.h"
-#include "log_types.h"
 #include "profiler.h"
-
 #include "nodedef.h"
 #include "environment.h"
 #include "emerge.h"
@@ -40,12 +39,15 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxelalgorithms.h"
 
 #if HAVE_THREAD_LOCAL
-thread_local MapBlockP m_block_cache = nullptr;
-thread_local v3pos_t m_block_cache_p;
+namespace
+{
+thread_local MapBlockP block_cache{};
+thread_local v3bpos_t block_cache_p;
+}
 #endif
 
 // TODO: REMOVE THIS func and use Map::getBlock
-MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p, bool trylock, bool nocache)
+MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 {
 
 #ifndef NDEBUG
@@ -59,14 +61,14 @@ MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p, bool trylock, bool nocache)
 
 	if (!nocache) {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-		auto lock = try_shared_lock(m_block_cache_mutex, try_to_lock);
+		auto lock = maybe_shared_lock(m_block_cache_mutex, try_to_lock);
 		if (lock.owns_lock())
 #endif
-			if (m_block_cache && p == m_block_cache_p) {
+			if (block_cache && p == block_cache_p) {
 #ifndef NDEBUG
 				g_profiler->add("Map: getBlock cache hit", 1);
 #endif
-				return m_block_cache;
+				return block_cache;
 			}
 	}
 
@@ -87,17 +89,17 @@ MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p, bool trylock, bool nocache)
 		if (lock.owns_lock())
 #endif
 		{
-			m_block_cache_p = p;
-			m_block_cache = block;
+			block_cache_p = p;
+			block_cache = block;
 		}
 	}
 
 	return block;
 }
 
-MapBlockP Map::getBlock(v3pos_t p, bool trylock, bool nocache)
+MapBlock *Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
 {
-	return getBlockNoCreateNoEx(p, trylock, nocache);
+	return getBlock(p, trylock, nocache).get();
 }
 
 void Map::getBlockCacheFlush()
@@ -105,7 +107,7 @@ void Map::getBlockCacheFlush()
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
-	m_block_cache = nullptr;
+	block_cache = nullptr;
 }
 
 MapBlock *Map::createBlankBlockNoInsert(const v3pos_t &p)
@@ -114,18 +116,18 @@ MapBlock *Map::createBlankBlockNoInsert(const v3pos_t &p)
 	return block;
 }
 
-MapBlock *Map::createBlankBlock(const v3pos_t &p)
+MapBlockP Map::createBlankBlock(const v3pos_t &p)
 {
 	m_db_miss.erase(p);
 
 	auto lock = m_blocks.lock_unique_rec();
-	MapBlock *block = getBlockNoCreateNoEx(p, false, true);
+	auto block = getBlock(p, false, true);
 	if (block != NULL) {
 		infostream << "Block already created p=" << block->getPos() << std::endl;
 		return block;
 	}
 
-	block = createBlankBlockNoInsert(p);
+	block.reset(createBlankBlockNoInsert(p));
 
 	m_blocks.insert_or_assign(p, block);
 
@@ -140,14 +142,14 @@ bool Map::insertBlock(MapBlock *block)
 
 	auto lock = m_blocks.lock_unique_rec();
 
-	auto block2 = getBlockNoCreateNoEx(block_p, false, true);
+	auto block2 = getBlock(block_p, false, true);
 	if (block2) {
 		verbosestream << "Block already exists " << block_p << std::endl;
 		return false;
 	}
 
 	// Insert into container
-	m_blocks.insert_or_assign(block_p, block);
+	m_blocks.insert_or_assign(block_p, MapBlockP{block});
 	return true;
 }
 
@@ -156,7 +158,7 @@ MapBlock *ServerMap::createBlock(v3pos_t p)
 	if (MapBlock *block = getBlockNoCreateNoEx(p, false, true)) {
 		return block;
 	}
-	return createBlankBlock(p);
+	return createBlankBlock(p).get();
 }
 
 /*
@@ -178,20 +180,34 @@ void Map::eraseBlock(const MapBlockP block)
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
 	auto lock = unique_lock(m_block_cache_mutex);
 #endif
-	m_block_cache = nullptr;
+	block_cache = nullptr;
 }
 
-MapNode dummy{CONTENT_IGNORE};
-
-MapNode &Map::getNodeTry(const v3pos_t &p)
+MapNode Map::getNodeTry(const v3pos_t &p)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
 #endif
 	auto blockpos = getNodeBlockPos(p);
 	auto block = getBlockNoCreateNoEx(blockpos, true);
-	if (!block)
-		return dummy; // MapNode(CONTENT_IGNORE);
+	if (!block) {
+		return {CONTENT_IGNORE};
+	}
+	auto relpos = p - blockpos * MAP_BLOCKSIZE;
+	return block->getNodeRef(relpos);
+}
+
+MapNode &Map::getNodeRef(const v3pos_t &p)
+{
+#ifndef NDEBUG
+	ScopeProfiler sp(g_profiler, "Map: getNodeTry");
+#endif
+	auto blockpos = getNodeBlockPos(p);
+	auto block = getBlockNoCreateNoEx(blockpos, true);
+	if (!block) {
+		static thread_local MapNode dummy{CONTENT_IGNORE};
+		return dummy;
+	}
 	auto relpos = p - blockpos * MAP_BLOCKSIZE;
 	return block->getNodeRef(relpos);
 }
@@ -376,9 +392,6 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 																 : &m_blocks_delete_1);
 		if (!m_blocks_delete->empty())
 			verbosestream << "Deleting blocks=" << m_blocks_delete->size() << std::endl;
-		for (auto &ir : *m_blocks_delete) {
-			delete ir.first;
-		}
 		m_blocks_delete->clear();
 		getBlockCacheFlush();
 		const thread_local static auto block_delete_time =
@@ -409,7 +422,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 
 		auto m_blocks_size = m_blocks.size();
 
-		for (auto ir : m_blocks) {
+		for (const auto &ir : m_blocks) {
 			if (n++ < m_blocks_update_last) {
 				continue;
 			} else {
@@ -429,10 +442,14 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 			}
 			*/
 
-			if (!block->isGenerated() && !block->getLodMesh(0, true)) {
-				blocks_delete.emplace_back(block);
-				continue;
-			}
+			if (!block->isGenerated())
+#if BUILD_CLIENT
+				if (!block->getLodMesh(0, true))
+#endif
+				{
+					blocks_delete.emplace_back(block);
+					continue;
+				}
 
 			{
 				auto lock = block->try_lock_unique_rec();
@@ -451,7 +468,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 						// modprofiler.add(block->getModifiedReasonString(), 1);
 						if (!save_started++)
 							beginSave();
-						if (!saveBlock(block)) {
+						if (!saveBlock(block.get())) {
 							continue;
 						}
 						saved_blocks_count++;
@@ -1122,7 +1139,7 @@ const v3pos_t g_4dirs[4] = {
 };
 
 bool ServerMap::propagateSunlight(
-		const v3pos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
+		const v3bpos_t &pos, std::set<v3pos_t> &light_sources, bool remove_light)
 {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
@@ -1391,7 +1408,6 @@ s16 ServerMap::findGroundLevel(v2pos_t p2d, bool cacheBlocks)
 	return level;
 }
 
-
 void ServerMap::prepareBlock(MapBlock *block) {
 	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
 
@@ -1402,7 +1418,6 @@ void ServerMap::prepareBlock(MapBlock *block) {
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
 }
-
 
 MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 {
@@ -1416,7 +1431,7 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 			dbase_ro->loadBlock(p3d, &blob);
 		}
 		if (!blob.length()) {
-			m_db_miss.emplace(p3d, 1);
+			m_db_miss.emplace(p3d);
 			return nullptr;
 		}
 
@@ -1578,7 +1593,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 				if (!lock->owns_lock())
 					continue;
 
-				saveBlock(block);
+				saveBlock(block.get());
 				block_count++;
 			}
 			if (breakable && porting::getTimeMs() > end_ms) {
@@ -1664,3 +1679,68 @@ int Server::save(float dtime, float dedicated_server_step, bool breakable) {
 
 	return ret;
 }
+// Copypaste of isBlockOccluded working without block data
+
+inline core::aabbox3d<bpos_t> getBox(const v3bpos_t &pos)
+{
+	return core::aabbox3d<bpos_t>(
+			pos, pos + v3bpos_t(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE) -
+						 v3bpos_t(1, 1, 1));
+}
+
+#if 0
+bool Map::isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes)
+{
+	// Check occlusion for center and all 8 corners of the mapblock
+	// Overshoot a little for less flickering
+	static const pos_t bs2 = MAP_BLOCKSIZE / 2 + 1;
+	static const v3pos_t dir9[9] = {
+			v3pos_t(0, 0, 0),
+			v3pos_t(1, 1, 1) * bs2,
+			v3pos_t(1, 1, -1) * bs2,
+			v3pos_t(1, -1, 1) * bs2,
+			v3pos_t(1, -1, -1) * bs2,
+			v3pos_t(-1, 1, 1) * bs2,
+			v3pos_t(-1, 1, -1) * bs2,
+			v3pos_t(-1, -1, 1) * bs2,
+			v3pos_t(-1, -1, -1) * bs2,
+	};
+
+	auto pos_blockcenter = pos + (MAP_BLOCKSIZE / 2);
+
+	// Starting step size, value between 1m and sqrt(3)m
+	float step = BS * 1.2f;
+	// Multiply step by each iteraction by 'stepfac' to reduce checks in distance
+	float stepfac = 1.05f;
+
+	float start_offset = BS * 1.0f;
+
+	// The occlusion search of 'isOccluded()' must stop short of the target
+	// point by distance 'end_offset' to not enter the target mapblock.
+	// For the 8 mapblock corners 'end_offset' must therefore be the maximum
+	// diagonal of a mapblock, because we must consider all view angles.
+	// sqrt(1^2 + 1^2 + 1^2) = 1.732
+	float end_offset = -BS * MAP_BLOCKSIZE * 1.732f;
+
+	// to reduce the likelihood of falsely occluded blocks
+	// require at least two solid blocks
+	// this is a HACK, we should think of a more precise algorithm
+	u32 needed_count = 2;
+
+	// Additional occlusion check, see comments in that function
+	v3pos_t check;
+	if (determineAdditionalOcclusionCheck(cam_pos_nodes, getBox(pos), check)) {
+		// node is always on a side facing the camera, end_offset can be lower
+		if (!isOccluded(cam_pos_nodes, check, step, stepfac, start_offset, -1.0f,
+					needed_count))
+			return false;
+	}
+
+	for (const auto &dir : dir9) {
+		if (!isOccluded(cam_pos_nodes, pos_blockcenter + dir, step, stepfac, start_offset,
+					end_offset, needed_count))
+			return false;
+	}
+	return true;
+}
+#endif

@@ -469,7 +469,7 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 	if (create_blank) {
 
-		return createBlankBlock(p);
+		return createBlankBlock(p).get();
 /*
 		try {
 			MapSector *sector = createSector(v2s16(p.X, p.Z));

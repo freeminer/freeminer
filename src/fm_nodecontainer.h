@@ -31,15 +31,15 @@ class NodeContainer
 public:
 	//	virtual const MapNode &getNodeRefUnsafeCheckFlags(const v3pos_t &p) = 0;
 	virtual const MapNode &getNodeRefUnsafe(const v3pos_t &p) = 0;
-	virtual MapNode getNodeNoExNoEmerge(const v3pos_t &p) = 0;
-	virtual MapNode getNodeNoEx(const v3pos_t &p) = 0;
+	virtual MapNode getNodeNoExNoEmerge(const v3pos_t &p) { return getNodeRefUnsafe(p); };
+	virtual MapNode getNodeNoEx(const v3pos_t &p) { return getNodeRefUnsafe(p); };
 	virtual const MapNode &getNodeRefUnsafeCheckFlags(const v3pos_t &p)
 	{
 		return getNodeRefUnsafe(p);
 	};
     virtual void setNode(const v3pos_t &p, const MapNode &n, bool important = false) {};
 	virtual void clear() {}
-	virtual void addArea(const VoxelArea &a){};
+	virtual void addArea(const VoxelArea &a) {};
 	virtual void copyFrom(MapNode *src, const VoxelArea &src_area, v3pos_t from_pos,
-			v3pos_t to_pos, const v3pos_t &size){};
+			v3pos_t to_pos, const v3pos_t &size) {};
 };

@@ -51,22 +51,27 @@ class ServerMap : public Map
 public:
 
 
-//freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t & p, MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr, bool block_add = true);
+    // freeminer:
+	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
+			bool block_add = true);
+	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
+			bool block_add = true);
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
 	void transforming_liquid_add(const v3pos_t &p);
 	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
+	std::vector<v3pos_t> m_transforming_liquid_local;
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
 	//returns basepos.y -1 if no surface has been found
 	// (due to limited data range of basepos.y this will always give a unique
 	// return value as long as minetest is compiled at least on 32bit architecture)
 	//int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-	virtual int getSurface(const v3pos_t& basepos, int searchup, bool walkable_only);
-/*
+	virtual int getSurface(const v3pos_t &basepos, int searchup, bool walkable_only);
+	/*
 	{
 		return basepos.Y - 1;
 	}
@@ -76,22 +81,29 @@ public:
 	std::mutex m_transforming_liquid_mutex;
 	typedef unordered_map_v3pos<int> lighting_map_t;
 	std::mutex m_lighting_modified_mutex;
-	std::map<v3pos_t, int> m_lighting_modified_blocks;
+	std::map<v3bpos_t, int> m_lighting_modified_blocks;
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
-	void lighting_modified_add(const v3pos_t& pos, int range = 5);
+	void lighting_modified_add(const v3pos_t &pos, int range = 5);
 
 	void unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
-			std::set<v3pos_t> &light_sources, std::map<v3bpos_t, MapBlock *> &modified_blocks);
+			std::set<v3pos_t> &light_sources,
+			std::map<v3bpos_t, MapBlock *> &modified_blocks);
 	void spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			std::map<v3bpos_t, MapBlock *> &modified_blocks, uint64_t end_ms);
 
-	u32 updateLighting(concurrent_map<v3pos_t, MapBlock *> &a_blocks,
-			std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
-	u32 updateLighting(lighting_map_t & a_blocks, unordered_map_v3pos<int> & processed, unsigned int max_cycle_ms = 0);
-	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int & loopcount);
+	u32 updateLighting(concurrent_map<v3bpos_t, MapBlock *> &a_blocks,
+			std::map<v3bpos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
+	u32 updateLighting(lighting_map_t &a_blocks, unordered_map_v3pos<int> &processed,
+			unsigned int max_cycle_ms = 0);
+	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int &loopcount);
 
-	bool propagateSunlight(
-			const v3pos_t& pos, std::set<v3pos_t> &light_sources, bool remove_light = false);
+	bool propagateSunlight(const v3bpos_t &pos, std::set<v3pos_t> &light_sources,
+			bool remove_light = false);
+
+	MapBlockP loadBlockNoStore(const v3bpos_t &p3d);
+
+	bool m_map_loading_enabled;
+	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
 
 	// Carries out any initialization necessary before block is sent
 	void prepareBlock(MapBlock *block);
@@ -99,9 +111,8 @@ public:
 	// Helper for placing objects on ground level
 	s16 findGroundLevel(v2pos_t p2d, bool cacheBlocks);
 
-    bool m_map_loading_enabled {1};
-    concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
-//end of freeminer
+	// == end of freeminer
+
 
 
 

@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "game.h"
 
+#include <atomic>
 #include <iomanip>
 #include <cmath>
 #include "client/renderingengine.h"
@@ -42,7 +43,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_cao.h"
 #include "content/subgames.h"
 #include "client/event_manager.h"
-#include "client/fm_farmesh.h"
 #include "fontengine.h"
 #include "gui/touchscreengui.h"
 #include "itemdef.h"
@@ -74,7 +74,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "translation.h"
 #include "util/basic_macros.h"
 #include "util/directiontables.h"
-#include "util/numeric.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
 #include "irrlicht_changes/static_text.h"
@@ -85,7 +84,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "clientdynamicinfo.h"
 #include <IAnimatedMeshSceneNode.h>
 
+
+#include "client/fm_farmesh.h"
 #include "threading/async.h"
+#include "util/numeric.h"
 #include <future>
 #include <memory>
 
@@ -672,8 +674,6 @@ struct GameRunData {
 	v3f update_draw_list_last_cam_pos;
 	unsigned int autoexit = 0;
 	bool profiler_state = false;
-//
-	//freeminer:
 	bool headless_optimize = false;
 	bool no_output = false;
 	float dedicated_server_step = 0.1;
@@ -701,7 +701,7 @@ struct GameRunData {
 	float repeat_place_timer;
 	float object_hit_delay_timer;
 	float time_from_last_punch;
-	ClientActiveObject *selected_object;
+	ClientActiveObjectPtr selected_object;
 
 	float jump_timer_up;          // from key up until key down
 	float jump_timer_down;        // since last key down
@@ -895,14 +895,17 @@ private:
 	};
 
 
-	//freeminer:
+	// fm:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
     async_step_runner updateDrawList_async;
+    async_step_runner update_shadows_async;
 	bool m_cinematic = false;
 	std::unique_ptr<FarMesh> farmesh;
     async_step_runner farmesh_async;
-	// minetest:
+	std::unique_ptr<RaycastState> pointedRaycastState;
+	PointedThing pointed;
+	// ==:
 
 
 
@@ -1100,10 +1103,11 @@ Game::Game() :
 
 Game::~Game()
 {
-	farmesh.reset();
 	farmesh_async.wait();
 	updateDrawList_async.wait();
-	
+	update_shadows_async.wait();
+	farmesh.reset();
+
 	delete client;
 	delete soundmaker;
 	sound_manager.reset();
@@ -1281,13 +1285,22 @@ void Game::run()
 			}
 		}
 
+		{
+			if (draw_control->farmesh) {
+				auto &far_blocks_send_timer =
+						client->getEnv().getClientMap().far_blocks_sent_timer;
+				far_blocks_send_timer -= dtime;
 
+				if (far_blocks_send_timer <= 0.0f) {
+					client->sendGetBlocks();
+					far_blocks_send_timer = 2;
+				}
+			}
 
 		run_time += dtime;
 		if (runData.autoexit && run_time > runData.autoexit)
 			g_gamecallback->shutdown_requested = 1;
-
-
+		}
 
 		// Prepare render data for next iteration
 
@@ -1362,7 +1375,6 @@ void Game::shutdown()
 	// only if the shutdown progress bar isn't shown yet
 	if (m_shutdown_progress == 0.0f)
 		showOverlayMessage(N_("Shutting down..."), 0, 0);
-
 
 	if (clouds)
 		clouds->drop();
@@ -1692,7 +1704,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
-		farmesh.reset(new FarMesh(client, server, draw_control));
+		farmesh = std::make_unique<FarMesh>(client, server, draw_control);
 	}
 
 	//freeminer:
@@ -2234,7 +2246,6 @@ void Game::updateStats(RunStats *stats, const FpsControl &draw_times,
 		jp->max = 0.0;
 		jp->min = 0.0;
 	}
-
 }
 
 
@@ -2413,12 +2424,15 @@ void Game::processKeyInput()
 	} else if (wasKeyDown(KeyType::INCREASE_VIEWING_RANGE)) {
 		increaseViewRange();
 		client->sendDrawControl();
+		++client->m_new_meshes;
 	} else if (wasKeyDown(KeyType::DECREASE_VIEWING_RANGE)) {
 		decreaseViewRange();
 		client->sendDrawControl();
+		++client->m_new_meshes;
 	} else if (wasKeyPressed(KeyType::RANGESELECT)) {
 		toggleFullViewRange();
 		client->sendDrawControl();
+		++client->m_new_meshes;
 	} else if (wasKeyDown(KeyType::ZOOM)) {
 		checkZoomEnabled();
 		client->sendDrawControl();
@@ -2548,7 +2562,7 @@ void Game::processItemSelection(u16 *new_playeritem)
 				*new_playeritem = client->getPreviousPlayerItem();
 			else
 */
-				*new_playeritem = i;
+			*new_playeritem = i;
 			break;
 		}
 	}
@@ -2941,16 +2955,16 @@ void Game::increaseViewRange()
 	s16 server_limit = sky->getFogDistance();
 
 	{ //fm:
-		if (g_settings->getS32("farmesh")) {
+		if (g_settings->getS32("lodmesh")) {
 			range_new = range * 1.5;
 		} else {
-			range_new = range + MAP_BLOCKSIZE;
+			range_new = range + MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 		}
 
 		// it's < 0 if it's outside the range of s16
 		// and increase it directly from 1 to 16 for less key pressing
-		if (range_new < MAP_BLOCKSIZE)
-			range_new = MAP_BLOCKSIZE;
+		if (range_new < MAP_BLOCKSIZE * client->getMeshGrid().cell_size)
+			range_new = MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 	}
 
 	if (range_new >= MAX_MAP_GENERATION_LIMIT) {
@@ -2976,15 +2990,15 @@ void Game::decreaseViewRange()
 	pos_t server_limit = sky->getFogDistance();
 
 	{ //fm:
-		if (g_settings->getS32("farmesh")) {
+		if (g_settings->getS32("lodmesh")) {
 			range_new = range / 1.5;
 		} else {
-			range_new = range - MAP_BLOCKSIZE;
+			range_new = range - MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 		}
 	}
 
-	if (range_new <= MAP_BLOCKSIZE) {
-		range_new = MAP_BLOCKSIZE;
+	if (range_new <= MAP_BLOCKSIZE * client->getMeshGrid().cell_size) {
+		range_new = MAP_BLOCKSIZE * client->getMeshGrid().cell_size;
 		std::wstring msg = server_limit >= 0 && range_new > server_limit ?
 				fwgettext("Viewing changed to %d (the minimum), but limited to %d by game or mod", range_new, server_limit) :
 				fwgettext("Viewing changed to %d (the minimum)", range_new);
@@ -3165,7 +3179,7 @@ void Game::updatePlayerControl(const CameraOrientation &cam)
 			else
 				disableCinematic();
 		}
-		draw_control.fov_want = player->zoom ? g_settings->getFloat("zoom_fov") : g_settings->getFloat("fov");
+		draw_control.fov_want = player->zoom ? player->getZoomFOV() : g_settings->getFloat("fov");
 		client->sendDrawControl();
 	}
 	draw_control.fov -= (draw_control.fov - draw_control.fov_want)/7;
@@ -3315,6 +3329,7 @@ void Game::handleClientEvent_Deathscreen(ClientEvent *event, CameraOrientation *
 			client->sendRespawn();
 		} else {
 		showDeathFormspec();
+
 		}
 	}
 	/* Handle visualization */
@@ -3772,7 +3787,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 		shootline.end += intToFloat(camera_offset, BS);
 	}
 
-	PointedThing pointed = updatePointedThing(shootline,
+	updatePointedThing(shootline,
 			selected_def.liquids_pointable,
 			selected_def.pointabilities,
 			!runData.btn_down_for_dig,
@@ -3907,20 +3922,37 @@ PointedThing Game::updatePointedThing(
 	runData.selected_object = NULL;
 	hud->pointing_at_object = false;
 
+/*
 	RaycastState s(shootline, look_for_object, liquids_pointable, pointabilities);
+*/
 	PointedThing result;
+
+	if (!pointedRaycastState || pointedRaycastState->finished) {
+		pointedRaycastState = std::make_unique<RaycastState>(
+				shootline, look_for_object, liquids_pointable, pointabilities);
+	}
+	pointedRaycastState->end_ms = porting::getTimeMs() + 2;
+	auto & s = *pointedRaycastState;
+
 	env.continueRaycast(&s, &result);
+
+	if (!pointedRaycastState->finished) {
+		result = pointed;
+	} else {
+		pointed = result;
+	}
+
 	if (result.type == POINTEDTHING_OBJECT) {
 		hud->pointing_at_object = true;
 
-		runData.selected_object = client->getEnv().getActiveObject(result.object_id);
+		runData.selected_object = client->getEnv().getActiveObjectPtr(result.object_id);
 		aabb3f selection_box;
 		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
 				runData.selected_object->getSelectionBox(&selection_box)) {
 			v3f pos = runData.selected_object->getPosition();
 			selectionboxes->emplace_back(selection_box);
 			hud->setSelectionPos(pos, camera_offset);
-			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object);
+			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object.get());
 			if (gcao != nullptr && gcao->getProperties().rotate_selectionbox)
 				hud->setSelectionRotation(gcao->getSceneNode()->getAbsoluteTransformation().getRotationDegrees());
 			else
@@ -4292,6 +4324,10 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 void Game::handlePointingAtObject(const PointedThing &pointed,
 		const ItemStack &tool_item, const v3f &player_position, bool show_debug)
 {
+	if (!runData.selected_object) {
+		return;
+	}
+
 	std::wstring infotext = unescape_translate(
 		utf8_to_wide(runData.selected_object->infoText()));
 
@@ -4507,7 +4543,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	*/
 
 	if (sky->getFogDistance() >= 0) {
-		draw_control->wanted_range = MYMIN(draw_control->wanted_range, sky->getFogDistance());
+		draw_control->wanted_range = MYMIN(draw_control->wanted_range.load(std::memory_order::relaxed), sky->getFogDistance());
 	}
 
 
@@ -4524,9 +4560,9 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		runData.fog_range = draw_control->wanted_range * BS
 				+ 0.0 * MAP_BLOCKSIZE * BS;
 
-		thread_local static const auto farmesh = g_settings->getS32("farmesh");
-		if (runData.fog_range < farmesh) {
-			runData.fog_range = farmesh;
+		thread_local static const auto farmesh_bs = g_settings->getS32("farmesh") * BS;
+		if (runData.fog_range < farmesh_bs) {
+			runData.fog_range = farmesh_bs ;
 		}
 
 		if (client->use_weather) {
@@ -4606,20 +4642,25 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (clouds)
 		updateClouds(dtime);
 
+	thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
 	if (farmesh) {
-		thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-		farmesh_async.step([&, farmesh_range = farmesh_range,
-								   //yaw = player->getYaw(),
-								   //pitch = player->getPitch(),
-								   camera_pos = camera->getPosition(),
-								   camera_offset = camera->getOffset(),
-								   speed = player->getSpeed().getLength()]() {
-			farmesh->update(camera_pos,
-					//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-					camera_offset,
-					//sky->getBrightness(),
-					farmesh_range, speed);
-		});
+		thread_local static uint8_t processed{};
+		thread_local static u64 next_run_time{};
+		if (processed || porting::getTimeMs() > next_run_time) {
+			next_run_time = porting::getTimeMs() + 300;
+			farmesh_async.step([&, farmesh_range = farmesh_range,
+									   //yaw = player->getYaw(),
+									   //pitch = player->getPitch(),
+									   camera_pos = camera->getPosition(),
+									   camera_offset = camera->getOffset(),
+									   speed = player->getSpeed().getLength()]() {
+				processed = farmesh->update(camera_pos,
+						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
+						camera_offset,
+						//sky->getBrightness(),
+						farmesh_range, speed);
+			});
+		}
 	}
 
 	/*
@@ -4675,7 +4716,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	runData.update_draw_list_timer += dtime;
 	runData.touch_blocks_timer += dtime;
 
-	float update_draw_list_delta = 0.2f;
+	float update_draw_list_delta = 0.5f;
 
 /* mt dir */
 #if 0
@@ -4698,37 +4739,28 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 #endif
 /* */
 
-#if 1
 	const auto camera_position = camera->getPosition();
-	if (!runData.headless_optimize) {
-		if (client->getEnv().getClientMap().m_drawlist_last ||
-				runData.update_draw_list_timer >= update_draw_list_delta ||
+	if (!runData.headless_optimize)
+		if ((client->m_new_meshes ||
+					runData.update_draw_list_timer >= update_draw_list_delta) ||
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
-						MAP_BLOCKSIZE * BS * 2 ||
+						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-			bool allow = true;
-			static const auto thread_local more_threads =
-					g_settings->getBool("more_threads");
-			if (more_threads) {
-				updateDrawList_async.step(
-						[&](const float dtime) {
-							client->getEnv().getClientMap().updateDrawListFm(
-									dtime, 10000);
-						},
-						runData.update_draw_list_timer);
-			} else
-				client->getEnv().getClientMap().updateDrawListFm(
-						runData.update_draw_list_timer);
-			runData.update_draw_list_timer = 0;
-			if (allow) {
-				runData.update_draw_list_last_cam_pos = camera->getPosition();
-			}
+			updateDrawList_async.step(
+					[camera_position, this](const float dtime) {
+						client->m_new_meshes = 0;
+						runData.update_draw_list_timer = 0;
+						runData.update_draw_list_last_cam_pos = camera_position;
+						client->getEnv().getClientMap().updateDrawListFm(dtime, 10000);
+					},
+					runData.update_draw_list_timer);
 		}
-	}
-#endif
-   if (!runData.headless_optimize)
+
+	if (!runData.headless_optimize)
 	if (RenderingEngine::get_shadow_renderer()) {
+			update_shadows_async.step([&]() {
 		updateShadows();
+			});
 	}
 
 
@@ -4993,8 +5025,6 @@ void Game::readSettings()
 	runData.enable_fog = m_cache_enable_fog;
 }
 
-
-
 /****************************************************************************/
 /****************************************************************************
  Shutdown / cleanup
@@ -5089,6 +5119,10 @@ void Game::showPauseMenu()
 	} else {
 		os << strgettext("Singleplayer");
 	}
+	if (!g_settings->get("remote_proto").empty()) {
+		os << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
+	}
+
 	os << "\n";
 	if (simple_singleplayer_mode || address.empty()) {
 		static const std::string on = strgettext("On");
@@ -5190,5 +5224,5 @@ bool the_game(bool *kill,
 
 	game.shutdown();
 
-	return started && game.runData.reconnect; 
+	return started && game.runData.reconnect;
 }

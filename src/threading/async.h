@@ -20,13 +20,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #pragma once
+#include <cstdint>
 #include <future>
 #include <chrono>
 
 #if defined(DUMP_STREAM)
 #include "log.h"
 #endif
-
 
 class async_step_runner
 {
@@ -44,7 +44,7 @@ public:
 		DUMP("Async steps end", (long)this, runs, skips);
 #endif
 	}
-	int wait(const int ms = 10000, const int step_ms = 100)
+	int wait(const int ms = 60000, const int step_ms = 100)
 	{
 		int i = 0;
 		for (; i < ms / step_ms; ++i) { // 10s max
@@ -57,8 +57,12 @@ public:
 
 	inline bool valid() { return future.valid(); }
 
+	constexpr static uint8_t IN_PROGRESS = 2;
+	// 0 : started and finished
+	// 1 : started
+	// 2 : in progress, skip
 	template <class Func, typename... Args>
-	bool step(Func func, Args &&...args)
+	uint8_t step(Func func, Args &&...args)
 	{
 		if (future.valid()) {
 			auto res = future.wait_for(std::chrono::milliseconds(0));
@@ -66,7 +70,7 @@ public:
 #if defined(DUMP_STREAM)
 				++skips;
 #endif
-				return true;
+				return IN_PROGRESS;
 			}
 		}
 

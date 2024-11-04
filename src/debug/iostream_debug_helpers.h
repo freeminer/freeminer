@@ -21,6 +21,10 @@
 #define DUMP_DEMANGLE demangle
 #endif
 
+#if !defined(DUMP_TYPE)
+#define DUMP_TYPE 0
+#endif
+
 template <typename Out, typename T>
 Out & dumpValue(Out &, T &&);
 
@@ -174,7 +178,11 @@ Out & dump(Out & out, const char * name, T && x)
          }
     }
 
-    out << DUMP_DEMANGLE(typeid(x).name()) << ' ' << name << " = ";
+    out 
+#if DUMP_TYPE
+    << DUMP_DEMANGLE(typeid(x).name()) << ' ' 
+#endif
+    << name << " = ";
     dumpValue(out, x) << "; ";
     return out;
 }

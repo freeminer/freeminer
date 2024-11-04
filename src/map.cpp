@@ -48,7 +48,6 @@ Map::Map(IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	m_liquid_step_flow = 1000;
 	time_life = 0;
 	getBlockCacheFlush();
 }
@@ -56,12 +55,14 @@ Map::Map(IGameDef *gamedef):
 Map::~Map()
 {
 	auto lock = m_blocks.lock_unique_rec();
+/*
 	for (auto & ir : m_blocks_delete_1)
 		delete ir.first;
 	for (auto & ir : m_blocks_delete_2)
 		delete ir.first;
 	for(auto & ir : m_blocks)
 		delete ir.second;
+*/		
 	getBlockCacheFlush();
 #if WTF
 	/*
@@ -218,6 +219,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		if (remove_metadata)
 			removeNodeMetadata(p);
 		setNode(p, n, important);
+		modified_blocks[getNodeBlockPos(p)] = nullptr;
 		return;
 	}
 
@@ -302,7 +304,7 @@ bool Map::addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata, bool impo
 	return succeeded;
 }
 
-bool Map::removeNodeWithEvent(v3pos_t p, bool important)
+bool Map::removeNodeWithEvent(v3pos_t p, int fast, bool important)
 {
 	MapEditEvent event;
 	event.type = MEET_REMOVENODE;
@@ -311,7 +313,7 @@ bool Map::removeNodeWithEvent(v3pos_t p, bool important)
 	bool succeeded = true;
 	try{
 		std::map<v3s16, MapBlock*> modified_blocks;
-		removeNodeAndUpdate(p, modified_blocks, 0, important);
+		removeNodeAndUpdate(p, modified_blocks, fast, important);
 
 		event.setModifiedBlocks(modified_blocks);
 	}

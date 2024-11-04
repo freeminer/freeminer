@@ -19,15 +19,15 @@ $0 -num_emerge_threads=1 tsan bot
 $0 all
 
 #manual play with gdb trace if segfault
-$0 gdb play
+$0 gdb go
 
 #normal play
-$0 play
+$0 go
 
 #build with latests installed clang and play
-$0 ---cmake_clang=1 ---cmake_libcxx=1 play
+$0 ---cmake_clang=1 ---cmake_libcxx=1 go
 #build with clang-3.8 and play
-$0 ---cmake_clang=-3.8 play
+$0 ---cmake_clang=-3.8 go
 
 # run server with debug in gdb
 $0 gdb server
@@ -43,13 +43,13 @@ $0 ---clients_autoexit=30 ---clients_runs=5 ---clients_sleep=25 ----headless tsa
 $0 ---cgroup=10g --address=192.168.0.1 --port=30005 tsan bot
 
 # Maybe some features should be disabled for run some sanitizers
-$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DHAVE_TCMALLOC=0  tsan bot
+$0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 -DENABLE_TCMALLOC=0 tsan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0                    asan bot
 $0 ---cmake_clang=1 -DENABLE_WEBSOCKET=0 ---cmake_leveldb=0 usan bot
 $0 ---cmake_clang=1 -DENABLE_TIFF=0                        gperf bot
 
 # debug touchscreen gui. use irrlicht branch ogl-es with touchscreen patch /build/android/irrlicht-touchcount.patch
-$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 asan play
+$0 ---build_name="_touch_asan" ---cmake_touch=1 -touchscreen=0 asan go
 
 # build and use custom leveldb
 $0 ---cmake_add="-DLEVELDB_INCLUDE_DIR=../../leveldb/include -DLEVELDB_LIBRARY=../../leveldb/out-static/libleveldb.a"
@@ -70,8 +70,8 @@ $0 --autoexit=60 bot_vtune
 $0 stress_vtune
 
 # google-perftools https://github.com/gperftools/gperftools
-$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 gperf bot
-$0 ---gperf_heapprofile=1 ---gperf_heapcheck=1 ---gperf_cpuprofile=1 ----headless ----headless_optimize ----info ---clients_num=50 -profiler_print_interval=10 stress_gperf
+$0 ---gperf_heapprofile=1 ---gperf_cpuprofile=1 gperf bot
+$0 ---gperf_heapprofile=1 ---gperf_cpuprofile=1 ----headless ----headless_optimize ----info ---clients_num=50 -profiler_print_interval=10 stress_gperf
 
 # stress test of flowing liquid
 $0 ----world_water
@@ -100,9 +100,12 @@ $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24110,2411
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24600,30000,0)'
 $0 ----mg_math_tglag ----server_optimize ----far -static_spawnpoint='(24100,30000,24100)'
 $0 ----fall1 -continuous_forward=1 bot
+
+ASAN_OPTIONS=detect_container_overflow=0 $0 ---cmake_leveldb=0 -DENABLE_SYSTEM_JSONCPP=0 -DENABLE_WEBSOCKET=0 -keymap_toggle_block_bounds=KEY_F9 ----fall2 set_client asan build_client run_single
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
+no if $] >= 5.038, warnings => 'deprecated::smartmatch';
 use strict;
 use feature      qw(say);
 use Data::Dumper ();
@@ -177,13 +180,14 @@ sub init_config () {
         runner           => 'nice ',
         screenshot_dir   => 'screenshot.' . $g->{date},
         tee              => '2>&1 | tee -a ',
-        tsan_leveldb_fix => 1,
-        tsan_opengl_fix  => 1,
+        #tsan_leveldb_fix => 1,
+        #tsan_opengl_fix  => 1,
         valgrind_tools   => [qw(memcheck exp-sgcheck exp-dhat   cachegrind callgrind massif exp-bbv)],
         # verbose         => 1,
         vtune_amplifier => '~/intel/vtune_amplifier_xe/bin64/',
         vtune_collect   => 'hotspots',                            # for full list: ~/intel/vtune_amplifier_xe/bin64/amplxe-cl -help collect
         world_clear     => 0,                                     # remove old world before start client
+        pid_path        => '/tmp/',
     };
 
     map { /^---(\w+)(?:=(.*))?/  and $config->{$1} = defined $2 ? $2 : 1; } @ARGV;
@@ -247,6 +251,7 @@ our $options = {
         fps_max           => 5,
         fps_max_unfocused => 5,
         headless_optimize => 1,
+        viewing_range     => 32,
     },
     software => {
         video_driver => 'software',
@@ -354,6 +359,7 @@ our $options = {
     },
     unload => {server_unload_unused_data_timeout => 20, client_unload_unused_data_timeout => 15,},
 };
+$options->{fall2} = { %{$options->{fall1}}, static_spawnpoint => '(10,21000,10)',};
 
 map { /^-(\w+)(?:=(.*))?/  and $options->{opt}{$1}  = $2; } @ARGV;
 map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
@@ -411,11 +417,10 @@ $commands = {
         return $r if $r;
         my %D;
         #$D{CMAKE_RUNTIME_OUTPUT_DIRECTORY} = "`pwd`";
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1,
-          if $config->{cmake_msan};
-        local $config->{cmake_clang} = 1, local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
+    	local $config->{cmake_debug} = 1, $D{SANITIZE_THREAD}  = 1, if $config->{cmake_tsan};
+	    local $config->{cmake_debug} = 1, $D{SANITIZE_ADDRESS} = 1, if $config->{cmake_asan};
+	    local $config->{cmake_debug} = 1, $D{SANITIZE_MEMORY}  = 1, if $config->{cmake_msan};
+	    local $config->{cmake_debug} = 1, local $config->{keep_luajit} = 1, $D{SANITIZE_UNDEFINED} = 1,
           if $config->{cmake_usan};
 
         $D{ENABLE_LUAJIT}     = 0                                if $config->{cmake_debug} and !$config->{keep_luajit};
@@ -432,8 +437,8 @@ $commands = {
         $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
         $D{USE_DEBUG_HELPERS} = 1;
 
-        $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version}`},
-          $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version}`}
+        $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version} clang | head -n1`},
+          $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version} clang++ | head -n1`}
           if $config->{cmake_clang};
         $D{BUILD_CLIENT} = (0 + !$config->{no_build_client});
         $D{BUILD_SERVER} = (0 + !$config->{no_build_server});
@@ -450,13 +455,14 @@ $commands = {
         local $config->{make_add} = $config->{make_add};
         $config->{make_add} .= " V=1 VERBOSE=1 " if $config->{make_verbose};
         #sy qq{nice make -j $config->{makej} $config->{make_add} $config->{tee} $config->{logdir}/autotest.$g->{task_name}.make.log};
-        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej}},
+        return sytee qq{$config->{make_add} nice cmake --build . -- -j $config->{makej} $config->{makev}},
           qq{$config->{logdir}/autotest.$g->{task_name}.make.log};
     },
     run_single => sub {
         sy qq{rm -rf ${root_path}cache/media/* } if $config->{cache_clear} and $root_path;
         $commands->{world_name}();
         sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
+        $config->{pid_file} = $config->{pid_path} . ($options->{pass}{name} || 'freeminer') . '.pid';
         return
           sytee $config->{runner},
           $commands->{env}(),
@@ -493,9 +499,9 @@ $commands = {
           qq{@_},
           $commands->{executable}(),
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
-          options_make([qw(gameid world port config autoexit verbose)]),
+          options_make($options->{pass}{config} ? () : [qw(gameid world port config autoexit verbose)]),
           qq{$config->{run_add}};
-
+        $config->{pid_file} = $config->{pid_path} . ($options->{pass}{worldname} || 'freeminerserver') . '.pid';
         if ($config->{server_bg}) {
             return sf $cmd . qq{ $config->{tee} $config->{logdir}/autotest.$g->{task_name}.server.out.log};
         } else {
@@ -547,9 +553,9 @@ qq{ffmpeg -f image2 $config->{ffmpeg_add_i} -pattern_type glob -i '../$config->{
     fail => sub {
         warn 'fail:', join ' ', @_;
     },
-    set_client => [{'---no_build_client' => 0, '---no_build_server' => 1,, '---executable_name' => 'freeminer',}],
+    set_client => [{'---no_build_client' => 0, '---no_build_server' => 1, '---executable_name' => 'freeminer',}],
     set_server =>
-      [{'---no_build_client' => 1, '---no_build_server' => 0, -options_add => 'no_exit', '---executable_name' => 'freeminerserver',}],
+      [{'---no_build_client' => 1, '---no_build_server' => 0, '----no_exit'=>1, '---executable_name' => 'freeminerserver',}],
 };
 
 our $tasks = {
@@ -565,7 +571,8 @@ our $tasks = {
         {'---cmake_debug' => 1,}
     ],
     build_client => ['set_client',   'build',],
-    bot          => ['build_client', 'run_bot'],
+    build_server => ['set_server',   'build',],
+    bot          => [{'----default' => 1, '----' . $config->{options_display} => 1}, 'build_client', 'run_bot'],
     clang        => {
         '---cmake_clang'  => 1,
         '---cmake_libcxx' => 1,
@@ -578,7 +585,7 @@ our $tasks = {
             $config->{envs}{asan}  = " ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer$config->{clang_version}`";
             0;
         },
-        'clang', 'debug',
+    	'debug',
 
         {
             '---cmake_asan' => 1,
@@ -589,14 +596,14 @@ our $tasks = {
             $g->{keep_config}          = 1;
             $g->{build_names}{san}     = 'tsan';
             #$config->{options_display} = 'software' if $config->{tsan_opengl_fix} and !$config->{options_display};
-            $config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
+            #$config->{cmake_leveldb} //= 0 if $config->{tsan_leveldb_fix};
             $config->{envs}{tsan} = " TSAN_OPTIONS='detect_deadlocks=1 second_deadlock_stack=1 history_size=7'";
             #? local $options->{opt}{enable_minimap} = 0;    # too unsafe
             # FATAL: ThreadSanitizer: unexpected memory mapping :
             sy 'sudo --non-interactive sysctl vm.mmap_rnd_bits=28';
             0;
         },
-        'clang', 'debug',
+    	'debug',
         {
             '---cmake_tsan' => 1,
         },
@@ -608,7 +615,7 @@ our $tasks = {
             $g->{build_names}{san} = 'msan';
             0;
         },
-        'clang', 'debug',
+	    'debug',
         {
             '---cmake_msan' => 1,
         },
@@ -619,7 +626,7 @@ our $tasks = {
             $g->{build_names}{san} = 'usan';
             0;
         },
-        'clang', 'debug',
+	    'debug',
         {
             '---cmake_usan' => 1,
         },
@@ -673,7 +680,7 @@ our $tasks = {
         0;
     },
 
-    server => [{-options_add => 'no_exit'}, 'set_server', 'build', 'run_server'],
+    server => ['set_server', 'build_server', 'run_server'],
 
     vtune => sub {
         sy 'echo 0|sudo tee /proc/sys/kernel/yama/ptrace_scope';
@@ -715,13 +722,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             ($config->{PPROF_PATH}) = `which google-pprof pprof`;
             $config->{PPROF_PATH} =~ s{\s+$}{}s;
             $ENV{PPROF_PATH} = $config->{PPROF_PATH};
-            my $flags;
-            $flags .= " MALLOCSTATS=9 "                          if $config->{gperf_heapprofile};
-            $flags .= " HEAPCHECK=normal "                       if $config->{gperf_heapcheck};
-            $flags .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
-            $flags .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
-            $config->{runner}  = $flags . ' ' . $config->{runner};
-            $config->{run_add} = $config->{run_add} . " ||:";
+            $config->{envs}{gperf} .= " MALLOCSTATS=9 PERFTOOLS_VERBOSE=9 "      if $config->{gperf_heapprofile};
+            $config->{envs}{gperf} .= " HEAPPROFILE=$config->{logdir}/heap.out " if $config->{gperf_heapprofile};
+            $config->{envs}{gperf} .= " CPUPROFILE=$config->{logdir}/cpu.out "   if $config->{gperf_cpuprofile};
             0;
         }
     ],
@@ -768,7 +771,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         }
     ],
 
-    play => [
+    go => [
         'set_client',
         {
             '---go'       => undef,
@@ -800,7 +803,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
             '-fixed_map_seed'          => 1,   '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100,
             '-max_block_send_distance' => 100, '----fly'    => 1, '----forward' => 1, '---world_clear' => 1,
             '---world'                 => $script_path . 'world_bench',
-            '-static_spawnpoint'       => '(0,25,0)',
+            '-static_spawnpoint'       => '(0,60,0)',
+            '-fps_max'                 => 120,
+            '-fps_max_unfocused'       => 120,
         },
         'fly'
     ],
@@ -808,7 +813,9 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
     bench1 => [{
             '-fixed_map_seed'          => 1,      '--autoexit' => $options->{pass}{autoexit} || 300, -max_block_generate_distance => 100,
             '-max_block_send_distance' => 100,    '---world_clear'     => 1, '--world' => $script_path . 'world_bench1',
-            -mg_name                   => 'math', '-static_spawnpoint' => "(0,20000,0)",
+            -mg_name                   => 'math', '-static_spawnpoint' => "(0,20202,0)",
+            '-fps_max'                 => 120,
+            '-fps_max_unfocused'       => 120,
         },
         'set_client',
         'build',
@@ -842,7 +849,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         sub { $config->{cmake_opt}{CMAKE_INSTALL_PREFIX} = $config->{logdir} . '/install'; 0 }, 'build',
         sub { sy qq{nice cmake --install .}; },
     ],
-    test => ['build', {'---show_profiler_graph' => 0, -show_profiler_graph => 0}, 'run_test'],
+    test => ['build_client', {'---show_profiler_graph' => 0, -show_profiler_graph => 0}, 'run_test'],
 };
 
 sub dmp (@) { say +(join ' ', (caller)[0 .. 5]), ' ', Data::Dumper::Dumper \@_ }
@@ -894,7 +901,7 @@ sub sig(;$$) {
 sub sy (@) {
     say 'running ', join ' ', @_;
     file_append("$config->{logdir}/run.sh", join(' ', @_), "\n");
-    return sig(system @_);
+    return sig system 'bash', '-c', join ' ', @_;
 }
 
 sub sytee (@) {
@@ -902,11 +909,18 @@ sub sytee (@) {
     say 'running ', join ' ', @_;
     file_append("$config->{logdir}/run.sh", join(' ', @_), "\n");
     my $pid = open my $fh, "-|", "@_ 2>&1" or return "can't open @_: $!";
+    if ($config->{pid_file}) {
+        unlink $config->{pid_file};
+        file_append($config->{pid_file}, $pid);
+    }
     while (defined($_ = <$fh>)) {
         print $_;
         file_append($tee, $_);
     }
     close($fh);
+    if ($config->{pid_file}) {
+        unlink $config->{pid_file};
+    }
     return sig(undef, $pid);
 }
 
@@ -937,7 +951,8 @@ sub options_make(;$$) {
 
     $rmm = {map { $_ => $config->{$_} } grep { $config->{$_} } array(@$mm)};
     $m ||= [
-        map { split /[,;]+/ } map { array($_) } 'default', $config->{options_display},    #$config->{options_bot},
+        map { split /[,;]+/ } map { array($_) } 
+        #'default',  $config->{options_display},    #$config->{options_bot},
         $config->{options_int}, $config->{options_add}, $config->{options_arr},
         (sort { $config->{options_use}{$a} <=> $config->{options_use}{$b} } keys %{$config->{options_use}}), 'opt',
     ];
@@ -1001,6 +1016,12 @@ sub commands_run(@);
 sub commands_run(@) {
     my @p    = @_;
     my $name = shift @p;
+
+    if ($config->{'no_' . $name}) {
+        warn 'command disabled ', $name;
+        return undef;
+    }
+
     say join ' ', "commands_run", $name, @p if $config->{verbose};
 
     my $c = $commands->{$name} || $tasks->{$name};

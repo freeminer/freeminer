@@ -39,8 +39,10 @@ public:
 
 	mapped_type nothing = {};
 
+	~concurrent_map_() { clear(); }
+
 	template <typename... Args>
-	mapped_type& get(Args &&...args)
+	mapped_type &get(Args &&...args)
 	{
 		auto lock = LOCKER::lock_shared_rec();
 
@@ -158,7 +160,6 @@ public:
 		return full_type::rend(std::forward<Args>(args)...);
 	}
 
-
 	template <typename... Args>
 	decltype(auto) erase(Args &&...args)
 	{
@@ -178,7 +179,8 @@ template <class Key, class T, class Compare = std::less<Key>,
 		class Allocator = std::allocator<std::pair<const Key, T>>>
 using concurrent_map = concurrent_map_<locker<>, Key, T, Compare, Allocator>;
 
-template <class Key, class T, class Compare = std::less<Key>, class Allocator = std::allocator<std::pair<const Key, T>>>
+template <class Key, class T, class Compare = std::less<Key>,
+		class Allocator = std::allocator<std::pair<const Key, T>>>
 using concurrent_shared_map = concurrent_map_<shared_locker, Key, T, Compare, Allocator>;
 
 #if ENABLE_THREADS

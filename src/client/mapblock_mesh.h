@@ -54,14 +54,14 @@ struct MeshMakeData
 	const NodeDefManager *nodedef;
 	bool m_use_shaders;
 
-	// fm:
-	NodeContainer &m_vmanip;
+    // fm:
+	NodeContainer & m_vmanip;
 	const u16 side_length_data;
 	const int lod_step;
 	const int far_step;
 	const int fscale;
 
-	int range{};
+	int range{1};
 	bool no_draw{};
 	unsigned int timestamp{};
 	bool debug{};

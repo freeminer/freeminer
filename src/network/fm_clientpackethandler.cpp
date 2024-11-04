@@ -170,69 +170,6 @@ void Client::handleCommand_AddNode(NetworkPacket* pkt)      {
 	addNode(p, n, remove_metadata, 2); //fast add
 }
 
-void Client::handleCommand_BlockData(NetworkPacket* pkt)    {
-	auto & packet = *(pkt->packet);
-	v3s16 p = packet[TOCLIENT_BLOCKDATA_POS].as<v3s16>();
-	s8 step = 1;
-	packet[TOCLIENT_BLOCKDATA_STEP].convert(step);
-
-	if (step == 1) {
-
-		std::istringstream istr(packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
-
-		MapBlock *block;
-
-		block = m_env.getMap().getBlockNoCreateNoEx(p);
-		bool new_block = !block;
-		if (new_block)
-			block = new MapBlock(&m_env.getMap(), p, this);
-
-		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, block->content_only);
-		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->content_only_param1);
-		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->content_only_param2);
-
-		block->deSerialize(istr, m_server_ser_ver, false);
-		s32 h; // for convert to atomic
-		packet[TOCLIENT_BLOCKDATA_HEAT].convert(h);
-		block->heat = h;
-		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(h);
-		block->humidity = h;
-
-		if (m_localdb) {
-			ServerMap::saveBlock(block, m_localdb);
-		}
-
-		if (new_block) {
-			if (!m_env.getMap().insertBlock(block)) {
-				delete block;
-				block = nullptr;
-			}
-		}
-
-		/*
-			//Add it to mesh update queue and set it to be acknowledged after update.
-		*/
-		//infostream<<"Adding mesh update task for received block "<<p<<std::endl;
-		if (block) {
-			updateMeshTimestampWithEdge(p);
-			if (!overload && block->content_only != CONTENT_IGNORE && block->content_only != CONTENT_AIR) {
-				if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(p) <= 1)
-					addUpdateMeshTaskWithEdge(p);
-			}
-		}
-
-		/*
-		#if !defined(NDEBUG)
-				if (m_env.getClientMap().m_block_boundary.size() > 150)
-					m_env.getClientMap().m_block_boundary.clear();
-				m_env.getClientMap().m_block_boundary[p] = block;
-		#endif
-		*/
-
-	}//step
-
-}
-
 void Client::handleCommand_Inventory(NetworkPacket* pkt)    {
 	auto & packet = *(pkt->packet);
 	std::string datastring = packet[TOCLIENT_INVENTORY_DATA].as<std::string>();

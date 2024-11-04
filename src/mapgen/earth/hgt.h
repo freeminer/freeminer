@@ -75,7 +75,7 @@ public:
 	bool load(ll_t lat, ll_t lon) override;
 };
 
-class height_tif : public height
+class height_tif final : public height
 {
 	const std::string folder;
 	int lat_loading = 200;
@@ -89,7 +89,7 @@ public:
 	bool load(ll_t lat, ll_t lon) override;
 };
 
-class height_gebco_tif : public height
+class height_gebco_tif final : public height
 {
 	const std::string folder;
 	int lat_loading = 200;
@@ -108,7 +108,7 @@ public:
 	static int lon90_start(ll_t lon);
 };
 
-class height_dummy : public height
+class height_dummy final : public height
 {
 protected:
 	std::tuple<size_t, size_t, ll_t, ll_t> ll_to_xy(ll_t lat, ll_t lon) override

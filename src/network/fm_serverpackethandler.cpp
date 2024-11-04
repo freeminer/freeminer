@@ -1491,7 +1491,7 @@ void Server::handleCommand_SrpBytesM(NetworkPacket* pkt) {
 
 void Server::handleCommand_Drawcontrol(NetworkPacket* pkt) {
 	const auto peer_id = pkt->getPeerId();
-	auto & packet = *(pkt->packet);
+	const auto & packet = *(pkt->packet);
 	auto player = m_env->getPlayer(pkt->getPeerId());
 	if (!player) {
 		m_con.DisconnectPeer(pkt->getPeerId());

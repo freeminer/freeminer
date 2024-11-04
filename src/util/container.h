@@ -77,7 +77,7 @@ public:
 		return m_queue.size();
 	}
 
-private:
+//private:
 	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
 	std::queue<Value> m_queue;
 };
@@ -254,16 +254,12 @@ public:
 
 	bool empty() const
 	{
-		//try_shared_lock lock(m_mutex);
 		MutexAutoLock lock(m_mutex);
 		return m_queue.empty();
 	}
 	bool empty_try()
 	{
-		//try_shared_lock lock(m_mutex, std::try_to_lock);
 		MutexAutoLock lock(m_mutex);
-		//if (!lock.owns_lock())
-		//	return 1;
 		return m_queue.empty();
 	}
 	size_t size() {

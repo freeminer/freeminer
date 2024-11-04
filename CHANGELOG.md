@@ -13,6 +13,7 @@ Changelog
   * Farmesh alpha
   * Multi protocol network: Auto use enet for freeminer servers and mt for minetest
   * Run abm's in whole world: to enable: abm_world=1
+  * Mapgen Earth (whole terrain 1:1 with seabeds)
 
 ### 5.7.0.0 (?)
   * Tree growth

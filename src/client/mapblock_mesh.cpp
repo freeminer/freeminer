@@ -58,7 +58,7 @@ MeshMakeData::MeshMakeData(const NodeDefManager *ndef, u16 side_length, bool use
 		side_length_data{side_length},
 		lod_step{lod_step},
 		far_step{far_step},
-		fscale(pow(2, far_step + lod_step))
+		fscale(1<<(far_step + lod_step))
 {}
 
 void MeshMakeData::fillBlockDataBegin(const v3s16 &blockpos)
@@ -780,7 +780,9 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3s16 camera_offs
 				tex.MagFilter = video::ETMAGF_NEAREST;
 			});
 
-		  if (data->far_step <= 0)
+#if !FARMESH_SHADOWS
+		 if (data->far_step <= 0)
+#endif
 			if (m_enable_shaders) {
 				material.MaterialType = m_shdrsrc->getShaderInfo(
 						p.layer.shader_id).material;
@@ -794,7 +796,11 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3s16 camera_offs
 
 			scene::SMeshBuffer *buf = new scene::SMeshBuffer();
 			buf->Material = material;
-			if (p.layer.isTransparent() && data->far_step <= 0) {
+			if (p.layer.isTransparent() 
+#if !FARMESH_SHADOWS
+				&& data->far_step <= 0
+#endif
+			) {
 				buf->append(&p.vertices[0], p.vertices.size(), nullptr, 0);
 
 				MeshTriangle t;
