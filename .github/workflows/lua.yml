@@ -38,7 +38,7 @@ jobs:
 
     - name: Integration test + devtest
       run: |
-        ./util/test_multiplayer.sh
+        serverconf="profiler.load=true" ./util/test_multiplayer.sh
 
   luacheck:
     name: "Builtin Luacheck and Unit Tests"

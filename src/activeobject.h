@@ -1,24 +1,6 @@
-/*
-activeobject.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -166,17 +148,19 @@ typedef std::unordered_map<std::string, BoneOverride> BoneOverrideMap;
 class ActiveObject
 {
 public:
-	ActiveObject(u16 id):
+	typedef u16 object_t;
+
+	ActiveObject(object_t id):
 		m_id(id)
 	{
 	}
 
-	u16 getId() const
+	object_t getId() const
 	{
 		return m_id;
 	}
 
-	void setId(u16 id)
+	void setId(object_t id)
 	{
 		m_id = id;
 	}
@@ -207,16 +191,24 @@ public:
 	virtual bool collideWithObjects() const = 0;
 
 
-	virtual void setAttachment(int parent_id, const std::string &bone, v3f position,
+	virtual void setAttachment(object_t parent_id, const std::string &bone, v3f position,
 			v3f rotation, bool force_visible) {}
-	virtual void getAttachment(int *parent_id, std::string *bone, v3f *position,
+	virtual void getAttachment(object_t *parent_id, std::string *bone, v3f *position,
 			v3f *rotation, bool *force_visible) const {}
+	// Detach all children
 	virtual void clearChildAttachments() {}
-	virtual void clearParentAttachment() {}
-	virtual void addAttachmentChild(int child_id) {}
-	virtual void removeAttachmentChild(int child_id) {}
+	// Detach from parent
+	virtual void clearParentAttachment()
+	{
+		setAttachment(0, "", v3f(), v3f(), false);
+	}
+
+	// To be be called from setAttachment() and descendants, but not manually!
+	virtual void addAttachmentChild(object_t child_id) {}
+	virtual void removeAttachmentChild(object_t child_id) {}
+
 protected:
-	u16 m_id; // 0 is invalid, "no id"
+	object_t m_id; // 0 is invalid, "no id"
 };
 
 using ActiveObjectPtr = std::shared_ptr<ActiveObject>;

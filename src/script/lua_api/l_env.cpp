@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_env.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <algorithm>
 #include "irr_v3d.h"
@@ -48,7 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/player_sao.h"
 #include "util/string.h"
 #include "translation.h"
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 #include "client/client.h"
 #endif
 
@@ -70,118 +52,13 @@ const EnumString ModApiEnvBase::es_BlockStatusType[] =
 
 ///////////////////////////////////////////////////////////////////////////////
 
-//v3pos_t start_pos;
-
-void LuaABM::trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider, 
-		v3pos_t neighbor_pos, uint8_t activate)
-{
-	ServerScripting *scriptIface = env->getScriptIface();
-	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex, std::try_to_lock);
-	if (!_script_lock.owns_lock()) {
-		return;
-	}
-	scriptIface->realityCheck();
-
-	lua_State *L = scriptIface->getStack();
-	sanity_check(lua_checkstack(L, 20));
-	StackUnroller stack_unroller(L);
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	// Get registered_abms
-	lua_getglobal(L, "core");
-	lua_getfield(L, -1, "registered_abms");
-	luaL_checktype(L, -1, LUA_TTABLE);
-	lua_remove(L, -2); // Remove core
-
-	// Get registered_abms[m_id]
-	lua_pushinteger(L, m_id);
-	lua_gettable(L, -2);
-	if(lua_isnil(L, -1))
-		//FATAL_ERROR("");
-		return;
-	lua_remove(L, -2); // Remove registered_abms
-
-	scriptIface->setOriginFromTable(-1);
-
-	// Call action
-	luaL_checktype(L, -1, LUA_TTABLE);
-	lua_getfield(L, -1, "action");
-	luaL_checktype(L, -1, LUA_TFUNCTION);
-	lua_remove(L, -2); // Remove registered_abms[m_id]
-	push_v3s16(L, p);
-	pushnode(L, n);
-	lua_pushnumber(L, active_object_count);
-	lua_pushnumber(L, active_object_count_wider);
-	const auto & neighbor = env->getServerMap().getNodeTry(neighbor_pos);
-	pushnode(L, neighbor);
-	lua_pushnumber(L, activate);
-
-	int result = lua_pcall(L, 6, 0, error_handler);
-	if (result)
-		scriptIface->scriptError(result, "LuaABM::trigger");
-
-	lua_pop(L, 1); // Pop error handler
-}
-
-void LuaLBM::trigger(ServerEnvironment *env, v3s16 p,
-	const MapNode n, const float dtime_s)
-{
-	ServerScripting *scriptIface = env->getScriptIface();
-	auto _script_lock = RecursiveMutexAutoLock(scriptIface->m_luastackmutex, std::try_to_lock);
-	if (!_script_lock.owns_lock()) {
-		return;
-	}
-	scriptIface->realityCheck();
-
-	lua_State *L = scriptIface->getStack();
-	sanity_check(lua_checkstack(L, 20));
-	StackUnroller stack_unroller(L);
-
-	int error_handler = PUSH_ERROR_HANDLER(L);
-
-	// Get registered_lbms
-	lua_getglobal(L, "core");
-	lua_getfield(L, -1, "registered_lbms");
-	luaL_checktype(L, -1, LUA_TTABLE);
-	lua_remove(L, -2); // Remove core
-
-	// Get registered_lbms[m_id]
-	lua_pushinteger(L, m_id);
-	lua_gettable(L, -2);
-	//FATAL_ERROR_IF(lua_isnil(L, -1), "Entry with given id not found in registered_lbms table");
-	if (lua_isnil(L, -1)) {
-		errorstream << "Entry with given id " << m_id << " not found in registered_lbms table" << std::endl;
-		return;
-	}
-	lua_remove(L, -2); // Remove registered_lbms
-
-	scriptIface->setOriginFromTable(-1);
-
-	// Call action
-	luaL_checktype(L, -1, LUA_TTABLE);
-	lua_getfield(L, -1, "action");
-	luaL_checktype(L, -1, LUA_TFUNCTION);
-	lua_remove(L, -2); // Remove registered_lbms[m_id]
-	push_v3s16(L, p);
-	pushnode(L, n);
-	lua_pushnumber(L, dtime_s);
-
-	int result = lua_pcall(L, 3, 0, error_handler);
-	if (result)
-		scriptIface->scriptError(result, "LuaLBM::trigger");
-
-	lua_pop(L, 1); // Pop error handler
-}
-
 int LuaRaycast::l_next(lua_State *L)
 {
 	GET_PLAIN_ENV_PTR;
 	ServerEnvironment *senv = dynamic_cast<ServerEnvironment*>(env);
 
 	bool csm = false;
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	csm = getClient(L) != nullptr;
 #endif
 
@@ -269,8 +146,8 @@ void LuaEmergeAreaCallback(v3s16 blockpos, EmergeAction action, void *param)
 	assert(state->refcount > 0);
 
 	// state must be protected by envlock
-	//Server *server = state->script->getServer();
-	//MutexAutoLock envlock(server->m_env_mutex);
+	Server *server = state->script->getServer();
+	Server::EnvAutoLock envlock(server);
 
 	state->refcount--;
 
@@ -359,6 +236,31 @@ int ModApiEnv::l_swap_node(lua_State *L)
 	MapNode n = readnode(L, 2);
 	// Do it
 	bool succeeded = env->swapNode(pos, n);
+	lua_pushboolean(L, succeeded);
+	return 1;
+}
+
+// bulk_swap_node([pos1, pos2, ...], node)
+// pos = {x=num, y=num, z=num}
+int ModApiEnv::l_bulk_swap_node(lua_State *L)
+{
+	GET_ENV_PTR;
+
+	luaL_checktype(L, 1, LUA_TTABLE);
+
+	s32 len = lua_objlen(L, 1);
+
+	MapNode n = readnode(L, 2);
+
+	// Do it
+	bool succeeded = true;
+	for (s32 i = 1; i <= len; i++) {
+		lua_rawgeti(L, 1, i);
+		if (!env->swapNode(read_v3s16(L, -1), n))
+			succeeded = false;
+		lua_pop(L, 1);
+	}
+
 	lua_pushboolean(L, succeeded);
 	return 1;
 }
@@ -927,10 +829,7 @@ int ModApiEnv::l_get_timeofday(lua_State *L)
 {
 	GET_PLAIN_ENV_PTR;
 
-	// Do it
-	int timeofday_mh = env->getTimeOfDay();
-	float timeofday_f = (float)timeofday_mh / 24000.0f;
-	lua_pushnumber(L, timeofday_f);
+	lua_pushnumber(L, env->getTimeOfDayF());
 	return 1;
 }
 
@@ -948,8 +847,7 @@ int ModApiEnv::l_get_gametime(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	int game_time = env->getGameTime();
-	lua_pushnumber(L, game_time);
+	lua_pushnumber(L, env->getGameTime());
 	return 1;
 }
 
@@ -1004,7 +902,7 @@ int ModApiEnv::l_find_node_near(lua_State *L)
 
 	int start_radius = (lua_isboolean(L, 4) && readParam<bool>(L, 4)) ? 0 : 1;
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	// Client API limitations
 	if (Client *client = getClient(L))
 		radius = client->CSMClampRadius(pos, radius);
@@ -1061,8 +959,8 @@ int ModApiEnvBase::findNodesInArea(lua_State *L, const NodeDefManager *ndef,
 		});
 
 		// last filter table is at top of stack
-		u32 i = filter.size() - 1;
-		do {
+		u32 i = filter.size();
+		while (i --> 0) {
 			if (idx[i] == 0) {
 				// No such node found -> drop the empty table
 				lua_pop(L, 1);
@@ -1070,7 +968,7 @@ int ModApiEnvBase::findNodesInArea(lua_State *L, const NodeDefManager *ndef,
 				// This node was found -> put table into the return table
 				lua_setfield(L, base, ndef->get(filter[i]).name.c_str());
 			}
-		} while (i-- != 0);
+		}
 
 		assert(lua_gettop(L) == base);
 		return 1;
@@ -1116,7 +1014,7 @@ int ModApiEnv::l_find_nodes_in_area(lua_State *L)
 	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	Map &map = env->getMap();
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	if (Client *client = getClient(L)) {
 		minp = client->CSMClampPos(minp);
 		maxp = client->CSMClampPos(maxp);
@@ -1178,7 +1076,7 @@ int ModApiEnv::l_find_nodes_in_area_under_air(lua_State *L)
 	const NodeDefManager *ndef = env->getGameDef()->ndef();
 	Map &map = env->getMap();
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	if (Client *client = getClient(L)) {
 		minp = client->CSMClampPos(minp);
 		maxp = client->CSMClampPos(maxp);
@@ -1560,6 +1458,7 @@ void ModApiEnv::Initialize(lua_State *L, int top)
 	API_FCT(bulk_set_node);
 	API_FCT(add_node);
 	API_FCT(swap_node);
+	API_FCT(bulk_swap_node);
 	API_FCT(add_item);
 	API_FCT(remove_node);
 	API_FCT(get_node_raw);

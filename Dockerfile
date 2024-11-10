@@ -34,24 +34,24 @@ COPY mods /usr/src/minetest/mods
 
 FROM dev as builder
 
-COPY .git /usr/src/minetest/.git
-COPY CMakeLists.txt /usr/src/minetest/CMakeLists.txt
-COPY README.md /usr/src/minetest/README.md
-COPY freeminer.conf.example /usr/src/minetest/freeminer.conf.example
-COPY builtin /usr/src/minetest/builtin
-COPY cmake /usr/src/minetest/cmake
-COPY doc /usr/src/minetest/doc
-COPY fonts /usr/src/minetest/fonts
-COPY lib /usr/src/minetest/lib
-COPY misc /usr/src/minetest/misc
-COPY po /usr/src/minetest/po
-COPY src /usr/src/minetest/src
-COPY irr /usr/src/minetest/irr
-COPY textures /usr/src/minetest/textures
+COPY .git /usr/src/luanti/.git
+COPY CMakeLists.txt /usr/src/luanti/CMakeLists.txt
+COPY README.md /usr/src/luanti/README.md
+COPY freeminer.conf.example /usr/src/luanti/freeminer.conf.example
+COPY builtin /usr/src/luanti/builtin
+COPY cmake /usr/src/luanti/cmake
+COPY doc /usr/src/luanti/doc
+COPY fonts /usr/src/luanti/fonts
+COPY lib /usr/src/luanti/lib
+COPY misc /usr/src/luanti/misc
+COPY po /usr/src/luanti/po
+COPY src /usr/src/luanti/src
+COPY irr /usr/src/luanti/irr
+COPY textures /usr/src/luanti/textures
 
 COPY games/default /usr/src/minetest/games/default
 
-WORKDIR /usr/src/minetest
+WORKDIR /usr/src/luanti
 RUN cmake -B build \
 		-DCMAKE_INSTALL_PREFIX=/usr/local \
 		-DCMAKE_BUILD_TYPE=Release \

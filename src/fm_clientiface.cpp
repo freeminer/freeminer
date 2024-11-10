@@ -581,7 +581,7 @@ uint32_t RemoteClient::SendFarBlocks()
 					sent_ts = -1;
 					continue;
 				}
-				const auto dbase = GetFarDatabase(m_env->m_map->dbase,
+				const auto dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
 						m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
 				if (!dbase) {
 					sent_ts = -1;

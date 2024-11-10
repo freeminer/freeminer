@@ -1,41 +1,31 @@
-/*
-clouds.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
+#include "irrlichttypes_bloated.h"
 #include "constants.h"
 #include "irr_ptr.h"
-#include "irrlichttypes_extrabloated.h"
 #include "skyparams.h"
 #include <iostream>
+#include <ISceneNode.h>
+#include <SMaterial.h>
+#include <SMeshBuffer.h>
 
 class IShaderSource;
 
-// Menu clouds
-class Clouds;
-extern Clouds *g_menuclouds;
+namespace irr::scene
+{
+	class ISceneManager;
+}
 
-// Scene manager used for menu clouds
+// Menu clouds
+// The mainmenu and the loading screen use the same Clouds object so that the
+// clouds don't jump when switching between the two.
+class Clouds;
 extern scene::ISceneManager *g_menucloudsmgr;
+extern Clouds *g_menuclouds;
 
 class Clouds : public scene::ISceneNode
 {
@@ -104,6 +94,14 @@ public:
 		m_params.color_ambient = color_ambient;
 	}
 
+	void setColorShadow(video::SColor color_shadow)
+	{
+		if (m_params.color_shadow == color_shadow)
+			return;
+		m_params.color_shadow = color_shadow;
+		invalidateMesh();
+	}
+
 	void setHeight(float height)
 	{
 		if (m_params.height == height)
@@ -151,6 +149,11 @@ private:
 // freeminer:
 	s32 m_humidity = 50;
 // ==
+
+	// Are the clouds 3D?
+	inline bool is3D() const {
+		return m_enable_3d && m_params.thickness >= 0.01f;
+	}
 
 	video::SMaterial m_material;
 	irr_ptr<scene::SMeshBuffer> m_meshbuffer;

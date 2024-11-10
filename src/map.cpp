@@ -1,24 +1,6 @@
-/*
-map.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "map.h"
 #include "irr_v3d.h"
@@ -884,17 +866,9 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 			} else {
 				flags |= VMANIP_BLOCK_DATA_INEXIST;
 
-				/*
-					Mark area inexistent
-				*/
+				// Mark area inexistent
 				VoxelArea a(p*MAP_BLOCKSIZE, (p+1)*MAP_BLOCKSIZE-v3s16(1,1,1));
-				// Fill with VOXELFLAG_NO_DATA
-				for(s32 z=a.MinEdge.Z; z<=a.MaxEdge.Z; z++)
-				for(s32 y=a.MinEdge.Y; y<=a.MaxEdge.Y; y++)
-				{
-					s32 i = m_area.index(a.MinEdge.X,y,z);
-					memset(&m_flags[i], VOXELFLAG_NO_DATA, MAP_BLOCKSIZE);
-				}
+				setFlags(a, VOXELFLAG_NO_DATA);
 			}
 		}
 		/*else if (block->getNode(0, 0, 0).getContent() == CONTENT_IGNORE)
@@ -910,9 +884,9 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 }
 
 void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
-	bool overwrite_generated, bool save_generated_block)
+	bool overwrite_generated, bool save_generated_block) const
 {
-	if(m_area.getExtent() == v3s16(0,0,0))
+	if (m_area.hasEmptyExtent())
 		return;
 	assert(m_map);
 

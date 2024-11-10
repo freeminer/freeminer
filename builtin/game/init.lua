@@ -39,6 +39,7 @@ dofile(gamepath .. "forceloading.lua")
 dofile(gamepath .. "hud.lua")
 dofile(gamepath .. "knockback.lua")
 dofile(gamepath .. "async.lua")
+dofile(gamepath .. "death_screen.lua")
 
 dofile(gamepath.."stat.lua")
 if core.setting_getbool("mod_debugging") then

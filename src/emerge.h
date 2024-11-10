@@ -1,24 +1,6 @@
-/*
-emerge.h
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #pragma once
 
@@ -49,6 +31,7 @@ class DecorationManager;
 class SchematicManager;
 class Server;
 class ModApiMapgen;
+struct MapDatabaseAccessor;
 
 // Structure containing inputs/outputs for chunk generation
 struct BlockMakeData {
@@ -180,6 +163,10 @@ public:
 	SchematicManager *getWritableSchematicManager();
 
 	void initMapgens(MapgenParams *mgparams);
+	/// @param holder non-owned reference that must stay alive
+	void initMap(MapDatabaseAccessor *holder);
+	/// resets the reference
+	void resetMap();
 
 	void startThreads();
 	void stopThreads();
@@ -198,6 +185,7 @@ public:
 		EmergeCompletionCallback callback,
 		void *callback_param);
 
+	size_t getQueueSize();
 	bool isBlockInQueue(v3s16 pos);
 
 	Mapgen *getCurrentMapgen();
@@ -213,6 +201,9 @@ private:
 	std::vector<Mapgen *> m_mapgens;
 	std::vector<EmergeThread *> m_threads;
 	std::atomic_bool m_threads_active {false};
+
+	// The map database
+	MapDatabaseAccessor *m_db = nullptr;
 
 	std::mutex m_queue_mutex;
 	std::map<v3s16, BlockEmergeData> m_blocks_enqueued;

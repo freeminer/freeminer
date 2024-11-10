@@ -15,8 +15,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef LOG_TYPES_HEADER
-#define LOG_TYPES_HEADER
+#pragma once
 
 //#include "log.h" //for replacing log.h to log_types.h in includes
 
@@ -51,5 +50,3 @@ class Value;
 
 class Address;
 std::ostream &operator<<(std::ostream &s, const Address &addr);
-
-#endif

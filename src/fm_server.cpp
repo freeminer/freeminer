@@ -692,7 +692,7 @@ void *WorldMergeThread::run()
 			.ndef{m_server->getNodeDefManager()},
 			.smap{m_server->getEnv().m_map.get()},
 			.far_dbases{m_server->far_dbases},
-			.dbase{m_server->getEnv().m_map->dbase},
+			.dbase{m_server->getEnv().m_map->m_db.dbase},
 			.save_dir{m_server->getEnv().m_map->m_savedir},
 	};
 	{
@@ -747,4 +747,15 @@ void *WorldMergeThread::run()
 
 	END_DEBUG_EXCEPTION_HANDLER;
 	return {};
+}
+
+void Server::SetBlocksNotSent()
+{
+	std::vector<session_t> clients = m_clients.getClientIDs();
+	ClientInterface::AutoLock clientlock(m_clients);
+	// Set the modified blocks unsent for all the clients
+	for (const session_t client_id : clients) {
+			if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
+				client->SetBlocksNotSent(/*block*/);
+	}
 }

@@ -1,29 +1,11 @@
-/*
-itemdef.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013 Kahrl <kahrl@gmx.net>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013 Kahrl <kahrl@gmx.net>
 
 #pragma once
 
-#include "irrlichttypes_extrabloated.h"
+#include "irrlichttypes_bloated.h"
 #include <string>
 #include <iostream>
 #include <optional>
@@ -42,11 +24,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class IGameDef;
 class Client;
 struct ToolCapabilities;
-#ifndef SERVER
-#include "client/texturesource.h"
 struct ItemMesh;
 struct ItemStack;
-#endif
+typedef std::vector<video::SColor> Palette; // copied from src/client/texturesource.h
+namespace irr::video { class ITexture; }
+using namespace irr;
 
 /*
 	Base item definition
@@ -173,6 +155,11 @@ private:
 class IItemDefManager
 {
 public:
+	// fm:
+	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	virtual void msgpack_unpack(msgpack::object o)=0;
+    // ==
+
 	IItemDefManager() = default;
 
 	virtual ~IItemDefManager() = default;
@@ -185,28 +172,32 @@ public:
 	virtual void getAll(std::set<std::string> &result) const=0;
 	// Check if item is known
 	virtual bool isKnown(const std::string &name) const=0;
-#ifndef SERVER
-	// Get item inventory texture
-	virtual video::ITexture* getInventoryTexture(const ItemStack &item, Client *client) const=0;
-
-	/**
-	 * Get wield mesh
-	 *
-	 * Returns nullptr if there is an inventory image
-	 */
-	virtual ItemMesh* getWieldMesh(const ItemStack &item, Client *client) const = 0;
-	// Get item palette
-	virtual Palette* getPalette(const ItemStack &item, Client *client) const = 0;
-	// Returns the base color of an item stack: the color of all
-	// tiles that do not define their own color.
-	virtual video::SColor getItemstackColor(const ItemStack &stack,
-		Client *client) const = 0;
-#endif
 
 	virtual void serialize(std::ostream &os, u16 protocol_version)=0;
 
-	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
-	virtual void msgpack_unpack(msgpack::object o)=0;
+	/* Client-specific methods */
+	// TODO: should be moved elsewhere in the future
+
+	// Get item inventory texture
+	virtual video::ITexture* getInventoryTexture(const ItemStack &item, Client *client) const
+	{ return nullptr; }
+
+	/**
+	 * Get wield mesh
+	 * @returns nullptr if there is an inventory image
+	 */
+	virtual ItemMesh* getWieldMesh(const ItemStack &item, Client *client) const
+	{ return nullptr; }
+
+	// Get item palette
+	virtual Palette* getPalette(const ItemStack &item, Client *client) const
+	{ return nullptr; }
+
+	// Returns the base color of an item stack: the color of all
+	// tiles that do not define their own color.
+	virtual video::SColor getItemstackColor(const ItemStack &stack,
+		Client *client) const
+	{ return video::SColor(0); }
 };
 
 class IWritableItemDefManager : public IItemDefManager

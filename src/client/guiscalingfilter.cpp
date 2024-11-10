@@ -1,20 +1,6 @@
-/*
-Copyright (C) 2015 Aaron Suen <warr1024@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2015 Aaron Suen <warr1024@gmail.com>
 
 #include "guiscalingfilter.h"
 #include "imagefilters.h"
@@ -23,6 +9,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include <cstdio>
 #include "client/renderingengine.h"
+#include <IImage.h>
+#include <ITexture.h>
+#include <IVideoDriver.h>
 
 /* Maintain a static cache to store the images that correspond to textures
  * in a format that's manipulable by code.  Some platforms exhibit issues

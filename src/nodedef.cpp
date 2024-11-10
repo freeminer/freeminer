@@ -1,33 +1,16 @@
-/*
-nodedef.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "nodedef.h"
 
 #include "itemdef.h"
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 #include "client/mesh.h"
 #include "client/shader.h"
 #include "client/client.h"
 #include "client/renderingengine.h"
+#include "client/texturesource.h"
 #include "client/tile.h"
 #include <IMeshManipulator.h>
 #endif
@@ -433,7 +416,7 @@ ContentFeatures::ContentFeatures()
 
 ContentFeatures::~ContentFeatures()
 {
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	for (u16 j = 0; j < 6; j++) {
 		delete tiles[j].layers[0].frames;
 		delete tiles[j].layers[1].frames;
@@ -448,7 +431,7 @@ void ContentFeatures::reset()
 	/*
 		Cached stuff
 	*/
-//#ifndef SERVER
+//#if CHECK_CLIENT_BUILD()
 	solidness = 2;
 	visual_solidness = 0;
 	backface_culling = true;
@@ -471,7 +454,7 @@ void ContentFeatures::reset()
 	groups["dig_immediate"] = 2;
 	drawtype = NDT_NORMAL;
 	mesh.clear();
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	for (auto &i : mesh_ptr)
 		i = NULL;
 	minimap_color = video::SColor(0, 0, 0, 0);
@@ -944,7 +927,7 @@ void ContentFeatures::msgpack_unpack(msgpack::object o)
 
 }
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 		const TileSpec &tile, const TileDef &tiledef, video::SColor color,
 		u8 material_type, u32 shader_id, bool backface_culling,
@@ -969,8 +952,6 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 	}
 	if (!tile.world_aligned)
 		layer->scale = 1;
-
-	layer->flags_texture = tsrc->getShaderFlagsTexture(layer->normal_texture ? true : false);
 
 	// Material flags
 	layer->material_flags = 0;
@@ -1011,18 +992,13 @@ static void fillTileAttribs(ITextureSource *tsrc, TileLayer *layer,
 
 		std::ostringstream os(std::ios::binary);
 		for (int i = 0; i < frame_count; i++) {
-			FrameSpec frame;
-
 			os.str("");
 			os << tiledef.name;
 			tiledef.animation.getTextureModifer(os,
 					layer->texture->getOriginalSize(), i);
 
+			FrameSpec &frame = (*layer->frames)[i];
 			frame.texture = tsrc->getTextureForMesh(os.str(), &frame.texture_id);
-			if (layer->normal_texture)
-				frame.normal_texture = tsrc->getNormalTexture(os.str());
-			frame.flags_texture = layer->flags_texture;
-			(*layer->frames)[i] = frame;
 		}
 	}
 }
@@ -1322,7 +1298,7 @@ NodeDefManager::NodeDefManager()
 
 NodeDefManager::~NodeDefManager()
 {
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	for (ContentFeatures &f : m_content_features) {
 		for (auto &j : f.mesh_ptr) {
 			if (j)
@@ -1814,11 +1790,11 @@ void NodeDefManager::applyTextureOverrides(const std::vector<TextureOverride> &o
 
 void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_args)
 {
-//#ifndef SERVER
+//#if CHECK_CLIENT_BUILD()
 	infostream << "NodeDefManager::updateTextures(): Updating "
 		"textures in node definitions" << std::endl;
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	Client *client = (Client *)gamedef;
 	ITextureSource *tsrc = !client ? nullptr : client->tsrc();
 	IShaderSource *shdsrc = !client ? nullptr : client->getShaderSource();
@@ -1839,7 +1815,7 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &(m_content_features[i]);
 		f->updateTextures(tsrc, shdsrc, meshmanip, client, tsettings, !progress_callback_args);
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 		if (progress_callback_args)
 		client->showUpdateProgressTexture(progress_callback_args, i, size);
 #endif

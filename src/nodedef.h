@@ -1,27 +1,10 @@
-/*
-nodedef.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
+#include "config.h"
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <iostream>
@@ -29,7 +12,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapnode.h"
 #include "nameidmapping.h"
 #include "client/tile.h"
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 #include <IMeshManipulator.h>
 #endif
 class Client;
@@ -457,7 +440,7 @@ struct ContentFeatures
 	/*
 		Cached stuff
 	 */
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	// 0     1     2     3     4     5
 	// up    down  right left  back  front
 	TileSpec tiles[6];
@@ -495,7 +478,7 @@ struct ContentFeatures
 
 	enum NodeDrawType drawtype;
 	std::string mesh;
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	scene::IMesh *mesh_ptr[24];
 	video::SColor minimap_color;
 #endif
@@ -674,11 +657,11 @@ struct ContentFeatures
 		return itemgroup_get(groups, group);
 	}
 
-//#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings,
 		bool server = false);
-//#endif
+#endif
 
 private:
 	void setAlphaFromLegacy(u8 legacy_alpha);

@@ -1,24 +1,6 @@
-/*
-porting.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 /*
 	Random portability stuff
@@ -77,13 +59,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "log.h"
 #include "util/string.h"
+#include "util/tracy_wrapper.h"
 #include <vector>
 #include <cstdarg>
 #include <cstdio>
 #include <signal.h>
 #include <atomic>
 
-#if !defined(SERVER) && defined(_WIN32)
+#if CHECK_CLIENT_BUILD() && defined(_WIN32)
 // On Windows export some driver-specific variables to encourage Minetest to be
 // executed on the discrete GPU in case of systems with two. Portability is fun.
 extern "C" {
@@ -490,7 +473,8 @@ bool setSystemPaths()
 		// Use "C:\Users\<user>\AppData\Roaming\<PROJECT_NAME_C>"
 		len = GetEnvironmentVariable("APPDATA", buf, sizeof(buf));
 		FATAL_ERROR_IF(len == 0 || len > sizeof(buf), "Failed to get APPDATA");
-		path_user = std::string(buf) + DIR_DELIM + PROJECT_NAME_C;
+		// TODO: Luanti with migration
+		path_user = std::string(buf) + DIR_DELIM + "Minetest";
 	} else {
 		path_user = std::string(buf);
 	}
@@ -555,8 +539,9 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user = std::string(getHomeOrFail()) + DIR_DELIM "."
-			+ PROJECT_NAME;
+			+ "minetest";
 	}
 
 	return true;
@@ -583,9 +568,10 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user = std::string(getHomeOrFail())
 			+ "/Library/Application Support/"
-			+ PROJECT_NAME;
+			+ "minetest";
 	}
 	return true;
 }
@@ -600,8 +586,9 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user  = std::string(getHomeOrFail()) + DIR_DELIM "."
-			+ lowercase(PROJECT_NAME);
+			+ "minetest";
 	}
 	return true;
 }
@@ -714,11 +701,13 @@ void initializePaths()
 	const char *cache_dir = getenv("XDG_CACHE_HOME");
 	const char *home_dir = getenv("HOME");
 	if (cache_dir && cache_dir[0] != '\0') {
-		path_cache = std::string(cache_dir) + DIR_DELIM + PROJECT_NAME;
+		// TODO: luanti with migration
+		path_cache = std::string(cache_dir) + DIR_DELIM + "minetest";
 	} else if (home_dir) {
 		// Then try $HOME/.cache/PROJECT_NAME
+		// TODO: luanti with migration
 		path_cache = std::string(home_dir) + DIR_DELIM + ".cache"
-			+ DIR_DELIM + PROJECT_NAME;
+			+ DIR_DELIM + "minetest";
 	} else {
 		// If neither works, use $PATH_USER/cache
 		path_cache = path_user + DIR_DELIM + "cache";
@@ -1031,6 +1020,8 @@ void TrackFreedMemory(size_t amount)
 
 void TriggerMemoryTrim()
 {
+	ZoneScoped;
+
 	constexpr auto MO = std::memory_order_relaxed;
 	if (memory_freed.load(MO) >= MEMORY_TRIM_THRESHOLD) {
 		// Synchronize call

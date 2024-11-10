@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2018 nerzhul, Loic BLOT <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2018 nerzhul, Loic BLOT <loic.blot@unix-experience.fr>
 
 #include <log.h>
 #include "mapblock.h"
@@ -156,7 +141,7 @@ bool ActiveObjectMgr::registerObject(std::shared_ptr<ServerActiveObject> obj)
 		return false;
 	}
 
-	auto obj_id = obj->getId(); 
+	auto obj_id = obj->getId();
 	m_active_objects.put(obj_id, std::move(obj));
 
 #if !NDEBUG
@@ -185,9 +170,19 @@ void ActiveObjectMgr::removeObject(u16 id)
 	}
 }
 
+void ActiveObjectMgr::invalidateActiveObjectObserverCaches()
+{
+	for (auto &active_object : m_active_objects.iter()) {
+		ServerActiveObject *obj = active_object.second.get();
+		if (!obj)
+			continue;
+		obj->invalidateEffectiveObservers();
+	}
+}
+
 void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 		std::vector<ServerActiveObjectPtr> &result,
-		const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb)
+		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
 {
 
 #if 0
@@ -221,7 +216,7 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 
 void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		std::vector<ServerActiveObjectPtr> &result,
-		const std::function<bool(const ServerActiveObjectPtr &obj)> &include_obj_cb)
+		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
 {
 /* fmtodo:
 	std::vector<ServerActiveObjectPtr> active_objects;
@@ -253,8 +248,10 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 	}
 }
 
-void ActiveObjectMgr::getAddedActiveObjectsAroundPos(v3f player_pos, f32 radius,
-		f32 player_radius, const std::set<u16> &current_objects,
+void ActiveObjectMgr::getAddedActiveObjectsAroundPos(
+		const v3f &player_pos, const std::string &player_name,
+		f32 radius, f32 player_radius,
+		const std::set<u16> &current_objects,
 		std::vector<u16> &added_objects)
 {
 #if 0
@@ -273,7 +270,8 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(v3f player_pos, f32 radius,
 		Go through the object list,
 		- discard removed/deactivated objects,
 		- discard objects that are too far away,
-		- discard objects that are found in current_objects.
+		- discard objects that are found in current_objects,
+		- discard objects that are not observed by the player.
 		- add remaining objects to added_objects
 	*/
 	for (auto &ao_it : m_active_objects.iter()) {
@@ -293,6 +291,9 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(v3f player_pos, f32 radius,
 			if (distance_f > player_radius && player_radius != 0)
 				continue;
 		} else if (distance_f > radius)
+			continue;
+
+		if (!object->isEffectivelyObservedBy(player_name))
 			continue;
 
 		// Discard if already on current_objects

@@ -1,26 +1,8 @@
-/*
-log.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include "log.h"
+#include "log_internal.h"
 
 #include "threading/mutex_auto_lock.h"
 #include "debug.h"
@@ -30,7 +12,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "exceptions.h"
 #include "util/numeric.h"
-#include "log.h"
 #include "filesys.h"
 
 #ifdef __ANDROID__
@@ -59,7 +40,7 @@ public:
 		return m_logger.hasOutput(m_level);
 	}
 
-	virtual void log(const std::string &buf) override {
+	virtual void log(std::string_view buf) override {
 		if (!m_raw) {
 			m_logger.log(m_level, buf);
 		} else {
@@ -110,7 +91,7 @@ thread_local LogStream dout_con(trace_target);
 // Android
 #ifdef __ANDROID__
 
-static unsigned int g_level_to_android[] = {
+constexpr static unsigned int g_level_to_android[] = {
 	ANDROID_LOG_INFO,     // LL_NONE
 	ANDROID_LOG_ERROR,    // LL_ERROR
 	ANDROID_LOG_WARN,     // LL_WARNING
@@ -120,11 +101,12 @@ static unsigned int g_level_to_android[] = {
 	ANDROID_LOG_VERBOSE,  // LL_TRACE
 };
 
-void AndroidLogOutput::logRaw(LogLevel lev, const std::string &line)
+void AndroidLogOutput::logRaw(LogLevel lev, std::string_view line)
 {
 	static_assert(ARRLEN(g_level_to_android) == LL_MAX,
 		"mismatch between android and internal loglevels");
-	__android_log_write(g_level_to_android[lev], PROJECT_NAME_C, line.c_str());
+	__android_log_print(g_level_to_android[lev], PROJECT_NAME_C, "%.*s",
+		line.size(), line.data());
 }
 #endif
 
@@ -135,7 +117,7 @@ void AndroidLogOutput::logRaw(LogLevel lev, const std::string &line)
 //// Logger
 ////
 
-LogLevel Logger::stringToLevel(const std::string &name)
+LogLevel Logger::stringToLevel(std::string_view name)
 {
 	if (name == "none")
 		return LL_NONE;
@@ -206,7 +188,7 @@ void Logger::setLevelSilenced(LogLevel lev, bool silenced)
 	m_silenced_levels[lev] = silenced;
 }
 
-void Logger::registerThread(const std::string &name)
+void Logger::registerThread(std::string_view name)
 {
 	std::thread::id id = std::this_thread::get_id();
 	MutexAutoLock lock(m_mutex);
@@ -260,7 +242,7 @@ const std::string &Logger::getThreadName()
 	return fallback_name;
 }
 
-void Logger::log(LogLevel lev, const std::string &text)
+void Logger::log(LogLevel lev, std::string_view text)
 {
 	if (isLevelSilenced(lev))
 		return;
@@ -276,7 +258,7 @@ void Logger::log(LogLevel lev, const std::string &text)
 	logToOutputs(lev, line, timestamp, thread_name, text);
 }
 
-void Logger::logRaw(LogLevel lev, const std::string &text)
+void Logger::logRaw(LogLevel lev, std::string_view text)
 {
 	if (isLevelSilenced(lev))
 		return;
@@ -284,7 +266,7 @@ void Logger::logRaw(LogLevel lev, const std::string &text)
 	logToOutputsRaw(lev, text);
 }
 
-void Logger::logToOutputsRaw(LogLevel lev, const std::string &line)
+void Logger::logToOutputsRaw(LogLevel lev, std::string_view line)
 {
 	MutexAutoLock lock(m_mutex);
 	for (size_t i = 0; i != m_outputs[lev].size(); i++)
@@ -293,7 +275,7 @@ void Logger::logToOutputsRaw(LogLevel lev, const std::string &line)
 
 void Logger::logToOutputs(LogLevel lev, const std::string &combined,
 	const std::string &time, const std::string &thread_name,
-	const std::string &payload_text)
+	std::string_view payload_text)
 {
 	MutexAutoLock lock(m_mutex);
 	for (size_t i = 0; i != m_outputs[lev].size(); i++)
@@ -342,7 +324,7 @@ StreamLogOutput::StreamLogOutput(std::ostream &stream) :
 #endif
 }
 
-void StreamLogOutput::logRaw(LogLevel lev, const std::string &line)
+void StreamLogOutput::logRaw(LogLevel lev, std::string_view line)
 {
 	bool colored_message = (Logger::color_mode == LOG_COLOR_ALWAYS) ||
 		(Logger::color_mode == LOG_COLOR_AUTO && is_tty);
@@ -379,44 +361,17 @@ void StreamLogOutput::logRaw(LogLevel lev, const std::string &line)
 	}
 }
 
-void LogOutputBuffer::updateLogLevel()
+void StreamProxy::fix_stream_state(std::ostream &os)
 {
-	const std::string &conf_loglev = g_settings->get("chat_log_level");
-	LogLevel log_level = Logger::stringToLevel(conf_loglev);
-	if (log_level == LL_MAX) {
-		warningstream << "Supplied unrecognized chat_log_level; "
-			"showing none." << std::endl;
-		log_level = LL_NONE;
-	}
-
-	m_logger.removeOutput(this);
-	m_logger.addOutputMaxLevel(this, log_level);
-}
-
-void LogOutputBuffer::logRaw(LogLevel lev, const std::string &line)
-{
-	std::string color;
-
-	if (!g_settings->getBool("disable_escape_sequences")) {
-		switch (lev) {
-		case LL_ERROR: // red
-			color = "\x1b(c@#F00)";
-			break;
-		case LL_WARNING: // yellow
-			color = "\x1b(c@#EE0)";
-			break;
-		case LL_INFO: // grey
-			color = "\x1b(c@#BBB)";
-			break;
-		case LL_VERBOSE: // dark grey
-		case LL_TRACE:
-			color = "\x1b(c@#888)";
-			break;
-		default: break;
-		}
-	}
-	MutexAutoLock lock(m_buffer_mutex);
-	m_buffer.emplace(color.append(line));
+	std::ios::iostate state = os.rdstate();
+	// clear error state so the stream works again
+	os.clear();
+	if (state & std::ios::eofbit)
+		os << "(ostream:eofbit)";
+	if (state & std::ios::badbit)
+		os << "(ostream:badbit)";
+	if (state & std::ios::failbit)
+		os << "(ostream:failbit)";
 }
 
 std::mutex localtime_mutex;

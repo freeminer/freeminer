@@ -1,24 +1,6 @@
-/*
-mesh.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -30,7 +12,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
  * Applies shading to a color based on the surface's
  * normal vector.
  */
-void applyFacesShading(video::SColor &color, const v3f &normal);
+void applyFacesShading(video::SColor &color, const v3f normal);
 
 /*
 	Create a new cube mesh.
@@ -55,17 +37,12 @@ void translateMesh(scene::IMesh *mesh, v3f vec);
 /*!
  * Sets a constant color for all vertices in the mesh buffer.
  */
-void setMeshBufferColor(scene::IMeshBuffer *buf, const video::SColor &color);
+void setMeshBufferColor(scene::IMeshBuffer *buf, const video::SColor color);
 
 /*
 	Set a constant color for all vertices in the mesh
 */
-void setMeshColor(scene::IMesh *mesh, const video::SColor &color);
-
-/*
-	Set a constant color for an animated mesh
-*/
-void setAnimatedMeshColor(scene::IAnimatedMeshSceneNode *node, const video::SColor &color);
+void setMeshColor(scene::IMesh *mesh, const video::SColor color);
 
 /*!
  * Overwrites the color of a mesh buffer.
@@ -135,5 +112,5 @@ bool checkMeshNormals(scene::IMesh *mesh);
 	Set the MinFilter, MagFilter and AnisotropicFilter properties of a texture
 	layer according to the three relevant boolean values found in the Minetest
 	settings.
-*/ 
+*/
 void setMaterialFilters(video::SMaterialLayer &tex, bool bilinear, bool trilinear, bool anisotropic);

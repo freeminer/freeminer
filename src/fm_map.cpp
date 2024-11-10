@@ -1426,9 +1426,9 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 	MapBlock *block = nullptr;
 	try {
 		std::string blob;
-		dbase->loadBlock(p3d, &blob);
-		if (!blob.length() && dbase_ro) {
-			dbase_ro->loadBlock(p3d, &blob);
+		m_db.dbase->loadBlock(p3d, &blob);
+		if (!blob.length() && m_db.dbase_ro) {
+			m_db.dbase_ro->loadBlock(p3d, &blob);
 		}
 		if (!blob.length()) {
 			m_db_miss.emplace(p3d);

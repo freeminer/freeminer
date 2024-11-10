@@ -5,6 +5,9 @@
 static const char *const copyright = "Irrlicht Engine (c) 2002-2017 Nikolaus Gebhardt"; // put string in binary
 
 #include "irrlicht.h"
+#include "matrix4.h"
+#include "SMaterial.h"
+
 #ifdef _IRR_COMPILE_WITH_WINDOWS_DEVICE_
 #include "CIrrDeviceWin32.h"
 #endif
@@ -98,10 +101,6 @@ extern "C" IRRLICHT_API bool IRRCALLCONV isDriverSupported(E_DRIVER_TYPE driver)
 #endif
 #ifdef _IRR_COMPILE_WITH_OPENGL_
 	case EDT_OPENGL:
-		return true;
-#endif
-#ifdef _IRR_COMPILE_WITH_OGLES1_
-	case EDT_OGLES1:
 		return true;
 #endif
 #ifdef _IRR_COMPILE_WITH_OGLES2_

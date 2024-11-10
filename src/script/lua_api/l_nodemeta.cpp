@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_nodemeta.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_nodemeta.h"
 #include "lua_api/l_internal.h"
@@ -61,6 +43,8 @@ void NodeMetaRef::reportMetadataChange(const std::string *name)
 	// Inform other things that the metadata has changed
 	NodeMetadata *meta = dynamic_cast<NodeMetadata*>(getmeta(false));
 
+	bool is_private_change = meta && name && meta->isPrivate(*name);
+
 	// If the metadata is now empty, get rid of it
 	if (meta && meta->empty()) {
 		clearMeta();
@@ -70,7 +54,7 @@ void NodeMetaRef::reportMetadataChange(const std::string *name)
 	MapEditEvent event;
 	event.type = MEET_BLOCK_NODE_METADATA_CHANGED;
 	event.setPositionModified(m_p);
-	event.is_private_change = name && meta && meta->isPrivate(*name);
+	event.is_private_change = is_private_change;
 	m_env->getMap().dispatchEvent(event);
 }
 
@@ -97,21 +81,24 @@ int NodeMetaRef::l_mark_as_private(lua_State *L)
 
 	NodeMetaRef *ref = checkObject<NodeMetaRef>(L, 1);
 	NodeMetadata *meta = dynamic_cast<NodeMetadata*>(ref->getmeta(true));
-	assert(meta);
+	if (!meta)
+		return 0;
 
+	bool modified = false;
 	if (lua_istable(L, 2)) {
 		lua_pushnil(L);
 		while (lua_next(L, 2) != 0) {
 			// key at index -2 and value at index -1
 			luaL_checktype(L, -1, LUA_TSTRING);
-			meta->markPrivate(readParam<std::string>(L, -1), true);
+			modified |= meta->markPrivate(readParam<std::string>(L, -1), true);
 			// removes value, keeps key for next iteration
 			lua_pop(L, 1);
 		}
 	} else if (lua_isstring(L, 2)) {
-		meta->markPrivate(readParam<std::string>(L, 2), true);
+		modified |= meta->markPrivate(readParam<std::string>(L, 2), true);
 	}
-	ref->reportMetadataChange();
+	if (modified)
+		ref->reportMetadataChange();
 
 	return 0;
 }
@@ -148,12 +135,13 @@ bool NodeMetaRef::handleFromTable(lua_State *L, int table, IMetadata *_meta)
 	Inventory *inv = meta->getInventory();
 	lua_getfield(L, table, "inventory");
 	if (lua_istable(L, -1)) {
+		auto *gamedef = getGameDef(L);
 		int inventorytable = lua_gettop(L);
 		lua_pushnil(L);
 		while (lua_next(L, inventorytable) != 0) {
 			// key at index -2 and value at index -1
-			std::string name = luaL_checkstring(L, -2);
-			read_inventory_list(L, -1, inv, name.c_str(), getServer(L));
+			const char *name = luaL_checkstring(L, -2);
+			read_inventory_list(L, -1, inv, name, gamedef);
 			lua_pop(L, 1); // Remove value, keep key for next iteration
 		}
 		lua_pop(L, 1);
@@ -180,7 +168,6 @@ NodeMetaRef::NodeMetaRef(IMetadata *meta):
 void NodeMetaRef::create(lua_State *L, v3s16 p, ServerEnvironment *env)
 {
 	NodeMetaRef *o = new NodeMetaRef(p, env);
-	//infostream<<"NodeMetaRef::create: o="<<o<<std::endl;
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
 	luaL_getmetatable(L, className);
 	lua_setmetatable(L, -2);

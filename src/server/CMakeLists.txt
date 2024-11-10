@@ -1,7 +1,6 @@
-set(server_SRCS
-
+set(common_server_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_key_value_cached.cpp
-	
+
 	${CMAKE_CURRENT_SOURCE_DIR}/activeobjectmgr.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ban.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/clientiface.cpp

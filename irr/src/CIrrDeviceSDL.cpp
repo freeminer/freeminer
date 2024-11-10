@@ -10,6 +10,7 @@
 #include "IGUIEnvironment.h"
 #include "IImageLoader.h"
 #include "IFileSystem.h"
+#include "IVideoDriver.h"
 #include "os.h"
 #include "CTimer.h"
 #include "irrString.h"
@@ -340,7 +341,13 @@ CIrrDeviceSDL::CIrrDeviceSDL(const SIrrlichtCreationParameters &param) :
 		SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 
 #if defined(SDL_HINT_APP_NAME)
-		SDL_SetHint(SDL_HINT_APP_NAME, "Minetest");
+		SDL_SetHint(SDL_HINT_APP_NAME, "Luanti");
+#endif
+
+		// Set IME hints
+		SDL_SetHint(SDL_HINT_IME_INTERNAL_EDITING, "1");
+#if defined(SDL_HINT_IME_SHOW_UI)
+		SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 #endif
 
 		u32 flags = SDL_INIT_TIMER | SDL_INIT_EVENTS;
@@ -588,18 +595,14 @@ bool CIrrDeviceSDL::createWindowWithContext()
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 		break;
-	case video::EDT_OGLES1:
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-		break;
 	case video::EDT_OGLES2:
 	case video::EDT_WEBGL1:
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 		break;
-	default:;
+	default:
+		_IRR_DEBUG_BREAK_IF(1);
 	}
 
 	if (CreationParams.DriverDebug) {
@@ -718,12 +721,19 @@ bool CIrrDeviceSDL::run()
 
 			irrevent.EventType = irr::EET_MOUSE_INPUT_EVENT;
 			irrevent.MouseInput.Event = irr::EMIE_MOUSE_MOVED;
-			MouseX = irrevent.MouseInput.X =
-				static_cast<s32>(SDL_event.motion.x * ScaleX);
-			MouseY = irrevent.MouseInput.Y =
-				static_cast<s32>(SDL_event.motion.y * ScaleY);
+
 			MouseXRel = static_cast<s32>(SDL_event.motion.xrel * ScaleX);
 			MouseYRel = static_cast<s32>(SDL_event.motion.yrel * ScaleY);
+			if (!SDL_GetRelativeMouseMode()) {
+				MouseX = static_cast<s32>(SDL_event.motion.x * ScaleX);
+				MouseY = static_cast<s32>(SDL_event.motion.y * ScaleY);
+			} else {
+				MouseX += MouseXRel;
+				MouseY += MouseYRel;
+			}
+			irrevent.MouseInput.X = MouseX;
+			irrevent.MouseInput.Y = MouseY;
+
 			irrevent.MouseInput.ButtonStates = MouseButtonStates;
 			irrevent.MouseInput.Shift = (keymod & KMOD_SHIFT) != 0;
 			irrevent.MouseInput.Control = (keymod & KMOD_CTRL) != 0;
@@ -1281,6 +1291,12 @@ bool CIrrDeviceSDL::setFullscreen(bool fullscreen)
 bool CIrrDeviceSDL::isWindowVisible() const
 {
 	return !IsInBackground;
+}
+
+//! Checks if the Irrlicht device supports touch events.
+bool CIrrDeviceSDL::supportsTouchEvents() const
+{
+	return true;
 }
 
 //! returns if window is active. if not, nothing need to be drawn

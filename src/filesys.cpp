@@ -1,24 +1,6 @@
-/*
-filesys.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 
 // fix strange bug:
@@ -42,20 +24,35 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/time.h>
 #endif
 #include <atomic>
+#include <memory>
 #include "log.h"
 #include "config.h"
 #include "porting.h"
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 #include "irr_ptr.h"
 #include <IFileArchive.h>
 #include <IFileSystem.h>
 #endif
+
 #ifdef __linux__
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #ifndef FICLONE
 #define FICLONE _IOW(0x94, 9, int)
 #endif
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
+#include <shlwapi.h>
+#include <io.h>
+#include <direct.h>
+#else
+#include <sys/types.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #endif
 
 // Error from last OS call as string
@@ -73,11 +70,6 @@ namespace fs
 /***********
  * Windows *
  ***********/
-
-#include <windows.h>
-#include <shlwapi.h>
-#include <io.h>
-#include <direct.h>
 
 std::vector<DirListNode> GetDirListing(const std::string &pathstring)
 {
@@ -288,13 +280,6 @@ bool CopyFileContents(const std::string &source, const std::string &target)
  * POSIX *
  *********/
 
-#include <unistd.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
 std::vector<DirListNode> GetDirListing(const std::string &pathstring)
 {
 	std::vector<DirListNode> listing;
@@ -397,41 +382,41 @@ bool RecursiveDelete(const std::string &path)
 		Execute the 'rm' command directly, by fork() and execve()
 	*/
 
-	infostream<<"Removing \""<<path<<"\""<<std::endl;
+	infostream << "Removing \"" << path << "\"" << std::endl;
 
-	pid_t child_pid = fork();
+	assert(IsPathAbsolute(path));
 
-	if(child_pid == 0)
-	{
+	const pid_t child_pid = fork();
+
+	if (child_pid == -1) {
+		errorstream << "fork errno: " << errno << ": " << strerror(errno)
+			<< std::endl;
+		return false;
+	}
+
+	if (child_pid == 0) {
 		// Child
-		const char *argv[4] = {
-#ifdef __ANDROID__
-			"/system/bin/rm",
-#else
-			"/bin/rm",
-#endif
+		std::array<const char*, 4> argv = {
+			"rm",
 			"-rf",
 			path.c_str(),
-			NULL
+			nullptr
 		};
 
-		verbosestream<<"Executing '"<<argv[0]<<"' '"<<argv[1]<<"' '"
-				<<argv[2]<<"'"<<std::endl;
+		execvp(argv[0], const_cast<char**>(argv.data()));
 
-		execv(argv[0], const_cast<char**>(argv));
-
-		// Execv shouldn't return. Failed.
+		// note: use cerr because our logging won't flush in forked process
+		std::cerr << "exec errno: " << errno << ": " << strerror(errno)
+			<< std::endl;
 		_exit(1);
-	}
-	else
-	{
+	} else {
 		// Parent
-		int child_status;
+		int status;
 		pid_t tpid;
-		do{
-			tpid = wait(&child_status);
-		}while(tpid != child_pid);
-		return (child_status == 0);
+		do
+			tpid = waitpid(child_pid, &status, 0);
+		while (tpid != child_pid);
+		return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 	}
 }
 
@@ -714,32 +699,43 @@ bool MoveDir(const std::string &source, const std::string &target)
 
 bool PathStartsWith(const std::string &path, const std::string &prefix)
 {
+	if (prefix.empty())
+		return path.empty();
 	size_t pathsize = path.size();
 	size_t pathpos = 0;
 	size_t prefixsize = prefix.size();
 	size_t prefixpos = 0;
 	for(;;){
+		// Test if current characters at path and prefix are delimiter OR EOS
 		bool delim1 = pathpos == pathsize
 			|| IsDirDelimiter(path[pathpos]);
 		bool delim2 = prefixpos == prefixsize
 			|| IsDirDelimiter(prefix[prefixpos]);
 
+		// Return false if it's delimiter/EOS in one path but not in the other
 		if(delim1 != delim2)
 			return false;
 
 		if(delim1){
+			// Skip consequent delimiters in path, in prefix
 			while(pathpos < pathsize &&
 					IsDirDelimiter(path[pathpos]))
 				++pathpos;
 			while(prefixpos < prefixsize &&
 					IsDirDelimiter(prefix[prefixpos]))
 				++prefixpos;
+			// Return true if prefix has ended (at delimiter/EOS)
 			if(prefixpos == prefixsize)
 				return true;
+			// Return false if path has ended (at delimiter/EOS)
+            // while prefix did not.
 			if(pathpos == pathsize)
 				return false;
 		}
 		else{
+			// Skip pairwise-equal characters in path and prefix until
+			// delimiter/EOS in path or prefix.
+			// Return false if differing characters are met.
 			size_t len = 0;
 			do{
 				char pathchar = path[pathpos+len];
@@ -947,7 +943,7 @@ bool safeWriteToFile(const std::string &path, std::string_view content)
 	return true;
 }
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 bool extractZipFile(io::IFileSystem *fs, const char *filename, const std::string &destination)
 {
 	// Be careful here not to touch the global file hierarchy in Irrlicht

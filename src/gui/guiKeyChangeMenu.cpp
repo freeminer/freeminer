@@ -1,26 +1,8 @@
-/*
-guiKeyChangeMenu.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013 Ciaran Gultnieks <ciaran@ciarang.com>
-Copyright (C) 2013 teddydestodes <derkomtur@schattengang.net>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013 Ciaran Gultnieks <ciaran@ciarang.com>
+// Copyright (C) 2013 teddydestodes <derkomtur@schattengang.net>
 
 #include "guiKeyChangeMenu.h"
 #include "debug.h"
@@ -32,6 +14,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIButton.h>
 #include <IGUIStaticText.h>
 #include <IGUIFont.h>
+#include <IVideoDriver.h>
 #include "settings.h"
 #include <algorithm>
 
@@ -383,6 +366,7 @@ void GUIKeyChangeMenu::add_key(int id, std::wstring button_name, const std::stri
 	key_settings.push_back(k);
 }
 
+// compare with button_titles in touchcontrols.cpp
 void GUIKeyChangeMenu::init_keys()
 {
 	this->add_key(GUI_ID_KEY_PL_LIST_BUTTON,      wstrgettext("Player list"),      "keymap_playerlist");

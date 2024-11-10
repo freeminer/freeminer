@@ -1,24 +1,6 @@
-/*
-mapblock.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -370,8 +352,8 @@ public:
 	// Copies data to VoxelManipulator to getPosRelative()
 	void copyTo(VoxelManipulator &dst);
 
-	// Copies data from VoxelManipulator getPosRelative()
-	void copyFrom(VoxelManipulator &dst);
+	// Copies data from VoxelManipulator to getPosRelative()
+	void copyFrom(const VoxelManipulator &src);
 
 	// Update is air flag.
 	// Sets m_is_air to appropriate value.
@@ -517,7 +499,7 @@ public:
 
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
 
-#if BUILD_CLIENT // Only on client
+#if CHECK_CLIENT_BUILD() // Only on client
 	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
 	void setLodMesh(const MapBlock::mesh_type &rmesh);
 	const MapBlock::mesh_type getFarMesh(block_step_t step);
@@ -636,7 +618,7 @@ private:
 	 */
 
 public:
-#ifndef SERVER // Only on client
+#if CHECK_CLIENT_BUILD() // Only on client
 /*
 	MapBlockMesh *mesh = nullptr;
 */

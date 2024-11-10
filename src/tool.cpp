@@ -1,24 +1,6 @@
-/*
-tool.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "tool.h"
 #include "itemdef.h"
@@ -47,18 +29,25 @@ void ToolGroupCap::toJson(Json::Value &object) const
 
 void ToolGroupCap::fromJson(const Json::Value &json)
 {
-	if (json.isObject()) {
-		if (json["maxlevel"].isInt())
-			maxlevel = json["maxlevel"].asInt();
-		if (json["uses"].isInt())
-			uses = json["uses"].asInt();
-		const Json::Value &times_object = json["times"];
-		if (times_object.isArray()) {
-			Json::ArrayIndex size = times_object.size();
-			for (Json::ArrayIndex i = 0; i < size; ++i)
-				if (times_object[i].isDouble())
-					times[i] = times_object[i].asFloat();
-		}
+	if (!json.isObject())
+		return;
+
+	if (json["maxlevel"].isInt())
+		maxlevel = json["maxlevel"].asInt();
+
+	if (json["uses"].isInt())
+		uses = json["uses"].asInt();
+
+	const Json::Value &times_object = json["times"];
+
+	if (!times_object.isArray())
+		return;
+
+	Json::ArrayIndex size = times_object.size();
+
+	for (Json::ArrayIndex i = 0; i < size; ++i) {
+		if (times_object[i].isDouble())
+			times[i] = times_object[i].asFloat();
 	}
 }
 
@@ -68,9 +57,11 @@ void ToolCapabilities::serialize(std::ostream &os, u16 protocol_version) const
 		writeU8(os, 5);
 	else
 		writeU8(os, 4); // proto == 37
+
 	writeF32(os, full_punch_interval);
 	writeS16(os, max_drop_level);
 	writeU32(os, groupcaps.size());
+
 	for (const auto &groupcap : groupcaps) {
 		const std::string *name = &groupcap.first;
 		const ToolGroupCap *cap = &groupcap.second;
@@ -105,6 +96,7 @@ void ToolCapabilities::deSerialize(std::istream &is)
 	max_drop_level = readS16(is);
 	groupcaps.clear();
 	u32 groupcaps_size = readU32(is);
+
 	for (u32 i = 0; i < groupcaps_size; i++) {
 		std::string name = deSerializeString16(is);
 		ToolGroupCap cap;
@@ -138,15 +130,19 @@ void ToolCapabilities::serializeJson(std::ostream &os) const
 	root["punch_attack_uses"] = punch_attack_uses;
 
 	Json::Value groupcaps_object;
+
 	for (const auto &groupcap : groupcaps) {
 		groupcap.second.toJson(groupcaps_object[groupcap.first]);
 	}
+
 	root["groupcaps"] = std::move(groupcaps_object);
 
 	Json::Value damage_groups_object;
+
 	for (const auto &damagegroup : damageGroups) {
 		damage_groups_object[damagegroup.first] = damagegroup.second;
 	}
+
 	root["damage_groups"] = std::move(damage_groups_object);
 
 	fastWriteJson(root, os);
@@ -156,36 +152,44 @@ void ToolCapabilities::deserializeJson(std::istream &is)
 {
 	Json::Value root;
 	is >> root;
-	if (root.isObject()) {
-		if (root["full_punch_interval"].isDouble())
-			full_punch_interval = root["full_punch_interval"].asFloat();
-		if (root["max_drop_level"].isInt())
-			max_drop_level = root["max_drop_level"].asInt();
-		if (root["punch_attack_uses"].isInt())
-			punch_attack_uses = root["punch_attack_uses"].asInt();
 
-		Json::Value &groupcaps_object = root["groupcaps"];
-		if (groupcaps_object.isObject()) {
-			Json::ValueIterator gciter;
-			for (gciter = groupcaps_object.begin();
-					gciter != groupcaps_object.end(); ++gciter) {
-				ToolGroupCap groupcap;
-				groupcap.fromJson(*gciter);
-				groupcaps[gciter.key().asString()] = groupcap;
-			}
-		}
+	if (!root.isObject())
+		return;
 
-		Json::Value &damage_groups_object = root["damage_groups"];
-		if (damage_groups_object.isObject()) {
-			Json::ValueIterator dgiter;
-			for (dgiter = damage_groups_object.begin();
-					dgiter != damage_groups_object.end(); ++dgiter) {
-				Json::Value &value = *dgiter;
-				if (value.isInt())
-					damageGroups[dgiter.key().asString()] =
-						value.asInt();
-			}
-		}
+	if (root["full_punch_interval"].isDouble())
+		full_punch_interval = root["full_punch_interval"].asFloat();
+
+	if (root["max_drop_level"].isInt())
+		max_drop_level = root["max_drop_level"].asInt();
+
+	if (root["punch_attack_uses"].isInt())
+		punch_attack_uses = root["punch_attack_uses"].asInt();
+
+	deserializeJsonGroupcaps(root["groupcaps"]);
+	deserializeJsonDamageGroups(root["damage_groups"]);
+}
+
+void ToolCapabilities::deserializeJsonGroupcaps(Json::Value &json)
+{
+	if (!json.isObject())
+		return;
+
+	for (Json::ValueIterator iter = json.begin(); iter != json.end(); ++iter) {
+		ToolGroupCap value;
+		value.fromJson(*iter);
+		groupcaps[iter.key().asString()] = value;
+	}
+}
+
+void ToolCapabilities::deserializeJsonDamageGroups(Json::Value &json)
+{
+	if (!json.isObject())
+		return;
+
+	for (Json::ValueIterator iter = json.begin(); iter != json.end(); ++iter) {
+		Json::Value &value = *iter;
+		if (value.isInt())
+			damageGroups[iter.key().asString()] = value.asInt();
 	}
 }
 
@@ -383,9 +387,8 @@ u32 calculateResultWear(const u32 uses, const u16 initial_wear)
 		   player.
 		*/
 		u16 wear_extra_at = blocks_normal * wear_normal;
-		if (initial_wear >= wear_extra_at) {
+		if (initial_wear >= wear_extra_at)
 			wear_extra = 1;
-		}
 	}
 	result_wear = wear_normal + wear_extra;
 	return result_wear;
@@ -431,6 +434,7 @@ DigParams getDigParams(const ItemGroupList &groups,
 
 		if (leveldiff > 1)
 			time /= leveldiff;
+
 		if (!result_diggable || time < result_time) {
 			result_time = time;
 			result_diggable = true;
@@ -530,4 +534,3 @@ f32 getToolRange(const ItemStack &wielded_item, const ItemStack &hand_item,
 
 	return max_d;
 }
-

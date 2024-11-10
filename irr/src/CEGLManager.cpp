@@ -51,9 +51,6 @@ bool CEGLManager::initialize(const SIrrlichtCreationParameters &params, const SE
 #elif defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	EglWindow = (NativeWindowType)Data.OpenGLLinux.X11Window;
 	EglDisplay = eglGetDisplay((NativeDisplayType)Data.OpenGLLinux.X11Display);
-#elif defined(_IRR_COMPILE_WITH_FB_DEVICE_)
-	EglWindow = (NativeWindowType)Data.OpenGLFB.Window;
-	EglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 #endif
 
 	// We must check if EGL display is valid.
@@ -152,9 +149,6 @@ EGLConfig CEGLManager::chooseConfig(EConfigStyle confStyle)
 	// Find proper OpenGL BIT.
 	EGLint eglOpenGLBIT = 0;
 	switch (Params.DriverType) {
-	case EDT_OGLES1:
-		eglOpenGLBIT = EGL_OPENGL_ES_BIT;
-		break;
 	case EDT_OGLES2:
 	case EDT_WEBGL1:
 		eglOpenGLBIT = EGL_OPENGL_ES2_BIT;
@@ -459,9 +453,6 @@ bool CEGLManager::generateContext()
 	EGLint OpenGLESVersion = 0;
 
 	switch (Params.DriverType) {
-	case EDT_OGLES1:
-		OpenGLESVersion = 1;
-		break;
 	case EDT_OGLES2:
 	case EDT_WEBGL1:
 		OpenGLESVersion = 2;

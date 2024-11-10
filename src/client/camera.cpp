@@ -1,24 +1,6 @@
-/*
-camera.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "camera.h"
 #include "debug.h"
@@ -42,6 +24,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "script/scripting_client.h"
 #include "gettext.h"
 #include <SViewFrustum.h>
+#include <IGUIFont.h>
+#include <IVideoDriver.h>
 
 #include "log_types.h"
 #include "game.h" // CameraModes
@@ -69,7 +53,7 @@ Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *re
 	// all other 3D scene nodes and before the GUI.
 	m_wieldmgr = smgr->createNewSceneManager();
 	m_wieldmgr->addCameraSceneNode();
-	m_wieldnode = new WieldMeshSceneNode(m_wieldmgr, -1, false);
+	m_wieldnode = new WieldMeshSceneNode(m_wieldmgr, -1);
 	m_wieldnode->setItem(ItemStack(), m_client);
 	m_wieldnode->drop(); // m_wieldmgr grabbed it
 
@@ -417,10 +401,11 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 
 	// Compute absolute camera position and target
 	m_headnode->getAbsoluteTransformation().transformVect(m_camera_position, rel_cam_pos);
-	m_headnode->getAbsoluteTransformation().rotateVect(m_camera_direction, rel_cam_target - rel_cam_pos);
+	m_camera_direction = m_headnode->getAbsoluteTransformation()
+			.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
-	v3f abs_cam_up;
-	m_headnode->getAbsoluteTransformation().rotateVect(abs_cam_up, rel_cam_up);
+	v3f abs_cam_up = m_headnode->getAbsoluteTransformation()
+			.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
 	v3f my_cp = m_camera_position;

@@ -1,24 +1,6 @@
-/*
-script/common/c_internal.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 /******************************************************************************/
 /******************************************************************************/
@@ -28,6 +10,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 /******************************************************************************/
 
 #pragma once
+
+#include <string_view>
 
 extern "C" {
 #include <lua.h>
@@ -130,7 +114,7 @@ int script_error_handler(lua_State *L);
 // Takes an error from lua_pcall and throws it as a LuaError
 void script_error(lua_State *L, int pcall_result, const char *mod, const char *fxn);
 
-bool script_log_unique(lua_State *L, std::string message, std::ostream &log_to,
+bool script_log_unique(lua_State *L, std::string_view message, std::ostream &log_to,
 	int stack_depth = 1);
 
 enum DeprecatedHandlingMode {
@@ -155,7 +139,8 @@ DeprecatedHandlingMode get_deprecated_handling_mode();
  *        (ie: not builtin or core). -1 to disabled.
  * @param once Log the deprecation warning only once per callsite.
  */
-void log_deprecated(lua_State *L, std::string message, int stack_depth = 1, bool once = false);
+void log_deprecated(lua_State *L, std::string_view message,
+	int stack_depth = 1, bool once = false);
 
 // Safely call string.dump on a function value
 // (does not pop, leaves one value on stack)

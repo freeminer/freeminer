@@ -1,24 +1,6 @@
-/*
-content_cao.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "content_cao.h"
 #include <IBillboardSceneNode.h>
@@ -189,6 +171,12 @@ static bool logOnce(const std::ostringstream &from, std::ostream &log_to)
 	return true;
 }
 
+static void setColorParam(scene::ISceneNode *node, video::SColor color)
+{
+	for (u32 i = 0; i < node->getMaterialCount(); ++i)
+		node->getMaterial(i).ColorParam = color;
+}
+
 /*
 	TestCAO
 */
@@ -258,7 +246,6 @@ void TestCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 	u16 indices[] = {0,1,2,2,3,0};
 	buf->append(vertices, 4, indices, 6);
 	// Set material
-	buf->getMaterial().Lighting = false;
 	buf->getMaterial().BackfaceCulling = false;
 	buf->getMaterial().TextureLayers[0].Texture = tsrc->getTextureForMesh("rat.png");
 	buf->getMaterial().TextureLayers[0].MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
@@ -469,7 +456,7 @@ scene::IAnimatedMeshSceneNode *GenericCAO::getAnimatedMeshSceneNode() const
 
 void GenericCAO::setChildrenVisible(bool toset)
 {
-	for (u16 cao_id : m_attachment_child_ids) {
+	for (object_t cao_id : m_attachment_child_ids) {
 		GenericCAO *obj = m_env->getGenericCAO(cao_id);
 		if (obj) {
 			// Check if the entity is forced to appear in first person.
@@ -478,10 +465,10 @@ void GenericCAO::setChildrenVisible(bool toset)
 	}
 }
 
-void GenericCAO::setAttachment(int parent_id, const std::string &bone,
+void GenericCAO::setAttachment(object_t parent_id, const std::string &bone,
 		v3f position, v3f rotation, bool force_visible)
 {
-	int old_parent = m_attachment_parent_id;
+	const auto old_parent = m_attachment_parent_id;
 	m_attachment_parent_id = parent_id;
 	m_attachment_bone = bone;
 	m_attachment_position = position;
@@ -513,7 +500,7 @@ void GenericCAO::setAttachment(int parent_id, const std::string &bone,
 	}
 }
 
-void GenericCAO::getAttachment(int *parent_id, std::string *bone, v3f *position,
+void GenericCAO::getAttachment(object_t *parent_id, std::string *bone, v3f *position,
 	v3f *rotation, bool *force_visible) const
 {
 	*parent_id = m_attachment_parent_id;
@@ -527,29 +514,21 @@ void GenericCAO::clearChildAttachments()
 {
 	// Cannot use for-loop here: setAttachment() modifies 'm_attachment_child_ids'!
 	while (!m_attachment_child_ids.empty()) {
-		int child_id = *m_attachment_child_ids.begin();
+		const auto child_id = *m_attachment_child_ids.begin();
 
-		if (ClientActiveObject *child = m_env->getActiveObject(child_id))
-			child->setAttachment(0, "", v3f(), v3f(), false);
-
-		removeAttachmentChild(child_id);
+		if (auto *child = m_env->getActiveObject(child_id))
+			child->clearParentAttachment();
+		else
+			removeAttachmentChild(child_id);
 	}
 }
 
-void GenericCAO::clearParentAttachment()
-{
-	if (m_attachment_parent_id)
-		setAttachment(0, "", m_attachment_position, m_attachment_rotation, false);
-	else
-		setAttachment(0, "", v3f(), v3f(), false);
-}
-
-void GenericCAO::addAttachmentChild(int child_id)
+void GenericCAO::addAttachmentChild(object_t child_id)
 {
 	m_attachment_child_ids.insert(child_id);
 }
 
-void GenericCAO::removeAttachmentChild(int child_id)
+void GenericCAO::removeAttachmentChild(object_t child_id)
 {
 	m_attachment_child_ids.erase(child_id);
 }
@@ -656,12 +635,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 
 	auto setMaterial = [this] (video::SMaterial &mat) {
 		mat.MaterialType = m_material_type;
-		mat.Lighting = false;
 		mat.FogEnable = true;
-		if (m_enable_shaders) {
-			mat.GouraudShading = false;
-			mat.NormalizeNormals = true;
-		}
 		mat.forEachTexture([] (auto &tex) {
 			tex.MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
 			tex.MagFilter = video::ETMAGF_NEAREST;
@@ -718,7 +692,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			// Set material
 			setMaterial(buf->getMaterial());
 			if (m_enable_shaders) {
-				buf->getMaterial().EmissiveColor = c;
+				buf->getMaterial().ColorParam = c;
 			}
 
 			// Add to mesh
@@ -744,7 +718,7 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			// Set material
 			setMaterial(buf->getMaterial());
 			if (m_enable_shaders) {
-				buf->getMaterial().EmissiveColor = c;
+				buf->getMaterial().ColorParam = c;
 			}
 
 			// Add to mesh
@@ -788,8 +762,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 			// set vertex colors to ensure alpha is set
 			setMeshColor(m_animated_meshnode->getMesh(), video::SColor(0xFFFFFFFF));
 
-			setAnimatedMeshColor(m_animated_meshnode, video::SColor(0xFFFFFFFF));
-
 			setSceneNodeMaterials(m_animated_meshnode);
 
 			m_animated_meshnode->forEachMaterial([this] (auto &mat) {
@@ -830,6 +802,24 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 				<<"\" not supported"<<std::endl;
 	}
 
+	/* Set VBO hint */
+	// wieldmesh sets its own hint, no need to handle it
+	if (m_enable_shaders && (m_meshnode || m_animated_meshnode)) {
+		// sprite uses vertex animation
+		if (m_meshnode && m_prop.visual != "upright_sprite")
+			m_meshnode->getMesh()->setHardwareMappingHint(scene::EHM_STATIC);
+
+		if (m_animated_meshnode) {
+			auto *mesh = m_animated_meshnode->getMesh();
+			// skinning happens on the CPU
+			if (m_animated_meshnode->getJointCount() > 0)
+				mesh->setHardwareMappingHint(scene::EHM_STREAM, scene::EBT_VERTEX);
+			else
+				mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_VERTEX);
+			mesh->setHardwareMappingHint(scene::EHM_STATIC, scene::EBT_INDEX);
+		}
+	}
+
 	/* don't update while punch texture modifier is active */
 	if (m_reset_textures_timer < 0)
 		updateTextures(m_current_texture_modifier);
@@ -854,14 +844,19 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 
 	if (m_animated_meshnode) {
 		u32 mat_count = m_animated_meshnode->getMaterialCount();
+		assert(mat_count == m_animated_meshnode->getMesh()->getMeshBufferCount());
+		u32 max_tex_idx = 0;
+		for (u32 i = 0; i < mat_count; ++i) {
+			max_tex_idx = std::max(max_tex_idx,
+					m_animated_meshnode->getMesh()->getTextureSlot(i));
+		}
 		if (mat_count == 0 || m_prop.textures.empty()) {
 			// nothing
-		} else if (mat_count > m_prop.textures.size()) {
+		} else if (max_tex_idx >= m_prop.textures.size()) {
 			std::ostringstream oss;
 			oss << "GenericCAO::addToScene(): Model "
-				<< m_prop.mesh << " loaded with " << mat_count
-				<< " mesh buffers but only " << m_prop.textures.size()
-				<< " texture(s) specified, this is deprecated.";
+				<< m_prop.mesh << " is missing " << (max_tex_idx + 1 - m_prop.textures.size())
+				<< " more texture(s), this is deprecated.";
 			logOnce(oss, warningstream);
 
 			video::ITexture *last = m_animated_meshnode->getMaterial(0).TextureLayers[0].Texture;
@@ -928,26 +923,15 @@ void GenericCAO::setNodeLight(const video::SColor &light_color)
 	}
 
 	if (m_enable_shaders) {
-		if (m_prop.visual == "upright_sprite") {
-			if (!m_meshnode)
-				return;
-			for (u32 i = 0; i < m_meshnode->getMaterialCount(); ++i)
-				m_meshnode->getMaterial(i).EmissiveColor = light_color;
-		} else {
-			scene::ISceneNode *node = getSceneNode();
-			if (!node)
-				return;
-
-			for (u32 i = 0; i < node->getMaterialCount(); ++i) {
-				video::SMaterial &material = node->getMaterial(i);
-				material.EmissiveColor = light_color;
-			}
-		}
+		auto *node = getSceneNode();
+		if (!node)
+			return;
+		setColorParam(node, light_color);
 	} else {
 		if (m_meshnode) {
 			setMeshColor(m_meshnode->getMesh(), light_color);
 		} else if (m_animated_meshnode) {
-			setAnimatedMeshColor(m_animated_meshnode, light_color);
+			setMeshColor(m_animated_meshnode->getMesh(), light_color);
 		} else if (m_spritenode) {
 			m_spritenode->setColor(light_color);
 		}
@@ -1064,7 +1048,7 @@ void GenericCAO::step(float dtime, ClientEnvironment *env)
 				walking = true;
 			}
 
-			v2s32 new_anim = v2s32(0,0);
+			v2f new_anim(0,0);
 			bool allow_update = false;
 
 			// increase speed if using fast or flying fast
@@ -1385,15 +1369,6 @@ void GenericCAO::updateTextures(std::string mod)
 			material.MaterialTypeParam = m_material_type_param;
 			material.setTexture(0, tsrc->getTextureForMesh(texturestring));
 
-			// This allows setting per-material colors. However, until a real lighting
-			// system is added, the code below will have no effect. Once MineTest
-			// has directional lighting, it should work automatically.
-			if (!m_prop.colors.empty()) {
-				material.AmbientColor = m_prop.colors[0];
-				material.DiffuseColor = m_prop.colors[0];
-				material.SpecularColor = m_prop.colors[0];
-			}
-
 			material.forEachTexture([=] (auto &tex) {
 				setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
 						use_anisotropic_filter);
@@ -1403,9 +1378,11 @@ void GenericCAO::updateTextures(std::string mod)
 
 	else if (m_animated_meshnode) {
 		if (m_prop.visual == "mesh") {
-			for (u32 i = 0; i < m_prop.textures.size() &&
-					i < m_animated_meshnode->getMaterialCount(); ++i) {
-				std::string texturestring = m_prop.textures[i];
+			for (u32 i = 0; i < m_animated_meshnode->getMaterialCount(); ++i) {
+				const auto texture_idx = m_animated_meshnode->getMesh()->getTextureSlot(i);
+				if (texture_idx >= m_prop.textures.size())
+					continue;
+				std::string texturestring = m_prop.textures[texture_idx];
 				if (texturestring.empty())
 					continue; // Empty texture string means don't modify that material
 				texturestring += mod;
@@ -1420,7 +1397,6 @@ void GenericCAO::updateTextures(std::string mod)
 				material.MaterialType = m_material_type;
 				material.MaterialTypeParam = m_material_type_param;
 				material.TextureLayers[0].Texture = texture;
-				material.Lighting = true;
 				material.BackfaceCulling = m_prop.backface_culling;
 
 				// don't filter low-res textures, makes them look blurry
@@ -1434,17 +1410,6 @@ void GenericCAO::updateTextures(std::string mod)
 					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
 							use_anisotropic_filter);
 				});
-			}
-			for (u32 i = 0; i < m_prop.colors.size() &&
-					i < m_animated_meshnode->getMaterialCount(); ++i)
-			{
-				video::SMaterial &material = m_animated_meshnode->getMaterial(i);
-				// This allows setting per-material colors. However, until a real lighting
-				// system is added, the code below will have no effect. Once MineTest
-				// has directional lighting, it should work automatically.
-				material.AmbientColor = m_prop.colors[i];
-				material.DiffuseColor = m_prop.colors[i];
-				material.SpecularColor = m_prop.colors[i];
 			}
 		}
 	}
@@ -1463,19 +1428,8 @@ void GenericCAO::updateTextures(std::string mod)
 				video::SMaterial &material = m_meshnode->getMaterial(i);
 				material.MaterialType = m_material_type;
 				material.MaterialTypeParam = m_material_type_param;
-				material.Lighting = false;
 				material.setTexture(0, tsrc->getTextureForMesh(texturestring));
 				material.getTextureMatrix(0).makeIdentity();
-
-				// This allows setting per-material colors. However, until a real lighting
-				// system is added, the code below will have no effect. Once MineTest
-				// has directional lighting, it should work automatically.
-				if(m_prop.colors.size() > i)
-				{
-					material.AmbientColor = m_prop.colors[i];
-					material.DiffuseColor = m_prop.colors[i];
-					material.SpecularColor = m_prop.colors[i];
-				}
 
 				material.forEachTexture([=] (auto &tex) {
 					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
@@ -1494,15 +1448,6 @@ void GenericCAO::updateTextures(std::string mod)
 				auto &material = m_meshnode->getMaterial(0);
 				material.setTexture(0, tsrc->getTextureForMesh(tname));
 
-				// This allows setting per-material colors. However, until a real lighting
-				// system is added, the code below will have no effect. Once MineTest
-				// has directional lighting, it should work automatically.
-				if(!m_prop.colors.empty()) {
-					material.AmbientColor = m_prop.colors[0];
-					material.DiffuseColor = m_prop.colors[0];
-					material.SpecularColor = m_prop.colors[0];
-				}
-
 				material.forEachTexture([=] (auto &tex) {
 					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
 							use_anisotropic_filter);
@@ -1519,19 +1464,6 @@ void GenericCAO::updateTextures(std::string mod)
 
 				auto &material = m_meshnode->getMaterial(1);
 				material.setTexture(0, tsrc->getTextureForMesh(tname));
-
-				// This allows setting per-material colors. However, until a real lighting
-				// system is added, the code below will have no effect. Once MineTest
-				// has directional lighting, it should work automatically.
-				if (m_prop.colors.size() >= 2) {
-					material.AmbientColor = m_prop.colors[1];
-					material.DiffuseColor = m_prop.colors[1];
-					material.SpecularColor = m_prop.colors[1];
-				} else if (!m_prop.colors.empty()) {
-					material.AmbientColor = m_prop.colors[0];
-					material.DiffuseColor = m_prop.colors[0];
-					material.SpecularColor = m_prop.colors[0];
-				}
 
 				material.forEachTexture([=] (auto &tex) {
 					setMaterialFilters(tex, use_bilinear_filter, use_trilinear_filter,
@@ -1885,10 +1817,9 @@ void GenericCAO::processMessage(const std::string &data)
 			phys.speed_walk = override_speed_walk;
 		}
 	} else if (cmd == AO_CMD_SET_ANIMATION) {
-		// TODO: change frames send as v2s32 value
 		v2f range = readV2F32(is);
 		if (!m_is_local_player) {
-			m_animation_range = v2s32((s32)range.X, (s32)range.Y);
+			m_animation_range = range;
 			m_animation_speed = readF32(is);
 			m_animation_blend = readF32(is);
 			// these are sent inverted so we get true when the server sends nothing
@@ -1898,7 +1829,7 @@ void GenericCAO::processMessage(const std::string &data)
 			LocalPlayer *player = m_env->getLocalPlayer();
 			if(player->last_animation == LocalPlayerAnimation::NO_ANIM)
 			{
-				m_animation_range = v2s32((s32)range.X, (s32)range.Y);
+				m_animation_range = range;
 				m_animation_speed = readF32(is);
 				m_animation_blend = readF32(is);
 				// these are sent inverted so we get true when the server sends nothing

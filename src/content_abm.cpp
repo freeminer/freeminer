@@ -34,15 +34,22 @@ public:
 	{
 		contents.emplace_back("group:liquid_drop");
 	}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
 		return contents;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> rn{"air"};
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return {"air"};
+		return rn;
 	}
+	const std::vector<std::string> wn{};
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return wn;
+	};
+
 	virtual float getTriggerInterval() override { return 20; }
 	virtual u32 getTriggerChance() override { return 10; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
@@ -75,20 +82,24 @@ class LiquidFreeze : public ActiveBlockModifier
 {
 public:
 	LiquidFreeze(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	const std::vector<std::string> tc{"group:freeze"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:freeze"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> rn{"air", "group:melt"};
+	const std::vector<std::string> rna{"air"};
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		std::vector<std::string> s;
-		s.emplace_back("air"); // maybe if !activate
-		if (!activate) {
-			s.emplace_back("group:melt");
-		}
-		return s;
+		return activate ? rna : rn;
 	}
+	std::vector<std::string> wn;
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return wn;
+	};
+
 	virtual float getTriggerInterval() override { return 10; }
 	virtual u32 getTriggerChance() override { return 10; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
@@ -208,20 +219,23 @@ class MeltWeather : public ActiveBlockModifier
 {
 public:
 	MeltWeather(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	const std::vector<std::string> tc{"group:melt"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:melt"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> nothing;
+	const std::vector<std::string> rn{"air", "group:freeze"};
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		std::vector<std::string> s;
-		if (!activate) {
-			s.emplace_back("air");
-			s.emplace_back("group:freeze");
-		}
-		return s;
+		return activate ? nothing : rn;
 	}
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return nothing;
+	};
+
 	virtual float getTriggerInterval() override { return 10; }
 	virtual u32 getTriggerChance() override { return 10; }
 	bool getSimpleCatchUp() override { return true; }
@@ -257,15 +271,23 @@ class MeltHot : public ActiveBlockModifier
 {
 public:
 	MeltHot(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	const std::vector<std::string> tc{"group:melt"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:melt"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> rn{"group:igniter", "group:hot"};
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return {"group:igniter", "group:hot"};
+		return rn;
 	}
+	const std::vector<std::string> nothing;
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return nothing;
+	};
+
 	virtual u32 getNeighborsRange() override { return 2; }
 	virtual float getTriggerInterval() override { return 10; }
 	virtual u32 getTriggerChance() override { return 5; }
@@ -293,15 +315,23 @@ class BurnHot : public ActiveBlockModifier
 {
 public:
 	BurnHot(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	const std::vector<std::string> tc{"group:flammable"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:flammable"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> rn{"air"};
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return {"air"};
+		return rn;
 	}
+	const std::vector<std::string> nothing;
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return nothing;
+	};
+
 	virtual u32 getNeighborsRange() override { return 1; }
 	virtual float getTriggerInterval() override { return 20; }
 	virtual u32 getTriggerChance() override { return 10; }
@@ -330,15 +360,23 @@ class LiquidFreezeCold : public ActiveBlockModifier
 {
 public:
 	LiquidFreezeCold(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	const std::vector<std::string> tc{"group:freeze"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:freeze"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> rn{"group:cold"};
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return {"group:cold"};
+		return rn;
 	}
+	const std::vector<std::string> nothing;
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return nothing;
+	};
+
 	virtual u32 getNeighborsRange() override { return 2; }
 	virtual float getTriggerInterval() override { return 10; }
 	virtual u32 getTriggerChance() override { return 4; }

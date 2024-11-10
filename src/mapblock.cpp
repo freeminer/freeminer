@@ -1,24 +1,6 @@
-/*
-mapblock.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mapblock.h"
 
@@ -35,7 +17,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "content_mapnode.h"  // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
 #include "serialization.h"
-#if BUILD_CLIENT
+#if CHECK_CLIENT_BUILD()
 #include "client/mapblock_mesh.h"
 #endif
 #include "porting.h"
@@ -94,6 +76,14 @@ MapBlock::~MapBlock()
 		abm_triggers.reset();
 		break;
 	}
+/*
+#if CHECK_CLIENT_BUILD()
+	{
+		delete mesh;
+		mesh = nullptr;
+	}
+#endif
+*/
 }
 
 bool MapBlock::onObjectsActivation()
@@ -191,14 +181,14 @@ void MapBlock::copyTo(VoxelManipulator &dst)
 			getPosRelative(), data_size);
 }
 
-void MapBlock::copyFrom(VoxelManipulator &dst)
+void MapBlock::copyFrom(const VoxelManipulator &src)
 {
 	const auto lock = lock_unique_rec();
 	v3s16 data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
 	VoxelArea data_area(v3s16(0,0,0), data_size - v3s16(1,1,1));
 
 	// Copy from VoxelManipulator to data
-	dst.copyTo(data, data_area, v3s16(0,0,0),
+	src.copyTo(data, data_area, v3s16(0,0,0),
 			getPosRelative(), data_size);
 }
 

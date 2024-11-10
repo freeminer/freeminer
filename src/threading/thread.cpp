@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #include "threading/thread.h"
 #include "fm_porting.h"
 #include "threading/mutex_auto_lock.h"
-#include "log.h"
+#include "log_internal.h"
 #include "porting.h"
 
 // for setName
@@ -118,7 +118,7 @@ bool Thread::start()
 
 	// The mutex may already be locked if the thread is being restarted
 	// FIXME: what if this fails, or if already locked by same thread?
-	MutexAutoLock sf_lock(m_start_finished_mutex, std::try_to_lock);
+	std::unique_lock sf_lock(m_start_finished_mutex, std::try_to_lock);
 
 	try {
 		m_thread_obj = new std::thread(threadProc, this);
@@ -190,7 +190,7 @@ void Thread::threadProc(Thread *thr)
 
 	// Wait for the thread that started this one to finish initializing the
 	// thread handle so that getThreadId/getThreadHandle will work.
-	MutexAutoLock sf_lock(thr->m_start_finished_mutex);
+	std::unique_lock sf_lock(thr->m_start_finished_mutex);
 
 	thr->m_retval = thr->run();
 

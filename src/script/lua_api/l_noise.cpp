@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_noise.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_noise.h"
 #include "lua_api/l_internal.h"
@@ -545,9 +527,9 @@ int LuaPcgRandom::l_set_state(lua_State *L)
 	u64 state[2];
 	s_state_0 >> std::hex >> state[0];
 	s_state_1 >> std::hex >> state[1];
-	
+
 	o->m_rnd.setState(state);
-	
+
 	return 0;
 }
 
@@ -644,10 +626,9 @@ int LuaSecureRandom::create_object(lua_State *L)
 {
 	LuaSecureRandom *o = new LuaSecureRandom();
 
-	// Fail and return nil if we can't securely fill the buffer
 	if (!o->fillRandBuf()) {
 		delete o;
-		return 0;
+		throw LuaError("SecureRandom: Failed to find secure random device on system");
 	}
 
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;

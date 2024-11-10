@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_server.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_server.h"
 #include "lua_api/l_internal.h"
@@ -368,7 +350,7 @@ int ModApiServer::l_ban_player(lua_State *L)
 	return 1;
 }
 
-// disconnect_player(name, [reason]) -> success
+// disconnect_player(name[, reason[, reconnect]]) -> success
 int ModApiServer::l_disconnect_player(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
@@ -391,7 +373,9 @@ int ModApiServer::l_disconnect_player(lua_State *L)
 		return 1;
 	}
 
-	server->DenyAccess(player->getPeerId(), SERVER_ACCESSDENIED_CUSTOM_STRING, message);
+	bool reconnect = readParam<bool>(L, 3, false);
+
+	server->DenyAccess(player->getPeerId(), SERVER_ACCESSDENIED_CUSTOM_STRING, message, reconnect);
 	lua_pushboolean(L, true);
 	return 1;
 }

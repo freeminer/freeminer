@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2024 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2024 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <cstddef>
 #include <memory>
@@ -54,7 +39,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 
 /*
-	ServerMap	
+	Helpers
+*/
+
+void MapDatabaseAccessor::loadBlock(v3s16 blockpos, std::string &ret)
+{
+	ret.clear();
+	dbase->loadBlock(blockpos, &ret);
+	if (ret.empty() && dbase_ro)
+		dbase_ro->loadBlock(blockpos, &ret);
+}
+
+/*
+	ServerMap
 */
 
 ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
@@ -69,7 +66,7 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 	emerge->map_settings_mgr = &settings_mgr;
 
 	/*
-		Try to load map; if not found, create a new one.
+		Try to open map; if not found, create a new one.
 	*/
 
 	// Determine which database backend to use
@@ -87,16 +84,19 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 		#endif
 	}
 	std::string backend = conf.get("backend");
-	dbase = createDatabase(backend, savedir, conf);
+	m_db.dbase = createDatabase(backend, savedir, conf);
 	if (conf.exists("readonly_backend")) {
 		std::string readonly_dir = savedir + DIR_DELIM + "readonly";
-		dbase_ro = createDatabase(conf.get("readonly_backend"), readonly_dir, conf);
+		m_db.dbase_ro = createDatabase(conf.get("readonly_backend"), readonly_dir, conf);
 	}
 	if (!conf.updateConfigFile(conf_path.c_str()))
 		errorstream << "ServerMap::ServerMap(): Failed to update world.mt!" << std::endl;
 
 	m_savedir = savedir;
 	m_map_saving_enabled = false;
+
+	// Inform EmergeManager of db handles
+	m_emerge->initMap(&m_db);
 
 	m_save_time_counter = mb->addCounter(
 		"minetest_map_save_time", "Time spent saving blocks (in microseconds)");
@@ -170,11 +170,15 @@ ServerMap::~ServerMap()
 				 << ", exception: " << e.what() << std::endl;
 	}
 
-	/*
-		Close database if it was opened
-	*/
-	delete dbase;
-	delete dbase_ro;
+	m_emerge->resetMap();
+
+	{
+		MutexAutoLock dblock(m_db.mutex);
+		delete m_db.dbase;
+		m_db.dbase = nullptr;
+		delete m_db.dbase_ro;
+		m_db.dbase_ro = nullptr;
+	}
 
 	deleteDetachedBlocks();
 }
@@ -626,9 +630,10 @@ s32 ServerMap::save(ModifiedState save_level
 
 void ServerMap::listAllLoadableBlocks(std::vector<v3s16> &dst)
 {
-	dbase->listAllLoadableBlocks(dst);
-	if (dbase_ro)
-		dbase_ro->listAllLoadableBlocks(dst);
+	MutexAutoLock dblock(m_db.mutex);
+	m_db.dbase->listAllLoadableBlocks(dst);
+	if (m_db.dbase_ro)
+		m_db.dbase_ro->listAllLoadableBlocks(dst);
 }
 
 void ServerMap::listAllLoadedBlocks(std::vector<v3s16> &dst)
@@ -686,19 +691,23 @@ MapDatabase *ServerMap::createDatabase(
 
 void ServerMap::beginSave()
 {
-	dbase->beginSave();
+	MutexAutoLock dblock(m_db.mutex);
+	m_db.dbase->beginSave();
 }
 
 void ServerMap::endSave()
 {
-	dbase->endSave();
+	MutexAutoLock dblock(m_db.mutex);
+	m_db.dbase->endSave();
 }
 
 bool ServerMap::saveBlock(MapBlock *block)
 {
 	changed_blocks_for_merge.emplace(block->getPos());
 
-	return saveBlock(block, dbase, m_map_compression_level);
+	// FIXME: serialization happens under mutex
+	MutexAutoLock dblock(m_db.mutex);
+	return saveBlock(block, m_db.dbase, m_map_compression_level);
 }
 
 bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db, int compression_level)
@@ -730,52 +739,46 @@ bool ServerMap::saveBlock(MapBlock *block, MapDatabase *db, int compression_leve
 	return ret;
 }
 
-#if 0
-void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool save_after_load)
+void ServerMap::deSerializeBlock(MapBlock *block, std::istream &is)
 {
+	ScopeProfiler sp(g_profiler, "ServerMap: deSer block", SPT_AVG, PRECISION_MICRO);
+
+	u8 version = readU8(is);
+	if (is.fail())
+		throw SerializationError("Failed to read MapBlock version");
+
+	block->deSerialize(is, version, true);
+}
+
+MapBlock *ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_after_load)
+{
+	ScopeProfiler sp(g_profiler, "ServerMap: load block", SPT_AVG, PRECISION_MICRO);
+	MapBlock *block = nullptr;
+	bool created_new = false;
+
 	try {
-		std::istringstream is(*blob, std::ios_base::binary);
+		//v2s16 p2d(p3d.X, p3d.Z);
+		//MapSector *sector = createSector(p2d);
+		auto * sector= this;
 
-		u8 version = readU8(is);
-
-		if(is.fail())
-			throw SerializationError("ServerMap::loadBlock(): Failed"
-					" to read MapBlock version");
-
-		MapBlock *block = nullptr;
 		std::unique_ptr<MapBlock> block_created_new;
-		block = sector->getBlockNoCreateNoEx(p3d.Y);
+		block = sector->getBlockNoCreateNoEx(p3d);
 		if (!block) {
-			block_created_new = sector->createBlankBlockNoInsert(p3d.Y);
+			block_created_new.reset(sector->createBlankBlockNoInsert(p3d));
 			block = block_created_new.get();
 		}
 
 		{
-			ScopeProfiler sp(g_profiler, "ServerMap: deSer block", SPT_AVG, PRECISION_MICRO);
-			block->deSerialize(is, version, true);
+			std::istringstream iss(blob, std::ios_base::binary);
+			deSerializeBlock(block, iss);
 		}
 
 		// If it's a new block, insert it to the map
 		if (block_created_new) {
-			sector->insertBlock(std::move(block_created_new));
-			ReflowScan scanner(this, m_emerge->ndef);
-			scanner.scan(block, &m_transforming_liquid);
+			sector->insertBlock(block_created_new.get());
+			created_new = true;
 		}
-
-		/*
-			Save blocks loaded in old format in new format
-		*/
-
-		//if(version < SER_FMT_VER_HIGHEST_READ || save_after_load)
-		// Only save if asked to; no need to update version
-		if(save_after_load)
-			saveBlock(block);
-
-		// We just loaded it from, so it's up-to-date.
-		block->resetModified();
-	}
-	catch(SerializationError &e)
-	{
+	} catch (SerializationError &e) {
 		errorstream<<"Invalid block data in database"
 				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
 				<<" (SerializationError): "<<e.what()<<std::endl;
@@ -790,49 +793,56 @@ void ServerMap::loadBlock(std::string *blob, v3s16 p3d, MapSector *sector, bool 
 			throw SerializationError("Invalid block data in database");
 		}
 	}
-}
 
-MapBlock* ServerMap::loadBlock(v3s16 blockpos)
-{
-	ScopeProfiler sp(g_profiler, "ServerMap: load block", SPT_AVG, PRECISION_MICRO);
-	bool created_new = (getBlockNoCreateNoEx(blockpos) == NULL);
+	assert(block);
 
-	v2s16 p2d(blockpos.X, blockpos.Z);
-
-	std::string ret;
-	dbase->loadBlock(blockpos, &ret);
-	if (!ret.empty()) {
-		loadBlock(&ret, blockpos, createSector(p2d), false);
-	} else if (dbase_ro) {
-		dbase_ro->loadBlock(blockpos, &ret);
-		if (!ret.empty()) {
-			loadBlock(&ret, blockpos, createSector(p2d), false);
-		}
-	} else {
-		return NULL;
-	}
-
-	MapBlock *block = getBlockNoCreateNoEx(blockpos);
-	if (created_new && (block != NULL)) {
+	if (created_new) {
+	  if (!g_settings->getBool("liquid_real")) {
+		ReflowScan scanner(this, m_emerge->ndef);
+		scanner.scan(block, &m_transforming_liquid);
+	  }
 		std::map<v3s16, MapBlock*> modified_blocks;
 		// Fix lighting if necessary
 		voxalgo::update_block_border_lighting(this, block, modified_blocks);
 		if (!modified_blocks.empty()) {
-			//Modified lighting, send event
 			MapEditEvent event;
 			event.type = MEET_OTHER;
 			event.setModifiedBlocks(modified_blocks);
 			dispatchEvent(event);
 		}
 	}
+
+	if (save_after_load)
+		saveBlock(block);
+
+	// We just loaded it, so it's up-to-date.
+	block->resetModified();
+
 	return block;
+}
+
+#if 0
+
+MapBlock* ServerMap::loadBlock(v3s16 blockpos)
+{
+	std::string data;
+	{
+		ScopeProfiler sp(g_profiler, "ServerMap: load block - sync (sum)");
+		MutexAutoLock dblock(m_db.mutex);
+		m_db.loadBlock(blockpos, data);
+	}
+
+	if (!data.empty())
+		return loadBlock(data, blockpos);
+	return getBlockNoCreateNoEx(blockpos);
 }
 
 #endif
 
 bool ServerMap::deleteBlock(v3s16 blockpos)
 {
-	if (!dbase->deleteBlock(blockpos))
+	MutexAutoLock dblock(m_db.mutex);
+	if (!m_db.dbase->deleteBlock(blockpos))
 		return false;
 
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);

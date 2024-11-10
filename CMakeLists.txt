@@ -12,8 +12,8 @@ set(CLANG_MINIMUM_VERSION "7.0.1")
 
 # You should not need to edit these manually, use util/bump_version.sh
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 9)
-set(VERSION_PATCH 1)
+set(VERSION_MINOR 10)
+set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
@@ -58,6 +58,11 @@ if((WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR APPLE)
 	set(DEFAULT_ENABLE_LTO FALSE)
 endif()
 set(ENABLE_LTO ${DEFAULT_ENABLE_LTO} CACHE BOOL "Use Link Time Optimization")
+
+set(BUILD_WITH_TRACY FALSE CACHE BOOL
+	"Fetch and build with the Tracy profiler client")
+set(FETCH_TRACY_GIT_TAG "master" CACHE STRING
+	"Git tag for fetching Tracy client. Match with your server (gui) version")
 
 set(DEFAULT_RUN_IN_PLACE FALSE)
 set(DEFAULT_RUN_IN_PLACE TRUE)
@@ -144,22 +149,7 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type: Debug or Release" FORCE)
 endif()
 
-
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
-if(NOT NO_LTO AND NOT DEVELOPMENT_BUILD AND(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
-	option(USE_LTO "Use LTO" ON)
-else()
-	option(USE_LTO "Use LTO" OFF)
-endif()
-
-if (USE_LTO)
-    # include(CheckIPOSupported)
-	# check_ipo_supported(RESULT supported OUTPUT error)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-	message(STATUS "Using lto")
-endif()
-
 
 set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL
 	"Whether to enable update checks by default")
@@ -170,7 +160,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Load default options for Android
 if(ANDROID)
 	cmake_minimum_required(VERSION 3.20)
-	include(MinetestAndroidLibs)
+	include(AndroidLibs)
 endif()
 
 
@@ -372,6 +362,8 @@ if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
 	add_subdirectory(lib/catch2)
 endif()
 
+add_subdirectory(lib/tiniergltf)
+
 # Subdirectories
 # Be sure to add all relevant definitions above this
 add_subdirectory(src)
@@ -390,7 +382,7 @@ include(CPackComponent)
 
 cpack_add_component(Docs
 	DISPLAY_NAME "Documentation"
-	DESCRIPTION "Documentation about freeminer and freeminer modding"
+	DESCRIPTION "Documentation about ${PROJECT_NAME_CAPITALIZED} and ${PROJECT_NAME_CAPITALIZED} modding"
 )
 
 if(WIN32)
@@ -479,4 +471,20 @@ if(BUILD_DOCUMENTATION)
 			COMMENT "Generating API documentation with Doxygen" VERBATIM
 		)
 	endif()
+endif()
+
+# Fetch Tracy
+if(BUILD_WITH_TRACY)
+	include(FetchContent)
+
+	message(STATUS "Fetching Tracy (${FETCH_TRACY_GIT_TAG})...")
+	FetchContent_Declare(
+		tracy
+		GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+		GIT_TAG ${FETCH_TRACY_GIT_TAG}
+		GIT_SHALLOW TRUE
+		GIT_PROGRESS TRUE
+	)
+	FetchContent_MakeAvailable(tracy)
+	message(STATUS "Fetching Tracy - done")
 endif()

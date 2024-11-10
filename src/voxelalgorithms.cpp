@@ -1,24 +1,6 @@
-/*
-voxelalgorithms.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <array>
 
@@ -1005,14 +987,18 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
  * The areas do not overlap.
  * Compatible with type 'direction'.
  */
-const VoxelArea block_pad[] = {
-	VoxelArea(v3s16(15, 0, 0), v3s16(15, 15, 15)), //X+
-	VoxelArea(v3s16(1, 15, 0), v3s16(14, 15, 15)), //Y+
-	VoxelArea(v3s16(1, 1, 15), v3s16(14, 14, 15)), //Z+
-	VoxelArea(v3s16(1, 1, 0), v3s16(14, 14, 0)),   //Z-
-	VoxelArea(v3s16(1, 0, 0), v3s16(14, 0, 15)),   //Y-
-	VoxelArea(v3s16(0, 0, 0), v3s16(0, 15, 15))    //X-
+#define B_1 (MAP_BLOCKSIZE - 1)
+#define B_2 (MAP_BLOCKSIZE - 2)
+const static VoxelArea block_pad[] = {
+	VoxelArea({B_1, 0, 0}, {B_1, B_1, B_1}), //X+
+	VoxelArea({1, B_1, 0}, {B_2, B_1, B_1}), //Y+
+	VoxelArea({1, 1, B_1}, {B_2, B_2, B_1}), //Z+
+	VoxelArea({1, 1, 0},   {B_2, B_2, 0}),   //Z-
+	VoxelArea({1, 0, 0},   {B_2, 0, B_1}),   //Y-
+	VoxelArea({0, 0, 0},   {0, B_1, B_1})    //X-
 };
+#undef B_1
+#undef B_2
 
 /*!
  * The common part of bulk light updates - it is always executed.

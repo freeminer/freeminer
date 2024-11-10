@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "config.h"
 #include "fm_world_merge.h"
@@ -29,6 +14,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "client/client.h"
 
+#include "irr_v2d.h"
 #include "util/base64.h"
 #include "client/camera.h"
 #include "client/mesh_generator_thread.h"
@@ -58,6 +44,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "particles.h"
 #include <memory>
 
+const char *accessDeniedStrings[SERVER_ACCESSDENIED_MAX] = {
+	N_("Invalid password"),
+	N_("Your client sent something the server didn't expect.  Try reconnecting or updating your client."),
+	N_("The server is running in singleplayer mode.  You cannot connect."),
+	N_("Your client's version is not supported.\nPlease contact the server administrator."),
+	N_("Player name contains disallowed characters"),
+	N_("Player name not allowed"),
+	N_("Too many users"),
+	N_("Empty passwords are disallowed.  Set a password and try again."),
+	N_("Another client is connected with this name.  If your client closed unexpectedly, try again in a minute."),
+	N_("Internal server error"),
+	"",
+	N_("Server shutting down"),
+	N_("The server has experienced an internal error.  You will now be disconnected.")
+};
+
 void Client::handleCommand_Deprecated(NetworkPacket* pkt)
 {
 	infostream << "Got deprecated command "
@@ -72,11 +74,11 @@ void Client::handleCommand_Hello(NetworkPacket* pkt)
 
 	u8 serialization_ver;
 	u16 proto_ver;
-	u16 compression_mode;
+	u16 unused_compression_mode;
 	u32 auth_mechs;
-	std::string username_legacy; // for case insensitivity
-	*pkt >> serialization_ver >> compression_mode >> proto_ver
-		>> auth_mechs >> username_legacy;
+	std::string unused;
+	*pkt >> serialization_ver >> unused_compression_mode >> proto_ver
+		>> auth_mechs >> unused;
 
 	// Chose an auth method we support
 	AuthMechanism chosen_auth_mechanism = choseAuthMech(auth_mechs);
@@ -85,7 +87,6 @@ void Client::handleCommand_Hello(NetworkPacket* pkt)
 			<< "serialization_ver=" << (u32)serialization_ver
 			<< ", auth_mechs=" << auth_mechs
 			<< ", proto_ver=" << proto_ver
-			<< ", compression_mode=" << compression_mode
 			<< ". Doing auth with mech " << chosen_auth_mechanism << std::endl;
 
 	if (!ser_ver_supported(serialization_ver)) {
@@ -96,10 +97,6 @@ void Client::handleCommand_Hello(NetworkPacket* pkt)
 
 	m_server_ser_ver = serialization_ver;
 	m_proto_ver = proto_ver;
-
-	//TODO verify that username_legacy matches sent username, only
-	// differs in casing (make both uppercase and compare)
-	// This is only necessary though when we actually want to add casing support
 
 	if (m_chosen_auth_mech != AUTH_MECHANISM_NONE) {
 		// we received a TOCLIENT_HELLO while auth was already going on
@@ -203,7 +200,6 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 	// to be processed even if the serialization format has
 	// not been agreed yet, the same as TOCLIENT_INIT.
 	m_access_denied = true;
-	m_access_denied_reason = "Unknown";
 
 	if (pkt->getCommand() != TOCLIENT_ACCESS_DENIED) {
 		// Legacy code from 0.4.12 and older but is still used
@@ -222,29 +218,23 @@ void Client::handleCommand_AccessDenied(NetworkPacket* pkt)
 	u8 denyCode;
 	*pkt >> denyCode;
 
-	if (denyCode == SERVER_ACCESSDENIED_SHUTDOWN ||
-			denyCode == SERVER_ACCESSDENIED_CRASH) {
+	if (pkt->getRemainingBytes() > 0)
 		*pkt >> m_access_denied_reason;
-		if (m_access_denied_reason.empty())
-			m_access_denied_reason = accessDeniedStrings[denyCode];
+
+	if (m_access_denied_reason.empty()) {
+		if (denyCode >= SERVER_ACCESSDENIED_MAX) {
+			m_access_denied_reason = gettext("Unknown disconnect reason.");
+		} else if (denyCode != SERVER_ACCESSDENIED_CUSTOM_STRING) {
+			m_access_denied_reason = gettext(accessDeniedStrings[denyCode]);
+		}
+	}
+
+	if (denyCode == SERVER_ACCESSDENIED_TOO_MANY_USERS) {
+		m_access_denied_reconnect = true;
+	} else if (pkt->getRemainingBytes() > 0) {
 		u8 reconnect;
 		*pkt >> reconnect;
 		m_access_denied_reconnect = reconnect & 1;
-	} else if (denyCode == SERVER_ACCESSDENIED_CUSTOM_STRING) {
-		*pkt >> m_access_denied_reason;
-	} else if (denyCode == SERVER_ACCESSDENIED_TOO_MANY_USERS) {
-		m_access_denied_reason = accessDeniedStrings[denyCode];
-		m_access_denied_reconnect = true;
-	} else if (denyCode < SERVER_ACCESSDENIED_MAX) {
-		m_access_denied_reason = accessDeniedStrings[denyCode];
-	} else {
-		// Allow us to add new error messages to the
-		// protocol without raising the protocol version, if we want to.
-		// Until then (which may be never), this is outside
-		// of the defined protocol.
-		*pkt >> m_access_denied_reason;
-		if (m_access_denied_reason.empty())
-			m_access_denied_reason = "Unknown";
 	}
 }
 
@@ -677,20 +667,10 @@ void Client::handleCommand_MovePlayerRel(NetworkPacket *pkt)
 	player->addPosition(added_pos);
 }
 
-void Client::handleCommand_DeathScreen(NetworkPacket* pkt)
+void Client::handleCommand_DeathScreenLegacy(NetworkPacket* pkt)
 {
-	bool set_camera_point_target;
-	v3f camera_point_target;
-
-	*pkt >> set_camera_point_target;
-	*pkt >> camera_point_target;
-
 	ClientEvent *event = new ClientEvent();
-	event->type                                = CE_DEATHSCREEN;
-	event->deathscreen.set_camera_point_target = set_camera_point_target;
-	event->deathscreen.camera_point_target_x   = camera_point_target.X;
-	event->deathscreen.camera_point_target_y   = camera_point_target.Y;
-	event->deathscreen.camera_point_target_z   = camera_point_target.Z;
+	event->type = CE_DEATHSCREEN_LEGACY;
 	m_client_event_queue.push(event);
 }
 
@@ -1503,12 +1483,17 @@ void Client::handleCommand_CloudParams(NetworkPacket* pkt)
 	f32 density;
 	video::SColor color_bright;
 	video::SColor color_ambient;
+	video::SColor color_shadow = video::SColor(255, 204, 204, 204);
 	f32 height;
 	f32 thickness;
 	v2f speed;
 
 	*pkt >> density >> color_bright >> color_ambient
 			>> height >> thickness >> speed;
+
+	if (pkt->getRemainingBytes() >= 4) {
+		*pkt >> color_shadow;
+	}
 
 	ClientEvent *event = new ClientEvent();
 	event->type                       = CE_CLOUD_PARAMS;
@@ -1518,6 +1503,7 @@ void Client::handleCommand_CloudParams(NetworkPacket* pkt)
 	// we avoid using new() and delete() for no good reason
 	event->cloud_params.color_bright  = color_bright.color;
 	event->cloud_params.color_ambient = color_ambient.color;
+	event->cloud_params.color_shadow = color_shadow.color;
 	event->cloud_params.height        = height;
 	event->cloud_params.thickness     = thickness;
 	// same here: deconstruct to skip constructor
@@ -1547,10 +1533,16 @@ void Client::handleCommand_LocalPlayerAnimations(NetworkPacket* pkt)
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player != NULL);
 
-	*pkt >> player->local_animations[0];
-	*pkt >> player->local_animations[1];
-	*pkt >> player->local_animations[2];
-	*pkt >> player->local_animations[3];
+	for (int i = 0; i < 4; ++i) {
+		if (getProtoVersion() >= 46) {
+			*pkt >> player->local_animations[i];
+		} else {
+			v2s32 local_animation;
+			*pkt >> local_animation;
+			player->local_animations[i] = v2f::from(local_animation);
+		}
+	}
+
 	*pkt >> player->local_animation_speed;
 
 	player->last_animation = LocalPlayerAnimation::NO_ANIM;
@@ -1848,6 +1840,13 @@ void Client::handleCommand_SetLighting(NetworkPacket *pkt)
 	}
 	if (pkt->getRemainingBytes() >= 4)
 		*pkt >> lighting.volumetric_light_strength;
+	if (pkt->getRemainingBytes() >= 4)
+		*pkt >> lighting.shadow_tint;
+	if (pkt->getRemainingBytes() >= 12) {
+		*pkt >> lighting.bloom_intensity
+				>> lighting.bloom_strength_factor
+				>> lighting.bloom_radius;
+	}
 }
 
 #endif

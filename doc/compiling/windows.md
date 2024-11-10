@@ -15,7 +15,7 @@ It is highly recommended to use vcpkg as package manager.
 After you successfully built vcpkg you can easily install the required libraries:
 
 ```powershell
-vcpkg install zlib zstd curl[winssl] openal-soft libvorbis libogg libjpeg-turbo sqlite3 freetype luajit gmp jsoncpp gettext opengl-registry --triplet x64-windows
+vcpkg install zlib zstd curl[winssl] openal-soft libvorbis libogg libjpeg-turbo sqlite3 freetype luajit gmp jsoncpp gettext[tools] opengl-registry --triplet x64-windows
 ```
 
 - `curl` is optional, but required to read the serverlist, `curl[winssl]` is required to use the content store.
@@ -29,7 +29,7 @@ There are other optional libraries, but they are not tested if they can build an
 Use `--triplet` to specify the target triplet, e.g. `x64-windows` or `x86-windows`.
 
 
-## Compile Minetest
+## Compile Luanti
 
 ### a) Using the vcpkg toolchain and CMake GUI
 
@@ -46,14 +46,14 @@ Use `--triplet` to specify the target triplet, e.g. `x64-windows` or `x86-window
 11. If there are any errors, solve them and hit **Configure**
 12. Click **Generate**
 13. Click **Open Project**
-14. Compile Minetest inside Visual studio.
+14. Compile Luanti inside Visual studio.
 
 ### b) Using the vcpkg toolchain and the commandline
 
 Run the following script in PowerShell:
 
 ```powershell
-cmake . -G"Visual Studio 15 2017 Win64" -DCMAKE_TOOLCHAIN_FILE=D:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_GETTEXT=OFF -DENABLE_CURSES=OFF
+cmake . -G"Visual Studio 16 2019" -DCMAKE_TOOLCHAIN_FILE=D:/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release -DENABLE_CURSES=OFF
 cmake --build . --config Release
 ```
 Make sure that the right compiler is selected and the path to the vcpkg toolchain is correct.

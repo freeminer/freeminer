@@ -1,24 +1,6 @@
-/*
-client.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -34,27 +16,25 @@ constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 // ==
 
 #include "clientenvironment.h"
-#include "irr_v3d.h"
-#include "irrlichttypes_extrabloated.h"
-#include <atomic>
+#include "irrlichttypes.h"
 #include <ostream>
 #include <map>
 #include <memory>
 #include <set>
 #include <vector>
 #include <unordered_set>
-#include "clientobject.h"
 #include "gamedef.h"
 #include "inventorymanager.h"
-#include "client/hud.h"
-#include "tileanimation.h"
 #include "network/address.h"
+#include "network/networkprotocol.h" // multiple enums
 #include "network/peerhandler.h"
 #include "gameparams.h"
-#include "clientdynamicinfo.h"
+#include "script/common/c_types.h" // LuaError
 #include "util/numeric.h"
+#include "util/string.h" // StringMap
+#include "config.h"
 
-#ifdef SERVER
+#if !IS_CLIENT_BUILD
 #error Do not include in server builds
 #endif
 
@@ -63,34 +43,35 @@ constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 class Server;
 class ChatBackend;
 
-struct ClientEvent;
-struct MeshMakeData;
-struct ChatMessage;
-class MapBlockMesh;
-class RenderingEngine;
-class IWritableTextureSource;
-class IWritableShaderSource;
-class IWritableItemDefManager;
-class ISoundManager;
-class NodeDefManager;
-//class IWritableCraftDefManager;
+class Camera;
 class ClientMediaDownloader;
-class SingleMediaDownloader;
-struct MapDrawControl;
+class ISoundManager;
+class IWritableItemDefManager;
+class IWritableShaderSource;
+class IWritableTextureSource;
+class MapBlockMesh;
+class MapDatabase;
+class MeshUpdateManager;
+class Minimap;
 class ModChannelMgr;
 class MtEventManager;
-struct PointedThing;
-struct MapNode;
-class MapDatabase;
-class Minimap;
-struct MinimapMapblock;
-class MeshUpdateManager;
-class ParticleManager;
-class Camera;
-struct PlayerControl;
 class NetworkPacket;
+class NodeDefManager;
+class ParticleManager;
+class RenderingEngine;
+class SingleMediaDownloader;
+struct ChatMessage;
+struct ClientDynamicInfo;
+struct ClientEvent;
+struct MapDrawControl;
+struct MapNode;
+struct MeshMakeData;
+struct MinimapMapblock;
+struct PlayerControl;
+struct PointedThing;
+
 namespace con {
-class Connection;
+class IConnection;
 }
 using sound_handle_t = int;
 
@@ -254,7 +235,7 @@ public:
 	void handleCommand_MovePlayer(NetworkPacket* pkt);
 	void handleCommand_PunchPlayer(NetworkPacket* pkt);
 	void handleCommand_MovePlayerRel(NetworkPacket* pkt);
-	void handleCommand_DeathScreen(NetworkPacket* pkt);
+	void handleCommand_DeathScreenLegacy(NetworkPacket* pkt);
 	void handleCommand_AnnounceMedia(NetworkPacket* pkt);
 	void handleCommand_Media(NetworkPacket* pkt);
 	void handleCommand_NodeDef(NetworkPacket* pkt);
@@ -311,7 +292,7 @@ public:
 	void sendChangePassword(const std::string &oldpassword,
 		const std::string &newpassword);
 	void sendDamage(u16 damage);
-	void sendRespawn();
+	void sendRespawnLegacy();
 	void sendReady();
 	void sendHaveMedia(const std::vector<u32> &tokens);
 	void sendUpdateClientInfo(const ClientDynamicInfo &info);
@@ -515,8 +496,8 @@ private:
 	void loadMods();
 
 	// Virtual methods from con::PeerHandler
-	void peerAdded(u16 peer_id) override;
-	void deletingPeer(u16 peer_id, bool timeout) override;
+	void peerAdded(session_t peer_id) override;
+	void deletingPeer(session_t peer_id, bool timeout) override;
 
 	void initLocalMapSaving(const Address &address,
 			const std::string &hostname,
@@ -559,7 +540,7 @@ public:
 private:
 	std::unique_ptr<ParticleManager> m_particle_manager;
 public:
-	std::unique_ptr<con_use::Connection> m_con;
+	std::unique_ptr<con::IConnection> m_con;
 private:
 	std::string m_address_name;
 	ELoginRegister m_allow_login_or_register = ELoginRegister::Any;
