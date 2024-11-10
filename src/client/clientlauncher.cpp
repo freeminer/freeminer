@@ -229,7 +229,7 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << '\n';
 			}
 
-#if !EXCEPTION_DEBUG
+#if NDEBUG && !EXCEPTION_DEBUG
 		} catch (std::exception &e) {
 			error_message = "Some exception: ";
 			error_message.append(debug_describe_exc(e));

@@ -199,7 +199,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	}
 	const auto lock = block->lock_unique_rec();
 	block->far_step = step;
-	content_t content_only;
+	content_t content_only{};
 	packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, content_only);
 	block->content_only = content_only;
 	packet.convert_safe(
