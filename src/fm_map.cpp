@@ -20,6 +20,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <cstdint>
+#include <memory>
 #include "database/database.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -110,9 +111,9 @@ void Map::getBlockCacheFlush()
 	block_cache = nullptr;
 }
 
-MapBlock *Map::createBlankBlockNoInsert(const v3pos_t &p)
+MapBlockP Map::createBlankBlockNoInsert(const v3pos_t &p)
 {
-	auto block = new MapBlock(p, m_gamedef);
+	const auto block = std::make_shared<MapBlock>(p, m_gamedef);
 	return block;
 }
 
@@ -127,14 +128,14 @@ MapBlockP Map::createBlankBlock(const v3pos_t &p)
 		return block;
 	}
 
-	block.reset(createBlankBlockNoInsert(p));
+	block = createBlankBlockNoInsert(p);
 
 	m_blocks.insert_or_assign(p, block);
 
 	return block;
 }
 
-bool Map::insertBlock(MapBlock *block)
+bool Map::insertBlock(MapBlockP block)
 {
 	auto block_p = block->getPos();
 
@@ -149,7 +150,7 @@ bool Map::insertBlock(MapBlock *block)
 	}
 
 	// Insert into container
-	m_blocks.insert_or_assign(block_p, MapBlockP{block});
+	m_blocks.insert_or_assign(block_p, block);
 	return true;
 }
 
@@ -1408,22 +1409,23 @@ s16 ServerMap::findGroundLevel(v2pos_t p2d, bool cacheBlocks)
 	return level;
 }
 
-void ServerMap::prepareBlock(MapBlock *block) {
+void ServerMap::prepareBlock(MapBlock *block)
+{
 	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
 
 	// Calculate weather conditions
 	//block->heat_last_update     = 0;
 	//block->humidity_last_update = 0;
-	v3pos_t p = block->getPos() *  MAP_BLOCKSIZE;
+	v3pos_t p = block->getPos() * MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
 }
 
-MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
+MapBlock *ServerMap::loadBlock(v3bpos_t p3d)
 {
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
-	MapBlock *block = nullptr;
+	MapBlockP block;
 	try {
 		std::string blob;
 		m_db.dbase->loadBlock(p3d, &blob);
@@ -1438,11 +1440,11 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 		std::istringstream is(blob, std::ios_base::binary);
 
 		u8 version = SER_FMT_VER_INVALID;
-		is.read((char*)&version, 1);
+		is.read((char *)&version, 1);
 
-		if(is.fail())
+		if (is.fail())
 			throw SerializationError("ServerMap::loadBlock(): Failed"
-					" to read MapBlock version");
+									 " to read MapBlock version");
 
 		/*u32 block_size = MapBlock::serializedLength(version);
 		SharedBuffer<u8> data(block_size);
@@ -1452,9 +1454,8 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 		//MapSector *sector = emergeSector(p2d);
 
 		bool created_new = false;
-		block = sector->getBlockNoCreateNoEx(p3d, false, true);
-		if(block == NULL)
-		{
+		block = sector->getBlock(p3d, false, true);
+		if (block == NULL) {
 			block = sector->createBlankBlockNoInsert(p3d);
 			created_new = true;
 		}
@@ -1462,65 +1463,62 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 		// Read basic data
 		if (!block->deSerialize(is, version, true)) {
 			if (created_new && block)
-				delete block;
-			return nullptr;
+				//delete block;
+				return nullptr;
 		}
 
 		// If it's a new block, insert it to the map
-		if(created_new)
-			if(!sector->insertBlock(block)) {
-				delete block;
+		if (created_new)
+			if (!sector->insertBlock(block)) {
+				//delete block;
 				return nullptr;
 			}
 
 		if (!g_settings->getBool("liquid_real")) {
 			ReflowScan scanner(this, m_emerge->ndef);
-			scanner.scan(block, &m_transforming_liquid);
+			scanner.scan(block.get(), &m_transforming_liquid);
 		}
 
 		// We just loaded it from, so it's up-to-date.
 		block->resetModified();
 
-/*
+		/*
 		if (block->getLightingExpired()) {
 			verbosestream<<"Loaded block with exiried lighting. (maybe sloooow appear), try recalc " << p3d<<std::endl;
 			lighting_modified_blocks.set(p3d, nullptr);
 		}
 */
 
-	//MapBlock *block = getBlockNoCreateNoEx(blockpos);
-	if (created_new && (block != NULL)) {
-		std::map<v3bpos_t, MapBlock*> modified_blocks;
-		// Fix lighting if necessary
-		voxalgo::update_block_border_lighting(this, block, modified_blocks);
-		if (!modified_blocks.empty()) {
-			//Modified lighting, send event
-			MapEditEvent event;
-			event.type = MEET_OTHER;
-			for (auto it = modified_blocks.begin();
-					it != modified_blocks.end(); ++it)
-				event.modified_blocks.push_back(it->first);
-			dispatchEvent(event);
+		//MapBlock *block = getBlockNoCreateNoEx(blockpos);
+		if (created_new && (block != NULL)) {
+			std::map<v3bpos_t, MapBlock *> modified_blocks;
+			// Fix lighting if necessary
+			voxalgo::update_block_border_lighting(this, block.get(), modified_blocks);
+			if (!modified_blocks.empty()) {
+				//Modified lighting, send event
+				MapEditEvent event;
+				event.type = MEET_OTHER;
+				for (auto it = modified_blocks.begin(); it != modified_blocks.end(); ++it)
+					event.modified_blocks.push_back(it->first);
+				dispatchEvent(event);
+			}
 		}
-	}
 
-
-
-		return block;
+		return block.get();
 	} catch (const std::exception &e) {
-		if (block)
-			delete block;
+		//if (block)
+		//	delete block;
 
-		errorstream<<"Invalid block data in database"
-				<<" ("<<p3d.X<<","<<p3d.Y<<","<<p3d.Z<<")"
-				<<" (SerializationError): "<<e.what()<<std::endl;
+		errorstream << "Invalid block data in database" << " (" << p3d.X << "," << p3d.Y
+					<< "," << p3d.Z << ")" << " (SerializationError): " << e.what()
+					<< std::endl;
 
 		// TODO: Block should be marked as invalid in memory so that it is
 		// not touched but the game can run
 
-		if(g_settings->getBool("ignore_world_load_errors")){
-			errorstream<<"Ignoring block load error. Duck and cover! "
-					<<"(ignore_world_load_errors)"<<std::endl;
+		if (g_settings->getBool("ignore_world_load_errors")) {
+			errorstream << "Ignoring block load error. Duck and cover! "
+						<< "(ignore_world_load_errors)" << std::endl;
 		} else {
 			throw SerializationError("Invalid block data in database");
 		}
@@ -1528,19 +1526,17 @@ MapBlock * ServerMap::loadBlock(v3bpos_t p3d)
 	return nullptr;
 }
 
-
 s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool breakable)
 {
 	if (!m_map_saving_enabled) {
-		warningstream<<"Not saving map, saving disabled."<<std::endl;
+		warningstream << "Not saving map, saving disabled." << std::endl;
 		return 0;
 	}
 
 	const auto start_time = porting::getTimeUs();
 
-	if(save_level == MOD_STATE_CLEAN)
-		infostream<<"ServerMap: Saving whole map, this can take time."
-				<<std::endl;
+	if (save_level == MOD_STATE_CLEAN)
+		infostream << "ServerMap: Saving whole map, this can take time." << std::endl;
 
 	if (m_map_metadata_changed || save_level == MOD_STATE_CLEAN) {
 		if (settings_mgr.saveMapMeta())
@@ -1563,12 +1559,12 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 	MAP_NOTHREAD_LOCK(this);
 
 	{
-		auto lock = breakable ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
+		auto lock =
+				breakable ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())
 			return m_blocks_save_last;
 
-		for(const auto &[pos, block] : m_blocks)
-		{
+		for (const auto &[pos, block] : m_blocks) {
 			if (n++ < m_blocks_save_last)
 				continue;
 			else
@@ -1580,16 +1576,17 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 
 			block_count_all++;
 
-			if(block->getModified() >= (u32)save_level) {
+			if (block->getModified() >= (u32)save_level) {
 				// Lazy beginSave()
-				if(!save_started) {
+				if (!save_started) {
 					beginSave();
 					save_started = true;
 				}
 
 				//modprofiler.add(block->getModifiedReasonString(), 1);
 
-				auto lock = breakable ? block->try_lock_unique_rec() : block->lock_unique_rec();
+				auto lock = breakable ? block->try_lock_unique_rec()
+									  : block->lock_unique_rec();
 				if (!lock->owns_lock())
 					continue;
 
@@ -1605,22 +1602,22 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 	if (!calls)
 		m_blocks_save_last = 0;
 
-	if(save_started)
+	if (save_started)
 		endSave();
 
 	/*
 		Only print if something happened or saved whole map
 	*/
-	if(/*save_level == MOD_STATE_CLEAN
-			||*/ block_count != 0) {
-		infostream << "ServerMap: Written: "
-				<< block_count << " blocks"
-				<< ", " << block_count_all << " blocks in memory."
+	if (/*save_level == MOD_STATE_CLEAN
+			||*/
+			block_count != 0) {
+		infostream << "ServerMap: Written: " << block_count << " blocks" << ", "
+				   << block_count_all << " blocks in memory."
 
-                << " Total=" << m_blocks.size() << ".";
-				if (m_blocks_save_last)
-					infostream<<" Break at "<< m_blocks_save_last;
-				infostream
+				   << " Total=" << m_blocks.size() << ".";
+		if (m_blocks_save_last)
+			infostream << " Break at " << m_blocks_save_last;
+		infostream
 
 				<< std::endl;
 		PrintInfo(infostream); // ServerMap/ClientMap:
@@ -1637,45 +1634,46 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 	return m_blocks_save_last;
 }
 
-int Server::save(float dtime, float dedicated_server_step, bool breakable) {
+int Server::save(float dtime, float dedicated_server_step, bool breakable)
+{
 	// Save map, players and auth stuff
 	int ret = 0;
-		float &counter = m_savemap_timer;
-		counter += dtime;
-		static thread_local const float save_interval =
+	float &counter = m_savemap_timer;
+	counter += dtime;
+	static thread_local const float save_interval =
 			g_settings->getFloat("server_map_save_interval");
-		if (counter >= save_interval) {
-			counter = 0.0;
-			TimeTaker timer_step("Server step: Save map, players and auth stuff");
-			//MutexAutoLock lock(m_env_mutex);
+	if (counter >= save_interval) {
+		counter = 0.0;
+		TimeTaker timer_step("Server step: Save map, players and auth stuff");
+		//MutexAutoLock lock(m_env_mutex);
 
-			ScopeProfiler sp(g_profiler, "Server: map saving (sum)");
+		ScopeProfiler sp(g_profiler, "Server: map saving (sum)");
 
-			// Save changed parts of map
-			if(m_env->getMap().save(MOD_STATE_WRITE_NEEDED, dedicated_server_step, breakable)) {
-				// partial save, will continue on next step
-				counter = g_settings->getFloat("server_map_save_interval");
-				++ret;
-				if (breakable)
-					goto save_break;
-			}
-
-			// Save ban file
-			if (m_banmanager->isModified()) {
-				m_banmanager->save();
-			}
-
-			// Save players
-			m_env->saveLoadedPlayers();
-
-			// Save environment metadata
-			m_env->saveMeta();
-
-			stat.save();
-			m_env->blocks_with_abm.save();
-
+		// Save changed parts of map
+		if (m_env->getMap().save(
+					MOD_STATE_WRITE_NEEDED, dedicated_server_step, breakable)) {
+			// partial save, will continue on next step
+			counter = g_settings->getFloat("server_map_save_interval");
+			++ret;
+			if (breakable)
+				goto save_break;
 		}
-		save_break:;
+
+		// Save ban file
+		if (m_banmanager->isModified()) {
+			m_banmanager->save();
+		}
+
+		// Save players
+		m_env->saveLoadedPlayers();
+
+		// Save environment metadata
+		m_env->saveMeta();
+
+		stat.save();
+		m_env->blocks_with_abm.save();
+	}
+save_break:;
 
 	return ret;
 }

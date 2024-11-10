@@ -7,6 +7,7 @@
 #include "irrlichttypes_bloated.h"
 #include "map.h"
 #include "camera.h"
+#include "threading/async.h"
 #include <atomic>
 #include <set>
 #include <unordered_set>
@@ -211,8 +212,9 @@ private:
     using drawlist_shadow_map = std::map<v3bpos_t, MapBlockP>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
-
 public:
+    async_step_runner update_drawlist_async;
+    async_step_runner update_shadows_async;
 	std::map<v3pos_t, MapBlock*> m_block_boundary;
 private:
 

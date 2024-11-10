@@ -753,7 +753,7 @@ void ServerMap::deSerializeBlock(MapBlock *block, std::istream &is)
 MapBlock *ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_after_load)
 {
 	ScopeProfiler sp(g_profiler, "ServerMap: load block", SPT_AVG, PRECISION_MICRO);
-	MapBlock *block = nullptr;
+	MapBlockP block;
 	bool created_new = false;
 
 	try {
@@ -761,21 +761,21 @@ MapBlock *ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_aft
 		//MapSector *sector = createSector(p2d);
 		auto * sector= this;
 
-		std::unique_ptr<MapBlock> block_created_new;
-		block = sector->getBlockNoCreateNoEx(p3d);
+		MapBlockP block_created_new;
+		block = sector->getBlock(p3d);
 		if (!block) {
-			block_created_new.reset(sector->createBlankBlockNoInsert(p3d));
-			block = block_created_new.get();
+			block_created_new = sector->createBlankBlockNoInsert(p3d);
+			block = block_created_new;
 		}
 
 		{
 			std::istringstream iss(blob, std::ios_base::binary);
-			deSerializeBlock(block, iss);
+			deSerializeBlock(block.get(), iss);
 		}
 
 		// If it's a new block, insert it to the map
 		if (block_created_new) {
-			sector->insertBlock(block_created_new.get());
+			sector->insertBlock(block_created_new);
 			created_new = true;
 		}
 	} catch (SerializationError &e) {
@@ -799,11 +799,11 @@ MapBlock *ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_aft
 	if (created_new) {
 	  if (!g_settings->getBool("liquid_real")) {
 		ReflowScan scanner(this, m_emerge->ndef);
-		scanner.scan(block, &m_transforming_liquid);
+		scanner.scan(block.get(), &m_transforming_liquid);
 	  }
 		std::map<v3s16, MapBlock*> modified_blocks;
 		// Fix lighting if necessary
-		voxalgo::update_block_border_lighting(this, block, modified_blocks);
+		voxalgo::update_block_border_lighting(this, block.get(), modified_blocks);
 		if (!modified_blocks.empty()) {
 			MapEditEvent event;
 			event.type = MEET_OTHER;
@@ -813,12 +813,12 @@ MapBlock *ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_aft
 	}
 
 	if (save_after_load)
-		saveBlock(block);
+		saveBlock(block.get());
 
 	// We just loaded it, so it's up-to-date.
 	block->resetModified();
 
-	return block;
+	return block.get();
 }
 
 #if 0

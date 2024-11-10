@@ -877,8 +877,6 @@ private:
 	// fm:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
-    async_step_runner updateDrawList_async;
-    async_step_runner update_shadows_async;
 	bool m_cinematic = false;
 	std::unique_ptr<FarMesh> farmesh;
     async_step_runner farmesh_async;
@@ -1088,8 +1086,6 @@ Game::Game() :
 Game::~Game()
 {
 	farmesh_async.wait();
-	updateDrawList_async.wait();
-	update_shadows_async.wait();
 	farmesh.reset();
 
 	delete client;
@@ -4746,7 +4742,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-			updateDrawList_async.step(
+			client->getEnv().getClientMap().update_drawlist_async.step(
 					[camera_position, this](const float dtime) {
 						client->m_new_meshes = 0;
 						runData.update_draw_list_timer = 0;
@@ -4758,7 +4754,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	if (!runData.headless_optimize)
 	if (RenderingEngine::get_shadow_renderer()) {
-			update_shadows_async.step([&]() {
+			client->getEnv().getClientMap().update_shadows_async.step([&]() {
 		updateShadows();
 			});
 	}

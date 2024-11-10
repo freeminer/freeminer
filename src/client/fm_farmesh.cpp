@@ -95,7 +95,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 				m_client->getEnv().getClientMap().m_far_blocks_ask.emplace(
 						blockpos_actual, std::make_pair(step, far_iteration_complete));
 
-				block.reset(client_map.createBlankBlockNoInsert(blockpos_actual));
+				block = client_map.createBlankBlockNoInsert(blockpos_actual);
 				block->far_step = step;
 				collect_reset_timestamp = block->far_make_mesh_timestamp =
 						m_client->m_uptime + wait_server_far_block + step;

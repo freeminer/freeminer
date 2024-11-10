@@ -278,9 +278,9 @@ public:
 	uint32_t far_iteration_use{};
 	uint32_t far_iteration_clean{};
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
-	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
+	MapBlockP createBlankBlockNoInsert(const v3bpos_t &p);
 	MapBlockP createBlankBlock(const v3bpos_t &p);
-	bool insertBlock(MapBlock *block);
+	bool insertBlock(MapBlockP block);
 	void eraseBlock(const MapBlockP block);
 	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
 	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;

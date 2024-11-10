@@ -9,7 +9,6 @@
 #include "irrlichttypes_extrabloated.h"
 #include "irr_ptr.h"
 #include "debug.h"
-//#include <fstream>
 #include "filesys.h"
 #include "util/container.h"
 #include "util/thread.h"

@@ -108,7 +108,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 	}
 
 	if (!block_up) {
-		block_up.reset(smap->createBlankBlockNoInsert(bpos_aligned));
+		block_up = smap->createBlankBlockNoInsert(bpos_aligned);
 	}
 
 	block_up->setTimestampNoChangedFlag(timestamp);
@@ -127,7 +127,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					if (!block) {
 						continue;
 					}
-					
+
 					const v3pos_t lpos((x << step_pow) % MAP_BLOCKSIZE,
 							(y << step_pow) % MAP_BLOCKSIZE,
 							(z << step_pow) % MAP_BLOCKSIZE);

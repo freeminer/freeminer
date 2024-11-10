@@ -191,7 +191,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 
 	MapBlockP block{};
 	if (step) {
-		block.reset(m_env.getMap().createBlankBlockNoInsert(bpos));
+		block = m_env.getMap().createBlankBlockNoInsert(bpos);
 	} else {
 		block = m_env.getMap().getBlock(bpos);
 		if (!block)

@@ -123,7 +123,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_DENY_SUDO_MODE",           0, true }, // 0x05
 	null_command_factory, // 0x06
 	null_command_factory, // 0x07
-	null_command_factory, // 0x08
+	{ "TOCLIENT_FREEMINER_INIT",           0, true }, // 0x08
 	null_command_factory, // 0x09
 	{ "TOCLIENT_ACCESS_DENIED",            0, true }, // 0x0A
 	null_command_factory, // 0x0B

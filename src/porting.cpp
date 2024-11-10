@@ -216,7 +216,7 @@ bool detectMSVCBuildDir(const std::string &path)
 	return (!removeStringEnd(path, ends).empty());
 }
 
-bool detectVCodeBuildDir(const std::string &path)
+bool detectVSCodeBuildDir(const std::string &path)
 {
 	const char *ends[] = {
 		"out/build/Release",
@@ -224,6 +224,11 @@ bool detectVCodeBuildDir(const std::string &path)
 		"out/build/RelWithDebInfo",
 		"out/build/Debug",
 		"out/build/Build",
+		"out/build/asan",
+		"out/build/tsan",
+		"out/build/msan",
+		"out/build/ubsan",
+		"out/build/gperf",
 		{}
 	};
 	return (!removeStringEnd(path, ends).empty());
@@ -668,7 +673,7 @@ void initializePaths()
 		if (detectMSVCBuildDir(execpath)) {
 			path_share += DIR_DELIM "..";
 			path_user  += DIR_DELIM "..";
-		} else if (detectVCodeBuildDir(execpath)) {
+		} else if (detectVSCodeBuildDir(execpath)) {
 			path_share += DIR_DELIM ".." DIR_DELIM "..";
 			path_user  += DIR_DELIM ".." DIR_DELIM "..";
 		}
