@@ -598,7 +598,7 @@ EmergeAction EmergeThread::getBlockOrStartGen(const v3s16 pos, bool allow_gen,
 		}
 		// 2). Second invocation, we have the data
 		if (!from_db->empty()) {
-			*block = m_map->loadBlock(*from_db, pos);
+			*block = m_map->loadBlock(*from_db, pos).get();
 			if (block_ok(*block))
 				return EMERGE_FROM_DISK;
 		}
