@@ -1887,11 +1887,11 @@ bool Game::connectToServer(const GameStartData &start_data,
 		}
 
 		framemarker.end();
-		return false;
 
 	} catch (con::ConnectionException &e) {
 		showOverlayMessage(std::string("Connection error: ") + e.what(), 0, 0);
 		errorstream << "Connection error: "<< e.what() << std::endl;
+		return false;
 
 #if !EXCEPTION_DEBUG
 	} catch (const std::exception &e) {

@@ -62,7 +62,9 @@ MapBlock::MapBlock(v3s16 pos, IGameDef *gamedef):
 		m_gamedef(gamedef)
 {
 	reallocate();
+/*	
 	assert(m_modified > MOD_STATE_CLEAN);
+*/
 }
 
 MapBlock::~MapBlock()
