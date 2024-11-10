@@ -216,6 +216,19 @@ bool detectMSVCBuildDir(const std::string &path)
 	return (!removeStringEnd(path, ends).empty());
 }
 
+bool detectVCodeBuildDir(const std::string &path)
+{
+	const char *ends[] = {
+		"out/build/Release",
+		"out/build/MinSizeRel",
+		"out/build/RelWithDebInfo",
+		"out/build/Debug",
+		"out/build/Build",
+		{}
+	};
+	return (!removeStringEnd(path, ends).empty());
+}
+
 // Note that the system info is sent in every HTTP request, so keep it reasonably
 // privacy-conserving while ideally still being meaningful.
 
@@ -655,6 +668,9 @@ void initializePaths()
 		if (detectMSVCBuildDir(execpath)) {
 			path_share += DIR_DELIM "..";
 			path_user  += DIR_DELIM "..";
+		} else if (detectVCodeBuildDir(execpath)) {
+			path_share += DIR_DELIM ".." DIR_DELIM "..";
+			path_user  += DIR_DELIM ".." DIR_DELIM "..";
 		}
 		else {
 		#if STATIC_BUILD

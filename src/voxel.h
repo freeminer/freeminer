@@ -410,7 +410,7 @@ public:
 		return m_data[m_area.index(p)];
 	}
 
-	const MapNode & getNodeRefUnsafeCheckFlags(const v3s16 &p) const
+	const MapNode & getNodeRefUnsafeCheckFlags(const v3s16 &p)
 	{
 		s32 index = m_area.index(p);
 
