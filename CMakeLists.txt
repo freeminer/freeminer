@@ -17,7 +17,7 @@ set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
-set(DEVELOPMENT_BUILD TRUE)
+set(DEVELOPMENT_BUILD FALSE)
 
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
 if(VERSION_EXTRA)
@@ -346,12 +346,16 @@ endif()
 
 if(APPLE)
 	install(FILES "misc/freeminer-icon.icns" DESTINATION "${SHAREDIR}")
-	install(FILES "misc/Info.plist" DESTINATION "${BUNDLE_PATH}/Contents")
+	install(FILES "${CMAKE_BINARY_DIR}/Info.plist" DESTINATION "${BUNDLE_PATH}/Contents")
+endif()
+
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+	set(client_RESOURCES "${CMAKE_SOURCE_DIR}/misc/luanti-icon.icns")
 endif()
 
 # Library pack
 find_package(GMP REQUIRED)
-find_package(Json REQUIRED)
+find_package(Json 1.0.0 REQUIRED)
 find_package(Lua REQUIRED)
 if(NOT USE_LUAJIT)
 	add_subdirectory(lib/bitop)

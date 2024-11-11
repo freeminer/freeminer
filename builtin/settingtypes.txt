@@ -1035,7 +1035,7 @@ chat_font_size (Chat font size) int 0 0 72
 [**Content Repository]
 
 #    The URL for the content repository
-contentdb_url (ContentDB URL) string https://content.minetest.net
+contentdb_url (ContentDB URL) string https://content.luanti.org
 
 #    If enabled and you have ContentDB packages installed, Luanti may contact ContentDB to
 #    check for package updates when opening the mainmenu.
@@ -1046,7 +1046,7 @@ contentdb_enable_updates_indicator (Enable updates available indicator on conten
 #    as defined by the Free Software Foundation.
 #    You can also specify content ratings.
 #    These flags are independent from Luanti versions,
-#    so see a full list at https://content.minetest.net/help/content_flags/
+#    so see a full list at https://content.luanti.org/help/content_flags/
 contentdb_flag_blacklist (ContentDB Flag Blacklist) string nonfree, desktop_default
 
 #    Maximum number of concurrent downloads. Downloads exceeding this limit will be queued.
@@ -1062,7 +1062,7 @@ contentdb_max_concurrent_downloads (ContentDB Max Concurrent Downloads) int 3 1
 enable_local_map_saving (Saving map received from server) bool false
 
 #    URL to the server list displayed in the Multiplayer Tab.
-serverlist_url (Serverlist URL) string servers.minetest.net
+serverlist_url (Serverlist URL) string servers.luanti.org
 
 #    If enabled, account registration is separate from login in the UI.
 #    If disabled, new accounts will be registered automatically when logging in.
@@ -1088,10 +1088,10 @@ server_name (Server name) string Luanti server
 server_description (Server description) string mine here
 
 #    Domain name of server, to be displayed in the serverlist.
-server_address (Server address) string game.minetest.net
+server_address (Server address) string game.example.net
 
 #    Homepage of server, to be displayed in the serverlist.
-server_url (Server URL) string https://minetest.net
+server_url (Server URL) string https://game.example.net
 
 #    Automatically report to the serverlist.
 server_announce (Announce server) bool false
@@ -1100,7 +1100,7 @@ server_announce (Announce server) bool false
 server_announce_send_players (Send player names to the server list) bool true
 
 #    Announce to this serverlist.
-serverlist_url (Serverlist URL) string servers.minetest.net
+serverlist_url (Serverlist URL) string servers.luanti.org
 
 #    Message of the day displayed to players connecting.
 motd (Message of the day) string

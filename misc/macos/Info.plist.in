@@ -9,11 +9,15 @@
 	<key>CFBundleIconFile</key>
 	<string>freeminer-icon.icns</string>
 	<key>CFBundleName</key>
-	<string>Freeminer</string>
+	<string>@PROJECT_NAME_CAPITALIZED@</string>
 	<key>CFBundleDisplayName</key>
-	<string>Freeminer</string>
+	<string>@PROJECT_NAME_CAPITALIZED@</string>
 	<key>CFBundleIdentifier</key>
 	<string>org.freeminer.freeminer</string>
+	<key>CFBundleVersion</key>
+	<string>@VERSION_STRING@</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.games</string>
 	<key>NSHighResolutionCapable</key>
 	<false/>
 </dict>
