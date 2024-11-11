@@ -375,6 +375,7 @@ bool Client::isShutdown()
 
 Client::~Client()
 {
+	mesh_thread_pool.wait_until_empty(); // before ~ClientMap()
 	m_shutdown = true;
 	if (m_con)
 		m_con->Disconnect();

@@ -1347,6 +1347,15 @@ void Game::shutdown()
 	chat_backend->addMessage(L"", L"# Disconnected.");
 	chat_backend->addMessage(L"", L"");
 
+	{
+		if (client)
+			client->mesh_thread_pool.wait_until_empty();
+		farmesh_async.wait();
+		farmesh.reset();
+		if (client)
+			client->mesh_thread_pool.wait_until_empty();
+	}
+
 	if (client) {
 		client->Stop();
 		if (texture_src)

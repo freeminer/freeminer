@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "network/fm_connection_use.h"
+#include "../network/fm_connection_use.h"
 
 #include <sstream>
 #include "clientiface.h"
