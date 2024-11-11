@@ -9,7 +9,7 @@
 #include "server/abmhandler.h"
 #include "serverenvironment.h"
 
-ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env), m_aabms_empty(true)
+ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env)
 {
 	m_aabms.fill(nullptr);
 }

@@ -394,7 +394,7 @@ public:
 
 		return m_data[index];
 	}
-	MapNode getNodeNoExNoEmerge(const v3s16 &p) const
+	MapNode getNodeNoExNoEmerge(const v3s16 &p)
 	{
 		if (!m_area.contains(p))
 			return {CONTENT_IGNORE};
