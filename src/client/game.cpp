@@ -5141,7 +5141,7 @@ void Game::showPauseMenu()
 		os << strgettext("Singleplayer");
 	}
 	if (!g_settings->get("remote_proto").empty()) {
-		os << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
+		os << "\n" << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
 	}
 
 	os << "\n";
