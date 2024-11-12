@@ -150,6 +150,8 @@ build_a*
 build_t*
 build_d*
 build_m*
+build_-*
+
 util/autotest/logs.*
 util/autotest/auto.json
 util/autotest/world*

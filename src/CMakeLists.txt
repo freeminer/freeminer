@@ -1268,6 +1268,8 @@ if(BUILD_SERVER)
 		${GMP_LIBRARY}
 	)
 	target_compile_definitions(${PROJECT_NAME}server PRIVATE "MT_BUILDTARGET=2")
+	target_compile_definitions(${PROJECT_NAME}server PRIVATE IS_SERVER_BUILD)
+
 	if(NOT USE_LUAJIT)
 		set_target_properties(${PROJECT_NAME}server PROPERTIES
 			# This is necessary for dynamic Lua modules
@@ -1306,7 +1308,6 @@ if(BUILD_SERVER)
 			${CURL_LIBRARIES}
 		)
 	endif()
-	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
 	if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
 		target_link_libraries(${PROJECT_NAME}server Catch2::Catch2)
 	endif()

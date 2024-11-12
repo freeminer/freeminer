@@ -6,7 +6,7 @@
 #include "irr_v3d.h"
 #include "log.h"
 #include "mapblock.h"
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 	#include "client/mapblock_mesh.h"
 #endif
 #include "voxel.h"

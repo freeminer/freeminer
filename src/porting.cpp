@@ -775,7 +775,7 @@ void initializePaths()
 }
 
 
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 
 /*
 float get_dpi() {

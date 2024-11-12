@@ -21,7 +21,7 @@
 #endif
 
 #include "network/connection.h" // ENET_IPV6
-#ifndef SERVER // Only on client
+#if IS_CLIENT_BUILD 
 #include "hud.h"
 #endif
 
@@ -122,11 +122,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_toggle_update_camera", debug ? "KEY_F4" : "");
 	settings->setDefault("keymap_toggle_block_boundaries", "KEY_F4");
 	settings->setDefault("keymap_playerlist", "KEY_TAB");
-#if IRRLICHT_VERSION_10000  >= 10703
 	settings->setDefault("keymap_console", "KEY_OEM_3");
-#else
-	settings->setDefault("keymap_console", "KEY_F10");
-#endif
 
 	if (debug)
 		settings->setDefault("keymap_toggle_block_bounds", "KEY_F9");
@@ -207,7 +203,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies
-#ifndef SERVER // Only on client
+#if IS_CLIENT_BUILD
 	settings->setDefault("minimap_default_mode", itos(MINIMAP_TYPE_SURFACE));
 #endif
 

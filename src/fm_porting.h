@@ -86,7 +86,7 @@ extern std::atomic_bool g_sighup, g_siginfo;
 	}
 
 
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 
 //void irr_device_wait_egl (irr::IrrlichtDevice * device = nullptr);
 

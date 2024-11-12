@@ -1025,7 +1025,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	, bool server
 	)
 {
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 	// minimap pixel color - the average color of a texture
 	if (tsrc)
 	if (tsettings.enable_minimap && !tiledef[0].name.empty())
@@ -1169,7 +1169,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	if (drawtype == NDT_NODEBOX)
 		solidness_far = 1;
 
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 	if (is_liquid) {
 		if (waving == 3) {
 			material_type = alpha == ALPHAMODE_OPAQUE ?
@@ -1355,7 +1355,7 @@ void NodeDefManager::clear()
 		f.buildable_to        = true;
 		f.floodable           = true;
 		f.is_ground_content   = true;
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
@@ -1378,7 +1378,7 @@ void NodeDefManager::clear()
 		f.diggable            = false;
 		f.buildable_to        = true; // A way to remove accidental CONTENT_IGNOREs
 		f.is_ground_content   = true;
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
