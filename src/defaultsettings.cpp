@@ -292,7 +292,8 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("TMPFolder", porting::path_user + "/tmp/");
 
 	//check for device with small screen
-	float x_inches = porting::getDisplaySize().X / porting::get_dpi();
+	// fmtodo
+	//float x_inches = porting::getDisplaySize().X / porting::get_dpi();
 
 	settings->setDefault("smooth_lighting", "false");
 	//settings->setDefault("enable_3d_clouds", "false");
@@ -311,10 +312,10 @@ void fm_set_default_settings(Settings *settings) {
 	//settings->setDefault("viewing_range", "25");
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
+/* fmtodo
 	if (x_inches  < 7) {
 		settings->setDefault("enable_minimap", "false");
 	}
-
 	if (x_inches  < 3.5) {
 		settings->setDefault("hud_scaling", "0.6");
 	} else if (x_inches < 4.5) {
@@ -322,6 +323,7 @@ void fm_set_default_settings(Settings *settings) {
 	} else if (x_inches < 7) {
 		settings->setDefault("hud_scaling", "0.8");
 	}
+*/
 
 	settings->setDefault("curl_verify_cert", "false");
 
@@ -361,12 +363,12 @@ void fm_set_default_settings(Settings *settings) {
 
 	actionstream << "Autoconfig: "" displayX=" << porting::getDisplaySize().X 
 		<< " density=" << porting::getDisplayDensity() 
-		<< " dpi=" << porting::get_dpi()
+		//<< " dpi=" << porting::get_dpi()
 		//<< " densityDpi=" << porting::get_densityDpi()
-		<< " x_inches=" << x_inches 
+		//<< " x_inches=" << x_inches 
 		<< " font=" << font_size 
 		//<< " lang=" << lang <<
-		"\n";
+		<<"\n";
 	}
 
 #endif

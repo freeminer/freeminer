@@ -107,7 +107,7 @@ void cleanupAndroid()
 	moncleanup();
 #endif
 
-	ANativeActivity_finish(app_global->activity);
+	// ANativeActivity_finish(app_global->activity);
 }
 
 static std::string readJavaString(jstring j_str)
@@ -275,6 +275,7 @@ float getDisplayDensity()
 	return value;
 }
 
+#if 0
 float get_dpi() {
 	static bool firstrun = true;
 	static float value = 0;
@@ -306,6 +307,7 @@ int get_densityDpi() {
 	}
 	return value;
 }
+#endif
 
 v2u32 getDisplaySize()
 {
