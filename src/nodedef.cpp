@@ -1020,6 +1020,8 @@ bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype
 
 #endif
 
+#if IS_CLIENT_BUILD
+
 void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings
 	, bool server
@@ -1286,6 +1288,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 /*
 	NodeDefManager
 */
+#endif
 
 
 

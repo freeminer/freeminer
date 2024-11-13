@@ -27,9 +27,14 @@ class Client;
 //fm:
 #include "fm_bitset.h"
 #include <unordered_set>
-
-
 #include "msgpack_fix.h"
+
+#if !CHECK_CLIENT_BUILD()
+namespace irr::scene
+{
+class IMeshManipulator;
+}
+#endif
 
 enum {
 	CONTENTFEATURES_NAME,
@@ -657,11 +662,11 @@ struct ContentFeatures
 		return itemgroup_get(groups, group);
 	}
 
-#if CHECK_CLIENT_BUILD()
+//#if CHECK_CLIENT_BUILD()
 	void updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 		scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings,
 		bool server = false);
-#endif
+//#endif
 
 private:
 	void setAlphaFromLegacy(u8 legacy_alpha);
