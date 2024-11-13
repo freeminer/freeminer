@@ -365,7 +365,8 @@ void fm_set_default_settings(Settings *settings) {
 		//<< " densityDpi=" << porting::get_densityDpi()
 		<< " x_inches=" << x_inches 
 		<< " font=" << font_size 
-		<< " lang=" << lang <<std::endl;
+		//<< " lang=" << lang <<
+		"\n";
 	}
 
 #endif
