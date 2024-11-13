@@ -334,9 +334,13 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("leaves_style", "opaque");
 	//settings->setDefault("mg_name", "v7");
 
+#if 0
+// fmtodo merge
 	char lang[3] = {};
 	AConfiguration_getLanguage(porting::app_global->config, lang);
 	settings->setDefault("language", lang);
+#endif
+
 	settings->setDefault("android_keyboard", "0");
 	settings->setDefault("texture_min_size", "16");
 	settings->setDefault("cloud_radius", "6");
