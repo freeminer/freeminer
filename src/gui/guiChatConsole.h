@@ -50,12 +50,13 @@ public:
 		f32 blink_speed = 1.0,
 		f32 relative_height = 1.0);
 
+/* fmold
 	void setPrompt(const std::wstring& input);
-
+	bool getAndroidUIInput();
+*/
 	// Irrlicht draw method
 	virtual void draw();
 
-	bool getAndroidUIInput();
 
 	virtual bool OnEvent(const SEvent& event);
 

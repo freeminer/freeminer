@@ -403,6 +403,9 @@ void GUIChatConsole::drawPrompt()
 
 }
 
+#if 0
+// fm old
+
 void GUIChatConsole::setPrompt(const std::wstring& input) {
 	m_chat_backend->getPrompt().cursorOperation(
 			ChatPrompt::CURSOROP_DELETE,
@@ -412,7 +415,6 @@ void GUIChatConsole::setPrompt(const std::wstring& input) {
 		m_chat_backend->getPrompt().input(input[i]);
 	}
 }
-
 
 bool GUIChatConsole::getAndroidUIInput() {
 #ifdef __ANDROID__
@@ -437,6 +439,7 @@ bool GUIChatConsole::getAndroidUIInput() {
 #endif
 	return false;
 }
+#endif
 
 bool GUIChatConsole::OnEvent(const SEvent& event)
 {
