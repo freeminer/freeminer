@@ -167,10 +167,12 @@ void Client::createFarMesh(MapBlockP &block)
 #else
 		static const auto m_cache_enable_shaders = false;
 #endif
-		MeshMakeData mdat(
-				m_client->getNodeDefManager(), MAP_BLOCKSIZE * m_client->getMeshGrid().cell_size, m_cache_enable_shaders, 0, step, &m_client->far_container);
+		MeshMakeData mdat(m_client->getNodeDefManager(),
+				MAP_BLOCKSIZE * m_client->getMeshGrid().cell_size, m_cache_enable_shaders,
+				0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
-		const auto mbmsh = std::make_shared<MapBlockMesh>(m_client, &mdat, m_camera_offset);
+		const auto mbmsh =
+				std::make_shared<MapBlockMesh>(m_client, &mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, step);
 		block->creating_far_mesh = false;
 	}

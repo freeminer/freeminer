@@ -117,7 +117,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	}
 
 	// s16 last_nearest_unsent_d = m_nearest_unsent_d;
-	auto d_start = m_nearest_unsent_d.load();
+	short d_start = m_nearest_unsent_d;//.load();
 
 	// infostream<<"d_start="<<d_start<<std::endl;
 

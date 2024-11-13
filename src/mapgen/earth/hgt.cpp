@@ -35,7 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <sstream>
 #include <string>
-#include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
 #include <utility>
@@ -326,7 +325,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
+	DUMP((long long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
 	TimeTaker timer("hgt load");
 
 	lat_loading = lat_dec;
@@ -483,7 +482,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	}
 	lat_loaded = lat_dec;
 	lon_loaded = lon_dec;
-	DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname,
+	DUMP("loadok", (long long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname,
 			filename, seconds_per_px_x, get(lat_dec, lon_dec), heights[0], heights.back(),
 			heights[side_length_x]);
 	return true;
@@ -530,7 +529,7 @@ bool height_tif::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
+	DUMP((long long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
 	TimeTaker timer("hgt load");
 
 	lat_loading = lat_dec;
@@ -618,7 +617,7 @@ bool height_tif::load(ll_t lat, ll_t lon)
 					pixel_per_deg_x = (ll_t)side_length_x / tile_deg_x;
 					pixel_per_deg_y = (ll_t)side_length_y / tile_deg_y;
 
-					DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded,
+					DUMP("loadok", (long long)this, heights.size(), lat_loaded, lon_loaded,
 							zipname, tifname, seconds_per_px_x, get(lat_dec, lon_dec));
 					DUMP("ppd", pixel_per_deg_x, pixel_per_deg_y);
 
@@ -748,7 +747,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP("loadstart", (long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded,
+	DUMP("loadstart", (long long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded,
 			lon_loaded);
 	TimeTaker timer("tiff load");
 
@@ -890,8 +889,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 
 #endif
 
-	DUMP("load not ok", (long)this, heights.size(), lat_loaded, lon_loaded,
-			seconds_per_px_x, get(lat_dec, lon_dec));
+	DUMP("load not ok", (long long)this, heights.size(), lat_loaded, lon_loaded,	seconds_per_px_x, get(lat_dec, lon_dec));
 	return false;
 }
 

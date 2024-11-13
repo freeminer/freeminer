@@ -361,8 +361,8 @@ our $options = {
 };
 $options->{fall2} = { %{$options->{fall1}}, static_spawnpoint => '(10,21000,10)',};
 
-map { /^-(\w+)(?:=(.*))?/  and $options->{opt}{$1}  = $2; } @ARGV;
-map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
+map { /^-([^-][^=]+)(?:=(.*))?/  and $options->{opt}{$1}  = $2; } @ARGV;
+map { /^--([^-][^=]+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
 
 my $child;
 

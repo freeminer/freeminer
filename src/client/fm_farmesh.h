@@ -56,7 +56,7 @@ public:
 			v3pos_t m_camera_offset,
 			//float brightness,
 			int render_range, float speed);
-	void makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool near = false);
+	void makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bnear = false);
 	void makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
