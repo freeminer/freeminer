@@ -58,7 +58,7 @@ jobs:
 
       - name: Test
         run: |
-          ./build/macos/luanti.app/Contents/MacOS/freeminer --run-unittests
+          ./build/macos/freeminer.app/Contents/MacOS/freeminer --run-unittests
 
       # Zipping the built .app preserves permissions on the contained files,
       #   which the GitHub artifact pipeline would otherwise strip away.
@@ -110,10 +110,10 @@ jobs:
         run: |
           mkdir -p "${HOME}/Library/Application Support/minetest/games/"
           ln -s "${PWD}/games/devtest" "${HOME}/Library/Application Support/minetest/games/"
-          ./build/macos/luanti.app/Contents/MacOS/freeminer --run-unittests
-          ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/MacOS/luanti --run-unittests
+          ./build/macos/freeminer.app/Contents/MacOS/freeminer --run-unittests
+          ./build_xcode/luanti.xcarchive/Products/Applications/freeminer.app/Contents/MacOS/luanti --run-unittests
 
       - name: Diff Resources
         run: |
-          diff -rd ./build/macos/luanti.app/Contents/Resources ./build_xcode/build/Release/luanti.app/Contents/Resources || exit 1
-          diff -rd ./build/macos/luanti.app/Contents/Resources ./build_xcode/luanti.xcarchive/Products/Applications/luanti.app/Contents/Resources || exit 1
+          diff -rd ./build/macos/freeminer.app/Contents/Resources ./build_xcode/build/Release/freeminer.app/Contents/Resources || exit 1
+          diff -rd ./build/macos/freeminer.app/Contents/Resources ./build_xcode/luanti.xcarchive/Products/Applications/freeminer.app/Contents/Resources || exit 1
