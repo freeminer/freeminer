@@ -67,7 +67,7 @@
 #include "util/tracy_wrapper.h"
 
 
-#if BUILD_CLIENT && !NDEBUG
+#if CHECK_CLIENT_BUILD() && !NDEBUG
 #include "network/clientopcodes.h"
 #endif
 #include "content_abm.h"
@@ -1590,7 +1590,7 @@ void Server::ProcessData(NetworkPacket *pkt)
 			//errorstream << "overload cmd=" << command << " n="<< toServerCommandTable[command].name << "\n";
 		}
 
-#if BUILD_CLIENT && !NDEBUG
+#if CHECK_CLIENT_BUILD() && !NDEBUG
 		tracestream << "Server processing packet " << (int)command << " ["
 					<< toServerCommandTable[command].name
 					<< "] state=" << (int)toServerCommandTable[command].state

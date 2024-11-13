@@ -444,7 +444,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 			*/
 
 			if (!block->isGenerated())
-#if BUILD_CLIENT
+#if CHECK_CLIENT_BUILD()
 				if (!block->getLodMesh(0, true))
 #endif
 				{

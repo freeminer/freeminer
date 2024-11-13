@@ -3,8 +3,8 @@
 #pragma once
 
 //freeminer:
-#cmakedefine01 BUILD_CLIENT
-#cmakedefine01 BUILD_SERVER
+//#cmakedefine01 BUILD_CLIENT
+//#cmakedefine01 BUILD_SERVER
 #cmakedefine01 ENABLE_THREADS
 #cmakedefine01 EXCEPTION_DEBUG
 #cmakedefine01 HAVE_FUTURE

@@ -85,7 +85,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
-#if BUILD_SERVER && !NDEBUG
+#if !CHECK_CLIENT_BUILD() && !NDEBUG
 #include "network/serveropcodes.h"
 #endif
 #include "chat.h"
@@ -1199,7 +1199,7 @@ void Client::ProcessData(NetworkPacket *pkt)
 		//errorstream << "overload cmd=" << command << " n="<< toClientCommandTable[command].name << "\n";
 	}
 
-#if BUILD_SERVER && !NDEBUG
+#if !CHECK_CLIENT_BUILD() && !NDEBUG
 		tracestream << "Client processing packet " << (int)command << " ["
 					<< toClientCommandTable[command].name
 					<< "] state=" << (int)toClientCommandTable[command].state
@@ -1245,7 +1245,7 @@ void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
 
 void Client::Send(NetworkPacket* pkt)
 {
-#if !NDEBUG && BUILD_SERVER
+#if !NDEBUG && !CHECK_CLIENT_BUILD()
 	tracestream << "Client sending packet " << (int)pkt->getCommand() << " ["
 				<< toServerCommandTable[pkt->getCommand()].name
 				<< "] state=" << (int)toServerCommandTable[pkt->getCommand()].state
