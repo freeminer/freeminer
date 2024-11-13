@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <atomic>
 #include <cstdint>
 #include <iostream>
 #include <algorithm>
@@ -450,7 +451,7 @@ void Client::connect(const Address &address, const std::string &address_name,
 
 void Client::step(float dtime)
 {
-	m_uptime.fetch_add(dtime, std::memory_order::relaxed);
+	m_uptime =  m_uptime + dtime;
 
 	// Limit a bit
 	if (dtime > DTIME_LIMIT)

@@ -11,6 +11,9 @@
 #include "irrlichttypes_bloated.h"
 #include <string>
 
+class JNIEnv;
+class android_app;
+
 namespace porting {
 /**
  * Show a text input dialog in Java
