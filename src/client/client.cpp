@@ -450,7 +450,7 @@ void Client::connect(const Address &address, const std::string &address_name,
 
 void Client::step(float dtime)
 {
-	m_uptime += dtime;
+	m_uptime.fetch_add(dtime, std::memory_order::relaxed);
 
 	// Limit a bit
 	if (dtime > DTIME_LIMIT)
