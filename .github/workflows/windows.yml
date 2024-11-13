@@ -61,7 +61,7 @@ jobs:
         run: |
           dest=$(mktemp -d)
           unzip -q -d "$dest" B/build/*.zip
-          cd "$dest"/luanti-*-win*
+          cd "$dest"/freeminer-*-win*
           wine bin/freeminer.exe --version
 
       - uses: actions/upload-artifact@v4

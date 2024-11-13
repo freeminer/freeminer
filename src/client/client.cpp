@@ -1071,8 +1071,9 @@ void Client::initLocalMapSaving(const Address &address,
 			gamespec = findSubgame("devtest");
 		conf.set("gameid", gamespec.id); // Later rewrited from server data
 	} else {
-		gamespec = findWorldSubgame(world_path);
+		// gamespec = findWorldSubgame(world_path);
 	}
+
 	std::string backend = conf.get("backend");
 	m_localdb = ServerMap::createDatabase(backend, world_path, conf);
 

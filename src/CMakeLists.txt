@@ -168,7 +168,7 @@ if(NOT MSVC)
 
 	endif()
 
-	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
+	if(CMAKE_SYSTEM_NAME MATCHES "(BSD|DragonFly)") # Darwin|
 		SET(PLATFORM_LIBS ${PLATFORM_LIBS} execinfo)
 	endif()
 

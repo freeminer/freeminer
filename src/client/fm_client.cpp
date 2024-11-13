@@ -9,6 +9,7 @@
 #include "emerge.h"
 #include "fm_world_merge.h"
 #include "irr_v3d.h"
+#include "log.h"
 #include "mapblock.h"
 #include "network/fm_networkprotocol.h"
 #include "server.h"
@@ -129,14 +130,23 @@ void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
 	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
 
 	if (farmesh_range && !m_localserver) {
-		m_localserver = std::make_unique<Server>(
-				"farmesh", findSubgame("devtest"), false, Address{}, true);
+		// Todo: make very small special game with only far nodes definitions
+		for (const auto &game : {"devtest", "default"}) {
+			try {
+				m_localserver = std::make_unique<Server>(
+						"farmesh", findSubgame(game), false, Address{}, true);
+				break;
+			} catch (const std::exception &ex) {
+				errorstream << "Failed to make local mapgen server with game " << game
+							<< " : " << ex.what() << "\n";
+			}
+		}
 	}
 	m_mapgen_params = std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
 	m_mapgen_params->MapgenParams::readParams(&settings);
 	m_mapgen_params->readParams(&settings);
 
-	if (!m_simple_singleplayer_mode && farmesh_range) {
+	if (!m_simple_singleplayer_mode && farmesh_range && m_localserver) {
 		const auto num_emerge_threads = g_settings->get("num_emerge_threads");
 		g_settings->set("num_emerge_threads", "1");
 		m_emerge = std::make_unique<EmergeManager>(
