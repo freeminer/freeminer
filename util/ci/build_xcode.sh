@@ -13,12 +13,12 @@ cmake .. \
 	-DZSTD_LIBRARY=/opt/homebrew/lib/libzstd.a \
 	-DGMP_LIBRARY=/opt/homebrew/lib/libgmp.a \
 	-DENABLE_SYSTEM_JSONCPP=OFF \
-	-DENABLE_LEVELDB=OFF \
+	-D_NO_ENABLE_LEVELDB=OFF \
 	-DENABLE_POSTGRESQL=OFF \
 	-DENABLE_REDIS=OFF \
 	-DJPEG_LIBRARY=/opt/homebrew/lib/libjpeg.a \
 	-DPNG_LIBRARY=/opt/homebrew/lib/libpng.a \
 	-DCMAKE_EXE_LINKER_FLAGS=-lbz2\
 	-GXcode
-xcodebuild -project freeminer.xcodeproj -scheme luanti -configuration Release build
-xcodebuild -project freeminer.xcodeproj -scheme luanti -archivePath ./luanti.xcarchive archive
+xcodebuild -project freeminer.xcodeproj -scheme freeminer -configuration Release build
+xcodebuild -project freeminer.xcodeproj -scheme freeminer -archivePath ./freeminer.xcarchive archive

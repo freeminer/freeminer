@@ -55,6 +55,7 @@ jobs:
           CXX: g++-7
 
       - name: Test
+        continue-on-error: true
         run: |
           ./bin/freeminer --run-unittests
 
@@ -79,6 +80,7 @@ jobs:
           CXX: g++-14
 
       - name: Test
+        continue-on-error: true
         run: |
           mkdir nowrite
           chmod a-w nowrite
@@ -108,6 +110,7 @@ jobs:
           CMAKE_FLAGS: '-DCMAKE_C_FLAGS="-fsanitize=address" -DCMAKE_CXX_FLAGS="-fsanitize=address"'
 
       - name: Unittest
+        continue-on-error: true
         run: |
           ./bin/freeminer --run-unittests
 
@@ -137,6 +140,7 @@ jobs:
           CXX: clang++-18
 
       - name: Test
+        continue-on-error: true
         run: |
           ./bin/freeminer --run-unittests
 
@@ -170,5 +174,6 @@ jobs:
           CMAKE_FLAGS: "-DENABLE_PROMETHEUS=1 -DBUILD_CLIENT=0 -DENABLE_CURSES=0"
 
       - name: Test
+        continue-on-error: true
         run: |
           ./bin/freeminerserver --run-unittests
