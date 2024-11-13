@@ -1817,8 +1817,10 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 
 	for (u32 i = 0; i < size; i++) {
 		ContentFeatures *f = &(m_content_features[i]);
-		f->updateTextures(tsrc, shdsrc, meshmanip, client, tsettings, !progress_callback_args);
 #if CHECK_CLIENT_BUILD()
+// fmtodo: Was for server for opaque flags?
+		f->updateTextures(tsrc, shdsrc, meshmanip, client, tsettings, !progress_callback_args);
+//#if CHECK_CLIENT_BUILD()
 		if (progress_callback_args)
 		client->showUpdateProgressTexture(progress_callback_args, i, size);
 #endif

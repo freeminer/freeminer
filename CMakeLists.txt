@@ -350,7 +350,7 @@ if(APPLE)
 endif()
 
 if(CMAKE_GENERATOR STREQUAL "Xcode")
-	set(client_RESOURCES "${CMAKE_SOURCE_DIR}/misc/luanti-icon.icns")
+	set(client_RESOURCES "${CMAKE_SOURCE_DIR}/misc/freeminer-icon.icns")
 endif()
 
 # Library pack

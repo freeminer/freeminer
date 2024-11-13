@@ -363,7 +363,7 @@ bool hasPhysicalKeyboardAndroid()
 	return result;
 }
 
-
+#if 0
 int canKeyboard() {
 	auto v = g_settings->getS32("android_keyboard");
 	if (v)
@@ -415,6 +415,6 @@ void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv) {
         [[maybe_unused]] jboolean lRes = lJNIEnv->CallBooleanMethod(lInputMethodManager, MethodHideSoftInput,lBinder, lFlags);
     }
 }
-
+#endif
 
 }

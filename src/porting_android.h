@@ -11,8 +11,10 @@
 #include "irrlichttypes_bloated.h"
 #include <string>
 
+/*
 class JNIEnv;
 class android_app;
+*/
 
 namespace porting {
 /**
@@ -86,8 +88,11 @@ int getInputDialogSelection();
 bool hasPhysicalKeyboardAndroid();
 
 extern int android_version_sdk_int;
+
+/*
 int canKeyboard();
 void displayKeyboard(bool pShow, android_app* mApplication, JNIEnv* lJNIEnv);
+*/
 float get_dpi();
 int get_densityDpi();
 
