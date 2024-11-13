@@ -2266,7 +2266,8 @@ void Game::processUserInput(f32 dtime)
 			g_touchcontrols->show();
 			g_touchcontrols->step(dtime);
 		}
-
+#if 0
+// fm old
 #ifdef __ANDROID__
 	if (gui_chat_console->isOpen()) {
 		if (gui_chat_console->getAndroidUIInput()) {
@@ -2275,6 +2276,8 @@ void Game::processUserInput(f32 dtime)
 		}
 	}
 #endif
+#endif
+
 		m_game_focused = true;
 	}
 
