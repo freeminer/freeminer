@@ -7,7 +7,6 @@
 #include "config.h"
 
 #include <atomic>
-#include <stdatomic.h>
 #include <vector>
 #include "irr_v3d.h"
 #include "mapnode.h"
