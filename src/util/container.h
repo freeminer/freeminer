@@ -442,7 +442,7 @@ private:
 */
 
 template<typename K, typename V>
-class ModifySafeMap
+class ModifySafeMap : locker<>
 {
 public:
 	// this allows bare pointers but also e.g. std::unique_ptr
@@ -470,6 +470,7 @@ public:
 	ALLOW_CLASS_MOVE(ModifySafeMap)
 
 	const V &get(const K &key) const {
+		const auto lock = lock_shared_rec();
 		if (m_iterating) {
 			auto it = m_new.find(key);
 			if (it != m_new.end())
@@ -491,6 +492,7 @@ public:
 			assert(false);
 			return;
 		}
+		const auto lock = lock_unique_rec();
 		if (m_iterating) {
 			auto it = m_values.find(key);
 			if (it != m_values.end()) {
@@ -508,6 +510,7 @@ public:
 			assert(false);
 			return;
 		}
+		const auto lock = lock_unique_rec();
 		if (m_iterating) {
 			auto it = m_values.find(key);
 			if (it != m_values.end()) {
@@ -521,6 +524,7 @@ public:
 	}
 
 	V take(const K &key) {
+		const auto lock = lock_unique_rec();
 		V ret = V();
 		if (m_iterating) {
 			auto it = m_new.find(key);
@@ -544,6 +548,7 @@ public:
 	}
 
 	bool remove(const K &key) {
+		const auto lock = lock_unique_rec();
 		return !!take(key);
 	}
 
@@ -554,6 +559,7 @@ public:
 			// to code and we happen to not need this.
 			return unknown;
 		}
+		const auto lock = lock_shared_rec();
 		assert(m_new.empty());
 		if (m_garbage == 0)
 			return m_values.size();
@@ -565,6 +571,7 @@ public:
 
 	// Warning: not constant-time!
 	bool empty() const {
+		const auto lock = lock_shared_rec();
 		if (m_iterating)
 			return false; // maybe
 		if (m_garbage == 0)
@@ -579,6 +586,7 @@ public:
 	auto iter() { return IterationHelper(this); }
 
 	void clear() {
+		const auto lock = lock_unique_rec();
 		if (m_iterating) {
 			for (auto &it : m_values)
 				it.second = V();
