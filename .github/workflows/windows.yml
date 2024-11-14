@@ -125,7 +125,6 @@ jobs:
         run: cmake --build . --config Release
 
       - name: Unittests
-        continue-on-error: true
         # need this workaround for stdout to work
         run: |
           $proc = start .\bin\Release\freeminer.exe --run-unittests -NoNewWindow -Wait -PassThru

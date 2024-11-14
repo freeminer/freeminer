@@ -13,7 +13,7 @@ cmake .. \
 	-DZSTD_LIBRARY=/opt/homebrew/lib/libzstd.a \
 	-DGMP_LIBRARY=/opt/homebrew/lib/libgmp.a \
 	-DENABLE_SYSTEM_JSONCPP=OFF \
-	-D_NO_ENABLE_LEVELDB=OFF \
+	-ENABLE_LEVELDB=OFF \
 	-DENABLE_POSTGRESQL=OFF \
 	-DENABLE_REDIS=OFF \
 	-DJPEG_LIBRARY=/opt/homebrew/lib/libjpeg.a \
