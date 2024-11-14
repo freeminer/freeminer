@@ -303,7 +303,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(
 		// Add to added_objects
 		added_objects.push_back(id);
 
-		if (++count > 10)
+		if (++count > 10 && !current_objects.empty())
 			break;   
 	}
 }
