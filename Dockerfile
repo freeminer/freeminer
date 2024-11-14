@@ -4,7 +4,7 @@ FROM $DOCKER_IMAGE AS dev
 ENV LUAJIT_VERSION v2.1
 
 RUN apk add --no-cache git build-base cmake curl-dev zlib-dev zstd-dev \
-		sqlite-dev postgresql-dev hiredis-dev leveldb-dev boost-dev ccache \
+		sqlite-dev postgresql-dev hiredis-dev leveldb-dev boost-system ccache \
 		gmp-dev jsoncpp-dev ninja ca-certificates
 
 WORKDIR /usr/src/

@@ -5,7 +5,7 @@ project(freeminer)
 set(PROJECT_NAME_CAPITALIZED "freeminer")
 set(VERSION_TWEAK 0) # freeminer
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(GCC_MINIMUM_VERSION "7.5")
 set(CLANG_MINIMUM_VERSION "7.0.1")
@@ -17,9 +17,11 @@ set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
-set(DEVELOPMENT_BUILD FALSE)
+set(DEVELOPMENT_BUILD FALSE) # freeminer
 
+set(DEVELOPMENT_BUILD TRUE)
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
+
 if(VERSION_EXTRA)
 	set(VERSION_STRING "${VERSION_STRING}-${VERSION_EXTRA}")
 elseif(DEVELOPMENT_BUILD)
@@ -75,8 +77,13 @@ set(RUN_IN_PLACE ${DEFAULT_RUN_IN_PLACE} CACHE BOOL
 
 
 # == freeminer:
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
 
 set(BUILD_CLIENT TRUE CACHE BOOL "Build client")
 if(WIN32 OR APPLE)
@@ -88,7 +95,6 @@ if(WIN32 OR APPLE)
 else()
 	set(BUILD_SERVER TRUE CACHE BOOL "Build server")
 endif()
-
 
 if(${CMAKE_VERSION} VERSION_LESS 3.13)
 	function(add_link_options)
