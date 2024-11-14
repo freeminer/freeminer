@@ -301,7 +301,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(const v3f &player_pos, f32 
 		added_objects.push(id);
 
 
-		if (++count > 10)
+		if (++count > 10 && !current_objects.empty())
 			break;   
 	
 	}
