@@ -442,7 +442,7 @@ private:
 */
 
 template<typename K, typename V>
-class ModifySafeMap : locker<>
+class ModifySafeMap : shared_locker
 {
 public:
 	// this allows bare pointers but also e.g. std::unique_ptr
@@ -640,7 +640,10 @@ protected:
 		auto end() { return m->m_values.cend(); }
 
 	private:
-		IterationHelper(ModifySafeMap<K, V> *parent) : m(parent) {
+		const std::unique_ptr<lock_rec_shared> lock;
+		IterationHelper(ModifySafeMap<K, V> *parent) : m(parent),
+			lock{parent->lock_shared_rec()}
+		{
 			assert(m->m_iterating < std::numeric_limits<decltype(m_iterating)>::max());
 			m->m_iterating++;
 		}
