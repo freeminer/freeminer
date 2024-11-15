@@ -20,6 +20,10 @@
 #include "constants.h"
 #include "util/timetaker.h" // TimePrecision
 
+#if !defined(__PRETTY_FUNCTION__) && defined(_MSC_VER)
+	#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
 #ifdef _MSC_VER
 	#define SWPRINTF_CHARSTRING L"%S"
 #else

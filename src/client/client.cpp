@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "client/fm_farmesh.h"
+
 #include <atomic>
 #include <cstdint>
 #include <iostream>
@@ -359,8 +361,14 @@ void Client::Stop()
 		m_localdb->endSave();
 	}
 
-	merger.reset(); // before m_localdb
+	// TODO: correct order:
 	mesh_thread_pool.wait_until_empty();
+	farmesh_async.wait();
+	mesh_thread_pool.wait_until_empty();
+	farmesh.reset();
+	farmesh_async.wait();
+	mesh_thread_pool.wait_until_empty();
+	merger.reset(); // before m_localdb
 
 	if (m_mods_loaded)
 		delete m_script;

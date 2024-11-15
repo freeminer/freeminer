@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "settings.h"
 #include "server.h"
+#include "porting.h"
 #include "util/directiontables.h"
 
 AbmWorldThread::AbmWorldThread(Server *server) :

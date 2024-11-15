@@ -878,8 +878,6 @@ private:
 	GUITable *playerlist = nullptr;
 	video::SColor console_bg {};
 	bool m_cinematic = false;
-	std::unique_ptr<FarMesh> farmesh;
-    async_step_runner farmesh_async;
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
 	// ==:
@@ -1085,9 +1083,6 @@ Game::Game() :
 
 Game::~Game()
 {
-	farmesh_async.wait();
-	farmesh.reset();
-
 	delete client;
 	delete soundmaker;
 	sound_manager.reset();
@@ -1347,14 +1342,6 @@ void Game::shutdown()
 	chat_backend->addMessage(L"", L"# Disconnected.");
 	chat_backend->addMessage(L"", L"");
 
-	{
-		if (client)
-			client->mesh_thread_pool.wait_until_empty();
-		farmesh_async.wait();
-		farmesh.reset();
-		if (client)
-			client->mesh_thread_pool.wait_until_empty();
-	}
 
 	if (client) {
 		client->Stop();
@@ -1659,7 +1646,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
-		farmesh = std::make_unique<FarMesh>(client, server, draw_control);
+		client->farmesh = std::make_unique<FarMesh>(client, server, draw_control);
 	}
 
 	//freeminer:
@@ -4674,18 +4661,18 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		updateClouds(dtime);
 
 	thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-	if (farmesh) {
+	if (client->farmesh) {
 		thread_local static uint8_t processed{};
 		thread_local static u64 next_run_time{};
 		if (processed || porting::getTimeMs() > next_run_time) {
 			next_run_time = porting::getTimeMs() + 300;
-			farmesh_async.step([&, farmesh_range = farmesh_range,
+			client->farmesh_async.step([&, farmesh_range = farmesh_range,
 									   //yaw = player->getYaw(),
 									   //pitch = player->getPitch(),
 									   camera_pos = camera->getPosition(),
 									   camera_offset = camera->getOffset(),
 									   speed = player->getSpeed().getLength()]() {
-				processed = farmesh->update(camera_pos,
+				processed = client->farmesh->update(camera_pos,
 						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
 						camera_offset,
 						//sky->getBrightness(),

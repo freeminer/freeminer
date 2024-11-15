@@ -12,6 +12,7 @@
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
 #include "threading/ThreadPool.h"
+#include "threading/async.h"
 constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 // ==
 
@@ -115,6 +116,7 @@ private:
 class ClientScripting;
 class GameUI;
 class WorldMerger;
+class FarMesh;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
@@ -152,6 +154,10 @@ public:
 	ServerMap::far_dbases_t far_dbases;
 	std::unique_ptr<WorldMerger> merger;
 	progschj::ThreadPool mesh_thread_pool;
+
+	std::unique_ptr<FarMesh> farmesh;
+    async_step_runner farmesh_async;
+
 	// ==
 
 public:

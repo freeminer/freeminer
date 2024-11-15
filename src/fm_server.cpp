@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "emerge.h"
 #include "filesys.h"
+#include "porting.h"
 #include "fm_world_merge.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
@@ -60,7 +61,7 @@ void *ServerThreadBase::run()
 	while (!stopRequested()) {
 		try {
 			const auto time_now = porting::getTimeMs();
-			const auto result = step((time_now - time_last)/1000.0);
+			const auto result = step((time_now - time_last) / 1000.0);
 			time_last = time_now;
 			std::this_thread::sleep_for(
 					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
@@ -475,7 +476,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	}
 	if (!m_key_value_storage.contains(name)) {
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name),
-				std::forward_as_tuple( getGameDef()->m_path_world, name));
+				std::forward_as_tuple(getGameDef()->m_path_world, name));
 	}
 	return m_key_value_storage.at(name);
 }
@@ -755,7 +756,7 @@ void Server::SetBlocksNotSent()
 	ClientInterface::AutoLock clientlock(m_clients);
 	// Set the modified blocks unsent for all the clients
 	for (const session_t client_id : clients) {
-			if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
-				client->SetBlocksNotSent(/*block*/);
+		if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
+			client->SetBlocksNotSent(/*block*/);
 	}
 }
