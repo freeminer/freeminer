@@ -640,7 +640,6 @@ protected:
 		auto end() { return m->m_values.cend(); }
 
 	private:
-		const std::unique_ptr<lock_rec_shared> lock;
 		IterationHelper(ModifySafeMap<K, V> *parent) : m(parent),
 			lock{parent->lock_shared_rec()}
 		{
@@ -649,6 +648,7 @@ protected:
 		}
 
 		ModifySafeMap<K, V> *m;
+		const std::unique_ptr<lock_rec_shared> lock;
 	};
 
 private:

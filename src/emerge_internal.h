@@ -79,6 +79,8 @@ private:
 	 * @return what to do for this block
 	 */
 	EmergeAction getBlockOrStartGen(v3s16 pos, bool allow_gen,
+		const std::string *from_db,  MapBlockP *block, BlockMakeData *data);
+	EmergeAction getBlockOrStartGen(v3s16 pos, bool allow_gen,
 		const std::string *from_db,  MapBlock **block, BlockMakeData *data);
 
 	MapBlock *finishGen(v3s16 pos, BlockMakeData *bmdata,
