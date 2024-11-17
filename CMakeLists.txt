@@ -121,7 +121,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	find_library (LIBCXX_LIBRARY c++)      
+	find_library (LIBCXX_LIBRARY c++)
 	find_library (LIBCXXABI_LIBRARY c++abi)
 	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
 		add_link_options(-stdlib=libc++)

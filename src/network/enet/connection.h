@@ -18,20 +18,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "enet/enet.h"
-#include "network/fm_connection_multi.h"
-#include "threading/concurrent_map.h"
-#include "threading/concurrent_unordered_map.h"
+//#include "network/fm_connection_multi.h"
 #include "threading/thread_vector.h"
 
 // #define CHANNEL_COUNT 3
 
 namespace con_enet
 {
-using namespace con;
+//using namespace con;
 class Connection : public thread_vector
 {
 public:
-	friend con_multi::Connection;
+	//friend con_multi::Connection;
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
 			con::PeerHandler *peerhandler = nullptr);
 	~Connection();

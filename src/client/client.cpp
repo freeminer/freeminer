@@ -369,6 +369,7 @@ void Client::Stop()
 	farmesh_async.wait();
 	mesh_thread_pool.wait_until_empty();
 	merger.reset(); // before m_localdb
+    getEnv().getClientMap().update_drawlist_async.wait();
 
 	if (m_mods_loaded)
 		delete m_script;

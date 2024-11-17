@@ -19,7 +19,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include "network/connection_internal.h"
 #if USE_ENET
 
-#include "fm_connection_enet.h"
+#include "network/enet/connection.h"
 #include "log.h"
 #include "network/networkpacket.h"
 #include "network/peerhandler.h"
