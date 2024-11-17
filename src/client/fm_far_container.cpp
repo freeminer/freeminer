@@ -15,7 +15,7 @@ FarContainer::FarContainer(Client *client) : m_client{client}
 
 namespace
 {
-thread_local MapBlockP block_cache{};
+thread_local MapBlockPtr block_cache{};
 thread_local std::pair<block_step_t, v3bpos_t> block_cache_p;
 }
 
@@ -31,7 +31,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
 			step, m_client->getEnv().getClientMap().getControl());
 
-	MapBlockP block;
+	MapBlockPtr block;
 	const auto step_block_pos = std::make_pair(step, bpos_aligned);
 	if (block_cache && step_block_pos == block_cache_p) {
 		block = block_cache;
@@ -42,13 +42,13 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		block = storage.get(bpos_aligned);
 	}
 
-	const auto loadBlock = [this](const auto &bpos, const auto step) -> MapBlockP {
+	const auto loadBlock = [this](const auto &bpos, const auto step) -> MapBlockPtr {
 		auto *dbase =
 				GetFarDatabase({}, m_client->far_dbases, m_client->m_world_path, step);
 		if (!dbase) {
 			return {};
 		}
-		MapBlockP block{m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos)};
+		MapBlockPtr block{m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos)};
 
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);

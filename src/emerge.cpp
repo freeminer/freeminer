@@ -570,18 +570,18 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, BlockEmergeData *bedata)
 EmergeAction EmergeThread::getBlockOrStartGen(const v3s16 pos, bool allow_gen,
 	 const std::string *from_db, MapBlock **block, BlockMakeData *bmdata)
 {
-	MapBlockP bptr;
+	MapBlockPtr bptr;
 	return getBlockOrStartGen(pos, allow_gen, from_db, &bptr, bmdata);
 }
 
 EmergeAction EmergeThread::getBlockOrStartGen(const v3s16 pos, bool allow_gen,
-	 const std::string *from_db, MapBlockP*block, BlockMakeData *bmdata)
+	 const std::string *from_db, MapBlockPtr*block, BlockMakeData *bmdata)
 {
 	//TimeTaker tt("", nullptr, PRECISION_MICRO);
 	//Server::EnvAutoLock envlock(m_server);
 	//g_profiler->avg("EmergeThread: lock wait time [us]", tt.stop());
 
-	auto block_ok = [] (MapBlockP b) {
+	auto block_ok = [] (MapBlockPtr b) {
 		return b && b->isGenerated();
 	};
 

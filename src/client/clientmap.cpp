@@ -834,7 +834,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	unordered_map_v3pos<bool> occlude_cache;
 
-	std::vector<std::pair<v3bpos_t, MapBlockP>> vector;
+	std::vector<std::pair<v3bpos_t, MapBlockPtr>> vector;
 	{
 		const auto lock = m_blocks.lock_shared_rec();
 		vector.reserve(m_blocks.size());

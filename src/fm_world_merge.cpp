@@ -47,7 +47,7 @@ std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueTyp
 }
 
 static const auto load_block = [](Map *smap, MapDatabase *dbase,
-									   const v3bpos_t &pos) -> MapBlockP {
+									   const v3bpos_t &pos) -> MapBlockPtr {
 	auto block = loadBlockNoStore(smap, dbase, pos);
 	if (!block) {
 		return {};
@@ -71,7 +71,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 {
 	const auto step_pow = 1;
 	const auto step_size = 1 << step_pow;
-	std::unordered_map<v3bpos_t, MapBlockP> blocks;
+	std::unordered_map<v3bpos_t, MapBlockPtr> blocks;
 	uint32_t timestamp = 0;
 	{
 		for (bpos_t x = 0; x < step_size; ++x)
@@ -94,7 +94,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 		timestamp = get_time_func();
 	}
 
-	MapBlockP block_up;
+	MapBlockPtr block_up;
 
 	if (partial) {
 		block_up = load_block(smap, dbase_up, bpos_aligned);

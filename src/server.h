@@ -821,7 +821,7 @@ private:
 	void SendActiveObjectMessages(
 			session_t peer_id, const ActiveObjectMessages &datas, bool reliable = true);
 public:
-	void SendBlockFm(session_t peer_id, MapBlockP block, u8 ver, u16 net_proto_version,
+	void SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver, u16 net_proto_version,
 			SerializedBlockCache *cache = nullptr);
 private:
 
@@ -899,5 +899,5 @@ void dedicated_server_loop(Server &server, bool &kill);
 // fm:
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
 		const std::string &savedir, block_step_t step);
-MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &pos);
+MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &pos);
 // ==

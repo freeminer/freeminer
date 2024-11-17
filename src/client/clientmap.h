@@ -206,10 +206,10 @@ private:
 
 // fm:
 	v3pos_t m_camera_position_node;
-    using drawlist_map = std::map<v3bpos_t, MapBlockP, MapBlockComparer>;
+    using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic_bool m_drawlist_current = false;
-    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockP>;
+    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
 public:

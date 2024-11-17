@@ -4,7 +4,7 @@
 #include "serverenvironment.h"
 #include "util/timetaker.h"
 
-size_t ServerEnvironment::blockStep(MapBlockP block, float dtime, uint8_t activate)
+size_t ServerEnvironment::blockStep(MapBlockPtr block, float dtime, uint8_t activate)
 {
 	if (!block)
 		return {};

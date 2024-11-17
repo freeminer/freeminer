@@ -102,7 +102,7 @@ v3pos_t ServerMap::transforming_liquid_pop()
 class cached_map_block
 {
 	Map *map_{};
-	MapBlockP cached_block;
+	MapBlockPtr cached_block;
 	v3bpos_t cached_block_pos;
 	std::unique_ptr<MapBlock::lock_rec_unique> lock;
 
@@ -115,7 +115,7 @@ public:
 		//DUMP(hit, miss, hit / (miss ? miss : 1));
 	}
 
-	MapBlockP change_block(const v3pos_t &pos)
+	MapBlockPtr change_block(const v3pos_t &pos)
 	{
 		auto blockpos = getNodeBlockPos(pos);
 		if (cached_block_pos == blockpos && cached_block) {

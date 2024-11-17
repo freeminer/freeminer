@@ -719,6 +719,8 @@ void ServerEnvironment::saveLoadedPlayers(bool force)
 	for (RemotePlayer *player : m_players) {
 		if (force || player->checkModified() || (player->getPlayerSAO() &&
 				player->getPlayerSAO()->getMeta().isModified())) {
+			savePlayer(player);
+#if WTF
 			try {
 				m_player_database->savePlayer(player);
 			} catch (DatabaseException &e) {
@@ -726,6 +728,7 @@ void ServerEnvironment::saveLoadedPlayers(bool force)
 					<< e.what() << std::endl;
 				throw;
 			}
+#endif
 		}
 	}
 }

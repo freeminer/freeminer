@@ -306,7 +306,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	std::string datastring(pkt->getString(6), pkt->getSize() - 6);
 	std::istringstream istr(datastring, std::ios_base::binary);
 
-	MapBlockP block;
+	MapBlockPtr block;
 
 	///v2s16 p2d(p.X, p.Z);
 	auto * sector = &m_env.getMap();

@@ -442,13 +442,13 @@ public:
 	bool m_more_threads = true;
 public:
 	ABMHandler m_abmhandler;
-	uint8_t analyzeBlock(MapBlockP block);
+	uint8_t analyzeBlock(MapBlockPtr block);
 private:
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3pos_t> m_abm_random_blocks;
 public:
-	size_t blockStep(MapBlockP block, float dtime = 0, uint8_t activate = 0);
+	size_t blockStep(MapBlockPtr block, float dtime = 0, uint8_t activate = 0);
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 public:

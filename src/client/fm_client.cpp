@@ -165,7 +165,7 @@ void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
 	}
 }
 
-void Client::createFarMesh(MapBlockP &block)
+void Client::createFarMesh(MapBlockPtr &block)
 {
 	if (bool cmp = false; block->creating_far_mesh.compare_exchange_weak(cmp, true)) {
 		const auto &m_client = this;
@@ -201,7 +201,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	std::istringstream istr(
 			packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
 
-	MapBlockP block{};
+	MapBlockPtr block{};
 	if (step) {
 		block = m_env.getMap().createBlankBlockNoInsert(bpos);
 	} else {
@@ -305,11 +305,11 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 #if 0
 				class BlockContainer : public NodeContainer
 				{
-					MapBlockP block;
+					MapBlockPtr block;
 
 				public:
 					Mapgen *m_mg{};
-					BlockContainer(Client *client, MapBlockP block_) :
+					BlockContainer(Client *client, MapBlockPtr block_) :
 							//m_client{client},
 							block{std::move(block_)} {};
 					const MapNode &getNodeRefUnsafe(const v3pos_t &pos) override

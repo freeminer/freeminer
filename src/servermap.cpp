@@ -750,10 +750,10 @@ void ServerMap::deSerializeBlock(MapBlock *block, std::istream &is)
 	block->deSerialize(is, version, true);
 }
 
-MapBlockP ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_after_load)
+MapBlockPtr ServerMap::loadBlock(const std::string &blob, v3bpos_t p3d, bool save_after_load)
 {
 	ScopeProfiler sp(g_profiler, "ServerMap: load block", SPT_AVG, PRECISION_MICRO);
-	MapBlockP block;
+	MapBlockPtr block;
 	bool created_new = false;
 
 	try {
@@ -761,7 +761,7 @@ MapBlockP ServerMap::loadBlock(const std::string &blob, v3s16 p3d, bool save_aft
 		//MapSector *sector = createSector(p2d);
 		auto * sector= this;
 
-		MapBlockP block_created_new;
+		MapBlockPtr block_created_new;
 		block = sector->getBlock(p3d);
 		if (!block) {
 			block_created_new = sector->createBlankBlockNoInsert(p3d);

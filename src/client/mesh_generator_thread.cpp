@@ -111,7 +111,7 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server, bool
 	/*
 		Make a list of blocks necessary for mesh generation and lock the blocks in memory.
 	*/
-	std::vector<MapBlockP> map_blocks;
+	std::vector<MapBlockPtr> map_blocks;
 	map_blocks.reserve((mesh_grid.cell_size+2)*(mesh_grid.cell_size+2)*(mesh_grid.cell_size+2));
 	v3s16 pos;
 	for (pos.X = mesh_position.X - 1; pos.X <= mesh_position.X + mesh_grid.cell_size; pos.X++)

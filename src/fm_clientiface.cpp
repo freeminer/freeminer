@@ -569,7 +569,7 @@ uint32_t RemoteClient::SendFarBlocks()
 	uint16_t sent_cnt{};
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
-		std::multimap<int32_t, MapBlockP> ordered;
+		std::multimap<int32_t, MapBlockPtr> ordered;
 		constexpr uint16_t send_max{50};
 		for (auto &far_blocks : far_blocks_requested) {
 			for (auto &[bpos, step_sent] : far_blocks) {

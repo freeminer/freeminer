@@ -347,7 +347,7 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 	return triggers_count;
 }
 
-uint8_t ServerEnvironment::analyzeBlock(MapBlockP block)
+uint8_t ServerEnvironment::analyzeBlock(MapBlockPtr block)
 {
 	u32 block_timestamp = block->getActualTimestamp();
 	if (block->m_next_analyze_timestamp > block_timestamp) {

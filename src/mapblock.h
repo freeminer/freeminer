@@ -768,6 +768,6 @@ inline void getNodeBlockPosWithOffset(v3s16 p, v3s16 &block, v3s16 &offset)
 */
 std::string analyze_block(MapBlock *block);
 
-using MapBlockP = std::shared_ptr<MapBlock>;
-// using MapBlockP = MapBlock *;
+using MapBlockPtr = std::shared_ptr<MapBlock>;
+// using MapBlockPtr = MapBlock *;
 

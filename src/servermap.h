@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "threading/concurrent_set.h"
 
 #include <vector>
@@ -98,7 +99,7 @@ public:
 	bool propagateSunlight(const v3bpos_t &pos, std::set<v3pos_t> &light_sources,
 			bool remove_light = false);
 
-	MapBlockP loadBlockNoStore(const v3bpos_t &p3d);
+	MapBlockPtr loadBlockNoStore(const v3bpos_t &p3d);
 
 	bool m_map_loading_enabled;
 	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
@@ -193,10 +194,10 @@ public:
 
 	// Load block in a synchronous fashion
 	MapBlock *loadBlock(v3s16 p) {return loadBlockP(p).get(); };
-	MapBlockP loadBlockP(v3s16 p);
+	MapBlockPtr loadBlockP(v3bpos_t p);
 	/// Load a block that was already read from disk. Used by EmergeManager.
 	/// @return non-null block (but can be blank)
-	MapBlockP loadBlock(const std::string &blob, v3s16 p, bool save_after_load=false);
+	MapBlockPtr loadBlock(const std::string &blob, v3bpos_t p, bool save_after_load=false);
 
 	// Helper for deserializing blocks from disk
 	// @throws SerializationError

@@ -593,10 +593,10 @@ MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dba
 	return far_dbases[step].get();
 };
 
-MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
+MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 {
 	try {
-		MapBlockP block{smap->createBlankBlockNoInsert(bpos)};
+		MapBlockPtr block{smap->createBlankBlockNoInsert(bpos)};
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);
 		if (!blob.length()) {
@@ -623,7 +623,7 @@ MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 	return {};
 }
 
-void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
+void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 		u16 net_proto_version, SerializedBlockCache *cache)
 {
 	thread_local const int net_compression_level =

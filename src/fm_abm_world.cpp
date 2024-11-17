@@ -202,7 +202,7 @@ void *AbmWorldThread::run()
 				return nullptr;
 			}
 			try {
-				const auto load_block = [&](const v3bpos_t &pos) -> MapBlockP {
+				const auto load_block = [&](const v3bpos_t &pos) -> MapBlockPtr {
 					auto block = m_server->getEnv().getServerMap().getBlock(pos);
 					if (block) {
 						return block;

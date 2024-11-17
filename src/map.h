@@ -131,7 +131,7 @@ public:
 	MapBlock * getBlockNoCreate(v3s16 p);
 	// Returns NULL if not found
 	MapBlock * getBlockNoCreateNoEx(v3pos_t p, bool trylock = false, bool nocache = false);
-	MapBlockP getBlock(v3pos_t p, bool trylock = false, bool nocache = false);
+	MapBlockPtr getBlock(v3pos_t p, bool trylock = false, bool nocache = false);
 	void getBlockCacheFlush();
 
 	/* Server overrides */
@@ -253,10 +253,10 @@ public:
 
 	// from old mapsector:
 	using m_blocks_type =
-			concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
+			concurrent_unordered_map<v3bpos_t, MapBlockPtr, v3posHash, v3posEqual>;
 	m_blocks_type m_blocks;
 	using m_far_blocks_type =
-			concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
+			concurrent_shared_unordered_map<v3bpos_t, MapBlockPtr, v3posHash, v3posEqual>;
 	m_far_blocks_type m_far_blocks;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
 	bool m_far_blocks_currrent {};
@@ -266,24 +266,24 @@ public:
 	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t,
 			std::pair<block_step_t, uint32_t>>; // client
 	far_blocks_ask_t m_far_blocks_ask;
-	std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX>
+	std::array<concurrent_unordered_map<v3bpos_t, MapBlockPtr>, FARMESH_STEP_MAX>
 			far_blocks_storage;
 	//double m_far_blocks_created = 0;
 	float far_blocks_sent_timer{1};
 	v3pos_t far_blocks_last_cam_pos;
-	std::vector<MapBlockP> m_far_blocks_delete_1, m_far_blocks_delete_2;
+	std::vector<MapBlockPtr> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current {};
 
 	//static constexpr bool m_far_fast =			true; // show generated far farmesh stable(0) or instant(1)
 	uint32_t far_iteration_use{};
 	uint32_t far_iteration_clean{};
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
-	MapBlockP createBlankBlockNoInsert(const v3bpos_t &p);
-	MapBlockP createBlankBlock(const v3bpos_t &p);
-	bool insertBlock(MapBlockP block);
-	void eraseBlock(const MapBlockP block);
-	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
-	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
+	MapBlockPtr createBlankBlockNoInsert(const v3bpos_t &p);
+	MapBlockPtr createBlankBlock(const v3bpos_t &p);
+	bool insertBlock(MapBlockPtr block);
+	void eraseBlock(const MapBlockPtr block);
+	std::unordered_map<MapBlockPtr, int> *m_blocks_delete = nullptr;
+	std::unordered_map<MapBlockPtr, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time{};
 	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_shared_unordered_set<v3bpos_t, v3posHash, v3posEqual> m_db_miss;
@@ -296,8 +296,8 @@ public:
 	try_shared_mutex m_block_cache_mutex;
 #endif
 #if !HAVE_THREAD_LOCAL
-	MapBlockP m_block_cache;
-	v3POS m_block_cache_p;
+	MapBlockPtr m_block_cache;
+	v3pos_t m_block_cache_p;
 #endif
 	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 

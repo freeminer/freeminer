@@ -84,7 +84,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bne
 		return;
 	}
 
-	MapBlockP block;
+	MapBlockPtr block;
 	{
 		const auto lock = far_blocks.lock_unique_rec();
 		if (const auto &it = far_blocks.find(blockpos_actual);

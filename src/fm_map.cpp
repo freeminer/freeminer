@@ -42,13 +42,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if HAVE_THREAD_LOCAL
 namespace
 {
-thread_local MapBlockP block_cache{};
+thread_local MapBlockPtr block_cache{};
 thread_local v3bpos_t block_cache_p;
 }
 #endif
 
 // TODO: REMOVE THIS func and use Map::getBlock
-MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
+MapBlockPtr Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 {
 
 #ifndef NDEBUG
@@ -73,7 +73,7 @@ MapBlockP Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 			}
 	}
 
-	MapBlockP block;
+	MapBlockPtr block;
 	{
 		auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())
@@ -111,17 +111,16 @@ void Map::getBlockCacheFlush()
 	block_cache = nullptr;
 }
 
-MapBlockP Map::createBlankBlockNoInsert(const v3pos_t &p)
+MapBlockPtr Map::createBlankBlockNoInsert(const v3pos_t &p)
 {
 	const auto block = std::make_shared<MapBlock>(p, m_gamedef);
 	return block;
 }
 
-MapBlockP Map::createBlankBlock(const v3pos_t &p)
+MapBlockPtr Map::createBlankBlock(const v3pos_t &p)
 {
 	m_db_miss.erase(p);
 
-	auto lock = m_blocks.lock_unique_rec();
 	auto block = getBlock(p, false, true);
 	if (block != NULL) {
 		infostream << "Block already created p=" << block->getPos() << std::endl;
@@ -130,12 +129,14 @@ MapBlockP Map::createBlankBlock(const v3pos_t &p)
 
 	block = createBlankBlockNoInsert(p);
 
+	const auto lock = m_blocks.lock_unique_rec();
+
 	m_blocks.insert_or_assign(p, block);
 
 	return block;
 }
 
-bool Map::insertBlock(MapBlockP block)
+bool Map::insertBlock(MapBlockPtr block)
 {
 	auto block_p = block->getPos();
 
@@ -173,7 +174,7 @@ bool Map::eraseBlock(v3pos_t blockpos)
 }
 */
 
-void Map::eraseBlock(const MapBlockP block)
+void Map::eraseBlock(const MapBlockPtr block)
 {
 	const auto block_p = block->getPos();
 	(*m_blocks_delete)[block] = 1;
@@ -407,7 +408,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 	u32 n = 0, calls = 0;
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
-	std::vector<MapBlockP> blocks_delete;
+	std::vector<MapBlockPtr> blocks_delete;
 	int save_started = 0;
 	{
 		auto lock = m_blocks.try_lock_shared_rec();
@@ -1421,11 +1422,11 @@ void ServerMap::prepareBlock(MapBlock *block)
 	updateBlockHumidity(senv, p, block);
 }
 
-MapBlockP ServerMap::loadBlockP(v3bpos_t p3d)
+MapBlockPtr ServerMap::loadBlockP(v3bpos_t p3d)
 {
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
-	MapBlockP block;
+	MapBlockPtr block;
 	try {
 		std::string blob;
 		m_db.dbase->loadBlock(p3d, &blob);
