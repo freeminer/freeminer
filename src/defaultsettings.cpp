@@ -20,7 +20,9 @@
 #include "porting_android.h"
 #endif
 
-#include "network/connection.h" // ENET_IPV6
+#if USE_ENET
+#include "external/enet/include/enet/enet.h" // ENET_IPV6
+#endif
 #if IS_CLIENT_BUILD 
 #include "hud.h"
 #endif

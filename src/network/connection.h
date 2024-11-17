@@ -70,7 +70,7 @@ public:
 
 	virtual void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable) = 0;
 
-	virtual session_t GetPeerID() const = 0;
+	//virtual session_t GetPeerID() const = 0;
 	virtual Address GetPeerAddress(session_t peer_id) = 0;
 	virtual float getPeerStat(session_t peer_id, rtt_stat_type type) = 0;
 	virtual float getLocalStat(rate_stat_type type) = 0;

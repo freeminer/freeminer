@@ -19,20 +19,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "enet/enet.h"
 //#include "network/fm_connection_multi.h"
+#include "network/connection.h"
+#include "network/mtp/impl.h"
+#include "network/mtp/internal.h"
+#include "network/networkprotocol.h"
 #include "threading/thread_vector.h"
+#include "threading/concurrent_map.h"
+#include "threading/concurrent_unordered_map.h"
+#include "msgpack_fix.h"
 
 // #define CHANNEL_COUNT 3
+//namespace msgpack {class sbuffer;}
 
-namespace con_enet
+namespace con
 {
 //using namespace con;
-class Connection : public thread_vector
+class ConnectionEnet final : public IConnection, public thread_vector
 {
 public:
 	//friend con_multi::Connection;
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
+	ConnectionEnet(u32 max_packet_size, float timeout, bool ipv6,
 			con::PeerHandler *peerhandler = nullptr);
-	~Connection();
+	~ConnectionEnet();
 	void *run();
 
 	/* Interface */
@@ -42,25 +50,26 @@ public:
 	ConnectionEventPtr waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommandPtr c);
 
-	void Serve(Address bind_addr);
-	void Connect(Address address);
-	bool Connected();
-	void Disconnect();
-	u32 Receive(NetworkPacket *pkt, int timeout = 1);
+	void Serve(Address bind_addr) override;
+	void Connect(Address address) override;
+	bool Connected() override;
+	void Disconnect() override;
+	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout = 1) override;
 	bool TryReceive(NetworkPacket *pkt);
 
 	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	void Send(
+			session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable) override;
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
-	u16 GetPeerID() { return m_peer_id; }
+	//session_t GetPeerID() const { return m_peer_id; }
 	void DeletePeer(u16 peer_id);
-	Address GetPeerAddress(u16 peer_id);
-	float getPeerStat(u16 peer_id, con::rtt_stat_type type);
-	float getLocalStat(con::rate_stat_type type);
+	Address GetPeerAddress(u16 peer_id) override;
+	float getPeerStat(u16 peer_id, con::rtt_stat_type type) override;
+	float getLocalStat(con::rate_stat_type type) override;
 
-	void DisconnectPeer(u16 peer_id);
-	size_t events_size();
+	void DisconnectPeer(u16 peer_id) override;
+	size_t events_size() override;
 
 private:
 	void putEvent(ConnectionEventPtr e);
@@ -85,7 +94,7 @@ private:
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 
-	u32 m_protocol_id;
+	//u32 m_protocol_id {PROTOCOL_ID};
 	u32 m_max_packet_size;
 	float m_timeout;
 	ENetHost *m_enet_host;
@@ -102,7 +111,7 @@ private:
 	unsigned int m_last_recieved_warn;
 
 	void SetPeerID(u16 id) { m_peer_id = id; }
-	u32 GetProtocolID() { return m_protocol_id; }
+	//u32 GetProtocolID() { return m_protocol_id; }
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
 	std::string getDesc();

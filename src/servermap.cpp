@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <memory>
 #include "map.h"
+#include "mapblock.h"
 #include "mapsector.h"
 #include "filesys.h"
 #include "voxel.h"
@@ -261,7 +262,7 @@ bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 		for (s16 y = full_bpmin.Y; y <= full_bpmax.Y; y++) {
 			v3s16 p(x, y, z);
 
-			MapBlock *block = emergeBlock(p, false);
+			auto block = emergeBlockP(p, false);
 			if (block == NULL) {
 				block = createBlock(p);
 
@@ -453,11 +454,16 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 
 MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 {
+	return emergeBlockP(p, create_blank).get();
+}
+
+MapBlockPtr ServerMap::emergeBlockP(v3s16 p, bool create_blank)
+{
 	TimeTaker timer("generateBlock");
 	MAP_NOTHREAD_LOCK(this);
 
 	{
-		auto block = getBlockNoCreateNoEx(p, false, true);
+		auto block = getBlock(p, false, true);
 		if (block)
 			return block;
 	}
@@ -466,14 +472,14 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 		return {};
 
 	{
-		MapBlock *block = loadBlock(p);
+		auto block = loadBlockP(p);
 		if(block)
 			return block;
 	}
 
 	if (create_blank) {
 
-		return createBlankBlock(p).get();
+		return createBlankBlock(p);
 /*
 		try {
 			MapSector *sector = createSector(v2s16(p.X, p.Z));

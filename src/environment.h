@@ -14,7 +14,6 @@
 	- etc.
 */
 //fm:
-#include "network/connection.h"
 #include "fm_bitset.h"
 #include "threading/concurrent_vector.h"
 #include <unordered_set>

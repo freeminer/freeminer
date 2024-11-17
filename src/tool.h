@@ -19,7 +19,6 @@
 struct ItemDefinition;
 class IItemDefManager;
 
-#include "network/connection.h"
 #include "util/msgpack_serialize.h"
 
 enum {

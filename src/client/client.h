@@ -10,7 +10,6 @@
 #include "map_settings_manager.h"
 #include "mapgen/mapgen.h"
 #include "msgpack_fix.h"
-#include "network/fm_connection_use.h"
 #include "threading/ThreadPool.h"
 #include "threading/async.h"
 constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;

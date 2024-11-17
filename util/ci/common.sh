@@ -4,7 +4,7 @@
 install_linux_deps() {
 	local pkgs=(
 		cmake gettext postgresql
-		libleveldb-dev libsnappy-dev libboost-system-dev libunwind-dev
+		ccache ninja-build libleveldb-dev libsnappy-dev libboost-system-dev libmsgpack-dev
 		libpng-dev libjpeg-dev libgl1-mesa-dev libxi-dev libfreetype-dev
 		libsqlite3-dev libhiredis-dev libogg-dev libgmp-dev libvorbis-dev
 		libopenal-dev libpq-dev libleveldb-dev libcurl4-openssl-dev libzstd-dev
@@ -29,7 +29,7 @@ install_linux_deps() {
 install_macos_deps() {
 	local pkgs=(
 		cmake gettext freetype gmp jpeg-turbo jsoncpp leveldb
-		snappy
+		snappy boost
 		libogg libpng libvorbis luajit zstd
 	)
 	export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1

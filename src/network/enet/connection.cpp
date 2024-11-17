@@ -19,13 +19,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include "network/connection_internal.h"
 #if USE_ENET
 
+#include "network/mtp/internal.h"
 #include "network/enet/connection.h"
 #include "log.h"
 #include "network/networkpacket.h"
 #include "network/peerhandler.h"
 #include "settings.h"
 
-namespace con_enet
+namespace con
 {
 
 // very ugly windows hack
@@ -87,10 +88,9 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 	Connection
 */
 
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-		con::PeerHandler *peerhandler) :
-		thread_vector("Connection", 90),
-		m_protocol_id(protocol_id), m_max_packet_size(max_packet_size),
+ConnectionEnet::ConnectionEnet(
+		u32 max_packet_size, float timeout, bool ipv6, con::PeerHandler *peerhandler) :
+		thread_vector("Connection", 90), m_max_packet_size(max_packet_size),
 		m_timeout(timeout), m_enet_host(nullptr), m_peer_id(0),
 		m_bc_peerhandler(peerhandler), m_last_recieved(0), m_last_recieved_warn(0),
 		timeout_mul(0)
@@ -101,7 +101,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 	start();
 }
 
-Connection::~Connection()
+ConnectionEnet::~ConnectionEnet()
 {
 	join();
 	if (m_enet_host)
@@ -110,7 +110,7 @@ Connection::~Connection()
 }
 
 /* Internal stuff */
-void *Connection::run()
+void *ConnectionEnet::run()
 {
 	while (!stopRequested()) {
 		EXCEPTION_HANDLER_BEGIN;
@@ -128,13 +128,13 @@ void *Connection::run()
 	return nullptr;
 }
 
-void Connection::putEvent(ConnectionEventPtr e)
+void ConnectionEnet::putEvent(ConnectionEventPtr e)
 {
 	assert(e->type != CONNEVENT_NONE); // Pre-condition
 	m_event_queue.push_back(e);
 }
 
-void Connection::processCommand(ConnectionCommandPtr c)
+void ConnectionEnet::processCommand(ConnectionCommandPtr c)
 {
 	switch (c->type) {
 	case CONNCMD_NONE:
@@ -181,7 +181,7 @@ void Connection::processCommand(ConnectionCommandPtr c)
 }
 
 // Receive packets from the network and buffers and create ConnectionEvents
-int Connection::receive()
+int ConnectionEnet::receive()
 {
 	int ret = 0;
 	if (!m_enet_host) {
@@ -206,7 +206,8 @@ int Connection::receive()
 			}
 
 			m_next_remote_peer_id = peer_id + 1;
-			if (m_next_remote_peer_id > PEER_ENET_MAX) m_next_remote_peer_id = PEER_ENET_MIN;
+			if (m_next_remote_peer_id > PEER_ENET_MAX)
+				m_next_remote_peer_id = PEER_ENET_MIN;
 
 			m_peers.emplace(peer_id, event.peer);
 			auto addr = Address(event.peer->address.host, event.peer->address.port);
@@ -281,7 +282,7 @@ int Connection::receive()
 }
 
 // host
-void Connection::serve(Address bind_address)
+void ConnectionEnet::serve(Address bind_address)
 {
 	infostream << getDesc() << "Enet UDP serving at " << bind_address.serializeString()
 			   << ":" << std::to_string(bind_address.getPort()) << std::endl;
@@ -303,7 +304,7 @@ void Connection::serve(Address bind_address)
 }
 
 // peer
-void Connection::connect(Address address)
+void ConnectionEnet::connect(Address address)
 {
 	infostream << getDesc() << "Enet connect to " << address.serializeString() << ":"
 			   << std::to_string(address.getPort()) << std::endl;
@@ -362,7 +363,7 @@ void Connection::connect(Address address)
 	}
 }
 
-void Connection::disconnect()
+void ConnectionEnet::disconnect()
 {
 	// MutexAutoLock peerlock(m_peers_mutex);
 	auto lock = m_peers.lock_unique_rec();
@@ -372,14 +373,15 @@ void Connection::disconnect()
 	m_peers_address.clear();
 }
 
-void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
+void ConnectionEnet::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	ENetPacket *packet = enet_packet_create(
 			*data, data.getSize(), reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
 	enet_host_broadcast(m_enet_host, 0, packet);
 }
 
-void Connection::send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
+void ConnectionEnet::send(
+		u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	{
 		// MutexAutoLock peerlock(m_peers_mutex);
@@ -409,7 +411,7 @@ void Connection::send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool re
 	}
 }
 
-ENetPeer *Connection::getPeer(u16 peer_id)
+ENetPeer *ConnectionEnet::getPeer(u16 peer_id)
 {
 	auto node = m_peers.find(peer_id);
 
@@ -419,7 +421,7 @@ ENetPeer *Connection::getPeer(u16 peer_id)
 	return node->second;
 }
 
-bool Connection::deletePeer(u16 peer_id, bool timeout)
+bool ConnectionEnet::deletePeer(u16 peer_id, bool timeout)
 {
 	// MutexAutoLock peerlock(m_peers_mutex);
 	if (m_peers.find(peer_id) == m_peers.end())
@@ -446,12 +448,12 @@ ConnectionEvent Connection::getEvent()
 	return m_event_queue.pop_frontNoEx();
 }
 */
-size_t Connection::events_size()
+size_t ConnectionEnet::events_size()
 {
 	return m_event_queue.size();
 }
 
-ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
+ConnectionEventPtr ConnectionEnet::waitEvent(u32 timeout_ms)
 {
 	try {
 		return m_event_queue.pop_front(timeout_ms);
@@ -460,7 +462,7 @@ ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 	}
 }
 
-void Connection::putCommand(ConnectionCommandPtr c)
+void ConnectionEnet::putCommand(ConnectionCommandPtr c)
 {
 	// TODO? if (!m_shutting_down)
 	{
@@ -469,17 +471,17 @@ void Connection::putCommand(ConnectionCommandPtr c)
 	}
 }
 
-void Connection::Serve(Address bind_addr)
+void ConnectionEnet::Serve(Address bind_addr)
 {
 	putCommand(ConnectionCommand::serve(bind_addr));
 }
 
-void Connection::Connect(Address address)
+void ConnectionEnet::Connect(Address address)
 {
 	putCommand(ConnectionCommand::connect(address));
 }
 
-bool Connection::Connected()
+bool ConnectionEnet::Connected()
 {
 	auto node = m_peers.find(PEER_ID_SERVER);
 	if (node == m_peers.end())
@@ -495,12 +497,12 @@ bool Connection::Connected()
 	return true;
 }
 
-void Connection::Disconnect()
+void ConnectionEnet::Disconnect()
 {
 	putCommand(ConnectionCommand::disconnect());
 }
 
-u32 Connection::Receive(NetworkPacket *pkt, int timeout)
+bool ConnectionEnet::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout)
 {
 	for (;;) {
 		auto e = waitEvent(timeout);
@@ -537,9 +539,9 @@ u32 Connection::Receive(NetworkPacket *pkt, int timeout)
 	return 0;
 }
 
-bool Connection::TryReceive(NetworkPacket *pkt)
+bool ConnectionEnet::TryReceive(NetworkPacket *pkt)
 {
-	return Receive(pkt, 0);
+	return ReceiveTimeoutMs(pkt, 0);
 }
 
 /*
@@ -553,27 +555,29 @@ void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 }
 */
 
-void Connection::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
+void ConnectionEnet::Send(
+		session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
 {
 	assert(channelnum < CHANNEL_COUNT); // Pre-condition
 
 	putCommand(con::ConnectionCommand::send(peer_id, channelnum, pkt, reliable));
 }
 
-void Connection::Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
+void ConnectionEnet::Send(
+		u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	assert(channelnum < CHANNEL_COUNT);
 	putCommand(ConnectionCommand::send(peer_id, channelnum, data, reliable));
 }
 
-void Connection::Send(
+void ConnectionEnet::Send(
 		u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
 {
 	SharedBuffer<u8> data((unsigned char *)buffer.data(), buffer.size());
 	Send(peer_id, channelnum, data, reliable);
 }
 
-Address Connection::GetPeerAddress(u16 peer_id)
+Address ConnectionEnet::GetPeerAddress(u16 peer_id)
 {
 	auto lock = m_peers_address.lock_unique_rec();
 	if (!m_peers_address.count(peer_id))
@@ -598,33 +602,33 @@ void Connection::DeletePeer(u16 peer_id)
 }
 */
 
-void Connection::PrintInfo(std::ostream &out)
+void ConnectionEnet::PrintInfo(std::ostream &out)
 {
 	out << getDesc() << ": ";
 }
 
-void Connection::PrintInfo()
+void ConnectionEnet::PrintInfo()
 {
 	PrintInfo(dout_con);
 }
 
-std::string Connection::getDesc()
+std::string ConnectionEnet::getDesc()
 {
 	return "";
 	// return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
 }
 
-float Connection::getPeerStat(u16 peer_id, con::rtt_stat_type type)
+float ConnectionEnet::getPeerStat(u16 peer_id, con::rtt_stat_type type)
 {
 	return 0;
 }
 
-float Connection::getLocalStat(con::rate_stat_type type)
+float ConnectionEnet::getLocalStat(con::rate_stat_type type)
 {
 	return 0;
 }
 
-void Connection::DisconnectPeer(u16 peer_id)
+void ConnectionEnet::DisconnectPeer(u16 peer_id)
 {
 	putCommand(ConnectionCommand::disconnect_peer(peer_id));
 }

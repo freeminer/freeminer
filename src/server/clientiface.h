@@ -9,7 +9,6 @@
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
 #include "threading/concurrent_set.h"
-#include "network/fm_connection_use.h"
 #include "util/unordered_map_hash.h"
 #include <atomic>
 #include "msgpack_fix.h"

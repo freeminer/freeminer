@@ -155,12 +155,12 @@ bool Map::insertBlock(MapBlockPtr block)
 	return true;
 }
 
-MapBlock *ServerMap::createBlock(v3pos_t p)
+MapBlockPtr ServerMap::createBlock(v3bpos_t p)
 {
-	if (MapBlock *block = getBlockNoCreateNoEx(p, false, true)) {
+	if (const auto block = getBlock(p, false, true)) {
 		return block;
 	}
-	return createBlankBlock(p).get();
+	return createBlankBlock(p);
 }
 
 /*

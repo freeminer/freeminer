@@ -264,11 +264,10 @@ local function set_selected_server(tabdata, idx, server)
 		core.settings:set("address", address)
 		core.settings:set("remote_port", port)
 		
-		-- FMTODO: fix enet and others and remove "false and"
-		if false and server.proto_multi and server.proto_multi.enet then
+		if server.proto_multi and server.proto_multi.enet then
 			gamedata.proto = "enet"
 			core.settings:set("remote_port", server.proto_multi.enet)
-		elseif false and server.proto_multi and server.proto_multi.sctp then
+		elseif server.proto_multi and server.proto_multi.sctp then
 			gamedata.proto = "sctp"
 			core.settings:set("remote_port", server.proto_multi.sctp)
 		elseif server.proto then
@@ -312,11 +311,10 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				gamedata.serverdescription = server.description
 				gamedata.proto_multi       = server.proto_multi
 				if gamedata.address and gamedata.port then
-					-- FMTODO: fix enet and others and remove "false and"
-					if false and gamedata.proto_multi and gamedata.proto_multi.enet then
+					if gamedata.proto_multi and gamedata.proto_multi.enet then
 						gamedata.port = gamedata.proto_multi.enet
 						gamedata.proto = "enet"
-				    elseif false and  gamedata.proto_multi and gamedata.proto_multi.sctp then
+				    elseif gamedata.proto_multi and gamedata.proto_multi.sctp then
 						gamedata.port = gamedata.proto_multi.sctp
 						gamedata.proto = "sctp"
 				    end

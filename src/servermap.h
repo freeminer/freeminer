@@ -5,6 +5,7 @@
 #pragma once
 
 #include "irr_v3d.h"
+#include "mapblock.h"
 #include "threading/concurrent_set.h"
 
 #include <vector>
@@ -14,6 +15,7 @@
 #include "util/container.h"
 #include "util/metricsbackend.h"
 #include "map_settings_manager.h"
+#include "util/unordered_map_hash.h"
 
 class Server;
 
@@ -109,6 +111,7 @@ public:
 
 	// Helper for placing objects on ground level
 	s16 findGroundLevel(v2pos_t p2d, bool cacheBlocks);
+	MapBlockPtr emergeBlockP(v3bpos_t p, bool create_blank=false) override;
 
 	// == end of freeminer
 
@@ -145,7 +148,7 @@ public:
 		- Memory
 		- Create blank
 	*/
-	MapBlock *createBlock(v3s16 p);
+	MapBlockPtr createBlock(v3bpos_t p);
 
 	/*
 		Forcefully get a block from somewhere (blocking!).

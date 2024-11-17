@@ -320,6 +320,9 @@ public:
 	concurrent_unordered_set<v3bpos_t> changed_blocks_for_merge;
 	using far_dbases_t = std::array<std::shared_ptr<MapDatabase>, FARMESH_STEP_MAX>;
 
+	virtual MapBlockPtr emergeBlockP(v3bpos_t p, bool create_blank=false)
+	{ return getBlock(p); }
+
 	//end of freeminer
 
 

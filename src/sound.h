@@ -11,7 +11,6 @@
 
 // fm:
 #include "msgpack_fix.h"
-#include "network/connection.h"
 #include "util/msgpack_serialize.h"
 
 

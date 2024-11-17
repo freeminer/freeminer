@@ -690,14 +690,13 @@ add_subdirectory(server)
 
 # == freeminer:
 OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
-# fmtodo merge enable: 
-OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 0)
+OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 1)
 if(USE_MULTI)
 	#set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
 	set(ENABLE_ENET 1 CACHE BOOL "")
 	#set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
         if (NOT ANDROID)
-	    	set(ENABLE_WEBSOCKET 1 CACHE BOOL "")
+	    	set(ENABLE_WEBSOCKET 0 CACHE BOOL "")
         endif()
 endif()
 

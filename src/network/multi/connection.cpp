@@ -19,9 +19,9 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "fm_connection_multi.h"
-
+#include "network/multi/connection.h"
 #include "connection.h"
+#include "network/enet/connection.h"
 #include "settings.h"
 #include "config.h"
 
@@ -35,43 +35,43 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fm_connection_websocket_sctp.h"
 #endif
 #if USE_ENET
-#include "fm_connection_enet.h"
+#include "network/enet/connection.h"
 #endif
 
-namespace con_multi
+namespace con
 {
 
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
+ConnectionMulti::ConnectionMulti(u32 max_packet_size, float timeout, bool ipv6,
 		con::PeerHandler *peerhandler) :
 #if USE_SCTP
 		m_con_sctp(std::make_shared<con_sctp::Connection>(
-				PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler)),
+				 max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_WEBSOCKET
 		m_con_ws(std::make_shared<con_ws::Connection>(
-				PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler)),
+				 max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_WEBSOCKET_SCTP
 		m_con_ws_sctp(std::make_shared<con_ws_sctp::Connection>(
-				PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler)),
+				 max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_ENET
-		m_con_enet(std::make_shared<con_enet::Connection>(
-				PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler)),
+		m_con_enet(std::make_shared<ConnectionEnet>(
+				 max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if MINETEST_TRANSPORT
 		m_con(std::make_shared<con::Connection>(
-				PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler)),
+				 max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 		dummy{}
 {
 }
 
-Connection::~Connection()
+ConnectionMulti::~ConnectionMulti()
 {
 }
 
-void Connection::Serve(Address bind_address)
+void ConnectionMulti::Serve(Address bind_address)
 {
 	infostream << "Multi serving at " << bind_address.serializeString() << ":"
 			   << std::to_string(bind_address.getPort()) << std::endl;
@@ -126,7 +126,7 @@ void Connection::Serve(Address bind_address)
 #endif
 }
 
-void Connection::Connect(Address address)
+void ConnectionMulti::Connect(Address address)
 {
 	const auto remote_proto = g_settings->get("remote_proto");
 
@@ -153,7 +153,7 @@ void Connection::Connect(Address address)
 #endif
 }
 
-bool Connection::Connected()
+bool ConnectionMulti::Connected()
 {
 #if USE_SCTP
 	if (m_con_sctp)
@@ -173,7 +173,7 @@ bool Connection::Connected()
 #endif
 }
 
-void Connection::Disconnect()
+void ConnectionMulti::Disconnect()
 {
 #if USE_SCTP
 	if (m_con_sctp)
@@ -190,7 +190,7 @@ void Connection::Disconnect()
 	connected_to = proto_name::none;
 }
 
-u32 Connection::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
+bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
 	u32 ret = 0;
 	for (const auto &timeout : {u32(0), timeout_ms}) {
@@ -214,7 +214,7 @@ u32 Connection::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 #endif
 #if USE_ENET
 		if (m_con_enet)
-			ret += m_con_enet->Receive(pkt, timeout);
+			ret += m_con_enet->ReceiveTimeoutMs(pkt, timeout);
 		if (ret)
 			return ret;
 #endif
@@ -228,12 +228,12 @@ u32 Connection::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 	return ret;
 }
 
-bool Connection::TryReceive(NetworkPacket *pkt)
+bool ConnectionMulti::TryReceive(NetworkPacket *pkt)
 {
 	return ReceiveTimeoutMs(pkt, 0);
 }
 
-void Connection::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
+void ConnectionMulti::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
 {
 	// TODO send to one
 #if USE_SCTP
@@ -265,7 +265,7 @@ void Connection::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool
 #endif
 }
 
-void Connection::Send(
+void ConnectionMulti::Send(
 		session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
 {
 	// TODO send to one
@@ -292,7 +292,7 @@ void Connection::Send(
 #endif
 }
 
-Address Connection::GetPeerAddress(session_t peer_id)
+Address ConnectionMulti::GetPeerAddress(session_t peer_id)
 {
 #if USE_SCTP
 	if (m_con_sctp && ((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
@@ -336,7 +336,7 @@ Address Connection::GetPeerAddress(session_t peer_id)
 	throw con::PeerNotFoundException("No address for peer found!");
 }
 
-float Connection::getPeerStat(session_t peer_id, con::rtt_stat_type type)
+float ConnectionMulti::getPeerStat(session_t peer_id, con::rtt_stat_type type)
 {
 #if USE_SCTP
 	if (m_con_sctp && ((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
@@ -358,7 +358,7 @@ float Connection::getPeerStat(session_t peer_id, con::rtt_stat_type type)
 	return {};
 }
 
-float Connection::getLocalStat(con::rate_stat_type type)
+float ConnectionMulti::getLocalStat(con::rate_stat_type type)
 {
 #if MINETEST_TRANSPORT
 	if (m_con)
@@ -367,7 +367,7 @@ float Connection::getLocalStat(con::rate_stat_type type)
 	return {};
 }
 
-void Connection::DisconnectPeer(session_t peer_id)
+void ConnectionMulti::DisconnectPeer(session_t peer_id)
 {
 #if USE_SCTP
 	if (m_con_sctp && ((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
@@ -398,7 +398,7 @@ void Connection::DisconnectPeer(session_t peer_id)
 #endif
 }
 
-size_t Connection::events_size()
+size_t ConnectionMulti::events_size()
 {
 	size_t ret = 0;
 #if USE_SCTP
