@@ -442,7 +442,7 @@ private:
 */
 
 template<typename K, typename V>
-class ModifySafeMap : shared_locker
+class ModifySafeMap : locker<>
 {
 public:
 	// this allows bare pointers but also e.g. std::unique_ptr
