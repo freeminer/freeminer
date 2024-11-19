@@ -186,7 +186,7 @@ void TestMapSettingsManager::testMapSettingsManager()
 void TestMapSettingsManager::testMapMetaSaveLoad()
 {
 	std::string path = getTestTempDirectory()
-		+ DIR_DELIM + "foobar" + DIR_DELIM + "map_meta.txt";
+		+ DIR_DELIM + "foobar" + DIR_DELIM + "map_meta";
 
 	makeUserConfig();
 	Settings &conf = *Settings::getLayer(SL_GLOBAL);

@@ -58,7 +58,7 @@ void MapDatabaseAccessor::loadBlock(v3s16 blockpos, std::string &ret)
 ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 		EmergeManager *emerge, MetricsBackend *mb):
 	Map(gamedef),
-	settings_mgr(savedir + DIR_DELIM + "map_meta.txt"),
+	settings_mgr(savedir + DIR_DELIM + "map_meta"),
 	m_emerge(emerge)
 {
 	verbosestream<<FUNCTION_NAME<<std::endl;
