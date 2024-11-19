@@ -339,9 +339,9 @@ void ConnectionSendThread::sendAsPacketReliable(BufferedPacketPtr &p, Channel *c
 bool ConnectionSendThread::rawSendAsPacket(session_t peer_id, u8 channelnum,
 	const SharedBuffer<u8> &data, bool reliable)
 {
-#ifdef __EMSCRIPTEN__
+//#ifdef __EMSCRIPTEN__
 	reliable = false;
-#endif
+//#endif
 
 	PeerHelper peer = m_connection->getPeerNoEx(peer_id);
 	if (!peer) {

@@ -196,7 +196,7 @@ void ConnectionMulti::Disconnect()
 bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
 	u32 ret = 0;
-	for (auto i = 0; !i || i < timeout_ms; ++i) {
+	for (auto i = 0; !i || (i < timeout_ms/10); ++i) {
 		const u32 timeout = i ? 10 : 0;
 		//for (const auto &timeout : {u32(0), u32(1)}) {
 #if USE_SCTP
