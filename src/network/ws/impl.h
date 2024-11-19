@@ -7,6 +7,7 @@
 #include "network/connection.h"
 #include "network/socket.h"
 #include "constants.h"
+#include "network/ws/wssocket.h"
 #include "util/pointer.h"
 #include "util/container.h"
 #include "util/numeric.h"
@@ -16,8 +17,9 @@
 #include <vector>
 #include <map>
 
-namespace con
+namespace con_ws
 {
+using namespace con;
 
 class ConnectionReceiveThread;
 class ConnectionSendThread;
@@ -94,7 +96,9 @@ struct BufferedPacket;
 typedef std::shared_ptr<BufferedPacket> BufferedPacketPtr;
 
 class Connection;
+/*
 class PeerHandler;
+*/
 
 class Peer : public IPeer {
 	public:
@@ -274,7 +278,7 @@ protected:
 
 	u32 getActiveCount();
 
-	UDPSocket m_udpSocket;
+	WSSocket m_udpSocket;
 	// Command queue: user -> SendThread
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 

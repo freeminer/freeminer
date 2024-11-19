@@ -1265,10 +1265,10 @@ ConnectionEventPtr ConnectionEvent::bindFailed()
 	Connection
 */
 
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+Connection::Connection(u32 max_packet_size, float timeout,
 		bool ipv6, PeerHandler *peerhandler) :
 	m_udpSocket(ipv6),
-	m_protocol_id(protocol_id),
+	//m_protocol_id(protocol_id),
 	m_sendThread(new ConnectionSendThread(max_packet_size, timeout)),
 	m_receiveThread(new ConnectionReceiveThread(max_packet_size)),
 	m_bc_peerhandler(peerhandler)

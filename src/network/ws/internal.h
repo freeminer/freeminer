@@ -4,8 +4,10 @@
 
 #pragma once
 
-#include "network/mtp/impl.h"
+#include "network/ws/impl.h"
+#include "network/mtp/internal.h"
 
+#if 0
 // Constant that differentiates the protocol from random data and other protocols
 #define PROTOCOL_ID 0x4f457403
 
@@ -98,7 +100,9 @@ with a buffer in the receiving and transmitting end.
 #define SEQNUM_INITIAL 65500
 #define SEQNUM_MAX 65535
 
-namespace con
+#endif
+
+namespace con_ws
 {
 
 

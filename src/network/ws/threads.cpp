@@ -3,14 +3,17 @@
 // Copyright (C) 2013-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 // Copyright (C) 2017 celeron55, Loic Blot <loic.blot@unix-experience.fr>
 
-#include "network/mtp/threads.h"
+#include "config.h"
+#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
+
+#include "network/ws/threads.h"
 #include "log.h"
 #include "profiler.h"
 #include "settings.h"
 #include "network/networkpacket.h"
 #include "util/serialize.h"
 
-namespace con
+namespace con_ws
 {
 
 /******************************************************************************/
@@ -359,7 +362,7 @@ bool ConnectionSendThread::rawSendAsPacket(session_t peer_id, u8 channelnum,
 		SharedBuffer<u8> reliable = makeReliablePacket(data, seqnum);
 
 		// Add base headers and make a packet
-		BufferedPacketPtr p = con::makePacket(peer->getAddress(), reliable,
+		BufferedPacketPtr p = makePacket(peer->getAddress(), reliable,
 			m_connection->GetProtocolID(), m_connection->GetPeerID(),
 			channelnum);
 
@@ -382,7 +385,7 @@ bool ConnectionSendThread::rawSendAsPacket(session_t peer_id, u8 channelnum,
 	}
 
 	// Add base headers and make a packet
-	BufferedPacketPtr p = con::makePacket(peer->getAddress(), data,
+	BufferedPacketPtr p = makePacket(peer->getAddress(), data,
 		m_connection->GetProtocolID(), m_connection->GetPeerID(),
 		channelnum);
 
@@ -1289,7 +1292,7 @@ SharedBuffer<u8> ConnectionReceiveThread::handlePacketType_Split(Channel *channe
 {
 	// We have to create a packet again for buffering
 	// This isn't actually too bad an idea.
-	BufferedPacketPtr packet = con::makePacket(peer->getAddress(),
+	BufferedPacketPtr packet = makePacket(peer->getAddress(),
 		packetdata,
 		m_connection->GetProtocolID(),
 		peer->id,
@@ -1354,7 +1357,7 @@ SharedBuffer<u8> ConnectionReceiveThread::handlePacketType_Reliable(Channel *cha
 		// This one comes later, buffer it.
 		// Actually we have to make a packet to buffer one.
 		// Well, we have all the ingredients, so just do it.
-		BufferedPacketPtr packet = con::makePacket(
+		BufferedPacketPtr packet = makePacket(
 			peer->getAddress(),
 			packetdata,
 			m_connection->GetProtocolID(),
@@ -1408,3 +1411,4 @@ SharedBuffer<u8> ConnectionReceiveThread::handlePacketType_Reliable(Channel *cha
 
 }
 
+#endif

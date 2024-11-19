@@ -16,6 +16,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "config.h"
+#include "network/networkprotocol.h"
 //#include "network/connection_internal.h"
 #if USE_ENET
 
@@ -30,7 +31,8 @@ namespace con
 {
 
 // very ugly windows hack
-#if (defined(_MSC_VER) || defined(__MINGW32__)) && defined(ENET_IPV6)
+ 
+#if (defined(_MSC_VER)) && defined(ENET_IPV6)  // || defined(__MINGW32__)
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -539,11 +541,12 @@ bool ConnectionEnet::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout)
 	return 0;
 }
 
+/*
 bool ConnectionEnet::TryReceive(NetworkPacket *pkt)
 {
 	return ReceiveTimeoutMs(pkt, 0);
 }
-
+*/
 /*
 void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
@@ -570,14 +573,16 @@ void ConnectionEnet::Send(
 	putCommand(ConnectionCommand::send(peer_id, channelnum, data, reliable));
 }
 
+/*
 void ConnectionEnet::Send(
 		u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
 {
 	SharedBuffer<u8> data((unsigned char *)buffer.data(), buffer.size());
 	Send(peer_id, channelnum, data, reliable);
 }
+*/
 
-Address ConnectionEnet::GetPeerAddress(u16 peer_id)
+Address ConnectionEnet::GetPeerAddress(session_t peer_id)
 {
 	auto lock = m_peers_address.lock_unique_rec();
 	if (!m_peers_address.count(peer_id))

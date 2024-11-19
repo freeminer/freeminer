@@ -689,14 +689,14 @@ add_subdirectory(util)
 add_subdirectory(server)
 
 # == freeminer:
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 0)
 OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 1)
 if(USE_MULTI)
 	#set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
 	set(ENABLE_ENET 1 CACHE BOOL "")
 	#set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
         if (NOT ANDROID)
-	    	set(ENABLE_WEBSOCKET 0 CACHE BOOL "")
+	    	set(ENABLE_WEBSOCKET 1 CACHE BOOL "")
         endif()
 endif()
 
@@ -711,7 +711,7 @@ if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
 			message(STATUS "Using websocket: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp")
 			find_package(OpenSSL)
 			set(WEBSOCKETPP_LIBRARY ${WEBSOCKETPP_LIBRARY} OpenSSL::SSL)
-			# MERGE FMTODO: set(USE_WEBSOCKET 1 CACHE BOOL "")
+			set(USE_WEBSOCKET 1 CACHE BOOL "")
 			#TODO:
 			# set(USE_WEBSOCKET_SCTP 1 CACHE BOOL "")
 		endif()

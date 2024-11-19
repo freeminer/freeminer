@@ -2,15 +2,18 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "config.h"
+#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
+
 #include <iomanip>
 #include <cerrno>
 #include <algorithm>
 #include <cmath>
-#include "network/mtp/internal.h"
+#include "network/ws/internal.h"
 #include "serialization.h"
 #include "log.h"
 #include "porting.h"
-#include "network/mtp/threads.h"
+#include "network/ws/threads.h"
 #include "network/peerhandler.h"
 #include "network/networkpacket.h"
 #include "util/serialize.h"
@@ -19,7 +22,7 @@
 #include "settings.h"
 #include "profiler.h"
 
-namespace con
+namespace con_ws
 {
 
 /******************************************************************************/
@@ -1106,7 +1109,7 @@ bool UDPPeer::processReliableSendCommand(
 		SharedBuffer<u8> reliable = makeReliablePacket(original, seqnum);
 
 		// Add base headers and make a packet
-		BufferedPacketPtr p = con::makePacket(address, reliable,
+		BufferedPacketPtr p = makePacket(address, reliable,
 				m_connection->GetProtocolID(), m_connection->GetPeerID(),
 				c.channelnum);
 
@@ -1679,3 +1682,5 @@ UDPPeer* Connection::createServerPeer(const Address &address)
 }
 
 } // namespace
+
+#endif

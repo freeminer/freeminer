@@ -6,8 +6,10 @@ set(common_network_SRCS
 	#${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_sctp.cpp
 	#${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_websocket_sctp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/wssocket.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ws/connection.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ws/connectionthreads.cpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/ws/connection.cpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/ws/connectionthreads.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws/impl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws/threads.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/address.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/connection.cpp

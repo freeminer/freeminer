@@ -24,8 +24,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "irrlichttypes.h"
 #include "network/connection.h"
-#include "network/connection_internal.h"
-#include "network/wssocket.h"
+//#include "network/connection_internal.h"
+#include "network/ws/wssocket.h"
 #include "network/networkexceptions.h"
 #include "../peerhandler.h"
 //#include "socket.h"
@@ -733,7 +733,7 @@ public:
 	friend class ConnectionSendThread;
 	friend class ConnectionReceiveThread;
 
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
+	Connection(u32 max_packet_size, float timeout, bool ipv6,
 			PeerHandler *peerhandler);
 	~Connection();
 

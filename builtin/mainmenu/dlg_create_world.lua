@@ -112,7 +112,9 @@ local function create_world_formspec(dialogdata)
 	local current_mg = dialogdata.mg
 	local mapgens = core.get_mapgen_names()
 
+--[[
 	pkgmgr.update_gamelist()
+]]
 
 	local flags = dialogdata.flags
 

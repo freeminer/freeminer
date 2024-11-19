@@ -21,7 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "network/multi/connection.h"
 #include "connection.h"
-#include "network/enet/connection.h"
+#include "network/networkpacket.h"
 #include "settings.h"
 #include "config.h"
 
@@ -29,7 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fm_connection_sctp.h"
 #endif
 #if USE_WEBSOCKET
-#include "ws/connection.h"
+#include "network/ws/impl.h"
 #endif
 #if USE_WEBSOCKET_SCTP
 #include "fm_connection_websocket_sctp.h"
@@ -37,31 +37,34 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #if USE_ENET
 #include "network/enet/connection.h"
 #endif
+#if MINETEST_TRANSPORT
+#include "network/mtp/impl.h"
+#endif
 
 namespace con
 {
 
-ConnectionMulti::ConnectionMulti(u32 max_packet_size, float timeout, bool ipv6,
-		con::PeerHandler *peerhandler) :
+ConnectionMulti::ConnectionMulti(
+		u32 max_packet_size, float timeout, bool ipv6, con::PeerHandler *peerhandler) :
 #if USE_SCTP
 		m_con_sctp(std::make_shared<con_sctp::Connection>(
-				 max_packet_size, timeout, ipv6, peerhandler)),
+				max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_WEBSOCKET
 		m_con_ws(std::make_shared<con_ws::Connection>(
-				 max_packet_size, timeout, ipv6, peerhandler)),
+				max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_WEBSOCKET_SCTP
 		m_con_ws_sctp(std::make_shared<con_ws_sctp::Connection>(
-				 max_packet_size, timeout, ipv6, peerhandler)),
+				max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_ENET
 		m_con_enet(std::make_shared<ConnectionEnet>(
-				 max_packet_size, timeout, ipv6, peerhandler)),
+				max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if MINETEST_TRANSPORT
 		m_con(std::make_shared<con::Connection>(
-				 max_packet_size, timeout, ipv6, peerhandler)),
+				max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 		dummy{}
 {
@@ -193,22 +196,24 @@ void ConnectionMulti::Disconnect()
 bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
 	u32 ret = 0;
-	for (const auto &timeout : {u32(0), timeout_ms}) {
+	for (auto i = 0; !i || i < timeout_ms; ++i) {
+		const u32 timeout = i ? 10 : 0;
+		//for (const auto &timeout : {u32(0), u32(1)}) {
 #if USE_SCTP
 		if (m_con_sctp)
-			ret += m_con_sctp->Receive(pkt, timeout);
+			ret += m_con_sctp->ReceiveTimeoutMs(pkt, timeout);
 		if (ret)
 			return ret;
 #endif
 #if USE_WEBSOCKET
 		if (m_con_ws)
-			ret += m_con_ws->Receive(pkt, timeout);
+			ret += m_con_ws->ReceiveTimeoutMs(pkt, timeout);
 		if (ret)
 			return ret;
 #endif
 #if USE_WEBSOCKET_SCTP
 		if (m_con_ws_sctp)
-			ret += m_con_ws_sctp->Receive(pkt, timeout);
+			ret += m_con_ws_sctp->ReceiveTimeoutMs(pkt, timeout);
 		if (ret)
 			return ret;
 #endif
@@ -228,12 +233,15 @@ bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 	return ret;
 }
 
+/*
 bool ConnectionMulti::TryReceive(NetworkPacket *pkt)
 {
 	return ReceiveTimeoutMs(pkt, 0);
 }
+*/
 
-void ConnectionMulti::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
+void ConnectionMulti::Send(
+		session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
 {
 	// TODO send to one
 #if USE_SCTP
@@ -265,6 +273,7 @@ void ConnectionMulti::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt,
 #endif
 }
 
+#if 0
 void ConnectionMulti::Send(
 		session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
 {
@@ -291,6 +300,7 @@ void ConnectionMulti::Send(
 		// reliable);
 #endif
 }
+#endif
 
 Address ConnectionMulti::GetPeerAddress(session_t peer_id)
 {

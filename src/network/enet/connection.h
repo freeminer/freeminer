@@ -29,7 +29,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "msgpack_fix.h"
 
 // #define CHANNEL_COUNT 3
-//namespace msgpack {class sbuffer;}
 
 namespace con
 {
@@ -41,30 +40,32 @@ public:
 	ConnectionEnet(u32 max_packet_size, float timeout, bool ipv6,
 			con::PeerHandler *peerhandler = nullptr);
 	~ConnectionEnet();
-	void *run();
+	void *run() override;
 
 	/* Interface */
 
+private:
 	// ConnectionEvent getEvent();
 	// ConnectionEvent waitEvent(u32 timeout_ms);
 	ConnectionEventPtr waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommandPtr c);
 
+public:
 	void Serve(Address bind_addr) override;
 	void Connect(Address address) override;
 	bool Connected() override;
 	void Disconnect() override;
 	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout = 1) override;
-	bool TryReceive(NetworkPacket *pkt);
+	//bool TryReceive(NetworkPacket *pkt);
 
-	void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	//void SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(
 			session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable) override;
 	void Send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
+	//void Send(u16 peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable);
 	//session_t GetPeerID() const { return m_peer_id; }
-	void DeletePeer(u16 peer_id);
-	Address GetPeerAddress(u16 peer_id) override;
+	//void DeletePeer(u16 peer_id);
+	Address GetPeerAddress(session_t peer_id) override;
 	float getPeerStat(u16 peer_id, con::rtt_stat_type type) override;
 	float getLocalStat(con::rate_stat_type type) override;
 

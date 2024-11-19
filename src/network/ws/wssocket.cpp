@@ -27,14 +27,13 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 */
 
 #include "config.h"
-#include "server/serverlist.h"
 #if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
 
 #include "wssocket.h"
 #include "constants.h"
 #include "filesys.h"
 #include "log.h"
-//#include "../server/serverlist.h"
+#include "../server/serverlist.h"
 #include "settings.h"
 #include "util/numeric.h"
 #include "util/string.h"
@@ -237,14 +236,15 @@ WSSocket::WSSocket(bool ipv6)
 bool WSSocket::init(bool ipv6, bool noExceptions)
 {
 
-	if (socket_enable_debug_output /*con_debug*/) {
-
+/*	if (socket_enable_debug_output /*con_debug* /) {
 		server.set_error_channels(websocketpp::log::elevel::all);
 		server.set_access_channels(websocketpp::log::alevel::all ^
 								   websocketpp::log::alevel::frame_payload ^
 								   websocketpp::log::alevel::frame_header);
 
-	} else {
+	} else 
+	*/
+	{
 		server.set_error_channels(websocketpp::log::elevel::none);
 		server.set_access_channels(websocketpp::log::alevel::none);
 	}
@@ -324,20 +324,11 @@ WSSocket::context_ptr WSSocket::on_tls_init(const websocketpp::connection_hdl & 
 
 WSSocket::~WSSocket()
 {
-	if (socket_enable_debug_output) {
-		tracestream << "WSSocket( "
-					//<< (int)m_handle
-					<< ")::~WSSocket()" << '\n';
-	}
 }
 
 void WSSocket::Bind(Address addr)
 {
-	if (socket_enable_debug_output) {
-		tracestream << "WSSocket(" //<< (int)m_handle
-					<< ")::Bind(): " << addr.serializeString() << ":" << addr.getPort()
-					<< '\n';
-	}
+
 	websocketpp::lib::error_code ec;
 	server.listen(addr.getPort(), ec);
 	if (ec) {
@@ -360,30 +351,6 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 
 	if (INTERNET_SIMULATOR)
 		dumping_packet = myrand() % INTERNET_SIMULATOR_PACKET_LOSS == 0;
-
-	if (socket_enable_debug_output) {
-		// Print packet destination and size
-		// tracestream << (int)m_handle << " -> ";
-		destination.print(tracestream);
-		tracestream << ", size=" << size;
-
-		// Print packet contents
-		tracestream << ", data=";
-		for (int i = 0; i < size && i < 20; i++) {
-			if (i % 2 == 0)
-				tracestream << " ";
-			unsigned int a = ((const unsigned char *)data)[i];
-			tracestream << std::hex << std::setw(2) << std::setfill('0') << a;
-		}
-
-		if (size > 20)
-			tracestream << "...";
-
-		if (dumping_packet)
-			tracestream << " (DUMPED BY INTERNET_SIMULATOR)";
-
-		tracestream << '\n';
-	}
 
 	if (dumping_packet) {
 		// Lol let's forget it
@@ -429,26 +396,6 @@ int WSSocket::Receive(Address &sender, void *data, int size)
 	sender = item.address;
 
 	memcpy(data, item.data.data(), item.data.size());
-
-	if (socket_enable_debug_output) {
-		// Print packet sender and size
-		// tracestream << (int)m_handle << " <- ";
-		sender.print(tracestream);
-		tracestream << ", size=" << received;
-
-		// Print packet contents
-		tracestream << ", data=";
-		for (int i = 0; i < received && i < 20; i++) {
-			if (i % 2 == 0)
-				tracestream << " ";
-			unsigned int a = ((const unsigned char *)data)[i];
-			tracestream << std::hex << std::setw(2) << std::setfill('0') << a;
-		}
-		if (received > 20)
-			tracestream << "...";
-
-		tracestream << '\n';
-	}
 
 	return received;
 }

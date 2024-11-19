@@ -14,9 +14,9 @@
 
 #include <cassert>
 #include "threading/thread.h"
-#include "network/mtp/internal.h"
+#include "network/ws/internal.h"
 
-namespace con
+namespace con_ws
 {
 
 class Connection;

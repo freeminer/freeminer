@@ -60,7 +60,7 @@ class Connection : public thread_vector
 public:
 	friend class con_multi::Connection;
 
-	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
+	Connection(u32 max_packet_size, float timeout, bool ipv6,
 			con::PeerHandler *peerhandler = nullptr);
 	~Connection();
 	void *run();
@@ -84,8 +84,7 @@ public:
 			bool reliable);
 	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
 	session_t GetPeerID() { return m_peer_id; }
-	void DeletePeer(session_t peer_id);
-	Address GetPeerAddress(session_t peer_id);
+	Address GetPeerAddress(session_t peer_id) override;
 	float getPeerStat(session_t peer_id, rtt_stat_type type);
 	float getLocalStat(rate_stat_type type);
 
@@ -136,7 +135,7 @@ private:
 	int m_last_recieved_warn;
 
 	void SetPeerID(const session_t id) { m_peer_id = id; }
-	u32 GetProtocolID() { return m_protocol_id; }
+	//u32 GetProtocolID() { return m_protocol_id; }
 	void PrintInfo(std::ostream &out);
 	void PrintInfo();
 

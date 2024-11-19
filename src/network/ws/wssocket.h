@@ -22,7 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <list>
-#include "address.h"
+#include "network/address.h"
 
 #include <websocketpp/server.hpp>
 
@@ -34,7 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <websocketpp/config/asio_no_tls.hpp>
 #endif
 
-extern bool socket_enable_debug_output;
+//extern bool socket_enable_debug_output;
 
 class WSSocket
 {
