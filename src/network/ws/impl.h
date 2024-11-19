@@ -310,6 +310,9 @@ private:
 	PeerHandler *m_bc_peerhandler;
 
 	bool m_shutting_down = false;
+
+	public:
+	size_t events_size() override { return m_event_queue.size(); }
 };
 
 } // namespace

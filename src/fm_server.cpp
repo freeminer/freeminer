@@ -124,7 +124,7 @@ void *ServerThread::run()
 				sleep = sleep_min;
 			end_ms += sleep; // u32(1000 * dedicated_server_step/2);
 			for (u16 i = 0; i < 1000; ++i) {
-				if (!m_server->Receive(sleep)) {
+				if (!m_server->Receive(sleep/1000)) {
 					// errorstream<<"Server: Recieve nothing="  << i << "
 					// per="<<porting::getTimeMs()-(end_ms-sleep)<<"
 					// sleep="<<sleep<<std::endl;

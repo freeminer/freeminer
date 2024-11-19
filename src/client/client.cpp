@@ -369,6 +369,7 @@ void Client::Stop()
 	mesh_thread_pool.wait_until_empty();
 	merger.reset(); // before m_localdb
     getEnv().getClientMap().update_drawlist_async.wait();
+	mesh_thread_pool.wait_until_empty();
 
 	if (m_mods_loaded)
 		delete m_script;
@@ -384,10 +385,16 @@ bool Client::isShutdown()
 
 Client::~Client()
 {
-	mesh_thread_pool.wait_until_empty(); // before ~ClientMap()
 	m_shutdown = true;
-	if (m_con)
+	if (m_con) {
 		m_con->Disconnect();
+		for (auto i = 0; i < 100; ++i) {
+			if (!m_con->Connected())
+				break;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+	}
+	mesh_thread_pool.wait_until_empty(); // before ~ClientMap()
 
 	deleteAuthData();
 

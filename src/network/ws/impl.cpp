@@ -1421,6 +1421,11 @@ ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 void Connection::putCommand(ConnectionCommandPtr c)
 {
 	if (!m_shutting_down) {
+
+//#ifdef __EMSCRIPTEN__
+		c->reliable = false;
+//#endif
+
 		m_command_queue.push_back(c);
 		m_sendThread->Trigger();
 	}
@@ -1584,8 +1589,8 @@ session_t Connection::createPeer(const Address &sender, int fd)
 	// Somebody wants to make a new connection
 
 	// Get a unique peer id
-	const session_t minimum = PEER_MINETEST_MIN;
-	const session_t overflow = PEER_MINETEST_MAX;
+	const session_t minimum = PEER_WS_MIN;
+	const session_t overflow = PEER_WS_MAX;
 
 	/*
 		Find an unused peer id

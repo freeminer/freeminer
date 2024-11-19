@@ -524,8 +524,8 @@ public:
 	}
 
 	V take(const K &key) {
-		const auto lock = lock_unique_rec();
 		V ret = V();
+		const auto lock = lock_unique_rec();
 		if (m_iterating) {
 			auto it = m_new.find(key);
 			if (it != m_new.end()) {
@@ -548,7 +548,6 @@ public:
 	}
 
 	bool remove(const K &key) {
-		const auto lock = lock_unique_rec();
 		return !!take(key);
 	}
 

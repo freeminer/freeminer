@@ -1499,7 +1499,8 @@ bool Connection::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 					"(port already in use?)");
 
         case CONNEVENT_CONNECT_FAILED:
-			throw ConnectionException("Failed to connect");		}
+			throw ConnectionException("Failed to connect");		
+		}
 	}
 	return false;
 }
