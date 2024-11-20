@@ -332,7 +332,7 @@ void RenderingEngine::draw_load_screen(const std::wstring &text,
 #ifndef __ANDROID__
 			const core::dimension2d<u32> &img_size =
 					progress_img_bg->getSize();
-			float density = g_settings->getFloat("gui_scaling", 0.5f, 20.0f) *
+			thread_local static const float density = g_settings->getFloat("gui_scaling", 0.5f, 20.0f) *
 					getDisplayDensity();
 			u32 imgW = rangelim(img_size.Width, 200, 600) * density;
 			u32 imgH = rangelim(img_size.Height, 24, 72) * density;
@@ -419,7 +419,7 @@ const VideoDriverInfo &RenderingEngine::getVideoDriverInfo(irr::video::E_DRIVER_
 
 float RenderingEngine::getDisplayDensity()
 {
-	float user_factor = g_settings->getFloat("display_density_factor", 0.5f, 5.0f);
+	thread_local static const float user_factor = g_settings->getFloat("display_density_factor", 0.5f, 5.0f);
 #ifndef __ANDROID__
 	float dpi = get_raw_device()->getDisplayDensity();
 	if (dpi == 0.0f)

@@ -98,6 +98,11 @@ void ActiveObjectMgr::step(
 	}
 # if 0
 */
+
+	const auto lock =  m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return;
+
 	g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
 	size_t count = 0;
 
@@ -199,6 +204,11 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 		}
 	}
 #endif
+
+	auto lock = m_active_objects.try_lock_unique_rec(); //prelock
+	if (!lock->owns_lock())
+		return;
+
 
 	float r2 = radius * radius;
 	for (auto &activeObject : m_active_objects.iter()) {

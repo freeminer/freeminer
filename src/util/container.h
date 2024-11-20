@@ -9,6 +9,7 @@
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
 #include "threading/semaphore.h"
+#include <atomic>
 #include <list>
 #include <vector>
 #include <map>
@@ -442,7 +443,7 @@ private:
 */
 
 template<typename K, typename V>
-class ModifySafeMap : locker<>
+class ModifySafeMap : public locker<>
 {
 public:
 	// this allows bare pointers but also e.g. std::unique_ptr
@@ -642,7 +643,7 @@ protected:
 		IterationHelper(ModifySafeMap<K, V> *parent) : m(parent),
 			lock{parent->lock_shared_rec()}
 		{
-			assert(m->m_iterating < std::numeric_limits<decltype(m_iterating)>::max());
+			//assert(m->m_iterating < std::numeric_limits<decltype(m_iterating)>::max());
 			m->m_iterating++;
 		}
 
@@ -653,7 +654,7 @@ protected:
 private:
 	std::map<K, V> m_values;
 	std::map<K, V> m_new;
-	unsigned int m_iterating = 0;
+	std::atomic_uint m_iterating = 0;
 	// approximate amount of null-placeholders in m_values, reliable for != 0 tests
 	size_t m_garbage = 0;
 
