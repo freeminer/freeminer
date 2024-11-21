@@ -86,6 +86,8 @@ MapBlock::~MapBlock()
 	}
 #endif
 */
+	delete[] data;
+	porting::TrackFreedMemory(sizeof(MapNode) * nodecount);
 }
 
 bool MapBlock::onObjectsActivation()
@@ -640,130 +642,133 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 	}
 }
 
-	MapNode MapBlock::getNodeNoEx(v3pos_t p) {
+// fm:
+MapNode MapBlock::getNodeNoEx(v3pos_t p)
+{
 #ifndef NDEBUG
-		ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
+	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
-		auto lock = lock_shared_rec();
-		return getNodeNoLock(p);
-	}
+	auto lock = lock_shared_rec();
+	return getNodeNoLock(p);
+}
 
-	void MapBlock::setNode(const v3pos_t &p, const MapNode & n, bool important)
-	{
+void MapBlock::setNode(const v3pos_t &p, const MapNode &n, bool important)
+{
 #ifndef NDEBUG
-		g_profiler->add("Map: setNode", 1);
+	g_profiler->add("Map: setNode", 1);
 #endif
-		//if (!isValidPosition(p.X, p.Y, p.Z))
-		//	return;
+	//if (!isValidPosition(p.X, p.Y, p.Z))
+	//	return;
 
-		auto nodedef = m_gamedef->ndef();
-		auto index = p.Z*zstride + p.Y*ystride + p.X;
-		const auto &f1 = nodedef->get(n.getContent());
+	auto nodedef = m_gamedef->ndef();
+	auto index = p.Z * zstride + p.Y * ystride + p.X;
+	const auto &f1 = nodedef->get(n.getContent());
 
-		auto lock = lock_unique_rec();
+	auto lock = lock_unique_rec();
 
-		const auto &f0 = nodedef->get(data[index].getContent());
+	const auto &f0 = nodedef->get(data[index].getContent());
 
-		data[index] = n;
+	data[index] = n;
 
-		modified_light light = modified_light_no;
-		if (f0.light_propagates != f1.light_propagates || f0.solidness != f1.solidness || f0.light_source != f1.light_source) /*|| f0.drawtype != f1.drawtype*/
-			light = modified_light_yes;
-	   if (important)
+	modified_light light = modified_light_no;
+	if (f0.light_propagates != f1.light_propagates || f0.solidness != f1.solidness ||
+			f0.light_source != f1.light_source) /*|| f0.drawtype != f1.drawtype*/
+		light = modified_light_yes;
+	if (important)
 		raiseModified(MOD_STATE_WRITE_NEEDED, light);
-	}
+}
 
-	void MapBlock::raiseModified(u32 mod, modified_light light, bool important)
-	{
-		static const thread_local auto save_changed_block = g_settings->getBool("save_changed_block");
+void MapBlock::raiseModified(u32 mod, modified_light light, bool important)
+{
+	static const thread_local auto save_changed_block =
+			g_settings->getBool("save_changed_block");
 
-/*
+	/*
 		if(mod >= MOD_STATE_WRITE_NEEDED / *&& m_timestamp != BLOCK_TIMESTAMP_UNDEFINED* /) {
 			m_changed_timestamp = (unsigned int)m_parent->time_life;
 		}
-*/		
-		if(mod > m_modified){
-    	    if (save_changed_block || important) // || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED )
+*/
+	if (mod > m_modified) {
+		if (save_changed_block ||
+				important) // || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED )
 			m_modified = mod;
-			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
-				m_disk_timestamp.store(m_timestamp);
-		}
-		if (light == modified_light_yes) {
-			setLightingComplete(0);
+		if (m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
+			m_disk_timestamp.store(m_timestamp);
+	}
+	if (light == modified_light_yes) {
+		setLightingComplete(0);
+	}
+}
+
+void MapBlock::pushElementsToCircuit(Circuit *circuit)
+{
+}
+
+bool MapBlock::analyzeContent()
+{
+	auto lock = try_lock_shared_rec();
+	if (!lock->owns_lock())
+		return false;
+	content_only = data[0].param0;
+	content_only_param1 = data[0].param1;
+	content_only_param2 = data[0].param2;
+	for (int i = 1; i < MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE; ++i) {
+		if (data[i].param0 != content_only || data[i].param1 != content_only_param1 ||
+				data[i].param2 != content_only_param2) {
+			content_only = CONTENT_IGNORE;
+			break;
 		}
 	}
-
-	void MapBlock::pushElementsToCircuit(Circuit *circuit)
-	{
-	}
-
-	bool MapBlock::analyzeContent()
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return false;
-		content_only = data[0].param0;
-		content_only_param1 = data[0].param1;
-		content_only_param2 = data[0].param2;
-		for (int i = 1; i < MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE; ++i) {
-			if (data[i].param0 != content_only || data[i].param1 != content_only_param1 ||
-					data[i].param2 != content_only_param2) {
-				content_only = CONTENT_IGNORE;
-				break;
-			}
-		}
-		return true;
-	}
-
+	return true;
+}
 
 const MapBlock::mesh_type empty_mesh;
 #if CHECK_CLIENT_BUILD()
-	const MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_other)
-	{
-		if (m_lod_mesh[step] || !allow_other)
-			return m_lod_mesh[step];
+const MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_other)
+{
+	if (m_lod_mesh[step] || !allow_other)
+		return m_lod_mesh[step];
 
-		for (int inc = 1; inc < 4; ++inc) {
-			if (step + inc < m_lod_mesh.size() && m_lod_mesh[step + inc])
-				return m_lod_mesh[step + inc];
-			if (step - inc >= 0 && m_lod_mesh[step - inc])
-				return m_lod_mesh[step - inc];
-		}
-		return empty_mesh;
+	for (int inc = 1; inc < 4; ++inc) {
+		if (step + inc < m_lod_mesh.size() && m_lod_mesh[step + inc])
+			return m_lod_mesh[step + inc];
+		if (step - inc >= 0 && m_lod_mesh[step - inc])
+			return m_lod_mesh[step - inc];
 	}
-
-	const MapBlock::mesh_type MapBlock::getFarMesh(block_step_t step)
-	{
-		return m_far_mesh[step];
-	}
-
-	void MapBlock::setLodMesh(const MapBlock::mesh_type &rmesh)
-	{
-		const auto ms = rmesh->lod_step;
-		if (auto mesh = std::move(m_lod_mesh[ms]))
-			delete_mesh = std::move(mesh);
-		m_lod_mesh[ms] = rmesh;
-	}
-
-	void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step)
-	{
-		if (auto mesh = std::move(m_far_mesh[step])) {
-			delete_mesh = std::move(mesh);
-		}
-		m_far_mesh[step] = rmesh;
-	}
-
-/*
-void MapBlock::delMesh() {
-	if (mesh16) {mesh16 = nullptr;}
-	if (mesh8)  {mesh8  = nullptr;}
-	if (mesh4)  {mesh4  = nullptr;}
-	if (mesh2)  {mesh2  = nullptr;}
-	if (mesh)   {mesh   = nullptr;}
+	return empty_mesh;
 }
-*/
+
+const MapBlock::mesh_type MapBlock::getFarMesh(block_step_t step)
+{
+	return m_far_mesh[step];
+}
+
+void MapBlock::setLodMesh(const MapBlock::mesh_type &rmesh)
+{
+	const auto ms = rmesh->lod_step;
+	if (auto mesh = std::move(m_lod_mesh[ms]))
+		delete_mesh = std::move(mesh);
+	m_lod_mesh[ms] = rmesh;
+}
+
+void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step)
+{
+	if (auto mesh = std::move(m_far_mesh[step])) {
+		delete_mesh = std::move(mesh);
+	}
+	m_far_mesh[step] = rmesh;
+}
+
+
 #endif
 
+void MapBlock::incrementUsageTimer(float dtime)
+{
+	std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
+	m_usage_timer += dtime * usage_timer_multiplier;
+}
+
+// ===
 
 bool MapBlock::storeActiveObject(u16 id)
 {
@@ -992,40 +997,6 @@ void MapBlock::deSerialize_pre22(std::istream &is, u8 version, bool disk)
 		}
 	}
 }
-
-void MapBlock::incrementUsageTimer(float dtime)
-{
-	std::lock_guard<std::mutex> lock(m_usage_timer_mutex);
-	m_usage_timer += dtime * usage_timer_multiplier;
-}
-
-/* here for errorstream
-	void MapBlock::setTimestamp(u32 time)
-	{
-//infostream<<"setTimestamp = "<< time <<std::endl;
-		m_timestamp = time;
-		raiseModified(MOD_STATE_WRITE_AT_UNLOAD, "setTimestamp");
-	}
-
-	void MapBlock::setTimestampNoChangedFlag(u32 time)
-	{
-//infostream<<"setTimestampNoChangedFlag = "<< time <<std::endl;
-		m_timestamp = time;
-	}
-
-	void MapBlock::raiseModified(u32 mod)
-	{
-		if(mod >= m_modified){
-			m_modified = mod;
-			if(m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
-				m_disk_timestamp = m_timestamp;
-			if(m_modified >= MOD_STATE_WRITE_NEEDED) {
-//infostream<<"raiseModified = "<< m_changed_timestamp << "=> "<<m_timestamp<<std::endl;
-				m_changed_timestamp = m_timestamp;
-			}
-		}
-	}
-*/
 
 /*
 	Get a quick string to describe what a block actually contains

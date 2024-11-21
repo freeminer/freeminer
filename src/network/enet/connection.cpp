@@ -241,6 +241,7 @@ int ConnectionEnet::receive()
 
 			/* Reset the peer's client information. */
 			delete (u16 *)event.peer->data;
+			event.peer->data = nullptr;
 
 			break;
 		case ENET_EVENT_TYPE_NONE:
