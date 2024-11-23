@@ -70,9 +70,9 @@ private:
 	#define SCRIPTAPI_LOCK_CHECK while(0)
 #endif
 
-#define TRY_SCRIPTAPI_PRECHECKHEADER                                           \
+#define TRY_SCRIPTAPI_PRECHECKHEADER(RET)                                           \
 		const std::unique_lock<std::recursive_mutex> scriptlock(this->m_luastackmutex, std::try_to_lock); \
-		if (!scriptlock.owns_lock()) { /* DUMP("skiplock", scriptlock); */ return {}; } \
+		if (!scriptlock.owns_lock()) { /* DUMP("skiplock", scriptlock); */ return RET; } \
 		SCRIPTAPI_LOCK_CHECK;                                                  \
 		realityCheck();                                                        \
 		lua_State *L = getStack();                                             \

@@ -226,7 +226,7 @@ void ScriptApiEntity::luaentity_GetProperties(u16 id,
 bool ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	const collisionMoveResult *moveresult)
 {
-	TRY_SCRIPTAPI_PRECHECKHEADER
+	TRY_SCRIPTAPI_PRECHECKHEADER({})
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 

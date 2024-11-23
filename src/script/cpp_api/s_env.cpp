@@ -139,7 +139,7 @@ void ScriptApiEnv::environment_OnGenerated(v3s16 minp, v3s16 maxp,
 
 void ScriptApiEnv::environment_Step(float dtime)
 {
-	TRY_SCRIPTAPI_PRECHECKHEADER
+	TRY_SCRIPTAPI_PRECHECKHEADER()
 
 	// Get core.registered_globalsteps
 	lua_getglobal(L, "core");
