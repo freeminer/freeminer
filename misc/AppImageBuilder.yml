@@ -3,7 +3,7 @@ version: 1
 AppDir:
   path: AppDir
   app_info:
-    id: net.minetest.minetest
+    id: org.freeminer.freeminer
     name: freeminer
     icon: freeminer
     version: !ENV ${VERSION}
@@ -57,4 +57,4 @@ script: |
     mkdir -p AppDir/usr/share/freeminer/misc
     cp AppDir/usr/share/icons/hicolor/128x128/apps/freeminer.png AppDir/usr/share/freeminer/misc/freeminer-xorg-icon-128.png
     # Validation issues
-    sed -i '/PrefersNonDefaultGPU/d' AppDir/usr/share/applications/net.minetest.minetest.desktop
+    sed -i '/PrefersNonDefaultGPU/d' AppDir/usr/share/applications/org.freeminer.freeminer.desktop

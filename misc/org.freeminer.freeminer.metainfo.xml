@@ -100,7 +100,7 @@
         </ul>
     </description>
 
-    <launchable type="desktop-id">net.minetest.minetest.desktop</launchable>
+    <launchable type="desktop-id">org.freeminer.freeminer.desktop</launchable>
     <screenshots>
         <screenshot type="default">
             <image>https://www.minetest.net/media/gallery/1.jpg</image>

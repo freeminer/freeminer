@@ -18,7 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-package net.minetest.minetest;
+package org.freeminer.freeminer;
 
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
@@ -39,7 +39,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
 
-import static net.minetest.minetest.UnzipService.*;
+import static org.freeminer.freeminer.UnzipService.*;
 
 public class MainActivity extends AppCompatActivity {
 	public static final String NOTIFICATION_CHANNEL_ID = "Minetest channel";
