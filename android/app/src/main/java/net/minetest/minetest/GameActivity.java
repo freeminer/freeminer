@@ -63,7 +63,7 @@ public class GameActivity extends SDLActivity {
 	@Override
 	protected String[] getLibraries() {
 		return new String[] {
-			"luanti"
+			"freeminer"
 		};
 	}
 
