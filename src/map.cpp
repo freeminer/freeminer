@@ -841,7 +841,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 	for(s32 x=p_min.X; x<=p_max.X; x++)
 	{
 		u8 flags = 0;
-		MapBlock *block;
+		MapBlockPtr block;
 		v3s16 p(x,y,z);
 		if (m_loaded_blocks.count(p) > 0)
 			continue;
@@ -850,7 +850,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 		{
 			TimeTaker timer2("emerge load");
 
-			block = m_map->getBlockNoCreateNoEx(p, false, true);
+			block = m_map->getBlock(p, false, true);
 			if (!block)
 				block_data_inexistent = true;
 			else
@@ -861,9 +861,11 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 		{
 
 			if (load_if_inexistent && !blockpos_over_max_limit(p)) {
-				block = m_map->emergeBlock(p, true);
+				block = m_map->emergeBlockP(p, true);
+			   if (block)
 				block->copyTo(*this);
-			} else {
+			} 
+			if (!block) {
 				flags |= VMANIP_BLOCK_DATA_INEXIST;
 
 				// Mark area inexistent

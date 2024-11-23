@@ -226,11 +226,7 @@ void ScriptApiEntity::luaentity_GetProperties(u16 id,
 bool ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	const collisionMoveResult *moveresult)
 {
-	/*RecursiveMutexAutoLock testscriptlock(m_luastackmutex, std::try_to_lock);
-	if (!testscriptlock.owns_lock())
-		return true;*/
-
-	SCRIPTAPI_PRECHECKHEADER
+	TRY_SCRIPTAPI_PRECHECKHEADER
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
