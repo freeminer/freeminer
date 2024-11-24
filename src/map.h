@@ -306,8 +306,6 @@ protected:
 	u32 m_blocks_save_last{};
 
 public:
-	std::atomic_uint time_life{};
-
 	inline MapNode getNodeNoEx(const v3pos_t &p) override { return getNodeTry(p); };
 	inline MapNode getNodeNoExNoEmerge(const v3pos_t &p) override
 	{

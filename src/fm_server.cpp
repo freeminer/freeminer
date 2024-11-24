@@ -349,7 +349,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 
 	int ret = 0;
 
-	m_env->getMap().time_life = m_uptime_counter->get() + m_env->m_game_time_start;
+	m_env->getServerMap().time_life = m_uptime_counter->get() + m_env->m_game_time_start;
 
 	/*
 		float dtime;

@@ -41,7 +41,7 @@ public:
 	{
 		wait();
 #if defined(DUMP_STREAM)
-		DUMP("Async steps end", (long)this, runs, skips);
+		DUMP("Async steps end", (long long)this, runs, skips);
 #endif
 	}
 	int wait(const int ms = 300000, const int step_ms = 100)

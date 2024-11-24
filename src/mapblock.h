@@ -564,34 +564,18 @@ public:
 
 	std::atomic_bool m_lighting_expired {false};
 
-	inline MapNode getNodeTry(const v3pos_t &p)
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return ignoreNode;
-		return getNodeNoLock(p);
-	}
+	MapNode getNodeTry(const v3pos_t &p);
 
-	inline MapNode& getNodeRef(const v3pos_t &p)
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return ignoreNode;
-		return getNodeNoLock(p);
-	}
+	MapNode &getNodeRef(const v3pos_t &p);
 
 	MapNode &getNodeNoLock(v3pos_t p)
 	{
 		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
 
-	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
-	{
-		data[p.Z * zstride + p.Y * ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE, important);
-	}
+	void setNodeNoLock(v3pos_t p, MapNode n, bool important = false);
 
-//===
+	//===
 
 	bool storeActiveObject(u16 id);
 	// clearObject and return removed objects count

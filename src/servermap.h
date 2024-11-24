@@ -113,6 +113,8 @@ public:
 	s16 findGroundLevel(v2pos_t p2d, bool cacheBlocks);
 	MapBlockPtr emergeBlockP(v3bpos_t p, bool create_blank=false) override;
 
+	static std::atomic_uint time_life;
+
 	// == end of freeminer
 
 

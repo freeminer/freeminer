@@ -30,7 +30,6 @@ Map::Map(IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_nodedef(gamedef->ndef())
 {
-	time_life = 0;
 	getBlockCacheFlush();
 }
 

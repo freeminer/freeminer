@@ -47,6 +47,8 @@ thread_local v3bpos_t block_cache_p;
 }
 #endif
 
+std::atomic_uint ServerMap::time_life {};
+
 // TODO: REMOVE THIS func and use Map::getBlock
 MapBlockPtr Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 {

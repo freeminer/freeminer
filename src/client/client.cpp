@@ -1633,7 +1633,7 @@ void Client::sendReady()
 void Client::sendPlayerPos()
 {
 	LocalPlayer *player = m_env.getLocalPlayer();
-	if (!player || !player->getCAO())
+	if (!player)
 		return;
 
 	// Save bandwidth by only updating position when
