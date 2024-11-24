@@ -4,178 +4,6 @@ INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
 
-
-# === fm ===
-
-INCLUDE(CheckCXXSourceRuns)
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-#set(CMAKE_CXX_STANDARD 20)
-
-set(HAVE_SHARED_MUTEX 1)
-set(HAVE_THREAD_LOCAL 1)
-
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-	set(HAVE_FUTURE 1)
-
-set(CMAKE_REQUIRED_FLAGS "")
-
-option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-
-if(ENABLE_THREADS)
-	set(ENABLE_THREADS 1)
-else()
-	set(ENABLE_THREADS 0)
-endif()
-
-
-option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
-if(MINETEST_PROTO)
-	set(MINETEST_TRANSPORT 1 CACHE BOOL "")
-	message(STATUS "Using minetest compatible protocol (some features missing)")
-endif()
-if (MINETEST_TRANSPORT)
-	message(STATUS "Using minetest compatible transport (slow)")
-endif()
-
-#
-# Set some optimizations and tweaks
-#
-
-include(CheckCXXCompilerFlag)
-
-if(STATIC_BUILD)
-	set(STATIC_BUILD 1)
-else()
-	set(STATIC_BUILD 0)
-endif()
-
-if(NOT MSVC)
-        # FM: TODO: REMOVE:
-	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
-
-	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
-		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
-	        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
-		endif ()
-	endif ()
-
-	if(SANITIZE_ADDRESS)
-                message(STATUS "Build with sanitize=address")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-	if(SANITIZE_THREAD)
-                message(STATUS "Build with sanitize=thread")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
-		endif()
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-	if(SANITIZE_MEMORY)
-                message(STATUS "Build with sanitize=memory")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-	if(SANITIZE_UNDEFINED)
-                message(STATUS "Build with sanitize=undefined ")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-
-	if (NOT (SANITIZE_ADDRESS OR SANITIZE_THREAD OR SANITIZE_MEMORY OR SANITIZE_UNDEFINED))
-		option(ENABLE_TCMALLOC "Enable tcmalloc" 1)
-	endif()
-
-	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
-		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
-			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-		endif()
-
-		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
-		else()
-			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
-		endif()
-
-		if(ENABLE_GPERF)
-			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
-		endif()
-
-		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
-			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-		endif()
-
-		if (PROFILER_LIBRARY)
-			# set(PLATFORM_LIBS ${PLATFORM_LIBS} -Wl,--no-as-needed ${PROFILER_LIBRARY} -Wl,--as-needed)
-			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY})
-		endif()
-
-		if (TCMALLOC_LIBRARY)
-			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
-			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-		endif()
-
-		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
-	endif()
-
-    # too noisy
-	option(ENABLE_UNWIND "Enable unwind" 0)
-	if(ENABLE_UNWIND)
-
-	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
-
-	find_library(UNWIND_LIBRARY NAMES unwind)
-
-	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
-
-	if(UNWIND_LIBRARY)
-        CHECK_CXX_SOURCE_RUNS("
-       #include <execinfo.h> // for backtrace
-       int main(int argc, char *argv[]) {
-            void *callstack[128];
-            const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
-            char buf[1024];
-            int nFrames = backtrace(callstack, nMaxFrames);
-            return 0;
-       }
-       "
-        USE_UNWIND)
-        if(NOT USE_UNWIND)
-            set(USE_UNWIND 0)
-        endif()
-        # set(USE_UNWIND 1)
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
-		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
-	endif()
-
-	endif()
-
-	if(CMAKE_SYSTEM_NAME MATCHES "(BSD|DragonFly)") # Darwin|
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} execinfo)
-	endif()
-
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
-endif()
-
-# === fm === ^^^
-
-
-
-
 check_type_size(int SIZEOF_INT BUILTIN_TYPES_ONLY LANGUAGE CXX)
 if(SIZEOF_INT LESS 4)
 	message(FATAL_ERROR "${PROJECT_NAME_CAPITALIZED} will not work with int less than 32 bits wide.")
@@ -404,7 +232,7 @@ if(ENABLE_LEVELDB)
 	message (STATUS "Leveldb library: ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
 
 	if (NOT SNAPPY_INCLUDE_DIR OR NOT SNAPPY_LIBRARY)
-		find_path(SNAPPY_INCLUDE_DIR snappy.h ${PROJECT_SOURCE_DIR}/external/snappy NO_DEFAULT_PATH)
+		find_path(SNAPPY_INCLUDE_DIR snappy.h PATHS ${PROJECT_SOURCE_DIR}/external/snappy NO_DEFAULT_PATH)
 	  if (SNAPPY_INCLUDE_DIR)
 		# Snappy have no cmake by default,
 		# git clone --recursive --depth 1 https://github.com/google/snappy src/external/snappy
@@ -423,8 +251,8 @@ if(ENABLE_LEVELDB)
 	endif()
 
 	if (NOT LEVELDB_INCLUDE_DIR OR NOT LEVELDB_LIBRARY)
-		find_path(LEVELDB_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
-	  if (LEVELDB_INCLUDE_DIR)
+		find_path(LEVELDB_INCLUDE_DIR NAMES leveldb/db.h PATHS ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
+		if (LEVELDB_INCLUDE_DIR)
 		# bad try direct make build 
 		#find_path(LEVELDB_MAKEFILE_DIR Makefile ${PROJECT_SOURCE_DIR}/external/leveldb NO_DEFAULT_PATH)
 		#if (LEVELDB_MAKEFILE_DIR)
