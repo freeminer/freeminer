@@ -50,7 +50,7 @@ public:
 	leveldb::WriteOptions write_options;
 	bool process_status(const leveldb::Status &status, bool reopen = false);
 #else
-	char *db;
+	char *db {};
 #endif
 	unsigned int repairs {};
 	std::string error;

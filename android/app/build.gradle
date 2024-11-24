@@ -58,6 +58,7 @@ android {
 task prepareAssets() {
 	def assetsFolder = "build/assets"
 	def projRoot = rootDir.parent
+	def gameToCopy = "default"
 
 	// See issue #4638
 	def unsupportedLanguages = new File("${projRoot}/src/unsupported_language_list.txt").text.readLines()
@@ -67,7 +68,7 @@ task prepareAssets() {
 	}
 	doLast {
 		copy {
-			from "${projRoot}/minetest.conf.example", "${projRoot}/README.md" into assetsFolder
+			from "${projRoot}/freeminer.conf.example", "${projRoot}/README.md" into assetsFolder
 		}
 		copy {
 			from "${projRoot}/doc/lgpl-2.1.txt" into assetsFolder
@@ -83,6 +84,9 @@ task prepareAssets() {
 		}
 		copy {
 			from "${projRoot}/fonts" include "*.ttf" into "${assetsFolder}/fonts"
+		}
+		copy {
+			from "${projRoot}/games/${gameToCopy}" into "${assetsFolder}/games/${gameToCopy}"
 		}
 		copy {
 			from "${projRoot}/textures/base/pack" into "${assetsFolder}/textures/base/pack"

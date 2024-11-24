@@ -67,7 +67,9 @@ set(FETCH_TRACY_GIT_TAG "master" CACHE STRING
 	"Git tag for fetching Tracy client. Match with your server (gui) version")
 
 set(DEFAULT_RUN_IN_PLACE FALSE)
-set(DEFAULT_RUN_IN_PLACE TRUE)
+if(NOT ANDROID)
+	set(DEFAULT_RUN_IN_PLACE TRUE)
+endif()
 if(WIN32)
 	set(DEFAULT_RUN_IN_PLACE TRUE)
 endif()
