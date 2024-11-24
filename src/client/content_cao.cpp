@@ -839,7 +839,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 	updateAnimation();
 	updateBones(.0f);
 	updateAttachments();
-
 	setNodeLight(m_last_light);
 	updateMeshCulling();
 

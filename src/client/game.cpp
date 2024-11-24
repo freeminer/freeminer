@@ -2590,7 +2590,7 @@ void Game::openInventory()
 	 */
 
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
-	if (!player || !player->getCAO())
+	if (!player)
 		return;
 
 	infostream << "Game: Launching inventory" << std::endl;

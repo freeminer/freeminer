@@ -137,7 +137,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("reconnects", win ? "1" : "10"); // TODO: wix windows
 
 	// Map generation
-	settings->setDefault("mg_name", "indev"); // "v6"
+	//settings->setDefault("mg_name", "indev"); // "v6"
 	//settings->setDefault("mg_flags", "trees, caves, dungeons"); // "dungeons"
 	//settings->setDefault("mgv6_spflags", "jungles, biome_blend, snowbiomes"); // "jungles, snowbiomes"
 	settings->setDefault("mg_math", ""); // configuration in json struct
