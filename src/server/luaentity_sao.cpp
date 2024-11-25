@@ -241,7 +241,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
        try {
 
 	// PROTOCOL_VERSION >= 37

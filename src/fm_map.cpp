@@ -64,7 +64,7 @@ MapBlockPtr Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 
 	if (!nocache) {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-		auto lock = maybe_shared_lock(m_block_cache_mutex, try_to_lock);
+		const auto lock = maybe_shared_lock(m_block_cache_mutex, try_to_lock);
 		if (lock.owns_lock())
 #endif
 			if (block_cache && p == block_cache_p) {
@@ -77,7 +77,7 @@ MapBlockPtr Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 
 	MapBlockPtr block;
 	{
-		auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
+		const auto lock = trylock ? m_blocks.try_lock_shared_rec() : m_blocks.lock_shared_rec();
 		if (!lock->owns_lock())
 			return nullptr;
 		const auto &n = m_blocks.find(p);
@@ -88,7 +88,7 @@ MapBlockPtr Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
 
 	if (!nocache) {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-		auto lock = unique_lock(m_block_cache_mutex, try_to_lock);
+		const auto lock = unique_lock(m_block_cache_mutex, try_to_lock);
 		if (lock.owns_lock())
 #endif
 		{
@@ -108,7 +108,7 @@ MapBlock *Map::getBlockNoCreateNoEx(v3pos_t p, bool trylock, bool nocache)
 void Map::getBlockCacheFlush()
 {
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-	auto lock = unique_lock(m_block_cache_mutex);
+	const auto lock = unique_lock(m_block_cache_mutex);
 #endif
 	block_cache = nullptr;
 }
@@ -144,7 +144,7 @@ bool Map::insertBlock(MapBlockPtr block)
 
 	m_db_miss.erase(block_p);
 
-	auto lock = m_blocks.lock_unique_rec();
+	const auto lock = m_blocks.lock_unique_rec();
 
 	auto block2 = getBlock(block_p, false, true);
 	if (block2) {
@@ -182,7 +182,7 @@ void Map::eraseBlock(const MapBlockPtr block)
 	(*m_blocks_delete)[block] = 1;
 	m_blocks.erase(block_p);
 #if ENABLE_THREADS && !HAVE_THREAD_LOCAL
-	auto lock = unique_lock(m_block_cache_mutex);
+	const auto lock = unique_lock(m_block_cache_mutex);
 #endif
 	block_cache = nullptr;
 }
@@ -413,7 +413,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 	std::vector<MapBlockPtr> blocks_delete;
 	int save_started = 0;
 	{
-		auto lock = m_blocks.try_lock_shared_rec();
+		const auto lock = m_blocks.try_lock_shared_rec();
 		if (!lock->owns_lock()) {
 			return m_blocks_update_last;
 		}
@@ -456,7 +456,7 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 				}
 
 			{
-				auto lock = block->try_lock_unique_rec();
+				const auto lock = block->try_lock_unique_rec();
 				if (!lock->owns_lock()) {
 					continue;
 				}
@@ -797,7 +797,7 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 		// Only fetch a new block if the block position has changed
 		if (block == NULL || blockpos != blockpos_last) {
 #if !ENABLE_THREADS
-			auto lock = m_nothread_locker.try_lock_shared_rec();
+			const auto lock = m_nothread_locker.try_lock_shared_rec();
 			if (!lock->owns_lock())
 				continue;
 #endif
@@ -810,7 +810,7 @@ void ServerMap::spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
 			blockchangecount++;
 		}
 
-		// auto lock = block->try_lock_unique_rec();
+		// const auto lock = block->try_lock_unique_rec();
 		// if (!lock->owns_lock())
 		//	continue;
 
@@ -975,7 +975,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 					i = a_blocks.erase(i);
 					goto ablocks_end;
 				}
-				auto lock = block->try_lock_unique_rec();
+				const auto lock = block->try_lock_unique_rec();
 				if (!lock->owns_lock()) {
 					break; // may cause dark areas
 				}
@@ -1147,7 +1147,7 @@ bool ServerMap::propagateSunlight(
 {
 	MapBlock *block = getBlockNoCreateNoEx(pos);
 
-	// auto lock = block->lock_unique_rec(); //no: in block_below_is_valid getnode outside
+	// const auto lock = block->lock_unique_rec(); //no: in block_below_is_valid getnode outside
 	// block
 
 	auto *nodemgr = m_gamedef->ndef();
@@ -1588,7 +1588,7 @@ s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool 
 
 				//modprofiler.add(block->getModifiedReasonString(), 1);
 
-				auto lock = breakable ? block->try_lock_unique_rec()
+				const auto lock = breakable ? block->try_lock_unique_rec()
 									  : block->lock_unique_rec();
 				if (!lock->owns_lock())
 					continue;

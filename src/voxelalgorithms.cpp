@@ -285,7 +285,7 @@ void unspread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				neighbor_block = current.block;
 			}
 
-			auto lock = neighbor_block->try_lock_unique_rec();
+			const auto lock = neighbor_block->try_lock_unique_rec();
 			if (!lock->owns_lock()) {
 				continue; // may cause dark areas
 			}
@@ -378,7 +378,7 @@ void spread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				neighbor_block = current.block;
 			}
 
-			auto lock = neighbor_block->try_lock_unique_rec();
+			const auto lock = neighbor_block->try_lock_unique_rec();
 			if (!lock->owns_lock()) {
 				continue; // may cause dark areas
 			}
@@ -922,7 +922,7 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 		return false;
 	}
 
-	auto lock = block->try_lock_unique_rec();
+	const auto lock = block->try_lock_unique_rec();
 	if (!lock->owns_lock()) {
 		return false; // may cause dark areas
 	}
@@ -1252,7 +1252,7 @@ bool repair_block_light(Map *map, MapBlock *block,
 
   {
 
-	auto lock = block->try_lock_unique_rec();
+	const auto lock = block->try_lock_unique_rec();
 	if (!lock->owns_lock()) {
 		return true; // may cause dark areas
 	}
@@ -1278,7 +1278,7 @@ bool repair_block_light(Map *map, MapBlock *block,
 
 
   {
-	auto lock = block->lock_shared_rec();
+	const auto lock = block->lock_shared_rec();
 
 	// --- STEP 2: Get nodes from borders to unlight
 

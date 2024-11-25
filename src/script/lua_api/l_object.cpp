@@ -806,7 +806,7 @@ int ObjectRef::l_set_properties(lua_State *L)
 	if (sao == nullptr)
 		return 0;
 
-	auto lock = sao->lock_unique_rec();
+	const auto lock = sao->lock_unique_rec();
 	
 	auto *prop = sao->accessObjectProperties();
 	if (prop == nullptr)
@@ -918,7 +918,7 @@ int ObjectRef::l_is_player(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkObject<ObjectRef>(L, 1);
-	RemotePlayer *player = getplayer(ref);
+	RemotePlayer *player = ref ? getplayer(ref) : nullptr;
 	lua_pushboolean(L, (player != nullptr));
 	return 1;
 }

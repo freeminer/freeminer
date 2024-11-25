@@ -288,7 +288,7 @@ public:
 		if (!*valid_position)
 			return ignoreNode;
 
-		auto lock = lock_shared_rec();
+		const auto lock = lock_shared_rec();
 		return data[p.Z * zstride + p.Y * ystride + p.X];
 	}
 
@@ -323,7 +323,7 @@ public:
 
 	inline MapNode getNodeNoCheck(s16 x, s16 y, s16 z)
 	{
-		auto lock = lock_shared_rec();
+		const auto lock = lock_shared_rec();
 		return data[z * zstride + y * ystride + x];
 	}
 
@@ -334,7 +334,7 @@ public:
 
 	inline void setNodeNoCheck(s16 x, s16 y, s16 z, MapNode n)
 	{
-        auto lock = lock_unique_rec();
+        const auto lock = lock_unique_rec();
 
 		data[z * zstride + y * ystride + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE);
@@ -342,7 +342,7 @@ public:
 
 	inline void setNodeNoCheck(v3pos_t p, MapNode n, bool important = false)
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 
 		data[p.Z * zstride + p.Y * ystride + p.X] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE, important);

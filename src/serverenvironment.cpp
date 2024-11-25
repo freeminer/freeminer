@@ -632,7 +632,7 @@ ServerEnvironment::~ServerEnvironment()
 
 	m_abms.clear();
 	{
-		auto lock = m_players.lock_shared_rec();
+		const auto lock = m_players.lock_shared_rec();
 
 	// Deallocate players
 	for (RemotePlayer *m_player : m_players) {
@@ -657,7 +657,7 @@ ServerMap & ServerEnvironment::getServerMap()
 
 RemotePlayer *ServerEnvironment::getPlayer(const session_t peer_id)
 {
-	auto lock = m_players.lock_shared_rec();
+	const auto lock = m_players.lock_shared_rec();
 	for (RemotePlayer *player : m_players) {
 		if (player->getPeerId() == peer_id)
 			return player;
@@ -667,7 +667,7 @@ RemotePlayer *ServerEnvironment::getPlayer(const session_t peer_id)
 
 RemotePlayer *ServerEnvironment::getPlayer(const std::string &name, bool match_invalid_peer)
 {
-	auto lock = m_players.lock_shared_rec();
+	const auto lock = m_players.lock_shared_rec();
 	for (RemotePlayer *player : m_players) {
 		if (player->getName() != name)
 			continue;
@@ -697,7 +697,7 @@ void ServerEnvironment::addPlayer(RemotePlayer *player)
 
 void ServerEnvironment::removePlayer(RemotePlayer *player)
 {
-	auto lock = m_players.lock_unique_rec();
+	const auto lock = m_players.lock_unique_rec();
 
 	for (std::vector<RemotePlayer *>::iterator it = m_players.begin();
 		it != m_players.end(); ++it) {
@@ -1560,7 +1560,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 #if !NDEBUG
 		ScopeProfiler sp(g_profiler, "ServerEnv: move players", SPT_AVG);
 #endif
-		auto lock = m_players.lock_shared_rec();
+		const auto lock = m_players.lock_shared_rec();
 		for (RemotePlayer *player : m_players) {
 			// Ignore disconnected players
 			if (!player || player->getPeerId() == PEER_ID_INEXISTENT)
@@ -1612,7 +1612,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 /* TODO use ao manager
 		if (!m_blocks_added_last && g_settings->getBool("enable_force_load")) {
 			//TimeTaker timer_s2("force load");
-			auto lock = m_active_objects.try_lock_shared_rec();
+			const auto lock = m_active_objects.try_lock_shared_rec();
 			if (lock->owns_lock())
 			for(auto
 				i = m_active_objects.begin();
@@ -1735,7 +1735,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 */
 		u32 n = 0, calls = 0;
 		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
-		auto lock = m_active_blocks.m_list.lock_shared_rec();
+		const auto lock = m_active_blocks.m_list.lock_shared_rec();
 
 		for (const auto &p: m_active_blocks.m_list) {
 			if (n++ < m_active_block_timer_last)
@@ -1803,7 +1803,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 		std::vector<v3s16> output(m_active_blocks.m_abm_list.size());
 
        {
-		auto lock = m_active_blocks.m_list.lock_shared_rec();
+		const auto lock = m_active_blocks.m_list.lock_shared_rec();
 		// Shuffle the active blocks so that each block gets an equal chance
 		// of having its ABMs run.
 		std::copy(m_active_blocks.m_abm_list.begin(), m_active_blocks.m_abm_list.end(), output.begin());
@@ -1954,7 +1954,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 	std::vector<RemotePlayer*> send_inventory;
 
    {
-	auto lock = m_players.try_lock_shared_rec();
+	const auto lock = m_players.try_lock_shared_rec();
 	if (lock->owns_lock())
 
 	// Send outdated player inventories
@@ -2077,7 +2077,7 @@ void ServerEnvironment::getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 	if (!playersao->isEffectivelyObservedBy(playersao->getPlayer()->getName()))
 		throw ModError("Player does not observe itself");
 
-	auto lock = current_objects.try_lock_shared_rec();
+	const auto lock = current_objects.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
 
@@ -2303,7 +2303,7 @@ u16 ServerEnvironment::addActiveObjectRaw(std::shared_ptr<ServerActiveObject> ob
 		if (block) {
 			block->m_static_objects.setActive(object->getId(), s_obj);
 			{
-			auto lock = object->lock_unique_rec();
+			const auto lock = object->lock_unique_rec();
 			object->m_static_exists = true;
 			object->m_static_block = blockpos;
 			}
@@ -2548,7 +2548,7 @@ void ServerEnvironment::deactivateFarObjects(const bool _force_delete)
 
 		v3pos_t static_block;
 		{
-			auto lock = obj->try_lock_shared();
+			const auto lock = obj->try_lock_shared();
 			if (!lock->owns_lock())
 				return false;
 			static_block = obj->m_static_block;

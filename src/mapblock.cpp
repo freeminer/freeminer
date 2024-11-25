@@ -58,7 +58,7 @@ MapNode MapBlock::getNodeNoEx(v3pos_t p)
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
 	return getNodeNoLock(p);
 }
 
@@ -72,7 +72,7 @@ void MapBlock::setNode(const v3pos_t &p, const MapNode &n, bool important)
 	auto index = p.Z * zstride + p.Y * ystride + p.X;
 	const auto &f1 = nodedef->get(n.getContent());
 
-	auto lock = lock_unique_rec();
+	const auto lock = lock_unique_rec();
 
 	const auto &f0 = nodedef->get(data[index].getContent());
 
@@ -114,7 +114,7 @@ void MapBlock::pushElementsToCircuit(Circuit *circuit)
 
 bool MapBlock::analyzeContent()
 {
-	auto lock = try_lock_shared_rec();
+	const auto lock = try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return false;
 	content_only = data[0].param0;
@@ -183,7 +183,7 @@ void MapBlock::setNodeNoLock(v3pos_t p, MapNode n, bool important)
 
 MapNode &MapBlock::getNodeRef(const v3pos_t &p)
 {
-	auto lock = try_lock_shared_rec();
+	const auto lock = try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return ignoreNode;
 	return getNodeNoLock(p);
@@ -191,7 +191,7 @@ MapNode &MapBlock::getNodeRef(const v3pos_t &p)
 
 MapNode MapBlock::getNodeTry(const v3pos_t &p)
 {
-	auto lock = try_lock_shared_rec();
+	const auto lock = try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return ignoreNode;
 	return getNodeNoLock(p);
@@ -507,7 +507,7 @@ void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int
 		infostream<<" serialize not generated block"<<std::endl;
 	}
 
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
 
 	writeU8(os, flags);
 	if (version >= 27) {
@@ -611,7 +611,7 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os)
 
 bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 {
-	auto lock = lock_unique_rec();
+	const auto lock = lock_unique_rec();
 	if(!ser_ver_supported(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 

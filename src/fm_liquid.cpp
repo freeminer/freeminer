@@ -92,7 +92,7 @@ v3pos_t ServerMap::transforming_liquid_pop()
 	m_transforming_liquid.pop_front();
 	return front;
 
-	// auto lock = m_transforming_liquid.lock_unique_rec();
+	// const auto lock = m_transforming_liquid.lock_unique_rec();
 	// auto it = m_transforming_liquid.begin();
 	// auto value = it->first;
 	// m_transforming_liquid.erase(it);
@@ -931,7 +931,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 	{
 		// TimeTaker timer13("transformLiquidsReal() reflow");
-		// auto lock = m_transforming_liquid.lock_unique_rec();
+		// const auto lock = m_transforming_liquid.lock_unique_rec();
 		//std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
 
 		// m_transforming_liquid.insert(must_reflow.begin(), must_reflow.end());

@@ -35,7 +35,7 @@ Map::Map(IGameDef *gamedef):
 
 Map::~Map()
 {
-	auto lock = m_blocks.lock_unique_rec();
+	const auto lock = m_blocks.lock_unique_rec();
 /*
 	for (auto & ir : m_blocks_delete_1)
 		delete ir.first;

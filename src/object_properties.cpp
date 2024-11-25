@@ -128,7 +128,7 @@ bool ObjectProperties::validate()
 
 void ObjectProperties::serialize(std::ostream &os) const
 {
-	// fmtodo: auto lock = lock_shared();
+	// fmtodo: const auto lock = lock_shared();
 
 	writeU8(os, 4); // PROTOCOL_VERSION >= 37
 	writeU16(os, hp_max);
@@ -192,7 +192,7 @@ void ObjectProperties::serialize(std::ostream &os) const
 
 void ObjectProperties::deSerialize(std::istream &is)
 {
-	// fmtodo: auto lock = lock_unique();
+	// fmtodo: const auto lock = lock_unique();
 
 	int version = readU8(is);
 	if (version != 4)

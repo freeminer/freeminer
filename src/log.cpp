@@ -376,6 +376,6 @@ void StreamProxy::fix_stream_state(std::ostream &os)
 
 std::mutex localtime_mutex;
 tm * localtime_safe(time_t * t) {
-	auto lock = std::unique_lock<std::mutex>(localtime_mutex);
+	const auto lock = std::unique_lock<std::mutex>(localtime_mutex);
 	return localtime(t);
 }

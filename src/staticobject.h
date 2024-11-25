@@ -36,7 +36,7 @@ public:
 	*/
 	void insert(u16 id, const StaticObject &obj)
 	{
-		auto lock = m_active.lock_unique_rec();
+		const auto lock = m_active.lock_unique_rec();
 		if (id == 0) {
 			m_stored.push_back(obj);
 		} else {
@@ -54,7 +54,7 @@ public:
 	{
 		if (!id)
 			return;
-		auto lock = m_active.lock_shared_rec();
+		const auto lock = m_active.lock_shared_rec();
 		if (m_active.find(id) == m_active.end()) {
 			verbosestream << "StaticObjectList::remove(): id=" << id << " not found"
 						  << std::endl;

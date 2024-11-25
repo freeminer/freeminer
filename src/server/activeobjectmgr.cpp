@@ -32,7 +32,7 @@ void ActiveObjectMgr::clearIf(const std::function<bool(const ServerActiveObjectP
 
 	{
 		// bad copy: avoid deadlocks with locks in cb
-		auto lock = m_active_objects.try_lock_shared_rec();
+		const auto lock = m_active_objects.try_lock_shared_rec();
 		if (!lock->owns_lock())
 			return;
 		active_objects = m_active_objects;
@@ -49,7 +49,7 @@ void ActiveObjectMgr::clearIf(const std::function<bool(const ServerActiveObjectP
 		return;
 
    {
-	auto lock = m_active_objects.try_lock_unique_rec();
+	const auto lock = m_active_objects.try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return;
 
@@ -84,7 +84,7 @@ void ActiveObjectMgr::step(
 	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
-		auto lock = m_active_objects.try_lock_unique_rec(); //prelock
+		const auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 		if (!lock->owns_lock())
 			return;
 		g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
@@ -194,7 +194,7 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
-		/*auto lock = m_active_objects.try_lock_unique_rec(); //prelock
+		/*const auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 		if (!lock->owns_lock())
 			return;
 		*/	
@@ -205,7 +205,7 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 	}
 #endif
 
-	auto lock = m_active_objects.try_lock_unique_rec(); //prelock
+	const auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 	if (!lock->owns_lock())
 		return;
 
@@ -232,7 +232,7 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 	std::vector<ServerActiveObjectPtr> active_objects;
 	active_objects.reserve(m_active_objects.size());
 	{
-		auto lock = m_active_objects.try_lock_unique_rec(); //prelock
+		const auto lock = m_active_objects.try_lock_unique_rec(); //prelock
 		if (!lock->owns_lock())
 			return;
 		// bad copy: avoid deadlocks with locks in cb
@@ -268,7 +268,7 @@ void ActiveObjectMgr::getAddedActiveObjectsAroundPos(
 	decltype(m_active_objects)::full_type active_objects;
 	{
 		// bad copy: avoid deadlocks with locks in cb
-		auto lock = m_active_objects.try_lock_shared_rec();
+		const auto lock = m_active_objects.try_lock_shared_rec();
 		if (!lock->owns_lock())
 			return;
 		active_objects = m_active_objects;

@@ -173,27 +173,27 @@ public:
 
 	void push_back(T t)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		std::queue<T>::push(t);
 	}
 
 	void push(T t)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		std::queue<T>::push(t);
 	}
 
 	template<typename... Args>
 	decltype(auto) emplace(Args&&... args)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		return std::queue<T>::emplace(std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	decltype(auto) emplace_back(Args&&... args)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		return std::queue<T>::emplace_back(std::forward<Args>(args)...);
 	}
 
@@ -203,7 +203,7 @@ public:
 
 	T pop_front()
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		T val = std::queue<T>::front();
 		std::queue<T>::pop();
 		return val;
@@ -211,13 +211,13 @@ public:
 
 	u32 size() const
 	{
-		auto lock = lock_shared();
+		const auto lock = lock_shared();
 		return std::queue<T>::size();
 	}
 
 	bool empty() const
 	{
-		auto lock = lock_shared();
+		const auto lock = lock_shared();
 		return std::queue<T>::empty();
 	}
 };

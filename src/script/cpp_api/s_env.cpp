@@ -240,7 +240,7 @@ void ScriptApiEnv::readABMs()
 		int trigger_chance = 50;
 		getintfield(L, current_abm, "chance", trigger_chance);
 
-		int neighbors_range = 1;
+		uint16_t neighbors_range = 1;
 		getintfield(L, current_abm, "neighbors_range", neighbors_range);
 
 		bool simple_catch_up = true;
@@ -466,7 +466,7 @@ void ScriptApiEnv::triggerABM(int id, v3s16 p, MapNode n,
 	pushnode(L, neighbor);
 	lua_pushnumber(L, activate);
 
-	int result = lua_pcall(L, 6, 0, error_handler);
+	int result = lua_pcall(L, 4 + 2, 0, error_handler);
 	if (result)
 		scriptError(result, "LuaABM::trigger");
 

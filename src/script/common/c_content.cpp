@@ -290,7 +290,7 @@ void read_object_properties(lua_State *L, int index,
 
 	luaL_checktype(L, -1, LUA_TTABLE);
 
-	// fmtodo: auto lock = prop->lock_unique();
+	// fmtodo: const auto lock = prop->lock_unique();
 
 	int hp_max = 0;
 	if (getintfield(L, -1, "hp_max", hp_max)) {

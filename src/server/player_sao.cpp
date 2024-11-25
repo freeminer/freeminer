@@ -126,7 +126,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 	writeV3F32(os, getRotation());
 	writeU16(os, getHP());
 
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
 
 	std::ostringstream msg_os(std::ios::binary);
 	msg_os << serializeString32(getPropertyPacket()); // message 1
@@ -270,7 +270,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	m_dig_pool.add(dtime);
 	m_move_pool.add(dtime);
 	{
-		auto lock = try_lock_unique_rec();
+		const auto lock = try_lock_unique_rec();
 		if (!lock->owns_lock())
 			goto NOLOCK2;
 
@@ -330,7 +330,7 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 	}
 
 	if (!m_physics_override_sent) {
-		auto lock = try_lock_unique_rec();
+		const auto lock = try_lock_unique_rec();
 		if (!lock->owns_lock())
 			goto NOLOCK3;
 		m_physics_override_sent = true;
@@ -401,7 +401,7 @@ void PlayerSAO::setPos(const v3f &pos)
 
 	setBasePosition(pos);
 	{
-	auto lock = lock_unique_rec();
+	const auto lock = lock_unique_rec();
 	// Movement caused by this command is always valid
 	m_last_good_position = getBasePosition();
 	m_last_stat_position = m_last_good_position;
@@ -442,7 +442,7 @@ void PlayerSAO::moveTo(v3f pos, bool continuous)
 
 	setBasePosition(pos);
 	{
-	auto lock = lock_unique_rec();
+	const auto lock = lock_unique_rec();
 	// Movement caused by this command is always valid
 	m_last_good_position = getBasePosition();
 	m_last_stat_position = m_last_good_position;

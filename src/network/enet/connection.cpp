@@ -369,7 +369,7 @@ void ConnectionEnet::connect(Address address)
 void ConnectionEnet::disconnect()
 {
 	// MutexAutoLock peerlock(m_peers_mutex);
-	auto lock = m_peers.lock_unique_rec();
+	const auto lock = m_peers.lock_unique_rec();
 	for (auto i = m_peers.begin(); i != m_peers.end(); ++i)
 		enet_peer_disconnect(i->second, 0);
 	m_peers.clear();
@@ -585,7 +585,7 @@ void ConnectionEnet::Send(
 
 Address ConnectionEnet::GetPeerAddress(session_t peer_id)
 {
-	auto lock = m_peers_address.lock_unique_rec();
+	const auto lock = m_peers_address.lock_unique_rec();
 	if (!m_peers_address.count(peer_id))
 		return Address();
 	return m_peers_address.get(peer_id);

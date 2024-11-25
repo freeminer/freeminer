@@ -159,7 +159,7 @@ void Player::clearHud()
 
 // freeminer part:
 void Player::addSpeed(v3f speed) {
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		m_speed += speed;
 }
 

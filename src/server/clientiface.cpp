@@ -850,7 +850,7 @@ void ClientInterface::sendToAll(NetworkPacket *pkt)
 void ClientInterface::sendToAll(u16 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
-	auto lock = m_clients.lock_shared_rec();
+	const auto lock = m_clients.lock_shared_rec();
 	for(auto
 		i = m_clients.begin();
 		i != m_clients.end(); ++i)
@@ -961,7 +961,7 @@ void ClientInterface::DeleteClient(session_t peer_id)
 	//TODO this should be done by client destructor!!!
 	// Handle objects
 	{
-	auto lock = client->m_known_objects.lock_unique_rec();
+	const auto lock = client->m_known_objects.lock_unique_rec();
 	for (const auto id: client->m_known_objects) {
 		// Get object
 		ServerActiveObject* obj = m_env->getActiveObject(id, true);

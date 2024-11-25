@@ -59,7 +59,7 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 					wider_unknown_count++;
 					continue;
 				}
-				auto lock = block2->m_static_objects.m_active.lock_shared_rec();
+				const auto lock = block2->m_static_objects.m_active.lock_shared_rec();
 				wider += block2->m_static_objects.m_active.size() +
 						 block2->m_static_objects.m_stored.size();
 			}
@@ -94,7 +94,7 @@ void ABMHandler::apply(MapBlock *block, uint8_t activate)
 #endif
 
 	{
-		// auto lock = block->try_lock_unique_rec();
+		// const auto lock = block->try_lock_unique_rec();
 		// if (!lock->owns_lock())
 		//	return;
 	}

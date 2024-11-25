@@ -223,7 +223,7 @@ bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 
 // fm:
 	{
-		auto lock = m_mapgen_process.lock_unique_rec();
+		const auto lock = m_mapgen_process.lock_unique_rec();
 		auto gen = m_mapgen_process.get(bpmin);
 		auto now = porting::getTimeMs();
 		if (gen > now - 60000 ) {

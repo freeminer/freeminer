@@ -148,14 +148,14 @@ public:
 	v3f getLastGoodPosition() const { return m_last_good_position; }
 	float resetTimeFromLastPunch()
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		float r = m_time_from_last_punch;
 		m_time_from_last_punch = 0.0;
 		return r;
 	}
 	void noCheatDigStart(const v3s16 &p)
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		m_nocheat_dig_pos = p;
 		m_nocheat_dig_time = 0;
 	}

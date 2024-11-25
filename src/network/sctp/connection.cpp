@@ -381,7 +381,7 @@ int Connection::receive()
 {
 	int n = 0;
 	{
-		auto lock = m_peers.lock_unique_rec();
+		const auto lock = m_peers.lock_unique_rec();
 		for (const auto &i : m_peers) {
 			const auto [nn, brk] = recv_(i.first, i.second);
 			n += nn;
@@ -1194,7 +1194,7 @@ void Connection::disconnect()
 		usrsctp_close(sock);
 	sock = nullptr;
 	{
-		auto lock = m_peers.lock_unique_rec();
+		const auto lock = m_peers.lock_unique_rec();
 
 		for (auto i = m_peers.begin(); i != m_peers.end(); ++i) {
 			usrsctp_close(i->second);
@@ -1206,7 +1206,7 @@ void Connection::disconnect()
 
 void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
-	auto lock = m_peers.lock_unique_rec();
+	const auto lock = m_peers.lock_unique_rec();
 	for (const auto &i : m_peers)
 		send(i.first, channelnum, data, reliable);
 }
@@ -1348,7 +1348,7 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
 
 	{
-		auto lock = m_peers.lock_unique_rec();
+		const auto lock = m_peers.lock_unique_rec();
 		auto sock = m_peers.get(peer_id);
 		if (sock)
 			usrsctp_close(sock);

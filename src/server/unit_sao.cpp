@@ -92,7 +92,7 @@ void UnitSAO::sendOutdatedData()
 	}
 
 	if (!m_animation_sent) {
-		auto lock = try_lock_unique_rec();
+		const auto lock = try_lock_unique_rec();
         if (!lock->owns_lock())
              goto NOLOCK4;
 

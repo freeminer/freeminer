@@ -51,7 +51,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 		std::set<v3pos_t> active_blocks_list;
 		//auto active_blocks_list = m_active_blocks.m_list;
 		{
-			auto lock = m_active_blocks.m_list.try_lock_shared_rec();
+			const auto lock = m_active_blocks.m_list.try_lock_shared_rec();
 			if (lock->owns_lock())
 				active_blocks_list = m_active_blocks.m_list;
 		}
@@ -90,7 +90,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 			if (lock_map->owns_lock())
 #endif
 			{
-				auto lock = m_map->m_blocks.try_lock_shared_rec();
+				const auto lock = m_map->m_blocks.try_lock_shared_rec();
 				if (lock->owns_lock())
 					for (const auto &ir : m_map->m_blocks) {
 						if (!ir.second || !ir.second->abm_triggers)

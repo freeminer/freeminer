@@ -20,7 +20,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
 		u64 max_ms)
 {
-	auto lock = try_lock_unique_rec();
+	const auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
 
@@ -376,7 +376,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 
 			MapBlock *block;
 			if (0) {
-				auto lock = env->getMap().m_blocks.try_lock_shared_rec();
+				const auto lock = env->getMap().m_blocks.try_lock_shared_rec();
 				if (!lock->owns_lock()) {
 					++block_skip_retry;
 					if (!first_skipped_d && d > always_first_ds)
@@ -618,7 +618,7 @@ uint32_t RemoteClient::SendFarBlocks()
 /*
 RemoteClientVector ClientInterface::getClientList()
 {
-	auto lock = m_clients.lock_unique_rec();
+	const auto lock = m_clients.lock_unique_rec();
 	RemoteClientVector clients;
 	for (const auto &ir : m_clients) {
 		const auto &c = ir.second;

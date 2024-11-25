@@ -28,7 +28,7 @@ float ServerActiveObject::getMinimumSavedMovement()
 
 ItemStack ServerActiveObject::getWieldedItem(ItemStack *selected, ItemStack *hand) const
 {
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
 
 	*selected = ItemStack();
 	if (hand)
