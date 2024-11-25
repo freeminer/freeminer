@@ -48,7 +48,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		if (!dbase) {
 			return {};
 		}
-		MapBlockPtr block{m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos)};
+		MapBlockPtr block = m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos);
 
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);

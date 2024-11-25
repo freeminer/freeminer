@@ -860,7 +860,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 		{
 
 			if (load_if_inexistent && !blockpos_over_max_limit(p)) {
-				block = m_map->emergeBlockP(p, true);
+				block = m_map->emergeBlockPtr(p, true);
 			   if (block)
 				block->copyTo(*this);
 			} 

@@ -262,7 +262,7 @@ bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 		for (s16 y = full_bpmin.Y; y <= full_bpmax.Y; y++) {
 			v3s16 p(x, y, z);
 
-			auto block = emergeBlockP(p, false);
+			auto block = emergeBlockPtr(p, false);
 			if (block == NULL) {
 				block = createBlock(p);
 
@@ -454,10 +454,10 @@ MapBlock * ServerMap::createBlock(v3s16 p)
 
 MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 {
-	return emergeBlockP(p, create_blank).get();
+	return emergeBlockPtr(p, create_blank).get();
 }
 
-MapBlockPtr ServerMap::emergeBlockP(v3s16 p, bool create_blank)
+MapBlockPtr ServerMap::emergeBlockPtr(v3s16 p, bool create_blank)
 {
 	TimeTaker timer("generateBlock");
 	MAP_NOTHREAD_LOCK(this);
@@ -472,7 +472,7 @@ MapBlockPtr ServerMap::emergeBlockP(v3s16 p, bool create_blank)
 		return {};
 
 	{
-		auto block = loadBlockP(p);
+		auto block = loadBlockPtr(p);
 		if(block)
 			return block;
 	}

@@ -1424,7 +1424,7 @@ void ServerMap::prepareBlock(MapBlock *block)
 	updateBlockHumidity(senv, p, block);
 }
 
-MapBlockPtr ServerMap::loadBlockP(v3bpos_t p3d)
+MapBlockPtr ServerMap::loadBlockPtr(v3bpos_t p3d)
 {
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;

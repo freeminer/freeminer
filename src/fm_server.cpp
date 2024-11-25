@@ -564,7 +564,8 @@ MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dba
 	}
 
 	if (savedir.empty()) {
-		errorstream << "No path for save database with step " << (short)step << "\n";
+		// Only with enable_local_map_saving on local game
+		// errorstream << "No path for save database with step " << (short)step << "\n";
 		return {};
 	}
 

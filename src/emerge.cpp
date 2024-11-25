@@ -614,7 +614,7 @@ EmergeAction EmergeThread::getBlockOrStartGen(const v3s16 pos, bool allow_gen,
 	{
 		MAP_NOTHREAD_LOCK(m_map);
 		// 2). Attempt to load block from disk if it was not in the memory
-		*block = m_map->loadBlockP(pos);
+		*block = m_map->loadBlockPtr(pos);
 	}
 
 		if (*block && (*block)->isGenerated())
