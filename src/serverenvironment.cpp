@@ -1215,8 +1215,9 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 
 	// Call destructor
 	if (cf_old.has_on_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_destruct(p, n_old);
-
+	   });
 	// Replace node
 	if (fast) {
 		try {
@@ -1242,7 +1243,9 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 
 	// Call post-destructor
 	if (cf_old.has_after_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_after_destruct(p, n_old);
+	   });
 
 	// Retrieve node content features
 	// if new node is same as old, reuse old definition to prevent a lookup
@@ -1250,8 +1253,9 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 
 	// Call constructor
 	if (cf_new.has_on_construct)
+	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_construct(p, n);
-
+	   });
 	return true;
 }
 
@@ -1262,7 +1266,9 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 
 	// Call destructor
 	if (ndef->get(n_old).has_on_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_destruct(p, n_old);
+	   });
 
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
@@ -1286,8 +1292,9 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 
 	// Call post-destructor
 	if (ndef->get(n_old).has_after_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_after_destruct(p, n_old);
-
+	   });
 	// Air doesn't require constructor
 	return true;
 }
@@ -1555,6 +1562,19 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 
 	{
 		getScriptIface()->player_event_process();
+	}
+
+	{
+		decltype(m_script->postponed)::full_type events;
+		{
+			const auto lock = m_script->postponed.try_lock_unique_rec();
+			if (lock->owns_lock()) {
+				std::swap(m_script->postponed, events);
+			}
+		}
+		for (const auto &e : events) {
+			e();
+		}
 	}
 
 	/*

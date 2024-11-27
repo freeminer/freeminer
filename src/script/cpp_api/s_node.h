@@ -7,6 +7,7 @@
 #include "irr_v3d.h"
 #include "cpp_api/s_base.h"
 #include "cpp_api/s_nodemeta.h"
+#include "threading/concurrent_vector.h"
 #include "util/string.h"
 
 struct MapNode;
@@ -35,6 +36,7 @@ public:
 			ServerActiveObject *sender);
 
 //fm:
+	concurrent_vector<std::function<void()>> postponed;
 	void node_on_activate(v3pos_t p, MapNode node);
 	void node_on_deactivate(v3pos_t p, MapNode node);
 	void node_drop(v3pos_t p, int fast);
