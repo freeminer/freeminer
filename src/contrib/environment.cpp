@@ -120,18 +120,18 @@ void ServerEnvironment::contrib_globalstep(const float dtime)
 
 	// Differed nodeupdates
 	//if (m_nodeupdate_queue.size() > 0) {
-		std::deque<v3pos_t> nuqueue; 
+		std::deque<nodeUpdatePos> nuqueue; 
 		int i = 0;
 		{
 			std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
 		while(++i < 1000 && !m_nodeupdate_queue.empty()) {nuqueue.emplace_back(m_nodeupdate_queue.front()); m_nodeupdate_queue.pop_front();}
 		}
 		//m_nodeupdate_queue.clear();
-		std::sort(nuqueue.begin(), nuqueue.end());
-		nuqueue.erase(std::unique(nuqueue.begin(), nuqueue.end()), nuqueue.end());
+		//std::sort(nuqueue.begin(), nuqueue.end());
+		//nuqueue.erase(std::unique(nuqueue.begin(), nuqueue.end()), nuqueue.end());
 
-		for (const auto &pos: nuqueue) {
-			nodeUpdate(pos, 10);
+		for (const auto &q: nuqueue) {
+			nodeUpdateReal(q.pos, q.recursion_limit, q.fast, q.destroy);
 		}
 	//}
 }
@@ -335,13 +335,13 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
  * When node is modified, update node and directly
  * linked nodes
  */
-size_t ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int fast, bool destroy)
+size_t ServerEnvironment::nodeUpdateReal(const v3pos_t &pos, u8 recursion_limit, u8 fast, bool destroy)
 {
 
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
 		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
-		m_nodeupdate_queue.push_back(pos);
+		m_nodeupdate_queue.emplace_back(pos);
 		return 1;
 	}
 
@@ -384,7 +384,7 @@ size_t ServerEnvironment::nodeUpdate(const v3pos_t pos, u16 recursion_limit, int
 						(!f_under.walkable || f_under.buildable_to)) {
 						if (spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast)) {
 							removeNode(n_pos, fast, false);
-							ret += 1 + nodeUpdate(n_pos, recursion_limit, fast, destroy);
+							ret += 1 + nodeUpdateReal(n_pos, recursion_limit, fast, destroy);
 						}
 					}
 				}

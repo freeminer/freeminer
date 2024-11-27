@@ -116,3 +116,10 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 
 	return calls;
 }
+
+size_t ServerEnvironment::nodeUpdate(
+		const v3pos_t &pos, u8 recursion_limit, u8 fast, bool destroy)
+{
+	m_nodeupdate_queue.emplace_back(pos, recursion_limit, fast, destroy);
+	return 0;
+}
