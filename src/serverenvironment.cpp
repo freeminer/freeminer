@@ -1553,6 +1553,10 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 	g_profiler->avg("SMap: Blocks", getMap().m_blocks.size());
 #endif
 
+	{
+		getScriptIface()->player_event_process();
+	}
+
 	/*
 		Handle players
 	*/

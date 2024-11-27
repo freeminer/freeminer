@@ -7,6 +7,7 @@
 #include "cpp_api/s_base.h"
 #include "irr_v3d.h"
 #include "mapnode.h"
+#include "threading/concurrent_vector.h"
 #include <unordered_set>
 #include <vector>
 
@@ -26,6 +27,16 @@ public:
 	// Called on player event
 	void player_event(ServerActiveObject *player, const std::string &type);
 
+// fm:
+	void player_event_real(ServerActiveObject *player, const std::string &type);
+	struct pevent
+	{
+		ServerActiveObject *player;
+		std::string type;
+	};
+	concurrent_vector<pevent> player_events;
+	void player_event_process();
+// ==
 	// Called after emerge of a block queued from core.emerge_area()
 	void on_emerge_area_completion(v3s16 blockpos, int action,
 		ScriptCallbackState *state);

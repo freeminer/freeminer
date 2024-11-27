@@ -151,6 +151,24 @@ void ScriptApiEnv::environment_Step(float dtime)
 
 void ScriptApiEnv::player_event(ServerActiveObject *player, const std::string &type)
 {
+	player_events.emplace_back(player, type);
+}
+
+void ScriptApiEnv::player_event_process()
+{
+	const auto lock = player_events.try_lock_unique_rec();
+	if (!lock->owns_lock())
+		return;
+
+	for (const auto &e : player_events) {
+		player_event_real(e.player, e.type);
+	}
+
+	player_events.clear();
+}
+
+void ScriptApiEnv::player_event_real(ServerActiveObject *player, const std::string &type)
+{
 	SCRIPTAPI_PRECHECKHEADER
 
 	if (player == NULL)
