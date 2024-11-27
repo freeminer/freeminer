@@ -4,6 +4,7 @@
 
 #include "cpp_api/s_env.h"
 #include <cstdint>
+#include <utility>
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
 #include "log.h"
@@ -156,15 +157,17 @@ void ScriptApiEnv::player_event(ServerActiveObject *player, const std::string &t
 
 void ScriptApiEnv::player_event_process()
 {
-	const auto lock = player_events.try_lock_unique_rec();
-	if (!lock->owns_lock())
-		return;
-
-	for (const auto &e : player_events) {
-		player_event_real(e.player, e.type);
+	std::vector<pevent> events;
+	{
+		const auto lock = player_events.try_lock_unique_rec();
+		if (!lock->owns_lock())
+			return;
+		std::swap(events, player_events);
 	}
 
-	player_events.clear();
+	for (const auto &e : events) {
+		player_event_real(e.player, e.type);
+	}
 }
 
 void ScriptApiEnv::player_event_real(ServerActiveObject *player, const std::string &type)
