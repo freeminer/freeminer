@@ -177,6 +177,11 @@ void ActiveObjectMgr::removeObject(u16 id)
 
 void ActiveObjectMgr::invalidateActiveObjectObserverCaches()
 {
+	const auto lock = m_active_objects.try_lock_shared_rec();
+	if (!lock->owns_lock()) {
+		return;
+	}
+
 	for (auto &active_object : m_active_objects.iter()) {
 		ServerActiveObject *obj = active_object.second.get();
 		if (!obj)

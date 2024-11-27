@@ -67,6 +67,7 @@ ScriptApiBase::ScriptApiBase(ScriptingType type):
 #ifdef SCRIPTAPI_LOCK_DEBUG
 	m_lock_recursion_count = 0;
 #endif
+
 	m_luastack = luaL_newstate();
 	FATAL_ERROR_IF(!m_luastack, "luaL_newstate() failed");
 
@@ -497,7 +498,7 @@ void ScriptApiBase::objectrefGetOrCreate(lua_State *L, ServerActiveObject *cobj)
 		errorstream << "ScriptApiBase::objectrefGetOrCreate(): "
 				<< "Pushing orphan ObjectRef. Please open a bug report for this."
 				<< std::endl;
-		assert(0);
+		//assert(0);
 		ObjectRef::create(L, cobj);
 	} else {
 		push_objectRef(L, cobj->getId());
