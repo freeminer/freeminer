@@ -17,7 +17,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-#include "enet/enet.h"
+#include <enet/enet.h>
 //#include "network/fm_connection_multi.h"
 #include "network/connection.h"
 #include "network/mtp/impl.h"

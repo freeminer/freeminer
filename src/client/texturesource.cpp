@@ -234,7 +234,7 @@ u32 TextureSource::getTextureId(const std::string &name)
 	infostream << "getTextureId(): Queued: name=\"" << name << "\"" << std::endl;
 
 	// We're gonna ask the result to be put into here
-	static thread_local ResultQueue<std::string, u32, std::thread::id, u8> result_queue;
+	static /*thread_local*/ ResultQueue<std::string, u32, std::thread::id, u8> result_queue;
 
 	// Throw a request in
 	m_get_texture_queue.add(name, std::this_thread::get_id(), 0, &result_queue);

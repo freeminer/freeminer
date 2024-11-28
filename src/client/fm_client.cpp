@@ -107,7 +107,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		if (mgtype == MAPGEN_INVALID) {
 			errorstream << "Client map save: mapgen '" << mg_name
 						<< "' not valid; falling back to "
-						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << std::endl;
+						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << "\n";
 			mgtype = FARMESH_DEFAULT_MAPGEN;
 			far_container.use_weather = false;
 		} else {

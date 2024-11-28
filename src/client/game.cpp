@@ -1244,9 +1244,9 @@ void Game::run()
 				}
 			}
 
-		run_time += dtime;
-		if (runData.autoexit && run_time > runData.autoexit)
-			g_gamecallback->shutdown_requested = 1;
+			run_time += dtime;
+			if (runData.autoexit && run_time > runData.autoexit)
+				g_gamecallback->shutdown_requested = 1;
 		}
 
 		// Prepare render data for next iteration

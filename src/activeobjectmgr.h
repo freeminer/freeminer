@@ -27,7 +27,9 @@ public:
 
 	virtual ~ActiveObjectMgr()
 	{
+/*
 		SANITY_CHECK(m_active_objects.empty());
+*/		
 		// Note: Do not call clear() here. The derived class is already half
 		// destructed.
 	}

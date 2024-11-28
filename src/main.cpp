@@ -39,7 +39,7 @@
 
 #if USE_ENET
 // todo: move to connection
-#include "enet/enet.h"
+#include <enet/enet.h>
 #endif
 
 

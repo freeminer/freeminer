@@ -32,7 +32,7 @@ class concurrent_unordered_map_ : public std::unordered_map<Key, T, Hash, Pred, 
 								  public LOCKER
 {
 public:
-	typedef typename std::unordered_map<Key, T, Hash, Pred, Alloc> full_type;
+	using full_type = std::unordered_map<Key, T, Hash, Pred, Alloc>;
 	typedef Key key_type;
 	typedef T mapped_type;
 	typedef Hash hasher;
