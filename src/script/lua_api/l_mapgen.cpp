@@ -517,7 +517,7 @@ int ModApiMapgen::l_get_heat(lua_State *L)
 
 	// freeminer dynamic:
 	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : 0;
-	GET_ENV_PTR; 
+	GET_ENV_PTR_NO_MAP_LOCK;
 	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos, nullptr, nullptr, block_add));
 	return 1;
 
@@ -543,7 +543,7 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 
 	// freeminer dynamic:
 	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : 0;
-	GET_ENV_PTR; 
+	GET_ENV_PTR_NO_MAP_LOCK;
 	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos,nullptr, nullptr, block_add));
 	return 1;
 

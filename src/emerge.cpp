@@ -402,6 +402,7 @@ bool EmergeManager::pushBlockEmergeData(
 	if ((flags & BLOCK_EMERGE_FORCE_QUEUE) == 0) {
 		if (m_blocks_enqueued.size() >= m_qlimit_total)
 			return false;
+
 		if (peer_requested != PEER_ID_INEXISTENT) {
 			u32 qlimit_peer = (flags & BLOCK_EMERGE_ALLOW_GEN) ?
 				m_qlimit_generate : m_qlimit_diskonly;
@@ -578,18 +579,15 @@ EmergeAction EmergeThread::getBlockOrStartGen(const v3s16 pos, bool allow_gen,
 	 const std::string *from_db, MapBlockPtr*block, BlockMakeData *bmdata)
 {
 	//TimeTaker tt("", nullptr, PRECISION_MICRO);
-	//Server::EnvAutoLock envlock(m_server);
+	Server::EnvAutoLock envlock(m_server);
 	//g_profiler->avg("EmergeThread: lock wait time [us]", tt.stop());
 
 	auto block_ok = [] (MapBlockPtr b) {
 		return b && b->isGenerated();
 	};
 
-	{
-	MAP_NOTHREAD_LOCK(m_map);
 	// 1). Attempt to fetch block from memory
 	*block = m_map->getBlock(pos, false, true);
-	}
 	if (*block) {
 		if (block_ok(*block)) {
 			// if we just read it from the db but the block exists that means
@@ -607,29 +605,17 @@ EmergeAction EmergeThread::getBlockOrStartGen(const v3s16 pos, bool allow_gen,
 		if (!from_db->empty()) {
 			*block = m_map->loadBlock(*from_db, pos);
 			if (block_ok(*block))
+            {
+     			m_map->prepareBlock(block->get());
+
 				return EMERGE_FROM_DISK;
+            }
 		}
 	}
 
-	{
-		MAP_NOTHREAD_LOCK(m_map);
-		// 2). Attempt to load block from disk if it was not in the memory
-		*block = m_map->loadBlockPtr(pos);
-	}
-
-		if (*block && (*block)->isGenerated())
-		{
-		 	MAP_NOTHREAD_LOCK(m_map);
-			m_map->prepareBlock(block->get());
-			return EMERGE_FROM_DISK;
-		}
-
-	{
-	MAP_NOTHREAD_LOCK(m_map);
 	// 3). Attempt to start generation
 	if (allow_gen && m_map->initBlockMake(pos, bmdata))
 		return EMERGE_GENERATED;
-	}
 
 /*
 	verbosestream << "EmergeThread::getBlockOrStartGen : cancel pos=" << pos << " block="<< *block;
@@ -679,7 +665,6 @@ MapBlock *EmergeThread::finishGen(v3s16 pos, BlockMakeData *bmdata,
 		Run Lua on_generated callbacks in the server environment
 	*/
 	try {
-		MAP_NOTHREAD_LOCK(m_map);
 		m_server->getScriptIface()->environment_OnGenerated(
 			minp, maxp, m_mapgen->blockseed);
 	} catch (LuaError &e) {
@@ -845,7 +830,7 @@ void *EmergeThread::run()
 		if (m_mapgen->heat_cache.size() > 1000) {
 			m_mapgen->heat_cache.clear();
 			m_mapgen->humidity_cache.clear();
-	}
+    	}
 	} catch (VersionMismatchException &e) {
 		std::ostringstream err;
 		err << "World data version mismatch in MapBlock " << pos << std::endl
