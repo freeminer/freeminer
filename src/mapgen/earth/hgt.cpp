@@ -326,7 +326,8 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
+	DUMP((long long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded,
+			lon_loaded);
 	TimeTaker timer("hgt load");
 
 	lat_loading = lat_dec;
@@ -361,9 +362,11 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	std::string zipfile = zipname + ".zip";
 	std::string zipfull = folder + "/" + zipfile;
 
-	std::string filename(255, 0);
-	sprintf(filename.data(), "%c%02d%c%03d.hgt", lat_dec > 0 ? 'N' : 'S', abs(lat_dec),
-			lon_dec > 0 ? 'E' : 'W', abs(lon_dec));
+	char buff[100];
+	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d.hgt", lat_dec > 0 ? 'N' : 'S',
+			abs(lat_dec), lon_dec > 0 ? 'E' : 'W', abs(lon_dec));
+	std::string filename = buff;
+
 	std::string filefull = folder + "/" + filename;
 	// DUMP(lat_dec, lon_dec, filename, zipname, zipfull);
 
@@ -383,7 +386,34 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		DUMP("sides", side_length_x, side_length_y, seconds_per_px_x, seconds_per_px_y);
 	};
 
+	// zst fastest
+	if (srtmTile.empty()) {
+		const auto zstfile = zipname + "/" + filename + ".zst";
+		std::string ffolder = folder + "/" + zipname;
+		std::string zstdfull = folder + "/" + zstfile;
+		fs::CreateAllDirs(ffolder);
+		multi_http_to_file(zstfile,
+				{
+						"http://cdn.freeminer.org/earth/" + zstfile,
+				},
+				zstdfull);
+		if (std::filesystem::exists(zstdfull) && std::filesystem::file_size(zstdfull)) {
+
+			// FIXME: zero copy possible in c++26 or with custom rdbuf
+			std::ifstream is(zstdfull, std::ios_base::binary);
+			std::ostringstream os(std::ios_base::binary);
+
+			decompressZstd(is, os);
+			srtmTile = os.str();
+			filesize = srtmTile.size();
+			if (filesize) {
+				set_ratio(filesize);
+			}
+		}
+	}
+
 	// bz2 has best compression
+	/* use zstd
 	if (srtmTile.empty()) {
 		const auto bzipfile = zipname + ".tar.bz2";
 		std::string bzipfull = folder + "/" + bzipfile;
@@ -402,6 +432,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 			}
 		}
 	}
+*/
 
 	// TODO: because unzip
 	//#if 1 //!defined(_WIN32)
@@ -483,9 +514,9 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	}
 	lat_loaded = lat_dec;
 	lon_loaded = lon_dec;
-	DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded, filesize, zipname,
-			filename, seconds_per_px_x, get(lat_dec, lon_dec), heights[0], heights.back(),
-			heights[side_length_x]);
+	DUMP("loadok", (long long)this, heights.size(), lat_loaded, lon_loaded, filesize,
+			zipname, filename, seconds_per_px_x, get(lat_dec, lon_dec), heights[0],
+			heights.back(), heights[side_length_x]);
 	return true;
 }
 
@@ -530,7 +561,8 @@ bool height_tif::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP((long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded);
+	DUMP((long long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded,
+			lon_loaded);
 	TimeTaker timer("hgt load");
 
 	lat_loading = lat_dec;
@@ -618,8 +650,9 @@ bool height_tif::load(ll_t lat, ll_t lon)
 					pixel_per_deg_x = (ll_t)side_length_x / tile_deg_x;
 					pixel_per_deg_y = (ll_t)side_length_y / tile_deg_y;
 
-					DUMP("loadok", (long)this, heights.size(), lat_loaded, lon_loaded,
-							zipname, tifname, seconds_per_px_x, get(lat_dec, lon_dec));
+					DUMP("loadok", (long long)this, heights.size(), lat_loaded,
+							lon_loaded, zipname, tifname, seconds_per_px_x,
+							get(lat_dec, lon_dec));
 					DUMP("ppd", pixel_per_deg_x, pixel_per_deg_y);
 
 					return true;
@@ -748,8 +781,8 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP("loadstart", (long)this, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded,
-			lon_loaded);
+	DUMP("loadstart", (long long)this, lat_dec, lon_dec, lat_loading, lon_loading,
+			lat_loaded, lon_loaded);
 	TimeTaker timer("tiff load");
 
 	lat_loading = lat_dec;
@@ -890,7 +923,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 
 #endif
 
-	DUMP("load not ok", (long)this, heights.size(), lat_loaded, lon_loaded,
+	DUMP("load not ok", (long long)this, heights.size(), lat_loaded, lon_loaded,
 			seconds_per_px_x, get(lat_dec, lon_dec));
 	return false;
 }
