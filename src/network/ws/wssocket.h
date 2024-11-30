@@ -88,5 +88,5 @@ private:
 	};
 	std::list<queue_item> incoming_queue;
 
-	int m_timeout_ms;
+	int m_timeout_ms = -1;
 };

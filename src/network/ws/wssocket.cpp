@@ -237,6 +237,7 @@ WSSocket::WSSocket(bool ipv6)
 
 bool WSSocket::init(bool ipv6, bool noExceptions)
 {
+	setTimeoutMs(0);
 
 /*	if (socket_enable_debug_output /*con_debug* /) {
 		server.set_error_channels(websocketpp::log::elevel::all);

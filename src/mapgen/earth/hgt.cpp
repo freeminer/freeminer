@@ -433,10 +433,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	}
 */
 
-	// TODO: because unzip
-	//#if 1 //!defined(_WIN32)
-	// DUMP(filefull, zipfull);
-
+#if !defined(_WIN32) && !defined(__ANDROID__)
 	if (srtmTile.empty() && !std::filesystem::exists(filefull)) {
 
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
@@ -465,7 +462,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 			set_ratio(filesize);
 		}
 	}
-	//#endif
+#endif
 
 	// TODO: first try load unpached file, then unpack zip
 	if (srtmTile.empty()) {
