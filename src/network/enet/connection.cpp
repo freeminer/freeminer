@@ -31,8 +31,8 @@ namespace con
 {
 
 // very ugly windows hack
- 
-#if (defined(_MSC_VER)) && defined(ENET_IPV6)  // || defined(__MINGW32__)
+
+#if (defined(_MSC_VER)) && defined(ENET_IPV6) // || defined(__MINGW32__)
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -458,6 +458,10 @@ size_t ConnectionEnet::events_size()
 
 ConnectionEventPtr ConnectionEnet::waitEvent(u32 timeout_ms)
 {
+	if (!timeout_ms && m_event_queue.empty()) {
+		return ConnectionEvent::create(CONNEVENT_NONE);
+	}
+	
 	try {
 		return m_event_queue.pop_front(timeout_ms);
 	} catch (const ItemNotFoundException &ex) {

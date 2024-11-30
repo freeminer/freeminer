@@ -1408,6 +1408,10 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 
 ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 {
+	if (!timeout_ms && m_event_queue.empty()) {
+		return ConnectionEvent::create(CONNEVENT_NONE);
+	}
+
 	try {
 		return m_event_queue.pop_front(timeout_ms);
 	} catch(ItemNotFoundException &ex) {

@@ -36,6 +36,10 @@ typedef int socklen_t;
 #define SOCKET_ERR_STR(e) strerror(e)
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emsocket.h>
+#endif
+
 static bool g_sockets_initialized = false;
 
 // Initialize sockets
