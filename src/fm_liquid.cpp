@@ -963,7 +963,9 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	}
 
 	for (const auto &pos : node_drop) {
-    	m_server->getEnv().getScriptIface()->node_drop(pos, 2);
+		m_server->getEnv().getScriptIface()->postponed.emplace_back([=]() {
+    		m_server->getEnv().getScriptIface()->node_drop(pos, 2);
+		});
 	}
 
 	for (const auto &pos : node_update) {

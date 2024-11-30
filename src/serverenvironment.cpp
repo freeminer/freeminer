@@ -1431,7 +1431,7 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 		if (obj->m_known_by_count > 0)
 			return false;
 
-		processActiveObjectRemove(obj.get());
+		processActiveObjectRemove(obj);
 
 		// Delete active object
 		return true;
@@ -2341,7 +2341,7 @@ u16 ServerEnvironment::addActiveObjectRaw(std::shared_ptr<ServerActiveObject> ob
 				<< object->getId() << " statically" << std::endl;
 			// clean in case of error
 			object->markForRemoval();
-			processActiveObjectRemove(object);
+			processActiveObjectRemove(object_u);
 			m_ao_manager.removeObject(object->getId());
 			return 0;
 		}
@@ -2402,7 +2402,7 @@ void ServerEnvironment::removeRemovedObjects(u32 max_cycle_ms)
 			}
 		}
 
-		processActiveObjectRemove(obj.get());
+		processActiveObjectRemove(obj);
 
 		// Delete
 		return true;
@@ -2683,7 +2683,7 @@ void ServerEnvironment::deactivateFarObjects(const bool _force_delete)
 			return false;
 		}
 
-		processActiveObjectRemove(obj);
+		processActiveObjectRemove(objp);
 
 		// Delete active object
 		return true;
@@ -2746,7 +2746,7 @@ bool ServerEnvironment::saveStaticToBlock(
 	return true;
 }
 
-void ServerEnvironment::processActiveObjectRemove(ServerActiveObject *obj)
+void ServerEnvironment::processActiveObjectRemove(ServerActiveObjectPtr obj)
 {
 	// markForRemoval or markForDeactivation should have been called before
 	// Not because it's strictly necessary but because the Lua callback is
@@ -2756,7 +2756,9 @@ void ServerEnvironment::processActiveObjectRemove(ServerActiveObject *obj)
 	// Tell the object about removal
 	obj->removingFromEnvironment();
 	// Deregister in scripting api
-	m_script->removeObjectReference(obj);
+   m_script->postponed.emplace_back([=, this]() {
+	m_script->removeObjectReference(obj.get());
+   });
 }
 
 PlayerDatabase *ServerEnvironment::openPlayerDatabase(const std::string &name,
