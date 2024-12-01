@@ -99,7 +99,7 @@ const bool emscripten =
 #endif
 ;
 
-const bool slow = debug || android || emscripten;
+const bool slow = debug || emscripten; // || android
 
 void fm_set_default_settings(Settings *settings) {
 
