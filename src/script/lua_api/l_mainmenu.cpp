@@ -1139,12 +1139,28 @@ int ModApiMainMenu::l_get_lan_servers(lua_State *L)
 
 		for (const auto &field_name : server.second.getMemberNames()) {
 			lua_pushstring(L, field_name.c_str());
-			if (server.second[field_name].isString())
+			if (server.second[field_name].isString()) {
 				lua_pushstring(L, server.second[field_name].asCString());
-			else if (server.second[field_name].isConvertibleTo(Json::realValue)) 
+			} else if (server.second[field_name].isConvertibleTo(Json::realValue)) {
 				lua_pushnumber(L, server.second[field_name].asDouble());
-			else
-			 	lua_pushnil(L);
+			} else if (server.second[field_name].isObject()) {
+				// TODO: use recursive json->lua convert
+				lua_newtable(L);
+				int table = lua_gettop(L);
+				for (const auto &k : server.second[field_name].getMemberNames()) {
+					const auto &v = server.second[field_name][k];
+					lua_pushstring(L, k.c_str());
+					if (v.isConvertibleTo(Json::realValue)) {
+						lua_pushnumber(L, v.asDouble());
+					} else {
+						lua_pushnil(L);
+					}
+					lua_settable(L, table);
+				}
+			}
+			else {
+				lua_pushnil(L);
+			}
 			lua_settable(L, top_lvl2);
 		}
 
