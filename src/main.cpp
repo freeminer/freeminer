@@ -67,8 +67,8 @@ extern "C" {
 #endif
 
 // TODO: luanti.conf with migration
-#define CONFIGFILE "freeminer.conf"
-#define CONFIGFILE_COMPAT "minetest.conf"
+#define CONFIGFILE "freeminer"
+#define CONFIGFILE_COMPAT "minetest"
 #define DEBUGFILE "debug.txt"
 #define DEFAULT_SERVER_PORT 30000
 
