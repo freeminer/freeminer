@@ -20,6 +20,10 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/fetch.h>
+#endif
+
 #include "httpfetch.h"
 #include "porting.h" // for sleep_ms(), get_sysinfo(), secure_rand_fill_buf()
 #include <iostream>
@@ -805,6 +809,19 @@ static void httpfetch_request_clear(u64 caller)
 void httpfetch_sync(const HTTPFetchRequest &fetch_request,
 		HTTPFetchResult &fetch_result)
 {
+// https://github.com/emscripten-core/emscripten/issues/4906
+#if defined(__EMSCRIPTEN__)
+    emscripten_fetch_attr_t attr;
+    emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "GET");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
+    auto *fetch = emscripten_fetch(&attr, fetch_request.url.c_str());
+	fetch_result.response_code = fetch->status;
+	fetch_result.succeeded = fetch_result.response_code == 200;
+	fetch_result.data = std::string((const char *)fetch->data, fetch->numBytes);
+	// errorstream << "emsfetch=" << fetch_result.response_code << " " << fetch_result.succeeded << " : " <<  readBuffer.size() << "\n";
+    emscripten_fetch_close(fetch);
+#else
 	// Create ongoing fetch data and make a cURL handle
 	// Set cURL options based on HTTPFetchRequest
 	CurlHandlePool pool;
@@ -813,6 +830,7 @@ void httpfetch_sync(const HTTPFetchRequest &fetch_request,
 	CURLcode res = ongoing.start(NULL);
 	// Update fetch result
 	fetch_result = *ongoing.complete(res);
+#endif
 }
 
 #else  // USE_CURL
