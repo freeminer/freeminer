@@ -235,7 +235,7 @@ const auto http_to_file = [](const std::string &url, const std::string &zipfull)
 	}
 
 	std::ofstream(zipfull, std::ios_base::binary) << res.data;
-	if (!std::filesystem::exists(zipfull))
+	if (!std::filesystem::exists(zipfull)) {
 		return uintmax_t{0};
 	}
 	return std::filesystem::file_size(zipfull);
