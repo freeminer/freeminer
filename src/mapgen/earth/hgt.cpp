@@ -226,15 +226,18 @@ const auto http_to_file = [](const std::string &url, const std::string &zipfull)
 
 	actionstream << req.url << " " << res.succeeded << " " << res.response_code << " "
 				 << res.data.size() << "\n";
-	if (!res.succeeded || res.response_code >= 300)
+	if (!res.succeeded || res.response_code >= 300) {
 		return uintmax_t{0};
+	}
 
-	if (!res.data.size())
+	if (!res.data.size()) {
 		return uintmax_t{0};
+	}
 
 	std::ofstream(zipfull, std::ios_base::binary) << res.data;
 	if (!std::filesystem::exists(zipfull))
 		return uintmax_t{0};
+	}
 	return std::filesystem::file_size(zipfull);
 };
 
@@ -393,7 +396,13 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		fs::CreateAllDirs(ffolder);
 		multi_http_to_file(zstfile,
 				{
-						"http://cdn.freeminer.org/earth/" + zstfile,
+#if defined(__EMSCRIPTEN__)
+						"/"
+#else
+						"http://cdn.freeminer.org/"
+#endif
+						"earth/" +
+								zstfile,
 				},
 				zstdfull);
 		if (std::filesystem::exists(zstdfull) && std::filesystem::file_size(zstdfull)) {
@@ -433,7 +442,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	}
 */
 
-#if !defined(_WIN32) && !defined(__ANDROID__)
+#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
 	if (srtmTile.empty() && !std::filesystem::exists(filefull)) {
 
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
