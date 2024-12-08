@@ -127,7 +127,7 @@ public:
 	////
 	//// Modification tracking methods
 	////
-	void raiseModified(u32 mod, u32 reason=MOD_REASON_UNKNOWN, bool important = false)
+	void raiseModified(u32 mod, u32 reason=MOD_REASON_UNKNOWN, bool important = true)
 	{
 		raiseModified(mod, modified_light_no, important);
 #ifdef WTFdebug
@@ -337,7 +337,7 @@ public:
         const auto lock = lock_unique_rec();
 
 		data[z * zstride + y * ystride + x] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE);
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE, false);
 	}
 
 	inline void setNodeNoCheck(v3pos_t p, MapNode n, bool important = false)

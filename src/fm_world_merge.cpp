@@ -186,7 +186,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					if (top_c.empty()) {
 						if (maybe_air) {
 							++not_empty_nodes;
-							block_up->setNodeNoLock(npos, air);
+							block_up->setNodeNoLock(npos, air, true);
 						}
 						continue;
 					}
@@ -206,7 +206,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					// TODO better check
 					++not_empty_nodes;
 
-					block_up->setNodeNoLock(npos, n);
+					block_up->setNodeNoLock(npos, n, true);
 				}
 	}
 	// TODO: skip full air;

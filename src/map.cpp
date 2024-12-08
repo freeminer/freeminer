@@ -906,7 +906,7 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 		block->copyFrom(*this);
 
    	  if (save_generated_block)
-		block->raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_VMANIP);
+		block->raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_VMANIP, false);
 		block->expireIsAirCache();
 
 		if(modified_blocks)

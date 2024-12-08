@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="label">Luanti</string>
+    <string name="label">Freeminer</string>
     <string name="loading">Lädt…</string>
     <string name="unzip_notification_title">Luanti lädt</string>
     <string name="unzip_notification_description">Weniger als 1 Minute…</string>

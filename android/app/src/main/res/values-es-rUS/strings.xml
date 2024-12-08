@@ -5,7 +5,7 @@
     <string name="no_web_browser">No se encontró ningún navegador web</string>
     <string name="loading">Cargando…</string>
     <string name="notification_channel_name">Notificación General</string>
-    <string name="label">Luanti</string>
+    <string name="label">Freeminer</string>
     <string name="notification_channel_description">Notificaciones de Luanti</string>
     <string name="unzip_notification_title">Cargando Luanti</string>
 </resources>

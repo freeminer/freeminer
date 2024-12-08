@@ -332,7 +332,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		*/
 	   if (save_generated_block)		
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
-			MOD_REASON_EXPIRE_IS_AIR);
+			MOD_REASON_EXPIRE_IS_AIR, false);
        else
         block->setLightingComplete(0);
 	}

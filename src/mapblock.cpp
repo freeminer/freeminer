@@ -83,7 +83,7 @@ void MapBlock::setNode(const v3pos_t &p, const MapNode &n, bool important)
 			f0.light_source != f1.light_source) /*|| f0.drawtype != f1.drawtype*/
 		light = modified_light_yes;
 	if (important)
-		raiseModified(MOD_STATE_WRITE_NEEDED, light);
+		raiseModified(MOD_STATE_WRITE_NEEDED, light, important);
 }
 
 void MapBlock::raiseModified(u32 mod, modified_light light, bool important)
@@ -95,10 +95,9 @@ void MapBlock::raiseModified(u32 mod, modified_light light, bool important)
 			m_changed_timestamp = (unsigned int) ServerMap::time_life;
 		}
 
-
 	if (mod > m_modified) {
 		if (save_changed_block ||
-				important) // || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED )
+				important || m_disk_timestamp != BLOCK_TIMESTAMP_UNDEFINED )
 			m_modified = mod;
 		if (m_modified >= MOD_STATE_WRITE_AT_UNLOAD)
 			m_disk_timestamp.store(m_timestamp);
