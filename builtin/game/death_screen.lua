@@ -4,10 +4,12 @@ local S = core.get_translator("__builtin")
 function core.show_death_screen(player, _reason)
 
 	-- fmtodo: make client-side
-	if core.settings:get("respawn_auto") then
-		player:respawn()
+--[[
+	if core.settings:get_bool("respawn_auto") then
+		-- NOT here, should be after reposition? player:respawn()
 		return
 	end
+]]
 
 	local fs = {
 		"formspec_version[1]",

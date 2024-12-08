@@ -96,7 +96,9 @@ void ScriptApiEntity::luaentity_Deactivate(u16 id, bool removal)
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
-		verbosestream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+#if !NDEBUG
+		verbosestream << "ScriptApiEntity::luaentity_Deactivate(" << id << "): Wrong type=" << type << std::endl;
+#endif
 		return;
 	}
 
@@ -144,7 +146,9 @@ std::string ScriptApiEntity::luaentity_GetStaticdata(u16 id)
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
+#if !NDEBUG
 		verbosestream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+#endif
 		return {};
 	}
 
