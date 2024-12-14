@@ -656,8 +656,13 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 	}
 
 	if (!m_generated) {
+		static thread_local const auto fix_not_generated = g_settings->getBool("fix_not_generated");
+		if (!fix_not_generated)
+
 		errorstream<<"MapBlock::deSerialize(): deserialize not generated block "<<getPos()<<std::endl;
-		//if (disk) m_generated = false; else // uncomment if you want convert old buggy map
+
+		if (disk && fix_not_generated) m_generated = true; else 
+
 		return false;
 	}
 

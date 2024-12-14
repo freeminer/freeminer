@@ -243,6 +243,8 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("save_generated_block", "true");
 	settings->setDefault("save_changed_block", "true");
 	settings->setDefault("block_delete_time", debug || slow ? "60" : threads ? "30" : "10");
+	settings->setDefault("fix_not_generated", "false");
+	
 
 #if (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
 	//settings->setDefault("enable_ipv6", "true");
