@@ -1424,8 +1424,13 @@ void ServerMap::prepareBlock(MapBlock *block)
 	updateBlockHumidity(senv, p, block);
 }
 
+#if 0
 MapBlockPtr ServerMap::loadBlockPtr(v3bpos_t p3d)
 {
+	if (!m_map_loading_enabled) {
+		return {};
+	}
+
 	ScopeProfiler sp(g_profiler, "ServerMap::loadBlock");
 	const auto sector = this;
 	MapBlockPtr block;
@@ -1528,6 +1533,7 @@ MapBlockPtr ServerMap::loadBlockPtr(v3bpos_t p3d)
 	}
 	return nullptr;
 }
+#endif
 
 s32 ServerMap::save(ModifiedState save_level, float dedicated_server_step, bool breakable)
 {

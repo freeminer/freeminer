@@ -468,11 +468,8 @@ MapBlockPtr ServerMap::emergeBlockPtr(v3s16 p, bool create_blank)
 			return block;
 	}
 
-	if (!m_map_loading_enabled)
-		return {};
-
 	{
-		auto block = loadBlockPtr(p);
+		auto block = loadBlock(p);
 		if(block)
 			return block;
 	}
@@ -827,23 +824,26 @@ MapBlockPtr ServerMap::loadBlock(const std::string &blob, v3bpos_t p3d, bool sav
 	return block;
 }
 
-#if 0
-
-MapBlock* ServerMap::loadBlock(v3s16 blockpos)
+MapBlockPtr ServerMap::loadBlock(v3s16 blockpos)
 {
 	std::string data;
+
+	if (m_map_loading_enabled)
 	{
 		ScopeProfiler sp(g_profiler, "ServerMap: load block - sync (sum)");
 		MutexAutoLock dblock(m_db.mutex);
 		m_db.loadBlock(blockpos, data);
 	}
 
+    if (data.empty() && m_db.dbase_ro) {
+		m_db.dbase_ro->loadBlock(blockpos, &data);
+	}
+
 	if (!data.empty())
 		return loadBlock(data, blockpos);
-	return getBlockNoCreateNoEx(blockpos);
+	return getBlock(blockpos);
 }
 
-#endif
 
 bool ServerMap::deleteBlock(v3s16 blockpos)
 {

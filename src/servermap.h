@@ -198,8 +198,7 @@ public:
 	static bool saveBlock(MapBlock *block, MapDatabase *db, int compression_level = -1);
 
 	// Load block in a synchronous fashion
-	MapBlock *loadBlock(v3s16 p) {return loadBlockPtr(p).get(); };
-	MapBlockPtr loadBlockPtr(v3bpos_t p);
+	MapBlockPtr loadBlock(v3bpos_t p);
 	/// Load a block that was already read from disk. Used by EmergeManager.
 	/// @return non-null block (but can be blank)
 	MapBlockPtr loadBlock(const std::string &blob, v3bpos_t p, bool save_after_load=false);
