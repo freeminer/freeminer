@@ -762,7 +762,7 @@ MapBlockPtr ServerMap::loadBlock(const std::string &blob, v3bpos_t p3d, bool sav
 	try {
 		//v2s16 p2d(p3d.X, p3d.Z);
 		//MapSector *sector = createSector(p2d);
-		auto * sector= this;
+		auto * sector = this;
 
 		MapBlockPtr block_created_new;
 		block = sector->getBlock(p3d);

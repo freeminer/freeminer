@@ -103,7 +103,7 @@ public:
 
 	MapBlockPtr loadBlockNoStore(const v3bpos_t &p3d);
 
-	bool m_map_loading_enabled;
+	bool m_map_loading_enabled {true};
 	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
 
 	// Carries out any initialization necessary before block is sent

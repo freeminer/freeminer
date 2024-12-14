@@ -1450,10 +1450,10 @@ MapBlockPtr ServerMap::loadBlockPtr(v3bpos_t p3d)
 		u8 version = SER_FMT_VER_INVALID;
 		is.read((char *)&version, 1);
 
-		if (is.fail())
+		if (is.fail()) {
 			throw SerializationError("ServerMap::loadBlock(): Failed"
 									 " to read MapBlock version");
-
+		}
 		/*u32 block_size = MapBlock::serializedLength(version);
 		SharedBuffer<u8> data(block_size);
 		is.read((char*)*data, block_size);*/
