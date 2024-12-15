@@ -629,6 +629,10 @@ uint32_t RemoteClient::SendFarBlocks()
 			runFarAll(cbpos, cell_size_pow, farmesh_quality, false,
 					[this, &ordered, &cbpos](
 							const v3bpos_t &bpos, const bpos_t &size) -> bool {
+						if (!size) {
+							return false;
+						};
+
 						// TODO: use block center
 						const auto bdist = radius_box(cbpos, bpos);
 						if (bdist << MAP_BLOCKP > farmesh_all_changed) {
@@ -636,6 +640,9 @@ uint32_t RemoteClient::SendFarBlocks()
 						}
 
 						block_step_t step = log(size) / log(2);
+						if (far_blocks_requested.size() < step) {
+							far_blocks_requested.resize(step);
+						}
 						auto &[stepp, sent_ts] = far_blocks_requested[step][bpos];
 						if (sent_ts < 0) { // <=
 							return false;
