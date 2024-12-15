@@ -513,6 +513,7 @@ void Client::step(float dtime)
 			sendInit(myplayer->getName());
 
 			sendInitFm();
+			sendDrawControl();
 		}
 
 		// Not connected, return
@@ -1710,7 +1711,6 @@ void Client::sendUpdateClientInfo(const ClientDynamicInfo& info)
 	Send(&pkt);
 }
 
-void Client::sendDrawControl() { }
 #endif
 
 void Client::removeNode(v3pos_t p, int fast)

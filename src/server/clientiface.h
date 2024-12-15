@@ -238,8 +238,9 @@ public:
 	u16 net_proto_version_fm{};
 	//std::atomic_int m_nearest_unsent_reset {0};
 	std::atomic_uint wanted_range{10};
-	std::atomic_int range_all{};
-	std::atomic_int farmesh = {};
+	std::atomic_bool range_all{};
+	std::atomic_int farmesh{};
+	uint8_t farmesh_quality{};
 	float fov{72};
 	//bool block_overflow;
 	ServerEnvironment *m_env{};
