@@ -3,7 +3,7 @@
 #include <future>
 #include <memory>
 #include "client.h"
-#include "client/fm_far_calc.h"
+#include "fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"

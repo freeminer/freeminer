@@ -660,6 +660,7 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
 	fm_map.cpp
 	fm_server.cpp
 	fm_world_merge.cpp
+	fm_far_calc.cpp
 	key_value_storage.cpp
 	log_types.cpp
 	stat.cpp

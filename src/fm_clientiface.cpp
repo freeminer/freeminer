@@ -1,4 +1,4 @@
-#include "client/fm_far_calc.h"
+#include "fm_far_calc.h"
 #include "constants.h"
 #include "server/clientiface.h"
 #include "irr_v3d.h"
