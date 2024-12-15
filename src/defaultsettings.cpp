@@ -196,6 +196,10 @@ void fm_set_default_settings(Settings *settings) {
 	//settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
 	settings->setDefault("client_mesh_chunk","1");
 
+	if (slow || android) {
+		settings->setDefault("translucent_liquids", "false");
+	}
+
 	// Liquid
 	settings->setDefault("liquid_real", "true");
     settings->setDefault("liquid_step", "100");

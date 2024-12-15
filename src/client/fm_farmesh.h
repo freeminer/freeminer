@@ -112,6 +112,7 @@ private:
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
 	int go_flat();
+	int go_container();
 	uint32_t far_iteration_complete{};
 	bool complete_set{};
 	uint32_t collect_reset_timestamp{static_cast<uint32_t>(-1)};
