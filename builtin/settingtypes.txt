@@ -114,6 +114,9 @@ farmesh_quality () int 2
 # Farmesh map data from server
 farmesh_server () bool true
 
+# Use all changed blocks in radius
+farmesh_all_changed () int 10000
+
 # Set to true to disable wield light (enabled by default, requires shaders)
 disable_wieldlight () bool false
 

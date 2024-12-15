@@ -271,9 +271,19 @@ int FarMesh::go_container()
 	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
 	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
 
-	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, false,
-			[this](const v3bpos_t &bpos, const bpos_t &size) -> bool {
+	thread_local static const s16 farmesh_all_changed =
+			g_settings->getU32("farmesh_all_changed");
+
+	runFarAll(cbpos, draw_control.cell_size_pow, draw_control.farmesh_quality, 0,
+			[this, &cbpos](const v3bpos_t &bpos, const bpos_t &size) -> bool {
 				const block_step_t step = log(size) / log(2);
+
+				// TODO: use block center
+				const auto bdist = radius_box(cbpos, bpos);
+				if ((bdist << MAP_BLOCKP) > farmesh_all_changed) {
+					return false;
+				}
+
 				const auto contains = m_client->getEnv()
 											  .getClientMap()
 											  .far_blocks_storage[step]
@@ -303,7 +313,8 @@ int FarMesh::go_flat()
 
 	// todo: maybe save blocks while cam pos not changed
 	std::array<std::unordered_set<v3bpos_t>, FARMESH_STEP_MAX> blocks;
-	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, cbpos.Y ?: 1,
+	runFarAll(cbpos, draw_control.cell_size_pow, draw_control.farmesh_quality,
+			cbpos.Y ?: 1,
 			[this, &draw_control, &blocks](
 					const v3bpos_t &bpos, const bpos_t &size) -> bool {
 				for (const auto &add : {

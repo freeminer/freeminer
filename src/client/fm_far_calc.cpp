@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 
 #include "client/clientmap.h"
-#include "constants.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 
@@ -359,9 +358,8 @@ void each(const each_param_t &param, const child_t &child)
 	}
 }
 
-void runFarAll(const MapDrawControl &draw_control, const v3bpos_t &ppos,
-		uint8_t cell_size_pow, pos_t two_d,
-		const std::function<bool(const v3bpos_t &, const bpos_t &)> &func)
+void runFarAll(const v3bpos_t &ppos, uint8_t cell_size_pow, uint8_t farmesh_quality,
+		pos_t two_d, const std::function<bool(const v3bpos_t &, const bpos_t &)> &func)
 {
 
 	const auto start =
@@ -382,7 +380,7 @@ void runFarAll(const MapDrawControl &draw_control, const v3bpos_t &ppos,
 
 	each({.player_pos{ppos.X, ppos.Y, ppos.Z},
 				 .cell_size_pow{cell_size_pow},
-				 .farmesh_quality{draw_control.farmesh_quality},
+				 .farmesh_quality{farmesh_quality},
 				 .func{func_convert},
 				 .two_d{static_cast<bool>(two_d)}},
 			start);
