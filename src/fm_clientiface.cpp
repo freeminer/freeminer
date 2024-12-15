@@ -1,4 +1,3 @@
-#include "client/clientmap.h"
 #include "client/fm_far_calc.h"
 #include "constants.h"
 #include "server/clientiface.h"
@@ -17,7 +16,6 @@
 #include "util/directiontables.h"
 #include "util/numeric.h"
 #include "util/unordered_map_hash.h"
-
 
 int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
@@ -120,7 +118,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	}
 
 	// s16 last_nearest_unsent_d = m_nearest_unsent_d;
-	short d_start = m_nearest_unsent_d;//.load();
+	short d_start = m_nearest_unsent_d; //.load();
 
 	// infostream<<"d_start="<<d_start<<std::endl;
 
@@ -618,13 +616,25 @@ uint32_t RemoteClient::SendFarBlocks()
 			if (!sao)
 				return 0;
 
-			MapDrawControl draw_control;
-			draw_control.farmesh_quality = farmesh_quality;
 			auto playerpos = sao->getBasePosition();
 
 			auto cbpos = floatToInt(playerpos, BS * MAP_BLOCKSIZE);
-			runFarAll(draw_control, cbpos, draw_control.cell_size_pow, false,
-					[this, &ordered](const v3bpos_t &bpos, const bpos_t &size) -> bool {
+
+			const auto cell_size = 1; // FMTODO from remoteclient
+			const auto cell_size_pow = log(cell_size) / log(2);
+
+			thread_local static const s16 farmesh_all_changed =
+					g_settings->getU32("farmesh_all_changed");
+
+			runFarAll(cbpos, cell_size_pow, farmesh_quality, false,
+					[this, &ordered, &cbpos](
+							const v3bpos_t &bpos, const bpos_t &size) -> bool {
+						// TODO: use block center
+						const auto bdist = radius_box(cbpos, bpos);
+						if (bdist << MAP_BLOCKP > farmesh_all_changed) {
+							return false;
+						}
+
 						block_step_t step = log(size) / log(2);
 						auto &[stepp, sent_ts] = far_blocks_requested[step][bpos];
 						if (sent_ts < 0) { // <=
