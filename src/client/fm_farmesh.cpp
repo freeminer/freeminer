@@ -18,6 +18,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -264,6 +265,29 @@ auto align_shift(auto pos, const auto amount)
 	(pos.Z >>= amount) <<= amount;
 	return pos;
 }
+
+int FarMesh::go_container()
+{
+	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
+	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
+
+	runFarAll(draw_control, cbpos, draw_control.cell_size_pow, false,
+			[this](const v3bpos_t &bpos, const bpos_t &size) -> bool {
+				const block_step_t step = log(size) / log(2);
+				const auto contains = m_client->getEnv()
+											  .getClientMap()
+											  .far_blocks_storage[step]
+											  .contains(bpos);
+
+				if (contains) {
+					makeFarBlock(bpos, step);
+				}
+
+				return false;
+			});
+	return 0;
+}
+
 int FarMesh::go_flat()
 {
 	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
@@ -569,12 +593,16 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 				if (!plane_processed[i].processed) {
 					continue;
 				}
+
 				++planes_processed;
 				async[i].step([this, i = i]() {
 					plane_processed[i].processed = go_direction(i);
 				});
 			}
 		}
+
+		go_container();
+
 		planes_processed_last = planes_processed;
 
 		if (planes_processed) {

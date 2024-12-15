@@ -546,12 +546,19 @@ void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
 	}
 	{
 		const auto lock = client->lock_unique_rec();
-		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<uint32_t>();
-		client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<bool>();
-		client->farmesh = packet[TOSERVER_DRAWCONTROL_FARMESH].as<uint32_t>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_WANTED_RANGE))
+			client->wanted_range =
+					packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<uint32_t>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_RANGE_ALL))
+			client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<bool>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_FARMESH))
+			client->farmesh = packet[TOSERVER_DRAWCONTROL_FARMESH].as<uint32_t>();
 		//client->lodmesh = packet[TOSERVER_DRAWCONTROL_LODMESH].as<u32>();
-		client->fov = packet[TOSERVER_DRAWCONTROL_FOV].as<float>();
-		client->farmesh_quality = packet[TOSERVER_DRAWCONTROL_FARMESH_QUALITY].as<uint8_t>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_FARMESH_QUALITY)) {
+			client->farmesh_quality =
+					packet[TOSERVER_DRAWCONTROL_FARMESH_QUALITY].as<uint8_t>();
+			client->have_farmesh_quality = true;
+		}
 	}
 	//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
 

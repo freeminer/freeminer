@@ -1,3 +1,6 @@
+#include "client/clientmap.h"
+#include "client/fm_far_calc.h"
+#include "constants.h"
 #include "server/clientiface.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -605,6 +608,51 @@ uint32_t RemoteClient::SendFarBlocks()
 			}
 		}
 
+		// TODO: why not have?
+		if (have_farmesh_quality) {
+			auto *player = m_env->getPlayer(peer_id);
+			if (!player)
+				return 0;
+
+			auto *sao = player->getPlayerSAO();
+			if (!sao)
+				return 0;
+
+			MapDrawControl draw_control;
+			draw_control.farmesh_quality = farmesh_quality;
+			auto playerpos = sao->getBasePosition();
+
+			auto cbpos = floatToInt(playerpos, BS * MAP_BLOCKSIZE);
+			runFarAll(draw_control, cbpos, draw_control.cell_size_pow, false,
+					[this, &ordered](const v3bpos_t &bpos, const bpos_t &size) -> bool {
+						block_step_t step = log(size) / log(2);
+						auto &[stepp, sent_ts] = far_blocks_requested[step][bpos];
+						if (sent_ts < 0) { // <=
+							return false;
+						}
+						const auto dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
+								m_env->m_server->far_dbases, m_env->m_map->m_savedir,
+								step);
+						if (!dbase) {
+							sent_ts = -1;
+							return false;
+						}
+						const auto block =
+								loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
+						if (!block) {
+							sent_ts = -1;
+							return false;
+						}
+
+						block->far_step = step;
+						//sent_ts = 0;
+						sent_ts = -1; //TODO
+						ordered.emplace(sent_ts - step, block);
+
+						return false;
+					});
+		}
+
 		// First with larger iteration and smaller step
 
 		for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
@@ -613,6 +661,7 @@ uint32_t RemoteClient::SendFarBlocks()
 					peer_id, it->second, serialization_version, net_proto_version);
 		}
 	}
+
 	return sent_cnt;
 }
 /*
