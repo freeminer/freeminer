@@ -517,6 +517,51 @@ void Server::handleCommand_InitFm(NetworkPacket *pkt)
 
 void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
 {
+	const auto peer_id = pkt->getPeerId();
+	if (!pkt->packet) {
+		if (!pkt->packet_unpack()) {
+			return;
+		}
+	}
+	auto &packet = *(pkt->packet);
+	/*
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		//m_con->DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+	*/
+
+	//auto playersao = player->getPlayerSAO();
+	/*
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}*/
+
+	auto client = getClientNoEx(peer_id, CS_Created);
+	if (!client){
+		return;
+	}
+	{
+		const auto lock = client->lock_unique_rec();
+		client->wanted_range = packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<uint32_t>();
+		client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<bool>();
+		client->farmesh = packet[TOSERVER_DRAWCONTROL_FARMESH].as<uint32_t>();
+		//client->lodmesh = packet[TOSERVER_DRAWCONTROL_LODMESH].as<u32>();
+		client->fov = packet[TOSERVER_DRAWCONTROL_FOV].as<float>();
+		client->farmesh_quality = packet[TOSERVER_DRAWCONTROL_FARMESH_QUALITY].as<uint8_t>();
+	}
+	//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
+
+	// minetest compat, fmtodo: make one place
+	/*
+	if (playersao) {
+		playersao->setFov(client->fov);
+		playersao->setWantedRange(client->wanted_range/MAPBLOCK_SIZE);
+	
+	}
+	*/
 }
 
 void Server::handleCommand_GetBlocks(NetworkPacket *pkt)

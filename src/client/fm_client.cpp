@@ -337,3 +337,22 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 #endif
 	}
 }
+
+void Client::sendDrawControl()
+{
+	MSGPACK_PACKET_INIT((int)TOSERVER_DRAWCONTROL, 7);
+	const auto &draw_control = m_env.getClientMap().getControl();
+	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (int32_t)draw_control.wanted_range);
+	PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, draw_control.range_all);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH, draw_control.farmesh);
+	PACK(TOSERVER_DRAWCONTROL_LODMESH, draw_control.lodmesh);
+	PACK(TOSERVER_DRAWCONTROL_FOV, draw_control.fov);
+	//PACK(TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW, false /*draw_control.block_overflow*/);
+	PACK(TOSERVER_DRAWCONTROL_LODMESH, draw_control.lodmesh);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH_QUALITY, draw_control.farmesh_quality);
+
+
+	NetworkPacket pkt(TOSERVER_DRAWCONTROL, 0);
+	pkt.putLongString({buffer.data(), buffer.size()});
+	Send(&pkt);
+}
