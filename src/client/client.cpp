@@ -185,6 +185,7 @@ Client::Client(
 	control.farmesh_quality = g_settings->getU16("farmesh_quality");
 	control.farmesh_quality_pow = log(control.farmesh_quality) / log(2);
 	control.farmesh_stable = g_settings->getU16("farmesh_stable");
+	control.farmesh_all_changed = g_settings->getPos("farmesh_all_changed");
 }
 
 void Client::migrateModStorage()

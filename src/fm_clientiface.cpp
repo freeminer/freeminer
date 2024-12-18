@@ -622,12 +622,12 @@ uint32_t RemoteClient::SendFarBlocks()
 
 			const auto cell_size = 1; // FMTODO from remoteclient
 			const auto cell_size_pow = log(cell_size) / log(2);
-
-			thread_local static const s16 farmesh_all_changed =
+			thread_local static const s16 setting_farmesh_all_changed =
 					g_settings->getU32("farmesh_all_changed");
-
+			const auto &use_farmesh_all_changed =
+					std::min(setting_farmesh_all_changed, farmesh_all_changed);
 			runFarAll(cbpos, cell_size_pow, farmesh_quality, false,
-					[this, &ordered, &cbpos](
+					[this, &ordered, &cbpos, &use_farmesh_all_changed](
 							const v3bpos_t &bpos, const bpos_t &size) -> bool {
 						if (!size) {
 							return false;
@@ -635,7 +635,7 @@ uint32_t RemoteClient::SendFarBlocks()
 
 						// TODO: use block center
 						const auto bdist = radius_box(cbpos, bpos);
-						if (bdist << MAP_BLOCKP > farmesh_all_changed) {
+						if (bdist << MAP_BLOCKP > use_farmesh_all_changed) {
 							return false;
 						}
 

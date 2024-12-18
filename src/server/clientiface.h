@@ -241,6 +241,7 @@ public:
 	std::atomic_bool range_all{};
 	std::atomic_int farmesh{};
 	uint8_t farmesh_quality{};
+	pos_t farmesh_all_changed{};
 	bool have_farmesh_quality{};
 	float fov{72};
 	//bool block_overflow;

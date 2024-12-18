@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "emerge.h"
 #include "filesys.h"
+#include "irrlichttypes.h"
 #include "porting.h"
 #include "fm_world_merge.h"
 #include "irrTypes.h"
@@ -541,7 +542,7 @@ void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
 	}*/
 
 	auto client = getClientNoEx(peer_id, CS_Created);
-	if (!client){
+	if (!client) {
 		return;
 	}
 	{
@@ -558,6 +559,10 @@ void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
 			client->farmesh_quality =
 					packet[TOSERVER_DRAWCONTROL_FARMESH_QUALITY].as<uint8_t>();
 			client->have_farmesh_quality = true;
+		}
+		if (packet.contains(TOSERVER_DRAWCONTROL_FARMESH_ALL_CHANGED)) {
+			client->farmesh_all_changed =
+					packet[TOSERVER_DRAWCONTROL_FARMESH_ALL_CHANGED].as<pos_t>();
 		}
 	}
 	//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
