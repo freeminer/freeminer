@@ -99,6 +99,9 @@ void ActiveObjectMgr::step(
 # if 0
 */
 
+    std::vector<ServerActiveObjectPtr> active_objects;
+
+    {
 	const auto lock =  m_active_objects.try_lock_shared_rec();
 	if (!lock->owns_lock())
 		return;
@@ -106,11 +109,21 @@ void ActiveObjectMgr::step(
 	g_profiler->avg("ActiveObjectMgr: SAO count [#]", m_active_objects.size());
 	size_t count = 0;
 
+    active_objects.reserve(m_active_objects.size());
+
 	for (auto &ao_it : m_active_objects.iter()) {
 		if (!ao_it.second)
 			continue;
 		count++;
-		f(ao_it.second);
+		active_objects.emplace_back(ao_it.second);
+		// f(ao_it.second);
+	}
+    }
+
+    size_t count = 0;
+	for (const auto &ao : active_objects) {
+		f(ao);
+		++count;
 	}
 
 	g_profiler->avg("ActiveObjectMgr: SAO count [#]", count);
