@@ -753,6 +753,7 @@ void *WorldMergeThread::run()
 			.dbase{m_server->getEnv().m_map->dbase},
 			.save_dir{m_server->getEnv().m_map->m_savedir},
 	};
+
 	{
 		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);
 		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
@@ -763,7 +764,7 @@ void *WorldMergeThread::run()
 			merger.world_merge_load_all = -1;
 			g_settings->getS16NoEx("world_merge_load_all", merger.world_merge_load_all);
 			merger.world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
-			u64 world_merge_all = 0;
+			uint64_t world_merge_all = 0;
 			g_settings->getU64NoEx("world_merge_all", world_merge_all);
 			if (world_merge_all) {
 				merger.merge_all();
@@ -773,6 +774,10 @@ void *WorldMergeThread::run()
 	merger.world_merge_load_all = 0;
 	merger.partial = true;
 
+	// Minimum blocks changed for periodic merge
+	uint64_t world_merge_min = 100;
+	g_settings->getU64NoEx("world_merge_min", world_merge_min);
+
 	while (!stopRequested()) {
 		if (merger.throttle()) {
 			tracestream << "World merge wait" << '\n';
@@ -780,7 +785,8 @@ void *WorldMergeThread::run()
 			continue;
 		}
 		if (merger.merge_server_diff(
-					m_server->getEnv().getServerMap().changed_blocks_for_merge)) {
+					m_server->getEnv().getServerMap().changed_blocks_for_merge,
+					world_merge_min)) {
 			break;
 		}
 
