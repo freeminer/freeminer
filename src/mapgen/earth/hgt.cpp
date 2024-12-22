@@ -235,7 +235,7 @@ const auto http_to_file = [](const std::string &url, const std::string &zipfull)
 		return uintmax_t{0};
 	}
 
-	std::ofstream(zipfull) << res.data;
+	std::ofstream(zipfull, std::ios_base::binary) << res.data;
 	if (!std::filesystem::exists(zipfull)) {
 		return uintmax_t{0};
 	}
@@ -267,7 +267,7 @@ const auto multi_http_to_file = [](const auto &zipfile,
 			//<< " || " << "curl -o " << zipfull << " https://viewfinderpanoramas.org/dem3/" << zipfile
 			<< "\n";
 
-	std::ofstream(zipfull) << ""; // create zero file
+	std::ofstream(zipfull, std::ios_base::binary) << ""; // create zero file
 	return std::filesystem::file_size(zipfull);
 };
 
