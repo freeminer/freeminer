@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "collision.h"
 #include <cmath>
@@ -23,7 +8,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "map.h"
 #include "nodedef.h"
 #include "gamedef.h"
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 #include "client/clientenvironment.h"
 #include "client/localplayer.h"
 #endif
@@ -273,7 +258,7 @@ static void add_object_boxes(Environment *env,
 		const v3f pos_f, const v3f speed_f, ActiveObject *self,
 		std::vector<NearbyCollisionInfo> &cinfo)
 {
-	auto process_object = [&] (ActiveObject *object) {
+	auto process_object = [&cinfo] (ActiveObject *object) {
 		if (object && object->collideWithObjects()) {
 			aabb3f box;
 			if (object->getCollisionBox(&box))
@@ -285,14 +270,14 @@ static void add_object_boxes(Environment *env,
 	const f32 distance = speed_f.getLength() * dtime +
 		box_0.getExtent().getLength() + 1.5f * BS;
 
-#ifndef SERVER
+#if CHECK_CLIENT_BUILD()
 	ClientEnvironment *c_env = dynamic_cast<ClientEnvironment*>(env);
 	if (c_env) {
 		std::vector<DistanceSortedActiveObject> clientobjects;
 		c_env->getActiveObjects(pos_f, distance, clientobjects);
 
 		for (auto &clientobject : clientobjects) {
-			// Do collide with everything but itself and the parent CAO
+			// Do collide with everything but itself and children
 			if (!self || (self != clientobject.obj &&
 					self != clientobject.obj->getParent())) {
 				process_object(clientobject.obj);
@@ -301,12 +286,12 @@ static void add_object_boxes(Environment *env,
 
 		// add collision with local player
 		LocalPlayer *lplayer = c_env->getLocalPlayer();
-		if (lplayer->getParent() == nullptr) {
+		auto *obj = (ClientActiveObject*) lplayer->getCAO();
+		if (!self || (self != obj && self != obj->getParent())) {
 			aabb3f lplayer_collisionbox = lplayer->getCollisionbox();
 			v3f lplayer_pos = lplayer->getPosition();
 			lplayer_collisionbox.MinEdge += lplayer_pos;
 			lplayer_collisionbox.MaxEdge += lplayer_pos;
-			auto *obj = (ActiveObject*) lplayer->getCAO();
 			cinfo.emplace_back(obj, 0, lplayer_collisionbox);
 		}
 	}
@@ -315,7 +300,7 @@ static void add_object_boxes(Environment *env,
 	{
 		ServerEnvironment *s_env = dynamic_cast<ServerEnvironment*>(env);
 		if (s_env) {
-			// search for objects which are not us, or we are not its parent.
+			// search for objects which are not us and not our children.
 			// we directly process the object in this callback to avoid useless
 			// looping afterwards.
 			auto include_obj_cb = [self, &process_object] (ServerActiveObject *obj) {
@@ -623,8 +608,10 @@ bool collision_check_intersection(Environment *env, IGameDef *gamedef,
 		Collision detection
 	*/
 	aabb3f checkbox = box_0;
-	checkbox.MinEdge += pos_f;
-	checkbox.MaxEdge += pos_f;
+	// aabbox3d::intersectsWithBox(box) returns true when the faces are touching perfectly.
+	// However, we do not want want a true-ish return value in that case. Add some tolerance.
+	checkbox.MinEdge += pos_f + (0.1f * BS);
+	checkbox.MaxEdge += pos_f - (0.1f * BS);
 
 	/*
 		Go through every node and object box

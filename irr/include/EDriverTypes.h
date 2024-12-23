@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "irrTypes.h"
-
 namespace irr
 {
 namespace video
@@ -23,9 +21,6 @@ enum E_DRIVER_TYPE
 	/** Performs hardware accelerated rendering of 3D and 2D
 	primitives. */
 	EDT_OPENGL,
-
-	//! OpenGL-ES 1.x driver, for embedded and mobile systems
-	EDT_OGLES1,
 
 	//! OpenGL-ES 2.x driver, for embedded and mobile systems
 	/** Supports shaders etc. */

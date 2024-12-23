@@ -30,9 +30,15 @@
    john@suckerfreegames.com
 */
 
-#include <irrlicht.h>
 #include <iostream>
 #include "CGUITTFont.h"
+#include "CMeshBuffer.h"
+#include "IFileSystem.h"
+#include "IGUIEnvironment.h"
+#include "IMeshManipulator.h"
+#include "IMeshSceneNode.h"
+#include "ISceneManager.h"
+#include "ISceneNode.h"
 
 namespace irr
 {
@@ -513,12 +519,15 @@ void CGUITTFont::setFontHinting(const bool enable, const bool enable_auto_hintin
 
 void CGUITTFont::draw(const core::stringw& text, const core::rect<s32>& position, video::SColor color, bool hcenter, bool vcenter, const core::rect<s32>* clip)
 {
-	draw(EnrichedString(std::wstring(text.c_str()), color), position, hcenter, vcenter, clip);
+	// Allow colors to work for strings that have passed through irrlicht by catching
+	// them here and converting them to enriched just before drawing.
+	EnrichedString s(text.c_str(), color);
+	draw(s, position, hcenter, vcenter, clip);
 }
 
 void CGUITTFont::draw(const EnrichedString &text, const core::rect<s32>& position, bool hcenter, bool vcenter, const core::rect<s32>* clip)
 {
-	const std::vector<video::SColor> &colors = text.getColors();
+	const auto &colors = text.getColors();
 
 	if (!Driver)
 		return;
@@ -718,7 +727,7 @@ core::dimension2d<u32> CGUITTFont::getDimension(const std::u32string& text) cons
 		if (p == '\r')	// Mac or Windows line breaks.
 		{
 			lineBreak = true;
-			if (*(iter + 1) == '\n')
+			if (iter + 1 != text.end() && *(iter + 1) == '\n')
 			{
 				++iter;
 				p = *iter;
@@ -1095,13 +1104,9 @@ core::array<scene::ISceneNode*> CGUITTFont::addTextSceneNode(const wchar_t* text
 
 	// the default font material
 	SMaterial mat;
-	mat.Lighting = true;
 	mat.ZWriteEnable = video::EZW_OFF;
-	mat.NormalizeNormals = true;
-	mat.ColorMaterial = video::ECM_NONE;
 	mat.MaterialType = use_transparency ? video::EMT_TRANSPARENT_ALPHA_CHANNEL : video::EMT_SOLID;
 	mat.MaterialTypeParam = 0.01f;
-	mat.DiffuseColor = color;
 
 	wchar_t current_char = 0, previous_char = 0;
 	u32 n = 0;

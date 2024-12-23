@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "localplayer.h"
 #include <cmath>
@@ -60,10 +45,7 @@ void PlayerSettings::registerSettingsCallback()
 
 void PlayerSettings::deregisterSettingsCallback()
 {
-	for (auto &name : PlayerSettings_names) {
-		g_settings->deregisterChangedCallback(name,
-			&PlayerSettings::settingsChangedCallback, this);
-	}
+	g_settings->deregisterAllChangedCallbacks(this);
 }
 
 void PlayerSettings::settingsChangedCallback(const std::string &name, void *data)
@@ -75,7 +57,7 @@ void PlayerSettings::settingsChangedCallback(const std::string &name, void *data
 	LocalPlayer
 */
 
-LocalPlayer::LocalPlayer(Client *client, const char *name):
+LocalPlayer::LocalPlayer(Client *client, const std::string &name):
 	Player(name, client->idef()),
 	m_client(client)
 {
@@ -360,7 +342,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 
 	collisionMoveResult result = collisionMoveSimple(env, m_client,
 		pos_max_d, m_collisionbox, player_stepheight, dtime,
-		&position, &m_speed, accel_f);
+		&position, &m_speed, accel_f, m_cao);
 
 	bool could_sneak = control.sneak && !free_move && !in_liquid &&
 		!is_climbing && physics_override.sneak;
@@ -444,7 +426,7 @@ void LocalPlayer::move(f32 dtime, Environment *env, f32 pos_max_d,
 			v3f check_pos = position;
 			check_pos.Y += y_diff * dtime * 22.0f + BS * 0.01f;
 			if (y_diff < BS * 0.6f || (physics_override.sneak_glitch
-					&& !collision_check_intersection(env, m_client, m_collisionbox, check_pos))) {
+					&& !collision_check_intersection(env, m_client, m_collisionbox, check_pos, m_cao))) {
 				// Smoothen the movement (based on 'position.Y = bmax.Y')
 				position.Y = std::min(check_pos.Y, bmax.Y);
 				m_speed.Y = 0.0f;
@@ -990,7 +972,7 @@ void LocalPlayer::old_move(f32 dtime, Environment *env, f32 pos_max_d,
 
 	collisionMoveResult result = collisionMoveSimple(env, m_client,
 		pos_max_d, m_collisionbox, player_stepheight, dtime,
-		&position, &m_speed, accel_f);
+		&position, &m_speed, accel_f, m_cao);
 
 	// Position was slightly changed; update standing node pos
 	if (touching_ground)
@@ -1254,7 +1236,7 @@ void LocalPlayer::handleAutojump(f32 dtime, Environment *env,
 
 	// try at peak of jump, zero step height
 	collisionMoveResult jump_result = collisionMoveSimple(env, m_client, pos_max_d,
-		m_collisionbox, 0.0f, dtime, &jump_pos, &jump_speed, v3f(0.0f));
+		m_collisionbox, 0.0f, dtime, &jump_pos, &jump_speed, v3f(0.0f), m_cao);
 
 	// see if we can get a little bit farther horizontally if we had
 	// jumped

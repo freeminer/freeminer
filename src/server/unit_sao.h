@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2020 Minetest core developers & community
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2020 Minetest core developers & community
 
 #pragma once
 
@@ -31,7 +16,7 @@ public:
 	UnitSAO(ServerEnvironment *env, v3f pos);
 	virtual ~UnitSAO() = default;
 
-	u16 getHP() const { return m_hp; }
+	u16 getHP() const override { return m_hp; }
 	// Use a function, if isDead can be defined by other conditions
 	bool isDead() const { return m_hp == 0; }
 
@@ -59,38 +44,39 @@ public:
 	{
 		return itemgroup_get(getArmorGroups(), "immortal");
 	}
-	void setArmorGroups(const ItemGroupList &armor_groups);
-	const ItemGroupList &getArmorGroups() const;
+	void setArmorGroups(const ItemGroupList &armor_groups) override;
+	const ItemGroupList &getArmorGroups() const override;
 
 	// Animation
 	void setAnimation(v2f frame_range, float frame_speed, float frame_blend,
-			bool frame_loop);
+			bool frame_loop) override;
 	void getAnimation(v2f *frame_range, float *frame_speed, float *frame_blend,
-			bool *frame_loop);
-	void setAnimationSpeed(float frame_speed);
+			bool *frame_loop) override;
+	void setAnimationSpeed(float frame_speed) override;
 
 	// Bone position
-	void setBoneOverride(const std::string &bone, const BoneOverride &props);
-	BoneOverride getBoneOverride(const std::string &bone);
+	void setBoneOverride(const std::string &bone, const BoneOverride &props) override;
+	BoneOverride getBoneOverride(const std::string &bone) override;
 	const std::unordered_map<std::string, BoneOverride>
-			&getBoneOverrides() const { return m_bone_override; };
+			&getBoneOverrides() const override { return m_bone_override; };
 
 	// Attachments
-	ServerActiveObject *getParent() const;
-	inline bool isAttached() const { return getParent(); }
-	void setAttachment(int parent_id, const std::string &bone, v3f position,
-			v3f rotation, bool force_visible);
-	void getAttachment(int *parent_id, std::string *bone, v3f *position,
-			v3f *rotation, bool *force_visible) const;
-	void clearChildAttachments();
-	void clearParentAttachment();
-	void addAttachmentChild(int child_id);
-	void removeAttachmentChild(int child_id);
-	const std::unordered_set<int> &getAttachmentChildIds() const;
+	ServerActiveObject *getParent() const override;
+	inline bool isAttached() const { return m_attachment_parent_id != 0; }
+	void setAttachment(object_t parent_id, const std::string &bone, v3f position,
+			v3f rotation, bool force_visible) override;
+	void getAttachment(object_t *parent_id, std::string *bone, v3f *position,
+			v3f *rotation, bool *force_visible) const override;
+	void clearChildAttachments() override;
+	void addAttachmentChild(object_t child_id) override;
+	void removeAttachmentChild(object_t child_id) override;
+	const std::unordered_set<object_t> &getAttachmentChildIds() const override {
+		return m_attachment_child_ids;
+	}
 
 	// Object properties
-	ObjectProperties *accessObjectProperties();
-	void notifyObjectPropertiesModified();
+	ObjectProperties *accessObjectProperties() override;
+	void notifyObjectPropertiesModified() override;
 	void sendOutdatedData();
 
 	// Update packets
@@ -121,13 +107,27 @@ protected:
 	// Stores position and rotation for each bone name
 	std::unordered_map<std::string, BoneOverride> m_bone_override;
 
-	int m_attachment_parent_id = 0;
+	object_t m_attachment_parent_id = 0;
+
+	void clearAnyAttachments();
+	virtual void onMarkedForDeactivation() override {
+		ServerActiveObject::onMarkedForDeactivation();
+		clearAnyAttachments();
+	}
+	virtual void onMarkedForRemoval() override {
+		ServerActiveObject::onMarkedForRemoval();
+		clearAnyAttachments();
+	}
 
 private:
-	void onAttach(int parent_id);
-	void onDetach(int parent_id);
+	void onAttach(ServerActiveObject *parent);
+	void onDetach(ServerActiveObject *parent);
 
 	std::string generatePunchCommand(u16 result_hp) const;
+
+	// Used to detect nested calls to setAttachments(), which can happen due to
+	// Lua callbacks
+	u8 m_attachment_call_counter = 0;
 
 	// Armor groups
 	bool m_armor_groups_sent = false;
@@ -144,7 +144,7 @@ private:
 	bool m_bone_override_sent = false;
 
 	// Attachments
-	std::unordered_set<int> m_attachment_child_ids;
+	std::unordered_set<object_t> m_attachment_child_ids;
 	std::string m_attachment_bone = "";
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;

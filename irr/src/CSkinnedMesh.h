@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "ISceneManager.h"
 #include "ISkinnedMesh.h"
 #include "SMeshBuffer.h"
 #include "quaternion.h"
@@ -17,6 +18,7 @@ namespace scene
 
 class IAnimatedMeshSceneNode;
 class IBoneSceneNode;
+class ISceneManager;
 
 class CSkinnedMesh : public ISkinnedMesh
 {
@@ -27,8 +29,8 @@ public:
 	//! destructor
 	virtual ~CSkinnedMesh();
 
-	//! returns the amount of frames. If the amount is 1, it is a static (=non animated) mesh.
-	u32 getFrameCount() const override;
+	//! If the duration is 0, it is a static (=non animated) mesh.
+	f32 getMaxFrameNumber() const override;
 
 	//! Gets the default animation speed of the animated mesh.
 	/** \return Amount of frames per second. If the amount is 0, it is a static, non animated mesh. */
@@ -39,8 +41,8 @@ public:
 	The actual speed is set in the scene node the mesh is instantiated in.*/
 	void setAnimationSpeed(f32 fps) override;
 
-	//! returns the animated mesh based on a detail level (which is ignored)
-	IMesh *getMesh(s32 frame, s32 detailLevel = 255, s32 startFrameLoop = -1, s32 endFrameLoop = -1) override;
+	//! returns the animated mesh for the given frame
+	IMesh *getMesh(f32) override;
 
 	//! Animates this mesh's joints based on frame input
 	//! blend: {0-old position, 1-New position}
@@ -60,6 +62,10 @@ public:
 	\return Returns the pointer to the mesh buffer or
 	NULL if there is no such mesh buffer. */
 	IMeshBuffer *getMeshBuffer(const video::SMaterial &material) const override;
+
+	u32 getTextureSlot(u32 meshbufNr) const override;
+
+	void setTextureSlot(u32 meshbufNr, u32 textureSlot);
 
 	//! returns an axis aligned bounding box
 	const core::aabbox3d<f32> &getBoundingBox() const override;
@@ -129,6 +135,9 @@ public:
 	//! Adds a new meshbuffer to the mesh, access it as last one
 	SSkinMeshBuffer *addMeshBuffer() override;
 
+	//! Adds a new meshbuffer to the mesh, access it as last one
+	void addMeshBuffer(SSkinMeshBuffer *meshbuf) override;
+
 	//! Adds a new joint to the mesh, access it as last one
 	SJoint *addJoint(SJoint *parent = 0) override;
 
@@ -184,6 +193,8 @@ private:
 	core::array<SSkinMeshBuffer *> *SkinningBuffers; // Meshbuffer to skin, default is to skin localBuffers
 
 	core::array<SSkinMeshBuffer *> LocalBuffers;
+	//! Mapping from meshbuffer number to bindable texture slot
+	std::vector<u32> TextureSlots;
 
 	core::array<SJoint *> AllJoints;
 	core::array<SJoint *> RootJoints;
