@@ -1,27 +1,13 @@
-/*
-Minetest
-Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2015 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "../hud.h"
 #include "fm_nodecontainer.h"
 #include "irrlichttypes_extrabloated.h"
+#include "irr_ptr.h"
 #include "util/thread.h"
 #include "voxel.h"
 #include <map>
@@ -82,6 +68,7 @@ struct MinimapData {
 	video::IImage *minimap_mask_square = nullptr;
 	video::ITexture *texture = nullptr;
 	video::ITexture *heightmap_texture = nullptr;
+	bool textures_initialised = false; // True if the following textures are not nullptrs.
 	video::ITexture *minimap_overlay_round = nullptr;
 	video::ITexture *minimap_overlay_square = nullptr;
 	video::ITexture *player_marker = nullptr;
@@ -147,31 +134,31 @@ public:
 
 	MinimapModeDef getModeDef() const { return data->mode; }
 
+	video::IImage *getMinimapMask();
 	video::ITexture *getMinimapTexture();
 
 	void blitMinimapPixelsToImageRadar(video::IImage *map_image);
 	void blitMinimapPixelsToImageSurface(video::IImage *map_image,
 		video::IImage *heightmap_image);
 
-	scene::SMeshBuffer *getMinimapMeshBuffer();
+	irr_ptr<scene::SMeshBuffer> createMinimapMeshBuffer();
 
 	MinimapMarker* addMarker(scene::ISceneNode *parent_node);
 	void removeMarker(MinimapMarker **marker);
 
 	void updateActiveMarkers();
-	void drawMinimap();
 	void drawMinimap(core::rect<s32> rect);
 
 	video::IVideoDriver *driver;
 	Client* client;
-	MinimapData *data;
+	std::unique_ptr<MinimapData> data;
 
 private:
 	ITextureSource *m_tsrc;
 	IShaderSource *m_shdrsrc;
 	const NodeDefManager *m_ndef;
-	MinimapUpdateThread *m_minimap_update_thread = nullptr;
-	scene::SMeshBuffer *m_meshbuffer;
+	std::unique_ptr<MinimapUpdateThread> m_minimap_update_thread;
+	irr_ptr<scene::SMeshBuffer> m_meshbuffer;
 	bool m_enable_shaders;
 	std::vector<MinimapModeDef> m_modes;
 	size_t m_current_mode_index;
@@ -180,6 +167,6 @@ private:
 /*
 	std::mutex m_mutex;
 */
-	std::list<MinimapMarker*> m_markers;
+	std::list<std::unique_ptr<MinimapMarker>> m_markers;
 	std::list<v2f> m_active_markers;
 };

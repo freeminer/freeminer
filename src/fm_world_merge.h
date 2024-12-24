@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <future>
 #include <unordered_set>
-#include "map.h"
+#include "servermap.h"
 #include "mapblock.h"
 
 class Server;

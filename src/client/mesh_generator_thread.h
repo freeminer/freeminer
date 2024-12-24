@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013, 2017 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013, 2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -39,7 +24,7 @@ struct QueuedMeshUpdate
 	int crack_level = -1;
 	v3s16 crack_pos;
 	MeshMakeData *data = nullptr; // This is generated in MeshUpdateQueue::pop()
-	std::vector<MapBlockP> map_blocks;
+	std::vector<MapBlockPtr> map_blocks;
 	bool urgent = false;
 
 	QueuedMeshUpdate() = default;
@@ -89,7 +74,6 @@ private:
 	// TODO: Add callback to update these when g_settings changes
 	bool m_cache_enable_shaders;
 	bool m_cache_smooth_lighting;
-	int m_meshgen_block_cache_size;
 
 	void fillDataFromMapBlocks(QueuedMeshUpdate *q);
 	void cleanupCache();
@@ -98,12 +82,11 @@ private:
 struct MeshUpdateResult
 {
 	v3s16 p = v3s16(-1338, -1338, -1338);
-	//MapBlockMesh *mesh = nullptr;
 	MapBlock::mesh_type mesh;
-	u8 solid_sides = 0;
+	u8 solid_sides;
 	std::vector<v3s16> ack_list;
 	bool urgent = false;
-	std::vector<MapBlockP> map_blocks;
+	std::vector<MapBlockPtr> map_blocks;
 
 	MeshUpdateResult() = default;
 };
@@ -113,12 +96,13 @@ class MeshUpdateManager;
 class MeshUpdateWorkerThread : public UpdateThread
 {
 public:
-	MeshUpdateWorkerThread(MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset);
+	MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3s16 *camera_offset);
 
 protected:
 	virtual void doUpdate();
 
 private:
+	Client *m_client;
 	MeshUpdateQueue *m_queue_in;
 	MeshUpdateManager *m_manager;
 	v3s16 *m_camera_offset;

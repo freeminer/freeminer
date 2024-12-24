@@ -1,31 +1,15 @@
-/*
-filesys.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
+#include "config.h"
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
-#include "exceptions.h"
+#include <fstream>
 
 #ifdef _WIN32
 #define DIR_DELIM "\\"
@@ -78,12 +62,18 @@ bool RecursiveDelete(const std::string &path);
 
 bool DeleteSingleFileOrEmptyDirectory(const std::string &path);
 
-// Returns path to temp directory, can return "" on error
+/// Returns path to temp directory.
+/// You probably don't want to use this directly, see `CreateTempFile` or `CreateTempDir`.
+/// @return path or "" on error
 std::string TempPath();
 
-// Returns path to securely-created temporary file (will already exist when this function returns)
-// can return "" on error
+/// Returns path to securely-created temporary file (will already exist when this function returns).
+/// @return path or "" on error
 std::string CreateTempFile();
+
+/// Returns path to securely-created temporary directory (will already exist when this function returns).
+/// @return path or "" on error
+std::string CreateTempDir();
 
 /* Returns a list of subdirectories, including the path itself, but excluding
        hidden directories (whose names start with . or _)
@@ -145,14 +135,74 @@ std::string AbsolutePath(const std::string &path);
 // delimiter is found.
 const char *GetFilenameFromPath(const char *path);
 
-bool safeWriteToFile(const std::string &path, const std::string &content);
+// Replace the content of a file on disk in a way that is safe from
+// corruption/truncation on a crash.
+// logs and returns false on error
+bool safeWriteToFile(const std::string &path, std::string_view content);
 
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 bool extractZipFile(irr::io::IFileSystem *fs, const char *filename, const std::string &destination);
 #endif
 
-bool ReadFile(const std::string &path, std::string &out);
+bool ReadFile(const std::string &path, std::string &out, bool log_error = false);
 
 bool Rename(const std::string &from, const std::string &to);
 
+/**
+ * Open a file buffer with error handling, commonly used with `std::fstream.rdbuf()`.
+ *
+ * @param stream stream references, must not already be open
+ * @param filename filename to open
+ * @param mode mode bits (used as-is)
+ * @param log_error log failure to errorstream?
+ * @param log_warn log failure to warningstream?
+ * @return true if success
+*/
+bool OpenStream(std::filebuf &stream, const char *filename,
+	std::ios::openmode mode, bool log_error, bool log_warn);
+
 } // namespace fs
+
+// outside of namespace for convenience:
+
+/**
+ * Helper function to open an output file stream (= writing).
+ *
+ * For compatibility with fopen() binary mode and truncate are always set.
+ * Use `fs::OpenStream` for more control.
+ * @param name file name
+ * @param log if true, failure to open the file will be logged to errorstream
+ * @param mode additional mode bits (e.g. std::ios::app)
+ * @return file stream, will be !good in case of error
+*/
+inline std::ofstream open_ofstream(const char *name, bool log,
+	std::ios::openmode mode = std::ios::openmode())
+{
+	mode |= std::ios::out | std::ios::binary;
+	if (!(mode & std::ios::app))
+		mode |= std::ios::trunc;
+	std::ofstream ofs;
+	if (!fs::OpenStream(*ofs.rdbuf(), name, mode, log, false))
+		ofs.setstate(std::ios::failbit);
+	return ofs;
+}
+
+/**
+ * Helper function to open an input file stream (= reading).
+ *
+ * For compatibility with fopen() binary mode is always set.
+ * Use `fs::OpenStream` for more control.
+ * @param name file name
+ * @param log if true, failure to open the file will be logged to errorstream
+ * @param mode additional mode bits (e.g. std::ios::ate)
+ * @return file stream, will be !good in case of error
+*/
+inline std::ifstream open_ifstream(const char *name, bool log,
+	std::ios::openmode mode = std::ios::openmode())
+{
+	mode |= std::ios::in | std::ios::binary;
+	std::ifstream ifs;
+	if (!fs::OpenStream(*ifs.rdbuf(), name, mode, log, false))
+		ifs.setstate(std::ios::failbit);
+	return ifs;
+}

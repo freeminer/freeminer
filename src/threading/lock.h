@@ -24,15 +24,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "../config.h"
 
-#ifdef _WIN32
 
-#include "../threading/mutex.h"
+using use_mutex = std::mutex;
+
+/*
+#ifdef _WIN32
 using use_mutex = std::mutex;
 using try_shared_mutex = use_mutex;
 using maybe_shared_lock = std::unique_lock<try_shared_mutex>;
 using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
-
 #else
 
 typedef std::mutex use_mutex;
@@ -50,6 +51,8 @@ const auto try_to_lock = boost::try_to_lock;
 
 #elif HAVE_SHARED_MUTEX
 //#elif __cplusplus >= 201305L
+*/
+
 
 #include <shared_mutex>
 using try_shared_mutex = std::shared_mutex;
@@ -58,6 +61,7 @@ using unique_lock = std::unique_lock<try_shared_mutex>;
 const auto try_to_lock = std::try_to_lock;
 #define LOCK_TWO 1
 
+/*
 #else
 
 using try_shared_mutex = use_mutex;
@@ -67,6 +71,7 @@ const auto try_to_lock = std::try_to_lock;
 #endif
 
 #endif
+*/
 
 // http://stackoverflow.com/questions/4792449/c0x-has-no-semaphores-how-to-synchronize-threads
 /* uncomment when need
@@ -144,14 +149,14 @@ public:
 class dummy_locker
 {
 public:
-	dummy_lock lock_unique() { return {}; };
-	dummy_lock try_lock_unique() { return {}; };
-	dummy_lock lock_shared() { return {}; };
-	dummy_lock try_lock_shared() { return {}; };
-	dummy_lock lock_unique_rec() { return {}; };
-	dummy_lock try_lock_unique_rec() { return {}; };
-	dummy_lock lock_shared_rec() { return {}; };
-	dummy_lock try_lock_shared_rec() { return {}; };
+	dummy_lock lock_unique() const { return {}; };
+	dummy_lock try_lock_unique() const { return {}; };
+	dummy_lock lock_shared() const { return {}; };
+	dummy_lock try_lock_shared() const { return {}; };
+	dummy_lock lock_unique_rec() const { return {}; };
+	dummy_lock try_lock_unique_rec() const { return {}; };
+	dummy_lock lock_shared_rec() const { return {}; };
+	dummy_lock try_lock_shared_rec() const { return {}; };
 };
 
 #if ENABLE_THREADS

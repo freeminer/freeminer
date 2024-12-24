@@ -1,20 +1,6 @@
-/*
-Copyright (C) 2016 Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2016 Loic Blot <loic.blot@unix-experience.fr>
 
 #include "config.h"
 
@@ -223,7 +209,7 @@ void MapDatabasePostgreSQL::initStatements()
 		"SELECT posX, posY, posZ FROM blocks");
 }
 
-bool MapDatabasePostgreSQL::saveBlock(const v3s16 &pos, const std::string &data)
+bool MapDatabasePostgreSQL::saveBlock(const v3s16 &pos, std::string_view data)
 {
 	// Verify if we don't overflow the platform integer with the mapblock size
 	if (data.size() > INT_MAX) {
@@ -240,7 +226,7 @@ bool MapDatabasePostgreSQL::saveBlock(const v3s16 &pos, const std::string &data)
 	y = htonl(pos.Y);
 	z = htonl(pos.Z);
 
-	const void *args[] = { &x, &y, &z, data.c_str() };
+	const void *args[] = { &x, &y, &z, data.data() };
 	const int argLen[] = {
 		sizeof(x), sizeof(y), sizeof(z), (int)data.size()
 	};
@@ -940,11 +926,11 @@ bool ModStorageDatabasePostgreSQL::hasModEntry(const std::string &modname,
 }
 
 bool ModStorageDatabasePostgreSQL::setModEntry(const std::string &modname,
-	const std::string &key, const std::string &value)
+	const std::string &key, std::string_view value)
 {
 	verifyDatabase();
 
-	const void *args[] = { modname.c_str(), key.c_str(), value.c_str() };
+	const void *args[] = { modname.c_str(), key.c_str(), value.data() };
 	const int argLen[] = {
 		-1,
 		(int)MYMIN(key.size(), INT_MAX),

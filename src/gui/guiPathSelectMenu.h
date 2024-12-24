@@ -1,24 +1,7 @@
-/*
-guiFileSelectMenu.h
-Copyright (C) 2013 sapier
-*/
 
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 sapier
 
 #pragma once
 
@@ -26,7 +9,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "modalMenu.h"
 #include "IGUIFileOpenDialog.h"
-#include "guiFormSpecMenu.h" //required because of TextDest only !!!
+
+struct TextDest;
 
 class GUIFileSelectMenu : public GUIModalMenu
 {

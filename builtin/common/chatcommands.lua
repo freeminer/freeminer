@@ -1,5 +1,3 @@
--- Minetest: builtin/common/chatcommands.lua
-
 -- For server-side translations (if INIT == "game")
 -- Otherwise, use core.gettext
 local S = core.get_translator("__builtin")
@@ -90,7 +88,7 @@ local function do_help_cmd(name, param)
 	if #args > 1 then
 		return false, S("Too many arguments, try using just /help <command>")
 	end
-	local use_gui = INIT ~= "client" and core.get_player_by_name(name)
+	local use_gui = INIT == "client" or core.get_player_by_name(name)
 	use_gui = use_gui and not opts:find("t")
 
 	if #args == 0 and not use_gui then
@@ -164,8 +162,8 @@ end
 
 if INIT == "client" then
 	core.register_chatcommand("help", {
-		params = core.gettext("[all | <cmd>]"),
-		description = core.gettext("Get help for commands"),
+		params = core.gettext("[all | <cmd>] [-t]"),
+		description = core.gettext("Get help for commands (-t: output in chat)"),
 		func = function(param)
 			return do_help_cmd(nil, param)
 		end,

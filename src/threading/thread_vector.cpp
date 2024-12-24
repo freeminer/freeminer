@@ -2,7 +2,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include "fm_porting.h"
-#include "log.h"
+#include "log_internal.h"
+
 #include "porting.h"
 
 thread_vector::thread_vector(const std::string &name, int priority) :

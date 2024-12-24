@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "mods.h"
 #include "filesys.h"
@@ -49,9 +34,8 @@ ServerModManager::ServerModManager(const std::string &worldpath):
 	configuration.checkConflictsAndDeps();
 }
 
-// clang-format off
 // This function cannot be currenctly easily tested but it should be ASAP
-void ServerModManager::loadMods(ServerScripting *script)
+void ServerModManager::loadMods(ServerScripting &script)
 {
 	// Print mods
 	infostream << "Server: Loading mods: ";
@@ -72,16 +56,15 @@ void ServerModManager::loadMods(ServerScripting *script)
 		}
 
 		auto t = porting::getTimeMs();
-		script->loadMod(script_path, mod.name);
+		script.loadMod(script_path, mod.name);
 		infostream << "Mod \"" << mod.name << "\" loaded after "
 			<< (porting::getTimeMs() - t) << " ms" << std::endl;
 	}
 
 	// Run a callback when mods are loaded
-	script->on_mods_loaded();
+	script.on_mods_loaded();
 }
 
-// clang-format on
 const ModSpec *ServerModManager::getModSpec(const std::string &modname) const
 {
 	for (const auto &mod : configuration.getMods()) {

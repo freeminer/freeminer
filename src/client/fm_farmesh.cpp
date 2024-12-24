@@ -53,16 +53,16 @@ const v3opos_t g_6dirso[6] = {
 		v3opos_t(0, 1, 0),	// top
 };
 
-void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool near)
+void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bnear)
 {
 	g_profiler->add("Client: Farmesh make", 1);
 
 	auto &client_map = m_client->getEnv().getClientMap();
 	const auto &draw_control = client_map.getControl();
 	const auto blockpos_actual =
-			near ? blockpos
-				 : getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
-						   draw_control);
+			bnear ? blockpos
+				  : getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
+							draw_control);
 	auto &far_blocks = //near ? m_client->getEnv().getClientMap().m_far_near_blocks :
 			client_map.m_far_blocks;
 	if (const auto it = client_map.far_blocks_storage[step].find(blockpos_actual);
@@ -84,8 +84,8 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 		block->far_iteration = far_iteration_complete;
 		return;
 	}
-	
-	MapBlockP block;
+
+	MapBlockPtr block;
 	{
 		const auto lock = far_blocks.lock_unique_rec();
 		if (const auto &it = far_blocks.find(blockpos_actual);
@@ -96,7 +96,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 				m_client->getEnv().getClientMap().m_far_blocks_ask.emplace(
 						blockpos_actual, std::make_pair(step, far_iteration_complete));
 
-				block.reset(client_map.createBlankBlockNoInsert(blockpos_actual));
+				block = client_map.createBlankBlockNoInsert(blockpos_actual);
 				block->far_step = step;
 				collect_reset_timestamp = block->far_make_mesh_timestamp =
 						m_client->m_uptime + wait_server_far_block + step;
@@ -131,10 +131,10 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, block_step_t step)
 
 	// TODO: fix finding correct near blocks respecting their steps and enable:
 
-	const static auto far = std::vector<v3pos_t>{
+	const static auto pfar = std::vector<v3pos_t>{
 			v3pos_t(0, 0, 0), // self
 	};
-	const static auto near = std::vector<v3pos_t>{
+	const static auto pnear = std::vector<v3pos_t>{
 			v3pos_t(0, 0, 0),  // self
 			v3pos_t(0, 0, 1),  // back
 			v3pos_t(1, 0, 0),  // right
@@ -143,7 +143,7 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, block_step_t step)
 			v3pos_t(0, 1, 0),  // top
 			v3pos_t(0, -1, 0), // bottom
 	};
-	const auto &use_dirs = near;
+	const auto &use_dirs = pnear;
 	const auto step_width = 1 << (step - 1);
 	for (const auto &dir : use_dirs) {
 		const auto bpos_dir = blockpos + dir * step_width;
@@ -318,8 +318,11 @@ int FarMesh::go_flat()
 			[this, &draw_control, &blocks](
 					const v3bpos_t &bpos, const bpos_t &size) -> bool {
 				for (const auto &add : {
-							 v2bpos_t(0, 0), v2bpos_t(0, size - 1), v2bpos_t(size - 1, 0),
-							 v2bpos_t(size - 1, size - 1), v2bpos_t(size >> 1, size >> 1),
+							 v2bpos_t(0, 0),
+							 v2bpos_t(0, size - 1),
+							 v2bpos_t(size - 1, 0),
+							 v2bpos_t(size - 1, size - 1),
+							 v2bpos_t(size >> 1, size >> 1),
 					 }) {
 					v3bpos_t bpos_new(bpos.X + add.X, 0, bpos.Z + add.Y);
 

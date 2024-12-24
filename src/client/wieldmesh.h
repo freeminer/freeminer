@@ -1,27 +1,25 @@
-/*
-Minetest
-Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include <string>
 #include <vector>
-#include "irrlichttypes_extrabloated.h"
+#include "irr_aabb3d.h"
+#include "irr_v3d.h"
+#include <EMaterialTypes.h>
+#include <IMeshSceneNode.h>
+#include <SColor.h>
+
+namespace irr::scene
+{
+	class ISceneManager;
+	class IMesh;
+	struct SMesh;
+}
+
+using namespace irr;
 
 struct ItemStack;
 class Client;
@@ -29,38 +27,54 @@ class ITextureSource;
 struct ContentFeatures;
 class ShadowRenderer;
 
-/*!
+/*
  * Holds color information of an item mesh's buffer.
  */
-struct ItemPartColor
+class ItemPartColor
 {
-	/*!
-	 * If this is false, the global base color of the item
-	 * will be used instead of the specific color of the
-	 * buffer.
+	/*
+	 * Optional color that overrides the global base color.
 	 */
-	bool override_base = false;
-	/*!
-	 * The color of the buffer.
+	video::SColor override_color;
+	/*
+	 * Stores the last color this mesh buffer was colorized as.
 	 */
-	video::SColor color = 0;
+	video::SColor last_colorized;
+
+	// saves some bytes compared to two std::optionals
+	bool override_color_set = false;
+	bool last_colorized_set = false;
+
+public:
 
 	ItemPartColor() = default;
 
 	ItemPartColor(bool override, video::SColor color) :
-			override_base(override), color(color)
-	{
+		override_color(color), override_color_set(override)
+	{}
+
+	void applyOverride(video::SColor &dest) const {
+		if (override_color_set)
+			dest = override_color;
+	}
+
+	bool needColorize(video::SColor target) {
+		if (last_colorized_set && target == last_colorized)
+			return false;
+		last_colorized_set = true;
+		last_colorized = target;
+		return true;
 	}
 };
 
 struct ItemMesh
 {
 	scene::IMesh *mesh = nullptr;
-	/*!
+	/*
 	 * Stores the color of each mesh buffer.
 	 */
 	std::vector<ItemPartColor> buffer_colors;
-	/*!
+	/*
 	 * If false, all faces of the item should have the same brightness.
 	 * Disables shading based on normal vectors.
 	 */
@@ -75,7 +89,7 @@ struct ItemMesh
 class WieldMeshSceneNode : public scene::ISceneNode
 {
 public:
-	WieldMeshSceneNode(scene::ISceneManager *mgr, s32 id = -1, bool lighting = false);
+	WieldMeshSceneNode(scene::ISceneManager *mgr, s32 id = -1);
 	virtual ~WieldMeshSceneNode();
 
 	void setCube(const ContentFeatures &f, v3f wield_scale);
@@ -104,9 +118,6 @@ public:
 	scene::IMeshSceneNode *m_meshnode = nullptr;
 private:
 	video::E_MATERIAL_TYPE m_material_type;
-
-	// True if SMaterial::Lighting should be enabled.
-	bool m_lighting;
 
 	bool m_enable_shaders;
 	bool m_anisotropic_filter;

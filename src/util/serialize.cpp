@@ -1,24 +1,6 @@
-/*
-util/serialize.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "serialize.h"
 #include "porting.h"
@@ -37,7 +19,7 @@ FloatType g_serialize_f32_type = FLOATTYPE_UNKNOWN;
 //// String
 ////
 
-std::string serializeString16(const std::string &plain)
+std::string serializeString16(std::string_view plain)
 {
 	std::string s;
 	char buf[2];
@@ -79,7 +61,7 @@ std::string deSerializeString16(std::istream &is)
 //// Long String
 ////
 
-std::string serializeString32(const std::string &plain)
+std::string serializeString32(std::string_view plain)
 {
 	std::string s;
 	char buf[4];
@@ -125,7 +107,7 @@ std::string deSerializeString32(std::istream &is)
 //// JSON-like strings
 ////
 
-std::string serializeJsonString(const std::string &plain)
+std::string serializeJsonString(std::string_view plain)
 {
 	std::string tmp;
 
@@ -266,13 +248,13 @@ std::string deSerializeJsonString(std::istream &is)
 	return tmp;
 }
 
-std::string serializeJsonStringIfNeeded(const std::string &s)
+std::string serializeJsonStringIfNeeded(std::string_view s)
 {
 	for (size_t i = 0; i < s.size(); ++i) {
 		if (s[i] <= 0x1f || s[i] >= 0x7f || s[i] == ' ' || s[i] == '\"')
 			return serializeJsonString(s);
 	}
-	return s;
+	return std::string(s);
 }
 
 std::string deSerializeJsonStringIfNeeded(std::istream &is)

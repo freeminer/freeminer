@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2022 sfan5 <sfan5@live.de>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2022 sfan5 <sfan5@live.de>
 
 #pragma once
 
@@ -34,41 +19,44 @@ extern "C" {
 	states and cannot be used for persistence or network transfer.
 */
 
-#define INSTR_SETTABLE (-10)
-#define INSTR_POP      (-11)
-#define INSTR_PUSHREF  (-12)
+#define INSTR_SETTABLE     (-10)
+#define INSTR_POP          (-11)
+#define INSTR_PUSHREF      (-12)
+#define INSTR_SETMETATABLE (-13)
 
 /**
- * Represents a single instruction that pushes a new value or works with existing ones.
+ * Represents a single instruction that pushes a new value or operates with existing ones.
  */
 struct PackedInstr
 {
 	s16 type; // LUA_T* or INSTR_*
 	u16 set_into; // set into table on stack
-	bool keep_ref; // is referenced later by INSTR_PUSHREF?
+	bool keep_ref; // referenced later by INSTR_PUSHREF?
 	bool pop; // remove from stack?
+	// Note: the remaining members are named by type, not usage
 	union {
 		bool bdata; // boolean: value
 		lua_Number ndata; // number: value
 		struct {
-			u16 uidata1, uidata2; // table: narr, nrec
+			u16 uidata1, uidata2; // table: narr | nrec
 		};
 		struct {
 			/*
-				SETTABLE: key index, value index
+				SETTABLE: key index | value index
 				POP: indices to remove
-				otherwise w/ set_into: numeric key, -
+				PUSHREF: index of referenced instr | unused
+				otherwise w/ set_into: numeric key | unused
 			*/
 			s32 sidata1, sidata2;
 		};
 		void *ptrdata; // userdata: implementation defined
-		s32 ref; // PUSHREF: index of referenced instr
 	};
 	/*
 		- string: value
 		- function: buffer
 		- w/ set_into: string key (no null bytes!)
 		- userdata: name in registry
+		- INSTR_SETMETATABLE: name of the metatable
 	*/
 	std::string sdata;
 
@@ -78,7 +66,7 @@ struct PackedInstr
 /**
  * A packed value can be a primitive like a string or number but also a table
  * including all of its contents. It is made up of a linear stream of
- * 'instructions' that build the final value when executed.
+ * instructions that build the final value when executed.
  */
 struct PackedValue
 {

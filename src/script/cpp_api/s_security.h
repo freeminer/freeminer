@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -49,12 +34,12 @@ public:
 	static bool safeLoadString(lua_State *L, const std::string &code, const char *chunk_name);
 	// Loads a file as Lua code safely (doesn't allow bytecode).
 	static bool safeLoadFile(lua_State *L, const char *path, const char *display_name = NULL);
-	// Checks if mods are allowed to read (and optionally write) to the path
-	static bool checkPath(lua_State *L, const char *path, bool write_required,
-			bool *write_allowed=NULL);
 	// Check if mod is whitelisted in the given setting
 	// This additionally checks that the mod's main file scope is executing.
 	static bool checkWhitelisted(lua_State *L, const std::string &setting);
+	// Checks if mods are allowed to read (and optionally write) to the path
+	static bool checkPath(lua_State *L, const char *path, bool write_required,
+			bool *write_allowed=NULL);
 
 private:
 	int getThread(lua_State *L);

@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "debug.h"
 #include "filesys.h"
@@ -99,15 +84,11 @@ bool MapSettingsManager::loadMapMeta()
 	if (m_map_settings->readJsonFile(m_map_meta_path + ".json")) {
 		return true;
 	}
-	auto map_meta_path = m_map_meta_path + ".txt";
+	const auto map_meta_path = m_map_meta_path + ".txt";
 
-	std::ifstream is(map_meta_path.c_str(), std::ios_base::binary);
-
-	if (!is.good()) {
-		errorstream << "loadMapMeta: could not open "
-			<< map_meta_path << std::endl;
+	auto is = open_ifstream(map_meta_path.c_str(), true);
+	if (!is.good())
 		return false;
-	}
 
 	if (!m_map_settings->parseConfigLines(is)) {
 		errorstream << "loadMapMeta: Format error. '[end_of_params]' missing?" << std::endl;

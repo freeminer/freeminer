@@ -1,4 +1,4 @@
---Minetest
+--Luanti
 --Copyright (C) 2013 sapier
 --
 --This program is free software; you can redistribute it and/or modify
@@ -124,16 +124,9 @@ local function get_formspec(data)
 	local mod = all_mods[data.selected_mod] or {name = ""}
 
 	local retval =
-		"size[11,6.5,false]" ..
-		"label[0.5,-0.25;" .. fgettext("World:") .. "]" ..
-		"label[1.75,-0.25;" .. data.worldspec.name .. "]"
-		--"checkbox[0,5.75;cb_hide_gamemods;" .. fgettext("Hide Game") .. ";" .. tostring(data.hide_gamemods) .. "]" ..
-		--"checkbox[2,5.75;cb_hide_mpcontent;" .. fgettext("Hide mp content") .. ";" .. tostring(data.hide_modpackcontents) .. "]"
-
-
-		--"size[11.5,7.5,true]" ..
-		--"label[0.5,0;" .. fgettext("World:") .. "]" ..
-		--"label[1.75,0;" .. data.worldspec.name .. "]"
+		"size[11.5,7.5,true]" ..
+		"label[0.5,0;" .. fgettext("World:") .. "]" ..
+		"label[1.75,0;" .. core.formspec_escape(data.worldspec.name) .. "]"
 
 	if mod.is_modpack or mod.type == "game" then
 		local info = core.formspec_escape(
@@ -341,7 +334,7 @@ local function handle_buttons(this, fields)
 	if fields.btn_config_world_cdb then
 		this.data.list = nil
 
-		local dlg = create_store_dlg("mod")
+		local dlg = create_contentdb_dlg("mod")
 		dlg:set_parent(this)
 		this:hide()
 		dlg:show()

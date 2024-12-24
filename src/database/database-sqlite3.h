@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -45,14 +30,9 @@ protected:
 	void verifyDatabase();
 
 	// Convertors
-	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const std::string &str) const
+	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, std::string_view str) const
 	{
-		sqlite3_vrfy(sqlite3_bind_text(s, iCol, str.c_str(), str.size(), NULL));
-	}
-
-	inline void str_to_sqlite(sqlite3_stmt *s, int iCol, const char *str) const
-	{
-		sqlite3_vrfy(sqlite3_bind_text(s, iCol, str, strlen(str), NULL));
+		sqlite3_vrfy(sqlite3_bind_text(s, iCol, str.data(), str.size(), NULL));
 	}
 
 	inline void int_to_sqlite(sqlite3_stmt *s, int iCol, int val) const
@@ -70,10 +50,28 @@ protected:
 		sqlite3_vrfy(sqlite3_bind_double(s, iCol, val));
 	}
 
-	inline std::string sqlite_to_string(sqlite3_stmt *s, int iCol)
+	// Note that the return value is only valid until the statement is stepped or reset.
+	inline std::string_view sqlite_to_string_view(sqlite3_stmt *s, int iCol)
 	{
 		const char* text = reinterpret_cast<const char*>(sqlite3_column_text(s, iCol));
-		return std::string(text ? text : "");
+		return text ? std::string_view(text) : std::string_view();
+	}
+
+	// Avoid using this in favor of `sqlite_to_string_view`.
+	inline std::string sqlite_to_string(sqlite3_stmt *s, int iCol)
+	{
+		return std::string(sqlite_to_string_view(s, iCol));
+	}
+
+	// Converts a BLOB-type column into a string_view (null byte safe).
+	// Note that the return value is only valid until the statement is stepped or reset.
+	inline std::string_view sqlite_to_blob(sqlite3_stmt *s, int iCol)
+	{
+		const char *data = reinterpret_cast<const char*>(sqlite3_column_blob(s, iCol));
+		if (!data)
+			return std::string_view();
+		size_t len = sqlite3_column_bytes(s, iCol);
+		return std::string_view(data, len);
 	}
 
 	inline s32 sqlite_to_int(sqlite3_stmt *s, int iCol)
@@ -108,13 +106,16 @@ protected:
 	}
 
 	// Query verifiers helpers
-	inline void sqlite3_vrfy(int s, const std::string &m = "", int r = SQLITE_OK) const
+	inline void sqlite3_vrfy(int s, std::string_view m = "", int r = SQLITE_OK) const
 	{
-		if (s != r)
-			throw DatabaseException(m + ": " + sqlite3_errmsg(m_database));
+		if (s != r) {
+			std::string msg(m);
+			msg.append(": ").append(sqlite3_errmsg(m_database));
+			throw DatabaseException(msg);
+		}
 	}
 
-	inline void sqlite3_vrfy(const int s, const int r, const std::string &m = "") const
+	inline void sqlite3_vrfy(const int s, const int r, std::string_view m = "") const
 	{
 		sqlite3_vrfy(s, m, r);
 	}
@@ -147,7 +148,7 @@ public:
 	MapDatabaseSQLite3(const std::string &savedir);
 	virtual ~MapDatabaseSQLite3();
 
-	bool saveBlock(const v3s16 &pos, const std::string &data);
+	bool saveBlock(const v3s16 &pos, std::string_view data);
 	void loadBlock(const v3s16 &pos, std::string *block);
 	bool deleteBlock(const v3s16 &pos);
 	void listAllLoadableBlocks(std::vector<v3s16> &dst);
@@ -248,7 +249,7 @@ public:
 		const std::string &key, std::string *value);
 	virtual bool hasModEntry(const std::string &modname, const std::string &key);
 	virtual bool setModEntry(const std::string &modname,
-		const std::string &key, const std::string &value);
+		const std::string &key,std::string_view value);
 	virtual bool removeModEntry(const std::string &modname, const std::string &key);
 	virtual bool removeModEntries(const std::string &modname);
 	virtual void listMods(std::vector<std::string> *res);

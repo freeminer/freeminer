@@ -1,24 +1,6 @@
-/*
-script/cpp_api/s_entity.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "cpp_api/s_entity.h"
 #include "cpp_api/s_internal.h"
@@ -114,7 +96,9 @@ void ScriptApiEntity::luaentity_Deactivate(u16 id, bool removal)
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
-		verbosestream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+#if !NDEBUG
+		verbosestream << "ScriptApiEntity::luaentity_Deactivate(" << id << "): Wrong type=" << type << std::endl;
+#endif
 		return;
 	}
 
@@ -162,7 +146,9 @@ std::string ScriptApiEntity::luaentity_GetStaticdata(u16 id)
 	luaentity_get(L, id);
 
 	if (const auto type = lua_type(L, -1); type != LUA_TTABLE) {
+#if !NDEBUG
 		verbosestream << "ScriptApiEntity::luaentity_GetStaticdata(" << id << "): Wrong type=" << type << std::endl;
+#endif
 		return {};
 	}
 
@@ -244,11 +230,7 @@ void ScriptApiEntity::luaentity_GetProperties(u16 id,
 bool ScriptApiEntity::luaentity_Step(u16 id, float dtime,
 	const collisionMoveResult *moveresult)
 {
-	RecursiveMutexAutoLock testscriptlock(m_luastackmutex, std::try_to_lock);
-	if (!testscriptlock.owns_lock())
-		return true;
-
-	SCRIPTAPI_PRECHECKHEADER
+	TRY_SCRIPTAPI_PRECHECKHEADER(true)
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
@@ -292,8 +274,6 @@ bool ScriptApiEntity::luaentity_Punch(u16 id,
 {
 	SCRIPTAPI_PRECHECKHEADER
 
-	assert(puncher);
-
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
 	// Get core.luaentities[id]
@@ -308,7 +288,10 @@ bool ScriptApiEntity::luaentity_Punch(u16 id,
 	}
 	luaL_checktype(L, -1, LUA_TFUNCTION);
 	lua_pushvalue(L, object);  // self
-	objectrefGetOrCreate(L, puncher);  // Clicker reference
+	if (puncher)
+		objectrefGetOrCreate(L, puncher);  // Puncher reference
+	else
+		lua_pushnil(L);
 	lua_pushnumber(L, time_from_last_punch);
 	push_tool_capabilities(L, *toolcap);
 	push_v3f(L, dir);

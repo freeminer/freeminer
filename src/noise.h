@@ -39,9 +39,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 extern FlagDesc flagdesc_noiseparams[];
 
-
-#if MAX_MAP_GENERATION_LIMIT > FARSCALE_LIMIT
-
 template <typename type_scale, typename type_coord>
 inline type_scale farscale(type_scale scale, type_coord z) {
 	return ( 1 + ( 1 - (FARSCALE_LIMIT * 1 - (fmod(fabs(z), FARSCALE_LIMIT))                     ) / (FARSCALE_LIMIT * 1) ) * (scale - 1) );
@@ -57,49 +54,30 @@ inline type_scale farscale(type_scale scale, type_coord x, type_coord y, type_co
 	return ( 1 + ( 1 - (FARSCALE_LIMIT * 3 - fmod(fabs(x) + fabs(y) + fabs(z), FARSCALE_LIMIT*3) ) / (FARSCALE_LIMIT * 3) ) * (scale - 1) );
 }
 
-#else
-
-template <typename type_scale, typename type_coord>
-inline type_scale farscale(type_scale scale, type_coord z) {
-	return ( 1 + ( 1 - (FARSCALE_LIMIT * 1 - (fabs(z))                     ) / (FARSCALE_LIMIT * 1) ) * (scale - 1) );
-}
-
-template <typename type_scale, typename type_coord>
-inline type_scale farscale(type_scale scale, type_coord x, type_coord z) {
-	return ( 1 + ( 1 - (FARSCALE_LIMIT * 2 - (fabs(x) + fabs(z))           ) / (FARSCALE_LIMIT * 2) ) * (scale - 1) );
-}
-
-template <typename type_scale, typename type_coord>
-inline type_scale farscale(type_scale scale, type_coord x, type_coord y, type_coord z) {
-	return ( 1 + ( 1 - (FARSCALE_LIMIT * 3 - (fabs(x) + fabs(y) + fabs(z)) ) / (FARSCALE_LIMIT * 3) ) * (scale - 1) );
-}
-
-#endif
-
-
 // Note: this class is not polymorphic so that its high level of
 // optimizability may be preserved in the common use case
 class PseudoRandom {
 public:
 	const static u32 RANDOM_RANGE = 32767;
 
-	inline PseudoRandom(int seed=0):
-		m_next(seed)
+	inline PseudoRandom(s32 seed_=0)
 	{
+		seed(seed_);
 	}
 
-	inline void seed(int seed)
+	inline void seed(s32 seed)
 	{
 		m_next = seed;
 	}
 
-	inline int next()
+	inline u32 next()
 	{
-		m_next = m_next * 1103515245 + 12345;
-		return (unsigned)(m_next / 65536) % (RANDOM_RANGE + 1);
+		m_next = static_cast<u32>(m_next) * 1103515245U + 12345U;
+		// Signed division is required due to backwards compatibility
+		return static_cast<u32>(m_next / 65536) % (RANDOM_RANGE + 1U);
 	}
 
-	inline int range(int min, int max)
+	inline s32 range(s32 min, s32 max)
 	{
 		if (max < min)
 			throw PrngException("Invalid range (max < min)");
@@ -109,14 +87,19 @@ public:
 		PcgRandom, we cannot modify this RNG's range as it would change the
 		output of this RNG for reverse compatibility.
 		*/
-		if ((u32)(max - min) > (RANDOM_RANGE + 1) / 10)
+		if (static_cast<u32>(max - min) > (RANDOM_RANGE + 1) / 5)
 			throw PrngException("Range too large");
 
 		return (next() % (max - min + 1)) + min;
 	}
 
+	// Allow save and restore of state
+	inline s32 getState() const
+	{
+		return m_next;
+	}
 private:
-	int m_next;
+	s32 m_next;
 };
 
 class PcgRandom {
@@ -133,6 +116,9 @@ public:
 	void bytes(void *out, size_t len);
 	s32 randNormalDist(s32 min, s32 max, int num_trials=6);
 
+	// Allow save and restore of state
+	void getState(u64 state[2]) const;
+	void setState(const u64 state[2]);
 private:
 	std::atomic_ullong m_state;
 	//u64 m_state;

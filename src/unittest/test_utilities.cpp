@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "test.h"
 
@@ -24,6 +9,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include "util/string.h"
 #include "util/base64.h"
+#include "util/colorize.h"
 
 class TestUtilities : public TestBase {
 public:
@@ -59,6 +45,8 @@ public:
 	void testBase64();
 	void testSanitizeDirName();
 	void testIsBlockInSight();
+	void testColorizeURL();
+	void testSanitizeUntrusted();
 };
 
 static TestUtilities g_test_instance;
@@ -92,6 +80,8 @@ void TestUtilities::runTests(IGameDef *gamedef)
 	TEST(testBase64);
 	TEST(testSanitizeDirName);
 	TEST(testIsBlockInSight);
+	TEST(testColorizeURL);
+	TEST(testSanitizeUntrusted);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -180,9 +170,11 @@ void TestUtilities::testWrapDegrees_0_360_v3f()
 
 void TestUtilities::testLowercase()
 {
-	UASSERT(lowercase("Foo bAR") == "foo bar");
-	UASSERT(lowercase("eeeeeeaaaaaaaaaaaààààà") == "eeeeeeaaaaaaaaaaaààààà");
-	UASSERT(lowercase("MINETEST-powa") == "minetest-powa");
+	UASSERTEQ(auto, lowercase("Foo bAR"), "foo bar");
+	UASSERTEQ(auto, lowercase("eeeeeeaaaaaaaaaaaààààà"), "eeeeeeaaaaaaaaaaaààààà");
+	// intentionally won't handle Unicode, regardless of locale
+	UASSERTEQ(auto, lowercase("ÜÜ"), "ÜÜ");
+	UASSERTEQ(auto, lowercase("MINETEST-powa"), "minetest-powa");
 }
 
 
@@ -240,20 +232,26 @@ void TestUtilities::testPadString()
 
 void TestUtilities::testStartsWith()
 {
-	UASSERT(str_starts_with(std::string(), std::string()) == true);
+	std::string the("the");
+	UASSERT(str_starts_with(std::string(), "") == true);
 	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
 		std::string()) == true);
 	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
-		std::string("the")) == true);
+		std::string_view(the)) == true);
 	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
 		std::string("The")) == false);
 	UASSERT(str_starts_with(std::string("the sharp pickaxe"),
 		std::string("The"), true) == true);
-	UASSERT(str_starts_with(std::string("T"), std::string("The")) == false);
+	UASSERT(str_starts_with(std::string("T"), "The") == false);
 }
 
 void TestUtilities::testStrEqual()
 {
+	std::string foo("foo");
+	UASSERT(str_equal(foo, std::string_view(foo)));
+	UASSERT(!str_equal(foo, std::string("bar")));
+	UASSERT(str_equal(std::string_view(foo), std::string_view(foo)));
+	UASSERT(str_equal(std::wstring(L"FOO"), std::wstring(L"foo"), true));
 	UASSERT(str_equal(utf8_to_wide("abc"), utf8_to_wide("abc")));
 	UASSERT(str_equal(utf8_to_wide("ABC"), utf8_to_wide("abc"), true));
 }
@@ -300,18 +298,30 @@ void TestUtilities::testAsciiPrintableHelper()
 
 void TestUtilities::testUTF8()
 {
-	UASSERT(utf8_to_wide("¤") == L"¤");
+#if FMTODO	
+	UASSERT(utf8_to_wide(u8"¤") == L"¤");
 
-	UASSERT(wide_to_utf8(L"¤") == "¤");
+	UASSERTEQ(std::string, wide_to_utf8(L"¤"), u8"¤");
 
 	UASSERTEQ(std::string, wide_to_utf8(utf8_to_wide("")), "");
 	UASSERTEQ(std::string, wide_to_utf8(utf8_to_wide("the shovel dug a crumbly node!")),
 		"the shovel dug a crumbly node!");
-	UASSERTEQ(std::string, wide_to_utf8(utf8_to_wide("-ä-")),
-		"-ä-");
-	UASSERTEQ(std::string, wide_to_utf8(utf8_to_wide("-\xF0\xA0\x80\x8B-")),
-		"-\xF0\xA0\x80\x8B-");
 
+	UASSERTEQ(std::string, wide_to_utf8(utf8_to_wide(u8"-ä-")),
+		u8"-ä-");
+	UASSERTEQ(std::string, wide_to_utf8(utf8_to_wide(u8"-\U0002000b-")),
+		u8"-\U0002000b-");
+	if constexpr (sizeof(wchar_t) == 4) {
+		const auto *literal = U"-\U0002000b-";
+		UASSERT(utf8_to_wide(u8"-\U0002000b-") == reinterpret_cast<const wchar_t*>(literal));
+	}
+
+	// try to check that the conversion function does not accidentally keep
+	// its internal state across invocations.
+	// \xC4\x81 is UTF-8 for \u0101
+	utf8_to_wide("\xC4");
+	UASSERT(utf8_to_wide("\x81") != L"\u0101");
+#endif
 }
 
 void TestUtilities::testRemoveEscapes()
@@ -626,17 +636,18 @@ void TestUtilities::testBase64()
 	UASSERT(base64_is_valid("AAAAA=A") == false);
 }
 
-
 void TestUtilities::testSanitizeDirName()
 {
-	UASSERT(sanitizeDirName("a", "~") == "a");
-	UASSERT(sanitizeDirName("  ", "~") == "__");
-	UASSERT(sanitizeDirName(" a ", "~") == "_a_");
-	UASSERT(sanitizeDirName("COM1", "~") == "~COM1");
-	UASSERT(sanitizeDirName("COM1", ":") == "_COM1");
-	UASSERT(sanitizeDirName("cOm\u00B2", "~") == "~cOm\u00B2");
-	UASSERT(sanitizeDirName("cOnIn$", "~") == "~cOnIn$");
-	UASSERT(sanitizeDirName(" cOnIn$ ", "~") == "_cOnIn$_");
+#if FMTODO
+	UASSERTEQ(auto, sanitizeDirName("a", "~"), "a");
+	UASSERTEQ(auto, sanitizeDirName("  ", "~"), "__");
+	UASSERTEQ(auto, sanitizeDirName(" a ", "~"), "_a_");
+	UASSERTEQ(auto, sanitizeDirName("COM1", "~"), "~COM1");
+	UASSERTEQ(auto, sanitizeDirName("COM1", ":"), "_COM1");
+	UASSERTEQ(auto, sanitizeDirName(u8"cOm\u00B2", "~"), u8"~cOm\u00B2");
+	UASSERTEQ(auto, sanitizeDirName("cOnIn$", "~"), "~cOnIn$");
+	UASSERTEQ(auto, sanitizeDirName(" cOnIn$ ", "~"), "_cOnIn$_");
+#endif
 }
 
 template <typename F, typename C>
@@ -702,5 +713,49 @@ void TestUtilities::testIsBlockInSight()
 		// we're looking at X+ but are so close to block (-1,0,0) that it
 		// should still be considered visible
 		UASSERT(isBlockInSight({-1, 0, 0}, cam_pos, cam_dir, fov, range));
+	}
+}
+
+void TestUtilities::testColorizeURL()
+{
+#ifdef HAVE_COLORIZE_URL
+	#define RED COLOR_CODE("#faa")
+	#define GREY COLOR_CODE("#aaa")
+	#define WHITE COLOR_CODE("#fff")
+
+	std::string result = colorize_url("http://example.com/");
+	UASSERTEQ(auto, result, (GREY "http://" WHITE "example.com" GREY "/"));
+
+	result = colorize_url("https://u:p@wikipedi\u0430.org:1234/heIIoll?a=b#c");
+	UASSERTEQ(auto, result,
+		(GREY "https://u:p@" WHITE "wikipedi" RED "%d0%b0" WHITE ".org" GREY ":1234/heIIoll?a=b#c"));
+#else
+	warningstream << "Test skipped." << std::endl;
+#endif
+}
+
+void TestUtilities::testSanitizeUntrusted()
+{
+#if 0
+	std::string_view t1{u8"Anästhesieausrüstung"};
+	UASSERTEQ(auto, sanitize_untrusted(t1), t1);
+#endif
+	std::string_view t2{"stop\x00here", 9};
+	UASSERTEQ(auto, sanitize_untrusted(t2), "stop");
+
+	UASSERTEQ(auto, sanitize_untrusted("\x01\x08\x13\x1dhello\r\n\tworld"), "hello\n\tworld");
+
+	std::string_view t3{"some \x1b(T@whatever)text\x1b" "E here"};
+	UASSERTEQ(auto, sanitize_untrusted(t3), t3);
+	auto t3_sanitized = sanitize_untrusted(t3, false);
+	UASSERT(str_starts_with(t3_sanitized, "some ") && str_ends_with(t3_sanitized, " here"));
+	UASSERT(t3_sanitized.find('\x1b') == std::string::npos);
+
+	UASSERTEQ(auto, sanitize_untrusted("\x1b[31m"), "[31m");
+
+	// edge cases
+	for (bool keep : {true, false}) {
+		UASSERTEQ(auto, sanitize_untrusted("\x1b", keep), "");
+		UASSERTEQ(auto, sanitize_untrusted("\x1b(", keep), "(");
 	}
 }

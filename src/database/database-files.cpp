@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "database-files.h"
 #include "convert_json.h"
@@ -25,6 +10,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "filesys.h"
 #include "server/player_sao.h"
 #include "util/string.h"
+#include <json/json.h>
 #include <cassert>
 
 // !!! WARNING !!!
@@ -47,8 +33,7 @@ void PlayerDatabaseFiles::deSerialize(RemotePlayer *p, std::istream &is,
 
 	p->m_dirty = true;
 	//args.getS32("version"); // Version field value not used
-	const std::string &name = args.get("name");
-	p->m_name = name;
+	p->m_name = args.get("name");
 
 	if (sao) {
 		try {
@@ -95,7 +80,7 @@ void PlayerDatabaseFiles::deSerialize(RemotePlayer *p, std::istream &is,
 		p->inventory.deSerialize(is);
 	} catch (SerializationError &e) {
 		errorstream << "Failed to deserialize player inventory. player_name="
-			<< name << " " << e.what() << std::endl;
+			<< p->getName() << " " << e.what() << std::endl;
 	}
 
 	if (!p->inventory.getList("craftpreview") && p->inventory.getList("craftresult")) {
@@ -118,7 +103,7 @@ void PlayerDatabaseFiles::serialize(RemotePlayer *p, std::ostream &os)
 	// Utilize a Settings object for storing values
 	Settings args("PlayerArgsEnd");
 	args.setS32("version", 1);
-	args.set("name", p->m_name);
+	args.set("name", p->getName());
 
 	PlayerSAO *sao = p->getPlayerSAO();
 	// This should not happen
@@ -164,11 +149,9 @@ void PlayerDatabaseFiles::savePlayer(RemotePlayer *player)
 		}
 
 		// Open and deserialize file to check player name
-		std::ifstream is(path.c_str(), std::ios_base::binary);
-		if (!is.good()) {
-			errorstream << "Failed to open " << path << std::endl;
+		auto is = open_ifstream(path.c_str(), true);
+		if (!is.good())
 			return;
-		}
 
 		deSerialize(&testplayer, is, path, NULL);
 		is.close();
@@ -204,7 +187,7 @@ bool PlayerDatabaseFiles::removePlayer(const std::string &name)
 	RemotePlayer temp_player("", NULL);
 	for (u32 i = 0; i < PLAYER_FILE_ALTERNATE_TRIES; i++) {
 		// Open file and deserialize
-		std::ifstream is(path.c_str(), std::ios_base::binary);
+		auto is = open_ifstream(path.c_str(), false);
 		if (!is.good())
 			continue;
 
@@ -230,7 +213,7 @@ bool PlayerDatabaseFiles::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
 	const std::string player_to_load = player->getName();
 	for (u32 i = 0; i < PLAYER_FILE_ALTERNATE_TRIES; i++) {
 		// Open file and deserialize
-		std::ifstream is(path.c_str(), std::ios_base::binary);
+		auto is = open_ifstream(path.c_str(), false);
 		if (!is.good())
 			continue;
 
@@ -259,7 +242,7 @@ void PlayerDatabaseFiles::listPlayers(std::vector<std::string> &res)
 
 		const std::string &filename = it->name;
 		std::string full_path = m_savedir + DIR_DELIM + filename;
-		std::ifstream is(full_path.c_str(), std::ios_base::binary);
+		auto is = open_ifstream(full_path.c_str(), true);
 		if (!is.good())
 			continue;
 
@@ -331,7 +314,7 @@ void AuthDatabaseFiles::reload()
 bool AuthDatabaseFiles::readAuthFile()
 {
 	std::string path = m_savedir + DIR_DELIM + "auth.txt";
-	std::ifstream file(path, std::ios::binary);
+	auto file = open_ifstream(path.c_str(), false);
 	if (!file.good()) {
 		return false;
 	}
@@ -428,13 +411,14 @@ bool ModStorageDatabaseFiles::hasModEntry(const std::string &modname, const std:
 }
 
 bool ModStorageDatabaseFiles::setModEntry(const std::string &modname,
-	const std::string &key, const std::string &value)
+	const std::string &key, std::string_view value)
 {
 	Json::Value *meta = getOrCreateJson(modname);
 	if (!meta)
 		return false;
 
-	(*meta)[key] = Json::Value(value);
+	Json::Value value_v(value.data(), value.data() + value.size());
+	(*meta)[key] = std::move(value_v);
 	m_modified.insert(modname);
 
 	return true;
@@ -526,8 +510,7 @@ Json::Value *ModStorageDatabaseFiles::getOrCreateJson(const std::string &modname
 
 	std::string path = m_storage_dir + DIR_DELIM + modname;
 	if (fs::PathExists(path)) {
-		std::ifstream is(path.c_str(), std::ios_base::binary);
-
+		auto is = open_ifstream(path.c_str(), true);
 		Json::CharReaderBuilder builder;
 		builder.settings_["collectComments"] = false;
 		std::string errs;

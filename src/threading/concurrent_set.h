@@ -61,7 +61,7 @@ public:
 	template <typename... Args>
 	mapped_type &get(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 
 		//if (!full_type::contains(std::forward<Args>(args)...))
 		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
@@ -73,18 +73,18 @@ public:
 	template <typename... Args>
 	decltype(auto) assign(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::assign(std::forward<Args>(args)...);
 	}
 
 	insert_return_type_old insert(const key_type &k)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::insert(k);
 	}
 	insert_return_type_old insert_try(const key_type &k)
 	{
-		auto lock = LOCKER::try_lock_unique_rec();
+		const auto lock = LOCKER::try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return {};
 		return full_type::insert(k);
@@ -92,7 +92,7 @@ public:
 
 	bool set_try(const key_type &k, const mapped_type &v)
 	{
-		auto lock = LOCKER::try_lock_unique_rec();
+		const auto lock = LOCKER::try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return false;
 		full_type::operator[](k) = v;
@@ -101,93 +101,93 @@ public:
 
 	bool empty()
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty();
 	}
 
 	size_type size() const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::size();
 	}
 
 	size_type count(const key_type &k)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::count(k);
 	}
 
 	template <typename... Args>
 	decltype(auto) contains(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::contains(std::forward<Args>(args)...);
 	}
 
 	iterator find(const key_type &k)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::find(k);
 	};
 
 	const_iterator find(const key_type &k) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::find(k);
 	};
 
 	iterator begin()
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
 	const_iterator begin() const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin();
 	};
 
 	reverse_iterator rbegin()
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::rbegin();
 	};
 
 	const_reverse_iterator rbegin() const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::rbegin();
 	};
 
 	iterator end()
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
 	const_iterator end() const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::end();
 	};
 
 	reverse_iterator rend()
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::rend();
 	};
 
 	const_reverse_iterator rend() const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::rend();
 	};
 
 	template <typename... Args>
 	decltype(auto) at(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::at(std::forward<Args>(args)...);
 	}
 
@@ -197,40 +197,40 @@ public:
 
 	typename full_type::iterator erase(const_iterator position)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(position);
 	}
 
 	/*
 	typename full_type::iterator erase(iterator position)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(position);
 	}
 */
 
 	size_type erase(const key_type &k)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(k);
 	}
 
 	typename full_type::iterator erase(const_iterator first, const_iterator last)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(first, last);
 	}
 
 	void clear()
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		full_type::clear();
 	}
 
 	template <typename... Args>
 	decltype(auto) operator=(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::operator=(std::forward<Args>(args)...);
 	}
 };

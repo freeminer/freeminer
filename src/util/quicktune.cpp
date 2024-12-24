@@ -1,24 +1,6 @@
-/*
-quicktune.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "quicktune.h"
 #include "threading/mutex_auto_lock.h"
@@ -34,6 +16,7 @@ std::string QuicktuneValue::getString()
 	}
 	return "<invalid type>";
 }
+
 void QuicktuneValue::relativeAdd(float amount)
 {
 	switch(type){
@@ -51,24 +34,16 @@ void QuicktuneValue::relativeAdd(float amount)
 
 static std::map<std::string, QuicktuneValue> g_values;
 static std::vector<std::string> g_names;
-std::mutex *g_mutex = NULL;
+static std::mutex g_mutex;
 
-static void makeMutex()
-{
-	if(!g_mutex){
-		g_mutex = new std::mutex();
-	}
-}
-
-std::vector<std::string> getQuicktuneNames()
+const std::vector<std::string> &getQuicktuneNames()
 {
 	return g_names;
 }
 
 QuicktuneValue getQuicktuneValue(const std::string &name)
 {
-	makeMutex();
-	MutexAutoLock lock(*g_mutex);
+	MutexAutoLock lock(g_mutex);
 	std::map<std::string, QuicktuneValue>::iterator i = g_values.find(name);
 	if(i == g_values.end()){
 		QuicktuneValue val;
@@ -80,17 +55,15 @@ QuicktuneValue getQuicktuneValue(const std::string &name)
 
 void setQuicktuneValue(const std::string &name, const QuicktuneValue &val)
 {
-	makeMutex();
-	MutexAutoLock lock(*g_mutex);
+	MutexAutoLock lock(g_mutex);
 	g_values[name] = val;
 	g_values[name].modified = true;
 }
 
 void updateQuicktuneValue(const std::string &name, QuicktuneValue &val)
 {
-	makeMutex();
-	MutexAutoLock lock(*g_mutex);
-	std::map<std::string, QuicktuneValue>::iterator i = g_values.find(name);
+	MutexAutoLock lock(g_mutex);
+	auto i = g_values.find(name);
 	if(i == g_values.end()){
 		g_values[name] = val;
 		g_names.push_back(name);

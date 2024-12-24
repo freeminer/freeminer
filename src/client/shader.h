@@ -1,32 +1,13 @@
-/*
-shader.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013 Kahrl <kahrl@gmx.net>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013 Kahrl <kahrl@gmx.net>
 
 #pragma once
 
 #include "irrlichttypes_bloated.h"
 #include <IMaterialRendererServices.h>
 #include <string>
-#include "tile.h"
 #include "nodedef.h"
 
 class IGameDef;
@@ -108,6 +89,57 @@ public:
 			has_been_set = true;
 		}
 	}
+
+	/* Type specializations */
+
+	/*
+	 * T2 looks redundant here but it is necessary so the compiler won't
+	 * resolve the templates at class instantiation and then fail because
+	 * some of these methods don't have valid types (= are not usable).
+	 * ref: <https://stackoverflow.com/a/6972771>
+	 *
+	 * Note: a `bool dummy` template parameter would have been easier but MSVC
+	 * does not like that. Also make sure not to define different specializations
+	 * with the same parameters, MSVC doesn't like that either.
+	 * I extend my thanks to Microsoft®
+	 */
+#define SPECIALIZE(_type, _count_expr) \
+	template<typename T2 = T> \
+	std::enable_if_t<std::is_same_v<T, T2> && std::is_same_v<T2, _type> && (_count_expr)>
+
+	SPECIALIZE(float, count == 2)
+	set(const v2f value, video::IMaterialRendererServices *services)
+	{
+		float array[2] = { value.X, value.Y };
+		set(array, services);
+	}
+
+	SPECIALIZE(float, count == 3)
+	set(const v3f value, video::IMaterialRendererServices *services)
+	{
+		float array[3] = { value.X, value.Y, value.Z };
+		set(array, services);
+	}
+
+	SPECIALIZE(float, count == 3 || count == 4)
+	set(const video::SColorf value, video::IMaterialRendererServices *services)
+	{
+		if constexpr (count == 3) {
+			float array[3] = { value.r, value.g, value.b };
+			set(array, services);
+		} else {
+			float array[4] = { value.r, value.g, value.b, value.a };
+			set(array, services);
+		}
+	}
+
+	SPECIALIZE(float, count == 16)
+	set(const core::matrix4 &value, video::IMaterialRendererServices *services)
+	{
+		set(value.pointer(), services);
+	}
+
+#undef SPECIALIZE
 };
 
 template <typename T, std::size_t count = 1, bool cache=true>
@@ -195,4 +227,4 @@ public:
 IWritableShaderSource *createShaderSource();
 
 void dumpShaderProgram(std::ostream &output_stream,
-	const std::string &program_type, const std::string &program);
+	const std::string &program_type, std::string_view program);

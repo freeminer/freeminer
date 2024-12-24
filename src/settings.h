@@ -1,24 +1,6 @@
-/*
-settings.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -27,8 +9,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/basic_macros.h"
 #include <memory>
 #include <string>
-#include <list>
 #include <set>
+#include <map>
 #include <mutex>
 
 #include "porting.h"
@@ -134,18 +116,17 @@ typedef std::unordered_map<std::string, SettingsEntry> SettingEntries;
 class Settings {
 public:
 	/* These functions operate on the global hierarchy! */
-	static Settings *createLayer(SettingsLayer sl, const std::string &end_tag = "");
+	static Settings *createLayer(SettingsLayer sl, std::string_view end_tag = "");
 	static Settings *getLayer(SettingsLayer sl);
 	/**/
 
-	Settings(const std::string &end_tag = "") :
+	Settings(std::string_view end_tag = "") :
 		m_end_tag(end_tag)
 	{}
-	Settings(const std::string &end_tag, SettingsHierarchy *h, int settings_layer);
+	Settings(std::string_view end_tag, SettingsHierarchy *h, int settings_layer);
 	~Settings();
 
-	//Settings & operator += (const Settings &other);
-	Settings & operator = (const Settings &other);
+	Settings & operator=(const Settings &other);
 
 	/***********************
 	 * Reading and writing *
@@ -157,7 +138,7 @@ public:
 	bool updateConfigFile(const std::string &filename);
 	// NOTE: Types of allowed_options are ignored.  Returns success.
 	bool parseCommandLine(int argc, char *argv[],
-			std::map<std::string, ValueSpec> &allowed_options);
+			const std::map<std::string, ValueSpec> &allowed_options);
 	bool parseConfigLines(std::istream &is);
 	void writeLines(std::ostream &os, u32 tab_depth=0) const;
 
@@ -277,8 +258,7 @@ public:
 
 	void registerChangedCallback(const std::string &name,
 		SettingsChangedCallback cbf, void *userdata = NULL);
-	void deregisterChangedCallback(const std::string &name,
-		SettingsChangedCallback cbf, void *userdata = NULL);
+	size_t deregisterAllChangedCallbacks(const void *userdata);
 
 	void removeSecureSettings();
 
@@ -296,8 +276,8 @@ private:
 	bool updateConfigObject(std::istream &is, std::ostream &os,
 		u32 tab_depth=0);
 
-	static bool checkNameValid(const std::string &name);
-	static bool checkValueValid(const std::string &value);
+	static bool checkNameValid(std::string_view name);
+	static bool checkValueValid(std::string_view value);
 	static std::string getMultiline(std::istream &is, size_t *num_lines=NULL);
 	static void printEntry(std::ostream &os, const std::string &name,
 		const SettingsEntry &entry, u32 tab_depth=0);
@@ -314,9 +294,7 @@ private:
 	// For sane mutex locking when iterating
 	friend class LuaSettings;
 
-	void updateNoLock(const Settings &other);
 	void clearNoLock();
-	void clearDefaultsNoLock();
 
 	void doCallbacks(const std::string &name) const;
 

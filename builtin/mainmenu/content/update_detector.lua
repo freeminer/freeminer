@@ -1,4 +1,4 @@
---Minetest
+--Luanti
 --Copyright (C) 2023 rubenwardy
 --
 --This program is free software; you can redistribute it and/or modify
@@ -26,8 +26,25 @@ if not core.get_http_api then
 end
 
 
+assert(core.create_dir(core.get_cache_path() .. DIR_DELIM .. "cdb"))
+local cache_file_path = core.get_cache_path() .. DIR_DELIM .. "cdb" .. DIR_DELIM .. "updates.json"
 local has_fetched = false
 local latest_releases
+do
+	if check_cache_age("cdb_updates_last_checked", 24 * 3600) then
+		local f = io.open(cache_file_path, "r")
+		local data = ""
+		if f then
+			data = f:read("*a")
+			f:close()
+		end
+		data = data ~= "" and core.parse_json(data) or nil
+		if type(data) == "table" then
+			latest_releases = data
+			has_fetched = true
+		end
+	end
+end
 
 
 local function fetch_latest_releases()
@@ -55,9 +72,6 @@ end
 
 
 local function has_packages_from_cdb()
-	pkgmgr.refresh_globals()
-	pkgmgr.update_gamelist()
-
 	for _, content in pairs(pkgmgr.get_all()) do
 		if pkgmgr.get_contentdb_id(content) then
 			return true
@@ -89,8 +103,10 @@ local function fetch()
 			has_fetched = false
 			return
 		end
-
 		latest_releases = lowercase_keys(releases)
+		core.safe_file_write(cache_file_path, core.write_json(latest_releases))
+		cache_settings:set("cdb_updates_last_checked", tostring(os.time()))
+
 		if update_detector.get_count() > 0 then
 			local maintab = ui.find_by_name("maintab")
 			if not maintab.hidden then
@@ -107,9 +123,6 @@ function update_detector.get_all()
 		fetch()
 		return {}
 	end
-
-	pkgmgr.refresh_globals()
-	pkgmgr.update_gamelist()
 
 	local ret = {}
 	local all_content = pkgmgr.get_all()

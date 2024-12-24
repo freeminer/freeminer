@@ -35,7 +35,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <sstream>
 #include <string>
-#include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
 #include <utility>
@@ -92,7 +91,7 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 	}
 
 	//DUMP((long)this, "notfound, will load", lat, lon, lat1, lon1, lat90, lon90, map1[lat1].contains(lon1), prev_layer_height);
-	auto lock = std::unique_lock(mutex);
+	const auto lock = std::unique_lock(mutex);
 
 	if (map1[lat1].contains(lon1)) {
 		prev_layer_height = map1[lat1][lon1]->get(lat, lon);
@@ -320,7 +319,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	if (ok(lat_dec, lon_dec)) {
 		return true;
 	}
-	auto lock = std::unique_lock(mutex);
+	const auto lock = std::unique_lock(mutex);
 	//DUMP(lat_dec, lon_dec);
 	if (ok(lat_dec, lon_dec)) {
 		return true;
@@ -443,10 +442,6 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	}
 */
 
-	// TODO: because unzip
-	//#if 1 //!defined(_WIN32)
-	// DUMP(filefull, zipfull);
-
 #if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
 	if (srtmTile.empty() && !std::filesystem::exists(filefull)) {
 
@@ -557,7 +552,7 @@ bool height_tif::load(ll_t lat, ll_t lon)
 	if (ok(lat, lon)) {
 		return true;
 	}
-	auto lock = std::unique_lock(mutex);
+	const auto lock = std::unique_lock(mutex);
 
 	if (lat >= 90 || lat <= -90 || lon >= 180 || lon <= -180)
 		return false;
@@ -782,7 +777,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 	if (ok(lat, lon)) {
 		return true;
 	}
-	auto lock = std::unique_lock(mutex);
+	const auto lock = std::unique_lock(mutex);
 	//DUMP(lat_dec, lon_dec);
 	if (ok(lat, lon)) {
 		return true;

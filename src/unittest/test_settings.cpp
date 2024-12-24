@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "test.h"
 
@@ -36,7 +21,7 @@ public:
 	void testFlagDesc();
 
 	static const char *config_text_before;
-	static const std::string config_text_after;
+	static const char *config_text_after;
 };
 
 static TestSettings g_test_instance;
@@ -51,7 +36,7 @@ void TestSettings::runTests(IGameDef *gamedef)
 ////////////////////////////////////////////////////////////////////////////////
 
 const char *TestSettings::config_text_before =
-	"leet = 1337\n"
+	u8"leet = 1337\n"
 	"leetleet = 13371337\n"
 	"leetleet_neg = -13371337\n"
 	"floaty_thing = 1.1\n"
@@ -76,7 +61,7 @@ const char *TestSettings::config_text_before =
 	"zoop = true\n"
 	"[dummy_eof_end_tag]\n";
 
-const std::string TestSettings::config_text_after =
+const char *TestSettings::config_text_after =
 	"leet = 1337\n"
 	"leetleet = 13371337\n"
 	"leetleet_neg = -13371337\n"
@@ -107,7 +92,7 @@ const std::string TestSettings::config_text_after =
 	"	scale = 40\n"
 	"	seed = 12341\n"
 	"	spread = (250,250,250)\n"
- 	"   farlacunarity = 1\n"
+	"   farlacunarity = 1\n"
 	"	farpersist = 1\n"
 	"	farscale = 1\n"
 	"	farspread = 1\n"
@@ -158,7 +143,7 @@ void TestSettings::testAllSettings()
 
 	// Not sure if 1.1 is an exact value as a float, but doesn't matter
 	UASSERT(fabs(s.getFloat("floaty_thing") - 1.1) < 0.001);
-	UASSERT(s.get("stringy_thing") == "asd /( ¤%&(/\" BLÖÄRP");
+	UASSERT(s.get("stringy_thing") == u8"asd /( ¤%&(/\" BLÖÄRP");
 	UASSERT(fabs(s.getV3F("coord").X - 1.0) < 0.001);
 	UASSERT(fabs(s.getV3F("coord").Y - 2.0) < 0.001);
 	UASSERT(fabs(s.getV3F("coord").Z - 4.5) < 0.001);

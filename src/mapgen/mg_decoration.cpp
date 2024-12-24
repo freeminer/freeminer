@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2015-2018 paramat
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2015-2018 paramat
 
 #include "mg_decoration.h"
 #include "mg_schematic.h"
@@ -27,6 +12,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "util/numeric.h"
 #include <algorithm>
 #include <vector>
+#include "mapgen/treegen.h"
 
 
 FlagDesc flagdesc_deco[] = {
@@ -236,8 +222,7 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 
 						v3s16 pos(x, y, z);
 						if (generate(mg->vm, &ps, pos, false))
-							mg->gennotify.addEvent(
-									GENNOTIFY_DECORATION, pos, index);
+							mg->gennotify.addDecorationEvent(pos, index);
 					}
 				}
 
@@ -249,8 +234,7 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 
 						v3s16 pos(x, y, z);
 						if (generate(mg->vm, &ps, pos, true))
-							mg->gennotify.addEvent(
-									GENNOTIFY_DECORATION, pos, index);
+							mg->gennotify.addDecorationEvent(pos, index);
 					}
 				}
 			} else { // Heightmap decorations
@@ -273,7 +257,7 @@ size_t Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax)
 
 				v3s16 pos(x, y, z);
 				if (generate(mg->vm, &ps, pos, false))
-					mg->gennotify.addEvent(GENNOTIFY_DECORATION, pos, index);
+					mg->gennotify.addDecorationEvent(pos, index);
 			}
 		}
 	}
@@ -473,4 +457,25 @@ size_t DecoSchematic::generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceilin
 	schematic->blitToVManip(vm, p, rot, force_placement);
 
 	return 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+ObjDef *DecoLSystem::clone() const
+{
+	auto def = new DecoLSystem();
+	Decoration::cloneTo(def);
+
+	def->tree_def = tree_def;
+	return def;
+}
+
+
+size_t DecoLSystem::generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling)
+{
+	if (!canPlaceDecoration(vm, p))
+		return 0;
+
+	// Make sure that tree_def can't be modified, since it is shared.
+	const auto &ref = *tree_def;
+	return treegen::make_ltree(*vm, p, ref);
 }

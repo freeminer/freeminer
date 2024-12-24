@@ -1,31 +1,13 @@
-/*
-clientmap.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
-#include "irr_v3d.h"
-#include "irrlichttypes_extrabloated.h"
+#include "irrlichttypes_bloated.h"
 #include "map.h"
 #include "camera.h"
+#include "threading/async.h"
 #include <atomic>
 #include <set>
 #include <unordered_set>
@@ -71,28 +53,19 @@ struct MapDrawControl
 	bool show_wireframe = false;
 };
 
-struct MeshBufList
-{
-	video::SMaterial m;
-	std::vector<std::pair<v3s16,scene::IMeshBuffer*>> bufs;
-};
-
-struct MeshBufListList
-{
-	/*!
-	 * Stores the mesh buffers of the world.
-	 * The array index is the material's layer.
-	 * The vector part groups vertices by material.
-	 */
-	std::vector<MeshBufList> lists[MAX_TILE_LAYERS];
-
-	void clear();
-	void add(scene::IMeshBuffer *buf, v3s16 position, u8 layer);
-};
-
 class Client;
 class ITextureSource;
 class PartialMeshBuffer;
+
+namespace irr::scene
+{
+	class IMeshBuffer;
+}
+
+namespace irr::video
+{
+	class IVideoDriver;
+}
 
 /*
 	ClientMap
@@ -110,16 +83,9 @@ public:
 			s32 id
 	);
 
-	virtual ~ClientMap();
-
 	bool maySaveBlocks() override
 	{
 		return false;
-	}
-
-	void drop() override
-	{
-		ISceneNode::drop(); // calls destructor
 	}
 
 	void updateCamera(v3f pos, v3f dir, f32 fov, v3s16 offset, video::SColor light_color);
@@ -135,14 +101,7 @@ public:
 
 	virtual void OnRegisterSceneNode() override;
 
-	virtual void render() override
-	{
-		video::IVideoDriver* driver = SceneManager->getVideoDriver();
-		if (driver->getDriverType() != video::EDT_NULL) {
-			driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
-			renderMap(driver, SceneManager->getSceneNodeRenderPass());
-		}
-	}
+	virtual void render() override;
 
 	virtual const aabb3f &getBoundingBox() const override
 	{
@@ -175,9 +134,12 @@ public:
 	f32 getWantedRange() const { return m_control.wanted_range; }
 	f32 getCameraFov() const { return m_camera_fov; }
 
-	void onSettingChanged(const std::string &name);
+	void onSettingChanged(std::string_view name, bool all);
 
 protected:
+	// use drop() instead
+	virtual ~ClientMap();
+
 	void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) override;
 private:
 	bool isMeshOccluded(MapBlock *mesh_block, u16 mesh_size, v3s16 cam_pos_nodes);
@@ -222,8 +184,9 @@ private:
 			m_pos(pos), m_partial_buffer(buffer), m_reuse_material(false), m_use_partial_buffer(true)
 		{}
 
-		scene::IMeshBuffer* getBuffer();
-		void draw(video::IVideoDriver* driver);
+		video::SMaterial &getMaterial();
+		/// @return index count
+		u32 draw(video::IVideoDriver* driver);
 	};
 
 	Client *m_client;
@@ -244,14 +207,15 @@ private:
 
 // fm:
 	v3pos_t m_camera_position_node;
-    using drawlist_map = std::map<v3bpos_t, MapBlockP, MapBlockComparer>;
+    using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic_bool m_drawlist_current = false;
-    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockP>;
+    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
-
 public:
+    async_step_runner update_drawlist_async;
+    async_step_runner update_shadows_async;
 	std::map<v3pos_t, MapBlock*> m_block_boundary;
 private:
 

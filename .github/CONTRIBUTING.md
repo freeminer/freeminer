@@ -36,6 +36,9 @@ Contributions are welcome! Here's how you can help:
     - Follow the [C/C++](http://dev.minetest.net/Code_style_guidelines) and
       [Lua](http://dev.minetest.net/Lua_code_style_guidelines) code style guidelines.
     - Check your code works as expected and document any changes to the Lua API.
+    - To avoid conflicting changes between contributions, do not do the following manually. They will be done before each release.
+      - Run `updatepo.sh` or update `luanti.po{,t}` even if your code adds new translatable strings.
+      - Update `minetest.conf.example` and `settings_translation_file.cpp` even if your code adds new core settings.
 
 4. Commit & [push](https://help.github.com/articles/pushing-to-a-remote/) your changes to a new branch (not `master`, one change per branch)
     - Commit messages should:
@@ -67,20 +70,6 @@ Contributions are welcome! Here's how you can help:
    might need more work in the future.
 5. It uses protocols and formats which include the required compatibility.
 
-### Important note about automated GitHub checks
-
-When you submit a pull request, GitHub automatically runs checks on the Minetest
-Engine combined with your changes. One of these checks is called 'cpp lint /
-clang format', which checks code formatting. Because formatting for readability
-requires human judgement this check often fails and often makes unsuitable
-formatting requests which make code readability worse.
-
-If this check fails, look at the details to check for any clear mistakes and
-correct those. However, you should not apply everything ClangFormat requests.
-Ignore requests that make code readability worse and any other clearly
-unsuitable requests. Discuss in the pull request with a core developer about how
-to progress.
-
 ## Issues
 
 If you experience an issue, we would like to know the details - especially when
@@ -94,7 +83,7 @@ a stable release is on the way.
      - Error logs (check the bottom of the `debug.txt` file).
      - Screenshots.
      - Ways you have tried to solve the issue, and whether they worked or not.
-     - Your Minetest version and the content (games, mods or texture packs) you have installed.
+     - Your Luanti version and the content (games, mods or texture packs) you have installed.
      - Your platform (e.g. Windows 10 or Ubuntu 15.04 x64).
 
 After reporting you should aim to answer questions or clarifications as this
@@ -110,7 +99,7 @@ possible.
 
 ## Translations
 
-The core translations of Minetest are performed using Weblate. You can access
+The core translations of Luanti are performed using Weblate. You can access
 the project page with a list of current languages
 [here](https://hosted.weblate.org/projects/minetest/minetest/).
 
@@ -121,7 +110,7 @@ translated by editing a `.tr` text file. See
 
 ## Donations
 
-If you'd like to monetarily support Minetest development, you can find donation
+If you'd like to monetarily support Luanti development, you can find donation
 methods on [our website](http://www.minetest.net/development/#donate).
 
 # Maintaining
@@ -129,7 +118,7 @@ methods on [our website](http://www.minetest.net/development/#donate).
 * This is a concise version of the
   [Rules & Guidelines](http://dev.minetest.net/Category:Rules_and_Guidelines) on the developer wiki.*
 
-These notes are for those who have push access Minetest (core developers / maintainers).
+These notes are for those who have push access Luanti (core developers / maintainers).
 
 - See the [project organisation](http://dev.minetest.net/Organisation) for the people involved.
 
@@ -180,4 +169,4 @@ Submit a :+1: (+1) or "Looks good" comment to show you believe the pull-request 
 
 ## Releasing a new version
 
-*Refer to [dev.minetest.net/Releasing_Minetest](http://dev.minetest.net/Releasing_Minetest)*
+*Refer to [dev.minetest.net/Releasing_Luanti](https://dev.minetest.net/Releasing_Luanti)*

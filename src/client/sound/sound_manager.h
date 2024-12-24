@@ -1,30 +1,15 @@
-/*
-Minetest
-Copyright (C) 2022 DS
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-OpenAL support based on work by:
-Copyright (C) 2011 Sebastian 'Bahamada' Rühl
-Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
-Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; ifnot, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2022 DS
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2011 Sebastian 'Bahamada' Rühl
+// Copyright (C) 2011 Cyriaque 'Cisoun' Skrapits <cysoun@gmail.com>
+// Copyright (C) 2011 Giuseppe Bilotta <giuseppe.bilotta@gmail.com>
 
 #pragma once
 
 #include "playing_sound.h"
+#include "al_extensions.h"
 #include "sound_constants.h"
 #include "sound_manager_messages.h"
 #include "../sound.h"
@@ -51,8 +36,10 @@ class OpenALSoundManager final : public Thread
 private:
 	std::unique_ptr<SoundFallbackPathProvider> m_fallback_path_provider;
 
-	ALCdevice *m_device;
-	ALCcontext *m_context;
+	ALCdevice *const m_device;
+	ALCcontext *const m_context;
+
+	const ALExtensions m_exts;
 
 	// time in seconds until which removeDeadSounds will be called again
 	f32 m_time_until_dead_removal = REMOVE_DEAD_SOUNDS_INTERVAL;

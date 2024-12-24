@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2018 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 extern "C" {
 #include <lauxlib.h>
@@ -25,6 +10,7 @@ extern "C" {
 #include <cmath>
 #include <irr_v2d.h>
 #include <irr_v3d.h>
+#include <string_view>
 #include "c_converter.h"
 #include "c_types.h"
 
@@ -78,11 +64,16 @@ v3f LuaHelper::readParam(lua_State *L, int index)
 }
 
 template <>
-std::string LuaHelper::readParam(lua_State *L, int index)
+std::string_view LuaHelper::readParam(lua_State *L, int index)
 {
 	size_t length;
-	std::string result;
 	const char *str = luaL_checklstring(L, index, &length);
-	result.assign(str, length);
-	return result;
+	return std::string_view(str, length);
+}
+
+template <>
+std::string LuaHelper::readParam(lua_State *L, int index)
+{
+	auto sv = readParam<std::string_view>(L, index);
+	return std::string(sv); // a copy
 }

@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "test.h"
 
@@ -32,14 +17,36 @@ public:
 
 	void runTests(IGameDef *gamedef);
 
+	void testBasic();
 	void testIsLocalhost();
+	void testResolve();
 };
 
 static TestAddress g_test_instance;
 
 void TestAddress::runTests(IGameDef *gamedef)
 {
+	TEST(testBasic);
 	TEST(testIsLocalhost);
+	TEST(testResolve);
+}
+
+void TestAddress::testBasic()
+{
+	Address tmp;
+
+	UASSERT(!tmp.isValid());
+	UASSERTEQ(int, tmp.getFamily(), 0);
+
+	tmp = Address(static_cast<u32>(0), 0);
+	UASSERT(tmp.isValid());
+	UASSERTEQ(int, tmp.getFamily(), AF_INET);
+	UASSERT(tmp.isAny());
+
+	tmp = Address(static_cast<IPv6AddressBytes*>(nullptr), 0);
+	UASSERT(tmp.isValid());
+	UASSERTEQ(int, tmp.getFamily(), AF_INET6);
+	UASSERT(tmp.isAny());
 }
 
 void TestAddress::testIsLocalhost()
@@ -64,4 +71,34 @@ void TestAddress::testIsLocalhost()
 	ipv6RawAddr = {16, 34, 0, 0, 0, 0, 29, 0, 0, 0, 188, 0, 0, 0, 0, 14};
 	memcpy(ipv6Bytes->bytes, &ipv6RawAddr[0], 16);
 	UASSERT(!Address(ipv6Bytes.get(), 0).isLocalhost())
+}
+
+void TestAddress::testResolve()
+{
+	// Empty test
+	{
+		Address tmp(1, 2, 3, 4, 5);
+		tmp.Resolve("");
+
+		UASSERT(tmp.isValid());
+		UASSERT(tmp.isAny());
+	}
+
+	// Localhost test
+	Address result, fallback;
+	result.Resolve("localhost", &fallback);
+
+	UASSERT(result.isValid());
+	UASSERT(result.isLocalhost());
+
+	if (fallback.isValid()) {
+		UASSERT(fallback.isLocalhost());
+
+		// the result should be ::1 and 127.0.0.1 so the fallback addr should be
+		// of a different family
+		UASSERTCMP(int, !=, result.getFamily(), fallback.getFamily());
+	} else if (g_settings->getBool("enable_ipv6")) {
+		warningstream << "Couldn't verify Address::Resolve fallback (no IPv6?)"
+			<< std::endl;
+	}
 }

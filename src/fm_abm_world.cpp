@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "settings.h"
 #include "server.h"
+#include "porting.h"
 #include "util/directiontables.h"
 
 AbmWorldThread::AbmWorldThread(Server *server) :
@@ -201,7 +202,7 @@ void *AbmWorldThread::run()
 				return nullptr;
 			}
 			try {
-				const auto load_block = [&](const v3bpos_t &pos) -> MapBlockP {
+				const auto load_block = [&](const v3bpos_t &pos) -> MapBlockPtr {
 					auto block = m_server->getEnv().getServerMap().getBlock(pos);
 					if (block) {
 						return block;

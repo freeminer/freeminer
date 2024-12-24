@@ -1,50 +1,43 @@
-/*
-util/serialize.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes_bloated.h"
 #include "exceptions.h" // for SerializationError
-#include "debug.h" // for assert
 #include "ieee_float.h"
 
 #include "config.h"
-#if HAVE_ENDIAN_H
-	#ifdef _WIN32
-		#define __BYTE_ORDER 0
-		#define __LITTLE_ENDIAN 0
-		#define __BIG_ENDIAN 1
-	#elif defined(__MACH__) && defined(__APPLE__)
-		#include <machine/endian.h>
-	#elif defined(__FreeBSD__) || defined(__DragonFly__)
-		#include <sys/endian.h>
-	#else
-		#include <endian.h>
-	#endif
-#endif
 #include <cstring> // for memcpy
+#include <cassert>
 #include <iostream>
 #include <string>
-#include <vector>
+#include <string_view>
+
+/* make sure BYTE_ORDER macros are available */
+#ifdef _WIN32
+	#define BYTE_ORDER 1234
+#elif defined(__MACH__) && defined(__APPLE__)
+	#include <machine/endian.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+	#include <sys/endian.h>
+#elif HAVE_ENDIAN_H
+	#include <endian.h>
+#else
+	#error "Can't detect endian (missing header)"
+#endif
+#ifndef LITTLE_ENDIAN
+	#define LITTLE_ENDIAN 1234
+#endif
+#ifndef BIG_ENDIAN
+	#define BIG_ENDIAN 4321
+#endif
+#if !defined(BYTE_ORDER) && defined(_BYTE_ORDER)
+	#define BYTE_ORDER _BYTE_ORDER
+#elif !defined(BYTE_ORDER) && defined(__BYTE_ORDER)
+	#define BYTE_ORDER __BYTE_ORDER
+#endif
 
 #include "../msgpack_fix.h"
 #include "msgpack_define_external.h"
@@ -286,7 +279,7 @@ inline v3f readV3F32(const u8 *data)
 
 inline void writeU8(u8 *data, u8 i)
 {
-	data[0] = (i >> 0) & 0xFF;
+	data[0] = i;
 }
 
 inline void writeS8(u8 *data, s8 i)
@@ -461,19 +454,19 @@ inline v3f clampToF1000(v3f v)
 }
 
 // Creates a string with the length as the first two bytes
-std::string serializeString16(const std::string &plain);
+std::string serializeString16(std::string_view plain);
 
 // Reads a string with the length as the first two bytes
 std::string deSerializeString16(std::istream &is);
 
 // Creates a string with the length as the first four bytes
-std::string serializeString32(const std::string &plain);
+std::string serializeString32(std::string_view plain);
 
 // Reads a string with the length as the first four bytes
 std::string deSerializeString32(std::istream &is);
 
 // Creates a string encoded in JSON format (almost equivalent to a C string literal)
-std::string serializeJsonString(const std::string &plain);
+std::string serializeJsonString(std::string_view plain);
 
 // Reads a string encoded in JSON format
 std::string deSerializeJsonString(std::istream &is);
@@ -489,7 +482,7 @@ MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
 
 // If the string contains spaces, quotes or control characters, encodes as JSON.
 // Else returns the string unmodified.
-std::string serializeJsonStringIfNeeded(const std::string &s);
+std::string serializeJsonStringIfNeeded(std::string_view s);
 
 // Parses a string serialized by serializeJsonStringIfNeeded.
 std::string deSerializeJsonStringIfNeeded(std::istream &is);

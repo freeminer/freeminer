@@ -1,26 +1,13 @@
-/*
-util/numeric.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
+
+//fm:
+#include <algorithm>
+#include <cmath>
+#include <map>
 
 #include "basic_macros.h"
 #include "constants.h"
@@ -31,12 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "SColor.h"
 #include <matrix4.h>
 #include <cmath>
-
-//fm:
 #include <algorithm>
-#include <cmath>
-#include <map>
-
 
 #define rangelim(d, min, max) ((d) < (min) ? (min) : ((d) > (max) ? (max) : (d)))
 #define myfloor(x) ((x) < 0.0 ? (int)(x) - 1 : (int)(x))
@@ -188,7 +170,9 @@ struct MeshGrid {
 	/// @brief Returns true if p is an origin of a cell in the grid.
 	bool isMeshPos(v3s16 &p) const
 	{
-		return ((p.X + p.Y + p.Z) % cell_size) == 0;
+		return p.X % cell_size == 0
+				&& p.Y % cell_size == 0
+				&& p.Z % cell_size == 0;
 	}
 
 	/// @brief Returns index of the given offset in a grid cell
@@ -258,6 +242,16 @@ void myrand_bytes(void *out, size_t len);
 int myrand_range(int min, int max);
 float myrand_range(float min, float max);
 float myrand_float();
+
+// Implements a C++11 UniformRandomBitGenerator using the above functions
+struct MyRandGenerator {
+	typedef u32 result_type;
+	static constexpr result_type min() { return 0; }
+	static constexpr result_type max() { return MYRAND_RANGE; }
+	inline result_type operator()() {
+		return myrand();
+	}
+};
 
 /*
 	Miscellaneous functions
@@ -466,12 +460,10 @@ class IntervalLimiter
 public:
 	IntervalLimiter() = default;
 
-	/*
-		dtime: time from last call to this method
-		wanted_interval: interval wanted
-		return value:
-			true: action should be skipped
-			false: action should be done
+	/**
+		@param dtime time from last call to this method
+		@param wanted_interval interval wanted
+		@return true if action should be done
 	*/
 	bool step(float dtime, float wanted_interval)
 	{
@@ -568,6 +560,17 @@ inline u32 npot2(u32 orig) {
 	return orig + 1;
 }
 
+// Distance between two values in a wrapped (circular) system
+template<typename T>
+inline unsigned wrappedDifference(T a, T b, const T maximum)
+{
+	if (a > b)
+		std::swap(a, b);
+	// now b >= a
+	unsigned s = b - a, l = static_cast<unsigned>(maximum - b) + a + 1;
+	return std::min(s, l);
+}
+
 // Gradual steps towards the target value in a wrapped (circular) system
 // using the shorter of both ways
 template<typename T>
@@ -587,18 +590,18 @@ inline void wrappedApproachShortest(T &current, const T target, const T stepsize
 	}
 }
 
-void setPitchYawRollRad(core::matrix4 &m, const v3f &rot);
+void setPitchYawRollRad(core::matrix4 &m, v3f rot);
 
-inline void setPitchYawRoll(core::matrix4 &m, const v3f &rot)
+inline void setPitchYawRoll(core::matrix4 &m, v3f rot)
 {
-	setPitchYawRollRad(m, rot * core::DEGTORAD64);
+	setPitchYawRollRad(m, rot * core::DEGTORAD);
 }
 
 v3f getPitchYawRollRad(const core::matrix4 &m);
 
 inline v3f getPitchYawRoll(const core::matrix4 &m)
 {
-	return getPitchYawRollRad(m) * core::RADTODEG64;
+	return getPitchYawRollRad(m) * core::RADTODEG;
 }
 
 // Muliply the RGB value of a color linearly, and clamp to black/white

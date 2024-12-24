@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2016 juhdanad, Daniel Juhasz <juhdanad@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2016 juhdanad, Daniel Juhasz <juhdanad@gmail.com>
 
 #include "raycast.h"
 #include "irr_v3d.h"
@@ -58,18 +43,20 @@ bool RaycastSort::operator() (const PointedThing &pt1,
 
 
 RaycastState::RaycastState(const core::line3d<f32> &shootline,
-	bool objects_pointable, bool liquids_pointable) :
+	bool objects_pointable, bool liquids_pointable,
+	const std::optional<Pointabilities> &pointabilities) :
 	m_shootline(shootline),
 	m_iterator(shootline.start / BS, shootline.getVector() / BS),
 	m_previous_node(m_iterator.m_current_node_pos),
 	m_objects_pointable(objects_pointable),
-	m_liquids_pointable(liquids_pointable)
+	m_liquids_pointable(liquids_pointable),
+	m_pointabilities(pointabilities)
 {
 }
 
 
-bool boxLineCollision(const aabb3f &box, const v3f &start,
-	const v3f &dir, v3f *collision_point, v3f *collision_normal)
+bool boxLineCollision(const aabb3f &box, const v3f start,
+	const v3f dir, v3f *collision_point, v3f *collision_normal)
 {
 	if (box.isPointInside(start)) {
 		*collision_point = start;
@@ -137,8 +124,8 @@ bool boxLineCollision(const aabb3f &box, const v3f &start,
 	return false;
 }
 
-bool boxLineCollision(const aabb3f &box, const v3f &rotation,
-	const v3f &start, const v3f &dir,
+bool boxLineCollision(const aabb3f &box, const v3f rotation,
+	const v3f start, const v3f dir,
 	v3f *collision_point, v3f *collision_normal, v3f *raw_collision_normal)
 {
 	// Inversely transform the ray rather than rotating the box faces;
@@ -147,7 +134,8 @@ bool boxLineCollision(const aabb3f &box, const v3f &rotation,
 	rot.makeInverse();
 
 	bool collision = boxLineCollision(box, rot * start, rot * dir, collision_point, collision_normal);
-	if (!collision) return collision;
+	if (!collision)
+		return collision;
 
 	// Transform the results back
 	rot.makeInverse();

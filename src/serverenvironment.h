@@ -1,29 +1,18 @@
-/*
-Minetest
-Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
+#include "server/fm_key_value_cached.h"
+#include "server/abmhandler.h"
+
+#include <set>
+#include <utility>
+
 #include "activeobject.h"
 #include "environment.h"
-#include "irr_v3d.h"
-#include "map.h"
-#include "server/fm_key_value_cached.h"
+#include "servermap.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
 #include "threading/concurrent_set.h"
@@ -33,9 +22,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <cstdint>
 #include <mutex>
 #include "util/metricsbackend.h"
-#include <set>
-#include <random>
-#include "server/abmhandler.h"
 
 class IGameDef;
 struct GameParams;
@@ -72,10 +58,13 @@ public:
 
 
 	// Set of contents to trigger on
-	virtual const std::vector<std::string> getTriggerContents() const = 0;
+	virtual const std::vector<std::string> &getTriggerContents() const = 0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual const std::vector<std::string> getRequiredNeighbors(uint8_t activate) const = 0;
+	virtual const std::vector<std::string> &getRequiredNeighbors(uint8_t activate) const = 0;
+	// Set of without neighbors (trigger doesn't happen if any are found)
+	// Empty = do not check neighbors
+	virtual const std::vector<std::string> &getWithoutNeighbors() const = 0;
 	// Trigger interval in seconds
 	virtual float getTriggerInterval() = 0;
 	// Random chance of (1 / return value), 0 is disallowed
@@ -117,29 +106,40 @@ struct ABMWithState
 struct LoadingBlockModifierDef
 {
 	// Set of contents to trigger on
-	std::set<std::string> trigger_contents;
+	std::vector<std::string> trigger_contents;
 	std::string name;
 	bool run_at_every_load = false;
 
 	virtual ~LoadingBlockModifierDef() = default;
 
-	virtual void trigger(ServerEnvironment *env, v3s16 p,
-			MapNode n, float dtime_s) {};
+	/// @brief Called to invoke LBM
+	/// @param env environment
+	/// @param block the block in question
+	/// @param positions set of node positions (block-relative!)
+	/// @param dtime_s game time since last deactivation
+	virtual void trigger(ServerEnvironment *env, MapBlock *block,
+		const std::unordered_set<v3s16> &positions, float dtime_s) {};
 };
 
-struct LBMContentMapping
+class LBMContentMapping
 {
-	typedef std::unordered_map<content_t, std::vector<LoadingBlockModifierDef *>> lbm_map;
-	lbm_map map;
+public:
+	typedef std::vector<LoadingBlockModifierDef*> lbm_vector;
+	typedef std::unordered_map<content_t, lbm_vector> lbm_map;
 
-	std::vector<LoadingBlockModifierDef *> lbm_list;
-
-	// Needs to be separate method (not inside destructor),
-	// because the LBMContentMapping may be copied and destructed
-	// many times during operation in the lbm_lookup_map.
-	void deleteContents();
+	LBMContentMapping() = default;
 	void addLBM(LoadingBlockModifierDef *lbm_def, IGameDef *gamedef);
-	const std::vector<LoadingBlockModifierDef *> *lookup(content_t c) const;
+	const lbm_map::mapped_type *lookup(content_t c) const;
+	const lbm_vector &getList() const { return lbm_list; }
+
+	// This struct owns the LBM pointers.
+	~LBMContentMapping();
+	DISABLE_CLASS_COPY(LBMContentMapping);
+	ALLOW_CLASS_MOVE(LBMContentMapping);
+
+private:
+	lbm_vector lbm_list;
+	lbm_map map;
 };
 
 class LBMManager
@@ -171,8 +171,7 @@ private:
 
 	// For m_query_mode == false:
 	// The key of the map is the LBM def's name.
-	// TODO make this std::unordered_map
-	std::map<std::string, LoadingBlockModifierDef *> m_lbm_defs;
+	std::unordered_map<std::string, LoadingBlockModifierDef *> m_lbm_defs;
 
 	// For m_query_mode == true:
 	// The key of the map is the LBM def's first introduction time.
@@ -196,7 +195,8 @@ public:
 		s16 active_block_range,
 		s16 active_object_range,
 		std::set<v3s16> &blocks_removed,
-		std::set<v3s16> &blocks_added);
+		std::set<v3s16> &blocks_added,
+		std::set<v3s16> &extra_blocks_added);
 
 	bool contains(v3s16 p) const {
 		return (m_list.find(p) != m_list.end());
@@ -247,8 +247,7 @@ enum ClearObjectsMode {
 class ServerEnvironment final : public Environment
 {
 public:
-	ServerEnvironment(ServerMap *map, ServerScripting *script_iface,
-		Server *server, const std::string &path_world, MetricsBackend *mb);
+	ServerEnvironment(std::unique_ptr<ServerMap> map, Server *server, MetricsBackend *mb);
 	~ServerEnvironment();
 
 	void init();
@@ -267,8 +266,6 @@ public:
 	float getSendRecommendedInterval()
 	{ return m_recommended_send_interval; }
 
-	void kickAllPlayers(AccessDeniedCode reason,
-		const std::string &str_reason, bool reconnect);
 	// Save players
 	void saveLoadedPlayers(bool force = false);
 	void savePlayer(RemotePlayer *player);
@@ -311,14 +308,7 @@ public:
 	*/
 	u16 addActiveObject(std::shared_ptr<ServerActiveObject> object);
 
-	/*
-		Add an active object as a static object to the corresponding
-		MapBlock.
-		Caller allocates memory, ServerEnvironment frees memory.
-		Return value: true if succeeded, false if failed.
-		(note:  not used, pending removal from engine)
-	*/
-	//bool addActiveObjectAsStatic(ServerActiveObject *object);
+	void invalidateActiveObjectObserverCaches();
 
 	/*
 		Find out what new objects have been added to
@@ -326,9 +316,8 @@ public:
 	*/
 	void getAddedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
-		//std::set<u16>  &current_objects,
-		concurrent_set<u16> &current_objects,
-		std::queue<u16> &added_objects);
+		const concurrent_set<u16> &current_objects,
+		std::vector<u16> &added_objects);
 
 	/*
 		Find out what new objects have been removed from
@@ -336,9 +325,8 @@ public:
 	*/
 	void getRemovedActiveObjects(PlayerSAO *playersao, s16 radius,
 		s16 player_radius,
-		//std::set<u16> &current_objects,
-		concurrent_set<u16> &current_objects,
-		std::queue<u16> &removed_objects);
+		const concurrent_set<u16> &current_objects,
+		std::vector<std::pair<bool /* gone? */, u16>> &removed_objects);
 
 	/*
 		Get the next message emitted by some active object.
@@ -348,7 +336,8 @@ public:
 
 	virtual void getSelectedActiveObjects(
 		const core::line3d<f32> &shootline_on_map,
-		std::vector<PointedThing> &objects
+		std::vector<PointedThing> &objects,
+		const std::optional<Pointabilities> &pointabilities
 	);
 
 	/*
@@ -395,13 +384,16 @@ public:
 	// Clear objects, loading and going through every MapBlock
 	void clearObjects(ClearObjectsMode mode);
 
+	// to be called before destructor
+	void deactivateBlocksAndObjects();
+
 	// This makes stuff happen
-	void step(f32 dtime, double uptime, unsigned int max_cycle_ms);
+	void step(f32 dtime, double uptime={}, unsigned int max_cycle_ms={});
 
 	u32 getGameTime() const { return m_game_time; }
 
 	void reportMaxLagEstimate(float f) { m_max_lag_estimate = f; }
-	float getMaxLagEstimate() { return m_max_lag_estimate; }
+	float getMaxLagEstimate() const { return m_max_lag_estimate; }
 
 	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; }
 
@@ -420,7 +412,7 @@ public:
 		bool static_exists, v3s16 static_block=v3s16(0,0,0));
 
 	RemotePlayer *getPlayer(const session_t peer_id);
-	RemotePlayer *getPlayer(const std::string &name);
+	RemotePlayer *getPlayer(const std::string &name, bool match_invalid_peer = false);
 	const std::vector<RemotePlayer *> getPlayers() const { return m_players; }
 	u32 getPlayerCount() const { return m_players.size(); }
 
@@ -450,17 +442,28 @@ public:
 	bool m_more_threads = true;
 public:
 	ABMHandler m_abmhandler;
-	uint8_t analyzeBlock(MapBlockP block);
+	uint8_t analyzeBlock(MapBlockPtr block);
 private:
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3pos_t> m_abm_random_blocks;
 public:
-	size_t blockStep(MapBlockP block, float dtime = 0, uint8_t activate = 0);
+	size_t blockStep(MapBlockPtr block, float dtime = 0, uint8_t activate = 0);
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
+
 public:
-	size_t nodeUpdate(const v3pos_t pos, u16 recursion_limit = 5, int fast = 2, bool destroy = false);
+	size_t nodeUpdate(const v3pos_t &pos, u8 recursion_limit = 5, u8 fast = 2, bool destroy = false);
+
+private:
+	struct nodeUpdatePos
+	{
+		v3pos_t pos;
+		u8 recursion_limit{5};
+		int fast{2};
+		bool destroy{false};
+	};
+	size_t nodeUpdateReal(const v3pos_t &pos, u8 recursion_limit = 5, u8 fast = 2, bool destroy = false);
 private:
 	void handleNodeDrops(const ContentFeatures &f, v3f pos, PlayerSAO* player=NULL);
 
@@ -475,7 +478,7 @@ private:
 	void explodeNode(const v3s16 pos);
 */
 
-	std::deque<v3pos_t> m_nodeupdate_queue;
+	std::deque<nodeUpdatePos> m_nodeupdate_queue;
 	std::mutex m_nodeupdate_queue_mutex;
 	// Circuit manager
 	Circuit m_circuit;
@@ -528,7 +531,7 @@ public:
 		Returns 0 if not added and thus deleted.
 	*/
 	u16 addActiveObjectRaw(std::shared_ptr<ServerActiveObject> object,
-			bool set_changed, u32 dtime_s);
+			const StaticObject *from_static, u32 dtime_s);
 
 	/*
 		Remove all objects that satisfy (isGone() && m_known_by_count==0)
@@ -559,12 +562,14 @@ public:
 	bool saveStaticToBlock(v3s16 blockpos, u16 store_id,
 			ServerActiveObject *obj, const StaticObject &s_obj, u32 mod_reason);
 
+	void processActiveObjectRemove(ServerActiveObjectPtr obj);
+
 	/*
 		Member variables
 	*/
 
 	// The map
-	ServerMap *m_map;
+	std::unique_ptr<ServerMap> m_map;
 	// Lua state
 	ServerScripting* m_script;
 	// Server definition
@@ -573,8 +578,6 @@ public:
 	server::ActiveObjectMgr m_ao_manager;
 	// on_mapblocks_changed map event receiver
 	OnMapblocksChangedReceiver m_on_mapblocks_changed_receiver;
-	// World path
-	const std::string m_path_world;
 	// Outgoing network message buffer for active objects
 public:
 	Queue<ActiveObjectMessage> m_active_object_messages;
@@ -614,9 +617,6 @@ private:
 
 	PlayerDatabase *m_player_database = nullptr;
 	AuthDatabase *m_auth_database = nullptr;
-
-	// Pseudo random generator for shuffling, etc.
-	std::mt19937 m_rgen;
 
 	// Particles
 	IntervalLimiter m_particle_management_interval;

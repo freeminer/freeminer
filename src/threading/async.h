@@ -41,10 +41,10 @@ public:
 	{
 		wait();
 #if defined(DUMP_STREAM)
-		DUMP("Async steps end", (long)this, runs, skips);
+		DUMP("Async steps end", (long long)this, runs, skips);
 #endif
 	}
-	int wait(const int ms = 60000, const int step_ms = 100)
+	int wait(const int ms = 300000, const int step_ms = 100)
 	{
 		int i = 0;
 		for (; i < ms / step_ms; ++i) { // 10s max

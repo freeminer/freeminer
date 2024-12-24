@@ -1,24 +1,6 @@
-/*
-guiFormSpecMenu.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -27,7 +9,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <stack>
 #include <unordered_set>
 
-#include "irrlichttypes_extrabloated.h"
+#include "irrlichttypes_bloated.h"
 #include "irr_ptr.h"
 #include "inventory.h"
 #include "inventorymanager.h"
@@ -35,17 +17,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiInventoryList.h"
 #include "guiScrollBar.h"
 #include "guiTable.h"
-#include "network/networkprotocol.h"
-#include "client/joystick_controller.h"
 #include "util/string.h"
 #include "util/enriched_string.h"
 #include "StyleSpec.h"
+#include <ICursorControl.h> // gui::ECURSOR_ICON
+#include <IGUIStaticText.h>
 
 class InventoryManager;
 class ISimpleTextureSource;
 class Client;
 class GUIScrollContainer;
 class ISoundManager;
+class JoystickController;
 
 enum FormspecFieldType {
 	f_Button,
@@ -139,6 +122,7 @@ class GUIFormSpecMenu : public GUIModalMenu
 		std::string fname;
 		std::wstring flabel;
 		std::wstring fdefault;
+		std::string url;
 		s32 fid;
 		bool send;
 		FormspecFieldType ftype;
@@ -224,6 +208,11 @@ public:
 		m_allowclose = value;
 	}
 
+	void setDebugView(bool value)
+	{
+		m_show_debug = value;
+	}
+
 	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0))
 	{
 		m_lock = lock;
@@ -289,8 +278,13 @@ public:
 	core::rect<s32> getAbsoluteRect();
 
 #ifdef __ANDROID__
-	bool getAndroidUIInput();
+	void getAndroidUIInput();
 #endif
+
+	// Returns the fixed formspec coordinate size for the given parameters.
+	static double getFixedImgsize(double screen_dpi, double gui_scaling);
+	// Returns the preferred non-fixed formspec coordinate size for the given parameters.
+	static double getImgsize(v2u32 avail_screensize, double screen_dpi, double gui_scaling);
 
 protected:
 	v2s32 getBasePos() const
@@ -419,7 +413,10 @@ private:
 
 		// used to restore table selection/scroll/treeview state
 		std::unordered_map<std::string, GUITable::DynamicData> table_dyndata;
+		std::string type;
 	};
+
+	static const std::unordered_map<std::string, std::function<void(GUIFormSpecMenu*, GUIFormSpecMenu::parserData *data, const std::string &description)>> element_parsers;
 
 	struct fs_key_pending {
 		bool key_up;
@@ -438,17 +435,16 @@ private:
 
 	void parseSize(parserData* data, const std::string &element);
 	void parseContainer(parserData* data, const std::string &element);
-	void parseContainerEnd(parserData* data);
+	void parseContainerEnd(parserData* data, const std::string &element);
 	void parseScrollContainer(parserData *data, const std::string &element);
-	void parseScrollContainerEnd(parserData *data);
+	void parseScrollContainerEnd(parserData *data, const std::string &element);
 	void parseList(parserData* data, const std::string &element);
 	void parseListRing(parserData* data, const std::string &element);
 	void parseCheckbox(parserData* data, const std::string &element);
 	void parseImage(parserData* data, const std::string &element);
 	void parseAnimatedImage(parserData *data, const std::string &element);
 	void parseItemImage(parserData* data, const std::string &element);
-	void parseButton(parserData* data, const std::string &element,
-			const std::string &typ);
+	void parseButton(parserData* data, const std::string &element);
 	void parseBackground(parserData* data, const std::string &element);
 	void parseTableOptions(parserData* data, const std::string &element);
 	void parseTableColumns(parserData* data, const std::string &element);
@@ -458,7 +454,7 @@ private:
 	void parseFieldEnterAfterEdit(parserData *data, const std::string &element);
 	void parseFieldCloseOnEnter(parserData *data, const std::string &element);
 	void parsePwdField(parserData* data, const std::string &element);
-	void parseField(parserData* data, const std::string &element, const std::string &type);
+	void parseField(parserData* data, const std::string &element);
 	void createTextField(parserData *data, FieldSpec &spec,
 		core::rect<s32> &rect, bool is_multiline);
 	void parseSimpleField(parserData* data,std::vector<std::string> &parts);
@@ -467,8 +463,7 @@ private:
 	void parseHyperText(parserData *data, const std::string &element);
 	void parseLabel(parserData* data, const std::string &element);
 	void parseVertLabel(parserData* data, const std::string &element);
-	void parseImageButton(parserData* data, const std::string &element,
-			const std::string &type);
+	void parseImageButton(parserData* data, const std::string &element);
 	void parseItemImageButton(parserData* data, const std::string &element);
 	void parseTabHeader(parserData* data, const std::string &element);
 	void parseBox(parserData* data, const std::string &element);
@@ -477,6 +472,7 @@ private:
 	void parseTooltip(parserData* data, const std::string &element);
 	bool parseVersionDirect(const std::string &data);
 	bool parseSizeDirect(parserData* data, const std::string &element);
+	void parseRealCoordinates(parserData* data, const std::string &element);
 	void parseScrollBar(parserData* data, const std::string &element);
 	void parseScrollBarOptions(parserData *data, const std::string &element);
 	bool parsePositionDirect(parserData *data, const std::string &element);
@@ -485,8 +481,8 @@ private:
 	void parseAnchor(parserData *data, const std::string &element);
 	bool parsePaddingDirect(parserData *data, const std::string &element);
 	void parsePadding(parserData *data, const std::string &element);
-	bool parseStyle(parserData *data, const std::string &element, bool style_type);
-	void parseSetFocus(const std::string &element);
+	void parseStyle(parserData *data, const std::string &element);
+	void parseSetFocus(parserData *, const std::string &element);
 	void parseModel(parserData *data, const std::string &element);
 
 	bool parseMiddleRect(const std::string &value, core::rect<s32> *parsed_rect);
@@ -508,6 +504,9 @@ private:
 
 	// used by getAbsoluteRect
 	s32 m_tabheader_upper_edge = 0;
+
+	// Determines the size (in pixels) of formspec coordinate units.
+	double calculateImgsize(const parserData &data);
 };
 
 class FormspecFormSource: public IFormSource

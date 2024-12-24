@@ -1,23 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "hud.h"
 #include <cmath>
@@ -32,6 +15,7 @@ const struct EnumString es_HudElementType[] =
 	{HUD_ELEM_IMAGE_WAYPOINT, "image_waypoint"},
 	{HUD_ELEM_COMPASS,   "compass"},
 	{HUD_ELEM_MINIMAP,   "minimap"},
+	{HUD_ELEM_HOTBAR,    "hotbar"},
 	{0, NULL},
 };
 

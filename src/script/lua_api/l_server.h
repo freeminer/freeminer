@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_server.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -41,6 +23,9 @@ private:
 
 	// get_worldpath()
 	static int l_get_worldpath(lua_State *L);
+
+	// get_mod_data_path()
+	static int l_get_mod_data_path(lua_State *L);
 
 	// is_singleplayer()
 	static int l_is_singleplayer(lua_State *L);
@@ -106,7 +91,7 @@ private:
 	// unban_player_or_ip()
 	static int l_unban_player_or_ip(lua_State *L);
 
-	// disconnect_player(name, [reason]) -> success
+	// disconnect_player(name[, reason[, reconnect]]) -> success
 	static int l_disconnect_player(lua_State *L);
 
 	// remove_player(name)
@@ -120,6 +105,9 @@ private:
 
 	// register_async_dofile(path)
 	static int l_register_async_dofile(lua_State *L);
+
+	// register_mapgen_script(path)
+	static int l_register_mapgen_script(lua_State *L);
 
 	// serialize_roundtrip(obj)
 	static int l_serialize_roundtrip(lua_State *L);

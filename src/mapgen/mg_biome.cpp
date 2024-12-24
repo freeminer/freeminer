@@ -1,26 +1,7 @@
-/*
-biome.cpp
-
-Minetest
-Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2014-2018 paramat
-
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2014-2018 paramat
 
 #include "mg_biome.h"
 #include "constants.h"
@@ -34,6 +15,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "porting.h"
 #include "settings.h"
 
+#include <algorithm>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -175,47 +157,36 @@ BiomeGenOriginal::BiomeGenOriginal(BiomeManager *biomemgr,
 	// is disabled.
 	memset(biomemap, 0, sizeof(biome_t) * m_csize.X * m_csize.Z);
 
-	// Calculating the bounding position of each biome so we know when we might switch
-	// First gathering all heights where we might switch
-	std::vector<s16> temp_transition_heights;
-	temp_transition_heights.reserve(m_bmgr->getNumObjects() * 2);
+	// Calculate cache of Y transition points
+	std::vector<s16> values;
+	values.reserve(m_bmgr->getNumObjects() * 2);
 	for (size_t i = 0; i < m_bmgr->getNumObjects(); i++) {
 		Biome *b = (Biome *)m_bmgr->getRaw(i);
-		temp_transition_heights.push_back(b->max_pos.Y);
-		temp_transition_heights.push_back(b->min_pos.Y);
+		values.push_back(b->max_pos.Y);
+		values.push_back(b->min_pos.Y);
 	}
 
-	// Sorting the biome transition points
-	std::sort(temp_transition_heights.begin(), temp_transition_heights.end(), std::greater<int>());
+	std::sort(values.begin(), values.end(), std::greater<>());
+	values.erase(std::unique(values.begin(), values.end()), values.end());
 
-	// Getting rid of duplicate biome transition points
-	s16 last = temp_transition_heights[0];
-	size_t out_pos = 1;
-	for (size_t i = 1; i < temp_transition_heights.size(); i++){
-		if (temp_transition_heights[i] != last) {
-			last = temp_transition_heights[i];
-			temp_transition_heights[out_pos++] = last;
-		}
-	}
-
-	biome_transitions = new s16[out_pos];
-	memcpy(biome_transitions, temp_transition_heights.data(), sizeof(s16) * out_pos);
+	m_transitions_y = std::move(values);
 }
 
 BiomeGenOriginal::~BiomeGenOriginal()
 {
 	delete []biomemap;
 
-	delete []biome_transitions;
 	delete noise_heat;
 	delete noise_humidity;
 	delete noise_heat_blend;
 	delete noise_humidity_blend;
 }
 
-s16* BiomeGenOriginal::getBiomeTransitions() const
+s16 BiomeGenOriginal::getNextTransitionY(s16 y) const
 {
-	return biome_transitions;
+	// Find first value that is less than y using binary search
+	auto it = std::lower_bound(m_transitions_y.begin(), m_transitions_y.end(), y, std::greater_equal<>());
+	return (it == m_transitions_y.end()) ? S16_MIN : *it;
 }
 
 BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const
@@ -326,7 +297,11 @@ Biome *BiomeGenOriginal::calcBiomeFromNoise(float heat, float humidity, v3s16 po
 	// Carefully tune pseudorandom seed variation to avoid single node dither
 	// and create larger scale blending patterns similar to horizontal biome
 	// blend.
-	const u64 seed = pos.Y + (heat + humidity) * 0.9f;
+	// The calculation can be a negative floating point number, which is an
+	// undefined behavior if assigned to unsigned integer. Cast the result
+	// into signed integer before it is casted into unsigned integer to
+	// eliminate the undefined behavior.
+	const u64 seed = static_cast<s64>(pos.Y + (heat + humidity) * 0.9f);
 	PcgRandom rng(seed);
 
 	if (biome_closest_blend && dist_min_blend <= dist_min &&

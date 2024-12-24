@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_server.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_server.h"
 #include "lua_api/l_internal.h"
@@ -32,6 +14,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "environment.h"
 #include "remoteplayer.h"
 #include "log.h"
+#include "filesys.h"
 #include <algorithm>
 
 // request_shutdown()
@@ -170,26 +153,6 @@ int ModApiServer::l_get_player_information(lua_State *L)
 		return 1;
 	}
 
-	/*
-		Be careful not to introduce a depdendency on the connection to
-		the peer here. This function is >>REQUIRED<< to still be able to return
-		values even when the peer unexpectedly disappears.
-		Hence all the ConInfo values here are optional.
-	*/
-
-	auto getConInfo = [&] (con::rtt_stat_type type, float *value) -> bool {
-		return server->getClientConInfo(player->getPeerId(), type, value);
-	};
-
-	float min_rtt, max_rtt, avg_rtt, min_jitter, max_jitter, avg_jitter;
-	bool have_con_info =
-		getConInfo(con::MIN_RTT, &min_rtt) &&
-		getConInfo(con::MAX_RTT, &max_rtt) &&
-		getConInfo(con::AVG_RTT, &avg_rtt) &&
-		getConInfo(con::MIN_JITTER, &min_jitter) &&
-		getConInfo(con::MAX_JITTER, &max_jitter) &&
-		getConInfo(con::AVG_JITTER, &avg_jitter);
-
 	ClientInfo info;
 	if (!server->getClientInfo(player->getPeerId(), info)) {
 		warningstream << FUNCTION_NAME << ": no client info?!" << std::endl;
@@ -213,6 +176,26 @@ int ModApiServer::l_get_player_information(lua_State *L)
 		lua_pushnumber(L, 0);
 	}
 	lua_settable(L, table);
+
+	/*
+		Be careful not to introduce a depdendency on the connection to
+		the peer here. This function is >>REQUIRED<< to still be able to return
+		values even when the peer unexpectedly disappears.
+		Hence all the ConInfo values here are optional.
+	*/
+
+	auto getConInfo = [&] (con::rtt_stat_type type, float *value) -> bool {
+		return server->getClientConInfo(player->getPeerId(), type, value);
+	};
+
+	float min_rtt, max_rtt, avg_rtt, min_jitter, max_jitter, avg_jitter;
+	bool have_con_info =
+		getConInfo(con::MIN_RTT, &min_rtt) &&
+		getConInfo(con::MAX_RTT, &max_rtt) &&
+		getConInfo(con::AVG_RTT, &avg_rtt) &&
+		getConInfo(con::MIN_JITTER, &min_jitter) &&
+		getConInfo(con::MAX_JITTER, &max_jitter) &&
+		getConInfo(con::AVG_JITTER, &avg_jitter);
 
 	if (have_con_info) { // may be missing
 		lua_pushstring(L, "min_rtt");
@@ -320,6 +303,11 @@ int ModApiServer::l_get_player_window_information(lua_State *L)
 	lua_pushstring(L, "real_hud_scaling");
 	lua_pushnumber(L, dynamic->real_hud_scaling);
 	lua_settable(L, dyn_table);
+
+	lua_pushstring(L, "touch_controls");
+	lua_pushboolean(L, dynamic->touch_controls);
+	lua_settable(L, dyn_table);
+
 	return 1;
 }
 
@@ -362,7 +350,7 @@ int ModApiServer::l_ban_player(lua_State *L)
 	return 1;
 }
 
-// disconnect_player(name, [reason]) -> success
+// disconnect_player(name[, reason[, reconnect]]) -> success
 int ModApiServer::l_disconnect_player(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
@@ -385,7 +373,9 @@ int ModApiServer::l_disconnect_player(lua_State *L)
 		return 1;
 	}
 
-	server->DenyAccess(player->getPeerId(), SERVER_ACCESSDENIED_CUSTOM_STRING, message);
+	bool reconnect = readParam<bool>(L, 3, false);
+
+	server->DenyAccess(player->getPeerId(), SERVER_ACCESSDENIED_CUSTOM_STRING, message, reconnect);
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -424,13 +414,7 @@ int ModApiServer::l_show_formspec(lua_State *L)
 	const char *playername = luaL_checkstring(L, 1);
 	const char *formname = luaL_checkstring(L, 2);
 	const char *formspec = luaL_checkstring(L, 3);
-
-	if(getServer(L)->showFormspec(playername,formspec,formname))
-	{
-		lua_pushboolean(L, true);
-	}else{
-		lua_pushboolean(L, false);
-	}
+	lua_pushboolean(L, getServer(L)->showFormspec(playername,formspec,formname));
 	return 1;
 }
 
@@ -438,7 +422,11 @@ int ModApiServer::l_show_formspec(lua_State *L)
 int ModApiServer::l_get_current_modname(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
+	std::string s = ScriptApiBase::getCurrentModNameInsecure(L);
+	if (!s.empty())
+		lua_pushstring(L, s.c_str());
+	else
+		lua_pushnil(L);
 	return 1;
 }
 
@@ -501,6 +489,24 @@ int ModApiServer::l_get_worldpath(lua_State *L)
 	return 1;
 }
 
+// get_mod_data_path()
+int ModApiServer::l_get_mod_data_path(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	std::string modname = ScriptApiBase::getCurrentModNameInsecure(L);
+	if (modname.empty())
+		return 0;
+
+	const Server *srv = getServer(L);
+	std::string path = srv->getModDataPath() + DIR_DELIM + modname;
+	if (!fs::CreateAllDirs(path))
+		throw LuaError("Failed to create dir");
+
+	lua_pushstring(L, path.c_str());
+	return 1;
+}
+
 // sound_play(spec, parameters, [ephemeral])
 int ModApiServer::l_sound_play(lua_State *L)
 {
@@ -543,32 +549,57 @@ int ModApiServer::l_dynamic_add_media(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	if (!getEnv(L))
-		throw LuaError("Dynamic media cannot be added before server has started up");
 	Server *server = getServer(L);
+	const bool at_startup = !getEnv(L);
 
-	std::string filepath;
-	std::string to_player;
-	bool ephemeral = false;
+	std::string tmp;
+	Server::DynamicMediaArgs args;
 
 	if (lua_istable(L, 1)) {
-		getstringfield(L, 1, "filepath", filepath);
-		getstringfield(L, 1, "to_player", to_player);
-		getboolfield(L, 1, "ephemeral", ephemeral);
+		getstringfield(L, 1, "filename", args.filename);
+		if (getstringfield(L, 1, "filepath", tmp))
+			args.filepath = tmp;
+		args.data.emplace();
+		if (!getstringfield(L, 1, "filedata", *args.data))
+			args.data.reset();
+		getstringfield(L, 1, "to_player", args.to_player);
+		getboolfield(L, 1, "ephemeral", args.ephemeral);
 	} else {
-		filepath = readParam<std::string>(L, 1);
+		tmp = readParam<std::string>(L, 1);
+		args.filepath = tmp;
 	}
-	if (filepath.empty())
-		luaL_typerror(L, 1, "non-empty string");
-	luaL_checktype(L, 2, LUA_TFUNCTION);
+	if (at_startup) {
+		if (!lua_isnoneornil(L, 2))
+			throw LuaError("must be called without callback at load-time");
+		// In order to keep edge cases to a minimum actually use an empty function.
+		int err = luaL_loadstring(L, "");
+		SANITY_CHECK(err == 0);
+		lua_replace(L, 2);
+	} else {
+		luaL_checktype(L, 2, LUA_TFUNCTION);
+	}
 
-	CHECK_SECURE_PATH(L, filepath.c_str(), false);
+	// validate
+	if (args.filepath) {
+		if (args.filepath->empty())
+			throw LuaError("filepath must be non-empty");
+		if (args.data)
+			throw LuaError("cannot provide both filepath and filedata");
+	} else if (args.data) {
+		if (args.filename.empty())
+			throw LuaError("filename required");
+	} else {
+		throw LuaError("either filepath or filedata must be provided");
+	}
 
-	u32 token = server->getScriptIface()->allocateDynamicMediaCallback(L, 2);
+	if (args.filepath)
+		CHECK_SECURE_PATH(L, args.filepath->c_str(), false);
 
-	bool ok = server->dynamicAddMedia(filepath, token, to_player, ephemeral);
+	args.token = server->getScriptIface()->allocateDynamicMediaCallback(L, 2);
+
+	bool ok = server->dynamicAddMedia(args);
 	if (!ok)
-		server->getScriptIface()->freeDynamicMediaCallback(token);
+		server->getScriptIface()->freeDynamicMediaCallback(args.token);
 	lua_pushboolean(L, ok);
 
 	return 1;
@@ -629,13 +660,28 @@ int ModApiServer::l_register_async_dofile(lua_State *L)
 	std::string path = readParam<std::string>(L, 1);
 	CHECK_SECURE_PATH(L, path.c_str(), false);
 
-	// Find currently running mod name (only at init time)
-	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
-	if (!lua_isstring(L, -1))
-		return 0;
-	std::string modname = readParam<std::string>(L, -1);
+	std::string modname = ScriptApiBase::getCurrentModNameInsecure(L);
+	if (modname.empty())
+		throw ModError("cannot determine mod name");
 
 	getServer(L)->m_async_init_files.emplace_back(modname, path);
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+// register_mapgen_script(path)
+int ModApiServer::l_register_mapgen_script(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	std::string path = readParam<std::string>(L, 1);
+	CHECK_SECURE_PATH(L, path.c_str(), false);
+
+	std::string modname = ScriptApiBase::getCurrentModNameInsecure(L);
+	if (modname.empty())
+		throw ModError("cannot determine mod name");
+
+	getServer(L)->m_mapgen_init_files.emplace_back(modname, path);
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -670,6 +716,7 @@ void ModApiServer::Initialize(lua_State *L, int top)
 	API_FCT(get_server_status);
 	API_FCT(get_server_uptime);
 	API_FCT(get_server_max_lag);
+	API_FCT(get_mod_data_path);
 	API_FCT(get_worldpath);
 	API_FCT(is_singleplayer);
 
@@ -703,6 +750,8 @@ void ModApiServer::Initialize(lua_State *L, int top)
 	API_FCT(do_async_callback);
 	API_FCT(register_async_dofile);
 	API_FCT(serialize_roundtrip);
+
+	API_FCT(register_mapgen_script);
 }
 
 void ModApiServer::InitializeAsync(lua_State *L, int top)

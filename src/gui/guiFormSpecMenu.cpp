@@ -1,24 +1,6 @@
-/*
-guiFormSpecMenu.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 
 #include <cstdlib>
@@ -36,12 +18,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUICheckBox.h>
 #include <IGUIComboBox.h>
 #include <IGUIEditBox.h>
-#include <IGUIStaticText.h>
 #include <IGUIFont.h>
 #include <IGUITabControl.h>
+#include <IGUIImage.h>
+#include <IAnimatedMeshSceneNode.h>
 #include "client/renderingengine.h"
+#include "client/joystick_controller.h"
 #include "log.h"
-#include "client/tile.h" // ITextureSource
 #include "client/hud.h" // drawItemStack
 #include "filesys.h"
 #include "gettime.h"
@@ -147,11 +130,23 @@ void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 		g_touchscreengui->reset_pressed();
 #endif
 
+	if (cur_formspec && cur_formspec->getReferenceCount() == 1) {
+		/*
+			Why reference count == 1? Reason:
+			1 on creation (see "drop()" remark below)
+			+1 for being a guiroot child
+			+1 when focused (CGUIEnvironment::setFocus)
+
+			Hence re-create the formspec when it's existing without any parent.
+		*/
+		cur_formspec->drop();
+		cur_formspec = nullptr;
+	}
+
 	if (cur_formspec == nullptr) {
 		cur_formspec = new GUIFormSpecMenu(joystick, guiroot, -1, &g_menumgr,
 			client, guienv, client->getTextureSource(), sound_manager, fs_src,
 			txt_dest, formspecPrepend);
-		cur_formspec->doPause = false;
 
 		/*
 			Caution: do not call (*cur_formspec)->drop() here --
@@ -160,12 +155,13 @@ void GUIFormSpecMenu::create(GUIFormSpecMenu *&cur_formspec, Client *client,
 			remaining reference (i.e. the menu was removed)
 			and delete it in that case.
 		*/
-
 	} else {
 		cur_formspec->setFormspecPrepend(formspecPrepend);
 		cur_formspec->setFormSource(fs_src);
 		cur_formspec->setTextDest(txt_dest);
 	}
+
+	cur_formspec->doPause = false;
 }
 
 void GUIFormSpecMenu::removeTooltip()
@@ -311,13 +307,11 @@ void GUIFormSpecMenu::parseSize(parserData* data, const std::string &element)
 		data->invsize.Y = MYMAX(0, stof(parts[1]));
 
 		lockSize(false);
-#ifndef HAVE_TOUCHSCREENGUI
-		if (parts.size() == 3) {
+		if (!g_settings->getBool("touch_gui") && parts.size() == 3) {
 			if (parts[2] == "true") {
 				lockSize(true,v2u32(800,600));
 			}
 		}
-#endif
 		data->explicit_size = true;
 		return;
 	}
@@ -340,7 +334,7 @@ void GUIFormSpecMenu::parseContainer(parserData* data, const std::string &elemen
 	errorstream<< "Invalid container start element (" << parts.size() << "): '" << element << "'"  << std::endl;
 }
 
-void GUIFormSpecMenu::parseContainerEnd(parserData* data)
+void GUIFormSpecMenu::parseContainerEnd(parserData* data, const std::string &)
 {
 	if (container_stack.empty()) {
 		errorstream<< "Invalid container end element, no matching container start element"  << std::endl;
@@ -353,7 +347,7 @@ void GUIFormSpecMenu::parseContainerEnd(parserData* data)
 void GUIFormSpecMenu::parseScrollContainer(parserData *data, const std::string &element)
 {
 	std::vector<std::string> parts;
-	if (!precheckElement("scroll_container start", element, 4, 5, parts))
+	if (!precheckElement("scroll_container start", element, 4, 6, parts))
 		return;
 
 	std::vector<std::string> v_pos  = split(parts[0], ',');
@@ -363,6 +357,12 @@ void GUIFormSpecMenu::parseScrollContainer(parserData *data, const std::string &
 	f32 scroll_factor = 0.1f;
 	if (parts.size() >= 5 && !parts[4].empty())
 		scroll_factor = stof(parts[4]);
+
+	std::optional<s32> content_padding_px;
+	if (parts.size() >= 6 && !parts[5].empty()) {
+		std::vector<std::string> v_size = { parts[5], parts[5] };
+		content_padding_px = getRealCoordinateGeometry(v_size)[orientation == "vertical" ? 1 : 0];
+	}
 
 	MY_CHECKPOS("scroll_container", 0);
 	MY_CHECKGEOM("scroll_container", 1);
@@ -402,6 +402,7 @@ void GUIFormSpecMenu::parseScrollContainer(parserData *data, const std::string &
 
 	GUIScrollContainer *mover = new GUIScrollContainer(Environment,
 			clipper, spec_mover.fid, rect_mover, orientation, scroll_factor);
+	mover->setContentPadding(content_padding_px);
 
 	data->current_parent = mover;
 
@@ -417,7 +418,7 @@ void GUIFormSpecMenu::parseScrollContainer(parserData *data, const std::string &
 	pos_offset.Y = 0.0f;
 }
 
-void GUIFormSpecMenu::parseScrollContainerEnd(parserData *data)
+void GUIFormSpecMenu::parseScrollContainerEnd(parserData *data, const std::string &)
 {
 	if (data->current_parent == this || data->current_parent->getParent() == this ||
 			container_stack.empty()) {
@@ -639,6 +640,11 @@ void GUIFormSpecMenu::parseCheckbox(parserData* data, const std::string &element
 	m_fields.push_back(spec);
 }
 
+void GUIFormSpecMenu::parseRealCoordinates(parserData* data, const std::string &element)
+{
+	data->real_coordinates = is_yes(element);
+}
+
 void GUIFormSpecMenu::parseScrollBar(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts;
@@ -750,7 +756,7 @@ void GUIFormSpecMenu::parseScrollBarOptions(parserData* data, const std::string 
 			data->scrollbar_options.thumb_size = value <= 0 ? 1 : value;
 			continue;
 		} else if (options[0] == "arrows") {
-			std::string value = trim(options[1]);
+			auto value = trim(options[1]);
 			if (value == "hide")
 				data->scrollbar_options.arrow_visiblity = GUIScrollBar::HIDE;
 			else if (value == "show")
@@ -971,17 +977,20 @@ void GUIFormSpecMenu::parseItemImage(parserData* data, const std::string &elemen
 	m_fields.push_back(spec);
 }
 
-void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
-		const std::string &type)
+void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element)
 {
+	int expected_parts = (data->type == "button_url" || data->type == "button_url_exit") ? 5 : 4;
 	std::vector<std::string> parts;
-	if (!precheckElement("button", element, 4, 4, parts))
+	if (!precheckElement("button", element, expected_parts, expected_parts, parts))
 		return;
 
 	std::vector<std::string> v_pos = split(parts[0],',');
 	std::vector<std::string> v_geom = split(parts[1],',');
 	std::string name = parts[2];
 	std::string label = parts[3];
+	std::string url;
+	if (data->type == "button_url" || data->type == "button_url_exit")
+		url = parts[4];
 
 	MY_CHECKPOS("button",0);
 	MY_CHECKGEOM("button",1);
@@ -1016,13 +1025,15 @@ void GUIFormSpecMenu::parseButton(parserData* data, const std::string &element,
 		258 + m_fields.size()
 	);
 	spec.ftype = f_Button;
-	if(type == "button_exit")
+	if (data->type == "button_exit" || data->type == "button_url_exit")
 		spec.is_exit = true;
+	if (data->type == "button_url" || data->type == "button_url_exit")
+		spec.url = url;
 
 	GUIButton *e = GUIButton::addButton(Environment, rect, m_tsrc,
 			data->current_parent, spec.fid, spec.flabel.c_str());
 
-	auto style = getStyleForElement(type, name, (type != "button") ? "button" : "");
+	auto style = getStyleForElement(data->type, name, (data->type != "button") ? "button" : "");
 
 	spec.sound = style[StyleSpec::STATE_DEFAULT].get(StyleSpec::Property::SOUND, "");
 
@@ -1180,7 +1191,9 @@ void GUIFormSpecMenu::parseTable(parserData* data, const std::string &element)
 	std::vector<std::string> v_pos = split(parts[0],',');
 	std::vector<std::string> v_geom = split(parts[1],',');
 	std::string name = parts[2];
-	std::vector<std::string> items = split(parts[3],',');
+	std::vector<std::string> items;
+	if (!parts[3].empty())
+		items = split(parts[3],',');
 	std::string str_initial_selection;
 
 	if (parts.size() >= 5)
@@ -1250,7 +1263,9 @@ void GUIFormSpecMenu::parseTextList(parserData* data, const std::string &element
 	std::vector<std::string> v_pos = split(parts[0],',');
 	std::vector<std::string> v_geom = split(parts[1],',');
 	std::string name = parts[2];
-	std::vector<std::string> items = split(parts[3],',');
+	std::vector<std::string> items;
+	if (!parts[3].empty())
+		items = split(parts[3],',');
 	std::string str_initial_selection;
 	std::string str_transparent = "false";
 
@@ -1678,11 +1693,10 @@ void GUIFormSpecMenu::parseTextArea(parserData* data, std::vector<std::string>& 
 	m_fields.push_back(spec);
 }
 
-void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
-		const std::string &type)
+void GUIFormSpecMenu::parseField(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts;
-	if (!precheckElement(type, element, 3, 5, parts))
+	if (!precheckElement(data->type, element, 3, 5, parts))
 		return;
 
 	if (parts.size() == 3 || parts.size() == 4) {
@@ -1691,7 +1705,7 @@ void GUIFormSpecMenu::parseField(parserData* data, const std::string &element,
 	}
 
 	// Else: >= 5 arguments in "parts"
-	parseTextArea(data, parts, type);
+	parseTextArea(data, parts, data->type);
 }
 
 void GUIFormSpecMenu::parseHyperText(parserData *data, const std::string &element)
@@ -1769,12 +1783,7 @@ void GUIFormSpecMenu::parseLabel(parserData* data, const std::string &element)
 	size_t str_pos = 0;
 
 	for (size_t i = 0; str_pos < str.size(); ++i) {
-		// Split per line
-		size_t str_nl = str.getString().find(L'\n', str_pos);
-		if (str_nl == std::wstring::npos)
-			str_nl = str.getString().size();
-		EnrichedString line = str.substr(str_pos, str_nl - str_pos);
-		str_pos += line.size() + 1;
+		EnrichedString line = str.getNextLine(&str_pos);
 
 		core::rect<s32> rect;
 
@@ -1919,8 +1928,7 @@ void GUIFormSpecMenu::parseVertLabel(parserData* data, const std::string &elemen
 	m_clickthrough_elements.push_back(e);
 }
 
-void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &element,
-		const std::string &type)
+void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &element)
 {
 	std::vector<std::string> parts;
 	if (!precheckElement("image_button", element, 5, 8, parts))
@@ -1977,7 +1985,8 @@ void GUIFormSpecMenu::parseImageButton(parserData* data, const std::string &elem
 		258 + m_fields.size()
 	);
 	spec.ftype = f_Button;
-	if (type == "image_button_exit")
+
+	if (data->type == "image_button_exit")
 		spec.is_exit = true;
 
 	GUIButtonImage *e = GUIButtonImage::addButton(Environment, rect, m_tsrc,
@@ -2444,8 +2453,8 @@ bool GUIFormSpecMenu::parseSizeDirect(parserData* data, const std::string &eleme
 	if (parts.size() < 2)
 		return false;
 
-	std::string type = trim(parts[0]);
-	std::string description = trim(parts[1]);
+	auto type = trim(parts[0]);
+	std::string description(trim(parts[1]));
 
 	if (type != "size" && type != "invsize")
 		return false;
@@ -2468,8 +2477,8 @@ bool GUIFormSpecMenu::parsePositionDirect(parserData *data, const std::string &e
 	if (parts.size() != 2)
 		return false;
 
-	std::string type = trim(parts[0]);
-	std::string description = trim(parts[1]);
+	auto type = trim(parts[0]);
+	std::string description(trim(parts[1]));
 
 	if (type != "position")
 		return false;
@@ -2507,8 +2516,8 @@ bool GUIFormSpecMenu::parseAnchorDirect(parserData *data, const std::string &ele
 	if (parts.size() != 2)
 		return false;
 
-	std::string type = trim(parts[0]);
-	std::string description = trim(parts[1]);
+	auto type = trim(parts[0]);
+	std::string description(trim(parts[1]));
 
 	if (type != "anchor")
 		return false;
@@ -2547,8 +2556,8 @@ bool GUIFormSpecMenu::parsePaddingDirect(parserData *data, const std::string &el
 	if (parts.size() != 2)
 		return false;
 
-	std::string type = trim(parts[0]);
-	std::string description = trim(parts[1]);
+	auto type = trim(parts[0]);
+	std::string description(trim(parts[1]));
 
 	if (type != "padding")
 		return false;
@@ -2577,14 +2586,21 @@ void GUIFormSpecMenu::parsePadding(parserData *data, const std::string &element)
 			<< "'" << std::endl;
 }
 
-bool GUIFormSpecMenu::parseStyle(parserData *data, const std::string &element, bool style_type)
+void GUIFormSpecMenu::parseStyle(parserData *data, const std::string &element)
 {
+	if (data->type != "style" && data->type != "style_type") {
+		errorstream << "Invalid style element type: '" << data->type << "'" << std::endl;
+		return;
+	}
+
+	bool style_type = (data->type == "style_type");
+
 	std::vector<std::string> parts = split(element, ';');
 
 	if (parts.size() < 2) {
 		errorstream << "Invalid style element (" << parts.size() << "): '" << element
 					<< "'" << std::endl;
-		return false;
+		return;
 	}
 
 	StyleSpec spec;
@@ -2595,7 +2611,7 @@ bool GUIFormSpecMenu::parseStyle(parserData *data, const std::string &element, b
 		if (equal_pos == std::string::npos) {
 			errorstream << "Invalid style element (Property missing value): '" << element
 						<< "'" << std::endl;
-			return false;
+			return;
 		}
 
 		std::string propname = trim(parts[i].substr(0, equal_pos));
@@ -2619,7 +2635,7 @@ bool GUIFormSpecMenu::parseStyle(parserData *data, const std::string &element, b
 
 	std::vector<std::string> selectors = split(parts[0], ',');
 	for (size_t sel = 0; sel < selectors.size(); sel++) {
-		std::string selector = trim(selectors[sel]);
+		std::string selector(trim(selectors[sel]));
 
 		// Copy the style properties to a new StyleSpec
 		// This allows a separate state mask per-selector
@@ -2710,10 +2726,10 @@ bool GUIFormSpecMenu::parseStyle(parserData *data, const std::string &element, b
 		}
 	}
 
-	return true;
+	return;
 }
 
-void GUIFormSpecMenu::parseSetFocus(const std::string &element)
+void GUIFormSpecMenu::parseSetFocus(parserData*, const std::string &element)
 {
 	std::vector<std::string> parts;
 	if (!precheckElement("set_focus", element, 1, 2, parts))
@@ -2790,8 +2806,13 @@ void GUIFormSpecMenu::parseModel(parserData *data, const std::string &element)
 
 	auto meshnode = e->setMesh(mesh);
 
-	for (u32 i = 0; i < textures.size() && i < meshnode->getMaterialCount(); ++i)
-		e->setTexture(i, m_tsrc->getTexture(unescape_string(textures[i])));
+	for (u32 i = 0; i < meshnode->getMaterialCount(); ++i) {
+		const auto texture_idx = mesh->getTextureSlot(i);
+		if (texture_idx >= textures.size())
+			warningstream << "Invalid model element: Not enough textures" << std::endl;
+		else
+			e->setTexture(i, m_tsrc->getTexture(unescape_string(textures[texture_idx])));
+	}
 
 	if (vec_rot.size() >= 2)
 		e->setRotation(v2f(stof(vec_rot[0]), stof(vec_rot[1])));
@@ -2839,6 +2860,55 @@ void GUIFormSpecMenu::removeAll()
 		scroll_container_it.second->drop();
 }
 
+const std::unordered_map<std::string, std::function<void(GUIFormSpecMenu*, GUIFormSpecMenu::parserData *data,
+	const std::string &description)>> GUIFormSpecMenu::element_parsers = {
+		{"container",              &GUIFormSpecMenu::parseContainer},
+		{"container_end",          &GUIFormSpecMenu::parseContainerEnd},
+		{"list",                   &GUIFormSpecMenu::parseList},
+		{"listring",               &GUIFormSpecMenu::parseListRing},
+		{"checkbox",               &GUIFormSpecMenu::parseCheckbox},
+		{"image",                  &GUIFormSpecMenu::parseImage},
+		{"animated_image",         &GUIFormSpecMenu::parseAnimatedImage},
+		{"item_image",             &GUIFormSpecMenu::parseItemImage},
+		{"button",                 &GUIFormSpecMenu::parseButton},
+		{"button_exit",            &GUIFormSpecMenu::parseButton},
+		{"button_url",             &GUIFormSpecMenu::parseButton},
+		{"button_url_exit",        &GUIFormSpecMenu::parseButton},
+		{"background",             &GUIFormSpecMenu::parseBackground},
+		{"background9",            &GUIFormSpecMenu::parseBackground},
+		{"tableoptions",           &GUIFormSpecMenu::parseTableOptions},
+		{"tablecolumns",           &GUIFormSpecMenu::parseTableColumns},
+		{"table",                  &GUIFormSpecMenu::parseTable},
+		{"textlist",               &GUIFormSpecMenu::parseTextList},
+		{"dropdown",               &GUIFormSpecMenu::parseDropDown},
+		{"field_enter_after_edit", &GUIFormSpecMenu::parseFieldEnterAfterEdit},
+		{"field_close_on_enter",   &GUIFormSpecMenu::parseFieldCloseOnEnter},
+		{"pwdfield",               &GUIFormSpecMenu::parsePwdField},
+		{"field",                  &GUIFormSpecMenu::parseField},
+		{"textarea",               &GUIFormSpecMenu::parseField},
+		{"hypertext",              &GUIFormSpecMenu::parseHyperText},
+		{"label",                  &GUIFormSpecMenu::parseLabel},
+		{"vertlabel",              &GUIFormSpecMenu::parseVertLabel},
+		{"item_image_button",      &GUIFormSpecMenu::parseItemImageButton},
+		{"image_button",           &GUIFormSpecMenu::parseImageButton},
+		{"image_button_exit",      &GUIFormSpecMenu::parseImageButton},
+		{"tabheader",              &GUIFormSpecMenu::parseTabHeader},
+		{"box",                    &GUIFormSpecMenu::parseBox},
+		{"bgcolor",                &GUIFormSpecMenu::parseBackgroundColor},
+		{"listcolors",             &GUIFormSpecMenu::parseListColors},
+		{"tooltip",                &GUIFormSpecMenu::parseTooltip},
+		{"scrollbar",              &GUIFormSpecMenu::parseScrollBar},
+		{"real_coordinates",       &GUIFormSpecMenu::parseRealCoordinates},
+		{"style",                  &GUIFormSpecMenu::parseStyle},
+		{"style_type",             &GUIFormSpecMenu::parseStyle},
+		{"scrollbaroptions",       &GUIFormSpecMenu::parseScrollBarOptions},
+		{"scroll_container",       &GUIFormSpecMenu::parseScrollContainer},
+		{"scroll_container_end",   &GUIFormSpecMenu::parseScrollContainerEnd},
+		{"set_focus",              &GUIFormSpecMenu::parseSetFocus},
+		{"model",                  &GUIFormSpecMenu::parseModel},
+};
+
+
 void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 {
 	//some prechecks
@@ -2855,195 +2925,15 @@ void GUIFormSpecMenu::parseElement(parserData* data, const std::string &element)
 	std::string type = trim(element.substr(0, pos));
 	std::string description = element.substr(pos+1);
 
-	if (type == "container") {
-		parseContainer(data, description);
+	// They remain here due to bool flags, for now
+	data->type = type;
+
+	auto it = element_parsers.find(type);
+	if (it != element_parsers.end()) {
+		it->second(this, data, description);
 		return;
 	}
 
-	if (type == "container_end") {
-		parseContainerEnd(data);
-		return;
-	}
-
-	if (type == "list") {
-		parseList(data, description);
-		return;
-	}
-
-	if (type == "listring") {
-		parseListRing(data, description);
-		return;
-	}
-
-	if (type == "checkbox") {
-		parseCheckbox(data, description);
-		return;
-	}
-
-	if (type == "image") {
-		parseImage(data, description);
-		return;
-	}
-
-	if (type == "animated_image") {
-		parseAnimatedImage(data, description);
-		return;
-	}
-
-	if (type == "item_image") {
-		parseItemImage(data, description);
-		return;
-	}
-
-	if (type == "button" || type == "button_exit") {
-		parseButton(data, description, type);
-		return;
-	}
-
-	if (type == "background" || type == "background9") {
-		parseBackground(data, description);
-		return;
-	}
-
-	if (type == "tableoptions"){
-		parseTableOptions(data,description);
-		return;
-	}
-
-	if (type == "tablecolumns"){
-		parseTableColumns(data,description);
-		return;
-	}
-
-	if (type == "table"){
-		parseTable(data,description);
-		return;
-	}
-
-	if (type == "textlist"){
-		parseTextList(data,description);
-		return;
-	}
-
-	if (type == "dropdown"){
-		parseDropDown(data,description);
-		return;
-	}
-
-	if (type == "field_enter_after_edit") {
-		parseFieldEnterAfterEdit(data, description);
-		return;
-	}
-
-	if (type == "field_close_on_enter") {
-		parseFieldCloseOnEnter(data, description);
-		return;
-	}
-
-	if (type == "pwdfield") {
-		parsePwdField(data,description);
-		return;
-	}
-
-	if ((type == "field") || (type == "textarea")){
-		parseField(data,description,type);
-		return;
-	}
-
-	if (type == "hypertext") {
-		parseHyperText(data,description);
-		return;
-	}
-
-	if (type == "label") {
-		parseLabel(data,description);
-		return;
-	}
-
-	if (type == "vertlabel") {
-		parseVertLabel(data,description);
-		return;
-	}
-
-	if (type == "item_image_button") {
-		parseItemImageButton(data,description);
-		return;
-	}
-
-	if ((type == "image_button") || (type == "image_button_exit")) {
-		parseImageButton(data,description,type);
-		return;
-	}
-
-	if (type == "tabheader") {
-		parseTabHeader(data,description);
-		return;
-	}
-
-	if (type == "box") {
-		parseBox(data,description);
-		return;
-	}
-
-	if (type == "bgcolor") {
-		parseBackgroundColor(data,description);
-		return;
-	}
-
-	if (type == "listcolors") {
-		parseListColors(data,description);
-		return;
-	}
-
-	if (type == "tooltip") {
-		parseTooltip(data,description);
-		return;
-	}
-
-	if (type == "scrollbar") {
-		parseScrollBar(data, description);
-		return;
-	}
-
-	if (type == "real_coordinates") {
-		data->real_coordinates = is_yes(description);
-		return;
-	}
-
-	if (type == "style") {
-		parseStyle(data, description, false);
-		return;
-	}
-
-	if (type == "style_type") {
-		parseStyle(data, description, true);
-		return;
-	}
-
-	if (type == "scrollbaroptions") {
-		parseScrollBarOptions(data, description);
-		return;
-	}
-
-	if (type == "scroll_container") {
-		parseScrollContainer(data, description);
-		return;
-	}
-
-	if (type == "scroll_container_end") {
-		parseScrollContainerEnd(data);
-		return;
-	}
-
-	if (type == "set_focus") {
-		parseSetFocus(description);
-		return;
-	}
-
-	if (type == "model") {
-		parseModel(data, description);
-		return;
-	}
 
 	// Ignore others
 	infostream << "Unknown DrawSpec: type=" << type << ", data=\"" << description << "\""
@@ -3057,7 +2947,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 		return;
 	}
 
-	porting::irr_device_wait_egl();
+	// fmtodo? porting::irr_device_wait_egl();
 
 	parserData mydata;
 
@@ -3214,7 +3104,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 	mydata.real_coordinates = m_formspec_version >= 2;
 	for (; i < elements.size(); i++) {
 		std::vector<std::string> parts = split(elements[i], '[');
-		std::string name = trim(parts[0]);
+		auto name = trim(parts[0]);
 		if (name != "real_coordinates" || parts.size() != 2)
 			break; // Invalid format
 
@@ -3244,57 +3134,7 @@ void GUIFormSpecMenu::regenerateGui(v2u32 screensize)
 			offset = v2s32(0,0);
 		}
 
-		const double gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 42.0f);
-		const double screen_dpi = RenderingEngine::getDisplayDensity() * 96;
-
-		double use_imgsize;
-		if (m_lock) {
-			// In fixed-size mode, inventory image size
-			// is 0.53 inch multiplied by the gui_scaling
-			// config parameter.  This magic size is chosen
-			// to make the main menu (15.5 inventory images
-			// wide, including border) just fit into the
-			// default window (800 pixels wide) at 96 DPI
-			// and default scaling (1.00).
-			use_imgsize = 0.5555 * screen_dpi * gui_scaling;
-		} else {
-			// Variables for the maximum imgsize that can fit in the screen.
-			double fitx_imgsize;
-			double fity_imgsize;
-
-			v2f padded_screensize(
-				mydata.screensize.X * (1.0f - mydata.padding.X * 2.0f),
-				mydata.screensize.Y * (1.0f - mydata.padding.Y * 2.0f)
-			);
-
-			if (mydata.real_coordinates) {
-				fitx_imgsize = padded_screensize.X / mydata.invsize.X;
-				fity_imgsize = padded_screensize.Y / mydata.invsize.Y;
-			} else {
-				// The maximum imgsize in the old coordinate system also needs to
-				// factor in padding and spacing along with 0.1 inventory slot spare
-				// and help text space, hence the magic numbers.
-				fitx_imgsize = padded_screensize.X /
-						((5.0 / 4.0) * (0.5 + mydata.invsize.X));
-				fity_imgsize = padded_screensize.Y /
-						((15.0 / 13.0) * (0.85 + mydata.invsize.Y));
-			}
-
-			s32 min_screen_dim = std::min(padded_screensize.X, padded_screensize.Y);
-
-#ifdef HAVE_TOUCHSCREENGUI
-			// In Android, the preferred imgsize should be larger to accommodate the
-			// smaller screensize.
-			double prefer_imgsize = min_screen_dim / 10 * gui_scaling;
-#else
-			// Desktop computers have more space, so try to fit 15 coordinates.
-			double prefer_imgsize = min_screen_dim / 15 * gui_scaling;
-#endif
-			// Try to use the preferred imgsize, but if that's bigger than the maximum
-			// size, use the maximum size.
-			use_imgsize = std::min(prefer_imgsize,
-					std::min(fitx_imgsize, fity_imgsize));
-		}
+		double use_imgsize = calculateImgsize(mydata);
 
 		// Everything else is scaled in proportion to the
 		// inventory image size.  The inventory slot spacing
@@ -3497,46 +3337,58 @@ void GUIFormSpecMenu::legacySortElements(std::list<IGUIElement *>::iterator from
 }
 
 #ifdef __ANDROID__
-bool GUIFormSpecMenu::getAndroidUIInput()
+void GUIFormSpecMenu::getAndroidUIInput()
 {
-	if (!hasAndroidUIInput())
-		return false;
+	porting::AndroidDialogState dialogState = getAndroidUIInputState();
+	if (dialogState == porting::DIALOG_SHOWN) {
+		return;
+	} else if (dialogState == porting::DIALOG_CANCELED) {
+		m_jni_field_name.clear();
+		return;
+	}
 
-	// still waiting
-	if (porting::getInputDialogState() == -1)
-		return true;
+	porting::AndroidDialogType dialog_type = porting::getLastInputDialogType();
 
 	std::string fieldname = m_jni_field_name;
 	m_jni_field_name.clear();
 
 	for (const FieldSpec &field : m_fields) {
 		if (field.fname != fieldname)
-			continue;
+			continue; // Iterate until found
 
 		IGUIElement *element = getElementFromId(field.fid, true);
 
-		if (!element || element->getType() != irr::gui::EGUIET_EDIT_BOX)
-			return false;
+		if (!element)
+			return;
 
-		gui::IGUIEditBox *editbox = (gui::IGUIEditBox *)element;
-		std::string text = porting::getInputDialogValue();
-		editbox->setText(utf8_to_wide(text).c_str());
+		auto element_type = element->getType();
+		if (dialog_type == porting::TEXT_INPUT && element_type == irr::gui::EGUIET_EDIT_BOX) {
+			gui::IGUIEditBox *editbox = (gui::IGUIEditBox *)element;
+			std::string text = porting::getInputDialogMessage();
+			editbox->setText(utf8_to_wide(text).c_str());
 
-		bool enter_after_edit = false;
-		auto iter = field_enter_after_edit.find(fieldname);
-		if (iter != field_enter_after_edit.end()) {
-			enter_after_edit = iter->second;
+			bool enter_after_edit = false;
+			auto iter = field_enter_after_edit.find(fieldname);
+			if (iter != field_enter_after_edit.end()) {
+				enter_after_edit = iter->second;
+			}
+			if (enter_after_edit && editbox->getParent()) {
+				SEvent enter;
+				enter.EventType = EET_GUI_EVENT;
+				enter.GUIEvent.Caller = editbox;
+				enter.GUIEvent.Element = nullptr;
+				enter.GUIEvent.EventType = gui::EGET_EDITBOX_ENTER;
+				editbox->getParent()->OnEvent(enter);
+			}
+		} else if (dialog_type == porting::SELECTION_INPUT &&
+				element_type == irr::gui::EGUIET_COMBO_BOX) {
+			auto dropdown = (gui::IGUIComboBox *) element;
+			int selected = porting::getInputDialogSelection();
+			dropdown->setAndSendSelected(selected);
 		}
-		if (enter_after_edit && editbox->getParent()) {
-			SEvent enter;
-			enter.EventType = EET_GUI_EVENT;
-			enter.GUIEvent.Caller = editbox;
-			enter.GUIEvent.Element = nullptr;
-			enter.GUIEvent.EventType = gui::EGET_EDITBOX_ENTER;
-			editbox->getParent()->OnEvent(enter);
-		}
+
+		return; // Early-return after found
 	}
-	return false;
 }
 #endif
 
@@ -3659,24 +3511,18 @@ void GUIFormSpecMenu::drawMenu()
 			NULL, m_client, IT_ROT_HOVERED);
 	}
 
-	// gui::IGUIElement::draw();
-
-	// On touchscreens, m_pointer is set by GUIModalMenu::preprocessEvent instead.
-#ifndef HAVE_TOUCHSCREENGUI
-	m_pointer = RenderingEngine::get_raw_device()->getCursorControl()->getPosition();
-#endif
-
 	/*
 		Draw fields/buttons tooltips and update the mouse cursor
 	*/
 	gui::IGUIElement *hovered =
 			Environment->getRootGUIElement()->getElementFromPoint(m_pointer);
 
-#ifndef HAVE_TOUCHSCREENGUI
 	gui::ICursorControl *cursor_control = RenderingEngine::get_raw_device()->
 			getCursorControl();
-	gui::ECURSOR_ICON current_cursor_icon = cursor_control->getActiveIcon();
-#endif
+	gui::ECURSOR_ICON current_cursor_icon = gui::ECI_NORMAL;
+	if (cursor_control)
+		current_cursor_icon = cursor_control->getActiveIcon();
+
 	bool hovered_element_found = false;
 
 	if (hovered) {
@@ -3720,11 +3566,10 @@ void GUIFormSpecMenu::drawMenu()
 							m_tooltips[field.fname].bgcolor);
 				}
 
-#ifndef HAVE_TOUCHSCREENGUI
-				if (field.ftype != f_HyperText && // Handled directly in guiHyperText
+				if (cursor_control &&
+						field.ftype != f_HyperText && // Handled directly in guiHyperText
 						current_cursor_icon != field.fcursor_icon)
 					cursor_control->setActiveIcon(field.fcursor_icon);
-#endif
 
 				hovered_element_found = true;
 
@@ -3735,10 +3580,8 @@ void GUIFormSpecMenu::drawMenu()
 
 	if (!hovered_element_found) {
 		// no element is hovered
-#ifndef HAVE_TOUCHSCREENGUI
-		if (current_cursor_icon != ECI_NORMAL)
+		if (cursor_control && current_cursor_icon != ECI_NORMAL)
 			cursor_control->setActiveIcon(ECI_NORMAL);
-#endif
 	}
 
 	m_tooltip_element->draw();
@@ -3769,16 +3612,13 @@ void GUIFormSpecMenu::showTooltip(const std::wstring &text,
 	v2u32 screenSize = Environment->getVideoDriver()->getScreenSize();
 	int tooltip_offset_x = m_btn_height;
 	int tooltip_offset_y = m_btn_height;
-#ifdef HAVE_TOUCHSCREENGUI
-	tooltip_offset_x *= 3;
-	tooltip_offset_y  = 0;
-	if (m_pointer.X > (s32)screenSize.X / 2)
-		tooltip_offset_x = -(tooltip_offset_x + tooltip_width);
 
-	// Hide tooltip after ETIE_LEFT_UP
-	if (m_pointer.X == 0)
-		return;
-#endif
+	if (RenderingEngine::getLastPointerType() == PointerType::Touch) {
+		tooltip_offset_x *= 3;
+		tooltip_offset_y  = 0;
+		if (m_pointer.X > (s32)screenSize.X / 2)
+			tooltip_offset_x = -(tooltip_offset_x + tooltip_width);
+	}
 
 	// Calculate and set the tooltip position
 	s32 tooltip_x = m_pointer.X + tooltip_offset_x;
@@ -4075,8 +3915,10 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode)
 
 bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 {
-
-	GUIModalMenu::preprocessEvent(event);
+	// This must be done first so that GUIModalMenu can set m_pointer_type
+	// correctly.
+	if (GUIModalMenu::preprocessEvent(event))
+		return true;
 
 	// The IGUITabControl renders visually using the skin's selected
 	// font, which we override for the duration of form drawing,
@@ -4100,6 +3942,8 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 			skin->setFont(m_font);
 			bool retval = hovered->OnEvent(event);
 			skin->setFont(old_font);
+			// This is expected to be set to BET_OTHER with mouse UP event
+			m_held_mouse_button = BET_OTHER;
 			return retval;
 		}
 	}
@@ -4107,7 +3951,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 	// Fix Esc/Return key being eaten by checkboxen and tables
 	if (event.EventType == EET_KEY_INPUT_EVENT) {
 			KeyPress kp(event.KeyInput);
-		if (kp == EscapeKey || kp == CancelKey
+		if (kp == EscapeKey
 				|| kp == getKeySetting("keymap_inventory")
 				|| event.KeyInput.Key==KEY_RETURN) {
 			gui::IGUIElement *focused = Environment->getFocus();
@@ -4138,10 +3982,9 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 	}
 
 	if (event.EventType == irr::EET_JOYSTICK_INPUT_EVENT) {
-		/* TODO add a check like:
-		if (event.JoystickEvent != joystick_we_listen_for)
+		if (event.JoystickEvent.Joystick != m_joystick->getJoystickId())
 			return false;
-		*/
+
 		bool handled = m_joystick->handleEvent(event.JoystickEvent);
 		if (handled) {
 			if (m_joystick->wasKeyDown(KeyType::ESC)) {
@@ -4156,7 +3999,7 @@ bool GUIFormSpecMenu::preprocessEvent(const SEvent& event)
 		return handled;
 	}
 
-	return GUIModalMenu::preprocessEvent(event);
+	return false;
 }
 
 void GUIFormSpecMenu::tryClose()
@@ -4175,7 +4018,7 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 	if (event.EventType==EET_KEY_INPUT_EVENT) {
 		KeyPress kp(event.KeyInput);
 		if (event.KeyInput.PressedDown && (
-				(kp == EscapeKey) || (kp == CancelKey) ||
+				(kp == EscapeKey) ||
 				((m_client != NULL) && (kp == getKeySetting("keymap_inventory"))))) {
 			tryClose();
 			return true;
@@ -4186,8 +4029,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			m_client->makeScreenshot();
 		}
 
-		if (event.KeyInput.PressedDown && kp == getKeySetting("keymap_toggle_debug"))
-			m_show_debug = !m_show_debug;
+		if (event.KeyInput.PressedDown && kp == getKeySetting("keymap_toggle_debug")) {
+			if (!m_client || m_client->checkPrivilege("debug"))
+				m_show_debug = !m_show_debug;
+		}
 
 		if (event.KeyInput.PressedDown &&
 			(event.KeyInput.Key==KEY_RETURN ||
@@ -4405,14 +4250,12 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			}
 		}
 
-#ifdef HAVE_TOUCHSCREENGUI
 		// The second touch (see GUIModalMenu::preprocessEvent() function)
 		ButtonEventType touch = BET_OTHER;
 		if (event.EventType == EET_TOUCH_INPUT_EVENT) {
 			if (event.TouchInput.Event == ETIE_LEFT_UP)
 				touch = BET_RIGHT;
 		}
-#endif
 
 		// Set this number to a positive value to generate a move action
 		// from m_selected_item to s.
@@ -4699,11 +4542,6 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			if (!m_left_dragging)
 				break;
 
-			// Abort left-dragging
-			m_left_dragging = false;
-			m_client->inhibit_inventory_revert = false;
-			m_left_drag_stacks.clear();
-
 			// Both the selected item and the hovered item need to be checked
 			// because we don't know exactly when the double-click happened
 			ItemStack slct;
@@ -4732,6 +4570,12 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						}
 
 						if (amount > 0) {
+							if (m_left_dragging) {
+								// Abort left-dragging
+								m_left_dragging = false;
+								m_client->inhibit_inventory_revert = false;
+								m_left_drag_stacks.clear();
+							}
 							IMoveAction *a = new IMoveAction();
 							a->count = amount;
 							a->from_inv = s.inventoryloc;
@@ -4757,7 +4601,6 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			break;
 		}
 
-#ifdef HAVE_TOUCHSCREENGUI
 		if (touch == BET_RIGHT && m_selected_item && !m_left_dragging) {
 			if (!s.isValid()) {
 				// Not a valid slot
@@ -4777,7 +4620,6 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 				}
 			}
 		}
-#endif
 
 		// Update left-dragged slots
 		if (m_left_dragging && m_left_drag_stacks.size() > 1) {
@@ -4815,6 +4657,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			// Save the adjusted source stack
 			list_selected->changeItem(m_selected_item->i, stack_from);
 		}
+
+		bool absorb_event = false;
 
 		// Possibly send inventory action to server
 		if (move_amount > 0 && inv_selected) {
@@ -4970,6 +4814,10 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			a->from_i = m_selected_item->i;
 			m_invmgr->inventoryAction(a);
 
+			// Formspecs usually close when you click outside them, we absorb
+			// the event to prevent that. See GUIModalMenu::remapClickOutside.
+			absorb_event = true;
+
 		} else if (craft_amount > 0) {
 			if(!s.isValid())
 				return false;
@@ -5003,6 +4851,9 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 			m_selected_dragging = false;
 		}
 		m_old_pointer = m_pointer;
+
+		if (absorb_event)
+			return true;
 	}
 
 	if (event.EventType == EET_GUI_EVENT) {
@@ -5061,6 +4912,17 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 						m_sound_manager->playSound(0, SoundSpec(s.sound, 1.0f));
 
 					s.send = true;
+
+					if (!s.url.empty()) {
+						if (m_client) {
+							// in game
+							g_gamecallback->showOpenURLDialog(s.url);
+						} else {
+							// main menu
+							porting::open_url(s.url);
+						}
+					}
+
 					if (s.is_exit) {
 						if (m_allowclose) {
 							acceptInput(quit_mode_accept);
@@ -5162,10 +5024,8 @@ bool GUIFormSpecMenu::OnEvent(const SEvent& event)
 		}
 	}
 
-#ifdef HAVE_TOUCHSCREENGUI
 	if (m_second_touch)
 		return true; // Stop propagating the event
-#endif
 
 	return Parent ? Parent->OnEvent(event) : false;
 }
@@ -5251,4 +5111,69 @@ std::array<StyleSpec, StyleSpec::NUM_STATES> GUIFormSpecMenu::getStyleForElement
 	}
 
 	return ret;
+}
+
+double GUIFormSpecMenu::getFixedImgsize(double screen_dpi, double gui_scaling)
+{
+	// In fixed-size mode, inventory image size
+	// is 0.53 inch multiplied by the gui_scaling
+	// config parameter.  This magic size is chosen
+	// to make the main menu (15.5 inventory images
+	// wide, including border) just fit into the
+	// default window (800 pixels wide) at 96 DPI
+	// and default scaling (1.00).
+	return 0.5555 * screen_dpi * gui_scaling;
+}
+
+double GUIFormSpecMenu::getImgsize(v2u32 avail_screensize, double screen_dpi, double gui_scaling)
+{
+	double fixed_imgsize = getFixedImgsize(screen_dpi, gui_scaling);
+
+	s32 min_screen_dim = std::min(avail_screensize.X, avail_screensize.Y);
+	double prefer_imgsize = min_screen_dim / 15 * gui_scaling;
+	// Use the available space more effectively on small windows/screens.
+	// This is especially important for mobile platforms.
+	prefer_imgsize = std::max(prefer_imgsize, fixed_imgsize);
+	return prefer_imgsize;
+}
+
+double GUIFormSpecMenu::calculateImgsize(const parserData &data)
+{
+	// must stay in sync with ClientDynamicInfo::calculateMaxFSSize
+
+    const double screen_dpi = RenderingEngine::getDisplayDensity() * 96;
+	const double gui_scaling = g_settings->getFloat("gui_scaling", 0.5f, 42.0f);
+
+	// Fixed-size mode
+	if (m_lock)
+		return getFixedImgsize(screen_dpi, gui_scaling);
+
+	// Variables for the maximum imgsize that can fit in the screen.
+	double fitx_imgsize;
+	double fity_imgsize;
+
+	v2f padded_screensize(
+		data.screensize.X * (1.0f - data.padding.X * 2.0f),
+		data.screensize.Y * (1.0f - data.padding.Y * 2.0f)
+	);
+
+	if (data.real_coordinates) {
+		fitx_imgsize = padded_screensize.X / data.invsize.X;
+		fity_imgsize = padded_screensize.Y / data.invsize.Y;
+	} else {
+		// The maximum imgsize in the old coordinate system also needs to
+		// factor in padding and spacing along with 0.1 inventory slot spare
+		// and help text space, hence the magic numbers.
+		fitx_imgsize = padded_screensize.X /
+				((5.0 / 4.0) * (0.5 + data.invsize.X));
+		fity_imgsize = padded_screensize.Y /
+				((15.0 / 13.0) * (0.85 + data.invsize.Y));
+	}
+
+	double prefer_imgsize = getImgsize(v2u32(padded_screensize.X, padded_screensize.Y),
+			screen_dpi, gui_scaling);
+
+	// Try to use the preferred imgsize, but if that's bigger than the maximum
+	// size, use the maximum size.
+	return std::min(prefer_imgsize, std::min(fitx_imgsize, fity_imgsize));
 }

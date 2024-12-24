@@ -1,39 +1,17 @@
-/*
-serverobject.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "serveractiveobject.h"
-#include <fstream>
 #include "inventory.h"
 #include "inventorymanager.h"
 #include "constants.h" // BS
-#include "log.h"
 #include "serverenvironment.h"
 
 Queue<ActiveObjectMessage> dummy_queue;
 
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 	ActiveObject(0),
-
-
 	m_env(env),
 	m_base_position(pos)
 
@@ -50,7 +28,7 @@ float ServerActiveObject::getMinimumSavedMovement()
 
 ItemStack ServerActiveObject::getWieldedItem(ItemStack *selected, ItemStack *hand) const
 {
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
 
 	*selected = ItemStack();
 	if (hand)
@@ -110,4 +88,49 @@ void ServerActiveObject::markForDeactivation()
 InventoryLocation ServerActiveObject::getInventoryLocation() const
 {
 	return InventoryLocation();
+}
+
+void ServerActiveObject::invalidateEffectiveObservers()
+{
+	m_effective_observers.reset();
+}
+
+using Observers = ServerActiveObject::Observers;
+
+const Observers &ServerActiveObject::getEffectiveObservers()
+{
+	if (m_effective_observers) // cached
+		return *m_effective_observers;
+
+	auto parent = getParent();
+	if (parent == nullptr)
+		return *(m_effective_observers = m_observers);
+	auto parent_observers = parent->getEffectiveObservers();
+	if (!parent_observers) // parent is unmanaged
+		return *(m_effective_observers = m_observers);
+	if (!m_observers) // we are unmanaged
+		return *(m_effective_observers = parent_observers);
+	// Set intersection between parent_observers and m_observers
+	// Avoid .clear() to free the allocated memory.
+	m_effective_observers = std::unordered_set<std::string>();
+	for (const auto &observer_name : *m_observers) {
+		if (parent_observers->count(observer_name) > 0)
+			(*m_effective_observers)->insert(observer_name);
+	}
+	return *m_effective_observers;
+}
+
+const Observers& ServerActiveObject::recalculateEffectiveObservers()
+{
+	// Invalidate final observers for this object and all of its parents.
+	for (auto obj = this; obj != nullptr; obj = obj->getParent())
+		obj->invalidateEffectiveObservers();
+	// getEffectiveObservers will now be forced to recalculate.
+	return getEffectiveObservers();
+}
+
+bool ServerActiveObject::isEffectivelyObservedBy(const std::string &player_name)
+{
+	auto effective_observers = getEffectiveObservers();
+	return !effective_observers || effective_observers->count(player_name) > 0;
 }

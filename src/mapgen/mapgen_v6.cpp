@@ -1,24 +1,8 @@
-/*
-Minetest
-Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2014-2018 paramat
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2014-2018 paramat
 
 
 #include <cmath>
@@ -53,6 +37,7 @@ FlagDesc flagdesc_mapgen_v6[] = {
 	{"snowbiomes", MGV6_SNOWBIOMES},
 	{"flat",       MGV6_FLAT},
 	{"trees",      MGV6_TREES},
+	{"temples",    MGV6_TEMPLES},
 	{"floatlands", MGV6_FLOATLANDS},
 	{NULL,         0}
 };
@@ -237,7 +222,8 @@ void MapgenV6Params::writeParams(Settings *settings) const
 void MapgenV6Params::setDefaultSettings(Settings *settings)
 {
 	settings->setDefault("mgv6_spflags", flagdesc_mapgen_v6, MGV6_JUNGLES |
-		MGV6_SNOWBIOMES | MGV6_TREES | MGV6_BIOMEBLEND | MGV6_MUDFLOW);
+		MGV6_SNOWBIOMES | MGV6_TREES | MGV6_BIOMEBLEND | MGV6_MUDFLOW |
+		MGV6_TEMPLES);
 }
 
 
@@ -604,7 +590,8 @@ void MapgenV6::makeChunk(BlockMakeData *data)
 			dp.np_alt_wall
 				= NoiseParams(-0.4, 1.0, v3f(40.0, 40.0, 40.0), 32474, 6, 1.1, 2.0);
 
-			if (getBiome(0, node_min) == BT_DESERT) {
+			if ((spflags & MGV6_TEMPLES) &&
+					getBiome(0, node_min) == BT_DESERT) {
 				dp.c_wall              = c_desert_stone;
 				dp.c_alt_wall          = CONTENT_IGNORE;
 				dp.c_stair             = c_stair_desert_stone;

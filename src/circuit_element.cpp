@@ -252,7 +252,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 	u8 real_face_id = FACE_TO_SHIFT(real_face);
 
 	if(current_node_features.is_wire || current_node_features.is_wire_connector) {
-		q.push(std::make_pair(current_pos, current_node_features.wire_connections[real_face_id]));
+		q.emplace(current_pos, current_node_features.wire_connections[real_face_id]);
 
 		while(!q.empty()) {
 			current_pos = q.front().first;
@@ -286,7 +286,7 @@ void CircuitElement::findConnectedWithFace(std::vector <std::pair <std::list<Cir
 						if(node_features.is_circuit_element) {
 							connected.emplace_back(pos_to_iterator[next_pos], next_real_shift);
 						} else {
-							q.push(std::make_pair(next_pos, node_features.wire_connections[next_real_shift]));
+							q.emplace(next_pos, node_features.wire_connections[next_real_shift]);
 						}
 
 						if(next_used_iterator != used.end()) {

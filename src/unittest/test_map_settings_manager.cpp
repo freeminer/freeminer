@@ -1,21 +1,6 @@
- /*
-Minetest
-Copyright (C) 2010-2014 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2014 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "test.h"
 
@@ -189,10 +174,9 @@ void TestMapSettingsManager::testMapSettingsManager()
 	SHA1 ctx;
 	std::string metafile_contents;
 	UASSERT(fs::ReadFile(test_mapmeta_path, metafile_contents));
-	ctx.addBytes(&metafile_contents[0], metafile_contents.size());
-	unsigned char *sha1_result = ctx.getDigest();
-	int resultdiff = memcmp(sha1_result, expected_contents_hash, 20);
-	free(sha1_result);
+	ctx.addBytes(metafile_contents);
+	std::string sha1_result = ctx.getDigest();
+	int resultdiff = memcmp(sha1_result.data(), expected_contents_hash, 20);
 
 	UASSERT(!resultdiff);
 #endif
@@ -202,7 +186,7 @@ void TestMapSettingsManager::testMapSettingsManager()
 void TestMapSettingsManager::testMapMetaSaveLoad()
 {
 	std::string path = getTestTempDirectory()
-		+ DIR_DELIM + "foobar" + DIR_DELIM + "map_meta.txt";
+		+ DIR_DELIM + "foobar" + DIR_DELIM + "map_meta";
 
 	makeUserConfig();
 	Settings &conf = *Settings::getLayer(SL_GLOBAL);

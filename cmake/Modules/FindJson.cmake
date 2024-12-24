@@ -23,7 +23,10 @@ if(NOT USE_SYSTEM_JSONCPP)
 	option(JSONCPP_WITH_WARNING_AS_ERROR OFF)
 	add_subdirectory(src/external/jsoncpp)
 	message(STATUS "Using bundled JSONCPP library. ${jsoncpp_BINARY_DIR}")
-	set(JSON_INCLUDE_DIR BEFORE SYSTEM ${PROJECT_SOURCE_DIR}/src/external/jsoncpp/include)
+	# Cant use SYSTEM BEFORE because tiniergltf uses this
+	#set(JSON_INCLUDE_DIR SYSTEM BEFORE ${PROJECT_SOURCE_DIR}/src/external/jsoncpp/include)
+	set(JSON_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src/external/jsoncpp/include)
+	
 	set(JSON_LIBRARY jsoncpp_static)
 	#set(JSON_LIBRARY jsoncpp_lib)
 

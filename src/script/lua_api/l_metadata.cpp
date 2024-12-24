@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017-8 rubenwardy <rw@rubenwardy.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2017-8 rubenwardy <rw@rubenwardy.com>
 
 #include "lua_api/l_metadata.h"
 #include "lua_api/l_internal.h"
@@ -115,9 +100,13 @@ int MetaDataRef::l_set_string(lua_State *L)
 
 	MetaDataRef *ref = checkAnyMetadata(L, 1);
 	std::string name = luaL_checkstring(L, 2);
-	size_t len = 0;
-	const char *s = lua_tolstring(L, 3, &len);
-	std::string str(s, len);
+	std::string_view str;
+	if (!lua_isnoneornil(L, 3)) {
+		str = readParam<std::string_view>(L, 3);
+	} else {
+		log_deprecated(L, "Value passed to set_string is nil. This behaviour is"
+			" undocumented and will result in an error in the future.", 1, true);
+	}
 
 	IMetadata *meta = ref->getmeta(!str.empty());
 	if (meta != NULL && meta->setString(name, str))
@@ -300,9 +289,8 @@ bool MetaDataRef::handleFromTable(lua_State *L, int table, IMetadata *meta)
 		while (lua_next(L, fieldstable) != 0) {
 			// key at index -2 and value at index -1
 			std::string name = readParam<std::string>(L, -2);
-			size_t cl;
-			const char *cs = lua_tolstring(L, -1, &cl);
-			meta->setString(name, std::string(cs, cl));
+			auto value = readParam<std::string_view>(L, -1);
+			meta->setString(name, value);
 			lua_pop(L, 1); // Remove value, keep key for next iteration
 		}
 		lua_pop(L, 1);

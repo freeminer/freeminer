@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "test.h"
 
@@ -49,31 +34,29 @@ void TestVoxelAlgorithms::runTests(IGameDef *gamedef)
 void TestVoxelAlgorithms::testVoxelLineIterator()
 {
 	// Test some lines
-	// Do not test lines that start or end on the border of
-	// two voxels as rounding errors can make the test fail!
-	std::vector<core::line3d<f32> > lines;
-	for (f32 x = -9.1; x < 9; x += 3.124) {
-	for (f32 y = -9.2; y < 9; y += 3.123) {
-	for (f32 z = -9.3; z < 9; z += 3.122) {
+	std::vector<core::line3d<f32>> lines;
+	for (f32 x = -9.1f; x < 9.0f; x += 3.124f)
+	for (f32 y = -9.2f; y < 9.0f; y += 3.123f)
+	for (f32 z = -9.3f; z < 9.0f; z += 3.122f) {
 		lines.emplace_back(-x, -y, -z, x, y, z);
 	}
+	for (f32 x = -3.0f; x < 3.1f; x += 0.5f)
+	for (f32 y = -3.0f; y < 3.1f; y += 0.5f)
+	for (f32 z = -3.0f; z < 3.1f; z += 0.5f) {
+		lines.emplace_back(-x, -y, -z, x, y, z);
 	}
-	}
-	lines.emplace_back(0, 0, 0, 0, 0, 0);
+	lines.emplace_back(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 	// Test every line
-	std::vector<core::line3d<f32> >::iterator it = lines.begin();
-	for (; it < lines.end(); it++) {
-		core::line3d<f32> l = *it;
-
+	for (auto l : lines) {
 		// Initialize test
 		voxalgo::VoxelLineIterator iterator(l.start, l.getVector());
 
 		//Test the first voxel
-		v3s16 start_voxel = floatToInt(l.start, 1);
+		v3s16 start_voxel = floatToInt(l.start, 1.0f);
 		UASSERT(iterator.m_current_node_pos == start_voxel);
 
 		// Values for testing
-		v3s16 end_voxel = floatToInt(l.end, 1);
+		v3s16 end_voxel = floatToInt(l.end, 1.0f);
 		v3s16 voxel_vector = end_voxel - start_voxel;
 		int nodecount = abs(voxel_vector.X) + abs(voxel_vector.Y)
 			+ abs(voxel_vector.Z);
@@ -88,8 +71,9 @@ void TestVoxelAlgorithms::testVoxelLineIterator()
 			UASSERTEQ(f32, (new_voxel - old_voxel).getLengthSQ(), 1);
 			// The line must intersect with the voxel
 			v3f voxel_center = intToFloat(iterator.m_current_node_pos, 1);
-			aabb3f box(voxel_center - v3f(0.5, 0.5, 0.5),
-				voxel_center + v3f(0.5, 0.5, 0.5));
+			constexpr f32 eps = 1.0e-5f;
+			aabb3f box(voxel_center - v3f(0.5f + eps),
+				voxel_center + v3f(0.5f + eps));
 			UASSERT(box.intersectsWithLine(l));
 			// Update old voxel
 			old_voxel = new_voxel;

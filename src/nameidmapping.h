@@ -1,32 +1,14 @@
-/*
-nameidmapping.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include <string>
 #include <iostream>
-#include <set>
 #include <unordered_map>
-#include "irrlichttypes_bloated.h"
+#include <cassert>
+#include "irrlichttypes.h"
 
 typedef std::unordered_map<u16, std::string> IdToNameMap;
 typedef std::unordered_map<std::string, u16> NameToIdMap;
@@ -45,6 +27,7 @@ public:
 
 	void set(u16 id, const std::string &name)
 	{
+		assert(!name.empty());
 		m_id_to_name[id] = name;
 		m_name_to_id[name] = id;
 	}
@@ -70,8 +53,7 @@ public:
 	}
 	bool getName(u16 id, std::string &result) const
 	{
-		IdToNameMap::const_iterator i;
-		i = m_id_to_name.find(id);
+		auto i = m_id_to_name.find(id);
 		if (i == m_id_to_name.end())
 			return false;
 		result = i->second;
@@ -79,8 +61,7 @@ public:
 	}
 	bool getId(const std::string &name, u16 &result) const
 	{
-		NameToIdMap::const_iterator i;
-		i = m_name_to_id.find(name);
+		auto i = m_name_to_id.find(name);
 		if (i == m_name_to_id.end())
 			return false;
 		result = i->second;

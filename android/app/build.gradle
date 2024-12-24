@@ -1,15 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-	compileSdkVersion 33
-	buildToolsVersion '33.0.2'
 	ndkVersion "$ndk_version"
 	defaultConfig {
-		applicationId 'net.minetest.minetest'
+		applicationId 'org.freeminer.freeminer'
 		minSdkVersion 21
-		targetSdkVersion 33
+		compileSdk 34
+		targetSdkVersion 34
 		versionName "${versionMajor}.${versionMinor}.${versionPatch}"
-		versionCode project.versionCode
+		versionCode versionMajor * 1000000 + versionMinor * 10000 + versionPatch * 100 + versionBuild
+	}
+
+	buildFeatures {
+		buildConfig true
 	}
 
 	// load properties
@@ -49,11 +52,13 @@ android {
 		sourceCompatibility JavaVersion.VERSION_1_8
 		targetCompatibility JavaVersion.VERSION_1_8
 	}
+	namespace 'org.freeminer.freeminer'
 }
 
 task prepareAssets() {
 	def assetsFolder = "build/assets"
 	def projRoot = rootDir.parent
+	def gameToCopy = "default"
 
 	// See issue #4638
 	def unsupportedLanguages = new File("${projRoot}/src/unsupported_language_list.txt").text.readLines()
@@ -63,7 +68,7 @@ task prepareAssets() {
 	}
 	doLast {
 		copy {
-			from "${projRoot}/minetest.conf.example", "${projRoot}/README.md" into assetsFolder
+			from "${projRoot}/freeminer.conf.example", "${projRoot}/README.md" into assetsFolder
 		}
 		copy {
 			from "${projRoot}/doc/lgpl-2.1.txt" into assetsFolder
@@ -75,10 +80,13 @@ task prepareAssets() {
 			from "${projRoot}/client/shaders" into "${assetsFolder}/client/shaders"
 		}
 		copy {
-			from "../native/deps/armeabi-v7a/Irrlicht/Shaders" into "${assetsFolder}/client/shaders/Irrlicht"
+			from "${projRoot}/irr/media/Shaders" into "${assetsFolder}/client/shaders/Irrlicht"
 		}
 		copy {
 			from "${projRoot}/fonts" include "*.ttf" into "${assetsFolder}/fonts"
+		}
+		copy {
+			from "${projRoot}/games/${gameToCopy}" into "${assetsFolder}/games/${gameToCopy}"
 		}
 		copy {
 			from "${projRoot}/textures/base/pack" into "${assetsFolder}/textures/base/pack"
@@ -91,7 +99,7 @@ task prepareAssets() {
 			def moPath = "${assetsFolder}/locale/${poFile.parentFile.name}/LC_MESSAGES/"
 			file(moPath).mkdirs()
 			exec {
-				commandLine 'msgfmt', '-o', "${moPath}/minetest.mo", poFile
+				commandLine 'msgfmt', '-o', "${moPath}/luanti.mo", poFile
 			}
 		}
 
@@ -99,7 +107,7 @@ task prepareAssets() {
 	}
 
 	task zipAssets(dependsOn: prepareAssets, type: Zip) {
-		archiveFileName = "Minetest.zip"
+		archiveFileName = "assets.zip"
 		from assetsFolder
 		destinationDirectory = file("src/main/assets")
 	}
@@ -108,16 +116,8 @@ task prepareAssets() {
 preBuild.dependsOn zipAssets
 prepareAssets.dependsOn ':native:getDeps'
 
-// Map for the version code that gives each ABI a value.
-import com.android.build.OutputFile
-
-def abiCodes = ['armeabi-v7a': 0, 'arm64-v8a': 1]
-android.applicationVariants.all { variant ->
-	variant.outputs.each {
-		output ->
-			def abiName = output.getFilter(OutputFile.ABI)
-			output.versionCodeOverride = abiCodes.get(abiName, 0) + variant.versionCode
-	}
+clean {
+	delete new File("src/main/assets", "assets.zip")
 }
 
 dependencies {

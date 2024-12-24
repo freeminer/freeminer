@@ -1,45 +1,38 @@
-/*
-Minetest
-Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #pragma once
 
-#include "util/pointer.h"
-#include "util/numeric.h"
+#include "util/pointer.h" // Buffer<T>
+#include "irrlichttypes_bloated.h"
 #include "networkprotocol.h"
 #include <SColor.h>
+#include <vector>
 
 // fm:
 #include "fm_networkprotocol.h"
 #include "../util/msgpack_serialize.h"
 
-
 class MsgpackPacketSafe;
+// ==
 
 class NetworkPacket
 {
-
 public:
-	NetworkPacket(u16 command, u32 datasize, session_t peer_id);
-	NetworkPacket(u16 command, u32 datasize);
+	NetworkPacket(u16 command, u32 preallocate, session_t peer_id) :
+		m_command(command), m_peer_id(peer_id)
+	{
+		m_data.reserve(preallocate);
+	}
+	NetworkPacket(u16 command, u32 preallocate) :
+		m_command(command)
+	{
+		m_data.reserve(preallocate);
+	}
 	NetworkPacket() = default;
 
-	~NetworkPacket();
+	~NetworkPacket() = default;
 
 	void putRawPacket(const u8 *data, u32 datasize, session_t peer_id);
 	void clear();
@@ -47,27 +40,27 @@ public:
 	// Getters
 	u32 getSize() const { return m_datasize; }
 	session_t getPeerId() const { return m_peer_id; }
-	u16 getCommand() { return m_command; }
+	u16 getCommand() const { return m_command; }
 	u32 getRemainingBytes() const { return m_datasize - m_read_offset; }
 	const char *getRemainingString() { return getString(m_read_offset); }
 
 	// Returns a c-string without copying.
 	// A better name for this would be getRawString()
-	const char *getString(u32 from_offset);
+	const char *getString(u32 from_offset) const;
 	// major difference to putCString(): doesn't write len into the buffer
 	void putRawString(const char *src, u32 len);
-	void putRawString(const std::string &src)
+	void putRawString(std::string_view src)
 	{
-		putRawString(src.c_str(), src.size());
+		putRawString(src.data(), src.size());
 	}
 
 	NetworkPacket &operator>>(std::string &dst);
-	NetworkPacket &operator<<(const std::string &src);
+	NetworkPacket &operator<<(std::string_view src);
 
-	void putLongString(const std::string &src);
+	void putLongString(std::string_view src);
 
 	NetworkPacket &operator>>(std::wstring &dst);
-	NetworkPacket &operator<<(const std::wstring &src);
+	NetworkPacket &operator<<(std::wstring_view src);
 
 	std::string readLongString();
 
@@ -122,11 +115,11 @@ public:
 	NetworkPacket &operator<<(video::SColor src);
 
 	// Temp, we remove SharedBuffer when migration finished
-	// ^ this comment has been here for 4 years
+	// ^ this comment has been here for 7 years
 	Buffer<u8> oldForgePacket();
 
 private:
-	void checkReadOffset(u32 from_offset, u32 field_size);
+	void checkReadOffset(u32 from_offset, u32 field_size) const;
 
 	inline void checkDataSize(u32 field_size)
 	{
@@ -139,17 +132,17 @@ private:
 	std::vector<u8> m_data;
 	u32 m_datasize = 0;
 	u32 m_read_offset = 0;
-	u16 m_command = 0;
+	u16 m_command =0;
 	session_t m_peer_id = 0;
 
-
-// freeminer:
+	// freeminer:
 public:
-	MsgpackPacketSafe * packet = nullptr;
-	msgpack::unpacked * packet_unpacked = nullptr;
+	std::shared_ptr<MsgpackPacketSafe> packet;
+	std::shared_ptr<msgpack::unpacked> packet_unpacked;
 	int packet_unpack();
 private:
+	// ==
 
 };
 
-bool parse_msgpack_packet(char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
+bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);

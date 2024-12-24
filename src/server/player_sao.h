@@ -1,23 +1,7 @@
-/*
-content_sao.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2020 Minetest core developers & community
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2020 Minetest core developers & community
 
 #pragma once
 
@@ -86,12 +70,12 @@ public:
 		Active object <-> environment interface
 	*/
 
-//fm:
+// fm:
 	void addSpeed(v3f);
 	std::atomic_uint m_ms_from_last_respawn {10000}; //more than ignore move time (1)
 	v3opos_t m_last_stat_position {};
 	double last_time_online = 0;
-
+// ==
 
 	void addedToEnvironment(u32 dtime_s) override;
 	void removingFromEnvironment() override;
@@ -102,6 +86,7 @@ public:
 	void step(float dtime, bool send_recommended) override;
 	void setBasePosition(v3f position);
 	void setPos(const v3f &pos) override;
+	void addPos(const v3f &added_pos) override;
 	void moveTo(v3f pos, bool continuous) override;
 	void setPlayerYaw(const float yaw);
 	// Data should not be sent at player initialization
@@ -135,6 +120,7 @@ public:
 	void setHPRaw(u16 hp) { m_hp = hp; }
 	u16 getBreath() const { return m_breath; }
 	void setBreath(const u16 breath, bool send = true);
+	void respawn();
 
 	/*
 		Inventory interface
@@ -153,22 +139,23 @@ public:
 
 	void disconnected();
 
+	void setPlayer(RemotePlayer *player) { m_player = player; }
 	RemotePlayer *getPlayer() { return m_player; }
-	session_t getPeerID() const { return m_peer_id; }
+	session_t getPeerID() const;
 
 	// Cheat prevention
 
 	v3f getLastGoodPosition() const { return m_last_good_position; }
 	float resetTimeFromLastPunch()
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		float r = m_time_from_last_punch;
 		m_time_from_last_punch = 0.0;
 		return r;
 	}
 	void noCheatDigStart(const v3s16 &p)
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		m_nocheat_dig_pos = p;
 		m_nocheat_dig_time = 0;
 	}
@@ -206,7 +193,7 @@ private:
 	std::string generateUpdatePhysicsOverrideCommand() const;
 
 	RemotePlayer *m_player = nullptr;
-	session_t m_peer_id = 0;
+	session_t m_peer_id_initial = 0; ///< only used to initialize RemotePlayer
 
 	// Cheat prevention
 	LagPool m_dig_pool;
@@ -241,6 +228,12 @@ public:
 	SimpleMetadata m_meta;
 
 public:
+	struct {
+		bool breathing : 1;
+		bool drowning : 1;
+		bool node_damage : 1;
+	} m_flags = {true, true, true};
+
 	std::atomic_bool m_physics_override_sent {false};
 };
 

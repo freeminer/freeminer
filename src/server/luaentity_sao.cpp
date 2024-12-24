@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2020 Minetest core developers & community
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2020 Minetest core developers & community
 
 #include "log_types.h"
 #include "luaentity_sao.h"
@@ -72,7 +57,7 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3f pos, const std::string &d
 		break;
 	}
 	// create object
-	verbosestream << "LuaEntitySAO::create(name=\"" << name << "\" state is";
+	verbosestream << "LuaEntitySAO(name=\"" << name << "\" state is ";
 	if (state.empty())
 		verbosestream << "empty";
 	else
@@ -139,18 +124,22 @@ void LuaEntitySAO::dispatchScriptDeactivate(bool removal)
 
 void LuaEntitySAO::step(float dtime, bool send_recommended)
 {
-	if(!m_properties_sent)
-	{
+	if (!m_properties_sent) {
 		std::string str = getPropertyPacket();
 		// create message and add to list
-		m_messages_out.emplace(getId(), true, str);
+		m_messages_out.emplace(getId(), true, std::move(str));
 		m_properties_sent = true;
 	}
 
+	if (!m_texture_modifier_sent) {
+		m_texture_modifier_sent = true;
+		m_messages_out.emplace(getId(), true, generateSetTextureModCommand());
+	}
+
 	// If attached, check that our parent is still there. If it isn't, detach.
-	if (m_attachment_parent_id && !isAttached()) {
+	if (m_attachment_parent_id && !getParent()) {
 		// This is handled when objects are removed from the map
-		warningstream << "LuaEntitySAO::step() id=" << m_id <<
+		warningstream << "LuaEntitySAO::step() " << m_init_name << " at " << m_last_sent_position << ", id=" << m_id <<
 			" is attached to nonexistent parent. This is a bug." << std::endl;
 		clearParentAttachment();
 		sendPosition(false, true);
@@ -208,7 +197,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 		}
 	}
 
-	if (fabs(m_prop.automatic_rotate) > 0.001f) {
+	if (std::abs(m_prop.automatic_rotate) > 0.001f) {
 		m_rotation_add_yaw = modulo360f(m_rotation_add_yaw + dtime * core::RADTODEG *
 				m_prop.automatic_rotate);
 	}
@@ -252,12 +241,12 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 {
 	std::ostringstream os(std::ios::binary);
 
-	auto lock = lock_shared_rec();
+	const auto lock = lock_shared_rec();
        try {
 
 	// PROTOCOL_VERSION >= 37
 	writeU8(os, 1); // version
-	os << serializeString16(""); // name
+	os << serializeString16(m_init_name); // name
 	writeU8(os, 0); // is_player
 	writeU16(os, getId()); //id
 	writeV3F32(os, getBasePosition());
@@ -268,13 +257,13 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	msg_os << serializeString32(getPropertyPacket()); // message 1
 	msg_os << serializeString32(generateUpdateArmorGroupsCommand()); // 2
 	msg_os << serializeString32(generateUpdateAnimationCommand()); // 3
-	for (const auto &bone_pos : m_bone_position) {
-		msg_os << serializeString32(generateUpdateBonePositionCommand(
-			bone_pos.first, bone_pos.second.X, bone_pos.second.Y)); // 3 + N
+	for (const auto &bone_override : m_bone_override) {
+		msg_os << serializeString32(generateUpdateBoneOverrideCommand(
+			bone_override.first, bone_override.second)); // 3 + N
 	}
-	msg_os << serializeString32(generateUpdateAttachmentCommand()); // 4 + m_bone_position.size
+	msg_os << serializeString32(generateUpdateAttachmentCommand()); // 4 + m_bone_override.size
 
-	int message_count = 4 + m_bone_position.size();
+	int message_count = 4 + m_bone_override.size();
 
 	for (const auto &id : getAttachmentChildIds()) {
 		if (ServerActiveObject *obj = m_env->getActiveObject(id)) {
@@ -302,6 +291,8 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 
 void LuaEntitySAO::getStaticData(std::string *result) const
 {
+	assert(isStaticAllowed());
+
 	std::ostringstream os(std::ios::binary);
 	// version must be 1 to keep backwards-compatibility. See version2
 	writeU8(os, 1);
@@ -343,16 +334,16 @@ u32 LuaEntitySAO::punch(v3f dir,
 		return 0;
 	}
 
-	FATAL_ERROR_IF(!puncher, "Punch action called without SAO");
-
 	s32 old_hp = getHP();
 	ItemStack selected_item, hand_item;
-	ItemStack tool_item = puncher->getWieldedItem(&selected_item, &hand_item);
+	ItemStack tool_item;
+	if (puncher)
+		tool_item = puncher->getWieldedItem(&selected_item, &hand_item);
 
 	PunchDamageResult result = getPunchDamage(
 			m_armor_groups,
 			toolcap,
-			&tool_item,
+			puncher ? &tool_item : nullptr,
 			time_from_last_punch,
 			initial_wear);
 
@@ -366,12 +357,16 @@ u32 LuaEntitySAO::punch(v3f dir,
 		}
 	}
 
-	actionstream << puncher->getDescription() << " (id=" << puncher->getId() <<
-			", hp=" << puncher->getHP() << ") punched " <<
-			getDescription() << " (id=" << m_id << ", hp=" << m_hp <<
-			"), damage=" << (old_hp - (s32)getHP()) <<
-			(damage_handled ? " (handled by Lua)" : "") << std::endl;
-
+	if (puncher) {
+		actionstream << puncher->getDescription() << " (id=" << puncher->getId() <<
+				", hp=" << puncher->getHP() << ")";
+	} else {
+		actionstream << "(none)";
+	}
+	actionstream << " punched " <<
+		  getDescription() << " (id=" << m_id << ", hp=" << m_hp <<
+		  "), damage=" << (old_hp - (s32)getHP()) <<
+		  (damage_handled ? " (handled by Lua)" : "") << std::endl;
 	// TODO: give Lua control over wear
 	return result.wear;
 }
@@ -422,8 +417,6 @@ void LuaEntitySAO::setHP(s32 hp, const PlayerHPChangeReason &reason)
 	sendPunchCommand();
 
 	if (m_hp == 0 && !isGone()) {
-		clearParentAttachment();
-		clearChildAttachments();
 		if (m_registered) {
 			ServerActiveObject *killer = nullptr;
 			if (reason.type == PlayerHPChangeReason::PLAYER_PUNCH)
@@ -461,16 +454,16 @@ v3f LuaEntitySAO::getAcceleration()
 
 void LuaEntitySAO::setTextureMod(const std::string &mod)
 {
-	m_current_texture_modifier = mod;
-	// create message and add to list
-	m_messages_out.emplace(getId(), true, generateSetTextureModCommand());
+	if (m_texture_modifier == mod)
+		return;
+	m_texture_modifier = mod;
+	m_texture_modifier_sent = false;
 }
 
 std::string LuaEntitySAO::getTextureMod() const
 {
-	return m_current_texture_modifier;
+	return m_texture_modifier;
 }
-
 
 std::string LuaEntitySAO::generateSetTextureModCommand() const
 {
@@ -478,7 +471,7 @@ std::string LuaEntitySAO::generateSetTextureModCommand() const
 	// command
 	writeU8(os, AO_CMD_SET_TEXTURE_MOD);
 	// parameters
-	os << serializeString16(m_current_texture_modifier);
+	os << serializeString16(m_texture_modifier);
 	return os.str();
 }
 
@@ -575,7 +568,7 @@ bool LuaEntitySAO::getCollisionBox(aabb3f *toset) const
 
 bool LuaEntitySAO::getSelectionBox(aabb3f *toset) const
 {
-	if (!m_prop.is_visible || !m_prop.pointable) {
+	if (!m_prop.is_visible) {
 		return false;
 	}
 

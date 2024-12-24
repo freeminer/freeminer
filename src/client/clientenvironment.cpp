@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "threading/async.h"
 #include "util/serialize.h"
@@ -41,68 +26,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "client/renderingengine.h"
 
 /*
-	CAOShaderConstantSetter
-*/
-
-//! Shader constant setter for passing material emissive color to the CAO object_shader
-class CAOShaderConstantSetter : public IShaderConstantSetter
-{
-public:
-	CAOShaderConstantSetter():
-			m_emissive_color_setting("emissiveColor")
-	{}
-
-	~CAOShaderConstantSetter() override = default;
-
-	void onSetConstants(video::IMaterialRendererServices *services) override
-	{
-		// Ambient color
-		video::SColorf emissive_color(m_emissive_color);
-
-		float as_array[4] = {
-			emissive_color.r,
-			emissive_color.g,
-			emissive_color.b,
-			emissive_color.a,
-		};
-		m_emissive_color_setting.set(as_array, services);
-	}
-
-	void onSetMaterial(const video::SMaterial& material) override
-	{
-		m_emissive_color = material.EmissiveColor;
-	}
-
-private:
-	video::SColor m_emissive_color;
-	CachedPixelShaderSetting<float, 4> m_emissive_color_setting;
-};
-
-class CAOShaderConstantSetterFactory : public IShaderConstantSetterFactory
-{
-public:
-	CAOShaderConstantSetterFactory()
-	{}
-
-	virtual IShaderConstantSetter* create()
-	{
-		return new CAOShaderConstantSetter();
-	}
-};
-
-/*
 	ClientEnvironment
 */
 
-ClientEnvironment::ClientEnvironment(ClientMap *map,
+ClientEnvironment::ClientEnvironment(irr_ptr<ClientMap> map,
 	ITextureSource *texturesource, Client *client):
 	Environment(client),
-	m_map(map),
+	m_map(std::move(map)),
 	m_texturesource(texturesource),
 	m_client(client)
 {
-	auto *shdrsrc = m_client->getShaderSource();
-	shdrsrc->addShaderConstantSetterFactory(new CAOShaderConstantSetterFactory());
 }
 
 ClientEnvironment::~ClientEnvironment()
@@ -113,18 +46,17 @@ ClientEnvironment::~ClientEnvironment()
 		delete simple_object;
 	}
 
-	// Drop/delete map
-	m_map->drop();
+	m_map.reset();
 
 	delete m_local_player;
 }
 
-Map & ClientEnvironment::getMap()
+Map &ClientEnvironment::getMap()
 {
 	return *m_map;
 }
 
-ClientMap & ClientEnvironment::getClientMap()
+ClientMap &ClientEnvironment::getClientMap()
 {
 	return *m_map;
 }
@@ -202,7 +134,7 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 	const auto lend_ms = porting::getTimeMs() + max_cycle_ms;
 	u32 loopcount = 0;
 
-	u32 steps = ceil(dtime / dtime_max_increment);
+	u32 steps = std::ceil(dtime / dtime_max_increment);
 	f32 dtime_part = dtime / steps;
 	for (; steps > 0; --steps) {
 		/*
@@ -475,7 +407,7 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 void ClientEnvironment::removeActiveObject(u16 id)
 {
 	// Get current attachment childs to detach them visually
-	std::unordered_set<int> attachment_childs;
+	std::unordered_set<ClientActiveObject::object_t> attachment_childs;
 	if (auto obj = getActiveObject(id))
 		attachment_childs = obj->getAttachmentChildIds();
 
@@ -547,7 +479,8 @@ ClientEnvEvent ClientEnvironment::getClientEnvEvent()
 
 void ClientEnvironment::getSelectedActiveObjects(
 	const core::line3d<f32> &shootline_on_map,
-	std::vector<PointedThing> &objects)
+	std::vector<PointedThing> &objects,
+	const std::optional<Pointabilities> &pointabilities)
 {
 	auto allObjects = m_ao_manager.getActiveSelectableObjects(shootline_on_map);
 	const v3f line_vector = shootline_on_map.getVector();
@@ -574,9 +507,23 @@ void ClientEnvironment::getSelectedActiveObjects(
 			current_raw_normal = current_normal;
 		}
 		if (collision) {
-			current_intersection += obj->getPosition();
-			objects.emplace_back(obj->getId(), current_intersection, current_normal, current_raw_normal,
-				(current_intersection - shootline_on_map.start).getLengthSQ());
+			PointabilityType pointable;
+			if (pointabilities) {
+				if (gcao->isPlayer()) {
+					pointable = pointabilities->matchPlayer(gcao->getGroups()).value_or(
+							gcao->getProperties().pointable);
+				} else {
+					pointable = pointabilities->matchObject(gcao->getName(),
+							gcao->getGroups()).value_or(gcao->getProperties().pointable);
+				}
+			} else {
+				pointable = gcao->getProperties().pointable;
+			}
+			if (pointable != PointabilityType::POINTABLE_NOT) {
+				current_intersection += obj->getPosition();
+				objects.emplace_back(obj->getId(), current_intersection, current_normal, current_raw_normal,
+					(current_intersection - shootline_on_map.start).getLengthSQ(), pointable);
+			}
 		}
 	}
 }

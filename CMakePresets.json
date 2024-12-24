@@ -1,0 +1,88 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 12
+  },
+  "configurePresets": [
+    {
+      "name": "Debug",
+      "displayName": "Debug",
+      "description": "Debug preset with debug symbols and no optimizations",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Release",
+      "displayName": "Release",
+      "description": "Release preset with optimizations and no debug symbols",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "RelWithDebInfo",
+      "displayName": "RelWithDebInfo",
+      "description": "Release with debug symbols",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "MinSizeRel",
+      "displayName": "MinSizeRel",
+      "description": "Release with minimal code size",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    }
+
+
+    ,{
+      "name": "asan",
+      "displayName": "asan",
+      "description": "Instrument with Address Sanitizer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZE_ADDRESS": "ON"
+      }
+    }
+    ,{
+      "name": "tsan",
+      "displayName": "tsan",
+      "description": "Instrument with Thread Sanitizer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZE_THREAD": "ON"
+      }
+    }
+    ,{
+      "name": "msan",
+      "displayName": "msan",
+      "description": "Instrument with Memory Sanitizer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZE_MEMORY": "ON"
+      }
+    }
+    ,{
+      "name": "ubsan",
+      "displayName": "ubsan",
+      "description": "Instrument with UB Sanitizer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "SANITIZE_UNDEFINED": "ON"
+      }
+    }
+    ,{
+      "name": "gperf",
+      "displayName": "gperf",
+      "description": "gperf",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_GPERF": "ON"
+      }
+    }
+  ]
+}

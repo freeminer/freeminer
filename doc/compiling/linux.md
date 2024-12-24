@@ -6,9 +6,12 @@
 | ---------- | ------- | ---------- |
 | GCC        | 7.5+    | or Clang 7.0.1+ |
 | CMake      | 3.5+    |            |
-| IrrlichtMt | -       | Custom version of Irrlicht, see https://github.com/minetest/irrlicht |
+| libjpeg    | -       |            |
+| libpng     | -       |            |
+| SDL        | 2.x     |            |
 | Freetype   | 2.0+    |            |
 | SQLite3    | 3+      |            |
+| Zlib       | -       |            |
 | Zstd       | 1.0+    |            |
 | LuaJIT     | 2.0+    | Bundled Lua 5.1 is used if not present |
 | GMP        | 5.0.0+  | Bundled mini-GMP is used if not present |
@@ -26,11 +29,11 @@ For Fedora users:
 
 For openSUSE users:
 
-	sudo zypper install gcc cmake libjpeg8-devel libpng16-devel openal-soft-devel libcurl-devel sqlite3-devel luajit-devel libzstd-devel Mesa-libGL-devel libXi-devel libvorbis-devel freetype2-devel
+	sudo zypper install gcc gcc-c++ cmake libjpeg8-devel libpng16-devel openal-soft-devel libcurl-devel sqlite3-devel luajit-devel libzstd-devel Mesa-libGL-devel libXi-devel libvorbis-devel freetype2-devel
 
 For Arch users:
 
-    sudo pacman -S base-devel libcurl-gnutls cmake libxi libpng sqlite libogg libvorbis openal freetype2 jsoncpp gmp luajit leveldb ncurses zstd gettext
+    sudo pacman -S --needed base-devel libcurl-gnutls cmake libxi libpng sqlite libogg libvorbis openal freetype2 jsoncpp gmp luajit leveldb ncurses zstd gettext
 
 For Alpine users:
 
@@ -38,7 +41,7 @@ For Alpine users:
 
 For Void users:
 
-    sudo xbps-install cmake libpng-devel jpeg-devel libXi-devel mesa sqlite-devel libogg-devel libvorbis-devel libopenal-devel libcurl-devel freetype-devel zlib-devel gmp-devel jsoncpp-devel LuaJIT-devel libzstd-devel gettext
+    sudo xbps-install cmake libpng-devel jpeg-devel libXi-devel mesa sqlite-devel libogg-devel libvorbis-devel libopenal-devel libcurl-devel freetype-devel zlib-devel gmp-devel jsoncpp-devel LuaJIT-devel zstd libzstd-devel gettext
 
 ## Download
 
@@ -69,23 +72,11 @@ Download source (this is the URL to the latest of source repository, which might
     git clone --depth 1 https://github.com/minetest/minetest.git
     cd minetest
 
-Download IrrlichtMt to `lib/irrlichtmt`, it will be used to satisfy the IrrlichtMt dependency that way:
-
-    git clone --depth 1 https://github.com/minetest/irrlicht.git lib/irrlichtmt
-
 Download source, without using Git:
 
     wget https://github.com/minetest/minetest/archive/master.tar.gz
     tar xf master.tar.gz
     cd minetest-master
-
-Download IrrlichtMt, without using Git:
-
-    cd lib/
-    wget https://github.com/minetest/irrlicht/archive/master.tar.gz
-    tar xf master.tar.gz
-    mv irrlicht-master irrlichtmt
-    cd ..
 
 ## Build
 
@@ -105,12 +96,3 @@ Run it:
 - You can disable the client build by specifying `-DBUILD_CLIENT=FALSE`.
 - You can select between Release and Debug build by `-DCMAKE_BUILD_TYPE=<Debug or Release>`.
   - Debug build is slower, but gives much more useful output in a debugger.
-- If you build a bare server you don't need to compile IrrlichtMt, just the headers suffice.
-  - In that case use `-DIRRLICHT_INCLUDE_DIR=/some/where/irrlichtmt/include`.
-
-- Minetest will use the IrrlichtMt package that is found first, given by the following order:
-  1. Specified `IRRLICHTMT_BUILD_DIR` CMake variable
-  2. `${PROJECT_SOURCE_DIR}/lib/irrlichtmt` (if existent)
-  3. Installation of IrrlichtMt in the system-specific library paths
-  4. For server builds with disabled `BUILD_CLIENT` variable, the headers from `IRRLICHT_INCLUDE_DIR` will be used.
-  - NOTE: Changing the IrrlichtMt build directory (includes system installs) requires regenerating the CMake cache (`rm CMakeCache.txt`)

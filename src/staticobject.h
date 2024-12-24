@@ -1,24 +1,6 @@
-/*
-staticobject.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -54,7 +36,7 @@ public:
 	*/
 	void insert(u16 id, const StaticObject &obj)
 	{
-		auto lock = m_active.lock_unique_rec();
+		const auto lock = m_active.lock_unique_rec();
 		if (id == 0) {
 			m_stored.push_back(obj);
 		} else {
@@ -72,7 +54,7 @@ public:
 	{
 		if (!id)
 			return;
-		auto lock = m_active.lock_shared_rec();
+		const auto lock = m_active.lock_shared_rec();
 		if (m_active.find(id) == m_active.end()) {
 			verbosestream << "StaticObjectList::remove(): id=" << id << " not found"
 						  << std::endl;
