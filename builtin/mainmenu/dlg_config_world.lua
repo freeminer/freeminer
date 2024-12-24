@@ -1,4 +1,4 @@
---Minetest
+--Luanti
 --Copyright (C) 2013 sapier
 --
 --This program is free software; you can redistribute it and/or modify
@@ -126,7 +126,7 @@ local function get_formspec(data)
 	local retval =
 		"size[11.5,7.5,true]" ..
 		"label[0.5,0;" .. fgettext("World:") .. "]" ..
-		"label[1.75,0;" .. data.worldspec.name .. "]"
+		"label[1.75,0;" .. core.formspec_escape(data.worldspec.name) .. "]"
 
 	if mod.is_modpack or mod.type == "game" then
 		local info = core.formspec_escape(

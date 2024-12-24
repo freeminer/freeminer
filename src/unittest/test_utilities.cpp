@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "irr_v3d.h"
 #include "test.h"
@@ -62,6 +47,7 @@ public:
 	void testSanitizeDirName();
 	void testIsBlockInSight();
 	void testColorizeURL();
+	void testSanitizeUntrusted();
 };
 
 static TestUtilities g_test_instance;
@@ -96,6 +82,7 @@ void TestUtilities::runTests(IGameDef *gamedef)
 	TEST(testSanitizeDirName);
 	TEST(testIsBlockInSight);
 	TEST(testColorizeURL);
+	TEST(testSanitizeUntrusted);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -745,4 +732,29 @@ void TestUtilities::testColorizeURL()
 #else
 	warningstream << "Test skipped." << std::endl;
 #endif
+}
+
+void TestUtilities::testSanitizeUntrusted()
+{
+	std::string_view t1{u8"Anästhesieausrüstung"};
+	UASSERTEQ(auto, sanitize_untrusted(t1), t1);
+
+	std::string_view t2{"stop\x00here", 9};
+	UASSERTEQ(auto, sanitize_untrusted(t2), "stop");
+
+	UASSERTEQ(auto, sanitize_untrusted("\x01\x08\x13\x1dhello\r\n\tworld"), "hello\n\tworld");
+
+	std::string_view t3{"some \x1b(T@whatever)text\x1b" "E here"};
+	UASSERTEQ(auto, sanitize_untrusted(t3), t3);
+	auto t3_sanitized = sanitize_untrusted(t3, false);
+	UASSERT(str_starts_with(t3_sanitized, "some ") && str_ends_with(t3_sanitized, " here"));
+	UASSERT(t3_sanitized.find('\x1b') == std::string::npos);
+
+	UASSERTEQ(auto, sanitize_untrusted("\x1b[31m"), "[31m");
+
+	// edge cases
+	for (bool keep : {true, false}) {
+		UASSERTEQ(auto, sanitize_untrusted("\x1b", keep), "");
+		UASSERTEQ(auto, sanitize_untrusted("\x1b(", keep), "(");
+	}
 }

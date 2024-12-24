@@ -1,23 +1,8 @@
-/*
-Minetest
-Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2015-2020 paramat
-Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2020 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2015-2020 paramat
+// Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "irr_v3d.h"
 #include "util/numeric.h"
@@ -83,8 +68,6 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 	const v3pos_t &em = vm->m_area.getExtent();
 	u32 index2d = 0;  // Biomemap index
 
-	s16 *biome_transitions = m_bmgn->getBiomeTransitions();
-
 	for (pos_t z = nmin.Z; z <= nmax.Z; z++)
 	for (pos_t x = nmin.X; x <= nmax.X; x++, index2d++) {
 		bool column_is_open = false;  // Is column open to overground
@@ -102,8 +85,7 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 		u16 depth_riverbed = biome->depth_riverbed;
 		u16 nplaced = 0;
 
-		int cur_biome_depth = 0;
-		s16 biome_y_min = biome_transitions[cur_biome_depth];
+		s16 biome_y_min = m_bmgn->getNextTransitionY(nmax.Y);
 
 		// Don't excavate the overgenerated stone at nmax.Y + 1,
 		// this creates a 'roof' over the tunnel, preventing light in
@@ -115,15 +97,12 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 			// We need this check to make sure that biomes don't generate too far down
 			if (y < biome_y_min) {
 				biome = m_bmgn->getBiomeAtIndex(index2d, v3pos_t(x, y, z));
+				biome_y_min = m_bmgn->getNextTransitionY(y);
 
-				// Finding the height of the next biome
-				// On first iteration this may loop a couple times after than it should just run once
-				while (y < biome_y_min) {
-					biome_y_min = biome_transitions[++cur_biome_depth];
+				if (x == nmin.X && z == nmin.Z && false) {
+					dstream << "cavegen: biome at " << y << " is " << biome->name
+						<< ", next at " << biome_y_min << std::endl;
 				}
-
-				/*if (x == nmin.X && z == nmin.Z)
-					printf("Cave: check @ %i -> %s -> again at %i\n", y, biome->name.c_str(), biome_y_min);*/
 			}
 
 			content_t c = vm->m_data[vi].getContent();

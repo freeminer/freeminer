@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2020 Minetest core developers & community
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2020 Minetest core developers & community
 
 #include "luaentity_sao.h"
 #include "collision.h"
@@ -147,7 +132,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 	}
 
 	// If attached, check that our parent is still there. If it isn't, detach.
-	if (m_attachment_parent_id && !isAttached()) {
+	if (m_attachment_parent_id && !getParent()) {
 		// This is handled when objects are removed from the map
 		warningstream << "LuaEntitySAO::step() " << m_init_name << " at " << m_last_sent_position << ", id=" << m_id <<
 			" is attached to nonexistent parent. This is a bug." << std::endl;
@@ -415,8 +400,6 @@ void LuaEntitySAO::setHP(s32 hp, const PlayerHPChangeReason &reason)
 	sendPunchCommand();
 
 	if (m_hp == 0 && !isGone()) {
-		clearParentAttachment();
-		clearChildAttachments();
 		if (m_registered) {
 			ServerActiveObject *killer = nullptr;
 			if (reason.type == PlayerHPChangeReason::PLAYER_PUNCH)

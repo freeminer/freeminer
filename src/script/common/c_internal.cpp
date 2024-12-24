@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "common/c_internal.h"
 #include "util/numeric.h"
@@ -122,27 +107,30 @@ void script_error(lua_State *L, int pcall_result, const char *mod, const char *f
 	throw LuaError(err_msg);
 }
 
-static void script_log_add_source(lua_State *L, std::string &message, int stack_depth)
+[[nodiscard]] static std::string script_log_add_source(lua_State *L,
+	std::string_view message, int stack_depth)
 {
+	std::string ret(message);
 	if (stack_depth <= 0)
-		return;
+		return ret;
 
 	lua_Debug ar;
 	if (lua_getstack(L, stack_depth, &ar)) {
 		FATAL_ERROR_IF(!lua_getinfo(L, "Sl", &ar), "lua_getinfo() failed");
-		message.append(" (at " + std::string(ar.short_src) + ":"
+		ret.append(" (at ").append(ar.short_src).append(":"
 			+ std::to_string(ar.currentline) + ")");
 	} else {
-		message.append(" (at ?:?)");
+		ret.append(" (at ?:?)");
 	}
+	return ret;
 }
 
-bool script_log_unique(lua_State *L, std::string message, std::ostream &log_to,
+bool script_log_unique(lua_State *L, std::string_view message_in, std::ostream &log_to,
 	int stack_depth)
 {
 	thread_local std::vector<u64> logged_messages;
 
-	script_log_add_source(L, message, stack_depth);
+	auto message = script_log_add_source(L, message_in, stack_depth);
 	u64 hash = murmur_hash_64_ua(message.data(), message.length(), 0xBADBABE);
 
 	if (std::find(logged_messages.begin(), logged_messages.end(), hash)
@@ -174,7 +162,7 @@ DeprecatedHandlingMode get_deprecated_handling_mode()
 	return ret;
 }
 
-void log_deprecated(lua_State *L, std::string message, int stack_depth, bool once)
+void log_deprecated(lua_State *L, std::string_view message, int stack_depth, bool once)
 {
 	DeprecatedHandlingMode mode = get_deprecated_handling_mode();
 	if (mode == DeprecatedHandlingMode::Ignore)
@@ -184,12 +172,12 @@ void log_deprecated(lua_State *L, std::string message, int stack_depth, bool onc
 	if (once) {
 		log = script_log_unique(L, message, warningstream, stack_depth);
 	} else {
-		script_log_add_source(L, message, stack_depth);
-		warningstream << message << std::endl;
+		auto message2 = script_log_add_source(L, message, stack_depth);
+		warningstream << message2 << std::endl;
 	}
 
 	if (mode == DeprecatedHandlingMode::Error)
-		throw LuaError(message);
+		throw LuaError(std::string(message));
 	else if (log)
 		infostream << script_get_backtrace(L) << std::endl;
 }

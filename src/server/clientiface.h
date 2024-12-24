@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -33,6 +18,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <list>
 #include <vector>
 #include <set>
+#include <unordered_map>
 #include <unordered_set>
 #include <memory>
 #include <mutex>
@@ -126,7 +112,7 @@ class EmergeManager;
 | TOCLIENT_INVENTORY          |                |                 |                     |
 | TOCLIENT_HP (opt)           |                \-----------------/                     |
 | TOCLIENT_BREATH             |                                                        |
-| TOCLIENT_DEATHSCREEN        |                                                        |
+| TOCLIENT_DEATHSCREEN_LEGACY |                                                        |
 +-----------------------------+                                                        |
               |                                                                        |
               v                                                                        |
@@ -168,7 +154,7 @@ class EmergeManager;
 
 */
 namespace con {
-	class Connection;
+	class IConnection;
 }
 
 
@@ -321,9 +307,6 @@ public:
 	void setPendingSerializationVersion(u8 version)
 		{ m_pending_serialization_version = version; }
 
-	void setDeployedCompressionMode(u16 byteFlag)
-		{ m_deployed_compression = byteFlag; }
-
 	void confirmSerializationVersion()
 		{ serialization_version = m_pending_serialization_version; }
 
@@ -449,8 +432,6 @@ private:
 
 	std::string m_full_version = "unknown";
 
-	u16 m_deployed_compression = 0;
-
 	/*
 		time this client was created
 	 */
@@ -464,7 +445,7 @@ public:
 
 	friend class Server;
 
-	ClientInterface(const std::shared_ptr<con::Connection> &con);
+	ClientInterface(const std::shared_ptr<con::IConnection> &con);
 	~ClientInterface();
 
 	/* run sync step */
@@ -543,7 +524,7 @@ private:
 	void UpdatePlayerList();
 
 	// Connection
-	std::shared_ptr<con::Connection> m_con;
+	std::shared_ptr<con::IConnection> m_con;
 	std::recursive_mutex m_clients_mutex;
 	// Connected clients (behind the con mutex)
 	RemoteClientMap m_clients;

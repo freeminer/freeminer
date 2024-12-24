@@ -1,5 +1,3 @@
--- Minetest: builtin/features.lua
-
 core.features = {
 	glasslike_framed = true,
 	nodebox_as_selectionbox = true,
@@ -42,6 +40,9 @@ core.features = {
 	node_interaction_actor = true,
 	moveresult_new_pos = true,
 	override_item_remove_fields = true,
+	hotbar_hud_element = true,
+	bulk_lbms = true,
+	abm_without_neighbors = true,
 }
 
 function core.has_feature(arg)

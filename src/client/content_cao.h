@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -99,15 +84,15 @@ private:
 	v2s16 m_tx_basepos;
 	bool m_initial_tx_basepos_set = false;
 	bool m_tx_select_horiz_by_yawpitch = false;
-	v2s32 m_animation_range;
+	v2f m_animation_range;
 	float m_animation_speed = 15.0f;
 	float m_animation_blend = 0.0f;
 	bool m_animation_loop = true;
 	// stores position and rotation for each bone name
 	BoneOverrideMap m_bone_override;
 
-	int m_attachment_parent_id = 0;
-	std::unordered_set<int> m_attachment_child_ids;
+	object_t m_attachment_parent_id = 0;
+	std::unordered_set<object_t> m_attachment_child_ids;
 	std::string m_attachment_bone = "";
 	v3f m_attachment_position;
 	v3f m_attachment_rotation;
@@ -226,16 +211,15 @@ public:
 	}
 
 	void setChildrenVisible(bool toset);
-	void setAttachment(int parent_id, const std::string &bone, v3f position,
+	void setAttachment(object_t parent_id, const std::string &bone, v3f position,
 			v3f rotation, bool force_visible) override;
-	void getAttachment(int *parent_id, std::string *bone, v3f *position,
+	void getAttachment(object_t *parent_id, std::string *bone, v3f *position,
 			v3f *rotation, bool *force_visible) const override;
 	void clearChildAttachments() override;
-	void clearParentAttachment() override;
-	void addAttachmentChild(int child_id) override;
-	void removeAttachmentChild(int child_id) override;
+	void addAttachmentChild(object_t child_id) override;
+	void removeAttachmentChild(object_t child_id) override;
 	ClientActiveObject *getParent() const override;
-	const std::unordered_set<int> &getAttachmentChildIds() const override
+	const std::unordered_set<object_t> &getAttachmentChildIds() const override
 	{ return m_attachment_child_ids; }
 	void updateAttachments() override;
 
