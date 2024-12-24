@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mapblock_mesh.h"
 #include "client.h"
@@ -30,6 +15,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "minimap.h"
 #include "content_mapblock.h"
 #include "util/directiontables.h"
+#include "util/tracy_wrapper.h"
 #include "client/meshgen/collector.h"
 #include "client/renderingengine.h"
 #include "util/numeric.h"
@@ -595,17 +581,11 @@ void MapBlockBspTree::traverse(s32 node, v3f viewpoint, std::vector<s32> &output
 	PartialMeshBuffer
 */
 
-void PartialMeshBuffer::beforeDraw() const
+void PartialMeshBuffer::draw(video::IVideoDriver *driver) const
 {
-	// Patch the indexes in the mesh buffer before draw
-	m_buffer->Indices = std::move(m_vertex_indexes);
-	m_buffer->setDirty(scene::EBT_INDEX);
-}
-
-void PartialMeshBuffer::afterDraw() const
-{
-	// Take the data back
-	m_vertex_indexes = m_buffer->Indices.steal();
+	const auto pType = m_buffer->getPrimitiveType();
+	driver->drawBuffers(m_buffer->getVertexBuffer(), m_indices.get(),
+		m_indices->getPrimitiveCount(pType), pType);
 }
 
 /*
@@ -620,8 +600,10 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3pos_t camera_of
 	m_last_crack(-1),
 	m_last_daynight_ratio((u32) -1)
 {
+	ZoneScoped;
+
 	for (auto &m : m_mesh)
-		m = new scene::SMesh();
+		m = make_irr<scene::SMesh>();
 	m_enable_shaders = data->m_use_shaders;
 
 	auto mesh_grid = client->getMeshGrid();
@@ -669,7 +651,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3pos_t camera_of
 	m_bounding_radius = std::sqrt(collector.m_bounding_radius_sq);
 
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
-		scene::SMesh *mesh = (scene::SMesh *)m_mesh[layer];
+		scene::SMesh *mesh = static_cast<scene::SMesh *>(m_mesh[layer].get());
 
 		for(u32 i = 0; i < collector.prebuffers[layer].size(); i++)
 		{
@@ -742,7 +724,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3pos_t camera_of
 
 			// Create material
 			video::SMaterial material;
-			material.Lighting = false;
 			material.BackfaceCulling = true;
 			material.FogEnable = true;
 			material.setTexture(0, p.layer.texture);
@@ -755,9 +736,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3pos_t camera_of
 				material.MaterialType = m_shdrsrc->getShaderInfo(
 						p.layer.shader_id).material;
 				p.layer.applyMaterialOptionsWithShaders(material);
-				if (p.layer.normal_texture)
-					material.setTexture(1, p.layer.normal_texture);
-				material.setTexture(2, p.layer.flags_texture);
 			} else {
 				p.layer.applyMaterialOptions(material);
 			}
@@ -786,12 +764,11 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3pos_t camera_of
 		}
 
 		if (mesh) {
-			// Use VBO for mesh (this just would set this for ever buffer)
+			// Use VBO for mesh (this just would set this for every buffer)
 			mesh->setHardwareMappingHint(scene::EHM_STATIC);
 		}
 	}
 
-	//std::cout<<"added "<<fastfaces.getSize()<<" faces."<<std::endl;
 	m_bsp_tree.buildTree(&m_transparent_triangles, data->side_length);
 
 	// Check if animation is required for this mesh
@@ -804,10 +781,10 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data, v3pos_t camera_of
 MapBlockMesh::~MapBlockMesh()
 {
 	size_t sz = 0;
-	for (scene::IMesh *m : m_mesh) {
+	for (auto &&m : m_mesh) {
 		for (u32 i = 0; i < m->getMeshBufferCount(); i++)
 			sz += m->getMeshBuffer(i)->getSize();
-		m->drop();
+		m.reset();
 	}
 	for (MinimapMapblock *block : m_minimap_mapblocks)
 		delete block;
@@ -868,11 +845,6 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 
 		const FrameSpec &frame = (*tile.frames)[frameno];
 		buf->getMaterial().setTexture(0, frame.texture);
-		if (m_enable_shaders) {
-			if (frame.normal_texture)
-				buf->getMaterial().setTexture(1, frame.normal_texture);
-			buf->getMaterial().setTexture(2, frame.flags_texture);
-		}
 	}
 
 	// Day-night transition
@@ -881,7 +853,7 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 		get_sunlight_color(&day_color, daynight_ratio);
 
 		for (auto &daynight_diff : m_daynight_diffs) {
-			auto *mesh = m_mesh[daynight_diff.first.first];
+			auto *mesh = m_mesh[daynight_diff.first.first].get();
 			mesh->setDirty(scene::EBT_VERTEX); // force reload to VBO
 			scene::IMeshBuffer *buf = mesh->
 				getMeshBuffer(daynight_diff.first.second);
@@ -909,6 +881,7 @@ void MapBlockMesh::updateTransparentBuffers(v3opos_t camera_pos, v3bpos_t block_
 	m_bsp_tree.traverse(rel_camera_pos, triangle_refs);
 
 	// arrange index sequences into partial buffers
+	m_transparent_buffers_consolidated = false;
 	m_transparent_buffers.clear();
 
 	scene::SMeshBuffer *current_buffer = nullptr;
@@ -933,6 +906,8 @@ void MapBlockMesh::updateTransparentBuffers(v3opos_t camera_pos, v3bpos_t block_
 
 void MapBlockMesh::consolidateTransparentBuffers()
 {
+	if (m_transparent_buffers_consolidated)
+		return;
 	m_transparent_buffers.clear();
 
 	scene::SMeshBuffer *current_buffer = nullptr;
@@ -955,6 +930,8 @@ void MapBlockMesh::consolidateTransparentBuffers()
 	if (!current_strain.empty()) {
 		this->m_transparent_buffers.emplace_back(current_buffer, std::move(current_strain));
 	}
+
+	m_transparent_buffers_consolidated = true;
 }
 
 video::SColor encode_light(u16 light, u8 emissive_light)

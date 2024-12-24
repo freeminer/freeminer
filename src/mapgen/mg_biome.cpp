@@ -1,24 +1,10 @@
-/*
-Minetest
-Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2014-2018 paramat
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2014-2018 paramat
 
 #include "mg_biome.h"
+#include "irrlichttypes.h"
 #include "mg_decoration.h"
 #include "emerge.h"
 #include "server.h"
@@ -149,47 +135,36 @@ BiomeGenOriginal::BiomeGenOriginal(BiomeManager *biomemgr,
 	// is disabled.
 	memset(biomemap, 0, sizeof(biome_t) * m_csize.X * m_csize.Z);
 
-	// Calculating the bounding position of each biome so we know when we might switch
-	// First gathering all heights where we might switch
-	std::vector<s16> temp_transition_heights;
-	temp_transition_heights.reserve(m_bmgr->getNumObjects() * 2);
+	// Calculate cache of Y transition points
+	std::vector<pos_t> values;
+	values.reserve(m_bmgr->getNumObjects() * 2);
 	for (size_t i = 0; i < m_bmgr->getNumObjects(); i++) {
 		Biome *b = (Biome *)m_bmgr->getRaw(i);
-		temp_transition_heights.push_back(b->max_pos.Y);
-		temp_transition_heights.push_back(b->min_pos.Y);
+		values.push_back(b->max_pos.Y);
+		values.push_back(b->min_pos.Y);
 	}
 
-	// Sorting the biome transition points
-	std::sort(temp_transition_heights.begin(), temp_transition_heights.end(), std::greater<int>());
+	std::sort(values.begin(), values.end(), std::greater<>());
+	values.erase(std::unique(values.begin(), values.end()), values.end());
 
-	// Getting rid of duplicate biome transition points
-	s16 last = temp_transition_heights[0];
-	size_t out_pos = 1;
-	for (size_t i = 1; i < temp_transition_heights.size(); i++){
-		if (temp_transition_heights[i] != last) {
-			last = temp_transition_heights[i];
-			temp_transition_heights[out_pos++] = last;
-		}
-	}
-
-	biome_transitions = new s16[out_pos];
-	memcpy(biome_transitions, temp_transition_heights.data(), sizeof(s16) * out_pos);
+	m_transitions_y = std::move(values);
 }
 
 BiomeGenOriginal::~BiomeGenOriginal()
 {
 	delete []biomemap;
 
-	delete []biome_transitions;
 	delete noise_heat;
 	delete noise_humidity;
 	delete noise_heat_blend;
 	delete noise_humidity_blend;
 }
 
-s16* BiomeGenOriginal::getBiomeTransitions() const
+pos_t BiomeGenOriginal::getNextTransitionY(pos_t y) const
 {
-	return biome_transitions;
+	// Find first value that is less than y using binary search
+	auto it = std::lower_bound(m_transitions_y.begin(), m_transitions_y.end(), y, std::greater_equal<>());
+	return (it == m_transitions_y.end()) ? S16_MIN : *it;
 }
 
 BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const

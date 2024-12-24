@@ -1,27 +1,25 @@
-/*
-Minetest
-Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include <string>
 #include <vector>
-#include "irrlichttypes_extrabloated.h"
+#include "irr_aabb3d.h"
+#include "irr_v3d.h"
+#include <EMaterialTypes.h>
+#include <IMeshSceneNode.h>
+#include <SColor.h>
+
+namespace irr::scene
+{
+	class ISceneManager;
+	class IMesh;
+	struct SMesh;
+}
+
+using namespace irr;
 
 struct ItemStack;
 class Client;
@@ -91,7 +89,7 @@ struct ItemMesh
 class WieldMeshSceneNode : public scene::ISceneNode
 {
 public:
-	WieldMeshSceneNode(scene::ISceneManager *mgr, s32 id = -1, bool lighting = false);
+	WieldMeshSceneNode(scene::ISceneManager *mgr, s32 id = -1);
 	virtual ~WieldMeshSceneNode();
 
 	void setCube(const ContentFeatures &f, v3f wield_scale);
@@ -118,9 +116,6 @@ private:
 	// Child scene node with the current wield mesh
 	scene::IMeshSceneNode *m_meshnode = nullptr;
 	video::E_MATERIAL_TYPE m_material_type;
-
-	// True if SMaterial::Lighting should be enabled.
-	bool m_lighting;
 
 	bool m_enable_shaders;
 	bool m_anisotropic_filter;

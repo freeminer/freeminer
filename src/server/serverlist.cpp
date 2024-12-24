@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <iostream>
 #include "version.h"
@@ -65,9 +50,10 @@ void sendAnnounce(AnnounceAction action,
 		server["game_time"]    = game_time;
 		server["clients"]      = (int) clients_names.size();
 		server["clients_max"]  = g_settings->getU16("max_users");
-		server["clients_list"] = Json::Value(Json::arrayValue);
-		for (const std::string &clients_name : clients_names) {
-			server["clients_list"].append(clients_name);
+		if (g_settings->getBool("server_announce_send_players")) {
+			server["clients_list"] = Json::Value(Json::arrayValue);
+			for (const std::string &clients_name : clients_names)
+				server["clients_list"].append(clients_name);
 		}
 		if (!gameid.empty())
 			server["gameid"] = gameid;

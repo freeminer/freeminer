@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "chatmessage.h"
 #include "irr_v3d.h"
@@ -102,12 +87,12 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	// First byte after command is maximum supported
 	// serialization version
 	u8 client_max;
-	u16 supp_compr_modes;
+	u16 unused;
 	u16 min_net_proto_version = 0;
 	u16 max_net_proto_version;
 	std::string playerName;
 
-	*pkt >> client_max >> supp_compr_modes >> min_net_proto_version
+	*pkt >> client_max >> unused >> min_net_proto_version
 			>> max_net_proto_version >> playerName;
 
 	u8 our_max = SER_FMT_VER_HIGHEST_READ;
@@ -136,10 +121,10 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 
 	// Figure out a working version if it is possible at all
 	if (max_net_proto_version >= SERVER_PROTOCOL_VERSION_MIN ||
-			min_net_proto_version <= SERVER_PROTOCOL_VERSION_MAX) {
+			min_net_proto_version <= LATEST_PROTOCOL_VERSION) {
 		// If maximum is larger than our maximum, go with our maximum
-		if (max_net_proto_version > SERVER_PROTOCOL_VERSION_MAX)
-			net_proto_version = SERVER_PROTOCOL_VERSION_MAX;
+		if (max_net_proto_version > LATEST_PROTOCOL_VERSION)
+			net_proto_version = LATEST_PROTOCOL_VERSION;
 		// Else go with client's maximum
 		else
 			net_proto_version = max_net_proto_version;
@@ -191,9 +176,6 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	}
 
 	m_clients.setPlayerName(peer_id, playername);
-	//TODO (later) case insensitivity
-
-	std::string legacyPlayerNameCasing = playerName;
 
 	if (!isSingleplayer() && strcasecmp(playername, "singleplayer") == 0) {
 		actionstream << "Server: Player with the name \"singleplayer\" tried "
@@ -280,17 +262,14 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	verbosestream << "Sending TOCLIENT_HELLO with auth method field: "
 		<< auth_mechs << std::endl;
 
-	NetworkPacket resp_pkt(TOCLIENT_HELLO,
-		1 + 4 + legacyPlayerNameCasing.size(), peer_id);
+	NetworkPacket resp_pkt(TOCLIENT_HELLO, 0, peer_id);
 
-	u16 depl_compress_mode = NETPROTO_COMPRESSION_NONE;
-	resp_pkt << depl_serial_v << depl_compress_mode << net_proto_version
-		<< auth_mechs << legacyPlayerNameCasing;
+	resp_pkt << depl_serial_v << u16(0) << net_proto_version
+		<< auth_mechs << std::string_view();
 
 	Send(&resp_pkt);
 
 	client->allowed_auth_mechs = auth_mechs;
-	client->setDeployedCompressionMode(depl_compress_mode);
 
 	m_clients.event(peer_id, CSE_Hello);
 }
@@ -484,11 +463,23 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	u8 bits = 0; // bits instead of bool so it is extensible later
 
 	*pkt >> keyPressed;
+	player->control.unpackKeysPressed(keyPressed);
+
 	*pkt >> f32fov;
 	fov = (f32)f32fov / 80.0f;
 	*pkt >> wanted_range;
+
 	if (pkt->getRemainingBytes() >= 1)
 		*pkt >> bits;
+
+	if (pkt->getRemainingBytes() >= 8) {
+		*pkt >> player->control.movement_speed;
+		*pkt >> player->control.movement_direction;
+	} else {
+		player->control.movement_speed = 0.0f;
+		player->control.movement_direction = 0.0f;
+		player->control.setMovementFromKeys();
+	}
 
 	v3opos_t position((opos_t)ps.X / 100.0f, (opos_t)ps.Y / 100.0f, (opos_t)ps.Z / 100.0f);
 	v3f speed((f32)ss.X / 100.0f, (f32)ss.Y / 100.0f, (f32)ss.Z / 100.0f);
@@ -507,8 +498,6 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	playersao->setFov(fov);
 	playersao->setWantedRange(wanted_range);
 	playersao->setCameraInverted(bits & 0x01);
-
-	player->control.unpackKeysPressed(keyPressed);
 
 	if (playersao->checkMovementCheat()) {
 		// Call callbacks
@@ -616,7 +605,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
-			std::string("player:")+player->getName());
+			"player:" + player->getName());
 
 	/*
 		Note: Always set inventory not sent, to repair cases
@@ -853,43 +842,16 @@ void Server::handleCommand_PlayerItem(NetworkPacket* pkt)
 
 	*pkt >> item;
 
-	if (item >= player->getHotbarItemcount()) {
+	if (item >= player->getMaxHotbarItemcount()) {
 		actionstream << "Player: " << player->getName()
 			<< " tried to access item=" << item
 			<< " out of hotbar_itemcount="
-			<< player->getHotbarItemcount()
+			<< player->getMaxHotbarItemcount()
 			<< "; ignoring." << std::endl;
 		return;
 	}
 
 	playersao->getPlayer()->setWieldIndex(item);
-}
-
-void Server::handleCommand_Respawn(NetworkPacket* pkt)
-{
-	session_t peer_id = pkt->getPeerId();
-	RemotePlayer *player = m_env->getPlayer(peer_id);
-	if (player == NULL) {
-		errorstream <<
-			"Server::ProcessData(): Canceling: No player for peer_id=" <<
-			peer_id << " disconnecting peer!" << std::endl;
-		DisconnectPeer(peer_id);
-		return;
-	}
-
-	PlayerSAO *playersao = player->getPlayerSAO();
-	assert(playersao);
-
-	if (!playersao->isDead())
-		return;
-
-	RespawnPlayer(peer_id);
-
-	actionstream << player->getName() << " respawns at "
-			<< (playersao->getBasePosition() / BS) << std::endl;
-
-	// ActiveObject is added to environment in AsyncRunStep after
-	// the previous addition has been successfully removed
 }
 
 bool Server::checkInteractDistance(RemotePlayer *player, const f32 d, const std::string &what)
@@ -984,11 +946,11 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 
 	// Update wielded item
 
-	if (item_i >= player->getHotbarItemcount()) {
+	if (item_i >= player->getMaxHotbarItemcount()) {
 		actionstream << "Player: " << player->getName()
 			<< " tried to access item=" << item_i
 			<< " out of hotbar_itemcount="
-			<< player->getHotbarItemcount()
+			<< player->getMaxHotbarItemcount()
 			<< "; ignoring." << std::endl;
 		return;
 	}
@@ -1035,12 +997,12 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 	/*
 		Check that target is reasonably close
 	*/
-	static thread_local const bool enable_anticheat =
-			!g_settings->getBool("disable_anticheat");
+	static thread_local const u32 anticheat_flags =
+		g_settings->getFlagStr("anticheat_flags", flagdesc_anticheat, nullptr);
 
 	if ((action == INTERACT_START_DIGGING || action == INTERACT_DIGGING_COMPLETED ||
 			action == INTERACT_PLACE || action == INTERACT_USE) &&
-			enable_anticheat && !isSingleplayer()) {
+			(anticheat_flags & AC_INTERACTION) && !isSingleplayer()) {
 		v3opos_t target_pos = player_pos;
 		if (pointed.type == POINTEDTHING_NODE) {
 			target_pos = posToOpos(pointed.node_undersurface, BS);
@@ -1070,7 +1032,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		If something goes wrong, this player is to blame
 	*/
 	RollbackScopeActor rollback_scope(m_rollback,
-			std::string("player:")+player->getName());
+			"player:" + player->getName());
 
 	switch (action) {
 	// Start digging or punch object
@@ -1143,7 +1105,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 
 		/* Cheat prevention */
 		bool is_valid_dig = true;
-		if (enable_anticheat && !isSingleplayer()) {
+		if ((anticheat_flags & AC_DIGGING) && !isSingleplayer()) {
 			v3pos_t nocheat_p = playersao->getNoCheatDigPos();
 			float nocheat_t = playersao->getNoCheatDigTime();
 			playersao->noCheatDigEnd();
@@ -1352,15 +1314,22 @@ static bool pkt_read_formspec_fields(NetworkPacket *pkt, StringMap &fields)
 	u16 field_count;
 	*pkt >> field_count;
 
-	u64 length = 0;
+	size_t length = 0;
 	for (u16 k = 0; k < field_count; k++) {
-		std::string fieldname;
+		std::string fieldname, fieldvalue;
 		*pkt >> fieldname;
-		fields[fieldname] = pkt->readLongString();
+		fieldvalue = pkt->readLongString();
 
-		length += fieldname.size();
-		length += fields[fieldname].size();
+		fieldname = sanitize_untrusted(fieldname, false);
+		// We'd love to strip escapes here but some formspec elements reflect data
+		// from the server (e.g. dropdown), which can contain translations.
+		fieldvalue = sanitize_untrusted(fieldvalue);
+
+		length += fieldname.size() + fieldvalue.size();
+
+		fields[std::move(fieldname)] = std::move(fieldvalue);
 	}
+
 	// 640K ought to be enough for anyone
 	return length < 640 * 1024;
 }
@@ -1401,7 +1370,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt)
 
 	// If something goes wrong, this player is to blame
 	RollbackScopeActor rollback_scope(m_rollback,
-			std::string("player:")+player->getName());
+			"player:" + player->getName());
 
 	// Check the target node for rollback data; leave others unnoticed
 	RollbackNode rn_old(&m_env->getMap(), p, this);

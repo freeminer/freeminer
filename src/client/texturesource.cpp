@@ -1,31 +1,17 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "texturesource.h"
 
 #include <IVideoDriver.h>
-#include "util/thread.h"
-#include "imagefilters.h"
 #include "guiscalingfilter.h"
-#include "renderingengine.h"
-#include "texturepaths.h"
+#include "imagefilters.h"
 #include "imagesource.h"
+#include "renderingengine.h"
+#include "settings.h"
+#include "texturepaths.h"
+#include "util/thread.h"
 
 
 // Stores internal information about a texture.
@@ -39,7 +25,7 @@ struct TextureInfo
 };
 
 // TextureSource
-class TextureSource : public IWritableTextureSource
+class TextureSource final : public IWritableTextureSource
 {
 public:
 	TextureSource();
@@ -137,7 +123,6 @@ public:
 
 	video::ITexture* getNormalTexture(const std::string &name);
 	video::SColor getTextureAverageColor(const std::string &name);
-	video::ITexture *getShaderFlagsTexture(bool normamap_present);
 
 private:
 
@@ -540,26 +525,4 @@ video::SColor TextureSource::getTextureAverageColor(const std::string &name)
 	image->drop();
 
 	return c;
-}
-
-
-video::ITexture *TextureSource::getShaderFlagsTexture(bool normalmap_present)
-{
-	std::string tname = "__shaderFlagsTexture";
-	tname += normalmap_present ? "1" : "0";
-
-	if (isKnownSourceImage(tname)) {
-		return getTexture(tname);
-	}
-
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
-	video::IImage *flags_image = driver->createImage(
-		video::ECF_A8R8G8B8, core::dimension2d<u32>(1, 1));
-	sanity_check(flags_image);
-	video::SColor c(255, normalmap_present ? 255 : 0, 0, 0);
-	flags_image->setPixel(0, 0, c);
-	insertSourceImage(tname, flags_image);
-	flags_image->drop();
-	return getTexture(tname);
-
 }

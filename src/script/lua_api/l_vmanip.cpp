@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include <map>
 #include "irr_v3d.h"
@@ -72,8 +57,7 @@ int LuaVoxelManip::l_get_data(lua_State *L)
 	bool use_buffer  = lua_istable(L, 2);
 
 	MMVManip *vm = o->vm;
-
-	u32 volume = vm->m_area.getVolume();
+	const u32 volume = vm->m_area.getVolume();
 
 	if (use_buffer)
 		lua_pushvalue(L, 2);
@@ -81,7 +65,8 @@ int LuaVoxelManip::l_get_data(lua_State *L)
 		lua_createtable(L, volume, 0);
 
 	for (u32 i = 0; i != volume; i++) {
-		lua_Integer cid = vm->m_data[i].getContent();
+		// Do not push unintialized data to Lua
+		lua_Integer cid = (vm->m_flags[i] & VOXELFLAG_NO_DATA) ? CONTENT_IGNORE : vm->m_data[i].getContent();
 		lua_pushinteger(L, cid);
 		lua_rawseti(L, -2, i + 1);
 	}
@@ -108,6 +93,12 @@ int LuaVoxelManip::l_set_data(lua_State *L)
 
 		lua_pop(L, 1);
 	}
+
+	// FIXME: in theory we should clear VOXELFLAG_NO_DATA here
+	// However there is no way to tell which values Lua code has intended to set
+	// (if they were VOXELFLAG_NO_DATA before), and which were just not touched.
+	// In practice this doesn't cause problems because read_from_map() will cause
+	// all covered blocks to be loaded anyway.
 
 	return 0;
 }
@@ -232,8 +223,7 @@ int LuaVoxelManip::l_get_light_data(lua_State *L)
 	bool use_buffer  = lua_istable(L, 2);
 
 	MMVManip *vm = o->vm;
-
-	u32 volume = vm->m_area.getVolume();
+	const u32 volume = vm->m_area.getVolume();
 
 	if (use_buffer)
 		lua_pushvalue(L, 2);
@@ -241,7 +231,8 @@ int LuaVoxelManip::l_get_light_data(lua_State *L)
 		lua_createtable(L, volume, 0);
 
 	for (u32 i = 0; i != volume; i++) {
-		lua_Integer light = vm->m_data[i].param1;
+		// Do not push unintialized data to Lua
+		lua_Integer light = (vm->m_flags[i] & VOXELFLAG_NO_DATA) ? 0 : vm->m_data[i].getParam1();
 		lua_pushinteger(L, light);
 		lua_rawseti(L, -2, i + 1);
 	}
@@ -281,8 +272,7 @@ int LuaVoxelManip::l_get_param2_data(lua_State *L)
 	bool use_buffer  = lua_istable(L, 2);
 
 	MMVManip *vm = o->vm;
-
-	u32 volume = vm->m_area.getVolume();
+	const u32 volume = vm->m_area.getVolume();
 
 	if (use_buffer)
 		lua_pushvalue(L, 2);
@@ -290,7 +280,8 @@ int LuaVoxelManip::l_get_param2_data(lua_State *L)
 		lua_createtable(L, volume, 0);
 
 	for (u32 i = 0; i != volume; i++) {
-		lua_Integer param2 = vm->m_data[i].param2;
+		// Do not push unintialized data to Lua
+		lua_Integer param2 = (vm->m_flags[i] & VOXELFLAG_NO_DATA) ? 0 : vm->m_data[i].getParam2();
 		lua_pushinteger(L, param2);
 		lua_rawseti(L, -2, i + 1);
 	}
@@ -334,6 +325,9 @@ int LuaVoxelManip::l_was_modified(lua_State *L)
 	LuaVoxelManip *o = checkObject<LuaVoxelManip>(L, 1);
 	MMVManip *vm = o->vm;
 
+	if (!o->is_mapgen_vm)
+		log_deprecated(L, "was_modified called for a non-mapgen VoxelManip object");
+
 	lua_pushboolean(L, vm->m_is_dirty);
 
 	return 1;
@@ -361,36 +355,35 @@ LuaVoxelManip::LuaVoxelManip(Map *map) : vm(new MMVManip(map))
 {
 }
 
-LuaVoxelManip::LuaVoxelManip(Map *map, v3pos_t p1, v3pos_t p2)
-{
-	vm = new MMVManip(map);
-
-	v3bpos_t bp1 = getNodeBlockPos(p1);
-	v3bpos_t bp2 = getNodeBlockPos(p2);
-	sortBoxVerticies(bp1, bp2);
-	vm->initialEmerge(bp1, bp2);
-}
-
 LuaVoxelManip::~LuaVoxelManip()
 {
 	if (!is_mapgen_vm)
 		delete vm;
 }
 
-// LuaVoxelManip()
+// LuaVoxelManip([p1, p2])
 // Creates an LuaVoxelManip and leaves it on top of stack
 int LuaVoxelManip::create_object(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	Map *map = &(env->getMap());
-	LuaVoxelManip *o = (lua_istable(L, 1) && lua_istable(L, 2)) ?
-		new LuaVoxelManip(map, check_v3pos(L, 1), check_v3pos(L, 2)) :
-		new LuaVoxelManip(map);
+	LuaVoxelManip *o = new LuaVoxelManip(&env->getMap());
 
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = o;
 	luaL_getmetatable(L, className);
 	lua_setmetatable(L, -2);
+
+	// Call read_from_map so we don't have to duplicate it here
+	const int top = lua_gettop(L);
+	if (lua_istable(L, 1) && lua_istable(L, 2)) {
+		lua_pushcfunction(L, l_read_from_map);
+		lua_pushvalue(L, top);
+		lua_pushvalue(L, 1);
+		lua_pushvalue(L, 2);
+		lua_call(L, 3, 0);
+	}
+	lua_settop(L, top);
+
 	return 1;
 }
 

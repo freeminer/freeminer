@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2017 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "database-files.h"
 #include "convert_json.h"
@@ -48,8 +33,7 @@ void PlayerDatabaseFiles::deSerialize(RemotePlayer *p, std::istream &is,
 
 	p->m_dirty = true;
 	//args.getS32("version"); // Version field value not used
-	const std::string &name = args.get("name");
-	strlcpy(p->m_name, name.c_str(), PLAYERNAME_SIZE);
+	p->m_name = args.get("name");
 
 	if (sao) {
 		try {
@@ -96,7 +80,7 @@ void PlayerDatabaseFiles::deSerialize(RemotePlayer *p, std::istream &is,
 		p->inventory.deSerialize(is);
 	} catch (SerializationError &e) {
 		errorstream << "Failed to deserialize player inventory. player_name="
-			<< name << " " << e.what() << std::endl;
+			<< p->getName() << " " << e.what() << std::endl;
 	}
 
 	if (!p->inventory.getList("craftpreview") && p->inventory.getList("craftresult")) {
@@ -119,7 +103,7 @@ void PlayerDatabaseFiles::serialize(RemotePlayer *p, std::ostream &os)
 	// Utilize a Settings object for storing values
 	Settings args("PlayerArgsEnd");
 	args.setS32("version", 1);
-	args.set("name", p->m_name);
+	args.set("name", p->getName());
 
 	PlayerSAO *sao = p->getPlayerSAO();
 	// This should not happen
@@ -171,7 +155,7 @@ void PlayerDatabaseFiles::savePlayer(RemotePlayer *player)
 
 		deSerialize(&testplayer, is, path, NULL);
 		is.close();
-		if (strcmp(testplayer.getName(), player->getName()) == 0) {
+		if (testplayer.getName() == player->getName()) {
 			path_found = true;
 			continue;
 		}

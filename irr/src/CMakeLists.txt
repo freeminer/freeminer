@@ -17,7 +17,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 	set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
-	add_compile_options(-Wall -pipe -fno-exceptions)
+	add_compile_options(-Wall -pipe)
 
 	# Enable SSE for floating point math on 32-bit x86 by default
 	# reasoning see minetest issue #11810 and https://gcc.gnu.org/wiki/FloatingPointMath
@@ -83,6 +83,10 @@ if(LINUX_PLATFORM)
 	add_definitions(-D_IRR_LINUX_PLATFORM_)
 endif()
 
+if(MSVC)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 if(USE_SDL2)
 	set(DEVICE "SDL")
 elseif(DEVICE STREQUAL "SDL")
@@ -130,12 +134,6 @@ else()
 	option(ENABLE_OPENGL "Enable OpenGL" TRUE)
 endif()
 
-if(USE_SDL2 OR EMSCRIPTEN OR APPLE)
-	set(ENABLE_GLES1 FALSE)
-else()
-	option(ENABLE_GLES1 "Enable OpenGL ES" FALSE)
-endif()
-
 if(APPLE)
 	set(ENABLE_GLES2 FALSE)
 	set(ENABLE_WEBGL1 FALSE)
@@ -172,14 +170,6 @@ if(ENABLE_OPENGL3)
 	endif()
 endif()
 
-if(ENABLE_GLES1)
-	add_definitions(-D_IRR_COMPILE_WITH_OGLES1_)
-	set(OPENGLES_DIRECT_LINK TRUE)
-	if(DEVICE MATCHES "^(WINDOWS|X11)$")
-		add_definitions(-D_IRR_COMPILE_WITH_EGL_MANAGER_)
-	endif()
-endif()
-
 if(ENABLE_GLES2)
 	add_definitions(-D_IRR_COMPILE_WITH_OGLES2_)
 	if(DEVICE MATCHES "^(WINDOWS|X11)$" OR EMSCRIPTEN)
@@ -204,7 +194,6 @@ endif()
 message(STATUS "Device: ${DEVICE}")
 message(STATUS "OpenGL: ${ENABLE_OPENGL}")
 message(STATUS "OpenGL 3: ${ENABLE_OPENGL3}")
-message(STATUS "OpenGL ES: ${ENABLE_GLES1}")
 if (ENABLE_GLES2)
 	message(STATUS "OpenGL ES 2: ON (unified)")
 else()
@@ -220,13 +209,6 @@ find_package(ZLIB REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 
-if(ENABLE_GLES1)
-	# only tested on Android, probably works on Linux (is this needed anywhere else?)
-	find_library(OPENGLES_LIBRARY NAMES GLESv1_CM REQUIRED)
-	find_library(EGL_LIBRARY NAMES EGL REQUIRED)
-
-	message(STATUS "Found OpenGLES: ${OPENGLES_LIBRARY}")
-endif()
 if(ENABLE_GLES2)
 	find_package(OpenGLES2 REQUIRED)
 endif()
@@ -237,7 +219,7 @@ if(USE_SDL2)
 	if(NOT ANDROID)
 		find_package(SDL2 REQUIRED)
 	else()
-		# provided by MinetestAndroidLibs.cmake
+		# provided by AndroidLibs.cmake
 	endif()
 	message(STATUS "Found SDL2: ${SDL2_LIBRARIES}")
 
@@ -316,6 +298,7 @@ set(link_includes
 
 set(IRRMESHLOADER
 	CB3DMeshFileLoader.cpp
+	CGLTFMeshFileLoader.cpp
 	COBJMeshFileLoader.cpp
 	CXMeshFileLoader.cpp
 )
@@ -328,16 +311,7 @@ add_library(IRRMESHOBJ OBJECT
 	${IRRMESHLOADER}
 )
 
-add_library(IRROBJ OBJECT
-	CBillboardSceneNode.cpp
-	CCameraSceneNode.cpp
-	CDummyTransformationSceneNode.cpp
-	CEmptySceneNode.cpp
-	CMeshManipulator.cpp
-	CSceneCollisionManager.cpp
-	CSceneManager.cpp
-	CMeshCache.cpp
-)
+target_link_libraries(IRRMESHOBJ PUBLIC tiniergltf::tiniergltf)
 
 set(IRRDRVROBJ
 	CNullDriver.cpp
@@ -357,14 +331,6 @@ if(ENABLE_OPENGL)
 		COpenGLDriver.cpp
 		COpenGLSLMaterialRenderer.cpp
 		COpenGLExtensionHandler.cpp
-	)
-endif()
-
-if(ENABLE_GLES1)
-	set(IRRDRVROBJ
-		${IRRDRVROBJ}
-		COGLESDriver.cpp
-		COGLESExtensionHandler.cpp
 	)
 endif()
 
@@ -479,14 +445,33 @@ add_library(IRRGUIOBJ OBJECT
 
 # Library
 
-add_library(IrrlichtMt STATIC)
+# There have to be some sources in IrrlichtMt to workaround Cmake Xcode generator bug
+add_library(IrrlichtMt STATIC
+	CBillboardSceneNode.cpp
+	CCameraSceneNode.cpp
+	CDummyTransformationSceneNode.cpp
+	CEmptySceneNode.cpp
+	CMeshManipulator.cpp
+	CSceneCollisionManager.cpp
+	CSceneManager.cpp
+	CMeshCache.cpp
+)
 foreach(object_lib
-	IRRMESHOBJ IRROBJ IRRVIDEOOBJ
+	IRRMESHOBJ IRRVIDEOOBJ
 	IRRIOOBJ IRROTHEROBJ IRRGUIOBJ)
 	# Set include directories for object library compilation
 	target_include_directories(${object_lib} PRIVATE ${link_includes})
-	# Add objects from object library to main library
-	target_sources(IrrlichtMt PRIVATE $<TARGET_OBJECTS:${object_lib}>)
+	if(CMAKE_GENERATOR STREQUAL "Xcode")
+		# Workaround for Cmake Xcode project generator
+		target_link_libraries(IrrlichtMt PRIVATE ${object_lib})
+	else()
+		# Add objects from object library to main library
+		target_sources(IrrlichtMt PRIVATE $<TARGET_OBJECTS:${object_lib}>)
+	endif()
+
+	if(BUILD_WITH_TRACY)
+		target_link_libraries(${object_lib} PRIVATE Tracy::TracyClient)
+	endif()
 endforeach()
 
 # Alias target provides add_submodule compatibility
@@ -495,21 +480,21 @@ add_library(IrrlichtMt::IrrlichtMt ALIAS IrrlichtMt)
 target_include_directories(IrrlichtMt
 	PUBLIC
 		"$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/>"
-		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 	PRIVATE
+		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
 		${link_includes}
 )
 
 # this needs to be here and not in a variable (like link_includes) due to issues
 # with the generator expressions on at least CMake 3.22, but not 3.28 or later
 target_link_libraries(IrrlichtMt PRIVATE
+	tiniergltf::tiniergltf
 	${ZLIB_LIBRARY}
 	${JPEG_LIBRARY}
 	${PNG_LIBRARY}
 	"$<$<BOOL:${USE_SDL2}>:SDL2::SDL2>"
 
 	"$<$<BOOL:${OPENGL_DIRECT_LINK}>:${OPENGL_LIBRARIES}>"
-	"$<$<BOOL:${OPENGLES_DIRECT_LINK}>:${OPENGLES_LIBRARY}>"
 	${EGL_LIBRARY}
 
 	# incl. transitive SDL2 dependencies for static linking
@@ -524,6 +509,9 @@ target_link_libraries(IrrlichtMt PRIVATE
 
 if(WIN32)
 	target_compile_definitions(IrrlichtMt INTERFACE _IRR_WINDOWS_API_) # used in _IRR_DEBUG_BREAK_IF definition in a public header
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	target_compile_definitions(IrrlichtMt INTERFACE _DEBUG) # same
 endif()
 if(APPLE OR ANDROID OR EMSCRIPTEN)
 	target_compile_definitions(IrrlichtMt PUBLIC IRR_MOBILE_PATHS)

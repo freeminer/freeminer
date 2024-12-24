@@ -45,6 +45,7 @@ public:
 	s32 getSmallStep() const { return small_step; }
 	s32 getPos() const;
 	s32 getTargetPos() const;
+	bool isHorizontal() const { return is_horizontal; }
 
 	void setMax(const s32 &max);
 	void setMin(const s32 &min);
@@ -53,6 +54,8 @@ public:
 	//! Sets a position immediately, aborting any ongoing interpolation.
 	// setPos does not send EGET_SCROLL_BAR_CHANGED events for you.
 	void setPos(const s32 &pos);
+	//! The same as setPos, but it takes care of sending EGET_SCROLL_BAR_CHANGED events.
+	void setPosAndSend(const s32 &pos);
 	//! Sets a target position for interpolation.
 	// If you want to do an interpolated addition, use
 	// setPosInterpolated(getTargetPos() + x).

@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -28,6 +13,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "SColor.h"
 #include <matrix4.h>
 #include <cmath>
+#include <algorithm>
 
 #define rangelim(d, min, max) ((d) < (min) ? (min) : ((d) > (max) ? (max) : (d)))
 #define myfloor(x) ((x) < 0.0 ? (int)(x) - 1 : (int)(x))
@@ -190,7 +176,9 @@ struct MeshGrid {
 	/// @brief Returns true if p is an origin of a cell in the grid.
 	bool isMeshPos(v3bpos_t &p) const
 	{
-		return ((p.X + p.Y + p.Z) % cell_size) == 0;
+		return p.X % cell_size == 0
+				&& p.Y % cell_size == 0
+				&& p.Z % cell_size == 0;
 	}
 
 	/// @brief Returns index of the given offset in a grid cell
@@ -412,6 +400,10 @@ inline v3opos_t v3fToOpos(const v3f & p)
 	return v3opos_t(p.X, p.Y, p.Z);
 }
 
+inline aabb3o ToOpos(const aabb3f &b) {
+  return {v3fToOpos(b.MinEdge), v3fToOpos(b.MaxEdge)};
+}
+
 inline v3f oposToV3f(const v3opos_t & p)
 {
 	return v3f(p.X, p.Y, p.Z);
@@ -556,6 +548,17 @@ inline u32 npot2(u32 orig) {
 	orig |= orig >> 8;
 	orig |= orig >> 16;
 	return orig + 1;
+}
+
+// Distance between two values in a wrapped (circular) system
+template<typename T>
+inline unsigned wrappedDifference(T a, T b, const T maximum)
+{
+	if (a > b)
+		std::swap(a, b);
+	// now b >= a
+	unsigned s = b - a, l = static_cast<unsigned>(maximum - b) + a + 1;
+	return std::min(s, l);
 }
 
 // Gradual steps towards the target value in a wrapped (circular) system
