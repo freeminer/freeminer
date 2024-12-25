@@ -25,7 +25,8 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	const auto step = getFarStep(m_client->getEnv().getClientMap().getControl(),
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
 			bpos);
-	const auto &shift = step; // + cell_size_pow;
+	//const auto &shift = step; // + cell_size_pow;
+	//const v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift, (bpos.Z >> shift) << shift);
 	const v3bpos_t bpos_aligned = getFarActual(bpos,
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
 			step, m_client->getEnv().getClientMap().getControl());
@@ -38,7 +39,6 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 
 	if (!block && step < FARMESH_STEP_MAX) {
 		const auto &storage = m_client->getEnv().getClientMap().far_blocks_storage[step];
-
 		block = storage.get(bpos_aligned);
 	}
 
@@ -87,7 +87,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	if (block) {
 		v3pos_t relpos = pos - bpos_aligned * MAP_BLOCKSIZE;
 
-		const auto &relpos_shift = step; // + 1;
+		const auto &relpos_shift = step;
 		const auto relpos_shifted = v3pos_t(relpos.X >> relpos_shift,
 				relpos.Y >> relpos_shift, relpos.Z >> relpos_shift);
 		const auto &n = block->getNodeNoLock(relpos_shifted);

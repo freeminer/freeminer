@@ -871,9 +871,11 @@ size_t ServerMap::transformLiquids(std::map<v3bpos_t, MapBlock*> &modified_block
 		}
 
 		// Ignore light (because calling voxalgo::update_lighting_nodes)
+/*
 		ContentLightingFlags f0 = m_nodedef->getLightingFlags(n0);
 		n0.setLight(LIGHTBANK_DAY, 0, f0);
 		n0.setLight(LIGHTBANK_NIGHT, 0, f0);
+*/
 
 		// Find out whether there is a suspect for this action
 		std::string suspect;

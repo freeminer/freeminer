@@ -83,6 +83,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 		block->far_iteration = far_iteration_complete;
 		return;
 	}
+	
 	MapBlockP block;
 	{
 		const auto lock = far_blocks.lock_unique_rec();
@@ -103,7 +104,7 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool nea
 			}
 		}
 	}
-	
+
 	block->far_iteration = far_iteration_complete;
 
 	if (m_client->m_uptime >= block->far_make_mesh_timestamp) {
