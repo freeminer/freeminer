@@ -65,7 +65,7 @@
 // This is the maximum value the setting map_generation_limit can be
 #if USE_POS32
 #define MAX_MAP_GENERATION_LIMIT (2147483008)
-#define FARMESH_LIMIT (200000)
+#define FARMESH_LIMIT (100000)
 #else
 #define MAX_MAP_GENERATION_LIMIT (31007)
 #define FARMESH_LIMIT (31007)
