@@ -77,8 +77,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // I really don't want to make every algorithm to check if it's going near
 // the limit or not, so this is lower.
 // This is the maximum value the setting map_generation_limit can be
+#if USE_POS32
+#define MAX_MAP_GENERATION_LIMIT (2147483008)
+#define FARMESH_LIMIT (100000)
+#else
 #define MAX_MAP_GENERATION_LIMIT (31007)
 #define FARMESH_LIMIT (31007)
+#endif
 
 // fm 32bit prepare (keep 31k)
 #define WEATHER_LIMIT (31007)
