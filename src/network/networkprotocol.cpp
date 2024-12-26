@@ -61,7 +61,16 @@
 		[scheduled bump for 5.10.0]
 */
 
+// First version with 32bit support
+const u16 PROTOCOL_VERSION_32BIT = 147; // change to actual LATEST+1 in future
+
+#if USE_POS32
+const u16 LATEST_PROTOCOL_VERSION = 147;
+#else
+
 const u16 LATEST_PROTOCOL_VERSION = 46;
+
+#endif
 
 // See also formspec [Version History] in doc/lua_api.md
 const u16 FORMSPEC_API_VERSION = 8;

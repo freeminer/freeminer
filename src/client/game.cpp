@@ -26,6 +26,7 @@
 #include "client/event_manager.h"
 #include "fontengine.h"
 #include "gui/touchcontrols.h"
+#include "irr_v3d.h"
 #include "itemdef.h"
 #include "log.h"
 #include "log_internal.h"
@@ -54,6 +55,7 @@
 #include "translation.h"
 #include "util/basic_macros.h"
 #include "util/directiontables.h"
+#include "util/numeric.h"
 #include "util/pointedthing.h"
 #include "util/quicktune_shortcutter.h"
 #include "irr_ptr.h"
@@ -82,7 +84,7 @@
 
 struct TextDestNodeMetadata : public TextDest
 {
-	TextDestNodeMetadata(v3s16 p, Client *client)
+	TextDestNodeMetadata(v3pos_t p, Client *client)
 	{
 		m_p = p;
 		m_client = client;
@@ -102,7 +104,7 @@ struct TextDestNodeMetadata : public TextDest
 		m_client->sendNodemetaFields(m_p, "", fields);
 	}
 
-	v3s16 m_p;
+	v3pos_t m_p;
 	Client *m_client;
 };
 
@@ -195,7 +197,7 @@ struct LocalFormspecHandler : public TextDest
 class NodeMetadataFormSource: public IFormSource
 {
 public:
-	NodeMetadataFormSource(ClientMap *map, v3s16 p):
+	NodeMetadataFormSource(ClientMap *map, v3pos_t p):
 		m_map(map),
 		m_p(p)
 	{
@@ -222,7 +224,7 @@ public:
 	}
 
 	ClientMap *m_map;
-	v3s16 m_p;
+	v3pos_t m_p;
 };
 
 class PlayerInventoryFormSource: public IFormSource
@@ -245,10 +247,10 @@ public:
 class NodeDugEvent : public MtEvent
 {
 public:
-	v3s16 p;
+	v3pos_t p;
 	MapNode n;
 
-	NodeDugEvent(v3s16 p, MapNode n):
+	NodeDugEvent(v3pos_t p, MapNode n):
 		p(p),
 		n(n)
 	{}
@@ -500,11 +502,11 @@ public:
 			m_minimap_yaw.set(minimap_yaw, services);
 		}
 
-		v3f offset = intToFloat(m_client->getCamera()->getOffset(), BS);
+		auto offset = oposToV3f(intToFloat(m_client->getCamera()->getOffset(), BS));
 		m_camera_offset_pixel.set(offset, services);
 		m_camera_offset_vertex.set(offset, services);
 
-		v3f camera_position = m_client->getCamera()->getPosition();
+		auto camera_position = oposToV3f(m_client->getCamera()->getPosition());
 		m_camera_position_pixel.set(camera_position, services);
 		m_camera_position_pixel.set(camera_position, services);
 
@@ -649,7 +651,7 @@ const static float object_hit_delay = 0.2;
 
 struct GameRunData {
 	//freeminer:
-	v3f update_draw_list_last_cam_pos;
+	v3opos_t update_draw_list_last_cam_pos;
 	unsigned int autoexit = 0;
 	bool profiler_state = false;
 	bool headless_optimize = false;
@@ -816,15 +818,15 @@ protected:
 	 * NULL if not found
 	 */
 	PointedThing updatePointedThing(
-			const core::line3d<f32> &shootline, bool liquids_pointable,
+			const core::line3d<opos_t> &shootline, bool liquids_pointable,
 			const std::optional<Pointabilities> &pointabilities,
-			bool look_for_object, const v3s16 &camera_offset);
+			bool look_for_object, const v3pos_t &camera_offset);
 	void handlePointingAtNothing(const ItemStack &playerItem);
 	void handlePointingAtNode(const PointedThing &pointed,
 			const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime);
 	void handlePointingAtObject(const PointedThing &pointed, const ItemStack &playeritem,
-			const v3f &player_position, bool show_debug);
-	void handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
+			const v3opos_t &player_position, bool show_debug);
+	void handleDigging(const PointedThing &pointed, const v3pos_t &nodepos,
 			const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime);
 	void updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			const CameraOrientation &cam);
@@ -913,7 +915,7 @@ private:
 	void updateChat(f32 dtime);
 
 	bool nodePlacement(const ItemDefinition &selected_def, const ItemStack &selected_item,
-		const v3s16 &nodepos, const v3s16 &neighborpos, const PointedThing &pointed,
+		const v3pos_t &nodepos, const v3pos_t &neighborpos, const PointedThing &pointed,
 		const NodeMetadata *meta);
 	static const ClientEventHandler clientEventHandler[CLIENTEVENT_MAX];
 
@@ -2956,7 +2958,7 @@ void Game::toggleBlockBoundaries(float *statustext_time, VolatileRunFlags *flags
 void Game::increaseViewRange()
 {
 	pos_t range = g_settings->getPos("viewing_range");
-	int range_new = range + 10;
+	pos_t range_new = range + 10;
 	s16 server_limit = sky->getFogDistance();
 
 	{ //fm:
@@ -3403,7 +3405,7 @@ void Game::handleClientEvent_HudAdd(ClientEvent *event, CameraOrientation *cam)
 	e->dir    = event->hudadd->dir;
 	e->align  = event->hudadd->align;
 	e->offset = event->hudadd->offset;
-	e->world_pos = event->hudadd->world_pos;
+	e->world_pos = oposToV3f(event->hudadd->world_pos);
 	e->size      = event->hudadd->size;
 	e->z_index   = event->hudadd->z_index;
 	e->text2     = event->hudadd->text2;
@@ -3680,7 +3682,7 @@ void Game::updateCamera(f32 dtime)
 	ToolCapabilities playeritem_toolcap =
 		playeritem.getToolCapabilities(itemdef_manager);
 
-	v3s16 old_camera_offset = camera->getOffset();
+	v3pos_t old_camera_offset = camera->getOffset();
 
 	if (wasKeyPressed(KeyType::CAMERA_MODE)) {
 		GenericCAO *playercao = player->getCAO();
@@ -3707,12 +3709,12 @@ void Game::updateCamera(f32 dtime)
 	camera->step(dtime);
 
 	f32 camera_fov = camera->getFovMax();
-	v3s16 camera_offset = camera->getOffset();
+	v3pos_t camera_offset = camera->getOffset();
 
 	m_camera_offset_changed = (camera_offset != old_camera_offset);
 
 	if (!m_flags.disable_camera_update) {
-		v3f camera_position = camera->getPosition();
+		v3opos_t camera_position = camera->getPosition();
 		v3f camera_direction = camera->getDirection();
 
 		client->getEnv().getClientMap().updateCamera(camera_position,
@@ -3736,10 +3738,10 @@ void Game::updateSound(f32 dtime)
 	// Update sound listener
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	ClientActiveObject *parent = player->getParent();
-	v3s16 camera_offset = camera->getOffset();
+	v3pos_t camera_offset = camera->getOffset();
 	sound_manager->updateListener(
 			(1.0f/BS) * camera->getCameraNode()->getPosition()
-					+ intToFloat(camera_offset, 1.0f),
+					+ posToFloat(camera_offset, 1.0f),
 			(1.0f/BS) * (parent ? parent->getVelocity() : player->getSpeed()),
 			camera->getDirection(),
 			camera->getCameraNode()->getUpVector());
@@ -3764,7 +3766,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 
 	const v3f camera_direction = camera->getDirection();
-	const v3s16 camera_offset  = camera->getOffset();
+	const v3pos_t camera_offset  = camera->getOffset();
 
 	/*
 		Calculate what block is the crosshair pointing to
@@ -3776,7 +3778,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 	const ItemDefinition &selected_def = selected_item.getDefinition(itemdef_manager);
 	f32 d = getToolRange(selected_item, hand_item, itemdef_manager);
 
-	core::line3d<f32> shootline;
+	core::line3d<opos_t> shootline;
 
 	switch (camera->getCameraMode()) {
 	case CAMERA_MODE_FIRST:
@@ -3793,10 +3795,10 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 		d = 0;
 		break;
 	}
-	shootline.end = shootline.start + camera_direction * BS * d;
+	shootline.end = shootline.start + v3fToOpos(camera_direction * BS * d);
 
 	if (g_touchcontrols && isTouchCrosshairDisabled()) {
-		shootline = g_touchcontrols->getShootline();
+		shootline = {v3fToOpos(g_touchcontrols->getShootline().start), v3fToOpos(g_touchcontrols->getShootline().end)};
 		// Scale shootline to the acual distance the player can reach
 		shootline.end = shootline.start +
 				shootline.getVector().normalize() * BS * d;
@@ -3855,7 +3857,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 
 		if (!runData.digging) {
 			client->interact(INTERACT_STOP_DIGGING, runData.pointed_old);
-			client->setCrack(-1, v3s16(0, 0, 0));
+			client->setCrack(-1, v3pos_t(0, 0, 0));
 			runData.dig_time = 0.0;
 		}
 	} else if (runData.dig_instantly && wasKeyReleased(KeyType::DIG)) {
@@ -3886,7 +3888,7 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 	} else if (pointed.type == POINTEDTHING_NODE) {
 		handlePointingAtNode(pointed, selected_item, hand_item, dtime);
 	} else if (pointed.type == POINTEDTHING_OBJECT) {
-		v3f player_position  = player->getPosition();
+		auto player_position  = player->getPosition();
 		bool basic_debug_allowed = client->checkPrivilege("debug") || (player->hud_flags & HUD_FLAG_BASIC_DEBUG);
 		handlePointingAtObject(pointed, tool_item, player_position,
 				m_game_ui->m_flags.show_basic_debug && basic_debug_allowed);
@@ -3920,11 +3922,11 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 
 
 PointedThing Game::updatePointedThing(
-	const core::line3d<f32> &shootline,
+	const core::line3d<opos_t> &shootline,
 	bool liquids_pointable,
 	const std::optional<Pointabilities> &pointabilities,
 	bool look_for_object,
-	const v3s16 &camera_offset)
+	const v3pos_t &camera_offset)
 {
 	std::vector<aabb3f> *selectionboxes = hud->getSelectionBoxes();
 	selectionboxes->clear();
@@ -3966,7 +3968,7 @@ PointedThing Game::updatePointedThing(
 		aabb3f selection_box;
 		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
 				runData.selected_object->getSelectionBox(&selection_box)) {
-			v3f pos = runData.selected_object->getPosition();
+			auto pos = runData.selected_object->getPosition();
 			selectionboxes->emplace_back(selection_box);
 			hud->setSelectionPos(pos, camera_offset);
 			GenericCAO* gcao = dynamic_cast<GenericCAO*>(runData.selected_object.get());
@@ -3991,7 +3993,7 @@ PointedThing Game::updatePointedThing(
 			box.MaxEdge += v3f(d, d, d);
 			selectionboxes->push_back(box);
 		}
-		hud->setSelectionPos(intToFloat(result.node_undersurface, BS),
+		hud->setSelectionPos(posToOpos(result.node_undersurface, BS),
 			camera_offset);
 		hud->setSelectionRotation(v3f());
 		hud->setSelectedFaceNormal(result.intersection_normal);
@@ -3999,15 +4001,15 @@ PointedThing Game::updatePointedThing(
 
 	// Update selection mesh light level and vertex colors
 	if (!selectionboxes->empty()) {
-		v3f pf = hud->getSelectionPos();
-		v3s16 p = floatToInt(pf, BS);
+		v3opos_t pf = hud->getSelectionPos();
+		v3pos_t p = oposToPos(pf, BS);
 
 		// Get selection mesh light level
 		MapNode n = map.getNode(p);
 		u16 node_light = getInteriorLight(n, -1, nodedef);
 		u16 light_level = node_light;
 
-		for (const v3s16 &dir : g_6dirs) {
+		for (const v3pos_t &dir : g_6dirs) {
 			n = map.getNode(p + dir);
 			node_light = getInteriorLight(n, -1, nodedef);
 			if (node_light > light_level)
@@ -4047,8 +4049,8 @@ void Game::handlePointingAtNothing(const ItemStack &playerItem)
 void Game::handlePointingAtNode(const PointedThing &pointed,
 	const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime)
 {
-	v3s16 nodepos = pointed.node_undersurface;
-	v3s16 neighborpos = pointed.node_abovesurface;
+	v3pos_t nodepos = pointed.node_undersurface;
+	v3pos_t neighborpos = pointed.node_abovesurface;
 
 	/*
 		Check information text of node
@@ -4101,7 +4103,7 @@ void Game::handlePointingAtNode(const PointedThing &pointed,
 }
 
 bool Game::nodePlacement(const ItemDefinition &selected_def,
-	const ItemStack &selected_item, const v3s16 &nodepos, const v3s16 &neighborpos,
+	const ItemStack &selected_item, const v3pos_t &nodepos, const v3pos_t &neighborpos,
 	const PointedThing &pointed, const NodeMetadata *meta)
 {
 	const auto &prediction = selected_def.node_placement_prediction;
@@ -4152,7 +4154,7 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 
 	verbosestream << "Node placement prediction for "
 		<< selected_def.name << " is " << prediction << std::endl;
-	v3s16 p = neighborpos;
+	v3pos_t p = neighborpos;
 
 	// Place inside node itself if buildable_to
 	MapNode n_under = map.getNode(nodepos, &is_valid_position);
@@ -4195,16 +4197,16 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 		predicted_node.setParam2(*place_param2);
 	} else if (predicted_f.param_type_2 == CPT2_WALLMOUNTED ||
 			predicted_f.param_type_2 == CPT2_COLORED_WALLMOUNTED) {
-		v3s16 dir = nodepos - neighborpos;
+		v3pos_t dir = nodepos - neighborpos;
 
 		if (abs(dir.Y) > MYMAX(abs(dir.X), abs(dir.Z))) {
 			// If you change this code, also change builtin/game/item.lua
 			u8 predicted_param2 = dir.Y < 0 ? 1 : 0;
 			if (selected_def.wallmounted_rotate_vertical) {
 				bool rotate90 = false;
-				v3f fnodepos = v3f(neighborpos.X, neighborpos.Y, neighborpos.Z);
-				v3f ppos = client->getEnv().getLocalPlayer()->getPosition() / BS;
-				v3f pdir = fnodepos - ppos;
+				v3opos_t fnodepos = v3opos_t(neighborpos.X, neighborpos.Y, neighborpos.Z);
+				auto ppos = client->getEnv().getLocalPlayer()->getPosition() / BS;
+				v3opos_t pdir = fnodepos - ppos;
 				switch (predicted_f.drawtype) {
 					case NDT_TORCHLIKE: {
 						rotate90 = !((pdir.X < 0 && pdir.Z > 0) ||
@@ -4237,7 +4239,7 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 			predicted_f.param_type_2 == CPT2_COLORED_FACEDIR ||
 			predicted_f.param_type_2 == CPT2_4DIR ||
 			predicted_f.param_type_2 == CPT2_COLORED_4DIR) {
-		v3s16 dir = nodepos - floatToInt(client->getEnv().getLocalPlayer()->getPosition(), BS);
+		v3pos_t dir = nodepos - floatToInt(client->getEnv().getLocalPlayer()->getPosition(), BS);
 
 		if (abs(dir.X) > abs(dir.Z)) {
 			predicted_node.setParam2(dir.X < 0 ? 3 : 1);
@@ -4249,12 +4251,12 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 	// Check attachment if node is in group attached_node
 	int an = itemgroup_get(predicted_f.groups, "attached_node");
 	if (an != 0) {
-		v3s16 pp;
+		v3pos_t pp;
 
 		if (an == 3) {
-			pp = p + v3s16(0, -1, 0);
+			pp = p + v3pos_t(0, -1, 0);
 		} else if (an == 4) {
-			pp = p + v3s16(0, 1, 0);
+			pp = p + v3pos_t(0, 1, 0);
 		} else if (an == 2) {
 			if (predicted_f.param_type_2 == CPT2_FACEDIR ||
 					predicted_f.param_type_2 == CPT2_COLORED_FACEDIR ||
@@ -4268,7 +4270,7 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 				predicted_f.param_type_2 == CPT2_COLORED_WALLMOUNTED) {
 			pp = p + predicted_node.getWallMountedDir(nodedef);
 		} else {
-			pp = p + v3s16(0, -1, 0);
+			pp = p + v3pos_t(0, -1, 0);
 		}
 
 		if (!nodedef->get(map.getNode(pp)).walkable) {
@@ -4314,8 +4316,8 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 				g_settings->getBool("enable_build_where_you_stand") ||
 				(client->checkPrivilege("noclip") && g_settings->getBool("noclip")) ||
 				(predicted_f.walkable &&
-					neighborpos != player->getStandingNodePos() + v3s16(0, 1, 0) &&
-					neighborpos != player->getStandingNodePos() + v3s16(0, 2, 0))) {
+					neighborpos != player->getStandingNodePos() + v3pos_t(0, 1, 0) &&
+					neighborpos != player->getStandingNodePos() + v3pos_t(0, 2, 0))) {
 */
 		if (player->canPlaceNode(p, predicted_node)) {
 			// This triggers the required mesh update too
@@ -4339,7 +4341,7 @@ bool Game::nodePlacement(const ItemDefinition &selected_def,
 }
 
 void Game::handlePointingAtObject(const PointedThing &pointed,
-		const ItemStack &tool_item, const v3f &player_position, bool show_debug)
+		const ItemStack &tool_item, const v3opos_t &player_position, bool show_debug)
 {
 	if (!runData.selected_object) {
 		return;
@@ -4377,8 +4379,8 @@ void Game::handlePointingAtObject(const PointedThing &pointed,
 
 		if (do_punch_damage) {
 			// Report direct punch
-			v3f objpos = runData.selected_object->getPosition();
-			v3f dir = (objpos - player_position).normalize();
+			v3opos_t objpos = runData.selected_object->getPosition();
+			v3f dir = (oposToV3f(objpos - player_position)).normalize();
 
 			bool disable_send = runData.selected_object->directReportPunch(
 					dir, &tool_item, runData.time_from_last_punch);
@@ -4394,7 +4396,7 @@ void Game::handlePointingAtObject(const PointedThing &pointed,
 }
 
 
-void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
+void Game::handleDigging(const PointedThing &pointed, const v3pos_t &nodepos,
 		const ItemStack &selected_item, const ItemStack &hand_item, f32 dtime)
 {
 	// See also: serverpackethandle.cpp, action == 2
@@ -4469,7 +4471,7 @@ void Game::handleDigging(const PointedThing &pointed, const v3s16 &nodepos,
 		client->setCrack(runData.dig_index, nodepos);
 	} else {
 		infostream << "Digging completed" << std::endl;
-		client->setCrack(-1, v3s16(0, 0, 0));
+		client->setCrack(-1, v3pos_t(0, 0, 0));
 
 		runData.dig_time = 0;
 		runData.digging = false;
@@ -4832,7 +4834,7 @@ void Game::updateClouds(float dtime)
 		this->clouds->step(dtime);
 		// this->camera->getPosition is not enough for third-person camera.
 		v3f camera_node_position = this->camera->getCameraNode()->getPosition();
-		v3s16 camera_offset      = this->camera->getOffset();
+		v3pos_t camera_offset      = this->camera->getOffset();
 		camera_node_position.X   = camera_node_position.X + camera_offset.X * BS;
 		camera_node_position.Y   = camera_node_position.Y + camera_offset.Y * BS;
 		camera_node_position.Z   = camera_node_position.Z + camera_offset.Z * BS;

@@ -7,6 +7,7 @@
 #include <json/json.h>
 #include "filesys.h"
 #include "gamedef.h"
+#include "irr_v3d.h"
 #include "porting.h"  // strlcpy
 #include "server.h"
 #include "settings.h"
@@ -99,15 +100,16 @@ RemotePlayerChatResult RemotePlayer::canSendChatMessage()
 	return RPLAYER_CHATRESULT_OK;
 }
 
-
-Json::Value operator<<(Json::Value &json, v3f &v) {
+template <typename T>
+Json::Value operator<<(Json::Value &json, const core::vector3d<T> &v) {
 	json["X"] = v.X;
 	json["Y"] = v.Y;
 	json["Z"] = v.Z;
 	return json;
 }
 
-Json::Value operator>>(Json::Value &json, v3f &v) {
+template <typename T>
+Json::Value operator>>(const Json::Value &json, core::vector3d<T> &v) {
 	v.X = json["X"].asFloat();
 	v.Y = json["Y"].asFloat();
 	v.Z = json["Z"].asFloat();
@@ -144,7 +146,7 @@ Json::Value operator>>(Json::Value &json, RemotePlayer &player) {
 	player.m_name = json["name"].asString();
 	if (playersao) {
 
-		v3f position;
+		v3opos_t position;
 		json["position"] >> position;
 		playersao->setHPRaw(json["hp"].asInt());
 		playersao->setBasePosition(position);

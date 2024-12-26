@@ -7,6 +7,9 @@
 #include "irr_aabb3d.h"
 #include <quaternion.h>
 #include "constants.h"
+#include "irrlichttypes.h"
+#include "util/numeric.h"
+#include "vector3d.h"
 
 bool RaycastSort::operator() (const PointedThing &pt1,
 	const PointedThing &pt2) const
@@ -42,11 +45,11 @@ bool RaycastSort::operator() (const PointedThing &pt1,
 }
 
 
-RaycastState::RaycastState(const core::line3d<f32> &shootline,
+RaycastState::RaycastState(const core::line3d<opos_t> &shootline,
 	bool objects_pointable, bool liquids_pointable,
 	const std::optional<Pointabilities> &pointabilities) :
 	m_shootline(shootline),
-	m_iterator(shootline.start / BS, shootline.getVector() / BS),
+	m_iterator(shootline.start / BS, oposToV3f(shootline.getVector() / BS)),
 	m_previous_node(m_iterator.m_current_node_pos),
 	m_objects_pointable(objects_pointable),
 	m_liquids_pointable(liquids_pointable),
@@ -55,10 +58,10 @@ RaycastState::RaycastState(const core::line3d<f32> &shootline,
 }
 
 
-bool boxLineCollision(const aabb3f &box, const v3f start,
-	const v3f dir, v3f *collision_point, v3f *collision_normal)
+bool boxLineCollision(const aabb3f &box, const v3opos_t start,
+	const v3opos_t dir, v3opos_t *collision_point, v3f *collision_normal)
 {
-	if (box.isPointInside(start)) {
+	if (box.isPointInside(oposToV3f(start))) {
 		*collision_point = start;
 		collision_normal->set(0, 0, 0);
 		return true;
@@ -123,23 +126,38 @@ bool boxLineCollision(const aabb3f &box, const v3f start,
 	}
 	return false;
 }
+// from inline vector3df quaternion::operator* (const vector3df& v) const
+inline irr::core::vector3d<opos_t> quaternion_operator_star(
+		const core::quaternion &self, const irr::core::vector3d<opos_t> &v)
+{
+	// nVidia SDK implementation
+
+	irr::core::vector3d<opos_t> uv, uuv;
+	const irr::core::vector3d<opos_t> qvec(self.X, self.Y, self.Z);
+	uv = qvec.crossProduct(v);
+	uuv = qvec.crossProduct(uv);
+	uv *= (2.0f * self.W);
+	uuv *= 2.0f;
+
+	return v + uv + uuv;
+}
 
 bool boxLineCollision(const aabb3f &box, const v3f rotation,
-	const v3f start, const v3f dir,
-	v3f *collision_point, v3f *collision_normal, v3f *raw_collision_normal)
+	const v3opos_t start, const v3opos_t dir,
+	v3opos_t *collision_point, v3f *collision_normal, v3f *raw_collision_normal)
 {
 	// Inversely transform the ray rather than rotating the box faces;
 	// this allows us to continue using a simple ray - AABB intersection
 	core::quaternion rot(rotation * core::DEGTORAD);
 	rot.makeInverse();
 
-	bool collision = boxLineCollision(box, rot * start, rot * dir, collision_point, collision_normal);
+	bool collision = boxLineCollision(box, quaternion_operator_star(rot, start), quaternion_operator_star(rot, dir), collision_point, collision_normal);
 	if (!collision)
 		return collision;
 
 	// Transform the results back
 	rot.makeInverse();
-	*collision_point = rot * *collision_point;
+	*collision_point = quaternion_operator_star(rot,  *collision_point);
 	*raw_collision_normal = *collision_normal;
 	*collision_normal = rot * *collision_normal;
 	return collision;

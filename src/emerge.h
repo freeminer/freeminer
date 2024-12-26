@@ -38,9 +38,9 @@ struct BlockMakeData {
 	MMVManip *vmanip = nullptr;
 	// Global map seed
 	u64 seed = 0;
-	v3s16 blockpos_min;
-	v3s16 blockpos_max;
-	UniqueQueue<v3s16> transforming_liquid;
+	v3bpos_t blockpos_min;
+	v3bpos_t blockpos_max;
+	UniqueQueue<v3pos_t> transforming_liquid;
 	const NodeDefManager *nodedef = nullptr;
 
 	BlockMakeData() = default;
@@ -67,7 +67,7 @@ constexpr const char *emergeActionStrs[] = {
 
 // Callback
 typedef void (*EmergeCompletionCallback)(
-	v3s16 blockpos, EmergeAction action, void *param);
+	v3bpos_t blockpos, EmergeAction action, void *param);
 
 typedef std::vector<
 	std::pair<
@@ -174,28 +174,28 @@ public:
 
 	bool enqueueBlockEmerge(
 		session_t peer_id,
-		v3s16 blockpos,
+		v3bpos_t blockpos,
 		bool allow_generate,
 		bool ignore_queue_limits=false);
 
 	bool enqueueBlockEmergeEx(
-		v3s16 blockpos,
+		v3bpos_t blockpos,
 		session_t peer_id,
 		u16 flags,
 		EmergeCompletionCallback callback,
 		void *callback_param);
 
 	size_t getQueueSize();
-	bool isBlockInQueue(v3s16 pos);
+	bool isBlockInQueue(v3bpos_t pos);
 
 	Mapgen *getCurrentMapgen();
 
 	// Mapgen helpers methods
-	int getSpawnLevelAtPoint(v2s16 p);
+	int getSpawnLevelAtPoint(v2pos_t p);
 	int getGroundLevelAtPoint(v2pos_t p);
-	bool isBlockUnderground(v3s16 blockpos);
+	bool isBlockUnderground(v3bpos_t blockpos);
 
-	static v3s16 getContainingChunk(v3s16 blockpos, s16 chunksize);
+	static v3bpos_t getContainingChunk(v3bpos_t blockpos, s16 chunksize);
 
 private:
 	std::vector<Mapgen *> m_mapgens;
@@ -206,7 +206,7 @@ private:
 	MapDatabaseAccessor *m_db = nullptr;
 
 	std::mutex m_queue_mutex;
-	std::map<v3s16, BlockEmergeData> m_blocks_enqueued;
+	std::map<v3bpos_t, BlockEmergeData> m_blocks_enqueued;
 	std::unordered_map<u16, u32> m_peer_queue_count;
 
 	u32 m_qlimit_total;
@@ -230,14 +230,14 @@ private:
 	EmergeThread *getOptimalThread();
 
 	bool pushBlockEmergeData(
-		v3s16 pos,
+		v3bpos_t pos,
 		u16 peer_requested,
 		u16 flags,
 		EmergeCompletionCallback callback,
 		void *callback_param,
 		bool *entry_already_exists);
 
-	bool popBlockEmergeData(v3s16 pos, BlockEmergeData *bedata);
+	bool popBlockEmergeData(v3bpos_t pos, BlockEmergeData *bedata);
 
 	void reportCompletedEmerge(EmergeAction action);
 

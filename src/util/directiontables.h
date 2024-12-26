@@ -69,19 +69,19 @@ enum DirectionWallmounted {
 	DWM_COUNT
 };
 
-extern const v3s16 g_6dirs[6];
+extern const v3pos_t g_6dirs[6];
 
-extern const v3s16 g_7dirs[7];
+extern const v3pos_t g_7dirs[7];
 
-extern const v3s16 g_26dirs[26];
+extern const v3pos_t g_26dirs[26];
 
 // 26th is (0,0,0)
-extern const v3s16 g_27dirs[27];
+extern const v3pos_t g_27dirs[27];
 
 extern const u8 wallmounted_to_facedir[DWM_COUNT];
 
 extern const v3s16 wallmounted_dirs[DWM_COUNT];
 
-extern const v3s16 facedir_dirs[32];
+extern const v3pos_t facedir_dirs[32];
 
 extern const v3s16 fourdir_dirs[4];

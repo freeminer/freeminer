@@ -21,16 +21,16 @@ public:
 	ScriptApiNode() = default;
 	virtual ~ScriptApiNode() = default;
 
-	bool node_on_punch(v3s16 p, MapNode node,
+	bool node_on_punch(v3pos_t p, MapNode node,
 			ServerActiveObject *puncher, const PointedThing &pointed);
-	bool node_on_dig(v3s16 p, MapNode node,
+	bool node_on_dig(v3pos_t p, MapNode node,
 			ServerActiveObject *digger);
-	void node_on_construct(v3s16 p, MapNode node);
-	void node_on_destruct(v3s16 p, MapNode node);
-	bool node_on_flood(v3s16 p, MapNode node, MapNode newnode);
-	void node_after_destruct(v3s16 p, MapNode node);
-	bool node_on_timer(v3s16 p, MapNode node, f32 dtime);
-	void node_on_receive_fields(v3s16 p,
+	void node_on_construct(v3pos_t p, MapNode node);
+	void node_on_destruct(v3pos_t p, MapNode node);
+	bool node_on_flood(v3pos_t p, MapNode node, MapNode newnode);
+	void node_after_destruct(v3pos_t p, MapNode node);
+	bool node_on_timer(v3pos_t p, MapNode node, f32 dtime);
+	void node_on_receive_fields(v3pos_t p,
 			const std::string &formname,
 			const StringMap &fields,
 			ServerActiveObject *sender);

@@ -154,7 +154,7 @@ void ScriptApiClient::on_formspec_input(const std::string &formname,
 	}
 }
 
-bool ScriptApiClient::on_dignode(v3s16 p, MapNode node)
+bool ScriptApiClient::on_dignode(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -163,7 +163,7 @@ bool ScriptApiClient::on_dignode(v3s16 p, MapNode node)
 	lua_getfield(L, -1, "registered_on_dignode");
 
 	// Push data
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	pushnode(L, node);
 
 	// Call functions
@@ -176,7 +176,7 @@ bool ScriptApiClient::on_dignode(v3s16 p, MapNode node)
 	return lua_toboolean(L, -1);
 }
 
-bool ScriptApiClient::on_punchnode(v3s16 p, MapNode node)
+bool ScriptApiClient::on_punchnode(v3pos_t p, MapNode node)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -185,7 +185,7 @@ bool ScriptApiClient::on_punchnode(v3s16 p, MapNode node)
 	lua_getfield(L, -1, "registered_on_punchnode");
 
 	// Push data
-	push_v3s16(L, p);
+	push_v3pos(L, p);
 	pushnode(L, node);
 
 	// Call functions

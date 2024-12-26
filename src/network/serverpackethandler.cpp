@@ -10,6 +10,7 @@
 #else //TODO
 
 #include "chatmessage.h"
+#include "irr_v3d.h"
 #include "server.h"
 #include "log.h"
 #include "emerge.h"
@@ -400,7 +401,7 @@ void Server::handleCommand_ClientReady(NetworkPacket* pkt)
 	// Send player list to this client
 	{
 		const std::vector<std::string> &players = m_clients.getPlayerNames();
-		NetworkPacket list_pkt(TOCLIENT_UPDATE_PLAYER_LIST, 0, peer_id);
+		NetworkPacket list_pkt(TOCLIENT_UPDATE_PLAYER_LIST, 0, peer_id , 0);
 		list_pkt << (u8) PLAYER_LIST_INIT << (u16) players.size();
 		for (const auto &player : players)
 			list_pkt << player;
@@ -429,15 +430,15 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 	/*
 		[0] u16 command
 		[2] u8 count
-		[3] v3s16 pos_0
-		[3+6] v3s16 pos_1
+		[3] v3pos_t pos_0
+		[3+6] v3pos_t pos_1
 		...
 	*/
 
 	u8 count;
 	*pkt >> count;
 
-	if ((s16)pkt->getSize() < 1 + (int)count * 6) {
+	if ((s16)pkt->getSize() < 1 + (int)count * (int)sizeof_v3pos(pkt->getProtoVer())) {
 		throw con::InvalidIncomingDataException
 				("GOTBLOCKS length is too short");
 	}
@@ -446,7 +447,7 @@ void Server::handleCommand_GotBlocks(NetworkPacket* pkt)
 	RemoteClient *client = m_clients.lockedGetClientNoEx(pkt->getPeerId());
 
 	for (u16 i = 0; i < count; i++) {
-		v3s16 p;
+		v3bpos_t p;
 		*pkt >> p;
 		client->GotBlock(p);
 	}
@@ -463,8 +464,8 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	s32 f32pitch, f32yaw;
 	u8 f32fov;
 
-	*pkt >> ps;
-	*pkt >> ss;
+	ps = pkt->readV3S32();
+	ss = pkt->readV3S32();
 	*pkt >> f32pitch;
 	*pkt >> f32yaw;
 
@@ -495,7 +496,7 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 		player->control.setMovementFromKeys();
 	}
 
-	v3f position((f32)ps.X / 100.0f, (f32)ps.Y / 100.0f, (f32)ps.Z / 100.0f);
+	v3opos_t position((opos_t)ps.X / 100.0f, (opos_t)ps.Y / 100.0f, (opos_t)ps.Z / 100.0f);
 	v3f speed((f32)ss.X / 100.0f, (f32)ss.Y / 100.0f, (f32)ss.Z / 100.0f);
 
 	pitch = modulo360f(pitch);
@@ -585,8 +586,8 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt)
 	/*
 		[0] u16 command
 		[2] u8 count
-		[3] v3s16 pos_0
-		[3+6] v3s16 pos_1
+		[3] v3pos_t pos_0
+		[3+6] v3pos_t pos_1
 		...
 	*/
 
@@ -595,13 +596,13 @@ void Server::handleCommand_DeletedBlocks(NetworkPacket* pkt)
 
 	RemoteClient *client = getClient(pkt->getPeerId());
 
-	if ((s16)pkt->getSize() < 1 + (int)count * 6) {
+	if ((s16)pkt->getSize() < 1 + (int)count * (int)sizeof(v3bpos_t)) {
 		throw con::InvalidIncomingDataException
 				("DELETEDBLOCKS length is too short");
 	}
 
 	for (u16 i = 0; i < count; i++) {
-		v3s16 p;
+		v3bpos_t p;
 		*pkt >> p;
 		client->SetBlockDeleted(p);
 	}
@@ -674,8 +675,8 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 		case InventoryLocation::NODEMETA:
 			{
 				// Check for out-of-range interaction
-				v3f node_pos   = intToFloat(loc.p, BS);
-				v3f player_pos = player->getPlayerSAO()->getEyePosition();
+				v3opos_t node_pos   = posToOpos(loc.p, BS);
+				v3opos_t player_pos = player->getPlayerSAO()->getEyePosition();
 				f32 d = player_pos.getDistanceFrom(node_pos);
 				return checkInteractDistance(player, d, "inventory");
 			}
@@ -983,7 +984,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		if (pointed.type == POINTEDTHING_NODE) {
 			// Re-send block to revert change on client-side
 			RemoteClient *client = getClient(peer_id);
-			v3s16 blockpos = getNodeBlockPos(pointed.node_undersurface);
+			v3bpos_t blockpos = getNodeBlockPos(pointed.node_undersurface);
 			client->SetBlockNotSent(blockpos);
 		}
 		// Call callbacks
@@ -993,7 +994,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 
 	process_PlayerPos(player, playersao, pkt);
 
-	v3f player_pos = playersao->getLastGoodPosition();
+	v3opos_t player_pos = playersao->getLastGoodPosition();
 
 	// Update wielded item
 
@@ -1034,12 +1035,12 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		RemoteClient *client = getClient(peer_id);
 		// Digging completed -> under
 		if (action == INTERACT_DIGGING_COMPLETED) {
-			v3s16 blockpos = getNodeBlockPos(pointed.node_undersurface);
+			v3bpos_t blockpos = getNodeBlockPos(pointed.node_undersurface);
 			client->SetBlockNotSent(blockpos);
 		}
 		// Placement -> above
 		else if (action == INTERACT_PLACE) {
-			v3s16 blockpos = getNodeBlockPos(pointed.node_abovesurface);
+			v3bpos_t blockpos = getNodeBlockPos(pointed.node_abovesurface);
 			client->SetBlockNotSent(blockpos);
 		}
 		return;
@@ -1054,9 +1055,9 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 	if ((action == INTERACT_START_DIGGING || action == INTERACT_DIGGING_COMPLETED ||
 			action == INTERACT_PLACE || action == INTERACT_USE) &&
 			(anticheat_flags & AC_INTERACTION) && !isSingleplayer()) {
-		v3f target_pos = player_pos;
+		v3opos_t target_pos = player_pos;
 		if (pointed.type == POINTEDTHING_NODE) {
-			target_pos = intToFloat(pointed.node_undersurface, BS);
+			target_pos = posToOpos(pointed.node_undersurface, BS);
 		} else if (pointed.type == POINTEDTHING_OBJECT) {
 			if (playersao->getId() == pointed_object->getId()) {
 				actionstream << "Server: " << player->getName()
@@ -1072,7 +1073,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 			if (pointed.type == POINTEDTHING_NODE) {
 				// Re-send block to revert change on client-side
 				RemoteClient *client = getClient(peer_id);
-				v3s16 blockpos = getNodeBlockPos(pointed.node_undersurface);
+				v3bpos_t blockpos = getNodeBlockPos(pointed.node_undersurface);
 				client->SetBlockNotSent(blockpos);
 			}
 			return;
@@ -1092,7 +1093,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 			MapNode n(CONTENT_IGNORE);
 			bool pos_ok;
 
-			v3s16 p_under = pointed.node_undersurface;
+			v3pos_t p_under = pointed.node_undersurface;
 			n = m_env->getMap().getNode(p_under, &pos_ok);
 			if (!pos_ok) {
 				infostream << "Server: Not punching: Node not found. "
@@ -1118,8 +1119,8 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		ItemStack tool_item = playersao->getWieldedItem(&selected_item, &hand_item);
 		ToolCapabilities toolcap =
 				tool_item.getToolCapabilities(m_itemdef);
-		v3f dir = (pointed_object->getBasePosition() -
-				(playersao->getBasePosition() + playersao->getEyeOffset())
+		v3f dir = oposToV3f(pointed_object->getBasePosition() -
+				(playersao->getBasePosition() + v3fToOpos(playersao->getEyeOffset()))
 					).normalize();
 		float time_from_last_punch =
 			playersao->resetTimeFromLastPunch();
@@ -1147,7 +1148,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		if (pointed.type != POINTEDTHING_NODE)
 			return;
 		bool pos_ok;
-		v3s16 p_under = pointed.node_undersurface;
+		v3pos_t p_under = pointed.node_undersurface;
 		MapNode n = m_env->getMap().getNode(p_under, &pos_ok);
 		if (!pos_ok) {
 			infostream << "Server: Not finishing digging: Node not found. "
@@ -1159,7 +1160,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		/* Cheat prevention */
 		bool is_valid_dig = true;
 		if ((anticheat_flags & AC_DIGGING) && !isSingleplayer()) {
-			v3s16 nocheat_p = playersao->getNoCheatDigPos();
+			v3pos_t nocheat_p = playersao->getNoCheatDigPos();
 			float nocheat_t = playersao->getNoCheatDigTime();
 			playersao->noCheatDigEnd();
 			// If player didn't start digging this, ignore dig
@@ -1235,7 +1236,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		if (is_valid_dig && n.getContent() != CONTENT_IGNORE)
 			m_script->node_on_dig(p_under, n, playersao);
 
-		v3s16 blockpos = getNodeBlockPos(p_under);
+		v3bpos_t blockpos = getNodeBlockPos(p_under);
 		RemoteClient *client = getClient(peer_id);
 		// Send unusual result (that is, node not being removed)
 		if (m_env->getMap().getNode(p_under).getContent() != CONTENT_AIR)
@@ -1294,8 +1295,8 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		// If item has node placement prediction, always send the
 		// blocks to make sure the client knows what exactly happened
 		RemoteClient *client = getClient(peer_id);
-		v3s16 blockpos = getNodeBlockPos(pointed.node_abovesurface);
-		v3s16 blockpos2 = getNodeBlockPos(pointed.node_undersurface);
+		v3bpos_t blockpos = getNodeBlockPos(pointed.node_abovesurface);
+		v3bpos_t blockpos2 = getNodeBlockPos(pointed.node_undersurface);
 		if (had_prediction) {
 			client->SetBlockNotSent(blockpos);
 			if (blockpos2 != blockpos)
@@ -1421,7 +1422,7 @@ void Server::handleCommand_NodeMetaFields(NetworkPacket* pkt)
 		return;
 	}
 
-	v3s16 p;
+	v3pos_t p;
 	std::string formname;
 	StringMap fields;
 
@@ -1711,7 +1712,7 @@ void Server::handleCommand_SrpBytesA(NetworkPacket* pkt)
 		return;
 	}
 
-	NetworkPacket resp_pkt(TOCLIENT_SRP_BYTES_S_B, 0, peer_id);
+	NetworkPacket resp_pkt(TOCLIENT_SRP_BYTES_S_B, 0, peer_id, 0);
 	resp_pkt << salt << std::string(bytes_B, len_B);
 	Send(&resp_pkt);
 }
@@ -1809,7 +1810,7 @@ void Server::handleCommand_ModChannelJoin(NetworkPacket *pkt)
 
 	session_t peer_id = pkt->getPeerId();
 	NetworkPacket resp_pkt(TOCLIENT_MODCHANNEL_SIGNAL,
-		1 + 2 + channel_name.size(), peer_id);
+		1 + 2 + channel_name.size(), peer_id, 0);
 
 	// Send signal to client to notify join succeed or not
 	if (g_settings->getBool("enable_mod_channels") &&
@@ -1834,7 +1835,7 @@ void Server::handleCommand_ModChannelLeave(NetworkPacket *pkt)
 
 	session_t peer_id = pkt->getPeerId();
 	NetworkPacket resp_pkt(TOCLIENT_MODCHANNEL_SIGNAL,
-		1 + 2 + channel_name.size(), peer_id);
+		1 + 2 + channel_name.size(), peer_id, 0);
 
 	// Send signal to client to notify join succeed or not
 	if (g_settings->getBool("enable_mod_channels") &&
@@ -1869,7 +1870,7 @@ void Server::handleCommand_ModChannelMsg(NetworkPacket *pkt)
 	// If channel not registered, signal it and ignore message
 	if (!m_modchannel_mgr->channelRegistered(channel_name)) {
 		NetworkPacket resp_pkt(TOCLIENT_MODCHANNEL_SIGNAL,
-			1 + 2 + channel_name.size(), peer_id);
+			1 + 2 + channel_name.size(), peer_id, 0);
 		resp_pkt << (u8)MODCHANNEL_SIGNAL_CHANNEL_NOT_REGISTERED << channel_name;
 		Send(&resp_pkt);
 		return;

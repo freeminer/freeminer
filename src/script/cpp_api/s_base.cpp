@@ -536,7 +536,7 @@ void ScriptApiBase::pushPlayerHPChangeReason(lua_State *L, const PlayerHPChangeR
 		lua_pushstring(L, reason.node.c_str());
 		lua_setfield(L, -2, "node");
 
-		push_v3s16(L, reason.node_pos);
+		push_v3pos(L, reason.node_pos);
 		lua_setfield(L, -2, "node_pos");
 	}
 }

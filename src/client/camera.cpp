@@ -296,7 +296,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	// Get player position
 	// Smooth the movement when walking up stairs
 	v3f old_player_position = m_playernode->getPosition();
-	v3f player_position = player->getPosition();
+	auto player_position = player->getPosition();
 
 	f32 yaw = player->getYaw();
 	f32 pitch = player->getPitch();
@@ -324,7 +324,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Set player node transformation
-	m_playernode->setPosition(player_position);
+	m_playernode->setPosition(oposToV3f(player_position));
 	m_playernode->setRotation(v3f(0, -1 * yaw, 0));
 	m_playernode->updateAbsolutePosition();
 
@@ -400,7 +400,9 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Compute absolute camera position and target
-	m_headnode->getAbsoluteTransformation().transformVect(m_camera_position, rel_cam_pos);
+	auto tmp = oposToV3f(m_camera_position); // TODO use offset?
+	m_headnode->getAbsoluteTransformation().transformVect(tmp, rel_cam_pos);
+	m_camera_position = v3fToOpos(tmp);
 	m_camera_direction = m_headnode->getAbsoluteTransformation()
 			.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
@@ -408,7 +410,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 			.rotateAndScaleVect(rel_cam_up);
 
 	// Separate camera position for calculation
-	v3f my_cp = m_camera_position;
+	v3opos_t my_cp = m_camera_position;
 
 	// Reposition the camera for third person view
 	if (m_camera_mode > CAMERA_MODE_FIRST)
@@ -448,18 +450,18 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 
 	// Update offset if too far away from the center of the map
 	m_camera_offset.X += CAMERA_OFFSET_STEP*
-			(((s16)(my_cp.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
+			(((pos_t)(my_cp.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
 	m_camera_offset.Y += CAMERA_OFFSET_STEP*
-			(((s16)(my_cp.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
+			(((pos_t)(my_cp.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
 	m_camera_offset.Z += CAMERA_OFFSET_STEP*
-			(((s16)(my_cp.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
+			(((pos_t)(my_cp.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
 
 	// Set camera node transformation
-	m_cameranode->setPosition(my_cp-intToFloat(m_camera_offset, BS));
+	m_cameranode->setPosition(oposToV3f(my_cp-posToOpos(m_camera_offset, BS)));
 	m_cameranode->updateAbsolutePosition();
 	m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
-	m_cameranode->setTarget(my_cp-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
+	m_cameranode->setTarget(oposToV3f(my_cp-posToOpos(m_camera_offset, BS) + v3fToOpos(100 * m_camera_direction)));
 
 	// update the camera position in third-person mode to render blocks behind player
 	// and correctly apply liquid post FX.

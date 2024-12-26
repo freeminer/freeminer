@@ -33,58 +33,58 @@
 // sqrt(3.0) / 2.0 in literal form.
 static constexpr const f32 BLOCK_MAX_RADIUS = 0.866025403784f * MAP_BLOCKSIZE * BS;
 
-inline s16 getContainerPos(s16 p, s16 d)
+inline bpos_t getContainerPos(pos_t p, pos_t d)
 {
 	return (p >= 0 ? p : p - d + 1) / d;
 }
 
-inline v2s16 getContainerPos(v2s16 p, s16 d)
+inline v2bpos_t getContainerPos(v2pos_t p, pos_t d)
 {
-	return v2s16(
+	return v2bpos_t(
 		getContainerPos(p.X, d),
 		getContainerPos(p.Y, d)
 	);
 }
 
-inline v3s16 getContainerPos(v3s16 p, s16 d)
+inline v3bpos_t getContainerPos(v3pos_t p, pos_t d)
 {
-	return v3s16(
+	return v3bpos_t(
 		getContainerPos(p.X, d),
 		getContainerPos(p.Y, d),
 		getContainerPos(p.Z, d)
 	);
 }
 
-inline v2s16 getContainerPos(v2s16 p, v2s16 d)
+inline v2bpos_t getContainerPos(v2pos_t p, v2pos_t d)
 {
-	return v2s16(
+	return v2bpos_t(
 		getContainerPos(p.X, d.X),
 		getContainerPos(p.Y, d.Y)
 	);
 }
 
-inline v3s16 getContainerPos(v3s16 p, v3s16 d)
+inline v3bpos_t getContainerPos(v3pos_t p, v3pos_t d)
 {
-	return v3s16(
+	return v3bpos_t(
 		getContainerPos(p.X, d.X),
 		getContainerPos(p.Y, d.Y),
 		getContainerPos(p.Z, d.Z)
 	);
 }
 
-inline void getContainerPosWithOffset(s16 p, s16 d, s16 &container, s16 &offset)
+inline void getContainerPosWithOffset(pos_t p, pos_t d, bpos_t &container, pos_t &offset)
 {
 	container = (p >= 0 ? p : p - d + 1) / d;
 	offset = p & (d - 1);
 }
 
-inline void getContainerPosWithOffset(const v2s16 &p, s16 d, v2s16 &container, v2s16 &offset)
+inline void getContainerPosWithOffset(const v2pos_t &p, pos_t d, v2bpos_t &container, v2pos_t &offset)
 {
 	getContainerPosWithOffset(p.X, d, container.X, offset.X);
 	getContainerPosWithOffset(p.Y, d, container.Y, offset.Y);
 }
 
-inline void getContainerPosWithOffset(const v3s16 &p, s16 d, v3s16 &container, v3s16 &offset)
+inline void getContainerPosWithOffset(const v3pos_t &p, pos_t d, v3bpos_t &container, v3pos_t &offset)
 {
 	getContainerPosWithOffset(p.X, d, container.X, offset.X);
 	getContainerPosWithOffset(p.Y, d, container.Y, offset.Y);
@@ -92,7 +92,7 @@ inline void getContainerPosWithOffset(const v3s16 &p, s16 d, v3s16 &container, v
 }
 
 
-inline bool isInArea(v3s16 p, s16 d)
+inline bool isInArea(v3pos_t p, pos_t d)
 {
 	return (
 		p.X >= 0 && p.X < d &&
@@ -101,7 +101,7 @@ inline bool isInArea(v3s16 p, s16 d)
 	);
 }
 
-inline bool isInArea(v2s16 p, s16 d)
+inline bool isInArea(v2pos_t p, pos_t d)
 {
 	return (
 		p.X >= 0 && p.X < d &&
@@ -109,7 +109,7 @@ inline bool isInArea(v2s16 p, s16 d)
 	);
 }
 
-inline bool isInArea(v3s16 p, v3s16 d)
+inline bool isInArea(v3pos_t p, v3pos_t d)
 {
 	return (
 		p.X >= 0 && p.X < d.X &&
@@ -118,23 +118,34 @@ inline bool isInArea(v3s16 p, v3s16 d)
 	);
 }
 
-inline void sortBoxVerticies(v3s16 &p1, v3s16 &p2) {
+inline void sortBoxVerticies(v3pos_t &p1, v3pos_t &p2) {
 	if (p1.X > p2.X)
-		SWAP(s16, p1.X, p2.X);
+		SWAP(pos_t, p1.X, p2.X);
 	if (p1.Y > p2.Y)
-		SWAP(s16, p1.Y, p2.Y);
+		SWAP(pos_t, p1.Y, p2.Y);
 	if (p1.Z > p2.Z)
-		SWAP(s16, p1.Z, p2.Z);
+		SWAP(pos_t, p1.Z, p2.Z);
 }
 
-inline v3s16 componentwise_min(const v3s16 &a, const v3s16 &b)
+ /*
+inline void sortBoxVerticies(v3bpos_t &p1, v3bpos_t &p2) {
+	if (p1.X > p2.X)
+		SWAP(bpos_t, p1.X, p2.X);
+	if (p1.Y > p2.Y)
+		SWAP(bpos_t, p1.Y, p2.Y);
+	if (p1.Z > p2.Z)
+		SWAP(bpos_t, p1.Z, p2.Z);
+}
+ */
+
+inline v3pos_t componentwise_min(const v3pos_t &a, const v3pos_t &b)
 {
-	return v3s16(MYMIN(a.X, b.X), MYMIN(a.Y, b.Y), MYMIN(a.Z, b.Z));
+	return v3pos_t(MYMIN(a.X, b.X), MYMIN(a.Y, b.Y), MYMIN(a.Z, b.Z));
 }
 
-inline v3s16 componentwise_max(const v3s16 &a, const v3s16 &b)
+inline v3pos_t componentwise_max(const v3pos_t &a, const v3pos_t &b)
 {
-	return v3s16(MYMAX(a.X, b.X), MYMAX(a.Y, b.Y), MYMAX(a.Z, b.Z));
+	return v3pos_t(MYMAX(a.X, b.X), MYMAX(a.Y, b.Y), MYMAX(a.Z, b.Z));
 }
 
 /// @brief Describes a grid with given step, oirginating at (0,0,0)
@@ -144,31 +155,31 @@ struct MeshGrid {
 	u32 getCellVolume() const { return cell_size * cell_size * cell_size; }
 
 	/// @brief returns coordinate of mesh cell given coordinate of a map block
-	s16 getCellPos(s16 p) const
+	bpos_t getCellPos(bpos_t p) const
 	{
 		return (p - (p < 0) * (cell_size - 1)) / cell_size;
 	}
 
 	/// @brief returns position of mesh cell in the grid given position of a map block
-	v3s16 getCellPos(v3s16 block_pos) const
+	v3bpos_t getCellPos(v3bpos_t block_pos) const
 	{
-		return v3s16(getCellPos(block_pos.X), getCellPos(block_pos.Y), getCellPos(block_pos.Z));
+		return v3bpos_t(getCellPos(block_pos.X), getCellPos(block_pos.Y), getCellPos(block_pos.Z));
 	}
 
 	/// @brief returns closest step of the grid smaller than p
-	s16 getMeshPos(s16 p) const
+	bpos_t getMeshPos(bpos_t p) const
 	{
 		return getCellPos(p) * cell_size;
 	}
 
 	/// @brief Returns coordinates of the origin of the grid cell containing p
-	v3s16 getMeshPos(v3s16 p) const
+	v3bpos_t getMeshPos(v3bpos_t p) const
 	{
-		return v3s16(getMeshPos(p.X), getMeshPos(p.Y), getMeshPos(p.Z));
+		return v3bpos_t(getMeshPos(p.X), getMeshPos(p.Y), getMeshPos(p.Z));
 	}
 
 	/// @brief Returns true if p is an origin of a cell in the grid.
-	bool isMeshPos(v3s16 &p) const
+	bool isMeshPos(v3bpos_t &p) const
 	{
 		return p.X % cell_size == 0
 				&& p.Y % cell_size == 0
@@ -177,7 +188,7 @@ struct MeshGrid {
 
 	/// @brief Returns index of the given offset in a grid cell
 	/// All offset coordinates must be smaller than the size of the cell
-	u16 getOffsetIndex(v3s16 offset) const
+	u16 getOffsetIndex(v3bpos_t offset) const
 	{
 		return (offset.Z * cell_size + offset.Y) * cell_size + offset.X;
 	}
@@ -281,7 +292,7 @@ inline u32 calc_parity(u32 v)
 
 u64 murmur_hash_64_ua(const void *key, int len, unsigned int seed);
 
-bool isBlockInSight(v3s16 blockpos_b, v3f camera_pos, v3f camera_dir,
+bool isBlockInSight(v3bpos_t blockpos_b, v3opos_t camera_pos, v3f camera_dir,
 		f32 camera_fov, f32 range, f32 *distance_ptr=NULL);
 
 s16 adjustDist(s16 dist, float zoom_fov);
@@ -303,9 +314,9 @@ inline constexpr f32 sqr(f32 f)
 /*
 	Returns integer position of node in given floating point position
 */
-inline v3s16 floatToInt(v3f p, f32 d)
+inline v3pos_t floatToInt(v3f p, f32 d)
 {
-	return v3s16(
+	return v3pos_t(
 		(p.X + (p.X > 0 ? d / 2 : -d / 2)) / d,
 		(p.Y + (p.Y > 0 ? d / 2 : -d / 2)) / d,
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
@@ -350,6 +361,7 @@ inline v3pos_t oposToPos(v3opos_t p, double d)
 /*
 	Returns floating point position of node in given integer position
 */
+
 inline v3f intToFloat(v3s16 p, f32 d)
 {
 	return v3f(
@@ -393,6 +405,10 @@ inline v3opos_t v3fToOpos(const v3f & p)
 	return v3opos_t(p.X, p.Y, p.Z);
 }
 
+inline aabb3o ToOpos(const aabb3f &b) {
+  return {v3fToOpos(b.MinEdge), v3fToOpos(b.MaxEdge)};
+}
+
 inline v3f oposToV3f(const v3opos_t & p)
 {
 	return v3f(p.X, p.Y, p.Z);
@@ -429,7 +445,7 @@ inline v3pos_t s16ToPos(const v3s16 & p)
 
 
 // Random helper. Usually d=BS
-inline aabb3f getNodeBox(v3s16 p, float d)
+inline aabb3f getNodeBox(v3pos_t p, float d)
 {
 	return aabb3f(
 		(float)p.X * d - 0.5f * d,

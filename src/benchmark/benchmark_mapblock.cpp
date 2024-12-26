@@ -43,7 +43,7 @@ static void workOnMetadata(const MBContainer &vec)
 		if (block->refGet() > 2)
 			block->refDrop();
 
-		v3s16 pos = block->getPos() * MAP_BLOCKSIZE;
+		v3pos_t pos = block->getPos() * MAP_BLOCKSIZE;
 		if (foo)
 			pos += v3s16(MAP_BLOCKSIZE / 2);
 
@@ -65,8 +65,8 @@ static u32 workOnNodes(const MBContainer &vec)
 		if (block->isOrphan())
 			continue;
 
-		v3s16 pos_of_block = block->getPosRelative();
-		v3s16 pos;
+		auto pos_of_block = block->getPosRelative();
+		v3pos_t pos;
 		MapNode n;
 		for (pos.X = 0; pos.X < MAP_BLOCKSIZE; pos.X++) {
 			for (pos.Y = 0; pos.Y < MAP_BLOCKSIZE; pos.Y++) {

@@ -32,9 +32,9 @@ public:
 	ActiveObjectType getType() const override { return ACTIVEOBJECT_TYPE_TEST; }
 	void addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr) override {}
 	bool getSelectionBox(aabb3f *toset) const override { *toset = selection_box; return true; }
-	const v3f getPosition() const override { return position; }
+	const v3opos_t getPosition() const override { return position; }
 
-	v3f position;
+	v3opos_t position;
 	aabb3f selection_box;
 };
 
@@ -133,13 +133,13 @@ void TestClientActiveObjectMgr::testGetActiveSelectableObjects()
 	auto obj = obj_u.get();
 	UASSERT(caomgr.registerObject(std::move(obj_u)));
 
-	auto assert_obj_selected = [&] (v3f a, v3f b) {
+	auto assert_obj_selected = [&] (v3opos_t a, v3opos_t b) {
 		auto actual = caomgr.getActiveSelectableObjects({a, b});
 		UASSERTEQ(auto, actual.size(), 1u);
 		UASSERTEQ(auto, actual.at(0).obj.get(), obj);
 	};
 
-	auto assert_obj_missed = [&] (v3f a, v3f b) {
+	auto assert_obj_missed = [&] (v3opos_t a, v3opos_t b) {
 		auto actual = caomgr.getActiveSelectableObjects({a, b});
 		UASSERTEQ(auto, actual.size(), 0u);
 	};

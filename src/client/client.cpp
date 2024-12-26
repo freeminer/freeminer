@@ -531,7 +531,7 @@ void Client::step(float dtime)
 	*/
 	const float map_timer_and_unload_dtime = 10.25;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
-		std::vector<v3s16> deleted_blocks;
+		std::vector<v3bpos_t> deleted_blocks;
 		//m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
 		if(m_env.getMap().timerUpdate(m_uptime,
 			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
@@ -550,7 +550,7 @@ void Client::step(float dtime)
 		*/
 
 		auto i = deleted_blocks.begin();
-		std::vector<v3s16> sendlist;
+		std::vector<v3bpos_t> sendlist;
 		for(;;) {
 			if(sendlist.size() == 255 || i == deleted_blocks.end()) {
 				if(sendlist.empty())
@@ -558,8 +558,8 @@ void Client::step(float dtime)
 				/*
 					[0] u16 command
 					[2] u8 count
-					[3] v3s16 pos_0
-					[3+6] v3s16 pos_1
+					[3] v3pos_t pos_0
+					[3+6] v3pos_t pos_1
 					...
 				*/
 
@@ -650,7 +650,7 @@ void Client::step(float dtime)
 
 		int num_processed_meshes = 0;
 		auto end_ms = porting::getTimeMs() + 5;
-		std::vector<v3s16> blocks_to_ack;
+		std::vector<v3bpos_t> blocks_to_ack;
 
 		auto qsize = m_mesh_update_manager->m_queue_out.size();
 		if (qsize > 1000)
@@ -670,7 +670,7 @@ void Client::step(float dtime)
 			bool do_mapper_update = true;
 
 /*
-			MapSector *sector = m_env.getMap().emergeSector(v2s16(r.p.X, r.p.Z));
+			MapSector *sector = m_env.getMap().emergeSector(v2bpos_t(r.p.X, r.p.Z));
 			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
 			// The block in question is not visible (perhaps it is culled at the server),
 			// create a blank block just to hold the chunk's mesh.
@@ -723,7 +723,7 @@ void Client::step(float dtime)
 			}
 
 			if (m_minimap && do_mapper_update) {
-				v3s16 ofs;
+				v3bpos_t ofs;
 
 				// See also mapblock_mesh.cpp for the code that creates the array of minimap blocks.
 				for (ofs.Z = 0; ofs.Z < m_mesh_grid.cell_size; ofs.Z++)
@@ -835,7 +835,7 @@ void Client::step(float dtime)
 			const auto cao = m_env.getActiveObject(object_id);
 			if (!cao)
 				continue;
-			m_sound->updateSoundPosVel(client_id, cao->getPosition() * (1.0f/BS),
+			m_sound->updateSoundPosVel(client_id, oposToV3f(cao->getPosition() * (1.0f/BS)),
 					cao->getVelocity() * (1.0f/BS));
 		}
 	}
@@ -1143,6 +1143,7 @@ void Client::ReceiveAll()
 #endif
 			if (!m_con->TryReceive(&pkt))
 				break;
+			pkt.setProtoVer(m_proto_ver);
 			ProcessData(&pkt);
 #if MINETEST_PROTO
 		} catch (const con::InvalidIncomingDataException &e) {
@@ -1280,7 +1281,7 @@ void Client::Send(NetworkPacket* pkt)
 // Will fill up 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1 + 4 + 4 bytes
 void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *pkt, bool camera_inverted)
 {
-	v3f pf           = myplayer->getPosition() * 100;
+	v3opos_t pf      = myplayer->getPosition() * 100;
 	v3f sf           = myplayer->getSpeed() * 100;
 	s32 pitch        = myplayer->getPitch() * 100;
 	s32 yaw          = myplayer->getYaw() * 100;
@@ -1308,7 +1309,9 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 		[12+12+4+4+4+1+1+1] f32 movement_speed
 		[12+12+4+4+4+1+1+1+4] f32 movement_direction
 	*/
-	*pkt << position << speed << pitch << yaw << keyPressed;
+	pkt->writeV3S32(position);
+	pkt->writeV3S32(speed); 
+	*pkt << pitch << yaw << keyPressed;
 	*pkt << fov << wanted_range;
 	*pkt << camera_inverted;
 	*pkt << movement_speed << movement_dir;
@@ -1343,7 +1346,7 @@ void Client::interact(InteractAction action, const PointedThing& pointed)
 	pkt << myplayer->getWieldIndex();
 
 	std::ostringstream tmp_os(std::ios::binary);
-	pointed.serialize(tmp_os);
+	pointed.serialize(tmp_os, m_proto_ver);
 
 	pkt.putLongString(tmp_os.str());
 
@@ -1448,24 +1451,24 @@ void Client::startAuth(AuthMechanism chosen_auth_mechanism)
 	}
 }
 
-void Client::sendDeletedBlocks(std::vector<v3s16> &blocks)
+void Client::sendDeletedBlocks(std::vector<v3bpos_t> &blocks)
 {
-	NetworkPacket pkt(TOSERVER_DELETEDBLOCKS, 1 + sizeof(v3s16) * blocks.size());
+	NetworkPacket pkt(TOSERVER_DELETEDBLOCKS, 1 + sizeof_v3pos(m_proto_ver) * blocks.size(), 0, m_proto_ver);
 
 	pkt << (u8) blocks.size();
 
-	for (const v3s16 &block : blocks) {
+	for (const v3bpos_t &block : blocks) {
 		pkt << block;
 	}
 
 	Send(&pkt);
 }
 
-void Client::sendGotBlocks(const std::vector<v3s16> &blocks)
+void Client::sendGotBlocks(const std::vector<v3bpos_t> &blocks)
 {
-	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + 6 * blocks.size());
+	NetworkPacket pkt(TOSERVER_GOTBLOCKS, 1 + sizeof_v3pos(m_proto_ver) * blocks.size(), 0, m_proto_ver);
 	pkt << (u8) blocks.size();
-	for (const v3s16 &block : blocks)
+	for (const v3bpos_t &block : blocks)
 		pkt << block;
 
 	Send(&pkt);
@@ -1486,7 +1489,7 @@ void Client::sendRemovedSounds(const std::vector<s32> &soundList)
 	Send(&pkt);
 }
 
-void Client::sendNodemetaFields(v3s16 p, const std::string &formname,
+void Client::sendNodemetaFields(v3pos_t p, const std::string &formname,
 		const StringMap &fields)
 {
 	size_t fields_size = fields.size();
@@ -1716,7 +1719,7 @@ void Client::sendUpdateClientInfo(const ClientDynamicInfo& info)
 
 void Client::removeNode(v3pos_t p, int fast)
 {
-	std::map<v3s16, MapBlock*> modified_blocks;
+	std::map<v3bpos_t, MapBlock*> modified_blocks;
 
 	try {
 		m_env.getMap().removeNodeAndUpdate(p, modified_blocks, fast ? fast : 2);
@@ -1736,10 +1739,10 @@ void Client::removeNode(v3pos_t p, int fast)
  * @param is_valid_position
  * @return
  */
-MapNode Client::CSMGetNode(v3s16 p, bool *is_valid_position)
+MapNode Client::CSMGetNode(v3pos_t p, bool *is_valid_position)
 {
 	if (checkCSMRestrictionFlag(CSMRestrictionFlags::CSM_RF_LOOKUP_NODES)) {
-		v3s16 ppos = floatToInt(m_env.getLocalPlayer()->getPosition(), BS);
+		v3pos_t ppos = oposToPos(m_env.getLocalPlayer()->getPosition(), BS);
 		if ((u32) ppos.getDistanceFrom(p) > m_csm_restriction_noderange) {
 			*is_valid_position = false;
 			return {};
@@ -1748,25 +1751,25 @@ MapNode Client::CSMGetNode(v3s16 p, bool *is_valid_position)
 	return m_env.getMap().getNode(p, is_valid_position);
 }
 
-int Client::CSMClampRadius(v3s16 pos, int radius)
+int Client::CSMClampRadius(v3pos_t pos, int radius)
 {
 	if (!checkCSMRestrictionFlag(CSMRestrictionFlags::CSM_RF_LOOKUP_NODES))
 		return radius;
 	// This is approximate and will cause some allowed nodes to be excluded
-	v3s16 ppos = floatToInt(m_env.getLocalPlayer()->getPosition(), BS);
+	v3pos_t ppos = oposToPos(m_env.getLocalPlayer()->getPosition(), BS);
 	u32 distance = ppos.getDistanceFrom(pos);
 	if (distance >= m_csm_restriction_noderange)
 		return 0;
 	return std::min<int>(radius, m_csm_restriction_noderange - distance);
 }
 
-v3s16 Client::CSMClampPos(v3s16 pos)
+v3pos_t Client::CSMClampPos(v3pos_t pos)
 {
 	if (!checkCSMRestrictionFlag(CSMRestrictionFlags::CSM_RF_LOOKUP_NODES))
 		return pos;
-	v3s16 ppos = floatToInt(m_env.getLocalPlayer()->getPosition(), BS);
+	v3pos_t ppos = oposToPos(m_env.getLocalPlayer()->getPosition(), BS);
 	const int range = m_csm_restriction_noderange;
-	return v3s16(
+	return v3pos_t(
 		core::clamp<int>(pos.X, (int)ppos.X - range, (int)ppos.X + range),
 		core::clamp<int>(pos.Y, (int)ppos.Y - range, (int)ppos.Y + range),
 		core::clamp<int>(pos.Z, (int)ppos.Z - range, (int)ppos.Z + range)
@@ -1777,7 +1780,7 @@ void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 {
 	//TimeTaker timer1("Client::addNode()");
 
-	std::map<v3s16, MapBlock*> modified_blocks;
+	std::map<v3bpos_t, MapBlock*> modified_blocks;
 
 	try {
 		//TimeTaker timer3("Client::addNode(): addNodeAndUpdate");
@@ -1909,15 +1912,15 @@ int Client::getCrackLevel()
 	return m_crack_level;
 }
 
-v3s16 Client::getCrackPos()
+v3pos_t Client::getCrackPos()
 {
 	return m_crack_pos;
 }
 
-void Client::setCrack(int level, v3s16 pos)
+void Client::setCrack(int level, v3pos_t pos)
 {
 	int old_crack_level = m_crack_level;
-	v3s16 old_crack_pos = m_crack_pos;
+	v3pos_t old_crack_pos = m_crack_pos;
 
 	m_crack_level = level;
 	m_crack_pos = pos;
@@ -2037,35 +2040,35 @@ void Client::addUpdateMeshTask(v3bpos_t p, bool ack_to_server, bool urgent, int 
 	m_mesh_update_manager->updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
 }
 
-void Client::addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server, bool urgent)
+void Client::addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server, bool urgent)
 {
 	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
 }
 
-void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool urgent)
+void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool urgent)
 {
 /*
 	{
-		v3s16 p = nodepos;
+		v3pos_t p = nodepos;
 		infostream<<"Client::addUpdateMeshTaskForNode(): "
 				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"
 				<<std::endl;
 	}
 */
 
-	v3s16 blockpos = getNodeBlockPos(nodepos);
-	v3s16 blockpos_relative = blockpos * MAP_BLOCKSIZE;
+	v3bpos_t blockpos = getNodeBlockPos(nodepos);
+	v3pos_t blockpos_relative = blockpos * MAP_BLOCKSIZE;
 	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, false);
 	// Leading edge
 	if (nodepos.X == blockpos_relative.X)
-		addUpdateMeshTask(blockpos + v3s16(-1, 0, 0), false, urgent);
+		addUpdateMeshTask(blockpos + v3bpos_t(-1, 0, 0), false, urgent);
 	if (nodepos.Y == blockpos_relative.Y)
-		addUpdateMeshTask(blockpos + v3s16(0, -1, 0), false, urgent);
+		addUpdateMeshTask(blockpos + v3bpos_t(0, -1, 0), false, urgent);
 	if (nodepos.Z == blockpos_relative.Z)
-		addUpdateMeshTask(blockpos + v3s16(0, 0, -1), false, urgent);
+		addUpdateMeshTask(blockpos + v3bpos_t(0, 0, -1), false, urgent);
 }
 
-void Client::updateCameraOffset(v3s16 camera_offset)
+void Client::updateCameraOffset(v3pos_t camera_offset)
 {
 	m_mesh_update_manager->m_camera_offset = camera_offset;
 }

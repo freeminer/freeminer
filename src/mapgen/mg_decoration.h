@@ -43,17 +43,17 @@ public:
 
 	virtual void resolveNodeNames();
 
-	bool canPlaceDecoration(MMVManip *vm, v3s16 p);
-	size_t placeDeco(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
+	bool canPlaceDecoration(MMVManip *vm, v3pos_t p);
+	size_t placeDeco(Mapgen *mg, u32 blockseed, v3pos_t nmin, v3pos_t nmax);
 
-	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling) = 0;
+	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3pos_t p, bool ceiling) = 0;
 
 	u32 flags = 0;
 	int mapseed = 0;
 	std::vector<content_t> c_place_on;
 	s16 sidelen = 1;
-	s16 y_min;
-	s16 y_max;
+	pos_t y_min;
+	pos_t y_max;
 	float fill_ratio = 0.0f;
 	NoiseParams np;
 	std::vector<content_t> c_spawnby;
@@ -73,7 +73,7 @@ public:
 	ObjDef *clone() const;
 
 	virtual void resolveNodeNames();
-	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling);
+	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3pos_t p, bool ceiling);
 
 	std::vector<content_t> c_decos;
 	s16 deco_height;
@@ -90,7 +90,7 @@ public:
 	DecoSchematic() = default;
 	virtual ~DecoSchematic();
 
-	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling);
+	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3pos_t p, bool ceiling);
 
 	Rotation rotation;
 	Schematic *schematic = nullptr;
@@ -102,7 +102,7 @@ class DecoLSystem : public Decoration {
 public:
 	ObjDef *clone() const;
 
-	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3s16 p, bool ceiling);
+	virtual size_t generate(MMVManip *vm, PcgRandom *pr, v3pos_t p, bool ceiling);
 
 	// In case it gets cloned it uses the same tree def.
 	std::shared_ptr<treegen::TreeDef> tree_def;
@@ -135,7 +135,7 @@ public:
 		}
 	}
 
-	size_t placeAllDecos(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
+	size_t placeAllDecos(Mapgen *mg, u32 blockseed, v3pos_t nmin, v3pos_t nmax);
 
 private:
 	DecorationManager() {};

@@ -79,15 +79,15 @@ public:
 
 	// Get the camera position (in absolute scene coordinates).
 	// This has view bobbing applied.
-	inline v3f getPosition() const
+	inline v3opos_t getPosition() const
 	{
 		return m_camera_position;
 	}
 
 	// Returns the absolute position of the head SceneNode in the world
-	inline v3f getHeadPosition() const
+	inline v3opos_t getHeadPosition() const
 	{
-		return m_headnode->getAbsolutePosition();
+		return v3fToOpos(m_headnode->getAbsolutePosition());
 	}
 
 	// Get the camera direction (in absolute camera coordinates).
@@ -98,7 +98,7 @@ public:
 	}
 
 	// Get the camera offset
-	inline v3s16 getOffset() const
+	inline v3pos_t getOffset() const
 	{
 		return m_camera_offset;
 	}
@@ -128,8 +128,8 @@ public:
 	{
 		return [planes = getFrustumCullPlanes(),
 				camera_offset = intToFloat(m_camera_offset, BS)
-				](v3f position, f32 radius) {
-			v3f pos_camspace = position - camera_offset;
+				](v3opos_t position, f32 radius) {
+			v3f pos_camspace = oposToV3f(position - camera_offset);
 			for (auto &plane : planes) {
 				if (plane.getDistanceTo(pos_camspace) > radius)
 					return true;
@@ -216,11 +216,11 @@ private:
 	f32 m_cache_fov;
 
 	// Absolute camera position
-	v3f m_camera_position;
+	v3opos_t m_camera_position;
 	// Absolute camera direction
 	v3f m_camera_direction;
 	// Camera offset
-	v3s16 m_camera_offset;
+	v3pos_t m_camera_offset;
 
 	bool m_stepheight_smooth_active = false;
 

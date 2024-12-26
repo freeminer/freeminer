@@ -209,7 +209,7 @@ void TestMapBlock::testLoad29(IGameDef *gamedef)
 	UASSERT(content_chest != CONTENT_IGNORE);
 
 	// there are bricks at each corner
-	const v3s16 pl[] = {
+	const v3pos_t pl[] = {
 		{0, 0, 0}, {15, 0, 0}, {0, 15, 0}, {0, 0, 15},
 		{15, 15, 0}, {15, 0, 15}, {0, 15, 15}, {15, 15, 15},
 	};

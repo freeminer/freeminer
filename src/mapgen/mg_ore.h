@@ -9,6 +9,7 @@
 #include "objdef.h"
 #include "noise.h"
 #include "nodedef.h"
+#include "irr_v3d.h"
 
 typedef u16 biome_t;  // copy from mg_biome.h to avoid an unnecessary include
 
@@ -44,8 +45,8 @@ public:
 	u32 clust_scarcity; // ore cluster has a 1-in-clust_scarcity chance of appearing at a node
 	s16 clust_num_ores; // how many ore nodes are in a chunk
 	s16 clust_size;     // how large (in nodes) a chunk of ore is
-	s16 y_min;
-	s16 y_max;
+	pos_t y_min;
+	pos_t y_max;
 	u8 ore_param2;		// to set node-specific attributes
 	u32 flags = 0;          // attributes for this ore
 	float nthresh;      // threshold for noise at which an ore is placed
@@ -58,9 +59,9 @@ public:
 
 	virtual void resolveNodeNames();
 
-	size_t placeOre(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
+	size_t placeOre(Mapgen *mg, u32 blockseed, v3pos_t nmin, v3pos_t nmax);
 	virtual void generate(MMVManip *vm, int mapseed, u32 blockseed,
-		v3s16 nmin, v3s16 nmax, biome_t *biomemap) = 0;
+		v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) = 0;
 
 protected:
 	void cloneTo(Ore *def) const;
@@ -73,7 +74,7 @@ public:
 	ObjDef *clone() const override;
 
 	void generate(MMVManip *vm, int mapseed, u32 blockseed,
-			v3s16 nmin, v3s16 nmax, biome_t *biomemap) override;
+			v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) override;
 };
 
 class OreSheet : public Ore {
@@ -87,7 +88,7 @@ public:
 	float column_midpoint_factor;
 
 	void generate(MMVManip *vm, int mapseed, u32 blockseed,
-			v3s16 nmin, v3s16 nmax, biome_t *biomemap) override;
+			v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) override;
 };
 
 class OrePuff : public Ore {
@@ -103,7 +104,7 @@ public:
 	virtual ~OrePuff();
 
 	void generate(MMVManip *vm, int mapseed, u32 blockseed,
-			v3s16 nmin, v3s16 nmax, biome_t *biomemap) override;
+			v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) override;
 };
 
 class OreBlob : public Ore {
@@ -112,7 +113,7 @@ public:
 
 	OreBlob() : Ore(true) {}
 	void generate(MMVManip *vm, int mapseed, u32 blockseed,
-			v3s16 nmin, v3s16 nmax, biome_t *biomemap) override;
+			v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) override;
 };
 
 class OreVein : public Ore {
@@ -127,7 +128,7 @@ public:
 	virtual ~OreVein();
 
 	void generate(MMVManip *vm, int mapseed, u32 blockseed,
-			v3s16 nmin, v3s16 nmax, biome_t *biomemap) override;
+			v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) override;
 };
 
 class OreStratum : public Ore {
@@ -142,7 +143,7 @@ public:
 	virtual ~OreStratum();
 
 	void generate(MMVManip *vm, int mapseed, u32 blockseed,
-			v3s16 nmin, v3s16 nmax, biome_t *biomemap) override;
+			v3pos_t nmin, v3pos_t nmax, biome_t *biomemap) override;
 };
 
 class OreManager : public ObjDefManager {
@@ -179,7 +180,7 @@ public:
 
 	void clear();
 
-	size_t placeAllOres(Mapgen *mg, u32 blockseed, v3s16 nmin, v3s16 nmax);
+	size_t placeAllOres(Mapgen *mg, u32 blockseed, v3pos_t nmin, v3pos_t nmax);
 
 private:
 	OreManager() {};

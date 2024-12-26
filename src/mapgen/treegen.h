@@ -55,20 +55,20 @@ namespace treegen {
 	};
 
 	// Add default tree
-	void make_tree(MMVManip &vmanip, v3s16 p0,
+	void make_tree(MMVManip &vmanip, v3pos_t p0,
 		bool is_apple_tree, const NodeDefManager *ndef, s32 seed);
 	// Add jungle tree
-	void make_jungletree(MMVManip &vmanip, v3s16 p0,
+	void make_jungletree(MMVManip &vmanip, v3pos_t p0,
 		const NodeDefManager *ndef, s32 seed);
 	// Add pine tree
-	void make_pine_tree(MMVManip &vmanip, v3s16 p0,
+	void make_pine_tree(MMVManip &vmanip, v3pos_t p0,
 		const NodeDefManager *ndef, s32 seed);
 
 	void make_cavetree(MMVManip &vmanip, v3pos_t p0,
 		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed);
 
 	// Spawn L-Systems tree on VManip
-	treegen::error make_ltree(MMVManip &vmanip, v3s16 p0, const TreeDef &def);
+	treegen::error make_ltree(MMVManip &vmanip, v3pos_t p0, const TreeDef &def);
 	// Helper to spawn it directly on map
-	treegen::error spawn_ltree(ServerMap *map, v3s16 p0, const TreeDef &def);
+	treegen::error spawn_ltree(ServerMap *map, v3pos_t p0, const TreeDef &def);
 }; // namespace treegen

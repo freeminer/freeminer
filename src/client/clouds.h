@@ -68,7 +68,7 @@ public:
 
 	void update(const v3f &camera_p, const video::SColorf &color, s16 humidity = 50);
 
-	void updateCameraOffset(v3s16 camera_offset)
+	void updateCameraOffset(v3pos_t camera_offset)
 	{
 		m_camera_offset = camera_offset;
 		updateBox();
@@ -160,7 +160,7 @@ private:
 	// Value of m_origin at the time the mesh was last updated
 	v2f m_mesh_origin;
 	// Value of center_of_drawing_in_noise_i at the time the mesh was last updated
-	v2s16 m_last_noise_center;
+	v2pos_t m_last_noise_center;
 	// Was the mesh ever generated?
 	bool m_mesh_valid = false;
 
@@ -170,7 +170,7 @@ private:
 	u32 m_seed;
 	v3f m_camera_pos;
 
-	v3s16 m_camera_offset;
+	v3pos_t m_camera_offset;
 	bool m_camera_inside_cloud = false;
 
 	bool m_enable_shaders, m_enable_3d;

@@ -87,7 +87,7 @@ void Particle::step(float dtime, ClientEnvironment *env)
 
 	if (m_p.collisiondetection) {
 		aabb3f box(v3f(-m_p.size / 2.0f), v3f(m_p.size / 2.0f));
-		v3f p_pos = m_pos * BS;
+		auto p_pos = m_pos * BS;
 		v3f p_velocity = m_velocity * BS;
 		collisionMoveResult r = collisionMoveSimple(env, env->getGameDef(), BS * 0.5f,
 			box, 0.0f, dtime, &p_pos, &p_velocity, m_acceleration * BS, nullptr,
@@ -123,7 +123,7 @@ void Particle::step(float dtime, ClientEnvironment *env)
 		m_pos = p_pos / BS;
 	} else {
 		// apply velocity and acceleration to position
-		m_pos += (m_velocity + m_acceleration * 0.5f * dtime) * dtime;
+		m_pos += (v3fToOpos(m_velocity + m_acceleration) * 0.5f * dtime) * dtime;
 		// apply acceleration to velocity
 		m_velocity += m_acceleration * dtime;
 	}
@@ -158,7 +158,7 @@ video::SColor Particle::updateLight(ClientEnvironment *env)
 {
 	u8 light = 0;
 
-	v3s16 p = v3s16(
+	v3pos_t p = v3pos_t(
 		floor(m_pos.X+0.5),
 		floor(m_pos.Y+0.5),
 		floor(m_pos.Z+0.5)
@@ -225,19 +225,19 @@ void Particle::updateVertices(ClientEnvironment *env, video::SColor color)
 
 	// Update position -- see #10398
 	auto *player = env->getLocalPlayer();
-	v3s16 camera_offset = env->getCameraOffset();
+	auto camera_offset = env->getCameraOffset();
 
 	for (u16 i = 0; i < 4; i++) {
 		video::S3DVertex &vertex = vertices[i];
 		if (m_p.vertical) {
-			v3f ppos = player->getPosition() / BS;
+			auto ppos = player->getPosition() / BS;
 			vertex.Pos.rotateXZBy(std::atan2(ppos.Z - m_pos.Z, ppos.X - m_pos.X) /
 				core::DEGTORAD + 90);
 		} else {
 			vertex.Pos.rotateYZBy(player->getPitch());
 			vertex.Pos.rotateXZBy(player->getYaw());
 		}
-		vertex.Pos += m_pos * BS - intToFloat(camera_offset, BS);
+		vertex.Pos += oposToV3f(m_pos * BS - intToFloat(camera_offset, BS));
 	}
 }
 
@@ -311,7 +311,7 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 	auto r_attract = p.attract.blend(fac);
 	auto attract   = r_attract.pickWithin();
 
-	v3f ppos = m_player->getPosition() / BS;
+	auto ppos = m_player->getPosition() / BS;
 	v3f pos = r_pos.pickWithin();
 	v3f sphere_radius = r_radius.pickWithin();
 
@@ -321,18 +321,18 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 		pos *= BS;
 		attached_absolute_pos_rot_matrix->transformVect(pos);
 		pos /= BS;
-		v3s16 camera_offset = m_particlemanager->m_env->getCameraOffset();
+		v3pos_t camera_offset = m_particlemanager->m_env->getCameraOffset();
 		pos.X += camera_offset.X;
 		pos.Y += camera_offset.Y;
 		pos.Z += camera_offset.Z;
 	}
 
-	if (pos.getDistanceFromSQ(ppos) > radius*radius)
+	if (v3fToOpos(pos).getDistanceFromSQ(ppos) > radius*radius)
 		return;
 
 	// Parameters for the single particle we're about to spawn
 	ParticleParameters pp;
-	pp.pos = pos;
+	pp.pos = v3fToOpos(pos);
 
 	pp.vel = r_vel.pickWithin();
 	pp.acc = r_acc.pickWithin();
@@ -347,7 +347,7 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 	}
 
 	if (attractor_obj)
-		attractor_origin += attractor_obj->getPosition() / BS;
+		attractor_origin += oposToV3f(attractor_obj->getPosition() / BS);
 	if (attractor_direction_obj) {
 		auto *attractor_absolute_pos_rot_matrix = attractor_direction_obj->getAbsolutePosRotMatrix();
 		if (attractor_absolute_pos_rot_matrix) {
@@ -368,7 +368,7 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 		ofs.rotateYZBy(myrand_range(0.f,360.f));
 		ofs.rotateXYBy(myrand_range(0.f,360.f));
 
-		pp.pos += ofs * mag;
+		pp.pos += v3fToOpos(ofs * mag);
 	}
 
 	if (p.attractor_kind != ParticleParamTypes::AttractorKind::none && attract != 0) {
@@ -379,23 +379,23 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 				break;
 
 			case ParticleParamTypes::AttractorKind::point: {
-				dist = pp.pos.getDistanceFrom(attractor_origin);
-				dir = pp.pos - attractor_origin;
+				dist = pp.pos.getDistanceFrom(v3fToOpos(attractor_origin));
+				dir = oposToV3f(pp.pos - v3fToOpos(attractor_origin));
 				dir.normalize();
 				break;
 			}
 
 			case ParticleParamTypes::AttractorKind::line: {
 				// https://github.com/minetest/minetest/issues/11505#issuecomment-915612700
-				const auto& lorigin = attractor_origin;
-				v3f ldir = attractor_direction;
+				const auto lorigin = v3fToOpos(attractor_origin);
+				auto ldir = v3fToOpos(attractor_direction);
 				ldir.normalize();
 				auto origin_to_point = pp.pos - lorigin;
 				auto scalar_projection = origin_to_point.dotProduct(ldir);
-				auto point_on_line = lorigin + (ldir * scalar_projection);
+				v3opos_t point_on_line = lorigin + (ldir * scalar_projection);
 
 				dist = pp.pos.getDistanceFrom(point_on_line);
-				dir = (point_on_line - pp.pos);
+				dir = oposToV3f(point_on_line - pp.pos);
 				dir.normalize();
 				dir *= -1; // flip it around so strength=1 attracts, not repulses
 				break;
@@ -406,7 +406,7 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 				const v3f& porigin = attractor_origin;
 				v3f normal = attractor_direction;
 				normal.normalize();
-				v3f point_to_origin = porigin - pp.pos;
+				v3f point_to_origin = porigin - oposToV3f(pp.pos);
 				f32 factor = normal.dotProduct(point_to_origin);
 				if (numericAbsolute(factor) == 0.0f) {
 					dir = normal;
@@ -414,7 +414,7 @@ void ParticleSpawner::spawnParticle(ClientEnvironment *env, float radius,
 					factor = numericSign(factor);
 					dir = normal * factor;
 				}
-				dist = numericAbsolute(normal.dotProduct(pp.pos - porigin));
+				dist = numericAbsolute(normal.dotProduct(oposToV3f(pp.pos) - porigin));
 				dir *= -1; // flip it around so strength=1 attracts, not repulses
 				break;
 			}
@@ -885,7 +885,7 @@ bool ParticleManager::getNodeParticleParams(const MapNode &n,
 // spawned during the digging of a node.
 
 void ParticleManager::addDiggingParticles(IGameDef *gamedef,
-	LocalPlayer *player, v3s16 pos, const MapNode &n, const ContentFeatures &f)
+	LocalPlayer *player, v3pos_t pos, const MapNode &n, const ContentFeatures &f)
 {
 	// No particles for "airlike" nodes
 	if (f.drawtype == NDT_AIRLIKE)
@@ -900,7 +900,7 @@ void ParticleManager::addDiggingParticles(IGameDef *gamedef,
 // function, called from Game::handleDigging() in game.cpp.
 
 void ParticleManager::addNodeParticle(IGameDef *gamedef,
-	LocalPlayer *player, v3s16 pos, const MapNode &n, const ContentFeatures &f)
+	LocalPlayer *player, v3pos_t pos, const MapNode &n, const ContentFeatures &f)
 {
 	ParticleParameters p;
 	video::ITexture *ref = nullptr;
@@ -923,10 +923,10 @@ void ParticleManager::addNodeParticle(IGameDef *gamedef,
 		-player->movement_gravity * player->physics_override.gravity / BS,
 		0.0f
 	);
-	p.pos = v3f(
-		(f32)pos.X + myrand_range(0.f, .5f) - .25f,
-		(f32)pos.Y + myrand_range(0.f, .5f) - .25f,
-		(f32)pos.Z + myrand_range(0.f, .5f) - .25f
+	p.pos = v3opos_t(
+		(opos_t)pos.X + myrand_range(0.f, .5f) - .25f,
+		(opos_t)pos.Y + myrand_range(0.f, .5f) - .25f,
+		(opos_t)pos.Z + myrand_range(0.f, .5f) - .25f
 	);
 
 	addParticle(std::make_unique<Particle>(

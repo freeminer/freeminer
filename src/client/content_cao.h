@@ -73,12 +73,12 @@ private:
 	scene::IDummyTransformationSceneNode *m_matrixnode = nullptr;
 	Nametag *m_nametag = nullptr;
 	MinimapMarker *m_marker = nullptr;
-	v3f m_position = v3f(0.0f, 10.0f * BS, 0);
+	v3opos_t m_position = v3opos_t(0.0f, 10.0f * BS, 0);
 	v3f m_velocity;
 	v3f m_acceleration;
 	v3f m_rotation;
 	u16 m_hp = 1;
-	SmoothTranslator<v3f> pos_translator;
+	SmoothTranslator<v3opos_t> pos_translator;
 	SmoothTranslatorWrappedv3f rot_translator;
 	// Spritesheet/animation stuff
 	v2f m_tx_size = v2f(1,1);
@@ -147,13 +147,13 @@ public:
 
 	void processInitData(const std::string &data);
 
-	bool getCollisionBox(aabb3f *toset) const override;
+	bool getCollisionBox(aabb3o *toset) const override;
 
 	bool collideWithObjects() const override;
 
 	virtual bool getSelectionBox(aabb3f *toset) const override;
 
-	const v3f getPosition() const override final;
+	const v3opos_t getPosition() const override final;
 
 	const v3f getVelocity() const override final { return m_velocity; }
 
@@ -243,7 +243,7 @@ public:
 	/* Get light position(s).
 	 * returns number of positions written into pos[], which must have space
 	 * for at least 3 vectors. */
-	u16 getLightPosition(v3s16 *pos);
+	u16 getLightPosition(v3pos_t *pos);
 
 	void updateNametag();
 

@@ -14,10 +14,10 @@
 class Database_Dummy : public MapDatabase, public PlayerDatabase, public ModStorageDatabase
 {
 public:
-	bool saveBlock(const v3s16 &pos, std::string_view data);
-	void loadBlock(const v3s16 &pos, std::string *block);
-	bool deleteBlock(const v3s16 &pos);
-	void listAllLoadableBlocks(std::vector<v3s16> &dst);
+	bool saveBlock(const v3bpos_t &pos, std::string_view data);
+	void loadBlock(const v3bpos_t &pos, std::string *block);
+	bool deleteBlock(const v3bpos_t &pos);
+	void listAllLoadableBlocks(std::vector<v3bpos_t> &dst);
 
 	void savePlayer(RemotePlayer *player);
 	bool loadPlayer(RemotePlayer *player, PlayerSAO *sao);

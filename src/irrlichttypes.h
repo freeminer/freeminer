@@ -10,7 +10,7 @@
  */
 #include <cstdint>
 
-#include "irrTypes.h"
+#include <irrTypes.h>
 #include "config.h"
 
 using namespace irr;
@@ -30,8 +30,6 @@ using namespace irr;
 #define U16_MAX UINT16_MAX
 #define U32_MAX UINT32_MAX
 #define U64_MAX UINT64_MAX
-
-
 
 #if USE_POS32
 

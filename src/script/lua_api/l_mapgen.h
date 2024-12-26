@@ -147,10 +147,10 @@ private:
 	static int update_liquids(lua_State *L, MMVManip *vm);
 
 	static int calc_lighting(lua_State *L, MMVManip *vm,
-			v3s16 pmin, v3s16 pmax, bool propagate_shadow);
+			v3pos_t pmin, v3pos_t pmax, bool propagate_shadow);
 
 	static int set_lighting(lua_State *L, MMVManip *vm,
-			v3s16 pmin, v3s16 pmax, u8 light);
+			v3pos_t pmin, v3pos_t pmax, u8 light);
 
 	// Helpers
 

@@ -14,6 +14,7 @@
 #include <vector>
 #include <string_view>
 
+#include "irr_v3d.h"
 #include "irrlichttypes_bloated.h"
 #include "common/c_types.h"
 
@@ -156,7 +157,7 @@ void                  push_v3pos        (lua_State *L, v3pos_t p);
 
 // This must match the implementation in builtin/game/misc_s.lua
 // Note that this returns a floating point result as Lua integers are 32-bit
-inline lua_Number hash_node_position(v3s16 pos)
+inline lua_Number hash_node_position(v3pos_t pos)
 {
 	return (((s64)pos.Z + 0x8000L) << 32)
 			| (((s64)pos.Y + 0x8000L) << 16)

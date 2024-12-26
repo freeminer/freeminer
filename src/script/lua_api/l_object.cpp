@@ -128,7 +128,7 @@ int ObjectRef::l_set_pos(lua_State *L)
 	if (sao == nullptr)
 		return 0;
 
-	v3f pos = checkFloatPos(L, 2);
+	auto pos = checkOposPos(L, 2);
 
 	sao->setPos(pos);
 	return 0;
@@ -143,7 +143,7 @@ int ObjectRef::l_add_pos(lua_State *L)
 	if (sao == nullptr)
 		return 0;
 
-	v3f pos = checkFloatPos(L, 2);
+	auto pos = checkOposPos(L, 2);
 
 	sao->addPos(pos);
 	return 0;
@@ -158,7 +158,7 @@ int ObjectRef::l_move_to(lua_State *L)
 	if (sao == nullptr)
 		return 0;
 
-	v3f pos = checkFloatPos(L, 2);
+	auto pos = checkOposPos(L, 2);
 	bool continuous = readParam<bool>(L, 3);
 
 	sao->moveTo(pos, continuous);
@@ -180,7 +180,7 @@ int ObjectRef::l_punch(lua_State *L)
 	ToolCapabilities toolcap = read_tool_capabilities(L, 4);
 	v3f dir;
 	if (puncher) {
-		dir = readParam<v3f>(L, 5, sao->getBasePosition() - puncher->getBasePosition());
+		dir = readParam<v3f>(L, 5, oposToV3f(sao->getBasePosition() - puncher->getBasePosition()));
 		dir.normalize();
 	} else {
 		dir = readParam<v3f>(L, 5, v3f(0));
@@ -507,7 +507,7 @@ int ObjectRef::l_send_mapblock(lua_State *L)
 	if (player == nullptr)
 		return 0;
 
-	v3s16 pos = read_v3s16(L, 2);
+	v3bpos_t pos = read_v3pos(L, 2);
 
 	session_t peer_id = player->getPeerId();
 	bool r = getServer(L)->SendBlock(peer_id, pos);

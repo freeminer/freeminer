@@ -21,9 +21,9 @@ class NodeTimer
 {
 public:
 	NodeTimer() = default;
-	NodeTimer(const v3s16 &position_):
+	NodeTimer(const v3pos_t &position_):
 		position(position_) {}
-	NodeTimer(f32 timeout_, f32 elapsed_, v3s16 position_):
+	NodeTimer(f32 timeout_, f32 elapsed_, v3pos_t position_):
 		timeout(timeout_), elapsed(elapsed_), position(position_) {}
 	~NodeTimer() = default;
 
@@ -32,7 +32,7 @@ public:
 
 	f32 timeout = 0.0f;
 	f32 elapsed = 0.0f;
-	v3s16 position;
+	v3pos_t position;
 };
 
 /*
@@ -49,8 +49,8 @@ public:
 	void deSerialize(std::istream &is, u8 map_format_version);
 
 	// Get timer
-	NodeTimer get(const v3s16 &p) {
-		std::map<v3s16, std::multimap<double, NodeTimer>::iterator>::iterator n =
+	NodeTimer get(const v3pos_t &p) {
+		std::map<v3pos_t, std::multimap<double, NodeTimer>::iterator>::iterator n =
 			m_iterators.find(p);
 		if (n == m_iterators.end())
 			return NodeTimer();
@@ -59,8 +59,8 @@ public:
 		return t;
 	}
 	// Deletes timer
-	void remove(v3s16 p) {
-		std::map<v3s16, std::multimap<double, NodeTimer>::iterator>::iterator n =
+	void remove(v3pos_t p) {
+		std::map<v3pos_t, std::multimap<double, NodeTimer>::iterator>::iterator n =
 			m_iterators.find(p);
 		if(n != m_iterators.end()) {
 			double removed_time = n->second->first;
@@ -79,7 +79,7 @@ public:
 	}
 	// Undefined behavior if there already is a timer
 	void insert(const NodeTimer &timer) {
-		v3s16 p = timer.position;
+		v3pos_t p = timer.position;
 		double trigger_time = m_time + (double)(timer.timeout - timer.elapsed);
 		std::multimap<double, NodeTimer>::iterator it = m_timers.emplace(trigger_time, timer);
 		m_iterators.emplace(p, it);
@@ -105,7 +105,7 @@ public:
 
 private:
 	std::multimap<double, NodeTimer> m_timers;
-	std::map<v3s16, std::multimap<double, NodeTimer>::iterator> m_iterators;
+	std::map<v3pos_t, std::multimap<double, NodeTimer>::iterator> m_iterators;
 	double m_next_trigger_time = -1.0;
 	double m_time = 0.0;
 };

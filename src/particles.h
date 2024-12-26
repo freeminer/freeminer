@@ -42,6 +42,8 @@ namespace ParticleParamTypes
 	DECL_PARAM_OVERLOADS(v2f);
 	DECL_PARAM_OVERLOADS(v3f);
 
+	DECL_PARAM_OVERLOADS(v3opos_t);
+
 	/* C++ is a strongly typed language. this means that enums cannot be implicitly
 	 * cast to integers, as they can be in C. while this may sound good in principle,
 	 * it means that our normal serialization functions cannot be called on
@@ -130,6 +132,7 @@ namespace ParticleParamTypes
 	using f32Parameter = Parameter<f32, 1>;
 	using v2fParameter = VectorParameter<v2f, 2>;
 	using v3fParameter = VectorParameter<v3f, 3>;
+	using v3oParameter = VectorParameter<v3opos_t, 3>;
 	// Add more parameter types here if you need them ...
 
 	// Bound limits information based on "Parameter" types
@@ -241,6 +244,7 @@ namespace ParticleParamTypes
 
 	using v2fTween      = TweenedParameter<v2fParameter>;
 	using v3fTween      = TweenedParameter<v3fParameter>;
+	using v3oTween      = TweenedParameter<v3oParameter>;
 	using f32Tween      = TweenedParameter<f32Parameter>;
 	using v3fRangeTween = TweenedParameter<v3fRange>;
 	using f32RangeTween = TweenedParameter<f32Range>;
@@ -301,7 +305,8 @@ struct CommonParticleParams
 
 struct ParticleParameters : CommonParticleParams
 {
-	v3f pos, vel, acc, drag;
+	v3opos_t pos;
+	v3f vel, acc, drag;
 	f32 size = 1, expirationtime = 1;
 	ParticleParamTypes::f32Range bounce;
 	ParticleParamTypes::v3fRange jitter;

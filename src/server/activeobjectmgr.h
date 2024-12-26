@@ -34,14 +34,14 @@ public:
 
 	void invalidateActiveObjectObserverCaches();
 
-	void getObjectsInsideRadius(const v3f &pos, float radius,
+	void getObjectsInsideRadius(const v3opos_t &pos, float radius,
 			std::vector<ServerActiveObjectPtr> &result,
 			std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb);
-	void getObjectsInArea(const aabb3f &box,
+	void getObjectsInArea(const aabb3o &box,
 			std::vector<ServerActiveObjectPtr> &result,
 			std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb);
 	void getAddedActiveObjectsAroundPos(
-			const v3f &player_pos, const std::string &player_name,
+			const v3opos_t &player_pos, const std::string &player_name,
 			f32 radius, f32 player_radius,
 			const std::set<u16> &current_objects,
 			std::vector<u16> &added_objects);

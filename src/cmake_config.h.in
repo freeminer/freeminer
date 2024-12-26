@@ -57,6 +57,8 @@
 #cmakedefine01 USE_SYSTEM_GMP
 #cmakedefine01 USE_SYSTEM_JSONCPP
 #cmakedefine01 USE_REDIS
+#cmakedefine01 USE_POS32
+#cmakedefine01 USE_OPOS64
 #cmakedefine01 HAVE_ENDIAN_H
 #cmakedefine01 HAVE_STRLCPY
 #cmakedefine01 HAVE_MALLOC_TRIM

@@ -94,14 +94,14 @@ MapSector * Map::getSectorNoGenerateNoLock(v2s16 p)
 	return sector;
 }
 
-MapSector *Map::getSectorNoGenerate(v2s16 p)
+MapSector *Map::getSectorNoGenerate(v2bpos_t p)
 {
 	return getSectorNoGenerateNoLock(p);
 }
 
-MapBlock *Map::getBlockNoCreateNoEx(v3s16 p3d)
+MapBlock *Map::getBlockNoCreateNoEx(v3bpos_t p3d)
 {
-	v2s16 p2d(p3d.X, p3d.Z);
+	v2bpos_t p2d(p3d.X, p3d.Z);
 	MapSector *sector = getSectorNoGenerate(p2d);
 	if (!sector)
 		return nullptr;
@@ -110,7 +110,7 @@ MapBlock *Map::getBlockNoCreateNoEx(v3s16 p3d)
 }
 */
 
-MapBlock *Map::getBlockNoCreate(v3s16 p3d)
+MapBlock *Map::getBlockNoCreate(v3bpos_t p3d)
 {
 	MapBlock *block = getBlockNoCreateNoEx(p3d);
 	if(block == NULL)
@@ -118,21 +118,21 @@ MapBlock *Map::getBlockNoCreate(v3s16 p3d)
 	return block;
 }
 
-bool Map::isValidPosition(v3s16 p)
+bool Map::isValidPosition(v3pos_t p)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3bpos_t blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	return (block != NULL);
 }
 
 // Returns a CONTENT_IGNORE node if not found
-MapNode Map::getNode(v3s16 p, bool *is_valid_position)
+MapNode Map::getNode(v3pos_t p, bool *is_valid_position)
 {
 #ifndef NDEBUG
 	ScopeProfiler sp(g_profiler, "Map: getNodeNoEx");
 #endif
 
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3bpos_t blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if (block == NULL) {
 		if (is_valid_position != NULL)
@@ -140,7 +140,7 @@ MapNode Map::getNode(v3s16 p, bool *is_valid_position)
 		return {CONTENT_IGNORE};
 	}
 
-	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t relpos = p - getBlockPosRelative(blockpos);
 	MapNode node = block->getNodeNoCheck(relpos);
 	if (is_valid_position != NULL)
 		*is_valid_position = true;
@@ -152,8 +152,8 @@ static void set_node_in_block(const NodeDefManager *nodedef, MapBlock *block,
 {
 	// Never allow placing CONTENT_IGNORE, it causes problems
 	if(n.getContent() == CONTENT_IGNORE){
-		v3s16 blockpos = block->getPos();
-		v3s16 p = blockpos * MAP_BLOCKSIZE + relpos;
+		auto blockpos = block->getPos();
+		v3pos_t p = blockpos * MAP_BLOCKSIZE + relpos;
 		errorstream<<"Not allowing to place CONTENT_IGNORE"
 				<<" while trying to replace \""
 				<<nodedef->get(block->getNodeNoCheck(relpos)).name
@@ -166,14 +166,14 @@ static void set_node_in_block(const NodeDefManager *nodedef, MapBlock *block,
 // throws InvalidPositionException if not found
 void Map::setNode(const v3pos_t &p, const MapNode &n, bool important)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3bpos_t blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreate(blockpos);
-	v3s16 relpos = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t relpos = p - blockpos*MAP_BLOCKSIZE;
 	set_node_in_block(m_gamedef->ndef(), block, relpos, n, important);
 }
 
-void Map::addNodeAndUpdate(v3s16 p, MapNode n,
-		std::map<v3s16, MapBlock*> &modified_blocks,
+void Map::addNodeAndUpdate(v3pos_t p, MapNode n,
+		std::map<v3bpos_t, MapBlock*> &modified_blocks,
 		bool remove_metadata, int fast, bool important)
 {
 	if (fast == 1 || fast == 2) { // fast: 1: just place node; 2: place ang get light from old; 3: place, recalculate light and skip liquid queue
@@ -208,9 +208,9 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	// Collect old node for rollback
 	RollbackNode rollback_oldnode(this, p, m_gamedef);
 
-	v3s16 blockpos = getNodeBlockPos(p);
+	v3bpos_t blockpos = getNodeBlockPos(p);
 	MapBlock *block = getBlockNoCreate(blockpos);
-	v3s16 relpos = p - blockpos * MAP_BLOCKSIZE;
+	v3pos_t relpos = p - blockpos * MAP_BLOCKSIZE;
 
 	// This is needed for updating the lighting
 	MapNode oldnode = block->getNodeNoCheck(relpos);
@@ -237,7 +237,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 		set_node_in_block(m_gamedef->ndef(), block, relpos, n, important);
 
 		// Update lighting
-		std::vector<std::pair<v3s16, MapNode> > oldnodes;
+		std::vector<std::pair<v3pos_t, MapNode> > oldnodes;
 		oldnodes.emplace_back(p, oldnode);
 		voxalgo::update_lighting_nodes(this, oldnodes, modified_blocks);
 	}
@@ -256,7 +256,7 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	}
 }
 
-void Map::removeNodeAndUpdate(v3s16 p,
+void Map::removeNodeAndUpdate(v3pos_t p,
 		std::map<v3bpos_t, MapBlock*> &modified_blocks, int fast, bool important)
 {
 	addNodeAndUpdate(p, MapNode(CONTENT_AIR), modified_blocks, true, fast, important);
@@ -271,7 +271,7 @@ bool Map::addNodeWithEvent(v3pos_t p, MapNode n, bool remove_metadata, bool impo
 
 	bool succeeded = true;
 	try{
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3bpos_t, MapBlock*> modified_blocks;
 		addNodeAndUpdate(p, n, modified_blocks, remove_metadata, 0, important);
 
 		event.setModifiedBlocks(modified_blocks);
@@ -293,7 +293,7 @@ bool Map::removeNodeWithEvent(v3pos_t p, int fast, bool important)
 
 	bool succeeded = true;
 	try{
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3bpos_t, MapBlock*> modified_blocks;
 		removeNodeAndUpdate(p, modified_blocks, fast, important);
 
 		event.setModifiedBlocks(modified_blocks);
@@ -327,14 +327,14 @@ struct TimeOrderedMapBlock {
 */
 #if WTF
 void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
-		std::vector<v3s16> *unloaded_blocks)
+		std::vector<v3bpos_t> *unloaded_blocks)
 {
 	bool save_before_unloading = maySaveBlocks();
 
 	// Profile modified reasons
 	Profiler modprofiler;
 
-	std::vector<v2s16> sector_deletion_queue;
+	std::vector<v2bpos_t> sector_deletion_queue;
 	u32 deleted_blocks_count = 0;
 	u32 saved_blocks_count = 0;
 	u32 block_count_all = 0;
@@ -358,7 +358,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 
 				if (block->refGet() == 0
 						&& block->getUsageTimer() > unload_timeout) {
-					v3s16 p = block->getPos();
+					v3bpos_t p = block->getPos();
 
 					// Save if modified
 					if (block->getModified() != MOD_STATE_CLEAN
@@ -415,7 +415,7 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 				continue;
 			}
 
-			v3s16 p = block->getPos();
+			v3bpos_t p = block->getPos();
 
 			// Save if modified
 			if (block->getModified() != MOD_STATE_CLEAN && save_before_unloading) {
@@ -470,15 +470,15 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 
 #endif
 
-void Map::unloadUnreferencedBlocks(std::vector<v3s16> *unloaded_blocks)
+void Map::unloadUnreferencedBlocks(std::vector<v3bpos_t> *unloaded_blocks)
 {
 	timerUpdate(0.0, -1.0, 100, unloaded_blocks);
 }
 
 #if WTF
-void Map::deleteSectors(std::vector<v2s16> &sectorList)
+void Map::deleteSectors(std::vector<v2bpos_t> &sectorList)
 {
-	for (v2s16 j : sectorList) {
+	for (v2bpos_t j : sectorList) {
 		MapSector *sector = m_sectors[j];
 		// If sector is in sector cache, remove it from there
 		if(m_sector_cache == sector)
@@ -495,20 +495,20 @@ void Map::PrintInfo(std::ostream &out)
 	out<<"Map: ";
 }
 
-std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)
+std::vector<v3pos_t> Map::findNodesWithMetadata(v3pos_t p1, v3pos_t p2)
 {
-	std::vector<v3s16> positions_with_meta;
+	std::vector<v3pos_t> positions_with_meta;
 
 	sortBoxVerticies(p1, p2);
-	v3s16 bpmin = getNodeBlockPos(p1);
-	v3s16 bpmax = getNodeBlockPos(p2);
+	v3bpos_t bpmin = getNodeBlockPos(p1);
+	v3bpos_t bpmax = getNodeBlockPos(p2);
 
 	VoxelArea area(p1, p2);
 
-	for (s16 z = bpmin.Z; z <= bpmax.Z; z++)
-	for (s16 y = bpmin.Y; y <= bpmax.Y; y++)
-	for (s16 x = bpmin.X; x <= bpmax.X; x++) {
-		v3s16 blockpos(x, y, z);
+	for (bpos_t z = bpmin.Z; z <= bpmax.Z; z++)
+	for (bpos_t y = bpmin.Y; y <= bpmax.Y; y++)
+	for (bpos_t x = bpmin.X; x <= bpmax.X; x++) {
+		v3bpos_t blockpos(x, y, z);
 
 		MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 		if (!block) {
@@ -522,10 +522,10 @@ std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)
 			continue;
 		}
 
-		v3s16 p_base = blockpos * MAP_BLOCKSIZE;
-		std::vector<v3s16> keys = block->m_node_metadata.getAllKeys();
+		v3pos_t p_base = getBlockPosRelative(blockpos);
+		std::vector<v3pos_t> keys = block->m_node_metadata.getAllKeys();
 		for (size_t i = 0; i != keys.size(); i++) {
-			v3s16 p(keys[i] + p_base);
+			v3pos_t p(keys[i] + p_base);
 			if (!area.contains(p))
 				continue;
 
@@ -536,10 +536,10 @@ std::vector<v3s16> Map::findNodesWithMetadata(v3s16 p1, v3s16 p2)
 	return positions_with_meta;
 }
 
-NodeMetadata *Map::getNodeMetadata(v3s16 p)
+NodeMetadata *Map::getNodeMetadata(v3pos_t p)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
-	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3bpos_t blockpos = getNodeBlockPos(p);
+	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::getNodeMetadata(): Need to emerge "
@@ -555,10 +555,10 @@ NodeMetadata *Map::getNodeMetadata(v3s16 p)
 	return meta;
 }
 
-bool Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
+bool Map::setNodeMetadata(v3pos_t p, NodeMetadata *meta)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
-	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3bpos_t blockpos = getNodeBlockPos(p);
+	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::setNodeMetadata(): Need to emerge "
@@ -574,10 +574,10 @@ bool Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 	return true;
 }
 
-void Map::removeNodeMetadata(v3s16 p)
+void Map::removeNodeMetadata(v3pos_t p)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
-	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3bpos_t blockpos = getNodeBlockPos(p);
+	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(block == NULL)
 	{
@@ -588,10 +588,10 @@ void Map::removeNodeMetadata(v3s16 p)
 	block->m_node_metadata.remove(p_rel);
 }
 
-NodeTimer Map::getNodeTimer(v3s16 p)
+NodeTimer Map::getNodeTimer(v3pos_t p)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
-	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3bpos_t blockpos = getNodeBlockPos(p);
+	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::getNodeTimer(): Need to emerge "
@@ -610,9 +610,9 @@ NodeTimer Map::getNodeTimer(v3s16 p)
 
 void Map::setNodeTimer(const NodeTimer &t)
 {
-	v3s16 p = t.position;
-	v3s16 blockpos = getNodeBlockPos(p);
-	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3pos_t p = t.position;
+	v3bpos_t blockpos = getNodeBlockPos(p);
+	v3pos_t p_rel = p - blockpos*MAP_BLOCKSIZE;
 	MapBlock *block = getBlockNoCreateNoEx(blockpos, false, true);
 	if(!block){
 		infostream<<"Map::setNodeTimer(): Need to emerge "
@@ -628,10 +628,10 @@ void Map::setNodeTimer(const NodeTimer &t)
 	block->setNodeTimer(nt);
 }
 
-void Map::removeNodeTimer(v3s16 p)
+void Map::removeNodeTimer(v3pos_t p)
 {
-	v3s16 blockpos = getNodeBlockPos(p);
-	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
+	v3bpos_t blockpos = getNodeBlockPos(p);
+	v3pos_t p_rel = p - getBlockPosRelative(blockpos);
 	MapBlock *block = getBlockNoCreateNoEx(blockpos);
 	if(block == NULL)
 	{
@@ -642,8 +642,8 @@ void Map::removeNodeTimer(v3s16 p)
 	block->removeNodeTimer(p_rel);
 }
 
-bool Map::determineAdditionalOcclusionCheck(const v3s16 pos_camera,
-	const core::aabbox3d<s16> &block_bounds, v3s16 &check)
+bool Map::determineAdditionalOcclusionCheck(const v3pos_t pos_camera,
+	const core::aabbox3d<pos_t> &block_bounds, v3pos_t &check)
 {
 	/*
 		This functions determines the node inside the target block that is
@@ -671,32 +671,32 @@ bool Map::determineAdditionalOcclusionCheck(const v3s16 pos_camera,
 
 	// straight
 	if (x_inside && y_inside) {
-		check = v3s16(pos_camera.X, pos_camera.Y, 0);
+		check = v3pos_t(pos_camera.X, pos_camera.Y, 0);
 		check.Z = CLOSEST_EDGE(pos_camera, block_bounds, Z);
 		return true;
 	} else if (y_inside && z_inside) {
-		check = v3s16(0, pos_camera.Y, pos_camera.Z);
+		check = v3pos_t(0, pos_camera.Y, pos_camera.Z);
 		check.X = CLOSEST_EDGE(pos_camera, block_bounds, X);
 		return true;
 	} else if (x_inside && z_inside) {
-		check = v3s16(pos_camera.X, 0, pos_camera.Z);
+		check = v3pos_t(pos_camera.X, 0, pos_camera.Z);
 		check.Y = CLOSEST_EDGE(pos_camera, block_bounds, Y);
 		return true;
 	}
 
 	// diagonal
 	if (x_inside) {
-		check = v3s16(pos_camera.X, 0, 0);
+		check = v3pos_t(pos_camera.X, 0, 0);
 		check.Y = CLOSEST_EDGE(pos_camera, block_bounds, Y);
 		check.Z = CLOSEST_EDGE(pos_camera, block_bounds, Z);
 		return true;
 	} else if (y_inside) {
-		check = v3s16(0, pos_camera.Y, 0);
+		check = v3pos_t(0, pos_camera.Y, 0);
 		check.X = CLOSEST_EDGE(pos_camera, block_bounds, X);
 		check.Z = CLOSEST_EDGE(pos_camera, block_bounds, Z);
 		return true;
 	} else if (z_inside) {
-		check = v3s16(0, 0, pos_camera.Z);
+		check = v3pos_t(0, 0, pos_camera.Z);
 		check.X = CLOSEST_EDGE(pos_camera, block_bounds, X);
 		check.Y = CLOSEST_EDGE(pos_camera, block_bounds, Y);
 		return true;
@@ -706,23 +706,23 @@ bool Map::determineAdditionalOcclusionCheck(const v3s16 pos_camera,
 	return false;
 }
 
-bool Map::isOccluded(const v3s16 pos_camera, const v3s16 pos_target,
+bool Map::isOccluded(const v3pos_t pos_camera, const v3pos_t pos_target,
 	float step, float stepfac, float offset, float end_offset, u32 needed_count)
 {
-	v3f direction = intToFloat(pos_target - pos_camera, BS);
+	auto direction = intToFloat(pos_target - pos_camera, BS);
 	float distance = direction.getLength();
 
 	// Normalize direction vector
 	if (distance > 0.0f)
 		direction /= distance;
 
-	v3f pos_origin_f = intToFloat(pos_camera, BS);
+	auto pos_origin_f = intToFloat(pos_camera, BS);
 	u32 count = 0;
 	bool is_valid_position;
 
 	for (; offset < distance + end_offset; offset += step) {
-		v3f pos_node_f = pos_origin_f + direction * offset;
-		v3s16 pos_node = floatToInt(pos_node_f, BS);
+		auto pos_node_f = pos_origin_f + direction * offset;
+		v3pos_t pos_node = floatToInt(pos_node_f, BS);
 
 		MapNode node = getNode(pos_node, &is_valid_position);
 
@@ -738,24 +738,24 @@ bool Map::isOccluded(const v3s16 pos_camera, const v3s16 pos_target,
 	return false;
 }
 
-bool Map::isBlockOccluded(v3s16 pos_relative, v3s16 cam_pos_nodes, bool simple_check)
+bool Map::isBlockOccluded(v3pos_t pos_relative, v3pos_t cam_pos_nodes, bool simple_check)
 {
 	// Check occlusion for center and all 8 corners of the mapblock
 	// Overshoot a little for less flickering
 	static const s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
-	static const v3s16 dir9[9] = {
-		v3s16( 0,  0,  0),
-		v3s16( 1,  1,  1) * bs2,
-		v3s16( 1,  1, -1) * bs2,
-		v3s16( 1, -1,  1) * bs2,
-		v3s16( 1, -1, -1) * bs2,
-		v3s16(-1,  1,  1) * bs2,
-		v3s16(-1,  1, -1) * bs2,
-		v3s16(-1, -1,  1) * bs2,
-		v3s16(-1, -1, -1) * bs2,
+	static const v3pos_t dir9[9] = {
+		v3pos_t( 0,  0,  0),
+		v3pos_t( 1,  1,  1) * bs2,
+		v3pos_t( 1,  1, -1) * bs2,
+		v3pos_t( 1, -1,  1) * bs2,
+		v3pos_t( 1, -1, -1) * bs2,
+		v3pos_t(-1,  1,  1) * bs2,
+		v3pos_t(-1,  1, -1) * bs2,
+		v3pos_t(-1, -1,  1) * bs2,
+		v3pos_t(-1, -1, -1) * bs2,
 	};
 
-	v3s16 pos_blockcenter = pos_relative + (MAP_BLOCKSIZE / 2);
+	v3pos_t pos_blockcenter = pos_relative + (MAP_BLOCKSIZE / 2);
 
 	// Starting step size, value between 1m and sqrt(3)m
 	float step = BS * 1.2f;
@@ -780,13 +780,13 @@ bool Map::isBlockOccluded(v3s16 pos_relative, v3s16 cam_pos_nodes, bool simple_c
 	// The client recalculates the complete drawlist periodically,
 	// and random sampling could lead to visible flicker.
 	if (simple_check) {
-		v3s16 random_point(myrand_range(-bs2, bs2), myrand_range(-bs2, bs2), myrand_range(-bs2, bs2));
+		v3pos_t random_point(myrand_range(-bs2, bs2), myrand_range(-bs2, bs2), myrand_range(-bs2, bs2));
 		return isOccluded(cam_pos_nodes, pos_blockcenter + random_point, step, stepfac,
 					start_offset, end_offset, 1);
 	}
 
 	// Additional occlusion check, see comments in that function
-	v3s16 check;
+	v3pos_t check;
 	if (determineAdditionalOcclusionCheck(cam_pos_nodes, MapBlock::getBox(pos_relative), check)) {
 		// node is always on a side facing the camera, end_offset can be lower
 		if (!isOccluded(cam_pos_nodes, check, step, stepfac, start_offset,
@@ -794,7 +794,7 @@ bool Map::isBlockOccluded(v3s16 pos_relative, v3s16 cam_pos_nodes, bool simple_c
 			return false;
 	}
 
-	for (const v3s16 &dir : dir9) {
+	for (const v3pos_t &dir : dir9) {
 		if (!isOccluded(cam_pos_nodes, pos_blockcenter + dir, step, stepfac,
 				start_offset, end_offset, needed_count))
 			return false;
@@ -809,7 +809,7 @@ MMVManip::MMVManip(Map *map):
 	assert(map);
 }
 
-void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
+void MMVManip::initialEmerge(v3bpos_t blockpos_min, v3bpos_t blockpos_max,
 	bool load_if_inexistent)
 {
 	TimeTaker timer1("initialEmerge");
@@ -817,11 +817,11 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 	assert(m_map);
 
 	// Units of these are MapBlocks
-	v3s16 p_min = blockpos_min;
-	v3s16 p_max = blockpos_max;
+	v3bpos_t p_min = blockpos_min;
+	v3bpos_t p_max = blockpos_max;
 
 	VoxelArea block_area_nodes
-			(p_min*MAP_BLOCKSIZE, (p_max+1)*MAP_BLOCKSIZE-v3s16(1,1,1));
+			(getBlockPosRelative(p_min), getBlockPosRelative(p_max+1)-v3pos_t(1,1,1));
 
 	u32 size_MB = block_area_nodes.getVolume()*4/1000000;
 	if(size_MB >= 1)
@@ -841,7 +841,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 	{
 		u8 flags = 0;
 		MapBlockPtr block;
-		v3s16 p(x,y,z);
+		v3bpos_t p(x,y,z);
 		if (m_loaded_blocks.count(p) > 0)
 			continue;
 
@@ -868,7 +868,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 				flags |= VMANIP_BLOCK_DATA_INEXIST;
 
 				// Mark area inexistent
-				VoxelArea a(p*MAP_BLOCKSIZE, (p+1)*MAP_BLOCKSIZE-v3s16(1,1,1));
+				VoxelArea a(p*MAP_BLOCKSIZE, (p+1)*MAP_BLOCKSIZE-v3pos_t(1,1,1));
 				setFlags(a, VOXELFLAG_NO_DATA);
 			}
 		}
@@ -884,7 +884,7 @@ void MMVManip::initialEmerge(v3s16 blockpos_min, v3s16 blockpos_max,
 	m_is_dirty = false;
 }
 
-void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
+void MMVManip::blitBackAll(std::map<v3bpos_t, MapBlock*> *modified_blocks,
 	bool overwrite_generated, bool save_generated_block) const
 {
 	if (m_area.hasEmptyExtent())
@@ -895,7 +895,7 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 		Copy data of all blocks
 	*/
 	for (auto &loaded_block : m_loaded_blocks) {
-		v3s16 p = loaded_block.first;
+		v3bpos_t p = loaded_block.first;
 		MapBlock *block = m_map->getBlockNoCreateNoEx(p, false, true);
 
 		bool existed = !(loaded_block.second & VMANIP_BLOCK_DATA_INEXIST);

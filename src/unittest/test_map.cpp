@@ -16,6 +16,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#include "irr_v3d.h"
 #include "test.h"
 
 #include <cstdio>
@@ -69,37 +70,37 @@ void TestMap::testMaxMapgenLimit()
 	UASSERT(objectpos_over_limit(v3f(-limit_times_bs-BS)) == true);
 
 	// blockpos_over_max_limit
-	s16 limit_block = MAX_MAP_GENERATION_LIMIT / MAP_BLOCKSIZE;
-	UASSERT(blockpos_over_max_limit(v3s16(limit_block)) == false);
-	UASSERT(blockpos_over_max_limit(v3s16(limit_block+1)) == true);
-	UASSERT(blockpos_over_max_limit(v3s16(-limit_block)) == false);
-	UASSERT(blockpos_over_max_limit(v3s16(-limit_block-1)) == true);
+	pos_t limit_block = MAX_MAP_GENERATION_LIMIT / MAP_BLOCKSIZE;
+	UASSERT(blockpos_over_max_limit(v3pos_t(limit_block)) == false);
+	UASSERT(blockpos_over_max_limit(v3pos_t(limit_block+1)) == true);
+	UASSERT(blockpos_over_max_limit(v3pos_t(-limit_block)) == false);
+	UASSERT(blockpos_over_max_limit(v3pos_t(-limit_block-1)) == true);
 }
 
 void TestMap::testForEachNodeInArea(IGameDef *gamedef)
 {
-	v3s16 minp_visit(-10, -10, -10);
-	v3s16 maxp_visit(20, 20, 10);
-	v3s16 dims_visit = maxp_visit - minp_visit + v3s16(1, 1, 1);
+	v3pos_t minp_visit(-10, -10, -10);
+	v3pos_t maxp_visit(20, 20, 10);
+	v3pos_t dims_visit = maxp_visit - minp_visit + v3pos_t(1, 1, 1);
 	s32 volume_visit = (s32)dims_visit.X * (s32)dims_visit.Y * (s32)dims_visit.Z;
 
-	v3s16 minp = minp_visit - v3s16(1, 1, 1);
-	v3s16 maxp = maxp_visit + v3s16(1, 1, 1);
+	v3pos_t minp = minp_visit - v3pos_t(1, 1, 1);
+	v3pos_t maxp = maxp_visit + v3pos_t(1, 1, 1);
 	DummyMap map(gamedef, getNodeBlockPos(minp), getNodeBlockPos(maxp));
 
-	v3s16 p1(0, 10, 5);
+	v3pos_t p1(0, 10, 5);
 	MapNode n1(t_CONTENT_STONE);
 	map.setNode(p1, n1);
 
-	v3s16 p2(-1, 15, 5);
+	v3pos_t p2(-1, 15, 5);
 	MapNode n2(t_CONTENT_TORCH);
 	map.setNode(p2, n2);
 
-	v3s16 p3 = minp_visit;
+	v3pos_t p3 = minp_visit;
 	MapNode n3(CONTENT_AIR);
 	map.setNode(p3, n3);
 
-	v3s16 p4 = maxp_visit;
+	v3pos_t p4 = maxp_visit;
 	MapNode n4(t_CONTENT_LAVA);
 	map.setNode(p4, n4);
 
@@ -108,11 +109,11 @@ void TestMap::testForEachNodeInArea(IGameDef *gamedef)
 	map.setNode(maxp, MapNode(t_CONTENT_WATER));
 
 	s32 n_visited = 0;
-	std::unordered_set<v3s16> visited;
-	v3s16 minp_visited(0, 0, 0);
-	v3s16 maxp_visited(0, 0, 0);
-	std::unordered_map<v3s16, MapNode> found;
-	map.forEachNodeInArea(minp_visit, maxp_visit, [&](v3s16 p, MapNode n) -> bool {
+	std::unordered_set<v3pos_t> visited;
+	v3pos_t minp_visited(0, 0, 0);
+	v3pos_t maxp_visited(0, 0, 0);
+	std::unordered_map<v3pos_t, MapNode> found;
+	map.forEachNodeInArea(minp_visit, maxp_visit, [&](v3pos_t p, MapNode n) -> bool {
 		n_visited++;
 		visited.insert(p);
 		minp_visited.X = std::min(minp_visited.X, p.X);
@@ -146,11 +147,11 @@ void TestMap::testForEachNodeInArea(IGameDef *gamedef)
 
 void TestMap::testForEachNodeInAreaBlank(IGameDef *gamedef)
 {
-	DummyMap map(gamedef, v3s16(0, 0, 0), v3s16(-1, -1, -1));
+	DummyMap map(gamedef, v3pos_t(0, 0, 0), v3pos_t(-1, -1, -1));
 
-	v3s16 invalid_p(0, 0, 0);
+	v3pos_t invalid_p(0, 0, 0);
 	bool visited = false;
-	map.forEachNodeInArea(invalid_p, invalid_p, [&](v3s16 p, MapNode n) -> bool {
+	map.forEachNodeInArea(invalid_p, invalid_p, [&](v3pos_t p, MapNode n) -> bool {
 		bool is_valid_position = true;
 		UASSERT(n == map.getNode(p, &is_valid_position));
 		UASSERT(!is_valid_position);
@@ -163,8 +164,8 @@ void TestMap::testForEachNodeInAreaBlank(IGameDef *gamedef)
 
 void TestMap::testForEachNodeInAreaEmpty(IGameDef *gamedef)
 {
-	DummyMap map(gamedef, v3s16(), v3s16());
-	map.forEachNodeInArea(v3s16(0, 0, 0), v3s16(-1, -1, -1), [&](v3s16 p, MapNode n) -> bool {
+	DummyMap map(gamedef, v3pos_t(), v3pos_t());
+	map.forEachNodeInArea(v3pos_t(0, 0, 0), v3pos_t(-1, -1, -1), [&](v3pos_t p, MapNode n) -> bool {
 		UASSERT(false); // Should be unreachable
 		return true;
 	});

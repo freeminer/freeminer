@@ -89,7 +89,7 @@ void TestSAO::runTests(IGameDef *gamedef)
 	env.deactivateBlocksAndObjects();
 }
 
-static LuaEntitySAO *add_entity(ServerEnvironment *env, v3f pos, const char *name)
+static LuaEntitySAO *add_entity(ServerEnvironment *env, v3opos_t pos, const char *name)
 {
 	auto obj_u = std::make_unique<LuaEntitySAO>(env, pos, name, "");
 	auto obj = obj_u.get();
@@ -117,8 +117,8 @@ void TestSAO::testStaticSave(ServerEnvironment *env)
 {
 	Map &map = env->getMap();
 
-	const v3f testpos(0, -66 * BS, 0);
-	const v3s16 testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
+	const v3opos_t testpos(0, -66 * BS, 0);
+	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
 	auto obj = add_entity(env, testpos, "test:static");
 	UASSERT(obj);
@@ -146,8 +146,8 @@ void TestSAO::testNotSaved(ServerEnvironment *env)
 {
 	Map &map = env->getMap();
 
-	const v3f testpos(0, 4 * BS, 0);
-	const v3s16 testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
+	const v3opos_t testpos(0, 4 * BS, 0);
+	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
 	// make sure matching block exists (see below)
 	auto *block = map.emergeBlock(testblockpos, true);
@@ -183,8 +183,8 @@ void TestSAO::testActivate(ServerEnvironment *env)
 {
 	Map &map = env->getMap();
 
-	const v3f testpos(0, 0, 100 * BS);
-	const v3s16 testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
+	const v3opos_t testpos(0, 0, 100 * BS);
+	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
 	// this time insert the static object manually
 	StaticObject s_obj;
@@ -218,8 +218,8 @@ void TestSAO::testStaticToFalse(ServerEnvironment *env)
 {
 	Map &map = env->getMap();
 
-	const v3f testpos(0, 0, -22 * BS);
-	const v3s16 testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
+	const v3opos_t testpos(0, 0, -22 * BS);
+	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
 	/*
 	 * This test represents an edge case where static_save changed from true
@@ -277,8 +277,8 @@ void TestSAO::testStaticToTrue(ServerEnvironment *env)
 {
 	Map &map = env->getMap();
 
-	const v3f testpos(123 * BS, 5 * BS, 0);
-	const v3s16 testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
+	const v3opos_t testpos(123 * BS, 5 * BS, 0);
+	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
 	auto obj = add_entity(env, testpos, "test:non_static");
 	UASSERT(obj);

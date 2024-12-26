@@ -17,11 +17,21 @@
 class MsgpackPacketSafe;
 // ==
 
+inline size_t sizeof_v3opos(u16 proto_ver) {
+	return proto_ver >= PROTOCOL_VERSION_32BIT ? sizeof(v3opos_t) : sizeof(v3f);
+}
+
+inline size_t sizeof_v3pos(u16 proto_ver) {
+	return proto_ver >= PROTOCOL_VERSION_32BIT ? sizeof(v3pos_t) : sizeof(v3s16);
+}
+
 class NetworkPacket
 {
 public:
-	NetworkPacket(u16 command, u32 preallocate, session_t peer_id) :
+	//NetworkPacket(u16 command, u32 datasize, session_t peer_id = 0, u16 proto_ver = 0);
+	NetworkPacket(u16 command, u32 preallocate, session_t peer_id, u16 proto_ver = 0) :
 		m_command(command), m_peer_id(peer_id)
+		, m_proto_ver(proto_ver)
 	{
 		m_data.reserve(preallocate);
 	}
@@ -34,6 +44,8 @@ public:
 
 	~NetworkPacket() = default;
 
+	void setProtoVer(u16 proto_ver) { m_proto_ver = proto_ver; }
+	u16 getProtoVer() { return m_proto_ver; }
 	void putRawPacket(const u8 *data, u32 datasize, session_t peer_id);
 	void clear();
 
@@ -90,11 +102,19 @@ public:
 	NetworkPacket &operator>>(float &dst);
 	NetworkPacket &operator<<(float src);
 
+	NetworkPacket &operator>>(double &dst);
+	NetworkPacket &operator<<(double src);
+
 	NetworkPacket &operator>>(v2f &dst);
 	NetworkPacket &operator<<(v2f src);
 
 	NetworkPacket &operator>>(v3f &dst);
 	NetworkPacket &operator<<(v3f src);
+
+#if USE_OPOS64
+	NetworkPacket &operator>>(v3opos_t &dst);
+	NetworkPacket &operator<<(v3opos_t src);
+#endif
 
 	NetworkPacket &operator>>(s16 &dst);
 	NetworkPacket &operator<<(s16 src);
@@ -108,8 +128,13 @@ public:
 	NetworkPacket &operator>>(v3s16 &dst);
 	NetworkPacket &operator<<(v3s16 src);
 
-	NetworkPacket &operator>>(v3s32 &dst);
-	NetworkPacket &operator<<(v3s32 src);
+	void writeV3S32(const v3s32 &src);
+	v3s32 readV3S32();
+
+#if USE_POS32
+	NetworkPacket &operator>>(v3pos_t &dst);
+	NetworkPacket &operator<<(v3pos_t src);
+#endif
 
 	NetworkPacket &operator>>(video::SColor &dst);
 	NetworkPacket &operator<<(video::SColor src);
@@ -143,6 +168,7 @@ public:
 private:
 	// ==
 
+	u16 m_proto_ver = 0;
 };
 
 bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);

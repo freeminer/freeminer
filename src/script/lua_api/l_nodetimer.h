@@ -12,7 +12,7 @@ class ServerMap;
 class NodeTimerRef : public ModApiBase
 {
 private:
-	v3s16 m_p;
+	v3pos_t m_p;
 	ServerMap *m_map;
 
 	static const luaL_Reg methods[];
@@ -32,12 +32,12 @@ private:
 	static int l_get_elapsed(lua_State *L);
 
 public:
-	NodeTimerRef(v3s16 p, ServerMap *map) : m_p(p), m_map(map) {}
+	NodeTimerRef(v3pos_t p, ServerMap *map) : m_p(p), m_map(map) {}
 	~NodeTimerRef() = default;
 
 	// Creates an NodeTimerRef and leaves it on top of stack
 	// Not callable from Lua; all references are created on the C side.
-	static void create(lua_State *L, v3s16 p, ServerMap *map);
+	static void create(lua_State *L, v3pos_t p, ServerMap *map);
 
 	static void Register(lua_State *L);
 

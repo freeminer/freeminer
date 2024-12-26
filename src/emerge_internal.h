@@ -15,6 +15,7 @@
 
 #include <queue>
 
+#include "irr_v3d.h"
 #include "util/thread.h"
 #include "threading/event.h"
 
@@ -37,7 +38,7 @@ public:
 	void signal();
 
 	// Requires queue mutex held
-	bool pushBlock(v3s16 pos);
+	bool pushBlock(v3bpos_t pos);
 
 	void cancelPendingItems();
 
@@ -47,7 +48,7 @@ public:
 protected:
 
 	void runCompletionCallbacks(
-		v3s16 pos, EmergeAction action,
+		v3bpos_t pos, EmergeAction action,
 		const EmergeCallbackList &callbacks);
 
 private:
@@ -58,14 +59,14 @@ private:
 
 	std::unique_ptr<EmergeScripting> m_script;
 	// read from scripting:
-	UniqueQueue<v3s16> *m_trans_liquid; //< non-null only when generating a mapblock
+	UniqueQueue<v3pos_t> *m_trans_liquid; //< non-null only when generating a mapblock
 
 	Event m_queue_event;
-	std::queue<v3s16> m_block_queue;
+	std::queue<v3bpos_t> m_block_queue;
 
 	bool initScripting();
 
-	bool popBlockEmerge(v3s16 *pos, BlockEmergeData *bedata);
+	bool popBlockEmerge(v3bpos_t *pos, BlockEmergeData *bedata);
 
 	/**
 	 * Try to get a block from memory and decide what to do.
@@ -78,13 +79,13 @@ private:
 	 * @param data info for mapgen
 	 * @return what to do for this block
 	 */
-	EmergeAction getBlockOrStartGen(v3s16 pos, bool allow_gen,
+	EmergeAction getBlockOrStartGen(v3bpos_t pos, bool allow_gen,
 		const std::string *from_db,  MapBlockPtr *block, BlockMakeData *data);
-	EmergeAction getBlockOrStartGen(v3s16 pos, bool allow_gen,
+	EmergeAction getBlockOrStartGen(v3bpos_t pos, bool allow_gen,
 		const std::string *from_db,  MapBlock **block, BlockMakeData *data);
 
-	MapBlock *finishGen(v3s16 pos, BlockMakeData *bmdata,
-		std::map<v3s16, MapBlock *> *modified_blocks);
+	MapBlock *finishGen(v3bpos_t pos, BlockMakeData *bmdata,
+		std::map<v3bpos_t, MapBlock *> *modified_blocks);
 
 	friend class EmergeManager;
 	friend class EmergeScripting;

@@ -8,6 +8,7 @@
 #include "map.h"
 #include "nodedef.h"
 #include "gamedef.h"
+#include "util/numeric.h"
 #if CHECK_CLIENT_BUILD()
 #include "client/clientenvironment.h"
 #include "client/localplayer.h"
@@ -25,7 +26,7 @@ namespace {
 
 struct NearbyCollisionInfo {
 	// node
-	NearbyCollisionInfo(bool is_ul, int bouncy, v3s16 pos, const aabb3f &box) :
+	NearbyCollisionInfo(bool is_ul, int bouncy, v3pos_t pos, const aabb3o &box) :
 		obj(nullptr),
 		box(box),
 		position(pos),
@@ -35,7 +36,7 @@ struct NearbyCollisionInfo {
 	{}
 
 	// object
-	NearbyCollisionInfo(ActiveObject *obj, int bouncy, const aabb3f &box) :
+	NearbyCollisionInfo(ActiveObject *obj, int bouncy, const aabb3o &box) :
 		obj(obj),
 		box(box),
 		bouncy(bouncy),
@@ -46,8 +47,8 @@ struct NearbyCollisionInfo {
 	inline bool isObject() const { return obj != nullptr; }
 
 	ActiveObject *obj;
-	aabb3f box;
-	v3s16 position;
+	aabb3o box;
+	v3pos_t position;
 	u8 bouncy;
 	// bitfield to save space
 	bool is_unloaded:1, is_step_up:1;
@@ -77,7 +78,7 @@ inline v3f truncate(const v3f vec, const f32 factor)
 // Returns -1 if no collision, 0 if X collision, 1 if Y collision, 2 if Z collision
 // The time after which the collision occurs is stored in dtime.
 CollisionAxis axisAlignedCollision(
-		const aabb3f &staticbox, const aabb3f &movingbox,
+		const aabb3o &staticbox, const aabb3o &movingbox,
 		const v3f speed, f32 *dtime)
 {
 	//TimeTaker tt("axisAlignedCollision");
@@ -103,7 +104,7 @@ CollisionAxis axisAlignedCollision(
 		time = std::max(*dtime, 0.0f);
 
 		if (*dtime <= dtime_max) {
-			inner_margin = std::max(-0.5f * (staticbox.MaxEdge.Y - staticbox.MinEdge.Y), -2.0f);
+			inner_margin = std::max<opos_t>(-0.5f * (staticbox.MaxEdge.Y - staticbox.MinEdge.Y), -2.0f);
 
 			if ((speed.Y > 0 && staticbox.MinEdge.Y - movingbox.MaxEdge.Y > inner_margin) ||
 				(speed.Y < 0 && movingbox.MinEdge.Y - staticbox.MaxEdge.Y > inner_margin)) {
@@ -131,7 +132,7 @@ CollisionAxis axisAlignedCollision(
 		time = std::max(*dtime, 0.0f);
 
 		if (*dtime <= dtime_max) {
-			inner_margin = std::max(-0.5f * (staticbox.MaxEdge.X - staticbox.MinEdge.X), -2.0f);
+			inner_margin = std::max<opos_t>(-0.5f * (staticbox.MaxEdge.X - staticbox.MinEdge.X), -2.0f);
 
 			if ((speed.X > 0 && staticbox.MinEdge.X - movingbox.MaxEdge.X > inner_margin) ||
 				(speed.X < 0 && movingbox.MinEdge.X - staticbox.MaxEdge.X > inner_margin)) {
@@ -158,7 +159,7 @@ CollisionAxis axisAlignedCollision(
 		time = std::max(*dtime, 0.0f);
 
 		if (*dtime <= dtime_max) {
-			inner_margin = std::max(-0.5f * (staticbox.MaxEdge.Z - staticbox.MinEdge.Z), -2.0f);
+			inner_margin = std::max<opos_t>(-0.5f * (staticbox.MaxEdge.Z - staticbox.MinEdge.Z), -2.0f);
 
 			if ((speed.Z > 0 && staticbox.MinEdge.Z - movingbox.MaxEdge.Z > inner_margin) ||
 				(speed.Z < 0 && movingbox.MinEdge.Z - staticbox.MaxEdge.Z > inner_margin)) {
@@ -182,7 +183,7 @@ CollisionAxis axisAlignedCollision(
 // Checks if moving the movingbox up by the given distance would hit a ceiling.
 bool wouldCollideWithCeiling(
 		const std::vector<NearbyCollisionInfo> &cinfo,
-		const aabb3f &movingbox,
+		const aabb3o &movingbox,
 		f32 y_increase, f32 d)
 {
 	//TimeTaker tt("wouldCollideWithCeiling");
@@ -191,7 +192,7 @@ bool wouldCollideWithCeiling(
 		return false;
 
 	for (const auto &it : cinfo) {
-		const aabb3f &staticbox = it.box;
+		const aabb3o &staticbox = it.box;
 		if ((movingbox.MaxEdge.Y - d <= staticbox.MinEdge.Y) &&
 				(movingbox.MaxEdge.Y + y_increase > staticbox.MinEdge.Y) &&
 				(movingbox.MinEdge.X < staticbox.MaxEdge.X) &&
@@ -204,7 +205,7 @@ bool wouldCollideWithCeiling(
 	return false;
 }
 
-static bool add_area_node_boxes(const v3s16 min, const v3s16 max, IGameDef *gamedef,
+static bool add_area_node_boxes(const v3pos_t min, const v3pos_t max, IGameDef *gamedef,
 		Environment *env, std::vector<NearbyCollisionInfo> &cinfo)
 {
 	const auto *nodedef = gamedef->getNodeDefManager();
@@ -213,7 +214,7 @@ static bool add_area_node_boxes(const v3s16 min, const v3s16 max, IGameDef *game
 	thread_local std::vector<aabb3f> nodeboxes;
 	Map *map = &env->getMap();
 
-	v3s16 p;
+	v3pos_t p;
 	for (p.Z = min.Z; p.Z <= max.Z; p.Z++)
 	for (p.Y = min.Y; p.Y <= max.Y; p.Y++)
 	for (p.X = min.X; p.X <= max.X; p.X++) {
@@ -238,8 +239,9 @@ static bool add_area_node_boxes(const v3s16 min, const v3s16 max, IGameDef *game
 			n.getCollisionBoxes(nodedef, &nodeboxes, neighbors);
 
 			// Calculate float position only once
-			v3f posf = intToFloat(p, BS);
-			for (auto box : nodeboxes) {
+			auto posf = intToFloat(p, BS);
+			for (auto boxf : nodeboxes) {
+				aabb3o box {v3fToOpos(boxf.MinEdge), v3fToOpos(boxf.MaxEdge)};
 				box.MinEdge += posf;
 				box.MaxEdge += posf;
 				cinfo.emplace_back(false, n_bouncy_value, p, box);
@@ -247,7 +249,7 @@ static bool add_area_node_boxes(const v3s16 min, const v3s16 max, IGameDef *game
 		} else {
 			// Collide with unloaded nodes (position invalid) and loaded
 			// CONTENT_IGNORE nodes (position valid)
-			aabb3f box = getNodeBox(p, BS);
+			auto box = getNodeBox(p, (opos_t)BS);
 			cinfo.emplace_back(true, 0, p, box);
 		}
 	}
@@ -256,12 +258,12 @@ static bool add_area_node_boxes(const v3s16 min, const v3s16 max, IGameDef *game
 
 static void add_object_boxes(Environment *env,
 		const aabb3f &box_0, f32 dtime,
-		const v3f pos_f, const v3f speed_f, ActiveObject *self,
+		const v3opos_t pos_f, const v3f speed_f, ActiveObject *self,
 		std::vector<NearbyCollisionInfo> &cinfo)
 {
 	auto process_object = [&cinfo] (ActiveObject *object) {
 		if (object && object->collideWithObjects()) {
-			aabb3f box;
+			aabb3o box;
 			if (object->getCollisionBox(&box))
 				cinfo.emplace_back(object, 0, box);
 		}
@@ -289,8 +291,8 @@ static void add_object_boxes(Environment *env,
 		LocalPlayer *lplayer = c_env->getLocalPlayer();
 		auto *obj = (ClientActiveObject*) lplayer->getCAO();
 		if (!self || (self != obj && self != obj->getParent())) {
-			aabb3f lplayer_collisionbox = lplayer->getCollisionbox();
-			v3f lplayer_pos = lplayer->getPosition();
+			auto lplayer_collisionbox = ToOpos(lplayer->getCollisionbox());
+			auto lplayer_pos = lplayer->getPosition();
 			lplayer_collisionbox.MinEdge += lplayer_pos;
 			lplayer_collisionbox.MaxEdge += lplayer_pos;
 			cinfo.emplace_back(obj, 0, lplayer_collisionbox);
@@ -322,9 +324,9 @@ static void add_object_boxes(Environment *env,
 #define PROFILER_NAME(text) (dynamic_cast<ServerEnvironment*>(env) ? ("Server: " text) : ("Client: " text))
 
 collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
-		f32 pos_max_d, const aabb3f &box_0,
+		opos_t pos_max_d, const aabb3f &box_0,
 		f32 stepheight, f32 dtime,
-		v3f *pos_f, v3f *speed_f,
+		v3opos_t *pos_f, v3f *speed_f,
 		v3f accel_f, ActiveObject *self,
 		bool collide_with_objects)
 {
@@ -350,12 +352,12 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		time_notification_done = false;
 	}
 
-	v3f dpos_f = (*speed_f + accel_f * 0.5f * dtime) * dtime;
-	v3f newpos_f = *pos_f + dpos_f;
+	v3opos_t dpos_f = (v3fToOpos(*speed_f + accel_f) * 0.5f * dtime) * dtime;
+	v3opos_t newpos_f = *pos_f + dpos_f;
 	*speed_f += accel_f * dtime;
 
 	// If the object is static, there are no collisions
-	if (dpos_f == v3f())
+	if (dpos_f == v3opos_t())
 		return result;
 
 	// Limit speed for avoiding hangs
@@ -384,8 +386,8 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			MYMAX(pos_f->Y, newpos_f.Y),
 			MYMAX(pos_f->Z, newpos_f.Z)
 		);
-		v3s16 min = floatToInt(minpos_f + box_0.MinEdge, BS) - v3s16(1, 1, 1);
-		v3s16 max = floatToInt(maxpos_f + box_0.MaxEdge, BS) + v3s16(1, 1, 1);
+		v3pos_t min = floatToInt(minpos_f + box_0.MinEdge, BS) - v3pos_t(1, 1, 1);
+		v3pos_t max = floatToInt(maxpos_f + box_0.MaxEdge, BS) + v3pos_t(1, 1, 1);
 
 		bool any_position_valid = add_area_node_boxes(min, max, gamedef, env, cinfo);
 
@@ -422,7 +424,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			break;
 		}
 
-		aabb3f movingbox = box_0;
+		aabb3o movingbox(v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge));
 		movingbox.MinEdge += *pos_f;
 		movingbox.MaxEdge += *pos_f;
 
@@ -454,15 +456,15 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 
 		if (nearest_collided == COLLISION_AXIS_NONE) {
 			// No collision with any collision box.
-			*pos_f += truncate(*speed_f * dtime, 100.0f);
+			*pos_f += v3fToOpos(truncate(*speed_f * dtime, 100.0f));
 			dtime = 0;  // Set to 0 to avoid "infinite" loop due to small FP numbers
 		} else {
 			// Otherwise, a collision occurred.
 			NearbyCollisionInfo &nearest_info = cinfo[nearest_boxindex];
-			const aabb3f& cbox = nearest_info.box;
+			const aabb3o& cbox = nearest_info.box;
 
 			//movingbox except moved to the horizontal position it would be after step up
-			aabb3f stepbox = movingbox;
+			aabb3o stepbox = movingbox;
 			stepbox.MinEdge.X += speed_f->X * dtime;
 			stepbox.MinEdge.Z += speed_f->Z * dtime;
 			stepbox.MaxEdge.X += speed_f->X * dtime;
@@ -490,7 +492,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 						pos_f->Z += speed_f->Z * nearest_dtime;
 				}
 			} else {
-				*pos_f += truncate(*speed_f * nearest_dtime, 100.0f);
+				*pos_f += v3fToOpos(truncate(*speed_f * nearest_dtime, 100.0f));
 				dtime -= nearest_dtime;
 			}
 
@@ -549,11 +551,11 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	/*
 		Final touches: Check if standing on ground, step up stairs.
 	*/
-	aabb3f box = box_0;
+	aabb3o box(v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge));
 	box.MinEdge += *pos_f;
 	box.MaxEdge += *pos_f;
 	for (const auto &box_info : cinfo) {
-		const aabb3f &cbox = box_info.box;
+		const aabb3o &cbox = box_info.box;
 
 		/*
 			See if the object is touching ground.
@@ -568,7 +570,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 				cbox.MinEdge.Z + d < box.MaxEdge.Z) {
 			if (box_info.is_step_up) {
 				pos_f->Y += cbox.MaxEdge.Y - box.MinEdge.Y;
-				box = box_0;
+				box = {(v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge))};
 				box.MinEdge += *pos_f;
 				box.MaxEdge += *pos_f;
 			}
@@ -585,15 +587,15 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 }
 
 bool collision_check_intersection(Environment *env, IGameDef *gamedef,
-		const aabb3f &box_0, const v3f &pos_f, ActiveObject *self,
+		const aabb3f &box_0, const v3opos_t &pos_f, ActiveObject *self,
 		bool collide_with_objects)
 {
 	ScopeProfiler sp(g_profiler, PROFILER_NAME("collision_check_intersection()"), SPT_AVG, PRECISION_MICRO);
 
 	std::vector<NearbyCollisionInfo> cinfo;
 	{
-		v3s16 min = floatToInt(pos_f + box_0.MinEdge, BS) - v3s16(1, 1, 1);
-		v3s16 max = floatToInt(pos_f + box_0.MaxEdge, BS) + v3s16(1, 1, 1);
+		auto min = floatToInt(pos_f + v3fToOpos(box_0.MinEdge), BS) - v3pos_t(1, 1, 1);
+		auto max = floatToInt(pos_f + v3fToOpos(box_0.MaxEdge), BS) + v3pos_t(1, 1, 1);
 
 		bool any_position_valid = add_area_node_boxes(min, max, gamedef, env, cinfo);
 
@@ -610,8 +612,8 @@ bool collision_check_intersection(Environment *env, IGameDef *gamedef,
 	/*
 		Collision detection
 	*/
-	aabb3f checkbox = box_0;
-	// aabbox3d::intersectsWithBox(box) returns true when the faces are touching perfectly.
+        aabb3o checkbox = {v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge)};
+        // aabbox3d::intersectsWithBox(box) returns true when the faces are touching perfectly.
 	// However, we do not want want a true-ish return value in that case. Add some tolerance.
 	checkbox.MinEdge += pos_f + (0.1f * BS);
 	checkbox.MaxEdge += pos_f - (0.1f * BS);

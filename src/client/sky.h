@@ -118,8 +118,8 @@ public:
 		ITextureSource *tsrc);
 
 	// Note: the Sky class doesn't use these values. It just stores them.
-	void setFogDistance(s16 fog_distance) { m_sky_params.fog_distance = fog_distance; }
-	s16 getFogDistance() const { return m_sky_params.fog_distance; }
+	void setFogDistance(	pos_t fog_distance) { m_sky_params.fog_distance = fog_distance; }
+	pos_t getFogDistance() const { return m_sky_params.fog_distance; }
 
 	void setFogStart(float fog_start) { m_sky_params.fog_start = fog_start; }
 	float getFogStart() const { return m_sky_params.fog_start; }

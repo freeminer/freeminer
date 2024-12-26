@@ -6,6 +6,7 @@
 #include "networkpacket.h"
 #include <memory>
 #include <sstream>
+#include "log.h"
 #include "networkexceptions.h"
 #include "util/serialize.h"
 #include "networkprotocol.h"
@@ -301,6 +302,16 @@ NetworkPacket& NetworkPacket::operator<<(float src)
 	return *this;
 }
 
+NetworkPacket& NetworkPacket::operator<<(double src)
+{
+	checkDataSize(sizeof(src));
+
+	writeF64(&m_data[m_read_offset], src);
+
+	m_read_offset += sizeof(src);
+	return *this;
+}
+
 NetworkPacket& NetworkPacket::operator>>(bool& dst)
 {
 	checkReadOffset(m_read_offset, 1);
@@ -386,6 +397,17 @@ NetworkPacket& NetworkPacket::operator>>(float& dst)
 	return *this;
 }
 
+NetworkPacket& NetworkPacket::operator>>(double& dst)
+{
+	checkReadOffset(m_read_offset, sizeof(dst));
+
+	dst = readF64(&m_data[m_read_offset]);
+
+	m_read_offset += sizeof(dst);
+	return *this;
+}
+
+
 NetworkPacket& NetworkPacket::operator>>(v2f& dst)
 {
 	checkReadOffset(m_read_offset, 8);
@@ -405,6 +427,25 @@ NetworkPacket& NetworkPacket::operator>>(v3f& dst)
 	m_read_offset += 12;
 	return *this;
 }
+
+#if USE_OPOS64
+NetworkPacket& NetworkPacket::operator>>(v3opos_t& dst)
+{
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
+		v3f tmp;
+		*this >> tmp;
+		dst = v3fToOpos(tmp);
+		return *this;
+	}
+
+	checkReadOffset(m_read_offset, sizeof(dst));
+
+	dst = readV3F64(&m_data[m_read_offset]);
+
+	m_read_offset += sizeof(dst);
+	return *this;
+}
+#endif
 
 NetworkPacket& NetworkPacket::operator>>(s16& dst)
 {
@@ -458,15 +499,34 @@ NetworkPacket& NetworkPacket::operator>>(v2s32& dst)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator>>(v3s32& dst)
+v3s32 NetworkPacket::readV3S32()
 {
 	checkReadOffset(m_read_offset, 12);
 
-	dst = readV3S32(&m_data[m_read_offset]);
+	v3s32 dst = ::readV3S32(&m_data[m_read_offset]);
+
+	m_read_offset += 12;
+	return dst;
+}
+
+#if USE_POS32
+NetworkPacket& NetworkPacket::operator>>(v3pos_t& dst)
+{
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
+		v3s16 tmp;
+		*this >> tmp;
+		dst = s16ToPos(tmp);
+		return *this;
+	}
+
+	checkReadOffset(m_read_offset, 12);
+
+	dst = ::readV3S32(&m_data[m_read_offset]);
 
 	m_read_offset += 12;
 	return *this;
 }
+#endif
 
 NetworkPacket& NetworkPacket::operator<<(v2f src)
 {
@@ -483,6 +543,21 @@ NetworkPacket& NetworkPacket::operator<<(v3f src)
 	return *this;
 }
 
+#if USE_OPOS64
+NetworkPacket& NetworkPacket::operator<<(v3opos_t src)
+{
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
+		*this << oposToV3f(src);
+		return *this;
+	}
+
+	*this << (double)src.X;
+	*this << (double)src.Y;
+	*this << (double)src.Z;
+	return *this;
+}
+#endif
+
 NetworkPacket& NetworkPacket::operator<<(v3s16 src)
 {
 	*this << (s16) src.X;
@@ -498,12 +573,26 @@ NetworkPacket& NetworkPacket::operator<<(v2s32 src)
 	return *this;
 }
 
-NetworkPacket& NetworkPacket::operator<<(v3s32 src)
+#if USE_POS32
+NetworkPacket& NetworkPacket::operator<<(v3pos_t src)
 {
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
+        *this << posToS16(src);
+		return *this;
+	}
+
 	*this << (s32) src.X;
 	*this << (s32) src.Y;
 	*this << (s32) src.Z;
 	return *this;
+}
+#endif
+
+void NetworkPacket::writeV3S32(const v3s32 &src)
+{
+	*this << (s32) src.X;
+	*this << (s32) src.Y;
+	*this << (s32) src.Z;
 }
 
 NetworkPacket& NetworkPacket::operator>>(video::SColor& dst)

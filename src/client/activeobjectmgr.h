@@ -8,6 +8,7 @@
 #include <vector>
 #include "../activeobjectmgr.h"
 #include "clientobject.h"
+#include "irrlichttypes.h"
 
 namespace client
 {
@@ -21,12 +22,12 @@ public:
 	bool registerObject(std::shared_ptr<ClientActiveObject> obj) override;
 	void removeObject(u16 id) override;
 
-	void getActiveObjects(const v3f &origin, f32 max_d,
+	void getActiveObjects(const v3opos_t &origin, opos_t max_d,
 			std::vector<DistanceSortedActiveObject> &dest);
 
 	/// Gets all CAOs whose selection boxes may intersect the @p shootline.
 	/// @note CAOs without a selection box are not returned.
 	/// @note Distances are along the @p shootline.
-	std::vector<DistanceSortedActiveObject> getActiveSelectableObjects(const core::line3d<f32> &shootline);
+	std::vector<DistanceSortedActiveObject> getActiveSelectableObjects(const core::line3d<opos_t> &shootline);
 };
 } // namespace client

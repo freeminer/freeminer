@@ -185,12 +185,15 @@ public:
 	bool getS16NoEx(const std::string &name, s16 &val) const;
 	bool getU32NoEx(const std::string &name, u32 &val) const;
 	bool getS32NoEx(const std::string &name, s32 &val) const;
-	bool getU64NoEx(const std::string &name, u64 &val) const;
 	bool getPosNoEx(const std::string &name, pos_t &val) const;
+	bool getU64NoEx(const std::string &name, u64 &val) const;
 	bool getFloatNoEx(const std::string &name, float &val) const;
 	bool getFloatNoEx(const std::string &name, double &val) const;
 	bool getV2FNoEx(const std::string &name, v2f &val) const;
 	bool getV3FNoEx(const std::string &name, v3f &val) const;
+#if USE_OPOS64
+	bool getV3FNoEx(const std::string &name, v3opos_t &val) const;
+#endif
 
 	// Like other getters, but handling each flag individualy:
 	// 1) Read default flags (or 0)
@@ -216,7 +219,7 @@ public:
 	bool setS16(const std::string &name, s16 value);
 	bool setU16(const std::string &name, u16 value);
 	bool setS32(const std::string &name, s32 value);
-	bool setU64(const std::string &name, uint64_t value);
+	bool setU64(const std::string &name, u64 value);
 	bool setPos(const std::string &name, pos_t value);
 	bool setFloat(const std::string &name, float value);
 	bool setV2F(const std::string &name, v2f value);

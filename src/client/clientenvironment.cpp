@@ -96,7 +96,7 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 	bool is_climbing = lplayer->is_climbing;
 
 	f32 player_speed = lplayer->getSpeed().getLength();
-	v3f pf = lplayer->getPosition();
+	auto pf = lplayer->getPosition();
 
 	/*
 		Maximum position increment
@@ -290,7 +290,7 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 		// (day: LIGHT_SUN, night: 0)
 		MapNode node_at_lplayer(CONTENT_AIR, 0x0f, 0);
 
-		v3s16 p = lplayer->getLightPosition();
+		v3pos_t p = lplayer->getLightPosition();
 		node_at_lplayer = m_map->getNode(p);
 
 		u16 light = getInteriorLight(node_at_lplayer, 0, m_client->ndef());
@@ -478,12 +478,12 @@ ClientEnvEvent ClientEnvironment::getClientEnvEvent()
 }
 
 void ClientEnvironment::getSelectedActiveObjects(
-	const core::line3d<f32> &shootline_on_map,
+	const core::line3d<opos_t> &shootline_on_map,
 	std::vector<PointedThing> &objects,
 	const std::optional<Pointabilities> &pointabilities)
 {
 	auto allObjects = m_ao_manager.getActiveSelectableObjects(shootline_on_map);
-	const v3f line_vector = shootline_on_map.getVector();
+	const v3opos_t line_vector = shootline_on_map.getVector();
 
 	for (const auto &allObject : allObjects) {
 		auto obj = allObject.obj;
@@ -491,9 +491,9 @@ void ClientEnvironment::getSelectedActiveObjects(
 		if (!obj->getSelectionBox(&selection_box))
 			continue;
 
-		v3f current_intersection;
+		v3opos_t current_intersection;
 		v3f current_normal, current_raw_normal;
-		const v3f rel_pos = shootline_on_map.start - obj->getPosition();
+		const v3opos_t rel_pos = shootline_on_map.start - obj->getPosition();
 		bool collision;
 		GenericCAO* gcao = dynamic_cast<GenericCAO*>(obj.get());
 		if (gcao != nullptr && gcao->getProperties().rotate_selectionbox) {

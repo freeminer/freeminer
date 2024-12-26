@@ -11,6 +11,7 @@
 #include "irr_v3d.h"
 #include "irr_v2d.h"
 #include "network/connection.h"
+#include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/serveropcodes.h"
 #include "server/ban.h"
@@ -18,6 +19,7 @@
 #include "servermap.h"
 #include "threading/mutex_auto_lock.h"
 #include "constants.h"
+#include "util/numeric.h"
 #include "voxel.h"
 #include "config.h"
 #include "version.h"
@@ -200,7 +202,7 @@ v3f ServerPlayingSound::getPos(ServerEnvironment *env, bool *pos_exists) const
 				return v3f(0,0,0);
 			if (pos_exists)
 				*pos_exists = true;
-			return sao->getBasePosition();
+			return oposToV3f(sao->getBasePosition());
 		}
 	}
 
@@ -958,7 +960,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 
 		ScopeProfiler sp(g_profiler, "Server: liquid transform");
 
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3bpos_t, MapBlock*> modified_blocks;
 		m_env->getServerMap().transformLiquids(modified_blocks, m_env);
 
 		if (!modified_blocks.empty()) {
@@ -1225,7 +1227,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		// We'll log the amount of each
 		Profiler prof;
 
-		std::unordered_set<v3s16> node_meta_updates;
+		std::unordered_set<v3pos_t> node_meta_updates;
 
 		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 #if !ENABLE_THREADS
@@ -1604,8 +1606,9 @@ void Server::ProcessData(NetworkPacket *pkt)
 			return;
 		}
 
-		u8 peer_ser_ver = getClient(peer_id, CS_InitDone)->serialization_version;
-
+		RemoteClient * client = getClient(peer_id, CS_InitDone);
+		u8 peer_ser_ver = client->serialization_version;
+		pkt->setProtoVer(client->net_proto_version);
 		if(peer_ser_ver == SER_FMT_VER_INVALID) {
 			errorstream << "Server: Peer serialization format invalid. "
 					"Skipping incoming command "
@@ -1936,7 +1939,7 @@ void Server::SendSpawnParticle(session_t peer_id, u16 protocol_version,
 
 	if (peer_id == PEER_ID_INEXISTENT) {
 		std::vector<session_t> clients = m_clients.getClientIDs();
-		const v3f pos = p.pos * BS;
+		const auto pos = p.pos * BS;
 		const float radius_sq = radius * radius;
 
 		for (const session_t client_id : clients) {
@@ -1958,7 +1961,7 @@ void Server::SendSpawnParticle(session_t peer_id, u16 protocol_version,
 	}
 	assert(protocol_version != 0);
 
-	NetworkPacket pkt(TOCLIENT_SPAWN_PARTICLE, 0, peer_id);
+	NetworkPacket pkt(TOCLIENT_SPAWN_PARTICLE, 0, peer_id, protocol_version);
 
 	{
 		// NetworkPacket and iostreams are incompatible...
@@ -2000,7 +2003,7 @@ void Server::SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
 				PlayerSAO *sao = player->getPlayerSAO();
 				if (!sao)
 					continue;
-				if (sao->getBasePosition().getDistanceFromSQ(pos) > radius_sq)
+				if (sao->getBasePosition().getDistanceFromSQ(v3fToOpos(pos)) > radius_sq)
 					continue;
 			}
 
@@ -2011,7 +2014,7 @@ void Server::SendAddParticleSpawner(session_t peer_id, u16 protocol_version,
 	}
 	assert(protocol_version != 0);
 
-	NetworkPacket pkt(TOCLIENT_ADD_PARTICLESPAWNER, 100, peer_id);
+	NetworkPacket pkt(TOCLIENT_ADD_PARTICLESPAWNER, 100, peer_id, protocol_version);
 
 	pkt << p.amount << p.time;
 
@@ -2304,11 +2307,11 @@ void Server::SendMovePlayer(PlayerSAO *sao)
 	// Send attachment updates instantly to the client prior updating position
 	sao->sendOutdatedData();
 
-	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof(v3f) + sizeof(f32) * 2, sao->getPeerID());
+	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof_v3opos(sao->getPlayer()->protocol_version) + sizeof(f32) * 2, sao->getPeerID(), sao->getPlayer()->protocol_version);
 	pkt << sao->getBasePosition() << sao->getLookPitch() << sao->getRotation().Y;
 
 	{
-		v3f pos = sao->getBasePosition();
+		auto pos = sao->getBasePosition();
 		verbosestream << "Server: Sending TOCLIENT_MOVE_PLAYER"
 				<< " pos=(" << pos.X << "," << pos.Y << "," << pos.Z << ")"
 				<< " pitch=" << sao->getLookPitch()
@@ -2319,7 +2322,7 @@ void Server::SendMovePlayer(PlayerSAO *sao)
 	Send(&pkt);
 }
 
-void Server::SendMovePlayerRel(session_t peer_id, const v3f &added_pos)
+void Server::SendMovePlayerRel(session_t peer_id, const v3opos_t &added_pos)
 {
 	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER_REL, 0, peer_id);
 	pkt << added_pos;
@@ -2587,7 +2590,7 @@ s32 Server::playSound(ServerPlayingSound &params, bool ephemeral)
 				continue;
 
 			if (pos_exists) {
-				if(sao->getBasePosition().getDistanceFrom(pos) >
+				if(sao->getBasePosition().getDistanceFrom(v3fToOpos(pos)) >
 						params.max_hear_distance)
 					continue;
 			}
@@ -2662,33 +2665,23 @@ void Server::fadeSound(s32 handle, float step, float gain)
 		m_playing_sounds.erase(it);
 }
 
-void Server::sendRemoveNode(v3s16 p, std::unordered_set<u16> *far_players,
+void Server::sendRemoveNode(v3pos_t p, std::unordered_set<u16> *far_players,
 		float far_d_nodes)
 {
-	v3f p_f = intToFloat(p, BS);
-	v3s16 block_pos = getNodeBlockPos(p);
-
-	NetworkPacket pkt(TOCLIENT_REMOVENODE, 6);
-	pkt << p;
-
-	sendNodeChangePkt(pkt, block_pos, p_f, far_d_nodes, far_players);
+	sendNodeChangePkt(TOCLIENT_REMOVENODE, {}, p, far_d_nodes, far_players);
 }
 
-void Server::sendAddNode(v3s16 p, MapNode n, std::unordered_set<u16> *far_players,
+void Server::sendAddNode(v3pos_t p, MapNode n, std::unordered_set<u16> *far_players,
 		float far_d_nodes, bool remove_metadata)
 {
-	v3f p_f = intToFloat(p, BS);
-	v3s16 block_pos = getNodeBlockPos(p);
-
-	NetworkPacket pkt(TOCLIENT_ADDNODE, 6 + 2 + 1 + 1 + 1);
-	pkt << p << n.param0 << n.param1 << n.param2
-			<< (u8) (remove_metadata ? 0 : 1);
-	sendNodeChangePkt(pkt, block_pos, p_f, far_d_nodes, far_players);
+	sendNodeChangePkt(TOCLIENT_ADDNODE, n, p, far_d_nodes, far_players, remove_metadata);
 }
 
-void Server::sendNodeChangePkt(NetworkPacket &pkt, v3s16 block_pos,
-		v3f p, float far_d_nodes, std::unordered_set<u16> *far_players)
+void Server::sendNodeChangePkt(u16 command, const MapNode& n, v3pos_t p_int, float far_d_nodes, std::unordered_set<u16> *far_players, bool remove_metadata)
 {
+	v3opos_t p = intToFloat(p_int, (opos_t)BS);
+	v3bpos_t block_pos = getNodeBlockPos(p_int);
+
 	float maxd = far_d_nodes * BS;
 	std::vector<session_t> clients = m_clients.getClientIDs();
 	ClientInterface::AutoLock clientlock(m_clients);
@@ -2711,11 +2704,22 @@ void Server::sendNodeChangePkt(NetworkPacket &pkt, v3s16 block_pos,
 			continue;
 		}
 
-		Send(client_id, &pkt);
+		if (command == TOCLIENT_ADDNODE) {
+			NetworkPacket pkt(TOCLIENT_ADDNODE,
+					sizeof_v3pos(player->protocol_version) + 2 + 1 + 1 + 1, 0,
+					player->protocol_version);
+			pkt << p << n.param0 << n.param1 << n.param2 << (u8)(remove_metadata ? 0 : 1);
+			m_clients.send(client_id, &pkt);
+		} else if (command == TOCLIENT_REMOVENODE) {
+			NetworkPacket pkt(TOCLIENT_REMOVENODE, sizeof_v3pos(player->protocol_version),
+					0, player->protocol_version);
+			pkt << p;
+			m_clients.send(client_id, &pkt);
+		}
 	}
 }
 
-void Server::sendMetadataChanged(const std::unordered_set<v3s16> &positions, float far_d_nodes)
+void Server::sendMetadataChanged(const std::unordered_set<v3pos_t> &positions, float far_d_nodes)
 {
 	NodeMetadataList meta_updates_list(false);
 	std::ostringstream os(std::ios::binary);
@@ -2729,17 +2733,17 @@ void Server::sendMetadataChanged(const std::unordered_set<v3s16> &positions, flo
 			continue;
 
 		ServerActiveObject *player = getPlayerSAO(i);
-		v3s16 player_pos;
+		v3pos_t player_pos;
 		if (player)
 			player_pos = floatToInt(player->getBasePosition(), BS);
 
-		for (const v3s16 pos : positions) {
+		for (const v3pos_t pos : positions) {
 			NodeMetadata *meta = m_env->getMap().getNodeMetadata(pos);
 
 			if (!meta)
 				continue;
 
-			v3s16 block_pos = getNodeBlockPos(pos);
+			v3bpos_t block_pos = getNodeBlockPos(pos);
 			if (!client->isBlockSent(block_pos) ||
 					player_pos.getDistanceFrom(pos) > far_d_nodes) {
 				client->SetBlockNotSent(block_pos);
@@ -2790,7 +2794,7 @@ void Server::SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
 		sptr = &s;
 	}
 
-	NetworkPacket pkt(TOCLIENT_BLOCKDATA, 2 + 2 + 2 + sptr->size(), peer_id);
+	NetworkPacket pkt(TOCLIENT_BLOCKDATA, sizeof_v3pos(m_env->getPlayer(peer_id)->protocol_version) + sptr->size(), peer_id, m_env->getPlayer(peer_id)->protocol_version);
 	pkt << block->getPos();
 	pkt.putRawString(*sptr);
 	pkt << block->far_step;
@@ -2894,7 +2898,7 @@ int Server::SendBlocks(float dtime)
 	return total;
 }
 
-bool Server::SendBlock(session_t peer_id, const v3s16 &blockpos)
+bool Server::SendBlock(session_t peer_id, const v3bpos_t &blockpos)
 {
 	MapBlock *block = m_env->getMap().getBlockNoCreateNoEx(blockpos);
 	if (!block)
@@ -4302,10 +4306,10 @@ void Server::addShutdownError(const ModError &e)
 }
 
 #if 1
-v3f Server::findSpawnPos(const std::string &player_name)
+v3opos_t Server::findSpawnPos(const std::string &player_name)
 {
 	ServerMap &map = m_env->getServerMap();
-	v3f nodeposf;
+	v3opos_t nodeposf;
 
 	pos_t find = 0;
 	g_settings->getPosNoEx("static_spawnpoint_find", find);
@@ -4328,7 +4332,7 @@ v3f Server::findSpawnPos(const std::string &player_name)
 	for (s32 i = 0; i < 4000 && !is_good; i++) {
 		s32 range = MYMIN(1 + i, range_max);
 		// We're going to try to throw the player to this position
-		v2s16 nodepos2d = v2s16(
+		v2pos_t nodepos2d = v2pos_t(
 		    nodeposf.X
 			-range + myrand_range(0, range*2),
 		    nodeposf.Z
@@ -4367,7 +4371,7 @@ v3f Server::findSpawnPos(const std::string &player_name)
 				if (air_count >= min_air_height) {
 					// Spawn in lower empty node
 					nodepos.Y--;
-					nodeposf = intToFloat(nodepos, BS);
+					nodeposf = posToOpos(nodepos, BS);
 					// Don't spawn the player outside map boundaries
 					if (objectpos_over_limit(nodeposf)) {
 						nodeposf = {0,0,0};
@@ -4393,7 +4397,7 @@ v3f Server::findSpawnPos(const std::string &player_name)
 		return nodeposf;
 
 	// No suitable spawn point found, return fallback 0,0,0
-	return v3f(0.0f, 0.0f, 0.0f);
+	return v3opos_t(0.0f, 0.0f, 0.0f);
 }
 #endif
 

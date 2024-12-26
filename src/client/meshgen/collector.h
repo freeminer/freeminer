@@ -5,6 +5,7 @@
 #pragma once
 #include <array>
 #include <vector>
+#include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "irr_v3d.h"
 #include <S3DVertex.h>
@@ -25,12 +26,12 @@ struct MeshCollector
 	std::array<std::vector<PreMeshBuffer>, MAX_TILE_LAYERS> prebuffers;
 	// bounding sphere radius and center
 	f32 m_bounding_radius_sq = 0.0f;
-	v3f m_center_pos;
+	v3opos_t m_center_pos;
 	v3f offset;
 
 	// center_pos: pos to use for bounding-sphere, in BS-space
 	// offset: offset added to vertices
-	MeshCollector(const v3f center_pos, v3f offset = v3f()) : m_center_pos(center_pos), offset(offset) {}
+	MeshCollector(const v3opos_t center_pos, v3f offset = v3f()) : m_center_pos(center_pos), offset(offset) {}
 
 	void append(const TileSpec &material,
 			const video::S3DVertex *vertices, u32 numVertices,

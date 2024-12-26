@@ -25,7 +25,7 @@ struct InventoryLocation
 	} type;
 
 	std::string name; // PLAYER, DETACHED
-	v3s16 p; // NODEMETA
+	v3pos_t p; // NODEMETA
 
 	InventoryLocation()
 	{
@@ -44,7 +44,7 @@ struct InventoryLocation
 		type = PLAYER;
 		name = name_;
 	}
-	void setNodeMeta(const v3s16 &p_)
+	void setNodeMeta(const v3pos_t &p_)
 	{
 		type = NODEMETA;
 		p = p_;

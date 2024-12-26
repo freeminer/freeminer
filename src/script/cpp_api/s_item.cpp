@@ -19,7 +19,7 @@
 	LuaError(std::string(__FUNCTION__) + ": " + (e).what() + ". " detail)
 
 bool ScriptApiItem::item_OnDrop(ItemStack &item,
-		ServerActiveObject *dropper, v3f pos)
+		ServerActiveObject *dropper, v3opos_t pos)
 {
 	SCRIPTAPI_PRECHECKHEADER
 
@@ -209,7 +209,7 @@ bool ScriptApiItem::item_CraftPredict(ItemStack &item, ServerActiveObject *user,
 // If core.registered_items[name] doesn't exist, core.nodedef_default
 // is tried instead so unknown items can still be manipulated to some degree
 bool ScriptApiItem::getItemCallback(const char *name, const char *callbackname,
-		const v3s16 *p)
+		const v3pos_t *p)
 {
 	lua_State* L = getStack();
 

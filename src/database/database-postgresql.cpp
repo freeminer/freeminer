@@ -209,7 +209,7 @@ void MapDatabasePostgreSQL::initStatements()
 		"SELECT posX, posY, posZ FROM blocks");
 }
 
-bool MapDatabasePostgreSQL::saveBlock(const v3s16 &pos, std::string_view data)
+bool MapDatabasePostgreSQL::saveBlock(const v3bpos_t &pos, std::string_view data)
 {
 	// Verify if we don't overflow the platform integer with the mapblock size
 	if (data.size() > INT_MAX) {
@@ -241,7 +241,7 @@ bool MapDatabasePostgreSQL::saveBlock(const v3s16 &pos, std::string_view data)
 	return true;
 }
 
-void MapDatabasePostgreSQL::loadBlock(const v3s16 &pos, std::string *block)
+void MapDatabasePostgreSQL::loadBlock(const v3bpos_t &pos, std::string *block)
 {
 	verifyDatabase();
 
@@ -265,7 +265,7 @@ void MapDatabasePostgreSQL::loadBlock(const v3s16 &pos, std::string *block)
 	PQclear(results);
 }
 
-bool MapDatabasePostgreSQL::deleteBlock(const v3s16 &pos)
+bool MapDatabasePostgreSQL::deleteBlock(const v3bpos_t &pos)
 {
 	verifyDatabase();
 
@@ -283,7 +283,7 @@ bool MapDatabasePostgreSQL::deleteBlock(const v3s16 &pos)
 	return true;
 }
 
-void MapDatabasePostgreSQL::listAllLoadableBlocks(std::vector<v3s16> &dst)
+void MapDatabasePostgreSQL::listAllLoadableBlocks(std::vector<v3bpos_t> &dst)
 {
 	verifyDatabase();
 
@@ -293,7 +293,7 @@ void MapDatabasePostgreSQL::listAllLoadableBlocks(std::vector<v3s16> &dst)
 	int numrows = PQntuples(results);
 
 	for (int row = 0; row < numrows; ++row)
-		dst.push_back(pg_to_v3s16(results, row, 0));
+		dst.push_back(pg_to_v3bpos_t(results, row, 0));
 
 	PQclear(results);
 }
@@ -445,7 +445,7 @@ void PlayerDatabasePostgreSQL::savePlayer(RemotePlayer *player)
 
 	verifyDatabase();
 
-	v3f pos = sao->getBasePosition();
+	auto pos = sao->getBasePosition();
 	std::string pitch = ftos(sao->getLookPitch());
 	std::string yaw = ftos(sao->getRotation().Y);
 	std::string posx = ftos(pos.X);
@@ -542,7 +542,7 @@ bool PlayerDatabasePostgreSQL::loadPlayer(RemotePlayer *player, PlayerSAO *sao)
 
 	sao->setLookPitch(pg_to_float(results, 0, 0));
 	sao->setRotation(v3f(0, pg_to_float(results, 0, 1), 0));
-	sao->setBasePosition(v3f(
+	sao->setBasePosition(v3opos_t(
 		pg_to_float(results, 0, 2),
 		pg_to_float(results, 0, 3),
 		pg_to_float(results, 0, 4))

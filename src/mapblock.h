@@ -9,6 +9,7 @@
 #include <atomic>
 #include <vector>
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapnode.h"
 #include "exceptions.h"
 #include "constants.h"
@@ -81,7 +82,7 @@ class MapBlock
 : public locker<> // TODO: find all deadlocks and change to shared_locker
 {
 public:
-	MapBlock(v3s16 pos, IGameDef *gamedef);
+	MapBlock(v3bpos_t pos, IGameDef *gamedef);
 	~MapBlock();
 
 	// Any server-modding code can "delete" arbitrary blocks (i.e. with
@@ -248,21 +249,21 @@ public:
 		return m_pos;
 	}
 
-	inline v3s16 getPosRelative()
+	inline v3pos_t getPosRelative()
 	{
 		return m_pos_relative;
 	}
 
-	inline core::aabbox3d<s16> getBox() {
+	inline core::aabbox3d<pos_t> getBox() {
 		return getBox(getPosRelative());
 	}
 
-	static inline core::aabbox3d<s16> getBox(const v3s16 &pos_relative)
+	static inline core::aabbox3d<pos_t> getBox(const v3pos_t &pos_relative)
 	{
-		return core::aabbox3d<s16>(pos_relative,
+		return core::aabbox3d<pos_t>(pos_relative,
 				pos_relative
-				+ v3s16(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE)
-				- v3s16(1,1,1));
+				+ v3pos_t(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE)
+				- v3pos_t(1,1,1));
 	}
 
 	////
@@ -276,7 +277,7 @@ public:
 			&& z >= 0 && z < MAP_BLOCKSIZE;
 	}
 
-	inline bool isValidPosition(v3s16 p)
+	inline bool isValidPosition(v3pos_t p)
 	{
 		return isValidPosition(p.X, p.Y, p.Z);
 	}
@@ -309,7 +310,7 @@ public:
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE);
 	}
 
-	inline void setNode(v3s16 p, MapNode n)
+	inline void setNode(v3pos_t p, MapNode n)
 	{
 		setNode(p.X, p.Y, p.Z, n);
 	}
@@ -321,18 +322,18 @@ public:
 	//// Non-checking variants of the above
 	////
 
-	inline MapNode getNodeNoCheck(s16 x, s16 y, s16 z)
+	inline MapNode getNodeNoCheck(pos_t x, pos_t y, pos_t z)
 	{
 		const auto lock = lock_shared_rec();
 		return data[z * zstride + y * ystride + x];
 	}
 
-	inline MapNode getNodeNoCheck(v3s16 p)
+	inline MapNode getNodeNoCheck(v3pos_t p)
 	{
 		return getNodeNoCheck(p.X, p.Y, p.Z);
 	}
 
-	inline void setNodeNoCheck(s16 x, s16 y, s16 z, MapNode n)
+	inline void setNodeNoCheck(pos_t x, pos_t y, pos_t z, MapNode n)
 	{
         const auto lock = lock_unique_rec();
 
@@ -372,7 +373,7 @@ public:
 	bool onObjectsActivation();
 	bool saveStaticObject(u16 id, const StaticObject &obj, u32 reason);
 
-	void step(float dtime, const std::function<bool(v3s16, MapNode, f32)> &on_timer_cb);
+	void step(float dtime, const std::function<bool(v3pos_t, MapNode, f32)> &on_timer_cb);
 
 	////
 	//// Timestamp (see m_timestamp)
@@ -445,12 +446,12 @@ public:
 	//// Node Timers
 	////
 
-	inline NodeTimer getNodeTimer(v3s16 p)
+	inline NodeTimer getNodeTimer(v3pos_t p)
 	{
 		return m_node_timers.get(p);
 	}
 
-	inline void removeNodeTimer(v3s16 p)
+	inline void removeNodeTimer(v3pos_t p)
 	{
 		m_node_timers.remove(p);
 	}
@@ -614,7 +615,7 @@ private:
 	bool m_orphan = false;
 
 	// Position in blocks on parent
-	v3s16 m_pos;
+	v3bpos_t m_pos;
 
 	/* Precalculated m_pos_relative value
 	 * This caches the value, improving performance by removing 3 s16 multiplications
@@ -622,7 +623,7 @@ private:
 	 * For a 5 minutes runtime with valgrind this removes 3 * 19M s16 multiplications.
 	 * The gain can be estimated in Release Build to 3 * 100M multiply operations for 5 mins.
 	 */
-	v3s16 m_pos_relative;
+	v3pos_t m_pos_relative;
 
 	/*
 		Reference count; currently used for determining if this block is in
@@ -720,9 +721,22 @@ inline bool objectpos_over_limit(v3f p)
 		p.Z >  max_limit_bs;
 }
 
-inline bool blockpos_over_max_limit(v3s16 p)
+#if USE_OPOS64
+inline bool objectpos_over_limit(v3opos_t p)
 {
-	const s16 max_limit_bp = MAX_MAP_GENERATION_LIMIT / MAP_BLOCKSIZE;
+	const opos_t max_limit_bs = MAX_MAP_GENERATION_LIMIT * BS;
+	return p.X < -max_limit_bs ||
+		p.X >  max_limit_bs ||
+		p.Y < -max_limit_bs ||
+		p.Y >  max_limit_bs ||
+		p.Z < -max_limit_bs ||
+		p.Z >  max_limit_bs;
+}
+#endif
+
+inline bool blockpos_over_max_limit(v3bpos_t p)
+{
+	const bpos_t max_limit_bp = MAX_MAP_GENERATION_LIMIT / MAP_BLOCKSIZE;
 	return p.X < -max_limit_bp ||
 		p.X >  max_limit_bp ||
 		p.Y < -max_limit_bp ||
@@ -734,7 +748,7 @@ inline bool blockpos_over_max_limit(v3s16 p)
 /*
 	Returns the position of the block where the node is located
 */
-inline v3s16 getNodeBlockPos(v3s16 p)
+inline v3bpos_t getNodeBlockPos(v3pos_t p)
 {
 	return v3bpos_t(p.X >> MAP_BLOCKP, p.Y >> MAP_BLOCKP, p.Z >> MAP_BLOCKP);
 /*
@@ -742,9 +756,14 @@ inline v3s16 getNodeBlockPos(v3s16 p)
 */
 }
 
-inline void getNodeBlockPosWithOffset(v3s16 p, v3s16 &block, v3s16 &offset)
+inline void getNodeBlockPosWithOffset(v3pos_t p, v3bpos_t &block, v3pos_t &offset)
 {
 	getContainerPosWithOffset(p, MAP_BLOCKSIZE, block, offset);
+}
+
+inline v3pos_t getBlockPosRelative(const v3bpos_t &p)
+{
+	return v3pos_t(p.X, p.Y, p.Z) * MAP_BLOCKSIZE;
 }
 
 /*

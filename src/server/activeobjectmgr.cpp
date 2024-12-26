@@ -152,7 +152,7 @@ bool ActiveObjectMgr::registerObject(std::shared_ptr<ServerActiveObject> obj)
 	}
 
 	if (objectpos_over_limit(obj->getBasePosition())) {
-		v3f p = obj->getBasePosition();
+		auto p = obj->getBasePosition();
 		warningstream << "Server::ActiveObjectMgr::addActiveObjectRaw(): "
 				<< "object position (" << p.X << "," << p.Y << "," << p.Z
 				<< ") outside maximum range" << std::endl;
@@ -203,7 +203,7 @@ void ActiveObjectMgr::invalidateActiveObjectObserverCaches()
 	}
 }
 
-void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
+void ActiveObjectMgr::getObjectsInsideRadius(const v3opos_t &pos, float radius,
 		std::vector<ServerActiveObjectPtr> &result,
 		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
 {
@@ -233,7 +233,7 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 		auto obj = activeObject.second;
 		if (!obj)
 			continue;
-		const v3f &objectpos = obj->getBasePosition();
+		const v3opos_t &objectpos = obj->getBasePosition();
 		if (objectpos.getDistanceFromSQ(pos) > r2)
 			continue;
 
@@ -242,7 +242,7 @@ void ActiveObjectMgr::getObjectsInsideRadius(const v3f &pos, float radius,
 	}
 }
 
-void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
+void ActiveObjectMgr::getObjectsInArea(const aabb3o &box,
 		std::vector<ServerActiveObjectPtr> &result,
 		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
 {
@@ -267,7 +267,7 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		auto obj = activeObject.second;
 		if (!obj)
 			continue;
-		const v3f &objectpos = obj->getBasePosition();
+		const v3opos_t &objectpos = obj->getBasePosition();
 		if (!box.isPointInside(objectpos))
 			continue;
 
@@ -277,7 +277,7 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 }
 
 void ActiveObjectMgr::getAddedActiveObjectsAroundPos(
-		const v3f &player_pos, const std::string &player_name,
+		const v3opos_t &player_pos, const std::string &player_name,
 		f32 radius, f32 player_radius,
 		const std::set<u16> &current_objects,
 		std::vector<u16> &added_objects)

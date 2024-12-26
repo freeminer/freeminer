@@ -14,7 +14,7 @@
 class UnitSAO : public ServerActiveObject
 {
 public:
-	UnitSAO(ServerEnvironment *env, v3f pos);
+	UnitSAO(ServerEnvironment *env, v3opos_t pos);
 	virtual ~UnitSAO() = default;
 
 	u16 getHP() const override { return m_hp; }
@@ -101,7 +101,7 @@ public:
 	std::string generateUpdateAnimationSpeedCommand() const;
 	std::string generateUpdateAnimationCommand() const;
 	std::string generateUpdateArmorGroupsCommand() const;
-	static std::string generateUpdatePositionCommand(const v3f &position,
+	static std::string generateUpdatePositionCommand(const v3opos_t &position,
 			const v3f &velocity, const v3f &acceleration, const v3f &rotation,
 			bool do_interpolate, bool is_movement_end, f32 update_interval);
 	std::string generateSetPropertiesCommand(const ObjectProperties &prop) const;

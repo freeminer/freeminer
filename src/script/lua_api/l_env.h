@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "lua_api/l_base.h"
 #include "raycast.h"
 
@@ -16,23 +17,23 @@ protected:
 	static void collectNodeIds(lua_State *L, int idx,
 		const NodeDefManager *ndef, std::vector<content_t> &filter);
 
-	static void checkArea(v3s16 &minp, v3s16 &maxp);
+	static void checkArea(v3pos_t &minp, v3pos_t &maxp);
 
-	// F must be (v3s16 pos) -> MapNode
+	// F must be (v3pos_t pos) -> MapNode
 	template <typename F>
-	static int findNodeNear(lua_State *L, v3s16 pos, int radius,
+	static int findNodeNear(lua_State *L, v3pos_t pos, int radius,
 		const std::vector<content_t> &filter, int start_radius, F &&getNode);
 
 	// F must be (G callback) -> void
-	// with G being (v3s16 p, MapNode n) -> bool
+	// with G being (v3pos_t p, MapNode n) -> bool
 	// and behave like Map::forEachNodeInArea
 	template <typename F>
 	static int findNodesInArea(lua_State *L,  const NodeDefManager *ndef,
 		const std::vector<content_t> &filter, bool grouped, F &&iterate);
 
-	// F must be (v3s16 pos) -> MapNode
+	// F must be (v3pos_t pos) -> MapNode
 	template <typename F>
-	static int findNodesInAreaUnderAir(lua_State *L, v3s16 minp, v3s16 maxp,
+	static int findNodesInAreaUnderAir(lua_State *L, v3pos_t minp, v3pos_t maxp,
 		const std::vector<content_t> &filter, F &&getNode);
 
 	static const EnumString es_ClearObjectsMode[];
@@ -308,7 +309,7 @@ private:
 public:
 	//! Constructor with the same arguments as RaycastState.
 	LuaRaycast(
-		const core::line3d<f32> &shootline,
+		const core::line3d<opos_t> &shootline,
 		bool objects_pointable,
 		bool liquids_pointable,
 		const std::optional<Pointabilities> &pointabilities) :
