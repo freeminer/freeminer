@@ -365,8 +365,8 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	std::string zipfull = folder + "/" + zipfile;
 
 	char buff[100];
-	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d.hgt", lat_dec > 0 ? 'N' : 'S',
-			abs(lat_dec), lon_dec > 0 ? 'E' : 'W', abs(lon_dec));
+	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d.hgt", lat_dec >= 0 ? 'N' : 'S',
+			abs(lat_dec), lon_dec >= 0 ? 'E' : 'W', abs(lon_dec));
 	std::string filename = buff;
 
 	std::string filefull = folder + "/" + filename;
