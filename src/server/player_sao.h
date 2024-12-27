@@ -205,7 +205,7 @@ public:
 	v3pos_t m_nocheat_dig_pos = v3pos_t(32767, 32767, 32767);
 	float m_nocheat_dig_time = 0.0f;
 	float m_max_speed_override_time = 0.0f;
-	v3f m_max_speed_override = v3f(0.0f, 0.0f, 0.0f);
+	v3opos_t m_max_speed_override = v3opos_t(0.0f, 0.0f, 0.0f);
 
 	// Timers
 	IntervalLimiter m_breathing_interval;

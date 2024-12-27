@@ -700,9 +700,9 @@ std::string PlayerSAO::getPropertyPacket()
 void PlayerSAO::setMaxSpeedOverride(const v3f &vel)
 {
 	if (m_max_speed_override_time == 0.0f)
-		m_max_speed_override = vel;
+		m_max_speed_override = v3fToOpos(vel);
 	else
-		m_max_speed_override += vel;
+		m_max_speed_override += v3fToOpos(vel);
 	if (m_player) {
 		float accel = MYMIN(m_player->movement_acceleration_default,
 				m_player->movement_acceleration_air);
@@ -787,7 +787,7 @@ bool PlayerSAO::checkMovementCheat()
 		player_max_jump = 0.0001f;
 
 	v3opos_t diff = (getBasePosition() - m_last_good_position);
-	float d_vert = diff.Y;
+	auto d_vert = diff.Y;
 	diff.Y = 0;
 	auto d_horiz = diff.getLength();
 	auto required_time = d_horiz / player_max_walk;
