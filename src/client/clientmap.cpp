@@ -4,6 +4,8 @@
 
 #include "fm_far_calc.h"
 
+#include "fm_far_calc.h"
+
 #include "clientmap.h"
 #include "client.h"
 #include "client/mesh.h"
