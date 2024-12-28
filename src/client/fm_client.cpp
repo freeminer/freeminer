@@ -252,7 +252,8 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	} else {
 		static thread_local const auto farmesh_server =
 				g_settings->getU16("farmesh_server");
-		if (!farmesh_server) {
+		static thread_local const auto farmesh = g_settings->getU16("farmesh");
+		if (!farmesh_server || !farmesh) {
 			return;
 		}
 

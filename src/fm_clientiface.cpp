@@ -607,7 +607,7 @@ uint32_t RemoteClient::SendFarBlocks()
 		}
 
 		// TODO: why not have?
-		if (have_farmesh_quality) {
+		if (farmesh && have_farmesh_quality && farmesh_all_changed) {
 			auto *player = m_env->getPlayer(peer_id);
 			if (!player)
 				return 0;
