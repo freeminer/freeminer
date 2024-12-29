@@ -245,16 +245,20 @@ const auto multi_http_to_file = [](const auto &zipfile,
 										const std::vector<std::string> &links,
 										const auto &zipfull) {
 	static concurrent_set<std::string> http_failed;
-	if (http_failed.contains(zipfile))
+	if (http_failed.contains(zipfile)) {
 		return std::filesystem::file_size(zipfull);
+	}
 
-	if (std::filesystem::exists(zipfull))
+	if (std::filesystem::exists(zipfull)) {
 		return std::filesystem::file_size(zipfull);
+	}
 
 	for (const auto &uri : links) {
-		if (http_to_file(uri, zipfull))
+		if (http_to_file(uri, zipfull)) {
 			return std::filesystem::file_size(zipfull);
+		}
 	}
+
 	http_failed.insert(zipfile);
 
 	errorstream
@@ -304,7 +308,7 @@ const auto gen_zip_name = [](int lat_dec, int lon_dec) {
 		zipname += 'S';
 		zipname += char('A' + abs(ceil(lat_dec / 90.0 * 23)));
 	} else {
-		zipname += char('A' + abs(floor(lat_dec / 90.0 * 23)));
+		zipname += char('A' + abs(round(lat_dec / 90.0 * 21)));
 	}
 	zipname += std::to_string(int(floor((((lon_dec + 180) / 360.0)) * 60) + 1));
 	return zipname;
@@ -335,6 +339,7 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	lat_loading = lat_dec;
 	lon_loading = lon_dec;
 
+//#define GEN_TEST 1
 #if GEN_TEST
 	{
 		size_t fails = 0;
@@ -348,6 +353,9 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 					 std::pair{std::pair{83, 30}, "U26"},
 					 std::pair{std::pair{68, 163}, "R03"}, // TODO!!!
 					 std::pair{std::pair{70, 164}, "R03"},
+					 std::pair{std::pair{47, 5}, "L31"},
+					 std::pair{std::pair{43, 5}, "K31"},
+					 std::pair{std::pair{44, 5}, "L31"},
 			 }) {
 			std::string r;
 			if (r = gen_zip_name(t.first.first, t.first.second); t.second != r) {
@@ -365,8 +373,8 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 	std::string zipfull = folder + "/" + zipfile;
 
 	char buff[100];
-	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d.hgt", lat_dec > 0 ? 'N' : 'S',
-			abs(lat_dec), lon_dec > 0 ? 'E' : 'W', abs(lon_dec));
+	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d.hgt", lat_dec >= 0 ? 'N' : 'S',
+			abs(lat_dec), lon_dec >= 0 ? 'E' : 'W', abs(lon_dec));
 	std::string filename = buff;
 
 	std::string filefull = folder + "/" + filename;
@@ -384,12 +392,17 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		seconds_per_px_x =
 				tile_deg_x * 3600 / (float)(side_length_x - side_length_x_extra);
 		seconds_per_px_y = ceil(tile_deg_y * 3600 / (float)(side_length_y));
-		DUMP(tile_deg_y * 3600 / (float)(side_length_y));
-		DUMP("sides", side_length_x, side_length_y, seconds_per_px_x, seconds_per_px_y);
+		//DUMP(tile_deg_y * 3600 / (float)(side_length_y));
+		//DUMP("sides", side_length_x, side_length_y, seconds_per_px_x, seconds_per_px_y);
 	};
 
 	// zst fastest
 	if (srtmTile.empty()) {
+		char buff[100];
+		std::snprintf(
+				buff, sizeof(buff), "%c%02d", lat_dec >= 0 ? 'N' : 'S', abs(lat_dec));
+		std::string zipname = buff;
+
 		const auto zstfile = zipname + "/" + filename + ".zst";
 		std::string ffolder = folder + "/" + zipname;
 		std::string zstdfull = folder + "/" + zstfile;
@@ -741,7 +754,7 @@ gebco_2023_sub_ice_n0.0_s-90.0_w90.0_e180.0.tif   8 australia
 	const auto w_end = w_start + 90;
 	name += std::to_string(w_end);
 	name += ".0";
-	DUMP(lat, lon, name, h_start, h_end, w_start, w_end);
+	// DUMP(lat, lon, name, h_start, h_end, w_start, w_end);
 	return name;
 }
 
@@ -749,7 +762,6 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 {
 	const auto lat_dec = lat90_start(lat);
 	const auto lon_dec = lon90_start(lon);
-
 #if TEST
 	static int once = 0;
 	if (!once++)
@@ -786,8 +798,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 		//DUMP(lat_dec, lon_dec);
 		return false;
 	}
-	DUMP("loadstart", (long long)this, lat_dec, lon_dec, lat_loading, lon_loading,
-			lat_loaded, lon_loaded);
+	//DUMP("loadstart", (long long)this, lat, lon, lat_dec, lon_dec, lat_loading, lon_loading, lat_loaded, lon_loaded, floor(lat / 90.0 + 1) * 90);
 	TimeTaker timer("tiff load");
 
 	lat_loading = lat_dec;
@@ -796,7 +807,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 	{
 		const auto name = file_name(lat, lon);
 		auto tifname = folder + "/" + "gebco_2023_sub_ice_" + name + ".tif";
-		DUMP(name, tifname);
+		//DUMP(name, tifname);
 		if (0) // too big zips
 		{
 			std::string zipfile = "gebco_2023_sub_ice_topo_geotiff.zip";
@@ -928,8 +939,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 
 #endif
 
-	DUMP("load not ok", (long long)this, heights.size(), lat_loaded, lon_loaded,
-			seconds_per_px_x, get(lat_dec, lon_dec));
+	// DUMP("load not ok", (long long)this, heights.size(), lat_loaded, lon_loaded, seconds_per_px_x, get(lat_dec, lon_dec));
 	return false;
 }
 
