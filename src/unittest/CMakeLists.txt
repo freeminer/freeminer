@@ -1,5 +1,5 @@
 set (UNITTEST_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/test_lock.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_lock.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/test.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_address.cpp

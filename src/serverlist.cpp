@@ -111,10 +111,8 @@ Json::Value MakeReport(AnnounceAction action,
 		server["damage"]       = g_settings->getBool("enable_damage");
 		server["password"]     = g_settings->getBool("disallow_empty_password");
 		server["pvp"]          = g_settings->getBool("enable_pvp");
-		if (uptime >= 1)
-			server["uptime"]   = (int) uptime;
-		if (game_time >= 1)
-			server["game_time"]= game_time;
+		server["uptime"]   = (int) uptime;
+		server["game_time"]= game_time;
 		server["clients"]      = (int) clients_names.size();
 		server["clients_max"]  = g_settings->getU16("max_users");
 		server["clients_list"] = Json::Value(Json::arrayValue);

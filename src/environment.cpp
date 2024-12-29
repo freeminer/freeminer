@@ -64,7 +64,7 @@ u32 Environment::getDayNightRatio()
 {
 	if (m_enable_day_night_ratio_override)
 		return m_day_night_ratio_override;
-	MutexAutoLock lock(m_time_lock);
+	//MutexAutoLock lock(m_time_lock);
 	return time_to_daynight_ratio(m_time_of_day, m_cache_enable_shaders);
 }
 
@@ -75,14 +75,14 @@ void Environment::setTimeOfDaySpeed(float speed)
 
 void Environment::setDayNightRatioOverride(bool enable, u32 value)
 {
-	MutexAutoLock lock(m_time_lock);
+	//MutexAutoLock lock(m_time_lock);
 	m_enable_day_night_ratio_override = enable;
 	m_day_night_ratio_override = value;
 }
 
 void Environment::setTimeOfDay(u32 time)
 {
-	MutexAutoLock lock(m_time_lock);
+	//MutexAutoLock lock(m_time_lock);
 	if (m_time_of_day > time)
 		++m_day_count;
 	m_time_of_day = time;
@@ -90,13 +90,13 @@ void Environment::setTimeOfDay(u32 time)
 
 u32 Environment::getTimeOfDay()
 {
-	MutexAutoLock lock(m_time_lock);
+	//MutexAutoLock lock(m_time_lock);
 	return m_time_of_day;
 }
 
 float Environment::getTimeOfDayF()
 {
-	MutexAutoLock lock(m_time_lock);
+	//MutexAutoLock lock(m_time_lock);
 	return (float)m_time_of_day / 24000.0;
 /*
 	return m_time_of_day_f;
@@ -295,7 +295,12 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 		// Next node
 		state->m_previous_node = state->m_iterator.m_current_node_pos;
 		state->m_iterator.next();
+
+		if (state->end_ms && porting::getTimeMs() > state->end_ms) {
+			return;
+		}
 	}
+	state->finished = true;
 	// Return empty PointedThing if nothing left on the ray
 	if (state->m_found.empty()) {
 		result->type = POINTEDTHING_NOTHING;
@@ -307,7 +312,7 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 
 void Environment::stepTimeOfDay(float dtime)
 {
-	MutexAutoLock lock(this->m_time_lock);
+	//MutexAutoLock lock(this->m_time_lock);
 
 	// Cached in order to prevent the two reads we do to give
 	// different results (can be written by code not under the lock)
@@ -327,7 +332,7 @@ void Environment::stepTimeOfDay(float dtime)
 
 		m_time_of_day = (m_time_of_day + units); // % 24000;
 		if (sync_f)
-			m_time_of_day %= 24000;
+			m_time_of_day = (m_time_of_day % 24000);
 
 /*
 		if (sync_f)

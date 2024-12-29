@@ -39,6 +39,8 @@ public:
 
 	mapped_type nothing = {};
 
+	~concurrent_map_() { clear(); }
+
 	template <typename... Args>
 	mapped_type &get(Args &&...args)
 	{

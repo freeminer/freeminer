@@ -100,7 +100,7 @@ struct abm_trigger_one {
 ////
 
 class MapBlock
-: public locker<>
+: public locker<> // TODO: find all deadlocks and change to shared_locker
 {
 public:
 	MapBlock(Map *parent, v3bpos_t pos, IGameDef *gamedef);
@@ -180,6 +180,13 @@ public:
 	{
 		return m_modified;
 	}
+
+/*
+	inline u32 getModifiedReason()
+	{
+		return m_modified_reason;
+	}
+*/
 
 	std::string getModifiedReasonString();
 
@@ -320,18 +327,6 @@ public:
 		return getNodeNoEx(p);
 	}
 
-	MapNode &getNodeTry(v3pos_t p)
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return ignoreNode;
-		return getNodeNoLock(p);
-/*
-		bool is_valid;
-		return getNode(p.X, p.Y, p.Z, &is_valid);
-*/
-	}
-
 /*
 	inline void setNode(s16 x, s16 y, s16 z, MapNode n)
 	{
@@ -344,17 +339,6 @@ public:
 */
 
 	void setNode(v3pos_t p, MapNode& n);
-
-	MapNode &getNodeNoLock(v3pos_t p)
-	{
-		return data[p.Z*zstride + p.Y*ystride + p.X];
-	}
-
-	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
-	{
-		data[p.Z * zstride + p.Y * ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
-	}
 
 	////
 	//// Non-checking variants of the above
@@ -535,43 +519,54 @@ public:
 
 	void pushElementsToCircuit(Circuit* circuit);
 
+	void fill(const MapNode & n) {
+		for (u32 i = 0; i < nodecount; ++i)
+			data[i] = n;
+	}
+
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
 
 #if BUILD_CLIENT // Only on client
-	MapBlock::mesh_type getLodMesh(int step, bool allow_other = false);
-	void setLodMesh(const MapBlock::mesh_type & rmesh);
-	MapBlock::mesh_type getFarMesh(int step);
-	void setFarMesh(const MapBlock::mesh_type & rmesh, uint32_t time);
+	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
+	void setLodMesh(const MapBlock::mesh_type &rmesh);
+	const MapBlock::mesh_type getFarMesh(block_step_t step);
+	void setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step);
 	std::mutex far_mutex;
-	u32 mesh_requested_timestamp = 0;
+	uint32_t mesh_requested_timestamp{};
+	block_step_t mesh_requested_step{};
 
 private:
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
 	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
 
-public:	
+public:
 #endif
 
-	std::atomic_short heat {0};
-	std::atomic_short humidity {0};
-	std::atomic_short heat_add {0};
-	std::atomic_short humidity_add {0};
-	std::atomic_ulong heat_last_update {0};
-	std::atomic_uint32_t humidity_last_update = 0;
-	float m_uptime_timer_last = 0;
-	std::atomic_short usage_timer_multiplier {1};
+	block_step_t far_step{};
+	uint32_t far_make_mesh_timestamp{static_cast<uint32_t>(-1)};
+	std::atomic_uint32_t far_iteration{};
+	std::atomic_bool creating_far_mesh{};
+	std::atomic_short heat{};
+	std::atomic_short humidity{};
+	std::atomic_short heat_add{};
+	std::atomic_short humidity_add{};
+	std::atomic_ulong heat_last_update{};
+	std::atomic_uint32_t humidity_last_update{};
+	float m_uptime_timer_last{};
+	std::atomic_short usage_timer_multiplier{1};
 
 	// Last really changed time (need send to client)
-	std::atomic_uint m_changed_timestamp {0};
-	u32 m_next_analyze_timestamp = 0;
+	std::atomic_uint m_changed_timestamp{};
+	uint32_t m_next_analyze_timestamp{};
 	typedef std::list<abm_trigger_one> abm_triggers_type;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
-	size_t abmTriggersRun(ServerEnvironment * m_env, u32 time, uint8_t activate = 0);
-	u32 m_abm_timestamp = 0;
+	size_t abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate = 0);
+	uint32_t m_abm_timestamp{};
 
-	u32 getActualTimestamp() {
+	u32 getActualTimestamp()
+	{
 		u32 block_timestamp = 0;
 		if (m_changed_timestamp && m_changed_timestamp != BLOCK_TIMESTAMP_UNDEFINED) {
 			block_timestamp = m_changed_timestamp;
@@ -582,8 +577,8 @@ public:
 	}
 
 	// Set to content type of a node if the block consists solely of nodes of one type, otherwise set to CONTENT_IGNORE
-	std::atomic<content_t> content_only = CONTENT_IGNORE;
-	u8 content_only_param1 = 0, content_only_param2 = 0;
+	std::atomic<content_t> content_only{CONTENT_IGNORE};
+	u8 content_only_param1{}, content_only_param2{};
 	bool analyzeContent();
 	std::mutex m_usage_timer_mutex;
 
@@ -596,6 +591,33 @@ public:
 	*/
 
 	std::atomic_bool m_lighting_expired {false};
+
+	inline MapNode getNodeTry(const v3pos_t &p)
+	{
+		auto lock = try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return ignoreNode;
+		return getNodeNoLock(p);
+	}
+
+	inline MapNode& getNodeRef(const v3pos_t &p)
+	{
+		auto lock = try_lock_shared_rec();
+		if (!lock->owns_lock())
+			return ignoreNode;
+		return getNodeNoLock(p);
+	}
+
+	MapNode &getNodeNoLock(v3pos_t p)
+	{
+		return data[p.Z*zstride + p.Y*ystride + p.X];
+	}
+
+	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
+	{
+		data[p.Z * zstride + p.Y * ystride + p.X] = n;
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
+	}
 
 //===
 
@@ -614,6 +636,12 @@ private:
 public:
 	/*
 		Public member variables
+*/
+
+/*
+#ifndef SERVER // Only on client
+       MapBlockMesh *mesh = nullptr;
+#endif
 	*/
 
 	NodeMetadataList m_node_metadata;
@@ -777,6 +805,6 @@ inline v3pos_t getBlockPosRelative(const v3bpos_t &p)
 */
 std::string analyze_block(MapBlock *block);
 
-//typedef std::shared_ptr<MapBlock> MapBlockP;
-typedef MapBlock * MapBlockP;
+using MapBlockP = std::shared_ptr<MapBlock>;
+// using MapBlockP = MapBlock *;
 

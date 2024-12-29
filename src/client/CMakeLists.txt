@@ -25,6 +25,8 @@ endif()
 set(client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_far_calc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_farmesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_client.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_far_container.cpp
 
 	${sound_SRCS}
 	${CMAKE_CURRENT_SOURCE_DIR}/meshgen/collector.cpp

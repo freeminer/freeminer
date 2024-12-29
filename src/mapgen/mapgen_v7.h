@@ -111,15 +111,6 @@ public:
 
 	virtual int generateTerrain();
 
-
-	//freeminer:
-	virtual bool visible(const v3pos_t &p)
-	{
-		// TODO: add more height features
-		return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
-	}
-
-
 private:
 	pos_t mount_zero_level;
 	pos_t floatland_ymin;
@@ -141,9 +132,14 @@ private:
 	Noise *noise_ridge;
 
 	//freeminer:
-	MapgenV7Params *sp;
+	MapgenV7Params *sp{};
 	//virtual void generateExperimental();
-	//=========
+	// freeminer:
+public:
+	virtual bool visible(const v3pos_t &p);
+
+private:
+	// ==
 
 	Noise *noise_floatland;
 };

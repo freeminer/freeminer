@@ -22,15 +22,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
-//fm:
+// fm:
+#include "client/fm_far_container.h"
+#include "map.h"
 #include "map_settings_manager.h"
+#include "mapgen/mapgen.h"
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
-
+#include "threading/ThreadPool.h"
+constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
+// ==
 
 #include "clientenvironment.h"
 #include "irr_v3d.h"
 #include "irrlichttypes_extrabloated.h"
+#include <atomic>
 #include <ostream>
 #include <map>
 #include <memory>
@@ -124,9 +130,46 @@ private:
 
 class ClientScripting;
 class GameUI;
+class WorldMerger;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
+
+private:
+	//fm:
+	bool is_simple_singleplayer_game {};
+	float m_timelapse_timer {-1};
+
+public:
+	std::atomic<double> m_uptime {};
+	bool use_weather {};
+	unsigned int overload {};
+
+	void handleCommand_FreeminerInit(NetworkPacket *pkt);
+	void handleCommand_BlockDataFm(NetworkPacket *pkt);
+	void sendInitFm();
+	void sendDrawControl();
+	void sendGetBlocks();
+	void updateMeshTimestampWithEdge(const v3bpos_t &blockpos);
+	void MakeEmerge(const Settings &settings, const MapgenType& mgtype);
+	void createFarMesh(MapBlockP &block);
+
+	std::unique_ptr<Server> m_localserver;
+	std::string m_world_path;
+	std::unique_ptr<EmergeManager> m_emerge;
+	std::unique_ptr<MapgenParams> m_mapgen_params;
+	std::unique_ptr<MapSettingsManager> m_settings_mgr;
+	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
+	f32 fog_range {};
+	std::atomic_size_t m_new_meshes {};
+	size_t m_new_farmeshes {};
+	ChatBackend *chat_backend {};
+	FarContainer far_container;
+	ServerMap::far_dbases_t far_dbases;
+	std::unique_ptr<WorldMerger> merger;
+	progschj::ThreadPool mesh_thread_pool;
+	// ==
+
 public:
 	/*
 		NOTE: Nothing is thread-safe here.
@@ -422,8 +465,6 @@ public:
 
 	void makeScreenshot(const std::string & name = "screenshot_");
 
-	ChatBackend *chat_backend;
-
 	inline void pushToChatQueue(ChatMessage *cec)
 	{
 		m_chat_queue.push(cec);
@@ -604,31 +645,6 @@ private:
 	// Detached inventories
 	// key = name
 	std::unordered_map<std::string, Inventory*> m_detached_inventories;
-
-
-//fm:
-	bool is_simple_singleplayer_game = 0;
-	float m_timelapse_timer = -1;
-public:
-	double m_uptime = 0;
-	bool use_weather = false;
-	unsigned int overload = 0;
-
-	void updateMeshTimestampWithEdge(v3bpos_t blockpos);
-	void handleCommand_FreeminerInit(NetworkPacket* pkt);
-	void sendDrawControl();
-
-	std::unique_ptr<Server> m_localserver;
-	std::string m_world_path;
-	std::unique_ptr<EmergeManager> m_emerge;
-	std::unique_ptr<MapgenParams> m_mapgen_params;
-	std::unique_ptr<MapSettingsManager> m_settings_mgr;
-	//concurrent_unordered_map<v3bpos_t, bool> farmesh_remake;
-	f32 fog_range = 0;
-	size_t m_new_meshes = 0;
-
-private:	
-
 
 	// Storage for mesh data for creating multiple instances of the same mesh
 	StringMap m_mesh_data;

@@ -44,7 +44,7 @@ public:
 		DUMP("Async steps end", (long)this, runs, skips);
 #endif
 	}
-	int wait(const int ms = 10000, const int step_ms = 100)
+	int wait(const int ms = 60000, const int step_ms = 100)
 	{
 		int i = 0;
 		for (; i < ms / step_ms; ++i) { // 10s max
@@ -57,10 +57,10 @@ public:
 
 	inline bool valid() { return future.valid(); }
 
-	constexpr static uint8_t UNKNOWN = 2;
-	// 0 : started
-	// 1 : skipped
-	// 2 : unknown ?
+	constexpr static uint8_t IN_PROGRESS = 2;
+	// 0 : started and finished
+	// 1 : started
+	// 2 : in progress, skip
 	template <class Func, typename... Args>
 	uint8_t step(Func func, Args &&...args)
 	{
@@ -70,7 +70,7 @@ public:
 #if defined(DUMP_STREAM)
 				++skips;
 #endif
-				return UNKNOWN;
+				return IN_PROGRESS;
 			}
 		}
 

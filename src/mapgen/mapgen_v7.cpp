@@ -193,6 +193,7 @@ MapgenV7Params::MapgenV7Params():
 
 void MapgenV7Params::readParams(const Settings *settings)
 {
+
 //freeminer:
 	settings->getNoiseParamsFromGroup("mg_np_layers",         np_layers);
 	paramsj = settings->getJson("mg_params", paramsj);
@@ -239,10 +240,12 @@ void MapgenV7Params::readParams(const Settings *settings)
 
 void MapgenV7Params::writeParams(Settings *settings) const
 {
+
 //freeminer:
 	settings->setNoiseParams("mg_np_layers",         np_layers);
 	settings->setJson("mg_params", paramsj);
 //----------
+
 	settings->setFlagStr("mgv7_spflags", spflags, flagdesc_mapgen_v7);
 	settings->setPos("mgv7_mount_zero_level",           mount_zero_level);
 	settings->setPos("mgv7_floatland_ymin",             floatland_ymin);
@@ -667,7 +670,36 @@ int MapgenV7::generateTerrain()
 	return stone_surface_max_y;
 }
 
+// fm:
 /*
 void MapgenV7::generateExperimental() {
 }
 */
+bool MapgenV7::visible(const v3pos_t &p)
+{
+	// return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
+
+	// from getSpawnLevelAtPoint
+
+	auto y = baseTerrainLevelAtPoint(p.X, p.Z);
+
+	// If mountains are disabled, terrain level is base terrain level.
+	// Avoids mid-air spawn where mountain terrain would have been.
+	if (!(spflags & MGV7_MOUNTAINS)) {
+		return y + 1 >= p.Y;
+	}
+
+	// todo: make faster
+	int iters = 256;
+	while (iters > 0) {
+		if (!getMountainTerrainAtPoint(p.X, y + 1, p.Z)) {
+			return y + 1 >= p.Y;
+		}
+		y++;
+		iters--;
+	}
+
+	return false;
+}
+
+// == 

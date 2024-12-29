@@ -132,7 +132,8 @@ if(NOT MSVC)
 		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
 	endif()
 
-	option(ENABLE_UNWIND "Enable unwind" 1)
+    # too noisy
+	option(ENABLE_UNWIND "Enable unwind" 0)
 	if(ENABLE_UNWIND)
 
 	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
@@ -790,22 +791,25 @@ if (USE_DEBUG_HELPERS)
 endif ()
 
 set(FMcommon_SRCS ${FMcommon_SRCS}
-	circuit.cpp
-	circuit_element.cpp
 	circuit_element_virtual.cpp
-	key_value_storage.cpp
+	circuit_element.cpp
+	circuit.cpp
+	fm_abm_world.cpp
 	fm_bitset.cpp
+	fm_liquid.cpp
+	fm_map.cpp
+	fm_server.cpp
+	fm_world_merge.cpp
+	key_value_storage.cpp
 	log_types.cpp
 	profiler.cpp
 	stat.cpp
-	fm_liquid.cpp
-	fm_map.cpp
+    content_abm_grow_tree.cpp
+    content_abm.cpp
     fm_abm.cpp
     fm_clientiface.cpp
-    content_abm.cpp
-    content_abm_grow_tree.cpp
     fm_serverenvironment.cpp
-)
+	)
 
 
 set(common_SRCS

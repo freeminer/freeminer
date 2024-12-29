@@ -99,7 +99,7 @@ const bool emscripten =
 #endif
 ;
 
-const bool slow = android || emscripten;
+const bool slow = debug || android || emscripten;
 
 void fm_set_default_settings(Settings *settings) {
 
@@ -144,6 +144,8 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("keymap_console", "KEY_F10");
 #endif
 
+	if (debug)
+		settings->setDefault("keymap_toggle_block_bounds", "KEY_F9");
 
 	// Fonts
 	settings->setDefault("freetype", "true"); // "false"
@@ -177,10 +179,11 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("cloud_height", "300"); // "120"
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
-	settings->setDefault("lodmesh", slow ? "2" : "4");
+	settings->setDefault("lodmesh", slow ? "4" : "5");
 	settings->setDefault("farmesh", slow ? "3000" : std::to_string(FARMESH_LIMIT*2));
-	settings->setDefault("farmesh_quality", slow ? "0" : "0");
+	settings->setDefault("farmesh_quality", slow ? "1" : "2"); //depends on client_mesh_chunk
 	settings->setDefault("farmesh_stable", "0");
+	settings->setDefault("farmesh_server", "1");
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
 	//settings->setDefault("enable_vbo", win ? "false" : "true");
@@ -190,14 +193,16 @@ void fm_set_default_settings(Settings *settings) {
 		settings->setDefault("shadow_map_color", "true");
 		settings->setDefault("enable_bloom", "true");
 	}
-	settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
+	//settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
+	settings->setDefault("client_mesh_chunk","1");
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");
+    settings->setDefault("liquid_step", "100");
 	settings->setDefault("liquid_send", android ? "3.0" : "1.0");
 	settings->setDefault("liquid_relax", android ? "1" : "2");
 	settings->setDefault("liquid_fast_flood", "-200");
-
+	
 	// Weather
 	settings->setDefault("weather", threads ? "true" : "false");
 	settings->setDefault("weather_biome", "false");
@@ -384,7 +389,6 @@ void fm_set_default_settings(Settings *settings) {
 #ifdef HAVE_TOUCHSCREENGUI
 	settings->setDefault("touchscreen", android ? "true" : "false");
 	settings->setDefault("touchtarget", "true");
-	settings->setDefault("touchscreen_threshold","20");
 #endif
 
 #ifdef __EMSCRIPTEN__

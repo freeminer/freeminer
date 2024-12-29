@@ -28,9 +28,13 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	null_command_handler, // 0x00 (never use this)
 	null_command_handler, // 0x01
 	{ "TOSERVER_INIT",                     TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Init }, // 0x02
-	null_command_handler, // 0x03
-	null_command_handler, // 0x04
-	null_command_handler, // 0x05
+
+// fm:
+	{ "TOSERVER_INIT_FM",                  TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_InitFm }, // 0x03
+	{ "TOSERVER_GET_BLOCKS",               TOSERVER_STATE_INGAME,  &Server::handleCommand_GetBlocks}, // 0x04
+	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x05
+// ==
+
 	null_command_handler, // 0x06
 	null_command_handler, // 0x07
 	null_command_handler, // 0x08
@@ -93,9 +97,7 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_HAVE_MEDIA",               TOSERVER_STATE_INGAME, &Server::handleCommand_HaveMedia }, // 0x41
 	null_command_handler, // 0x42
 	{ "TOSERVER_CLIENT_READY",             TOSERVER_STATE_STARTUP, &Server::handleCommand_ClientReady }, // 0x43
-
-	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x44
-
+	null_command_handler, // 0x44
 	null_command_handler, // 0x45
 	null_command_handler, // 0x46
 	null_command_handler, // 0x47
@@ -145,7 +147,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	null_command_factory, // 0x0F
 	{ "TOCLIENT_INIT",                     0, true }, // 0x10
 	null_command_factory, // 0x11
-	null_command_factory, // 0x12
+	{ "TOCLIENT_BLOCKDATA_FM",                2, true }, // 0x20
 	null_command_factory, // 0x13
 	null_command_factory, // 0x14
 	null_command_factory, // 0x15

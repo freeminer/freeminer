@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes_extrabloated.h"
 #include "map.h"
 #include "camera.h"
+#include <atomic>
 #include <set>
 #include <unordered_set>
 #include <vector>
@@ -34,33 +35,33 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 struct MapDrawControl
 {
 
-// freeminer:
-	int32_t farmesh = 30000;
-	uint16_t farmesh_quality = 0;
-	bool farmesh_stable = false;
-	int32_t lodmesh = 4;
-	int cell_size = 1;
-	int cell_size_pow = 0;
+	// freeminer:
+	int32_t farmesh{30000};
+	uint16_t farmesh_quality{};
+	bool farmesh_stable{};
+	int32_t lodmesh{4};
+	int cell_size{1};
+	uint8_t cell_size_pow{};
+	uint8_t farmesh_quality_pow{};
 
-	float fps = 30;
-	float fps_avg = 30;
-	float fps_wanted = 30;
-	float drawtime_avg = 30;
+	float fps{30};
+	float fps_avg{30};
+	float fps_wanted{30};
+	float drawtime_avg{30};
 
-	float fov = 180;
-	float fov_add = 0;
-	float fov_want = 180; // smooth change
+	float fov{180};
+	float fov_add{};
+	float fov_want{180}; // smooth change
 
-	float farthest_drawn = 0;
+	float farthest_drawn{};
 
-	//bool block_overflow;
 	void fm_init();
-	MapDrawControl() {
-		fm_init();
-	}
+	MapDrawControl() { fm_init(); }
+	// == 
+
 
 	// Wanted drawing range
-	float wanted_range = 0.0f;
+	std::atomic_int32_t wanted_range = 0.0f;
 	// Overrides limits by drawing everything
 	bool range_all = false;
 	// Allow rendering out of bounds
@@ -244,8 +245,11 @@ private:
 	v3pos_t m_camera_position_node;
     using drawlist_map = std::map<v3bpos_t, MapBlockP, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
-	std::atomic<drawlist_map *> m_drawlist {&m_drawlist_0};
-	std::atomic_bool m_drawlist_current = 0;
+	std::atomic_bool m_drawlist_current = false;
+    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockP>;
+	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
+	std::atomic_bool m_drawlist_shadow_current = false;
+
 public:
 	std::map<v3bpos_t, MapBlock*> m_block_boundary;
 private:
@@ -253,7 +257,9 @@ private:
 
 	//std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
 	std::vector<MapBlock*> m_keeplist;
+/*
 	std::map<v3bpos_t, MapBlock*> m_drawlist_shadow;
+*/	
 	bool m_needs_update_drawlist;
 
 	std::set<v2bpos_t> m_last_drawn_sectors;

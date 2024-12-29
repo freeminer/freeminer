@@ -41,7 +41,7 @@ struct QueuedMeshUpdate
 	int crack_level = -1;
 	v3pos_t crack_pos;
 	MeshMakeData *data = nullptr; // This is generated in MeshUpdateQueue::pop()
-	std::vector<MapBlock *> map_blocks;
+	std::vector<MapBlockP> map_blocks;
 	bool urgent = false;
 
 	QueuedMeshUpdate() = default;
@@ -105,7 +105,7 @@ struct MeshUpdateResult
 	u8 solid_sides = 0;
 	std::vector<v3bpos_t> ack_list;
 	bool urgent = false;
-	std::vector<MapBlock *> map_blocks;
+	std::vector<MapBlockP> map_blocks;
 
 	MeshUpdateResult() = default;
 };
