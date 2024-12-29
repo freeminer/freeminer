@@ -83,7 +83,7 @@ CollisionAxis axisAlignedCollision(
 {
 	//TimeTaker tt("axisAlignedCollision");
 
-	aabb3f relbox(
+	aabb3o relbox(
 			(movingbox.MaxEdge.X - movingbox.MinEdge.X) + (staticbox.MaxEdge.X - staticbox.MinEdge.X),						// sum of the widths
 			(movingbox.MaxEdge.Y - movingbox.MinEdge.Y) + (staticbox.MaxEdge.Y - staticbox.MinEdge.Y),
 			(movingbox.MaxEdge.Z - movingbox.MinEdge.Z) + (staticbox.MaxEdge.Z - staticbox.MinEdge.Z),
@@ -240,7 +240,7 @@ static bool add_area_node_boxes(const v3pos_t min, const v3pos_t max, IGameDef *
 			// Calculate float position only once
 			auto posf = intToFloat(p, BS);
 			for (auto boxf : nodeboxes) {
-				aabb3o box {v3fToOpos(boxf.MinEdge), v3fToOpos(boxf.MaxEdge)};
+				aabb3o box = ToOpos(boxf);
 				box.MinEdge += posf;
 				box.MaxEdge += posf;
 				cinfo.emplace_back(false, n_bouncy_value, p, box);
@@ -373,18 +373,18 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	cinfo.clear();
 
 	{
-		v3f minpos_f(
+		v3opos_t minpos_f(
 			MYMIN(pos_f->X, newpos_f.X),
 			MYMIN(pos_f->Y, newpos_f.Y) + 0.01f * BS, // bias rounding, player often at +/-n.5
 			MYMIN(pos_f->Z, newpos_f.Z)
 		);
-		v3f maxpos_f(
+		v3opos_t maxpos_f(
 			MYMAX(pos_f->X, newpos_f.X),
 			MYMAX(pos_f->Y, newpos_f.Y),
 			MYMAX(pos_f->Z, newpos_f.Z)
 		);
-		v3pos_t min = floatToInt(minpos_f + box_0.MinEdge, BS) - v3pos_t(1, 1, 1);
-		v3pos_t max = floatToInt(maxpos_f + box_0.MaxEdge, BS) + v3pos_t(1, 1, 1);
+		v3pos_t min = floatToInt(minpos_f + v3fToOpos(box_0.MinEdge), BS) - v3pos_t(1, 1, 1);
+		v3pos_t max = floatToInt(maxpos_f + v3fToOpos(box_0.MaxEdge), BS) + v3pos_t(1, 1, 1);
 
 		bool any_position_valid = add_area_node_boxes(min, max, gamedef, env, cinfo);
 
@@ -421,7 +421,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			break;
 		}
 
-		aabb3o movingbox(v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge));
+		aabb3o movingbox(ToOpos(box_0));
 		movingbox.MinEdge += *pos_f;
 		movingbox.MaxEdge += *pos_f;
 
@@ -548,7 +548,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	/*
 		Final touches: Check if standing on ground, step up stairs.
 	*/
-	aabb3o box(v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge));
+	aabb3o box(ToOpos(box_0));
 	box.MinEdge += *pos_f;
 	box.MaxEdge += *pos_f;
 	for (const auto &box_info : cinfo) {
@@ -567,7 +567,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 				cbox.MinEdge.Z + d < box.MaxEdge.Z) {
 			if (box_info.is_step_up) {
 				pos_f->Y += cbox.MaxEdge.Y - box.MinEdge.Y;
-				box = {(v3fToOpos(box_0.MinEdge), v3fToOpos(box_0.MaxEdge))};
+				box = ToOpos(box_0);
 				box.MinEdge += *pos_f;
 				box.MaxEdge += *pos_f;
 			}

@@ -66,7 +66,7 @@ bool boxLineCollision(const aabb3f &box, const v3opos_t start,
 		collision_normal->set(0, 0, 0);
 		return true;
 	}
-	float m = 0;
+	opos_t m = 0;
 
 	// Test X collision
 	if (dir.X != 0) {
