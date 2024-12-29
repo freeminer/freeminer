@@ -206,7 +206,6 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 			v3opos_t npf = intToFloat(np, BS);
 			v3opos_t rel_start = state->m_shootline.start - npf;
 			for (aabb3f &box : boxes) {
-				//aabb3o box(v3fToOpos(boxf.MinEdge), v3fToOpos(boxf.MaxEdge));
 				v3opos_t intersection_point;
 				v3f intersection_normal;
 				if (!boxLineCollision(box, rel_start,
