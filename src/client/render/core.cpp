@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "core.h"
 #include "plain.h"
@@ -36,7 +21,7 @@ RenderingCore::~RenderingCore()
 	delete shadow_renderer;
 }
 
-void RenderingCore::draw(video::SColor _skycolor, bool _show_hud, bool _show_minimap,
+void RenderingCore::draw(video::SColor _skycolor, bool _show_hud,
 		bool _draw_wield_tool, bool _draw_crosshair)
 {
 	v2u32 screensize = device->getVideoDriver()->getScreenSize();
@@ -46,7 +31,6 @@ void RenderingCore::draw(video::SColor _skycolor, bool _show_hud, bool _show_min
 	context.draw_crosshair = _draw_crosshair;
 	context.draw_wield_tool = _draw_wield_tool;
 	context.show_hud = _show_hud;
-	context.show_minimap = _show_minimap;
 
 	pipeline->reset(context);
 	pipeline->run(context);

@@ -1,24 +1,6 @@
-/*
-porting.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 /*
 	Random portability stuff
@@ -54,8 +36,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 #if defined(__ANDROID__)
 	#include "porting_android.h"
+	#include <android/api-level.h>
 #endif
 #if defined(__APPLE__)
+	#include <mach-o/dyld.h>
+	#include <CoreFoundation/CoreFoundation.h>
 	// For _NSGetEnviron()
 	// Related: https://gitlab.haskell.org/ghc/ghc/issues/2458
 	#include <crt_externs.h>
@@ -65,16 +50,23 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	#include <FindDirectory.h>
 #endif
 
-#include "config.h"
+#if HAVE_MALLOC_TRIM
+	// glibc-only pretty much
+	#include <malloc.h>
+#endif
+
 #include "debug.h"
 #include "filesys.h"
 #include "log.h"
 #include "util/string.h"
-#include <list>
+#include "util/tracy_wrapper.h"
+#include <vector>
 #include <cstdarg>
 #include <cstdio>
+#include <signal.h>
+#include <atomic>
 
-#if !defined(SERVER) && defined(_WIN32)
+#if CHECK_CLIENT_BUILD() && defined(_WIN32)
 // On Windows export some driver-specific variables to encourage Minetest to be
 // executed on the discrete GPU in case of systems with two. Portability is fun.
 extern "C" {
@@ -90,7 +82,7 @@ namespace porting
 	Signal handler (grabs Ctrl-C on POSIX systems)
 */
 
-bool g_killed = false;
+static bool g_killed = false;
 
 bool *signal_handler_killstatus()
 {
@@ -100,9 +92,8 @@ bool *signal_handler_killstatus()
 std::atomic_bool g_sighup, g_siginfo;
 
 #if !defined(_WIN32) // POSIX
-	#include <signal.h>
 
-void signal_handler(int sig)
+static void signal_handler(int sig)
 {
 	switch(sig) {
 #if defined(SIGINFO)
@@ -153,9 +144,8 @@ void signal_handler_init(void)
 }
 
 #else // _WIN32
-	#include <signal.h>
 
-BOOL WINAPI event_handler(DWORD sig)
+static BOOL WINAPI event_handler(DWORD sig)
 {
 	switch (sig) {
 	case CTRL_C_EVENT:
@@ -189,11 +179,11 @@ void signal_handler_init(void)
 	Path mangler
 */
 
-// Default to RUN_IN_PLACE style relative paths
-std::string path_share = "..";
-std::string path_user = "..";
-std::string path_locale = path_share + DIR_DELIM + "locale";
-std::string path_cache = path_user + DIR_DELIM + "cache";
+// Nobody should be reading these before initializePaths() is called
+std::string path_share = "UNINITIALIZED";
+std::string path_user = "UNINITIALIZED";
+std::string path_locale = "UNINITIALIZED";
+std::string path_cache = "UNINITIALIZED";
 
 
 std::string getDataPath(const char *subpath)
@@ -201,7 +191,7 @@ std::string getDataPath(const char *subpath)
 	return path_share + DIR_DELIM + subpath;
 }
 
-void pathRemoveFile(char *path, char delim)
+[[maybe_unused]] static void pathRemoveFile(char *path, char delim)
 {
 	// Remove filename and path delimiter
 	int i;
@@ -226,10 +216,30 @@ bool detectMSVCBuildDir(const std::string &path)
 	return (!removeStringEnd(path, ends).empty());
 }
 
-std::string get_sysinfo()
+bool detectVSCodeBuildDir(const std::string &path)
+{
+	const char *ends[] = {
+		"out/build/Release",
+		"out/build/MinSizeRel",
+		"out/build/RelWithDebInfo",
+		"out/build/Debug",
+		"out/build/Build",
+		"out/build/asan",
+		"out/build/tsan",
+		"out/build/msan",
+		"out/build/ubsan",
+		"out/build/gperf",
+		{}
+	};
+	return (!removeStringEnd(path, ends).empty());
+}
+
+// Note that the system info is sent in every HTTP request, so keep it reasonably
+// privacy-conserving while ideally still being meaningful.
+
+static std::string detectSystemInfo()
 {
 #ifdef _WIN32
-
 	std::ostringstream oss;
 	LPSTR filePath = new char[MAX_PATH];
 	UINT blockSize;
@@ -249,26 +259,56 @@ std::string get_sysinfo()
 		<< LOWORD(fixedFileInfo->dwProductVersionMS) << '.' // Minor
 		<< HIWORD(fixedFileInfo->dwProductVersionLS) << ' '; // Build
 
-	#ifdef _WIN64
-	oss << "x86_64";
-	#else
-	BOOL is64 = FALSE;
-	if (IsWow64Process(GetCurrentProcess(), &is64) && is64)
-		oss << "x86_64"; // 32-bit app on 64-bit OS
-	else
+	SYSTEM_INFO info;
+	GetNativeSystemInfo(&info);
+	switch (info.wProcessorArchitecture) {
+	case PROCESSOR_ARCHITECTURE_AMD64:
+		oss << "x86_64";
+		break;
+	case PROCESSOR_ARCHITECTURE_ARM:
+		oss << "arm";
+		break;
+	case PROCESSOR_ARCHITECTURE_ARM64:
+		oss << "arm64";
+		break;
+	case PROCESSOR_ARCHITECTURE_INTEL:
 		oss << "x86";
-	#endif
+		break;
+	default:
+		oss << "unknown";
+		break;
+	}
 
 	delete[] lpVersionInfo;
 	delete[] filePath;
 
 	return oss.str();
-#else
+#elif defined(__ANDROID__)
+	std::ostringstream oss;
 	struct utsname osinfo;
 	uname(&osinfo);
-	return std::string(osinfo.sysname) + "/"
-		+ osinfo.release + " " + osinfo.machine;
+	int api = android_get_device_api_level();
+
+	oss << "Android/" << api << " " << osinfo.machine;
+	return oss.str();
+#else /* POSIX */
+	struct utsname osinfo;
+	uname(&osinfo);
+
+	std::string_view release(osinfo.release);
+	// cut off anything but the primary version number
+	release = release.substr(0, release.find_first_not_of("0123456789."));
+
+	std::string ret = osinfo.sysname;
+	ret.append("/").append(release).append(" ").append(osinfo.machine);
+	return ret;
 #endif
+}
+
+const std::string &get_sysinfo()
+{
+	static std::string ret = detectSystemInfo();
+	return ret;
 }
 
 
@@ -283,9 +323,9 @@ bool getCurrentWorkingDir(char *buf, size_t len)
 }
 
 
-bool getExecPathFromProcfs(char *buf, size_t buflen)
+static bool getExecPathFromProcfs(char *buf, size_t buflen)
 {
-#ifndef _WIN32
+#if defined(__linux__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 	buflen--;
 
 	ssize_t len;
@@ -412,10 +452,7 @@ bool getCurrentExecPath(char *buf, size_t len)
 #endif
 
 
-//// Non-Windows
-#if !defined(_WIN32)
-
-const char *getHomeOrFail()
+[[maybe_unused]] static inline const char *getHomeOrFail()
 {
 	const char *home = getenv("HOME");
 	// In rare cases the HOME environment variable may be unset
@@ -423,8 +460,6 @@ const char *getHomeOrFail()
 		"Required environment variable HOME is not set");
 	return home;
 }
-
-#endif
 
 
 //// Windows
@@ -456,13 +491,21 @@ bool setSystemPaths()
 		// Use "C:\Users\<user>\AppData\Roaming\<PROJECT_NAME_C>"
 		len = GetEnvironmentVariable("APPDATA", buf, sizeof(buf));
 		FATAL_ERROR_IF(len == 0 || len > sizeof(buf), "Failed to get APPDATA");
-		path_user = std::string(buf) + DIR_DELIM + PROJECT_NAME_C;
+		// TODO: Luanti with migration
+		path_user = std::string(buf) + DIR_DELIM + "Minetest";
 	} else {
 		path_user = std::string(buf);
 	}
 
 	return true;
 }
+
+
+//// Android
+
+#elif defined(__ANDROID__)
+
+extern bool setSystemPaths(); // defined in porting_android.cpp
 
 
 //// Linux
@@ -473,11 +516,7 @@ bool setSystemPaths()
 	char buf[BUFSIZ];
 
 	if (!getCurrentExecPath(buf, sizeof(buf))) {
-#ifdef __ANDROID__
-		errorstream << "Unable to read bindir "<< std::endl;
-#else
 		FATAL_ERROR("Unable to read bindir");
-#endif
 		return false;
 	}
 
@@ -486,7 +525,7 @@ bool setSystemPaths()
 
 	// Find share directory from these.
 	// It is identified by containing the subdirectory "builtin".
-	std::list<std::string> trylist;
+	std::vector<std::string> trylist;
 	std::string static_sharedir = STATIC_SHAREDIR;
 	if (!static_sharedir.empty() && static_sharedir != ".")
 		trylist.push_back(static_sharedir);
@@ -495,12 +534,7 @@ bool setSystemPaths()
 		DIR_DELIM + PROJECT_NAME);
 	trylist.push_back(bindir + DIR_DELIM "..");
 
-#ifdef __ANDROID__
-	trylist.push_back(path_user);
-#endif
-
-	for (std::list<std::string>::const_iterator
-			i = trylist.begin(); i != trylist.end(); ++i) {
+	for (auto i = trylist.begin(); i != trylist.end(); ++i) {
 		const std::string &trypath = *i;
 		if (!fs::PathExists(trypath) ||
 			!fs::PathExists(trypath + DIR_DELIM + "builtin")) {
@@ -519,15 +553,14 @@ bool setSystemPaths()
 		break;
 	}
 
-#ifndef __ANDROID__
 	const char *const minetest_user_path = getenv("MINETEST_USER_PATH");
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user = std::string(getHomeOrFail()) + DIR_DELIM "."
-			+ PROJECT_NAME;
+			+ "minetest";
 	}
-#endif
 
 	return true;
 }
@@ -553,9 +586,10 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user = std::string(getHomeOrFail())
 			+ "/Library/Application Support/"
-			+ PROJECT_NAME;
+			+ "minetest";
 	}
 	return true;
 }
@@ -570,8 +604,9 @@ bool setSystemPaths()
 	if (minetest_user_path && minetest_user_path[0] != '\0') {
 		path_user = std::string(minetest_user_path);
 	} else {
+		// TODO: luanti with migration
 		path_user  = std::string(getHomeOrFail()) + DIR_DELIM "."
-			+ lowercase(PROJECT_NAME);
+			+ "minetest";
 	}
 	return true;
 }
@@ -579,7 +614,8 @@ bool setSystemPaths()
 
 #endif
 
-void migrateCachePath()
+// Move cache folder from path_user to system cache location if possible.
+[[maybe_unused]] static void migrateCachePath()
 {
 	const std::string local_cache_path = path_user + DIR_DELIM + "cache";
 
@@ -599,13 +635,30 @@ void migrateCachePath()
 	}
 }
 
+// Create tag in cache folder according to <https://bford.info/cachedir/> spec
+static void createCacheDirTag()
+{
+	const auto path = path_cache + DIR_DELIM + "CACHEDIR.TAG";
+
+	if (fs::PathExists(path))
+		return;
+	fs::CreateAllDirs(path_cache);
+	auto ofs = open_ofstream(path.c_str(), false);
+	if (!ofs.good())
+		return;
+	ofs << "Signature: 8a477f597d28d172789f06886806bc55\n"
+		"# This file is a cache directory tag automatically created by "
+		PROJECT_NAME_C ".\n"
+		"# For information about cache directory tags, see: "
+		"https://bford.info/cachedir/\n";
+}
+
 void initializePaths()
 {
 #if RUN_IN_PLACE
-	char buf[BUFSIZ];
-
 	infostream << "Using relative paths (RUN_IN_PLACE)" << std::endl;
 
+	char buf[BUFSIZ];
 	bool success =
 		getCurrentExecPath(buf, sizeof(buf)) ||
 		getExecPathFromProcfs(buf, sizeof(buf));
@@ -620,6 +673,9 @@ void initializePaths()
 		if (detectMSVCBuildDir(execpath)) {
 			path_share += DIR_DELIM "..";
 			path_user  += DIR_DELIM "..";
+		} else if (detectVSCodeBuildDir(execpath)) {
+			path_share += DIR_DELIM ".." DIR_DELIM "..";
+			path_user  += DIR_DELIM ".." DIR_DELIM "..";
 		}
 		else {
 		#if STATIC_BUILD
@@ -650,38 +706,45 @@ void initializePaths()
 		path_user  = execpath;
 	}
 	path_cache = path_user + DIR_DELIM + "cache";
+
 #else
 	infostream << "Using system-wide paths (NOT RUN_IN_PLACE)" << std::endl;
 
 	if (!setSystemPaths())
 		errorstream << "Failed to get one or more system-wide path" << std::endl;
 
-
-#  ifdef _WIN32
+#  ifdef __ANDROID__
+	sanity_check(!path_cache.empty());
+#  elif defined(_WIN32)
 	path_cache = path_user + DIR_DELIM + "cache";
 #  else
-	// Initialize path_cache
 	// First try $XDG_CACHE_HOME/PROJECT_NAME
 	const char *cache_dir = getenv("XDG_CACHE_HOME");
 	const char *home_dir = getenv("HOME");
 	if (cache_dir && cache_dir[0] != '\0') {
-		path_cache = std::string(cache_dir) + DIR_DELIM + PROJECT_NAME;
+		// TODO: luanti with migration
+		path_cache = std::string(cache_dir) + DIR_DELIM + "minetest";
 	} else if (home_dir) {
 		// Then try $HOME/.cache/PROJECT_NAME
+		// TODO: luanti with migration
 		path_cache = std::string(home_dir) + DIR_DELIM + ".cache"
-			+ DIR_DELIM + PROJECT_NAME;
+			+ DIR_DELIM + "minetest";
 	} else {
 		// If neither works, use $PATH_USER/cache
 		path_cache = path_user + DIR_DELIM + "cache";
 	}
+#  endif // _WIN32
+
 	// Migrate cache folder to new location if possible
 	migrateCachePath();
-#  endif // _WIN32
+
 #endif // RUN_IN_PLACE
 
 	infostream << "Detected share path: " << path_share << std::endl;
 	infostream << "Detected user path: " << path_user << std::endl;
 	infostream << "Detected cache path: " << path_cache << std::endl;
+
+	createCacheDirTag();
 
 #if USE_GETTEXT
 	bool found_localedir = false;
@@ -712,7 +775,7 @@ void initializePaths()
 }
 
 
-#ifndef SERVER
+#if IS_CLIENT_BUILD
 
 /*
 float get_dpi() {
@@ -722,8 +785,8 @@ float get_dpi() {
 int get_densityDpi() { return 0; }
 */
 
-void irr_device_wait_egl (irr::IrrlichtDevice *dev) {
 #if 0 //TODO fm?  #ifdef __ANDROID__
+void irr_device_wait_egl (irr::IrrlichtDevice *dev) {
 	if (!dev)
 		dev = device; // move to renderengine?
 	if (!dev)
@@ -737,8 +800,8 @@ void irr_device_wait_egl (irr::IrrlichtDevice *dev) {
 		}
 	}
 	dev->getContextManager()->activateContext(dev->getContextManager()->getContext());
-#endif
 }
+#endif
 
 #endif
 
@@ -787,15 +850,32 @@ bool secure_rand_fill_buf(void *buf, size_t len)
 
 #endif
 
+#ifndef __ANDROID__
+
+void osSpecificInit()
+{
+#ifdef _WIN32
+	// hardening options
+	HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE |
+		BASE_SEARCH_PATH_PERMANENT);
+	SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
+#endif
+}
+
+#endif
+
 void attachOrCreateConsole()
 {
 #ifdef _WIN32
-	static bool consoleAllocated = false;
-	const bool redirected = (_fileno(stdout) == -2 || _fileno(stdout) == -1); // If output is redirected to e.g a file
-	if (!consoleAllocated && redirected && (AttachConsole(ATTACH_PARENT_PROCESS) || AllocConsole())) {
-		freopen("CONOUT$", "w", stdout);
-		freopen("CONOUT$", "w", stderr);
-		consoleAllocated = true;
+	static bool once = false;
+	const bool redirected = _fileno(stdout) >= 0; // If output is redirected to e.g a file
+	if (!once && !redirected) {
+		if (AttachConsole(ATTACH_PARENT_PROCESS) || AllocConsole()) {
+			freopen("CONOUT$", "w", stdout);
+			freopen("CONOUT$", "w", stderr);
+		}
+		once = true;
 	}
 #endif
 }
@@ -830,6 +910,21 @@ std::string QuoteArgv(const std::string &arg)
 	ret.push_back('"');
 	return ret;
 }
+
+std::string ConvertError(DWORD error_code)
+{
+	wchar_t buffer[320];
+
+	auto r = FormatMessageW(
+		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		nullptr, error_code, 0, buffer, ARRLEN(buffer) - 1, nullptr);
+	if (!r)
+		return std::to_string(error_code);
+
+	if (!buffer[0]) // should not happen normally
+		return "?";
+	return wide_to_utf8(buffer);
+}
 #endif
 
 int mt_snprintf(char *buf, const size_t buf_size, const char *fmt, ...)
@@ -854,6 +949,11 @@ int mt_snprintf(char *buf, const size_t buf_size, const char *fmt, ...)
 	return c;
 }
 
+#ifdef __ANDROID__
+// defined in porting_android.cpp
+extern void openURIAndroid(const char *url);
+#endif
+
 static bool open_uri(const std::string &uri)
 {
 	if (uri.find_first_of("\r\n") != std::string::npos) {
@@ -864,7 +964,7 @@ static bool open_uri(const std::string &uri)
 #if defined(_WIN32)
 	return (intptr_t)ShellExecuteA(NULL, NULL, uri.c_str(), NULL, NULL, SW_SHOWNORMAL) > 32;
 #elif defined(__ANDROID__)
-	openURIAndroid(uri);
+	openURIAndroid(uri.c_str());
 	return true;
 #elif defined(__APPLE__)
 	const char *argv[] = {"open", uri.c_str(), NULL};
@@ -878,7 +978,7 @@ static bool open_uri(const std::string &uri)
 
 bool open_url(const std::string &url)
 {
-	if (url.substr(0, 7) != "http://" && url.substr(0, 8) != "https://") {
+	if (!str_starts_with(url, "http://") && !str_starts_with(url, "https://")) {
 		errorstream << "Unable to open browser as URL is missing schema: " << url << std::endl;
 		return false;
 	}
@@ -910,6 +1010,48 @@ inline double get_perf_freq()
 }
 
 double perf_freq = get_perf_freq();
+
+#endif
+
+#if HAVE_MALLOC_TRIM
+
+/*
+ * On Linux/glibc we found that after deallocating bigger chunks of data (esp. MapBlocks)
+ * the memory would not be given back to the OS and would stay at peak usage.
+ * This appears to be a combination of unfortunate allocation order/fragmentation
+ * and the fact that glibc does not call madvise(MADV_DONTNEED) on its own.
+ * Some other allocators were also affected, jemalloc and musl libc were not.
+ * read more: <https://forum.luanti.org/viewtopic.php?t=30509>
+ *
+ * As a workaround we track freed memory coarsely and call malloc_trim() once a
+ * certain amount is reached.
+ *
+ * Because trimming can take more than 10ms and would cause jitter if done
+ * uncontrolled we have a separate function, which is called from background threads.
+ */
+
+static std::atomic<size_t> memory_freed;
+
+constexpr size_t MEMORY_TRIM_THRESHOLD = 256 * 1024 * 1024;
+
+void TrackFreedMemory(size_t amount)
+{
+	memory_freed.fetch_add(amount, std::memory_order_relaxed);
+}
+
+void TriggerMemoryTrim()
+{
+	ZoneScoped;
+
+	constexpr auto MO = std::memory_order_relaxed;
+	if (memory_freed.load(MO) >= MEMORY_TRIM_THRESHOLD) {
+		// Synchronize call
+		if (memory_freed.exchange(0, MO) < MEMORY_TRIM_THRESHOLD)
+			return;
+		// Leave some headroom for future allocations
+		malloc_trim(8 * 1024 * 1024);
+	}
+}
 
 #endif
 

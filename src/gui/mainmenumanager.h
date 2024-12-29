@@ -1,24 +1,6 @@
-/*
-mainmenumanager.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -37,7 +19,7 @@ public:
 	virtual void disconnect() = 0;
 	virtual void changePassword() = 0;
 	virtual void changeVolume() = 0;
-
+	virtual void showOpenURLDialog(const std::string &url) = 0;
 	virtual void signalKeyConfigChange() = 0;
 };
 
@@ -51,14 +33,14 @@ class MainMenuManager : public IMenuManager
 public:
 	virtual void createdMenu(gui::IGUIElement *menu)
 	{
-#ifndef NDEBUG
-		for (gui::IGUIElement *i : m_stack) {
-			assert(i != menu);
+		for (gui::IGUIElement *e : m_stack) {
+			if (e == menu)
+				return;
 		}
-#endif
 
 		if(!m_stack.empty())
 			m_stack.back()->setVisible(false);
+
 		m_stack.push_back(menu);
 		guienv->setFocus(m_stack.back());
 	}
@@ -83,7 +65,7 @@ public:
 		return mm && mm->preprocessEvent(event);
 	}
 
-	u32 menuCount()
+	size_t menuCount() const
 	{
 		return m_stack.size();
 	}
@@ -98,12 +80,16 @@ public:
 		return false;
 	}
 
+	// FIXME: why isn't this private?
 	std::list<gui::IGUIElement*> m_stack;
 };
 
 extern MainMenuManager g_menumgr;
 
-extern bool isMenuActive();
+static inline bool isMenuActive()
+{
+	return g_menumgr.menuCount() != 0;
+}
 
 class MainGameCallback : public IGameCallback
 {
@@ -111,44 +97,48 @@ public:
 	MainGameCallback() = default;
 	virtual ~MainGameCallback() = default;
 
-	virtual void exitToOS()
+	void exitToOS() override
 	{
 		shutdown_requested = true;
 	}
 
-	virtual void disconnect()
+	void disconnect() override
 	{
 		disconnect_requested = true;
 	}
 
-	virtual void changePassword()
+	void changePassword() override
 	{
 		changepassword_requested = true;
 	}
 
-	virtual void changeVolume()
+	void changeVolume() override
 	{
 		changevolume_requested = true;
 	}
 
-	virtual void keyConfig()
+	void keyConfig() override
 	{
 		keyconfig_requested = true;
 	}
 
-	virtual void signalKeyConfigChange()
+	void signalKeyConfigChange() override
 	{
 		keyconfig_changed = true;
 	}
 
+	void showOpenURLDialog(const std::string &url) override
+	{
+		show_open_url_dialog = url;
+	}
 
 	bool disconnect_requested = false;
 	bool changepassword_requested = false;
 	bool changevolume_requested = false;
 	bool keyconfig_requested = false;
 	bool shutdown_requested = false;
-
 	bool keyconfig_changed = false;
+	std::string show_open_url_dialog = "";
 };
 
 extern MainGameCallback *g_gamecallback;

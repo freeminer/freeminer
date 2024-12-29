@@ -1,34 +1,13 @@
-/*
-mapblock.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
-#include <atomic>
-#include <cstddef>
-#include <cstdint>
-#include <mutex>
-#include "threading/lock.h"
+#include "config.h"
 
-#include <set>
+#include <atomic>
+#include <vector>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "mapnode.h"
@@ -73,27 +52,27 @@ struct abm_trigger_one {
 //// MapBlock modified reason flags
 ////
 
-#define MOD_REASON_INITIAL                   (1 << 0)
-#define MOD_REASON_REALLOCATE                (1 << 1)
-#define MOD_REASON_SET_IS_UNDERGROUND        (1 << 2)
-#define MOD_REASON_SET_LIGHTING_COMPLETE     (1 << 3)
-#define MOD_REASON_SET_GENERATED             (1 << 4)
-#define MOD_REASON_SET_NODE                  (1 << 5)
-#define MOD_REASON_SET_NODE_NO_CHECK         (1 << 6)
-#define MOD_REASON_SET_TIMESTAMP             (1 << 7)
-#define MOD_REASON_REPORT_META_CHANGE        (1 << 8)
-#define MOD_REASON_CLEAR_ALL_OBJECTS         (1 << 9)
-#define MOD_REASON_BLOCK_EXPIRED             (1 << 10)
-#define MOD_REASON_ADD_ACTIVE_OBJECT_RAW     (1 << 11)
-#define MOD_REASON_REMOVE_OBJECTS_REMOVE     (1 << 12)
-#define MOD_REASON_REMOVE_OBJECTS_DEACTIVATE (1 << 13)
-#define MOD_REASON_TOO_MANY_OBJECTS          (1 << 14)
-#define MOD_REASON_STATIC_DATA_ADDED         (1 << 15)
-#define MOD_REASON_STATIC_DATA_REMOVED       (1 << 16)
-#define MOD_REASON_STATIC_DATA_CHANGED       (1 << 17)
-#define MOD_REASON_EXPIRE_DAYNIGHTDIFF       (1 << 18)
-#define MOD_REASON_VMANIP                    (1 << 19)
-#define MOD_REASON_UNKNOWN                   (1 << 20)
+enum ModReason : u32 {
+	MOD_REASON_REALLOCATE                 = 1 << 0,
+	MOD_REASON_SET_IS_UNDERGROUND         = 1 << 1,
+	MOD_REASON_SET_LIGHTING_COMPLETE      = 1 << 2,
+	MOD_REASON_SET_GENERATED              = 1 << 3,
+	MOD_REASON_SET_NODE                   = 1 << 4,
+	MOD_REASON_SET_TIMESTAMP              = 1 << 5,
+	MOD_REASON_REPORT_META_CHANGE         = 1 << 6,
+	MOD_REASON_CLEAR_ALL_OBJECTS          = 1 << 7,
+	MOD_REASON_BLOCK_EXPIRED              = 1 << 8,
+	MOD_REASON_ADD_ACTIVE_OBJECT_RAW      = 1 << 9,
+	MOD_REASON_REMOVE_OBJECTS_REMOVE      = 1 << 10,
+	MOD_REASON_REMOVE_OBJECTS_DEACTIVATE  = 1 << 11,
+	MOD_REASON_TOO_MANY_OBJECTS           = 1 << 12,
+	MOD_REASON_STATIC_DATA_ADDED          = 1 << 13,
+	MOD_REASON_STATIC_DATA_REMOVED        = 1 << 14,
+	MOD_REASON_STATIC_DATA_CHANGED        = 1 << 15,
+	MOD_REASON_EXPIRE_IS_AIR              = 1 << 16,
+	MOD_REASON_VMANIP                     = 1 << 17,
+	MOD_REASON_UNKNOWN                    = 1 << 18,
+};
 
 ////
 //// MapBlock itself
@@ -103,35 +82,25 @@ class MapBlock
 : public locker<> // TODO: find all deadlocks and change to shared_locker
 {
 public:
-	MapBlock(Map *parent, v3bpos_t pos, IGameDef *gamedef);
+	MapBlock(v3bpos_t pos, IGameDef *gamedef);
 	~MapBlock();
-
-	/*virtual u16 nodeContainerId() const
-	{
-		return NODECONTAINER_ID_MAPBLOCK;
-	}*/
-
-	Map *getParent()
-	{
-		return m_parent;
-	}
 
 	// Any server-modding code can "delete" arbitrary blocks (i.e. with
 	// core.delete_area), which makes them orphan. Avoid using orphan blocks for
 	// anything.
 	bool isOrphan() const
 	{
-		return !m_parent;
+		return m_orphan;
 	}
 
 	void makeOrphan()
 	{
-		m_parent = nullptr;
+		m_orphan = true;
 	}
 
 	void reallocate()
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #if __GNUC__ > 7
@@ -159,7 +128,7 @@ public:
 	////
 	//// Modification tracking methods
 	////
-	void raiseModified(u32 mod, u32 reason, bool important = false)
+	void raiseModified(u32 mod, u32 reason=MOD_REASON_UNKNOWN, bool important = true)
 	{
 		raiseModified(mod, modified_light_no, important);
 #ifdef WTFdebug
@@ -173,7 +142,7 @@ public:
 		}
 #endif
 		if (mod == MOD_STATE_WRITE_NEEDED)
-			contents_cached = false;
+			contents.clear();
 	}
 
 	inline u32 getModified()
@@ -221,7 +190,7 @@ public:
 */
 			m_lighting_complete = newflags;
 /*
-			raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_LIGHTING_COMPLETE);
+			raiseModified(MOD_STATE_WRITE_AT_UNLOAD, MOD_REASON_SET_LIGHTING_COMPLETE);
 		}
 */
 	}
@@ -234,7 +203,7 @@ public:
 	inline void setLightingComplete(LightBank bank, u8 direction,
 		bool is_complete)
 	{
-		assert(direction >= 0 && direction <= 5);
+		assert(direction <= 5);
 		if (bank == LIGHTBANK_NIGHT) {
 			direction += 6;
 		}
@@ -249,7 +218,7 @@ public:
 
 	inline bool isLightingComplete(LightBank bank, u8 direction)
 	{
-		assert(direction >= 0 && direction <= 5);
+		assert(direction <= 5);
 		if (bank == LIGHTBANK_NIGHT) {
 			direction += 6;
 		}
@@ -285,10 +254,14 @@ public:
 		return m_pos_relative;
 	}
 
-	inline core::aabbox3d<pos_t> getBox()
+	inline core::aabbox3d<pos_t> getBox() {
+		return getBox(getPosRelative());
+	}
+
+	static inline core::aabbox3d<pos_t> getBox(const v3pos_t &pos_relative)
 	{
-		return core::aabbox3d<pos_t>(getPosRelative(),
-				getPosRelative()
+		return core::aabbox3d<pos_t>(pos_relative,
+				pos_relative
 				+ v3pos_t(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE)
 				- v3pos_t(1,1,1));
 	}
@@ -316,7 +289,7 @@ public:
 		if (!*valid_position)
 			return ignoreNode;
 
-		auto lock = lock_shared_rec();
+		const auto lock = lock_shared_rec();
 		return data[p.Z * zstride + p.Y * ystride + p.X];
 	}
 
@@ -336,9 +309,14 @@ public:
 		data[z * zstride + y * ystride + x] = n;
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE);
 	}
+
+	inline void setNode(v3pos_t p, MapNode n)
+	{
+		setNode(p.X, p.Y, p.Z, n);
+	}
 */
 
-	void setNode(v3pos_t p, MapNode& n);
+	void setNode(const v3pos_t& p, const MapNode& n, bool important = false);
 
 	////
 	//// Non-checking variants of the above
@@ -346,7 +324,7 @@ public:
 
 	inline MapNode getNodeNoCheck(pos_t x, pos_t y, pos_t z)
 	{
-		auto lock = lock_shared_rec();
+		const auto lock = lock_shared_rec();
 		return data[z * zstride + y * ystride + x];
 	}
 
@@ -357,45 +335,39 @@ public:
 
 	inline void setNodeNoCheck(pos_t x, pos_t y, pos_t z, MapNode n)
 	{
-        auto lock = lock_unique_rec();
+        const auto lock = lock_unique_rec();
 
 		data[z * zstride + y * ystride + x] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK);
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE, false);
 	}
 
 	inline void setNodeNoCheck(v3pos_t p, MapNode n, bool important = false)
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 
 		data[p.Z * zstride + p.Y * ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
+		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE, important);
 	}
-
-	// These functions consult the parent container if the position
-	// is not valid on this MapBlock.
-	bool isValidPositionParent(v3pos_t p);
-	MapNode getNodeParent(v3pos_t p, bool *is_valid_position = NULL);
 
 	// Copies data to VoxelManipulator to getPosRelative()
 	void copyTo(VoxelManipulator &dst);
 
-	// Copies data from VoxelManipulator getPosRelative()
-	void copyFrom(VoxelManipulator &dst);
+	// Copies data from VoxelManipulator to getPosRelative()
+	void copyFrom(const VoxelManipulator &src);
 
-	// Update day-night lighting difference flag.
-	// Sets m_day_night_differs to appropriate value.
-	// These methods don't care about neighboring blocks.
-	void actuallyUpdateDayNightDiff();
+	// Update is air flag.
+	// Sets m_is_air to appropriate value.
+	void actuallyUpdateIsAir();
 
 	// Call this to schedule what the previous function does to be done
 	// when the value is actually needed.
-	void expireDayNightDiff();
+	void expireIsAirCache();
 
-	inline bool getDayNightDiff()
+	inline bool isAir()
 	{
-		if (m_day_night_differs_expired)
-			actuallyUpdateDayNightDiff();
-		return m_day_night_differs;
+		if (m_is_air_expired)
+			actuallyUpdateIsAir();
+		return m_is_air;
 	}
 
 	bool onObjectsActivation();
@@ -455,15 +427,17 @@ public:
 
 	inline void refGrab()
 	{
+		assert(m_refcount < SHRT_MAX);
 		m_refcount++;
 	}
 
 	inline void refDrop()
 	{
+		assert(m_refcount > 0);
 		m_refcount--;
 	}
 
-	inline int refGet()
+	inline short refGet()
 	{
 		return m_refcount;
 	}
@@ -507,7 +481,6 @@ public:
 	void serializeNetworkSpecific(std::ostream &os);
 	void deSerializeNetworkSpecific(std::istream &is);
 
-
 //fm:
 	/*
 		Flags
@@ -526,7 +499,7 @@ public:
 
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
 
-#if BUILD_CLIENT // Only on client
+#if CHECK_CLIENT_BUILD() // Only on client
 	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
 	void setLodMesh(const MapBlock::mesh_type &rmesh);
 	const MapBlock::mesh_type getFarMesh(block_step_t step);
@@ -592,39 +565,27 @@ public:
 
 	std::atomic_bool m_lighting_expired {false};
 
-	inline MapNode getNodeTry(const v3pos_t &p)
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return ignoreNode;
-		return getNodeNoLock(p);
-	}
+	MapNode getNodeTry(const v3pos_t &p);
 
-	inline MapNode& getNodeRef(const v3pos_t &p)
-	{
-		auto lock = try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return ignoreNode;
-		return getNodeNoLock(p);
-	}
+	MapNode &getNodeRef(const v3pos_t &p);
 
 	MapNode &getNodeNoLock(v3pos_t p)
 	{
 		return data[p.Z*zstride + p.Y*ystride + p.X];
 	}
 
-	inline void setNodeNoLock(v3pos_t p, MapNode n, bool important = false)
-	{
-		data[p.Z * zstride + p.Y * ystride + p.X] = n;
-		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_SET_NODE_NO_CHECK, important);
-	}
+	void setNodeNoLock(v3pos_t p, MapNode n, bool important = false);
 
-//===
-
+	//===
 
 	bool storeActiveObject(u16 id);
 	// clearObject and return removed objects count
 	u32 clearObjects();
+
+	static const u32 ystride = MAP_BLOCKSIZE;
+	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
+
+	static const u32 nodecount = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 
 private:
 	/*
@@ -633,72 +594,89 @@ private:
 
 	void deSerialize_pre22(std::istream &is, u8 version, bool disk);
 
-public:
 	/*
-		Public member variables
-*/
+	 * PLEASE NOTE: When adding something here be mindful of position and size
+	 * of member variables! This is also the reason for the weird public-private
+	 * interleaving.
+	 * If in doubt consult `pahole` to see the effects.
+	 */
 
+public:
+#if CHECK_CLIENT_BUILD() // Only on client
 /*
-#ifndef SERVER // Only on client
-       MapBlockMesh *mesh = nullptr;
-#endif
-	*/
-
-	NodeMetadataList m_node_metadata;
-	StaticObjectList m_static_objects;
-
-	static const u32 ystride = MAP_BLOCKSIZE;
-	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
-
-	static const u32 nodecount = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
-
-	//// ABM optimizations ////
-	// Cache of content types
-	std::unordered_set<content_t> contents;
-	// True if content types are cached
-	std::atomic_bool contents_cached {false};
-	// True if we never want to cache content types for this block
-	bool do_not_cache_contents = false;
+	MapBlockMesh *mesh = nullptr;
+*/
 	// marks the sides which are opaque: 00+Z-Z+Y-Y+X-X
-	u8 solid_sides {0};
+	u8 solid_sides = 0;
+#endif
 
 private:
-	/*
-		Private member variables
-	*/
+	// see isOrphan()
+	bool m_orphan = false;
 
-	// NOTE: Lots of things rely on this being the Map
-	Map *m_parent;
 	// Position in blocks on parent
 	v3bpos_t m_pos;
 
-	/* This is the precalculated m_pos_relative value
-	* This caches the value, improving performance by removing 3 s16 multiplications
-	* at runtime on each getPosRelative call
-	* For a 5 minutes runtime with valgrind this removes 3 * 19M s16 multiplications
-	* The gain can be estimated in Release Build to 3 * 100M multiply operations for 5 mins
-	*/
+	/* Precalculated m_pos_relative value
+	 * This caches the value, improving performance by removing 3 s16 multiplications
+	 * at runtime on each getPosRelative call.
+	 * For a 5 minutes runtime with valgrind this removes 3 * 19M s16 multiplications.
+	 * The gain can be estimated in Release Build to 3 * 100M multiply operations for 5 mins.
+	 */
 	v3pos_t m_pos_relative;
 
+	/*
+		Reference count; currently used for determining if this block is in
+		the list of blocks to be drawn.
+	*/
+	std::atomic_short m_refcount = 0;
+
+	/*
+	 * Note that this is not an inline array because that has implications for
+	 * heap fragmentation (the array is exactly 16K), CPU caches and/or
+	 * optimizability of algorithms working on this array.
+	 */
+	MapNode *const data; // of `nodecount` elements
+
+	// provides the item and node definitions
 	IGameDef *m_gamedef;
+
+	/*
+		When the block is accessed, this is set to 0.
+		Map will unload the block when this reaches a timeout.
+	*/
+	float m_usage_timer = 0;
+
+public:
+	//// ABM optimizations ////
+	// True if we never want to cache content types for this block
+	bool do_not_cache_contents = false;
+	// Cache of content types
+	// This is actually a set but for the small sizes we have a vector should be
+	// more efficient.
+	// Can be empty, in which case nothing was cached yet.
+	std::vector<content_t> contents;
+
+private:
+	// Whether day and night lighting differs
+	bool m_is_air = false;
+	bool m_is_air_expired = true;
 
 	/*
 		- On the server, this is used for telling whether the
 		  block has been modified from the one on disk.
 		- On the client, this is used for nothing.
 	*/
-	std::atomic_uint8_t m_modified = MOD_STATE_CLEAN;
-	std::atomic_uint32_t m_modified_reason = MOD_REASON_INITIAL;
+	std::atomic_uint16_t m_modified = MOD_STATE_CLEAN;
+	u32 m_modified_reason = 0;
 
 	/*
-		When propagating sunlight and the above block doesn't exist,
-		sunlight is assumed if this is false.
-
-		In practice this is set to true if the block is completely
-		undeground with nothing visible above the ground except
-		caves.
+		When block is removed from active blocks, this is set to gametime.
+		Value BLOCK_TIMESTAMP_UNDEFINED=0xffffffff means there is no timestamp.
 	*/
-	std::atomic_bool is_underground = false;
+	std::atomic_uint32_t m_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
+	// The on-disk (or to-be on-disk) timestamp value
+	std::atomic_uint32_t m_disk_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
 
 	/*!
 	 * Each bit indicates if light spreading was finished
@@ -710,35 +688,23 @@ private:
 	*/
 	std::atomic_short m_lighting_complete {static_cast<short>(0xFFFF)};
 
-	// Whether day and night lighting differs
-	bool m_day_night_differs = false;
-	std::atomic_bool m_day_night_differs_expired {true};
-
-	std::atomic_bool m_generated {false};
+	// Whether mapgen has generated the content of this block (persisted)
+	std::atomic_bool m_generated = false;
 
 	/*
-		When block is removed from active blocks, this is set to gametime.
-		Value BLOCK_TIMESTAMP_UNDEFINED=0xffffffff means there is no timestamp.
-	*/
-	std::atomic_uint m_timestamp {BLOCK_TIMESTAMP_UNDEFINED};
-	// The on-disk (or to-be on-disk) timestamp value
-	std::atomic_uint m_disk_timestamp = BLOCK_TIMESTAMP_UNDEFINED;
+		When propagating sunlight and the above block doesn't exist,
+		sunlight is assumed if this is false.
 
-	/*
-		When the block is accessed, this is set to 0.
-		Map will unload the block when this reaches a timeout.
+		In practice this is set to true if the block is completely
+		undeground with nothing visible above the ground except
+		caves.
 	*/
-	float m_usage_timer = 0;
-
-	/*
-		Reference count; currently used for determining if this block is in
-		the list of blocks to be drawn.
-	*/
-	std::atomic_int m_refcount {0};
-
-	MapNode data[nodecount];
+	std::atomic_bool is_underground = false;
 
 public:
+	NodeMetadataList m_node_metadata;
+	StaticObjectList m_static_objects;
+
 	NodeTimerList m_node_timers;
 };
 
@@ -805,6 +771,6 @@ inline v3pos_t getBlockPosRelative(const v3bpos_t &p)
 */
 std::string analyze_block(MapBlock *block);
 
-using MapBlockP = std::shared_ptr<MapBlock>;
-// using MapBlockP = MapBlock *;
+using MapBlockPtr = std::shared_ptr<MapBlock>;
+// using MapBlockPtr = MapBlock *;
 

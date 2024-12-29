@@ -1,26 +1,9 @@
-/*
-Minetest
-Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2015-2018 paramat
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2015-2018 paramat
 
 #include <fstream>
-#include <typeinfo>
-#include "irr_v3d.h"
 #include "mg_schematic.h"
 #include "server.h"
 #include "mapgen.h"
@@ -33,6 +16,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "serialization.h"
 #include "filesys.h"
 #include "voxelalgorithms.h"
+#include "porting.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -81,6 +65,8 @@ Schematic::~Schematic()
 {
 	delete []schemdata;
 	delete []slice_probs;
+	u32 nodecount = size.X * size.Y * size.Z;
+	porting::TrackFreedMemory(nodecount * sizeof(MapNode));
 }
 
 ObjDef *Schematic::clone() const
@@ -239,10 +225,6 @@ bool Schematic::placeOnVManip(MMVManip *vm, v3pos_t p, u32 flags,
 void Schematic::placeOnMap(ServerMap *map, v3pos_t p, u32 flags,
 	Rotation rot, bool force_place)
 {
-	concurrent_map<v3bpos_t, MapBlock *> lighting_modified_blocks;
-/*
-	std::map<v3bpos_t, MapBlock *> lighting_modified_blocks;
-*/
 	std::map<v3bpos_t, MapBlock *> modified_blocks;
 	std::map<v3bpos_t, MapBlock *>::iterator it;
 
@@ -398,7 +380,7 @@ bool Schematic::serializeToMts(std::ostream *os) const
 	}
 
 	// compressed bulk node data
-	SharedBuffer<u8> buf = MapNode::serializeBulk(MTSCHEM_MAPNODE_SER_FMT_VER,
+	auto buf = MapNode::serializeBulk(MTSCHEM_MAPNODE_SER_FMT_VER,
 		schemdata, size.X * size.Y * size.Z, 2, 2);
 	compress(buf, ss, MTSCHEM_MAPNODE_SER_FMT_VER);
 
@@ -499,12 +481,9 @@ bool Schematic::serializeToLua(std::ostream *os, bool use_comments,
 bool Schematic::loadSchematicFromFile(const std::string &filename,
 	const NodeDefManager *ndef, StringMap *replace_names)
 {
-	std::ifstream is(filename.c_str(), std::ios_base::binary);
-	if (!is.good()) {
-		errorstream << __FUNCTION__ << ": unable to open file '"
-			<< filename << "'" << std::endl;
+	auto is = open_ifstream(filename.c_str(), true);
+	if (!is.good())
 		return false;
-	}
 
 	if (!m_ndef)
 		m_ndef = ndef;
@@ -645,7 +624,7 @@ void Schematic::condenseContentIds()
 			numids++;
 
 			m_nodenames.push_back(m_ndef->get(c).name);
-			nodeidmap.emplace(std::make_pair(c, id));
+			nodeidmap.emplace(c, id);
 		} else {
 			id = it->second;
 		}

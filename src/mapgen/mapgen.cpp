@@ -1,27 +1,11 @@
-/*
-Minetest
-Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2015-2018 paramat
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2018 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2015-2018 paramat
 
 #include <cmath>
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -80,6 +64,7 @@ FlagDesc flagdesc_gennotify[] = {
 	{"large_cave_begin", 1 << GENNOTIFY_LARGECAVE_BEGIN},
 	{"large_cave_end",   1 << GENNOTIFY_LARGECAVE_END},
 	{"decoration",       1 << GENNOTIFY_DECORATION},
+	{"custom",           1 << GENNOTIFY_CUSTOM},
 	{NULL,               0}
 };
 
@@ -122,7 +107,7 @@ static_assert(
 ////
 
 Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeParams *emerge) :
-	gennotify(emerge->gen_notify_on, emerge->gen_notify_on_deco_ids)
+	gennotify(emerge->createNotifier())
 {
 	id           = mapgenid;
 	water_level  = params->water_level;
@@ -440,7 +425,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3po
 				// This is the topmost node in the column
 				bool ispushed = false;
 				if ((!rare || !(rarecnt++ % 36)) && isLiquidHorizontallyFlowable(vi, em)) {
-					//trans_liquid->push_back(v3s16(x, y, z));
+					//trans_liquid->push_back(v3pos_t(x, y, z));
 					env->getServerMap().transforming_liquid_add({x, y, z});
 					ispushed = true;
 				}
@@ -456,7 +441,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3po
 						(!waschecked && isLiquidHorizontallyFlowable(vi_above, em)))) {
 					// Push back the lowest node in the column which is one
 					// node above this one
-					// trans_liquid->push_back(v3s16(x, y + 1, z));
+					// trans_liquid->push_back(v3pos_t(x, y + 1, z));
 					env->getServerMap().transforming_liquid_add(v3pos_t(x, y + 1, z));
 				}
 			}
@@ -711,8 +696,6 @@ void MapgenBasic::generateBiomes()
 
 	noise_filler_depth->perlinMap2D(node_min.X, node_min.Z);
 
-	s16 *biome_transitions = biomegen->getBiomeTransitions();
-
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++)
 	for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
 		Biome *biome = NULL;
@@ -723,8 +706,7 @@ void MapgenBasic::generateBiomes()
 		u16 depth_riverbed = 0;
 		u32 vi = vm->m_area.index(x, node_max.Y, z);
 
-		int cur_biome_depth = 0;
-		s16 biome_y_min = biome_transitions[cur_biome_depth];
+		s16 biome_y_min = biomegen->getNextTransitionY(node_max.Y);
 
 		// Check node at base of mapchunk above, either a node of a previously
 		// generated mapchunk or if not, a node of overgenerated base terrain.
@@ -760,15 +742,7 @@ void MapgenBasic::generateBiomes()
 				if (!biome || y < biome_y_min) {
 					// (Re)calculate biome
 					biome = biomegen->getBiomeAtIndex(index, v3pos_t(x, y, z));
-
-					// Finding the height of the next biome
-					// On first iteration this may loop a couple times after than it should just run once
-					while (y < biome_y_min) {
-						biome_y_min = biome_transitions[++cur_biome_depth];
-					}
-
-					/*if (x == node_min.X && z == node_min.Z)
-						printf("Map: check @ %i -> %s -> again at %i\n", y, biome->name.c_str(), biome_y_min);*/
+					biome_y_min = biomegen->getNextTransitionY(y);
 				}
 
 				// Add biome to biomemap at first stone surface detected
@@ -1067,39 +1041,67 @@ void MapgenBasic::generateDungeons(pos_t max_stone_y)
 ////
 
 GenerateNotifier::GenerateNotifier(u32 notify_on,
-	const std::set<u32> *notify_on_deco_ids)
+	const std::set<u32> *notify_on_deco_ids,
+	const std::set<std::string> *notify_on_custom)
 {
 	m_notify_on = notify_on;
 	m_notify_on_deco_ids = notify_on_deco_ids;
+	m_notify_on_custom = notify_on_custom;
 }
 
 
-bool GenerateNotifier::addEvent(GenNotifyType type, v3pos_t pos, u32 id)
+bool GenerateNotifier::addEvent(GenNotifyType type, v3pos_t pos)
 {
-	if (!(m_notify_on & (1 << type)))
-		return false;
-
-	if (type == GENNOTIFY_DECORATION &&
-		m_notify_on_deco_ids->find(id) == m_notify_on_deco_ids->cend())
+	assert(type != GENNOTIFY_DECORATION && type != GENNOTIFY_CUSTOM);
+	if (!shouldNotifyOn(type))
 		return false;
 
 	GenNotifyEvent gne;
 	gne.type = type;
 	gne.pos  = pos;
-	gne.id   = id;
-	m_notify_events.push_back(gne);
+	m_notify_events.emplace_back(std::move(gne));
+	return true;
+}
 
+
+bool GenerateNotifier::addDecorationEvent(v3pos_t pos, u32 id)
+{
+	if (!shouldNotifyOn(GENNOTIFY_DECORATION))
+		return false;
+	// check if data relating to this decoration was requested
+	assert(m_notify_on_deco_ids);
+	if (m_notify_on_deco_ids->find(id) == m_notify_on_deco_ids->cend())
+		return false;
+
+	GenNotifyEvent gne;
+	gne.type = GENNOTIFY_DECORATION;
+	gne.pos  = pos;
+	gne.id   = id;
+	m_notify_events.emplace_back(std::move(gne));
+	return true;
+}
+
+
+bool GenerateNotifier::setCustom(const std::string &key, const std::string &value)
+{
+	if (!shouldNotifyOn(GENNOTIFY_CUSTOM))
+		return false;
+	// check if this key was requested to be saved
+	assert(m_notify_on_custom);
+	if (m_notify_on_custom->count(key) == 0)
+		return false;
+
+	m_notify_custom[key] = value;
 	return true;
 }
 
 
 void GenerateNotifier::getEvents(
-	std::map<std::string, std::vector<v3pos_t> > &event_map)
+	std::map<std::string, std::vector<v3pos_t>> &event_map) const
 {
-	std::list<GenNotifyEvent>::iterator it;
+	for (auto &gn : m_notify_events) {
+		assert(gn.type != GENNOTIFY_CUSTOM); // never stored in this list
 
-	for (it = m_notify_events.begin(); it != m_notify_events.end(); ++it) {
-		GenNotifyEvent &gn = *it;
 		std::string name = (gn.type == GENNOTIFY_DECORATION) ?
 			"decoration#"+ itos(gn.id) :
 			flagdesc_gennotify[gn.type].name;
@@ -1112,6 +1114,7 @@ void GenerateNotifier::getEvents(
 void GenerateNotifier::clearEvents()
 {
 	m_notify_events.clear();
+	m_notify_custom.clear();
 }
 
 

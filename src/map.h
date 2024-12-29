@@ -1,30 +1,11 @@
-/*
-map.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include <cstdint>
 #include <iostream>
-#include <sstream>
 #include <set>
 #include <map>
 #include "irr_v3d.h"
@@ -43,39 +24,31 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "voxel.h"
 #include "modifiedstate.h"
-#include "util/container.h"
-#include "util/metricsbackend.h"
 #include "util/numeric.h"
 #include "nodetimer.h"
-#include "map_settings_manager.h"
 #include "debug.h"
 
-#include "mapblock.h"
-#include <sys/types.h>
-#include <unordered_set>
-#include "fm_nodecontainer.h"
-#include "config.h"
-
-class Settings;
-class MapDatabase;
-class ClientMap;
+/*
 class MapSector;
-class ServerMapSector;
-class MapBlock;
+*/
 class NodeMetadata;
 class IGameDef;
 class IRollbackManager;
-class EmergeManager;
-class MetricsBackend;
-class ServerEnvironment;
-struct BlockMakeData;
-class Server;
+class MapDatabase;
+
+#if !ENABLE_THREADS
+	#define MAP_NOTHREAD_LOCK(map) auto lock_map = map->m_nothread_locker.lock_unique_rec();
+#else
+	#define MAP_NOTHREAD_LOCK(map) ;
+#endif
+
+
 
 /*
 	MapEditEvent
 */
 
-enum MapEditEventType{
+enum MapEditEventType {
 	// Node added (changed from air or something else to something)
 	MEET_ADDNODE,
 	// Node removed (changed to air)
@@ -106,7 +79,7 @@ struct MapEditEvent
 		modified_blocks.push_back(getNodeBlockPos(pos));
 	}
 
-	void setModifiedBlocks(const std::map<v3bpos_t, MapBlock *> blocks)
+	void setModifiedBlocks(const std::map<v3bpos_t, MapBlock *>& blocks)
 	{
 		assert(modified_blocks.empty()); // only meant for initialization (once)
 		modified_blocks.reserve(blocks.size());
@@ -153,14 +126,6 @@ public:
 	virtual ~Map();
 	DISABLE_CLASS_COPY(Map);
 
-	/*
-		Drop (client) or delete (server) the map.
-	*/
-	virtual void drop()
-	{
-		delete this;
-	}
-
 	void addEventReceiver(MapEventReceiver *event_receiver);
 	void removeEventReceiver(MapEventReceiver *event_receiver);
 	// event shall be deleted by caller after the call.
@@ -169,8 +134,8 @@ public:
 	// Returns InvalidPositionException if not found
 	MapBlock * getBlockNoCreate(v3bpos_t p);
 	// Returns NULL if not found
-	MapBlock * getBlockNoCreateNoEx(v3bpos_t p, bool trylock = false, bool nocache = false);
-	MapBlockP getBlock(v3bpos_t p, bool trylock = false, bool nocache = false);
+	MapBlock * getBlockNoCreateNoEx(v3pos_t p, bool trylock = false, bool nocache = false);
+	MapBlockPtr getBlock(v3pos_t p, bool trylock = false, bool nocache = false);
 	void getBlockCacheFlush();
 
 	/* Server overrides */
@@ -182,7 +147,7 @@ public:
 	bool isValidPosition(v3pos_t p);
 
 	// throws InvalidPositionException if not found
-	void setNode(v3pos_t p, MapNode n, bool important = false);
+	void setNode(const v3pos_t &p, const MapNode &n, bool important = false) override;
 
 	// Returns a CONTENT_IGNORE node if not found
 	// If is_valid_position is not NULL then this will be set to true if the
@@ -280,7 +245,7 @@ public:
 		Utilities
 	*/
 
-	//freeminer:
+	// freeminer:
 	MapNode getNodeTry(const v3pos_t &p);
 	//MapNode getNodeNoLock(v3s16 p); // dont use
 
@@ -292,10 +257,10 @@ public:
 
 	// from old mapsector:
 	using m_blocks_type =
-			concurrent_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
+			concurrent_unordered_map<v3bpos_t, MapBlockPtr, v3posHash, v3posEqual>;
 	m_blocks_type m_blocks;
 	using m_far_blocks_type =
-			concurrent_shared_unordered_map<v3bpos_t, MapBlockP, v3posHash, v3posEqual>;
+			concurrent_shared_unordered_map<v3bpos_t, MapBlockPtr, v3posHash, v3posEqual>;
 	m_far_blocks_type m_far_blocks;
 	std::vector<std::shared_ptr<MapBlock>> m_far_blocks_delete;
 	bool m_far_blocks_currrent {};
@@ -305,24 +270,24 @@ public:
 	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t,
 			std::pair<block_step_t, uint32_t>>; // client
 	far_blocks_ask_t m_far_blocks_ask;
-	std::array<concurrent_unordered_map<v3bpos_t, MapBlockP>, FARMESH_STEP_MAX>
+	std::array<concurrent_unordered_map<v3bpos_t, MapBlockPtr>, FARMESH_STEP_MAX>
 			far_blocks_storage;
 	//double m_far_blocks_created = 0;
 	float far_blocks_sent_timer{1};
 	v3pos_t far_blocks_last_cam_pos;
-	std::vector<MapBlockP> m_far_blocks_delete_1, m_far_blocks_delete_2;
+	std::vector<MapBlockPtr> m_far_blocks_delete_1, m_far_blocks_delete_2;
 	bool m_far_blocks_delete_current {};
 
 	//static constexpr bool m_far_fast =			true; // show generated far farmesh stable(0) or instant(1)
 	uint32_t far_iteration_use{};
 	uint32_t far_iteration_clean{};
 	// MapBlock * getBlockNoCreateNoEx(v3pos_t & p);
-	MapBlock *createBlankBlockNoInsert(const v3bpos_t &p);
-	MapBlockP createBlankBlock(const v3bpos_t &p);
-	bool insertBlock(MapBlock *block);
-	void eraseBlock(const MapBlockP block);
-	std::unordered_map<MapBlockP, int> *m_blocks_delete = nullptr;
-	std::unordered_map<MapBlockP, int> m_blocks_delete_1, m_blocks_delete_2;
+	MapBlockPtr createBlankBlockNoInsert(const v3bpos_t &p);
+	MapBlockPtr createBlankBlock(const v3bpos_t &p);
+	bool insertBlock(MapBlockPtr block);
+	void eraseBlock(const MapBlockPtr block);
+	std::unordered_map<MapBlockPtr, int> *m_blocks_delete = nullptr;
+	std::unordered_map<MapBlockPtr, int> m_blocks_delete_1, m_blocks_delete_2;
 	uint64_t m_blocks_delete_time{};
 	// void getBlocks(std::list<MapBlock*> &dest);
 	concurrent_shared_unordered_set<v3bpos_t, v3posHash, v3posEqual> m_db_miss;
@@ -335,8 +300,8 @@ public:
 	try_shared_mutex m_block_cache_mutex;
 #endif
 #if !HAVE_THREAD_LOCAL
-	MapBlockP m_block_cache;
-	v3bpos_t m_block_cache_p;
+	MapBlockPtr m_block_cache;
+	v3pos_t m_block_cache_p;
 #endif
 	void copy_27_blocks_to_vm(MapBlock *block, VoxelManipulator &vmanip);
 
@@ -345,8 +310,6 @@ protected:
 	u32 m_blocks_save_last{};
 
 public:
-	std::atomic_uint time_life{};
-
 	inline MapNode getNodeNoEx(const v3pos_t &p) override { return getNodeTry(p); };
 	inline MapNode getNodeNoExNoEmerge(const v3pos_t &p) override
 	{
@@ -354,10 +317,13 @@ public:
 	};
 	inline MapNode &getNodeRefUnsafe(const v3pos_t &p) override { return getNodeRef(p); }
 
-	bool isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes);
+	// bool isBlockOccluded(const v3pos_t &pos, const v3pos_t &cam_pos_nodes);
 
 	concurrent_unordered_set<v3bpos_t> changed_blocks_for_merge;
 	using far_dbases_t = std::array<std::shared_ptr<MapDatabase>, FARMESH_STEP_MAX>;
+
+	virtual MapBlockPtr emergeBlockPtr(v3bpos_t p, bool create_blank=false)
+	{ return getBlock(p); }
 
 	//end of freeminer
 
@@ -373,9 +339,9 @@ public:
 	{
 		v3bpos_t bpmin = getNodeBlockPos(minp);
 		v3bpos_t bpmax = getNodeBlockPos(maxp);
-		for (bpos_t bz = bpmin.Z; bz <= bpmax.Z; bz++)
-		for (bpos_t bx = bpmin.X; bx <= bpmax.X; bx++)
-		for (bpos_t by = bpmin.Y; by <= bpmax.Y; by++) {
+		for (auto bz = bpmin.Z; bz <= bpmax.Z; bz++)
+		for (auto bx = bpmin.X; bx <= bpmax.X; bx++)
+		for (auto by = bpmin.Y; by <= bpmax.Y; by++) {
 			// y is iterated innermost to make use of the sector cache.
 			v3bpos_t bp(bx, by, bz);
 			auto block = getBlockNoCreateNoEx(bp);
@@ -399,7 +365,12 @@ public:
 		}
 	}
 
-	bool isBlockOccluded(MapBlock *block, v3pos_t cam_pos_nodes);
+	bool isBlockOccluded(MapBlock *block, v3pos_t cam_pos_nodes)
+	{
+		return isBlockOccluded(block->getPosRelative(), cam_pos_nodes, false);
+	}
+	bool isBlockOccluded(v3pos_t pos_relative, v3pos_t cam_pos_nodes, bool simple_check = false);
+
 protected:
 	IGameDef *m_gamedef;
 	std::set<MapEventReceiver*> m_event_receivers;
@@ -418,252 +389,12 @@ protected:
 	// Can be implemented by child class
 	virtual void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) {}
 
-	bool determineAdditionalOcclusionCheck(const v3pos_t &pos_camera,
-		const core::aabbox3d<pos_t> &block_bounds, v3pos_t &check);
-	bool isOccluded(const v3pos_t &pos_camera, const v3pos_t &pos_target,
+	bool determineAdditionalOcclusionCheck(v3pos_t pos_camera,
+		const core::aabbox3d<pos_t> &block_bounds, v3pos_t &to_check);
+	bool isOccluded(v3pos_t pos_camera, v3pos_t pos_target,
 		float step, float stepfac, float start_offset, float end_offset,
 		u32 needed_count);
 };
-
-/*
-	ServerMap
-
-	This is the only map class that is able to generate map.
-*/
-
-class ServerMap : public Map
-{
-public:
-
-    // freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
-			bool block_add = true);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
-			bool block_add = true);
-
-	size_t transforming_liquid_size();
-	v3pos_t transforming_liquid_pop();
-	void transforming_liquid_add(v3pos_t p);
-	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
-	std::vector<v3pos_t> m_transforming_liquid_local;
-
-	//getSurface level starting on basepos.y up to basepos.y + searchup
-	//returns basepos.y -1 if no surface has been found
-	// (due to limited data range of basepos.y this will always give a unique
-	// return value as long as minetest is compiled at least on 32bit architecture)
-	//int getSurface(v3s16 basepos, int searchup, bool walkable_only);
-	virtual int getSurface(const v3pos_t &basepos, int searchup, bool walkable_only);
-	/*
-	{
-		return basepos.Y - 1;
-	}
-*/
-
-	//concurrent_unordered_map<v3POS, bool, v3posHash, v3posEqual> m_transforming_liquid;
-	std::mutex m_transforming_liquid_mutex;
-	typedef unordered_map_v3pos<int> lighting_map_t;
-	std::mutex m_lighting_modified_mutex;
-	std::map<v3bpos_t, int> m_lighting_modified_blocks;
-	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
-	void lighting_modified_add(const v3pos_t &pos, int range = 5);
-
-	void unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
-			std::set<v3pos_t> &light_sources,
-			std::map<v3bpos_t, MapBlock *> &modified_blocks);
-	void spreadLight(enum LightBank bank, std::set<v3pos_t> &from_nodes,
-			std::map<v3bpos_t, MapBlock *> &modified_blocks, uint64_t end_ms);
-
-	u32 updateLighting(concurrent_map<v3bpos_t, MapBlock *> &a_blocks,
-			std::map<v3bpos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
-	u32 updateLighting(lighting_map_t &a_blocks, unordered_map_v3pos<int> &processed,
-			unsigned int max_cycle_ms = 0);
-	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int &loopcount);
-
-	bool propagateSunlight(const v3bpos_t &pos, std::set<v3pos_t> &light_sources,
-			bool remove_light = false);
-
-	MapBlockP loadBlockNoStore(const v3bpos_t &p3d);
-
-	// == end of freeminer
-
-
-
-
-
-
-	/*
-		savedir: directory to which map data should be saved
-	*/
-	ServerMap(const std::string &savedir, IGameDef *gamedef, EmergeManager *emerge, MetricsBackend *mb);
-	~ServerMap();
-
-	/*
-
-		Get a sector from somewhere.
-		- Check memory
-		- Check disk (doesn't load blocks)
-		- Create blank one
-	*/
-/*
-	MapSector *createSector(v2bpos_t p);
-*/
-	/*
-		Blocks are generated by using these and makeBlock().
-	*/
-	bool blockpos_over_mapgen_limit(v3bpos_t p);
-	bool initBlockMake(v3bpos_t blockpos, BlockMakeData *data);
-	void finishBlockMake(BlockMakeData *data,
-		std::map<v3bpos_t, MapBlock*> *changed_blocks);
-
-	/*
-		Get a block from somewhere.
-		- Memory
-		- Create blank
-	*/
-	MapBlock *createBlock(v3bpos_t p);
-
-	/*
-		Forcefully get a block from somewhere.
-		- Memory
-		- Load from disk
-		- Create blank filled with CONTENT_IGNORE
-
-	*/
-	MapBlock *emergeBlock(v3bpos_t p, bool create_blank=false) override;
-
-	/*
-		Try to get a block.
-		If it does not exist in memory, add it to the emerge queue.
-		- Memory
-		- Emerge Queue (deferred disk or generate)
-	*/
-	MapBlock *getBlockOrEmerge(v3bpos_t p3d);
-
-	// Carries out any initialization necessary before block is sent
-	void prepareBlock(MapBlock *block);
-
-	// Helper for placing objects on ground level
-	s16 findGroundLevel(v2pos_t p2d, bool cacheBlocks);
-
-	bool isBlockInQueue(v3bpos_t pos);
-
-	void addNodeAndUpdate(v3pos_t p, MapNode n,
-			std::map<v3bpos_t, MapBlock*> &modified_blocks,
-			bool remove_metadata
-			, int fast = 0, bool important = false) override;
-
-	/*
-		Database functions
-	*/
-	static MapDatabase *createDatabase(const std::string &name, const std::string &savedir, Settings &conf);
-
-	// Call these before and after saving of blocks
-	void beginSave() override;
-	void endSave() override;
-
-	s32 save(ModifiedState save_level, float dedicated_server_step = 0.1, bool breakable = 0) override;
-	void listAllLoadableBlocks(std::vector<v3bpos_t> &dst);
-	void listAllLoadedBlocks(std::vector<v3bpos_t> &dst);
-
-	MapgenParams *getMapgenParams();
-
-	bool saveBlock(MapBlock *block) override;
-	static bool saveBlock(MapBlock *block, MapDatabase *db, int compression_level = -1);
-	MapBlock* loadBlock(v3bpos_t p);
-/*	
-	// Database version
-	void loadBlock(std::string *blob, v3bpos_t p3d, MapSector *sector, bool save_after_load=false);
-*/
-
-	// Blocks are removed from the map but not deleted from memory until
-	// deleteDetachedBlocks() is called, since pointers to them may still exist
-	// when deleteBlock() is called.
-	bool deleteBlock(v3bpos_t blockpos) override;
-
-	void deleteDetachedBlocks();
-
-	void step();
-
-	void updateVManip(v3bpos_t pos);
-
-	// For debug printing
-	void PrintInfo(std::ostream &out) override;
-
-	bool isSavingEnabled(){ return m_map_saving_enabled; }
-
-	u64 getSeed();
-
-	/*!
-	 * Fixes lighting in one map block.
-	 * May modify other blocks as well, as light can spread
-	 * out of the specified block.
-	 * Returns false if the block is not generated (so nothing
-	 * changed), true otherwise.
-	 */
-	bool repairBlockLight(v3bpos_t blockpos,
-		std::map<v3bpos_t, MapBlock *> *modified_blocks);
-
-	size_t transformLiquids(std::map<v3bpos_t, MapBlock*> & modified_blocks,
-			ServerEnvironment *env
-            , Server *m_server, unsigned int max_cycle_ms			
-			);
-
-	MapSettingsManager settings_mgr;
-
-protected:
-
-	void reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks) override;
-
-private:
-	friend class ModApiMapgen; // for m_transforming_liquid
-
-	// Emerge manager
-	EmergeManager *m_emerge;
-
-public:
-	std::string m_savedir;
-	bool m_map_saving_enabled;
-	bool m_map_loading_enabled;
-	concurrent_shared_unordered_map<v3bpos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
-
-	int m_map_compression_level;
-
-private:
-	concurrent_set<v3bpos_t> m_chunks_in_progress;
-
-	// used by deleteBlock() and deleteDetachedBlocks()
-	std::vector<std::unique_ptr<MapBlock>> m_detached_blocks;
-
-	// Queued transforming water nodes
-	UniqueQueue<v3pos_t> m_transforming_liquid;
-	f32 m_transforming_liquid_loop_count_multiplier = 1.0f;
-	u32 m_unprocessed_count = 0;
-	u64 m_inc_trending_up_start_time = 0; // milliseconds
-	bool m_queue_size_timer_started = false;
-
-	/*
-		Metadata is re-written on disk only if this is true.
-		This is reset to false when written on disk.
-	*/
-	bool m_map_metadata_changed = true;
-public:
-	MapDatabase *dbase = nullptr;
-private:
-	MapDatabase *dbase_ro = nullptr;
-
-	// Map metrics
-	MetricGaugePtr m_loaded_blocks_gauge;
-	MetricCounterPtr m_save_time_counter;
-	MetricCounterPtr m_save_count_counter;
-};
-
-#if !ENABLE_THREADS
-	#define MAP_NOTHREAD_LOCK(map) auto lock_map = map->m_nothread_locker.lock_unique_rec();
-#else
-	#define MAP_NOTHREAD_LOCK(map) ;
-#endif
 
 #define VMANIP_BLOCK_DATA_INEXIST     1
 #define VMANIP_BLOCK_CONTAINS_CIGNORE 2
@@ -686,7 +417,7 @@ public:
 	// This is much faster with big chunks of generated data
 	void blitBackAll(std::map<v3bpos_t, MapBlock*> * modified_blocks,
 		bool overwrite_generated = true
-		, bool save_generated_block = true);
+		, bool save_generated_block = true) const;
 
 	/*
 		Creates a copy of this VManip including contents, the copy will not be

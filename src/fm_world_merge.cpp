@@ -47,7 +47,7 @@ std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueTyp
 }
 
 static const auto load_block = [](Map *smap, MapDatabase *dbase,
-									   const v3bpos_t &pos) -> MapBlockP {
+									   const v3bpos_t &pos) -> MapBlockPtr {
 	auto block = loadBlockNoStore(smap, dbase, pos);
 	if (!block) {
 		return {};
@@ -71,7 +71,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 {
 	const auto step_pow = 1;
 	const auto step_size = 1 << step_pow;
-	std::unordered_map<v3bpos_t, MapBlockP> blocks;
+	std::unordered_map<v3bpos_t, MapBlockPtr> blocks;
 	uint32_t timestamp = 0;
 	{
 		for (bpos_t x = 0; x < step_size; ++x)
@@ -94,7 +94,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 		timestamp = get_time_func();
 	}
 
-	MapBlockP block_up;
+	MapBlockPtr block_up;
 
 	if (partial) {
 		block_up = load_block(smap, dbase_up, bpos_aligned);
@@ -108,7 +108,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 	}
 
 	if (!block_up) {
-		block_up.reset(smap->createBlankBlockNoInsert(bpos_aligned));
+		block_up = smap->createBlankBlockNoInsert(bpos_aligned);
 	}
 
 	block_up->setTimestampNoChangedFlag(timestamp);
@@ -127,7 +127,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					if (!block) {
 						continue;
 					}
-					
+
 					const v3pos_t lpos((x << step_pow) % MAP_BLOCKSIZE,
 							(y << step_pow) % MAP_BLOCKSIZE,
 							(z << step_pow) % MAP_BLOCKSIZE);
@@ -186,7 +186,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					if (top_c.empty()) {
 						if (maybe_air) {
 							++not_empty_nodes;
-							block_up->setNodeNoLock(npos, air);
+							block_up->setNodeNoLock(npos, air, true);
 						}
 						continue;
 					}
@@ -206,7 +206,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 					// TODO better check
 					++not_empty_nodes;
 
-					block_up->setNodeNoLock(npos, n);
+					block_up->setNodeNoLock(npos, n, true);
 				}
 	}
 	// TODO: skip full air;
@@ -328,7 +328,7 @@ bool WorldMerger::merge_one_step(
 
 	printstat();
 
-	return false;
+	return !processed;
 }
 
 bool WorldMerger::merge_list(std::unordered_set<v3bpos_t> &blocks_todo)
@@ -358,10 +358,15 @@ bool WorldMerger::merge_changed()
 }
 
 bool WorldMerger::merge_server_diff(
-		concurrent_unordered_set<v3bpos_t> &smap_changed_blocks_for_merge)
+		concurrent_unordered_set<v3bpos_t> &smap_changed_blocks_for_merge,
+		size_t min_blocks)
 {
 	{
 		const auto lock = smap_changed_blocks_for_merge.try_lock_unique_rec();
+		if (smap_changed_blocks_for_merge.size() < min_blocks) {
+			return false;
+		}
+
 		changed_blocks_for_merge = smap_changed_blocks_for_merge;
 		smap_changed_blocks_for_merge.clear();
 	}

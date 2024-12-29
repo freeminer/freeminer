@@ -1,32 +1,27 @@
-cmake_minimum_required(VERSION 3.5)
-
-# Set policies up to 3.9 since we want to enable the IPO option
-if(${CMAKE_VERSION} VERSION_LESS 3.9)
-	cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
-else()
-	cmake_policy(VERSION 3.9)
-endif()
+cmake_minimum_required(VERSION 3.12)
 
 # This can be read from ${PROJECT_NAME} after project() is called
 project(freeminer)
 set(PROJECT_NAME_CAPITALIZED "freeminer")
 set(VERSION_TWEAK 0) # freeminer
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(GCC_MINIMUM_VERSION "7.5")
 set(CLANG_MINIMUM_VERSION "7.0.1")
 
 # You should not need to edit these manually, use util/bump_version.sh
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 8)
+set(VERSION_MINOR 10)
 set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
 # Change to false for releases
-set(DEVELOPMENT_BUILD TRUE)
+set(DEVELOPMENT_BUILD FALSE) # freeminer
 
+set(DEVELOPMENT_BUILD TRUE)
 set(VERSION_STRING "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_TWEAK}")
+
 if(VERSION_EXTRA)
 	set(VERSION_STRING "${VERSION_STRING}-${VERSION_EXTRA}")
 elseif(DEVELOPMENT_BUILD)
@@ -45,8 +40,36 @@ set(BUILD_UNITTESTS TRUE CACHE BOOL "Build unittests")
 set(BUILD_BENCHMARKS FALSE CACHE BOOL "Build benchmarks")
 set(BUILD_DOCUMENTATION TRUE CACHE BOOL "Build documentation")
 
+if(NOT DEVELOPMENT_BUILD)
+set(DEFAULT_ENABLE_LTO TRUE)
+endif()
+# by default don't enable on Debug builds to get faster builds
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(DEFAULT_ENABLE_LTO FALSE)
+endif()
+#### LTO testing list ####
+# - Linux: seems to work always
+# - win32/msvc: works
+# - win32/gcc: fails to link
+# - win32/clang: works
+# - macOS on x86: seems to be fine
+# - macOS on ARM: crashes, see <https://github.com/minetest/minetest/issues/14397>
+# Note: since CMake has no easy architecture detection disabling for Mac entirely
+#### ####
+if((WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR APPLE)
+	set(DEFAULT_ENABLE_LTO FALSE)
+endif()
+set(ENABLE_LTO ${DEFAULT_ENABLE_LTO} CACHE BOOL "Use Link Time Optimization")
+
+set(BUILD_WITH_TRACY FALSE CACHE BOOL
+	"Fetch and build with the Tracy profiler client")
+set(FETCH_TRACY_GIT_TAG "master" CACHE STRING
+	"Git tag for fetching Tracy client. Match with your server (gui) version")
+
 set(DEFAULT_RUN_IN_PLACE FALSE)
-set(DEFAULT_RUN_IN_PLACE TRUE)
+if(NOT ANDROID)
+	set(DEFAULT_RUN_IN_PLACE TRUE)
+endif()
 if(WIN32)
 	set(DEFAULT_RUN_IN_PLACE TRUE)
 endif()
@@ -56,9 +79,15 @@ set(RUN_IN_PLACE ${DEFAULT_RUN_IN_PLACE} CACHE BOOL
 
 
 # == freeminer:
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)
+
+set(BUILD_CLIENT TRUE CACHE BOOL "Build client")
 if(WIN32 OR APPLE)
 	# win32 broken! http://forum.freeminer.org/threads/building-errors.182/#post-1852
 	#if( ${CMAKE_SYSTEM_VERSION} VERSION_LESS 6.0 )
@@ -68,7 +97,6 @@ if(WIN32 OR APPLE)
 else()
 	set(BUILD_SERVER TRUE CACHE BOOL "Build server")
 endif()
-
 
 if(${CMAKE_VERSION} VERSION_LESS 3.13)
 	function(add_link_options)
@@ -95,7 +123,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 endif()
 
 if(USE_LIBCXX AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-	find_library (LIBCXX_LIBRARY c++)      
+	find_library (LIBCXX_LIBRARY c++)
 	find_library (LIBCXXABI_LIBRARY c++abi)
 	if (LIBCXX_LIBRARY AND LIBCXXABI_LIBRARY)
 		add_link_options(-stdlib=libc++)
@@ -113,7 +141,173 @@ if (USE_STATIC_LIBRARIES)
     set(BUILD_SHARED_LIBS OFF)
 endif()
 
-#============
+# === fm ===
+
+INCLUDE(CheckCXXSourceRuns)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+#set(CMAKE_CXX_STANDARD 20)
+
+set(HAVE_SHARED_MUTEX 1)
+set(HAVE_THREAD_LOCAL 1)
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+	set(HAVE_FUTURE 1)
+
+set(CMAKE_REQUIRED_FLAGS "")
+
+option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
+
+if(ENABLE_THREADS)
+	set(ENABLE_THREADS 1)
+else()
+	set(ENABLE_THREADS 0)
+endif()
+
+option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
+if(MINETEST_PROTO)
+	set(MINETEST_TRANSPORT 1 CACHE BOOL "")
+	message(STATUS "Using minetest compatible protocol (some features missing)")
+endif()
+if (MINETEST_TRANSPORT)
+	message(STATUS "Using minetest compatible transport (slow)")
+endif()
+
+#
+# Set some optimizations and tweaks
+#
+
+include(CheckCXXCompilerFlag)
+
+if(STATIC_BUILD)
+	set(STATIC_BUILD 1)
+else()
+	set(STATIC_BUILD 0)
+endif()
+
+if(NOT MSVC)
+        # FM: TODO: REMOVE:
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
+
+	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
+		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
+	        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
+			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
+		endif ()
+	endif ()
+
+	if(SANITIZE_ADDRESS)
+                message(STATUS "Build with sanitize=address")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+        set(ENABLE_SYSTEM_JSONCPP 0)
+	endif()
+	if(SANITIZE_THREAD)
+                message(STATUS "Build with sanitize=thread")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
+		endif()
+        set(ENABLE_SYSTEM_JSONCPP 0)
+	endif()
+	if(SANITIZE_MEMORY)
+                message(STATUS "Build with sanitize=memory")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
+        set(ENABLE_SYSTEM_JSONCPP 0)
+	endif()
+	if(SANITIZE_UNDEFINED)
+                message(STATUS "Build with sanitize=undefined ")
+		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+        set(ENABLE_SYSTEM_JSONCPP 0)
+	endif()
+
+	if (NOT (CMAKE_BUILD_TYPE STREQUAL "Debug" OR SANITIZE_ADDRESS OR SANITIZE_THREAD OR SANITIZE_MEMORY OR SANITIZE_UNDEFINED))
+		option(ENABLE_TCMALLOC "Enable tcmalloc" 1)
+	endif()
+
+	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
+		#set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
+			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+		endif()
+
+		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
+		else()
+			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
+		endif()
+
+		if(ENABLE_GPERF)
+			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
+		endif()
+
+		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
+			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+		endif()
+
+		if (PROFILER_LIBRARY)
+			# set(PLATFORM_LIBS ${PLATFORM_LIBS} -Wl,--no-as-needed ${PROFILER_LIBRARY} -Wl,--as-needed)
+			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY})
+		endif()
+
+		if (TCMALLOC_LIBRARY)
+			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
+			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+		endif()
+
+		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
+	endif()
+
+    # too noisy
+	option(ENABLE_UNWIND "Enable unwind" 0)
+	if(ENABLE_UNWIND)
+
+	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
+	find_library(UNWIND_LIBRARY NAMES unwind)
+
+	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
+		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+	endif()
+
+	if(UNWIND_LIBRARY)
+        CHECK_CXX_SOURCE_RUNS("
+       #include <execinfo.h> // for backtrace
+       int main(int argc, char *argv[]) {
+            void *callstack[128];
+            const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
+            char buf[1024];
+            int nFrames = backtrace(callstack, nMaxFrames);
+            return 0;
+       }
+       "
+        USE_UNWIND)
+        if(NOT USE_UNWIND)
+            set(USE_UNWIND 0)
+        endif()
+        # set(USE_UNWIND 1)
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
+		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
+	endif()
+
+	endif()
+
+	if(CMAKE_SYSTEM_NAME MATCHES "(BSD|DragonFly)") # Darwin|
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} execinfo)
+	endif()
+
+	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
+endif()
+
+# === fm === ^^^
+
 
 message(STATUS "*** Will build version ${VERSION_STRING} ***")
 message(STATUS "BUILD_CLIENT: " ${BUILD_CLIENT})
@@ -129,22 +323,7 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Build type: Debug or Release" FORCE)
 endif()
 
-
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
-if(NOT NO_LTO AND NOT DEVELOPMENT_BUILD AND(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
-	option(USE_LTO "Use LTO" ON)
-else()
-	option(USE_LTO "Use LTO" OFF)
-endif()
-
-if (USE_LTO)
-    # include(CheckIPOSupported)
-	# check_ipo_supported(RESULT supported OUTPUT error)
-	set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-	message(STATUS "Using lto")
-endif()
-
 
 set(ENABLE_UPDATE_CHECKER (NOT ${DEVELOPMENT_BUILD}) CACHE BOOL
 	"Whether to enable update checks by default")
@@ -155,33 +334,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Load default options for Android
 if(ANDROID)
 	cmake_minimum_required(VERSION 3.20)
-	include(MinetestAndroidLibs)
+	include(AndroidLibs)
 endif()
 
 
-set(IRRLICHTMT_BUILD_DIR "" CACHE PATH "Path to IrrlichtMt build directory.")
 if(NOT NO_BUILD)
-if(ANDROID)
-	# currently manually provided
-elseif(NOT "${IRRLICHTMT_BUILD_DIR}" STREQUAL "")
-	find_package(IrrlichtMt QUIET
-		PATHS "${IRRLICHTMT_BUILD_DIR}"
-		NO_DEFAULT_PATH
-	)
-
-	if(NOT TARGET IrrlichtMt::IrrlichtMt)
-		# find_package() searches certain subdirectories. ${PATH}/cmake is not
-		# the only one, but it is the one where IrrlichtMt is supposed to export
-		# IrrlichtMtConfig.cmake
-		message(FATAL_ERROR "Could not find IrrlichtMtConfig.cmake in ${IRRLICHTMT_BUILD_DIR}/cmake.")
-	endif()
-elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt")
-	message(STATUS "Using user-provided IrrlichtMt at subdirectory 'lib/irrlichtmt'")
+if(TRUE)
+	message(STATUS "Using imported IrrlichtMt at subdirectory 'irr'")
 	if(BUILD_CLIENT)
-		# tell IrrlichtMt to create a static library
-		#set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared library" FORCE)
-		add_subdirectory(lib/irrlichtmt EXCLUDE_FROM_ALL)
-		#unset(BUILD_SHARED_LIBS CACHE)
+		add_subdirectory(irr EXCLUDE_FROM_ALL)
 
 		if(NOT TARGET IrrlichtMt)
 			message(FATAL_ERROR "IrrlichtMt project is missing a CMake target?!")
@@ -189,47 +350,22 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt")
 	else()
 		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
 		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/lib/irrlichtmt/include")
-	endif()
-else()
-	find_package(IrrlichtMt QUIET)
-	if(NOT TARGET IrrlichtMt::IrrlichtMt)
-		string(CONCAT explanation_msg
-			"The Minetest team has forked Irrlicht to make their own customizations. "
-			"It can be found here: https://github.com/minetest/irrlicht\n"
-			"For example use: git clone --depth=1 https://github.com/minetest/irrlicht lib/irrlichtmt\n")
-		if(BUILD_CLIENT)
-			message(FATAL_ERROR "IrrlichtMt is required to build the client, but it was not found.\n${explanation_msg}")
-		endif()
-
-		include(MinetestFindIrrlichtHeaders)
-		if(NOT IRRLICHT_INCLUDE_DIR)
-			message(FATAL_ERROR "IrrlichtMt headers are required to build the server, but none found.\n${explanation_msg}")
-		endif()
-		message(STATUS "Found IrrlichtMt headers: ${IRRLICHT_INCLUDE_DIR}")
-		add_library(IrrlichtMt::IrrlichtMt INTERFACE IMPORTED)
-		# Note that we can't use target_include_directories() since that doesn't work for IMPORTED targets before CMake 3.11
-		set_target_properties(IrrlichtMt::IrrlichtMt PROPERTIES
-			INTERFACE_INCLUDE_DIRECTORIES "${IRRLICHT_INCLUDE_DIR}")
+			INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/irr/include")
 	endif()
 endif()
 
-if(ANDROID)
-	# skipped for now
-elseif(BUILD_CLIENT AND TARGET IrrlichtMt::IrrlichtMt)
-	# retrieve version somehow
-	if(NOT IrrlichtMt_VERSION)
-		get_target_property(IrrlichtMt_VERSION IrrlichtMt VERSION)
+if (ENABLE_LTO OR CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+	include(CheckIPOSupported)
+	check_ipo_supported(RESULT lto_supported OUTPUT lto_output)
+	if(lto_supported)
+		set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+		message(STATUS "LTO/IPO is enabled")
+	else()
+		set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
+		message(STATUS "LTO/IPO was requested but is not supported by the compiler: ${lto_output}")
 	endif()
-	message(STATUS "Found IrrlichtMt ${IrrlichtMt_VERSION}")
-
-	set(TARGET_VER_S 1.9.0mt13)
-	string(REPLACE "mt" "." TARGET_VER ${TARGET_VER_S})
-	if(IrrlichtMt_VERSION VERSION_LESS ${TARGET_VER})
-		message(FATAL_ERROR "At least IrrlichtMt ${TARGET_VER_S} is required to build")
-	elseif(NOT DEVELOPMENT_BUILD AND IrrlichtMt_VERSION VERSION_GREATER ${TARGET_VER})
-		message(FATAL_ERROR "IrrlichtMt ${TARGET_VER_S} is required to build")
-	endif()
+else()
+	message(STATUS "LTO/IPO is not enabled")
 endif()
 endif()
 
@@ -269,7 +405,7 @@ elseif(UNIX) # Linux, BSD etc
 		set(EXAMPLE_CONF_DIR ".")
 		set(MANDIR "unix/man")
 		set(XDG_APPS_DIR "unix/applications")
-		set(APPDATADIR "unix/metainfo")
+		set(METAINFODIR "unix/metainfo")
 		set(ICONDIR "unix/icons")
 		set(LOCALEDIR "locale")
 	else()
@@ -280,7 +416,7 @@ elseif(UNIX) # Linux, BSD etc
 		set(MANDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_MANDIR}")
 		set(EXAMPLE_CONF_DIR ${DOCDIR})
 		set(XDG_APPS_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/applications")
-		set(APPDATADIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/metainfo")
+		set(METAINFODIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/metainfo")
 		set(ICONDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/icons")
 		set(LOCALEDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LOCALEDIR}")
 	endif()
@@ -375,7 +511,7 @@ install(FILES "freeminer.conf.example" DESTINATION "${EXAMPLE_CONF_DIR}")
 if(UNIX AND NOT APPLE)
 	install(FILES "doc/freeminer.6" "doc/freeminerserver.6" DESTINATION "${MANDIR}/man6")
 	install(FILES "misc/org.freeminer.freeminer.desktop" DESTINATION "${XDG_APPS_DIR}")
-	install(FILES "misc/org.freeminer.freeminer.appdata.xml" DESTINATION "${APPDATADIR}")
+	install(FILES "misc/org.freeminer.freeminer.metainfo.xml" DESTINATION "${METAINFODIR}")
 	install(FILES "misc/freeminer.svg" DESTINATION "${ICONDIR}/hicolor/scalable/apps")
 	install(FILES "misc/freeminer-xorg-icon-128.png"
 		DESTINATION "${ICONDIR}/hicolor/128x128/apps"
@@ -384,20 +520,27 @@ endif()
 
 if(APPLE)
 	install(FILES "misc/freeminer-icon.icns" DESTINATION "${SHAREDIR}")
-	install(FILES "misc/Info.plist" DESTINATION "${BUNDLE_PATH}/Contents")
+	install(FILES "${CMAKE_BINARY_DIR}/Info.plist" DESTINATION "${BUNDLE_PATH}/Contents")
+endif()
+
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+	set(client_RESOURCES "${CMAKE_SOURCE_DIR}/misc/freeminer-icon.icns")
 endif()
 
 # Library pack
 find_package(GMP REQUIRED)
-find_package(Json REQUIRED)
+find_package(Json 1.0.0 REQUIRED)
 find_package(Lua REQUIRED)
 if(NOT USE_LUAJIT)
 	add_subdirectory(lib/bitop)
 endif()
+add_subdirectory(lib/sha256)
 
-if(BUILD_BENCHMARKS)
+if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
 	add_subdirectory(lib/catch2)
 endif()
+
+add_subdirectory(lib/tiniergltf)
 
 # Subdirectories
 # Be sure to add all relevant definitions above this
@@ -417,7 +560,7 @@ include(CPackComponent)
 
 cpack_add_component(Docs
 	DISPLAY_NAME "Documentation"
-	DESCRIPTION "Documentation about freeminer and freeminer modding"
+	DESCRIPTION "Documentation about ${PROJECT_NAME_CAPITALIZED} and ${PROJECT_NAME_CAPITALIZED} modding"
 )
 
 if(WIN32)
@@ -506,4 +649,20 @@ if(BUILD_DOCUMENTATION)
 			COMMENT "Generating API documentation with Doxygen" VERBATIM
 		)
 	endif()
+endif()
+
+# Fetch Tracy
+if(BUILD_WITH_TRACY)
+	include(FetchContent)
+
+	message(STATUS "Fetching Tracy (${FETCH_TRACY_GIT_TAG})...")
+	FetchContent_Declare(
+		tracy
+		GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+		GIT_TAG ${FETCH_TRACY_GIT_TAG}
+		GIT_SHALLOW TRUE
+		GIT_PROGRESS TRUE
+	)
+	FetchContent_MakeAvailable(tracy)
+	message(STATUS "Fetching Tracy - done")
 endif()

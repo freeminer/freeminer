@@ -1,23 +1,7 @@
-/*
-Minetest
-Copyright (C) 2014-2020 paramat
-Copyright (C) 2014-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014-2020 paramat
+// Copyright (C) 2014-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #pragma once
 
@@ -136,11 +120,14 @@ public:
 	// Same as above, but uses a raw numeric index correlating to the (x,z) position.
 	virtual Biome *getBiomeAtIndex(size_t index, v3pos_t pos) const = 0;
 
-	virtual s16 *getBiomeTransitions() const = 0;
+	// Returns the next lower y position at which the biome could change.
+	// You can use this to optimize calls to getBiomeAtIndex().
+	virtual pos_t getNextTransitionY(pos_t y) const {
+		return y == S16_MIN ? y : (y - 1);
+	};
 
 	// Result of calcBiomes bulk computation.
 	biome_t *biomemap = nullptr;
-	s16 *biome_transitions = nullptr;
 
 protected:
 	BiomeManager *m_bmgr = nullptr;
@@ -175,7 +162,7 @@ struct BiomeParamsOriginal : public BiomeParams {
 	NoiseParams np_humidity_blend;
 };
 
-class BiomeGenOriginal : public BiomeGen {
+class BiomeGenOriginal final : public BiomeGen {
 public:
 	BiomeGenOriginal(BiomeManager *biomemgr,
 		const BiomeParamsOriginal *params, v3pos_t chunksize);
@@ -197,7 +184,7 @@ public:
 	Biome *getBiomeAtIndex(size_t index, v3pos_t pos) const;
 
 	Biome *calcBiomeFromNoise(float heat, float humidity, v3pos_t pos) const;
-	s16 *getBiomeTransitions() const;
+	pos_t getNextTransitionY(pos_t y) const;
 
 	float *heatmap;
 	float *humidmap;
@@ -209,6 +196,9 @@ private:
 	Noise *noise_humidity;
 	Noise *noise_heat_blend;
 	Noise *noise_humidity_blend;
+
+	// ordered descending
+	std::vector<pos_t> m_transitions_y;
 };
 
 

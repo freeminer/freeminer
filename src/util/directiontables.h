@@ -1,24 +1,6 @@
-/*
-util/directiontables.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -72,19 +54,22 @@ enum Direction6D {
 /// Direction in the wallmounted format.
 /// P is Positive, N is Negative.
 enum DirectionWallmounted {
+	// The 6 wallmounted directions
 	DWM_YP,
 	DWM_YN,
 	DWM_XP,
 	DWM_XN,
 	DWM_ZP,
 	DWM_ZN,
-	DWM_COUNT,
+	// There are 6 wallmounted directions, but 8 possible states (3 bits).
+	// So we have 2 additional states, which drawtypes might use for
+	// special ("S") behavior.
+	DWM_S1,
+	DWM_S2,
+	DWM_COUNT
 };
 
-extern const v3bpos_t g_6dirs_b[6];
-extern const v3bpos_t g_7dirs_b[7];
-
-extern const v3pos_t g_6dirs[DWM_COUNT];
+extern const v3pos_t g_6dirs[6];
 
 extern const v3pos_t g_7dirs[7];
 
@@ -93,9 +78,9 @@ extern const v3pos_t g_26dirs[26];
 // 26th is (0,0,0)
 extern const v3pos_t g_27dirs[27];
 
-extern const u8 wallmounted_to_facedir[6];
+extern const u8 wallmounted_to_facedir[DWM_COUNT];
 
-extern const v3s16 wallmounted_dirs[8];
+extern const v3s16 wallmounted_dirs[DWM_COUNT];
 
 extern const v3pos_t facedir_dirs[32];
 

@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_object.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -41,10 +23,12 @@ public:
 	~ObjectRef() = default;
 
 	// Creates an ObjectRef and leaves it on top of stack
-	// Not callable from Lua; all references are created on the C side.
+	// NOTE: do not call this, use `ScriptApiBase::objectrefGetOrCreate()`!
 	static void create(lua_State *L, ServerActiveObject *object);
 
-	static void set_null(lua_State *L);
+	// Clear the pointer in the ObjectRef (at -1).
+	// Throws an fatal error if the object pointer wasn't `expect`.
+	static void set_null(lua_State *L, void *expect);
 
 	static void Register(lua_State *L);
 
@@ -70,11 +54,17 @@ private:
 	// remove(self)
 	static int l_remove(lua_State *L);
 
+	// is_valid(self)
+	static int l_is_valid(lua_State *L);
+
 	// get_pos(self)
 	static int l_get_pos(lua_State *L);
 
 	// set_pos(self, pos)
 	static int l_set_pos(lua_State *L);
+
+	// add_pos(self, pos)
+	static int l_add_pos(lua_State *L);
 
 	// move_to(self, pos, continuous)
 	static int l_move_to(lua_State *L);
@@ -133,6 +123,15 @@ private:
 	// get_bone_position(self, bone)
 	static int l_get_bone_position(lua_State *L);
 
+	// set_bone_override(self, bone)
+	static int l_set_bone_override(lua_State *L);
+
+	// get_bone_override(self, bone)
+	static int l_get_bone_override(lua_State *L);
+
+	// get_bone_override(self)
+	static int l_get_bone_overrides(lua_State *L);
+
 	// set_attach(self, parent, bone, position, rotation)
 	static int l_set_attach(lua_State *L);
 
@@ -150,6 +149,15 @@ private:
 
 	// get_properties(self)
 	static int l_get_properties(lua_State *L);
+
+	// set_observers(self, observers)
+	static int l_set_observers(lua_State *L);
+
+	// get_observers(self)
+	static int l_get_observers(lua_State *L);
+
+	// get_effective_observers(self)
+	static int l_get_effective_observers(lua_State *L);
 
 	// is_player(self)
 	static int l_is_player(lua_State *L);
@@ -291,6 +299,9 @@ private:
 	// hud_get(self, id)
 	static int l_hud_get(lua_State *L);
 
+	// hud_get_all(self)
+	static int l_hud_get_all(lua_State *L);
+
 	// hud_set_flags(self, flags)
 	static int l_hud_set_flags(lua_State *L);
 
@@ -387,4 +398,10 @@ private:
 
 	// respawn(self)
 	static int l_respawn(lua_State *L);
+
+	// set_flags(self, flags)
+	static int l_set_flags(lua_State *L);
+
+	// get_flags(self)
+	static int l_get_flags(lua_State *L);
 };

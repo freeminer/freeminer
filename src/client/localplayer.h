@@ -1,24 +1,6 @@
-/*
-localplayer.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -26,9 +8,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "player.h"
 #include "environment.h"
 #include "constants.h"
-#include "settings.h"
 #include "lighting.h"
-#include <list>
+#include <string>
 
 class Client;
 class Environment;
@@ -45,14 +26,34 @@ enum class LocalPlayerAnimation
 	NO_ANIM,
 	WALK_ANIM,
 	DIG_ANIM,
-	WD_ANIM
-}; // no local animation, walking, digging, both
+	WD_ANIM // walking + digging
+};
+
+struct PlayerSettings
+{
+	bool free_move = false;
+	bool pitch_move = false;
+	bool fast_move = false;
+	bool continuous_forward = false;
+	bool always_fly_fast = false;
+	bool aux1_descends = false;
+	bool noclip = false;
+	bool autojump = false;
+
+	void readGlobalSettings();
+	void registerSettingsCallback();
+	void deregisterSettingsCallback();
+
+private:
+	static void settingsChangedCallback(const std::string &name, void *data);
+};
 
 class LocalPlayer : public Player
 {
 public:
-	LocalPlayer(Client *client, const char *name);
-	virtual ~LocalPlayer() = default;
+
+	LocalPlayer(Client *client, const std::string &name);
+	virtual ~LocalPlayer();
 
 	// Initialize hp to 0, so that no hearts will be shown if server
 	// doesn't support health points
@@ -95,6 +96,8 @@ public:
 	u8 last_camera_fov = 0;
 	u8 last_wanted_range = 0;
 	bool last_camera_inverted = false;
+	f32 last_movement_speed = 0.0f;
+	f32 last_movement_dir = 0.0f;
 
 	float camera_impact = 0.0f;
 
@@ -131,29 +134,34 @@ public:
 	//void addSpeed(v3f speed);
 //=========
 
-	u16 getBreath() { auto lock = lock_shared(); return m_breath; }
-	void setBreath(u16 breath) { auto lock = lock_unique_rec(); m_breath = breath; }
+	u16 getBreath() { const auto lock = lock_shared(); return m_breath; }
+	void setBreath(u16 breath) { const auto lock = lock_unique_rec(); m_breath = breath; }
 
 	v3pos_t getLightPosition() const;
 
-	void setYaw(f32 yaw) { auto lock = lock_unique_rec(); m_yaw = yaw; }
-	f32 getYaw() const { auto lock = lock_shared(); return m_yaw; }
+	void setYaw(f32 yaw) { const auto lock = lock_unique_rec(); m_yaw = yaw; }
+	f32 getYaw() const { const auto lock = lock_shared(); return m_yaw; }
 
-	void setPitch(f32 pitch) { auto lock = lock_unique_rec(); m_pitch = pitch; }
-	f32 getPitch() const { auto lock = lock_shared(); return m_pitch; }
+	void setPitch(f32 pitch) { const auto lock = lock_unique_rec(); m_pitch = pitch; }
+	f32 getPitch() const { const auto lock = lock_shared(); return m_pitch; }
 
 	inline void setPosition(const v3opos_t &position)
 	{
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		m_position = position;
 		m_sneak_node_exists = false;
 	}
+	inline void addPosition(const v3opos_t &added_pos)
+	{
+		m_position += added_pos;
+		m_sneak_node_exists = false;
+	}
 
-	v3opos_t getPosition() const { auto lock = lock_shared(); return m_position; }
+	v3opos_t getPosition() const { const auto lock = lock_shared(); return m_position; }
 
 	// Non-transformed eye offset getters
 	// For accurate positions, use the Camera functions
-	v3opos_t getEyePosition() const { auto lock = lock_shared(); return m_position + v3fToOpos(getEyeOffset()); }
+	v3opos_t getEyePosition() const { const auto lock = lock_shared(); return m_position + v3fToOpos(getEyeOffset()); }
 	v3f getEyeOffset() const;
 	void setEyeHeight(float eye_height) { m_eye_height = eye_height; }
 
@@ -174,6 +182,8 @@ public:
 	}
 
 	inline Lighting& getLighting() { return m_lighting; }
+
+	inline PlayerSettings &getPlayerSettings() { return m_player_settings; }
 
 private:
 	void accelerate(const v3f &target_speed, const f32 max_increase_H,
@@ -227,5 +237,7 @@ private:
 
 	GenericCAO *m_cao = nullptr;
 	Client *m_client;
+
+	PlayerSettings m_player_settings;
 	Lighting m_lighting;
 };

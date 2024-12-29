@@ -3,8 +3,8 @@
 #pragma once
 
 //freeminer:
-#cmakedefine01 BUILD_CLIENT
-#cmakedefine01 BUILD_SERVER
+//#cmakedefine01 BUILD_CLIENT
+//#cmakedefine01 BUILD_SERVER
 #cmakedefine01 ENABLE_THREADS
 #cmakedefine01 EXCEPTION_DEBUG
 #cmakedefine01 HAVE_FUTURE
@@ -60,6 +60,8 @@
 #cmakedefine01 USE_POS32
 #cmakedefine01 USE_OPOS64
 #cmakedefine01 HAVE_ENDIAN_H
+#cmakedefine01 HAVE_STRLCPY
+#cmakedefine01 HAVE_MALLOC_TRIM
 #cmakedefine01 CURSES_HAVE_CURSES_H
 #cmakedefine01 CURSES_HAVE_NCURSES_H
 #cmakedefine01 CURSES_HAVE_NCURSES_NCURSES_H
@@ -68,3 +70,5 @@
 #cmakedefine01 CURSES_HAVE_NCURSESW_CURSES_H
 #cmakedefine01 BUILD_UNITTESTS
 #cmakedefine01 BUILD_BENCHMARKS
+#cmakedefine01 USE_SDL2
+#cmakedefine01 BUILD_WITH_TRACY

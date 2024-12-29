@@ -1,4 +1,4 @@
---Minetest
+--Luanti
 --Copyright (C) 2023 Gregor Parzefall
 --
 --This program is free software; you can redistribute it and/or modify
@@ -15,15 +15,30 @@
 --with this program; if not, write to the Free Software Foundation, Inc.,
 --51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+---- IMPORTANT ----
+-- This whole file can be removed after a while.
+-- It was only directly useful for upgrades from 5.7.0 to 5.8.0, but
+-- maybe some odd fellow directly upgrades from 5.6.1 to 5.9.0 in the future...
+-- see <https://github.com/minetest/minetest/pull/13850> in case it's not obvious
+---- ----
+
+local SETTING_NAME = "no_mtg_notification"
+
 function check_reinstall_mtg()
-	if core.settings:get_bool("no_mtg_notification") then
+	-- used to be in minetest.conf
+	if core.settings:get_bool(SETTING_NAME) then
+		cache_settings:set_bool(SETTING_NAME, true)
+		core.settings:remove(SETTING_NAME)
+	end
+
+	if cache_settings:get_bool(SETTING_NAME) then
 		return
 	end
 
 	local games = core.get_games()
 	for _, game in ipairs(games) do
 		if game.id == "minetest" then
-			core.settings:set_bool("no_mtg_notification", true)
+			cache_settings:set_bool(SETTING_NAME, true)
 			return
 		end
 	end
@@ -37,7 +52,7 @@ function check_reinstall_mtg()
 		end
 	end
 	if not mtg_world_found then
-		core.settings:set_bool("no_mtg_notification", true)
+		cache_settings:set_bool(SETTING_NAME, true)
 		return
 	end
 
@@ -53,15 +68,15 @@ end
 local function get_formspec(dialogdata)
 	local markup = table.concat({
 		"<big>", fgettext("Minetest Game is no longer installed by default"), "</big>\n",
-		fgettext("For a long time, the Minetest engine shipped with a default game called \"Minetest Game\". " ..
-				"Since Minetest 5.8.0, Minetest ships without a default game."), "\n",
+		fgettext("For a long time, Luanti shipped with a default game called \"Minetest Game\". " ..
+				"Since version 5.8.0, Luanti ships without a default game."), "\n",
 		fgettext("If you want to continue playing in your Minetest Game worlds, you need to reinstall Minetest Game."),
 	})
 
 	return table.concat({
 		"formspec_version[6]",
 		"size[12.8,7]",
-		"hypertext[0.375,0.375;12.05,5.2;text;", minetest.formspec_escape(markup), "]",
+		"hypertext[0.375,0.375;12.05,5.2;text;", core.formspec_escape(markup), "]",
 		"container[0.375,5.825]",
 		"style[dismiss;bgcolor=red]",
 		"button[0,0;4,0.8;dismiss;", fgettext("Dismiss"), "]",
@@ -78,7 +93,7 @@ local function buttonhandler(this, fields)
 
 		local maintab = ui.find_by_name("maintab")
 
-		local dlg = create_store_dlg(nil, "minetest/minetest")
+		local dlg = create_contentdb_dlg(nil, "minetest/minetest")
 		dlg:set_parent(maintab)
 		maintab:hide()
 		dlg:show()
@@ -87,7 +102,7 @@ local function buttonhandler(this, fields)
 	end
 
 	if fields.dismiss then
-		core.settings:set_bool("no_mtg_notification", true)
+		cache_settings:set_bool("no_mtg_notification", true)
 		this:delete()
 		return true
 	end
@@ -99,7 +114,7 @@ local function eventhandler(event)
 		return true
 	elseif event == "MenuQuit" then
 		-- Don't allow closing the dialog with ESC, but still allow exiting
-		-- Minetest.
+		-- Luanti
 		core.close()
 		return true
 	end
@@ -111,5 +126,3 @@ function create_reinstall_mtg_dlg()
 			buttonhandler, eventhandler)
 	return dlg
 end
-
-

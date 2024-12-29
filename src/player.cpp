@@ -1,27 +1,10 @@
-/*
-player.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "player.h"
 
+#include <atomic>
 #include <cmath>
 #include "threading/mutex_auto_lock.h"
 #include "util/numeric.h"
@@ -33,13 +16,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 //#include "filesys.h"
 #include "log_types.h"
 #include "porting.h"  // strlcpy
+#include <tuple>
 
 
-Player::Player(const std::string & name, IItemDefManager *idef):
+bool is_valid_player_name(std::string_view name)
+{
+	return !name.empty() && name.size() <= PLAYERNAME_SIZE && string_allowed(name, PLAYERNAME_ALLOWED_CHARS);
+}
+
+Player::Player(const std::string &name, IItemDefManager *idef):
 	inventory(idef)
 {
 	m_name = name;
-	hotbar_image_items = 0;
 
 	inventory.clear();
 	inventory.addList("main", PLAYER_INVENTORY_SIZE);
@@ -82,20 +70,10 @@ Player::Player(const std::string & name, IItemDefManager *idef):
 		HUD_FLAG_CHAT_VISIBLE;
 
 	hud_hotbar_itemcount = HUD_HOTBAR_ITEMCOUNT_DEFAULT;
-
-	m_player_settings.readGlobalSettings();
-	// Register player setting callbacks
-	for (const std::string &name : m_player_settings.setting_names)
-		g_settings->registerChangedCallback(name,
-			&Player::settingsChangedCallback, &m_player_settings);
 }
 
 Player::~Player()
 {
-	// m_player_settings becomes invalid, remove callbacks
-	for (const std::string &name : m_player_settings.setting_names)
-		g_settings->deregisterChangedCallback(name,
-			&Player::settingsChangedCallback, &m_player_settings);
 	clearHud();
 }
 
@@ -103,6 +81,11 @@ void Player::setWieldIndex(u16 index)
 {
 	const InventoryList *mlist = inventory.getList("main");
 	m_wield_index = MYMIN(index, mlist ? mlist->getSize() : 0);
+}
+
+u16 Player::getWieldIndex()
+{
+	return std::min(m_wield_index.load(std::memory_order_relaxed), getMaxHotbarItemcount());
 }
 
 ItemStack &Player::getWieldedItem(ItemStack *selected, ItemStack *hand) const
@@ -146,6 +129,12 @@ HudElement* Player::getHud(u32 id)
 	return NULL;
 }
 
+void Player::hudApply(std::function<void(const std::vector<HudElement*>&)> f)
+{
+	MutexAutoLock lock(m_mutex);
+	f(hud);
+}
+
 HudElement* Player::removeHud(u32 id)
 {
 	MutexAutoLock lock(m_mutex);
@@ -168,16 +157,55 @@ void Player::clearHud()
 	}
 }
 
-//freeminer part:
+// freeminer part:
 void Player::addSpeed(v3f speed) {
-		auto lock = lock_unique_rec();
+		const auto lock = lock_unique_rec();
 		m_speed += speed;
 }
 
 // end of freeminer
 
+u16 Player::getMaxHotbarItemcount()
+{
+	InventoryList *mainlist = inventory.getList("main");
+	return mainlist ? std::min(mainlist->getSize(), (u32) hud_hotbar_itemcount) : 0;
+}
 
-#ifndef SERVER
+void PlayerControl::setMovementFromKeys()
+{
+	bool a_up = direction_keys & (1 << 0),
+		a_down = direction_keys & (1 << 1),
+		a_left = direction_keys & (1 << 2),
+		a_right = direction_keys & (1 << 3);
+
+	if (a_up || a_down || a_left || a_right)  {
+		// if contradictory keys pressed, stay still
+		if (a_up && a_down && a_left && a_right)
+			movement_speed = 0.0f;
+		else if (a_up && a_down && !a_left && !a_right)
+			movement_speed = 0.0f;
+		else if (!a_up && !a_down && a_left && a_right)
+			movement_speed = 0.0f;
+		else
+			// If there is a keyboard event, assume maximum speed
+			movement_speed = 1.0f;
+	}
+
+	// Check keyboard for input
+	float x = 0, y = 0;
+	if (a_up)
+		y += 1;
+	if (a_down)
+		y -= 1;
+	if (a_left)
+		x -= 1;
+	if (a_right)
+		x += 1;
+
+	if (x != 0 || y != 0)
+		// If there is a keyboard event, it takes priority
+		movement_direction = std::atan2(x, y);
+}
 
 u32 PlayerControl::getKeysPressed() const
 {
@@ -201,7 +229,7 @@ u32 PlayerControl::getKeysPressed() const
 		float abs_d;
 
 		// (absolute value indicates forward / backward)
-		abs_d = abs(movement_direction);
+		abs_d = std::abs(movement_direction);
 		if (abs_d < 3.0f / 8.0f * M_PI)
 			keypress_bits |= (u32)1; // Forward
 		if (abs_d > 5.0f / 8.0f * M_PI)
@@ -211,7 +239,7 @@ u32 PlayerControl::getKeysPressed() const
 		abs_d = movement_direction + M_PI_2;
 		if (abs_d >= M_PI)
 			abs_d -= 2 * M_PI;
-		abs_d = abs(abs_d);
+		abs_d = std::abs(abs_d);
 		// (value now indicates left / right)
 		if (abs_d < 3.0f / 8.0f * M_PI)
 			keypress_bits |= (u32)1 << 2; // Left
@@ -222,7 +250,6 @@ u32 PlayerControl::getKeysPressed() const
 	return keypress_bits;
 }
 
-#endif
 
 void PlayerControl::unpackKeysPressed(u32 keypress_bits)
 {
@@ -235,19 +262,23 @@ void PlayerControl::unpackKeysPressed(u32 keypress_bits)
 	zoom  = keypress_bits & (1 << 9);
 }
 
-void PlayerSettings::readGlobalSettings()
+v2f PlayerControl::getMovement() const
 {
-	free_move = g_settings->getBool("free_move");
-	pitch_move = g_settings->getBool("pitch_move");
-	fast_move = g_settings->getBool("fast_move");
-	continuous_forward = g_settings->getBool("continuous_forward");
-	always_fly_fast = g_settings->getBool("always_fly_fast");
-	aux1_descends = g_settings->getBool("aux1_descends");
-	noclip = g_settings->getBool("noclip");
-	autojump = g_settings->getBool("autojump");
+	return v2f(std::sin(movement_direction), std::cos(movement_direction)) * movement_speed;
 }
 
-void Player::settingsChangedCallback(const std::string &name, void *data)
+static auto tie(const PlayerPhysicsOverride &o)
 {
-	((PlayerSettings *)data)->readGlobalSettings();
+	// Make sure to add new members to this list!
+	return std::tie(
+	o.speed, o.jump, o.gravity, o.sneak, o.sneak_glitch, o.new_move, o.speed_climb,
+	o.speed_crouch, o.liquid_fluidity, o.liquid_fluidity_smooth, o.liquid_sink,
+	o.acceleration_default, o.acceleration_air, o.speed_fast, o.acceleration_fast,
+	o.speed_walk
+	);
+}
+
+bool PlayerPhysicsOverride::operator==(const PlayerPhysicsOverride &other) const
+{
+	return tie(*this) == tie(other);
 }

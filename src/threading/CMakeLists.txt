@@ -1,4 +1,4 @@
-set(JTHREAD_SRCS
+set(threading_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/thread_vector.cpp
 

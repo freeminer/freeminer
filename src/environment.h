@@ -1,24 +1,6 @@
-/*
-environment.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -32,7 +14,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 	- etc.
 */
 //fm:
-#include "network/connection.h"
 #include "fm_bitset.h"
 #include "threading/concurrent_vector.h"
 #include <unordered_set>
@@ -48,6 +29,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <map>
 #include <atomic>
 #include <mutex>
+#include <optional>
 #include "irr_v3d.h"
 #include "util/basic_macros.h"
 #include "line3d.h"
@@ -56,6 +38,7 @@ class IGameDef;
 class Map;
 struct PointedThing;
 class RaycastState;
+struct Pointabilities;
 
 struct ItemStack;
 class PlayerSAO;
@@ -120,7 +103,8 @@ public:
 	 * @param[out] objects          found objects
 	 */
 	virtual void getSelectedActiveObjects(const core::line3d<opos_t> &shootline_on_map,
-			std::vector<PointedThing> &objects) = 0;
+			std::vector<PointedThing> &objects,
+			const std::optional<Pointabilities> &pointabilities) = 0;
 
 	/*!
 	 * Returns the next node or object the shootline meets.

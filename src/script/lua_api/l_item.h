@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_item.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -127,6 +109,11 @@ private:
 	// No-op if `max_uses` is 0 or item is not a tool.
 	// Returns true if the item is (or was) a tool.
 	static int l_add_wear_by_uses(lua_State *L);
+
+	// get_wear_bar_params(self) -> table
+	// Returns the effective wear bar parameters.
+	// Returns nil if this item has none associated.
+	static int l_get_wear_bar_params(lua_State *L);
 
 	// add_item(self, itemstack or itemstring or table or nil) -> itemstack
 	// Returns leftover item stack

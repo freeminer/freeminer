@@ -1,24 +1,6 @@
-/*
-socket.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -56,18 +38,26 @@ public:
 	bool operator==(const Address &address) const;
 	bool operator!=(const Address &address) const { return !(*this == address); }
 
-	struct sockaddr_in getAddress() const;
-	struct sockaddr_in6 getAddress6() const;
-	u16 getPort() const;
 	int getFamily() const { return m_addr_family; }
+	bool isValid() const { return m_addr_family != 0; }
 	bool isIPv6() const { return m_addr_family == AF_INET6; }
-	bool isZero() const;
+	struct sockaddr_in getAddress() const { return m_address.ipv4; }
+	struct sockaddr_in6 getAddress6() const { return m_address.ipv6; }
+	u16 getPort() const { return m_port; }
+
 	void print(std::ostream &s) const;
 	std::string serializeString() const;
+
+	// Is this an address that binds to all interfaces (like INADDR_ANY)?
+	bool isAny() const;
+	// Is this an address referring to the local host?
 	bool isLocalhost() const;
 
-	// Resolve() may throw ResolveError (address is unchanged in this case)
-	void Resolve(const char *name);
+	// `name`: hostname or numeric IP
+	// `fallback`: fallback IP to try gets written here
+	// any empty name resets the IP to the "any address"
+	// may throw ResolveError (address is unchanged in this case)
+	void Resolve(const char *name, Address *fallback = nullptr);
 
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
@@ -82,5 +72,6 @@ private:
 		struct sockaddr_in ipv4;
 		struct sockaddr_in6 ipv6;
 	} m_address = {};
-	u16 m_port = 0; // Port is separate from sockaddr structures
+	// port is separate from in_addr structures
+	u16 m_port = 0;
 };

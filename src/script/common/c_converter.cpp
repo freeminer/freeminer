@@ -1,24 +1,6 @@
-/*
-script/common/c_converter.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 extern "C" {
 #include <lua.h>
@@ -28,6 +10,7 @@ extern "C" {
 #include "util/numeric.h"
 #include "util/serialize.h"
 #include "util/string.h"
+#include "log.h"
 #include "common/c_converter.h"
 #include "common/c_internal.h"
 #include "constants.h"
@@ -60,6 +43,7 @@ extern "C" {
  */
 static void read_v3_aux(lua_State *L, int index)
 {
+	CHECK_POS_TAB(index);
 	lua_pushvalue(L, index);
 	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_READ_VECTOR);
 	lua_insert(L, -2);
@@ -427,20 +411,20 @@ aabb3f read_aabb3f(lua_State *L, int index, f32 scale)
 	return box;
 }
 
-void push_aabb3f(lua_State *L, aabb3f box)
+void push_aabb3f(lua_State *L, aabb3f box, f32 divisor)
 {
 	lua_createtable(L, 6, 0);
-	lua_pushnumber(L, box.MinEdge.X);
+	lua_pushnumber(L, box.MinEdge.X / divisor);
 	lua_rawseti(L, -2, 1);
-	lua_pushnumber(L, box.MinEdge.Y);
+	lua_pushnumber(L, box.MinEdge.Y / divisor);
 	lua_rawseti(L, -2, 2);
-	lua_pushnumber(L, box.MinEdge.Z);
+	lua_pushnumber(L, box.MinEdge.Z / divisor);
 	lua_rawseti(L, -2, 3);
-	lua_pushnumber(L, box.MaxEdge.X);
+	lua_pushnumber(L, box.MaxEdge.X / divisor);
 	lua_rawseti(L, -2, 4);
-	lua_pushnumber(L, box.MaxEdge.Y);
+	lua_pushnumber(L, box.MaxEdge.Y / divisor);
 	lua_rawseti(L, -2, 5);
-	lua_pushnumber(L, box.MaxEdge.Z);
+	lua_pushnumber(L, box.MaxEdge.Z / divisor);
 	lua_rawseti(L, -2, 6);
 }
 
@@ -470,6 +454,16 @@ std::vector<aabb3f> read_aabb3f_vector(lua_State *L, int index, f32 scale)
 		}
 	}
 	return boxes;
+}
+
+void push_aabb3f_vector(lua_State *L, const std::vector<aabb3f> &boxes, f32 divisor)
+{
+	lua_createtable(L, boxes.size(), 0);
+	int i = 1;
+	for (const aabb3f &box : boxes) {
+		push_aabb3f(L, box, divisor);
+		lua_rawseti(L, -2, i++);
+	}
 }
 
 size_t read_stringlist(lua_State *L, int index, std::vector<std::string> *result)
@@ -537,6 +531,17 @@ bool check_field_or_nil(lua_State *L, int index, int type, const char *fieldname
 bool getstringfield(lua_State *L, int table,
 		const char *fieldname, std::string &result)
 {
+	std::string_view sv;
+	if (getstringfield(L, table, fieldname, sv)) {
+		result = sv;
+		return true;
+	}
+	return false;
+}
+
+bool getstringfield(lua_State *L, int table,
+		const char *fieldname, std::string_view &result)
+{
 	lua_getfield(L, table, fieldname);
 	bool got = false;
 
@@ -544,7 +549,7 @@ bool getstringfield(lua_State *L, int table,
 		size_t len = 0;
 		const char *ptr = lua_tolstring(L, -1, &len);
 		if (ptr) {
-			result.assign(ptr, len);
+			result = std::string_view(ptr, len);
 			got = true;
 		}
 	}

@@ -1,24 +1,6 @@
-/*
-guiChatConsole.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "guiChatConsole.h"
 #include "chat.h"
@@ -28,7 +10,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/keycode.h"
 #include "settings.h"
 #include "porting.h"
-#include "client/tile.h"
+#include "client/texturesource.h"
 #include "client/fontengine.h"
 #include "log_types.h"
 #include "gettext.h"
@@ -109,9 +91,13 @@ GUIChatConsole::~GUIChatConsole()
 
 void GUIChatConsole::openConsole(f32 scale)
 {
+	if (m_open)
+		return;
+
 	assert(scale > 0.0f && scale <= 1.0f);
 
 	m_open = true;
+
 	m_desired_height_fraction = scale;
 	m_desired_height = scale * m_screensize.Y;
 	reformatConsole();
@@ -417,6 +403,9 @@ void GUIChatConsole::drawPrompt()
 
 }
 
+#if 0
+// fm old
+
 void GUIChatConsole::setPrompt(const std::wstring& input) {
 	m_chat_backend->getPrompt().cursorOperation(
 			ChatPrompt::CURSOROP_DELETE,
@@ -426,7 +415,6 @@ void GUIChatConsole::setPrompt(const std::wstring& input) {
 		m_chat_backend->getPrompt().input(input[i]);
 	}
 }
-
 
 bool GUIChatConsole::getAndroidUIInput() {
 #ifdef __ANDROID__
@@ -451,6 +439,7 @@ bool GUIChatConsole::getAndroidUIInput() {
 #endif
 	return false;
 }
+#endif
 
 bool GUIChatConsole::OnEvent(const SEvent& event)
 {
@@ -496,7 +485,7 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				!iswcntrl(event.KeyInput.Char) && !IS_PRIVATE_USE_CHAR(event.KeyInput.Char);
 
 		//if (event.KeyInput.Key == KEY_ESCAPE) {
-		if ( (kp == EscapeKey || kp == CancelKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) ) {
+		if ( (kp == EscapeKey) && ((int)event.KeyInput.Key == (int)event.KeyInput.Char) ) {
 			closeConsoleAtOnce();
 			m_close_on_enter = false;
 			// inhibit open so the_game doesn't reopen immediately
@@ -744,12 +733,8 @@ bool GUIChatConsole::OnEvent(const SEvent& event)
 				if (!was_url_pressed
 						&& event.MouseInput.Event == EMIE_MMOUSE_PRESSED_DOWN) {
 					// Paste primary selection at cursor pos
-#if IRRLICHT_VERSION_MT_REVISION >= 11
 					const c8 *text = Environment->getOSOperator()
 							->getTextFromPrimarySelection();
-#else
-					const c8 *text = nullptr;
-#endif
 					if (text)
 						prompt.input(utf8_to_wide(text));
 				}
@@ -840,9 +825,7 @@ bool GUIChatConsole::weblinkClick(s32 col, s32 row)
 
 void GUIChatConsole::updatePrimarySelection()
 {
-#if IRRLICHT_VERSION_MT_REVISION >= 11
 	std::wstring wselected = m_chat_backend->getPrompt().getSelection();
 	std::string selected = wide_to_utf8(wselected);
 	Environment->getOSOperator()->copyToPrimarySelection(selected.c_str());
-#endif
 }

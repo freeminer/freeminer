@@ -1,4 +1,7 @@
-local color = minetest.colorize
+local color = core.colorize
+
+-- \208\176 is a cyrillic small a
+local unsafe_url = core.formspec_escape("https://u:p@wikipedi\208\176.org:1233/heIIoll?a=b#c")
 
 local clip_fs = [[
 	style_type[label,button,image_button,item_image_button,
@@ -6,7 +9,7 @@ local clip_fs = [[
 			,field,textarea,checkbox,dropdown;noclip=%c]
 
 	label[0,0;A clipping test]
-	button[0,1;3,0.8;clip_button;A clipping test]
+	button_url[0,1;3,0.8;clip_button;A clipping test;]] .. unsafe_url .. [[]
 	image_button[0,2;3,0.8;testformspec_button_image.png;clip_image_button;A clipping test]
 	item_image_button[0,3;3,0.8;testformspec:item;clip_item_image_button;A clipping test]
 	tabheader[0,4.7;3,0.63;clip_tabheader;Clip,Test,Text,Tabs;1;false;false]
@@ -61,14 +64,49 @@ local inv_style_fs = [[
 	list[current_player;main;.5,7;8,4]
 ]]
 
-local hypertext_basic = [[
+-- Some textures from textures/base/pack and Devtest, with many different sizes
+-- and aspect ratios.
+local image_column = "image,0=logo.png,1=crack_anylength.png^[invert:rgb,2=checkbox_16.png," ..
+		"3=checkbox_32.png,4=checkbox_64.png,5=default_lava.png," ..
+		"6=progress_bar.png,7=progress_bar_bg.png"
+local words = {
+	"esciunt", "repudiandae", "repellat", "voluptatem", "autem", "vitae", "et",
+	"minima", "quasi", "facere", "nihil", "ea", "nemo", "rem", "non", "eos",
+	"laudantium", "eveniet", "veritatis",
+}
+
+local reseed = math.random(2^31-1)
+math.randomseed(1337)
+
+local table_content = {}
+for i = 1, 100 do
+	table.insert(table_content, words[math.random(#words)])
+	table.insert(table_content, words[math.random(#words)])
+	table.insert(table_content, words[math.random(#words)])
+	table.insert(table_content, math.random(0, 7))
+	table.insert(table_content, math.random(0, 7))
+	table.insert(table_content, math.random(0, 7))
+	table.insert(table_content, words[math.random(#words)])
+end
+
+math.randomseed(reseed)
+
+local table_fs = table.concat({
+	"tablecolumns[text,align=left;text,align=right;text,align=center;",
+			image_column, ",align=left;",
+			image_column, ",align=right;",
+			image_column, ",align=center;text,align=right]",
+	"table[0,0;17,12;the_table;", table.concat(table_content, ","), ";1]"
+})
+
+local hypertext_basic = [[A hypertext element
 <bigger>Normal test</bigger>
 This is a normal text.
 
 <bigger><mono>style</mono> test</bigger>
-<style color=#FFFF00>Yellow text.</style> <style color=#FF0000>Red text.</style>
-<style size=24>Size 24.</style> <style size=16>Size 16</style>. <style size=12>Size 12.</style>
-<style font=normal>Normal font.</style> <style font=mono>Mono font.</style>
+<style color="#FFFF00">Yellow text.</style> <style color='#FF0000'>Red text.</style>
+<style size="24">Size 24.</style> <style size=16>Size 16</style>. <style size=12>Size 12.</style>
+<style font="normal">Normal font.</style> <style font=mono>Mono font.</style>
 
 <bigger>Tag test</bigger>
 <normal>normal</normal>
@@ -85,19 +123,20 @@ This is a normal text.
 
 <bigger>Custom tag test</bigger>
 <tag name=t_green color=green>
-<tag name=t_hover hovercolor=yellow>
-<tag name=t_size size=24>
-<tag name=t_mono font=mono>
-<tag name=t_multi color=green font=mono size=24>
+<tag name="t_hover" hovercolor=yellow>
+<tag name="t_size" size=24>
+<tag name="t_mono" font=mono>
+<tag name="t_multi" color=green font=mono size=24>
 <t_green>color=green</t_green>
-Action: <action name=color><t_green>color=green</t_green></action>
-Action: <action name=hovercolor><t_hover>hovercolor=yellow</t_hover></action>
+Action: <action name="color"><t_green>color=green</t_green></action>
+Action: <action name="hovercolor"><t_hover>hovercolor=yellow</t_hover></action>
+Action URL: <action name="open" url="https://example.com/?a=b#c">open URL</action>
 <t_size>size=24</t_size>
 <t_mono>font=mono</t_mono>
 <t_multi>color=green font=mono size=24</t_multi>
 
 <bigger><mono>action</mono> test</bigger>
-<action name=action_test>action</action>
+<action name="action_test">action</action>
 
 <bigger><mono>img</mono> test</bigger>
 Normal:
@@ -139,13 +178,13 @@ This is a test of the global tag. The parameters are:
 background=gray margin=20 valign=bottom halign=right color=pink hovercolor=purple size=12 font=mono
 <action name=global>action</action>]]
 
-local hypertext_fs = "hypertext[0,0;11,9;hypertext;"..minetest.formspec_escape(hypertext_basic).."]"..
-	"hypertext[0,9.5;11,2.5;hypertext;"..minetest.formspec_escape(hypertext_global).."]"
+local hypertext_fs = "hypertext[0,0;11,9;hypertext;"..core.formspec_escape(hypertext_basic).."]"..
+	"hypertext[0,9.5;11,2.5;hypertext;"..core.formspec_escape(hypertext_global).."]"
 
 local style_fs = [[
 	style[one_btn1;bgcolor=red;textcolor=yellow;bgcolor_hovered=orange;
 		bgcolor_pressed=purple]
-	button[0,0;2.5,0.8;one_btn1;Button]
+	button_url_exit[0,0;2.5,0.8;one_btn1;Button;]] .. unsafe_url .. [[]
 
 	style[one_btn2;border=false;textcolor=cyan] ]]..
 	"button[0,1.05;2.5,0.8;one_btn2;Text " .. color("#FF0", "Yellow") .. [[]
@@ -216,11 +255,11 @@ local style_fs = [[
 
 	style[one_f3;textcolor=yellow]
 	textarea[0,7.025;2.5,0.8;one_f3;Label;]] ..
-		minetest.formspec_escape("Yellow Text\nLine two") .. [[ ]
+		core.formspec_escape("Yellow Text\nLine two") .. [[ ]
 
 	style[one_f4;border=false;textcolor=cyan]
 	textarea[0,8.324999999999999;2.5,0.8;one_f4;Label;]] ..
-		minetest.formspec_escape("Borderless Cyan Text\nLine two") .. [[ ]
+		core.formspec_escape("Borderless Cyan Text\nLine two") .. [[ ]
 
 	container_end[]
 ]]
@@ -260,7 +299,18 @@ local scroll_fs =
 	"scrollbaroptions[max=170]".. -- lowest seen pos is: 0.1*170+6=23 (factor*max+height)
 	"scrollbar[7.5,0;0.3,4;vertical;scrbar;0]"..
 	"scrollbar[8,0;0.3,4;vertical;scrbarhmmm;0]"..
-	"dropdown[0,6;2;hmdrpdwnnn;Outside,of,container;1]"
+	"dropdown[0,6;2;hmdrpdwnnn;Outside,of,container;1]"..
+	"scroll_container[0,8;10,4;scrbar420;vertical;0.1;2]"..
+		"button[0.5,0.5;10,1;;Container with padding=2]"..
+		"list[current_player;main;0,5;8,4;]"..
+	"scroll_container_end[]"..
+	"scrollbar[10.1,8;0.5,4;vertical;scrbar420;0]"..
+	-- Buttons for scale comparison
+	"button[11,8;1,1;;0]"..
+	"button[11,9;1,1;;1]"..
+	"button[11,10;1,1;;2]"..
+	"button[11,11;1,1;;3]"..
+	"button[11,12;1,1;;4]"
 
 --style_type[label;textcolor=green]
 --label[0,0;Green]
@@ -346,6 +396,10 @@ local pages = {
 		"label[11,0.5;Noclip]" ..
 		"container[11.5,1]" .. clip_fs:gsub("%%c", "true") .. "container_end[]",
 
+	-- Table
+		"size[18,13]real_coordinates[true]" ..
+		"container[0.5,0.5]" .. table_fs.. "container_end[]",
+
 	-- Hypertext
 		"size[12,13]real_coordinates[true]" ..
 		"container[0.5,0.5]" .. hypertext_fs .. "container_end[]",
@@ -419,7 +473,7 @@ mouse control = true]
 		]],
 
 	-- Scroll containers
-		"formspec_version[3]size[12,13]" ..
+		"formspec_version[7]size[12,13]" ..
 		scroll_fs,
 
 	-- Sound
@@ -473,12 +527,12 @@ local function show_test_formspec(pname)
 		page = page()
 	end
 
-	local fs = page .. "tabheader[0,0;11,0.65;maintabs;Real Coord,Styles,Noclip,Hypertext,Tabs,Invs,Window,Anim,Model,ScrollC,Sound,Background,Unsized;" .. page_id .. ";false;false]"
+	local fs = page .. "tabheader[0,0;11,0.65;maintabs;Real Coord,Styles,Noclip,Table,Hypertext,Tabs,Invs,Window,Anim,Model,ScrollC,Sound,Background,Unsized;" .. page_id .. ";false;false]"
 
-	minetest.show_formspec(pname, "testformspec:formspec", fs)
+	core.show_formspec(pname, "testformspec:formspec", fs)
 end
 
-minetest.register_on_player_receive_fields(function(player, formname, fields)
+core.register_on_player_receive_fields(function(player, formname, fields)
 	if formname ~= "testformspec:formspec" then
 		return false
 	end
@@ -490,15 +544,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 
 	if fields.ani_img_1 and fields.ani_btn_1 then
-		minetest.chat_send_player(player:get_player_name(), "ani_img_1 = " .. tostring(fields.ani_img_1))
+		core.chat_send_player(player:get_player_name(), "ani_img_1 = " .. tostring(fields.ani_img_1))
 		return true
 	elseif fields.ani_img_2 and fields.ani_btn_2 then
-		minetest.chat_send_player(player:get_player_name(), "ani_img_2 = " .. tostring(fields.ani_img_2))
+		core.chat_send_player(player:get_player_name(), "ani_img_2 = " .. tostring(fields.ani_img_2))
 		return true
 	end
 
 	if fields.hypertext then
-		minetest.chat_send_player(player:get_player_name(), "Hypertext action received: " .. tostring(fields.hypertext))
+		core.chat_send_player(player:get_player_name(), "Hypertext action received: " .. tostring(fields.hypertext))
 		return true
 	end
 
@@ -523,11 +577,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	end
 end)
 
-minetest.register_chatcommand("test_formspec", {
+core.register_chatcommand("test_formspec", {
 	params = "",
 	description = "Open the test formspec",
 	func = function(name)
-		if not minetest.get_player_by_name(name) then
+		if not core.get_player_by_name(name) then
 			return false, "You need to be online!"
 		end
 

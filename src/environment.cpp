@@ -1,24 +1,6 @@
-/*
-environment.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include <fstream>
 #include "environment.h"
@@ -26,7 +8,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "contrib/fallingsao.h"
 #include "contrib/itemsao.h"
 
-#include "irr_v3d.h"
 #include "raycast.h"
 #include "scripting_server.h"
 #include "server.h"
@@ -122,27 +103,35 @@ bool Environment::line_of_sight(v3opos_t pos1, v3f pos2, v3pos_t *p)
 }
 
 /*
-	Check if a node is pointable
+	Check how a node can be pointed at
 */
-inline static bool isPointableNode(const MapNode &n,
-	const NodeDefManager *nodedef , bool liquids_pointable)
+inline static PointabilityType isPointableNode(const MapNode &n,
+	const NodeDefManager *nodedef, bool liquids_pointable,
+	const std::optional<Pointabilities> &pointabilities)
 {
 	const ContentFeatures &features = nodedef->get(n);
-	return features.pointable ||
-	       (liquids_pointable && features.isLiquid());
+	if (pointabilities) {
+		std::optional<PointabilityType> match =
+				pointabilities->matchNode(features.name, features.groups);
+		if (match)
+			return match.value();
+	}
+
+	if (features.isLiquid() && liquids_pointable)
+		return PointabilityType::POINTABLE;
+	return features.pointable;
 }
 
-void Environment::continueRaycast(RaycastState *state, PointedThing *result)
+void Environment::continueRaycast(RaycastState *state, PointedThing *result_p)
 {
 	const NodeDefManager *nodedef = getMap().getNodeDefManager();
 	if (state->m_initialization_needed) {
 		// Add objects
 		if (state->m_objects_pointable) {
 			std::vector<PointedThing> found;
-			getSelectedActiveObjects(state->m_shootline, found);
-			for (const PointedThing &pointed : found) {
-				state->m_found.push(pointed);
-			}
+			getSelectedActiveObjects(state->m_shootline, found, state->m_pointabilities);
+			for (auto &pointed : found)
+				state->m_found.push(std::move(pointed));
 		}
 		// Set search range
 		core::aabbox3d<pos_t> maximal_exceed = nodedef->getSelectionBoxIntUnion();
@@ -161,14 +150,10 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 	}
 
 	Map &map = getMap();
-	// If a node is found, this is the center of the
-	// first nodebox the shootline meets.
-	v3opos_t found_boxcenter(0, 0, 0);
-	// The untested nodes are in this range.
-	core::aabbox3d<pos_t> new_nodes;
+	std::vector<aabb3f> boxes;
 	while (state->m_iterator.m_current_index <= lastIndex) {
 		// Test the nodes around the current node in search_range.
-		new_nodes = state->m_search_range;
+		core::aabbox3d<pos_t> new_nodes = state->m_search_range;
 		new_nodes.MinEdge += state->m_iterator.m_current_node_pos;
 		new_nodes.MaxEdge += state->m_iterator.m_current_node_pos;
 
@@ -196,22 +181,27 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 		}
 
 		// For each untested node
-		for (pos_t x = new_nodes.MinEdge.X; x <= new_nodes.MaxEdge.X; x++)
-		for (pos_t y = new_nodes.MinEdge.Y; y <= new_nodes.MaxEdge.Y; y++)
-		for (pos_t z = new_nodes.MinEdge.Z; z <= new_nodes.MaxEdge.Z; z++) {
+		for (auto z = new_nodes.MinEdge.Z; z <= new_nodes.MaxEdge.Z; z++)
+		for (auto y = new_nodes.MinEdge.Y; y <= new_nodes.MaxEdge.Y; y++)
+		for (auto x = new_nodes.MinEdge.X; x <= new_nodes.MaxEdge.X; x++) {
 			MapNode n;
 			v3pos_t np(x, y, z);
 			bool is_valid_position;
 
 			n = map.getNode(np, &is_valid_position);
-			if (!(is_valid_position && isPointableNode(n, nodedef,
-					state->m_liquids_pointable))) {
+			if (!is_valid_position)
 				continue;
-			}
+
+			PointabilityType pointable = isPointableNode(n, nodedef,
+					state->m_liquids_pointable,
+					state->m_pointabilities);
+			// If it can be pointed through skip
+			if (pointable == PointabilityType::POINTABLE_NOT)
+				continue;
 
 			PointedThing result;
 
-			std::vector<aabb3f> boxes;
+			boxes.clear();
 			n.getSelectionBoxes(nodedef, &boxes,
 				n.getNeighbors(np, &map));
 
@@ -221,13 +211,15 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 			float min_distance_sq = 10000000;
 			// ID of the current box (loop counter)
 			u16 id = 0;
+			// If a node is found, this is the center of the
+			// first nodebox the shootline meets.
+			v3opos_t found_boxcenter(0, 0, 0);
 
 			// Do calculations relative to the node center
 			// to translate the ray rather than the boxes
 			v3opos_t npf = intToFloat(np, BS);
 			v3opos_t rel_start = state->m_shootline.start - npf;
 			for (aabb3f &box : boxes) {
-				//aabb3o box(v3fToOpos(boxf.MinEdge), v3fToOpos(boxf.MaxEdge));
 				v3opos_t intersection_point;
 				v3f intersection_normal;
 				if (!boxLineCollision(box, rel_start,
@@ -255,12 +247,13 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 			if (!is_colliding) {
 				continue;
 			}
+			result.pointability = pointable;
 			result.type = POINTEDTHING_NODE;
 			result.node_undersurface = np;
 			result.distanceSq = min_distance_sq;
 			// Set undersurface and abovesurface nodes
-			f32 d = 0.002 * BS;
-			v3opos_t fake_intersection = result.intersection_point;
+			const f32 d = 0.002 * BS;
+			auto fake_intersection = result.intersection_point;
 			found_boxcenter += npf; // translate back to world coords
 			// Move intersection towards its source block.
 			if (fake_intersection.X < found_boxcenter.X) {
@@ -282,8 +275,9 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 				fake_intersection, BS);
 			result.node_abovesurface = result.node_real_undersurface
 				+ floatToInt(result.intersection_normal, 1.0f);
+
 			// Push found PointedThing
-			state->m_found.push(result);
+			state->m_found.push(std::move(result));
 			// If this is nearer than the old nearest object,
 			// the search can be shorter
 			s16 newIndex = state->m_iterator.getIndex(
@@ -303,10 +297,12 @@ void Environment::continueRaycast(RaycastState *state, PointedThing *result)
 	state->finished = true;
 	// Return empty PointedThing if nothing left on the ray
 	if (state->m_found.empty()) {
-		result->type = POINTEDTHING_NOTHING;
+		result_p->type = POINTEDTHING_NOTHING;
 	} else {
-		*result = state->m_found.top();
+		*result_p = state->m_found.top();
 		state->m_found.pop();
+		if (result_p->pointability == PointabilityType::POINTABLE_BLOCKING)
+			result_p->type = POINTEDTHING_NOTHING;
 	}
 }
 

@@ -27,7 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../settings.h"
 #include "../version.h"
 #include "networkprotocol.h"
-#include "serverlist.h"
+#include "../server/serverlist.h"
 
 //copypaste from ../socket.cpp
 #ifdef _WIN32
@@ -212,10 +212,11 @@ void *lan_adv::run()
 		server["description"] = g_settings->get("server_description");
 		server["version"] = g_version_string;
 		bool strict_checking = g_settings->getBool("strict_protocol_version_checking");
+
 		server["proto_min"] =
 				strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MIN;
 		server["proto_max"] =
-				strict_checking ? LATEST_PROTOCOL_VERSION : SERVER_PROTOCOL_VERSION_MAX;
+				strict_checking ? LATEST_PROTOCOL_VERSION : LATEST_PROTOCOL_VERSION;
 		server["url"] = g_settings->get("server_url");
 		server["creative"] = g_settings->getBool("creative_mode");
 		server["damage"] = g_settings->getBool("enable_damage");

@@ -1,27 +1,13 @@
-/*
-Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "serveropcodes.h"
-#include "../config.h"
+#include "server.h"
 
-const static ToServerCommandHandler null_command_handler = { "TOSERVER_NULL", TOSERVER_STATE_ALL, &Server::handleCommand_Null };
+const static ToServerCommandHandler null_command_handler =
+	{ "TOSERVER_NULL", TOSERVER_STATE_ALL, &Server::handleCommand_Null };
 
 const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 {
@@ -32,7 +18,7 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 // fm:
 	{ "TOSERVER_INIT_FM",                  TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_InitFm }, // 0x03
 	{ "TOSERVER_GET_BLOCKS",               TOSERVER_STATE_INGAME,  &Server::handleCommand_GetBlocks}, // 0x04
-	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_STARTUP, &Server::handleCommand_Drawcontrol }, // 0x05
+	{ "TOSERVER_DRAWCONTROL",              TOSERVER_STATE_NOT_CONNECTED, &Server::handleCommand_Drawcontrol }, // 0x05
 // ==
 
 	null_command_handler, // 0x06
@@ -85,7 +71,7 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_DAMAGE",                   TOSERVER_STATE_INGAME, &Server::handleCommand_Damage }, // 0x35
 	null_command_handler, // 0x36
 	{ "TOSERVER_PLAYERITEM",               TOSERVER_STATE_INGAME, &Server::handleCommand_PlayerItem }, // 0x37
-	{ "TOSERVER_RESPAWN",                  TOSERVER_STATE_INGAME, &Server::handleCommand_Respawn }, // 0x38
+	null_command_handler, // 0x38
 	{ "TOSERVER_INTERACT",                 TOSERVER_STATE_INGAME, &Server::handleCommand_Interact }, // 0x39
 	{ "TOSERVER_REMOVED_SOUNDS",           TOSERVER_STATE_INGAME, &Server::handleCommand_RemovedSounds }, // 0x3a
 	{ "TOSERVER_NODEMETA_FIELDS",          TOSERVER_STATE_INGAME, &Server::handleCommand_NodeMetaFields }, // 0x3b
@@ -115,7 +101,7 @@ const ToServerCommandHandler toServerCommandTable[TOSERVER_NUM_MSG_TYPES] =
 	{ "TOSERVER_UPDATE_CLIENT_INFO",       TOSERVER_STATE_INGAME, &Server::handleCommand_UpdateClientInfo }, // 0x53
 };
 
-const static ClientCommandFactory null_command_factory = { "TOCLIENT_NULL", 0, false };
+const static ClientCommandFactory null_command_factory = { nullptr, 0, false };
 
 /*
 	Channels used for Server -> Client communication
@@ -137,7 +123,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_DENY_SUDO_MODE",           0, true }, // 0x05
 	null_command_factory, // 0x06
 	null_command_factory, // 0x07
-	null_command_factory, // 0x08
+	{ "TOCLIENT_FREEMINER_INIT",           0, true }, // 0x08
 	null_command_factory, // 0x09
 	{ "TOCLIENT_ACCESS_DENIED",            0, true }, // 0x0A
 	null_command_factory, // 0x0B
@@ -145,7 +131,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	null_command_factory, // 0x0D
 	null_command_factory, // 0x0E
 	null_command_factory, // 0x0F
-	{ "TOCLIENT_INIT",                     0, true }, // 0x10
+	null_command_factory, // 0x10
 	null_command_factory, // 0x11
 	{ "TOCLIENT_BLOCKDATA_FM",                2, true }, // 0x20
 	null_command_factory, // 0x13
@@ -184,7 +170,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_MOVE_PLAYER",              0, false }, // 0x34
 	null_command_factory, // 0x35
 	{ "TOCLIENT_FOV",                      0, true }, // 0x36
-	{ "TOCLIENT_DEATHSCREEN",              0, true }, // 0x37
+	null_command_factory, // 0x37
 	{ "TOCLIENT_MEDIA",                    2, true }, // 0x38
 	null_command_factory, // 0x39
 	{ "TOCLIENT_NODEDEF",                  0, true }, // 0x3A
@@ -222,7 +208,7 @@ const ClientCommandFactory clientCommandFactoryTable[TOCLIENT_NUM_MSG_TYPES] =
 	{ "TOCLIENT_SET_SUN",                  0, true }, // 0x5a
 	{ "TOCLIENT_SET_MOON",                 0, true }, // 0x5b
 	{ "TOCLIENT_SET_STARS",                0, true }, // 0x5c
-	null_command_factory, // 0x5d
+	{ "TOCLIENT_MOVE_PLAYER_REL",          0, true }, // 0x5d
 	null_command_factory, // 0x5e
 	null_command_factory, // 0x5f
 	{ "TOCLIENT_SRP_BYTES_S_B",            0, true }, // 0x60

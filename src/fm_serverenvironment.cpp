@@ -4,7 +4,7 @@
 #include "serverenvironment.h"
 #include "util/timetaker.h"
 
-size_t ServerEnvironment::blockStep(MapBlockP block, float dtime, uint8_t activate)
+size_t ServerEnvironment::blockStep(MapBlockPtr block, float dtime, uint8_t activate)
 {
 	if (!block)
 		return {};
@@ -51,7 +51,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 		std::set<v3pos_t> active_blocks_list;
 		//auto active_blocks_list = m_active_blocks.m_list;
 		{
-			auto lock = m_active_blocks.m_list.try_lock_shared_rec();
+			const auto lock = m_active_blocks.m_list.try_lock_shared_rec();
 			if (lock->owns_lock())
 				active_blocks_list = m_active_blocks.m_list;
 		}
@@ -90,7 +90,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 			if (lock_map->owns_lock())
 #endif
 			{
-				auto lock = m_map->m_blocks.try_lock_shared_rec();
+				const auto lock = m_map->m_blocks.try_lock_shared_rec();
 				if (lock->owns_lock())
 					for (const auto &ir : m_map->m_blocks) {
 						if (!ir.second || !ir.second->abm_triggers)
@@ -115,4 +115,12 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 	}
 
 	return calls;
+}
+
+size_t ServerEnvironment::nodeUpdate(
+		const v3pos_t &pos, u8 recursion_limit, u8 fast, bool destroy)
+{
+	std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
+	m_nodeupdate_queue.emplace_back(pos, recursion_limit, fast, destroy);
+	return 0;
 }

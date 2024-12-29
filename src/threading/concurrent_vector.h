@@ -46,7 +46,7 @@ public:
 	template <typename... Args>
 	decltype(auto) operator=(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		// TODO: other.shared_lock
 		return full_type::operator=(std::forward<Args>(args)...);
 	}
@@ -54,64 +54,64 @@ public:
 	template <typename... Args>
 	decltype(auto) assign(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::assign(std::forward<Args>(args)...);
 	}
 
 	bool empty()
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty();
 	}
 
 	size_type size() const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::size();
 	}
 
 	template <typename... Args>
 	decltype(auto) at(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::at(std::forward<Args>(args)...);
 	}
 
 	reference operator[](size_type n)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::operator[](n);
 	};
 
 	const_reference operator[](size_type n) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::operator[](n);
 	};
 
 	void resize(size_type sz)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::resize(sz);
 	};
 
 	void clear()
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::clear();
 	};
 
 	template <typename... Args>
 	decltype(auto) push_back(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::push_back(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) emplace_back(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::emplace_back(std::forward<Args>(args)...);
 	}
 };

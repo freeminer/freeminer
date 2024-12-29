@@ -1,28 +1,11 @@
-/*
-hud.h
-Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
-Copyright (C) 2017 red-001 <red-001@outlook.ie>
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+// Copyright (C) 2017 red-001 <red-001@outlook.ie>
 
 #pragma once
 
-#include "irr_v3d.h"
-#include "irrlichttypes_extrabloated.h"
+#include "irrlichttypes_bloated.h"
 #include <string>
 #include "common/c_types.h"
 
@@ -70,10 +53,11 @@ enum HudElementType {
 	HUD_ELEM_WAYPOINT  = 4,
 	HUD_ELEM_IMAGE_WAYPOINT = 5,
 	HUD_ELEM_COMPASS   = 6,
-	HUD_ELEM_MINIMAP   = 7
+	HUD_ELEM_MINIMAP   = 7,
+	HUD_ELEM_HOTBAR    = 8,
 };
 
-enum HudElementStat {
+enum HudElementStat : u8 {
 	HUD_STAT_POS = 0,
 	HUD_STAT_NAME,
 	HUD_STAT_SCALE,
@@ -88,6 +72,7 @@ enum HudElementStat {
 	HUD_STAT_Z_INDEX,
 	HUD_STAT_TEXT2,
 	HUD_STAT_STYLE,
+	HudElementStat_END // Dummy for validity check
 };
 
 enum HudCompassDir {

@@ -1,6 +1,6 @@
-#include <cstdint>
-#include "clientiface.h"
+#include "fm_far_calc.h"
 #include "constants.h"
+#include "server/clientiface.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "map.h"
@@ -15,12 +15,13 @@
 #include "threading/lock.h"
 #include "util/directiontables.h"
 #include "util/numeric.h"
+#include "util/unordered_map_hash.h"
 
 int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
 		u64 max_ms)
 {
-	auto lock = try_lock_unique_rec();
+	const auto lock = try_lock_unique_rec();
 	if (!lock->owns_lock())
 		return 0;
 
@@ -117,7 +118,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	}
 
 	// s16 last_nearest_unsent_d = m_nearest_unsent_d;
-	auto d_start = m_nearest_unsent_d.load();
+	short d_start = m_nearest_unsent_d; //.load();
 
 	// infostream<<"d_start="<<d_start<<std::endl;
 
@@ -358,7 +359,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 							MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
 
 					v3pos_t spn = cam_pos_nodes + v3pos_t(0, 0, 0);
-					if (env->getServerMap().isBlockOccluded(p * MAP_BLOCKSIZE, spn)) {
+					if (env->getMap().isBlockOccluded(p * MAP_BLOCKSIZE, spn)) {
 						g_profiler->add("SMap: Occlusion skip", 1);
 						++blocks_occlusion_culled;
 						return false;
@@ -376,7 +377,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 
 			MapBlock *block;
 			if (0) {
-				auto lock = env->getMap().m_blocks.try_lock_shared_rec();
+				const auto lock = env->getMap().m_blocks.try_lock_shared_rec();
 				if (!lock->owns_lock()) {
 					++block_skip_retry;
 					if (!first_skipped_d && d > always_first_ds)
@@ -569,7 +570,7 @@ uint32_t RemoteClient::SendFarBlocks()
 	uint16_t sent_cnt{};
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
-		std::multimap<int32_t, MapBlockP> ordered;
+		std::multimap<int32_t, MapBlockPtr> ordered;
 		constexpr uint16_t send_max{50};
 		for (auto &far_blocks : far_blocks_requested) {
 			for (auto &[bpos, step_sent] : far_blocks) {
@@ -581,13 +582,13 @@ uint32_t RemoteClient::SendFarBlocks()
 					sent_ts = -1;
 					continue;
 				}
-				const auto dbase = GetFarDatabase(m_env->m_map->dbase,
+				const auto dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
 						m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
 				if (!dbase) {
 					sent_ts = -1;
 					continue;
 				}
-				const auto block = loadBlockNoStore(m_env->m_map, dbase, bpos);
+				const auto block = loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
 				if (!block) {
 					sent_ts = -1;
 					continue;
@@ -605,6 +606,70 @@ uint32_t RemoteClient::SendFarBlocks()
 			}
 		}
 
+		// TODO: why not have?
+		if (farmesh && have_farmesh_quality && farmesh_all_changed) {
+			auto *player = m_env->getPlayer(peer_id);
+			if (!player)
+				return 0;
+
+			auto *sao = player->getPlayerSAO();
+			if (!sao)
+				return 0;
+
+			auto playerpos = sao->getBasePosition();
+
+			auto cbpos = floatToInt(playerpos, BS * MAP_BLOCKSIZE);
+
+			const auto cell_size = 1; // FMTODO from remoteclient
+			const auto cell_size_pow = log(cell_size) / log(2);
+			thread_local static const pos_t setting_farmesh_all_changed =
+					g_settings->getU32("farmesh_all_changed");
+			const auto &use_farmesh_all_changed =
+					std::min(setting_farmesh_all_changed, farmesh_all_changed);
+			runFarAll(cbpos, cell_size_pow, farmesh_quality, false,
+					[this, &ordered, &cbpos, &use_farmesh_all_changed](
+							const v3bpos_t &bpos, const bpos_t &size) -> bool {
+						if (!size) {
+							return false;
+						};
+
+						// TODO: use block center
+						const auto bdist = radius_box(cbpos, bpos);
+						if (bdist << MAP_BLOCKP > use_farmesh_all_changed) {
+							return false;
+						}
+
+						block_step_t step = log(size) / log(2);
+						if (far_blocks_requested.size() < step) {
+							far_blocks_requested.resize(step);
+						}
+						auto &[stepp, sent_ts] = far_blocks_requested[step][bpos];
+						if (sent_ts < 0) { // <=
+							return false;
+						}
+						const auto dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
+								m_env->m_server->far_dbases, m_env->m_map->m_savedir,
+								step);
+						if (!dbase) {
+							sent_ts = -1;
+							return false;
+						}
+						const auto block =
+								loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
+						if (!block) {
+							sent_ts = -1;
+							return false;
+						}
+
+						block->far_step = step;
+						//sent_ts = 0;
+						sent_ts = -1; //TODO
+						ordered.emplace(sent_ts - step, block);
+
+						return false;
+					});
+		}
+
 		// First with larger iteration and smaller step
 
 		for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
@@ -613,12 +678,13 @@ uint32_t RemoteClient::SendFarBlocks()
 					peer_id, it->second, serialization_version, net_proto_version);
 		}
 	}
+
 	return sent_cnt;
 }
-
+/*
 RemoteClientVector ClientInterface::getClientList()
 {
-	auto lock = m_clients.lock_unique_rec();
+	const auto lock = m_clients.lock_unique_rec();
 	RemoteClientVector clients;
 	for (const auto &ir : m_clients) {
 		const auto &c = ir.second;
@@ -628,3 +694,4 @@ RemoteClientVector ClientInterface::getClientList()
 	}
 	return clients;
 }
+*/

@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_item.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_item.h"
 #include "lua_api/l_itemstackmeta.h"
@@ -166,6 +148,9 @@ int LuaItemStack::l_get_metadata(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	LuaItemStack *o = checkObject<LuaItemStack>(L, 1);
 	ItemStack &item = o->m_stack;
+
+	log_deprecated(L, "ItemStack:get_metadata is deprecated", 1, true);
+
 	const std::string &value = item.metadata.getString("");
 	lua_pushlstring(L, value.c_str(), value.size());
 	return 1;
@@ -178,6 +163,8 @@ int LuaItemStack::l_set_metadata(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	LuaItemStack *o = checkObject<LuaItemStack>(L, 1);
 	ItemStack &item = o->m_stack;
+
+	log_deprecated(L, "ItemStack:set_metadata is deprecated", 1, true);
 
 	size_t len = 0;
 	const char *ptr = luaL_checklstring(L, 2, &len);
@@ -379,6 +366,22 @@ int LuaItemStack::l_add_wear_by_uses(lua_State *L)
 	return 1;
 }
 
+// get_wear_bar_params(self) -> table
+// Returns the effective wear bar parameters.
+// Returns nil if this item has none associated.
+int LuaItemStack::l_get_wear_bar_params(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	LuaItemStack *o = checkObject<LuaItemStack>(L, 1);
+	ItemStack &item = o->m_stack;
+	auto params = item.getWearBarParams(getGameDef(L)->idef());
+	if (params.has_value()) {
+		push_wear_bar_params(L, *params);
+		return 1;
+	}
+	return 0;
+}
+
 // add_item(self, itemstack or itemstring or table or nil) -> itemstack
 // Returns leftover item stack
 int LuaItemStack::l_add_item(lua_State *L)
@@ -554,6 +557,7 @@ const luaL_Reg LuaItemStack::methods[] = {
 	luamethod(LuaItemStack, get_tool_capabilities),
 	luamethod(LuaItemStack, add_wear),
 	luamethod(LuaItemStack, add_wear_by_uses),
+	luamethod(LuaItemStack, get_wear_bar_params),
 	luamethod(LuaItemStack, add_item),
 	luamethod(LuaItemStack, item_fits),
 	luamethod(LuaItemStack, take_item),
@@ -681,7 +685,7 @@ int ModApiItem::l_get_content_id(lua_State *L)
 
 	// If this is called at mod load time, NodeDefManager isn't aware of
 	// aliases yet, so we need to handle them manually
-	std::string alias_name = idef->getAlias(name);
+	const auto &alias_name = idef->getAlias(name);
 
 	content_t content_id;
 	if (alias_name != name) {

@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2010-2016 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2014-2016 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2016 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2014-2016 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "remoteplayer.h"
 #include <json/json.h>
@@ -70,6 +55,11 @@ RemotePlayer::RemotePlayer(const std::string &name, IItemDefManager *idef):
 	m_star_params   = SkyboxDefaults::getStarDefaults();
 }
 
+RemotePlayer::~RemotePlayer()
+{
+	if (m_sao)
+		m_sao->setPlayer(nullptr);
+}
 
 RemotePlayerChatResult RemotePlayer::canSendChatMessage()
 {
@@ -110,36 +100,21 @@ RemotePlayerChatResult RemotePlayer::canSendChatMessage()
 	return RPLAYER_CHATRESULT_OK;
 }
 
-
-Json::Value operator<<(Json::Value &json, v3f &v) {
+template <typename T>
+Json::Value operator<<(Json::Value &json, const core::vector3d<T> &v) {
 	json["X"] = v.X;
 	json["Y"] = v.Y;
 	json["Z"] = v.Z;
 	return json;
 }
 
-Json::Value operator>>(Json::Value &json, v3f &v) {
+template <typename T>
+Json::Value operator>>(const Json::Value &json, core::vector3d<T> &v) {
 	v.X = json["X"].asFloat();
 	v.Y = json["Y"].asFloat();
 	v.Z = json["Z"].asFloat();
 	return json;
 }
-
-#if USE_OPOS64
-Json::Value operator<<(Json::Value &json, v3opos_t &v) {
-	json["X"] = v.X;
-	json["Y"] = v.Y;
-	json["Z"] = v.Z;
-	return json;
-}
-
-Json::Value operator>>(Json::Value &json, v3opos_t &v) {
-	v.X = json["X"].asFloat();
-	v.Y = json["Y"].asFloat();
-	v.Z = json["Z"].asFloat();
-	return json;
-}
-#endif
 
 Json::Value operator<<(Json::Value &json, RemotePlayer &player) {
 	auto playersao = player.getPlayerSAO();

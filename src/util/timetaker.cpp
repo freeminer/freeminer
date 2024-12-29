@@ -1,24 +1,6 @@
-/*
-util/timetaker.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "timetaker.h"
 
@@ -28,21 +10,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 unsigned int g_time_taker_enabled = 0;
 
-void TimeTaker::start() {
-	if (!m_time1)
-		m_time1 = porting::getTime(m_precision);
-};
-
-TimeTaker::TimeTaker(const std::string &name, u64 *result, TimePrecision prec)
+void TimeTaker::start()
 {
-	m_name = name;
-	m_result = result;
-	m_precision = prec;
-	if (!g_time_taker_enabled) {
-		m_running = false;
-		return;
-	}
-	m_time1 = porting::getTime(prec);
+	if (!m_time1)
+	m_time1 = porting::getTime(m_precision);
 }
 
 u64 TimeTaker::stop(bool quiet)
@@ -52,16 +23,9 @@ u64 TimeTaker::stop(bool quiet)
 		if (m_result != nullptr) {
 			(*m_result) += dtime;
 		} else {
-			if (!quiet && dtime >= g_time_taker_enabled) {
-				static const char* const units[] = {
-					"s"  /* PRECISION_SECONDS */,
-					"ms" /* PRECISION_MILLI */,
-					"us" /* PRECISION_MICRO */,
-					"ns" /* PRECISION_NANO */,
-				};
-				verbosestream << m_name << " took "
-				           << dtime << units[m_precision]
-					   << std::endl;
+			if (!quiet && !m_name.empty() && dtime >= g_time_taker_enabled) {
+				infostream << m_name << " took "
+					<< dtime << TimePrecision_units[m_precision] << std::endl;
 			}
 		}
 		m_running = false;

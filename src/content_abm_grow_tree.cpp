@@ -209,15 +209,22 @@ public:
 			}
 		}
 	}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	const std::vector<std::string> tc{"group:grow_tree"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:grow_tree"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> nothing;
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return {};
+		return nothing;
 	}
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return nothing;
+	};
+
 	// u32 getNeighborsRange() override { return 3; }
 	virtual float getTriggerInterval() override { return grow_debug_fast ? 0.1 : 5; }
 	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 5; }
@@ -747,7 +754,7 @@ top    = ceil(avg - 1)
 					++want_level;
 				}
 				if (nbh[D_TOP].water_level != want_level) {
-						//if (grow_debug) DUMP("settop", top_level, total_level, avg_level_for_top,around_all_is_tree);
+					//if (grow_debug) DUMP("settop", top_level, total_level, avg_level_for_top,around_all_is_tree);
 					// if (all_is_tree && n_water_level>= params.tree_water_max) DUMP(top_level, total_level, float_avg_level_for_top, avg_level_for_top);
 					set_tree_water_level(
 							nbh[D_TOP].node, want_level, params.tree_water_param2);
@@ -823,15 +830,22 @@ public:
 			}
 		}
 	}
-	virtual const std::vector<std::string> getTriggerContents() const override
+	std::vector<std::string> tc {"group:grow_leaves"};
+	virtual const std::vector<std::string> &getTriggerContents() const override
 	{
-		return {"group:grow_leaves"};
+		return tc;
 	}
-	virtual const std::vector<std::string> getRequiredNeighbors(
+	const std::vector<std::string> nothing;
+	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return {};
+		return nothing;
 	}
+	virtual const std::vector<std::string> &getWithoutNeighbors() const override
+	{
+		return nothing;
+	};
+
 	u32 getNeighborsRange() override { return 1; }
 	virtual float getTriggerInterval() override { return grow_debug_fast ? 0.1 : 10; }
 	virtual u32 getTriggerChance() override { return grow_debug_fast ? 1 : 10; }

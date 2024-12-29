@@ -1,31 +1,14 @@
-/*
-script/lua_api/l_env.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irr_v3d.h"
 #include "lua_api/l_base.h"
-#include "serverenvironment.h"
 #include "raycast.h"
+
+class ServerScripting;
 
 // base class containing helpers
 class ModApiEnvBase : public ModApiBase {
@@ -36,19 +19,19 @@ protected:
 
 	static void checkArea(v3pos_t &minp, v3pos_t &maxp);
 
-	// F must be (v3s16 pos) -> MapNode
+	// F must be (v3pos_t pos) -> MapNode
 	template <typename F>
 	static int findNodeNear(lua_State *L, v3pos_t pos, int radius,
 		const std::vector<content_t> &filter, int start_radius, F &&getNode);
 
 	// F must be (G callback) -> void
-	// with G being (v3s16 p, MapNode n) -> bool
+	// with G being (v3pos_t p, MapNode n) -> bool
 	// and behave like Map::forEachNodeInArea
 	template <typename F>
 	static int findNodesInArea(lua_State *L,  const NodeDefManager *ndef,
 		const std::vector<content_t> &filter, bool grouped, F &&iterate);
 
-	// F must be (v3s16 pos) -> MapNode
+	// F must be (v3pos_t pos) -> MapNode
 	template <typename F>
 	static int findNodesInAreaUnderAir(lua_State *L, v3pos_t minp, v3pos_t maxp,
 		const std::vector<content_t> &filter, F &&getNode);
@@ -68,6 +51,10 @@ private:
 	// pos = {x=num, y=num, z=num}
 	static int l_bulk_set_node(lua_State *L);
 
+	// bulk_swap_node([pos1, pos2, ...], node)
+	// pos = {x=num, y=num, z=num}
+	static int l_bulk_swap_node(lua_State *L);
+
 	static int l_add_node(lua_State *L);
 
 	// remove_node(pos)
@@ -78,13 +65,10 @@ private:
 	// pos = {x=num, y=num, z=num}
 	static int l_swap_node(lua_State *L);
 
-	// get_node(pos)
-	// pos = {x=num, y=num, z=num}
-	static int l_get_node(lua_State *L);
-
-	// get_node_or_nil(pos)
-	// pos = {x=num, y=num, z=num}
-	static int l_get_node_or_nil(lua_State *L);
+	// get_node_raw(x, y, z) -> content, param1, param2, pos_ok
+	// Used to implement get_node and get_node_or_nil in lua.
+	// This is still faster than doing it from C++ even with optimized pushnode.
+	static int l_get_node_raw(lua_State *L);
 
 	// get_node_light(pos, timeofday)
 	// pos = {x=num, y=num, z=num}
@@ -96,15 +80,15 @@ private:
 	// timeofday: nil = current time, 0 = night, 0.5 = day
 	static int l_get_natural_light(lua_State *L);
 
-	// place_node(pos, node)
+	// place_node(pos, node, [placer])
 	// pos = {x=num, y=num, z=num}
 	static int l_place_node(lua_State *L);
 
-	// dig_node(pos)
+	// dig_node(pos, [digger])
 	// pos = {x=num, y=num, z=num}
 	static int l_dig_node(lua_State *L);
 
-	// punch_node(pos)
+	// punch_node(pos, [puncher])
 	// pos = {x=num, y=num, z=num}
 	static int l_punch_node(lua_State *L);
 
@@ -126,6 +110,12 @@ private:
 
 	// freeze_melt(pos)
 	static int l_freeze_melt(lua_State *L);
+
+	// get_node_boxes(box_type, pos, [node]) -> table
+	// box_type = string
+	// pos = {x=num, y=num, z=num}
+	// node = {name=string, param1=num, param2=num} or nil
+	static int l_get_node_boxes(lua_State *L);
 
 	// find_nodes_with_meta(pos1, pos2)
 	static int l_find_nodes_with_meta(lua_State *L);
@@ -257,88 +247,45 @@ public:
 	static void InitializeClient(lua_State *L, int top);
 };
 
-class LuaABM : public ActiveBlockModifier {
+/*
+ * Duplicates of certain env APIs that operate not on the global
+ * map but on a VoxelManipulator. This is for emerge scripting.
+ */
+class ModApiEnvVM : public ModApiEnvBase {
 private:
-	int m_id;
 
-	u32 m_neighbors_range = 0;
-	std::vector<std::string> m_trigger_contents;
-	std::vector<std::string> m_required_neighbors;
-	float m_trigger_interval;
-	u32 m_trigger_chance;
-	bool m_simple_catch_up;
-	pos_t m_min_y;
-	pos_t m_max_y;
-public:
-	LuaABM(lua_State *L, int id,
-			const std::vector<std::string> &trigger_contents,
-			const std::vector<std::string> &required_neighbors,
-			int neighbors_range,
-			float trigger_interval, u32 trigger_chance, bool simple_catch_up, pos_t min_y, pos_t max_y):
-		m_id(id),
-		m_neighbors_range(neighbors_range),
-		m_trigger_contents(trigger_contents),
-		m_required_neighbors(required_neighbors),
-		m_trigger_interval(trigger_interval),
-		m_trigger_chance(trigger_chance),
-		m_simple_catch_up(simple_catch_up),
-		m_min_y(min_y),
-		m_max_y(max_y)
-	{
-	}
-	virtual const std::vector<std::string> getTriggerContents() const
-	{
-		return m_trigger_contents;
-	}
-	virtual const std::vector<std::string> getRequiredNeighbors(uint8_t activate) const
-	{
-		return m_required_neighbors;
-	}
-	virtual u32 getNeighborsRange()
-	{
-		return m_neighbors_range;
-	}
-	virtual float getTriggerInterval()
-	{
-		return m_trigger_interval;
-	}
-	virtual u32 getTriggerChance()
-	{
-		return m_trigger_chance;
-	}
-	virtual bool getSimpleCatchUp()
-	{
-		return m_simple_catch_up;
-	}
-	virtual pos_t getMinY()
-	{
-		return m_min_y;
-	}
-	virtual pos_t getMaxY()
-	{
-		return m_max_y;
-	}
-	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, 
-			v3pos_t neighbor_pos, uint8_t activate);
-};
+	// get_node_or_nil(pos)
+	static int l_get_node_or_nil(lua_State *L);
 
-class LuaLBM : public LoadingBlockModifierDef
-{
-private:
-	int m_id;
+	// get_node_max_level(pos)
+	static int l_get_node_max_level(lua_State *L);
+
+	// get_node_level(pos)
+	static int l_get_node_level(lua_State *L);
+
+	// set_node_level(pos)
+	static int l_set_node_level(lua_State *L);
+
+	// add_node_level(pos)
+	static int l_add_node_level(lua_State *L);
+
+	// find_node_near(pos, radius, nodenames, [search_center])
+	static int l_find_node_near(lua_State *L);
+
+	// find_nodes_in_area(minp, maxp, nodenames, [grouped])
+	static int l_find_nodes_in_area(lua_State *L);
+
+	// find_surface_nodes_in_area(minp, maxp, nodenames)
+	static int l_find_nodes_in_area_under_air(lua_State *L);
+
+	// spawn_tree(pos, treedef)
+	static int l_spawn_tree(lua_State *L);
+
+	// Helper: get the vmanip we're operating on
+	static MMVManip *getVManip(lua_State *L);
+
 public:
-	LuaLBM(lua_State *L, int id,
-			const std::set<std::string> &trigger_contents,
-			const std::string &name,
-			bool run_at_every_load):
-		m_id(id)
-	{
-		this->run_at_every_load = run_at_every_load;
-		this->trigger_contents = trigger_contents;
-		this->name = name;
-	}
-	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n, float dtime_s);
+	static void InitializeEmerge(lua_State *L, int top);
 };
 
 //! Lua wrapper for RaycastState objects
@@ -364,8 +311,9 @@ public:
 	LuaRaycast(
 		const core::line3d<opos_t> &shootline,
 		bool objects_pointable,
-		bool liquids_pointable) :
-		state(shootline, objects_pointable, liquids_pointable)
+		bool liquids_pointable,
+		const std::optional<Pointabilities> &pointabilities) :
+		state(shootline, objects_pointable, liquids_pointable, pointabilities)
 	{}
 
 	//! Creates a LuaRaycast and leaves it on top of the stack.

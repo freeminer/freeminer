@@ -30,6 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "emerge.h"
 #include "filesys.h"
+#include "irrlichttypes.h"
+#include "porting.h"
 #include "fm_world_merge.h"
 #include "irrTypes.h"
 #include "irr_v3d.h"
@@ -60,7 +62,7 @@ void *ServerThreadBase::run()
 	while (!stopRequested()) {
 		try {
 			const auto time_now = porting::getTimeMs();
-			const auto result = step((time_now - time_last)/1000.0);
+			const auto result = step((time_now - time_last) / 1000.0);
 			time_last = time_now;
 			std::this_thread::sleep_for(
 					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
@@ -123,7 +125,7 @@ void *ServerThread::run()
 				sleep = sleep_min;
 			end_ms += sleep; // u32(1000 * dedicated_server_step/2);
 			for (u16 i = 0; i < 1000; ++i) {
-				if (!m_server->Receive(sleep)) {
+				if (!m_server->Receive(sleep / 1000.0)) {
 					// errorstream<<"Server: Recieve nothing="  << i << "
 					// per="<<porting::getTimeMs()-(end_ms-sleep)<<"
 					// sleep="<<sleep<<std::endl;
@@ -348,7 +350,7 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 
 	int ret = 0;
 
-	m_env->getMap().time_life = m_uptime_counter->get() + m_env->m_game_time_start;
+	m_env->getServerMap().time_life = m_uptime_counter->get() + m_env->m_game_time_start;
 
 	/*
 		float dtime;
@@ -475,7 +477,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	}
 	if (!m_key_value_storage.contains(name)) {
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name),
-				std::forward_as_tuple(m_path_world, name));
+				std::forward_as_tuple(getGameDef()->m_path_world, name));
 	}
 	return m_key_value_storage.at(name);
 }
@@ -517,6 +519,62 @@ void Server::handleCommand_InitFm(NetworkPacket *pkt)
 
 void Server::handleCommand_Drawcontrol(NetworkPacket *pkt)
 {
+	const auto peer_id = pkt->getPeerId();
+	if (!pkt->packet) {
+		if (!pkt->packet_unpack()) {
+			return;
+		}
+	}
+	auto &packet = *(pkt->packet);
+	/*
+	auto player = m_env->getPlayer(pkt->getPeerId());
+	if (!player) {
+		//m_con->DisconnectPeer(pkt->getPeerId());
+		return;
+	}
+	*/
+
+	//auto playersao = player->getPlayerSAO();
+	/*
+	if (!playersao) {
+		m_con.DisconnectPeer(pkt->getPeerId());
+		return;
+	}*/
+
+	auto client = getClientNoEx(peer_id, CS_Created);
+	if (!client) {
+		return;
+	}
+	{
+		const auto lock = client->lock_unique_rec();
+		if (packet.contains(TOSERVER_DRAWCONTROL_WANTED_RANGE))
+			client->wanted_range =
+					packet[TOSERVER_DRAWCONTROL_WANTED_RANGE].as<uint32_t>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_RANGE_ALL))
+			client->range_all = packet[TOSERVER_DRAWCONTROL_RANGE_ALL].as<bool>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_FARMESH))
+			client->farmesh = packet[TOSERVER_DRAWCONTROL_FARMESH].as<uint32_t>();
+		//client->lodmesh = packet[TOSERVER_DRAWCONTROL_LODMESH].as<u32>();
+		if (packet.contains(TOSERVER_DRAWCONTROL_FARMESH_QUALITY)) {
+			client->farmesh_quality =
+					packet[TOSERVER_DRAWCONTROL_FARMESH_QUALITY].as<uint8_t>();
+			client->have_farmesh_quality = true;
+		}
+		if (packet.contains(TOSERVER_DRAWCONTROL_FARMESH_ALL_CHANGED)) {
+			client->farmesh_all_changed =
+					packet[TOSERVER_DRAWCONTROL_FARMESH_ALL_CHANGED].as<pos_t>();
+		}
+	}
+	//client->block_overflow = packet[TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW].as<bool>();
+
+	// minetest compat, fmtodo: make one place
+	/*
+	if (playersao) {
+		playersao->setFov(client->fov);
+		playersao->setWantedRange(client->wanted_range/MAPBLOCK_SIZE);
+	
+	}
+	*/
 }
 
 void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
@@ -563,7 +621,8 @@ MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dba
 	}
 
 	if (savedir.empty()) {
-		errorstream << "No path for save database with step " << (short)step << "\n";
+		// Only with enable_local_map_saving on local game
+		// errorstream << "No path for save database with step " << (short)step << "\n";
 		return {};
 	}
 
@@ -592,10 +651,10 @@ MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dba
 	return far_dbases[step].get();
 };
 
-MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
+MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 {
 	try {
-		MapBlockP block{smap->createBlankBlockNoInsert(bpos)};
+		MapBlockPtr block{smap->createBlankBlockNoInsert(bpos)};
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);
 		if (!blob.length()) {
@@ -622,7 +681,7 @@ MapBlockP loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos)
 	return {};
 }
 
-void Server::SendBlockFm(session_t peer_id, MapBlockP block, u8 ver,
+void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 		u16 net_proto_version, SerializedBlockCache *cache)
 {
 	thread_local const int net_compression_level =
@@ -658,9 +717,9 @@ uint32_t Server::SendFarBlocks(float dtime)
 	ScopeProfiler sp(g_profiler, "Server: Far blocks send");
 	uint32_t sent{};
 	for (const auto &client : m_clients.getClientList()) {
-		if (!client)
+		if (!client.second)
 			continue;
-		sent += client->SendFarBlocks();
+		sent += client.second->SendFarBlocks();
 	}
 	return sent;
 }
@@ -690,11 +749,12 @@ void *WorldMergeThread::run()
 			}},
 			.get_time_func{[this]() { return m_server->getEnv().getGameTime(); }},
 			.ndef{m_server->getNodeDefManager()},
-			.smap{m_server->getEnv().m_map},
+			.smap{m_server->getEnv().m_map.get()},
 			.far_dbases{m_server->far_dbases},
-			.dbase{m_server->getEnv().m_map->dbase},
+			.dbase{m_server->getEnv().m_map->m_db.dbase},
 			.save_dir{m_server->getEnv().m_map->m_savedir},
 	};
+
 	{
 		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);
 		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
@@ -705,7 +765,7 @@ void *WorldMergeThread::run()
 			merger.world_merge_load_all = -1;
 			g_settings->getS16NoEx("world_merge_load_all", merger.world_merge_load_all);
 			merger.world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
-			u64 world_merge_all = 0;
+			uint64_t world_merge_all = 0;
 			g_settings->getU64NoEx("world_merge_all", world_merge_all);
 			if (world_merge_all) {
 				merger.merge_all();
@@ -715,6 +775,10 @@ void *WorldMergeThread::run()
 	merger.world_merge_load_all = 0;
 	merger.partial = true;
 
+	// Minimum blocks changed for periodic merge
+	uint64_t world_merge_min = 100;
+	g_settings->getU64NoEx("world_merge_min", world_merge_min);
+
 	while (!stopRequested()) {
 		if (merger.throttle()) {
 			tracestream << "World merge wait" << '\n';
@@ -722,7 +786,8 @@ void *WorldMergeThread::run()
 			continue;
 		}
 		if (merger.merge_server_diff(
-					m_server->getEnv().getServerMap().changed_blocks_for_merge)) {
+					m_server->getEnv().getServerMap().changed_blocks_for_merge,
+					world_merge_min)) {
 			break;
 		}
 
@@ -747,4 +812,15 @@ void *WorldMergeThread::run()
 
 	END_DEBUG_EXCEPTION_HANDLER;
 	return {};
+}
+
+void Server::SetBlocksNotSent()
+{
+	std::vector<session_t> clients = m_clients.getClientIDs();
+	ClientInterface::AutoLock clientlock(m_clients);
+	// Set the modified blocks unsent for all the clients
+	for (const session_t client_id : clients) {
+		if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
+			client->SetBlocksNotSent(/*block*/);
+	}
 }

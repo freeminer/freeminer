@@ -1,27 +1,10 @@
-/*
-database.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "database.h"
 #include "constants.h"
+#include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include <sstream>
 #include "util/string.h"
@@ -72,14 +55,15 @@ v3bpos_t MapDatabase::getIntegerAsBlock(s64 i)
 	return pos;
 }
 
-std::string MapDatabase::getBlockAsString(const v3bpos_t &pos) {
+std::string MapDatabase::getBlockAsString(const v3bpos_t &pos)
+{
     // 'a' is like version marker. In future other letters or words can be used.
 	std::ostringstream os;
 	os << "a" << pos.X << "," << pos.Y << "," << pos.Z;
 	return os.str().c_str();
 }
 
-std::string MapDatabase::getBlockAsStringCompatible(const v3bpos_t &pos)
+std::string MapDatabase::getBlockAsStringCompatible(const v3bpos_t &pos) const
 {
 #if USE_POS32	
 	const bpos_t max_limit_bp = 31000 / MAP_BLOCKSIZE;
@@ -96,7 +80,8 @@ std::string MapDatabase::getBlockAsStringCompatible(const v3bpos_t &pos)
 #endif
 }
 
-v3bpos_t MapDatabase::getStringAsBlock(const std::string &i) {
+v3bpos_t MapDatabase::getStringAsBlock(const std::string &i)
+{
 #if USE_POS32	
 	std::istringstream is(i);
 	v3bpos_t pos;

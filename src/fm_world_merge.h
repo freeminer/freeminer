@@ -24,7 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <future>
 #include <unordered_set>
-#include "map.h"
+#include "servermap.h"
 #include "mapblock.h"
 
 class Server;
@@ -62,6 +62,7 @@ public:
 	bool merge_all();
 	bool merge_changed();
 	bool merge_server_diff(
-			concurrent_unordered_set<v3bpos_t> &smap_changed_blocks_for_merge);
+			concurrent_unordered_set<v3bpos_t> &smap_changed_blocks_for_merge,
+			size_t min_blocks = 1);
 	bool add_changed(const v3bpos_t &bpos);
 };

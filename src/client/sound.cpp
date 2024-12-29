@@ -1,29 +1,13 @@
-/*
-Minetest
-Copyright (C) 2023 DS
-
-
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2023 DS
 
 #include "sound.h"
 
 #include "filesys.h"
 #include "log.h"
 #include "porting.h"
+#include "settings.h"
 #include "util/numeric.h"
 #include <algorithm>
 #include <string>
@@ -100,4 +84,27 @@ void ISoundManager::freeId(sound_handle_t id, u32 num_owners)
 		m_occupied_ids.erase(it);
 	else
 		it->second -= num_owners;
+}
+
+void sound_volume_control(ISoundManager *sound_mgr, bool is_window_active)
+{
+	bool mute_sound = g_settings->getBool("mute_sound");
+	if (mute_sound) {
+		sound_mgr->setListenerGain(0.0f);
+	} else {
+		// Check if volume is in the proper range, else fix it.
+		float old_volume = g_settings->getFloat("sound_volume");
+		float new_volume = rangelim(old_volume, 0.0f, 1.0f);
+
+		if (old_volume != new_volume) {
+			g_settings->setFloat("sound_volume", new_volume);
+		}
+
+		if (!is_window_active) {
+			new_volume *= g_settings->getFloat("sound_volume_unfocused");
+			new_volume = rangelim(new_volume, 0.0f, 1.0f);
+		}
+
+		sound_mgr->setListenerGain(new_volume);
+	}
 }

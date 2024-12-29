@@ -18,10 +18,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-package net.minetest.minetest;
+package org.freeminer.freeminer;
 
-import android.app.NativeActivity;
+import org.libsdl.app.SDLActivity;
+
 import android.content.Intent;
+import android.content.ActivityNotFoundException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -32,6 +34,8 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
+import android.content.res.Configuration;
 
 import androidx.annotation.Keep;
 import androidx.appcompat.app.AlertDialog;
@@ -45,51 +49,59 @@ import java.util.Objects;
 // This annotation prevents the minifier/Proguard from mangling them.
 @Keep
 @SuppressWarnings("unused")
-public class GameActivity extends NativeActivity {
-	static {
-		System.loadLibrary("c++_shared");
-		System.loadLibrary("minetest");
+public class GameActivity extends SDLActivity {
+	@Override
+	protected String getMainSharedObject() {
+		return getContext().getApplicationInfo().nativeLibraryDir + "/libfreeminer.so";
 	}
 
-	private int messageReturnCode = -1;
+	@Override
+	protected String getMainFunction() {
+		return "SDL_Main";
+	}
+
+	@Override
+	protected String[] getLibraries() {
+		return new String[] {
+			"freeminer"
+		};
+	}
+
+	// Prevent SDL from changing orientation settings since we already set the
+	// correct orientation in our AndroidManifest.xml
+	@Override
+	public void setOrientationBis(int w, int h, boolean resizable, String hint) {}
+
+	enum DialogType { TEXT_INPUT, SELECTION_INPUT }
+	enum DialogState { DIALOG_SHOWN, DIALOG_INPUTTED, DIALOG_CANCELED }
+
+	private DialogType lastDialogType = DialogType.TEXT_INPUT;
+	private DialogState inputDialogState = DialogState.DIALOG_CANCELED;
 	private String messageReturnValue = "";
+	private int selectionReturnValue = 0;
+
+	private native void saveSettings();
 
 	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+	protected void onStop() {
+		super.onStop();
+		// Avoid losing setting changes in case the app is onDestroy()ed later.
+		// Saving stuff in onStop() is recommended in the Android activity
+		// lifecycle documentation.
+		saveSettings();
 	}
 
-	private void makeFullScreen() {
-		this.getWindow().getDecorView().setSystemUiVisibility(
-				View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-				View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-				View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+	public void showTextInputDialog(String hint, String current, int editType) {
+		runOnUiThread(() -> showTextInputDialogUI(hint, current, editType));
 	}
 
-	@Override
-	public void onWindowFocusChanged(boolean hasFocus) {
-		super.onWindowFocusChanged(hasFocus);
-		if (hasFocus)
-			makeFullScreen();
+	public void showSelectionInputDialog(String[] optionList, int selectedIdx) {
+		runOnUiThread(() -> showSelectionInputDialogUI(optionList, selectedIdx));
 	}
 
-	@Override
-	protected void onResume() {
-		super.onResume();
-		makeFullScreen();
-	}
-
-	@Override
-	public void onBackPressed() {
-		// Ignore the back press so Minetest can handle it
-	}
-
-	public void showDialog(String acceptButton, String hint, String current, int editType) {
-		runOnUiThread(() -> showDialogUI(hint, current, editType));
-	}
-
-	private void showDialogUI(String hint, String current, int editType) {
+	private void showTextInputDialogUI(String hint, String current, int editType) {
+		lastDialogType = DialogType.TEXT_INPUT;
+		inputDialogState = DialogState.DIALOG_SHOWN;
 		final AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		LinearLayout container = new LinearLayout(this);
 		container.setOrientation(LinearLayout.VERTICAL);
@@ -114,7 +126,7 @@ public class GameActivity extends NativeActivity {
 			// For multi-line, do not submit the text after pressing Enter key
 			if (keyCode == KeyEvent.KEYCODE_ENTER && editType != 1) {
 				imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
-				messageReturnCode = 0;
+				inputDialogState = DialogState.DIALOG_INPUTTED;
 				messageReturnValue = editText.getText().toString();
 				alertDialog.dismiss();
 				return true;
@@ -128,27 +140,53 @@ public class GameActivity extends NativeActivity {
 			doneButton.setText(R.string.ime_dialog_done);
 			doneButton.setOnClickListener((view -> {
 				imm.hideSoftInputFromWindow(editText.getWindowToken(), 0);
-				messageReturnCode = 0;
+				inputDialogState = DialogState.DIALOG_INPUTTED;
 				messageReturnValue = editText.getText().toString();
 				alertDialog.dismiss();
 			}));
 		}
 		alertDialog.setOnCancelListener(dialog -> {
 			getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+			inputDialogState = DialogState.DIALOG_CANCELED;
 			messageReturnValue = current;
-			messageReturnCode = -1;
 		});
 		alertDialog.show();
 		editText.requestFocusTryShow();
 	}
 
-	public int getDialogState() {
-		return messageReturnCode;
+	public void showSelectionInputDialogUI(String[] optionList, int selectedIdx) {
+		lastDialogType = DialogType.SELECTION_INPUT;
+		inputDialogState = DialogState.DIALOG_SHOWN;
+		final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setSingleChoiceItems(optionList, selectedIdx, (dialog, selection) -> {
+			inputDialogState = DialogState.DIALOG_INPUTTED;
+			selectionReturnValue = selection;
+			dialog.dismiss();
+		});
+		builder.setOnCancelListener(dialog -> {
+			inputDialogState = DialogState.DIALOG_CANCELED;
+			selectionReturnValue = selectedIdx;
+		});
+		AlertDialog alertDialog = builder.create();
+		alertDialog.show();
 	}
 
-	public String getDialogValue() {
-		messageReturnCode = -1;
+	public int getLastDialogType() {
+		return lastDialogType.ordinal();
+	}
+
+	public int getInputDialogState() {
+		return inputDialogState.ordinal();
+	}
+
+	public String getDialogMessage() {
+		inputDialogState = DialogState.DIALOG_CANCELED;
 		return messageReturnValue;
+	}
+
+	public int getDialogSelection() {
+		inputDialogState = DialogState.DIALOG_CANCELED;
+		return selectionReturnValue;
 	}
 
 	public float getDensity() {
@@ -165,7 +203,11 @@ public class GameActivity extends NativeActivity {
 
 	public void openURI(String uri) {
 		Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-		startActivity(browserIntent);
+		try {
+			startActivity(browserIntent);
+		} catch (ActivityNotFoundException e) {
+			runOnUiThread(() -> Toast.makeText(this, R.string.no_web_browser, Toast.LENGTH_SHORT).show());
+		}
 	}
 
 	public String getUserDataPath() {
@@ -183,7 +225,7 @@ public class GameActivity extends NativeActivity {
 			return;
 		}
 
-		Uri fileUri = FileProvider.getUriForFile(this, "net.minetest.minetest.fileprovider", file);
+		Uri fileUri = FileProvider.getUriForFile(this, "org.freeminer.freeminer.fileprovider", file);
 
 		Intent intent = new Intent(Intent.ACTION_SEND, fileUri);
 		intent.setDataAndType(fileUri, getContentResolver().getType(fileUri));
@@ -216,5 +258,9 @@ public class GameActivity extends NativeActivity {
 		}
 
 		return langCode;
+	}
+
+	public boolean hasPhysicalKeyboard() {
+		return getContext().getResources().getConfiguration().keyboard != Configuration.KEYBOARD_NOKEYS;
 	}
 }

@@ -1,27 +1,10 @@
-/*
-util/numeric.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "numeric.h"
 
+#include "irrlichttypes.h"
 #include "log.h"
 #include "constants.h" // BS, MAP_BLOCKSIZE
 #include "noise.h" // PseudoRandom, PcgRandom
@@ -33,7 +16,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 // myrand
 
-PcgRandom g_pcgrand;
+static PcgRandom g_pcgrand;
 
 u32 myrand()
 {
@@ -131,13 +114,13 @@ bool isBlockInSight(v3pos_t blockpos_b, v3opos_t camera_pos, v3f camera_dir,
 	);
 
 	// Block position relative to camera
-	//auto blockpos_relative = blockpos - camera_pos;
+	//v3f blockpos_relative = blockpos - camera_pos;
 
 	// Total distance
 /*
-	f32 d = MYMAX(0, blockpos_relative.getLength() - BLOCK_MAX_RADIUS);
+	auto d = MYMAX(0, blockpos_relative.getLength() - BLOCK_MAX_RADIUS);
 */	
-	auto d = radius_box(blockpos, camera_pos);
+	opos_t d = radius_box(blockpos, camera_pos);
 
 	if (distance_ptr)
 		*distance_ptr = d;
@@ -196,7 +179,7 @@ s16 adjustDist(s16 dist, float zoom_fov)
 	return std::round(adjustDist((float)dist, zoom_fov));
 }
 
-void setPitchYawRollRad(core::matrix4 &m, const v3f &rot)
+void setPitchYawRollRad(core::matrix4 &m, v3f rot)
 {
 	f64 a1 = rot.Z, a2 = rot.X, a3 = rot.Y;
 	f64 c1 = cos(a1), s1 = sin(a1);

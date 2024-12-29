@@ -1,24 +1,6 @@
-/*
-subgame.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -35,6 +17,8 @@ struct SubgameSpec
 	std::string title;
 	std::string author;
 	int release;
+	std::string first_mod; // "" <=> no mod
+	std::string last_mod; // "" <=> no mod
 	std::string path;
 	std::string gamemods_path;
 
@@ -42,7 +26,6 @@ struct SubgameSpec
 	 * Map from virtual path to mods path
 	 */
 	std::unordered_map<std::string, std::string> addon_mods_paths;
-	std::string menuicon_path;
 
 	// For logging purposes
 	std::vector<const char *> deprecation_msgs;
@@ -51,12 +34,16 @@ struct SubgameSpec
 			const std::string &gamemods_path = "",
 			const std::unordered_map<std::string, std::string> &addon_mods_paths = {},
 			const std::string &title = "",
-			const std::string &menuicon_path = "",
-			const std::string &author = "", int release = 0) :
+			const std::string &author = "", int release = 0,
+			const std::string &first_mod = "",
+			const std::string &last_mod = "") :
 			id(id),
-			title(title), author(author), release(release), path(path),
-			gamemods_path(gamemods_path), addon_mods_paths(addon_mods_paths),
-			menuicon_path(menuicon_path)
+			title(title), author(author), release(release),
+			first_mod(first_mod),
+			last_mod(last_mod),
+			path(path),
+			gamemods_path(gamemods_path),
+			addon_mods_paths(addon_mods_paths)
 	{
 	}
 

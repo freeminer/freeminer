@@ -2,6 +2,7 @@ set(sound_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp)
 
 if(USE_SOUND)
 	set(sound_SRCS ${sound_SRCS}
+		${CMAKE_CURRENT_SOURCE_DIR}/sound/al_extensions.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/sound/al_helpers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/sound/ogg_file.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/sound/playing_sound.cpp
@@ -23,7 +24,6 @@ if(USE_SOUND)
 endif()
 
 set(client_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/fm_far_calc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_farmesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_client.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_far_container.cpp
@@ -71,6 +71,9 @@ set(client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/shader.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sky.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/tile.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/texturepaths.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/texturesource.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/imagesource.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/wieldmesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadows.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/shadows/dynamicshadowsrender.cpp

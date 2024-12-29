@@ -112,10 +112,11 @@ private:
 
         ~handle_in_flight_decrement()
         {
-            std::size_t prev
-                = std::atomic_fetch_sub_explicit(&tp.in_flight,
-                    std::size_t(1),
-                    std::memory_order_acq_rel);
+            std::size_t prev = tp.in_flight--;
+            /* error: no member named '__c11_atomic_fetch_add' in namespace 'std':
+            std::size_t prev = std::atomic_fetch_sub_explicit(&tp.in_flight, std::size_t(1), std::memory_order_acq_rel);
+            */
+
             if (prev == 1)
             {
                 std::unique_lock<std::mutex> guard(tp.in_flight_mutex);
@@ -185,9 +186,8 @@ auto ThreadPool::enqueue_worker(bool block, F&& f, Args&&... args) -> std::futur
         throw std::runtime_error("enqueue on stopped ThreadPool");
 
     tasks.emplace([task](){ (*task)(); });
-    std::atomic_fetch_add_explicit(&in_flight,
-        std::size_t(1),
-        std::memory_order_relaxed);
+    //std::atomic_fetch_add_explicit(&in_flight,std::size_t(1),std::memory_order_relaxed);
+    ++in_flight;
     condition_consumers.notify_one();
 
     return res;

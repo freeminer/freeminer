@@ -44,7 +44,7 @@ public:
 	template <typename... Args>
 	mapped_type &get(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 
 		//if (!full_type::contains(std::forward<Args>(args)...))
 		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
@@ -56,35 +56,35 @@ public:
 	template <typename... Args>
 	decltype(auto) at(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::at(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) assign(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::assign(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) insert(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::insert(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) emplace(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::emplace(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) emplace_try(Args &&...args)
 	{
-		auto lock = LOCKER::try_lock_unique_rec();
+		const auto lock = LOCKER::try_lock_unique_rec();
 		if (!lock->owns_lock())
 			return false;
 		return full_type::emplace(std::forward<Args>(args)...).second;
@@ -93,84 +93,84 @@ public:
 	template <typename... Args>
 	decltype(auto) insert_or_assign(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::insert_or_assign(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) empty(Args &&...args) const noexcept
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::empty(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) size(Args &&...args) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::size(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) count(Args &&...args) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::count(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) contains(Args &&...args) const
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::contains(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) find(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::find(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) begin(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::begin(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) rbegin(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::rbegin(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) end(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::end(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) rend(Args &&...args)
 	{
-		auto lock = LOCKER::lock_shared_rec();
+		const auto lock = LOCKER::lock_shared_rec();
 		return full_type::rend(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) erase(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::erase(std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	decltype(auto) clear(Args &&...args)
 	{
-		auto lock = LOCKER::lock_unique_rec();
+		const auto lock = LOCKER::lock_unique_rec();
 		return full_type::clear(std::forward<Args>(args)...);
 	}
 };

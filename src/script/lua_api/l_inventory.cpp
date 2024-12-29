@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_inventory.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "lua_api/l_inventory.h"
 #include "lua_api/l_internal.h"
@@ -154,19 +136,28 @@ int InvRef::l_set_width(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	InvRef *ref = checkObject<InvRef>(L, 1);
 	const char *listname = luaL_checkstring(L, 2);
+
 	int newwidth = luaL_checknumber(L, 3);
+	if (newwidth < 0) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
 	Inventory *inv = getinv(L, ref);
 	if(inv == NULL){
-		return 0;
+		lua_pushboolean(L, false);
+		return 1;
 	}
 	InventoryList *list = inv->getList(listname);
 	if(list){
 		list->setWidth(newwidth);
 	} else {
-		return 0;
+		lua_pushboolean(L, false);
+		return 1;
 	}
 	reportInventoryChange(L, ref);
-	return 0;
+	lua_pushboolean(L, true);
+	return 1;
 }
 
 // get_stack(self, listname, i) -> itemstack
@@ -267,19 +258,19 @@ int InvRef::l_set_lists(lua_State *L)
 	}
 
 	// Make a temporary inventory in case reading fails
-	Inventory *tempInv(inv);
-	tempInv->clear();
+	Inventory tempInv(*inv);
+	tempInv.clear();
 
 	Server *server = getServer(L);
 
 	lua_pushnil(L);
 	luaL_checktype(L, 2, LUA_TTABLE);
 	while (lua_next(L, 2)) {
-		const char *listname = lua_tostring(L, -2);
-		read_inventory_list(L, -1, tempInv, listname, server);
+		const char *listname = luaL_checkstring(L, -2);
+		read_inventory_list(L, -1, &tempInv, listname, server);
 		lua_pop(L, 1);
 	}
-	inv = tempInv;
+	*inv = tempInv;
 	return 0;
 }
 

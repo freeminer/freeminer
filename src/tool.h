@@ -1,36 +1,24 @@
-/*
-tool.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes.h"
-#include <string>
-#include <iostream>
 #include "itemgroup.h"
 #include "json-forwards.h"
+#include "common/c_types.h"
+#include <SColor.h>
+
+#include <string>
+#include <iostream>
+#include <map>
+#include <unordered_map>
+#include <optional>
 
 struct ItemDefinition;
+class IItemDefManager;
 
-#include "network/connection.h"
 #include "util/msgpack_serialize.h"
 
 enum {
@@ -47,15 +35,11 @@ struct ToolGroupCap
 
 	ToolGroupCap() = default;
 
-	bool getTime(int rating, float *time) const
-	{
-		std::unordered_map<int, float>::const_iterator i = times.find(rating);
-		if (i == times.end()) {
-			*time = 0;
-			return false;
-		}
-		*time = i->second;
-		return true;
+	std::optional<float> getTime(int rating) const {
+		auto i = times.find(rating);
+		if (i == times.end())
+			return std::nullopt;
+		return i->second;
 	}
 
 	template<typename Packer>
@@ -119,6 +103,41 @@ struct ToolCapabilities
 	void msgpack_unpack(msgpack::object o);
 	void serializeJson(std::ostream &os) const;
 	void deserializeJson(std::istream &is);
+
+private:
+	void deserializeJsonGroupcaps(Json::Value &json);
+	void deserializeJsonDamageGroups(Json::Value &json);
+};
+
+struct WearBarParams
+{
+	std::map<f32, video::SColor> colorStops;
+	enum BlendMode : u8 {
+	    BLEND_MODE_CONSTANT,
+	    BLEND_MODE_LINEAR,
+	    BlendMode_END // Dummy for validity check
+	};
+	constexpr const static EnumString es_BlendMode[3] = {
+		{WearBarParams::BLEND_MODE_CONSTANT, "constant"},
+		{WearBarParams::BLEND_MODE_LINEAR, "linear"},
+		{0, nullptr}
+	};
+	BlendMode blend;
+
+	WearBarParams(const std::map<f32, video::SColor> &colorStops, BlendMode blend):
+		colorStops(colorStops),
+		blend(blend)
+	{}
+
+	WearBarParams(const video::SColor color):
+		WearBarParams({{0.0f, color}}, WearBarParams::BLEND_MODE_CONSTANT)
+	{};
+
+	void serialize(std::ostream &os) const;
+	static WearBarParams deserialize(std::istream &is);
+	void serializeJson(std::ostream &os) const;
+	static std::optional<WearBarParams> deserializeJson(std::istream &is);
+	video::SColor getWearBarColor(f32 durabilityPercent);
 };
 
 struct DigParams
@@ -182,4 +201,5 @@ PunchDamageResult getPunchDamage(
 );
 
 u32 calculateResultWear(const u32 uses, const u16 initial_wear);
-f32 getToolRange(const ItemDefinition &def_selected, const ItemDefinition &def_hand);
+f32 getToolRange(const ItemStack &wielded_item, const ItemStack &hand_item,
+		const IItemDefManager *itemdef_manager);

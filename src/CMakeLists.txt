@@ -4,191 +4,14 @@ INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
 
-
-# === fm ===
-
-INCLUDE(CheckCXXSourceRuns)
-
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-set(CMAKE_CXX_STANDARD 20)
-
-set(HAVE_SHARED_MUTEX 1)
-set(HAVE_THREAD_LOCAL 1)
-
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
-	set(HAVE_FUTURE 1)
-
-set(CMAKE_REQUIRED_FLAGS "")
-
-option(ENABLE_THREADS "Use more threads (might be slower on 1-2 core machines)" 1)
-
-if(ENABLE_THREADS)
-	set(ENABLE_THREADS 1)
-else()
-	set(ENABLE_THREADS 0)
-endif()
-
-
-option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
-if(MINETEST_PROTO)
-	set(MINETEST_TRANSPORT 1 CACHE BOOL "")
-	message(STATUS "Using minetest compatible protocol (some features missing)")
-endif()
-if (MINETEST_TRANSPORT)
-	message(STATUS "Using minetest compatible transport (slow)")
-endif()
-
-#
-# Set some optimizations and tweaks
-#
-
-include(CheckCXXCompilerFlag)
-
-if(STATIC_BUILD)
-	set(STATIC_BUILD 1)
-else()
-	set(STATIC_BUILD 0)
-endif()
-
-if(NOT MSVC)
-        # FM: TODO: REMOVE:
-	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
-
-	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
-		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color")
-	        elseif ( CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.8 )
-			set(OTHER_FLAGS "${OTHER_FLAGS}  -fdiagnostics-color=always")
-		endif ()
-	endif ()
-
-	if(SANITIZE_ADDRESS)
-                message(STATUS "Build with sanitize=address")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-	if(SANITIZE_THREAD)
-                message(STATUS "Build with sanitize=thread")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=thread -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-			set(OTHER_FLAGS "${OTHER_FLAGS} -pie")
-		endif()
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-	if(SANITIZE_MEMORY)
-                message(STATUS "Build with sanitize=memory")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=memory -fPIE -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pie")
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-	if(SANITIZE_UNDEFINED)
-                message(STATUS "Build with sanitize=undefined ")
-		set(OTHER_FLAGS "${OTHER_FLAGS} -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-        set(ENABLE_SYSTEM_JSONCPP 0)
-	endif()
-
-	if (NOT (SANITIZE_ADDRESS OR SANITIZE_THREAD OR SANITIZE_MEMORY OR SANITIZE_UNDEFINED))
-		option(ENABLE_TCMALLOC "Enable tcmalloc" 1)
-	endif()
-
-	if(ENABLE_GPERF OR ENABLE_TCMALLOC)
-		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
-			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-		endif()
-
-		if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-			find_library(TCMALLOC_LIBRARY NAMES tcmalloc_debug tcmalloc)
-		else()
-			find_library(TCMALLOC_LIBRARY NAMES tcmalloc tcmalloc_and_profiler)
-		endif()
-
-		if(ENABLE_GPERF)
-			find_library(PROFILER_LIBRARY NAMES profiler tcmalloc_and_profiler)
-		endif()
-
-		if (USE_STATIC_LIBRARIES AND TCMALLOC_STATIC)
-			list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-		endif()
-
-		if (PROFILER_LIBRARY)
-			# set(PLATFORM_LIBS ${PLATFORM_LIBS} -Wl,--no-as-needed ${PROFILER_LIBRARY} -Wl,--as-needed)
-			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${PROFILER_LIBRARY})
-		endif()
-
-		if (TCMALLOC_LIBRARY)
-			set(PLATFORM_LIBS ${PLATFORM_LIBS} ${TCMALLOC_LIBRARY})
-			set(OTHER_FLAGS "${OTHER_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-		endif()
-
-		message(STATUS "Build with tcmalloc ${TCMALLOC_LIBRARY} ${PROFILER_LIBRARY}")
-	endif()
-
-    # too noisy
-	option(ENABLE_UNWIND "Enable unwind" 0)
-	if(ENABLE_UNWIND)
-
-	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
-
-	find_library(UNWIND_LIBRARY NAMES unwind)
-
-	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
-
-	if(UNWIND_LIBRARY)
-        CHECK_CXX_SOURCE_RUNS("
-       #include <execinfo.h> // for backtrace
-       int main(int argc, char *argv[]) {
-            void *callstack[128];
-            const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
-            char buf[1024];
-            int nFrames = backtrace(callstack, nMaxFrames);
-            return 0;
-       }
-       "
-        USE_UNWIND)
-        if(NOT USE_UNWIND)
-            set(USE_UNWIND 0)
-        endif()
-        # set(USE_UNWIND 1)
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
-		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
-	endif()
-
-	endif()
-
-	if(CMAKE_SYSTEM_NAME MATCHES "(Darwin|BSD|DragonFly)")
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} execinfo)
-	endif()
-
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${OTHER_FLAGS}")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
-endif()
-
-# === fm === ^^^
-
-
-
-
 check_type_size(int SIZEOF_INT BUILTIN_TYPES_ONLY LANGUAGE CXX)
 if(SIZEOF_INT LESS 4)
-	message(FATAL_ERROR "Minetest will not work with int less than 32 bits wide.")
+	message(FATAL_ERROR "${PROJECT_NAME_CAPITALIZED} will not work with int less than 32 bits wide.")
 endif()
 
 check_type_size(size_t SIZEOF_SIZE_T LANGUAGE CXX)
 if(SIZEOF_SIZE_T LESS 4)
-	message(FATAL_ERROR "Minetest will not work with size_t less than 32 bits wide.")
+	message(FATAL_ERROR "${PROJECT_NAME_CAPITALIZED} will not work with size_t less than 32 bits wide.")
 endif()
 
 # Add custom SemiDebug build mode
@@ -204,10 +27,15 @@ mark_as_advanced(
 	CMAKE_CXX_FLAGS_SEMIDEBUG
 	CMAKE_C_FLAGS_SEMIDEBUG
 )
+set(SUPPORTED_BUILD_TYPES None Release Debug SemiDebug RelWithDebInfo MinSizeRel)
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
-	"Choose the type of build. Options are: None Debug SemiDebug RelWithDebInfo MinSizeRel."
+	"Choose the type of build. Options are: ${SUPPORTED_BUILD_TYPES}."
 	FORCE
 )
+if(NOT (CMAKE_BUILD_TYPE IN_LIST SUPPORTED_BUILD_TYPES))
+	message(WARNING
+			"Unknown CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}. Options are: ${SUPPORTED_BUILD_TYPES}.")
+endif()
 
 
 # Set some random things default to not being visible in the GUI
@@ -223,11 +51,30 @@ endif()
 option(USE_POS32 "32 bit node/block positions (experimental, not compatible with 16 bit)" TRUE)
 option(USE_OPOS64 "64 bit object positions (experimental, not compatible with 32 bit)" ${USE_POS32})
 
+option(PRECOMPILE_HEADERS "Precompile some headers (experimental; requires CMake 3.16 or later)" FALSE)
+set(PRECOMPILED_HEADERS_PATH "" CACHE FILEPATH "Path to a file listing all headers to precompile")
+
+if(PRECOMPILE_HEADERS)
+	if(${CMAKE_VERSION} VERSION_LESS 3.16)
+		message(FATAL_ERROR "PRECOMPILE_HEADERS is on, but precompiled headers require at least CMake 3.16.")
+	endif()
+	if(PRECOMPILED_HEADERS_PATH)
+		set(PRECOMPILED_HEADERS ${PRECOMPILED_HEADERS_PATH})
+	else()
+		set(PRECOMPILED_HEADERS "${CMAKE_SOURCE_DIR}/src/precompiled_headers.txt")
+	endif()
+	message(STATUS "Reading headers to precompile from: ${PRECOMPILED_HEADERS}")
+	# ignore lines that begin with # and empty lines
+	file(STRINGS ${PRECOMPILED_HEADERS} PRECOMPILED_HEADERS_LIST REGEX "^[^#].*$")
+	set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PRECOMPILED_HEADERS})
+endif()
+
+
 option(ENABLE_CURL "Enable cURL support for fetching media" TRUE)
 set(USE_CURL FALSE)
 
 if(ENABLE_CURL)
-	find_package(CURL)
+	find_package(CURL 7.28.0)
 	if (CURL_FOUND)
 		message(STATUS "cURL support enabled.")
 		set(USE_CURL TRUE)
@@ -305,11 +152,6 @@ if(ENABLE_SOUND AND BUILD_CLIENT)
 	else()
 		message(WARNING "Sound enabled, but cannot be used.\n")
 	endif()
-endif()
-
-option(ENABLE_TOUCH "Enable Touchscreen support" FALSE)
-if(ENABLE_TOUCH)
-	add_definitions(-DHAVE_TOUCHSCREENGUI)
 endif()
 
 if(BUILD_CLIENT)
@@ -392,7 +234,7 @@ if(ENABLE_LEVELDB)
 	message (STATUS "Leveldb library: ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
 
 	if (NOT SNAPPY_INCLUDE_DIR OR NOT SNAPPY_LIBRARY)
-		find_path(SNAPPY_INCLUDE_DIR snappy.h ${PROJECT_SOURCE_DIR}/external/snappy NO_DEFAULT_PATH)
+		find_path(SNAPPY_INCLUDE_DIR snappy.h PATHS ${PROJECT_SOURCE_DIR}/external/snappy NO_DEFAULT_PATH)
 	  if (SNAPPY_INCLUDE_DIR)
 		# Snappy have no cmake by default,
 		# git clone --recursive --depth 1 https://github.com/google/snappy src/external/snappy
@@ -411,8 +253,8 @@ if(ENABLE_LEVELDB)
 	endif()
 
 	if (NOT LEVELDB_INCLUDE_DIR OR NOT LEVELDB_LIBRARY)
-		find_path(LEVELDB_INCLUDE_DIR leveldb/db.h ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
-	  if (LEVELDB_INCLUDE_DIR)
+		find_path(LEVELDB_INCLUDE_DIR NAMES leveldb/db.h PATHS ${PROJECT_SOURCE_DIR}/external/leveldb/include NO_DEFAULT_PATH)
+		if (LEVELDB_INCLUDE_DIR)
 		# bad try direct make build 
 		#find_path(LEVELDB_MAKEFILE_DIR Makefile ${PROJECT_SOURCE_DIR}/external/leveldb NO_DEFAULT_PATH)
 		#if (LEVELDB_MAKEFILE_DIR)
@@ -579,9 +421,14 @@ if(WIN32)
 	if(NOT VCPKG_APPLOCAL_DEPS)
 		set(ZLIB_DLL "" CACHE FILEPATH "Path to Zlib DLL for installation (optional)")
 		set(ZSTD_DLL "" CACHE FILEPATH "Path to Zstd DLL for installation (optional)")
-		if(ENABLE_SOUND)
-			set(OPENAL_DLL "" CACHE FILEPATH "Path to OpenAL32.dll for installation (optional)")
-			set(OGG_DLL "" CACHE FILEPATH "Path to libogg.dll for installation (optional)")
+		if(BUILD_CLIENT)
+			set(PNG_DLL "" CACHE FILEPATH "Path to libpng DLL for installation (optional)")
+			set(JPEG_DLL "" CACHE FILEPATH "Path to libjpeg DLL for installation (optional)")
+			set(SDL2_DLL "" CACHE FILEPATH "Path to SDL2 DLL for installation (optional)")
+		endif()
+		if(BUILD_CLIENT AND ENABLE_SOUND)
+			set(OPENAL_DLL "" CACHE FILEPATH "Path to OpenAL DLL for installation (optional)")
+			set(OGG_DLL "" CACHE FILEPATH "Path to Ogg DLL for installation (optional)")
 			set(VORBIS_DLL "" CACHE FILEPATH "Path to Vorbis DLLs for installation (optional)")
 		endif()
 		if(USE_GETTEXT)
@@ -614,12 +461,31 @@ else()
 	endif()
 
 	if (ANDROID)
-		include_directories(${ANDROID_NDK}/sources/android/native_app_glue)
-		add_library(native_app_glue OBJECT ${ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.c)
-		set(PLATFORM_LIBS ${PLATFORM_LIBS} native_app_glue)
-
 		set(PLATFORM_LIBS ${PLATFORM_LIBS} android log)
 	endif()
+endif()
+
+# On clang and gcc, some functionalities of std::atomic require -latomic.
+# See <https://en.cppreference.com/w/cpp/atomic/atomic#Notes>.
+# Note that find_library does not reliably find it so we have to resort to this.
+# Also, passing -latomic is not always the same as adding atomic to the library list.
+include(CheckCSourceCompiles)
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	set(CMAKE_REQUIRED_LIBRARIES "-latomic")
+	check_c_source_compiles("int main(){}" HAVE_LINK_ATOMIC)
+	set(CMAKE_REQUIRED_LIBRARIES "")
+	if(HAVE_LINK_ATOMIC)
+		set(PLATFORM_LIBS ${PLATFORM_LIBS} "-latomic")
+	endif()
+endif()
+
+include(CheckSymbolExists)
+check_symbol_exists(strlcpy "string.h" HAVE_STRLCPY)
+
+if(UNIX)
+	check_symbol_exists(malloc_trim "malloc.h" HAVE_MALLOC_TRIM)
+else()
+	set(HAVE_MALLOC_TRIM FALSE)
 endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
@@ -646,18 +512,14 @@ add_subdirectory(debug)
 add_subdirectory(threading)
 add_subdirectory(content)
 add_subdirectory(database)
-add_subdirectory(gui)
 add_subdirectory(mapgen)
 add_subdirectory(network)
 add_subdirectory(script)
-add_subdirectory(unittest)
-add_subdirectory(benchmark)
 add_subdirectory(util)
-add_subdirectory(irrlicht_changes)
 add_subdirectory(server)
 
-
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL, not compatible with other)" 0)
+# == freeminer:
+OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 0)
 OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 1)
 if(USE_MULTI)
 	#set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
@@ -800,9 +662,9 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
 	fm_map.cpp
 	fm_server.cpp
 	fm_world_merge.cpp
+	fm_far_calc.cpp
 	key_value_storage.cpp
 	log_types.cpp
-	profiler.cpp
 	stat.cpp
     content_abm_grow_tree.cpp
     content_abm.cpp
@@ -810,85 +672,92 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
     fm_clientiface.cpp
     fm_serverenvironment.cpp
 	)
+# == end freeminer:
 
-
-set(common_SRCS
-	${FMcommon_SRCS}
-	${contrib_SRCS}
-
-	${database_SRCS}
-	${mapgen_SRCS}
-	${server_SRCS}
-	${content_SRCS}
-	ban.cpp
+# Source files that are identical between server & client builds.
+# This means they don't use or include anything that depends on the
+# CHECK_CLIENT_BUILD() macro. If you wrongly add something here there will be
+# a compiler error and you need to instead add it to client_SRCS or common_SRCS.
+set(independent_SRCS
 	chat.cpp
-	clientiface.cpp
-	collision.cpp
-	content_mapnode.cpp
 	content_nodemeta.cpp
 	convert_json.cpp
 	craftdef.cpp
 	debug.cpp
-	defaultsettings.cpp
-	emerge.cpp
-	environment.cpp
 	face_position_cache.cpp
-	filesys.cpp
-	gettext.cpp
+	gettext_plural_form.cpp
 	httpfetch.cpp
 	hud.cpp
 	inventory.cpp
-	inventorymanager.cpp
-	itemdef.cpp
 	itemstackmetadata.cpp
-	light.cpp
 	lighting.cpp
 	log.cpp
-	main.cpp
-	map.cpp
-	map_settings_manager.cpp
-	mapblock.cpp
-	mapnode.cpp
-	mapsector.cpp
 	metadata.cpp
 	modchannels.cpp
 	nameidmapping.cpp
-	nodedef.cpp
 	nodemetadata.cpp
 	nodetimer.cpp
 	noise.cpp
 	objdef.cpp
 	object_properties.cpp
 	particles.cpp
-	pathfinder.cpp
-	player.cpp
-	porting.cpp
 	profiler.cpp
-	raycast.cpp
-	reflowscan.cpp
-	remoteplayer.cpp
-	rollback.cpp
-	rollback_interface.cpp
 	serialization.cpp
-	server.cpp
-	serverenvironment.cpp
-	serverlist.cpp
 	settings.cpp
 	staticobject.cpp
 	terminal_chat_console.cpp
 	texture_override.cpp
 	tileanimation.cpp
 	tool.cpp
+	${common_network_SRCS}
+	${content_SRCS}
+	${database_SRCS}
+	${threading_SRCS}
+	${util_SRCS}
+)
+
+# /!\ Consider carefully before adding files here /!\
+set(common_SRCS
+	${FMcommon_SRCS}
+	${contrib_SRCS}
+
+	${DEBUG_SRCS}
+	clientdynamicinfo.cpp
+	collision.cpp
+	content_mapnode.cpp
+	defaultsettings.cpp
+	emerge.cpp
+	environment.cpp
+	filesys.cpp
+	gettext.cpp
+	inventorymanager.cpp
+	itemdef.cpp
+	light.cpp
+	main.cpp
+	map_settings_manager.cpp
+	map.cpp
+	mapblock.cpp
+	mapnode.cpp
+	mapsector.cpp
+	nodedef.cpp
+	pathfinder.cpp
+	player.cpp
+	porting.cpp
+	raycast.cpp
+	reflowscan.cpp
+	remoteplayer.cpp
+	rollback_interface.cpp
+	server.cpp
+	serverenvironment.cpp
+	servermap.cpp
 	translation.cpp
 	version.cpp
 	voxel.cpp
 	voxelalgorithms.cpp
-	hud.cpp
-	${common_network_SRCS}
-	${JTHREAD_SRCS}
 	${common_SCRIPT_SRCS}
-	${UTIL_SRCS}
-	${DEBUG_SRCS}
+	${common_server_SRCS}
+	${mapgen_SRCS}
+	${server_network_SRCS}
 )
 
 if(ANDROID)
@@ -896,17 +765,23 @@ if(ANDROID)
 endif()
 
 if(BUILD_UNITTESTS)
+	add_subdirectory(unittest)
 	set(common_SRCS ${common_SRCS} ${UNITTEST_SRCS})
 endif()
 
 if(BUILD_BENCHMARKS)
+	add_subdirectory(benchmark)
 	set(common_SRCS ${common_SRCS} ${BENCHMARK_SRCS})
+endif()
+
+if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
+	set(common_SRCS ${common_SRCS} catch.cpp)
 endif()
 
 # This gives us the icon and file version information
 if(WIN32)
 	set(WINRESOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/winresource.rc")
-	set(MINETEST_EXE_MANIFEST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/freeminer.exe.manifest")
+	set(EXE_MANIFEST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../misc/freeminer.exe.manifest")
 	if(MINGW)
 		if(NOT CMAKE_RC_COMPILER)
 			set(CMAKE_RC_COMPILER "windres.exe")
@@ -916,20 +791,22 @@ if(WIN32)
 			-i${WINRESOURCE_FILE}
 			-o ${CMAKE_CURRENT_BINARY_DIR}/winresource_rc.o
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-			DEPENDS ${WINRESOURCE_FILE} ${MINETEST_EXE_MANIFEST_FILE})
+			DEPENDS ${WINRESOURCE_FILE} ${EXE_MANIFEST_FILE})
 		SET(extra_windows_SRCS ${CMAKE_CURRENT_BINARY_DIR}/winresource_rc.o)
 	else(MINGW) # Probably MSVC
-		set(extra_windows_SRCS ${WINRESOURCE_FILE} ${MINETEST_EXE_MANIFEST_FILE})
+		set(extra_windows_SRCS ${WINRESOURCE_FILE} ${EXE_MANIFEST_FILE})
 	endif(MINGW)
 endif()
 
 set(FMclient_SRCS
-	#guiTextInputMenu.cpp
+	guiTextInputMenu.cpp
 )
 
 # Client sources
 if (BUILD_CLIENT)
 	add_subdirectory(client)
+	add_subdirectory(gui)
+	add_subdirectory(irrlicht_changes)
 endif(BUILD_CLIENT)
 
 set(client_SRCS
@@ -951,13 +828,11 @@ if(BUILD_BENCHMARKS)
 	set(client_SRCS ${client_SRCS} ${BENCHMARK_CLIENT_SRCS})
 endif()
 
-list(SORT client_SRCS)
-
 # Server sources
+# (nothing here because a client always comes with a server)
 set(server_SRCS
 	${common_SRCS}
 )
-list(SORT server_SRCS)
 
 # Avoid source_group on broken CMake version.
 # see issue #7074 #7075
@@ -978,6 +853,9 @@ include_directories(SYSTEM
 	${GMP_INCLUDE_DIR}
 	${JSON_INCLUDE_DIR}
 	${LUA_BIT_INCLUDE_DIR}
+	# on Android, Luanti depends on SDL2 directly
+	# on other platforms, only IrrlichtMt depends on SDL2
+	"$<$<PLATFORM_ID:Android>:${SDL2_INCLUDE_DIRS}>"
 )
 
 #freeminer includes:
@@ -1004,24 +882,95 @@ endif()
 if (NO_BUILD_BIN_DIR)
 
 # When cross-compiling assume the user doesn't want to run the executable anyway,
-# otherwise place it in <source dir>/bin/ since Minetest can only run from there.
+# otherwise place it in <source dir>/bin/ since Luanti can only run from there.
 if(NOT CMAKE_CROSSCOMPILING)
 	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
-
 else()
 	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}")
+endif()
+
+# shared object target
+add_library(EngineCommon OBJECT
+	${independent_SRCS}
+)
+add_dependencies(EngineCommon GenerateVersion)
+target_link_libraries(EngineCommon
+	sha256
+)
+get_target_property(
+	IRRLICHT_INCLUDES IrrlichtMt::IrrlichtMt INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(EngineCommon PRIVATE ${IRRLICHT_INCLUDES})
+if(PRECOMPILE_HEADERS)
+	target_precompile_headers(EngineCommon PRIVATE ${PRECOMPILED_HEADERS_LIST})
+endif()
+
+if(APPLE)
+	# Configure the Info.plist file
+	configure_file(
+		"${CMAKE_SOURCE_DIR}/misc/macos/Info.plist.in"
+		"${CMAKE_BINARY_DIR}/Info.plist"
+	)
 endif()
 
 if(BUILD_CLIENT)
+	# client target
 	if(ANDROID)
-		add_library(${PROJECT_NAME} SHARED ${client_SRCS})
+		add_library(${PROJECT_NAME} SHARED)
 	else()
-		add_executable(${PROJECT_NAME} ${client_SRCS} ${extra_windows_SRCS})
+		add_executable(${PROJECT_NAME})
 	endif()
-	add_dependencies(${PROJECT_NAME} GenerateVersion)
+
+
+	if(CMAKE_GENERATOR STREQUAL "Xcode")
+		# File with used entitlements
+		set(XCODE_CODE_SIGN_ENTITLEMENTS "${CMAKE_SOURCE_DIR}/misc/macos/entitlements/release.entitlements" CACHE FILEPATH "Path to entitlements file to be used with Xcode signing")
+
+		set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/build")
+		set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/build")
+
+		target_sources(${PROJECT_NAME} PUBLIC ${client_RESOURCES})
+
+		add_dependencies(${PROJECT_NAME} translations)
+
+		set_target_properties(${PROJECT_NAME} PROPERTIES
+			MACOSX_BUNDLE TRUE
+			MACOSX_BUNDLE_INFO_PLIST "${CMAKE_BINARY_DIR}/Info.plist"
+			RESOURCE "${client_RESOURCES}"
+			XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "org.freeminer.freeminer"
+			XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
+			XCODE_ATTRIBUTE_INSTALL_PATH "/Applications"
+			XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+			XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+			XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
+			XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "$(inherited)"
+			XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${XCODE_CODE_SIGN_ENTITLEMENTS}"
+		)
+
+		# Prinv env variables to file, for debugging purposes
+		#add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+		#	COMMAND ${CMAKE_COMMAND} -E env bash ${CMAKE_SOURCE_DIR}/util/xcode/capture_env.sh ${CMAKE_BINARY_DIR}/post_env.log
+		#)
+
+		add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/util/xcode/install_resources.cmake
+				-DTARGET_DIR=$<TARGET_FILE_DIR:${PROJECT_NAME}>
+				-DBINARY_DIR=${CMAKE_BINARY_DIR}
+				-DPROJECT_NAME=${PROJECT_NAME}
+			COMMENT "Checking INSTALL_ROOT and copying resources"
+		)
+	endif()
+
+	list(SORT client_SRCS)
+	target_sources(${PROJECT_NAME} PRIVATE
+		$<TARGET_OBJECTS:EngineCommon>
+		${client_SRCS}
+		${extra_windows_SRCS}
+	)
+
 	target_link_libraries(
 		${PROJECT_NAME}
 		${ZLIB_LIBRARIES}
@@ -1040,8 +989,14 @@ if(BUILD_CLIENT)
 		${OSMIUM_LIRARY}
 
 		${LUA_BIT_LIBRARY}
+		sha256
 		${FREETYPE_LIBRARY}
+		${PLATFORM_LIBS}
+		# on Android, Luanti depends on SDL2 directly
+		# on other platforms, only IrrlichtMt depends on SDL2
+		"$<$<PLATFORM_ID:Android>:${SDL2_LIBRARIES}>"
 	)
+	target_compile_definitions(${PROJECT_NAME} PRIVATE "MT_BUILDTARGET=1")
 	if(NOT USE_LUAJIT)
 		set_target_properties(${PROJECT_NAME} PROPERTIES
 			# This is necessary for dynamic Lua modules
@@ -1091,8 +1046,15 @@ if(BUILD_CLIENT)
 	if (USE_SPATIAL)
 		target_link_libraries(${PROJECT_NAME} ${SPATIAL_LIBRARY})
 	endif()
-	if(BUILD_BENCHMARKS)
-		target_link_libraries(${PROJECT_NAME} catch2)
+	if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
+		target_link_libraries(${PROJECT_NAME} Catch2::Catch2)
+	endif()
+	if(BUILD_WITH_TRACY)
+		target_link_libraries(${PROJECT_NAME} Tracy::TracyClient)
+	endif()
+
+	if(PRECOMPILE_HEADERS)
+		target_precompile_headers(${PROJECT_NAME} PRIVATE ${PRECOMPILED_HEADERS_LIST})
 	endif()
 
 	target_link_libraries(${PROJECT_NAME} ${PLATFORM_LIBS})
@@ -1100,12 +1062,18 @@ endif(BUILD_CLIENT)
 
 
 if(BUILD_SERVER)
-	add_executable(${PROJECT_NAME}server ${server_SRCS} ${extra_windows_SRCS})
-	add_dependencies(${PROJECT_NAME}server GenerateVersion)
+	# server target
+	add_executable(${PROJECT_NAME}server)
+	list(SORT server_SRCS)
+	target_sources(${PROJECT_NAME}server PRIVATE
+		$<TARGET_OBJECTS:EngineCommon>
+		${server_SRCS}
+		${extra_windows_SRCS}
+	)
 
+	# don't link the irrlicht library
 	get_target_property(
 		IRRLICHT_INCLUDES IrrlichtMt::IrrlichtMt INTERFACE_INCLUDE_DIRECTORIES)
-	# Doesn't work without PRIVATE/PUBLIC/INTERFACE mode specified.
 	target_include_directories(${PROJECT_NAME}server PRIVATE ${IRRLICHT_INCLUDES})
 	target_link_libraries(
 		${PROJECT_NAME}server
@@ -1122,10 +1090,12 @@ if(BUILD_SERVER)
 
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}
+		sha256
 		${GMP_LIBRARY}
 	)
-	set_target_properties(${PROJECT_NAME}server PROPERTIES
-		COMPILE_DEFINITIONS "SERVER")
+	target_compile_definitions(${PROJECT_NAME}server PRIVATE "MT_BUILDTARGET=2")
+	target_compile_definitions(${PROJECT_NAME}server PRIVATE IS_SERVER_BUILD)
+
 	if(NOT USE_LUAJIT)
 		set_target_properties(${PROJECT_NAME}server PROPERTIES
 			# This is necessary for dynamic Lua modules
@@ -1164,9 +1134,15 @@ if(BUILD_SERVER)
 			${CURL_LIBRARIES}
 		)
 	endif()
-	set_target_properties(${PROJECT_NAME}server PROPERTIES COMPILE_DEFINITIONS "SERVER")
-	if(BUILD_BENCHMARKS)
-		target_link_libraries(${PROJECT_NAME}server catch2)
+	if(BUILD_UNITTESTS OR BUILD_BENCHMARKS)
+		target_link_libraries(${PROJECT_NAME}server Catch2::Catch2)
+	endif()
+	if(BUILD_WITH_TRACY)
+		target_link_libraries(${PROJECT_NAME}server Tracy::TracyClient)
+	endif()
+
+	if(PRECOMPILE_HEADERS)
+		target_precompile_headers(${PROJECT_NAME}server PRIVATE ${PRECOMPILED_HEADERS_LIST})
 	endif()
 
 	target_link_libraries(${PROJECT_NAME}server ${PLATFORM_LIBS})
@@ -1194,15 +1170,16 @@ endif()
 # Set some optimizations and tweaks
 
 include(CheckCSourceCompiles)
-include(CheckSymbolExists)
 
 set(CMAKE_REQUIRED_INCLUDES ${LUA_INCLUDE_DIR})
 if(USE_LUAJIT)
-	set(CMAKE_REQUIRED_LIBRARIES ${LUA_LIBRARY})
+	# libm usually required if statically linking
+	set(CMAKE_REQUIRED_LIBRARIES ${LUA_LIBRARY} m)
 	# LuaJIT provides exactly zero ways to determine how recent it is (the version
 	# is unchanged since 2017), however it happens that string buffers were added
 	# after the changes which we care about so that works as an indicator.
 	# (https://github.com/LuaJIT/LuaJIT/commit/4c6b669 March 2021)
+	# Note: This is no longer true as of August 2023, but we're keeping the old check.
 	unset(HAVE_RECENT_LJ CACHE)
 	check_symbol_exists(luaopen_string_buffer "lualib.h" HAVE_RECENT_LJ)
 	if(NOT HAVE_RECENT_LJ)
@@ -1222,7 +1199,7 @@ elseif(NOT MSVC)
 	check_c_source_compiles("#include <lua.h>\nint main(){return sizeof(lua_atccall);}" HAVE_ATCCALL)
 	if(NOT HAVE_ATCCALL)
 		string(CONCAT explanation_msg
-			"It looks like you're trying to build Minetest using a system-wide "
+			"It looks like you're trying to build ${PROJECT_NAME_CAPITALIZED} using a system-wide "
 			"Lua installation. This is no longer supported because PUC Lua "
 			"cannot interoperate with C++ correctly. Read src/unittest/test_lua.cpp "
 			" for technical details.")
@@ -1232,7 +1209,7 @@ endif()
 
 if(MSVC)
 	# Visual Studio
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D _WIN32_WINNT=0x0601 /D WIN32_LEAN_AND_MEAN")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D _WIN32_WINNT=0x0601 /D WIN32_LEAN_AND_MEAN /D _CRT_SECURE_NO_WARNINGS")
 	# EHa enables SEH exceptions (used for catching segfaults)
 	set(CMAKE_CXX_FLAGS_RELEASE "/EHa /Ox /MD /GS- /Zi /fp:fast /D NDEBUG /D _HAS_ITERATOR_DEBUGGING=0")
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -1270,8 +1247,8 @@ if(MSVC)
 	endif()
 else()
 	# GCC or compatible compilers such as Clang
-	set(WARNING_FLAGS "-Wall -Wextra")
-	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-unused-parameter")
+	set(WARNING_FLAGS "-Wall -Wextra -Wno-unused-parameter -Werror=vla")
+	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-braced-scalar-init")
 	if(WARN_ALL)
 		set(RELEASE_WARNING_FLAGS "${WARNING_FLAGS}")
 	else()
@@ -1279,7 +1256,9 @@ else()
 	endif()
 
 	if(MINGW)
-		set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads -fexceptions")
+		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+			set(OTHER_FLAGS "${OTHER_FLAGS} -mthreads")
+		endif()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32_WINNT=0x0601 -DWIN32_LEAN_AND_MEAN")
 	endif()
 
@@ -1319,7 +1298,7 @@ else()
 	endif()
 
 	if(MINGW)
-		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -mwindows")
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-mwindows")
 	endif()
 
 endif()
@@ -1361,6 +1340,20 @@ if(WIN32 AND NOT STATIC_BUILD)
 				install(FILES ${VORBIS_DLL} DESTINATION ${BINDIR})
 			endif()
 		endif()
+		if(BUILD_CLIENT)
+			if(PNG_DLL)
+				install(FILES ${PNG_DLL} DESTINATION ${BINDIR})
+			endif()
+			if(JPEG_DLL)
+				install(FILES ${JPEG_DLL} DESTINATION ${BINDIR})
+			endif()
+			if(SDL2_DLL)
+				install(FILES ${SDL2_DLL} DESTINATION ${BINDIR})
+			endif()
+			if(FREETYPE_DLL)
+				install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
+			endif()
+		endif()
 		if(CURL_DLL)
 			install(FILES ${CURL_DLL} DESTINATION ${BINDIR})
 		endif()
@@ -1369,9 +1362,6 @@ if(WIN32 AND NOT STATIC_BUILD)
 		endif()
 		if(ZSTD_DLL)
 			install(FILES ${ZSTD_DLL} DESTINATION ${BINDIR})
-		endif()
-		if(BUILD_CLIENT AND FREETYPE_DLL)
-			install(FILES ${FREETYPE_DLL} DESTINATION ${BINDIR})
 		endif()
 		if(SQLITE3_DLL)
 			install(FILES ${SQLITE3_DLL} DESTINATION ${BINDIR})
@@ -1386,11 +1376,15 @@ if(WIN32 AND NOT STATIC_BUILD)
 			install(FILES ${GETTEXT_DLL} DESTINATION ${BINDIR})
 		endif()
 	endif()
-
-	if(BUILD_CLIENT AND IRRLICHT_DLL)
-		install(FILES ${IRRLICHT_DLL} DESTINATION ${BINDIR})
-	endif()
 endif()
+
+macro(CreateLegacyAlias _cmake_target _old_path _new_name)
+	add_custom_target("${_cmake_target}" ALL
+		COMMAND "${CMAKE_COMMAND}" -E create_symlink "${_new_name}" "${_old_path}"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+	add_dependencies("${_cmake_target}" "${_new_name}")
+	install(PROGRAMS "${_old_path}" DESTINATION ${BINDIR})
+endmacro()
 
 if(BUILD_CLIENT AND NOT ANDROID)
 	install(TARGETS ${PROJECT_NAME}
@@ -1399,6 +1393,9 @@ if(BUILD_CLIENT AND NOT ANDROID)
 		ARCHIVE DESTINATION ${BINDIR}
 		BUNDLE DESTINATION .
 	)
+	if(UNIX)
+		CreateLegacyAlias(minetest_alias "${EXECUTABLE_OUTPUT_PATH}/minetest" ${PROJECT_NAME})
+	endif()
 
 	if(APPLE)
 		install(CODE "
@@ -1411,7 +1408,7 @@ if(BUILD_CLIENT AND NOT ANDROID)
 	if(USE_GETTEXT)
 		foreach(LOCALE ${GETTEXT_USED_LOCALES})
 			set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-			set(MO_BUILD_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
+			set(MO_BUILD_PATH "${MO_BUILD_PATH}/luanti.mo")
 			install(FILES ${MO_BUILD_PATH} DESTINATION ${MO_DEST_PATH})
 		endforeach()
 	endif()
@@ -1422,6 +1419,9 @@ endif()
 
 if(BUILD_SERVER)
 	install(TARGETS ${PROJECT_NAME}server DESTINATION ${BINDIR})
+	if(UNIX)
+		CreateLegacyAlias(minetestserver_alias "${EXECUTABLE_OUTPUT_PATH}/minetestserver" ${PROJECT_NAME}server)
+	endif()
 endif()
 
 if (ANDROID)
@@ -1432,9 +1432,10 @@ elseif (USE_GETTEXT)
 
 	foreach(LOCALE ${GETTEXT_USED_LOCALES})
 		#set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/${PROJECT_NAME}.po")
-		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/minetest.po")
+		set(PO_FILE_PATH "${GETTEXT_PO_PATH}/${LOCALE}/luanti.po")
 		set_mo_paths(MO_BUILD_PATH MO_DEST_PATH ${LOCALE})
-		set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
+		#set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
+		set(MO_FILE_PATH "${MO_BUILD_PATH}/luanti.mo")
 
 		add_custom_command(OUTPUT ${MO_BUILD_PATH}
 			COMMAND ${CMAKE_COMMAND} -E make_directory ${MO_BUILD_PATH}

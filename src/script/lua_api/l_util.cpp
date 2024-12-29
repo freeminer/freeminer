@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_util.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "irrlichttypes_extrabloated.h"
 #include "lua_api/l_util.h"
@@ -36,6 +18,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "convert_json.h"
 #include "debug.h"
 #include "log.h"
+#include "log_internal.h"
 #include "tool.h"
 #include "filesys.h"
 #include "settings.h"
@@ -45,7 +28,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "version.h"
 #include "util/hex.h"
 #include "util/sha1.h"
+#include "my_sha256.h"
 #include "util/png.h"
+#include "player.h"
+#include "daynightratio.h"
 #include <cstdio>
 
 // only available in zstd 1.3.5+
@@ -62,13 +48,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 int ModApiUtil::l_log(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	std::string text;
+	std::string_view text;
 	LogLevel level = LL_NONE;
-	if (lua_isnone(L, 2)) {
-		text = luaL_checkstring(L, 1);
+	if (lua_isnoneornil(L, 2)) {
+		text = readParam<std::string_view>(L, 1);
 	} else {
-		std::string name = luaL_checkstring(L, 1);
-		text = luaL_checkstring(L, 2);
+		auto name = readParam<std::string_view>(L, 1);
+		text = readParam<std::string_view>(L, 2);
 		if (name == "deprecated") {
 			log_deprecated(L, text, 2);
 			return 0;
@@ -76,7 +62,7 @@ int ModApiUtil::l_log(lua_State *L)
 		level = Logger::stringToLevel(name);
 		if (level == LL_MAX) {
 			warningstream << "Tried to log at unknown level '" << name
-				<< "'.  Defaulting to \"none\"." << std::endl;
+				<< "'. Defaulting to \"none\"." << std::endl;
 			level = LL_NONE;
 		}
 	}
@@ -92,12 +78,16 @@ int ModApiUtil::l_get_us_time(lua_State *L)
 	return 1;
 }
 
-// parse_json(str[, nullvalue])
+// Maximum depth of a JSON object:
+// Reading and writing should not overflow the Lua, C, or jsoncpp stacks.
+constexpr static u16 MAX_JSON_DEPTH = 1024;
+
+// parse_json(str[, nullvalue, return_error])
 int ModApiUtil::l_parse_json(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	const char *jsonstr = luaL_checkstring(L, 1);
+	const auto jsonstr = readParam<std::string_view>(L, 1);
 
 	// Use passed nullvalue or default to nil
 	int nullindex = 2;
@@ -106,36 +96,39 @@ int ModApiUtil::l_parse_json(lua_State *L)
 		nullindex = lua_gettop(L);
 	}
 
-	Json::Value root;
-
-	{
-		std::istringstream stream(jsonstr);
-
-		Json::CharReaderBuilder builder;
-		builder.settings_["collectComments"] = false;
-		std::string errs;
-
-		if (!Json::parseFromStream(builder, stream, &root, &errs)) {
-			errorstream << "Failed to parse json data " << errs << std::endl;
-			size_t jlen = strlen(jsonstr);
-			if (jlen > 100) {
-				errorstream << "Data (" << jlen
-					<< " bytes) printed to warningstream." << std::endl;
-				warningstream << "data: \"" << jsonstr << "\"" << std::endl;
-			} else {
-				errorstream << "data: \"" << jsonstr << "\"" << std::endl;
-			}
+	bool return_error = lua_toboolean(L, 3);
+	const auto handle_error = [&](const char *errmsg) {
+		if (return_error) {
 			lua_pushnil(L);
-			return 1;
+			lua_pushstring(L, errmsg);
+			return 2;
 		}
+		errorstream << "Failed to parse json data: " << errmsg << std::endl;
+		errorstream << "data: \"";
+		if (jsonstr.size() <= 100) {
+			errorstream << jsonstr << "\"";
+		} else {
+			errorstream << jsonstr.substr(0, 100) << "\"... (truncated)";
+		}
+		errorstream << std::endl;
+		lua_pushnil(L);
+		return 1;
+	};
+
+	Json::Value root;
+	{
+		Json::CharReaderBuilder builder;
+		builder.settings_["stackLimit"] = MAX_JSON_DEPTH;
+		builder.settings_["collectComments"] = false;
+		const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+		std::string errmsg;
+		if (!reader->parse(jsonstr.data(), jsonstr.data() + jsonstr.size(), &root, &errmsg))
+			return handle_error(errmsg.c_str());
 	}
 
-	if (!push_json_value(L, root, nullindex)) {
-		errorstream << "Failed to parse json data, "
-			<< "depth exceeds lua stack limit" << std::endl;
-		errorstream << "data: \"" << jsonstr << "\"" << std::endl;
-		lua_pushnil(L);
-	}
+	if (!push_json_value(L, root, nullindex))
+		return handle_error("depth exceeds lua stack limit");
+
 	return 1;
 }
 
@@ -152,7 +145,7 @@ int ModApiUtil::l_write_json(lua_State *L)
 
 	Json::Value root;
 	try {
-		read_json_value(L, root, 1);
+		read_json_value(L, root, 1, MAX_JSON_DEPTH);
 	} catch (SerializationError &e) {
 		lua_pushnil(L);
 		lua_pushstring(L, e.what());
@@ -321,8 +314,7 @@ int ModApiUtil::l_compress(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+	auto data = readParam<std::string_view>(L, 1);
 
 	LuaCompressMethod method = get_compress_method(L, 2);
 
@@ -333,13 +325,13 @@ int ModApiUtil::l_compress(lua_State *L)
 		if (!lua_isnoneornil(L, 3))
 			level = readParam<int>(L, 3);
 
-		compressZlib(reinterpret_cast<const u8 *>(data), size, os, level);
+		compressZlib(data, os, level);
 	} else if (method == LUA_COMPRESS_METHOD_ZSTD) {
 		int level = ZSTD_CLEVEL_DEFAULT;
 		if (!lua_isnoneornil(L, 3))
 			level = readParam<int>(L, 3);
 
-		compressZstd(reinterpret_cast<const u8 *>(data), size, os, level);
+		compressZstd(data, os, level);
 	}
 
 	std::string out = os.str();
@@ -353,12 +345,12 @@ int ModApiUtil::l_decompress(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+	auto data = readParam<std::string_view>(L, 1);
 
 	LuaCompressMethod method = get_compress_method(L, 2);
 
-	std::istringstream is(std::string(data, size), std::ios_base::binary);
+	// FIXME: zero copy possible in c++26 or with custom rdbuf
+	std::istringstream is(std::string(data), std::ios_base::binary);
 	std::ostringstream os(std::ios_base::binary);
 
 	if (method == LUA_COMPRESS_METHOD_DEFLATE) {
@@ -378,10 +370,9 @@ int ModApiUtil::l_encode_base64(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+	auto data = readParam<std::string_view>(L, 1);
 
-	std::string out = base64_encode((const unsigned char *)(data), size);
+	std::string out = base64_encode(data);
 
 	lua_pushlstring(L, out.data(), out.size());
 	return 1;
@@ -392,9 +383,7 @@ int ModApiUtil::l_decode_base64(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	size_t size;
-	const char *d = luaL_checklstring(L, 1, &size);
-	const std::string data = std::string(d, size);
+	auto data = readParam<std::string_view>(L, 1);
 
 	if (!base64_is_valid(data)) {
 		lua_pushnil(L);
@@ -490,12 +479,11 @@ int ModApiUtil::l_safe_file_write(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	const char *path = luaL_checkstring(L, 1);
-	size_t size;
-	const char *content = luaL_checklstring(L, 2, &size);
+	auto content = readParam<std::string_view>(L, 2);
 
 	CHECK_SECURE_PATH(L, path, true);
 
-	bool ret = fs::safeWriteToFile(path, std::string(content, size));
+	bool ret = fs::safeWriteToFile(path, content);
 	lua_pushboolean(L, ret);
 
 	return 1;
@@ -536,7 +524,7 @@ int ModApiUtil::l_get_version(lua_State *L)
 	lua_pushnumber(L, SERVER_PROTOCOL_VERSION_MIN);
 	lua_setfield(L, table, "proto_min");
 
-	lua_pushnumber(L, SERVER_PROTOCOL_VERSION_MAX);
+	lua_pushnumber(L, LATEST_PROTOCOL_VERSION);
 	lua_setfield(L, table, "proto_max");
 
 	if (strcmp(g_version_string, g_version_hash) != 0) {
@@ -552,18 +540,16 @@ int ModApiUtil::l_get_version(lua_State *L)
 int ModApiUtil::l_sha1(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	size_t size;
-	const char *data = luaL_checklstring(L, 1, &size);
+
+	auto data = readParam<std::string_view>(L, 1);
 	bool hex = !lua_isboolean(L, 2) || !readParam<bool>(L, 2);
 
 	// Compute actual checksum of data
 	std::string data_sha1;
 	{
 		class SHA1 ctx;
-		ctx.addBytes(data, size);
-		unsigned char *data_tmpdigest = ctx.getDigest();
-		data_sha1.assign((char*) data_tmpdigest, 20);
-		free(data_tmpdigest);
+		ctx.addBytes(data);
+		data_sha1 = ctx.getDigest();
 	}
 
 	if (hex) {
@@ -571,6 +557,27 @@ int ModApiUtil::l_sha1(lua_State *L)
 		lua_pushstring(L, sha1_hex.c_str());
 	} else {
 		lua_pushlstring(L, data_sha1.data(), data_sha1.size());
+	}
+
+	return 1;
+}
+
+int ModApiUtil::l_sha256(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	auto data = readParam<std::string_view>(L, 1);
+	bool hex = !lua_isboolean(L, 2) || !readParam<bool>(L, 2);
+
+	std::string data_sha256;
+	data_sha256.resize(SHA256_DIGEST_LENGTH);
+	mt_SHA256(reinterpret_cast<const unsigned char*>(data.data()), data.size(),
+		reinterpret_cast<unsigned char *>(data_sha256.data()));
+
+	if (hex) {
+		lua_pushstring(L, hex_encode(data_sha256).c_str());
+	} else {
+		lua_pushlstring(L, data_sha256.data(), data_sha256.size());
 	}
 
 	return 1;
@@ -613,6 +620,31 @@ int ModApiUtil::l_colorspec_to_bytes(lua_State *L)
 	return 0;
 }
 
+// colorspec_to_table(colorspec)
+int ModApiUtil::l_colorspec_to_table(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	video::SColor color(0);
+	if (read_color(L, 1, &color)) {
+		push_ARGB8(L, color);
+		return 1;
+	}
+
+	return 0;
+}
+
+// time_to_day_night_ratio(time_of_day)
+int ModApiUtil::l_time_to_day_night_ratio(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	float time_of_day = lua_tonumber(L, 1) * 24000;
+	u32 dnr = time_to_daynight_ratio(time_of_day, true);
+	lua_pushnumber(L, dnr / 1000.0f);
+	return 1;
+}
+
 // encode_png(w, h, data, level)
 int ModApiUtil::l_encode_png(lua_State *L)
 {
@@ -635,12 +667,10 @@ int ModApiUtil::l_get_last_run_mod(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	lua_rawgeti(L, LUA_REGISTRYINDEX, CUSTOM_RIDX_CURRENT_MOD_NAME);
-	std::string current_mod = readParam<std::string>(L, -1, "");
-	if (current_mod.empty()) {
-		lua_pop(L, 1);
-		lua_pushstring(L, getScriptApiBase(L)->getOrigin().c_str());
-	}
+	std::string current_mod = ScriptApiBase::getCurrentModNameInsecure(L);
+	if (current_mod.empty())
+		current_mod = getScriptApiBase(L)->getOrigin();
+	lua_pushstring(L, current_mod.c_str());
 	return 1;
 }
 
@@ -659,8 +689,18 @@ int ModApiUtil::l_urlencode(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	const char *value = luaL_checkstring(L, 1);
-	lua_pushstring(L, urlencode(value).c_str());
+	auto s = readParam<std::string_view>(L, 1);
+	lua_pushstring(L, urlencode(s).c_str());
+	return 1;
+}
+
+// is_valid_player_name(name)
+int ModApiUtil::l_is_valid_player_name(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	auto s = readParam<std::string_view>(L, 1);
+	lua_pushboolean(L, is_valid_player_name(s));
 	return 1;
 }
 
@@ -702,8 +742,11 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 
 	API_FCT(get_version);
 	API_FCT(sha1);
+	API_FCT(sha256);
 	API_FCT(colorspec_to_colorstring);
 	API_FCT(colorspec_to_bytes);
+	API_FCT(colorspec_to_table);
+	API_FCT(time_to_day_night_ratio);
 
 	API_FCT(encode_png);
 
@@ -711,6 +754,7 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(set_last_run_mod);
 
 	API_FCT(urlencode);
+	API_FCT(is_valid_player_name);
 
 	LuaSettings::create(L, g_settings, g_settings_path);
 	lua_setfield(L, top, "settings");
@@ -735,8 +779,14 @@ void ModApiUtil::InitializeClient(lua_State *L, int top)
 
 	API_FCT(get_version);
 	API_FCT(sha1);
+	API_FCT(sha256);
 	API_FCT(colorspec_to_colorstring);
 	API_FCT(colorspec_to_bytes);
+	API_FCT(colorspec_to_table);
+	API_FCT(time_to_day_night_ratio);
+
+	API_FCT(get_last_run_mod);
+	API_FCT(set_last_run_mod);
 
 	API_FCT(urlencode);
 
@@ -768,15 +818,18 @@ void ModApiUtil::InitializeAsync(lua_State *L, int top)
 	API_FCT(get_dir_list);
 	API_FCT(safe_file_write);
 
-	API_FCT(request_insecure_environment);
+	// no request_insecure_environment here! mod origins are not tracked securely here.
 
 	API_FCT(encode_base64);
 	API_FCT(decode_base64);
 
 	API_FCT(get_version);
 	API_FCT(sha1);
+	API_FCT(sha256);
 	API_FCT(colorspec_to_colorstring);
 	API_FCT(colorspec_to_bytes);
+	API_FCT(colorspec_to_table);
+	API_FCT(time_to_day_night_ratio);
 
 	API_FCT(encode_png);
 

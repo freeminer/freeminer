@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "settings.h"
 #include "convert_json.h"
@@ -102,7 +87,7 @@ void SettingsHierarchy::onLayerRemoved(int layer)
 
 /* Settings implementation */
 
-Settings *Settings::createLayer(SettingsLayer sl, const std::string &end_tag)
+Settings *Settings::createLayer(SettingsLayer sl, std::string_view end_tag)
 {
 	return new Settings(end_tag, &g_hierarchy, (int)sl);
 }
@@ -114,7 +99,7 @@ Settings *Settings::getLayer(SettingsLayer sl)
 }
 
 
-Settings::Settings(const std::string &end_tag, SettingsHierarchy *h,
+Settings::Settings(std::string_view end_tag, SettingsHierarchy *h,
 		int settings_layer) :
 	m_end_tag(end_tag),
 	m_hierarchy(h),
@@ -136,7 +121,7 @@ Settings::~Settings()
 }
 
 
-Settings & Settings::operator = (const Settings &other)
+Settings & Settings::operator=(const Settings &other)
 {
 	if (&other == this)
 		return *this;
@@ -156,7 +141,7 @@ Settings & Settings::operator = (const Settings &other)
 }
 
 
-bool Settings::checkNameValid(const std::string &name)
+bool Settings::checkNameValid(std::string_view name)
 {
 	bool valid = name.find_first_of("=\"{}#") == std::string::npos;
 	if (valid)
@@ -171,7 +156,7 @@ bool Settings::checkNameValid(const std::string &name)
 }
 
 
-bool Settings::checkValueValid(const std::string &value)
+bool Settings::checkValueValid(std::string_view value)
 {
 	if (value.substr(0, 3) == "\"\"\"" ||
 		value.find("\n\"\"\"") != std::string::npos) {
@@ -404,28 +389,25 @@ bool Settings::updateConfigFile(const std::string &filename)
 	if (!was_modified)
 		return true;
 
-	if (!fs::safeWriteToFile(filename.c_str(), os.str())) {
-		errorstream << "Error writing configuration file: \""
-			<< filename << "\"" << std::endl;
+	if (!fs::safeWriteToFile(filename, os.str()))
 		return false;
-	}
 
 	return true;
 }
 
 
 bool Settings::parseCommandLine(int argc, char *argv[],
-		std::map<std::string, ValueSpec> &allowed_options)
+		const std::map<std::string, ValueSpec> &allowed_options)
 {
 	int nonopt_index = 0;
 	for (int i = 1; i < argc; i++) {
-		std::string arg_name = argv[i];
+		std::string_view arg_name(argv[i]);
 		if (arg_name.substr(0, 2) != "--") {
 			// If option doesn't start with -, read it in as nonoptX
-			if (arg_name[0] != '-'){
+			if (arg_name[0] != '-') {
 				std::string name = "nonopt";
 				name += itos(nonopt_index);
-				set(name, arg_name);
+				set(name, std::string(arg_name));
 				nonopt_index++;
 				continue;
 			}
@@ -437,10 +419,9 @@ bool Settings::parseCommandLine(int argc, char *argv[],
 */
 		}
 
-		std::string name = arg_name.substr(2);
+		std::string name(arg_name.substr(2));
 
-		std::map<std::string, ValueSpec>::iterator n;
-		n = allowed_options.find(name);
+		auto n = allowed_options.find(name);
 		if (n == allowed_options.end()) {
 			errorstream << "Unknown command-line parameter \""
 					<< arg_name << "\"" << std::endl;
@@ -584,18 +565,6 @@ v3f Settings::getV3F(const std::string &name) const
 	return str_to_v3f(get(name));
 }
 
-#if USE_OPOS64
-v3opos_t Settings::getV3O(const std::string &name) const
-{
-	v3opos_t value;
-	Strfnd f(get(name));
-	f.next("(");
-	value.X = stod(f.next(","));
-	value.Y = stod(f.next(","));
-	value.Z = stod(f.next(")"));
-	return value;
-}
-#endif
 
 u32 Settings::getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 	u32 *flagmask) const
@@ -886,7 +855,7 @@ bool Settings::getV3FNoEx(const std::string &name, v3f &val) const
 bool Settings::getV3FNoEx(const std::string &name, v3opos_t &val) const
 {
 	try {
-		val = getV3O(name);
+		val = v3fToOpos(getV3F(name));
 		return true;
 	} catch (SettingNotFoundException &e) {
 		return false;
@@ -1092,7 +1061,7 @@ bool Settings::remove(const std::string &name)
 SettingsParseEvent Settings::parseConfigObject(const std::string &line,
 	std::string &name, std::string &value)
 {
-	std::string trimmed_line = trim(line);
+	auto trimmed_line = trim(line);
 
 	if (trimmed_line.empty())
 		return SPE_NONE;
@@ -1152,21 +1121,22 @@ void Settings::registerChangedCallback(const std::string &name,
 	m_callbacks[name].emplace_back(cbf, userdata);
 }
 
-void Settings::deregisterChangedCallback(const std::string &name,
-	SettingsChangedCallback cbf, void *userdata)
+size_t Settings::deregisterAllChangedCallbacks(const void *userdata)
 {
 	MutexAutoLock lock(m_callback_mutex);
-	SettingsCallbackMap::iterator it_cbks = m_callbacks.find(name);
 
-	if (it_cbks != m_callbacks.end()) {
-		SettingsCallbackList &cbks = it_cbks->second;
-
-		SettingsCallbackList::iterator position =
-			std::find(cbks.begin(), cbks.end(), std::make_pair(cbf, userdata));
-
-		if (position != cbks.end())
-			cbks.erase(position);
+	size_t n_removed = 0;
+	for (auto &settings : m_callbacks) {
+		for (auto cb = settings.second.begin(); cb != settings.second.end();) {
+			if (cb->second == userdata) {
+				cb = settings.second.erase(cb);
+				n_removed++;
+			} else {
+				++cb;
+			}
+		}
 	}
+	return n_removed;
 }
 
 void Settings::removeSecureSettings()

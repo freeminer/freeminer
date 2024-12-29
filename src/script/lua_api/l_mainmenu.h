@@ -1,24 +1,6 @@
-/*
-script/lua_api/l_mainmenu.h
-Copyright (C) 2013 sapier
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 sapier
 
 #pragma once
 
@@ -37,7 +19,7 @@ private:
 	 * @param name name of variable to read
 	 * @return string value of requested variable
 	 */
-	static std::string getTextData(lua_State *L, std::string name);
+	static std::string getTextData(lua_State *L, const std::string &name);
 
 	/**
 	 * read an integer variable from gamedata table within lua stack
@@ -45,7 +27,7 @@ private:
 	 * @param name name of variable to read
 	 * @return integer value of requested variable
 	 */
-	static int getIntegerData(lua_State *L, std::string name,bool& valid);
+	static int getIntegerData(lua_State *L, const std::string &name, bool& valid);
 
 	/**
 	 * read a bool variable from gamedata table within lua stack
@@ -53,7 +35,7 @@ private:
 	 * @param name name of variable to read
 	 * @return bool value of requested variable
 	 */
-	static int getBoolData(lua_State *L, std::string name,bool& valid);
+	static int getBoolData(lua_State *L, const std::string &name ,bool& valid);
 
 	/**
 	 * Checks if a path may be modified. Paths in the temp directory or the user
@@ -82,6 +64,8 @@ private:
 
 	static int l_get_mapgen_names(lua_State *L);
 
+	static int l_get_language(lua_State *L);
+
 	static int l_gettext(lua_State *L);
 
 	//packages
@@ -91,6 +75,8 @@ private:
 	static int l_get_content_info(lua_State *L);
 
 	static int l_check_mod_configuration(lua_State *L);
+
+	static int l_get_content_translation(lua_State *L);
 
 	//gui
 
@@ -119,6 +105,8 @@ private:
 	static int l_get_active_renderer(lua_State *L);
 
 	static int l_get_active_irrlicht_device(lua_State *L);
+
+	static int l_irrlicht_device_supports_touch(lua_State *L);
 
 	//filesystem
 
@@ -163,16 +151,16 @@ private:
 
 	static int l_get_max_supp_proto(lua_State *L);
 
+	static int l_get_formspec_version(lua_State  *L);
+
 	// other
 	static int l_open_url(lua_State *L);
+
+	static int l_open_url_dialog(lua_State *L);
 
 	static int l_open_dir(lua_State *L);
 
 	static int l_share_file(lua_State *L);
-
-	static int l_set_once(lua_State *L);
-
-	static int l_get_once(lua_State *L);
 
 	// async
 	static int l_do_async_callback(lua_State *L);

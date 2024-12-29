@@ -1,31 +1,13 @@
-/*
-serialization.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes.h"
 #include "exceptions.h"
 #include <iostream>
-#include "util/pointer.h"
+#include <string_view>
 
 /*
 	Map format serialization version
@@ -86,21 +68,29 @@ inline bool ser_ver_supported(s32 v) {
 }
 
 /*
-	Misc. serialization functions
+	Compression functions
 */
 
 void compressZlib(const u8 *data, size_t data_size, std::ostream &os, int level = 2);
-void compressZlib(const std::string &data, std::ostream &os, int level = 2);
+inline void compressZlib(std::string_view data, std::ostream &os, int level = 2)
+{
+	compressZlib(reinterpret_cast<const u8*>(data.data()), data.size(), os, level);
+}
 void decompressZlib(std::istream &is, std::ostream &os, size_t limit = 0);
 
 void compressZstd(const u8 *data, size_t data_size, std::ostream &os, int level = 2);
-void compressZstd(const std::string &data, std::ostream &os, int level = 2);
+inline void compressZstd(std::string_view data, std::ostream &os, int level = 2)
+{
+	compressZstd(reinterpret_cast<const u8*>(data.data()), data.size(), os, level);
+}
 void decompressZstd(std::istream &is, std::ostream &os);
 
-// These choose between zlib and a self-made one according to version
-void compress(const SharedBuffer<u8> &data, std::ostream &os, u8 version, int level = -1);
-void compress(const std::string &data, std::ostream &os, u8 version, int level = -1);
-void compress(u8 *data, u32 size, std::ostream &os, u8 version, int level = -1);
+// These choose between zstd, zlib and a self-made one according to version
+void compress(const u8 *data, u32 size, std::ostream &os, u8 version, int level = 2);
+inline void compress(std::string_view data, std::ostream &os, u8 version, int level = 2)
+{
+	compress(reinterpret_cast<const u8*>(data.data()), data.size(), os, version, level);
+}
 void decompress(std::istream &is, std::ostream &os, u8 version);
 
 //freeminer:

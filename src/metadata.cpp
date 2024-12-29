@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "metadata.h"
 #include "log.h"
@@ -70,7 +55,7 @@ bool IMetadata::getStringToRef(const std::string &name,
 const std::string &IMetadata::resolveString(const std::string &str, std::string *place,
 		u16 recursion, bool deprecated) const
 {
-	if (recursion <= 1 && str.substr(0, 2) == "${" && str[str.length() - 1] == '}') {
+	if (recursion <= 1 && str_starts_with(str, "${") && str.back() == '}') {
 		if (deprecated) {
 			warningstream << "Deprecated use of recursive resolution syntax in metadata: ";
 			safe_print_string(warningstream, str);
@@ -128,7 +113,7 @@ const std::string *SimpleMetadata::getStringRaw(const std::string &name, std::st
 	return found != m_stringvars.cend() ? &found->second : nullptr;
 }
 
-bool SimpleMetadata::setString(const std::string &name, const std::string &var)
+bool SimpleMetadata::setString(const std::string &name, std::string_view var)
 {
 	if (var.empty()) {
 		if (m_stringvars.erase(name) == 0)
@@ -137,7 +122,7 @@ bool SimpleMetadata::setString(const std::string &name, const std::string &var)
 		StringMap::iterator it = m_stringvars.find(name);
 		if (it != m_stringvars.end() && it->second == var)
 			return false;
-		m_stringvars[name] = var;
+		m_stringvars[name].assign(var);
 	}
 	m_modified = true;
 	return true;

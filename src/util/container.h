@@ -1,31 +1,15 @@
-/*
-util/container.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include "irrlichttypes.h"
+#include "debug.h" // sanity_check
 #include "exceptions.h"
 #include "threading/mutex_auto_lock.h"
 #include "threading/semaphore.h"
+#include <atomic>
 #include <list>
 #include <vector>
 #include <map>
@@ -33,9 +17,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "unordered_map_hash.h"
 #include <unordered_set>
 #include <queue>
+#include <cassert>
+#include <limits>
 
 /*
-Queue with unique values with fast checking of value existence
+	Queue with unique values with fast checking of value existence
 */
 
 template<typename Value>
@@ -78,6 +64,10 @@ public:
 	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
 	std::queue<Value> m_queue;
 };
+
+/*
+	Thread-safe map
+*/
 
 template<typename Key, typename Value>
 class MutexedMap
@@ -183,27 +173,27 @@ public:
 
 	void push_back(T t)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		std::queue<T>::push(t);
 	}
 
 	void push(T t)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		std::queue<T>::push(t);
 	}
 
 	template<typename... Args>
 	decltype(auto) emplace(Args&&... args)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		return std::queue<T>::emplace(std::forward<Args>(args)...);
 	}
 
 	template<typename... Args>
 	decltype(auto) emplace_back(Args&&... args)
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		return std::queue<T>::emplace_back(std::forward<Args>(args)...);
 	}
 
@@ -213,7 +203,7 @@ public:
 
 	T pop_front()
 	{
-		auto lock = lock_unique();
+		const auto lock = lock_unique();
 		T val = std::queue<T>::front();
 		std::queue<T>::pop();
 		return val;
@@ -221,18 +211,20 @@ public:
 
 	u32 size() const
 	{
-		auto lock = lock_shared();
+		const auto lock = lock_shared();
 		return std::queue<T>::size();
 	}
 
 	bool empty() const
 	{
-		auto lock = lock_shared();
+		const auto lock = lock_shared();
 		return std::queue<T>::empty();
 	}
 };
 
-// Thread-safe Double-ended queue
+/*
+	Thread-safe double-ended queue
+*/
 
 template<typename T>
 class MutexedQueue
@@ -362,6 +354,10 @@ protected:
 	Semaphore m_signal;
 };
 
+/*
+	LRU cache
+*/
+
 template<typename K, typename V>
 class LRUCache
 {
@@ -429,4 +425,238 @@ private:
 	cache_type m_map;
 	// we can't use std::deque here, because its iterators get invalidated
 	std::list<K> m_queue;
+};
+
+/*
+	Map that can be safely modified (insertion, deletion) during iteration
+	Caveats:
+	- you cannot insert null elements
+	- you have to check for null elements during iteration, those are ones already deleted
+	- size() and empty() don't work during iteration
+	- not thread-safe in any way
+
+	How this is implemented:
+	- there are two maps: new and real
+	- if inserting duration iteration, the value is inserted into the "new" map
+	- if deleting during iteration, the value is set to null (to be GC'd later)
+	- when iteration finishes the "new" map is merged into the "real" map
+*/
+
+template<typename K, typename V>
+class ModifySafeMap : public locker<>
+{
+public:
+	// this allows bare pointers but also e.g. std::unique_ptr
+	static_assert(std::is_default_constructible<V>::value,
+		"Value type must be default constructible");
+	static_assert(std::is_constructible<bool, V>::value,
+		"Value type must be convertible to bool");
+	static_assert(std::is_move_assignable<V>::value,
+		"Value type must be move-assignable");
+
+	typedef K key_type;
+	typedef V mapped_type;
+
+	ModifySafeMap() {
+		// the null value must convert to false and all others to true, but
+		// we can't statically check the latter.
+		sanity_check(!null_value);
+	}
+	~ModifySafeMap() {
+		assert(!m_iterating);
+	}
+
+	// possible to implement but we don't need it
+	DISABLE_CLASS_COPY(ModifySafeMap)
+	ALLOW_CLASS_MOVE(ModifySafeMap)
+
+	const V &get(const K &key) const {
+		const auto lock = lock_shared_rec();
+		if (m_iterating) {
+			auto it = m_new.find(key);
+			if (it != m_new.end())
+				return it->second;
+		}
+		auto it = m_values.find(key);
+		// This conditional block was converted from a ternary to ensure no
+		// temporary values are created in evaluating the return expression,
+		// which could cause a dangling reference.
+		if (it != m_values.end()) {
+			return it->second;
+		} else {
+			return null_value;
+		}
+	}
+
+	void put(const K &key, const V &value) {
+		if (!value) {
+			assert(false);
+			return;
+		}
+		const auto lock = lock_unique_rec();
+		if (m_iterating) {
+			auto it = m_values.find(key);
+			if (it != m_values.end()) {
+				it->second = V();
+				m_garbage++;
+			}
+			m_new[key] = value;
+		} else {
+			m_values[key] = value;
+		}
+	}
+
+	void put(const K &key, V &&value) {
+		if (!value) {
+			assert(false);
+			return;
+		}
+		const auto lock = lock_unique_rec();
+		if (m_iterating) {
+			auto it = m_values.find(key);
+			if (it != m_values.end()) {
+				it->second = V();
+				m_garbage++;
+			}
+			m_new[key] = std::move(value);
+		} else {
+			m_values[key] = std::move(value);
+		}
+	}
+
+	V take(const K &key) {
+		V ret = V();
+		const auto lock = lock_unique_rec();
+		if (m_iterating) {
+			auto it = m_new.find(key);
+			if (it != m_new.end()) {
+				ret = std::move(it->second);
+				m_new.erase(it);
+			}
+		}
+		auto it = m_values.find(key);
+		if (it == m_values.end())
+			return ret;
+		if (!ret)
+			ret = std::move(it->second);
+		if (m_iterating) {
+			it->second = V();
+			m_garbage++;
+		} else {
+			m_values.erase(it);
+		}
+		return ret;
+	}
+
+	bool remove(const K &key) {
+		return !!take(key);
+	}
+
+	// Warning: not constant-time!
+	size_t size() const {
+		if (m_iterating) {
+			// This is by no means impossible to determine, it's just annoying
+			// to code and we happen to not need this.
+			return unknown;
+		}
+		const auto lock = lock_shared_rec();
+		assert(m_new.empty());
+		if (m_garbage == 0)
+			return m_values.size();
+		size_t n = 0;
+		for (auto &it : m_values)
+			n += !it.second ? 0 : 1;
+		return n;
+	}
+
+	// Warning: not constant-time!
+	bool empty() const {
+		const auto lock = lock_shared_rec();
+		if (m_iterating)
+			return false; // maybe
+		if (m_garbage == 0)
+			return m_values.empty();
+		for (auto &it : m_values) {
+			if (!!it.second)
+				return false;
+		}
+		return true;
+	}
+
+	auto iter() { return IterationHelper(this); }
+
+	void clear() {
+		const auto lock = lock_unique_rec();
+		if (m_iterating) {
+			for (auto &it : m_values)
+				it.second = V();
+			m_garbage = m_values.size();
+		} else {
+			m_values.clear();
+			m_garbage = 0;
+		}
+	}
+
+	static inline const V null_value = V();
+
+	// returned by size() if called during iteration
+	static constexpr size_t unknown = static_cast<size_t>(-1);
+
+protected:
+	void merge_new() {
+		assert(!m_iterating);
+		if (!m_new.empty()) {
+			m_new.merge(m_values); // entries in m_new take precedence
+			m_values.clear();
+			std::swap(m_values, m_new);
+		}
+	}
+
+	void collect_garbage() {
+		assert(!m_iterating);
+		if (m_values.size() < GC_MIN_SIZE || m_garbage < m_values.size() / 2)
+			return;
+		for (auto it = m_values.begin(); it != m_values.end(); ) {
+			if (!it->second)
+				it = m_values.erase(it);
+			else
+				++it;
+		}
+		m_garbage = 0;
+	}
+
+	struct IterationHelper {
+		friend class ModifySafeMap<K, V>;
+		~IterationHelper() {
+			assert(m->m_iterating);
+			m->m_iterating--;
+			if (!m->m_iterating) {
+				m->merge_new();
+				m->collect_garbage();
+			}
+		}
+
+		auto begin() { return m->m_values.cbegin(); }
+		auto end() { return m->m_values.cend(); }
+
+	private:
+		IterationHelper(ModifySafeMap<K, V> *parent) : m(parent),
+			lock{parent->lock_shared_rec()}
+		{
+			//assert(m->m_iterating < std::numeric_limits<decltype(m_iterating)>::max());
+			m->m_iterating++;
+		}
+
+		ModifySafeMap<K, V> *m;
+		const std::unique_ptr<lock_rec_shared> lock;
+	};
+
+private:
+	std::map<K, V> m_values;
+	std::map<K, V> m_new;
+	std::atomic_uint m_iterating = 0;
+	// approximate amount of null-placeholders in m_values, reliable for != 0 tests
+	size_t m_garbage = 0;
+
+	static constexpr size_t GC_MIN_SIZE = 30;
 };

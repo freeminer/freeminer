@@ -1,24 +1,6 @@
-/*
-constants.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
@@ -57,11 +39,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #define CONNECTION_TIMEOUT 30
 
-#define RESEND_TIMEOUT_MIN 0.1
-#define RESEND_TIMEOUT_MAX 3.0
-// resend_timeout = avg_rtt * this
-#define RESEND_TIMEOUT_FACTOR 8
-
 /*
     Server
 */
@@ -70,6 +47,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #define LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS 0
 // Override for the previous one when distance of block is very low
 #define BLOCK_SEND_DISABLE_LIMITS_MAX_D 1
+
+/*
+    Client/Server
+*/
+
+// Limit maximum dtime in client/server step(...) and for collision detection
+#define DTIME_LIMIT 2.5f
 
 /*
     Map-related things
@@ -81,7 +65,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // This is the maximum value the setting map_generation_limit can be
 #if USE_POS32
 #define MAX_MAP_GENERATION_LIMIT (2147483008)
-#define FARMESH_LIMIT (200000)
+#define FARMESH_LIMIT (100000)
 #else
 #define MAX_MAP_GENERATION_LIMIT (31007)
 #define FARMESH_LIMIT (31007)

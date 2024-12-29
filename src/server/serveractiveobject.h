@@ -1,34 +1,18 @@
-/*
-serverobject.h
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include <cassert>
 #include <unordered_set>
+#include <optional>
 #include "irrlichttypes_bloated.h"
 #include "activeobject.h"
 #include "itemgroup.h"
 #include "util/container.h"
 #include "threading/lock.h"
+
 
 /*
 
@@ -77,11 +61,6 @@ public:
 	void markForRemoval();
 	void markForDeactivation();
 
-	// Create a certain type of ServerActiveObject
-	static ServerActiveObject* create(ActiveObjectType type,
-			ServerEnvironment *env, u16 id, v3f pos,
-			const std::string &data);
-
 	/*
 		Some simple getters/setters
 	*/
@@ -101,6 +80,8 @@ public:
 
 	virtual void setPos(const v3opos_t &pos)
 		{ setBasePosition(pos); }
+	virtual void addPos(const v3opos_t &added_pos)
+		{ setBasePosition(m_base_position + added_pos); }
 	// continuous: if true, object does not stop immediately at pos
 	virtual void moveTo(v3opos_t pos, bool continuous)
 		{ setBasePosition(pos); }
@@ -178,14 +159,16 @@ public:
 	{}
 	virtual void setAnimationSpeed(float frame_speed)
 	{}
-	virtual void setBonePosition(const std::string &bone, v3f position, v3f rotation)
+	virtual void setBoneOverride(const std::string &bone, const BoneOverride &props)
 	{}
-	virtual void getBonePosition(const std::string &bone, v3f *position, v3f *lotation)
-	{}
-	virtual const std::unordered_set<int> &getAttachmentChildIds() const
-	{ static std::unordered_set<int> rv; return rv; }
+	virtual BoneOverride getBoneOverride(const std::string &bone)
+	{ BoneOverride props; return props; }
+	virtual const BoneOverrideMap &getBoneOverrides() const
+	{ static BoneOverrideMap rv; return rv; }
+	virtual const std::unordered_set<object_t> &getAttachmentChildIds() const
+	{ static std::unordered_set<object_t> rv; return rv; }
 	virtual ServerActiveObject *getParent() const { return nullptr; }
-	virtual ObjectProperties* accessObjectProperties()
+	virtual ObjectProperties *accessObjectProperties()
 	{ return NULL; }
 	virtual void notifyObjectPropertiesModified()
 	{}
@@ -235,6 +218,10 @@ public:
 
 	/*
 		Whether the object's static data has been stored to a block
+
+		Note that `!isStaticAllowed() && m_static_exists` is a valid state
+		(though it usually doesn't persist long) and you need to be careful
+		about handling it.
 	*/
 	bool m_static_exists = false;
 	/*
@@ -243,12 +230,27 @@ public:
 	*/
 	v3bpos_t m_static_block = v3bpos_t(1337,1337,1337);
 
+	// Names of players to whom the object is to be sent, not considering parents.
+	using Observers = std::optional<std::unordered_set<std::string>>;
+	Observers m_observers;
+
+	/// Invalidate final observer cache. This needs to be done whenever
+	/// the observers of this object or any of its ancestors may have changed.
+	void invalidateEffectiveObservers();
+	/// Cache `m_effective_observers` with the names of all observers,
+	/// also indirect observers (object attachment chain).
+	const Observers &getEffectiveObservers();
+	/// Force a recalculation of final observers (including all parents).
+	const Observers &recalculateEffectiveObservers();
+	/// Whether the object is sent to `player_name`
+	bool isEffectivelyObservedBy(const std::string &player_name);
+
 protected:
+	// Cached intersection of m_observers of this object and all its parents.
+	std::optional<Observers> m_effective_observers;
+
 	virtual void onMarkedForDeactivation() {}
 	virtual void onMarkedForRemoval() {}
-
-	virtual void onAttach(int parent_id) {}
-	virtual void onDetach(int parent_id) {}
 
 	ServerEnvironment *m_env;
 	v3opos_t m_base_position;

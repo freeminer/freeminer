@@ -179,10 +179,8 @@ else
 LOCAL_C_INCLUDES += jni/src/lua/src
 endif
 
-# 		jni/src/guiTextInputMenu.cpp              \
-
-
 LOCAL_SRC_FILES +=                                \
+		jni/src/guiTextInputMenu.cpp              \
 		jni/src/fm_bitset.cpp                     \
 		jni/src/fm_liquid.cpp                     \
 		jni/src/fm_map.cpp                        \

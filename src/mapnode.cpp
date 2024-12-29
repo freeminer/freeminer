@@ -1,26 +1,8 @@
-/*
-mapnode.cpp
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include "irrlichttypes_extrabloated.h"
+#include "irrlichttypes_bloated.h"
 #include "mapnode.h"
 #include "porting.h"
 #include "nodedef.h"
@@ -98,6 +80,8 @@ v3pos_t MapNode::getWallMountedDir(const NodeDefManager *nodemgr) const
 	case 3: return v3pos_t(-1,0,0);
 	case 4: return v3pos_t(0,0,1);
 	case 5: return v3pos_t(0,0,-1);
+	case 6: return v3pos_t(0,1,0);
+	case 7: return v3pos_t(0,-1,0);
 	}
 }
 
@@ -328,17 +312,46 @@ void transformNodeBox(const MapNode &n, const NodeBox &nodebox,
 	}
 	else if(nodebox.type == NODEBOX_WALLMOUNTED)
 	{
-		v3pos_t dir = n.getWallMountedDir(nodemgr);
+		auto dir = n.getWallMountedDir(nodemgr);
+		u8 wall = n.getWallMounted(nodemgr);
 
 		// top
 		if(dir == v3pos_t(0,1,0))
 		{
-			boxes.push_back(nodebox.wall_top);
+			if (wall == DWM_S1) {
+				v3f vertices[2] =
+				{
+					nodebox.wall_top.MinEdge,
+					nodebox.wall_top.MaxEdge
+				};
+				for (v3f &vertex : vertices) {
+					vertex.rotateXZBy(90);
+				}
+				aabb3f box = aabb3f(vertices[0]);
+				box.addInternalPoint(vertices[1]);
+				boxes.push_back(box);
+			} else {
+				boxes.push_back(nodebox.wall_top);
+			}
 		}
 		// bottom
 		else if(dir == v3pos_t(0,-1,0))
 		{
-			boxes.push_back(nodebox.wall_bottom);
+			if (wall == DWM_S2) {
+				v3f vertices[2] =
+				{
+					nodebox.wall_bottom.MinEdge,
+					nodebox.wall_bottom.MaxEdge
+				};
+				for (v3f &vertex : vertices) {
+					vertex.rotateXZBy(-90);
+				}
+				aabb3f box = aabb3f(vertices[0]);
+				box.addInternalPoint(vertices[1]);
+				boxes.push_back(box);
+			} else {
+				boxes.push_back(nodebox.wall_bottom);
+			}
 		}
 		// side
 		else
@@ -785,7 +798,7 @@ void MapNode::deSerialize(u8 *source, u8 version)
 	}
 }
 
-SharedBuffer<u8> MapNode::serializeBulk(int version,
+Buffer<u8> MapNode::serializeBulk(int version,
 		const MapNode *nodes, u32 nodecount,
 		u8 content_width, u8 params_width)
 {
@@ -801,17 +814,19 @@ SharedBuffer<u8> MapNode::serializeBulk(int version,
 		throw SerializationError("MapNode::serializeBulk: serialization to "
 				"version < 24 not possible");
 
-	SharedBuffer<u8> databuf(nodecount * (content_width + params_width));
+	Buffer<u8> databuf(nodecount * (content_width + params_width));
 
-	u32 start1 = content_width * nodecount;
-	u32 start2 = (content_width + 1) * nodecount;
+	// Writing to the buffer linearly is faster
+	u8 *p = &databuf[0];
+	for (u32 i = 0; i < nodecount; i++, p += 2)
+		writeU16(p, nodes[i].param0);
 
-	// Serialize content
-	for (u32 i = 0; i < nodecount; i++) {
-		writeU16(&databuf[i * 2], nodes[i].param0);
-		writeU8(&databuf[start1 + i], nodes[i].param1);
-		writeU8(&databuf[start2 + i], nodes[i].param2);
-	}
+	for (u32 i = 0; i < nodecount; i++, p++)
+		writeU8(p, nodes[i].param1);
+
+	for (u32 i = 0; i < nodecount; i++, p++)
+		writeU8(p, nodes[i].param2);
+
 	return databuf;
 }
 

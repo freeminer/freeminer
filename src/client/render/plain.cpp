@@ -1,22 +1,7 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "plain.h"
 #include "secondstage.h"
@@ -61,12 +46,8 @@ void DrawHUD::run(PipelineContext &context)
 		if (context.draw_crosshair)
 			context.hud->drawCrosshair();
 
-		context.hud->drawHotbar(context.client->getEnv().getLocalPlayer()->getWieldIndex());
 		context.hud->drawLuaElements(context.client->getCamera()->getOffset());
 		context.client->getCamera()->drawNametags();
-		auto mapper = context.client->getMinimap();
-		if (mapper && context.show_minimap)
-			mapper->drawMinimap();
 	}
 	context.device->getGUIEnvironment()->drawAll();
 }
@@ -106,7 +87,7 @@ void UpscaleStep::run(PipelineContext &context)
 std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale)
 {
 	RenderStep *step = new Draw3D();
-	if (g_settings->getBool("enable_shaders")) {
+	if (g_settings->getBool("enable_shaders") && g_settings->getBool("enable_post_processing")) {
 		RenderPipeline *pipeline = new RenderPipeline();
 		pipeline->addStep(pipeline->own(std::unique_ptr<RenderStep>(step)));
 
@@ -131,7 +112,7 @@ RenderStep* addUpscaling(RenderPipeline *pipeline, RenderStep *previousStep, v2f
 		return previousStep;
 
 	// When shaders are enabled, post-processing pipeline takes care of rescaling
-	if (g_settings->getBool("enable_shaders"))
+	if (g_settings->getBool("enable_shaders") && g_settings->getBool("enable_post_processing"))
 		return previousStep;
 
 

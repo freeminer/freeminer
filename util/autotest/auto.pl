@@ -307,6 +307,13 @@ our $options = {
         static_spawnpoint => '(-70,20020,-190)',
         mg_flags          => '',                                                                                          # "trees",
     },
+    fall3 => {
+        '--world'         => $script_path . 'world_fall3',
+        mg_name           => 'math',
+        mg_math           => {"generator" => "aexion", "N" => 11,"cadd" => -1.0002,"size" => 30000 },
+        water_level       => -30000,
+        static_spawnpoint => '(10,10,10)',
+    },
     far => {
         max_block_generate_distance => 50,
         max_block_send_distance     => 50,
@@ -361,8 +368,8 @@ our $options = {
 };
 $options->{fall2} = { %{$options->{fall1}}, static_spawnpoint => '(10,21000,10)',};
 
-map { /^-(\w+)(?:=(.*))?/  and $options->{opt}{$1}  = $2; } @ARGV;
-map { /^--(\w+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
+map { /^-([^-][^=]+)(?:=(.*))?/  and $options->{opt}{$1}  = $2; } @ARGV;
+map { /^--([^-][^=]+)(?:=(.*))?/ and $options->{pass}{$1} = $2; } @ARGV;
 
 my $child;
 

@@ -1,23 +1,8 @@
-/*
-Minetest
-Copyright (C) 2022 Minetest Authors
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2022 Minetest Authors
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
-
-#include "benchmark_setup.h"
+#include "catch.h"
 #include "voxelalgorithms.h"
 #include "dummygamedef.h"
 #include "dummymap.h"
@@ -27,9 +12,9 @@ TEST_CASE("benchmark_lighting")
 	DummyGameDef gamedef;
 	NodeDefManager *ndef = gamedef.getWritableNodeDefManager();
 
-	v3s16 pmin(-16, -16, -16);
-	v3s16 pmax(15, 15, 15);
-	v3s16 bpmin = getNodeBlockPos(pmin), bpmax = getNodeBlockPos(pmax);
+	v3pos_t pmin(-16, -16, -16);
+	v3pos_t pmax(15, 15, 15);
+	auto bpmin = getNodeBlockPos(pmin), bpmax = getNodeBlockPos(pmax);
 	DummyMap map(&gamedef, bpmin, bpmax);
 
 	content_t content_wall;

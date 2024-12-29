@@ -1,27 +1,10 @@
-/*
-voxelalgorithms.cpp
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+#include <array>
 
 #include "voxelalgorithms.h"
-#include "irr_v3d.h"
 #include "nodedef.h"
 #include "mapblock.h"
 #include "map.h"
@@ -55,12 +38,12 @@ typedef v3bpos_t mapblock_v3;
 
 //! Contains information about a node whose light is about to change.
 struct ChangingLight {
+	//! Pointer to the node's block.
+	MapBlock *block = nullptr;
 	//! Relative position of the node in its map block.
 	relative_v3 rel_position;
 	//! Position of the node's block.
 	mapblock_v3 block_position;
-	//! Pointer to the node's block.
-	MapBlock *block = NULL;
 	/*!
 	 * Direction from the node that caused this node's changing
 	 * to this node.
@@ -71,9 +54,9 @@ struct ChangingLight {
 
 	ChangingLight(relative_v3 rel_pos, mapblock_v3 block_pos,
 		MapBlock *b, direction source_dir) :
+		block(b),
 		rel_position(rel_pos),
 		block_position(block_pos),
-		block(b),
 		source_direction(source_dir)
 	{}
 };
@@ -85,7 +68,7 @@ struct ChangingLight {
  */
 struct LightQueue {
 	//! For each light level there is a vector.
-	std::vector<ChangingLight> lights[LIGHT_SUN + 1];
+	std::array<std::vector<ChangingLight>, LIGHT_SUN + 1> lights;
 	//! Light of the brightest ChangingLight in the queue.
 	u8 max_light;
 
@@ -96,9 +79,15 @@ struct LightQueue {
 	LightQueue(size_t reserve)
 	{
 		max_light = LIGHT_SUN;
-		for (u8 i = 0; i <= LIGHT_SUN; i++) {
-			lights[i].reserve(reserve);
-		}
+		for (auto &l : lights)
+			l.reserve(reserve);
+	}
+
+	//! Clears a LightQueue.
+	void clear() {
+		max_light = LIGHT_SUN;
+		for (auto &l : lights)
+			l.clear();
 	}
 
 	/*!
@@ -296,7 +285,7 @@ void unspread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				neighbor_block = current.block;
 			}
 
-			auto lock = neighbor_block->try_lock_unique_rec();
+			const auto lock = neighbor_block->try_lock_unique_rec();
 			if (!lock->owns_lock()) {
 				continue; // may cause dark areas
 			}
@@ -389,7 +378,7 @@ void spread_light(Map *map, const NodeDefManager *nodemgr, LightBank bank,
 				neighbor_block = current.block;
 			}
 
-			auto lock = neighbor_block->try_lock_unique_rec();
+			const auto lock = neighbor_block->try_lock_unique_rec();
 			if (!lock->owns_lock()) {
 				continue; // may cause dark areas
 			}
@@ -473,7 +462,7 @@ bool is_sunlight_above(Map *map, v3pos_t pos, const NodeDefManager *ndef)
 	return sunlight;
 }
 
-static const LightBank banks[] = { LIGHTBANK_DAY, LIGHTBANK_NIGHT };
+static constexpr LightBank banks[] = { LIGHTBANK_DAY, LIGHTBANK_NIGHT };
 
 void update_lighting_nodes(Map *map,
 	const std::vector<std::pair<v3pos_t, MapNode>> &oldnodes,
@@ -483,10 +472,14 @@ void update_lighting_nodes(Map *map,
 	// For node getter functions
 	bool is_valid_position;
 
+	// cached allocations
+	thread_local UnlightQueue disappearing_lights(1);
+	thread_local ReLightQueue light_sources(4);
+
 	// Process each light bank separately
 	for (LightBank bank : banks) {
-		UnlightQueue disappearing_lights(256);
-		ReLightQueue light_sources(256);
+		disappearing_lights.clear();
+		light_sources.clear();
 		// Nodes that are brighter than the brightest modified node was
 		// won't change, since they didn't get their light from a
 		// modified node.
@@ -635,9 +628,8 @@ void update_lighting_nodes(Map *map,
 			modified_blocks);
 		// Initialize light values for light spreading.
 		for (u8 i = 0; i <= LIGHT_SUN; i++) {
-			const std::vector<ChangingLight> &lights = light_sources.lights[i];
-			for (std::vector<ChangingLight>::const_iterator it = lights.begin();
-					it < lights.end(); ++it) {
+			const auto &lights = light_sources.lights[i];
+			for (auto it = lights.begin(); it < lights.end(); ++it) {
 				MapNode n = it->block->getNodeNoCheck(it->rel_position);
 				n.setLight(bank, i, ndef->getLightingFlags(n));
 				it->block->setNodeNoCheck(it->rel_position, n);
@@ -656,14 +648,16 @@ void update_lighting_nodes(Map *map,
  * Borders of a map block in relative node coordinates.
  * Compatible with type 'direction'.
  */
-const VoxelArea block_borders[] = {
-	VoxelArea(v3pos_t(15, 0, 0), v3pos_t(15, 15, 15)), //X+
-	VoxelArea(v3pos_t(0, 15, 0), v3pos_t(15, 15, 15)), //Y+
-	VoxelArea(v3pos_t(0, 0, 15), v3pos_t(15, 15, 15)), //Z+
-	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(15, 15, 0)),   //Z-
-	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(15, 0, 15)),   //Y-
-	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(0, 15, 15))    //X-
+#define B_1 (MAP_BLOCKSIZE - 1)
+const static VoxelArea block_borders[] = {
+	VoxelArea(v3pos_t(B_1, 0, 0), v3pos_t(B_1, B_1, B_1)), //X+
+	VoxelArea(v3pos_t(0, B_1, 0), v3pos_t(B_1, B_1, B_1)), //Y+
+	VoxelArea(v3pos_t(0, 0, B_1), v3pos_t(B_1, B_1, B_1)), //Z+
+	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(B_1, B_1, 0)),   //Z-
+	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(B_1, 0, B_1)),   //Y-
+	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(0, B_1, B_1))    //X-
 };
+#undef B_1
 
 /*!
  * Returns true if:
@@ -701,11 +695,14 @@ void update_block_border_lighting(Map *map, MapBlock *block,
 	std::map<v3bpos_t, MapBlock*> &modified_blocks)
 {
 	const NodeDefManager *ndef = map->getNodeDefManager();
+	// Since invalid light is not common, do not allocate
+	// memory if not needed.
+	UnlightQueue disappearing_lights(0);
+	ReLightQueue light_sources(0);
+
 	for (LightBank bank : banks) {
-		// Since invalid light is not common, do not allocate
-		// memory if not needed.
-		UnlightQueue disappearing_lights(0);
-		ReLightQueue light_sources(0);
+		disappearing_lights.clear();
+		light_sources.clear();
 		// Get incorrect lights
 		for (direction d = 0; d < 6; d++) {
 			// For each direction
@@ -758,9 +755,8 @@ void update_block_border_lighting(Map *map, MapBlock *block,
 			modified_blocks);
 		// Initialize light values for light spreading.
 		for (u8 i = 0; i <= LIGHT_SUN; i++) {
-			const std::vector<ChangingLight> &lights = light_sources.lights[i];
-			for (std::vector<ChangingLight>::const_iterator it = lights.begin();
-					it < lights.end(); ++it) {
+			const auto &lights = light_sources.lights[i];
+			for (auto it = lights.begin(); it < lights.end(); ++it) {
 				MapNode n = it->block->getNodeNoCheck(it->rel_position);
 				n.setLight(bank, i, ndef->getLightingFlags(n));
 				it->block->setNodeNoCheck(it->rel_position, n);
@@ -926,7 +922,7 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
 		return false;
 	}
 
-	auto lock = block->try_lock_unique_rec();
+	const auto lock = block->try_lock_unique_rec();
 	if (!lock->owns_lock()) {
 		return false; // may cause dark areas
 	}
@@ -991,14 +987,18 @@ bool propagate_block_sunlight(Map *map, const NodeDefManager *ndef,
  * The areas do not overlap.
  * Compatible with type 'direction'.
  */
-const VoxelArea block_pad[] = {
-	VoxelArea(v3pos_t(15, 0, 0), v3pos_t(15, 15, 15)), //X+
-	VoxelArea(v3pos_t(1, 15, 0), v3pos_t(14, 15, 15)), //Y+
-	VoxelArea(v3pos_t(1, 1, 15), v3pos_t(14, 14, 15)), //Z+
-	VoxelArea(v3pos_t(1, 1, 0), v3pos_t(14, 14, 0)),   //Z-
-	VoxelArea(v3pos_t(1, 0, 0), v3pos_t(14, 0, 15)),   //Y-
-	VoxelArea(v3pos_t(0, 0, 0), v3pos_t(0, 15, 15))    //X-
+#define B_1 (MAP_BLOCKSIZE - 1)
+#define B_2 (MAP_BLOCKSIZE - 2)
+const static VoxelArea block_pad[] = {
+	VoxelArea({B_1, 0, 0}, {B_1, B_1, B_1}), //X+
+	VoxelArea({1, B_1, 0}, {B_2, B_1, B_1}), //Y+
+	VoxelArea({1, 1, B_1}, {B_2, B_2, B_1}), //Z+
+	VoxelArea({1, 1, 0},   {B_2, B_2, 0}),   //Z-
+	VoxelArea({1, 0, 0},   {B_2, 0, B_1}),   //Y-
+	VoxelArea({0, 0, 0},   {0, B_1, B_1})    //X-
 };
+#undef B_1
+#undef B_2
 
 /*!
  * The common part of bulk light updates - it is always executed.
@@ -1047,8 +1047,8 @@ void finish_bulk_light_update(Map *map, mapblock_v3 minblock,
 			// Skip not existing blocks
 			continue;
 		// For each node in the block:
-		for (relpos.X = 0; relpos.X < MAP_BLOCKSIZE; relpos.X++)
 		for (relpos.Z = 0; relpos.Z < MAP_BLOCKSIZE; relpos.Z++)
+		for (relpos.X = 0; relpos.X < MAP_BLOCKSIZE; relpos.X++)
 		for (relpos.Y = 0; relpos.Y < MAP_BLOCKSIZE; relpos.Y++) {
 			MapNode node = block->getNodeNoCheck(relpos.X, relpos.Y, relpos.Z);
 			ContentLightingFlags f = ndef->getLightingFlags(node);
@@ -1074,9 +1074,8 @@ void finish_bulk_light_update(Map *map, mapblock_v3 minblock,
 		u8 maxlight = (b == 0) ? LIGHT_MAX : LIGHT_SUN;
 		// Initialize light values for light spreading.
 		for (u8 i = 0; i <= maxlight; i++) {
-			const std::vector<ChangingLight> &lights = relight[b].lights[i];
-			for (std::vector<ChangingLight>::const_iterator it = lights.begin();
-					it < lights.end(); ++it) {
+			const auto &lights = relight[b].lights[i];
+			for (auto it = lights.begin(); it < lights.end(); ++it) {
 				MapNode n = it->block->getNodeNoCheck(it->rel_position);
 				n.setLight(bank, i, ndef->getLightingFlags(n));
 				it->block->setNodeNoCheck(it->rel_position, n);
@@ -1152,8 +1151,8 @@ void blit_back_with_light(Map *map, MMVManip *vm,
 		// For each border of the block:
 		for (const VoxelArea &a : block_pad) {
 			// For each node of the border:
-			for (relpos.X = a.MinEdge.X; relpos.X <= a.MaxEdge.X; relpos.X++)
 			for (relpos.Z = a.MinEdge.Z; relpos.Z <= a.MaxEdge.Z; relpos.Z++)
+			for (relpos.X = a.MinEdge.X; relpos.X <= a.MaxEdge.X; relpos.X++)
 			for (relpos.Y = a.MinEdge.Y; relpos.Y <= a.MaxEdge.Y; relpos.Y++) {
 
 				// Get old and new node
@@ -1253,7 +1252,7 @@ bool repair_block_light(Map *map, MapBlock *block,
 
   {
 
-	auto lock = block->try_lock_unique_rec();
+	const auto lock = block->try_lock_unique_rec();
 	if (!lock->owns_lock()) {
 		return true; // may cause dark areas
 	}
@@ -1279,7 +1278,7 @@ bool repair_block_light(Map *map, MapBlock *block,
 
 
   {
-	auto lock = block->lock_shared_rec();
+	const auto lock = block->lock_shared_rec();
 
 	// --- STEP 2: Get nodes from borders to unlight
 
@@ -1328,34 +1327,34 @@ VoxelLineIterator::VoxelLineIterator(const v3opos_t &start_position, const v3f &
 	m_last_index = getIndex(floatToInt(start_position + v3fToOpos(line_vector), 1));
 
 	if (m_line_vector.X > 0) {
-		m_next_intersection_multi.X = (floorf(m_start_position.X - 0.5) + 1.5
+		m_next_intersection_multi.X = (m_current_node_pos.X + 0.5f
 			- m_start_position.X) / m_line_vector.X;
 		m_intersection_multi_inc.X = 1 / m_line_vector.X;
 	} else if (m_line_vector.X < 0) {
-		m_next_intersection_multi.X = (floorf(m_start_position.X - 0.5)
-			- m_start_position.X + 0.5) / m_line_vector.X;
+		m_next_intersection_multi.X = (m_current_node_pos.X - 0.5f
+			- m_start_position.X) / m_line_vector.X;
 		m_intersection_multi_inc.X = -1 / m_line_vector.X;
 		m_step_directions.X = -1;
 	}
 
 	if (m_line_vector.Y > 0) {
-		m_next_intersection_multi.Y = (floorf(m_start_position.Y - 0.5) + 1.5
+		m_next_intersection_multi.Y = (m_current_node_pos.Y + 0.5f
 			- m_start_position.Y) / m_line_vector.Y;
 		m_intersection_multi_inc.Y = 1 / m_line_vector.Y;
 	} else if (m_line_vector.Y < 0) {
-		m_next_intersection_multi.Y = (floorf(m_start_position.Y - 0.5)
-			- m_start_position.Y + 0.5) / m_line_vector.Y;
+		m_next_intersection_multi.Y = (m_current_node_pos.Y - 0.5f
+			- m_start_position.Y) / m_line_vector.Y;
 		m_intersection_multi_inc.Y = -1 / m_line_vector.Y;
 		m_step_directions.Y = -1;
 	}
 
 	if (m_line_vector.Z > 0) {
-		m_next_intersection_multi.Z = (floorf(m_start_position.Z - 0.5) + 1.5
+		m_next_intersection_multi.Z = (m_current_node_pos.Z + 0.5f
 			- m_start_position.Z) / m_line_vector.Z;
 		m_intersection_multi_inc.Z = 1 / m_line_vector.Z;
 	} else if (m_line_vector.Z < 0) {
-		m_next_intersection_multi.Z = (floorf(m_start_position.Z - 0.5)
-			- m_start_position.Z + 0.5) / m_line_vector.Z;
+		m_next_intersection_multi.Z = (m_current_node_pos.Z - 0.5f
+			- m_start_position.Z) / m_line_vector.Z;
 		m_intersection_multi_inc.Z = -1 / m_line_vector.Z;
 		m_step_directions.Z = -1;
 	}

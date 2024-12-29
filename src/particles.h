@@ -1,31 +1,12 @@
-/*
-particles.h
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #pragma once
 
 #include <string>
 #include <sstream>
 #include <vector>
-#include <ctgmath>
 #include <type_traits>
 #include "irrlicht_changes/printing.h"
 #include "irrlichttypes_bloated.h"
@@ -208,7 +189,8 @@ namespace ParticleParamTypes
 	}
 
 	// Animation styles (fwd is normal, linear interpolation)
-	enum class TweenStyle : u8 { fwd, rev, pulse, flicker };
+	// TweenStyle_END is a dummy value for validity check
+	enum class TweenStyle : u8 { fwd, rev, pulse, flicker, TweenStyle_END};
 
 	// "Tweened" pretty much means "animated" in this context
 	template <typename T>
@@ -283,8 +265,10 @@ struct ParticleTexture
 struct ServerParticleTexture : public ParticleTexture
 {
 	std::string string;
-	void serialize(std::ostream &os, u16 protocol_ver, bool newPropertiesOnly = false) const;
-	void deSerialize(std::istream &is, u16 protocol_ver, bool newPropertiesOnly = false);
+	void serialize(std::ostream &os, u16 protocol_ver, bool newPropertiesOnly = false,
+			bool skipAnimation = false) const;
+	void deSerialize(std::istream &is, u16 protocol_ver, bool newPropertiesOnly = false,
+			bool skipAnimation = false);
 };
 
 struct CommonParticleParams

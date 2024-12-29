@@ -56,7 +56,7 @@ public:
 			v3pos_t m_camera_offset,
 			//float brightness,
 			int render_range, float speed);
-	void makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool near = false);
+	void makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bnear = false);
 	void makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
 	//void makeFarBlocks(const v3bpos_t &blockpos);
 
@@ -112,6 +112,7 @@ private:
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
 	int go_flat();
+	int go_container();
 	uint32_t far_iteration_complete{};
 	bool complete_set{};
 	uint32_t collect_reset_timestamp{static_cast<uint32_t>(-1)};

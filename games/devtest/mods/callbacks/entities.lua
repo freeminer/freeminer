@@ -1,8 +1,8 @@
 -- Entities that test their callbacks
 
 local message = function(msg)
-	minetest.log("action", "[callbacks] "..msg)
-	minetest.chat_send_all(msg)
+	core.log("action", "[callbacks] "..msg)
+	core.chat_send_all(msg)
 end
 
 local get_object_name = function(obj)
@@ -18,11 +18,11 @@ local get_object_name = function(obj)
 end
 
 local spos = function(self)
-	return minetest.pos_to_string(vector.round(self.object:get_pos()))
+	return core.pos_to_string(vector.round(self.object:get_pos()))
 end
 
 -- Callback test entity (all callbacks except on_step)
-minetest.register_entity("callbacks:callback", {
+core.register_entity("callbacks:callback", {
 	initial_properties = {
 		visual = "upright_sprite",
 		textures = { "callbacks_callback_entity.png" },
@@ -69,10 +69,33 @@ minetest.register_entity("callbacks:callback", {
 })
 
 -- Only test on_step callback
-minetest.register_entity("callbacks:callback_step", {
+core.register_entity("callbacks:callback_step", {
 	visual = "upright_sprite",
 	textures = { "callbacks_callback_entity_step.png" },
 	on_step = function(self, dtime)
 		message("on_step callback entity: on_step! pos="..spos(self).."; dtime="..dtime)
+	end,
+})
+
+-- Callback punch with nil puncher
+core.register_entity("callbacks:callback_puncher", {
+	initial_properties = {
+		visual = "upright_sprite",
+		textures = { "callbacks_callback_entity.png" },
+		infotext = "Callback entity for nil puncher test.",
+	},
+
+	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir, damage)
+		if puncher then
+			puncher:punch(nil, time_from_last_punch, tool_capabilities, dir)
+			self.object:punch(nil, time_from_last_punch, tool_capabilities, dir)
+		else
+			message(
+				"Callback entity: on_punch with nil puncher "..
+				"pos="..spos(self).."; "..
+				"time_from_last_punch="..time_from_last_punch.."; "..
+				"tool_capabilities="..dump(tool_capabilities).."; "..
+				"dir="..dump(dir).."; damage="..damage)
+		end
 	end,
 })

@@ -1,24 +1,6 @@
-/*
-guiEngine.h
-Copyright (C) 2013 sapier
-*/
-
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2013 sapier
 
 #pragma once
 
@@ -29,8 +11,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "guiFormSpecMenu.h"
 #include "client/clouds.h"
 #include "client/sound.h"
-#include "client/tile.h"
 #include "util/enriched_string.h"
+#include "translation.h"
 
 /******************************************************************************/
 /* Structs and macros                                                         */
@@ -56,6 +38,7 @@ struct image_definition {
 class GUIEngine;
 class RenderingEngine;
 class MainMenuScripting;
+class IWritableShaderSource;
 struct MainMenuData;
 
 /******************************************************************************/
@@ -168,7 +151,22 @@ public:
 		return m_scriptdir;
 	}
 
+	/**
+	 * Get translations for content
+	 *
+	 * Only loads a single textdomain from the path, as specified by `domain`,
+	 * for performance reasons.
+	 *
+	 * WARNING: Do not store the returned pointer for long as the contents may
+	 * change with the next call to `getContentTranslations`.
+	 * */
+	Translations *getContentTranslations(const std::string &path,
+			const std::string &domain, const std::string &lang_code);
+
 private:
+	std::string m_last_translations_key;
+	/** Only the most recently used translation set is kept loaded */
+	Translations m_last_translations;
 
 	/** find and run the main menu script */
 	bool loadMainMenuScript();
@@ -190,7 +188,7 @@ private:
 	MainMenuData                         *m_data = nullptr;
 	/** texture source */
 	std::unique_ptr<ISimpleTextureSource> m_texture_source;
-	/** sound manager*/
+	/** sound manager */
 	std::unique_ptr<ISoundManager>        m_sound_manager;
 
 	/** representation of form source to be used in mainmenu formspec */
@@ -264,27 +262,11 @@ private:
 	/** and text that is in it */
 	EnrichedString m_toplefttext;
 
-	/** initialize cloud subsystem */
-	void cloudInit();
 	/** do preprocessing for cloud subsystem */
-	void cloudPreProcess();
-	/** do postprocessing for cloud subsystem */
-	void cloudPostProcess(u32 frametime_min, IrrlichtDevice *device);
-
-	/** internam data required for drawing clouds */
-	struct clouddata {
-		/** delta time since last cloud processing */
-		f32 dtime;
-		/** absolute time of last cloud processing */
-		u32 lasttime;
-		/** pointer to cloud class */
-		irr_ptr<Clouds> clouds;
-		/** camera required for drawing clouds */
-		scene::ICameraSceneNode *camera = nullptr;
-	};
+	void drawClouds(float dtime);
 
 	/** is drawing of clouds enabled atm */
-	bool        m_clouds_enabled = true;
-	/** data used to draw clouds */
-	clouddata   m_cloud;
+	bool m_clouds_enabled = true;
+
+	static void fullscreenChangedCallback(const std::string &name, void *data);
 };

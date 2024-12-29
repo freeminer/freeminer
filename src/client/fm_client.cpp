@@ -3,12 +3,13 @@
 #include <future>
 #include <memory>
 #include "client.h"
-#include "client/fm_far_calc.h"
+#include "fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"
 #include "fm_world_merge.h"
 #include "irr_v3d.h"
+#include "log.h"
 #include "mapblock.h"
 #include "network/fm_networkprotocol.h"
 #include "server.h"
@@ -106,7 +107,7 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		if (mgtype == MAPGEN_INVALID) {
 			errorstream << "Client map save: mapgen '" << mg_name
 						<< "' not valid; falling back to "
-						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << std::endl;
+						<< Mapgen::getMapgenName(FARMESH_DEFAULT_MAPGEN) << "\n";
 			mgtype = FARMESH_DEFAULT_MAPGEN;
 			far_container.use_weather = false;
 		} else {
@@ -129,14 +130,23 @@ void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
 	const thread_local static auto farmesh_range = g_settings->getS32("farmesh");
 
 	if (farmesh_range && !m_localserver) {
-		m_localserver = std::make_unique<Server>(
-				"farmesh", findSubgame("devtest"), false, Address{}, true);
+		// Todo: make very small special game with only far nodes definitions
+		for (const auto &game : {"devtest", "default"}) {
+			try {
+				m_localserver = std::make_unique<Server>(
+						"farmesh", findSubgame(game), false, Address{}, true);
+				break;
+			} catch (const std::exception &ex) {
+				errorstream << "Failed to make local mapgen server with game " << game
+							<< " : " << ex.what() << "\n";
+			}
+		}
 	}
 	m_mapgen_params = std::unique_ptr<MapgenParams>(Mapgen::createMapgenParams(mgtype));
 	m_mapgen_params->MapgenParams::readParams(&settings);
 	m_mapgen_params->readParams(&settings);
 
-	if (!m_simple_singleplayer_mode && farmesh_range) {
+	if (!m_simple_singleplayer_mode && farmesh_range && m_localserver) {
 		const auto num_emerge_threads = g_settings->get("num_emerge_threads");
 		g_settings->set("num_emerge_threads", "1");
 		m_emerge = std::make_unique<EmergeManager>(
@@ -155,7 +165,7 @@ void Client::MakeEmerge(const Settings &settings, const MapgenType &mgtype)
 	}
 }
 
-void Client::createFarMesh(MapBlockP &block)
+void Client::createFarMesh(MapBlockPtr &block)
 {
 	if (bool cmp = false; block->creating_far_mesh.compare_exchange_weak(cmp, true)) {
 		const auto &m_client = this;
@@ -167,10 +177,12 @@ void Client::createFarMesh(MapBlockP &block)
 #else
 		static const auto m_cache_enable_shaders = false;
 #endif
-		MeshMakeData mdat(
-				m_client, m_cache_enable_shaders, 0, step, &m_client->far_container);
+		MeshMakeData mdat(m_client->getNodeDefManager(),
+				MAP_BLOCKSIZE * m_client->getMeshGrid().cell_size, m_cache_enable_shaders,
+				0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
-		const auto mbmsh = std::make_shared<MapBlockMesh>(&mdat, m_camera_offset);
+		const auto mbmsh =
+				std::make_shared<MapBlockMesh>(m_client, &mdat, m_camera_offset);
 		block->setFarMesh(mbmsh, step);
 		block->creating_far_mesh = false;
 	}
@@ -189,9 +201,9 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	std::istringstream istr(
 			packet[TOCLIENT_BLOCKDATA_DATA].as<std::string>(), std::ios_base::binary);
 
-	MapBlockP block{};
+	MapBlockPtr block{};
 	if (step) {
-		block.reset(m_env.getMap().createBlankBlockNoInsert(bpos));
+		block = m_env.getMap().createBlankBlockNoInsert(bpos);
 	} else {
 		block = m_env.getMap().getBlock(bpos);
 		if (!block)
@@ -199,7 +211,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	}
 	const auto lock = block->lock_unique_rec();
 	block->far_step = step;
-	content_t content_only;
+	content_t content_only{};
 	packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, content_only);
 	block->content_only = content_only;
 	packet.convert_safe(
@@ -252,8 +264,10 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 	} else {
 		static thread_local const auto farmesh_server =
 				g_settings->getU16("farmesh_server");
-		if (!farmesh_server)
+		static thread_local const auto farmesh = g_settings->getU16("farmesh");
+		if (!farmesh_server || !farmesh) {
 			return;
+		}
 
 		auto &far_blocks_storage = getEnv().getClientMap().far_blocks_storage[step];
 		{
@@ -293,11 +307,11 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 #if 0
 				class BlockContainer : public NodeContainer
 				{
-					MapBlockP block;
+					MapBlockPtr block;
 
 				public:
 					Mapgen *m_mg{};
-					BlockContainer(Client *client, MapBlockP block_) :
+					BlockContainer(Client *client, MapBlockPtr block_) :
 							//m_client{client},
 							block{std::move(block_)} {};
 					const MapNode &getNodeRefUnsafe(const v3pos_t &pos) override
@@ -336,4 +350,23 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 			}
 #endif
 	}
+}
+
+void Client::sendDrawControl()
+{
+	MSGPACK_PACKET_INIT((int)TOSERVER_DRAWCONTROL, 4);
+	const auto &draw_control = m_env.getClientMap().getControl();
+	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (int32_t)draw_control.wanted_range);
+	//PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, draw_control.range_all);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH, draw_control.farmesh);
+	//PACK(TOSERVER_DRAWCONTROL_LODMESH, draw_control.lodmesh);
+	//PACK(TOSERVER_DRAWCONTROL_FOV, draw_control.fov);
+	//PACK(TOSERVER_DRAWCONTROL_BLOCK_OVERFLOW, false /*draw_control.block_overflow*/);
+	//PACK(TOSERVER_DRAWCONTROL_LODMESH, draw_control.lodmesh);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH_QUALITY, draw_control.farmesh_quality);
+	PACK(TOSERVER_DRAWCONTROL_FARMESH_ALL_CHANGED, draw_control.farmesh_all_changed);
+
+	NetworkPacket pkt(TOSERVER_DRAWCONTROL, buffer.size());
+	pkt.putLongString({buffer.data(), buffer.size()});
+	Send(&pkt);
 }

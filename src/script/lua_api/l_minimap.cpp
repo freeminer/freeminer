@@ -1,21 +1,6 @@
-/*
-Minetest
-Copyright (C) 2017 Loic Blot <loic.blot@unix-experience.fr>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2017 Loic Blot <loic.blot@unix-experience.fr>
 
 
 #include "lua_api/l_minimap.h"
@@ -132,9 +117,6 @@ int LuaMinimap::l_show(lua_State *L)
 	if (!g_settings->getBool("enable_minimap"))
 		return 1;
 
-	Client *client = getClient(L);
-	assert(client);
-
 	LuaMinimap *ref = checkObject<LuaMinimap>(L, 1);
 	Minimap *m = getobject(ref);
 
@@ -144,15 +126,11 @@ int LuaMinimap::l_show(lua_State *L)
 	if (m->getModeIndex() == 0 && m->getMaxModeIndex() > 0)
 		m->setModeIndex(1);
 
-	client->showMinimap(true);
 	return 1;
 }
 
 int LuaMinimap::l_hide(lua_State *L)
 {
-	Client *client = getClient(L);
-	assert(client);
-
 	LuaMinimap *ref = checkObject<LuaMinimap>(L, 1);
 	Minimap *m = getobject(ref);
 
@@ -162,7 +140,6 @@ int LuaMinimap::l_hide(lua_State *L)
 	if (m->getModeIndex() != 0)
 		m->setModeIndex(0);
 
-	client->showMinimap(false);
 	return 1;
 }
 

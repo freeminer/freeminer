@@ -1,4 +1,4 @@
-package net.minetest.minetest;
+package org.freeminer.freeminer;
 
 import android.content.Context;
 import android.util.Log;

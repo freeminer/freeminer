@@ -1,19 +1,6 @@
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "config.h"
 
@@ -30,6 +17,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <hiredis.h>
 #include <cassert>
 
+/*
+ * Redis is not a good fit for Minetest and only still supported for legacy as
+ * well as advanced use case reasons, see:
+ * <https://github.com/minetest/minetest/issues/14822>
+ *
+ * Do NOT extend this backend with any new functionality.
+ */
 
 Database_Redis::Database_Redis(Settings &conf)
 {
@@ -64,6 +58,9 @@ Database_Redis::Database_Redis(Settings &conf)
 		}
 		freeReplyObject(reply);
 	}
+
+	dstream << "Note: When storing data in Redis you need to ensure that eviction"
+		" is disabled, or you risk DATA LOSS." << std::endl;
 }
 
 Database_Redis::~Database_Redis()
@@ -71,7 +68,8 @@ Database_Redis::~Database_Redis()
 	redisFree(ctx);
 }
 
-void Database_Redis::beginSave() {
+void Database_Redis::beginSave()
+{
 	redisReply *reply = static_cast<redisReply *>(redisCommand(ctx, "MULTI"));
 	if (!reply) {
 		throw DatabaseException(std::string(
@@ -80,7 +78,8 @@ void Database_Redis::beginSave() {
 	freeReplyObject(reply);
 }
 
-void Database_Redis::endSave() {
+void Database_Redis::endSave()
+{
 	redisReply *reply = static_cast<redisReply *>(redisCommand(ctx, "EXEC"));
 	if (!reply) {
 		throw DatabaseException(std::string(
@@ -89,12 +88,12 @@ void Database_Redis::endSave() {
 	freeReplyObject(reply);
 }
 
-bool Database_Redis::saveBlock(const v3bpos_t &pos, const std::string &data)
+bool Database_Redis::saveBlock(const v3bpos_t &pos, std::string_view data)
 {
 	std::string tmp = getBlockAsStringCompatible(pos);
 
 	redisReply *reply = static_cast<redisReply *>(redisCommand(ctx, "HSET %s %s %b",
-			hash.c_str(), tmp.c_str(), data.c_str(), data.size()));
+			hash.c_str(), tmp.c_str(), data.data(), data.size()));
 	if (!reply) {
 		warningstream << "saveBlock: redis command 'HSET' failed on "
 			"block " << pos << ": " << ctx->errstr << std::endl;

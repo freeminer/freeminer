@@ -140,7 +140,7 @@ void Circuit::swapNode(v3pos_t pos, const MapNode& n_old, const MapNode& n_new) 
 }
 
 void Circuit::addElement(v3pos_t pos) {
-	auto lock = m_elements_mutex.lock_unique_rec();
+	const auto lock = m_elements_mutex.lock_unique_rec();
 
 	bool already_existed[6];
 	bool connected_faces[6] = {0};
@@ -205,7 +205,7 @@ void Circuit::addElement(v3pos_t pos) {
 }
 
 void Circuit::removeElement(v3pos_t pos) {
-	auto lock = m_elements_mutex.lock_unique_rec();
+	const auto lock = m_elements_mutex.lock_unique_rec();
 
 	std::vector <std::list <CircuitElementVirtual>::iterator> virtual_elements_for_update;
 	std::list <CircuitElement>::iterator current_element = m_pos_to_iterator[pos];
@@ -235,7 +235,7 @@ void Circuit::removeElement(v3pos_t pos) {
 }
 
 void Circuit::addWire(v3pos_t pos) {
-	auto lock = m_elements_mutex.lock_unique_rec();
+	const auto lock = m_elements_mutex.lock_unique_rec();
 
 	// This is used for converting elements of current_face_connected to their ids in all_connected.
 	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > all_connected;
@@ -315,7 +315,7 @@ void Circuit::addWire(v3pos_t pos) {
 }
 
 void Circuit::removeWire(v3pos_t pos) {
-	auto lock = m_elements_mutex.lock_unique_rec();
+	const auto lock = m_elements_mutex.lock_unique_rec();
 
 	std::vector <std::pair <std::list <CircuitElement>::iterator, u8> > current_face_connected;
 
@@ -383,7 +383,7 @@ void Circuit::removeWire(v3pos_t pos) {
 
 void Circuit::update(float dtime) {
 	if(m_since_last_update > m_min_update_delay) {
-		auto lock = m_elements_mutex.lock_unique_rec();
+		const auto lock = m_elements_mutex.lock_unique_rec();
 		m_since_last_update -= m_min_update_delay;
 		// Each element send signal to other connected virtual elements.
 		bool is_map_loaded = true;
@@ -422,7 +422,7 @@ void Circuit::update(float dtime) {
 
 
 void Circuit::swapElement(const MapNode& n_old, const MapNode& n_new, v3pos_t pos) {
-	auto lock = m_elements_mutex.lock_unique_rec();
+	const auto lock = m_elements_mutex.lock_unique_rec();
 
 	const ContentFeatures& n_old_features = m_ndef->get(n_old);
 	const ContentFeatures& n_new_features = m_ndef->get(n_new);
@@ -510,7 +510,7 @@ void Circuit::load() {
 }
 
 void Circuit::save() {
-	auto lock = m_elements_mutex.lock_shared_rec();
+	const auto lock = m_elements_mutex.lock_shared_rec();
 	std::ostringstream ostr(std::ios_base::binary);
 	std::ofstream out((m_savedir + DIR_DELIM + elements_states_file).c_str(), std::ios_base::binary);
 	out.write(reinterpret_cast<const char*>(&circuit_simulator_version), sizeof(circuit_simulator_version));

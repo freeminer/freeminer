@@ -1,29 +1,17 @@
-/*
-Minetest
-Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+// Luanti
+// SPDX-License-Identifier: LGPL-2.1-or-later
+// Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or
-(at your option) any later version.
+#include "fm_far_calc.h"
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program; if not, write to the Free Software Foundation, Inc.,
-51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+#include "fm_far_calc.h"
 
 #include "clientmap.h"
 #include "client.h"
-#include "client/fm_far_calc.h"
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
-#include <atomic>
+#include <IVideoDriver.h>
 #include <matrix4.h>
 #include "mapsector.h"
 #include "mapblock.h"
@@ -32,38 +20,49 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "camera.h"               // CameraModes
 #include "util/basic_macros.h"
+#include "util/tracy_wrapper.h"
 #include "client/renderingengine.h"
 #include "util/numeric.h"
 
 #include <queue>
 
-// struct MeshBufListList
-void MeshBufListList::clear()
-{
-	for (auto &list : lists)
-		list.clear();
-}
+namespace {
+	// A helper struct
+	struct MeshBufListMaps
+	{
+		struct MaterialHash
+		{
+			size_t operator()(const video::SMaterial &m) const noexcept
+			{
+				// Only hash first texture. Simple and fast.
+				return std::hash<video::ITexture *>{}(m.TextureLayers[0].Texture);
+			}
+		};
 
-void MeshBufListList::add(scene::IMeshBuffer *buf, v3bpos_t position, u8 layer)
-{
-	// Append to the correct layer
-	std::vector<MeshBufList> &list = lists[layer];
-	const video::SMaterial &m = buf->getMaterial();
-	for (MeshBufList &l : list) {
-		// comparing a full material is quite expensive so we don't do it if
-		// not even first texture is equal
-		if (l.m.TextureLayers[0].Texture != m.TextureLayers[0].Texture)
-			continue;
+		using MeshBufListMap = std::unordered_map<
+				video::SMaterial,
+				std::vector<std::pair<v3bpos_t, scene::IMeshBuffer *>>,
+				MaterialHash>;
 
-		if (l.m == m) {
-			l.bufs.emplace_back(position, buf);
-			return;
+		std::array<MeshBufListMap, MAX_TILE_LAYERS> maps;
+
+		void clear()
+		{
+			for (auto &map : maps)
+				map.clear();
 		}
-	}
-	MeshBufList l;
-	l.m = m;
-	l.bufs.emplace_back(position, buf);
-	list.emplace_back(l);
+
+		void add(scene::IMeshBuffer *buf, v3pos_t position, u8 layer)
+		{
+			assert(layer < MAX_TILE_LAYERS);
+
+			// Append to the correct layer
+			auto &map = maps[layer];
+			const video::SMaterial &m = buf->getMaterial();
+			auto &bufs = map[m]; // default constructs if non-existent
+			bufs.emplace_back(position, buf);
+		}
+	};
 }
 
 void MapDrawControl::fm_init()
@@ -76,12 +75,23 @@ void MapDrawControl::fm_init()
 
 	fov_want = fov = g_settings->getFloat("fov");
 }
+/*
+	ClientMap
+*/
 
 static void on_settings_changed(const std::string &name, void *data)
 {
-	static_cast<ClientMap*>(data)->onSettingChanged(name);
+	static_cast<ClientMap*>(data)->onSettingChanged(name, false);
 }
-// ClientMap
+
+static const std::string ClientMap_settings[] = {
+	"trilinear_filter",
+	"bilinear_filter",
+	"anisotropic_filter",
+	"transparency_sorting_distance",
+	"occlusion_culler",
+	"enable_raytraced_culling",
+};
 
 ClientMap::ClientMap(
 		Client *client,
@@ -110,44 +120,38 @@ ClientMap::ClientMap(
 	m_box = aabb3f(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
 
-	/* TODO: Add a callback function so these can be updated when a setting
-	 *       changes.  At this point in time it doesn't matter (e.g. /set
-	 *       is documented to change server settings only)
-	 *
-	 * TODO: Local caching of settings is not optimal and should at some stage
-	 *       be updated to use a global settings object for getting thse values
-	 *       (as opposed to the this local caching). This can be addressed in
-	 *       a later release.
-	 */
-	m_cache_trilinear_filter  = g_settings->getBool("trilinear_filter");
-	m_cache_bilinear_filter   = g_settings->getBool("bilinear_filter");
-	m_cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
-	m_cache_transparency_sorting_distance = g_settings->getU16("transparency_sorting_distance");
-	m_loops_occlusion_culler = g_settings->get("occlusion_culler") == "loops";
-	g_settings->registerChangedCallback("occlusion_culler", on_settings_changed, this);
-	m_enable_raytraced_culling = g_settings->getBool("enable_raytraced_culling");
-	g_settings->registerChangedCallback("enable_raytraced_culling", on_settings_changed, this);
+	for (const auto &name : ClientMap_settings)
+		g_settings->registerChangedCallback(name, on_settings_changed, this);
+	// load all settings at once
+	onSettingChanged("", true);
 }
 
-void ClientMap::onSettingChanged(const std::string &name)
+void ClientMap::onSettingChanged(std::string_view name, bool all)
 {
-	if (name == "occlusion_culler")
+	if (all || name == "trilinear_filter")
+		m_cache_trilinear_filter  = g_settings->getBool("trilinear_filter");
+	if (all || name == "bilinear_filter")
+		m_cache_bilinear_filter   = g_settings->getBool("bilinear_filter");
+	if (all || name == "anisotropic_filter")
+		m_cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
+	if (all || name == "transparency_sorting_distance")
+		m_cache_transparency_sorting_distance = g_settings->getU16("transparency_sorting_distance");
+	if (all || name == "occlusion_culler")
 		m_loops_occlusion_culler = g_settings->get("occlusion_culler") == "loops";
-	if (name == "enable_raytraced_culling")
+	if (all || name == "enable_raytraced_culling")
 		m_enable_raytraced_culling = g_settings->getBool("enable_raytraced_culling");
 }
 
 ClientMap::~ClientMap()
 {
-	g_settings->deregisterChangedCallback("occlusion_culler", on_settings_changed, this);
-	g_settings->deregisterChangedCallback("enable_raytraced_culling", on_settings_changed, this);
+	g_settings->deregisterAllChangedCallbacks(this);
 }
 
 void ClientMap::updateCamera(v3opos_t pos, v3f dir, f32 fov, v3pos_t offset, video::SColor light_color)
 {
-	//v3s16 previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
+	//v3pos_t previous_node = floatToInt(m_camera_position, BS) + m_camera_offset;
 	v3pos_t previous_node = m_camera_position_node;
-	v3bpos_t previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
+	v3pos_t previous_block = getContainerPos(previous_node, MAP_BLOCKSIZE);
 
 	m_camera_position = pos;
 	m_camera_direction = dir;
@@ -157,7 +161,7 @@ void ClientMap::updateCamera(v3opos_t pos, v3f dir, f32 fov, v3pos_t offset, vid
 
 	v3pos_t current_node = floatToInt(m_camera_position, BS); // + m_camera_offset;
 	m_camera_position_node = current_node;
-	v3bpos_t current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
+	auto current_block = getContainerPos(current_node, MAP_BLOCKSIZE);
 
 	// reorder the blocks when camera crosses block boundary
 	if (previous_block != current_block)
@@ -169,7 +173,7 @@ void ClientMap::updateCamera(v3opos_t pos, v3f dir, f32 fov, v3pos_t offset, vid
 }
 
 /*
-MapSector * ClientMap::emergeSector(v2bpos_t p2d)
+MapSector * ClientMap::emergeSector(v2s16 p2d)
 {
 	// Check that it doesn't exist already
 	MapSector *sector = getSectorNoGenerate(p2d);
@@ -195,6 +199,14 @@ void ClientMap::OnRegisterSceneNode()
 	ISceneNode::OnRegisterSceneNode();
 	// It's not needed to register this node to the shadow renderer
 	// we have other way to find it
+}
+
+void ClientMap::render()
+{
+	video::IVideoDriver* driver = SceneManager->getVideoDriver();
+    if (driver->getDriverType() == video::EDT_NULL) { return; }
+	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
+	renderMap(driver, SceneManager->getSceneNodeRenderPass());
 }
 
 void ClientMap::getBlocksInViewRange(v3pos_t cam_pos_nodes,
@@ -295,8 +307,8 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	}
 	m_keeplist.clear();
 
-	//const v3s16 cam_pos_nodes = floatToInt(m_camera_position, BS);
-	const v3pos_t cam_pos_nodes = m_camera_position_node;
+	//const v3pos_t cam_pos_nodes = floatToInt(m_camera_position, BS);
+	v3pos_t cam_pos_nodes = m_camera_position_node;
 
 	v3pos_t p_blocks_min;
 	v3pos_t p_blocks_max;
@@ -319,7 +331,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 			occlusion_culling_enabled = false;
 	}
 
-	const v3bpos_t camera_block = getContainerPos(cam_pos_nodes, MAP_BLOCKSIZE);
+	const auto camera_block = getContainerPos(cam_pos_nodes, MAP_BLOCKSIZE);
 	m_drawlist = drawlist_map(MapBlockComparer(camera_block));
 
 	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
@@ -359,8 +371,8 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 		MapBlockVect sectorblocks;
 
 		for (auto &sector_it : m_sectors) {
-			MapSector *sector = sector_it.second;
-			v2bpos_t sp = sector->getPos();
+			const MapSector *sector = sector_it.second;
+			auto sp = sector->getPos();
 
 			blocks_loaded += sector->size();
 			if (!m_control.range_all) {
@@ -369,11 +381,9 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 					continue;
 			}
 
-			sectorblocks.clear();
-			sector->getBlocks(sectorblocks);
-
 			// Loop through blocks in sector
-			for (MapBlock *block : sectorblocks) {
+			for (const auto &entry : sector->getBlocks()) {
+				MapBlock *block = entry.second.get();
 				MapBlockMesh *mesh = block->mesh;
 */
 			{
@@ -382,7 +392,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 				v3opos_t mesh_sphere_center;
 				f32 mesh_sphere_radius;
 
-				v3pos_t block_pos_nodes = block->getPosRelative();
+				auto block_pos_nodes = block->getPosRelative();
 
 				if (mesh) {
 					mesh_sphere_center = intToFloat(block_pos_nodes, BS)
@@ -477,7 +487,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 			// Get the sector, block and mesh
 /*
-			MapSector *sector = this->getSectorNoGenerate(v2bpos_t(block_coord.X, block_coord.Z));
+			MapSector *sector = this->getSectorNoGenerate(v2s16(block_coord.X, block_coord.Z));
 
 			MapBlock *block = sector ? sector->getBlockNoCreateNoEx(block_coord.Y) : nullptr;
 
@@ -695,7 +705,7 @@ void ClientMap::touchMapBlocks()
 
 /*
 	for (const auto &sector_it : m_sectors) {
-		MapSector *sector = sector_it.second;
+		const MapSector *sector = sector_it.second;
 		v2bpos_t sp = sector->getPos();
 
 		blocks_loaded += sector->size();
@@ -704,18 +714,17 @@ void ClientMap::touchMapBlocks()
 					sp.Y < p_blocks_min.Z || sp.Y > p_blocks_max.Z)
 				continue;
 		}
-
-		MapBlockVect sectorblocks;
-		sector->getBlocks(sectorblocks);
 */
 		/*
 			Loop through blocks in sector
 		*/
-	{
 		for (auto & [key, block] : m_blocks) {
-		//for (MapBlock *block : sectorblocks) {
-		//	MapBlockMesh *mesh = block->mesh;
 			const auto mesh = block->getLodMesh(0, true);
+/*
+		for (const auto &entry : sector->getBlocks()) {
+			MapBlock *block = entry.second.get();
+			MapBlockMesh *mesh = block->mesh;
+*/
 
 			// Calculate the coordinates for range and frustum culling
 			v3opos_t mesh_sphere_center;
@@ -743,7 +752,8 @@ void ClientMap::touchMapBlocks()
 			block->resetUsageTimer();
 			blocks_in_range_with_mesh++;
 		}
-	}
+
+	//}
 
 	g_profiler->avg("MapBlock meshes in range [#]", blocks_in_range_with_mesh);
 	g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
@@ -827,7 +837,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	unordered_map_v3pos<bool> occlude_cache;
 
-	std::vector<std::pair<v3bpos_t, MapBlockP>> vector;
+	std::vector<std::pair<v3bpos_t, MapBlockPtr>> vector;
 	{
 		const auto lock = m_blocks.lock_shared_rec();
 		vector.reserve(m_blocks.size());
@@ -1127,6 +1137,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
 
+	ZoneScoped;
+
 	bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
 
 	std::string prefix;
@@ -1171,7 +1183,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		Draw the selected MapBlocks
 	*/
 
-	MeshBufListList grouped_buffers;
+	MeshBufListMaps grouped_buffers;
 	std::vector<DrawDescriptor> draw_order;
 	video::SMaterial previous_material;
 
@@ -1212,15 +1224,11 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		if (is_frustum_culled(mesh_sphere_center, mesh_sphere_radius))
 			continue;
 
-		v3opos_t block_pos_r = posToOpos(block->getPosRelative() + MAP_BLOCKSIZE / 2, BS);
-
-		float d = camera_position.getDistanceFrom(block_pos_r);
-		d = MYMAX(0,d - BLOCK_MAX_RADIUS);
-
 		// Mesh animation
 		if (pass == scene::ESNRP_SOLID) {
-			// Pretty random but this should work somewhat nicely
-			bool faraway = d >= BS * 50;
+			// 50 nodes is pretty arbitrary but it should work somewhat nicely
+			float distance_sq = camera_position.getDistanceFromSQ(mesh_sphere_center);
+			bool faraway = distance_sq >= std::pow(BS * 50 + mesh_sphere_radius, 2.0f);
 
 			if (is_far)
 				faraway = false;
@@ -1248,7 +1256,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		}
 		else {
 			// otherwise, group buffers across meshes
-			// using MeshBufListList
+			// using MeshBufListMaps
 			for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 				scene::IMesh *mesh = block_mesh->getMesh(layer);
 				assert(mesh);
@@ -1274,11 +1282,11 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	}
 
 	// Capture draw order for all solid meshes
-	for (auto &lists : grouped_buffers.lists) {
-		for (MeshBufList &list : lists) {
+	for (auto &map : grouped_buffers.maps) {
+		for (auto &list : map) {
 			// iterate in reverse to draw closest blocks first
-			for (auto it = list.bufs.rbegin(); it != list.bufs.rend(); ++it) {
-				draw_order.emplace_back(it->first, it->second, it != list.bufs.rbegin());
+			for (auto it = list.second.rbegin(); it != list.second.rend(); ++it) {
+				draw_order.emplace_back(it->first, it->second, it != list.second.rbegin());
 			}
 		}
 	}
@@ -1294,10 +1302,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	drawcall_count += draw_order.size();
 
 	for (auto &descriptor : draw_order) {
-		scene::IMeshBuffer *buf = descriptor.getBuffer();
-
 		if (!descriptor.m_reuse_material) {
-			auto &material = buf->getMaterial();
+			auto &material = descriptor.getMaterial();
 
 			// Apply filter settings
 			material.forEachTexture([this] (auto &tex) {
@@ -1329,8 +1335,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		m.setTranslation(oposToV3f(block_wpos - offset));
 
 		driver->setTransform(video::ETS_WORLD, m);
-		descriptor.draw(driver);
-		vertex_count += buf->getIndexCount();
+		vertex_count += descriptor.draw(driver);
 	}
 
 	g_profiler->avg(prefix + "draw meshes [ms]", draw.stop(true));
@@ -1456,8 +1461,7 @@ int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 		v3f z_dir = z_directions[i];
 		core::CMatrix4<f32> a;
 		a.buildRotateFromTo(v3f(0,1,0), z_dir);
-		v3f dir = m_camera_direction;
-		a.rotateVect(dir);
+		v3f dir = a.rotateAndScaleVect(m_camera_direction);
 		int br = 0;
 		float step = BS*1.5;
 		if(max_d > 35*BS)
@@ -1566,7 +1570,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	u32 drawcall_count = 0;
 	u32 vertex_count = 0;
 
-	MeshBufListList grouped_buffers;
+	MeshBufListMaps grouped_buffers;
 	std::vector<DrawDescriptor> draw_order;
 
 
@@ -1615,9 +1619,11 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		}
 		else {
 			// otherwise, group buffers across meshes
-			// using MeshBufListList
-			//auto mapBlockMesh = block->mesh;
-			//assert(mapBlockMesh);
+			// using MeshBufListMaps
+/*
+			MapBlockMesh *mapBlockMesh = block->mesh;
+			assert(mapBlockMesh);
+*/
 
 			for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 				scene::IMesh *mesh = mapBlockMesh->getMesh(layer);
@@ -1638,18 +1644,18 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	}
 
 	u32 buffer_count = 0;
-	for (auto &lists : grouped_buffers.lists)
-		for (MeshBufList &list : lists)
-			buffer_count += list.bufs.size();
+	for (auto &map : grouped_buffers.maps)
+		for (auto &list : map)
+			buffer_count += list.second.size();
 
 	draw_order.reserve(draw_order.size() + buffer_count);
 
 	// Capture draw order for all solid meshes
-	for (auto &lists : grouped_buffers.lists) {
-		for (MeshBufList &list : lists) {
+	for (auto &map : grouped_buffers.maps) {
+		for (auto &list : map) {
 			// iterate in reverse to draw closest blocks first
-			for (auto it = list.bufs.rbegin(); it != list.bufs.rend(); ++it)
-				draw_order.emplace_back(it->first, it->second, it != list.bufs.rbegin());
+			for (auto it = list.second.rbegin(); it != list.second.rend(); ++it)
+				draw_order.emplace_back(it->first, it->second, it != list.second.rbegin());
 		}
 	}
 
@@ -1657,19 +1663,28 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	draw.start();
 
 	core::matrix4 m; // Model matrix
-	auto offset = posToOpos(m_camera_offset, (opos_t)BS);
+	auto offset = intToFloat(m_camera_offset, (opos_t)BS);
 	u32 material_swaps = 0;
 
 	// Render all mesh buffers in order
 	drawcall_count += draw_order.size();
 
-	for (auto &descriptor : draw_order) {
-		scene::IMeshBuffer *buf = descriptor.getBuffer();
+	bool translucent_foliage = g_settings->getBool("enable_translucent_foliage");
 
+	video::E_MATERIAL_TYPE leaves_material = video::EMT_SOLID;
+
+	// For translucent leaves, we want to use backface culling instead of frontface.
+	if (translucent_foliage) {
+		// this is the material leaves would use, compare to nodedef.cpp
+		auto* shdsrc = m_client->getShaderSource();
+		const u32 leaves_shader = shdsrc->getShader("nodes_shader", TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES);
+		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
+	}
+
+	for (auto &descriptor : draw_order) {
 		if (!descriptor.m_reuse_material) {
 			// override some material properties
-			video::SMaterial local_material = buf->getMaterial();
-			local_material.MaterialType = material.MaterialType;
+			video::SMaterial local_material = descriptor.getMaterial();
 			// do not override culling if the original material renders both back
 			// and front faces in solid mode (e.g. plantlike)
 			// Transparent plants would still render shadows only from one side,
@@ -1678,8 +1693,12 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 				local_material.BackfaceCulling = material.BackfaceCulling;
 				local_material.FrontfaceCulling = material.FrontfaceCulling;
 			}
+			if (local_material.MaterialType == leaves_material && translucent_foliage) {
+				local_material.BackfaceCulling = true;
+				local_material.FrontfaceCulling = false;
+			}
+			local_material.MaterialType = material.MaterialType;
 			local_material.BlendOperation = material.BlendOperation;
-			local_material.Lighting = false;
 			driver->setMaterial(local_material);
 			++material_swaps;
 		}
@@ -1688,8 +1707,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		m.setTranslation(oposToV3f(block_wpos - offset));
 
 		driver->setTransform(video::ETS_WORLD, m);
-		descriptor.draw(driver);
-		vertex_count += buf->getIndexCount();
+		vertex_count += descriptor.draw(driver);
 	}
 
 	// restore the driver material state
@@ -1716,11 +1734,6 @@ void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_
 
 	ScopeProfiler sp(g_profiler, "CM::updateDrawListShadow()", SPT_AVG);
 
-	v3pos_t cam_pos_nodes = floatToInt(shadow_light_pos, BS);
-	v3pos_t p_blocks_min;
-	v3pos_t p_blocks_max;
-	getBlocksInViewRange(cam_pos_nodes, &p_blocks_min, &p_blocks_max, radius + length);
-
 	for (auto &i : m_drawlist_shadow) {
 		auto block = i.second;
 		block->refDrop();
@@ -1734,24 +1747,22 @@ void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_
 
 /*
 	for (auto &sector_it : m_sectors) {
-		MapSector *sector = sector_it.second;
+		const MapSector *sector = sector_it.second;
 		if (!sector)
 			continue;
 		blocks_loaded += sector->size();
-
-		MapBlockVect sectorblocks;
-		sector->getBlocks(sectorblocks);
-
 */
 		/*
 			Loop through blocks in sector
 		*/
+
 		for (const auto & [key, block] : m_blocks) {
 			++blocks_loaded;
 			
 			const auto mesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf), true);
 /*
-		for (MapBlock *block : sectorblocks) {
+		for (const auto &entry : sector->getBlocks()) {
+			MapBlock *block = entry.second.get();
 			MapBlockMesh *mesh = block->mesh;
 */
 			if (!mesh) {
@@ -1759,8 +1770,8 @@ void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_
 				continue;
 			}
 
-			v3opos_t block_pos = intToFloat(getBlockPosRelative(block->getPos()), BS) + mesh->getBoundingSphereCenter();
-			v3opos_t projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
+			auto block_pos = intToFloat(block->getPosRelative(), BS) + mesh->getBoundingSphereCenter();
+			auto projection = shadow_light_pos + shadow_light_dir * shadow_light_dir.dotProduct(block_pos - shadow_light_pos);
 			if (projection.getDistanceFrom(block_pos) > (radius + mesh->getBoundingRadius()))
 				continue;
 
@@ -1807,35 +1818,46 @@ void ClientMap::updateTransparentMeshBuffers()
 	ScopeProfiler sp(g_profiler, "CM::updateTransparentMeshBuffers", SPT_AVG);
 	u32 sorted_blocks = 0;
 	u32 unsorted_blocks = 0;
-	f32 sorting_distance_sq = pow(m_cache_transparency_sorting_distance * BS, 2.0f);
-
+	bool transparency_sorting_enabled = m_cache_transparency_sorting_distance > 0;
+	f32 sorting_distance = m_cache_transparency_sorting_distance * BS;
 
 	// Update the order of transparent mesh buffers in each mesh
 	for (auto it = m_drawlist.begin(); it != m_drawlist.end(); it++) {
+/*
+		MapBlock *block = it->second;
+		MapBlockMesh *blockmesh = block->mesh;
+*/
 		auto block = it->second;
-		auto block_mesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf));
+		auto blockmesh = block->getLodMesh(getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf));
 
 #if FARMESH_SHADOWS
-		if (!block_mesh) {
-			block_mesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(far_blocks_last_cam_pos), block->getPos()));
+		if (!blockmesh) {
+			blockmesh = block->getFarMesh(getFarStep(m_control, getNodeBlockPos(far_blocks_last_cam_pos), block->getPos()));
 		}
 #endif
 
-		if (!block_mesh)
+		if (!blockmesh)
 			continue;
 
 		if (m_needs_update_transparent_meshes ||
-				block_mesh->getTransparentBuffers().size() == 0) {
+				blockmesh->getTransparentBuffers().size() == 0) {
+			bool do_sort_block = transparency_sorting_enabled;
 
-			v3bpos_t block_pos = block->getPos();
-			auto block_pos_f = posToOpos(getBlockPosRelative(block_pos) + MAP_BLOCKSIZE / 2, BS);
-			f32 distance = m_camera_position.getDistanceFromSQ(block_pos_f);
-			if (distance <= sorting_distance_sq) {
-				block_mesh->updateTransparentBuffers(m_camera_position, block_pos);
-				++sorted_blocks;
+			if (do_sort_block) {
+				auto mesh_sphere_center = intToFloat(block->getPosRelative(), BS)
+						+ blockmesh->getBoundingSphereCenter();
+				f32 mesh_sphere_radius = blockmesh->getBoundingRadius();
+				f32 distance_sq = m_camera_position.getDistanceFromSQ(mesh_sphere_center);
+
+				if (distance_sq > std::pow(sorting_distance + mesh_sphere_radius, 2.0f))
+					do_sort_block = false;
 			}
-			else {
-				block_mesh->consolidateTransparentBuffers();
+
+			if (do_sort_block) {
+				blockmesh->updateTransparentBuffers(m_camera_position, block->getPos());
+				++sorted_blocks;
+			} else {
+				blockmesh->consolidateTransparentBuffers();
 				++unsorted_blocks;
 			}
 		}
@@ -1846,19 +1868,19 @@ void ClientMap::updateTransparentMeshBuffers()
 	m_needs_update_transparent_meshes = false;
 }
 
-scene::IMeshBuffer* ClientMap::DrawDescriptor::getBuffer()
+video::SMaterial &ClientMap::DrawDescriptor::getMaterial()
 {
-	return m_use_partial_buffer ? m_partial_buffer->getBuffer() : m_buffer;
+	return (m_use_partial_buffer ? m_partial_buffer->getBuffer() : m_buffer)->getMaterial();
 }
 
-void ClientMap::DrawDescriptor::draw(video::IVideoDriver* driver)
+u32 ClientMap::DrawDescriptor::draw(video::IVideoDriver* driver)
 {
 	if (m_use_partial_buffer) {
-		m_partial_buffer->beforeDraw();
-		driver->drawMeshBuffer(m_partial_buffer->getBuffer());
-		m_partial_buffer->afterDraw();
+		m_partial_buffer->draw(driver);
+		return m_partial_buffer->getBuffer()->getVertexCount();
 	} else {
 		driver->drawMeshBuffer(m_buffer);
+		return m_buffer->getVertexCount();
 	}
 }
 
