@@ -84,12 +84,14 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 		}
 	}
 
+	/*
 	const auto lat90 = height_gebco_tif::lat90_start(lat); // + 90 % 180;
 	const auto lon90 = height_gebco_tif::lon90_start(lon);
 	if (map90[lat90].contains(lon90)) {
 		const auto h = map90[lat90][lon90]->get(lat, lon);
 		return std::min(h, prev_layer_height);
 	}
+*/
 
 	//DUMP((long)this, "notfound, will load", lat, lon, lat1, lon1, lat90, lon90, map1[lat1].contains(lon1), prev_layer_height);
 	auto lock = std::unique_lock(mutex);
@@ -104,10 +106,27 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 			return prev_layer_height;
 		}
 	}
+	/*
 	if (map90[lat90].contains(lon90)) {
 		//DUMP("g2");
 		return std::min(prev_layer_height, map90[lat90][lon90]->get(lat, lon));
 	}
+*/
+
+	const auto place_dummy = [&](const auto &lat_dec, const auto &lon_dec) {
+		const static auto hgt_dummy = std::make_shared<height_dummy>();
+		//DUMP("place dummy", lat, lon, lat_dec, lon_dec, map1[lat_dec].contains(lon_dec));
+		if (!map1[lat_dec].contains(lon_dec))
+			map1[lat_dec][lon_dec] = hgt_dummy;
+		return map1[lat_dec][lon_dec]->get(lat, lon);
+	};
+	const auto place_dummy90 = [&](const auto &lat90, const auto &lon90) {
+		const static auto hgt_dummy = std::make_shared<height_dummy>();
+		//DUMP("place dummy", lat, lon, map90[lat90].contains(lon90));
+		if (!map90[lat90].contains(lon90))
+			map90[lat90][lon90] = hgt_dummy;
+		return map90[lat90][lon90]->get(lat, lon);
+	};
 
 	if (lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
 		// DUMP("insert", (long)this, lat, lon, folder, map1.size(), map1[lat1].size());
@@ -128,6 +147,7 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 					return prev_layer_height;
 				}
 			}
+			place_dummy(lat1, lon1);
 		}
 		if (0) {
 			// WRONG, todo
@@ -144,6 +164,15 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 				return map1[lat_dec][lon_dec]->get(lat, lon);
 			}
 		}
+	}
+	const auto lat90 = height_gebco_tif::lat90_start(lat); // + 90 % 180;
+	const auto lon90 = height_gebco_tif::lon90_start(lon);
+	if (lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
+
+		if (map90[lat90].contains(lon90)) {
+			return std::min(prev_layer_height, map90[lat90][lon90]->get(lat, lon));
+		}
+
 		if (!map90[lat90].contains(lon90)) {
 			// DUMP("isloaded?", map90[lat90].contains(lon90));
 			auto hgt = std::make_shared<height_gebco_tif>(folder, lat, lon);
@@ -157,17 +186,10 @@ height::height_t hgts::get(height_hgt::ll_t lat, height_hgt::ll_t lon)
 			}
 		}
 	}
-	{
-		const static auto hgt_dummy = std::make_shared<height_dummy>();
-		const auto lat_dec = hgt_dummy->lat_start(lat);
-		const auto lon_dec = hgt_dummy->lon_start(lon);
-		DUMP("place dummy", lat, lon, lat_dec, lon_dec, map1[lat_dec].contains(lon_dec));
-		if (!map1[lat_dec].contains(lon_dec))
-			map1[lat_dec][lon_dec] = hgt_dummy;
-		if (!map90[lat90].contains(lon90))
-			map90[lat90][lon90] = hgt_dummy;
-		return map1[lat_dec][lon_dec]->get(lat, lon);
+	if (!map90[lat90].contains(lon90)) {
+		place_dummy90(lat90, lon90);
 	}
+	return map90[lat90][lon90]->get(lat, lon);
 }
 
 std::mutex height::mutex;
@@ -455,12 +477,8 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		}
 	}
 */
-
-	// TODO: because unzip
-	//#if 1 //!defined(_WIN32)
-	// DUMP(filefull, zipfull);
-
-#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
+#if 0
+//#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
 	if (srtmTile.empty() && !std::filesystem::exists(filefull)) {
 
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
@@ -843,7 +861,7 @@ bool height_gebco_tif::load(ll_t lat, ll_t lon)
 					<< "https://www.bodc.ac.uk/data/open_download/gebco/gebco_2023_sub_ice_topo/geotiff/"
 					<< " or "
 					<< "https://www.bodc.ac.uk/data/open_download/gebco/gebco_2023_tid/geotiff/"
-					<< "\n";
+					<< " in " << porting::path_cache + DIR_DELIM + "earth" << "\n";
 		}
 
 		//DUMP(tifname, std::filesystem::exists(tifname));
