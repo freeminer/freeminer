@@ -497,6 +497,9 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 	}
 
 	v3opos_t position((opos_t)ps.X / 100.0f, (opos_t)ps.Y / 100.0f, (opos_t)ps.Z / 100.0f);
+	if (pkt->getRemainingBytes() >= 24 && pkt->getProtoVer() >= PROTOCOL_VERSION_32BIT) {
+		*pkt >> position;
+	}
 	v3f speed((f32)ss.X / 100.0f, (f32)ss.Y / 100.0f, (f32)ss.Z / 100.0f);
 
 	pitch = modulo360f(pitch);

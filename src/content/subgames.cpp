@@ -381,7 +381,7 @@ void loadGameConfAndInitWorld(const std::string &path, const std::string &name,
 			backend = "dummy";
 		}
 		conf.set("backend", backend);
-		conf.set("player_backend", "leveldb");
+		conf.set("player_backend", "leveldbfm");
 		conf.set("auth_backend", "leveldb");
 		conf.set("mod_storage_backend", "files");
 #elif USE_SQLITE3

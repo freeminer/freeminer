@@ -2809,7 +2809,7 @@ bool ServerEnvironment::migratePlayersDatabase(const GameParams &game_params,
 	if (!world_mt.exists("player_backend")) {
 		errorstream << "Please specify your current backend in world.mt:"
 			<< std::endl
-			<< "	player_backend = {files|sqlite3|leveldb|postgresql}"
+			<< "	player_backend = {files|sqlite3|leveldb|leveldbfm|postgresql}"
 			<< std::endl;
 		return false;
 	}
