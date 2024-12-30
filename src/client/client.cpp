@@ -1056,6 +1056,9 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 	*pkt << fov << wanted_range;
 	*pkt << camera_inverted;
 	*pkt << movement_speed << movement_dir;
+	if (pkt->getProtoVer() >= PROTOCOL_VERSION_32BIT) {
+		*pkt << myplayer->getPosition();
+	}
 }
 
 void Client::interact(InteractAction action, const PointedThing& pointed)
@@ -1081,6 +1084,7 @@ void Client::interact(InteractAction action, const PointedThing& pointed)
 	*/
 
 	NetworkPacket pkt(TOSERVER_INTERACT, 1 + 2 + 0);
+    pkt.setProtoVer(m_proto_ver);
 
 	pkt << (u8)action;
 	pkt << myplayer->getWieldIndex();
@@ -1416,7 +1420,7 @@ void Client::sendPlayerPos()
 	player->last_movement_speed  = movement_speed;
 	player->last_movement_dir    = movement_dir;
 
-	NetworkPacket pkt(TOSERVER_PLAYERPOS, 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1 + 4 + 4);
+    pkt.setProtoVer(m_proto_ver);
 
 	writePlayerPos(player, &map, &pkt, camera_inverted);
 
