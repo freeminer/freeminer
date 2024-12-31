@@ -278,6 +278,10 @@ int FarMesh::go_container()
 			[this, &cbpos](const v3bpos_t &bpos, const bpos_t &size) -> bool {
 				const block_step_t step = log(size) / log(2);
 
+				if (step >= FARMESH_STEP_MAX) {
+					return false;
+				}
+
 				// TODO: use block center
 				const auto bdist = radius_box(cbpos, bpos);
 				if ((bdist << MAP_BLOCKP) > farmesh_all_changed) {
