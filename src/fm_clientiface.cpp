@@ -73,7 +73,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 
 	v3pos_t center_nodepos = floatToInt(playerpos_predicted, BS);
 
-	v3pos_t center = getNodeBlockPos(center_nodepos);
+	auto center = getNodeBlockPos(center_nodepos);
 
 	// Camera position and direction
 	auto camera_pos = sao->getEyePosition();
@@ -284,7 +284,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		}
 
 		for (auto li = list.begin(); li != list.end(); ++li) {
-			const v3pos_t p = *li + center;
+			const auto p = *li + center;
 
 			/*
 				Send throttling

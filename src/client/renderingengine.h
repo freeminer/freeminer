@@ -37,7 +37,7 @@ class Minimap;
 class RenderingCore;
 
 // Instead of a mechanism to disable fog we just set it to be really far away
-#define FOG_RANGE_ALL (FARMESH_LIMIT*3 * BS)
+#define FOG_RANGE_ALL (FARMESH_LIMIT*4 * BS)
 
 /* Helpers */
 
