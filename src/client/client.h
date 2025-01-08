@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "msgpack_fix.h"
 #include "network/fm_connection_use.h"
 #include "threading/ThreadPool.h"
+#include "threading/async.h"
 constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 // ==
 
@@ -57,6 +58,7 @@ constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 
 #define CLIENT_CHAT_MESSAGE_LIMIT_PER_10S 10.0f
 
+class FarMesh;
 class Server;
 class ChatBackend;
 
@@ -168,6 +170,10 @@ public:
 	ServerMap::far_dbases_t far_dbases;
 	std::unique_ptr<WorldMerger> merger;
 	progschj::ThreadPool mesh_thread_pool;
+	std::unique_ptr<FarMesh> farmesh;
+    async_step_runner updateDrawList_async;
+    async_step_runner update_shadows_async;
+    async_step_runner farmesh_async;
 	// ==
 
 public:

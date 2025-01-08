@@ -928,13 +928,9 @@ private:
 
 
 	// fm:
-	GUITable *playerlist = nullptr;
+	GUITable *playerlist {};
 	video::SColor console_bg {};
-    async_step_runner updateDrawList_async;
-    async_step_runner update_shadows_async;
-	bool m_cinematic = false;
-	std::unique_ptr<FarMesh> farmesh;
-    async_step_runner farmesh_async;
+	bool m_cinematic {};
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
 	// ==:
@@ -1138,11 +1134,6 @@ Game::Game() :
 
 Game::~Game()
 {
-	farmesh_async.wait();
-	updateDrawList_async.wait();
-	update_shadows_async.wait();
-	farmesh.reset();
-
 	delete client;
 	delete soundmaker;
 	sound_manager.reset();
@@ -1684,7 +1675,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
-		farmesh = std::make_unique<FarMesh>(client, server, draw_control);
+		client->farmesh = std::make_unique<FarMesh>(client, server, draw_control);
 	}
 
 	//freeminer:
@@ -4541,18 +4532,18 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		updateClouds(dtime);
 
 	thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
-	if (farmesh) {
+	if (client->farmesh) {
 		thread_local static uint8_t processed{};
 		thread_local static u64 next_run_time{};
 		if (processed || porting::getTimeMs() > next_run_time) {
 			next_run_time = porting::getTimeMs() + 300;
-			farmesh_async.step([&, farmesh_range = farmesh_range,
+			client->farmesh_async.step([&, farmesh_range = farmesh_range,
 									   //yaw = player->getYaw(),
 									   //pitch = player->getPitch(),
 									   camera_pos = camera->getPosition(),
 									   camera_offset = camera->getOffset(),
 									   speed = player->getSpeed().getLength()]() {
-				processed = farmesh->update(camera_pos,
+				processed = client->farmesh->update(camera_pos,
 						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
 						camera_offset,
 						//sky->getBrightness(),
@@ -4668,7 +4659,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 				runData.update_draw_list_last_cam_pos.getDistanceFrom(camera_position) >
 						MAP_BLOCKSIZE * BS * 1 ||
 				m_camera_offset_changed) {
-			updateDrawList_async.step(
+			client->updateDrawList_async.step(
 					[camera_position, this](const float dtime) {
 						client->m_new_meshes = 0;
 						runData.update_draw_list_timer = 0;
@@ -4680,7 +4671,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 	if (!runData.headless_optimize)
 	if (RenderingEngine::get_shadow_renderer()) {
-			update_shadows_async.step([&]() {
+			client->update_shadows_async.step([&]() {
 		updateShadows();
 			});
 	}
