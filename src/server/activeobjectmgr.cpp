@@ -27,43 +27,7 @@ ActiveObjectMgr::~ActiveObjectMgr()
 
 void ActiveObjectMgr::clearIf(const std::function<bool(const ServerActiveObjectPtr&, u16)> &cb)
 {
-/* fmtodo:?
-	decltype(m_active_objects)::full_type active_objects;
-
-	{
-		// bad copy: avoid deadlocks with locks in cb
-		const auto lock = m_active_objects.try_lock_shared_rec();
-		if (!lock->owns_lock())
-			return;
-		active_objects = m_active_objects;
-	}
-
-	for (auto &[id, it] : active_objects) {
-		if (cb(it, id)) {
-			// erase by id, `it` can be invalid now
-			//removeObject(id);
-			objects_to_remove.emplace_back(id);
-		}
-	}
-	if (objects_to_remove.empty())
-		return;
-
-   {
-	const auto lock = m_active_objects.try_lock_unique_rec();
-	if (!lock->owns_lock())
-		return;
-
-	// Remove references from m_active_objects
-	for (u16 i : objects_to_remove) {
-		//m_active_objects.erase(i);
-		removeObject(i);
-	}
-   }
-	objects_to_remove.clear();
-
-	return;
-// === */
-
+/*
 	for (auto &it : m_active_objects.iter()) {
 		if (!it.second)
 			continue;
@@ -71,6 +35,36 @@ void ActiveObjectMgr::clearIf(const std::function<bool(const ServerActiveObjectP
 			// Remove reference from m_active_objects
 			m_active_objects.remove(it.first);
 		}
+	}
+*/
+
+	std::vector<std::pair<u16, ServerActiveObjectPtr>> active_objects;
+	active_objects.reserve(m_active_objects.size());
+
+	{
+		const auto lock = m_active_objects.lock_shared_rec();
+		for (auto &it : m_active_objects.iter()) {
+			if (!it.second)
+				continue;
+			active_objects.emplace_back(it);
+		}
+	}
+	for (const auto &it : active_objects) {
+		if (cb(it.second, it.first)) {
+			objects_to_remove.emplace_back(it.first);
+		}
+	}
+	if (objects_to_remove.empty()) {
+		return;
+	}
+	{
+		const auto lock = m_active_objects.try_lock_unique_rec();
+		if (!lock->owns_lock())
+			return;
+		for (const auto &id : objects_to_remove) {
+			m_active_objects.remove(id);
+		}
+		objects_to_remove.clear();
 	}
 }
 
