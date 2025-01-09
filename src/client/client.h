@@ -153,10 +153,10 @@ public:
 	ServerMap::far_dbases_t far_dbases;
 	std::unique_ptr<WorldMerger> merger;
 	progschj::ThreadPool mesh_thread_pool;
-
 	std::unique_ptr<FarMesh> farmesh;
+    async_step_runner updateDrawList_async;
+    async_step_runner update_shadows_async;
     async_step_runner farmesh_async;
-
 	// ==
 
 public:

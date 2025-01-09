@@ -82,7 +82,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "emerge.h"
 #include "fm_world_merge.h"
-
 #if !MINETEST_PROTO
 #include "network/fm_clientpacketsender.cpp"
 #endif
@@ -401,6 +400,10 @@ Client::~Client()
 
 	m_mesh_update_manager->stop();
 	m_mesh_update_manager->wait();
+
+	farmesh_async.wait();
+	updateDrawList_async.wait();
+	update_shadows_async.wait();
 
 /*	
 	MeshUpdateResult r;

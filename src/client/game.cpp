@@ -875,9 +875,9 @@ private:
 
 
 	// fm:
-	GUITable *playerlist = nullptr;
+	GUITable *playerlist {};
 	video::SColor console_bg {};
-	bool m_cinematic = false;
+	bool m_cinematic {};
 	std::unique_ptr<RaycastState> pointedRaycastState;
 	PointedThing pointed;
 	// ==:
