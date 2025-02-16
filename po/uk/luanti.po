@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-02-05 11:03+0000\n"
+"PO-Revision-Date: 2025-02-17 17:11+0000\n"
 "Last-Translator: Тарас Арт <fromkaniv@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10.1-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -270,7 +270,7 @@ msgstr "Сенсорний екран"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "pause_menu"
-msgstr ""
+msgstr "Меню паузи"
 
 #: builtin/common/settings/settingtypes.lua
 msgid "Client Mods"
@@ -553,7 +553,7 @@ msgstr "Трекер Проблем"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
-msgstr "Джерело"
+msgstr "Вихідний код"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Translate"
@@ -608,6 +608,8 @@ msgid ""
 "This is the list of clients connected to\n"
 "$1"
 msgstr ""
+"Це список клієнтів, приєднаних до\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -974,15 +976,15 @@ msgstr "Увімкнути все"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "Group by prefix"
-msgstr ""
+msgstr "Групувати за префіксом"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses a game called $2 and the following mods:"
-msgstr ""
+msgstr "Сервер $1 використовує гру $2 і такі моди:"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses the following mods:"
-msgstr ""
+msgstr "Сервер $1 використовує такі моди:"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "A new $1 version is available"
@@ -1261,6 +1263,10 @@ msgid ""
 "mod:<name>\n"
 "player:<name>"
 msgstr ""
+"Можливі фільтри\n"
+"game:<назва>\n"
+"mod:<назва>\n"
+"player:<назва>"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1382,7 +1388,7 @@ msgstr "Межі показуються у близьких блоків"
 
 #: src/client/game.cpp
 msgid "Bounding boxes shown"
-msgstr ""
+msgstr "Показано обмежувальні рамки"
 
 #: src/client/game.cpp
 msgid "Camera update disabled"
@@ -2308,19 +2314,19 @@ msgstr "Віддалений сервер"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Reset"
-msgstr ""
+msgstr "Скинути"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Start dragging a button to add. Tap outside to cancel."
-msgstr ""
+msgstr "Почніть тягнути кнопку, щоб додати. Натисніть зовні, щоб скасувати."
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap a button to select it. Drag a button to move it."
-msgstr ""
+msgstr "Натисніть кнопку, щоб вибрати. Перетягніть кнопку, щоб рухати."
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap outside to deselect."
-msgstr ""
+msgstr "Натисніть зовні, щоб скасувати вибір."
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Joystick"
@@ -2655,6 +2661,8 @@ msgid ""
 "All mesh buffers with less than this number of vertices will be merged\n"
 "during map rendering. This improves rendering performance."
 msgstr ""
+"Усі буфери сітки з меншою кількістю вершин будуть об’єднані\n"
+"під час візуалізації карти. Це покращує продуктивність візуалізації."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -3063,7 +3071,7 @@ msgstr "Хмари в меню"
 
 #: src/settings_translation_file.cpp
 msgid "Color depth for post-processing texture"
-msgstr ""
+msgstr "Глибина кольору для текстури після обробки"
 
 #: src/settings_translation_file.cpp
 msgid "Colored fog"
@@ -3270,6 +3278,11 @@ msgid ""
 "Reducing this can improve performance, but some effects (e.g. debanding)\n"
 "require more than 8 bits to work."
 msgstr ""
+"Визначає глибину кольору текстури, яка використовується для конвеєра "
+"постобробки.\n"
+"Зменшення цього може покращити продуктивність, але деяким ефектам(наприклад, "
+"дебаг)\n"
+"для роботи потрібно більше 8 біт."
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
@@ -3486,6 +3499,10 @@ msgid ""
 "situations\n"
 "where transparency sorting would be very slow otherwise."
 msgstr ""
+"Малює прозорість впорядкованих трикутників, згрупованих за їх сітчастими "
+"буферами.\n"
+"Це порушує сортування прозорості між буферами сітки, але уникає ситуацій\n"
+"де сортування прозорості було б дуже повільним в іншому випадку."
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
@@ -5187,7 +5204,7 @@ msgstr "Мінімум випадкового числа малих печер �
 
 #: src/settings_translation_file.cpp
 msgid "Minimum vertex count for mesh buffers"
-msgstr ""
+msgstr "Мінімальна кількість вершин для буферів сітки"
 
 #: src/settings_translation_file.cpp
 msgid "Mipmapping"
