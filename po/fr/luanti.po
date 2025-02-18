@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: French (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-02-15 22:03+0000\n"
-"Last-Translator: waxtatect <piero@live.ie>\n"
+"PO-Revision-Date: 2025-02-19 01:40+0000\n"
+"Last-Translator: meafk qc <meafk80@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/minetest/minetest/"
 "fr/>\n"
 "Language: fr\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.10\n"
+"X-Generator: Weblate 5.10.1-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -32,7 +32,7 @@ msgstr "Commande invalide : "
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
-msgstr "Commande émise : "
+msgstr "Commande effectuée : "
 
 #: builtin/client/chatcommands.lua
 msgid "List online players"
@@ -43,8 +43,9 @@ msgid "Online players: "
 msgstr "Joueurs en ligne : "
 
 #: builtin/client/chatcommands.lua
+#, fuzzy
 msgid "The out chat queue is now empty."
-msgstr "La file de messages du tchat est maintenant vide."
+msgstr "La file de messages du tchat est actuellement vide."
 
 #: builtin/client/chatcommands.lua
 msgid "This command is disabled by server."
@@ -63,6 +64,7 @@ msgid "Command not available: "
 msgstr "Commande non disponible : "
 
 #: builtin/common/chatcommands.lua
+#, fuzzy
 msgid "Get help for commands (-t: output in chat)"
 msgstr "Obtenir de l'aide pour les commandes (-t : afficher dans le tchat)"
 
@@ -71,7 +73,7 @@ msgid ""
 "Use '.help <cmd>' to get more information, or '.help all' to list everything."
 msgstr ""
 "Utiliser « .help <cmd> » pour obtenir plus d'informations, ou « .help all » "
-"pour tout lister."
+"pour lister tout les commandes."
 
 #: builtin/common/chatcommands.lua
 msgid "[all | <cmd>] [-t]"
@@ -140,6 +142,7 @@ msgstr "Sauvegarder"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Scale"
 msgstr "Échelle"
 
@@ -188,6 +191,7 @@ msgid "(The game will need to enable automatic exposure as well)"
 msgstr "(Le jeu doit également activer l'exposition automatique)"
 
 #: builtin/common/settings/dlg_settings.lua
+#, fuzzy
 msgid "(The game will need to enable bloom as well)"
 msgstr "(Le jeu doit également activer le flou lumineux)"
 
@@ -240,15 +244,16 @@ msgstr "Mouvement"
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "No results"
-msgstr "Pas de résultat"
+msgstr "Aucun résultat"
 
 #: builtin/common/settings/dlg_settings.lua
+#, fuzzy
 msgid "Reset setting to default"
-msgstr "Réinitialiser le réglage par défaut"
+msgstr "Réinitialiser le paramètre par défaut"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Reset setting to default ($1)"
-msgstr "Réinitialiser le réglage par défaut ($1)"
+msgstr "Réinitialiser le paramètre par défaut ($1)"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
@@ -357,12 +362,12 @@ msgstr "Le serveur prend en charge les versions du protocole entre $1 et $2. "
 
 #: builtin/mainmenu/common.lua
 msgid "We only support protocol version $1."
-msgstr "Nous prenons en charge seulement la version du protocole $1."
+msgstr "Nous prenons uniquement en charge la version du protocole $1."
 
 #: builtin/mainmenu/common.lua
 msgid "We support protocol versions between version $1 and $2."
 msgstr ""
-"Nous prenons en charge seulement les versions du protocole entre $1 et $2."
+"Nous prenons uniquement en charge les versions du protocole entre $1 et $2."
 
 #: builtin/mainmenu/content/contentdb.lua
 msgid "Error installing \"$1\": $2"
@@ -381,8 +386,8 @@ msgid ""
 "Failed to extract \"$1\" (insufficient disk space, unsupported file type or "
 "broken archive)"
 msgstr ""
-"Échec de l'extraction de « $1 » (espace disque insuffisant, type de fichier "
-"non pris en charge ou archive endommagée)"
+"Échec de l'extraction de « $1 » (espace dans le disque insuffisant, type de "
+"fichier non pris en charge ou archive endommagée)"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid ""
@@ -390,7 +395,7 @@ msgid ""
 "$2 queued"
 msgstr ""
 "$1 en téléchargement,\n"
-"$2 mis en attente"
+"$2 en attente de téléchargement"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "$1 downloading..."
