@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-02-17 17:11+0000\n"
-"Last-Translator: Тарас Арт <fromkaniv@gmail.com>\n"
+"PO-Revision-Date: 2025-02-21 22:54+0000\n"
+"Last-Translator: neketos851 <kokgp554t@mozmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
 "Language: uk\n"
@@ -186,15 +186,15 @@ msgstr "полегшений"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "(The game will need to enable automatic exposure as well)"
-msgstr "(В грі також буде потрібно увімкнути автоматичні тіні)"
+msgstr "(Грі також потрібно увімкнути автоматичну експозицію)"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "(The game will need to enable bloom as well)"
-msgstr "(В грі також потрібно увімкнути розмиття)"
+msgstr "(Грі також потрібно увімкнути розмиття)"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "(The game will need to enable volumetric lighting as well)"
-msgstr "(В грі також потрібно увімкнути об'ємне освітлення)"
+msgstr "(Грі також потрібно увімкнути об'ємне освітлення)"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "(Use system language)"
@@ -286,7 +286,7 @@ msgstr "Вміст: Моди"
 
 #: builtin/common/settings/shadows_component.lua
 msgid "(The game will need to enable shadows as well)"
-msgstr "(грі також буде потрібно увімкнути тіні)"
+msgstr "(Грі також буде потрібно увімкнути тіні)"
 
 #: builtin/common/settings/shadows_component.lua
 msgid "Custom"
@@ -573,7 +573,7 @@ msgstr "Відвідати сайт"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "by $1  —  $2 downloads  —  +$3 / $4 / -$5"
-msgstr "Зроблено $1  —  $2 загрузок  —  +$3 / $4 / -$5"
+msgstr "Зроблено $1  —  $2 завантажень  —  +$3 / $4 / -$5"
 
 #: builtin/mainmenu/content/pkgmgr.lua
 msgid "$1 (Enabled)"
@@ -970,9 +970,8 @@ msgstr ""
 "Цей пакмод має явну назву в modpack.conf, на що не вплине перейменування."
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
-#, fuzzy
 msgid "Expand all"
-msgstr "Увімкнути все"
+msgstr "Розгорнути все"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "Group by prefix"
@@ -1362,9 +1361,8 @@ msgid "Access denied. Reason: %s"
 msgstr "Доступ відхилено. Причина: %s"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "All debug info hidden"
-msgstr "Інформація для налагодження увімкнена"
+msgstr "Всю інформацію для налагодження сховано"
 
 #: src/client/game.cpp
 msgid "Automatic forward disabled"
@@ -1626,7 +1624,7 @@ msgstr "Гучність звуку змінено на %d%%"
 #: src/client/game.cpp
 #, fuzzy
 msgid "Wireframe not supported by video driver"
-msgstr "Відтінювачі увімкнені, але GLSL не підтримується драйвером."
+msgstr "Wireframe відображення не підтримується поточним графічним драйвером"
 
 #: src/client/game.cpp
 msgid "Wireframe shown"
@@ -2059,9 +2057,8 @@ msgid "Failed to compile the \"%s\" shader."
 msgstr "Не вдалося скомпілювати шейдер \"%s\"."
 
 #: src/client/shader.cpp
-#, fuzzy
 msgid "GLSL is not supported by the driver"
-msgstr "Відтінювачі увімкнені, але GLSL не підтримується драйвером."
+msgstr "GLSL не підтримується драйвером"
 
 #. ~ Error when a mod is missing dependencies. Ex: "Mod Title is missing: mod1, mod2, mod3"
 #: src/content/mod_configuration.cpp
@@ -2298,19 +2295,16 @@ msgid "Sound Volume: %d%%"
 msgstr "Гучність звуку: %d%%"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Add button"
-msgstr "Середня кнопка"
+msgstr "Додати кнопку"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Done"
-msgstr "Готово!"
+msgstr "Готово"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Remove"
-msgstr "Віддалений сервер"
+msgstr "Прибрати"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Reset"
@@ -3101,14 +3095,14 @@ msgid ""
 "These flags are independent from Luanti versions,\n"
 "so see a full list at https://content.luanti.org/help/content_flags/"
 msgstr ""
-"Розділений комами перелік міток, які треба приховувати у репозиторії "
-"вмісту.\n"
-"\"nonfree\" використовується для приховання пакунків, що не є \"вільним "
-"програмним\n"
-"забезпеченням\", як визначено Фондом вільного програмного забезпечення.\n"
+"Розділений комами перелік міток, які треба приховувати у репозиторії вмісту."
+"\n"
+"\"nonfree\" використовується для приховання пакунків, що не є "
+"\"вільним програмним забезпеченням\",\n"
+"як визначено Фондом вільного програмного забезпечення.\n"
 "Ви також можете вказувати оцінки вмісту.\n"
-"Ці мітки незалежні від версій Minetest, тому дивіться\n"
-"повний перелік на https://content.minetest.net/help/content_flags/"
+"Ці мітки незалежні від версій Luanti, тому дивіться\n"
+"повний перелік на https://content.luanti.org/help/content_flags/"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6483,6 +6477,7 @@ msgstr ""
 "Шлях до файла відносно до вашого шляху світу, де зберігатимуться профайли."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "The gesture for punching players/entities.\n"
 "This can be overridden by games and mods.\n"
@@ -6494,15 +6489,15 @@ msgid ""
 "Known from the classic Luanti mobile controls.\n"
 "Combat is more or less impossible."
 msgstr ""
-"Жест, що означає удар по гравцю або сутності.\n"
-"Це визначаться іграми або модами.\n"
+"Жест, що означає удар по гравцям/сутностям\n"
+"Може бути перевизначений іграми або модами.\n"
 "\n"
 "* short_tap (короткий дотик)\n"
 "Простий у використанні й відомий за іншими іграми, які не повинні бути "
 "названі.\n"
 "\n"
 "* long_tap (довгий дотик)\n"
-"Відомий за класичному мобільному управлінні Luanti.\n"
+"Відомий з класичного мобільного керування Luanti.\n"
 "Бої більш-менш неможливі."
 
 #: src/settings_translation_file.cpp
