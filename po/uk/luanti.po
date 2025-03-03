@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-02-27 01:26+0000\n"
-"Last-Translator: Тарас Арт <fromkaniv@gmail.com>\n"
+"PO-Revision-Date: 2025-03-03 14:54+0000\n"
+"Last-Translator: Денис Савченко <denissavchenko0@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
 "Language: uk\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10.2-dev\n"
+"X-Generator: Weblate 5.10.3-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -415,7 +415,7 @@ msgstr "Завантаження..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Featured"
-msgstr "Рекомендовано"
+msgstr "Рекомендоване"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Games"
@@ -910,7 +910,7 @@ msgstr "Назва відсутня"
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
 msgid "Name"
-msgstr "Назва"
+msgstr "Ім'я"
 
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
@@ -4585,7 +4585,7 @@ msgstr "Поріг озер"
 
 #: src/settings_translation_file.cpp
 msgid "Language"
-msgstr "Мови"
+msgstr "Мова"
 
 #: src/settings_translation_file.cpp
 msgid "Large cave depth"
@@ -5775,7 +5775,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Screenshots"
-msgstr "Знімки екрана"
+msgstr "Скриншоти"
 
 #: src/settings_translation_file.cpp
 msgid "Seabed noise"
