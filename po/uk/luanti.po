@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-03-03 14:54+0000\n"
-"Last-Translator: Денис Савченко <denissavchenko0@gmail.com>\n"
+"PO-Revision-Date: 2025-03-04 18:59+0000\n"
+"Last-Translator: Денис <denissavchenko0@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
 "Language: uk\n"
@@ -430,7 +430,7 @@ msgstr "Завантаження..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Mods"
-msgstr "Моди"
+msgstr "Модифікації"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 #: builtin/mainmenu/content/dlg_package.lua
@@ -447,7 +447,7 @@ msgstr "У черзі"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Texture Packs"
-msgstr "Набори текстур"
+msgstr "Текстурні пакети"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "The package $1 was not found."
@@ -919,7 +919,7 @@ msgstr "Пароль"
 
 #: builtin/mainmenu/dlg_register.lua
 msgid "Passwords do not match"
-msgstr "Паролі не збігаються"
+msgstr "Паролі не співпадають"
 
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_online.lua
 msgid "Register"
@@ -1028,7 +1028,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_about.lua
 msgid "About"
-msgstr "Деталі"
+msgstr "Про"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Active Contributors"
@@ -1802,7 +1802,7 @@ msgstr "Виконати"
 
 #: src/client/keycode.cpp
 msgid "Help"
-msgstr "Довідка"
+msgstr "Допомога"
 
 #: src/client/keycode.cpp
 msgid "Home"
@@ -2299,7 +2299,7 @@ msgstr "Готово"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Remove"
-msgstr "Прибрати"
+msgstr "Вилучити"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Reset"
