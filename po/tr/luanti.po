@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Turkish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-01-07 17:01+0000\n"
-"Last-Translator: Siber <anonloxu@gmail.com>\n"
+"PO-Revision-Date: 2025-03-11 16:25+0000\n"
+"Last-Translator: Siber <siber@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/minetest/"
 "minetest/tr/>\n"
 "Language: tr\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10.3-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -63,9 +63,8 @@ msgid "Command not available: "
 msgstr "Komut kullanılamıyor: "
 
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "Get help for commands (-t: output in chat)"
-msgstr "Komutlar için yardım alın"
+msgstr "Komutlar için yardım alın (-t: sohbet çıktısına)"
 
 #: builtin/common/chatcommands.lua
 msgid ""
@@ -211,7 +210,7 @@ msgstr "Erişilebilirlik"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Auto"
-msgstr ""
+msgstr "Otomatik"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/guiKeyChangeMenu.cpp
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
@@ -532,9 +531,8 @@ msgid "Overwrite"
 msgstr "Üzerine yaz"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "ContentDB page"
-msgstr "ContentDB URL"
+msgstr "ContentDB sayfası"
 
 #: builtin/mainmenu/content/dlg_package.lua
 #, fuzzy
@@ -585,7 +583,7 @@ msgstr "siteyi ziyaret et"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "by $1  —  $2 downloads  —  +$3 / $4 / -$5"
-msgstr ""
+msgstr "1$ - 2$ indirme ile - +3$ / 4$ / -5$"
 
 #: builtin/mainmenu/content/pkgmgr.lua
 msgid "$1 (Enabled)"
@@ -621,6 +619,8 @@ msgid ""
 "This is the list of clients connected to\n"
 "$1"
 msgstr ""
+"Bu, aşağıdakilere bağlı istemcilerin listesidir\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -736,7 +736,7 @@ msgstr "Dekorasyonlar"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Desert temples"
-msgstr ""
+msgstr "Çöl Tapınakları"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Development Test is meant for developers."
@@ -747,6 +747,8 @@ msgid ""
 "Different dungeon variant generated in desert biomes (only if dungeons "
 "enabled)"
 msgstr ""
+"Çöl biyomlarında farklı zindan varyantları oluşturur (eğer zindanlar aktif "
+"ise)"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Dungeons"
@@ -988,15 +990,15 @@ msgstr "Hepsini etkinleştir"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "Group by prefix"
-msgstr ""
+msgstr "Ön eke göre gruplama"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses a game called $2 and the following mods:"
-msgstr ""
+msgstr "$1 sunucusu $2 adlı bir oyun ve aşağıdaki modları kullanır:"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses the following mods:"
-msgstr ""
+msgstr "$1 sunucu aşağıdaki modları kullanır:"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "A new $1 version is available"
@@ -1020,11 +1022,11 @@ msgstr "Daha sonra"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "Never"
-msgstr "asla"
+msgstr "Asla"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "Visit website"
-msgstr "siteyi ziyaret et"
+msgstr "Siteyi ziyaret et"
 
 #: builtin/mainmenu/init.lua src/client/game_formspec.cpp
 msgid "Settings"
@@ -1161,15 +1163,16 @@ msgid "Install games from ContentDB"
 msgstr "ContentDB'den oyunlar yükle"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Luanti doesn't come with a game by default."
-msgstr "Minetest Game artık öntanımlı olarak kurulu değil"
+msgstr "Minetest Game artık öntanımlı olarak kurulu değil."
 
 #: builtin/mainmenu/tab_local.lua
 msgid ""
 "Luanti is a game-creation platform that allows you to play many different "
 "games."
 msgstr ""
+"Luanti, birçok farklı oyunu oynamanıza olanak tanıyan bir oyun oluşturma "
+"platformudur."
 
 #: builtin/mainmenu/tab_local.lua
 msgid "New"
@@ -1204,29 +1207,28 @@ msgid "Start Game"
 msgstr "Oyun Başlat"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "You need to install a game before you can create a world."
-msgstr "Bir mod kurabilmeniz için önce bir oyun kurmanız gerekir"
+msgstr "Bir mod kurabilmeniz için önce bir oyun kurmanız gerekir."
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Add favorite"
-msgstr "Uzak port"
+msgstr "Favorilere ekle"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Address"
 msgstr "Adres"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid ""
 "Clients:\n"
 "$1"
-msgstr "İstemci"
+msgstr ""
+"İstemciler:\n"
+"$1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Creative mode"
-msgstr "Yaratıcı kip"
+msgstr "Yaratıcı modu"
 
 #. ~ PvP = Player versus Player
 #: builtin/mainmenu/tab_online.lua
@@ -1238,9 +1240,8 @@ msgid "Favorites"
 msgstr "Sık Kullanılanlar"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Game: $1"
-msgstr "Oyun"
+msgstr "Oyun: $1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Incompatible Servers"
@@ -1255,14 +1256,12 @@ msgid "Login"
 msgstr "Giriş"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Number of mods: $1"
-msgstr "Emerge iş sayısı"
+msgstr "Mod sayısı: $1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Open server website"
-msgstr "Adanmış sunucu adımı"
+msgstr "Sunucunun sitesini aç"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
@@ -1275,6 +1274,10 @@ msgid ""
 "mod:<name>\n"
 "player:<name>"
 msgstr ""
+"Olası filtreler\n"
+"oyun:<isim>\n"
+"mod:<isim>\n"
+"oyuncu:<isim>"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1285,9 +1288,8 @@ msgid "Refresh"
 msgstr "Yenile"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Remove favorite"
-msgstr "Uzak port"
+msgstr "Favorilerden kaldır"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Server Description"
@@ -1397,7 +1399,7 @@ msgstr "Blok sınırları yakındaki bloklar için gösteriliyor"
 
 #: src/client/game.cpp
 msgid "Bounding boxes shown"
-msgstr ""
+msgstr "Sınırlayıcı kutular gösterilmektedir"
 
 #: src/client/game.cpp
 msgid "Camera update disabled"
@@ -1631,9 +1633,11 @@ msgstr ""
 "mod tarafından %d ile sınırlandırıldı"
 
 #: src/client/game.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Viewing range changed to %d, but limited to %d by game or mod"
-msgstr "Görüntüleme uzaklığı değişti: %d"
+msgstr ""
+"Görüntüleme aralığı %d olarak değiştirildi, ancak oyun veya mod tarafından "
+"%d ile sınırlandırıldı"
 
 #: src/client/game.cpp
 #, c-format
@@ -1642,7 +1646,7 @@ msgstr "Ses %d/100'e değişti"
 
 #: src/client/game.cpp
 msgid "Wireframe not supported by video driver"
-msgstr ""
+msgstr "Tel kafes video sürücüsü tarafından desteklenmiyor"
 
 #: src/client/game.cpp
 msgid "Wireframe shown"
@@ -2278,11 +2282,11 @@ msgstr "tuşa bas"
 
 #: src/gui/guiOpenURL.cpp
 msgid "Open"
-msgstr ""
+msgstr "Açık"
 
 #: src/gui/guiOpenURL.cpp
 msgid "Open URL?"
-msgstr ""
+msgstr "URL'yi Aç?"
 
 #: src/gui/guiOpenURL.cpp
 #, fuzzy
@@ -2335,19 +2339,19 @@ msgstr "Uzak sunucu"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Reset"
-msgstr ""
+msgstr "Sıfırla"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Start dragging a button to add. Tap outside to cancel."
-msgstr ""
+msgstr "Düğmeyi eklemek için sürükle. İptal etmek için dışarıya tıkla."
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap a button to select it. Drag a button to move it."
-msgstr ""
+msgstr "Seçmek için bir düğmeye tıkla. Hareket ettirmek için sürükle."
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap outside to deselect."
-msgstr ""
+msgstr "Seçimi kaldırmak için dışarıya tıklayın."
 
 #: src/gui/touchscreenlayout.cpp
 #, fuzzy
@@ -2356,31 +2360,31 @@ msgstr "Joystick ID"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Overflow menu"
-msgstr ""
+msgstr "Taşma menüsü"
 
 #: src/gui/touchscreenlayout.cpp
-#, fuzzy
 msgid "Toggle debug"
-msgstr "Sisi aç/kapa"
+msgstr "Hata ayıklamayı aç / kapat"
 
 #: src/network/clientpackethandler.cpp
 msgid ""
 "Another client is connected with this name.  If your client closed "
 "unexpectedly, try again in a minute."
 msgstr ""
+"Bu isimle başka bir istemci bağlandı.  İstemciniz beklenmedik bir şekilde "
+"kapandıysa, bir dakika içinde tekrar deneyin."
 
 #: src/network/clientpackethandler.cpp
 msgid "Empty passwords are disallowed.  Set a password and try again."
-msgstr ""
+msgstr "Boş parolalara izin verilmez.  Bir şifre belirleyin ve tekrar deneyin."
 
 #: src/network/clientpackethandler.cpp
 msgid "Internal server error"
-msgstr ""
+msgstr "Dahili sunucu hatası"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Invalid password"
-msgstr "Eski Parola"
+msgstr "Yanlış Parola"
 
 #. ~ DO NOT TRANSLATE THIS LITERALLY!
 #. This is a special string which needs to contain the translation's
@@ -2403,51 +2407,53 @@ msgstr "Ad alındı. Lütfen başka bir ad seçin"
 
 #: src/network/clientpackethandler.cpp
 msgid "Player name contains disallowed characters"
-msgstr ""
+msgstr "Oyuncu ismi izin verilmeyen karakterler içeriyor"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Player name not allowed"
-msgstr "Kullanıcı adı çok uzun."
+msgstr "Kullanıcı adı izin verilmiyor"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Server shutting down"
-msgstr "Kapatılıyor..."
+msgstr "Sunucu Kapatılıyor"
 
 #: src/network/clientpackethandler.cpp
 msgid ""
 "The server has experienced an internal error.  You will now be disconnected."
-msgstr ""
+msgstr "Sunucu dahili bir hata yaşıyor.  Bağlantınız şimdi kesilecek."
 
 #: src/network/clientpackethandler.cpp
 msgid "The server is running in singleplayer mode.  You cannot connect."
-msgstr ""
+msgstr "Sunucu tek oyunculu moda çalışıyor.  Bağlanamazsınız."
 
 #: src/network/clientpackethandler.cpp
 msgid "Too many users"
-msgstr ""
+msgstr "Çok fazla kullanıcı"
 
 #: src/network/clientpackethandler.cpp
 msgid "Unknown disconnect reason."
-msgstr ""
+msgstr "Bilinmeyen bağlantı kesilme sebebi."
 
 #: src/network/clientpackethandler.cpp
 msgid ""
 "Your client sent something the server didn't expect.  Try reconnecting or "
 "updating your client."
 msgstr ""
+"İstemciniz sunucuya beklenmeyen bir ley gönderdi.  Tekrar bağlanmayı ya da "
+"istemcinizi güncelleyin."
 
 #: src/network/clientpackethandler.cpp
 msgid ""
 "Your client's version is not supported.\n"
 "Please contact the server administrator."
 msgstr ""
+"İstemci sürümünüz desteklenmiyor.\n"
+"Lütfen sunucu yöneticisi ile iletişime geçin."
 
 #: src/server.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "%s while shutting down: "
-msgstr "Kapatılıyor..."
+msgstr "Kapatma sırasında %s: "
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2682,6 +2688,8 @@ msgid ""
 "All mesh buffers with less than this number of vertices will be merged\n"
 "during map rendering. This improves rendering performance."
 msgstr ""
+"Bu sayıdan daha az köşeye sahip tüm örgü tamponları birleştirilecektir\n"
+"harita oluşturma sırasında. Bu, render performansını artırır."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -2690,7 +2698,7 @@ msgstr "Düz yerine 3D bulut görünümünü kullanın."
 
 #: src/settings_translation_file.cpp
 msgid "Allows liquids to be translucent."
-msgstr ""
+msgstr "Sıvıların yarı saydam olmasını sağlar."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2740,11 +2748,11 @@ msgstr "Düzgünleştirme yöntemi"
 
 #: src/settings_translation_file.cpp
 msgid "Anticheat flags"
-msgstr ""
+msgstr "Anti-hile bayrakları"
 
 #: src/settings_translation_file.cpp
 msgid "Anticheat movement tolerance"
-msgstr ""
+msgstr "Anti-Hile hareket toleransı"
 
 #: src/settings_translation_file.cpp
 msgid "Append item name"
@@ -2768,10 +2776,19 @@ msgid ""
 "With OpenGL ES, dithering only works if the shader supports high\n"
 "floating-point precision and it may have a higher performance impact."
 msgstr ""
+"Renk bandı yapaylıklarını azaltmak için karartma uygulayın.\n"
+"Dithering, kayıpsız sıkıştırılmış dosyaların boyutunu önemli ölçüde artırır\n"
+"ekran görüntüleri ve ekran veya işletim sistemi yanlış çalışıyorsa\n"
+"ek dithering gerçekleştirir veya renk kanalları nicemlenmemişse\n"
+"8 bite kadar.\n"
+"OpenGL ES ile, dithering yalnızca gölgelendirici yüksek bitleri "
+"destekliyorsa çalışır.\n"
+"kayan nokta hassasiyeti ve daha yüksek bir performans etkisine sahip "
+"olabilir."
 
 #: src/settings_translation_file.cpp
 msgid "Apply specular shading to nodes."
-msgstr ""
+msgstr "Düğümlere speküler gölgelendirme uygulayın."
 
 #: src/settings_translation_file.cpp
 msgid "Arm inertia"
@@ -2911,7 +2928,7 @@ msgstr "Blok gönderme iyileştirme uzaklığı"
 
 #: src/settings_translation_file.cpp
 msgid "Bobbing"
-msgstr ""
+msgstr "Sallanma"
 
 #: src/settings_translation_file.cpp
 msgid "Bold and italic font path"
