@@ -90,10 +90,10 @@ const bool slow = debug || emscripten; // || android
 void fm_set_default_settings(Settings *settings) {
 
 	// Screen
-#if __ANDROID__ || __ARM_ARCH
-	//settings->setDefault("enable_shaders", "0");
-#endif
-//	settings->setDefault("chat_buffer_size", "6"); // todo re-enable
+	if (android) {
+		settings->setDefault("enable_shaders", "0");
+	}
+
 	settings->setDefault("timelapse", "0");
 
 	// Paths

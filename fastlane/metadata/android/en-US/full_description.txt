@@ -1,7 +1,13 @@
-Luanti is a voxel-based game platform with multiplayer capabilities.
+Freeminer is a Minecraft-inspired sandbox game.
 
-The objective of the available games varies, from sandbox games where you can explore, dig and build in a very large voxel world, to arcade-style games.
+Freeminer is based on Minetest/Luanti which is developed by a number of contributors from all over the globe.
 
-There is a wide range of built-in map generators for procedurally generated terrain, and voxel-based lighting that adapts to the environment and light sources.
+Unlike Minetest/Luanti it aims to make the game fun while trading off some bits of perfectionism.
 
-All games and mods are written in Lua with a scripting API that is easy to use and makes it easy for modders to get started.
+Unique features:
+
+1000x better view range and name
+
+Much closer to infinity world size (±2147483647 blocks in all directions) in this branch
+
+10x faster and more reliable networking

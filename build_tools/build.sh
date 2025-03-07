@@ -48,7 +48,7 @@ git pull --rebase ||:
 git submodule update --init --recursive ||:
 
 #compile
-cmake .. -GNinja -DENABLE_GLES=1 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` ${CMAKE_OPT}
+cmake .. -GNinja -DENABLE_GLES=1 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` -DBUILD_UNITTESTS=0 ${CMAKE_OPT}
 nice cmake --build .
 
 
