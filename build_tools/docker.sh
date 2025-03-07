@@ -3,4 +3,4 @@
 # IMAGE=manjarolinux ./docker.sh
 # IMAGE=archlinux ./docker.sh
 
-docker run -v $(pwd)/..:/work -it ${IMAGE=ubuntu} bash -c " cd /work && build_tools/build.sh "
+docker run -v $(pwd)/..:/work -it ${IMAGE=ubuntu} env CCACHE_DIR=/work/.ccache bash -c " cd /work/build_tools/; ./build.sh "
