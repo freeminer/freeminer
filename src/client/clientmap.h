@@ -37,6 +37,7 @@ struct MapDrawControl
 	float fov_want{180}; // smooth change
 
 	float farthest_drawn{};
+	bool enable_fog = g_settings->getBool("enable_fog");
 
 	void fm_init();
 	MapDrawControl() { fm_init(); }

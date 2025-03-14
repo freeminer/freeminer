@@ -659,7 +659,6 @@ struct GameRunData {
 	bool show_block_boundaries = false;
 	bool connected = false;
 	bool reconnect = false;
-	bool enable_fog = g_settings->getBool("enable_fog");
     //==
 
 
@@ -1556,6 +1555,8 @@ bool Game::createClient(const GameStartData &start_data)
 	draw_control = new MapDrawControl();
 	if (!draw_control)
 		return false;
+
+	draw_control->enable_fog = m_cache_enable_fog;
 
 	bool could_connect, connect_aborted;
 	if (!connectToServer(start_data, &could_connect, &connect_aborted))
@@ -2881,7 +2882,9 @@ void Game::toggleFog()
 	else
 		m_game_ui->showTranslatedStatusText("Fog disabled");
 
-	runData.enable_fog = allowed && flag;
+	if (draw_control) {
+		draw_control->enable_fog = allowed && flag;
+	}
 }
 
 
@@ -4578,7 +4581,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 /*
 		runData.fog_range = draw_control->wanted_range * BS;
 */
-		if (!runData.enable_fog) {
+		if (!draw_control->enable_fog) {
 			runData.fog_range = FOG_RANGE_ALL;
 		} else {
 			runData.fog_range = draw_control->wanted_range * BS + 0.0 * MAP_BLOCKSIZE * BS;
@@ -4594,8 +4597,10 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 				runData.fog_range += 50 * BS;
 			}
 		}
-		runData.fog_range = fog_was + (runData.fog_range - fog_was) / 50;
 	}
+
+	runData.fog_range = std::min<f32>(client->getCamera()->getCameraNode()->getFarValue(),
+			fog_was + (runData.fog_range - fog_was) / 50);
 
 	client->fog_range = runData.fog_range;
 
@@ -5048,7 +5053,9 @@ void Game::readSettings()
 
 	m_does_lost_focus_pause_game = g_settings->getBool("pause_on_lost_focus");
 
-	runData.enable_fog = m_cache_enable_fog;
+	if (draw_control) {
+		draw_control->enable_fog = m_cache_enable_fog;
+	}
 }
 
 /****************************************************************************/
