@@ -4599,7 +4599,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		}
 	}
 
-	runData.fog_range = std::min<f32>(client->getCamera()->getCameraNode()->getFarValue(),
+	runData.fog_range = std::min<f32>(client->getCamera()->getCameraNode()->getFarValue()/1.2,
 			fog_was + (runData.fog_range - fog_was) / 50);
 
 	client->fog_range = runData.fog_range;
