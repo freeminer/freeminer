@@ -603,7 +603,7 @@ void Camera::updateViewingRange()
 
 	m_draw_control.wanted_range = std::fmin(adjustDist(viewing_range, getFovMax()), FARMESH_LIMIT * 4);
 	if (m_draw_control.range_all) {
-		m_cameranode->setFarValue(FARMESH_LIMIT * 4 * BS);
+		m_cameranode->setFarValue(m_draw_control.enable_fog ? std::min(100000.f, FARMESH_LIMIT * 4 * BS) : FARMESH_LIMIT * 4 * BS);
 		return;
 	}
 
