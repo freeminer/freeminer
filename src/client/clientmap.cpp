@@ -811,7 +811,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	//bool free_move = g_settings->getBool("free_move");
 
-	auto range_max = m_control.range_all ? MAX_MAP_GENERATION_LIMIT*2 : m_control.wanted_range.load(std::memory_order::relaxed);
+	auto range_max = m_control.range_all ? FARMESH_LIMIT*2 : m_control.wanted_range.load(std::memory_order::relaxed);
 
 	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
 
