@@ -31,7 +31,7 @@ public:
 	void player_event_real(ServerActiveObject *player, const std::string &type);
 	struct pevent
 	{
-		ServerActiveObject *player;
+		ServerActiveObject *player {};
 		std::string type;
 	};
 	concurrent_vector<pevent> player_events;
