@@ -1351,6 +1351,8 @@ void Game::shutdown()
 			sleep_ms(100);
 	}
 
+	runData.selected_object.reset();
+
 	delete client;
 	client = nullptr;
 	delete soundmaker;
