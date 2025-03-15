@@ -1,3 +1,20 @@
+#if !defined(FILE_INCLUDED)
+#include "debug/iostream_debug_helpers.h"
+#include <osmium/area/assembler.hpp>
+#include <osmium/area/multipolygon_manager.hpp>
+#include <osmium/dynamic_handler.hpp>
+#include <osmium/handler/node_locations_for_ways.hpp>
+#include <osmium/index/map/sparse_mem_array.hpp>
+#include <osmium/io/file.hpp>
+#include <osmium/io/pbf_input.hpp>
+#include <osmium/osm/entity_bits.hpp>
+#include <osmium/osm/node.hpp>
+#include <osmium/osm/way.hpp>
+#include <osmium/tags/tags_filter.hpp>
+
+#include "mapgen/mapgen_earth.h"
+#endif
+
 class MyHandler : public osmium::handler::Handler
 {
 	MapgenEarth *mg;
@@ -6,10 +23,7 @@ class MyHandler : public osmium::handler::Handler
 public:
 	MyHandler(MapgenEarth *mg) : mg{mg} {}
 
-	void osm_object(const osmium::OSMObject &osm_object) const noexcept
-	{
-
-	}
+	void osm_object(const osmium::OSMObject &osm_object) const noexcept {}
 
 	void build_poly(const osmium::NodeRefList &a, short h, MapNode n)
 	{
@@ -28,8 +42,7 @@ public:
 				v2pos_t pos = mg->ll_to_pos(
 						ll(node_ref.location().lat(), node_ref.location().lon()));
 
-				if (
-						!pos_ok(pos)) {
+				if (!pos_ok(pos)) {
 				}
 				if (prev_ok && (pos_ok(pos) || pos_ok(prev_pos))) {
 					mg->bresenham(pos.X, pos.Y, prev_pos.X, prev_pos.Y,
@@ -74,6 +87,7 @@ public:
 		}
 
 		build_poly(way.nodes(), h, n);
+	}
 
 	void relation(const osmium::Relation &relation)
 	{
@@ -82,9 +96,7 @@ public:
 		}
 
 		for (const auto &sn : relation.subitems<osmium::Way>()) {
-
-			build_poly(sn.nodes(), 4, mg->visible_surface_dry);
-
+			way(sn);
 		}
 	}
 };
@@ -95,38 +107,39 @@ class hdl : public handler_i
 			osmium::Location>;
 	using cache_t = osmium::handler::NodeLocationsForWays<index_t>;
 
-	index_t index;
-	cache_t cache{index};
+	MapgenEarth *mg{};
 	const std::string path_name;
-	MapgenEarth *mg;
+
+	MyHandler handler;
 
 public:
 	hdl(MapgenEarth *mg, const std::string &path_name) :
-			path_name{path_name}, mg{mg}
+			mg{mg}, path_name{path_name}, handler{mg}
 	{
-		cache.ignore_errors();
 	}
 
 	void apply() override
 	{
-		osmium::area::Assembler::config_type
-				assembler_config; 
+		osmium::area::Assembler::config_type assembler_config;
 		assembler_config.create_empty_areas = false;
-		// Initialize the MultipolygonManager. Its job is to collect all
-		// relations and member ways needed for each area. It then calls an
-		// instance of the osmium::area::Assembler class (with the given config)
-		// to actually assemble one area.
+
 		osmium::area::MultipolygonManager<osmium::area::Assembler> mp_manager{
 				assembler_config};
-		// We read the input file twice. In the first pass, only relations are
-		// read and fed into the multipolygon manager.
-		MyHandler handler{mg};
-		osmium::relations::read_relations(osmium::io::File{path_name}, mp_manager);
+		index_t index;
+		cache_t cache{index};
+		cache.ignore_errors();
+		{
+			const auto llmin = mg->pos_to_ll(mg->node_min.X, mg->node_min.Z);
+			const auto llmax = mg->pos_to_ll(mg->node_max.X, mg->node_max.Z);
 
-		osmium::io::Reader reader{osmium::io::File{path_name, "pbf"}};
+		}
+		osmium::io::File file{path_name, "pbf"};
+		osmium::relations::read_relations(file, mp_manager);
 
+		osmium::io::Reader reader{file};
 		osmium::apply(reader, cache, handler,
-				mp_manager.handler([&handler](const osmium::memory::Buffer &area_buffer) {
+				mp_manager.handler([&handler = this->handler](
+										   const osmium::memory::Buffer &area_buffer) {
 					osmium::apply(area_buffer, handler);
 				}));
 	}

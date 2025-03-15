@@ -35,19 +35,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <sstream>
 #include <string>
-#include <thread>
 #include <unistd.h>
 #include <utility>
 #include <vector>
 #include "debug/iostream_debug_helpers.h"
-
 #include "filesys.h"
-#include "httpfetch.h"
-#include "log.h"
-#include "mapgen/mapgen_earth.h"
-#include "settings.h"
-#include "threading/concurrent_set.h"
-
+#include "http.h"
+#include "porting.h"
+#include "serialization.h"
 #include "util/timetaker.h"
 
 #if USE_TIFF
@@ -205,96 +200,6 @@ height_tif::height_tif(const std::string &folder, ll_t lat, ll_t lon) : folder{f
 	tile_deg_x = 60;
 	tile_deg_y = 45;
 }
-
-std::string exec_to_string(const std::string &cmd)
-{
-	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-	if (!pipe) {
-		DUMP("Cmd failed: ", cmd);
-		return {};
-	}
-
-	std::array<uint8_t, 1000000> buffer;
-	std::stringstream result;
-	size_t sz = 0;
-	while ((sz = fread((char *)buffer.data(), 1, buffer.size(), pipe.get())) > 0) {
-		result << std::string{(char *)buffer.data(), sz};
-	}
-	return result.str();
-}
-
-const auto http_to_file = [](const std::string &url, const std::string &zipfull) {
-	HTTPFetchRequest req;
-	req.url = url;
-	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
-	actionstream << "Downloading map from " << req.url << "\n";
-
-	HTTPFetchResult res;
-
-	if (1) {
-		// TODO: why sync does not work?
-		req.caller = HTTPFETCH_SYNC;
-		httpfetch_sync(req, res);
-	} else {
-		req.caller = httpfetch_caller_alloc();
-		httpfetch_async(req);
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		HTTPFetchResult res;
-		while (!httpfetch_async_get(req.caller, res)) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-		httpfetch_caller_free(req.caller);
-	}
-
-	actionstream << req.url << " " << res.succeeded << " " << res.response_code << " "
-				 << res.data.size() << "\n";
-	if (!res.succeeded || res.response_code >= 300) {
-		return uintmax_t{0};
-	}
-
-	if (!res.data.size()) {
-		return uintmax_t{0};
-	}
-
-	std::ofstream(zipfull, std::ios_base::binary) << res.data;
-	if (!std::filesystem::exists(zipfull)) {
-		return uintmax_t{0};
-	}
-	return std::filesystem::file_size(zipfull);
-};
-
-const auto multi_http_to_file = [](const auto &zipfile,
-										const std::vector<std::string> &links,
-										const auto &zipfull) {
-	static concurrent_set<std::string> http_failed;
-	if (http_failed.contains(zipfile)) {
-		return std::filesystem::file_size(zipfull);
-	}
-
-	if (std::filesystem::exists(zipfull)) {
-		return std::filesystem::file_size(zipfull);
-	}
-
-	for (const auto &uri : links) {
-		if (http_to_file(uri, zipfull)) {
-			return std::filesystem::file_size(zipfull);
-		}
-	}
-
-	http_failed.insert(zipfile);
-
-	errorstream
-			<< "Not found " << zipfile << "\n"
-			<< "try to download manually: \n"
-			<< "curl -o " << zipfull << " "
-			<< links[0]
-			//<< "curl -o " << zipfull << " https://viewfinderpanoramas.org/dem1/" << zipfile
-			//<< " || " << "curl -o " << zipfull << " https://viewfinderpanoramas.org/dem3/" << zipfile
-			<< "\n";
-
-	std::ofstream(zipfull, std::ios_base::binary) << ""; // create zero file
-	return std::filesystem::file_size(zipfull);
-};
 
 bool height::ok(ll_t lat, ll_t lon)
 {

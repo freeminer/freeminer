@@ -609,16 +609,24 @@ if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeList
 endif()
 
 option(ENABLE_OSMIUM "Enable Osmium" 1)
-if(ENABLE_OSMIUM AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/CMakeLists.txt)
+
+if (ENABLE_OSMIUM)
+	find_path(OSMIUM_INCLUDE_DIR osmium/osm.hpp)
+endif()
+
+if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/CMakeLists.txt))
 	find_package(Boost)
 	if(Boost_FOUND)
 		set(BUILD_TESTING 0 CACHE INTERNAL "")
 		set(BUILD_DATA_TESTS 0 CACHE INTERNAL "")
 		set(BUILD_EXAMPLES 0 CACHE INTERNAL "")
 		set(BUILD_BENCHMARKS 0 CACHE INTERNAL "")
-		add_subdirectory(external/libosmium)
-		set(OSMIUM_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/include)
-		include_directories(BEFORE SYSTEM ${OSMIUM_INCLUDE_DIR})
+
+		if (NOT OSMIUM_INCLUDE_DIR)
+			add_subdirectory(external/libosmium)
+			set(OSMIUM_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/include)
+			include_directories(BEFORE SYSTEM ${OSMIUM_INCLUDE_DIR})
+		endif()
 		find_package(BZip2)
 		if(BZIP2_FOUND)
 			set (OSMIUM_LIRARY ${OSMIUM_LIRARY} BZip2::BZip2)
@@ -666,11 +674,11 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
 	key_value_storage.cpp
 	log_types.cpp
 	stat.cpp
-    content_abm_grow_tree.cpp
-    content_abm.cpp
-    fm_abm.cpp
-    fm_clientiface.cpp
-    fm_serverenvironment.cpp
+	content_abm_grow_tree.cpp
+	content_abm.cpp
+	fm_abm.cpp
+	fm_clientiface.cpp
+	fm_serverenvironment.cpp
 	)
 # == end freeminer:
 
