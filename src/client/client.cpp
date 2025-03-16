@@ -630,7 +630,9 @@ void Client::step(float dtime)
 		infostream<<"Client: avg_rtt="<<avg_rtt<<std::endl;
 #endif
 
-		sendDrawControl(); //not very good place. maybe 5s timer better
+		if (m_state == LC_Ready) {
+			sendDrawControl(); //not very good place. maybe 5s timer better
+		}
 	}
 
 	/*
