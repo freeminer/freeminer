@@ -151,7 +151,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		scale = {params["scale"]["x"].asDouble(), params["scale"]["y"].asDouble(),
 				params["scale"]["z"].asDouble()};
 
-		/* todomake test
+	/* todomake test
 	static bool shown = 0;
 	if (!shown) {
 		shown = true;
@@ -173,7 +173,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		}
 	}
 	*/
-		/*
+	/*
 	hgt_reader.debug = 1;
 	std::vector<std::pair<int, int>> a{
 			{0, 0}, {-30000, -30000}, {-30000, 30000}, {30000, -30000}, {30000, 30000}};
@@ -403,9 +403,7 @@ double tiley2lat(int y, int z)
 	return 180.0 / M_PI * atan(0.5 * (exp(n) - exp(-n)));
 }
 
-const auto floor01 = [](const auto &v, const float &div) {
-	return floor(v * div) / div;
-};
+const auto floor01 = [](const auto &v, const float &div) { return floor(v * div) / div; };
 const auto ceil01 = [](const auto &v, const float &div) { return ceil(v * div) / div; };
 
 const auto make_bbox = [](auto tc, auto div) {
@@ -438,7 +436,7 @@ void MapgenEarth::generateBuildings()
 				folder + DIR_DELIM + "extract.001." + bbox001 + ".osm.pbf";
 		if (!maps_holder->osm_bbox.contains(bbox001)) {
 			char buff[100];
-			const auto timestamp = "202412261000"; // todo auto
+			const auto timestamp = "202503130700"; // todo auto
 			std::snprintf(buff, sizeof(buff), "%c%02d%c%03d-%s.osm.pbf",
 					lat_dec >= 0 ? 'N' : 'S', abs(lat_dec), lon_dec >= 0 ? 'W' : 'E',
 					abs(lon_dec), timestamp);
@@ -479,10 +477,12 @@ void MapgenEarth::generateBuildings()
 				}
 			}
 
-			auto osm = std::make_shared<hdl>(this, use_file);
-			const auto lock = maps_holder->osm_bbox.lock_unique_rec();
-			if (!maps_holder->osm_bbox.contains(bbox001)) {
-				maps_holder->osm_bbox.emplace(bbox001, osm);
+			if (std::filesystem::exists(use_file)) {
+				const auto osm = std::make_shared<hdl>(this, use_file);
+				const auto lock = maps_holder->osm_bbox.lock_unique_rec();
+				if (!maps_holder->osm_bbox.contains(bbox001)) {
+					maps_holder->osm_bbox.emplace(bbox001, osm);
+				}
 			}
 		}
 		if (const auto &hdlr = maps_holder->osm_bbox.get(bbox001)) {
