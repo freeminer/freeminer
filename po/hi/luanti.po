@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2023-11-17 00:07+0000\n"
+"PO-Revision-Date: 2025-03-19 11:07+0000\n"
 "Last-Translator: Ritwik <ritwikraghav14@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/minetest/minetest/"
 "hi/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.2\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -63,9 +63,8 @@ msgid "Command not available: "
 msgstr "अनुपलब्ध आदेश - "
 
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "Get help for commands (-t: output in chat)"
-msgstr "आदेशों से जुड़ी सहायता पायें"
+msgstr "आदेशों से जुड़ी सहायता पायें (-t : बातचीत में फलन)"
 
 #: builtin/common/chatcommands.lua
 msgid ""
@@ -75,9 +74,8 @@ msgstr ""
 "सूची देखें।"
 
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "[all | <cmd>] [-t]"
-msgstr "[सभी | <cmd>]"
+msgstr "[सभी | <cmd>] [-t]"
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
@@ -96,9 +94,8 @@ msgid "Select file"
 msgstr "फाईल चुनें"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Set"
-msgstr "सिलेक्ट"
+msgstr "लागू करें"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "(No description of setting given)"
@@ -133,9 +130,8 @@ msgid "Offset"
 msgstr "आफसेट"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "Persistence"
-msgstr "हठ (पर्सिस्टेन्स)"
+msgstr "दृढ़ता"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/dlg_config_world.lua src/gui/guiKeyChangeMenu.cpp
@@ -439,7 +435,7 @@ msgstr "लोड हो रहा है ..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Mods"
-msgstr "माॅड"
+msgstr "परिवर्तन"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 #: builtin/mainmenu/content/dlg_package.lua
@@ -6578,7 +6574,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "cURL"
-msgstr ""
+msgstr "कर्ल"
 
 #: src/settings_translation_file.cpp
 msgid "cURL file download timeout"
