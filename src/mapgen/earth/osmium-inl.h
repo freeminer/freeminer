@@ -1,5 +1,5 @@
 #if !defined(FILE_INCLUDED)
-#include "debug/iostream_debug_helpers.h"
+#include "debug/dump.h"
 #include <osmium/area/assembler.hpp>
 #include <osmium/area/multipolygon_manager.hpp>
 #include <osmium/dynamic_handler.hpp>

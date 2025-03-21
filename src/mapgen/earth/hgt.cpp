@@ -38,7 +38,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <utility>
 #include <vector>
-#include "debug/iostream_debug_helpers.h"
+#include "debug/dump.h"
 #include "filesys.h"
 #include "http.h"
 #include "porting.h"

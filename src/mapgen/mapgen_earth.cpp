@@ -26,7 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <string>
 
-#include "debug/iostream_debug_helpers.h"
+#include "debug/dump.h"
 #include "filesys.h"
 #include "irr_v2d.h"
 #include "irrlichttypes.h"

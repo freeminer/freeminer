@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <thread>
 #include <fstream>
-#include "debug/iostream_debug_helpers.h"
+#include "debug/dump.h"
 #include "httpfetch.h"
 #include "log.h"
 #include "settings.h"
