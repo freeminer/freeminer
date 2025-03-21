@@ -3344,6 +3344,22 @@ void Game::handleClientEvent_DeathscreenLegacy(ClientEvent *event, CameraOrienta
 
 void Game::handleClientEvent_ShowFormSpec(ClientEvent *event, CameraOrientation *cam)
 {
+
+	if (event->show_formspec.formname &&
+			*event->show_formspec.formname == "__builtin:death" &&
+			g_settings->getBool("respawn_auto")) {
+		client->sendRespawnLegacy();
+
+		StringMap fields;
+		fields["quit"] = "1";
+		client->sendInventoryFields(*event->show_formspec.formname, fields);
+
+		//client->sendRespawn();
+		delete event->show_formspec.formspec;
+		delete event->show_formspec.formname;
+		return;
+	}
+
 	if (event->show_formspec.formspec->empty()) {
 		auto formspec = m_game_ui->getFormspecGUI();
 		if (formspec && (event->show_formspec.formname->empty()
