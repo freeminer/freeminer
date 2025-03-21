@@ -443,7 +443,7 @@ $commands = {
         $D{ENABLE_TCMALLOC}   = $config->{cmake_tcmalloc}        if defined $config->{cmake_tcmalloc};
         $D{USE_LTO}           = $config->{cmake_lto}             if defined $config->{cmake_lto};
         $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
-        $D{USE_DEBUG_HELPERS} = 1;
+        $D{USE_DEBUG_DUMP} = 1;
 
         $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version} clang | head -n1`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version} clang++ | head -n1`}
