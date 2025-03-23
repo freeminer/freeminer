@@ -1014,8 +1014,6 @@ static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType d
 
 #endif
 
-//#if IS_CLIENT_BUILD
-
 void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings
 	, bool server
@@ -1248,12 +1246,15 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 			}
 		}
 	}
+	#endif
 }
-#endif
+//#endif
 
 /*
 	NodeDefManager
 */
+
+
 
 
 NodeDefManager::NodeDefManager()
@@ -1319,7 +1320,7 @@ void NodeDefManager::clear()
 		f.buildable_to        = true;
 		f.floodable           = true;
 		f.is_ground_content   = true;
-#if IS_CLIENT_BUILD
+#if CHECK_CLIENT_BUILD()
 		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
@@ -1342,7 +1343,7 @@ void NodeDefManager::clear()
 		f.diggable            = false;
 		f.buildable_to        = true; // A way to remove accidental CONTENT_IGNOREs
 		f.is_ground_content   = true;
-#if IS_CLIENT_BUILD
+#if CHECK_CLIENT_BUILD()
 		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
@@ -1784,8 +1785,9 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 //#if CHECK_CLIENT_BUILD()
 		if (progress_callback_args)
 		client->showUpdateProgressTexture(progress_callback_args, i, size);
-#endif
+		#endif
 	}
+//#endif
 }
 
 void NodeDefManager::serialize(std::ostream &os, u16 protocol_version) const
