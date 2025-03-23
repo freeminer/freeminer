@@ -18,7 +18,7 @@ struct ObjectProperties // FMTODO: public shared_locker
 	/* member variables ordered roughly by size */
 
 	std::vector<std::string> textures;
-	std::vector<video::SColor> colors;
+	std::vector<video::SColor> colors; // Currently unused
 	// Values are BS=1
 	aabb3f collisionbox = aabb3f(-0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f);
 	// Values are BS=1

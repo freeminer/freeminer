@@ -439,7 +439,7 @@ int MapgenIndev::generateGround()
 							: 0;
 
 			// Fill ground with stone
-			v3pos_t em = vm->m_area.getExtent();
+			auto em = vm->m_area.getExtent();
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 
 			cache_index = 0;

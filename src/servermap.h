@@ -12,8 +12,8 @@
 #include <memory>
 
 #include "map.h"
-#include "util/container.h"
-#include "util/metricsbackend.h"
+#include "util/container.h" // UniqueQueue
+#include "util/metricsbackend.h" // ptr typedefs
 #include "map_settings_manager.h"
 #include "util/unordered_map_hash.h"
 

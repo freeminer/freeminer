@@ -113,7 +113,6 @@ private:
 };
 
 class ClientScripting;
-class GameUI;
 class WorldMerger;
 class FarMesh;
 
@@ -177,7 +176,6 @@ public:
 			ISoundManager *sound,
 			MtEventManager *event,
 			RenderingEngine *rendering_engine,
-			GameUI *game_ui,
 			ELoginRegister allow_login_or_register
 	);
 
@@ -362,8 +360,6 @@ public:
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false, bool urgent=false);
 	void addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server=false, bool urgent=false);
-
-	void updateCameraOffset(v3s16 camera_offset);
 
 	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
 	// Get event from queue. If queue is empty, it triggers an assertion failure.
@@ -638,8 +634,6 @@ private:
 
 	// own state
 	LocalClientState m_state;
-
-	GameUI *m_game_ui;
 
 	// Used for saving server map to disk client-side
 	MapDatabase *m_localdb = nullptr;

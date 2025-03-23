@@ -15,7 +15,6 @@ using namespace irr;
 class Client;
 class EnrichedString;
 class GUIChatConsole;
-class GUIFormSpecMenu;
 struct MapDrawControl;
 struct PointedThing;
 
@@ -82,15 +81,6 @@ public:
 	void toggleHud();
 	void toggleProfiler(bool&);
 
-	GUIFormSpecMenu *&updateFormspec(const std::string &formname)
-	{
-		m_formname = formname;
-		return m_formspec;
-	}
-
-	const std::string &getFormspecName() { return m_formname; }
-	GUIFormSpecMenu *&getFormspecGUI() { return m_formspec; }
-	void deleteFormspec();
 	void clearText();
 
 private:
@@ -116,9 +106,4 @@ private:
 	gui::IGUIStaticText *m_guitext_profiler = nullptr; // Profiler text
 	u16 m_profiler_current_page = 0;
 	u16 m_profiler_max_page = 3;
-
-	// Default: "". If other than "": Empty show_formspec packets will only
-	// close the formspec when the formname matches
-	std::string m_formname;
-	GUIFormSpecMenu *m_formspec = nullptr;
 };

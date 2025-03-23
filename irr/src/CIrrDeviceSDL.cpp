@@ -31,53 +31,6 @@ static int SDLDeviceInstances = 0;
 
 namespace irr
 {
-namespace video
-{
-#ifdef _IRR_COMPILE_WITH_OPENGL_
-IVideoDriver *createOpenGLDriver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager);
-#else
-static IVideoDriver *createOpenGLDriver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager)
-{
-	os::Printer::log("No OpenGL support compiled in.", ELL_ERROR);
-	return nullptr;
-}
-#endif
-
-#ifdef ENABLE_OPENGL3
-IVideoDriver *createOpenGL3Driver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager);
-#else
-static IVideoDriver *createOpenGL3Driver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager)
-{
-	os::Printer::log("No OpenGL 3 support compiled in.", ELL_ERROR);
-	return nullptr;
-}
-#endif
-
-#ifdef _IRR_COMPILE_WITH_OGLES2_
-IVideoDriver *createOGLES2Driver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager);
-#else
-static IVideoDriver *createOGLES2Driver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager)
-{
-	os::Printer::log("No OpenGL ES 2 support compiled in.", ELL_ERROR);
-	return nullptr;
-}
-#endif
-
-#ifdef _IRR_COMPILE_WITH_WEBGL1_
-IVideoDriver *createWebGL1Driver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager);
-#else
-static IVideoDriver *createWebGL1Driver(const SIrrlichtCreationParameters &params, io::IFileSystem *io, IContextManager *contextManager)
-{
-	os::Printer::log("No WebGL 1 support compiled in.", ELL_ERROR);
-	return nullptr;
-}
-#endif
-} // end namespace video
-
-} // end namespace irr
-
-namespace irr
-{
 #ifdef _IRR_EMSCRIPTEN_PLATFORM_
 EM_BOOL CIrrDeviceSDL::MouseUpDownCallback(int eventType, const EmscriptenMouseEvent *event, void *userData)
 {
@@ -300,14 +253,10 @@ CIrrDeviceSDL::CIrrDeviceSDL(const SIrrlichtCreationParameters &param) :
 		Resizable(param.WindowResizable == 1 ? true : false), CurrentTouchCount(0),
 		IsInBackground(false)
 {
-#ifdef _DEBUG
-	setDebugName("CIrrDeviceSDL");
-#endif
-
 	if (++SDLDeviceInstances == 1) {
 #ifdef __ANDROID__
 		// Blocking on pause causes problems with multiplayer.
-		// See https://github.com/minetest/minetest/issues/10842.
+		// see <https://github.com/luanti-org/luanti/issues/10842>
 		SDL_SetHint(SDL_HINT_ANDROID_BLOCK_ON_PAUSE, "0");
 		SDL_SetHint(SDL_HINT_ANDROID_BLOCK_ON_PAUSE_PAUSEAUDIO, "0");
 
@@ -321,7 +270,7 @@ CIrrDeviceSDL::CIrrDeviceSDL(const SIrrlichtCreationParameters &param) :
 		SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
 
 		// Disabling the compositor is not a good idea in windowed mode.
-		// See https://github.com/minetest/minetest/issues/14596
+		// see <https://github.com/luanti-org/luanti/issues/14596>
 		SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0");
 
 #if defined(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
@@ -713,7 +662,7 @@ bool CIrrDeviceSDL::run()
 
 	while (!Close && wrap_PollEvent(&SDL_event)) {
 		// os::Printer::log("event: ", core::stringc((int)SDL_event.type).c_str(),   ELL_INFORMATION);	// just for debugging
-		memset(&irrevent, 0, sizeof(irrevent));
+		irrevent = {};
 
 		switch (SDL_event.type) {
 		case SDL_MOUSEMOTION: {
@@ -1297,6 +1246,15 @@ bool CIrrDeviceSDL::isWindowVisible() const
 bool CIrrDeviceSDL::supportsTouchEvents() const
 {
 	return true;
+}
+
+//! Checks whether windowing uses the Wayland protocol.
+bool CIrrDeviceSDL::isUsingWayland() const
+{
+	if (!Window)
+		return false;
+	auto *name = SDL_GetCurrentVideoDriver();
+	return name && !strcmp(name, "wayland");
 }
 
 //! returns if window is active. if not, nothing need to be drawn

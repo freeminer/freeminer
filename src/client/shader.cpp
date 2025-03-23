@@ -6,7 +6,6 @@
 #include <fstream>
 #include <iterator>
 #include "shader.h"
-#include "irrlichttypes_extrabloated.h"
 #include "irr_ptr.h"
 #include "debug.h"
 #include "filesys.h"
@@ -19,7 +18,6 @@
 #include <IMaterialRendererServices.h>
 #include <IShaderConstantSetCallBack.h>
 #include "client/renderingengine.h"
-#include <EShaderTypes.h>
 #include "gettext.h"
 #include "log.h"
 #include "gamedef.h"
@@ -271,7 +269,7 @@ public:
 		The id 0 points to a null shader. Its material is EMT_SOLID.
 	*/
 	u32 getShaderIdDirect(const std::string &name,
-		MaterialType material_type, NodeDrawType drawtype) override;
+		MaterialType material_type, NodeDrawType drawtype);
 
 	/*
 		If shader specified by the name pointed by the id doesn't
@@ -281,9 +279,17 @@ public:
 		and not found in cache, the call is queued to the main thread
 		for processing.
 	*/
-
 	u32 getShader(const std::string &name,
 		MaterialType material_type, NodeDrawType drawtype) override;
+
+	u32 getShaderRaw(const std::string &name, bool blendAlpha) override
+	{
+		// TODO: the shader system should be refactored to be much more generic.
+		// Just let callers pass arbitrary constants, this would also deal with
+		// runtime changes cleanly.
+		return getShader(name, blendAlpha ? TILE_MATERIAL_ALPHA : TILE_MATERIAL_BASIC,
+			NodeDrawType_END);
+	}
 
 	ShaderInfo getShaderInfo(u32 id) override;
 
@@ -306,9 +312,6 @@ public:
 	}
 
 private:
-
-	// Are shaders even enabled?
-	bool m_enabled;
 
 	// The id of the thread that is allowed to use irrlicht directly
 	std::thread::id m_main_thread;
@@ -348,12 +351,6 @@ ShaderSource::ShaderSource()
 	// Add a dummy ShaderInfo as the first index, named ""
 	m_shaderinfo_cache.emplace_back();
 
-	m_enabled = g_settings->getBool("enable_shaders");
-	if (!m_enabled) {
-		warningstream << "You are running " PROJECT_NAME_C " with shaders disabled, "
-			"this is not a recommended configuration." << std::endl;
-	}
-
 	// Add main global constant setter
 	addShaderConstantSetterFactory(new MainShaderConstantSetterFactory());
 }
@@ -362,11 +359,9 @@ ShaderSource::~ShaderSource()
 {
 	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
-	if (!m_enabled)
-		return;
-
 	// Delete materials
 	auto *gpu = RenderingEngine::get_video_driver()->getGPUProgrammingServices();
+	assert(gpu);
 	for (ShaderInfo &i : m_shaderinfo_cache) {
 		if (!i.name.empty())
 			gpu->deleteShaderMaterial(i.material);
@@ -495,11 +490,9 @@ void ShaderSource::rebuildShaders()
 {
 	MutexAutoLock lock(m_shaderinfo_cache_mutex);
 
-	if (!m_enabled)
-		return;
-
 	// Delete materials
 	auto *gpu = RenderingEngine::get_video_driver()->getGPUProgrammingServices();
+	assert(gpu);
 	for (ShaderInfo &i : m_shaderinfo_cache) {
 		if (!i.name.empty()) {
 			gpu->deleteShaderMaterial(i.material);
@@ -546,14 +539,14 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 	}
 	shaderinfo.material = shaderinfo.base_material;
 
-	if (!m_enabled)
+	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
+	// The null driver doesn't support shaders (duh), but we can pretend it does.
+	if (driver->getDriverType() == video::EDT_NULL)
 		return shaderinfo;
 
-	video::IVideoDriver *driver = RenderingEngine::get_video_driver();
 	auto *gpu = driver->getGPUProgrammingServices();
 	if (!driver->queryFeature(video::EVDF_ARB_GLSL) || !gpu) {
-		throw ShaderException(gettext("Shaders are enabled but GLSL is not "
-			"supported by the driver."));
+		throw ShaderException(gettext("GLSL is not supported by the driver"));
 	}
 
 	// Create shaders header
@@ -620,11 +613,23 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		#define textureFlags texture2
 	)";
 
+	/// Unique name of this shader, for debug/logging
+	std::string log_name = name;
+
+	/* Define constants for node and object shaders */
+	const bool node_shader = drawtype != NodeDrawType_END;
+	if (node_shader) {
+
+	log_name.append(" mat=").append(itos(material_type))
+		.append(" draw=").append(itos(drawtype));
+
 	bool use_discard = fully_programmable;
-	// For renderers that should use discard instead of GL_ALPHA_TEST
-	const char *renderer = reinterpret_cast<const char*>(GL.GetString(GL.RENDERER));
-	if (strstr(renderer, "GC7000"))
-		use_discard = true;
+	if (!use_discard) {
+		// workaround for a certain OpenGL implementation lacking GL_ALPHA_TEST
+		const char *renderer = reinterpret_cast<const char*>(GL.GetString(GL.RENDERER));
+		if (strstr(renderer, "GC7000"))
+			use_discard = true;
+	}
 	if (use_discard) {
 		if (shaderinfo.base_material == video::EMT_TRANSPARENT_ALPHA_CHANNEL)
 			shaders_header << "#define USE_DISCARD 1\n";
@@ -677,9 +682,35 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		shaders_header << "#define WATER_WAVE_LENGTH " << g_settings->getFloat("water_wave_length") << "\n";
 		shaders_header << "#define WATER_WAVE_SPEED " << g_settings->getFloat("water_wave_speed") << "\n";
 	}
+	switch (material_type) {
+		case TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT:
+		case TILE_MATERIAL_WAVING_LIQUID_OPAQUE:
+		case TILE_MATERIAL_WAVING_LIQUID_BASIC:
+			shaders_header << "#define MATERIAL_WAVING_LIQUID 1\n";
+			break;
+		default:
+			shaders_header << "#define MATERIAL_WAVING_LIQUID 0\n";
+			break;
+	}
+	switch (material_type) {
+		case TILE_MATERIAL_WAVING_LIQUID_TRANSPARENT:
+		case TILE_MATERIAL_WAVING_LIQUID_OPAQUE:
+		case TILE_MATERIAL_WAVING_LIQUID_BASIC:
+		case TILE_MATERIAL_LIQUID_TRANSPARENT:
+			shaders_header << "#define MATERIAL_WATER_REFLECTIONS 1\n";
+			break;
+		default:
+			shaders_header << "#define MATERIAL_WATER_REFLECTIONS 0\n";
+			break;
+	}
 
 	shaders_header << "#define ENABLE_WAVING_LEAVES " << g_settings->getBool("enable_waving_leaves") << "\n";
 	shaders_header << "#define ENABLE_WAVING_PLANTS " << g_settings->getBool("enable_waving_plants") << "\n";
+
+	}
+
+	/* Other constants */
+
 	shaders_header << "#define ENABLE_TONE_MAPPING " << g_settings->getBool("tone_mapping") << "\n";
 
 	if (g_settings->getBool("enable_dynamic_shadows")) {
@@ -730,34 +761,30 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		shaders_header << "#define VOLUMETRIC_LIGHT 1\n";
 	}
 
-	shaders_header << "#line 0\n"; // reset the line counter for meaningful diagnostics
-
 	std::string common_header = shaders_header.str();
+	const char *final_header = "#line 0\n"; // reset the line counter for meaningful diagnostics
 
 	std::string vertex_shader = m_sourcecache.getOrLoad(name, "opengl_vertex.glsl");
 	std::string fragment_shader = m_sourcecache.getOrLoad(name, "opengl_fragment.glsl");
 	std::string geometry_shader = m_sourcecache.getOrLoad(name, "opengl_geometry.glsl");
 
-	vertex_shader = common_header + vertex_header + vertex_shader;
-	fragment_shader = common_header + fragment_header + fragment_shader;
+	vertex_shader = common_header + vertex_header + final_header + vertex_shader;
+	fragment_shader = common_header + fragment_header + final_header + fragment_shader;
 	const char *geometry_shader_ptr = nullptr; // optional
 	if (!geometry_shader.empty()) {
-		geometry_shader = common_header + geometry_header + geometry_shader;
+		geometry_shader = common_header + geometry_header + final_header + geometry_shader;
 		geometry_shader_ptr = geometry_shader.c_str();
 	}
 
-	irr_ptr<ShaderCallback> cb{new ShaderCallback(m_setter_factories)};
-	infostream<<"Compiling high level shaders for "<<name<<std::endl;
+	auto cb = make_irr<ShaderCallback>(m_setter_factories);
+	infostream << "Compiling high level shaders for " << log_name << std::endl;
 	s32 shadermat = gpu->addHighLevelShaderMaterial(
-		vertex_shader.c_str(), nullptr, video::EVST_VS_1_1,
-		fragment_shader.c_str(), nullptr, video::EPST_PS_1_1,
-		geometry_shader_ptr, nullptr, video::EGST_GS_4_0, scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
-		cb.get(), shaderinfo.base_material,  1);
+		vertex_shader.c_str(), fragment_shader.c_str(), geometry_shader_ptr,
+		log_name.c_str(), scene::EPT_TRIANGLES, scene::EPT_TRIANGLES, 0,
+		cb.get(), shaderinfo.base_material);
 	if (shadermat == -1) {
-		errorstream<<"generate_shader(): "
-				"failed to generate \""<<name<<"\", "
-				"addHighLevelShaderMaterial failed."
-				<<std::endl;
+		errorstream << "generateShader(): failed to generate shaders for "
+			<< log_name << ", addHighLevelShaderMaterial failed." << std::endl;
 		dumpShaderProgram(warningstream, "Vertex", vertex_shader);
 		dumpShaderProgram(warningstream, "Fragment", fragment_shader);
 		dumpShaderProgram(warningstream, "Geometry", geometry_shader);

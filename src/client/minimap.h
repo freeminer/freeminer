@@ -4,19 +4,37 @@
 
 #pragma once
 
-#include "../hud.h"
 #include "fm_nodecontainer.h"
-#include "irrlichttypes_extrabloated.h"
+
+#include "irrlichttypes.h"
 #include "irr_ptr.h"
+#include "rect.h"
+#include "SMeshBuffer.h"
+
+#include "../hud.h"
+#include "mapnode.h"
 #include "util/thread.h"
-#include "voxel.h"
 #include <map>
 #include <string>
 #include <vector>
 
+namespace irr {
+	namespace video {
+		class IVideoDriver;
+		class IImage;
+		class ITexture;
+	}
+
+	namespace scene {
+		class ISceneNode;
+	}
+}
+
 class Client;
+class NodeDefManager;
 class ITextureSource;
 class IShaderSource;
+class VoxelManipulator;
 
 #include "util/unordered_map_hash.h"
 
@@ -159,7 +177,6 @@ private:
 	const NodeDefManager *m_ndef;
 	std::unique_ptr<MinimapUpdateThread> m_minimap_update_thread;
 	irr_ptr<scene::SMeshBuffer> m_meshbuffer;
-	bool m_enable_shaders;
 	std::vector<MinimapModeDef> m_modes;
 	size_t m_current_mode_index;
 	u16 m_surface_mode_scan_height;

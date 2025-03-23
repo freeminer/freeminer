@@ -19,11 +19,13 @@
 #include "remoteplayer.h"
 #include "rollback_interface.h"
 #include "scripting_server.h"
+#include "serialization.h"
 #include "settings.h"
 #include "tool.h"
 #include "version.h"
 #include "irrlicht_changes/printing.h"
 #include "network/connection.h"
+#include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/serveropcodes.h"
 #include "server/player_sao.h"
@@ -34,6 +36,8 @@
 #include "util/serialize.h"
 #include "util/srp.h"
 #include "clientdynamicinfo.h"
+
+#include <algorithm>
 
 void Server::handleCommand_Deprecated(NetworkPacket* pkt)
 {
@@ -90,34 +94,27 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	if (denyIfBanned(peer_id))
 		return;
 
-	// First byte after command is maximum supported
-	// serialization version
-	u8 client_max;
+	u8 max_ser_ver; // SER_FMT_VER_HIGHEST_READ (of client)
 	u16 unused;
-	u16 min_net_proto_version = 0;
+	u16 min_net_proto_version;
 	u16 max_net_proto_version;
 	std::string playerName;
 
-	*pkt >> client_max >> unused >> min_net_proto_version
-			>> max_net_proto_version >> playerName;
+	*pkt >> max_ser_ver >> unused
+			>> min_net_proto_version >> max_net_proto_version
+			>> playerName;
 
-	u8 our_max = SER_FMT_VER_HIGHEST_READ;
 	// Use the highest version supported by both
-	u8 depl_serial_v = std::min(client_max, our_max);
-	// If it's lower than the lowest supported, give up.
-#if SER_FMT_VER_LOWEST_READ > 0
-	if (depl_serial_v < SER_FMT_VER_LOWEST_READ)
-		depl_serial_v = SER_FMT_VER_INVALID;
-#endif
+	const u8 serialization_ver = std::min(max_ser_ver, SER_FMT_VER_HIGHEST_WRITE);
 
-	if (depl_serial_v == SER_FMT_VER_INVALID) {
+	if (!ser_ver_supported_write(serialization_ver)) {
 		actionstream << "Server: A mismatched client " << playerName << " tried to connect from " <<
-			addr_s << " ser_fmt_max=" << (int)client_max << std::endl;
+			addr_s << " ser_fmt_max=" << (int)serialization_ver << std::endl;
 		DenyAccess(peer_id, SERVER_ACCESSDENIED_WRONG_VERSION);
 		return;
 	}
 
-	client->setPendingSerializationVersion(depl_serial_v);
+	client->setPendingSerializationVersion(serialization_ver);
 
 	/*
 		Read and check network protocol version
@@ -270,8 +267,9 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 
 	NetworkPacket resp_pkt(TOCLIENT_HELLO, 0, peer_id);
 
-	resp_pkt << depl_serial_v << u16(0) << net_proto_version
-		<< auth_mechs << std::string_view();
+	resp_pkt << serialization_ver << u16(0) /* unused */
+		<< net_proto_version
+		<< auth_mechs << std::string_view() /* unused */;
 
 	Send(&resp_pkt);
 
@@ -487,7 +485,11 @@ void Server::process_PlayerPos(RemotePlayer *player, PlayerSAO *playersao,
 		*pkt >> bits;
 
 	if (pkt->getRemainingBytes() >= 8) {
-		*pkt >> player->control.movement_speed;
+		f32 movement_speed;
+		*pkt >> movement_speed;
+		if (movement_speed != movement_speed) // NaN
+			movement_speed = 0.0f;
+		player->control.movement_speed = std::clamp(movement_speed, 0.0f, 1.0f);
 		*pkt >> player->control.movement_direction;
 	} else {
 		player->control.movement_speed = 0.0f;
@@ -652,6 +654,24 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 		where the client made a bad prediction.
 	*/
 
+	auto mark_player_inv_list_dirty = [this](const InventoryLocation &loc,
+			const std::string &list_name) {
+
+		// Undo the client prediction of the affected list. See `clientApply`.
+		if (loc.type != InventoryLocation::PLAYER)
+			return;
+
+		Inventory *inv = m_inventory_mgr->getInventory(loc);
+		if (!inv)
+			return;
+
+		InventoryList *list = inv->getList(list_name);
+		if (!list)
+			return;
+
+		list->setModified(true);
+	};
+
 	const bool player_has_interact = checkPriv(player->getName(), "interact");
 
 	auto check_inv_access = [player, player_has_interact, this] (
@@ -696,8 +716,12 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 		ma->to_inv.applyCurrentPlayer(player->getName());
 
 		m_inventory_mgr->setInventoryModified(ma->from_inv);
-		if (ma->from_inv != ma->to_inv)
+		mark_player_inv_list_dirty(ma->from_inv, ma->from_list);
+		bool inv_different = ma->from_inv != ma->to_inv;
+		if (inv_different)
 			m_inventory_mgr->setInventoryModified(ma->to_inv);
+		if (inv_different || ma->from_list != ma->to_list)
+			mark_player_inv_list_dirty(ma->to_inv, ma->to_list);
 
 		if (!check_inv_access(ma->from_inv) ||
 				!check_inv_access(ma->to_inv))
@@ -734,6 +758,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 		da->from_inv.applyCurrentPlayer(player->getName());
 
 		m_inventory_mgr->setInventoryModified(da->from_inv);
+		mark_player_inv_list_dirty(da->from_inv, da->from_list);
 
 		/*
 			Disable dropping items out of craftpreview
@@ -769,6 +794,7 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 		ca->craft_inv.applyCurrentPlayer(player->getName());
 
 		m_inventory_mgr->setInventoryModified(ca->craft_inv);
+		// Note: `ICraftAction::clientApply` is empty, thus nothing to revert.
 
 		// Disallow crafting if not allowed to interact
 		if (!player_has_interact) {

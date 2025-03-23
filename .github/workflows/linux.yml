@@ -53,6 +53,8 @@ jobs:
         env:
           CC: gcc-7
           CXX: g++-7
+          # Test fallback SHA implementations
+          CMAKE_FLAGS: '-DENABLE_OPENSSL=0'
 
       - name: Test
         continue-on-error: true

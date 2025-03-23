@@ -237,6 +237,12 @@ MapBlock::~MapBlock()
 	porting::TrackFreedMemory(sizeof(MapNode) * nodecount);
 }
 
+static inline size_t get_max_objects_per_block()
+{
+	thread_local const auto ret = g_settings->getU16("max_objects_per_block");
+	return MYMAX(256, ret);
+}
+
 bool MapBlock::onObjectsActivation()
 {
 	// Ignore if no stored objects (to not set changed flag)
@@ -250,14 +256,13 @@ bool MapBlock::onObjectsActivation()
 			<< std::endl;
 #endif
 
-	thread_local const auto max_objects_per_block = g_settings->getU16("max_objects_per_block");
-	if (count > max_objects_per_block) {
+	if (count > get_max_objects_per_block()) {
 		errorstream << "suspiciously large amount of objects detected: "
 			<< count << " in " << getPos() << "; removing all of them."
 			<< std::endl;
 		// Clear stored list
 		//m_static_objects.clearStored();
-		m_static_objects.m_stored.resize(max_objects_per_block);
+		m_static_objects.m_stored.resize(get_max_objects_per_block());
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_TOO_MANY_OBJECTS);
 		return false;
 	}
@@ -267,7 +272,7 @@ bool MapBlock::onObjectsActivation()
 
 bool MapBlock::saveStaticObject(u16 id, const StaticObject &obj, u32 reason)
 {
-	if (m_static_objects.getStoredSize() >= g_settings->getU16("max_objects_per_block")) {
+	if (m_static_objects.getStoredSize() >= get_max_objects_per_block()) {
 		warningstream << "MapBlock::saveStaticObject(): Trying to store id = " << id
 				<< " statically but block " << getPos() << " already contains "
 				<< m_static_objects.getStoredSize() << " objects."
@@ -482,10 +487,8 @@ static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 
 void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int compression_level, bool use_content_only)
 {
-	if(!ser_ver_supported(version))
+	if (!ser_ver_supported_write(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
-
-	FATAL_ERROR_IF(version < SER_FMT_VER_LOWEST_WRITE, "Serialization version error");
 
 	std::ostringstream os_raw(std::ios_base::binary);
 	std::ostream &os = version >= 29 ? os_raw : os_compressed;
@@ -524,7 +527,7 @@ void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int
 	Buffer<u8> buf;
 	const u8 content_width = 2;
 	const u8 params_width = 2;
- 	if(disk)
+	if(disk)
 	{
 		MapNode *tmp_nodes = new MapNode[nodecount];
 		memcpy(tmp_nodes, data, nodecount * sizeof(MapNode));
@@ -611,7 +614,8 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os)
 bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 {
 	const auto lock = lock_unique_rec();
-	if(!ser_ver_supported(version))
+
+	if (!ser_ver_supported_read(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 
 	TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()<<std::endl);

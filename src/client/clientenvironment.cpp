@@ -101,7 +101,6 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 	/*
 		Maximum position increment
 	*/
-	//f32 position_max_increment = 0.05*BS;
 	f32 position_max_increment = 0.1*BS;
 
 	// Maximum time increment (for collision detection etc)
@@ -208,12 +207,11 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 		}
 
 		/*
-			Move the lplayer.
+			Move the local player.
 			This also does collision detection.
 		*/
 
-		lplayer->move(dtime_part, this, position_max_increment,
-			&player_collisions);
+		lplayer->move(dtime_part, this, &player_collisions);
 
 		++loopcount;
 		if (porting::getTimeMs() >= lend_ms) {
@@ -486,8 +484,8 @@ void ClientEnvironment::getSelectedActiveObjects(
 	const v3f line_vector = shootline_on_map.getVector();
 
 	for (const auto &allObject : allObjects) {
-		auto obj = allObject.obj;
-		aabb3f selection_box;
+		ClientActiveObject *obj = allObject.obj.get();
+		aabb3f selection_box{{0.0f, 0.0f, 0.0f}};
 		if (!obj->getSelectionBox(&selection_box))
 			continue;
 
@@ -495,7 +493,7 @@ void ClientEnvironment::getSelectedActiveObjects(
 		v3f current_normal, current_raw_normal;
 		const v3f rel_pos = shootline_on_map.start - obj->getPosition();
 		bool collision;
-		GenericCAO* gcao = dynamic_cast<GenericCAO*>(obj.get());
+		GenericCAO* gcao = dynamic_cast<GenericCAO*>(obj);
 		if (gcao != nullptr && gcao->getProperties().rotate_selectionbox) {
 			gcao->getSceneNode()->updateAbsolutePosition();
 			const v3f deg = obj->getSceneNode()->getAbsoluteTransformation().getRotationDegrees();

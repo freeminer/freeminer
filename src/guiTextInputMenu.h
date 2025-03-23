@@ -23,7 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef GUITEXTINPUTMENU_HEADER
 #define GUITEXTINPUTMENU_HEADER
 
-#include "irrlichttypes_extrabloated.h"
 #include "gui/guiFormSpecMenu.h"
 #include <string>
 

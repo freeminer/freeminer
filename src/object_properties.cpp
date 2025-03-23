@@ -15,8 +15,7 @@ static const video::SColor NULL_BGCOLOR{0, 1, 1, 1};
 
 ObjectProperties::ObjectProperties()
 {
-	textures.emplace_back("blank.png");
-	colors.emplace_back(255,255,255,255);
+	textures.emplace_back("blank.png"); // no_texture.png
 }
 
 std::string ObjectProperties::dump() const

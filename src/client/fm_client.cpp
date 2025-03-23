@@ -170,19 +170,14 @@ void Client::createFarMesh(MapBlockPtr &block)
 	if (bool cmp = false; block->creating_far_mesh.compare_exchange_weak(cmp, true)) {
 		const auto &m_client = this;
 		const auto &blockpos_actual = block->getPos();
-		const auto &m_camera_offset = m_camera->getOffset();
+		//const auto &m_camera_offset = m_camera->getOffset();
 		const auto &step = block->far_step;
-#if FARMESH_SHADOWS
-		static const auto m_cache_enable_shaders = g_settings->getBool("enable_shaders");
-#else
-		static const auto m_cache_enable_shaders = false;
-#endif
 		MeshMakeData mdat(m_client->getNodeDefManager(),
-				MAP_BLOCKSIZE * m_client->getMeshGrid().cell_size, m_cache_enable_shaders,
+				MAP_BLOCKSIZE * m_client->getMeshGrid().cell_size, m_mesh_grid,
 				0, step, &m_client->far_container);
 		mdat.m_blockpos = blockpos_actual;
 		const auto mbmsh =
-				std::make_shared<MapBlockMesh>(m_client, &mdat, m_camera_offset);
+				std::make_shared<MapBlockMesh>(m_client, &mdat);
 		block->setFarMesh(mbmsh, step);
 		block->creating_far_mesh = false;
 	}

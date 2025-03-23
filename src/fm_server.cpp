@@ -40,6 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "mapnode.h"
 #include "network/fm_networkprotocol.h"
+#include "network/networkpacket.h"
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"

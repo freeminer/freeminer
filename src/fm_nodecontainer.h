@@ -38,6 +38,7 @@ public:
 		return getNodeRefUnsafe(p);
 	};
     virtual void setNode(const v3pos_t &p, const MapNode &n, bool important = false) {};
+    virtual bool setNodeNoEmerge(const v3pos_t &p, const MapNode &n) { setNode(p, n); return true; };
 	virtual void clear() {}
 	virtual void addArea(const VoxelArea &a) {};
 	virtual void copyFrom(MapNode *src, const VoxelArea &src_area, v3pos_t from_pos,

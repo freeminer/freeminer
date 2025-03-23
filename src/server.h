@@ -8,6 +8,7 @@
 #include "stat.h"
 #include "network/fm_lan.h"
 #include <unordered_set>
+#include "network/fm_networkprotocol.h"
 //== 
 
 
@@ -15,7 +16,6 @@
 #include "map.h"
 #include "hud.h"
 #include "gamedef.h"
-#include "serialization.h" // For SER_FMT_VER_INVALID
 #include "content/mods.h"
 #include "inventorymanager.h"
 #include "content/subgames.h"
@@ -31,6 +31,7 @@
 #include "chatmessage.h"
 #include "sound.h"
 #include "translation.h"
+#include "script/common/c_types.h" // LuaError
 #include <atomic>
 #include <string>
 #include <list>
@@ -228,7 +229,9 @@ public:
 	u16 Receive(float min_time);
 	void yieldToOtherThreads(float dtime);
 
-	PlayerSAO* StageTwoClientInit(session_t peer_id);
+	// Full player initialization after they processed all static media
+	// This is a helper function for TOSERVER_CLIENT_READY
+	PlayerSAO *StageTwoClientInit(session_t peer_id);
 
 	/*
 	 * Command Handlers
@@ -376,8 +379,7 @@ public:
 	void setStepSettings(StepSettings spdata) { m_step_settings.store(spdata); }
 	StepSettings getStepSettings() { return m_step_settings.load(); }
 
-	inline void setAsyncFatalError(const std::string &error)
-			{ m_async_fatal_error.set(error); }
+	void setAsyncFatalError(const std::string &error);
 	inline void setAsyncFatalError(const LuaError &e)
 	{
 		setAsyncFatalError(std::string("Lua: ") + e.what());
@@ -667,7 +669,8 @@ private:
 
 		Call with env and con locked.
 	*/
-	PlayerSAO *emergePlayer(const char *name, session_t peer_id, u16 proto_version);
+	std::unique_ptr<PlayerSAO> emergePlayer(const char *name, session_t peer_id,
+		u16 proto_version);
 
 	/*
 		Variables

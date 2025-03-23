@@ -20,6 +20,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "client/fm_farmesh.h"
+#include "client/fm_far_container.h"
 
 #include <atomic>
 #include <cstdint>
@@ -31,15 +32,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <json/json.h>
 #include <string>
 #include "client.h"
-#include "client/fm_far_container.h"
-#include "irr_v3d.h"
+#include "client/fontengine.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "threading/mutex_auto_lock.h"
 #include "client/clientevent.h"
-#include "client/gameui.h"
 #include "client/renderingengine.h"
 #include "client/sound.h"
 #include "client/texturepaths.h"
@@ -63,6 +62,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "shader.h"
 #include "gettext.h"
+#include "gettime.h"
 #include "clientdynamicinfo.h"
 #include "clientmap.h"
 #include "clientmedia.h"
@@ -135,7 +135,6 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		RenderingEngine *rendering_engine,
-		GameUI *game_ui,
 		ELoginRegister allow_login_or_register
 ):
 	far_container{this},
@@ -162,7 +161,6 @@ Client::Client(
 	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
 	m_media_downloader(new ClientMediaDownloader()),
 	m_state(LC_Created),
-	m_game_ui(game_ui),
 	m_modchannel_mgr(new ModChannelMgr())
 {
 	// Add local player
@@ -440,6 +438,9 @@ Client::~Client()
 	for (auto &csp : m_sounds_client_to_server)
 		m_sound->freeId(csp.first);
 	m_sounds_client_to_server.clear();
+
+	// Go back to our mainmenu fonts
+	g_fontengine->clearMediaFonts();
 }
 
 void Client::connect(const Address &address, const std::string &address_name,
@@ -674,8 +675,11 @@ void Client::step(float dtime)
 			std::vector<MinimapMapblock*> minimap_mapblocks;
 			bool do_mapper_update = true;
 
+			ClientMap &map = m_env.getClientMap();
+
 /*
-			MapSector *sector = m_env.getMap().emergeSector(v2s16(r.p.X, r.p.Z));
+			MapSector *sector = map.emergeSector(v2s16(r.p.X, r.p.Z));
+
 			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
 			// The block in question is not visible (perhaps it is culled at the server),
 			// create a blank block just to hold the chunk's mesh.
@@ -684,19 +688,23 @@ void Client::step(float dtime)
 				block = sector->createBlankBlock(r.p.Y);
 */
 
-			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
+			MapBlock *block = map.getBlockNoCreateNoEx(r.p);
 			if (!block && r.mesh)
-				block = m_env.getMap().createBlankBlock(r.p).get();
+				block = map.createBlankBlock(r.p).get();
 
 			if (block) {
+				const auto old_mesh = block->getLodMesh(r.mesh->lod_step);
+				if (!old_mesh) {
+					++m_new_meshes;
+				}
 				// Delete the old mesh
+				if (old_mesh)
+					map.invalidateMapBlockMesh(old_mesh.get());
+
 /*
 				delete block->mesh;
 				block->mesh = nullptr;
 */
-				if (!block->getLodMesh(r.mesh->lod_step)) {
-					++m_new_meshes;
-				}
 				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 
@@ -711,9 +719,9 @@ void Client::step(float dtime)
 						if (r.mesh->getMesh(l)->getMeshBufferCount() != 0)
 							is_empty = false;
 
-					if (is_empty)
+					if (is_empty) {
 						delete r.mesh;
-					else {
+					} else {
 						// Replace with the new mesh
 						block->mesh = r.mesh;
 */
@@ -911,7 +919,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 	std::string name;
 
 	const char *image_ext[] = {
-		".png", ".jpg", ".bmp", ".tga",
+		".png", ".jpg", ".tga",
 		NULL
 	};
 	name = removeStringEnd(filename, image_ext);
@@ -979,6 +987,13 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 		TRACESTREAM(<< "Client: Loading translation: "
 				<< "\"" << filename << "\"" << std::endl);
 		g_client_translations->loadTranslation(filename, data);
+		return true;
+	}
+
+	const char *font_ext[] = {".ttf", ".woff", NULL};
+	name = removeStringEnd(filename, font_ext);
+	if (!name.empty()) {
+		g_fontengine->setMediaFont(name, data);
 		return true;
 	}
 
@@ -1395,7 +1410,7 @@ void Client::sendInit(const std::string &playerName)
 {
 	NetworkPacket pkt(TOSERVER_INIT, 1 + 2 + 2 + (1 + playerName.size()));
 
-	pkt << (u8) SER_FMT_VER_HIGHEST_READ << (u16) 0;
+	pkt << SER_FMT_VER_HIGHEST_READ << (u16) 0 /* unused */;
 	pkt << CLIENT_PROTOCOL_VERSION_MIN << LATEST_PROTOCOL_VERSION;
 	pkt << playerName;
 
@@ -2068,11 +2083,6 @@ void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool ur
 		addUpdateMeshTask(blockpos + v3s16(0, -1, 0), false, urgent);
 	if (nodepos.Z == blockpos_relative.Z)
 		addUpdateMeshTask(blockpos + v3s16(0, 0, -1), false, urgent);
-}
-
-void Client::updateCameraOffset(v3s16 camera_offset)
-{
-	m_mesh_update_manager->m_camera_offset = camera_offset;
 }
 
 ClientEvent *Client::getClientEvent()

@@ -11,16 +11,24 @@
 #include <cassert>
 #include <list>
 
+#include "IGUIEnvironment.h"
+
+namespace irr::gui {
+	class IGUIStaticText;
+}
+
 class IGameCallback
 {
 public:
 	virtual void exitToOS() = 0;
+	virtual void openSettings() = 0;
 	virtual void keyConfig() = 0;
 	virtual void disconnect() = 0;
 	virtual void changePassword() = 0;
 	virtual void changeVolume() = 0;
 	virtual void showOpenURLDialog(const std::string &url) = 0;
 	virtual void signalKeyConfigChange() = 0;
+	virtual void touchscreenLayout() = 0;
 };
 
 extern gui::IGUIEnvironment *guienv;
@@ -70,6 +78,12 @@ public:
 		return m_stack.size();
 	}
 
+	void deleteFront()
+	{
+		m_stack.front()->setVisible(false);
+		deletingMenu(m_stack.front());
+	}
+
 	bool pausesGame()
 	{
 		for (gui::IGUIElement *i : m_stack) {
@@ -80,7 +94,7 @@ public:
 		return false;
 	}
 
-	// FIXME: why isn't this private?
+private:
 	std::list<gui::IGUIElement*> m_stack;
 };
 
@@ -100,6 +114,11 @@ public:
 	void exitToOS() override
 	{
 		shutdown_requested = true;
+	}
+
+	void openSettings() override
+	{
+		settings_requested = true;
 	}
 
 	void disconnect() override
@@ -127,15 +146,22 @@ public:
 		keyconfig_changed = true;
 	}
 
+	void touchscreenLayout() override
+	{
+		touchscreenlayout_requested = true;
+	}
+
 	void showOpenURLDialog(const std::string &url) override
 	{
 		show_open_url_dialog = url;
 	}
 
 	bool disconnect_requested = false;
+	bool settings_requested = false;
 	bool changepassword_requested = false;
 	bool changevolume_requested = false;
 	bool keyconfig_requested = false;
+	bool touchscreenlayout_requested = false;
 	bool shutdown_requested = false;
 	bool keyconfig_changed = false;
 	std::string show_open_url_dialog = "";
