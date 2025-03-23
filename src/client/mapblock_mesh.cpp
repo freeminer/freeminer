@@ -71,9 +71,10 @@ void MeshMakeData::fillBlockData(const v3s16 &bp, MapNode *data)
 
 void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 {
+	auto & m_vmanip = m_vmanip_store; 
+
 	m_blockpos = {0, 0, 0};
 
-/* fmtodo
 	m_vmanip.clear();
 	// area around 0,0,0 so that this positon has neighbors
 	const s16 sz = 3;
@@ -84,7 +85,6 @@ void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 		m_vmanip.m_data[i] = padding;
 		m_vmanip.m_flags[i] &= ~VOXELFLAG_NO_DATA;
 	}
-*/
 
 	m_vmanip.setNodeNoEmerge({0, 0, 0}, data);
 }
