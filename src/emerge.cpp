@@ -679,7 +679,7 @@ MapBlock *EmergeThread::finishGen(v3bpos_t pos, BlockMakeData *bmdata,
 	*/
 	assert(!m_mapgen->generating);
 	m_mapgen->gennotify.clearEvents();
-	m_mapgen->vm = nullptr;
+	// m_mapgen->vm = nullptr;
 
 	/*
 		Activate the block
