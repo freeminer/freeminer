@@ -179,8 +179,8 @@ class hdl : public handler_i
 public:
 	hdl(MapgenEarth *mg, const std::string &path_name) :
 			mg{mg}, path_name{path_name}, handler{mg}
-	{
-	}
+	
+	~hdl() = default;
 
 	void apply() override
 	{
@@ -201,6 +201,11 @@ public:
 		osmium::relations::read_relations(file, mp_manager);
 
 		osmium::io::Reader reader{file};
+		if (!mg->vm) {
+			errorstream << "wrong vm\n";
+			return;
+		}
+
 		osmium::apply(reader, cache, handler,
 				mp_manager.handler([&handler = this->handler](
 										   const osmium::memory::Buffer &area_buffer) {

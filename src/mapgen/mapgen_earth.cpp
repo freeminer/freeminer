@@ -404,7 +404,8 @@ double tiley2lat(int y, int z)
 }
 
 const auto floor01 = [](const auto &v, const float &div) { return floor(v * div) / div; };
-const auto ceil01 = [](const auto &v, const float &div) { return ceil(v * div) / div; };
+
+//const auto ceil01 = [](const auto &v, const float &div) { return ceil(v * div) / div; };
 
 const auto make_bbox = [](auto tc, auto div) {
 	const auto lat_dec01 = floor01(tc.lat, div);
@@ -460,8 +461,9 @@ void MapgenEarth::generateBuildings()
 					if (!std::filesystem::exists(filename)) {
 						std::stringstream cmd;
 						// TODO: use osmium tool as lib
-						cmd << "osmium extract --output-format pbf --strategy smart " << "--bbox " << bbox
-							<< " --output " << filename << ".tmp" << " " << path_name;
+						cmd << "osmium extract --output-format pbf --strategy smart "
+							<< "--bbox " << bbox << " --output " << filename << ".tmp"
+							<< " " << path_name;
 						exec_to_string(cmd.str());
 						std::filesystem::rename(filename + ".tmp", filename);
 						// osmium extract --bbox 11.0,46.0,11.1,46.1 N46W011-202412261000.osm.pbf  --output tttttt.pbf
