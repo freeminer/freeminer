@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Hebrew (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2024-05-04 14:07+0000\n"
+"PO-Revision-Date: 2025-03-24 18:57+0000\n"
 "Last-Translator: jhon game <jhongamepc2@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/minetest/minetest/"
 "he/>\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.5.3\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -36,7 +36,7 @@ msgstr "פקודה מקומית"
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
-msgstr ""
+msgstr "פקודה שניתנה: "
 
 #: builtin/client/chatcommands.lua
 #, fuzzy
@@ -50,11 +50,11 @@ msgstr "שחקן יחיד"
 
 #: builtin/client/chatcommands.lua
 msgid "The out chat queue is now empty."
-msgstr ""
+msgstr "תור הצ'אט ליציאה ריק כעת."
 
 #: builtin/client/chatcommands.lua
 msgid "This command is disabled by server."
-msgstr ""
+msgstr "פקודה זו מושבתת על ידי השרת."
 
 #: builtin/common/chatcommands.lua
 #, fuzzy
@@ -68,11 +68,11 @@ msgstr "פקודה מקומית"
 
 #: builtin/common/chatcommands.lua
 msgid "Command not available: "
-msgstr ""
+msgstr "הפקודה לא זמינה: "
 
 #: builtin/common/chatcommands.lua
 msgid "Get help for commands (-t: output in chat)"
-msgstr ""
+msgstr "קבל עזרה עבור פקודות (-ל: פלט בצ'אט)"
 
 #: builtin/common/chatcommands.lua
 msgid ""
@@ -6432,7 +6432,7 @@ msgstr "ווליום"
 
 #: src/settings_translation_file.cpp
 msgid "Volume multiplier when the window is unfocused."
-msgstr ""
+msgstr "מכפיל עוצמת הקול כאשר החלון אינו ממוקד."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6482,11 +6482,11 @@ msgstr "מפלס פני המים בעולם."
 
 #: src/settings_translation_file.cpp
 msgid "Waving Nodes"
-msgstr ""
+msgstr "מנופפים בצמתים"
 
 #: src/settings_translation_file.cpp
 msgid "Waving leaves"
-msgstr ""
+msgstr "מניפים עלים"
 
 #: src/settings_translation_file.cpp
 msgid "Waving liquids"
@@ -6540,12 +6540,21 @@ msgid ""
 "This is also used as the base node texture size for world-aligned\n"
 "texture autoscaling."
 msgstr ""
+"בעת שימוש בסינון בילינארי/תלת ליניארי, מרקמים ברזולוציה נמוכה\n"
+"ניתן לטשטש, כך שאופציה זו משדרגת אותם באופן אוטומטי לשימור\n"
+"פיקסלים חדים. זה מגדיר את גודל המרקם המינימלי עבור המרקמים המוגדלים;\n"
+"ערכים גבוהים יותר נראים חדים יותר, אך דורשים יותר זיכרון.\n"
+"הגדרה זו חלה רק אם אחד מהמסננים שהוזכרו מופעל.\n"
+"זה משמש גם כגודל מרקם הצומת הבסיסי עבור מיושר עולם\n"
+"קנה מידה אוטומטי של מרקם."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Whether name tag backgrounds should be shown by default.\n"
 "Mods may still set a background."
 msgstr ""
+"האם יש להציג רקעים של תגי שם כברירת מחדל.\n"
+"ייתכן שמודדים עדיין מגדירים רקע."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6619,6 +6628,12 @@ msgid ""
 "See also texture_min_size.\n"
 "Warning: This option is EXPERIMENTAL!"
 msgstr ""
+"ניתן לשנות קנה מידה של טקסטורות מיושרות בעולם כך שיפרשו מספר צמתים. אוּלָם,\n"
+"ייתכן שהשרת לא ישלח את הסולם הרצוי, במיוחד אם אתה משתמש\n"
+"מארז טקסטורה שעוצב במיוחד; עם אפשרות זו, הלקוח מנסה\n"
+"כדי לקבוע את קנה המידה באופן אוטומטי בהתבסס על גודל המרקם.\n"
+"ראה גם texture_min_size.\n"
+"אזהרה: אפשרות זו היא ניסיוני!"
 
 #: src/settings_translation_file.cpp
 msgid "World-aligned textures mode"
