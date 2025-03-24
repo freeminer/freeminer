@@ -459,6 +459,9 @@ void MapgenEarth::generateBuildings()
 												 const auto &filename01) {
 					if (!std::filesystem::exists(filename01)) {
 						std::stringstream cmd;
+						// TODO: use osmium tool as lib
+						cmd << "osmium extract --strategy smart " << "--bbox " << bbox
+							<< " --output " << filename01 << " " << path_name;
 						exec_to_string(cmd.str());
 					}
 				};

@@ -1,13 +1,13 @@
 // https://github.com/louis-e/arnis/blob/main/src/floodfill.rs + chatgpt
 #include "flood_fill.h"
 
-#include <iostream>
 #include <vector>
 #include <set>
 #include <deque>
 #include <cmath>
 #include <chrono>
 #include <algorithm>
+#include "log.h"
 #include "debug/dump.h"
 
 // Struct for representing a 2D point
