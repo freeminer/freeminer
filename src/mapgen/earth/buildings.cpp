@@ -1,3 +1,5 @@
+// https://github.com/louis-e/arnis/blob/main/src/element_processing/buildings.rs + chatgpt
+
 // TODO 
 
 #include <climits>

@@ -456,13 +456,15 @@ void MapgenEarth::generateBuildings()
 			std::string use_file;
 			{
 				const auto try_extract = [](const auto &path_name, const auto &bbox,
-												 const auto &filename01) {
-					if (!std::filesystem::exists(filename01)) {
+												 const auto &filename) {
+					if (!std::filesystem::exists(filename)) {
 						std::stringstream cmd;
 						// TODO: use osmium tool as lib
-						cmd << "osmium extract --strategy smart " << "--bbox " << bbox
-							<< " --output " << filename01 << " " << path_name;
+						cmd << "osmium extract --output-format pbf --strategy smart " << "--bbox " << bbox
+							<< " --output " << filename << ".tmp" << " " << path_name;
 						exec_to_string(cmd.str());
+						std::filesystem::rename(filename + ".tmp", filename);
+						// osmium extract --bbox 11.0,46.0,11.1,46.1 N46W011-202412261000.osm.pbf  --output tttttt.pbf
 					}
 				};
 
