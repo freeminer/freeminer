@@ -179,6 +179,8 @@ class hdl : public handler_i
 public:
 	hdl(MapgenEarth *mg, const std::string &path_name) :
 			mg{mg}, path_name{path_name}, handler{mg}
+	{
+	}
 	
 	~hdl() = default;
 
