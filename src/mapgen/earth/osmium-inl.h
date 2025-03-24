@@ -41,13 +41,14 @@ public:
 				pos.Y >= mg->node_min.Z && pos.Y < mg->node_max.Z);
 	};
 
-	void build_poly(const osmium::NodeRefList &a, pos_t h_min, pos_t h, MapNode n)
+	void build_poly(const osmium::NodeRefList &a, pos_t h_min, pos_t h, MapNode n,
+			bool use_surface_height = false)
 	{
 
 		v2pos_t prev_pos;
-		size_t prev_ok = 0;
-		pos_t y;
-		size_t num = 0;
+		size_t prev_ok{};
+		pos_t y{};
+		size_t num{};
 		for (const auto &node_ref : a) {
 			if (!node_ref.location())
 				continue;
@@ -68,8 +69,11 @@ public:
 			}
 		}
 
-		for (const auto &at_y :
-				{static_cast<pos_t>(y + h_min), static_cast<pos_t>(y + h)}) { //try roof
+		for (const auto &h_use :
+				{static_cast<pos_t>(h_min), static_cast<pos_t>(h)}) { //try roof
+
+			auto at_y = h_use + y;
+
 			if (at_y < mg->node_min.Y || at_y > mg->node_max.Y) {
 				continue;
 			}
@@ -82,7 +86,12 @@ public:
 			}
 			auto area = flood_fill_area(list);
 			for (const auto &pos2 : area) {
-				const v3pos_t pos = {pos2.X, at_y, pos2.Y};
+				if (use_surface_height) {
+					y = mg->get_height(pos2.X, pos2.Y);
+				}
+
+				const v3pos_t pos = {pos2.X, static_cast<short>(h_use + y), pos2.Y};
+
 				if (mg->vm->exists(pos)) {
 					mg->vm->setNode(pos, n);
 				}
@@ -95,6 +104,7 @@ public:
 		MapNode n;
 		pos_t h = 0;
 		pos_t h_min = 0;
+		bool use_surface_height = false;
 
 		if (way.tags().has_key("height")) {
 			h = stoi(way.tags().get_value_by_key("height"));
@@ -116,26 +126,31 @@ public:
 			if (!h)
 				h = 1;
 			n = mg->c_cobble;
+			use_surface_height = true;
 		} else if (way.tags().has_key("barrier")) {
 			if (!h)
 				h = 2;
 			n = mg->c_cobble;
+			use_surface_height = true;
 		} else if (way.tags().has_key("natural") &&
 				   way.tags().get_value_by_key("natural") == std::string{"coastline"}) {
 			if (!h)
 				h = 1;
 			n = mg->visible_surface_hot;
+			use_surface_height = true;
 		} else if (way.tags().has_key("waterway")) {
 			if (!h)
 				h = 1;
 			n = mg->n_water;
+			use_surface_height = true;
 		} else {
 			if (todo)
 				DUMP("skip", way.id(), way.tags());
 			return;
 		}
-
-		build_poly(way.nodes(), h_min, h, n);
+		if (n) {
+			build_poly(way.nodes(), h_min, h, n, use_surface_height);
+		}
 	}
 
 	void relation(const osmium::Relation &relation)
