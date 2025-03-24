@@ -289,8 +289,8 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 	const int8_t iy((delta_y > 0) - (delta_y < 0));
 	delta_y = std::abs(delta_y) << 1;
 
-	if (vm->exists({x1, y, y1})) {
-		for (pos_t yi = y; yi <= y + h; ++yi) {
+	for (pos_t yi = y; yi <= y + h; ++yi) {
+		if (vm->exists({x1, yi, y1})) {
 			vm->setNode({x1, yi, y1}, n);
 		}
 	}
@@ -309,8 +309,8 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 			error += delta_y;
 			x1 += ix;
 
-			if (vm->exists({x1, y, y1})) {
-				for (pos_t yi = y; yi <= y + h; ++yi) {
+			for (pos_t yi = y; yi <= y + h; ++yi) {
+				if (vm->exists({x1, yi, y1})) {
 					vm->setNode({x1, yi, y1}, n);
 				}
 			}
@@ -329,8 +329,8 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 			error += delta_x;
 			y1 += iy;
 
-			if (vm->exists({x1, y, y1})) {
-				for (pos_t yi = y; yi <= y + h; ++yi) {
+			for (pos_t yi = y; yi <= y + h; ++yi) {
+				if (vm->exists({x1, yi, y1})) {
 					vm->setNode({x1, yi, y1}, n);
 				}
 			}

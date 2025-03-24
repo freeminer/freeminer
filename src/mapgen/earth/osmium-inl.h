@@ -1,3 +1,8 @@
+#include <cstddef>
+#include <vector>
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
+#include "map.h"
 #if !defined(FILE_INCLUDED)
 #include "debug/dump.h"
 #include <osmium/area/assembler.hpp>
@@ -15,6 +20,11 @@
 #include "mapgen/mapgen_earth.h"
 #endif
 
+#include "flood_fill.h"
+
+static constexpr auto floor_height = 4;
+static constexpr auto default_floors = 2;
+
 class MyHandler : public osmium::handler::Handler
 {
 	MapgenEarth *mg;
@@ -25,15 +35,19 @@ public:
 
 	void osm_object(const osmium::OSMObject &osm_object) const noexcept {}
 
-	void build_poly(const osmium::NodeRefList &a, short h, MapNode n)
+	bool pos_ok(const v2pos_t &pos)
 	{
-		const auto pos_ok = [&](const v2pos_t &pos) {
-			return (pos.X >= mg->node_min.X && pos.X < mg->node_max.X &&
-					pos.Y >= mg->node_min.Z && pos.Y < mg->node_max.Z);
-		};
+		return (pos.X >= mg->node_min.X && pos.X < mg->node_max.X &&
+				pos.Y >= mg->node_min.Z && pos.Y < mg->node_max.Z);
+	};
+
+	void build_poly(const osmium::NodeRefList &a, pos_t h_min, pos_t h, MapNode n)
+	{
 
 		v2pos_t prev_pos;
 		size_t prev_ok = 0;
+		pos_t y;
+		size_t num = 0;
 		for (const auto &node_ref : a) {
 			if (!node_ref.location())
 				continue;
@@ -42,14 +56,36 @@ public:
 				v2pos_t pos = mg->ll_to_pos(
 						ll(node_ref.location().lat(), node_ref.location().lon()));
 
-				if (!pos_ok(pos)) {
+				if (!num++) {
+					y = mg->get_height(pos.X, pos.Y);
 				}
 				if (prev_ok && (pos_ok(pos) || pos_ok(prev_pos))) {
 					mg->bresenham(pos.X, pos.Y, prev_pos.X, prev_pos.Y,
-							mg->get_height(pos.X, pos.Y), h, n);
+							y + h_min, h - h_min, n);
 				}
 				prev_pos = pos;
 				++prev_ok;
+			}
+		}
+
+		for (const auto &at_y :
+				{static_cast<pos_t>(y + h_min), static_cast<pos_t>(y + h)}) { //try roof
+			if (at_y < mg->node_min.Y || at_y > mg->node_max.Y) {
+				continue;
+			}
+
+			std::vector<v2pos_t> list;
+			for (const auto &node_ref : a) {
+				v2pos_t pos = mg->ll_to_pos(
+						ll(node_ref.location().lat(), node_ref.location().lon()));
+				list.emplace_back(pos);
+			}
+			auto area = flood_fill_area(list);
+			for (const auto &pos2 : area) {
+				const v3pos_t pos = {pos2.X, at_y, pos2.Y};
+				if (mg->vm->exists(pos)) {
+					mg->vm->setNode(pos, n);
+				}
 			}
 		}
 	}
@@ -58,35 +94,48 @@ public:
 	{
 		MapNode n;
 		pos_t h = 0;
-		if (way.tags().has_key("building")) {
-			if (const auto levels = way.tags().get_value_by_key("building:levels")) {
-				h = 4 * stoi(levels);
-			} else {
-				h = 8;
+		pos_t h_min = 0;
+
+		if (way.tags().has_key("height")) {
+			h = stoi(way.tags().get_value_by_key("height"));
+		}
+		if (way.tags().has_key("min_height")) {
+			h_min = stoi(way.tags().get_value_by_key("min_height"));
+		}
+
+		if (way.tags().has_key("building") || way.tags().has_key("building:part")) {
+			if (!h) {
+				if (const auto levels = way.tags().get_value_by_key("building:levels")) {
+					h = floor_height * stoi(levels);
+				} else {
+					h = floor_height * default_floors;
+				}
 			}
 			n = mg->c_cobble;
 		} else if (way.tags().has_key("highway") || way.tags().has_key("aeroway")) {
-			h = 1;
+			if (!h)
+				h = 1;
 			n = mg->c_cobble;
 		} else if (way.tags().has_key("barrier")) {
-			h = 2;
+			if (!h)
+				h = 2;
 			n = mg->c_cobble;
 		} else if (way.tags().has_key("natural") &&
 				   way.tags().get_value_by_key("natural") == std::string{"coastline"}) {
-			h = 1;
+			if (!h)
+				h = 1;
 			n = mg->visible_surface_hot;
 		} else if (way.tags().has_key("waterway")) {
-			h = 1;
+			if (!h)
+				h = 1;
 			n = mg->n_water;
-
 		} else {
-
 			if (todo)
 				DUMP("skip", way.id(), way.tags());
 			return;
 		}
 
-		build_poly(way.nodes(), h, n);
+		build_poly(way.nodes(), h_min, h, n);
 	}
 
 	void relation(const osmium::Relation &relation)
