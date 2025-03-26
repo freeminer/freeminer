@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <system_error>
 
 #include "debug/dump.h"
 #include "filesys.h"
@@ -428,73 +429,83 @@ void MapgenEarth::generateBuildings()
 #include "earth/osmium-inl.h"
 	const auto tc = pos_to_ll(node_min.X, node_min.Z);
 	const auto tc_max = pos_to_ll(node_max.X, node_max.Z);
-	if (1) {
-		const auto lat_dec = lat_start(tc.lat);
-		const auto lon_dec = lon_start(tc.lon);
-		const auto bbox001 = make_bbox(tc, 100);
-		const auto folder = porting::path_cache + DIR_DELIM + "earth";
-		const auto filename001 =
-				folder + DIR_DELIM + "extract.001." + bbox001 + ".osm.pbf";
-		if (!maps_holder->osm_bbox.contains(bbox001)) {
-			char buff[100];
-			const auto timestamp = "202503130700"; // todo auto
-			std::snprintf(buff, sizeof(buff), "%c%02d%c%03d-%s.osm.pbf",
-					lat_dec >= 0 ? 'N' : 'S', abs(lat_dec), lon_dec >= 0 ? 'W' : 'E',
-					abs(lon_dec), timestamp);
-			std::string filename = buff;
-			const auto path_name = folder + DIR_DELIM + filename;
-			{ // todo lock
-				if (!std::filesystem::exists(path_name)) {
-					const auto lock = std::lock_guard(maps_holder->osm_http_lock);
-					if (!std::filesystem::exists(path_name)) {
-						const auto url =
-								"https://osm.download.movisda.io/grid/" + filename;
-						multi_http_to_file({url}, path_name);
-					}
-				}
-			}
+	static const auto folder = porting::path_cache + DIR_DELIM + "earth";
+	const auto lat_dec = lat_start(tc.lat);
+	const auto lon_dec = lon_start(tc.lon);
 
-			std::string use_file;
-			{
-				const auto try_extract = [](const auto &path_name, const auto &bbox,
-												 const auto &filename) {
-					if (!std::filesystem::exists(filename)) {
-						std::stringstream cmd;
-						// TODO: use osmium tool as lib
-						cmd << "osmium extract --output-format pbf --strategy smart "
-							<< "--bbox " << bbox << " --output " << filename << ".tmp"
-							<< " " << path_name;
-						exec_to_string(cmd.str());
-						std::filesystem::rename(filename + ".tmp", filename);
-						// osmium extract --bbox 11.0,46.0,11.1,46.1 N46W011-202412261000.osm.pbf  --output tttttt.pbf
-					}
-				};
-
-				{
-					const auto bbox01 = make_bbox(tc, 10);
-					const auto filename01 =
-							folder + DIR_DELIM + "extract.01." + bbox01 + ".osm.pbf";
-					try_extract(path_name, bbox01, filename01);
-					use_file = filename01;
-				}
-
-				{
-					try_extract(use_file, bbox001, filename001);
-					use_file = filename001;
-				}
-			}
-
-			if (std::filesystem::exists(use_file)) {
-				const auto osm = std::make_shared<hdl>(this, use_file);
-				const auto lock = maps_holder->osm_bbox.lock_unique_rec();
-				if (!maps_holder->osm_bbox.contains(bbox001)) {
-					maps_holder->osm_bbox.emplace(bbox001, osm);
-				}
-			}
+	static const auto timestamp = []() {
+		std::string ts = "202503130700";
+		g_settings->getNoEx("earth_movisda_timestamp", ts);
+		return ts;
+	}();
+	char buff[100];
+	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d-%s.osm.pbf", lat_dec >= 0 ? 'N' : 'S',
+			abs(lat_dec), lon_dec >= 0 ? 'W' : 'E', abs(lon_dec), timestamp.c_str());
+	std::string filename = buff;
+	const auto base_full_name = folder + DIR_DELIM + filename;
+	if (!std::filesystem::exists(base_full_name)) {
+		const auto lock = std::lock_guard(maps_holder->osm_http_lock);
+		if (!std::filesystem::exists(base_full_name)) {
+			const auto url = "https://osm.download.movisda.io/grid/" + filename;
+			multi_http_to_file({url}, base_full_name);
 		}
-		if (const auto &hdlr = maps_holder->osm_bbox.get(bbox001)) {
-			hdlr->apply();
+	}
+
+	std::string use_file = base_full_name;
+	std::string bbox;
+	{
+		const auto try_extract = [](const auto &path_name, const auto &bbox,
+										 const auto &filename) {
+			if (std::filesystem::exists(filename)) {
+				return true;
+			}
+			const auto lock = std::lock_guard(maps_holder->osm_extract_lock);
+			if (std::filesystem::exists(filename)) {
+				return true;
+			}
+
+			std::stringstream cmd;
+			// TODO: use osmium tool as lib
+			cmd << "osmium extract --output-format pbf --strategy smart " << "--bbox "
+				<< bbox << " --output " << filename << ".tmp" << " " << path_name;
+			exec_to_string(cmd.str());
+			if (!std::filesystem::exists(filename + ".tmp")) {
+				return false;
+			}
+
+			std::error_code error_code;
+			std::filesystem::rename(filename + ".tmp", filename, error_code);
+			return !error_code.value();
+		};
+
+		for (auto div = 10; div <= 1000; div *= 10) {
+			std::error_code ec;
+			const auto size = std::filesystem::file_size(use_file, ec);
+			if (ec || size < 40000) {
+				break;
+			};
+
+			const auto bbox_next = make_bbox(tc, div);
+			auto filename_next = folder + DIR_DELIM + "extract." + std::to_string(div) +
+								 "." + bbox_next + ".osm.pbf";
+			if (!try_extract(use_file, bbox_next, filename_next)) {
+				break;
+			}
+			use_file = filename_next;
+			bbox = bbox_next;
 		}
+	}
+
+	if (std::filesystem::exists(use_file)) {
+		const auto osm = std::make_shared<hdl>(this, use_file);
+		const auto lock = maps_holder->osm_bbox.lock_unique_rec();
+		if (!maps_holder->osm_bbox.contains(bbox)) {
+			maps_holder->osm_bbox.emplace(bbox, osm);
+		}
+	}
+
+	if (const auto &hdlr = maps_holder->osm_bbox.get(bbox)) {
+		hdlr->apply();
 	}
 #endif
 }
