@@ -30,6 +30,7 @@
 #include "common/c_converter.h"
 #include "gui/guiOpenURL.h"
 #include "gettext.h"
+#include "util/string.h"
 
 /******************************************************************************/
 std::string ModApiMainMenu::getTextData(lua_State *L, const std::string &name)
@@ -126,10 +127,13 @@ int ModApiMainMenu::l_start(lua_State *L)
 	data->simple_singleplayer_mode = getBoolData(L,"singleplayer",valid);
 	data->do_reconnect = getBoolData(L, "do_reconnect", valid);
 	if (!data->do_reconnect) {
-		data->name     = getTextData(L,"playername");
-		data->password = getTextData(L,"password");
-		data->address  = getTextData(L,"address");
-		data->port     = getTextData(L,"port");
+		// Get rid of trailing whitespace in name (may be added by autocompletion
+		// on Android, which would then cause SERVER_ACCESSDENIED_WRONG_CHARS_IN_NAME).
+		data->name     = trim(getTextData(L, "playername"));
+		data->password = getTextData(L, "password");
+		// There's no reason for these to have leading/trailing whitespace either.
+		data->address  = trim(getTextData(L, "address"));
+		data->port     = trim(getTextData(L, "port"));
 
 		const auto val = getTextData(L, "allow_login_or_register");
 		if (val == "login")
