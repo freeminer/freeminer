@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Spanish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-02-28 20:45+0000\n"
-"Last-Translator: Jorge Rodríguez <mr.jrodriguez05@gmail.com>\n"
+"PO-Revision-Date: 2025-03-30 02:00+0000\n"
+"Last-Translator: Miguel <miguel_p.l@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/minetest/"
 "minetest/es/>\n"
 "Language: es\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10.3-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -256,7 +256,7 @@ msgstr "Buscar"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
-msgstr "Mostrar configuraciones avanzadas"
+msgstr "Mostrar ajustes avanzados"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show technical names"
@@ -1037,7 +1037,7 @@ msgstr "Acerca de"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Active Contributors"
-msgstr "Colaboradores Activos"
+msgstr "Colaboradores activos"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Active renderer:"
@@ -1045,11 +1045,11 @@ msgstr "Renderizador activo:"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Core Developers"
-msgstr "Desarrolladores Principales"
+msgstr "Desarrolladores principales"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Core Team"
-msgstr "Equipo Principal"
+msgstr "Equipo principal"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Open User Data Directory"
@@ -1065,11 +1065,11 @@ msgstr ""
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Previous Contributors"
-msgstr "Antiguos Colaboradores"
+msgstr "Colaboradores anteriores"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Previous Core Developers"
-msgstr "Antiguos Desarrolladores Principales"
+msgstr "Desarrolladores principales anteriores"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Share debug log"
@@ -6950,7 +6950,8 @@ msgstr ""
 "imagen menos detallada.\n"
 "Los valores más altos dan como resultado una imagen menos detallada.\n"
 "Nota: el submuetreo no está actualmente soportado si la opción \"3d_mode\" "
-"está configurada a un valor no preestablecido."
+"está configurada\n"
+"a un valor no preestablecido."
 
 #: src/settings_translation_file.cpp
 msgid "Unlimited player transfer distance"
