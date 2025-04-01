@@ -367,8 +367,7 @@ Client::~Client()
 	g_fontengine->clearMediaFonts();
 }
 
-void Client::connect(const Address &address, const std::string &address_name,
-	bool is_local_server)
+void Client::connect(const Address &address, const std::string &address_name)
 {
 	if (m_con) {
 		// can't do this if the connection has entered auth phase
@@ -389,7 +388,7 @@ void Client::connect(const Address &address, const std::string &address_name,
 
 	m_con->Connect(address);
 
-	initLocalMapSaving(address, m_address_name, is_local_server);
+	initLocalMapSaving(address, m_address_name);
 }
 
 void Client::step(float dtime)
@@ -917,11 +916,9 @@ void Client::request_media(const std::vector<std::string> &file_requests)
 			<< pkt.getSize() << ")" << std::endl;
 }
 
-void Client::initLocalMapSaving(const Address &address,
-		const std::string &hostname,
-		bool is_local_server)
+void Client::initLocalMapSaving(const Address &address, const std::string &hostname)
 {
-	if (!g_settings->getBool("enable_local_map_saving") || is_local_server) {
+	if (!g_settings->getBool("enable_local_map_saving") || m_internal_server) {
 		return;
 	}
 	if (m_localdb) {
