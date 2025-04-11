@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-02-09 13:23+0100\n"
-"PO-Revision-Date: 2025-02-13 12:44+0000\n"
+"PO-Revision-Date: 2025-04-11 20:33+0000\n"
 "Last-Translator: ninjum <ninhum@gmx.com>\n"
 "Language-Team: Galician <https://hosted.weblate.org/projects/minetest/"
 "minetest/gl/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -2328,7 +2328,7 @@ msgstr "Toca fóra para deseleccionar."
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Joystick"
-msgstr "Joystick"
+msgstr "Panca de mando"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Overflow menu"
@@ -3619,12 +3619,12 @@ msgstr "Activar a xanela da consola"
 
 #: src/settings_translation_file.cpp
 msgid "Enable joysticks"
-msgstr "Activar joysticks"
+msgstr "Activar Pancas de mando"
 
 #: src/settings_translation_file.cpp
 msgid "Enable joysticks. Requires a restart to take effect"
 msgstr ""
-"Activar pancas de xogo (joysticks). Require un reinicio para facer efecto"
+"Activar pancas de mando (joysticks). Require un reinicio para facer efecto"
 
 #: src/settings_translation_file.cpp
 msgid "Enable mod channels support."
@@ -3868,15 +3868,15 @@ msgstr "Semente de mapa fixa"
 
 #: src/settings_translation_file.cpp
 msgid "Fixed virtual joystick"
-msgstr "Joystick virtual fixo"
+msgstr "Panca de mando virtual fixa"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Fixes the position of virtual joystick.\n"
 "If disabled, virtual joystick will center to first-touch's position."
 msgstr ""
-"Corrixe a posición da panca de xogos ( joystick) virtual.\n"
-"Se está desactivado, a panca de xogos virtual centrarase na posición do "
+"Corrixe a posición da panca de mando ( joystick) virtual.\n"
+"Se está desactivado, a panca de mando virtual centrarase na posición do "
 "primeiro toque."
 
 #: src/settings_translation_file.cpp
@@ -4545,23 +4545,23 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Joystick ID"
-msgstr "ID do joystick"
+msgstr "ID da Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid "Joystick button repetition interval"
-msgstr "Intervalo de repetición do botón do joystick"
+msgstr "Intervalo de repetición do botón da Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid "Joystick dead zone"
-msgstr "Zona morta do joystick"
+msgstr "Zona morta da Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid "Joystick frustum sensitivity"
-msgstr "Sensibilidade do gatillo do joystick"
+msgstr "Sensibilidade do gatillo da Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid "Joystick type"
-msgstr "Tipo de joystick"
+msgstr "Tipo de Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4615,19 +4615,19 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Julia w"
-msgstr "Julia w"
+msgstr "Conxunto de Julia w"
 
 #: src/settings_translation_file.cpp
 msgid "Julia x"
-msgstr "Julia x"
+msgstr "Conxunto de Julia X"
 
 #: src/settings_translation_file.cpp
 msgid "Julia y"
-msgstr "Julia y"
+msgstr "Conxunto de Julia y"
 
 #: src/settings_translation_file.cpp
 msgid "Julia z"
-msgstr "Julia z"
+msgstr "Conxunto de Julia z"
 
 #: src/settings_translation_file.cpp
 msgid "Jumping speed"
@@ -5879,7 +5879,6 @@ msgid "See https://www.sqlite.org/pragma.html#pragma_synchronous"
 msgstr "Ver https://www.sqlite.org/pragma.html#pragma_synchronous"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Select the antialiasing method to apply.\n"
 "\n"
@@ -5902,24 +5901,28 @@ msgid ""
 "Renders higher-resolution image of the scene, then scales down to reduce\n"
 "the aliasing effects. This is the slowest and the most accurate method."
 msgstr ""
-"Escolle o método de suavización para aplicar.\n"
+"Escolle o método de suavizado de bordos a aplicar.\n"
 "\n"
-"* Ningún: non hai antialiasing (predeterminado)\n"
+"* Ningún – Sen suavizado de bordos (predeterminado)\n"
 "\n"
-"* FSAA: antialiasing de pantalla completa proporcionado por hardware\n"
-"(incompatible con posprocesamento e submostraxe)\n"
-"A.K.A antialiasing de varias mostras (MSAA)\n"
-"Suaviza os bordos do bloque pero non afecta o interior das texturas.\n"
-"É necesario reiniciar para cambiar esta opción.\n"
+"* FSAA: antialiasing de pantalla completa fornecido polo soporte físico\n"
+"Tamén coñecido como suavizado por mostraxe múltiple (MSAA))\n"
+"Suaviza os bordos do bloque pero non afecta ao interior das texturas.\n"
 "\n"
-"* FXAA - Antialiasing aproximado rápido (require sombreadores)\n"
-"Aplica un filtro de posprocesamento para detectar e suavizar os bordos de "
-"alto contraste.\n"
-"Ofrece equilibrio entre velocidade e calidade de imaxe.\n"
+"Se o procesamento posterior está desactivado, cambiar FSAA require "
+"reiniciar..\n"
+"Ademais, se o procesamento posterior está desactivado, FSAA non funcionará "
+"xunto con submostraxe\n"
+"nin cun axuste de \"3d_mode\" non predeterminado.\n"
 "\n"
-"* SSAA - Antialiasing de supermostraxe (require sombreadores)\n"
-"Mostra a imaxe de maior resolución da escena e, a continuación, redúcese "
-"para reducir\n"
+"* FXAA – Suavizado rápido aproximado\n"
+"Aplica un filtro de procesamento posterior para detectar e suavizar bordos "
+"de alto contraste.\n"
+"Ofrece equilibrio entre velocidade e calidade visual.\n"
+"\n"
+"* SSAA – Suavizado por supermostraxe\n"
+"Renderiza a escena a unha resolución superior e redúcese despois para "
+"minimizar\n"
 "os efectos de aliasing. Este é o método máis lento e preciso."
 
 #: src/settings_translation_file.cpp
@@ -6532,7 +6535,7 @@ msgstr "O URL do repositorio de contido"
 
 #: src/settings_translation_file.cpp
 msgid "The dead zone of the joystick"
-msgstr "A zona morta do joystick"
+msgstr "A zona morta da Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6580,7 +6583,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "The identifier of the joystick to use"
-msgstr "O identificador do joystick que se vai utilizar"
+msgstr "O identificador da Panca de mando que se vai utilizar"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6655,8 +6658,8 @@ msgid ""
 "The sensitivity of the joystick axes for moving the\n"
 "in-game view frustum around."
 msgstr ""
-"A sensibilidade dos eixes do joystick para mover o\n"
-"vista no xogo frustum ao redor."
+"A sensibilidade dos eixes da Panca de mando para mover o\n"
+"campo de visión dentro do xogo."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6698,7 +6701,7 @@ msgid ""
 "when holding down a joystick button combination."
 msgstr ""
 "O tempo en segundos que tarda entre eventos repetidos\n"
-"ao manter premida unha combinación de botóns do joystick."
+"ao manter premida unha combinación de botóns da panca de mando."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6711,7 +6714,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "The type of joystick"
-msgstr "O tipo de joystick"
+msgstr "O tipo de Panca de mando"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6983,9 +6986,9 @@ msgid ""
 "If enabled, virtual joystick will also tap \"Aux1\" button when out of main "
 "circle."
 msgstr ""
-"Usar a panca de xogos ( joystick) virtual para activar o botón \"Aux1\".\n"
-"Se está activado, a panca de xogos virtual tamén tocará o botón \"Aux1\" "
-"cando estea fóra do círculo principal."
+"Usar a panca de mando virtual para activar o botón \"Aux1\".\n"
+"Se está activado, a panca de mando virtual tamén premerá o botón \"Aux1\" ao "
+"saír do círculo principal."
 
 #: src/settings_translation_file.cpp
 msgid "User Interfaces"
@@ -7078,7 +7081,7 @@ msgstr "Campo de visión"
 
 #: src/settings_translation_file.cpp
 msgid "Virtual joystick triggers Aux1 button"
-msgstr "O joystick virtual activa o botón Aux1"
+msgstr "A Panca de mando virtual activa o botón Aux1"
 
 #: src/settings_translation_file.cpp
 msgid "Volume"
@@ -7383,7 +7386,7 @@ msgstr "Nivel Y do fondo do mar."
 
 #: src/settings_translation_file.cpp
 msgid "cURL"
-msgstr "cURL"
+msgstr "cliente URL"
 
 #: src/settings_translation_file.cpp
 msgid "cURL file download timeout"
