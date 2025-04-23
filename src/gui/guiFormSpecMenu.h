@@ -206,7 +206,10 @@ public:
 
 	void defaultAllowClose(bool value)
 	{
+		// Also set m_allowclose here in order to have the correct value if
+		// escape is pressed before regenerateGui() is called.
 		m_default_allowclose = value;
+		m_allowclose = value;
 	}
 
 	void setDebugView(bool value)
