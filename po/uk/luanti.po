@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-09 13:23+0100\n"
+"POT-Creation-Date: 2025-04-24 16:51+0200\n"
 "PO-Revision-Date: 2025-03-26 06:33+0000\n"
 "Last-Translator: Yof <Yof@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
@@ -83,8 +83,17 @@ msgid "Browse"
 msgstr "Оглянути"
 
 #: builtin/common/settings/components.lua
+msgid "Conflicts with \"$1\""
+msgstr ""
+
+#: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Редагувати"
+
+#: builtin/common/settings/components.lua
+#, fuzzy
+msgid "Remove keybinding"
+msgstr "Прив'язки до клавіш."
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -112,8 +121,8 @@ msgstr "2D-шум"
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/dlg_create_world.lua
 #: builtin/mainmenu/dlg_delete_content.lua
 #: builtin/mainmenu/dlg_delete_world.lua builtin/mainmenu/dlg_register.lua
-#: builtin/mainmenu/dlg_rename_modpack.lua src/gui/guiKeyChangeMenu.cpp
-#: src/gui/guiOpenURL.cpp src/gui/guiPasswordChange.cpp
+#: builtin/mainmenu/dlg_rename_modpack.lua src/gui/guiOpenURL.cpp
+#: src/gui/guiPasswordChange.cpp
 msgid "Cancel"
 msgstr "Скасувати"
 
@@ -135,7 +144,7 @@ msgid "Persistence"
 msgstr "Постійність"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#: builtin/mainmenu/dlg_config_world.lua src/gui/guiKeyChangeMenu.cpp
+#: builtin/mainmenu/dlg_config_world.lua
 msgid "Save"
 msgstr "Зберегти"
 
@@ -208,8 +217,18 @@ msgstr "Доступність"
 msgid "Auto"
 msgstr "Автоматично"
 
-#: builtin/common/settings/dlg_settings.lua src/gui/guiKeyChangeMenu.cpp
-#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+#: builtin/common/settings/dlg_settings.lua
+#: builtin/mainmenu/content/dlg_contentdb.lua
+#: builtin/mainmenu/content/dlg_package.lua
+msgid "Back"
+msgstr "Назад"
+
+#: builtin/common/settings/dlg_settings.lua
+msgid "Buttons with crosshair"
+msgstr ""
+
+#: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
+#: src/settings_translation_file.cpp
 msgid "Chat"
 msgstr "Чат"
 
@@ -230,9 +249,18 @@ msgstr "Вимкнено"
 msgid "Enabled"
 msgstr "Увімкнено"
 
+#: builtin/common/settings/dlg_settings.lua src/gui/guiVolumeChange.cpp
+#: src/gui/touchscreenlayout.cpp
+msgid "Exit"
+msgstr "Вихід"
+
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
 msgstr "Загальне"
+
+#: builtin/common/settings/dlg_settings.lua
+msgid "Long tap"
+msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -256,6 +284,10 @@ msgid "Search"
 msgstr "Пошук"
 
 #: builtin/common/settings/dlg_settings.lua
+msgid "Short tap"
+msgstr ""
+
+#: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
 msgstr "Просунуті налаштування"
 
@@ -264,12 +296,17 @@ msgid "Show technical names"
 msgstr "Показувати технічні назви"
 
 #: builtin/common/settings/dlg_settings.lua
-msgid "Touchscreen layout"
-msgstr "Схема сенсорного екрану"
+#, fuzzy
+msgid "Tap"
+msgstr "Tab"
 
 #: builtin/common/settings/dlg_settings.lua
-msgid "pause_menu"
-msgstr "Меню паузи"
+msgid "Tap with crosshair"
+msgstr ""
+
+#: builtin/common/settings/dlg_settings.lua
+msgid "Touchscreen layout"
+msgstr "Схема сенсорного екрану"
 
 #: builtin/common/settings/settingtypes.lua
 msgid "Client Mods"
@@ -401,11 +438,6 @@ msgid "All"
 msgstr "Все"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
-msgid "Back"
-msgstr "Назад"
-
-#: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "ContentDB is not available when Luanti was compiled without cURL"
 msgstr "ContentDB недоступний, якщо Luanti скомпільовано без cURL"
 
@@ -433,7 +465,6 @@ msgid "Mods"
 msgstr "Моди"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
 msgid "No packages could be retrieved"
 msgstr "Не вдалося отримати пакунки"
 
@@ -535,6 +566,15 @@ msgid "Donate"
 msgstr "Пожертвувати"
 
 #: builtin/mainmenu/content/dlg_package.lua
+msgid "Error loading package information"
+msgstr ""
+
+#: builtin/mainmenu/content/dlg_package.lua
+#, fuzzy
+msgid "Error loading reviews"
+msgstr "Помилка створення клієнта: %s"
+
+#: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
 msgstr "Тема на форумі"
 
@@ -549,6 +589,10 @@ msgstr "Встановити [$1]"
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Issue Tracker"
 msgstr "Трекер проблем"
+
+#: builtin/mainmenu/content/dlg_package.lua
+msgid "Reviews"
+msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
@@ -604,11 +648,9 @@ msgstr "Не вдалося встановити $1 як набір тексту
 
 #: builtin/mainmenu/dlg_clients_list.lua
 msgid ""
-"This is the list of clients connected to\n"
+"Players connected to\n"
 "$1"
 msgstr ""
-"Це список клієнтів, приєднаних до\n"
-"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -1202,14 +1244,6 @@ msgid "Address"
 msgstr "Адреса"
 
 #: builtin/mainmenu/tab_online.lua
-msgid ""
-"Clients:\n"
-"$1"
-msgstr ""
-"Клієнти:\n"
-"$1"
-
-#: builtin/mainmenu/tab_online.lua
 msgid "Creative mode"
 msgstr "Творчий режим"
 
@@ -1249,6 +1283,15 @@ msgstr "Відкрити сайт серверу"
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
 msgstr "Затримка"
+
+#: builtin/mainmenu/tab_online.lua
+#, fuzzy
+msgid ""
+"Players:\n"
+"$1"
+msgstr ""
+"Клієнти:\n"
+"$1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid ""
@@ -2079,6 +2122,11 @@ msgstr ""
 msgid "Some mods have unsatisfied dependencies:"
 msgstr "У деяких моди невирішено залежності:"
 
+#: src/gui/guiButtonKey.h
+#, fuzzy
+msgid "Press Button"
+msgstr "Ліва кнопка"
+
 #: src/gui/guiChatConsole.cpp
 msgid "Failed to open webpage"
 msgstr "Не вдалося завантажити вебсторінку"
@@ -2090,162 +2138,6 @@ msgstr "Відкривання вебсторінки"
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
 msgstr "Далі"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "\"Aux1\" = climb down"
-msgstr "\"Aux1\" = лізти вниз"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Autoforward"
-msgstr "Автохід"
-
-#: src/gui/guiKeyChangeMenu.cpp src/settings_translation_file.cpp
-msgid "Automatic jumping"
-msgstr "Автоматичне перестрибування"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Aux1"
-msgstr "Aux1"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Backward"
-msgstr "Назад"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Block bounds"
-msgstr "Межі вузлів"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Change camera"
-msgstr "Змінити камеру"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Command"
-msgstr "Команда"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Console"
-msgstr "Консоль"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Dec. range"
-msgstr "Зменш. видимість"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Dec. volume"
-msgstr "Зменшити звук"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Double tap \"jump\" to toggle fly"
-msgstr "Подвійний стрибок вмикає політ"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Drop"
-msgstr "Викинути"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Forward"
-msgstr "Вперед"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Inc. range"
-msgstr "Збільш. видимість"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Inc. volume"
-msgstr "Збільшити звук"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Inventory"
-msgstr "Інвентар"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Jump"
-msgstr "Стрибок"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Key already in use"
-msgstr "Клавіша вже використовується"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Keybindings."
-msgstr "Прив'язки до клавіш."
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Left"
-msgstr "Ліворуч"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Local command"
-msgstr "Локальна команда"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Mute"
-msgstr "Вимкнути звук"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Next item"
-msgstr "Наступний предмет"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Prev. item"
-msgstr "Попередній предмет"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Range select"
-msgstr "Вибір діапазону"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Right"
-msgstr "Праворуч"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Screenshot"
-msgstr "Знімок екрана"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Sneak"
-msgstr "Крастися"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Toggle HUD"
-msgstr "Увімкнути HUD"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle chat log"
-msgstr "Увімкнути журнал чату"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle fast"
-msgstr "Прискорення"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle fly"
-msgstr "Політ"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Toggle fog"
-msgstr "Увімкнути туман"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle minimap"
-msgstr "Увімкнути мінімапу"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle noclip"
-msgstr "Прохід крізь стіни"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Toggle pitchmove"
-msgstr "Увімкнути висотний рух"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Zoom"
-msgstr "Збільшити"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "press key"
-msgstr "натисніть клавішу"
 
 #: src/gui/guiOpenURL.cpp
 msgid "Open"
@@ -2274,10 +2166,6 @@ msgstr "Старий пароль"
 #: src/gui/guiPasswordChange.cpp
 msgid "Passwords do not match!"
 msgstr "Паролі не збігаються!"
-
-#: src/gui/guiVolumeChange.cpp src/gui/touchscreenlayout.cpp
-msgid "Exit"
-msgstr "Вихід"
 
 #: src/gui/guiVolumeChange.cpp
 msgid "Muted"
@@ -2316,17 +2204,78 @@ msgstr "Натисніть кнопку, щоб вибрати. Перетягн
 msgid "Tap outside to deselect."
 msgstr "Натисніть зовні, щоб скасувати вибір."
 
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Aux1"
+msgstr "Aux1"
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Change camera"
+msgstr "Змінити камеру"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Dig/punch/use"
+msgstr ""
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Drop"
+msgstr "Викинути"
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Inventory"
+msgstr "Інвентар"
+
 #: src/gui/touchscreenlayout.cpp
 msgid "Joystick"
 msgstr "Джойстик"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Jump"
+msgstr "Стрибок"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Overflow menu"
 msgstr "Меню додаткових дій"
 
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+#, fuzzy
+msgid "Place/use"
+msgstr "Клавіша покласти"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Range select"
+msgstr "Вибір діапазону"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Sneak"
+msgstr "Крастися"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle chat log"
+msgstr "Увімкнути журнал чату"
+
 #: src/gui/touchscreenlayout.cpp
 msgid "Toggle debug"
 msgstr "Перемкнути налагодження"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle fast"
+msgstr "Прискорення"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle fly"
+msgstr "Політ"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle minimap"
+msgstr "Увімкнути мінімапу"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle noclip"
+msgstr "Прохід крізь стіни"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Zoom"
+msgstr "Збільшити"
 
 #: src/network/clientpackethandler.cpp
 msgid ""
@@ -2805,6 +2754,10 @@ msgid "Audio"
 msgstr "Звук"
 
 #: src/settings_translation_file.cpp
+msgid "Automatic jumping"
+msgstr "Автоматичне перестрибування"
+
+#: src/settings_translation_file.cpp
 msgid "Automatically jump up single-node obstacles."
 msgstr "Автоматично стрибати на перешкодах висотою один вузол."
 
@@ -3016,6 +2969,11 @@ msgid "Client"
 msgstr "Клієнт"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Client Debugging"
+msgstr "Налагодження"
+
+#: src/settings_translation_file.cpp
 msgid "Client Mesh Chunksize"
 msgstr "Розмір ділянки на сітці клієнта"
 
@@ -3086,10 +3044,10 @@ msgid ""
 "These flags are independent from Luanti versions,\n"
 "so see a full list at https://content.luanti.org/help/content_flags/"
 msgstr ""
-"Розділений комами перелік міток, які треба приховувати у репозиторії вмісту."
-"\n"
-"\"nonfree\" використовується для приховання пакунків, що не є "
-"\"вільним програмним забезпеченням\"\n"
+"Розділений комами перелік міток, які треба приховувати у репозиторії "
+"вмісту.\n"
+"\"nonfree\" використовується для приховання пакунків, що не є \"вільним "
+"програмним забезпеченням\"\n"
 "за визначенням Фонда вільного програмного забезпечення.\n"
 "Ви також можете вказувати оцінки вмісту.\n"
 "Ці мітки незалежні від версій Luanti, тому дивіться\n"
@@ -3112,6 +3070,10 @@ msgstr ""
 "небезпечних\n"
 "функцій, навіть коли увімкнено безпеку модів (через "
 "request_insecure_environment())."
+
+#: src/settings_translation_file.cpp
+msgid "Command"
+msgstr "Команда"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3268,6 +3230,16 @@ msgstr ""
 "Зменшення цього може покращити продуктивність, але деяким ефектам(наприклад, "
 "дебаг)\n"
 "для роботи потрібно більше 8 біт."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Decrease view range"
+msgstr "Зменш. видимість"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Decrease volume"
+msgstr "Зменшити звук"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
@@ -3490,6 +3462,11 @@ msgstr ""
 "де сортування прозорості було б дуже повільним в іншому випадку."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Drop item"
+msgstr "Клавіша викидання предметів"
+
+#: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
 msgstr "Записувати дані налагодження генератору світу."
 
@@ -3532,6 +3509,13 @@ msgid ""
 msgstr ""
 "Увімкнути підтримку IPv6 (для клієнта і серверу).\n"
 "Потрібно для підключень за IPv6 взагалі."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Enable IPv6 support for server.\n"
+"Note that clients will be able to connect with both IPv4 and IPv6.\n"
+"Ignored if bind_address is set."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3659,14 +3643,6 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Enable/disable running an IPv6 server.\n"
-"Ignored if bind_address is set."
-msgstr ""
-"Дозволити/заборонити серверу приймати підключення IPv6.\n"
-"Ігнорується, якщо налаштовано bind_address."
-
-#: src/settings_translation_file.cpp
-msgid ""
 "Enables Hable's 'Uncharted 2' filmic tone mapping.\n"
 "Simulates the tone curve of photographic film and how this approximates the\n"
 "appearance of high dynamic range images. Mid-range contrast is slightly\n"
@@ -3700,8 +3676,8 @@ msgid ""
 "\"auto\" means that the touchscreen controls will be enabled and disabled\n"
 "automatically depending on the last used input method."
 msgstr ""
-"Вмикає сенсорні елементи керування, дозволяючи вам грати за допомогою дотику."
-"\n"
+"Вмикає сенсорні елементи керування, дозволяючи вам грати за допомогою "
+"дотику.\n"
 "\"auto\" означає, що сенсорні елементи керування будуть увімкнені та "
 "вимкнені\n"
 "в залежності від останнього використовуваного методу."
@@ -3753,16 +3729,13 @@ msgid "FPS"
 msgstr "FPS"
 
 #: src/settings_translation_file.cpp
-msgid "FPS when unfocused or paused"
+#, fuzzy
+msgid "FPS when unfocused"
 msgstr "FPS, при паузі або поза фокусом"
 
 #: src/settings_translation_file.cpp
 msgid "Factor noise"
 msgstr "Шум фактору"
-
-#: src/settings_translation_file.cpp
-msgid "Fall bobbing factor"
-msgstr "Множник похитування при падінні"
 
 #: src/settings_translation_file.cpp
 msgid "Fallback font path"
@@ -3975,15 +3948,15 @@ msgid ""
 "From how far blocks are generated for clients, stated in mapblocks (16 "
 "nodes)."
 msgstr ""
-"Наскільки далеко вузли генеруються для клієнтів, зазначається у блоках мапи ("
-"16 вузлів)."
+"Наскільки далеко вузли генеруються для клієнтів, зазначається у блоках мапи "
+"(16 вузлів)."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "From how far blocks are sent to clients, stated in mapblocks (16 nodes)."
 msgstr ""
-"З якої відстані вузли надсилаються до клієнтів, зазначається у блоках мапи ("
-"16 вузлів)."
+"З якої відстані вузли надсилаються до клієнтів, зазначається у блоках мапи "
+"(16 вузлів)."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3996,8 +3969,8 @@ msgstr ""
 "Найдальніша відстань, з якій клієнти знають про об'єкти, зазначається у "
 "блоках мапи (16 вузлів).\n"
 "\n"
-"Виставлення цього більше за active_block_range також зумовить сервер запам'"
-"ятовувати\n"
+"Виставлення цього більше за active_block_range також зумовить сервер "
+"запам'ятовувати\n"
 "активні об'єкти до цієї відстані у напрямку погляду гравця.\n"
 "(Це може допомогти уникати раптового зникнення мобів з поля зору)"
 
@@ -4185,12 +4158,181 @@ msgstr ""
 "у вузлах в секунду за секунду."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 1"
+msgstr "Клавіша слоту 1 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 10"
+msgstr "Клавіша слоту 10 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 11"
+msgstr "Клавіша слоту 11 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 12"
+msgstr "Клавіша слоту 12 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 13"
+msgstr "Клавіша слоту 13 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 14"
+msgstr "Клавіша слоту 14 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 15"
+msgstr "Клавіша слоту 15 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 16"
+msgstr "Клавіша слоту 16 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 17"
+msgstr "Клавіша слоту 17 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 18"
+msgstr "Клавіша слоту 18 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 19"
+msgstr "Клавіша слоту 19 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 2"
+msgstr "Клавіша слоту 2 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 20"
+msgstr "Клавіша слоту 20 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 21"
+msgstr "Клавіша слоту 21 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 22"
+msgstr "Клавіша слоту 22 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 23"
+msgstr "Клавіша слоту 23 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 24"
+msgstr "Клавіша слоту 24 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 25"
+msgstr "Клавіша слоту 25 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 26"
+msgstr "Клавіша слоту 26 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 27"
+msgstr "Клавіша слоту 27 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 28"
+msgstr "Клавіша слоту 28 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 29"
+msgstr "Клавіша слоту 29 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 3"
+msgstr "Клавіша слоту 3 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 30"
+msgstr "Клавіша слоту 30 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 31"
+msgstr "Клавіша слоту 31 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 32"
+msgstr "Клавіша слоту 32 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 4"
+msgstr "Клавіша слоту 4 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 5"
+msgstr "Клавіша слоту 5 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 6"
+msgstr "Клавіша слоту 6 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 7"
+msgstr "Клавіша слоту 7 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 8"
+msgstr "Клавіша слоту 8 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 9"
+msgstr "Клавіша слоту 9 швидкої панелі"
+
+#: src/settings_translation_file.cpp
 msgid "Hotbar: Enable mouse wheel for selection"
 msgstr "Панель швидкого доступу: коліщатко миші для вибору"
 
 #: src/settings_translation_file.cpp
 msgid "Hotbar: Invert mouse wheel direction"
 msgstr "Панель швидкого доступу: Інвертувати коліщатко"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar: select next item"
+msgstr "Клавіша слоту 1 швидкої панелі"
+
+#: src/settings_translation_file.cpp
+msgid "Hotbar: select previous item"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "How deep to make rivers."
@@ -4316,6 +4458,16 @@ msgstr ""
 "Якщо вимкнено, під'єднання до серверу автоматично зареєструє новий акаунт."
 
 #: src/settings_translation_file.cpp
+msgid "If enabled, the \"Aux1\" key will toggle when pressed."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"If enabled, the \"Sneak\" key will toggle when pressed.\n"
+"This functionality is ignored when fly is enabled."
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid ""
 "If enabled, the server will perform map block occlusion culling based on\n"
 "on the eye position of the player. This can reduce the number of blocks\n"
@@ -4387,6 +4539,16 @@ msgid "In-game chat console height, between 0.1 (10%) and 1.0 (100%)."
 msgstr "Висота консолі чата у грі, між 0.1 (10%) і 1.0 (100%)."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Increase view range"
+msgstr "Збільш. видимість"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Increase volume"
+msgstr "Збільшити звук"
+
+#: src/settings_translation_file.cpp
 msgid "Initial vertical speed when jumping, in nodes per second."
 msgstr "Початкова вертикальна швидкість при стрибку, у вузлах в секунду."
 
@@ -4424,6 +4586,11 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "Instrument the methods of entities on registration."
 msgstr "Замірювати методи сутностей при реєстрації."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Interaction style"
+msgstr "Ітерації"
 
 #: src/settings_translation_file.cpp
 msgid "Interval of saving important changes in the world, stated in seconds."
@@ -4566,6 +4733,332 @@ msgid "Jumping speed"
 msgstr "Швидкість стрибання"
 
 #: src/settings_translation_file.cpp
+msgid "Key for decreasing the viewing range."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for decreasing the volume."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for decrementing the selected value in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for digging, punching or using something.\n"
+"(Note: The actual meaning might vary on a per-game basis.)"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for dropping the currently selected item."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for increasing the viewing range."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for increasing the volume."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for incrementing the selected value in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for jumping."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving fast in fast mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for moving the player backward.\n"
+"Will also disable autoforward, when active."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving the player forward."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving the player left."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving the player right."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for muting the game."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the chat window to type commands."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the chat window to type local commands."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the chat window."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the inventory."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for placing an item/block or for using something.\n"
+"(Note: The actual meaning might vary on a per-game basis.)"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 11th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 12th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 13th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 14th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 15th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 16th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 17th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 18th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 19th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 20th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 21st hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 22nd hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 23rd hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 24th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 25th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 26th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 27th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 28th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 29th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 30th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 31st hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 32nd hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the eighth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the fifth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the first hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the fourth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the next item in the hotbar."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the ninth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the previous item in the hotbar."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the second hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the seventh hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the sixth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the tenth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the third hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for sneaking.\n"
+"Also used for climbing down and descending in water if aux1_descends is "
+"disabled."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for switching between first- and third-person camera."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for switching to the next entry in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for switching to the previous entry in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for taking screenshots."
+msgstr "Формат знімків екрана."
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling autoforward."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for toggling cinematic mode."
+msgstr "Згладжування руху камери у кінорежимі"
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling display of minimap."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling fast mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling flying."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for toggling fullscreen mode."
+msgstr "Повноекранний режим."
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling noclip mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling pitch move mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the camera update. Only usable with 'debug' privilege."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of chat."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of debug info."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of fog."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of mapblock boundaries."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of the HUD."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of the large chat console."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of the profiler. Used for development."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for toggling unlimited view range."
+msgstr "Обмежена видимість"
+
+#: src/settings_translation_file.cpp
+msgid "Key to use view zoom when possible."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Keybindings"
+msgstr "Прив'язки до клавіш."
+
+#: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
 msgstr "Клавіатура й миша"
 
@@ -4600,6 +5093,11 @@ msgstr "Найменьша кількість великих печер"
 #: src/settings_translation_file.cpp
 msgid "Large cave proportion flooded"
 msgstr "Співвідношення затоплення печер"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Large chat console"
+msgstr "Консоль (повна)"
 
 #: src/settings_translation_file.cpp
 msgid "Leaves style"
@@ -4779,6 +5277,10 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "Loading Block Modifiers"
 msgstr "Модифікатори вузлів, що завантажуються (LBM)"
+
+#: src/settings_translation_file.cpp
+msgid "Local command"
+msgstr "Локальна команда"
 
 #: src/settings_translation_file.cpp
 msgid "Lower Y limit of dungeons."
@@ -4998,7 +5500,8 @@ msgid "Maximum FPS"
 msgstr "Найбільша кількість FPS"
 
 #: src/settings_translation_file.cpp
-msgid "Maximum FPS when the window is not focused, or when the game is paused."
+#, fuzzy
+msgid "Maximum FPS when the window is not focused."
 msgstr "Найбільша кількість FPS, коли вікно поза фокусом або гру призупинено."
 
 #: src/settings_translation_file.cpp
@@ -5072,10 +5575,10 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid ""
 "Maximum number of mapblocks for client to be kept in memory.\n"
-"Set to -1 for unlimited amount."
+"Note that there is an internal dynamic minimum number of blocks that\n"
+"won't be deleted, depending on the current view range.\n"
+"Set to -1 for no limit."
 msgstr ""
-"Найбільша кількість блоків мапи для збереження у пам'яті клієнта.\n"
-"Встановіть це в -1 для необмеженної кількості."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5119,12 +5622,14 @@ msgid "Maximum simultaneous block sends per client"
 msgstr "Максимум одночасних надсилань вузлів на клієнт"
 
 #: src/settings_translation_file.cpp
-msgid "Maximum size of the outgoing chat queue"
+#, fuzzy
+msgid "Maximum size of the client's outgoing chat queue"
 msgstr "Макс. розмір черги вихідн. повідомлень"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
-"Maximum size of the outgoing chat queue.\n"
+"Maximum size of the client's outgoing chat queue.\n"
 "0 to disable queueing and -1 to make the queue size unlimited."
 msgstr ""
 "Максимальний розмір черги вихідних повідомлень у чаті.\n"
@@ -5247,6 +5752,25 @@ msgid "Mouse sensitivity multiplier."
 msgstr "Множник чутливості миші."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Move backward"
+msgstr "Назад"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Move forward"
+msgstr "Автохід"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Move left"
+msgstr "Пересування"
+
+#: src/settings_translation_file.cpp
+msgid "Move right"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid "Movement threshold"
 msgstr "Поріг переміщення"
 
@@ -5255,12 +5779,8 @@ msgid "Mud noise"
 msgstr "Шум бруду"
 
 #: src/settings_translation_file.cpp
-msgid ""
-"Multiplier for fall bobbing.\n"
-"For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
-msgstr ""
-"Множник для похитування при падінні.\n"
-"Наприклад: 0 вимикає похитування, 1.0 для звичайного, 2.0 для подвійного."
+msgid "Mute"
+msgstr "Вимкнути звук"
 
 #: src/settings_translation_file.cpp
 msgid "Mute sound"
@@ -5363,8 +5883,8 @@ msgid ""
 "This is a trade-off between SQLite transaction overhead and\n"
 "memory consumption (4096=100MB, as a rule of thumb)."
 msgstr ""
-"Кількість додаткових вузлів, що одночасно може бути завантажено з "
-"/clearobjects.\n"
+"Кількість додаткових вузлів, що одночасно може бути завантажено з /"
+"clearobjects.\n"
 "Це домовленність між витратою на транзакції SQLite і\n"
 "споживанням пам'яті (4096=100 МБ, як правило)."
 
@@ -5395,6 +5915,16 @@ msgid ""
 "Opaqueness (alpha) of the shadow behind the default font, between 0 and 255."
 msgstr ""
 "Непрозорість (альфа-канал) тіні позаду звичайного шрифта, між 0 та 255."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Open chat"
+msgstr "Відкрити"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Open inventory"
+msgstr "Інвентар"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5533,11 +6063,13 @@ msgid "Prometheus listener address"
 msgstr "Адреса прослуховування Prometheus"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "Prometheus listener address.\n"
-"If Luanti is compiled with ENABLE_PROMETHEUS option enabled,\n"
-"enable metrics listener for Prometheus on that address.\n"
-"Metrics can be fetched on http://127.0.0.1:30000/metrics"
+"If Luanti is compiled with Prometheus support, this setting\n"
+"enables the metrics listener for Prometheus on that address.\n"
+"By default you can fetch metrics from http://127.0.0.1:30000/metrics.\n"
+"An empty value disables the metrics listener."
 msgstr ""
 "Адреса прослуховування Prometheus.\n"
 "Якщо Luanti скомпільовано з увімкненою опцією ENABLE_PROMETHEUS,\n"
@@ -5555,6 +6087,22 @@ msgstr "Мінімальна версія протоколу"
 #: src/settings_translation_file.cpp
 msgid "Punch gesture"
 msgstr "Жест удару"
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: decrement value"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: increment value"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: select next entry"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: select previous entry"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5749,6 +6297,10 @@ msgid "Screen width"
 msgstr "Ширина екрана"
 
 #: src/settings_translation_file.cpp
+msgid "Screenshot"
+msgstr "Знімок екрана"
+
+#: src/settings_translation_file.cpp
 msgid "Screenshot folder"
 msgstr "Тека для знімків екрана"
 
@@ -5826,8 +6378,8 @@ msgstr ""
 "субдискретизацією або заданим не за замовчуванням \"3d_mode\".\n"
 "\n"
 "* FXAA - швидке приблизне згладжування\n"
-"Застосовує постобробку для виявлення й згладжування висококонтрастних кутів."
-"\n"
+"Застосовує постобробку для виявлення й згладжування висококонтрастних "
+"кутів.\n"
 "Забезпечує баланс між швидкістю і якістю зображення.\n"
 "\n"
 "* SSAA - згладжування із супер-вибіркою\n"
@@ -6461,14 +7013,15 @@ msgstr ""
 "Шлях до файла відносно до вашого шляху світу, де зберігатимуться профайли."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "The gesture for punching players/entities.\n"
 "This can be overridden by games and mods.\n"
 "\n"
-"* short_tap\n"
+"* Short tap\n"
 "Easy to use and well-known from other games that shall not be named.\n"
 "\n"
-"* long_tap\n"
+"* Long tap\n"
 "Known from the classic Luanti mobile controls.\n"
 "Combat is more or less impossible."
 msgstr ""
@@ -6486,6 +7039,23 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "The identifier of the joystick to use"
 msgstr "Ідентифікатор джойстика, що використовується"
+
+#: src/settings_translation_file.cpp
+msgid ""
+"The kind of digging/placing controls used.\n"
+"\n"
+"* Tap\n"
+"Long/short tap anywhere on the screen to interact.\n"
+"Interaction happens at finger position.\n"
+"\n"
+"* Tap with crosshair\n"
+"Long/short tap anywhere on the screen to interact.\n"
+"Interaction happens at crosshair position.\n"
+"\n"
+"* Buttons with crosshair\n"
+"Use dedicated dig/place buttons to interact.\n"
+"Interaction happens at crosshair position."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6538,8 +7108,8 @@ msgstr ""
 "Радіус об'єму вузлів навколо кожного гравця, на якого поширюється дія\n"
 "активного вузлу, зазнчається в блоках мапи (16 вузлів).\n"
 "В активні вузли завантажуються об'єкти й запускаються ABM.\n"
-"Це також мінімальний діапазон, у якому підтримуються активні об'єтки (моби)."
-"\n"
+"Це також мінімальний діапазон, у якому підтримуються активні об'єтки "
+"(моби).\n"
 "Це повинно бути налаштовано разом з active_object_send_range_blocks."
 
 #: src/settings_translation_file.cpp
@@ -6661,6 +7231,67 @@ msgstr ""
 "Для зменшення затримки, передача блоків затримується, коли гравець будує "
 "щось.\n"
 "Це визначає, як довго вона затримується після розміщення або видалення вузлу."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle Aux1 key"
+msgstr "Клавіша Aux1"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle HUD"
+msgstr "Увімкнути HUD"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle Sneak key"
+msgstr "Кінематографічний режим"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle automatic forward"
+msgstr "Клавіша автоматичного руху вперед"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle block bounds"
+msgstr "Межі вузлів"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle camera mode"
+msgstr "Увімкнути журнал чату"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle camera update"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle cinematic mode"
+msgstr "Кінематографічний режим"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle debug info"
+msgstr "Перемкнути налагодження"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle fog"
+msgstr "Увімкнути туман"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle fullscreen"
+msgstr "Політ"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle pitchmove"
+msgstr "Увімкнути висотний рух"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle profiler"
+msgstr "Політ"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6821,18 +7452,6 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "Use bilinear filtering when scaling textures."
 msgstr "Використовувати білінійну фільтрацію при масштабуванні текстур."
-
-#: src/settings_translation_file.cpp
-msgid "Use crosshair for touch screen"
-msgstr "Перехрестя для дотику"
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Use crosshair to select object instead of whole screen.\n"
-"If enabled, a crosshair will be shown and will be used for selecting object."
-msgstr ""
-"Використовувати перехрестя для вибору об'єкта замість усього екрану.\n"
-"Якщо увімкнено, перехрестя буде показано та використано для вибору об'єкта."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7194,11 +7813,12 @@ msgid "World start time"
 msgstr "Початковий час гри"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "World-aligned textures may be scaled to span several nodes. However,\n"
 "the server may not send the scale you want, especially if you use\n"
 "a specially-designed texture pack; with this option, the client tries\n"
-"to determine the scale automatically basing on the texture size.\n"
+"to determine the scale automatically based on the texture size.\n"
 "See also texture_min_size.\n"
 "Warning: This option is EXPERIMENTAL!"
 msgstr ""
@@ -7285,6 +7905,9 @@ msgstr "Час очікування взаємодії з cURL"
 msgid "cURL parallel limit"
 msgstr "Обмеження одночасних з'єднань cURL"
 
+#~ msgid "\"Aux1\" = climb down"
+#~ msgstr "\"Aux1\" = лізти вниз"
+
 #~ msgid "- Address: "
 #~ msgstr "- Адреса: "
 
@@ -7365,14 +7988,8 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Are you sure to reset your singleplayer world?"
 #~ msgstr "Ви впевнені, що бажаєте скинути свій світ одиночної гри?"
 
-#~ msgid "Automatic forward key"
-#~ msgstr "Клавіша автоматичного руху вперед"
-
 #~ msgid "Autosave Screen Size"
 #~ msgstr "Зберігати розмір вікна"
-
-#~ msgid "Aux1 key"
-#~ msgstr "Клавіша Aux1"
 
 #~ msgid "Back to Main Menu"
 #~ msgstr "Назад до головного меню"
@@ -7451,6 +8068,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Connected Glass"
 #~ msgstr "Зʼєднане скло"
+
+#~ msgid "Console"
+#~ msgstr "Консоль"
 
 #~ msgid "Content Store"
 #~ msgstr "Додатки"
@@ -7568,11 +8188,11 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Disable anticheat"
 #~ msgstr "Вимкнути античіт"
 
-#~ msgid "Disabled unlimited viewing range"
-#~ msgstr "Обмежена видимість"
-
 #~ msgid "Don't show \"reinstall Minetest Game\" notification"
 #~ msgstr "Не показувати повідомлення \"перевстановити Minetest Game\""
+
+#~ msgid "Double tap \"jump\" to toggle fly"
+#~ msgstr "Подвійний стрибок вмикає політ"
 
 #~ msgid "Down"
 #~ msgstr "Вниз"
@@ -7585,9 +8205,6 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Downloading and installing $1, please wait..."
 #~ msgstr "Завантаження і встановлення $1, зачекайте..."
-
-#~ msgid "Drop item key"
-#~ msgstr "Клавіша викидання предметів"
 
 #~ msgid "Dynamic shadows:"
 #~ msgstr "Динамічні тіні:"
@@ -7613,6 +8230,13 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgstr ""
 #~ "Увімкнути об'єкти буферу вершин.\n"
 #~ "Це повинно значно покращити графічну продуктивність."
+
+#~ msgid ""
+#~ "Enable/disable running an IPv6 server.\n"
+#~ "Ignored if bind_address is set."
+#~ msgstr ""
+#~ "Дозволити/заборонити серверу приймати підключення IPv6.\n"
+#~ "Ігнорується, якщо налаштовано bind_address."
 
 #~ msgid ""
 #~ "Enables caching of facedir rotated meshes.\n"
@@ -7645,6 +8269,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Enter "
 #~ msgstr "Ввід "
 
+#~ msgid "Fall bobbing factor"
+#~ msgstr "Множник похитування при падінні"
+
 #~ msgid "Fancy Leaves"
 #~ msgstr "Гарне листя"
 
@@ -7670,6 +8297,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Fog toggle key"
 #~ msgstr "Клавіша ввімкнення туману"
 
+#~ msgid "Forward"
+#~ msgstr "Вперед"
+
 #~ msgid "Forward key"
 #~ msgstr "Клавіша Вперед"
 
@@ -7687,102 +8317,6 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Hide: Temporary Settings"
 #~ msgstr "Тимчасові налаштування"
-
-#~ msgid "Hotbar slot 1 key"
-#~ msgstr "Клавіша слоту 1 швидкої панелі"
-
-#~ msgid "Hotbar slot 10 key"
-#~ msgstr "Клавіша слоту 10 швидкої панелі"
-
-#~ msgid "Hotbar slot 11 key"
-#~ msgstr "Клавіша слоту 11 швидкої панелі"
-
-#~ msgid "Hotbar slot 12 key"
-#~ msgstr "Клавіша слоту 12 швидкої панелі"
-
-#~ msgid "Hotbar slot 13 key"
-#~ msgstr "Клавіша слоту 13 швидкої панелі"
-
-#~ msgid "Hotbar slot 14 key"
-#~ msgstr "Клавіша слоту 14 швидкої панелі"
-
-#~ msgid "Hotbar slot 15 key"
-#~ msgstr "Клавіша слоту 15 швидкої панелі"
-
-#~ msgid "Hotbar slot 16 key"
-#~ msgstr "Клавіша слоту 16 швидкої панелі"
-
-#~ msgid "Hotbar slot 17 key"
-#~ msgstr "Клавіша слоту 17 швидкої панелі"
-
-#~ msgid "Hotbar slot 18 key"
-#~ msgstr "Клавіша слоту 18 швидкої панелі"
-
-#~ msgid "Hotbar slot 19 key"
-#~ msgstr "Клавіша слоту 19 швидкої панелі"
-
-#~ msgid "Hotbar slot 2 key"
-#~ msgstr "Клавіша слоту 2 швидкої панелі"
-
-#~ msgid "Hotbar slot 20 key"
-#~ msgstr "Клавіша слоту 20 швидкої панелі"
-
-#~ msgid "Hotbar slot 21 key"
-#~ msgstr "Клавіша слоту 21 швидкої панелі"
-
-#~ msgid "Hotbar slot 22 key"
-#~ msgstr "Клавіша слоту 22 швидкої панелі"
-
-#~ msgid "Hotbar slot 23 key"
-#~ msgstr "Клавіша слоту 23 швидкої панелі"
-
-#~ msgid "Hotbar slot 24 key"
-#~ msgstr "Клавіша слоту 24 швидкої панелі"
-
-#~ msgid "Hotbar slot 25 key"
-#~ msgstr "Клавіша слоту 25 швидкої панелі"
-
-#~ msgid "Hotbar slot 26 key"
-#~ msgstr "Клавіша слоту 26 швидкої панелі"
-
-#~ msgid "Hotbar slot 27 key"
-#~ msgstr "Клавіша слоту 27 швидкої панелі"
-
-#~ msgid "Hotbar slot 28 key"
-#~ msgstr "Клавіша слоту 28 швидкої панелі"
-
-#~ msgid "Hotbar slot 29 key"
-#~ msgstr "Клавіша слоту 29 швидкої панелі"
-
-#~ msgid "Hotbar slot 3 key"
-#~ msgstr "Клавіша слоту 3 швидкої панелі"
-
-#~ msgid "Hotbar slot 30 key"
-#~ msgstr "Клавіша слоту 30 швидкої панелі"
-
-#~ msgid "Hotbar slot 31 key"
-#~ msgstr "Клавіша слоту 31 швидкої панелі"
-
-#~ msgid "Hotbar slot 32 key"
-#~ msgstr "Клавіша слоту 32 швидкої панелі"
-
-#~ msgid "Hotbar slot 4 key"
-#~ msgstr "Клавіша слоту 4 швидкої панелі"
-
-#~ msgid "Hotbar slot 5 key"
-#~ msgstr "Клавіша слоту 5 швидкої панелі"
-
-#~ msgid "Hotbar slot 6 key"
-#~ msgstr "Клавіша слоту 6 швидкої панелі"
-
-#~ msgid "Hotbar slot 7 key"
-#~ msgstr "Клавіша слоту 7 швидкої панелі"
-
-#~ msgid "Hotbar slot 8 key"
-#~ msgstr "Клавіша слоту 8 швидкої панелі"
-
-#~ msgid "Hotbar slot 9 key"
-#~ msgstr "Клавіша слоту 9 швидкої панелі"
 
 #~ msgid "IPv6 support."
 #~ msgstr "Підтримка IPv6."
@@ -7816,6 +8350,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Jump key"
 #~ msgstr "Клавіша Стрибок"
+
+#~ msgid "Key already in use"
+#~ msgstr "Клавіша вже використовується"
 
 #~ msgid ""
 #~ "Key for decreasing the viewing range.\n"
@@ -8075,11 +8612,11 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ "Комбінації клавіш. (Якщо це меню зламалося, видаліть налаштування з "
 #~ "minetest.conf)"
 
-#~ msgid "Large chat console key"
-#~ msgstr "Консоль (повна)"
-
 #~ msgid "Lava depth"
 #~ msgstr "Глибина лави"
+
+#~ msgid "Left"
+#~ msgstr "Ліворуч"
 
 #~ msgid "Left key"
 #~ msgstr "Ліва клавіша"
@@ -8104,6 +8641,13 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Mapblock mesh generator's MapBlock cache size in MB"
 #~ msgstr "Розмір кешу блоків мапи генератору мешів у МБ"
+
+#~ msgid ""
+#~ "Maximum number of mapblocks for client to be kept in memory.\n"
+#~ "Set to -1 for unlimited amount."
+#~ msgstr ""
+#~ "Найбільша кількість блоків мапи для збереження у пам'яті клієнта.\n"
+#~ "Встановіть це в -1 для необмеженної кількості."
 
 #~ msgid ""
 #~ "Maximum number of packets sent per send step, if you have a slow "
@@ -8151,6 +8695,13 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Misc"
 #~ msgstr "Різне"
 
+#~ msgid ""
+#~ "Multiplier for fall bobbing.\n"
+#~ "For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
+#~ msgstr ""
+#~ "Множник для похитування при падінні.\n"
+#~ "Наприклад: 0 вимикає похитування, 1.0 для звичайного, 2.0 для подвійного."
+
 #~ msgid "Mute key"
 #~ msgstr "Вимкнути звук"
 
@@ -8159,6 +8710,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Name/Password"
 #~ msgstr "Ім'я/Пароль"
+
+#~ msgid "Next item"
+#~ msgstr "Наступний предмет"
 
 #~ msgid "No"
 #~ msgstr "Ні"
@@ -8212,9 +8766,6 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Pitch move key"
 #~ msgstr "Клавіша зміни висоти"
 
-#~ msgid "Place key"
-#~ msgstr "Клавіша покласти"
-
 #~ msgid "Player name"
 #~ msgstr "Імʼя гравця"
 
@@ -8227,6 +8778,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "Please enter a valid number."
 #~ msgstr "Введіть коректне число."
 
+#~ msgid "Prev. item"
+#~ msgstr "Попередній предмет"
+
 #~ msgid "PvP enabled"
 #~ msgstr "Бої увімкнено"
 
@@ -8238,6 +8792,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Reset singleplayer world"
 #~ msgstr "Скинути світ одиночної гри"
+
+#~ msgid "Right"
+#~ msgstr "Праворуч"
 
 #~ msgid "Right key"
 #~ msgstr "Права клавіша"
@@ -8333,14 +8890,18 @@ msgstr "Обмеження одночасних з'єднань cURL"
 #~ msgid "This is not a recommended configuration."
 #~ msgstr "Ця конфігурація не рекомендується."
 
+#~ msgid ""
+#~ "This is the list of clients connected to\n"
+#~ "$1"
+#~ msgstr ""
+#~ "Це список клієнтів, приєднаних до\n"
+#~ "$1"
+
 #~ msgid "Time send interval"
 #~ msgstr "Період надсилання часу"
 
 #~ msgid "To enable shaders the OpenGL driver needs to be used."
 #~ msgstr "Для того, щоб увімкнути шейдери, потрібно мати драйвер OpenGL."
-
-#~ msgid "Toggle Cinematic"
-#~ msgstr "Кінематографічний режим"
 
 #~ msgid "Tone Mapping"
 #~ msgstr "Тоновий шейдер"
@@ -8362,6 +8923,18 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "Up"
 #~ msgstr "Вгору"
+
+#~ msgid "Use crosshair for touch screen"
+#~ msgstr "Перехрестя для дотику"
+
+#~ msgid ""
+#~ "Use crosshair to select object instead of whole screen.\n"
+#~ "If enabled, a crosshair will be shown and will be used for selecting "
+#~ "object."
+#~ msgstr ""
+#~ "Використовувати перехрестя для вибору об'єкта замість усього екрану.\n"
+#~ "Якщо увімкнено, перехрестя буде показано та використано для вибору "
+#~ "об'єкта."
 
 #~ msgid "VBO"
 #~ msgstr "VBO"
@@ -8455,3 +9028,9 @@ msgstr "Обмеження одночасних з'єднань cURL"
 
 #~ msgid "ok"
 #~ msgstr "добре"
+
+#~ msgid "pause_menu"
+#~ msgstr "Меню паузи"
+
+#~ msgid "press key"
+#~ msgstr "натисніть клавішу"

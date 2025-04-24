@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Slovenian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-02-09 13:23+0100\n"
+"POT-Creation-Date: 2025-04-24 16:51+0200\n"
 "PO-Revision-Date: 2025-02-28 14:08+0000\n"
 "Last-Translator: Gg Gg <veselsem0@gmail.com>\n"
 "Language-Team: Slovenian <https://hosted.weblate.org/projects/minetest/"
@@ -83,8 +83,17 @@ msgid "Browse"
 msgstr "Prebrskaj"
 
 #: builtin/common/settings/components.lua
+msgid "Conflicts with \"$1\""
+msgstr ""
+
+#: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Uredi"
+
+#: builtin/common/settings/components.lua
+#, fuzzy
+msgid "Remove keybinding"
+msgstr "Bližnjice na tipkovnici."
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -112,8 +121,8 @@ msgstr "2D šum"
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/dlg_create_world.lua
 #: builtin/mainmenu/dlg_delete_content.lua
 #: builtin/mainmenu/dlg_delete_world.lua builtin/mainmenu/dlg_register.lua
-#: builtin/mainmenu/dlg_rename_modpack.lua src/gui/guiKeyChangeMenu.cpp
-#: src/gui/guiOpenURL.cpp src/gui/guiPasswordChange.cpp
+#: builtin/mainmenu/dlg_rename_modpack.lua src/gui/guiOpenURL.cpp
+#: src/gui/guiPasswordChange.cpp
 msgid "Cancel"
 msgstr "Prekliči"
 
@@ -135,7 +144,7 @@ msgid "Persistence"
 msgstr "Trajanje"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#: builtin/mainmenu/dlg_config_world.lua src/gui/guiKeyChangeMenu.cpp
+#: builtin/mainmenu/dlg_config_world.lua
 msgid "Save"
 msgstr "Shrani"
 
@@ -208,8 +217,18 @@ msgstr "Dostopnost"
 msgid "Auto"
 msgstr "Avtomatsko"
 
-#: builtin/common/settings/dlg_settings.lua src/gui/guiKeyChangeMenu.cpp
-#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+#: builtin/common/settings/dlg_settings.lua
+#: builtin/mainmenu/content/dlg_contentdb.lua
+#: builtin/mainmenu/content/dlg_package.lua
+msgid "Back"
+msgstr "Nazaj"
+
+#: builtin/common/settings/dlg_settings.lua
+msgid "Buttons with crosshair"
+msgstr ""
+
+#: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
+#: src/settings_translation_file.cpp
 msgid "Chat"
 msgstr "Klepet"
 
@@ -230,9 +249,18 @@ msgstr "Onemogočeno"
 msgid "Enabled"
 msgstr "Omogočeno"
 
+#: builtin/common/settings/dlg_settings.lua src/gui/guiVolumeChange.cpp
+#: src/gui/touchscreenlayout.cpp
+msgid "Exit"
+msgstr "Izhod"
+
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
 msgstr "Glavno"
+
+#: builtin/common/settings/dlg_settings.lua
+msgid "Long tap"
+msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -256,6 +284,10 @@ msgid "Search"
 msgstr "Poišči"
 
 #: builtin/common/settings/dlg_settings.lua
+msgid "Short tap"
+msgstr ""
+
+#: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
 msgstr "Pokaži napredne nastavitve"
 
@@ -264,12 +296,17 @@ msgid "Show technical names"
 msgstr "Prikaži tehnična imena"
 
 #: builtin/common/settings/dlg_settings.lua
-msgid "Touchscreen layout"
-msgstr "Postavitev zaslona na dotik"
+#, fuzzy
+msgid "Tap"
+msgstr "Tabulator"
 
 #: builtin/common/settings/dlg_settings.lua
-msgid "pause_menu"
-msgstr "meni_za_odmor"
+msgid "Tap with crosshair"
+msgstr ""
+
+#: builtin/common/settings/dlg_settings.lua
+msgid "Touchscreen layout"
+msgstr "Postavitev zaslona na dotik"
 
 #: builtin/common/settings/settingtypes.lua
 msgid "Client Mods"
@@ -401,11 +438,6 @@ msgid "All"
 msgstr "Vse"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
-msgid "Back"
-msgstr "Nazaj"
-
-#: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "ContentDB is not available when Luanti was compiled without cURL"
 msgstr "ContentDB ni na voljo, če je bil Luanti preveden brez podpore cURL"
 
@@ -433,7 +465,6 @@ msgid "Mods"
 msgstr "Prilagoditve (mods)"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
 msgid "No packages could be retrieved"
 msgstr "Ni mogoče pridobiti nobenega paketa"
 
@@ -535,6 +566,15 @@ msgid "Donate"
 msgstr "Doniraj"
 
 #: builtin/mainmenu/content/dlg_package.lua
+msgid "Error loading package information"
+msgstr ""
+
+#: builtin/mainmenu/content/dlg_package.lua
+#, fuzzy
+msgid "Error loading reviews"
+msgstr "Napaka pri ustvarjanju odjemalca:%s"
+
+#: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
 msgstr "Tema foruma"
 
@@ -549,6 +589,10 @@ msgstr "Namesti [$1]"
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Issue Tracker"
 msgstr "Sledilnik težav"
+
+#: builtin/mainmenu/content/dlg_package.lua
+msgid "Reviews"
+msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
@@ -604,11 +648,9 @@ msgstr "Ni mogoče namestiti $1 kot paket tekstur"
 
 #: builtin/mainmenu/dlg_clients_list.lua
 msgid ""
-"This is the list of clients connected to\n"
+"Players connected to\n"
 "$1"
 msgstr ""
-"Seznam odjemalcev ki so povezani na\n"
-" $1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -1205,14 +1247,6 @@ msgid "Address"
 msgstr "Naslov"
 
 #: builtin/mainmenu/tab_online.lua
-msgid ""
-"Clients:\n"
-"$1"
-msgstr ""
-"Odjemalec\n"
-"$1"
-
-#: builtin/mainmenu/tab_online.lua
 msgid "Creative mode"
 msgstr "Ustvarjalni način"
 
@@ -1252,6 +1286,15 @@ msgstr "Odpri spletno stran strežnika"
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
 msgstr "Ping"
+
+#: builtin/mainmenu/tab_online.lua
+#, fuzzy
+msgid ""
+"Players:\n"
+"$1"
+msgstr ""
+"Odjemalec\n"
+"$1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid ""
@@ -2095,6 +2138,11 @@ msgstr ""
 msgid "Some mods have unsatisfied dependencies:"
 msgstr "Nekatere prilagoditve imajo manjkajoče odvisnosti:"
 
+#: src/gui/guiButtonKey.h
+#, fuzzy
+msgid "Press Button"
+msgstr "Leva tipka"
+
 #: src/gui/guiChatConsole.cpp
 msgid "Failed to open webpage"
 msgstr "Napaka pri odpiranju spletne strani"
@@ -2106,162 +2154,6 @@ msgstr "Odpiranje spletne strani"
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
 msgstr "Nadaljuj"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "\"Aux1\" = climb down"
-msgstr "\"Pomožna tipka\" (Aux1) = spuščanje"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Autoforward"
-msgstr "Samodejno premikanje naprej"
-
-#: src/gui/guiKeyChangeMenu.cpp src/settings_translation_file.cpp
-msgid "Automatic jumping"
-msgstr "Samodejno skakanje"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Aux1"
-msgstr "Pomožna tipka (Aux1)"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Backward"
-msgstr "Nazaj"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Block bounds"
-msgstr "Robovi blokov"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Change camera"
-msgstr "Sprememba kamere"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Command"
-msgstr "Ukaz"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Console"
-msgstr "Konzola"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Dec. range"
-msgstr "Zmanjšaj doseg pogleda"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Dec. volume"
-msgstr "Zmanjšaj glasnost"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Double tap \"jump\" to toggle fly"
-msgstr "Dvojni klik »skoka« omogoči letenje"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Drop"
-msgstr "Izvrzi"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Forward"
-msgstr "Naprej"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Inc. range"
-msgstr "Povečaj doseg pogleda"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Inc. volume"
-msgstr "Povečaj glasnonst"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Inventory"
-msgstr "Inventar"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Jump"
-msgstr "Skoči"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Key already in use"
-msgstr "Tipka je že v uporabi"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Keybindings."
-msgstr "Bližnjice na tipkovnici."
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Left"
-msgstr "Levo"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Local command"
-msgstr "Krajevni ukaz"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Mute"
-msgstr "Utišaj"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Next item"
-msgstr "Naslednji predmet"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Prev. item"
-msgstr "Predhodni predmet"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Range select"
-msgstr "Izberi obseg"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Right"
-msgstr "Desno"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Screenshot"
-msgstr "Posnetek zaslona"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Sneak"
-msgstr "Plaziti se"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Toggle HUD"
-msgstr "Preklopi HUD"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle chat log"
-msgstr "Preklopi beleženje pogovora"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle fast"
-msgstr "Preklopi hitro premikanje"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle fly"
-msgstr "Preklopi letenje"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Toggle fog"
-msgstr "Preklopi meglo"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle minimap"
-msgstr "Preklopi zemljevid (minimap)"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Toggle noclip"
-msgstr "Preklopi premikanje skozi kocke"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "Toggle pitchmove"
-msgstr "Preklopi nagibanje"
-
-#: src/gui/guiKeyChangeMenu.cpp src/gui/touchscreenlayout.cpp
-msgid "Zoom"
-msgstr "Približanje"
-
-#: src/gui/guiKeyChangeMenu.cpp
-msgid "press key"
-msgstr "pritisni tipko"
 
 #: src/gui/guiOpenURL.cpp
 msgid "Open"
@@ -2290,10 +2182,6 @@ msgstr "Staro geslo"
 #: src/gui/guiPasswordChange.cpp
 msgid "Passwords do not match!"
 msgstr "Gesli se ne ujemata!"
-
-#: src/gui/guiVolumeChange.cpp src/gui/touchscreenlayout.cpp
-msgid "Exit"
-msgstr "Izhod"
 
 #: src/gui/guiVolumeChange.cpp
 msgid "Muted"
@@ -2332,17 +2220,78 @@ msgstr "Tapnite za izbiro. Povlecite za premikanje."
 msgid "Tap outside to deselect."
 msgstr "Tapnite izven, da prekličete izbiro."
 
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Aux1"
+msgstr "Pomožna tipka (Aux1)"
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Change camera"
+msgstr "Sprememba kamere"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Dig/punch/use"
+msgstr ""
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Drop"
+msgstr "Izvrzi"
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Inventory"
+msgstr "Inventar"
+
 #: src/gui/touchscreenlayout.cpp
 msgid "Joystick"
 msgstr "Igralna palica"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Jump"
+msgstr "Skoči"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Overflow menu"
 msgstr "Razširjeni meni"
 
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+#, fuzzy
+msgid "Place/use"
+msgstr "Tipka za letenje"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Range select"
+msgstr "Izberi obseg"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Sneak"
+msgstr "Plaziti se"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle chat log"
+msgstr "Preklopi beleženje pogovora"
+
 #: src/gui/touchscreenlayout.cpp
 msgid "Toggle debug"
 msgstr "Preklopi na način za odpravljanje napak"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle fast"
+msgstr "Preklopi hitro premikanje"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle fly"
+msgstr "Preklopi letenje"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle minimap"
+msgstr "Preklopi zemljevid (minimap)"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Toggle noclip"
+msgstr "Preklopi premikanje skozi kocke"
+
+#: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
+msgid "Zoom"
+msgstr "Približanje"
 
 #: src/network/clientpackethandler.cpp
 msgid ""
@@ -2649,8 +2598,8 @@ msgid ""
 "to be sure) creates a solid floatland layer."
 msgstr ""
 "Prilagodi gostoto plasti plavajočih otokov.\n"
-"Povečaj vrednost za večjo gostoto. Vrednost je lahko pozitivna ali negativna."
-"\n"
+"Povečaj vrednost za večjo gostoto. Vrednost je lahko pozitivna ali "
+"negativna.\n"
 "Vrednost 0.0: 50% prostornine so plavajoči otoki.\n"
 "Vrednost 2.0 (lahko je višja, odvisno od 'mgv7_np_floatland', vedno "
 "preverite) ustvari trdno plast plavajočih otokov."
@@ -2826,6 +2775,10 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "Audio"
 msgstr "Zvok"
+
+#: src/settings_translation_file.cpp
+msgid "Automatic jumping"
+msgstr "Samodejno skakanje"
 
 #: src/settings_translation_file.cpp
 msgid "Automatically jump up single-node obstacles."
@@ -3040,6 +2993,11 @@ msgid "Client"
 msgstr "Odjemalec"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Client Debugging"
+msgstr "Odpravljanje napak"
+
+#: src/settings_translation_file.cpp
 msgid "Client Mesh Chunksize"
 msgstr "Velikost chunka odjemalske mreže"
 
@@ -3135,6 +3093,10 @@ msgstr ""
 "dostop do nevarnih funkcij,\n"
 "tudi ko je varnost prilagoditev vključena (prek "
 "request_insecure_environment())."
+
+#: src/settings_translation_file.cpp
+msgid "Command"
+msgstr "Ukaz"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3289,6 +3251,16 @@ msgstr ""
 "Znižanje te nastavitve lahko poveča učinkovitost, a nekatere operacije (npr. "
 "debanding)\n"
 "potrebujejo več kot 8 bitov za pravilno delovanje."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Decrease view range"
+msgstr "Zmanjšaj doseg pogleda"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Decrease volume"
+msgstr "Zmanjšaj glasnost"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
@@ -3513,6 +3485,11 @@ msgstr ""
 "kjer bi bilo razvrščanje prosojnosti sicer zelo počasno."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Drop item"
+msgstr "Tipka za met predmeta"
+
+#: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
 msgstr "Izpiši podatke za odpravljanje napak pri generiranju zemljevida."
 
@@ -3555,6 +3532,13 @@ msgid ""
 msgstr ""
 "Omogoči podporo za IPv6 (za odjemalca in strežnik).\n"
 "Potrebno za delovanje povezav IPv6."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Enable IPv6 support for server.\n"
+"Note that clients will be able to connect with both IPv4 and IPv6.\n"
+"Ignored if bind_address is set."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3686,14 +3670,6 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Enable/disable running an IPv6 server.\n"
-"Ignored if bind_address is set."
-msgstr ""
-"Omogoči/onemogoči zagon strežnika IPv6.\n"
-"Prezre se, če je nastavljen bind_address."
-
-#: src/settings_translation_file.cpp
-msgid ""
 "Enables Hable's 'Uncharted 2' filmic tone mapping.\n"
 "Simulates the tone curve of photographic film and how this approximates the\n"
 "appearance of high dynamic range images. Mid-range contrast is slightly\n"
@@ -3774,15 +3750,11 @@ msgid "FPS"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "FPS when unfocused or paused"
+msgid "FPS when unfocused"
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Factor noise"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Fall bobbing factor"
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -4175,12 +4147,182 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 1"
+msgstr "Tipka za prostor 1 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 10"
+msgstr "Tipka za prostor 10 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 11"
+msgstr "Tipka za prostor 11 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 12"
+msgstr "Tipka za prostor 12 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 13"
+msgstr "Tipka za prostor 13 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 14"
+msgstr "Tipka za prostor 14 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 15"
+msgstr "Tipka za prostor 15 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 16"
+msgstr "Tipka za prostor 17 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 17"
+msgstr "Tipka za prostor 17 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 18"
+msgstr "Tipka za prostor 18 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 19"
+msgstr "Tipka za prostor 19 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 2"
+msgstr "Tipka za prostor 2 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 20"
+msgstr "Tipka za prostor 20 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 21"
+msgstr "Tipka za prostor 21 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 22"
+msgstr "Tipka za prostor 22 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 23"
+msgstr "Tipka za prostor 23 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 24"
+msgstr "Tipka za prostor 24 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 25"
+msgstr "Tipka za prostor 25 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 26"
+msgstr "Tipka za prostor 26 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 27"
+msgstr "Tipka za prostor 27 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 28"
+msgstr "Tipka za prostor 28 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 29"
+msgstr "Tipka za prostor 29 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 3"
+msgstr "Tipka za prostor 3 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 30"
+msgstr "Tipka za prostor 30 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 31"
+msgstr "Tipka za prostor 31 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 32"
+msgstr "Tipka za prostor 32 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 4"
+msgstr "Tipka za prostor 4 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 5"
+msgstr "Tipka za prostor 5 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 6"
+msgstr "Tipka za prostor 6 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 7"
+msgstr "Tipka za prostor 7 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 8"
+msgstr "Tipka za prostor 8 v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar slot 9"
+msgstr "Tipka za prostor 9 v hotbar-u"
+
+#: src/settings_translation_file.cpp
 msgid "Hotbar: Enable mouse wheel for selection"
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Hotbar: Invert mouse wheel direction"
 msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar: select next item"
+msgstr "Tipka za naslednji prostor v hotbar-u"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Hotbar: select previous item"
+msgstr "Tipka za prejšnji prostor v hotbar-u"
 
 #: src/settings_translation_file.cpp
 msgid "How deep to make rivers."
@@ -4290,6 +4432,16 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
+msgid "If enabled, the \"Aux1\" key will toggle when pressed."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"If enabled, the \"Sneak\" key will toggle when pressed.\n"
+"This functionality is ignored when fly is enabled."
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid ""
 "If enabled, the server will perform map block occlusion culling based on\n"
 "on the eye position of the player. This can reduce the number of blocks\n"
@@ -4352,6 +4504,16 @@ msgid "In-game chat console height, between 0.1 (10%) and 1.0 (100%)."
 msgstr "Višina konzole za klepet med igro, med 0,1 (10%) in 1,0 (100%)."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Increase view range"
+msgstr "Povečaj doseg pogleda"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Increase volume"
+msgstr "Povečaj glasnonst"
+
+#: src/settings_translation_file.cpp
 msgid "Initial vertical speed when jumping, in nodes per second."
 msgstr ""
 
@@ -4383,6 +4545,10 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Instrument the methods of entities on registration."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Interaction style"
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -4504,6 +4670,332 @@ msgid "Jumping speed"
 msgstr ""
 
 #: src/settings_translation_file.cpp
+msgid "Key for decreasing the viewing range."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for decreasing the volume."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for decrementing the selected value in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for digging, punching or using something.\n"
+"(Note: The actual meaning might vary on a per-game basis.)"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for dropping the currently selected item."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for increasing the viewing range."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for increasing the volume."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for incrementing the selected value in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for jumping."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving fast in fast mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for moving the player backward.\n"
+"Will also disable autoforward, when active."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving the player forward."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving the player left."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for moving the player right."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for muting the game."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the chat window to type commands."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the chat window to type local commands."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the chat window."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for opening the inventory."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for placing an item/block or for using something.\n"
+"(Note: The actual meaning might vary on a per-game basis.)"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 11th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 12th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 13th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 14th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 15th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 16th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 17th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 18th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 19th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 20th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 21st hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 22nd hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 23rd hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 24th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 25th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 26th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 27th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 28th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 29th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 30th hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 31st hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the 32nd hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the eighth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the fifth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the first hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the fourth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the next item in the hotbar."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the ninth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the previous item in the hotbar."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the second hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the seventh hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the sixth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the tenth hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for selecting the third hotbar slot."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Key for sneaking.\n"
+"Also used for climbing down and descending in water if aux1_descends is "
+"disabled."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for switching between first- and third-person camera."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for switching to the next entry in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for switching to the previous entry in Quicktune."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for taking screenshots."
+msgstr "Oblika posnetkov zaslona."
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling autoforward."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for toggling cinematic mode."
+msgstr "Glajenje premikanja kamere v filmskem načinu"
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling display of minimap."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling fast mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling flying."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for toggling fullscreen mode."
+msgstr "Celozaslonski način."
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling noclip mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling pitch move mode."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the camera update. Only usable with 'debug' privilege."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of chat."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of debug info."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of fog."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of mapblock boundaries."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of the HUD."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of the large chat console."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Key for toggling the display of the profiler. Used for development."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Key for toggling unlimited view range."
+msgstr "Onemogočen neomejen doseg pogleda"
+
+#: src/settings_translation_file.cpp
+msgid "Key to use view zoom when possible."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Keybindings"
+msgstr "Bližnjice na tipkovnici."
+
+#: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
 msgstr ""
 
@@ -4537,6 +5029,10 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Large cave proportion flooded"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Large chat console"
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -4684,6 +5180,10 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "Loading Block Modifiers"
 msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Local command"
+msgstr "Krajevni ukaz"
 
 #: src/settings_translation_file.cpp
 msgid "Lower Y limit of dungeons."
@@ -4881,7 +5381,7 @@ msgid "Maximum FPS"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "Maximum FPS when the window is not focused, or when the game is paused."
+msgid "Maximum FPS when the window is not focused."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -4943,7 +5443,9 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid ""
 "Maximum number of mapblocks for client to be kept in memory.\n"
-"Set to -1 for unlimited amount."
+"Note that there is an internal dynamic minimum number of blocks that\n"
+"won't be deleted, depending on the current view range.\n"
+"Set to -1 for no limit."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -4981,12 +5483,12 @@ msgid "Maximum simultaneous block sends per client"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid "Maximum size of the outgoing chat queue"
+msgid "Maximum size of the client's outgoing chat queue"
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
-"Maximum size of the outgoing chat queue.\n"
+"Maximum size of the client's outgoing chat queue.\n"
 "0 to disable queueing and -1 to make the queue size unlimited."
 msgstr ""
 
@@ -5104,6 +5606,25 @@ msgstr "Števnik občutljivosti premikanja miške."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
+msgid "Move backward"
+msgstr "Nazaj"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Move forward"
+msgstr "Samodejno premikanje naprej"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Move left"
+msgstr "Hitro gibanje"
+
+#: src/settings_translation_file.cpp
+msgid "Move right"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Movement threshold"
 msgstr "Vhod v jamo"
 
@@ -5112,10 +5633,8 @@ msgid "Mud noise"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-msgid ""
-"Multiplier for fall bobbing.\n"
-"For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
-msgstr ""
+msgid "Mute"
+msgstr "Utišaj"
 
 #: src/settings_translation_file.cpp
 msgid "Mute sound"
@@ -5225,6 +5744,16 @@ msgstr ""
 msgid ""
 "Opaqueness (alpha) of the shadow behind the default font, between 0 and 255."
 msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Open chat"
+msgstr "Odpri"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Open inventory"
+msgstr "Inventar"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5347,9 +5876,10 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid ""
 "Prometheus listener address.\n"
-"If Luanti is compiled with ENABLE_PROMETHEUS option enabled,\n"
-"enable metrics listener for Prometheus on that address.\n"
-"Metrics can be fetched on http://127.0.0.1:30000/metrics"
+"If Luanti is compiled with Prometheus support, this setting\n"
+"enables the metrics listener for Prometheus on that address.\n"
+"By default you can fetch metrics from http://127.0.0.1:30000/metrics.\n"
+"An empty value disables the metrics listener."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -5362,6 +5892,22 @@ msgstr "Različice protokola niso skladne"
 
 #: src/settings_translation_file.cpp
 msgid "Punch gesture"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: decrement value"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: increment value"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: select next entry"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Quicktune: select previous entry"
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -5530,6 +6076,10 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "Screen width"
 msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Screenshot"
+msgstr "Posnetek zaslona"
 
 #: src/settings_translation_file.cpp
 msgid "Screenshot folder"
@@ -6110,16 +6660,33 @@ msgid ""
 "The gesture for punching players/entities.\n"
 "This can be overridden by games and mods.\n"
 "\n"
-"* short_tap\n"
+"* Short tap\n"
 "Easy to use and well-known from other games that shall not be named.\n"
 "\n"
-"* long_tap\n"
+"* Long tap\n"
 "Known from the classic Luanti mobile controls.\n"
 "Combat is more or less impossible."
 msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "The identifier of the joystick to use"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
+"The kind of digging/placing controls used.\n"
+"\n"
+"* Tap\n"
+"Long/short tap anywhere on the screen to interact.\n"
+"Interaction happens at finger position.\n"
+"\n"
+"* Tap with crosshair\n"
+"Long/short tap anywhere on the screen to interact.\n"
+"Interaction happens at crosshair position.\n"
+"\n"
+"* Buttons with crosshair\n"
+"Use dedicated dig/place buttons to interact.\n"
+"Interaction happens at crosshair position."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -6252,6 +6819,67 @@ msgid ""
 "This determines how long they are slowed down after placing or removing a "
 "node."
 msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle Aux1 key"
+msgstr "Preklopi letenje"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle HUD"
+msgstr "Preklopi HUD"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle Sneak key"
+msgstr "Preklopi gladek pogled"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle automatic forward"
+msgstr "Tipka za avtomatsko premikanje naprej"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle block bounds"
+msgstr "Robovi blokov"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle camera mode"
+msgstr "Preklopi beleženje pogovora"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle camera update"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle cinematic mode"
+msgstr "Preklopi gladek pogled"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle debug info"
+msgstr "Preklopi na način za odpravljanje napak"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle fog"
+msgstr "Preklopi meglo"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle fullscreen"
+msgstr "Preklopi letenje"
+
+#: src/settings_translation_file.cpp
+msgid "Toggle pitchmove"
+msgstr "Preklopi nagibanje"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Toggle profiler"
+msgstr "Preklopi letenje"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6392,16 +7020,6 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Use bilinear filtering when scaling textures."
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid "Use crosshair for touch screen"
-msgstr ""
-
-#: src/settings_translation_file.cpp
-msgid ""
-"Use crosshair to select object instead of whole screen.\n"
-"If enabled, a crosshair will be shown and will be used for selecting object."
 msgstr ""
 
 #: src/settings_translation_file.cpp
@@ -6715,7 +7333,7 @@ msgid ""
 "World-aligned textures may be scaled to span several nodes. However,\n"
 "the server may not send the scale you want, especially if you use\n"
 "a specially-designed texture pack; with this option, the client tries\n"
-"to determine the scale automatically basing on the texture size.\n"
+"to determine the scale automatically based on the texture size.\n"
 "See also texture_min_size.\n"
 "Warning: This option is EXPERIMENTAL!"
 msgstr ""
@@ -6786,6 +7404,9 @@ msgstr ""
 msgid "cURL parallel limit"
 msgstr ""
 
+#~ msgid "\"Aux1\" = climb down"
+#~ msgstr "\"Pomožna tipka\" (Aux1) = spuščanje"
+
 #~ msgid "- Address: "
 #~ msgstr "– Naslov: "
 
@@ -6852,9 +7473,6 @@ msgstr ""
 
 #~ msgid "Are you sure to reset your singleplayer world?"
 #~ msgstr "Ali res želiš ponastaviti samostojno igro?"
-
-#~ msgid "Automatic forward key"
-#~ msgstr "Tipka za avtomatsko premikanje naprej"
 
 #~ msgid "Autosave Screen Size"
 #~ msgstr "Samodejno shrani velikost zaslona"
@@ -6949,6 +7567,9 @@ msgstr ""
 #~ msgid "Connected Glass"
 #~ msgstr "Povezano steklo"
 
+#~ msgid "Console"
+#~ msgstr "Konzola"
+
 #~ msgid "Continuous forward"
 #~ msgstr "Neprekinjeno naprej"
 
@@ -7040,8 +7661,8 @@ msgstr ""
 #~ msgid "Disable anticheat"
 #~ msgstr "Onemogoči preprečevanje goljufanja"
 
-#~ msgid "Disabled unlimited viewing range"
-#~ msgstr "Onemogočen neomejen doseg pogleda"
+#~ msgid "Double tap \"jump\" to toggle fly"
+#~ msgstr "Dvojni klik »skoka« omogoči letenje"
 
 #~ msgid "Down"
 #~ msgstr "Dol"
@@ -7054,9 +7675,6 @@ msgstr ""
 
 #~ msgid "Downloading and installing $1, please wait..."
 #~ msgstr "Prenašanje in nameščanje $1, prosimo počakajte..."
-
-#~ msgid "Drop item key"
-#~ msgstr "Tipka za met predmeta"
 
 #, fuzzy
 #~ msgid "Dynamic shadows:"
@@ -7080,6 +7698,13 @@ msgstr ""
 #, fuzzy
 #~ msgid "Enable touchscreen"
 #~ msgstr "Celozaslonski način"
+
+#~ msgid ""
+#~ "Enable/disable running an IPv6 server.\n"
+#~ "Ignored if bind_address is set."
+#~ msgstr ""
+#~ "Omogoči/onemogoči zagon strežnika IPv6.\n"
+#~ "Prezre se, če je nastavljen bind_address."
 
 #~ msgid "Enables minimap."
 #~ msgstr "Omogoči zemljevid (minimap)."
@@ -7130,6 +7755,9 @@ msgstr ""
 #~ msgid "Formspec default background opacity (between 0 and 255)."
 #~ msgstr "Formspec privzeta neprosojnost ozadja (med 0 in 255)."
 
+#~ msgid "Forward"
+#~ msgstr "Naprej"
+
 #~ msgid "Forward key"
 #~ msgstr "Tipka naprej"
 
@@ -7139,108 +7767,6 @@ msgstr ""
 #, fuzzy
 #~ msgid "Hide: Temporary Settings"
 #~ msgstr "Nastavitve"
-
-#~ msgid "Hotbar next key"
-#~ msgstr "Tipka za naslednji prostor v hotbar-u"
-
-#~ msgid "Hotbar previous key"
-#~ msgstr "Tipka za prejšnji prostor v hotbar-u"
-
-#~ msgid "Hotbar slot 1 key"
-#~ msgstr "Tipka za prostor 1 v hotbar-u"
-
-#~ msgid "Hotbar slot 10 key"
-#~ msgstr "Tipka za prostor 10 v hotbar-u"
-
-#~ msgid "Hotbar slot 11 key"
-#~ msgstr "Tipka za prostor 11 v hotbar-u"
-
-#~ msgid "Hotbar slot 12 key"
-#~ msgstr "Tipka za prostor 12 v hotbar-u"
-
-#~ msgid "Hotbar slot 13 key"
-#~ msgstr "Tipka za prostor 13 v hotbar-u"
-
-#~ msgid "Hotbar slot 14 key"
-#~ msgstr "Tipka za prostor 14 v hotbar-u"
-
-#~ msgid "Hotbar slot 15 key"
-#~ msgstr "Tipka za prostor 15 v hotbar-u"
-
-#~ msgid "Hotbar slot 16 key"
-#~ msgstr "Tipka za prostor 17 v hotbar-u"
-
-#~ msgid "Hotbar slot 17 key"
-#~ msgstr "Tipka za prostor 17 v hotbar-u"
-
-#~ msgid "Hotbar slot 18 key"
-#~ msgstr "Tipka za prostor 18 v hotbar-u"
-
-#~ msgid "Hotbar slot 19 key"
-#~ msgstr "Tipka za prostor 19 v hotbar-u"
-
-#~ msgid "Hotbar slot 2 key"
-#~ msgstr "Tipka za prostor 2 v hotbar-u"
-
-#~ msgid "Hotbar slot 20 key"
-#~ msgstr "Tipka za prostor 20 v hotbar-u"
-
-#~ msgid "Hotbar slot 21 key"
-#~ msgstr "Tipka za prostor 21 v hotbar-u"
-
-#~ msgid "Hotbar slot 22 key"
-#~ msgstr "Tipka za prostor 22 v hotbar-u"
-
-#~ msgid "Hotbar slot 23 key"
-#~ msgstr "Tipka za prostor 23 v hotbar-u"
-
-#~ msgid "Hotbar slot 24 key"
-#~ msgstr "Tipka za prostor 24 v hotbar-u"
-
-#~ msgid "Hotbar slot 25 key"
-#~ msgstr "Tipka za prostor 25 v hotbar-u"
-
-#~ msgid "Hotbar slot 26 key"
-#~ msgstr "Tipka za prostor 26 v hotbar-u"
-
-#~ msgid "Hotbar slot 27 key"
-#~ msgstr "Tipka za prostor 27 v hotbar-u"
-
-#~ msgid "Hotbar slot 28 key"
-#~ msgstr "Tipka za prostor 28 v hotbar-u"
-
-#~ msgid "Hotbar slot 29 key"
-#~ msgstr "Tipka za prostor 29 v hotbar-u"
-
-#~ msgid "Hotbar slot 3 key"
-#~ msgstr "Tipka za prostor 3 v hotbar-u"
-
-#~ msgid "Hotbar slot 30 key"
-#~ msgstr "Tipka za prostor 30 v hotbar-u"
-
-#~ msgid "Hotbar slot 31 key"
-#~ msgstr "Tipka za prostor 31 v hotbar-u"
-
-#~ msgid "Hotbar slot 32 key"
-#~ msgstr "Tipka za prostor 32 v hotbar-u"
-
-#~ msgid "Hotbar slot 4 key"
-#~ msgstr "Tipka za prostor 4 v hotbar-u"
-
-#~ msgid "Hotbar slot 5 key"
-#~ msgstr "Tipka za prostor 5 v hotbar-u"
-
-#~ msgid "Hotbar slot 6 key"
-#~ msgstr "Tipka za prostor 6 v hotbar-u"
-
-#~ msgid "Hotbar slot 7 key"
-#~ msgstr "Tipka za prostor 7 v hotbar-u"
-
-#~ msgid "Hotbar slot 8 key"
-#~ msgstr "Tipka za prostor 8 v hotbar-u"
-
-#~ msgid "Hotbar slot 9 key"
-#~ msgstr "Tipka za prostor 9 v hotbar-u"
 
 #~ msgid "IPv6 support."
 #~ msgstr "IPv6 podpora."
@@ -7279,11 +7805,17 @@ msgstr ""
 #~ msgid "Invalid gamespec."
 #~ msgstr "Neveljavna določila igre."
 
+#~ msgid "Key already in use"
+#~ msgstr "Tipka je že v uporabi"
+
 #~ msgid ""
 #~ "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
 #~ msgstr ""
 #~ "Vloge tipk (če ta meni preneha delovati, odstranite nastavitve tipk iz "
 #~ "datoteke minetest.conf)"
+
+#~ msgid "Left"
+#~ msgstr "Levo"
 
 #~ msgid "Main"
 #~ msgstr "Glavni"
@@ -7314,6 +7846,9 @@ msgstr ""
 
 #~ msgid "Name/Password"
 #~ msgstr "Ime / Geslo"
+
+#~ msgid "Next item"
+#~ msgstr "Naslednji predmet"
 
 #~ msgid "No"
 #~ msgstr "Ne"
@@ -7349,10 +7884,6 @@ msgstr ""
 #~ msgid "Particles"
 #~ msgstr "Delci"
 
-#, fuzzy
-#~ msgid "Place key"
-#~ msgstr "Tipka za letenje"
-
 #~ msgid ""
 #~ "Player is able to fly without being affected by gravity.\n"
 #~ "This requires the \"fly\" privilege on the server."
@@ -7366,11 +7897,17 @@ msgstr ""
 #~ msgid "Please enter a valid number."
 #~ msgstr "Vpisati je treba veljavno število."
 
+#~ msgid "Prev. item"
+#~ msgstr "Predhodni predmet"
+
 #~ msgid "PvP enabled"
 #~ msgstr "Igra PvP je omogočena"
 
 #~ msgid "Reset singleplayer world"
 #~ msgstr "Ponastavi samostojno igro"
+
+#~ msgid "Right"
+#~ msgstr "Desno"
 
 #~ msgid "Screen:"
 #~ msgstr "Zaslon:"
@@ -7427,11 +7964,15 @@ msgstr ""
 #~ "Možnost omogoča gladko drsenje kamere med premikanjem.\n"
 #~ "Lahko je uporabno pri snemanju videa igre."
 
+#~ msgid ""
+#~ "This is the list of clients connected to\n"
+#~ "$1"
+#~ msgstr ""
+#~ "Seznam odjemalcev ki so povezani na\n"
+#~ " $1"
+
 #~ msgid "To enable shaders the OpenGL driver needs to be used."
 #~ msgstr "Za prikaz senčenja mora biti omogočen gonilnik OpenGL."
-
-#~ msgid "Toggle Cinematic"
-#~ msgstr "Preklopi gladek pogled"
 
 #~ msgid "Tone Mapping"
 #~ msgstr "Barvno preslikavanje"
@@ -7511,3 +8052,9 @@ msgstr ""
 
 #~ msgid "ok"
 #~ msgstr "v redu"
+
+#~ msgid "pause_menu"
+#~ msgstr "meni_za_odmor"
+
+#~ msgid "press key"
+#~ msgstr "pritisni tipko"
