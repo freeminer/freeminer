@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Indonesian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-02-11 02:02+0000\n"
+"PO-Revision-Date: 2025-04-25 10:52+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/minetest/"
 "minetest/id/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.11.1-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -83,16 +83,15 @@ msgstr "Jelajahi"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "Konflik dengan \"$1\""
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Sunting"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Pengaturan tombol."
+msgstr "Hapus pengikatan tombol"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -224,7 +223,7 @@ msgstr "Kembali"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Buttons with crosshair"
-msgstr ""
+msgstr "Tombol dengan bidik silang"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
@@ -259,7 +258,7 @@ msgstr "Umum"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Ketuk lama"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -284,7 +283,7 @@ msgstr "Cari"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Ketuk singkat"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -295,13 +294,12 @@ msgid "Show technical names"
 msgstr "Tampilkan nama teknis"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Tap"
-msgstr "Tab"
+msgstr "Ketuk"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap with crosshair"
-msgstr ""
+msgstr "Ketuk dengan bidik silang"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -566,12 +564,11 @@ msgstr "Berdonasi"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
-msgstr ""
+msgstr "Kesalahan memuat informasi paket"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Error loading reviews"
-msgstr "Masalah saat membuat klien: %s"
+msgstr "Kesalahan memuat ulasan"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
@@ -591,7 +588,7 @@ msgstr "Pelacak Isu"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Reviews"
-msgstr ""
+msgstr "Ulasan"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
@@ -650,6 +647,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Pemain terhubung ke\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -1283,12 +1282,11 @@ msgid "Ping"
 msgstr "Ping"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid ""
 "Players:\n"
 "$1"
 msgstr ""
-"Klien:\n"
+"Pemain:\n"
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
@@ -2128,9 +2126,8 @@ msgid "Some mods have unsatisfied dependencies:"
 msgstr "Beberapa mod memiliki ketergantungan yang tidak dipenuhi:"
 
 #: src/gui/guiButtonKey.h
-#, fuzzy
 msgid "Press Button"
-msgstr "Klik Kiri"
+msgstr "Tekan Tombol"
 
 #: src/gui/guiChatConsole.cpp
 msgid "Failed to open webpage"
@@ -2220,7 +2217,7 @@ msgstr "Ubah kamera"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Dig/punch/use"
-msgstr ""
+msgstr "Gali/pukul/gunakan"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
@@ -2243,9 +2240,8 @@ msgid "Overflow menu"
 msgstr "Menu luap"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Place/use"
-msgstr "Tombol taruh"
+msgstr "Letakkan/gunakan"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Range select"
@@ -2981,9 +2977,8 @@ msgid "Client"
 msgstr "Klien"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client Debugging"
-msgstr "Pengawakutuan"
+msgstr "Debug Klien"
 
 #: src/settings_translation_file.cpp
 msgid "Client Mesh Chunksize"
@@ -3243,14 +3238,12 @@ msgstr ""
 "memerlukan lebih dari 8 bit supaya bekerja."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Decrease view range"
-msgstr "Turunkan jangkauan"
+msgstr "Kurangi jarak pandang"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Decrease volume"
-msgstr "Turunkan volume"
+msgstr "Kurangi volume"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
@@ -3477,9 +3470,8 @@ msgstr ""
 "di mana pengurutan transparansi akan menjadi lebih lambat."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Drop item"
-msgstr "Tombol menjatuhkan barang"
+msgstr "Jatuhkan item"
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
@@ -3531,6 +3523,9 @@ msgid ""
 "Note that clients will be able to connect with both IPv4 and IPv6.\n"
 "Ignored if bind_address is set."
 msgstr ""
+"Aktifkan dukungan IPv6 untuk server.\n"
+"Perhatikan bahwa klien akan dapat terhubung dengan IPv4 dan IPv6.\n"
+"Diabaikan jika bind_address diatur."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3740,9 +3735,8 @@ msgid "FPS"
 msgstr "FPS (bingkai per detik)"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "FPS when unfocused"
-msgstr "FPS saat dijeda atau tidak difokuskan"
+msgstr "FPS saat tidak fokus"
 
 #: src/settings_translation_file.cpp
 msgid "Factor noise"
@@ -4173,164 +4167,132 @@ msgstr ""
 "dalam nodus per detik per detik."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 1"
-msgstr "Tombol hotbar slot 1"
+msgstr "Slot hotbar 1"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 10"
-msgstr "Tombol hotbar slot 10"
+msgstr "Slot hotbar 10"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 11"
-msgstr "Tombol hotbar slot 11"
+msgstr "Slot hotbar 11"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 12"
-msgstr "Tombol hotbar slot 12"
+msgstr "Slot hotbar 12"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 13"
-msgstr "Tombol hotbar slot 13"
+msgstr "Slot hotbar 13"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 14"
-msgstr "Tombol hotbar slot 14"
+msgstr "Slot hotbar 14"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 15"
-msgstr "Tombol hotbar slot 15"
+msgstr "Slot hotbar 15"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 16"
-msgstr "Tombol hotbar slot 16"
+msgstr "Slot hotbar 16"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 17"
-msgstr "Tombol hotbar slot 17"
+msgstr "Slot hotbar 17"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 18"
-msgstr "Tombol hotbar slot 18"
+msgstr "Slot hotbar 18"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 19"
-msgstr "Tombol hotbar slot 19"
+msgstr "Slot hotbar 19"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 2"
-msgstr "Tombol hotbar slot 2"
+msgstr "Slot hotbar 2"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 20"
-msgstr "Tombol hotbar slot 20"
+msgstr "Slot hotbar 20"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 21"
-msgstr "Tombol hotbar slot 21"
+msgstr "Slot hotbar 21"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 22"
-msgstr "Tombol hotbar slot 22"
+msgstr "Slot hotbar 22"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 23"
-msgstr "Tombol hotbar slot 23"
+msgstr "Slot hotbar 23"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 24"
-msgstr "Tombol hotbar slot 24"
+msgstr "Slot hotbar 24"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 25"
-msgstr "Tombol hotbar slot 25"
+msgstr "Slot hotbar 25"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 26"
-msgstr "Tombol hotbar slot 26"
+msgstr "Slot hotbar 26"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 27"
-msgstr "Tombol hotbar slot 27"
+msgstr "Slot hotbar 27"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 28"
-msgstr "Tombol hotbar slot 28"
+msgstr "Slot hotbar 28"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 29"
-msgstr "Tombol hotbar slot 29"
+msgstr "Slot hotbar 29"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 3"
-msgstr "Tombol hotbar slot 3"
+msgstr "Slot hotbar 3"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 30"
-msgstr "Tombol hotbar slot 30"
+msgstr "Slot hotbar 30"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 31"
-msgstr "Tombol hotbar slot 31"
+msgstr "Slot hotbar 31"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 32"
-msgstr "Tombol hotbar slot 32"
+msgstr "Slot hotbar 32"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 4"
-msgstr "Tombol hotbar slot 4"
+msgstr "Slot hotbar 4"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 5"
-msgstr "Tombol hotbar slot 5"
+msgstr "Slot hotbar 5"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 6"
-msgstr "Tombol hotbar slot 6"
+msgstr "Slot hotbar 6"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 7"
-msgstr "Tombol hotbar slot 7"
+msgstr "Slot hotbar 7"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 8"
-msgstr "Tombol hotbar slot 8"
+msgstr "Slot hotbar 8"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 9"
-msgstr "Tombol hotbar slot 9"
+msgstr "Slot hotbar 9"
 
 #: src/settings_translation_file.cpp
 msgid "Hotbar: Enable mouse wheel for selection"
@@ -4341,14 +4303,12 @@ msgid "Hotbar: Invert mouse wheel direction"
 msgstr "Hotbar: Balikkan arah roda tetikus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar: select next item"
-msgstr "Tombol hotbar selanjutnya"
+msgstr "Hotbar: pilih item berikutnya"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar: select previous item"
-msgstr "Tombol hotbar sebelumnya"
+msgstr "Hotbar: pilih item sebelumnya"
 
 #: src/settings_translation_file.cpp
 msgid "How deep to make rivers."
@@ -4476,13 +4436,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "If enabled, the \"Aux1\" key will toggle when pressed."
-msgstr ""
+msgstr "Jika diaktifkan, tombol \"Aux1\" akan beralih saat ditekan."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If enabled, the \"Sneak\" key will toggle when pressed.\n"
 "This functionality is ignored when fly is enabled."
 msgstr ""
+"Jika diaktifkan, tombol \"Mengendap-endap\" akan beralih saat ditekan.\n"
+"Fungsi ini diabaikan saat terbang diaktifkan."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4561,14 +4523,12 @@ msgstr ""
 "Tinggi konsol obrolan dalam permainan, dari 0.1 (10%) sampai 1.0 (100%)."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Increase view range"
-msgstr "Naikkan jangkauan"
+msgstr "Tambah jarak pandang"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Increase volume"
-msgstr "Naikkan volume"
+msgstr "Tambah volume"
 
 #: src/settings_translation_file.cpp
 msgid "Initial vertical speed when jumping, in nodes per second."
@@ -4612,9 +4572,8 @@ msgid "Instrument the methods of entities on registration."
 msgstr "Melengkapi metode entitas dengan perkakas saat didaftarkan."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Interaction style"
-msgstr "Perulangan"
+msgstr "Gaya interaksi"
 
 #: src/settings_translation_file.cpp
 msgid "Interval of saving important changes in the world, stated in seconds."
@@ -4756,340 +4715,337 @@ msgstr "Kelajuan lompat"
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the viewing range."
-msgstr ""
+msgstr "Tombol untuk mengurangi jarak pandang."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the volume."
-msgstr ""
+msgstr "Tombol untuk mengurangi volume."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Tombol untuk mengurangi nilai yang dipilih di Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for digging, punching or using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Tombol untuk menggali, memukul, atau menggunakan sesuatu.\n"
+"(Catatan: Arti sebenarnya mungkin berbeda tergantung pada game.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for dropping the currently selected item."
-msgstr ""
+msgstr "Tombol untuk menjatuhkan item yang sedang dipilih."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the viewing range."
-msgstr ""
+msgstr "Tombol untuk menambah jarak pandang."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the volume."
-msgstr ""
+msgstr "Tombol untuk menambah volume."
 
 #: src/settings_translation_file.cpp
 msgid "Key for incrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Tombol untuk menambah nilai yang dipilih di Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for jumping."
-msgstr ""
+msgstr "Tombol untuk melompat."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving fast in fast mode."
-msgstr ""
+msgstr "Tombol untuk bergerak cepat dalam mode cepat."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for moving the player backward.\n"
 "Will also disable autoforward, when active."
 msgstr ""
 "Tombol untuk bergerak mundur.\n"
-"Akan mematikan maju otomatis, saat dinyalakan.\n"
-"Lihat http://irrlicht.sourceforge.net/docu/"
-"namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3"
+"Akan menonaktifkan maju otomatis, saat aktif."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player forward."
-msgstr ""
+msgstr "Tombol untuk bergerak maju."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player left."
-msgstr ""
+msgstr "Tombol untuk bergerak ke kiri."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player right."
-msgstr ""
+msgstr "Tombol untuk bergerak ke kanan."
 
 #: src/settings_translation_file.cpp
 msgid "Key for muting the game."
-msgstr ""
+msgstr "Tombol untuk membisukan game."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type commands."
-msgstr ""
+msgstr "Tombol untuk membuka jendela obrolan untuk mengetik perintah."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type local commands."
-msgstr ""
+msgstr "Tombol untuk membuka jendela obrolan untuk mengetik perintah lokal."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window."
-msgstr ""
+msgstr "Tombol untuk membuka jendela obrolan."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the inventory."
-msgstr ""
+msgstr "Tombol untuk membuka inventaris."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for placing an item/block or for using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Tombol untuk meletakkan item/blok atau untuk menggunakan sesuatu.\n"
+"(Catatan: Arti sebenarnya mungkin berbeda tergantung pada game.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 11th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-11."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 12th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-12."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 13th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-13."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 14th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-14."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 15th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-15."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 16th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-16."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 17th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-17."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 18th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-18."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 19th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-19."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 20th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-20."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 21st hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-21."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 22nd hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-22."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 23rd hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-23."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 24th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-24."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 25th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-25."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 26th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-26."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 27th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-27."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 28th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-28."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 29th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-29."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 30th hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-30."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 31st hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-31."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 32nd hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ke-32."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the eighth hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar kedelapan."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the fifth hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar kelima."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the first hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar pertama."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the fourth hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar keempat."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the next item in the hotbar."
-msgstr ""
+msgstr "Tombol untuk memilih item berikutnya di hotbar."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the ninth hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar kesembilan."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the previous item in the hotbar."
-msgstr ""
+msgstr "Tombol untuk memilih item sebelumnya di hotbar."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the second hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar kedua."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the seventh hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ketujuh."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the sixth hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar keenam."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the tenth hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar kesepuluh."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the third hotbar slot."
-msgstr ""
+msgstr "Tombol untuk memilih slot hotbar ketiga."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for sneaking.\n"
 "Also used for climbing down and descending in water if aux1_descends is "
 "disabled."
 msgstr ""
-"Tombol untuk menyelinap.\n"
-"Juga digunakan untuk turun dan menyelam dalam air jika aux1_descends "
-"dimatikan.\n"
-"Lihat http://irrlicht.sourceforge.net/docu/"
-"namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3"
+"Tombol untuk mengendap-endap.\n"
+"Juga digunakan untuk turun dan menyelam di air jika aux1_descends "
+"dinonaktifkan."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching between first- and third-person camera."
-msgstr ""
+msgstr "Tombol untuk beralih antara kamera orang pertama dan ketiga."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the next entry in Quicktune."
-msgstr ""
+msgstr "Tombol untuk beralih ke entri berikutnya di Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the previous entry in Quicktune."
-msgstr ""
+msgstr "Tombol untuk beralih ke entri sebelumnya di Quicktune."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for taking screenshots."
-msgstr "Format tangkapan layar."
+msgstr "Tombol untuk mengambil tangkapan layar."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling autoforward."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan maju otomatis."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling cinematic mode."
-msgstr "Penghalusan kamera dalam mode sinema"
+msgstr "Tombol untuk mengaktifkan/menonaktifkan mode sinematik."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling display of minimap."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan minimap."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling fast mode."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan mode cepat."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling flying."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan terbang."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling fullscreen mode."
-msgstr "Mode layar penuh."
+msgstr "Tombol untuk mengaktifkan/menonaktifkan layar penuh."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling noclip mode."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan mode noclip."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling pitch move mode."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan mode gerak pitch."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the camera update. Only usable with 'debug' privilege."
 msgstr ""
+"Tombol untuk mengaktifkan/menonaktifkan pembaruan kamera. Hanya dapat "
+"digunakan dengan hak istimewa 'debug'."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of chat."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan obrolan."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of debug info."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan info debug."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of fog."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan kabut."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of mapblock boundaries."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan batas mapblock."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the HUD."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan HUD."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the large chat console."
-msgstr ""
+msgstr "Tombol untuk mengaktifkan/menonaktifkan tampilan konsol obrolan besar."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
+"Tombol untuk mengaktifkan/menonaktifkan tampilan profiler. Digunakan untuk "
+"pengembangan."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling unlimited view range."
-msgstr "Matikan jarak pandang tidak terbatas"
+msgstr "Tombol untuk mematikan jarak pandang tak terbatas."
 
 #: src/settings_translation_file.cpp
 msgid "Key to use view zoom when possible."
-msgstr ""
+msgstr "Tombol untuk menggunakan zoom tampilan jika memungkinkan."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keybindings"
-msgstr "Pengaturan tombol."
+msgstr "Pengikatan tombol"
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
@@ -5128,9 +5084,8 @@ msgid "Large cave proportion flooded"
 msgstr "Perbandingan cairan dalam gua besar"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Large chat console"
-msgstr "Tombol konsol obrolan besar"
+msgstr "Konsol obrolan besar"
 
 #: src/settings_translation_file.cpp
 msgid "Leaves style"
@@ -5531,11 +5486,8 @@ msgid "Maximum FPS"
 msgstr "FPS maksimum"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum FPS when the window is not focused."
-msgstr ""
-"FPS (bingkai per detik) maksimum saat permainan dijeda atau saat jendela "
-"tidak difokuskan."
+msgstr "FPS maksimum saat permainan dijeda atau saat jendela tidak fokus."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum distance to render shadows."
@@ -5612,6 +5564,10 @@ msgid ""
 "won't be deleted, depending on the current view range.\n"
 "Set to -1 for no limit."
 msgstr ""
+"Jumlah maksimum mapblock untuk klien yang disimpan dalam memori.\n"
+"Perhatikan bahwa ada jumlah minimum blok dinamis internal yang\n"
+"tidak akan dihapus, tergantung pada jarak pandang saat ini.\n"
+"Atur ke -1 untuk tanpa batas."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5654,18 +5610,17 @@ msgid "Maximum simultaneous block sends per client"
 msgstr "Jumlah maksimum blok yang dikirim serentak kepada per klien"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum size of the client's outgoing chat queue"
-msgstr "Ukuran maksimum antrean obrolan keluar"
+msgstr "Ukuran maksimum antrean obrolan keluar klien"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Maximum size of the client's outgoing chat queue.\n"
 "0 to disable queueing and -1 to make the queue size unlimited."
 msgstr ""
-"Ukuran maksimum antrean obrolan keluar.\n"
-"0 untuk mematikan pengantrean dan -1 untuk mengatur antrean tanpa batas."
+"Ukuran maksimum antrean obrolan keluar klien.\n"
+"0 untuk menonaktifkan antrean dan -1 untuk membuat ukuran antrean tidak "
+"terbatas."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5783,23 +5738,20 @@ msgid "Mouse sensitivity multiplier."
 msgstr "Pengali kepekaan tetikus."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move backward"
 msgstr "Mundur"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move forward"
-msgstr "Maju otomatis"
+msgstr "Maju"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move left"
-msgstr "Pergerakan"
+msgstr "Bergerak ke kiri"
 
 #: src/settings_translation_file.cpp
 msgid "Move right"
-msgstr ""
+msgstr "Bergerak ke kanan"
 
 #: src/settings_translation_file.cpp
 msgid "Movement threshold"
@@ -5949,14 +5901,12 @@ msgid ""
 msgstr "Keburaman (alfa) bayangan di belakang fon bawaan, antara 0 dan 255."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Open chat"
-msgstr "Buka"
+msgstr "Buka obrolan"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Open inventory"
-msgstr "Inventaris"
+msgstr "Buka inventaris"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6096,7 +6046,6 @@ msgid "Prometheus listener address"
 msgstr "Alamat pendengar Prometheus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Prometheus listener address.\n"
 "If Luanti is compiled with Prometheus support, this setting\n"
@@ -6105,9 +6054,11 @@ msgid ""
 "An empty value disables the metrics listener."
 msgstr ""
 "Alamat pendengar Prometheus.\n"
-"Jika Luanti dikompilasi dengan pilihan ENABLE_PROMETHEUS dinyalakan,\n"
-"ini menyalakan pendengar metrik untuk Prometheus pada alamat itu.\n"
-"Metrik dapat diambil pada http://127.0.0.1:30000/metrics"
+"Jika Luanti dikompilasi dengan dukungan Prometheus, pengaturan ini\n"
+"mengaktifkan pendengar metrik untuk Prometheus di alamat tersebut.\n"
+"Secara default, Anda dapat mengambil metrik dari http://127.0.0.1:30000/"
+"metrics.\n"
+"Nilai kosong menonaktifkan pendengar metrik."
 
 #: src/settings_translation_file.cpp
 msgid "Proportion of large caves that contain liquid."
@@ -6123,19 +6074,19 @@ msgstr "Gerakan memukul"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: decrement value"
-msgstr ""
+msgstr "Quicktune: kurangi nilai"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: increment value"
-msgstr ""
+msgstr "Quicktune: tambah nilai"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select next entry"
-msgstr ""
+msgstr "Quicktune: pilih entri berikutnya"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select previous entry"
-msgstr ""
+msgstr "Quicktune: pilih entri sebelumnya"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6398,46 +6349,28 @@ msgid ""
 "Renders higher-resolution image of the scene, then scales down to reduce\n"
 "the aliasing effects. This is the slowest and the most accurate method."
 msgstr ""
-"Pilih metode antialiasing untuk diterapkan.\n"
+"Pilih metode antialiasing yang akan diterapkan.\n"
 "\n"
+"* Tidak ada - Tidak ada antialiasing (default)\n"
 "\n"
+"* FSAA - Antialiasing layar penuh yang disediakan oleh perangkat keras\n"
+"Alias: antialiasing multi-sample (MSAA)\n"
+"Menghaluskan tepi blok tetapi tidak mempengaruhi bagian dalam tekstur.\n"
 "\n"
-"* Tidak ada - tidak ada antialiasing (default)\n"
+"Jika Pemrosesan Pasca dinonaktifkan, mengubah FSAA memerlukan restart.\n"
+"Selain itu, jika Pemrosesan Pasca dinonaktifkan, FSAA tidak akan berfungsi "
+"bersama dengan\n"
+"undersampling atau pengaturan \"3d_mode\" yang tidak default.\n"
 "\n"
-"\n"
-"\n"
-"* FSAA-Antialiasing layar penuh yang disediakan perangkat keras\n"
-"\n"
-"A.k.a antialiasing multi-sampel (MSAA)\n"
-"\n"
-"Menghancur tepi blok tetapi tidak mempengaruhi bagian dalam tekstur.\n"
-"\n"
-"\n"
-"\n"
-"Jika pemrosesan pos dinonaktifkan, mengubah FSAA memerlukan restart.\n"
-"\n"
-"Juga, jika pemrosesan pos dinonaktifkan, FSAA tidak akan bekerja sama "
-"dengannya\n"
-"\n"
-"pengaturan undersampling atau non-default \"3D_MODE\".\n"
-"\n"
-"\n"
-"\n"
-"* Fxaa - perkiraan cepat antialiasing\n"
-"\n"
-"Menerapkan filter pasca pemrosesan untuk mendeteksi dan menghaluskan tepi "
-"kontras tinggi.\n"
-"\n"
+"* FXAA - Antialiasing perkiraan cepat\n"
+"Menerapkan filter pemrosesan pasca untuk mendeteksi dan menghaluskan tepi "
+"dengan kontras tinggi.\n"
 "Memberikan keseimbangan antara kecepatan dan kualitas gambar.\n"
 "\n"
-"\n"
-"\n"
-"* SSAA - Antialiasing Super -Sampling\n"
-"\n"
-"Membuat gambar resolusi yang lebih tinggi dari pemandangan itu, lalu "
-"berskala ke bawah untuk mengurangi\n"
-"\n"
-"Efek aliasing. Ini adalah metode paling lambat dan paling akurat."
+"* SSAA - Antialiasing super-sampling\n"
+"Menghasilkan gambar dengan resolusi lebih tinggi dari adegan, kemudian "
+"mengurangi skala untuk mengurangi\n"
+"efek aliasing. Ini adalah metode yang paling lambat dan paling akurat."
 
 #: src/settings_translation_file.cpp
 msgid "Selection box border color (R,G,B)."
@@ -7054,7 +6987,6 @@ msgstr ""
 "Jalur berkas relatif terhadap jalur dunia Anda tempat profil akan disimpan."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "The gesture for punching players/entities.\n"
 "This can be overridden by games and mods.\n"
@@ -7066,14 +6998,14 @@ msgid ""
 "Known from the classic Luanti mobile controls.\n"
 "Combat is more or less impossible."
 msgstr ""
-"Gerakan untuk meninju pemain/entitas.\n"
+"Gestur untuk memukul pemain/entitas.\n"
 "Ini dapat ditimpa oleh game dan mod.\n"
 "\n"
-"* short_tap\n"
-"Mudah digunakan dan terkenal dari game lain yang tidak akan disebutkan "
-"namanya.\n"
+"* Ketuk singkat\n"
+"Mudah digunakan dan terkenal dari game lain yang namanya tidak boleh disebut."
 "\n"
-"* long_tap\n"
+"\n"
+"* Ketuk lama\n"
 "Dikenal dari kontrol seluler Luanti klasik.\n"
 "Pertarungan kurang lebih tidak mungkin."
 
@@ -7097,6 +7029,19 @@ msgid ""
 "Use dedicated dig/place buttons to interact.\n"
 "Interaction happens at crosshair position."
 msgstr ""
+"Jenis kontrol menggali/meletakkan yang digunakan.\n"
+"\n"
+"* Ketuk\n"
+"Ketuk lama/singkat di mana saja pada layar untuk berinteraksi.\n"
+"Interaksi terjadi pada posisi jari.\n"
+"\n"
+"* Ketuk dengan bidik silang\n"
+"Ketuk lama/singkat di mana saja pada layar untuk berinteraksi.\n"
+"Interaksi terjadi pada posisi bidik silang.\n"
+"\n"
+"* Tombol dengan bidik silang\n"
+"Gunakan tombol gali/letakkan khusus untuk berinteraksi.\n"
+"Interaksi terjadi pada posisi bidik silang."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7275,7 +7220,6 @@ msgstr ""
 "mencopot nodus."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Aux1 key"
 msgstr "Tombol Aux1"
 
@@ -7284,57 +7228,48 @@ msgid "Toggle HUD"
 msgstr "Alih HUD"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Sneak key"
-msgstr "Tombol beralih mode kamera"
+msgstr "Tombol alih Mengendap-endap"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle automatic forward"
-msgstr "Tombol maju otomatis"
+msgstr "Tombol alih maju otomatis"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle block bounds"
-msgstr "Batasan blok"
+msgstr "Tombol batas blok"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle camera mode"
-msgstr "Tombol beralih mode kamera"
+msgstr "Tombol alih mode kamera"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle camera update"
-msgstr "Tombol beralih mode kamera"
+msgstr "Tombol alih pembaruan kamera"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle cinematic mode"
-msgstr "Mode sinema"
+msgstr "Tombol alih mode sinematik"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle debug info"
-msgstr "Alih pengawakutuan"
+msgstr "Tombol alih info debug"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle fog"
 msgstr "Alih kabut"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle fullscreen"
-msgstr "Alih terbang"
+msgstr "Tombol alih layar penuh"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle pitchmove"
 msgstr "Gerak sesuai pandang"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle profiler"
-msgstr "Alih terbang"
+msgstr "Tombol alih profiler"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7857,7 +7792,6 @@ msgid "World start time"
 msgstr "Waktu mulai dunia"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "World-aligned textures may be scaled to span several nodes. However,\n"
 "the server may not send the scale you want, especially if you use\n"
@@ -7866,12 +7800,14 @@ msgid ""
 "See also texture_min_size.\n"
 "Warning: This option is EXPERIMENTAL!"
 msgstr ""
-"Tekstur yang sejajar dengan dunia dapat diperbesar hingga beberapa nodus.\n"
-"Namun, server mungkin tidak mengirimkan perbesaran yang Anda inginkan,\n"
-"terlebih jika Anda menggunakan paket tekstur yang didesain khusus; dengan\n"
-"pilihan ini, klien mencoba untuk menentukan perbesaran otomatis sesuai\n"
-"ukuran tekstur. Lihat juga texture_min_size.\n"
-"Peringatan: Pilihan ini dalam tahap PERCOBAAN!"
+"Tekstur yang sejajar dengan dunia dapat diskalakan untuk mencakup beberapa "
+"node. Namun,\n"
+"server mungkin tidak mengirimkan skala yang Anda inginkan, terutama jika "
+"Anda menggunakan\n"
+"paket tekstur yang dirancang khusus; dengan opsi ini, klien mencoba\n"
+"menentukan skala secara otomatis berdasarkan ukuran tekstur.\n"
+"Lihat juga texture_min_size.\n"
+"Peringatan: Opsi ini EKSPERIMENTAL!"
 
 #: src/settings_translation_file.cpp
 msgid "World-aligned textures mode"
