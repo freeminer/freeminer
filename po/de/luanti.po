@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: German (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-02-11 02:02+0000\n"
+"PO-Revision-Date: 2025-04-25 19:50+0000\n"
 "Last-Translator: Wuzzy <Wuzzy@disroot.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/minetest/minetest/"
 "de/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -83,16 +83,15 @@ msgstr "Durchsuchen"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "Konflikt mit „$1“"
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Bearbeiten"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Tastenbelegung."
+msgstr "Tastenbelegung entfernen"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -224,7 +223,7 @@ msgstr "Zurück"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Buttons with crosshair"
-msgstr ""
+msgstr "Knöpfe mit Fadenkreuz"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
@@ -259,7 +258,7 @@ msgstr "Allgemein"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Langes Antippen"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -284,7 +283,7 @@ msgstr "Suchen"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Kurzes Antippen"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -295,13 +294,12 @@ msgid "Show technical names"
 msgstr "Technische Namen zeigen"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Tap"
-msgstr "Tab"
+msgstr "Antippen"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap with crosshair"
-msgstr ""
+msgstr "Antippen mit Fadenkreuz"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -567,12 +565,11 @@ msgstr "Spenden"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
-msgstr ""
+msgstr "Fehler beim Laden der Paketinformationen"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Error loading reviews"
-msgstr "Fehler bei Erstellung des Clients: %s"
+msgstr "Fehler beim Laden der Rezensionen"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
@@ -592,7 +589,7 @@ msgstr "Issue-Tracker"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Reviews"
-msgstr ""
+msgstr "Rezensionen"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
@@ -652,6 +649,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Spieler verbunden zu\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -1293,12 +1292,11 @@ msgid "Ping"
 msgstr "Latenz"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid ""
 "Players:\n"
 "$1"
 msgstr ""
-"Clients:\n"
+"Spieler:\n"
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
@@ -2137,9 +2135,8 @@ msgid "Some mods have unsatisfied dependencies:"
 msgstr "Einige Mods haben nicht erfüllte Abhängigkeiten:"
 
 #: src/gui/guiButtonKey.h
-#, fuzzy
 msgid "Press Button"
-msgstr "Linke Taste"
+msgstr "Knopf drücken"
 
 #: src/gui/guiChatConsole.cpp
 msgid "Failed to open webpage"
@@ -2228,7 +2225,7 @@ msgstr "Kamerawechsel"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Dig/punch/use"
-msgstr ""
+msgstr "Graben/hauen/benutzen"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
@@ -2251,9 +2248,8 @@ msgid "Overflow menu"
 msgstr "Überlauf-Menü"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Place/use"
-msgstr "Bautaste"
+msgstr "Platzieren/benutzen"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Range select"
@@ -3013,9 +3009,8 @@ msgid "Client"
 msgstr "Client"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client Debugging"
-msgstr "Debugging"
+msgstr "Client-Debugging"
 
 #: src/settings_translation_file.cpp
 msgid "Client Mesh Chunksize"
@@ -3278,12 +3273,10 @@ msgstr ""
 "brauchen mehr als 8 Bit, um zu funktionieren."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Decrease view range"
 msgstr "Sicht verringern"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Decrease volume"
 msgstr "Leiser"
 
@@ -3520,9 +3513,8 @@ msgstr ""
 "Situationen, wo die Transparenzsortierung sonst sehr langsam wäre."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Drop item"
-msgstr "Wegwerfen-Taste"
+msgstr "Wegwerfen"
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
@@ -3574,6 +3566,10 @@ msgid ""
 "Note that clients will be able to connect with both IPv4 and IPv6.\n"
 "Ignored if bind_address is set."
 msgstr ""
+"IPv6-Unterstützung für Server aktivieren.\n"
+"Beachten Sie, dass Clients in der Lage sein werden, sich mit sowohl IPv4 als "
+"auch IPv6 zu verbinden.\n"
+"Wird ignoriert, falls bind_address gesetzt wurde."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3793,9 +3789,8 @@ msgid "FPS"
 msgstr "Bildwiederholrate"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "FPS when unfocused"
-msgstr "Bildwiederholrate wenn Fenster im Hintergrund/Spiel pausiert"
+msgstr "Bildwiederholrate wenn nicht fokussiert"
 
 #: src/settings_translation_file.cpp
 msgid "Factor noise"
@@ -4246,164 +4241,132 @@ msgstr ""
 "in Blöcken pro Sekunde pro Sekunde."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 1"
-msgstr "Schnellleistentaste 1"
+msgstr "Schnellleistenplatz 1"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 10"
-msgstr "Schnellleistentaste 10"
+msgstr "Schnellleistenplatz 10"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 11"
-msgstr "Schnellleistentaste 11"
+msgstr "Schnellleistenplatz 11"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 12"
-msgstr "Schnellleistentaste 12"
+msgstr "Schnellleistenplatz 12"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 13"
-msgstr "Schnellleistentaste 13"
+msgstr "Schnellleistenplatz 13"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 14"
-msgstr "Schnellleistentaste 14"
+msgstr "Schnellleistenplatz 14"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 15"
-msgstr "Schnellleistentaste 15"
+msgstr "Schnellleistenplatz 15"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 16"
-msgstr "Schnellleistentaste 16"
+msgstr "Schnellleistenplatz 16"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 17"
-msgstr "Schnellleistentaste 17"
+msgstr "Schnellleistenplatz 17"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 18"
-msgstr "Schnellleistentaste 18"
+msgstr "Schnellleistenplatz 18"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 19"
-msgstr "Schnellleistentaste 18"
+msgstr "Schnellleistenplatz 19"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 2"
-msgstr "Schnellleistentaste 2"
+msgstr "Schnellleistenplatz 2"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 20"
-msgstr "Schnellleistentaste 20"
+msgstr "Schnellleistenplatz 20"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 21"
-msgstr "Schnellleistentaste 21"
+msgstr "Schnellleistenplatz 21"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 22"
-msgstr "Schnellleistentaste 22"
+msgstr "Schnellleistenplatz 22"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 23"
-msgstr "Schnellleistentaste 23"
+msgstr "Schnellleistenplatz 23"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 24"
-msgstr "Schnellleistentaste 24"
+msgstr "Schnellleistenplatz 24"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 25"
-msgstr "Schnellleistentaste 25"
+msgstr "Schnellleistenplatz 25"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 26"
-msgstr "Schnellleistentaste 26"
+msgstr "Schnellleistenplatz 26"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 27"
-msgstr "Schnellleistentaste 27"
+msgstr "Schnellleistenplatz 27"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 28"
-msgstr "Schnellleistentaste 28"
+msgstr "Schnellleistenplatz 28"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 29"
-msgstr "Schnellleistentaste 29"
+msgstr "Schnellleistenplatz 29"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 3"
-msgstr "Schnellleistentaste 3"
+msgstr "Schnellleistenplatz 3"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 30"
-msgstr "Schnellleistentaste 30"
+msgstr "Schnellleistenplatz 30"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 31"
-msgstr "Schnellleistentaste 31"
+msgstr "Schnellleistenplatz 31"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 32"
-msgstr "Schnellleistentaste 32"
+msgstr "Schnellleistenplatz 32"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 4"
-msgstr "Schnellleistentaste 4"
+msgstr "Schnellleistenplatz 4"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 5"
-msgstr "Schnellleistentaste 5"
+msgstr "Schnellleistenplatz 5"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 6"
-msgstr "Schnellleistentaste 6"
+msgstr "Schnellleistenplatz 6"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 7"
-msgstr "Schnellleistentaste 7"
+msgstr "Schnellleistenplatz 7"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 8"
-msgstr "Schnellleistentaste 8"
+msgstr "Schnellleistenplatz 8"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar slot 9"
-msgstr "Schnellleistentaste 9"
+msgstr "Schnellleistenplatz 9"
 
 #: src/settings_translation_file.cpp
 msgid "Hotbar: Enable mouse wheel for selection"
@@ -4414,14 +4377,12 @@ msgid "Hotbar: Invert mouse wheel direction"
 msgstr "Schnellleiste: Mausradrichtung umkehren"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar: select next item"
-msgstr "Taste für nächsten Ggnstd. in Schnellleiste"
+msgstr "Schnellleiste: Nächsten Gegenstand auswählen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Hotbar: select previous item"
-msgstr "Taste für vorherigen Ggnstd. in Schnellleiste"
+msgstr "Schnellleiste: Vorherigen Gegenstand auswählen"
 
 #: src/settings_translation_file.cpp
 msgid "How deep to make rivers."
@@ -4552,13 +4513,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "If enabled, the \"Aux1\" key will toggle when pressed."
-msgstr ""
+msgstr "Falls aktiviert, wird die „Aux1“-Taste beim Drücken es wechseln."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If enabled, the \"Sneak\" key will toggle when pressed.\n"
 "This functionality is ignored when fly is enabled."
 msgstr ""
+"Falls aktiviert, wird die „Schleichen“-Taste beim Drücken es wechslen.\n"
+"Diese Funktion wird im Flugmodus ignoriert."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4643,12 +4606,10 @@ msgstr ""
 "(Beachten Sie die englische Notation mit Punkt als Dezimaltrennzeichen.)"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Increase view range"
 msgstr "Sicht erhöhen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Increase volume"
 msgstr "Lauter"
 
@@ -4696,9 +4657,8 @@ msgid "Instrument the methods of entities on registration."
 msgstr "Die Methoden von Entitys bei ihrer Registrierung instrumentieren."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Interaction style"
-msgstr "Iterationen"
+msgstr "Interaktionsstil"
 
 #: src/settings_translation_file.cpp
 msgid "Interval of saving important changes in the world, stated in seconds."
@@ -4844,233 +4804,235 @@ msgstr "Sprunggeschwindigkeit"
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the viewing range."
-msgstr ""
+msgstr "Taste zum Verringern der Sichtweite."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the volume."
-msgstr ""
+msgstr "Taste zum Verringern der Lautstärke."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Taste, um den gewählten Wert im Quicktune zu verringern."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for digging, punching or using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Taste zum Graben, Hauen oder zur Benutzung von etwas.\n"
+"(Anmerkung: Die tatsächliche Bedeutung kann je nach Spiel variieren.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for dropping the currently selected item."
-msgstr ""
+msgstr "Taste zum Fallenlassen des momentan ausgewählten Gegenstands."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the viewing range."
-msgstr ""
+msgstr "Taste zur Erhöhung der Sichtweite."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the volume."
-msgstr ""
+msgstr "Taste zur Erhöhung der Lautstärke."
 
 #: src/settings_translation_file.cpp
 msgid "Key for incrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Taste zur Erhöhung des gewählten Werts im Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for jumping."
-msgstr ""
+msgstr "Taste zum Springen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving fast in fast mode."
-msgstr ""
+msgstr "Taste, um sich schnell im Schnellmodus zu bewegen."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for moving the player backward.\n"
 "Will also disable autoforward, when active."
 msgstr ""
 "Taste, um den Spieler rückwärts zu bewegen.\n"
-"Wird, wenn aktiviert, auch die Vorwärtsautomatik deaktivieren.\n"
-"Siehe http://irrlicht.sourceforge.net/docu/"
-"namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3"
+"Wird, wenn aktiviert, auch die Vorwärtsautomatik deaktivieren."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player forward."
-msgstr ""
+msgstr "Taste, um den Spieler vorwärts zu bewegen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player left."
-msgstr ""
+msgstr "Taste, um den Spieler nach links zu bewegen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player right."
-msgstr ""
+msgstr "Taste, um den Spieler nach rechts zu bewegen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for muting the game."
-msgstr ""
+msgstr "Taste, um das Spiel verstummen zu lassen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type commands."
-msgstr ""
+msgstr "Taste, um das Chatfenster für die Eingabe von Befehlen zu öffnen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type local commands."
 msgstr ""
+"Taste, um das Chatfenster für die Eingabe von lokalen Befehlen zu öffnen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window."
-msgstr ""
+msgstr "Taste, um das Chatfenster zu öffnen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the inventory."
-msgstr ""
+msgstr "Taste zum Öffnen des Inventars."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for placing an item/block or for using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Taste für die Platzierung eines Gegenstandes / eines Blocks oder für die "
+"Benutzung von etwas.\n"
+"(Anmerkung: Die tatsächliche Bedeutung kann je nach Spiel variieren.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 11th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 11. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 12th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 12. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 13th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 13. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 14th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 14. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 15th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 15. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 16th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 16. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 17th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 17. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 18th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 18. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 19th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 19. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 20th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 20. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 21st hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 21. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 22nd hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 22. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 23rd hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 23. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 24th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 24. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 25th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 25. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 26th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 26. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 27th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 27. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 28th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 28. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 29th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 29. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 30th hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 30. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 31st hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 31. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 32nd hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des 32. Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the eighth hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des achten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the fifth hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des fünften Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the first hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des ersten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the fourth hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des vierten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the next item in the hotbar."
-msgstr ""
+msgstr "Taste für die Auswahl des nächsten Gegenstands in der Schnellleiste."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the ninth hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des neunten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the previous item in the hotbar."
-msgstr ""
+msgstr "Taste für die Auswahl des vorherigen Gegenstands in der Schnellleiste."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the second hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des zweiten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the seventh hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des siebten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the sixth hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des sechsten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the tenth hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des zehnten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the third hotbar slot."
-msgstr ""
+msgstr "Taste für die Auswahl des dritten Schnellleistenplatzes."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for sneaking.\n"
 "Also used for climbing down and descending in water if aux1_descends is "
@@ -5078,106 +5040,105 @@ msgid ""
 msgstr ""
 "Taste zum Schleichen.\n"
 "Wird auch zum Runterklettern und das Sinken im Wasser verwendet, falls "
-"aux1_descends deaktiviert ist.\n"
-"Siehe http://irrlicht.sourceforge.net/docu/"
-"namespaceirr.html#a54da2a0e231901735e3da1b0edf72eb3"
+"aux1_descends deaktiviert ist."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching between first- and third-person camera."
 msgstr ""
+"Taste zum Wechseln zwischen der Kamera der ersten Person und der dritten "
+"Person."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the next entry in Quicktune."
-msgstr ""
+msgstr "Taste zum Wechseln zum nächsten Eintrag im Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the previous entry in Quicktune."
-msgstr ""
+msgstr "Taste zum Wechseln zum vorherigen Eintrag im Quicktune."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for taking screenshots."
-msgstr "Dateiformat von Bildschirmfotos."
+msgstr "Taste für die Aufnahme von Screenshots."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling autoforward."
-msgstr ""
+msgstr "Taste für das Umschalten der Vorwärtsautomatik."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling cinematic mode."
-msgstr "Kameraglättung im Filmmodus"
+msgstr "Taste für die Umschaltung des Filmmodus."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling display of minimap."
-msgstr ""
+msgstr "Taste für das Umschalten der Anzeige der Übersichtskarte."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling fast mode."
-msgstr ""
+msgstr "Taste zum Umschalten des Schnellmodus."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling flying."
-msgstr ""
+msgstr "Taste, um das Fliegen ein- oder auszuschalten."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling fullscreen mode."
-msgstr "Vollbildmodus."
+msgstr "Taste zum Ein- oder Ausschalten des Vollbildmodus."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling noclip mode."
-msgstr ""
+msgstr "Taste zum Umschalten des Geistmodus."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling pitch move mode."
-msgstr ""
+msgstr "Taste zum Umschalten des Nick-Bewegungsmodus."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the camera update. Only usable with 'debug' privilege."
 msgstr ""
+"Taste zum Umschalten der Kameraaktualisierung. Kann nur mit dem „debug“-"
+"Privileg benutzt werden."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of chat."
-msgstr ""
+msgstr "Taste zum Umschalten der Anzeige des Chat."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of debug info."
-msgstr ""
+msgstr "Taste zum Umschalten der Anzeige der Debuginformationen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of fog."
-msgstr ""
+msgstr "Taste zum Umschalten der Anzeige des Nebels."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of mapblock boundaries."
-msgstr ""
+msgstr "Taste zum Umschalten der Anzeige der Kartenblockgrenzen."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the HUD."
-msgstr ""
+msgstr "Taste zum Umschalten der Anzeige der HUD."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the large chat console."
-msgstr ""
+msgstr "Taste zum Umschalten der Anzeige der großen Chatkonsole."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
+"Taste zum Umschalten der Anzeige des Profilers. Wird für die Entwicklung "
+"benutzt."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling unlimited view range."
-msgstr "Unbegrenzte Sichtweite deaktiviert"
+msgstr "Taste zum Umschalten der unbegrenzten Sichtweite."
 
 #: src/settings_translation_file.cpp
 msgid "Key to use view zoom when possible."
-msgstr ""
+msgstr "Taste für die Benutzung der Zoomansicht, falls möglich."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keybindings"
-msgstr "Tastenbelegung."
+msgstr "Tastenbelegung"
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
@@ -5218,9 +5179,8 @@ msgid "Large cave proportion flooded"
 msgstr "Anteil gefluteter großer Höhlen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Large chat console"
-msgstr "Taste für große Chatkonsole"
+msgstr "Große Chatkonsole"
 
 #: src/settings_translation_file.cpp
 msgid "Leaves style"
@@ -5628,11 +5588,8 @@ msgid "Maximum FPS"
 msgstr "Maximale Bildwiederholrate"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum FPS when the window is not focused."
-msgstr ""
-"Maximale Bildwiederholrate, während das Fenster nicht fokussiert oder das "
-"Spiel pausiert ist."
+msgstr "Maximale Bildwiederholrate, während das Fenster nicht fokussiert ist."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum distance to render shadows."
@@ -5712,6 +5669,10 @@ msgid ""
 "won't be deleted, depending on the current view range.\n"
 "Set to -1 for no limit."
 msgstr ""
+"Maximale Anzahl Kartenblöcke, den der Client im Speicher vorhalten soll.\n"
+"Beachten Sie, dass es ein internes dynamisches Minimum an Blöcken gibt,\n"
+"welche abhängig von der aktuellen Sichtweite nicht gelöscht werden.\n"
+"Auf -1 setzen, um kein Limit festzulegen."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5756,17 +5717,15 @@ msgid "Maximum simultaneous block sends per client"
 msgstr "Max. gleichzeitig versendete Blöcke pro Client"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum size of the client's outgoing chat queue"
-msgstr "Maximale Größe der ausgehenden Chatwarteschlange"
+msgstr "Maximale Größe der ausgehenden Chatwarteschlange des Clients"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Maximum size of the client's outgoing chat queue.\n"
 "0 to disable queueing and -1 to make the queue size unlimited."
 msgstr ""
-"Maximale Größe der ausgehenden Chatwarteschlange.\n"
+"Maximale Größe der ausgehenden Chatwarteschlange des Clients.\n"
 "0, um Warteschlange zu deaktivieren, -1, um die Warteschlangengröße nicht zu "
 "begrenzen."
 
@@ -5890,23 +5849,20 @@ msgid "Mouse sensitivity multiplier."
 msgstr "Faktor für die Mausempfindlichkeit."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move backward"
-msgstr "Rückwärts"
+msgstr "Rückwärts bewegen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move forward"
-msgstr "Autovorwärts"
+msgstr "Vorwärts bewegen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move left"
-msgstr "Bewegung"
+msgstr "Nach links bewegen"
 
 #: src/settings_translation_file.cpp
 msgid "Move right"
-msgstr ""
+msgstr "Nach rechts bewegen"
 
 #: src/settings_translation_file.cpp
 msgid "Movement threshold"
@@ -6062,14 +6018,12 @@ msgstr ""
 "zwischen 0 und 255."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Open chat"
-msgstr "Öffnen"
+msgstr "Chat öffnen"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Open inventory"
-msgstr "Inventar"
+msgstr "Inventar öffnen"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6212,7 +6166,6 @@ msgid "Prometheus listener address"
 msgstr "Prometheus-Lauschadresse"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Prometheus listener address.\n"
 "If Luanti is compiled with Prometheus support, this setting\n"
@@ -6221,9 +6174,12 @@ msgid ""
 "An empty value disables the metrics listener."
 msgstr ""
 "Prometheus-Lauschadresse.\n"
-"Falls Luanti mit der ENABLE_PROMETEUS-Option kompiliert wurde,\n"
-"wird dies den Metriklauscher für Prometheus auf dieser Adresse aktivieren.\n"
-"Metriken können von http://127.0.0.1:30000/metrics abgegriffen werden."
+"Falls Luanti mit Prometheus-Unterstützung kompiliert wurde,\n"
+"wird diese Einstellung den Metriklauscher für Prometheus an dieser Adresse "
+"aktivieren.\n"
+"Standardmäßig können Metriken von http://127.0.0.1:30000/metrics abgegriffen "
+"werden.\n"
+"Ein leerer Wert deaktiviert den Metriklauscher."
 
 #: src/settings_translation_file.cpp
 msgid "Proportion of large caves that contain liquid."
@@ -6239,19 +6195,19 @@ msgstr "Schlaggeste"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: decrement value"
-msgstr ""
+msgstr "Quicktune: Wert verringern"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: increment value"
-msgstr ""
+msgstr "Quicktune: Wert erhöhen"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select next entry"
-msgstr ""
+msgstr "Quicktune: Nächsten Eintrag auswählen"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select previous entry"
-msgstr ""
+msgstr "Quicktune: Vorherigen Eintrag auswählen"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7174,7 +7130,6 @@ msgstr ""
 "Der Dateipfad relativ zu Ihrem Weltpfad, in dem Profile abgespeichert werden."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "The gesture for punching players/entities.\n"
 "This can be overridden by games and mods.\n"
@@ -7189,12 +7144,12 @@ msgstr ""
 "Die Geste für das Schlagen von Spielern/Entitys.\n"
 "Dies kann von Spielen und Mods überschrieben werden.\n"
 "\n"
-"* short_tap\n"
+"* Kurzes Antippen\n"
 "Leicht zu benutzen und bekannt aus anderen Spielen, die nicht genannt werden "
 "sollen.\n"
 "\n"
-"* long_tap\n"
-"Bekannt aus der klassischen Luanti-Touchscreen-Steuerung.\n"
+"* Langes Antippen\n"
+"Bekannt aus der klassischen Luanti-Mobil-Steuerung.\n"
 "Kämpfen ist mehr oder weniger unmöglich."
 
 #: src/settings_translation_file.cpp
@@ -7217,6 +7172,19 @@ msgid ""
 "Use dedicated dig/place buttons to interact.\n"
 "Interaction happens at crosshair position."
 msgstr ""
+"Die Art der verwendeten Grabe-/Platzierungssteuerung.\n"
+"\n"
+"* Antippen\n"
+"Irgendwo auf den Bildschirm lang/kurz Antippen zum Interagieren.\n"
+"Die Interaktion passiert an der Fingerposition.\n"
+"\n"
+"* Antippen mit Fadenkreuz\n"
+"Irgendwo auf den Bildschirm lang/kurz Antippen zum Interagieren.\n"
+"Die Interaktion passiert an der Fadenkreuzposition.\n"
+"\n"
+"* Knöpfe mit Fadenkreuz\n"
+"Eigenständige Grabe-/Platzierungsbuttons für die Interaktion benutzen.\n"
+"Die Interaktion passiert an der Fadenkreuzposition."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7408,66 +7376,56 @@ msgstr ""
 "verlangsamt werden, nachdem ein Block platziert oder entfernt wurde."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Aux1 key"
-msgstr "Aux1-Taste"
+msgstr "Aux1-Taste umschalten"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle HUD"
 msgstr "HUD an/aus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Sneak key"
-msgstr "Kameraauswahltaste"
+msgstr "Schleichtaste umschalten"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle automatic forward"
-msgstr "Vorwärtsautomatiktaste"
+msgstr "Vorwärtsautomatik umschalten"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle block bounds"
-msgstr "Blockgrenzen"
+msgstr "Blockgrenzen umschalten"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle camera mode"
-msgstr "Kameraauswahltaste"
+msgstr "Kameramodus wechseln"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle camera update"
-msgstr "Kameraauswahltaste"
+msgstr "Kameraaktualisierung umschalten"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle cinematic mode"
 msgstr "Filmmodus umschalten"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle debug info"
-msgstr "Debug an/aus"
+msgstr "Debugmodus umschalten"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle fog"
 msgstr "Nebel an/aus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle fullscreen"
-msgstr "Flugmodus"
+msgstr "Vollbild umschalten"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle pitchmove"
 msgstr "Nickbewegung"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle profiler"
-msgstr "Flugmodus"
+msgstr "Profiler umschalten"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -8003,7 +7961,6 @@ msgid "World start time"
 msgstr "Weltstartzeit"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "World-aligned textures may be scaled to span several nodes. However,\n"
 "the server may not send the scale you want, especially if you use\n"
