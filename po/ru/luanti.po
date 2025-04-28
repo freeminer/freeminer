@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Russian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-04-26 11:03+0000\n"
-"Last-Translator: Romeostar <contactromeostar@mail.ru>\n"
+"PO-Revision-Date: 2025-04-29 03:21+0000\n"
+"Last-Translator: \"Alex Maryson Jr.\" <akamar87@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/minetest/"
 "minetest/ru/>\n"
 "Language: ru\n"
@@ -4735,14 +4735,19 @@ msgid "Key for decreasing the volume."
 msgstr "Клавиша уменьшения громкости."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Key for decrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Клавиша для уменьшения выбранного значения в QuickTune."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "Key for digging, punching or using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Клавиша для копания, удара или использования чего-либо.\n"
+"\n"
+"(Примечание: фактическое значение может варьироваться в зависимости от игры.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for dropping the currently selected item."
@@ -4757,8 +4762,9 @@ msgid "Key for increasing the volume."
 msgstr "Клавиша увеличения громкости."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Key for incrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Клавиша для увеличения выбранного значения в QuickTune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for jumping."
@@ -4797,8 +4803,9 @@ msgid "Key for opening the chat window to type commands."
 msgstr "Клавиша открытия чата для ввода комманд."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Key for opening the chat window to type local commands."
-msgstr ""
+msgstr "Клавиша открытия окна чата для ввода локальных команд."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window."
@@ -4968,12 +4975,14 @@ msgid "Key for switching between first- and third-person camera."
 msgstr "Клавиша для переключения между камерой от первого и от третьего лица."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Key for switching to the next entry in Quicktune."
-msgstr ""
+msgstr "Клавиша для перехода на следующую запись в QuickTune."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Key for switching to the previous entry in Quicktune."
-msgstr ""
+msgstr "Клавиша для перехода на предыдущую запись в QuickTune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for taking screenshots."
@@ -5042,8 +5051,11 @@ msgid "Key for toggling the display of the large chat console."
 msgstr "Клавиша включения большой чат-консоли."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
+"Клавиша для переключения отображения профилировщика. Используется для "
+"разработки."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling unlimited view range."
