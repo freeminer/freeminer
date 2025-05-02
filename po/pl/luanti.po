@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Polish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-01-27 22:03+0000\n"
-"Last-Translator: Mateusz Mendel <mendelm9@gmail.com>\n"
+"PO-Revision-Date: 2025-05-04 20:14+0000\n"
+"Last-Translator: Karol1165 <kutkarol1165@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/minetest/minetest/"
 "pl/>\n"
 "Language: pl\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -91,9 +91,8 @@ msgid "Edit"
 msgstr "Edytuj"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Przypisanie klawiszy."
+msgstr "Usuń przypisanie klawiszy"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -260,7 +259,7 @@ msgstr "Ogólne"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Długie przytrzymanie"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -285,7 +284,7 @@ msgstr "Wyszukaj"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Krótkie dotknięcie"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -572,7 +571,7 @@ msgstr "Przekaż darowiznę"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
-msgstr ""
+msgstr "Błąd przy ładowaniu informacji o pakiecie"
 
 #: builtin/mainmenu/content/dlg_package.lua
 #, fuzzy
@@ -657,6 +656,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Gracze połączeni do\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -1026,16 +1027,17 @@ msgid "Expand all"
 msgstr "Włącz wszystkie"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
+#, fuzzy
 msgid "Group by prefix"
-msgstr ""
+msgstr "Grupuj poprzez prefiks"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses a game called $2 and the following mods:"
-msgstr ""
+msgstr "Serwer $1 używa gry nazwanej $2 i następujących modów:"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses the following mods:"
-msgstr ""
+msgstr "Serwer $1 używa następujących modyfikacji:"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "A new $1 version is available"
@@ -1249,9 +1251,8 @@ msgid "You need to install a game before you can create a world."
 msgstr "Musisz zainstalować grę, zanim będziesz mógł stworzyć świat."
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Add favorite"
-msgstr "Usuń z ulubionych"
+msgstr "Dodaj do ulubionych"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Address"
@@ -1271,9 +1272,8 @@ msgid "Favorites"
 msgstr "Ulubione"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Game: $1"
-msgstr "Gra"
+msgstr "Gra: $1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Incompatible Servers"
@@ -1288,25 +1288,24 @@ msgid "Login"
 msgstr "Zaloguj się"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Number of mods: $1"
-msgstr "Liczba powstających wątków"
+msgstr "Liczba modyfikacji: $1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Open server website"
-msgstr "Krok serwera dedykowanego"
+msgstr "Otwórz stronę internetową serwera"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
 msgstr "Ping"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid ""
 "Players:\n"
 "$1"
-msgstr "Klient"
+msgstr ""
+"Gracze:\n"
+"$1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid ""
@@ -1315,6 +1314,10 @@ msgid ""
 "mod:<name>\n"
 "player:<name>"
 msgstr ""
+"Możliwe filtry\n"
+"game:<nazwa>\n"
+"mod:<nazwa>\n"
+"player:<nazwa>"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1410,9 +1413,8 @@ msgid "Access denied. Reason: %s"
 msgstr "Odmowa dostępu. Powód: %s"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "All debug info hidden"
-msgstr "Informacje debugu widoczne"
+msgstr "Wszystkie informacje debugowania ukryte"
 
 #: src/client/game.cpp
 msgid "Automatic forward disabled"
@@ -2113,9 +2115,8 @@ msgid "Failed to compile the \"%s\" shader."
 msgstr "Nie udało się skompilować shadera \"%s\"."
 
 #: src/client/shader.cpp
-#, fuzzy
 msgid "GLSL is not supported by the driver"
-msgstr "Shadery są włączone, ale GLSL nie jest wspierany przez sterownik."
+msgstr "GLSL nie jest wspierany przez sterownik"
 
 #. ~ Error when a mod is missing dependencies. Ex: "Mod Title is missing: mod1, mod2, mod3"
 #: src/content/mod_configuration.cpp
@@ -2143,9 +2144,8 @@ msgid "Some mods have unsatisfied dependencies:"
 msgstr "Niektóre modyfikacje mają niespełnione zależności:"
 
 #: src/gui/guiButtonKey.h
-#, fuzzy
 msgid "Press Button"
-msgstr "Lewy przycisk myszy"
+msgstr "Naciśnij przycisk"
 
 #: src/gui/guiChatConsole.cpp
 msgid "Failed to open webpage"
@@ -2197,9 +2197,8 @@ msgid "Sound Volume: %d%%"
 msgstr "Głośność: %d%%"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Add button"
-msgstr "Środkowy przycisk myszy"
+msgstr "Dodaj przycisk"
 
 #: src/gui/touchscreeneditor.cpp
 #, fuzzy
@@ -2207,13 +2206,12 @@ msgid "Done"
 msgstr "Gotowe!"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Remove"
-msgstr "Serwer zdalny"
+msgstr "Usuń"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Reset"
-msgstr ""
+msgstr "Resetuj"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Start dragging a button to add. Tap outside to cancel."
@@ -2225,7 +2223,7 @@ msgstr ""
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap outside to deselect."
-msgstr ""
+msgstr "Naciśnij na zewnątrz, aby anulować wybór"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Aux1"
@@ -2237,7 +2235,7 @@ msgstr "Zmień kamerę"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Dig/punch/use"
-msgstr ""
+msgstr "Kop/uderz/użyj"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
@@ -2261,9 +2259,8 @@ msgid "Overflow menu"
 msgstr ""
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Place/use"
-msgstr "Klawisz latania"
+msgstr "Postaw/użyj"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Range select"
@@ -2311,15 +2308,12 @@ msgstr ""
 "wyniku niespodziewanego błędu, spróbuj jeszcze raz za minutę."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Empty passwords are disallowed.  Set a password and try again."
-msgstr ""
-"Puste pola z hasłami są niedozwolone.  Ustaw hasło i spróbuj jeszcze raz."
+msgstr "Puste hasła są niedozwolone.  Ustaw hasło i spróbuj jeszcze raz."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Internal server error"
-msgstr "Błąd serwera wewnętrznego"
+msgstr "Wewnętrzny błąd serwera"
 
 #: src/network/clientpackethandler.cpp
 msgid "Invalid password"
@@ -2364,18 +2358,15 @@ msgid ""
 msgstr "Serwer napotkał błąd wewnętrzny.   Zostaniesz teraz rozłączony."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "The server is running in singleplayer mode.  You cannot connect."
 msgstr ""
 "Serwer działa w trybie dla pojedynczego gracza.   Nie możesz się połączyć."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Too many users"
 msgstr "Zbyt wielu użytkowników"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Unknown disconnect reason."
 msgstr "Nieznana przyczyna rozłączenia użytkownika."
 
@@ -2696,12 +2687,10 @@ msgid "Antialiasing method"
 msgstr "Metoda antyaliasingu"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Anticheat flags"
 msgstr "Flagi anticheata"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Anticheat movement tolerance"
 msgstr "Tolerancja ruchu anticheata"
 
@@ -2861,9 +2850,8 @@ msgid "Biome noise"
 msgstr "Szum biomu"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Block bounds HUD radius"
-msgstr "Zasięg granic bloków HUD"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Block cull optimize distance"
@@ -3018,9 +3006,8 @@ msgid "Client"
 msgstr "Klient"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client Debugging"
-msgstr "Debugowanie"
+msgstr "Debugowanie klienta"
 
 #: src/settings_translation_file.cpp
 msgid "Client Mesh Chunksize"
@@ -3064,7 +3051,7 @@ msgstr "Chmury w menu"
 
 #: src/settings_translation_file.cpp
 msgid "Color depth for post-processing texture"
-msgstr ""
+msgstr "Głębia koloru dla przetwarzania tekstury"
 
 #: src/settings_translation_file.cpp
 msgid "Colored fog"
@@ -4811,11 +4798,11 @@ msgstr "Szybkość skoku"
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the viewing range."
-msgstr ""
+msgstr "Klawisz do zmniejszania zasięgu widzenia."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the volume."
-msgstr ""
+msgstr "Klawisz do zmniejszania głośności."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decrementing the selected value in Quicktune."
@@ -4829,15 +4816,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Key for dropping the currently selected item."
-msgstr ""
+msgstr "Klawisz do wyrzucania aktualnie wybranego przedmiotu."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the viewing range."
-msgstr ""
+msgstr "Klawisz do zwiększenia zasięgu widzenia."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the volume."
-msgstr ""
+msgstr "Klawisz do zwiększenia głośności."
 
 #: src/settings_translation_file.cpp
 msgid "Key for incrementing the selected value in Quicktune."
@@ -4876,23 +4863,23 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Key for muting the game."
-msgstr ""
+msgstr "Klawisz do wyciszenia gry."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type commands."
-msgstr ""
+msgstr "Klawisz do otwierania czatu, aby wpisać komendę."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type local commands."
-msgstr ""
+msgstr "Klawisz do otwierania czatu, aby wpisać lokalne komendy."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window."
-msgstr ""
+msgstr "Klawisz do otwierania czatu."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the inventory."
-msgstr ""
+msgstr "Klawisz do otwierania ekwipunku."
 
 #: src/settings_translation_file.cpp
 msgid ""
