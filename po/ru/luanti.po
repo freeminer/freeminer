@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Russian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-04-29 03:21+0000\n"
-"Last-Translator: \"Alex Maryson Jr.\" <akamar87@gmail.com>\n"
+"PO-Revision-Date: 2025-05-03 05:01+0000\n"
+"Last-Translator: Nana_M <sab.pyrope@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/minetest/"
 "minetest/ru/>\n"
 "Language: ru\n"
@@ -4735,18 +4735,15 @@ msgid "Key for decreasing the volume."
 msgstr "Клавиша уменьшения громкости."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for decrementing the selected value in Quicktune."
-msgstr "Клавиша для уменьшения выбранного значения в QuickTune."
+msgstr "Клавиша для уменьшения выбранного значения в Quicktune."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Key for digging, punching or using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
 "Клавиша для копания, удара или использования чего-либо.\n"
-"\n"
 "(Примечание: фактическое значение может варьироваться в зависимости от игры.)"
 
 #: src/settings_translation_file.cpp
@@ -4762,9 +4759,8 @@ msgid "Key for increasing the volume."
 msgstr "Клавиша увеличения громкости."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for incrementing the selected value in Quicktune."
-msgstr "Клавиша для увеличения выбранного значения в QuickTune."
+msgstr "Клавиша для увеличения выбранного значения в Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for jumping."
@@ -4803,7 +4799,6 @@ msgid "Key for opening the chat window to type commands."
 msgstr "Клавиша открытия чата для ввода комманд."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for opening the chat window to type local commands."
 msgstr "Клавиша открытия окна чата для ввода локальных команд."
 
@@ -4975,14 +4970,12 @@ msgid "Key for switching between first- and third-person camera."
 msgstr "Клавиша для переключения между камерой от первого и от третьего лица."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for switching to the next entry in Quicktune."
-msgstr "Клавиша для перехода на следующую запись в QuickTune."
+msgstr "Клавиша для перехода к следующей записи в Quicktune."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for switching to the previous entry in Quicktune."
-msgstr "Клавиша для перехода на предыдущую запись в QuickTune."
+msgstr "Клавиша для перехода к предыдущей записи в Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for taking screenshots."
@@ -5051,7 +5044,6 @@ msgid "Key for toggling the display of the large chat console."
 msgstr "Клавиша включения большой чат-консоли."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
 "Клавиша для переключения отображения профилировщика. Используется для "
@@ -5063,7 +5055,7 @@ msgstr "Клавиша включения неограниченной даль�
 
 #: src/settings_translation_file.cpp
 msgid "Key to use view zoom when possible."
-msgstr ""
+msgstr "Клавиша для использования зума, когда возможно."
 
 #: src/settings_translation_file.cpp
 msgid "Keybindings"
@@ -5588,6 +5580,10 @@ msgid ""
 "won't be deleted, depending on the current view range.\n"
 "Set to -1 for no limit."
 msgstr ""
+"Максимальное число мапблоков для хранения в памяти клиента.\n"
+"Учтите, что есть внутренний динамический минимум блоков, которые\n"
+"не будут удалены, в зависимости от текущей дальности прорисовки.\n"
+"Установите на -1, чтобы убрать лимит."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5630,17 +5626,15 @@ msgid "Maximum simultaneous block sends per client"
 msgstr "Максимум одновременно отправляемых мапблоков на клиент"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Maximum size of the client's outgoing chat queue"
-msgstr "Максимальный размер очереди исходящих сообщений в чате"
+msgstr "Максимальный размер очереди исходящих сообщений клиента в чате"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Maximum size of the client's outgoing chat queue.\n"
 "0 to disable queueing and -1 to make the queue size unlimited."
 msgstr ""
-"Максимальный размер очереди исходящих сообщений в чате.\n"
+"Максимальный размер очереди исходящих сообщений в чате для клиента.\n"
 "0 для отключения очереди и -1 для неограниченного размера."
 
 #: src/settings_translation_file.cpp
@@ -6069,7 +6063,6 @@ msgid "Prometheus listener address"
 msgstr "Адрес прослушивания Prometheus"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Prometheus listener address.\n"
 "If Luanti is compiled with Prometheus support, this setting\n"
@@ -6078,9 +6071,10 @@ msgid ""
 "An empty value disables the metrics listener."
 msgstr ""
 "Адрес прослушивания Prometheus.\n"
-"Если Luanti скомпилирован с опцией ENABLE_PROMETHEUS,\n"
-"включить прослушивание метрик для Prometheus по этому адресу.\n"
-"Метрики можно получить на http://127.0.0.1:30000/metrics"
+"Если Luanti скомпилирован с поддержкой Prometheus, эта опция\n"
+"включит прослушивание метрик на данном адресе.\n"
+"По умолчанию, вы можете получить метрики с http://127.0.0.1:30000/metrics.\n"
+"Пустое значение отключает прослушивание метрик."
 
 #: src/settings_translation_file.cpp
 msgid "Proportion of large caves that contain liquid."
@@ -6096,19 +6090,19 @@ msgstr "Жест для удара"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: decrement value"
-msgstr ""
+msgstr "Quicktune: уменьшить значение"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: increment value"
-msgstr ""
+msgstr "Quicktune: увеличить значение"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select next entry"
-msgstr ""
+msgstr "Quicktune: выбрать следующую запись"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select previous entry"
-msgstr ""
+msgstr "Quicktune: выбрать предыдущую запись"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7022,7 +7016,6 @@ msgstr ""
 "Путь к файлу, куда будут сохранены профили, относительно пути к вашему миру."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "The gesture for punching players/entities.\n"
 "This can be overridden by games and mods.\n"
@@ -7034,16 +7027,16 @@ msgid ""
 "Known from the classic Luanti mobile controls.\n"
 "Combat is more or less impossible."
 msgstr ""
-"Жест, обозначающий удар по игроку/объекту.\n"
-"Его можно изменить в играх и модах.\n"
+"Жест для удара по игрокам/объектам.\n"
+"Он может быть перезаписан играми и модами.\n"
 "\n"
-"* короткий удар\n"
-"Прост в использовании и хорошо известен по другим играм, названия которых не "
-"указываются.\n"
+"* Короткое касание\n"
+"Просто в использовании и хорошо известно по другим играм, чьи названия не "
+"упоминают.\n"
 "\n"
-"* длинный удар\n"
-"Известен по классическому мобильному элементу управления Luanti.\n"
-"Сражение более или менее невозможно."
+"* Длинное касание\n"
+"Известно по классическому мобильному управлению Luanti.\n"
+"Сражаться будет почти невозможно."
 
 #: src/settings_translation_file.cpp
 msgid "The identifier of the joystick to use"
@@ -7065,6 +7058,19 @@ msgid ""
 "Use dedicated dig/place buttons to interact.\n"
 "Interaction happens at crosshair position."
 msgstr ""
+"Используемый вид управления для копания/установки.\n"
+"\n"
+"* Касание\n"
+"Длинное/короткое касание в любом месте экране для взаимодействия.\n"
+"Взаимодействие происходит на позиции пальца.\n"
+"\n"
+"* Касание с прицелом\n"
+"Длинное/короткое касание в любом месте экране для взаимодействия.\n"
+"Взаимодействие происходит на позиции прицела.\n"
+"\n"
+"* Кнопки с прицеломr\n"
+"Используйте отдельные кнопки копания/установки для взаимодействия.\n"
+"Взаимодействие происходит на позиции прицела."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7257,9 +7263,8 @@ msgid "Toggle HUD"
 msgstr "Вкл/откл интерфейс"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Sneak key"
-msgstr "Клавиша переключения режима камеры"
+msgstr "Клавиша переключения приседания"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle automatic forward"
@@ -7298,9 +7303,8 @@ msgid "Toggle pitchmove"
 msgstr "По наклону взгляда"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle profiler"
-msgstr "Режим полёта"
+msgstr "Переключить профилировщик"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7826,7 +7830,6 @@ msgid "World start time"
 msgstr "Начальное время мира"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "World-aligned textures may be scaled to span several nodes. However,\n"
 "the server may not send the scale you want, especially if you use\n"
@@ -7843,7 +7846,7 @@ msgstr ""
 "попытается\n"
 "определить масштаб самостоятельно, основываясь на размере текстур.\n"
 "См. также «texture_min_size».\n"
-"Предупреждение: Эта настройка является ЭКСПЕРИМЕНТАЛЬНОЙ!"
+"Предупреждение: эта настройка является ЭКСПЕРИМЕНТАЛЬНОЙ!"
 
 #: src/settings_translation_file.cpp
 msgid "World-aligned textures mode"
