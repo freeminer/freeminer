@@ -4,6 +4,8 @@ set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/flood_fill.cpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/earth/buildings.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/dungeongen.cpp

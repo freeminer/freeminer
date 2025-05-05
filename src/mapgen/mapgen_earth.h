@@ -72,6 +72,7 @@ struct maps_holder_t
 	concurrent_shared_map<std::string, osm_ptr> osm_by_path;
 	concurrent_shared_map<std::string, osm_ptr> osm_bbox;
 	std::mutex osm_http_lock;
+	std::mutex osm_extract_lock;
 };
 
 class MapgenEarth : public MapgenV7
