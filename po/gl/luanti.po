@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-04-11 20:33+0000\n"
+"PO-Revision-Date: 2025-05-10 13:03+0000\n"
 "Last-Translator: ninjum <ninhum@gmx.com>\n"
 "Language-Team: Galician <https://hosted.weblate.org/projects/minetest/"
 "minetest/gl/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -83,16 +83,15 @@ msgstr "Explorar"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "Conflitos con \"$1\""
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Editar"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Atallos de teclado."
+msgstr "Atallos de teclado"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -224,7 +223,7 @@ msgstr "Voltar"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Buttons with crosshair"
-msgstr ""
+msgstr "Botóns con punto de mira"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
@@ -259,7 +258,7 @@ msgstr "Xeral"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Toque longo"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -284,7 +283,7 @@ msgstr "Procurar"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Toque curto"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -301,7 +300,7 @@ msgstr "Tabulador"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap with crosshair"
-msgstr ""
+msgstr "Tocar coa mira"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -566,7 +565,7 @@ msgstr "Doar"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
-msgstr ""
+msgstr "Produciuse un erro ao cargar a información do paquete"
 
 #: builtin/mainmenu/content/dlg_package.lua
 #, fuzzy
@@ -591,7 +590,7 @@ msgstr "Rastrexador de Problemas"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Reviews"
-msgstr ""
+msgstr "Valoracións"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
@@ -652,6 +651,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Xogadores conectados a\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -2224,7 +2225,7 @@ msgstr "Cambiar cámara"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Dig/punch/use"
-msgstr ""
+msgstr "Escavar/perforar/usar"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
@@ -3550,6 +3551,10 @@ msgid ""
 "Note that clients will be able to connect with both IPv4 and IPv6.\n"
 "Ignored if bind_address is set."
 msgstr ""
+"Activar o soporte para IPv6 no servidor.\n"
+"Teña en conta que os clientes poderán conectarse tanto con IPv4 como con "
+"IPv6.\n"
+"Ignórase se se define bind_address."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4519,13 +4524,16 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "If enabled, the \"Aux1\" key will toggle when pressed."
-msgstr ""
+msgstr "Se está activada, a tecla \"Aux1\" alternará ao premela."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "If enabled, the \"Sneak\" key will toggle when pressed.\n"
 "This functionality is ignored when fly is enabled."
 msgstr ""
+"Se está activado, a tecla de “Agocharse” funcionará como interruptor ao ser "
+"premida.\n"
+"Esta funcionalidade ignórase se está activada a opción de voar."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4803,45 +4811,47 @@ msgstr "Velocidade de salto"
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the viewing range."
-msgstr ""
+msgstr "Tecla para diminuír o rango de visión."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decreasing the volume."
-msgstr ""
+msgstr "Tecla para baixar o volume."
 
 #: src/settings_translation_file.cpp
 msgid "Key for decrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Tecla para diminuír o valor seleccionado en Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for digging, punching or using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Tecla para escavar, golpear ou usar algo.\n"
+"(Nota: o significado exacto pode variar segundo o xogo.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for dropping the currently selected item."
-msgstr ""
+msgstr "Tecla para tirar o elemento seleccionado."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the viewing range."
-msgstr ""
+msgstr "Tecla para aumentar o rango de visión."
 
 #: src/settings_translation_file.cpp
 msgid "Key for increasing the volume."
-msgstr ""
+msgstr "Tecla para aumentar o volume."
 
 #: src/settings_translation_file.cpp
 msgid "Key for incrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Tecla para incrementar o valor seleccionado en Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for jumping."
-msgstr ""
+msgstr "Tecla para saltar."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving fast in fast mode."
-msgstr ""
+msgstr "Tecla para moverse rapidamente no modo rápido."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -4856,177 +4866,179 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player forward."
-msgstr ""
+msgstr "Tecla para mover o xogador cara adiante."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player left."
-msgstr ""
+msgstr "Tecla para mover o xogador á esquerda."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving the player right."
-msgstr ""
+msgstr "Tecla para mover o xogador á dereita."
 
 #: src/settings_translation_file.cpp
 msgid "Key for muting the game."
-msgstr ""
+msgstr "Tecla para silenciar o xogo."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type commands."
-msgstr ""
+msgstr "Tecla para abrir a xanela de chat e escribir comandos."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type local commands."
-msgstr ""
+msgstr "Tecla para abrir a xanela de chat e escribir comandos locais."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window."
-msgstr ""
+msgstr "Tecla para abrir a xanela de chat."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the inventory."
-msgstr ""
+msgstr "Tecla para abrir o inventario."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for placing an item/block or for using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Tecla para colocar un obxecto/bloque ou para usar algo.\n"
+"(Nota: o significado exacto pode variar segundo o xogo.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 11th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 11º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 12th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 12º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 13th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 13º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 14th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 14º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 15th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 15º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 16th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 16º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 17th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 17º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 18th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 18º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 19th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 19º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 20th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 20º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 21st hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 21º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 22nd hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 22º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 23rd hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 23º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 24th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 24º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 25th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 25º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 26th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 26º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 27th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 27º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 28th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 28º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 29th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 29º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 30th hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 30º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 31st hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 31º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the 32nd hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 32º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the eighth hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 8º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the fifth hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 5º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the first hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 1º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the fourth hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 4º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the next item in the hotbar."
-msgstr ""
+msgstr "Tecla para seleccionar o seguinte obxecto na barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the ninth hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 9º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the previous item in the hotbar."
-msgstr ""
+msgstr "Tecla para seleccionar o obxecto anterior na barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the second hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 2º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the seventh hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 7º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the sixth hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 6º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the tenth hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 10º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for selecting the third hotbar slot."
-msgstr ""
+msgstr "Tecla para seleccionar o 3º slot da barra de acceso rápido."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5043,15 +5055,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching between first- and third-person camera."
-msgstr ""
+msgstr "Tecla para cambiar entre a cámara en primeira e terceira persoa."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the next entry in Quicktune."
-msgstr ""
+msgstr "Tecla para cambiar á seguinte entrada en Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the previous entry in Quicktune."
-msgstr ""
+msgstr "Tecla para cambiar á entrada anterior en Quicktune."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5060,7 +5072,7 @@ msgstr "Formato das capturas de pantalla."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling autoforward."
-msgstr ""
+msgstr "Tecla para alternar o autoforward."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5069,15 +5081,15 @@ msgstr "Suavizado de cámara en modo cinematográfico"
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling display of minimap."
-msgstr ""
+msgstr "Tecla para alternar a visualización do minimapa."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling fast mode."
-msgstr ""
+msgstr "Tecla para alternar o modo rápido."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling flying."
-msgstr ""
+msgstr "Tecla para alternar o voo."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5086,43 +5098,47 @@ msgstr "Modo de pantalla completa."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling noclip mode."
-msgstr ""
+msgstr "Tecla para alternar o modo noclip."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling pitch move mode."
-msgstr ""
+msgstr "Tecla para alternar o modo de movemento de inclinación."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the camera update. Only usable with 'debug' privilege."
 msgstr ""
+"Tecla para alternar a actualización da cámara. Só se pode usar cun "
+"privilexio 'debug'."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of chat."
-msgstr ""
+msgstr "Tecla para alternar a visualización do chat."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of debug info."
-msgstr ""
+msgstr "Tecla para alternar a visualización da información de depuración."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of fog."
-msgstr ""
+msgstr "Tecla para alternar a visualización da néboa."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of mapblock boundaries."
-msgstr ""
+msgstr "Tecla para alternar a visualización das fronteiras dos bloques do mapa."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the HUD."
-msgstr ""
+msgstr "Tecla para alternar a visualización do HUD."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the large chat console."
-msgstr ""
+msgstr "Tecla para alternar a visualización da consola de chat grande."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
+"Tecla para alternar a visualización do perfilador. Usado para "
+"desenvolvemento."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5131,7 +5147,7 @@ msgstr "Campo de visión ilimitada desactivado"
 
 #: src/settings_translation_file.cpp
 msgid "Key to use view zoom when possible."
-msgstr ""
+msgstr "Tecla para usar o zoom da vista cando sexa posible."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5670,6 +5686,10 @@ msgid ""
 "won't be deleted, depending on the current view range.\n"
 "Set to -1 for no limit."
 msgstr ""
+"Número máximo de bloques do mapa que o cliente manterá na memoria.\n"
+"Teña en conta que existe un número mínimo interno dinámico de bloques que\n"
+"non se eliminarán, dependendo do rango de visión actual.\n"
+"Estableza a -1 para sen límite."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5859,7 +5879,7 @@ msgstr "Movemento"
 
 #: src/settings_translation_file.cpp
 msgid "Move right"
-msgstr ""
+msgstr "Mover á dereita"
 
 #: src/settings_translation_file.cpp
 msgid "Movement threshold"
@@ -6188,19 +6208,19 @@ msgstr "xesto de golpe"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: decrement value"
-msgstr ""
+msgstr "Quicktune: decrementa o valor"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: increment value"
-msgstr ""
+msgstr "Quicktune: incrementa o valor"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select next entry"
-msgstr ""
+msgstr "Quicktune: selecciona a seguinte entrada"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select previous entry"
-msgstr ""
+msgstr "Quicktune: selecciona a entrada anterior"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7166,6 +7186,19 @@ msgid ""
 "Use dedicated dig/place buttons to interact.\n"
 "Interaction happens at crosshair position."
 msgstr ""
+"O tipo de controis de escavado/colocación empregados.\n"
+"\n"
+"* Toque\n"
+"Toque longo/curto en calquera lugar da pantalla para interactuar.\n"
+"A interacción prodúcese na posición do dedo.\n"
+"\n"
+"* Tocar coa mira\n"
+"Toca longa/curta en calquera lugar da pantalla para interactuar.\n"
+"A interacción ocorre na posición da mira.\n"
+"\n"
+"* Botóns con mira\n"
+"Usa botóns específicos para escavar/colocar para interactuar.\n"
+"A interacción ocorre na posición da mira."
 
 #: src/settings_translation_file.cpp
 msgid ""
