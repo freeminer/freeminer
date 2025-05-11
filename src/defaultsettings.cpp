@@ -173,12 +173,21 @@ void fm_set_default_settings(Settings *settings) {
 	//settings->setDefault("enable_vbo", win ? "false" : "true");
 	settings->setDefault("light_ambient", "false");
 	if (!slow) {
-		settings->setDefault("enable_dynamic_shadows", "true");
-		settings->setDefault("shadow_map_color", "true");
-		//settings->setDefault("enable_bloom", "true");
+		for (const auto &name : {
+					 "enable_auto_exposure",
+					 "enable_bloom",
+					 "enable_dynamic_shadows",
+					 "enable_node_specular",
+					 "enable_translucent_foliage",
+					 "enable_volumetric_lighting",
+					 "enable_water_reflections",
+					 "shadow_map_color",
+			 }) {
+			settings->setDefault(name, "true");
+		}
 	}
 	//settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
-	settings->setDefault("client_mesh_chunk","1");
+	settings->setDefault("client_mesh_chunk", "1");
 
 	if (slow || android) {
 		settings->setDefault("translucent_liquids", "false");

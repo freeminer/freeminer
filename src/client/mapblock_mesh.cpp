@@ -747,9 +747,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 				material.PolygonOffsetDepthBias = -1;
 			}
 
-#if !FARMESH_SHADOWS
-		 if (data->far_step <= 0)
-#endif
 			{
 				material.MaterialType = m_shdrsrc->getShaderInfo(
 						p.layer.shader_id).material;
@@ -759,9 +756,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			scene::SMeshBuffer *buf = new scene::SMeshBuffer();
 			buf->Material = material;
 			if (p.layer.isTransparent() 
-#if !FARMESH_SHADOWS
 				&& data->far_step <= 0
-#endif
 			) {
 				buf->append(&p.vertices[0], p.vertices.size(), nullptr, 0);
 
@@ -781,7 +776,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			}
 			mesh->addMeshBuffer(buf);
 			buf->drop();
-
 		}
 
 		if (mesh) {

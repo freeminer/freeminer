@@ -1223,6 +1223,9 @@ void MeshBufListMaps::addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
 			auto &material = buf->getMaterial();
 			auto *rnd = driver->getMaterialRenderer(material.MaterialType);
 			bool transparent = rnd && rnd->isTransparent();
+			if (block_mesh->far_step) {
+				transparent = false;
+			}
 			if (!transparent)
 				add(buf, block_pos, layer);
 		}

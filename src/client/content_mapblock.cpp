@@ -522,7 +522,7 @@ u8 MapblockMeshGenerator::getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 same
 			(box.MinEdge.Z == -NODE_BOUNDARY ? 32 : 0);
 
 	u8 sametype_mask = 0;
-  if (data->fscale <= 1)
+    if (data->fscale <= 1)
 	if (cur_node.f->alpha == AlphaMode::ALPHAMODE_OPAQUE) {
 		// In opaque nodeboxes, faces on opposite sides can cancel
 		// each other out if there is a matching neighbor of the same type
@@ -1597,7 +1597,9 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			sametype_neighbors |= flag;
 
 		// mark neighbors that are simple solid blocks
-		if (nodedef->get(n2).drawtype == NDT_NORMAL)
+		if (nodedef->get(n2).drawtype == NDT_NORMAL 
+			|| data->far_step
+		)
 			solid_neighbors |= flag;
 
 		if (cur_node.f->node_box.type == NODEBOX_CONNECTED) {
@@ -1618,6 +1620,10 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			isTransparent = true;
 			break;
 		}
+	}
+
+	if (data->far_step) {
+		isTransparent = 0;
 	}
 
 	if (isTransparent) {
