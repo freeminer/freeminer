@@ -25,6 +25,15 @@
 #include <algorithm>
 #include "client/renderingengine.h"
 
+
+// fm:
+float ClientEnvironment::getLocalPlayerSpeedLength() const
+{
+	return m_local_player ? m_local_player->getSpeed().getLength() : 0;
+}
+// ===
+
+
 /*
 	ClientEnvironment
 */

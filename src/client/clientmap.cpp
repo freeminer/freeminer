@@ -369,7 +369,7 @@ private:
 void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 {
 	auto & m_drawlist = m_drawlist_0;
-	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 
@@ -892,7 +892,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	auto range_max = m_control.range_all ? FARMESH_LIMIT*2 : m_control.wanted_range.load(std::memory_order::relaxed);
 
-	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	const int maxq = 1000;
 
@@ -1371,7 +1371,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 {
 
 	auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
-	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ZoneScoped;
 
@@ -1823,7 +1823,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 {
 	auto &m_drawlist_shadow =
 			m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
-	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	bool is_transparent_pass = pass != scene::ESNRP_SOLID;
 	std::string prefix;
@@ -1966,7 +1966,7 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 
 	auto &m_drawlist_shadow =
 			!m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
-	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ScopeProfiler sp(g_profiler, "CM::updateDrawListShadow()", SPT_AVG);
 
@@ -2049,7 +2049,7 @@ void ClientMap::reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks
 void ClientMap::updateTransparentMeshBuffers()
 {
 	auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
-	const auto speedf = m_client->getEnv().getLocalPlayer()->getSpeed().getLength();
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ScopeProfiler sp(g_profiler, "CM::updateTransparentMeshBuffers", SPT_AVG);
 	u32 sorted_blocks = 0;
