@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Portuguese (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2024-09-08 12:09+0000\n"
-"Last-Translator: Davi Lopes <davilopes@systemli.org>\n"
+"PO-Revision-Date: 2025-05-12 16:41+0000\n"
+"Last-Translator: Felipe Amaral <contato.feamaral@gmail.com>\n"
 "Language-Team: Portuguese <https://hosted.weblate.org/projects/minetest/"
 "minetest/pt/>\n"
 "Language: pt\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.8-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -63,9 +63,8 @@ msgid "Command not available: "
 msgstr "Comando não disponível: "
 
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "Get help for commands (-t: output in chat)"
-msgstr "Obtenha ajuda para comandos"
+msgstr "Obtenha ajuda para comandos (-t: saída no chat)"
 
 #: builtin/common/chatcommands.lua
 msgid ""
@@ -75,9 +74,8 @@ msgstr ""
 "tudo."
 
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "[all | <cmd>] [-t]"
-msgstr "[all| <cmd>]"
+msgstr "[Tudo | <cmd>] [-t]"
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
@@ -85,16 +83,15 @@ msgstr "Navegar"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "Conflito com \"$1\""
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Editar"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Combinações de teclas."
+msgstr "Remover atalho"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -102,7 +99,7 @@ msgstr "Selecione o diretório"
 
 #: builtin/common/settings/components.lua
 msgid "Select file"
-msgstr "Selecione o ficheiro"
+msgstr "Selecione o arquivo"
 
 #: builtin/common/settings/components.lua
 msgid "Set"
@@ -195,19 +192,16 @@ msgid "eased"
 msgstr "amenizado"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "(The game will need to enable automatic exposure as well)"
-msgstr "(O jogo precisará habilitar sombras também)"
+msgstr "(O jogo precisará habilitar a exposição automática também)"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "(The game will need to enable bloom as well)"
-msgstr "(O jogo precisará habilitar sombras também)"
+msgstr "(O jogo precisará habilitar o bloom também)"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "(The game will need to enable volumetric lighting as well)"
-msgstr "(O jogo precisará habilitar sombras também)"
+msgstr "(O jogo precisará habilitar a iluminação volumétrica também)"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "(Use system language)"
@@ -219,7 +213,7 @@ msgstr "Acessibilidade"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Auto"
-msgstr ""
+msgstr "Automático"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
@@ -229,7 +223,7 @@ msgstr "Voltar"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Buttons with crosshair"
-msgstr ""
+msgstr "Botões com mira"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
@@ -264,7 +258,7 @@ msgstr "Em geral"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Toque longo"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -289,7 +283,7 @@ msgstr "Procurar"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Toque curto"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -300,18 +294,16 @@ msgid "Show technical names"
 msgstr "Mostrar nomes técnicos"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Tap"
-msgstr "Tabulação"
+msgstr "Toque"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap with crosshair"
-msgstr ""
+msgstr "Toque com mira"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Touchscreen layout"
-msgstr "Tela sensível ao toque"
+msgstr "Layout para tela sensível ao toque"
 
 #: builtin/common/settings/settingtypes.lua
 msgid "Client Mods"
@@ -326,12 +318,10 @@ msgid "Content: Mods"
 msgstr "Conteúdo: Mods"
 
 #: builtin/common/settings/shadows_component.lua
-#, fuzzy
 msgid "(The game will need to enable shadows as well)"
-msgstr "(O jogo precisará habilitar sombras também)"
+msgstr "(O jogo precisará habilitar as sombras também)"
 
 #: builtin/common/settings/shadows_component.lua
-#, fuzzy
 msgid "Custom"
 msgstr "Personalizado"
 
@@ -421,11 +411,12 @@ msgid "Failed to download $1"
 msgstr "Falhou em descarregar $1"
 
 #: builtin/mainmenu/content/contentdb.lua
-#, fuzzy
 msgid ""
 "Failed to extract \"$1\" (insufficient disk space, unsupported file type or "
 "broken archive)"
-msgstr "Erro na extração: \"$1\" (Tipo de arquivo não suportado ou corrompido)"
+msgstr ""
+"Falha ao extrair \"$1\" (Espaço em disco insuficiente, tipo de arquivo não "
+"suportado ou arquivo corrompido)"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid ""
@@ -441,12 +432,11 @@ msgstr "A descarregar $1..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "All"
-msgstr ""
+msgstr "Tudo"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#, fuzzy
 msgid "ContentDB is not available when Luanti was compiled without cURL"
-msgstr "ContentDB não está disponível quando Minetest é compilado sem cURL"
+msgstr "ContentDB não está disponível quando Luanti foi compilado sem cURL"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Downloading..."
@@ -454,7 +444,7 @@ msgstr "A descarregar..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Featured"
-msgstr ""
+msgstr "Destaque"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Games"
@@ -484,7 +474,6 @@ msgid "Queued"
 msgstr "Enfileirado"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#, fuzzy
 msgid "Texture Packs"
 msgstr "Pacotes de texturas"
 
@@ -526,9 +515,8 @@ msgid "Dependencies:"
 msgstr "Dependências:"
 
 #: builtin/mainmenu/content/dlg_install.lua
-#, fuzzy
 msgid "Error getting dependencies for package $1"
-msgstr "Erro ao obter as dependências do pacote"
+msgstr "Erro ao obter as dependências do pacote $1"
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Install"
@@ -563,57 +551,53 @@ msgid "Overwrite"
 msgstr "Sobrescrever"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "ContentDB page"
-msgstr "Url do ContentDB"
+msgstr "página do ContentDB"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Description"
-msgstr "Descrição do servidor"
+msgstr "Descrição"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Donate"
-msgstr ""
+msgstr "Doação"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
-msgstr ""
+msgstr "Erro ao carregar informação do pacote"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Error loading reviews"
-msgstr "A criar cliente: %s"
+msgstr "Erro ao carregar avaliações"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
-msgstr ""
+msgstr "Tópico do Fórum"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Information"
-msgstr "Informação:"
+msgstr "Informação"
+
+#: builtin/mainmenu/content/dlg_package.lua
+msgid "Install [$1]"
+msgstr "Instalar [$1]"
 
 #: builtin/mainmenu/content/dlg_package.lua
 #, fuzzy
-msgid "Install [$1]"
-msgstr "Instalar $1"
-
-#: builtin/mainmenu/content/dlg_package.lua
 msgid "Issue Tracker"
-msgstr ""
+msgstr "Rastreador de problemas"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Reviews"
-msgstr ""
+msgstr "Avaliações"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
-msgstr ""
+msgstr "Fonte"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Translate"
-msgstr ""
+msgstr "Traduzir"
 
 #: builtin/mainmenu/content/dlg_package.lua builtin/mainmenu/tab_content.lua
 msgid "Uninstall"
@@ -624,13 +608,12 @@ msgid "Update"
 msgstr "Atualizar"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Website"
-msgstr "Visite o website"
+msgstr "Website"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "by $1  —  $2 downloads  —  +$3 / $4 / -$5"
-msgstr ""
+msgstr "por $1 — $2 downloads — +$3 / $4 / -$5"
 
 #: builtin/mainmenu/content/pkgmgr.lua
 msgid "$1 (Enabled)"
@@ -666,6 +649,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Jogadores conectados\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -793,6 +778,8 @@ msgid ""
 "Different dungeon variant generated in desert biomes (only if dungeons "
 "enabled)"
 msgstr ""
+"Variante de masmorras diferente gerada em biomas do deserto (apenas se as "
+"masmorras estiverem habilitadas)"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Dungeons"
@@ -986,14 +973,13 @@ msgid "Dismiss"
 msgstr "Ignorar"
 
 #: builtin/mainmenu/dlg_reinstall_mtg.lua
-#, fuzzy
 msgid ""
 "For a long time, Luanti shipped with a default game called \"Minetest "
 "Game\". Since version 5.8.0, Luanti ships without a default game."
 msgstr ""
-"Por muito tempo, a engine Minetest foi publicada com um jogo padrão chamado "
-"\"Minetest Game\". Desde o Minetest 5.8.0, Minetest agora é publicado sem um "
-"jogo padrão."
+"Por muito tempo, Luanti foi publicada com um jogo padrão chamado "
+"\"Minetest Game\". Desde a versão 5.8.0, Luanti é publicado sem um jogo "
+"padrão."
 
 #: builtin/mainmenu/dlg_reinstall_mtg.lua
 msgid ""
@@ -1028,21 +1014,20 @@ msgstr ""
 "sobrescrever qualquer renomeio aqui."
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
-#, fuzzy
 msgid "Expand all"
-msgstr "Ativar tudo"
+msgstr "Expandir tudo"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "Group by prefix"
-msgstr ""
+msgstr "Agrupar por prefixo"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses a game called $2 and the following mods:"
-msgstr ""
+msgstr "O servidor $1 usa um jogo chamado $2 e os seguintes mods:"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "The $1 server uses the following mods:"
-msgstr ""
+msgstr "O servidor $1 usa os seguintes mods:"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "A new $1 version is available"
@@ -1207,18 +1192,16 @@ msgid "Install games from ContentDB"
 msgstr "Instalar jogos do ContentDB"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Luanti doesn't come with a game by default."
-msgstr "Minetest Game não vem mais instalado por padrão"
+msgstr "Luanti não vem com um jogo instalado por padrão"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid ""
 "Luanti is a game-creation platform that allows you to play many different "
 "games."
 msgstr ""
-"O Minetest é um plataforma de criação de jogos que permite você jogar muitos "
-"jogos diferentes."
+"Luanti é uma plataforma de criação de jogos que permite jogar muitos jogos "
+"diferentes."
 
 #: builtin/mainmenu/tab_local.lua
 msgid "New"
@@ -1253,14 +1236,12 @@ msgid "Start Game"
 msgstr "Iniciar o jogo"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "You need to install a game before you can create a world."
-msgstr "Você precisa instalar um jogo antes de poder instalar um mod"
+msgstr "Você precisa instalar um jogo antes de poder criar um mundo."
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Add favorite"
-msgstr "Remover favorito"
+msgstr "Adicionar favorito"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Address"
@@ -1280,9 +1261,8 @@ msgid "Favorites"
 msgstr "Favoritos"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Game: $1"
-msgstr "Jogo"
+msgstr "Jogo: $1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Incompatible Servers"
@@ -1297,25 +1277,24 @@ msgid "Login"
 msgstr "Login"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Number of mods: $1"
-msgstr "Número de seguimentos de emersão"
+msgstr "Número de mods: $1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Open server website"
-msgstr "Intervalo de atualização do servidor"
+msgstr "Abrir site do servidor"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
 msgstr "Ping"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid ""
 "Players:\n"
 "$1"
-msgstr "Cliente"
+msgstr ""
+"Jogadores:\n"
+"$1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid ""
@@ -1324,6 +1303,10 @@ msgid ""
 "mod:<name>\n"
 "player:<name>"
 msgstr ""
+"Filtros possíveis\n"
+"jogo: <nome>\n"
+"mod:<nome>\n"
+"jogador: <nome>"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1419,9 +1402,8 @@ msgid "Access denied. Reason: %s"
 msgstr "Acesso negado. Razão:%s"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "All debug info hidden"
-msgstr "Informação de debug mostrada"
+msgstr "Todas as informações de depuração escondidas"
 
 #: src/client/game.cpp
 msgid "Automatic forward disabled"
@@ -1445,7 +1427,7 @@ msgstr "Limites de bloco mostrados para blocos próximos"
 
 #: src/client/game.cpp
 msgid "Bounding boxes shown"
-msgstr ""
+msgstr "Caixas de contorno visíveis"
 
 #: src/client/game.cpp
 msgid "Camera update disabled"
@@ -1542,9 +1524,8 @@ msgid "Fog enabled"
 msgstr "Névoa habilitada"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fog enabled by game or mod"
-msgstr "Zoom atualmente desativado por jogo ou mod"
+msgstr "Neblina habilitado pelo jogo ou mod"
 
 #: src/client/game.cpp
 msgid "Item definitions..."
@@ -1634,28 +1615,27 @@ msgid "Unable to listen on %s because IPv6 is disabled"
 msgstr "Incapaz de escutar em%s porque IPv6 está desativado"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Unlimited viewing range disabled"
-msgstr "Alcance de visualização ilimitado ativado"
+msgstr "Alcance ilimitado de visão desabilitado"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Unlimited viewing range enabled"
-msgstr "Alcance de visualização ilimitado ativado"
+msgstr "Alcance ilimitado de visão habilitado"
 
 #: src/client/game.cpp
 msgid "Unlimited viewing range enabled, but forbidden by game or mod"
-msgstr ""
+msgstr "Alcance ilimitado de visão habilitado, mas proibido pelo jogo ou mod"
 
 #: src/client/game.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Viewing changed to %d (the minimum)"
-msgstr "Distancia de visualização está no mínimo: %d"
+msgstr "Visualização alterada para %d (o mínimo)"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing changed to %d (the minimum), but limited to %d by game or mod"
 msgstr ""
+"Visualização alterada para %d (o mínimo), mas limitada em %d pelo jogo ou mod"
 
 #: src/client/game.cpp
 #, c-format
@@ -1663,20 +1643,22 @@ msgid "Viewing range changed to %d"
 msgstr "Distância de visualização alterado para %d"
 
 #: src/client/game.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Viewing range changed to %d (the maximum)"
-msgstr "Distância de visualização alterado para %d"
+msgstr "Alcance de visão alterado para %d (o máximo)"
 
 #: src/client/game.cpp
 #, c-format
 msgid ""
 "Viewing range changed to %d (the maximum), but limited to %d by game or mod"
 msgstr ""
+"O alcance de visão alterado para %d (o máximo), mas limitado a %d por jogo "
+"ou mod"
 
 #: src/client/game.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Viewing range changed to %d, but limited to %d by game or mod"
-msgstr "Distância de visualização alterado para %d"
+msgstr "Alcance de visão alterado para %d, mas limitado em %d pelo jogo ou mod"
 
 #: src/client/game.cpp
 #, c-format
@@ -1685,7 +1667,7 @@ msgstr "Som alterado para %d%%"
 
 #: src/client/game.cpp
 msgid "Wireframe not supported by video driver"
-msgstr ""
+msgstr "Wireframe não suportado pelo driver de vídeo"
 
 #: src/client/game.cpp
 msgid "Wireframe shown"
@@ -1721,7 +1703,6 @@ msgid "Continue"
 msgstr "Continuar"
 
 #: src/client/game_formspec.cpp
-#, fuzzy
 msgid ""
 "Controls:\n"
 "No menu open:\n"
@@ -1736,18 +1717,18 @@ msgid ""
 "- touch&drag, tap 2nd finger\n"
 " --> place single item to slot\n"
 msgstr ""
-"Controles por defeito:\n"
-"Se não há nenhum menu visível:\n"
-"- Um toque: ativa botão\n"
-"- Duplo toque: colocar/usar\n"
-"- Deslizar dedo: Olhar em redor\n"
-"Se menu/inventário visível:\n"
-"- Duplo toque: (fora do menu/inventário):\n"
-" -->fechar\n"
-"- Tocar Item e depois tocar num compartimento:\n"
-" --> mover item\n"
-"- Tocar e arrastar, e depois tocar com o 2º dedo\n"
-" --> Coloca apenas um item no compartimento\n"
+"Controles:\n"
+"Nenhum menu aberto:\n"
+"- Deslizar o dedo: olhar ao redor\n"
+"- Toque: colocar/socar/usar (padrão)\n"
+"- Toque longo: cavar/usar (padrão)\n"
+"Menu/inventário aberto:\n"
+"- toque duplo (fora):\n"
+"--> fechar\n"
+"- toque em pilha de itens, toque em slot:\n"
+"--> mover pilha de itens\n"
+"- toque e arraste, toque com 2º dedo\n"
+"--> colocar um único item no slot\n"
 
 #: src/client/game_formspec.cpp
 msgid "Exit to Menu"
@@ -1832,28 +1813,24 @@ msgstr "Backspace"
 
 #. ~ Usually paired with the Pause key
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Break Key"
-msgstr "Tecla para agachar"
+msgstr "Tecla Break"
 
 #: src/client/keycode.cpp
 msgid "Caps Lock"
 msgstr "Caps Lock"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Clear Key"
-msgstr "Limpar"
+msgstr "Tecla Clear"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Control Key"
-msgstr "Control"
+msgstr "Tecla Control"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Delete Key"
-msgstr "Eliminar"
+msgstr "Tecla Delete"
 
 #: src/client/keycode.cpp
 msgid "Down Arrow"
@@ -1904,9 +1881,8 @@ msgid "Insert"
 msgstr "Insert"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Left Arrow"
-msgstr "Control Esquerdo"
+msgstr "Seta Para Esquerda"
 
 #: src/client/keycode.cpp
 msgid "Left Button"
@@ -1930,9 +1906,8 @@ msgstr "Tecla WINDOWS esquerda"
 
 #. ~ Key name, common on Windows keyboards
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Menu Key"
-msgstr "Menu"
+msgstr "Tecla Menu"
 
 #: src/client/keycode.cpp
 msgid "Middle Button"
@@ -2007,20 +1982,17 @@ msgid "OEM Clear"
 msgstr "Limpar OEM"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Page Down"
-msgstr "Page down"
+msgstr "Page Down"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Page Up"
-msgstr "Page up"
+msgstr "Page Up"
 
 #. ~ Usually paired with the Break key
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Pause Key"
-msgstr "Pausa"
+msgstr "Tecla Pause"
 
 #: src/client/keycode.cpp
 msgid "Play"
@@ -2032,14 +2004,12 @@ msgid "Print"
 msgstr "Tecla Print Screen"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Return Key"
-msgstr "Enter"
+msgstr "Tecla Enter"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Right Arrow"
-msgstr "Control Direito"
+msgstr "Seta Para Direita"
 
 #: src/client/keycode.cpp
 msgid "Right Button"
@@ -2071,9 +2041,8 @@ msgid "Select"
 msgstr "Seleccionar"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Shift Key"
-msgstr "Shift"
+msgstr "Tecla Shift"
 
 #: src/client/keycode.cpp
 msgid "Sleep"
@@ -2093,7 +2062,7 @@ msgstr "Tabulação"
 
 #: src/client/keycode.cpp
 msgid "Up Arrow"
-msgstr ""
+msgstr "Seta Para Cima"
 
 #: src/client/keycode.cpp
 msgid "X Button 1"
@@ -2104,9 +2073,8 @@ msgid "X Button 2"
 msgstr "Botão X 2"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Zoom Key"
-msgstr "Zoom"
+msgstr "Tecla Zoom"
 
 #: src/client/minimap.cpp
 msgid "Minimap hidden"
@@ -2268,9 +2236,8 @@ msgid "Inventory"
 msgstr "Inventário"
 
 #: src/gui/touchscreenlayout.cpp
-#, fuzzy
 msgid "Joystick"
-msgstr "ID do Joystick"
+msgstr "Joystick"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Jump"
@@ -2278,12 +2245,11 @@ msgstr "Saltar"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Overflow menu"
-msgstr ""
+msgstr "Menu de excesso"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Place/use"
-msgstr "Tecla de pôr"
+msgstr "Colocar/usar"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Range select"
@@ -2298,9 +2264,8 @@ msgid "Toggle chat log"
 msgstr "Ativar histórico de conversa"
 
 #: src/gui/touchscreenlayout.cpp
-#, fuzzy
 msgid "Toggle debug"
-msgstr "Ativar névoa"
+msgstr "Ativar depuração"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Toggle fast"
@@ -2327,19 +2292,20 @@ msgid ""
 "Another client is connected with this name.  If your client closed "
 "unexpectedly, try again in a minute."
 msgstr ""
+"Outro cliente está conectado com este nome. Se o seu cliente fechou "
+"inesperadamente, tente novamente em um minuto."
 
 #: src/network/clientpackethandler.cpp
 msgid "Empty passwords are disallowed.  Set a password and try again."
-msgstr ""
+msgstr "Senhas vazias não são permitidas.  Defina uma senha e tente novamente."
 
 #: src/network/clientpackethandler.cpp
 msgid "Internal server error"
-msgstr ""
+msgstr "Erro interno de servidor"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Invalid password"
-msgstr "Palavra-passe antiga"
+msgstr "Senha inválida"
 
 #. ~ DO NOT TRANSLATE THIS LITERALLY!
 #. This is a special string which needs to contain the translation's
@@ -2362,22 +2328,20 @@ msgstr "Este nome já foi escolhido. Por favor, escolha outro nome"
 
 #: src/network/clientpackethandler.cpp
 msgid "Player name contains disallowed characters"
-msgstr ""
+msgstr "Nome do jogador contém caracteres não permitidos"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Player name not allowed"
-msgstr "Nome de jogador demasiado longo."
+msgstr "Nome do jogador não permitido"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Server shutting down"
-msgstr "A desligar..."
+msgstr "Servidor desligando"
 
 #: src/network/clientpackethandler.cpp
 msgid ""
 "The server has experienced an internal error.  You will now be disconnected."
-msgstr ""
+msgstr "O servidor experienciou um erro interno.  Agora você será desconectado."
 
 #: src/network/clientpackethandler.cpp
 msgid "The server is running in singleplayer mode.  You cannot connect."
