@@ -736,9 +736,8 @@ static void uninit_common()
 static void startup_message()
 {
 	print_version(infostream);
-	infostream << "SER_FMT_VER_HIGHEST_READ=" <<
-		TOSTRING(SER_FMT_VER_HIGHEST_READ) <<
-		" LATEST_PROTOCOL_VERSION=" << LATEST_PROTOCOL_VERSION
+	infostream << "SER_FMT_VER_HIGHEST_READ=" << (int)SER_FMT_VER_HIGHEST_READ
+		<< " LATEST_PROTOCOL_VERSION=" << (int)LATEST_PROTOCOL_VERSION
 		<< std::endl;
 }
 
