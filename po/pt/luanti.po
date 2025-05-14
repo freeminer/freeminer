@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Portuguese (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-24 16:51+0200\n"
+"POT-Creation-Date: 2025-05-14 23:02+0200\n"
 "PO-Revision-Date: 2025-05-12 16:41+0000\n"
 "Last-Translator: Felipe Amaral <contato.feamaral@gmail.com>\n"
 "Language-Team: Portuguese <https://hosted.weblate.org/projects/minetest/"
@@ -217,7 +217,7 @@ msgstr "Automático"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
+#: builtin/mainmenu/content/dlg_package.lua src/gui/guiVolumeChange.cpp
 msgid "Back"
 msgstr "Voltar"
 
@@ -246,11 +246,6 @@ msgstr "Desativado"
 #: builtin/common/settings/dlg_settings.lua
 msgid "Enabled"
 msgstr "Ativado"
-
-#: builtin/common/settings/dlg_settings.lua src/gui/guiVolumeChange.cpp
-#: src/gui/touchscreenlayout.cpp
-msgid "Exit"
-msgstr "Sair"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
@@ -938,6 +933,32 @@ msgstr "pkgmgr: caminho inválido \"$1\""
 msgid "Delete World \"$1\"?"
 msgstr "Eliminar mundo \"$1\"?"
 
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "As a result, your keybindings may have been changed."
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Check out the key settings or refer to the documentation:"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Close"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+#, fuzzy
+msgid "Keybindings changed"
+msgstr "Combinações de teclas."
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+#, fuzzy
+msgid "Open settings"
+msgstr "Definições"
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "The input handling system was reworked in Luanti 5.12.0."
+msgstr ""
+
 #: builtin/mainmenu/dlg_register.lua src/gui/guiPasswordChange.cpp
 msgid "Confirm Password"
 msgstr "Confirmar palavra-passe"
@@ -977,9 +998,8 @@ msgid ""
 "For a long time, Luanti shipped with a default game called \"Minetest "
 "Game\". Since version 5.8.0, Luanti ships without a default game."
 msgstr ""
-"Por muito tempo, Luanti foi publicada com um jogo padrão chamado "
-"\"Minetest Game\". Desde a versão 5.8.0, Luanti é publicado sem um jogo "
-"padrão."
+"Por muito tempo, Luanti foi publicada com um jogo padrão chamado \"Minetest "
+"Game\". Desde a versão 5.8.0, Luanti é publicado sem um jogo padrão."
 
 #: builtin/mainmenu/dlg_reinstall_mtg.lua
 msgid ""
@@ -2232,6 +2252,10 @@ msgid "Drop"
 msgstr "Largar"
 
 #: src/gui/touchscreenlayout.cpp
+msgid "Exit"
+msgstr "Sair"
+
+#: src/gui/touchscreenlayout.cpp
 msgid "Inventory"
 msgstr "Inventário"
 
@@ -2341,7 +2365,8 @@ msgstr "Servidor desligando"
 #: src/network/clientpackethandler.cpp
 msgid ""
 "The server has experienced an internal error.  You will now be disconnected."
-msgstr "O servidor experienciou um erro interno.  Agora você será desconectado."
+msgstr ""
+"O servidor experienciou um erro interno.  Agora você será desconectado."
 
 #: src/network/clientpackethandler.cpp
 msgid "The server is running in singleplayer mode.  You cannot connect."

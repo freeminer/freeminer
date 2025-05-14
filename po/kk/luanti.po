@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Kazakh (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-24 16:51+0200\n"
+"POT-Creation-Date: 2025-05-14 23:02+0200\n"
 "PO-Revision-Date: 2024-10-06 05:16+0000\n"
 "Last-Translator: Soupborshfe5e4d4ba7c349aa <bssoupborsh@gmail.com>\n"
 "Language-Team: Kazakh <https://hosted.weblate.org/projects/minetest/minetest/"
@@ -216,7 +216,7 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
+#: builtin/mainmenu/content/dlg_package.lua src/gui/guiVolumeChange.cpp
 msgid "Back"
 msgstr ""
 
@@ -246,11 +246,6 @@ msgstr ""
 #, fuzzy
 msgid "Enabled"
 msgstr "қосылған"
-
-#: builtin/common/settings/dlg_settings.lua src/gui/guiVolumeChange.cpp
-#: src/gui/touchscreenlayout.cpp
-msgid "Exit"
-msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
@@ -925,6 +920,31 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_delete_world.lua
 msgid "Delete World \"$1\"?"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "As a result, your keybindings may have been changed."
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Check out the key settings or refer to the documentation:"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Close"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Keybindings changed"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+#, fuzzy
+msgid "Open settings"
+msgstr "Баптаулар"
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "The input handling system was reworked in Luanti 5.12.0."
 msgstr ""
 
 #: builtin/mainmenu/dlg_register.lua src/gui/guiPasswordChange.cpp
@@ -2175,6 +2195,10 @@ msgstr ""
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
+msgstr ""
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Exit"
 msgstr ""
 
 #: src/gui/touchscreenlayout.cpp

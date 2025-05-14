@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: French (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-24 16:51+0200\n"
+"POT-Creation-Date: 2025-05-14 23:02+0200\n"
 "PO-Revision-Date: 2025-04-28 18:58+0000\n"
 "Last-Translator: waxtatect <piero@live.ie>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/minetest/minetest/"
@@ -217,7 +217,7 @@ msgstr "Automatique"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#: builtin/mainmenu/content/dlg_package.lua
+#: builtin/mainmenu/content/dlg_package.lua src/gui/guiVolumeChange.cpp
 msgid "Back"
 msgstr "Retour"
 
@@ -246,11 +246,6 @@ msgstr "Désactivé"
 #: builtin/common/settings/dlg_settings.lua
 msgid "Enabled"
 msgstr "Activé"
-
-#: builtin/common/settings/dlg_settings.lua src/gui/guiVolumeChange.cpp
-#: src/gui/touchscreenlayout.cpp
-msgid "Exit"
-msgstr "Quitter"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
@@ -940,6 +935,32 @@ msgstr "Gestionnaire de mods : chemin invalide de « $1 »"
 #: builtin/mainmenu/dlg_delete_world.lua
 msgid "Delete World \"$1\"?"
 msgstr "Supprimer le monde « $1 » ?"
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "As a result, your keybindings may have been changed."
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Check out the key settings or refer to the documentation:"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "Close"
+msgstr ""
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+#, fuzzy
+msgid "Keybindings changed"
+msgstr "Raccourcis clavier"
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+#, fuzzy
+msgid "Open settings"
+msgstr "Paramètres"
+
+#: builtin/mainmenu/dlg_rebind_keys.lua
+msgid "The input handling system was reworked in Luanti 5.12.0."
+msgstr ""
 
 #: builtin/mainmenu/dlg_register.lua src/gui/guiPasswordChange.cpp
 msgid "Confirm Password"
@@ -2232,6 +2253,10 @@ msgstr "Creuser/frapper/utiliser"
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
 msgstr "Lâcher"
+
+#: src/gui/touchscreenlayout.cpp
+msgid "Exit"
+msgstr "Quitter"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Inventory"
@@ -4447,8 +4472,8 @@ msgid ""
 "and\n"
 "descending."
 msgstr ""
-"Si activé, la touche « Aux1 » est utilisée à la place de la touche « Marcher "
-"» pour monter ou descendre."
+"Si activé, la touche « Aux1 » est utilisée à la place de la touche "
+"« Marcher » pour monter ou descendre."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4571,8 +4596,8 @@ msgstr "Couleur de l'arrière-plan de la console de tchat en jeu (R,V,B)."
 #: src/settings_translation_file.cpp
 msgid "In-game chat console height, between 0.1 (10%) and 1.0 (100%)."
 msgstr ""
-"Hauteur maximale de la console de tchat en jeu, entre 0,1 (10 %) et 1,0 (100 "
-"%)."
+"Hauteur maximale de la console de tchat en jeu, entre 0,1 (10 %) et 1,0 "
+"(100 %)."
 
 #: src/settings_translation_file.cpp
 msgid "Increase view range"
@@ -5096,7 +5121,8 @@ msgstr "Touche pour afficher l'ATH."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the large chat console."
-msgstr "Touche pour afficher la console de tchat à la hauteur maximale définie."
+msgstr ""
+"Touche pour afficher la console de tchat à la hauteur maximale définie."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of the profiler. Used for development."
@@ -5698,8 +5724,8 @@ msgid ""
 "Maximum size of the client's outgoing chat queue.\n"
 "0 to disable queueing and -1 to make the queue size unlimited."
 msgstr ""
-"Taille maximale, pour le client, de la file de sortie des messages du tchat."
-"\n"
+"Taille maximale, pour le client, de la file de sortie des messages du "
+"tchat.\n"
 "0 pour désactiver la file de sortie et -1 pour rendre la taille de la file "
 "de sortie illimitée."
 
@@ -5938,16 +5964,16 @@ msgid ""
 msgstr ""
 "Nombre de fils émergents à utiliser.\n"
 "Valeur 0 :\n"
-"– Sélection automatique. Le nombre de fils émergents est le « nombre de "
-"processeurs - 2 », avec un minimum de 1.\n"
+"– Sélection automatique. Le nombre de fils émergents est le "
+"« nombre de processeurs - 2 », avec un minimum de 1.\n"
 "Toute autre valeur :\n"
 "– Spécifie le nombre de fils émergents, avec un minimum de 1.\n"
 "ATTENTION : augmenter le nombre de fils émergents accélère bien la création "
 "de terrain,\n"
 "mais cela peut nuire à la performance du jeu en interférant avec d’autres "
 "processus,\n"
-"en particulier en mode solo et/ou lors de l’exécution de code Lua dans « "
-"on_generated ».\n"
+"en particulier en mode solo et/ou lors de l’exécution de code Lua dans "
+"« on_generated ».\n"
 "Pour beaucoup d'utilisateurs, la valeur optimale peut être « 1 »."
 
 #: src/settings_translation_file.cpp
@@ -6151,8 +6177,8 @@ msgstr ""
 "Adresse d'écoute pour Prometheus.\n"
 "Lorsque Luanti est compilé avec prise en charge de Prometheus, cette adresse "
 "est utilisée pour l'écoute de données.\n"
-"Par défaut, les métriques peuvent être récupérées à partir de "
-"http://127.0.0.1:30000/metrics.\n"
+"Par défaut, les métriques peuvent être récupérées à partir de http://"
+"127.0.0.1:30000/metrics.\n"
 "Une valeur vide désactive l'écoute des métriques."
 
 #: src/settings_translation_file.cpp
