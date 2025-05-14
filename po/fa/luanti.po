@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-24 16:51+0200\n"
-"PO-Revision-Date: 2025-02-07 06:13+0000\n"
-"Last-Translator: Ilia <iliaabbasi@outlook.com>\n"
+"PO-Revision-Date: 2025-05-14 20:53+0000\n"
+"Last-Translator: Sepehr <realsepehrz@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/minetest/"
 "minetest/fa/>\n"
 "Language: fa\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -37,7 +37,7 @@ msgstr ""
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
-msgstr "دستور اجرا شده:  . "
+msgstr "دستور صادر شده: "
 
 #: builtin/client/chatcommands.lua
 msgid "List online players"
@@ -473,9 +473,8 @@ msgid "Queued"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#, fuzzy
 msgid "Texture Packs"
-msgstr "تکسچر پک ها"
+msgstr "تکسچر پک‌ها"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "The package $1 was not found."
@@ -560,7 +559,7 @@ msgstr "توضیحات"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Donate"
-msgstr ""
+msgstr "اهدا کنید"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
@@ -996,9 +995,8 @@ msgid ""
 msgstr ""
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
-#, fuzzy
 msgid "Expand all"
-msgstr "فعال کردن همه"
+msgstr "همه را گسترش دهید"
 
 #: builtin/mainmenu/dlg_server_list_mods.lua
 msgid "Group by prefix"
@@ -1213,9 +1211,8 @@ msgid "You need to install a game before you can create a world."
 msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Add favorite"
-msgstr "حذف از علاقه مندی"
+msgstr "افزودن مورد علاقه"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Address"
@@ -1235,9 +1232,8 @@ msgid "Favorites"
 msgstr "علاقه ها"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Game: $1"
-msgstr "بازی ها"
+msgstr "بازی: 1$"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Incompatible Servers"
@@ -2136,9 +2132,8 @@ msgid "Add button"
 msgstr ""
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Done"
-msgstr "انجام شد!"
+msgstr "انجام شد"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Remove"
@@ -3258,9 +3253,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Drop item"
-msgstr "آیتم قبلی"
+msgstr "رها کردن آیتم"
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
@@ -5272,9 +5266,8 @@ msgid "Move forward"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move left"
-msgstr "حرکت"
+msgstr "حرکت به چپ"
 
 #: src/settings_translation_file.cpp
 msgid "Move right"
