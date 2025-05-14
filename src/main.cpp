@@ -777,10 +777,13 @@ static bool read_config_file(const Settings &cmd_args)
 		}
 
 		// If no path found, use the first one (menu creates the file)
-		if (g_settings_path.empty())
+		if (g_settings_path.empty()) {
 			g_settings_path = filenames[0];
+			g_first_run = true;
+		}
 	}
-	infostream << "Global configuration file: " << g_settings_path << std::endl;
+	infostream << "Global configuration file: " << g_settings_path
+		<< (g_first_run ? " (first run)" : "") << std::endl;
 
 	return true;
 }
