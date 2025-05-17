@@ -179,6 +179,7 @@ void fm_set_default_settings(Settings *settings) {
 					 "enable_dynamic_shadows",
 					 "enable_node_specular",
 					 "enable_translucent_foliage",
+					 "enable_post_processing",
 					 "enable_volumetric_lighting",
 					 "enable_water_reflections",
 					 "shadow_map_color",
