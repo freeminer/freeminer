@@ -4326,23 +4326,20 @@ v3f Server::findSpawnPos(const std::string &player_name)
 {
 	ServerMap &map = m_env->getServerMap();
 
-	std::optional<v3f> staticSpawnPoint;
-	if (g_settings->getV3FNoEx("static_spawnpoint", staticSpawnPoint) && staticSpawnPoint.has_value())
-	{
-		return *staticSpawnPoint * BS;
-	}
-
 	v3f nodeposf;
 
 	pos_t find = 0;
 	g_settings->getPosNoEx("static_spawnpoint_find", find);
-	std::optional<v3f> nodeposfo;
-	if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, nodeposfo)) {
-		nodeposf = *nodeposfo;
-		if (!find)
+	std::optional<v3f> staticSpawnPoint;
+	if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, staticSpawnPoint) && staticSpawnPoint.has_value()) {
+		nodeposf = *staticSpawnPoint;
+		if (!find) {
 			return nodeposf * BS;
-	} else if (g_settings->getV3FNoEx("static_spawnpoint", nodeposfo)) {
-		nodeposf = *nodeposfo;
+		}
+	} else
+	if (g_settings->getV3FNoEx("static_spawnpoint", staticSpawnPoint) && staticSpawnPoint.has_value())
+	{
+		nodeposf = *staticSpawnPoint;
 		if (!find)
 			return nodeposf * BS;
 	}
