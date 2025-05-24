@@ -31,6 +31,8 @@ using namespace irr;
 #define U64_MAX UINT64_MAX
 
 #if USE_POS32
+#define POS_MIN INT32_MIN
+#define POS_MAX INT32_MAX
 
 // Node position
 using pos_t = irr::s32;
@@ -39,6 +41,8 @@ using pos_t = irr::s32;
 using bpos_t = irr::s32;
 
 #else
+#define POS_MIN INT16_MIN
+#define POS_MAX INT16_MAX
 using pos_t = irr::s16;
 using bpos_t = irr::s16;
 #endif

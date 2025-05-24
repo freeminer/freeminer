@@ -347,7 +347,7 @@ size_t DecoSimple::generate(MMVManip *vm, PcgRandom *pr, v3pos_t p, bool ceiling
 		pr->range(deco_param2, deco_param2_max) : deco_param2;
 	bool force_placement = (flags & DECO_FORCE_PLACEMENT);
 
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 vi = vm->m_area.index(p);
 
 	if (ceiling) {
