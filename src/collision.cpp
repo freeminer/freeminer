@@ -21,6 +21,8 @@
 #warning "-ffast-math is known to cause bugs in collision code, do not use!"
 #endif
 
+bool g_collision_problems_encountered = false;
+
 namespace {
 
 struct NearbyCollisionInfo {
@@ -260,7 +262,7 @@ static void add_object_boxes(Environment *env,
 {
 	auto process_object = [&cinfo] (ActiveObject *object) {
 		if (object && object->collideWithObjects()) {
-			aabb3f box;
+			aabb3f box{{0.0f, 0.0f, 0.0f}};
 			if (object->getCollisionBox(&box))
 				cinfo.emplace_back(object, 0, box);
 		}
@@ -321,7 +323,7 @@ static void add_object_boxes(Environment *env,
 #define PROFILER_NAME(text) (dynamic_cast<ServerEnvironment*>(env) ? ("Server: " text) : ("Client: " text))
 
 collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
-		f32 pos_max_d, const aabb3f &box_0,
+		const aabb3f &box_0,
 		f32 stepheight, f32 dtime,
 		v3f *pos_f, v3f *speed_f,
 		v3f accel_f, ActiveObject *self,
@@ -342,6 +344,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			warningstream << "collisionMoveSimple: maximum step interval exceeded,"
 					" lost movement details!"<<std::endl;
 		}
+		g_collision_problems_encountered = true;
 		dtime = DTIME_LIMIT;
 	} else {
 		time_notification_done = false;
@@ -415,7 +418,8 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		// Avoid infinite loop
 		loopcount++;
 		if (loopcount >= 100) {
-			warningstream << "collisionMoveSimple: Loop count exceeded, aborting to avoid infiniite loop" << std::endl;
+			warningstream << "collisionMoveSimple: Loop count exceeded, aborting to avoid infinite loop" << std::endl;
+			g_collision_problems_encountered = true;
 			break;
 		}
 
@@ -505,7 +509,6 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			info.object = nearest_info.obj;
 			info.new_pos = *pos_f;
 			info.old_speed = *speed_f;
-			info.plane = nearest_collided;
 
 			// Set the speed component that caused the collision to zero
 			if (step_up) {

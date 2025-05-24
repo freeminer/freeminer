@@ -80,10 +80,9 @@ struct MapEditEvent
 		case MEET_OTHER:
 		{
 			VoxelArea a;
-			for (v3bpos_t p : modified_blocks) {
-				v3bpos_t np1b = getContainerPos(v3pos_t(p.X, p.Y, p.Z), MAP_BLOCKSIZE);
-				v3pos_t np1(np1b.X, np1b.Y, np1b.Z);
-				v3pos_t np2 = np1 + v3pos_t(1,1,1)*MAP_BLOCKSIZE - v3pos_t(1,1,1);
+			for (const auto &p : modified_blocks) {
+				v3pos_t np1 = v3pos_t(p.X, p.Y, p.Z)*MAP_BLOCKSIZE;
+				v3pos_t np2 = np1 + v3pos_t(MAP_BLOCKSIZE-1);
 				a.addPoint(np1);
 				a.addPoint(np2);
 			}
@@ -302,9 +301,6 @@ protected:
 		u32 needed_count);
 };
 
-#define VMANIP_BLOCK_DATA_INEXIST     1
-#define VMANIP_BLOCK_CONTAINS_CIGNORE 2
-
 class MMVManip : public VoxelManipulator
 {
 public:
@@ -348,4 +344,8 @@ protected:
 		value = flags describing the block
 	*/
 	std::map<v3bpos_t, u8> m_loaded_blocks;
+
+	enum : u8 {
+		VMANIP_BLOCK_DATA_INEXIST = 1 << 0,
+	};
 };

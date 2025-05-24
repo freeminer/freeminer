@@ -263,7 +263,7 @@ private:
 	// isLiquidHorizontallyFlowable() is a helper function for updateLiquid()
 	// that checks whether there are floodable nodes without liquid beneath
 	// the node at index vi.
-	inline bool isLiquidHorizontallyFlowable(u32 vi, v3pos_t em);
+	inline bool isLiquidHorizontallyFlowable(u32 vi, v3s32 em);
 };
 
 /*

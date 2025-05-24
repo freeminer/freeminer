@@ -242,7 +242,7 @@ u32 Mapgen::getBlockSeed2(v3pos_t p, s32 seed)
 // Returns -MAX_MAP_GENERATION_LIMIT if not found
 pos_t Mapgen::findGroundLevel(v2pos_t p2d, pos_t ymin, pos_t ymax)
 {
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 i = vm->m_area.index(p2d.X, ymax, p2d.Y);
 	pos_t y;
 
@@ -260,7 +260,7 @@ pos_t Mapgen::findGroundLevel(v2pos_t p2d, pos_t ymin, pos_t ymax)
 // Returns -MAX_MAP_GENERATION_LIMIT if not found or if ground is found first
 pos_t Mapgen::findLiquidSurface(v2pos_t p2d, pos_t ymin, pos_t ymax)
 {
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 i = vm->m_area.index(p2d.X, ymax, p2d.Y);
 	pos_t y;
 
@@ -298,7 +298,7 @@ void Mapgen::updateHeightmap(v3pos_t nmin, v3pos_t nmax)
 void Mapgen::getSurfaces(v2pos_t p2d, pos_t ymin, pos_t ymax,
 	std::vector<pos_t> &floors, std::vector<pos_t> &ceilings)
 {
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 
 	bool is_walkable = false;
 	u32 vi = vm->m_area.index(p2d.X, ymax, p2d.Y);
@@ -322,7 +322,7 @@ void Mapgen::getSurfaces(v2pos_t p2d, pos_t ymin, pos_t ymax,
 }
 
 
-inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3pos_t em)
+inline bool Mapgen::isLiquidHorizontallyFlowable(u32 vi, v3s32 em)
 {
 	u32 vi_neg_x = vi;
 	VoxelArea::add_x(em, vi_neg_x, -1);
@@ -359,7 +359,7 @@ void Mapgen::updateLiquid(UniqueQueue<v3pos_t> *trans_liquid, v3pos_t nmin, v3po
 {
 	bool isignored, isliquid, wasignored, wasliquid, waschecked, waspushed;
 	content_t was_n;
-	const v3pos_t &em  = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 
 	isignored = true;
 	isliquid = false;
@@ -483,7 +483,7 @@ void Mapgen::propagateSunlight(v3pos_t nmin, v3pos_t nmax, bool propagate_shadow
 	//TimeTaker t("propagateSunlight");
 	VoxelArea a(nmin, nmax);
 	bool block_is_underground = (water_level >= nmax.Y);
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 
 	// NOTE: Direct access to the low 4 bits of param1 is okay here because,
 	// by definition, sunlight will never be in the night lightbank.
@@ -631,7 +631,7 @@ void MapgenBasic::generateBiomes()
 	assert(biomegen);
 	assert(biomemap);
 
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 index = 0;
 
 	noise_filler_depth->perlinMap2D(node_min.X, node_min.Z);
@@ -646,7 +646,7 @@ void MapgenBasic::generateBiomes()
 		u16 depth_riverbed = 0;
 		u32 vi = vm->m_area.index(x, node_max.Y, z);
 
-		s16 biome_y_min = biomegen->getNextTransitionY(node_max.Y);
+		s16 biome_y_next = biomegen->getNextTransitionY(node_max.Y);
 
 		// Check node at base of mapchunk above, either a node of a previously
 		// generated mapchunk or if not, a node of overgenerated base terrain.
@@ -663,23 +663,29 @@ void MapgenBasic::generateBiomes()
 
 		for (pos_t y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[vi].getContent();
+			const bool biome_outdated = !biome || y <= biome_y_next;
 			// Biome is (re)calculated:
 			// 1. At the surface of stone below air or water.
 			// 2. At the surface of water below air.
 			// 3. When stone or water is detected but biome has not yet been calculated.
 			// 4. When stone or water is detected just below a biome's lower limit.
 			bool is_stone_surface = (c == c_stone) &&
-				(air_above || water_above || !biome || y < biome_y_min); // 1, 3, 4
+				(air_above || water_above || biome_outdated); // 1, 3, 4
 
 			bool is_water_surface =
 				(c == c_water_source || c == c_river_water_source) &&
-				(air_above || !biome || y < biome_y_min); // 2, 3, 4
+				(air_above || biome_outdated); // 2, 3, 4
 
 			if (is_stone_surface || is_water_surface) {
-				if (!biome || y < biome_y_min) {
+				if (biome_outdated) {
 					// (Re)calculate biome
 					biome = biomegen->getBiomeAtIndex(index, v3pos_t(x, y, z));
-					biome_y_min = biomegen->getNextTransitionY(y);
+					biome_y_next = biomegen->getNextTransitionY(y);
+
+					if (x == node_min.X && z == node_min.Z && false) {
+						dstream << "biomegen: biome at " << y << " is " << biome->name
+							<< ", next at " << biome_y_next << std::endl;
+					}
 				}
 
 				// Add biome to biomemap at first stone surface detected
@@ -759,7 +765,7 @@ void MapgenBasic::generateBiomes()
 		// If no stone surface detected in mapchunk column and a water surface
 		// biome fallback exists, add it to the biomemap. This avoids water
 		// surface decorations failing in deep water.
- 		if (biomemap[index] == BIOME_NONE && water_biome_index != 0)
+		if (biomemap[index] == BIOME_NONE && water_biome_index != 0)
 			biomemap[index] = water_biome_index;
 	}
 }
@@ -770,7 +776,7 @@ void MapgenBasic::dustTopNodes()
 	if (node_max.Y < water_level)
 		return;
 
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	u32 index = 0;
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++)
