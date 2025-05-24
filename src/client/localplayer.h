@@ -18,6 +18,7 @@ class GenericCAO;
 class ClientActiveObject;
 class ClientEnvironment;
 class IGameDef;
+struct CollisionInfo;
 struct collisionMoveResult;
 
 enum class LocalPlayerAnimation
@@ -70,11 +71,8 @@ public:
 
 	f32 gravity = 0; // total downwards acceleration
 
-	void move(f32 dtime, Environment *env, opos_t pos_max_d);
-	void move(f32 dtime, Environment *env, opos_t pos_max_d,
-			std::vector<CollisionInfo> *collision_info);
-	// Temporary option for old move code
-	void old_move(f32 dtime, Environment *env, opos_t pos_max_d,
+	void move(f32 dtime, Environment *env);
+	void move(f32 dtime, Environment *env,
 			std::vector<CollisionInfo> *collision_info);
 
 	void applyControl(float dtime, Environment *env);
@@ -176,10 +174,11 @@ private:
 		const f32 max_increase_V, const bool use_pitch);
 	bool updateSneakNode(Map *map, const v3opos_t &position, const v3opos_t &sneak_max);
 	float getSlipFactor(Environment *env, const v3f &speedH);
+	void old_move(f32 dtime, Environment *env,
+			std::vector<CollisionInfo> *collision_info);
 	void handleAutojump(f32 dtime, Environment *env,
 		const collisionMoveResult &result,
-		const v3opos_t &position_before_move, const v3f &speed_before_move,
-		opos_t pos_max_d);
+		v3opos_t position_before_move, v3f speed_before_move);
 
 	v3opos_t m_position;
 	v3pos_t m_standing_node;

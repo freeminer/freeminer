@@ -60,16 +60,20 @@
 		Rename TOSERVER_RESPAWN to TOSERVER_RESPAWN_LEGACY
 		Support float animation frame numbers in TOCLIENT_LOCAL_PLAYER_ANIMATIONS
 		[scheduled bump for 5.10.0]
+	PROTOCOL VERSION 47
+		Add particle blend mode "clip"
+		[scheduled bump for 5.11.0]
 */
 
 // First version with 32bit support
-const u16 PROTOCOL_VERSION_32BIT = 147; // change to actual LATEST+1 in future
+const u16 PROTOCOL_VERSION_32BIT = 147; // change to actual LATEST_PROTOCOL_VERSION+1 in future
 
 #if USE_POS32
-const u16 LATEST_PROTOCOL_VERSION = 147;
+const u16 LATEST_PROTOCOL_VERSION = 148;
 #else
 
-const u16 LATEST_PROTOCOL_VERSION = 46;
+// Note: Also update core.protocol_versions in builtin when bumping
+const u16 LATEST_PROTOCOL_VERSION = 47;
 
 #endif
 

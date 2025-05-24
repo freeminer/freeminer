@@ -16,6 +16,7 @@ extern "C" {
 #include "constants.h"
 #include <set>
 #include <cmath>
+#include "common/c_types.h"
 
 
 #define CHECK_TYPE(index, name, type) do { \
@@ -387,7 +388,8 @@ bool is_color_table(lua_State *L, int index)
 
 aabb3f read_aabb3f(lua_State *L, int index, f32 scale)
 {
-	aabb3f box;
+	// default value for accidental/historical reasons
+	aabb3f box{-1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
 	if(lua_istable(L, index)){
 		lua_rawgeti(L, index, 1);
 		box.MinEdge.X = lua_tonumber(L, -1) * scale;
@@ -629,8 +631,8 @@ bool getboolfield_default(lua_State *L, int table,
 	return result;
 }
 
-v3s16 getv3s16field_default(lua_State *L, int table,
-		const char *fieldname, v3s16 default_)
+v3pos_t getv3s16field_default(lua_State *L, int table,
+		const char *fieldname, v3pos_t default_)
 {
 	getv3intfield(L, table, fieldname, default_);
 	return default_;

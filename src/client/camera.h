@@ -48,7 +48,7 @@ struct Nametag
 			return bgcolor.value();
 		else if (!use_fallback)
 			return video::SColor(0, 0, 0, 0);
-		else if (textcolor.getLuminance() > 186)
+		else if (textcolor.getBrightness() > 186)
 			// Dark background for light text
 			return video::SColor(50, 50, 50, 50);
 		else
@@ -69,6 +69,9 @@ class Camera
 public:
 	Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine);
 	~Camera();
+
+	static void settingChangedCallback(const std::string &name, void *data);
+	void readSettings();
 
 	// Get camera scene node.
 	// It has the eye transformation, pitch and view bobbing applied.
@@ -146,6 +149,9 @@ public:
 
 	// Update the camera from the local player's position.
 	void update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio);
+
+	// Adjust the camera offset when needed
+	void updateOffset();
 
 	// Update render distance
 	void updateViewingRange();
