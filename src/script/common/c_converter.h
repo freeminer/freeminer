@@ -12,6 +12,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <string_view>
 
 #include "irr_v3d.h"

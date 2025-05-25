@@ -5,7 +5,7 @@
 #include "guiHyperText.h"
 #include "guiScrollBar.h"
 #include "client/fontengine.h"
-#include "client/hud.h" // drawItemStack
+#include "drawItemStack.h"
 #include "IVideoDriver.h"
 #include "client/client.h"
 #include "client/renderingengine.h"
@@ -539,22 +539,22 @@ u32 ParsedText::parseTag(const wchar_t *text, u32 cursor)
 			std::string str = attrs["angle"];
 			std::vector<std::string> parts = split(str, ',');
 			if (parts.size() == 3) {
-				m_element->angle = v3pos_t(
+				m_element->angle = v3s16(
 						rangelim(stoi(parts[0]), -180, 180),
 						rangelim(stoi(parts[1]), -180, 180),
 						rangelim(stoi(parts[2]), -180, 180));
-				m_element->rotation = v3pos_t(0, 0, 0);
+				m_element->rotation = v3s16(0, 0, 0);
 			}
 		}
 
 		if (attrs.count("rotate")) {
 			if (attrs["rotate"] == "yes") {
-				m_element->rotation = v3pos_t(0, 100, 0);
+				m_element->rotation = v3s16(0, 100, 0);
 			} else {
 				std::string str = attrs["rotate"];
 				std::vector<std::string> parts = split(str, ',');
 				if (parts.size() == 3) {
-					m_element->rotation = v3pos_t (
+					m_element->rotation = v3s16(
 							rangelim(stoi(parts[0]), -1000, 1000),
 							rangelim(stoi(parts[1]), -1000, 1000),
 							rangelim(stoi(parts[2]), -1000, 1000));
@@ -734,7 +734,7 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 		ymargin = p.margin;
 
 		// Place non floating stuff
-		std::vector<ParsedText::Element>::iterator el = p.elements.begin();
+		auto el = p.elements.begin();
 
 		while (el != p.elements.end()) {
 			// Determine line width and y pos
@@ -807,8 +807,8 @@ void TextDrawer::place(const core::rect<s32> &dest_rect)
 				el++;
 			}
 
-			std::vector<ParsedText::Element>::iterator linestart = el;
-			std::vector<ParsedText::Element>::iterator lineend = p.elements.end();
+			auto linestart = el;
+			auto lineend = p.elements.end();
 
 			// First pass, find elements fitting into line
 			// (or at least one element)

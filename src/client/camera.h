@@ -57,8 +57,6 @@ struct Nametag
 	}
 };
 
-enum CameraMode {CAMERA_MODE_FIRST, CAMERA_MODE_THIRD, CAMERA_MODE_THIRD_FRONT};
-
 /*
 	Client camera class, manages the player and camera scene nodes, the viewing distance
 	and performs view bobbing etc. It also displays the wielded tool in front of the
@@ -130,7 +128,7 @@ public:
 	auto getFrustumCuller() const
 	{
 		return [planes = getFrustumCullPlanes(),
-				camera_offset = intToFloat(m_camera_offset, BS)
+				camera_offset = intToFloat(m_camera_offset, (opos_t)BS)
 				](v3opos_t position, f32 radius) {
 			v3f pos_camspace = oposToV3f(position - camera_offset);
 			for (auto &plane : planes) {
@@ -169,7 +167,8 @@ public:
 	void drawWieldedTool(irr::core::matrix4* translation=NULL);
 
 	// Toggle the current camera mode
-	void toggleCameraMode() {
+	void toggleCameraMode()
+	{
 		if (m_camera_mode == CAMERA_MODE_FIRST)
 			m_camera_mode = CAMERA_MODE_THIRD;
 		else if (m_camera_mode == CAMERA_MODE_THIRD)
@@ -185,7 +184,7 @@ public:
 	}
 
 	//read the current camera mode
-	inline CameraMode getCameraMode()
+	inline CameraMode getCameraMode() const
 	{
 		return m_camera_mode;
 	}
@@ -257,8 +256,6 @@ private:
 	s32 m_view_bobbing_state = 0;
 	// Speed of view bobbing animation
 	f32 m_view_bobbing_speed = 0.0f;
-	// Fall view bobbing
-	f32 m_view_bobbing_fall = 0.0f;
 
 	// Digging animation frame (0 <= m_digging_anim < 1)
 	f32 m_digging_anim = 0.0f;
@@ -273,7 +270,6 @@ private:
 
 	CameraMode m_camera_mode = CAMERA_MODE_FIRST;
 
-	f32 m_cache_fall_bobbing_amount;
 	f32 m_cache_view_bobbing_amount;
 	bool m_arm_inertia;
 

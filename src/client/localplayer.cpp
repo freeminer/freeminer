@@ -353,7 +353,7 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 					(could_sneak && m_sneak_node_exists))
 				continue;
 
-			diff = posToOpos(colinfo.node_p, BS) - position;
+			diff = intToFloat(colinfo.node_p, BS) - position;
 
 			// Find nearest colliding node
 			opos_t len_sq = diff.getLengthSQ();
@@ -388,7 +388,7 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 		If sneaking, keep on top of last walked node and don't fall off
 	*/
 	if (could_sneak && m_sneak_node_exists) {
-		const v3opos_t sn_f = posToOpos(m_sneak_node, BS);
+		const v3opos_t sn_f = intToFloat(m_sneak_node, BS);
 		const v3opos_t bmin = sn_f + v3fToOpos(m_sneak_node_bb_top.MinEdge);
 		const v3opos_t bmax = sn_f + v3fToOpos(m_sneak_node_bb_top.MaxEdge);
 		const v3opos_t old_pos = position;

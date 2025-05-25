@@ -114,7 +114,7 @@ void DungeonGen::generate(MMVManip *vm, u32 bseed, v3pos_t nmin, v3pos_t nmax)
 		u32 i = vm->m_area.index(nmin.X, y, z);
 		for (pos_t x = nmin.X; x <= nmax.X; x++) {
 			if (vm->m_data[i].getContent() == dp.c_wall) {
-				if (NoisePerlin3D(&dp.np_alt_wall, x, y, z, blockseed) > 0.0f)
+				if (NoiseFractal3D(&dp.np_alt_wall, x, y, z, blockseed) > 0.0f)
 					vm->m_data[i].setContent(dp.c_alt_wall);
 			}
 			i++;
