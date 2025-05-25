@@ -31,6 +31,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "client/texturesource.h"
+
 /*
 	NodeBox
 */
