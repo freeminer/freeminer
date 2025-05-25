@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <set>
+#include <shared_mutex>
 #include <vector>
 #include "../activeobjectmgr.h"
 #include "serveractiveobject.h"
@@ -19,6 +20,7 @@ class ActiveObjectMgr final : public ::ActiveObjectMgr<ServerActiveObject>
 public:
 	void deferDelete(const ServerActiveObjectPtr& obj);
 private:
+	std::shared_mutex m_spatial_index_mutex;
 
 
     std::vector<ServerActiveObjectPtr> m_objects_to_delete, m_objects_to_delete_2;
