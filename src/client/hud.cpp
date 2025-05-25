@@ -942,7 +942,7 @@ void Hud::drawBlockBounds()
 	v3s16 pos = player->getStandingNodePos();
 
 	if (m_block_bounds_mode == BLOCK_BOUNDS_FAR_DRAWN) {
-	    const auto offset = posToOpos(client->getCamera()->getOffset(), BS);
+		const auto offset = intToFloat(client->getCamera()->getOffset(), BS);
 
 		//s8 radius = m_block_bounds_mode == BLOCK_BOUNDS_NEAR ? 2 : 0;
 

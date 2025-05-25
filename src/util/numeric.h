@@ -380,6 +380,7 @@ inline v3s16 doubleToInt(v3d p, double d)
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
 }
 
+[[nodiscard]]
 inline v3pos_t doubleToPos(v3d p, double d)
 {
 	return v3pos_t(
@@ -388,6 +389,7 @@ inline v3pos_t doubleToPos(v3d p, double d)
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
 }
 
+[[nodiscard]]
 inline v3pos_t floatToInt(v3d p, f32 d)
 {
 	return v3pos_t(
@@ -396,7 +398,7 @@ inline v3pos_t floatToInt(v3d p, f32 d)
 		(p.Z + (p.Z > 0 ? d / 2 : -d / 2)) / d);
 }
 
-
+[[nodiscard]]
 inline v3pos_t oposToPos(v3opos_t p, double d)
 {
 	return v3pos_t(
@@ -409,61 +411,35 @@ inline v3pos_t oposToPos(v3opos_t p, double d)
 	Returns floating point position of node in given integer position
 */
 [[nodiscard]]
-inline v3f intToFloat(v3s16 p, f32 d)
+inline v3opos_t intToFloat(v3pos_t p, f32 d)
+{
+	return v3opos_t::from(p) * d;
+}
+
+[[nodiscard]]
+inline v3f posToFloat(const v3pos_t & p, f32 d)
 {
 	return v3f::from(p) * d;
 }
 
-#if USE_OPOS64 || USE_POS32
-inline v3opos_t intToFloat(const v3pos_t & p, const opos_t d)
-{
-	return v3opos_t(
-		(opos_t)p.X * d,
-		(opos_t)p.Y * d,
-		(opos_t)p.Z * d
-	);
-}
-#endif
-
-inline v3f posToFloat(const v3pos_t & p, f32 d)
-{
-	return v3f(
-		(f32)p.X * d,
-		(f32)p.Y * d,
-		(f32)p.Z * d
-	);
-}
-
-inline v3opos_t posToOpos(const v3pos_t & p, const opos_t d)
-{
-	return v3opos_t(
-		(opos_t)p.X * d,
-		(opos_t)p.Y * d,
-		(opos_t)p.Z * d
-	);
-}
-
+[[nodiscard]]
 inline v3opos_t v3fToOpos(const v3f & p)
 {
 	return v3opos_t(p.X, p.Y, p.Z);
 }
 
+[[nodiscard]]
+inline aabb3o ToOpos(const aabb3f &b) {
+  return {v3fToOpos(b.MinEdge), v3fToOpos(b.MaxEdge)};
+}
+
+[[nodiscard]]
 inline v3f oposToV3f(const v3opos_t & p)
 {
 	return v3f(p.X, p.Y, p.Z);
 }
-
- /*
-inline v3f intToFloat(v3bpos_t p, f32 d)
-{
-	return v3f(
-		(f32)p.X * d,
-		(f32)p.Y * d,
-		(f32)p.Z * d
-	);
-}
- */
-
+ 
+[[nodiscard]]
 inline v3s16 posToS16(const v3pos_t & p)
 {
 #if USE_POS32
@@ -473,6 +449,7 @@ inline v3s16 posToS16(const v3pos_t & p)
 #endif
 }
 
+[[nodiscard]]
 inline v3pos_t s16ToPos(const v3s16 & p)
 {
 #if USE_POS32
@@ -497,12 +474,8 @@ inline aabb3f getNodeBox(v3s16 p, float d)
 inline aabb3o getNodeBox(v3pos_t p, opos_t d)
 {
 	return aabb3o(
-		(opos_t)p.X * d - 0.5f * d,
-		(opos_t)p.Y * d - 0.5f * d,
-		(opos_t)p.Z * d - 0.5f * d,
-		(opos_t)p.X * d + 0.5f * d,
-		(opos_t)p.Y * d + 0.5f * d,
-		(opos_t)p.Z * d + 0.5f * d
+		v3opos_t::from(p) * d - 0.5f * d,
+		v3opos_t::from(p) * d + 0.5f * d
 	);
 }
 #endif
