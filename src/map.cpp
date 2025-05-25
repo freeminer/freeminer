@@ -294,12 +294,13 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 
 	// If there is no practical limit, we spare creation of mapblock_queue
 	if (max_loaded_blocks < 0) {
+		MapBlockVect blocks;
 		for (auto &sector_it : m_sectors) {
 			MapSector *sector = sector_it.second;
 
 			bool all_blocks_deleted = true;
 
-			MapBlockVect blocks;
+			blocks.clear();
 			sector->getBlocks(blocks);
 
 			for (MapBlock *block : blocks) {
@@ -338,10 +339,11 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 		}
 	} else {
 		std::priority_queue<TimeOrderedMapBlock> mapblock_queue;
+		MapBlockVect blocks;
 		for (auto &sector_it : m_sectors) {
 			MapSector *sector = sector_it.second;
 
-			MapBlockVect blocks;
+			blocks.clear();
 			sector->getBlocks(blocks);
 
 			for (MapBlock *block : blocks) {
@@ -419,16 +421,16 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 
 void Map::unloadUnreferencedBlocks(std::vector<v3bpos_t> *unloaded_blocks)
 {
-	timerUpdate(0.0, -1.0, 0, unloaded_blocks);
+	timerUpdate(0, -1, 0, unloaded_blocks);
 }
 
-void Map::deleteSectors(std::vector<v2bpos_t> &sectorList)
+void Map::deleteSectors(const std::vector<v2bpos_t> &sectorList)
 {
 	for (v2bpos_t j : sectorList) {
 		MapSector *sector = m_sectors[j];
 		// If sector is in sector cache, remove it from there
-		if(m_sector_cache == sector)
-			m_sector_cache = NULL;
+		if (m_sector_cache == sector)
+			m_sector_cache = nullptr;
 		// Remove from map and delete
 		m_sectors.erase(j);
 		delete sector;

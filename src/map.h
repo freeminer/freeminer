@@ -50,6 +50,9 @@ struct MapEditEvent
 	MapNode n = CONTENT_AIR;
 	std::vector<v3bpos_t> modified_blocks; // Represents a set
 	bool is_private_change = false;
+	// Setting low_priority to true allows the server
+	// to send this change to clients with some delay.
+	bool low_priority = false;
 
 	MapEditEvent() = default;
 
@@ -194,7 +197,7 @@ public:
 	// Deletes sectors and their blocks from memory
 	// Takes cache into account
 	// If deleted sector is in sector cache, clears cache
-	void deleteSectors(std::vector<v2bpos_t> &list);
+	void deleteSectors(const std::vector<v2bpos_t> &list);
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);

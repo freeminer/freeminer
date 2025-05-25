@@ -31,8 +31,8 @@ class Settings;
 class MMVManip;
 class NodeDefManager;
 
-extern FlagDesc flagdesc_mapgen[];
-extern FlagDesc flagdesc_gennotify[];
+extern const FlagDesc flagdesc_mapgen[];
+extern const FlagDesc flagdesc_gennotify[];
 
 class Biome;
 class BiomeGen;
