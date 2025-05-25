@@ -9,6 +9,7 @@
 #include "objdef.h"
 #include "nodedef.h"
 #include "noise.h"
+#include "debug.h" // FATAL_ERROR_IF
 
 struct MapgenParams;
 
@@ -22,6 +23,12 @@ class BiomeManager;
 
 typedef u16 biome_t;
 
+constexpr v3pos_t MAX_MAP_GENERATION_LIMIT_V3(
+	MAX_MAP_GENERATION_LIMIT,
+	MAX_MAP_GENERATION_LIMIT,
+	MAX_MAP_GENERATION_LIMIT
+);
+
 #define BIOME_NONE ((biome_t)0)
 
 enum BiomeType {
@@ -32,31 +39,32 @@ class Biome : public ObjDef, public NodeResolver {
 public:
 	ObjDef *clone() const;
 
-	u32 flags;
-
-	content_t c_top;
-	content_t c_filler;
-	content_t c_stone;
-	content_t c_water_top;
-	content_t c_water;
-	content_t c_river_water;
-	content_t c_riverbed;
-	content_t c_dust;
+	content_t
+		c_top         = CONTENT_IGNORE,
+		c_filler      = CONTENT_IGNORE,
+		c_stone       = CONTENT_IGNORE,
+		c_water_top   = CONTENT_IGNORE,
+		c_water       = CONTENT_IGNORE,
+		c_river_water = CONTENT_IGNORE,
+		c_riverbed    = CONTENT_IGNORE,
+		c_dust        = CONTENT_IGNORE;
 	std::vector<content_t> c_cave_liquid;
-	content_t c_dungeon;
-	content_t c_dungeon_alt;
-	content_t c_dungeon_stair;
+	content_t
+		c_dungeon       = CONTENT_IGNORE,
+		c_dungeon_alt   = CONTENT_IGNORE,
+		c_dungeon_stair = CONTENT_IGNORE;
 
-	pos_t depth_top;
-	pos_t depth_filler;
-	pos_t depth_water_top;
-	pos_t depth_riverbed;
+	pos_t depth_top       = 0;
+	pos_t depth_filler    = -MAX_MAP_GENERATION_LIMIT;
+	pos_t depth_water_top = 0;
+	pos_t depth_riverbed  = 0;
 
-	v3pos_t min_pos;
-	v3pos_t max_pos;
-	float heat_point;
-	float humidity_point;
-	pos_t vertical_blend;
+	v3pos_t min_pos = -MAX_MAP_GENERATION_LIMIT_V3;
+	v3pos_t max_pos =  MAX_MAP_GENERATION_LIMIT_V3;
+	float heat_point     = 0.0f;
+	float humidity_point = 0.0f;
+	pos_t vertical_blend = 0;
+	float weight = 1.0f;
 
 	//freeminer:
 	content_t c_ice;
@@ -197,7 +205,8 @@ private:
 	Noise *noise_heat_blend;
 	Noise *noise_humidity_blend;
 
-	// ordered descending
+	/// Y values at which biomes may transition.
+	/// This array may only be used for downwards scanning!
 	std::vector<pos_t> m_transitions_y;
 };
 

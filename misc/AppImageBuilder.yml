@@ -3,9 +3,9 @@ version: 1
 AppDir:
   path: AppDir
   app_info:
-    id: org.freeminer.freeminer
-    name: freeminer
-    icon: freeminer
+    id: org.luanti.luanti
+    name: Luanti
+    icon: luanti
     version: !ENV ${VERSION}
     exec: usr/bin/freeminer
     exec_args: $@
@@ -54,7 +54,5 @@ script: |
     cmake --install appimage-build
 
     # Is a backup icon location in case
-    mkdir -p AppDir/usr/share/freeminer/misc
-    cp AppDir/usr/share/icons/hicolor/128x128/apps/freeminer.png AppDir/usr/share/freeminer/misc/freeminer-xorg-icon-128.png
-    # Validation issues
-    sed -i '/PrefersNonDefaultGPU/d' AppDir/usr/share/applications/org.freeminer.freeminer.desktop
+    mkdir -p AppDir/usr/share/luanti/misc
+    cp AppDir/usr/share/icons/hicolor/128x128/apps/luanti.png AppDir/usr/share/luanti/misc/luanti-xorg-icon-128.png

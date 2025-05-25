@@ -28,7 +28,7 @@
 #define MGV6_FLOATLANDS 0x80
 
 
-extern FlagDesc flagdesc_mapgen_v6[];
+extern const FlagDesc flagdesc_mapgen_v6[];
 
 
 enum BiomeV6Type
@@ -156,7 +156,7 @@ public:
 	void addMud();
 	void flowMud(pos_t &mudflow_minpos, pos_t &mudflow_maxpos);
 	void moveMud(u32 remove_index, u32 place_index,
-		u32 above_remove_index, v2pos_t pos, v3pos_t em);
+		u32 above_remove_index, v2pos_t pos, v3s32 em);
 	void growGrass();
 	void placeTreesAndJungleGrass();
 	virtual void generateCaves(int max_stone_y);

@@ -88,12 +88,12 @@ public:
 	/*
 	 * Returns true if the calling thread is this Thread object.
 	 */
-	bool isCurrentThread() { return std::this_thread::get_id() == getThreadId(); }
+	bool isCurrentThread() const { return std::this_thread::get_id() == getThreadId(); }
 
-	bool isRunning() { return m_running; }
-	bool stopRequested() { return m_request_stop; }
+	bool isRunning() const { return m_running; }
+	bool stopRequested() const { return m_request_stop; }
 
-	std::thread::id getThreadId() { return m_thread_obj->get_id(); }
+	std::thread::id getThreadId() const { return m_thread_obj->get_id(); }
 
 	//fm? std::thread::id getThreadId() { return std::hash<std::thread::id>()(m_thread_obj->get_id()); }
 
@@ -102,7 +102,7 @@ public:
 	 * Returns true if the thread has exited and the return value was available,
 	 * or false if the thread has yet to finish.
 	 */
-	bool getReturnValue(void **ret);
+	bool getReturnValue(void **ret) const;
 
 	/*
 	 * Binds (if possible, otherwise sets the affinity of) the thread to the
@@ -146,7 +146,7 @@ protected:
 	virtual void *run() = 0;
 
 private:
-	std::thread::native_handle_type getThreadHandle()
+	std::thread::native_handle_type getThreadHandle() const
 		{ return m_thread_obj->native_handle(); }
 
 	static void threadProc(Thread *thr);

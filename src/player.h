@@ -130,8 +130,18 @@ struct PlayerPhysicsOverride
 	}
 };
 
+/// @note numeric values are part of network protocol
+enum CameraMode {
+	// not a mode. indicates that any may be used.
+	CAMERA_MODE_ANY = 0,
+	CAMERA_MODE_FIRST,
+	CAMERA_MODE_THIRD,
+	CAMERA_MODE_THIRD_FRONT
+};
+
+extern const struct EnumString es_CameraMode[];
+
 class Map;
-struct CollisionInfo;
 struct HudElement;
 class Environment;
 
@@ -144,12 +154,6 @@ public:
 	virtual ~Player() = 0;
 
 	DISABLE_CLASS_COPY(Player);
-
-	virtual void move(f32 dtime, Environment *env, opos_t pos_max_d)
-	{}
-	virtual void move(f32 dtime, Environment *env, opos_t pos_max_d,
-			std::vector<CollisionInfo> *collision_info)
-	{}
 
 	// in BS-space
 	inline void setSpeed(v3f speed)
@@ -174,6 +178,8 @@ public:
 		}
 		return size;
 	}
+
+	CameraMode allowed_camera_mode = CAMERA_MODE_ANY;
 
 	v3f eye_offset_first;
 	v3f eye_offset_third;

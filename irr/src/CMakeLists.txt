@@ -1,15 +1,13 @@
-# When enabling SDL2 by default on macOS, don't forget to change
-# "NSHighResolutionCapable" to true in "Info.plist".
-if(ANDROID)
-	set(DEFAULT_SDL2 ON)
-endif()
+set(DEFAULT_SDL2 ON)
 
 option(USE_SDL2 "Use the SDL2 backend" ${DEFAULT_SDL2})
+
+option(USE_SDL2_STATIC "Link with SDL2 static libraries" FALSE)
 
 # Compiler flags
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	add_definitions(-D_DEBUG)
+	add_compile_definitions(_DEBUG)
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
@@ -33,6 +31,15 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 elseif(MSVC)
 	string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrt.lib") # ???? fuck off
 
+	add_compile_definitions(
+		# Suppress some useless warnings
+		_CRT_SECURE_NO_DEPRECATE
+		# Get M_PI to work
+		_USE_MATH_DEFINES
+		# Don't define min/max macros in minwindef.h
+		NOMINMAX
+	)
+
 	add_compile_options(/Zl)
 
 	# Enable SSE for floating point math on 32-bit x86 by default
@@ -43,9 +50,7 @@ elseif(MSVC)
 endif()
 
 # Platform-independent configuration (hard-coded currently)
-add_definitions(
-	-DIRR_ENABLE_BUILTIN_FONT
-)
+add_compile_definitions(IRR_ENABLE_BUILTIN_FONT)
 
 # Platform-specific configuration
 
@@ -56,35 +61,35 @@ endif()
 # Device
 
 if(WIN32)
-	add_definitions(-D_IRR_WINDOWS_ -D_IRR_WINDOWS_API_)
+	add_compile_definitions(_IRR_WINDOWS_ _IRR_WINDOWS_API_)
 	set(DEVICE "WINDOWS")
 elseif(APPLE)
-	add_definitions(-D_IRR_OSX_PLATFORM_)
+	add_compile_definitions(_IRR_OSX_PLATFORM_)
 	set(DEVICE "OSX")
 elseif(ANDROID)
-	add_definitions(-D_IRR_ANDROID_PLATFORM_)
+	add_compile_definitions(_IRR_ANDROID_PLATFORM_)
 	if(NOT USE_SDL2)
 		message(FATAL_ERROR "The Android build requires SDL2")
 	endif()
 elseif(EMSCRIPTEN)
-	add_definitions(-D_IRR_EMSCRIPTEN_PLATFORM_ -D_IRR_COMPILE_WITH_EGL_MANAGER_)
+	add_compile_definitions(_IRR_EMSCRIPTEN_PLATFORM_ _IRR_COMPILE_WITH_EGL_MANAGER_)
 	set(LINUX_PLATFORM TRUE)
 	set(DEVICE "SDL")
 elseif(SOLARIS)
-	add_definitions(-D_IRR_SOLARIS_PLATFORM_ -D_IRR_POSIX_API_)
+	add_compile_definitions(_IRR_SOLARIS_PLATFORM_ _IRR_POSIX_API_)
 	set(DEVICE "X11")
 else()
-	add_definitions(-D_IRR_POSIX_API_)
+	add_compile_definitions(_IRR_POSIX_API_)
 	set(LINUX_PLATFORM TRUE)
 	set(DEVICE "X11")
 endif()
 
 if(LINUX_PLATFORM)
-	add_definitions(-D_IRR_LINUX_PLATFORM_)
+	add_compile_definitions(_IRR_LINUX_PLATFORM_)
 endif()
 
 if(MSVC)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 endif()
 
 if(USE_SDL2)
@@ -93,7 +98,7 @@ elseif(DEVICE STREQUAL "SDL")
 	message(FATAL_ERROR "SDL was used but not enabled?!")
 endif()
 
-add_definitions("-D_IRR_COMPILE_WITH_${DEVICE}_DEVICE_")
+add_compile_definitions("_IRR_COMPILE_WITH_${DEVICE}_DEVICE_")
 
 # X11
 
@@ -114,7 +119,7 @@ endif()
 # Joystick
 
 if(NOT (BSD OR SOLARIS OR EMSCRIPTEN))
-	add_definitions(-D_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
+	add_compile_definitions(_IRR_COMPILE_WITH_JOYSTICK_EVENTS_)
 endif()
 
 # OpenGL
@@ -123,10 +128,10 @@ if(USE_SDL2)
 	if(NOT ANDROID)
 		set(DEFAULT_OPENGL3 TRUE)
 	endif()
-	option(ENABLE_OPENGL3 "Enable OpenGL 3+" ${DEFAULT_OPENGL3})
 else()
-	set(ENABLE_OPENGL3 FALSE)
+	set(DEFAULT_OPENGL3 FALSE)
 endif()
+option(ENABLE_OPENGL3 "Enable OpenGL 3+" ${DEFAULT_OPENGL3})
 
 if(ANDROID OR EMSCRIPTEN)
 	set(ENABLE_OPENGL FALSE)
@@ -152,33 +157,39 @@ else()
 	endif()
 endif()
 
-if(ENABLE_OPENGL)
-	add_definitions(-D_IRR_COMPILE_WITH_OPENGL_)
-	set(OPENGL_DIRECT_LINK TRUE) # driver relies on this
+if(ENABLE_OPENGL OR (ENABLE_OPENGL3 AND NOT USE_SDL2))
+	if(ENABLE_OPENGL)
+		add_compile_definitions(_IRR_COMPILE_WITH_OPENGL_)
+		set(OPENGL_DIRECT_LINK TRUE) # driver relies on this
+	endif()
 	if(DEVICE STREQUAL "WINDOWS")
-		add_definitions(-D_IRR_COMPILE_WITH_WGL_MANAGER_)
+		add_compile_definitions(_IRR_COMPILE_WITH_WGL_MANAGER_)
 	elseif(DEVICE STREQUAL "X11")
-		add_definitions(-D_IRR_COMPILE_WITH_GLX_MANAGER_)
+		add_compile_definitions(_IRR_COMPILE_WITH_GLX_MANAGER_)
 	elseif(DEVICE STREQUAL "OSX")
-		add_definitions(-D_IRR_COMPILE_WITH_NSOGL_MANAGER_)
+		add_compile_definitions(_IRR_COMPILE_WITH_NSOGL_MANAGER_)
 	endif()
 endif()
 
 if(ENABLE_OPENGL3)
-	if (NOT USE_SDL2)
+	if(DEVICE STREQUAL "WINDOWS")
+		# supported
+	elseif(DEVICE STREQUAL "X11")
+		# supported
+	elseif (NOT USE_SDL2)
 		message(FATAL_ERROR "OpenGL 3 driver requires SDL2")
 	endif()
 endif()
 
 if(ENABLE_GLES2)
-	add_definitions(-D_IRR_COMPILE_WITH_OGLES2_)
+	add_compile_definitions(_IRR_COMPILE_WITH_OGLES2_)
 	if(DEVICE MATCHES "^(WINDOWS|X11)$" OR EMSCRIPTEN)
-		add_definitions(-D_IRR_COMPILE_WITH_EGL_MANAGER_)
+		add_compile_definitions(_IRR_COMPILE_WITH_EGL_MANAGER_)
 	endif()
 endif()
 
 if(ENABLE_WEBGL1)
-	add_definitions(-D_IRR_COMPILE_WITH_WEBGL1_)
+	add_compile_definitions(_IRR_COMPILE_WITH_WEBGL1_)
 endif()
 
 # Misc
@@ -186,7 +197,7 @@ endif()
 include(TestBigEndian)
 TEST_BIG_ENDIAN(BIG_ENDIAN)
 if(BIG_ENDIAN)
-	add_definitions(-D__BIG_ENDIAN__)
+	add_compile_definitions(__BIG_ENDIAN__)
 endif()
 
 # Configuration report
@@ -215,7 +226,11 @@ endif()
 if(ENABLE_OPENGL)
 	find_package(OpenGL REQUIRED)
 endif()
+set(USE_SDL2_SHARED FALSE)
 if(USE_SDL2)
+	if(NOT USE_SDL2_STATIC)
+		set(USE_SDL2_SHARED TRUE)
+	endif()
 	if(NOT ANDROID)
 		find_package(SDL2 REQUIRED)
 	else()
@@ -257,7 +272,7 @@ if(ENABLE_OPENGL AND DEVICE STREQUAL "SDL")
 #endif\n\
 int main() {}" CHECK_GL_VERSION_4_5)
 	if(CHECK_GL_VERSION_4_5)
-		add_definitions(-DIRR_PREFER_SDL_GL_HEADER)
+		add_compile_definitions(IRR_PREFER_SDL_GL_HEADER)
 	endif()
 endif()
 
@@ -269,7 +284,7 @@ elseif(APPLE)
 	find_library(COCOA_LIB Cocoa REQUIRED)
 	find_library(IOKIT_LIB IOKit REQUIRED)
 
-	add_definitions(-DGL_SILENCE_DEPRECATION)
+	add_compile_definitions(GL_SILENCE_DEPRECATION)
 elseif(NOT USE_SDL2)
 	# Unix probably
 	find_package(X11 REQUIRED)
@@ -304,7 +319,7 @@ set(IRRMESHLOADER
 )
 
 add_library(IRRMESHOBJ OBJECT
-	CSkinnedMesh.cpp
+	SkinnedMesh.cpp
 	CBoneSceneNode.cpp
 	CMeshSceneNode.cpp
 	CAnimatedMeshSceneNode.cpp
@@ -344,27 +359,27 @@ if(ENABLE_OPENGL3 OR ENABLE_GLES2)
 		OpenGL/FixedPipelineRenderer.cpp
 		OpenGL/MaterialRenderer.cpp
 		OpenGL/Renderer2D.cpp
+		OpenGL/VBO.cpp
 	)
 endif()
 
 if(ENABLE_OPENGL3)
 	set(IRRDRVROBJ
 		${IRRDRVROBJ}
-		OpenGL3/Driver.cpp
+		OpenGL3/DriverGL3.cpp
 	)
 endif()
 
 if(ENABLE_GLES2)
 	set(IRRDRVROBJ
 		${IRRDRVROBJ}
-		OpenGLES2/Driver.cpp
+		OpenGLES2/DriverGLES2.cpp
 	)
 endif()
 
 set(IRRIMAGEOBJ
 	CColorConverter.cpp
 	CImage.cpp
-	CImageLoaderBMP.cpp
 	CImageLoaderJPG.cpp
 	CImageLoaderPNG.cpp
 	CImageLoaderTGA.cpp
@@ -386,7 +401,6 @@ add_library(IRRIOOBJ OBJECT
 	CReadFile.cpp
 	CWriteFile.cpp
 	CZipReader.cpp
-	CAttributes.cpp
 )
 
 add_library(IRROTHEROBJ OBJECT
@@ -492,7 +506,8 @@ target_link_libraries(IrrlichtMt PRIVATE
 	${ZLIB_LIBRARY}
 	${JPEG_LIBRARY}
 	${PNG_LIBRARY}
-	"$<$<BOOL:${USE_SDL2}>:SDL2::SDL2>"
+	"$<$<BOOL:${USE_SDL2_SHARED}>:SDL2::SDL2>"
+	"$<$<BOOL:${USE_SDL2_STATIC}>:SDL2::SDL2-static>"
 
 	"$<$<BOOL:${OPENGL_DIRECT_LINK}>:${OPENGL_LIBRARIES}>"
 	${EGL_LIBRARY}
@@ -508,10 +523,10 @@ target_link_libraries(IrrlichtMt PRIVATE
 )
 
 if(WIN32)
-	target_compile_definitions(IrrlichtMt INTERFACE _IRR_WINDOWS_API_) # used in _IRR_DEBUG_BREAK_IF definition in a public header
+	target_compile_definitions(IrrlichtMt INTERFACE _IRR_WINDOWS_API_)
 endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	target_compile_definitions(IrrlichtMt INTERFACE _DEBUG) # same
+	target_compile_definitions(IrrlichtMt INTERFACE _DEBUG)
 endif()
 if(APPLE OR ANDROID OR EMSCRIPTEN)
 	target_compile_definitions(IrrlichtMt PUBLIC IRR_MOBILE_PATHS)

@@ -312,7 +312,7 @@ const std::string &get_sysinfo()
 }
 
 
-bool getCurrentWorkingDir(char *buf, size_t len)
+[[maybe_unused]] static bool getCurrentWorkingDir(char *buf, size_t len)
 {
 #ifdef _WIN32
 	DWORD ret = GetCurrentDirectory(len, buf);
@@ -739,6 +739,10 @@ void initializePaths()
 	migrateCachePath();
 
 #endif // RUN_IN_PLACE
+
+	assert(!path_share.empty());
+	assert(!path_user.empty());
+	assert(!path_cache.empty());
 
 	infostream << "Detected share path: " << path_share << std::endl;
 	infostream << "Detected user path: " << path_user << std::endl;

@@ -17,26 +17,25 @@
 
 #include "irr_v3d.h"                   // for irrlicht datatypes
 
-#include "constants.h"
-#include "serialization.h"             // for SER_FMT_VER_INVALID
-#include "network/networkpacket.h"
-#include "network/networkprotocol.h"
 #include "network/address.h"
+#include "network/networkprotocol.h" // session_t
 #include "porting.h"
 #include "threading/mutex_auto_lock.h"
 #include "clientdynamicinfo.h"
 
 #include <list>
-#include <vector>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <memory>
 #include <mutex>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
-class MapBlock;
-class ServerEnvironment;
 class EmergeManager;
+class MapBlock;
+class NetworkPacket;
+class ServerEnvironment;
 
 /*
  * State Transitions
@@ -231,7 +230,7 @@ public:
 	//       Also, the client must be moved to some other container.
 	session_t peer_id = PEER_ID_INEXISTENT;
 	// The serialization version to use with the client
-	u8 serialization_version = SER_FMT_VER_INVALID;
+	u8 serialization_version;
 	//
 	std::atomic_ushort net_proto_version = 0;
 
@@ -289,8 +288,8 @@ public:
 
 	void SentBlock(v3bpos_t p, double time);
 
-	void SetBlockNotSent(v3bpos_t p);
-	void SetBlocksNotSent(const std::vector<v3bpos_t> &blocks);
+	void SetBlockNotSent(v3bpos_t p, bool low_priority = false);
+	void SetBlocksNotSent(const std::vector<v3bpos_t> &blocks, bool low_priority = false);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -372,7 +371,7 @@ public:
 
 private:
 	// Version is stored in here after INIT before INIT2
-	u8 m_pending_serialization_version = SER_FMT_VER_INVALID;
+	u8 m_pending_serialization_version;
 
 	/* current state of client */
 	std::atomic<ClientState> m_state = CS_Created;
@@ -431,19 +430,8 @@ private:
 		- The size of this list is limited to some value
 		Block is added when it is sent with BLOCKDATA.
 		Block is removed when GOTBLOCKS is received.
-		Value is time from sending. (not used at the moment)
 	*/
-	std::unordered_map<v3bpos_t, float> m_blocks_sending;
-
-	/*
-		Blocks that have been modified since blocks were
-		sent to the client last (getNextBlocks()).
-		This is used to reset the unsent distance, so that
-		modified blocks are resent to the client.
-
-		List of block positions.
-	*/
-	std::unordered_set<v3bpos_t> m_blocks_modified;
+	std::unordered_set<v3bpos_t> m_blocks_sending;
 
 	/*
 		Count of excess GotBlocks().
@@ -513,7 +501,7 @@ public:
 	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
 
 	/* mark blocks as not sent on all active clients */
-	void markBlocksNotSent(const std::vector<v3bpos_t> &positions);
+	void markBlocksNotSent(const std::vector<v3bpos_t> &positions, bool low_priority = false);
 
 	/* verify is server user limit was reached */
 	bool isUserLimitReached();

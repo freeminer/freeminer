@@ -7,39 +7,38 @@
 #include "irrlichttypes.h"
 #include "itemgroup.h"
 #include "json-forwards.h"
-#include "common/c_types.h"
+#include "util/enum_string.h"
 #include <SColor.h>
 
 #include <string>
 #include <iostream>
+#include <vector>
 #include <map>
-#include <unordered_map>
 #include <optional>
 
 struct ItemDefinition;
 class IItemDefManager;
 
-#include "util/msgpack_serialize.h"
-
-enum {
-	TOOLGROUPCAP_USES,
-	TOOLGROUPCAP_MAXLEVEL,
-	TOOLGROUPCAP_TIMES
-};
+/*
+ * NOTE: these structs intentionally use vector<pair<>> or map<> over unordered_map<>
+ * to avoid blowing up the structure sizes. Also because the linear "dumb" approach
+ * works better if you have just a handful of items.
+ */
 
 struct ToolGroupCap
 {
-	std::unordered_map<int, float> times;
+	std::vector<std::pair<int, float>> times;
 	int maxlevel = 1;
 	int uses = 20;
 
 	ToolGroupCap() = default;
 
 	std::optional<float> getTime(int rating) const {
-		auto i = times.find(rating);
-		if (i == times.end())
-			return std::nullopt;
-		return i->second;
+		for (auto &it : times) {
+			if (it.first == rating)
+				return it.second;
+		}
+		return std::nullopt;
 	}
 
 	template<typename Packer>
@@ -64,8 +63,8 @@ struct ToolGroupCap
 };
 
 
-typedef std::unordered_map<std::string, struct ToolGroupCap> ToolGCMap;
-typedef std::unordered_map<std::string, s16> DamageGroup;
+typedef std::map<std::string, ToolGroupCap> ToolGCMap;
+typedef std::map<std::string, s16> DamageGroup;
 
 enum {
 	TOOLCAP_FULL_PUNCH_INTERVAL,
@@ -78,9 +77,9 @@ struct ToolCapabilities
 {
 	float full_punch_interval;
 	int max_drop_level;
+	int punch_attack_uses;
 	ToolGCMap groupcaps;
 	DamageGroup damageGroups;
-	int punch_attack_uses;
 
 	ToolCapabilities(
 			float full_punch_interval_ = 1.4f,
@@ -91,9 +90,9 @@ struct ToolCapabilities
 	):
 		full_punch_interval(full_punch_interval_),
 		max_drop_level(max_drop_level_),
+		punch_attack_uses(punch_attack_uses_),
 		groupcaps(groupcaps_),
-		damageGroups(damageGroups_),
-		punch_attack_uses(punch_attack_uses_)
+		damageGroups(damageGroups_)
 	{}
 
 	void serialize(std::ostream &os, u16 version) const;
@@ -111,17 +110,18 @@ private:
 
 struct WearBarParams
 {
-	std::map<f32, video::SColor> colorStops;
 	enum BlendMode : u8 {
 	    BLEND_MODE_CONSTANT,
 	    BLEND_MODE_LINEAR,
 	    BlendMode_END // Dummy for validity check
 	};
 	constexpr const static EnumString es_BlendMode[3] = {
-		{WearBarParams::BLEND_MODE_CONSTANT, "constant"},
-		{WearBarParams::BLEND_MODE_LINEAR, "linear"},
+		{BLEND_MODE_CONSTANT, "constant"},
+		{BLEND_MODE_LINEAR, "linear"},
 		{0, nullptr}
 	};
+
+	std::map<f32, video::SColor> colorStops;
 	BlendMode blend;
 
 	WearBarParams(const std::map<f32, video::SColor> &colorStops, BlendMode blend):
@@ -137,6 +137,7 @@ struct WearBarParams
 	static WearBarParams deserialize(std::istream &is);
 	void serializeJson(std::ostream &os) const;
 	static std::optional<WearBarParams> deserializeJson(std::istream &is);
+
 	video::SColor getWearBarColor(f32 durabilityPercent);
 };
 

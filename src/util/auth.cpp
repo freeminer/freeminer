@@ -6,7 +6,7 @@
 #include <string>
 #include "auth.h"
 #include "base64.h"
-#include "sha1.h"
+#include "util/hashing.h"
 #include "srp.h"
 #include "util/string.h"
 #include "debug.h"
@@ -23,9 +23,7 @@ std::string translate_password(const std::string &name,
 		return "";
 
 	std::string slt = name + password;
-	SHA1 sha1;
-	sha1.addBytes(slt);
-	std::string digest = sha1.getDigest();
+	std::string digest = hashing::sha1(slt);
 	std::string pwd = base64_encode(digest);
 	return pwd;
 }
@@ -69,9 +67,9 @@ void generate_srp_verifier_and_salt(const std::string &name,
 	std::string *salt)
 {
 	char *bytes_v = nullptr;
-	size_t verifier_len;
+	size_t verifier_len = 0;
 	char *salt_ptr = nullptr;
-	size_t salt_len;
+	size_t salt_len = 0;
 	gen_srp_v(name, password, &salt_ptr, &salt_len, &bytes_v, &verifier_len);
 	*verifier = std::string(bytes_v, verifier_len);
 	*salt = std::string(salt_ptr, salt_len);

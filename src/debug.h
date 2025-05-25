@@ -6,10 +6,7 @@
 
 #include <exception>
 #include <cassert>
-#include "gettime.h"
-#include "debug/stacktrace.h"
-#include "log.h"
-#include "config.h"
+#include "log.h" // unused. for convenience.
 
 #ifdef _MSC_VER
 	#define FUNCTION_NAME __FUNCTION__

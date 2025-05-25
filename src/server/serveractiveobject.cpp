@@ -8,8 +8,6 @@
 #include "constants.h" // BS
 #include "serverenvironment.h"
 
-Queue<ActiveObjectMessage> dummy_queue;
-
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
 	ActiveObject(0),
 	m_env(env),
@@ -19,6 +17,17 @@ ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
 	m_messages_out(env ? env->m_active_object_messages : dummy_queue)
 
 {
+}
+
+void ServerActiveObject::setBasePosition(v3opos_t pos)
+{
+	bool changed = m_base_position != pos;
+	m_base_position = pos;
+	if (changed && getEnv()) {
+		// getEnv() should never be null if the object is in an environment.
+		// It may however be null e.g. in tests or database migrations.
+		getEnv()->updateObjectPos(getId(), pos);
+	}
 }
 
 float ServerActiveObject::getMinimumSavedMovement()

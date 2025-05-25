@@ -127,7 +127,7 @@ void LuaRaycast::Register(lua_State *L)
 		{"__gc", gc_object},
 		{0, 0}
 	};
-	registerClass(L, className, methods, metamethods);
+	registerClass<LuaRaycast>(L, methods, metamethods);
 
 	lua_register(L, className, create_object);
 }
@@ -918,9 +918,8 @@ int ModApiEnv::l_find_node_near(lua_State *L)
 void ModApiEnvBase::checkArea(v3pos_t &minp, v3pos_t &maxp)
 {
 	auto volume = VoxelArea(minp, maxp).getVolume();
-	// Volume limit equal to 8 default mapchunks, (80 * 2) ^ 3 = 4,096,000
-	if (volume > 4096000) {
-		throw LuaError("Area volume exceeds allowed value of 4096000");
+	if (volume > MAX_WORKING_VOLUME) {
+		throw LuaError("Area volume exceeds allowed value of " + std::to_string(MAX_WORKING_VOLUME));
 	}
 
 	// Clamp to map range to avoid problems
@@ -1095,9 +1094,9 @@ int ModApiEnv::l_find_nodes_in_area_under_air(lua_State *L)
 	return findNodesInAreaUnderAir(L, minp, maxp, filter, getNode);
 }
 
-// get_perlin(seeddiff, octaves, persistence, scale)
-// returns world-specific PerlinNoise
-int ModApiEnv::l_get_perlin(lua_State *L)
+// get_value_noise(seeddiff, octaves, persistence, scale)
+// returns world-specific ValueNoise
+int ModApiEnv::l_get_value_noise(lua_State *L)
 {
 	GET_ENV_PTR_NO_MAP_LOCK;
 
@@ -1114,16 +1113,16 @@ int ModApiEnv::l_get_perlin(lua_State *L)
 
 	params.seed += (int)env->getServerMap().getSeed();
 
-	LuaPerlinNoise *n = new LuaPerlinNoise(&params);
+	LuaValueNoise *n = new LuaValueNoise(&params);
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = n;
-	luaL_getmetatable(L, "PerlinNoise");
+	luaL_getmetatable(L, "ValueNoise");
 	lua_setmetatable(L, -2);
 	return 1;
 }
 
-// get_perlin_map(noiseparams, size)
-// returns world-specific PerlinNoiseMap
-int ModApiEnv::l_get_perlin_map(lua_State *L)
+// get_value_noise_map(noiseparams, size)
+// returns world-specific ValueNoiseMap
+int ModApiEnv::l_get_value_noise_map(lua_State *L)
 {
 	GET_ENV_PTR_NO_MAP_LOCK;
 
@@ -1133,9 +1132,9 @@ int ModApiEnv::l_get_perlin_map(lua_State *L)
 	v3pos_t size = read_v3pos(L, 2);
 
 	s32 seed = (s32)(env->getServerMap().getSeed());
-	LuaPerlinNoiseMap *n = new LuaPerlinNoiseMap(&np, seed, size);
+	LuaValueNoiseMap *n = new LuaValueNoiseMap(&np, seed, size);
 	*(void **)(lua_newuserdata(L, sizeof(void *))) = n;
-	luaL_getmetatable(L, "PerlinNoiseMap");
+	luaL_getmetatable(L, "ValueNoiseMap");
 	lua_setmetatable(L, -2);
 	return 1;
 }
@@ -1378,11 +1377,7 @@ int ModApiEnv::l_spawn_tree(lua_State *L)
 	ServerMap *map = &env->getServerMap();
 	treegen::error e;
 	if ((e = treegen::spawn_ltree (map, p0, tree_def)) != treegen::SUCCESS) {
-		if (e == treegen::UNBALANCED_BRACKETS) {
-			luaL_error(L, "spawn_tree(): closing ']' has no matching opening bracket");
-		} else {
-			luaL_error(L, "spawn_tree(): unknown error");
-		}
+		throw LuaError("spawn_tree(): " + treegen::error_to_string(e));
 	}
 
 	lua_pushboolean(L, true);
@@ -1492,8 +1487,8 @@ void ModApiEnv::Initialize(lua_State *L, int top)
 	API_FCT(load_area);
 	API_FCT(emerge_area);
 	API_FCT(delete_area);
-	API_FCT(get_perlin);
-	API_FCT(get_perlin_map);
+	API_FCT(get_value_noise);
+	API_FCT(get_value_noise_map);
 	API_FCT(get_voxel_manip);
 	API_FCT(clear_objects);
 	API_FCT(spawn_tree);
@@ -1696,11 +1691,7 @@ int ModApiEnvVM::l_spawn_tree(lua_State *L)
 
 	treegen::error e;
 	if ((e = treegen::make_ltree(*vm, p0, tree_def)) != treegen::SUCCESS) {
-		if (e == treegen::UNBALANCED_BRACKETS) {
-			throw LuaError("spawn_tree(): closing ']' has no matching opening bracket");
-		} else {
-			throw LuaError("spawn_tree(): unknown error");
-		}
+		throw LuaError("spawn_tree(): " + treegen::error_to_string(e));
 	}
 
 	lua_pushboolean(L, true);

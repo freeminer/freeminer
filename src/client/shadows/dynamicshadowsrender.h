@@ -7,8 +7,9 @@
 #include <string>
 #include <vector>
 #include <IrrlichtDevice.h>
-#include "irrlichttypes_extrabloated.h"
 #include "client/shadows/dynamicshadows.h"
+#include <ISceneNode.h>
+#include <ISceneManager.h>
 
 class ShadowDepthShaderCB;
 class shadowScreenQuad;
@@ -27,7 +28,8 @@ struct NodeToApply
 			E_SHADOW_MODE m = E_SHADOW_MODE::ESM_BOTH) :
 			node(n),
 			shadowMode(m){};
-	bool operator<(const NodeToApply &other) const { return node < other.node; };
+
+	bool operator==(scene::ISceneNode *n) const { return node == n; }
 
 	scene::ISceneNode *node;
 
@@ -67,6 +69,7 @@ public:
 	void removeNodeFromShadowList(scene::ISceneNode *node);
 
 	void update(video::ITexture *outputTarget = nullptr);
+	/// Force shadow map to be re-drawn in one go next frame
 	void setForceUpdateShadowMap() { m_force_update_shadow_map = true; }
 	void drawDebug();
 
@@ -118,11 +121,11 @@ private:
 	std::vector<NodeToApply> m_shadow_node_array;
 
 	float m_shadow_strength;
-	video::SColor m_shadow_tint{ 255, 0, 0, 0 };
+	video::SColor m_shadow_tint;
 	float m_shadow_strength_gamma;
 	float m_shadow_map_max_distance;
-	float m_shadow_map_texture_size;
-	float m_time_day{0.0f};
+	u32 m_shadow_map_texture_size;
+	float m_time_day;
 	int m_shadow_samples;
 	bool m_shadow_map_texture_32bit;
 	bool m_shadows_enabled;
@@ -130,7 +133,7 @@ private:
 	bool m_shadow_map_colored;
 	bool m_force_update_shadow_map;
 	u8 m_map_shadow_update_frames; /* Use this number of frames to update map shaodw */
-	u8 m_current_frame{0}; /* Current frame */
+	u8 m_current_frame; /* Current frame */
 	f32 m_perspective_bias_xy;
 	f32 m_perspective_bias_z;
 

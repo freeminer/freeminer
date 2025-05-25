@@ -5,7 +5,6 @@
 #pragma once
 
 #include <memory>
-#include "debug.h"
 #include "util/container.h"
 #include "irrlichttypes.h"
 #include "util/basic_macros.h"
@@ -46,8 +45,7 @@ public:
 /*
 				if (!it.second)
 					continue;
-*/
-				m_active_objects.remove(it.first);
+				removeObject(it.first);
 			}
 		} while (!m_active_objects.empty());
 	}

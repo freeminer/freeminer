@@ -55,13 +55,18 @@ public:
 		return m_queue.front();
 	}
 
-	u32 size() const
+	size_t size() const
 	{
 		return m_queue.size();
 	}
 
-//private:
-	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
+	bool empty() const
+	{
+		return m_queue.empty();
+	}
+
+private:
+	std::set<Value> m_set;
 	std::queue<Value> m_queue;
 };
 
@@ -481,11 +486,10 @@ public:
 		// This conditional block was converted from a ternary to ensure no
 		// temporary values are created in evaluating the return expression,
 		// which could cause a dangling reference.
-		if (it != m_values.end()) {
+		if (it != m_values.end())
 			return it->second;
-		} else {
+		else
 			return null_value;
-		}
 	}
 
 	void put(const K &key, const V &value) {
@@ -552,7 +556,7 @@ public:
 		return !!take(key);
 	}
 
-	// Warning: not constant-time!
+	/// @warning not constant-time!
 	size_t size() const {
 		if (m_iterating) {
 			// This is by no means impossible to determine, it's just annoying
@@ -569,7 +573,7 @@ public:
 		return n;
 	}
 
-	// Warning: not constant-time!
+	/// @warning not constant-time!
 	bool empty() const {
 		const auto lock = lock_shared_rec();
 		if (m_iterating)

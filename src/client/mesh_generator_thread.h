@@ -72,12 +72,11 @@ private:
 	std::unordered_set<v3bpos_t> m_inflight_blocks;
 	std::mutex m_mutex;
 
-	// TODO: Add callback to update these when g_settings changes
-	bool m_cache_enable_shaders;
+	// TODO: Add callback to update these when g_settings changes, and update all meshes
 	bool m_cache_smooth_lighting;
+	bool m_cache_enable_water_reflections;
 
 	void fillDataFromMapBlocks(QueuedMeshUpdate *q);
-	void cleanupCache();
 };
 
 struct MeshUpdateResult
@@ -97,7 +96,7 @@ class MeshUpdateManager;
 class MeshUpdateWorkerThread : public UpdateThread
 {
 public:
-	MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *queue_in, MeshUpdateManager *manager, v3pos_t *camera_offset);
+	MeshUpdateWorkerThread(Client *client, MeshUpdateQueue *queue_in, MeshUpdateManager *manager);
 
 protected:
 	virtual void doUpdate();
@@ -106,7 +105,6 @@ private:
 	Client *m_client;
 	MeshUpdateQueue *m_queue_in;
 	MeshUpdateManager *m_manager;
-	v3pos_t *m_camera_offset;
 
 	// TODO: Add callback to update these when g_settings changes
 	int m_generation_interval;
@@ -124,8 +122,6 @@ public:
 	void putResult(const MeshUpdateResult &r);
 	bool getNextResult(MeshUpdateResult &r);
 
-
-	v3pos_t m_camera_offset;
 
 	void start();
 	void stop();

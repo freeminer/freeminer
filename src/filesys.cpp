@@ -117,7 +117,7 @@ std::vector<DirListNode> GetDirListing(const std::string &pathstring)
 					<< " Error is " << dwError << std::endl;
 			listing.clear();
 			return listing;
- 		}
+		}
 	}
 	return listing;
 }
@@ -149,20 +149,23 @@ bool IsDir(const std::string &path)
 			(attr & FILE_ATTRIBUTE_DIRECTORY));
 }
 
+bool IsFile(const std::string &path)
+{
+	DWORD attr = GetFileAttributes(path.c_str());
+	return (attr != INVALID_FILE_ATTRIBUTES &&
+			!(attr & FILE_ATTRIBUTE_DIRECTORY));
+}
+
 bool IsExecutable(const std::string &path)
 {
 	DWORD type;
 	return GetBinaryType(path.c_str(), &type) != 0;
 }
 
-bool IsDirDelimiter(char c)
-{
-	return c == '/' || c == '\\';
-}
-
 bool RecursiveDelete(const std::string &path)
 {
 	infostream << "Recursively deleting \"" << path << "\"" << std::endl;
+	assert(IsPathAbsolute(path));
 	if (!IsDir(path)) {
 		infostream << "RecursiveDelete: Deleting file  " << path << std::endl;
 		if (!DeleteFile(path.c_str())) {
@@ -194,19 +197,9 @@ bool RecursiveDelete(const std::string &path)
 
 bool DeleteSingleFileOrEmptyDirectory(const std::string &path)
 {
-	DWORD attr = GetFileAttributes(path.c_str());
-	bool is_directory = (attr != INVALID_FILE_ATTRIBUTES &&
-			(attr & FILE_ATTRIBUTE_DIRECTORY));
-	if(!is_directory)
-	{
-		bool did = DeleteFile(path.c_str());
-		return did;
-	}
-	else
-	{
-		bool did = RemoveDirectory(path.c_str());
-		return did;
-	}
+	if (!IsDir(path))
+		return DeleteFile(path.c_str());
+	return RemoveDirectory(path.c_str());
 }
 
 std::string TempPath()
@@ -349,8 +342,7 @@ bool CreateDir(const std::string &path)
 
 bool PathExists(const std::string &path)
 {
-	struct stat st{};
-	return (stat(path.c_str(),&st) == 0);
+	return access(path.c_str(), F_OK) == 0;
 }
 
 bool IsPathAbsolute(const std::string &path)
@@ -361,19 +353,27 @@ bool IsPathAbsolute(const std::string &path)
 bool IsDir(const std::string &path)
 {
 	struct stat statbuf{};
-	if(stat(path.c_str(), &statbuf))
+	if (stat(path.c_str(), &statbuf))
 		return false; // Actually error; but certainly not a directory
 	return ((statbuf.st_mode & S_IFDIR) == S_IFDIR);
+}
+
+bool IsFile(const std::string &path)
+{
+	struct stat statbuf{};
+	if (stat(path.c_str(), &statbuf))
+		return false;
+#ifdef S_IFSOCK
+	// sockets cannot be opened in any way, so they are not files.
+	if ((statbuf.st_mode & S_IFSOCK) == S_IFSOCK)
+		return false;
+#endif
+	return ((statbuf.st_mode & S_IFDIR) != S_IFDIR);
 }
 
 bool IsExecutable(const std::string &path)
 {
 	return access(path.c_str(), X_OK) == 0;
-}
-
-bool IsDirDelimiter(char c)
-{
-	return c == '/';
 }
 
 bool RecursiveDelete(const std::string &path)
@@ -519,15 +519,10 @@ bool CopyFileContents(const std::string &source, const std::string &target)
 	// fallback to normal copy, but no need to reopen the files
 	sourcefile.reset(fdopen(srcfd, "rb"));
 	targetfile.reset(fdopen(tgtfd, "wb"));
-	goto fallback;
-
-#endif
-
+#else
 	sourcefile.reset(fopen(source.c_str(), "rb"));
 	targetfile.reset(fopen(target.c_str(), "wb"));
-
-fallback:
-
+#endif
 	if (!sourcefile) {
 		errorstream << source << ": can't open for reading: "
 			<< strerror(errno) << std::endl;
@@ -728,7 +723,7 @@ bool PathStartsWith(const std::string &path, const std::string &prefix)
 			if(prefixpos == prefixsize)
 				return true;
 			// Return false if path has ended (at delimiter/EOS)
-            // while prefix did not.
+			// while prefix did not.
 			if(pathpos == pathsize)
 				return false;
 		}
@@ -846,21 +841,56 @@ std::string RemoveRelativePathComponents(std::string path)
 std::string AbsolutePath(const std::string &path)
 {
 #ifdef _WIN32
+	// handle behavior differences on windows
+	if (path.empty())
+		return "";
+	else if (!PathExists(path))
+		return "";
 	char *abs_path = _fullpath(NULL, path.c_str(), MAX_PATH);
 #else
 	char *abs_path = realpath(path.c_str(), NULL);
 #endif
-	if (!abs_path) return "";
+	if (!abs_path)
+		return "";
 	std::string abs_path_str(abs_path);
 	free(abs_path);
 	return abs_path_str;
+}
+
+std::string AbsolutePathPartial(const std::string &path)
+{
+	if (path.empty())
+		return "";
+	// Try to determine absolute path
+	std::string abs_path = fs::AbsolutePath(path);
+	if (!abs_path.empty())
+		return abs_path;
+	// Remove components until it works
+	std::string cur_path = path;
+	std::string removed;
+	while (abs_path.empty() && !cur_path.empty()) {
+		std::string component;
+		cur_path = RemoveLastPathComponent(cur_path, &component);
+		removed = component + (removed.empty() ? "" : DIR_DELIM + removed);
+		abs_path = AbsolutePath(cur_path);
+	}
+	// If we had a relative path that does not exist, it needs to be joined with cwd
+	if (cur_path.empty() && !IsPathAbsolute(path))
+		abs_path = AbsolutePath(".");
+	// or there's an error
+	if (abs_path.empty())
+		return "";
+	// Put them back together and resolve the remaining relative components
+	if (!removed.empty())
+		abs_path.append(DIR_DELIM).append(removed);
+	return RemoveRelativePathComponents(abs_path);
 }
 
 const char *GetFilenameFromPath(const char *path)
 {
 	const char *filename = strrchr(path, DIR_DELIM_CHAR);
 	// Consistent with IsDirDelimiter this function handles '/' too
-	if (DIR_DELIM_CHAR != '/') {
+	if constexpr (DIR_DELIM_CHAR != '/') {
 		const char *tmp = strrchr(path, '/');
 		if (tmp && tmp > filename)
 			filename = tmp;
