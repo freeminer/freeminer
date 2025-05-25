@@ -128,7 +128,7 @@ public:
 	auto getFrustumCuller() const
 	{
 		return [planes = getFrustumCullPlanes(),
-				camera_offset = intToFloat(m_camera_offset, BS)
+				camera_offset = intToFloat(m_camera_offset, (opos_t)BS)
 				](v3opos_t position, f32 radius) {
 			v3f pos_camspace = oposToV3f(position - camera_offset);
 			for (auto &plane : planes) {

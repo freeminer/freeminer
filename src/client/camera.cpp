@@ -449,11 +449,11 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Set camera node transformation
-	m_cameranode->setPosition(oposToV3f(m_camera_position - posToOpos(m_camera_offset, BS)));
+	m_cameranode->setPosition(oposToV3f(m_camera_position - intToFloat(m_camera_offset, BS)));
 	m_cameranode->setUpVector(abs_cam_up);
 	m_cameranode->updateAbsolutePosition();
 	// *100 helps in large map coordinates
-	m_cameranode->setTarget(oposToV3f(m_camera_position - posToOpos(m_camera_offset, BS)
+	m_cameranode->setTarget(oposToV3f(m_camera_position - intToFloat(m_camera_offset, BS)
 		+ 100 * v3fToOpos(m_camera_direction)));
 
 	/*

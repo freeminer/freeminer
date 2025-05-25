@@ -868,7 +868,7 @@ void Hud::setSelectionPos(const v3opos_t &pos, const v3pos_t &camera_offset)
 {
 	m_camera_offset = camera_offset;
 	m_selection_pos = pos;
-	m_selection_pos_with_offset = oposToV3f(pos - posToOpos(camera_offset, BS));
+	m_selection_pos_with_offset = oposToV3f(pos - intToFloat(camera_offset, BS));
 }
 
 void Hud::drawSelectionMesh()

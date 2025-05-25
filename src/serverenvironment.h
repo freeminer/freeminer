@@ -220,7 +220,7 @@ public:
 	// Find the daylight value at pos with a Depth First Search
 	u8 findSunlight(v3pos_t pos) const;
 
-	void updateObjectPos(u16 id, v3f pos)
+	void updateObjectPos(u16 id, v3opos_t pos)
 	{
 		return m_ao_manager.updateObjectPos(id, pos);
 	}

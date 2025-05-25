@@ -1388,7 +1388,7 @@ void ServerEnvironment::getSelectedActiveObjects(
 		return false;
 	};
 
-	aabb3f search_area(shootline_on_map.start, shootline_on_map.end);
+	aabb3o search_area(shootline_on_map.start, shootline_on_map.end);
 	search_area.repair();
 	search_area.MinEdge -= 5 * BS;
 	search_area.MaxEdge += 5 * BS;
