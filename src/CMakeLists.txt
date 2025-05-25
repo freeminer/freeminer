@@ -500,11 +500,14 @@ endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
 
-if(HAVE_ENDIAN_H)
-	set(HAVE_ENDIAN_H 1)
-else()
-	set(HAVE_ENDIAN_H 0)
+if((NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR) AND EXISTS "${PROJECT_SOURCE_DIR}/cmake_config.h")
+	message(FATAL_ERROR "You are doing an out-of-tree build, but build artifacts are left in-tree. This will break the build!")
 endif()
+configure_file(
+	"${PROJECT_SOURCE_DIR}/cmake_config.h.in"
+	"${PROJECT_BINARY_DIR}/cmake_config.h"
+)
+
 
 # Add a target that always rebuilds cmake_config_githash.h
 add_custom_target(GenerateVersion
@@ -899,12 +902,14 @@ if(USE_CURL)
 	include_directories(${CURL_INCLUDE_DIRS})
 endif()
 
-
 if (NO_BUILD_BIN_DIR)
 
-# When cross-compiling assume the user doesn't want to run the executable anyway,
-# otherwise place it in <source dir>/bin/ since Luanti can only run from there.
-if(NOT CMAKE_CROSSCOMPILING)
+# When cross-compiling place the executable in <build dir>/bin so that multiple
+# targets can be built from the same source folder. Otherwise, place it in
+# <source dir>/bin/ since Luanti can only run from there.
+if(CMAKE_CROSSCOMPILING)
+	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/bin")
+else()
 	set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 endif()
 
@@ -1467,22 +1472,19 @@ elseif (USE_GETTEXT)
 		#set(MO_FILE_PATH "${MO_BUILD_PATH}/${PROJECT_NAME}.mo")
 		set(MO_FILE_PATH "${MO_BUILD_PATH}/luanti.mo")
 
-		add_custom_command(OUTPUT ${MO_BUILD_PATH}
-			COMMAND ${CMAKE_COMMAND} -E make_directory ${MO_BUILD_PATH}
-			COMMENT "mo-update [${LOCALE}]: Creating locale directory.")
-
 		add_custom_command(
 			OUTPUT ${MO_FILE_PATH}
+			COMMAND ${CMAKE_COMMAND} -E make_directory ${MO_BUILD_PATH}
 			COMMAND ${GETTEXT_MSGFMT} -o ${MO_FILE_PATH} ${PO_FILE_PATH}
-			DEPENDS ${MO_BUILD_PATH} ${PO_FILE_PATH}
+			DEPENDS ${PO_FILE_PATH}
 			WORKING_DIRECTORY "${GETTEXT_PO_PATH}/${LOCALE}"
-			COMMENT "mo-update [${LOCALE}]: Creating mo file."
+			COMMENT "mo-update [${LOCALE}]: Creating mo file"
 			)
 
 		list(APPEND MO_FILES ${MO_FILE_PATH})
 	endforeach()
 
-	add_custom_target(translations ALL COMMENT "mo update" DEPENDS ${MO_FILES})
+	add_custom_target(translations ALL COMMENT "mo-update" DEPENDS ${MO_FILES})
 endif()
 
 # Subdirectories

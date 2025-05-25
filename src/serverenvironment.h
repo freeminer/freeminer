@@ -5,7 +5,8 @@
 #pragma once
 
 #include "server/fm_key_value_cached.h"
-#include "server/abmhandler.h"
+//#include "server/abmhandler.h"
+#include "threading/concurrent_set.h"
 
 #include <set>
 #include <utility>
@@ -15,7 +16,7 @@
 #include "servermap.h"
 #include "settings.h"
 #include "server/activeobjectmgr.h"
-#include "threading/concurrent_set.h"
+#include "server/blockmodifier.h"
 #include "util/numeric.h"
 #include <atomic>
 #include <cstddef>
@@ -30,159 +31,12 @@ class PlayerDatabase;
 class AuthDatabase;
 class PlayerSAO;
 class ServerEnvironment;
-class ActiveBlockModifier;
 struct StaticObject;
 class ServerActiveObject;
 class Server;
 class ServerScripting;
 enum AccessDeniedCode : u8;
 typedef u16 session_t;
-
-/*
-	{Active, Loading} block modifier interface.
-
-	These are fed into ServerEnvironment at initialization time;
-	ServerEnvironment handles deleting them.
-*/
-
-class ActiveBlockModifier
-{
-public:
-	ActiveBlockModifier() = default;
-	virtual ~ActiveBlockModifier() = default;
-
-
-	// fm:
-	// Maximum range to neighbors  
-	virtual u32 getNeighborsRange() { return 1; };                 
-
-
-	// Set of contents to trigger on
-	virtual const std::vector<std::string> &getTriggerContents() const = 0;
-	// Set of required neighbors (trigger doesn't happen if none are found)
-	// Empty = do not check neighbors
-	virtual const std::vector<std::string> &getRequiredNeighbors(uint8_t activate) const = 0;
-	// Set of without neighbors (trigger doesn't happen if any are found)
-	// Empty = do not check neighbors
-	virtual const std::vector<std::string> &getWithoutNeighbors() const = 0;
-	// Trigger interval in seconds
-	virtual float getTriggerInterval() = 0;
-	// Random chance of (1 / return value), 0 is disallowed
-	virtual u32 getTriggerChance() = 0;
-	// Whether to modify chance to simulate time lost by an unnattended block
-	virtual bool getSimpleCatchUp() = 0;
-	// get min Y for apply abm
-	virtual s16 getMinY() = 0;
-	// get max Y for apply abm
-	virtual s16 getMaxY() = 0;
-	// This is called usually at interval for 1/chance of the nodes
-/*
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
-*/
-	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider
-			, v3pos_t neighbor_pos, uint8_t activate = 0){};
-};
-
-struct ABMWithState
-{
-	ActiveBlockModifier *abm;
-	float timer = 0.0f;
-
-
-	// fm:
-	float interval = 10;
-	float chance = 50;
-	int neighbors_range;
-	bool simple_catchup;
-	std::vector<content_t> trigger_ids;
-	FMBitset required_neighbors = CONTENT_ID_CAPACITY,
-			 required_neighbors_activate = CONTENT_ID_CAPACITY;
-
-
-	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
-};
-
-struct LoadingBlockModifierDef
-{
-	// Set of contents to trigger on
-	std::vector<std::string> trigger_contents;
-	std::string name;
-	bool run_at_every_load = false;
-
-	virtual ~LoadingBlockModifierDef() = default;
-
-	/// @brief Called to invoke LBM
-	/// @param env environment
-	/// @param block the block in question
-	/// @param positions set of node positions (block-relative!)
-	/// @param dtime_s game time since last deactivation
-	virtual void trigger(ServerEnvironment *env, MapBlock *block,
-		const std::unordered_set<v3s16> &positions, float dtime_s) {};
-};
-
-class LBMContentMapping
-{
-public:
-	typedef std::vector<LoadingBlockModifierDef*> lbm_vector;
-	typedef std::unordered_map<content_t, lbm_vector> lbm_map;
-
-	LBMContentMapping() = default;
-	void addLBM(LoadingBlockModifierDef *lbm_def, IGameDef *gamedef);
-	const lbm_map::mapped_type *lookup(content_t c) const;
-	const lbm_vector &getList() const { return lbm_list; }
-
-	// This struct owns the LBM pointers.
-	~LBMContentMapping();
-	DISABLE_CLASS_COPY(LBMContentMapping);
-	ALLOW_CLASS_MOVE(LBMContentMapping);
-
-private:
-	lbm_vector lbm_list;
-	lbm_map map;
-};
-
-class LBMManager
-{
-public:
-	LBMManager() = default;
-	~LBMManager();
-
-	// Don't call this after loadIntroductionTimes() ran.
-	void addLBMDef(LoadingBlockModifierDef *lbm_def);
-
-	void loadIntroductionTimes(const std::string &times,
-		IGameDef *gamedef, u32 now);
-
-	// Don't call this before loadIntroductionTimes() ran.
-	std::string createIntroductionTimesString();
-
-	// Don't call this before loadIntroductionTimes() ran.
-	void applyLBMs(ServerEnvironment *env, MapBlock *block,
-			u32 stamp, float dtime_s);
-
-	// Warning: do not make this std::unordered_map, order is relevant here
-	typedef std::map<u32, LBMContentMapping> lbm_lookup_map;
-
-private:
-	// Once we set this to true, we can only query,
-	// not modify
-	bool m_query_mode = false;
-
-	// For m_query_mode == false:
-	// The key of the map is the LBM def's name.
-	std::unordered_map<std::string, LoadingBlockModifierDef *> m_lbm_defs;
-
-	// For m_query_mode == true:
-	// The key of the map is the LBM def's first introduction time.
-	lbm_lookup_map m_lbm_lookup;
-
-	// Returns an iterator to the LBMs that were introduced
-	// after the given time. This is guaranteed to return
-	// valid values for everything
-	lbm_lookup_map::const_iterator getLBMsIntroducedAfter(u32 time)
-	{ return m_lbm_lookup.lower_bound(time); }
-};
 
 /*
 	List of active blocks, used by ServerEnvironment
@@ -210,13 +64,25 @@ public:
 		m_list.clear();
 	}
 
+	/// @return true if block was newly added
+	bool add(v3s16 p) {
+		if (m_list.insert(p).second) {
+			m_abm_list.insert(p);
+			return true;
+		}
+		return false;
+	}
+
 	void remove(v3s16 p) {
 		m_list.erase(p);
 		m_abm_list.erase(p);
 	}
 
+	// list of all active blocks
 	//std::set<v3s16> m_list;
 	maybe_concurrent_set<v3pos_t> m_list;
+	// list of blocks for ABM processing
+	// subset of `m_list` that does not contain view cone affected blocks
 	std::set<v3s16> m_abm_list;
 	// list of blocks that are always active, not modified by this class
 	std::set<v3s16> m_forceloaded_list;
@@ -340,10 +206,10 @@ public:
 	);
 
 	/*
-		Activate objects and dynamically modify for the dtime determined
-		from timestamp and additional_dtime
+		Force a block to become active. It will probably be deactivated
+		the next time active blocks are re-calculated.
 	*/
-	void activateBlock(MapBlock *block, u32 additional_dtime=0);
+	void forceActivateBlock(MapBlock *block);
 
 	/*
 		{Active,Loading}BlockModifiers
@@ -365,6 +231,11 @@ public:
 
 	// Find the daylight value at pos with a Depth First Search
 	u8 findSunlight(v3s16 pos) const;
+
+	void updateObjectPos(u16 id, v3f pos)
+	{
+		return m_ao_manager.updateObjectPos(id, pos);
+	}
 
 	// Find all active objects inside a radius around a point
 	void getObjectsInsideRadius(std::vector<ServerActiveObjectPtr> &objects, const v3f &pos, float radius,
@@ -514,6 +385,9 @@ public:
 			const std::string &savedir, const Settings &conf);
 	static AuthDatabase *openAuthDatabase(const std::string &name,
 			const std::string &savedir, const Settings &conf);
+
+	void activateBlock(MapBlock *block);
+
 	/*
 		Internal ActiveObject interface
 		-------------------------------------------
@@ -610,6 +484,16 @@ private:
 	// Estimate for general maximum lag as determined by server.
 	// Can raise to high values like 15s with eg. map generation mods.
 	std::atomic<float> m_max_lag_estimate {0.1f};
+
+
+	/*
+	 * TODO: Add a callback function so these can be updated when a setting
+	 *       changes.
+	 */
+	float m_cache_active_block_mgmt_interval;
+	float m_cache_abm_interval;
+	float m_cache_nodetimer_interval;
+	float m_cache_abm_time_budget;
 
 	// peer_ids in here should be unique, except that there may be many 0s
 	concurrent_vector<RemotePlayer*> m_players;

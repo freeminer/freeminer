@@ -11,8 +11,9 @@ Comment[tr]=Tek-Çok oyuncuyla küplerden sonsuz dünyalar inşa et
 Exec=freeminer
 Icon=freeminer
 Terminal=false
-PrefersNonDefaultGPU=true
+# Note: don't add PrefersNonDefaultGPU here, see #16095
 Type=Application
 Categories=Game;Simulation;
 StartupNotify=false
+StartupWMClass=Freeminer
 Keywords=sandbox;world;mining;crafting;blocks;nodes;multiplayer;roleplaying;minetest;

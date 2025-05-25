@@ -123,7 +123,7 @@ void RollbackManager::registerNewNode(const int id, const std::string &name)
 int RollbackManager::getActorId(const std::string &name)
 {
 #if USE_SQLITE3
-	for (std::vector<Entity>::const_iterator iter = knownActors.begin();
+	for (auto iter = knownActors.begin();
 			iter != knownActors.end(); ++iter) {
 		if (iter->name == name) {
 			return iter->id;
@@ -147,7 +147,7 @@ int RollbackManager::getActorId(const std::string &name)
 int RollbackManager::getNodeId(const std::string &name)
 {
 #if USE_SQLITE3
-	for (std::vector<Entity>::const_iterator iter = knownNodes.begin();
+	for (auto iter = knownNodes.begin();
 			iter != knownNodes.end(); ++iter) {
 		if (iter->name == name) {
 			return iter->id;
@@ -170,7 +170,7 @@ int RollbackManager::getNodeId(const std::string &name)
 
 const char * RollbackManager::getActorName(const int id)
 {
-	for (std::vector<Entity>::const_iterator iter = knownActors.begin();
+	for (auto iter = knownActors.begin();
 			iter != knownActors.end(); ++iter) {
 		if (iter->id == id) {
 			return iter->name.c_str();
@@ -183,7 +183,7 @@ const char * RollbackManager::getActorName(const int id)
 
 const char * RollbackManager::getNodeName(const int id)
 {
-	for (std::vector<Entity>::const_iterator iter = knownNodes.begin();
+	for (auto iter = knownNodes.begin();
 			iter != knownNodes.end(); ++iter) {
 		if (iter->id == id) {
 			return iter->name.c_str();
@@ -800,9 +800,7 @@ void RollbackManager::flush()
 #if USE_SQLITE3
 	sqlite3_exec(db, "BEGIN", NULL, NULL, NULL);
 
-	std::list<RollbackAction>::const_iterator iter;
-
-	for (iter  = action_todisk_buffer.begin();
+	for (auto iter = action_todisk_buffer.begin();
 			iter != action_todisk_buffer.end();
 			++iter) {
 		if (iter->actor.empty()) {

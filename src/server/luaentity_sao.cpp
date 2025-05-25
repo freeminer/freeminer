@@ -174,7 +174,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			m_velocity = p_velocity;
 			m_acceleration = p_acceleration;
 		} else {
-			setBasePosition(getBasePosition() + (m_velocity + m_acceleration * 0.5f * dtime) * dtime);
+			addPos((m_velocity + m_acceleration * 0.5f * dtime) * dtime);
 			m_velocity += dtime * m_acceleration;
 		}
 

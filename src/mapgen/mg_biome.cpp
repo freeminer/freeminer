@@ -188,14 +188,14 @@ BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const
 
 float BiomeGenOriginal::calcHeatAtPoint(v3s16 pos) const
 {
-	return NoisePerlin2D(&m_params->np_heat, pos.X, pos.Z, m_params->seed) +
-		NoisePerlin2D(&m_params->np_heat_blend, pos.X, pos.Z, m_params->seed);
+	return NoiseFractal2D(&m_params->np_heat, pos.X, pos.Z, m_params->seed) +
+		NoiseFractal2D(&m_params->np_heat_blend, pos.X, pos.Z, m_params->seed);
 }
 
 float BiomeGenOriginal::calcHumidityAtPoint(v3s16 pos) const
 {
-	return NoisePerlin2D(&m_params->np_humidity, pos.X, pos.Z, m_params->seed) +
-		NoisePerlin2D(&m_params->np_humidity_blend, pos.X, pos.Z, m_params->seed);
+	return NoiseFractal2D(&m_params->np_humidity, pos.X, pos.Z, m_params->seed) +
+		NoiseFractal2D(&m_params->np_humidity_blend, pos.X, pos.Z, m_params->seed);
 }
 
 Biome *BiomeGenOriginal::calcBiomeAtPoint(v3s16 pos) const
@@ -208,10 +208,10 @@ void BiomeGenOriginal::calcBiomeNoise(v3s16 pmin)
 {
 	m_pmin = pmin;
 
-	noise_heat->perlinMap2D(pmin.X, pmin.Z);
-	noise_humidity->perlinMap2D(pmin.X, pmin.Z);
-	noise_heat_blend->perlinMap2D(pmin.X, pmin.Z);
-	noise_humidity_blend->perlinMap2D(pmin.X, pmin.Z);
+	noise_heat->noiseMap2D(pmin.X, pmin.Z);
+	noise_humidity->noiseMap2D(pmin.X, pmin.Z);
+	noise_heat_blend->noiseMap2D(pmin.X, pmin.Z);
+	noise_humidity_blend->noiseMap2D(pmin.X, pmin.Z);
 
 	for (s32 i = 0; i < m_csize.X * m_csize.Z; i++) {
 		noise_heat->result[i]     += noise_heat_blend->result[i];
@@ -312,7 +312,7 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	auto heat = NoisePerlin2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
+	auto heat = NoiseFractal2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
 	// auto heat =calcHeatAtPoint(p);
 
 	if (use_weather) {
@@ -336,7 +336,7 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 
 s16 BiomeManager::calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
-	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
+	auto humidity = NoiseFractal2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
 	// auto humidity = calcHumidityAtPoint(p);
 
 	if (use_weather) {

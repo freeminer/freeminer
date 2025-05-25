@@ -24,6 +24,7 @@
 Settings *g_settings = nullptr;
 static SettingsHierarchy g_hierarchy;
 std::string g_settings_path;
+bool g_first_run = false;
 
 Json::Reader json_reader;
 

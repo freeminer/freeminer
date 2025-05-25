@@ -9,6 +9,7 @@
 #include "objdef.h"
 #include "nodedef.h"
 #include "noise.h"
+#include "debug.h" // FATAL_ERROR_IF
 
 struct MapgenParams;
 

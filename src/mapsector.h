@@ -10,6 +10,7 @@
 #include "irr_v2d.h"
 #include "mapblock.h"
 #include <ostream>
+#include <memory>
 #include <map>
 #include <vector>
 

@@ -28,7 +28,7 @@
 #define MGV6_FLOATLANDS 0x80
 
 
-extern FlagDesc flagdesc_mapgen_v6[];
+extern const FlagDesc flagdesc_mapgen_v6[];
 
 
 enum BiomeV6Type

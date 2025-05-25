@@ -46,7 +46,8 @@ public:
 				if (!it.second)
 					continue;
 */
-				m_active_objects.remove(it.first);
+
+				removeObject(it.first);
 			}
 		} while (!m_active_objects.empty());
 	}

@@ -56,5 +56,3 @@ script: |
     # Is a backup icon location in case
     mkdir -p AppDir/usr/share/freeminer/misc
     cp AppDir/usr/share/icons/hicolor/128x128/apps/freeminer.png AppDir/usr/share/freeminer/misc/freeminer-xorg-icon-128.png
-    # Validation issues
-    sed -i '/PrefersNonDefaultGPU/d' AppDir/usr/share/applications/org.freeminer.freeminer.desktop

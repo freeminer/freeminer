@@ -60,11 +60,6 @@
 	#define strncasecmp(x, y, n) strnicmp(x, y, n)
 #endif
 
-#ifdef __MINGW32__
-	// was broken in 2013, unclear if still needed
-	#define strtok_r(x, y, z) mystrtok_r(x, y, z)
-#endif
-
 #if !HAVE_STRLCPY
 	#define strlcpy(d, s, n) mystrlcpy(d, s, n)
 #endif
@@ -87,7 +82,7 @@ namespace porting
 void signal_handler_init();
 // Returns a pointer to a bool.
 // When the bool is true, program should quit.
-bool * signal_handler_killstatus();
+[[nodiscard]] bool *signal_handler_killstatus();
 
 /*
 	Path of static data directory.
@@ -115,11 +110,13 @@ extern std::string path_cache;
 /*
 	Gets the path of our executable.
 */
+[[nodiscard]]
 bool getCurrentExecPath(char *buf, size_t len);
 
 /*
 	Concatenate subpath to path_share.
 */
+[[nodiscard]]
 std::string getDataPath(const char *subpath);
 
 /*
@@ -290,7 +287,8 @@ inline const char *getPlatformName()
 	;
 }
 
-bool secure_rand_fill_buf(void *buf, size_t len);
+// Securely fills buffer with bytes from system's random source
+[[nodiscard]] bool secure_rand_fill_buf(void *buf, size_t len);
 
 // Call once near beginning of main function.
 void osSpecificInit();
@@ -318,10 +316,10 @@ static inline void TriggerMemoryTrim() { (void)0; }
 
 #ifdef _WIN32
 // Quotes an argument for use in a CreateProcess() commandline (not cmd.exe!!)
-std::string QuoteArgv(const std::string &arg);
+[[nodiscard]] std::string QuoteArgv(const std::string &arg);
 
 // Convert an error code (e.g. from GetLastError()) into a string.
-std::string ConvertError(DWORD error_code);
+[[nodiscard]] std::string ConvertError(DWORD error_code);
 #endif
 
 // snprintf wrapper

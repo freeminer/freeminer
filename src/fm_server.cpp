@@ -817,6 +817,7 @@ void *WorldMergeThread::run()
 
 void Server::SetBlocksNotSent()
 {
+#if 0
 	std::vector<session_t> clients = m_clients.getClientIDs();
 	ClientInterface::AutoLock clientlock(m_clients);
 	// Set the modified blocks unsent for all the clients
@@ -824,4 +825,5 @@ void Server::SetBlocksNotSent()
 		if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
 			client->SetBlocksNotSent(/*block*/);
 	}
+#endif
 }
