@@ -251,8 +251,8 @@ public:
 
 	void SentBlock(v3bpos_t p);
 
-	void SetBlockNotSent(v3bpos_t p);
-	void SetBlocksNotSent(const std::vector<v3bpos_t> &blocks);
+	void SetBlockNotSent(v3bpos_t p, bool low_priority = false);
+	void SetBlocksNotSent(const std::vector<v3bpos_t> &blocks, bool low_priority = false);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -388,19 +388,8 @@ private:
 		- The size of this list is limited to some value
 		Block is added when it is sent with BLOCKDATA.
 		Block is removed when GOTBLOCKS is received.
-		Value is time from sending. (not used at the moment)
 	*/
-	std::unordered_map<v3bpos_t, float> m_blocks_sending;
-
-	/*
-		Blocks that have been modified since blocks were
-		sent to the client last (getNextBlocks()).
-		This is used to reset the unsent distance, so that
-		modified blocks are resent to the client.
-
-		List of block positions.
-	*/
-	std::unordered_set<v3bpos_t> m_blocks_modified;
+	std::unordered_set<v3bpos_t> m_blocks_sending;
 
 	/*
 		Count of excess GotBlocks().
@@ -454,7 +443,7 @@ public:
 	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
 
 	/* mark blocks as not sent on all active clients */
-	void markBlocksNotSent(const std::vector<v3bpos_t> &positions);
+	void markBlocksNotSent(const std::vector<v3bpos_t> &positions, bool low_priority = false);
 
 	/* verify is server user limit was reached */
 	bool isUserLimitReached();

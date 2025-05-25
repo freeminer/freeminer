@@ -23,7 +23,6 @@ struct shadowFrustum
 	core::matrix4 ViewMat;
 	v3opos_t position;
 	v3f player;
-	v3pos_t camera_offset;
 };
 
 class DirectionalLight
@@ -86,6 +85,7 @@ public:
 		return mapRes;
 	}
 
+	/// If true, shadow map needs to be invalidated due to frustum change
 	bool should_update_map_shadow{true};
 
 	void commitFrustum();

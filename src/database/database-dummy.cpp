@@ -30,15 +30,13 @@ void Database_Dummy::loadBlock(const v3bpos_t &pos, std::string *block)
 
 bool Database_Dummy::deleteBlock(const v3bpos_t &pos)
 {
-	m_database.erase(getBlockAsString(pos));
-	return true;
+	return m_database.erase(getBlockAsString(pos)) > 0;
 }
 
 void Database_Dummy::listAllLoadableBlocks(std::vector<v3bpos_t> &dst)
 {
 	dst.reserve(m_database.size());
-	for (std::map<std::string, std::string>::const_iterator x = m_database.begin();
-			x != m_database.end(); ++x) {
+	for (auto x = m_database.begin(); x != m_database.end(); ++x) {
 		dst.push_back(getStringAsBlock(x->first));
 	}
 }
