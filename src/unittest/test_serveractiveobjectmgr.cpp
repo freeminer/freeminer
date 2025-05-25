@@ -23,7 +23,7 @@ public:
 
 	u16 getFreeId() const { return saomgr.getFreeId(); }
 
-	bool registerObject(std::unique_ptr<ServerActiveObject> obj)
+	bool registerObject(std::shared_ptr<ServerActiveObject> obj)
 	{
 		auto *ptr = obj.get();
 		if (!saomgr.registerObject(std::move(obj)))
@@ -42,7 +42,7 @@ public:
 
 	void updateObjectPos(u16 id, const v3opos_t &pos)
 	{
-		auto *obj = saomgr.getActiveObject(id);
+		auto obj = saomgr.getActiveObject(id);
 		REQUIRE(obj != nullptr);
 		obj->setPos(pos);
 		saomgr.updateObjectPos(id, pos); // HACK work around m_env == nullptr
@@ -54,7 +54,7 @@ public:
 		ids.clear();
 	}
 
-	ServerActiveObject *getActiveObject(u16 id)
+	ServerActiveObjectPtr getActiveObject(u16 id)
 	{
 		return saomgr.getActiveObject(id);
 	}
@@ -84,38 +84,38 @@ public:
 	}
 
 	void getObjectsInsideRadiusNaive(const v3opos_t &pos, float radius,
-			std::vector<ServerActiveObject *> &result)
+			std::vector<ServerActiveObjectPtr> &result)
 	{
 		for (const auto &[id, obj] : saomgr.m_active_objects.iter()) {
 			if (obj->getBasePosition().getDistanceFromSQ(pos) <= radius * radius) {
-				result.push_back(obj.get());
+				result.push_back(obj);
 			}
 		}
 	}
 
 	void getObjectsInAreaNaive(const aabb3o &box,
-			std::vector<ServerActiveObject *> &result)
+			std::vector<ServerActiveObjectPtr> &result)
 	{
 		for (const auto &[id, obj] : saomgr.m_active_objects.iter()) {
 			if (box.isPointInside(obj->getBasePosition())) {
-				result.push_back(obj.get());
+				result.push_back(obj);
 			}
 		}
 	}
 
-	constexpr static auto compare_by_id = [](auto *sao1, auto *sao2) -> bool {
+	constexpr static auto compare_by_id = [](auto sao1, auto sao2) -> bool {
 		return sao1->getId() < sao2->getId();
 	};
 
-	static void sortById(std::vector<ServerActiveObject *> &saos)
+	static void sortById(std::vector<ServerActiveObjectPtr> &saos)
 	{
 		std::sort(saos.begin(), saos.end(), compare_by_id);
 	}
 
-	void compareObjects(std::vector<ServerActiveObject *> &actual,
-			std::vector<ServerActiveObject *> &expected)
+	void compareObjects(std::vector<ServerActiveObjectPtr> &actual,
+			std::vector<ServerActiveObjectPtr> &expected)
 	{
-		std::vector<ServerActiveObject *> unexpected, missing;
+		std::vector<ServerActiveObjectPtr> unexpected, missing;
 		sortById(actual);
 		sortById(expected);
 
@@ -133,7 +133,7 @@ public:
 
 	void compareObjectsInsideRadius(const v3opos_t &pos, float radius)
 	{
-		std::vector<ServerActiveObject *> actual, expected;
+		std::vector<ServerActiveObjectPtr> actual, expected;
 		saomgr.getObjectsInsideRadius(pos, radius, actual, nullptr);
 		getObjectsInsideRadiusNaive(pos, radius, expected);
 		compareObjects(actual, expected);
@@ -141,7 +141,7 @@ public:
 
 	void compareObjectsInArea(const aabb3o &box)
 	{
-		std::vector<ServerActiveObject *> actual, expected;
+		std::vector<ServerActiveObjectPtr> actual, expected;
 		saomgr.getObjectsInArea(box, actual, nullptr);
 		getObjectsInAreaNaive(box, expected);
 		compareObjects(actual, expected);
@@ -179,7 +179,7 @@ SECTION("free ID") {
 
 SECTION("register object") {
 	TestServerActiveObjectMgr saomgr;
-	auto sao_u = std::make_unique<MockServerActiveObject>();
+	auto sao_u = std::make_shared<MockServerActiveObject>();
 	auto sao = sao_u.get();
 	REQUIRE(saomgr.registerObject(std::move(sao_u)));
 
@@ -187,13 +187,13 @@ SECTION("register object") {
 
 	auto saoToCompare = saomgr.getActiveObject(id);
 	REQUIRE(saoToCompare->getId() == id);
-	REQUIRE(saoToCompare == sao);
+	REQUIRE(saoToCompare.get() == sao);
 
 	sao_u = std::make_shared<MockServerActiveObject>();
 	sao = sao_u.get();
 	REQUIRE(saomgr.registerObject(std::move(sao_u)));
-	REQUIRE(saomgr.getActiveObject(sao->getId()) == sao);
-	REQUIRE(saomgr.getActiveObject(sao->getId()) != saoToCompare);
+	REQUIRE(saomgr.getActiveObject(sao->getId()).get() == sao);
+	REQUIRE(saomgr.getActiveObject(sao->getId()).get() != saoToCompare.get());
 
 	saomgr.clear();
 }

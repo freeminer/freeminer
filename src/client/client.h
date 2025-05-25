@@ -114,6 +114,8 @@ private:
 };
 
 class ClientScripting;
+class WorldMerger;
+class FarMesh;
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {

@@ -270,6 +270,14 @@ private:
 
 	CameraMode m_camera_mode = CAMERA_MODE_FIRST;
 
+
+// fm:
+	u8 m_wieldlight = 0;
+	u8 m_wieldlight_add = 0;
+	bool m_cache_movement_fov = false;
+	f32 m_cache_wanted_fps = 30;
+// ===
+
 	f32 m_cache_view_bobbing_amount;
 	bool m_arm_inertia;
 

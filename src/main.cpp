@@ -836,7 +836,7 @@ static bool read_config_file(const Settings &cmd_args)
 
 		// If no path found, use the first one (menu creates the file)
 		if (g_settings_path.empty()) {
-			g_settings_path = filenames[0];
+			g_settings_path = filenames[0] + ".conf";
 			g_first_run = true;
 		}
 	}
@@ -1114,6 +1114,8 @@ static bool determine_subgame(GameParams *game_params)
 					errorstream << "Use '--gameid list' to print a list of all installed games." << std::endl;
 				return false;
 			}
+
+			gamespec = findSubgame("default");
 		}
 	} else { // World exists
 		std::string world_gameid = getWorldGameId(game_params->world_path, false);

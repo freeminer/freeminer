@@ -69,6 +69,7 @@
 #include "util/numeric.h"
 #include <future>
 #include <memory>
+#include "gui/guiTable.h"
 
 
 #if USE_SOUND
@@ -674,8 +675,6 @@ protected:
 	void toggleFast();
 	void toggleNoClip();
 	void toggleCinematic();
-	void enableCinematic();
-	void disableCinematic();
 
 	void toggleBlockBounds();
 	void toggleAutoforward();
@@ -775,6 +774,20 @@ private:
 		/// 0 = no debug text active, see toggleDebug() for the rest
 		int debug_state = 0;
 	};
+
+
+	// fm:
+	void enableCinematic();
+	void disableCinematic();
+	void dropSelectedStack();
+
+	GUITable *playerlist {};
+	video::SColor console_bg {};
+	bool m_cinematic {};
+	std::unique_ptr<RaycastState> pointedRaycastState;
+	PointedThing pointed;
+	// ==:
+
 
 	void pauseAnimation();
 	void resumeAnimation();
@@ -1211,6 +1224,12 @@ void Game::run()
 
 void Game::shutdown()
 {
+
+	if (runData.autoexit) {
+		actionstream << "Profiler:" << std::fixed << std::setprecision(9) << std::endl;
+		g_profiler->print(actionstream);
+	}
+
 	// Delete text and menus first
 	m_game_ui->clearText();
 	m_game_formspec.reset();
@@ -1596,7 +1615,7 @@ bool Game::initGui()
 
 	if(!g_settings->get("console_color").empty())
 	{
-		v3f console_color = g_settings->getV3F("console_color");
+		v3f console_color = g_settings->getV3F("console_color").value();
 		console_bg = video::SColor(g_settings->getU16("console_alpha"), console_color.X, console_color.Y, console_color.Z);
 	}
 
@@ -1651,7 +1670,7 @@ bool Game::connectToServer(const GameStartData &start_data,
 	}
 
 #if USE_MULTI
-	if (simple_singleplayer_mode || local_server_mode) {
+	if (simple_singleplayer_mode) {
 		u16 port = 0;
 #if USE_ENET
 		if (!g_settings->getU16NoEx("port_enet", port)) {
@@ -2233,6 +2252,7 @@ void Game::processKeyInput()
 /*		
 	} else if (wasKeyDown(KeyType::TOGGLE_UPDATE_CAMERA)) {
 		toggleUpdateCamera();
+*/
 	} else if (wasKeyPressed(KeyType::CAMERA_MODE)) {
 		camera->toggleCameraMode();
 		updateCameraMode();
@@ -3138,11 +3158,34 @@ void Game::handleClientEvent_PlayerForceMove(ClientEvent *event, CameraOrientati
 
 void Game::handleClientEvent_DeathscreenLegacy(ClientEvent *event, CameraOrientation *cam)
 {
+	client->getEnv().getLocalPlayer()->m_sneak_node_exists = false;
+	if (g_settings->getBool("respawn_auto")) {
+		client->sendRespawnLegacy();
+		return;
+	}
+
 	m_game_formspec.showDeathFormspecLegacy();
 }
 
 void Game::handleClientEvent_ShowFormSpec(ClientEvent *event, CameraOrientation *cam)
 {
+	// fm:
+	if (event->show_formspec.formname &&
+			*event->show_formspec.formname == "__builtin:death" &&
+			g_settings->getBool("respawn_auto")) {
+		client->sendRespawnLegacy();
+
+		StringMap fields;
+		fields["quit"] = "1";
+		client->sendInventoryFields(*event->show_formspec.formname, fields);
+
+		//client->sendRespawn();
+		delete event->show_formspec.formspec;
+		delete event->show_formspec.formname;
+		return;
+	}
+	// ===
+
 	m_game_formspec.showFormSpec(*event->show_formspec.formspec,
 		*event->show_formspec.formname);
 
@@ -3532,7 +3575,10 @@ void Game::updateCameraOffset()
 
 		env.updateCameraOffset(camera_offset);
 		clouds->updateCameraOffset(camera_offset);
-	}
+
+		if (sky)
+			sky->camera_offset = camera_offset;
+}
 }
 
 void Game::updateSound(f32 dtime)
@@ -3770,7 +3816,7 @@ PointedThing Game::updatePointedThing(
 	if (result.type == POINTEDTHING_OBJECT) {
 		hud->pointing_at_object = true;
 
-		runData.selected_object = client->getEnv().getActiveObject(result.object_id);
+		runData.selected_object = client->getEnv().getActiveObjectPtr(result.object_id);
 		aabb3f selection_box{{0.0f, 0.0f, 0.0f}};
 		if (show_entity_selectionbox && runData.selected_object->doShowSelectionBox() &&
 				runData.selected_object->getSelectionBox(&selection_box)) {
@@ -4516,7 +4562,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	runData.update_draw_list_timer += dtime;
 	runData.touch_blocks_timer += dtime;
 
-	constexpr float update_draw_list_delta = 0.2f;
+	constexpr float update_draw_list_delta = 0.5f;
 	constexpr float touch_mapblock_delta = 4.0f;
 
 /* mt dir */
@@ -4771,7 +4817,13 @@ void Game::settingChangedCallback(const std::string &setting_name, void *data)
 
 void Game::readSettings()
 {
-	
+
+	// fm:
+	m_cinematic = g_settings->getBool("cinematic");
+	if (draw_control) {
+		draw_control->enable_fog = m_cache_enable_fog;
+	}
+	// ===
 
 	LogLevel chat_log_level = Logger::stringToLevel(g_settings->get("chat_log_level"));
 	if (chat_log_level == LL_MAX) {
@@ -4807,10 +4859,6 @@ void Game::readSettings()
 	m_invert_hotbar_mouse_wheel = g_settings->getBool("invert_hotbar_mouse_wheel");
 
 	m_does_lost_focus_pause_game = g_settings->getBool("pause_on_lost_focus");
-
-	if (draw_control) {
-		draw_control->enable_fog = m_cache_enable_fog;
-	}
 }
 
 /****************************************************************************/

@@ -175,7 +175,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			m_velocity = p_velocity;
 			m_acceleration = p_acceleration;
 		} else {
-			addPos((v3fToOpos(m_velocity + m_acceleration) * 0.5f * dtime) * dtime);
+			addPos(v3fToOpos(m_velocity + m_acceleration * 0.5f * dtime) * dtime);
 			m_velocity += dtime * m_acceleration;
 		}
 
@@ -250,7 +250,7 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, 0); // is_player
 	writeU16(os, getId()); //id
 	writeV3O(os, getBasePosition(), protocol_version);
-	writeV3F32(os, m_rotation);
+	writeV3F32(os, getRotation());
 	writeU16(os, m_hp);
 
 	std::ostringstream msg_os(std::ios::binary);
@@ -556,8 +556,9 @@ bool LuaEntitySAO::getCollisionBox(aabb3o *toset) const
 		toset->MinEdge = v3fToOpos(m_prop.collisionbox.MinEdge * BS);
 		toset->MaxEdge = v3fToOpos(m_prop.collisionbox.MaxEdge * BS);
 
-		toset->MinEdge += getBasePosition();
-		toset->MaxEdge += getBasePosition();
+		const auto bpos = getBasePosition();
+		toset->MinEdge += bpos;
+		toset->MaxEdge += bpos;
 
 		return true;
 	}

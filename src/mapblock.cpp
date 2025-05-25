@@ -3,6 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "mapblock.h"
+#include "profiler.h"
 #include "servermap.h"
 
 #include <atomic>
@@ -26,6 +27,8 @@
 #include "util/string.h"
 #include "util/serialize.h"
 #include "util/basic_macros.h"
+
+#include "circuit.h"
 
 // Like a std::unordered_map<content_t, content_t>, but faster.
 //
@@ -285,7 +288,7 @@ MapBlock::~MapBlock()
 
 static inline size_t get_max_objects_per_block()
 {
-	u16 ret = g_settings->getU16("max_objects_per_block");
+	thread_local const auto ret = g_settings->getU16("max_objects_per_block");
 	return MYMAX(256, ret);
 }
 
@@ -308,7 +311,7 @@ bool MapBlock::onObjectsActivation()
 			<< std::endl;
 		// Clear stored list
 		//m_static_objects.clearStored();
-		m_static_objects.m_stored.resize(max_objects_per_block);
+		m_static_objects.m_stored.resize(get_max_objects_per_block());
 		raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_TOO_MANY_OBJECTS);
 		return false;
 	}
@@ -641,6 +644,8 @@ void MapBlock::serializeNetworkSpecific(std::ostream &os)
 
 bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 {
+	const auto lock = lock_unique_rec();
+
 	if (!ser_ver_supported_read(version))
 		throw VersionMismatchException("ERROR: MapBlock format not supported");
 

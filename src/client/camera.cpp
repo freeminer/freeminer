@@ -27,7 +27,7 @@
 #include <IGUIFont.h>
 #include <IVideoDriver.h>
 
-static constexpr f32 CAMERA_OFFSET_STEP = 200;
+static constexpr f32 CAMERA_OFFSET_STEP = 1000;
 
 #define WIELDMESH_OFFSET_X 55.0f
 #define WIELDMESH_OFFSET_Y -35.0f
@@ -79,6 +79,12 @@ void Camera::readSettings()
 	 *       (as opposed to the this local caching). This can be addressed in
 	 *       a later release.
 	 */
+
+    //fm:
+	m_cache_movement_fov        = g_settings->getBool("movement_fov");
+	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
+	m_draw_control.wanted_range = g_settings->getFloat("viewing_range");
+	
 	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount", 0.0f, 7.9f);
 	// 45 degrees is the lowest FOV that doesn't cause the server to treat this
 	// as a zoom FOV and load world beyond the set server limits.

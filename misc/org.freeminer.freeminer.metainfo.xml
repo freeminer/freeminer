@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-<<<<<<<< HEAD:misc/org.freeminer.freeminer.metainfo.xml
     <id>org.freeminer.freeminer</id>
-========
-    <id>org.luanti.luanti</id>
     <provides>
-        <id>net.minetest.minetest</id>
+        <id>org.freeminer.freeminer</id>
     </provides>
     <replaces>
-        <id>net.minetest.minetest</id>
+        <id>org.freeminer.freeminer</id>
     </replaces>
->>>>>>>> pminetest/minetest32net:misc/org.luanti.luanti.metainfo.xml
 
     <name>Freeminer</name>
     <summary>Block-based multiplayer game platform</summary>
@@ -20,13 +16,8 @@
     <metadata_license>CC0-1.0</metadata_license>
     <project_license>LGPL-2.1+ AND CC-BY-SA-3.0 AND MIT AND Apache-2.0</project_license>
 
-<<<<<<<< HEAD:misc/org.freeminer.freeminer.metainfo.xml
     <developer id="org.freeminer">
         <name>Freeminer Team</name>
-========
-    <developer id="org.luanti">
-        <name>Luanti Team</name>
->>>>>>>> pminetest/minetest32net:misc/org.luanti.luanti.metainfo.xml
     </developer>
 
     <supports>
@@ -138,7 +129,7 @@
     <launchable type="desktop-id">org.freeminer.freeminer.desktop</launchable>
 ========
     <launchable type="desktop-id">org.luanti.luanti.desktop</launchable>
->>>>>>>> pminetest/minetest32net:misc/org.luanti.luanti.metainfo.xml
+>>>>>>>> 5.12.0:misc/org.luanti.luanti.metainfo.xml
     <screenshots>
         <screenshot type="default">
             <image>https://www.luanti.org/media/gallery/1.jpg</image>
@@ -169,25 +160,14 @@
         <keyword>roleplaying</keyword>
     </keywords>
 
-<<<<<<<< HEAD:misc/org.freeminer.freeminer.metainfo.xml
     <url type="homepage">https://freeminer.org</url>
-    <url type="bugtracker">https://www.minetest.net/get-involved/#reporting-issues</url>
-    <url type="translate">https://dev.minetest.net/Translation</url>
-    <url type="donation">https://www.minetest.net/get-involved/#donate</url>
-    <url type="faq">https://wiki.minetest.net/FAQ</url>
-    <url type="help">https://wiki.minetest.net</url>
-    <url type="vcs-browser">https://github.com/freeminer/freeminer</url>
-    <url type="contribute">https://www.minetest.net/get-involved</url>
-========
-    <url type="homepage">https://www.luanti.org</url>
     <url type="bugtracker">https://www.luanti.org/get-involved/#reporting-issues</url>
     <url type="translate">https://dev.luanti.org/Translation/</url>
     <url type="donation">https://www.luanti.org/get-involved/#donate</url>
     <url type="faq">https://wiki.luanti.org/FAQ</url>
     <url type="help">https://wiki.luanti.org</url>
-    <url type="vcs-browser">https://github.com/luanti-org/luanti</url>
+    <url type="vcs-browser">https://github.com/freeminer/freeminer</url>
     <url type="contribute">https://www.luanti.org/get-involved</url>
->>>>>>>> pminetest/minetest32net:misc/org.luanti.luanti.metainfo.xml
 
     <provides>
         <binary>luanti</binary>

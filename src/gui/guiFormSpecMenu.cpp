@@ -3944,7 +3944,7 @@ void GUIFormSpecMenu::acceptInput(FormspecQuitMode quitmode)
 						if (s.fdefault == L"Changed")
 							fields[s.fname] = "CHG:" + itos(e->getPos());
 						else
-							fields[name] = "VAL:" + itos(e->getPos());
+							fields[s.fname] = "VAL:" + itos(e->getPos());
 					}
 				} else if (s.ftype == f_AnimatedImage) {
 					// No dynamic cast possible due to some distributions shipped

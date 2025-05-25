@@ -10,6 +10,17 @@
 #include <vector>
 #include <SMaterial.h>
 
+
+// Stores internal information about a texture.
+struct TextureInfo
+{
+	std::string name;
+	video::ITexture *texture = nullptr;
+
+	// Stores source image names which ImageSource::generateImage used.
+	std::set<std::string> sourceImages{};
+};
+
 enum MaterialType : u8 {
 	TILE_MATERIAL_BASIC,
 	TILE_MATERIAL_ALPHA,

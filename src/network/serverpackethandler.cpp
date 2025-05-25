@@ -109,7 +109,7 @@ void Server::handleCommand_Init(NetworkPacket* pkt)
 	const u8 serialization_ver = std::min(max_ser_ver, SER_FMT_VER_HIGHEST_WRITE);
 
 	if (!ser_ver_supported_write(serialization_ver)) {
-		actionstream << "Server: A mismatched client tried to connect from " <<
+		actionstream << "Server: A mismatched client " << playerName << " tried to connect from " <<
 			addr_s << " ser_fmt_max=" << (int)serialization_ver << std::endl;
 		DenyAccess(peer_id, SERVER_ACCESSDENIED_WRONG_VERSION);
 		return;

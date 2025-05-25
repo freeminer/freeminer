@@ -6,10 +6,12 @@
 #include "map.h"
 #include "profiler.h"
 #include "server.h"
-#include "server/abmhandler.h"
+//#include "server/abmhandler.h"
 #include "serverenvironment.h"
 
 ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env)
+//ABMHandler::ABMHandler(std::vector<ABMWithState> &abms, float dtime_s,
+//		ServerEnvironment *env, bool use_timers) : m_env{env}
 {
 	m_aabms.fill(nullptr);
 }
@@ -35,12 +37,13 @@ void ABMHandler::init(std::vector<ABMWithState> &abms)
 		}
 	}
 }
-
+/*
 ABMHandler::~ABMHandler()
 {
 	for (auto i = m_aabms_list.begin(); i != m_aabms_list.end(); ++i)
 		delete *i;
 }
+*/
 
 // Find out how many objects the given block and its neighbours contain.
 // Returns the number of objects in the block, and also in 'wider' the
@@ -60,18 +63,21 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 					continue;
 				}
 				const auto lock = block2->m_static_objects.m_active.lock_shared_rec();
-				wider += block2->m_static_objects.m_active.size() +
-						 block2->m_static_objects.m_stored.size();
+				wider += block2->m_static_objects.size();
+				// wider += block2->m_static_objects.m_active.size() +
+				//			block2->m_static_objects.m_stored.size();
 			}
 	// Extrapolate
-	u32 active_object_count = block->m_static_objects.m_active.size();
+	//u32 active_object_count = block->m_static_objects.m_active.size();
+	u32 active_object_count = block->m_static_objects.getActiveSize();
 	u32 wider_known_count = 3 * 3 * 3 - wider_unknown_count;
 	if (wider_known_count)
 		wider += wider_unknown_count * wider / wider_known_count;
 	return active_object_count;
 }
 
-void ABMHandler::apply(MapBlock *block, uint8_t activate)
+void ABMHandler::apply(MapBlock *block, int &blocks_scanned, int &abms_run,
+		int &blocks_cached, uint8_t activate)
 {
 	if (m_aabms_empty)
 		return;
@@ -159,7 +165,7 @@ void ABMHandler::apply(MapBlock *block, uint8_t activate)
 					v3pos_t neighbor_pos;
 					auto &required_neighbors =
 							activate == 1 ? ir.abmws->required_neighbors_activate
-									 : ir.abmws->required_neighbors;
+										  : ir.abmws->required_neighbors;
 					if (required_neighbors.count() > 0) {
 						v3pos_t p1;
 						int neighbors_range = i->abmws->neighbors_range;
@@ -358,7 +364,8 @@ uint8_t ServerEnvironment::analyzeBlock(MapBlockPtr block)
 	if (!block->analyzeContent())
 		return {};
 	uint8_t activate = block_timestamp - block->m_next_analyze_timestamp > 3600 ? 1 : 0;
-	m_abmhandler.apply(block.get(), activate);
+	int dummy;
+	m_abmhandler.apply(block.get(), dummy, dummy, dummy, activate);
 	// infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
 	block->m_next_analyze_timestamp = block_timestamp + 2;
 	return activate;

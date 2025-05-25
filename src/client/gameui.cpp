@@ -243,6 +243,9 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 void GameUI::initFlags()
 {
 	m_flags = GameUI::Flags();
+
+	g_settings->getBoolNoEx("show_basic_debug", m_flags.show_basic_debug);
+	g_settings->getBoolNoEx("show_profiler_graph", m_flags.show_profiler_graph);
 }
 
 void GameUI::showTranslatedStatusText(const char *str)

@@ -475,7 +475,7 @@ void Clouds::update(const v3f &camera_p, const video::SColorf &color_diffuse, s1
 			v2f camera_in_noise;
 			camera_in_noise.X = floorf((camera_p.X - m_origin.X) / cloud_size + 0.5f);
 			camera_in_noise.Y = floorf((camera_p.Z - m_origin.Y) / cloud_size + 0.5f);
-			bool filled = gridFilled(camera_in_noise.X, camera_in_noise.Y);
+			bool filled = gridFilled(camera_in_noise.X, camera_in_noise.Y, m_humidity);
 			m_camera_inside_cloud = filled;
 		}
 	}

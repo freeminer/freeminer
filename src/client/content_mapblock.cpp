@@ -523,7 +523,7 @@ u8 MapblockMeshGenerator::getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 same
 			(box.MinEdge.Z == -NODE_BOUNDARY ? 32 : 0);
 
 	u8 sametype_mask = 0;
-  if (data->fscale <= 1)
+    if (data->fscale <= 1)
 	if (cur_node.f->alpha == AlphaMode::ALPHAMODE_OPAQUE) {
 		// In opaque nodeboxes, faces on opposite sides can cancel
 		// each other out if there is a matching neighbor of the same type
@@ -1598,7 +1598,9 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			sametype_neighbors |= flag;
 
 		// mark neighbors that are simple solid blocks
-		if (nodedef->get(n2).drawtype == NDT_NORMAL)
+		if (nodedef->get(n2).drawtype == NDT_NORMAL 
+			|| data->far_step
+		)
 			solid_neighbors |= flag;
 
 		if (cur_node.f->node_box.type == NODEBOX_CONNECTED) {
@@ -1619,6 +1621,10 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			isTransparent = true;
 			break;
 		}
+	}
+
+	if (data->far_step) {
+		isTransparent = 0;
 	}
 
 	if (isTransparent) {
@@ -1794,9 +1800,12 @@ void MapblockMeshGenerator::generate()
 {
 	ZoneScoped;
 
-	for (cur_node.p.Z = 0; cur_node.p.Z < data->m_side_length; cur_node.p.Z++)
-	for (cur_node.p.Y = 0; cur_node.p.Y < data->m_side_length; cur_node.p.Y++)
-	for (cur_node.p.X = 0; cur_node.p.X < data->m_side_length; cur_node.p.X++) {
+	const auto lstep = 1 << data->lod_step;
+	const auto fstep = 1 << data->far_step;
+	for (cur_node.pf.Z = cur_node.pr.Z = 0; cur_node.pr.Z < data->side_length_data; cur_node.pr.Z+=lstep, cur_node.pf.Z+=fstep)
+	for (cur_node.pf.Y = cur_node.pr.Y = 0; cur_node.pr.Y < data->side_length_data; cur_node.pr.Y+=lstep, cur_node.pf.Y+=fstep)
+	for (cur_node.pf.X = cur_node.pr.X = 0; cur_node.pr.X < data->side_length_data; cur_node.pr.X+=lstep, cur_node.pf.X+=fstep) {
+		cur_node.p = (data->far_step ? cur_node.pf : cur_node.pr);
 		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
 		cur_node.f = &nodedef->get(cur_node.n);
 		drawNode();

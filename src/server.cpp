@@ -833,6 +833,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		return;
 	}
 
+	if (!m_sendblocks_thead)
 	{
 		TimeTaker timer_step("Server step: SendBlocks");
 		// Send blocks to clients
@@ -1314,6 +1315,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				break;
 		}
 
+/*
 		if (event_count != 0) {
 			verbosestream << "Server: MapEditEvents modified total "
 				<< block_count << " blocks:" << std::endl;
@@ -2531,6 +2533,15 @@ void Server::SendActiveObjectRemoveAdd(RemoteClient *client, PlayerSAO *playersa
 
 #if MINETEST_PROTO
 	Send(&pkt);
+#else
+	MSGPACK_PACKET_INIT(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD, 2);
+	PACK(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_REMOVE, removed_objects_data);
+	PACK(TOCLIENT_ACTIVE_OBJECT_REMOVE_ADD_ADD, added_objects_data);
+
+	// Send as reliable
+	m_clients.send(client->peer_id, 0, buffer, true);
+#endif
+
 }
 
 void Server::SendActiveObjectMessages(session_t peer_id, const std::string &datas,
@@ -4376,13 +4387,26 @@ v3opos_t Server::findSpawnPos(const std::string &player_name)
 {
 	ServerMap &map = m_env->getServerMap();
 
+	v3opos_t nodeposf;
+
+	pos_t find = 0;
+	g_settings->getPosNoEx("static_spawnpoint_find", find);
 	std::optional<v3opos_t> staticSpawnPoint;
+	if (g_settings->getV3FNoEx("static_spawnpoint_" + player_name, staticSpawnPoint) && staticSpawnPoint.has_value()) {
+		nodeposf = *staticSpawnPoint;
+		if (!find) {
+			return nodeposf * BS;
+		}
+	} else
 	if (g_settings->getV3FNoEx("static_spawnpoint", staticSpawnPoint) && staticSpawnPoint.has_value())
 	{
-		return *staticSpawnPoint * BS;
+		nodeposf = *staticSpawnPoint;
+		if (!find)
+			return nodeposf * BS;
 	}
 
-	v3opos_t nodeposf;
+	pos_t min_air_height = 3;
+	g_settings->getPosNoEx("static_spawnpoint_find_height", min_air_height);
 
 	bool is_good = false;
 	// Limit spawn range to mapgen edges (determined by 'mapgen_limit')
@@ -4449,9 +4473,6 @@ v3opos_t Server::findSpawnPos(const std::string &player_name)
 			nodepos.Y++;
 		}
 	}
-
-	return nodeposf;
-
 
 	if (is_good)
 		return nodeposf;

@@ -38,6 +38,14 @@
 #include "cavegen.h"
 #include "dungeongen.h"
 
+// fm:
+#include "log_types.h"
+#include "mapgen_indev.h"
+#include "mapgen_math.h"
+#include "mapgen_earth.h"
+#include "serverenvironment.h"
+
+
 const FlagDesc flagdesc_mapgen[] = {
 	{"caves",       MG_CAVES},
 	{"dungeons",    MG_DUNGEONS},
@@ -717,13 +725,14 @@ void MapgenBasic::generateBiomes()
 
 		for (pos_t y = node_max.Y; y >= node_min.Y; y--) {
 			content_t c = vm->m_data[vi].getContent();
+			bool cc_stone = (c != CONTENT_AIR && c != c_water_source && c != c_ice && c != CONTENT_IGNORE); // was in mt: c == c_stone
 			const bool biome_outdated = !biome || y <= biome_y_next;
 			// Biome is (re)calculated:
 			// 1. At the surface of stone below air or water.
 			// 2. At the surface of water below air.
 			// 3. When stone or water is detected but biome has not yet been calculated.
 			// 4. When stone or water is detected just below a biome's lower limit.
-			bool is_stone_surface = (c == c_stone) &&
+			bool is_stone_surface = (cc_stone) &&
 				(air_above || water_above || biome_outdated); // 1, 3, 4
 
 			bool is_water_surface =

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "fm_bitset.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -28,11 +30,15 @@ public:
 	ActiveBlockModifier() = default;
 	virtual ~ActiveBlockModifier() = default;
 
+	// fm:
+	virtual u32 getNeighborsRange() { return 1; };
+	// ===
+
 	// Set of contents to trigger on
 	virtual const std::vector<std::string> &getTriggerContents() const = 0;
 	// Set of required neighbors (trigger doesn't happen if none are found)
 	// Empty = do not check neighbors
-	virtual const std::vector<std::string> &getRequiredNeighbors() const = 0;
+	virtual const std::vector<std::string> &getRequiredNeighbors(uint8_t activate = 0) const = 0;
 	// Set of without neighbors (trigger doesn't happen if any are found)
 	// Empty = do not check neighbors
 	virtual const std::vector<std::string> &getWithoutNeighbors() const = 0;
@@ -47,9 +53,13 @@ public:
 	// get max Y for apply abm
 	virtual pos_t getMaxY() = 0;
 	// This is called usually at interval for 1/chance of the nodes
-	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n){};
+/*	
+	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
+*/	
 	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-		u32 active_object_count, u32 active_object_count_wider){};
+		u32 active_object_count, u32 active_object_count_wider
+		, v3pos_t neighbor_pos = {}, uint8_t activate = 0
+		){};
 };
 
 struct ABMWithState
@@ -57,16 +67,45 @@ struct ABMWithState
 	ActiveBlockModifier *abm;
 	float timer = 0.0f;
 
-	ABMWithState(ActiveBlockModifier *abm_);
+	// fm:
+	float interval = 10;
+	float chance = 50;
+	int neighbors_range;
+	bool simple_catchup;
+	std::vector<content_t> trigger_ids;
+	FMBitset required_neighbors = CONTENT_ID_CAPACITY,
+			 required_neighbors_activate = CONTENT_ID_CAPACITY;
+	// ===
+
+	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
 };
 
 struct ActiveABM; // hidden
 
+struct ActiveABM
+{
+	ABMWithState *abmws = nullptr;
+
+	ActiveBlockModifier *abm{};
+	std::vector<content_t> required_neighbors;
+	std::vector<content_t> without_neighbors;
+	//bool check_required_neighbors{}; // false if required_neighbors is known to be empty
+	int chance{};
+	pos_t min_y{};
+	pos_t max_y{};
+};
+
+
+
 class ABMHandler
 {
-	ServerEnvironment *m_env;
+	ServerEnvironment *m_env{};
 	// vector index = content_t
-	std::vector<std::vector<ActiveABM>*> m_aabms;
+	//std::vector<std::vector<ActiveABM>*> m_aabms;
+
+	std::array<std::vector<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
+	std::list<std::vector<ActiveABM> *> m_aabms_list;
+	bool m_aabms_empty{true};
 
 public:
 	ABMHandler(std::vector<ABMWithState> &abms,
@@ -81,6 +120,12 @@ public:
 	static u32 countObjects(MapBlock *block, ServerMap * map, u32 &wider);
 
 	void apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached);
+
+	// fm:
+    ABMHandler(ServerEnvironment *env);
+	void init(std::vector<ABMWithState> &abms);
+	void apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached, uint8_t activate = 0);
+    // ===
 };
 
 /*

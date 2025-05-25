@@ -702,7 +702,8 @@ void make_jungletree(MMVManip &vmanip, v3pos_t p0, const NodeDefManager *ndef,
 	// p1 is now the last piece of the trunk
 	p1.Y -= 1;
 
-	VoxelArea leaves_a(v3pos_t(-3, -2, -3), v3pos_t(3, 2, 3));
+	s16 size = pr.range(2, 4);
+	VoxelArea leaves_a(v3pos_t(-size, -pr.range(2, 4), -size), v3pos_t(size, pr.range(2, 4), size));
 	Buffer<u8> leaves_d(leaves_a.getVolume());
 	for (u32 i = 0; i < leaves_d.getSize(); i++)
 		leaves_d[i] = 0;
@@ -878,6 +879,33 @@ void make_pine_tree(MMVManip &vmanip, v3pos_t p0, const NodeDefManager *ndef,
 			vi++;
 			i++;
 		}
+	}
+}
+
+void make_cavetree(MMVManip &vmanip, v3pos_t p0,
+		bool is_jungle_tree, const NodeDefManager *ndef, s32 seed)
+{
+	MapNode treenode(ndef->getId(is_jungle_tree ? "mapgen_jungletree" : "mapgen_tree"));
+	MapNode leavesnode(ndef->getId(is_jungle_tree ? "mapgen_jungleleaves" : "mapgen_leaves"));
+
+	PseudoRandom pr(seed);
+	pos_t trunk_h = pr.range(2, pr.range(2, 5));
+	v3pos_t p1 = p0;
+	for (pos_t ii=0; ii<trunk_h; ii++) {
+		if (vmanip.m_area.contains(p1)) {
+			if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
+				return;
+			const ContentLightingFlags f = ndef->getLightingFlags(vmanip.getNodeNoExNoEmerge(p1));
+			if (ii == 0 && vmanip.getNodeNoExNoEmerge(p1).getLight(LIGHTBANK_DAY, f) == LIGHT_SUN)
+				return;
+			vmanip.m_data[vmanip.m_area.index(p1)] = treenode;
+		}
+		p1.Y++;
+	}
+	if (vmanip.m_area.contains(p1)) {
+		if (vmanip.getNodeNoExNoEmerge(p1).getContent() != CONTENT_AIR)
+			return;
+		vmanip.m_data[vmanip.m_area.index(p1)] = leavesnode;
 	}
 }
 

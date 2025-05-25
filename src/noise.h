@@ -211,8 +211,8 @@ public:
 		float *persistence_map=NULL)
 	{
 		return noiseMap2D(
-			x + xoff * np.spread.X,
-			y + yoff * np.spread.Y,
+			x + xoff * np.spread.X * farscale(np.far_spread, x, y),
+			y + yoff * np.spread.Y * farscale(np.far_spread, x, y),
 			persistence_map);
 	}
 
@@ -220,9 +220,9 @@ public:
 		float z, float zoff, float *persistence_map=NULL)
 	{
 		return noiseMap3D(
-			x + xoff * np.spread.X,
-			y + yoff * np.spread.Y,
-			z + zoff * np.spread.Z,
+			x + xoff * np.spread.X * farscale(np.far_spread, x, y, z),
+			y + yoff * np.spread.Y * farscale(np.far_spread, x, y, z),
+			z + zoff * np.spread.Z * farscale(np.far_spread, x, y, z),
 			persistence_map);
 	}
 

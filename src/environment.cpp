@@ -38,7 +38,7 @@ u32 Environment::getDayNightRatio()
 {
 	if (m_enable_day_night_ratio_override)
 		return m_day_night_ratio_override;
-	return time_to_daynight_ratio(m_time_of_day_f * 24000, true);
+	return time_to_daynight_ratio(m_time_of_day, true);
 }
 
 void Environment::setTimeOfDaySpeed(float speed)

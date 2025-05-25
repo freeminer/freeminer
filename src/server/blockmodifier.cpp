@@ -14,25 +14,47 @@
 	ABMs
 */
 
-ABMWithState::ABMWithState(ActiveBlockModifier *abm_):
+ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	abm(abm_)
 {
+	auto ndef = senv->getGameDef()->ndef();
+
+	chance = abm->getTriggerChance();
+	if(chance == 0)
+		chance = 1;
+
+	// abm process may be very slow if > 1
+	neighbors_range = abm->getNeighborsRange();
+	int nr_max = g_settings->getS32("abm_neighbors_range_max");
+	if (!neighbors_range) {
+		neighbors_range = 1;
+	} else if (neighbors_range > nr_max) {
+		neighbors_range = nr_max;
+	}
+
+	simple_catchup = abm->getSimpleCatchUp();
+
 	// Initialize timer to random value to spread processing
 	float itv = abm->getTriggerInterval();
 	itv = MYMAX(0.001f, itv); // No less than 1ms
 	int minval = MYMAX(-0.51f * itv, -60); // Clamp to
 	int maxval = MYMIN( 0.51f * itv,  60); // +-60 seconds
 	timer = myrand_range(minval, maxval);
+
+
+	for(auto & i : abm->getRequiredNeighbors(0)) {
+		ndef->getIds(i, required_neighbors);
+	}
+
+	for(auto & i : abm->getRequiredNeighbors(1)) {
+		ndef->getIds(i, required_neighbors_activate);
+	}
+
+	for(auto & i : abm->getTriggerContents()) {
+		ndef->getIds(i, trigger_ids);
+	}
 }
 
-struct ActiveABM
-{
-	ActiveBlockModifier *abm;
-	std::vector<content_t> required_neighbors;
-	std::vector<content_t> without_neighbors;
-	int chance;
-	s16 min_y, max_y;
-};
 
 #define CONTENT_TYPE_CACHE_MAX 64
 
@@ -92,8 +114,10 @@ ABMHandler::ABMHandler(std::vector<ABMWithState> &abms,
 			ndef->getIds(s, ids);
 		SORT_AND_UNIQUE(ids);
 		for (content_t c : ids) {
+/*
 			if (c >= m_aabms.size())
 				m_aabms.resize(c + 256, nullptr);
+*/
 			if (!m_aabms[c])
 				m_aabms[c] = new std::vector<ActiveABM>;
 			m_aabms[c]->push_back(aabm);
@@ -107,6 +131,7 @@ ABMHandler::~ABMHandler()
 		delete aabms;
 }
 
+/*
 u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 {
 	wider = 0;
@@ -129,6 +154,7 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 	wider += wider_unknown_count * wider / wider_known_count;
 	return active_object_count;
 }
+*/
 
 void ABMHandler::apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached)
 {
@@ -239,7 +265,7 @@ neighbor_found:
 
 			abms_run++;
 			// Call all the trigger variations
-			aabm.abm->trigger(m_env, p, n);
+			//aabm.abm->trigger(m_env, p, n);
 			aabm.abm->trigger(m_env, p, n,
 				active_object_count, active_object_count_wider);
 

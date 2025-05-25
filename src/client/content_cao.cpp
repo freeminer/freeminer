@@ -1605,6 +1605,13 @@ void GenericCAO::processMessage(const std::string &data)
 		//float update_interval = readF32(is);
 		m_update_interval = readF32(is);
 
+		// fm:
+		if (porting::getTimeMs() > m_position_recd + 1000)
+			do_interpolate = false;
+
+		m_position_recd = porting::getTimeMs();
+     	// ===
+
 		if(getParent() != NULL) // Just in case
 			return;
 

@@ -254,7 +254,7 @@ void Client::handleCommand_AddNode(NetworkPacket* pkt)
 	bool keep_metadata;
 	*pkt >> keep_metadata;
 
-	addNode(p, n, !keep_metadata);
+	addNode(p, n, !keep_metadata, 2);
 }
 
 void Client::handleCommand_NodemetaChanged(NetworkPacket *pkt)

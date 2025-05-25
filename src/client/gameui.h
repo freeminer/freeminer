@@ -104,6 +104,6 @@ private:
 	core::rect<s32> m_current_chat_size{0, 0, 0, 0};
 
 	gui::IGUIStaticText *m_guitext_profiler = nullptr; // Profiler text
-	u8 m_profiler_current_page = 0;
-	const u8 m_profiler_max_page = 3;
+	u16 m_profiler_current_page = 0;
+	u16 m_profiler_max_page = 3;
 };

@@ -65,8 +65,9 @@ public:
 		return m_queue.empty();
 	}
 
-private:
-	std::set<Value> m_set;
+//private:
+	//std::set<Value> m_set;
+	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
 	std::queue<Value> m_queue;
 };
 

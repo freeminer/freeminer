@@ -173,12 +173,22 @@ void fm_set_default_settings(Settings *settings) {
 	//settings->setDefault("enable_vbo", win ? "false" : "true");
 	settings->setDefault("light_ambient", "false");
 	if (!slow) {
-		settings->setDefault("enable_dynamic_shadows", "true");
-		settings->setDefault("shadow_map_color", "true");
-		//settings->setDefault("enable_bloom", "true");
+		for (const auto &name : {
+					 "enable_auto_exposure",
+					 "enable_bloom",
+					 "enable_dynamic_shadows",
+					 "enable_node_specular",
+					 "enable_translucent_foliage",
+					 "enable_post_processing",
+					 "enable_volumetric_lighting",
+					 "enable_water_reflections",
+					 "shadow_map_color",
+			 }) {
+			settings->setDefault(name, "true");
+		}
 	}
 	//settings->setDefault("client_mesh_chunk", std::to_string(std::max<int>(1, Thread::getNumberOfProcessors() / 4)));
-	settings->setDefault("client_mesh_chunk","1");
+	settings->setDefault("client_mesh_chunk", "1");
 
 	if (slow || android) {
 		settings->setDefault("translucent_liquids", "false");
@@ -499,7 +509,7 @@ void set_default_settings()
 	settings->setDefault("screenshot_path", "screenshots");
 	settings->setDefault("screenshot_format", "png");
 	settings->setDefault("screenshot_quality", "0");
-	settings->setDefault("client_unload_unused_data_timeout", "600");
+	settings->setDefault("client_unload_unused_data_timeout", "300");
 	settings->setDefault("client_mapblock_limit", "7500"); // about 120 MB
 	settings->setDefault("enable_build_where_you_stand", "false");
 	settings->setDefault("curl_timeout", "20000");
@@ -802,7 +812,7 @@ void set_default_settings()
 #endif
 
 #if ENABLE_UPDATE_CHECKER
-	settings->setDefault("update_information_url", "https://www.luanti.org/release_info.json");
+	settings->setDefault("update_information_url", "https://freeminer.org/release_info.json");
 #else
 	settings->setDefault("update_information_url", "");
 #endif

@@ -52,6 +52,9 @@ private:
 class LocalPlayer : public Player
 {
 public:
+	// fm:
+	bool canPlaceNode(const v3pos_t& p, const MapNode& node);
+	// ===
 
 	LocalPlayer(Client *client, const std::string &name);
 	virtual ~LocalPlayer();

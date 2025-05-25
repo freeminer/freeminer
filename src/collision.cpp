@@ -367,7 +367,7 @@ static void add_object_boxes(Environment *env,
 			const v3opos_t max = pos_f + v3fToOpos(box_0.MaxEdge) + tolerance + componentwise_max(movement, v3opos_t());
 
 			// nothing is put into this vector
-			std::vector<ServerActiveObject*> s_objects;
+			std::vector<ServerActiveObjectPtr> s_objects;
 			s_env->getObjectsInArea(s_objects, aabb3o(min, max), include_obj_cb);
 		}
 	}
@@ -412,7 +412,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	// Average speed
 	v3f aspeed_f = *speed_f + accel_f * 0.5f * dtime;
 	// Limit speed for avoiding hangs
-	aspeed_f = truncate(rangelimv(aspeed_f, -5000.0f, 5000.0f), 10000.0f);
+	aspeed_f = truncate(rangelimv(aspeed_f, -1000.0f, 1000.0f), 10000.0f);
 
 	// Collect node boxes in movement range
 

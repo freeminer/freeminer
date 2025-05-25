@@ -20,7 +20,7 @@ template <class T>
 class aabbox3d
 {
 public:
-	constexpr aabbox3d() = delete;
+	constexpr aabbox3d(): MinEdge{0}, MaxEdge{0} {}; // = delete;
 	//! Constructor with min edge and max edge.
 	constexpr aabbox3d(const vector3d<T> &min, const vector3d<T> &max) :
 			MinEdge(min), MaxEdge(max) {}

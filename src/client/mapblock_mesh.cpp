@@ -32,10 +32,18 @@
 */
 
 MeshMakeData::MeshMakeData(const NodeDefManager *ndef,
-		u16 side_length, MeshGrid mesh_grid) :
-	m_side_length(side_length),
+		u16 side_length, MeshGrid mesh_grid
+		, int lod_step, int far_step,
+		NodeContainer *nodecontainer) :
+	m_side_length(side_length >> lod_step),
 	m_mesh_grid(mesh_grid),
 	m_nodedef(ndef)
+	,
+	m_vmanip{nodecontainer ? *nodecontainer : m_vmanip_store},
+	side_length_data{side_length},
+	lod_step{lod_step},
+	far_step{far_step},
+	fscale(1<<(far_step + lod_step))
 {
 	assert(m_side_length > 0);
 }
@@ -49,7 +57,7 @@ void MeshMakeData::fillBlockDataBegin(const v3bpos_t &blockpos)
 	m_vmanip.clear();
 	// extra 1 block thick layer around the mesh
 	VoxelArea voxel_area(blockpos_nodes - v3bpos_t(1,1,1) * MAP_BLOCKSIZE,
-			blockpos_nodes + v3bpos_t(1,1,1) * (m_side_length + MAP_BLOCKSIZE) - v3bpos_t(1,1,1));
+			blockpos_nodes + v3bpos_t(1,1,1) * (side_length_data + MAP_BLOCKSIZE) - v3bpos_t(1,1,1));
 	m_vmanip.addArea(voxel_area);
 }
 
@@ -64,6 +72,8 @@ void MeshMakeData::fillBlockData(const v3bpos_t &bp, MapNode *data)
 
 void MeshMakeData::fillSingleNode(MapNode data, MapNode padding)
 {
+	auto & m_vmanip = m_vmanip_store; 
+
 	m_blockpos = {0, 0, 0};
 
 	m_vmanip.clear();
@@ -609,6 +619,12 @@ void PartialMeshBuffer::draw(video::IVideoDriver *driver) const
 */
 
 MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
+
+	far_step{data->far_step},
+	lod_step{data->lod_step},
+	fscale{data->fscale},
+	timestamp{data->timestamp},
+
 	m_tsrc(client->getTextureSource()),
 	m_shdrsrc(client->getShaderSource()),
 	m_bounding_sphere_center((data->m_side_length * 0.5f - 0.5f) * BS),
@@ -621,9 +637,10 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		m = make_irr<scene::SMesh>();
 
 	auto mesh_grid = data->m_mesh_grid;
-	v3bpos_t bp = data->m_blockpos;
+	auto bp = data->m_blockpos;
 	// Only generate minimap mapblocks at grid aligned coordinates.
 	// FIXME: ^ doesn't really make sense. and in practice, bp is always aligned
+	if (fscale<=1) // || !data->block->getMesh())
 	if (mesh_grid.isMeshPos(bp) && data->m_generate_minimap) {
 		// meshgen area always fits into a grid cell
 		m_minimap_mapblocks.resize(mesh_grid.getCellVolume(), nullptr);
@@ -712,9 +729,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			scene::SMeshBuffer *buf = new scene::SMeshBuffer();
 			buf->Material = material;
 			if (p.layer.isTransparent() 
-#if !FARMESH_SHADOWS
 				&& data->far_step <= 0
-#endif
 			) {
 				buf->append(&p.vertices[0], p.vertices.size(), nullptr, 0);
 
@@ -734,7 +749,6 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			}
 			mesh->addMeshBuffer(buf);
 			buf->drop();
-
 		}
 
 		if (mesh) {
@@ -743,6 +757,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		}
 	}
 
+	if (data->lod_step <= 0)
 	m_bsp_tree.buildTree(&m_transparent_triangles, data->m_side_length);
 
 	// Check if animation is required for this mesh
@@ -949,7 +964,7 @@ u8 get_solid_sides(MeshMakeData *data)
 	const NodeDefManager *ndef = data->m_nodedef;
 
 	const u16 side = data->m_side_length;
-	assert(data->m_vmanip.m_area.contains(blockpos_nodes + v3pos_t(side - 1)));
+	// assert(data->m_vmanip.m_area.contains(blockpos_nodes + v3s16(side - 1)));
 
 	u8 result = 0x3F; // all sides solid
 	for (s16 i = 0; i < side && result != 0; i++)

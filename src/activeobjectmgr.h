@@ -45,6 +45,8 @@ public:
 /*
 				if (!it.second)
 					continue;
+*/
+
 				removeObject(it.first);
 			}
 		} while (!m_active_objects.empty());

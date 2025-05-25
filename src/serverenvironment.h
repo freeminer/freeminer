@@ -5,7 +5,8 @@
 #pragma once
 
 #include "server/fm_key_value_cached.h"
-#include "server/abmhandler.h"
+//#include "server/abmhandler.h"
+#include "threading/concurrent_set.h"
 
 #include <set>
 #include <utility>
@@ -78,7 +79,8 @@ public:
 	}
 
 	// list of all active blocks
-	std::set<v3bpos_t> m_list;
+	//std::set<v3s16> m_list;
+	maybe_concurrent_set<v3pos_t> m_list;
 	// list of blocks for ABM processing
 	// subset of `m_list` that does not contain view cone affected blocks
 	std::set<v3bpos_t> m_abm_list;

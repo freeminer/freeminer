@@ -29,7 +29,7 @@ const struct EnumString es_ObjectVisual[] =
 
 ObjectProperties::ObjectProperties()
 {
-	textures.emplace_back("no_texture.png");
+	textures.emplace_back("blank.png"); // no_texture.png
 }
 
 std::string ObjectProperties::dump() const

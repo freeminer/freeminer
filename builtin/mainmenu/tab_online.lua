@@ -66,6 +66,7 @@ local function set_selected_server(server)
 	if server == nil then -- reset selection
 		core.settings:remove("address")
 		core.settings:remove("remote_port")
+		core.settings:remove("remote_proto")
 		return
 	end
 	local address = server.address
@@ -73,8 +74,27 @@ local function set_selected_server(server)
 	gamedata.serverdescription = server.description
 
 	if address and port then
+
+		-- fm:
+		if server.proto_multi and server.proto_multi.enet then
+			gamedata.proto = "enet"
+			gamedata.port = server.proto_multi.enet
+			port = gamedata.port
+		elseif server.proto_multi and server.proto_multi.sctp then
+			gamedata.proto = "sctp"
+			gamedata.port = server.proto_multi.sctp
+			port = gamedata.port
+		elseif server.proto then
+			gamedata.proto = server.proto
+		else
+			gamedata.proto = "mt"
+		end
+		core.settings:set("remote_proto", gamedata.proto or "mt")
+		-- ===
+
 		core.settings:set("address", address)
 		core.settings:set("remote_port", port)
+
 	end
 end
 
@@ -440,6 +460,7 @@ local function search_server_list(input, tabdata)
 			return
 		end
 	end
+
 	-- If no compatible server found, clear selection
 	set_selected_server(nil)
 end
@@ -474,6 +495,8 @@ local function main_button_handler(tabview, fields, name, tabdata)
 				gamedata.servername        = server.name
 				gamedata.serverdescription = server.description
 				gamedata.proto_multi       = server.proto_multi
+print(server)
+print(gamedata)
 				if gamedata.address and gamedata.port then
 					set_selected_server(server)
 					core.start()

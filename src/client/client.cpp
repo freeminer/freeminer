@@ -20,6 +20,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "client/fm_farmesh.h"
+#include "client/fm_far_container.h"
 
 #include <atomic>
 #include <cstdint>
@@ -529,7 +530,7 @@ void Client::step(float dtime)
 	/*
 		Run Map's timers and unload unused data
 	*/
-	constexpr float map_timer_and_unload_dtime = 5.25f;
+	constexpr float map_timer_and_unload_dtime = 15.25f;
 	constexpr s32 mapblock_limit_enforce_distance = 200;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		std::vector<v3bpos_t> deleted_blocks;
@@ -558,10 +559,13 @@ void Client::step(float dtime)
 				m_mapblock_limit_logged = mapblock_limit;
 			}
 		}
-
+        
+		if(
 		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
 			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
-			mapblock_limit, &deleted_blocks);
+			mapblock_limit, &deleted_blocks, max_cycle_ms))
+            m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
+
 
 		// Send info to server
 
@@ -688,7 +692,9 @@ void Client::step(float dtime)
 			bool do_mapper_update = true;
 
 			ClientMap &map = m_env.getClientMap();
-			MapSector *sector = map.emergeSector(v2bpos_t(r.p.X, r.p.Z));
+
+/*
+			MapSector *sector = map.emergeSector(v2s16(r.p.X, r.p.Z));
 
 			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
 			// The block in question is not visible (perhaps it is culled at the server),
@@ -698,20 +704,23 @@ void Client::step(float dtime)
 				block = sector->createBlankBlock(r.p.Y);
 */
 
-			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
+			MapBlock *block = map.getBlockNoCreateNoEx(r.p);
 			if (!block && r.mesh)
-				block = m_env.getMap().createBlankBlock(r.p).get();
+				block = map.createBlankBlock(r.p).get();
 
 			if (block) {
+				const auto old_mesh = block->getLodMesh(r.mesh->lod_step);
+				if (!old_mesh) {
+					++m_new_meshes;
+				}
 				// Delete the old mesh
-				if (block->mesh)
-					map.invalidateMapBlockMesh(block->mesh);
+				if (old_mesh)
+					map.invalidateMapBlockMesh(old_mesh.get());
+
+/*
 				delete block->mesh;
 				block->mesh = nullptr;
 */
-				if (!block->getLodMesh(r.mesh->lod_step)) {
-					++m_new_meshes;
-				}
 				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 
@@ -1033,6 +1042,7 @@ void Client::deletingPeer(session_t peer_id, bool timeout)
 		m_access_denied_reason = gettext("Connection aborted (protocol error?).");
 }
 
+#if MINETEST_PROTO
 void Client::request_media(const std::vector<std::string> &file_requests)
 {
 	std::ostringstream os(std::ios_base::binary);
@@ -1598,7 +1608,7 @@ void Client::sendChatMessage(const std::wstring &message)
 		pkt << message;
 		Send(&pkt);
 	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size < 0) {
-		m_out_chat_queue.push(wide_to_utf8(message));
+		m_out_chat_queue.push(message);
 	} else {
 		infostream << "Could not queue chat message because maximum out chat queue size ("
 				<< max_queue_size << ") is reached." << std::endl;
@@ -2063,7 +2073,9 @@ void Client::addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server, bo
 
 void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool urgent)
 {
+/*
 	infostream << "Client::addUpdateMeshTaskForNode(): " << nodepos << std::endl;
+*/
 
 	v3bpos_t blockpos = getNodeBlockPos(nodepos);
 	v3pos_t blockpos_relative = blockpos * MAP_BLOCKSIZE;

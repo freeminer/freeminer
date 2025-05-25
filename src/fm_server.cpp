@@ -40,6 +40,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "mapnode.h"
 #include "network/fm_networkprotocol.h"
+#include "network/networkpacket.h"
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"
@@ -816,6 +817,7 @@ void *WorldMergeThread::run()
 
 void Server::SetBlocksNotSent()
 {
+#if 0
 	std::vector<session_t> clients = m_clients.getClientIDs();
 	ClientInterface::AutoLock clientlock(m_clients);
 	// Set the modified blocks unsent for all the clients
@@ -823,4 +825,5 @@ void Server::SetBlocksNotSent()
 		if (RemoteClient *client = m_clients.lockedGetClientNoEx(client_id))
 			client->SetBlocksNotSent(/*block*/);
 	}
+#endif
 }

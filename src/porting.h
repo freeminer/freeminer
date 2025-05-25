@@ -35,7 +35,6 @@
 
 	#define sleep_ms(x) Sleep(x)
 
-	#define MAX_PACKET_SIZE_SINGLEPLAYER 1400
 	#define sleep_us(x) Sleep((x)/1000)
 
 	#define SLEEP_ACCURACY_US 2000

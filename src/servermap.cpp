@@ -319,7 +319,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		Copy transforming liquid information
 	*/
 	while (!data->transforming_liquid.empty()) {
-		m_transforming_liquid.push_back(data->transforming_liquid.front());
+		transforming_liquid_add(data->transforming_liquid.front());
 		data->transforming_liquid.pop_front();
 	}
 
@@ -341,15 +341,21 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
         block->setLightingComplete(0);
 	}
 
+	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
 	// Note: this does not apply to the extra border area
-	for (auto x = bpmin.X; x <= bpmax.X; x++)
-	for (auto z = bpmin.Z; z <= bpmax.Z; z++)
-	for (auto y = bpmin.Y; y <= bpmax.Y; y++) {
-		MapBlock *block = getBlockNoCreateNoEx(v3bpos_t(x, y, z));
+	for (s16 x = bpmin.X; x <= bpmax.X; x++)
+	for (s16 z = bpmin.Z; z <= bpmax.Z; z++)
+	for (s16 y = bpmin.Y; y <= bpmax.Y; y++) {
+		v3pos_t p(x, y, z);
+		auto block = getBlockNoCreateNoEx(p, false, true);
 		if (!block)
 			continue;
 
 		block->setGenerated(true);
+
+        updateBlockHeat(senv, p * MAP_BLOCKSIZE, block);
+        updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block);
+
 		// Set timestamp to ensure correct application of LBMs and other stuff
 		block->setTimestampNoChangedFlag(now);
 	}
@@ -659,9 +665,10 @@ MapDatabase *ServerMap::createDatabase(
 	Settings &conf)
 {
 	MapDatabase *db = nullptr;
-
+	#if USE_SQLITE3
 	if (name == "sqlite3")
 		db = new MapDatabaseSQLite3(savedir);
+	#endif
 	if (name == "dummy")
 		db = new Database_Dummy();
 	#if USE_LEVELDB

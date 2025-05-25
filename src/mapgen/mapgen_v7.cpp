@@ -439,10 +439,12 @@ float MapgenV7::baseTerrainLevelAtPoint(pos_t x, pos_t z)
 	auto persist_save = noise_terrain_base->np.persist;
 	noise_terrain_base->np.persist = persist;
 	float height_base = NoiseFractal2D(&noise_terrain_base->np, x, z, seed);
+	noise_terrain_base->np.persist = persist_save;
 
 	persist_save = noise_terrain_alt->np.persist;
 	noise_terrain_alt->np.persist = persist;
 	float height_alt = NoiseFractal2D(&noise_terrain_alt->np, x, z, seed);
+	noise_terrain_alt->np.persist = persist_save;
 
 	if (height_alt > height_base)
 		return height_alt;

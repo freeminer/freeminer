@@ -31,6 +31,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "client/texturesource.h"
+
 /*
 	NodeBox
 */
@@ -1017,8 +1019,6 @@ static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType d
 
 #endif
 
-#if IS_CLIENT_BUILD
-
 void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc,
 	scene::IMeshManipulator *meshmanip, Client *client, const TextureSettings &tsettings
 	, bool server
@@ -1161,7 +1161,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 	if (drawtype == NDT_NODEBOX)
 		solidness_far = 1;
 
-#if IS_CLIENT_BUILD
+#if CHECK_CLIENT_BUILD()
 	if (is_liquid) {
 		if (waving == 3) {
 			material_type = alpha == ALPHAMODE_OPAQUE ?
@@ -1184,6 +1184,7 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 
 	u32 overlay_shader = shdsrc->getShader("nodes_shader", overlay_material, drawtype);
 
+	if (tsrc)
 	// minimap pixel color = average color of top tile
 	if (tsettings.enable_minimap && !tdef[0].name.empty() && drawtype != NDT_AIRLIKE)
 		minimap_color = tsrc->getTextureAverageColor(tdef[0].name);
@@ -1282,17 +1283,13 @@ void ContentFeatures::updateTextures(ITextureSource *tsrc, IShaderSource *shdsrc
 			mesh_ptr = nullptr;
 		}
 	}
+	#endif
 }
-#endif
-}
-/*
-#endif
-*/
+//#endif
 
 /*
 	NodeDefManager
 */
-#endif
 
 
 
@@ -1360,7 +1357,7 @@ void NodeDefManager::clear()
 		f.buildable_to        = true;
 		f.floodable           = true;
 		f.is_ground_content   = true;
-#if IS_CLIENT_BUILD
+#if CHECK_CLIENT_BUILD()
 		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
@@ -1383,7 +1380,7 @@ void NodeDefManager::clear()
 		f.diggable            = false;
 		f.buildable_to        = true; // A way to remove accidental CONTENT_IGNOREs
 		f.is_ground_content   = true;
-#if IS_CLIENT_BUILD
+#if CHECK_CLIENT_BUILD()
 		f.minimap_color = video::SColor(0,0,0,0);
 #endif
 		// Insert directly into containers
@@ -1824,11 +1821,11 @@ void NodeDefManager::updateTextures(IGameDef *gamedef, void *progress_callback_a
 //#if CHECK_CLIENT_BUILD()
 		if (progress_callback_args)
 		client->showUpdateProgressTexture(progress_callback_args, i, size);
+		#endif
 	}
 
 	tsrc->setImageCaching(false);
-#endif
-	}
+//#endif
 }
 
 void NodeDefManager::serialize(std::ostream &os, u16 protocol_version) const

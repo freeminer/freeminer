@@ -308,6 +308,16 @@ float contour(float v)
 
 ///////////////////////// [ Fractal value noise ] ////////////////////////////
 
+std::ostream &operator<<(std::ostream &os, NoiseParams &np)
+{
+	os << "noiseprms[offset=" << np.offset << ",scale=" << np.scale
+	   << ",spread=" << np.spread << ",seed=" << np.seed << ",octaves=" << np.octaves
+	   << ",persist=" << np.persist << ",lacunarity=" << np.lacunarity
+	   << ",flags=" << np.flags << ",farscale=" << np.far_scale
+	   << ",farspread=" << np.far_spread << ",farpersist=" << np.far_persist
+	   << ",farlacunarity=" << np.far_lacunarity << "]";
+	return os;
+}
 
 float NoiseFractal2D(const NoiseParams *np, float x, float y, s32 seed)
 {
@@ -391,7 +401,7 @@ Noise::~Noise()
 	delete[] noise_buf;
 	delete[] result;
 
-	gradient_buf = nullptr;
+	//gradient_buf = nullptr;
 	persist_buf = nullptr;
 	noise_buf = nullptr;
 	result = nullptr;
@@ -683,7 +693,7 @@ float *Noise::noiseMap2D(float x, float y, float *persistence_map)
 
 	for (size_t oct = 0; oct < np.octaves; oct++) {
 		valueMap2D(x * f, y * f,
-			f / np.spread.X, f / np.spread.Y,
+			f / np.spread.X * far_spread, f / np.spread.Y * far_spread,
 			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);
@@ -726,7 +736,7 @@ float *Noise::noiseMap3D(float x, float y, float z, float *persistence_map)
 
 	for (size_t oct = 0; oct < np.octaves; oct++) {
 		valueMap3D(x * f, y * f, z * f,
-			f / np.spread.X, f / np.spread.Y, f / np.spread.Z,
+			f / np.spread.X * far_spread, f / np.spread.Y * far_spread, f / np.spread.Z * far_spread,
 			seed + np.seed + oct);
 
 		updateResults(g, persist_buf, persistence_map, bufsize);

@@ -836,6 +836,9 @@ if (BUILD_CLIENT)
 endif(BUILD_CLIENT)
 
 list(APPEND client_SRCS
+	${FMclient_SRCS}
+
+	${client_SRCS}
 	${common_SRCS}
 	${gui_SRCS}
 	${client_network_SRCS}
@@ -901,6 +904,7 @@ if(USE_CURL)
 	include_directories(${CURL_INCLUDE_DIRS})
 endif()
 
+if (NO_BUILD_BIN_DIR)
 
 # When cross-compiling place the executable in <build dir>/bin so that multiple
 # targets can be built from the same source folder. Otherwise, place it in

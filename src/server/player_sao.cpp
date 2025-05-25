@@ -83,6 +83,11 @@ std::string PlayerSAO::getDescription()
 void PlayerSAO::addedToEnvironment(u32 dtime_s)
 {
 	ServerActiveObject::addedToEnvironment(dtime_s);
+	if (!m_player) {
+		errorstream << "PlayerSAO::addedToEnvironment(): Fail id=" << getPeerID() << std::endl;
+		return;
+	}
+
 	m_player->setPlayerSAO(this);
 	m_player->setPeerId(m_peer_id_initial);
 	m_peer_id_initial = PEER_ID_INEXISTENT; // don't try to use it again.
@@ -119,7 +124,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 	writeU8(os, 1); // is_player
 	writeS16(os, getId()); // id
 	writeV3O(os, getBasePosition(), protocol_version);
-	writeV3F32(os, m_rotation);
+	writeV3F32(os, getRotation());
 	writeU16(os, getHP());
 
 	const auto lock = lock_shared_rec();
@@ -307,7 +312,10 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		if (isAttached())
 			pos = m_last_good_position;
 		else
+        {
 			pos = getBasePosition();
+			vel = m_player->getSpeed();
+     	}
 
 		std::string str = generateUpdatePositionCommand(
 			pos,
@@ -819,8 +827,9 @@ bool PlayerSAO::getCollisionBox(aabb3o *toset) const
 	toset->MinEdge = v3fToOpos(m_prop.collisionbox.MinEdge * BS);
 	toset->MaxEdge = v3fToOpos(m_prop.collisionbox.MaxEdge * BS);
 
-	toset->MinEdge += getBasePosition();
-	toset->MaxEdge += getBasePosition();
+	const auto base_position = getBasePosition();
+	toset->MinEdge += base_position;
+	toset->MaxEdge += base_position;
 	return true;
 }
 

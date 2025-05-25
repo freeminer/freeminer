@@ -61,6 +61,7 @@ public:
 	{
 		return m_ao_manager.getActiveObject(id);
 	}
+	float getLocalPlayerSpeedLength() const;
 // --
 
 	ClientEnvironment(irr_ptr<ClientMap> map, ITextureSource *texturesource, Client *client);

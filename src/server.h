@@ -8,6 +8,7 @@
 #include "stat.h"
 #include "network/fm_lan.h"
 #include <unordered_set>
+#include "network/fm_networkprotocol.h"
 //== 
 
 

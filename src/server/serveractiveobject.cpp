@@ -8,6 +8,8 @@
 #include "constants.h" // BS
 #include "serverenvironment.h"
 
+Queue<ActiveObjectMessage> dummy_queue;
+
 ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
 	ActiveObject(0),
 	m_env(env),
@@ -21,6 +23,7 @@ ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
 
 void ServerActiveObject::setBasePosition(v3opos_t pos)
 {
+	std::lock_guard<std::mutex> lock(m_base_position_mutex);
 	bool changed = m_base_position != pos;
 	m_base_position = pos;
 	if (changed && getEnv()) {

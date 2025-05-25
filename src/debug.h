@@ -6,6 +6,8 @@
 
 #include <exception>
 #include <cassert>
+#include "debug/stacktrace.h"
+#include "config.h"
 #include "log.h" // unused. for convenience.
 
 #ifdef _MSC_VER

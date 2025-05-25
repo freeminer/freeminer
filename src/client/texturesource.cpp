@@ -27,6 +27,7 @@ struct TextureInfo
 	std::set<std::string> sourceImages{};
 };
 
+*/
 // Stores internal information about a texture image.
 struct ImageInfo
 {

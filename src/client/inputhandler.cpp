@@ -16,6 +16,11 @@ void MyEventReceiver::reloadKeybindings()
 {
 	clearKeyCache();
 
+	//freeminer:
+	//keybindings[KeyType::MSG]            = getKeySetting("keymap_msg");
+	keybindings[KeyType::PLAYERLIST]     = getKeySetting("keymap_playerlist");
+    //==
+
 	keybindings[KeyType::FORWARD] = getKeySetting("keymap_forward");
 	keybindings[KeyType::BACKWARD] = getKeySetting("keymap_backward");
 	keybindings[KeyType::LEFT] = getKeySetting("keymap_left");
@@ -52,7 +57,9 @@ void MyEventReceiver::reloadKeybindings()
 	keybindings[KeyType::TOGGLE_HUD] = getKeySetting("keymap_toggle_hud");
 	keybindings[KeyType::TOGGLE_CHAT] = getKeySetting("keymap_toggle_chat");
 	keybindings[KeyType::TOGGLE_FOG] = getKeySetting("keymap_toggle_fog");
+/*
 	keybindings[KeyType::TOGGLE_UPDATE_CAMERA] = getKeySetting("keymap_toggle_update_camera");
+*/
 	keybindings[KeyType::TOGGLE_DEBUG] = getKeySetting("keymap_toggle_debug");
 	keybindings[KeyType::TOGGLE_PROFILER] = getKeySetting("keymap_toggle_profiler");
 	keybindings[KeyType::CAMERA_MODE] = getKeySetting("keymap_camera_mode");
@@ -276,6 +283,9 @@ struct RandomInputHandlerSimData {
 void RandomInputHandler::step(float dtime)
 {
 	static RandomInputHandlerSimData rnd_data[] = {
+		{ KeyType::SNEAK, 0.0f, 45 },
+		{ KeyType::RIGHT, 0.0f, 10 },
+
 		{ KeyType::JUMP, 0.0f, 40 },
 		{ KeyType::AUX1, 0.0f, 40 },
 		{ KeyType::FORWARD, 0.0f, 40 },

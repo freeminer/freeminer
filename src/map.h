@@ -209,7 +209,9 @@ public:
 	// Deletes sectors and their blocks from memory
 	// Takes cache into account
 	// If deleted sector is in sector cache, clears cache
-	void deleteSectors(const std::vector<v2bpos_t> &list);
+/*
+	void deleteSectors(const std::vector<v2s16> &list);
+*/
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);

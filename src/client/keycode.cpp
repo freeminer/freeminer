@@ -336,6 +336,13 @@ std::string KeyPress::sym() const
 	return name;
 }
 
+/*
+const KeyPress LControlKey("KEY_LCONTROL");
+const KeyPress RControlKey("KEY_RCONTROL");
+const KeyPress LShiftKey("KEY_LSHIFT");
+const KeyPress RShiftKey("KEY_RSHIFT");
+*/
+
 std::string KeyPress::name() const
 {
 	const auto &name = lookup_scancode(scancode).LangName;

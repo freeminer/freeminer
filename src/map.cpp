@@ -474,10 +474,11 @@ void Map::timerUpdate(float dtime, float unload_timeout, s32 max_loaded_blocks,
 
 void Map::unloadUnreferencedBlocks(std::vector<v3bpos_t> *unloaded_blocks)
 {
-	timerUpdate(0, -1, 0, unloaded_blocks);
+	timerUpdate(0, -1, 100, unloaded_blocks);
 }
 
-void Map::deleteSectors(const std::vector<v2bpos_t> &sectorList)
+#if WTF
+void Map::deleteSectors(const std::vector<v2s16> &sectorList)
 {
 	for (v2bpos_t j : sectorList) {
 		MapSector *sector = m_sectors[j];

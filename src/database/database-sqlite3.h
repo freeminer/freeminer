@@ -191,6 +191,8 @@ private:
 
 	bool m_new_format = false;
 
+	std::mutex mutex;
+
 	sqlite3_stmt *m_stmt_read = nullptr;
 	sqlite3_stmt *m_stmt_write = nullptr;
 	sqlite3_stmt *m_stmt_list = nullptr;

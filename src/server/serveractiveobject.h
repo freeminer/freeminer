@@ -64,7 +64,9 @@ public:
 	/*
 		Some simple getters/setters
 	*/
-	v3opos_t getBasePosition() const { return m_base_position; }
+	v3opos_t getBasePosition() const { 
+		std::lock_guard<std::mutex> lock(m_base_position_mutex);
+		return m_base_position; }
 	void setBasePosition(v3opos_t pos);
 	ServerEnvironment* getEnv(){ return m_env; }
 
@@ -270,19 +272,21 @@ protected:
 	*/
 	std::atomic_bool m_pending_removal = false;
 
-//fm:
-	public:
+// fm:
+public:
 	float m_uptime_last = 0;
 	protected:
-
+// ===
 
 	/*
 		Queue of messages to be sent to the client
 	*/
-	std::queue<ActiveObjectMessage> m_messages_out;
+	//std::queue<ActiveObjectMessage> m_messages_out;
+	Queue<ActiveObjectMessage> & m_messages_out;
 
 private:
 	v3opos_t m_base_position; // setBasePosition updates index and MUST be called
+	mutable std::mutex m_base_position_mutex;
 };
 
 using ServerActiveObjectPtr = std::shared_ptr<ServerActiveObject>;

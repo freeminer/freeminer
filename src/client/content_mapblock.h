@@ -59,6 +59,9 @@ private:
 
 // current node
 	struct {
+		v3pos_t pf;
+		v3pos_t pr;
+
 		v3pos_t p; // relative to blockpos_nodes
 		v3f origin; // p in BS space
 		MapNode n;

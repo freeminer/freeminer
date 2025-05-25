@@ -49,7 +49,7 @@ FallingSAO::FallingSAO(ServerEnvironment *env, v3opos_t pos,
 	m_prop.hp_max = 1;
 	m_prop.collideWithObjects = false;
 	m_prop.collisionbox = core::aabbox3d<f32>(-0.5, -0.5, -0.5, 0.5, 0.5, 0.5);
-	m_prop.visual = "wielditem";
+	m_prop.visual = OBJECTVISUAL_WIELDITEM;
 	m_prop.textures.clear();
 	m_prop.visual_size = v3f(0.667,0.667,0.667);
 	fast = fast_;

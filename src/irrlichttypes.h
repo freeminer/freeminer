@@ -4,9 +4,10 @@
 
 #pragma once
 
+#include "config.h"
+
 #include <cstdint>
 #include <irrTypes.h>
-#include "config.h"
 
 using namespace irr;
 

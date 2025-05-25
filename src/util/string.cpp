@@ -687,7 +687,7 @@ std::wstring colorizeText(const std::wstring &s, std::vector<video::SColor> &col
 	video::SColor color = initial_color;
 	while (i < s.length()) {
 		if (s[i] == L'\v' && i + 7 < s.length()) {
-			parseColorString(wide_to_narrow(s.substr(i + 1, 7)), color);
+			parseColorString(wide_to_narrow(s.substr(i + 1, 7)), color, true);
 			i += 8;
 			continue;
 		}

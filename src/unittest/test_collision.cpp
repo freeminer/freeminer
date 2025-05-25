@@ -38,7 +38,7 @@ namespace {
 			map.fill({-1, -1, -1}, {1, 1, 1}, MapNode(CONTENT_AIR));
 		}
 
-		void step(f32 dtime) override {}
+		void step(f32 dtime, double uptime, unsigned int max_cycle_ms) override {}
 
 		Map &getMap() override { return map; }
 

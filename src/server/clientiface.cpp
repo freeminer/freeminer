@@ -462,11 +462,13 @@ void RemoteClient::SetBlockNotSent(v3bpos_t p, bool low_priority)
 			m_nearest_unsent_d = std::min(m_nearest_unsent_d, this_d);
 		}
 	}
+*/
 }
 
 void RemoteClient::SetBlocksNotSent(const std::vector<v3bpos_t> &blocks, bool low_priority)
 {
-	for (const auto &p : blocks) {
+/*
+	for (v3s16 p : blocks) {
 		SetBlockNotSent(p, low_priority);
 	}
 */

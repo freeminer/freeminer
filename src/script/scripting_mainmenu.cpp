@@ -87,7 +87,7 @@ bool MainMenuScripting::mayModifyPath(const std::string &path)
 
 	if (fs::PathStartsWith(path, path_user + DIR_DELIM "client"))
 		return true;
-	if (fs::PathStartsWith(path, path_user + DIR_DELIM "games"))
+	if (fs::PathStartsWith(path, path_user + DIR_DELIM "games" + GAMES_VERSION))
 		return true;
 	if (fs::PathStartsWith(path, path_user + DIR_DELIM "mods"))
 		return true;

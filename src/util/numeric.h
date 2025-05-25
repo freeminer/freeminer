@@ -4,10 +4,6 @@
 
 #pragma once
 
-//fm:
-#include <algorithm>
-#include <cmath>
-#include <map>
 
 #include "basic_macros.h"
 #include "constants.h"
@@ -19,6 +15,36 @@
 #include <matrix4.h>
 #include <cmath>
 #include <algorithm>
+
+
+
+// fm:
+//#include <map>
+
+inline float cycle_shift(float value, float by = 0, float max = 1)
+{
+	if (value + by < 0)   return value + by + max;
+	if (value + by > max) return value + by - max;
+	return value + by;
+}
+
+inline unsigned int radius_box(const v3pos_t &a, const v3pos_t &b)
+{
+	return std::max({std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y), std::abs((float)a.Z - b.Z)});
+}
+
+/*
+inline int radius_box(const v3bpos_t & a, const v3bpos_t & b) {
+	return std::max([std::abs((float)a.X - b.X), std::abs((float)a.Y - b.Y), std::abs((float)a.Z - b.Z)});
+}
+*/
+
+inline unsigned int radius_box(const v3opos_t &a, const v3opos_t &b)
+{
+	return std::max({std::fabs(a.X - b.X), std::fabs(a.Y - b.Y), std::fabs(a.Z - b.Z)});
+}
+// ===
+
 
 // Like std::clamp but allows mismatched types
 template <typename T, typename T2, typename T3>
@@ -433,8 +459,18 @@ inline v3pos_t s16ToPos(const v3s16 & p)
 #endif
 }
 
+
 // Returns box of a node as in-world box. Usually d=BS
 [[nodiscard]]
+inline aabb3f getNodeBox(v3s16 p, float d)
+{
+	return aabb3f(
+		v3f::from(p) * d - 0.5f * d,
+		v3f::from(p) * d + 0.5f * d
+	);
+}
+
+#if USE_OPOS64
 inline aabb3o getNodeBox(v3pos_t p, opos_t d)
 {
 	return aabb3o(
@@ -442,6 +478,7 @@ inline aabb3o getNodeBox(v3pos_t p, opos_t d)
 		v3opos_t::from(p) * d + 0.5f * d
 	);
 }
+#endif
 
 class IntervalLimiter
 {

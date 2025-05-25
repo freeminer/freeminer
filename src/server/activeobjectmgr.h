@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <set>
+#include <shared_mutex>
 #include <vector>
 #include "../activeobjectmgr.h"
 #include "serveractiveobject.h"
@@ -19,6 +20,7 @@ class ActiveObjectMgr final : public ::ActiveObjectMgr<ServerActiveObject>
 public:
 	void deferDelete(const ServerActiveObjectPtr& obj);
 private:
+	std::shared_mutex m_spatial_index_mutex;
 
 
     std::vector<ServerActiveObjectPtr> m_objects_to_delete, m_objects_to_delete_2;
@@ -38,8 +40,8 @@ public:
 	void updateObjectPos(u16 id, v3opos_t pos);
 
 	void getObjectsInsideRadius(v3opos_t pos, float radius,
-			std::vector<ServerActiveObject *> &result,
-			std::function<bool(ServerActiveObject *obj)> include_obj_cb);
+			std::vector<ServerActiveObjectPtr> &result,
+			std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb);
 	void getObjectsInArea(const aabb3o &box,
 			std::vector<ServerActiveObjectPtr> &result,
 			std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb);

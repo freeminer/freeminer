@@ -35,7 +35,7 @@ struct MinimapMapblock;
 
 struct MeshMakeData
 {
-	VoxelManipulator m_vmanip;
+	VoxelManipulator m_vmanip_store;
 
 	// base pos of meshgen area, in blocks
 	v3bpos_t m_blockpos = v3bpos_t(-1337,-1337,-1337);
@@ -54,7 +54,24 @@ struct MeshMakeData
 
 	const NodeDefManager *m_nodedef;
 
-	MeshMakeData(const NodeDefManager *ndef, u16 side_lingth, MeshGrid mesh_grid);
+    // fm:
+	NodeContainer & m_vmanip;
+	const u16 side_length_data;
+	const int lod_step;
+	const int far_step;
+	const int fscale;
+
+	int range{1};
+	bool no_draw{};
+	unsigned int timestamp{};
+	bool debug{};
+	// ==
+
+	MeshMakeData(const NodeDefManager *ndef, u16 side_length, MeshGrid mesh_grid
+			, int lod_step = 0
+			, int far_step = 0
+			, NodeContainer * nodecontainer = {}
+			 );
 
 	/*
 		Copy block data manually (to allow optimizations by the caller)

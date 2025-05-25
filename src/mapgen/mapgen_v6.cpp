@@ -1079,6 +1079,7 @@ void MapgenV6::growGrass() // Add surface nodes
 	MapNode n_dirt_with_grass(c_dirt_with_grass);
 	MapNode n_dirt_with_snow(c_dirt_with_snow);
 	MapNode n_snowblock(c_snowblock);
+	MapNode n_dirt(c_dirt);
 	const v3s32 &em = vm->m_area.getExtent();
 
 	u32 index = 0;

@@ -44,7 +44,7 @@ std::string sha256(std::string_view data)
 	auto success = EVP_Digest(src, data.size(), dst, nullptr, EVP_sha256(), nullptr) == 1;
 	FATAL_ERROR_IF(!success, "sha256 failed");
 #else
-	SHA256(src, data.size(), dst);
+	mt_SHA256(src, data.size(), dst);
 #endif
 	return digest;
 }

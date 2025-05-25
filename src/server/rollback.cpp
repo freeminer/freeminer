@@ -122,6 +122,7 @@ void RollbackManager::registerNewNode(const int id, const std::string &name)
 
 int RollbackManager::getActorId(const std::string &name)
 {
+#if USE_SQLITE3
 	for (auto iter = knownActors.begin();
 			iter != knownActors.end(); ++iter) {
 		if (iter->name == name) {
@@ -145,6 +146,7 @@ int RollbackManager::getActorId(const std::string &name)
 
 int RollbackManager::getNodeId(const std::string &name)
 {
+#if USE_SQLITE3
 	for (auto iter = knownNodes.begin();
 			iter != knownNodes.end(); ++iter) {
 		if (iter->name == name) {

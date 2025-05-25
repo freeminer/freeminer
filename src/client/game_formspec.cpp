@@ -114,6 +114,7 @@ struct HardcodedPauseFormspecHandler : public TextDest
 			g_gamecallback->exitToOS();
 #ifndef __ANDROID__
 			RenderingEngine::get_raw_device()->closeDevice();
+			RenderingEngine::get_raw_device()->run();
 #endif
 			return;
 		}
@@ -322,7 +323,7 @@ void GameFormSpec::showPlayerInventory()
 	 */
 
 	LocalPlayer *player = m_client->getEnv().getLocalPlayer();
-	if (!player || !player->getCAO())
+	if (!player) // || !player->getCAO())
 		return;
 
 	infostream << "Game: Launching inventory" << std::endl;
@@ -419,6 +420,11 @@ void GameFormSpec::showPauseMenu()
 	} else {
 		os << strgettext("Singleplayer");
 	}
+
+	if (!g_settings->get("remote_proto").empty()) {
+		os << "\n" << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
+	}
+
 	os << "\n";
 	if (simple_singleplayer_mode || address.empty()) {
 		static const std::string on = strgettext("On");

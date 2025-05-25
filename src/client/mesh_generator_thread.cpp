@@ -179,8 +179,15 @@ void MeshUpdateQueue::done(v3bpos_t pos)
 void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 	auto mesh_grid = m_client->getMeshGrid();
+
+	const auto lod_step = getLodStep(m_client->m_env.getClientMap().getControl(),
+			getNodeBlockPos(
+					floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)),
+			q->p, m_client->getEnv().getLocalPlayer()->getSpeed().getLength());
+
 	MeshMakeData *data = new MeshMakeData(m_client->ndef(),
-			MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid);
+		MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid,
+		lod_step, 0);
 	q->data = data;
 
 	data->fillBlockDataBegin(q->p);
@@ -208,6 +215,8 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 	data->m_generate_minimap = !!m_client->getMinimap();
 	data->m_smooth_lighting = m_cache_smooth_lighting;
 	data->m_enable_water_reflections = m_cache_enable_water_reflections;
+
+	data->range = getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(q->p);
 }
 
 /*
@@ -232,7 +241,7 @@ void MeshUpdateWorkerThread::doUpdate()
 
 		ScopeProfiler sp(g_profiler, "Client: Mesh making (sum)");
 
-		MapBlockMesh *mesh_new = new MapBlockMesh(m_client, q->data);
+		const auto mesh_new = std::make_shared<MapBlockMesh>(m_client, q->data);
 
 		MeshUpdateResult r;
 		r.p = q->p;
@@ -268,6 +277,8 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 
 	for (int i = 0; i < number_of_threads; i++)
 		m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(client, &m_queue_in, this));
+
+	m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(client, &m_queue_in_urgent, this));
 }
 
 void MeshUpdateManager::updateBlock(Map *map, v3bpos_t p, bool ack_block_to_server,
@@ -282,7 +293,7 @@ void MeshUpdateManager::updateBlock(Map *map, v3bpos_t p, bool ack_block_to_serv
 	static thread_local const bool many_neighbors =
 			g_settings->getBool("smooth_lighting")
 			&& !g_settings->getFlag("performance_tradeoffs");
-	if (!m_queue_in.addBlock(map, p, ack_block_to_server, urgent)) {
+	if (!(urgent ? m_queue_in_urgent : m_queue_in).addBlock(map, p, ack_block_to_server, urgent)) {
 		warningstream << "Update requested for non-existent block at "
 				<< p << std::endl;
 		return;

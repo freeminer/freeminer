@@ -19,6 +19,13 @@
 struct ItemDefinition;
 class IItemDefManager;
 
+#include "util/msgpack_serialize.h"
+
+enum {
+	TOOLGROUPCAP_USES,
+	TOOLGROUPCAP_MAXLEVEL,
+	TOOLGROUPCAP_TIMES
+};
 /*
  * NOTE: these structs intentionally use vector<pair<>> or map<> over unordered_map<>
  * to avoid blowing up the structure sizes. Also because the linear "dumb" approach

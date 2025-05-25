@@ -29,7 +29,7 @@ void StaticObject::serialize(std::ostream &os) const
 	// type
 	writeU8(os, type);
 	// pos
-#if USE_OPOS64
+	#if USE_OPOS64
 	writeV3O(os, pos);
 #else
 	writeV3F1000(os, clampToF1000(oposToV3f(pos)));

@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "contrib/fallingsao.h"
+#include "contrib/itemsao.h"
+#include "environment.h"
+#include "log_types.h"
+
 #include <algorithm>
 #include <stack>
 #include <utility>
@@ -190,6 +195,21 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 	m_script(server->getScriptIface()),
 	m_server(server)
 {
+
+    //fm:
+	m_use_weather = g_settings->getBool("weather");
+	m_use_weather_biome = g_settings->getBool("weather_biome");
+
+	// Init custom SAO
+	v3opos_t nullpos;
+	//epixel::Creature* c = new epixel::Creature(NULL, nullpos, "", "");
+	epixel::ItemSAO* i = new epixel::ItemSAO(NULL, nullpos, "", "");
+	epixel::FallingSAO* f = new epixel::FallingSAO(NULL, nullpos, "", "");
+	//delete c;
+	delete i;
+	delete f;
+
+
 	m_cache_active_block_mgmt_interval = g_settings->getFloat("active_block_mgmt_interval");
 	m_cache_abm_interval = rangelim(g_settings->getFloat("abm_interval"), 0.1f, 30);
 	m_cache_nodetimer_interval = rangelim(g_settings->getFloat("nodetimer_interval"), 0.1f, 1);
@@ -372,6 +392,7 @@ void ServerEnvironment::addPlayer(RemotePlayer *player)
 
 void ServerEnvironment::removePlayer(RemotePlayer *player)
 {
+	const auto lock = m_players.lock_unique_rec();
 	for (auto it = m_players.begin(); it != m_players.end(); ++it) {
 		if ((*it) == player) {
 			delete *it;
@@ -500,7 +521,10 @@ void ServerEnvironment::loadMeta()
 	// Open file and deserialize
 	auto is = open_ifstream(path.c_str(), true);
 	if (!is.good())
+		errorstream << "Couldn't load env meta\n";
+/*
 		throw SerializationError("Couldn't load env meta");
+*/
 
 	Settings args("EnvArgsEnd");
 	if (!args.parseConfigLines(is)) {
@@ -510,14 +534,20 @@ void ServerEnvironment::loadMeta()
 */	
 	}
 
-	if (args.exists("abm_world_last")) {abm_world_last = args.getU64("abm_world_last");}
+	if (args.exists("abm_world_last")) {
+		abm_world_last = args.getU64("abm_world_last");
+	}
 
 	try {
 		m_game_time_start =
 		m_game_time = args.getU64("game_time");
 	} catch (SettingNotFoundException &e) {
 		// Getting this is crucial, otherwise timestamps are useless
+		errorstream << "Couldn't read game_time from env meta: " << e.what() << "\n";
+/*
 		throw SerializationError("Couldn't read game_time from env meta");
+*/
+
 	}
 
 	setTimeOfDay(args.exists("time_of_day") ?
@@ -986,6 +1016,13 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 		}
 	}
 
+
+	/* 
+	    Update circuit
+	*/
+	 m_circuit.update(dtime);
+
+	 
 	/*
 		Manage active block list
 	*/
@@ -1133,11 +1170,18 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 	if (m_active_block_timer_last || m_active_blocks_nodemetadata_interval.step(dtime, m_cache_nodetimer_interval)) {
 #if !NDEBUG
 		ScopeProfiler sp(g_profiler, "ServerEnv: Run node timers", SPT_AVG);
+#endif
 
 		// FIXME: this is not actually correct, because the block may have been
 		// activated just moments ago. In practice the intervnal is very small
 		// so this doesn't really matter.
+/*
 		const float dtime = m_cache_nodetimer_interval;
+*/
+
+		u32 n = 0, calls = 0;
+		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
+		const auto lock = m_active_blocks.m_list.lock_shared_rec();
 
 		for (const auto &p: m_active_blocks.m_list) {
 			if (n++ < m_active_block_timer_last)
@@ -1158,6 +1202,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 			// If the block timestamp has changed considerably, mark it to be
 			// re-saved. We do this even if there were no actual data changes
 			// for the sake of LBMs.
+           if(block->getDiskTimestamp() != BLOCK_TIMESTAMP_UNDEFINED)
 			if (block->getTimestamp() > block->getDiskTimestamp()
 				+ BLOCK_RESAVE_TIMESTAMP_DIFF) {
 				block->raiseModified(MOD_STATE_WRITE_AT_UNLOAD,
@@ -1659,7 +1704,7 @@ void ServerEnvironment::getSelectedActiveObjects(
 	search_area.MaxEdge += 5 * BS;
 
 	// Use "logic in callback" pattern to avoid useless vector filling
-	std::vector<ServerActiveObject*> tmp;
+	std::vector<ServerActiveObjectPtr> tmp;
 	getObjectsInArea(tmp, search_area, process);
 }
 
@@ -1955,14 +2000,22 @@ void ServerEnvironment::deactivateFarObjects(const bool _force_delete)
 		// The block in which the object resides in
 		v3bpos_t blockpos_o = getNodeBlockPos(floatToInt(objectpos, BS));
 
+		v3pos_t static_block;
+		{
+			const auto lock = obj->try_lock_shared();
+			if (!lock->owns_lock())
+				return false;
+			static_block = obj->m_static_block;
+		}
+
 		// If object's static data is stored in a deactivated block or it has moved a bunch
 		// then re-save to the block in which the object is now located in.
 		// This only applies if the object is in a currently active block, since deactivating
 		// is handled by the code further below.
 		if (!force_delete && obj->isStaticAllowed() && obj->m_static_exists &&
 		   m_active_blocks.contains(blockpos_o) &&
-		   (!m_active_blocks.contains(obj->m_static_block) ||
-		   blockpos_o.getDistanceFromSQ(obj->m_static_block) >= ACTIVE_OBJECT_RESAVE_DISTANCE_SQ)) {
+		   (!m_active_blocks.contains(static_block) ||
+		   blockpos_o.getDistanceFromSQ(static_block) >= ACTIVE_OBJECT_RESAVE_DISTANCE_SQ)) {
 
 			// Delete from block where object was located
 			deleteStaticFromBlock(obj, id, MOD_REASON_STATIC_DATA_REMOVED, false);

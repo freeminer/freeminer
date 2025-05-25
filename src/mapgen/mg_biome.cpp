@@ -312,7 +312,7 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	auto heat = NoisePerlin2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
+	auto heat = NoiseFractal2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
 	// auto heat =calcHeatAtPoint(p);
 
 	if (use_weather) {
@@ -336,7 +336,7 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 
 s16 BiomeManager::calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
-	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
+	auto humidity = NoiseFractal2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
 	// auto humidity = calcHumidityAtPoint(p);
 
 	if (use_weather) {
@@ -362,6 +362,11 @@ ObjDef *Biome::clone() const
 	auto obj = new Biome();
 	ObjDef::cloneTo(obj);
 	NodeResolver::cloneTo(obj);
+
+	// fm:
+	obj->c_top_cold = c_top_cold;
+	obj->c_ice = c_ice;
+	// ===
 
 	obj->c_top = c_top;
 	obj->c_filler = c_filler;

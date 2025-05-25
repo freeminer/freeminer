@@ -79,7 +79,7 @@ void Mapgen_features::layers_init(EmergeParams *emerge, const Json::Value &param
 
 void Mapgen_features::layers_prepare(const v3pos_t &node_min, const v3pos_t &node_max)
 {
-	noise_layers->perlinMap3D(node_min.X, node_min.Y - y_oversize_down, node_min.Z);
+	noise_layers->noiseMap3D(node_min.X, node_min.Y - y_oversize_down, node_min.Z);
 
 	noise_layers_width = ((noise_layers->np.offset + noise_layers->np.scale) -
 						  (noise_layers->np.offset - noise_layers->np.scale));
@@ -117,7 +117,7 @@ void Mapgen_features::cave_prepare(
 		cave_noise_threshold = 0;
 		return;
 	}
-	noise_cave_indev->perlinMap3D(node_min.X, node_min.Y - y_oversize_down, node_min.Z);
+	noise_cave_indev->noiseMap3D(node_min.X, node_min.Y - y_oversize_down, node_min.Z);
 	cave_noise_threshold = 800;
 }
 
@@ -400,7 +400,7 @@ int MapgenIndev::generateGround()
 			node_min.Y <= floatland_ymax) {
 		gen_floatlands = true;
 		// Calculate noise for floatland generation
-		noise_floatland->perlinMap3D(node_min.X, node_min.Y - y_oversize_down, node_min.Z);
+		noise_floatland->noiseMap3D(node_min.X, node_min.Y - y_oversize_down, node_min.Z);
 
 		// Cache floatland noise offset values, for floatland tapering
 		for (pos_t y = node_min.Y - y_oversize_down; y <= node_max.Y + y_oversize_up; y++, cache_index++) {
@@ -439,7 +439,7 @@ int MapgenIndev::generateGround()
 							: 0;
 
 			// Fill ground with stone
-			v3pos_t em = vm->m_area.getExtent();
+			auto em = vm->m_area.getExtent();
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 
 			cache_index = 0;
