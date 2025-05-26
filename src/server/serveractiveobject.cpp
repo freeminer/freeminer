@@ -23,9 +23,12 @@ ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
 
 void ServerActiveObject::setBasePosition(v3f pos)
 {
+    bool changed{};
+	{
 	std::lock_guard<std::mutex> lock(m_base_position_mutex);
-	bool changed = m_base_position != pos;
+	changed = m_base_position != pos;
 	m_base_position = pos;
+	}
 	if (changed && getEnv()) {
 		// getEnv() should never be null if the object is in an environment.
 		// It may however be null e.g. in tests or database migrations.
