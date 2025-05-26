@@ -1771,6 +1771,12 @@ void MapblockMeshGenerator::drawNode()
 		default:
 			break;
 	}
+
+	if (data->fscale > 1) {
+		drawSolidNode();
+		return;
+	}
+
 	cur_node.origin = oposToV3f(intToFloat(cur_node.p, BS));
 	if (data->m_smooth_lighting) {
 		getSmoothLightFrame();
