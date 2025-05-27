@@ -155,10 +155,7 @@ bool ActiveObjectMgr::registerObject(std::shared_ptr<ServerActiveObject> obj)
 
 	auto obj_id = obj->getId();
 	m_active_objects.put(obj_id, std::move(obj));
-	{
-	const auto lock = unique_lock(m_spatial_index_mutex);
 	m_spatial_index.insert(pos.toArray(), obj_id);
-	}
 
 #if !NDEBUG
 	auto new_size = m_active_objects.size();
@@ -184,7 +181,6 @@ void ActiveObjectMgr::removeObject(u16 id)
 		infostream << "Server::ActiveObjectMgr::removeObject(): "
 				<< "id=" << id << " not found" << std::endl;
 	} else {
-		const auto lock = unique_lock(m_spatial_index_mutex);
 		m_spatial_index.remove(id);
 	}
 }
@@ -210,7 +206,6 @@ void ActiveObjectMgr::updateObjectPos(u16 id, v3f pos)
 	// otherwise we're still waiting to be inserted into the index
 	// (or have already been removed).
 	if (m_active_objects.get(id)){
-		const auto lock = unique_lock(m_spatial_index_mutex);
 		m_spatial_index.update(pos.toArray(), id);
 	}
 }
@@ -219,8 +214,6 @@ void ActiveObjectMgr::getObjectsInsideRadius(v3f pos, float radius,
 		std::vector<ServerActiveObjectPtr> &result,
 		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
 {
-	const auto lock = std::shared_lock(m_spatial_index_mutex);
-
 	float r_squared = radius * radius;
 	m_spatial_index.rangeQuery((pos - v3f(radius)).toArray(), (pos + v3f(radius)).toArray(), [&](auto objPos, u16 id) {
 		if (v3f(objPos).getDistanceFromSQ(pos) > r_squared)
@@ -238,8 +231,6 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		std::vector<ServerActiveObjectPtr> &result,
 		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
 {
-	const auto lock = std::shared_lock(m_spatial_index_mutex);
-
 	m_spatial_index.rangeQuery(box.MinEdge.toArray(), box.MaxEdge.toArray(), [&](auto _, u16 id) {
 		auto obj = m_active_objects.get(id);
 		if (!obj)
