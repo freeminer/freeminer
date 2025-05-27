@@ -183,6 +183,7 @@ void fm_set_default_settings(Settings *settings) {
 					 "enable_volumetric_lighting",
 					 "enable_water_reflections",
 					 "shadow_map_color",
+					 "soft_clouds",
 			 }) {
 			settings->setDefault(name, "true");
 		}
