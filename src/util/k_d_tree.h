@@ -517,7 +517,7 @@ private:
 	size_t n_entries = 0;
 	size_t deleted = 0;
 
-	std::mutex mutex;
+	mutable std::mutex mutex;
 };
 
 } // end namespace k_d_tree
