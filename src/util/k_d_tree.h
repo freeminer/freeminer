@@ -440,7 +440,18 @@ public:
 	void rangeQuery(const Point &min, const Point &max,
 			const F &cb) const
 	{
-		const std::scoped_lock guard{mutex};
+		std::vector<std::pair<std::array<Component, Dim>, Id>> resv;
+		{
+			const auto cbc = [&resv](const auto &p, const auto &id) {
+				resv.emplace_back(p, id);
+			};
+			const std::scoped_lock guard{mutex};
+			for (const auto &tree : trees)
+				tree.rangeQuery(min, max, cbc);
+		}
+		for (const auto &res : resv)
+			cb(res.first, res.second);
+		return;
 
 		for (const auto &tree : trees)
 			tree.rangeQuery(min, max, cb);
