@@ -405,12 +405,6 @@ GUIEngine::~GUIEngine()
 	m_sound_manager.reset();
 
 	m_irr_toplefttext->remove();
-
-	// delete textures
-	for (image_definition &texture : m_textures) {
-		if (texture.texture)
-			m_rendering_engine->get_video_driver()->removeTexture(texture.texture);
-	}
 }
 
 /******************************************************************************/
