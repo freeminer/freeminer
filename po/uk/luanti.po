@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-05-14 23:02+0200\n"
-"PO-Revision-Date: 2025-03-26 06:33+0000\n"
-"Last-Translator: Yof <Yof@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2025-05-28 02:32+0000\n"
+"Last-Translator: Тарас Арт <fromkaniv@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
 "Language: uk\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -84,16 +84,15 @@ msgstr "Оглянути"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "Конфліктує з «$1»"
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "Редагувати"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Прив'язки до клавіш."
+msgstr "Видалити призначення клавіші"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -225,7 +224,7 @@ msgstr "Назад"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Buttons with crosshair"
-msgstr ""
+msgstr "Кнопки з прицілом"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
@@ -255,7 +254,7 @@ msgstr "Загальне"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Довгий тап"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -280,7 +279,7 @@ msgstr "Пошук"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Короткий тап"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -297,7 +296,7 @@ msgstr "Tab"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap with crosshair"
-msgstr ""
+msgstr "Тап з прицілом"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -473,7 +472,7 @@ msgstr "У черзі"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Texture Packs"
-msgstr "Текстурні пакети"
+msgstr "Текстури"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "The package $1 was not found."
@@ -562,12 +561,11 @@ msgstr "Пожертвувати"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
-msgstr ""
+msgstr "Помилка завантаження інформації про пакунок"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Error loading reviews"
-msgstr "Помилка створення клієнта: %s"
+msgstr "Помилка завантаження відгуків"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
@@ -587,7 +585,7 @@ msgstr "Трекер проблем"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Reviews"
-msgstr ""
+msgstr "Відгуки"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
@@ -611,7 +609,7 @@ msgstr "Сайт"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "by $1  —  $2 downloads  —  +$3 / $4 / -$5"
-msgstr "із $1  —  $2 завантажень  —  +$3 / $4 / -$5"
+msgstr "Автор: $1  —  $2 завантажень  —  +$3 / $4 / -$5"
 
 #: builtin/mainmenu/content/pkgmgr.lua
 msgid "$1 (Enabled)"
@@ -646,6 +644,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Гравці приєднані до\n"
+"$1"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "(Enabled, has error)"
@@ -934,15 +934,15 @@ msgstr "Видалити світ \"$1\"?"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "As a result, your keybindings may have been changed."
-msgstr ""
+msgstr "В результаті ваші налаштування клавіш можуть бути змінені."
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "Check out the key settings or refer to the documentation:"
-msgstr ""
+msgstr "Перегляньте налаштування клавіш або зверніться до документації:"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "Close"
-msgstr ""
+msgstr "Закрити"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 #, fuzzy
@@ -956,7 +956,7 @@ msgstr "Налаштування"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "The input handling system was reworked in Luanti 5.12.0."
-msgstr ""
+msgstr "Система обробки введення була перероблена в Luanti 5.12.0."
 
 #: builtin/mainmenu/dlg_register.lua src/gui/guiPasswordChange.cpp
 msgid "Confirm Password"
@@ -1258,7 +1258,7 @@ msgstr "Вам потрібно встановити гру перш ніж мо
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Add favorite"
-msgstr "Додати в улюблені"
+msgstr "Додати до улюблених"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Address"
@@ -1299,7 +1299,7 @@ msgstr "Кількість модів: $1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Open server website"
-msgstr "Відкрити сайт серверу"
+msgstr "Відкрити сайт сервера"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
@@ -1336,7 +1336,7 @@ msgstr "Оновити"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Remove favorite"
-msgstr "Видалити улюблений"
+msgstr "Видалити з улюблених"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Server Description"
@@ -2235,7 +2235,7 @@ msgstr "Змінити камеру"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Dig/punch/use"
-msgstr ""
+msgstr "Копання/удар/використання"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Drop"
@@ -2548,7 +2548,7 @@ msgstr "Повідомлення що показується усім клієн
 
 #: src/settings_translation_file.cpp
 msgid "A message to be displayed to all clients when the server shuts down."
-msgstr "Повідомлення що показується усім клієнтам при вимкненні серверу."
+msgstr "Повідомлення що показується усім клієнтам при вимкненні сервера."
 
 #: src/settings_translation_file.cpp
 msgid "ABM interval"
@@ -3268,7 +3268,7 @@ msgstr "Зменшити звук"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
-msgstr "Крок виділеного серверу"
+msgstr "Крок виділеного сервера"
 
 #: src/settings_translation_file.cpp
 msgid "Default acceleration"
@@ -3426,7 +3426,8 @@ msgid ""
 "Description of server, to be displayed when players join and in the "
 "serverlist."
 msgstr ""
-"Опис серверу, що показуватиметься при заході гравця й у переліку серверів."
+"Опис сервера, що показуватиметься при приєднанні гравця й у переліку "
+"серверів."
 
 #: src/settings_translation_file.cpp
 msgid "Desert noise threshold"
@@ -3532,8 +3533,8 @@ msgid ""
 "Enable IPv6 support (for both client and server).\n"
 "Required for IPv6 connections to work at all."
 msgstr ""
-"Увімкнути підтримку IPv6 (для клієнта і серверу).\n"
-"Потрібно для підключень за IPv6 взагалі."
+"Увімкнути підтримку IPv6 (для клієнта і сервера).\n"
+"Потрібно для підключень IPv6 взагалі."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3654,9 +3655,9 @@ msgid ""
 "textures)\n"
 "when connecting to the server."
 msgstr ""
-"Увімкає використання віждаленого медіасерверу (якщо забезпечено сервером).\n"
-"Віддалені сервери пропонують набагато бистріше завантажувати медіафайли\n"
-"(наприклад текстури) під час підключення до серверу."
+"Вмикає використання віддаленого медіасервера (якщо забезпечено сервером).\n"
+"Віддалені сервери пропонують набагато швидше завантажувати медіафайли\n"
+"(наприклад текстури) під час підключення до сервера."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4156,7 +4157,7 @@ msgstr "Шум Hilliness4"
 
 #: src/settings_translation_file.cpp
 msgid "Homepage of server, to be displayed in the serverlist."
-msgstr "Сторінка серверу, для відображення у списку серверів."
+msgstr "Сторінка сервера, що відображається у списку серверів."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4462,8 +4463,8 @@ msgid ""
 "If enabled, invalid world data won't cause the server to shut down.\n"
 "Only enable this if you know what you are doing."
 msgstr ""
-"Якщо увімкнено, неправильні дані світу не зумовлять вимкнення серверу.\n"
-"Вмикайте це тільки якщо ви знаєте, що робите."
+"Якщо увімкнено, то неправильні дані світу не зумовлять вимкнення серверу.\n"
+"Вмикайте це лише якщо ви знаєте, що робите."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5149,7 +5150,7 @@ msgid ""
 "This is a lower bound, i.e. server steps may not be shorter than this, but\n"
 "they are often longer."
 msgstr ""
-"Довжина кроку серверу (інтервал, з яким все зазвичай оновлюються),\n"
+"Довжина кроку серверу (інтервал, з яким все зазвичай оновлюється),\n"
 "зазначається у секундах.\n"
 "Не застосовується до сесій, які запущено з клієнтського меню.\n"
 "Це нижня межа, тобто кроки серверу не можуть бути коротше за це\n"
@@ -5830,13 +5831,13 @@ msgid ""
 "When starting from the main menu, this is overridden."
 msgstr ""
 "Ім'я гравця.\n"
-"При запуску серверу клієнт з цим ім'ям є адміністраторам.\n"
+"При запуску сервера клієнт з цим ім'ям є адміністратором.\n"
 "При запуску з головного меню це перевизначається."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Name of the server, to be displayed when players join and in the serverlist."
-msgstr "Ім'я серверу, що відображуються при вході й у переліку серверів."
+msgstr "Ім'я сервера, що відображається при вході й у списку серверів."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6293,7 +6294,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Saving map received from server"
-msgstr "Збереження мапи, що отримано з серверу"
+msgstr "Збереження мапи, що отримано з сервера"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6483,7 +6484,7 @@ msgstr "Сервер"
 
 #: src/settings_translation_file.cpp
 msgid "Server Gameplay"
-msgstr "Геймплей серверу"
+msgstr "Геймплей сервера"
 
 #: src/settings_translation_file.cpp
 msgid "Server Security"
@@ -6913,16 +6914,16 @@ msgstr ""
 "островів.\n"
 "Вода вимкнена за замовчуванням і буде розміщена лише у тому випадку, якщо це "
 "значення\n"
-"буде встановлено вище за \"mgv7_floatland_ymax\" - \"mgv7_floatland_taper\" "
-"(початок\n"
+"буде встановлено вище за \"mgv7_floatland_ymax\" - \"mgv7_floatland_taper\" ("
+"початок\n"
 "верхнього звуження).\n"
 "***УВАГА, ПОТЕНЦІЙНА ЗАГРОЗА СВІТАМ І ПРОДУКТИВНОСТІ СЕРВЕРУ***:\n"
 "При увімкненні розміщення води висячі острови повинні бути налаштовані й "
 "перевірені\n"
-"на наявність суцільного шару, виставивши \"mgv7_floatland_density\" на 2.0 "
-"(або інше\n"
+"на наявність суцільного шару, виставивши \"mgv7_floatland_density\" на 2.0 ("
+"або інше\n"
 "потрібне значення, що залежить від \"mgv7_np_floatland\"), щоб уникнути\n"
-"надмірно посиленого потоку води на сервері та величезного затоплення\n"
+"надмірного посиленого потоку води на сервері та величезного затоплення\n"
 "поверхні світу знизу."
 
 #: src/settings_translation_file.cpp
@@ -7418,7 +7419,7 @@ msgstr ""
 #: src/settings_translation_file.cpp
 msgid "URL to the server list displayed in the Multiplayer Tab."
 msgstr ""
-"Адреса переліку серверу, що зображується у вкладці Багатокористувацька гра."
+"Адреса списку серверів, що відображається у вкладці Багатокористувацька гра."
 
 #: src/settings_translation_file.cpp
 msgid "Undersampling"
