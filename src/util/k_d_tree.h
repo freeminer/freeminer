@@ -3,10 +3,11 @@
 
 #pragma once
 
+#include <mutex>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <mutex>
 #include <unordered_map>
 #include <vector>
 #include <memory>
@@ -273,9 +274,7 @@ public:
 		, ids(nullptr)
 		, tree(nullptr)
 		, deleted()
-	{
-		mutex = std::make_unique<std::mutex>();
-	}
+	{}
 
 	//! Build a tree containing just a single point
 	KdTree(const Point &point, const Id &id)
@@ -284,7 +283,6 @@ public:
 		, tree(std::make_unique<Idx[]>(1))
 		, deleted(1)
 	{
-		mutex = std::make_unique<std::mutex>();
 		tree[0] = 0;
 		ids[0] = id;
 	}
@@ -296,7 +294,6 @@ public:
 		, tree(std::make_unique<Idx[]>(n))
 		, deleted(n)
 	{
-		mutex = std::make_unique<std::mutex>();
 		std::copy(ids, ids + n, this->ids.get());
 		init(0, 0, items.indices);
 	}
@@ -305,7 +302,6 @@ public:
 	KdTree(const KdTree &a, const KdTree &b)
 		: items(a.items, b.items)
 	{
-		mutex = std::make_unique<std::mutex>();
 		tree = std::make_unique<Idx[]>(cap());
 		ids = std::make_unique<Id[]>(cap());
 		std::copy(a.ids.get(), a.ids.get() + a.cap(), ids.get());
@@ -314,15 +310,8 @@ public:
 		// since `init` abuses the `deleted` marks as left/right marks.
 		deleted = std::vector<bool>(cap());
 		init(0, 0, items.indices);
-
-      {
-		const std::scoped_lock guard{*a.mutex.get()};
 		std::copy(a.deleted.begin(), a.deleted.end(), deleted.begin());
-	  }
-	  {
-		const std::scoped_lock guard{*b.mutex.get()};
 		std::copy(b.deleted.begin(), b.deleted.end(), deleted.begin() + a.items.size());
-	  }
 	}
 
 	template<typename F>
@@ -334,7 +323,6 @@ public:
 
 	void remove(Idx internalIdx)
 	{
-		const std::scoped_lock guard{*mutex.get()};
 		assert(!deleted[internalIdx]);
 		deleted[internalIdx] = true;
 	}
@@ -343,12 +331,7 @@ public:
 	void foreach(F cb) const
 	{
 		for (Idx i = 0; i < cap(); ++i) {
-			bool d;
-			{
-				const std::scoped_lock guard(*mutex.get());
-				d = deleted[i];
-			}
-			if (!d) {
+			if (!deleted[i]) {
 				cb(i, items.points.getPoint(i), ids[i]);
 			}
 		}
@@ -390,11 +373,8 @@ private:
 		} else {
 			rangeQuery(rightChild, nextSplit, min, max, cb);
 			rangeQuery(leftChild, nextSplit, min, max, cb);
-		   {
-    		const std::scoped_lock guard(*mutex.get());
 			if (deleted[ptid])
 				return;
-		   }
 			const auto point = items.points.getPoint(ptid);
 			for (uint8_t d = 0; d < Dim; ++d)
 				if (point[d] < min[d] || point[d] > max[d])
@@ -406,7 +386,6 @@ private:
 	std::unique_ptr<Id[]> ids;
 	std::unique_ptr<Idx[]> tree;
 	std::vector<bool> deleted;
-	std::unique_ptr<std::mutex> mutex;
 };
 
 template<uint8_t Dim, class Component, class Id>
@@ -420,6 +399,7 @@ public:
 	void insert(const std::array<Component, Dim> &point, Id id)
 	{
 		Tree tree(point, id);
+		const std::scoped_lock guard{mutex};
 		for (uint8_t tree_idx = 0;; ++tree_idx) {
 			if (tree_idx == trees.size()) {
 				trees.push_back(std::move(tree));
@@ -440,6 +420,7 @@ public:
 
 	void remove(Id id)
 	{
+		const std::scoped_lock guard{mutex};
 		const auto it = del_entries.find(id);
 		assert(it != del_entries.end());
 		trees.at(it->second.tree_idx).remove(it->second.in_tree);
@@ -533,6 +514,8 @@ private:
 	std::unordered_map<Id, DelEntry> del_entries;
 	size_t n_entries = 0;
 	size_t deleted = 0;
+
+	std::mutex mutex;
 };
 
 } // end namespace k_d_tree
