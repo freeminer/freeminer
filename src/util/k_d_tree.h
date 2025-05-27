@@ -440,6 +440,8 @@ public:
 	void rangeQuery(const Point &min, const Point &max,
 			const F &cb) const
 	{
+		const std::scoped_lock guard{mutex};
+
 		for (const auto &tree : trees)
 			tree.rangeQuery(min, max, cb);
 	}
