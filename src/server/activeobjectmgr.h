@@ -20,9 +20,6 @@ class ActiveObjectMgr final : public ::ActiveObjectMgr<ServerActiveObject>
 public:
 	void deferDelete(const ServerActiveObjectPtr& obj);
 private:
-	std::shared_mutex m_spatial_index_mutex;
-
-
     std::vector<ServerActiveObjectPtr> m_objects_to_delete, m_objects_to_delete_2;
 	std::vector<u16> objects_to_remove;
 public:

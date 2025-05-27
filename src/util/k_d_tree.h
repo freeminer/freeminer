@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <mutex>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -397,6 +399,7 @@ public:
 	void insert(const std::array<Component, Dim> &point, Id id)
 	{
 		Tree tree(point, id);
+		const std::scoped_lock guard{mutex};
 		for (uint8_t tree_idx = 0;; ++tree_idx) {
 			if (tree_idx == trees.size()) {
 				trees.push_back(std::move(tree));
@@ -417,6 +420,7 @@ public:
 
 	void remove(Id id)
 	{
+		const std::scoped_lock guard{mutex};
 		const auto it = del_entries.find(id);
 		assert(it != del_entries.end());
 		trees.at(it->second.tree_idx).remove(it->second.in_tree);
@@ -510,6 +514,8 @@ private:
 	std::unordered_map<Id, DelEntry> del_entries;
 	size_t n_entries = 0;
 	size_t deleted = 0;
+
+	std::mutex mutex;
 };
 
 } // end namespace k_d_tree
