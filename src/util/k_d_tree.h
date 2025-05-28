@@ -445,7 +445,10 @@ public:
 			const auto cbc = [&resv](const auto &p, const auto &id) {
 				resv.emplace_back(p, id);
 			};
-			const std::scoped_lock guard{mutex};
+			const std::unique_lock lock{mutex, std::try_to_lock};
+			if (!lock.owns_lock()) {
+				return;
+			}
 			for (const auto &tree : trees)
 				tree.rangeQuery(min, max, cbc);
 		}
