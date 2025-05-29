@@ -21,13 +21,18 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include <cstdlib>
+#include <memory>
+#include <mutex>
+#include <sstream>
 #include <string>
+#include <system_error>
 
-#include "debug/iostream_debug_helpers.h"
+#include "debug/dump.h"
 #include "filesys.h"
 #include "irr_v2d.h"
 #include "irrlichttypes.h"
 #include "mapgen/earth/hgt.h"
+#include "mapgen/earth/http.h"
 #include "mapgen_earth.h"
 #include "voxel.h"
 #include "mapblock.h"
@@ -48,11 +53,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <osmium/handler/node_locations_for_ways.hpp>
 #include <osmium/index/map/sparse_mem_array.hpp>
 #include <osmium/io/file.hpp>
+#include <osmium/io/pbf_input.hpp>
 #include <osmium/osm/entity_bits.hpp>
 #include <osmium/osm/node.hpp>
 #include <osmium/osm/way.hpp>
 #include <osmium/tags/tags_filter.hpp>
 #endif
+std::unique_ptr<maps_holder_t> MapgenEarth::maps_holder;
 
 void MapgenEarthParams::setDefaultSettings(Settings *settings)
 {
@@ -119,8 +126,7 @@ long double distance(
 */
 
 MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
-		MapgenV7((MapgenV7Params *)params_, emerge),
-		hgt_reader(porting::path_cache + DIR_DELIM + "earth")
+		MapgenV7((MapgenV7Params *)params_, emerge)
 {
 	ndef = emerge->ndef;
 	// mg_params = (MapgenEarthParams *)params_->sparams;
@@ -146,7 +152,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		scale = {params["scale"]["x"].asDouble(), params["scale"]["y"].asDouble(),
 				params["scale"]["z"].asDouble()};
 
-		/* todomake test
+	/* todomake test
 	static bool shown = 0;
 	if (!shown) {
 		shown = true;
@@ -168,7 +174,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		}
 	}
 	*/
-		/*
+	/*
 	hgt_reader.debug = 1;
 	std::vector<std::pair<int, int>> a{
 			{0, 0}, {-30000, -30000}, {-30000, 30000}, {30000, -30000}, {30000, 30000}};
@@ -190,14 +196,9 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	hgt_reader.debug = 0;
 */
 
-#if USE_OSMIUM
-#include "earth/osmium-inl.h"
-	const auto path_name =
-			porting::path_cache + DIR_DELIM + "earth" + DIR_DELIM + "map.pbf";
-	if (std::filesystem::exists(path_name)) {
-		handler = std::make_unique<hdl>(this, path_name);
+	if (!maps_holder) {
+		maps_holder = std::make_unique<maps_holder_t>();
 	}
-#endif
 }
 
 MapgenEarth::~MapgenEarth()
@@ -261,7 +262,7 @@ v2pos_t MapgenEarth::ll_to_pos(const ll &l)
 pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 {
 	const auto tc = pos_to_ll(x, z);
-	auto y = hgt_reader.get(tc.lat, tc.lon);
+	auto y = maps_holder->hgt_reader.get(tc.lat, tc.lon);
 	return ceil(y / scale.Y) - center.Y;
 }
 
@@ -289,8 +290,8 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 	const int8_t iy((delta_y > 0) - (delta_y < 0));
 	delta_y = std::abs(delta_y) << 1;
 
-	if (vm->exists({x1, y, y1})) {
-		for (pos_t yi = y; yi <= y + h; ++yi) {
+	for (pos_t yi = y; yi <= y + h; ++yi) {
+		if (vm->exists({x1, yi, y1})) {
 			vm->setNode({x1, yi, y1}, n);
 		}
 	}
@@ -309,8 +310,8 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 			error += delta_y;
 			x1 += ix;
 
-			if (vm->exists({x1, y, y1})) {
-				for (pos_t yi = y; yi <= y + h; ++yi) {
+			for (pos_t yi = y; yi <= y + h; ++yi) {
+				if (vm->exists({x1, yi, y1})) {
 					vm->setNode({x1, yi, y1}, n);
 				}
 			}
@@ -329,8 +330,8 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 			error += delta_x;
 			y1 += iy;
 
-			if (vm->exists({x1, y, y1})) {
-				for (pos_t yi = y; yi <= y + h; ++yi) {
+			for (pos_t yi = y; yi <= y + h; ++yi) {
+				if (vm->exists({x1, yi, y1})) {
 					vm->setNode({x1, yi, y1}, n);
 				}
 			}
@@ -371,9 +372,140 @@ int MapgenEarth::generateTerrain()
 	return 0;
 }
 
+int lat_start(ll_t lat_dec)
+{
+	return floor(lat_dec);
+}
+
+int lon_start(ll_t lon_dec)
+{
+	return floor(lon_dec);
+}
+
+int long2tilex(double lon, int z)
+{
+	return (int)(floor((lon + 180.0) / 360.0 * (1 << z)));
+}
+
+int lat2tiley(double lat, int z)
+{
+	double latrad = lat * M_PI / 180.0;
+	return (int)(floor((1.0 - asinh(tan(latrad)) / M_PI) / 2.0 * (1 << z)));
+}
+
+double tilex2long(int x, int z)
+{
+	return x / (double)(1 << z) * 360.0 - 180;
+}
+
+double tiley2lat(int y, int z)
+{
+	double n = M_PI - 2.0 * M_PI * y / (double)(1 << z);
+	return 180.0 / M_PI * atan(0.5 * (exp(n) - exp(-n)));
+}
+
+const auto floor01 = [](const auto &v, const float &div) { return floor(v * div) / div; };
+
+//const auto ceil01 = [](const auto &v, const float &div) { return ceil(v * div) / div; };
+
+const auto make_bbox = [](auto tc, auto div) {
+	const auto lat_dec01 = floor01(tc.lat, div);
+	const auto lon_dec01 = floor01(tc.lon, div);
+	const auto lat_end_dec01 = floor01(tc.lat + (1.0 / div), div);
+	const auto lon_end_dec01 = floor01(tc.lon + (1.0 / div), div);
+	std::stringstream bboxs;
+	bboxs << lon_dec01 << "," << lat_dec01 << "," << lon_end_dec01 << ","
+		  << lat_end_dec01;
+	auto bbox = bboxs.str();
+	return bbox;
+};
+
 void MapgenEarth::generateBuildings()
 {
 
-	if (handler)
-		handler->apply();
+#if USE_OSMIUM
+
+#define FILE_INCLUDED 1
+#include "earth/osmium-inl.h"
+	const auto tc = pos_to_ll(node_min.X, node_min.Z);
+	const auto tc_max = pos_to_ll(node_max.X, node_max.Z);
+	static const auto folder = porting::path_cache + DIR_DELIM + "earth";
+	const auto lat_dec = lat_start(tc.lat);
+	const auto lon_dec = lon_start(tc.lon);
+
+	static const auto timestamp = []() {
+		std::string ts = "202503130700";
+		g_settings->getNoEx("earth_movisda_timestamp", ts);
+		return ts;
+	}();
+	char buff[100];
+	std::snprintf(buff, sizeof(buff), "%c%02d%c%03d-%s.osm.pbf", lat_dec >= 0 ? 'N' : 'S',
+			abs(lat_dec), lon_dec >= 0 ? 'W' : 'E', abs(lon_dec), timestamp.c_str());
+	std::string filename = buff;
+	const auto base_full_name = folder + DIR_DELIM + filename;
+	if (!std::filesystem::exists(base_full_name)) {
+		const auto lock = std::lock_guard(maps_holder->osm_http_lock);
+		if (!std::filesystem::exists(base_full_name)) {
+			const auto url = "https://osm.download.movisda.io/grid/" + filename;
+			multi_http_to_file({url}, base_full_name);
+		}
+	}
+
+	std::string use_file = base_full_name;
+	std::string bbox;
+	{
+		const auto try_extract = [](const auto &path_name, const auto &bbox,
+										 const auto &filename) {
+			if (std::filesystem::exists(filename)) {
+				return true;
+			}
+			const auto lock = std::lock_guard(maps_holder->osm_extract_lock);
+			if (std::filesystem::exists(filename)) {
+				return true;
+			}
+
+			std::stringstream cmd;
+			// TODO: use osmium tool as lib
+			cmd << "osmium extract --output-format pbf --strategy smart " << "--bbox "
+				<< bbox << " --output " << filename << ".tmp" << " " << path_name;
+			exec_to_string(cmd.str());
+			if (!std::filesystem::exists(filename + ".tmp")) {
+				return false;
+			}
+
+			std::error_code error_code;
+			std::filesystem::rename(filename + ".tmp", filename, error_code);
+			return !error_code.value();
+		};
+
+		for (auto div = 10; div <= 1000; div *= 10) {
+			std::error_code ec;
+			const auto size = std::filesystem::file_size(use_file, ec);
+			if (ec || size < 40000) {
+				break;
+			};
+
+			const auto bbox_next = make_bbox(tc, div);
+			auto filename_next = folder + DIR_DELIM + "extract." + std::to_string(div) +
+								 "." + bbox_next + ".osm.pbf";
+			if (!try_extract(use_file, bbox_next, filename_next)) {
+				break;
+			}
+			use_file = filename_next;
+			bbox = bbox_next;
+		}
+	}
+
+	if (std::filesystem::exists(use_file)) {
+		const auto osm = std::make_shared<hdl>(this, use_file);
+		const auto lock = maps_holder->osm_bbox.lock_unique_rec();
+		if (!maps_holder->osm_bbox.contains(bbox)) {
+			maps_holder->osm_bbox.emplace(bbox, osm);
+		}
+	}
+
+	if (const auto &hdlr = maps_holder->osm_bbox.get(bbox)) {
+		hdlr->apply();
+	}
+#endif
 }

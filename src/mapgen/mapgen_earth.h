@@ -22,11 +22,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <memory>
-#include "config.h"
+#include <mutex>
+#include <string>
+#include "filesys.h"
 #include "mapgen/earth/hgt.h"
 #include "mapgen/mapgen.h"
 #include "mapgen/mapgen_v7.h"
-#include "json/json.h"
+#include "porting.h"
+#include "threading/concurrent_map.h"
 
 //using ll_t = float;
 using ll_t = double;
@@ -62,12 +65,22 @@ public:
 	virtual void apply() = 0;
 };
 
+struct maps_holder_t
+{
+	hgts hgt_reader{porting::path_cache + DIR_DELIM + "earth"};
+	using osm_ptr = std::shared_ptr<handler_i>;
+	concurrent_shared_map<std::string, osm_ptr> osm_by_path;
+	concurrent_shared_map<std::string, osm_ptr> osm_bbox;
+	std::mutex osm_http_lock;
+	std::mutex osm_extract_lock;
+};
+
 class MapgenEarth : public MapgenV7
 {
 public:
 	MapgenEarthParams *mg_params;
 
-	std::unique_ptr<handler_i> handler;
+	static std::unique_ptr<maps_holder_t> maps_holder;
 
 	virtual MapgenType getType() const override { return MAPGEN_EARTH; }
 	MapgenEarth(MapgenEarthParams *mg_params, EmergeParams *emerge);
@@ -87,8 +100,6 @@ public:
 	MapNode layers_get(float value, float max);
 	bool visible(const v3pos_t &p) override;
 	const MapNode &visible_content(const v3pos_t &p, bool use_weather) override;
-
-	hgts hgt_reader;
 
 	pos_t get_height(pos_t x, pos_t z);
 	ll pos_to_ll(pos_t x, pos_t z);

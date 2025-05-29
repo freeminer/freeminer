@@ -83,6 +83,7 @@ $0 ----world_sand
 $0 -mg_name=earth -mg_earth='{"center":{"z":36.822183, "y":0, "x":30.583390}}' bot
 #$0 -mg_name=earth -mg_earth='{"scale":{"z":10000, "y":0.01, "x":10000}}' bot
 $0 -mg_name=earth -mg_earth='{"scale":{"z":10000, "y":100, "x":10000}}' bot
+$0 -mg_name=earth -mg_earth='{"center":{"z":27.9878279,"y":0,"x":86.923833}}' -static_spawnpoint='(130,8842,56)' bot  # everest
 
 $0 ---cmake_minetest=1 ---build_name=_minetest ----headless ----headless_optimize --address=cool.server.org --port=30001 ---clients_num=25 clients
 
@@ -443,7 +444,7 @@ $commands = {
         $D{ENABLE_TCMALLOC}   = $config->{cmake_tcmalloc}        if defined $config->{cmake_tcmalloc};
         $D{USE_LTO}           = $config->{cmake_lto}             if defined $config->{cmake_lto};
         $D{EXCEPTION_DEBUG}   = $config->{cmake_exception_debug} if defined $config->{cmake_exception_debug};
-        $D{USE_DEBUG_HELPERS} = 1;
+        $D{USE_DEBUG_DUMP} = 1;
 
         $D{CMAKE_C_COMPILER} = qq{`which clang$config->{clang_version} clang | head -n1`},
           $D{CMAKE_CXX_COMPILER} = qq{`which clang++$config->{clang_version} clang++ | head -n1`}
