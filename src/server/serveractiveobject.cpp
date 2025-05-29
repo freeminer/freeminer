@@ -10,14 +10,16 @@
 
 Queue<ActiveObjectMessage> dummy_queue;
 
-ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
+ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
+
+// fm:
+	m_uptime_last(0),
+	m_messages_out(env ? env->m_active_object_messages : dummy_queue),
+// ===
+
 	ActiveObject(0),
 	m_env(env),
 	m_base_position(pos)
-
-	,m_uptime_last(0),
-	m_messages_out(env ? env->m_active_object_messages : dummy_queue)
-
 {
 }
 
