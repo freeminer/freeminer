@@ -3,6 +3,9 @@
 // TODO 
 
 #include <climits>
+#include <osmium/osm/node.hpp>
+#include <osmium/osm/relation.hpp>
+#include <osmium/osm/way.hpp>
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -14,6 +17,7 @@
 #include <chrono>
 #include <functional>
 #include "irr_v2d.h"
+#include "irrlichttypes.h"
 
 // -------------------------------------------------------------------
 // Example stubs for the types and constants referenced in the Rust code
@@ -111,6 +115,7 @@ struct XZPoint
 */
 using XZPoint = v2pos_t;
 
+/*
 // A node from OSM processing
 struct ProcessedNode
 {
@@ -120,13 +125,18 @@ struct ProcessedNode
     // Convenience for BFS or geometry
     XZPoint xz() const { return XZPoint(x, z); }
 };
+*/
+using ProcessedNode = osmium::Node;
 
 // A way from OSM processing (list of nodes, plus string->string tags)
+/*
 struct ProcessedWay
 {
     std::vector<ProcessedNode> nodes;
     std::unordered_map<std::string, std::string> tags;
 };
+*/
+using ProcessedWay = osmium::Way;
 
 // Relationship roles
 enum class ProcessedMemberRole
@@ -143,11 +153,14 @@ struct ProcessedMember
 };
 
 // A relation from OSM processing
+/*
 struct ProcessedRelation
 {
     std::vector<ProcessedMember> members;
     std::unordered_map<std::string, std::string> tags;
 };
+*/
+using ProcessedRelation = osmium::Relation;
 
 // A “Ground” class that can return ground level from a set of points
 struct Ground
@@ -301,19 +314,20 @@ void generate_bridge(WorldEditor &editor,
     Block floor_block   = STONE;
     Block railing_block = STONE_BRICKS;
 
-    std::optional<std::pair<int,int>> previous_node = std::nullopt;
+    std::optional<XZPoint> previous_node = std::nullopt;
 
-    for (auto &node : element.nodes) {
-        int x = node.x;
-        int z = node.z;
+    for (auto &node : element.nodes()) {
+
+        const auto& x = node.x();
+        const auto& z = node.y();
 
         // Base: find ground level
-        int bridge_level = ground.level({x, z});
+        int bridge_level = ground.level({static_cast<pos_t>(x), static_cast<pos_t>(z)});
 
         // If "level" tag exists, adjust further
-        if (element.tags.count("level") > 0) {
+        if (element.tags().has_key("level") ) {
             try {
-                int lvl = std::stoi(element.tags.at("level"));
+                int lvl = std::stoi(element.tags().get_value_by_key("level"));
                 // The Rust code had (level * 3) + 1
                 bridge_level += (lvl * 3) + 1;
             }
@@ -324,12 +338,12 @@ void generate_bridge(WorldEditor &editor,
 
         // Use Bresenham to connect from the previous node
         if (previous_node.has_value()) {
-            auto [px, pz] = previous_node.value();
+            const auto &[px, pz] = previous_node.value();
 
             int prev_bridge_level = ground.level({px, pz});
-            if (element.tags.count("level") > 0) {
+            if (element.tags().has_key("level") ) {
                 try {
-                    int lvl = std::stoi(element.tags.at("level"));
+                    int lvl = std::stoi(element.tags().get_value_by_key("level"));
                     prev_bridge_level += (lvl * 3) + 1;
                 }
                 catch (...) {}
@@ -344,14 +358,14 @@ void generate_bridge(WorldEditor &editor,
             }
         }
 
-        previous_node = std::make_pair(x, z);
+        previous_node = {static_cast<pos_t>(x), static_cast<pos_t>(z)};
     }
 
     // Flood fill the area between the bridge path nodes
     std::vector<std::pair<int,int>> polygon_coords;
-    polygon_coords.reserve(element.nodes.size());
-    for (auto &n : element.nodes) {
-        polygon_coords.emplace_back(n.x, n.z);
+    polygon_coords.reserve(element.nodes().size());
+    for (auto &n : element.nodes()) {
+        polygon_coords.emplace_back(n.x(), n.y());
     }
 
     auto bridge_area = flood_fill_area(polygon_coords, floodfill_timeout);
@@ -360,10 +374,10 @@ void generate_bridge(WorldEditor &editor,
         int x = pt.first;
         int z = pt.second;
 
-        int bridge_level = ground.level({x, z});
-        if (element.tags.count("level") > 0) {
+        int bridge_level = ground.level({static_cast<pos_t>(x), static_cast<pos_t>(z)});
+        if (element.tags().has_key("level") ) {
             try {
-                int lvl = std::stoi(element.tags.at("level"));
+                int lvl = std::stoi(element.tags().get_value_by_key("level"));
                 bridge_level += (lvl * 3) + 1;
             }
             catch (...) {}
@@ -382,9 +396,9 @@ void generate_buildings(WorldEditor &editor,
 {
     // Get base Y from ground
     std::vector<XZPoint> nodePoints;
-    nodePoints.reserve(element.nodes.size());
-    for (auto &n : element.nodes) {
-        nodePoints.push_back(n.xz());
+    nodePoints.reserve(element.nodes().size());
+    for (const  auto &n : element.nodes()) {
+        nodePoints.emplace_back(static_cast<pos_t>(n.x()), static_cast<pos_t>(n.y()));
     }
     auto maybeBaseY = ground.min_level(nodePoints);
     if (!maybeBaseY.has_value()) {
@@ -394,9 +408,9 @@ void generate_buildings(WorldEditor &editor,
 
     // building:min_level
     int min_level = 0;
-    if (element.tags.count("building:min_level") > 0) {
+    if (element.tags().has_key("building:min_level") ) {
         try {
-            min_level = std::stoi(element.tags.at("building:min_level"));
+            min_level = std::stoi(element.tags().get_value_by_key("building:min_level"));
         }
         catch (...) {
             min_level = 0;
@@ -433,8 +447,8 @@ void generate_buildings(WorldEditor &editor,
 
         // building:colour
         Block wall_block;
-        if (element.tags.count("building:colour") > 0) {
-            auto building_colour = element.tags.at("building:colour");
+        if (element.tags().has_key("building:colour") > 0) {
+            auto building_colour = element.tags().get_value_by_key("building:colour");
             auto maybeRgb = color_text_to_rgb_tuple(building_colour);
             if (maybeRgb.has_value()) {
                 auto rgb = maybeRgb.value();
@@ -455,8 +469,8 @@ void generate_buildings(WorldEditor &editor,
 
         // roof:colour
         Block floor_block;
-        if (element.tags.count("roof:colour") > 0) {
-            auto roof_colour = element.tags.at("roof:colour");
+        if (element.tags().has_key("roof:colour") > 0) {
+            auto roof_colour = element.tags().get_value_by_key("roof:colour");
             auto maybeRgb = color_text_to_rgb_tuple(roof_colour);
             if (maybeRgb.has_value()) {
                 auto rgb = maybeRgb.value();
@@ -474,8 +488,8 @@ void generate_buildings(WorldEditor &editor,
         else {
             // check building type
             Block fallback_floor = LIGHT_GRAY_CONCRETE;
-            if (element.tags.count("building") > 0) {
-                auto building_type = element.tags.at("building");
+            if (element.tags().has_key("building") > 0) {
+                auto building_type = element.tags().get_value_by_key("building");
                 if (building_type == "yes" || building_type == "house" ||
                     building_type == "detached" || building_type == "static_caravan" ||
                     building_type == "semidetached_house" || building_type == "bungalow" ||
@@ -487,10 +501,10 @@ void generate_buildings(WorldEditor &editor,
                     floor_block = fallback_floor;
                 }
             }
-            else if (element.tags.count("building:part") > 0)
+            else if (element.tags().has_key("building:part") > 0)
             {
                 // same logic
-                auto bpart = element.tags.at("building:part");
+                auto bpart = element.tags().get_value_by_key("building:part");
                 // if it’s a typical house or something else, you can do your logic
                 floor_block = building_floor_variations()[variation_index_floor];
             }
@@ -516,17 +530,17 @@ void generate_buildings(WorldEditor &editor,
         int building_height = std::max(static_cast<int>(6.0 * scale_factor), 3);
 
         // Skip if 'layer' or 'level' is negative
-        if (element.tags.count("layer") > 0) {
+        if (element.tags().has_key("layer") > 0) {
             try {
-                int layer_val = std::stoi(element.tags.at("layer"));
+                int layer_val = std::stoi(element.tags().get_value_by_key("layer"));
                 if (layer_val < 0) {
                     return;
                 }
             } catch(...) {}
         }
-        if (element.tags.count("level") > 0) {
+        if (element.tags().has_key("level") > 0) {
             try {
-                int lvl_val = std::stoi(element.tags.at("level"));
+                int lvl_val = std::stoi(element.tags().get_value_by_key("level"));
                 if (lvl_val < 0) {
                     return;
                 }
@@ -534,9 +548,9 @@ void generate_buildings(WorldEditor &editor,
         }
 
         // building:levels
-        if (element.tags.count("building:levels") > 0) {
+        if (element.tags().has_key("building:levels") > 0) {
             try {
-                int levels = std::stoi(element.tags.at("building:levels"));
+                int levels = std::stoi(element.tags().get_value_by_key("building:levels"));
                 int lev = levels - min_level;
                 if (lev >= 1) {
                     building_height = static_cast<int>((lev * 4 + 2) * scale_factor);
@@ -547,8 +561,8 @@ void generate_buildings(WorldEditor &editor,
         }
 
         // height
-        if (element.tags.count("height") > 0) {
-            auto height_str = element.tags.at("height");
+        if (element.tags().has_key("height") > 0) {
+            std::string height_str = element.tags().get_value_by_key("height");
             // Possibly strip trailing "m"
             if (!height_str.empty()) {
                 // e.g. remove trailing 'm'
@@ -572,24 +586,24 @@ void generate_buildings(WorldEditor &editor,
         }
 
         // Check amenity = "shelter"
-        if (element.tags.count("amenity") > 0) {
-            auto amenity_type = element.tags.at("amenity");
+        if (element.tags().has_key("amenity") > 0) {
+            auto amenity_type = element.tags().get_value_by_key("amenity");
             if (amenity_type == "shelter") {
                 // handle special shelter logic:
                 Block roof_block = STONE_BRICK_SLAB;
 
                 // polygon coords
                 std::vector<std::pair<int,int>> polygon_coords;
-                polygon_coords.reserve(element.nodes.size());
-                for (auto &n : element.nodes) {
-                    polygon_coords.emplace_back(n.x, n.z);
+                polygon_coords.reserve(element.nodes().size());
+                for (auto &n : element.nodes()) {
+                    polygon_coords.emplace_back(n.x(), n.y());
                 }
                 auto roof_area = flood_fill_area(polygon_coords, args.timeout);
 
                 // place fences and roof slabs
-                for (auto &node : element.nodes) {
-                    int nx = node.x;
-                    int nz = node.z;
+                for (auto &node : element.nodes()) {
+                    int nx = node.x();
+                    int nz = node.y();
 
                     auto maybeY = ground.min_level(nodePoints);
                     if(!maybeY.has_value()) {
@@ -617,8 +631,8 @@ void generate_buildings(WorldEditor &editor,
         }
 
         // Check building tag
-        if (element.tags.count("building") > 0) {
-            auto building_type = element.tags.at("building");
+        if (element.tags().has_key("building") > 0) {
+            auto building_type = element.tags().get_value_by_key("building");
 
             if (building_type == "garage") {
                 building_height = std::max(static_cast<int>(2.0 * scale_factor), 3);
@@ -627,15 +641,15 @@ void generate_buildings(WorldEditor &editor,
                 building_height = std::max(static_cast<int>(2.0 * scale_factor), 3);
 
                 // If bicycle_parking
-                if (element.tags.count("bicycle_parking") > 0) {
+                if (element.tags().has_key("bicycle_parking") > 0) {
                     // special shed logic
                     Block ground_block = OAK_PLANKS;
                     Block roof_block   = STONE_BLOCK_SLAB;
 
                     std::vector<std::pair<int,int>> polygon_coords;
-                    polygon_coords.reserve(element.nodes.size());
-                    for (auto &n : element.nodes) {
-                        polygon_coords.emplace_back(n.x, n.z);
+                    polygon_coords.reserve(element.nodes().size());
+                    for (auto &n : element.nodes()) {
+                        polygon_coords.emplace_back(n.x(), n.y());
                     }
                     auto floor_area = flood_fill_area(polygon_coords, args.timeout);
 
@@ -651,9 +665,9 @@ void generate_buildings(WorldEditor &editor,
                     }
 
                     // place fences, roof
-                    for (auto &node : element.nodes) {
-                        int nx = node.x;
-                        int nz = node.z;
+                    for (auto &node : element.nodes()) {
+                        int nx = node.x();
+                        int nz = node.y();
                         for (int dy=1; dy<=4; ++dy) {
                             editor.set_block(OAK_FENCE, nx, y + dy, nz, std::nullopt, std::nullopt);
                         }
@@ -669,15 +683,15 @@ void generate_buildings(WorldEditor &editor,
                 }
             }
             else if (building_type == "parking" ||
-                     (element.tags.count("parking") > 0 && element.tags.at("parking") == "multi-storey"))
+                     (element.tags().has_key("parking") > 0 && element.tags().get_value_by_key("parking") == "multi-storey"))
             {
                 // multi-storey parking
                 building_height = std::max(building_height, 16);
 
                 std::vector<std::pair<int,int>> polygon_coords;
-                polygon_coords.reserve(element.nodes.size());
-                for (auto &n : element.nodes) {
-                    polygon_coords.emplace_back(n.x, n.z);
+                polygon_coords.reserve(element.nodes().size());
+                for (auto &n : element.nodes()) {
+                    polygon_coords.emplace_back(n.x(), n.y());
                 }
                 auto floor_area = flood_fill_area(polygon_coords, args.timeout);
 
@@ -692,9 +706,9 @@ void generate_buildings(WorldEditor &editor,
                     int current_level = ground_level + level * 4;
 
                     // outer walls
-                    for (auto &node : element.nodes) {
-                        int nx = node.x;
-                        int nz = node.z;
+                    for (auto &node : element.nodes()) {
+                        int nx = node.x();
+                        int nz = node.y();
                         // build wall from current_level+1..current_level+4
                         for (int y = current_level+1; y <= current_level+4; ++y) {
                             editor.set_block(STONE_BRICKS, nx, y, nz, std::nullopt, std::nullopt);
@@ -718,9 +732,9 @@ void generate_buildings(WorldEditor &editor,
 
                     // Use the nodes to create outline
                     std::optional<std::pair<int,int>> prev_outline = std::nullopt;
-                    for (auto &node : element.nodes) {
-                        int nx = node.x;
-                        int nz = node.z;
+                    for (auto &node : element.nodes()) {
+                        int nx = node.x();
+                        int nz = node.y();
                         if (prev_outline.has_value()) {
                             auto [px, pz] = prev_outline.value();
                             auto outline_pts = bresenham_line(px, current_level, pz,
@@ -754,9 +768,9 @@ void generate_buildings(WorldEditor &editor,
                 int roof_height = ground_level + 5;
 
                 // edges w/ Bresenham
-                for (auto &node : element.nodes) {
-                    int nx = node.x;
-                    int nz = node.z;
+                for (auto &node : element.nodes()) {
+                    int nx = node.x();
+                    int nz = node.y();
 
                     if (previous_node.has_value()) {
                         auto [px, pz] = previous_node.value();
@@ -779,9 +793,9 @@ void generate_buildings(WorldEditor &editor,
 
                 // flood fill the interior
                 std::vector<std::pair<int,int>> polygon_coords;
-                polygon_coords.reserve(element.nodes.size());
-                for (auto &n : element.nodes) {
-                    polygon_coords.emplace_back(n.x, n.z);
+                polygon_coords.reserve(element.nodes().size());
+                for (auto &n : element.nodes()) {
+                    polygon_coords.emplace_back(n.x(), n.y());
                 }
                 auto roof_area = flood_fill_area(polygon_coords, args.timeout);
 
@@ -814,9 +828,9 @@ void generate_buildings(WorldEditor &editor,
         }
 
         // Process the outer walls
-        for (auto &node : element.nodes) {
-            int x = node.x;
-            int z = node.z;
+        for (auto &node : element.nodes()) {
+            int x = node.x();
+            int z = node.y();
 
             if (previous_node.has_value()) {
                 auto [px, pz] = previous_node.value();
@@ -864,9 +878,9 @@ void generate_buildings(WorldEditor &editor,
         if (cCount != 0) {
             // gather polygon coords
             std::vector<std::pair<int,int>> polygon_coords;
-            polygon_coords.reserve(element.nodes.size());
-            for (auto &n : element.nodes) {
-                polygon_coords.emplace_back(n.x, n.z);
+            polygon_coords.reserve(element.nodes().size());
+            for (auto &n : element.nodes()) {
+                polygon_coords.emplace_back(n.x(), n.y());
             }
             auto floor_area = flood_fill_area(polygon_coords, args.timeout);
 
@@ -922,19 +936,24 @@ void generate_building_from_relation(WorldEditor &editor,
 {
     // building:levels from relation
     int relation_levels = 2; // default
-    if (relation.tags.count("building:levels") > 0) {
+    if (relation.tags().has_key("building:levels") > 0) {
         try {
-            relation_levels = std::stoi(relation.tags.at("building:levels"));
+            relation_levels = std::stoi(relation.tags().get_value_by_key("building:levels"));
         }
         catch(...) {
             relation_levels = 2;
         }
     }
 
+
     // For each outer member, build
-    for (auto &member : relation.members) {
-        if (member.role == ProcessedMemberRole::Outer) {
-            generate_buildings(editor, member.way, ground, args, relation_levels);
+    //for (auto &member : relation.members()) {
+    for (auto &member :relation.subitems<osmium::Way>()){
+        //if (member.role() == ProcessedMemberRole::Outer) {
+        //if (member.role() == std::string{"outer"}) 
+         //if (member.type() == osmium::item_type::inner_ring)
+        { 
+            generate_buildings(editor, member, ground, args, relation_levels);
         }
     }
 
@@ -947,7 +966,7 @@ void generate_building_from_relation(WorldEditor &editor,
             std::vector<std::pair<int,int>> polygon_coords;
             polygon_coords.reserve(member.way.nodes.size());
             for (auto &n : member.way.nodes) {
-                polygon_coords.emplace_back(n.x, n.z);
+                polygon_coords.emplace_back(n.x(), n.y());
             }
             auto hole_area = flood_fill_area(polygon_coords, args.timeout);
 

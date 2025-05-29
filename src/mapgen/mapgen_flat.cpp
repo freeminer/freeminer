@@ -23,7 +23,7 @@
 #include "mapgen_flat.h"
 
 
-FlagDesc flagdesc_mapgen_flat[] = {
+const FlagDesc flagdesc_mapgen_flat[] = {
 	{"lakes",   MGFLAT_LAKES},
 	{"hills",   MGFLAT_HILLS},
 	{"caverns", MGFLAT_CAVERNS},
@@ -164,7 +164,7 @@ int MapgenFlat::getSpawnLevelAtPoint(v2pos_t p)
 	pos_t stone_level = ground_level;
 	float n_terrain =
 		((spflags & MGFLAT_LAKES) || (spflags & MGFLAT_HILLS)) ?
-		NoisePerlin2D(&noise_terrain->np, p.X, p.Y, seed) :
+		NoiseFractal2D(&noise_terrain->np, p.X, p.Y, seed) :
 		0.0f;
 
 	if ((spflags & MGFLAT_LAKES) && n_terrain < lake_threshold) {
@@ -172,7 +172,7 @@ int MapgenFlat::getSpawnLevelAtPoint(v2pos_t p)
 		stone_level = ground_level - depress;
 	} else if ((spflags & MGFLAT_HILLS) && n_terrain > hill_threshold) {
 		pos_t rise = (n_terrain - hill_threshold) * hill_steepness;
-	 	stone_level = ground_level + rise;
+		stone_level = ground_level + rise;
 	}
 
 	if (ground_level < water_level)
@@ -278,13 +278,13 @@ pos_t MapgenFlat::generateTerrain()
 	MapNode n_stone(c_stone);
 	MapNode n_water(c_water_source);
 
-	const v3pos_t &em = vm->m_area.getExtent();
+	const v3s32 &em = vm->m_area.getExtent();
 	pos_t stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
 	u32 ni2d = 0;
 
 	bool use_noise = (spflags & MGFLAT_LAKES) || (spflags & MGFLAT_HILLS);
 	if (use_noise)
-		noise_terrain->perlinMap2D(node_min.X, node_min.Z);
+		noise_terrain->noiseMap2D(node_min.X, node_min.Z);
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++)
 	for (pos_t x = node_min.X; x <= node_max.X; x++, ni2d++) {
@@ -296,7 +296,7 @@ pos_t MapgenFlat::generateTerrain()
 			stone_level = ground_level - depress;
 		} else if ((spflags & MGFLAT_HILLS) && n_terrain > hill_threshold) {
 			pos_t rise = (n_terrain - hill_threshold) * hill_steepness;
-		 	stone_level = ground_level + rise;
+			stone_level = ground_level + rise;
 		}
 
 		u32 vi = vm->m_area.index(x, node_min.Y - 1, z);

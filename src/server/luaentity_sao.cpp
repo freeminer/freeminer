@@ -161,12 +161,11 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			aabb3f box = m_prop.collisionbox;
 			box.MinEdge *= BS;
 			box.MaxEdge *= BS;
-			opos_t pos_max_d = BS*0.25; // Distance per iteration
 			auto p_pos = getBasePosition();
 			v3f p_velocity = m_velocity;
 			v3f p_acceleration = m_acceleration;
 			moveresult = collisionMoveSimple(m_env, m_env->getGameDef(),
-					pos_max_d, box, m_prop.stepheight, dtime,
+					box, m_prop.stepheight, dtime,
 					&p_pos, &p_velocity, p_acceleration,
 					this, m_prop.collideWithObjects);
 			moveresult_p = &moveresult;
@@ -176,7 +175,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			m_velocity = p_velocity;
 			m_acceleration = p_acceleration;
 		} else {
-			setBasePosition(getBasePosition() + v3fToOpos(m_velocity + m_acceleration * 0.5f * dtime) * dtime);
+			addPos(v3fToOpos(m_velocity + m_acceleration * 0.5f * dtime) * dtime);
 			m_velocity += dtime * m_acceleration;
 		}
 

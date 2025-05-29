@@ -199,7 +199,7 @@ std::shared_ptr<epixel::ItemSAO> ServerEnvironment::spawnItemActiveObject(const 
 		ObjectProperties* objProps = obj->accessObjectProperties();
 
 		objProps->is_visible = true;
-		objProps->visual = "wielditem";
+		objProps->visual = OBJECTVISUAL_WIELDITEM;
 		objProps->mesh = "empty.obj";
 		objProps->textures.clear();
 		objProps->textures.push_back(itemName);
@@ -222,7 +222,7 @@ std::shared_ptr<epixel::FallingSAO> ServerEnvironment::spawnFallingActiveObject(
 	auto obj = std::make_shared<epixel::FallingSAO>(this, pos, "__builtin:falling_node", "", fast);
 		ObjectProperties* objProps = obj->accessObjectProperties();
 		objProps->is_visible = true;
-		objProps->visual = "wielditem";
+		objProps->visual = OBJECTVISUAL_WIELDITEM;
 		objProps->textures.clear();
 		objProps->textures.push_back(nodeName);
 		objProps->physical = true;

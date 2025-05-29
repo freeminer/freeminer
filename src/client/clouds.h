@@ -134,8 +134,11 @@ private:
 	{
 		float height_bs    = m_params.height    * BS;
 		float thickness_bs = m_params.thickness * BS;
-		m_box = aabb3f(-BS * 1000000.0f, height_bs, -BS * 1000000.0f,
-				BS * 1000000.0f, height_bs + thickness_bs, BS * 1000000.0f);
+		float far_bs       = 1000000.0f         * BS;
+		m_box = aabb3f(-far_bs, height_bs, -far_bs,
+			far_bs, height_bs + thickness_bs, far_bs);
+		m_box.MinEdge -= v3f::from(m_camera_offset) * BS;
+		m_box.MaxEdge -= v3f::from(m_camera_offset) * BS;
 	}
 
 	void updateMesh();
@@ -164,7 +167,7 @@ private:
 	// Was the mesh ever generated?
 	bool m_mesh_valid = false;
 
-	aabb3f m_box;
+	aabb3f m_box{{0.0f, 0.0f, 0.0f}};
 	v2f m_origin;
 	u16 m_cloud_radius_i;
 	u32 m_seed;
@@ -173,7 +176,7 @@ private:
 	v3pos_t m_camera_offset;
 	bool m_camera_inside_cloud = false;
 
-	bool m_enable_shaders, m_enable_3d;
+	bool m_enable_3d;
 	video::SColorf m_color = video::SColorf(1.0f, 1.0f, 1.0f, 1.0f);
 public:
 	CloudParams m_params;

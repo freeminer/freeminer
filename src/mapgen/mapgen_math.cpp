@@ -664,7 +664,7 @@ int MapgenMath::generateTerrain()
 
 	MapNode n_ice(c_ice);
 	//u32 index = 0;
-	v3pos_t em = vm->m_area.getExtent();
+	auto em = vm->m_area.getExtent();
 	/* debug
 	v3f vec0 = (v3f(node_min.X, node_min.Y, node_min.Z) - center) * scale ;
 	errorstream << " X=" << node_min.X << " Y=" << node_min.Y << " Z=" << node_min.Z

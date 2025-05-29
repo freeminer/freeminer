@@ -27,20 +27,7 @@ BiomeManager::BiomeManager(Server *server) :
 
 	// Create default biome to be used in case none exist
 	Biome *b = new Biome;
-
 	b->name            = "default";
-	b->flags           = 0;
-	b->depth_top       = 0;
-	b->depth_filler    = -MAX_MAP_GENERATION_LIMIT;
-	b->depth_water_top = 0;
-	b->depth_riverbed  = 0;
-	b->min_pos         = v3pos_t(-MAX_MAP_GENERATION_LIMIT,
-			-MAX_MAP_GENERATION_LIMIT, -MAX_MAP_GENERATION_LIMIT);
-	b->max_pos         = v3pos_t(MAX_MAP_GENERATION_LIMIT,
-			MAX_MAP_GENERATION_LIMIT, MAX_MAP_GENERATION_LIMIT);
-	b->heat_point      = 0.0;
-	b->humidity_point  = 0.0;
-	b->vertical_blend  = 0;
 
 	b->m_nodenames.emplace_back("mapgen_stone");
 	b->m_nodenames.emplace_back("mapgen_stone");
@@ -84,11 +71,13 @@ void BiomeManager::clear()
 {
 	EmergeManager *emerge = m_server->getEmergeManager();
 
-	// Remove all dangling references in Decorations
-	DecorationManager *decomgr = emerge->getWritableDecorationManager();
-	for (size_t i = 0; i != decomgr->getNumObjects(); i++) {
-		Decoration *deco = (Decoration *)decomgr->getRaw(i);
-		deco->biomes.clear();
+	if (emerge) {
+		// Remove all dangling references in Decorations
+		DecorationManager *decomgr = emerge->getWritableDecorationManager();
+		for (size_t i = 0; i != decomgr->getNumObjects(); i++) {
+			Decoration *deco = (Decoration *)decomgr->getRaw(i);
+			deco->biomes.clear();
+		}
 	}
 
 	// Don't delete the first biome
@@ -163,7 +152,10 @@ BiomeGenOriginal::BiomeGenOriginal(BiomeManager *biomemgr,
 	for (size_t i = 0; i < m_bmgr->getNumObjects(); i++) {
 		Biome *b = (Biome *)m_bmgr->getRaw(i);
 		values.push_back(b->max_pos.Y);
-		values.push_back(b->min_pos.Y);
+		// We scan for biomes from high Y to low Y (top to bottom). Hence,
+		// biomes effectively transition at (min_pos.Y - 1).
+		if (b->min_pos.Y > -MAX_MAP_GENERATION_LIMIT)
+			values.push_back(b->min_pos.Y - 1);
 	}
 
 	std::sort(values.begin(), values.end(), std::greater<>());
@@ -196,14 +188,14 @@ BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const
 
 float BiomeGenOriginal::calcHeatAtPoint(v3pos_t pos) const
 {
-	return NoisePerlin2D(&m_params->np_heat, pos.X, pos.Z, m_params->seed) +
-		NoisePerlin2D(&m_params->np_heat_blend, pos.X, pos.Z, m_params->seed);
+	return NoiseFractal2D(&m_params->np_heat, pos.X, pos.Z, m_params->seed) +
+		NoiseFractal2D(&m_params->np_heat_blend, pos.X, pos.Z, m_params->seed);
 }
 
 float BiomeGenOriginal::calcHumidityAtPoint(v3pos_t pos) const
 {
-	return NoisePerlin2D(&m_params->np_humidity, pos.X, pos.Z, m_params->seed) +
-		NoisePerlin2D(&m_params->np_humidity_blend, pos.X, pos.Z, m_params->seed);
+	return NoiseFractal2D(&m_params->np_humidity, pos.X, pos.Z, m_params->seed) +
+		NoiseFractal2D(&m_params->np_humidity_blend, pos.X, pos.Z, m_params->seed);
 }
 
 Biome *BiomeGenOriginal::calcBiomeAtPoint(v3pos_t pos) const
@@ -216,10 +208,10 @@ void BiomeGenOriginal::calcBiomeNoise(v3pos_t pmin)
 {
 	m_pmin = pmin;
 
-	noise_heat->perlinMap2D(pmin.X, pmin.Z);
-	noise_humidity->perlinMap2D(pmin.X, pmin.Z);
-	noise_heat_blend->perlinMap2D(pmin.X, pmin.Z);
-	noise_humidity_blend->perlinMap2D(pmin.X, pmin.Z);
+	noise_heat->noiseMap2D(pmin.X, pmin.Z);
+	noise_humidity->noiseMap2D(pmin.X, pmin.Z);
+	noise_heat_blend->noiseMap2D(pmin.X, pmin.Z);
+	noise_humidity_blend->noiseMap2D(pmin.X, pmin.Z);
 
 	for (s32 i = 0; i < m_csize.X * m_csize.Z; i++) {
 		noise_heat->result[i]     += noise_heat_blend->result[i];
@@ -281,7 +273,9 @@ Biome *BiomeGenOriginal::calcBiomeFromNoise(float heat, float humidity, v3pos_t 
 
 		float d_heat = heat - heat_point;
 		float d_humidity = humidity - b->humidity_point;
-		float dist = (d_heat * d_heat) + (d_humidity * d_humidity);
+		float dist = ((d_heat * d_heat) + (d_humidity * d_humidity));
+		if (b->weight > 0.f)
+		       dist /= b->weight;
 
 		if (pos.Y <= b->max_pos.Y) { // Within y limits of biome b
 			if (dist < dist_min) {
@@ -318,7 +312,7 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 	//f32 heat = NoisePerlin3D(np_heat, p.X, env->getGameTime()/100, p.Z, seed);
 
 	//variant 2: season change based on default heat map
-	auto heat = NoisePerlin2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
+	auto heat = NoiseFractal2D(&(mapgen_params->bparams->np_heat), p.X, p.Z, seed); // -30..20..70
 	// auto heat =calcHeatAtPoint(p);
 
 	if (use_weather) {
@@ -342,7 +336,7 @@ s16 BiomeManager::calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float
 
 s16 BiomeManager::calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather) {
 
-	auto humidity = NoisePerlin2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
+	auto humidity = NoiseFractal2D(&(mapgen_params->bparams->np_humidity), p.X, p.Z, seed);
 	// auto humidity = calcHumidityAtPoint(p);
 
 	if (use_weather) {
@@ -369,10 +363,10 @@ ObjDef *Biome::clone() const
 	ObjDef::cloneTo(obj);
 	NodeResolver::cloneTo(obj);
 
-	obj->flags = flags;
-
+	// fm:
 	obj->c_top_cold = c_top_cold;
 	obj->c_ice = c_ice;
+	// ===
 
 	obj->c_top = c_top;
 	obj->c_filler = c_filler;
@@ -397,6 +391,7 @@ ObjDef *Biome::clone() const
 	obj->heat_point = heat_point;
 	obj->humidity_point = humidity_point;
 	obj->vertical_blend = vertical_blend;
+	obj->weight = weight;
 
 	return obj;
 }

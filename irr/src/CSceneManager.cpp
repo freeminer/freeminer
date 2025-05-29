@@ -3,6 +3,7 @@
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
 #include <algorithm>
+#include <cassert>
 
 #include "CSceneManager.h"
 #include "IVideoDriver.h"
@@ -16,7 +17,7 @@
 
 #include "os.h"
 
-#include "CSkinnedMesh.h"
+#include "SkinnedMesh.h"
 #include "CXMeshFileLoader.h"
 #include "COBJMeshFileLoader.h"
 #include "CB3DMeshFileLoader.h"
@@ -41,14 +42,9 @@ CSceneManager::CSceneManager(video::IVideoDriver *driver,
 		ISceneNode(0, 0),
 		Driver(driver),
 		CursorControl(cursorControl),
-		ActiveCamera(0), ShadowColor(150, 0, 0, 0), AmbientLight(0, 0, 0, 0), Parameters(0),
+		ActiveCamera(0),
 		MeshCache(cache), CurrentRenderPass(ESNRP_NONE)
 {
-#ifdef _DEBUG
-	ISceneManager::setDebugName("CSceneManager ISceneManager");
-	ISceneNode::setDebugName("CSceneManager ISceneNode");
-#endif
-
 	// root node's scene manager
 	SceneManager = this;
 
@@ -63,9 +59,6 @@ CSceneManager::CSceneManager(video::IVideoDriver *driver,
 		MeshCache = new CMeshCache();
 	else
 		MeshCache->grab();
-
-	// set scene parameters
-	Parameters = new io::CAttributes();
 
 	// create collision manager
 	CollisionManager = new CSceneCollisionManager(this, Driver);
@@ -108,9 +101,6 @@ CSceneManager::~CSceneManager()
 
 	if (MeshCache)
 		MeshCache->drop();
-
-	if (Parameters)
-		Parameters->drop();
 
 	// remove all nodes before dropping the driver
 	// as render targets may be destroyed twice
@@ -310,9 +300,9 @@ void CSceneManager::render()
 //! returns the axis aligned bounding box of this node
 const core::aabbox3d<f32> &CSceneManager::getBoundingBox() const
 {
-	_IRR_DEBUG_BREAK_IF(true) // Bounding Box of Scene Manager should never be used.
+	assert(false); // Bounding Box of Scene Manager should never be used.
 
-	static const core::aabbox3d<f32> dummy;
+	static const core::aabbox3d<f32> dummy{{0.0f, 0.0f, 0.0f}};
 	return dummy;
 }
 
@@ -445,9 +435,6 @@ u32 CSceneManager::registerNodeForRendering(ISceneNode *node, E_SCENE_NODE_RENDE
 			taken = 1;
 		}
 
-	// as of yet unused
-	case ESNRP_LIGHT:
-	case ESNRP_SHADOW:
 	case ESNRP_NONE: // ignore this one
 		break;
 	}
@@ -472,17 +459,14 @@ void CSceneManager::drawAll()
 	if (!Driver)
 		return;
 
-	u32 i; // new ISO for scoping problem in some compilers
-
 	// reset all transforms
 	Driver->setMaterial(video::SMaterial());
 	Driver->setTransform(video::ETS_PROJECTION, core::IdentityMatrix);
 	Driver->setTransform(video::ETS_VIEW, core::IdentityMatrix);
 	Driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
-	for (i = video::ETS_COUNT - 1; i >= video::ETS_TEXTURE_0; --i)
+	for (u32 i = video::ETS_COUNT - 1; i >= video::ETS_TEXTURE_0; --i)
 		Driver->setTransform((video::E_TRANSFORMATION_STATE)i, core::IdentityMatrix);
-	// TODO: This should not use an attribute here but a real parameter when necessary (too slow!)
-	Driver->setAllowZWriteOnTransparent(Parameters->getAttributeAsBool(ALLOW_ZWRITE_ON_TRANSPARENT));
+	Driver->setAllowZWriteOnTransparent(true);
 
 	// do animations and other stuff.
 	OnAnimate(os::Timer::getTime());
@@ -500,13 +484,19 @@ void CSceneManager::drawAll()
 	// let all nodes register themselves
 	OnRegisterSceneNode();
 
+	const auto &render_node = [this] (ISceneNode *node) {
+		u32 flags = node->isDebugDataVisible();
+		node->setDebugDataVisible((flags & DebugDataMask) | DebugDataBits);
+		node->render();
+	};
+
 	// render camera scenes
 	{
 		CurrentRenderPass = ESNRP_CAMERA;
 		Driver->getOverrideMaterial().Enabled = ((Driver->getOverrideMaterial().EnablePasses & CurrentRenderPass) != 0);
 
 		for (auto *node : CameraList)
-			node->render();
+			render_node(node);
 
 		CameraList.clear();
 	}
@@ -517,7 +507,7 @@ void CSceneManager::drawAll()
 		Driver->getOverrideMaterial().Enabled = ((Driver->getOverrideMaterial().EnablePasses & CurrentRenderPass) != 0);
 
 		for (auto *node : SkyBoxList)
-			node->render();
+			render_node(node);
 
 		SkyBoxList.clear();
 	}
@@ -530,7 +520,7 @@ void CSceneManager::drawAll()
 		std::sort(SolidNodeList.begin(), SolidNodeList.end());
 
 		for (auto &it : SolidNodeList)
-			it.Node->render();
+			render_node(it.Node);
 
 		SolidNodeList.clear();
 	}
@@ -543,7 +533,7 @@ void CSceneManager::drawAll()
 		std::sort(TransparentNodeList.begin(), TransparentNodeList.end());
 
 		for (auto &it : TransparentNodeList)
-			it.Node->render();
+			render_node(it.Node);
 
 		TransparentNodeList.clear();
 	}
@@ -556,7 +546,7 @@ void CSceneManager::drawAll()
 		std::sort(TransparentEffectNodeList.begin(), TransparentEffectNodeList.end());
 
 		for (auto &it : TransparentEffectNodeList)
-			it.Node->render();
+			render_node(it.Node);
 
 		TransparentEffectNodeList.clear();
 	}
@@ -567,7 +557,7 @@ void CSceneManager::drawAll()
 		Driver->getOverrideMaterial().Enabled = ((Driver->getOverrideMaterial().EnablePasses & CurrentRenderPass) != 0);
 
 		for (auto *node : GuiNodeList)
-			node->render();
+			render_node(node);
 
 		GuiNodeList.clear();
 	}
@@ -746,12 +736,6 @@ void CSceneManager::clear()
 	removeAll();
 }
 
-//! Returns interface to the parameters set in this scene.
-io::IAttributes *CSceneManager::getParameters()
-{
-	return Parameters;
-}
-
 //! Returns current render pass.
 E_SCENE_NODE_RENDER_PASS CSceneManager::getSceneNodeRenderPass() const
 {
@@ -775,22 +759,10 @@ ISceneManager *CSceneManager::createNewSceneManager(bool cloneContent)
 	return manager;
 }
 
-//! Sets ambient color of the scene
-void CSceneManager::setAmbientLight(const video::SColorf &ambientColor)
-{
-	AmbientLight = ambientColor;
-}
-
-//! Returns ambient color of the scene
-const video::SColorf &CSceneManager::getAmbientLight() const
-{
-	return AmbientLight;
-}
-
 //! Get a skinned mesh, which is not available as header-only code
-ISkinnedMesh *CSceneManager::createSkinnedMesh()
+SkinnedMesh *CSceneManager::createSkinnedMesh()
 {
-	return new CSkinnedMesh();
+	return new SkinnedMesh(SkinnedMesh::SourceFormat::OTHER);
 }
 
 // creates a scenemanager

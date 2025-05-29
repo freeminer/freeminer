@@ -15,8 +15,7 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CIRCUIT_ELEMENT_VIRTUAL_H
-#define CIRCUIT_ELEMENT_VIRTUAL_H
+#pragma once
 
 #include <list>
 #include <map>
@@ -54,5 +53,3 @@ private:
 	u32 m_element_id;
 	bool m_state;
 };
-
-#endif

@@ -68,6 +68,9 @@ struct MapEditEvent
 	MapNode n = CONTENT_AIR;
 	std::vector<v3bpos_t> modified_blocks; // Represents a set
 	bool is_private_change = false;
+	// Setting low_priority to true allows the server
+	// to send this change to clients with some delay.
+	bool low_priority = false;
 
 	MapEditEvent() = default;
 
@@ -98,10 +101,9 @@ struct MapEditEvent
 		case MEET_OTHER:
 		{
 			VoxelArea a;
-			for (v3bpos_t p : modified_blocks) {
-				v3bpos_t np1b = getContainerPos(v3pos_t(p.X, p.Y, p.Z), MAP_BLOCKSIZE);
-				v3pos_t np1(np1b.X, np1b.Y, np1b.Z);
-				v3pos_t np2 = np1 + v3pos_t(1,1,1)*MAP_BLOCKSIZE - v3pos_t(1,1,1);
+			for (const auto &p : modified_blocks) {
+				v3pos_t np1 = v3pos_t(p.X, p.Y, p.Z)*MAP_BLOCKSIZE;
+				v3pos_t np2 = np1 + v3pos_t(MAP_BLOCKSIZE-1);
 				a.addPoint(np1);
 				a.addPoint(np2);
 			}
@@ -203,6 +205,13 @@ public:
 		Saves modified blocks before unloading if possible.
 	*/
 	void unloadUnreferencedBlocks(std::vector<v3bpos_t> *unloaded_blocks=NULL);
+
+	// Deletes sectors and their blocks from memory
+	// Takes cache into account
+	// If deleted sector is in sector cache, clears cache
+/*
+	void deleteSectors(const std::vector<v2s16> &list);
+*/
 
 	// For debug printing. Prints "Map: ", "ServerMap: " or "ClientMap: "
 	virtual void PrintInfo(std::ostream &out);
@@ -396,9 +405,6 @@ protected:
 		u32 needed_count);
 };
 
-#define VMANIP_BLOCK_DATA_INEXIST     1
-#define VMANIP_BLOCK_CONTAINS_CIGNORE 2
-
 class MMVManip : public VoxelManipulator
 {
 public:
@@ -445,4 +451,8 @@ protected:
 		value = flags describing the block
 	*/
 	std::map<v3bpos_t, u8> m_loaded_blocks;
+
+	enum : u8 {
+		VMANIP_BLOCK_DATA_INEXIST = 1 << 0,
+	};
 };

@@ -25,6 +25,8 @@ struct NoiseParams;
 // Global objects
 extern Settings *g_settings; // Same as Settings::getLayer(SL_GLOBAL);
 extern std::string g_settings_path;
+/// Is set to true if the engine runs for the first time
+extern bool g_first_run;
 
 // Type for a settings changed callback function
 typedef void (*SettingsChangedCallback)(const std::string &name, void *data);
@@ -158,7 +160,7 @@ public:
 	float getFloat(const std::string &name) const;
 	float getFloat(const std::string &name, float min, float max) const;
 	v2f getV2F(const std::string &name) const;
-	v3f getV3F(const std::string &name) const;
+	std::optional<v3f> getV3F(const std::string &name) const;
 	u32 getFlagStr(const std::string &name, const FlagDesc *flagdesc,
 			u32 *flagmask) const;
 	bool getNoiseParams(const std::string &name, NoiseParams &np) const;
@@ -190,9 +192,9 @@ public:
 	bool getFloatNoEx(const std::string &name, float &val) const;
 	bool getFloatNoEx(const std::string &name, double &val) const;
 	bool getV2FNoEx(const std::string &name, v2f &val) const;
-	bool getV3FNoEx(const std::string &name, v3f &val) const;
+	bool getV3FNoEx(const std::string &name, std::optional<v3f> &val) const;
 #if USE_OPOS64
-	bool getV3FNoEx(const std::string &name, v3opos_t &val) const;
+	bool getV3FNoEx(const std::string &name, std::optional<v3opos_t> &val) const;
 #endif
 
 	// Like other getters, but handling each flag individualy:

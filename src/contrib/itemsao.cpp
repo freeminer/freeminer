@@ -47,7 +47,7 @@ ItemSAO::ItemSAO(ServerEnvironment *env, v3opos_t pos,
 	m_prop.mesh = "empty.obj";
 	m_prop.collideWithObjects = false;
 	m_prop.collisionbox = core::aabbox3d<f32>(-0.3, -0.3, -0.3, 0.3, 0.3, 0.3);
-	m_prop.visual = "wielditem";
+	m_prop.visual = OBJECTVISUAL_WIELDITEM;
 	m_prop.visual_size = v3f(0.4,0.4, 0.4);
 	m_prop.spritediv = v2s16(1,1);
 	m_prop.initial_sprite_basepos = v2s16(0,0);

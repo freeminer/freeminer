@@ -41,6 +41,14 @@ struct InventoryLocation;
 class ServerActiveObject : public ActiveObject
 , public shared_locker
 {
+// fm:
+public:
+	float m_uptime_last = 0;
+	Queue<ActiveObjectMessage> & m_messages_out;
+// ===
+
+
+
 public:
 	/*
 		NOTE: m_env can be NULL, but step() isn't called if it is.
@@ -64,14 +72,10 @@ public:
 	/*
 		Some simple getters/setters
 	*/
-	v3opos_t getBasePosition() const {
-             std::lock_guard<std::mutex> lock(m_base_position_mutex);
-	     return m_base_position;
-        }
-	void setBasePosition(v3opos_t pos){
-             std::lock_guard<std::mutex> lock(m_base_position_mutex);
-             m_base_position = pos;
-        }
+	v3opos_t getBasePosition() const { 
+		std::lock_guard<std::mutex> lock(m_base_position_mutex);
+		return m_base_position; }
+	void setBasePosition(v3opos_t pos);
 	ServerEnvironment* getEnv(){ return m_env; }
 
 	/*
@@ -253,8 +257,6 @@ protected:
 	virtual void onMarkedForRemoval() {}
 
 	ServerEnvironment *m_env;
-	v3opos_t m_base_position;
-	mutable std::mutex m_base_position_mutex;
 	std::unordered_set<u32> m_attached_particle_spawners;
 
 	/*
@@ -278,16 +280,14 @@ protected:
 	*/
 	std::atomic_bool m_pending_removal = false;
 
-//fm:
-	public:
-	float m_uptime_last = 0;
-	protected:
-
-
 	/*
 		Queue of messages to be sent to the client
 	*/
-	Queue<ActiveObjectMessage> & m_messages_out;
+	//std::queue<ActiveObjectMessage> m_messages_out;
+
+private:
+	v3opos_t m_base_position; // setBasePosition updates index and MUST be called
+	mutable std::mutex m_base_position_mutex;
 };
 
 using ServerActiveObjectPtr = std::shared_ptr<ServerActiveObject>;

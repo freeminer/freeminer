@@ -24,6 +24,7 @@
 #endif
 */
 #include "threading/mutex_auto_lock.h"
+#include "common/c_types.h"
 
 #ifdef SCRIPTAPI_LOCK_DEBUG
 #include <cassert>

@@ -142,13 +142,13 @@ inline irr::core::vector3d<opos_t> quaternion_operator_star(
 	return v + uv + uuv;
 }
 
-bool boxLineCollision(const aabb3f &box, const v3f rotation,
-	const v3opos_t start, const v3opos_t dir,
+bool boxLineCollision(const aabb3f &box, v3f rotation_radians,
+	v3opos_t start, v3opos_t dir,
 	v3opos_t *collision_point, v3f *collision_normal, v3f *raw_collision_normal)
 {
 	// Inversely transform the ray rather than rotating the box faces;
 	// this allows us to continue using a simple ray - AABB intersection
-	core::quaternion rot(rotation * core::DEGTORAD);
+	core::quaternion rot(rotation_radians);
 	rot.makeInverse();
 
 	bool collision = boxLineCollision(box, quaternion_operator_star(rot, start), quaternion_operator_star(rot, dir), collision_point, collision_normal);

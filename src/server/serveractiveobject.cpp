@@ -10,15 +10,32 @@
 
 Queue<ActiveObjectMessage> dummy_queue;
 
-ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3opos_t pos):
+ServerActiveObject::ServerActiveObject(ServerEnvironment *env, v3f pos):
+
+// fm:
+	m_uptime_last(0),
+	m_messages_out(env ? env->m_active_object_messages : dummy_queue),
+// ===
+
 	ActiveObject(0),
 	m_env(env),
 	m_base_position(pos)
-
-	,m_uptime_last(0),
-	m_messages_out(env ? env->m_active_object_messages : dummy_queue)
-
 {
+}
+
+void ServerActiveObject::setBasePosition(v3opos_t pos)
+{
+    bool changed{};
+	{
+	std::lock_guard<std::mutex> lock(m_base_position_mutex);
+	changed = m_base_position != pos;
+	m_base_position = pos;
+	}
+	if (changed && getEnv()) {
+		// getEnv() should never be null if the object is in an environment.
+		// It may however be null e.g. in tests or database migrations.
+		getEnv()->updateObjectPos(getId(), pos);
+	}
 }
 
 float ServerActiveObject::getMinimumSavedMovement()

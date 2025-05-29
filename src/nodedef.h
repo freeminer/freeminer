@@ -8,6 +8,7 @@
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <iostream>
+#include <memory> // shared_ptr
 #include <map>
 #include "mapnode.h"
 #include "nameidmapping.h"
@@ -221,9 +222,9 @@ struct NodeBox
 	// NODEBOX_FIXED
 	std::vector<aabb3f> fixed;
 	// NODEBOX_WALLMOUNTED
-	aabb3f wall_top;
-	aabb3f wall_bottom;
-	aabb3f wall_side; // being at the -X side
+	aabb3f wall_top = dummybox;
+	aabb3f wall_bottom = dummybox;
+	aabb3f wall_side = dummybox; // being at the -X side
 	// NODEBOX_CONNECTED
 	// (kept externally to not bloat the structure)
 	std::shared_ptr<NodeBoxConnected> connected;
@@ -245,6 +246,10 @@ struct NodeBox
 	void reset();
 	void serialize(std::ostream &os, u16 protocol_version) const;
 	void deSerialize(std::istream &is);
+
+private:
+	/// @note the actual defaults are in reset(), see nodedef.cpp
+	static constexpr aabb3f dummybox = aabb3f({0, 0, 0});
 };
 
 struct MapNode;
@@ -277,7 +282,6 @@ public:
 	int node_texture_size;
 	bool translucent_liquids;
 	bool connected_glass;
-	bool enable_mesh_cache;
 	bool enable_minimap;
 
 	TextureSettings() = default;
@@ -329,6 +333,7 @@ enum NodeDrawType : u8
 	NDT_MESH,
 	// Combined plantlike-on-solid
 	NDT_PLANTLIKE_ROOTED,
+
 	// Dummy for validity check
 	NodeDrawType_END
 };
@@ -484,7 +489,7 @@ struct ContentFeatures
 	enum NodeDrawType drawtype;
 	std::string mesh;
 #if CHECK_CLIENT_BUILD()
-	scene::IMesh *mesh_ptr[24];
+	scene::SMesh *mesh_ptr; // mesh in case of mesh node
 	video::SColor minimap_color;
 #endif
 	float visual_scale; // Misc. scale parameter
@@ -617,21 +622,6 @@ struct ContentFeatures
 		}
 	}
 
-	bool needsBackfaceCulling() const
-	{
-		switch (drawtype) {
-		case NDT_TORCHLIKE:
-		case NDT_SIGNLIKE:
-		case NDT_FIRELIKE:
-		case NDT_RAILLIKE:
-		case NDT_PLANTLIKE:
-		case NDT_PLANTLIKE_ROOTED:
-		case NDT_MESH:
-			return false;
-		default:
-			return true;
-		}
-	}
 
 	bool isLiquid() const{
 		return (liquid_type != LIQUID_NONE);
@@ -966,14 +956,14 @@ private:
 	 * The union of all nodes' selection boxes.
 	 * Might be larger if big nodes are removed from the manager.
 	 */
-	aabb3f m_selection_box_union;
+	aabb3f m_selection_box_union{{0.0f, 0.0f, 0.0f}};
 
 	/*!
 	 * The smallest box in integer node coordinates that
 	 * contains all nodes' selection boxes.
 	 * Might be larger if big nodes are removed from the manager.
 	 */
-	core::aabbox3d<pos_t> m_selection_box_int_union;
+	core::aabbox3d<pos_t> m_selection_box_int_union{{0, 0, 0}};
 
 	/*!
 	 * NodeResolver instances to notify once node registration has finished.

@@ -20,6 +20,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "client/fm_farmesh.h"
+#include "client/fm_far_container.h"
 
 #include <atomic>
 #include <cstdint>
@@ -31,15 +32,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <json/json.h>
 #include <string>
 #include "client.h"
-#include "client/fm_far_container.h"
-#include "irr_v3d.h"
+#include "client/fontengine.h"
 #include "network/clientopcodes.h"
 #include "network/connection.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "threading/mutex_auto_lock.h"
 #include "client/clientevent.h"
-#include "client/gameui.h"
 #include "client/renderingengine.h"
 #include "client/sound.h"
 #include "client/texturepaths.h"
@@ -63,6 +62,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "shader.h"
 #include "gettext.h"
+#include "gettime.h"
 #include "clientdynamicinfo.h"
 #include "clientmap.h"
 #include "clientmedia.h"
@@ -77,6 +77,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "translation.h"
 #include "content/mod_configuration.h"
 #include "mapnode.h"
+#include "item_visuals_manager.h"
 
 #include "database/database.h"
 #include "server.h"
@@ -135,7 +136,7 @@ Client::Client(
 		ISoundManager *sound,
 		MtEventManager *event,
 		RenderingEngine *rendering_engine,
-		GameUI *game_ui,
+		ItemVisualsManager *item_visuals_manager,
 		ELoginRegister allow_login_or_register
 ):
 	far_container{this},
@@ -149,6 +150,7 @@ Client::Client(
 	m_sound(sound),
 	m_event(event),
 	m_rendering_engine(rendering_engine),
+	m_item_visuals_manager(item_visuals_manager),
 	m_mesh_update_manager(std::make_unique<MeshUpdateManager>(this)),
 	m_env(
 		make_irr<ClientMap>(this, rendering_engine, control, 666),
@@ -162,7 +164,6 @@ Client::Client(
 	m_chosen_auth_mech(AUTH_MECHANISM_NONE),
 	m_media_downloader(new ClientMediaDownloader()),
 	m_state(LC_Created),
-	m_game_ui(game_ui),
 	m_modchannel_mgr(new ModChannelMgr())
 {
 	// Add local player
@@ -424,6 +425,8 @@ Client::~Client()
 	// cleanup 3d model meshes on client shutdown
 	m_rendering_engine->cleanupMeshCache();
 
+	m_item_visuals_manager->clear();
+
 	guiScalingCacheClear();
 
 	delete m_minimap;
@@ -442,8 +445,7 @@ Client::~Client()
 	m_sounds_client_to_server.clear();
 }
 
-void Client::connect(const Address &address, const std::string &address_name,
-	bool is_local_server)
+void Client::connect(const Address &address, const std::string &address_name)
 {
 	if (m_con) {
 		// can't do this if the connection has entered auth phase
@@ -465,7 +467,7 @@ void Client::connect(const Address &address, const std::string &address_name,
 
 	m_con->Connect(address);
 
-	initLocalMapSaving(address, m_address_name, is_local_server);
+	initLocalMapSaving(address, m_address_name);
 }
 
 void Client::step(float dtime)
@@ -476,11 +478,7 @@ void Client::step(float dtime)
 	if (dtime > DTIME_LIMIT)
 		dtime = DTIME_LIMIT;
 
-	m_animation_time += dtime;
-	if(m_animation_time > 60.0)
-		m_animation_time -= 60.0;
-
-	m_time_of_day_update_timer += dtime;
+	m_animation_time = fmodf(m_animation_time + dtime, 60.0f);
 
 	ReceiveAll();
 
@@ -532,25 +530,44 @@ void Client::step(float dtime)
 	/*
 		Run Map's timers and unload unused data
 	*/
-	const float map_timer_and_unload_dtime = 10.25;
+	constexpr float map_timer_and_unload_dtime = 15.25f;
+	constexpr s32 mapblock_limit_enforce_distance = 200;
 	if(m_map_timer_and_unload_interval.step(dtime, map_timer_and_unload_dtime)) {
 		std::vector<v3bpos_t> deleted_blocks;
-		//m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
-		if(m_env.getMap().timerUpdate(m_uptime,
+
+		// Determine actual block limit to use
+		const s32 configured_limit = g_settings->getS32("client_mapblock_limit");
+		s32 mapblock_limit;
+		if (configured_limit < 0) {
+			mapblock_limit = -1;
+		} else {
+			s32 view_range = g_settings->getS16("viewing_range");
+			// Up to a certain limit we want to guarantee that the client can keep
+			// a full 360° view loaded in memory without blocks vanishing behind
+			// the players back.
+			// We use a sphere volume to approximate this. In practice far less
+			// blocks will be needed due to occlusion/culling.
+			float blocks_range = ceilf(std::min(mapblock_limit_enforce_distance, view_range)
+				/ (float) MAP_BLOCKSIZE);
+			mapblock_limit = (4.f/3.f) * M_PI * powf(blocks_range, 3);
+			assert(mapblock_limit > 0);
+			mapblock_limit = std::max(mapblock_limit, configured_limit);
+			if (mapblock_limit > std::max(configured_limit, m_mapblock_limit_logged)) {
+				infostream << "Client: using block limit of " << mapblock_limit
+					<< " rather than configured " << configured_limit
+					<< " due to view range." << std::endl;
+				m_mapblock_limit_logged = mapblock_limit;
+			}
+		}
+        
+		if(
+		m_env.getMap().timerUpdate(map_timer_and_unload_dtime,
 			std::max(g_settings->getFloat("client_unload_unused_data_timeout"), 0.0f),
-			g_settings->getS32("client_mapblock_limit"),
-			&deleted_blocks,
-			max_cycle_ms))
-			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
+			mapblock_limit, &deleted_blocks, max_cycle_ms))
+            m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 
-		/*if(deleted_blocks.size() > 0)
-			infostream<<"Client: Unloaded "<<deleted_blocks.size()
-					<<" unused blocks"<<std::endl;*/
 
-		/*
-			Send info to server
-			NOTE: This loop is intentionally iterated the way it is.
-		*/
+		// Send info to server
 
 		auto i = deleted_blocks.begin();
 		std::vector<v3bpos_t> sendlist;
@@ -674,8 +691,11 @@ void Client::step(float dtime)
 			std::vector<MinimapMapblock*> minimap_mapblocks;
 			bool do_mapper_update = true;
 
+			ClientMap &map = m_env.getClientMap();
+
 /*
-			MapSector *sector = m_env.getMap().emergeSector(v2bpos_t(r.p.X, r.p.Z));
+			MapSector *sector = map.emergeSector(v2s16(r.p.X, r.p.Z));
+
 			MapBlock *block = sector->getBlockNoCreateNoEx(r.p.Y);
 			// The block in question is not visible (perhaps it is culled at the server),
 			// create a blank block just to hold the chunk's mesh.
@@ -684,19 +704,23 @@ void Client::step(float dtime)
 				block = sector->createBlankBlock(r.p.Y);
 */
 
-			MapBlock *block = m_env.getMap().getBlockNoCreateNoEx(r.p);
+			MapBlock *block = map.getBlockNoCreateNoEx(r.p);
 			if (!block && r.mesh)
-				block = m_env.getMap().createBlankBlock(r.p).get();
+				block = map.createBlankBlock(r.p).get();
 
 			if (block) {
+				const auto old_mesh = block->getLodMesh(r.mesh->lod_step);
+				if (!old_mesh) {
+					++m_new_meshes;
+				}
 				// Delete the old mesh
+				if (old_mesh)
+					map.invalidateMapBlockMesh(old_mesh.get());
+
 /*
 				delete block->mesh;
 				block->mesh = nullptr;
 */
-				if (!block->getLodMesh(r.mesh->lod_step)) {
-					++m_new_meshes;
-				}
 				block->setLodMesh(r.mesh);
 				block->solid_sides = r.solid_sides;
 
@@ -711,9 +735,9 @@ void Client::step(float dtime)
 						if (r.mesh->getMesh(l)->getMeshBufferCount() != 0)
 							is_empty = false;
 
-					if (is_empty)
+					if (is_empty) {
 						delete r.mesh;
-					else {
+					} else {
 						// Replace with the new mesh
 						block->mesh = r.mesh;
 */
@@ -770,9 +794,11 @@ void Client::step(float dtime)
 		if (num_processed_meshes > 0)
 			g_profiler->graphAdd("num_processed_meshes", num_processed_meshes);
 
-		auto shadow_renderer = RenderingEngine::get_shadow_renderer();
-		if (shadow_renderer && force_update_shadows)
-			shadow_renderer->setForceUpdateShadowMap();
+		if (force_update_shadows && !g_settings->getFlag("performance_tradeoffs")) {
+			auto shadow = RenderingEngine::get_shadow_renderer();
+			if (shadow)
+				shadow->setForceUpdateShadowMap();
+		};
 	}
 
 	/*
@@ -911,7 +937,7 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 	std::string name;
 
 	const char *image_ext[] = {
-		".png", ".jpg", ".bmp", ".tga",
+		".png", ".jpg", ".tga",
 		NULL
 	};
 	name = removeStringEnd(filename, image_ext);
@@ -982,6 +1008,15 @@ bool Client::loadMedia(const std::string &data, const std::string &filename,
 		return true;
 	}
 
+	const char *font_ext[] = {".ttf", ".woff", NULL};
+	name = removeStringEnd(filename, font_ext);
+	if (!name.empty()) {
+		verbosestream<<"Client: Loading file as font: \""
+				<< filename << "\"" << std::endl;
+		g_fontengine->setMediaFont(name, data);
+		return true;
+	}
+
 	errorstream << "Client: Don't know how to load file \""
 		<< filename << "\"" << std::endl;
 	return false;
@@ -1007,15 +1042,6 @@ void Client::deletingPeer(session_t peer_id, bool timeout)
 		m_access_denied_reason = gettext("Connection aborted (protocol error?).");
 }
 
-/*
-	u16 command
-	u16 number of files requested
-	for each file {
-		u16 length of name
-		string name
-	}
-*/
-
 #if MINETEST_PROTO
 void Client::request_media(const std::vector<std::string> &file_requests)
 {
@@ -1025,7 +1051,6 @@ void Client::request_media(const std::vector<std::string> &file_requests)
 
 	FATAL_ERROR_IF(file_requests_size > 0xFFFF, "Unsupported number of file requests");
 
-	// Packet dynamicly resized
 	NetworkPacket pkt(TOSERVER_REQUEST_MEDIA, 2 + 0);
 
 	pkt << (u16) (file_requests_size & 0xFFFF);
@@ -1043,11 +1068,9 @@ void Client::request_media(const std::vector<std::string> &file_requests)
 #endif
 
 
-void Client::initLocalMapSaving(const Address &address,
-		const std::string &hostname,
-		bool is_local_server)
+void Client::initLocalMapSaving(const Address &address, const std::string &hostname)
 {
-	if (!g_settings->getBool("enable_local_map_saving") || is_local_server) {
+	if (!g_settings->getBool("enable_local_map_saving") || m_internal_server) {
 		return;
 	}
 	if (m_localdb) {
@@ -1286,8 +1309,8 @@ void Client::Send(NetworkPacket* pkt)
 // Will fill up 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1 + 4 + 4 bytes
 void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *pkt, bool camera_inverted)
 {
-	v3opos_t pf      = myplayer->getPosition() * 100;
-	v3f sf           = myplayer->getSpeed() * 100;
+	v3s32 position   = v3s32::from(myplayer->getPosition() * 100);
+	v3s32 speed      = v3s32::from(myplayer->getSpeed() * 100);
 	s32 pitch        = myplayer->getPitch() * 100;
 	s32 yaw          = myplayer->getYaw() * 100;
 	u32 keyPressed   = myplayer->control.getKeysPressed();
@@ -1297,9 +1320,6 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 			std::ceil(clientMap->getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
 	f32 movement_speed = myplayer->control.movement_speed;
 	f32 movement_dir = myplayer->control.movement_direction;
-
-	v3s32 position(pf.X, pf.Y, pf.Z);
-	v3s32 speed(sf.X, sf.Y, sf.Z);
 
 	/*
 		Format:
@@ -1320,6 +1340,7 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 	*pkt << fov << wanted_range;
 	*pkt << camera_inverted;
 	*pkt << movement_speed << movement_dir;
+
 	if (pkt->getProtoVer() >= PROTOCOL_VERSION_32BIT) {
 		*pkt << myplayer->getPosition();
 	}
@@ -1402,7 +1423,7 @@ void Client::sendInit(const std::string &playerName)
 {
 	NetworkPacket pkt(TOSERVER_INIT, 1 + 2 + 2 + (1 + playerName.size()));
 
-	pkt << (u8) SER_FMT_VER_HIGHEST_READ << (u16) 0;
+	pkt << SER_FMT_VER_HIGHEST_READ << (u16) 0 /* unused */;
 	pkt << CLIENT_PROTOCOL_VERSION_MIN << LATEST_PROTOCOL_VERSION;
 	pkt << playerName;
 
@@ -1587,7 +1608,7 @@ void Client::sendChatMessage(const std::wstring &message)
 		pkt << message;
 		Send(&pkt);
 	} else if (m_out_chat_queue.size() < (u16) max_queue_size || max_queue_size < 0) {
-		m_out_chat_queue.push(wide_to_utf8(message));
+		m_out_chat_queue.push(message);
 	} else {
 		infostream << "Could not queue chat message because maximum out chat queue size ("
 				<< max_queue_size << ") is reached." << std::endl;
@@ -1912,11 +1933,6 @@ void Client::inventoryAction(InventoryAction *a)
 	delete a;
 }
 
-float Client::getAnimationTime()
-{
-	return m_animation_time;
-}
-
 int Client::getCrackLevel()
 {
 	return m_crack_level;
@@ -2058,12 +2074,7 @@ void Client::addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server, bo
 void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool urgent)
 {
 /*
-	{
-		v3pos_t p = nodepos;
-		infostream<<"Client::addUpdateMeshTaskForNode(): "
-				<<"("<<p.X<<","<<p.Y<<","<<p.Z<<")"
-				<<std::endl;
-	}
+	infostream << "Client::addUpdateMeshTaskForNode(): " << nodepos << std::endl;
 */
 
 	v3bpos_t blockpos = getNodeBlockPos(nodepos);
@@ -2076,11 +2087,6 @@ void Client::addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server, bool 
 		addUpdateMeshTask(blockpos + v3bpos_t(0, -1, 0), false, urgent);
 	if (nodepos.Z == blockpos_relative.Z)
 		addUpdateMeshTask(blockpos + v3bpos_t(0, 0, -1), false, urgent);
-}
-
-void Client::updateCameraOffset(v3pos_t camera_offset)
-{
-	m_mesh_update_manager->m_camera_offset = camera_offset;
 }
 
 ClientEvent *Client::getClientEvent()

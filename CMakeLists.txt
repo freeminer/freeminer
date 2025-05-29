@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
+if(POLICY CMP0177)
+    cmake_policy(SET CMP0177 NEW)
+endif()
 
 # This can be read from ${PROJECT_NAME} after project() is called
 project(freeminer)
@@ -12,7 +15,7 @@ set(CLANG_MINIMUM_VERSION "7.0.1")
 
 # You should not need to edit these manually, use util/bump_version.sh
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 10)
+set(VERSION_MINOR 12)
 set(VERSION_PATCH 0)
 set(VERSION_EXTRA "" CACHE STRING "Stuff to append to version string")
 
@@ -53,7 +56,7 @@ endif()
 # - win32/gcc: fails to link
 # - win32/clang: works
 # - macOS on x86: seems to be fine
-# - macOS on ARM: crashes, see <https://github.com/minetest/minetest/issues/14397>
+# - macOS on ARM: crashes, see <https://github.com/luanti-org/luanti/issues/14397>
 # Note: since CMake has no easy architecture detection disabling for Mac entirely
 #### ####
 if((WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR APPLE)
@@ -85,6 +88,7 @@ find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+	set(ENV{CCACHE_SLOPPINESS} pch_defines,time_macros)
 endif(CCACHE_FOUND)
 
 set(BUILD_CLIENT TRUE CACHE BOOL "Build client")

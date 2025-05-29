@@ -8,7 +8,9 @@
 #include <list>
 #include <unordered_map>
 #include <string>
-#include "irrlichttypes_extrabloated.h"
+#include <IGUIElement.h>
+#include <IGUIEnvironment.h>
+#include "irr_v3d.h"
 
 using namespace irr;
 
@@ -92,8 +94,8 @@ public:
 
 		// img & item specific attributes
 		std::string name;
-		v3pos_t angle{0, 0, 0};
-		v3pos_t rotation{0, 0, 0};
+		v3s16 angle{0, 0, 0};
+		v3s16 rotation{0, 0, 0};
 
 		s32 margin = 10;
 

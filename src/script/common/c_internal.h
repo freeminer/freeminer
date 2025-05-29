@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
 
 extern "C" {
@@ -19,7 +20,7 @@ extern "C" {
 }
 
 #include "config.h"
-#include "common/c_types.h"
+#include "util/enum_string.h"
 
 
 /*
@@ -39,6 +40,7 @@ enum {
 #endif
 
 	CUSTOM_RIDX_SCRIPTAPI,
+	/// @warning don't use directly, `ScriptApiSecurity` has wrappers
 	CUSTOM_RIDX_GLOBALS_BACKUP,
 	CUSTOM_RIDX_CURRENT_MOD_NAME,
 	CUSTOM_RIDX_ERROR_HANDLER,

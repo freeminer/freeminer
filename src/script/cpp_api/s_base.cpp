@@ -5,6 +5,7 @@
 #include "cpp_api/s_base.h"
 #include "cpp_api/s_internal.h"
 #include "cpp_api/s_security.h"
+#include "debug.h"
 #include "lua_api/l_object.h"
 #include "common/c_converter.h"
 #include "server/player_sao.h"
@@ -203,9 +204,13 @@ void ScriptApiBase::checkSetByBuiltin()
 {
 	lua_State *L = getStack();
 
-	if (m_gamedef) {
-		CHECK(CUSTOM_RIDX_READ_VECTOR, "read_vector");
-		CHECK(CUSTOM_RIDX_PUSH_VECTOR, "push_vector");
+	CHECK(CUSTOM_RIDX_READ_VECTOR, "read_vector");
+	CHECK(CUSTOM_RIDX_PUSH_VECTOR, "push_vector");
+
+	if (getType() == ScriptingType::Server ||
+			(getType() == ScriptingType::Async && m_gamedef) ||
+			getType() == ScriptingType::Emerge ||
+			getType() == ScriptingType::Client) {
 		CHECK(CUSTOM_RIDX_READ_NODE, "read_node");
 		CHECK(CUSTOM_RIDX_PUSH_NODE, "push_node");
 	}
@@ -225,37 +230,6 @@ std::string ScriptApiBase::getCurrentModNameInsecure(lua_State *L)
 	return ret;
 }
 
-std::string ScriptApiBase::getCurrentModName(lua_State *L)
-{
-	auto script = ModApiBase::getScriptApiBase(L);
-	if (script->getType() == ScriptingType::Async ||
-		script->getType() == ScriptingType::Emerge)
-	{
-		// As a precaution never return a "secure" mod name in the async and
-		// emerge environment, because these currently do not track mod origins
-		// in a spoof-safe way (see l_register_async_dofile and l_register_mapgen_script).
-		return "";
-	}
-
-	// We have to make sure that this function is being called directly by
-	// a mod, otherwise a malicious mod could override a function and
-	// steal its return value. (e.g. request_insecure_environment)
-	lua_Debug info;
-
-	// Make sure there's only one item below this function on the stack...
-	if (lua_getstack(L, 2, &info))
-		return "";
-	FATAL_ERROR_IF(!lua_getstack(L, 1, &info), "lua_getstack() failed");
-	FATAL_ERROR_IF(!lua_getinfo(L, "S", &info), "lua_getinfo() failed");
-
-	// ...and that that item is the main file scope.
-	if (strcmp(info.what, "main") != 0)
-		return "";
-
-	// at this point we can trust this value:
-	return getCurrentModNameInsecure(L);
-}
-
 void ScriptApiBase::loadMod(const std::string &script_path,
 		const std::string &mod_name)
 {
@@ -273,7 +247,7 @@ void ScriptApiBase::loadScript(const std::string &script_path)
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
 	bool ok;
-	if (m_secure) {
+	if (ScriptApiSecurity::isSecure(L)) {
 		ok = ScriptApiSecurity::safeLoadFile(L, script_path.c_str());
 	} else {
 		ok = !luaL_loadfile(L, script_path.c_str());
@@ -494,12 +468,8 @@ void ScriptApiBase::objectrefGetOrCreate(lua_State *L, ServerActiveObject *cobj)
 	if (!cobj) {
 		ObjectRef::create(L, nullptr); // dummy reference
 	} else if (cobj->getId() == 0) {
-		// TODO after 5.10.0: convert this to a FATAL_ERROR
-		errorstream << "ScriptApiBase::objectrefGetOrCreate(): "
-				<< "Pushing orphan ObjectRef. Please open a bug report for this."
-				<< std::endl;
-		//assert(0);
-		ObjectRef::create(L, cobj);
+		FATAL_ERROR("ScriptApiBase::objectrefGetOrCreate(): "
+				"Pushing orphan ObjectRef. Please open a bug report for this.");
 	} else {
 		push_objectRef(L, cobj->getId());
 		if (cobj->isGone())

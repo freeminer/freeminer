@@ -343,7 +343,7 @@ int MapgenEarth::generateTerrain()
 {
 	MapNode n_ice(c_ice);
 	u32 index = 0;
-	v3pos_t em = vm->m_area.getExtent();
+	auto em = vm->m_area.getExtent();
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
 		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {

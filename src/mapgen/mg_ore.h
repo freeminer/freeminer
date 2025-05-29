@@ -34,7 +34,7 @@ enum OreType {
 	ORE_STRATUM,
 };
 
-extern FlagDesc flagdesc_ore[];
+extern const FlagDesc flagdesc_ore[];
 
 class Ore : public ObjDef, public NodeResolver {
 public:
@@ -173,9 +173,8 @@ public:
 			return new OreVein;
 		case ORE_STRATUM:
 			return new OreStratum;
-		default:
-			return nullptr;
 		}
+		return nullptr;
 	}
 
 	void clear();

@@ -6,6 +6,7 @@
 
 #include "irrlichttypes.h"
 #include <rect.h>
+#include <SColor.h>
 
 namespace irr::video
 {
@@ -26,6 +27,10 @@ namespace irr::video
  */
 void imageCleanTransparent(video::IImage *src, u32 threshold);
 
+/* Returns the gamma-correct average color of the image, with transparent pixels
+ * ignored. */
+video::SColor imageAverageColor(const video::IImage *img);
+
 /* Scale a region of an image into another image, using nearest-neighbor with
  * anti-aliasing; treat pixels as crisp rectangles, but blend them at boundaries
  * to prevent non-integer scaling ratio artifacts.  Note that this may cause
@@ -34,11 +39,3 @@ void imageCleanTransparent(video::IImage *src, u32 threshold);
  * and downscaling.
  */
 void imageScaleNNAA(video::IImage *src, const core::rect<s32> &srcrect, video::IImage *dest);
-
-/* Check and align image to npot2 if required by hardware
- * @param image image to check for npot2 alignment
- * @param driver driver to use for image operations
- * @return image or copy of image aligned to npot2
- */
-video::IImage *Align2Npot2(video::IImage *image, video::IVideoDriver *driver);
-

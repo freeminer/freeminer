@@ -30,13 +30,12 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t p
 	m_prop.selectionbox = aabb3f(-0.3f, 0.0f, -0.3f, 0.3f, 1.77f, 0.3f);
 	m_prop.pointable = PointabilityType::POINTABLE;
 	// Start of default appearance, this should be overwritten by Lua
-	m_prop.visual = "upright_sprite";
+	m_prop.visual = OBJECTVISUAL_UPRIGHT_SPRITE;
 	m_prop.visual_size = v3f(1, 2, 1);
 	m_prop.textures.clear();
 	m_prop.textures.emplace_back("player.png");
 	m_prop.textures.emplace_back("player_back.png");
 	m_prop.colors.clear();
-	m_prop.colors.emplace_back(255, 255, 255, 255);
 	m_prop.spritediv = v2s16(1,1);
 	m_prop.eye_height = 1.625f;
 	// End of default appearance
@@ -88,7 +87,7 @@ void PlayerSAO::addedToEnvironment(u32 dtime_s)
 		errorstream << "PlayerSAO::addedToEnvironment(): Fail id=" << getPeerID() << std::endl;
 		return;
 	}
-	//wtf? ServerActiveObject::setBasePosition(m_base_position);
+
 	m_player->setPlayerSAO(this);
 	m_player->setPeerId(m_peer_id_initial);
 	m_peer_id_initial = PEER_ID_INEXISTENT; // don't try to use it again.
@@ -124,7 +123,7 @@ std::string PlayerSAO::getClientInitializationData(u16 protocol_version)
 	os << serializeString16(m_player->getName()); // name
 	writeU8(os, 1); // is_player
 	writeS16(os, getId()); // id
-	writeV3O(os, m_base_position, protocol_version);
+	writeV3O(os, getBasePosition(), protocol_version);
 	writeV3F32(os, getRotation());
 	writeU16(os, getHP());
 
@@ -315,7 +314,6 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 		else
         {
 			pos = getBasePosition();
-
 			vel = m_player->getSpeed();
      	}
 
@@ -786,7 +784,7 @@ bool PlayerSAO::checkMovementCheat()
 	if (player_max_jump < 0.0001f)
 		player_max_jump = 0.0001f;
 
-	v3opos_t diff = (getBasePosition() - m_last_good_position);
+	auto diff = (getBasePosition() - m_last_good_position);
 	auto d_vert = diff.Y;
 	diff.Y = 0;
 	auto d_horiz = diff.getLength();

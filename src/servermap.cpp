@@ -212,6 +212,7 @@ bool ServerMap::blockpos_over_mapgen_limit(v3bpos_t p)
 
 bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 {
+	assert(data);
 	s16 csize = getMapgenParams()->chunksize;
 	auto bpmin = EmergeManager::getContainingChunk(blockpos, csize);
 	auto bpmax = bpmin + v3bpos_t(1, 1, 1) * (csize - 1);
@@ -290,8 +291,10 @@ bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 }
 
 void ServerMap::finishBlockMake(BlockMakeData *data,
-	std::map<v3bpos_t, MapBlock*> *changed_blocks)
+	std::map<v3bpos_t, MapBlock*> *changed_blocks, u32 now)
 {
+	assert(data);
+	assert(changed_blocks);
 	auto bpmin = data->blockpos_min;
 	auto bpmax = data->blockpos_max;
 
@@ -315,7 +318,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	/*
 		Copy transforming liquid information
 	*/
-	while (data->transforming_liquid.size()) {
+	while (!data->transforming_liquid.empty()) {
 		transforming_liquid_add(data->transforming_liquid.front());
 		data->transforming_liquid.pop_front();
 	}
@@ -329,7 +332,7 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		*/
 		block->expireIsAirCache();
 		/*
-			Set block as modified
+			Set block as modified (if it isn't already)
 		*/
 	   if (save_generated_block)		
 		block->raiseModified(MOD_STATE_WRITE_NEEDED,
@@ -338,16 +341,12 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
         block->setLightingComplete(0);
 	}
 
-	/*
-		Set central blocks as generated
-		Update weather data in blocks
-	*/
 	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
-
-	for (bpos_t x = bpmin.X; x <= bpmax.X; x++)
-	for (bpos_t z = bpmin.Z; z <= bpmax.Z; z++)
-	for (bpos_t y = bpmin.Y; y <= bpmax.Y; y++) {
-		v3bpos_t p(x, y, z);
+	// Note: this does not apply to the extra border area
+	for (s16 x = bpmin.X; x <= bpmax.X; x++)
+	for (s16 z = bpmin.Z; z <= bpmax.Z; z++)
+	for (s16 y = bpmin.Y; y <= bpmax.Y; y++) {
+		v3pos_t p(x, y, z);
 		auto block = getBlockNoCreateNoEx(p, false, true);
 		if (!block)
 			continue;
@@ -356,13 +355,11 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 
         updateBlockHeat(senv, p * MAP_BLOCKSIZE, block);
         updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block);
+
+		// Set timestamp to ensure correct application of LBMs and other stuff
+		block->setTimestampNoChangedFlag(now);
 	}
 
-	/*
-		Save changed parts of map
-		NOTE: Will be saved later.
-	*/
-	//save(MOD_STATE_WRITE_AT_UNLOAD);
 	m_chunks_in_progress.erase(bpmin);
 
     //fmtodo merge with m_chunks_in_progress
@@ -667,29 +664,35 @@ MapDatabase *ServerMap::createDatabase(
 	const std::string &savedir,
 	Settings &conf)
 {
+	MapDatabase *db = nullptr;
 	#if USE_SQLITE3
 	if (name == "sqlite3")
-		return new MapDatabaseSQLite3(savedir);
+		db = new MapDatabaseSQLite3(savedir);
 	#endif
 	if (name == "dummy")
-		return new Database_Dummy();
+		db = new Database_Dummy();
 	#if USE_LEVELDB
 	if (name == "leveldb")
-		return new Database_LevelDB(savedir);
+		db = new Database_LevelDB(savedir);
 	#endif
 	#if USE_REDIS
 	if (name == "redis")
-		return new Database_Redis(conf);
+		db = new Database_Redis(conf);
 	#endif
 	#if USE_POSTGRESQL
 	if (name == "postgresql") {
 		std::string connect_string;
 		conf.getNoEx("pgsql_connection", connect_string);
-		return new MapDatabasePostgreSQL(connect_string);
+		db = new MapDatabasePostgreSQL(connect_string);
 	}
 	#endif
 
-	throw BaseException(std::string("Database backend ") + name + " not supported.");
+	if (!db)
+		throw BaseException(std::string("Database backend ") + name + " not supported.");
+	// Do this to get feedback about errors asap
+	db->verifyDatabase();
+	assert(db->initialized());
+	return db;
 }
 
 void ServerMap::beginSave()
@@ -810,6 +813,7 @@ MapBlockPtr ServerMap::loadBlock(const std::string &blob, v3bpos_t p3d, bool sav
 		if (!modified_blocks.empty()) {
 			MapEditEvent event;
 			event.type = MEET_OTHER;
+			event.low_priority = true;
 			event.setModifiedBlocks(modified_blocks);
 			dispatchEvent(event);
 		}

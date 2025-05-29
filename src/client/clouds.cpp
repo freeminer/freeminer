@@ -34,16 +34,13 @@ Clouds::Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
 	m_seed(seed)
 {
 	assert(ssrc);
-	m_enable_shaders = g_settings->getBool("enable_shaders");
 
 	m_material.BackfaceCulling = true;
 	m_material.FogEnable = true;
 	m_material.AntiAliasing = video::EAAM_SIMPLE;
-	if (m_enable_shaders) {
-		auto sid = ssrc->getShader("cloud_shader", TILE_MATERIAL_ALPHA);
+	{
+		auto sid = ssrc->getShaderRaw("cloud_shader", true);
 		m_material.MaterialType = ssrc->getShaderInfo(sid).material;
-	} else {
-		m_material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	}
 
 	m_params = SkyboxDefaults::getCloudDefaults();
@@ -55,6 +52,13 @@ Clouds::Clouds(scene::ISceneManager* mgr, IShaderSource *ssrc,
 		&cloud_3d_setting_changed, this);
 
 	updateBox();
+
+	// Neither EAC_BOX (the default) nor EAC_FRUSTUM_BOX will correctly cull
+	// the clouds.
+	// And yes, the bounding box is correct. You can check using the #if 0'd
+	// code in render() and see for yourself.
+	// So I give up and let's disable culling.
+	setAutomaticCulling(scene::EAC_OFF);
 
 	m_meshbuffer.reset(new scene::SMeshBuffer());
 	m_meshbuffer->setHardwareMappingHint(scene::EHM_DYNAMIC);
@@ -129,15 +133,11 @@ void Clouds::updateMesh()
 
 	// Colors with primitive shading
 
-	video::SColorf c_top_f(m_color);
-	video::SColorf c_side_1_f(m_color);
-	video::SColorf c_side_2_f(m_color);
-	video::SColorf c_bottom_f(m_color);
-	if (m_enable_shaders) {
-		// shader mixes the base color, set via ColorParam
-		c_top_f = c_side_1_f = c_side_2_f = c_bottom_f = video::SColorf(1.0f, 1.0f, 1.0f, 1.0f);
-	}
-	video::SColorf shadow = m_params.color_shadow;
+	video::SColorf c_top_f(1, 1, 1, 1);
+	video::SColorf c_side_1_f(1, 1, 1, 1);
+	video::SColorf c_side_2_f(1, 1, 1, 1);
+	video::SColorf c_bottom_f(1, 1, 1, 1);
+	const video::SColorf shadow = m_params.color_shadow;
 
 	c_side_1_f.r *= shadow.r * 0.25f + 0.75f;
 	c_side_1_f.g *= shadow.g * 0.25f + 0.75f;
@@ -390,6 +390,19 @@ void Clouds::render()
 	if (SceneManager->getSceneNodeRenderPass() != scene::ESNRP_TRANSPARENT)
 		return;
 
+#if 0
+	{
+		video::SMaterial tmp;
+		tmp.Thickness = 1.f;
+		driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
+		driver->setMaterial(tmp);
+		aabb3f tmpbox = m_box;
+		tmpbox.MinEdge.X = tmpbox.MinEdge.Z = -1000 * BS;
+		tmpbox.MaxEdge.X = tmpbox.MaxEdge.Z = 1000 * BS;
+		driver->draw3DBox(tmpbox, video::SColor(255, 255, 0x4d, 0));
+	}
+#endif
+
 	updateMesh();
 
 	// Update position
@@ -402,8 +415,7 @@ void Clouds::render()
 	}
 
 	m_material.BackfaceCulling = is3D();
-	if (m_enable_shaders)
-		m_material.ColorParam = m_color.toSColor();
+	m_material.ColorParam = m_color.toSColor();
 
 	driver->setTransform(video::ETS_WORLD, AbsoluteTransformation);
 	driver->setMaterial(m_material);
@@ -455,14 +467,14 @@ void Clouds::update(const v3f &camera_p, const video::SColorf &color_diffuse, s1
 
 	// is the camera inside the cloud mesh?
 	m_camera_pos = camera_p;
-	m_camera_inside_cloud = false; // default
+	m_camera_inside_cloud = false;
 	if (is3D()) {
 		float camera_height = camera_p.Y - BS * m_camera_offset.Y;
 		if (camera_height >= m_box.MinEdge.Y &&
 				camera_height <= m_box.MaxEdge.Y) {
 			v2f camera_in_noise;
-			camera_in_noise.X = floor((camera_p.X - m_origin.X) / cloud_size + 0.5);
-			camera_in_noise.Y = floor((camera_p.Z - m_origin.Y) / cloud_size + 0.5);
+			camera_in_noise.X = floorf((camera_p.X - m_origin.X) / cloud_size + 0.5f);
+			camera_in_noise.Y = floorf((camera_p.Z - m_origin.Y) / cloud_size + 0.5f);
 			bool filled = gridFilled(camera_in_noise.X, camera_in_noise.Y, m_humidity);
 			m_camera_inside_cloud = filled;
 		}
@@ -475,8 +487,8 @@ void Clouds::readSettings()
 	// chosen to avoid exactly that.
 	// refer to vertex_count in updateMesh()
 	m_enable_3d = g_settings->getBool("enable_3d_clouds");
-	const u16 maximum = m_enable_3d ? 62 : 25;
-	m_cloud_radius_i = rangelim(g_settings->getU16("cloud_radius"), 1, maximum);
+	const u16 maximum = !m_enable_3d ? 62 : 25;
+	m_cloud_radius_i = rangelim(g_settings->getU16("cloud_radius"), 8, maximum);
 
 	invalidateMesh();
 }
@@ -484,7 +496,7 @@ void Clouds::readSettings()
 bool Clouds::gridFilled(int x, int y, s16 humidity) const
 {
 	float cloud_size_noise = cloud_size / (BS * 200.f);
-	float noise = noise2d_perlin(
+	float noise = noise2d_fractal(
 			(float)x * cloud_size_noise,
 			(float)y * cloud_size_noise,
 			m_seed, 3, 0.5);

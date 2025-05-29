@@ -71,4 +71,7 @@ namespace treegen {
 	treegen::error make_ltree(MMVManip &vmanip, v3pos_t p0, const TreeDef &def);
 	// Helper to spawn it directly on map
 	treegen::error spawn_ltree(ServerMap *map, v3pos_t p0, const TreeDef &def);
+
+	// Helper to get a string from the error message
+	std::string error_to_string(error e);
 }; // namespace treegen
