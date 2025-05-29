@@ -49,6 +49,32 @@ public:
 			std::vector<u16> &added_objects);
 
 private:
-	k_d_tree::DynamicKdTrees<3, f32, u16> m_spatial_index;
+	// k_d_tree::DynamicKdTrees<3, f32, u16> m_spatial_index;
+
+	// tmp:
+	template <uint8_t Dim, class Component, class Id>
+	class FakeDynamicKdTrees
+	{
+		using Tree = k_d_tree::KdTree<Dim, Component, Id>;
+
+	public:
+		using Point = typename Tree::Point;
+
+		void insert(const std::array<Component, Dim> &point, Id id) {}
+
+		void remove(Id id) {}
+
+		void update(const Point &newPos, Id id) {}
+
+		template <typename F>
+		void rangeQuery(const Point &min, const Point &max, const F &cb) const
+		{
+		}
+
+		size_t size() const { return 0; }
+	};
+
+	FakeDynamicKdTrees<3, opos_t, u16> m_spatial_index;
+	// ===
 };
 } // namespace server

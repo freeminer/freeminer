@@ -41,6 +41,14 @@ struct InventoryLocation;
 class ServerActiveObject : public ActiveObject
 , public shared_locker
 {
+// fm:
+public:
+	float m_uptime_last = 0;
+	Queue<ActiveObjectMessage> & m_messages_out;
+// ===
+
+
+
 public:
 	/*
 		NOTE: m_env can be NULL, but step() isn't called if it is.
@@ -272,17 +280,10 @@ protected:
 	*/
 	std::atomic_bool m_pending_removal = false;
 
-// fm:
-public:
-	float m_uptime_last = 0;
-	protected:
-// ===
-
 	/*
 		Queue of messages to be sent to the client
 	*/
 	//std::queue<ActiveObjectMessage> m_messages_out;
-	Queue<ActiveObjectMessage> & m_messages_out;
 
 private:
 	v3f m_base_position; // setBasePosition updates index and MUST be called

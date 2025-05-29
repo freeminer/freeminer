@@ -210,6 +210,8 @@ void ActiveObjectMgr::updateObjectPos(u16 id, v3f pos)
 	}
 }
 
+#if 0
+
 void ActiveObjectMgr::getObjectsInsideRadius(v3f pos, float radius,
 		std::vector<ServerActiveObjectPtr> &result,
 		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
@@ -238,6 +240,44 @@ void ActiveObjectMgr::getObjectsInArea(const aabb3f &box,
 		if (!include_obj_cb || include_obj_cb(obj))
 			result.push_back(obj);
 	});
+}
+
+#endif
+
+// Wait for fix ^ and delete:
+void ActiveObjectMgr::getObjectsInsideRadius(v3opos_t pos, float radius,
+		std::vector<ServerActiveObjectPtr> &result,
+		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
+{
+	float r2 = radius * radius;
+	for (const auto &activeObject : m_active_objects.iter()) {
+		const auto obj = activeObject.second;
+		if (!obj)
+			continue;
+		const auto &objectpos = obj->getBasePosition();
+		if (objectpos.getDistanceFromSQ(pos) > r2)
+			continue;
+
+		if (!include_obj_cb || include_obj_cb(obj))
+			result.push_back(obj);
+	}
+}
+
+void ActiveObjectMgr::getObjectsInArea(const aabb3o &box,
+		std::vector<ServerActiveObjectPtr> &result,
+		std::function<bool(const ServerActiveObjectPtr &obj)> include_obj_cb)
+{
+	for (auto &activeObject : m_active_objects.iter()) {
+		const auto obj = activeObject.second;
+		if (!obj)
+			continue;
+		const auto &objectpos = obj->getBasePosition();
+		if (!box.isPointInside(objectpos))
+			continue;
+
+		if (!include_obj_cb || include_obj_cb(obj))
+			result.push_back(obj);
+	}
 }
 
 void ActiveObjectMgr::getAddedActiveObjectsAroundPos(
