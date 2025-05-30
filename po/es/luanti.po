@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Spanish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-05-14 23:02+0200\n"
-"PO-Revision-Date: 2025-03-30 02:00+0000\n"
-"Last-Translator: Miguel <miguel_p.l@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2025-05-31 06:01+0000\n"
+"Last-Translator: Jorge Rodríguez <mr.jrodriguez05@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/minetest/"
 "minetest/es/>\n"
 "Language: es\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -90,9 +90,8 @@ msgid "Edit"
 msgstr "Editar"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "Combinaciones de teclas."
+msgstr "Remover combinación de teclas"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -948,14 +947,12 @@ msgid "Close"
 msgstr ""
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
-#, fuzzy
 msgid "Keybindings changed"
-msgstr "Combinaciones de teclas."
+msgstr "Combinaciones de teclas cambiadas"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
-#, fuzzy
 msgid "Open settings"
-msgstr "Ajustes"
+msgstr "Abrir ajustes"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "The input handling system was reworked in Luanti 5.12.0."
@@ -1312,12 +1309,11 @@ msgid "Ping"
 msgstr "Ping"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid ""
 "Players:\n"
 "$1"
 msgstr ""
-"Clientes:\n"
+"Jugadores:\n"
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
