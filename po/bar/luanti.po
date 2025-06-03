@@ -8,14 +8,16 @@ msgstr ""
 "Project-Id-Version: luanti\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-05-14 23:02+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2025-06-08 13:07+0000\n"
+"Last-Translator: gogu <sidtirouluca@proton.me>\n"
+"Language-Team: Bavarian <https://hosted.weblate.org/projects/minetest/"
+"minetest/bar/>\n"
 "Language: bar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
@@ -23,11 +25,11 @@ msgstr ""
 
 #: builtin/client/chatcommands.lua
 msgid "Empty command."
-msgstr ""
+msgstr "Laaris Kommando."
 
 #: builtin/client/chatcommands.lua
 msgid "Invalid command: "
-msgstr ""
+msgstr "Ungiltigs Kommando: "
 
 #: builtin/client/chatcommands.lua
 msgid "List online players"
@@ -39,7 +41,7 @@ msgstr ""
 
 #: builtin/client/chatcommands.lua
 msgid "Online players: "
-msgstr ""
+msgstr "Spiila online: "
 
 #: builtin/client/chatcommands.lua
 msgid "Exit to main menu"
@@ -80,11 +82,11 @@ msgstr ""
 
 #: builtin/common/settings/components.lua
 msgid "Set"
-msgstr ""
+msgstr "Setzn"
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
-msgstr ""
+msgstr "Stirgln"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -96,7 +98,7 @@ msgstr ""
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
-msgstr ""
+msgstr "Unpassn"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
@@ -109,17 +111,17 @@ msgstr ""
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: src/settings_translation_file.cpp
 msgid "Offset"
-msgstr ""
+msgstr "Forsotz"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: src/settings_translation_file.cpp
 msgid "Scale"
-msgstr ""
+msgstr "Skala"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Seed"
-msgstr ""
+msgstr "Sume"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "X spread"
@@ -139,11 +141,11 @@ msgstr ""
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Octaves"
-msgstr ""
+msgstr "Oktavn"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Persistence"
-msgstr ""
+msgstr "Persistenz"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Lacunarity"
@@ -154,7 +156,7 @@ msgstr ""
 #. for noise settings in the settings menu.
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "defaults"
-msgstr ""
+msgstr "Standard"
 
 #. ~ "eased" is a noise parameter flag.
 #. It is used to make the map smoother and
@@ -162,7 +164,7 @@ msgstr ""
 #. the settings menu.
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "eased"
-msgstr ""
+msgstr "woach (eased)"
 
 #. ~ "absvalue" is a noise parameter flag.
 #. It is short for "absolute value".
@@ -170,7 +172,7 @@ msgstr ""
 #. the settings menu.
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "absvalue"
-msgstr ""
+msgstr "Absolutwert"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "(No description of setting given)"
@@ -179,7 +181,7 @@ msgstr ""
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Save"
-msgstr ""
+msgstr "Spaichorn"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/content/dlg_install.lua
@@ -190,11 +192,11 @@ msgstr ""
 #: builtin/mainmenu/dlg_rename_modpack.lua src/gui/guiOpenURL.cpp
 #: src/gui/guiPasswordChange.cpp
 msgid "Cancel"
-msgstr ""
+msgstr "Obrechn"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
-msgstr ""
+msgstr "Ollgimoan"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -207,7 +209,7 @@ msgstr ""
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
 msgid "Chat"
-msgstr ""
+msgstr "Tschät"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "Controls"
@@ -215,7 +217,7 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
-msgstr ""
+msgstr "Biweygung"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "(The game will need to enable automatic exposure as well)"
@@ -235,11 +237,11 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Auto"
-msgstr ""
+msgstr "Automatisch"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Enabled"
-msgstr ""
+msgstr "Aktiviert"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
@@ -248,7 +250,7 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap"
-msgstr ""
+msgstr "Untippm"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Tap with crosshair"
@@ -270,7 +272,7 @@ msgstr ""
 #: builtin/mainmenu/content/dlg_contentdb.lua
 #: builtin/mainmenu/content/dlg_package.lua src/gui/guiVolumeChange.cpp
 msgid "Back"
-msgstr ""
+msgstr "Zrugg"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show technical names"
@@ -282,11 +284,11 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
-msgstr ""
+msgstr "Suachn"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Clear"
-msgstr ""
+msgstr "Laarn"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
@@ -319,15 +321,15 @@ msgstr ""
 
 #: builtin/common/settings/shadows_component.lua
 msgid "Low"
-msgstr ""
+msgstr "Niddor"
 
 #: builtin/common/settings/shadows_component.lua
 msgid "Medium"
-msgstr ""
+msgstr "Mittl"
 
 #: builtin/common/settings/shadows_component.lua
 msgid "High"
-msgstr ""
+msgstr "Hoach"
 
 #: builtin/common/settings/shadows_component.lua
 msgid "Very High"
@@ -348,7 +350,7 @@ msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: builtin/fstk/ui.lua
 msgid "<none available>"
@@ -425,7 +427,7 @@ msgstr ""
 #: builtin/mainmenu/content/dlg_package.lua builtin/mainmenu/serverlistmgr.lua
 #: src/client/game.cpp
 msgid "Loading..."
-msgstr ""
+msgstr "Loudn..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "No packages could be retrieved"
@@ -433,19 +435,19 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "All"
-msgstr ""
+msgstr "Olla"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Games"
-msgstr ""
+msgstr "Spiile"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Mods"
-msgstr ""
+msgstr "Mods"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Texture Packs"
-msgstr ""
+msgstr "Texturpaklan"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid ""
@@ -459,23 +461,23 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "No updates"
-msgstr ""
+msgstr "Koana Updates"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Update All [$1]"
-msgstr ""
+msgstr "Olla updaten [$1]"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Downloading..."
-msgstr ""
+msgstr "Oaloudn..."
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Queued"
-msgstr ""
+msgstr "Ingiplant"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Featured"
-msgstr ""
+msgstr "Viergstellt"
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Already installed"
@@ -516,7 +518,7 @@ msgstr ""
 #: builtin/mainmenu/content/dlg_install.lua
 #: builtin/mainmenu/dlg_config_world.lua builtin/mainmenu/tab_content.lua
 msgid "Dependencies:"
-msgstr ""
+msgstr "Ohengigkaitn"
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Install missing dependencies"
@@ -524,7 +526,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Install"
-msgstr ""
+msgstr "Instoll"
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Error getting dependencies for package $1"
@@ -540,7 +542,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_overwrite.lua
 msgid "Overwrite"
-msgstr ""
+msgstr "Iboschraibm"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Error loading package information"
@@ -560,35 +562,35 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua builtin/mainmenu/tab_content.lua
 msgid "Update"
-msgstr ""
+msgstr "Aktualisiern"
 
 #: builtin/mainmenu/content/dlg_package.lua builtin/mainmenu/tab_content.lua
 msgid "Uninstall"
-msgstr ""
+msgstr "Ausstoll"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Description"
-msgstr ""
+msgstr "Bischraibung"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Information"
-msgstr ""
+msgstr "Information"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Reviews"
-msgstr ""
+msgstr "Rezensionn"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Donate"
-msgstr ""
+msgstr "Spendn"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Website"
-msgstr ""
+msgstr "Hoamsaite"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
-msgstr ""
+msgstr "Quellkoud"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Issue Tracker"
@@ -596,7 +598,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Translate"
-msgstr ""
+msgstr "Ibosetz"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
@@ -642,7 +644,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "World:"
-msgstr ""
+msgstr "Welt:"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "No modpack description provided."
@@ -662,7 +664,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mod:"
-msgstr ""
+msgstr "Mod:"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "No (optional) dependencies"
@@ -694,7 +696,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "enabled"
-msgstr ""
+msgstr "aktiviert"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Disable all"
@@ -712,7 +714,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Caverns"
-msgstr ""
+msgstr "Stolln"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Very large caverns deep in the underground"
@@ -720,7 +722,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Rivers"
-msgstr ""
+msgstr "Flisse"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Sea level rivers"
@@ -728,7 +730,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Mountains"
-msgstr ""
+msgstr "Perg"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Floatlands (experimental)"
@@ -772,11 +774,11 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Hills"
-msgstr ""
+msgstr "Pinggl/Pichl"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Lakes"
-msgstr ""
+msgstr "Sea"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Additional terrain"
@@ -826,15 +828,15 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Caves"
-msgstr ""
+msgstr "Höuln"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Dungeons"
-msgstr ""
+msgstr "Kerka"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Decorations"
-msgstr ""
+msgstr "Dekorationen"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid ""
@@ -852,7 +854,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Biomes"
-msgstr ""
+msgstr "Biome"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Biome blending"
@@ -876,7 +878,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua src/settings_translation_file.cpp
 msgid "Mapgen"
-msgstr ""
+msgstr "Kortngenerator"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Development Test is meant for developers."
@@ -905,7 +907,7 @@ msgstr ""
 #: builtin/mainmenu/dlg_delete_content.lua
 #: builtin/mainmenu/dlg_delete_world.lua builtin/mainmenu/tab_local.lua
 msgid "Delete"
-msgstr ""
+msgstr "Löschn"
 
 #: builtin/mainmenu/dlg_delete_content.lua
 msgid "pkgmgr: failed to delete \"$1\""
@@ -950,12 +952,12 @@ msgstr ""
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
 msgid "Name"
-msgstr ""
+msgstr "Nume"
 
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
 msgid "Password"
-msgstr ""
+msgstr "Passwort"
 
 #: builtin/mainmenu/dlg_register.lua src/gui/guiPasswordChange.cpp
 msgid "Confirm Password"
@@ -991,7 +993,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_reinstall_mtg.lua
 msgid "Dismiss"
-msgstr ""
+msgstr "Olehn"
 
 #: builtin/mainmenu/dlg_reinstall_mtg.lua
 msgid "Reinstall Minetest Game"
@@ -1045,11 +1047,11 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "Later"
-msgstr ""
+msgstr "Speyta"
 
 #: builtin/mainmenu/dlg_version_info.lua
 msgid "Never"
-msgstr ""
+msgstr "Nia"
 
 #: builtin/mainmenu/init.lua src/client/game_formspec.cpp
 msgid "Settings"
@@ -1065,7 +1067,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_about.lua
 msgid "About"
-msgstr ""
+msgstr "Ibo"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Core Developers"
@@ -1143,7 +1145,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_content.lua
 msgid "Content"
-msgstr ""
+msgstr "Innholt"
 
 #: builtin/mainmenu/tab_content.lua
 msgid "Content [$1]"
@@ -1189,7 +1191,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_local.lua
 msgid "New"
-msgstr ""
+msgstr "Noi"
 
 #: builtin/mainmenu/tab_local.lua
 msgid "Select World:"
@@ -1241,7 +1243,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Address"
-msgstr ""
+msgstr "Addresse"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Server Description"
@@ -1249,7 +1251,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Login"
-msgstr ""
+msgstr "Inloggn"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Game: $1"
@@ -1279,7 +1281,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Ping"
-msgstr ""
+msgstr "Ping"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Creative mode"
@@ -1292,7 +1294,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Favorites"
-msgstr ""
+msgstr "Favoritn"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1332,7 +1334,7 @@ msgstr ""
 
 #: src/client/client.cpp
 msgid "Done!"
-msgstr ""
+msgstr "Förtig!"
 
 #: src/client/clientlauncher.cpp
 msgid "Main Menu"
@@ -1364,7 +1366,7 @@ msgstr ""
 
 #: src/client/clientmedia.cpp src/client/game.cpp
 msgid "Media..."
-msgstr ""
+msgstr "Medien…"
 
 #: src/client/game.cpp
 msgid "Shutting down..."
@@ -1389,11 +1391,11 @@ msgstr ""
 
 #: src/client/game.cpp src/client/game_formspec.cpp
 msgid "Singleplayer"
-msgstr ""
+msgstr "Oanzlspiila"
 
 #: src/client/game.cpp
 msgid "Multiplayer"
-msgstr ""
+msgstr "Mearspiila"
 
 #: src/client/game.cpp
 msgid "Resolving address..."
@@ -1437,11 +1439,11 @@ msgstr ""
 
 #: src/client/game.cpp
 msgid "KiB/s"
-msgstr ""
+msgstr "KiB/s"
 
 #: src/client/game.cpp
 msgid "MiB/s"
-msgstr ""
+msgstr "MiB/s"
 
 #: src/client/game.cpp
 msgid "Client side scripting is disabled"
@@ -1672,7 +1674,7 @@ msgstr ""
 
 #: src/client/game_formspec.cpp
 msgid "Continue"
-msgstr ""
+msgstr "Waita"
 
 #: src/client/game_formspec.cpp
 msgid "Change Password"
@@ -1712,11 +1714,11 @@ msgstr ""
 
 #: src/client/game_formspec.cpp
 msgid "On"
-msgstr ""
+msgstr "Oan"
 
 #: src/client/game_formspec.cpp
 msgid "Off"
-msgstr ""
+msgstr "Ou"
 
 #. ~ PvP = Player versus Player
 #: src/client/game_formspec.cpp
@@ -1799,7 +1801,7 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Tab"
-msgstr ""
+msgstr "Tabulator"
 
 #: src/client/keycode.cpp
 msgid "Clear Key"
@@ -1833,7 +1835,7 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Space"
-msgstr ""
+msgstr "Laartaste"
 
 #: src/client/keycode.cpp
 msgid "Page Up"
@@ -1845,11 +1847,11 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "End"
-msgstr ""
+msgstr "Ende"
 
 #: src/client/keycode.cpp
 msgid "Home"
-msgstr ""
+msgstr "Hoam"
 
 #: src/client/keycode.cpp
 msgid "Left Arrow"
@@ -1870,12 +1872,12 @@ msgstr ""
 #. ~ Key name
 #: src/client/keycode.cpp
 msgid "Select"
-msgstr ""
+msgstr "Auswouln"
 
 #. ~ "Print screen" key
 #: src/client/keycode.cpp
 msgid "Print"
-msgstr ""
+msgstr "Druck"
 
 #: src/client/keycode.cpp
 msgid "Execute"
@@ -1887,7 +1889,7 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Insert"
-msgstr ""
+msgstr "Infügn"
 
 #: src/client/keycode.cpp
 msgid "Delete Key"
@@ -1895,7 +1897,7 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Help"
-msgstr ""
+msgstr "Hilfe"
 
 #: src/client/keycode.cpp
 msgid "Left Windows"
@@ -2019,11 +2021,11 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Apps"
-msgstr ""
+msgstr "Programme"
 
 #: src/client/keycode.cpp
 msgid "Sleep"
-msgstr ""
+msgstr "Schlouf"
 
 #: src/client/keycode.cpp
 msgid "Erase EOF"
@@ -2031,7 +2033,7 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Play"
-msgstr ""
+msgstr "Spiil"
 
 #: src/client/keycode.cpp
 msgid "Zoom Key"
@@ -2103,7 +2105,7 @@ msgstr ""
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
-msgstr ""
+msgstr "Fortsetzn"
 
 #: src/gui/guiOpenURL.cpp
 msgid "Open URL?"
@@ -2115,7 +2117,7 @@ msgstr ""
 
 #: src/gui/guiOpenURL.cpp
 msgid "Open"
-msgstr ""
+msgstr "Autian"
 
 #: src/gui/guiPasswordChange.cpp
 msgid "Old Password"
@@ -2127,7 +2129,7 @@ msgstr ""
 
 #: src/gui/guiPasswordChange.cpp
 msgid "Change"
-msgstr ""
+msgstr "Ändon"
 
 #: src/gui/guiPasswordChange.cpp
 msgid "Passwords do not match!"
@@ -2140,7 +2142,7 @@ msgstr ""
 
 #: src/gui/guiVolumeChange.cpp
 msgid "Muted"
-msgstr ""
+msgstr "Stumm"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Add button"
@@ -2148,11 +2150,11 @@ msgstr ""
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Reset"
-msgstr ""
+msgstr "Zruggsetzn"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Done"
-msgstr ""
+msgstr "Förtig"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Remove"
