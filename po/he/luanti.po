@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Hebrew (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-05-14 23:02+0200\n"
-"PO-Revision-Date: 2025-03-24 18:57+0000\n"
+"PO-Revision-Date: 2025-06-04 11:01+0000\n"
 "Last-Translator: jhon game <jhongamepc2@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/minetest/minetest/"
 "he/>\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.12-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -1529,9 +1529,9 @@ msgid "Debug info shown"
 msgstr "מידע דיבאג מוצג"
 
 #: src/client/game.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Error creating client: %s"
-msgstr "יוצר לקוח..."
+msgstr "שגיאה ביצירת לקוח: %s"
 
 #: src/client/game.cpp
 msgid "Fast mode disabled"
