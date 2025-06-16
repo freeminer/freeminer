@@ -8,14 +8,16 @@ msgstr ""
 "Project-Id-Version: luanti\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-05-14 23:02+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2025-06-17 07:01+0000\n"
+"Last-Translator: ButterflyOfFire <boffire@users.noreply.hosted.weblate.org>\n"
+"Language-Team: Kabyle <https://hosted.weblate.org/projects/minetest/minetest/"
+"kab/>\n"
 "Language: kab\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
+"X-Generator: Weblate 5.12.1\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
@@ -84,7 +86,7 @@ msgstr ""
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
-msgstr ""
+msgstr "Snirem"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -96,7 +98,7 @@ msgstr ""
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
-msgstr ""
+msgstr "Ẓreg"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
@@ -179,7 +181,7 @@ msgstr ""
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Save"
-msgstr ""
+msgstr "Sekles"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/content/dlg_install.lua
@@ -190,11 +192,11 @@ msgstr ""
 #: builtin/mainmenu/dlg_rename_modpack.lua src/gui/guiOpenURL.cpp
 #: src/gui/guiPasswordChange.cpp
 msgid "Cancel"
-msgstr ""
+msgstr "Semmet"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "General"
-msgstr ""
+msgstr "Amatu"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -202,12 +204,12 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Accessibility"
-msgstr ""
+msgstr "Tuffart"
 
 #: builtin/common/settings/dlg_settings.lua src/gui/touchscreenlayout.cpp
 #: src/settings_translation_file.cpp
 msgid "Chat"
-msgstr ""
+msgstr "Asqerdec"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
 msgid "Controls"
@@ -235,7 +237,7 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Auto"
-msgstr ""
+msgstr "Awurman"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Enabled"
@@ -270,7 +272,7 @@ msgstr ""
 #: builtin/mainmenu/content/dlg_contentdb.lua
 #: builtin/mainmenu/content/dlg_package.lua src/gui/guiVolumeChange.cpp
 msgid "Back"
-msgstr ""
+msgstr "Uɣal"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show technical names"
@@ -282,11 +284,11 @@ msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
-msgstr ""
+msgstr "Nadi"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Clear"
-msgstr ""
+msgstr "Sfeḍ"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/mainmenu/content/dlg_contentdb.lua
@@ -348,7 +350,7 @@ msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "OK"
-msgstr ""
+msgstr "Ih"
 
 #: builtin/fstk/ui.lua
 msgid "<none available>"
@@ -360,7 +362,7 @@ msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "Reconnect"
-msgstr ""
+msgstr "Ales tuqqna"
 
 #: builtin/fstk/ui.lua
 msgid "Main menu"
@@ -433,11 +435,11 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "All"
-msgstr ""
+msgstr "Akk"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Games"
-msgstr ""
+msgstr "Uraren"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Mods"
@@ -524,7 +526,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Install"
-msgstr ""
+msgstr "Sebded"
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Error getting dependencies for package $1"
@@ -560,7 +562,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua builtin/mainmenu/tab_content.lua
 msgid "Update"
-msgstr ""
+msgstr "Mucceḍ"
 
 #: builtin/mainmenu/content/dlg_package.lua builtin/mainmenu/tab_content.lua
 msgid "Uninstall"
@@ -568,7 +570,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Description"
-msgstr ""
+msgstr "Aglam"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Information"
@@ -580,15 +582,15 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Donate"
-msgstr ""
+msgstr "Mudd tawsa"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Website"
-msgstr ""
+msgstr "Asmel Web"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Source"
-msgstr ""
+msgstr "Aɣbalu"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Issue Tracker"
@@ -596,7 +598,7 @@ msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Translate"
-msgstr ""
+msgstr "Suqel"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
@@ -642,7 +644,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "World:"
-msgstr ""
+msgstr "Amaḍal:"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "No modpack description provided."
@@ -728,7 +730,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Mountains"
-msgstr ""
+msgstr "Idurar"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Floatlands (experimental)"
@@ -888,7 +890,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Create"
-msgstr ""
+msgstr "Snulfu-d"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "No game selected"
@@ -905,7 +907,7 @@ msgstr ""
 #: builtin/mainmenu/dlg_delete_content.lua
 #: builtin/mainmenu/dlg_delete_world.lua builtin/mainmenu/tab_local.lua
 msgid "Delete"
-msgstr ""
+msgstr "Kkes"
 
 #: builtin/mainmenu/dlg_delete_content.lua
 msgid "pkgmgr: failed to delete \"$1\""
@@ -937,7 +939,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "Close"
-msgstr ""
+msgstr "Mdel"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "Open settings"
@@ -950,12 +952,12 @@ msgstr ""
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
 msgid "Name"
-msgstr ""
+msgstr "Isem"
 
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
 msgid "Password"
-msgstr ""
+msgstr "Awal n uɛeddi"
 
 #: builtin/mainmenu/dlg_register.lua src/gui/guiPasswordChange.cpp
 msgid "Confirm Password"
