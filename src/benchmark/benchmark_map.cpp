@@ -7,6 +7,7 @@
 #include "map.h"
 #include "mapsector.h"
 
+namespace {
 class TestMap : public Map {
 public:
 	TestMap(IGameDef *gamedef) : Map(gamedef) {}
@@ -30,6 +31,7 @@ public:
 	}
 
 };
+}
 
 static void fillMap(TestMap &map, s16 n)
 {
