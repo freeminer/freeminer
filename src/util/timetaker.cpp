@@ -24,7 +24,7 @@ u64 TimeTaker::stop(bool quiet)
 			(*m_result) += dtime;
 		} else {
 			if (!quiet && !m_name.empty() && dtime >= g_time_taker_enabled) {
-				infostream << m_name << " took "
+				verbosestream << m_name << " took "
 					<< dtime << TimePrecision_units[m_precision] << std::endl;
 			}
 		}

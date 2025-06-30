@@ -70,7 +70,7 @@ private:
 	f32 m_camera_pitch;
 	f32 m_camera_yaw;*/
 	Client *m_client{};
-	MapDrawControl *m_control{};
+	const MapDrawControl *m_control{};
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
 	float m_speed{};

@@ -89,11 +89,6 @@ const bool slow = debug || emscripten; // || android
 
 void fm_set_default_settings(Settings *settings) {
 
-	// Screen
-	if (android) {
-		settings->setDefault("enable_shaders", "0");
-	}
-
 	settings->setDefault("timelapse", "0");
 
 	// Paths
@@ -107,10 +102,6 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("public_serverlist", "1");
 	settings->setDefault("password_save", "1");
 	settings->setDefault("enable_split_login_register", "false");
-
-	// Game Speed
-	settings->setDefault("fps_max_unfocused", "10"); // "20"
-	settings->setDefault("static_viewing_range", "false");
 
 	// Debugging stuff
 	settings->setDefault("show_debug", debug ? "true" : "false"); // "true"

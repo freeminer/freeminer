@@ -1045,7 +1045,6 @@ function tabbuilder.tab_settings()
 	-- Effects settings
 	add_title("Effects settings")
 	add_checkbox( "cb_particles",                 "enable_particles",           "Enable Particles"      )
-	add_checkbox( "cb_shaders",                   "enable_shaders",             "Shaders"               )
 
 	-- Enviroment settings
 	add_title("Enviroment settings")
@@ -1110,15 +1109,6 @@ function tabbuilder.handle_settings_buttons(fields)
 	end
 	if fields["cb_trilinear"] then
 		core.settings:set("trilinear_filter", fields["cb_trilinear"])
-	end
-
-	if fields["cb_shaders"] then
-		if (core.settings:get("video_driver") == "direct3d8" or core.settings:get("video_driver") == "direct3d9") then
-			core.settings:set("enable_shaders", "false")
-			gamedata.errormessage = fgettext("To enable shaders the OpenGL driver needs to be used.")
-		else
-			core.settings:set("enable_shaders", fields["cb_shaders"])
-		end
 	end
 	if fields["cb_particles"] then
 		core.settings:set("enable_particles", fields["cb_particles"])
