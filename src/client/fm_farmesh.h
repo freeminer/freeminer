@@ -47,7 +47,7 @@ class Server;
 class FarMesh
 {
 public:
-	FarMesh(Client *client, Server *server, MapDrawControl *m_control);
+	FarMesh(Client *client, Server *server);
 
 	~FarMesh();
 
@@ -120,4 +120,6 @@ private:
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;
 	std::array<async_step_runner, 6> async;
+	async_step_runner async_cleaner;
+	int async_cleaner_last{};
 };

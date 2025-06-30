@@ -1562,7 +1562,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
-		client->farmesh = std::make_unique<FarMesh>(client, server, draw_control);
+		client->farmesh = std::make_unique<FarMesh>(client, server);
 	}
 
 	//freeminer:

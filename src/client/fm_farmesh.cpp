@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "fm_farmesh.h"
 
@@ -58,7 +59,8 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bne
 	g_profiler->add("Client: Farmesh make", 1);
 
 	auto &client_map = m_client->getEnv().getClientMap();
-	const auto &draw_control = client_map.getControl();
+	//const auto &draw_control = client_map.getControl();
+	const auto &draw_control = *m_control;
 	const auto blockpos_actual =
 			bnear ? blockpos
 				  : getFarActual(blockpos, getNodeBlockPos(m_camera_pos_aligned), step,
@@ -67,7 +69,8 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bne
 			client_map.m_far_blocks;
 	if (const auto it = client_map.far_blocks_storage[step].find(blockpos_actual);
 			it != client_map.far_blocks_storage[step].end()) {
-		auto &block = it->second;
+		auto &block = it->second.first;
+		it->second.second = m_client->m_uptime;
 		{
 			const auto lock = far_blocks.lock_unique_rec();
 			if (const auto &fbit = far_blocks.find(blockpos_actual);
@@ -147,7 +150,7 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos, block_step_t step)
 	const auto step_width = 1 << (step - 1);
 	for (const auto &dir : use_dirs) {
 		const auto bpos_dir = blockpos + dir * step_width;
-		const auto &control = m_client->getEnv().getClientMap().getControl();
+		const auto &control = *m_control;
 		const auto bpos = getFarActual(
 				bpos_dir, getNodeBlockPos(m_camera_pos_aligned), step, control);
 		const auto block_step_correct =
@@ -214,8 +217,8 @@ void FarMesh::makeFarBlocks(const v3bpos_t &blockpos)
 }
 #endif
 
-FarMesh::FarMesh(Client *client, Server *server, MapDrawControl *control) :
-		m_client{client}, m_control{control}
+FarMesh::FarMesh(Client *client, Server *server) :
+		m_client{client}, m_control{&m_client->getEnv().getClientMap().getControl()}
 {
 
 	EmergeManager *emerge_use = server			   ? server->getEmergeManager()
@@ -268,7 +271,7 @@ auto align_shift(auto pos, const auto amount)
 
 int FarMesh::go_container()
 {
-	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
+	const auto &draw_control = *m_control;
 	const auto cbpos = getNodeBlockPos(m_camera_pos_aligned);
 
 	thread_local static const s16 farmesh_all_changed =
@@ -304,7 +307,7 @@ int FarMesh::go_container()
 
 int FarMesh::go_flat()
 {
-	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
+	const auto &draw_control = *m_control;
 
 	auto &dcache = direction_caches[0][0];
 	auto &last_step = dcache.step_num;
@@ -370,7 +373,7 @@ int FarMesh::go_direction(const size_t dir_n)
 	auto &cache = direction_caches[dir_n];
 	auto &mg_cache = mg_caches[dir_n];
 
-	const auto &draw_control = m_client->getEnv().getClientMap().getControl();
+	const auto &draw_control = *m_control;
 
 	const auto dir = g_6dirso[dir_n];
 	const auto grid_size_xy = grid_size_x * grid_size_y;

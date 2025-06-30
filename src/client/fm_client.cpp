@@ -270,7 +270,8 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 			if (far_blocks_storage.find(bpos) != far_blocks_storage.end()) {
 				return;
 			}
-			far_blocks_storage.insert_or_assign(block->getPos(), block);
+
+			far_blocks_storage.insert_or_assign(block->getPos(),  std::make_pair(block, (int)m_uptime));
 		}
 		++m_new_farmeshes;
 
