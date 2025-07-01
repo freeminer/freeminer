@@ -663,6 +663,45 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 			//clientMap.far_blocks_sent_timer = 0;
 		}
 */
+
+		if (complete_set) {
+			const auto now = m_client->m_uptime.load(); //porting::getTimeMs();
+			if (now > async_cleaner_next) {
+				thread_local static const auto client_unload_unused_data_timeout =
+						g_settings->getFloat("client_unload_unused_data_timeout");
+				async_cleaner_next = now + client_unload_unused_data_timeout / 2;
+				async_cleaner.step([this]() {
+					auto &client_map = m_client->getEnv().getClientMap();
+					const auto &far_blocks = client_map.m_far_blocks;
+					block_step_t step = 0;
+					for (auto &bs : client_map.far_blocks_storage) {
+						std::vector<v3pos_t> del;
+						{
+							if (const auto lock = bs.try_lock_shared_rec();
+									lock->owns_lock()) {
+								for (const auto &b : bs) {
+									if (m_client->m_uptime >
+											b.second.second +
+													client_unload_unused_data_timeout) {
+										del.emplace_back(b.first);
+									}
+								}
+							}
+						}
+						if (const auto sz = del.size(); sz) {
+							infostream << "Deleting old far blocks step=" << step << " "
+									   << sz << " / " << bs.size() << "\n";
+							const auto lock = bs.lock_unique_rec();
+							for (const auto &pos : del) {
+								bs.erase(pos);
+							}
+						}
+						++step;
+					}
+				});
+			}
+		}
+
 		return planes_processed;
 	}
 }
