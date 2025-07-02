@@ -719,9 +719,10 @@ uint32_t Server::SendFarBlocks(float dtime)
 	ScopeProfiler sp(g_profiler, "Server: Far blocks send");
 	uint32_t sent{};
 	for (const auto &client : m_clients.getClientList()) {
-		if (!client.second)
+		const auto c = client.second;
+		if (!c)
 			continue;
-		sent += client.second->SendFarBlocks(uptime);
+		sent += c->SendFarBlocks(uptime);
 	}
 	return sent;
 }
