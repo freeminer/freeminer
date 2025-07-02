@@ -715,12 +715,13 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 
 uint32_t Server::SendFarBlocks(float dtime)
 {
+	int32_t uptime = m_uptime_counter->get();
 	ScopeProfiler sp(g_profiler, "Server: Far blocks send");
 	uint32_t sent{};
 	for (const auto &client : m_clients.getClientList()) {
 		if (!client.second)
 			continue;
-		sent += client.second->SendFarBlocks();
+		sent += client.second->SendFarBlocks(uptime);
 	}
 	return sent;
 }

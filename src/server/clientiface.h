@@ -257,7 +257,7 @@ public:
 	std::mutex far_blocks_requested_mutex;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
 			std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
-	uint32_t SendFarBlocks();
+	uint32_t SendFarBlocks(const int32_t uptime);
 	// ==
 
 	/* Authentication information */

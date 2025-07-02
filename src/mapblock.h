@@ -509,7 +509,8 @@ public:
 	uint32_t mesh_requested_timestamp{};
 	block_step_t mesh_requested_step{};
 
-private:
+protected:
+	friend class ClientMap;
 	std::array<MapBlock::mesh_type, LODMESH_STEP_MAX + 1> m_lod_mesh;
 	std::array<MapBlock::mesh_type, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;

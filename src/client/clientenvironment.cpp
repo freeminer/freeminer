@@ -285,6 +285,7 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 		}
 	}
 
+    if (m_script)
 	if (m_client->modsLoaded())
 		m_script->environment_step(dtime);
 
