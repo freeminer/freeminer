@@ -43,6 +43,7 @@ class Server;
 // #define FARMESH_FAST 1
 // #define FARMESH_DEBUG 1 // One direction, one thread, no neighborhoods
 #define FARMESH_SHADOWS 1
+//#define FARMESH_CLEAN 1
 
 class FarMesh
 {

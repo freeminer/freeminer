@@ -205,8 +205,8 @@ public:
     async_step_runner update_drawlist_async;
     async_step_runner update_shadows_async;
 	std::map<v3pos_t, MapBlock*> m_block_boundary;
+	void cleanPerodic(uint32_t uptime);
 private:
-
 
 	//std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
 	std::vector<MapBlock*> m_keeplist;

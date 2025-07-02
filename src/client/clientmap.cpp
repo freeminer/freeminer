@@ -1130,6 +1130,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 								fmesh_step, m_control));
 			}
 
+			if (mesh) {
+				mesh->last_used = m_client->m_uptime;
+			}
 			// Add to set
 			//block->refGrab();
 			//block->resetUsageTimer();
@@ -1480,6 +1483,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	  if (!is_far)
 		if (is_frustum_culled(mesh_sphere_center, mesh_sphere_radius))
 			continue;
+
+		block_mesh->last_used = m_client->m_uptime;
 
 		// Mesh animation
 		if (pass == scene::ESNRP_SOLID) {
@@ -2013,6 +2018,8 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 	// Number of blocks with mesh in rendering range
 	u32 blocks_in_range_with_mesh = 0;
 
+	std::unordered_set<v3bpos_t> blocks_skip_farmesh;
+
 /*
 	for (auto &sector_it : m_sectors) {
 		const MapSector *sector = sector_it.second;
@@ -2052,18 +2059,23 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 			if (m_drawlist_shadow.emplace(block->getPos(), block).second) {
 				block->refGrab();
 			}
+
+			blocks_skip_farmesh.emplace(block->getPos());
 		}
 
 #if FARMESH_SHADOWS
-	{
-		const auto lock = m_far_blocks.lock_shared_rec();
-		for (const auto &[pos, block] : m_far_blocks) {
-			if (far_iteration_clean && block->far_iteration < far_iteration_clean) {
-			} else if (block->far_iteration >= far_iteration_use) {
-				m_drawlist_shadow.emplace(pos, block);
+		{
+			const auto lock = m_far_blocks.lock_shared_rec();
+			for (const auto &[pos, block] : m_far_blocks) {
+				if (far_iteration_clean && block->far_iteration < far_iteration_clean) {
+				} else if (block->far_iteration >= far_iteration_use) {
+					if (blocks_skip_farmesh.contains(pos))
+						continue;
+
+					m_drawlist_shadow.emplace(pos, block);
+				}
 			}
 		}
-	}
 #endif
 
 	m_drawlist_shadow_current = !m_drawlist_shadow_current;

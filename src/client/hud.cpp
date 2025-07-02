@@ -967,7 +967,7 @@ void Hud::drawBlockBounds()
 										.m_far_blocks_last_cam_pos),
 						blockPos);
 */
-						const auto &mesh_step = block->far_step;
+				const auto &mesh_step = block->far_step;
 				int g = 0;
 
 				if (!inFarGrid(blockPos, getNodeBlockPos(

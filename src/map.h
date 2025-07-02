@@ -276,8 +276,12 @@ public:
 	using far_blocks_ask_t = concurrent_shared_unordered_map<v3bpos_t,
 			std::pair<block_step_t, uint32_t>>; // client
 	far_blocks_ask_t m_far_blocks_ask;
-	std::array<concurrent_unordered_map<v3bpos_t, std::pair<MapBlockPtr, int>>, FARMESH_STEP_MAX>
-			far_blocks_storage;
+	struct BlockUsed
+	{
+		MapBlockPtr block{};
+		int32_t last_used{};
+	};
+	std::array<concurrent_unordered_map<v3bpos_t, BlockUsed>, FARMESH_STEP_MAX> far_blocks_storage;
 	//double m_far_blocks_created = 0;
 	float far_blocks_sent_timer{1};
 	v3pos_t far_blocks_last_cam_pos;

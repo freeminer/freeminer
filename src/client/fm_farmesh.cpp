@@ -68,9 +68,9 @@ void FarMesh::makeFarBlock(const v3bpos_t &blockpos, block_step_t step, bool bne
 	auto &far_blocks = //near ? m_client->getEnv().getClientMap().m_far_near_blocks :
 			client_map.m_far_blocks;
 	if (const auto it = client_map.far_blocks_storage[step].find(blockpos_actual);
-			it != client_map.far_blocks_storage[step].end()) {
-		auto &block = it->second.first;
-		it->second.second = m_client->m_uptime;
+			it != client_map.far_blocks_storage[step].end() && it->second.block) {
+		auto &block = it->second.block;
+		it->second.last_used = m_client->m_uptime;
 		{
 			const auto lock = far_blocks.lock_unique_rec();
 			if (const auto &fbit = far_blocks.find(blockpos_actual);
@@ -291,10 +291,10 @@ int FarMesh::go_container()
 					return false;
 				}
 
-				const auto contains = m_client->getEnv()
-											  .getClientMap()
-											  .far_blocks_storage[step]
-											  .contains(bpos);
+				auto &step_blocks =
+						m_client->getEnv().getClientMap().far_blocks_storage[step];
+				const auto it = step_blocks.find(bpos);
+				const auto contains = it != step_blocks.end() && it->second.block;
 
 				if (contains) {
 					makeFarBlock(bpos, step);
@@ -664,6 +664,7 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 		}
 */
 
+#if FARMESH_CLEAN
 		if (complete_set) {
 			const auto now = m_client->m_uptime.load(); //porting::getTimeMs();
 			if (now > async_cleaner_next) {
@@ -672,22 +673,25 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 				async_cleaner_next = now + client_unload_unused_data_timeout / 2;
 				async_cleaner.step([this]() {
 					auto &client_map = m_client->getEnv().getClientMap();
-					const auto &far_blocks = client_map.m_far_blocks;
+					//const auto &far_blocks = client_map.m_far_blocks;
 					block_step_t step = 0;
 					for (auto &bs : client_map.far_blocks_storage) {
-						std::vector<v3pos_t> del;
+						//std::vector<v3pos_t> del;
 						{
 							if (const auto lock = bs.try_lock_shared_rec();
 									lock->owns_lock()) {
-								for (const auto &b : bs) {
-									if (m_client->m_uptime >
-											b.second.second +
-													client_unload_unused_data_timeout) {
-										del.emplace_back(b.first);
+								for (auto &b : bs) {
+									if (b.second.last_used &&
+											m_client->m_uptime >
+													b.second.last_used +
+															client_unload_unused_data_timeout) {
+										b.second.last_used = 0;
+										b.second.block.reset();
 									}
 								}
 							}
 						}
+						/*
 						if (const auto sz = del.size(); sz) {
 							infostream << "Deleting old far blocks step=" << step << " "
 									   << sz << " / " << bs.size() << "\n";
@@ -695,12 +699,13 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 							for (const auto &pos : del) {
 								bs.erase(pos);
 							}
-						}
+						}*/
 						++step;
 					}
 				});
 			}
 		}
+#endif
 
 		return planes_processed;
 	}
