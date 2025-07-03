@@ -37,27 +37,43 @@
         "CMAKE_BUILD_TYPE": "MinSizeRel"
       }
     }
-
-
     ,{
       "name": "asan",
       "displayName": "asan",
-      "description": "Instrument with Address Sanitizer",
+      "description": "Instrument with Address Sanitizer : RelWithDebInfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "SANITIZE_ADDRESS": "ON"
+      }
+    },
+    {
+      "name": "asan_debug",
+      "displayName": "asan debug",
+      "description": "Instrument with Address Sanitizer : Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "SANITIZE_ADDRESS": "ON"
       }
-    }
-    ,{
+    },
+    {
       "name": "tsan",
       "displayName": "tsan",
+      "description": "Instrument with Thread Sanitizer",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "SANITIZE_THREAD": "ON"
+      }
+    },
+    {
+      "name": "tsan_debug",
+      "displayName": "tsan debug",
       "description": "Instrument with Thread Sanitizer",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "SANITIZE_THREAD": "ON"
       }
-    }
-    ,{
+    },
+    {
       "name": "msan",
       "displayName": "msan",
       "description": "Instrument with Memory Sanitizer",
@@ -65,8 +81,8 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "SANITIZE_MEMORY": "ON"
       }
-    }
-    ,{
+    },
+    {
       "name": "ubsan",
       "displayName": "ubsan",
       "description": "Instrument with UB Sanitizer",
@@ -74,8 +90,8 @@
         "CMAKE_BUILD_TYPE": "Debug",
         "SANITIZE_UNDEFINED": "ON"
       }
-    }
-    ,{
+    },
+    {
       "name": "gperf",
       "displayName": "gperf",
       "description": "gperf",
