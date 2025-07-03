@@ -126,7 +126,7 @@ void PacketCounter::print(std::ostream &o) const
 Client::Client(
 		bool is_simple_singleplayer_game,
 
-		const char *playername,
+		const std::string &playername,
 		const std::string &password,
 		MapDrawControl &control,
 		IWritableTextureSource *tsrc,
