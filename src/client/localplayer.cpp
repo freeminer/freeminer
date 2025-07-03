@@ -254,7 +254,10 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 		return;
 	}
 
-	m_speed += m_added_velocity;
+	{
+		const auto lock = lock_unique();
+		m_speed += m_added_velocity;
+	}
 	m_added_velocity = v3f(0.0f);
 
 	/*
@@ -339,6 +342,11 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 	float player_stepheight = (m_cao == nullptr) ? 0.0f :
 		(touching_ground ? m_cao->getStepHeight() : (0.2f * BS));
 
+	auto m_speed = [this]() {
+		const auto lock = lock_shared();
+		return this->m_speed;
+	}();
+
 	v3f accel_f(0, -gravity, 0);
 	const v3opos_t initial_position = position;
 	const v3f initial_speed = m_speed;
@@ -346,6 +354,11 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 	collisionMoveResult result = collisionMoveSimple(env, m_client,
 		m_collisionbox, player_stepheight, dtime,
 		&position, &m_speed, accel_f, m_cao);
+
+	{
+		const auto lock = lock_unique();
+		this->m_speed = m_speed;
+	}
 
 	bool could_sneak = control.sneak && !free_move && !in_liquid &&
 		!is_climbing && physics_override.sneak;

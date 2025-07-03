@@ -39,7 +39,7 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 
 	if (!block && step < FARMESH_STEP_MAX) {
 		const auto &storage = m_client->getEnv().getClientMap().far_blocks_storage[step];
-		block = storage.get(bpos_aligned);
+		block = storage.get(bpos_aligned).block;
 	}
 
 	const auto loadBlock = [this](const auto &bpos, const auto step) -> MapBlockPtr {

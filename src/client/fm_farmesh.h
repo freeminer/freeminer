@@ -43,11 +43,12 @@ class Server;
 // #define FARMESH_FAST 1
 // #define FARMESH_DEBUG 1 // One direction, one thread, no neighborhoods
 #define FARMESH_SHADOWS 1
+//#define FARMESH_CLEAN 1
 
 class FarMesh
 {
 public:
-	FarMesh(Client *client, Server *server, MapDrawControl *m_control);
+	FarMesh(Client *client, Server *server);
 
 	~FarMesh();
 
@@ -70,7 +71,7 @@ private:
 	f32 m_camera_pitch;
 	f32 m_camera_yaw;*/
 	Client *m_client{};
-	MapDrawControl *m_control{};
+	const MapDrawControl *m_control{};
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
 	float m_speed{};
@@ -120,4 +121,6 @@ private:
 	concurrent_shared_unordered_map<uint16_t, concurrent_unordered_set<v3bpos_t>>
 			far_blocks_list;
 	std::array<async_step_runner, 6> async;
+	async_step_runner async_cleaner;
+	int async_cleaner_next{};
 };

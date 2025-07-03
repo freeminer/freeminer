@@ -253,9 +253,9 @@ public:
 	const int lod_step;
 	const int fscale;
 	//bool no_draw = 0;
-	unsigned int timestamp = 0;
-	//u32 m_usage_timer = 0;
-// ===
+	unsigned int timestamp{};
+	uint32_t last_used{};
+	// ===
 
 
 	/// Radius of the bounding-sphere, in BS-space.

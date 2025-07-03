@@ -624,6 +624,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 	lod_step{data->lod_step},
 	fscale{data->fscale},
 	timestamp{data->timestamp},
+	last_used{static_cast<u32>(client->m_uptime)},
 
 	m_tsrc(client->getTextureSource()),
 	m_shdrsrc(client->getShaderSource()),

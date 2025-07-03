@@ -967,7 +967,7 @@ void Hud::drawBlockBounds()
 										.m_far_blocks_last_cam_pos),
 						blockPos);
 */
-						const auto &mesh_step = block->far_step;
+				const auto &mesh_step = block->far_step;
 				int g = 0;
 
 				if (!inFarGrid(blockPos, getNodeBlockPos(
@@ -1032,7 +1032,11 @@ void Hud::drawBlockBounds()
 		for (size_t step = 0; step < far_blocks.size(); ++step) {
 			const auto &blocks = far_blocks[step];
 			const auto mesh_step = step;
-			for (const auto &[blockPos, block] : blocks) {
+			for (const auto &[blockPos, block_ts] : blocks) {
+				const auto &[block, ts] = block_ts;
+				if (!block) {
+					continue;
+				}
 				const auto has_mesh = !!block->getFarMesh(mesh_step);
 				int fscale = pow(2, mesh_step );
 				int lod_step = 0;

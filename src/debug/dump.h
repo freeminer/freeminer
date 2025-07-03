@@ -12,6 +12,11 @@
 #include <iomanip>
 #include <iostream>
 
+#if DUMP_TIME == 1
+#include <chrono>
+#endif
+
+
 /** Usage:
   *
   * DUMP(variable...)
@@ -212,8 +217,18 @@ Out & dump(Out & out, const char * name, T && x)
     #define DUMP_THREAD << " [ " << getThreadId() << " ] "
 #endif
 
+#if DUMP_TIME == 1 // !defined(DUMP_TIME)
+    #define DUMP_TIME_STR << "( " << std::chrono::system_clock::now().time_since_epoch().count() << " ) "
+#elif DUMP_TIME
+    #define DUMP_TIME_STR DUMP_TIME
+#endif
+
+#if !defined(DUMP_TIME_STR)
+    #define DUMP_TIME_STR
+#endif
+
 #define DUMPVAR(VAR) ::dump(DUMP_STREAM, #VAR, (VAR));
-#define DUMPHEAD DUMP_STREAM DUMP_FILE DUMP_THREAD DUMP_FUNCTION;
+#define DUMPHEAD DUMP_STREAM DUMP_FILE DUMP_TIME_STR DUMP_THREAD DUMP_FUNCTION;
 
 #define DUMPTAIL DUMP_STREAM DUMP_ENDL;
 
