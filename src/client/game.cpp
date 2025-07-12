@@ -1199,6 +1199,7 @@ void Game::run()
 		updateCamera(dtime);
 		updateSound(dtime);
 		processPlayerInteraction(dtime, m_game_ui->m_flags.show_hud);
+	   if (!runData.headless_optimize)
 		updateFrame(&graph, &stats, dtime, cam_view);
 		updateProfilerGraphs(&graph);
 
@@ -4619,7 +4620,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	/*
 		==================== Drawing begins ====================
 	*/
-	if (!runData.headless_optimize)
+	if (!runData.headless_optimize && !runData.no_output)
 	if (device->isWindowVisible())
 		drawScene(graph, stats);
 	/*

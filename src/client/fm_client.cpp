@@ -278,7 +278,6 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 
 		//todo: step ordered thread pool
 		mesh_thread_pool.enqueue([this, block]() mutable {
-			createFarMesh(block);
 			auto &client_map = getEnv().getClientMap();
 			const auto &control = client_map.getControl();
 			const auto bpos = block->getPos();
@@ -289,6 +288,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 						control)) {
 				return;
 			}
+			createFarMesh(block);
 			auto &far_blocks = client_map.m_far_blocks;
 			if (const auto &it = far_blocks.find(bpos); it != far_blocks.end()) {
 				if (it->second->far_step != block->far_step) {

@@ -24,9 +24,11 @@
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_SQLITE3
 #cmakedefine01 USE_TIFF
-#cmakedefine01 USE_UNWIND
 #cmakedefine01 USE_WEBSOCKET
 #cmakedefine01 USE_WEBSOCKET_SCTP
+#cmakedefine01 USE_UNWIND
+#cmakedefine01 Backtrace_FOUND
+#define Backtrace_HEADER "@Backtrace_HEADER@"
 
 
 #define PROJECT_NAME "@PROJECT_NAME@"
