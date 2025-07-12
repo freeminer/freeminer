@@ -2,8 +2,11 @@
 #include "stacktrace.h"
 #include "config.h"
 
+#if Backtrace_FOUND
+#include Backtrace_HEADER
+#endif
+
 #if USE_UNWIND
-#include <execinfo.h> // for backtrace
 #include <dlfcn.h>	  // for dladdr
 #include <cxxabi.h>	  // for __cxa_demangle
 #include <sstream>

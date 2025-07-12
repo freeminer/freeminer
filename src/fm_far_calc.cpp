@@ -45,6 +45,7 @@ block_step_t getLodStep(const MapDrawControl &draw_control,
 		// 		return i;
 		// }
 
+/*
 		if (range >= cells + draw_control.lodmesh * 64) // cell_size = 4
 			return 8;
 		if (range >= cells + draw_control.lodmesh * 32)
@@ -53,6 +54,8 @@ block_step_t getLodStep(const MapDrawControl &draw_control,
 			return 6;
 		if (range >= cells + draw_control.lodmesh * 8)
 			return 5;
+*/
+
 		if (range >= cells + draw_control.lodmesh * 4)
 			return 4;
 		else if (range >= cells + draw_control.lodmesh * 2)
