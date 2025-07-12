@@ -1199,6 +1199,7 @@ void Game::run()
 		updateCamera(dtime);
 		updateSound(dtime);
 		processPlayerInteraction(dtime, m_game_ui->m_flags.show_hud);
+	   if (!runData.headless_optimize)
 		updateFrame(&graph, &stats, dtime, cam_view);
 		updateProfilerGraphs(&graph);
 
@@ -1564,7 +1565,7 @@ bool Game::createClient(const GameStartData &start_data)
 		client->getScript()->on_minimap_ready(mapper);
 
 	if (!runData.headless_optimize && g_settings->getS32("farmesh")) {
-		client->farmesh = std::make_unique<FarMesh>(client, server, draw_control);
+		client->farmesh = std::make_unique<FarMesh>(client, server);
 	}
 
 	//freeminer:
@@ -1704,7 +1705,7 @@ bool Game::connectToServer(const GameStartData &start_data,
 	try {
 		client = new Client(
 				simple_singleplayer_mode,
-				start_data.name.c_str(),
+				start_data.name,
 				start_data.password,
 				*draw_control, texture_src, shader_src,
 				itemdef_manager, nodedef_manager, sound_manager.get(), eventmgr,
@@ -4619,7 +4620,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	/*
 		==================== Drawing begins ====================
 	*/
-	if (!runData.headless_optimize)
+	if (!runData.headless_optimize && !runData.no_output)
 	if (device->isWindowVisible())
 		drawScene(graph, stats);
 	/*

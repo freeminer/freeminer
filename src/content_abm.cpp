@@ -186,7 +186,7 @@ public:
 					 }) {
 					const auto p_new = p + dir_look;
 					auto n_look = map->getNodeTry(p_new);
-					const auto &look_cf = ndef->get(n_look);
+					//const auto &look_cf = ndef->get(n_look);
 					const auto n_up = map->getNodeTry(p_new + dir_up);
 					const auto &n_up_cf = ndef->get(n_up.getContent());
 					if (n_look.getContent() == CONTENT_AIR &&

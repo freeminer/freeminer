@@ -565,8 +565,9 @@ queue_full_break:
 	return num_blocks_selected - num_blocks_sending;
 }
 
-uint32_t RemoteClient::SendFarBlocks()
+uint32_t RemoteClient::SendFarBlocks(const int32_t uptime)
 {
+	const static thread_local auto client_unload_unused_data_timeout = g_settings->getFloat("client_unload_unused_data_timeout");
 	uint16_t sent_cnt{};
 	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
@@ -575,7 +576,7 @@ uint32_t RemoteClient::SendFarBlocks()
 		for (auto &far_blocks : far_blocks_requested) {
 			for (auto &[bpos, step_sent] : far_blocks) {
 				auto &[step, sent_ts] = step_sent;
-				if (sent_ts <= 0) {
+				if (sent_ts < 0 || (sent_ts && sent_ts + client_unload_unused_data_timeout > uptime)) {
 					continue;
 				}
 				if (step >= FARMESH_STEP_MAX - 1) {
@@ -590,14 +591,14 @@ uint32_t RemoteClient::SendFarBlocks()
 				}
 				const auto block = loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
 				if (!block) {
-					sent_ts = -1;
+					sent_ts = uptime + client_unload_unused_data_timeout * 3;
 					continue;
 				}
 
 				g_profiler->add("Server: Far blocks sent", 1);
 
 				block->far_step = step;
-				sent_ts = 0;
+				sent_ts = uptime ?: 1;
 				ordered.emplace(sent_ts - step, block);
 
 				if (++sent_cnt > send_max) {

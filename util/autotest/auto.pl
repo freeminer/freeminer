@@ -478,7 +478,7 @@ $commands = {
           qq{@_},
           $commands->{executable}(),
           qq{$config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
-          options_make([qw(gameid world address port config autoexit verbose trace)]),
+          options_make([qw(gameid world worldname address port config autoexit verbose trace)]),
           qq{$config->{run_add} }, qq{$config->{logdir}/autotest.$g->{task_name}.out.log};
         0;
     },
@@ -498,17 +498,22 @@ $commands = {
     },
     run_server_simple => sub {
         my $fork = $config->{server_bg} ? '&' : '';
-        sytee $config->{runner}, $commands->{env}(), qq{@_}, $commands->{executable}(), $fork,
+        $commands->{world_name}();
+        sytee $config->{runner}, $commands->{env}(), qq{@_}, $commands->{executable}(), qq{--server}, 
+        options_make($options->{pass}{config} ? () : [qw(gameid world worldname port config autoexit verbose)]),
+        $fork,
           qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
     },
     run_server => sub {
+        $commands->{world_name}();
         my $cmd = join ' ',
           $config->{runner},
           $commands->{env}(),
           qq{@_},
           $commands->{executable}(),
+          qq{--server},
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
-          options_make($options->{pass}{config} ? () : [qw(gameid world port config autoexit verbose)]),
+          options_make($options->{pass}{config} ? () : [qw(gameid world worldname port config autoexit verbose)]),
           qq{$config->{run_add}};
         $config->{pid_file} = $config->{pid_path} . ($options->{pass}{worldname} || 'freeminerserver') . '.pid';
         if ($config->{server_bg}) {

@@ -192,8 +192,7 @@ else()
 endif()
 
 if(NOT MSVC)
-        # FM: TODO: REMOVE:
-	set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
+	# set(WARNING_FLAGS "${WARNING_FLAGS} -Wno-inconsistent-missing-override")
 
 	if("${CMAKE_GENERATOR}" STREQUAL "Ninja" )
 		if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -267,22 +266,21 @@ if(NOT MSVC)
 	endif()
 
     # too noisy
-	option(ENABLE_UNWIND "Enable unwind" 0)
+	option(ENABLE_UNWIND "Enable unwind" 1)
 	if(ENABLE_UNWIND)
 
 	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
 		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
 	endif()
-
-	find_library(UNWIND_LIBRARY NAMES unwind)
+    find_package(Backtrace)
 
 	if(USE_STATIC_LIBRARIES AND UNWIND_STATIC)
 		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
 	endif()
 
-	if(UNWIND_LIBRARY)
+	if(Backtrace_FOUND)
         CHECK_CXX_SOURCE_RUNS("
-       #include <execinfo.h> // for backtrace
+       #include <${Backtrace_HEADER}> // for backtrace
        int main(int argc, char *argv[]) {
             void *callstack[128];
             const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
@@ -296,8 +294,9 @@ if(NOT MSVC)
             set(USE_UNWIND 0)
         endif()
         # set(USE_UNWIND 1)
-		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${UNWIND_LIBRARY})
-		message(STATUS "Build with unwind ${UNWIND_LIBRARY}")
+		SET(PLATFORM_LIBS ${PLATFORM_LIBS} ${Backtrace_LIBRARIES})
+		message(STATUS "Build with unwind ${Backtrace_LIBRARIES} : ${Backtrace_INCLUDE_DIRS} : ${Backtrace_HEADER}")
+		include_directories(SYSTEM ${Backtrace_INCLUDE_DIRS})
 	endif()
 
 	endif()
