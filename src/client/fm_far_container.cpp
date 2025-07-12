@@ -22,14 +22,14 @@ thread_local std::pair<block_step_t, v3bpos_t> block_cache_p;
 const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 {
 	const auto bpos = getNodeBlockPos(pos);
-	const auto step = getFarStep(m_client->getEnv().getClientMap().getControl(),
-			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
-			bpos);
+	const auto player_bpos =
+			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos);
+	const auto step =
+			getFarStep(m_client->getEnv().getClientMap().getControl(), player_bpos, bpos);
 	//const auto &shift = step; // + cell_size_pow;
 	//const v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift, (bpos.Z >> shift) << shift);
-	const v3bpos_t bpos_aligned = getFarActual(bpos,
-			getNodeBlockPos(m_client->getEnv().getClientMap().far_blocks_last_cam_pos),
-			step, m_client->getEnv().getClientMap().getControl());
+	const v3bpos_t bpos_aligned = getFarActual(
+			bpos, player_bpos, step, m_client->getEnv().getClientMap().getControl());
 
 	MapBlockPtr block;
 	const auto step_block_pos = std::make_pair(step, bpos_aligned);
@@ -48,7 +48,8 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		if (!dbase) {
 			return {};
 		}
-		MapBlockPtr block = m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos);
+		MapBlockPtr block =
+				m_client->getEnv().getClientMap().createBlankBlockNoInsert(bpos);
 
 		std::string blob;
 		dbase->loadBlock(bpos, &blob);
@@ -85,6 +86,9 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 	}
 
 	if (block) {
+		block_cache_p = step_block_pos;
+		block_cache = block;
+
 		v3pos_t relpos = pos - bpos_aligned * MAP_BLOCKSIZE;
 
 		const auto &relpos_shift = step;
@@ -94,9 +98,6 @@ const MapNode &FarContainer::getNodeRefUnsafe(const v3pos_t &pos)
 		if (n.getContent() != CONTENT_IGNORE) {
 			return n;
 		}
-
-		block_cache_p = step_block_pos;
-		block_cache = block;
 	}
 
 	if (const auto &v = m_mg->visible_content(pos, use_weather); v.getContent()) {
