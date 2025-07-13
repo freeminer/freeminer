@@ -478,6 +478,8 @@ inline void wrappedApproachShortest(T &current, const T target, const T stepsize
 	}
 }
 
+/// @note Uses (extrinsic) Z-X-Y rotation order, left-handed rotation
+/// @note This is not consistent with matrix4::setRotationRadians
 void setPitchYawRollRad(core::matrix4 &m, v3f rot);
 
 inline void setPitchYawRoll(core::matrix4 &m, v3f rot)
@@ -485,6 +487,7 @@ inline void setPitchYawRoll(core::matrix4 &m, v3f rot)
 	setPitchYawRollRad(m, rot * core::DEGTORAD);
 }
 
+/// @see setPitchYawRollRad
 v3f getPitchYawRollRad(const core::matrix4 &m);
 
 inline v3f getPitchYawRoll(const core::matrix4 &m)
