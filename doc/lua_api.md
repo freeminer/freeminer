@@ -309,10 +309,6 @@ The .x, .b3d and .gltf formats additionally support (a single) animation.
 
 #### glTF
 
-The glTF model file format for now only serves as a
-more modern alternative to the other static model file formats;
-it unlocks no special rendering features.
-
 Binary glTF (`.glb`) files are supported and recommended over `.gltf` files
 due to their space savings.
 
