@@ -281,7 +281,7 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 			auto &client_map = getEnv().getClientMap();
 			const auto &control = client_map.getControl();
 			const auto bpos = block->getPos();
-			int fmesh_step_ = getFarStep(control,
+			const auto fmesh_step_ = getFarStep(control,
 					getNodeBlockPos(client_map.far_blocks_last_cam_pos), block->getPos());
 			if (!inFarGrid(block->getPos(),
 						getNodeBlockPos(client_map.far_blocks_last_cam_pos), fmesh_step_,
@@ -290,6 +290,8 @@ void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 			}
 			createFarMesh(block);
 			auto &far_blocks = client_map.m_far_blocks;
+			
+			const auto lock = far_blocks.lock_unique_rec();
 			if (const auto &it = far_blocks.find(bpos); it != far_blocks.end()) {
 				if (it->second->far_step != block->far_step) {
 					return;

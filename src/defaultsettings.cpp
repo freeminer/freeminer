@@ -209,7 +209,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_days", "2");
 
 	settings->setDefault("respawn_auto", "false");
-	settings->setDefault("autojump", android || emscripten ? "1" : "0");
+	settings->setDefault("autojump", 1 || android || emscripten ? "1" : "0");
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies
