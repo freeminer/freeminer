@@ -511,7 +511,7 @@ $commands = {
           $commands->{env}(),
           qq{@_},
           $commands->{executable}(),
-          qq{--server},
+          ($config->{executable_name} eq 'freeminer' ? qq{--server} : ()),
           qq{--logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
           options_make($options->{pass}{config} ? () : [qw(gameid world worldname port config autoexit verbose)]),
           qq{$config->{run_add}};

@@ -566,6 +566,7 @@ void Client::step(float dtime)
 			mapblock_limit, &deleted_blocks, max_cycle_ms))
             m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
 
+		m_env.getClientMap().cleanPerodic(m_uptime);
 
 		// Send info to server
 
