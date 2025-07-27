@@ -2851,6 +2851,8 @@ Version History
 * Formspec version 9 (5.12.0)
   * Add allow_close[]
   * label[]: Add "area label" variant
+* Formspec version 10 (5.13.0)
+  * model[]: Support floating-point frames
 
 Elements
 --------
