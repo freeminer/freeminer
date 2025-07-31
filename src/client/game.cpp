@@ -4601,7 +4601,7 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 					runData.update_draw_list_timer);
 		}
 
-	if (!runData.headless_optimize)
+	if (!runData.headless_optimize && client->getEnv().getLocalPlayer())
 	if (RenderingEngine::get_shadow_renderer()) {
 			client->getEnv().getClientMap().update_shadows_async.step([&]() {
 		updateShadows();

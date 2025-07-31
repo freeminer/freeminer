@@ -53,11 +53,13 @@ public:
 
 
     // freeminer:
-	virtual s16 updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
+	using humidity_t = s16;
+	using heat_t = s16;
+	virtual heat_t updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3pos<heat_t> *cache = nullptr,
 			bool block_add = true);
-	virtual s16 updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3pos<s16> *cache = nullptr,
+	virtual humidity_t updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3pos<humidity_t> *cache = nullptr,
 			bool block_add = true);
 
 	size_t transforming_liquid_size();

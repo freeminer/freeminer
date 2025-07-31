@@ -260,8 +260,8 @@ s16 Map::getHumidity(const v3pos_t &p, bool no_random)
 	return 0;
 }
 
-s16 ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBlock *block,
-		unordered_map_v3pos<s16> *cache, bool block_add)
+ServerMap::heat_t ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
+		MapBlock *block, unordered_map_v3pos<ServerMap::heat_t> *cache, bool block_add)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
@@ -270,8 +270,6 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBloc
 			return block->heat +
 				   (block_add ? (short)block->heat_add : 0); // + myrand_range(0, 1);
 		}
-	} else if (!cache) {
-		block = getBlockNoCreateNoEx(bp, true);
 	}
 	if (cache && cache->contains(bp)) {
 		return cache->at(bp); // + myrand_range(0, 1);
@@ -279,11 +277,35 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBloc
 	auto value = m_emerge->biomemgr->calcBlockHeat(p, getSeed(), env->getTimeOfDayF(),
 			gametime * env->m_time_of_day_speed, env->m_use_weather);
 
+	if (!block) {
+		block = getBlockNoCreateNoEx(bp); //, true);
+	}
+
+	{
+		int8_t blocks_around = 0;
+		heat_t sum = 0;
+		for (const auto &dir : g_6dirs) {
+			if (auto nblock = getBlockNoCreateNoEx(bp + dir, true)) {
+				sum += nblock->humidity;
+				if (block_add) {
+					sum += nblock->humidity_add;
+				}
+				++blocks_around;
+			}
+		}
+		if (blocks_around) {
+			const auto diff = ((sum / blocks_around) - value) / 4;
+			// DUMP("hea", (int)blocks_around, sum, value, diff);
+			value += diff;
+		}
+	}
+
 	if (block) {
 		block->heat = value;
-		block->heat_last_update = env->m_use_weather ? gametime + 30 : -1;
-		if (block_add)
+		block->heat_last_update = env->m_use_weather ? gametime + 100 : -1;
+		if (block_add) {
 			value += block->heat_add; // in cache stored total value
+		}
 	}
 	if (cache) {
 		(*cache)[bp] = value;
@@ -291,27 +313,50 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p, MapBloc
 	return value; // + myrand_range(0, 1);
 }
 
-s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
-		MapBlock *block, unordered_map_v3pos<s16> *cache, bool block_add)
+ServerMap::humidity_t ServerMap::updateBlockHumidity(ServerEnvironment *env,
+		const v3pos_t &p, MapBlock *block,
+		unordered_map_v3pos<ServerMap::humidity_t> *cache, bool block_add)
 {
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
 	if (block) {
-		if (gametime < block->humidity_last_update)
+		if (gametime < block->humidity_last_update) {
 			return block->humidity +
 				   (block_add ? (short)block->humidity_add : 0); //+ myrand_range(0, 1);
-	} else if (!cache) {
-		block = getBlockNoCreateNoEx(bp, true);
+		}
 	}
-	if (cache && cache->count(bp))
+	if (cache && cache->count(bp)) {
 		return cache->at(bp) + myrand_range(0, 1);
-
+	}
 	auto value = m_emerge->biomemgr->calcBlockHumidity(p, getSeed(), env->getTimeOfDayF(),
 			gametime * env->m_time_of_day_speed, env->m_use_weather);
 
+	if (!block) {
+		block = getBlockNoCreateNoEx(bp); //, true);
+	}
+
+	{
+		int8_t blocks_around = 0;
+		humidity_t sum = 0;
+		for (const auto &dir : g_6dirs) {
+			if (auto nblock = getBlockNoCreateNoEx(bp + dir, true)) {
+				sum += nblock->humidity;
+				if (block_add) {
+					sum += nblock->humidity_add;
+				}
+				++blocks_around;
+			}
+		}
+		if (blocks_around) {
+			const auto diff = ((sum / blocks_around) - value) / 4;
+			// DUMP("hum", (int)blocks_around, sum, value, diff);
+			value += diff;
+		}
+	}
+
 	if (block) {
 		block->humidity = value;
-		block->humidity_last_update = env->m_use_weather ? gametime + 30 : -1;
+		block->humidity_last_update = env->m_use_weather ? gametime + 100 : -1;
 		if (block_add)
 			value += block->humidity_add;
 	}
@@ -1419,7 +1464,7 @@ void ServerMap::prepareBlock(MapBlock *block)
 	// Calculate weather conditions
 	//block->heat_last_update     = 0;
 	//block->humidity_last_update = 0;
-	v3pos_t p = block->getPos() * MAP_BLOCKSIZE;
+	const v3pos_t p = block->getPos() * MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
 }
