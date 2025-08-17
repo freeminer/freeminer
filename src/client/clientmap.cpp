@@ -1454,7 +1454,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
     draw_order.reserve(m_drawlist.size());
 	for (auto &i : m_drawlist) {
 		const v3s16 block_pos = i.first;
-		auto block = i.second;
+		const auto & block = i.second;
 		int mesh_step = getLodStep(
 				m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf);
 
