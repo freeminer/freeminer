@@ -118,7 +118,7 @@ void GUITextInputMenu::regenerateGui(v2u32 screensize)
 		// e->drop(); TODO: figure out what actually happens here.
 		Environment->setFocus(e);
 
-		irr::SEvent evt;
+		SEvent evt;
 		evt.EventType = EET_KEY_INPUT_EVENT;
 		evt.KeyInput.Key = KEY_END;
 		evt.KeyInput.PressedDown = true;
@@ -155,7 +155,9 @@ void GUITextInputMenu::acceptInput()
 		gui::IGUIElement *e = getElementFromId(256);
 		if(e != NULL)
 		{
-			m_dest->gotText(e->getText());
+            StringMap fields;
+            fields["text"] = e->getText();
+    		m_dest->gotText(fields);
 		}
 		delete m_dest;
 		m_dest = NULL;

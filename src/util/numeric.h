@@ -158,6 +158,20 @@ inline void sortBoxVerticies(core::vector3d<T> &p1, core::vector3d<T> &p2)
 }
 
 template <typename T>
+inline constexpr core::vector2d<T> componentwise_min(const core::vector2d<T> &a,
+	const core::vector2d<T> &b)
+{
+	return {std::min(a.X, b.X), std::min(a.Y, b.Y)};
+}
+
+template <typename T>
+inline constexpr core::vector2d<T> componentwise_max(const core::vector2d<T> &a,
+	const core::vector2d<T> &b)
+{
+	return {std::max(a.X, b.X), std::max(a.Y, b.Y)};
+}
+
+template <typename T>
 inline constexpr core::vector3d<T> componentwise_min(const core::vector3d<T> &a,
 	const core::vector3d<T> &b)
 {
@@ -594,6 +608,8 @@ inline void wrappedApproachShortest(T &current, const T target, const T stepsize
 	}
 }
 
+/// @note Uses (extrinsic) Z-X-Y rotation order, left-handed rotation
+/// @note This is not consistent with matrix4::setRotationRadians
 void setPitchYawRollRad(core::matrix4 &m, v3f rot);
 
 inline void setPitchYawRoll(core::matrix4 &m, v3f rot)
@@ -601,6 +617,7 @@ inline void setPitchYawRoll(core::matrix4 &m, v3f rot)
 	setPitchYawRollRad(m, rot * core::DEGTORAD);
 }
 
+/// @see setPitchYawRollRad
 v3f getPitchYawRollRad(const core::matrix4 &m);
 
 inline v3f getPitchYawRoll(const core::matrix4 &m)

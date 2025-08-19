@@ -61,6 +61,7 @@
 #include "util/string.h"
 #include "util/tracy_wrapper.h"
 #include <vector>
+#include <csignal>
 #include <cstdarg>
 #include <cstdio>
 #include <signal.h>
@@ -82,9 +83,9 @@ namespace porting
 	Signal handler (grabs Ctrl-C on POSIX systems)
 */
 
-static bool g_killed = false;
+volatile static std::sig_atomic_t g_killed = false;
 
-bool *signal_handler_killstatus()
+volatile std::sig_atomic_t *signal_handler_killstatus()
 {
 	return &g_killed;
 }
@@ -92,6 +93,7 @@ bool *signal_handler_killstatus()
 std::atomic_bool g_sighup, g_siginfo;
 
 #if !defined(_WIN32) // POSIX
+#define STDERR_FILENO 2
 
 static void signal_handler(int sig)
 {
@@ -110,19 +112,15 @@ static void signal_handler(int sig)
 	if (!g_killed) {
 		g_killed = true;
 		if (sig == SIGINT) {
-			dstream << "INFO: signal_handler(): "
-				<< "Ctrl-C pressed, shutting down." << std::endl;
+			const char *dbg_text{"INFO: signal_handler(): "
+				"Ctrl-C pressed, shutting down.\n"};
+			write(STDERR_FILENO, dbg_text, strlen(dbg_text));
 		} else if (sig == SIGTERM) {
-			dstream << "INFO: signal_handler(): "
-				<< "got SIGTERM, shutting down." << std::endl;
+			const char *dbg_text{"INFO: signal_handler(): "
+				"got SIGTERM, shutting down.\n"};
+			write(STDERR_FILENO, dbg_text, strlen(dbg_text));
 		}
-
-		// Comment out for less clutter when testing scripts
-		/*dstream << "INFO: sigint_handler(): "
-				<< "Printing debug stacks" << std::endl;
-		debug_stacks_print();*/
 	}
-		break;
 
 		default:
 		(void)signal(sig, SIG_DFL);

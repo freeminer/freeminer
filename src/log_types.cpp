@@ -65,14 +65,14 @@ std::ostream &operator<<(std::ostream &s, const std::map<v3pos_t, unsigned int> 
 	return s;
 }
 
-std::ostream &operator<<(std::ostream &s, const irr::video::SColor &c)
+std::ostream &operator<<(std::ostream &s, const video::SColor &c)
 {
 	s << "c32(" << c.color << ": a=" << c.getAlpha() << ",r=" << c.getRed()
 	  << ",g=" << c.getGreen() << ",b=" << c.getBlue() << ")";
 	return s;
 }
 
-std::ostream &operator<<(std::ostream &s, const irr::video::SColorf &c)
+std::ostream &operator<<(std::ostream &s, const video::SColorf &c)
 {
 	s << "cf32("
 	  << "a=" << c.getAlpha() << ",r=" << c.getRed() << ",g=" << c.getGreen()

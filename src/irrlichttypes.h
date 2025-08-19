@@ -9,9 +9,7 @@
 #include <cstdint>
 #include <irrTypes.h>
 
-using namespace irr;
 
-#define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
 #define S8_MIN  INT8_MIN
 #define S16_MIN INT16_MIN
 #define S32_MIN INT32_MIN
@@ -29,17 +27,20 @@ using namespace irr;
 
 
 
+// fm:
+#define IRRLICHT_VERSION_10000 IRRLICHT_VERSION_MAJOR*10000 + IRRLICHT_VERSION_MINOR * 100 + IRRLICHT_VERSION_REVISION
+
 #if USE_POS32
 
 // Node position
-using pos_t = irr::s32;
+using pos_t = s32;
 
 // Block position
-using bpos_t = irr::s32;
+using bpos_t = s32;
 
 #else
-using pos_t = irr::s16;
-using bpos_t = irr::s16;
+using pos_t = s16;
+using bpos_t = s16;
 #endif
 
 #if USE_OPOS64
@@ -50,3 +51,4 @@ using opos_t = float;
 #endif
 
 using block_step_t = uint8_t;
+// ===

@@ -61,8 +61,6 @@ ServerMap::ServerMap(const std::string &savedir, IGameDef *gamedef,
 	settings_mgr(savedir + DIR_DELIM + "map_meta"),
 	m_emerge(emerge)
 {
-	verbosestream<<FUNCTION_NAME<<std::endl;
-
 	// Tell the EmergeManager about our MapSettingsManager
 	emerge->map_settings_mgr = &settings_mgr;
 
@@ -665,6 +663,8 @@ MapDatabase *ServerMap::createDatabase(
 	Settings &conf)
 {
 	MapDatabase *db = nullptr;
+	verbosestream << "Creating map database with backend \"" << name << "\"" << std::endl;
+
 	#if USE_SQLITE3
 	if (name == "sqlite3")
 		db = new MapDatabaseSQLite3(savedir);

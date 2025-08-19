@@ -203,8 +203,8 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 	// Init custom SAO
 	v3f nullpos;
 	//epixel::Creature* c = new epixel::Creature(NULL, nullpos, "", "");
-	epixel::ItemSAO* i = new epixel::ItemSAO(NULL, nullpos, "", "");
-	epixel::FallingSAO* f = new epixel::FallingSAO(NULL, nullpos, "", "");
+	epixel::ItemSAO* i = new epixel::ItemSAO(this, nullpos, "", "");
+	epixel::FallingSAO* f = new epixel::FallingSAO(this, nullpos, "", "");
 	//delete c;
 	delete i;
 	delete f;
@@ -282,14 +282,14 @@ void ServerEnvironment::init()
 		warningstream << "/!\\ You are using old player file backend. "
 				<< "This backend is deprecated and will be removed in a future release /!\\"
 				<< std::endl << "Switching to SQLite3 or PostgreSQL is advised, "
-				<< "please read https://wiki.luanti.org/Database_backends." << std::endl;
+				<< "please read https://docs.luanti.org/for-server-hosts/database-backends." << std::endl;
 	}
 
 	if (auth_backend_name == "files") {
 		warningstream << "/!\\ You are using old auth file backend. "
 				<< "This backend is deprecated and will be removed in a future release /!\\"
 				<< std::endl << "Switching to SQLite3 is advised, "
-				<< "please read https://wiki.luanti.org/Database_backends." << std::endl;
+				<< "please read https://docs.luanti.org/for-server-hosts/database-backends." << std::endl;
 	}
 
 	m_player_database = openPlayerDatabase(player_backend_name, world_path, conf);

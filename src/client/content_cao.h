@@ -17,7 +17,7 @@
 #include <map>
 #include <memory>
 
-namespace irr::scene {
+namespace scene {
 	class IMeshSceneNode;
 	class IBillboardSceneNode;
 }
@@ -152,6 +152,7 @@ private:
 	float m_update_interval = 0.1;
 
 public:
+
 	GenericCAO(Client *client, ClientEnvironment *env);
 
 	~GenericCAO();
@@ -289,8 +290,6 @@ public:
 
 	void updateAnimationSpeed();
 
-	void updateBones(f32 dtime);
-
 	void processMessage(const std::string &data) override;
 
 	bool directReportPunch(v3f dir, const ItemStack *punchitem,
@@ -304,4 +303,10 @@ public:
 	}
 
 	void updateMeshCulling();
+
+private:
+
+	/// Update the parent chain so getPosition() returns an up to date position.
+	void updateParentChain() const;
+
 };

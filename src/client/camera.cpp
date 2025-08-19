@@ -601,12 +601,13 @@ void Camera::updateViewingRange()
 		return;
 	}
 
-	thread_local static const auto farmesh = g_settings->getS32("farmesh");
+    viewing_range = m_draw_control.wanted_range;
+    thread_local static const auto farmesh = g_settings->getS32("farmesh");
 	if (viewing_range < farmesh) {
 		viewing_range = farmesh;
 	}
 
-	m_cameranode->setFarValue((viewing_range < 2000) ? 2000 * BS : viewing_range * BS);
+	m_cameranode->setFarValue(std::fmax(2000, viewing_range) * BS);
 }
 
 void Camera::setDigging(s32 button)
@@ -630,7 +631,7 @@ void Camera::wield(const ItemStack &item)
 	m_wieldlight_add = ((ItemGroupList)idef->get(itemname).groups)["wield_light"]*200/14;
 }
 
-void Camera::drawWieldedTool(irr::core::matrix4* translation)
+void Camera::drawWieldedTool(core::matrix4* translation)
 {
     //fm?:
 	/*
@@ -657,12 +658,12 @@ void Camera::drawWieldedTool(irr::core::matrix4* translation)
 	cam->setFarValue(1000);
 	if (translation != NULL)
 	{
-		irr::core::matrix4 startMatrix = cam->getAbsoluteTransformation();
-		irr::core::vector3df focusPoint = (cam->getTarget()
+		core::matrix4 startMatrix = cam->getAbsoluteTransformation();
+		core::vector3df focusPoint = (cam->getTarget()
 				- cam->getAbsolutePosition()).setLength(1)
 				+ cam->getAbsolutePosition();
 
-		irr::core::vector3df camera_pos =
+		core::vector3df camera_pos =
 				(startMatrix * *translation).getTranslation();
 		cam->setPosition(camera_pos);
 		cam->updateAbsolutePosition();
@@ -741,7 +742,7 @@ void Camera::removeNametag(Nametag *nametag)
 
 std::array<core::plane3d<f32>, 4> Camera::getFrustumCullPlanes() const
 {
-	using irr::scene::SViewFrustum;
+	using scene::SViewFrustum;
 	const auto &frustum_planes = m_cameranode->getViewFrustum()->planes;
 	return {
 		frustum_planes[SViewFrustum::VF_LEFT_PLANE],

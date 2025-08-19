@@ -35,7 +35,6 @@ class NodeDefManager;
 	Debug stuff
 */
 extern u64 emerge_time;
-extern u64 emerge_load_time;
 
 /*
 	This class resembles aabbox3d<s16> a lot, but has inclusive
@@ -470,7 +469,7 @@ public:
 		Control
 	*/
 
-	virtual void clear();
+	void clear();
 
 	void print(std::ostream &o, const NodeDefManager *nodemgr,
 			VoxelPrintMode mode=VOXELPRINT_MATERIAL) const;

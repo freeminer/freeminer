@@ -1,3 +1,5 @@
+file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+
 set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
@@ -7,6 +9,7 @@ set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/flood_fill.cpp
 	#${CMAKE_CURRENT_SOURCE_DIR}/earth/buildings.cpp
 
+	${mapgen_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/dungeongen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_carpathian.cpp

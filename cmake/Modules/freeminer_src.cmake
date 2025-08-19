@@ -165,5 +165,6 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
 	fm_abm.cpp
 	fm_clientiface.cpp
 	fm_serverenvironment.cpp
+	${DEBUG_SRCS}
 	)
 # == end freeminer:

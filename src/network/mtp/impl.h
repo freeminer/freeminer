@@ -12,6 +12,7 @@
 #include "util/numeric.h"
 #include "porting.h"
 #include "network/networkprotocol.h"
+#include <atomic>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -305,7 +306,7 @@ private:
 	// Backwards compatibility
 	PeerHandler *m_bc_peerhandler;
 
-	bool m_shutting_down = false;
+	std::atomic<bool> m_shutting_down = false;
 };
 
 } // namespace

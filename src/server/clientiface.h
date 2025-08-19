@@ -315,12 +315,17 @@ public:
 
 	void PrintInfo(std::ostream &o)
 	{
-		o<<"RemoteClient "<<peer_id<<": "
-				<<"m_blocks_sent.size()="<<m_blocks_sent.size()
-				<<", m_nearest_unsent_d="<<m_nearest_unsent_d
-				<<", wanted_range="<<wanted_range * MAP_BLOCKSIZE
-				<< ", v=" << net_proto_version << ":" << net_proto_version_fm
-				<<std::endl;
+		o << "RemoteClient " << peer_id << ": "
+			<<"blocks_sent=" << m_blocks_sent.size()
+			<<", blocks_sending=" << m_blocks_sending.size()
+			<<", nearest_unsent_d=" << m_nearest_unsent_d
+			<<", map_send_completion_timer=" << (int)(m_map_send_completion_timer + 0.5f)
+/*
+			<<", excess_gotblocks=" << m_excess_gotblocks;
+		m_excess_gotblocks = 0;
+*/
+		    << ", wanted_range="<<wanted_range * MAP_BLOCKSIZE
+			<< ", v=" << net_proto_version << ":" << net_proto_version_fm;
 	}
 
 	// Time from last placing or removing blocks
@@ -483,7 +488,7 @@ public:
 			bool reliable); //todo: delete
 	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
 	void sendToAll(u16 channelnum, msgpack::sbuffer const &buffer, bool reliable);
-	RemoteClientPtr getClient(u16 peer_id, ClientState state_min = CS_Active);
+	RemoteClientPtr getClient(session_t peer_id, ClientState state_min = CS_Active);
 	//RemoteClientVector getClientList();
 	// ==
 
@@ -502,7 +507,7 @@ public:
 	/* mark blocks as not sent on all active clients */
 	void markBlocksNotSent(const std::vector<v3s16> &positions, bool low_priority = false);
 
-	/* verify is server user limit was reached */
+	/* verify if server user limit was reached */
 	bool isUserLimitReached();
 
 	/* get list of client player names */
@@ -515,7 +520,7 @@ public:
 	void sendCustom(session_t peer_id, u8 channel, NetworkPacket *pkt, bool reliable);
 
 	/* send to all clients */
-	void sendToAll(NetworkPacket *pkt);
+	void sendToAll(NetworkPacket *pkt, ClientState state_min = CS_Active);
 
 	/* delete a client */
 	void DeleteClient(session_t peer_id);
@@ -524,23 +529,16 @@ public:
 	void CreateClient(session_t peer_id);
 
 	/* get a client by peer_id */
-	RemoteClient *getClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
+	RemoteClient* getClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
 
 	/* get client by peer_id (make sure you have list lock before!*/
-	RemoteClient *lockedGetClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
+	RemoteClient* lockedGetClientNoEx(session_t peer_id,  ClientState state_min = CS_Active);
 
 	/* get state of client by id*/
 	ClientState getClientState(session_t peer_id);
 
-	/* set client playername */
-	void setPlayerName(session_t peer_id, const std::string &name);
-
 	/* get protocol version of client */
 	u16 getProtocolVersion(session_t peer_id);
-
-	/* set client version */
-	void setClientVersion(session_t peer_id, u8 major, u8 minor, u8 patch,
-			const std::string &full);
 
 	/* event to update client state */
 	void event(session_t peer_id, ClientStateEvent event);
@@ -552,7 +550,8 @@ public:
 		m_env = env;
 	}
 
-	static std::string state2Name(ClientState state);
+	static const char *state2Name(ClientState state);
+
 protected:
 	class AutoLock {
 	public:
@@ -587,18 +586,24 @@ private:
 
 	// Connection
 	std::shared_ptr<con::IConnection> m_con;
+
+	// FIXME?: as far as I can tell this lock is pointless because only the server
+	// thread ever touches the clients. Consider how getClientNoEx() returns
+	// a raw pointer too.
 	//std::recursive_mutex m_clients_mutex;
-	// Connected clients (behind the con mutex)
+	// Connected clients (behind the mutex)
 	RemoteClientMap m_clients;
-	std::vector<std::string> m_clients_names; //for announcing masterserver
+	std::vector<std::string> m_clients_names; // for announcing to server list
 
 	// Environment
-	ServerEnvironment *m_env;
+	ServerEnvironment *m_env = nullptr;
 
 	float m_print_info_timer = 0;
 	float m_check_linger_timer = 0;
 
 	static const char *statenames[];
 
-	static constexpr int LINGER_TIMEOUT = 10;
+	// Note that this puts a fixed timeout on the init & auth phase for a client.
+	// (lingering is enforced until CS_InitDone)
+	static constexpr int LINGER_TIMEOUT = 12;
 };

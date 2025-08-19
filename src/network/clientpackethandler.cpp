@@ -329,7 +329,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	}
 
 	if (m_localdb && !is_simple_singleplayer_game) {
-		ServerMap::saveBlock(block.get(), m_localdb);
+		ServerMap::saveBlock(block.get(), m_localdb.get());
 		if (!far_container.have_params) {
 			merger->add_changed(p);
 		}
@@ -361,9 +361,8 @@ void Client::handleCommand_Inventory(NetworkPacket* pkt)
 
 	m_update_wielded_item = true;
 
-	delete m_inventory_from_server;
-	m_inventory_from_server = new Inventory(player->inventory);
-	m_inventory_from_server_age = 0.0;
+	m_inventory_from_server = std::make_unique<Inventory>(player->inventory);
+	m_inventory_from_server_age = 0.0f;
 }
 
 void Client::handleCommand_TimeOfDay(NetworkPacket* pkt)
@@ -930,6 +929,7 @@ void Client::handleCommand_InventoryFormSpec(NetworkPacket* pkt)
 
 	// Store formspec in LocalPlayer
 	player->inventory_formspec = pkt->readLongString();
+	player->inventory_formspec_override.clear();
 }
 
 void Client::handleCommand_DetachedInventory(NetworkPacket* pkt)
