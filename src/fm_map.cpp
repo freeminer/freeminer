@@ -123,6 +123,8 @@ MapBlockPtr Map::createBlankBlock(const v3pos_t &p)
 {
 	m_db_miss.erase(p);
 
+	const auto lock = m_blocks.lock_unique_rec();
+
 	auto block = getBlock(p, false, true);
 	if (block != NULL) {
 		infostream << "Block already created p=" << block->getPos() << std::endl;
@@ -130,8 +132,6 @@ MapBlockPtr Map::createBlankBlock(const v3pos_t &p)
 	}
 
 	block = createBlankBlockNoInsert(p);
-
-	const auto lock = m_blocks.lock_unique_rec();
 
 	m_blocks.insert_or_assign(p, block);
 
