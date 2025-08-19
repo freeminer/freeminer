@@ -918,10 +918,10 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 		if (!it.second)
 			continue;
 		v3s16 p = it.first;
-		MapBlock *block = m_map->getBlockNoCreateNoEx(p, false, true);
+		auto block = m_map->getBlock(p, false, true);
 		if (!block) {
 			if (!blockpos_over_max_limit(p)) {
-				block = m_map->emergeBlock(p, true);
+				block = m_map->emergeBlockPtr(p, true);
 				nload++;
 			}
 		}
@@ -940,7 +940,7 @@ void MMVManip::blitBackAll(std::map<v3s16, MapBlock*> *modified_blocks,
 		block->expireIsAirCache();
 
 		if(modified_blocks)
-			(*modified_blocks)[p] = block;
+			(*modified_blocks)[p] = block.get(); // should not be used by pointer
 	}
 
 	if (nload > 0) {
