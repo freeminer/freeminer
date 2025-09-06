@@ -58,6 +58,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <osmium/osm/node.hpp>
 #include <osmium/osm/way.hpp>
 #include <osmium/tags/tags_filter.hpp>
+
+#include "mapgen/earth/buildings.h"
+
+#include "earth/osmium-inl.h"
+
 #endif
 std::unique_ptr<maps_holder_t> MapgenEarth::maps_holder;
 
@@ -425,8 +430,8 @@ void MapgenEarth::generateBuildings()
 
 #if USE_OSMIUM
 
-#define FILE_INCLUDED 1
-#include "earth/osmium-inl.h"
+	//#define FILE_INCLUDED 1
+	//#include "earth/osmium-inl.h"
 	const auto tc = pos_to_ll(node_min.X, node_min.Z);
 	const auto tc_max = pos_to_ll(node_max.X, node_max.Z);
 	static const auto folder = porting::path_cache + DIR_DELIM + "earth";
@@ -434,7 +439,7 @@ void MapgenEarth::generateBuildings()
 	const auto lon_dec = lon_start(tc.lon);
 
 	static const auto timestamp = []() {
-		std::string ts = "202507310100";
+		std::string ts = "202509040800";
 		g_settings->getNoEx("earth_movisda_timestamp", ts);
 		return ts;
 	}();

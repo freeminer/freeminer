@@ -7,7 +7,11 @@ set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/flood_fill.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/earth/buildings.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/buildings.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/generate_world.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/adapter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/highways.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/bresenham.cpp
 
 	${mapgen_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp

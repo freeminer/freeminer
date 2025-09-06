@@ -104,6 +104,7 @@ public:
 	pos_t get_height(pos_t x, pos_t z);
 	ll pos_to_ll(pos_t x, pos_t z);
 	v2pos_t ll_to_pos(const ll &l);
+	v2d ll_to_pos_absolute(const ll &l);
 	void bresenham(
 			pos_t xa, pos_t za, pos_t xb, pos_t zb, pos_t y, pos_t h, const MapNode &n);
 };
