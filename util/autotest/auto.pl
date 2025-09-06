@@ -686,7 +686,7 @@ our $tasks = {
           . $config->{runner}
           . $config->{gdb}
           . q{ -ex 'set debuginfod enabled on' }
-          . q{ -ex 'run' -ex 't a a bt' }
+          . q{ -ex 'run' -ex 'backtrace' -ex 'thread apply all backtrace' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
           . q{ --args };
         #@_ = ('debug') if !@_;
