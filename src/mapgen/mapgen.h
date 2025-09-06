@@ -328,8 +328,10 @@ protected:
 
 	Noise *noise_filler_depth;
 
+public:
 	v3s16 node_min;
 	v3s16 node_max;
+protected:
 	v3s16 full_node_min;
 	v3s16 full_node_max;
 
