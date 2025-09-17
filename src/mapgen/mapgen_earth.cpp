@@ -59,8 +59,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <osmium/osm/way.hpp>
 #include <osmium/tags/tags_filter.hpp>
 
-#include "mapgen/earth/buildings.h"
-
 #include "earth/osmium-inl.h"
 
 #endif
@@ -138,6 +136,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	mg_params = params_;
 
 	Json::Value &params = mg_params->params;
+	flags = 0;
 
 	if (params.get("light", 0).asBool())
 		this->flags &= ~MG_LIGHT;

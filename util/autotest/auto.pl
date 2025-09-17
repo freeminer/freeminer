@@ -685,7 +685,10 @@ our $tasks = {
             ' env ASAN_OPTIONS=abort_on_error=1 '
           . $config->{runner}
           . $config->{gdb}
-          . q{ -ex 'set debuginfod enabled on' }
+          . q{ --quiet }
+          . ($config->{gdb_stay} ? '' : q{ --batch })
+          . q { -iex='set auto-load safe-path /' }
+          . q{ -iex='set debuginfod enabled on' }
           . q{ -ex 'run' -ex 'backtrace' -ex 'thread apply all backtrace' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
           . q{ --args };

@@ -1,7 +1,9 @@
 #include <cstddef>
+#include <cstdlib>
 #include <vector>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "log.h"
 #include "map.h"
 #if !defined(FILE_INCLUDED)
 #include "debug/dump.h"
@@ -20,8 +22,7 @@
 #include "mapgen/mapgen_earth.h"
 #endif
 
-#include "flood_fill.h"
-#include "mapgen/earth/generate_world.h"
+#include "arnis/data_processing.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -187,23 +188,46 @@ class MyHandler : public osmium::handler::Handler
 
 public:
 	MyHandler(MapgenEarth *mg) : mg{mg} {}
-	bool pos_ok(const v2pos_t &pos)
-	{
-		return (pos.X >= mg->node_min.X && pos.X < mg->node_max.X &&
-				pos.Y >= mg->node_min.Z && pos.Y < mg->node_max.Z);
-	};
+
 	void way(const osmium::Way &way)
 	{
-		generate_world(mg, way);
+		Ground ground;
+		ground.mg = mg;
+		WorldEditor editor;
+		editor.mg = mg;
+		editor.ground = &ground;
+		std::vector<ProcessedElement> v;
+		ProcessedWay w;
+		for (const auto &t : way.tags()) {
+			w.tags.emplace(t.key(), t.value());
+		}
+		for (const auto &n : way.nodes()) {
+			ProcessedNode pn;
+			pn.tags = w.tags;
+			const auto [x, y] = editor.node_to_xz(n);
+			pn.x = x;
+			pn.z = y;
+			pn.id = w.id;
+			w.nodes.emplace_back(pn);
+		}
+		v.emplace_back(w);
+		arnis::generate_world(editor, v);
 	}
 
 	void relation(const osmium::Relation &relation)
 	{
-		generate_world(mg, relation);
+
+		Ground ground;
+		ground.mg = mg;
+		WorldEditor editor;
+		editor.mg = mg;
+		editor.ground = &ground;
+		std::vector<ProcessedElement> v;
+		for (const auto &r : relation) {
+		}
+		arnis::generate_world(editor, v);
 	}
-
 };
-
 class hdl : public handler_i
 {
 	using index_t = osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type,
@@ -220,7 +244,7 @@ public:
 			mg{mg}, path_name{path_name}, handler{mg}
 	{
 	}
-	
+
 	~hdl() = default;
 
 	void apply() override

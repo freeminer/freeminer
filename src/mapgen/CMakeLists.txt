@@ -1,17 +1,22 @@
 file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 set(mapgen_SRCS
-	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis_adapter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/block_definitions.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/bresenham.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/colors.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/data_processing.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/buildings.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/highways.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/railways.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/subprocessor/buildings_interior.cpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/water_areas.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/floodfill.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/flood_fill.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/buildings.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/generate_world.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/adapter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/highways.cpp	
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/bresenham.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
 
 	${mapgen_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp
