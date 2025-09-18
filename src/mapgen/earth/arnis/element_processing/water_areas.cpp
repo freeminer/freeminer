@@ -19,11 +19,13 @@
 //#include "world_editor.h"
 
 #include "../../arnis_adapter.h"
-
+#undef stoi
 namespace arnis
 {
 
-using BgPoint = boost::geometry : model::d2::point_xy<double>;
+namespace water_areas {
+
+using BgPoint = boost::geometry::model::d2::point_xy<double>;
 using BgLinestring = boost::geometry::model::linestring<BgPoint>;
 using BgPolygon = boost::geometry::model::polygon<BgPoint>;
 using BgBox = boost::geometry::model::box<BgPoint>;
@@ -34,7 +36,7 @@ static void merge_loopy_loops(std::vector<std::vector<ProcessedNode>> &loops)
 	std::vector<std::vector<ProcessedNode>> merged;
 
 	for (std::size_t i = 0; i < loops.size(); ++i) {
-		for (std::size_t j = 0 j < loops.size(); ++j) {
+		for (std::size_t j = 0; j < loops.size(); ++j) {
 			if (i == j) {
 				continue;
 			}
@@ -43,10 +45,10 @@ static void merge_loopy_loops(std::vector<std::vector<ProcessedNode>> &loops)
 				continue;
 			}
 
-			const std::vector<ProcesseNode> &x = loops[i];
-			const std::vector<Processed> &y = loops[j];
+			const std::vector<ProcessedNode> &x = loops[i];
+			const std::vector<ProcessedNode> &y = loops[j];
 
-			(x.empty() || y.empty())
+if			(x.empty() || y.empty())
 			{
 				continue;
 			}
@@ -83,10 +85,10 @@ static void merge_loopy_loops(std::vector<std::vector<ProcessedNode>> &loops)
 				r.insert(r.end(), x.begin() + 1, x.end());
 				merged.push_back(std::move(r));
 			} else if (x.back().id == y.front().id) {
-				removed.pus_back(i);
+				removed.push_back(i);
 				removed.push_back(j);
 
-				std::vector<ProcesseNode> r = x;
+				std::vector<ProcessedNode> r = x;
 				r.insert(r.end(), y.begin() + 1, y.end());
 				merged.push_back(std::move(r));
 			}
@@ -165,12 +167,12 @@ static void inverse_floodfill_iterative(const std::pair<int, int> &min,
 		}
 	}
 }
-
+/*
 static void inverse_floodfill_recursive(const std::pair<int, int> &min,
 		const std::pair<int, int> &max, const std::vector<BgPolygon> &outers,
 		const std::vector<BgPolygon> &inners,
 
-		WorldEdit &editor, const std::chrono::steady_clock::time_point &start_time)
+		WorldEditor &editor, const std::chrono::steady_clock::time_point &start_time)
 {
 	if (std::chrono::duration_cast<std::chrono::seconds>(
 				std::chrono::steady_clock::now() - start_time)
@@ -245,6 +247,235 @@ static void inverse_floodfill_recursive(const std::pair<int, int> &min,
 		}
 	}
 }
+*/
+/*
+void inverse_floodfill_iterative(
+    std::pair<int32_t, int32_t> min,
+    std::pair<int32_t, int32_t> max,
+    int value,
+    const std::vector<BgPolygon>& outers,
+    const std::vector<BgPolygon>& inners,
+    world::WorldEditor& editor);
+*/
+
+#if 0
+void inverse_floodfill_recursive(
+    std::pair<int32_t, int32_t> min,
+    std::pair<int32_t, int32_t> max,    const std::vector<BgPolygon>& outers,
+    const std::vector<BgPolygon>& inners,
+    WorldEditor& editor,
+    const std::chrono::steady_clock::time_point& start_time)
+{
+    using namespace std::chrono;
+    constexpr int64_t ITERATIVE_THRES = 10'000;
+
+    if (min.first > max.first || min.second > max.second) {
+        return;
+    }
+/*
+    if (duration<seconds>(steady_clock::now() - start_time).count() > 25) {
+        std::cout << "Water area generation exceeded 25 seconds, continuing anyway\n";
+    }
+*/
+    int64_t width = static_cast<int64_t>(max.first) - static_cast<int64_t>(min.first);
+    int64_t height = static_cast<int64_t>(max.second) - static_cast<int64_t>(min.second);
+
+    if (width * height < ITERATIVE_THRES) {
+        inverse_floodfill_iterative(min, max, 0, outers, inners, editor);
+        return;
+    }
+
+    int32_t center_x = (min.first + max.first) / 2;
+    int32_t center_z = (min.second + max.second) / 2;
+
+    std::array<std::tuple<int32_t, int32_t, int32_t, int32_t>, 4> quadrants = {{
+        {min.first, center_x, min.second, center_z},
+        {center_x, max.first, min.second, center_z},
+        {min.first, center_x, center_z, max.second},
+        {center_x, max.first, center_z, max.second}
+    }};
+
+    for (const auto& [min_x, max_x, min_z, max_z] : quadrants) {
+        BgBox rect(BgPoint(static_cast<double>(min_x), static_cast<double>(min_z)),
+                   BgPoint(static_cast<double>(max_x), static_cast<double>(max_z)));
+
+        bool any_outer_contains = std::any_of(
+            outers.begin(), outers.end(),
+            [&rect](const BgPolygon& outer) {
+                return boost::geometry::within(rect, outer);
+            }
+        );
+
+        bool any_inner_intersects = std::any_of(
+            inners.begin(), inners.end(),
+            [&rect](const BgPolygon& inner) {
+                return boost::geometry::intersects(inner, rect);
+            }
+        );
+
+        if (any_outer_contains && !any_inner_intersects) {
+            rect_fill(min_x, max_x, min_z, max_z, 0, editor);
+            continue;
+        }
+
+        std::vector<BgPolygon> outers_intersects;
+        std::copy_if(
+            outers.begin(), outers.end(),
+            std::back_inserter(outers_intersects),
+            [&rect](const BgPolygon& poly) { return boost::geometry::intersects(poly, rect); }
+        );
+
+        std::vector<BgPolygon> inners_intersects;
+        std::copy_if(
+            inners.begin(), inners.end(),
+            std::back_inserter(inners_intersects),
+            [&rect](const BgPolygon& poly) { return boost::geometry::intersects(poly, rect); }
+        );
+
+        if (!outers_intersects.empty()) {
+            inverse_floodfill_recursive(
+                {min_x, min_z},
+                {max_x, max_z},
+                outers_intersects,
+                inners_intersects,
+                editor,
+                start_time
+            );
+        }
+    }
+}
+#endif
+/*
+#include <vector>
+#include <chrono>
+#include <iostream>
+#include <algorithm>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/linestring.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+using BgPoint = boost::geometry::model::d2::point_xy<double>;
+using BgLinestring = boost::geometry::model::linestring<BgPoint>;
+using BgPolygon = boost::geometry::model::polygon<BgPoint>;
+using BgBox = BgPolygon;
+
+namespace world {
+    struct WorldEditor {
+        // Editor methods and data
+    };
+}
+*/
+
+
+/*
+void rect_fill(int min_x, int max_x, int min_z, int max_z, int value, world::WorldEditor& editor);
+
+void invers_floodfill_iterative(
+    std::pair<int32_t, int32_t> min,
+    std::pair<int32_t, int32_t> max,
+    int value,
+    const std::vector<BgPolygon>& outers,
+    const std::vector<BgPolygon>& inners,
+    world::WorldEditor& editor);
+*/
+BgPolygon make_rectangle_polygon(int min_x, int max_x, int min_z, int max_z) {
+    BgPolygon poly;
+    boost::geometry::append(poly.outer(), BgPoint(min_x, min_z));
+    boost::geometry::append(poly.outer(), BgPoint(max_x, min_z));
+    boost::geometry::append(poly.outer(), BgPoint(max_x, max_z));
+    boost::geometry::append(poly.outer(), BgPoint(min_x, max_z));
+    boost::geometry::append(poly.outer(), BgPoint(min_x, min_z)); // close polygon
+    boost::geometry::correct(poly);
+    return poly;
+}
+
+void inverse_floodfill_recursive(
+    std::pair<int32_t, int32_t> min,
+    std::pair<int32_t, int32_t> max,
+    const std::vector<BgPolygon>& outers,
+    const std::vector<BgPolygon>& inners,
+    WorldEditor& editor,
+    const std::chrono::steady_clock::time_point& start_time)
+{
+    using namespace std::chrono;
+    constexpr int64_t ITERATIVE_THRES = 10'000;
+
+    if (min.first > max.first || min.second > max.second) {
+        return;
+    }
+
+    if (duration_cast<seconds>(steady_clock::now() - start_time).count() > 25) {
+        std::cout << "Water area generation exceeded 25 seconds, continuing anyway\n";
+    }
+
+    int64_t width = static_cast<int64_t>(max.first) - static_cast<int64_t>(min.first);
+    int64_t height = static_cast<int64_t>(max.second) - static_cast<int64_t>(min.second);
+
+    if (width * height < ITERATIVE_THRES) {
+        inverse_floodfill_iterative(min, max, 0, outers, inners, editor);
+        return;
+    }
+
+    int32_t center_x = (min.first + max.first) / 2;
+    int32_t center_z = (min.second + max.second) / 2;
+
+    std::array<std::tuple<int32_t, int32_t, int32_t, int32_t>, 4> quadrants = {{
+        {min.first, center_x, min.second, center_z},
+        {center_x, max.first, min.second, center_z},
+        {min.first, center_x, center_z, max.second},
+        {center_x, max.first, center_z, max.second}
+    }};
+
+    for (const auto& [min_x, max_x, min_z, max_z] : quadrants) {
+        auto rect = make_rectangle_polygon(min_x, max_x, min_z, max_z);
+
+        bool any_outer_contains = std::any_of(
+            outers.begin(), outers.end(),
+            [&rect](const BgPolygon& outer) {
+                return boost::geometry::within(rect, outer);
+            }
+        );
+
+        bool any_inner_intersects = std::any_of(
+
+ inners.begin(), inners.end(),
+            [&rect](const BgPolygon& inner) {
+                return boost::geometry::intersects(inner, rect);
+            }
+        );
+
+        if (any_outer_contains && !any_inner_intersects) {
+            rect_fill(min_x, max_x, min_z, max_z, 0, editor);
+            continue;
+        }
+
+        std::vector<BgPolygon> outers_intersects;
+        std::copy_if(
+            outers.begin(), outers.end(),
+            std::back_inserter(outers_intersects),
+            [&rect](const BgPolygon& poly) { return boost::geometry::intersects(poly, rect); }
+        );
+
+        std::vector<BgPolygon> inners_intersects;
+        std::copy_if(
+            inners.begin(), inners.end(),
+            std::back_inserter(inners_intersects),
+            [&rect](const BgPolygon& poly) { return boost::geometry::intersects(poly, rect); }
+        );
+
+        if (!outers_intersects.empty()) {
+            inverse_floodfill_recursive(
+                {min_x, min_z},
+                {max_x, max_z},
+                outers_intersects,
+                inners_intersects,
+                editor,
+                start_time
+            );
+        }
+    }
+}
+
 
 static void inverse_floodfill(int min_x, int min_z, int max_x, int max_z,
 		const std::vector<std::vector<XZPoint>> &outers,
@@ -257,7 +488,7 @@ static void inverse_floodfill(int min_x, int min_z, int max_x, int max_z,
 		BgLinestring ls;
 		ls.reserve(poly_pts.size());
 		for (const auto &pt : poly_pts) {
-			ls.emplace_back(static_ca<double>(pt.x), static_cast<double>pt.z));
+			ls.emplace_back(static_cast<double>(pt.x), static_cast<double>(pt.z));
 		}
 		// ensure closed
 		if (!ls.empty() &&
@@ -276,7 +507,7 @@ static void inverse_floodfill(int min_x, int min_z, int max_x, int max_z,
 		BgLinestring ls;
 		ls.reserve(poly_pts.size());
 		for (const auto &pt : poly_pts) {
-			ls.emplace_back(static_cast<doub>(pt.x), static_cast<double>(pt.z));
+			ls.emplace_back(static_cast<double>(pt.x), static_cast<double>(pt.z));
 		}
 		if (!ls.empty() &&
 				(ls.front().x() != ls.back().x() || ls.front().y() != ls.back().y())) {
@@ -375,7 +606,7 @@ void generate_water_areas(WorldEditor &editor, const ProcessedRelation &element)
 		auto [min_x, min_z] = editor.get_min_coords();
 		auto [max_x, max_z] = editor.get_max_coords();
 
-		std::vector<std::vector<XZPoint>> individualouters_xz;
+		std::vector<std::vector<XZPoint>> individual_outers_xz;
 		for (const auto &poly : individual_outers) {
 			std::vector<XZPoint> v;
 			v.reserve(poly.size());
@@ -388,7 +619,7 @@ void generate_water_areas(WorldEditor &editor, const ProcessedRelation &element)
 		std::vector<std::vector<XZPoint>> inners_xz;
 		for (const auto &poly : inners_copy) {
 			std::vector<XZPoint> v;
-			.reserve(poly.size());
+			v.reserve(poly.size());
 			for (const auto &n : poly) {
 				v.push_back(n.xz());
 			}
@@ -398,5 +629,6 @@ void generate_water_areas(WorldEditor &editor, const ProcessedRelation &element)
 		inverse_floodfill(min_x, min_z, max_x, max_z, individual_outers_xz, inners_xz,
 				editor, start_time);
 	}
+}
 }
 }

@@ -1,11 +1,11 @@
 
 
 // https://heck.ai/
-// write in c++ without explanation and examples, use full namespaces, prefer std::optional instead pointers :
+// write in c++ without explanation and examples, use full namespaces, prefer std::optional instead pointers, do not use static functions :
 
 #pragma once
 //using XZPoint = v2pos_t;
-#include <map>
+#include <optional>
 #include <osmium/osm/entity.hpp>
 #include <osmium/osm/location.hpp>
 #include <osmium/osm/node.hpp>
@@ -15,6 +15,8 @@
 #include "../../irr_v2d.h"
 #include "map.h"
 #include "mapgen/mapgen_earth.h"
+#include "emerge.h"
+
 #include "../../debug/dump.h"
 
 class Block : public MapNode
@@ -101,18 +103,25 @@ class ProcessedElement :
 		public variant_t
 {
 public:
+	enum class Type
+	{
+		Node,
+		Way,
+		Relation
+	} type;
+
 	ProcessedElement(ProcessedNode const &n) :
-			variant_t(n), kind_("node")
+			variant_t(n), kind_("node"), type{Type::Node}
 	{
 	}
 
 	ProcessedElement(ProcessedWay const &w) :
-			variant_t(w), kind_("way")
+			variant_t(w), kind_("way"), type{Type::Way}
 	{
 	}
 
 	ProcessedElement(ProcessedRelation const &r) :
-			variant_t(r), kind_("relation")
+			variant_t(r), kind_("relation"), type{Type::Relation}
 	{
 	}
 
@@ -158,6 +167,27 @@ public:
 		} else { // relation
 			return std::get<ProcessedRelation>(*this).id;
 		}
+	}
+
+	const std::unordered_map<std::string, std::string> &tags() const
+	{
+		if (is_node()) {
+			return as_node().tags;
+		} else {
+			return as_way().tags;
+		}
+	}
+
+	static ProcessedElement FromNode(const ProcessedNode &n)
+	{
+		ProcessedElement e(n);
+		return e;
+	}
+
+	static ProcessedElement FromWay(const ProcessedWay &w)
+	{
+		ProcessedElement e(w);
+		return e;
 	}
 
 	std::string const &kind() const noexcept { return kind_; }
@@ -312,9 +342,22 @@ struct WorldEditor
 					pos, block);
 		}
 	}
+
+	void set_block(const Block &block, int x, int y, int z, std::optional<int>,
+			std::optional<int>)
+	{
+		return set_block(block, x, y, z);
+	}
+
+	void set_block(
+			const Block &block, int x, int y, int z, std::nullopt_t, std::nullopt_t)
+	{
+		return set_block(block, x, y, z);
+	}
+
 	void set_block_absolute(const Block &block, int x, int y, int z,
-			std::optional<const std::vector<Block> *> maybe_variants = {},
-			std::optional<const std::vector<Block> *> maybe_replacements = {})
+			std::optional<const std::vector<Block>> maybe_variants = {},
+			std::optional<const std::vector<Block>> maybe_replacements = {})
 	{
 
 		const v3pos_t pos{
@@ -328,6 +371,12 @@ struct WorldEditor
 			mg->vm->setNode(pos, block);
 		}
 	}
+
+	void set_block_absolute(const Block &block, int x, int y, int z, void *, void *)
+	{
+		return set_block_absolute(block, x, y, z);
+	}
+
 	void set_block_with_properties_absolute(
 			BlockWithProperties bwp, int32_t x, int32_t y, int32_t z, void *a, void *b)
 	{
@@ -373,6 +422,30 @@ struct WorldEditor
 	{
 		return std::make_pair(mg->node_min.X, mg->node_min.Z);
 	};
+
+	std::pair<int, int> get_max_coords() const
+	{
+		return std::make_pair(mg->node_max.X, mg->node_max.Z);
+	};
+
+	void fill_blocks(Block block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
+			std::int32_t x2, std::int32_t y2, std::int32_t z2,
+			const std::optional<std::vector<Block>> override_whitelist,
+			const std::optional<std::vector<Block>> override_blacklist)
+	{
+		auto [min_x, max_x] = std::minmax(x1, x2);
+		auto [min_y, max_y] = std::minmax(y1, y2);
+		auto [min_z, max_z] = std::minmax(z1, z2);
+
+		for (std::int32_t x = min_x; x <= max_x; ++x) {
+			for (std::int32_t y = min_y; y <= max_y; ++y) {
+				for (std::int32_t z = min_z; z <= max_z; ++z) {
+					this->set_block(
+							block, x, y, z, override_whitelist, override_blacklist);
+				}
+			}
+		}
+	}
 };
 
 struct Args
@@ -425,52 +498,6 @@ struct Args
 namespace arnis
 {
 
-namespace block_definitions
-{
-
-// Example constants to match the Rust block references
-// You’ll need to define these properly in your code.
-extern Block AIR;
-extern Block BLACK_CONCRETE;
-extern Block BRICK;
-extern Block COBBLESTONE_WALL;
-extern Block COBBLESTONE;
-extern Block DIRT;
-extern Block GLOWSTONE;
-extern Block GRASS_BLOCK;
-extern Block GRAY_CONCRETE;
-extern Block GREEN_WOOL;
-extern Block LIGHT_GRAY_CONCRETE;
-extern Block OAK_FENCE_GATE;
-extern Block OAK_FENCE;
-extern Block OAK_PLANKS;
-extern Block RED_WOOL;
-extern Block SAND;
-extern Block SMOOTH_STONE;
-extern Block SNOW_LAYER;
-extern Block STONE_BLOCK_SLAB;
-extern Block STONE_BRICKS;
-extern Block STONE;
-extern Block WHITE_CONCRETE;
-extern Block WHITE_STAINED_GLASS;
-extern Block WHITE_WOOL;
-extern Block YELLOW_WOOL;
-extern Block STONE_BRICK_SLAB;
-
-extern Block GRAVEL;
-extern Block OAK_LOG;
-extern Block RAIL_NORTH_SOUTH;
-extern Block RAIL_EAST_WEST;
-extern Block RAIL_NORTH_WEST;
-extern Block RAIL_NORTH_EAST;
-extern Block RAIL_SOUTH_WEST;
-extern Block RAIL_SOUTH_EAST;
-extern Block IRON_BLOCK;
-extern Block DIRT_PATH;
-extern Block GLASS;
-extern Block SANDSTONE;
-extern Block SMOOTH_STONE_BLOCK;
-}
 /*
 static const Block OAK_FENCE            = {"oak_fence"};
 static const Block STONE_BRICK_SLAB     = {"stone_brick_slab"};
@@ -488,8 +515,6 @@ static const Block OAK_PLANKS           = {"oak_planks"};
 static const Block STONE_BLOCK_SLAB     = {"stone_block_slab"};
 static const Block OAK_FENCE_GATE       = {"oak_fence_gate"}; // Example
 */
-
-using namespace block_definitions;
 
 //extern MapgenEarth *mg;
 void init(MapgenEarth *mg);

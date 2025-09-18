@@ -153,13 +153,11 @@ void generate_landuse_from_relation(
 namespace natural
 {
 void generate_natural(
-		WorldEditor &editor, const ProcessedElement &element, const Args &args)
-{
-}
+		WorldEditor &editor, const ProcessedElement &element, const Args &args);
+
 void generate_natural_from_relation(
-		WorldEditor &editor, const ProcessedElement &rel, const Args &args)
-{
-}
+		WorldEditor &editor, const ProcessedRelation &rel, const Args &args);
+
 }
 
 namespace amenities
@@ -226,9 +224,7 @@ void generate_man_made_nodes(WorldEditor &editor, const ProcessedElement &node)
 
 namespace water_areas
 {
-void generate_water_areas(WorldEditor &editor, const ProcessedElement &rel)
-{
-}
+void generate_water_areas(WorldEditor &editor, const ProcessedRelation &rel);
 }
 
 namespace doors
@@ -309,19 +305,18 @@ bool generate_world(WorldEditor &editor, const std::vector<ProcessedElement> &el
 				args.ground_level = editor.ground->level(way.nodes.begin()->xz());
 			}
 
-			//DUMP("w", args.ground_level, way.tags);
 			if (way.tags.contains("building") || way.tags.contains("building:part")) {
-				buildings::generate_buildings(&editor, way, args_, std::optional<int>{});
+				buildings::generate_buildings(&editor, way, args, std::optional<int>{});
 			} else if (way.tags.contains("highway")) {
-				highways::generate_highways(editor, element, args_);
+				highways::generate_highways(editor, element, args);
 			} else if (way.tags.contains("landuse")) {
-				landuse::generate_landuse(editor, way, args_);
+				landuse::generate_landuse(editor, way, args);
 			} else if (way.tags.contains("natural")) {
-				natural::generate_natural(editor, element, args_);
+				natural::generate_natural(editor, element, args);
 			} else if (way.tags.contains("amenity")) {
-				amenities::generate_amenities(editor, element, args_);
+				amenities::generate_amenities(editor, element, args);
 			} else if (way.tags.contains("leisure")) {
-				leisure::generate_leisure(editor, way, args_);
+				leisure::generate_leisure(editor, way, args);
 			} else if (way.tags.contains("barrier")) {
 				barriers::generate_barriers(editor, element);
 			} else if (way.tags.contains("waterway")) {
@@ -334,12 +329,12 @@ bool generate_world(WorldEditor &editor, const std::vector<ProcessedElement> &el
 				railways::generate_roller_coaster(editor, way);
 			} else if (way.tags.contains("aeroway") ||
 					   way.tags.contains("area:aeroway")) {
-				highways::generate_aeroway(editor, way, args_);
+				highways::generate_aeroway(editor, way, args);
 			} else if (way.tags.get("service") ==
 					   std::optional<std::string>(std::string("siding"))) {
 				highways::generate_siding(editor, way);
 			} else if (way.tags.contains("man_made")) {
-				man_made::generate_man_made(editor, element, args_);
+				man_made::generate_man_made(editor, element, args);
 			}
 		} else if (element.is_node()) {
 			auto const &node = element.as_node();
@@ -351,13 +346,13 @@ bool generate_world(WorldEditor &editor, const std::vector<ProcessedElement> &el
 			} else if (node.tags.contains("natural") &&
 					   node.tags.get("natural") ==
 							   std::optional<std::string>(std::string("tree"))) {
-				natural::generate_natural(editor, element, args_);
+				natural::generate_natural(editor, element, args);
 			} else if (node.tags.contains("amenity")) {
-				amenities::generate_amenities(editor, element, args_);
+				amenities::generate_amenities(editor, element, args);
 			} else if (node.tags.contains("barrier")) {
 				barriers::generate_barrier_nodes(editor, node);
 			} else if (node.tags.contains("highway")) {
-				highways::generate_highways(editor, element, args_);
+				highways::generate_highways(editor, element, args);
 			} else if (node.tags.contains("tourism")) {
 				tourisms::generate_tourisms(editor, node);
 			} else if (node.tags.contains("man_made")) {
@@ -377,20 +372,20 @@ bool generate_world(WorldEditor &editor, const std::vector<ProcessedElement> &el
 			DUMP("r", args.ground_level, rel.tags);
 
 			if (rel.tags.contains("building") || rel.tags.contains("building:part")) {
-				buildings::generate_building_from_relation(editor, rel, args_);
+				buildings::generate_building_from_relation(editor, rel, args);
 			} else if (rel.tags.contains("water") ||
 					   rel.tags.get("natural") ==
 							   std::optional<std::string>(std::string("water"))) {
 				water_areas::generate_water_areas(editor, rel);
 			} else if (rel.tags.contains("natural")) {
-				natural::generate_natural_from_relation(editor, rel, args_);
+				natural::generate_natural_from_relation(editor, rel, args);
 			} else if (rel.tags.contains("landuse")) {
-				landuse::generate_landuse_from_relation(editor, rel, args_);
+				landuse::generate_landuse_from_relation(editor, rel, args);
 			} else if (rel.tags.get("leisure") ==
 					   std::optional<std::string>(std::string("park"))) {
-				leisure::generate_leisure_from_relation(editor, rel, args_);
+				leisure::generate_leisure_from_relation(editor, rel, args);
 			} else if (rel.tags.contains("man_made")) {
-				man_made::generate_man_made(editor, ProcessedElement(rel), args_);
+				man_made::generate_man_made(editor, ProcessedElement(rel), args);
 			}
 		}
 	}

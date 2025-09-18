@@ -590,15 +590,13 @@ void generate_buildings(WorldEditor* editor,
                 } else if ((x % 5) == 0 && (z % 5) == 0) {
                     editor->set_block_absolute(GLOWSTONE, x, start_y_offset + building_height + abs_terrain_offset, z);
                 }
-//DUMP(element.tags);
-try {
+
                 if (!args.roof
                     || element.tags.find("roof:shape") == element.tags.end()
                     || element.tags.at("roof:shape") == "flat") {
                     editor->set_block_absolute(floor_block, x, start_y_offset + building_height + abs_terrain_offset + 1, z);
+                    }
                 }
-            } catch (const std::exception &ex) {DUMP(ex.what());}
-            }
         }
 
         if (args.interior) {

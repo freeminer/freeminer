@@ -16,10 +16,7 @@ using std::pair;
 
 #include "../bresenham.h"
 #include "../../arnis_adapter.h"
-//using namespace arnis;
-
 #undef stoi
-
 namespace arnis
 {
 

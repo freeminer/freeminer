@@ -11,6 +11,7 @@
 namespace arnis
 {
 
+
 /*
 enum class Block {
     GLASS,
@@ -246,19 +247,17 @@ Block get_stair_block_for_material(const Block &material) {
 
 static const std::array<Block, 7> WINDOW_VARIATIONS = {
     GLASS,
-/*
+
     GRAY_STAINED_GLASS,
     LIGHT_GRAY_STAINED_GLASS,
     GRAY_STAINED_GLASS,
     BROWN_STAINED_GLASS,
     WHITE_STAINED_GLASS,
     TINTED_GLASS
-    */
+    
 };
 
 static const std::vector<std::pair<RGB, std::vector<Block>>> DEFINED_COLORS = {
-{ {233, 107, 57},  { BRICK /*, NETHER_BRICK*/ } },
-/*
     { {233, 107, 57},  { BRICK, NETHER_BRICK } },
     { {18, 12, 13},    { POLISHED_BLACKSTONE_BRICKS, BLACKSTONE, DEEPSLATE_BRICKS } },
     { {76, 127, 153},  { LIGHT_BLUE_TERRACOTTA } },
@@ -280,8 +279,6 @@ static const std::vector<std::pair<RGB, std::vector<Block>>> DEFINED_COLORS = {
     { {255, 255, 255}, { WHITE_CONCRETE, QUARTZ_BRICKS, QUARTZ_BLOCK } },
     { {209, 177, 161}, { WHITE_TERRACOTTA, SMOOTH_SANDSTONE, SMOOTH_STONE, SANDSTONE, LIGHT_GRAY_CONCRETE } },
     { {191, 147, 42},  { SMOOTH_SANDSTONE, SANDSTONE, SMOOTH_STONE } }
-*/
-    { {191, 147, 42},  { SANDSTONE, SMOOTH_STONE } }
     };
 
 /*
@@ -308,8 +305,8 @@ Block get_window_block_for_building_type(const std::string& building_type) {
         const std::vector<Block> residential_windows = {
             GLASS,
             WHITE_STAINED_GLASS,
-            //LIGHT_GRAY_STAINED_GLASS,
-            //BROWN_STAINED_GLASS
+            LIGHT_GRAY_STAINED_GLASS,
+            BROWN_STAINED_GLASS
         };
         std::uniform_int_distribution<std::size_t> dist(0, residential_windows.size() - 1);
         return residential_windows[dist(rng)];
@@ -318,7 +315,7 @@ Block get_window_block_for_building_type(const std::string& building_type) {
         const std::vector<Block> institutional_windows = {
             GLASS,
             WHITE_STAINED_GLASS,
-            //LIGHT_GRAY_STAINED_GLASS
+            LIGHT_GRAY_STAINED_GLASS
         };
         std::uniform_int_distribution<std::size_t> dist(0, institutional_windows.size() - 1);
         return institutional_windows[dist(rng)];
@@ -334,9 +331,9 @@ Block get_window_block_for_building_type(const std::string& building_type) {
     if (building_type == "industrial" || building_type == "warehouse") {
         const std::vector<Block> industrial_windows = {
             GLASS,
-            //GRAY_STAINED_GLASS,
-            //LIGHT_GRAY_STAINED_GLASS,
-            //BROWN_STAINED_GLASS
+            GRAY_STAINED_GLASS,
+            LIGHT_GRAY_STAINED_GLASS,
+            BROWN_STAINED_GLASS
         };
         std::uniform_int_distribution<std::size_t> dist(0, industrial_windows.size() - 1);
         return industrial_windows[dist(rng)];
@@ -354,10 +351,10 @@ Block get_random_floor_block() {
         WHITE_CONCRETE,
         GRAY_CONCRETE,
         LIGHT_GRAY_CONCRETE,
-        //POLISHED_ANDESITE,
+        POLISHED_ANDESITE,
         SMOOTH_STONE,
         STONE_BRICKS,
-        //MUD_BRICKS,
+        MUD_BRICKS,
         OAK_PLANKS
     };
     std::mt19937& rng = global_rng();
@@ -387,32 +384,32 @@ Block get_building_wall_block_for_color(const RGB& color) {
 Block get_fallback_building_block() {
     //const std::array<Block, 27> fallback_options = {
     const std::vector<Block> fallback_options = {
-      //  BLACKSTONE,
-      //  BLACK_TERRACOTTA,
+        BLACKSTONE,
+        BLACK_TERRACOTTA,
         BRICK,
-        // BROWN_CONCRETE,
-        // BROWN_TERRACOTTA,
-        // DEEPSLATE_BRICKS,
-        // END_STONE_BRICKS,
+        BROWN_CONCRETE,
+        BROWN_TERRACOTTA,
+        DEEPSLATE_BRICKS,
+        END_STONE_BRICKS,
         GRAY_CONCRETE,
-        //GRAY_TERRACOTTA,
-        //LIGHT_BLUE_TERRACOTTA,
+        GRAY_TERRACOTTA,
+        LIGHT_BLUE_TERRACOTTA,
         LIGHT_GRAY_CONCRETE,
-        // MUD_BRICKS,
-        // NETHER_BRICK,
-        // POLISHED_ANDESITE,
-        // POLISHED_BLACKSTONE,
-        // POLISHED_BLACKSTONE_BRICKS,
-        // POLISHED_DEEPSLATE,
-        // POLISHED_GRANITE,
-        // QUARTZ_BLOCK,
-        // QUARTZ_BRICKS,
+        MUD_BRICKS,
+        NETHER_BRICK,
+        POLISHED_ANDESITE,
+        POLISHED_BLACKSTONE,
+        POLISHED_BLACKSTONE_BRICKS,
+        POLISHED_DEEPSLATE,
+        POLISHED_GRANITE,
+        QUARTZ_BLOCK,
+        QUARTZ_BRICKS,
         SANDSTONE,
-        // SMOOTH_SANDSTONE,
+        SMOOTH_SANDSTONE,
         SMOOTH_STONE,
         STONE_BRICKS,
         WHITE_CONCRETE,
-        // WHITE_TERRACOTTA,
+        WHITE_TERRACOTTA,
         OAK_PLANKS
     };
     std::mt19937& rng = global_rng();
@@ -424,15 +421,15 @@ Block get_castle_wall_block() {
     //const std::array<Block, 10> castle_wall_options = {
     const std::vector<Block> castle_wall_options = {
         STONE_BRICKS,
-        /*CHISELED_STONE_BRICKS,
+        CHISELED_STONE_BRICKS,
         CRACKED_STONE_BRICKS,
-        */
+        
         COBBLESTONE,
-        /*MOSSY_COBBLESTONE,
+        MOSSY_COBBLESTONE,
         DEEPSLATE_BRICKS,
         POLISHED_ANDESITE,
         ANDESITE,
-        */
+        
         SMOOTH_STONE,
         BRICK
     };
@@ -440,5 +437,6 @@ Block get_castle_wall_block() {
     std::uniform_int_distribution<std::size_t> dist(0, castle_wall_options.size() - 1);
     return castle_wall_options[dist(rng)];
 }
+
 
 }

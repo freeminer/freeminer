@@ -2,6 +2,7 @@ file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis_adapter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/blocks.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/block_definitions.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/bresenham.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/colors.cpp
@@ -10,7 +11,10 @@ set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/highways.cpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/railways.cpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/subprocessor/buildings_interior.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/water_areas.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/tree.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/natural.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/waterways.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/water_areas.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/floodfill.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
