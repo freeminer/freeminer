@@ -163,9 +163,7 @@ void generate_natural_from_relation(
 namespace amenities
 {
 void generate_amenities(
-		WorldEditor &editor, const ProcessedElement &element, const Args &args)
-{
-}
+		WorldEditor &editor, const ProcessedElement &element, const Args &args);
 }
 
 namespace leisure
@@ -181,9 +179,9 @@ void generate_leisure_from_relation(
 
 namespace barriers
 {
-void generate_barriers(WorldEditor &editor, const ProcessedElement &element)
-{
-}
+void generate_barriers(WorldEditor &editor, const ProcessedElement &element);
+
+
 void generate_barrier_nodes(WorldEditor &editor, const ProcessedElement &node)
 {
 }
@@ -191,9 +189,8 @@ void generate_barrier_nodes(WorldEditor &editor, const ProcessedElement &node)
 
 namespace waterways
 {
-void generate_waterways(WorldEditor &editor, const ProcessedElement &way)
-{
-}
+void generate_waterways(WorldEditor &editor, const ProcessedWay &way);
+
 }
 
 namespace railways

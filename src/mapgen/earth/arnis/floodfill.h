@@ -7,7 +7,7 @@
 
 namespace arnis
 {
-
+namespace floodfill {
 std::vector<std::pair<int, int>> flood_fill_area(
 		const std::vector<std::pair<int, int>> &polygon_coords,
 		const std::chrono::milliseconds *timeout = nullptr);
@@ -28,5 +28,6 @@ inline std::vector<std::pair<int, int>> flood_fill_area(
 
 	return flood_fill_area(polygon_coords, &t);
 }
-
+}
+using namespace floodfill;
 }

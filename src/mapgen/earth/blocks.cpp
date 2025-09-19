@@ -199,15 +199,15 @@ void init(MapgenEarth *mg)
 	if (mg_) {
 		mg = mg_;
 	}*/
-	const auto def = mg->m_emerge->ndef->getId("default:cobble");
 
 	const auto g = [&](const auto &v) { return mg->m_emerge->ndef->getId(v); };
+	const auto def = g("default:cobble");
 
-	ACACIA_PLANKS = def;
-	AIR = def;
+	ACACIA_PLANKS = g("default:wood");
+	AIR = CONTENT_AIR;
 	ANDESITE = def;
-	BIRCH_LEAVES = def;
-	BIRCH_LOG = def;
+	BIRCH_LEAVES = g("default:leaves");
+	BIRCH_LOG = g("default:tree");
 	BLACK_CONCRETE = def;
 	BLACKSTONE = def;
 	BLUE_FLOWER = def;
@@ -219,16 +219,16 @@ void init(MapgenEarth *mg)
 	COBBLESTONE = def;
 	POLISHED_BLACKSTONE_BRICKS = def;
 	CRACKED_STONE_BRICKS = def;
-	CRIMSON_PLANKS = def;
+	CRIMSON_PLANKS = g("default:wood");
 	CUT_SANDSTONE = def;
 	CYAN_CONCRETE = def;
-	DARK_OAK_PLANKS = def;
+	DARK_OAK_PLANKS = g("default:wood");
 	DEEPSLATE_BRICKS = def;
 	DIORITE = def;
 	DIRT = def;
 	END_STONE_BRICKS = def;
 	FARMLAND = def;
-	GLASS = mg->m_emerge->ndef->getId("default:glass");
+	GLASS = g("default:glass");
 	GLOWSTONE = def;
 	GRANITE = def;
 	GRASS_BLOCK = def;
@@ -241,7 +241,7 @@ void init(MapgenEarth *mg)
 	HAY_BALE = def;
 	IRON_BARS = def;
 	IRON_BLOCK = def;
-	JUNGLE_PLANKS = def;
+	JUNGLE_PLANKS = g("default:wood");
 	LADDER = def;
 	LIGHT_BLUE_CONCRETE = def;
 	LIGHT_BLUE_TERRACOTTA = def;
@@ -252,9 +252,9 @@ void init(MapgenEarth *mg)
 	NETHER_BRICK = def;
 	NETHERITE_BLOCK = def;
 	OAK_FENCE = def;
-	OAK_LEAVES = def;
-	OAK_LOG = def;
-	OAK_PLANKS = def;
+	OAK_LEAVES = g("default:leaves");
+	OAK_LOG = g("default:tree");
+	OAK_PLANKS = g("default:wood");
 	OAK_SLAB = def;
 	ORANGE_TERRACOTTA = def;
 	PODZOL = def;
@@ -269,7 +269,7 @@ void init(MapgenEarth *mg)
 	PURPUR_BLOCK = def;
 	PURPUR_PILLAR = def;
 	QUARTZ_BRICKS = def;
-	RAIL = mg->m_emerge->ndef->getId("default:rail");
+	RAIL = g("default:rail");
 	RED_FLOWER = def;
 	RED_NETHER_BRICK = def;
 	RED_TERRACOTTA = def;
@@ -283,7 +283,7 @@ void init(MapgenEarth *mg)
 	SMOOTH_STONE = def;
 	SPONGE = g("sponge:sponge");
 	SPRUCE_LOG = def;
-	SPRUCE_PLANKS = def;
+	SPRUCE_PLANKS = g("default:wood");
 	STONE_BLOCK_SLAB = def;
 	STONE_BRICK_SLAB = def;
 	STONE_BRICKS = def;
@@ -291,7 +291,7 @@ void init(MapgenEarth *mg)
 	TERRACOTTA = def;
 	WARPED_PLANKS = def;
 	WATER = g("default:water");
-	;
+	
 	WHITE_CONCRETE = def;
 	WHITE_FLOWER = def;
 	WHITE_STAINED_GLASS = GLASS;
@@ -338,9 +338,9 @@ void init(MapgenEarth *mg)
 	CLAY = def;
 	DIRT_PATH = def;
 	ICE = g("default:ice");
-	;
-	PACKED_ICE = def;
-	MUD = def;
+	
+	PACKED_ICE = g("default:ice");
+	MUD = g("default:dirt");
 	DEAD_BUSH = def;
 	TALL_GRASS_BOTTOM = def;
 	TALL_GRASS_TOP = def;
@@ -386,47 +386,47 @@ void init(MapgenEarth *mg)
 
 	// TODO: find better in mods
 
-	AIR = mg->m_emerge->ndef->getId("air");
-	BLACK_CONCRETE = mg->m_emerge->ndef->getId("default:obsidian"); // ?
-	BRICK = mg->m_emerge->ndef->getId("default:brick");
-	COBBLESTONE = mg->m_emerge->ndef->getId("default:cobble");
-	COBBLESTONE_WALL = mg->m_emerge->ndef->getId("default:cobble");
-	DIRT = mg->m_emerge->ndef->getId("default:dirt");
-	DIRT_PATH = mg->m_emerge->ndef->getId("default:dry_dirt");
-	GLASS = mg->m_emerge->ndef->getId("default:glass");
-	GLOWSTONE = mg->m_emerge->ndef->getId("default:stone");
-	GRASS_BLOCK = mg->m_emerge->ndef->getId("default:dirt_with_grass");
-	GRAVEL = mg->m_emerge->ndef->getId("default:gravel");
-	GRAY_CONCRETE = mg->m_emerge->ndef->getId("default:stone"); //  TODO
-	GREEN_WOOL = mg->m_emerge->ndef->getId("wool:green");
-	IRON_BLOCK = mg->m_emerge->ndef->getId("default:steelblock");	   // TODO
-	LIGHT_GRAY_CONCRETE = mg->m_emerge->ndef->getId("default:cobble"); // TODO
-	OAK_FENCE = mg->m_emerge->ndef->getId("default:wood");
-	//OAK_FENCE_GATE = mg->m_emerge->ndef->getId("default:wood");
-	OAK_LEAVES = mg->m_emerge->ndef->getId("default:leaves");
-	OAK_LOG = mg->m_emerge->ndef->getId("default:tree"); // TODO
-	OAK_PLANKS = mg->m_emerge->ndef->getId("default:wood");
-	//RAIL_EAST_WEST = mg->m_emerge->ndef->getId("default:rail");
-	//RAIL_NORTH_EAST = mg->m_emerge->ndef->getId("default:rail");
-	//RAIL_NORTH_SOUTH = mg->m_emerge->ndef->getId("default:rail");
-	//RAIL_NORTH_WEST = mg->m_emerge->ndef->getId("default:rail");
-	//RAIL_SOUTH_EAST = mg->m_emerge->ndef->getId("default:rail");
-	//RAIL_SOUTH_WEST = mg->m_emerge->ndef->getId("default:rail");
-	RED_WOOL = mg->m_emerge->ndef->getId("wool:red");
-	SAND = mg->m_emerge->ndef->getId("default:sand");
-	SANDSTONE = mg->m_emerge->ndef->getId("default:sandstone");
-	SMOOTH_STONE = mg->m_emerge->ndef->getId("default:stone");
-	SMOOTH_STONE_BLOCK = mg->m_emerge->ndef->getId("default:stone"); //TODO
-	SNOW_LAYER = mg->m_emerge->ndef->getId("default:snow");
-	STONE = mg->m_emerge->ndef->getId("default:stone");
-	STONE_BLOCK_SLAB = mg->m_emerge->ndef->getId("default:stone");
-	STONE_BRICK_SLAB = mg->m_emerge->ndef->getId("default:cobble");
-	STONE_BRICKS = mg->m_emerge->ndef->getId("default:cobble");
-	WHITE_CONCRETE = mg->m_emerge->ndef->getId("default:stone");	  // TODO
-	WHITE_STAINED_GLASS = mg->m_emerge->ndef->getId("default:glass"); // ?
-	WHITE_WOOL = mg->m_emerge->ndef->getId("wool:white");
-	YELLOW_WOOL = mg->m_emerge->ndef->getId("wool:yellow");
-	WATER = mg->m_emerge->ndef->getId("default:water");
+	AIR = g("air");
+	BLACK_CONCRETE = g("default:obsidian"); // ?
+	BRICK = g("default:brick");
+	COBBLESTONE = g("default:cobble");
+	COBBLESTONE_WALL = g("default:cobble");
+	DIRT = g("default:dirt");
+	DIRT_PATH = g("default:dry_dirt");
+	GLASS = g("default:glass");
+	GLOWSTONE = g("default:stone");
+	GRASS_BLOCK = g("default:dirt_with_grass");
+	GRAVEL = g("default:gravel");
+	GRAY_CONCRETE = g("default:stone"); //  TODO
+	GREEN_WOOL = g("wool:green");
+	IRON_BLOCK = g("default:steelblock");	   // TODO
+	LIGHT_GRAY_CONCRETE = g("default:cobble"); // TODO
+	OAK_FENCE = g("default:wood");
+	//OAK_FENCE_GATE = g("default:wood");
+	//OAK_LEAVES = g("default:leaves");
+	OAK_LOG = g("default:tree"); // TODO
+	OAK_PLANKS = g("default:wood");
+	//RAIL_EAST_WEST = g("default:rail");
+	//RAIL_NORTH_EAST = g("default:rail");
+	//RAIL_NORTH_SOUTH = g("default:rail");
+	//RAIL_NORTH_WEST = g("default:rail");
+	//RAIL_SOUTH_EAST = g("default:rail");
+	//RAIL_SOUTH_WEST = g("default:rail");
+	RED_WOOL = g("wool:red");
+	SAND = g("default:sand");
+	SANDSTONE = g("default:sandstone");
+	SMOOTH_STONE = g("default:stone");
+	SMOOTH_STONE_BLOCK = g("default:stone"); //TODO
+	SNOW_LAYER = g("default:snow");
+	STONE = g("default:stone");
+	STONE_BLOCK_SLAB = g("default:stone");
+	STONE_BRICK_SLAB = g("default:cobble");
+	STONE_BRICKS = g("default:cobble");
+	WHITE_CONCRETE = g("default:stone");	  // TODO
+	WHITE_STAINED_GLASS = g("default:glass"); // ?
+	WHITE_WOOL = g("wool:white");
+	YELLOW_WOOL = g("wool:yellow");
+	WATER = g("default:water");
 }
 
 }

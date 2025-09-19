@@ -1,5 +1,7 @@
 #include "bresenham.h"
 #include "irr_v3d.h"
+namespace arnis {
+namespace bresenham {
 
 
 std::vector<std::tuple<int,int,int>> bresenham_line(
@@ -153,4 +155,7 @@ old_bresenham_line(
 	points.emplace_back(x2, y2, z2);
 
 	return points;
+}
+
+}
 }

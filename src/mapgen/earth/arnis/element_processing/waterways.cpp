@@ -19,6 +19,7 @@
 namespace arnis
 {
 
+    namespace waterways{
 
 std::pair<int, int> get_waterway_dimensions(const std::string& waterway_type) {
     if (waterway_type == "river") return std::pair<int,int>(8, 3);
@@ -136,4 +137,5 @@ void generate_waterways(WorldEditor& editor, const ProcessedWay& element) {
     }
 }
 
+}
 }

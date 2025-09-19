@@ -47,7 +47,7 @@ struct XZ : public v2s32
 };
 struct XZPoint : public XZ
 {
-	XZPoint() noexcept : XZ(0, 0) {} //= default;
+	XZPoint() noexcept : XZ(0, 0) {}					 //= default;
 	XZPoint(const XZPoint &p) noexcept : XZ{p.x, p.z} {} //=  default;
 	XZPoint(XZPoint &&p) noexcept : XZ{p.x, p.z} {}		 //= default;
 	XZPoint(int x, int y) : XZ{x, y} {}
@@ -99,8 +99,7 @@ struct ProcessedRelation
 
 using variant_t = std::variant<ProcessedNode, ProcessedWay, ProcessedRelation>;
 
-class ProcessedElement :
-		public variant_t
+class ProcessedElement : public variant_t
 {
 public:
 	enum class Type
@@ -115,8 +114,7 @@ public:
 	{
 	}
 
-	ProcessedElement(ProcessedWay const &w) :
-			variant_t(w), kind_("way"), type{Type::Way}
+	ProcessedElement(ProcessedWay const &w) : variant_t(w), kind_("way"), type{Type::Way}
 	{
 	}
 
@@ -178,6 +176,12 @@ public:
 		}
 	}
 
+	const std::vector<ProcessedNode> &nodes() const
+	{
+		if (is_way())
+			return as_way().nodes;
+	}
+
 	static ProcessedElement FromNode(const ProcessedNode &n)
 	{
 		ProcessedElement e(n);
@@ -193,7 +197,6 @@ public:
 	std::string const &kind() const noexcept { return kind_; }
 	std::string kind_;
 };
-
 
 // A “Ground” class that can return ground level from a set of points
 struct Ground
@@ -262,6 +265,8 @@ struct Ground
 	}
 };
 
+namespace world_editor
+{
 // A “WorldEditor” that can set blocks in your map
 struct WorldEditor
 {
@@ -277,10 +282,8 @@ struct WorldEditor
 	// Place a block at (x, y, z). The optional adjacency arguments
 	// mimic the Rust code’s “Some(&[COBBLESTONE, COBBLESTONE_WALL])” idea.
 	void set_block(const Block &block, int x, int y, int z,
-
 			const std::optional<std::vector<Block>> &replace_with = {},
-			const std::optional<std::vector<Block>> &avoid = {}
-	)
+			const std::optional<std::vector<Block>> &avoid = {})
 	{
 		// Implementation for adding a block to the world
 		/*
@@ -341,6 +344,24 @@ struct WorldEditor
 					//{cpos.X-mg->node_min.X, static_cast<pos_t>(y)-mg->node_min.Y, cpos.Y-mg->node_min.Z},
 					pos, block);
 		}
+	}
+
+	void set_block(const Block &block, int x, int y, int z,
+			const std::optional<std::vector<Block>> &replace_with, std::nullopt_t)
+	{
+		return set_block(block, x, y, z, replace_with);
+	}
+
+	void set_block(const Block &block, int x, int y, int z,
+			const std::optional<std::vector<Block>> &replace_with, std::optional<int>)
+	{
+		return set_block(block, x, y, z, replace_with);
+	}
+
+	void set_block(const Block &b, int x, int y, int z,
+			const std::optional<std::vector<const Block *>> &alt, std::nullopt_t)
+	{
+		return set_block(b, x, y, z);
 	}
 
 	void set_block(const Block &block, int x, int y, int z, std::optional<int>,
@@ -448,6 +469,9 @@ struct WorldEditor
 	}
 };
 
+}
+using namespace world_editor;
+
 struct Args
 {
 	// Bounding box of the area (min_lat,min_lng,max_lat,max_lng) (required)
@@ -520,6 +544,34 @@ static const Block OAK_FENCE_GATE       = {"oak_fence_gate"}; // Example
 void init(MapgenEarth *mg);
 
 Block get_castle_wall_block();
+
+namespace args
+{
+using Args = Args;
+}
+namespace world_editor
+{
+using WorldEditor = WorldEditor;
+}
+namespace osm_parser
+{
+using ProcessedElement = ProcessedElement;
+using ProcessedNode = ProcessedNode;
+using Way = ProcessedWay;
+}
+namespace coordinate_system
+{
+namespace cartesian
+{
+using XZPoint = XZPoint;
+}
+}
+namespace block_definitions
+{
+using Block = Block;
+using namespace arnis::block_definitions;
+}
+
 }
 
 #include "arnis/floodfill.h"

@@ -13,6 +13,7 @@
 
 namespace arnis {
 
+namespace floodfill {
 
 
 namespace bg = boost::geometry;
@@ -517,4 +518,5 @@ std::vector<std::pair<int32_t, int32_t>> original_flood_fill_area(
 }
 #endif
 
+}
 }

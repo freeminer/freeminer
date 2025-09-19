@@ -7,6 +7,8 @@ set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/bresenham.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/colors.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/data_processing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/amenities.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/barriers.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/buildings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/highways.cpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/railways.cpp	
