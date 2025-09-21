@@ -5,6 +5,7 @@
 
 #pragma once
 //using XZPoint = v2pos_t;
+#include <cstdint>
 #include <optional>
 #include <osmium/osm/entity.hpp>
 #include <osmium/osm/location.hpp>
@@ -18,6 +19,9 @@
 #include "emerge.h"
 
 #include "../../debug/dump.h"
+
+#undef stoi
+#undef stof
 
 class Block : public MapNode
 {
@@ -75,8 +79,8 @@ struct ProcessedNode
 struct ProcessedWay
 {
 	std::int64_t id;
-	tags_t tags;
 	std::vector<ProcessedNode> nodes;
+	tags_t tags;
 };
 
 enum class ProcessedMemberRole
@@ -99,27 +103,33 @@ struct ProcessedRelation
 
 using variant_t = std::variant<ProcessedNode, ProcessedWay, ProcessedRelation>;
 
+//enum class ElementType { Node, Way };
+enum class ElementType : uint8_t
+{
+	Node,
+	Way,
+	Relation
+};
+
 class ProcessedElement : public variant_t
 {
 public:
-	enum class Type
-	{
-		Node,
-		Way,
-		Relation
-	} type;
+	using Type = ElementType;
+	Type type;
 
 	ProcessedElement(ProcessedNode const &n) :
-			variant_t(n), kind_("node"), type{Type::Node}
+			variant_t(n), type{Type::Node}, kind_("node")
 	{
+		node = as_node();
 	}
 
-	ProcessedElement(ProcessedWay const &w) : variant_t(w), kind_("way"), type{Type::Way}
+	ProcessedElement(ProcessedWay const &w) : variant_t(w), type{Type::Way}, kind_("way")
 	{
+		way = as_way();
 	}
 
 	ProcessedElement(ProcessedRelation const &r) :
-			variant_t(r), kind_("relation"), type{Type::Relation}
+			variant_t(r), type{Type::Relation}, kind_("relation")
 	{
 	}
 
@@ -196,6 +206,37 @@ public:
 
 	std::string const &kind() const noexcept { return kind_; }
 	std::string kind_;
+
+	std::optional<ProcessedNode> node;
+	std::optional<ProcessedWay> way;
+
+	std::optional<std::string> tag(const std::string &key) const
+	{
+		auto it = tags().find(key);
+		if (it != tags().end()) {
+			return std::optional<std::string>(it->second);
+		}
+		return std::optional<std::string>();
+	}
+
+	std::optional<ProcessedNode> first_node() const
+	{
+		if (is_node())
+			return as_node();
+		if (is_way() && !as_way().nodes.empty()) {
+			return std::optional<ProcessedNode>(as_way().nodes.front());
+		}
+		return std::optional<ProcessedNode>();
+	}
+
+	const std::vector<ProcessedNode> &nodes_vec() const
+	{
+		static const std::vector<ProcessedNode> empty_vec{};
+		if (is_way()) {
+			return as_way().nodes;
+		}
+		return empty_vec;
+	}
 };
 
 // A “Ground” class that can return ground level from a set of points
@@ -448,11 +489,12 @@ struct WorldEditor
 	{
 		return std::make_pair(mg->node_max.X, mg->node_max.Z);
 	};
+	int get_absolute_y(int x, int y, int z) { return ground->get_absolute_y(x, y, z); }
 
-	void fill_blocks(Block block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
+	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
 			std::int32_t x2, std::int32_t y2, std::int32_t z2,
-			const std::optional<std::vector<Block>> override_whitelist,
-			const std::optional<std::vector<Block>> override_blacklist)
+			const std::optional<std::vector<Block>> &override_whitelist,
+			const std::optional<std::vector<Block>> &override_blacklist)
 	{
 		auto [min_x, max_x] = std::minmax(x1, x2);
 		auto [min_y, max_y] = std::minmax(y1, y2);
@@ -466,6 +508,41 @@ struct WorldEditor
 				}
 			}
 		}
+	}
+
+	
+	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
+			std::int32_t x2, std::int32_t y2, std::int32_t z2,
+			const std::optional<std::vector<Block>> &override_whitelist,
+			const std::optional<int> override_blacklist)
+	{
+		return fill_blocks(block, x1, y1, z1, x2, y2, z2, override_whitelist,
+				std::optional<std::vector<Block>>{});
+	}
+
+	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
+			std::int32_t x2, std::int32_t y2, std::int32_t z2,
+			const std::optional<std::vector<Block>> &override_whitelist,
+			std::nullopt_t)
+	{
+		return fill_blocks(block, x1, y1, z1, x2, y2, z2, override_whitelist,
+				std::optional<std::vector<Block>>{});
+	}
+				
+	
+	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
+			std::int32_t x2, std::int32_t y2, std::int32_t z2, std::nullopt_t,
+			std::nullopt_t)
+	{
+		return fill_blocks(block, x1, y1, z1, x2, y2, z2,
+				std::optional<std::vector<Block>>{}, std::optional<std::vector<Block>>{});
+	}
+
+	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
+			std::int32_t x2, std::int32_t y2, std::int32_t z2)
+	{
+		return fill_blocks(block, x1, y1, z1, x2, y2, z2,
+				std::optional<std::vector<Block>>{}, std::optional<std::vector<Block>>{});
 	}
 };
 
@@ -555,8 +632,11 @@ using WorldEditor = WorldEditor;
 }
 namespace osm_parser
 {
+using ElementType = ElementType;
 using ProcessedElement = ProcessedElement;
 using ProcessedNode = ProcessedNode;
+//using Node = ProcessedNode;
+using ProcessedWay = ProcessedWay;
 using Way = ProcessedWay;
 }
 namespace coordinate_system
@@ -573,6 +653,7 @@ using namespace arnis::block_definitions;
 }
 
 }
+namespace crate = arnis;
 
 #include "arnis/floodfill.h"
 #include "arnis/colors.h"

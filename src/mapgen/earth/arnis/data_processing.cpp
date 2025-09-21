@@ -133,21 +133,19 @@ void generate_buildings(WorldEditor *editor, const ProcessedWay &element,
 
 namespace highways
 {
-void generate_highways(
-		WorldEditor &editor, const ProcessedElement &element, const Args &args);
+void generate_highways(WorldEditor &editor, const ProcessedElement &element,
+		const Args &args,
+		const std::vector<crate::osm_parser::ProcessedElement> &all_elements);
 void generate_aeroway(WorldEditor &editor, const ProcessedWay &way, const Args &args);
 void generate_siding(WorldEditor &editor, const ProcessedWay &way);
 }
 
 namespace landuse
 {
-void generate_landuse(WorldEditor &editor, const ProcessedElement &way, const Args &args)
-{
-}
+void generate_landuse(WorldEditor &editor, const ProcessedWay &way, const Args &args);
+
 void generate_landuse_from_relation(
-		WorldEditor &editor, const ProcessedElement &rel, const Args &args)
-{
-}
+		WorldEditor &editor, const ProcessedRelation &rel, const Args &args);
 }
 
 namespace natural
@@ -157,7 +155,6 @@ void generate_natural(
 
 void generate_natural_from_relation(
 		WorldEditor &editor, const ProcessedRelation &rel, const Args &args);
-
 }
 
 namespace amenities
@@ -168,55 +165,38 @@ void generate_amenities(
 
 namespace leisure
 {
-void generate_leisure(WorldEditor &editor, const ProcessedElement &way, const Args &args)
-{
-}
+void generate_leisure(WorldEditor &editor, const ProcessedWay &way, const Args &args);
 void generate_leisure_from_relation(
-		WorldEditor &editor, const ProcessedElement &rel, const Args &args)
-{
-}
+		WorldEditor &editor, const ProcessedRelation &rel, const Args &args);
 }
 
 namespace barriers
 {
 void generate_barriers(WorldEditor &editor, const ProcessedElement &element);
-
-
-void generate_barrier_nodes(WorldEditor &editor, const ProcessedElement &node)
-{
-}
+void generate_barrier_nodes(WorldEditor &editor, const ProcessedNode &node);
 }
 
 namespace waterways
 {
 void generate_waterways(WorldEditor &editor, const ProcessedWay &way);
-
 }
 
 namespace railways
 {
-//void generate_railways(WorldEditor &editor, const ProcessedElement &way);
-//void generate_roller_coaster(WorldEditor &editor, const ProcessedElement &way);
 void generate_roller_coaster(WorldEditor &editor, const ProcessedWay &way);
 void generate_railways(WorldEditor &editor, const ProcessedWay &element);
 }
 
 namespace tourisms
 {
-void generate_tourisms(WorldEditor &editor, const ProcessedElement &node)
-{
-}
+void generate_tourisms(WorldEditor &editor, const ProcessedNode &node);
 }
 
 namespace man_made
 {
 void generate_man_made(
-		WorldEditor &editor, const ProcessedElement &element, const Args &args)
-{
-}
-void generate_man_made_nodes(WorldEditor &editor, const ProcessedElement &node)
-{
-}
+		WorldEditor &editor, const ProcessedElement &element, const Args &args);
+void generate_man_made_nodes(WorldEditor &editor, const ProcessedNode &node);
 }
 
 namespace water_areas
@@ -226,9 +206,7 @@ void generate_water_areas(WorldEditor &editor, const ProcessedRelation &rel);
 
 namespace doors
 {
-void generate_doors(WorldEditor &editor, const ProcessedElement &rel)
-{
-}
+void generate_doors(WorldEditor &editor, const ProcessedNode &rel);
 }
 
 // Main generate_world function
@@ -305,7 +283,7 @@ bool generate_world(WorldEditor &editor, const std::vector<ProcessedElement> &el
 			if (way.tags.contains("building") || way.tags.contains("building:part")) {
 				buildings::generate_buildings(&editor, way, args, std::optional<int>{});
 			} else if (way.tags.contains("highway")) {
-				highways::generate_highways(editor, element, args);
+				highways::generate_highways(editor, element, args, elements);
 			} else if (way.tags.contains("landuse")) {
 				landuse::generate_landuse(editor, way, args);
 			} else if (way.tags.contains("natural")) {
@@ -349,7 +327,7 @@ bool generate_world(WorldEditor &editor, const std::vector<ProcessedElement> &el
 			} else if (node.tags.contains("barrier")) {
 				barriers::generate_barrier_nodes(editor, node);
 			} else if (node.tags.contains("highway")) {
-				highways::generate_highways(editor, element, args);
+				highways::generate_highways(editor, element, args, elements);
 			} else if (node.tags.contains("tourism")) {
 				tourisms::generate_tourisms(editor, node);
 			} else if (node.tags.contains("man_made")) {

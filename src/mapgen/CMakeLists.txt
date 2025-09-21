@@ -1,23 +1,11 @@
 file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
+file(GLOB_RECURSE mapgen_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/*.cpp")
+
 set(mapgen_SRCS
+    ${mapgen_SRCS}
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis_adapter.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/blocks.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/block_definitions.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/bresenham.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/colors.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/data_processing.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/amenities.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/barriers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/buildings.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/highways.cpp	
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/railways.cpp	
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/subprocessor/buildings_interior.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/tree.cpp	
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/natural.cpp	
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/waterways.cpp	
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/element_processing/water_areas.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/floodfill.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp

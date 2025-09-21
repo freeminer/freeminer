@@ -19,8 +19,6 @@
 
 #include "../../arnis_adapter.h"
 
-#undef stoi
-
 //using namespace arnis;
 namespace arnis
 {

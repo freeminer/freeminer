@@ -6,9 +6,6 @@
 #include <cstdlib>
 
 #include "../../arnis_adapter.h"
-#undef stoi
-
-
 
 
 /*
@@ -34,11 +31,6 @@ namespace world_editor {
 }
 }
 */
-
-namespace crate
-{
-using namespace arnis;
-}
 
 namespace arnis
 {
