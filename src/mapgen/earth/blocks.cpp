@@ -356,7 +356,7 @@ void init(MapgenEarth *mg)
 	RED_CARPET = def;
 	ANVIL = def;
 	NOTE_BLOCK = def;
-	OAK_DOOR = g("doors:door_wood");
+	OAK_DOOR = g("doors:door_wood_a");
 	BREWING_STAND = def;
 	RED_BED_NORTH_HEAD = g("beds:bed_top");
 	RED_BED_NORTH_FOOT = g("beds:bed_bottom");
@@ -374,7 +374,7 @@ void init(MapgenEarth *mg)
 	BROWN_CONCRETE = def;
 	BLACK_TERRACOTTA = def;
 	BROWN_TERRACOTTA = def;
-	STONE_BRICK_STAIRS = g("stairs:stonebrick");
+	STONE_BRICK_STAIRS = g("stairs:stair_stonebrick");
 	MUD_BRICK_STAIRS = STONE_BRICK_STAIRS;
 	POLISHED_BLACKSTONE_BRICK_STAIRS = g("stairs:stair_obsidian_block");
 	BRICK_STAIRS = g("stairs:stair_cobble");
@@ -428,7 +428,7 @@ void init(MapgenEarth *mg)
 	WHITE_STAINED_GLASS = g("default:glass"); // ?
 	//WHITE_WOOL = g("wool:white");
 	//YELLOW_WOOL = g("wool:yellow");
-	WATER = g("default:water");
+	//WATER = g("default:water");
 }
 
 }
