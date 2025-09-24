@@ -1,7 +1,10 @@
 
 # == freeminer:
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 0)
-OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 1)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+	OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 0)
+	OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 1)
+endif()
+
 if(USE_MULTI)
 	#set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
 	set(ENABLE_ENET 1 CACHE BOOL "")

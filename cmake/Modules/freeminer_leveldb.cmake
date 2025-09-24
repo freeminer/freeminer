@@ -62,6 +62,10 @@ if(ENABLE_LEVELDB)
 		set(LEVELDB_BUILD_BENCHMARKS 0 CACHE INTERNAL "")
 		set(LEVELDB_INSTALL 0 CACHE INTERNAL "")
 		set(HAVE_CLANG_THREAD_SAFETY 0 CACHE INTERNAL "") # -Werror remove
+		if(EMSCRIPTEN) # BUG?
+			include_directories(${ZSTD_INCLUDE_DIR})
+		endif()
+
 		add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/leveldb)
 		set(LEVELDB_LIBRARY leveldb)
 		message(STATUS "Using bundled leveldb ${LEVELDB_INCLUDE_DIR} ${LEVELDB_LIBRARY}")
