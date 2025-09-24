@@ -1,11 +1,16 @@
 file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-file(GLOB_RECURSE mapgen_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.cpp")
+if (USE_OSMIUM)
+	file(GLOB_RECURSE mapgen_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.cpp")
+	set(mapgen_SRCS
+	    ${mapgen_SRCS}
+		${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis_adapter.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/earth/blocks.cpp
+	)
+endif()
 
 set(mapgen_SRCS
     ${mapgen_SRCS}
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis_adapter.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/earth/blocks.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp

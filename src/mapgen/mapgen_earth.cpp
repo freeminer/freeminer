@@ -280,6 +280,7 @@ int MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
 	return get_height(p.X, p.Y); // + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
+#if 0 
 //  https://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
 void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, pos_t y,
 		pos_t h, const MapNode &n)
@@ -342,6 +343,7 @@ void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, 
 		}
 	}
 }
+#endif
 
 int MapgenEarth::generateTerrain()
 {
