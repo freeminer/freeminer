@@ -438,7 +438,8 @@ void MapgenEarth::generateBuildings()
 	const auto lon_dec = lon_start(tc.lon);
 
 	static const auto timestamp = []() {
-		std::string ts = "202509040800";
+		 // const std::string ts = "202509040800";
+		 std::string ts = "latest";
 		g_settings->getNoEx("earth_movisda_timestamp", ts);
 		return ts;
 	}();

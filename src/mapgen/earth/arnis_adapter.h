@@ -655,8 +655,8 @@ using namespace arnis::block_definitions;
 }
 namespace crate = arnis;
 
-#include "arnis/floodfill.h"
-#include "arnis/colors.h"
-#include "arnis/block_definitions.h"
-#include "arnis/bresenham.h"
-#include "arnis/element_processing/subprocessor/buildings_interior.h"
+#include "arnis-cpp/src/floodfill.h"
+#include "arnis-cpp/src/colors.h"
+#include "arnis-cpp/src/block_definitions.h"
+#include "arnis-cpp/src/bresenham.h"
+#include "arnis-cpp/src/element_processing/subprocessor/buildings_interior.h"

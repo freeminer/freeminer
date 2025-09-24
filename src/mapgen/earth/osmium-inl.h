@@ -22,7 +22,7 @@
 #include "mapgen/mapgen_earth.h"
 #endif
 
-#include "arnis/data_processing.h"
+#include "arnis-cpp/src/data_processing.h"
 
 #if 0
 static constexpr auto floor_height = 4;

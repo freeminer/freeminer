@@ -25,3 +25,6 @@
 [submodule "src/external/libtiff"]
 	path = src/external/libtiff
 	url = https://gitlab.com/libtiff/libtiff.git
+[submodule "src/mapgen/earth/arnis-cpp"]
+	path = src/mapgen/earth/arnis-cpp
+	url = https://github.com/freeminer/arnis-cpp

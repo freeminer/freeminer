@@ -1,6 +1,6 @@
 file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-file(GLOB_RECURSE mapgen_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis/*.cpp")
+file(GLOB_RECURSE mapgen_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.cpp")
 
 set(mapgen_SRCS
     ${mapgen_SRCS}
