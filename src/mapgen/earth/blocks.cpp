@@ -1,4 +1,5 @@
 #include "arnis_adapter.h"
+#include "emerge.h"
 
 namespace arnis
 {
@@ -426,9 +427,9 @@ void init(MapgenEarth *mg)
 	STONE_BRICKS = g("default:cobble");
 	WHITE_CONCRETE = g("default:stone");	  // TODO
 	WHITE_STAINED_GLASS = g("default:glass"); // ?
-	//WHITE_WOOL = g("wool:white");
-	//YELLOW_WOOL = g("wool:yellow");
-	//WATER = g("default:water");
+											  //WHITE_WOOL = g("wool:white");
+											  //YELLOW_WOOL = g("wool:yellow");
+											  //WATER = g("default:water");
 }
 
 }

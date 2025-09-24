@@ -1,10 +1,8 @@
 
-
 // https://heck.ai/
 // write in c++ without explanation and examples, use full namespaces, prefer std::optional instead pointers, do not use static functions :
 
 #pragma once
-//using XZPoint = v2pos_t;
 #include <cstdint>
 #include <optional>
 #include <osmium/osm/entity.hpp>
@@ -16,30 +14,18 @@
 #include "../../irr_v2d.h"
 #include "map.h"
 #include "mapgen/mapgen_earth.h"
-#include "emerge.h"
 
 #include "../../debug/dump.h"
 
 #undef stoi
 #undef stof
 
-class Block : public MapNode
-{
-public:
-	Block(content_t c = {}) : MapNode{c} {}
+#include "arnis-cpp/src/args.h"
+#include "arnis_block.h"
 
-	content_t id() const { return getContent(); }
-};
-class BlockWithProperties
+namespace arnis
 {
-public:
-	Block block;
-	static BlockWithProperties simple(Block b)
-	{
-		return BlockWithProperties{
-				b /*, StairFacing::North, StairShape::Straight, false*/};
-	}
-};
+
 struct XZPoint;
 
 struct XZ : public v2s32
@@ -250,18 +236,12 @@ struct Ground
 		int relative_x = x_input; //- xzbbox.min_x();
 		int relative_z = z_input; //- xzbbox.min_z();
 		return level(XZPoint(relative_x, relative_z)) + y_offset;
-		/*
-		} else {
-            return y_offset; // If no ground reference, use y_offset as absolute Y
-        }
-			*/
 	}
 
 	// Return the minimum ground level among points
 	// Return std::nullopt if no valid data, to match the Rust’s Option
 	std::optional<int> min_level(const std::vector<XZPoint> &points) const
 	{
-		//DUMP(points.size());
 		if (points.empty()) {
 			return std::nullopt;
 		}
@@ -280,29 +260,8 @@ struct Ground
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
-		// Example stub (always 64). Real code might do something more sophisticated.
-
-		// TODO use const from osmium
-		//constexpr double osmium_scale = 10000000;
-
-		//DUMP(osmium_scale, x / osmium_scale - cpos.X, z / osmium_scale - cpos.Y);
-		//DUMP(osmium_scale, cpos.X - x / osmium_scale , cpos.Y - z / osmium_scale );
-		//const ll oll(x / osmium_scale, z / osmium_scale);
-		//const ll oll(z / osmium_scale, x / osmium_scale);
-		/*
-		const ll oll(pos.Y / osmium::detail::coordinate_precision,
-				pos.X / osmium::detail::coordinate_precision);
-
-		const auto pos2 = mg->ll_to_pos(oll); // {pos.X, pos.Y}
-		// TODO: scale y
-		//const v3pos_t lpos{pos2.X, 0, pos2.Y};
-
-		const auto h = mg->get_height(pos2.X, pos2.Y);
-*/
 		const auto h = mg->get_height(pos.X, pos.Y);
-		//DUMP(pos, pos2, h);
 		return h;
-		//return 64;
 	}
 };
 
@@ -327,63 +286,16 @@ struct WorldEditor
 			const std::optional<std::vector<Block>> &avoid = {})
 	{
 		// Implementation for adding a block to the world
-		/*
-		(void)block;
-		(void)x;
-		(void)y;
-		(void)z;
-		(void)maybe_variants;
-		(void)maybe_replacements;
-*/
-		//Block to_set = block;
-		//if (maybe_variants.has_value() && !maybe_variants.value()->empty())
-		//to_set = maybe_variants.value()->at(0);
-		//DUMP(x, y, z, block);
-		//DUMP(x-(mg->center.X+mg->node_min.X), y-(mg->center.Y+mg->node_min.Y), z - (mg->center.Z + mg->node_min.Z), block);
-
-		//auto cpos = mg->ll_to_pos({mg->center.X, mg->center.Z});
-		//auto cpos = mg->ll_to_pos_absolute({});
-		//DUMP(mg->node_min, mg->center, cpos);
-
-		// TODO use const from osmium
-		//constexpr double osmium_scale = 10000000;
-
-		//DUMP(osmium_scale, x / osmium_scale - cpos.X, z / osmium_scale - cpos.Y);
-		//DUMP(osmium_scale, cpos.X - x / osmium_scale , cpos.Y - z / osmium_scale );
-		//const ll oll(x / osmium_scale, z / osmium_scale);
-
-		/*
-		const ll oll(z / osmium::detail::coordinate_precision, x / osmium::detail::coordinate_precision);
-		const auto pos2 = mg->ll_to_pos(oll);
-		// TODO: scale y
-		const v3pos_t pos{pos2.X, static_cast<pos_t>(y), pos2.Y};
-*/
-
 		const auto yg = ground->level({x, z});
-
 		const v3pos_t pos{
 				static_cast<pos_t>(x), static_cast<pos_t>(yg + y), static_cast<pos_t>(z)};
-		//const v3pos_t chunk_pos = abs_pos - mg->node_min;
-		//const auto chunk_pos = abs_pos;
-
-		//if (!pos_ok(chunk_pos))return;
-
-		//if (static auto i = 0; !(++i % 10000))DUMP(i, mg->node_min, mg->node_max, cpos, chunk_pos,oll, x,y,z); //.lat, oll.lon);
-
-		//if (!pos_ok(cpos)) return;
-		//DUMP(mg->node_min, mg->node_max, cpos, abs_pos, chunk_pos, oll); //.lat, oll.lon);
 		if (!mg || !mg->vm) {
 			DUMP("broken mg");
 			return;
 		}
 
 		if (mg->vm->exists(pos)) {
-			mg->vm->setNode(
-					//{static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)},
-					//{cpos.X, y, cpos.Y},
-					//{cpos.X, static_cast<pos_t>(y), cpos.Y},
-					//{cpos.X-mg->node_min.X, static_cast<pos_t>(y)-mg->node_min.Y, cpos.Y-mg->node_min.Z},
-					pos, block);
+			mg->vm->setNode(pos, block);
 		}
 	}
 
@@ -460,24 +372,11 @@ struct WorldEditor
 	//inline auto node_to_xz(const osmium::NodeRef &node)
 	inline auto node_to_xz(const auto &node)
 	{
-		//const auto &x = node.x();
-		//const auto &z = node.y();
-
-		//constexpr double osmium_scale = 10000000;
-
-		//DUMP(osmium_scale, x / osmium_scale - cpos.X, z / osmium_scale - cpos.Y);
-		//DUMP(osmium_scale, cpos.X - x / osmium_scale , cpos.Y - z / osmium_scale );
-		//const ll oll(x / osmium_scale, z / osmium_scale);
-		//const ll oll(z / osmium_scale, x / osmium_scale);
-		//const auto pos2 = arnis::mg->ll_to_pos(oll);
 		const auto pos2 = mg->ll_to_pos({static_cast<ll_t>(node.y()) /
 												 osmium::detail::coordinate_precision,
 				static_cast<ll_t>(node.x()) / osmium::detail::coordinate_precision});
 		// TODO: scale y
-		//const v3pos_t pos{pos2.X, static_cast<pos_t>(y), pos2.Y};
-
 		return std::make_pair(pos2.X, pos2.Y);
-		//return {pos2.X, pos2.Y};
 	}
 
 	std::pair<int, int> get_min_coords() const
@@ -491,8 +390,8 @@ struct WorldEditor
 	};
 	int get_absolute_y(int x, int y, int z) { return ground->get_absolute_y(x, y, z); }
 
-	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
-			std::int32_t x2, std::int32_t y2, std::int32_t z2,
+	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
+			std::int32_t z1, std::int32_t x2, std::int32_t y2, std::int32_t z2,
 			const std::optional<std::vector<Block>> &override_whitelist,
 			const std::optional<std::vector<Block>> &override_blacklist)
 	{
@@ -510,9 +409,8 @@ struct WorldEditor
 		}
 	}
 
-	
-	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
-			std::int32_t x2, std::int32_t y2, std::int32_t z2,
+	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
+			std::int32_t z1, std::int32_t x2, std::int32_t y2, std::int32_t z2,
 			const std::optional<std::vector<Block>> &override_whitelist,
 			const std::optional<int> override_blacklist)
 	{
@@ -520,26 +418,24 @@ struct WorldEditor
 				std::optional<std::vector<Block>>{});
 	}
 
-	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
-			std::int32_t x2, std::int32_t y2, std::int32_t z2,
-			const std::optional<std::vector<Block>> &override_whitelist,
-			std::nullopt_t)
+	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
+			std::int32_t z1, std::int32_t x2, std::int32_t y2, std::int32_t z2,
+			const std::optional<std::vector<Block>> &override_whitelist, std::nullopt_t)
 	{
 		return fill_blocks(block, x1, y1, z1, x2, y2, z2, override_whitelist,
 				std::optional<std::vector<Block>>{});
 	}
-				
-	
-	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
-			std::int32_t x2, std::int32_t y2, std::int32_t z2, std::nullopt_t,
-			std::nullopt_t)
+
+	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
+			std::int32_t z1, std::int32_t x2, std::int32_t y2, std::int32_t z2,
+			std::nullopt_t, std::nullopt_t)
 	{
 		return fill_blocks(block, x1, y1, z1, x2, y2, z2,
 				std::optional<std::vector<Block>>{}, std::optional<std::vector<Block>>{});
 	}
 
-	void fill_blocks(const Block& block, std::int32_t x1, std::int32_t y1, std::int32_t z1,
-			std::int32_t x2, std::int32_t y2, std::int32_t z2)
+	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
+			std::int32_t z1, std::int32_t x2, std::int32_t y2, std::int32_t z2)
 	{
 		return fill_blocks(block, x1, y1, z1, x2, y2, z2,
 				std::optional<std::vector<Block>>{}, std::optional<std::vector<Block>>{});
@@ -547,77 +443,16 @@ struct WorldEditor
 };
 
 }
+
+
 using namespace world_editor;
+}
 
-struct Args
-{
-	// Bounding box of the area (min_lat,min_lng,max_lat,max_lng) (required)
-	//LLBBox bbox{};
+#include "arnis-cpp/src/block_definitions.h"
 
-	// JSON file containing OSM data (optional)
-	std::optional<std::string> file{std::nullopt};
-
-	// JSON file to save OSM data to (optional)
-	std::optional<std::string> save_json_file{std::nullopt};
-
-	// Path to the Minecraft world (required)
-	std::string path{};
-
-	// Downloader method (requests/curl/wget) (optional)
-	std::string downloader{std::string("requests")};
-
-	// World scale to use, in blocks per meter
-	double scale{1.0};
-
-	// Ground level to use in the Minecraft world
-	int ground_level{-62};
-
-	// Enable terrain (optional)
-	bool terrain{false};
-
-	// Enable interior generation (optional)
-	bool interior{true};
-
-	// Enable roof generation (optional)
-	bool roof{true};
-
-	// Enable filling ground (optional)
-	bool fillground{false};
-
-	// Enable debug mode (optional)
-	bool debug{false};
-
-	// Set floodfill timeout (seconds) (optional)
-	//std::optional<std::chrono::duration<double>> timeout{std::nullopt};
-	const std::chrono::milliseconds timeout{200};
-	std::chrono::milliseconds timeout_ref() const { return timeout; }
-
-	// Spawn point coordinates (lat, lng)
-	std::optional<std::pair<double, double>> spawn_point{std::nullopt};
-};
 
 namespace arnis
 {
-
-/*
-static const Block OAK_FENCE            = {"oak_fence"};
-static const Block STONE_BRICK_SLAB     = {"stone_brick_slab"};
-static const Block COBBLESTONE_WALL     = {"cobblestone_wall"};
-static const Block STONE_BRICKS         = {"stone_bricks"};
-static const Block SMOOTH_STONE         = {"smooth_stone"};
-static const Block COBBLESTONE          = {"cobblestone"};
-static const Block WHITE_STAINED_GLASS  = {"white_stained_glass"};
-static const Block LIGHT_GRAY_CONCRETE  = {"light_gray_concrete"};
-static const Block GLOWSTONE            = {"glowstone"};
-static const Block SNOW_LAYER           = {"snow_layer"};
-static const Block AIR                  = {"air"};
-static const Block STONE                = {"stone"};
-static const Block OAK_PLANKS           = {"oak_planks"};
-static const Block STONE_BLOCK_SLAB     = {"stone_block_slab"};
-static const Block OAK_FENCE_GATE       = {"oak_fence_gate"}; // Example
-*/
-
-//extern MapgenEarth *mg;
 void init(MapgenEarth *mg);
 
 Block get_castle_wall_block();
@@ -635,10 +470,10 @@ namespace osm_parser
 using ElementType = ElementType;
 using ProcessedElement = ProcessedElement;
 using ProcessedNode = ProcessedNode;
-//using Node = ProcessedNode;
 using ProcessedWay = ProcessedWay;
 using Way = ProcessedWay;
 }
+using Node = ProcessedNode;
 namespace coordinate_system
 {
 namespace cartesian
@@ -655,8 +490,4 @@ using namespace arnis::block_definitions;
 }
 namespace crate = arnis;
 
-#include "arnis-cpp/src/floodfill.h"
-#include "arnis-cpp/src/colors.h"
-#include "arnis-cpp/src/block_definitions.h"
 #include "arnis-cpp/src/bresenham.h"
-#include "arnis-cpp/src/element_processing/subprocessor/buildings_interior.h"

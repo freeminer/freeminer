@@ -191,18 +191,18 @@ public:
 
 	void way(const osmium::Way &way)
 	{
-		Ground ground;
+		arnis::Ground ground;
 		ground.mg = mg;
-		WorldEditor editor;
+		arnis::WorldEditor editor;
 		editor.mg = mg;
 		editor.ground = &ground;
-		std::vector<ProcessedElement> v;
-		ProcessedWay w;
+		std::vector<arnis::ProcessedElement> v;
+		arnis::ProcessedWay w;
 		for (const auto &t : way.tags()) {
 			w.tags.emplace(t.key(), t.value());
 		}
 		for (const auto &n : way.nodes()) {
-			ProcessedNode pn;
+			arnis::ProcessedNode pn;
 			pn.tags = w.tags;
 			const auto [x, y] = editor.node_to_xz(n);
 			pn.x = x;
@@ -217,12 +217,12 @@ public:
 	void relation(const osmium::Relation &relation)
 	{
 
-		Ground ground;
+		arnis::Ground ground;
 		ground.mg = mg;
-		WorldEditor editor;
+		arnis::WorldEditor editor;
 		editor.mg = mg;
 		editor.ground = &ground;
-		std::vector<ProcessedElement> v;
+		std::vector<arnis::ProcessedElement> v;
 		for (const auto &r : relation) {
 		}
 		arnis::generate_world(editor, v);
