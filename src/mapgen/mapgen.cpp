@@ -84,6 +84,12 @@ struct MapgenDesc {
 // Of the remaining, v5 last due to age, v7 first due to being the default.
 // The order of 'enum MapgenType' in mapgen.h must match this order.
 static MapgenDesc g_reg_mapgens[] = {
+// fm:
+	{"earth",       true},
+	{"math",       true},
+	{"indev",      true},
+// ===
+
 	{"v7",         true},
 	{"valleys",    true},
 	{"carpathian", true},
@@ -92,10 +98,6 @@ static MapgenDesc g_reg_mapgens[] = {
 	{"fractal",    true},
 	{"singlenode", true},
 	{"v6",         true},
-
-	{"indev",      true},
-	{"math",       true},
-	{"earth",       true},
 };
 
 static_assert(

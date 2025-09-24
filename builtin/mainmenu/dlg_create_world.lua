@@ -2,6 +2,8 @@
 -- Copyright (C) 2014 sapier
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
+dofile(core.get_mainmenu_path()..DIR_DELIM.."dlg_create_world_fm.lua")
+
 local function table_to_flags(ftable)
 	-- Convert e.g. { jungles = true, caves = false } to "jungles,nocaves"
 	local str = {}
@@ -34,6 +36,10 @@ local flag_checkboxes = {
 		{ "mountains", fgettext("Mountains") },
 		{ "floatlands", fgettext("Floatlands (experimental)"),
 		fgettext("Floating landmasses in the sky") },
+	},
+	earth = {
+		cb_caverns,
+		--{ "floatlands", fgettext("Floatlands (experimental)"), fgettext("Floating landmasses in the sky") },
 	},
 
 	v5 = {
@@ -230,6 +236,22 @@ local function create_world_formspec(dialogdata)
 			y = y + 0.5
 		end
 
+-- fm:
+		y = y + 0.2
+		form = form .. "label[0,"..(y+0.1)..";" .. fgettext("Preset") .. "]"
+		y = y + 0.5
+		if mg_preset[mapgen] then
+		form = form .. "dropdown[0,"..y..";6.3;mg_preset;"
+
+   		for preset, opt in pairs(mg_preset[mapgen]) do
+				form = form .. preset .. ","
+		   		for opt, val in pairs(mg_preset[mapgen][preset]) do
+				end
+			end
+		end
+		form = form .. ";" .. "]"
+-- ===
+
 		if mapgen ~= "v6" then
 			-- No special treatment
 			return form, y
@@ -408,6 +430,15 @@ local function create_world_buttonhandler(this, fields)
 				mgvalleys_spflags = table_to_flags(this.data.flags.valleys),
 				mgflat_spflags = table_to_flags(this.data.flags.flat),
 			}
+
+-- fm:
+			if fields["mg_preset"] then
+				for opt, val in pairs(mg_preset[settings.mg_name][fields["mg_preset"]]) do
+					settings[opt] = val;
+				end
+			end
+-- ===
+
 			message = core.create_world(worldname, game.id, settings)
 		end
 
@@ -483,8 +514,11 @@ function create_create_world_dlg()
 		mg = core.settings:get("mg_name"),
 		flags = {
 			main = core.settings:get_flags("mg_flags"),
+
 			indev = core.settings:get_flags("mgindev_spflags"),
 			math = core.settings:get_flags("mgmath_spflags"),
+			earth = core.settings:get_flags("mgearth_spflags"),
+
 			v5 = core.settings:get_flags("mgv5_spflags"),
 			v6 = core.settings:get_flags("mgv6_spflags"),
 			v7 = core.settings:get_flags("mgv7_spflags"),

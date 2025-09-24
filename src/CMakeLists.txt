@@ -1,5 +1,8 @@
 project(freeminer)
 
+include(freeminer_src)
+
+
 INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
@@ -445,8 +448,6 @@ add_subdirectory(script)
 add_subdirectory(util)
 add_subdirectory(server)
 
-include(freeminer_src)
-
 # Source files that are identical between server & client builds.
 # This means they don't use or include anything that depends on the
 # CHECK_CLIENT_BUILD() macro. If you wrongly add something here there will be
@@ -493,6 +494,7 @@ file(GLOB common_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 # /!\ Consider carefully before adding files here /!\
 set(common_SRCS
 	${FMcommon_SRCS}
+	${DEBUG_SRCS}
 	${contrib_SRCS}
 
 	${common_HDRS}

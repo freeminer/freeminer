@@ -110,7 +110,7 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/e
 		set(BUILD_EXAMPLES 0 CACHE INTERNAL "")
 		set(BUILD_BENCHMARKS 0 CACHE INTERNAL "")
 
-		if (NOT OSMIUM_INCLUDE_DIR)
+		if (NOT OSMIUM_INCLUDE_DIR AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/CMakeLists.txt)
 			add_subdirectory(external/libosmium)
 			set(OSMIUM_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/include)
 			include_directories(BEFORE SYSTEM ${OSMIUM_INCLUDE_DIR})
@@ -168,6 +168,5 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
 	fm_abm.cpp
 	fm_clientiface.cpp
 	fm_serverenvironment.cpp
-	${DEBUG_SRCS}
 	)
 # == end freeminer:

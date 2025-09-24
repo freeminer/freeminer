@@ -19,7 +19,7 @@ if [ -z "$NO_DEPS" ]; then
   SUDO=${SUDO=$(which sudo ||:)}
   if [ "$DIST" = "Debian" ] || [ "$DIST" = "Ubuntu" ]; then
     ${SUDO} apt update
-    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install -y git subversion build-essential cmake ninja-build ccache libsdl2-dev libbz2-dev libzstd-dev  libjpeg-dev libfreetype6-dev libxxf86vm-dev libxi-dev libsqlite3-dev libhiredis-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libssl-dev libluajit-5.1-dev libgettextpo0 libmsgpack-dev libboost-system-dev  clang lld llvm libc++-dev libc++abi-dev
+    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install -y git subversion build-essential cmake ninja-build ccache libsdl2-dev libbz2-dev libzstd-dev  libjpeg-dev libfreetype6-dev libxxf86vm-dev libxi-dev libsqlite3-dev libhiredis-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libssl-dev libluajit-5.1-dev libgettextpo0 libmsgpack-dev libboost-system-dev  clang lld llvm libc++-dev libc++abi-dev libosmium2-dev
     for PACKAGE in libpng12-dev libpng-dev libgles1-mesa-dev libgles2-mesa-dev libgl1-mesa-dev ; do
         ${SUDO} apt install -y $PACKAGE ||:
     done
