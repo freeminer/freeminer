@@ -1,8 +1,5 @@
 project(freeminer)
 
-include(freeminer_src)
-
-
 INCLUDE(CheckTypeSize)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
@@ -44,8 +41,6 @@ endif()
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 
-find_package(MsgPack REQUIRED)
-
 if(NOT (BUILD_CLIENT OR BUILD_SERVER OR NO_BUILD))
 	message(WARNING "Neither BUILD_CLIENT nor BUILD_SERVER is set! Setting BUILD_SERVER=true")
 	set(BUILD_SERVER TRUE)
@@ -82,22 +77,6 @@ if(ENABLE_CURL)
 	endif()
 else()
 	mark_as_advanced(CLEAR CURL_LIBRARY CURL_INCLUDE_DIR)
-endif()
-
-option(ENABLE_ICONV "Enable utf8 convert via iconv " FALSE)
-
-if(ENABLE_ICONV)
-	find_package(Iconv)
-	if(ICONV_INCLUDE_DIR)
-		set(USE_ICONV 1)
-		message(STATUS "iconv.h found: ${ICONV_INCLUDE_DIR}")
-	else()
-		message(STATUS "iconv.h NOT found")
-	endif()
-endif()
-
-if(NOT USE_ICONV)
-	set(USE_ICONV 0)
 endif()
 
 if(NOT USE_CURL)
@@ -265,17 +244,6 @@ else(USE_PROMETHEUS)
 	message(STATUS "Prometheus client disabled.")
 endif(USE_PROMETHEUS)
 
-#option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
-set(USE_MANDELBULBER 1)
-#find_package(Mandelbulber)
-
-option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " FALSE)
-if(ENABLE_IPV4_DEFAULT)
-	set(USE_IPV4_DEFAULT 1)
-else()
-	set(USE_IPV4_DEFAULT 0)
-endif()
-
 OPTION(ENABLE_SPATIAL "Enable SpatialIndex AreaStore backend" TRUE)
 set(USE_SPATIAL FALSE)
 
@@ -416,6 +384,8 @@ else()
 endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
+
+include(freeminer_src)
 
 if((NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR) AND EXISTS "${PROJECT_SOURCE_DIR}/cmake_config.h")
 	message(FATAL_ERROR "You are doing an out-of-tree build, but build artifacts are left in-tree. This will break the build!")
