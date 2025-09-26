@@ -22,7 +22,8 @@ mg_preset = {
 		},
         rooms = {
 			mg_math           = '{"generator":"rooms"}',
-			light_ambient     = '1'
+			light_ambient     = '1',
+			mg_float_islands = 0,
 		}
 	},
     earth = {
@@ -33,5 +34,6 @@ mg_preset = {
         dolomites  = { mg_earth = '{"center": {"z": 46.4084595, "x": 11.8393018    } }', },
         matterhorn = { mg_earth = '{"center": {"z": 45.976400,  "x": 7.658600      } }', },
         dubai      = { mg_earth = '{"center": {"z": 25.19715,   "x": 55.27288      } }', },
+        tokyo      = { mg_earth = '{"center": {"z": 35.6835103, "x": 139.7538318   } }', },
 	}
 }

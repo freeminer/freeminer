@@ -237,19 +237,16 @@ local function create_world_formspec(dialogdata)
 		end
 
 -- fm:
-		y = y + 0.2
-		form = form .. "label[0,"..(y+0.1)..";" .. fgettext("Preset") .. "]"
-		y = y + 0.5
 		if mg_preset[mapgen] then
-		form = form .. "dropdown[0,"..y..";6.3;mg_preset;"
-
-   		for preset, opt in pairs(mg_preset[mapgen]) do
+			y = y + 0.2
+			form = form .. "label[0,"..(y+0.1)..";" .. fgettext("Preset") .. "]"
+			y = y + 0.5
+			form = form .. "dropdown[0,"..y..";6.3;mg_preset;"
+   			for preset, opt in pairs(mg_preset[mapgen]) do
 				form = form .. preset .. ","
-		   		for opt, val in pairs(mg_preset[mapgen][preset]) do
-				end
 			end
+			form = form .. ";" .. "]"
 		end
-		form = form .. ";" .. "]"
 -- ===
 
 		if mapgen ~= "v6" then
