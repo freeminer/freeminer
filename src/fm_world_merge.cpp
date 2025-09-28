@@ -221,7 +221,7 @@ void WorldMerger::merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,
 bool WorldMerger::merge_one_step(
 		block_step_t step, std::unordered_set<v3bpos_t> &blocks_todo)
 {
-	auto *dbase_current = GetFarDatabase(dbase, far_dbases, save_dir, step);
+	auto *dbase_current = GetFarDatabase(dbase.get(), far_dbases, save_dir, step);
 	auto *dbase_up = GetFarDatabase({}, far_dbases, save_dir, step + 1);
 	if (!dbase_up) {
 		errorstream << "World merge: No database up for step " << (short)step << "\n";

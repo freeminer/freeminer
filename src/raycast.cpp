@@ -127,13 +127,13 @@ bool boxLineCollision(const aabb3f &box, const v3opos_t start,
 	return false;
 }
 // from inline vector3df quaternion::operator* (const vector3df& v) const
-inline irr::core::vector3d<opos_t> quaternion_operator_star(
-		const core::quaternion &self, const irr::core::vector3d<opos_t> &v)
+inline core::vector3d<opos_t> quaternion_operator_star(
+		const core::quaternion &self, const core::vector3d<opos_t> &v)
 {
 	// nVidia SDK implementation
 
-	irr::core::vector3d<opos_t> uv, uuv;
-	const irr::core::vector3d<opos_t> qvec(self.X, self.Y, self.Z);
+	core::vector3d<opos_t> uv, uuv;
+	const core::vector3d<opos_t> qvec(self.X, self.Y, self.Z);
 	uv = qvec.crossProduct(v);
 	uuv = qvec.crossProduct(uv);
 	uv *= (2.0f * self.W);

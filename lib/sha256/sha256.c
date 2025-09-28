@@ -496,7 +496,7 @@ mt_SHA256_Update(mt_SHA256_CTX *c, const void *data_, size_t len)
 LCRYPTO_ALIAS(SHA256_Update);
 
 void
-SHA256_Transform(mt_SHA256_CTX *c, const unsigned char *data)
+mt_SHA256_Transform(mt_SHA256_CTX *c, const unsigned char *data)
 {
 	sha256_block_data_order(c, data, 1);
 }

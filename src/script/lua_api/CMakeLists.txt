@@ -1,6 +1,9 @@
+file(GLOB common_SCRIPT_LUA_API_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+
 set(common_SCRIPT_LUA_API_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/l_key_value_storage.cpp
 
+	${common_SCRIPT_LUA_API_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/l_areastore.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/l_auth.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/l_base.cpp

@@ -156,8 +156,8 @@ bool ClientLauncher::run(GameStartData &start_data, const Settings &cmd_args)
 	/*
 		Menu-game loop
 	*/
-	bool retval = true;
-	bool *kill = porting::signal_handler_killstatus();
+	bool retval         = true;
+	volatile auto *kill = porting::signal_handler_killstatus();
 
 	while (m_rendering_engine->run() && !*kill &&
 		!g_gamecallback->shutdown_requested) {
@@ -335,8 +335,8 @@ void ClientLauncher::init_input()
 
 void ClientLauncher::init_joysticks()
 {
-	irr::core::array<irr::SJoystickInfo> infos;
-	std::vector<irr::SJoystickInfo> joystick_infos;
+	core::array<SJoystickInfo> infos;
+	std::vector<SJoystickInfo> joystick_infos;
 
 	// Make sure this is called maximum once per
 	// irrlicht device, otherwise it will give you
@@ -357,6 +357,18 @@ void ClientLauncher::init_joysticks()
 void ClientLauncher::setting_changed_callback(const std::string &name, void *data)
 {
 	static_cast<ClientLauncher*>(data)->config_guienv();
+}
+
+static video::ITexture *loadTexture(video::IVideoDriver *driver, const char *path)
+{
+	// FIXME?: it would be cleaner to do this through a ITextureSource, but we don't have one
+	video::ITexture *texture = nullptr;
+	verbosestream << "Loading texture " << path << std::endl;
+	if (auto *image = driver->createImageFromFile(path); image) {
+		texture = driver->addTexture(fs::GetFilenameFromPath(path), image);
+		image->drop();
+	}
+	return texture;
 }
 
 void ClientLauncher::config_guienv()
@@ -399,10 +411,9 @@ void ClientLauncher::config_guienv()
 		if (cached_id != sprite_ids.end()) {
 			skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, cached_id->second);
 		} else {
-			gui::IGUISpriteBank *sprites = skin->getSpriteBank();
-			video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
-			video::ITexture *texture = driver->getTexture(path.c_str());
-			s32 id = sprites->addTextureAsSprite(texture);
+			auto *driver = m_rendering_engine->get_video_driver();
+			auto *texture = loadTexture(driver, path.c_str());
+			s32 id = skin->getSpriteBank()->addTextureAsSprite(texture);
 			if (id != -1) {
 				skin->setIcon(gui::EGDI_CHECK_BOX_CHECKED, id);
 				sprite_ids.emplace(path, id);
@@ -587,9 +598,10 @@ bool ClientLauncher::launch_game(std::string &error_message,
 void ClientLauncher::main_menu(MainMenuData *menudata)
 {
 	ServerList::lan_get();
-	bool *kill = porting::signal_handler_killstatus();
+
+	volatile auto       *kill   = porting::signal_handler_killstatus();
 	video::IVideoDriver *driver = m_rendering_engine->get_video_driver();
-	auto *device = m_rendering_engine->get_raw_device();
+	auto                *device = m_rendering_engine->get_raw_device();
 
 	// Wait until app is in foreground because of #15883
 	infostream << "Waiting for app to be in foreground" << std::endl;
@@ -654,7 +666,7 @@ void ClientLauncher::wait_data() {
 			wait = true;
 			break;
 		}
-	bool &kill = *porting::signal_handler_killstatus();
+	auto &kill = *porting::signal_handler_killstatus();
 	for (int i = 0; i < 100; ++i) { // 10s max
 		if (i || wait) {
 			auto driver = device->getVideoDriver();

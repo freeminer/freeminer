@@ -41,8 +41,6 @@ endif()
 # Set some random things default to not being visible in the GUI
 mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 
-find_package(MsgPack REQUIRED)
-
 if(NOT (BUILD_CLIENT OR BUILD_SERVER OR NO_BUILD))
 	message(WARNING "Neither BUILD_CLIENT nor BUILD_SERVER is set! Setting BUILD_SERVER=true")
 	set(BUILD_SERVER TRUE)
@@ -81,22 +79,6 @@ if(ENABLE_CURL)
 	endif()
 else()
 	mark_as_advanced(CLEAR CURL_LIBRARY CURL_INCLUDE_DIR)
-endif()
-
-option(ENABLE_ICONV "Enable utf8 convert via iconv " FALSE)
-
-if(ENABLE_ICONV)
-	find_package(Iconv)
-	if(ICONV_INCLUDE_DIR)
-		set(USE_ICONV 1)
-		message(STATUS "iconv.h found: ${ICONV_INCLUDE_DIR}")
-	else()
-		message(STATUS "iconv.h NOT found")
-	endif()
-endif()
-
-if(NOT USE_ICONV)
-	set(USE_ICONV 0)
 endif()
 
 if(NOT USE_CURL)
@@ -205,93 +187,7 @@ if(ENABLE_POSTGRESQL)
 	endif()
 endif(ENABLE_POSTGRESQL)
 
-option(ENABLE_LEVELDB "Enable LevelDB backend" TRUE)
-set(USE_LEVELDB FALSE)
-
-if(ENABLE_LEVELDB)
-
-	if (LIBCXX_LIBRARY)
-		set(SYSTEM_LEVELDB 0 CACHE BOOL "")
-	endif()
-
-   if (SYSTEM_LEVELDB)
-    if(USE_STATIC_LIBRARIES AND LEVELDB_STATIC)
-	   list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
-
-	find_library(LEVELDB_LIBRARY NAMES leveldb libleveldb)
-	find_path(LEVELDB_INCLUDE_DIR db.h PATH_SUFFIXES leveldb)
-	find_library(SNAPPY_LIBRARY snappy)
-	find_path(SNAPPY_INCLUDE_DIR snappy.h PATH_SUFFIXES snappy)
-
-	if(USE_STATIC_LIBRARIES AND LEVELDB_STATIC)
-		list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
-	endif()
-
-   endif()
-
-	message (STATUS "Snappy library: ${SNAPPY_LIBRARY} : ${SNAPPY_INCLUDE_DIR}")
-	message (STATUS "Leveldb library: ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
-
-	if ((NOT SNAPPY_INCLUDE_DIR OR NOT SNAPPY_LIBRARY) AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/snappy/snappy.h)
-		set(SNAPPY_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/snappy)
-		# Snappy have no cmake by default,
-		# git clone --recursive --depth 1 https://github.com/google/snappy src/external/snappy
-		# But we can collect something from pulls
-		# wget -O src/external/snappy/CMakeLists.txt https://raw.githubusercontent.com/adasworks/snappy-cmake/master/CMakeLists.txt
-		set(SNAPPY_BUILD_TESTS 0 CACHE INTERNAL "")
-		set(SNAPPY_BUILD_BENCHMARKS 0 CACHE INTERNAL "")
-		set(SNAPPY_INSTALL 0 CACHE INTERNAL "")
-		set(HAVE_TCMALLOC 0 CACHE INTERNAL "")
-
-		add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/snappy)
-		set(SNAPPY_LIBRARY snappy)
-		set(HAVE_SNAPPY 1 CACHE INTERNAL "")
-		message(STATUS "Using bundled snappy ${SNAPPY_LIBRARY} : ${SNAPPY_INCLUDE_DIR}")
-	endif()
-
-	if ((NOT LEVELDB_INCLUDE_DIR OR NOT LEVELDB_LIBRARY) AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/leveldb/include/leveldb/db.h)
-		set(LEVELDB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/leveldb/include)
-		# bad try direct make build 
-		#find_path(LEVELDB_MAKEFILE_DIR Makefile ${PROJECT_SOURCE_DIR}/external/leveldb NO_DEFAULT_PATH)
-		#if (LEVELDB_MAKEFILE_DIR)
-		#	execute_process(COMMAND "make -f ${LEVELDB_MAKEFILE_DIR}/Makefile" WORKING_DIRECTORY LEVELDB_MAKEFILE_DIR OUTPUT_VARIABLE LMKE ERROR_VARIABLE LMKE)
-		#message(STATUS "leveldb mk=${LMKE}")
-		#endif()
-		#
-		# good cmake try
-		# Leveldb have no cmake by default,
-		# git clone --recursive --depth 1 https://github.com/google/leveldb src/external/leveldb
-		# But we can collect something from pulls
-		# wget -O src/external/leveldb/CMakeLists.txt https://raw.githubusercontent.com/proller/leveldb/patch-2/CMakeLists.txt
-		# wget -O src/external/leveldb/leveldbConfig.cmake.in https://raw.githubusercontent.com/tamaskenez/leveldb-cmake-win/native_windows_port_1_18/leveldbConfig.cmake.in
-		set(LEVELDB_BUILD_TESTS 0 CACHE INTERNAL "")
-		set(LEVELDB_BUILD_BENCHMARKS 0 CACHE INTERNAL "")
-		set(LEVELDB_INSTALL 0 CACHE INTERNAL "")
-		set(HAVE_CLANG_THREAD_SAFETY 0 CACHE INTERNAL "") # -Werror remove
-		add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/leveldb)
-		set(LEVELDB_LIBRARY leveldb)
-		message(STATUS "Using bundled leveldb ${LEVELDB_INCLUDE_DIR} ${LEVELDB_LIBRARY}")
-	endif()
-
-	if(SNAPPY_LIBRARY AND SNAPPY_INCLUDE_DIR)
-		include_directories(SYSTEM ${SNAPPY_INCLUDE_DIR})
-	endif()
-
-	if(LEVELDB_LIBRARY AND LEVELDB_INCLUDE_DIR)
-		set(USE_LEVELDB TRUE)
-		message(STATUS "LevelDB backend enabled. ${LEVELDB_LIBRARY} : ${LEVELDB_INCLUDE_DIR}")
-		include_directories(SYSTEM ${LEVELDB_INCLUDE_DIR})
-	elseif (NOT FORCE_LEVELDB)
-		message(WARNING "LevelDB not found! Player data cannot be saved in singleplayer or server")
-	endif()
-endif(ENABLE_LEVELDB)
-
-# this is needed because VS builds install LevelDB via nuget
-if(FORCE_LEVELDB)
-	set(USE_LEVELDB 1)
-endif()
-
+include(freeminer_leveldb)
 
 OPTION(ENABLE_REDIS "Enable Redis backend" TRUE)
 set(USE_REDIS FALSE)
@@ -349,17 +245,6 @@ if(USE_PROMETHEUS)
 else(USE_PROMETHEUS)
 	message(STATUS "Prometheus client disabled.")
 endif(USE_PROMETHEUS)
-
-#option(ENABLE_MANDELBULBER "Use Mandelbulber source to generate more fractals in math mapgen" OFF)
-set(USE_MANDELBULBER 1)
-#find_package(Mandelbulber)
-
-option(ENABLE_IPV4_DEFAULT "Do not use ipv6 dual socket " FALSE)
-if(ENABLE_IPV4_DEFAULT)
-	set(USE_IPV4_DEFAULT 1)
-else()
-	set(USE_IPV4_DEFAULT 0)
-endif()
 
 OPTION(ENABLE_SPATIAL "Enable SpatialIndex AreaStore backend" TRUE)
 set(USE_SPATIAL FALSE)
@@ -502,6 +387,8 @@ endif()
 
 check_include_files(endian.h HAVE_ENDIAN_H)
 
+include(freeminer_src)
+
 if((NOT PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR) AND EXISTS "${PROJECT_SOURCE_DIR}/cmake_config.h")
 	message(FATAL_ERROR "You are doing an out-of-tree build, but build artifacts are left in-tree. This will break the build!")
 endif()
@@ -532,174 +419,6 @@ add_subdirectory(network)
 add_subdirectory(script)
 add_subdirectory(util)
 add_subdirectory(server)
-
-# == freeminer:
-OPTION(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 0)
-OPTION(USE_MULTI "Enable MT+ENET+WSS networking" 1)
-if(USE_MULTI)
-	#set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
-	set(ENABLE_ENET 1 CACHE BOOL "")
-	#set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
-        if (NOT ANDROID)
-	    	set(ENABLE_WEBSOCKET 1 CACHE BOOL "")
-        endif()
-endif()
-
-
-if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
-    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp/CMakeLists.txt)
-		find_package(Boost)
-		if(Boost_FOUND)
-			include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp)
-			# add_subdirectory(external/websocketpp)
-			# set(WEBSOCKETPP_LIBRARY websocketpp::websocketpp)
-			message(STATUS "Using websocket: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp")
-			find_package(OpenSSL)
-			set(WEBSOCKETPP_LIBRARY ${WEBSOCKETPP_LIBRARY} OpenSSL::SSL)
-			set(USE_WEBSOCKET 1 CACHE BOOL "")
-			#TODO:
-			# set(USE_WEBSOCKET_SCTP 1 CACHE BOOL "")
-		endif()
-	else()
-		#set(USE_WEBSOCKET 0)
-		#set(USE_WEBSOCKET_SCTP 0)
-    endif()
-endif()
-
-if(ENABLE_SCTP AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
-    message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
-    set(ENABLE_SCTP 0)
-endif()
-
-if(ENABLE_SCTP)
-        # from external/usrsctp/usrsctplib/CMakeLists.txt :
-	if(SCTP_DEBUG)
-		set(sctp_debug 1 CACHE INTERNAL "")
-		add_definitions(-DSCTP_DEBUG=1)
-	endif()
-	set(sctp_build_programs 0 CACHE INTERNAL "")
-	set(sctp_werror 0 CACHE INTERNAL "")
-	set(WERROR 0 CACHE INTERNAL "") #old
-
-	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
-
-	#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
-	set(SCTP_LIBRARY usrsctp)
-
-	set(USE_SCTP 1)
-
-	message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
-#else()
-	#set(USE_SCTP 0)
-endif()
-
-if(ENABLE_ENET)
-	if(NOT ENABLE_SYSTEM_ENET AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h)
-		add_subdirectory(external/enet)
-		set(ENET_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include)
-		set(ENET_LIBRARY enet)
-	endif()
-	if(NOT ENET_LIBRARY)
-		find_library(ENET_LIBRARY NAMES enet)
-		find_path(ENET_INCLUDE_DIR enet/enet.h)
-	endif()
-	if(ENET_LIBRARY AND ENET_INCLUDE_DIR)
-		include_directories(${ENET_INCLUDE_DIR})
-		message(STATUS "Using enet: ${ENET_INCLUDE_DIR} ${ENET_LIBRARY}")
-		set(USE_ENET 1)
-	endif()
-endif()
-
-#set(TinyTIFF_BUILD_TESTS 0 CACHE INTERNAL "")
-#add_subdirectory(external/TinyTIFF/src)
-#set(TINYTIFF_LIRARY TinyTIFF)
-
-option(ENABLE_TIFF "Enable tiff (feotiff for mapgen earth)" 1)
-if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeLists.txt)
-	set(tiff-tools 0 CACHE INTERNAL "")
-	set(tiff-tests 0 CACHE INTERNAL "")
-	set(tiff-docs 0 CACHE INTERNAL "")
-	add_subdirectory(external/libtiff)
-	set(TIFF_LIRARY TIFF::tiff)
-	set(TIFF_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/libtiff/libtiff ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/libtiff)
-	include_directories(BEFORE SYSTEM ${TIFF_INCLUDE_DIR})
-	message(STATUS "Using tiff: ${TIFF_INCLUDE_DIR} ${TIFF_LIRARY}")
-	set(USE_TIFF 1)
-endif()
-
-option(ENABLE_OSMIUM "Enable Osmium" 1)
-
-if (ENABLE_OSMIUM)
-	find_path(OSMIUM_INCLUDE_DIR osmium/osm.hpp)
-endif()
-
-if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/CMakeLists.txt))
-	find_package(Boost)
-	if(Boost_FOUND)
-		set(BUILD_TESTING 0 CACHE INTERNAL "")
-		set(BUILD_DATA_TESTS 0 CACHE INTERNAL "")
-		set(BUILD_EXAMPLES 0 CACHE INTERNAL "")
-		set(BUILD_BENCHMARKS 0 CACHE INTERNAL "")
-
-		if (NOT OSMIUM_INCLUDE_DIR)
-			add_subdirectory(external/libosmium)
-			set(OSMIUM_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/libosmium/include)
-			include_directories(BEFORE SYSTEM ${OSMIUM_INCLUDE_DIR})
-		endif()
-		find_package(BZip2)
-		if(BZIP2_FOUND)
-			set (OSMIUM_LIRARY ${OSMIUM_LIRARY} BZip2::BZip2)
-		endif()
-		find_package(EXPAT)
-		if(EXPAT_FOUND)
-			set (OSMIUM_LIRARY ${OSMIUM_LIRARY} EXPAT::EXPAT)
-		endif()
-		set(USE_OSMIUM 1)
-		message(STATUS "Using osmium: ${OSMIUM_INCLUDE_DIR} : ${OSMIUM_LIRARY}")
-	endif()
-endif()
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
-    set(USE_DEBUG_DUMP ON CACHE BOOL "")
-endif()
-
-if (USE_DEBUG_DUMP)
-    #get_target_property(MAGIC_ENUM_INCLUDE_DIR ch_contrib::magic_enum INTERFACE_INCLUDE_DIRECTORIES)
-    # CMake generator expression will do insane quoting when it encounters special character like quotes, spaces, etc.
-    # Prefixing "SHELL:" will force it to use the original text.
-    #set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${MAGIC_ENUM_INCLUDE_DIR}\" -include \"${ClickHouse_SOURCE_DIR}/base/base/dump.h\"")
-    set (INCLUDE_DEBUG_HELPERS "SHELL:-I\"${CMAKE_CURRENT_SOURCE_DIR}/debug/\" -include \"${CMAKE_CURRENT_SOURCE_DIR}/debug/dump.h\"")
-    #set (INCLUDE_DEBUG_HELPERS "SHELL:-include \"${CMAKE_CURRENT_SOURCE_DIR}/util/dump.h\"")
-    # Use generator expression as we don't want to pollute CMAKE_CXX_FLAGS, which will interfere with CMake check system.
-    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${INCLUDE_DEBUG_HELPERS}>)
-	if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-		add_definitions(-DDUMP_STREAM=actionstream)
-	else()
-		add_definitions(-DDUMP_STREAM=verbosestream)
-	endif()
-endif ()
-
-set(FMcommon_SRCS ${FMcommon_SRCS}
-	circuit_element_virtual.cpp
-	circuit_element.cpp
-	circuit.cpp
-	fm_abm_world.cpp
-	fm_bitset.cpp
-	fm_liquid.cpp
-	fm_map.cpp
-	fm_server.cpp
-	fm_world_merge.cpp
-	fm_far_calc.cpp
-	key_value_storage.cpp
-	log_types.cpp
-	stat.cpp
-	content_abm_grow_tree.cpp
-	content_abm.cpp
-	fm_abm.cpp
-	fm_clientiface.cpp
-	fm_serverenvironment.cpp
-	)
-# == end freeminer:
 
 # Source files that are identical between server & client builds.
 # This means they don't use or include anything that depends on the
@@ -742,12 +461,15 @@ set(independent_SRCS
 	${util_SRCS}
 )
 
+file(GLOB common_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+
 # /!\ Consider carefully before adding files here /!\
 set(common_SRCS
 	${FMcommon_SRCS}
+	${DEBUG_SRCS}
 	${contrib_SRCS}
 
-	${DEBUG_SRCS}
+	${common_HDRS}
 	clientdynamicinfo.cpp
 	collision.cpp
 	content_mapnode.cpp
@@ -825,7 +547,7 @@ if(WIN32)
 endif()
 
 set(FMclient_SRCS
-	guiTextInputMenu.cpp
+	#guiTextInputMenu.cpp
 )
 
 # Client sources
@@ -1305,7 +1027,7 @@ else()
 	set(MATH_FLAGS "-fno-math-errno -fno-trapping-math -fno-signed-zeros")
 
 	# Enable SSE for floating point math on 32-bit x86 by default
-	# reasoning see minetest issue #11810 and https://gcc.gnu.org/wiki/FloatingPointMath
+	# reasoning see luanti issue #11810 and https://gcc.gnu.org/wiki/FloatingPointMath
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		check_c_source_compiles("#ifndef __i686__\n#error\n#endif\nint main(){}" IS_I686)
 		if(IS_I686)

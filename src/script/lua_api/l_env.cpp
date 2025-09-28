@@ -20,6 +20,7 @@
 #include "server.h"
 #include "nodedef.h"
 #include "daynightratio.h"
+#include "util/numeric.h"
 #include "util/pointedthing.h"
 #include "mapgen/treegen.h"
 #include "emerge_internal.h"
@@ -269,15 +270,22 @@ int ModApiEnv::l_bulk_swap_node(lua_State *L)
 // get_node_raw(x, y, z) -> content, param1, param2, pos_ok
 int ModApiEnv::l_get_node_raw(lua_State *L)
 {
-	GET_ENV_PTR;
+	GET_PLAIN_ENV_PTR;
 
-	// pos
-	// mirrors implementation of read_v3s16 (with the exact same rounding)
-	double x = lua_tonumber(L, 1);
-	double y = lua_tonumber(L, 2);
-	double z = lua_tonumber(L, 3);
-	v3pos_t pos = doubleToPos(v3d(x, y, z), 1.0);
-	// Do it
+	v3pos_t pos;
+	// mirrors the implementation of read_v3s16 (with the exact same rounding)
+	{
+		if (lua_isnoneornil(L, 1))
+			log_deprecated(L, "X position is nil", 1, true);
+		if (lua_isnoneornil(L, 2))
+			log_deprecated(L, "Y position is nil", 1, true);
+		if (lua_isnoneornil(L, 3))
+			log_deprecated(L, "Z position is nil", 1, true);
+		double x = lua_tonumber(L, 1);
+		double y = lua_tonumber(L, 2);
+		double z = lua_tonumber(L, 3);
+		pos = doubleToPos(v3d(x, y, z), 1.0);
+	}
 	bool pos_ok;
 	MapNode n = env->getMap().getNode(pos, &pos_ok);
 	// Return node and pos_ok

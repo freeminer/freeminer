@@ -663,6 +663,7 @@ static bool use_debugger(int argc, char *argv[])
 		warningstream << "Couldn't find a debugger to use. Try installing gdb or lldb." << std::endl;
 		return false;
 	}
+	verbosestream << "Found debugger " << debugger_path << std::endl;
 
 	// Try to be helpful
 #ifdef NDEBUG
@@ -721,11 +722,11 @@ static bool use_debugger(int argc, char *argv[])
 static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 {
 	startup_message();
-	set_default_settings();
 
 	sockets_init();
 
 	// Initialize g_settings
+	set_default_settings();
 	Settings::createLayer(SL_GLOBAL);
 
 	// Set cleanup callback(s) to run at process exit
@@ -745,10 +746,11 @@ static bool init_common(const Settings &cmd_args, int argc, char *argv[])
 	// Initialize random seed
 	u64 seed;
 	if (!porting::secure_rand_fill_buf(&seed, sizeof(seed))) {
-		verbosestream << "Secure randomness not available to seed global RNG." << std::endl;
+		infostream << "Secure randomness not available to seed global RNG!" << std::endl;
 		std::ostringstream oss;
-		// some stuff that's hard to predict:
-		oss << time(nullptr) << porting::getTimeUs() << argc << g_settings_path;
+		// stuff that's somewhat unpredictable:
+		oss << time(nullptr) << porting::getTimeUs() << argc
+			<< g_settings_path << reinterpret_cast<intptr_t>(argv);
 		print_version(oss);
 		std::string data = oss.str();
 		seed = murmur_hash_64_ua(data.c_str(), data.size(), 0xc0ffee);
@@ -1216,7 +1218,7 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 			return false;
 		}
 		ChatInterface iface;
-		bool &kill = *porting::signal_handler_killstatus();
+		volatile auto &kill = *porting::signal_handler_killstatus();
 
 		try {
 			// Create server
@@ -1263,7 +1265,7 @@ static bool run_dedicated_server(const GameParams &game_params, const Settings &
 			server.m_autoexit = autoexit_;
 
 			// Run server
-			bool &kill = *porting::signal_handler_killstatus();
+			volatile auto &kill = *porting::signal_handler_killstatus();
 			dedicated_server_loop(server, kill);
 
 		} catch (const ModError &e) {
@@ -1308,7 +1310,7 @@ static bool migrate_map_database(const GameParams &game_params, const Settings &
 
 	u32 count = 0;
 	u64 last_update_time = 0;
-	bool &kill = *porting::signal_handler_killstatus();
+	volatile auto &kill = *porting::signal_handler_killstatus();
 
 	std::vector<v3bpos_t> blocks;
 	old_db->listAllLoadableBlocks(blocks);
@@ -1374,7 +1376,7 @@ static bool recompress_map_database(const GameParams &game_params, const Setting
 
 	u32 count = 0;
 	u64 last_update_time = 0;
-	bool &kill = *porting::signal_handler_killstatus();
+	volatile auto &kill = *porting::signal_handler_killstatus();
 	const u8 serialize_as_ver = SER_FMT_VER_HIGHEST_WRITE;
 	const s16 map_compression_level = rangelim(g_settings->getS16("map_compression_level_disk"), -1, 9);
 

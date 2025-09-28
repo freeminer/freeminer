@@ -69,23 +69,32 @@
 #include "gettext.h"
 #include "util/tracy_wrapper.h"
 
+#include <csignal>
+
 
 #if CHECK_CLIENT_BUILD() && !NDEBUG
 #include "network/clientopcodes.h"
 #endif
 #include "content_abm.h"
-#include "log_types.h"
 #include "tool.h"
 #include <iomanip>
 #include "msgpack_fix.h"
-#include <chrono>
 #include <sys/types.h>
-#include "threading/thread_vector.h"
-#include "key_value_storage.h"
 #include "fm_server.h"
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
 #endif
+
+
+/*
+class ClientNotFoundException : public BaseException
+{
+public:
+	ClientNotFoundException(const char *s):
+		BaseException(s)
+	{}
+};
+*/
 
 ModIPCStore::~ModIPCStore()
 {
@@ -684,9 +693,12 @@ void Server::start()
 		// we're not printing to rawstream to avoid it showing up in the logs.
 		// however it would then mess up the ncurses terminal (m_admin_chat),
 		// so we skip it in that case.
-		for (auto line : art)
-			std::cerr << line << std::endl;
+		for (size_t i = 0; i < ARRLEN(art); ++i)
+			std::cerr << art[i] << (i == ARRLEN(art) - 1 ? "" : "\n");
+		// add a "tail" with the engine version
+		std::cerr << "  ___ " << g_version_hash << std::endl;
 	}
+
 
    actionstream << "\033[1mfree\033[1;33mminer \033[1;36mv" << g_version_hash
 				<< "\033[0m \t"
@@ -747,12 +759,12 @@ void Server::start()
 #endif
 				<< std::endl;
 
-   actionstream << "World at [" << m_path_world << "]" << std::endl;
-   actionstream << "Server for gameid=\"" << m_gamespec.id << "\" mapgen=\""
-				<< Mapgen::getMapgenName(m_emerge->mgparams->mgtype)
-				<< "\" listening on ";
-   m_bind_addr.print(actionstream);
-   actionstream << "." << std::endl;
+	actionstream << "World at [" << m_path_world << "]" << std::endl;
+	actionstream << "Server for gameid=\"" << m_gamespec.id
+			<< "\" mapgen=\"" << Mapgen::getMapgenName(m_emerge->mgparams->mgtype)
+			<< "\" listening on ";
+	m_bind_addr.print(actionstream);
+	actionstream << "." << std::endl;
 }
 
 void Server::stop()
@@ -1713,7 +1725,7 @@ bool Server::getClientConInfo(session_t peer_id, con::rtt_stat_type type, float*
 bool Server::getClientInfo(session_t peer_id, ClientInfo &ret)
 {
 	ClientInterface::AutoLock clientlock(m_clients);
-	RemoteClient* client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
+	auto client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
 
 	if (!client)
 		return false;
@@ -1737,7 +1749,7 @@ bool Server::getClientInfo(session_t peer_id, ClientInfo &ret)
 const ClientDynamicInfo *Server::getClientDynamicInfo(session_t peer_id)
 {
 	ClientInterface::AutoLock clientlock(m_clients);
-	RemoteClient *client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
+	auto client = m_clients.lockedGetClientNoEx(peer_id, CS_Invalid);
 
 	if (!client)
 		return nullptr;
@@ -1930,7 +1942,8 @@ void Server::SendChatMessage(session_t peer_id, const ChatMessage &message)
 	if (peer_id != PEER_ID_INEXISTENT) {
 		Send(&pkt);
 	} else {
-		m_clients.sendToAll(&pkt);
+		// If a client has completed auth but is still joining, still send chat
+		m_clients.sendToAll(&pkt, CS_InitDone);
 	}
 }
 
@@ -1948,11 +1961,10 @@ void Server::SendShowFormspecMessage(session_t peer_id, const std::string &forms
 				(it->second == formname || formname.empty())) {
 			m_formspec_state_data.erase(peer_id);
 		}
-		pkt.putLongString("");
 	} else {
 		m_formspec_state_data[peer_id] = formname;
-		pkt.putLongString(formspec);
 	}
+	pkt.putLongString(formspec);
 	pkt << formname;
 
 	Send(&pkt);
@@ -2720,7 +2732,7 @@ void Server::sendNodeChangePkt(u16 command, const MapNode& n, v3pos_t p_int, flo
 	ClientInterface::AutoLock clientlock(m_clients);
 
 	for (session_t client_id : clients) {
-		RemoteClient *client = m_clients.lockedGetClientNoEx(client_id);
+		auto client = m_clients.lockedGetClientNoEx(client_id);
 		if (!client)
 			continue;
 
@@ -2957,6 +2969,7 @@ size_t Server::addMediaFile(const std::string &filename,
 				<< filename << "\"" << std::endl;
 		return false;
 	}
+
 	// If name is not in a supported format, ignore it
 	const char *supported_ext[] = {
 		".png", ".jpg", ".tga",
@@ -2986,6 +2999,12 @@ size_t Server::addMediaFile(const std::string &filename,
 				<< filepath << "\"" << std::endl;
 		return false;
 	}
+	if (filedata.size() > MEDIAFILE_MAX_SIZE) {
+		errorstream << "Server::addMediaFile(): \""
+				<< filepath << "\" is too big (" << (filedata.size() >> 10)
+				<< "KiB). The internal limit is " << (MEDIAFILE_MAX_SIZE >> 10) << "KiB." << std::endl;
+		return false;
+	}
 
 	std::string sha1 = hashing::sha1(filedata);
 	std::string sha1_hex = hex_encode(sha1);
@@ -2995,7 +3014,7 @@ size_t Server::addMediaFile(const std::string &filename,
 	// Put in list
 	m_media[filename] = MediaInfo(filepath, sha1);
 	verbosestream << "Server: " << sha1_hex << " is " << filename
-			<< std::endl;
+			<< " (" << (filedata.size() >> 10) << "KiB)" << std::endl;
 
 	size_t size = filedata.length();
 
@@ -3163,8 +3182,8 @@ void Server::sendRequestedMedia(session_t peer_id,
 		auto it = m_media.find(name);
 
 		if (it == m_media.end()) {
-			errorstream<<"Server::sendRequestedMedia(): Client asked for "
-					<<"unknown file \""<<(name)<<"\""<<std::endl;
+			warningstream << "Server::sendRequestedMedia(): Client asked for "
+					"unknown file \"" << name << "\"" << std::endl;
 			continue;
 		}
 		const auto &m = it->second;
@@ -3173,7 +3192,7 @@ void Server::sendRequestedMedia(session_t peer_id,
 		// have duplicate filenames. So we can't check it.
 		if (!m.no_announce) {
 			if (!client->markMediaSent(name)) {
-				infostream << "Server::sendRequestedMedia(): Client asked has "
+				warningstream << "Server::sendRequestedMedia(): Client has "
 					"requested \"" << name << "\" before, not sending it again."
 					<< std::endl;
 				continue;
@@ -3618,9 +3637,7 @@ std::wstring Server::handleChat(const std::string &name,
 
 	ChatMessage chatmsg(line);
 
-	std::vector<session_t> clients = m_clients.getClientIDs();
-	for (u16 cid : clients)
-		SendChatMessage(cid, chatmsg);
+	SendChatMessage(PEER_ID_INEXISTENT, chatmsg);
 
 	return L"";
 }
@@ -3640,7 +3657,7 @@ void Server::handleAdminChat(const ChatEventChat *evt)
 
 RemoteClient *Server::getClient(session_t peer_id, ClientState state_min)
 {
-	RemoteClient *client = getClientNoEx(peer_id,state_min);
+	auto client = getClientNoEx(peer_id,state_min);
 	if(!client)
 		throw ClientNotFoundException("Client not found");
 
@@ -3793,6 +3810,15 @@ bool Server::denyIfBanned(session_t peer_id)
 	return false;
 }
 
+bool Server::checkUserLimit(const std::string &player_name, const std::string &addr_s)
+{
+	if (!m_clients.isUserLimitReached())
+		return false;
+	if (player_name == g_settings->get("name")) // admin can always join
+		return false;
+	return !m_script->can_bypass_userlimit(player_name, addr_s);
+}
+
 void Server::notifyPlayer(const char *name, const std::wstring &msg)
 {
 	// m_env will be NULL if the server is initializing
@@ -3821,6 +3847,9 @@ bool Server::showFormspec(const char *playername, const std::string &formspec,
 	RemotePlayer *player = m_env->getPlayer(playername);
 	if (!player)
 		return false;
+
+	// To allow re-sending the same inventory formspec.
+	player->inventory_formspec_overridden = formname.empty() && !formspec.empty();
 
 	SendShowFormspecMessage(player->getPeerId(), formspec, formname);
 	return true;
@@ -3929,7 +3958,6 @@ void Server::hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &
 
 Address Server::getPeerAddress(session_t peer_id)
 {
-	// Note that this is only set after Init was received in Server::handleCommand_Init
 	return getClient(peer_id, CS_Invalid)->getAddress();
 }
 
@@ -4655,7 +4683,7 @@ std::unique_ptr<PlayerSAO> Server::emergePlayer(const char *name, session_t peer
 	return playersao;
 }
 
-void dedicated_server_loop(Server &server, bool &kill)
+void dedicated_server_loop(Server &server, volatile std::sig_atomic_t &kill)
 {
 	verbosestream<<"dedicated_server_loop()"<<std::endl;
 
@@ -4848,7 +4876,7 @@ ModStorageDatabase *Server::openModStorageDatabase(const std::string &world_path
 		warningstream << "/!\\ You are using the old mod storage files backend. "
 			<< "This backend is deprecated and may be removed in a future release /!\\"
 			<< std::endl << "Switching to SQLite3 is advised, "
-			<< "please read https://wiki.luanti.org/Database_backends." << std::endl;
+			<< "please read https://docs.luanti.org/for-server-hosts/database-backends." << std::endl;
 
 	return openModStorageDatabase(backend, world_path, world_mt);
 }

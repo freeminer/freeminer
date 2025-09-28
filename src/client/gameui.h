@@ -11,7 +11,7 @@
 #include <IGUIEnvironment.h>
 #include "game.h"
 
-using namespace irr;
+
 class Client;
 class EnrichedString;
 class GUIChatConsole;

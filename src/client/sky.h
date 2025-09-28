@@ -6,7 +6,7 @@
 
 #include "irrlichttypes_bloated.h"
 #include <ISceneNode.h>
-#include <SMeshBuffer.h>
+#include <CMeshBuffer.h>
 #include <array>
 #include "camera.h" // CameraMode
 #include "irr_ptr.h"
@@ -14,7 +14,7 @@
 
 #define SKY_MATERIAL_COUNT 12
 
-namespace irr::video
+namespace video
 {
 	class IVideoDriver;
 	class IImage;
@@ -230,7 +230,7 @@ private:
 		float horizon_position,	float day_position);
 
 public:
-	irr::scene::ISceneNode * sun_moon_light = nullptr;
+	scene::ISceneNode * sun_moon_light = nullptr;
 	v3pos_t camera_offset;
 	void sky_rotate(const scene::ICameraSceneNode* camera, SKY_ROTATE type, float wicked_time_of_day, v3f & Pos);
 private:

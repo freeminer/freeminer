@@ -58,6 +58,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <osmium/osm/node.hpp>
 #include <osmium/osm/way.hpp>
 #include <osmium/tags/tags_filter.hpp>
+
+#include "earth/osmium-inl.h"
+
 #endif
 std::unique_ptr<maps_holder_t> MapgenEarth::maps_holder;
 
@@ -133,6 +136,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	mg_params = params_;
 
 	Json::Value &params = mg_params->params;
+	flags = 0;
 
 	if (params.get("light", 0).asBool())
 		this->flags &= ~MG_LIGHT;
@@ -276,69 +280,6 @@ int MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
 	return get_height(p.X, p.Y); // + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
-//  https://www.roguebasin.com/index.php?title=Bresenham%27s_Line_Algorithm
-void MapgenEarth::bresenham(pos_t x1, pos_t y1, const pos_t x2, const pos_t y2, pos_t y,
-		pos_t h, const MapNode &n)
-{
-	pos_t delta_x(x2 - x1);
-	// if x1 == x2, then it does not matter what we set here
-	const int8_t ix((delta_x > 0) - (delta_x < 0));
-	delta_x = std::abs(delta_x) << 1;
-
-	pos_t delta_y(y2 - y1);
-	// if y1 == y2, then it does not matter what we set here
-	const int8_t iy((delta_y > 0) - (delta_y < 0));
-	delta_y = std::abs(delta_y) << 1;
-
-	for (pos_t yi = y; yi <= y + h; ++yi) {
-		if (vm->exists({x1, yi, y1})) {
-			vm->setNode({x1, yi, y1}, n);
-		}
-	}
-
-	if (delta_x >= delta_y) {
-		// error may go below zero
-		pos_t error(delta_y - (delta_x >> 1));
-
-		while (x1 != x2) {
-			// reduce error, while taking into account the corner case of error == 0
-			if ((error > 0) || (!error && (ix > 0))) {
-				error -= delta_x;
-				y1 += iy;
-			}
-
-			error += delta_y;
-			x1 += ix;
-
-			for (pos_t yi = y; yi <= y + h; ++yi) {
-				if (vm->exists({x1, yi, y1})) {
-					vm->setNode({x1, yi, y1}, n);
-				}
-			}
-		}
-	} else {
-		// error may go below zero
-		int error(delta_x - (delta_y >> 1));
-
-		while (y1 != y2) {
-			// reduce error, while taking into account the corner case of error == 0
-			if ((error > 0) || (!error && (iy > 0))) {
-				error -= delta_y;
-				x1 += ix;
-			}
-
-			error += delta_x;
-			y1 += iy;
-
-			for (pos_t yi = y; yi <= y + h; ++yi) {
-				if (vm->exists({x1, yi, y1})) {
-					vm->setNode({x1, yi, y1}, n);
-				}
-			}
-		}
-	}
-}
-
 int MapgenEarth::generateTerrain()
 {
 	MapNode n_ice(c_ice);
@@ -425,8 +366,8 @@ void MapgenEarth::generateBuildings()
 
 #if USE_OSMIUM
 
-#define FILE_INCLUDED 1
-#include "earth/osmium-inl.h"
+	//#define FILE_INCLUDED 1
+	//#include "earth/osmium-inl.h"
 	const auto tc = pos_to_ll(node_min.X, node_min.Z);
 	const auto tc_max = pos_to_ll(node_max.X, node_max.Z);
 	static const auto folder = porting::path_cache + DIR_DELIM + "earth";
@@ -434,7 +375,8 @@ void MapgenEarth::generateBuildings()
 	const auto lon_dec = lon_start(tc.lon);
 
 	static const auto timestamp = []() {
-		std::string ts = "202503130700";
+		 // const std::string ts = "202509040800";
+		 std::string ts = "latest";
 		g_settings->getNoEx("earth_movisda_timestamp", ts);
 		return ts;
 	}();

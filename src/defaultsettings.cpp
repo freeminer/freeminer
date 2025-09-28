@@ -209,7 +209,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_days", "2");
 
 	settings->setDefault("respawn_auto", "false");
-	settings->setDefault("autojump", android || emscripten ? "1" : "0");
+	settings->setDefault("autojump", 1 || android || emscripten ? "1" : "0");
 	settings->setDefault("hotbar_cycling", "false");
 
 // TODO: refactor and resolve client/server dependencies
@@ -245,7 +245,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("emergequeue_limit_diskonly", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_generate", ""); // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
-	settings->setDefault("num_emerge_threads", ""); // "1"
+	// settings->setDefault("num_emerge_threads", ""); // "1" // Fix and enable auto
 	settings->setDefault("server_map_save_interval", "300"); // "5.3"
 	settings->setDefault("sqlite_synchronous", "1"); // "2"
 	settings->setDefault("save_generated_block", "true");
@@ -576,6 +576,7 @@ void set_default_settings()
 	USEKEY2("keymap_fullscreen", "SYSTEM_SCANCODE_68", "KEY_F11");
 	USEKEY2("keymap_increase_viewing_range_min", "SYSTEM_SCANCODE_46", "+");
 	USEKEY2("keymap_decrease_viewing_range_min", "SYSTEM_SCANCODE_45", "-");
+	settings->setDefault("keymap_close_world", "");
 	USEKEY2("keymap_slot1", "SYSTEM_SCANCODE_30", "KEY_KEY_1");
 	USEKEY2("keymap_slot2", "SYSTEM_SCANCODE_31", "KEY_KEY_2");
 	USEKEY2("keymap_slot3", "SYSTEM_SCANCODE_32", "KEY_KEY_3");

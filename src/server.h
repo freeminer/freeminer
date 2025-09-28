@@ -33,6 +33,7 @@
 #include "translation.h"
 #include "script/common/c_types.h" // LuaError
 #include <atomic>
+#include <csignal>
 #include <string>
 #include <list>
 #include <map>
@@ -59,6 +60,7 @@ class AbmWorldThread;
 class WorldMergeThread;
 
 
+
 class ClientNotFoundException : public BaseException
 {
 public:
@@ -66,6 +68,7 @@ public:
 		BaseException(s)
 	{}
 };
+
 // ==
 
 
@@ -402,6 +405,7 @@ public:
 	void hudSetHotbarImage(RemotePlayer *player, const std::string &name, int items = 0);
 	void hudSetHotbarSelectedImage(RemotePlayer *player, const std::string &name);
 
+	/// @note this is only available for client state >= CS_HelloSent
 	Address getPeerAddress(session_t peer_id);
 
 	void setLocalPlayerAnimations(RemotePlayer *player, v2f animation_frames[4],
@@ -652,14 +656,18 @@ private:
 
 	void handleChatInterfaceEvent(ChatEvent *evt);
 
+	/// @brief Checks if user limit allows a potential client to join
+	/// @return true if the client can NOT join
+	bool checkUserLimit(const std::string &player_name, const std::string &addr_s);
+
 	// This returns the answer to the sender of wmessage, or "" if there is none
 	std::wstring handleChat(const std::string &name, std::wstring wmessage_input,
 		bool check_shout_priv = false, RemotePlayer *player = nullptr);
 	void handleAdminChat(const ChatEventChat *evt);
 
 	// When called, connection mutex should be locked
-	RemoteClient* getClient(session_t peer_id, ClientState state_min = CS_Active);
-	RemoteClient* getClientNoEx(session_t peer_id, ClientState state_min = CS_Active);
+	RemoteClient *getClient(session_t peer_id, ClientState state_min = CS_Active);
+	RemoteClient *getClientNoEx(session_t peer_id, ClientState state_min = CS_Active);
 
 	// When called, environment mutex should be locked
 	std::string getPlayerName(session_t peer_id);
@@ -899,11 +907,12 @@ public:
 
 	Shuts down when kill is set to true.
 */
-void dedicated_server_loop(Server &server, bool &kill);
-
 
 // fm:
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
 		const std::string &savedir, block_step_t step);
 MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &pos);
 // ==
+
+
+void dedicated_server_loop(Server &server, volatile std::sig_atomic_t &kill);

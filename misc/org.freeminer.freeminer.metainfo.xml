@@ -125,11 +125,7 @@
         </ul>
     </description>
 
-<<<<<<<< HEAD:misc/org.freeminer.freeminer.metainfo.xml
     <launchable type="desktop-id">org.freeminer.freeminer.desktop</launchable>
-========
-    <launchable type="desktop-id">org.luanti.luanti.desktop</launchable>
->>>>>>>> 5.12.0:misc/org.luanti.luanti.metainfo.xml
     <screenshots>
         <screenshot type="default">
             <image>https://www.luanti.org/media/gallery/1.jpg</image>
@@ -162,10 +158,10 @@
 
     <url type="homepage">https://freeminer.org</url>
     <url type="bugtracker">https://www.luanti.org/get-involved/#reporting-issues</url>
-    <url type="translate">https://dev.luanti.org/Translation/</url>
+    <url type="translate">https://docs.luanti.org/for-creators/translation/</url>
     <url type="donation">https://www.luanti.org/get-involved/#donate</url>
-    <url type="faq">https://wiki.luanti.org/FAQ</url>
-    <url type="help">https://wiki.luanti.org</url>
+    <url type="faq">https://docs.luanti.org/about/faq</url>
+    <url type="help">https://docs.luanti.org</url>
     <url type="vcs-browser">https://github.com/freeminer/freeminer</url>
     <url type="contribute">https://www.luanti.org/get-involved</url>
 
@@ -178,6 +174,6 @@
     <update_contact></update_contact>
 
     <releases>
-        <release date="2025-05-23" version="5.12.0"/>
+        <release date="2025-08-01" version="5.13.0"/>
     </releases>
 </component>

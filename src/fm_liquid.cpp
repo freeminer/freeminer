@@ -359,6 +359,8 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 						nb.infinity = (nb.node.param2 & LIQUID_INFINITY_MASK);
 					}
 					break;
+					case LiquidType_END:
+					break;
 				}
 
 				// DUMP(i, nb.liquid, nb.infinity, (int)liquid_levels[i], f.name);

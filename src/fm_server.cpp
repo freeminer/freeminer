@@ -718,6 +718,7 @@ uint32_t Server::SendFarBlocks(float dtime)
 	int32_t uptime = m_uptime_counter->get();
 	ScopeProfiler sp(g_profiler, "Server: Far blocks send");
 	uint32_t sent{};
+	const auto lock = m_clients.getClientList().lock_shared_rec();
 	for (const auto &client : m_clients.getClientList()) {
 		const auto c = client.second;
 		if (!c)
@@ -754,7 +755,7 @@ void *WorldMergeThread::run()
 			.ndef{m_server->getNodeDefManager()},
 			.smap{m_server->getEnv().m_map.get()},
 			.far_dbases{m_server->far_dbases},
-			.dbase{m_server->getEnv().m_map->m_db.dbase},
+			.dbase{m_server->getEnv().m_map->m_db.dbase, [](MapDatabase*){}},
 			.save_dir{m_server->getEnv().m_map->m_savedir},
 	};
 
