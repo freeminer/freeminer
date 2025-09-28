@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "fm_weather.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
 #include "threading/concurrent_set.h"
@@ -51,15 +52,12 @@ class ServerMap : public Map
 {
 public:
 
-
-    // freeminer:
-	using humidity_t = s16;
-	using heat_t = s16;
-	virtual heat_t updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3pos<heat_t> *cache = nullptr,
+	// freeminer:
+	virtual weather::heat_t updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3bpos<weather::heat_t> *cache = nullptr,
 			bool block_add = true);
-	virtual humidity_t updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3pos<humidity_t> *cache = nullptr,
+	virtual weather::humidity_t updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
+			MapBlock *block = nullptr, unordered_map_v3bpos<weather::humidity_t> *cache = nullptr,
 			bool block_add = true);
 
 	size_t transforming_liquid_size();

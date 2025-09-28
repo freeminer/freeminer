@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <osmium/geom/tile.hpp>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -256,6 +257,10 @@ ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z)
 		return {89.9999, 0};
 	}
 }
+ll MapgenEarth::pos_to_ll(const v3pos_t &p)
+{
+	return pos_to_ll(p.X, p.Z);
+}
 
 v2pos_t MapgenEarth::ll_to_pos(const ll &l)
 {
@@ -288,7 +293,7 @@ int MapgenEarth::generateTerrain()
 
 	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
 		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
-			s16 heat =
+			auto heat =
 					m_emerge->env->m_use_weather
 							? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env,
 									  v3pos_t(x, node_max.Y, z), nullptr, &heat_cache)
@@ -375,8 +380,7 @@ void MapgenEarth::generateBuildings()
 	const auto lon_dec = lon_start(tc.lon);
 
 	static const auto timestamp = []() {
-		 // const std::string ts = "202509040800";
-		 std::string ts = "latest";
+		std::string ts = "latest";
 		g_settings->getNoEx("earth_movisda_timestamp", ts);
 		return ts;
 	}();
@@ -449,5 +453,26 @@ void MapgenEarth::generateBuildings()
 	if (const auto &hdlr = maps_holder->osm_bbox.get(bbox)) {
 		hdlr->apply();
 	}
+
+	warningstream << "Buildings stat: " << node_min << " set=" << stat.set
+				  << " miss=" << stat.miss << " level=" << stat.level
+				  << " check=" << stat.check << " fill=" << stat.fill << "\n";
+	stat = {};
+
 #endif
+}
+
+weather::heat_t MapgenEarth::calcBlockHeat(const v3pos_t &p, uint64_t seed,
+		float timeofday, float totaltime, bool use_weather)
+{
+	const auto ll = pos_to_ll(p);
+	const auto tile = osmium::geom::Tile(3, osmium::Location(ll.lon, ll.lat));
+	return m_emerge->biomemgr->calcBlockHeat(p, seed, timeofday, totaltime, use_weather);
+}
+
+weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t seed,
+		float timeofday, float totaltime, bool use_weather)
+{
+	return m_emerge->biomemgr->calcBlockHumidity(
+			p, seed, timeofday, totaltime, use_weather);
 }

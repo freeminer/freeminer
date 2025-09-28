@@ -260,6 +260,7 @@ struct Ground
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
+		++mg->stat.level;
 		const auto h = mg->get_height(pos.X, pos.Y);
 		return h;
 	}
@@ -287,16 +288,8 @@ struct WorldEditor
 	{
 		// Implementation for adding a block to the world
 		const auto yg = ground->level({x, z});
-		const v3pos_t pos{
-				static_cast<pos_t>(x), static_cast<pos_t>(yg + y), static_cast<pos_t>(z)};
-		if (!mg || !mg->vm) {
-			DUMP("broken mg");
-			return;
-		}
 
-		if (mg->vm->exists(pos)) {
-			mg->vm->setNode(pos, block);
-		}
+		return set_block_absolute(block, x, yg + y, z, replace_with, avoid);
 	}
 
 	void set_block(const Block &block, int x, int y, int z,
@@ -343,6 +336,9 @@ struct WorldEditor
 		}
 		if (mg->vm->exists(pos)) {
 			mg->vm->setNode(pos, block);
+			++mg->stat.set;
+		} else {
+			++mg->stat.miss;
 		}
 	}
 
@@ -362,6 +358,8 @@ struct WorldEditor
 		const v3pos_t pos{
 				static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 
+		++mg->stat.check;
+
 		if (!mg->vm->exists(pos))
 			return false;
 
@@ -372,9 +370,11 @@ struct WorldEditor
 	//inline auto node_to_xz(const osmium::NodeRef &node)
 	inline auto node_to_xz(const auto &node)
 	{
-		const auto pos2 = mg->ll_to_pos({static_cast<ll_t>(node.y()) /
-												 osmium::detail::coordinate_precision,
-				static_cast<ll_t>(node.x()) / osmium::detail::coordinate_precision});
+		const auto pos2 = mg->ll_to_pos(
+				{static_cast<ll_t>(node.y()) /
+								static_cast<ll_t>(osmium::detail::coordinate_precision),
+						static_cast<ll_t>(node.x()) /
+								static_cast<ll_t>(osmium::detail::coordinate_precision)});
 		// TODO: scale y
 		return std::make_pair(pos2.X, pos2.Y);
 	}
@@ -398,7 +398,6 @@ struct WorldEditor
 		auto [min_x, max_x] = std::minmax(x1, x2);
 		auto [min_y, max_y] = std::minmax(y1, y2);
 		auto [min_z, max_z] = std::minmax(z1, z2);
-
 		for (std::int32_t x = min_x; x <= max_x; ++x) {
 			for (std::int32_t y = min_y; y <= max_y; ++y) {
 				for (std::int32_t z = min_z; z <= max_z; ++z) {
@@ -407,6 +406,7 @@ struct WorldEditor
 				}
 			}
 		}
+		++mg->stat.fill;
 	}
 
 	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
@@ -444,12 +444,10 @@ struct WorldEditor
 
 }
 
-
 using namespace world_editor;
 }
 
 #include "arnis-cpp/src/block_definitions.h"
-
 
 namespace arnis
 {

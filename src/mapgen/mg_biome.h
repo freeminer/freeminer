@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "fm_weather.h"
 #include "irr_v3d.h"
 #include "objdef.h"
 #include "nodedef.h"
@@ -245,9 +246,9 @@ public:
 	s32 weather_humidity_height;
 	s32 weather_hot_core;
 
-	MapgenParams * mapgen_params = nullptr;
-	s16 calcBlockHeat(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
-	s16 calcBlockHumidity(v3pos_t p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	MapgenParams * mapgen_params{};
+	weather::heat_t calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	//====
 
 	BiomeGen *createBiomeGen(BiomeGenType type, BiomeParams *params, v3s16 chunksize)
