@@ -759,6 +759,7 @@ ShaderInfo ShaderSource::generateShader(const std::string &name,
 		dumpShaderProgram(warningstream, "Vertex", vertex_shader);
 		dumpShaderProgram(warningstream, "Fragment", fragment_shader);
 		dumpShaderProgram(warningstream, "Geometry", geometry_shader);
+		return shaderinfo;
 		throw ShaderException(
 			fmtgettext("Failed to compile the \"%s\" shader.", log_name.c_str()) +
 			strgettext("\nCheck debug.txt for details."));

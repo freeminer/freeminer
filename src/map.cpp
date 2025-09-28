@@ -830,52 +830,77 @@ void MMVManip::initialEmerge(v3bpos_t p_min, v3bpos_t p_max, bool load_if_inexis
 		infostream<<std::endl;
 	}
 
-	const bool all_new = m_area.hasEmptyExtent() || block_area_nodes.contains(m_area);
+	std::map<v3bpos_t, bool> had_blocks;
+	// we can skip this calculation if the areas are disjoint
+	if (!m_area.intersect(block_area_nodes).hasEmptyExtent())
+		had_blocks = getCoveredBlocks();
+
+	const bool all_new = m_area.hasEmptyExtent();
 	addArea(block_area_nodes);
 
 	for(s32 z=p_min.Z; z<=p_max.Z; z++)
 	for(s32 y=p_min.Y; y<=p_max.Y; y++)
 	for(s32 x=p_min.X; x<=p_max.X; x++)
 	{
-		u8 flags = 0;
-		MapBlockPtr block;
 		v3bpos_t p(x,y,z);
-		if (m_loaded_blocks.count(p) > 0)
+		// if this block was already in the vmanip and it has data, skip
+		if (auto it = had_blocks.find(p); it != had_blocks.end() && it->second)
 			continue;
 
-		bool block_data_inexistent = false;
-		{
-			TimeTaker timer2("emerge load");
-
-			block = m_map->getBlock(p, false, true);
-			if (!block)
-				block_data_inexistent = true;
-			else
-				block->copyTo(*this);
-		}
-
-		if(block_data_inexistent)
-		{
-
+		auto block = m_map->getBlock(p, false, true);
+		if (block) {
+			block->copyTo(*this);
+		} else {
 			if (load_if_inexistent && !blockpos_over_max_limit(p)) {
 				block = m_map->emergeBlockPtr(p, true);
-			   if (block)
+				assert(block);
 				block->copyTo(*this);
-			} 
-			if (!block) {
-				flags |= VMANIP_BLOCK_DATA_INEXIST;
-
+			} else {
 				// Mark area inexistent
 				VoxelArea a(p*MAP_BLOCKSIZE, (p+1)*MAP_BLOCKSIZE-v3pos_t(1,1,1));
 				setFlags(a, VOXELFLAG_NO_DATA);
 			}
 		}
-
-		m_loaded_blocks[p] = flags;
 	}
 
 	if (all_new)
 		m_is_dirty = false;
+}
+
+std::map<v3bpos_t, bool> MMVManip::getCoveredBlocks() const
+{
+	std::map<v3bpos_t, bool> ret;
+	if (m_area.hasEmptyExtent())
+		return ret;
+
+	// Figure out if *any* node in this block has data according to m_flags
+	const auto &check_block = [this] (v3bpos_t bp) -> bool {
+		v3pos_t pmin = bp * MAP_BLOCKSIZE;
+		v3pos_t pmax = pmin + v3bpos_t(MAP_BLOCKSIZE-1);
+		for(auto z=pmin.Z; z<=pmax.Z; z++)
+		for(auto y=pmin.Y; y<=pmax.Y; y++)
+		for(auto x=pmin.X; x<=pmax.X; x++) {
+			if (!(m_flags[m_area.index(x,y,z)] & VOXELFLAG_NO_DATA))
+				return true;
+		}
+		return false;
+	};
+
+	auto bpmin = getNodeBlockPos(m_area.MinEdge);
+	auto bpmax = getNodeBlockPos(m_area.MaxEdge);
+
+	if (bpmin * MAP_BLOCKSIZE != m_area.MinEdge)
+		throw BaseException("MMVManip not block-aligned");
+	if ((bpmax+1) * MAP_BLOCKSIZE - v3bpos_t(1) != m_area.MaxEdge)
+		throw BaseException("MMVManip not block-aligned");
+
+	for(auto z=bpmin.Z; z<=bpmax.Z; z++)
+	for(auto y=bpmin.Y; y<=bpmax.Y; y++)
+	for(auto x=bpmin.X; x<=bpmax.X; x++) {
+		v3bpos_t bp(x,y,z);
+		ret[bp] = check_block(bp);
+	}
+	return ret;
 }
 
 void MMVManip::blitBackAll(std::map<v3bpos_t, MapBlock*> *modified_blocks,
@@ -885,17 +910,27 @@ void MMVManip::blitBackAll(std::map<v3bpos_t, MapBlock*> *modified_blocks,
 		return;
 	assert(m_map);
 
-	/*
-		Copy data of all blocks
-	*/
-	assert(!m_loaded_blocks.empty());
-	for (auto &loaded_block : m_loaded_blocks) {
-		v3bpos_t p = loaded_block.first;
-		MapBlock *block = m_map->getBlockNoCreateNoEx(p, false, true);
+	size_t nload = 0;
 
-		bool existed = !(loaded_block.second & VMANIP_BLOCK_DATA_INEXIST);
-		if (!existed || (block == NULL) ||
-			(!overwrite_generated && block->isGenerated()))
+	// Copy all the blocks with data back to the map
+	const auto loaded_blocks = getCoveredBlocks();
+	for (auto &it : loaded_blocks) {
+		if (!it.second)
+			continue;
+		auto p = it.first;
+		auto block = m_map->getBlock(p, false, true);
+		if (!block) {
+			if (!blockpos_over_max_limit(p)) {
+				block = m_map->emergeBlockPtr(p, true);
+				nload++;
+			}
+		}
+		if (!block) {
+			warningstream << "blitBackAll: Couldn't load block " << p
+				<< " to write data to map" << std::endl;
+			continue;
+		}
+		if (!overwrite_generated && block->isGenerated())
 			continue;
 
 		block->copyFrom(*this);
@@ -905,7 +940,11 @@ void MMVManip::blitBackAll(std::map<v3bpos_t, MapBlock*> *modified_blocks,
 		block->expireIsAirCache();
 
 		if(modified_blocks)
-			(*modified_blocks)[p] = block;
+			(*modified_blocks)[p] = block.get(); // should not be used by pointer
+	}
+
+	if (nload > 0) {
+		verbosestream << "blitBackAll: " << nload << " blocks had to be loaded for writing" << std::endl;
 	}
 }
 
@@ -923,11 +962,7 @@ MMVManip *MMVManip::clone() const
 		ret->m_flags = new u8[size];
 		memcpy(ret->m_flags, m_flags, size * sizeof(u8));
 	}
-
 	ret->m_is_dirty = m_is_dirty;
-	// Even if the copy is disconnected from a map object keep the information
-	// needed to write it back to one
-	ret->m_loaded_blocks = m_loaded_blocks;
 
 	return ret;
 }

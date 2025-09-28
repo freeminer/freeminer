@@ -45,12 +45,11 @@ public:
 	mapped_type &get(Args &&...args)
 	{
 		const auto lock = LOCKER::lock_shared_rec();
-
-		//if (!full_type::contains(std::forward<Args>(args)...))
-		if (full_type::find(std::forward<Args>(args)...) == full_type::end())
-			return nothing;
-
-		return full_type::operator[](std::forward<Args>(args)...);
+		if (const auto &it = full_type::find(std::forward<Args>(args)...);
+				it != full_type::end()) {
+			return it->second;
+		}
+		return nothing;
 	}
 
 	template <typename... Args>

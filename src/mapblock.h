@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <vector>
+#include "fm_nodecontainer.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "mapnode.h"
@@ -29,6 +30,7 @@ class NodeMetadataList;
 class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;
+class NameIdMapping;
 
 #define BLOCK_TIMESTAMP_UNDEFINED 0xffffffff
 
@@ -118,11 +120,6 @@ public:
 			data[i] = ignoreNode;
 
 		//raiseModified(MOD_STATE_WRITE_NEEDED, MOD_REASON_REALLOCATE);
-	}
-
-	MapNode* getData()
-	{
-		return data;
 	}
 
 	////
@@ -350,7 +347,7 @@ public:
 	}
 
 	// Copies data to VoxelManipulator to getPosRelative()
-	void copyTo(VoxelManipulator &dst);
+	void copyTo(NodeContainer &dst);
 
 	// Copies data from VoxelManipulator to getPosRelative()
 	void copyFrom(const VoxelManipulator &src);
@@ -585,17 +582,22 @@ public:
 	// clearObject and return removed objects count
 	u32 clearObjects();
 
+private:
 	static const u32 ystride = MAP_BLOCKSIZE;
 	static const u32 zstride = MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 
 	static const u32 nodecount = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
 
-private:
 	/*
 		Private methods
 	*/
 
 	void deSerialize_pre22(std::istream &is, u8 version, bool disk);
+
+	static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
+		const NodeDefManager *nodedef);
+	static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
+			IGameDef *gamedef);
 
 	/*
 	 * PLEASE NOTE: When adding something here be mindful of position and size

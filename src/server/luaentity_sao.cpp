@@ -52,7 +52,14 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3opos_t pos, const std::stri
 		rotation.X = readF1000(is);
 		rotation.Z = readF1000(is);
 
-		// if (version2 < 2)
+		if (version2 < 2) {
+			m_guid = env->getGUIDGenerator().next();
+			break;
+		}
+
+		m_guid.deSerialize(is);
+
+		// if (version2 < 3)
 		//     break;
 		// <read new values>
 		break;
@@ -70,6 +77,14 @@ LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3opos_t pos, const std::stri
 	m_hp = hp;
 	m_velocity = velocity;
 	setRotation(rotation);
+}
+
+LuaEntitySAO::LuaEntitySAO(ServerEnvironment *env, v3opos_t pos, const std::string &name,
+		const std::string &state) :
+		UnitSAO(env, pos),
+		m_init_name(name), m_init_state(state),
+		m_guid(env->getGUIDGenerator().next())
+{
 }
 
 LuaEntitySAO::~LuaEntitySAO()
@@ -312,10 +327,12 @@ void LuaEntitySAO::getStaticData(std::string *result) const
 	writeF1000(os, m_rotation.Y);
 
 	// version2. Increase this variable for new values
-	writeU8(os, 1); // PROTOCOL_VERSION >= 37
+	writeU8(os, 2);
 
 	writeF1000(os, m_rotation.X);
 	writeF1000(os, m_rotation.Z);
+
+	m_guid.serialize(os);
 
 	// <write new values>
 
@@ -430,6 +447,13 @@ void LuaEntitySAO::setHP(s32 hp, const PlayerHPChangeReason &reason)
 u16 LuaEntitySAO::getHP() const
 {
 	return m_hp;
+}
+
+std::string LuaEntitySAO::getGUID() const
+{
+	// The "@" ensures that entity GUIDs are easily recognizable
+	// and makes it obvious that they can't collide with player names.
+	return "@" + m_guid.base64();
 }
 
 void LuaEntitySAO::setVelocity(v3f velocity)

@@ -506,7 +506,7 @@ video::ITexture *Minimap::getMinimapTexture()
 
 		map_image->fill(video::SColor(255, 0, 0, 0));
 		image->copyTo(map_image,
-			irr::core::vector2d<int> {
+			core::vector2d<int> {
 				((data->mode.map_size - (static_cast<int>(dim.Width))) >> 1)
 					- data->pos.X / data->mode.scale,
 				((data->mode.map_size - (static_cast<int>(dim.Height))) >> 1)
@@ -737,9 +737,8 @@ void Minimap::updateActiveMarkers()
 //// MinimapMapblock
 ////
 
-void MinimapMapblock::getMinimapNodes(NodeContainer *vmanip, const v3pos_t &pos)
+void MinimapMapblock::getMinimapNodes(NodeContainer *vmanip, const NodeDefManager *nodedef, const v3pos_t &pos)
 {
-
 	for (s16 x = 0; x < MAP_BLOCKSIZE; x++)
 	for (s16 z = 0; z < MAP_BLOCKSIZE; z++) {
 		s16 air_count = 0;
@@ -749,11 +748,12 @@ void MinimapMapblock::getMinimapNodes(NodeContainer *vmanip, const v3pos_t &pos)
 		for (s16 y = MAP_BLOCKSIZE -1; y >= 0; y--) {
 			v3pos_t p(x, y, z);
 			MapNode n = vmanip->getNodeNoEx(pos + p);
-			if (!surface_found && n.getContent() != CONTENT_AIR) {
+			const ContentFeatures &f = nodedef->get(n);
+			if (!surface_found && f.drawtype != NDT_AIRLIKE) {
 				mmpixel->height = y;
 				mmpixel->n = n;
 				surface_found = true;
-			} else if (n.getContent() == CONTENT_AIR) {
+			} else if (f.drawtype == NDT_AIRLIKE) {
 				air_count++;
 			}
 		}

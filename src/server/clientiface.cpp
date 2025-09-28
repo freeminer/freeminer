@@ -48,7 +48,7 @@ const char *ClientInterface::statenames[] = {
 	"SudoMode",
 };
 
-std::string ClientInterface::state2Name(ClientState state)
+const char *ClientInterface::state2Name(ClientState state)
 {
 	return statenames[state];
 }
@@ -685,9 +685,11 @@ ClientInterface::~ClientInterface()
 std::vector<session_t> ClientInterface::getClientIDs(ClientState min_state)
 {
 	std::vector<session_t> reply;
-	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
+	
 	auto clientslock = m_clients.lock_unique_rec();
 
+	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
+	reply.reserve(m_clients.size());
 	for (const auto &m_client : m_clients) {
 		if (m_client.second->getState() >= min_state)
 			reply.push_back(m_client.second->peer_id);
@@ -705,14 +707,10 @@ void ClientInterface::markBlocksNotSent(const std::vector<v3bpos_t> &positions, 
 	}
 }
 
-/**
- * Verify if user limit was reached.
- * User limit count all clients from HelloSent state (MT protocol user) to Active state
- * @return true if user limit was reached
- */
 bool ClientInterface::isUserLimitReached()
 {
-	return getClientIDs(CS_HelloSent).size() >= g_settings->getU16("max_users");
+	// Note that this only counts clients that have fully joined
+	return getClientIDs().size() >= g_settings->getU16("max_users");
 }
 
 void ClientInterface::step(float dtime)
@@ -732,21 +730,18 @@ void ClientInterface::step(float dtime)
 	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
 	for (const auto &it : m_clients) {
 		auto state = it.second->getState();
-		if (state >= CS_HelloSent)
+		if (state >= CS_InitDone)
 			continue;
 		if (it.second->uptime() <= LINGER_TIMEOUT)
 			continue;
-		// CS_Created means nobody has even noticed the client is there
-		//            (this is before on_prejoinplayer runs)
-		// CS_Invalid should not happen
-		// -> log those as warning, the rest as info
-		std::ostream &os = state == CS_Created || state == CS_Invalid ?
-			warningstream : infostream;
+		// Complain louder if this situation is unexpected
+		auto &os = state == CS_Disconnecting || state == CS_Denied ?
+			infostream : warningstream;
 		try {
 			Address addr = m_con->GetPeerAddress(it.second->peer_id);
 			os << "Disconnecting lingering client from "
-				<< addr.serializeString() << " (state="
-				<< state2Name(state) << ")" << std::endl;
+				<< addr.serializeString() << " peer_id=" << it.second->peer_id
+				<< " (" << state2Name(state) << ")" << std::endl;
 			m_con->DisconnectPeer(it.second->peer_id);
 		} catch (con::PeerNotFoundException &e) {
 		}
@@ -778,9 +773,10 @@ void ClientInterface::UpdatePlayerList()
 
 			{
 				//RecursiveMutexAutoLock clientslock(m_clients_mutex);
-				RemoteClient* client = lockedGetClientNoEx(i);
+				auto client = lockedGetClientNoEx(i);
 				if (client)
 					client->PrintInfo(infostream);
+				infostream << std::endl;
 			}
 		  }
 
@@ -822,16 +818,15 @@ void ClientInterface::sendCustom(session_t peer_id, u8 channel, NetworkPacket *p
 	m_con->Send(peer_id, channel, pkt, reliable);
 }
 
-void ClientInterface::sendToAll(NetworkPacket *pkt)
+void ClientInterface::sendToAll(NetworkPacket *pkt, ClientState state_min)
 {
-	auto clientslock = m_clients.lock_unique_rec();
-	for (auto &client_it : m_clients) {
-		const auto client = client_it.second;
-		if (client->net_proto_version != 0) {
-			auto &ccf = clientCommandFactoryTable[pkt->getCommand()];
-			FATAL_ERROR_IF(!ccf.name, "packet type missing in table");
-			m_con->Send(client->peer_id, ccf.channel, pkt, ccf.reliable);
-		}
+	auto &ccf = clientCommandFactoryTable[pkt->getCommand()];
+	FATAL_ERROR_IF(!ccf.name, "packet type missing in table");
+	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
+    auto clientslock = m_clients.lock_unique_rec();
+	for (auto &[peer_id, client] : m_clients) {
+		if (client->getState() >= state_min)
+			m_con->Send(peer_id, ccf.channel, pkt, ccf.reliable);
 	}
 }
 
@@ -863,10 +858,11 @@ void ClientInterface::sendToAll(u16 channelnum,
 #endif
 
 //TODO: return here shared_ptr
-RemoteClient* ClientInterface::getClientNoEx(u16 peer_id, ClientState state_min)
+RemoteClient* ClientInterface::getClientNoEx(session_t peer_id, ClientState state_min)
 {
-	auto client = getClient(peer_id, state_min);
-	return client.get();
+	// RecursiveMutexAutoLock clientslock(m_clients_mutex);
+	auto client = lockedGetClientNoEx(peer_id, state_min);
+	return client;
 }
 
 RemoteClientPtr ClientInterface::getClient(session_t peer_id, ClientState state_min)
@@ -876,29 +872,17 @@ RemoteClientPtr ClientInterface::getClient(session_t peer_id, ClientState state_
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if (n == m_clients.end())
-		return NULL;
+		return nullptr;
 
 	if (n->second->getState() >= state_min)
 		return n->second;
 
-	return NULL;
+	return nullptr;
 }
 
 RemoteClient* ClientInterface::lockedGetClientNoEx(session_t peer_id, ClientState state_min)
 {
-	return getClientNoEx(peer_id, state_min);
-#if WTF
-	RemoteClientMap::const_iterator n = m_clients.find(peer_id);
-	// The client may not exist; clients are immediately removed if their
-	// access is denied, and this event occurs later then.
-	if (n == m_clients.end())
-		return NULL;
-
-	if (n->second->getState() >= state_min)
-		return n->second;
-
-	return NULL;
-#endif
+	return getClient(peer_id, state_min).get();
 }
 
 ClientState ClientInterface::getClientState(session_t peer_id)
@@ -911,23 +895,6 @@ ClientState ClientInterface::getClientState(session_t peer_id)
 		return CS_Invalid;
 
 	return n->second->getState();
-}
-
-void ClientInterface::setPlayerName(session_t peer_id, const std::string &name)
-{
-	auto client = getClient(peer_id, CS_Invalid);
-	if(!client)
-		return;
-
-	client->setName(name);
-#if WTF
-	RecursiveMutexAutoLock clientslock(m_clients_mutex);
-	RemoteClientMap::iterator n = m_clients.find(peer_id);
-	// The client may not exist; clients are immediately removed if their
-	// access is denied, and this event occurs later then.
-	if (n != m_clients.end())
-		n->second->setName(name);
-#endif		
 }
 
 void ClientInterface::DeleteClient(session_t peer_id)
@@ -1037,26 +1004,4 @@ u16 ClientInterface::getProtocolVersion(session_t peer_id)
 		return 0;
 
 	return client->net_proto_version;
-}
-
-void ClientInterface::setClientVersion(session_t peer_id, u8 major, u8 minor, u8 patch,
-		const std::string &full)
-{
-	auto client = getClient(peer_id, CS_Invalid);
-	if (!client)
-		return;
-
-	client->setVersionInfo(major, minor, patch, full);
-#if WTF
-	RecursiveMutexAutoLock conlock(m_clients_mutex);
-
-	// Error check
-	RemoteClientMap::iterator n = m_clients.find(peer_id);
-
-	// No client to set versions
-	if (n == m_clients.end())
-		return;
-
-	n->second->setVersionInfo(major, minor, patch, full);
-#endif
 }

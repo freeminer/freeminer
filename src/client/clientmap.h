@@ -58,12 +58,12 @@ class Client;
 class ITextureSource;
 class PartialMeshBuffer;
 
-namespace irr::scene
+namespace scene
 {
 	class IMeshBuffer;
 }
 
-namespace irr::video
+namespace video
 {
 	class IVideoDriver;
 }

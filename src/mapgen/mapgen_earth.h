@@ -24,19 +24,21 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <memory>
 #include <mutex>
 #include <string>
-#include "filesys.h"
-#include "mapgen/earth/hgt.h"
-#include "mapgen/mapgen.h"
+
+#include "earth/hgt.h"
 #include "mapgen/mapgen_v7.h"
 #include "porting.h"
+#include "filesys.h"
 #include "threading/concurrent_map.h"
+
+typedef core::vector2d<double> v2d;
 
 //using ll_t = float;
 using ll_t = double;
 struct ll
 {
-	ll_t lat = 0;
-	ll_t lon = 0;
+	ll_t lat{};
+	ll_t lon{};
 };
 
 inline std::ostream &operator<<(std::ostream &s, const ll &p)
@@ -47,8 +49,8 @@ inline std::ostream &operator<<(std::ostream &s, const ll &p)
 
 struct MapgenEarthParams : public MapgenV7Params
 {
-	MapgenEarthParams(){};
-	~MapgenEarthParams(){};
+	MapgenEarthParams() {};
+	~MapgenEarthParams() {};
 
 	Json::Value params;
 
@@ -104,6 +106,7 @@ public:
 	pos_t get_height(pos_t x, pos_t z);
 	ll pos_to_ll(pos_t x, pos_t z);
 	v2pos_t ll_to_pos(const ll &l);
+	//v2d ll_to_pos_absolute(const ll &l);
 	void bresenham(
 			pos_t xa, pos_t za, pos_t xb, pos_t zb, pos_t y, pos_t h, const MapNode &n);
 };

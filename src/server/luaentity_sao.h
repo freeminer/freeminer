@@ -6,6 +6,7 @@
 #pragma once
 
 #include "unit_sao.h"
+#include "util/guid.h"
 
 class FallingSAO;
 
@@ -17,11 +18,7 @@ public:
 	LuaEntitySAO(ServerEnvironment *env, v3opos_t pos, const std::string &data);
 	// Used by the Lua API
 	LuaEntitySAO(ServerEnvironment *env, v3opos_t pos, const std::string &name,
-			const std::string &state) :
-			UnitSAO(env, pos),
-			m_init_name(name), m_init_state(state)
-	{
-	}
+			const std::string &state);
 	~LuaEntitySAO();
 
 	ActiveObjectType getType() const { return ACTIVEOBJECT_TYPE_LUAENTITY; }
@@ -49,6 +46,7 @@ public:
 
 	void setHP(s32 hp, const PlayerHPChangeReason &reason);
 	u16 getHP() const;
+	std::string getGUID() const;
 
 	/* LuaEntitySAO-specific */
 	void setVelocity(v3f velocity);
@@ -91,6 +89,8 @@ private:
 public:
 	bool m_registered = false;
 private:
+
+	MyGUID m_guid;
 
 	v3f m_velocity;
 	v3f m_acceleration;

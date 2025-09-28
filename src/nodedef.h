@@ -31,7 +31,7 @@ class Client;
 #include "msgpack_fix.h"
 
 #if !CHECK_CLIENT_BUILD()
-namespace irr::scene
+namespace scene
 {
 class IMeshManipulator;
 }

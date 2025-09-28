@@ -473,8 +473,8 @@ $commands = {
         sy qq{rm -rf $config->{world} } if $config->{world_clear} and $config->{world};
         $config->{pid_file} = $config->{pid_path} . ($options->{pass}{name} || 'freeminer') . '.pid';
         return
-          sytee $config->{runner},
-          $commands->{env}(),
+          sytee $commands->{env}(),
+          $config->{runner},
           qq{@_},
           $commands->{executable}(),
           qq{$config->{go} --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
@@ -483,8 +483,8 @@ $commands = {
         0;
     },
     run_test => sub {
-        sy $config->{runner},
-          $commands->{env}(),
+        sy $commands->{env}(),
+          $config->{runner},
           qq{@_},
           $commands->{executable}(),
           qq{--run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log},
@@ -493,13 +493,14 @@ $commands = {
     set_bot         => {'----bot' => 1, '----bot_random' => 1,},
     run_bot         => ['set_bot', 'set_client', 'run_single'],
     valgrind => sub {
-        local $config->{runner} = $config->{runner} . " valgrind @_";
-        commands_run($config->{run_task});
+        $g->{keep_config} = 1;
+        $config->{runner} = $config->{runner} . " valgrind @_";
+        0;
     },
     run_server_simple => sub {
         my $fork = $config->{server_bg} ? '&' : '';
         $commands->{world_name}();
-        sytee $config->{runner}, $commands->{env}(), qq{@_}, $commands->{executable}(), qq{--server}, 
+        sytee $commands->{env}(), $config->{runner},  qq{@_}, $commands->{executable}(), qq{--server}, 
         options_make($options->{pass}{config} ? () : [qw(gameid world worldname port config autoexit verbose)]),
         $fork,
           qq{$config->{logdir}/autotest.$g->{task_name}.server.out.log};
@@ -507,8 +508,8 @@ $commands = {
     run_server => sub {
         $commands->{world_name}();
         my $cmd = join ' ',
-          $config->{runner},
           $commands->{env}(),
+          $config->{runner},
           qq{@_},
           $commands->{executable}(),
           ($config->{executable_name} eq 'freeminer' ? qq{--server} : ()),
@@ -530,8 +531,8 @@ $commands = {
             for ($config->{clients_start} .. $config->{clients_num}) {
                 Time::HiRes::sleep($config->{clients_spawn_sleep} // 0.2);
                 sf
-                  $config->{runner},
                   $commands->{env}(),
+                  $config->{runner},
                   qq{@_},
                   $commands->{executable}(),
                   qq{--name $config->{name}$_ --go --autoexit $autoexit --logfile $config->{logdir}/autotest.$g->{task_name}.game.log},
@@ -648,7 +649,7 @@ our $tasks = {
     (
         map {
             'valgrind_' . $_ => [
-                'debug', 'build',
+                #'debug', 'build',
                 ['valgrind', '--tool=' . $_],
             ],
         } @{$config->{valgrind_tools}}
@@ -685,8 +686,11 @@ our $tasks = {
             ' env ASAN_OPTIONS=abort_on_error=1 '
           . $config->{runner}
           . $config->{gdb}
-          . q{ -ex 'set debuginfod enabled on' }
-          . q{ -ex 'run' -ex 't a a bt' }
+          . q{ --quiet }
+          . ($config->{gdb_stay} ? '' : q{ --batch })
+          . q { -iex='set auto-load safe-path /' }
+          . q{ -iex='set debuginfod enabled on' }
+          . q{ -ex 'run' -ex 'backtrace' -ex 'thread apply all backtrace' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
           . q{ --args };
         #@_ = ('debug') if !@_;

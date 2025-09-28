@@ -30,6 +30,19 @@ struct QueuedMeshUpdate
 
 	QueuedMeshUpdate() = default;
 	~QueuedMeshUpdate();
+
+	/**
+	 * Get blocks needed for this mesh update from the map.
+	 * Blocks that were already loaded are skipped.
+	 * @param map Map
+	 * @param cell_size mesh grid cell size
+	 */
+	void retrieveBlocks(Map *map, u16 cell_size);
+	/**
+	 * Drop block references.
+	 * @note not done by destructor, since this is only safe on main thread
+	 */
+	void dropBlocks();
 };
 
 /*
@@ -48,9 +61,16 @@ public:
 
 	~MeshUpdateQueue();
 
-	// Caches the block at p and its neighbors (if needed) and queues a mesh
-	// update for the block at p
-	bool addBlock(Map *map, v3bpos_t p, bool ack_block_to_server, bool urgent);
+	/**
+	 * Caches the block at p and its neighbors (if needed) and queues a mesh
+	 * update for the block p.
+	 * @param map Map
+	 * @param p block position
+	 * @param ack_to_server Should be acked to server when done?
+	 * @param urget High-priority?
+	 * @param from_neighbor was this update only necessary due to a neighbor change?
+	 */
+	bool addBlock(Map *map, v3bpos_t p, bool ack_to_server, bool urgent, bool from_neighbor);
 
 	// Returned pointer must be deleted
 	// Returns NULL if queue is empty
@@ -59,7 +79,7 @@ public:
 	// Marks a position as finished, unblocking the next update
 	void done(v3bpos_t pos);
 
-	u32 size()
+	size_t size()
 	{
 		MutexAutoLock lock(m_mutex);
 		return m_queue.size();
@@ -120,6 +140,7 @@ public:
 	void updateBlock(Map *map, v3bpos_t p, bool ack_block_to_server, bool urgent,
 			bool update_neighbors = false);
 	void putResult(const MeshUpdateResult &r);
+	/// @note caller needs to refDrop() the affected map_blocks
 	bool getNextResult(MeshUpdateResult &r);
 
 

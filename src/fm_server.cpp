@@ -755,7 +755,7 @@ void *WorldMergeThread::run()
 			.ndef{m_server->getNodeDefManager()},
 			.smap{m_server->getEnv().m_map.get()},
 			.far_dbases{m_server->far_dbases},
-			.dbase{m_server->getEnv().m_map->m_db.dbase},
+			.dbase{m_server->getEnv().m_map->m_db.dbase, [](MapDatabase*){}},
 			.save_dir{m_server->getEnv().m_map->m_savedir},
 	};
 

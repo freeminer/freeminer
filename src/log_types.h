@@ -33,8 +33,8 @@ std::ostream &operator<<(std::ostream &s, const v3opos_t &p);
 #endif
 
 #include <SColor.h>
-std::ostream &operator<<(std::ostream &s, const irr::video::SColor &c);
-std::ostream &operator<<(std::ostream &s, const irr::video::SColorf &c);
+std::ostream &operator<<(std::ostream &s, const video::SColor &c);
+std::ostream &operator<<(std::ostream &s, const video::SColorf &c);
 
 #include <map>
 std::ostream &operator<<(std::ostream &s, const std::map<v3pos_t, unsigned int> &p);

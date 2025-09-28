@@ -11,11 +11,11 @@
 #include <iostream>
 #include <ISceneNode.h>
 #include <SMaterial.h>
-#include <SMeshBuffer.h>
+#include <CMeshBuffer.h>
 
 class IShaderSource;
 
-namespace irr::scene
+namespace scene
 {
 	class ISceneManager;
 }
@@ -184,4 +184,5 @@ public:
 
 // fm:
 extern Clouds *g_menuclouds;
-extern irr::scene::ISceneManager *g_menucloudsmgr;
+extern scene::ISceneManager *g_menucloudsmgr;
+// ===

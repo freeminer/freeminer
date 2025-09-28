@@ -18,6 +18,7 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t p
 		bool is_singleplayer):
 	UnitSAO(env_, v3opos_t(0,0,0)),
 	m_player(player_),
+	m_player_name(player_->getName()),
 	m_peer_id_initial(peer_id_),
 	m_is_singleplayer(is_singleplayer)
 {

@@ -16,7 +16,6 @@
 #include "gamedef.h"
 #include "irrlicht_changes/printing.h"
 #include "log.h"
-#include "nameidmapping.h"
 #include "content_mapnode.h"  // For legacy name-id mapping
 #include "content_nodemeta.h" // For legacy deserialization
 #include "serialization.h"
@@ -374,7 +373,8 @@ std::string MapBlock::getModifiedReasonString()
 }
 
 
-void MapBlock::copyTo(VoxelManipulator &dst)
+//void MapBlock::copyTo(VoxelManipulator &dst)
+void MapBlock::copyTo(NodeContainer &dst)
 {
 	const auto lock = lock_shared_rec();
 	v3pos_t data_size(MAP_BLOCKSIZE, MAP_BLOCKSIZE, MAP_BLOCKSIZE);
@@ -429,7 +429,7 @@ void MapBlock::expireIsAirCache()
 // Renumbers the content IDs (starting at 0 and incrementing)
 // Note that there's no technical reason why we *have to* renumber the IDs,
 // but we do it anyway as it also helps compressability.
-static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
+void MapBlock::getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 	const NodeDefManager *nodedef)
 {
 	IdIdMapping &mapping = IdIdMapping::giveClearedThreadLocalInstance();
@@ -460,7 +460,7 @@ static void getBlockNodeIdMapping(NameIdMapping *nimap, MapNode *nodes,
 // Unknown ones are added to nodedef.
 // Will not update itself to match id-name pairs in nodedef.
 static std::mutex correctBlockNodeIds_mutex;
-static void correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
+void MapBlock::correctBlockNodeIds(const NameIdMapping *nimap, MapNode *nodes,
 		IGameDef *gamedef)
 {
 	const NodeDefManager *nodedef = gamedef->ndef();

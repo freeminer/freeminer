@@ -5,11 +5,12 @@
 #pragma once
 
 #include "fm_nodecontainer.h"
+#include "util/unordered_map_hash.h"
 
 #include "irrlichttypes.h"
 #include "irr_ptr.h"
 #include "rect.h"
-#include "SMeshBuffer.h"
+#include "CMeshBuffer.h"
 
 #include "../hud.h"
 #include "mapnode.h"
@@ -18,16 +19,14 @@
 #include <string>
 #include <vector>
 
-namespace irr {
-	namespace video {
-		class IVideoDriver;
-		class IImage;
-		class ITexture;
-	}
+namespace video {
+	class IVideoDriver;
+	class IImage;
+	class ITexture;
+}
 
-	namespace scene {
-		class ISceneNode;
-	}
+namespace scene {
+	class ISceneNode;
 }
 
 class Client;
@@ -35,8 +34,6 @@ class NodeDefManager;
 class ITextureSource;
 class IShaderSource;
 class VoxelManipulator;
-
-#include "util/unordered_map_hash.h"
 
 #define MINIMAP_MAX_SX 512
 #define MINIMAP_MAX_SY 512
@@ -70,7 +67,7 @@ struct MinimapPixel {
 };
 
 struct MinimapMapblock {
-	void getMinimapNodes(NodeContainer *vmanip, const v3pos_t &pos);
+	void getMinimapNodes(NodeContainer *vmanip, const NodeDefManager *nodedef, const v3pos_t &pos);
 
 	MinimapPixel data[MAP_BLOCKSIZE * MAP_BLOCKSIZE];
 };
