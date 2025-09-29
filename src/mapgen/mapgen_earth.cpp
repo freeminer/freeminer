@@ -454,7 +454,7 @@ void MapgenEarth::generateBuildings()
 		hdlr->apply();
 	}
 
-	warningstream << "Buildings stat: " << node_min << " set=" << stat.set
+	verbosestream << "Buildings stat: " << node_min << " set=" << stat.set
 				  << " miss=" << stat.miss << " level=" << stat.level
 				  << " check=" << stat.check << " fill=" << stat.fill << "\n";
 	stat = {};
