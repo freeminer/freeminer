@@ -7,6 +7,7 @@
 #include <cmath>
 #include "irr_v3d.h"
 #include "mapgen.h"
+#include "servermap.h"
 #include "voxel.h"
 #include "noise.h"
 #include "gamedef.h"
@@ -1261,4 +1262,14 @@ const MapNode &Mapgen::visible_content(const v3pos_t &p, bool use_weather)
 		   : heat < 10 ? visible_surface
 		   : heat < 40 ? (humidity < 20 ? visible_surface_dry : visible_surface_green)
 					   : visible_surface_hot;
+}
+
+weather::heat_t Mapgen::calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather)
+{
+	return m_emerge->biomemgr->calcBlockHeat(p, seed, timeofday, totaltime, use_weather);
+}
+
+weather::humidity_t Mapgen::calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather)
+{
+	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime, use_weather);
 }

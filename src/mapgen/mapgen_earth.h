@@ -105,8 +105,20 @@ public:
 
 	pos_t get_height(pos_t x, pos_t z);
 	ll pos_to_ll(pos_t x, pos_t z);
+	ll pos_to_ll(const v3pos_t &p);
 	v2pos_t ll_to_pos(const ll &l);
-	//v2d ll_to_pos_absolute(const ll &l);
-	void bresenham(
-			pos_t xa, pos_t za, pos_t xb, pos_t zb, pos_t y, pos_t h, const MapNode &n);
+
+	weather::heat_t calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday,
+			float totaltime, bool use_weather) override;
+	weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed,
+			float timeofday, float totaltime, bool use_weather) override;
+
+	struct Stat
+	{
+		int set{};
+		int miss{};
+		int level{};
+		int check{};
+		int fill{};
+	} stat;
 };
