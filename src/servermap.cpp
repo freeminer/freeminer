@@ -272,7 +272,7 @@ void ServerMap::cancelBlockMake(BlockMakeData *data)
 	for (auto x = full_bpmin.X; x <= full_bpmax.X; x++)
 	for (auto z = full_bpmin.Z; z <= full_bpmax.Z; z++)
 	for (auto y = full_bpmin.Y; y <= full_bpmax.Y; y++) {
-		MapBlock *block = getBlockNoCreateNoEx(v3pos_t(x, y, z));
+		MapBlock *block = getBlockNoCreateNoEx(v3bpos_t(x, y, z));
 		if (block)
 			block->refDrop();
 	}

@@ -36,7 +36,7 @@ TEST_CASE("benchmark_lighting")
 
 	// Make a platform with a light below it.
 	{
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3pos_t, MapBlock*> modified_blocks;
 		MMVManip vm(&map);
 		vm.initialEmerge(bpmin, bpmax, false);
 		s32 volume = vm.m_area.getVolume();
@@ -44,27 +44,27 @@ TEST_CASE("benchmark_lighting")
 			vm.m_data[i] = MapNode(CONTENT_AIR);
 		for (s16 z = -10; z <= 10; z++)
 		for (s16 x = -10; x <= 10; x++)
-			vm.setNodeNoEmerge(v3s16(x, 1, z), MapNode(content_wall));
-		vm.setNodeNoEmerge(v3s16(0, -10, 0), MapNode(content_light));
+			vm.setNodeNoEmerge(v3pos_t(x, 1, z), MapNode(content_wall));
+		vm.setNodeNoEmerge(v3pos_t(0, -10, 0), MapNode(content_light));
 		voxalgo::blit_back_with_light(&map, &vm, &modified_blocks);
 	}
 
 	BENCHMARK_ADVANCED("voxalgo::update_lighting_nodes")(Catch::Benchmark::Chronometer meter) {
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3pos_t, MapBlock*> modified_blocks;
 		meter.measure([&] {
-			map.addNodeAndUpdate(v3s16(0, 0, 0), MapNode(content_light), modified_blocks);
-			map.removeNodeAndUpdate(v3s16(0, 0, 0), modified_blocks);
+			map.addNodeAndUpdate(v3pos_t(0, 0, 0), MapNode(content_light), modified_blocks);
+			map.removeNodeAndUpdate(v3pos_t(0, 0, 0), modified_blocks);
 		});
 	};
 
 	BENCHMARK_ADVANCED("voxalgo::blit_back_with_light")(Catch::Benchmark::Chronometer meter) {
-		std::map<v3s16, MapBlock*> modified_blocks;
+		std::map<v3pos_t, MapBlock*> modified_blocks;
 		MMVManip vm(&map);
-		vm.initialEmerge(v3s16(0, 0, 0), v3s16(0, 0, 0), false);
+		vm.initialEmerge(v3pos_t(0, 0, 0), v3pos_t(0, 0, 0), false);
 		meter.measure([&] {
-			vm.setNodeNoEmerge(v3s16(0, 0, 0), MapNode(content_light));
+			vm.setNodeNoEmerge(v3pos_t(0, 0, 0), MapNode(content_light));
 			voxalgo::blit_back_with_light(&map, &vm, &modified_blocks);
-			vm.setNodeNoEmerge(v3s16(0, 0, 0), MapNode(CONTENT_AIR));
+			vm.setNodeNoEmerge(v3pos_t(0, 0, 0), MapNode(CONTENT_AIR));
 			voxalgo::blit_back_with_light(&map, &vm, &modified_blocks);
 		});
 	};
