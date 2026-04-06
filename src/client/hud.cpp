@@ -4,7 +4,7 @@
 // Copyright (C) 2010-2013 blue42u, Jonathon Anderson <anderjon@umail.iu.edu>
 // Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
-#include "client/hud.h"
+#include "hud.h"
 #include <string>
 #include <iostream>
 #include <cmath>
@@ -15,7 +15,6 @@
 #include "client.h"
 #include "inventory.h"
 #include "shader.h"
-#include "client/tile.h"
 #include "localplayer.h"
 #include "camera.h"
 #include "fontengine.h"
@@ -28,6 +27,8 @@
 #include "util/enriched_string.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "gui/drawItemStack.h"
+#include <ICameraSceneNode.h>
+#include <IMesh.h>
 
 #define OBJECT_CROSSHAIR_LINE_SIZE 8
 #define CROSSHAIR_LINE_SIZE 10
@@ -394,9 +395,16 @@ void Hud::drawLuaElements(const v3pos_t &camera_offset)
 				if (textfont->getType() == gui::EGFT_CUSTOM)
 					ttfont = static_cast<gui::CGUITTFont *>(textfont);
 
-				video::SColor color(255, (e->number >> 16) & 0xFF,
-										 (e->number >> 8)  & 0xFF,
-										 (e->number >> 0)  & 0xFF);
+				u32 num = e->number;
+				u8 alpha = (num >> 24) & 0xFF;
+				if (alpha == 0)
+					alpha = 0xFF; // Backwards compatibility
+
+				video::SColor color = video::SColor(alpha,
+						(num >> 16) & 0xFF,
+						(num >> 8)  & 0xFF,
+						(num >> 0)  & 0xFF);
+
 				EnrichedString text(unescape_string(utf8_to_wide(e->text)), color);
 				core::dimension2d<u32> textsize = textfont->getDimension(text.c_str());
 

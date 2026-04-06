@@ -11,18 +11,23 @@
 #include "lua_api/l_object.h"
 #include "lua_api/l_item.h"
 #include "common/c_internal.h"
-#include "server.h"
+#include "content/mods.h" // ModSpec
+#include "server.h" // ServerPlayingSound
+#include "itemdef.h"
 #include "log.h"
 #include "tool.h"
-#include "porting.h"
-#include "mapgen/mg_schematic.h"
 #include "noise.h"
+#include "porting.h" // strlcpy
 #include "server/player_sao.h"
 #include "util/pointedthing.h"
 #include "debug.h" // For FATAL_ERROR
 #include <SColor.h>
 #include <json/json.h>
 #include "mapgen/treegen.h"
+
+#if CHECK_CLIENT_BUILD()
+#include "client/node_visuals.h"
+#endif
 
 struct EnumString es_TileAnimationType[] =
 {
@@ -68,10 +73,20 @@ void read_item_definition(lua_State* L, int index,
 
 	getstringfield(L, index, "description", def.description);
 	getstringfield(L, index, "short_description", def.short_description);
-	getstringfield(L, index, "inventory_image", def.inventory_image);
-	getstringfield(L, index, "inventory_overlay", def.inventory_overlay);
-	getstringfield(L, index, "wield_image", def.wield_image);
-	getstringfield(L, index, "wield_overlay", def.wield_overlay);
+
+	lua_getfield(L, index, "inventory_image");
+	def.inventory_image = read_item_image_definition(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, index, "inventory_overlay");
+	def.inventory_overlay = read_item_image_definition(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, index, "wield_image");
+	def.wield_image = read_item_image_definition(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, index, "wield_overlay");
+	def.wield_overlay = read_item_image_definition(L, -1);
+	lua_pop(L, 1);
+
 	getstringfield(L, index, "palette", def.palette_image);
 
 	// Read item color.
@@ -212,13 +227,13 @@ void push_item_definition_full(lua_State *L, const ItemDefinition &i)
 	}
 	lua_pushstring(L, type.c_str());
 	lua_setfield(L, -2, "type");
-	lua_pushstring(L, i.inventory_image.c_str());
+	push_item_image_definition(L, i.inventory_image);
 	lua_setfield(L, -2, "inventory_image");
-	lua_pushstring(L, i.inventory_overlay.c_str());
+	push_item_image_definition(L, i.inventory_overlay);
 	lua_setfield(L, -2, "inventory_overlay");
-	lua_pushstring(L, i.wield_image.c_str());
+	push_item_image_definition(L, i.wield_image);
 	lua_setfield(L, -2, "wield_image");
-	lua_pushstring(L, i.wield_overlay.c_str());
+	push_item_image_definition(L, i.wield_overlay);
 	lua_setfield(L, -2, "wield_overlay");
 	lua_pushstring(L, i.palette_image.c_str());
 	lua_setfield(L, -2, "palette_image");
@@ -1069,8 +1084,10 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 		lua_setfield(L, -2, "mesh");
 	}
 #if CHECK_CLIENT_BUILD()
-	push_ARGB8(L, c.minimap_color);       // I know this is not set-able w/ register_node,
-	lua_setfield(L, -2, "minimap_color"); // but the people need to know!
+	if (c.visuals) {
+		push_ARGB8(L, c.visuals->minimap_color); // I know this is not set-able w/ register_node,
+		lua_setfield(L, -2, "minimap_color");    // but the people need to know!
+	}
 #endif
 	lua_pushnumber(L, c.visual_scale);
 	lua_setfield(L, -2, "visual_scale");
@@ -1083,8 +1100,12 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 		lua_pushstring(L, c.palette_name.c_str());
 		lua_setfield(L, -2, "palette_name");
 
-		push_palette(L, c.palette);
-		lua_setfield(L, -2, "palette");
+#if CHECK_CLIENT_BUILD()
+		if (c.visuals) {
+			push_palette(L, c.visuals->palette);
+			lua_setfield(L, -2, "palette");
+		}
+#endif
 	}
 	lua_pushnumber(L, c.waving);
 	lua_setfield(L, -2, "waving");
@@ -1543,11 +1564,11 @@ void push_inventory_lists(lua_State *L, const Inventory &inv)
 void read_inventory_list(lua_State *L, int tableindex,
 		Inventory *inv, const char *name, IGameDef *gdef, int forcesize)
 {
-	if(tableindex < 0)
+	if (tableindex < 0)
 		tableindex = lua_gettop(L) + 1 + tableindex;
 
 	// If nil, delete list
-	if(lua_isnil(L, tableindex)){
+	if (lua_isnil(L, tableindex)) {
 		inv->deleteList(name);
 		return;
 	}
@@ -1568,6 +1589,40 @@ void read_inventory_list(lua_State *L, int tableindex,
 			break; // Truncate provided list of items
 		invlist->changeItem(i, items[i]);
 	}
+}
+
+/******************************************************************************/
+ItemImageDef read_item_image_definition(lua_State *L, int index)
+{
+	if(index < 0)
+		index = lua_gettop(L) + 1 + index;
+
+	ItemImageDef item_image;
+
+	if(lua_isstring(L, index)){
+		item_image.name = lua_tostring(L, index);
+	}
+	else if(lua_istable(L, index))
+	{
+		getstringfield(L, index, "name", item_image.name);
+
+		lua_getfield(L, index, "animation");
+		item_image.animation = read_animation_definition(L, -1);
+		lua_pop(L, 1);
+	}
+
+	return item_image;
+}
+
+/******************************************************************************/
+void push_item_image_definition(lua_State *L, const ItemImageDef &item_image)
+{
+	/* FIXME: inventory_image.animation, inventory_overlay.animation, wield_image.animation
+	 * and wield_overlay.animation, because for nodes we don't push "tiles" (yet) and
+	 * we don't have a push_TileAnimationParams function (yet). */
+
+	lua_pushstring(L, item_image.name.c_str());
+
 }
 
 /******************************************************************************/
@@ -1610,9 +1665,11 @@ ToolCapabilities read_tool_capabilities(
 		lua_State *L, int table)
 {
 	ToolCapabilities toolcap;
+	luaL_checktype(L, table, LUA_TTABLE);
 	getfloatfield(L, table, "full_punch_interval", toolcap.full_punch_interval);
 	getintfield(L, table, "max_drop_level", toolcap.max_drop_level);
 	getintfield(L, table, "punch_attack_uses", toolcap.punch_attack_uses);
+
 	lua_getfield(L, table, "groupcaps");
 	if(lua_istable(L, -1)){
 		int table_groupcaps = lua_gettop(L);
@@ -1631,7 +1688,7 @@ ToolCapabilities read_tool_capabilities(
 				float maxwear = 0;
 				if (getfloatfield(L, table_groupcap, "maxwear", maxwear)){
 					if (maxwear != 0)
-						groupcap.uses = 1.0/maxwear;
+						groupcap.uses = 1.0f/maxwear;
 					else
 						groupcap.uses = 0;
 					warningstream << "Field \"maxwear\" is deprecated; "
@@ -1693,7 +1750,7 @@ PointabilityType read_pointability_type(lua_State *L, int index)
 			return PointabilityType::POINTABLE_BLOCKING;
 		}
 	}
-	throw LuaError("Invalid pointable type.");
+	throw LuaError("Invalid pointable type");
 }
 
 /******************************************************************************/
@@ -1701,6 +1758,7 @@ Pointabilities read_pointabilities(lua_State *L, int index)
 {
 	Pointabilities pointabilities;
 
+	luaL_checktype(L, index, LUA_TTABLE);
 	lua_getfield(L, index, "nodes");
 	if(lua_istable(L, -1)){
 		int ti = lua_gettop(L);
@@ -1759,6 +1817,9 @@ void push_pointability_type(lua_State *L, PointabilityType pointable)
 		break;
 	case PointabilityType::POINTABLE_BLOCKING:
 		lua_pushliteral(L, "blocking");
+		break;
+	default:
+		assert(false);
 		break;
 	}
 }
@@ -2599,11 +2660,13 @@ void push_mod_spec(lua_State *L, const ModSpec &spec, bool include_unsatisfied)
 	lua_pushstring(L, spec.virtual_path.c_str());
 	lua_setfield(L, -2, "virtual_path");
 
-	lua_newtable(L);
-	int i = 1;
-	for (const auto &dep : spec.unsatisfied_depends) {
-		lua_pushstring(L, dep.c_str());
-		lua_rawseti(L, -2, i++);
+	if (include_unsatisfied) {
+		lua_newtable(L);
+		int i = 1;
+		for (const auto &dep : spec.unsatisfied_depends) {
+			lua_pushstring(L, dep.c_str());
+			lua_rawseti(L, -2, i++);
+		}
+		lua_setfield(L, -2, "unsatisfied_depends");
 	}
-	lua_setfield(L, -2, "unsatisfied_depends");
 }

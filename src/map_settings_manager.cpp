@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
-#include "debug.h"
 #include "filesys.h"
 #include "log.h"
 #include "mapgen/mapgen.h"
@@ -125,10 +124,20 @@ MapgenParams *MapSettingsManager::makeMapgenParams()
 	if (mapgen_params)
 		return mapgen_params;
 
+	MapgenParams *params = makeMapgenParamsCopy();
+	if (!params)
+		return nullptr;
+	mapgen_params = params;
+	return params;
+}
+
+MapgenParams *MapSettingsManager::makeMapgenParamsCopy() const
+{
+	// Note: can't return mapgen_params here, because we want a copy.
+
 	assert(m_map_settings);
 	assert(m_defaults);
 
-	// Now, get the mapgen type so we can create the appropriate MapgenParams
 	std::string mg_name;
 	MapgenType mgtype = getMapSetting("mg_name", &mg_name) ?
 		Mapgen::getMapgenType(mg_name) : MAPGEN_DEFAULT;
@@ -150,9 +159,6 @@ MapgenParams *MapSettingsManager::makeMapgenParams()
 	// Load the rest of the mapgen params from our active settings
 	params->MapgenParams::readParams(m_map_settings.get());
 	params->readParams(m_map_settings.get());
-
-	// Hold onto our params
-	mapgen_params = params;
 
 	return params;
 }

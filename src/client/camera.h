@@ -5,14 +5,12 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include "inventory.h"
+#include "inventory.h" // ItemStack
+#include "util/basic_macros.h"
 #include "util/numeric.h"
-#include "client/localplayer.h"
-#include <ICameraSceneNode.h>
-#include <ISceneNode.h>
 #include <plane3d.h>
 #include <array>
-#include <list>
+#include <vector>
 #include <optional>
 
 class LocalPlayer;
@@ -20,6 +18,14 @@ struct MapDrawControl;
 class Client;
 class RenderingEngine;
 class WieldMeshSceneNode;
+
+enum CameraMode : int;
+
+namespace scene {
+	class ICameraSceneNode;
+	class ISceneManager;
+	class ISceneNode;
+};
 
 struct Nametag
 {
@@ -75,10 +81,7 @@ public:
 	}
 
 	// Returns the absolute position of the head SceneNode in the world
-	inline v3f getHeadPosition() const
-	{
-		return m_headnode->getAbsolutePosition();
-	}
+	v3f getHeadPosition() const;
 
 	// Get the camera direction (in absolute camera coordinates).
 	// This has view bobbing applied.
@@ -156,15 +159,7 @@ public:
 	void drawWieldedTool(core::matrix4* translation=NULL);
 
 	// Toggle the current camera mode
-	void toggleCameraMode()
-	{
-		if (m_camera_mode == CAMERA_MODE_FIRST)
-			m_camera_mode = CAMERA_MODE_THIRD;
-		else if (m_camera_mode == CAMERA_MODE_THIRD)
-			m_camera_mode = CAMERA_MODE_THIRD_FRONT;
-		else
-			m_camera_mode = CAMERA_MODE_FIRST;
-	}
+	void toggleCameraMode();
 
 	// Set the current camera mode
 	inline void setCameraMode(CameraMode mode)
@@ -255,12 +250,12 @@ private:
 	f32 m_wield_change_timer = 0.125f;
 	ItemStack m_wield_item_next;
 
-	CameraMode m_camera_mode = CAMERA_MODE_FIRST;
+	CameraMode m_camera_mode;
 
 	f32 m_cache_view_bobbing_amount;
 	bool m_arm_inertia;
 
-	std::list<Nametag *> m_nametags;
+	std::vector<Nametag*> m_nametags;
 	bool m_show_nametag_backgrounds;
 
 	// Last known light color of the player

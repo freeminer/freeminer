@@ -4,8 +4,21 @@
 
 #include "collector.h"
 #include <stdexcept>
-#include "log.h"
-#include "client/mesh.h"
+#include <cassert>
+
+bool PreMeshBuffer::append(const PreMeshBuffer &other)
+{
+	const size_t nv = vertices.size();
+	const size_t ni = indices.size();
+	if (nv + other.vertices.size() > U16_MAX)
+		return false;
+
+	vertices.insert(vertices.end(), other.vertices.begin(), other.vertices.end());
+	indices.insert(indices.end(), other.indices.begin(), other.indices.end());
+	for (size_t i = ni; i < indices.size(); i++)
+		indices[i] += nv;
+	return true;
+}
 
 void MeshCollector::append(const TileSpec &tile, const video::S3DVertex *vertices,
 		u32 numVertices, const u16 *indices, u32 numIndices)
@@ -23,10 +36,13 @@ void MeshCollector::append(const TileLayer &layer, const video::S3DVertex *verti
 {
 	PreMeshBuffer &p = findBuffer(layer, layernum, numVertices);
 
+	const u16 aux = layer.texture_layer_idx;
+
 	u32 vertex_count = p.vertices.size();
+	assert(vertex_count + numVertices <= U16_MAX);
 	for (u32 i = 0; i < numVertices; i++) {
 		p.vertices.emplace_back(vertices[i].Pos + offset, vertices[i].Normal,
-				vertices[i].Color, vertices[i].TCoords);
+				vertices[i].Color, vertices[i].TCoords, aux);
 		m_bounding_radius_sq = std::max(m_bounding_radius_sq,
 				(vertices[i].Pos - m_center_pos).getLengthSQ());
 	}
