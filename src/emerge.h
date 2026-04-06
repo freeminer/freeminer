@@ -165,7 +165,6 @@ public:
 
 	void startThreads();
 	void stopThreads();
-	bool isRunning();
 
 	bool enqueueBlockEmerge(
 		session_t peer_id,
@@ -189,13 +188,18 @@ public:
 	int getSpawnLevelAtPoint(v2pos_t p);
 	bool isBlockUnderground(v3bpos_t blockpos);
 
-	static v3bpos_t getContainingChunk(v3bpos_t blockpos, s16 chunksize);
+	/// @return min edge of chunk in block units
+	static v3bpos_t getContainingChunk(v3bpos_t blockpos, v3pos_t chunksize);
 
 private:
+	void initThreads(bool should_multithread);
+
 	std::vector<Mapgen *> m_mapgens;
 	std::vector<EmergeThread *> m_threads;
 	bool m_threads_active = false;
 
+	// Server reference
+	Server *m_server = nullptr;
 	// The map database
 	MapDatabaseAccessor *m_db = nullptr;
 

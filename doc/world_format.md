@@ -152,6 +152,8 @@ World metadata.
     mod_storage_backend = sqlite3 - which DB backend to use for mod storage
     server_announce = false       - whether the server is publicly announced or not
     load_mod_<mod> = false        - whether <mod> is to be loaded in this world
+    world_name = Sol III          - name of the world (if not set, the world folder name will be used)
+                                    shown in the main menu and used as a technical identifier
 
 For `load_mod_<mod>`, the possible values are:
 
@@ -249,7 +251,7 @@ Example content:
 
 # Map File Format
 
-Luanti maps consist of `MapBlock`s, chunks of 16x16x16 nodes.
+Luanti maps consist of `MapBlock`s, each holds 16x16x16 nodes.
 
 In addition to the bulk node data, `MapBlock`s stored on disk also contain
 other things.

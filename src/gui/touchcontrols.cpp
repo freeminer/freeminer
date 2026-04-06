@@ -7,7 +7,6 @@
 #include "touchcontrols.h"
 #include "touchscreenlayout.h"
 
-#include "gettime.h"
 #include "irr_v2d.h"
 #include "log.h"
 #include "porting.h"
@@ -16,11 +15,9 @@
 #include "client/renderingengine.h"
 #include "client/texturesource.h"
 #include "util/enum_string.h"
-#include "util/numeric.h"
 #include "irr_gui_ptr.h"
 #include "IGUIImage.h"
 #include "IGUIStaticText.h"
-#include "IGUIFont.h"
 #include <IrrlichtDevice.h>
 #include <ISceneCollisionManager.h>
 #include <IGUIElement.h>
@@ -212,11 +209,13 @@ static KeyPress id_to_keypress(touch_gui_button_id id)
 	auto setting_name = id_to_setting(id);
 
 	assert(!setting_name.empty());
-	auto kp = getKeySetting(setting_name);
-	if (!kp)
+	const auto &keylist = getKeySetting(setting_name);
+	if (keylist.empty()) {
 		warningstream << "TouchControls: Unbound or invalid key for "
 				<< setting_name << ", hiding button." << std::endl;
-	return kp;
+		return KeyPress();
+	}
+	return keylist[0];
 }
 
 

@@ -3,17 +3,14 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 // Copyright (C) 2018 stujones11, Stuart Jones <stujones111@gmail.com>
 
-#include <cstdlib>
 #include <IEventReceiver.h>
 #include <IGUIComboBox.h>
 #include <IGUIEditBox.h>
 #include "client/renderingengine.h"
 #include "modalMenu.h"
-#include "gettext.h"
 #include "gui/guiInventoryList.h"
 #include "porting.h"
 #include "settings.h"
-#include "touchcontrols.h"
 
 PointerAction PointerAction::fromEvent(const SEvent &event) {
 	switch (event.EventType) {
@@ -92,12 +89,8 @@ void GUIModalMenu::draw()
 void GUIModalMenu::quitMenu()
 {
 	allowFocusRemoval(true);
-	// This removes Environment's grab on us
-	Environment->removeFocus(this);
 	m_menumgr->deletingMenu(this);
 	this->remove();
-	if (g_touchcontrols)
-		g_touchcontrols->show();
 }
 
 static bool isChild(gui::IGUIElement *tocheck, gui::IGUIElement *parent)

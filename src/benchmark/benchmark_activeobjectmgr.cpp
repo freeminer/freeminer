@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include "catch.h"
+#include "irr_v3d.h"
 #include "server/activeobjectmgr.h"
 #include "util/numeric.h"
 

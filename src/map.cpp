@@ -15,10 +15,9 @@
 #include "profiler.h"
 #include "nodedef.h"
 #include "gamedef.h"
-#include "util/directiontables.h"
 #include "rollback_interface.h"
 #include "environment.h"
-#include "irrlicht_changes/printing.h"
+#include <queue>
 
 /*
 	Map
@@ -777,12 +776,10 @@ void MMVManip::initialEmerge(v3bpos_t p_min, v3bpos_t p_max, bool load_if_inexis
 			(getBlockPosRelative(p_min), getBlockPosRelative(p_max+1)-v3pos_t(1,1,1));
 
 	u32 size_MB = block_area_nodes.getVolume() * sizeof(MapNode) / 1000000U;
-	if(size_MB >= 1)
-	{
-		infostream<<"initialEmerge: area: ";
+	if (size_MB >= 4) {
+		infostream << "initialEmerge: area: ";
 		block_area_nodes.print(infostream);
-		infostream<<" ("<<size_MB<<"MB)";
-		infostream<<std::endl;
+		infostream << " (" << size_MB << "MB)" << std::endl;
 	}
 
 	std::map<v3bpos_t, bool> had_blocks;

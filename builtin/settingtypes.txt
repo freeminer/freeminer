@@ -40,6 +40,7 @@
 # `type_args` can be:
 #   * int:
 #            - default
+#            - default min
 #            - default min max
 #   * string:
 #            - default (if default is not specified then "" is set)
@@ -47,8 +48,10 @@
 #            - default
 #   * float:
 #            - default
+#            - default min
 #            - default min max
 #   * enum:
+#            Empty string "" is a valid enum value
 #            - default value1,value2,...
 #   * path:
 #            - default (if default is not specified then "" is set)
@@ -88,8 +91,9 @@
 # * The value of a boolean setting, such as enable_dynamic_shadows
 # * An engine-defined value:
 #     * desktop / android
+#     * touch_support
 #     * touchscreen / keyboard_mouse
-#     * opengl / gles
+#     * shadows_support
 # * You can negate any requirement by prepending with !
 # * The "keyboard_mouse" requirement is automatically added to settings with the
 #   "key" type.
@@ -111,12 +115,12 @@
 [*General]
 
 #    Smooths rotation of camera, also called look or mouse smoothing. 0 to disable.
-camera_smoothing (Camera smoothing) float 0.0 0.0 0.99
+camera_smoothing (Camera smoothing) float 0.0 0.0 100.0
 
 #    Smooths rotation of camera when in cinematic mode, 0 to disable. Enter cinematic mode by using the key set in Controls.
 #
 #    Requires: keyboard_mouse
-cinematic_camera_smoothing (Camera smoothing in cinematic mode) float 0.7 0.0 0.99
+cinematic_camera_smoothing (Camera smoothing in cinematic mode) float 0.05 0.0 100.0
 
 #    If enabled, you can place nodes at the position (feet + eye level) where you stand.
 #    This is helpful when working with nodeboxes in small areas.
@@ -157,6 +161,9 @@ autojump (Automatic jumping) bool false
 #    Enable this when you dig or place too often by accident.
 #    On touchscreens, this only affects digging.
 safe_dig_and_place (Safe digging and placing) bool false
+
+#	 Enable a confirmation dialog before closing.
+enable_esc_dialog (Confirmation dialog before closing) bool true
 
 [*Keyboard and Mouse]
 
@@ -431,7 +438,6 @@ window_maximized (Window maximized) bool false
 #    Save window size automatically when modified.
 #    If true, screen size is saved in screen_w and screen_h, and whether the window
 #    is maximized is stored in window_maximized.
-#    (Autosaving window_maximized only works if compiled with SDL.)
 #
 #    Requires: desktop
 autosave_screensize (Remember screen size) bool true
@@ -453,7 +459,9 @@ pause_on_lost_focus (Pause on lost window focus) bool false
 #    to not waste CPU power for no benefit.
 fps_max (Maximum FPS) int 60 1 4294967295
 
-#    Vertical screen synchronization. Your system may still force VSync on even if this is disabled.
+#    Vertical screen synchronization.
+#    Note: A restart is required after changing this!
+#    Your system may still force VSync and ignore this setting.
 vsync (VSync) bool false
 
 #    Maximum FPS when the window is not focused.
@@ -611,18 +619,21 @@ anisotropic_filter (Anisotropic filtering) bool false
 #             Also, if Post Processing is disabled, FSAA will not work together with
 #             undersampling or a non-default "3d_mode" setting.
 #
-#    * FXAA - Fast approximate antialiasing
-#             Applies a post-processing filter to detect and smoothen high-contrast edges.
-#             Provides balance between speed and image quality.
-#
 #    * SSAA - Super-sampling antialiasing
 #             Renders higher-resolution image of the scene, then scales down to reduce
 #             the aliasing effects. This is the slowest and the most accurate method.
-antialiasing (Antialiasing method) enum none none,fsaa,fxaa,ssaa
+antialiasing (Antialiasing method) enum none none,fsaa,ssaa
 
 #    Defines the size of the sampling grid for FSAA and SSAA antialiasing methods.
 #    Value of 2 means taking 2x2 = 4 samples.
 fsaa (Anti-aliasing scale) enum 2 2,4,8,16
+
+#    Applies a post-processing filter to detect and smoothen high-contrast edges.
+#    Provides balance between speed and image quality.
+#    fxaa can used in combination with the other anti-aliasing methods
+#
+#    Requires: enable_post_processing
+fxaa (Fast approximate antialiasing) bool false
 
 [**Occlusion Culling]
 
@@ -697,60 +708,60 @@ water_wave_speed (Waving liquids wave speed) float 5.0
 
 #    Set to true to enable Shadow Mapping.
 #
-#    Requires: opengl
-enable_dynamic_shadows (Dynamic shadows) bool false
+#    Requires: shadows_support
+enable_dynamic_shadows (Enable dynamic shadows) bool false
 
 #    Set the shadow strength gamma.
 #    Adjusts the intensity of in-game dynamic shadows.
 #    Lower value means lighter shadows, higher value means darker shadows.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_strength_gamma (Shadow strength gamma) float 1.0 0.1 10.0
 
 #    Maximum distance to render shadows.
 #
-#    Requires: enable_dynamic_shadows, opengl
-shadow_map_max_distance (Shadow map max distance in nodes to render shadows) float 140.0 10.0 1000.0
+#    Requires: enable_dynamic_shadows, shadows_support
+shadow_map_max_distance (Shadow map render distance) float 140.0 10.0 1000.0
 
 #    Texture size to render the shadow map on.
 #    This must be a power of two.
 #    Bigger numbers create better shadows but it is also more expensive.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_map_texture_size (Shadow map texture size) int 2048 128 8192
 
 #    Sets shadow texture quality to 32 bits.
 #    On false, 16 bits texture will be used.
 #    This can cause much more artifacts in the shadow.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_map_texture_32bit (Shadow map texture in 32 bits) bool true
 
 #    Define shadow filtering quality.
 #    This simulates the soft shadows effect by applying a PCF or Poisson disk
 #    but also uses more resources.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_filters (Shadow filter quality) enum 1 0,1,2
 
 #    Enable colored shadows for transculent nodes.
 #    This is expensive.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_map_color (Colored shadows) bool false
 
 #    Set the soft shadow radius size.
 #    Lower values mean sharper shadows, bigger values mean softer shadows.
 #    Minimum value: 1.0; maximum value: 15.0
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_soft_radius (Soft shadow radius) float 5.0 1.0 15.0
 
 #    Set the default tilt of Sun/Moon orbit in degrees.
 #    Games may change orbit tilt via API.
 #    Value of 0 means no tilt / vertical orbit.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_sky_body_orbit_tilt (Sky Body Orbit Tilt) float 0.0 -60.0 60.0
 
 [**Post Processing]
@@ -866,13 +877,16 @@ formspec_fullscreen_bg_color (Formspec Full-Screen Background Color) string (0,0
 gui_scaling_filter (GUI scaling filter) bool false
 
 #    Delay showing tooltips, stated in milliseconds.
-tooltip_show_delay (Tooltip delay) int 400 0 18446744073709551615
+tooltip_show_delay (Tooltip delay) int 400 0
 
 #    Append item name to tooltip.
 tooltip_append_itemname (Append item name) bool false
 
 #    Use a cloud animation for the main menu background.
 menu_clouds (Clouds in menu) bool true
+
+#    Choose theme colors for the main menu background.
+menu_theme (Menu theme) enum light dark,light
 
 [**HUD]
 
@@ -1052,10 +1066,6 @@ anticheat_flags (Anticheat flags) flags digging,interaction,movement digging,int
 #    Increase the value if players experience stuttery movement.
 anticheat_movement_tolerance (Anticheat movement tolerance) float 1.0 1.0
 
-#    If enabled, actions are recorded for rollback.
-#    This option is only read when server starts.
-enable_rollback_recording (Rollback recording) bool false
-
 [**Client-side Modding]
 
 #    Restricts the access of certain client-side functions on servers.
@@ -1078,7 +1088,7 @@ csm_restriction_noderange (Client-side node lookup range restriction) int 0 0 42
 
 #    Remove color codes from incoming chat messages
 #    Use this to stop players from being able to use color in their messages
-strip_color_codes (Strip color codes) bool false
+strip_color_codes (Strip color codes) bool true
 
 #    Set the maximum length of a chat message (in characters) sent by clients.
 chat_message_max_size (Chat message max length) int 500 10 65535
@@ -2002,7 +2012,7 @@ shader_path (Shader path) path
 
 #    The rendering back-end.
 #    Note: A restart is required after changing this!
-#    OpenGL is the default for desktop, and OGLES2 for Android.
+#    By default OpenGL3 is preferred on desktop, or OGLES2 on Android.
 video_driver (Video driver) enum  ,opengl,opengl3,ogles2
 
 #    Distance in nodes at which transparency depth sorting is enabled.
@@ -2052,6 +2062,10 @@ world_aligned_mode (World-aligned textures mode) enum enable disable,enable,forc
 #    Warning: This option is EXPERIMENTAL!
 autoscale_mode (Autoscaling mode) enum disable disable,enable,force
 
+#    Caps the maximum number of layers used with array textures (if supported).
+#    This is only useful for debugging.
+array_texture_max (Array texture max layers) int 65535 0 65535
+
 #    When using bilinear/trilinear filtering, low-resolution textures
 #    can be blurred, so this option automatically upscales them to preserve
 #    crisp pixels. This defines the minimum texture size for the upscaled textures;
@@ -2078,14 +2092,14 @@ post_processing_texture_bits (Color depth for post-processing texture) enum 16 8
 #    Enable Poisson disk filtering.
 #    On true uses Poisson disk to make "soft shadows". Otherwise uses PCF filtering.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_poisson_filter (Poisson filtering) bool true
 
 #    Spread a complete update of the shadow map over a given number of frames.
 #    Higher values might make shadows laggy, lower values
 #    will consume more resources.
 #
-#    Requires: enable_dynamic_shadows, opengl
+#    Requires: enable_dynamic_shadows, shadows_support
 shadow_update_frames (Map shadows update frames) int 16 1 32
 
 #    Set to true to render debugging breakdown of the bloom effect.
@@ -2107,10 +2121,10 @@ font_bold (Font bold by default) bool false
 
 font_italic (Font italic by default) bool false
 
-#    Shadow offset (in pixels) of the default font. If 0, then shadow will not be drawn.
-font_shadow (Font shadow) int 1 0 65535
+#    Shadow offset (in pixels) for all fonts. If 0, then no shadow will be drawn.
+font_shadow (Font shadow) int 1 0 255
 
-#    Opaqueness (alpha) of the shadow behind the default font, between 0 and 255.
+#    Opaqueness (alpha) of the shadow behind the font.
 font_shadow_alpha (Font shadow alpha) int 127 0 255
 
 #    Font size of the default font where 1 unit = 1 pixel at 96 DPI
@@ -2204,10 +2218,10 @@ client_mapblock_limit (Mapblock limit) [client] int 7500 -1 2147483647
 #    Maximum number of blocks that are simultaneously sent per client.
 #    The maximum total count is calculated dynamically:
 #    max_total = ceil((#clients + max_users) * per_client / 4)
-max_simultaneous_block_sends_per_client (Maximum simultaneous block sends per client) [server] int 40 1 4294967295
+max_simultaneous_block_sends_per_client (Maximum simultaneous block sends per client) [server] int 40 1
 
-#    To reduce lag, block transfers are slowed down when a player is building something.
-#    This determines how long they are slowed down after placing or removing a node.
+#    To save bandwidth, block transfers are slowed down when a player is building something.
+#    This determines how long the throttling lasts after placing a node.
 full_block_send_enable_min_time_from_building (Delay in sending blocks after building) [server] float 2.0 0.0
 
 #    Maximum number of packets sent per send step in the low-level networking code.
@@ -2239,6 +2253,11 @@ kick_msg_crash (Crash message) string This server has experienced an internal er
 #    Whether to ask clients to reconnect after a (Lua) crash.
 #    Set this to true if your server is set up to restart automatically.
 ask_reconnect_on_crash (Ask to reconnect after crash) bool false
+
+#    If enabled, node and inventory actions are recorded for rollback.
+#    This option is only read on server start. Note that the engine will not
+#    automatically clean old entries from the rollback database.
+enable_rollback_recording (Rollback recording) bool false
 
 [**Server/Env Performance] [server]
 
@@ -2357,17 +2376,12 @@ emergequeue_limit_diskonly (Per-player limit of queued blocks load from disk) in
 #    This limit is enforced per player.
 emergequeue_limit_generate (Per-player limit of queued blocks to generate) int 128 1 1000000
 
-#    Number of emerge threads to use.
-#    Value 0:
-#    -    Automatic selection. The number of emerge threads will be
-#    -    'number of processors - 2', with a lower limit of 1.
-#    Any other value:
-#    -    Specifies the number of emerge threads, with a lower limit of 1.
-#    WARNING: Increasing the number of emerge threads increases engine mapgen
-#    speed, but this may harm game performance by interfering with other
-#    processes, especially in singleplayer and/or when running Lua code in
-#    'on_generated'. For many users the optimum setting may be '1'.
-num_emerge_threads (Number of emerge threads) int 1 0 32767
+#    Number of emerge threads (responsible for map generation and loading) to use.
+#    If 0 then the engine will automatically choose a suitable value depending
+#    on the hardware and type of map generator.
+#    WARNING: There are known bugs in the default map generators (v6, v7, ...)
+#    when using more than 1 thread. The automatic choice will avoid this.
+num_emerge_threads (Number of emerge threads) int 0 0 32767
 
 [**cURL] [common]
 
@@ -2454,7 +2468,7 @@ enable_joysticks (Enable joysticks) bool false
 joystick_id (Joystick ID) int 0 0 255
 
 #    The type of joystick
-joystick_type (Joystick type) enum auto auto,generic,xbox,dragonrise_gamecube
+joystick_type (Joystick type) enum auto auto,generic,xbox,ps5,dragonrise_gamecube
 
 #    The time in seconds it takes between repeated events
 #    when holding down a joystick button combination.

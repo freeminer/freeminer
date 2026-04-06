@@ -3,65 +3,71 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "server.h"
-#include "irr_v2d.h"
-#include "network/connection.h"
-#include "network/networkpacket.h"
-#include "network/networkprotocol.h"
-#include "network/serveropcodes.h"
-#include "server/ban.h"
-#include "environment.h"
-#include "servermap.h"
-#include "threading/mutex_auto_lock.h"
-#include "constants.h"
-#include "util/numeric.h"
-#include "voxel.h"
+
+#include "chat_interface.h"
+#include "chatmessage.h"
 #include "config.h"
-#include "version.h"
-#include "filesys.h"
-#include "mapblock.h"
-#include "server/serveractiveobject.h"
-#include "serialization.h" // SER_FMT_VER_INVALID
-#include "settings.h"
-#include "profiler.h"
-#include "log.h"
-#include "scripting_server.h"
-#include "nodedef.h"
-#include "itemdef.h"
-#include "craftdef.h"
-#include "emerge.h"
-#include "mapgen/mapgen.h"
-#include "mapgen/mg_biome.h"
-#include "content_mapnode.h"
+#include "constants.h"
 #include "content_nodemeta.h"
-#include "content/mods.h"
-#include "modchannels.h"
-#include "server/serverlist.h"
-#include "util/string.h"
+#include "craftdef.h"
+#include "environment.h"
+#include "filesys.h"
+#include "gameparams.h"
+#include "gettext.h"
+#include "irr_v2d.h"
+#include "itemdef.h"
+#include "log.h"
+#include "mapblock.h"
+#include "nodedef.h"
+#include "particles.h"
+#include "profiler.h"
+#include "remoteplayer.h"
+#include "server/ban.h"
+#include "serverenvironment.h"
+#include "servermap.h"
+#include "server/player_sao.h"
 #include "server/rollback.h"
-#include "util/serialize.h"
-#include "util/thread.h"
-#include "defaultsettings.h"
-#include "server/mods.h"
+#include "server/serveractiveobject.h"
+#include "server/serverinventorymgr.h"
+#include "server/serverlist.h"
+#include "settings.h"
+#include "translation.h"
 #include "util/base64.h"
 #include "util/hashing.h"
 #include "util/hex.h"
+#include "util/serialize.h"
+#include "util/string.h"
+#include "util/thread.h"
+#include "util/tracy_wrapper.h"
+#include "version.h"
+
+// Mapgen
+#include "emerge.h"
+#include "mapgen/mapgen.h"
+#include "mapgen/mg_biome.h"
+
+// Modding
+#include "modchannels.h"
+#include "script/common/c_types.h" // LuaError
+#include "scripting_server.h"
+#include "server/mods.h" // ServerModManager
+
+// Network
+#include "network/connection.h"
+#include "network/networkexceptions.h"
+#include "network/networkpacket.h"
+#include "network/networkprotocol.h"
+#include "network/serveropcodes.h"
+#include "serialization.h" // SER_FMT_VER_INVALID
+
+// Database
 #include "database/database.h"
-#include "chatmessage.h"
-#include "chat_interface.h"
-#include "remoteplayer.h"
-#include "server/player_sao.h"
-#include "server/serverinventorymgr.h"
-#include "translation.h"
 #include "database/database-sqlite3.h"
 #if USE_POSTGRESQL
 #include "database/database-postgresql.h"
 #endif
 #include "database/database-files.h"
 #include "database/database-dummy.h"
-#include "gameparams.h"
-#include "particles.h"
-#include "gettext.h"
-#include "util/tracy_wrapper.h"
 
 #include <iostream>
 #include <queue>
@@ -410,7 +416,7 @@ Server::~Server()
 	// Clean up files
 	for (auto &it : m_media) {
 		if (it.second.delete_at_shutdown) {
-			fs::DeleteSingleFileOrEmptyDirectory(it.second.path);
+			fs::DeleteSingleFileOrEmptyDirectory(it.second.path, true);
 		}
 	}
 
@@ -760,7 +766,6 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 		if (!modified_blocks.empty()) {
 			MapEditEvent event;
 			event.type = MEET_OTHER;
-			event.low_priority = true;
 			event.setModifiedBlocks(modified_blocks);
 			m_env->getMap().dispatchEvent(event);
 		}
@@ -1018,7 +1023,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			}
 			case MEET_OTHER:
 				prof.add("MEET_OTHER", 1);
-				m_clients.markBlocksNotSent(event->modified_blocks, event->low_priority);
+				m_clients.markBlocksNotSent(event->modified_blocks);
 				break;
 			default:
 				prof.add("unknown", 1);
@@ -1034,7 +1039,7 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			*/
 			for (const u16 far_player : far_players) {
 				if (RemoteClient *client = getClient(far_player))
-					client->SetBlocksNotSent(event->modified_blocks, event->low_priority);
+					client->SetBlocksNotSent(event->modified_blocks);
 			}
 
 			delete event;
@@ -1955,7 +1960,7 @@ void Server::SendSetStars(session_t peer_id, const StarParams &params)
 
 	pkt << params.visible << params.count
 		<< params.starcolor << params.scale
-		<< params.day_opacity;
+		<< params.day_opacity << params.star_seed;
 
 	Send(&pkt);
 }
@@ -2910,7 +2915,7 @@ void Server::stepPendingDynMediaCallbacks(float dtime)
 			assert(m_media.count(name));
 			sanity_check(m_media[name].ephemeral);
 
-			fs::DeleteSingleFileOrEmptyDirectory(m_media[name].path);
+			fs::DeleteSingleFileOrEmptyDirectory(m_media[name].path, true);
 			m_media.erase(name);
 		}
 		getScriptIface()->freeDynamicMediaCallback(token);
@@ -3993,6 +3998,11 @@ void Server::setAsyncFatalError(const std::string &error)
 		m_thread->stop();
 }
 
+void Server::setAsyncFatalError(const LuaError &e)
+{
+	setAsyncFatalError(std::string("Lua: ") + e.what());
+}
+
 // Not thread-safe.
 void Server::addShutdownError(const ModError &e)
 {
@@ -4008,6 +4018,11 @@ void Server::addShutdownError(const ModError &e)
 			*m_shutdown_errmsg += "\n\n" + msg;
 		}
 	}
+}
+
+Map &Server::getMap()
+{
+	return m_env->getMap();
 }
 
 v3opos_t Server::findSpawnPos()

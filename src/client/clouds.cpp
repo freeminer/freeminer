@@ -6,7 +6,7 @@
 #include "client/shader.h"
 #include "clouds.h"
 #include "constants.h"
-#include "debug.h"
+#include "util/numeric.h"
 #include "irrlicht_changes/printing.h"
 #include "noise.h"
 #include "profiler.h"
@@ -108,7 +108,6 @@ void Clouds::updateMesh()
 		return;
 	}
 
-	ScopeProfiler sp(g_profiler, "Clouds::updateMesh()", SPT_AVG);
 	m_mesh_origin = m_origin;
 	m_last_noise_center = center_of_drawing_in_noise_i;
 	m_mesh_valid = true;
@@ -374,7 +373,7 @@ void Clouds::render()
 		return;
 
 #if 0
-	{
+	{ // proof that m_box is correct
 		video::SMaterial tmp;
 		tmp.Thickness = 1.f;
 		driver->setTransform(video::ETS_WORLD, core::IdentityMatrix);
@@ -406,7 +405,7 @@ void Clouds::render()
 	const float cloud_full_radius = cloud_size * m_cloud_radius_i;
 
 	// Get fog parameters for setting them back later
-	video::SColor fog_color(0,0,0,0);
+	video::SColor fog_color;
 	video::E_FOG_TYPE fog_type = video::EFT_FOG_LINEAR;
 	f32 fog_start = 0;
 	f32 fog_end = 0;

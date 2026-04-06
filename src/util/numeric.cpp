@@ -4,7 +4,6 @@
 
 #include "numeric.h"
 
-#include "log.h"
 #include "constants.h" // BS, MAP_BLOCKSIZE
 #include "noise.h" // PcgRandom
 #include <cstring>
@@ -105,7 +104,7 @@ bool isBlockInSight(v3pos_t blockpos_b, v3opos_t camera_pos, v3f camera_dir,
 	auto blockpos_relative = blockpos - camera_pos;
 
 	// Total distance
-	auto d = MYMAX(0, blockpos_relative.getLength() - BLOCK_MAX_RADIUS);
+	auto d = std::max(opos_t{}, blockpos_relative.getLength() - BLOCK_MAX_RADIUS);
 
 	if (distance_ptr)
 		*distance_ptr = d;

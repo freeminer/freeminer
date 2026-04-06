@@ -30,19 +30,16 @@ OpenGLVersion COpenGLES2Driver::getVersionFromOpenGL() const
 void COpenGLES2Driver::initFeatures()
 {
 	if (Version.Spec != OpenGLSpec::ES) {
-		auto msg = "Context isn't OpenGL ES";
-		os::Printer::log(msg, ELL_ERROR);
-		throw std::runtime_error(msg);
+		throw std::runtime_error("Context isn't OpenGL ES");
 	}
 	if (!isVersionAtLeast(2, 0)) {
-		auto msg = "Open GL ES 2.0 is required";
-		os::Printer::log(msg, ELL_ERROR);
-		throw std::runtime_error(msg);
+		throw std::runtime_error("Open GL ES 2.0 is required");
 	}
 	initExtensions();
 
 	if (Version.Major >= 3) {
 		// NOTE floating-point formats may not be suitable for render targets.
+		// See also EVDF_RENDER_TO_FLOAT_TEXTURE.
 		TextureFormats[ECF_A1R5G5B5] = {GL_RGB5_A1, GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1, CColorConverter::convert_A1R5G5B5toR5G5B5A1};
 		TextureFormats[ECF_R5G6B5] = {GL_RGB565, GL_RGB, GL_UNSIGNED_SHORT_5_6_5};
 		TextureFormats[ECF_R8G8B8] = {GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE};
@@ -126,6 +123,7 @@ void COpenGLES2Driver::initFeatures()
 	KHRDebugSupported = queryExtension("GL_KHR_debug");
 	if (KHRDebugSupported)
 		MaxLabelLength = GetInteger(GL.MAX_LABEL_LENGTH);
+	RenderToFloatTextureSupported = isVersionAtLeast(3, 2)|| queryExtension("GL_EXT_color_buffer_float");
 
 	// COGLESCoreExtensionHandler::Feature
 	static_assert(MATERIAL_MAX_TEXTURES <= 8, "Only up to 8 textures are guaranteed");
@@ -156,7 +154,11 @@ IVideoDriver *createOGLES2Driver(const SIrrlichtCreationParameters &params, io::
 {
 	os::Printer::log("Using COpenGLES2Driver", ELL_INFORMATION);
 	COpenGLES2Driver *driver = new COpenGLES2Driver(params, io, contextManager);
-	driver->genericDriverInit(params.WindowSize, params.Stencilbuffer); // don't call in constructor, it uses virtual function calls of driver
+	// don't call in constructor, it uses virtual function calls of driver
+	if (!driver->genericDriverInit(params.WindowSize, params.Stencilbuffer)) {
+		delete driver;
+		driver = nullptr;
+	}
 	return driver;
 }
 

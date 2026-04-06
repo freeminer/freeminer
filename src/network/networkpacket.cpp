@@ -4,9 +4,6 @@
 
 #include "networkpacket.h"
 #include <sstream>
-#include "log.h"
-#include "networkexceptions.h"
-#include "util/numeric.h"
 #include "util/serialize.h"
 #include "networkprotocol.h"
 

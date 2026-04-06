@@ -7,7 +7,6 @@
 #include <set>
 #include <string>
 #include <vector>
-#include <list>
 #include <optional>
 
 #include "irrlichttypes.h"
@@ -65,7 +64,7 @@ public:
 
 	// Append chat line
 	// Removes oldest chat line if scrollback size is reached
-	void addLine(const std::wstring &name, const std::wstring &text);
+	void addLine(const EnrichedString &name, const EnrichedString &text);
 
 	// Remove all chat lines
 	void clear();
