@@ -89,22 +89,6 @@ COpenGLExtensionHandler::COpenGLExtensionHandler() :
 		// DSA with EXT or functions to simulate it
 		pGlTextureStorage2DEXT(0), pGlTexStorage2D(0), pGlTextureStorage3DEXT(0), pGlTexStorage3D(0), pGlTextureSubImage2DEXT(0), pGlGetTextureImageEXT(0),
 		pGlNamedFramebufferTextureEXT(0), pGlFramebufferTexture(0), pGlGenerateTextureMipmapEXT(0)
-#if defined(GLX_SGI_swap_control)
-		,
-		pGlxSwapIntervalSGI(0)
-#endif
-#if defined(GLX_EXT_swap_control)
-		,
-		pGlxSwapIntervalEXT(0)
-#endif
-#if defined(WGL_EXT_swap_control)
-		,
-		pWglSwapIntervalEXT(0)
-#endif
-#if defined(GLX_MESA_swap_control)
-		,
-		pGlxSwapIntervalMESA(0)
-#endif
 {
 	for (u32 i = 0; i < IRR_OpenGL_Feature_Count; ++i)
 		FeatureAvailable[i] = false;
@@ -360,20 +344,6 @@ void COpenGLExtensionHandler::initExtensions(video::IContextManager *cmgr, bool 
 	pGlActiveTexture = (PFNGLACTIVETEXTUREPROC)IRR_OGL_LOAD_EXTENSION("glActiveTexture");
 	pGlGenerateTextureMipmapEXT = (PFNGLGENERATETEXTUREMIPMAPEXTPROC)IRR_OGL_LOAD_EXTENSION("glGenerateTextureMipmapEXT");
 
-// get vsync extension
-#if defined(WGL_EXT_swap_control) && !defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
-	pWglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)IRR_OGL_LOAD_EXTENSION("wglSwapIntervalEXT");
-#endif
-#if defined(GLX_SGI_swap_control) && !defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
-	pGlxSwapIntervalSGI = (PFNGLXSWAPINTERVALSGIPROC)IRR_OGL_LOAD_EXTENSION("glXSwapIntervalSGI");
-#endif
-#if defined(GLX_EXT_swap_control) && !defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
-	pGlxSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)IRR_OGL_LOAD_EXTENSION("glXSwapIntervalEXT");
-#endif
-#if defined(GLX_MESA_swap_control) && !defined(_IRR_COMPILE_WITH_SDL_DEVICE_)
-	pGlxSwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)IRR_OGL_LOAD_EXTENSION("glXSwapIntervalMESA");
-#endif
-
 	GLint num = 0;
 	// set some properties
 #if defined(GL_ARB_multitexture) || defined(GL_VERSION_1_3)
@@ -610,6 +580,8 @@ bool COpenGLExtensionHandler::queryFeature(E_VIDEO_DRIVER_FEATURE feature) const
 		return FeatureAvailable[IRR_NV_depth_clamp] || FeatureAvailable[IRR_ARB_depth_clamp];
 	case EVDF_TEXTURE_MULTISAMPLE:
 		return (Version >= 302) || FeatureAvailable[IRR_ARB_texture_multisample];
+	case EVDF_RENDER_TO_FLOAT_TEXTURE:
+		return Version >= 300 || FeatureAvailable[IRR_ARB_color_buffer_float];
 
 	default:
 		return false;

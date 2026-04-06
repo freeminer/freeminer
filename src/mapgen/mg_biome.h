@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "irrlichttypes.h"
+#include "constants.h"
 #include "objdef.h"
 #include "nodedef.h"
 #include "noise.h"

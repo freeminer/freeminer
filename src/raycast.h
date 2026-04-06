@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "irr_v3d.h"
+#include <queue>
 #include "voxelalgorithms.h"
 #include "util/pointedthing.h"
 

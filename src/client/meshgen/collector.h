@@ -20,6 +20,10 @@ struct PreMeshBuffer
 	PreMeshBuffer() = default;
 	explicit PreMeshBuffer(const TileLayer &layer) : layer(layer) {}
 
+	bool empty() const {
+		return indices.empty();
+	}
+
 	/// @brief Colorizes vertices as indicated by tile layer
 	void applyTileColor()
 	{
@@ -34,6 +38,10 @@ struct PreMeshBuffer
 				c->getBlue() * tc.getBlue() / 255U);
 		}
 	}
+
+	/// @brief Append another buffer to this one
+	/// @return false if index would overflow
+	bool append(const PreMeshBuffer &other);
 };
 
 struct MeshCollector

@@ -196,10 +196,6 @@ public:
 	or similar. */
 	virtual bool supportsTouchEvents() const { return false; }
 
-	//! Get the current color format of the window
-	/** \return Color format of the window. */
-	virtual video::ECOLOR_FORMAT getColorFormat() const = 0;
-
 	//! Notifies the device that it should close itself.
 	/** IrrlichtDevice::run() will always return false after closeDevice() was called. */
 	virtual void closeDevice() = 0;
@@ -365,6 +361,7 @@ public:
 	\return The corresponding keycode.
 	*/
 	virtual Keycode getKeyFromScancode(const u32 scancode) const {
-		return Keycode(KEY_UNKNOWN, (wchar_t)scancode);
+		(void)scancode;
+		return Keycode(KEY_UNKNOWN, (wchar_t)0xFFFF);
 	}
 };

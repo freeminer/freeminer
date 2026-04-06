@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include <fstream>
 #include "environment.h"
 #include "collision.h"
 #include "irr_v3d.h"
 #include "raycast.h"
-#include "scripting_server.h"
 #include "server.h"
+#include "settings.h"
 #include "daynightratio.h"
 #include "emerge.h"
 #include "util/numeric.h"

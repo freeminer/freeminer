@@ -8,7 +8,6 @@ extern "C" {
 }
 
 #include "util/numeric.h"
-#include "util/serialize.h"
 #include "util/string.h"
 #include "log.h"
 #include "common/c_converter.h"
@@ -282,7 +281,7 @@ video::SColor read_ARGB8(lua_State *L, int index)
 
 	// FIXME: maybe we should have strict type checks here. compare to is_color_table()
 
-	video::SColor color(0);
+	video::SColor color;
 	CHECK_TYPE(index, "ARGB color", LUA_TTABLE);
 	lua_getfield(L, index, "a");
 	color.setAlpha(lua_isnumber(L, -1) ? clamp_col(lua_tonumber(L, -1)) : 0xFF);

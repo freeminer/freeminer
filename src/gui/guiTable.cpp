@@ -4,22 +4,18 @@
 
 
 #include "guiTable.h"
-#include <queue>
 #include <sstream>
 #include <utility>
 #include <cstring>
 #include <IGUISkin.h>
 #include <IGUIFont.h>
 #include "client/renderingengine.h"
-#include "debug.h"
 #include "irrlicht_changes/CGUITTFont.h"
 #include "log.h"
 #include "client/texturesource.h"
-#include "gettime.h"
 #include "util/string.h"
 #include "util/numeric.h"
 #include "util/string.h" // for parseColorString()
-#include "settings.h" // for settings
 #include "porting.h" // for dpi
 #include "client/guiscalingfilter.h"
 
@@ -832,8 +828,8 @@ bool GUITable::OnEvent(const SEvent &event)
 		}
 		else if (event.KeyInput.Key == KEY_ESCAPE ||
 				event.KeyInput.Key == KEY_SPACE ||
-				(event.KeyInput.Key == KEY_TAB && event.KeyInput.Control)) {
-			// pass to parent
+				event.KeyInput.Key == KEY_TAB) {
+			// pass to parent for focus cycling (both plain Tab and Ctrl+Tab)
 			return IGUIElement::OnEvent(event);
 		}
 		else if (event.KeyInput.PressedDown && event.KeyInput.Char) {

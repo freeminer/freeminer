@@ -7,7 +7,10 @@
 #include "IMeshBuffer.h"
 #include "CVertexBuffer.h"
 #include "CIndexBuffer.h"
+#include "WeightBuffer.h"
+#include "IVertexBuffer.h"
 #include "S3DVertex.h"
+#include "vector3d.h"
 #include <cassert>
 
 namespace scene
@@ -90,7 +93,7 @@ struct SSkinMeshBuffer final : public IMeshBuffer
 	}
 
 	//! Get standard vertex at given index
-	virtual video::S3DVertex *getVertex(u32 index)
+	video::S3DVertex *getVertex(u32 index)
 	{
 		switch (VertexType) {
 		case video::EVT_2TCOORDS:
@@ -221,6 +224,8 @@ public:
 	SVertexBufferLightMap *Vertices_2TCoords;
 	SVertexBuffer *Vertices_Standard;
 	SIndexBuffer *Indices;
+
+	std::optional<WeightBuffer> Weights;
 
 	core::matrix4 Transformation;
 

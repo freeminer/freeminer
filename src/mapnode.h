@@ -7,28 +7,22 @@
 #include "irrlichttypes_bloated.h"
 #include "light.h"
 #include "util/pointer.h"
-#include <string>
 #include <vector>
 
 class NodeDefManager;
 class Map;
 
-/*
-	Naming scheme:
-	- Material = irrlicht's Material class
-	- Content = (content_t) content of a node
-	- Tile = TileSpec at some side of a node of some content type
-*/
+// content_t denotes the content of a node
 typedef u16 content_t;
 #define CONTENT_MAX UINT16_MAX
 
 /*
-	The maximum node ID that can be registered by mods. This must
-	be significantly lower than the maximum content_t value, so that
-	there is enough room for dummy node IDs, which are created when
+	The maximum node ID that can be registered by mods. This is
+	somewhat lower than the maximum content_t value, so that
+	there is enough room for dummy node IDs. These are created when
 	a MapBlock containing unknown node names is loaded from disk.
 */
-#define MAX_REGISTERED_CONTENT 0x7fffU
+static constexpr content_t MAX_REGISTERED_CONTENT = CONTENT_MAX - CONTENT_MAX / 10;
 
 /*
 	A solid walkable node with the texture unknown_node.png.
@@ -98,9 +92,6 @@ enum Rotation {
  */
 #define LIQUID_LEVEL_MASK 0x07
 #define LIQUID_FLOW_DOWN_MASK 0x08
-
-//#define LIQUID_LEVEL_MASK 0x3f // better finite water
-//#define LIQUID_FLOW_DOWN_MASK 0x40 // not used when finite water
 
 /* maximum amount of liquid in a block */
 #define LIQUID_LEVEL_MAX LIQUID_LEVEL_MASK
@@ -187,14 +178,6 @@ struct alignas(u32) MapNode
 	{
 		param2 = p;
 	}
-
-	/*!
-	 * Returns the color of the node.
-	 *
-	 * \param f content features of this node
-	 * \param color output, contains the node's color.
-	 */
-	void getColor(const ContentFeatures &f, video::SColor *color) const;
 
 	inline void setLight(LightBank bank, u8 a_light, ContentLightingFlags f) noexcept
 	{

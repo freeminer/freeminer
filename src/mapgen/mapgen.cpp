@@ -12,21 +12,16 @@
 #include "noise.h"
 #include "gamedef.h"
 #include "mg_biome.h"
-#include "mapblock.h"
 #include "mapnode.h"
 #include "map.h"
 #include "nodedef.h"
 #include "emerge.h"
 #include "voxelalgorithms.h"
-#include "porting.h"
 #include "profiler.h"
 #include "settings.h"
 #include "treegen.h"
-#include "serialization.h"
-#include "util/serialize.h"
 #include "util/numeric.h"
 #include "util/directiontables.h"
-#include "filesys.h"
 #include "log.h"
 #include "mapgen_carpathian.h"
 #include "mapgen_flat.h"
@@ -102,7 +97,7 @@ Mapgen::Mapgen(int mapgenid, MapgenParams *params, EmergeParams *emerge) :
 	water_level  = params->water_level;
 	mapgen_limit = params->mapgen_limit;
 	flags        = params->flags;
-	csize        = v3pos_t(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
+	csize        = params->chunksize * MAP_BLOCKSIZE;
 
 	/*
 		We are losing half our entropy by doing this, but it is necessary to
@@ -146,7 +141,9 @@ const char *Mapgen::getMapgenName(MapgenType mgtype)
 	if (index == MAPGEN_INVALID || index >= ARRLEN(g_reg_mapgens))
 		return "invalid";
 
-	return g_reg_mapgens[index].name;
+	auto &it = g_reg_mapgens[index];
+	assert(it.name);
+	return it.name;
 }
 
 
@@ -1073,10 +1070,29 @@ void MapgenParams::readParams(const Settings *settings)
 
 	settings->getPosNoEx("water_level", water_level);
 	settings->getPosNoEx("mapgen_limit", mapgen_limit);
-	settings->getS16NoEx("chunksize", chunksize);
 	settings->getFlagStrNoEx("mg_flags", flags, flagdesc_mapgen);
 
-	chunksize = rangelim(chunksize, 1, 10);
+	std::string chunksize_str;
+	settings->getNoEx("chunksize", chunksize_str);
+	if (is_number(chunksize_str)) {
+		chunksize = v3pos_t(stoi(chunksize_str, 1, 999));
+	} else if (auto tmp = str_to_v3f(chunksize_str); tmp.has_value()) {
+		chunksize = v3pos_t(
+			rangelim(tmp->X, 1, 999),
+			rangelim(tmp->Y, 1, 999),
+			rangelim(tmp->Z, 1, 999)
+		);
+	} else if (!chunksize_str.empty()) {
+		errorstream << "MapgenParams: invalid chunksize \"" << chunksize_str
+			<< "\"" << std::endl;
+	}
+	// Finally check the volume limit
+	if (u32 v = chunksize.X * chunksize.Y * chunksize.Z; v > MAX_CHUNK_VOLUME) {
+		errorstream << "MapgenParams: chunksize " << chunksize
+			<< " is too big (volume > " << MAX_CHUNK_VOLUME
+			<< "), falling back to the default." << std::endl;
+		chunksize = v3pos_t(5);
+	}
 
 	delete bparams;
 	bparams = BiomeManager::createBiomeParams(BIOMEGEN_ORIGINAL);
@@ -1093,8 +1109,14 @@ void MapgenParams::writeParams(Settings *settings) const
 	settings->setU64("seed", seed);
 	settings->setPos("water_level", water_level);
 	settings->setPos("mapgen_limit", mapgen_limit);
-	settings->setS16("chunksize", chunksize);
 	settings->setFlagStr("mg_flags", flags, flagdesc_mapgen);
+
+	// Write as number if cubic, for backwards-compatibility
+	if (chunksize.X == chunksize.Y && chunksize.Y == chunksize.Z) {
+		settings->setS16("chunksize", chunksize.X);
+	} else {
+		settings->setV3F("chunksize", v3f::from(chunksize));
+	}
 
 	if (bparams)
 		bparams->writeParams(settings);
@@ -1103,29 +1125,14 @@ void MapgenParams::writeParams(Settings *settings) const
 
 s32 MapgenParams::getSpawnRangeMax()
 {
-	if (!m_mapgen_edges_calculated) {
-		std::pair<pos_t, pos_t> edges = get_mapgen_edges(mapgen_limit, chunksize);
-		mapgen_edge_min = edges.first;
-		mapgen_edge_max = edges.second;
-		m_mapgen_edges_calculated = true;
-	}
-
-	return MYMIN(-mapgen_edge_min, mapgen_edge_max);
+	auto [emin, emax] = get_mapgen_edges(mapgen_limit, chunksize);
+	s32 min_xz = std::max(emin.X, emin.Z), max_xz = std::min(emax.X, emax.Z);
+	return std::min(-min_xz, max_xz);
 }
 
 
-std::pair<pos_t, pos_t> get_mapgen_edges(pos_t mapgen_limit, s16 chunksize)
+std::pair<v3pos_t, v3pos_t> get_mapgen_edges(pos_t mapgen_limit, v3pos_t chunksize)
 {
-	// Central chunk offset, in blocks
-	s16 ccoff_b = -chunksize / 2;
-	// Chunksize, in nodes
-	s32 csize_n = chunksize * MAP_BLOCKSIZE;
-	// Minp/maxp of central chunk, in nodes
-	s16 ccmin = ccoff_b * MAP_BLOCKSIZE;
-	s16 ccmax = ccmin + csize_n - 1;
-	// Fullminp/fullmaxp of central chunk, in nodes
-	s16 ccfmin = ccmin - MAP_BLOCKSIZE;
-	s16 ccfmax = ccmax + MAP_BLOCKSIZE;
 	// Effective mapgen limit, in blocks
 	// Uses same calculation as ServerMap::blockpos_over_mapgen_limit(v3pos_t p)
 	pos_t mapgen_limit_b = rangelim(mapgen_limit,
@@ -1133,10 +1140,29 @@ std::pair<pos_t, pos_t> get_mapgen_edges(pos_t mapgen_limit, s16 chunksize)
 	// Effective mapgen limits, in nodes
 	pos_t mapgen_limit_min = -mapgen_limit_b * MAP_BLOCKSIZE;
 	pos_t mapgen_limit_max = (mapgen_limit_b + 1) * MAP_BLOCKSIZE - 1;
-	// Number of complete chunks from central chunk fullminp/fullmaxp
-	// to effective mapgen limits.
-	pos_t numcmin = MYMAX((ccfmin - mapgen_limit_min) / csize_n, 0);
-	pos_t numcmax = MYMAX((mapgen_limit_max - ccfmax) / csize_n, 0);
+
+	const auto &calculate = [&] (s16 cs) -> std::pair<s16, s16> {
+		// Central chunk offset, in blocks
+		s16 ccoff_b = -cs / 2;
+		// Chunksize, in nodes
+		s32 csize_n = cs * MAP_BLOCKSIZE;
+		// Minp/maxp of central chunk, in nodes
+		s16 ccmin = ccoff_b * MAP_BLOCKSIZE;
+		s16 ccmax = ccmin + csize_n - 1;
+		// Fullminp/fullmaxp of central chunk, in nodes
+		s16 ccfmin = ccmin - MAP_BLOCKSIZE;
+		s16 ccfmax = ccmax + MAP_BLOCKSIZE;
+		// Number of complete chunks from central chunk fullminp/fullmaxp
+		// to effective mapgen limits.
+		s16 numcmin = std::max((ccfmin - mapgen_limit_min) / csize_n, 0);
+		s16 numcmax = std::max((mapgen_limit_max - ccfmax) / csize_n, 0);
+		return {ccmin - numcmin * csize_n, ccmax + numcmax * csize_n};
+	};
+
 	// Mapgen edges, in nodes
-	return std::pair<pos_t, pos_t>(ccmin - numcmin * csize_n, ccmax + numcmax * csize_n);
+	v3pos_t emin, emax;
+	std::tie(emin.X, emax.X) = calculate(chunksize.X);
+	std::tie(emin.Y, emax.Y) = calculate(chunksize.Y);
+	std::tie(emin.Z, emax.Z) = calculate(chunksize.Z);
+	return {emin, emax};
 }

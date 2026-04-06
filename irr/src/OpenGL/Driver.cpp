@@ -58,6 +58,7 @@ static const VertexType vtStandard = {
 				{EVA_NORMAL, 3, GL_FLOAT, VertexAttribute::Mode::Regular, offsetof(S3DVertex, Normal)},
 				{EVA_COLOR, 4, GL_UNSIGNED_BYTE, VertexAttribute::Mode::Normalized, offsetof(S3DVertex, Color)},
 				{EVA_TCOORD0, 2, GL_FLOAT, VertexAttribute::Mode::Regular, offsetof(S3DVertex, TCoords)},
+				{EVA_AUX, 1, GL_UNSIGNED_SHORT, VertexAttribute::Mode::Regular, offsetof(S3DVertex, Aux)},
 		},
 };
 
@@ -66,6 +67,7 @@ static const VertexType vtStandard = {
 // - only one class in the hierarchy has non-static data members
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Winvalid-offsetof"
+
 
 static const VertexType vt2TCoords = {
 		sizeof(S3DVertex2TCoords),
@@ -150,7 +152,7 @@ COpenGL3DriverBase::COpenGL3DriverBase(const SIrrlichtCreationParameters &params
 		MaterialRenderer2DActive(0), MaterialRenderer2DTexture(0), MaterialRenderer2DNoTexture(0),
 		CurrentRenderMode(ERM_NONE), Transformation3DChanged(true),
 		OGLES2ShaderPath(params.OGLES2ShaderPath),
-		ColorFormat(ECF_R8G8B8), ContextManager(contextManager), EnableErrorTest(params.DriverDebug)
+		ContextManager(contextManager), EnableErrorTest(params.DriverDebug)
 {
 	if (!ContextManager)
 		return;
@@ -171,7 +173,8 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 
 	deleteMaterialRenders();
 
-	CacheHandler->getTextureCache().clear();
+	if (CacheHandler)
+		CacheHandler->getTextureCache().clear();
 
 	removeAllRenderTargets();
 	deleteAllTextures();
@@ -235,8 +238,13 @@ bool COpenGL3DriverBase::isVersionAtLeast(int major, int minor) const noexcept
 
 bool COpenGL3DriverBase::genericDriverInit(const core::dimension2d<u32> &screenSize, bool stencilBuffer)
 {
-	initVersion();
-	initFeatures();
+	try {
+		initVersion();
+		initFeatures();
+	} catch (std::runtime_error &e) {
+		os::Printer::log(e.what(), ELL_ERROR);
+		return false;
+	}
 	printTextureFormats();
 
 	if (EnableErrorTest) {
@@ -1075,6 +1083,9 @@ void COpenGL3DriverBase::setMaterial(const SMaterial &material)
 	Material = material;
 	OverrideMaterial.apply(Material);
 
+	if (!CacheHandler) // can be null during early cleanup
+		return;
+
 	for (u32 i = 0; i < Feature.MaxTextureUnits; ++i) {
 		auto *texture = material.getTexture(i);
 		CacheHandler->getTextureCache().set(i, texture);
@@ -1174,6 +1185,8 @@ void COpenGL3DriverBase::setRenderStates3DMode()
 		if (static_cast<u32>(Material.MaterialType) < MaterialRenderers.size())
 			MaterialRenderers[Material.MaterialType].Renderer->OnSetMaterial(
 					Material, LastMaterial, ResetRenderStates, this);
+		else
+			os::Printer::log("Attempt to render with invalid material", ELL_WARNING);
 
 		LastMaterial = Material;
 		CacheHandler->correctCacheMaterial(LastMaterial);
@@ -1558,12 +1571,6 @@ E_DRIVER_TYPE COpenGL3DriverBase::getDriverType() const
 	return EDT_OPENGL3;
 }
 
-//! returns color format
-ECOLOR_FORMAT COpenGL3DriverBase::getColorFormat() const
-{
-	return ColorFormat;
-}
-
 //! Get a vertex shader constant index.
 s32 COpenGL3DriverBase::getVertexShaderConstantID(const c8 *name)
 {
@@ -1688,10 +1695,14 @@ ITexture *COpenGL3DriverBase::addRenderTargetTextureCubemap(const u32 sideLen, c
 	return renderTargetTexture;
 }
 
-//! Returns the maximum amount of primitives
-u32 COpenGL3DriverBase::getMaximalPrimitiveCount() const
+SDriverLimits COpenGL3DriverBase::getLimits() const
 {
-	return Version.Spec == OpenGLSpec::ES ? 65535 : 0x7fffffff;
+	SDriverLimits ret;
+	ret.GLVersion = core::vector2di(Version.Major, Version.Minor);
+	ret.MaxPrimitiveCount = Version.Spec == OpenGLSpec::ES ? UINT16_MAX : INT32_MAX;
+	ret.MaxTextureSize = MaxTextureSize;
+	ret.MaxArrayTextureImages = MaxArrayTextureLayers;
+	return ret;
 }
 
 bool COpenGL3DriverBase::setRenderTargetEx(IRenderTarget *target, u16 clearFlag, SColor clearColor, f32 clearDepth, u8 clearStencil)
@@ -1704,8 +1715,10 @@ bool COpenGL3DriverBase::setRenderTargetEx(IRenderTarget *target, u16 clearFlag,
 	if (CurrentRenderTarget) {
 		// Update mip-map of the generated texture, if enabled.
 		auto textures = CurrentRenderTarget->getTexture();
-		for (size_t i = 0; i < textures.size(); ++i)
-			textures[i]->regenerateMipMapLevels();
+		for (size_t i = 0; i < textures.size(); ++i) {
+			if (textures[i])
+				textures[i]->regenerateMipMapLevels();
+		}
 	}
 
 	core::dimension2d<u32> destRenderTargetSize(0, 0);
@@ -1860,11 +1873,6 @@ void COpenGL3DriverBase::removeTexture(ITexture *texture)
 {
 	CacheHandler->getTextureCache().remove(texture);
 	CNullDriver::removeTexture(texture);
-}
-
-core::dimension2du COpenGL3DriverBase::getMaxTextureSize() const
-{
-	return core::dimension2du(MaxTextureSize, MaxTextureSize);
 }
 
 GLenum COpenGL3DriverBase::getGLBlend(E_BLEND_FACTOR factor) const

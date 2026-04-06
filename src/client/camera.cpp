@@ -3,11 +3,10 @@
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "camera.h"
-#include "debug.h"
 #include "client.h"
-#include "config.h"
-#include "map.h"
 #include "clientmap.h"     // MapDrawControl
+#include "irr_v3d.h"
+#include "localplayer.h"
 #include "player.h"
 #include <cmath>
 #include "client/renderingengine.h"
@@ -22,9 +21,12 @@
 #include "fontengine.h"
 #include "script/scripting_client.h"
 #include "gettext.h"
-#include <SViewFrustum.h>
+
+#include <ICameraSceneNode.h>
 #include <IGUIFont.h>
+#include <ISceneNode.h>
 #include <IVideoDriver.h>
+#include <SViewFrustum.h>
 
 static constexpr f32 CAMERA_OFFSET_STEP = 200;
 
@@ -41,6 +43,7 @@ static const char *setting_names[] = {
 Camera::Camera(MapDrawControl &draw_control, Client *client, RenderingEngine *rendering_engine):
 	m_draw_control(draw_control),
 	m_client(client),
+	m_camera_mode(CAMERA_MODE_FIRST),
 	m_player_light_color(0xFFFFFFFF)
 {
 	auto smgr = rendering_engine->get_scene_manager();
@@ -90,6 +93,11 @@ Camera::~Camera()
 {
 	g_settings->deregisterAllChangedCallbacks(this);
 	m_wieldmgr->drop();
+}
+
+v3opos_t Camera::getHeadPosition() const
+{
+	return v3fToOpos(m_headnode->getAbsolutePosition());
 }
 
 void Camera::notifyFovChange()
@@ -626,6 +634,16 @@ void Camera::drawWieldedTool(core::matrix4* translation)
 		cam->setTarget(focusPoint);
 	}
 	m_wieldmgr->drawAll();
+}
+
+void Camera::toggleCameraMode()
+{
+	if (m_camera_mode == CAMERA_MODE_FIRST)
+		m_camera_mode = CAMERA_MODE_THIRD;
+	else if (m_camera_mode == CAMERA_MODE_THIRD)
+		m_camera_mode = CAMERA_MODE_THIRD_FRONT;
+	else
+		m_camera_mode = CAMERA_MODE_FIRST;
 }
 
 void Camera::drawNametags()
