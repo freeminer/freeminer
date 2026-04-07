@@ -544,23 +544,34 @@ void ConnectionSendThread::connect(Address address)
 	address.print(dout_con);
 	dout_con << std::endl;
 
-	UDPPeer *peer = m_connection->createServerPeer(address);
+	// For WebSocket client connection, we need to establish the connection first
+	try {
+		// Set up the connection as client
+		m_connection->SetPeerID(PEER_ID_INEXISTENT);
+		
+		// Create the server peer for the connection
+		UDPPeer *peer = m_connection->createServerPeer(address);
 
-	// Create event
-	m_connection->putEvent(ConnectionEvent::peerAdded(peer->id, peer->address));
+		// Create event
+		m_connection->putEvent(ConnectionEvent::peerAdded(peer->id, peer->address));
 
-	Address bind_addr;
-	if (address.isIPv6())
-		bind_addr.setAddress(static_cast<IPv6AddressBytes*>(nullptr));
-	else
-		bind_addr.setAddress(static_cast<u32>(0));
+		// Bind to a local address for the WebSocket connection
+		Address bind_addr;
+		if (address.isIPv6())
+			bind_addr.setAddress(static_cast<IPv6AddressBytes*>(nullptr));
+		else
+			bind_addr.setAddress(static_cast<u32>(0));
 
-	m_connection->m_udpSocket.Bind(bind_addr);
+		m_connection->m_udpSocket.Bind(bind_addr);
 
-	// Send a dummy packet to server with peer_id = PEER_ID_INEXISTENT
-	m_connection->SetPeerID(PEER_ID_INEXISTENT);
-	NetworkPacket pkt(0, 0);
-	m_connection->Send(PEER_ID_SERVER, 0, &pkt, true);
+		// Send a dummy packet to server to initiate connection
+		NetworkPacket pkt(0, 0);
+		m_connection->Send(PEER_ID_SERVER, 0, &pkt, true);
+	}
+	catch (std::exception &e) {
+		errorstream << m_connection->getDesc() << " connection failed: " << e.what() << std::endl;
+		m_connection->putEvent(ConnectionEvent::connectFailed());
+	}
 }
 
 void ConnectionSendThread::disconnect()
