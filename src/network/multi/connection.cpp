@@ -51,8 +51,8 @@ ConnectionMulti::ConnectionMulti(
 				max_packet_size, timeout, ipv6, peerhandler)),
 #endif
 #if USE_WEBSOCKET
-		m_con_ws(std::make_shared<con_ws::Connection>(
-				100000, timeout, ipv6, peerhandler)),
+		m_con_ws(
+				std::make_shared<con_ws::Connection>(100000, timeout, ipv6, peerhandler)),
 #endif
 #if USE_WEBSOCKET_SCTP
 		m_con_ws_sctp(std::make_shared<con_ws_sctp::Connection>(
@@ -142,6 +142,12 @@ void ConnectionMulti::Connect(Address address)
 		m_con_sctp->Connect(address);
 	}
 #endif
+#if USE_WEBSOCKET
+	if (m_con_ws && (remote_proto == "mt_ws" || remote_proto == "ws")) {
+		connected_to = proto_name::websocket;
+		m_con_ws->Connect(address);
+	}
+#endif
 #if USE_ENET
 	if (m_con_enet && remote_proto == "enet") {
 		connected_to = proto_name::enet;
@@ -163,6 +169,11 @@ bool ConnectionMulti::Connected()
 		if (auto c = m_con_sctp->Connected(); c)
 			return c;
 #endif
+#if USE_WEBSOCKET
+	if (m_con_ws)
+		if (auto c = m_con_ws->Connected(); c)
+			return c;
+#endif
 #if USE_ENET
 	if (m_con_enet)
 		if (auto c = m_con_enet->Connected(); c)
@@ -172,8 +183,8 @@ bool ConnectionMulti::Connected()
 	if (m_con)
 		if (auto c = m_con->Connected(); c)
 			return c;
-	return false;
 #endif
+	return false;
 }
 
 void ConnectionMulti::Disconnect()
@@ -181,6 +192,10 @@ void ConnectionMulti::Disconnect()
 #if USE_SCTP
 	if (m_con_sctp)
 		m_con_sctp->Disconnect();
+#endif
+#if USE_WEBSOCKET
+	if (m_con_ws)
+		m_con_ws->Disconnect();
 #endif
 #if USE_ENET
 	if (m_con_enet)
@@ -196,7 +211,7 @@ void ConnectionMulti::Disconnect()
 bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
 	u32 ret = 0;
-	for (u32 i = 0; !i || (i < timeout_ms/10); ++i) {
+	for (u32 i = 0; !i || (i < timeout_ms / 10); ++i) {
 		const u32 timeout = i ? 10 : 0;
 		//for (const auto &timeout : {u32(0), u32(1)}) {
 #if USE_SCTP
@@ -353,6 +368,12 @@ float ConnectionMulti::getPeerStat(session_t peer_id, con::rtt_stat_type type)
 							  (connected_to == sctp && peer_id == PEER_ID_SERVER)))
 		return m_con_sctp->getPeerStat(peer_id, type);
 #endif
+#if USE_WEBSOCKET
+	if (m_con_ws &&
+			((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
+					(connected_to == proto_name::websocket && peer_id == PEER_ID_SERVER)))
+		return m_con_ws->getPeerStat(peer_id, type);
+#endif
 #if USE_ENET
 	if (m_con_enet &&
 			((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
@@ -370,6 +391,10 @@ float ConnectionMulti::getPeerStat(session_t peer_id, con::rtt_stat_type type)
 
 float ConnectionMulti::getLocalStat(con::rate_stat_type type)
 {
+#if USE_WEBSOCKET
+	if (m_con_ws)
+		return m_con_ws->getLocalStat(type);
+#endif
 #if MINETEST_TRANSPORT
 	if (m_con)
 		return m_con->getLocalStat(type);

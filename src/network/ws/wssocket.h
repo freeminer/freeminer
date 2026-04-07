@@ -25,13 +25,16 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/address.h"
 
 #include <websocketpp/server.hpp>
+#include <websocketpp/client.hpp>
 
 #define USE_SSL 1
 
 #if USE_SSL
 #include <websocketpp/config/asio.hpp>
+#include <websocketpp/config/asio_client.hpp>
 #else
 #include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
 #endif
 
 //extern bool socket_enable_debug_output;
@@ -44,6 +47,7 @@ public:
 	WSSocket(bool ipv6);
 	~WSSocket();
 	void Bind(Address addr);
+	bool Connect(const Address &addr);
 
 	bool init(bool ipv6, bool noExceptions = false);
 
@@ -60,24 +64,37 @@ public:
 
 #if USE_SSL
 	using ws_server_t = websocketpp::server<websocketpp::config::asio_tls>;
-	//typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
+	using ws_client_t = websocketpp::client<websocketpp::config::asio_tls>;
 	typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 #else
 	using ws_server_t = websocketpp::server<websocketpp::config::asio>;
+	using ws_client_t = websocketpp::client<websocketpp::config::asio>;
 #endif
 
 	typedef ws_server_t::message_ptr message_ptr;
+	typedef ws_client_t::message_ptr client_message_ptr;
 
 	ws_server_t server;
+	ws_client_t client;
 	hdl_list hdls;
 	bool ws_serve = false;
+	bool ws_client = false;
+	websocketpp::connection_hdl client_hdl;
+	Address client_address;
+
 	void on_http(const websocketpp::connection_hdl &hdl);
 	void on_fail(const websocketpp::connection_hdl &hdl);
 	void on_close(const websocketpp::connection_hdl &hdl);
 	void on_open(const websocketpp::connection_hdl &hdl);
 	void on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg);
+	void on_client_message(
+			const websocketpp::connection_hdl &hdl, const client_message_ptr &msg);
+	void on_client_open(const websocketpp::connection_hdl &hdl);
+	void on_client_fail(const websocketpp::connection_hdl &hdl);
+	void on_client_close(const websocketpp::connection_hdl &hdl);
 #if USE_SSL
 	context_ptr on_tls_init(const websocketpp::connection_hdl &hdl);
+	context_ptr on_client_tls_init(const websocketpp::connection_hdl &hdl);
 #endif
 
 private:

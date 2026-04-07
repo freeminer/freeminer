@@ -186,6 +186,38 @@ void WSSocket::on_open(const websocketpp::connection_hdl &)
 	cs << "open handler" << '\n';
 }
 
+void WSSocket::on_client_open(const websocketpp::connection_hdl &hdl)
+{
+	cs << "client open handler" << '\n';
+	// Add the client connection to hdls map
+	hdls.emplace(hdl, client_address);
+}
+
+void WSSocket::on_client_fail(const websocketpp::connection_hdl &hdl)
+{
+	cs << "client fail handler" << '\n';
+	hdls.erase(hdl);
+}
+
+void WSSocket::on_client_close(const websocketpp::connection_hdl &hdl)
+{
+	cs << "client close handler" << '\n';
+	hdls.erase(hdl);
+}
+
+void WSSocket::on_client_message(
+		const websocketpp::connection_hdl &hdl, const client_message_ptr &msg)
+{
+	// For client messages, we use the client address
+	std::string s{msg->get_payload().data(), msg->get_payload().size()};
+#if !NDEBUG
+	cs << "Client message: " << msg->get_payload().size() << " " << msg->get_payload()
+	   << '\n';
+#endif
+
+	incoming_queue.emplace_back(queue_item{client_address, std::move(s)});
+}
+
 void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg)
 {
 	// DUMP("om", msg->get_payload().size(), msg->get_payload());
@@ -239,7 +271,7 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 {
 	setTimeoutMs(0);
 
-/*	if (socket_enable_debug_output /*con_debug* /) {
+	/*	if (socket_enable_debug_output /*con_debug* /) {
 		server.set_error_channels(websocketpp::log::elevel::all);
 		server.set_access_channels(websocketpp::log::alevel::all ^
 								   websocketpp::log::alevel::frame_payload ^
@@ -325,8 +357,87 @@ WSSocket::context_ptr WSSocket::on_tls_init(const websocketpp::connection_hdl & 
 }
 #endif
 
+#if USE_SSL
+WSSocket::context_ptr WSSocket::on_client_tls_init(
+		const websocketpp::connection_hdl & /* hdl */)
+{
+	namespace asio = websocketpp::lib::asio;
+	context_ptr ctx = websocketpp::lib::make_shared<asio::ssl::context>(
+			asio::ssl::context::tlsv13_client);
+	try {
+		ctx->set_options(asio::ssl::context::default_workarounds |
+						 asio::ssl::context::no_sslv2 | asio::ssl::context::no_sslv3);
+	} catch (const std::exception &e) {
+		errorstream << "Client TLS init exception: " << e.what();
+	}
+	return ctx;
+}
+#endif
+
 WSSocket::~WSSocket()
 {
+}
+
+bool WSSocket::Connect(const Address &addr)
+{
+	try {
+		// Initialize client
+		client.set_access_channels(websocketpp::log::alevel::none);
+		client.set_error_channels(websocketpp::log::elevel::none);
+		client.init_asio();
+
+		// Set up client handlers
+		client.set_open_handler(websocketpp::lib::bind(
+				&WSSocket::on_client_open, this, websocketpp::lib::placeholders::_1));
+		client.set_fail_handler(websocketpp::lib::bind(
+				&WSSocket::on_client_fail, this, websocketpp::lib::placeholders::_1));
+		client.set_close_handler(websocketpp::lib::bind(
+				&WSSocket::on_client_close, this, websocketpp::lib::placeholders::_1));
+		client.set_message_handler(websocketpp::lib::bind(&WSSocket::on_client_message,
+				this, websocketpp::lib::placeholders::_1,
+				websocketpp::lib::placeholders::_2));
+
+#if USE_SSL
+		client.set_tls_init_handler(bind(
+				&WSSocket::on_client_tls_init, this, websocketpp::lib::placeholders::_1));
+#endif
+
+		// Create connection URI
+		std::string uri =
+				"ws://" + addr.serializeString() + ":" + std::to_string(addr.getPort());
+
+		// Create connection
+		websocketpp::lib::error_code ec;
+		auto con = client.get_connection(uri, ec);
+		if (ec) {
+			errorstream << "Could not create connection to " << uri << ": "
+						<< ec.message() << std::endl;
+			return false;
+		}
+
+		// Store the connection handle and address
+		client_hdl = con->get_handle();
+		client_address = addr;
+		ws_client = true;
+
+		// Connect
+		client.connect(con);
+
+		// Run the client io_service in a separate thread
+		std::thread client_thread([this]() {
+			try {
+				client.run();
+			} catch (const std::exception &e) {
+				errorstream << "Client run error: " << e.what() << std::endl;
+			}
+		});
+		client_thread.detach();
+
+		return true;
+	} catch (const std::exception &e) {
+		errorstream << "Connection failed: " << e.what() << std::endl;
+		return false;
+	}
 }
 
 void WSSocket::Bind(Address addr)
@@ -363,18 +474,34 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 
 	websocketpp::connection_hdl hdl;
 	bool found = false;
-	for (const auto &[h, addr] : hdls) {
-		if (addr == destination) {
-			hdl = h;
-			found = true;
+
+	// Check if this is a client connection
+	if (ws_client && client_address == destination) {
+		hdl = client_hdl;
+		found = true;
+	} else {
+		// Check server connections
+		for (const auto &[h, addr] : hdls) {
+			if (addr == destination) {
+				hdl = h;
+				found = true;
+				break;
+			}
 		}
 	}
+
 	if (!found) {
 		verbosestream << " Send to " << destination << " not found in peers" << '\n';
 		return;
 	}
+
 	websocketpp::lib::error_code ec;
-	server.send(hdl, data, size, websocketpp::frame::opcode::value::binary, ec);
+	if (ws_client && client_address == destination) {
+		client.send(hdl, data, size, websocketpp::frame::opcode::value::binary, ec);
+	} else {
+		server.send(hdl, data, size, websocketpp::frame::opcode::value::binary, ec);
+	}
+
 	if (ec.value()) {
 		verbosestream << "WS Send failed " << ec.value() << ":" << ec.message() << '\n';
 		// Maybe delete peer here?
@@ -415,13 +542,18 @@ void WSSocket::setTimeoutMs(int timeout_ms)
 
 bool WSSocket::WaitData(int timeout_ms)
 {
-	if (!ws_serve) {
+	if (!ws_serve && !ws_client) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(m_timeout_ms));
 		return false;
 	}
+
 	for (int ms = 0; ms < timeout_ms; ++ms) {
-		if (server.poll_one())
+		if (ws_serve && server.poll_one()) {
 			server.run_one();
+		}
+		if (ws_client && client.poll_one()) {
+			client.run_one();
+		}
 		if (!incoming_queue.empty())
 			return true;
 		// TODO: condvar here
