@@ -51,153 +51,160 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // bad anything but works
 // todo: prepare all data from all sources in one good tiled layer
 
+// Thread-local container cache definition
+thread_local hgts::ThreadLocalContainerCache hgts::tl_container_cache;
+
 hgts::hgts(const std::string &folder) : folder{folder}
 {
 	std::error_code ec;
 	std::filesystem::create_directories(folder, ec);
 }
 
+// Get layer definitions
+std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::ll_t lon) {
+	constexpr auto layers = true;
+	
+	auto place_dummy_generic = [](std::map<int, std::map<int, std::shared_ptr<height>>>& map,
+								 std::unordered_map<uint64_t, std::weak_ptr<height>>& cache,
+								 int lat_dec, int lon_dec) {
+		const static auto hgt_dummy = std::make_shared<height_dummy>();
+		if (!map[lat_dec].contains(lon_dec)) {
+			map[lat_dec][lon_dec] = hgt_dummy;
+			cache[make_tile_key(lat_dec, lon_dec)] = hgt_dummy;
+		}
+	};
+	
+	auto identity_post_process = [](height::ll_t result) { return result; };
+	
+	return {
+		Layer{
+			.container = map1,
+			.cache = tl_container_cache.map1_cache,
+			.factory = [](const std::string& folder, height::ll_t lat, height::ll_t lon) {
+				return std::make_shared<height_hgt>(folder, lat, lon);
+			},
+			.post_process = identity_post_process,
+			.place_dummy = place_dummy_generic,
+			.min_height = 0.0f,   // Primary layer can handle very low elevations
+			.max_height = 10000.0f,   // Primary layer handles high elevations
+		},
+		Layer{
+			.container = map1_seabed,
+			.cache = tl_container_cache.map1_seabed_cache,
+			.factory = [](const std::string& folder, height::ll_t lat, height::ll_t lon) {
+				return std::make_shared<height_seabed_tif>(folder, lat, lon);
+			},
+			.post_process = identity_post_process,
+			.place_dummy = place_dummy_generic,
+			.min_height = -12000.0f,  // Seabed handles deep ocean depths
+			.max_height = 0.0f,       // Seabed only for underwater/sea level
+		}
+	};
+}
+
 height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lon)
 {
-
-	constexpr auto layers = true;
-
-	const auto lat1 = height::lat_start(lat); // + 90 % 180;
+	const auto lat1 = height::lat_start(lat);
 	const auto lon1 = height::lon_start(lon);
-	const auto get_lat1 = [&](const auto &map1_lat1,
-								  const auto &lon1) -> std::optional<height::height_t> {
-		if (const auto it = map1_lat1.find(lon1); it != map1_lat1.end()) {
-			const auto prev_layer_height = it->second->get(lat, lon);
-
-			if constexpr (layers) {
-				if (prev_layer_height) {
-					return prev_layer_height;
-				}
-			} else {
-				return prev_layer_height;
+	
+	// First try thread-local container cache
+	const uint64_t tile_key = make_tile_key(lat1, lon1);
+	
+	// Get all layers
+	auto layers = get_layers(lat, lon);
+	
+	// Try each layer in cycle
+	for (auto& layer : layers) {
+		// Check thread-local cache first
+		auto it = layer.cache.find(tile_key);
+		if (auto cached_height = it != layer.cache.end() ? it->second.lock() : std::shared_ptr<height>{};
+		    cached_height && cached_height->ok(lat, lon)) {
+			const auto result = cached_height->get(lat, lon);
+			const auto processed_result = layer.post_process(result);
+			
+			// Check if result is within layer's valid range
+			if (processed_result > layer.min_height && processed_result < layer.max_height) {
+				return processed_result;
 			}
-		}
-		return {};
-	};
-
-	{
-		if (const auto ret = get_lat1(map1[lat1], lon1)) {
-			return ret.value();
-		}
-		if (const auto ret = get_lat1(map1_seabed[lat1], lon1)) {
-			// todo: layer configurable
-			if (ret.value() > 0)
-				return 0;
-			return ret.value();
+			// If not in range, continue to next layer
 		}
 	}
 
-	/*
-	const auto lat90 = height_gebco_tif::lat90_start(lat); // + 90 % 180;
-	const auto lon90 = height_gebco_tif::lon90_start(lon);
-	if (map90[lat90].contains(lon90)) {
-		const auto h = map90[lat90][lon90]->get(lat, lon);
-		return std::min(h, prev_layer_height);
-	}
-*/
-
-	//DUMP((long)this, "notfound, will load", lat, lon, lat1, lon1, lat90, lon90, map1[lat1].contains(lon1), prev_layer_height);
-	const auto lock = std::unique_lock(mutex);
-	const auto &map1_lat1 = map1[lat1];
-
-	if (const auto ret = get_lat1(map1_lat1, lon1)) {
-		return ret.value();
-	}
-	if (const auto ret = get_lat1(map1_seabed[lat1], lon1)) {
-		// todo: layer configurable
-		if (ret.value() > 0)
-			return 0;
-		return ret.value();
-	}
-
-	const auto place_dummy = [&](auto &map, const auto &lat_dec, const auto &lon_dec) {
-		const static auto hgt_dummy = std::make_shared<height_dummy>();
-		//DUMP("place dummy", lat, lon, lat_dec, lon_dec, map1[lat_dec].contains(lon_dec));
-		if (!map[lat_dec].contains(lon_dec))
-			map[lat_dec][lon_dec] = hgt_dummy;
-		return map[lat_dec][lon_dec]->get(lat, lon);
-	};
-	/*
-	const auto place_dummy90 = [&](const auto &lat90, const auto &lon90) {
-		const static auto hgt_dummy = std::make_shared<height_dummy>();
-		//DUMP("place dummy", lat, lon, map90[lat90].contains(lon90));
-		if (!map90[lat90].contains(lon90))
-			map90[lat90][lon90] = hgt_dummy;
-		return map90[lat90][lon90]->get(lat, lon);
-	};
-    */
-	if (lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
-		// DUMP("insert", (long)this, lat, lon, folder, map1.size(), map1_lat1.size());
-		if (!map1_lat1.contains(lon1)) {
-			auto hgt = std::make_shared<height_hgt>(folder, lat, lon);
-			const int lat_dec = hgt->lat_start(lat);
-			const int lon_dec = hgt->lon_start(lon);
-			if (hgt->load(lat, lon)) {
-				map1[lat_dec][lon_dec] = std::move(hgt);
-				if (const auto ret = get_lat1(map1[lat_dec], lon_dec)) {
-					return ret.value();
+	// Try each layer with lock
+	for (auto& layer : layers) {
+		{
+			const auto lock = std::unique_lock(mutex);
+			if (const auto it = layer.container.find(lat1); it != layer.container.end()) {
+				if (const auto inner_it = it->second.find(lon1); inner_it != it->second.end()) {
+					const auto result = inner_it->second->get(lat, lon);
+					const auto processed_result = layer.post_process(result);
+					
+					// Check if result is within layer's valid range
+					if (processed_result > layer.min_height && processed_result < layer.max_height) {
+						// Cache the height object for future fast access
+						layer.cache[tile_key] = inner_it->second;
+						return processed_result;
+					}
+					// If not in range, continue to next layer
 				}
 			}
-			place_dummy(map1, lat1, lon1);
-		}
-
-		if (const auto ret = get_lat1(map1[lat1], lon1)) {
-			return ret.value();
-		}
-
-		if (!map1_seabed[lat1].contains(lon1)) {
-			auto hgt = std::make_shared<height_seabed_tif>(folder, lat, lon);
-			const int lat_dec = hgt->lat_start(lat);
-			const int lon_dec = hgt->lon_start(lon);
-			if (hgt->load(lat, lon)) {
-				map1_seabed[lat_dec][lon_dec] = std::move(hgt);
-				if (const auto ret = get_lat1(map1_seabed[lat_dec], lon_dec)) {
-
-					return ret.value();
+		} // Lock released
+		
+		// Load data outside the lock if needed and within valid range
+		if (lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
+			const auto& container_lat1 = layer.container[lat1];
+			
+			if (!container_lat1.contains(lon1)) {
+				auto hgt = layer.factory(folder, lat, lon);
+				const int lat_dec = hgt->lat_start(lat);
+				const int lon_dec = hgt->lon_start(lon);
+				if (hgt->load(lat, lon)) {
+					// Successfully loaded, now acquire lock to store it
+					{
+						const auto lock = std::unique_lock(mutex);
+						layer.container[lat_dec][lon_dec] = std::move(hgt);
+					} // Lock released
+					
+					// Now get the result with a brief lock
+					const auto lock = std::unique_lock(mutex);
+					if (const auto it = layer.container.find(lat_dec); it != layer.container.end()) {
+						if (const auto inner_it = it->second.find(lon_dec); inner_it != it->second.end()) {
+							const auto result = inner_it->second->get(lat, lon);
+							const auto processed_result = layer.post_process(result);
+							
+							// Check if result is within layer's valid range
+							if (processed_result > layer.min_height && processed_result < layer.max_height) {
+								layer.cache[make_tile_key(lat_dec, lon_dec)] = layer.container[lat_dec][lon_dec];
+								return processed_result;
+							}
+						}
+					}
+				} else {
+					// Failed to load, place dummy
+					const auto lock = std::unique_lock(mutex);
+					layer.place_dummy(layer.container, layer.cache, lat1, lon1);
 				}
-			} else {
-				place_dummy(map1_seabed, lat1, lon1);
 			}
-		}
-		if (const auto ret = get_lat1(map1_seabed[lat1], lon1)) {
-			// todo: layer configurable
-			if (ret.value() > 0)
-				return 0;
-			return ret.value();
-		}
-	}
-	/*
-	const auto lat90 = height_gebco_tif::lat90_start(lat); // + 90 % 180;
-	const auto lon90 = height_gebco_tif::lon90_start(lon);
-	if (lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
-
-		if (map90[lat90].contains(lon90)) {
-			return std::min(prev_layer_height, map90[lat90][lon90]->get(lat, lon));
-		}
-
-		if (!map90[lat90].contains(lon90)) {
-			// DUMP("isloaded?", map90[lat90].contains(lon90));
-			auto hgt = std::make_shared<height_gebco_tif>(folder, lat, lon);
-
-			//DUMP("load gebco tif", lat, lon, lat90, lon90);
-
-			if (hgt->load(lat, lon)) {
-				// DUMP("loadok=", hgt->ok(lat, lon));
-				map90[lat90][lon90] = std::move(hgt);
-				return std::min(prev_layer_height, map90[lat90][lon90]->get(lat, lon));
+			
+			// Final check with lock held
+			const auto lock = std::unique_lock(mutex);
+			if (const auto it = layer.container.find(lat1); it != layer.container.end()) {
+				if (const auto inner_it = it->second.find(lon1); inner_it != it->second.end()) {
+					const auto result = inner_it->second->get(lat, lon);
+					const auto processed_result = layer.post_process(result);
+					
+					// Check if result is within layer's valid range
+					if (processed_result > layer.min_height && processed_result < layer.max_height) {
+						// Cache the height object for future fast access
+						layer.cache[tile_key] = inner_it->second;
+						return processed_result;
+					}
+				}
 			}
 		}
 	}
-	if (!map90[lat90].contains(lon90)) {
-		return place_dummy90(lat90, lon90);
-	}
-	return map90[lat90][lon90]->get(lat, lon);
-	*/
+	
+	// If all layers failed or results were out of range, return 0 as fallback
 	return 0;
 }
 
