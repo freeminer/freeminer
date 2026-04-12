@@ -1443,6 +1443,8 @@ void Connection::Serve(Address bind_addr)
 
 void Connection::Connect(Address address)
 {
+	// For WebSocket client connection, we need to establish the connection first
+	m_udpSocket.Connect(address);
 	putCommand(ConnectionCommand::connect(address));
 }
 
