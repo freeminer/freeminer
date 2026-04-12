@@ -1,9 +1,10 @@
 uniform sampler2D baseTexture;
+#define normalTexture texture1
 uniform sampler2D normalTexture;
 uniform vec3 yawVec;
 
-varying lowp vec4 varColor;
-varying mediump vec2 varTexCoord;
+VARYING_ lowp vec4 varColor;
+VARYING_ mediump vec2 varTexCoord;
 
 void main (void)
 {

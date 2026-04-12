@@ -30,6 +30,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "threading/async.h"
 #include "threading/concurrent_unordered_map.h"
+#include "util/unordered_map_hash.h"
 
 class Client;
 class Mapgen;

@@ -14,30 +14,24 @@
 
 #include "irr_v3d.h"
 #include "map.h"
-#include "hud.h"
+#include "hud_element.h" // HudElementStat
 #include "gamedef.h"
-#include "content/mods.h"
-#include "inventorymanager.h"
 #include "content/subgames.h"
 #include "network/peerhandler.h"
-#include "network/connection.h"
-#include "util/numeric.h"
 #include "util/thread.h"
 #include "util/basic_macros.h"
 #include "util/metricsbackend.h"
-#include "serverenvironment.h"
 #include "server/clientiface.h"
 #include "threading/ordered_mutex.h"
-#include "chatmessage.h"
-#include "sound.h"
 #include "translation.h"
-#include "script/common/c_types.h" // LuaError
+#include "sound_spec.h"
 #include <atomic>
 #include <csignal>
 #include <string>
 #include <list>
-#include <map>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 #include <optional>
 #include <string_view>
 #include <shared_mutex>
@@ -72,37 +66,50 @@ public:
 // ==
 
 
-class ChatEvent;
-struct ChatEventChat;
-struct ChatInterface;
-class IWritableItemDefManager;
-class NodeDefManager;
-class IWritableCraftDefManager;
 class BanManager;
+class ChatEvent;
+class EmergeManager;
 class Inventory;
+class IRollbackManager;
+class IWritableCraftDefManager;
+class IWritableItemDefManager;
+class LuaError;
+class MetricsBackend;
 class ModChannelMgr;
-class RemotePlayer;
+class NodeDefManager;
 class Player;
 class PlayerSAO;
-struct PlayerHPChangeReason;
-class IRollbackManager;
-struct RollbackAction;
-class EmergeManager;
-class ServerScripting;
+class RemotePlayer;
 class ServerEnvironment;
-struct SoundSpec;
-struct CloudParams;
-struct SkyboxParams;
-struct SunParams;
-struct MoonParams;
-struct StarParams;
-struct Lighting;
-class ServerThread;
-class ServerModManager;
 class ServerInventoryManager;
+class ServerModManager;
+class ServerScripting;
+class ServerThread;
+class Settings;
+
+struct ChatEventChat;
+struct ChatInterface;
+struct ChatMessage;
+struct CloudParams;
+struct GameParams;
+struct Lighting;
+struct MoonParams;
 struct PackedValue;
 struct ParticleParameters;
 struct ParticleSpawnerParameters;
+struct PlayerHPChangeReason;
+struct RollbackAction;
+struct SkyboxParams;
+struct SoundSpec;
+struct StarParams;
+struct SunParams;
+
+namespace con {
+	class IConnection;
+	class IPeer;
+
+	enum rtt_stat_type : int;
+}
 
 // Anticheat flags
 enum {
@@ -390,16 +397,13 @@ public:
 	StepSettings getStepSettings() { return m_step_settings.load(); }
 
 	void setAsyncFatalError(const std::string &error);
-	inline void setAsyncFatalError(const LuaError &e)
-	{
-		setAsyncFatalError(std::string("Lua: ") + e.what());
-	}
+	void setAsyncFatalError(const LuaError &e);
 
 	// Not thread-safe.
 	void addShutdownError(const ModError &e);
 
 	bool showFormspec(const char *name, const std::string &formspec, const std::string &formname);
-	Map & getMap() { return m_env->getMap(); }
+	Map &getMap();
 	ServerEnvironment & getEnv() { return *m_env; }
 	v3opos_t findSpawnPos(const std::string &player_name);
 
@@ -514,7 +518,7 @@ public:
 		EnvAutoLock(Server *server): m_lock(server->m_env_mutex) {}
 
 	private:
-		std::lock_guard<ordered_mutex> m_lock;
+		std::lock_guard<std::mutex> m_lock;
 */
 	};
 
@@ -706,7 +710,7 @@ private:
 	*/
 
 	// Environment mutex (envlock)
-	ordered_mutex m_env_mutex;
+	std::mutex m_env_mutex;
 
 	// World directory
 public:
@@ -765,6 +769,8 @@ public:
 	// Craft definition manager
 	IWritableCraftDefManager *m_craftdef;
 
+	// NOTE: Cannot use forward declaration of 'Translations'. Whereas most
+	// modern compilers support incomplete types here, it's not in the C++ spec.
 	std::unordered_map<std::string, Translations> server_translations;
 
 	ModIPCStore m_ipcstore;
@@ -879,7 +885,7 @@ public:
 	void handleCommand_Drawcontrol(NetworkPacket *pkt);
 	void handleCommand_GetBlocks(NetworkPacket *pkt);
 	void handleCommand_InitFm(NetworkPacket *pkt);
-	ServerMap::far_dbases_t far_dbases;
+	Map::far_dbases_t far_dbases;
 	uint32_t SendFarBlocks(float dtime);
 
 	Stat stat;
@@ -931,7 +937,7 @@ public:
 */
 
 // fm:
-MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
+MapDatabase *GetFarDatabase(MapDatabase *dbase, Map::far_dbases_t &far_dbases,
 		const std::string &savedir, block_step_t step);
 MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &pos);
 // ==

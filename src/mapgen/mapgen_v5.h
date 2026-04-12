@@ -63,7 +63,7 @@ public:
 	pos_t generateBaseTerrain();
 
 private:
-	Noise *noise_factor;
-	Noise *noise_height;
-	Noise *noise_ground;
+	Noise *noise_factor = nullptr;
+	Noise *noise_height = nullptr;
+	Noise *noise_ground = nullptr;
 };

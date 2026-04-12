@@ -10,10 +10,10 @@
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "log.h"
-#include "environment.h"
 #include "mapgen/mapgen.h"
 #include "lua_api/l_env.h"
 #include "server.h"
+#include "serverenvironment.h"
 #include "scripting_server.h"
 #include "script/common/c_content.h"
 

@@ -8,6 +8,7 @@
 #include <set>
 #include <shared_mutex>
 #include <vector>
+#include <set>
 #include "../activeobjectmgr.h"
 #include "serveractiveobject.h"
 #include "util/k_d_tree.h"

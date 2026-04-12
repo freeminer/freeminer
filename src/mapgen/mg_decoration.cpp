@@ -9,8 +9,6 @@
 #include "mapgen.h"
 #include "noise.h"
 #include "map.h"
-#include "log.h"
-#include "util/numeric.h"
 #include <algorithm>
 #include <vector>
 #include "mapgen/treegen.h"

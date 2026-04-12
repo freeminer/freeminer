@@ -9,10 +9,6 @@
 #include "emerge.h"
 #include "server.h"
 #include "nodedef.h"
-#include "map.h" //for MMVManip
-#include "log_types.h"
-#include "util/numeric.h"
-#include "porting.h"
 #include "settings.h"
 
 #include <algorithm>

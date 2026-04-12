@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "nodedef.h"
 #include "server.h"
 #include "serverenvironment.h"
+#include "servermap.h"
 
 constexpr auto grow_debug = 1; //false;
 constexpr auto grow_debug_fast_default = 1;

@@ -6,7 +6,8 @@
 #pragma once
 
 #include "fm_weather.h"
-#include "irr_v3d.h"
+
+#include "constants.h"
 #include "objdef.h"
 #include "nodedef.h"
 #include "noise.h"

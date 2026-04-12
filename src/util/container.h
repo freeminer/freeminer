@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "threading/lock.h"
+#include "util/unordered_map_hash.h"
+
 #include "irrlichttypes.h"
 #include "debug.h" // sanity_check
 #include "exceptions.h"
@@ -13,8 +16,6 @@
 #include <list>
 #include <vector>
 #include <map>
-#include "../threading/lock.h"
-#include "unordered_map_hash.h"
 #include <unordered_set>
 #include <queue>
 #include <cassert>
@@ -34,7 +35,7 @@ public:
 	true: value added
 	false: value already exists
 	*/
-	bool push_back(const Value& value)
+	bool push_back(const Value &value)
 	{
 		if (m_set.insert(value).second)
 		{
@@ -50,7 +51,7 @@ public:
 		m_queue.pop();
 	}
 
-	const Value& front() const
+	const Value &front() const
 	{
 		return m_queue.front();
 	}
@@ -65,9 +66,11 @@ public:
 		return m_queue.empty();
 	}
 
-//private:
-	//std::set<Value> m_set;
 	std::unordered_set<Value, v3posHash, v3posEqual> m_set;
+/*
+private:
+	std::unordered_set<Value> m_set;
+*/
 	std::queue<Value> m_queue;
 };
 

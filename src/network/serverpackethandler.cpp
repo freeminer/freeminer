@@ -12,20 +12,22 @@
 #include "chatmessage.h"
 #include "irr_v3d.h"
 #include "server.h"
+#include "serverenvironment.h"
 #include "log.h"
 #include "emerge.h"
+#include "itemdef.h"
 #include "mapblock.h"
 #include "modchannels.h"
 #include "nodedef.h"
+#include "porting.h" // strcasecmp
 #include "remoteplayer.h"
 #include "rollback_interface.h"
 #include "scripting_server.h"
 #include "serialization.h"
 #include "settings.h"
 #include "tool.h"
-#include "version.h"
-#include "irrlicht_changes/printing.h"
 #include "network/connection.h"
+#include "network/networkexceptions.h"
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/serveropcodes.h"
@@ -34,7 +36,6 @@
 #include "util/auth.h"
 #include "util/base64.h"
 #include "util/pointedthing.h"
-#include "util/serialize.h"
 #include "util/srp.h"
 #include "clientdynamicinfo.h"
 
@@ -880,7 +881,9 @@ void Server::handleCommand_PlayerItem(NetworkPacket* pkt)
 
 	*pkt >> item;
 
-	if (item >= player->getMaxHotbarItemcount()) {
+	if (player->getMaxHotbarItemcount() == 0) {
+		return; // ignore silently
+	} else if (item >= player->getMaxHotbarItemcount()) {
 		actionstream << "Player " << player->getName()
 			<< " tried to access item=" << item
 			<< " out of hotbar_itemcount="
@@ -981,8 +984,9 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 	v3opos_t player_pos = playersao->getLastGoodPosition();
 
 	// Update wielded item
-
-	if (item_i >= player->getMaxHotbarItemcount()) {
+	if (player->getMaxHotbarItemcount() == 0) {
+		return; // ignore silently
+	} else if (item_i >= player->getMaxHotbarItemcount()) {
 		actionstream << "Player " << player->getName()
 			<< " tried to access item=" << item_i
 			<< " out of hotbar_itemcount="
@@ -1101,7 +1105,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 
 		ItemStack selected_item, hand_item;
 		ItemStack tool_item = playersao->getWieldedItem(&selected_item, &hand_item);
-		ToolCapabilities toolcap =
+		const ToolCapabilities &toolcap =
 				tool_item.getToolCapabilities(m_itemdef, &hand_item);
 		v3f dir = oposToV3f(pointed_object->getBasePosition() -
 				(playersao->getBasePosition() + v3fToOpos(playersao->getEyeOffset()))
@@ -1109,7 +1113,7 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		float time_from_last_punch =
 			playersao->resetTimeFromLastPunch();
 
-		u32 wear = pointed_object->punch(dir, &toolcap, playersao,
+		u32 wear = pointed_object->punch(dir, toolcap, playersao,
 				time_from_last_punch, tool_item.wear);
 
 		stat.add("punch", player->getName());
@@ -1237,11 +1241,6 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 		std::optional<ItemStack> selected_item;
 		getWieldedItem(playersao, selected_item);
 
-		// Reset build time counter
-		if (pointed.type == POINTEDTHING_NODE &&
-				selected_item->getDefinition(m_itemdef).type == ITEM_NODE)
-			getClient(peer_id)->m_time_from_building = 0.0;
-
 		const bool had_prediction = !selected_item->getDefinition(m_itemdef).
 			node_placement_prediction.empty();
 
@@ -1262,6 +1261,10 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 					SendInventory(player, true);
 			}
 
+			// on_secondary_use might have removed the object
+			if (pointed_object->isGone())
+				return;
+
 			pointed_object->rightClick(playersao);
 		} else if (m_script->item_OnPlace(selected_item, playersao, pointed)) {
 			// Placement was handled in lua
@@ -1275,6 +1278,8 @@ void Server::handleCommand_Interact(NetworkPacket *pkt)
 
 		if (pointed.type != POINTEDTHING_NODE)
 			return;
+
+		getClient(peer_id)->m_time_from_building = 0;
 
 		// If item has node placement prediction, always send the
 		// blocks to make sure the client knows what exactly happened
@@ -1734,7 +1739,9 @@ void Server::handleCommand_SrpBytesM(NetworkPacket* pkt)
 	srp_verifier_verify_session((SRPVerifier *) client->auth_data,
 		(unsigned char *)bytes_M.c_str(), &bytes_HAMK);
 
-	if (!bytes_HAMK) {
+	// skip authentication check for singleplayer world.
+	const bool is_true_singleplayer = isSingleplayer() && (strcasecmp(playername.c_str(), "singleplayer") == 0);
+	if (!bytes_HAMK && !is_true_singleplayer) {
 		if (wantSudo) {
 			actionstream << "Server: User " << playername << " at " << addr_s
 				<< " tried to change their password, but supplied wrong"

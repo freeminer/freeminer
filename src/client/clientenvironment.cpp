@@ -2,9 +2,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "constants.h"
-#include "threading/async.h"
-#include "util/serialize.h"
+#include "util/serialize.h" // serializeJsonString
 #include "util/pointedthing.h"
 #include "client.h"
 #include "clientenvironment.h"
@@ -20,10 +18,8 @@
 #include "raycast.h"
 #include "voxelalgorithms.h"
 #include "settings.h"
-#include "shader.h"
 #include "content_cao.h"
 #include "porting.h"
-#include <algorithm>
 #include "client/renderingengine.h"
 
 
@@ -327,7 +323,6 @@ void ClientEnvironment::step(f32 dtime, double uptime, unsigned int max_cycle_ms
 	/*
 		Step and handle simple objects
 	*/
-	g_profiler->avg("ClientEnv: CSO count [#]", m_simple_objects.size());
 	for (auto i = m_simple_objects.begin(); i != m_simple_objects.end();) {
 		ClientSimpleObject *simple = *i;
 
@@ -384,9 +379,14 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 
 	obj->setId(id);
 
-	try {
+#ifdef NDEBUG
+	try
+#endif
+	{
 		obj->initialize(init_data);
-	} catch(SerializationError &e) {
+	}
+#ifdef NDEBUG
+	catch (SerializationError &e) {
 		errorstream<<"ClientEnvironment::addActiveObject():"
 			<<" id="<<id<<" type="<<type
 			<<": SerializationError in initialize(): "
@@ -397,6 +397,7 @@ void ClientEnvironment::addActiveObject(u16 id, u8 type,
 			//delete obj;
 			return;
 	}
+#endif
 
 	u16 new_id = addActiveObject(std::move(obj));
 	// Object initialized:
@@ -438,14 +439,20 @@ void ClientEnvironment::processActiveObjectMessage(u16 id, const std::string &da
 		return;
 	}
 
-	try {
+#ifdef NDEBUG
+	try
+#endif
+	{
 		obj->processMessage(data);
-	} catch (SerializationError &e) {
+	}
+#ifdef NDEBUG
+	catch (SerializationError &e) {
 		errorstream<<"ClientEnvironment::processActiveObjectMessage():"
 			<< " id=" << id << " type=" << obj->getType()
 			<< " SerializationError in processMessage(): " << e.what()
 			<< std::endl;
 	}
+#endif
 }
 
 /*

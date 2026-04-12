@@ -2,8 +2,12 @@
 -- Copyright (C) 2013 sapier
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-
 mm_game_theme = {}
+
+local COLORS = {
+	dark = { clouds = "#1c2a47", sky = "#090b1a" },
+	light = { clouds = "#f0f0ff", sky = "#8cbafa" },
+}
 
 --------------------------------------------------------------------------------
 function mm_game_theme.init()
@@ -21,7 +25,7 @@ function mm_game_theme.set_engine(hide_decorations)
 
 	core.set_topleft_text("")
 
-	local have_bg      = false
+	local have_bg = false
 	local have_overlay = mm_game_theme.set_engine_single("overlay")
 
 	if not have_overlay then
@@ -37,12 +41,16 @@ function mm_game_theme.set_engine(hide_decorations)
 		mm_game_theme.set_engine_single("footer")
 	end
 
+	local c = COLORS[core.settings:get("menu_theme")]
+	if not c then
+		core.log("warning", "Invalid menu theme: " .. core.settings:get("menu_theme"))
+	else
+		core.set_clouds_color(c.clouds)
+		core.set_sky_color(c.sky)
+	end
+
 	if not have_bg then
-		if core.settings:get_bool("menu_clouds") then
-			core.set_clouds(true)
-		else
-			mm_game_theme.set_dirt_bg()
-		end
+		core.set_clouds(core.settings:get_bool("menu_clouds"))
 	end
 end
 
@@ -58,7 +66,7 @@ function mm_game_theme.set_game(gamedetails)
 
 	core.set_topleft_text(gamedetails.name)
 
-	local have_bg      = false
+	local have_bg = false
 	local have_overlay = mm_game_theme.set_game_single("overlay", gamedetails)
 
 	if not have_overlay then
@@ -72,28 +80,39 @@ function mm_game_theme.set_game(gamedetails)
 	mm_game_theme.set_game_single("header", gamedetails)
 	mm_game_theme.set_game_single("footer", gamedetails)
 
+	local c = COLORS[core.settings:get("menu_theme")]
+	if not c then
+		core.log("warning", "Invalid menu theme: " .. core.settings:get("menu_theme"))
+	else
+		core.set_clouds_color(c.clouds)
+		core.set_sky_color(c.sky)
+	end
+
 	if not have_bg then
-		if core.settings:get_bool("menu_clouds") then
-			core.set_clouds(true)
-		else
-			mm_game_theme.set_dirt_bg()
-		end
+		core.set_clouds(core.settings:get_bool("menu_clouds"))
 	end
 end
 
 --------------------------------------------------------------------------------
 function mm_game_theme.clear_single(identifier)
-	core.set_background(identifier,"")
+	core.set_background(identifier, "")
 end
 
 --------------------------------------------------------------------------------
+local valid_image_extensions = {
+	".png",
+	".jpg",
+	".jpeg",
+}
+
 function mm_game_theme.set_engine_single(identifier)
 	--try texture pack first
 	if mm_game_theme.texturepack ~= nil then
-		local path = mm_game_theme.texturepack .. DIR_DELIM .."menu_" ..
-										identifier .. ".png"
-		if core.set_background(identifier,path) then
-			return true
+		for _, extension in pairs(valid_image_extensions) do
+			local path = mm_game_theme.texturepack .. DIR_DELIM .. "menu_" .. identifier .. extension
+			if core.set_background(identifier, path) then
+				return true
+			end
 		end
 	end
 
@@ -107,56 +126,44 @@ end
 
 --------------------------------------------------------------------------------
 function mm_game_theme.set_game_single(identifier, gamedetails)
-	assert(gamedetails ~= nil)
+	local extensions_randomised = table.copy(valid_image_extensions)
+	table.shuffle(extensions_randomised)
+	for _, extension in pairs(extensions_randomised) do
+		assert(gamedetails ~= nil)
 
-	if mm_game_theme.texturepack ~= nil then
-		local path = mm_game_theme.texturepack .. DIR_DELIM ..
-			gamedetails.id .. "_menu_" .. identifier .. ".png"
+		if mm_game_theme.texturepack ~= nil then
+			local path = mm_game_theme.texturepack .. DIR_DELIM .. gamedetails.id .. "_menu_" .. identifier .. extension
+			if core.set_background(identifier, path) then
+				return true
+			end
+		end
+
+		-- Find out how many randomized textures the game provides
+		local n = 0
+		local filename
+		local menu_files = core.get_dir_list(gamedetails.path .. DIR_DELIM .. "menu", false)
+		for i = 1, #menu_files do
+			filename = identifier .. "." .. i .. extension
+			if table.indexof(menu_files, filename) == -1 then
+				n = i - 1
+				break
+			end
+		end
+		-- Select random texture, 0 means standard texture
+		n = math.random(0, n)
+		if n == 0 then
+			filename = identifier .. extension
+		else
+			filename = identifier .. "." .. n .. extension
+		end
+
+		local path = gamedetails.path .. DIR_DELIM .. "menu" .. DIR_DELIM .. filename
 		if core.set_background(identifier, path) then
 			return true
 		end
-	end
 
-	-- Find out how many randomized textures the game provides
-	local n = 0
-	local filename
-	local menu_files = core.get_dir_list(gamedetails.path .. DIR_DELIM .. "menu", false)
-	for i = 1, #menu_files do
-		filename = identifier .. "." .. i .. ".png"
-		if table.indexof(menu_files, filename) == -1 then
-			n = i - 1
-			break
-		end
 	end
-	-- Select random texture, 0 means standard texture
-	n = math.random(0, n)
-	if n == 0 then
-		filename = identifier .. ".png"
-	else
-		filename = identifier .. "." .. n .. ".png"
-	end
-
-	local path = gamedetails.path .. DIR_DELIM .. "menu" ..
-		DIR_DELIM .. filename
-	if core.set_background(identifier, path) then
-		return true
-	end
-
 	return false
-end
-
---------------------------------------------------------------------------------
-function mm_game_theme.set_dirt_bg()
-	if mm_game_theme.texturepack ~= nil then
-		local path = mm_game_theme.texturepack .. DIR_DELIM .."default_dirt.png"
-		if core.set_background("background", path, true, 128) then
-			return true
-		end
-	end
-
-	-- Use universal fallback texture in textures/base/pack
-	local minimalpath = defaulttexturedir .. "menu_bg.png"
-	core.set_background("background", minimalpath, true, 128)
 end
 
 --------------------------------------------------------------------------------

@@ -6,6 +6,7 @@
 
 #include "irr_v3d.h"
 #include "nodedef.h"
+#include "tile.h"
 
 struct MeshMakeData;
 struct MeshCollector;
@@ -76,7 +77,7 @@ private:
 	video::SColor blendLightColor(const v3f &vertex_pos);
 	video::SColor blendLightColor(const v3f &vertex_pos, const v3f &vertex_normal);
 
-	void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = MATERIAL_FLAG_CRACK_OVERLAY,
+	void useTile(TileSpec *tile_ret, int index = 0, u8 set_flags = 0,
 		u8 reset_flags = 0, bool special = false);
 	void getTile(int index, TileSpec *tile_ret);
 	void getTile(v3pos_t direction, TileSpec *tile_ret);

@@ -6,18 +6,18 @@
 
 #include "irr_v3d.h"
 #include "player.h"
-#include "environment.h"
 #include "constants.h"
 #include "lighting.h"
 #include "util/numeric.h"
 #include <string>
 
 class Client;
+class ClientActiveObject;
 class Environment;
 class ClientEnvironment;
 struct MapNode;
 class GenericCAO;
-class ClientActiveObject;
+class Map;
 struct CollisionInfo;
 struct collisionMoveResult;
 

@@ -10,7 +10,6 @@
 #include "porting.h" // for sleep_ms(), get_sysinfo(), secure_rand_fill_buf()
 #include <list>
 #include <unordered_map>
-#include <cerrno>
 #include <mutex>
 #include "threading/event.h"
 #include "config.h"
@@ -227,19 +226,18 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 		return;
 
 	// Set static cURL options
-	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3);
+	curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
 	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, ""); // = all supported ones
 
 	std::string bind_address = g_settings->get("bind_address");
-	if (!bind_address.empty()) {
-		curl_easy_setopt(curl, CURLOPT_INTERFACE, bind_address.c_str());
-	}
+	curl_easy_setopt(curl, CURLOPT_INTERFACE,
+		bind_address.empty() ? nullptr : bind_address.c_str());
 
-	if (!g_settings->getBool("enable_ipv6")) {
-		curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
-	}
+	bool enable_ipv6 = g_settings->getBool("enable_ipv6");
+	curl_easy_setopt(curl, CURLOPT_IPRESOLVE,
+		 enable_ipv6 ? CURL_IPRESOLVE_WHATEVER : CURL_IPRESOLVE_V4);
 
 	// Restrict protocols so that curl vulnerabilities in
 	// other protocols don't affect us.
@@ -267,9 +265,7 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS,
 			request.connect_timeout);
 
-	if (!request.useragent.empty())
-		curl_easy_setopt(curl, CURLOPT_USERAGENT, request.useragent.c_str());
-	else {
+	if (request.useragent.empty()) {
 		std::string useragent = std::string("Freeminer ") + g_version_hash;
 #ifdef _WIN32
 		useragent += "Windows";
@@ -279,7 +275,10 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 		useragent += std::string(" (") + osinfo.sysname + "; " + osinfo.release + "; " + osinfo.machine + ")";
 #endif
 		curl_easy_setopt(curl, CURLOPT_USERAGENT, useragent.c_str());
-	}
+	} else
+
+	curl_easy_setopt(curl, CURLOPT_USERAGENT,
+		request.useragent.empty() ? nullptr : request.useragent.c_str());
 
 	// Set up a write callback that writes to the
 	// result struct, unless the data is to be discarded
@@ -298,14 +297,14 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 	default:
 		assert(false);
 	case HTTP_GET:
-		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1);
+		curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 		break;
 	case HTTP_HEAD:
 		// This is kinda pointless right now, since we don't return response headers (TODO?)
-		curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+		curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
 		break;
 	case HTTP_POST:
-		curl_easy_setopt(curl, CURLOPT_POST, 1);
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		break;
 	case HTTP_PUT:
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
@@ -357,9 +356,8 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 	}
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, http_header);
 
-	if (!g_settings->getBool("curl_verify_cert")) {
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-	}
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER,
+		g_settings->getBool("curl_verify_cert") ? 1L : 0L);
 }
 
 CURLcode HTTPFetchOngoing::start(CURLM *multi_)
@@ -433,7 +431,6 @@ HTTPFetchOngoing::~HTTPFetchOngoing()
 	// Set safe options for the reusable cURL handle
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
 			httpfetch_discardfunction);
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, nullptr);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, nullptr);
 	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, nullptr);
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, nullptr);

@@ -17,3 +17,4 @@ Categories=Game;Simulation;
 StartupNotify=false
 StartupWMClass=freeminer
 Keywords=sandbox;world;mining;crafting;blocks;nodes;multiplayer;roleplaying;minetest;
+X-Purism-FormFactor=Mobile;Workstation

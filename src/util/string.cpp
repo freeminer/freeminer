@@ -9,7 +9,7 @@
 #include <cctype>
 
 #include "hex.h"
-#include "porting.h"
+#include "porting.h" // strtok_r, strtoull and strncasecmp
 #include "translation.h"
 #include "strfnd.h"
 

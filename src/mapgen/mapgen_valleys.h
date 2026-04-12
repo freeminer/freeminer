@@ -87,19 +87,18 @@ public:
 	}
 
 private:
-
-	BiomeGenOriginal *m_bgen;
+	BiomeGenOriginal *m_bgen = nullptr;
 
 	float altitude_chill;
 	float river_depth_bed;
 	float river_size_factor;
 
-	Noise *noise_inter_valley_fill;
-	Noise *noise_inter_valley_slope;
-	Noise *noise_rivers;
-	Noise *noise_terrain_height;
-	Noise *noise_valley_depth;
-	Noise *noise_valley_profile;
+	Noise *noise_inter_valley_fill = nullptr;
+	Noise *noise_inter_valley_slope = nullptr;
+	Noise *noise_rivers = nullptr;
+	Noise *noise_terrain_height = nullptr;
+	Noise *noise_valley_depth = nullptr;
+	Noise *noise_valley_profile = nullptr;
 
 	virtual int generateTerrain();
 

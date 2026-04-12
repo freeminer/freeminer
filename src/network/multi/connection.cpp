@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "network/multi/connection.h"
 #include "connection.h"
+#include "network/networkexceptions.h"
 #include "network/networkpacket.h"
 #include "settings.h"
 #include "config.h"

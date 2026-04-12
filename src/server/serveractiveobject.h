@@ -4,14 +4,16 @@
 
 #pragma once
 
+#include "threading/lock.h"
+#include "util/container.h"
+
 #include <cassert>
 #include <unordered_set>
 #include <optional>
+#include <queue>
 #include "irrlichttypes_bloated.h"
 #include "activeobject.h"
 #include "itemgroup.h"
-#include "util/container.h"
-#include "threading/lock.h"
 
 
 /*
@@ -141,7 +143,7 @@ public:
 
 	// Returns added tool wear
 	virtual u32 punch(v3f dir,
-			const ToolCapabilities *toolcap = nullptr,
+			const ToolCapabilities &toolcap,
 			ServerActiveObject *puncher = nullptr,
 			float time_from_last_punch = 1000000.0f,
 			u16 initial_wear = 0)

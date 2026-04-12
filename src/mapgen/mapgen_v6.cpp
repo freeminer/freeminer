@@ -4,13 +4,13 @@
 // Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 // Copyright (C) 2014-2018 paramat
 
+#include "servermap.h"
 
 #include <cmath>
 #include "irrlichttypes.h"
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
-#include "mapblock.h"
 #include "mapnode.h"
 #include "map.h"
 #include "nodedef.h"

@@ -3,6 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "config.h"
+#include "network/networkexceptions.h"
 #if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
 
 #include <iomanip>

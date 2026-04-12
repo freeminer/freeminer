@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "network/networkprotocol.h"
+#include "constants.h" // PEER_ID_INEXISTENT
 #include "player.h"
 #include "skyparams.h"
 #include "lighting.h"

@@ -122,6 +122,8 @@ local function create_world_formspec(dialogdata)
 	if game ~= nil then
 		local gameconfig = Settings(game.path.."/game.conf")
 
+		current_mg = current_mg or gameconfig:get("default_mapgen") or core.settings:get("mg_name")
+
 		local allowed_mapgens = (gameconfig:get("allowed_mapgens") or ""):split()
 		for key, value in pairs(allowed_mapgens) do
 			allowed_mapgens[key] = value:trim()
@@ -508,7 +510,6 @@ function create_create_world_dlg()
 		worldname = "",
 		-- settings the world is created with:
 		seed = core.settings:get("fixed_map_seed") or "",
-		mg = core.settings:get("mg_name"),
 		flags = {
 			main = core.settings:get_flags("mg_flags"),
 

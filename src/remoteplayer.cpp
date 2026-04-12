@@ -5,13 +5,9 @@
 
 #include "remoteplayer.h"
 #include <json/json.h>
-#include "filesys.h"
 #include "gamedef.h"
-#include "irr_v3d.h"
-#include "porting.h"  // strlcpy
 #include "server.h"
 #include "settings.h"
-#include "convert_json.h"
 #include "server/player_sao.h"
 
 /*

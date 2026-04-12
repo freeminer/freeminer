@@ -61,7 +61,6 @@ public:
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
-	void transforming_liquid_add(const v3pos_t &p);
 	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
 	std::vector<v3pos_t> m_transforming_liquid_local;
 
@@ -146,7 +145,7 @@ public:
 	/// @brief write data back to map after mapgen
 	/// @param now current game time
 	void finishBlockMake(BlockMakeData *data,
-		std::map<v3bpos_t, MapBlock*> *changed_blocks, u32 now);
+		std::map<v3bpos_t, MapBlock*> *changed_blocks, ServerEnvironment *env);
 	void cancelBlockMake(BlockMakeData *data);
 
 	/*
@@ -246,8 +245,13 @@ public:
 			);
 
 /*
-	void transforming_liquid_add(v3pos_t p);
+	void transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks,
+			ServerEnvironment *env);
 */
+	size_t transformLiquidsLocal(std::map<v3pos_t, MapBlock*> &modified_blocks, UniqueQueue<v3pos_t> &liquid_queue,
+			ServerEnvironment *env, u32 liquid_loop_max
+		    , Server *m_server, unsigned int max_cycle_ms);
+	void transforming_liquid_add(const v3pos_t &p);
 
 	MapSettingsManager settings_mgr;
 

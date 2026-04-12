@@ -10,17 +10,15 @@
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "cpp_api/s_security.h"
-#include "server/player_sao.h"
-#include "util/serialize.h"
 #include "server.h"
-#include "environment.h"
+#include "serverenvironment.h"
+#include "servermap.h"
 #include "emerge_internal.h"
+#include "map_settings_manager.h"
 #include "mapgen/mg_biome.h"
 #include "mapgen/mg_ore.h"
 #include "mapgen/mg_decoration.h"
 #include "mapgen/mg_schematic.h"
-#include "mapgen/mapgen_v5.h"
-#include "mapgen/mapgen_v7.h"
 #include "mapgen/treegen.h"
 #include "filesys.h"
 #include "settings.h"
@@ -877,28 +875,27 @@ int ModApiMapgen::l_get_mapgen_edges(lua_State *L)
 	// MapSettingsManager::makeMapgenParams cannot be used here because it would
 	// make mapgen settings immutable from then on. Mapgen settings should stay
 	// mutable until after mod loading ends.
+	std::unique_ptr<MapgenParams> params(settingsmgr->makeMapgenParamsCopy());
 
 	pos_t mapgen_limit;
 	if (lua_isnumber(L, 1)) {
-		 mapgen_limit = lua_tointeger(L, 1);
+		mapgen_limit = lua_tointeger(L, 1);
 	} else {
-		std::string mapgen_limit_str;
-		settingsmgr->getMapSetting("mapgen_limit", &mapgen_limit_str);
-		mapgen_limit = stol(mapgen_limit_str, 0);
+		mapgen_limit = params->mapgen_limit;
 	}
 
-	s16 chunksize;
+	v3bpos_t chunksize;
 	if (lua_isnumber(L, 2)) {
-		chunksize = lua_tointeger(L, 2);
+		chunksize = v3bpos_t(lua_tointeger(L, 2));
+	} else if (lua_istable(L, 2)) {
+		chunksize = check_v3pos(L, 2);
 	} else {
-		std::string chunksize_str;
-		settingsmgr->getMapSetting("chunksize", &chunksize_str);
-		chunksize = stoi(chunksize_str, 1, 10);
+		chunksize = params->chunksize;
 	}
 
-	std::pair<pos_t, pos_t> edges = get_mapgen_edges(mapgen_limit, chunksize);
-	push_v3pos(L, v3pos_t(1, 1, 1) * edges.first);
-	push_v3pos(L, v3pos_t(1, 1, 1) * edges.second);
+	auto edges = get_mapgen_edges(mapgen_limit, chunksize);
+	push_v3pos(L, edges.first);
+	push_v3pos(L, edges.second);
 	return 2;
 }
 
@@ -912,12 +909,9 @@ int ModApiMapgen::l_get_mapgen_chunksize(lua_State *L)
 	// MapSettingsManager::makeMapgenParams cannot be used here because it would
 	// make mapgen settings immutable from then on. Mapgen settings should stay
 	// mutable until after mod loading ends.
+	std::unique_ptr<MapgenParams> params(settingsmgr->makeMapgenParamsCopy());
 
-	std::string chunksize_str;
-	settingsmgr->getMapSetting("chunksize", &chunksize_str);
-	s16 chunksize = stoi(chunksize_str, 1, 10);
-
-	push_v3s16(L, v3s16{chunksize, chunksize, chunksize});
+	push_v3s16(L, params->chunksize);
 	return 1;
 }
 

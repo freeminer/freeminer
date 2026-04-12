@@ -6,16 +6,9 @@
 
 #include <atomic>
 #include <cmath>
-#include "threading/mutex_auto_lock.h"
-#include "util/numeric.h"
-#include "hud.h"
+#include "hud_element.h"
 #include "constants.h"
 #include "gamedef.h"
-#include "settings.h"
-//#include "content_sao.h"
-//#include "filesys.h"
-#include "log_types.h"
-#include "porting.h"  // strlcpy
 #include <tuple>
 
 const struct EnumString es_CameraMode[] = {

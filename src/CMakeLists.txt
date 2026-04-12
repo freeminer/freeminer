@@ -70,7 +70,7 @@ if(PRECOMPILE_HEADERS)
 endif()
 
 
-option(ENABLE_CURL "Enable cURL support for fetching media" TRUE)
+option(ENABLE_CURL "Enable cURL support" TRUE)
 set(USE_CURL FALSE)
 
 if(ENABLE_CURL)
@@ -85,10 +85,10 @@ endif()
 
 if(NOT USE_CURL)
 	if(BUILD_CLIENT)
-		message(WARNING "cURL is required to load the server list")
+		message(WARNING "cURL is required to use the server list, content browser or update checker")
 	endif()
 	if(BUILD_SERVER)
-		message(WARNING "cURL is required to announce to the server list")
+		message(WARNING "cURL is required to announce to the server list or use the HTTP API")
 	endif()
 endif()
 
@@ -147,7 +147,7 @@ if(BUILD_CLIENT)
 	endif()
 endif()
 
-option(ENABLE_CURSES "Enable ncurses console" TRUE)
+option(ENABLE_CURSES "Enable ncurses console" ${BUILD_SERVER})
 set(USE_CURSES FALSE)
 
 if(ENABLE_CURSES)
@@ -244,9 +244,9 @@ endif(ENABLE_PROMETHEUS)
 
 if(USE_PROMETHEUS)
 	message(STATUS "Prometheus client enabled.")
-else(USE_PROMETHEUS)
+else()
 	message(STATUS "Prometheus client disabled.")
-endif(USE_PROMETHEUS)
+endif()
 
 OPTION(ENABLE_SPATIAL "Enable SpatialIndex AreaStore backend" TRUE)
 set(USE_SPATIAL FALSE)
@@ -435,7 +435,7 @@ set(independent_SRCS
 	face_position_cache.cpp
 	gettext_plural_form.cpp
 	httpfetch.cpp
-	hud.cpp
+	hud_element.cpp
 	inventory.cpp
 	itemstackmetadata.cpp
 	log.cpp
@@ -451,6 +451,7 @@ set(independent_SRCS
 	profiler.cpp
 	serialization.cpp
 	settings.cpp
+	sound_spec.cpp
 	staticobject.cpp
 	terminal_chat_console.cpp
 	texture_override.cpp
@@ -734,6 +735,7 @@ if(BUILD_CLIENT)
 		${FREEMINER_CLIENT_LIBRARIES}
 
 		${LUA_BIT_LIBRARY}
+		lstrpack
 		sha256
 		${FREETYPE_LIBRARY}
 		${PLATFORM_LIBS}
@@ -833,6 +835,7 @@ if(BUILD_SERVER)
 
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}
+		lstrpack
 		sha256
 		${GMP_LIBRARY}
 	)
@@ -1036,7 +1039,7 @@ else()
 	set(CMAKE_CXX_FLAGS_DEBUG "${STD_FLAGS} -g -O0 ${WARNING_FLAGS} ${OTHER_FLAGS}")
 
 	if(UNIX)
-		# enable assertions for libstdc++ or libc++
+		# enable assertions for libstdc++
 		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wp,-D_GLIBCXX_ASSERTIONS -Wp,-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG")
 	endif()
 	if(USE_GPROF)

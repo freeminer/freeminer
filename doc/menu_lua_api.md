@@ -1,4 +1,4 @@
-Luanti Lua Mainmenu API Reference 5.14.0
+Luanti Lua Mainmenu API Reference 5.15.1
 ========================================
 
 Introduction
@@ -218,6 +218,9 @@ GUI
   * `minsize`: minimum tile size, images are scaled to at least this size prior
    doing tiling (background only)
 * `core.set_clouds(<true/false>)`
+* `core.set_clouds_color(colorString)`
+* `core.set_sky_color(colorString)`
+  * `colorString`: `"#RRGGBB"` format
 * `core.set_topleft_text(text)`
 * `core.show_touchscreen_layout()`
 * `core.show_path_select_dialog(formname, caption, is_file_select)`
@@ -342,6 +345,10 @@ Package - content which is downloadable from the content db, may or may not be i
           optional_depends = {"mod", "names"}, -- mods only
       }
       ```
+* `core.get_mod_list(path, virtual_path)`
+    * Returns a flat list of mod and modpack information found within the specified path.
+    * Each entry consists of the fields `name`, `author`, `release`, `description`,
+      `path`, `virtual_path`, `is_name_explicit`, `is_modpack`, `modpack_depth`.
 * `core.check_mod_configuration(world_path, mod_paths)`
     * Checks whether configuration is valid.
     * `world_path`: path to the world

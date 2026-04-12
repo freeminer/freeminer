@@ -3,12 +3,12 @@
 // Copyright (C) 2014-2020 paramat
 // Copyright (C) 2013-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
+#include "servermap.h"
 
 #include "mapgen.h"
 #include <cmath>
 #include "voxel.h"
 #include "noise.h"
-#include "mapblock.h"
 #include "mapnode.h"
 #include "map.h"
 #include "nodedef.h"

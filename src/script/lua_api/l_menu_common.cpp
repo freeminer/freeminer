@@ -6,6 +6,7 @@
 #include "l_menu_common.h"
 
 #include "client/renderingengine.h"
+#include "client/shadows/dynamicshadowsrender.h"
 #include "gettext.h"
 #include "lua_api/l_internal.h"
 
@@ -28,6 +29,14 @@ int ModApiMenuCommon::l_get_active_driver(lua_State *L)
 }
 
 
+int ModApiMenuCommon::l_driver_supports_shadows(lua_State *L)
+{
+	auto *device = RenderingEngine::get_raw_device();
+	lua_pushboolean(L, ShadowRenderer::isSupported(device->getVideoDriver()));
+	return 1;
+}
+
+
 int ModApiMenuCommon::l_irrlicht_device_supports_touch(lua_State *L)
 {
 	lua_pushboolean(L, RenderingEngine::get_raw_device()->supportsTouchEvents());
@@ -43,12 +52,24 @@ int ModApiMenuCommon::l_normalize_keycode(lua_State *L)
 }
 
 
+int ModApiMenuCommon::l_get_key_description(lua_State *L)
+{
+	const char *keystr = luaL_checkstring(L, 1);
+	KeyPress kp(keystr);
+	std::string name = kp.name();
+	lua_pushstring(L, name.c_str());
+	return 1;
+}
+
+
 void ModApiMenuCommon::Initialize(lua_State *L, int top)
 {
 	API_FCT(gettext);
 	API_FCT(get_active_driver);
+	API_FCT(driver_supports_shadows);
 	API_FCT(irrlicht_device_supports_touch);
 	API_FCT(normalize_keycode);
+	API_FCT(get_key_description);
 }
 
 

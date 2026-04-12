@@ -9,7 +9,7 @@
 #include "rollback_interface.h"
 #include <list>
 #include <vector>
-
+#include <deque>
 #include "config.h"
 #if USE_SQLITE3
 #include "sqlite3.h"
@@ -20,7 +20,7 @@ class IGameDef;
 struct ActionRow;
 struct Entity;
 
-class RollbackManager: public IRollbackManager
+class RollbackManager final : public IRollbackManager
 {
 public:
 	RollbackManager(const std::string & world_path, IGameDef * gamedef);
@@ -73,22 +73,23 @@ private:
 	std::string current_actor;
 	bool current_actor_is_guess = false;
 
-	std::list<RollbackAction> action_todisk_buffer;
-	std::list<RollbackAction> action_latest_buffer;
+	std::vector<RollbackAction> action_todisk_buffer;
+	std::deque<RollbackAction> action_latest_buffer;
 
 	std::string database_path;
 #if USE_SQLITE3
-	sqlite3 * db;
-	sqlite3_stmt * stmt_insert;
-	sqlite3_stmt * stmt_replace;
-	sqlite3_stmt * stmt_select;
-	sqlite3_stmt * stmt_select_range;
-	sqlite3_stmt * stmt_select_withActor;
-	sqlite3_stmt * stmt_knownActor_select;
-	sqlite3_stmt * stmt_knownActor_insert;
-	sqlite3_stmt * stmt_knownNode_select;
-	sqlite3_stmt * stmt_knownNode_insert;
+	sqlite3 *db = nullptr;
+	sqlite3_stmt *stmt_insert = nullptr;
+	sqlite3_stmt *stmt_replace = nullptr;
+	sqlite3_stmt *stmt_select = nullptr;
+	sqlite3_stmt *stmt_select_range = nullptr;
+	sqlite3_stmt *stmt_select_withActor = nullptr;
+	sqlite3_stmt *stmt_knownActor_select = nullptr;
+	sqlite3_stmt *stmt_knownActor_insert = nullptr;
+	sqlite3_stmt *stmt_knownNode_select = nullptr;
+	sqlite3_stmt *stmt_knownNode_insert = nullptr;
 #endif
+
 	std::vector<Entity> knownActors;
 	std::vector<Entity> knownNodes;
 };

@@ -16,6 +16,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "config.h"
+#include "network/networkexceptions.h"
 #include "network/networkprotocol.h"
 //#include "network/connection_internal.h"
 #if USE_ENET

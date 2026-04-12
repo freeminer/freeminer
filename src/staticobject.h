@@ -4,13 +4,17 @@
 
 #pragma once
 
-#include "irrlichttypes_bloated.h"
-#include <string>
-#include <sstream>
-#include <vector>
-#include <map>
-#include "debug.h"
 #include "threading/concurrent_map.h"
+
+#include "debug.h" // FATAL_ERROR
+#include "irrlichttypes_bloated.h"
+#include "log.h"
+
+#include <istream>
+#include <map>
+#include <ostream>
+#include <string>
+#include <vector>
 
 class ServerActiveObject;
 

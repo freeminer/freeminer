@@ -8,7 +8,9 @@
 
 #include "convert_json.h"
 #include "database-leveldb.h"
-#include "log_types.h"
+
+#include "debug.h"
+#include "log.h"
 #include "filesys.h"
 #include "exceptions.h"
 #include "remoteplayer.h"
