@@ -24,11 +24,10 @@
 #include "remoteplayer.h"
 #include "scripting_server.h"
 #include "server.h"
-#include "util/serialize.h"
+#include "servermap.h"
 #include "util/numeric.h"
 #include "util/basic_macros.h"
 #include "util/pointedthing.h"
-#include "threading/mutex_auto_lock.h"
 #include "filesys.h"
 #include "gameparams.h"
 #include "database/database-dummy.h"
@@ -40,7 +39,6 @@
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
-#include "irrlicht_changes/printing.h"
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
 
@@ -303,8 +301,12 @@ void ServerEnvironment::init()
 
 void ServerEnvironment::deactivateBlocksAndObjects()
 {
+	// Prevent any funny business from happening in case further callbacks
+	// try to add new objects.
+	m_shutting_down = true;
+
 	// Clear active block list.
-	// This makes the next one delete all active objects.
+	// This makes the next code delete all active objects.
 	m_active_blocks.clear();
 
 	deactivateFarObjects(true);
@@ -312,6 +314,7 @@ void ServerEnvironment::deactivateBlocksAndObjects()
 
 ServerEnvironment::~ServerEnvironment()
 {
+	m_script = nullptr;
 	assert(m_active_blocks.size() == 0); // deactivateBlocksAndObjects does this
 
 	removeRemovedObjects(50000);
@@ -333,11 +336,14 @@ ServerEnvironment::~ServerEnvironment()
 	for (RemotePlayer *m_player : m_players) {
 		delete m_player;
 	}
+	m_players.clear();
 
 	}
 
 	delete m_player_database;
+	m_player_database = nullptr;
 	delete m_auth_database;
+	m_auth_database = nullptr;
 }
 
 Map & ServerEnvironment::getMap()
@@ -1500,6 +1506,12 @@ u16 ServerEnvironment::addActiveObject(std::shared_ptr<ServerActiveObject> objec
 {
 	if (!object)
 		return 0;
+	//assert(object);	// Pre-condition
+	if (m_shutting_down) {
+		warningstream << "ServerEnvironment: refusing to add active object "
+			"during shutdown: " << object->getDescription() << std::endl;
+		return 0;
+	}
 	m_added_objects++;
 	u16 id = addActiveObjectRaw(std::move(object), nullptr, 0);
 	return id;
@@ -1897,7 +1909,7 @@ std::unique_ptr<ServerActiveObject> ServerEnvironment::createSAO(ActiveObjectTyp
 */
 void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 {
-	if (block == NULL)
+	if (!block || m_shutting_down)
 		return;
 
 	if (!block->onObjectsActivation())

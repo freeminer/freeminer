@@ -31,7 +31,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <IGUIFont.h>
 #include <IVideoDriver.h>
 
-#include "porting.h"
 #include "gettext.h"
 #include "util/string.h"
 

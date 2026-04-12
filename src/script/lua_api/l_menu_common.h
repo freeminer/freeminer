@@ -12,8 +12,10 @@ class ModApiMenuCommon: public ModApiBase
 private:
 	static int l_gettext(lua_State *L);
 	static int l_get_active_driver(lua_State *L);
+	static int l_driver_supports_shadows(lua_State *L);
 	static int l_irrlicht_device_supports_touch(lua_State *L);
 	static int l_normalize_keycode(lua_State *L);
+	static int l_get_key_description(lua_State *L);
 
 public:
 	static void Initialize(lua_State *L, int top);

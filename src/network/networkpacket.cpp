@@ -6,7 +6,6 @@
 #include "networkpacket.h"
 #include <memory>
 #include <sstream>
-#include "networkexceptions.h"
 #include "util/serialize.h"
 #include "networkprotocol.h"
 

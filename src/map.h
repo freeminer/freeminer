@@ -4,29 +4,28 @@
 
 #pragma once
 
-#include <cstdint>
-#include <iostream>
-#include <set>
-#include <map>
-#include "irr_v3d.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
 #include "util/unordered_map_hash.h"
 
+#include <map>
+#include <ostream>
+#include <set>
+#include <unordered_map>
+
 #include "irrlichttypes_bloated.h"
-#include "mapblock.h"
+#include "mapblock.h" // for forEachNodeInArea
 #include "mapnode.h"
 #include "constants.h"
 #include "voxel.h"
 #include "modifiedstate.h"
-#include "util/numeric.h"
-#include "nodetimer.h"
-#include "debug.h"
+#include "util/numeric.h" // for forEachNodeInArea
 
 /*
 class MapSector;
 */
 class NodeMetadata;
+class NodeTimer;
 class IGameDef;
 
 class MapDatabase;
@@ -63,9 +62,6 @@ struct MapEditEvent
 	MapNode n = CONTENT_AIR;
 	std::vector<v3s16> modified_blocks; // Represents a set
 	bool is_private_change = false;
-	// Setting low_priority to true allows the server
-	// to send this change to clients with some delay.
-	bool low_priority = false;
 
 	MapEditEvent() = default;
 

@@ -18,7 +18,6 @@
 #include "config.h"
 #include "irrlichttypes.h" // u64
 #include "debug.h"
-#include "constants.h"
 #include "util/timetaker.h" // TimePrecision
 
 #if !defined(__PRETTY_FUNCTION__) && defined(_MSC_VER)
@@ -131,6 +130,12 @@ void initializePaths();
 */
 const std::string &get_sysinfo();
 
+
+/*
+	Return size of system RAM in MB
+	(or 0 if unavailable/error)
+*/
+u32 getMemorySizeMB();
 
 // Monotonic timer
 

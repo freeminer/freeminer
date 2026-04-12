@@ -11,6 +11,8 @@
 #include "scripting_server.h"
 #include "server.h"
 #include "serverenvironment.h"
+#include "settings.h"
+#include "util/serialize.h"
 
 PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t peer_id_,
 		bool is_singleplayer):
@@ -51,6 +53,8 @@ PlayerSAO::PlayerSAO(ServerEnvironment *env_, RemotePlayer *player_, session_t p
 	if (!g_settings->getBool("enable_damage"))
 		m_armor_groups["immortal"] = 1;
 }
+
+// PlayerSAO::~PlayerSAO(): eventually deleted by `ActiveObjectMgr::removeObject`
 
 void PlayerSAO::finalize(RemotePlayer *player, const std::set<std::string> &privs)
 {
@@ -174,7 +178,8 @@ void PlayerSAO::step(float dtime, bool send_recommended)
 
 			// No more breath, damage player
 			if (m_breath == 0) {
-				PlayerHPChangeReason reason(PlayerHPChangeReason::DROWNING);
+				std::string nodename = c.name;
+				PlayerHPChangeReason reason(PlayerHPChangeReason::DROWNING, nodename, p);
 				setHP(m_hp - c.drowning, reason);
 			}
 		}
@@ -498,15 +503,12 @@ void PlayerSAO::addSpeed(v3f speed)
 }
 
 u32 PlayerSAO::punch(v3f dir,
-	const ToolCapabilities *toolcap,
+	const ToolCapabilities &toolcap,
 	ServerActiveObject *puncher,
 	float time_from_last_punch,
 	u16 initial_wear)
 {
 	if (!m_player)
-		return 0;
-
-	if (!toolcap)
 		return 0;
 
 	// No effect if PvP disabled or if immortal

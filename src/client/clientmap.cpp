@@ -10,14 +10,17 @@
 #include "client/mesh.h"
 #include "mapblock_mesh.h"
 #include <IMaterialRenderer.h>
+#include <ISceneManager.h>
 #include <IVideoDriver.h>
 #include <matrix4.h>
 #include "mapsector.h"
 #include "mapblock.h"
+#include "node_visuals.h"
 #include "nodedef.h"
+#include "player.h" // CameraMode
 #include "profiler.h"
 #include "settings.h"
-#include "camera.h"               // CameraModes
+#include "camera.h"
 #include "util/basic_macros.h"
 #include "util/tracy_wrapper.h"
 #include "client/renderingengine.h"
@@ -461,7 +464,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	// Number of blocks frustum culled
 	u32 blocks_frustum_culled = 0;
 
-	MeshGrid mesh_grid = m_client->getMeshGrid();
+	const MeshGrid mesh_grid = m_client->getMeshGrid();
 
 	// No occlusion culling when free_move is on and camera is inside ground
 	// No occlusion culling for chunk sizes of 4 and above
@@ -469,11 +472,13 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	bool occlusion_culling_enabled = mesh_grid.cell_size < 4;
 	if (m_control.allow_noclip) {
 		MapNode n = getNode(cam_pos_nodes);
-		if (n.getContent() == CONTENT_IGNORE || m_nodedef->get(n).solidness == 2)
+		if (n.getContent() == CONTENT_IGNORE || m_nodedef->get(n).visuals->solidness == 2)
 			occlusion_culling_enabled = false;
 	}
 
 	const v3s16 camera_block = getContainerPos(cam_pos_nodes, MAP_BLOCKSIZE);
+	//assert(m_drawlist.empty());
+	//m_drawlist = decltype(m_drawlist)(MapBlockComparer(camera_block));
 	m_drawlist = drawlist_map{MapBlockComparer(camera_block)};
 
 	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
@@ -483,7 +488,14 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	// if (occlusion_culling_enabled && m_control.show_wireframe)
 	// 	occlusion_culling_enabled = porting::getTimeS() & 1;
 
-	// Set of mesh holding blocks
+	const auto &add_to_drawlist = [this, &m_drawlist] (auto &block) {
+		block->refGrab();
+		auto res = m_drawlist.emplace(block->getPos(), block);
+		(void)res;
+		assert(res.second); // must not already exist
+	};
+
+	// Set of mesh holding blocks, will be transferred to m_drawlist
 	std::set<v3s16> shortlist;
 
 	/*
@@ -493,8 +505,9 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	if (m_control.range_all || m_loops_occlusion_culler) {
 		// Number of blocks currently loaded by the client
 		u32 blocks_loaded = 0;
-		// Number of blocks with mesh in rendering range
-		u32 blocks_in_range_with_mesh = 0;
+		// Number of blocks in rendering range
+		u32 blocks_in_range = 0;
+		assert(m_keeplist.empty());
 
 
 			for (auto & [block_coord, block] : m_blocks) {
@@ -533,6 +546,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 				v3f mesh_sphere_center;
 				f32 mesh_sphere_radius;
 
+				v3s16 block_pos = block->getPos();
 				v3s16 block_pos_nodes = block->getPosRelative();
 
 				if (mesh) {
@@ -553,12 +567,12 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 				// Keep the block alive as long as it is in range.
 				block->resetUsageTimer();
-				blocks_in_range_with_mesh++;
+				blocks_in_range++;
 
 				// Frustum culling
 				// Only do coarse culling here, to account for fast camera movement.
 				// This is needed because this function is not called every frame.
-				float frustum_cull_extra_radius = 300.0f;
+				float frustum_cull_extra_radius = 30.0f * BS;
 				if (is_frustum_culled(mesh_sphere_center,
 						mesh_sphere_radius + frustum_cull_extra_radius)) {
 					blocks_frustum_culled++;
@@ -567,7 +581,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 				// Raytraced occlusion culling - send rays from the camera to the block's corners
 				if (!m_control.range_all && occlusion_culling_enabled && m_enable_raytraced_culling &&
-						mesh &&
+						block &&
 						isMeshOccluded(block.get(), mesh_grid.cell_size, cam_pos_nodes)) {
 					blocks_occlusion_culled++;
 					continue;
@@ -576,20 +590,26 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 				if (mesh_grid.cell_size > 1) {
 					// Block meshes are stored in the corner block of a chunk
 					// (where all coordinate are divisible by the chunk size)
-					// Add them to the de-dup set.
-					shortlist.emplace(mesh_grid.getMeshPos(block->getPos()));
-					// All other blocks we can grab and add to the keeplist right away.
-					m_keeplist.push_back(block.get());
-					block->refGrab();
-				} else if (mesh) {
-					// without mesh chunking we can add the block to the drawlist
-					block->refGrab();
-					m_drawlist.emplace(block->getPos(), block);
+					// Deduplicate and add them later
+					shortlist.emplace(mesh_grid.getMeshPos(block_pos));
+					// All other blocks we can add to m_keeplist right away
+					if (!mesh_grid.isMeshPos(block_pos) || !mesh) {
+						m_keeplist.push_back(block);
+						block->refGrab();
+					}
+				} else {
+					if (mesh) {
+						// add directly to the drawlist
+						add_to_drawlist(block);
+					} else { // ...or to m_keeplist
+						m_keeplist.push_back(block);
+						block->refGrab();
+					}
 				}
 			}
 		}
 
-		g_profiler->avg("MapBlock meshes in range [#]", blocks_in_range_with_mesh);
+		g_profiler->avg("MapBlocks in range [#]", blocks_in_range);
 		g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
 	} else {
 		// Blocks visited by the algorithm
@@ -599,8 +619,8 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 		std::queue<v3s16> blocks_to_consider;
 
-		v3s16 camera_mesh = mesh_grid.getMeshPos(camera_block);
-		v3s16 camera_cell = mesh_grid.getCellPos(camera_block);
+		const v3s16 camera_mesh = mesh_grid.getMeshPos(camera_block);
+		const v3s16 camera_cell = mesh_grid.getCellPos(camera_block);
 
 		// Bits per block:
 		// [ visited | 0 | 0 | 0 | 0 | Z visible | Y visible | X visible ]
@@ -612,29 +632,25 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 		// Recursively walk the space and pick mapblocks for drawing
 		while (!blocks_to_consider.empty()) {
-
 			v3s16 block_coord = blocks_to_consider.front();
 			blocks_to_consider.pop();
+			// We only iterate along the grid
+			assert(mesh_grid.isMeshPos(block_coord));
 
 			v3s16 cell_coord = mesh_grid.getCellPos(block_coord);
 			auto &flags = meshes_seen.getChunk(cell_coord).getBits(cell_coord);
 
-			// Only visit each block once (it may have been queued up to three times)
+			// Only visit each cell once (it may have been queued up to three times)
 			if ((flags & 0x80) == 0x80)
 				continue;
 			flags |= 0x80;
 
 			blocks_visited++;
 
-			// Get the sector, block and mesh
+			MapBlock *block = getBlockNoCreateNoEx(block_coord);
 /*
-			MapSector *sector = this->getSectorNoGenerate(v2s16(block_coord.X, block_coord.Z));
-
-			MapBlock *block = sector ? sector->getBlockNoCreateNoEx(block_coord.Y) : nullptr;
-
 			MapBlockMesh *mesh = block ? block->mesh : nullptr;
 */
-			MapBlock *block = getBlockNoCreateNoEx(block_coord);
 			int mesh_step =
 					farmesh::getLodStep(m_control, getNodeBlockPos(cam_pos_nodes), block_coord, speedf);
 			auto mesh = block ? block->getLodMesh(mesh_step, true) : nullptr;
@@ -656,20 +672,20 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 						+ mesh->getBoundingSphereCenter();
 				mesh_sphere_radius = mesh->getBoundingRadius();
 			} else {
-				mesh_sphere_center = intToFloat(block_pos_nodes, BS) + v3f((mesh_grid.cell_size * MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
+				mesh_sphere_center = intToFloat(block_pos_nodes, BS) +
+					v3f((mesh_grid.cell_size * MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
 				mesh_sphere_radius = 0.87f * mesh_grid.cell_size * MAP_BLOCKSIZE * BS;
 			}
 
 			// First, perform a simple distance check.
-			if (!m_control.range_all &&
-				mesh_sphere_center.getDistanceFrom(intToFloat(cam_pos_nodes, BS)) >
+			if (mesh_sphere_center.getDistanceFrom(intToFloat(cam_pos_nodes, BS)) >
 					m_control.wanted_range * BS + mesh_sphere_radius)
 				continue; // Out of range, skip.
 
 			// Frustum culling
 			// Only do coarse culling here, to account for fast camera movement.
 			// This is needed because this function is not called every frame.
-			float frustum_cull_extra_radius = 300.0f;
+			float frustum_cull_extra_radius = 30.0f * BS;
 			if (is_frustum_culled(mesh_sphere_center,
 					mesh_sphere_radius + frustum_cull_extra_radius)) {
 				blocks_frustum_culled++;
@@ -685,26 +701,16 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 			// Raytraced occlusion culling - send rays from the camera to the block's corners
 			if (occlusion_culling_enabled && m_enable_raytraced_culling &&
-					block && mesh &&
-					visible_outer_sides != 0x07 && isMeshOccluded(block, mesh_grid.cell_size, cam_pos_nodes)) {
+					block && visible_outer_sides != 0x07 &&
+					isMeshOccluded(block, mesh_grid.cell_size, cam_pos_nodes)) {
 				blocks_occlusion_culled++;
 				continue;
 			}
 
-			if (mesh_grid.cell_size > 1) {
-				// Block meshes are stored in the corner block of a chunk
-				// (where all coordinate are divisible by the chunk size)
-				// Add them to the de-dup set.
-				shortlist.emplace(block_coord.X, block_coord.Y, block_coord.Z);
-				// All other blocks we can grab and add to the keeplist right away.
-				if (block) {
-					m_keeplist.push_back(block);
-					block->refGrab();
-				}
-			} else if (mesh) {
-				// without mesh chunking we can add the block to the drawlist
-				block->refGrab();
-				m_drawlist.emplace(block_coord, block);
+			// Note that we don't fill m_keeplist, or call resetUsageTimer() here.
+			// touchMapBlocks() exists to deal with that.
+			if (mesh) {
+				add_to_drawlist(block);
 			}
 
 			// Decide which sides to traverse next or to block away
@@ -788,8 +794,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 						auto &next_flags = meshes_seen.getChunk(next_cell).getBits(next_cell);
 						next_flags |= my_side;
 						blocks_to_consider.push(next_pos);
-					}
-					else {
+					} else {
 						sides_skipped++;
 					}
 				};
@@ -806,18 +811,16 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 					traverse_far_side(+mesh_grid.cell_size);
 			}
 		}
-		g_profiler->avg("MapBlocks sides skipped [#]", sides_skipped);
+		g_profiler->avg("MapBlock sides skipped [#]", sides_skipped);
 		g_profiler->avg("MapBlocks examined [#]", blocks_visited);
 	}
-	g_profiler->avg("MapBlocks shortlist [#]", shortlist.size());
 
+	// must populate either only to avoid duplicates
 	assert(m_drawlist.empty() || shortlist.empty());
 	for (auto pos : shortlist) {
-		MapBlock *block = getBlockNoCreateNoEx(pos);
-		if (block) {
-			block->refGrab();
-			m_drawlist.emplace(pos, block);
-		}
+		auto block = getBlock(pos);
+		if (block /*&& block->mesh*/)
+			add_to_drawlist(block);
 	}
 
 	g_profiler->avg("MapBlocks occlusion culled [#]", blocks_occlusion_culled);
@@ -827,12 +830,15 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 
 void ClientMap::touchMapBlocks()
 {
+	// This function is only needed when using the BFS culler, since it does not
+	// look at all blocks in range.
+	// compare to ClientMap::updateDrawList()
 	if (m_control.range_all || m_loops_occlusion_culler)
 		return;
 
 	ScopeProfiler sp(g_profiler, "CM::touchMapBlocks()", SPT_AVG);
 
-	v3s16 cam_pos_nodes = floatToInt(m_camera_position, BS);
+	const v3s16 cam_pos_nodes = floatToInt(m_camera_position, BS);
 
 	v3s16 p_blocks_min;
 	v3s16 p_blocks_max;
@@ -840,8 +846,8 @@ void ClientMap::touchMapBlocks()
 
 	// Number of blocks currently loaded by the client
 	u32 blocks_loaded = 0;
-	// Number of blocks with mesh in rendering range
-	u32 blocks_in_range_with_mesh = 0;
+	// Number of blocks in rendering range
+	u32 blocks_in_range = 0;
 
 /*
 	for (const auto &sector_it : m_sectors) {
@@ -883,19 +889,18 @@ void ClientMap::touchMapBlocks()
 			}
 
 			// First, perform a simple distance check.
-			if (!m_control.range_all &&
-				mesh_sphere_center.getDistanceFrom(m_camera_position) >
+			if (mesh_sphere_center.getDistanceFrom(m_camera_position) >
 					m_control.wanted_range * BS + mesh_sphere_radius)
 				continue; // Out of range, skip.
 
 			// Keep the block alive as long as it is in range.
 			block->resetUsageTimer();
-			blocks_in_range_with_mesh++;
+			blocks_in_range++;
 		}
 
 	//}
 
-	g_profiler->avg("MapBlock meshes in range [#]", blocks_in_range_with_mesh);
+	g_profiler->avg("MapBlocks in range [#]", blocks_in_range);
 	g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
 }
 
@@ -969,7 +974,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	if (m_control.allow_noclip) {
 		MapNode n = getNode(m_camera_position_node);
-		if (n.getContent() == CONTENT_IGNORE || m_nodedef->get(n).solidness == 2)
+		if (n.getContent() == CONTENT_IGNORE || m_nodedef->get(n).visuals->solidness == 2)
 			occlusion_culling_enabled = false;
 	}
 
@@ -1590,6 +1595,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	u32 vertex_count = 0;
 	u32 drawcall_count = 0;
 	u32 material_swaps = 0;
+	u32 array_texture_use = 0;
 
 	// Render all mesh buffers in order
 	drawcall_count += draw_order.size();
@@ -1619,8 +1625,12 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 				layer.MagFilter = video::ETMAGF_NEAREST;
 				layer.AnisotropicFilter = 0;
 			}
+
 			driver->setMaterial(material);
 			++material_swaps;
+			if (auto *tex = material.getTexture(0); tex && tex->getType() == video::ETT_2D_ARRAY)
+				++array_texture_use;
+
 			material.TextureLayers[ShadowRenderer::TEXTURE_LAYER_SHADOW].Texture = nullptr;
 		}
 
@@ -1663,6 +1673,11 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	if(is_transparent_pass)
 		m_far_blocks_delete.clear();
+
+	if (material_swaps && array_texture_use) {
+		int percent = (100.0f * array_texture_use) / material_swaps;
+		g_profiler->avg(prefix + "array texture use [%]", percent);
+	}
 }
 
 void ClientMap::invalidateMapBlockMesh(MapBlockMesh *mesh)
@@ -1887,7 +1902,7 @@ void ClientMap::renderPostFx(CameraMode cam_mode)
 
 	// If the camera is in a solid node, make everything black.
 	// (first person mode only)
-	if (features.solidness == 2 && cam_mode == CAMERA_MODE_FIRST &&
+	if (features.visuals->solidness == 2 && cam_mode == CAMERA_MODE_FIRST &&
 			!m_control.allow_noclip) {
 		post_color = video::SColor(255, 0, 0, 0);
 	}
@@ -1907,7 +1922,7 @@ void ClientMap::PrintInfo(std::ostream &out)
 }
 
 void ClientMap::renderMapShadows(video::IVideoDriver *driver,
-		const video::SMaterial &material, s32 pass, int frame, int total_frames)
+		ModifyMaterialCallback cb, s32 pass, int frame, int total_frames)
 {
 	auto &m_drawlist_shadow =
 			m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
@@ -1997,34 +2012,21 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 
 	bool translucent_foliage = g_settings->getBool("enable_translucent_foliage");
 
-	video::E_MATERIAL_TYPE leaves_material = video::EMT_SOLID;
-
 	// For translucent leaves, we want to use backface culling instead of frontface.
+	std::vector<video::E_MATERIAL_TYPE> leaves_material;
 	if (translucent_foliage) {
-		// this is the material leaves would use, compare to nodedef.cpp
-		auto* shdsrc = m_client->getShaderSource();
-		const u32 leaves_shader = shdsrc->getShader("nodes_shader", TILE_MATERIAL_WAVING_LEAVES, NDT_ALLFACES);
-		leaves_material = shdsrc->getShaderInfo(leaves_shader).material;
+		auto *shdsrc = m_client->getShaderSource();
+		// Find out all materials used by leaves so we can identify them
+		leaves_material.reserve(m_nodedef->m_leaves_materials.size());
+		for (u32 shader_id : m_nodedef->m_leaves_materials)
+			leaves_material.push_back(shdsrc->getShaderInfo(shader_id).material);
 	}
 
 	for (auto &descriptor : draw_order) {
 		if (!descriptor.m_reuse_material) {
-			// override some material properties
 			video::SMaterial local_material = descriptor.getMaterial();
-			// do not override culling if the original material renders both back
-			// and front faces in solid mode (e.g. plantlike)
-			// Transparent plants would still render shadows only from one side,
-			// but this conflicts with water which occurs much more frequently
-			if (is_transparent_pass || local_material.BackfaceCulling || local_material.FrontfaceCulling) {
-				local_material.BackfaceCulling = material.BackfaceCulling;
-				local_material.FrontfaceCulling = material.FrontfaceCulling;
-			}
-			if (local_material.MaterialType == leaves_material && translucent_foliage) {
-				local_material.BackfaceCulling = true;
-				local_material.FrontfaceCulling = false;
-			}
-			local_material.MaterialType = material.MaterialType;
-			local_material.BlendOperation = material.BlendOperation;
+			bool is_foliage = translucent_foliage && CONTAINS(leaves_material, local_material.MaterialType);
+			cb(local_material, is_foliage);
 			driver->setMaterial(local_material);
 			++material_swaps;
 		}
@@ -2038,8 +2040,9 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	// restore the driver material state
 	video::SMaterial clean;
 	clean.BlendOperation = video::EBO_ADD;
-	driver->setMaterial(clean); // reset material to defaults
-	// FIXME: why is this here?
+	driver->setMaterial(clean);
+	// This is somehow needed to fully reset the rendering state, or later operations
+	// will be broken. (TODO why?)
 	driver->draw3DLine(v3f(), v3f(), video::SColor(0));
 
 	g_profiler->avg(prefix + "draw meshes [ms]", draw.stop(true));

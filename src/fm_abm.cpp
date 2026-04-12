@@ -8,6 +8,7 @@
 #include "server.h"
 //#include "server/abmhandler.h"
 #include "serverenvironment.h"
+#include "servermap.h"
 
 ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env)
 //ABMHandler::ABMHandler(std::vector<ABMWithState> &abms, float dtime_s,

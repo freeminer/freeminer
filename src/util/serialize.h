@@ -39,8 +39,7 @@
 	#define BYTE_ORDER __BYTE_ORDER
 #endif
 
-#include "../msgpack_fix.h"
-#include "msgpack_define_external.h"
+//#include "../msgpack_fix.h"
 
 #define FIXEDPOINT_FACTOR 1000.0f
 
@@ -385,11 +384,25 @@ inline void writeV3F32(u8 *data, v3f p)
 //// Iostream wrapper for data read/write
 ////
 
+inline bool canRead(std::istream &is)
+{
+	return is.peek() != EOF;
+}
+
+// Assuming -O3 on GCC 14.2.0, this function results in 55% less machine code
+// generated for the `is.eof()` branch in `MAKE_STREAM_READ_FXN`.
+static void serialize_throw_eof()
+{
+	throw SerializationError("EOF");
+}
+
 #define MAKE_STREAM_READ_FXN(T, N, S)    \
 	inline T read ## N(std::istream &is) \
 	{                                    \
 		char buf[S] = {0};               \
 		is.read(buf, sizeof(buf));       \
+		if (is.eof())                    \
+			serialize_throw_eof();       \
 		return read ## N((u8 *)buf);     \
 	}
 
@@ -470,15 +483,6 @@ std::string serializeJsonString(std::string_view plain);
 
 // Reads a string encoded in JSON format
 std::string deSerializeJsonString(std::istream &is);
-
-MSGPACK_DEFINE_EXTERNAL(v2f, X, Y);
-MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
-//MSGPACK_DEFINE_EXTERNAL(v2s16, X, Y);
-MSGPACK_DEFINE_EXTERNAL(v2s32, X, Y);
-MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
-MSGPACK_DEFINE_EXTERNAL(v3s32, X, Y, Z);
-MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
-MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
 
 // If the string contains spaces, quotes or control characters, encodes as JSON.
 // Else returns the string unmodified.

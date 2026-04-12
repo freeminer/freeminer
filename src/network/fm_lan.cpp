@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fm_lan.h"
 #include <cstdint>
 #include "convert_json.h"
+#include "network/address.h"
 #include "socket.h"
 #include "../log_types.h"
 #include "../settings.h"

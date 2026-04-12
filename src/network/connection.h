@@ -4,8 +4,8 @@
 #pragma once
 
 #include "irrlichttypes.h"
-#include "socket.h"
 #include "networkprotocol.h" // session_t
+#include "socket.h" // Address
 
 //namespace con_ws { class Connection; }
 
@@ -17,7 +17,7 @@ namespace con
 class PeerHandler;
 
 
-enum rtt_stat_type {
+enum rtt_stat_type : int {
 	MIN_RTT,
 	MAX_RTT,
 	AVG_RTT,
@@ -26,7 +26,7 @@ enum rtt_stat_type {
 	AVG_JITTER
 };
 
-enum rate_stat_type {
+enum rate_stat_type : int {
 	CUR_DL_RATE,
 	AVG_DL_RATE,
 	CUR_INC_RATE,

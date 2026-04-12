@@ -16,12 +16,13 @@
 #include <emscripten/html5.h>
 #endif
 
+#ifdef _IRR_USE_SDL3_
+#define SDL_DISABLE_OLD_NAMES
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_mouse.h>
+#else
 #include <SDL.h>
-// DirectFB is removed in SDL3, thou distribution as Alpine currently ships SDL2
-// with enabled DirectFB, but requiring another fix at a top of SDL2.
-// We don't need DirectFB in Irrlicht/Minetest, so simply disable it here to prevent issues.
-#undef SDL_VIDEO_DRIVER_DIRECTFB
-#include <SDL_syswm.h>
+#endif
 
 #include <memory>
 #include <unordered_map>
@@ -58,9 +59,6 @@ public:
 
 	//! returns if window is minimized.
 	bool isWindowMinimized() const override;
-
-	//! returns color format of the window.
-	video::ECOLOR_FORMAT getColorFormat() const override;
 
 	//! notifies the device that it should close itself
 	void closeDevice() override;
@@ -107,12 +105,7 @@ public:
 	}
 
 	//! Get the SDL version
-	std::string getVersionString() const override
-	{
-		SDL_version ver;
-		SDL_GetVersion(&ver);
-		return std::to_string(ver.major) + "." + std::to_string(ver.minor) + "." + std::to_string(ver.patch);
-	}
+	std::string getVersionString() const override;
 
 	//! Get the display density in dots per inch.
 	float getDisplayDensity() const override;
@@ -133,11 +126,14 @@ public:
 		void setVisible(bool visible) override
 		{
 			IsVisible = visible;
+#ifdef _IRR_USE_SDL3_
 			if (visible)
-				SDL_ShowCursor(SDL_ENABLE);
-			else {
-				SDL_ShowCursor(SDL_DISABLE);
-			}
+				SDL_ShowCursor();
+			else
+				SDL_HideCursor();
+#else
+			SDL_ShowCursor(visible ? SDL_ENABLE : SDL_DISABLE);
+#endif
 		}
 
 		//! Returns if the cursor is currently visible.
@@ -174,8 +170,11 @@ public:
 					static_cast<int>(x / Device->ScaleX),
 					static_cast<int>(y / Device->ScaleY));
 #endif
-
+#ifdef _IRR_USE_SDL3_
+			if (SDL_GetWindowRelativeMouseMode(Device->Window)) {
+#else
 			if (SDL_GetRelativeMouseMode()) {
+#endif
 				// There won't be an event for this warp (details on libsdl-org/SDL/issues/6034)
 				Device->MouseX = x;
 				Device->MouseY = y;
@@ -205,13 +204,16 @@ public:
 
 		virtual void setRelativeMode(bool relative) override
 		{
+#ifdef _IRR_USE_SDL3_
+			if (relative != (bool)SDL_GetWindowRelativeMouseMode(Device->Window)) {
+				SDL_SetWindowRelativeMouseMode(Device->Window, relative);
+			}
+#else
 			// Only change it when necessary, as it flushes mouse motion when enabled
 			if (relative != static_cast<bool>(SDL_GetRelativeMouseMode())) {
-				if (relative)
-					SDL_SetRelativeMouseMode(SDL_TRUE);
-				else
-					SDL_SetRelativeMouseMode(SDL_FALSE);
+				SDL_SetRelativeMouseMode(relative ? SDL_TRUE : SDL_FALSE);
 			}
+#endif
 		}
 
 		void setActiveIcon(gui::ECURSOR_ICON iconId) override
@@ -271,8 +273,13 @@ public:
 		{
 			void operator()(SDL_Cursor *ptr)
 			{
+#ifdef _IRR_USE_SDL3_
+				if (ptr)
+					SDL_DestroyCursor(ptr);
+#else
 				if (ptr)
 					SDL_FreeCursor(ptr);
+#endif
 			}
 		};
 		std::vector<std::unique_ptr<SDL_Cursor, CursorDeleter>> Cursors;
@@ -290,7 +297,7 @@ private:
 	static bool keyIsKnownSpecial(EKEY_CODE irrlichtKey);
 
 	// Return the Char that should be sent to Irrlicht for the given key (either the one passed in or 0).
-	static int findCharToPassToIrrlicht(uint32_t sdlKey, EKEY_CODE irrlichtKey, bool numlock);
+	static wchar_t findCharToPassToIrrlicht(uint32_t sdlKey, EKEY_CODE irrlichtKey, u16 keymod);
 
 	std::variant<u32, EKEY_CODE> getScancodeFromKey(const Keycode &key) const override;
 	Keycode getKeyFromScancode(const u32 scancode) const override;
@@ -324,7 +331,9 @@ private:
 
 	bool Resizable;
 
+#ifndef _IRR_USE_SDL3_
 	static u32 getFullscreenFlag(bool fullscreen);
+#endif // SDL3: Replaced by boolean
 
 	core::rect<s32> lastElemPos;
 

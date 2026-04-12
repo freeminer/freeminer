@@ -30,6 +30,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "scripting_server.h"
 #include "server.h"
+#include "serverenvironment.h"
+#include "servermap.h"
 #include "settings.h"
 #include "util/unordered_map_hash.h"
 #include <cstddef>

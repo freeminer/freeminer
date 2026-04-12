@@ -35,6 +35,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "reflowscan.h"
 #include "server.h"
 #include "server/ban.h"
+#include "servermap.h"
+#include "settings.h"
 #include "util/directiontables.h"
 #include "serverenvironment.h"
 #include "voxelalgorithms.h"

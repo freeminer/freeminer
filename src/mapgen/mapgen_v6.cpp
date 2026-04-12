@@ -4,12 +4,12 @@
 // Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 // Copyright (C) 2014-2018 paramat
 
+#include "servermap.h"
 
 #include <cmath>
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
-#include "mapblock.h"
 #include "mapnode.h"
 #include "map.h"
 #include "nodedef.h"
@@ -55,7 +55,7 @@ MapgenV6::MapgenV6(MapgenV6Params *params, EmergeParams *emerge)
 		// (5,2,5) generates very broken terrain
 		throw BaseException("MapgenV6: chunk size must be cubic");
 	}
-	if (csize.Y % 2 == 0) {
+	if (csize.Y % (MAP_BLOCKSIZE * 2) == 0) {
 		// weird ledges appear in some places
 		warningstream << "MapgenV6: chunk heights divisible by two are known "
 			"to be buggy." << std::endl;

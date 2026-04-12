@@ -23,6 +23,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "debug.h"
 #include "fm_server.h"
 #include "profiler.h"
+#include "serverenvironment.h"
+#include "servermap.h"
 #include "settings.h"
 #include "server.h"
 #include "porting.h"

@@ -192,6 +192,7 @@ Send a direct message to a player=Kirim pesan langsung kepada pemain
 Invalid usage, see /help msg.=Penggunaan tidak sah. Lihat /help msg.
 The player @1 is not online.=Pemain @1 tidak daring.
 DM from @1: @2=Pesan langsung dari @1: @2
+DM sent to @1: @2=
 Get the last login time of a player or yourself=Ambil waktu masuk terakhir pemain atau diri Anda
 @1's last login time was @2.=Waktu masuk terakhir @1 adalah @2.
 @1's last login time is unknown.=Waktu masuk terakhir @1 tidak diketahui.
@@ -223,7 +224,7 @@ Can do server maintenance stuff=Dapat melakukan tindakan perawatan server
 Can bypass node protection in the world=Dapat menembus pengamanan nodus dalam dunia
 Can ban and unban players=Dapat memblokir atau menghapus blokir pemain
 Can kick players=Dapat menendang keluar pemain
-Can use /give and /giveme=Dapat menggunakan /give dan /giveme
+Can use /give, /giveme, /pulverize and /clearinv=
 Can use /setpassword and /clearpassword=Dapat menggunakan /setpassword dan /clearpassword
 Can use fly mode=Dapat menggunakan mode terbang
 Can use fast mode=Dapat menggunakan mode cepat
@@ -235,6 +236,7 @@ Air=Udara
 Ignore=Ignore
 You can't place 'ignore' nodes!=Anda tidak dapat menaruh nodus 'ignore'!
 print [<filter>] | dump [<filter>] | save [<format> [<filter>]] | reset=print [<filter>] | dump [<filter>] | save [<format> [<filter>]] | reset
+Handle the profiler and profiling data. Can output to chat (print), action log (dump), or file in world (save). Format can be one of txt, csv, lua, json, json_pretty (structures may be subject to change). Filter is a lua pattern used to limit output to matching mod names.=
 Statistics written to action log.=Statistik ditulis ke log action.
 Statistics were reset.=Statistik diatur ulang.
 Values below show absolute/relative times spend per server step by the instrumented function.=Nilai berikut menampilkan waktu mutlak/relatif yang dihabiskan tiap langkah server oleh fungsi instrumen.
@@ -242,3 +244,8 @@ A total of @1 sample(s) were taken.=Total @1 sampel yang diambil.
 The output is limited to '@1'.=Keluaran dibatasi ke '@1'.
 Saving of profile failed: @1=Penyimpanan profil gagal: @1
 Profile saved to @1=Profil disimpan ke @1
+
+
+##### not used anymore #####
+
+Can use /give and /giveme=Dapat menggunakan /give dan /giveme

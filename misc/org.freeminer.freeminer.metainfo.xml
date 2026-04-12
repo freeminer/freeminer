@@ -3,6 +3,7 @@
     <id>org.freeminer.freeminer</id>
     <provides>
         <id>org.freeminer.freeminer</id>
+        <binary>freeminer</binary>
     </provides>
     <replaces>
         <id>org.freeminer.freeminer</id>
@@ -165,15 +166,11 @@
     <url type="vcs-browser">https://github.com/freeminer/freeminer</url>
     <url type="contribute">https://www.luanti.org/get-involved</url>
 
-    <provides>
-        <binary>luanti</binary>
-    </provides>
-
     <translation type="gettext">luanti</translation>
 
     <update_contact></update_contact>
 
     <releases>
-        <release date="2025-08-01" version="5.13.0"/>
+        <release date="2026-02-08" version="5.15.1"/>
     </releases>
 </component>

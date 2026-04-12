@@ -26,6 +26,19 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../msgpack_fix.h"
 
 #include "../serialization.h" //decompressZlib
+#include "irrlichttypes_bloated.h"
+#include "msgpack_define_external.h"
+
+MSGPACK_DEFINE_EXTERNAL(v2f, X, Y);
+MSGPACK_DEFINE_EXTERNAL(v3f, X, Y, Z);
+//MSGPACK_DEFINE_EXTERNAL(v2s16, X, Y);
+MSGPACK_DEFINE_EXTERNAL(v2s32, X, Y);
+MSGPACK_DEFINE_EXTERNAL(v3s16, X, Y, Z);
+MSGPACK_DEFINE_EXTERNAL(v3s32, X, Y, Z);
+MSGPACK_DEFINE_EXTERNAL(video::SColor, color);
+MSGPACK_DEFINE_EXTERNAL(aabb3f, MinEdge, MaxEdge);
+
+
 
 using packet_field_t = uint8_t;
 

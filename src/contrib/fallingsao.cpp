@@ -26,6 +26,8 @@
 #include "scripting_server.h"
 #include "server.h"
 //#include "scripting_game.h"
+#include "serverenvironment.h"
+#include "servermap.h"
 #include "util/serialize.h"
 #include <sstream>
 

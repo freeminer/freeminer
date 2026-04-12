@@ -18,18 +18,16 @@
 #include "exceptions.h"
 #include "constants.h"
 #include "staticobject.h"
-#include "nodemetadata.h"
+#include "nodemetadata.h" // NodeMetadataList
 #include "nodetimer.h"
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
-#include "settings.h"
 
 class Circuit;
 class ServerEnvironment;
 struct ActiveABM;
 
 class Map;
-class NodeMetadataList;
 class IGameDef;
 class MapBlockMesh;
 class VoxelManipulator;

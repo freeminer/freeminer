@@ -9,7 +9,6 @@
 #include "util/basic_macros.h"
 #include <memory>
 #include <string>
-#include <set>
 #include <map>
 #include <mutex>
 

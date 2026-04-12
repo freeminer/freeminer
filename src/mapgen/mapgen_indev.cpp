@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "mapgen/mapgen_v6.h"
 #include "serverenvironment.h"
+#include "servermap.h"
 #include "util/numeric.h"
 #include "log_types.h"
 #include "emerge.h"

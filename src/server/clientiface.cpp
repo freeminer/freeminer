@@ -2,13 +2,16 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2014 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "profiler.h"
+
 #include <sstream>
 #include "clientiface.h"
 #include "debug.h"
 #include "network/connection.h"
+#include "network/networkexceptions.h"
 #include "network/networkpacket.h"
 #include "network/serveropcodes.h"
-#include "profiler.h"
+#include "porting.h" // porting::getTimeS
 #include "remoteplayer.h"
 #include "serialization.h" // SER_FMT_VER_INVALID
 #include "settings.h"
@@ -56,14 +59,16 @@ const char *ClientInterface::state2Name(ClientState state)
 RemoteClient::RemoteClient() :
 	serialization_version(SER_FMT_VER_INVALID),
 	m_pending_serialization_version(SER_FMT_VER_INVALID),
-	m_max_simul_sends(g_settings->getU16("max_simultaneous_block_sends_per_client")),
+	m_max_simul_sends(std::max<u16>(1,
+		g_settings->getU16("max_simultaneous_block_sends_per_client"))),
 	m_min_time_from_building(
 		g_settings->getFloat("full_block_send_enable_min_time_from_building")),
 	m_max_send_distance(g_settings->getS16("max_block_send_distance")),
 	m_block_optimize_distance(g_settings->getS16("block_send_optimize_distance")),
 	m_block_cull_optimize_distance(g_settings->getS16("block_cull_optimize_distance")),
 	m_max_gen_distance(g_settings->getS16("max_block_generate_distance")),
-	m_occ_cull(g_settings->getBool("server_side_occlusion_culling"))
+	m_occ_cull(g_settings->getBool("server_side_occlusion_culling")),
+	m_connection_time(porting::getTimeS())
 {
 }
 
@@ -149,14 +154,15 @@ int RemoteClient::GetNextBlocks (
 	u16 max_simul_sends_usually = m_max_simul_sends;
 
 	/*
-		Check the time from last addNode/removeNode.
-
 		Decrease send rate if player is building stuff.
+
+		The idea is that we can save some bandwidth since the player is busy
+		and not looking around.
 	*/
 	m_time_from_building += dtime;
 	if (m_time_from_building < m_min_time_from_building) {
-		max_simul_sends_usually
-			= LIMITED_MAX_SIMULTANEOUS_BLOCK_SENDS;
+		max_simul_sends_usually *= LIMITED_BLOCK_SENDS_FACTOR;
+		max_simul_sends_usually = MYMAX(1, max_simul_sends_usually);
 	}
 
 	/*
@@ -223,17 +229,19 @@ int RemoteClient::GetNextBlocks (
 	s16 d_max = full_d_max;
 
 	// Don't loop very much at a time
-	s16 max_d_increment_at_time = 2;
+	const s16 max_d_increment_at_time = 2;
 	if (d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
 
-	// cos(angle between velocity and camera) * |velocity|
-	// Limit to 0.0f in case player moves backwards.
-	f32 dot = rangelim(camera_dir.dotProduct(playerspeed), 0.0f, 300.0f);
+	{
+		// cos(angle between velocity and camera) * |velocity|
+		// Limit to 0.0f in case player moves backwards.
+		f32 dot = rangelim(camera_dir.dotProduct(playerspeed), 0.0f, 300.0f);
 
-	// Reduce the field of view when a player moves and looks forward.
-	// limit max fov effect to 50%, 60% at 20n/s fly speed
-	camera_fov = camera_fov / (1 + dot / 300.0f);
+		// Reduce the field of view when a player moves and looks forward.
+		// limit max fov effect to 50%, 60% at 20n/s fly speed
+		camera_fov = camera_fov / (1 + dot / 300.0f);
+	}
 
 	s32 nearest_emerged_d = -1;
 	s32 nearest_sent_d = -1;
@@ -260,11 +268,9 @@ int RemoteClient::GetNextBlocks (
 				Also, don't send blocks that are already flying.
 			*/
 
-			// Start with the usual maximum
 			u16 max_simul_dynamic = max_simul_sends_usually;
-
 			// If block is very close, allow full maximum
-			if (d <= BLOCK_SEND_DISABLE_LIMITS_MAX_D)
+			if (d <= BLOCK_ALWAYS_SEND_MAX_D)
 				max_simul_dynamic = m_max_simul_sends;
 
 			/*
@@ -392,8 +398,8 @@ queue_full_break:
 			new_nearest_unsent_d = 0;
 			m_nothing_to_send_pause_timer = 2.0f;
 			infostream << "Server: Player " << m_name << ", peer_id=" << peer_id
-				<< ": full map send completed after " << m_map_send_completion_timer
-				<< "s, restarting" << std::endl;
+				<< ": full map send (d=" << d << ") completed after "
+				<< m_map_send_completion_timer << "s, restarting" << std::endl;
 			m_map_send_completion_timer = 0.0f;
 		} else {
 			if (nearest_sent_d != -1)
@@ -438,7 +444,7 @@ void RemoteClient::SentBlock(v3s16 p)
 }
 */
 
-void RemoteClient::SetBlockNotSent(v3s16 p, bool low_priority)
+void RemoteClient::SetBlockNotSent(v3s16 p)
 {
 /*
 	++m_nearest_unsent_reset;
@@ -447,29 +453,25 @@ void RemoteClient::SetBlockNotSent(v3s16 p, bool low_priority)
 	// remove the block from sending and sent sets,
 	// and reset the scan loop if found
 	if (m_blocks_sending.erase(p) + m_blocks_sent.erase(p) > 0) {
-		// If this is a low priority event, do not reset m_nearest_unsent_d.
-		// Instead, the send loop will get to the block in the next full loop iteration.
-		if (!low_priority) {
-			// Note that we do NOT use the euclidean distance here.
-			// getNextBlocks builds successive cube-surfaces in the send loop.
-			// This resets the distance to the maximum cube size that
-			// still guarantees that this block will be scanned again right away.
-			//
-			// Using m_last_center is OK, as a change in center
-			// will reset m_nearest_unsent_d to 0 anyway (see getNextBlocks).
-			p -= m_last_center;
-			s16 this_d = std::max({std::abs(p.X), std::abs(p.Y), std::abs(p.Z)});
-			m_nearest_unsent_d = std::min(m_nearest_unsent_d, this_d);
-		}
+		// Note that we do NOT use the euclidean distance here.
+		// getNextBlocks builds successive cube-surfaces in the send loop.
+		// This resets the distance to the maximum cube size that
+		// still guarantees that this block will be scanned again right away.
+		//
+		// Using m_last_center is OK, as a change in center
+		// will reset m_nearest_unsent_d to 0 anyway (see getNextBlocks).
+		p -= m_last_center;
+		s16 this_d = std::max({std::abs(p.X), std::abs(p.Y), std::abs(p.Z)});
+		m_nearest_unsent_d = std::min(m_nearest_unsent_d, this_d);
 	}
 */
 }
 
-void RemoteClient::SetBlocksNotSent(const std::vector<v3s16> &blocks, bool low_priority)
+void RemoteClient::SetBlocksNotSent(const std::vector<v3s16> &blocks)
 {
 /*
 	for (v3s16 p : blocks) {
-		SetBlockNotSent(p, low_priority);
+		SetBlockNotSent(p);
 	}
 */
 }
@@ -644,6 +646,11 @@ void RemoteClient::setEncryptedPassword(const std::string& pwd)
 	allowed_auth_mechs = AUTH_MECHANISM_SRP;
 }
 
+u64 RemoteClient::uptime() const
+{
+	return porting::getTimeS() - m_connection_time;
+}
+
 void RemoteClient::setVersionInfo(u8 major, u8 minor, u8 patch, const std::string &full)
 {
 	m_version_major = major;
@@ -698,12 +705,12 @@ std::vector<session_t> ClientInterface::getClientIDs(ClientState min_state)
 	return reply;
 }
 
-void ClientInterface::markBlocksNotSent(const std::vector<v3s16> &positions, bool low_priority)
+void ClientInterface::markBlocksNotSent(const std::vector<v3s16> &positions)
 {
 	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
 	for (const auto &client : m_clients) {
 		if (client.second->getState() >= CS_Active)
-			client.second->SetBlocksNotSent(positions, low_priority);
+			client.second->SetBlocksNotSent(positions);
 	}
 }
 

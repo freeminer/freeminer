@@ -192,6 +192,7 @@ Send a direct message to a player=Envoyer un message privé à un joueur.
 Invalid usage, see /help msg.=Usage invalide, voir /help msg.
 The player @1 is not online.=Le joueur @1 n'est pas en ligne.
 DM from @1: @2=Message privé de @1 : @2
+DM sent to @1: @2=
 Get the last login time of a player or yourself=Obtenir l'horodatage de la dernière connexion d'un joueur ou de vous-même.
 @1's last login time was @2.=@1 s'est connecté pour la dernière fois au @2.
 @1's last login time is unknown.=L'horodatage de la dernière connexion de @1 est inconnu.
@@ -223,7 +224,7 @@ Can do server maintenance stuff=Peut effectuer des tâches de maintenance du ser
 Can bypass node protection in the world=Peut outrepasser la protection des nœuds dans le monde.
 Can ban and unban players=Peut bannir et rétablir des joueurs.
 Can kick players=Peut expulser des joueurs.
-Can use /give and /giveme=Peut utiliser /give et /giveme
+Can use /give, /giveme, /pulverize and /clearinv=
 Can use /setpassword and /clearpassword=Peut utiliser /setpassword et /clearpassword
 Can use fly mode=Peut utiliser le mode vol
 Can use fast mode=Peut utiliser le mode rapide
@@ -235,6 +236,7 @@ Air=Air
 Ignore=Ignorer
 You can't place 'ignore' nodes!=Vous ne pouvez pas placé de nœuds 'ignorés' !
 print [<filter>] | dump [<filter>] | save [<format> [<filter>]] | reset=print [<filtre>] | dump [<filtre>] | save [<format> [<filtre>]] | reset
+Handle the profiler and profiling data. Can output to chat (print), action log (dump), or file in world (save). Format can be one of txt, csv, lua, json, json_pretty (structures may be subject to change). Filter is a lua pattern used to limit output to matching mod names.=
 Statistics written to action log.=Les statistiques sont écrites dans les journaux d'actions.
 Statistics were reset.=Les statistiques ont été réinitialisées.
 Values below show absolute/relative times spend per server step by the instrumented function.=Les valeurs inférieures affichent les temps absolu et relatif dépensés par étape du serveur par la fonction utilisée.
@@ -242,3 +244,8 @@ A total of @1 sample(s) were taken.=@1 échantillons ont été collectés.
 The output is limited to '@1'.=La sortie est limitée à '@1'.
 Saving of profile failed: @1=La sauvegarde du profil a échoué : @1
 Profile saved to @1=Le profil a été sauvegardé dans @1
+
+
+##### not used anymore #####
+
+Can use /give and /giveme=Peut utiliser /give et /giveme

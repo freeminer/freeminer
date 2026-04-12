@@ -1,7 +1,9 @@
 #include "irr_v3d.h"
 #include "map.h"
+#include "porting.h"
 #include "scripting_server.h"
 #include "serverenvironment.h"
+#include "servermap.h"
 #include "util/timetaker.h"
 
 size_t ServerEnvironment::blockStep(MapBlockPtr block, float dtime_s, uint8_t activate)

@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2024 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include <algorithm>
+#include "servermap.h"
+#include <cstddef>
 
 #include "map.h"
 #include "mapblock.h"
@@ -17,18 +18,18 @@
 #include "profiler.h"
 #include "gamedef.h"
 #include "util/directiontables.h"
+#include "util/serialize.h"
 #include "rollback_interface.h"
 #include "reflowscan.h"
 #include "emerge.h"
-#include "mapgen/mapgen_v6.h"
 #include "mapgen/mg_biome.h"
 #include "config.h"
 #include "server.h"
+#include "serverenvironment.h"
 #include "database/database.h"
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
 #include "script/scripting_server.h"
-#include "irrlicht_changes/printing.h"
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
@@ -210,9 +211,9 @@ bool ServerMap::blockpos_over_mapgen_limit(v3s16 p)
 bool ServerMap::initBlockMake(v3s16 blockpos, BlockMakeData *data)
 {
 	assert(data);
-	s16 csize = getMapgenParams()->chunksize;
+	const v3s16 csize = getMapgenParams()->chunksize;
 	const v3s16 bpmin = EmergeManager::getContainingChunk(blockpos, csize);
-	const v3s16 bpmax = bpmin + v3s16(1, 1, 1) * (csize - 1);
+	const v3s16 bpmax = bpmin + csize - v3s16(1);
 
 	if (!m_chunks_in_progress.insert(bpmin).second)
 		return false;
@@ -303,10 +304,11 @@ void ServerMap::cancelBlockMake(BlockMakeData *data)
 }
 
 void ServerMap::finishBlockMake(BlockMakeData *data,
-	std::map<v3s16, MapBlock*> *changed_blocks, u32 now)
+	std::map<v3s16, MapBlock*> *changed_blocks, ServerEnvironment *env)
 {
 	assert(data);
 	assert(changed_blocks);
+	u32 now = env->getGameTime();
 	const v3s16 bpmin = data->blockpos_min;
 	const v3s16 bpmax = data->blockpos_max;
 
@@ -328,7 +330,13 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		<< changed_blocks->size());
 
 	/*
-		Copy transforming liquid information
+		Process the chunk's liquid queue now.
+		This avoids sending many duplicate block updates.
+	 */
+	transformLiquidsLocal(*changed_blocks, data->transforming_liquid, env, g_settings->getS32("liquid_loop_max"), env->m_server, 100);
+
+	/*
+		Copy remaining (if any) transforming liquid information
 	*/
 	while (!data->transforming_liquid.empty()) {
 		transforming_liquid_add(data->transforming_liquid.front());
@@ -374,9 +382,9 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 
 		/* Border blocks are grabbed during
 		   generation but mustn't be marked generated. */
-        if (bp.X >= bpmin.X && bp.X <= bpmax.X
-           				&& bp.Y >= bpmin.Y && bp.Y <= bpmax.Y
-           				&& bp.Z >= bpmin.Z && bp.Z <= bpmax.Z) {
+		if (bp.X >= bpmin.X && bp.X <= bpmax.X
+				&& bp.Y >= bpmin.Y && bp.Y <= bpmax.Y
+				&& bp.Z >= bpmin.Z && bp.Z <= bpmax.Z) {
 			block->setGenerated(true);
 			// Set timestamp to ensure correct application
 			// of LBMs and other stuff.
@@ -871,7 +879,6 @@ MapBlockPtr ServerMap::loadBlock(const std::string &blob, v3bpos_t p3d, bool sav
 		if (!modified_blocks.empty()) {
 			MapEditEvent event;
 			event.type = MEET_OTHER;
-			event.low_priority = true;
 			event.setModifiedBlocks(modified_blocks);
 			dispatchEvent(event);
 		}
@@ -1033,18 +1040,16 @@ void ServerMap::transforming_liquid_add(const v3pos_t &p)
 	m_transforming_liquid.push_back(p);
 }
 
-size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
-		ServerEnvironment *env
-		, Server *m_server, unsigned int max_cycle_ms)
+size_t ServerMap::transformLiquidsLocal(std::map<v3s16, MapBlock*> &modified_blocks, UniqueQueue<v3s16> &liquid_queue,
+		ServerEnvironment *env, u32 liquid_loop_max
+	    , Server *m_server, unsigned int max_cycle_ms)
 {
     g_profiler->avg("Server: liquids queue", transforming_liquid_size());
     if (thread_local const auto static liquid_real = g_settings->getBool("liquid_real"); liquid_real)
             return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
     const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
-
-	u32 loopcount = 0;
-	u32 initial_size = transforming_liquid_size();
+	size_t loopcount = 0;
 
 	/*if(initial_size != 0)
 		infostream<<"transformLiquids(): initial_size="<<initial_size<<std::endl;*/
@@ -1056,13 +1061,10 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 	std::vector<v3s16> check_for_falling;
 
-	u32 liquid_loop_max = g_settings->getS32("liquid_loop_max");
-	u32 loop_max = liquid_loop_max;
-
 	while (transforming_liquid_size() != 0)
 	{
 		// This should be done here so that it is done when continue is used
-		if (loopcount >= initial_size || loopcount >= loop_max)
+		if (loopcount >= liquid_loop_max)
 			break;
 
 		if (porting::getTimeMs() > end_ms)
@@ -1074,11 +1076,11 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 			Get a queued transforming liquid node
 		*/
 /*
-		v3s16 p0 = m_transforming_liquid.front();
-		m_transforming_liquid.pop_front();
+		v3s16 p0 = liquid_queue.front();
+		liquid_queue.pop_front();
 */
 
-		v3pos_t p0 = transforming_liquid_pop();
+		auto p0 = transforming_liquid_pop();
 
 		MapNode n0 = getNode(p0);
 
@@ -1155,7 +1157,7 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 						// current node changes or not.
 						if (nb.t != NEIGHBOR_UPPER && liquid_type != LIQUID_NONE)
 							transforming_liquid_add(npos);
-							//m_transforming_liquid.push_back(npos);
+							//liquid_queue.push_back(npos);
 						// if the current node happens to be a flowing node, it will start to flow down here.
 						if (nb.t == NEIGHBOR_LOWER)
 							flowing_down = true;
@@ -1366,14 +1368,17 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 				for (u16 i = 0; i < num_flows; i++)
 					if (flows[i].t != NEIGHBOR_UPPER)
 						transforming_liquid_add(flows[i].p);
+						//liquid_queue.push_back(flows[i].p);
 				for (u16 i = 0; i < num_airs; i++)
 					if (airs[i].t != NEIGHBOR_UPPER)
 						transforming_liquid_add(airs[i].p);
+						//liquid_queue.push_back(airs[i].p);
 				break;
 			case LIQUID_NONE:
 				// this flow has turned to air; neighboring flows might need to do the same
 				for (u16 i = 0; i < num_flows; i++)
 					transforming_liquid_add(flows[i].p);
+					//liquid_queue.push_back(flows[i].p);
 				break;
 			case LiquidType_END:
 				break;
@@ -1383,6 +1388,7 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 
 	for (const auto &iter : must_reflow)
 		transforming_liquid_add(iter);
+		//liquid_queue.push_back(iter);
 
 	voxalgo::update_lighting_nodes(this, changed_nodes, modified_blocks);
 
@@ -1391,6 +1397,21 @@ size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
 	}
 
 	env->getScriptIface()->on_liquid_transformed(changed_nodes);
+
+     return loopcount;
+}
+
+size_t ServerMap::transformLiquids(std::map<v3s16, MapBlock*> &modified_blocks,
+		ServerEnvironment *env
+	    , Server *m_server, unsigned int max_cycle_ms
+	)
+{
+	// process the whole queue at most once, to rate-limit
+	u32 liquid_loop_max = std::min<u32>(m_transforming_liquid.size(), g_settings->getS32("liquid_loop_max"));
+
+    u32 initial_size = transforming_liquid_size();
+	const auto loopcount =
+	transformLiquidsLocal(modified_blocks, m_transforming_liquid, env, liquid_loop_max, env->m_server, max_cycle_ms);
 
 
 	u32 ret = loopcount >= initial_size ? 0 : transforming_liquid_size();

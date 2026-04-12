@@ -12,6 +12,7 @@
 #include "server.h"
 #include "emerge.h"
 #include "face_position_cache.h"
+#include "servermap.h"
 #include "threading/lock.h"
 #include "util/directiontables.h"
 #include "util/numeric.h"
@@ -298,7 +299,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 			u16 max_simul_dynamic = max_simul_sends_usually;
 
 			// If block is very close, allow full maximum
-			if (d <= BLOCK_SEND_DISABLE_LIMITS_MAX_D)
+			if (d <= BLOCK_ALWAYS_SEND_MAX_D)
 				max_simul_dynamic = max_simul_sends_setting;
 
 			// Don't select too many blocks for sending

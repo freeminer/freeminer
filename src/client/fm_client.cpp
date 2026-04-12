@@ -4,6 +4,7 @@
 #include <memory>
 #include "client.h"
 #include "client/fm_farmesh.h"
+#include "client/localplayer.h"
 #include "client/mapblock_mesh.h"
 #include "clientmap.h"
 #include "emerge.h"

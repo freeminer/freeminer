@@ -7,11 +7,15 @@
 #pragma once
 
 #include "fm_weather.h"
+#include "util/unordered_map_hash.h"
+
+#include "constants.h"
 #include "noise.h"
 #include "nodedef.h"
 #include "util/string.h"
 #include "util/container.h"
 #include <utility>
+#include <set>
 
 #define MAPGEN_DEFAULT MAPGEN_V7
 #define MAPGEN_DEFAULT_NAME "v7"
@@ -89,7 +93,7 @@ private:
 	u32 m_notify_on = 0;
 	const std::set<u32> *m_notify_on_deco_ids = nullptr;
 	const std::set<std::string> *m_notify_on_custom = nullptr;
-	std::list<GenNotifyEvent> m_notify_events;
+	std::vector<GenNotifyEvent> m_notify_events;
 	StringMap m_notify_custom;
 
 	inline bool shouldNotifyOn(GenNotifyType type) const {
@@ -122,7 +126,7 @@ struct MapgenParams {
 	virtual ~MapgenParams();
 
 	MapgenType mgtype = MAPGEN_DEFAULT;
-	s16 chunksize = 5;
+	v3s16 chunksize = v3s16(5);
 	u64 seed = 0;
 	s16 water_level = 1;
 	s16 liquid_pressure = 0;
@@ -133,9 +137,6 @@ struct MapgenParams {
 
 	BiomeParamsOriginal *bparams = nullptr;
 
-	s16 mapgen_edge_min = -MAX_MAP_GENERATION_LIMIT;
-	s16 mapgen_edge_max = MAX_MAP_GENERATION_LIMIT;
-
 	virtual void readParams(const Settings *settings);
 	virtual void writeParams(Settings *settings) const;
 	// Default settings for g_settings such as flags
@@ -143,8 +144,8 @@ struct MapgenParams {
 
 	s32 getSpawnRangeMax();
 
-private:
-	bool m_mapgen_edges_calculated = false;
+	// Mostly arbitrary limit
+	constexpr static u32 MAX_CHUNK_VOLUME = 2000;
 };
 
 
@@ -177,6 +178,7 @@ public:
 	u32 blockseed;
 	s16 *heightmap = nullptr;
 	biome_t *biomemap = nullptr;
+	// Chunk size in nodes
 	v3s16 csize;
 
 	BiomeGen *biomegen = nullptr;
@@ -326,9 +328,9 @@ public:
 	virtual void generateBuildings() {};
 
 protected:
-	BiomeManager *m_bmgr;
+	BiomeManager *m_bmgr = nullptr;
 
-	Noise *noise_filler_depth;
+	Noise *noise_filler_depth = nullptr;
 
 public:
 	v3s16 node_min;
@@ -371,4 +373,4 @@ protected:
 
 // Calculate exact edges of the outermost mapchunks that are within the set
 // mapgen_limit. Returns the minimum and maximum edges in nodes in that order.
-std::pair<s16, s16> get_mapgen_edges(s16 mapgen_limit, s16 chunksize);
+std::pair<v3s16, v3s16> get_mapgen_edges(s16 mapgen_limit, v3s16 chunksize);

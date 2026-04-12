@@ -4,6 +4,7 @@
 // Copyright (C) 2017 celeron55, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "config.h"
+#include "network/networkexceptions.h"
 #if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
 
 #include "network/ws/threads.h"

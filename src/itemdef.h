@@ -5,21 +5,21 @@
 
 #pragma once
 
+// fm:
+#include "msgpack_fix.h"
+
 #include "irrlichttypes_bloated.h"
 #include <string>
 #include <iostream>
 #include <optional>
 #include <set>
 #include "itemgroup.h"
-#include "sound.h"
-
-// fm:
-#include "msgpack_fix.h"
-
+#include "sound_spec.h"
 #include "texture_override.h" // TextureOverride
 #include "tool.h"
 #include "util/pointabilities.h"
 #include "util/pointedthing.h"
+#include "tileanimation.h"
 
 struct ToolCapabilities;
 struct ItemDefinition;
@@ -77,6 +77,27 @@ enum {
 	ITEMDEF_SOUND_PLACE_GAIN,
 	ITEMDEF_RANGE
 };
+struct ItemImageDef
+{
+	// May be extended to support meshes in the future
+	std::string name;
+	TileAnimationParams animation;
+
+	ItemImageDef &operator=(const std::string &other_name)
+	{
+		this->name = other_name;
+		return *this;
+	}
+
+	void reset()
+	{
+		animation.type = TileAnimationType::TAT_NONE;
+		name.clear();
+	}
+
+	void serialize(std::ostream &os, u16 protocol_version) const;
+	void deSerialize(std::istream &is, u16 protocol_version);
+};
 
 struct ItemDefinition
 {
@@ -91,10 +112,10 @@ struct ItemDefinition
 	/*
 		Visual properties
 	*/
-	std::string inventory_image; // Optional for nodes, mandatory for tools/craftitems
-	std::string inventory_overlay; // Overlay of inventory_image.
-	std::string wield_image; // If empty, inventory_image or mesh (only nodes) is used
-	std::string wield_overlay; // Overlay of wield_image.
+	ItemImageDef inventory_image; // Optional for nodes, mandatory for tools/craftitems
+	ItemImageDef inventory_overlay; // Overlay of inventory_image.
+	ItemImageDef wield_image; // If empty, inventory_image or mesh (only nodes) is used
+	ItemImageDef wield_overlay; // Overlay of wield_image.
 	std::string palette_image; // If specified, the item will be colorized based on this
 	video::SColor color; // The fallback color of the node.
 	v3f wield_scale;
@@ -139,8 +160,8 @@ struct ItemDefinition
 	void deSerialize(std::istream &is, u16 protocol_version);
 
 //fm:
-	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
-	void msgpack_unpack(msgpack::object o);
+//	void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const;
+//	void msgpack_unpack(msgpack::object o);
 
 private:
 	void resetInitial();
@@ -150,8 +171,8 @@ class IItemDefManager
 {
 public:
 	// fm:
-	virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
-	virtual void msgpack_unpack(msgpack::object o)=0;
+	// virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer> &pk) const=0;
+	// virtual void msgpack_unpack(msgpack::object o)=0;
     // ==
 
 	IItemDefManager() = default;

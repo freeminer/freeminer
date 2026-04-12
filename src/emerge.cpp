@@ -22,34 +22,31 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "emerge_internal.h"
 
+#include <cmath>
 #include <iostream>
-
-#include "irr_v2d.h"
-#include "util/container.h"
 #include "config.h"
 #include "constants.h"
-#include "environment.h"
 #include "irrlicht_changes/printing.h"
 #include "filesys.h"
 #include "log.h"
+#include "serverenvironment.h"
 #include "servermap.h"
-#include "database/database.h"
 #include "mapblock.h"
 #include "mapgen/mg_biome.h"
 #include "mapgen/mg_ore.h"
 #include "mapgen/mg_decoration.h"
 #include "mapgen/mg_schematic.h"
-#include "nodedef.h"
+#include "porting.h"
 #include "profiler.h"
 #include "scripting_server.h"
 #include "scripting_emerge.h"
+#include "script/common/c_types.h" // LuaError
 #include "server.h"
 #include "settings.h"
 #include "voxel.h"
 
 EmergeParams::~EmergeParams()
 {
-	infostream << "EmergeParams: destroying " << this << std::endl;
 	// Delete everything that was cloned on creation of EmergeParams
 	delete biomegen;
 	delete biomemgr;
@@ -81,7 +78,9 @@ EmergeParams::EmergeParams(EmergeManager *parent, const BiomeGen *biomegen,
 
 EmergeManager::EmergeManager(Server *server, MetricsBackend *mb)
 {
-	this->ndef      = server->getNodeDefManager();
+	assert(server);
+	this->m_server  = server;
+	this->ndef      = server->ndef();
 	this->biomemgr  = new BiomeManager(server);
 	this->oremgr    = new OreManager(server);
 	this->decomgr   = new DecorationManager(server);
@@ -108,39 +107,14 @@ EmergeManager::EmergeManager(Server *server, MetricsBackend *mb)
 		);
 	}
 
-	s16 nthreads = 1;
-	g_settings->getS16NoEx("num_emerge_threads", nthreads);
-	// If automatic, leave a proc for the main thread and one for
-	// some other misc thread
-#if ENABLE_THREADS
-	if (nthreads <= 0) {
-		nthreads = Thread::getNumberOfProcessors() - 2;
-		if (nthreads > 8)
-			nthreads = 8;
-	}
-#endif
-	if (nthreads < 1)
-		nthreads = 1;
-
 	m_qlimit_total = g_settings->getU32("emergequeue_limit_total");
-	if (m_qlimit_total < 1)
-		m_qlimit_total = nthreads * 128;
-
-	// FIXME: these fallback values are probably not good
-	if (!g_settings->getU32NoEx("emergequeue_limit_diskonly", m_qlimit_diskonly) || !m_qlimit_diskonly)
-		m_qlimit_diskonly = nthreads * 100;
-	if (!g_settings->getU32NoEx("emergequeue_limit_generate", m_qlimit_generate) || !m_qlimit_generate)
-		m_qlimit_generate = nthreads * 32;
+	m_qlimit_diskonly = g_settings->getU32("emergequeue_limit_diskonly");
+	m_qlimit_generate = g_settings->getU32("emergequeue_limit_generate");
 
 	// don't trust user input for something very important like this
 	m_qlimit_diskonly = rangelim(m_qlimit_diskonly, 2, 1000000);
 	m_qlimit_generate = rangelim(m_qlimit_generate, 1, 1000000);
 	m_qlimit_total = std::max(m_qlimit_total, std::max(m_qlimit_diskonly, m_qlimit_generate));
-
-	for (s16 i = 0; i < nthreads; i++)
-		m_threads.push_back(new EmergeThread(server, i));
-
-	infostream << "EmergeManager: using " << nthreads << " threads" << std::endl;
 }
 
 
@@ -219,18 +193,61 @@ void EmergeManager::initMapgens(MapgenParams *params)
 
 	biomemgr->mapgen_params = params;
 
-	v3s16 csize = v3s16(1, 1, 1) * (params->chunksize * MAP_BLOCKSIZE);
+	infostream << "EmergeManager: initializing for mapgen="
+		<< Mapgen::getMapgenName(params->mgtype)
+		<< " and chunksize=" << params->chunksize << std::endl;
+
+	/*
+	 * Singlenode is currently the only mapgen not affected by the
+	 * unfinished slice bug, so allow multiple threads by default.
+	 * We do this for the Lua mapgens who benefit from this (since singlenode
+	 * itself isn't very useful).
+	 * see <https://github.com/luanti-org/luanti/issues/9357>
+	 */
+	bool multithread = params->mgtype == MAPGEN_SINGLENODE;
+	initThreads(multithread);
+
+	v3s16 csize = params->chunksize * MAP_BLOCKSIZE;
 	biomegen = biomemgr->createBiomeGen(BIOMEGEN_ORIGINAL, params->bparams, csize);
 
 	for (u32 i = 0; i != m_threads.size(); i++) {
 		EmergeParams *p = new EmergeParams(this, biomegen,
 			biomemgr, oremgr, decomgr, schemmgr);
-		infostream << "EmergeManager: Created params " << p
-			<< " for thread " << i << std::endl;
 		m_mapgens.push_back(Mapgen::createMapgen(params->mgtype, params, p));
 	}
 }
 
+void EmergeManager::initThreads(bool should_multithread)
+{
+	s16 nthreads = g_settings->getS16("num_emerge_threads");
+	if (nthreads <= 0 && should_multithread) {
+		u32 concurrency = Thread::getNumberOfProcessors();
+		u32 memoryMB = porting::getMemorySizeMB();
+		if (memoryMB) {
+			// Cap threads according to total RAM with a conservative 1 GB per thread.
+			// This is for the sake of Android phones, where many cores & low RAM
+			// is not uncommon (e.g. 8C + 3GB).
+			concurrency = std::min<u32>(concurrency, std::roundf(memoryMB / 1024.0f));
+		}
+		// Leave 2 cores for main thread and whatever else.
+		nthreads = (concurrency > 2) ? (concurrency - 2) : 1;
+		// Testing has shown that more than 4 threads don't become any faster:
+		// <https://github.com/luanti-org/luanti/pull/16634>
+		// May have to be revisited after emerge code is refactored to be less
+		// lock heavy.
+		nthreads = std::min<s16>(8, nthreads);
+	}
+	nthreads = std::max<s16>(1, nthreads);
+
+    if (m_qlimit_total < 1)
+        m_qlimit_total = nthreads * 64;
+
+		FATAL_ERROR_IF(!m_threads.empty(), "Threads already initialized.");
+	for (s16 i = 0; i < nthreads; i++)
+		m_threads.push_back(new EmergeThread(m_server, i));
+
+	infostream << "EmergeManager: using " << nthreads << " thread(s)" << std::endl;
+}
 
 Mapgen *EmergeManager::getCurrentMapgen()
 {
@@ -275,12 +292,6 @@ void EmergeManager::stopThreads()
 		m_threads[i]->wait();
 
 	m_threads_active = false;
-}
-
-
-bool EmergeManager::isRunning()
-{
-	return m_threads_active;
 }
 
 
@@ -348,11 +359,9 @@ bool EmergeManager::isBlockInQueue(v3s16 pos)
 //
 
 
-// TODO(hmmmm): Move this to ServerMap
-v3s16 EmergeManager::getContainingChunk(v3s16 blockpos, s16 chunksize)
+v3s16 EmergeManager::getContainingChunk(v3s16 blockpos, v3s16 chunksize)
 {
-	s16 coff = -chunksize / 2;
-	v3s16 chunk_offset(coff, coff, coff);
+	v3s16 chunk_offset = -chunksize / 2;
 
 	return getContainerPos(blockpos - chunk_offset, chunksize)
 		* chunksize + chunk_offset;
@@ -415,7 +424,7 @@ bool EmergeManager::pushBlockEmergeData(
 		}
 	}
 
-	auto findres = m_blocks_enqueued.insert(std::make_pair(pos, BlockEmergeData()));
+	auto findres = m_blocks_enqueued.emplace(pos, BlockEmergeData());
 
 	BlockEmergeData &bedata = findres.first->second;
 	*entry_already_exists   = !findres.second;
@@ -639,8 +648,7 @@ MapBlock *EmergeThread::finishGen(v3s16 pos, BlockMakeData *bmdata,
 		Perform post-processing on blocks (invalidate lighting, queue liquid
 		transforms, etc.) to finish block make
 	*/
-	m_map->finishBlockMake(bmdata, modified_blocks,
-		m_server->m_env->getGameTime());
+	m_map->finishBlockMake(bmdata, modified_blocks, m_server->m_env);
 
 	MapBlockPtr block = m_map->getBlock(pos, false, true);
 	if (!block) {
@@ -845,7 +853,8 @@ void *EmergeThread::run()
 			<< "----" << std::endl
 			<< "\"" << e.what() << "\"" << std::endl
 			<< "See debug.txt." << std::endl
-			<< "You can ignore this using [ignore_world_load_errors = true]."
+			<< "This can be ignored using the `ignore_world_load_errors` setting. "
+			<< "But it will also destroy stuff in the affected MapBlocks, do not use."
 			<< std::endl;
 		m_server->setAsyncFatalError(err.str());
 	} catch (const std::exception &e) {

@@ -18,11 +18,10 @@
 
 #include "network/address.h"
 #include "network/networkprotocol.h" // session_t
-#include "porting.h"
 #include "threading/mutex_auto_lock.h"
 #include "clientdynamicinfo.h"
+#include "constants.h" // PEER_ID_INEXISTENT
 
-#include <list>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -289,8 +288,8 @@ public:
 
 	void SentBlock(v3bpos_t p, double time);
 
-	void SetBlockNotSent(v3s16 p, bool low_priority = false);
-	void SetBlocksNotSent(const std::vector<v3s16> &blocks, bool low_priority = false);
+	void SetBlockNotSent(v3s16 p);
+	void SetBlocksNotSent(const std::vector<v3s16> &blocks);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -355,7 +354,7 @@ public:
 		{ serialization_version = m_pending_serialization_version; }
 
 	/* get uptime */
-	u64 uptime() const { return porting::getTimeS() - m_connection_time; }
+	u64 uptime() const;
 
 	/* set version information */
 	void setVersionInfo(u8 major, u8 minor, u8 patch, const std::string &full);
@@ -471,7 +470,7 @@ private:
 	/*
 		time this client was created
 	 */
-	const u64 m_connection_time = porting::getTimeS();
+	const u64 m_connection_time;
 };
 
 //typedef std::unordered_map<u16, RemoteClient*> RemoteClientMap;
@@ -507,7 +506,7 @@ public:
 	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
 
 	/* mark blocks as not sent on all active clients */
-	void markBlocksNotSent(const std::vector<v3s16> &positions, bool low_priority = false);
+	void markBlocksNotSent(const std::vector<v3s16> &positions);
 
 	/* verify if server user limit was reached */
 	bool isUserLimitReached();

@@ -14,9 +14,9 @@
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "scripting_server.h"
-#include "environment.h"
 #include "mapblock.h"
 #include "server.h"
+#include "serverenvironment.h"
 #include "nodedef.h"
 #include "daynightratio.h"
 #include "util/pointedthing.h"
@@ -26,6 +26,7 @@
 #include <unordered_set>
 #include "face_position_cache.h"
 #include "remoteplayer.h"
+#include "servermap.h"
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
 #include "util/string.h"

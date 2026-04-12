@@ -19,6 +19,8 @@
 #include "environment.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "serverenvironment.h"
+#include "servermap.h"
 #if 0
 #include "chathandler.h"
 #include "content_sao.h"

@@ -27,11 +27,14 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <unordered_map>
 #include <utility>
+#include "common/c_types.h"
 #include "database/database.h"
 #include "emerge.h"
 #include "filesys.h"
 #include "fm_weather.h"
 #include "irrlichttypes.h"
+#include "network/connection.h"
+#include "network/networkexceptions.h"
 #include "porting.h"
 #include "fm_world_merge.h"
 #include "irrTypes.h"
@@ -45,6 +48,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "server.h"
 #include "debug/stacktrace.h"
+#include "serverenvironment.h"
 #include "util/timetaker.h"
 
 ServerThreadBase::ServerThreadBase(Server *server, const std::string &name,

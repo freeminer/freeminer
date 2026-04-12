@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "servermap.h"
+
 #include "content_abm.h"
 #include <cstdint>
 #include "server.h"

@@ -51,6 +51,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mg_biome.h"
 #include "nodedef.h"
 #include "serverenvironment.h"
+#include "servermap.h"
 #include "settings.h"
 #include "util/timetaker.h"
 #include "voxel.h"
