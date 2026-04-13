@@ -83,12 +83,11 @@ bool FarMesh::makeFarBlock(
 	}
 #endif
 	{
-		auto &far_blocks_storage_step = client_map.far_blocks_storage[step];
-
-		const auto lock = far_blocks_storage_step.lock_unique_rec();
-
-		//if (!block)
 		{
+			auto &far_blocks_storage_step = client_map.far_blocks_storage[step];
+
+			const auto lock = far_blocks_storage_step.lock_unique_rec();
+
 			if (const auto it = far_blocks_storage_step.find(blockpos_actual);
 					it != far_blocks_storage_step.end() && it->second.block) {
 				block = it->second.block;
@@ -97,20 +96,67 @@ bool FarMesh::makeFarBlock(
 					//far_blocks.insert_or_assign(blockpos_actual, block);
 				}
 			}
-		}
-		if (!block) {
-			block = client_map.createBlankBlockNoInsert(blockpos_actual);
-			block->far_step = step;
-			block->far_status = MapBlock::far_status_e::s1_created;
-			collect_reset_timestamp =
-					m_client->m_uptime + (farmesh_wait_server ?: 1) * step;
-			block->far_make_mesh_timestamp =
-					farmesh_wait_server ? collect_reset_timestamp : 0;
 
-			far_blocks_storage_step.insert_or_assign(
-					blockpos_actual, Map::BlockUsed{block, (int32_t)m_client->m_uptime});
-			//far_blocks.insert_or_assign(blockpos_actual, block);
+			if (!block) {
+				block = client_map.createBlankBlockNoInsert(blockpos_actual);
+				block->far_step = step;
+				block->far_status = MapBlock::far_status_e::s1_created;
+				collect_reset_timestamp =
+						m_client->m_uptime + (farmesh_wait_server ?: 1) * step;
+				block->far_make_mesh_timestamp =
+						farmesh_wait_server ? collect_reset_timestamp : 0;
+
+				far_blocks_storage_step.insert_or_assign(blockpos_actual,
+						Map::BlockUsed{block, (int32_t)m_client->m_uptime});
+				//far_blocks.insert_or_assign(blockpos_actual, block);
+			}
 		}
+
+		// if (block->far_status >= MapBlock::far_status_e::s6_mesh_complete)
+		{
+			// Check if old block exists and old step + 1 == new step
+			MapBlockPtr old_block;
+			{
+				const auto lock = far_blocks.lock_shared_rec();
+				if (const auto &it = far_blocks.find(blockpos_actual);
+						it != far_blocks.end()) {
+					old_block = it->second;
+				}
+			}
+
+			if (old_block && old_block->far_step + 1 == step) {
+				// Find other 7 old blocks filling new block volume
+				// Make these 7 blocks not renderable by setting their far_iteration to 0
+				const bpos_t blocks_per_side = 2; // 2x2x2 = 8 blocks total
+				const bpos_t step_shift =
+						1 << (step - 1 +
+								draw_control
+										.cell_size_pow); // Calculate shift based on step and cell size
+				for (bpos_t x = 0; x < blocks_per_side; ++x) {
+					for (bpos_t y = 0; y < blocks_per_side; ++y) {
+						for (bpos_t z = 0; z < blocks_per_side; ++z) {
+							if (x == 0 && y == 0 && z == 0)
+								continue; // Skip the main block
+
+							// Calculate block positions using shifting size to step as around
+							v3bpos_t sub_block_pos =
+									blockpos_actual +
+									v3bpos_t{static_cast<bpos_t>(x * step_shift),
+											static_cast<bpos_t>(y * step_shift),
+											static_cast<bpos_t>(z * step_shift)};
+							const auto lock = far_blocks.lock_shared_rec();
+							if (const auto &it = far_blocks.find(sub_block_pos);
+									it != far_blocks.end()) {
+								if (it->second) {
+									it->second->far_iteration = 0; // Make non-renderable
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		far_blocks.insert_or_assign(blockpos_actual, block);
 	}
 
