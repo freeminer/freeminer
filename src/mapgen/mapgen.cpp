@@ -39,6 +39,7 @@
 #include "mapgen_indev.h"
 #include "mapgen_math.h"
 #include "mapgen_earth.h"
+#include "mapgen_erosion.h"
 #include "serverenvironment.h"
 
 
@@ -84,6 +85,7 @@ static MapgenDesc g_reg_mapgens[] = {
 	{"earth",       true},
 	{"math",       true},
 	{"indev",      true},
+	{"erosion",    true},
 // ===
 
 	{"v7",         true},
@@ -176,6 +178,8 @@ Mapgen *Mapgen::createMapgen(MapgenType mgtype, MapgenParams *params,
 		return new MapgenMath((MapgenMathParams *)params, emerge);
 	case MAPGEN_EARTH:
 		return new MapgenEarth((MapgenEarthParams *)params, emerge);
+	case MAPGEN_EROSION:
+		return new MapgenErosion((MapgenErosionParams *)params, emerge);
 
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathian((MapgenCarpathianParams *)params, emerge);
@@ -209,6 +213,8 @@ MapgenParams *Mapgen::createMapgenParams(MapgenType mgtype)
 		return new MapgenMathParams;
 	case MAPGEN_EARTH:
 		return new MapgenEarthParams;
+	case MAPGEN_EROSION:
+		return new MapgenErosionParams;
 
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathianParams;
