@@ -74,8 +74,8 @@ private:
 	float m_warp_scale = 1.0f / 900.0f;
 	float m_warp_strength = 220.0f;
 	float m_detail_scale = 1.0f / 180.0f;
-	float m_base_offset = 24.0f;
-	float m_base_height = 110.0f;
+	float m_base_offset = -18.0f;
+	float m_base_height = 96.0f;
 	float m_mountain_height = 340.0f;
 	float m_land_lift = 28.0f;
 	float m_coast_blend = 72.0f;

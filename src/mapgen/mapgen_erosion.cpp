@@ -80,8 +80,8 @@ MapgenErosion::MapgenErosion(MapgenErosionParams *params, EmergeParams *emerge) 
 	m_warp_strength = rangelim(cfg.get("warp_strength", 220.0).asFloat(), 0.0f, 2048.0f);
 	m_detail_scale = rangelim(cfg.get("detail_scale", 1.0 / 180.0).asFloat(),
 			1.0f / 4000.0f, 1.0f / 16.0f);
-	m_base_offset = rangelim(cfg.get("base_offset", 24.0).asFloat(), -256.0f, 256.0f);
-	m_base_height = rangelim(cfg.get("base_height", 110.0).asFloat(), 0.0f, 1024.0f);
+	m_base_offset = rangelim(cfg.get("base_offset", -18.0).asFloat(), -256.0f, 256.0f);
+	m_base_height = rangelim(cfg.get("base_height", 96.0).asFloat(), 0.0f, 1024.0f);
 	m_mountain_height = rangelim(cfg.get("mountain_height", 340.0).asFloat(), 0.0f, 2048.0f);
 	m_land_lift = rangelim(cfg.get("land_lift", 28.0).asFloat(), 0.0f, 128.0f);
 	m_coast_blend = rangelim(cfg.get("coast_blend", 72.0).asFloat(), 8.0f, 256.0f);
@@ -186,19 +186,24 @@ float MapgenErosion::baseHeightAtPoint(pos_t x, pos_t z) const
 	float pz = z + warp_z * m_warp_strength;
 
 	float continent = sampleFbm(px, pz, m_continent_scale, 300, 5, 0.5f, 2.0f);
-	continent = smoothstep5(clamp01(continent * 0.5f + 0.62f));
+	continent = smoothstep5(clamp01(continent * 0.5f + 0.5f));
 
 	float macro = sampleFbm(px, pz, m_continent_scale * 3.0f, 400, 4, 0.55f, 2.1f);
 	float hills = sampleFbm(px, pz, m_detail_scale * 0.35f, 500, 5, 0.52f, 2.0f);
 	float detail = sampleFbm(px, pz, m_detail_scale, 600, 4, 0.5f, 2.0f);
 	float ridged = sampleRidged(px, pz, m_detail_scale * 0.22f, 700, 5, 0.55f, 2.0f);
 
-	float macro_height = macro * 50.0f + hills * 36.0f + detail * 14.0f;
+	float land_mask = smoothstep5(clamp01((continent - 0.38f) / 0.4f));
+	float basin_mask = smoothstep5(clamp01((0.55f - continent) / 0.55f));
+	float continental_height = lerp(-0.9f, 1.0f, continent) * m_base_height;
+	float macro_height = (macro * 42.0f + hills * 30.0f + detail * 12.0f) *
+			lerp(0.45f, 1.0f, land_mask);
 	float mountain_mask = smoothstep5(clamp01((continent - 0.42f) / 0.48f));
 	float mountain_height = std::pow(ridged, 1.35f) * mountain_mask * m_mountain_height;
+	float basin_depth = basin_mask * basin_mask * (m_base_height * 0.55f);
 
-	return water_level + m_base_offset + continent * m_base_height +
-			macro_height + mountain_height;
+	return water_level + m_base_offset + continental_height +
+			macro_height + mountain_height - basin_depth;
 }
 
 
