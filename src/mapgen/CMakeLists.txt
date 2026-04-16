@@ -14,6 +14,7 @@ set(mapgen_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_erosion.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
 

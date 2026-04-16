@@ -108,6 +108,7 @@ enum MapgenType {
 	MAPGEN_EARTH,
 	MAPGEN_MATH,
 	MAPGEN_INDEV,
+	MAPGEN_EROSION,
     // ==========
 
 	MAPGEN_V7,
