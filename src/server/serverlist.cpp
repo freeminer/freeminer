@@ -55,6 +55,10 @@ void sendAnnounce(AnnounceAction action,
 		}
 		if (!gameid.empty())
 			server["gameid"] = gameid;
+
+		#if USE_POS32
+			server["map_size"]       = (int)USE_POS32;
+		#endif
 	}
 
 	if (action == AA_START) {
