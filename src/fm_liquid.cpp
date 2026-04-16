@@ -195,24 +195,26 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	uint16_t loop_rand = myrand();
 
 	unordered_set_v3bpos blocks_lighting_update;
+	std::vector<v3pos_t> transforming_liquid_local;
 
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	{
 		std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
-		m_transforming_liquid_local.reserve(initial_size);
+		transforming_liquid_local.reserve(initial_size);
 		while (!m_transforming_liquid.m_queue.empty()) {
-			m_transforming_liquid_local.emplace_back(
+			transforming_liquid_local.emplace_back(
 					m_transforming_liquid.m_queue.front());
 			m_transforming_liquid.m_queue.pop();
 		}
 		m_transforming_liquid.m_set.clear();
+		m_transforming_liquid_local_size = transforming_liquid_local.size();
 	}
 
 	{
 		cached_map_block cached_map(this);
 
-		for (const auto &p0 : m_transforming_liquid_local) {
+		for (const auto &p0 : transforming_liquid_local) {
 			// This should be done here so that it is done when continue is used
 			//if (loopcount >= initial_size * 2 || porting::getTimeMs() > end_ms)
 			//	break;
@@ -913,7 +915,8 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 			// g_profiler->graphAdd("liquids", 1);
 		}
 	}
-	m_transforming_liquid_local.clear();
+	transforming_liquid_local.clear();
+	m_transforming_liquid_local_size = 0;
 
 	//size_t ret = loopcount >= initial_size ? 0 : transforming_liquid_size();
 	//if (ret || loopcount > m_liquid_step_flow)
@@ -942,28 +945,28 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 		//DUMP(fast_reflow.size(), must_reflow.size(), must_reflow_second.size());
 		std::unordered_set<v3pos_t> uniq;
-		m_transforming_liquid_local.reserve(
+		transforming_liquid_local.reserve(
 				must_reflow.size() + must_reflow_second.size() + fast_reflow.size() * 4);
 		for (const auto &[bp, list] : fast_reflow) {
 			for (const auto &p : list) {
 				if (!uniq.contains(p))
-					m_transforming_liquid_local.emplace_back(p);
+					transforming_liquid_local.emplace_back(p);
 				uniq.emplace(p);
 			}
 		}
 
 		for (const auto &p : must_reflow) {
 			if (!uniq.contains(p))
-				m_transforming_liquid_local.emplace_back(p);
+				transforming_liquid_local.emplace_back(p);
 			uniq.emplace(p);
 		}
 		for (const auto &p : must_reflow_second) {
 			if (!uniq.contains(p))
-				m_transforming_liquid_local.emplace_back(p);
+				transforming_liquid_local.emplace_back(p);
 			uniq.emplace(p);
 		}
 
-		m_transforming_liquid_local_size = m_transforming_liquid_local.size();
+		m_transforming_liquid_local_size = transforming_liquid_local.size();
 	}
 
 	for (const auto &pos : node_drop) {
