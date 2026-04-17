@@ -382,13 +382,13 @@ float MapgenErosion::erosionHeightAtPoint(pos_t x, pos_t z)
 }
 
 
-pos_t MapgenErosion::getGroundLevelAtPoint(v2pos_t p)
+int MapgenErosion::getGroundLevelAtPoint(v2pos_t p)
 {
 	return myround(erosionHeightAtPoint(p.X, p.Y));
 }
 
 
-pos_t MapgenErosion::getSpawnLevelAtPoint(v2pos_t p)
+int MapgenErosion::getSpawnLevelAtPoint(v2pos_t p)
 {
 	pos_t y = getGroundLevelAtPoint(p);
 	if (y < water_level || y > water_level + 256)

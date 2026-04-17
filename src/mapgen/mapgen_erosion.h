@@ -44,8 +44,8 @@ public:
 	~MapgenErosion() = default;
 
 	int generateTerrain() override;
-	pos_t getSpawnLevelAtPoint(v2pos_t p) override;
-	pos_t getGroundLevelAtPoint(v2pos_t p) override;
+	int getSpawnLevelAtPoint(v2pos_t p) override;
+	int getGroundLevelAtPoint(v2pos_t p) override;
 	bool visible(const v3pos_t &p) override;
 
 private:
