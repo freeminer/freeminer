@@ -238,8 +238,8 @@ our $options = {
         fps_max_unfocused => 10,
     },
     bot_random => {
-        #random_input       => 1,
-        #continuous_forward => 1,
+        random_input       => 1,
+        continuous_forward => 1,
     },
     bot_forward => {
         continuous_forward => 1,
