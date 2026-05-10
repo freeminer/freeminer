@@ -175,6 +175,20 @@ android_keyboard () enum 0 0,1,2
 touchscreen () bool true
 
 
+
+#    Enables the local MCP WebSocket control server for external agents.
+#    This exposes player control tools on localhost and should only be enabled
+#    for trusted local automation.
+enable_mcp (Enable MCP agent control) bool false
+
+#    Local TCP port used by the MCP WebSocket control server.
+mcp_ws_port (MCP WebSocket port) int 3001 1 65535
+
+#    Optional command for a stdio MCP helper process. Leave empty to use only
+#    the built-in WebSocket tool server.
+mcp_stdio_command (MCP stdio helper command) string
+
+
 [*Server] [server]
 # Lan udp announce
 serverlist_lan () bool true

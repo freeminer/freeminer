@@ -10,6 +10,9 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 Changelog
 ======
 
+### 5.15.2.0 (?)
+  * Client MCP support: enable_mcp=1
+
 ### 5.14.0.0 (?)
   * Farmesh fixes and settings
      * Works with client_mesh_chunk: Just set client_mesh_chunk=4 for better quality
