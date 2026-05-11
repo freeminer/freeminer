@@ -12,6 +12,7 @@ Changelog
 
 ### 5.15.2.0 (?)
   * Client MCP support: enable_mcp=1
+  * Mapgen Earth: Add voxel earth ( https://github.com/voxelearth ) voxelizer: voxel_earth=1  ;  voxel_earth_api_key=YOUR_GOOGLE_3D_TILES_API_KEY_HERE
 
 ### 5.14.0.0 (?)
   * Farmesh fixes and settings

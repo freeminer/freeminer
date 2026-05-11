@@ -91,6 +91,7 @@ public:
 	DISABLE_CLASS_COPY(EmergeParams);
 
 	const NodeDefManager *ndef; // shared
+	Server *server; // shared
 	bool enable_mapgen_debug_info;
 
 	u32 gen_notify_on;
@@ -121,6 +122,7 @@ class EmergeManager {
 	 * - using schemmgr to load and place schematics
 	 */
 	friend class ModApiMapgen;
+	friend class EmergeParams;
 public:
 	ServerEnvironment *env = nullptr;
 
