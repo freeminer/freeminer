@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/fm_far_container.h"
 #include "fm_far_calc.h"
 #include <atomic>
+#include "mcp_player_control.h"
 
 
 #include "client.h"
@@ -181,6 +182,14 @@ Client::Client(
 {
 	// Add local player
 	m_env.setLocalPlayer(new LocalPlayer(this, playername));
+
+	if (g_settings->getBool("enable_mcp")) {
+		// Initialize MCP Player Control
+		m_mcp_player_control = std::make_unique<MCPPlayerControl>(this);
+
+		// Start MCP WebSocket server for external tool integration
+		startMCPWebSocketServer(g_settings->getU16("mcp_ws_port"));
+	}
 
 	// Make the mod storage database and begin the save for later
 	m_mod_storage_database =
@@ -409,6 +418,7 @@ bool Client::isShutdown()
 Client::~Client()
 {
 	m_shutdown = true;
+	stopMCPWebSocketServer();
 	if (m_con) {
 		m_con->Disconnect();
 		for (auto i = 0; i < 100; ++i) {
@@ -1880,6 +1890,17 @@ void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 
 void Client::setPlayerControl(PlayerControl &control)
 {
+	{
+		std::lock_guard<std::mutex> lock(m_mcp_control_mutex);
+		if (m_has_mcp_control_override) {
+			if (std::chrono::steady_clock::now() < m_mcp_control_override_until) {
+				control = m_mcp_control_override;
+			} else {
+				m_has_mcp_control_override = false;
+			}
+		}
+	}
+
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player);
 	player->control = control;

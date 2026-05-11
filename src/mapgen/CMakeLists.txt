@@ -1,23 +1,20 @@
-file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
-
-if (USE_OSMIUM)
-	file(GLOB_RECURSE mapgen_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis-cpp/src/*.cpp")
-	set(mapgen_SRCS
-	    ${mapgen_SRCS}
-		${CMAKE_CURRENT_SOURCE_DIR}/earth/arnis_adapter.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/earth/blocks.cpp
-	)
-endif()
-
-set(mapgen_SRCS
-    ${mapgen_SRCS}
+set(freeminer_mapgen_SRCS
+    ${freeminer_mapgen_SRCS}
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_erosion.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
+)
+add_subdirectory(earth)
+set(FREEMINER_SERVER_LIBRARIES ${FREEMINER_SERVER_LIBRARIES} PARENT_SCOPE)
+set(FREEMINER_CLIENT_LIBRARIES ${FREEMINER_CLIENT_LIBRARIES} PARENT_SCOPE)
 
+file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
+set(mapgen_SRCS
+    ${freeminer_mapgen_SRCS}
+	${mapgen_SRCS}
 	${mapgen_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/dungeongen.cpp

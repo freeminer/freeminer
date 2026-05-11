@@ -302,6 +302,9 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("minimap_shape_round", "false");
 	settings->setDefault("mainmenu_last_selected_world", "1");
 
+	settings->setDefault("enable_mcp", "false");
+	settings->setDefault("mcp_ws_port", "3001");
+	settings->setDefault("mcp_stdio_command", "");
 
 #ifdef __ANDROID__
 	settings->setDefault("TMPFolder", porting::path_user + "/tmp/");

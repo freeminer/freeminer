@@ -94,10 +94,11 @@ public:
 
 	virtual int generateTerrain();
 
-private:
+protected:
 	pos_t mount_zero_level;
 	pos_t floatland_ymin;
 	pos_t floatland_ymax;
+private:
 	pos_t floatland_taper;
 	float float_taper_exp;
 	float floatland_density;
@@ -106,6 +107,7 @@ private:
 	float *float_offset_cache = nullptr;
 
     // freeminer:
+protected:
 	MapgenV7Params *sp{};
 	//virtual void generateExperimental();
 	// freeminer:

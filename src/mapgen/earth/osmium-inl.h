@@ -257,7 +257,7 @@ class hdl : public handler_i
 public:
 	hdl(MapgenEarth *mg, const std::string &path_name) : path_name{path_name} {}
 
-	~hdl() = default;
+	virtual ~hdl() = default;
 
 	void apply(MapgenEarth *mg) override
 	{

@@ -21,9 +21,10 @@ else()
     option(FETCH_DEPS "Compile deps (boost,...) in place" 0)
 endif()
 
+set(FETCHCONTENT_UPDATES_DISCONNECTED 1)
+set(FETCHCONTENT_QUIET 0) # Needed to print downloading progress
+
 if(FETCH_DEPS)
-    set(FETCHCONTENT_UPDATES_DISCONNECTED 1)
-    set(FETCHCONTENT_QUIET 0) # Needed to print downloading progress
     include(FetchContent)
     set(ENABLE_LIB_ONLY ON CACHE BOOL "")
     set(ENABLE_TESTS OFF CACHE BOOL "")
@@ -78,7 +79,6 @@ if(FETCH_DEPS)
     )
 
     include(FetchContent)
-    set(FETCHCONTENT_QUIET FALSE) # Needed to print downloading progress
     FetchContent_Declare(
         Boost
         GIT_REPOSITORY https://github.com/boostorg/boost.git
@@ -189,17 +189,46 @@ if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeList
     set(FREEMINER_COMMON_LIBRARIES ${FREEMINER_COMMON_LIBRARIES} ${TIFF_LIRARY})
 endif()
 
-option(ENABLE_OSMIUM "Enable Osmium" 1)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/json/include/nlohmann/json.hpp")
+    add_subdirectory(mapgen/earth/json)
+    set(NLOHMANN_INCLUDE_DIR mapgen/earth/json/include)
+    include_directories(BEFORE SYSTEM ${NLOHMANN_INCLUDE_DIR})
+    message(STATUS "Using nlohmann json : ${NLOHMANN_INCLUDE_DIR}")
+endif()
+
+option(ENABLE_OSMIUM "Enable Osmium" 0)
 
 # if(ENABLE_OSMIUM)
 #     find_path(OSMIUM_INCLUDE_DIR osmium/osm.hpp)
 # endif()
 
+if(1)
+    include(FetchContent)
+    FetchContent_Declare(
+        tinygltf
+        GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+        GIT_TAG v2.9.7
+        GIT_SUBMODULES_RECURSE OFF
+        # SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltf
+        GIT_SHALLOW TRUE
+        OVERRIDE_FIND_PACKAGE TRUE
+        USES_TERMINAL_DOWNLOAD TRUE
+        GIT_PROGRESS TRUE
+        DOWNLOAD_EXTRACT_TIMESTAMP ON
+        EXCLUDE_FROM_ALL
+    )
+    FetchContent_MakeAvailable(tinygltf)
+
+    set(TINYGLTF_INCLUDE_DIR ${tinygltf_SOURCE_DIR})
+    include_directories(${TINYGLTF_INCLUDE_DIR})
+
+endif()
+
+
 if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/CMakeLists.txt))
 
     if(FETCH_DEPS)
         include(FetchContent)
-        set(FETCHCONTENT_QUIET FALSE) # Needed to print downloading progress
 
         FetchContent_Declare(lz4
             URL https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
@@ -264,7 +293,9 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
         set(BUILD_BENCHMARKS 0 CACHE INTERNAL "")
         set(Osmium_USE_GEOS 0 CACHE INTERNAL "")
         set(Osmium_USE_GDAL 0 CACHE INTERNAL "")
-        set(CPPCHECK 0 CACHE INTERNAL "")
+        set(CPPCHECK NOTFOUND CACHE INTERNAL "")
+        set(Osmium_USE_GEOS 0 CACHE INTERNAL "")
+        set(Osmium_USE_GDAL 0 CACHE INTERNAL "")
 
         if(NOT OSMIUM_INCLUDE_DIR)
             if(boost_SOURCE_DIR)
@@ -332,11 +363,12 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
             include_directories(BEFORE SYSTEM ${NLOHMANN_INCLUDE_DIR})
             list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/osmium-tool/cmake/Modules/")
             # add_subdirectory(mapgen/earth/osmium-tool)
+            set(OSMIUM_TOOL_LIBRARY osmium-tool-lib)
             set(OSMIUM_TOOL_SRC mapgen/earth/osmium-tool/src/)
 
             configure_file(${OSMIUM_TOOL_SRC}/version.cpp.in ${PROJECT_BINARY_DIR}/${OSMIUM_TOOL_SRC}/version.cpp)
 
-            add_library(osmium-tool-lib
+            add_library(${OSMIUM_TOOL_LIBRARY}
                 ${PROJECT_BINARY_DIR}/${OSMIUM_TOOL_SRC}/version.cpp
                 ${OSMIUM_TOOL_SRC}cmd_factory.cpp
                 ${OSMIUM_TOOL_SRC}cmd.cpp
@@ -362,12 +394,11 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
                 ${OSMIUM_TOOL_SRC}option_clean.cpp
                 ${OSMIUM_TOOL_SRC}util.cpp
             )
-            target_link_libraries(osmium-tool-lib
+            target_link_libraries(${OSMIUM_TOOL_LIBRARY}
                 PRIVATE ${OSMIUM_LIRARY}
                 PUBLIC Boost::program_options)
-            target_include_directories(osmium-tool-lib PRIVATE ${OSMIUM_INCLUDE_DIR})
+            target_include_directories(${OSMIUM_TOOL_LIBRARY} PRIVATE ${OSMIUM_INCLUDE_DIR})
 
-            set(OSMIUM_TOOL_LIBRARY osmium-tool-lib)
             list(APPEND FREEMINER_COMMON_LIBRARIES ${OSMIUM_TOOL_LIBRARY})
 
         endif()
@@ -404,7 +435,7 @@ endif()
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ${CMAKE_VERSION} VERSION_GREATER "3.11.0")
-    set(USE_DEBUG_DUMP ON CACHE BOOL "")
+    # set(USE_DEBUG_DUMP ON CACHE BOOL "")
 endif()
 
 if(USE_DEBUG_DUMP)

@@ -724,6 +724,7 @@ if(BUILD_CLIENT)
 
 	target_link_libraries(
 		${PROJECT_NAME}
+		${FREEMINER_CLIENT_LIBRARIES}
 		${ZLIB_LIBRARIES}
 		IrrlichtMt::IrrlichtMt
 		${ZSTD_LIBRARY}
@@ -731,9 +732,6 @@ if(BUILD_CLIENT)
 		${LUA_LIBRARY}
 		${GMP_LIBRARY}
 		${JSON_LIBRARY}
-
-		${FREEMINER_CLIENT_LIBRARIES}
-
 		${LUA_BIT_LIBRARY}
 		lstrpack
 		sha256
@@ -827,12 +825,10 @@ if(BUILD_SERVER)
 	target_include_directories(${PROJECT_NAME}server PRIVATE ${IRRLICHT_INCLUDES})
 	target_link_libraries(
 		${PROJECT_NAME}server
+		${FREEMINER_SERVER_LIBRARIES}
 		${ZLIB_LIBRARIES}
 		${ZSTD_LIBRARY}
 		${JSON_LIBRARY}
-
-		${FREEMINER_SERVER_LIBRARIES}
-
 		${LUA_LIBRARY}
 		${LUA_BIT_LIBRARY}
 		lstrpack

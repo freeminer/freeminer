@@ -37,3 +37,6 @@
 [submodule "src/mapgen/earth/json"]
 	path = src/mapgen/earth/json
 	url = https://github.com/nlohmann/json.git
+[submodule "src/mapgen/earth/luanti-earth"]
+	path = src/mapgen/earth/luanti-earth
+	url = https://github.com/freeminer/luanti-earth.git
