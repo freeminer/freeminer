@@ -525,24 +525,9 @@ void MapgenEarth::start_download_and_voxelize(double lat, double lon, double ele
 				VoxelGrid grid = voxelizer.voxelize(tile, resolution, origin.X, origin.Y,
 						origin.Z, y_offset_nodes, center.X, center.Y, center.Z, scale.X,
 						scale.Y, scale.Z, node_min.X, node_min.Y, node_min.Z);
-				int auto_y_anchor = 1;
-				g_settings->getS32NoEx("voxel_earth_auto_y_anchor", auto_y_anchor);
-				pos_t y_anchor_shift = 0;
-				if (auto_y_anchor && !grid.voxels.empty()) {
-					pos_t min_voxel_y = std::numeric_limits<pos_t>::max();
-					for (const auto &v : grid.voxels) {
-						if (v.x < 0 || v.x >= csize.X || v.z < 0 || v.z >= csize.Z)
-							continue;
-						min_voxel_y = std::min<pos_t>(min_voxel_y, v.y);
-					}
-					if (min_voxel_y != std::numeric_limits<pos_t>::max()) {
-						const pos_t target_min_y = terrain_y - node_min.Y;
-						y_anchor_shift = target_min_y - min_voxel_y;
-					}
-				}
 				for (const auto &v : grid.voxels) {
-					const pos_t shifted_y = static_cast<pos_t>(v.y + y_anchor_shift);
-					const v3pos_t pos_rel{static_cast<pos_t>(v.x), shifted_y,
+					const v3pos_t pos_rel{static_cast<pos_t>(v.x),
+							static_cast<pos_t>(v.y),
 							//+ csize.Y/2
 							static_cast<pos_t>(v.z)};
 					const auto pos = node_min + pos_rel;
