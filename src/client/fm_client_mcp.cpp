@@ -10,6 +10,7 @@
 #include "constants.h"
 #include "inventory.h"
 #include "inventorymanager.h"
+#include "irr_v3d.h"
 #include "log.h"
 #include "mapblock.h"
 #include "mapnode.h"
@@ -32,8 +33,8 @@ static Json::Value makeMCPObjectSchema()
 	return schema;
 }
 
-static void addMCPSchemaProperty(Json::Value &schema, const char *name,
-		const char *type, const char *description)
+static void addMCPSchemaProperty(
+		Json::Value &schema, const char *name, const char *type, const char *description)
 {
 	schema["properties"][name]["type"] = type;
 	schema["properties"][name]["description"] = description;
@@ -69,12 +70,18 @@ static Json::Value makeMCPPositionSchema()
 static Json::Value makeMCPAreaSchema()
 {
 	Json::Value schema = makeMCPObjectSchema();
-	addMCPSchemaProperty(schema, "min_x", "integer", "Minimum world X position in nodes.");
-	addMCPSchemaProperty(schema, "min_y", "integer", "Minimum world Y position in nodes.");
-	addMCPSchemaProperty(schema, "min_z", "integer", "Minimum world Z position in nodes.");
-	addMCPSchemaProperty(schema, "max_x", "integer", "Maximum world X position in nodes.");
-	addMCPSchemaProperty(schema, "max_y", "integer", "Maximum world Y position in nodes.");
-	addMCPSchemaProperty(schema, "max_z", "integer", "Maximum world Z position in nodes.");
+	addMCPSchemaProperty(
+			schema, "min_x", "integer", "Minimum world X position in nodes.");
+	addMCPSchemaProperty(
+			schema, "min_y", "integer", "Minimum world Y position in nodes.");
+	addMCPSchemaProperty(
+			schema, "min_z", "integer", "Minimum world Z position in nodes.");
+	addMCPSchemaProperty(
+			schema, "max_x", "integer", "Maximum world X position in nodes.");
+	addMCPSchemaProperty(
+			schema, "max_y", "integer", "Maximum world Y position in nodes.");
+	addMCPSchemaProperty(
+			schema, "max_z", "integer", "Maximum world Z position in nodes.");
 	addMCPRequired(schema, "min_x");
 	addMCPRequired(schema, "min_y");
 	addMCPRequired(schema, "min_z");
@@ -84,8 +91,8 @@ static Json::Value makeMCPAreaSchema()
 	return schema;
 }
 
-static Json::Value nodeToMCPJson(v3s16 pos, MapNode node, bool is_valid,
-		const NodeDefManager *ndef)
+static Json::Value nodeToMCPJson(
+		v3pos_t pos, MapNode node, bool is_valid, const NodeDefManager *ndef)
 {
 	Json::Value node_obj;
 	node_obj["pos"]["x"] = pos.X;
@@ -135,8 +142,8 @@ static void setMCPError(Json::Value &response, int code, const std::string &mess
 	response["error"] = error_obj;
 }
 
-static bool selectMCPWieldedItem(Client *client, LocalPlayer *player,
-		const Json::Value &args, Json::Value &status)
+static bool selectMCPWieldedItem(
+		Client *client, LocalPlayer *player, const Json::Value &args, Json::Value &status)
 {
 	if (!player) {
 		status["success"] = false;
@@ -200,18 +207,22 @@ static bool selectMCPWieldedItem(Client *client, LocalPlayer *player,
 	return false;
 }
 
-static bool makeMCPPlacePointedThing(Client *client, v3s16 target,
+static bool makeMCPPlacePointedThing(Client *client, v3pos_t target,
 		const Json::Value &args, PointedThing &pointed, Json::Value &status)
 {
-	static const v3s16 dirs[] = {
-			v3s16(0, -1, 0), v3s16(0, 1, 0), v3s16(-1, 0, 0),
-			v3s16(1, 0, 0), v3s16(0, 0, -1), v3s16(0, 0, 1),
+	static const v3pos_t dirs[] = {
+			v3pos_t(0, -1, 0),
+			v3pos_t(0, 1, 0),
+			v3pos_t(-1, 0, 0),
+			v3pos_t(1, 0, 0),
+			v3pos_t(0, 0, -1),
+			v3pos_t(0, 0, 1),
 	};
 
 	ClientMap &map = client->getEnv().getClientMap();
 	const NodeDefManager *ndef = client->getNodeDefManager();
-	auto try_under = [&](v3s16 under) -> bool {
-		v3s16 normal_i = target - under;
+	auto try_under = [&](const auto &under) -> bool {
+		auto normal_i = target - under;
 		if (std::abs(normal_i.X) + std::abs(normal_i.Y) + std::abs(normal_i.Z) != 1)
 			return false;
 
@@ -226,11 +237,11 @@ static bool makeMCPPlacePointedThing(Client *client, v3s16 target,
 			return false;
 
 		v3f normal((f32)normal_i.X, (f32)normal_i.Y, (f32)normal_i.Z);
-		v3f point = intToFloat(under, BS) + normal * (BS * 0.5f);
+		auto point = intToFloat(under, BS) + v3fToOpos(normal * (BS * 0.5f));
 		LocalPlayer *player = client->getEnv().getLocalPlayer();
 		f32 distance_sq = player ? player->getPosition().getDistanceFromSQ(point) : 0.0f;
-		pointed = PointedThing(under, target, under, point, normal, 0,
-				distance_sq, under_features.pointable);
+		pointed = PointedThing(under, target, under, point, normal, 0, distance_sq,
+				under_features.pointable);
 
 		status["under"]["x"] = under.X;
 		status["under"]["y"] = under.Y;
@@ -239,8 +250,9 @@ static bool makeMCPPlacePointedThing(Client *client, v3s16 target,
 		return true;
 	};
 
-	if (args.isMember("under_x") && args.isMember("under_y") && args.isMember("under_z")) {
-		v3s16 under(args["under_x"].asInt(), args["under_y"].asInt(),
+	if (args.isMember("under_x") && args.isMember("under_y") &&
+			args.isMember("under_z")) {
+		v3pos_t under(args["under_x"].asInt(), args["under_y"].asInt(),
 				args["under_z"].asInt());
 		if (try_under(under))
 			return true;
@@ -250,7 +262,7 @@ static bool makeMCPPlacePointedThing(Client *client, v3s16 target,
 		return false;
 	}
 
-	for (const v3s16 &dir : dirs) {
+	for (const auto &dir : dirs) {
 		if (try_under(target + dir))
 			return true;
 	}
@@ -260,11 +272,11 @@ static bool makeMCPPlacePointedThing(Client *client, v3s16 target,
 	return false;
 }
 
-static PointedThing makeMCPNodePointedThing(Client *client, v3s16 pos,
-		const ContentFeatures &features)
+static PointedThing makeMCPNodePointedThing(
+		Client *client, v3pos_t pos, const ContentFeatures &features)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
-	v3f point = intToFloat(pos, BS);
+	auto point = intToFloat(pos, BS);
 	v3f normal(0.0f, 1.0f, 0.0f);
 	f32 distance_sq = player ? player->getPosition().getDistanceFromSQ(point) : 0.0f;
 	return PointedThing(pos, pos, pos, point, normal, 0, distance_sq, features.pointable);
@@ -303,8 +315,8 @@ static Json::Value chatLineToMCPJson(const ChatLine &line, u32 index)
 	line_obj["name"] = wide_to_utf8(line.name.getString());
 	line_obj["text"] = wide_to_utf8(line.text.getString());
 	if (!line.name.empty())
-		line_obj["formatted"] = "<" + line_obj["name"].asString() + "> " +
-				line_obj["text"].asString();
+		line_obj["formatted"] =
+				"<" + line_obj["name"].asString() + "> " + line_obj["text"].asString();
 	else
 		line_obj["formatted"] = line_obj["text"].asString();
 	return line_obj;
@@ -329,8 +341,8 @@ static Json::Value chatBufferToMCPJson(const ChatBuffer &buffer, int count)
 	return chat_obj;
 }
 
-void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
-		Client::mcp_ws_server_t::message_ptr msg)
+void Client::onWebSocketMessage(
+		websocketpp::connection_hdl hdl, Client::mcp_ws_server_t::message_ptr msg)
 {
 	Json::Value request;
 	Json::CharReaderBuilder reader;
@@ -338,8 +350,8 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 
 	std::unique_ptr<Json::CharReader> json_reader(reader.newCharReader());
 	if (!json_reader->parse(msg->get_payload().c_str(),
-				msg->get_payload().c_str() + msg->get_payload().length(),
-				&request, &errors)) {
+				msg->get_payload().c_str() + msg->get_payload().length(), &request,
+				&errors)) {
 		Json::Value error_response;
 		error_response["jsonrpc"] = "2.0";
 		error_response["id"] = request.isMember("id") ? request["id"] : Json::Value();
@@ -403,36 +415,46 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 			addMCPSchemaProperty(control_schema, "duration_ms", "integer",
 					"How long to hold the control override.");
 			tools.append(makeMCPTool("set_player_control",
-					"Temporarily set player movement and action controls.", control_schema));
+					"Temporarily set player movement and action controls.",
+					control_schema));
 
-			tools.append(makeMCPTool("get_node",
-					"Get node data at a world position.", makeMCPPositionSchema()));
+			tools.append(makeMCPTool("get_node", "Get node data at a world position.",
+					makeMCPPositionSchema()));
 			tools.append(makeMCPTool("get_nodes_area",
 					"Get node data for a bounded world area.", makeMCPAreaSchema()));
 
 			Json::Value wield_schema = makeMCPObjectSchema();
-			addMCPSchemaProperty(wield_schema, "slot", "integer", "Hotbar slot to wield.");
+			addMCPSchemaProperty(
+					wield_schema, "slot", "integer", "Hotbar slot to wield.");
 			addMCPSchemaProperty(wield_schema, "item", "string",
 					"Item name to find and wield from the hotbar.");
 			tools.append(makeMCPTool("set_wielded_item",
 					"Wield a hotbar slot or item name.", wield_schema));
 
 			Json::Value move_inv_schema = makeMCPObjectSchema();
-			addMCPSchemaProperty(move_inv_schema, "from_list", "string", "Source list name.");
-			addMCPSchemaProperty(move_inv_schema, "from_index", "integer", "Source stack index.");
-			addMCPSchemaProperty(move_inv_schema, "to_list", "string", "Destination list name.");
-			addMCPSchemaProperty(move_inv_schema, "to_index", "integer", "Destination stack index.");
-			addMCPSchemaProperty(move_inv_schema, "count", "integer", "Count to move, or 0 for all.");
+			addMCPSchemaProperty(
+					move_inv_schema, "from_list", "string", "Source list name.");
+			addMCPSchemaProperty(
+					move_inv_schema, "from_index", "integer", "Source stack index.");
+			addMCPSchemaProperty(
+					move_inv_schema, "to_list", "string", "Destination list name.");
+			addMCPSchemaProperty(
+					move_inv_schema, "to_index", "integer", "Destination stack index.");
+			addMCPSchemaProperty(
+					move_inv_schema, "count", "integer", "Count to move, or 0 for all.");
 			tools.append(makeMCPTool("move_inventory_item",
-					"Move an item stack inside the current player inventory.", move_inv_schema));
+					"Move an item stack inside the current player inventory.",
+					move_inv_schema));
 
 			Json::Value craft_schema = makeMCPObjectSchema();
-			addMCPSchemaProperty(craft_schema, "count", "integer", "Craft count, or 0 for all.");
-			tools.append(makeMCPTool("craft",
-					"Craft from the current player craft grid.", craft_schema));
+			addMCPSchemaProperty(
+					craft_schema, "count", "integer", "Craft count, or 0 for all.");
+			tools.append(makeMCPTool(
+					"craft", "Craft from the current player craft grid.", craft_schema));
 
 			Json::Value place_schema = makeMCPPositionSchema();
-			addMCPSchemaProperty(place_schema, "slot", "integer", "Hotbar slot to place from.");
+			addMCPSchemaProperty(
+					place_schema, "slot", "integer", "Hotbar slot to place from.");
 			addMCPSchemaProperty(place_schema, "item", "string",
 					"Item name to find in the hotbar before placing.");
 			addMCPSchemaProperty(place_schema, "under_x", "integer",
@@ -442,9 +464,10 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 			addMCPSchemaProperty(place_schema, "under_z", "integer",
 					"Optional support node Z coordinate.");
 			tools.append(makeMCPTool("place_node",
-					"Place the wielded or requested hotbar item at a world position.", place_schema));
-			tools.append(makeMCPTool("dig_node",
-					"Dig a node at a world position.", makeMCPPositionSchema()));
+					"Place the wielded or requested hotbar item at a world position.",
+					place_schema));
+			tools.append(makeMCPTool("dig_node", "Dig a node at a world position.",
+					makeMCPPositionSchema()));
 
 			tools.append(makeMCPTool("move_player_to",
 					"Move player to specific coordinates.", makeMCPPositionSchema()));
@@ -457,9 +480,10 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 			tools.append(makeMCPTool("rotate_player",
 					"Rotate player camera to specific angles.", rotate_schema));
 			tools.append(makeMCPTool("teleport_player",
-					"Instantly teleport player to coordinates.", makeMCPPositionSchema()));
-			tools.append(makeMCPTool("get_pointed_thing",
-					"Get the current pointed thing under cursor."));
+					"Instantly teleport player to coordinates.",
+					makeMCPPositionSchema()));
+			tools.append(makeMCPTool(
+					"get_pointed_thing", "Get the current pointed thing under cursor."));
 
 			Json::Value world_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(world_schema, "radius", "integer",
@@ -472,8 +496,9 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 			response["result"] = result;
 		} else if (method == "tools/call" && request.isMember("params")) {
 			Json::Value params = request["params"];
-			Json::Value args = params.isMember("arguments") ?
-					params["arguments"] : Json::Value(Json::objectValue);
+			Json::Value args = params.isMember("arguments")
+									   ? params["arguments"]
+									   : Json::Value(Json::objectValue);
 			std::string tool_name = params["name"].asString();
 			LocalPlayer *player = m_env.getLocalPlayer();
 
@@ -493,8 +518,10 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 					player_state["velocity"]["z"] = player->getSpeed().Z / BS;
 					player_state["health"] = (int)player->hp;
 					player_state["breath"] = (int)player->getBreath();
-					player_state["wield_index"] = static_cast<int>(player->getWieldIndex());
-					player_state["hotbar_size"] = static_cast<int>(player->getMaxHotbarItemcount());
+					player_state["wield_index"] =
+							static_cast<int>(player->getWieldIndex());
+					player_state["hotbar_size"] =
+							static_cast<int>(player->getMaxHotbarItemcount());
 					player_state["success"] = true;
 				}
 				setMCPTextResult(response, player_state);
@@ -508,8 +535,10 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 					for (const InventoryList *list : player->inventory.getLists())
 						lists.append(inventoryListToMCPJson(list));
 					inventory_obj["success"] = true;
-					inventory_obj["wield_index"] = static_cast<int>(player->getWieldIndex());
-					inventory_obj["hotbar_size"] = static_cast<int>(player->getMaxHotbarItemcount());
+					inventory_obj["wield_index"] =
+							static_cast<int>(player->getWieldIndex());
+					inventory_obj["hotbar_size"] =
+							static_cast<int>(player->getMaxHotbarItemcount());
 					inventory_obj["lists"] = lists;
 				}
 				setMCPTextResult(response, inventory_obj);
@@ -575,15 +604,16 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				if (args.isMember("yaw"))
 					control.yaw = args["yaw"].asFloat();
 
-				const u32 duration_ms = rangelim(args.get("duration_ms", 250).asUInt(),
-						50, 5000);
+				const u32 duration_ms =
+						rangelim(args.get("duration_ms", 250).asUInt(), 50, 5000);
 				setMCPPlayerControl(control, duration_ms);
 				setMCPEmptyResult(response);
 			} else if (tool_name == "get_node") {
-				v3s16 pos(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
+				v3pos_t pos(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
 				bool ok = false;
 				MapNode node = m_env.getClientMap().getNode(pos, &ok);
-				setMCPTextResult(response, nodeToMCPJson(pos, node, ok, getNodeDefManager()));
+				setMCPTextResult(
+						response, nodeToMCPJson(pos, node, ok, getNodeDefManager()));
 			} else if (tool_name == "get_nodes_area") {
 				v3s16 minp(args["min_x"].asInt(), args["min_y"].asInt(),
 						args["min_z"].asInt());
@@ -596,8 +626,8 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				if (maxp.Z < minp.Z)
 					std::swap(maxp.Z, minp.Z);
 
-				s64 volume = (s64)(maxp.X - minp.X + 1) *
-						(maxp.Y - minp.Y + 1) * (maxp.Z - minp.Z + 1);
+				s64 volume = (s64)(maxp.X - minp.X + 1) * (maxp.Y - minp.Y + 1) *
+							 (maxp.Z - minp.Z + 1);
 				Json::Value area;
 				area["success"] = volume <= 4096;
 				area["volume"] = (Json::Int64)volume;
@@ -605,13 +635,14 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 					area["error"] = "Requested area is too large";
 				} else {
 					Json::Value nodes(Json::arrayValue);
-					for (s16 x = minp.X; x <= maxp.X; x++) {
-						for (s16 y = minp.Y; y <= maxp.Y; y++) {
-							for (s16 z = minp.Z; z <= maxp.Z; z++) {
-								v3s16 pos(x, y, z);
+					for (auto x = minp.X; x <= maxp.X; x++) {
+						for (auto y = minp.Y; y <= maxp.Y; y++) {
+							for (auto z = minp.Z; z <= maxp.Z; z++) {
+								v3pos_t pos(x, y, z);
 								bool ok = false;
 								MapNode node = m_env.getClientMap().getNode(pos, &ok);
-								nodes.append(nodeToMCPJson(pos, node, ok, getNodeDefManager()));
+								nodes.append(nodeToMCPJson(
+										pos, node, ok, getNodeDefManager()));
 							}
 						}
 					}
@@ -653,7 +684,7 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				setMCPTextResult(response, status);
 			} else if (tool_name == "place_node") {
 				Json::Value status;
-				v3s16 target(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
+				v3pos_t target(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
 				if (!selectMCPWieldedItem(this, player, args, status)) {
 					setMCPTextResult(response, status);
 				} else {
@@ -669,7 +700,7 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				}
 			} else if (tool_name == "dig_node") {
 				Json::Value status;
-				v3s16 pos(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
+				v3pos_t pos(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
 				bool ok = false;
 				MapNode node = m_env.getClientMap().getNode(pos, &ok);
 				const ContentFeatures &features = getNodeDefManager()->get(node);
@@ -689,16 +720,16 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				}
 				setMCPTextResult(response, status);
 			} else if (tool_name == "move_player_to" && m_mcp_player_control) {
-				m_mcp_player_control->movePlayerTo(args["x"].asFloat(),
-						args["y"].asFloat(), args["z"].asFloat());
+				m_mcp_player_control->movePlayerTo(
+						args["x"].asFloat(), args["y"].asFloat(), args["z"].asFloat());
 				setMCPEmptyResult(response);
 			} else if (tool_name == "rotate_player" && m_mcp_player_control) {
-				m_mcp_player_control->rotatePlayer(args["pitch"].asFloat(),
-						args["yaw"].asFloat());
+				m_mcp_player_control->rotatePlayer(
+						args["pitch"].asFloat(), args["yaw"].asFloat());
 				setMCPEmptyResult(response);
 			} else if (tool_name == "teleport_player" && m_mcp_player_control) {
-				m_mcp_player_control->teleportPlayer(args["x"].asFloat(),
-						args["y"].asFloat(), args["z"].asFloat());
+				m_mcp_player_control->teleportPlayer(
+						args["x"].asFloat(), args["y"].asFloat(), args["z"].asFloat());
 				setMCPEmptyResult(response);
 			} else if (tool_name == "get_pointed_thing") {
 				PointedThing pointed = getCurrentPointedThing();
@@ -707,12 +738,18 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				pointed_obj["pointability"] = (int)pointed.pointability;
 
 				if (pointed.type == POINTEDTHING_NODE) {
-					pointed_obj["node"]["undersurface"]["x"] = pointed.node_undersurface.X;
-					pointed_obj["node"]["undersurface"]["y"] = pointed.node_undersurface.Y;
-					pointed_obj["node"]["undersurface"]["z"] = pointed.node_undersurface.Z;
-					pointed_obj["node"]["abovesurface"]["x"] = pointed.node_abovesurface.X;
-					pointed_obj["node"]["abovesurface"]["y"] = pointed.node_abovesurface.Y;
-					pointed_obj["node"]["abovesurface"]["z"] = pointed.node_abovesurface.Z;
+					pointed_obj["node"]["undersurface"]["x"] =
+							pointed.node_undersurface.X;
+					pointed_obj["node"]["undersurface"]["y"] =
+							pointed.node_undersurface.Y;
+					pointed_obj["node"]["undersurface"]["z"] =
+							pointed.node_undersurface.Z;
+					pointed_obj["node"]["abovesurface"]["x"] =
+							pointed.node_abovesurface.X;
+					pointed_obj["node"]["abovesurface"]["y"] =
+							pointed.node_abovesurface.Y;
+					pointed_obj["node"]["abovesurface"]["z"] =
+							pointed.node_abovesurface.Z;
 					pointed_obj["node"]["real_undersurface"]["x"] =
 							pointed.node_real_undersurface.X;
 					pointed_obj["node"]["real_undersurface"]["y"] =
@@ -730,9 +767,12 @@ void Client::onWebSocketMessage(websocketpp::connection_hdl hdl,
 				pointed_obj["intersection_normal"]["x"] = pointed.intersection_normal.X;
 				pointed_obj["intersection_normal"]["y"] = pointed.intersection_normal.Y;
 				pointed_obj["intersection_normal"]["z"] = pointed.intersection_normal.Z;
-				pointed_obj["raw_intersection_normal"]["x"] = pointed.raw_intersection_normal.X;
-				pointed_obj["raw_intersection_normal"]["y"] = pointed.raw_intersection_normal.Y;
-				pointed_obj["raw_intersection_normal"]["z"] = pointed.raw_intersection_normal.Z;
+				pointed_obj["raw_intersection_normal"]["x"] =
+						pointed.raw_intersection_normal.X;
+				pointed_obj["raw_intersection_normal"]["y"] =
+						pointed.raw_intersection_normal.Y;
+				pointed_obj["raw_intersection_normal"]["z"] =
+						pointed.raw_intersection_normal.Z;
 				pointed_obj["distance_sq"] = pointed.distanceSq;
 				setMCPTextResult(response, pointed_obj);
 			} else if (tool_name == "get_world_content") {
@@ -764,19 +804,18 @@ void Client::startMCPWebSocketServer(int port)
 		m_mcp_websocket_server.clear_access_channels(websocketpp::log::alevel::all);
 
 		m_mcp_websocket_server.set_message_handler(
-				[this](websocketpp::connection_hdl hdl, mcp_ws_server_t::message_ptr msg) {
+				[this](websocketpp::connection_hdl hdl,
+						mcp_ws_server_t::message_ptr msg) {
 					this->onWebSocketMessage(hdl, msg);
 				});
 
-		m_mcp_websocket_server.set_open_handler(
-				[](websocketpp::connection_hdl) {
-					infostream << "MCP WebSocket client connected" << std::endl;
-				});
+		m_mcp_websocket_server.set_open_handler([](websocketpp::connection_hdl) {
+			infostream << "MCP WebSocket client connected" << std::endl;
+		});
 
-		m_mcp_websocket_server.set_close_handler(
-				[](websocketpp::connection_hdl) {
-					infostream << "MCP WebSocket client disconnected" << std::endl;
-				});
+		m_mcp_websocket_server.set_close_handler([](websocketpp::connection_hdl) {
+			infostream << "MCP WebSocket client disconnected" << std::endl;
+		});
 
 		m_mcp_websocket_server.listen("127.0.0.1", std::to_string(port));
 		m_mcp_websocket_server.start_accept();
@@ -814,8 +853,8 @@ void Client::setMCPPlayerControl(PlayerControl control, u32 duration_ms)
 
 	std::lock_guard<std::mutex> lock(m_mcp_control_mutex);
 	m_mcp_control_override = control;
-	m_mcp_control_override_until = std::chrono::steady_clock::now() +
-			std::chrono::milliseconds(duration_ms);
+	m_mcp_control_override_until =
+			std::chrono::steady_clock::now() + std::chrono::milliseconds(duration_ms);
 	m_has_mcp_control_override = true;
 }
 
@@ -834,8 +873,8 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 	if (!player)
 		return world_content;
 
-	v3f player_pos = player->getPosition();
-	v3s16 player_block_pos = getNodeBlockPos(floatToInt(player_pos, BS));
+	auto player_pos = player->getPosition();
+	auto player_block_pos = getNodeBlockPos(floatToInt(player_pos, BS));
 
 	world_content["player_position"]["x"] = player_pos.X / BS;
 	world_content["player_position"]["y"] = player_pos.Y / BS;
@@ -851,13 +890,16 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 	const int max_blocks = 27;
 	int block_count = 0;
 
-	v3s16 min_block = player_block_pos - v3s16(radius_blocks, radius_blocks, radius_blocks);
-	v3s16 max_block = player_block_pos + v3s16(radius_blocks, radius_blocks, radius_blocks);
+	auto min_block =
+			player_block_pos - v3pos_t(radius_blocks, radius_blocks, radius_blocks);
+	auto max_block =
+			player_block_pos + v3pos_t(radius_blocks, radius_blocks, radius_blocks);
 
-	for (s16 x = min_block.X; x <= max_block.X && block_count < max_blocks; x++) {
-		for (s16 y = min_block.Y; y <= max_block.Y && block_count < max_blocks; y++) {
-			for (s16 z = min_block.Z; z <= max_block.Z && block_count < max_blocks; z++) {
-				v3s16 block_pos(x, y, z);
+	for (auto x = min_block.X; x <= max_block.X && block_count < max_blocks; x++) {
+		for (auto y = min_block.Y; y <= max_block.Y && block_count < max_blocks; y++) {
+			for (auto z = min_block.Z; z <= max_block.Z && block_count < max_blocks;
+					z++) {
+				v3pos_t block_pos(x, y, z);
 				MapBlock *block = map.getBlockNoCreateNoEx(block_pos);
 
 				if (!block)
@@ -875,10 +917,13 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 				int sample_count = 0;
 				const int max_samples = 10;
 
-				for (s16 nx = 0; nx < MAP_BLOCKSIZE && sample_count < max_samples; nx += 4) {
-					for (s16 ny = 0; ny < MAP_BLOCKSIZE && sample_count < max_samples; ny += 4) {
-						for (s16 nz = 0; nz < MAP_BLOCKSIZE && sample_count < max_samples; nz += 4) {
-							v3s16 node_pos(nx, ny, nz);
+				for (s16 nx = 0; nx < MAP_BLOCKSIZE && sample_count < max_samples;
+						nx += 4) {
+					for (s16 ny = 0; ny < MAP_BLOCKSIZE && sample_count < max_samples;
+							ny += 4) {
+						for (s16 nz = 0; nz < MAP_BLOCKSIZE && sample_count < max_samples;
+								nz += 4) {
+							v3pos_t node_pos(nx, ny, nz);
 							MapNode node = block->getNodeNoCheck(node_pos);
 
 							if (node.getContent() != CONTENT_AIR &&
