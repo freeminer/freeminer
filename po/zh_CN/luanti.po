@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Chinese (Simplified) (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-01-20 16:27+0000\n"
-"Last-Translator: 玄枵 <ipmlosion@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-05-12 02:11+0000\n"
+"Last-Translator: saillill <2637298591@qq.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/minetest/minetest/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 2026.5-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -127,11 +127,13 @@ msgid ""
 "2D noise: flag on.\n"
 "3D noise: flag off."
 msgstr ""
+"2D 噪声：标记已开启。\n"
+"3D 噪声：标记已关闭。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Amplifies every octave by (amplitude of the previous octave * Persistence)."
-msgstr ""
+msgstr "按（前一八度的振幅 × 持续度）来放大每个八度（层）。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/content/dlg_install.lua
@@ -147,23 +149,23 @@ msgstr "取消"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Controls how many octaves (layers) the noise will have."
-msgstr ""
+msgstr "控制噪声的八度（层）数量。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Each octave is a simple noise generator. Each one also adds more detail to "
 "the noise."
-msgstr ""
+msgstr "每个八度（层）都是一个简单的噪声发生器。每一层还会为噪声增加更多细节。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Finally, all of the octaves will be combined to generate the noise."
-msgstr ""
+msgstr "最后，所有八度（层）将组合在一起生成噪声。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Having lots of octaves is not recommended because it increases terrain "
 "generation time."
-msgstr ""
+msgstr "不建议使用过多八度（层），因为这会增加地形生成时间。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Lacunarity"
@@ -173,35 +175,35 @@ msgstr "空白"
 msgid ""
 "Lower values make the terrain simple and higher values make the terrain "
 "rough."
-msgstr ""
+msgstr "值越低地形越简单，值越高地形越粗糙。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Lower values make the terrain smooth and higher values make the terrain have "
 "fine detail."
-msgstr ""
+msgstr "值越低地形越平滑，值越高地形细节越精细。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Lower values will result in smoother noise and higher values will result in "
 "rougher noise."
-msgstr ""
+msgstr "值越低噪声越平滑，值越高噪声越粗糙。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Making 3D noise eased is not recommended because it significantly increases "
 "the load."
-msgstr ""
+msgstr "不建议平滑 3D 噪声，因为这会显著增加负载。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Maps noise gradient values onto a quintic S-curve before performing "
 "interpolation."
-msgstr ""
+msgstr "在执行插值之前，先将噪声梯度值映射到五次 S 曲线上。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Octaves"
-msgstr "八音"
+msgstr "八度"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: src/settings_translation_file.cpp
@@ -210,11 +212,11 @@ msgstr "补偿"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Offsets the final noise by this value."
-msgstr ""
+msgstr "按此值偏移最终噪声。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Overrides the 'eased' flag based on the noise type."
-msgstr ""
+msgstr "根据噪声类型覆写“eased”（平滑）标志。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Persistence"
@@ -232,11 +234,11 @@ msgstr "比例"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales every octave by (scale of the previous octave / Lacunarity)."
-msgstr ""
+msgstr "按（前一八度的缩放值 ÷ 间隙度）来缩放每个八度（层）。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales the noise in the $1 axis by this value."
-msgstr ""
+msgstr "按此值缩放 $1 轴上的噪声。"
 
 #. TRANSLATORS: Value for randomness
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
@@ -246,38 +248,37 @@ msgstr "种子"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Takes the absolute value of each octave while adding them together."
-msgstr ""
+msgstr "在叠加各八度（层）的同时，取每一层的绝对值。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The first octave is amplified by 1."
-msgstr ""
+msgstr "第一个八度（层）的振幅为 1。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "The first octave is scaled by 1."
-msgstr "服务器已禁用该命令."
+msgstr "第一个八度（层）的缩放值为 1。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The multiplier for the noise before the offset is added."
-msgstr ""
+msgstr "在添加偏移之前，对噪声施加的倍数。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The random seed for the noise. The same seed results in the same noise."
-msgstr ""
+msgstr "噪声的随机种子。相同的种子会产生相同的噪声。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "This is also the scale of the largest structures in the $1 direction of the "
 "noise."
-msgstr ""
+msgstr "这也是噪声在 $1 方向上最大结构的尺度。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "This results in smooth noise instead of gridlike noise."
-msgstr ""
+msgstr "这会产生平滑的噪声，而不是网格状噪声。"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "This results in spiky noise."
-msgstr ""
+msgstr "这会导致噪声出现尖刺。"
 
 #. TRANSLATORS: "absvalue" is a noise parameter flag.
 #. It is short for "absolute value".
@@ -323,7 +324,7 @@ msgstr "（使用系统语言）"
 #. TRANSLATORS: Shown when a default setting is the empty string
 #: builtin/common/settings/dlg_settings.lua
 msgid "<empty>"
-msgstr ""
+msgstr "< 无 >"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Accessibility"
