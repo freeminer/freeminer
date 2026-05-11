@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Czech (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-02-16 12:09+0000\n"
+"PO-Revision-Date: 2026-05-12 02:11+0000\n"
 "Last-Translator: Elviska <vonelviska@seznam.cz>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/minetest/minetest/"
 "cs/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.16-dev\n"
+"X-Generator: Weblate 2026.5-dev\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -335,7 +335,7 @@ msgstr "(Použít jazyk systému)"
 #. TRANSLATORS: Shown when a default setting is the empty string
 #: builtin/common/settings/dlg_settings.lua
 msgid "<empty>"
-msgstr ""
+msgstr "<prázdné>"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Accessibility"
@@ -373,9 +373,8 @@ msgid "Controls"
 msgstr "Ovládání"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Zranění / PvP"
+msgstr "Zranění"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
@@ -417,9 +416,8 @@ msgstr "Obnovit výchozí nastavení"
 
 #. TRANSLATORS: $1 will be replaced with a default setting value
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Reset setting to default: $1"
-msgstr "Vrátit nastavení do původního stavu ($1)"
+msgstr "Navrátit nastavení do původního stavu ($1)"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
@@ -1540,9 +1538,8 @@ msgstr ""
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Possible filters"
-msgstr "Poissonův filtr"
+msgstr "Možné filtry"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1628,9 +1625,8 @@ msgid "Media..."
 msgstr "Média..."
 
 #: src/client/fontengine.cpp
-#, fuzzy
 msgid "Failed to find a valid font"
-msgstr "Nepodařilo se najít \"%s\" shadery."
+msgstr "Nepodařilo se najít správný font"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -2137,7 +2133,7 @@ msgstr "Střední tlačítko myši"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "Tlačítko myši %d"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
@@ -2317,9 +2313,8 @@ msgid "Failed to create the texture \"%s\" for the rendering pipeline."
 msgstr "Selhalo vytváření textury pro \"%s\" v daném rendrovacím kanále."
 
 #: src/client/renderingengine.cpp
-#, fuzzy
 msgid "Could not initialize any supported video driver!"
-msgstr "Vizuální návrh není podporován video kartou"
+msgstr "Nelze zavést jakýkoliv podporovaný video driver!"
 
 #: src/client/shader.cpp
 #, c-format
@@ -2374,9 +2369,8 @@ msgid "Opening webpage"
 msgstr "Otevírání webové stránky"
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "Skript hlavní nabídky"
+msgstr "Selhalo načtení kódu hlavního menu!"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -2915,14 +2909,12 @@ msgid "Anticheat movement tolerance"
 msgstr "Tolerance Anticheatu pro pohyb"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append item name to tooltips"
-msgstr "Dodatkový název položky v popisku."
+msgstr "Připojovat názvy předmětů do popisků věcí"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append the full item name to the tooltip of item stacks."
-msgstr "Dodatkový název položky v popisku."
+msgstr "Připojit celý název předmětů do popisků hromad věcí."
 
 #: src/settings_translation_file.cpp
 msgid "Apple trees noise"
@@ -3497,9 +3489,8 @@ msgstr ""
 "Také určuje barvu zaměřovače"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage flash"
-msgstr "Nastavení pro Generátor mapy"
+msgstr "Záblesky zranění"
 
 #: src/settings_translation_file.cpp
 msgid "Debug log file size threshold"
@@ -3844,9 +3835,8 @@ msgid "Enable Raytraced Culling"
 msgstr "Povolit „Raytraced Culling“"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable SSCSM"
-msgstr "Zapnout vše"
+msgstr "Zapnout SSCM"
 
 #: src/settings_translation_file.cpp
 msgid "Enable a confirmation dialog before closing."
@@ -4121,7 +4111,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Flashing of the screen when taking damage."
-msgstr ""
+msgstr "Záblesky na obrazovce při utrpění zranění."
 
 #: src/settings_translation_file.cpp
 msgid "Floatland density"
@@ -5093,14 +5083,12 @@ msgid "Keyboard and Mouse"
 msgstr "Klávesnice a myš"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keyboard camera speed"
-msgstr "Klávesnice a myš"
+msgstr "Klávesnicová rychlost kamery"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keyboard-controlled camera rotation speed, in degrees per second."
-msgstr "Rychlost ve svislém směru při šplhání, v blocích za vteřinu."
+msgstr "Rychlost otáčení kamery pomocí klávesnice, v stupních za sekundu."
 
 #: src/settings_translation_file.cpp
 msgid "Kick players who sent more than X messages per 10 seconds."
@@ -5316,21 +5304,19 @@ msgstr "Místní příkaz"
 
 #: src/settings_translation_file.cpp
 msgid "Look down"
-msgstr ""
+msgstr "Podívat se dolů"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Look left"
-msgstr "Pohyb doleva"
+msgstr "Podívat se doleva"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Look right"
-msgstr "Pohyb doprava"
+msgstr "Podívat se doprava"
 
 #: src/settings_translation_file.cpp
 msgid "Look up"
-msgstr ""
+msgstr "Podívat se nahoru"
 
 #: src/settings_translation_file.cpp
 msgid "Lower Y limit of dungeons."
@@ -6568,6 +6554,9 @@ msgid ""
 "variables.\n"
 "Note that this will not apply to Luanti's in-game protocol."
 msgstr ""
+"Nastavení zástupného serveru pro cURL. Toto je URI stejně jako *_proxy "
+"proměnné prostředí.\n"
+"Toto se nevztahuje na protokol ve hrách Luanti."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7784,6 +7773,8 @@ msgid ""
 "Where to enable server-sent client-side modding (SSCSM).\n"
 "Warning: Experimental."
 msgstr ""
+"Kde zapnout posílání serverových módu rovnou na klienta (SSCSM).\n"
+"Varování: Experimentální."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7963,7 +7954,7 @@ msgstr "cURL limit paralelních stahování"
 
 #: src/settings_translation_file.cpp
 msgid "cURL proxy address"
-msgstr ""
+msgstr "Adresa cURL zástupného serveru"
 
 #: src/util/screenshot.cpp
 #, c-format
