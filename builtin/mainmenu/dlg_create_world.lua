@@ -244,8 +244,8 @@ local function create_world_formspec(dialogdata)
 			form = form .. "label[0,"..(y+0.1)..";" .. fgettext("Preset") .. "]"
 			y = y + 0.5
 			form = form .. "dropdown[0,"..y..";6.3;mg_preset;"
-   			for preset, opt in pairs(mg_preset[mapgen]) do
-				form = form .. preset .. ","
+			for _, preset in ipairs(mg_preset[mapgen]) do
+				form = form .. preset.name .. ","
 			end
 			form = form .. ";" .. "]"
 		end
@@ -431,9 +431,16 @@ local function create_world_buttonhandler(this, fields)
 			}
 
 -- fm:
-			if fields["mg_preset"] and mg_preset[settings.mg_name][fields["mg_preset"]] then
-				for opt, val in pairs(mg_preset[settings.mg_name][fields["mg_preset"]]) do
-					settings[opt] = val;
+			if fields["mg_preset"] and mg_preset[settings.mg_name] then
+				for _, preset in ipairs(mg_preset[settings.mg_name]) do
+					if preset.name == fields["mg_preset"] then
+						for opt, val in pairs(preset) do
+							if opt ~= "name" then
+								settings[opt] = val;
+							end
+						end
+						break;
+					end
 				end
 			end
 -- ===

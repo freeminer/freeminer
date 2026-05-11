@@ -492,10 +492,8 @@ void MapgenEarth::start_download_and_voxelize(double lat, double lon, double ele
 		const double chunk_ellipsoid_elevation =
 				earth::orthometric_to_ellipsoid_height(lat, lon, chunk_elevation);
 		Vec3 origin = cartesianFromDegrees(lat, lon, chunk_ellipsoid_elevation);
-		double y_offset_nodes = -earth::geoid_undulation_m(lat, lon) / scale.Y;
-		double configured_y_offset_nodes = 0.0;
-		g_settings->getFloatNoEx("voxel_earth_y_offset", configured_y_offset_nodes);
-		y_offset_nodes += configured_y_offset_nodes;
+		double y_offset_nodes = 0.0;
+		g_settings->getFloatNoEx("voxel_earth_y_offset", y_offset_nodes);
 		// DUMP(node_min, node_max, lat, lon, origin.X, origin.Y, origin.Z, tiles.size());
 		const auto mg = this;
 
