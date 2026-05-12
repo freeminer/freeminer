@@ -4,6 +4,9 @@
 
 #include "client.h"
 
+#include "config.h"
+#if USE_CLIENT_MCP
+
 #include "chat.h"
 #include "client/localplayer.h"
 #include "clientmap.h"
@@ -24,8 +27,6 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
-
-#if USE_CLIENT_MCP
 
 static Json::Value makeMCPObjectSchema()
 {

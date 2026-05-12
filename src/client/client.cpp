@@ -23,8 +23,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/fm_far_container.h"
 #include "fm_far_calc.h"
 #include <atomic>
+#if USE_CLIENT_MCP
 #include "mcp_player_control.h"
-
+#endif
 
 #include "client.h"
 
