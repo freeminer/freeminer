@@ -79,8 +79,14 @@ mg_preset = {
             mg_earth = '{"center": {"z": 37.774900,  "x": -122.419400,  "y":0} }',
         },
         {
+            name = "rome",
+            mg_earth = '{"center": {"z": 41.902800,  "x": 12.496400,    "y":0} }',
+        },
+        {
             name = "tokyo",
             mg_earth = '{"center": {"z": 35.6835103, "x": 139.7538318   } }',
         },
     },
 }
+
+mg_preset.voxel_earth = mg_preset.earth

@@ -133,7 +133,4 @@ public:
 		std::atomic_int fill{};
 		void clean() { set = miss = level = check = fill = 0; }
 	} stat;
-
-	void start_download_and_voxelize(double lat, double lon, double elevation,
-			double radius, int resolution, const std::string &api_key);
 };

@@ -39,6 +39,7 @@
 #include "mapgen_indev.h"
 #include "mapgen_math.h"
 #include "mapgen_earth.h"
+#include "mapgen_voxel_earth.h"
 #include "mapgen_erosion.h"
 #include "serverenvironment.h"
 
@@ -83,6 +84,7 @@ struct MapgenDesc {
 static MapgenDesc g_reg_mapgens[] = {
 // fm:
 	{"earth",       true},
+	{"voxel_earth", true},
 	{"math",       true},
 	{"indev",      true},
 	{"erosion",    true},
@@ -178,6 +180,8 @@ Mapgen *Mapgen::createMapgen(MapgenType mgtype, MapgenParams *params,
 		return new MapgenMath((MapgenMathParams *)params, emerge);
 	case MAPGEN_EARTH:
 		return new MapgenEarth((MapgenEarthParams *)params, emerge);
+	case MAPGEN_VOXEL_EARTH:
+		return new MapgenVoxelEarth((MapgenEarthParams *)params, emerge);
 	case MAPGEN_EROSION:
 		return new MapgenErosion((MapgenErosionParams *)params, emerge);
 
@@ -212,6 +216,8 @@ MapgenParams *Mapgen::createMapgenParams(MapgenType mgtype)
 	case MAPGEN_MATH:
 		return new MapgenMathParams;
 	case MAPGEN_EARTH:
+		return new MapgenEarthParams;
+	case MAPGEN_VOXEL_EARTH:
 		return new MapgenEarthParams;
 	case MAPGEN_EROSION:
 		return new MapgenErosionParams;
