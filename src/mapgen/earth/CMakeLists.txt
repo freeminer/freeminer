@@ -30,7 +30,7 @@ if(USE_VOXEL_EARTH)
     set(TINYGLTF_INSTALL 0 CACHE INTERNAL "")
     set(TINYGLTF_INSTALL_VENDOR 0 CACHE INTERNAL "")
 
-    include_directories(tinygltf)
+    include_directories(${TINYGLTF_INCLUDE_DIR})
 
     set(HAVE_NLOHMANN_JSON 1 CACHE INTERNAL "")
     add_subdirectory(luanti-earth/native)
