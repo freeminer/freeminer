@@ -17,11 +17,13 @@
 #include <mutex>
 #include <thread>
 
+#if USE_CLIENT_MCP
 // WebSocket includes
 #include "network/ws/wssocket.h"
 #include <websocketpp/server.hpp>
 #include <websocketpp/config/asio.hpp>
 #include <json/json.h>
+#endif
 
 constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 // ==
@@ -142,6 +144,8 @@ private:
 	std::unique_ptr<MCPPlayerControl> m_mcp_player_control;
 
 public:
+
+#if USE_CLIENT_MCP
 	// Getter for MCP Player Control
 	MCPPlayerControl* getMCPPlayerControl() { return m_mcp_player_control.get(); }
 
@@ -156,9 +160,21 @@ public:
 	typedef websocketpp::server<websocketpp::config::asio>::message_ptr message_ptr;
 
 	// WebSocket server methods
-	void startMCPWebSocketServer(int port = 3001);
-	void stopMCPWebSocketServer();
 	void onWebSocketMessage(websocketpp::connection_hdl hdl, mcp_ws_server_t::message_ptr msg);
+
+private:
+	mcp_ws_server_t m_mcp_websocket_server;
+	bool m_websocket_server_running = false;
+	std::thread m_websocket_server_thread;
+	std::mutex m_mcp_control_mutex;
+	bool m_has_mcp_control_override = false;
+	PlayerControl m_mcp_control_override;
+	std::chrono::steady_clock::time_point m_mcp_control_override_until;
+
+#endif
+public:
+void startMCPWebSocketServer(int port = 3001);
+	void stopMCPWebSocketServer();
 
 	std::atomic<double> m_uptime {};
 	bool use_weather {};
@@ -196,15 +212,6 @@ public:
     async_step_runner updateDrawList_async;
     async_step_runner update_shadows_async;
     async_step_runner farmesh_async;
-
-private:
-	mcp_ws_server_t m_mcp_websocket_server;
-	bool m_websocket_server_running = false;
-	std::thread m_websocket_server_thread;
-	std::mutex m_mcp_control_mutex;
-	bool m_has_mcp_control_override = false;
-	PlayerControl m_mcp_control_override;
-	std::chrono::steady_clock::time_point m_mcp_control_override_until;
 
 	// ==
 

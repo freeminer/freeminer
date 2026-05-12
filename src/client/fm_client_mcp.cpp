@@ -25,6 +25,8 @@
 #include <cmath>
 #include <sstream>
 
+#if USE_CLIENT_MCP
+
 static Json::Value makeMCPObjectSchema()
 {
 	Json::Value schema;
@@ -792,9 +794,11 @@ void Client::onWebSocketMessage(
 			Json::writeString(Json::StreamWriterBuilder(), response),
 			websocketpp::frame::opcode::text);
 }
+#endif
 
 void Client::startMCPWebSocketServer(int port)
 {
+#if USE_CLIENT_MCP
 	if (m_websocket_server_running)
 		return;
 
@@ -833,10 +837,12 @@ void Client::startMCPWebSocketServer(int port)
 	} catch (const std::exception &e) {
 		errorstream << "Failed to start MCP WebSocket server: " << e.what() << std::endl;
 	}
+#endif
 }
 
 void Client::stopMCPWebSocketServer()
 {
+#if USE_CLIENT_MCP
 	if (m_websocket_server_running) {
 		m_websocket_server_running = false;
 		m_mcp_websocket_server.stop_listening();
@@ -845,7 +851,10 @@ void Client::stopMCPWebSocketServer()
 			m_websocket_server_thread.join();
 		infostream << "MCP WebSocket server stopped" << std::endl;
 	}
+#endif
 }
+
+#if USE_CLIENT_MCP
 
 void Client::setMCPPlayerControl(PlayerControl control, u32 duration_ms)
 {
@@ -954,3 +963,5 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 
 	return world_content;
 }
+
+#endif
