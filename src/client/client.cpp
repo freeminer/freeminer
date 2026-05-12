@@ -183,6 +183,7 @@ Client::Client(
 	// Add local player
 	m_env.setLocalPlayer(new LocalPlayer(this, playername));
 
+#if USE_CLIENT_MCP
 	if (g_settings->getBool("enable_mcp")) {
 		// Initialize MCP Player Control
 		m_mcp_player_control = std::make_unique<MCPPlayerControl>(this);
@@ -190,6 +191,7 @@ Client::Client(
 		// Start MCP WebSocket server for external tool integration
 		startMCPWebSocketServer(g_settings->getU16("mcp_ws_port"));
 	}
+#endif
 
 	// Make the mod storage database and begin the save for later
 	m_mod_storage_database =
@@ -1877,6 +1879,7 @@ void Client::addNode(v3pos_t p, MapNode n, bool remove_metadata, int fast)
 
 void Client::setPlayerControl(PlayerControl &control)
 {
+#if USE_CLIENT_MCP
 	{
 		std::lock_guard<std::mutex> lock(m_mcp_control_mutex);
 		if (m_has_mcp_control_override) {
@@ -1887,6 +1890,7 @@ void Client::setPlayerControl(PlayerControl &control)
 			}
 		}
 	}
+#endif
 
 	LocalPlayer *player = m_env.getLocalPlayer();
 	assert(player);

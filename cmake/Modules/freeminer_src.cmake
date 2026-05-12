@@ -11,7 +11,7 @@ if(USE_MULTI)
     set(ENABLE_ENET 1 CACHE BOOL "")
     #set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
     if(NOT ANDROID)
-        set(ENABLE_WEBSOCKET 1 CACHE BOOL "")
+        set(ENABLE_WEBSOCKET 0 CACHE BOOL "")
     endif()
 endif()
 
@@ -126,6 +126,8 @@ if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
         #set(USE_WEBSOCKET_SCTP 0)
     endif()
 endif()
+
+set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
 if(ENABLE_SCTP AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
     message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")

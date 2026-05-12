@@ -28,6 +28,7 @@
 #cmakedefine01 USE_TIFF
 #cmakedefine01 USE_WEBSOCKET
 #cmakedefine01 USE_WEBSOCKET_SCTP
+#cmakedefine01 USE_CLIENT_MCP
 #cmakedefine01 USE_UNWIND
 #cmakedefine01 Backtrace_FOUND
 #cmakedefine01 USE_ATOMIC_SHARED_PTR
