@@ -35,7 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "emerge.h"
 #include "mapgen/earth/png_holder.h"
-//#include "mapgen/earth/rgb_temp.h"
+#include "mapgen/earth/rgb_temp.h"
 #include "mapgen/mg_decoration.h"
 #include "mapgen/mg_ore.h"
 #include "server.h"

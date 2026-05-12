@@ -26,6 +26,11 @@
 namespace arnis
 {
 
+namespace block_definitions
+{
+extern Block LIGHT_GRAY_WALL_BANNER;
+}
+
 struct XZPoint;
 
 struct XZ : public v2s32
@@ -395,6 +400,54 @@ struct WorldEditor
 		return std::make_pair(mg->node_max.X, mg->node_max.Z);
 	};
 	int get_absolute_y(int x, int y, int z) { return ground->get_absolute_y(x, y, z); }
+	int get_ground_level(int x, int z) const { return ground ? ground->level({x, z}) : 0; }
+	int get_water_level(int x, int z) const { return get_ground_level(x, z); }
+
+	bool check_for_block_absolute(int x, int y, int z,
+			const std::optional<std::vector<Block>> &blocks = {},
+			const std::optional<std::vector<Block>> &avoid = {})
+	{
+		(void)blocks;
+		(void)avoid;
+		const v3pos_t pos{
+				static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
+		++mg->stat.check;
+		if (!mg || !mg->vm || !mg->vm->exists(pos))
+			return false;
+		const auto n = mg->vm->getNode(pos);
+		return !(n.getContent() == CONTENT_AIR || n.getContent() == CONTENT_IGNORE);
+	}
+
+	bool block_exists_absolute(int x, int y, int z)
+	{
+		return check_for_block_absolute(x, y, z);
+	}
+
+	void set_block_if_absent_absolute(const Block &block, int x, int y, int z)
+	{
+		if (!check_for_block_absolute(x, y, z))
+			set_block_absolute(block, x, y, z);
+	}
+
+	void fill_column_absolute(const Block &block, int x, int z, int min_y, int max_y,
+			bool skip_existing)
+	{
+		if (max_y < min_y)
+			return;
+		for (int y = min_y; y <= max_y; ++y) {
+			if (skip_existing && check_for_block_absolute(x, y, z))
+				continue;
+			set_block_absolute(block, x, y, z);
+		}
+	}
+
+	void place_wall_banner(int x, int y, int z, const std::string &facing,
+			const std::vector<std::pair<std::string, std::string>> &patterns)
+	{
+		(void)facing;
+		(void)patterns;
+		set_block_absolute(block_definitions::LIGHT_GRAY_WALL_BANNER, x, y, z);
+	}
 
 	void fill_blocks(const Block &block, std::int32_t x1, std::int32_t y1,
 			std::int32_t z1, std::int32_t x2, std::int32_t y2, std::int32_t z2,

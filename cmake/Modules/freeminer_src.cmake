@@ -196,7 +196,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/json/include/nlohmann/json.h
     message(STATUS "Using nlohmann json : ${NLOHMANN_INCLUDE_DIR}")
 endif()
 
-option(ENABLE_OSMIUM "Enable Osmium" 0)
+option(ENABLE_OSMIUM "Enable Osmium" 1)
 
 # if(ENABLE_OSMIUM)
 #     find_path(OSMIUM_INCLUDE_DIR osmium/osm.hpp)
@@ -358,9 +358,9 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
         endif()
 
         if(USE_OSMIUM_TOOL)
-            add_subdirectory(mapgen/earth/json)
-            set(NLOHMANN_INCLUDE_DIR mapgen/earth/json/include)
-            include_directories(BEFORE SYSTEM ${NLOHMANN_INCLUDE_DIR})
+            #add_subdirectory(mapgen/earth/json)
+            #set(NLOHMANN_INCLUDE_DIR mapgen/earth/json/include)
+            #include_directories(BEFORE SYSTEM ${NLOHMANN_INCLUDE_DIR})
             list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/osmium-tool/cmake/Modules/")
             # add_subdirectory(mapgen/earth/osmium-tool)
             set(OSMIUM_TOOL_LIBRARY osmium-tool-lib)
