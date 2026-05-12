@@ -1,4 +1,8 @@
+#include "config.h"
+#if USE_CLIENT_MCP
+
 #include "mcp_player_control.h"
+
 #include "client.h"
 #include "constants.h"
 #include "irr_v3d.h"
@@ -276,3 +280,5 @@ void MCPPlayerControl::teleportPlayer(float x, float y, float z)
 
 	sendMCPRequest("tools/call", params);
 }
+
+#endif

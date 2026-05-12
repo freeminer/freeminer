@@ -19,7 +19,7 @@
 
 #if USE_CLIENT_MCP
 // WebSocket includes
-#include "network/ws/wssocket.h"
+//#include "network/ws/wssocket.h"
 #include <websocketpp/server.hpp>
 #include <websocketpp/config/asio.hpp>
 #include <json/json.h>
@@ -140,12 +140,12 @@ private:
 	bool is_simple_singleplayer_game {};
 	float m_timelapse_timer {-1};
 
+#if USE_CLIENT_MCP
 	// MCP Player Control
 	std::unique_ptr<MCPPlayerControl> m_mcp_player_control;
 
 public:
 
-#if USE_CLIENT_MCP
 	// Getter for MCP Player Control
 	MCPPlayerControl* getMCPPlayerControl() { return m_mcp_player_control.get(); }
 
