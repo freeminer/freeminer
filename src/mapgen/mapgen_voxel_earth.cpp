@@ -75,15 +75,18 @@ MapgenVoxelEarth::MapgenVoxelEarth(MapgenEarthParams *params_, EmergeParams *eme
 	fs::GetRecursiveDirs(texture_dirs, g_settings->get("texture_path"));
 	fs::GetRecursiveDirs(texture_dirs,
 			porting::path_user + DIR_DELIM + "textures" + DIR_DELIM + "server");
-	if (emerge->server) {
+	if (emerge && emerge->server) {
 		if (const SubgameSpec *gamespec = emerge->server->getGameSpec())
 			fs::GetRecursiveDirs(texture_dirs, gamespec->path + DIR_DELIM + "textures");
-		if (const ModSpec *mod = emerge->server->getModSpec("luanti_earth"))
-			pure_colors_path = mod->path + DIR_DELIM + "colors.lua";
-		const auto &mods = emerge->server->getMods();
-		for (auto it = mods.crbegin(); it != mods.crend(); ++it) {
-			fs::GetRecursiveDirs(texture_dirs, it->path + DIR_DELIM + "textures");
-			fs::GetRecursiveDirs(texture_dirs, it->path + DIR_DELIM + "media");
+		if (emerge->server->m_modmgr.get()) {
+			if (const ModSpec *mod = emerge->server->getModSpec("luanti_earth")) {
+				pure_colors_path = mod->path + DIR_DELIM + "colors.lua";
+			}
+			const auto &mods = emerge->server->getMods();
+			for (auto it = mods.crbegin(); it != mods.crend(); ++it) {
+				fs::GetRecursiveDirs(texture_dirs, it->path + DIR_DELIM + "textures");
+				fs::GetRecursiveDirs(texture_dirs, it->path + DIR_DELIM + "media");
+			}
 		}
 	}
 	voxel_importer::init_block_palette(ndef, texture_dirs, pure_colors_path);
