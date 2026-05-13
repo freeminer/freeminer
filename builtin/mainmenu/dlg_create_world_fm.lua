@@ -33,6 +33,7 @@ mg_preset = {
     earth = {
         {
             name = "zero",
+            mg_earth = '{"center": {"z": 0, "x": 0, "y":0} }',
         },
         {
             name = "big_canyon",

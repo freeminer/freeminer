@@ -222,7 +222,7 @@ void MapgenVoxelEarth::makeChunk(BlockMakeData *data)
 
 	const auto radius = csize.X / 2; // - MAP_BLOCKSIZE;
 	const auto resolution = csize.X;
-	const auto elevation = node_min.Y + csize.Y / 2;
+	const auto elevation = node_min.Y; // + csize.Y / 2;
 	start_download_and_voxelize(tc.lat, tc.lon, elevation, radius, resolution, key);
 
 	// Update liquids
