@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Lithuanian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-05-14 20:11+0000\n"
-"Last-Translator: Nicolas Vycas Nery <vycasnicolas@gmail.com>\n"
+"PO-Revision-Date: 2026-05-18 09:11+0000\n"
+"Last-Translator: Nicolas Vyčas Nery <vycasnicolas@gmail.com>\n"
 "Language-Team: Lithuanian <https://hosted.weblate.org/projects/minetest/"
 "minetest/lt/>\n"
 "Language: lt\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "(n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 2026.5.dev0\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -82,7 +82,7 @@ msgstr ""
 
 #: builtin/common/settings/components.lua
 msgid "Add keybinding"
-msgstr ""
+msgstr "Pridėti klavišų priskyrimą"
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
@@ -90,7 +90,7 @@ msgstr "Naršyti"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "Konfliktuoja su „$1“"
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
@@ -109,9 +109,8 @@ msgid "Select file"
 msgstr "Pasirinkite failą"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Set"
-msgstr "Pasirinkti"
+msgstr "Nustatyti"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "$1 spread"
@@ -256,9 +255,8 @@ msgid "The first octave is amplified by 1."
 msgstr ""
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "The first octave is scaled by 1."
-msgstr "Ši komanda išjungta serverio."
+msgstr "Pirmoji oktava masteliuojama koeficientu 1."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The multiplier for the noise before the offset is added."
@@ -294,9 +292,8 @@ msgstr ""
 #. It describes the default processing options
 #. for noise settings in the settings menu.
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "defaults"
-msgstr "keisti žaidimą"
+msgstr "Numatytieji"
 
 #. TRANSLATORS: "eased" is a noise parameter flag.
 #. It is used to make the map smoother and
@@ -361,25 +358,21 @@ msgid "Clear"
 msgstr "Išvalyti"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Controls"
-msgstr "Kairysis Control"
+msgstr "Valdymas"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Leisti sužeidimus"
+msgstr "Žala"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
-#, fuzzy
 msgid "Disabled"
-msgstr "Išjungti papildinį"
+msgstr "Išjungta"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Enabled"
-msgstr "įjungtas"
+msgstr "įjungta"
 
 #. TRANSLATORS: Category for general settings
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
@@ -435,9 +428,8 @@ msgstr ""
 
 #. TRANSLATORS: Touchscreen interaction style
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Tap"
-msgstr "Tabuliacija"
+msgstr "Bakstelėjimas"
 
 #. TRANSLATORS: Touchscreen interaction style
 #: builtin/common/settings/dlg_settings.lua
@@ -455,24 +447,20 @@ msgid "Touchscreen layout"
 msgstr ""
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Unavailable"
-msgstr "Komanda negalima: "
+msgstr "Nepieinama"
 
 #: builtin/common/settings/settingtypes.lua
-#, fuzzy
 msgid "Client Mods"
-msgstr "Pasirinkite pasaulį:"
+msgstr "Kliento modifikacijos"
 
 #: builtin/common/settings/settingtypes.lua
-#, fuzzy
 msgid "Content: Games"
-msgstr "Tęsti"
+msgstr "Turinys: žaidimai"
 
 #: builtin/common/settings/settingtypes.lua
-#, fuzzy
 msgid "Content: Mods"
-msgstr "Tęsti"
+msgstr "Turinys: modifikacijos"
 
 #: builtin/common/settings/shadows_component.lua
 msgid "(The game will need to enable shadows as well)"
@@ -559,16 +547,14 @@ msgid "Error installing \"$1\": $2"
 msgstr ""
 
 #: builtin/mainmenu/content/contentdb.lua
-#, fuzzy
 msgid "Failed to download \"$1\""
-msgstr "Nepavyko parsiųsti $1"
+msgstr "Nepavyko parsiųsti „$1“"
 
 #: builtin/mainmenu/content/contentdb.lua
 msgid "Failed to download $1"
 msgstr "Nepavyko parsiųsti $1"
 
 #: builtin/mainmenu/content/contentdb.lua
-#, fuzzy
 msgid ""
 "Failed to extract \"$1\" (insufficient disk space, unsupported file type or "
 "broken archive)"
@@ -590,9 +576,8 @@ msgid "All"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#, fuzzy
 msgid "ContentDB is not available when Luanti was compiled without cURL"
-msgstr "ContentDB nėra prieinama, kai Minetest sukompiliuojamas be cURL"
+msgstr "ContentDB nėra prieinama, kai Luanti sukompiliuojamas be cURL"
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
 msgid "Downloading..."
@@ -624,9 +609,8 @@ msgid "No packages could be retrieved"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#, fuzzy
 msgid "No updates"
-msgstr "Atnaujinti"
+msgstr "Atnaujinimų nėra"
 
 #. TRANSLATORS: A download is queued
 #: builtin/mainmenu/content/dlg_contentdb.lua
@@ -634,7 +618,6 @@ msgid "Queued"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_contentdb.lua
-#, fuzzy
 msgid "Texture Packs"
 msgstr "Tekstūrų paketai"
 
@@ -690,14 +673,12 @@ msgid "Install"
 msgstr "Įdiegti"
 
 #: builtin/mainmenu/content/dlg_install.lua
-#, fuzzy
 msgid "Install $1"
-msgstr "Įdiegti"
+msgstr "Įdiegti $1"
 
 #: builtin/mainmenu/content/dlg_install.lua
-#, fuzzy
 msgid "Install missing dependencies"
-msgstr "Inicijuojami mazgai"
+msgstr "Įdiegti trūkstamas priklausomybes"
 
 #: builtin/mainmenu/content/dlg_install.lua
 msgid "Not found"
@@ -720,14 +701,12 @@ msgid "Overwrite"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "ContentDB page"
-msgstr "Tęsti"
+msgstr "„ContentDB“ puslapis"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Description"
-msgstr "Serverio prievadas"
+msgstr "Aprašymas"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Donate"
@@ -738,24 +717,21 @@ msgid "Error loading package information"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Error loading reviews"
-msgstr "Kuriamas klientas..."
+msgstr "Klaida įkeliant apžvalgas"
 
 #: builtin/mainmenu/content/dlg_package.lua
 msgid "Forum Topic"
 msgstr ""
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Information"
-msgstr "Papildinio informacija:"
+msgstr "Informacija"
 
 #. TRANSLATORS: $1 = download size
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Install [$1]"
-msgstr "Įdiegti"
+msgstr "Įdiegti [$1]"
 
 #. TRANSLATORS: Also known as 'bug tracker'
 #: builtin/mainmenu/content/dlg_package.lua
@@ -784,14 +760,12 @@ msgid "Update"
 msgstr "Atnaujinti"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "Website"
 msgstr "Svetainė"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "by $1"
-msgstr "$1 po $2"
+msgstr "po $1"
 
 #. TRANSLATORS: Info line for a ContentDB package:
 #. $1 = author,
@@ -802,47 +776,38 @@ msgid "by $1  —  $2 downloads  —  +$3 / $4 / -$5"
 msgstr ""
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "$1 (Enabled)"
-msgstr "įjungtas"
+msgstr "$1 (įjungtas)"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "$1 mods"
-msgstr "Konfigūruoti papildinius"
+msgstr "$1 modifikacijos"
 
 #: builtin/mainmenu/content/pkgmgr.lua
 msgid "Failed to install $1 to $2"
 msgstr "Nepavyko įdiegti $1 į $2"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "Install: Unable to find suitable folder name for $1"
 msgstr ""
 "Papildinio diegimas: nepavyksta rasti tinkamo aplanko pavadinimo papildinio "
 "paketui $1"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "Unable to find a valid mod, modpack, or game"
-msgstr ""
-"Papildinio diegimas: nepavyksta rasti tinkamo aplanko pavadinimo papildinio "
-"paketui $1"
+msgstr "Nepavyko rasti tinkamos modifikacijos, modifikacijų paketo ar žaidimo"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "Unable to install a $1 as a $2"
 msgstr "Nepavyko įdiegti $1 į $2"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "Unable to install a $1 as a texture pack"
-msgstr "Nepavyko įdiegti $1 į $2"
+msgstr "Nepavyko įdiegti $1 kaip tekstūrų paketo"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "World mods"
-msgstr "Pasaulio pavadinimas"
+msgstr "Pasaulio modifikacijos"
 
 #. TRANSLATORS: $1 = server name
 #: builtin/mainmenu/dlg_clients_list.lua
@@ -938,9 +903,8 @@ msgid "Always show this dialog."
 msgstr ""
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
-#, fuzzy
 msgid "Are you sure you want to quit?"
-msgstr "Ar tikrai norite ištrinti „$1“?"
+msgstr "Ar tikrai norite išeiti?"
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Quit"
@@ -993,9 +957,8 @@ msgid "Desert temples"
 msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
-#, fuzzy
 msgid "Development Test is meant for developers."
-msgstr "Dėmesio: Minimalus kūrimo bandymas yra skirtas vystytojams."
+msgstr "Vystymo testas skirtas programuotojams."
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid ""
@@ -1012,16 +975,14 @@ msgid "Flat terrain"
 msgstr "Lygus reljefas"
 
 #: builtin/mainmenu/dlg_create_world.lua
-#, fuzzy
 msgid "Floating landmasses in the sky"
-msgstr "Salos danguje"
+msgstr "Danguje kybančios sausumos masės"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Floatlands (experimental)"
 msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
-#, fuzzy
 msgid "Generate non-fractal terrain: Oceans and underground"
 msgstr "Generuoti nefraktalinį reljefą: Vandenynuose ir po žeme"
 
@@ -1030,9 +991,8 @@ msgid "Hills"
 msgstr "Kalvos"
 
 #: builtin/mainmenu/dlg_create_world.lua
-#, fuzzy
 msgid "Humid rivers"
-msgstr "Tvankios upės"
+msgstr "Drėgnosios upės"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Increases humidity around rivers"
@@ -1059,9 +1019,8 @@ msgid "Mapgen flags"
 msgstr ""
 
 #: builtin/mainmenu/dlg_create_world.lua
-#, fuzzy
 msgid "Mapgen-specific flags"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generatoriaus specifiniai požymiai"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Mountains"
@@ -1151,14 +1110,12 @@ msgid "Delete"
 msgstr "Ištrinti"
 
 #: builtin/mainmenu/dlg_delete_content.lua
-#, fuzzy
 msgid "pkgmgr: failed to delete \"$1\""
-msgstr "Papildtvrk: nepavyko ištrinti „$1“"
+msgstr "pkgmgr: nepavyko ištrinti „$1“"
 
 #: builtin/mainmenu/dlg_delete_content.lua
-#, fuzzy
 msgid "pkgmgr: invalid path \"$1\""
-msgstr "Papildtvrk: netinkamas papildinio kelias „$1“"
+msgstr "pkgmgr: netinkamas papildinio kelias „$1“"
 
 #: builtin/mainmenu/dlg_delete_world.lua
 msgid "Delete World \"$1\"?"
@@ -1181,9 +1138,8 @@ msgid "Keybindings changed"
 msgstr ""
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
-#, fuzzy
 msgid "Open settings"
-msgstr "Nustatymai"
+msgstr "Atidaryti nustatymus"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "The input handling system was reworked in Luanti 5.12.0."
@@ -1209,14 +1165,12 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_local.lua
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Password"
-msgstr "Naujas slaptažodis"
+msgstr "Slaptažodis"
 
 #: builtin/mainmenu/dlg_register.lua
-#, fuzzy
 msgid "Passwords do not match"
-msgstr "Slaptažodžiai nesutampa!"
+msgstr "Slaptažodžiai nesutampa"
 
 #. TRANSLATORS: Register an account on a server
 #: builtin/mainmenu/dlg_register.lua builtin/mainmenu/tab_online.lua
@@ -1245,9 +1199,8 @@ msgid "Minetest Game is no longer installed by default"
 msgstr ""
 
 #: builtin/mainmenu/dlg_reinstall_mtg.lua
-#, fuzzy
 msgid "Reinstall Minetest Game"
-msgstr "Įdiegti kitą žaidimą"
+msgstr "Perdiegti „Minetest“ žaidimą"
 
 #: builtin/mainmenu/dlg_rename_modpack.lua
 msgid "Accept"
@@ -1265,9 +1218,8 @@ msgstr ""
 
 #. TRANSLATORS: Expand all entries in a tree view
 #: builtin/mainmenu/dlg_server_list_mods.lua
-#, fuzzy
 msgid "Expand all"
-msgstr "Įjungti visus"
+msgstr "Išskleisti viską"
 
 #. TRANSLATORS: A checkbox; if enabled, it will group mods by their prefix
 #: builtin/mainmenu/dlg_server_list_mods.lua
@@ -1305,9 +1257,8 @@ msgid "Never"
 msgstr "Niekada"
 
 #: builtin/mainmenu/dlg_version_info.lua
-#, fuzzy
 msgid "Visit website"
-msgstr "Svetainė"
+msgstr "Apsilankyti svetainėje"
 
 #: builtin/mainmenu/init.lua
 msgid "Debug build, expect worse performance"
@@ -1349,9 +1300,8 @@ msgid "Core Team"
 msgstr ""
 
 #: builtin/mainmenu/tab_about.lua
-#, fuzzy
 msgid "Open User Data Directory"
-msgstr "Pasirinkite aplanką"
+msgstr "Atidaryti vartotojo duomenų katalogą"
 
 #: builtin/mainmenu/tab_about.lua
 msgid ""
@@ -1381,47 +1331,41 @@ msgid "Browse online content [$1]"
 msgstr ""
 
 #: builtin/mainmenu/tab_content.lua
-#, fuzzy
 msgid "Content"
-msgstr "Tęsti"
+msgstr "Turinys"
 
 #. TRANSLATORS: $1 = number of available updates
 #: builtin/mainmenu/tab_content.lua
-#, fuzzy
 msgid "Content [$1]"
-msgstr "Tęsti"
+msgstr "Turinys [$1]"
 
 #: builtin/mainmenu/tab_content.lua
 msgid "Disable Texture Pack"
 msgstr "Pasirinkite tekstūros paketą"
 
 #: builtin/mainmenu/tab_content.lua
-#, fuzzy
 msgid "Installed Packages:"
-msgstr "Įdiegti papildiniai:"
+msgstr "Įdiegti paketai:"
 
 #: builtin/mainmenu/tab_content.lua
 msgid "No dependencies."
 msgstr ""
 
 #: builtin/mainmenu/tab_content.lua
-#, fuzzy
 msgid "No package description available"
-msgstr "Papildinio aprašymas nepateiktas"
+msgstr "Paketo aprašymas neprieinamas"
 
 #: builtin/mainmenu/tab_content.lua
 msgid "Rename"
 msgstr "Pervadinti"
 
 #: builtin/mainmenu/tab_content.lua
-#, fuzzy
 msgid "Update available?"
-msgstr "Komanda negalima: "
+msgstr "Ar yra atnaujinimas?"
 
 #: builtin/mainmenu/tab_content.lua
-#, fuzzy
 msgid "Use Texture Pack"
-msgstr "Tekstūrų paketai"
+msgstr "Naudoti tekstūrų paketą"
 
 #: builtin/mainmenu/tab_local.lua
 msgid "Announce Server"
@@ -1440,14 +1384,12 @@ msgid "Enable Damage"
 msgstr "Leisti sužeidimus"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Host Game"
-msgstr "Slėpti vidinius"
+msgstr "Kurti žaidimą"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Host Server"
-msgstr "Serveris"
+msgstr "Kurti serverį"
 
 #: builtin/mainmenu/tab_local.lua
 msgid "Install a game"
@@ -1472,9 +1414,8 @@ msgid "New"
 msgstr "Naujas"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Play Game"
-msgstr "Pradėti žaidimą"
+msgstr "Žaisti žaidimą"
 
 #. TRANSLATORS: Network port
 #: builtin/mainmenu/tab_local.lua builtin/mainmenu/tab_online.lua
@@ -1482,9 +1423,8 @@ msgid "Port"
 msgstr "Prievadas"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Select Mods"
-msgstr "Pasirinkite pasaulį:"
+msgstr "Pasirinkti modifikacijas"
 
 #: builtin/mainmenu/tab_local.lua
 msgid "Select World:"
@@ -1492,27 +1432,24 @@ msgstr "Pasirinkite pasaulį:"
 
 #: builtin/mainmenu/tab_local.lua
 msgid "Server Port"
-msgstr "Serverio prievadas"
+msgstr "Serverio Prievadas"
 
 #: builtin/mainmenu/tab_local.lua
-#, fuzzy
 msgid "Start Game"
-msgstr "Slėpti vidinius"
+msgstr "Pradėti žaidimą"
 
 #: builtin/mainmenu/tab_local.lua
 msgid "You need to install a game before you can create a world."
 msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Add favorite"
 msgstr "Pašalinti iš mėgiamų"
 
 #. TRANSLATORS: Network address
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Address"
-msgstr "- Adresas: "
+msgstr "Adresas"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Creative mode"
@@ -1520,28 +1457,24 @@ msgstr "Kūrybinė veiksena"
 
 #. TRANSLATORS: PvP = Player versus Player
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Damage / PvP"
-msgstr "Leisti sužeidimus"
+msgstr "Žala / PvP"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Favorites"
-msgstr "Mėgiami:"
+msgstr "Mėgiami"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Game: $1"
-msgstr "Žaidimas"
+msgstr "Žaidimas: $1"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Incompatible Servers"
 msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Join Game"
-msgstr "Slėpti vidinius"
+msgstr "Prisijungti prie žaidimo"
 
 #. TRANSLATORS: Login to server
 #: builtin/mainmenu/tab_online.lua
@@ -1575,9 +1508,8 @@ msgid "Possible filters"
 msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Public Servers"
-msgstr "Paskelbti Serverį"
+msgstr "Viešieji serveriai"
 
 #. TRANSLATORS: As in 'reload'/'check again'
 #: builtin/mainmenu/tab_online.lua
@@ -1585,19 +1517,16 @@ msgid "Refresh"
 msgstr ""
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Remove favorite"
 msgstr "Pašalinti iš mėgiamų"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Server Description"
-msgstr "Serverio prievadas"
+msgstr "Serverio Aprašymas"
 
 #: src/client/client.cpp
-#, fuzzy
 msgid "Connection aborted (protocol error?)."
-msgstr "Ryšio klaida (baigėsi prijungimo laikas?)"
+msgstr "Ryšio klaida (baigėsi prijungimo laikas?)."
 
 #: src/client/client.cpp src/client/game.cpp
 msgid "Connection timed out."
@@ -1629,9 +1558,8 @@ msgid "Saved screenshot to \"%s\""
 msgstr "Ekrano nuotrauka įrašyta į „%s“"
 
 #: src/client/clientlauncher.cpp
-#, fuzzy
 msgid "Could not find or load game: "
-msgstr "Nepavyko rasti ar įkelti žaidimo „"
+msgstr "Nepavyko rasti ar įkelti žaidimo: "
 
 #: src/client/clientlauncher.cpp
 msgid "Main Menu"
@@ -1663,9 +1591,8 @@ msgid "Media..."
 msgstr "Medija..."
 
 #: src/client/fontengine.cpp
-#, fuzzy
 msgid "Failed to find a valid font"
-msgstr "Nepavyko parsiųsti $1"
+msgstr "Nepavyko rasti tinkamo šrifto"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -1677,9 +1604,8 @@ msgstr ""
 "Patikrinkite debug.txt dėl papildomos informacijos."
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "A serialization error occurred:"
-msgstr "Įvyko klaida:"
+msgstr "Įvyko serializavimo klaida:"
 
 #: src/client/game.cpp
 #, c-format
@@ -1691,14 +1617,12 @@ msgid "All debug info hidden"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Automatic forward disabled"
-msgstr "Pirmyn"
+msgstr "Automatinis judėjimas pirmyn išjungtas"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Automatic forward enabled"
-msgstr "Pirmyn"
+msgstr "Automatinis judėjimas pirmyn įjungtas"
 
 #: src/client/game.cpp
 msgid "Block bounds hidden"
@@ -1721,28 +1645,24 @@ msgid "Camera update disabled"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Camera update enabled"
-msgstr "Žalojimas įjungtas"
+msgstr "Kameros atnaujinimas įjungtas"
 
 #: src/client/game.cpp
 msgid "Can't show block bounds (disabled by game or mod)"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Cinematic mode disabled"
-msgstr "Kūrybinė veiksena"
+msgstr "Kinematografinis režimas išjungtas"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Cinematic mode enabled"
-msgstr "Kūrybinė veiksena"
+msgstr "Kinematografinis režimas įjungtas"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Client disconnected"
-msgstr "Žaisti tinkle(klientas)"
+msgstr "Klientas atsijungė"
 
 #: src/client/game.cpp
 msgid "Client side scripting is disabled"
@@ -1778,47 +1698,41 @@ msgid "Debug info shown"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Error creating client: %s"
-msgstr "Kuriamas klientas..."
+msgstr "Klaida kuriant klientą: %s"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fast mode disabled"
-msgstr "Išjungti papildinį"
+msgstr "Greitasis režimas išjungtas"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fast mode enabled"
-msgstr "Žalojimas įjungtas"
+msgstr "Greitasis režimas įjungtas"
 
 #: src/client/game.cpp
 msgid "Fast mode enabled (note: no 'fast' privilege)"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fly mode disabled"
-msgstr "Išjungti papildinį"
+msgstr "Skraidymo režimas išjungtas"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fly mode enabled"
-msgstr "Žalojimas įjungtas"
+msgstr "Skraidymo režimas įjungtas"
 
 #: src/client/game.cpp
 msgid "Fly mode enabled (note: no 'fly' privilege)"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fog disabled"
-msgstr "Išjungti papildinį"
+msgstr "Rūkas išjungtas"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Fog enabled"
-msgstr "įjungtas"
+msgstr "Rūkas įjungtas"
 
 #: src/client/game.cpp
 msgid "Fog enabled by game or mod"
@@ -1850,9 +1764,8 @@ msgid "Noclip mode disabled"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Noclip mode enabled"
-msgstr "Žalojimas įjungtas"
+msgstr "Noclip režimas įjungtas"
 
 #: src/client/game.cpp
 msgid "Noclip mode enabled (note: no 'noclip' privilege)"
@@ -1887,18 +1800,16 @@ msgid "Singleplayer"
 msgstr "Žaisti vienam"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Sound muted"
-msgstr "Garso lygis"
+msgstr "Garsas nutildytas"
 
 #: src/client/game.cpp
 msgid "Sound system is not supported on this build"
 msgstr ""
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Sound unmuted"
-msgstr "Garso lygis"
+msgstr "Garsas įjungtas"
 
 #: src/client/game.cpp
 #, c-format
@@ -2004,7 +1915,6 @@ msgid "Continue"
 msgstr "Tęsti"
 
 #: src/client/game_formspec.cpp
-#, fuzzy
 msgid ""
 "Controls:\n"
 "No menu open:\n"
@@ -2019,18 +1929,18 @@ msgid ""
 "- touch&drag, tap 2nd finger\n"
 " --> place single item to slot\n"
 msgstr ""
-"Numatytas valdymas:\n"
-"Nematomi meniu:\n"
-"- vienas palietimas: mygtukas aktyvuoti\n"
-"- dvigubas palietimas: padėti/naudoti\n"
-"- slinkti pirštu: žvalgytis aplink\n"
-"Meniu/Inventorius matomi:\n"
-"- dvigubas palietimas (išorėje):\n"
-" -->uždaryti\n"
-"- liesti rietuvę, liesti angą:\n"
-" --> judinti rietuvę\n"
-"- liesti&tempti, liesti antru pirštu\n"
-" --> padėti vieną elementą į angą\n"
+"Valdymas:\n"
+"Kai meniu neatidarytas:\n"
+"- braukti pirštu: žvalgytis\n"
+"- bakstelėti: padėti / smogti / naudoti (numatyta)\n"
+"- palaikyti bakstelėjus: kasti / naudoti (numatyta)\n"
+"Kai meniu / inventorius atidarytas:\n"
+"- bakstelėti du kartus (išorėje):\n"
+" --> uždaryti\n"
+"- paliesti krūvą, paliesti langelį:\n"
+" --> perkelti krūvą\n"
+"- paliesti ir vilkti, bakstelėti antru pirštu:\n"
+" --> įdėti vieną daiktą į langelį\n"
 
 #. TRANSLATORS: Pause menu button, try to keep the translation short
 #: src/client/game_formspec.cpp
@@ -2047,9 +1957,8 @@ msgid "Game info:"
 msgstr ""
 
 #: src/client/game_formspec.cpp
-#, fuzzy
 msgid "Game paused"
-msgstr "Žaidimo pavadinimas"
+msgstr "Žaidimas pristabdytas"
 
 #: src/client/game_formspec.cpp
 msgid "Hosting server"
@@ -2085,9 +1994,8 @@ msgid "Chat currently disabled by game or mod"
 msgstr ""
 
 #: src/client/gameui.cpp
-#, fuzzy
 msgid "Chat hidden"
-msgstr "Nustatyti klavišus"
+msgstr "Pokalbis paslėptas"
 
 #: src/client/gameui.cpp
 msgid "Chat shown"
@@ -2117,61 +2025,52 @@ msgstr "Atgal"
 
 #. TRANSLATORS: Usually paired with the Pause key
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Break Key"
-msgstr "Nustatyti klavišus"
+msgstr "Break klavišas"
 
 #: src/client/keycode.cpp
 msgid "Caps Lock"
 msgstr ""
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Clear Key"
-msgstr "Išvalyti"
+msgstr "Clear klavišas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Control Key"
-msgstr "Valdymas"
+msgstr "Control klavišas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Delete Key"
-msgstr "Ištrinti"
+msgstr "Delete klavišas"
 
 #: src/client/keycode.cpp
 msgid "Down Arrow"
 msgstr ""
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "End Key"
-msgstr "Meniu"
+msgstr "End klavišas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Help Key"
-msgstr "Ištrinti"
+msgstr "Help klavišas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Home Key"
-msgstr "Pritraukti"
+msgstr "Home klavišas"
 
 #: src/client/keycode.cpp
 msgid "Insert"
 msgstr "Įterpti"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Left Arrow"
-msgstr "Kairysis Control"
+msgstr "Kairė rodyklė"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Left Click"
-msgstr "Kairysis Control"
+msgstr "Kairysis pelės spustelėjimas"
 
 #: src/client/keycode.cpp
 msgid "Left Control"
@@ -2191,9 +2090,8 @@ msgid "Left Windows"
 msgstr "Kairieji langai"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Menu Key"
-msgstr "Meniu"
+msgstr "Meniu klavišas"
 
 #: src/client/keycode.cpp
 msgid "Middle Click"
@@ -2232,9 +2130,8 @@ msgid "Numpad -"
 msgstr "SkaitKlav -"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Numpad ."
-msgstr "SkaitKlav *"
+msgstr "SkaitKlav ."
 
 #: src/client/keycode.cpp
 msgid "Numpad /"
@@ -2281,9 +2178,8 @@ msgid "Numpad 9"
 msgstr "SkaitKlav 9"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Page Down"
-msgstr "Žemyn"
+msgstr "Puslapis žemyn"
 
 #: src/client/keycode.cpp
 msgid "Page Up"
@@ -2291,9 +2187,8 @@ msgstr ""
 
 #. TRANSLATORS: Usually paired with the Break key
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Pause Key"
-msgstr "Pause"
+msgstr "Pause klavišas"
 
 #: src/client/keycode.cpp
 msgid "Play"
@@ -2305,19 +2200,16 @@ msgid "Print"
 msgstr "Spausdinti"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Return Key"
-msgstr "Grįžti"
+msgstr "Return klavišas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Right Arrow"
-msgstr "Dešinysis Control"
+msgstr "Dešinė rodyklė"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Right Click"
-msgstr "Dešinysis Control"
+msgstr "Dešinysis pelės spustelėjimas"
 
 #: src/client/keycode.cpp
 msgid "Right Control"
@@ -2346,23 +2238,20 @@ msgid "Scroll Lock"
 msgstr "Scroll Lock"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Select Key"
-msgstr "Ištrinti"
+msgstr "Select klavišas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Shift Key"
-msgstr "Shift (Lyg2)"
+msgstr "Shift klavišas"
 
 #: src/client/keycode.cpp
 msgid "Space"
 msgstr "Tarpas"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Tab Key"
-msgstr "Nustatyti klavišus"
+msgstr "Tab klavišas"
 
 #: src/client/keycode.cpp
 msgid "Up Arrow"
@@ -2401,9 +2290,9 @@ msgid "Failed to compile the \"%s\" shader."
 msgstr "Nepavyko sukompiliuoti „%s“ šešėliuoklio."
 
 #: src/client/shader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to find \"%s\" shader files."
-msgstr "Nepavyko parsiųsti $1"
+msgstr "Nepavyko rasti \"%s\" šešėliuotojų failų."
 
 #. TRANSLATORS: GLSL = OpenGL Shading Language
 #: src/client/shader.cpp
@@ -2429,28 +2318,24 @@ msgid ""
 msgstr ""
 
 #: src/content/mod_configuration.cpp
-#, fuzzy
 msgid "Some mods have unsatisfied dependencies:"
-msgstr "Nėra būtinų priklausomybių"
+msgstr "Kai kurios modifikacijos turi netenkinamų priklausomybių:"
 
 #: src/gui/guiButtonKey.h
-#, fuzzy
 msgid "Press Button"
-msgstr "Kairysis mygtukas"
+msgstr "Paspauskite mygtuką"
 
 #: src/gui/guiChatConsole.cpp
-#, fuzzy
 msgid "Failed to open webpage"
-msgstr "Nepavyko parsiųsti $1"
+msgstr "Nepavyko atidaryti tinklalapio"
 
 #: src/gui/guiChatConsole.cpp
 msgid "Opening webpage"
 msgstr ""
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "Pagrindinis meniu"
+msgstr "Nepavyko įkelti pagrindinio meniu skriptas!"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -2465,9 +2350,8 @@ msgid "Open URL?"
 msgstr ""
 
 #: src/gui/guiOpenURL.cpp
-#, fuzzy
 msgid "Unable to open URL"
-msgstr "Nepavyko parsiųsti $1"
+msgstr "Nepavyksta atidaryti URL"
 
 #: src/gui/guiPasswordChange.cpp
 msgid "Change"
@@ -2486,24 +2370,21 @@ msgid "Passwords do not match!"
 msgstr "Slaptažodžiai nesutampa!"
 
 #: src/gui/guiVolumeChange.cpp
-#, fuzzy
 msgid "Muted"
-msgstr "paspauskite klavišą"
+msgstr "Nutildyta"
 
 #: src/gui/guiVolumeChange.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Sound Volume: %d%%"
-msgstr "Garso lygis: "
+msgstr "Garsumas: %d%%"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Add button"
-msgstr "Vidurinis mygtukas"
+msgstr "Pridėti mygtuką"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Done"
-msgstr "Atlikta!"
+msgstr "Atlikta"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Remove"
@@ -2530,9 +2411,8 @@ msgid "Aux1"
 msgstr ""
 
 #: src/gui/touchscreenlayout.cpp
-#, fuzzy
 msgid "Change camera"
-msgstr "Nustatyti klavišus"
+msgstr "Pakeisti kamerą"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Dig/punch/use"
@@ -2563,9 +2443,8 @@ msgid "Overflow menu"
 msgstr ""
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Place/use"
-msgstr "Kūrybinė veiksena"
+msgstr "Padėti / naudoti"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Range select"
@@ -2576,14 +2455,12 @@ msgid "Sneak"
 msgstr "Sėlinti"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle chat log"
-msgstr "Įjungti greitą"
+msgstr "Perjungti pokalbių žurnalą"
 
 #: src/gui/touchscreenlayout.cpp
-#, fuzzy
 msgid "Toggle debug"
-msgstr "Įjungti skrydį"
+msgstr "Perjungti derinimą"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Toggle fast"
@@ -2594,9 +2471,8 @@ msgid "Toggle fly"
 msgstr "Įjungti skrydį"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle minimap"
-msgstr "Įjungti noclip"
+msgstr "Perjungti mini žemėlapį"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Toggle noclip"
@@ -2621,9 +2497,8 @@ msgid "Internal server error"
 msgstr ""
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Invalid password"
-msgstr "Senas slaptažodis"
+msgstr "Neteisingas slaptažodis"
 
 #. TRANSLATORS: DO NOT TRANSLATE THIS LITERALLY!
 #. This is a special string which needs to contain the translation's
@@ -2647,14 +2522,12 @@ msgid "Player name contains disallowed characters"
 msgstr ""
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Player name not allowed"
-msgstr "Žaidėjo vardas per ilgas."
+msgstr "Žaidėjo vardas neleidžiamas"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Server shutting down"
-msgstr "Išjungiama..."
+msgstr "Serveris išjungiamas"
 
 #: src/network/clientpackethandler.cpp
 msgid ""
@@ -2686,9 +2559,9 @@ msgid ""
 msgstr ""
 
 #: src/server.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "%s while shutting down: "
-msgstr "Išjungiama..."
+msgstr "%s išjungiant: "
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2753,9 +2626,8 @@ msgid "3D"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "3D clouds"
-msgstr "Trimačiai debesys"
+msgstr "3D debesys"
 
 #: src/settings_translation_file.cpp
 msgid "3D mode"
@@ -2875,9 +2747,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Admin name"
-msgstr "Pasaulio pavadinimas"
+msgstr "Administratoriaus vardas"
 
 #: src/settings_translation_file.cpp
 msgid "Advanced"
@@ -2936,16 +2807,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Announce to this serverlist."
-msgstr "Paskelbti tai serverių sąrašui"
+msgstr "Skelbti šiame serverių sąraše."
 
 #: src/settings_translation_file.cpp
 msgid "Anti-aliasing scale"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Antialiasing method"
-msgstr "Inicijuojami mazgai"
+msgstr "Kraštų glotninimo metodas"
 
 #: src/settings_translation_file.cpp
 msgid "Anticheat flags"
@@ -3061,9 +2931,8 @@ msgid "Base terrain height."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Base texture size"
-msgstr "Tekstūrų paketai"
+msgstr "Bazinės tekstūros dydis"
 
 #: src/settings_translation_file.cpp
 msgid "Basic privileges"
@@ -3082,9 +2951,8 @@ msgid "Bilinear filtering"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Bind address"
-msgstr "Ieškoma adreso..."
+msgstr "Susiejimo adresas"
 
 #: src/settings_translation_file.cpp
 msgid "Biome API"
@@ -3135,9 +3003,8 @@ msgid "Builtin"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Camera"
-msgstr "Nustatyti klavišus"
+msgstr "Kamera"
 
 #: src/settings_translation_file.cpp
 msgid "Camera smoothing"
@@ -3219,18 +3086,16 @@ msgid "Chat command time message threshold"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Chat commands"
-msgstr "Komanda"
+msgstr "Pokalbių komandos"
 
 #: src/settings_translation_file.cpp
 msgid "Chat font size"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Chat log level"
-msgstr "Nustatyti klavišus"
+msgstr "Pokalbių žurnalo lygis"
 
 #: src/settings_translation_file.cpp
 msgid "Chat message count limit"
@@ -3271,9 +3136,8 @@ msgid "Client"
 msgstr "Žaisti tinkle(klientas)"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client Debugging"
-msgstr "Žaisti tinkle(klientas)"
+msgstr "Kliento derinimas"
 
 #: src/settings_translation_file.cpp
 msgid "Client Mesh Chunksize"
@@ -3284,24 +3148,20 @@ msgid "Client and Server"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client modding"
-msgstr "Žaisti tinkle(klientas)"
+msgstr "Kliento modifikavimas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client side modding restrictions"
-msgstr "Žaisti tinkle(klientas)"
+msgstr "Kliento pusės modifikavimo apribojimai"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client-side Modding"
-msgstr "Žaisti tinkle(klientas)"
+msgstr "Kliento pusės modifikavimas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Client-side node lookup range restriction"
-msgstr "Žaisti tinkle(klientas)"
+msgstr "Kliento pusės mazgų paieškos nuotolio apribojimas"
 
 #: src/settings_translation_file.cpp
 msgid "Climbing speed"
@@ -3312,14 +3172,12 @@ msgid "Cloud radius"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Clouds"
-msgstr "Trimačiai debesys"
+msgstr "Debesys"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Clouds in menu"
-msgstr "Pagrindinis meniu"
+msgstr "Debesys meniu"
 
 #: src/settings_translation_file.cpp
 msgid "Color depth for post-processing texture"
@@ -3387,9 +3245,8 @@ msgid "Confirmation dialog before closing"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Connect glass"
-msgstr "Jungtis"
+msgstr "Sujungti stiklą"
 
 #: src/settings_translation_file.cpp
 msgid "Connect to external media server"
@@ -3408,9 +3265,8 @@ msgid "Console color"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Console height"
-msgstr "Nustatyti klavišus"
+msgstr "Konsolės aukštis"
 
 #: src/settings_translation_file.cpp
 msgid "Content Repository"
@@ -3425,9 +3281,8 @@ msgid "ContentDB Max Concurrent Downloads"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "ContentDB URL"
-msgstr "Tęsti"
+msgstr "„ContentDB“ URL"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3510,9 +3365,8 @@ msgid "Decrease view range"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Decrease volume"
-msgstr "Garso lygis"
+msgstr "Sumažinti garsą"
 
 #: src/settings_translation_file.cpp
 msgid "Dedicated server step"
@@ -3529,9 +3383,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Default password"
-msgstr "Naujas slaptažodis"
+msgstr "Numatytasis slaptažodis"
 
 #: src/settings_translation_file.cpp
 msgid "Default privileges"
@@ -3542,9 +3395,8 @@ msgid "Default report format"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Default stack size"
-msgstr "keisti žaidimą"
+msgstr "Numatytasis krūvos dydis"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3668,9 +3520,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Developer Options"
-msgstr "Dekoracijos"
+msgstr "Kūrėjo parinktys"
 
 #: src/settings_translation_file.cpp
 msgid "Disable if you only want to instrument with Tracy."
@@ -3712,9 +3563,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Drop item"
-msgstr "Mesti"
+msgstr "Išmesti daiktą"
 
 #: src/settings_translation_file.cpp
 msgid "Dump the mapgen debug information."
@@ -3745,18 +3595,16 @@ msgid "Enable Automatic Exposure"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable Bloom"
-msgstr "Įjungti visus"
+msgstr "Įjungti švytėjimą"
 
 #: src/settings_translation_file.cpp
 msgid "Enable Bloom Debug"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable Debanding"
-msgstr "Leisti sužeidimus"
+msgstr "Įjungti juostų šalinimą"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3793,9 +3641,8 @@ msgid "Enable Raytraced Culling"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable SSCSM"
-msgstr "Įjungti visus"
+msgstr "Įjungti SSCSM"
 
 #: src/settings_translation_file.cpp
 msgid "Enable a confirmation dialog before closing."
@@ -3836,9 +3683,8 @@ msgid "Enable mod channels support."
 msgstr "Įjungti papildinių kanalų palaikymą."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable mod security"
-msgstr "Papildiniai internete"
+msgstr "Įjungti modifikacijų saugumą"
 
 #: src/settings_translation_file.cpp
 msgid "Enable mouse wheel (scroll) for item selection in hotbar."
@@ -3904,9 +3750,8 @@ msgid "Enables debug and error-checking in the OpenGL driver."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enables smooth scrolling."
-msgstr "Papildiniai internete"
+msgstr "Įjungia tolygų slinkimą."
 
 #: src/settings_translation_file.cpp
 msgid "Enables the post processing pipeline."
@@ -4131,8 +3976,7 @@ msgstr ""
 "Pavyzdžiui,\n"
 "16 pikselių aukščio pikselinis šriftas turėtų turėti nustatytą 16 reikšmę, "
 "tad jis bus\n"
-"tik 16, 32, 48 ir t. t. dydžio, tad modifikacija, prašanti 25 dydžio, gaus "
-"32."
+"tik 16, 32, 48 ir t.t. dydžio, tad modifikacija, prašanti 25 dydžio, gaus 32."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4214,9 +4058,8 @@ msgid "GUI scaling filter"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Gamepads"
-msgstr "Žaidimai"
+msgstr "Žaidimų pultai"
 
 #: src/settings_translation_file.cpp
 msgid "Global callbacks"
@@ -4262,9 +4105,8 @@ msgid "Ground noise"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "HTTP mods"
-msgstr "Papildiniai"
+msgstr "HTTP modifikacijos"
 
 #: src/settings_translation_file.cpp
 msgid "HUD"
@@ -4304,9 +4146,8 @@ msgid "Height component of the initial window size."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Height noise"
-msgstr "Dešinieji langai"
+msgstr "Aukščio triukšmas"
 
 #: src/settings_translation_file.cpp
 msgid "Height select noise"
@@ -4674,9 +4515,8 @@ msgid "Increase view range"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Increase volume"
-msgstr "Garso lygis"
+msgstr "Padidinti garsą"
 
 #: src/settings_translation_file.cpp
 msgid "Initial vertical speed when jumping, in nodes per second."
@@ -4956,9 +4796,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Length of liquid waves."
-msgstr "Nepermatomi lapai"
+msgstr "Skysčio bangų ilgis."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5013,9 +4852,8 @@ msgid "Light curve low gradient"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Lighting"
-msgstr "Apšvietimo efektai"
+msgstr "Apšvietimas"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5081,9 +4919,8 @@ msgid "Loading Block Modifiers"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Local command"
-msgstr "Komanda"
+msgstr "Vietinė komanda"
 
 #: src/settings_translation_file.cpp
 msgid "Look down"
@@ -5110,9 +4947,8 @@ msgid "Lower Y limit of floatlands."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Main menu script"
-msgstr "Pagrindinis meniu"
+msgstr "Pagrindinio meniu skriptas"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5211,69 +5047,60 @@ msgid "Mapblock unload timeout"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen Carpathian"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimas (Karpatai)"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen Carpathian specific flags"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen Flat"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimas (Plokščias)"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen Flat specific flags"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen Fractal"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimas (Fraktalas)"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen Fractal specific flags"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimo (Fraktalas) specifinės žymos"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen V5"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimo (V5)"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen V5 specific flags"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen V6"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimo (V6)"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen V6 specific flags"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen V7"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimo (V7)"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen V7 specific flags"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen Valleys"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimas (Slėniai)"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mapgen Valleys specific flags"
-msgstr "Žemėlapių generavimas"
+msgstr "Žemėlapio generavimo (Slėniai) specifinės žymos"
 
 #: src/settings_translation_file.cpp
 msgid "Mapgen debug"
@@ -5440,9 +5267,8 @@ msgid "Measure time samples"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Menu theme"
-msgstr "Meniu"
+msgstr "Meniu tema"
 
 #: src/settings_translation_file.cpp
 msgid "Message of the day"
@@ -5493,9 +5319,8 @@ msgid "Mod Profiler"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Mod Security"
-msgstr "Papildiniai internete"
+msgstr "Modifikacijų saugumas"
 
 #: src/settings_translation_file.cpp
 msgid "Mod channels"
@@ -5548,14 +5373,12 @@ msgid "Mouse sensitivity multiplier."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move backward"
-msgstr "Atgal"
+msgstr "Judėti atgal"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Move forward"
-msgstr "Pirmyn"
+msgstr "Judėti pirmyn"
 
 #: src/settings_translation_file.cpp
 msgid "Move left"
@@ -5616,9 +5439,8 @@ msgid "New users need to input this password."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Node and Entity Highlighting"
-msgstr "Apšvietimo efektai"
+msgstr "Mazgų ir esybių paryškinimas"
 
 #: src/settings_translation_file.cpp
 msgid "Node highlighting"
@@ -5681,9 +5503,8 @@ msgid "Open chat"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Open inventory"
-msgstr "Inventorius"
+msgstr "Atidaryti inventorių"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5815,9 +5636,8 @@ msgid "Proportion of large caves that contain liquid."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Protocol version minimum"
-msgstr "Neatitinka protokolo versija. "
+msgstr "Minimali protokolo versija"
 
 #: src/settings_translation_file.cpp
 msgid "Punch gesture"
@@ -5907,9 +5727,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Return to Main Menu"
-msgstr "Grįžti į meniu"
+msgstr "Grįžti į pagrindinį meniu"
 
 #: src/settings_translation_file.cpp
 msgid "Ridge mountain spread noise"
@@ -5940,9 +5759,8 @@ msgid "River depth"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "River noise"
-msgstr "Dešinieji langai"
+msgstr "Upės triukšmas"
 
 #: src/settings_translation_file.cpp
 msgid "River size"
@@ -6033,9 +5851,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Screenshots"
-msgstr "Užlaikymas"
+msgstr "Ekrano nuotraukos"
 
 #: src/settings_translation_file.cpp
 msgid "Seabed noise"
@@ -6114,34 +5931,28 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Send player names to the server list"
-msgstr "Paskelbti tai serverių sąrašui"
+msgstr "Siųsti žaidėjų vardus į serverių sąrašą"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server"
 msgstr "Serveris"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server Gameplay"
-msgstr "Serveris"
+msgstr "Serverio žaidimo eiga"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server Security"
-msgstr "Serverio prievadas"
+msgstr "Serverio saugumas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server URL"
-msgstr "Serveris"
+msgstr "Serverio URL"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server address"
-msgstr "Serverio prievadas"
+msgstr "Serverio adresas"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6151,17 +5962,14 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server description"
-msgstr "Serverio prievadas"
+msgstr "Serverio aprašymas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server name"
-msgstr "Serveris"
+msgstr "Serverio pavadinimas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server port"
 msgstr "Serverio prievadas"
 
@@ -6170,24 +5978,20 @@ msgid "Server-side occlusion culling"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Server/Env Performance"
-msgstr "Serverio prievadas"
+msgstr "Serverio / aplinkos našumas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Serverlist URL"
-msgstr "Viešų serverių sąrašas"
+msgstr "Serverių sąrašo URL"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Serverlist and MOTD"
-msgstr "Viešų serverių sąrašas"
+msgstr "Serverių sąrašas ir MOTD"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Serverlist file"
-msgstr "Viešų serverių sąrašas"
+msgstr "Serverių sąrašo failas"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6279,9 +6083,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Shader path"
-msgstr "Šešėliavimai"
+msgstr "Šešėliuotojų kelias"
 
 #: src/settings_translation_file.cpp
 msgid "Shadow filter quality"
@@ -6382,14 +6185,12 @@ msgid "Small-scale temperature variation for blending biomes on borders."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Smooth lighting"
-msgstr "Apšvietimo efektai"
+msgstr "Tolygus apšvietimas"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Smooth scrolling"
-msgstr "Apšvietimo efektai"
+msgstr "Tolygus slinkimas"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6404,27 +6205,24 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Sneaking speed"
-msgstr "Nustatyti klavišus"
+msgstr "Sėlinimo greitis"
 
 #: src/settings_translation_file.cpp
 msgid "Sneaking speed, in nodes per second."
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Soft clouds"
-msgstr "Trimačiai debesys"
+msgstr "Minkšti debesys"
 
 #: src/settings_translation_file.cpp
 msgid "Soft shadow radius"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Sound"
-msgstr "Garso lygis"
+msgstr "Garsas"
 
 #: src/settings_translation_file.cpp
 msgid "Sound Extensions Blacklist"
@@ -6793,72 +6591,60 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Aux1 key"
-msgstr "Pašokti"
+msgstr "Perjungti „Aux1“ klavišą"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle HUD"
-msgstr "Įjungti skrydį"
+msgstr "Perjungti HUD"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle Sneak key"
-msgstr "Įjungti kinematografinį"
+msgstr "Perjungti sėlinimo klavišą"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle automatic forward"
-msgstr "Pirmyn"
+msgstr "Perjungti automatinį judėjimą pirmyn"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle block bounds"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle camera mode"
-msgstr "Įjungti greitą"
+msgstr "Perjungti kameros režimą"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle camera update"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle cinematic mode"
-msgstr "Įjungti kinematografinį"
+msgstr "Perjungti kinematografinį režimą"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle debug info"
-msgstr "Įjungti skrydį"
+msgstr "Perjungti derinimo informaciją"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle fog"
-msgstr "Įjungti skrydį"
+msgstr "Perjungti rūką"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle fullscreen"
-msgstr "Įjungti skrydį"
+msgstr "Perjungti viso ekrano režimą"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle large chat console"
-msgstr "Nustatyti klavišus"
+msgstr "Perjungti didelę pokalbių konsolę"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle pitchmove"
-msgstr "Įjungti greitą"
+msgstr "Perjungti polinkio judėjimą"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Toggle profiler"
-msgstr "Įjungti skrydį"
+msgstr "Perjungti profiliuotoją"
 
 #: src/settings_translation_file.cpp
 msgid "Toggle unlimited view range"
@@ -6895,9 +6681,8 @@ msgid "Tradeoffs for performance"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Translucent foliage"
-msgstr "Nepermatomi lapai"
+msgstr "Pusiau permatoma lapija"
 
 #: src/settings_translation_file.cpp
 msgid "Translucent liquids"
@@ -7139,9 +6924,8 @@ msgid "Volume when unfocused"
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Volumetric lighting"
-msgstr "Apšvietimo efektai"
+msgstr "Tūrinis apšvietimas"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7317,9 +7101,8 @@ msgid ""
 msgstr ""
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "World start time"
-msgstr "Pasaulio pavadinimas"
+msgstr "Pasaulio pradžios laikas"
 
 #: src/settings_translation_file.cpp
 msgid ""
