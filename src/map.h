@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <list>
 #include <map>
 #include <ostream>
 #include <set>
@@ -49,6 +50,9 @@ struct MapEditEvent
 	MapNode n = CONTENT_AIR;
 	std::vector<v3bpos_t> modified_blocks; // Represents a set
 	bool is_private_change = false;
+	// Setting low_priority to true allows the server
+	// to send this change to clients with some delay.
+	bool low_priority = false;
 
 	MapEditEvent() = default;
 
@@ -304,7 +308,8 @@ class MMVManip : public VoxelManipulator
 {
 public:
 	MMVManip(Map *map);
-	virtual ~MMVManip() = default;
+	~MMVManip() override;
+	DISABLE_CLASS_COPY(MMVManip)
 
 	/*
 		Loads specified area from map and *adds* it to the area already
@@ -344,6 +349,10 @@ public:
 	// Is it impossible to call initialEmerge / blitBackAll?
 	inline bool isOrphan() const { return !m_map; }
 
+	std::list<MMVManip **>::iterator addTrackedRef(MMVManip **ref_ref);
+
+	void removeTrackedRef(std::list<MMVManip **>::iterator it);
+
 	bool m_is_dirty = false;
 
 protected:
@@ -351,4 +360,8 @@ protected:
 
 	// may be null
 	Map *m_map = nullptr;
+
+private:
+	// references to this that need to be cleared on destruction
+	std::list<MMVManip **> m_tracked_refs;
 };
