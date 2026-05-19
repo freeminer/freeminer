@@ -105,6 +105,10 @@ Json::Value MakeReport(AnnounceAction action,
 		server["proto"]        = g_settings->get("server_proto");
 
 		addMultiProto(server, port);
+
+		#if USE_POS32
+			server["map_size"]       = (int)USE_POS32;
+		#endif
 	}
 
 	if (action == AA_START) {

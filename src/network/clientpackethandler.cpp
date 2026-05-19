@@ -1203,7 +1203,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	u32 dir;
 	v2f align;
 	v2f offset;
-	v3f world_pos;
+	v3opos_t world_pos;
 	v2f size;
 	s16 z_index = 0;
 	std::string text2;
@@ -1252,7 +1252,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	event->hudadd->dir       = dir;
 	event->hudadd->align     = align;
 	event->hudadd->offset    = offset;
-	event->hudadd->world_pos = v3fToOpos(world_pos); //todo v3d
+	event->hudadd->world_pos = world_pos;
 	event->hudadd->size      = size;
 	event->hudadd->z_index   = z_index;
 	event->hudadd->text2     = text2;
@@ -1276,7 +1276,7 @@ void Client::handleCommand_HudChange(NetworkPacket* pkt)
 {
 	std::string sdata;
 	v2f v2fdata;
-	v3f v3fdata;
+	v3opos_t v3fdata;
 	u32 intdata = 0;
 	u32 server_id;
 	u8 stat;
@@ -1471,7 +1471,8 @@ void Client::handleCommand_HudSetSky(NetworkPacket* pkt)
 		if (!pkt->hasRemainingBytes())
 			break;
 		// >= 5.8.0-dev
-		*pkt >> skybox.fog_distance >> skybox.fog_start;
+		pkt->readPos(skybox.fog_distance);
+		*pkt >> skybox.fog_start;
 
 		if (!pkt->hasRemainingBytes())
 			break;

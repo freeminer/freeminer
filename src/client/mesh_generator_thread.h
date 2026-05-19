@@ -8,7 +8,6 @@
 #include <mutex>
 #include <unordered_set>
 #include "irrlichttypes_bloated.h"
-#include "mapblock.h"
 #include "threading/mutex_auto_lock.h"
 #include "util/thread.h"
 #include <vector>

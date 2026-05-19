@@ -180,7 +180,7 @@ int RemoteClient::GetNextBlocks (
 	s32 new_nearest_unsent_d = -1;
 
 	// Get view range and camera fov (radians) from the client
-	s16 fog_distance = sao->getPlayer()->getSkyParams().fog_distance;
+	auto fog_distance = sao->getPlayer()->getSkyParams().fog_distance;
 	s16 wanted_range = sao->getWantedRange() + 1;
 	if (fog_distance >= 0) {
 		// enforce if limited by mod
@@ -464,7 +464,7 @@ void RemoteClient::SetBlockNotSent(v3bpos_t p, bool low_priority)
 		// Using m_last_center is OK, as a change in center
 		// will reset m_nearest_unsent_d to 0 anyway (see getNextBlocks).
 		p -= m_last_center;
-		s16 this_d = std::max({std::abs(p.X), std::abs(p.Y), std::abs(p.Z)});
+		bpos_t this_d = std::max({std::abs(p.X), std::abs(p.Y), std::abs(p.Z)});
 
 		// If this is a low priority event (and not close), do not reset m_nearest_unsent_d.
 		// Instead, the send loop will get to the block in the next full loop iteration.
@@ -478,7 +478,7 @@ void RemoteClient::SetBlockNotSent(v3bpos_t p, bool low_priority)
 void RemoteClient::SetBlocksNotSent(const std::vector<v3bpos_t> &blocks, bool low_priority)
 {
 /*
-	for (v3s16 p : blocks) {
+	for (const auto &p : blocks) {
 		SetBlockNotSent(p, low_priority);
 	}
 */

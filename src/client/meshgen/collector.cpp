@@ -5,6 +5,7 @@
 #include "util/numeric.h"
 
 #include "collector.h"
+#include "util/numeric.h"
 #include <stdexcept>
 #include <cassert>
 

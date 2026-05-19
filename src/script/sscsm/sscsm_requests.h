@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "irr_v3d.h"
 #include "sscsm_irequest.h"
 #include "sscsm_ievent.h"
 #include "mapnode.h"

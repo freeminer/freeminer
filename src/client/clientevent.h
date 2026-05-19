@@ -61,7 +61,7 @@ struct ClientEventHudChange
 	v2f v2fdata;
 	std::string sdata;
 	u32 data;
-	v3f v3fdata;
+	v3opos_t v3fdata;
 	v2s32 v2s32data;
 };
 

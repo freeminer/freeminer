@@ -7,6 +7,7 @@
 #include "camera.h"
 #include "client.h"
 #include "clientmap.h"     // MapDrawControl
+#include "irr_v3d.h"
 #include "localplayer.h"
 #include "player.h"
 #include <cmath>
