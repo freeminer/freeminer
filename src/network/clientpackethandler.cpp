@@ -1440,7 +1440,8 @@ void Client::handleCommand_HudSetSky(NetworkPacket* pkt)
 		if (!pkt->hasRemainingBytes())
 			break;
 		// >= 5.8.0-dev
-		*pkt >> skybox.fog_distance >> skybox.fog_start;
+		pkt->readPos(skybox.fog_distance);
+		*pkt >> skybox.fog_start;
 
 		if (!pkt->hasRemainingBytes())
 			break;

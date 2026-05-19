@@ -451,7 +451,32 @@ v3s32 NetworkPacket::readV3S32()
 	return dst;
 }
 
+NetworkPacket& NetworkPacket::readPos(pos_t& dst)
+{
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
+		s16 tmp;
+		*this >> tmp;
+		dst = tmp;
+		return *this;
+	}
+
+	*this >> dst;
+	return *this;
+}
+
+NetworkPacket& NetworkPacket::writePos(pos_t src)
+{
+	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {
+		*this << (u16) src;
+		return *this;
+	}
+
+	*this << src;
+	return *this;
+}
+
 #if USE_POS32
+
 NetworkPacket& NetworkPacket::operator>>(v3pos_t& dst)
 {
 	if (m_proto_ver < PROTOCOL_VERSION_32BIT) {

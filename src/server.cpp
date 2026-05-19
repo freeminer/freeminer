@@ -1976,7 +1976,9 @@ void Server::SendSetSky(session_t peer_id, const SkyboxParams &params)
 				<< c.night_sky << c.night_horizon << c.indoors;
 		}
 
-		pkt << params.body_orbit_tilt << params.fog_distance << params.fog_start
+		pkt << params.body_orbit_tilt;
+		pkt.writePos(params.fog_distance);
+		pkt << params.fog_start
 			<< params.fog_color;
 
 		pkt << params.auto_dim_skybox;
