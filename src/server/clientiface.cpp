@@ -229,7 +229,10 @@ int RemoteClient::GetNextBlocks (
 	s16 d_max = full_d_max;
 
 	// Don't loop very much at a time
-	const s16 max_d_increment_at_time = 2;
+	// At large distances there are (many) more blocks per loop,
+	// so limit loops even more.
+	// note that the loop will advance by at most max_d_increment_at_time+1
+	const s16 max_d_increment_at_time = d_start < d_cull_opt * 2 ? 2 : 0;
 	if (d_max > d_start + max_d_increment_at_time)
 		d_max = d_start + max_d_increment_at_time;
 
@@ -444,7 +447,7 @@ void RemoteClient::SentBlock(v3bpos_t p)
 }
 */
 
-void RemoteClient::SetBlockNotSent(v3bpos_t p)
+void RemoteClient::SetBlockNotSent(v3bpos_t p, bool low_priority)
 {
 /*
 	++m_nearest_unsent_reset;
@@ -462,16 +465,21 @@ void RemoteClient::SetBlockNotSent(v3bpos_t p)
 		// will reset m_nearest_unsent_d to 0 anyway (see getNextBlocks).
 		p -= m_last_center;
 		s16 this_d = std::max({std::abs(p.X), std::abs(p.Y), std::abs(p.Z)});
-		m_nearest_unsent_d = std::min(m_nearest_unsent_d, this_d);
+
+		// If this is a low priority event (and not close), do not reset m_nearest_unsent_d.
+		// Instead, the send loop will get to the block in the next full loop iteration.
+		if (!low_priority || this_d < m_block_cull_optimize_distance) {
+			m_nearest_unsent_d = std::min(m_nearest_unsent_d, this_d);
+		}
 	}
 */
 }
 
-void RemoteClient::SetBlocksNotSent(const std::vector<v3bpos_t> &blocks)
+void RemoteClient::SetBlocksNotSent(const std::vector<v3bpos_t> &blocks, bool low_priority)
 {
 /*
-	for (auto p : blocks) {
-		SetBlockNotSent(p);
+	for (v3s16 p : blocks) {
+		SetBlockNotSent(p, low_priority);
 	}
 */
 }
@@ -705,12 +713,12 @@ std::vector<session_t> ClientInterface::getClientIDs(ClientState min_state)
 	return reply;
 }
 
-void ClientInterface::markBlocksNotSent(const std::vector<v3bpos_t> &positions)
+void ClientInterface::markBlocksNotSent(const std::vector<v3bpos_t> &positions, bool low_priority)
 {
 	//RecursiveMutexAutoLock clientslock(m_clients_mutex);
 	for (const auto &client : m_clients) {
 		if (client.second->getState() >= CS_Active)
-			client.second->SetBlocksNotSent(positions);
+			client.second->SetBlocksNotSent(positions, low_priority);
 	}
 }
 

@@ -289,8 +289,8 @@ public:
 
 	void SentBlock(v3bpos_t p, double time);
 
-	void SetBlockNotSent(v3bpos_t p);
-	void SetBlocksNotSent(const std::vector<v3bpos_t> &blocks);
+	void SetBlockNotSent(v3bpos_t p, bool low_priority = false);
+	void SetBlocksNotSent(const std::vector<v3bpos_t> &blocks, bool low_priority = false);
 
 	/**
 	 * tell client about this block being modified right now.
@@ -507,7 +507,7 @@ public:
 	std::vector<session_t> getClientIDs(ClientState min_state=CS_Active);
 
 	/* mark blocks as not sent on all active clients */
-	void markBlocksNotSent(const std::vector<v3bpos_t> &positions);
+	void markBlocksNotSent(const std::vector<v3bpos_t> &positions, bool low_priority = false);
 
 	/* verify if server user limit was reached */
 	bool isUserLimitReached();

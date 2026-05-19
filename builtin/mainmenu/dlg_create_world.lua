@@ -198,6 +198,7 @@ local function create_world_formspec(dialogdata)
 			fgettext("Dungeons") .. ";"..strflag(flags.main, "dungeons").."]"
 		y = y + 0.5
 
+		-- TRANSLATORS: Map generator decorations (used for structures, trees, plants, and more)
 		local d_name = fgettext("Decorations")
 		local d_tt
 		if mapgen == "v6" then
@@ -281,6 +282,7 @@ local function create_world_formspec(dialogdata)
 		-- biomeblend
 		y = y + 0.55
 		form = form .. "checkbox[0,"..y..";flag_v6_biomeblend;" ..
+			-- TRANSLATORS: Smooth transition between biomes
 			fgettext("Biome blending") .. ";"..strflag(flags.v6, "biomeblend").."]" ..
 			"tooltip[flag_v6_biomeblend;" ..
 			fgettext("Smooth transition between biomes") .. "]"
@@ -329,6 +331,7 @@ local function create_world_formspec(dialogdata)
 	if not disallowed_mapgen_settings["seed"] then
 
 		retval = retval .. "field[0.3,1.7;6,0.5;te_seed;" ..
+				-- TRANSLATORS: Value for randomness
 				fgettext("Seed") ..
 				";".. core.formspec_escape(dialogdata.seed) .. "]"
 

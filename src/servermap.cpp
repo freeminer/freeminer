@@ -251,18 +251,12 @@ bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 		Create the whole area of this and the neighboring blocks
 	*/
 	for (auto x = full_bpmin.X; x <= full_bpmax.X; x++)
-	for (auto z = full_bpmin.Z; z <= full_bpmax.Z; z++) {
-/*
-		v2bpos_t sectorpos(x, z);
-		// Sector metadata is loaded from disk if not already loaded.
-		MapSector *sector = createSector(sectorpos);
-		FATAL_ERROR_IF(sector == NULL, "createSector() failed");
-*/
-		for (auto y = full_bpmin.Y; y <= full_bpmax.Y; y++) {
+	for (auto z = full_bpmin.Z; z <= full_bpmax.Z; z++)
+	for (auto y = full_bpmin.Y; y <= full_bpmax.Y; y++) {
 			v3pos_t p(x, y, z);
 
 			auto block = emergeBlockPtr(p, false);
-			if (block == NULL) {
+			if (!block) {
 				block = createBlock(p);
 
 				// Block gets sunlight if this is true.
@@ -271,7 +265,6 @@ bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 				block->setIsUnderground(ug);
 			}
 			block->refGrab();
-		}
 	}
 
 	/*
@@ -282,7 +275,7 @@ bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 	*/
 
 	data->vmanip = new MMVManip(this);
-	data->vmanip->initialEmerge(full_bpmin, full_bpmax);
+	data->vmanip->initialEmerge(full_bpmin, full_bpmax, false);
 
 	// Data is ready now.
 	return true;
@@ -878,6 +871,7 @@ MapBlockPtr ServerMap::loadBlock(const std::string &blob, v3bpos_t p3d, bool sav
 		if (!modified_blocks.empty()) {
 			MapEditEvent event;
 			event.type = MEET_OTHER;
+			event.low_priority = true;
 			event.setModifiedBlocks(modified_blocks);
 			dispatchEvent(event);
 		}
