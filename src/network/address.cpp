@@ -142,6 +142,15 @@ void Address::Resolve(const char *name, Address *fallback)
 // IP address -> textual representation
 std::string Address::serializeString() const
 {
+	const void *src = nullptr;
+	switch (m_addr_family) {
+		case AF_INET:  src = &m_address.ipv4; break;
+		case AF_INET6: src = &m_address.ipv6; break;
+	}
+
+	if (!src)
+		return "<unhandled-addr-family>";
+
 	char str[INET6_ADDRSTRLEN];
 	if (!inet_ntop(m_addr_family, (m_addr_family == AF_INET) ? (void*)&(m_address.ipv4.sin_addr) : (void*)&(m_address.ipv6.sin6_addr), str, INET6_ADDRSTRLEN)) {
 		return "";

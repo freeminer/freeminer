@@ -230,9 +230,10 @@ int UDPSocket::Receive(Address &sender, void *data, int size)
 
 /*
 		u16 address_port = ntohs(address.sin6_port);
-		const auto *bytes = reinterpret_cast<IPv6AddressBytes*>
-			(address.sin6_addr.s6_addr);
-		sender = Address(bytes, address_port);
+/*
+		IPv6AddressBytes bytes;
+		memcpy(bytes.bytes, address.sin6_addr.s6_addr, sizeof(address.sin6_addr.s6_addr));
+		sender = Address(&bytes, address_port);
 */
 		sender = address;
 	} else {
