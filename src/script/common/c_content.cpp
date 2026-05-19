@@ -2401,7 +2401,7 @@ void read_hud_element(lua_State *L, HudElement *elem)
 	lua_pop(L, 1);
 
 	lua_getfield(L, 2, "world_pos");
-	elem->world_pos = lua_istable(L, -1) ? read_v3f(L, -1) : v3f();
+	elem->world_pos = lua_istable(L, -1) ? read_v3o(L, -1) : v3opos_t();
 	lua_pop(L, 1);
 
 	elem->style = getintfield_default(L, 2, "style", 0);
@@ -2521,7 +2521,7 @@ bool read_hud_change(lua_State *L, HudElementStat &stat, HudElement *elem, void 
 			*value = &elem->offset;
 			break;
 		case HUD_STAT_WORLD_POS:
-			elem->world_pos = read_v3f(L, 4);
+			elem->world_pos = read_v3o(L, 4);
 			*value = &elem->world_pos;
 			break;
 		case HUD_STAT_SIZE:
