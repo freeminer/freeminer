@@ -4,7 +4,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
 "PO-Revision-Date: 2026-05-21 20:11+0000\n"
-"Last-Translator: Alexander Astafiev <alexander.astafiev.1989@gmail.com>\n"
+"Last-Translator: BlackImpostor <SkyBuilderOFFICAL@yandex.ru>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/minetest/"
 "minetest/ru/>\n"
 "Language: ru\n"
@@ -379,9 +379,8 @@ msgid "Controls"
 msgstr "Управление"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Урон / PvP"
+msgstr "Урон"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
@@ -423,9 +422,8 @@ msgstr "Вернуть значение по умолчанию"
 
 #. TRANSLATORS: $1 will be replaced with a default setting value
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Reset setting to default: $1"
-msgstr "Вернуть значение по умолчанию ($1)"
+msgstr "Вернуть значение по умолчанию: $1"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
@@ -1547,9 +1545,8 @@ msgstr ""
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Possible filters"
-msgstr "Фильтрация Пуассона"
+msgstr "Возможные фильтры"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1634,9 +1631,8 @@ msgid "Media..."
 msgstr "Медиафайлы..."
 
 #: src/client/fontengine.cpp
-#, fuzzy
 msgid "Failed to find a valid font"
-msgstr "Не удалось найти файлы шейдера \"%s\"."
+msgstr "Не удалось найти действительный шрифт"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -2148,7 +2144,7 @@ msgstr "Средний Клик"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "Кнопка Мыши %d"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
@@ -2328,9 +2324,8 @@ msgid "Failed to create the texture \"%s\" for the rendering pipeline."
 msgstr "Не удалось создать текстуру \"%s\" для конвейерного рендеринга."
 
 #: src/client/renderingengine.cpp
-#, fuzzy
 msgid "Could not initialize any supported video driver!"
-msgstr "Полигоны не доступны этим видео драйвером"
+msgstr "Не удалось инициализировать ни один из поддерживаемых видеодрайверов!"
 
 #: src/client/shader.cpp
 #, c-format
@@ -2385,9 +2380,8 @@ msgid "Opening webpage"
 msgstr "Открытие страницы"
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "Скрипт главного меню"
+msgstr "Не удалось загрузить скрипт основного меню!"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -2932,14 +2926,12 @@ msgid "Anticheat movement tolerance"
 msgstr "Допуск движения античита"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append item name to tooltips"
-msgstr "Добавлять названия предметов во всплывающих подсказках."
+msgstr "Применение названия предмета во всплывающие подсказки"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append the full item name to the tooltip of item stacks."
-msgstr "Добавлять названия предметов во всплывающих подсказках."
+msgstr "Применение полного названия предмета во всплывающие подсказки стака."
 
 #: src/settings_translation_file.cpp
 msgid "Apple trees noise"
@@ -3529,9 +3521,8 @@ msgstr ""
 "Также контролирует цвет объекта прицела"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage flash"
-msgstr "Флаги генерации карты"
+msgstr "Вспышка от урона"
 
 #: src/settings_translation_file.cpp
 msgid "Debug log file size threshold"
@@ -3885,9 +3876,8 @@ msgid "Enable Raytraced Culling"
 msgstr "Включить лучевое окклюзивное отсечение"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable SSCSM"
-msgstr "Включить всё"
+msgstr "Включить SSCSM"
 
 #: src/settings_translation_file.cpp
 msgid "Enable a confirmation dialog before closing."
@@ -4168,7 +4158,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Flashing of the screen when taking damage."
-msgstr ""
+msgstr "Вспышка экрана при получении урона."
 
 #: src/settings_translation_file.cpp
 msgid "Floatland density"
@@ -5141,14 +5131,14 @@ msgid "Keyboard and Mouse"
 msgstr "Клавиатура и мышь"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keyboard camera speed"
-msgstr "Клавиатура и мышь"
+msgstr "Скорость камеры клавиатуры"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keyboard-controlled camera rotation speed, in degrees per second."
-msgstr "Скорость вертикального лазания в нодах в секунду."
+msgstr ""
+"Скорость поворота камеры, контролируемой клавиатурой, указывается в градусах "
+"за секунду."
 
 #: src/settings_translation_file.cpp
 msgid "Kick players who sent more than X messages per 10 seconds."
@@ -6615,6 +6605,9 @@ msgid ""
 "variables.\n"
 "Note that this will not apply to Luanti's in-game protocol."
 msgstr ""
+"Задайте прокси-сервер для использования cURL. Это URI, аналогичный "
+"переменным окружения *_proxy.\n"
+"Обратите внимание, что это не относится к внутриигровому протоколу Luanti."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7858,6 +7851,8 @@ msgid ""
 "Where to enable server-sent client-side modding (SSCSM).\n"
 "Warning: Experimental."
 msgstr ""
+"Где включать клиентское моддинг-сопровождение на стороне сервера (SSCSM).\n"
+"Предупреждение: экспериментальная функция."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -8038,7 +8033,7 @@ msgstr "Лимит одновременных соединений cURL"
 
 #: src/settings_translation_file.cpp
 msgid "cURL proxy address"
-msgstr ""
+msgstr "Прокси адрес для cURL"
 
 #: src/util/screenshot.cpp
 #, c-format
