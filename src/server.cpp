@@ -1874,7 +1874,8 @@ void Server::SendDeleteParticleSpawner(session_t peer_id, u32 id)
 
 void Server::SendHUDAdd(session_t peer_id, u32 id, HudElement *form)
 {
-	NetworkPacket pkt(TOCLIENT_HUDADD, 0 , peer_id);
+	auto protocol_version = m_clients.getProtocolVersion(peer_id);
+	NetworkPacket pkt(TOCLIENT_HUDADD, 0 , peer_id, protocol_version);
 
 	pkt << id << (u8) form->type << form->pos << form->name << form->scale
 			<< form->text << form->number << form->item << form->dir
@@ -1951,7 +1952,9 @@ void Server::SendHUDSetParam(session_t peer_id, u16 param, std::string_view valu
 
 void Server::SendSetSky(session_t peer_id, const SkyboxParams &params)
 {
-	NetworkPacket pkt(TOCLIENT_SET_SKY, 0, peer_id);
+
+	auto protocol_version = m_clients.getProtocolVersion(peer_id);
+	NetworkPacket pkt(TOCLIENT_SET_SKY, 0, peer_id, protocol_version);
 
 	// Handle prior clients here
 	if (m_clients.getProtocolVersion(peer_id) < 39) {
