@@ -8,8 +8,13 @@ if(USE_OSMIUM)
     message(STATUS "Using osmium + arnis")
 endif()
 
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/luanti-earth/native/src/voxelizer.h")
+if(NOT EMSCRIPTEN)
+    option(ENABLE_VOXEL_EARTH "Voxel earth mapgen" 1)
+endif()
+
+if(ENABLE_VOXEL_EARTH AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/luanti-earth/native/src/voxelizer.h")
     option(USE_VOXEL_EARTH "Earth: Use voxel earth" 1)
+    message(STATUS "Using voxel earth mapgen ${USE_VOXEL_EARTH}")
 endif()
 
 # if(USE_VOXEL_EARTH)
