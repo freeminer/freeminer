@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2025-05-14 20:53+0000\n"
-"Last-Translator: Sepehr <realsepehrz@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-05-26 01:11+0000\n"
+"Last-Translator: Mehrdad Shaeri <mehrdad.shaeri@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/minetest/"
 "minetest/fa/>\n"
 "Language: fa\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 2026.6.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -41,11 +41,11 @@ msgstr "دستور صادر شده: "
 
 #: builtin/client/chatcommands.lua
 msgid "List online players"
-msgstr ""
+msgstr "لیست بازیکنان آنلاین"
 
 #: builtin/client/chatcommands.lua
 msgid "Online players: "
-msgstr ""
+msgstr "بازیکنان آنلاین: "
 
 #: builtin/client/chatcommands.lua
 msgid "The out chat queue is now empty."
@@ -53,11 +53,11 @@ msgstr ""
 
 #: builtin/client/chatcommands.lua
 msgid "This command is disabled by server."
-msgstr ""
+msgstr "این دستور توسط سرور غیرفعال شده."
 
 #: builtin/common/chatcommands.lua
 msgid "Available commands:"
-msgstr ""
+msgstr "دستورات موجود:"
 
 #: builtin/common/chatcommands.lua
 msgid "Available commands: "
@@ -104,11 +104,11 @@ msgstr ""
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
-msgstr ""
+msgstr "انتخاب دایرکتوری"
 
 #: builtin/common/settings/components.lua
 msgid "Select file"
-msgstr ""
+msgstr "انتخاب فایل"
 
 #: builtin/common/settings/components.lua
 msgid "Set"
