@@ -1,7 +1,8 @@
 set(DEPS "${CMAKE_SOURCE_DIR}/android/native/deps/${ANDROID_ABI}")
 
 set(CURL_INCLUDE_DIR ${DEPS}/Curl/include)
-set(CURL_LIBRARY ${DEPS}/Curl/libcurl.a;${DEPS}/Curl/libmbedcrypto.a;${DEPS}/Curl/libmbedtls.a;${DEPS}/Curl/libmbedx509.a)
+set(CURL_LIBRARY ${DEPS}/Curl/libcurl.a)
+set(CURL_EXTRA_LIBRARIES ${DEPS}/Curl/libmbedcrypto.a ${DEPS}/Curl/libmbedtls.a ${DEPS}/Curl/libmbedx509.a)
 set(FREETYPE_INCLUDE_DIR_freetype2 ${FREETYPE_INCLUDE_DIR_ft2build}/freetype)
 set(FREETYPE_INCLUDE_DIR_ft2build ${DEPS}/Freetype/include/freetype2)
 set(FREETYPE_LIBRARY ${DEPS}/Freetype/libfreetype.a)
