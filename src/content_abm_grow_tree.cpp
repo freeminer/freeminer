@@ -94,6 +94,12 @@ struct GrowParams
 	int tree_get_water_max_from_humidity = 30; // max level to get from air
 	int tree_grow_bottom = 1;
 	int tree_grow_chance = 10;
+	int tree_branch_chance = 25; // 0 disables, higher is less frequent
+	int tree_branch_water_min = 25;
+	int tree_branch_light_min = 10;
+	int tree_branch_max_near = 1;
+	int tree_branch_cost = 2;
+	int tree_branch_spacing = 2;
 	int tree_width_to_height = 1;
 	int leaves_water_max = 20; // todo: depend on humidity 2-20
 	int leaves_grow_light_min = 8;
@@ -135,6 +141,18 @@ struct GrowParams
 			tree_grow_bottom = cf.groups.at("tree_grow_bottom");
 		if (cf.groups.contains("tree_grow_chance"))
 			tree_grow_chance = cf.groups.at("tree_grow_chance");
+		if (cf.groups.contains("tree_branch_chance"))
+			tree_branch_chance = cf.groups.at("tree_branch_chance");
+		if (cf.groups.contains("tree_branch_water_min"))
+			tree_branch_water_min = cf.groups.at("tree_branch_water_min");
+		if (cf.groups.contains("tree_branch_light_min"))
+			tree_branch_light_min = cf.groups.at("tree_branch_light_min");
+		if (cf.groups.contains("tree_branch_max_near"))
+			tree_branch_max_near = cf.groups.at("tree_branch_max_near");
+		if (cf.groups.contains("tree_branch_cost"))
+			tree_branch_cost = cf.groups.at("tree_branch_cost");
+		if (cf.groups.contains("tree_branch_spacing"))
+			tree_branch_spacing = cf.groups.at("tree_branch_spacing");
 		if (cf.groups.contains("tree_width_to_height"))
 			tree_width_to_height = cf.groups.at("tree_width_to_height");
 		if (cf.groups.contains("tree_get_water_from_humidity"))
@@ -320,6 +338,30 @@ public:
 			}
 		};
 
+		const auto opposite_direction = [](const auto &direction) -> int {
+			switch (direction) {
+			case D_TOP:
+				return D_BOTTOM;
+			case D_BOTTOM:
+				return D_TOP;
+			case D_FRONT:
+				return D_BACK;
+			case D_BACK:
+				return D_FRONT;
+			case D_LEFT:
+				return D_RIGHT;
+			case D_RIGHT:
+				return D_LEFT;
+			default:
+				return D_SELF;
+			}
+		};
+
+		const auto is_vertical_facedir = [](const auto &facedir) {
+			return ((facedir >= 0) && (facedir <= 3)) ||
+				   ((facedir >= 20) && (facedir <= 23));
+		};
+
 		Neighbor nbh[7]{};
 		{
 			size_t look_direction = 0;
@@ -385,7 +427,7 @@ public:
 				nb.water_level = nb.is_my_leaves ? get_leaves_water_level(nb.node)
 								 : nb.is_tree	 ? get_tree_water_level(
 														   nb.node, params.tree_water_param2)
-											  : 0;
+												 : 0;
 
 				nb.facedir = nb.node.getFaceDir(ndef);
 
@@ -393,9 +435,7 @@ public:
 
 				if (nb.self) {
 					// Can self grow to up/down?
-					nb.allow_grow_by_rotation =
-							((self_facedir >= 0) && (self_facedir <= 3)) ||
-							((self_facedir >= 20) && (self_facedir <= 23));
+					nb.allow_grow_by_rotation = is_vertical_facedir(self_facedir);
 				} else if (nb.top || nb.bottom) {
 					nb.allow_grow_by_rotation = nbh[D_SELF].allow_grow_by_rotation;
 				} else if (look_direction == D_FRONT || look_direction == D_BACK) {
@@ -451,6 +491,10 @@ public:
 			}
 		}
 
+		const int branch_side_dirs[] = {D_BACK, D_FRONT, D_RIGHT, D_LEFT};
+		const int branch_start_direction = branch_side_dirs[myrand_range(0, 3)];
+		const int self_grow_direction = next_grow_node_idx_by_facedir(self.facedir);
+
 		for (int look_direction = D_SELF + 1; look_direction <= D_BOTTOM;
 				++look_direction) {
 			auto &nb = nbh[look_direction];
@@ -501,6 +545,100 @@ public:
 			}
 
 			//  DUMP(i, pos.Y, self_water_level, nb.top, nb.water_level, allow_grow_by_light, up_all_leaves, nb.is_my_leaves, nb.is_any_leaves, up_all_leaves, nb.light, params.leaves_die_light_max, nb.allow_grow_by_rotation, nb.is_liquid, nb.cf->name);
+			const auto has_near_side_branch = [&](int spacing) {
+				for (int y = -spacing; y <= spacing; ++y) {
+					for (int side_dir = D_BACK; side_dir <= D_LEFT; ++side_dir) {
+						const auto side_pos = pos + v3pos_t{0, static_cast<pos_t>(y), 0} +
+											  leaves_look_dirs[side_dir];
+						const auto side_node = map->getNodeTry(side_pos);
+						if (!side_node) {
+							return true;
+						}
+
+						const auto side_content = side_node.getContent();
+						if (side_content == content ||
+								ndef->get(side_content).groups.contains("tree")) {
+							return true;
+						}
+					}
+				}
+
+				return false;
+			};
+
+			const auto has_open_below = [&](const v3pos_t &target_pos) {
+				const auto below_node = map->getNodeTry(target_pos + v3pos_t{0, -1, 0});
+				return below_node && ndef->get(below_node.getContent()).buildable_to;
+			};
+
+			const bool can_start_side_branch = [&]() {
+				if (params.tree_branch_chance <= 0 || !nb.side ||
+						params.tree_water_param2 ||
+						look_direction != branch_start_direction) {
+					return false;
+				}
+
+				if (!has_open_below(nb.pos)) {
+					return false;
+				}
+
+				if (!self_allow_grow_by_rotation || nbh[D_BOTTOM].content != content ||
+						nbh[D_TOP].content != content) {
+					return false;
+				}
+
+				if (near_tree >= params.tree_branch_max_near ||
+						self_water_level < params.tree_branch_water_min ||
+						nb.light < params.tree_branch_light_min) {
+					return false;
+				}
+
+				if (nb.is_liquid || nb.is_soil || nb.cf->groups.contains("sand")) {
+					return false;
+				}
+
+				if (!(nb.is_any_leaves || nb.cf->buildable_to ||
+							nb.cf->groups.contains("fruit"))) {
+					return false;
+				}
+
+				if (!(grow_debug_fast || activate ||
+							!myrand_range(0, params.tree_branch_chance))) {
+					return false;
+				}
+
+				return !has_near_side_branch(std::max(0, params.tree_branch_spacing));
+			}();
+
+			const bool can_rotate_branch_up = [&]() {
+				if (self_allow_grow_by_rotation) {
+					return false;
+				}
+
+				const auto &self_facedir = self.facedir;
+				const int next_idx = next_grow_node_idx_by_facedir(self_facedir);
+				if (look_direction != next_idx) {
+					return false;
+				}
+
+				const int opposite_idx = opposite_direction(next_idx);
+				const bool have_horizontal_parent =
+						opposite_idx >= 0 && opposite_idx < 7 &&
+						nbh[opposite_idx].content == content &&
+						!is_vertical_facedir(nbh[opposite_idx].facedir);
+				if (!have_horizontal_parent) {
+					return false;
+				}
+
+				const uint8_t next_light =
+						next_idx >= 0 && next_idx < 7 ? nbh[next_idx].light : 0;
+				if (nb.is_my_leaves || nbh[D_TOP].is_my_leaves) {
+					return true;
+				}
+
+				return nb.light > self.light && next_light < nbh[D_TOP].light;
+			}();
+
 			auto tree_grow = [&]() {
 				if (content == nb.content) {
 					return false;
@@ -515,7 +653,17 @@ public:
 					return false;
 				}
 
-				if (!nb.allow_grow_by_rotation) {
+				if (!nb.allow_grow_by_rotation && !can_start_side_branch) {
+					return false;
+				}
+
+				if (!self_allow_grow_by_rotation &&
+						look_direction != self_grow_direction) {
+					return false;
+				}
+
+				if (!self_allow_grow_by_rotation && !can_rotate_branch_up &&
+						!has_open_below(nb.pos)) {
 					return false;
 				}
 
@@ -554,47 +702,31 @@ public:
 					}
 				}
 
-				if (!(grow_debug_fast || activate ||
-							!myrand_range(
-									0, params.tree_grow_chance * (nb.bottom ? 3 : 1)))) {
+				if (!can_start_side_branch &&
+						!(grow_debug_fast || activate ||
+								!myrand_range(0,
+										params.tree_grow_chance * (nb.bottom ? 3 : 1)))) {
 					return false;
 				}
 
-				if (!decrease(self_water_level)) {
+				if (!decrease(self_water_level,
+							can_start_side_branch ? std::max(1, params.tree_branch_cost)
+												  : 1)) {
 					return true;
 				}
 
 				//if (grow_debug) DUMP("tr->tr", i, nb.pos.Y, nb.top, nb.bottom, nb.content, content, self_water_level, self_water_level_orig, nb.light);
 
 				auto node = self.node; //{content, 1, nbh[D_SELF].node.getParam2()};
-				{
-					// Check if light is enough and current grow direction is horizontal - rotate and grow up
+				if (can_start_side_branch) {
+					node.setParam2(direction_to_facedir(look_direction));
+				} else {
 					const auto &self_facedir = self.facedir;
-					// Check if current tree is growing horizontally (sides: 4-5, 6-9, 12-19)
-					// Vertical directions are typically 0-3 and 20-23
-					// bool is_currently_horizontal =
-					// 		(self_facedir >= 4 && self_facedir <= 19) ||
-					// 		(self_facedir == 12 || self_facedir == 18);
+					if (!is_vertical_facedir(self_facedir)) {
+						node.setParam2(self_facedir);
 
-					// Rotate upward only if the node in the current growth direction has more light than the side node
-					if (//self.side && 
-						nb.light > self.light // params.tree_grow_up_light_min
-							// && is_currently_horizontal
-							//&& !myrand_range(0, params.tree_grow_up_chance)
-					) {
-						// Determine the next neighbor index based on the current facedir
-
-						const int next_idx = next_grow_node_idx_by_facedir(self_facedir);
-						if (look_direction == next_idx) {
-							uint8_t next_light = 0;
-							if (next_idx >= 0 && next_idx < 7) {
-								next_light = nbh[next_idx].light;
-							}
-
-							if (next_light < nbh[D_TOP].light) {
-								// Current growth is horizontal (side), sufficient light, next node in growth direction is brighter, and random chance passes
-								node.setParam2(0); // Set rotation to upward
-							}
+						if (can_rotate_branch_up) {
+							node.setParam2(0);
 						}
 					}
 				}
@@ -616,7 +748,13 @@ public:
 				}
 
 				if (nb.side && nb.is_tree && self_allow_grow_by_rotation) {
-					// DUMP("skip tr side pump", water_level, nb.is_tree, allow_grow_up_by_rotation),
+					if (nb.is_other_tree ||
+							next_grow_node_idx_by_facedir(nb.facedir) != look_direction) {
+						// Pump only into branches that point away from this trunk.
+						return false;
+					}
+				} else if (nb.is_tree && !self_allow_grow_by_rotation &&
+						   look_direction != self_grow_direction) {
 					return false;
 				}
 
