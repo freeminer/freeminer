@@ -151,6 +151,7 @@ void ServerScripting::InitializeModApi(lua_State *L, int top)
 	ModApiAuth::Initialize(L, top);
 	ModApiCraft::Initialize(L, top);
 	ModApiEnv::Initialize(L, top);
+	ModApiEnv::InitializeFM(L, top);
 	ModApiInventory::Initialize(L, top);
 	ModApiItem::Initialize(L, top);
 	ModApiMapgen::Initialize(L, top);

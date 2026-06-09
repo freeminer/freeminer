@@ -111,6 +111,9 @@ private:
 	// freeze_melt(pos)
 	static int l_freeze_melt(lua_State *L);
 
+	// tnt_explode(pos, options) -> result table
+	static int l_tnt_explode(lua_State *L);
+
 	// get_node_boxes(box_type, pos, [node]) -> table
 	// box_type = string
 	// pos = {x=num, y=num, z=num}
@@ -253,6 +256,7 @@ private:
 
 public:
 	static void Initialize(lua_State *L, int top);
+	static void InitializeFM(lua_State *L, int top);
 	static void InitializeClient(lua_State *L, int top);
 };
 
