@@ -293,6 +293,30 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 	std::vector<v3pos_t> chained_tnt;
 	unordered_set_v3pos terminal_tnt_ignited;
 
+	const auto blast_strength_from_radius = [](int radius) {
+		const double diameter = static_cast<double>(radius) * 2.0 + 1.0;
+		return diameter * diameter * diameter;
+	};
+
+	const auto tnt_node_blast_strength = [&](content_t content) {
+		const auto &cf = ndef->get(content);
+
+		const int tnt_strength =
+				itemgroup_get(cf.groups, "tnt_blast_tnt_strength");
+		if (tnt_strength > 0)
+			return static_cast<double>(tnt_strength);
+
+		const int strength = itemgroup_get(cf.groups, "tnt_blast_strength");
+		if (strength > 0)
+			return static_cast<double>(strength);
+
+		const int radius = itemgroup_get(cf.groups, "tnt_radius");
+		if (radius > 0)
+			return blast_strength_from_radius(radius);
+
+		return blast_tnt_strength;
+	};
+
 	const auto has_on_blast = [&](content_t content) {
 		const auto found = on_blast_cache.find(content);
 		if (found != on_blast_cache.end())
@@ -621,9 +645,10 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				}
 
 				env->removeNode(candidate.node_pos, 2);
-				added_strength += blast_tnt_strength;
-				remaining_strength += blast_tnt_strength;
-				total_strength += blast_tnt_strength;
+				const double node_strength = tnt_node_blast_strength(content);
+				added_strength += node_strength;
+				remaining_strength += node_strength;
+				total_strength += node_strength;
 				++tnts;
 			} else {
 				if (tnt_burning_content != CONTENT_IGNORE)
