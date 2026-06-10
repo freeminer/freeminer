@@ -47,6 +47,28 @@ std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueTyp
 			[](const pairtype &p1, const pairtype &p2) { return p1.second < p2.second; });
 }
 
+static video::SColor get_light_source_color(const ContentFeatures &cf)
+{
+	auto has_custom_color = [](const video::SColor &color) {
+		return color.getAlpha() != 255 || color.getRed() != 255 ||
+			   color.getGreen() != 255 || color.getBlue() != 255;
+	};
+
+	if (has_custom_color(cf.color))
+		return cf.color;
+
+	for (const auto &tile : cf.tiledef) {
+		if (tile.has_color)
+			return tile.color;
+	}
+
+	if (cf.post_effect_color.getAlpha())
+		return video::SColor(255, cf.post_effect_color.getRed(),
+				cf.post_effect_color.getGreen(), cf.post_effect_color.getBlue());
+
+	return video::SColor(255, 255, 255, 255);
+}
+
 static const auto load_block = [](Map *smap, MapDatabase *dbase,
 									   const v3bpos_t &pos) -> MapBlockPtr {
 	auto block = loadBlockNoStore(smap, dbase, pos);
@@ -146,7 +168,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					std::vector<uint8_t> top_light_night;
 					std::unordered_map<content_t, MapNode> nodes;
 
-					// TODO: tune block selector
+			// TODO: tune block selector
 
 #if 0
 // Simple grid aligned
@@ -196,8 +218,9 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						if (farlights && !step && (lf.light_source) && !cf.isLiquid()) {
 							const auto plpos =
 									block->getPosRelative() + p; //pos_in_block;
-							const auto &[i, r] = block->m_light_points.try_emplace(
-									plpos, lf.light_source);
+							block->m_light_points.try_emplace(
+									plpos, MapBlock::makeLightPoint(lf.light_source,
+												   get_light_source_color(cf)));
 						}
 
 						nodes[c] = n;
@@ -252,7 +275,8 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 			for (const auto &lp : block->m_light_points) {
 				++one_step_stat.lights_count;
 				++lights_in_block;
-				const auto mod = int(coef * some_magick_thinner_const * (16 - lp.second));
+				const auto level = MapBlock::getLightPointLevel(lp.second);
+				const auto mod = int(coef * some_magick_thinner_const * (16 - level));
 				if (mod &&
 						(step >= 1 ||
 								lights_in_block > (min_no_skip_lights * step * 3)) &&
