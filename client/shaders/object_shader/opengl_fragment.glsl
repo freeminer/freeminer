@@ -11,6 +11,7 @@ uniform float fogShadingParameter;
 uniform vec3 eyePosition;
 uniform vec3 sunPosition;
 uniform float wieldLight;
+uniform float wieldLightBrightness;
 
 // The cameraOffset is the current center of the visible world.
 uniform highp vec3 cameraOffset;
@@ -391,14 +392,13 @@ void main(void)
 #endif
 
 	color = base.rgb;
-	vec4 col = vec4(color.rgb * varColor.rgb, 1.0);
 
-	float wieldRadius = wieldLight * 4.0;
+	float wieldRadius = wieldLight * 6.0;
 	float light = wieldLight > 0.0
 			? (1.0 - smoothstep(0.0, wieldRadius, length(eyeVec))) *
-					clamp(wieldLight / 14.0, 0.0, 1.0)
+					wieldLightBrightness
 			: 0.0;
-	col.rgb *= min(vIDiff + light, 1.0);
+	vec4 col = vec4(color.rgb * max(varColor.rgb * vIDiff, vec3(light)), 1.0);
 
 	//col.rgb *= vIDiff;
 
