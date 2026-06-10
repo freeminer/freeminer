@@ -601,6 +601,7 @@ our $tasks = {
     build_client => ['set_client',   'build',],
     build_server => ['set_server',   'build',],
     bot          => [{'----default' => 1, '----' . $config->{options_display} => 1}, 'build_client', 'run_bot'],
+    bot_random      => [{'----bot' => 1, '----bot_random' => 1,}, 'bot'],
     clang        => {
         '---cmake_clang'  => 1,
         '---cmake_libcxx' => 1,

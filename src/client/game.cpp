@@ -218,7 +218,7 @@ public:
 
 		auto camera_position = oposToV3f(m_client->getCamera()->getPosition());
 		m_camera_position_pixel.set(camera_position, services);
-		m_camera_position_pixel.set(camera_position, services);
+		m_camera_position_vertex.set(camera_position, services);
 
 		m_texel_size0_vertex.set(m_texel_size0, services);
 		m_texel_size0_pixel.set(m_texel_size0, services);

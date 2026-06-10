@@ -474,7 +474,11 @@ void main(void)
 	}
 
 	color = base.rgb;
-	float light = max((wieldLight/2.0)/gl_FragCoord.z, 0.0);
+	float wieldRadius = wieldLight * 4.0;
+	float light = wieldLight > 0.0
+			? (1.0 - smoothstep(0.0, wieldRadius, length(eyeVec))) *
+					clamp(wieldLight / 14.0, 0.0, 1.0)
+			: 0.0;
 	vec4 col = vec4(color.rgb * min(varColor.rgb + light, 1.0), 1.0);
 	//vec4 col = vec4(base.rgb * varColor.rgb, 1.0);
 
