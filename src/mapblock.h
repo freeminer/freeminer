@@ -540,7 +540,36 @@ public:
 	std::mutex abm_triggers_mutex;
 	size_t abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate = 0);
 	uint32_t m_abm_timestamp{};
-    using light_t = uint8_t;
+	using light_t = uint32_t;
+	static light_t makeLightPoint(u8 level, video::SColor color)
+	{
+		if (level > LIGHT_MAX)
+			level = LIGHT_MAX;
+
+		return (static_cast<light_t>(level) << 24) |
+			   (static_cast<light_t>(color.getRed()) << 16) |
+			   (static_cast<light_t>(color.getGreen()) << 8) |
+			   static_cast<light_t>(color.getBlue());
+	}
+
+	static u8 getLightPointLevel(light_t light)
+	{
+		if (light <= LIGHT_SUN)
+			return static_cast<u8>(light);
+
+		const auto level = static_cast<u8>((light >> 24) & 0xff);
+		return level > LIGHT_MAX ? LIGHT_MAX : level;
+	}
+
+	static video::SColor getLightPointColor(light_t light)
+	{
+		if (light <= LIGHT_SUN)
+			return video::SColor(255, 255, 255, 255);
+
+		return video::SColor(
+				255, (light >> 16) & 0xff, (light >> 8) & 0xff, light & 0xff);
+	}
+
 	std::unordered_map<v3pos_t, light_t> m_light_points;
 
 	u32 getActualTimestamp()
