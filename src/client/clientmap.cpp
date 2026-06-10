@@ -67,7 +67,7 @@ namespace {
 		}
 
 		void addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
-			video::IVideoDriver *driver);
+			video::IVideoDriver *driver, bool shadow_pass = false);
 	};
 
 	// reference to a mesh buffer used when rendering the map.
@@ -1275,7 +1275,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 
 void MeshBufListMaps::addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
-	video::IVideoDriver *driver)
+	video::IVideoDriver *driver, bool shadow_pass)
 {
 	for (int layer = 0; layer < MAX_TILE_LAYERS; layer++) {
 		scene::IMesh *mesh = block_mesh->getMesh(layer);
@@ -1284,6 +1284,9 @@ void MeshBufListMaps::addFromBlock(v3s16 block_pos, MapBlockMesh *block_mesh,
 		u32 c = mesh->getMeshBufferCount();
 		for (u32 i = 0; i < c; i++) {
 			scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
+
+			if (shadow_pass && buf->getPrimitiveType() == scene::EPT_POINTS)
+				continue;
 
 			auto &material = buf->getMaterial();
 			auto *rnd = driver->getMaterialRenderer(material.MaterialType);
@@ -1989,7 +1992,7 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 				draw_order.emplace_back(get_block_wpos(block_pos), &buffer);
 		} else {
 			// Otherwise, group them
-			grouped_buffers.addFromBlock(block_pos, mapBlockMesh.get(), driver);
+			grouped_buffers.addFromBlock(block_pos, mapBlockMesh.get(), driver, true);
 		}
 	}
 

@@ -2272,21 +2272,27 @@ void Client::afterContentReceived()
 	// content from previous sessions.
 	guiScalingCacheClear();
 
-   if (!headless_optimize) {
+	if (!headless_optimize) {
 
-	// Rebuild inherited images and recreate textures
-	infostream<<"- Rebuilding images and textures"<<std::endl;
-	m_rendering_engine->draw_load_screen(wstrgettext("Loading textures..."),
-			guienv, m_tsrc, 0, 66);
-	m_tsrc->rebuildImagesAndTextures();
+		// Rebuild inherited images and recreate textures
+		infostream<<"- Rebuilding images and textures"<<std::endl;
+		m_rendering_engine->draw_load_screen(wstrgettext("Loading textures..."),
+				guienv, m_tsrc, 0, 66);
+		m_tsrc->rebuildImagesAndTextures();
 
-	// Rebuild shaders
-	infostream<<"- Rebuilding shaders"<<std::endl;
-	m_rendering_engine->draw_load_screen(wstrgettext("Rebuilding shaders..."),
-			guienv, m_tsrc, 0, 68);
-	m_shsrc->rebuildShaders();
+		// Rebuild shaders
+		infostream<<"- Rebuilding shaders"<<std::endl;
+		m_rendering_engine->draw_load_screen(wstrgettext("Rebuilding shaders..."),
+				guienv, m_tsrc, 0, 68);
+		m_shsrc->rebuildShaders();
+		ShaderConstants constants;
+		const u32 shader_id = m_shsrc->getShader("far_light", constants,
+				video::EMT_SOLID);
+		m_far_light_material = m_shsrc->getShaderInfo(shader_id).material;
 
-   }
+	} else {
+		m_far_light_material = video::EMT_SOLID;
+	}
 	// Update node aliases
 	infostream<<"- Updating node aliases"<<std::endl;
 	m_rendering_engine->draw_load_screen(wstrgettext("Initializing nodes..."),

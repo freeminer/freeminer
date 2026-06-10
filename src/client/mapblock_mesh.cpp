@@ -801,7 +801,10 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 							if (!buffer) {
 								buffer = new scene::SMeshBuffer();
 								buffer->PrimitiveType = scene::EPT_POINTS;
+								buffer->Material.MaterialType =
+										client->getFarLightMaterial();
 								buffer->Material.PointCloud = true;
+								buffer->Material.Thickness = 2.0f;
 								buffer->Material.BackfaceCulling = false;
 								buffer->Material.FogEnable = true;
 							}

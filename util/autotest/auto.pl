@@ -238,8 +238,8 @@ our $options = {
         fps_max_unfocused => 10,
     },
     bot_random => {
-        #random_input       => 1,
-        #continuous_forward => 1,
+        random_input       => 1,
+        continuous_forward => 1,
     },
     bot_forward => {
         continuous_forward => 1,
@@ -601,6 +601,7 @@ our $tasks = {
     build_client => ['set_client',   'build',],
     build_server => ['set_server',   'build',],
     bot          => [{'----default' => 1, '----' . $config->{options_display} => 1}, 'build_client', 'run_bot'],
+    bot_random      => [{'----bot' => 1, '----bot_random' => 1,}, 'bot'],
     clang        => {
         '---cmake_clang'  => 1,
         '---cmake_libcxx' => 1,
