@@ -221,7 +221,8 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 	const bool liquid_real = getboolfield_default(L, 2, "liquid_real", false);
 	const std::string owner = getstringfield_default(L, 2, "owner", "");
 
-	const int melt_chance = std::max(0, getintfield_default(L, 2, "melt_chance", 15));
+	const int melt_chance = std::max(0,
+			static_cast<int>(getintfield_default(L, 2, "melt_chance", 15)));
 	const int melt_direction = getintfield_default(L, 2, "melt_direction", 1);
 	const double melt_min_radius = static_cast<double>(
 			getfloatfield_default(L, 2, "melt_min_radius", 10.0f));
