@@ -8,141 +8,145 @@ msgstr ""
 "Project-Id-Version: luanti\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2026-06-15 06:01+0000\n"
+"Last-Translator: ien-info <internet-education-nations@outlook.com>\n"
+"Language-Team: Burmese <https://hosted.weblate.org/projects/minetest/"
+"minetest/my/>\n"
 "Language: my\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
-msgstr ""
+msgstr "အသုံးပြုလိုက်သော ကွန်မန်း - "
 
 #: builtin/client/chatcommands.lua
 msgid "Empty command."
-msgstr ""
+msgstr "ဘာကွန်မန်းမှ ရိုက်မထားပါ။"
 
 #: builtin/client/chatcommands.lua
 msgid "Invalid command: "
-msgstr ""
+msgstr "အသုံးမဝင်သော ကွန်မန်း - "
 
 #: builtin/client/chatcommands.lua
 msgid "List online players"
-msgstr ""
+msgstr "အွန်လိုင်းပေါ်ရှိ ကစားသမားများစာရင်း"
 
 #: builtin/client/chatcommands.lua
 msgid "This command is disabled by server."
-msgstr ""
+msgstr "ဤကွန်မန်းစာသားကို ဆာဗာမှ ပိတ်ပင်ထားသည်။"
 
 #: builtin/client/chatcommands.lua
 msgid "Online players: "
-msgstr ""
+msgstr "အွန်လိုင်းကစားသမားများ။ "
 
 #: builtin/client/chatcommands.lua
 msgid "Exit to main menu"
-msgstr ""
+msgstr "ပင်မမီနူးသို့ထွက်ရန်"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
-msgstr ""
+msgstr "ထွက်ခွာမည့် ချတ်တန်းစီဇယားကို ရှင်းလင်းရန်"
 
 #: builtin/client/chatcommands.lua
 msgid "The out chat queue is now empty."
-msgstr ""
+msgstr "ထွက်ခွာမည့် ချတ်တန်းစီဇယား ယခု လွတ်လပ်သွားပါပြီ။"
 
 #: builtin/common/chatcommands.lua
 msgid "Available commands: "
-msgstr ""
+msgstr "ရနိုင်သောကွန်မန်းများ။ "
 
 #. TRANSLATORS: 'help' and 'all' mustn't be translated. cmd = command
 #: builtin/common/chatcommands.lua
 msgid ""
 "Use '.help <cmd>' to get more information, or '.help all' to list everything."
 msgstr ""
+"အသေးစိတ်သိရှိရန် '.help ' ကို အသုံးပြုပါ၊ သို့မဟုတ် အားလုံးကိုကြည့်ရန် '.help all' ကို အသုံးပြုပါ။"
 
 #: builtin/common/chatcommands.lua
 msgid "Available commands:"
-msgstr ""
+msgstr "ရနိုင်သောကွန်မန်းများ:"
 
 #: builtin/common/chatcommands.lua
 msgid "Command not available: "
-msgstr ""
+msgstr "ကွန်မန်းမရနိုင်ပါ။ "
 
 #. TRANSLATORS: Syntax of 'help' command. Don't translate anything except 'cmd' (=command)
 #: builtin/common/chatcommands.lua
 msgid "[all | <cmd>] [-t]"
-msgstr ""
+msgstr "[all | <cmd>] [-t]"
 
 #: builtin/common/chatcommands.lua
 msgid "Get help for commands (-t: output in chat)"
-msgstr ""
+msgstr "ကွန်မန်းများအတွက် အကူအညီရယူရန် (-t - ချတ်ဘောက်စ်အတွင်း အဖြေထုတ်ပေးရန်)"
 
 #: builtin/common/settings/components.lua
 msgid "Set"
-msgstr ""
+msgstr "သတ်မှတ်ရန် သို့မဟုတ် ပြင်ဆင်ရန်"
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
-msgstr ""
+msgstr "ရှာဖွေကြည့်ရှုရန်"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
-msgstr ""
+msgstr "ဖိုဒါ ရွေးချယ်ရန်"
 
 #: builtin/common/settings/components.lua
 msgid "Select file"
-msgstr ""
+msgstr "ဖိုင်ရွေးချယ်ရန်"
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
-msgstr ""
+msgstr "တည်းဖြတ်ရန်"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "\"$1\" နှင့် ကိုက်ညီမှုမရှိပါ"
 
 #: builtin/common/settings/components.lua
 msgid "Remove keybinding"
-msgstr ""
+msgstr "ခလုတ်သတ်မှတ်ချက်ကို ဖယ်ရှားရန်"
 
 #: builtin/common/settings/components.lua
 msgid "Add keybinding"
-msgstr ""
+msgstr "ခလုတ်သတ်မှတ်ချက်ထည့်ရန်"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: src/settings_translation_file.cpp
 msgid "Offset"
-msgstr ""
+msgstr "နေရာလွဲချက်"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Offsets the final noise by this value."
-msgstr ""
+msgstr "ဤတန်ဖိုးဖြင့် နောက်ဆုံး Noise ကို နေရာရွှေ့ရန်။"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: src/settings_translation_file.cpp
 msgid "Scale"
-msgstr ""
+msgstr "စကေး"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The multiplier for the noise before the offset is added."
-msgstr ""
+msgstr "နေရာလွဲချက် မပေါင်းထည့်မီ Noise အတွက် အသုံးပြုမည့် မြှောက်ဖော်ကိန်း."
 
 #. TRANSLATORS: Value for randomness
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "Seed"
-msgstr ""
+msgstr "မျိုးစေ့"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The random seed for the noise. The same seed results in the same noise."
 msgstr ""
+"Noise အတွက် ကျပန်းမျိုးစေ့ ဖြစ်သည်။ မျိုးစေ့ တူညီပါက Noise ရလဒ်လည်း တူညီလိမ့်မည်။"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "$1 spread"
-msgstr ""
+msgstr "$1 ပျံ့နှံ့မှု"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales the noise in the $1 axis by this value."
