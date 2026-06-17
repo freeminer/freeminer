@@ -54,7 +54,15 @@ const v3opos_t g_6dirso[6] = {
 		v3opos_t(0, 1, 0),	// top
 };
 
-void FarMesh::publishFarBlock(const MapBlockPtr &block)
+static v3bpos_t align_far_block_pos(v3bpos_t pos, const uint8_t shift)
+{
+	(pos.X >>= shift) <<= shift;
+	(pos.Y >>= shift) <<= shift;
+	(pos.Z >>= shift) <<= shift;
+	return pos;
+}
+
+void FarMesh::publishFarBlock(const MapBlockPtr &block, const bool check_coarser)
 {
 	if (!block) {
 		return;
@@ -64,6 +72,82 @@ void FarMesh::publishFarBlock(const MapBlockPtr &block)
 	auto &far_blocks = client_map.m_far_blocks;
 	const auto blockpos_actual = block->getPos();
 	const auto step = block->far_step;
+	const auto block_iteration = block->far_iteration.load();
+
+	if (!block_iteration) {
+		return;
+	}
+
+	if (client_map.far_iteration_clean && block_iteration < client_map.far_iteration_clean) {
+		return;
+	}
+
+	if (check_coarser && step + 1 < FARMESH_STEP_MAX) {
+		MapBlockPtr replaces_coarser_block;
+		std::array<MapBlockPtr, 8> refined_blocks{};
+		bool refined_group_ready = false;
+		const bpos_t blocks_per_side = 2;
+		const bpos_t step_shift = 1 << (step + m_control->cell_size_pow);
+		const auto parent_pos =
+				align_far_block_pos(blockpos_actual, step + m_control->cell_size_pow);
+
+		{
+			const auto lock = far_blocks.lock_shared_rec();
+			if (const auto it = far_blocks.find(parent_pos);
+					it != far_blocks.end() && it->second && it->second != block &&
+					it->second->far_step == step + 1) {
+				replaces_coarser_block = it->second;
+				if (replaces_coarser_block->far_iteration < block_iteration) {
+					replaces_coarser_block->far_iteration = block_iteration;
+				}
+			}
+		}
+
+		if (replaces_coarser_block) {
+			refined_group_ready = true;
+			size_t refined_index = 0;
+			auto &far_blocks_storage_step = client_map.far_blocks_storage[step];
+			const auto lock = far_blocks_storage_step.lock_shared_rec();
+			for (bpos_t x = 0; x < blocks_per_side; ++x) {
+				for (bpos_t y = 0; y < blocks_per_side; ++y) {
+					for (bpos_t z = 0; z < blocks_per_side; ++z) {
+						const v3bpos_t sub_block_pos =
+								parent_pos +
+								v3bpos_t{static_cast<bpos_t>(x * step_shift),
+										static_cast<bpos_t>(y * step_shift),
+										static_cast<bpos_t>(z * step_shift)};
+						const auto it = far_blocks_storage_step.find(sub_block_pos);
+						if (it == far_blocks_storage_step.end() || !it->second.block ||
+								it->second.block->far_status <
+										MapBlock::far_status_e::s6_mesh_complete) {
+							refined_group_ready = false;
+							break;
+						}
+						it->second.block->far_iteration = block_iteration;
+						refined_blocks[refined_index++] = it->second.block;
+					}
+					if (!refined_group_ready) {
+						break;
+					}
+				}
+				if (!refined_group_ready) {
+					break;
+				}
+			}
+		}
+
+		if (replaces_coarser_block && !refined_group_ready) {
+			return;
+		}
+
+		if (refined_group_ready) {
+			for (const auto &refined_block : refined_blocks) {
+				publishFarBlock(refined_block, false);
+			}
+			replaces_coarser_block->far_iteration = 0;
+			return;
+		}
+	}
 
 	const auto lock = far_blocks.lock_unique_rec();
 	far_blocks.insert_or_assign(blockpos_actual, block);
@@ -158,8 +242,8 @@ bool FarMesh::makeFarBlock(
 			const bpos_t blocks_per_side = 2;
 			const bpos_t step_shift = 1 << (step - 1 + draw_control.cell_size_pow);
 			const auto lock = far_blocks.lock_shared_rec();
-			for (bpos_t x = 0; x < blocks_per_side && !replaces_finer_block; ++x) {
-				for (bpos_t y = 0; y < blocks_per_side && !replaces_finer_block; ++y) {
+			for (bpos_t x = 0; x < blocks_per_side; ++x) {
+				for (bpos_t y = 0; y < blocks_per_side; ++y) {
 					for (bpos_t z = 0; z < blocks_per_side; ++z) {
 						const v3bpos_t sub_block_pos =
 								blockpos_actual +
@@ -170,7 +254,9 @@ bool FarMesh::makeFarBlock(
 								it != far_blocks.end() && it->second &&
 								it->second != block && it->second->far_step + 1 == step) {
 							replaces_finer_block = true;
-							break;
+							if (block->far_status < MapBlock::far_status_e::s6_mesh_complete) {
+								it->second->far_iteration = far_iteration_use;
+							}
 						}
 					}
 				}
@@ -178,8 +264,66 @@ bool FarMesh::makeFarBlock(
 		}
 
 		block->far_iteration = far_iteration_use;
-		if (!replaces_finer_block ||
-				block->far_status >= MapBlock::far_status_e::s6_mesh_complete) {
+
+		MapBlockPtr replaces_coarser_block;
+		std::array<MapBlockPtr, 8> refined_blocks{};
+		bool refined_group_ready = false;
+		if (step + 1 < FARMESH_STEP_MAX) {
+			const bpos_t blocks_per_side = 2;
+			const bpos_t step_shift = 1 << (step + draw_control.cell_size_pow);
+			const auto parent_pos =
+					align_far_block_pos(blockpos_actual, step + draw_control.cell_size_pow);
+			{
+				const auto lock = far_blocks.lock_shared_rec();
+				if (const auto it = far_blocks.find(parent_pos);
+						it != far_blocks.end() && it->second && it->second != block &&
+						it->second->far_step == step + 1) {
+					replaces_coarser_block = it->second;
+					replaces_coarser_block->far_iteration = far_iteration_use;
+				}
+			}
+			if (replaces_coarser_block) {
+				refined_group_ready = true;
+				size_t refined_index = 0;
+				auto &far_blocks_storage_step = client_map.far_blocks_storage[step];
+				const auto lock = far_blocks_storage_step.lock_shared_rec();
+				for (bpos_t x = 0; x < blocks_per_side; ++x) {
+					for (bpos_t y = 0; y < blocks_per_side; ++y) {
+						for (bpos_t z = 0; z < blocks_per_side; ++z) {
+							const v3bpos_t sub_block_pos =
+									parent_pos +
+									v3bpos_t{static_cast<bpos_t>(x * step_shift),
+											static_cast<bpos_t>(y * step_shift),
+											static_cast<bpos_t>(z * step_shift)};
+							const auto it = far_blocks_storage_step.find(sub_block_pos);
+							if (it == far_blocks_storage_step.end() || !it->second.block ||
+									it->second.block->far_status <
+											MapBlock::far_status_e::s6_mesh_complete) {
+								refined_group_ready = false;
+								break;
+							}
+							it->second.block->far_iteration = far_iteration_use;
+							refined_blocks[refined_index++] = it->second.block;
+						}
+						if (!refined_group_ready) {
+							break;
+						}
+					}
+					if (!refined_group_ready) {
+						break;
+					}
+				}
+			}
+		}
+
+		if (refined_group_ready) {
+			for (const auto &refined_block : refined_blocks) {
+				publishFarBlock(refined_block, false);
+			}
+			replaces_coarser_block->far_iteration = 0;
+		} else if (!replaces_coarser_block &&
+				(!replaces_finer_block ||
+						block->far_status >= MapBlock::far_status_e::s6_mesh_complete)) {
 			publishFarBlock(block);
 		}
 	}
@@ -959,7 +1103,7 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 					for (auto &blocks_step : client_map.far_blocks_storage) {
 						//std::vector<v3pos_t> del;
 						{
-							const auto lock = blocks_step.try_lock_shared_rec();
+							const auto lock = blocks_step.try_lock_unique_rec();
 							if (!lock->owns_lock()) {
 								continue;
 							}
@@ -968,7 +1112,7 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 								if (!block) {
 									continue;
 								}
-								if (block->far_step >= client_map.far_iteration_clean) {
+								if (block->far_iteration >= client_map.far_iteration_clean) {
 									continue;
 								}
 								if (block_used.second.far_last_used &&
