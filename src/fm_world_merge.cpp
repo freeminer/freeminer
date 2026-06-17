@@ -81,6 +81,19 @@ static const auto load_block = [](Map *smap, MapDatabase *dbase,
 	return block;
 };
 
+static int16_t average_climate(int64_t sum, size_t count)
+{
+	if (!count)
+		return 0;
+
+	if (sum >= 0)
+		return static_cast<int16_t>((sum + static_cast<int64_t>(count / 2)) /
+									static_cast<int64_t>(count));
+
+	return static_cast<int16_t>((sum - static_cast<int64_t>(count / 2)) /
+								static_cast<int64_t>(count));
+}
+
 WorldMerger::~WorldMerger()
 {
 	if (last_async.valid()) {
@@ -96,6 +109,12 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	const auto step_size = 1 << step_pow;
 	std::unordered_map<v3bpos_t, MapBlockPtr> blocks;
 	uint32_t timestamp = 0;
+	int64_t heat_sum = 0;
+	int64_t humidity_sum = 0;
+	int64_t heat_add_sum = 0;
+	int64_t humidity_add_sum = 0;
+	uint64_t heat_last_update = 0;
+	uint32_t humidity_last_update = 0;
 	{
 		for (bpos_t x = 0; x < step_size; ++x)
 			for (bpos_t y = 0; y < step_size; ++y)
@@ -118,6 +137,18 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					}
 					if (const auto ts = nblock->getActualTimestamp(); ts > timestamp)
 						timestamp = ts;
+					heat_sum += nblock->heat;
+					humidity_sum += nblock->humidity;
+					heat_add_sum += nblock->heat_add;
+					humidity_add_sum += nblock->humidity_add;
+					if (const auto ts = nblock->heat_last_update.load();
+							ts > heat_last_update) {
+						heat_last_update = ts;
+					}
+					if (const auto ts = nblock->humidity_last_update.load();
+							ts > humidity_last_update) {
+						humidity_last_update = ts;
+					}
 					blocks[rpos] = nblock;
 				}
 	}
@@ -144,6 +175,15 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	}
 
 	block_up->setTimestampNoChangedFlag(timestamp);
+	const auto climate_blocks = blocks.size();
+	if (climate_blocks) {
+		block_up->heat = average_climate(heat_sum, climate_blocks);
+		block_up->humidity = average_climate(humidity_sum, climate_blocks);
+		block_up->heat_add = average_climate(heat_add_sum, climate_blocks);
+		block_up->humidity_add = average_climate(humidity_add_sum, climate_blocks);
+		block_up->heat_last_update = heat_last_update;
+		block_up->humidity_last_update = humidity_last_update;
+	}
 
 	size_t not_empty_nodes{};
 	{
