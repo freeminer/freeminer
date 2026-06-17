@@ -170,16 +170,23 @@ void main(void)
 
 	vec4 pos = inVertexPosition;
 #if MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
-	// Generate waves with Perlin-type noise.
-	// The constants are calibrated such that they roughly
-	// correspond to the old sine waves.
-	vec3 wavePos = (mWorld * pos).xyz + cameraOffset;
-	// The waves are slightly compressed along the z-axis to get
-	// wave-fronts along the x-axis.
-	wavePos.x /= WATER_WAVE_LENGTH * 3.0;
-	wavePos.z /= WATER_WAVE_LENGTH * 2.0;
-	wavePos.z += animationTimer * WATER_WAVE_SPEED * 10.0;
-	pos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
+	// Keep the animated surface continuous. Scrolling value noise makes
+	// individual vertices move like a sawtooth when crossing lattice cells.
+	vec3 wavePos = (mWorld * pos).xyz;
+	wavePos += mod(cameraOffset, vec3(
+		WATER_WAVE_LENGTH * 24.0,
+		1.0,
+		WATER_WAVE_LENGTH * 30.0));
+	const float tau = 6.28318530718;
+	float waveTime = animationTimer * WATER_WAVE_SPEED * 10.0;
+	float wave =
+		0.50 * sin(tau * (wavePos.x / (WATER_WAVE_LENGTH * 8.0) +
+			wavePos.z / (WATER_WAVE_LENGTH * 5.0) + waveTime)) +
+		0.30 * sin(tau * (wavePos.x / (WATER_WAVE_LENGTH * 12.0) -
+			wavePos.z / (WATER_WAVE_LENGTH * 6.0) + waveTime * 0.68)) +
+		0.20 * sin(tau * ((wavePos.x + wavePos.z) /
+			(WATER_WAVE_LENGTH * 3.0) + waveTime * 1.31));
+	pos.y += (wave - 1.0) * WATER_WAVE_HEIGHT * 2.5;
 #elif MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES
 	pos.x += disp_x;
 	pos.y += disp_z * 0.1;

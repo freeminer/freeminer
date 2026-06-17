@@ -555,6 +555,8 @@ void main(void)
 		// Water reflections
 #if (defined(ENABLE_WATER_REFLECTIONS) && MATERIAL_WATER_REFLECTIONS && ENABLE_WAVING_WATER)
 		vec3 wavePos = worldPosition * vec3(2.0, 0.0, 2.0);
+		wavePos.x += mod(cameraOffset.x * 2.0, WATER_WAVE_LENGTH * 3.0 * 289.0);
+		wavePos.z += mod(cameraOffset.z * 2.0, WATER_WAVE_LENGTH * 2.0 * 289.0);
 		float off = animationTimer * WATER_WAVE_SPEED * 10.0;
 		wavePos.x /= WATER_WAVE_LENGTH * 3.0;
 		wavePos.z /= WATER_WAVE_LENGTH * 2.0;
