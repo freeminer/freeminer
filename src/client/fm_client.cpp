@@ -193,15 +193,17 @@ void Client::createFarMesh(MapBlockPtr &block)
 		//const auto &m_camera_offset = m_camera->getOffset();
 		const auto &step = block->far_step;
 		MeshMakeData mesh_make_data(m_client->getNodeDefManager(),
-				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0,
-
-				step, &m_client->far_container);
+				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0, step,
+				&m_client->far_container);
 		mesh_make_data.m_blockpos = blockpos;
 		const auto mesh = std::make_shared<MapBlockMesh>(m_client, &mesh_make_data);
 		block->setFarMesh(mesh, step);
 		block->far_step_draw = block->far_step;
 		block->creating_far_mesh = false;
 		block->far_status = MapBlock::far_status_e::s6_mesh_complete;
+		if (m_client->farmesh) {
+			m_client->farmesh->publishFarBlock(block);
+		}
 		++m_client->m_new_meshes;
 		g_profiler->avg("Client: Farmesh mesh [ms]", timer.stop(true));
 	}
