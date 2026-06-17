@@ -54,6 +54,47 @@ const v3opos_t g_6dirso[6] = {
 		v3opos_t(0, 1, 0),	// top
 };
 
+void FarMesh::publishFarBlock(const MapBlockPtr &block)
+{
+	if (!block) {
+		return;
+	}
+
+	auto &client_map = m_client->getEnv().getClientMap();
+	auto &far_blocks = client_map.m_far_blocks;
+	const auto blockpos_actual = block->getPos();
+	const auto step = block->far_step;
+
+	const auto lock = far_blocks.lock_unique_rec();
+	far_blocks.insert_or_assign(blockpos_actual, block);
+
+	if (!step) {
+		return;
+	}
+
+	const bpos_t blocks_per_side = 2;
+	const bpos_t step_shift = 1 << (step - 1 + m_control->cell_size_pow);
+	for (bpos_t x = 0; x < blocks_per_side; ++x) {
+		for (bpos_t y = 0; y < blocks_per_side; ++y) {
+			for (bpos_t z = 0; z < blocks_per_side; ++z) {
+				if (x == 0 && y == 0 && z == 0) {
+					continue;
+				}
+
+				const v3bpos_t sub_block_pos =
+						blockpos_actual + v3bpos_t{static_cast<bpos_t>(x * step_shift),
+												  static_cast<bpos_t>(y * step_shift),
+												  static_cast<bpos_t>(z * step_shift)};
+				if (const auto it = far_blocks.find(sub_block_pos);
+						it != far_blocks.end() && it->second &&
+						it->second->far_step + 1 == step) {
+					it->second->far_iteration = 0;
+				}
+			}
+		}
+	}
+}
+
 bool FarMesh::makeFarBlock(
 		const v3bpos_t &blockpos, block_step_t step, const bool low_priority)
 {
@@ -112,55 +153,36 @@ bool FarMesh::makeFarBlock(
 			}
 		}
 
-		// if (block->far_status >= MapBlock::far_status_e::s6_mesh_complete)
-		{
-			// Check if old block exists and old step + 1 == new step
-			MapBlockPtr old_block;
-			{
-				const auto lock = far_blocks.lock_shared_rec();
-				if (const auto &it = far_blocks.find(blockpos_actual);
-						it != far_blocks.end()) {
-					old_block = it->second;
-				}
-			}
-
-			if (old_block && old_block->far_step + 1 == step) {
-				// Find other 7 old blocks filling new block volume
-				// Make these 7 blocks not renderable by setting their far_iteration to 0
-				const bpos_t blocks_per_side = 2; // 2x2x2 = 8 blocks total
-				const bpos_t step_shift =
-						1 << (step - 1 +
-								draw_control
-										.cell_size_pow); // Calculate shift based on step and cell size
-				for (bpos_t x = 0; x < blocks_per_side; ++x) {
-					for (bpos_t y = 0; y < blocks_per_side; ++y) {
-						for (bpos_t z = 0; z < blocks_per_side; ++z) {
-							if (x == 0 && y == 0 && z == 0)
-								continue; // Skip the main block
-
-							// Calculate block positions using shifting size to step as around
-							v3bpos_t sub_block_pos =
-									blockpos_actual +
-									v3bpos_t{static_cast<bpos_t>(x * step_shift),
-											static_cast<bpos_t>(y * step_shift),
-											static_cast<bpos_t>(z * step_shift)};
-							const auto lock = far_blocks.lock_shared_rec();
-							if (const auto &it = far_blocks.find(sub_block_pos);
-									it != far_blocks.end()) {
-								if (it->second) {
-									it->second->far_iteration = 0; // Make non-renderable
-								}
-							}
+		bool replaces_finer_block = false;
+		if (step) {
+			const bpos_t blocks_per_side = 2;
+			const bpos_t step_shift = 1 << (step - 1 + draw_control.cell_size_pow);
+			const auto lock = far_blocks.lock_shared_rec();
+			for (bpos_t x = 0; x < blocks_per_side && !replaces_finer_block; ++x) {
+				for (bpos_t y = 0; y < blocks_per_side && !replaces_finer_block; ++y) {
+					for (bpos_t z = 0; z < blocks_per_side; ++z) {
+						const v3bpos_t sub_block_pos =
+								blockpos_actual +
+								v3bpos_t{static_cast<bpos_t>(x * step_shift),
+										static_cast<bpos_t>(y * step_shift),
+										static_cast<bpos_t>(z * step_shift)};
+						if (const auto &it = far_blocks.find(sub_block_pos);
+								it != far_blocks.end() && it->second &&
+								it->second != block && it->second->far_step + 1 == step) {
+							replaces_finer_block = true;
+							break;
 						}
 					}
 				}
 			}
 		}
 
-		far_blocks.insert_or_assign(blockpos_actual, block);
+		block->far_iteration = far_iteration_use;
+		if (!replaces_finer_block ||
+				block->far_status >= MapBlock::far_status_e::s6_mesh_complete) {
+			publishFarBlock(block);
+		}
 	}
-
-	block->far_iteration = far_iteration_use;
 
 	if (block->far_status < MapBlock::far_status_e::s2_requested) {
 		for (pos_t x = 0; x < 1 << draw_control.cell_size_pow; ++x) {

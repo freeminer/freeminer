@@ -62,6 +62,7 @@ public:
 	bool makeFarBlock(
 			const v3bpos_t &blockpos, block_step_t step, const bool low_priority = false);
 	size_t makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
+	void publishFarBlock(const MapBlockPtr &block);
 
 	bool enqueueFarMeshForBlock(const v3bpos_t &blockpos, const block_step_t step,
 			const MapBlockPtr &block, const double timestamp,
