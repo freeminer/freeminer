@@ -23,18 +23,19 @@
 //// MinimapUpdateThread
 ////
 
-MinimapUpdateThread::~MinimapUpdateThread()
+MinimapUpdateThread::MinimapUpdateThread() : UpdateThread("Minimap")
 {
-	for (auto &it : m_blocks_cache) {
-		delete it.second;
-	}
+	next_update = 0;
 
-	for (auto &q : m_update_queue) {
-		delete q.data;
-	}
+	// Avoid frequent rehashing while the player moves through a large cached area.
+	m_blocks_cache.reserve(65536);
+	getmap_cache.reserve(4096);
 }
 
-bool MinimapUpdateThread::pushBlockUpdate(v3s16 pos, MinimapMapblock *data)
+MinimapUpdateThread::~MinimapUpdateThread() = default;
+
+bool MinimapUpdateThread::pushBlockUpdate(v3bpos_t pos,
+		std::unique_ptr<MinimapMapblock> data)
 {
 	MutexAutoLock lock(m_queue_mutex);
 
@@ -42,8 +43,7 @@ bool MinimapUpdateThread::pushBlockUpdate(v3s16 pos, MinimapMapblock *data)
 	// If it is, update the data and quit.
 	for (QueuedMinimapUpdate &q : m_update_queue) {
 		if (q.pos == pos) {
-			delete q.data;
-			q.data = data;
+			q.data = std::move(data);
 			return false;
 		}
 	}
@@ -51,8 +51,8 @@ bool MinimapUpdateThread::pushBlockUpdate(v3s16 pos, MinimapMapblock *data)
 	// Add the block
 	QueuedMinimapUpdate q;
 	q.pos  = pos;
-	q.data = data;
-	m_update_queue.push_back(q);
+	q.data = std::move(data);
+	m_update_queue.push_back(std::move(q));
 
 	return true;
 }
@@ -64,7 +64,7 @@ bool MinimapUpdateThread::popBlockUpdate(QueuedMinimapUpdate *update)
 	if (m_update_queue.empty())
 		return false;
 
-	*update = m_update_queue.front();
+	*update = std::move(m_update_queue.front());
 	m_update_queue.pop_front();
 
 	return true;
@@ -72,7 +72,7 @@ bool MinimapUpdateThread::popBlockUpdate(QueuedMinimapUpdate *update)
 
 void MinimapUpdateThread::enqueueBlock(v3s16 pos, MinimapMapblock *data)
 {
-	pushBlockUpdate(pos, data);
+	pushBlockUpdate(pos, std::unique_ptr<MinimapMapblock>(data));
 	deferUpdate();
 }
 
@@ -85,18 +85,13 @@ void MinimapUpdateThread::doUpdate()
 	while (popBlockUpdate(&update)) {
 		getmap_cache.erase(v2pos_t(update.pos.X, update.pos.Z));
 		if (update.data) {
-			// Swap two values in the map using single lookup
-			auto result = m_blocks_cache.emplace(update.pos, update.data);
-			if (!result.second) {
-				delete result.first->second;
-				result.first->second = update.data;
-			}
-		} else {
 			auto it = m_blocks_cache.find(update.pos);
-			if (it != m_blocks_cache.end()) {
-				delete it->second;
-				m_blocks_cache.erase(it);
-			}
+			if (it == m_blocks_cache.end())
+				m_blocks_cache.emplace(update.pos, std::move(update.data));
+			else
+				it->second = std::move(update.data);
+		} else {
+			m_blocks_cache.erase(update.pos);
 		}
 	}
 
@@ -816,13 +811,13 @@ void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, s16 scan_height) {
 					auto it = m_blocks_cache.find(v3pos_t(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
-					vec.emplace(c++, it->second);
+					vec.emplace(c++, it->second.get());
 				}
 				for (auto i = blockpos_max.Y; i > blockpos_player.Y; --i) {
 					auto it = m_blocks_cache.find(v3pos_t(blockpos_max.X, i, blockpos_max.Z));
 					if (it == m_blocks_cache.end())
 						continue;
-					vec.emplace(c++, it->second);
+					vec.emplace(c++, it->second.get());
 				}
 			}
 

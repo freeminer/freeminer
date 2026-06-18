@@ -16,6 +16,7 @@
 #include "hud_element.h"
 #include "mapnode.h"
 #include "util/thread.h"
+#include <memory>
 #include <map>
 #include <string>
 #include <vector>
@@ -94,18 +95,18 @@ struct MinimapData {
 };
 
 struct QueuedMinimapUpdate {
-	v3s16 pos;
-	MinimapMapblock *data = nullptr;
+	v3bpos_t pos;
+	std::unique_ptr<MinimapMapblock> data;
 };
 
 class MinimapUpdateThread : public UpdateThread {
 public:
-	MinimapUpdateThread() : UpdateThread("Minimap") { next_update = 0; }
+	MinimapUpdateThread();
 	virtual ~MinimapUpdateThread();
 
-	void getMap(v3s16 pos, s16 size, s16 height);
-	void enqueueBlock(v3s16 pos, MinimapMapblock *data);
-	bool pushBlockUpdate(v3s16 pos, MinimapMapblock *data);
+	void getMap(v3pos_t pos, s16 size, pos_t height);
+	void enqueueBlock(v3bpos_t pos, MinimapMapblock *data);
+	bool pushBlockUpdate(v3bpos_t pos, std::unique_ptr<MinimapMapblock> data);
 	bool popBlockUpdate(QueuedMinimapUpdate *update);
 
 	MinimapData *data = nullptr;
@@ -117,7 +118,7 @@ protected:
 private:
 	std::mutex m_queue_mutex;
 	std::deque<QueuedMinimapUpdate> m_update_queue;
-	unordered_map_v3pos<MinimapMapblock *> m_blocks_cache;
+	unordered_map_v3pos<std::unique_ptr<MinimapMapblock>> m_blocks_cache;
 	//simple: unordered_map_v2pos<std::vector<MinimapMapblock*>> getmap_cache
 	unordered_map_v2pos<std::map<pos_t, MinimapMapblock*>> getmap_cache;
 };
