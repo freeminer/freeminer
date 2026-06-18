@@ -397,9 +397,9 @@ int MapgenErosion::getSpawnLevelAtPoint(v2pos_t p)
 }
 
 
-bool MapgenErosion::visible(const v3pos_t &p)
+bool MapgenErosion::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
-	return getGroundLevelAtPoint({p.X, p.Z}) >= p.Y;
+	return surface_y.value_or(getGroundLevelAtPoint({p.X, p.Z})) >= p.Y;
 }
 
 

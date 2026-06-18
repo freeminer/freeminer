@@ -193,7 +193,7 @@ Client::Client(
 	m_item_visuals_manager(item_visuals_manager),
 	m_mesh_update_manager(std::make_unique<MeshUpdateManager>(this)),
 	m_env(
-		make_irr<ClientMap>(this, rendering_engine, control, 666),
+		ClientMap::create(this, rendering_engine, control, 666),
 		tsrc, this
 	),
 	m_particle_manager(std::make_unique<ParticleManager>(&m_env)),

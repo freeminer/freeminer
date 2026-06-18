@@ -72,10 +72,10 @@ public:
 	pos_t getSpawnLevelAtPoint(v2pos_t p);
 
 	//freeminer:
-	bool visible(const v3pos_t &p)
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 	{
 		// TODO: Make faster and more features
-		const auto sl = getSpawnLevelAtPoint({p.X, p.Z});
+		const auto sl = surface_y.value_or(getSpawnLevelAtPoint({p.X, p.Z}));
 		return (sl >= p.Y && sl < MAX_MAP_GENERATION_LIMIT);
 	}
 

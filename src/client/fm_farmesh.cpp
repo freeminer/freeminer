@@ -78,7 +78,8 @@ void FarMesh::publishFarBlock(const MapBlockPtr &block, const bool check_coarser
 		return;
 	}
 
-	if (client_map.far_iteration_clean && block_iteration < client_map.far_iteration_clean) {
+	if (client_map.far_iteration_clean &&
+			block_iteration < client_map.far_iteration_clean) {
 		return;
 	}
 
@@ -112,10 +113,9 @@ void FarMesh::publishFarBlock(const MapBlockPtr &block, const bool check_coarser
 				for (bpos_t y = 0; y < blocks_per_side; ++y) {
 					for (bpos_t z = 0; z < blocks_per_side; ++z) {
 						const v3bpos_t sub_block_pos =
-								parent_pos +
-								v3bpos_t{static_cast<bpos_t>(x * step_shift),
-										static_cast<bpos_t>(y * step_shift),
-										static_cast<bpos_t>(z * step_shift)};
+								parent_pos + v3bpos_t{static_cast<bpos_t>(x * step_shift),
+													 static_cast<bpos_t>(y * step_shift),
+													 static_cast<bpos_t>(z * step_shift)};
 						const auto it = far_blocks_storage_step.find(sub_block_pos);
 						if (it == far_blocks_storage_step.end() || !it->second.block ||
 								it->second.block->far_status <
@@ -254,7 +254,8 @@ bool FarMesh::makeFarBlock(
 								it != far_blocks.end() && it->second &&
 								it->second != block && it->second->far_step + 1 == step) {
 							replaces_finer_block = true;
-							if (block->far_status < MapBlock::far_status_e::s6_mesh_complete) {
+							if (block->far_status <
+									MapBlock::far_status_e::s6_mesh_complete) {
 								it->second->far_iteration = far_iteration_use;
 							}
 						}
@@ -271,8 +272,8 @@ bool FarMesh::makeFarBlock(
 		if (step + 1 < FARMESH_STEP_MAX) {
 			const bpos_t blocks_per_side = 2;
 			const bpos_t step_shift = 1 << (step + draw_control.cell_size_pow);
-			const auto parent_pos =
-					align_far_block_pos(blockpos_actual, step + draw_control.cell_size_pow);
+			const auto parent_pos = align_far_block_pos(
+					blockpos_actual, step + draw_control.cell_size_pow);
 			{
 				const auto lock = far_blocks.lock_shared_rec();
 				if (const auto it = far_blocks.find(parent_pos);
@@ -296,7 +297,8 @@ bool FarMesh::makeFarBlock(
 											static_cast<bpos_t>(y * step_shift),
 											static_cast<bpos_t>(z * step_shift)};
 							const auto it = far_blocks_storage_step.find(sub_block_pos);
-							if (it == far_blocks_storage_step.end() || !it->second.block ||
+							if (it == far_blocks_storage_step.end() ||
+									!it->second.block ||
 									it->second.block->far_status <
 											MapBlock::far_status_e::s6_mesh_complete) {
 								refined_group_ready = false;
@@ -322,8 +324,9 @@ bool FarMesh::makeFarBlock(
 			}
 			replaces_coarser_block->far_iteration = 0;
 		} else if (!replaces_coarser_block &&
-				(!replaces_finer_block ||
-						block->far_status >= MapBlock::far_status_e::s6_mesh_complete)) {
+				   (!replaces_finer_block ||
+						   block->far_status >=
+								   MapBlock::far_status_e::s6_mesh_complete)) {
 			publishFarBlock(block);
 		}
 	}
@@ -608,6 +611,9 @@ FarMesh::~FarMesh()
 {
 	g_settings->deregisterAllChangedCallbacks(this);
 	farmesh_thread_stop = true;
+	for (auto &a : async_direction) {
+		a.wait();
+	}
 	if (farmesh_thread.joinable()) {
 		farmesh_thread.join();
 	}
@@ -852,8 +858,8 @@ int FarMesh::go_direction(const size_t dir_n)
 					if (const auto &it = mg_cache.find(pos_int); it != mg_cache.end()) {
 						visible = it->second;
 					} else {
-						visible =
-								mg->visible(pos_int) || mg->visible_water_level(pos_int);
+						visible = mg->visible(pos_int, {}) ||
+								  mg->visible_water_level(pos_int);
 						mg_cache[pos_int] = visible;
 					}
 				}
@@ -1112,7 +1118,8 @@ uint8_t FarMesh::update(v3opos_t camera_pos,
 								if (!block) {
 									continue;
 								}
-								if (block->far_iteration >= client_map.far_iteration_clean) {
+								if (block->far_iteration >=
+										client_map.far_iteration_clean) {
 									continue;
 								}
 								if (block_used.second.far_last_used &&

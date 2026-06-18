@@ -489,11 +489,12 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 	// if (occlusion_culling_enabled && m_control.show_wireframe)
 	// 	occlusion_culling_enabled = porting::getTimeS() & 1;
 
-	const auto &add_to_drawlist = [this, &m_drawlist] (auto &block) {
-		block->refGrab();
+	const auto &add_to_drawlist = [&m_drawlist] (auto &block) {
 		auto res = m_drawlist.emplace(block->getPos(), block);
 		(void)res;
 		assert(res.second); // must not already exist
+		if (res.second)
+			block->refGrab();
 	};
 
 	// Set of mesh holding blocks, will be transferred to m_drawlist
@@ -1509,6 +1510,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	MeshBufListMaps &grouped_buffers = tl_meshbuflistmaps;
 	DrawDescriptorList &draw_order = tl_drawdescriptorlist;
+	std::vector<MapBlock::mesh_type> mesh_keepalive;
 	grouped_buffers.clear();
 	draw_order.clear();
 
@@ -1516,6 +1518,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	//const MeshGrid mesh_grid = m_client->getMeshGrid();
     draw_order.reserve(m_drawlist.size());
+	mesh_keepalive.reserve(m_drawlist.size());
 	for (auto &i : m_drawlist) {
 		const auto block_pos = i.first;
 		const auto & block = i.second;
@@ -1568,6 +1571,8 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 				block_mesh->decreaseAnimationForceTimer();
 			}
 		}
+
+		mesh_keepalive.push_back(block_mesh);
 
 		/*
 			Get the meshbuffers of the block
@@ -1642,6 +1647,15 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		driver->setTransform(video::ETS_WORLD, m);
 
 		vertex_count += descriptor.draw(driver);
+	}
+
+	if (is_transparent_pass) {
+		const u32 far_fog_vertices = renderFarFog(driver);
+		if (far_fog_vertices) {
+			vertex_count += far_fog_vertices;
+			++drawcall_count;
+			++material_swaps;
+		}
 	}
 
 	g_profiler->avg(prefix + "draw meshes [ms]", tt_draw.stop(true));
@@ -1947,8 +1961,10 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 
 	MeshBufListMaps &grouped_buffers = tl_meshbuflistmaps;
 	DrawDescriptorList &draw_order = tl_drawdescriptorlist;
+	std::vector<MapBlock::mesh_type> mesh_keepalive;
 	grouped_buffers.clear();
 	draw_order.clear();
+	mesh_keepalive.reserve(m_drawlist_shadow.size());
 
 	std::size_t count = 0;
 	std::size_t meshes_per_frame = m_drawlist_shadow.size() / total_frames + 1;
@@ -1982,6 +1998,8 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 
 		if (!mapBlockMesh)
 			continue;
+
+		mesh_keepalive.push_back(mapBlockMesh);
 
 		/*
 			Get the meshbuffers of the block
@@ -2140,7 +2158,8 @@ void ClientMap::updateDrawListShadow(v3opos_t shadow_light_pos, v3opos_t shadow_
 					if (blocks_skip_farmesh.contains(pos))
 						continue;
 
-					m_drawlist_shadow.emplace(pos, block);
+					if (m_drawlist_shadow.emplace(pos, block).second)
+						block->refGrab();
 				}
 			}
 		}

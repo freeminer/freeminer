@@ -256,7 +256,7 @@ public:
 	MapNode visible_ice;
 	MapNode visible_transparent = {CONTENT_AIR, LIGHT_SUN};
 
-	virtual bool visible(const v3pos_t &p);
+	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y);
 	virtual bool visible_water_level(const v3pos_t &p);
 	virtual const MapNode &visible_content(const v3pos_t &p, bool use_weather);
 	virtual bool surface_2d() { return true; };

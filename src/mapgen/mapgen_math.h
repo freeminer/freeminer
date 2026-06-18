@@ -81,6 +81,6 @@ public:
 	double (*func)(double, double, double, double, int, int);
 	MapNode layers_get(float value, float max);
 	std::pair<bool, double> calc_point(pos_t x, pos_t y, pos_t z);
-	bool visible(const v3pos_t &p) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
 	bool surface_2d() override { return false; };
 };
