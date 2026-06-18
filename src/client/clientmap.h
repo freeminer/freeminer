@@ -208,8 +208,10 @@ private:
 
 
 // fm:
+public:
 	static irr_ptr<ClientMap> create(Client *client, RenderingEngine *rendering_engine,
 			MapDrawControl &control, s32 id);
+private:
 	v3pos_t m_camera_position_node;
     using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
