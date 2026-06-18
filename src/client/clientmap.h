@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "CMeshBuffer.h"
 #include "threading/async.h"
 #include "settings.h"
 
