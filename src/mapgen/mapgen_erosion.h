@@ -46,7 +46,7 @@ public:
 	int generateTerrain() override;
 	int getSpawnLevelAtPoint(v2pos_t p) override;
 	int getGroundLevelAtPoint(v2pos_t p) override;
-	bool visible(const v3pos_t &p) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
 
 private:
 	struct Vec2f {

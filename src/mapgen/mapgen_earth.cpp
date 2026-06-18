@@ -252,14 +252,14 @@ MapNode MapgenEarth::layers_get(float value, float max)
 	return layers_node[layer_index];
 }
 
-bool MapgenEarth::visible(const v3pos_t &p)
+bool MapgenEarth::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
-	return p.Y < get_height(p.X, p.Z);
+	return p.Y < surface_y.value_or(get_height(p.X, p.Z));
 }
 
 const MapNode &MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 {
-	const auto v = visible(p);
+	const auto v = visible(p, {});
 	const auto vw = visible_water_level(p);
 	if (!v && !vw) {
 		return visible_transparent;
@@ -594,8 +594,8 @@ weather::heat_t MapgenEarth::calcBlockHeat(const v3pos_t &p, uint64_t seed,
 weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t seed,
 		float timeofday, float totaltime, bool use_weather)
 {
-	return m_emerge->biomemgr->calcBlockHumidity(
-			p, seed, timeofday, totaltime, use_weather);
+	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime,
+			use_weather, getGroundLevelAtPoint({p.X, p.Z}));
 }
 
 maps_holder_t::~maps_holder_t()

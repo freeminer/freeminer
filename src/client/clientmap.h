@@ -207,6 +207,8 @@ private:
 
 
 // fm:
+	static irr_ptr<ClientMap> create(Client *client, RenderingEngine *rendering_engine,
+			MapDrawControl &control, s32 id);
 	v3pos_t m_camera_position_node;
     using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
@@ -221,7 +223,42 @@ public:
 	void cleanPerodic(uint32_t uptime);
 private:
 
-	//std::map<v3s16, MapBlock*, MapBlockComparer> m_drawlist;
+	void initFarFogMaterial();
+	void updateFarFogCells();
+	u32 rebuildFarFogMeshBuffer();
+	u32 renderFarFog(video::IVideoDriver *driver);
+
+	bool m_far_fog_material_ready = false;
+	video::SMaterial m_far_fog_material;
+	irr_ptr<scene::SMeshBuffer> m_far_fog_meshbuffer;
+	struct FarFogCell {
+		v3bpos_t block_pos;
+		block_step_t step = 0;
+		bpos_t block_span = 0;
+		float distance = 0.0f;
+		MapBlockPtr block;
+		bool has_climate = false;
+		float heat = 0.0f;
+		float humidity = 0.0f;
+	};
+	std::array<std::vector<FarFogCell>, 2> m_far_fog_cells;
+	std::mutex m_far_fog_cells_mutex;
+	std::atomic_uint8_t m_far_fog_cells_current = 0;
+	std::atomic_bool m_far_fog_cells_ready = false;
+	v3bpos_t m_far_fog_cells_origin;
+	uint32_t m_far_fog_cells_iteration_draw = 0;
+	async_step_runner m_far_fog_async;
+	bool m_far_fog_mesh_valid = false;
+	bool m_far_fog_mesh_cells_ready = false;
+	uint8_t m_far_fog_mesh_cells_current = 0;
+	v3pos_t m_far_fog_mesh_camera_bucket;
+	v3pos_t m_far_fog_mesh_camera_offset;
+	v3f m_far_fog_mesh_camera_direction = v3f(0.0f, 0.0f, 1.0f);
+	uint16_t m_far_fog_mesh_time_bucket = 0;
+	uint32_t m_far_fog_mesh_iteration_draw = 0;
+// ===
+
+	//std::map<v3bpos_t, MapBlock*, MapBlockComparer> m_drawlist;
 	// List of additional blocks to keep (relevant with mesh_chunk > 1, since
 	// not all blocks contain a mesh)
 	std::vector<MapBlockPtr> m_keeplist;

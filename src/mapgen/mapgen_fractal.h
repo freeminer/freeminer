@@ -64,7 +64,7 @@ public:
 	s16 generateTerrain();
 
 	//freeminer:
-	bool visible(const v3pos_t &p) override { return getFractalAtPoint(p.X, p.Y, p.Z); }
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override { return getFractalAtPoint(p.X, p.Y, p.Z); }
 	bool surface_2d() override { return false; };
 
 

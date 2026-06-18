@@ -144,6 +144,12 @@ farmesh_server () bool true
 # Use all changed blocks in radius
 farmesh_all_changed () int 10000
 
+# Draw coarse far-block volumetric fog up to this distance in nodes.
+# Set to 0 to disable.
+#
+# Requires: farmesh
+volumetric_fog (Volumetric fog) int 20000
+
 # Set to true to disable wield light (enabled by default, requires shaders)
 disable_wieldlight () bool false
 
@@ -295,8 +301,16 @@ year_days () int 30
 weather_humidity_season () float 30
 weather_humidity_daily  () float -12
 weather_humidity_width  () float 300
+# Y level where humid air receives cloud-layer condensation boost
+cloud_height () int 500
 # Add 1% on every height (in nodes)  1000 = 1% per 1000 nodes
 weather_humidity_height () float -250
+
+# Morning low-altitude humidity boost for ground fog
+weather_humidity_morning () float 22
+
+# Height of morning ground-fog humidity layer in nodes
+weather_humidity_morning_height () float 180
 
 # Humidity change amplitude
 weather_humidity_days  () float 2

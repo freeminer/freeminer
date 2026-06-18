@@ -658,13 +658,13 @@ int MapgenV7::generateTerrain()
 void MapgenV7::generateExperimental() {
 }
 */
-bool MapgenV7::visible(const v3pos_t &p)
+bool MapgenV7::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
 	// return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
 
 	// from getSpawnLevelAtPoint
 
-	auto y = baseTerrainLevelAtPoint(p.X, p.Z);
+	auto y = surface_y.value_or(baseTerrainLevelAtPoint(p.X, p.Z));
 
 	// If mountains are disabled, terrain level is base terrain level.
 	// Avoids mid-air spawn where mountain terrain would have been.

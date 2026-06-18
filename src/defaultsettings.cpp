@@ -149,11 +149,12 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("disable_wieldlight", "false");
 	settings->setDefault("mip_map", "true"); // "false"
 	// Clouds, water, glass, leaves, fog
-	settings->setDefault("cloud_height", "300"); // "120"
+	settings->setDefault("cloud_height", "500"); // "120"
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "3" : "5");
-	settings->setDefault("farmesh", slow ? "5000" : std::to_string(FARMESH_LIMIT / 2));
+	const auto farmesh = slow ? "5000" : std::to_string(FARMESH_LIMIT / 2);
+	settings->setDefault("farmesh", farmesh);
 	const auto mesh_chunk_and_farmesh_quality = "2"; //slow ? "2" : "4";
 	settings->setDefault("client_mesh_chunk", mesh_chunk_and_farmesh_quality);
 	settings->setDefault("farmesh_quality",
@@ -161,6 +162,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_stable", "20");
 	settings->setDefault("farmesh_server", "1");
 	settings->setDefault("farmesh_all_changed", slow ? "1000" : "10000");
+	settings->setDefault("volumetric_fog", farmesh);
 	settings->setDefault("farlights", "1");
 
 	settings->setDefault("headless_optimize", "false");
@@ -209,6 +211,8 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("weather_humidity_daily", "-12");
 	settings->setDefault("weather_humidity_width", "300");
 	settings->setDefault("weather_humidity_height", "-250");
+	settings->setDefault("weather_humidity_morning", "22");
+	settings->setDefault("weather_humidity_morning_height", "180");
 	settings->setDefault("weather_humidity_days", "2");
 
 	settings->setDefault("respawn_auto", "false");

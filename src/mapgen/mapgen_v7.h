@@ -112,7 +112,7 @@ protected:
 	//virtual void generateExperimental();
 	// freeminer:
 public:
-	virtual bool visible(const v3pos_t &p);
+	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y);
 
 private:
 	// =========

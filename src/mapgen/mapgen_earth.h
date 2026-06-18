@@ -111,7 +111,7 @@ public:
 	MapNode n_air, n_water, n_stone;
 
 	MapNode layers_get(float value, float max);
-	bool visible(const v3pos_t &p) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
 	const MapNode &visible_content(const v3pos_t &p, bool use_weather) override;
 
 	pos_t get_height(pos_t x, pos_t z);

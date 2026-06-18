@@ -245,11 +245,15 @@ public:
 	s32 weather_humidity_daily;
 	s32 weather_humidity_days;
 	s32 weather_humidity_height;
+	s32 weather_humidity_morning;
+	s32 weather_humidity_morning_height;
 	s32 weather_hot_core;
+	s32 cloud_height;
 
 	MapgenParams * mapgen_params{};
 	weather::heat_t calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
+	weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather, pos_t surface_y);
 	//====
 
 	BiomeGen *createBiomeGen(BiomeGenType type, BiomeParams *params, v3s16 chunksize)

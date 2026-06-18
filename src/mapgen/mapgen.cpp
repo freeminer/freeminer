@@ -7,6 +7,7 @@
 #include <cmath>
 #include "irr_v3d.h"
 #include "mapgen.h"
+#include "irrlichttypes.h"
 #include "servermap.h"
 #include "voxel.h"
 #include "noise.h"
@@ -1275,14 +1276,15 @@ bool Mapgen::visible_water_level(const v3pos_t &p)
 	return p.Y < water_level;
 }
 
-bool Mapgen::visible(const v3pos_t &p)
+bool Mapgen::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
-	return getGroundLevelAtPoint({p.X, p.Z}) >= p.Y;
+	return surface_y.value_or(getGroundLevelAtPoint({p.X, p.Z})) >= p.Y;
 }
 
 const MapNode &Mapgen::visible_content(const v3pos_t &p, bool use_weather)
 {
-	const auto v = visible(p);
+	const pos_t surface_y = getGroundLevelAtPoint({p.X, p.Z});
+	const auto v = visible(p, surface_y);
 	const auto vw = visible_water_level(p);
 	if (!v && !vw)
 		return visible_transparent;
@@ -1295,7 +1297,7 @@ const MapNode &Mapgen::visible_content(const v3pos_t &p, bool use_weather)
 		return heat < 0 ? visible_ice : visible_water;
 	const auto humidity = m_emerge->biomemgr->calcBlockHumidity(p, seed,
 			env ? env->getTimeOfDay() * env->m_time_of_day_speed : 0,
-			env ? env->getGameTime() : 0, !!env && env->m_use_weather);
+			env ? env->getGameTime() : 0, !!env && env->m_use_weather, surface_y);
 	return heat < 0	   ? (humidity < 20 ? visible_surface : visible_surface_cold)
 		   : heat < 10 ? visible_surface
 		   : heat < 40 ? (humidity < 20 ? visible_surface_dry : visible_surface_green)
@@ -1309,5 +1311,6 @@ weather::heat_t Mapgen::calcBlockHeat(const v3pos_t &p, uint64_t seed, float tim
 
 weather::humidity_t Mapgen::calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather)
 {
-	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime, use_weather);
+	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime,
+			use_weather, getGroundLevelAtPoint({p.X, p.Z}));
 }
