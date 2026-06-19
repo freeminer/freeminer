@@ -159,6 +159,7 @@ void GameUI::update(const RunStats &stats, Client *client, MapDrawControl *draw_
 		auto pos_i = floatToInt(player_position, BS);
 		os << " | (t=" << client->getEnv().getClientMap().getHeat(pos_i, 1)
 		   << "C, h=" << client->getEnv().getClientMap().getHumidity(pos_i, 1) << "%"
+		   << " w=" << client->getEnv().getClientMap().getWind(pos_i, 1)
 		   << ")";
 		;
 

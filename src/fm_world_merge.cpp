@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <cstdint>
 #include <cstdlib>
+#include <cmath>
 #include <functional>
 #include <future>
 #include <string>
@@ -87,11 +88,11 @@ static int16_t average_climate(int64_t sum, size_t count)
 		return 0;
 
 	if (sum >= 0)
-		return static_cast<int16_t>((sum + static_cast<int64_t>(count / 2)) /
-									static_cast<int64_t>(count));
+		return static_cast<int16_t>(
+				(sum + static_cast<int64_t>(count / 2)) / static_cast<int64_t>(count));
 
-	return static_cast<int16_t>((sum - static_cast<int64_t>(count / 2)) /
-								static_cast<int64_t>(count));
+	return static_cast<int16_t>(
+			(sum - static_cast<int64_t>(count / 2)) / static_cast<int64_t>(count));
 }
 
 WorldMerger::~WorldMerger()
@@ -113,6 +114,8 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	int64_t humidity_sum = 0;
 	int64_t heat_add_sum = 0;
 	int64_t humidity_add_sum = 0;
+	v3f wind_sum;
+	size_t wind_count = 0;
 	uint64_t heat_last_update = 0;
 	uint32_t humidity_last_update = 0;
 	{
@@ -141,6 +144,12 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					humidity_sum += nblock->humidity;
 					heat_add_sum += nblock->heat_add;
 					humidity_add_sum += nblock->humidity_add;
+					const auto wind = nblock->wind;
+					if (std::isfinite(wind.X) && std::isfinite(wind.Y) &&
+							std::isfinite(wind.Z)) {
+						wind_sum += wind;
+						++wind_count;
+					}
 					if (const auto ts = nblock->heat_last_update.load();
 							ts > heat_last_update) {
 						heat_last_update = ts;
@@ -183,6 +192,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 		block_up->humidity_add = average_climate(humidity_add_sum, climate_blocks);
 		block_up->heat_last_update = heat_last_update;
 		block_up->humidity_last_update = humidity_last_update;
+		block_up->wind = wind_count ? wind_sum / static_cast<float>(wind_count) : v3f();
 	}
 
 	size_t not_empty_nodes{};

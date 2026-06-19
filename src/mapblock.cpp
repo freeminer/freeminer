@@ -708,10 +708,11 @@ void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int
 
 void MapBlock::serializeNetworkSpecific(std::ostream &os)
 {
-	int version = 2;
+	int version = 3;
 	writeU8(os, version);
 	writeF1000(os, heat + heat_add); // deprecated heat
 	writeF1000(os, humidity + humidity_add); // deprecated humidity
+    writeV3F32(os, wind);
 }
 
 bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
@@ -917,6 +918,9 @@ void MapBlock::deSerializeNetworkSpecific(std::istream &is)
 		if (version >= 1) {
 			heat = readF1000(is);	  // deprecated heat
 			humidity = readF1000(is); // deprecated humidity
+		}
+		if (version >= 3) {
+			wind = readV3F32(is);
 		}
 	} catch (SerializationError &e) {
 		warningstream << "MapBlock::deSerializeNetworkSpecific(): Ignoring an error"

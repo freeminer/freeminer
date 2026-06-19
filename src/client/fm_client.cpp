@@ -329,6 +329,11 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 		weather::humidity_t humidity = 0;
 		packet[TOCLIENT_BLOCKDATA_HUMIDITY].convert(humidity);
 		block->humidity = humidity;
+		if (packet.contains(TOCLIENT_BLOCKDATA_WIND)) {
+			weather::wind_t wind;
+			packet[TOCLIENT_BLOCKDATA_WIND].convert(wind);
+			block->wind = wind;
+		}
 	}
 
 	mesh_thread_pool.enqueue([this, block, bpos, step]() {

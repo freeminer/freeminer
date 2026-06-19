@@ -385,8 +385,9 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		}
 
 		updateBlockHeat(senv, bp * MAP_BLOCKSIZE, block);
-        updateBlockHumidity(senv, bp * MAP_BLOCKSIZE, block);
-   	    changed_blocks_for_merge.emplace(bp);
+		updateBlockHumidity(senv, bp * MAP_BLOCKSIZE, block);
+		updateBlockWind(senv, bp * MAP_BLOCKSIZE, block);
+		changed_blocks_for_merge.emplace(bp);
 	}
 
 	m_chunks_in_progress.erase(bpmin);

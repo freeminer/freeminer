@@ -20,11 +20,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <algorithm>
-#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <vector>
 #include "database/database.h"
+#include "fm_weather.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "map.h"
@@ -43,6 +43,24 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "serverenvironment.h"
 #include "voxelalgorithms.h"
+
+namespace
+{
+float fm_weather_pressure(float heat, float humidity, pos_t y)
+{
+	// Approximate low pressure from warm/humid air and lower pressure at altitude.
+	return -heat - humidity * 0.25f - static_cast<float>(y) * 0.02f;
+}
+
+weather::wind_t fm_limit_wind(weather::wind_t wind)
+{
+	constexpr float max_wind = 8.0f;
+	const float length = wind.getLength();
+	if (length > max_wind && length > 0.0001f)
+		wind *= max_wind / length;
+	return wind;
+}
+}
 
 #if HAVE_THREAD_LOCAL
 namespace
@@ -299,9 +317,8 @@ MapNode Map::getNodeNoLock(v3POS p) //dont use
 
 s16 Map::getHeat(const v3bpos_t &p, bool no_random)
 {
-	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
-	if (block != NULL) {
-		s16 value = block->heat + block->heat_add;
+	if (const auto block = getBlock(getNodeBlockPos(p))) {
+		const auto value = block->heat + block->heat_add;
 		return value + (no_random ? 0 : myrand_range(0, 1));
 	}
 	// errorstream << "No heat for " << p.X<<"," << p.Z << std::endl;
@@ -310,13 +327,20 @@ s16 Map::getHeat(const v3bpos_t &p, bool no_random)
 
 s16 Map::getHumidity(const v3bpos_t &p, bool no_random)
 {
-	MapBlock *block = getBlockNoCreateNoEx(getNodeBlockPos(p));
-	if (block != NULL) {
-		s16 value = block->humidity + block->humidity_add;
+	if (const auto block = getBlock(getNodeBlockPos(p))) {
+		const auto value = block->humidity + block->humidity_add;
 		return value + (no_random ? 0 : myrand_range(0, 1));
 	}
 	// errorstream << "No humidity for " << p.X<<"," << p.Z << std::endl;
 	return 0;
+}
+
+v3f Map::getWind(const v3bpos_t &p, bool no_random)
+{
+	if (const auto block = getBlock(getNodeBlockPos(p))) {
+		return block->wind;
+	}
+	return {};
 }
 
 weather::heat_t ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
@@ -390,9 +414,9 @@ weather::humidity_t ServerMap::updateBlockHumidity(ServerEnvironment *env,
 		return cache->at(bp) + myrand_range(0, 1);
 	}
 
-	auto value =
-			m_emerge->getFirstMapgen()->calcBlockHumidity(p, getSeed(), env->getTimeOfDayF(),
-					gametime * env->m_time_of_day_speed, env->m_use_weather);
+	auto value = m_emerge->getFirstMapgen()->calcBlockHumidity(p, getSeed(),
+			env->getTimeOfDayF(), gametime * env->m_time_of_day_speed,
+			env->m_use_weather);
 	//auto value = m_emerge->biomemgr->calcBlockHumidity(p, getSeed(), env->getTimeOfDayF(),gametime * env->m_time_of_day_speed, env->m_use_weather);
 
 	if (!block) {
@@ -614,6 +638,113 @@ u32 ServerMap::stepLoadedBlockWeather(
 
 	g_profiler->avg("ServerMap: weather active blocks", active_count);
 	return m_weather_update_last;
+weather::wind_t ServerMap::updateBlockWind(ServerEnvironment *env, const v3pos_t &p,
+		MapBlock *block, unordered_map_v3bpos<weather::wind_t> *cache, bool block_add)
+{
+	const auto bp = getNodeBlockPos(p);
+	if (!env || !env->m_use_weather) {
+		if (block)
+			block->wind = {};
+		if (cache)
+			(*cache)[bp] = {};
+		return {};
+	}
+
+	if (cache && cache->contains(bp))
+		return cache->at(bp);
+
+	if (!block)
+		block = getBlockNoCreateNoEx(bp);
+
+	struct sample_t
+	{
+		float heat = 0.0f;
+		float humidity = 0.0f;
+		float pressure = 0.0f;
+	};
+
+	const auto gametime = env->getGameTime();
+	const auto timeofday = env->getTimeOfDayF();
+	const auto totaltime = gametime * env->m_time_of_day_speed;
+	auto *mapgen = m_emerge->getFirstMapgen();
+	if (!mapgen)
+		return {};
+
+	const auto seed = getSeed();
+
+	const auto sample = [&](const v3bpos_t &sample_bp) -> sample_t {
+		const v3pos_t sample_p = sample_bp * MAP_BLOCKSIZE;
+		auto *sample_block =
+				sample_bp == bp ? block : getBlockNoCreateNoEx(sample_bp, true);
+
+		float heat = 0.0f;
+		float humidity = 0.0f;
+		if (sample_block && gametime < sample_block->heat_last_update) {
+			heat = sample_block->heat;
+			if (block_add)
+				heat += sample_block->heat_add;
+		} else {
+			heat = mapgen->calcBlockHeat(
+					sample_p, seed, timeofday, totaltime, env->m_use_weather);
+		}
+
+		if (sample_block && gametime < sample_block->humidity_last_update) {
+			humidity = sample_block->humidity;
+			if (block_add)
+				humidity += sample_block->humidity_add;
+		} else {
+			humidity = mapgen->calcBlockHumidity(
+					sample_p, seed, timeofday, totaltime, env->m_use_weather);
+		}
+
+		humidity = std::clamp(humidity, 0.0f, 100.0f);
+		return {
+				.heat = heat,
+				.humidity = humidity,
+				.pressure = fm_weather_pressure(heat, humidity, sample_p.Y),
+		};
+	};
+
+	const auto center = sample(bp);
+	const auto x_neg = sample(bp + v3bpos_t(-1, 0, 0));
+	const auto x_pos = sample(bp + v3bpos_t(1, 0, 0));
+	const auto y_neg = sample(bp + v3bpos_t(0, -1, 0));
+	const auto y_pos = sample(bp + v3bpos_t(0, 1, 0));
+	const auto z_neg = sample(bp + v3bpos_t(0, 0, -1));
+	const auto z_pos = sample(bp + v3bpos_t(0, 0, 1));
+
+	const float avg_heat = (x_neg.heat + x_pos.heat + y_neg.heat + y_pos.heat +
+								   z_neg.heat + z_pos.heat) /
+						   6.0f;
+
+	weather::wind_t wind;
+	wind.X = (x_neg.pressure - x_pos.pressure) * 0.05f;
+	wind.Z = (z_neg.pressure - z_pos.pressure) * 0.05f;
+	wind.Y = std::clamp((center.heat - avg_heat) * 0.025f +
+								(center.humidity - 80.0f) * 0.01f +
+								(y_neg.pressure - y_pos.pressure) * 0.005f,
+			-1.5f, 2.5f);
+
+	weather::wind_t mapgen_wind;
+	if (mapgen->calcBlockWind(
+				p, seed, timeofday, totaltime, env->m_use_weather, &mapgen_wind)) {
+		mapgen_wind.Y = wind.Y;
+		wind = mapgen_wind * 0.80f + wind * 0.20f;
+	}
+
+	wind = fm_limit_wind(wind);
+
+	if (block) {
+		const auto old_wind = block->wind;
+		if (old_wind.getLengthSQ() > 0.0001f)
+			wind = fm_limit_wind(old_wind * 0.80f + wind * 0.20f);
+		block->wind = wind;
+	}
+
+	if (cache)
+		(*cache)[bp] = wind;
+
+	return wind;
 }
 
 int ServerMap::getSurface(const v3pos_t &basepos, int searchup, bool walkable_only)
@@ -1719,6 +1850,7 @@ void ServerMap::prepareBlock(MapBlock *block)
 	const v3pos_t p = block->getPos() * MAP_BLOCKSIZE;
 	updateBlockHeat(senv, p, block);
 	updateBlockHumidity(senv, p, block);
+	updateBlockWind(senv, p, block);
 }
 
 #if 0

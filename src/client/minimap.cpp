@@ -794,7 +794,7 @@ void MinimapUpdateThread::getMap(v3pos_t pos, s16 size, s16 scan_height) {
 
 			v2pos_t top_block_xz(blockpos_max.X, blockpos_max.Z);
 
-			if (!getmap_cache.count(top_block_xz)) {
+			if (!getmap_cache.contains(top_block_xz)) {
 				getmap_cache.emplace(std::piecewise_construct, std::forward_as_tuple(top_block_xz), std::forward_as_tuple());
 				auto & vec = getmap_cache[top_block_xz];
 

@@ -16,6 +16,33 @@
 
 #include "log_types.h"
 
+namespace
+{
+constexpr float PLAYER_WIND_ACCEL_AIR = 0.35f;
+constexpr float PLAYER_WIND_ACCEL_GROUND = 0.08f;
+constexpr float PLAYER_MAX_WIND_ACCEL = 3.0f * BS;
+
+v3f getPlayerWindAcceleration(Map *map, const v3pos_t &pos, const v3f &speed,
+		bool touching_ground, bool in_liquid, bool is_climbing)
+{
+	if (!map || in_liquid || is_climbing)
+		return {};
+
+	const auto wind = map->getWind(pos, true);
+	if (!std::isfinite(wind.X) || !std::isfinite(wind.Y) || !std::isfinite(wind.Z))
+		return {};
+
+	const v3f target_speed(wind.X * BS, 0.0f, wind.Z * BS);
+	v3f accel = (target_speed - v3f(speed.X, 0.0f, speed.Z)) *
+				(touching_ground ? PLAYER_WIND_ACCEL_GROUND : PLAYER_WIND_ACCEL_AIR);
+	const float accel_length = accel.getLength();
+	if (accel_length > PLAYER_MAX_WIND_ACCEL && accel_length > 0.0001f)
+		accel *= PLAYER_MAX_WIND_ACCEL / accel_length;
+
+	return accel;
+}
+}
+
 /*
 	PlayerSettings
 */
@@ -350,7 +377,9 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 	const float sneak_stepheight = 0.6f * BS;
 
 	v3f accel_f(0, -gravity, 0);
-	const v3f initial_position = position;
+	accel_f += getPlayerWindAcceleration(map, floatToInt(position, BS), m_speed,
+			touching_ground, in_liquid || in_liquid_stable, is_climbing);
+	const v3opos_t initial_position = position;
 	const v3f initial_speed = m_speed;
 
 
@@ -1014,8 +1043,9 @@ void LocalPlayer::old_move(f32 dtime, Environment *env,
 	// TODO: This shouldn't be hardcoded but decided by the server
 	float player_stepheight = touching_ground ? (BS * 0.6f) : (BS * 0.2f);
 
-	v3f accel_f;
-	const v3f initial_position = position;
+	v3f accel_f = getPlayerWindAcceleration(map, floatToInt(position, BS), m_speed,
+			touching_ground, in_liquid || in_liquid_stable, is_climbing);
+	const v3opos_t initial_position = position;
 	const v3f initial_speed = m_speed;
 
 	StepUpMode step_up_mode = StepUpMode::LEGACY;
