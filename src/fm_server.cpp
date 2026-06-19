@@ -699,7 +699,7 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATA_FM, 8);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATA_FM, 9);
 	PACK(TOCLIENT_BLOCKDATA_POS, block->getPos());
 
 	std::ostringstream os(std::ios_base::binary);
@@ -710,6 +710,7 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 	PACK(TOCLIENT_BLOCKDATA_HEAT, (weather::heat_t)(block->heat + block->heat_add));
 	PACK(TOCLIENT_BLOCKDATA_HUMIDITY,
 			(weather::humidity_t)(block->humidity + block->humidity_add));
+	PACK(TOCLIENT_BLOCKDATA_WIND, (weather::wind_t)(block->wind));
 	PACK(TOCLIENT_BLOCKDATA_STEP, block->far_step);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY,
 			block->m_is_mono_block ? block->data[0].param0 : CONTENT_IGNORE);
@@ -737,7 +738,7 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 	pk_blocks.pack_array(blocks.size());
 
 	for (const auto &block : blocks) {
-		pk_blocks.pack_map(8);
+		pk_blocks.pack_map(9);
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_POS, block->getPos());
 		std::ostringstream os(std::ios_base::binary);
 		block->serialize(os, ver, false, net_compression_level);
@@ -748,6 +749,7 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 				(weather::heat_t)(block->heat + block->heat_add));
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HUMIDITY,
 				(weather::humidity_t)(block->humidity + block->humidity_add));
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_WIND, (weather::wind_t)(block->wind));
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_STEP, block->far_step);
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_CONTENT_ONLY,
 				block->m_is_mono_block ? block->data[0].param0 : CONTENT_IGNORE);

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "fm_weather.h"
 #include "threading/concurrent_unordered_map.h"
 #include "threading/concurrent_unordered_set.h"
 #include "util/unordered_map_hash.h"
@@ -269,8 +270,10 @@ public:
 	std::atomic_size_t m_liquid_step_flow{1000};
 	std::atomic_size_t m_transforming_liquid_local_size{0};
 
-	virtual s16 getHeat(const v3pos_t &p, bool no_random = 0);
-	virtual s16 getHumidity(const v3pos_t &p, bool no_random = 0);
+	virtual weather::heat_t getHeat(const v3pos_t &p, bool no_random = {});
+	virtual weather::humidity_t getHumidity(const v3pos_t &p, bool no_random = {});
+	virtual weather::wind_t getWind(const v3bpos_t &p, bool no_random = {});
+
 
 	// from old mapsector:
 	using m_blocks_type =

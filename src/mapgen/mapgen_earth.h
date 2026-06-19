@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -54,8 +55,8 @@ inline std::ostream &operator<<(std::ostream &s, const ll &p)
 
 struct MapgenEarthParams : public MapgenV7Params
 {
-	MapgenEarthParams(){};
-	~MapgenEarthParams(){};
+	MapgenEarthParams() {};
+	~MapgenEarthParams() {};
 
 	Json::Value params;
 
@@ -83,6 +84,16 @@ struct maps_holder_t
 	std::mutex osm_http_lock;
 	std::mutex osm_extract_lock;
 	std::unique_ptr<PngImage> heat_image;
+	std::unique_ptr<PngImage> tavg_image;
+	std::array<std::unique_ptr<PngImage>, 12> tavg_month_images;
+	std::unique_ptr<PngImage> vapr_image;
+	std::array<std::unique_ptr<PngImage>, 12> vapr_month_images;
+	std::unique_ptr<PngImage> cloud_image;
+	std::array<std::unique_ptr<PngImage>, 12> cloud_month_images;
+	std::unique_ptr<PngImage> wind_u_image;
+	std::array<std::unique_ptr<PngImage>, 12> wind_u_month_images;
+	std::unique_ptr<PngImage> wind_v_image;
+	std::array<std::unique_ptr<PngImage>, 12> wind_v_month_images;
 	concurrent_shared_vector<std::string> files_to_delete;
 	~maps_holder_t();
 };
@@ -103,6 +114,8 @@ public:
 	void generateBuildings() override;
 	pos_t getSpawnLevelAtPoint(v2pos_t p) override;
 	pos_t getGroundLevelAtPoint(v2pos_t p) override;
+	bool calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime,
+			bool use_weather, weather::wind_t *wind) override;
 
 	v3d scale{1, 1, 1};
 	v3d center{0, 0, 0};

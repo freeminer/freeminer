@@ -7,6 +7,8 @@ VARYING_ lowp vec4 varColor;
 VARYING_ mediump vec2 varTexCoord;
 VARYING_ highp vec3 eyeVec;
 VARYING_ highp vec3 fogWorldPos;
+VARYING_ highp vec3 fogWind;
+VARYING_ highp float fogPhase;
 
 float fogHash(vec2 p)
 {
@@ -34,12 +36,22 @@ void main(void)
 	float radial = 1.0 - smoothstep(0.62, 1.20, radial_distance);
 	radial *= 1.0 - smoothstep(0.94, 1.12, max(abs(centered_uv.x), abs(centered_uv.y)));
 
-	vec2 drift = vec2(animationTimer * 0.018, animationTimer * -0.011);
-	float n1 = fogNoise(fogWorldPos.xz * 0.00085 + drift);
-	float n2 = fogNoise(fogWorldPos.xy * 0.00125 - drift * 1.7);
-	float n3 = fogNoise(fogWorldPos.zy * 0.00170 + drift.yx * 1.3);
+	float fog_time = animationTimer * 100.0;
+	float wind_speed = min(length(fogWind.xz), 80.0);
+	vec2 wind_dir = wind_speed > 0.001 ? normalize(fogWind.xz) : vec2(1.0, 0.0);
+	vec2 side_dir = vec2(-wind_dir.y, wind_dir.x);
+	vec2 wind_drift = wind_dir *
+		((fog_time * 0.026 + sin(fog_time * 0.17 + fogPhase) * 0.20) *
+			(0.35 + wind_speed * 0.025));
+	vec2 curl_drift = side_dir *
+		(sin(fog_time * 0.11 + fogPhase * 1.73) *
+			(0.16 + wind_speed * 0.006));
+	vec2 drift = vec2(fog_time * 0.013, fog_time * -0.008) + curl_drift;
+	float n1 = fogNoise(fogWorldPos.xz * 0.00085 - wind_drift + drift);
+	float n2 = fogNoise(fogWorldPos.xy * 0.00125 - vec2(wind_drift.x, curl_drift.y) - drift * 1.7);
+	float n3 = fogNoise(fogWorldPos.zy * 0.00170 - vec2(wind_drift.y, curl_drift.x) + drift.yx * 1.3);
 	float cloud = smoothstep(0.18, 0.92, n1 * 0.56 + n2 * 0.30 + n3 * 0.14);
-	float soft_grain = fogNoise(fogWorldPos.xz * 0.0032 - drift * 2.2);
+	float soft_grain = fogNoise(fogWorldPos.xz * 0.0032 - wind_drift * 1.7 - drift * 2.2);
 
 	float alpha = varColor.a * radial * mix(0.34, 1.12, cloud) *
 		mix(0.82, 1.12, soft_grain);

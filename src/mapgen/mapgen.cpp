@@ -1314,3 +1314,9 @@ weather::humidity_t Mapgen::calcBlockHumidity(const v3pos_t &p, uint64_t seed, f
 	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime,
 			use_weather, getGroundLevelAtPoint({p.X, p.Z}));
 }
+
+bool Mapgen::calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday,
+		float totaltime, bool use_weather, weather::wind_t *wind)
+{
+	return false;
+}

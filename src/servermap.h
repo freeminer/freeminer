@@ -50,13 +50,18 @@ struct MapDatabaseAccessor {
 class ServerMap : public Map
 {
 public:
-
 	// freeminer:
 	virtual weather::heat_t updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3bpos<weather::heat_t> *cache = nullptr,
+			MapBlock *block = nullptr,
+			unordered_map_v3bpos<weather::heat_t> *cache = nullptr,
 			bool block_add = true);
-	virtual weather::humidity_t updateBlockHumidity(ServerEnvironment *env, const v3pos_t &p,
-			MapBlock *block = nullptr, unordered_map_v3bpos<weather::humidity_t> *cache = nullptr,
+	virtual weather::humidity_t updateBlockHumidity(ServerEnvironment *env,
+			const v3pos_t &p, MapBlock *block = nullptr,
+			unordered_map_v3bpos<weather::humidity_t> *cache = nullptr,
+			bool block_add = true);
+	virtual weather::wind_t updateBlockWind(ServerEnvironment *env,
+			const v3pos_t &p, MapBlock *block = nullptr,
+			unordered_map_v3bpos<weather::wind_t> *cache = nullptr,
 			bool block_add = true);
 
 	size_t transforming_liquid_size();
@@ -101,23 +106,20 @@ public:
 
 	MapBlockPtr loadBlockNoStore(const v3bpos_t &p3d);
 
-	bool m_map_loading_enabled {true};
-	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual> m_mapgen_process;
+	bool m_map_loading_enabled{true};
+	concurrent_shared_unordered_map<v3pos_t, unsigned int, v3posHash, v3posEqual>
+			m_mapgen_process;
 
 	// Carries out any initialization necessary before block is sent
 	void prepareBlock(MapBlock *block);
 
 	// Helper for placing objects on ground level
 	pos_t findGroundLevel(v2pos_t p2d, bool cacheBlocks);
-	MapBlockPtr emergeBlockPtr(v3bpos_t p, bool create_blank=false) override;
+	MapBlockPtr emergeBlockPtr(v3bpos_t p, bool create_blank = false) override;
 
 	static std::atomic_uint time_life;
 
 	// == end of freeminer
-
-
-
-
 
 	/*
 		savedir: directory to which map data should be saved

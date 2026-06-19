@@ -29,12 +29,34 @@
 #include "serverenvironment.h"
 #include "servermap.h"
 #include "util/serialize.h"
+#include <cmath>
 #include <sstream>
 
 #include "log_types.h"
 
 namespace epixel
 {
+
+namespace
+{
+constexpr float FALLINGSAO_GRAVITY = -10.0f * BS;
+constexpr float FALLINGSAO_WIND_ACCEL = 0.75f;
+constexpr float FALLINGSAO_MAX_WIND_ACCEL = 6.0f * BS;
+
+v3f getFallingSAOAcceleration(Map &map, const v3pos_t &pos, const v3f &velocity)
+{
+	auto wind = map.getWind(pos, true);
+
+	const v3f target_velocity(wind.X * BS, 0.0f, wind.Z * BS);
+	v3f wind_accel = (target_velocity - v3f(velocity.X, 0.0f, velocity.Z)) *
+					 FALLINGSAO_WIND_ACCEL;
+	const float accel_length = wind_accel.getLength();
+	if (accel_length > FALLINGSAO_MAX_WIND_ACCEL && accel_length > 0.0001f)
+		wind_accel *= FALLINGSAO_MAX_WIND_ACCEL / accel_length;
+
+	return v3f(wind_accel.X, FALLINGSAO_GRAVITY, wind_accel.Z);
+}
+}
 
 FallingSAO::FallingSAO(ServerEnvironment *env, v3opos_t pos,
 		const std::string &name, const std::string &state, int fast_):
@@ -125,10 +147,10 @@ void FallingSAO::step(float dtime, bool send_recommended)
 
 	auto* ndef = m_env->getGameDef()->getNodeDefManager();
 
-	setAcceleration(v3f(0,-10*BS,0));
 	// Under node, center
 	const auto m_base_position = getBasePosition();
 	v3pos_t p = floatToInt(m_base_position, BS);
+	setAcceleration(getFallingSAOAcceleration(m_env->getMap(), p, getVelocity()));
 	v3pos_t p_under(p.X, p.Y - 1, p.Z);
 /*
 	bool cur_exists = false, under_exists = false;

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "CMeshBuffer.h"
+#include "fm_weather.h"
 #include "threading/async.h"
 #include "settings.h"
 
@@ -13,6 +14,8 @@
 #include <ISceneNode.h>
 #include <map>
 #include <functional>
+#include <mutex>
+#include <unordered_map>
 
 struct MapDrawControl
 {
@@ -233,7 +236,7 @@ private:
 
 	bool m_far_fog_material_ready = false;
 	video::SMaterial m_far_fog_material;
-	irr_ptr<scene::SMeshBuffer> m_far_fog_meshbuffer;
+	std::vector<irr_ptr<scene::SMeshBuffer>> m_far_fog_meshbuffers;
 	struct FarFogCell {
 		v3bpos_t block_pos;
 		block_step_t step = 0;
@@ -243,9 +246,13 @@ private:
 		bool has_climate = false;
 		float heat = 0.0f;
 		float humidity = 0.0f;
+		float terrain_y = 0.0f;
+		weather::wind_t wind;
 	};
 	std::array<std::vector<FarFogCell>, 2> m_far_fog_cells;
 	std::mutex m_far_fog_cells_mutex;
+	std::unordered_map<std::size_t, float> m_far_fog_terrain_cache;
+	std::mutex m_far_fog_terrain_cache_mutex;
 	std::atomic_uint8_t m_far_fog_cells_current = 0;
 	std::atomic_bool m_far_fog_cells_ready = false;
 	v3bpos_t m_far_fog_cells_origin;
