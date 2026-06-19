@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-03-29 10:09+0000\n"
-"Last-Translator: Tarás Lavrentiev <fromkaniv@gmail.com>\n"
+"PO-Revision-Date: 2026-06-20 12:01+0000\n"
+"Last-Translator: winver <kirillstuzhuk@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
 "Language: uk\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -337,7 +337,7 @@ msgstr "(Системна мова)"
 #. TRANSLATORS: Shown when a default setting is the empty string
 #: builtin/common/settings/dlg_settings.lua
 msgid "<empty>"
-msgstr ""
+msgstr "<порожно>"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Accessibility"
@@ -1540,9 +1540,8 @@ msgstr ""
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Possible filters"
-msgstr "Пуасоновська фільтрація"
+msgstr "Можливі фільтри"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1627,9 +1626,8 @@ msgid "Media..."
 msgstr "Ресурси..."
 
 #: src/client/fontengine.cpp
-#, fuzzy
 msgid "Failed to find a valid font"
-msgstr "Не вдалося знайти файли шейдерів \"%s\"."
+msgstr "Не вдалося знайти дійсний шрифт"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -2136,7 +2134,7 @@ msgstr "Середній клік"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "Кнопка миші %d"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
@@ -2316,9 +2314,8 @@ msgid "Failed to create the texture \"%s\" for the rendering pipeline."
 msgstr "Не вдалося створити текстуру \"%s\" для конвеєра рендерингу."
 
 #: src/client/renderingengine.cpp
-#, fuzzy
 msgid "Could not initialize any supported video driver!"
-msgstr "Відображення трикутниками не підтримується графічним драйвером"
+msgstr "Не вдалося ініціалізувати жоден підтримуваний відеодрайвер!"
 
 #: src/client/shader.cpp
 #, c-format
@@ -2374,9 +2371,8 @@ msgid "Opening webpage"
 msgstr "Відкривання вебсторінки"
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "Скрипт головного меню"
+msgstr "Не вдалося завантажити скрипт головного меню!"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
