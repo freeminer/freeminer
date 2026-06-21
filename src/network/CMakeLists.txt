@@ -5,11 +5,14 @@ set(common_network_SRCS
 	# TODO merge:
 	${CMAKE_CURRENT_SOURCE_DIR}/multi/connection.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/enet/connection.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_sctp.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/fm_connection_websocket_sctp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sctp/api.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sctp/impl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sctp/io.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sctp/send.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/impl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/peers.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/websocket.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/wssocket.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/ws/connection.cpp
-	#${CMAKE_CURRENT_SOURCE_DIR}/ws/connectionthreads.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/impl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/threads.cpp
 

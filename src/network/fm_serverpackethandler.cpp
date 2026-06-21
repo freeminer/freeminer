@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
+Copyright (C) 2024 proller <proler@gmail.com>
 */
 
 /*

@@ -34,6 +34,10 @@ namespace con
 {
 class PeerHandler;
 }
+namespace con_ws_sctp
+{
+class Connection;
+}
 
 namespace con
 {
@@ -66,7 +70,7 @@ private:
 	std::shared_ptr<IConnection> m_con_ws;
 #endif
 #if USE_WEBSOCKET_SCTP
-	std::shared_ptr<IConnection> m_con_ws_sctp;
+	std::shared_ptr<con_ws_sctp::Connection> m_con_ws_sctp;
 #endif
 #if USE_ENET
 	std::shared_ptr<IConnection> m_con_enet;

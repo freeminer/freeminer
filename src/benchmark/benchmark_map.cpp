@@ -40,7 +40,7 @@ static void fillMap(TestMap &map, s16 n)
 	for(s16 z=0; z<n; z++)
 	for(s16 y=0; y<n; y++)
 	for(s16 x=0; x<n; x++) {
-		v3s16 p(x,y,z);
+		v3pos_t p(x,y,z);
 		// create an empty block
 		map.createBlockTest(p);
 	}

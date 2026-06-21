@@ -1,7 +1,3 @@
-// Luanti
-// SPDX-License-Identifier: LGPL-2.1-or-later
-// Copyright (C) 2026 Cline AI Assistant
-
 #include "catch.h"
 #include "database/database-dummy.h"
 #include "database/database-leveldb.h"
@@ -12,16 +8,37 @@
 #include "porting.h"
 #include "filesys.h"
 #include "settings.h"
+#include <array>
+#include <cctype>
 #include <exception>
+#include <iomanip>
 #include <memory>
+#include <optional>
 #include <random>
 #include <algorithm>
+#include <string_view>
+#include <vector>
 
 namespace
 {
 
 static bool g_benchmark_initialized = false;
 static std::string g_test_directory;
+static size_t g_database_instance_counter = 0;
+
+static constexpr std::array<size_t, 5> g_benchmark_block_sizes = {
+		256,
+		1024,
+		4 * 1024,
+		16 * 1024,
+		64 * 1024,
+};
+static constexpr size_t g_load_benchmark_blocks = 4096;
+
+static std::string getBenchmarkDirectory()
+{
+	return porting::path_share + DIR_DELIM + ".benchmark_tmp";
+}
 
 static void initialize_benchmark_environment()
 {
@@ -29,7 +46,7 @@ static void initialize_benchmark_environment()
 		return;
 
 	// Create temporary directory for benchmark databases
-	g_test_directory = porting::path_share + DIR_DELIM + ".benchmark_tmp";
+	g_test_directory = getBenchmarkDirectory();
 	fs::CreateAllDirs(g_test_directory);
 
 	g_benchmark_initialized = true;
@@ -37,13 +54,23 @@ static void initialize_benchmark_environment()
 
 static void cleanup_benchmark_environment()
 {
-	if (!g_benchmark_initialized)
-		return;
+	if (g_test_directory.empty())
+		g_test_directory = getBenchmarkDirectory();
 
 	// Clean up temporary directory
-	fs::RecursiveDelete(g_test_directory);
+	if (fs::PathExists(g_test_directory))
+		fs::RecursiveDelete(g_test_directory);
 
+	g_database_instance_counter = 0;
 	g_benchmark_initialized = false;
+	g_test_directory.clear();
+}
+
+static std::string makeBenchmarkDatabasePath(std::string_view db_name)
+{
+	initialize_benchmark_environment();
+	return g_test_directory + DIR_DELIM + std::string(db_name) + "_" +
+		   std::to_string(g_database_instance_counter++);
 }
 
 static std::unique_ptr<MapDatabase> create_dummy_database()
@@ -57,7 +84,7 @@ static std::unique_ptr<MapDatabase> create_leveldb_database()
 #if !USE_LEVELDB
 	return nullptr;
 #else
-	std::string db_path = g_test_directory + DIR_DELIM + "leveldb_test";
+	std::string db_path = makeBenchmarkDatabasePath("leveldb_test");
 	fs::CreateAllDirs(db_path);
 	return std::make_unique<Database_LevelDB>(db_path);
 #endif
@@ -68,7 +95,7 @@ static std::unique_ptr<MapDatabase> create_sqlite3_database()
 #if !USE_SQLITE3
 	return nullptr;
 #else
-	std::string db_path = g_test_directory + DIR_DELIM + "sqlite3_test";
+	std::string db_path = makeBenchmarkDatabasePath("sqlite3_test");
 	fs::CreateAllDirs(db_path);
 	return std::make_unique<MapDatabaseSQLite3>(db_path);
 #endif
@@ -150,99 +177,231 @@ static v3pos_t generateTestPosition(int index)
 	return v3pos_t(x, y, z);
 }
 
+static std::string formatBlockSize(size_t bytes)
+{
+	if (bytes >= 1024 && bytes % 1024 == 0)
+		return std::to_string(bytes / 1024) + " KiB";
+
+	return std::to_string(bytes) + " B";
+}
+
+static std::string makeThroughputBenchmarkName(
+		std::string_view operation, const std::string &db_name, size_t block_size)
+{
+	return "DB" + std::string(operation) + "_" + db_name + "_" +
+		   std::to_string(block_size) + "B";
+}
+
+struct ThroughputBenchmarkMetadata
+{
+	std::string operation;
+	std::string db_name;
+	size_t block_size;
+};
+
+static std::optional<ThroughputBenchmarkMetadata> parseThroughputBenchmarkName(
+		const std::string &name)
+{
+	constexpr std::string_view write_prefix = "DBWrite_";
+	constexpr std::string_view read_prefix = "DBRead_";
+
+	std::string operation;
+	size_t prefix_size = 0;
+	if (name.compare(0, write_prefix.size(), write_prefix) == 0) {
+		operation = "write";
+		prefix_size = write_prefix.size();
+	} else if (name.compare(0, read_prefix.size(), read_prefix) == 0) {
+		operation = "read";
+		prefix_size = read_prefix.size();
+	} else {
+		return std::nullopt;
+	}
+
+	const auto separator = name.rfind('_');
+	if (separator == std::string::npos || separator <= prefix_size ||
+			separator + 2 > name.size() || name.back() != 'B') {
+		return std::nullopt;
+	}
+
+	size_t block_size = 0;
+	for (size_t i = separator + 1; i + 1 < name.size(); ++i) {
+		const unsigned char c = static_cast<unsigned char>(name[i]);
+		if (!std::isdigit(c))
+			return std::nullopt;
+		block_size = block_size * 10 + (c - '0');
+	}
+
+	if (block_size == 0)
+		return std::nullopt;
+
+	return ThroughputBenchmarkMetadata{
+			operation,
+			name.substr(prefix_size, separator - prefix_size),
+			block_size,
+	};
+}
+
+struct ThroughputBenchmarkResult
+{
+	std::string db_name;
+	std::string operation;
+	size_t block_size;
+	double mean_ns;
+	double operations_per_second;
+	double mib_per_second;
+};
+
+class DatabaseBenchmarkThroughputListener : public Catch::EventListenerBase
+{
+public:
+	using Catch::EventListenerBase::EventListenerBase;
+
+	static std::string getDescription()
+	{
+		return "prints derived database benchmark throughput";
+	}
+
+	void benchmarkEnded(Catch::BenchmarkStats<> const &stats) override
+	{
+		const auto metadata = parseThroughputBenchmarkName(stats.info.name);
+		if (!metadata)
+			return;
+
+		const double mean_ns = stats.mean.point.count();
+		if (mean_ns <= 0.0)
+			return;
+
+		const double operations_per_second = 1000000000.0 / mean_ns;
+		const double mib_per_second = operations_per_second *
+									  static_cast<double>(metadata->block_size) /
+									  (1024.0 * 1024.0);
+
+		m_results.push_back({
+				metadata->db_name,
+				metadata->operation,
+				metadata->block_size,
+				mean_ns,
+				operations_per_second,
+				mib_per_second,
+		});
+	}
+
+	void testRunEnded(Catch::TestRunStats const &) override
+	{
+		if (m_results.empty())
+			return;
+
+		auto &out = Catch::cerr();
+		const auto old_flags = out.flags();
+		const auto old_precision = out.precision();
+
+		out << "\nDatabase read/write throughput "
+			<< "(derived from Catch2 benchmark mean)\n";
+		out << std::left << std::setw(14) << "database" << std::setw(8) << "op"
+			<< std::right << std::setw(10) << "size" << std::setw(15) << "ops/sec"
+			<< std::setw(15) << "MiB/sec" << std::setw(15) << "mean ns/op" << '\n';
+		out << std::string(77, '-') << '\n';
+
+		for (const auto &result : m_results) {
+			out << std::left << std::setw(14) << result.db_name << std::setw(8)
+				<< result.operation << std::right << std::setw(10)
+				<< formatBlockSize(result.block_size) << std::setw(15) << std::fixed
+				<< std::setprecision(0) << result.operations_per_second << std::setw(15)
+				<< std::fixed << std::setprecision(2) << result.mib_per_second
+				<< std::setw(15) << std::fixed << std::setprecision(1) << result.mean_ns
+				<< '\n';
+		}
+
+		out.flags(old_flags);
+		out.precision(old_precision);
+	}
+
+private:
+	std::vector<ThroughputBenchmarkResult> m_results;
+};
+
+CATCH_REGISTER_LISTENER(DatabaseBenchmarkThroughputListener)
+
 // Benchmark functions for each operation
 template <typename DatabaseFactory>
 static void benchmarkSaveBlock(
-		DatabaseFactory factory, const std::string &db_name, size_t iterations)
+		DatabaseFactory factory, const std::string &db_name, size_t block_size)
 {
-	BENCHMARK_ADVANCED("SaveBlock_" + db_name)(Catch::Benchmark::Chronometer meter)
+	initialize_benchmark_environment();
+	auto db = factory();
+	if (!db)
+		return;
+
+	std::string test_data = generateTestData(block_size);
+	size_t next_index = 0;
+	db->beginSave();
+
+	BENCHMARK_ADVANCED(makeThroughputBenchmarkName("Write", db_name, block_size))(
+			Catch::Benchmark::Chronometer meter)
 	{
-		initialize_benchmark_environment();
-		auto db = factory();
-		if (!db) {
-			meter.measure([] { return 0; }); // Skip if database not available
-			return;
-		}
-
-		std::string test_data = generateTestData();
-		db->beginSave();
-
-		meter.measure([&] {
-			for (size_t i = 0; i < meter.runs(); ++i) {
-				const auto pos = generateTestPosition(i);
-				db->saveBlock(pos, test_data);
-			}
-			return meter.runs();
+		meter.measure([&](int) {
+			const auto pos = generateTestPosition(next_index++);
+			return db->saveBlock(pos, test_data);
 		});
-
-		db->endSave();
 	};
+
+	db->endSave();
 }
 
 template <typename DatabaseFactory>
 static void benchmarkLoadBlock(
-		DatabaseFactory factory, const std::string &db_name, size_t iterations)
+		DatabaseFactory factory, const std::string &db_name, size_t block_size)
 {
-	BENCHMARK_ADVANCED("LoadBlock_" + db_name)(Catch::Benchmark::Chronometer meter)
+	initialize_benchmark_environment();
+	auto db = factory();
+	if (!db)
+		return;
+
+	// Pre-populate database
+	std::string test_data = generateTestData(block_size);
+	db->beginSave();
+	for (size_t i = 0; i < g_load_benchmark_blocks; ++i) {
+		const auto pos = generateTestPosition(i);
+		db->saveBlock(pos, test_data);
+	}
+	db->endSave();
+
+	std::string loaded_data;
+	BENCHMARK_ADVANCED(makeThroughputBenchmarkName("Read", db_name, block_size))(
+			Catch::Benchmark::Chronometer meter)
 	{
-		initialize_benchmark_environment();
-		auto db = factory();
-		if (!db) {
-			meter.measure([] { return 0; }); // Skip if database not available
-			return;
-		}
-
-		// Pre-populate database
-		std::string test_data = generateTestData();
-		db->beginSave();
-		for (size_t i = 0; i < iterations; ++i) {
-			const auto pos = generateTestPosition(i);
-			db->saveBlock(pos, test_data);
-		}
-		db->endSave();
-
-		std::string loaded_data;
-		meter.measure([&] {
-			for (size_t i = 0; i < meter.runs(); ++i) {
-				const auto pos = generateTestPosition(i % iterations);
-				db->loadBlock(pos, &loaded_data);
-			}
-			return meter.runs();
+		meter.measure([&](int i) {
+			const auto pos = generateTestPosition(i % g_load_benchmark_blocks);
+			db->loadBlock(pos, &loaded_data);
+			return loaded_data.size();
 		});
 	};
 }
 
 template <typename DatabaseFactory>
-static void benchmarkDeleteBlock(
-		DatabaseFactory factory, const std::string &db_name, size_t iterations)
+static void benchmarkDeleteBlock(DatabaseFactory factory, const std::string &db_name)
 {
 	BENCHMARK_ADVANCED("DeleteBlock_" + db_name)(Catch::Benchmark::Chronometer meter)
 	{
 		initialize_benchmark_environment();
 		auto db = factory();
 		if (!db) {
-			meter.measure([] { return 0; }); // Skip if database not available
+			meter.measure([](int) { return 0; }); // Skip if database not available
 			return;
 		}
 
 		// Pre-populate database
 		std::string test_data = generateTestData();
 		db->beginSave();
-		for (size_t i = 0; i < iterations; ++i) {
+		for (int i = 0; i < meter.runs(); ++i) {
 			auto pos = generateTestPosition(i);
 			db->saveBlock(pos, test_data);
 		}
 		db->endSave();
 
-		meter.measure([&] {
-			size_t deleted = 0;
-			for (size_t i = 0; i < meter.runs(); ++i) {
-				auto pos = generateTestPosition(i % iterations);
-				if (db->deleteBlock(pos)) {
-					deleted++;
-				}
-			}
-			return deleted;
+		meter.measure([&](int i) {
+			auto pos = generateTestPosition(i);
+			return db->deleteBlock(pos);
 		});
 	};
 }
@@ -251,34 +410,28 @@ template <typename DatabaseFactory>
 static void benchmarkListAllBlocks(
 		DatabaseFactory factory, const std::string &db_name, size_t iterations)
 {
+	initialize_benchmark_environment();
+	auto db = factory();
+	if (!db)
+		return;
+
+	// Pre-populate database with reasonable amount of data
+	size_t populate_count = std::min(iterations, static_cast<size_t>(1000));
+	std::string test_data = generateTestData();
+	db->beginSave();
+	for (size_t i = 0; i < populate_count; ++i) {
+		const auto pos = generateTestPosition(i);
+		db->saveBlock(pos, test_data);
+	}
+	db->endSave();
+
+	std::vector<v3pos_t> block_list;
 	BENCHMARK_ADVANCED("ListAllBlocks_" + db_name)(Catch::Benchmark::Chronometer meter)
 	{
-		initialize_benchmark_environment();
-		auto db = factory();
-		if (!db) {
-			meter.measure([] { return 0; }); // Skip if database not available
-			return;
-		}
-
-		// Pre-populate database with reasonable amount of data
-		size_t populate_count = std::min(iterations, static_cast<size_t>(1000));
-		std::string test_data = generateTestData();
-		db->beginSave();
-		for (size_t i = 0; i < populate_count; ++i) {
-			const auto pos = generateTestPosition(i);
-			db->saveBlock(pos, test_data);
-		}
-		db->endSave();
-
-		std::vector<v3pos_t> block_list;
 		meter.measure([&] {
-			size_t total_found = 0;
-			for (size_t i = 0; i < meter.runs(); ++i) {
-				block_list.clear();
-				db->listAllLoadableBlocks(block_list);
-				total_found += block_list.size();
-			}
-			return total_found;
+			block_list.clear();
+			db->listAllLoadableBlocks(block_list);
+			return block_list.size();
 		});
 	};
 }
@@ -287,43 +440,45 @@ static void benchmarkListAllBlocks(
 
 TEST_CASE("benchmark_database_operations")
 {
-	const auto iterations1 = 10000;
 	const auto iterations2 = 1000;
 
-	const auto have_postgresl = !!create_postgresql_database();
+	const auto have_postgresql = !!create_postgresql_database();
 	const auto have_redis = !!create_redis_database();
 	SECTION("SaveBlock Operations")
 	{
-
-		benchmarkSaveBlock(create_dummy_database, "Dummy", iterations1);
-		benchmarkSaveBlock(create_leveldb_database, "LevelDB", iterations1);
-		benchmarkSaveBlock(create_sqlite3_database, "SQLite3", iterations1);
-		if (have_postgresl)
-			benchmarkSaveBlock(create_postgresql_database, "Postgresql", iterations1);
-		if (have_redis)
-			benchmarkSaveBlock(create_redis_database, "Redis", iterations1);
+		for (const size_t block_size : g_benchmark_block_sizes) {
+			benchmarkSaveBlock(create_dummy_database, "Dummy", block_size);
+			benchmarkSaveBlock(create_leveldb_database, "LevelDB", block_size);
+			benchmarkSaveBlock(create_sqlite3_database, "SQLite3", block_size);
+			if (have_postgresql)
+				benchmarkSaveBlock(create_postgresql_database, "Postgresql", block_size);
+			if (have_redis)
+				benchmarkSaveBlock(create_redis_database, "Redis", block_size);
+		}
 	}
 
 	SECTION("LoadBlock Operations")
 	{
-		benchmarkLoadBlock(create_dummy_database, "Dummy", iterations1);
-		benchmarkLoadBlock(create_leveldb_database, "LevelDB", iterations1);
-		benchmarkLoadBlock(create_sqlite3_database, "SQLite3", iterations1);
-		if (have_postgresl)
-			benchmarkLoadBlock(create_postgresql_database, "Postgresql", iterations1);
-		if (have_redis)
-			benchmarkLoadBlock(create_redis_database, "Redis", iterations1);
+		for (const size_t block_size : g_benchmark_block_sizes) {
+			benchmarkLoadBlock(create_dummy_database, "Dummy", block_size);
+			benchmarkLoadBlock(create_leveldb_database, "LevelDB", block_size);
+			benchmarkLoadBlock(create_sqlite3_database, "SQLite3", block_size);
+			if (have_postgresql)
+				benchmarkLoadBlock(create_postgresql_database, "Postgresql", block_size);
+			if (have_redis)
+				benchmarkLoadBlock(create_redis_database, "Redis", block_size);
+		}
 	}
 
 	SECTION("DeleteBlock Operations")
 	{
-		benchmarkDeleteBlock(create_dummy_database, "Dummy", iterations1);
-		benchmarkDeleteBlock(create_leveldb_database, "LevelDB", iterations1);
-		benchmarkDeleteBlock(create_sqlite3_database, "SQLite3", iterations1);
-		if (have_postgresl)
-			benchmarkDeleteBlock(create_postgresql_database, "Postgresql", iterations1);
+		benchmarkDeleteBlock(create_dummy_database, "Dummy");
+		benchmarkDeleteBlock(create_leveldb_database, "LevelDB");
+		benchmarkDeleteBlock(create_sqlite3_database, "SQLite3");
+		if (have_postgresql)
+			benchmarkDeleteBlock(create_postgresql_database, "Postgresql");
 		if (have_redis)
-			benchmarkDeleteBlock(create_redis_database, "Redis", iterations1);
+			benchmarkDeleteBlock(create_redis_database, "Redis");
 	}
 
 	SECTION("ListAllBlocks Operations")
@@ -331,7 +486,7 @@ TEST_CASE("benchmark_database_operations")
 		benchmarkListAllBlocks(create_dummy_database, "Dummy", iterations2);
 		benchmarkListAllBlocks(create_leveldb_database, "LevelDB", iterations2);
 		benchmarkListAllBlocks(create_sqlite3_database, "SQLite3", iterations2);
-		if (have_postgresl)
+		if (have_postgresql)
 			benchmarkListAllBlocks(create_postgresql_database, "Postgresql", iterations2);
 		if (have_redis)
 			benchmarkListAllBlocks(create_redis_database, "Redis", iterations2);

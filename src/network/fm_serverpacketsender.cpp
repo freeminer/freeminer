@@ -1,4 +1,8 @@
 /*
+Copyright (C) 2024 proller <proler@gmail.com>
+*/
+
+/*
 This file is part of Freeminer.
 
 Freeminer is free software: you can redistribute it and/or modify
@@ -14,6 +18,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 #include "server.h"
 #include "server/player_sao.h"
 
