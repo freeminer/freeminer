@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-04-06 09:09+0000\n"
-"Last-Translator: Jamil Mohamad Alhussein <jamilmohamadalhoseen@gmail.com>\n"
+"PO-Revision-Date: 2026-06-22 13:01+0000\n"
+"Last-Translator: Omar The 2nd <omarthe3st@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/minetest/minetest/"
 "ar/>\n"
 "Language: ar\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 5.17-dev\n"
+"X-Generator: Weblate 2026.7.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -91,16 +91,15 @@ msgstr "استعرض"
 
 #: builtin/common/settings/components.lua
 msgid "Conflicts with \"$1\""
-msgstr ""
+msgstr "يختلف مع \"$١\""
 
 #: builtin/common/settings/components.lua
 msgid "Edit"
 msgstr "حرر"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Remove keybinding"
-msgstr "روابط المفاتيح."
+msgstr "ازل روابط المفاتيح"
 
 #: builtin/common/settings/components.lua
 msgid "Select directory"
@@ -111,14 +110,12 @@ msgid "Select file"
 msgstr "إختر ملف"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Set"
-msgstr "Select"
+msgstr "اختار"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "$1 spread"
-msgstr "التوزع على محور X"
+msgstr "تم توزيع ١$"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "(No description of setting given)"
@@ -126,13 +123,15 @@ msgstr "(الإعداد بدون وصف)"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "2D Noise"
-msgstr "ضوضاء 2D"
+msgstr "ضوضاء ثنائية الابعاد"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "2D noise: flag on.\n"
 "3D noise: flag off."
 msgstr ""
+"ضوضاء ثنائية الابعاد: تم تشغيل العلم.\n"
+"ضوضاء ثلاثية الابعاد: تم توقيف العلم."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
@@ -224,7 +223,6 @@ msgid "Overrides the 'eased' flag based on the noise type."
 msgstr ""
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "Persistence"
 msgstr "استمرار"
 
@@ -1324,7 +1322,7 @@ msgstr "جرب إعادة تمكين قائمة الحوادم العامة وت
 
 #: builtin/mainmenu/tab_about.lua
 msgid "About"
-msgstr "حول"
+msgstr "عن"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Active Contributors"
@@ -4280,7 +4278,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "HUD"
-msgstr ""
+msgstr "هاد"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
