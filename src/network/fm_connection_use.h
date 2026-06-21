@@ -29,7 +29,7 @@ constexpr auto server_proto = "mt";
 //namespace con_use{using namespace con_multi;}
 #define USE_TRANSPORT "multi";
 #elif USE_WEBSOCKET
-#include "ws/connection.h"
+#include "network/ws/impl.h"
 constexpr auto server_proto = "mt_ws";
 namespace con_use
 {
@@ -38,7 +38,7 @@ using namespace con_ws;
 #define USE_TRANSPORT "ws";
 #elif USE_WEBSOCKET_SCTP
 constexpr auto server_proto = "mt_ws_sctp";
-#include "fm_connection_websocket_sctp.h"
+#include "network/ws_sctp/connection.h"
 namespace con_use
 {
 using namespace con_ws_sctp;
@@ -46,7 +46,7 @@ using namespace con_ws_sctp;
 #define USE_TRANSPORT "ws_sctp";
 #elif USE_SCTP
 constexpr auto server_proto = "mt_sctp";
-#include "fm_connection_sctp.h"
+#include "network/sctp/connection.h"
 namespace con_use
 {
 using namespace con_sctp;

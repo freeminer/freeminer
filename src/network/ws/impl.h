@@ -235,26 +235,27 @@ public:
 
 	Connection(u32 max_packet_size, float timeout, bool ipv6,
 			PeerHandler *peerhandler);
-	~Connection();
+	~Connection() override;
 
 	/* Interface */
 	ConnectionEventPtr waitEvent(u32 timeout_ms);
 
 	void putCommand(ConnectionCommandPtr c);
 
-	void Serve(Address bind_addr);
-	void Connect(Address address);
-	bool Connected();
-	void Disconnect();
-	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms);
-	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	void Serve(Address bind_addr) override;
+	void Connect(Address address) override;
+	bool Connected() override;
+	void Disconnect() override;
+	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms) override;
+	void Send(
+			session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable) override;
 	session_t GetPeerID() const { return m_peer_id; }
-	Address GetPeerAddress(session_t peer_id);
-	float getPeerStat(session_t peer_id, rtt_stat_type type);
-	float getLocalStat(rate_stat_type type);
+	Address GetPeerAddress(session_t peer_id) override;
+	float getPeerStat(session_t peer_id, rtt_stat_type type) override;
+	float getLocalStat(rate_stat_type type) override;
 	u32 GetProtocolID() const { return m_protocol_id; };
 	const std::string getDesc();
-	void DisconnectPeer(session_t peer_id);
+	void DisconnectPeer(session_t peer_id) override;
 
 protected:
 	PeerHelper getPeerNoEx(session_t peer_id);

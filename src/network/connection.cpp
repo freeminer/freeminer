@@ -37,7 +37,7 @@ IConnection *createMTP(float timeout, bool ipv6, PeerHandler *handler, bool simp
 #elif USE_ENET
 	return new con::ConnectionEnet(MAX_PACKET_SIZE, timeout, ipv6, handler);
 #elif USE_SCTP
-												   return new con::ConnectionSctp(
+												   return new con_sctp::Connection(
 														   MAX_PACKET_SIZE, timeout, ipv6,
 														   handler);
 #elif MINETEST_TRANSPORT

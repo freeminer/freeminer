@@ -502,6 +502,14 @@ $commands = {
           qq{--run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log},
           options_make([qw(verbose trace)]);
     },
+    benchmark => ['build_client', sub {
+        sy $commands->{env}(),
+          $config->{runner},
+          qq{@_},
+          $commands->{executable}(),
+          qq{--run-benchmarks},
+          ;
+    }],
     set_bot         => {'----bot' => 1, }, # '----bot_random' => 1,
     run_bot         => ['set_bot', 'set_client', 'run_single'],
     run             => ['set_client', 'run_single'],

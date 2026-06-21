@@ -2,73 +2,12 @@
 Copyright (C) 2023 proller <proler@gmail.com>
 */
 
-/*
-This file is part of Freeminer.
-
-Freeminer is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-Freeminer  is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/*
-
-Very experimental sctp networking
-
-to build:
-add submodules:
-git submodule add https://github.com/sctplab/usrsctp.git src/external/usrsctp
-git submodule add https://github.com/proller/android-ifaddrs.git
-build/android/jni/android-ifaddrs
-
-and make with:
-cmake . -DENABLE_SCTP=1
-
-*/
-
-/*
-https://chromium.googlesource.com/external/webrtc/+/master/talk/media/sctp/sctpdataengine.cc
-*/
-
-#include <cerrno>
-#include <string_view>
-#include <sys/socket.h>
-#include <unistd.h>
-#include "config.h"
+#include "network/sctp/internal.h"
 
 #if USE_SCTP
 
-#include "log.h"
-#include "network/fm_connection_sctp.h"
-#include "network/networkpacket.h"
-#include "network/networkprotocol.h"
-#include "porting.h"
-#include "profiler.h"
-#include "serialization.h"
-#include "settings.h"
-#include "util/numeric.h"
-#include "util/serialize.h"
-#include "util/string.h"
-#include <cstdarg>
-
-#include "external/usrsctp/usrsctplib/usrsctp.h"
-
-#ifdef __EMSCRIPTEN__
-#include <emsocket.h>
-#endif
-
 namespace con_sctp
 {
-
-#define BUFFER_SIZE (1 << 16)
 
 // very ugly windows hack
 #if defined(_WIN32)
@@ -132,46 +71,6 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 }
 #endif
 
-/*
-	Connection
-*/
-void debug_printf(const char *format, ...)
-{
-	printf("SCTP_DEBUG: ");
-	va_list ap;
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
-// auto & cs = verbosestream; //errorstream; // remove after debug
-#if SCTP_DEBUG
-auto &cs = errorstream; // remove after debug
-#else
-auto &cs = verbosestream; // remove after debug
-#endif
-
-static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
-{
-	DUMP((long)addr, (long)buf, length, tos, set_df);
-
-	char *dump_buf;
-	int *fdp;
-
-	fdp = (int *)addr;
-
-	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
-		fprintf(stderr, "%s", dump_buf);
-		DUMP("Out", dump_buf);
-		usrsctp_freedumpbuffer(dump_buf);
-	}
-	if (send(*fdp, buf, length, 0) < 0) {
-		return (errno);
-	} else {
-		return (0);
-	}
-}
-
 #define MAX_PACKET_SIZE (1 << 16)
 #define BUFFER_SIZE 80
 #define DISCARD_PPID 39
@@ -206,184 +105,13 @@ DUMP("handle_packets thrd", MAX_PACKET_SIZE, arg);
 	return (NULL);
 }
 
-Connection::Connection(u32 max_packet_size, float timeout, bool ipv6,
-		PeerHandler *peerhandler) :
-		thread_vector("Connection"),
-		//m_protocol_id(protocol_id),
-		m_max_packet_size(max_packet_size),
-		m_timeout(timeout), sock(nullptr), m_peer_id(0), m_bc_peerhandler(peerhandler),
-		m_last_recieved(0), m_last_recieved_warn(0)
-
-#ifdef __EMSCRIPTEN__
-		, domain{AF_CONN}
-#endif
-{
-
-	if (domain == AF_CONN) {
-		sctp_conn_output = conn_output;
-		// domain = AF_CONN;
-	}
-	// #endif
-
-	start();
-}
-
-bool Connection::sctp_inited = false;
-
-Connection::~Connection()
-{
-
-	join();
-	deletePeer(0);
-
-	disconnect();
-
-	if (sctp_inited_by_me) {
-
-		for (int i = 0; i < 100; ++i) {
-			if (!usrsctp_finish())
-				break;
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-			// cs << "Connection::~Connection() wait " << i << std::endl;
-		}
-
-		sctp_inited = false;
-	}
-}
-
-/* Internal stuff */
-
-void *Connection::run()
-{
-	while (!stopRequested()) {
-		while (!m_command_queue.empty()) {
-			auto c = m_command_queue.pop_frontNoEx();
-			processCommand(c);
-		}
-		if (receive() <= 0) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		}
-	}
-
-	disconnect();
-
-	return nullptr;
-}
-
-/* Internal stuff */
-
-void Connection::putEvent(ConnectionEventPtr e)
-{
-	assert(e->type != CONNEVENT_NONE); // Pre-condition
-	m_event_queue.push_back(e);
-}
-
-void Connection::processCommand(ConnectionCommandPtr c)
-{
-	switch (c->type) {
-	case CONNCMD_NONE:
-		dout_con << getDesc() << " processing CONNCMD_NONE" << std::endl;
-		return;
-	case CONNCMD_SERVE:
-		dout_con << getDesc() << " processing CONNCMD_SERVE port=" << c->address.getPort()
-				 << std::endl;
-		serve(c->address);
-		return;
-	case CONNCMD_CONNECT:
-		dout_con << getDesc() << " processing CONNCMD_CONNECT" << std::endl;
-		connect_addr(c->address);
-		return;
-	case CONNCMD_DISCONNECT:
-		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
-		disconnect();
-		return;
-	case CONNCMD_DISCONNECT_PEER:
-		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;
-		deletePeer(c->peer_id, false); // its correct ?
-		// DisconnectPeer(c.peer_id);
-		return;
-	case CONNCMD_SEND:
-		dout_con << getDesc() << " processing CONNCMD_SEND" << std::endl;
-		send(c->peer_id, c->channelnum, c->data, c->reliable);
-		return;
-	case CONNCMD_SEND_TO_ALL:
-		dout_con << getDesc() << " processing CONNCMD_SEND_TO_ALL" << std::endl;
-		sendToAll(c->channelnum, c->data, c->reliable);
-		return;
-		/*	case CONNCMD_DELETE_PEER:
-				dout_con << getDesc() << " processing CONNCMD_DELETE_PEER" << std::endl;
-				deletePeer(c.peer_id, false);
-				return;
-		*/
-	case CONCMD_ACK:
-	case CONCMD_CREATE_PEER:
-		break;
-	}
-}
-
-void Connection::sctp_setup(u16 port)
-{
-	if (sctp_inited)
-		return;
-	sctp_inited = true;
-	sctp_inited_by_me = true;
-
-	auto debug_func = debug_printf;
-	debug_func = nullptr;
-#if SCTP_DEBUG
-	debug_func = debug_printf;
-#endif
-
-	cs << "sctp_setup(" << port << ")" << std::endl;
-	DUMP("sctp_conn_output", (long)sctp_conn_output);
-	usrsctp_init(port, sctp_conn_output, debug_func);
-	// usrsctp_init_nothreads(port, nullptr, debug_func);
-
-#if SCTP_DEBUG
-	// usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_NONE);
-	usrsctp_sysctl_set_sctp_debug_on(SCTP_DEBUG_ALL);
-	usrsctp_sysctl_set_sctp_logging_level(0xffffffff);
-#endif
-
-#ifdef __EMSCRIPTEN__
-	usrsctp_sysctl_set_sctp_auto_asconf(0);
-	// usrsctp_sysctl_set_sctp_multiple_asconfs(0);
-	usrsctp_sysctl_set_sctp_ecn_enable(0);
-	usrsctp_sysctl_set_sctp_asconf_enable(0);
-#endif
-
-	// #if __ANDROID__
-#ifndef __EMSCRIPTEN__
-	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
-	usrsctp_sysctl_set_sctp_mobility_base(1);
-
-	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
-#endif
-
-	usrsctp_sysctl_set_sctp_cmt_on_off(1); // SCTP_CMT_MAX
-	usrsctp_sysctl_set_sctp_cmt_use_dac(1);
-	usrsctp_sysctl_set_sctp_buffer_splitting(1);
-
-	// usrsctp_sysctl_set_sctp_max_retran_chunk(5); // def 30
-	usrsctp_sysctl_set_sctp_shutdown_guard_time_default(20); // def 180
-	usrsctp_sysctl_set_sctp_heartbeat_interval_default(10);
-	// usrsctp_sysctl_set_sctp_init_rtx_max_default(5); //def 8
-	// usrsctp_sysctl_set_sctp_assoc_rtx_max_default(5); //def 10
-	// usrsctp_sysctl_set_sctp_max_retran_chunk(5); //30
-
-	// #if !defined(SCTP_WITH_NO_CSUM)
-	// usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
-	// #endif
-}
-
-// Receive packets from the network and buffers and create ConnectionEvents
 int Connection::receive()
 {
 	int n = 0;
 	{
 		const auto lock = m_peers.lock_unique_rec();
 		for (const auto &i : m_peers) {
-			const auto [nn, brk] = recv_(i.first, i.second);
+			const auto [nn, brk] = recv(i.first, i.second);
 			n += nn;
 			if (brk)
 				break;
@@ -625,6 +353,7 @@ std::pair<int, bool> Connection::recv(session_t peer_id, struct socket *sock)
 					}
 					handle_association_change_event(
 							peer_id, &(notification.sn_assoc_change));
+					onAssociationChange(peer_id, &(notification.sn_assoc_change));
 #if 0
 					const sctp_assoc_change& change = notification.sn_assoc_change;
 					switch (change.sac_state) {
@@ -800,9 +529,11 @@ usrsctp_set_non_blocking(sock, 1);
 	}
 
 	const int one = 1;
-	if (usrsctp_setsockopt(
-				sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, &one, sizeof(one)) < 0) {
-		perror("usrsctp_setsockopt SCTP_I_WANT_MAPPED_V4_ADDR");
+	if (domain != AF_CONN) {
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR,
+					&one, sizeof(one)) < 0) {
+			perror("usrsctp_setsockopt SCTP_I_WANT_MAPPED_V4_ADDR");
+		}
 	}
 
 	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &one, sizeof(one)) <
@@ -846,8 +577,13 @@ if (domain == AF_INET6 || domain == AF_INET) {
 	if (!bind_address.isIPv6()) {
 		cs << "connect() transform to v6 " << __LINE__ << std::endl;
 
-		inet_pton(AF_INET6, ("::ffff:" + bind_address.serializeString()).c_str(),
-				&addr.sin6_addr);
+		if (bind_address.isAny())
+			addr.sin6_addr = in6addr_any;
+		else if (bind_address.isLocalhost())
+			addr.sin6_addr = in6addr_loopback;
+		else
+			inet_pton(AF_INET6, ("::ffff:" + bind_address.serializeString()).c_str(),
+					&addr.sin6_addr);
 	} else {
 		addr = bind_address.getAddress6();
 	}
@@ -1010,12 +746,11 @@ void Connection::connect_addr(const Address &address)
 	   << " scope=" << addr.sin6_scope_id
 #endif
 	   << std::endl;
-	if (auto connect_result =
-					usrsctp_connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		if (connect_result < 0 && errno != EINPROGRESS) {
-			perror("usrsctp_connect fail");
-			sock = nullptr;
-		}
+	const int connect_result =
+			usrsctp_connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+	if (connect_result < 0 && errno != EINPROGRESS) {
+		perror("usrsctp_connect fail");
+		sock = nullptr;
 	}
 
 	cs << "connect() ok sock=" << sock << std::endl;
@@ -1118,7 +853,6 @@ void Connection::connect_conn(const Address &address)
 	usrsctp_register_address((void *)&fd);
 	int rc = 0;
 	DUMP(fd);
-	pthread_t tid{};
 DUMP("creating handle_packets thrd");
 /*
 	if ((rc = pthread_create(&tid, NULL, &handle_packets, (void *)&fd)) != 0) {
@@ -1190,355 +924,20 @@ DUMP("created handle_packets thrd", rc);
 
 void Connection::disconnect()
 {
-	if (sock)
-		usrsctp_close(sock);
+	struct socket *primary_sock = sock;
+	if (primary_sock)
+		usrsctp_close(primary_sock);
 	sock = nullptr;
 	{
 		const auto lock = m_peers.lock_unique_rec();
 
 		for (auto i = m_peers.begin(); i != m_peers.end(); ++i) {
-			usrsctp_close(i->second);
+			if (i->second && i->second != primary_sock)
+				usrsctp_close(i->second);
 		}
 		m_peers.clear();
 	}
 	m_peers_address.clear();
-}
-
-void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
-{
-	const auto lock = m_peers.lock_unique_rec();
-	for (const auto &i : m_peers)
-		send(i.first, channelnum, data, reliable);
-}
-
-void Connection::send(
-		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
-{
-	// cs<<" === sending to peer_id="<<peer_id <<" channelnum="<<(int)channelnum<< "
-	// reliable="<<reliable<< " bytes="<<data.getSize()<<" hash=" <<std::dec<<
-	// std::hash<std::string>()(std::string((const char*)*data,
-	// data.getSize()))<<std::endl;
-	{
-		if (m_peers.find(peer_id) == m_peers.end()) {
-			cs << " === send no peer " << peer_id << std::endl;
-			return;
-		}
-	}
-	dout_con << getDesc() << " sending to peer_id=" << peer_id << std::endl;
-
-	if (channelnum >= CHANNEL_COUNT) {
-		cs << " === send no chan " << channelnum << "/" << CHANNEL_COUNT << std::endl;
-		return;
-	}
-
-	auto sock = getPeer(peer_id);
-	if (!sock) {
-		cs << " === send no peer sock" << std::endl;
-		deletePeer(peer_id, false);
-		return;
-	}
-
-	// cs<<" === send to peer " << peer_id<< "sock="<< peer<<std::endl;
-
-	usrsctp_set_non_blocking(sock, 1);
-
-	uint32_t flags = 0;
-
-	struct sctp_sendv_spa spa = {};
-	spa.sendv_sndinfo.snd_sid = channelnum + 1 + (!reliable) * 4;
-
-	if (!reliable) {
-		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-		spa.sendv_prinfo.pr_value = 1; // units?
-		spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
-		flags = SCTP_UNORDERED;
-		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
-	}
-
-	// spa.sendv_sndinfo = sndinfo;
-	spa.sendv_flags |= SCTP_SEND_SNDINFO_VALID;
-
-	size_t maxlen = 0xffff - 1000;
-	// size_t maxlen = 1400;
-	size_t buflen = data.getSize();
-	size_t sendlen = std::min(buflen, maxlen);
-	size_t remlen = buflen;
-	size_t curpos = 0;
-
-	while (remlen > 0) {
-		if (remlen <= maxlen) {
-			spa.sendv_sndinfo.snd_flags |= SCTP_EOR;
-		}
-
-		// cs<<" psend" << " remlen=" << remlen << " curpos="<<curpos<< "
-		// sendlen="<<sendlen << " buflen="<<buflen<< " nowsent="<<(curpos+sendlen)<<"
-		// flags="<<spa.sendv_sndinfo.snd_flags<< " sid="<<spa.sendv_sndinfo.snd_sid
-		//<<" hash=" <<std::dec<< std::hash<std::string>()(std::string((const char*)*data,
-		// data.getSize()))
-		//<<std::endl;
-
-		// int len = usrsctp_sendv(sock, *data + curpos, sendlen, NULL, 0, (void
-		// *)&spa.sendv_sndinfo, sizeof(spa.sendv_sndinfo), SCTP_SENDV_SNDINFO, 0);
-		int len = usrsctp_sendv(sock, *data + curpos, sendlen, NULL, 0, (void *)&spa,
-				sizeof(spa), SCTP_SENDV_SPA, flags);
-		if (len > 0) {
-			curpos += len;
-			remlen -= len;
-			sendlen = std::min(remlen, maxlen);
-		}
-		if (errno == EWOULDBLOCK) {
-			cs << "send EWOULDBLOCK len=" << len << std::endl;
-			usrsctp_set_non_blocking(sock, 0);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
-			continue;
-		}
-		if (errno == EAGAIN) {
-			cs << "send EAGAIN len=" << len << std::endl;
-			continue;
-		}
-		if (len < 0) {
-			perror("usrsctp_sendv");
-			deletePeer(peer_id, 0);
-
-			cs << " === sending FAILED to peer_id=" << peer_id
-			   << " bytes=" << data.getSize() << " sock=" << sock << " len=" << len
-			   << " curpos=" << curpos << std::endl;
-			break;
-		}
-
-		// if(len != buflen)
-		// cs<<" part send" << " len="<<len<< " / "<<buflen<<std::endl;
-	}
-}
-
-struct socket *Connection::getPeer(session_t peer_id)
-{
-	auto node = m_peers.find(peer_id);
-
-	if (node == m_peers.end())
-		return NULL;
-
-	return node->second;
-}
-
-bool Connection::deletePeer(session_t peer_id, bool timeout)
-{
-	cs << "Connection::deletePeer " << peer_id << ", " << timeout << std::endl;
-	Address peer_address;
-	// any peer has a primary address this never fails!
-	// peer->getAddress(MTP_PRIMARY, peer_address);
-
-	if (!peer_id) {
-		if (sock) {
-			usrsctp_close(sock);
-			sock = nullptr;
-
-			putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
-
-			return true;
-		} else {
-			return false;
-		}
-	}
-	if (m_peers.find(peer_id) == m_peers.end())
-		return false;
-
-	// Create event
-	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
-
-	{
-		const auto lock = m_peers.lock_unique_rec();
-		auto sock = m_peers.get(peer_id);
-		if (sock)
-			usrsctp_close(sock);
-
-		// delete m_peers[peer_id]; -- enet should handle this
-		m_peers.erase(peer_id);
-	}
-	m_peers_address.erase(peer_id);
-	return true;
-}
-
-/* Interface */
-/*
-ConnectionEvent Connection::getEvent() {
-	if(m_event_queue.empty()) {
-		ConnectionEvent e;
-		e.type = CONNEVENT_NONE;
-		return e;
-	}
-	return m_event_queue.pop_frontNoEx();
-}
-*/
-
-ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
-{
-	try {
-		return m_event_queue.pop_front(timeout_ms);
-	} catch (const ItemNotFoundException &ex) {
-		return ConnectionEvent::create(CONNEVENT_NONE);
-	}
-}
-
-void Connection::putCommand(ConnectionCommandPtr c)
-{
-	// TODO? if (!m_shutting_down)
-	{
-		m_command_queue.push_back(c);
-		// m_sendThread->Trigger();
-	}
-}
-
-void Connection::Serve(Address bind_addr)
-{
-	putCommand(ConnectionCommand::serve(bind_addr));
-}
-
-void Connection::Connect(Address address)
-{
-	putCommand(ConnectionCommand::connect(address));
-}
-
-bool Connection::Connected()
-{
-	auto node = m_peers.find(PEER_ID_SERVER);
-	if (node == m_peers.end())
-		return false;
-
-	// TODO: why do we even need to know our peer id?
-	if (!m_peer_id)
-		m_peer_id = 2;
-
-	if (m_peer_id == PEER_ID_INEXISTENT)
-		return false;
-
-	return true;
-}
-
-void Connection::Disconnect()
-{
-	putCommand(ConnectionCommand::disconnect());
-}
-
-u32 Connection::Receive(NetworkPacket *pkt, int timeout)
-{
-	for (;;) {
-		auto e = waitEvent(timeout);
-		if (e->type != CONNEVENT_NONE)
-			dout_con << getDesc() << ": Receive: got event: " << e->describe()
-					 << std::endl;
-		switch (e->type) {
-		case CONNEVENT_NONE:
-			// throw NoIncomingDataException("No incoming data");
-			return 0;
-		case CONNEVENT_DATA_RECEIVED:
-			if (e->data.getSize() < 2) {
-				continue;
-			}
-			pkt->putRawPacket(*e->data, e->data.getSize(), e->peer_id);
-			return e->data.getSize();
-		case CONNEVENT_PEER_ADDED: {
-			if (m_bc_peerhandler)
-				m_bc_peerhandler->peerAdded(e->peer_id);
-			continue;
-		}
-		case CONNEVENT_PEER_REMOVED: {
-			if (m_bc_peerhandler)
-				m_bc_peerhandler->deletingPeer(e->peer_id, e->timeout);
-			continue;
-		}
-		case CONNEVENT_BIND_FAILED:
-			throw ConnectionBindFailed("Failed to bind socket "
-									   "(port already in use?)");
-		case CONNEVENT_CONNECT_FAILED:
-			throw ConnectionException("Failed to connect");
-		}
-	}
-	return 0;
-}
-
-bool Connection::TryReceive(NetworkPacket *pkt)
-{
-	return Receive(pkt, 0);
-}
-
-/*
-void Connection::SendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable) {
-	assert(channelnum < CHANNEL_COUNT);
-
-	ConnectionCommand c;
-	c.sendToAll(channelnum, data, reliable);
-	putCommand(c);
-}
-*/
-
-void Connection::Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
-{
-	assert(channelnum < CHANNEL_COUNT); // Pre-condition
-
-	putCommand(ConnectionCommand::send(peer_id, channelnum, pkt, reliable));
-}
-
-void Connection::Send(
-		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
-{
-	assert(channelnum < CHANNEL_COUNT); // Pre-condition
-
-	putCommand(ConnectionCommand::send(peer_id, channelnum, data, reliable));
-}
-
-void Connection::Send(
-		session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
-{
-	SharedBuffer<u8> data((unsigned char *)buffer.data(), buffer.size());
-	Send(peer_id, channelnum, data, reliable);
-}
-
-Address Connection::GetPeerAddress(session_t peer_id)
-{
-	if (!m_peers_address.count(peer_id))
-		return Address();
-	return m_peers_address.get(peer_id);
-}
-
-/*
-void Connection::DeletePeer(u16 peer_id) {
-	ConnectionCommand c;
-	c.deletePeer(peer_id);
-	putCommand(c);
-}
-*/
-
-void Connection::PrintInfo(std::ostream &out)
-{
-	out << getDesc() << ": ";
-}
-
-void Connection::PrintInfo()
-{
-	PrintInfo(dout_con);
-}
-
-std::string Connection::getDesc()
-{
-	return "";
-	// return std::string("con(")+itos(m_socket.GetHandle())+"/"+itos(m_peer_id)+")";
-}
-
-float Connection::getPeerStat(session_t peer_id, rtt_stat_type type)
-{
-	return 0;
-}
-
-float Connection::getLocalStat(con::rate_stat_type type)
-{
-	return 0;
-}
-
-void Connection::DisconnectPeer(session_t peer_id)
-{
-	putCommand(ConnectionCommand::disconnect_peer(peer_id));
 }
 
 } // namespace

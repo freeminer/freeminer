@@ -26,6 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "msgpack_fix.h"
 #include "network/address.h"
 #include "network/connection.h"
+#include "network/mtp/internal.h"
 #include "network/networkprotocol.h"
 #include "network/peerhandler.h"
 #include "threading/concurrent_map.h"
@@ -34,6 +35,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/container.h"
 #include "util/pointer.h"
 
+#include <mutex>
 
 #define CHANNEL_COUNT 3
 
@@ -55,15 +57,15 @@ namespace con_sctp
 {
 using namespace con;
 
-class Connection : public thread_vector
+class Connection : public con::IConnection, public thread_vector
 {
 public:
 	friend class con_multi::Connection;
 
 	Connection(u32 max_packet_size, float timeout, bool ipv6,
-			con::PeerHandler *peerhandler = nullptr);
-	~Connection();
-	void *run();
+			con::PeerHandler *peerhandler = nullptr, bool start_worker = true);
+	~Connection() override;
+	void *run() override;
 
 	/* Interface */
 
@@ -71,10 +73,11 @@ public:
 	ConnectionEventPtr waitEvent(u32 timeout_ms);
 	void putCommand(ConnectionCommandPtr c);
 
-	void Serve(Address bind_addr);
-	void Connect(Address address);
-	bool Connected();
-	void Disconnect();
+	void Serve(Address bind_addr) override;
+	void Connect(Address address) override;
+	bool Connected() override;
+	void Disconnect() override;
+	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms) override;
 	u32 Receive(NetworkPacket *pkt, int timeout = 1);
 	bool TryReceive(NetworkPacket *pkt);
 
@@ -82,18 +85,19 @@ public:
 	void Send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void Send(session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer,
 			bool reliable);
-	void Send(session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable);
+	void Send(
+			session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable) override;
 	session_t GetPeerID() { return m_peer_id; }
 	Address GetPeerAddress(session_t peer_id) override;
-	float getPeerStat(session_t peer_id, rtt_stat_type type);
-	float getLocalStat(rate_stat_type type);
+	float getPeerStat(session_t peer_id, rtt_stat_type type) override;
+	float getLocalStat(rate_stat_type type) override;
 
-	void DisconnectPeer(session_t peer_id);
-	size_t events_size() { return m_event_queue.size(); }
+	void DisconnectPeer(session_t peer_id) override;
+	size_t events_size() override { return m_event_queue.size(); }
 
 protected:
 	void putEvent(ConnectionEventPtr e);
-	void processCommand(ConnectionCommandPtr c);
+	virtual void processCommand(ConnectionCommandPtr c);
 	void send(float dtime);
 	virtual int receive();
 	void runTimeouts(float dtime);
@@ -101,13 +105,14 @@ protected:
 	void connect_addr(const Address & address);
 	void connect_conn(const Address & address);
 	void disconnect();
+	void finish_sctp();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 
 protected:
 	struct socket *getPeer(session_t peer_id);
 
-	bool deletePeer(session_t peer_id, bool timeout = 0);
+	virtual bool deletePeer(session_t peer_id, bool timeout = 0);
 private:
 
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
@@ -144,7 +149,10 @@ protected:
 private:
 
 	bool sock_listen = false, sock_connect = false, sctp_inited_by_me = false;
+	bool sctp_ref_registered = false;
 	static bool sctp_inited;
+	static std::mutex sctp_init_mutex;
+	static unsigned int sctp_refcount;
 protected:
 /*
 #ifdef __EMSCRIPTEN__
@@ -167,6 +175,8 @@ protected:
 	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
 	void sctp_setup(u16 port = 9899);
 	struct socket *sctp_server_sock{};
+	virtual void onAssociationChange(
+			session_t peer_id, const struct sctp_assoc_change *sac);
 private:
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
 

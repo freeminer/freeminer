@@ -15,12 +15,6 @@
   along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-//#include <ctime>
-
-//#include "stat.h"
-//#include "gettime.h"
-//#include "log.h"
-
 #include "fm_key_value_cached.h"
 
 KeyValueCached::KeyValueCached(const std::string &savedir, const std::string &name) :

@@ -115,10 +115,14 @@ if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
             endif()
 
             set(WEBSOCKETPP_LIBRARY ${WEBSOCKETPP_LIBRARY} Boost::headers)
-            set(USE_WEBSOCKET 1 CACHE BOOL "")
-            message(STATUS "Using websocket ${USE_WEBSOCKET}: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp : ${WEBSOCKETPP_LIBRARY}")
-            #TODO:
-            # set(USE_WEBSOCKET_SCTP 1 CACHE BOOL "")
+            if(ENABLE_WEBSOCKET)
+                set(USE_WEBSOCKET 1 CACHE BOOL "")
+            endif()
+
+            if(ENABLE_WEBSOCKET_SCTP)
+                set(USE_WEBSOCKET_SCTP 1 CACHE BOOL "")
+            endif()
+            message(STATUS "Using websocket ${USE_WEBSOCKET},${USE_WEBSOCKET_SCTP}: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp : ${WEBSOCKETPP_LIBRARY}")
             set(FREEMINER_COMMON_LIBRARIES ${FREEMINER_COMMON_LIBRARIES} ${WEBSOCKETPP_LIBRARY})
         endif()
     else()
@@ -129,12 +133,12 @@ endif()
 
 set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
-if(ENABLE_SCTP AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
+if((ENABLE_SCTP OR ENABLE_WEBSOCKET_SCTP) AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
     message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
     set(ENABLE_SCTP 0)
 endif()
 
-if(ENABLE_SCTP)
+if(ENABLE_SCTP OR ENABLE_WEBSOCKET_SCTP)
     # from external/usrsctp/usrsctplib/CMakeLists.txt :
     if(SCTP_DEBUG)
         set(sctp_debug 1 CACHE INTERNAL "")
