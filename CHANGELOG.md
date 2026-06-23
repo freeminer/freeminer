@@ -14,6 +14,7 @@ Changelog
   * Core tnt blast ( also try enable_nuke=1 )
   * Colored far lights
   * Tree growth tuned
+  * Volumetric clouds and fog ( volumetric_fog=20000 )
 
 ### 5.15.2.0 (?)
   * Client MCP support: enable_mcp=1

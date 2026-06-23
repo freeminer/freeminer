@@ -5,9 +5,6 @@
 
 #pragma once
 
-#include "config.h"
-#if MINETEST_TRANSPORT
-
 /********************************************/
 /* may only be included from in src/network */
 /********************************************/
@@ -177,5 +174,3 @@ private:
 	RateLimitHelper m_new_peer_ratelimit;
 };
 }
-
-#endif

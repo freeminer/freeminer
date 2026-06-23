@@ -6,7 +6,7 @@
 #pragma once
 
 #include "config.h"
-#if MINETEST_TRANSPORT
+#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
 
 /********************************************/
 /* may only be included from in src/network */
