@@ -47,6 +47,7 @@ constexpr float FAR_FOG_STORM_MIN_CLOUD_HEIGHT_RATIO = 2.0f / 3.0f;
 constexpr size_t FAR_FOG_TERRAIN_CACHE_MAX = 32768;
 constexpr float FAR_FOG_MAX_WIND = 8.0f;
 constexpr float FAR_FOG_TWO_PI = 6.2831853f;
+constexpr float FAR_FOG_MIN_VISIBLE_HUMIDITY = 48.0f * 1.3f;
 
 struct FarFogClimate
 {
@@ -275,11 +276,12 @@ FarFogAltitudeProfile far_fog_altitude_profile(
 float far_fog_density(const FarFogClimate &climate, const FarFogAltitudeProfile &altitude)
 {
 	const float humidity = climate.humidity;
-	if (humidity <= 0.0f || altitude.density <= 0.0f)
+	if (humidity <= FAR_FOG_MIN_VISIBLE_HUMIDITY || altitude.density <= 0.0f)
 		return 0.0f;
 
 	const float heat = climate.heat;
-	const float humidity_base = smoothstep_f(48.0f, 100.0f, humidity);
+	const float humidity_base =
+			smoothstep_f(FAR_FOG_MIN_VISIBLE_HUMIDITY, 100.0f, humidity);
 	const float humidity_density = humidity_base * humidity_base;
 	const float cool_density = 1.0f - smoothstep_f(16.0f, 44.0f, heat);
 	const float warm_mist = smoothstep_f(84.0f, 100.0f, humidity) * 0.22f;
@@ -294,20 +296,23 @@ float far_fog_density(const FarFogClimate &climate, const FarFogAltitudeProfile 
 
 float far_fog_visual_height(float source_size, const FarFogAltitudeProfile &altitude)
 {
+	constexpr float puff_scale = 1.5f;
 	if (altitude.cave)
-		return std::max(1.0f, source_size * 1.84f);
+		return std::max(1.0f, source_size * 1.84f * puff_scale);
 
-	return std::max(1.0f, source_size * 1.64f);
+	return std::max(1.0f, source_size * 1.64f * puff_scale);
 }
 
 float far_fog_visual_width(float source_size)
 {
-	return std::max(1.0f, source_size * 1.64f);
+	constexpr float puff_scale = 1.5f;
+	return std::max(1.0f, source_size * 1.64f * puff_scale);
 }
 
 float far_fog_visual_depth(float source_size)
 {
-	return std::max(1.0f, source_size * 1.64f);
+	constexpr float puff_scale = 1.5f;
+	return std::max(1.0f, source_size * 1.64f * puff_scale);
 }
 
 v3f far_fog_limit_wind(v3f wind)
@@ -731,8 +736,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	if (!m_control.farmesh)
 		return 0;
 
-	thread_local static const pos_t volumetric_fog_range_nodes =
-			g_settings->getPos("volumetric_fog");
+	const pos_t volumetric_fog_range_nodes = g_settings->getPos("volumetric_fog");
 	if (volumetric_fog_range_nodes <= 0)
 		return 0;
 	const float volumetric_fog_range =
@@ -797,7 +801,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	up.normalize();
 
 	constexpr u32 max_fog_quads = 0x3fff;
-	constexpr u32 max_fog_buffers = 6;
+	const u32 max_fog_buffers =
+			std::clamp<u32>(static_cast<u32>(volumetric_fog_range_nodes / 2000), 6, 16);
 	constexpr float fog_alpha_scale = 0.46f;
 	constexpr u32 fog_quad_limit = max_fog_quads;
 	static const float cloud_height_nodes =
@@ -813,6 +818,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	u32 low_density_count = 0;
 	u32 low_alpha_count = 0;
 	u32 slice_count = 0;
+	u32 protected_count = 0;
 	u32 wind_count = 0;
 	float wind_sum = 0.0f;
 
@@ -830,6 +836,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 			far_fog_scene_camera_position(m_camera_position, m_camera_offset);
 	static const pos_t water_level_nodes = g_settings->getS16("water_level");
 	const bool camera_above_water = m_camera_position_node.Y > water_level_nodes;
+	const float near_fog_reserve_range = std::min(volumetric_fog_range, 4096.0f * BS);
 	const auto terrain_reference = [&](const v3bpos_t &block_pos,
 										   bpos_t block_span) -> float {
 		const auto key = far_fog_terrain_cache_key(block_pos, block_span);
@@ -881,8 +888,15 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	vertices->reserve(max_fog_quads * 4);
 	indices->reserve(max_fog_quads * 6);
 
+	constexpr u32 max_near_fog_extra_buffers = 4;
+	bool allow_near_fog_extra_buffers = false;
+	const auto fog_buffer_limit = [&]() -> u32 {
+		return max_fog_buffers +
+			   (allow_near_fog_extra_buffers ? max_near_fog_extra_buffers : 0);
+	};
+
 	const auto next_fog_buffer = [&]() -> bool {
-		if (current_fog_buffer + 1 >= max_fog_buffers)
+		if (current_fog_buffer + 1 >= fog_buffer_limit())
 			return false;
 
 		++current_fog_buffer;
@@ -947,7 +961,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 			return false;
 		} else {
 			const float humidity_visibility =
-					smoothstep_f(48.0f, 88.0f, climate.humidity);
+					smoothstep_f(FAR_FOG_MIN_VISIBLE_HUMIDITY, 88.0f, climate.humidity);
 			const float saturated_visibility =
 					smoothstep_f(88.0f, 100.0f, climate.humidity);
 			const float min_density =
@@ -959,24 +973,55 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		const float visual_height = far_fog_visual_height(cell_size, altitude);
 		const float visual_depth = far_fog_visual_depth(cell_size);
 		const float half_height_nodes = visual_height / BS * 0.5f;
-		visual_center_y_nodes =
-				std::clamp(visual_center_y_nodes, cell_min_y_nodes + half_height_nodes,
-						cell_max_y_nodes - half_height_nodes);
-		const float volume_distance =
+		const float clamped_half_height_nodes =
+				std::min(half_height_nodes, cell_size_nodes * 0.5f);
+		visual_center_y_nodes = std::clamp(visual_center_y_nodes,
+				cell_min_y_nodes + clamped_half_height_nodes,
+				cell_max_y_nodes - clamped_half_height_nodes);
+
+		const float sphere_radius =
+				std::min({visual_width, visual_height, visual_depth}) * 0.5f;
+		const float radius_variation = std::clamp(
+				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0x7f4a7c15u) * 0.18f,
+				0.82f, 1.18f);
+		const float aspect_x = std::clamp(
+				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0x94d049bbu) * 0.07f,
+				0.90f, 1.10f);
+		const float aspect_y = std::clamp(
+				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0x6c8e9cf5u) * 0.07f,
+				0.90f, 1.10f);
+		const float half_width = sphere_radius * radius_variation * aspect_x;
+		const float half_height = sphere_radius * radius_variation * aspect_y;
+		const v3f center_jitter(far_fog_signed_noise(cell_pos, cell_step, 0x51ed270bu) *
+										visual_width * 0.12f,
+				far_fog_signed_noise(cell_pos, cell_step, 0xc2b2ae35u) * visual_height *
+						0.08f,
+				far_fog_signed_noise(cell_pos, cell_step, 0x27d4eb2fu) * visual_depth *
+						0.12f);
+		const v3f visual_center(cell_min.X + cell_size * 0.5f + center_jitter.X,
+				cell_min.Y + (visual_center_y_nodes - cell_min_y_nodes) * BS +
+						center_jitter.Y,
+				cell_min.Z + cell_size * 0.5f + center_jitter.Z);
+
+		const float cell_box_distance =
 				far_fog_distance_to_box(camera_scene_position, cell_min, cell_size);
+		const float visual_distance =
+				visual_center.getDistanceFrom(camera_scene_position);
 		const float near_fade =
-				volume_distance <= 0.001f
+				cell_box_distance <= 0.001f
 						? 1.0f
 						: std::max(0.45f,
-								  smoothstep_f(1.0f * BS, 8.0f * BS, volume_distance));
-		const float far_fade =
-				1.0f - smoothstep_f(volumetric_fog_range * 0.92f,
-							   volumetric_fog_range * 1.20f, volume_distance);
+								  smoothstep_f(1.0f * BS, 8.0f * BS, cell_box_distance));
+		const float far_fade = 1.0f - smoothstep_f(volumetric_fog_range * 0.82f,
+											  volumetric_fog_range, visual_distance);
 		const float alpha_variation = std::clamp(
 				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0xa24baedu) * 0.18f,
 				0.72f, 1.22f);
 		const float humidity_alpha =
-				std::clamp(0.30f + smoothstep_f(48.0f, 90.0f, climate.humidity) * 0.78f +
+				std::clamp(0.30f +
+								   smoothstep_f(FAR_FOG_MIN_VISIBLE_HUMIDITY, 90.0f,
+										   climate.humidity) *
+										   0.78f +
 								   smoothstep_f(90.0f, 100.0f, climate.humidity) * 0.28f,
 						0.20f, 1.36f);
 		const float alpha_f =
@@ -992,31 +1037,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		const auto color = fog_color_for_climate(
 				alpha, climate, altitude, visual_center_y_nodes - terrain_y_nodes);
 
-		const float sphere_radius =
-				std::min({visual_width, visual_height, visual_depth}) * 0.5f;
-		const float radius_variation = std::clamp(
-				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0x7f4a7c15u) * 0.18f,
-				0.82f, 1.18f);
-		const float aspect_x = std::clamp(
-				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0x94d049bbu) * 0.07f,
-				0.90f, 1.10f);
-		const float aspect_y = std::clamp(
-				1.0f + far_fog_signed_noise(cell_pos, cell_step, 0x6c8e9cf5u) * 0.07f,
-				0.90f, 1.10f);
-		const float half_width = sphere_radius * radius_variation * aspect_x;
-		const float half_height = sphere_radius * radius_variation * aspect_y;
 		const v3f rx = right * half_width;
 		const v3f uy = up * half_height;
-		const v3f center_jitter(far_fog_signed_noise(cell_pos, cell_step, 0x51ed270bu) *
-										visual_width * 0.12f,
-				far_fog_signed_noise(cell_pos, cell_step, 0xc2b2ae35u) * visual_height *
-						0.08f,
-				far_fog_signed_noise(cell_pos, cell_step, 0x27d4eb2fu) * visual_depth *
-						0.12f);
-		const v3f visual_center(cell_min.X + cell_size * 0.5f + center_jitter.X,
-				cell_min.Y + (visual_center_y_nodes - cell_min_y_nodes) * BS +
-						center_jitter.Y,
-				cell_min.Z + cell_size * 0.5f + center_jitter.Z);
 		const v3f packed_wind(
 				wind_world.X, far_fog_phase(cell_pos, cell_step), wind_world.Z);
 		const u16 base = static_cast<u16>(vertices->size());
@@ -1038,7 +1060,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		++slice_count;
 
 		return vertices->size() / 4 >= fog_quad_limit &&
-			   current_fog_buffer + 1 >= max_fog_buffers;
+			   current_fog_buffer + 1 >= fog_buffer_limit();
 	};
 
 	const auto add_fog_cell =
@@ -1052,10 +1074,24 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 				terrain_y_nodes, wind_world);
 	};
 
-	const auto fog_split_pow = [&](block_step_t fog_step,
-									   bpos_t block_span) -> block_step_t {
+	const auto cell_distance = [&](const v3bpos_t &block_pos, bpos_t block_span) {
 		const float block_size = static_cast<float>(MAP_BLOCKSIZE * block_span) * BS;
-		const float target_size = static_cast<float>(MAP_BLOCKSIZE) * 4.0f * BS;
+		const v3f block_min =
+				oposToV3f(intToFloat(block_pos * MAP_BLOCKSIZE - m_camera_offset, BS));
+		const v3f block_center =
+				block_min + v3f(block_size * 0.5f, block_size * 0.5f, block_size * 0.5f);
+		return block_center.getDistanceFrom(camera_scene_position);
+	};
+
+	const auto fog_split_pow = [&](block_step_t fog_step, bpos_t block_span,
+									   float distance) -> block_step_t {
+		const float block_size = static_cast<float>(MAP_BLOCKSIZE * block_span) * BS;
+		float target_size = static_cast<float>(MAP_BLOCKSIZE) * 4.0f * BS;
+		const float range_part = distance / std::max(volumetric_fog_range, 1.0f);
+		if (range_part > 0.55f)
+			target_size *= 4.0f;
+		else if (range_part > 0.30f)
+			target_size *= 2.0f;
 		block_step_t split_pow = 0;
 		while ((1 << split_pow) < block_span && split_pow < 2 &&
 				block_size / static_cast<float>(1 << split_pow) > target_size) {
@@ -1071,7 +1107,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		if (vertices->size() / 4 >= fog_quad_limit && !next_fog_buffer())
 			return true;
 
-		const block_step_t split_pow = fog_split_pow(fog_step, block_span);
+		const block_step_t split_pow =
+				fog_split_pow(fog_step, block_span, cell_distance(block_pos, block_span));
 		const bpos_t split_count = 1 << split_pow;
 		const bpos_t cell_span = block_span >> split_pow;
 		const block_step_t cell_step = static_cast<block_step_t>(
@@ -1163,15 +1200,6 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		return false;
 	};
 
-	const auto cell_distance = [&](const v3bpos_t &block_pos, bpos_t block_span) {
-		const float block_size = static_cast<float>(MAP_BLOCKSIZE * block_span) * BS;
-		const v3f block_min =
-				oposToV3f(intToFloat(block_pos * MAP_BLOCKSIZE - m_camera_offset, BS));
-		const v3f block_center =
-				block_min + v3f(block_size * 0.5f, block_size * 0.5f, block_size * 0.5f);
-		return block_center.getDistanceFrom(camera_scene_position);
-	};
-
 	struct DrawlistFogCell
 	{
 		v3bpos_t block_pos;
@@ -1225,14 +1253,22 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		std::sort(sorted_near_cells.begin(), sorted_near_cells.end(), farthest_first);
 
 		for (const auto &cell : sorted_near_cells) {
+			FarFogClimate generated_climate;
+			const FarFogClimate *generated_climate_ptr = nullptr;
+			if (far_fog_climate_missing(far_fog_climate_from_block(cell.block))) {
+				generated_climate = far_fog_generated_climate(
+						m_client, cell.block_pos, cell.step, cell.block_span);
+				generated_climate_ptr = &generated_climate;
+			}
 			if (draw_fog_source(cell.block_pos, cell.step, cell.block_span, cell.block,
-						nullptr, terrain_reference(cell.block_pos, cell.block_span), {}))
+						generated_climate_ptr,
+						terrain_reference(cell.block_pos, cell.block_span), {}))
 				return true;
 		}
 		return false;
 	};
 
-	const auto draw_far_fog_cells = [&]() -> bool {
+	const auto draw_far_fog_cells = [&](bool near_only) -> bool {
 		if (!cells_ready)
 			return false;
 
@@ -1241,6 +1277,11 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		for (const auto &cell : fog_cells) {
 			if (cell.step >= FARMESH_STEP_MAX)
 				continue;
+			const bool near_cell = cell.distance <= near_fog_reserve_range;
+			if (near_only != near_cell)
+				continue;
+			if (near_only)
+				++protected_count;
 			const FarFogClimate generated_climate{
 					.heat = cell.heat,
 					.humidity = cell.humidity,
@@ -1254,7 +1295,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		return false;
 	};
 
-	const auto draw_far_drawlist_blocks = [&]() -> bool {
+	const auto draw_far_drawlist_blocks = [&](bool near_only) -> bool {
 		const bool drawlist_current = m_drawlist_current.load(std::memory_order_acquire);
 		const auto &drawlist = drawlist_current ? m_drawlist_1 : m_drawlist_0;
 		std::vector<DrawlistFogCell> sorted_far_cells;
@@ -1281,18 +1322,36 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		std::sort(sorted_far_cells.begin(), sorted_far_cells.end(), farthest_first);
 
 		for (const auto &cell : sorted_far_cells) {
+			const bool near_cell = cell.distance <= near_fog_reserve_range;
+			if (near_only != near_cell)
+				continue;
+			if (near_only)
+				++protected_count;
+			FarFogClimate generated_climate;
+			const FarFogClimate *generated_climate_ptr = nullptr;
+			if (far_fog_climate_missing(far_fog_climate_from_block(cell.block))) {
+				generated_climate = far_fog_generated_climate(
+						m_client, cell.block_pos, cell.step, cell.block_span);
+				generated_climate_ptr = &generated_climate;
+			}
 			if (draw_fog_source(cell.block_pos, cell.step, cell.block_span, cell.block,
-						nullptr, terrain_reference(cell.block_pos, cell.block_span), {}))
+						generated_climate_ptr,
+						terrain_reference(cell.block_pos, cell.block_span), {}))
 				return true;
 		}
 		return false;
 	};
 
-	bool done = draw_far_fog_cells();
+	bool done = draw_far_fog_cells(false);
 	if (!done && !cells_ready)
-		done = draw_far_drawlist_blocks();
-	if (!done)
-		done = draw_near_drawlist_blocks();
+		done = draw_far_drawlist_blocks(false);
+	const bool far_done = done;
+	allow_near_fog_extra_buffers = true;
+	const bool near_generated_done =
+			cells_ready ? draw_far_fog_cells(true) : draw_far_drawlist_blocks(true);
+	const bool near_drawlist_done = draw_near_drawlist_blocks();
+	allow_near_fog_extra_buffers = false;
+	done = far_done || near_generated_done || near_drawlist_done;
 
 	const u32 vertex_count = far_fog_vertex_count();
 	for (auto &fog_buffer : m_far_fog_meshbuffers) {
@@ -1320,15 +1379,18 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	g_profiler->avg("Client: Far fog daylight", daylight * 100.0f);
 	g_profiler->avg("Client: Far fog moon brightness", moon_brightness * 100.0f);
 	g_profiler->avg("Client: Far fog slices", slice_count);
+	g_profiler->avg("Client: Far fog protected", protected_count);
 	g_profiler->avg("Client: Far fog wind", wind_count ? wind_sum / wind_count : 0.0f);
 	g_profiler->avg("Client: Far fog vertices", vertex_count);
 	g_profiler->avg("Client: Far fog buffers", current_fog_buffer + 1);
+	g_profiler->avg("Client: Far fog max buffers", max_fog_buffers);
+	g_profiler->avg("Client: Far fog near extra buffers", max_near_fog_extra_buffers);
 	return vertex_count;
 }
 
 u32 ClientMap::renderFarFog(video::IVideoDriver *driver)
 {
-	thread_local static const pos_t volumetric_fog_range_nodes =
+	thread_local static const auto volumetric_fog_range_nodes =
 			g_settings->getPos("volumetric_fog");
 	if (volumetric_fog_range_nodes <= 0)
 		return 0;
