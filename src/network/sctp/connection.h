@@ -98,7 +98,7 @@ public:
 protected:
 	void putEvent(ConnectionEventPtr e);
 	virtual void processCommand(ConnectionCommandPtr c);
-	void send(float dtime);
+	void send_(float dtime);
 	virtual int receive();
 	void runTimeouts(float dtime);
 	virtual void serve(const Address & address);
@@ -107,7 +107,7 @@ protected:
 	void disconnect();
 	void finish_sctp();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void send(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void send_(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
 
 protected:
 	struct socket *getPeer(session_t peer_id);
@@ -164,6 +164,7 @@ protected:
 #endif
 */
 	std::thread handle_packets_thread;
+	int conn_fd = -1;
 
 	int domain = AF_INET6;
 	//bool use_conn = false;
@@ -171,7 +172,7 @@ protected:
 	int (*server_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
 	int (*client_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
 
-	std::pair<int, bool> recv(session_t peer_id, struct socket *sock);
+	std::pair<int, bool> recv_(session_t peer_id, struct socket *sock);
 	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
 	void sctp_setup(u16 port = 9899);
 	struct socket *sctp_server_sock{};

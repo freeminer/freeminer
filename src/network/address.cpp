@@ -10,11 +10,6 @@
 #include "network/networkexceptions.h"
 #include "settings.h"
 
-#ifdef __EMSCRIPTEN__
-//#include <emsocket.h>
-#include <mainloop.h>
-#endif
-
 #ifdef _WIN32
 #include <windows.h>
 #include <winsock2.h>
@@ -32,6 +27,10 @@ typedef int socklen_t;
 #include <arpa/inet.h>
 #define LAST_SOCKET_ERR() (errno)
 typedef int socket_t;
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <emsocket.h>
 #endif
 
 /*

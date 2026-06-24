@@ -26,6 +26,8 @@ static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_
 	int *fdp;
 
 	fdp = (int *)addr;
+	if (!fdp || *fdp < 0)
+		return EPIPE;
 
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
@@ -154,7 +156,7 @@ void Connection::processCommand(ConnectionCommandPtr c)
 		return;
 	case CONNCMD_SEND:
 		dout_con << getDesc() << " processing CONNCMD_SEND" << std::endl;
-		send(c->peer_id, c->channelnum, c->data, c->reliable);
+		send_(c->peer_id, c->channelnum, c->data, c->reliable);
 		return;
 	case CONNCMD_SEND_TO_ALL:
 		dout_con << getDesc() << " processing CONNCMD_SEND_TO_ALL" << std::endl;
