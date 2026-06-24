@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "fm_server.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -47,6 +48,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/networkpacket.h"
 #include "profiler.h"
 #include "server.h"
+#include "servermap.h"
 #include "debug/stacktrace.h"
 #include "serverenvironment.h"
 #include "util/timetaker.h"
@@ -379,6 +381,20 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 					g_settings->getFloat("server_unload_unused_data_timeout"), -1, {},
 					max_cycle_ms)) {
 			m_map_timer_and_unload_interval.run_next(map_timer_and_unload_dtime);
+			++ret;
+		}
+	}
+
+	static const float weather_update_dtime = 10.0f;
+	if (!maintenance_status &&
+			m_weather_update_interval.step(dtime, weather_update_dtime)) {
+		TimeTaker timer_step("Server step: weather update");
+		ScopeProfiler sp(g_profiler, "Server: weather update");
+		const u32 weather_budget_ms =
+				std::max<u32>(5, std::min<u32>(25, max_cycle_ms / 4));
+		if (m_env->getServerMap().stepLoadedBlockWeather(
+					m_env, weather_update_dtime, weather_budget_ms)) {
+			m_weather_update_interval.run_next(weather_update_dtime);
 			++ret;
 		}
 	}

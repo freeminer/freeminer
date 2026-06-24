@@ -526,6 +526,7 @@ public:
 	std::atomic_short humidity{};
 	std::atomic_short heat_add{};
 	std::atomic_short humidity_add{};
+	v3f wind{};
 	std::atomic_ulong heat_last_update{};
 	std::atomic_uint32_t humidity_last_update{};
 	float m_uptime_timer_last{};
