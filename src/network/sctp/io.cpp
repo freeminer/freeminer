@@ -111,7 +111,7 @@ int Connection::receive()
 	{
 		const auto lock = m_peers.lock_unique_rec();
 		for (const auto &i : m_peers) {
-			const auto [nn, brk] = recv(i.first, i.second);
+			const auto [nn, brk] = recv_(i.first, i.second);
 			n += nn;
 			if (brk)
 				break;
@@ -119,7 +119,7 @@ int Connection::receive()
 	}
 
 	if (sock_connect && sock) {
-		const auto [nn, brk] = recv(PEER_ID_SERVER, sock);
+		const auto [nn, brk] = recv_(PEER_ID_SERVER, sock);
 		n += nn;
 	}
 
@@ -300,7 +300,7 @@ static void handle_peer_address_change_event(const struct sctp_paddr_change *spc
 	return;
 }
 
-std::pair<int, bool> Connection::recv(session_t peer_id, struct socket *sock)
+std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 {
 
 	if (!sock) {
@@ -758,28 +758,6 @@ void Connection::connect_addr(const Address &address)
 	sock_connect = true;
 }
 
-static int receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
-		size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
-{
-
-	if (data) {
-		if (flags & MSG_NOTIFICATION) {
-			printf("Notification of length %d received.\n", (int)datalen);
-		} else {
-			printf("Msg of length %d received via %p:%u on stream %u with SSN %u and TSN "
-				   "%u, PPID %u, context %u.\n",
-					(int)datalen, addr.sconn.sconn_addr, ntohs(addr.sconn.sconn_port),
-					rcv.rcv_sid, rcv.rcv_ssn, rcv.rcv_tsn, (uint32_t)ntohl(rcv.rcv_ppid),
-					rcv.rcv_context);
-		}
-		free(data);
-	} else {
-		usrsctp_deregister_address(ulp_info);
-		usrsctp_close(sock);
-	}
-	return (1);
-}
-
 void Connection::connect_conn(const Address &address)
 {
 	// struct socket *sock = nullptr;
@@ -795,17 +773,18 @@ void Connection::connect_conn(const Address &address)
 
 		} else
 	*/
-	int fd = 0;
 	// struct socket *s;
 	// struct sockaddr_in sin;
 
 	// if ((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-	if ((fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+	conn_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (conn_fd < 0) {
 		perror("socket");
 		putEvent(ConnectionEvent::connectFailed());
-		DUMP("no sock", fd);
+		DUMP("no sock", conn_fd);
+		return;
 	}
-	DUMP(fd);
+	DUMP(conn_fd);
 	/*
 		memset(&sin, 0, sizeof(struct sockaddr_in));
 		sin.sin_family = AF_INET;
@@ -840,19 +819,21 @@ void Connection::connect_conn(const Address &address)
 	sina.sin_port = htons(address.getPort());
 
 	DUMP(sina);
-	if (connect(fd, (struct sockaddr *)&sina, sizeof(sina)) < 0) {
+	if (connect(conn_fd, (struct sockaddr *)&sina, sizeof(sina)) < 0) {
 		perror("connect");
 		putEvent(ConnectionEvent::connectFailed());
-		DUMP(fd);
+		DUMP(conn_fd);
+		close(conn_fd);
+		conn_fd = -1;
 		return;
 	}
 	// std::string t {"TESTFIRST"};
 	// DUMP(write(fd, t.c_str(), t.size()));
 
 	usrsctp_sysctl_set_sctp_ecn_enable(0);
-	usrsctp_register_address((void *)&fd);
+	usrsctp_register_address((void *)&conn_fd);
 	int rc = 0;
-	DUMP(fd);
+	DUMP(conn_fd);
 DUMP("creating handle_packets thrd");
 /*
 	if ((rc = pthread_create(&tid, NULL, &handle_packets, (void *)&fd)) != 0) {
@@ -861,17 +842,19 @@ DUMP("creating handle_packets thrd");
 	}
 */
 //std::thread t1(handle_packets, (void *)&fd);
-handle_packets_thread =  std::thread {handle_packets, (void *)&fd};
+handle_packets_thread = std::thread{handle_packets, (void *)&conn_fd};
 
 DUMP("created handle_packets thrd", rc);
 
 
 
 	if ((sock = usrsctp_socket(
-				 AF_CONN, SOCK_STREAM, IPPROTO_SCTP, receive_cb, NULL, 0, &fd)) == NULL) {
+				 AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0,
+				 &conn_fd)) == NULL) {
 		perror("usrsctp_socket");
 		putEvent(ConnectionEvent::connectFailed());
 		DUMP((long)sock);
+		disconnect();
 		return;
 	}
 
@@ -883,25 +866,23 @@ DUMP("created handle_packets thrd", rc);
 			return;
 		}
 	*/
-	// sock_setup(/*PEER_ID_SERVER,*/ sock);
+	sock_setup(/*PEER_ID_SERVER,*/ sock);
 
 	m_peers.insert_or_assign(PEER_ID_SERVER, sock);
 
 	struct sockaddr_conn sconn = {};
-	/*
-		// memset(&sconn, 0, sizeof(struct sockaddr_conn));
-		sconn.sconn_family = AF_CONN;
-	#ifdef HAVE_SCONN_LEN
-		sconn.sconn_len = sizeof(struct sockaddr_conn);
-	#endif
-		sconn.sconn_port = htons(0);
-		sconn.sconn_addr = NULL;
-		if (usrsctp_bind(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
-			perror("usrsctp_bind");
-			putEvent(ConnectionEvent::bindFailed());
-			return;
-		}
-	*/
+	sconn.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	sconn.sconn_len = sizeof(struct sockaddr_conn);
+#endif
+	sconn.sconn_port = htons(0);
+	sconn.sconn_addr = NULL;
+	if (usrsctp_bind(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
+		perror("usrsctp_bind");
+		putEvent(ConnectionEvent::bindFailed());
+		disconnect();
+		return;
+	}
 	usrsctp_set_non_blocking(sock, 1);
 
 	sconn = {};
@@ -910,10 +891,11 @@ DUMP("created handle_packets thrd", rc);
 	sconn.sconn_len = sizeof(struct sockaddr_conn);
 #endif
 	sconn.sconn_port = htons(address.getPort());
-	sconn.sconn_addr = &fd;
+	sconn.sconn_addr = &conn_fd;
 	if (usrsctp_connect(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
 		perror("usrsctp_connect");
 		putEvent(ConnectionEvent::connectFailed());
+		disconnect();
 		return;
 	}
 
@@ -938,6 +920,15 @@ void Connection::disconnect()
 		m_peers.clear();
 	}
 	m_peers_address.clear();
+
+	if (conn_fd >= 0) {
+		usrsctp_deregister_address(&conn_fd);
+		shutdown(conn_fd, SHUT_RDWR);
+		close(conn_fd);
+		conn_fd = -1;
+	}
+	if (handle_packets_thread.joinable())
+		handle_packets_thread.join();
 }
 
 } // namespace

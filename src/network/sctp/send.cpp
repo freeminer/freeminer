@@ -13,10 +13,10 @@ void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	const auto lock = m_peers.lock_unique_rec();
 	for (const auto &i : m_peers)
-		send(i.first, channelnum, data, reliable);
+		send_(i.first, channelnum, data, reliable);
 }
 
-void Connection::send(
+void Connection::send_(
 		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
 	// cs<<" === sending to peer_id="<<peer_id <<" channelnum="<<(int)channelnum<< "
