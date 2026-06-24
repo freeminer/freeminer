@@ -868,6 +868,7 @@ private:
 
 	float m_liquid_send_timer{};
 	float m_liquid_send_interval{1};
+	IntervalLimiter m_weather_update_interval;
 
 public:
 	lan_adv lan_adv_server;

@@ -20,8 +20,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <memory>
+#include <vector>
 #include "database/database.h"
 #include "fm_weather.h"
 #include "irr_v3d.h"
@@ -54,6 +56,8 @@ float fm_weather_pressure(float heat, float humidity, pos_t y)
 weather::wind_t fm_limit_wind(weather::wind_t wind)
 {
 	constexpr float max_wind = 8.0f;
+	if (!std::isfinite(wind.X) || !std::isfinite(wind.Y) || !std::isfinite(wind.Z))
+		return {};
 	const float length = wind.getLength();
 	if (length > max_wind && length > 0.0001f)
 		wind *= max_wind / length;
@@ -70,6 +74,45 @@ thread_local v3bpos_t block_cache_p;
 #endif
 
 std::atomic_uint ServerMap::time_life{};
+
+namespace
+{
+
+struct BlockWeatherState
+{
+	MapBlockPtr block;
+	v3bpos_t pos;
+	float heat = 0.0f;
+	float humidity = 0.0f;
+	weather::wind_t wind;
+	float pressure = 0.0f;
+	bool active = false;
+};
+
+float clamp_weather_float(float value, float min_value, float max_value)
+{
+	return std::max(min_value, std::min(max_value, value));
+}
+
+float heat_transfer_weight(const v3pos_t &dir, float delta)
+{
+	if (dir.Y > 0)
+		return delta < 0.0f ? 1.8f : 0.35f; // lose heat upward, resist heat sinking
+	if (dir.Y < 0)
+		return delta > 0.0f ? 1.8f : 0.35f; // gain heat from below, resist heat sinking
+	return 1.0f;
+}
+
+float humidity_transfer_weight(const v3pos_t &dir, float delta)
+{
+	if (dir.Y > 0)
+		return delta > 0.0f ? 1.6f : 0.45f; // gain humidity from above
+	if (dir.Y < 0)
+		return delta < 0.0f ? 1.6f : 0.45f; // lose humidity downward
+	return 1.0f;
+}
+
+} // namespace
 
 // TODO: REMOVE THIS func and use Map::getBlock
 MapBlockPtr Map::getBlock(v3bpos_t p, bool trylock, bool nocache)
@@ -295,7 +338,7 @@ weather::heat_t ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
 	if (block) {
-		if (gametime < block->heat_last_update) {
+		if (block->heat_last_update) {
 			return block->heat +
 				   (block_add ? (short)block->heat_add : 0); // + myrand_range(0, 1);
 		}
@@ -317,9 +360,9 @@ weather::heat_t ServerMap::updateBlockHeat(ServerEnvironment *env, const v3pos_t
 		weather::heat_t sum = 0;
 		for (const auto &dir : g_6dirs) {
 			if (auto nblock = getBlockNoCreateNoEx(bp + dir, true)) {
-				sum += nblock->humidity;
+				sum += nblock->heat;
 				if (block_add) {
-					sum += nblock->humidity_add;
+					sum += nblock->heat_add;
 				}
 				++blocks_around;
 			}
@@ -351,7 +394,7 @@ weather::humidity_t ServerMap::updateBlockHumidity(ServerEnvironment *env,
 	const auto bp = getNodeBlockPos(p);
 	const auto gametime = env->getGameTime();
 	if (block) {
-		if (gametime < block->humidity_last_update) {
+		if (block->humidity_last_update) {
 			return block->humidity +
 				   (block_add ? (short)block->humidity_add : 0); //+ myrand_range(0, 1);
 		}
@@ -400,6 +443,203 @@ weather::humidity_t ServerMap::updateBlockHumidity(ServerEnvironment *env,
 	return value > 100 ? 100 : value;
 }
 
+u32 ServerMap::stepLoadedBlockWeather(
+		ServerEnvironment *env, float dtime, unsigned int max_cycle_ms)
+{
+	if (!env || !env->m_use_weather)
+		return 0;
+
+	const u64 end_ms = porting::getTimeMs() + max_cycle_ms;
+	const float dt = clamp_weather_float(dtime, 0.1f, 20.0f);
+	const float gametime = env->getGameTime() * env->m_time_of_day_speed;
+	const float timeofday = env->getTimeOfDayF();
+	auto *mapgen = m_emerge->getFirstMapgen();
+	if (!mapgen)
+		return m_weather_update_last;
+	const auto seed = getSeed();
+
+	std::vector<BlockWeatherState> states;
+	unordered_map_v3bpos<size_t> index;
+
+	auto add_state = [&](const v3bpos_t &pos, const MapBlockPtr &block, bool active) {
+		if (!block || !block->isGenerated())
+			return false;
+
+		auto found = index.find(pos);
+		if (found != index.end()) {
+			const bool was_active = states[found->second].active;
+			states[found->second].active = states[found->second].active || active;
+			return active && !was_active;
+		}
+
+		const auto block_lock = block->try_lock_shared_rec();
+		if (!block_lock->owns_lock())
+			return false;
+
+		BlockWeatherState state;
+		state.block = block;
+		state.pos = pos;
+		state.heat = block->heat + block->heat_add;
+		state.humidity = block->humidity + block->humidity_add;
+		state.wind = block->wind;
+		state.pressure = fm_weather_pressure(
+				state.heat, state.humidity, pos.Y * MAP_BLOCKSIZE);
+		state.active = active;
+
+		index.emplace(pos, states.size());
+		states.emplace_back(state);
+		return active;
+	};
+
+	u32 n = 0;
+	u32 active_count = 0;
+	{
+		const auto map_lock = m_blocks.try_lock_shared_rec();
+		if (!map_lock->owns_lock())
+			return m_weather_update_last;
+
+		const size_t blocks_size = m_blocks.size();
+		for (const auto &[pos, block] : m_blocks) {
+			if (n++ < m_weather_update_last)
+				continue;
+
+			if (!add_state(pos, block, true))
+				continue;
+
+			++active_count;
+			for (const auto &dir : g_6dirs) {
+				const auto neighbor_pos = pos + dir;
+				auto neighbor = m_blocks.find(neighbor_pos);
+				if (neighbor != m_blocks.end())
+					add_state(neighbor_pos, neighbor->second, false);
+			}
+
+			if (active_count > std::max<size_t>(64, blocks_size / 20) &&
+					porting::getTimeMs() > end_ms) {
+				m_weather_update_last = n;
+				break;
+			}
+		}
+
+		if (n >= blocks_size || active_count == 0)
+			m_weather_update_last = 0;
+	}
+
+	struct WeatherResult
+	{
+		size_t index;
+		float heat;
+		float humidity;
+		weather::wind_t wind;
+	};
+	std::vector<WeatherResult> results;
+	results.reserve(active_count);
+
+	for (size_t i = 0; i < states.size(); ++i) {
+		const BlockWeatherState &state = states[i];
+		if (!state.active)
+			continue;
+
+		const v3pos_t node_pos = state.pos * MAP_BLOCKSIZE;
+		const float base_heat = mapgen->calcBlockHeat(
+				node_pos, seed, timeofday, gametime, env->m_use_weather);
+		const float base_humidity = mapgen->calcBlockHumidity(
+				node_pos, seed, timeofday, gametime, env->m_use_weather);
+
+		float heat_diffusion = 0.0f;
+		float humidity_diffusion = 0.0f;
+		float heat_weight_sum = 0.0f;
+		float humidity_weight_sum = 0.0f;
+		float heat_advection = 0.0f;
+		float humidity_advection = 0.0f;
+		weather::wind_t pressure_gradient;
+		int neighbors = 0;
+
+		for (const auto &dir : g_6dirs) {
+			auto found = index.find(state.pos + dir);
+			if (found == index.end())
+				continue;
+
+			const BlockWeatherState &neighbor = states[found->second];
+			const v3f dirf(dir.X, dir.Y, dir.Z);
+			const float heat_delta = neighbor.heat - state.heat;
+			const float humidity_delta = neighbor.humidity - state.humidity;
+			const float pressure_delta = neighbor.pressure - state.pressure;
+			const float inflow = std::max(0.0f, -state.wind.dotProduct(dirf));
+			const float heat_weight = heat_transfer_weight(dir, heat_delta);
+			const float humidity_weight = humidity_transfer_weight(dir, humidity_delta);
+
+			heat_diffusion += heat_delta * heat_weight;
+			humidity_diffusion += humidity_delta * humidity_weight;
+			heat_weight_sum += heat_weight;
+			humidity_weight_sum += humidity_weight;
+			heat_advection += heat_delta * inflow;
+			humidity_advection += humidity_delta * inflow;
+			pressure_gradient += dirf * pressure_delta;
+			++neighbors;
+		}
+
+		if (neighbors > 0) {
+			if (heat_weight_sum > 0.0f)
+				heat_diffusion /= heat_weight_sum;
+			if (humidity_weight_sum > 0.0f)
+				humidity_diffusion /= humidity_weight_sum;
+			heat_advection /= neighbors;
+			humidity_advection /= neighbors;
+			pressure_gradient /= neighbors;
+		}
+
+		weather::wind_t wind = state.wind - pressure_gradient * (0.015f * dt);
+		wind *= std::exp(-0.08f * dt);
+		weather::wind_t mapgen_wind;
+		if (mapgen->calcBlockWind(
+					node_pos, seed, timeofday, gametime, env->m_use_weather, &mapgen_wind)) {
+			mapgen_wind.Y = wind.Y;
+			wind = mapgen_wind * 0.80f + wind * 0.20f;
+		}
+		wind = fm_limit_wind(wind);
+
+		float heat = state.heat;
+		float humidity = state.humidity;
+
+		heat += heat_diffusion * (0.035f * dt);
+		humidity += humidity_diffusion * (0.055f * dt);
+		heat += heat_advection * (0.015f * dt);
+		humidity += humidity_advection * (0.020f * dt);
+
+		heat += (base_heat - heat) * (0.006f * dt);
+		humidity += (base_humidity - humidity) * (0.006f * dt);
+
+		// Warm air can carry more water; cold blocks lose a little humidity.
+		humidity += std::max(0.0f, heat - 25.0f) * (0.002f * dt);
+		humidity -= std::max(0.0f, 5.0f - heat) * (0.003f * dt);
+
+		results.push_back({
+				i,
+				clamp_weather_float(heat, -100.0f, 100.0f),
+				clamp_weather_float(humidity, 0.0f, 100.0f),
+				wind,
+		});
+	}
+
+	const auto next_update = env->getGameTime() + 20;
+	for (const WeatherResult &result : results) {
+		BlockWeatherState &state = states[result.index];
+		const auto block_lock = state.block->try_lock_unique_rec();
+		if (!block_lock->owns_lock())
+			continue;
+
+		state.block->heat = std::lround(result.heat - state.block->heat_add);
+		state.block->humidity = std::lround(result.humidity - state.block->humidity_add);
+		state.block->wind = result.wind;
+		state.block->heat_last_update = next_update;
+		state.block->humidity_last_update = next_update;
+	}
+
+	g_profiler->avg("ServerMap: weather active blocks", active_count);
+	return m_weather_update_last;
+}
+
 weather::wind_t ServerMap::updateBlockWind(ServerEnvironment *env, const v3pos_t &p,
 		MapBlock *block, unordered_map_v3bpos<weather::wind_t> *cache, bool block_add)
 {
@@ -441,7 +681,7 @@ weather::wind_t ServerMap::updateBlockWind(ServerEnvironment *env, const v3pos_t
 
 		float heat = 0.0f;
 		float humidity = 0.0f;
-		if (sample_block && gametime < sample_block->heat_last_update) {
+		if (sample_block && sample_block->heat_last_update) {
 			heat = sample_block->heat;
 			if (block_add)
 				heat += sample_block->heat_add;
@@ -450,7 +690,7 @@ weather::wind_t ServerMap::updateBlockWind(ServerEnvironment *env, const v3pos_t
 					sample_p, seed, timeofday, totaltime, env->m_use_weather);
 		}
 
-		if (sample_block && gametime < sample_block->humidity_last_update) {
+		if (sample_block && sample_block->humidity_last_update) {
 			humidity = sample_block->humidity;
 			if (block_add)
 				humidity += sample_block->humidity_add;

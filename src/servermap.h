@@ -63,6 +63,7 @@ public:
 			const v3pos_t &p, MapBlock *block = nullptr,
 			unordered_map_v3bpos<weather::wind_t> *cache = nullptr,
 			bool block_add = true);
+	u32 stepLoadedBlockWeather(ServerEnvironment *env, float dtime, unsigned int max_cycle_ms);
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
@@ -118,6 +119,7 @@ public:
 	MapBlockPtr emergeBlockPtr(v3bpos_t p, bool create_blank = false) override;
 
 	static std::atomic_uint time_life;
+	u32 m_weather_update_last{};
 
 	// == end of freeminer
 

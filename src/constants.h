@@ -77,6 +77,7 @@
 #define FARMESH_LIMIT MAX_MAP_GENERATION_LIMIT
 #endif
 
+
 // fm 32bit prepare (keep 31k)
 #define WEATHER_LIMIT (31007)
 #define FARSCALE_LIMIT (31007)
