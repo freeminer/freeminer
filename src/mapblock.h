@@ -527,12 +527,11 @@ public:
 	std::atomic_short humidity{};
 	std::atomic_short heat_add{};
 	std::atomic_short humidity_add{};
-	v3f wind{};
 	std::atomic_ulong heat_last_update{};
 	std::atomic_uint32_t humidity_last_update{};
 	float m_uptime_timer_last{};
 	std::atomic_short usage_timer_multiplier{1};
-    weather::wind_t wind{};
+	weather::wind_t wind{};
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp{};
 	uint32_t m_next_analyze_timestamp{};

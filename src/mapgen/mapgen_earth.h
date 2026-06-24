@@ -112,8 +112,8 @@ public:
 	void makeChunk(BlockMakeData *data) override;
 	int generateTerrain() override;
 	void generateBuildings() override;
-	pos_t getSpawnLevelAtPoint(v2pos_t p) override;
-	pos_t getGroundLevelAtPoint(v2pos_t p) override;
+	int getSpawnLevelAtPoint(v2pos_t p) override;
+	int getGroundLevelAtPoint(v2pos_t p) override;
 	bool calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime,
 			bool use_weather, weather::wind_t *wind) override;
 
