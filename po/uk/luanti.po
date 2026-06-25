@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Ukrainian (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-06-20 12:01+0000\n"
-"Last-Translator: winver <kirillstuzhuk@gmail.com>\n"
+"PO-Revision-Date: 2026-06-26 21:01+0000\n"
+"Last-Translator: Tarás Lavrentiev <fromkaniv@gmail.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/minetest/"
 "minetest/uk/>\n"
 "Language: uk\n"
@@ -375,9 +375,8 @@ msgid "Controls"
 msgstr "Керування"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Поранення / PvP"
+msgstr "Поранення"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
@@ -1862,46 +1861,48 @@ msgstr "Неможливо використовувати %s, тому що IPv6
 
 #: src/client/game.cpp
 msgid "Unlimited viewing range disabled"
-msgstr "Необмежену видимість вимкнено"
+msgstr "Необмежену дальність огляду вимкнено"
 
 #: src/client/game.cpp
 msgid "Unlimited viewing range enabled"
-msgstr "Необмежену видимість увімкнено"
+msgstr "Необмежену дальність огляду увімкнено"
 
 #: src/client/game.cpp
 msgid "Unlimited viewing range enabled, but forbidden by game or mod"
-msgstr "Необмежену видимість увімкнено, але заборонено грою або модом"
+msgstr "Необмежену дальність огляду увімкнено, але заборонено грою або модом"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing changed to %d (the minimum)"
-msgstr "Видимість змінено до %d (мінімум)"
+msgstr "Дальність огляду змінено до %d (мінімум)"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing changed to %d (the minimum), but limited to %d by game or mod"
-msgstr "Видимість змінено до %d (мінімум), але обмежено до %d грою або модом"
+msgstr ""
+"Дальність огляду змінено до %d (мінімум), але обмежено до %d грою або модом"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing range changed to %d"
-msgstr "Видимість змінено до %d"
+msgstr "Дальність огляду змінено до %d"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing range changed to %d (the maximum)"
-msgstr "Видимість змінено до %d (максимум)"
+msgstr "Дальність огляду змінено до %d (максимум)"
 
 #: src/client/game.cpp
 #, c-format
 msgid ""
 "Viewing range changed to %d (the maximum), but limited to %d by game or mod"
-msgstr "Видимість змінено до %d (максимум), але обмежено до %d грою або модом"
+msgstr ""
+"Дальність огляду змінено до %d (максимум), але обмежено до %d грою або модом"
 
 #: src/client/game.cpp
 #, c-format
 msgid "Viewing range changed to %d, but limited to %d by game or mod"
-msgstr "Видимість змінено до %d, але обмежено до %d грою або модом"
+msgstr "Дальність огляду змінено до %d, але обмежено до %d грою або модом"
 
 #: src/client/game.cpp
 #, c-format
@@ -2910,9 +2911,8 @@ msgid "Anticheat movement tolerance"
 msgstr "Допуск руху античита"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append item name to tooltips"
-msgstr "Додавати назви предметів до підказок."
+msgstr "Додавати назви предметів до підказок"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -2962,8 +2962,8 @@ msgid ""
 "Arm inertia, gives a more realistic movement of\n"
 "the arm when the camera moves."
 msgstr ""
-"Похитування руки забезпечують природніші рухи\n"
-"руки, коли камера рухається."
+"Похитування руки забезпечує природнішу її динаміку\n"
+"під час руху камери."
 
 #: src/settings_translation_file.cpp
 msgid "Array texture max layers"
@@ -3017,7 +3017,7 @@ msgstr "Звук"
 
 #: src/settings_translation_file.cpp
 msgid "Automatic jumping"
-msgstr "Автоматичне перестрибування"
+msgstr "Автострибок"
 
 #: src/settings_translation_file.cpp
 msgid "Automatically jump up single-node obstacles."
@@ -3532,7 +3532,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Decrease view range"
-msgstr "Зменшити видимість"
+msgstr "Зменшити дальність огляду"
 
 #: src/settings_translation_file.cpp
 msgid "Decrease volume"
@@ -3853,9 +3853,8 @@ msgid "Enable Raytraced Culling"
 msgstr "Увімкнути проминеве оклюзивне відсікання"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable SSCSM"
-msgstr "Увімкнути все"
+msgstr "Увімкнути SSCSM"
 
 #: src/settings_translation_file.cpp
 msgid "Enable a confirmation dialog before closing."
@@ -3960,8 +3959,9 @@ msgid ""
 "Enable view bobbing and amount of view bobbing.\n"
 "For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
 msgstr ""
-"Увімкнути похитування погляду та встановити множник похитування.\n"
-"Наприклад: 0 — вимикає похитування, 1.0 — для типового, 2.0 — для подвійного."
+"Увімкнути похитування камери та встановити його множник.\n"
+"Наприклад: 0 — вимикає похитування зовсім, 1.0 — для типового, 2.0 — для "
+"подвійного."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4052,7 +4052,7 @@ msgstr "FPS"
 
 #: src/settings_translation_file.cpp
 msgid "FPS when unfocused"
-msgstr "FPS поза фокусом"
+msgstr "Обмеження FPS поза фокусом"
 
 #: src/settings_translation_file.cpp
 msgid "Factor noise"
@@ -4133,7 +4133,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Flashing of the screen when taking damage."
-msgstr ""
+msgstr "Блимання екрана під час отримання поранення."
 
 #: src/settings_translation_file.cpp
 msgid "Floatland density"
@@ -4387,7 +4387,7 @@ msgstr "HUD"
 
 #: src/settings_translation_file.cpp
 msgid "HUD scaling"
-msgstr "Масштабування HUD"
+msgstr "Масштабування ігрового інтейферсу"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4689,8 +4689,8 @@ msgid ""
 "If FPS would go higher than this, limit it by sleeping\n"
 "to not waste CPU power for no benefit."
 msgstr ""
-"Якщо FPS стає вище за це значення, вона обмежується простоєм,\n"
-"щоб не витрачати потужність процесора марно."
+"Якщо FPS перевищує це значення, він обмежується простоєм,\n"
+"щоб марно не навантажувати процесор."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4842,7 +4842,7 @@ msgstr "Висота ігрової консолі чату в грі, між 0.
 
 #: src/settings_translation_file.cpp
 msgid "Increase view range"
-msgstr "Збільшити видимість"
+msgstr "Збільшити дальність огляду"
 
 #: src/settings_translation_file.cpp
 msgid "Increase volume"
@@ -5556,11 +5556,11 @@ msgstr "Найбільша кількість пакетів на ітераці
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS"
-msgstr "Найбільша кількість FPS"
+msgstr "Обмеження FPS"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS when the window is not focused."
-msgstr "Найбільша частота FPS коли вікно поза фокусом."
+msgstr "Обмежує FPS коли вікно не знаходиться у фокусі."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum distance to render shadows."
@@ -5990,8 +5990,8 @@ msgid ""
 "formspec is\n"
 "open."
 msgstr ""
-"Відкривати меню паузі при втраті фокуса вікна.\n"
-"Не відкриває, якщо будь-яка форму вже відкрито."
+"Відкривати меню паузи, якщо вікно гри втрачає фокус.\n"
+"Не спрацьовує, якщо вже відкрито будь-яку іншу форму."
 
 #: src/settings_translation_file.cpp
 msgid "OpenGL debug"
@@ -6198,7 +6198,7 @@ msgstr "Шлях до звичайного шрифту"
 
 #: src/settings_translation_file.cpp
 msgid "Remember screen size"
-msgstr "Пам'ятати розмір вікна"
+msgstr "Зберігати розмір вікна"
 
 #: src/settings_translation_file.cpp
 msgid "Remote media"
@@ -6320,10 +6320,9 @@ msgid ""
 "window\n"
 "is maximized is stored in window_maximized."
 msgstr ""
-"Автоматично зберігати розмір вікна під час зміни.\n"
-"Якщо значення true, розмір екрана зберігається в screen_w та screen_h, а "
-"інформація про те, чи розгорнуто вікно\n"
-"зберігається в window_maximized."
+"Автоматичне збереження розміру вікна під час його зміни.\n"
+"Якщо увімкнено, розмір екрана записується в screen_w та screen_h,\n"
+"а стан вікна (розгорнуте чи ні) — в window_maximized."
 
 #: src/settings_translation_file.cpp
 msgid "Saving map received from server"
@@ -6596,7 +6595,7 @@ msgid ""
 "Set the language. By default, the system language is used.\n"
 "A restart is required after changing this."
 msgstr ""
-"Встановіть мову. Типово використовується системна мова.\n"
+"Встановити мову. Типово використовується системна мова.\n"
 "Після зміни цього потрібен перезапуск."
 
 #: src/settings_translation_file.cpp
@@ -7478,12 +7477,13 @@ msgid ""
 "set\n"
 "to a non-default value."
 msgstr ""
-"Субдискретизація подібна використанню низької роздільності, але вона\n"
-"застовується лише до світу гри, не доторкуючись графічного інтерфейсу.\n"
-"Вона повинна дати значне збільшення продуктивності, але меншу деталізацію.\n"
-"Вищі значення призводять до меншої деталізації зображення.\n"
-"Зазначте: субдискретизація наразі не підтримується якщо налаштування\n"
-"\"3d_mode\" задано до чогось крім звичайного значення."
+"Субдискретизація подібна до зниження роздільної здатності, але "
+"застосовується\n"
+"лише до тривимірного світу гри, не впливаючи на графічний інтерфейс.\n"
+"Вона значно підвищує продуктивність, проте зменшує деталізацію зображення\n"
+"(що вище значення, то менша деталізація).\n"
+"Примітка: субдискретизація наразі не підтримується, якщо\n"
+"параметр 3d_mode має будь-яке значення, крім типового."
 
 #: src/settings_translation_file.cpp
 msgid "Unlimited player transfer distance"
@@ -7572,7 +7572,7 @@ msgstr "Інтерфейси"
 
 #: src/settings_translation_file.cpp
 msgid "VSync"
-msgstr "Вертикальна синхронізація"
+msgstr "Вертикальна синхронізація (VSync)"
 
 #: src/settings_translation_file.cpp
 msgid "Valley depth"
@@ -7638,8 +7638,8 @@ msgid ""
 msgstr ""
 "Вертикальна синхронізація екрана.\n"
 "Примітка: Після зміни цього параметра потрібен перезапуск!\n"
-"Ваша система все ще може примусово використовувати вертикальну синхронізацію "
-"та ігнорувати цей параметр."
+"Ваша система все ще може примусово використовувати\n"
+"вертикальну синхронізацію та ігнорувати цей параметр."
 
 #: src/settings_translation_file.cpp
 msgid "Video driver"
@@ -7651,11 +7651,11 @@ msgstr "Множник похитування"
 
 #: src/settings_translation_file.cpp
 msgid "View distance in nodes."
-msgstr "Дальність погляду у вузлах."
+msgstr "Дальність промальовування у вузлах."
 
 #: src/settings_translation_file.cpp
 msgid "Viewing range"
-msgstr "Видимість"
+msgstr "Дальність огляду"
 
 #: src/settings_translation_file.cpp
 msgid "Virtual joystick triggers Aux1 button"
@@ -7823,7 +7823,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Whether the window is maximized."
-msgstr "Чи розгорнуто вікно."
+msgstr "Максимізує (розгортає) вікно."
 
 #: src/settings_translation_file.cpp
 msgid ""
