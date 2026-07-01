@@ -848,10 +848,13 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	};
 	const auto fog_color_for_climate = [&](u8 alpha, const FarFogClimate &climate,
 											   const FarFogAltitudeProfile &altitude,
-											   float fog_y_relative_nodes) {
+											   float fog_y_relative_nodes,
+											   float density, float top_view) {
 		const float cold = 1.0f - smoothstep_f(-5.0f, 35.0f, climate.heat);
 		const float humidity = std::clamp(climate.humidity, 0.0f, 100.0f);
 		const float thin_mist = 1.0f - smoothstep_f(52.0f, 78.0f, humidity);
+		const float density_shadow = smoothstep_f(0.16f, 0.82f, density);
+		const float humidity_shadow = smoothstep_f(76.0f, 100.0f, humidity);
 		const bool storm_height =
 				fog_y_relative_nodes >=
 				cloud_height_nodes * FAR_FOG_STORM_MIN_CLOUD_HEIGHT_RATIO;
@@ -860,20 +863,28 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 						? 0.0f
 						: smoothstep_f(FAR_FOG_STORM_HUMIDITY, 100.0f, humidity);
 		const float storm_light = 1.0f - storm_cloud * (0.38f + daylight * 0.12f);
+		const float density_light = std::clamp(
+				1.0f - density_shadow * (0.07f + humidity_shadow * 0.16f) -
+						top_view * (0.14f + density_shadow * 0.18f +
+										   humidity_shadow * 0.10f + daylight * 0.06f),
+				0.56f, 1.0f);
 		constexpr float light_r = 190.0f;
 		constexpr float light_g = 198.0f;
 		constexpr float light_b = 214.0f;
 		return video::SColor(alpha,
 				far_fog_color_channel(std::min<float>(255.0f,
 											  light_r + cold * 18.0f + thin_mist * 28.0f),
-						fog_light * storm_light * (0.84f + daylight * 0.18f)),
+						fog_light * storm_light * density_light *
+								(0.84f + daylight * 0.18f)),
 				far_fog_color_channel(std::min<float>(255.0f,
 											  light_g + cold * 20.0f + thin_mist * 30.0f),
-						fog_light * storm_light * (0.91f + daylight * 0.10f)),
+						fog_light * storm_light * density_light *
+								(0.91f + daylight * 0.10f)),
 				far_fog_color_channel(std::min<float>(255.0f,
 											  light_b + cold * 28.0f + thin_mist * 34.0f),
 						std::min(1.0f,
-								fog_light * storm_light * (1.07f - daylight * 0.08f))));
+								fog_light * storm_light * density_light *
+										(1.07f - daylight * 0.08f))));
 	};
 
 	if (m_far_fog_meshbuffers.empty())
@@ -1034,8 +1045,16 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		}
 		const auto alpha =
 				static_cast<u8>(std::clamp(alpha_f * fog_alpha_scale, 1.0f, 196.0f));
+		const float top_view =
+				altitude.cave
+						? 0.0f
+						: smoothstep_f(0.15f, 0.85f, -forward.Y) *
+								  smoothstep_f(30.0f, 220.0f,
+										  static_cast<float>(m_camera_position_node.Y) -
+												  visual_center_y_nodes);
 		const auto color = fog_color_for_climate(
-				alpha, climate, altitude, visual_center_y_nodes - terrain_y_nodes);
+				alpha, climate, altitude, visual_center_y_nodes - terrain_y_nodes,
+				density, top_view);
 
 		const v3f rx = right * half_width;
 		const v3f uy = up * half_height;
