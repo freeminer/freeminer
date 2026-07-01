@@ -3,7 +3,10 @@
 // write in c++ without explanation and examples, use full namespaces, prefer std::optional instead pointers, do not use static functions :
 
 #pragma once
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <osmium/osm/entity.hpp>
 #include <osmium/osm/location.hpp>
@@ -11,6 +14,8 @@
 #include <osmium/osm/relation.hpp>
 #include <osmium/osm/way.hpp>
 #include <variant>
+#include <tuple>
+#include <utility>
 #include "../../irr_v2d.h"
 #include "map.h"
 #include "mapgen/mapgen_earth.h"
@@ -22,6 +27,7 @@
 
 #include "arnis-cpp/src/args.h"
 #include "arnis_block.h"
+#include "arnis-cpp/src/land_cover.h"
 
 namespace arnis
 {
@@ -29,6 +35,7 @@ namespace arnis
 namespace block_definitions
 {
 extern Block LIGHT_GRAY_WALL_BANNER;
+extern Block WATER;
 }
 
 struct XZPoint;
@@ -237,6 +244,9 @@ public:
 struct Ground
 {
 	MapgenEarth *mg = nullptr;
+	std::optional<land_cover::LandCoverData> land_cover;
+	std::size_t land_cover_world_width = 0;
+	std::size_t land_cover_world_height = 0;
 
 	int get_absolute_y(int x_input, int y_offset, int z_input) const
 	{
@@ -274,6 +284,143 @@ struct Ground
 			return 1;
 		}
 		return h;
+	}
+
+	bool has_land_cover() const
+	{
+		return land_cover.has_value() && land_cover->width > 0 && land_cover->height > 0 &&
+			   land_cover_world_width > 0 && land_cover_world_height > 0;
+	}
+
+	void set_land_cover_data(land_cover::LandCoverData data,
+			std::size_t world_width, std::size_t world_height)
+	{
+		// Rust parity: src/ground.rs land-cover accessors.
+		// Divergence: C++ currently receives an OSM-derived grid; ESA COG fetch is not ported.
+		data.width = data.grid.empty() ? 0 : data.grid.front().size();
+		data.height = data.grid.size();
+		data.water_distance =
+				land_cover::compute_water_distance(data.grid, data.width, data.height);
+		data.refresh_water_blend_grid();
+		land_cover = std::move(data);
+		land_cover_world_width = world_width;
+		land_cover_world_height = world_height;
+	}
+
+	std::pair<std::size_t, std::size_t> land_cover_index(const XZPoint &coord) const
+	{
+		// Rust parity: src/ground.rs::cover_class / water_distance sampling.
+		const auto &lc = *land_cover;
+		const double x_ratio = std::clamp(static_cast<double>(coord.x) /
+						static_cast<double>(std::max<std::size_t>(1, land_cover_world_width - 1)),
+				0.0, 1.0);
+		const double z_ratio = std::clamp(static_cast<double>(coord.z) /
+						static_cast<double>(std::max<std::size_t>(1, land_cover_world_height - 1)),
+				0.0, 1.0);
+		const auto x = std::min<std::size_t>(
+				static_cast<std::size_t>(std::llround(x_ratio * static_cast<double>(lc.width - 1))),
+				lc.width - 1);
+		const auto z = std::min<std::size_t>(
+				static_cast<std::size_t>(std::llround(z_ratio * static_cast<double>(lc.height - 1))),
+				lc.height - 1);
+		return {x, z};
+	}
+
+	uint8_t cover_class(const XZPoint &coord) const
+	{
+		if (!has_land_cover())
+			return 0;
+		const auto [x, z] = land_cover_index(coord);
+		return land_cover->grid[z][x];
+	}
+
+	uint8_t water_distance(const XZPoint &coord) const
+	{
+		if (!has_land_cover())
+			return 0;
+		const auto [x, z] = land_cover_index(coord);
+		if (z >= land_cover->water_distance.size() ||
+				x >= land_cover->water_distance[z].size())
+			return 0;
+		return land_cover->water_distance[z][x];
+	}
+
+	double water_blend(const XZPoint &coord) const
+	{
+		if (!has_land_cover())
+			return 0.0;
+		const auto &lc = *land_cover;
+		if (lc.water_blend_grid.empty())
+			return 0.0;
+
+		const double fx = std::clamp(static_cast<double>(coord.x) /
+						static_cast<double>(std::max<std::size_t>(1, land_cover_world_width - 1)),
+				0.0, 1.0) *
+				static_cast<double>(lc.width - 1);
+		const double fz = std::clamp(static_cast<double>(coord.z) /
+						static_cast<double>(std::max<std::size_t>(1, land_cover_world_height - 1)),
+				0.0, 1.0) *
+				static_cast<double>(lc.height - 1);
+		const auto x0 = std::min<std::size_t>(static_cast<std::size_t>(std::floor(fx)), lc.width - 1);
+		const auto z0 = std::min<std::size_t>(static_cast<std::size_t>(std::floor(fz)), lc.height - 1);
+		const auto x1 = std::min<std::size_t>(x0 + 1, lc.width - 1);
+		const auto z1 = std::min<std::size_t>(z0 + 1, lc.height - 1);
+		const double tx = fx - std::floor(fx);
+		const double tz = fz - std::floor(fz);
+		const double w00 = lc.water_blend_grid[z0][x0];
+		const double w10 = lc.water_blend_grid[z0][x1];
+		const double w01 = lc.water_blend_grid[z1][x0];
+		const double w11 = lc.water_blend_grid[z1][x1];
+		const double top = w00 * (1.0 - tx) + w10 * tx;
+		const double bottom = w01 * (1.0 - tx) + w11 * tx;
+		return top * (1.0 - tz) + bottom * tz;
+	}
+
+	std::optional<std::tuple<int, int, int, int>> lc_water_block_bounds() const
+	{
+		// Rust parity: src/ground.rs::lc_water_block_bounds.
+		// Used by water_depth to avoid scanning the full world bbox.
+		if (!has_land_cover())
+			return std::nullopt;
+		const auto &lc = *land_cover;
+		std::size_t gx0 = std::numeric_limits<std::size_t>::max();
+		std::size_t gz0 = std::numeric_limits<std::size_t>::max();
+		std::size_t gx1 = 0;
+		std::size_t gz1 = 0;
+		bool any = false;
+		for (std::size_t z = 0; z < lc.height; ++z) {
+			for (std::size_t x = 0; x < lc.width; ++x) {
+				if (lc.grid[z][x] != land_cover::LC_WATER)
+					continue;
+				gx0 = std::min(gx0, x);
+				gx1 = std::max(gx1, x);
+				gz0 = std::min(gz0, z);
+				gz1 = std::max(gz1, z);
+				any = true;
+			}
+		}
+		if (!any)
+			return std::nullopt;
+
+		auto span = [](std::size_t g_lo, std::size_t g_hi,
+						 std::size_t world_dim, std::size_t grid_dim) {
+			if (grid_dim <= 1 || world_dim <= 1)
+				return std::pair<int, int>{0, static_cast<int>(world_dim - 1)};
+			const double f = static_cast<double>(world_dim - 1) /
+					static_cast<double>(grid_dim - 1);
+			const int lo = static_cast<int>(std::floor((static_cast<double>(g_lo) - 0.5) * f)) - 1;
+			const int hi = static_cast<int>(std::ceil((static_cast<double>(g_hi) + 0.5) * f)) + 1;
+			return std::pair<int, int>{
+					std::max(0, lo), std::min(static_cast<int>(world_dim - 1), hi)};
+		};
+		const auto [x0, x1] = span(gx0, gx1, land_cover_world_width, lc.width);
+		const auto [z0, z1] = span(gz0, gz1, land_cover_world_height, lc.height);
+		return std::tuple<int, int, int, int>{x0, z0, x1, z1};
+	}
+
+	int water_level(const XZPoint &coord) const
+	{
+		return level(coord);
 	}
 };
 
@@ -346,8 +493,20 @@ struct WorldEditor
 			return;
 		}
 		if (mg->vm->exists(pos)) {
-			mg->vm->setNode(pos, block);
-			++mg->stat.set;
+			bool should_set = true;
+			const auto current = mg->vm->getNode(pos);
+			const auto content = current.getContent();
+			if (maybe_variants) {
+				should_set = std::any_of(maybe_variants->begin(), maybe_variants->end(),
+						[content](const Block &b) { return b.getContent() == content; });
+			} else if (maybe_replacements) {
+				should_set = std::none_of(maybe_replacements->begin(), maybe_replacements->end(),
+						[content](const Block &b) { return b.getContent() == content; });
+			}
+			if (should_set) {
+				mg->vm->setNode(pos, block);
+				++mg->stat.set;
+			}
 		} else {
 			++mg->stat.miss;
 		}
@@ -375,7 +534,14 @@ struct WorldEditor
 			return false;
 
 		const auto n = mg->vm->getNode(pos);
-		return !(n.getContent() == CONTENT_AIR || n.getContent() == CONTENT_IGNORE);
+		const auto content = n.getContent();
+		if (content == CONTENT_AIR || content == CONTENT_IGNORE)
+			return false;
+		if (blocks) {
+			return std::any_of(blocks->begin(), blocks->end(),
+					[content](const Block &b) { return b.getContent() == content; });
+		}
+		return true;
 	}
 
 	//inline auto node_to_xz(const osmium::NodeRef &node)
@@ -401,21 +567,55 @@ struct WorldEditor
 	};
 	int get_absolute_y(int x, int y, int z) { return ground->get_absolute_y(x, y, z); }
 	int get_ground_level(int x, int z) const { return ground ? ground->level({x, z}) : 0; }
-	int get_water_level(int x, int z) const { return get_ground_level(x, z); }
+	int get_water_level(int x, int z) const
+	{
+		return ground ? ground->water_level({x, z}) : get_ground_level(x, z);
+	}
+	bool is_lc_water(int x, int z) const
+	{
+		if (ground && ground->has_land_cover()) {
+			return ground->cover_class({x - mg->node_min.X, z - mg->node_min.Z}) ==
+				   land_cover::LC_WATER;
+		}
+		if (!mg || !mg->vm)
+			return false;
+		const v3pos_t pos{
+				static_cast<pos_t>(x), static_cast<pos_t>(get_water_level(x, z)),
+				static_cast<pos_t>(z)};
+		if (!mg->vm->exists(pos))
+			return false;
+		return mg->vm->getNode(pos).getContent() ==
+			   block_definitions::WATER.getContent();
+	}
+	uint8_t water_distance(int x, int z) const
+	{
+		if (ground && ground->has_land_cover())
+			return ground->water_distance({x - mg->node_min.X, z - mg->node_min.Z});
+		return is_lc_water(x, z) ? 0 : 15;
+	}
 
 	bool check_for_block_absolute(int x, int y, int z,
 			const std::optional<std::vector<Block>> &blocks = {},
 			const std::optional<std::vector<Block>> &avoid = {})
 	{
-		(void)blocks;
-		(void)avoid;
 		const v3pos_t pos{
 				static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 		++mg->stat.check;
 		if (!mg || !mg->vm || !mg->vm->exists(pos))
 			return false;
 		const auto n = mg->vm->getNode(pos);
-		return !(n.getContent() == CONTENT_AIR || n.getContent() == CONTENT_IGNORE);
+		const auto content = n.getContent();
+		if (content == CONTENT_AIR || content == CONTENT_IGNORE)
+			return false;
+		if (blocks) {
+			return std::any_of(blocks->begin(), blocks->end(),
+					[content](const Block &b) { return b.getContent() == content; });
+		}
+		if (avoid) {
+			return std::any_of(avoid->begin(), avoid->end(),
+					[content](const Block &b) { return b.getContent() == content; });
+		}
+		return true;
 	}
 
 	bool block_exists_absolute(int x, int y, int z)
