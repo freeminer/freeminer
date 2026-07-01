@@ -112,7 +112,9 @@ void main(void)
 	float cloud_light_sample = fogMap3(cloud_pos + sun_dir * 0.42, local_falloff);
 	float direct_light = clamp((cloud - cloud_light_sample) / 0.55, 0.0, 1.0);
 	vec3 cloud_light = vec3(0.91, 0.98, 1.05) + vec3(1.0, 0.60, 0.30) * direct_light * 0.28;
-	float self_shadow = mix(1.08, 0.74, cloud * clamp(varColor.a * 1.55, 0.0, 1.0));
+	float density_shadow = smoothstep(0.16, 0.72, density);
+	float self_shadow = mix(1.00, 0.66,
+		max(cloud * clamp(varColor.a * 1.70, 0.0, 1.0), density_shadow * 0.72));
 	vec3 color = mix(varColor.rgb * cloud_light * self_shadow, fogColor.rgb, fog_mix);
 
 	gl_FragColor = vec4(color, alpha);
