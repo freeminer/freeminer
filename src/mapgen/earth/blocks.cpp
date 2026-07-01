@@ -97,6 +97,14 @@ Block STONE;
 Block TERRACOTTA;
 Block WARPED_PLANKS;
 Block WATER;
+Block SEAGRASS;
+Block KELP_PLANT;
+Block MAGMA_BLOCK;
+Block KELP;
+Block TALL_SEAGRASS_BOTTOM;
+Block TALL_SEAGRASS_TOP;
+Block SEA_PICKLE;
+Block SOUL_SAND;
 Block WHITE_CONCRETE;
 Block WHITE_FLOWER;
 Block WHITE_STAINED_GLASS;
@@ -415,6 +423,16 @@ void init(MapgenEarth *mg)
 	TERRACOTTA = g("default:clay");
 	WARPED_PLANKS = g("default:wood");
 	WATER = g("default:water_source");
+	// Rust parity: water_depth.rs uses MineClone ocean/nether blocks.
+	// Divergence: Earth game maps them to available Minetest Game nodes.
+	SEAGRASS = g({"default:marram_grass_1", "default:grass_3"});
+	KELP_PLANT = g({"default:sand_with_kelp", "default:marram_grass_3", "default:marram_grass_1"});
+	MAGMA_BLOCK = g({"default:obsidian", "default:lava_source", "default:stone"});
+	KELP = KELP_PLANT;
+	TALL_SEAGRASS_BOTTOM = g({"default:marram_grass_2", "default:marram_grass_1"});
+	TALL_SEAGRASS_TOP = g({"default:marram_grass_3", "default:marram_grass_1"});
+	SEA_PICKLE = g({"default:coral_green", "default:coral_cyan", "default:coral_skeleton"});
+	SOUL_SAND = g({"default:desert_sand", "default:sand"});
 	WHITE_CONCRETE = g({"wool:white", "basic_materials:concrete_block", "default:stone"});
 	WHITE_FLOWER = g("flowers:dandelion_white");
 	WHITE_STAINED_GLASS = GLASS;
