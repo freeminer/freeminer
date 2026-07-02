@@ -553,19 +553,27 @@ MapNode MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 		return valid(node.getContent()) ? node : fallback;
 	};
 
-	const auto solid = visible(p, {});
+	const auto surface_y = get_height(p.X, p.Z);
+	const auto solid = visible(p, surface_y);
 	const auto water = visible_water_level(p);
 	if (!solid && !water) {
 		return visible_transparent;
 	}
 
-	if (solid)
-		return Mapgen::visible_content(p, use_weather);
-
 	const float timeofday = env ? env->getTimeOfDayF() : 0.0f;
 	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
 	const bool weather = use_weather && env && env->m_use_weather;
-	const auto heat = calcBlockHeat(p, seed, timeofday, totaltime, weather);
+	const v3pos_t climate_p(p.X, solid ? surface_y : water_level, p.Z);
+	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
+
+	if (solid) {
+		if (!use_weather)
+			return visible_surface_green;
+
+		const auto humidity =
+				calcBlockHumidity(climate_p, seed, timeofday, totaltime, weather);
+		return visible_surface_by_climate(heat, humidity);
+	}
 
 	if (p.Y <= water_level) {
 		if (heat < 0 && p.Y > heat / 3 && valid(c_ice))
