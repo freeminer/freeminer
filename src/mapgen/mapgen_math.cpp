@@ -657,8 +657,43 @@ std::pair<bool, double> MapgenMath::calc_point(pos_t x, pos_t y, pos_t z)
 
 bool MapgenMath::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
-	const auto [have, d] = calc_point(p.X, p.Y, p.Z);
+	const bool have = calc_point(p.X, p.Y, p.Z).first;
 	return have;
+}
+
+MapNode MapgenMath::visible_content(const v3pos_t &p, bool use_weather)
+{
+	const auto valid = [](const MapNode &node) {
+		const content_t content = node.getContent();
+		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+			   content != CONTENT_AIR;
+	};
+	const auto node_or = [&valid](const MapNode &node, const MapNode &fallback) {
+		return valid(node) ? node : fallback;
+	};
+
+	const bool have = calc_point(p.X, p.Y, p.Z).first;
+	if (have && p.Y > water_level)
+		return Mapgen::visible_content(p, use_weather);
+
+	const float timeofday = env ? env->getTimeOfDayF() : 0.0f;
+	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
+	const bool weather = use_weather && env && env->m_use_weather;
+	const auto heat = calcBlockHeat(p, seed, timeofday, totaltime, weather);
+
+	if (have) {
+		const auto humidity = calcBlockHumidity(p, seed, timeofday, totaltime, weather);
+		return visible_surface_by_climate(heat, humidity);
+	}
+
+	if (p.Y <= water_level) {
+		if (heat < 0 && p.Y > heat / 3)
+			return node_or(MapNode(c_ice, LIGHT_SUN), visible_ice);
+
+		return node_or(n_water, visible_water);
+	}
+
+	return visible_transparent;
 }
 
 int MapgenMath::generateTerrain()

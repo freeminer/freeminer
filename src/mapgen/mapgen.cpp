@@ -4,6 +4,7 @@
 // Copyright (C) 2013-2018 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 // Copyright (C) 2015-2018 paramat
 
+#include <algorithm>
 #include <cmath>
 #include "irr_v3d.h"
 #include "mapgen.h"
@@ -1273,7 +1274,7 @@ std::pair<v3s16, v3s16> get_mapgen_edges(s16 mapgen_limit, v3s16 chunksize)
 
 bool Mapgen::visible_water_level(const v3pos_t &p)
 {
-	return p.Y < water_level;
+	return p.Y <= water_level;
 }
 
 bool Mapgen::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
@@ -1281,35 +1282,98 @@ bool Mapgen::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 	return surface_y.value_or(getGroundLevelAtPoint({p.X, p.Z})) >= p.Y;
 }
 
-const MapNode &Mapgen::visible_content(const v3pos_t &p, bool use_weather)
+MapNode Mapgen::visible_surface_by_climate(
+		weather::heat_t heat, weather::humidity_t humidity) const
 {
-	const pos_t surface_y = getGroundLevelAtPoint({p.X, p.Z});
-	const auto v = visible(p, surface_y);
-	const auto vw = visible_water_level(p);
-	if (!v && !vw)
-		return visible_transparent;
-	if (!use_weather)
-		return visible_surface_green;
-	const auto heat = m_emerge->biomemgr->calcBlockHeat(p, seed,
-			env ? env->getTimeOfDay() * env->m_time_of_day_speed : 0,
-			env ? env->getGameTime() : 0, !!env && env->m_use_weather);
-	if (!v && p.Y < water_level)
-		return heat < 0 ? visible_ice : visible_water;
-	const auto humidity = m_emerge->biomemgr->calcBlockHumidity(p, seed,
-			env ? env->getTimeOfDay() * env->m_time_of_day_speed : 0,
-			env ? env->getGameTime() : 0, !!env && env->m_use_weather, surface_y);
-	return heat < 0	   ? (humidity < 20 ? visible_surface : visible_surface_cold)
-		   : heat < 10 ? visible_surface
-		   : heat < 40 ? (humidity < 20 ? visible_surface_dry : visible_surface_green)
-					   : visible_surface_hot;
+	if (heat < -10)
+		return humidity < 25 ? visible_surface_permafrost : visible_surface_cold;
+	if (heat < 0)
+		return humidity < 35 ? visible_surface_tundra : visible_surface_cold;
+	if (heat < 8)
+		return humidity < 25 ? visible_surface_rock : visible_surface_coniferous;
+	if (heat < 22)
+		return humidity < 18 ? visible_surface_dry : visible_surface_green;
+	if (heat < 35)
+		return humidity < 15 ? visible_surface_desert
+							 : humidity < 35 ? visible_surface_dry
+											 : visible_surface_green;
+	return humidity < 20 ? visible_surface_desert
+						 : humidity < 55 ? visible_surface_green
+										 : visible_surface_rainforest;
 }
 
-weather::heat_t Mapgen::calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather)
+MapNode Mapgen::visible_content(const v3pos_t &p, bool use_weather)
+{
+	const int surface_y = getGroundLevelAtPoint({p.X, p.Z});
+	const bool solid = visible(p, surface_y);
+	const bool water = visible_water_level(p);
+	if (!solid && !water)
+		return visible_transparent;
+
+	const float timeofday = env ? env->getTimeOfDayF() : 0.0f;
+	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
+	const bool weather = use_weather && env && env->m_use_weather;
+	const v3pos_t climate_p(p.X, solid ? surface_y : water_level, p.Z);
+	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
+
+	auto node_or = [](content_t content, const MapNode &fallback) {
+		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+							   content != CONTENT_AIR
+					   ? MapNode(content, LIGHT_SUN)
+					   : fallback;
+	};
+
+	Biome *biome = biomegen ? biomegen->calcBiomeAtPoint(
+									  v3s16(p.X, solid ? surface_y : water_level, p.Z))
+							: nullptr;
+
+	if (!solid) {
+		if (biome) {
+			const bool ice = heat < 0 && p.Y > water_level + heat / 4;
+			if (ice)
+				return node_or(biome->c_ice, visible_ice);
+
+			const bool water_top = p.Y > water_level - biome->depth_water_top;
+			return node_or(
+					water_top ? biome->c_water_top : biome->c_water, visible_water);
+		}
+
+		return heat < 0 ? visible_ice : visible_water;
+	}
+
+	if (biome) {
+		const int depth = surface_y - p.Y;
+		const int top_depth = std::max<int>(biome->depth_top, 0);
+		const int base_filler = std::max<int>(top_depth + biome->depth_filler, 0);
+
+		if (depth < top_depth) {
+			const content_t top =
+					p.Y >= water_level && heat < -3 ? biome->c_top_cold : biome->c_top;
+			return node_or(top, heat < -3 ? visible_surface_cold : visible_surface_green);
+		}
+
+		if (depth < base_filler)
+			return node_or(biome->c_filler, visible_surface);
+
+		return node_or(biome->c_stone, visible_surface);
+	}
+
+	if (!use_weather)
+		return visible_surface_green;
+
+	const auto humidity =
+			calcBlockHumidity(climate_p, seed, timeofday, totaltime, weather);
+	return visible_surface_by_climate(heat, humidity);
+}
+
+weather::heat_t Mapgen::calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday,
+		float totaltime, bool use_weather)
 {
 	return m_emerge->biomemgr->calcBlockHeat(p, seed, timeofday, totaltime, use_weather);
 }
 
-weather::humidity_t Mapgen::calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather)
+weather::humidity_t Mapgen::calcBlockHumidity(const v3pos_t &p, uint64_t seed,
+		float timeofday, float totaltime, bool use_weather)
 {
 	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime,
 			use_weather, getGroundLevelAtPoint({p.X, p.Z}));

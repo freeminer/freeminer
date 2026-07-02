@@ -130,7 +130,8 @@ std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t 
 		}
 	}
 
-	if (const auto &v = m_mg->visible_content(pos, use_weather); v.getContent()) {
+	if (const auto v = m_mg->visible_content(pos, use_weather);
+			v.getContent() != CONTENT_IGNORE && v.getContent() != CONTENT_UNKNOWN) {
 		const auto visible = m_mg->surface_2d() && v.getContent() != CONTENT_AIR;
 		return {v, visible};
 	}
