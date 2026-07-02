@@ -1324,7 +1324,7 @@ MapNode Mapgen::visible_content(const v3pos_t &p, bool use_weather)
 	};
 
 	Biome *biome = biomegen ? biomegen->calcBiomeAtPoint(
-									  v3s16(p.X, solid ? surface_y : water_level, p.Z))
+									  v3pos_t(p.X, solid ? surface_y : water_level, p.Z))
 							: nullptr;
 
 	if (!solid) {
