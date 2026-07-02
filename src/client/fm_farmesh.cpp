@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <utility>
 #include <vector>
 
@@ -526,13 +527,57 @@ FarMesh::FarMesh(Client *client, Server *server) :
 
 		m_client->far_container.m_mg = mg;
 		const auto &ndef = m_client->getNodeDefManager();
-		mg->visible_surface = ndef->getId("default:stone");
-		mg->visible_water = ndef->getId("default:water_source");
-		mg->visible_ice = ndef->getId("default:ice");
-		mg->visible_surface_green = ndef->getId("default:dirt_with_grass");
-		mg->visible_surface_dry = ndef->getId("default:dirt_with_dry_grass");
-		mg->visible_surface_cold = ndef->getId("default:dirt_with_snow");
-		mg->visible_surface_hot = ndef->getId("default:sand");
+		const auto valid_content = [](content_t content) {
+			return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+				   content != CONTENT_AIR;
+		};
+		const auto node_id = [&](std::initializer_list<const char *> names,
+									 content_t fallback) -> content_t {
+			content_t content = CONTENT_IGNORE;
+			for (const auto *name : names) {
+				if (ndef->getId(name, content) && valid_content(content))
+					return content;
+			}
+			return valid_content(fallback) ? fallback
+										   : static_cast<content_t>(CONTENT_AIR);
+		};
+
+		mg->visible_surface = node_id({"mapgen_stone", "default:stone"}, CONTENT_AIR);
+		mg->visible_water =
+				node_id({"mapgen_water_source", "default:water_source"}, CONTENT_AIR);
+		mg->visible_ice =
+				node_id({"mapgen_ice", "default:ice"}, mg->visible_water.getContent());
+		mg->visible_surface_green =
+				node_id({"default:dirt_with_grass"}, mg->visible_surface.getContent());
+		mg->visible_surface_dry = node_id(
+				{"default:dirt_with_dry_grass", "default:dry_dirt_with_dry_grass"},
+				mg->visible_surface_green.getContent());
+		mg->visible_surface_cold =
+				node_id({"mapgen_dirt_with_snow", "default:dirt_with_snow"},
+						mg->visible_surface.getContent());
+		mg->visible_surface_hot = node_id(
+				{"default:sand", "mapgen_stone"}, mg->visible_surface.getContent());
+		mg->visible_surface_rainforest =
+				node_id({"default:dirt_with_rainforest_litter"},
+						mg->visible_surface_green.getContent());
+		mg->visible_surface_coniferous =
+				node_id({"default:dirt_with_coniferous_litter"},
+						mg->visible_surface_green.getContent());
+		mg->visible_surface_tundra =
+				node_id({"default:permafrost_with_moss", "default:permafrost"},
+						mg->visible_surface_cold.getContent());
+		mg->visible_surface_permafrost =
+				node_id({"default:permafrost_with_stones", "default:permafrost"},
+						mg->visible_surface_cold.getContent());
+		mg->visible_surface_desert =
+				node_id({"default:desert_sand", "default:sand"},
+						mg->visible_surface_hot.getContent());
+		mg->visible_surface_beach =
+				node_id({"default:sand", "default:silver_sand"},
+						mg->visible_surface_hot.getContent());
+		mg->visible_surface_rock =
+				node_id({"default:gravel", "mapgen_stone", "default:stone"},
+						mg->visible_surface.getContent());
 	}
 
 	g_settings->getBoolNoEx("farmesh_flat", farmesh_flat);

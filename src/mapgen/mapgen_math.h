@@ -82,5 +82,6 @@ public:
 	MapNode layers_get(float value, float max);
 	std::pair<bool, double> calc_point(pos_t x, pos_t y, pos_t z);
 	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
+	MapNode visible_content(const v3pos_t &p, bool use_weather) override;
 	bool surface_2d() override { return false; };
 };

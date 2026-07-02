@@ -540,29 +540,40 @@ MapNode MapgenEarth::layers_get(float value, float max)
 
 bool MapgenEarth::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
-	return p.Y < surface_y.value_or(get_height(p.X, p.Z));
+	return p.Y <= surface_y.value_or(get_height(p.X, p.Z));
 }
 
-const MapNode &MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
+MapNode MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 {
-	const auto v = visible(p, {});
-	const auto vw = visible_water_level(p);
-	if (!v && !vw) {
+	const auto valid = [](content_t content) {
+		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+			   content != CONTENT_AIR;
+	};
+	const auto node_or = [&valid](const MapNode &node, const MapNode &fallback) {
+		return valid(node.getContent()) ? node : fallback;
+	};
+
+	const auto solid = visible(p, {});
+	const auto water = visible_water_level(p);
+	if (!solid && !water) {
 		return visible_transparent;
 	}
-	if (!use_weather) {
-		return visible_surface_green;
-	}
-	auto heat = 10;
-	heat += p.Y / -100; // upper=colder, lower=hotter, 3c per 1000
 
-	if (!v && p.Y < water_level)
-		return heat < 0 ? visible_ice : visible_water;
-	const auto humidity = 60;
-	return heat < 0	   ? (humidity < 20 ? visible_surface : visible_surface_cold)
-		   : heat < 10 ? visible_surface
-		   : heat < 40 ? (humidity < 20 ? visible_surface_dry : visible_surface_green)
-					   : visible_surface_hot;
+	if (solid)
+		return Mapgen::visible_content(p, use_weather);
+
+	const float timeofday = env ? env->getTimeOfDayF() : 0.0f;
+	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
+	const bool weather = use_weather && env && env->m_use_weather;
+	const auto heat = calcBlockHeat(p, seed, timeofday, totaltime, weather);
+
+	if (p.Y <= water_level) {
+		if (heat < 0 && p.Y > heat / 3 && valid(c_ice))
+			return MapNode(c_ice, LIGHT_SUN);
+		return node_or(n_water, visible_water);
+	}
+
+	return visible_transparent;
 }
 
 //constexpr double EARTH_RADIUS = 6378137.0;
