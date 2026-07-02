@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Polish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-06-22 13:01+0000\n"
-"Last-Translator: Dawid <dawidgorski.m@gmail.com>\n"
+"PO-Revision-Date: 2026-07-03 01:01+0000\n"
+"Last-Translator: vergil sparda <literallyvergildmc.contact@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/minetest/minetest/"
 "pl/>\n"
 "Language: pl\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.7.1.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -137,7 +137,7 @@ msgstr ""
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Amplifies every octave by (amplitude of the previous octave * Persistence)."
-msgstr ""
+msgstr "Wzmacnia każdą oktawę o (amplituda poprzedniej oktawy * Trwałość)."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/content/dlg_install.lua
@@ -153,23 +153,27 @@ msgstr "Anuluj"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Controls how many octaves (layers) the noise will have."
-msgstr ""
+msgstr "Określa, ile oktaw (warstw) będzie miał szum."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Each octave is a simple noise generator. Each one also adds more detail to "
 "the noise."
 msgstr ""
+"Każda oktawa jest prostym generatorem szumu. Każda z nich dodaje też więcej "
+"szczegółów do szumu."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Finally, all of the octaves will be combined to generate the noise."
-msgstr ""
+msgstr "Na koniec wszystkie oktawy zostaną połączone, aby wygenerować szum."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Having lots of octaves is not recommended because it increases terrain "
 "generation time."
 msgstr ""
+"Używanie dużej liczby oktaw nie jest zalecane, ponieważ wydłuża czas "
+"generowania terenu."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Lacunarity"
@@ -180,30 +184,38 @@ msgid ""
 "Lower values make the terrain simple and higher values make the terrain "
 "rough."
 msgstr ""
+"Niższe wartości sprawiają, że teren jest prostszy, a wyższe — że jest "
+"bardziej nierówny."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Lower values make the terrain smooth and higher values make the terrain have "
 "fine detail."
 msgstr ""
+"Niższe wartości sprawiają, że teren jest gładszy, a wyższe — że ma "
+"drobniejsze detale."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Lower values will result in smoother noise and higher values will result in "
 "rougher noise."
-msgstr ""
+msgstr "Niższe wartości dają gładszy szum, a wyższe — bardziej chropowaty szum."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Making 3D noise eased is not recommended because it significantly increases "
 "the load."
 msgstr ""
+"Ustawienie flagi „eased\" (wygładzanie) dla szumu 3D nie jest zalecane, "
+"ponieważ znacząco zwiększa obciążenie."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Maps noise gradient values onto a quintic S-curve before performing "
 "interpolation."
 msgstr ""
+"Mapuje wartości gradientu szumu na krzywą S piątego stopnia (kwintyczną) "
+"przed wykonaniem interpolacji."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Octaves"
@@ -216,11 +228,11 @@ msgstr "Margines"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Offsets the final noise by this value."
-msgstr ""
+msgstr "Przesuwa końcowy szum o tę wartość."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Overrides the 'eased' flag based on the noise type."
-msgstr ""
+msgstr "Nadpisuje flagę „eased\" na podstawie typu szumu."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Persistence"
@@ -238,11 +250,11 @@ msgstr "Skaluj"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales every octave by (scale of the previous octave / Lacunarity)."
-msgstr ""
+msgstr "Skaluje każdą oktawę o (skala poprzedniej oktawy / Lakunarność)."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales the noise in the $1 axis by this value."
-msgstr ""
+msgstr "Skaluje szum na osi $1 o tę wartość."
 
 #. TRANSLATORS: Value for randomness
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
@@ -252,11 +264,11 @@ msgstr "Ziarno losowości"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Takes the absolute value of each octave while adding them together."
-msgstr ""
+msgstr "Podczas sumowania oktaw brana jest wartość bezwzględna każdej z nich."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The first octave is amplified by 1."
-msgstr ""
+msgstr "Pierwsza oktawa jest wzmacniana o 1."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #, fuzzy
@@ -265,25 +277,25 @@ msgstr "Ta komenda jest dezaktywowana przez serwer."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The multiplier for the noise before the offset is added."
-msgstr ""
+msgstr "Mnożnik szumu stosowany przed dodaniem przesunięcia."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The random seed for the noise. The same seed results in the same noise."
-msgstr ""
+msgstr "Losowy seed szumu. Ten sam seed daje ten sam szum."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "This is also the scale of the largest structures in the $1 direction of the "
 "noise."
-msgstr ""
+msgstr "Jest to również skala największych struktur w kierunku $1 szumu."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "This results in smooth noise instead of gridlike noise."
-msgstr ""
+msgstr "Skutkuje to gładkim szumem zamiast szumu przypominającego siatkę."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "This results in spiky noise."
-msgstr ""
+msgstr "Skutkuje to kolczastym szumem."
 
 #. TRANSLATORS: "absvalue" is a noise parameter flag.
 #. It is short for "absolute value".
@@ -329,7 +341,7 @@ msgstr "(Użyj języka systemowego)"
 #. TRANSLATORS: Shown when a default setting is the empty string
 #: builtin/common/settings/dlg_settings.lua
 msgid "<empty>"
-msgstr ""
+msgstr "<puste>"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Accessibility"
@@ -449,6 +461,8 @@ msgid ""
 "These settings are unavailable due to your platform, hardware or in "
 "combination with the current settings."
 msgstr ""
+"Te ustawienia są niedostępne ze względu na Twoją platformę, sprzęt lub "
+"bieżącą kombinację ustawień."
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Touchscreen layout"
@@ -873,7 +887,7 @@ msgstr "Mod:"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mods located inside the world folder."
-msgstr ""
+msgstr "Mody znajdujące się w folderze świata."
 
 #. TRANSLATORS: About mod dependencies
 #: builtin/mainmenu/dlg_config_world.lua
@@ -913,7 +927,7 @@ msgstr "włączone"
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Always show this dialog."
-msgstr ""
+msgstr "Zawsze pokazuj ten dialog."
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Are you sure you want to quit?"
@@ -1292,7 +1306,7 @@ msgstr "Odwiedź stronę"
 
 #: builtin/mainmenu/init.lua
 msgid "Debug build, expect worse performance"
-msgstr ""
+msgstr "Kompilacja debugowa, spodziewaj się gorszej wydajności"
 
 #. TRANSLATORS: Try to keep the translation short
 #: builtin/mainmenu/init.lua src/client/game_formspec.cpp
@@ -1619,7 +1633,7 @@ msgstr "Nie udało się otworzyć dostarczonego pliku z hasłem "
 
 #: src/client/clientlauncher.cpp
 msgid "World does not exist and no game selected to create one."
-msgstr ""
+msgstr "Świat nie istnieje, a nie wybrano żadnej gry, aby go utworzyć."
 
 #: src/client/clientmedia.cpp src/client/game.cpp
 msgid "Media..."
@@ -2139,23 +2153,23 @@ msgstr "Menu"
 
 #: src/client/keycode.cpp
 msgid "Middle Click"
-msgstr ""
+msgstr "Środkowy przycisk myszy"
 
 #. TRANSLATORS: This is for mouse buttons without an intuitive description. %d is the number of the button.
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "Przycisk myszy %d"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
 msgid "Mouse X1"
-msgstr ""
+msgstr "Przycisk myszy X1"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
 msgid "Mouse X2"
-msgstr ""
+msgstr "Przycisk myszy X2"
 
 #: src/client/keycode.cpp
 msgid "Num Lock"
@@ -2276,7 +2290,7 @@ msgstr "Prawy Windows"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Scancode: %d"
-msgstr ""
+msgstr "Kod skanowania: %d"
 
 #: src/client/keycode.cpp
 msgid "Scroll Lock"
@@ -2325,7 +2339,7 @@ msgstr "Minimapa w trybie teksturowym"
 #: src/client/render/pipeline.cpp
 #, c-format
 msgid "Failed to create the texture \"%s\" for the rendering pipeline."
-msgstr ""
+msgstr "Nie udało się utworzyć tekstury „%s\" dla potoku renderowania."
 
 #: src/client/renderingengine.cpp
 #, fuzzy
@@ -2451,10 +2465,13 @@ msgstr "Resetuj"
 #: src/gui/touchscreeneditor.cpp
 msgid "Start dragging a button to add. Tap outside to cancel."
 msgstr ""
+"Zacznij przeciągać przycisk, aby go dodać. Dotknij poza obszarem, aby "
+"anulować."
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap a button to select it. Drag a button to move it."
 msgstr ""
+"Dotknij przycisku, aby go zaznaczyć. Przeciągnij przycisk, aby go przesunąć."
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Tap outside to deselect."
@@ -2495,7 +2512,7 @@ msgstr "Skok"
 
 #: src/gui/touchscreenlayout.cpp
 msgid "Overflow menu"
-msgstr ""
+msgstr "Menu przepełnienia"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Place/use"
@@ -2864,6 +2881,10 @@ msgid ""
 "All mesh buffers with less than this number of vertices will be merged\n"
 "during map rendering. This improves rendering performance."
 msgstr ""
+"Wszystkie bufory siatki (mesh) z mniejszą liczbą wierzchołków niż podana "
+"wartość\n"
+"zostaną scalone podczas renderowania mapy. Poprawia to wydajność "
+"renderowania."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -2957,6 +2978,10 @@ msgid ""
 "Provides balance between speed and image quality.\n"
 "fxaa can used in combination with the other anti-aliasing methods"
 msgstr ""
+"Stosuje filtr przetwarzania końcowego, który wykrywa i wygładza krawędzie o "
+"wysokim kontraście.\n"
+"Zapewnia równowagę między szybkością a jakością obrazu.\n"
+"FXAA można stosować w połączeniu z innymi metodami antyaliasingu"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2990,7 +3015,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Array texture max layers"
-msgstr ""
+msgstr "Maksymalna liczba warstw tekstury tablicowej"
 
 #: src/settings_translation_file.cpp
 msgid "Ask to reconnect after crash"
@@ -3102,7 +3127,7 @@ msgstr "Szum biomu"
 
 #: src/settings_translation_file.cpp
 msgid "Block bounds HUD radius"
-msgstr ""
+msgstr "Promień HUD granic bloków"
 
 #: src/settings_translation_file.cpp
 msgid "Block cull optimize distance"
@@ -3157,10 +3182,13 @@ msgid ""
 "Caps the maximum number of layers used with array textures (if supported).\n"
 "This is only useful for debugging."
 msgstr ""
+"Ogranicza maksymalną liczbę warstw używanych w teksturach tablicowych (jeśli "
+"obsługiwane).\n"
+"Przydatne wyłącznie do debugowania."
 
 #: src/settings_translation_file.cpp
 msgid "Capture Tracy zones"
-msgstr ""
+msgstr "Przechwytuj strefy Tracy"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3168,6 +3196,9 @@ msgid ""
 "You need to build with Tracy to use this, see doc/developing/profiling.md\n"
 "for details."
 msgstr ""
+"Przechwytuj strefy Tracy za pomocą instrumentacji profilera.\n"
+"Aby z tego skorzystać, musisz zbudować grę z obsługą Tracy — \n"
+"szczegóły znajdziesz w doc/developing/profiling.md."
 
 #: src/settings_translation_file.cpp
 msgid "Cave noise"
@@ -3540,6 +3571,10 @@ msgid ""
 "Reducing this can improve performance, but some effects (e.g. debanding)\n"
 "require more than 8 bits to work."
 msgstr ""
+"Określ głębię kolorów tekstury używanej w potoku przetwarzania końcowego.\n"
+"Zmniejszenie tej wartości może poprawić wydajność, ale niektóre efekty (np. "
+"debanding)\n"
+"wymagają więcej niż 8 bitów, aby działać."
 
 #: src/settings_translation_file.cpp
 msgid "Decrease view range"
@@ -3733,7 +3768,7 @@ msgstr "Opcje deweloperskie"
 
 #: src/settings_translation_file.cpp
 msgid "Disable if you only want to instrument with Tracy."
-msgstr ""
+msgstr "Wyłącz, jeśli chcesz jedynie instrumentować kod za pomocą Tracy."
 
 #: src/settings_translation_file.cpp
 msgid "Disallow empty passwords"
@@ -3774,6 +3809,11 @@ msgid ""
 "situations\n"
 "where transparency sorting would be very slow otherwise."
 msgstr ""
+"Rysuj trójkąty posortowane pod względem przezroczystości, pogrupowane według "
+"buforów siatki.\n"
+"Powoduje to zerwanie sortowania przezroczystości między buforami siatki, ale "
+"pozwala uniknąć sytuacji,\n"
+"w których sortowanie przezroczystości byłoby w przeciwnym razie bardzo wolne."
 
 #: src/settings_translation_file.cpp
 msgid "Drop item"
@@ -3833,6 +3873,10 @@ msgid ""
 "Note that clients will be able to connect with both IPv4 and IPv6.\n"
 "Ignored if bind_address is set."
 msgstr ""
+"Włącz obsługę IPv6 na serwerze.\n"
+"Zwróć uwagę, że klienci będą mogli łączyć się zarówno przez IPv4, jak i "
+"IPv6.\n"
+"Ignorowane, jeśli ustawiono bind_address."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -4150,7 +4194,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Flashing of the screen when taking damage."
-msgstr ""
+msgstr "Miganie ekranu podczas otrzymywania obrażeń."
 
 #: src/settings_translation_file.cpp
 msgid "Floatland density"
@@ -5110,21 +5154,23 @@ msgstr "Szybkość skoku"
 
 #: src/settings_translation_file.cpp
 msgid "Key for decrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Klawisz do zmniejszania wybranej wartości w Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Key for digging, punching or using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Klawisz do kopania, uderzania lub używania czegoś.\n"
+"(Uwaga: rzeczywiste znaczenie może się różnić w zależności od gry.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for incrementing the selected value in Quicktune."
-msgstr ""
+msgstr "Klawisz do zwiększania wybranej wartości w Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving fast in fast mode."
-msgstr ""
+msgstr "Klawisz do szybkiego poruszania się w trybie szybkim."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type commands."
@@ -5139,18 +5185,22 @@ msgid ""
 "Key for placing an item/block or for using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
+"Klawisz do stawiania przedmiotu/bloku lub używania czegoś.\n"
+"(Uwaga: rzeczywiste znaczenie może się różnić w zależności od gry.)"
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the next entry in Quicktune."
-msgstr ""
+msgstr "Klawisz do przełączania na następny wpis w Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for switching to the previous entry in Quicktune."
-msgstr ""
+msgstr "Klawisz do przełączania na poprzedni wpis w Quicktune."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the camera update. Only usable with 'debug' privilege."
 msgstr ""
+"Klawisz do przełączania aktualizacji kamery. Dostępny tylko z uprawnieniem "
+"'debug'."
 
 #: src/settings_translation_file.cpp
 msgid "Key for toggling the display of mapblock boundaries."
@@ -5402,7 +5452,7 @@ msgstr "Lokalne polecenie"
 
 #: src/settings_translation_file.cpp
 msgid "Look down"
-msgstr ""
+msgstr "Patrz w dół"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5416,7 +5466,7 @@ msgstr "W prawo"
 
 #: src/settings_translation_file.cpp
 msgid "Look up"
-msgstr ""
+msgstr "Patrz w górę"
 
 #: src/settings_translation_file.cpp
 msgid "Lower Y limit of dungeons."
@@ -5718,6 +5768,10 @@ msgid ""
 "won't be deleted, depending on the current view range.\n"
 "Set to -1 for no limit."
 msgstr ""
+"Maksymalna liczba mapbloków przechowywanych w pamięci klienta.\n"
+"Zwróć uwagę, że istnieje wewnętrzne, dynamiczne minimum liczby bloków,\n"
+"które nie zostaną usunięte, w zależności od bieżącego zasięgu widzenia.\n"
+"Ustaw -1, aby nie było limitu."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -5836,7 +5890,7 @@ msgstr "Dolna granica losowej liczby małych jaskiń na mapchunk."
 
 #: src/settings_translation_file.cpp
 msgid "Minimum vertex count for mesh buffers"
-msgstr ""
+msgstr "Minimalna liczba wierzchołków dla buforów siatki"
 
 #: src/settings_translation_file.cpp
 msgid "Mipmapping"
@@ -5863,6 +5917,8 @@ msgid ""
 "Modifier key bind for closing your world.\n"
 "Requires ESC + the selected key to work."
 msgstr ""
+"Klawisz modyfikujący do zamykania świata.\n"
+"Wymaga kombinacji ESC + wybranego klawisza, aby zadziałać."
 
 #: src/settings_translation_file.cpp
 msgid "Modifies the size of the HUD elements."
@@ -6010,6 +6066,14 @@ msgid ""
 "WARNING: There are known bugs in the default map generators (v6, v7, ...)\n"
 "when using more than 1 thread. The automatic choice will avoid this."
 msgstr ""
+"Liczba wątków emerge (odpowiedzialnych za generowanie i wczytywanie mapy) do "
+"wykorzystania.\n"
+"Jeśli ustawiono 0, silnik automatycznie dobierze odpowiednią wartość w "
+"zależności\n"
+"od sprzętu i typu generatora mapy.\n"
+"OSTRZEŻENIE: W domyślnych generatorach mapy (v6, v7, ...) występują znane "
+"błędy\n"
+"przy użyciu więcej niż 1 wątku. Automatyczny wybór pozwala tego uniknąć."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6227,19 +6291,19 @@ msgstr "Gest uderzenia"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: decrement value"
-msgstr ""
+msgstr "Quicktune: zmniejsz wartość"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: increment value"
-msgstr ""
+msgstr "Quicktune: zwiększ wartość"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select next entry"
-msgstr ""
+msgstr "Quicktune: wybierz następny wpis"
 
 #: src/settings_translation_file.cpp
 msgid "Quicktune: select previous entry"
-msgstr ""
+msgstr "Quicktune: wybierz poprzedni wpis"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6664,6 +6728,9 @@ msgid ""
 "variables.\n"
 "Note that this will not apply to Luanti's in-game protocol."
 msgstr ""
+"Ustaw serwer proxy używany przez cURL. To adres URI, podobnie jak zmienne "
+"środowiskowe *_proxy.\n"
+"Zwróć uwagę, że nie dotyczy to protokołu gry Luanti."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7220,6 +7287,21 @@ msgid ""
 "Use dedicated dig/place buttons to interact.\n"
 "Interaction happens at crosshair position."
 msgstr ""
+"Rodzaj używanych elementów sterujących kopaniem/stawianiem.\n"
+"\n"
+"* Dotknięcie\n"
+"Długie/krótkie dotknięcie w dowolnym miejscu ekranu, aby wejść w "
+"interakcję.\n"
+"Interakcja zachodzi w miejscu dotknięcia palcem.\n"
+"\n"
+"* Dotknięcie z celownikiem\n"
+"Długie/krótkie dotknięcie w dowolnym miejscu ekranu, aby wejść w "
+"interakcję.\n"
+"Interakcja zachodzi w miejscu celownika.\n"
+"\n"
+"* Przyciski z celownikiem\n"
+"Użyj dedykowanych przycisków kopania/stawiania, aby wejść w interakcję.\n"
+"Interakcja zachodzi w miejscu celownika."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -7924,6 +8006,8 @@ msgid ""
 "Where to enable server-sent client-side modding (SSCSM).\n"
 "Warning: Experimental."
 msgstr ""
+"Gdzie włączyć modding po stronie klienta wysyłany przez serwer (SSCSM).\n"
+"Ostrzeżenie: Eksperymentalne."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -8112,12 +8196,12 @@ msgstr "Limit żądań równoległych cURL"
 
 #: src/settings_translation_file.cpp
 msgid "cURL proxy address"
-msgstr ""
+msgstr "Adres proxy cURL"
 
 #: src/util/screenshot.cpp
 #, c-format
 msgid "Failed to save screenshot to \"%s\""
-msgstr ""
+msgstr "Nie udało się zapisać zrzutu ekranu do „%s”"
 
 #~ msgid "Append item name"
 #~ msgstr "Dołącz nazwę przedmiotu"
