@@ -34,6 +34,10 @@ private:
 	// returns the humidity at the position
 	static int l_get_humidity(lua_State *L);
 
+	// get_wind(pos)
+	// returns the wind at the position
+	static int l_get_wind(lua_State *L);
+
 	// get_biome_data(pos)
 	// returns a table containing the biome id, heat and humidity at the position
 	static int l_get_biome_data(lua_State *L);

@@ -6952,6 +6952,8 @@ Environment access
     * Returns the heat (a number) at the position, or `nil` on failure.
 * `core.get_humidity(pos)`
     * Returns the humidity (a number) at the position, or `nil` on failure.
+* `core.get_wind(pos)`
+    * Returns the wind as a vector at the position, or `nil` on failure.
 * `core.get_biome_data(pos)`
     * Returns a table containing:
         * `biome` the biome id of the biome at that position

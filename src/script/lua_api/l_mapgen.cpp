@@ -553,6 +553,19 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 	return 1;
 }
 
+// get_wind(pos)
+// returns the wind at the position
+int ModApiMapgen::l_get_wind(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	v3s16 pos = read_v3s16(L, 1);
+	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : true;
+	GET_ENV_PTR_NO_MAP_LOCK;
+	push_v3f(L, env->getServerMap().updateBlockWind(env, pos, nullptr, nullptr, block_add));
+	return 1;
+}
+
 
 // get_biome_data(pos)
 // returns a table containing the biome id, heat and humidity at the position
@@ -2100,6 +2113,7 @@ void ModApiMapgen::Initialize(lua_State *L, int top)
 	API_FCT(get_biome_name);
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
+	API_FCT(get_wind);
 	API_FCT(get_biome_data);
 	API_FCT(get_mapgen_object);
 	API_FCT(get_spawn_level);
@@ -2144,6 +2158,7 @@ void ModApiMapgen::InitializeEmerge(lua_State *L, int top)
 	API_FCT(get_biome_name);
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
+	API_FCT(get_wind);
 	API_FCT(get_biome_data);
 	API_FCT(get_mapgen_object);
 
