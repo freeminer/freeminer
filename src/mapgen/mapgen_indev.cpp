@@ -482,8 +482,17 @@ int MapgenIndev::generateGround()
 					} else if (y <= water_level) {
 						vm->m_data[i] =
 								(heat < 0 && y > heat / 3) ? n_ice : n_water_source;
-						if (liquid_pressure && y <= 0)
-							vm->m_data[i].addLevel(m_emerge->ndef, water_level - y, 1);
+						if (liquid_pressure > 0 && y <= 0) {
+							const int pressure = ((ItemGroupList)m_emerge->ndef
+													->get(vm->m_data[i])
+													.groups)["pressure"];
+							if (pressure > 0) {
+								int add = water_level - y;
+								if (add > pressure)
+									add = pressure;
+								vm->m_data[i].addLevel(m_emerge->ndef, add, 1);
+							}
+						}
 					} else if (gen_floatlands && y >= float_taper_ymax &&
 							   y <= floatland_ywater) {
 						//vm->m_data[vi] = n_water; // Water for solid floatland layer only

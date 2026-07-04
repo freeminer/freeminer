@@ -34,8 +34,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "servermap.h"
 #include "settings.h"
 #include "util/unordered_map_hash.h"
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -104,14 +106,18 @@ v3pos_t ServerMap::transforming_liquid_pop()
 class cached_map_block
 {
 	Map *map_{};
+	std::map<v3pos_t, MapBlock *> *modified_blocks_{};
 	MapBlockPtr cached_block;
-	v3bpos_t cached_block_pos;
+	v3bpos_t cached_block_pos{};
 	std::unique_ptr<MapBlock::lock_rec_unique> lock;
 
 	int hit = 0, miss = 0;
 
 public:
-	cached_map_block(Map *map) : map_{map} {}
+	cached_map_block(Map *map, std::map<v3pos_t, MapBlock *> *modified_blocks) :
+			map_{map}, modified_blocks_{modified_blocks}
+	{
+	}
 	~cached_map_block()
 	{
 		//DUMP(hit, miss, hit / (miss ? miss : 1));
@@ -120,7 +126,7 @@ public:
 	MapBlockPtr change_block(const v3pos_t &pos)
 	{
 		auto blockpos = getNodeBlockPos(pos);
-		if (cached_block_pos == blockpos && cached_block) {
+		if (cached_block && cached_block_pos == blockpos) {
 			++hit;
 			return cached_block;
 		}
@@ -146,29 +152,37 @@ public:
 	void setNode(const v3pos_t &pos, const MapNode &n, bool important = false)
 	{
 		if (!change_block(pos)) {
-			return map_->setNode(pos, n, important);
+			map_->setNode(pos, n, important);
+			if (modified_blocks_) {
+				const auto blockpos = getNodeBlockPos(pos);
+				if (auto *block = map_->getBlockNoCreateNoEx(blockpos))
+					(*modified_blocks_)[blockpos] = block;
+			}
+			return;
 		}
 		v3pos_t relpos = pos - cached_block_pos * MAP_BLOCKSIZE;
-		return cached_block->setNodeNoLock(relpos, n, important);
+		cached_block->setNodeNoLock(relpos, n, important);
+		if (modified_blocks_)
+			(*modified_blocks_)[cached_block_pos] = cached_block.get();
 	}
 };
 
-size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_ms)
+size_t ServerMap::transformLiquidsReal(Server *m_server,
+		std::map<v3pos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms)
 {
 	const auto *nodemgr = m_nodedef;
 
 	// TimeTaker timer("transformLiquidsReal()");
 	size_t loopcount = 0;
-	const auto initial_size =
-			transforming_liquid_size() - m_transforming_liquid_local_size;
+	size_t initial_size = 0;
 
-	size_t regenerated = 0;
+	int64_t regenerated = 0;
 
 #if LIQUID_DEBUG
 	bool debug = 1;
 #endif
 
-	thread_local static const uint8_t relax = g_settings->getS16("liquid_relax");
+	thread_local static const int relax = g_settings->getS16("liquid_relax");
 	thread_local static const auto fast_flood = g_settings->getS16("liquid_fast_flood");
 	thread_local static const int water_level = g_settings->getS16("water_level");
 	const int16_t liquid_pressure = m_server->m_emerge->mgparams->liquid_pressure;
@@ -196,11 +210,15 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 	unordered_set_v3bpos blocks_lighting_update;
 	std::vector<v3pos_t> transforming_liquid_local;
+	std::vector<v3pos_t> requeue_liquid;
+	size_t next_liquid_index = 0;
 
-	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
+	//const auto end_ms = porting::getTimeMs() + max_cycle_ms;
+	//const bool time_limited = max_cycle_ms > 0;
 
 	{
 		std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+		initial_size = m_transforming_liquid.size();
 		transforming_liquid_local.reserve(initial_size);
 		while (!m_transforming_liquid.m_queue.empty()) {
 			transforming_liquid_local.emplace_back(
@@ -212,12 +230,15 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 	}
 
 	{
-		cached_map_block cached_map(this);
+		cached_map_block cached_map(this, &modified_blocks);
 
-		for (const auto &p0 : transforming_liquid_local) {
+		for (; next_liquid_index < transforming_liquid_local.size(); ++next_liquid_index) {
 			// This should be done here so that it is done when continue is used
 			//if (loopcount >= initial_size * 2 || porting::getTimeMs() > end_ms)
 			//	break;
+			//if (loopcount > 0 && time_limited && porting::getTimeMs() > end_ms)
+			//	break;
+			const auto &p0 = transforming_liquid_local[next_liquid_index];
 			++loopcount;
 			/*
 			Get a queued transforming liquid node
@@ -458,16 +479,22 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 			if (want_continue)
 				continue;
 
+			if (neighbors[D_SELF].node &&
+					(neighbors[D_SELF].node.param2 & LIQUID_STABLE_MASK))
+				continue;
+
 			if (liquid_kind == CONTENT_IGNORE || !neighbors[D_SELF].liquid ||
-					total_level <= 0)
+					total_level <= 0 || can_liquid <= 0 || can_liquid_same_level <= 0)
 				continue;
 
 			int16_t level_max = nodemgr->get(liquid_kind_flowing).getMaxLevel();
-			int16_t level_max_compressed =
-					nodemgr->get(liquid_kind_flowing).getMaxLevel(1);
-			int16_t pressure = liquid_pressure ? ((ItemGroupList)nodemgr->get(liquid_kind)
-																 .groups)["pressure"]
-											   : 0;
+			int16_t pressure = liquid_pressure > 0 ?
+					((ItemGroupList)nodemgr->get(liquid_kind).groups)["pressure"] : 0;
+			pressure = std::max<int16_t>(0, pressure);
+			int16_t level_max_compressed = pressure ?
+					std::min<int16_t>(nodemgr->get(liquid_kind_flowing).getMaxLevel(1),
+							level_max + pressure) :
+					level_max;
 			auto liquid_renewable = nodemgr->get(liquid_kind).liquid_renewable;
 #if LIQUID_DEBUG
 			s16 total_was = total_level; // debug
@@ -710,19 +737,6 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 					}
 				}
 
-				if (liquid_levels_want[D_TOP] > level_max && relax && total_level <= 0 &&
-						level_avg > level_max && liquid_levels_want[D_TOP] < level_avg) {
-#if LIQUID_DEBUG
-					infostream << " top pressure relax: " << " top="
-							   << (int)liquid_levels_want[D_TOP] << " to=>" << level_avg
-							   << std::endl;
-#endif
-
-					// regenerated += level_avg - liquid_levels_want[D_TOP];
-					// liquid_levels_want[D_TOP] = level_avg;
-					regenerated += 1;
-					liquid_levels_want[D_TOP] += 1;
-				}
 			}
 
 #if LIQUID_DEBUG
@@ -915,14 +929,20 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 			// g_profiler->graphAdd("liquids", 1);
 		}
 	}
-	transforming_liquid_local.clear();
-	m_transforming_liquid_local_size = 0;
 
 	//size_t ret = loopcount >= initial_size ? 0 : transforming_liquid_size();
 	//if (ret || loopcount > m_liquid_step_flow)
-	if (porting::getTimeMs() > end_ms)
-		m_liquid_step_flow +=
-				(m_liquid_step_flow > loopcount ? -1 : 1) * (int)loopcount / 10;
+	/* if (time_limited && porting::getTimeMs() > end_ms) {
+		const size_t delta = loopcount / 10;
+		if (delta > 0) {
+			const size_t current_step_flow = m_liquid_step_flow.load();
+			if (current_step_flow > loopcount)
+				m_liquid_step_flow.store(
+						current_step_flow > delta ? current_step_flow - delta : 0);
+			else
+				m_liquid_step_flow.store(current_step_flow + delta);
+		}
+	}*/
 	/*
 	if (loopcount)
 		infostream<<"Map::transformLiquidsReal(): loopcount="<<loopcount<<"
@@ -945,29 +965,37 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 		//DUMP(fast_reflow.size(), must_reflow.size(), must_reflow_second.size());
 		std::unordered_set<v3pos_t> uniq;
-		transforming_liquid_local.reserve(
+		requeue_liquid.reserve(transforming_liquid_local.size() - next_liquid_index +
 				must_reflow.size() + must_reflow_second.size() + fast_reflow.size() * 4);
+		for (size_t i = next_liquid_index; i < transforming_liquid_local.size(); ++i) {
+			const auto &p = transforming_liquid_local[i];
+			if (uniq.insert(p).second)
+				requeue_liquid.emplace_back(p);
+		}
 		for (const auto &[bp, list] : fast_reflow) {
 			for (const auto &p : list) {
-				if (!uniq.contains(p))
-					transforming_liquid_local.emplace_back(p);
-				uniq.emplace(p);
+				if (uniq.insert(p).second)
+					requeue_liquid.emplace_back(p);
 			}
 		}
 
 		for (const auto &p : must_reflow) {
-			if (!uniq.contains(p))
-				transforming_liquid_local.emplace_back(p);
-			uniq.emplace(p);
+			if (uniq.insert(p).second)
+				requeue_liquid.emplace_back(p);
 		}
 		for (const auto &p : must_reflow_second) {
-			if (!uniq.contains(p))
-				transforming_liquid_local.emplace_back(p);
-			uniq.emplace(p);
+			if (uniq.insert(p).second)
+				requeue_liquid.emplace_back(p);
 		}
 
-		m_transforming_liquid_local_size = transforming_liquid_local.size();
+		{
+			std::lock_guard<std::mutex> lock(m_transforming_liquid_mutex);
+			for (const auto &p : requeue_liquid)
+				m_transforming_liquid.push_back(p);
+			m_transforming_liquid_local_size = 0;
+		}
 	}
+	transforming_liquid_local.clear();
 
 	for (const auto &pos : node_drop) {
 		m_server->getEnv().getScriptIface()->postponed.emplace_back([=]() {
@@ -984,7 +1012,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 		if (!block)
 			continue;
 		block->setLightingComplete(0);
-		// modified_blocks[blockpos] = block;
+		modified_blocks[blockpos] = block;
 		// if(!nodemgr->get(neighbors[i].node).light_propagates ||
 		// nodemgr->get(neighbors[i].node).light_source) // better to update always
 		//	lighting_modified_blocks.set_try(block->getPos(), block);
@@ -992,7 +1020,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server, unsigned int max_cycle_
 
 	g_profiler->avg("Server: liquids real processed", loopcount);
 	if (regenerated)
-		g_profiler->avg("Server: liquids regenerated", regenerated);
+		g_profiler->avg("Server: liquids regenerated", static_cast<float>(regenerated));
 	/*
 		if (loopcount < initial_size)
 			g_profiler->add("Server: liquids queue", initial_size);

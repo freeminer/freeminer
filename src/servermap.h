@@ -67,7 +67,9 @@ public:
 
 	size_t transforming_liquid_size();
 	v3pos_t transforming_liquid_pop();
-	size_t transformLiquidsReal(Server *m_server, const unsigned int max_cycle_ms);
+	size_t transformLiquidsReal(Server *m_server,
+			std::map<v3pos_t, MapBlock *> &modified_blocks,
+			const unsigned int max_cycle_ms);
 	std::vector<v3pos_t> m_transforming_liquid_local;
 
 	//getSurface level starting on basepos.y up to basepos.y + searchup
