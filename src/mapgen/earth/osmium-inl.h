@@ -230,8 +230,8 @@ public:
 			editor.mg = mg;
 			editor.ground = &ground;
 			std::vector<arnis::ProcessedElement> v;
-			for (const auto &r : relation) {
-			}
+			//for (const auto &r : relation) {
+			//}
 			for (const auto &sn : relation.subitems<osmium::Way>()) {
 				way(sn);
 			}
@@ -270,8 +270,8 @@ public:
 		cache_t cache{index};
 		cache.ignore_errors();
 		{
-			const auto llmin = mg->pos_to_ll(mg->node_min.X, mg->node_min.Z);
-			const auto llmax = mg->pos_to_ll(mg->node_max.X, mg->node_max.Z);
+			// const auto llmin = mg->pos_to_ll(mg->node_min.X, mg->node_min.Z);
+			// const auto llmax = mg->pos_to_ll(mg->node_max.X, mg->node_max.Z);
 		}
 		osmium::io::File file{path_name, "pbf"};
 		osmium::relations::read_relations(file, mp_manager);

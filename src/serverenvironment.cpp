@@ -1119,7 +1119,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 		*/
 
 	   u32 n = 0;
-	   const auto end_ms = porting::getTimeMs() + max_cycle_ms;
+	   //const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	   m_blocks_added_last = 0;
 	   auto i = m_blocks_added.begin();
 	   for (; i != m_blocks_added.end(); ++i) {
