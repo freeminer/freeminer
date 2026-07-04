@@ -876,7 +876,7 @@ public:
 				++have_liquid;
 				//if (grow_debug)DUMP("get top", nbh[D_TOP].water_level, total_level,(int)have_liquid);
 			}
-			const auto total_level_orig = total_level;
+			//const auto total_level_orig = total_level;
 
 			/*
 tot

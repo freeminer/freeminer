@@ -561,7 +561,7 @@ int ModApiMapgen::l_get_wind(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	v3s16 pos = read_v3s16(L, 1);
+	const auto pos = read_v3pos(L, 1);
 	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : true;
 	GET_ENV_PTR_NO_MAP_LOCK;
 	push_v3f(L, env->getServerMap().updateBlockWind(env, pos, nullptr, nullptr, block_add));

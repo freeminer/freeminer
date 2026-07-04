@@ -23,7 +23,7 @@ class LuaABM : public ActiveBlockModifier {
 private:
 	const int m_id;
 
-	uint16_t m_neighbors_range{};
+	// uint16_t m_neighbors_range{};
 
 	std::vector<std::string> m_trigger_contents;
 	std::vector<std::string> m_required_neighbors;
@@ -42,7 +42,7 @@ public:
 			float trigger_interval, u32 trigger_chance, bool simple_catch_up,
 			pos_t min_y, pos_t max_y):
 		m_id(id),
-		m_neighbors_range{neighbors_range},
+		//m_neighbors_range{neighbors_range},
 		m_trigger_contents(trigger_contents),
 		m_required_neighbors(required_neighbors),
 		m_without_neighbors(without_neighbors),
@@ -455,7 +455,7 @@ void ScriptApiEnv::triggerABM(int id, v3pos_t p, MapNode n,
 		, v3pos_t neighbor_pos, uint8_t activate
 		)
 {
-	SCRIPTAPI_PRECHECKHEADER
+	TRY_SCRIPTAPI_PRECHECKHEADER()
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 

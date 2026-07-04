@@ -74,7 +74,7 @@ public:
 	/*
 		Some simple getters/setters
 	*/
-	v3opos_t getBasePosition() const { 
+	v3opos_t getBasePosition() const {
 		std::lock_guard<std::mutex> lock(m_base_position_mutex);
 		return m_base_position; }
 	void setBasePosition(v3opos_t pos);

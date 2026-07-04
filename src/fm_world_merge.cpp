@@ -306,7 +306,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	one_block_stat_t one_step_stat;
 	block_up->m_light_points.clear();
 	if (farlights) {
-		constexpr auto some_magick_thinner_const = 1; // more -> less far ligts
+		constexpr auto some_magick_thinner_const = 2; // more -> less far ligts
 		constexpr auto min_no_skip_lights =
 				2; // do not skip this amount lights on block << farstep
 		for (const auto &[bpos, block] : blocks) {
