@@ -1037,10 +1037,18 @@ size_t ServerMap::transformLiquidsLocal(std::map<v3bpos_t, MapBlock*> &modified_
 		ServerEnvironment *env, u32 liquid_loop_max
 	    , Server *m_server, unsigned int max_cycle_ms)
 {
-    g_profiler->avg("Server: liquids queue", transforming_liquid_size());
-    if (thread_local const auto static liquid_real = g_settings->getBool("liquid_real"); liquid_real)
-            return ServerMap::transformLiquidsReal(m_server, max_cycle_ms);
-    const auto end_ms = porting::getTimeMs() + max_cycle_ms;
+	g_profiler->avg("Server: liquids queue", transforming_liquid_size());
+	if (thread_local const auto static liquid_real = g_settings->getBool("liquid_real");
+			liquid_real) {
+		if (&liquid_queue != &m_transforming_liquid) {
+			while (!liquid_queue.empty()) {
+				transforming_liquid_add(liquid_queue.front());
+				liquid_queue.pop_front();
+			}
+		}
+		return ServerMap::transformLiquidsReal(m_server, modified_blocks, max_cycle_ms);
+	}
+	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 
 	size_t loopcount = 0;
 

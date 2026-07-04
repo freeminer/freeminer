@@ -267,8 +267,9 @@ liquid_relax () int 2
 # by default works only at y= -100 .. 0 (water_level = 0) for preserving deep caves from flooding
 liquid_fast_flood () int -200
 
-#    Enable liquid pressure physics
-liquid_pressure (Liquid pressure) bool false
+# Enable liquid pressure physics for liquids with a pressure group.
+# 0 = disabled, 1 = enabled.
+liquid_pressure (Liquid pressure) int 0
 
 # Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
 weather () bool true
