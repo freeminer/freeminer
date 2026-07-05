@@ -169,7 +169,10 @@ void ABMHandler::apply(MapBlock *block, int &blocks_scanned, int &abms_run,
 						heat_sum += hot;
 					}
 
-					int humidity = ((ItemGroupList)ndef->get(n).groups)["water"];
+					auto groups = (ItemGroupList)ndef->get(n).groups;
+					int humidity = groups["water"];
+					if (!humidity)
+						humidity = groups["steam"];
 					if (humidity) {
 						++humidity_num;
 					}
