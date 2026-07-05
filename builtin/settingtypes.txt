@@ -269,7 +269,7 @@ liquid_fast_flood () int -200
 
 # Enable liquid pressure physics for liquids with a pressure group.
 # 0 = disabled, 1 = enabled.
-liquid_pressure (Liquid pressure) int 0
+liquid_pressure (Liquid pressure) int 1
 
 # Enable weather (cold-hot, water freeze-melt). use only with liquid_real=1
 weather () bool true

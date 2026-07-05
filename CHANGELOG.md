@@ -15,7 +15,8 @@ Changelog
   * Colored far lights
   * Tree growth tuned
   * Volumetric clouds and fog ( volumetric_fog=20000 )
-
+  * Steam physics added, liquid_pressure fixed and enabled by default
+  
 ### 5.15.2.0 (?)
   * Client MCP support: enable_mcp=1
   * Mapgen Voxel Earth: https://github.com/voxelearth  need voxel_earth_api_key=YOUR_GOOGLE_3D_TILES_API_KEY_HERE

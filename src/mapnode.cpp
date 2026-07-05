@@ -477,6 +477,12 @@ u8 MapNode::getLevel(const NodeDefManager *nodemgr) const
 	const ContentFeatures &f = nodemgr->get(*this);
 	if (f.param_type_2 == CPT2_LEVELED) {
 		u8 level = getParam2() & LEVELED_MASK;
+		if (f.liquid_type == LIQUID_SOURCE &&
+				f.liquid_alternative_flowing_id == getContent()) {
+			if (level)
+				return level;
+			return f.getMaxLevel();
+		}
 		if (f.liquid_type == LIQUID_SOURCE)
 			level += f.getMaxLevel();
 		if(level)
@@ -610,12 +616,14 @@ int MapNode::freeze_melt(const NodeDefManager *ndef, int direction) {
 	s16 level_was = this->getLevel(ndef);
 	this->setContent(to);
 	s16 level_now_max = this->getMaxLevel(ndef);
-	if (level_was_max && level_was_max != level_now_max) {
-		s16 want = (float)level_now_max / level_was_max * level_was;
-		if (!want)
-			want = 1;
-		if (want != level_was)
-			this->setLevel(ndef, want);
+	if (level_was_max && level_now_max) {
+		s16 want = level_was;
+		if (level_was_max != level_now_max) {
+			want = (float)level_now_max / level_was_max * level_was;
+			if (!want)
+				want = 1;
+		}
+		this->setLevel(ndef, want);
 	}
 	if (this->getMaxLevel(ndef) && !this->getLevel(ndef))
 		this->addLevel(ndef);
