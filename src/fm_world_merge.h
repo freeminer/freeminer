@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <unordered_set>
 #include "servermap.h"
 #include "mapblock.h"
@@ -51,6 +52,8 @@ public:
 	const std::shared_ptr<MapDatabase> dbase{};
 	std::string save_dir;
 	std::future<void> last_async;
+	std::mutex changed_blocks_mutex;
+	std::mutex merge_mutex;
 	~WorldMerger();
 	void init();
 	bool stop();

@@ -19,11 +19,16 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
+#include <array>
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <cmath>
 #include <functional>
 #include <future>
+#include <limits>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include "constants.h"
@@ -38,15 +43,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "server.h"
 #include "fm_world_merge.h"
-
-//  https://stackoverflow.com/a/34937216
-template <typename KeyType, typename ValueType>
-std::pair<KeyType, ValueType> get_max(const std::unordered_map<KeyType, ValueType> &x)
-{
-	using pairtype = std::pair<KeyType, ValueType>;
-	return *std::max_element(x.begin(), x.end(),
-			[](const pairtype &p1, const pairtype &p2) { return p1.second < p2.second; });
-}
 
 static video::SColor get_light_source_color(const ContentFeatures &cf)
 {
@@ -95,11 +91,43 @@ static int16_t average_climate(int64_t sum, size_t count)
 			(sum - static_cast<int64_t>(count / 2)) / static_cast<int64_t>(count));
 }
 
+static uint64_t valid_update_time(uint64_t timestamp)
+{
+	if (timestamp == std::numeric_limits<uint64_t>::max() ||
+			timestamp == std::numeric_limits<uint32_t>::max())
+		return 0;
+	return timestamp;
+}
+
+static uint64_t newest_block_time(const MapBlockPtr &block)
+{
+	if (!block)
+		return 0;
+
+	const auto heat_time = valid_update_time(block->heat_last_update.load());
+	const auto humidity_time = valid_update_time(block->humidity_last_update.load());
+	return std::max<uint64_t>(
+			block->getActualTimestamp(), std::max(heat_time, humidity_time));
+}
+
+static bool within_lazy_window(uint64_t source_time, uint64_t target_time, uint32_t lazy)
+{
+	if (!lazy)
+		return false;
+	if (source_time < target_time)
+		return true;
+	return source_time - target_time < lazy;
+}
+
 WorldMerger::~WorldMerger()
 {
-	if (last_async.valid()) {
-		last_async.wait();
+	std::future<void> async;
+	{
+		std::lock_guard<std::mutex> lock(changed_blocks_mutex);
+		async = std::move(last_async);
 	}
+	if (async.valid())
+		async.wait();
 	merge_changed();
 }
 
@@ -118,6 +146,8 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	size_t wind_count = 0;
 	uint64_t heat_last_update = 0;
 	uint32_t humidity_last_update = 0;
+	using light_points_t = std::unordered_map<v3pos_t, MapBlock::light_t>;
+	std::unordered_map<v3bpos_t, light_points_t> generated_light_points;
 	{
 		for (bpos_t x = 0; x < step_size; ++x)
 			for (bpos_t y = 0; y < step_size; ++y)
@@ -172,8 +202,10 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 		block_up = load_block(smap, dbase_up, bpos_aligned);
 		if (block_up && lazy_up) {
 			// actionstream << "s=" << step <<" at=" << block_up->getActualTimestamp() << " t=" << block_up->getTimestamp() <<  " myts=" << timestamp << "\n";
-			const auto up_ts = block_up->getActualTimestamp();
-			if (timestamp < up_ts + lazy_up) {
+			const auto source_time = std::max<uint64_t>(
+					timestamp, std::max<uint64_t>(valid_update_time(heat_last_update),
+									   valid_update_time(humidity_last_update)));
+			if (within_lazy_window(source_time, newest_block_time(block_up), lazy_up)) {
 				return {};
 			}
 		}
@@ -202,22 +234,18 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 			for (pos_t y = 0; y < block_size; ++y)
 				for (pos_t z = 0; z < block_size; ++z) {
 					const v3pos_t npos(x, y, z);
-					const v3pos_t bbpos(x >> (MAP_BLOCKP - step_pow),
+					const v3bpos_t bbpos(x >> (MAP_BLOCKP - step_pow),
 							y >> (MAP_BLOCKP - step_pow), z >> (MAP_BLOCKP - step_pow));
 
-					const auto &block = blocks[bbpos];
-					if (!block) {
+					const auto block_it = blocks.find(bbpos);
+					if (block_it == blocks.end() || !block_it->second) {
 						continue;
 					}
+					const auto &block = block_it->second;
 
 					const v3pos_t lpos((x << step_pow) % MAP_BLOCKSIZE,
 							(y << step_pow) % MAP_BLOCKSIZE,
 							(z << step_pow) % MAP_BLOCKSIZE);
-					// TODO: smart node select (top priority? content priority?)
-					std::unordered_map<content_t, uint8_t> top_c;
-					std::vector<uint8_t> top_light_night;
-					std::unordered_map<content_t, MapNode> nodes;
-
 			// TODO: tune block selector
 
 #if 0
@@ -228,6 +256,11 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 
 					bool maybe_air{};
 					MapNode air;
+					std::array<content_t, 8> contents{};
+					std::array<uint8_t, 8> weights{};
+					std::array<MapNode, 8> nodes{};
+					size_t content_count = 0;
+					uint8_t max_light_night = 0;
 					for (const auto &dir : {
 								 v3pos_t{0, 1, 0},
 								 v3pos_t{1, 0, 0},
@@ -247,59 +280,73 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						if (c == CONTENT_AIR) {
 							maybe_air = true;
 							air = n;
-							top_c[c] += 1;
-							// continue;
-						} else {
-							top_c[c] += 2;
 						}
+
+						uint8_t weight = c == CONTENT_AIR ? 1 : 2;
 						if (!dir.getLengthSQ()) {
 							// main node priority TODO: tune 2
-							top_c[c] += 4;
+							weight += 4;
 						}
+
+						size_t content_index = 0;
+						for (; content_index < content_count; ++content_index) {
+							if (contents[content_index] == c)
+								break;
+						}
+						if (content_index == content_count) {
+							contents[content_index] = c;
+							weights[content_index] = 0;
+							++content_count;
+						}
+
+						weights[content_index] += weight;
+						nodes[content_index] = n;
 
 						const auto &lf = ndef->getLightingFlags(c);
 						const auto &cf = ndef->get(c);
 
 						if (const auto light_night = n.getLightRaw(LIGHTBANK_NIGHT, lf);
 								light_night) {
-							top_light_night.emplace_back(light_night);
+							max_light_night = std::max(max_light_night, light_night);
 						}
 						// TODO: whats with lava?
 						if (farlights && !step && (lf.light_source) && !cf.isLiquid()) {
 							const auto plpos =
 									block->getPosRelative() + p; //pos_in_block;
-							block->m_light_points.try_emplace(
+							generated_light_points[bbpos].try_emplace(
 									plpos, MapBlock::makeLightPoint(lf.light_source,
 												   get_light_source_color(cf)));
 						}
-
-						nodes[c] = n;
 					}
 
-					if (top_c.empty()) {
+					if (!content_count) {
 						if (maybe_air) {
-							++not_empty_nodes;
 							block_up->setNodeNoLock(npos, air, true);
 						}
 						continue;
 					}
-					const auto &max = get_max(top_c);
-					auto n = nodes[max.first];
+					size_t best_index = 0;
+					for (size_t i = 1; i < content_count; ++i) {
+						if (weights[i] > weights[best_index])
+							best_index = i;
+					}
+					auto n = nodes[best_index];
 
-					if (!top_light_night.empty()) {
-						auto max_light = *max_element(
-								std::begin(top_light_night), std::end(top_light_night));
-						n.setLight(LIGHTBANK_NIGHT, max_light, ndef->getLightingFlags(n));
+					if (max_light_night) {
+						n.setLight(LIGHTBANK_NIGHT, max_light_night,
+								ndef->getLightingFlags(n));
 					}
 #endif
 
 					if ( //n.getContent() == CONTENT_AIR ||
 							n.getContent() == CONTENT_IGNORE)
 						continue;
-					// TODO better check
-					++not_empty_nodes;
 
 					block_up->setNodeNoLock(npos, n, true);
+					if (n.getContent() != CONTENT_AIR) {
+						// TODO better check
+						++not_empty_nodes;
+					}
 				}
 	}
 	// TODO: skip full air;
@@ -313,23 +360,35 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 			if (!block) {
 				continue;
 			}
+			const light_points_t *light_points = nullptr;
+			if (!step) {
+				const auto lights_it = generated_light_points.find(bpos);
+				if (lights_it == generated_light_points.end())
+					continue;
+				light_points = &lights_it->second;
+			} else {
+				light_points = &block->m_light_points;
+			}
+			if (!light_points || light_points->empty())
+				continue;
+
 			size_t lights_in_block = 0;
 			//size_t lights_in_block_skipped = 0;
 			// TODO: apply some smart? filtering here
 			// block_up->m_light_points.insert(block->m_light_points.begin(), block->m_light_points.end());
-			const auto size = block->m_light_points.size();
+			const auto size = light_points->size();
 			if (!size)
 				continue;
 			block_up->m_light_points.reserve(block_up->m_light_points.size() + size / 2);
 			const auto coef = std::log2(size);
-			for (const auto &lp : block->m_light_points) {
+			const auto keep_first =
+					min_no_skip_lights * (static_cast<size_t>(step) + 1) * 3;
+			for (const auto &lp : *light_points) {
 				++one_step_stat.lights_count;
 				++lights_in_block;
 				const auto level = MapBlock::getLightPointLevel(lp.second);
 				const auto mod = int(coef * some_magick_thinner_const * (16 - level));
-				if (mod &&
-						(step >= 1 ||
-								lights_in_block > (min_no_skip_lights * step * 3)) &&
+				if (mod > 1 && lights_in_block > keep_first &&
 						(one_step_stat.lights_count % mod)) {
 					//++lights_in_block_skipped;
 					continue;
@@ -343,6 +402,8 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	if (not_empty_nodes) {
 		block_up->setGenerated(true);
 		ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level);
+	} else {
+		dbase_up->deleteBlock(bpos_aligned);
 	}
 
 	return one_step_stat;
@@ -466,6 +527,7 @@ bool WorldMerger::merge_one_step(
 
 bool WorldMerger::merge_list(std::unordered_set<v3bpos_t> &blocks_todo)
 {
+	std::lock_guard<std::mutex> lock(merge_mutex);
 	for (block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
 		if (merge_one_step(step, blocks_todo)) {
 			return true;
@@ -482,28 +544,31 @@ bool WorldMerger::merge_all()
 
 bool WorldMerger::merge_changed()
 {
-	if (!changed_blocks_for_merge.empty()) {
-		const auto res = merge_list(changed_blocks_for_merge);
-		changed_blocks_for_merge.clear();
-		return res;
+	std::unordered_set<v3bpos_t> blocks_todo;
+	{
+		std::lock_guard<std::mutex> lock(changed_blocks_mutex);
+		blocks_todo.swap(changed_blocks_for_merge);
 	}
-	return false;
+	if (blocks_todo.empty())
+		return false;
+	return merge_list(blocks_todo);
 }
 
 bool WorldMerger::merge_server_diff(
 		concurrent_unordered_set<v3bpos_t> &smap_changed_blocks_for_merge,
 		size_t min_blocks)
 {
+	std::unordered_set<v3bpos_t> blocks_todo;
 	{
-		const auto lock = smap_changed_blocks_for_merge.try_lock_unique_rec();
+		const auto lock = smap_changed_blocks_for_merge.lock_unique_rec();
 		if (smap_changed_blocks_for_merge.size() < min_blocks) {
 			return false;
 		}
 
-		changed_blocks_for_merge = smap_changed_blocks_for_merge;
+		blocks_todo = smap_changed_blocks_for_merge;
 		smap_changed_blocks_for_merge.clear();
 	}
-	return merge_changed();
+	return merge_list(blocks_todo);
 }
 
 bool WorldMerger::stop()
@@ -522,15 +587,26 @@ bool WorldMerger::throttle()
 
 bool WorldMerger::add_changed(const v3bpos_t &bpos)
 {
-	changed_blocks_for_merge.emplace(bpos);
+	std::unordered_set<v3bpos_t> blocks_todo;
+	std::future<void> previous_async;
+	{
+		std::lock_guard<std::mutex> lock(changed_blocks_mutex);
+		changed_blocks_for_merge.emplace(bpos);
 
-	if (changed_blocks_for_merge.size() < 1000) {
-		return false;
+		if (changed_blocks_for_merge.size() < 1000) {
+			return false;
+		}
+		blocks_todo = std::move(changed_blocks_for_merge);
+		changed_blocks_for_merge.clear();
+		previous_async = std::move(last_async);
+		last_async = std::async(
+				std::launch::async, [this, previous = std::move(previous_async),
+											copy = std::move(blocks_todo)]() mutable {
+					if (previous.valid())
+						previous.wait();
+					merge_list(copy);
+				});
 	}
-	last_async =
-			std::async(std::launch::async, [copy = std::move(changed_blocks_for_merge),
-												   this]() mutable { merge_list(copy); });
-	changed_blocks_for_merge.clear();
 	return true;
 }
 
