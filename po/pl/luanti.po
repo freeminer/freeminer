@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Polish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-07-03 01:01+0000\n"
-"Last-Translator: vergil sparda <literallyvergildmc.contact@gmail.com>\n"
+"PO-Revision-Date: 2026-07-08 07:01+0000\n"
+"Last-Translator: Grzegorz Szymaszek <gszymaszek@short.pl>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/minetest/minetest/"
 "pl/>\n"
 "Language: pl\n"
@@ -81,9 +81,8 @@ msgid "[all | <cmd>] [-t]"
 msgstr "[all | <cmd>] [-t]"
 
 #: builtin/common/settings/components.lua
-#, fuzzy
 msgid "Add keybinding"
-msgstr "Przypisanie klawiszy."
+msgstr "Dodaj przypisanie klawiszy"
 
 #: builtin/common/settings/components.lua
 msgid "Browse"
@@ -414,9 +413,8 @@ msgstr "Brak wyników"
 
 #. TRANSLATORS: Indicates that the action does not have a corresponding keybinding.
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Not bound"
-msgstr "Nie znaleziono"
+msgstr "Nieprzypisany"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Reset setting to default"
@@ -424,9 +422,8 @@ msgstr "Przywróć wartość domyślną"
 
 #. TRANSLATORS: $1 will be replaced with a default setting value
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Reset setting to default: $1"
-msgstr "Przywróć wartość domyślną ($1)"
+msgstr "Przywróć ustawienie domyślne: $1"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
@@ -789,9 +786,8 @@ msgid "Website"
 msgstr "Strona internetowa"
 
 #: builtin/mainmenu/content/dlg_package.lua
-#, fuzzy
 msgid "by $1"
-msgstr "$1 przez $2"
+msgstr "przez $1"
 
 #. TRANSLATORS: Info line for a ContentDB package:
 #. $1 = author,
@@ -1553,9 +1549,8 @@ msgstr ""
 "$1"
 
 #: builtin/mainmenu/tab_online.lua
-#, fuzzy
 msgid "Possible filters"
-msgstr "Filtrowanie Poissona"
+msgstr "Możliwe filtry"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1640,9 +1635,8 @@ msgid "Media..."
 msgstr "Media..."
 
 #: src/client/fontengine.cpp
-#, fuzzy
 msgid "Failed to find a valid font"
-msgstr "Nie udało się skompilować shadera \"%s\"."
+msgstr "Nie udało odnaleźć prawidłowej czcionki"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -1929,9 +1923,8 @@ msgid "Volume changed to %d%%"
 msgstr "Zmieniono poziom głośności na %d%%"
 
 #: src/client/game.cpp
-#, fuzzy
 msgid "Wireframe not supported by video driver"
-msgstr "Shadery są włączone, ale GLSL nie jest wspierany przez sterownik."
+msgstr "Wireframe nie jest wspierane przez sterownik"
 
 #: src/client/game.cpp
 msgid "Wireframe shown"
@@ -2103,19 +2096,16 @@ msgid "Down Arrow"
 msgstr "Strzałka w dół"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "End Key"
-msgstr "Menu"
+msgstr "End"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Help Key"
-msgstr "Delete"
+msgstr "Help"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Home Key"
-msgstr "Klawisz Zoom"
+msgstr "Home"
 
 #: src/client/keycode.cpp
 msgid "Insert"
@@ -2126,9 +2116,8 @@ msgid "Left Arrow"
 msgstr "Strzałka w lewo"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Left Click"
-msgstr "Lewy Control"
+msgstr "Lewy przycisk myszy"
 
 #: src/client/keycode.cpp
 msgid "Left Control"
@@ -2266,9 +2255,8 @@ msgid "Right Arrow"
 msgstr "Strzałka w prawo"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Right Click"
-msgstr "Prawy Control"
+msgstr "Prawy przycisk myszy"
 
 #: src/client/keycode.cpp
 msgid "Right Control"
@@ -2297,9 +2285,8 @@ msgid "Scroll Lock"
 msgstr "Scroll Lock"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Select Key"
-msgstr "Delete"
+msgstr "Select"
 
 #: src/client/keycode.cpp
 msgid "Shift Key"
@@ -2310,9 +2297,8 @@ msgid "Space"
 msgstr "Spacja"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Tab Key"
-msgstr "Break"
+msgstr "Tab"
 
 #: src/client/keycode.cpp
 msgid "Up Arrow"
@@ -2342,9 +2328,8 @@ msgid "Failed to create the texture \"%s\" for the rendering pipeline."
 msgstr "Nie udało się utworzyć tekstury „%s\" dla potoku renderowania."
 
 #: src/client/renderingengine.cpp
-#, fuzzy
 msgid "Could not initialize any supported video driver!"
-msgstr "Shadery są włączone, ale GLSL nie jest wspierany przez sterownik."
+msgstr "Nie udało się uruchomić żadnego obsługiwanego sterownika wideo!"
 
 #: src/client/shader.cpp
 #, c-format
@@ -2352,9 +2337,9 @@ msgid "Failed to compile the \"%s\" shader."
 msgstr "Nie udało się skompilować shadera \"%s\"."
 
 #: src/client/shader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to find \"%s\" shader files."
-msgstr "Nie udało się skompilować shadera \"%s\"."
+msgstr "Nie udało się odnaleźć plików shadera „%s”."
 
 #. TRANSLATORS: GLSL = OpenGL Shading Language
 #: src/client/shader.cpp
@@ -2400,9 +2385,8 @@ msgid "Opening webpage"
 msgstr "Otwieram stronę internetową"
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "Skrypt głównego menu"
+msgstr "Nie udało się załadować skryptu głównego menu!"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -2450,9 +2434,8 @@ msgid "Add button"
 msgstr "Dodaj przycisk"
 
 #: src/gui/touchscreeneditor.cpp
-#, fuzzy
 msgid "Done"
-msgstr "Gotowe!"
+msgstr "Gotowe"
 
 #: src/gui/touchscreeneditor.cpp
 msgid "Remove"
@@ -2502,9 +2485,8 @@ msgid "Inventory"
 msgstr "Ekwipunek"
 
 #: src/gui/touchscreenlayout.cpp
-#, fuzzy
 msgid "Joystick"
-msgstr "Identyfikator Joystick-a"
+msgstr "Joystick"
 
 #: src/gui/touchscreenlayout.cpp src/settings_translation_file.cpp
 msgid "Jump"
@@ -2555,13 +2537,12 @@ msgid "Zoom"
 msgstr "Zoom"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid ""
 "Another client is connected with this name.  If your client closed "
 "unexpectedly, try again in a minute."
 msgstr ""
-"Inny klient jest połączony z taką nazwą.   Jeśli Twój klient zamknął się w "
-"wyniku niespodziewanego błędu, spróbuj jeszcze raz za minutę."
+"Inny klient jest połączony z taką nazwą.  Jeśli Twój klient zamknął się "
+"niespodziewanie, spróbuj ponownie za minutę."
 
 #: src/network/clientpackethandler.cpp
 msgid "Empty passwords are disallowed.  Set a password and try again."
@@ -2595,7 +2576,6 @@ msgid "Name is taken. Please choose another name"
 msgstr "Nazwa jest zajęta. Wybierz inną nazwę"
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid "Player name contains disallowed characters"
 msgstr "Nazwa gracza zawiera niedozwolone znaki"
 
@@ -2608,10 +2588,9 @@ msgid "Server shutting down"
 msgstr "Wyłączanie..."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid ""
 "The server has experienced an internal error.  You will now be disconnected."
-msgstr "Serwer napotkał błąd wewnętrzny.   Zostaniesz teraz rozłączony."
+msgstr "Serwer napotkał błąd wewnętrzny.  Zostaniesz teraz rozłączony."
 
 #: src/network/clientpackethandler.cpp
 msgid "The server is running in singleplayer mode.  You cannot connect."
@@ -2627,22 +2606,20 @@ msgid "Unknown disconnect reason."
 msgstr "Nieznana przyczyna rozłączenia użytkownika."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid ""
 "Your client sent something the server didn't expect.  Try reconnecting or "
 "updating your client."
 msgstr ""
-"Twój klient wysłał serwerowi coś, czego ten się nie spodziewał. Spróbuj "
+"Twój klient wysłał serwerowi coś, czego ten się nie spodziewał.  Spróbuj "
 "połączyć się ponownie lub zaktualizować klienta."
 
 #: src/network/clientpackethandler.cpp
-#, fuzzy
 msgid ""
 "Your client's version is not supported.\n"
 "Please contact the server administrator."
 msgstr ""
 "Wersja Twojego klienta nie jest wspierana.\n"
-"Skontaktuj się z administratorem serwera."
+"Skontaktuj się z administratorem serwera."
 
 #: src/server.cpp
 #, c-format
@@ -2887,7 +2864,6 @@ msgstr ""
 "renderowania."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Allow clouds to look 3D instead of flat."
 msgstr "Włącz chmury 3D zamiast płaskich."
 
@@ -2958,9 +2934,8 @@ msgid "Anticheat movement tolerance"
 msgstr "Tolerancja ruchu anticheata"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append item name to tooltips"
-msgstr "Dołącz nazwę przedmiotu do jego opisu."
+msgstr "Dołącz nazwę przedmiotu do jego opisu"
 
 #: src/settings_translation_file.cpp
 #, fuzzy
