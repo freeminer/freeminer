@@ -6948,11 +6948,13 @@ Environment access
       or `nil` on failure.
 * `core.get_mapgen_object(objectname)`
     * Return requested mapgen object if available (see [Mapgen objects](#mapgen-objects))
-* `core.get_heat(pos)`
+* `core.get_heat(pos, include_add=true)`
     * Returns the heat (a number) at the position, or `nil` on failure.
-* `core.get_humidity(pos)`
+    * If `include_add` is false, local dynamic heat additions are ignored.
+* `core.get_humidity(pos, include_add=true)`
     * Returns the humidity (a number) at the position, or `nil` on failure.
-* `core.get_wind(pos)`
+    * If `include_add` is false, local dynamic humidity additions are ignored.
+* `core.get_wind(pos, include_add=true)`
     * Returns the wind as a vector at the position, or `nil` on failure.
 * `core.get_biome_data(pos)`
     * Returns a table containing:
