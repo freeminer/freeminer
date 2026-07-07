@@ -94,6 +94,27 @@ float clamp_weather_float(float value, float min_value, float max_value)
 	return std::max(min_value, std::min(max_value, value));
 }
 
+template <typename AtomicValue>
+void store_weather_split(
+		AtomicValue &base_ref, AtomicValue &add_ref, float total, float min_value, float max_value)
+{
+	total = clamp_weather_float(total, min_value, max_value);
+
+	float add = static_cast<float>(add_ref.load());
+	float base = total - add;
+	if (base < min_value) {
+		base = min_value;
+		add = total - base;
+	} else if (base > max_value) {
+		base = max_value;
+		add = total - base;
+	}
+
+	const auto base_i = static_cast<short>(std::lround(base));
+	base_ref = base_i;
+	add_ref = static_cast<short>(std::lround(total - static_cast<float>(base_i)));
+}
+
 float heat_transfer_weight(const v3pos_t &dir, float delta)
 {
 	if (dir.Y > 0)
@@ -626,11 +647,14 @@ u32 ServerMap::stepLoadedBlockWeather(
 	for (const WeatherResult &result : results) {
 		BlockWeatherState &state = states[result.index];
 		const auto block_lock = state.block->try_lock_unique_rec();
-		if (!block_lock->owns_lock())
+		if (!block_lock->owns_lock()) {
 			continue;
+		}
 
-		state.block->heat = std::lround(result.heat - state.block->heat_add);
-		state.block->humidity = std::lround(result.humidity - state.block->humidity_add);
+		store_weather_split(state.block->heat, state.block->heat_add,
+				result.heat, -100.0f, 100.0f);
+		store_weather_split(state.block->humidity, state.block->humidity_add,
+				result.humidity, 0.0f, 100.0f);
 		state.block->wind = result.wind;
 		state.block->heat_last_update = next_update;
 		state.block->humidity_last_update = next_update;

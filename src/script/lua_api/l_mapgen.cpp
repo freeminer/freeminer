@@ -512,8 +512,12 @@ int ModApiMapgen::l_get_heat(lua_State *L)
 
 	v3pos_t pos = read_v3pos(L, 1);
 
-	// freeminer dynamic:
-	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : 0;
+	// freeminer dynamic: default to total block climate, including local adders.
+	bool block_add = true;
+	if (lua_isnumber(L, 2))
+		block_add = lua_tonumber(L, 2) != 0;
+	else if (!lua_isnoneornil(L, 2))
+		block_add = lua_toboolean(L, 2);
 	GET_ENV_PTR_NO_MAP_LOCK;
 	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos, nullptr, nullptr, block_add));
 	return 1;
@@ -538,10 +542,14 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 
 	v3pos_t pos = read_v3pos(L, 1);
 
-	// freeminer dynamic:
-	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : 0;
+	// freeminer dynamic: default to total block climate, including local adders.
+	bool block_add = true;
+	if (lua_isnumber(L, 2))
+		block_add = lua_tonumber(L, 2) != 0;
+	else if (!lua_isnoneornil(L, 2))
+		block_add = lua_toboolean(L, 2);
 	GET_ENV_PTR_NO_MAP_LOCK;
-	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos,nullptr, nullptr, block_add));
+	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos, nullptr, nullptr, block_add));
 	return 1;
 
 	const BiomeGen *biomegen = getBiomeGen(L);

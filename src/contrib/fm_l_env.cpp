@@ -712,6 +712,9 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		const double hit_strength = std::max(0.0, available_strength - pass_loss);
 		const bool weak_edge = available_strength <=
 				blast_distance_loss + resistance + 1.0;
+		const int melt_level_multiplier =
+				itemgroup_get(cf.groups, "tnt_melt_level_multiplier");
+		const bool forced_tnt_melt = melt_level_multiplier > 0;
 
 		if (blocks_wave && hit_strength <= blast_min_strength) {
 			++last_blocked_rays;
@@ -724,16 +727,26 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		if (!blocks_wave && !charge_strength(candidate.step_cost))
 			return;
 
-		if (blocks_wave && hit_strength > 0.0 && liquid_real && (last || weak_edge) &&
-				dr > melt_min_radius && melt_chance > 0 &&
-				myrand_range(1, melt_chance) <= 1) {
+		if (blocks_wave && hit_strength > 0.0 && liquid_real &&
+				(forced_tnt_melt ||
+						((last || weak_edge) && dr > melt_min_radius &&
+								melt_chance > 0 &&
+								myrand_range(1, melt_chance) <= 1))) {
 			if (!can_charge_strength(resistance))
 				return;
 
 			MapNode melted_node = candidate.node;
+			const s16 source_level = candidate.node.getLevel(ndef);
 			const int changed = melted_node.freeze_melt(ndef, melt_direction);
 			melted += changed;
 			if (changed) {
+				const u8 target_max_level = melted_node.getMaxLevel(ndef);
+				if (melt_level_multiplier > 1 && source_level > 0 &&
+						target_max_level > 0) {
+					const s16 target_level = rangelim<s16>(
+							source_level * melt_level_multiplier, 1, target_max_level);
+					melted_node.setLevel(ndef, target_level);
+				}
 				charge_strength(resistance);
 				env->swapNode(candidate.node_pos, melted_node);
 			}
