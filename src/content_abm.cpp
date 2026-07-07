@@ -510,8 +510,8 @@ public:
 		return nothing;
 	};
 
-	virtual float getTriggerInterval() override { return 10; }
-	virtual u32 getTriggerChance() override { return 4; }
+	virtual float getTriggerInterval() override { return 5; }
+	virtual u32 getTriggerChance() override { return 1; }
 	bool getSimpleCatchUp() override { return true; }
 	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
 	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
