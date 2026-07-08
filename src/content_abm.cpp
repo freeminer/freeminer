@@ -500,10 +500,11 @@ public:
 		return tc;
 	}
 	const std::vector<std::string> nothing;
+	const std::vector<std::string> rn{"air"};
 	virtual const std::vector<std::string> &getRequiredNeighbors(
 			uint8_t activate) const override
 	{
-		return nothing;
+		return rn;
 	}
 	virtual const std::vector<std::string> &getWithoutNeighbors() const override
 	{
