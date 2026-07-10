@@ -848,8 +848,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	};
 	const auto fog_color_for_climate = [&](u8 alpha, const FarFogClimate &climate,
 											   const FarFogAltitudeProfile &altitude,
-											   float fog_y_relative_nodes,
-											   float density, float top_view) {
+											   float fog_y_relative_nodes, float density,
+											   float top_view) {
 		const float cold = 1.0f - smoothstep_f(-5.0f, 35.0f, climate.heat);
 		const float humidity = std::clamp(climate.humidity, 0.0f, 100.0f);
 		const float thin_mist = 1.0f - smoothstep_f(52.0f, 78.0f, humidity);
@@ -882,9 +882,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 								(0.91f + daylight * 0.10f)),
 				far_fog_color_channel(std::min<float>(255.0f,
 											  light_b + cold * 28.0f + thin_mist * 34.0f),
-						std::min(1.0f,
-								fog_light * storm_light * density_light *
-										(1.07f - daylight * 0.08f))));
+						std::min(1.0f, fog_light * storm_light * density_light *
+											   (1.07f - daylight * 0.08f))));
 	};
 
 	if (m_far_fog_meshbuffers.empty())
@@ -1052,9 +1051,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 								  smoothstep_f(30.0f, 220.0f,
 										  static_cast<float>(m_camera_position_node.Y) -
 												  visual_center_y_nodes);
-		const auto color = fog_color_for_climate(
-				alpha, climate, altitude, visual_center_y_nodes - terrain_y_nodes,
-				density, top_view);
+		const auto color = fog_color_for_climate(alpha, climate, altitude,
+				visual_center_y_nodes - terrain_y_nodes, density, top_view);
 
 		const v3f rx = right * half_width;
 		const v3f uy = up * half_height;
@@ -1237,25 +1235,29 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	};
 
 	const auto draw_near_drawlist_blocks = [&]() -> bool {
-		const bool drawlist_current = m_drawlist_current.load(std::memory_order_acquire);
-		const auto &drawlist = drawlist_current ? m_drawlist_1 : m_drawlist_0;
 		const bpos_t near_cell_span = 1 << m_control.cell_size_pow;
 		std::unordered_map<v3bpos_t, MapBlockPtr, v3posHash, v3posEqual> near_cells;
-		near_cells.reserve(drawlist.size());
-		for (const auto &[block_pos, block] : drawlist) {
-			if (!block)
-				continue;
+		{
+			std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
+			const bool drawlist_current =
+					m_drawlist_current.load(std::memory_order_acquire);
+			const auto &drawlist = drawlist_current ? m_drawlist_1 : m_drawlist_0;
+			near_cells.reserve(drawlist.size());
+			for (const auto &[block_pos, block] : drawlist) {
+				if (!block)
+					continue;
 
-			const auto fog_step = block->far_step_draw ?: block->far_step;
-			if (fog_step)
-				continue;
+				const auto fog_step = block->far_step_draw ?: block->far_step;
+				if (fog_step)
+					continue;
 
-			const v3bpos_t cell_pos =
-					far_fog_align_block_pos(block_pos, m_control.cell_size_pow);
-			auto [it, inserted] = near_cells.emplace(cell_pos, block);
-			if (!inserted &&
-					far_fog_climate_missing(far_fog_climate_from_block(it->second)))
-				it->second = block;
+				const v3bpos_t cell_pos =
+						far_fog_align_block_pos(block_pos, m_control.cell_size_pow);
+				auto [it, inserted] = near_cells.emplace(cell_pos, block);
+				if (!inserted &&
+						far_fog_climate_missing(far_fog_climate_from_block(it->second)))
+					it->second = block;
+			}
 		}
 
 		std::vector<DrawlistFogCell> sorted_near_cells;
@@ -1315,28 +1317,32 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	};
 
 	const auto draw_far_drawlist_blocks = [&](bool near_only) -> bool {
-		const bool drawlist_current = m_drawlist_current.load(std::memory_order_acquire);
-		const auto &drawlist = drawlist_current ? m_drawlist_1 : m_drawlist_0;
 		std::vector<DrawlistFogCell> sorted_far_cells;
-		sorted_far_cells.reserve(drawlist.size());
-		for (const auto &[block_pos, block] : drawlist) {
-			if (!block)
-				continue;
+		{
+			std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
+			const bool drawlist_current =
+					m_drawlist_current.load(std::memory_order_acquire);
+			const auto &drawlist = drawlist_current ? m_drawlist_1 : m_drawlist_0;
+			sorted_far_cells.reserve(drawlist.size());
+			for (const auto &[block_pos, block] : drawlist) {
+				if (!block)
+					continue;
 
-			const auto fog_step = block->far_step_draw ?: block->far_step;
-			if (fog_step >= FARMESH_STEP_MAX)
-				continue;
-			if (!fog_step)
-				continue;
+				const auto fog_step = block->far_step_draw ?: block->far_step;
+				if (fog_step >= FARMESH_STEP_MAX)
+					continue;
+				if (!fog_step)
+					continue;
 
-			const bpos_t block_span = 1 << (fog_step + m_control.cell_size_pow);
-			sorted_far_cells.push_back(DrawlistFogCell{
-					.block_pos = block_pos,
-					.step = fog_step,
-					.block_span = block_span,
-					.distance = cell_distance(block_pos, block_span),
-					.block = block,
-			});
+				const bpos_t block_span = 1 << (fog_step + m_control.cell_size_pow);
+				sorted_far_cells.push_back(DrawlistFogCell{
+						.block_pos = block_pos,
+						.step = fog_step,
+						.block_span = block_span,
+						.distance = cell_distance(block_pos, block_span),
+						.block = block,
+				});
+			}
 		}
 		std::sort(sorted_far_cells.begin(), sorted_far_cells.end(), farthest_first);
 

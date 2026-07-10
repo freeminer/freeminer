@@ -5,7 +5,7 @@
 #pragma once
 
 // fm:
-#include "client/fm_far_container.h"
+#include "fm_far_container.h"
 #include "../servermap.h"
 #include "map_settings_manager.h"
 #include "mapgen/mapgen.h"

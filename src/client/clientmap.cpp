@@ -425,6 +425,7 @@ private:
 
 void ClientMap::clearDrawList()
 {
+	std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
 	auto & m_drawlist = m_drawlist_0;
 
 
@@ -445,6 +446,7 @@ void ClientMap::updateDrawList(float dtime, unsigned int max_cycle_ms)
 {
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 
+	std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
 	clearDrawList();
 
 	auto & m_drawlist = m_drawlist_0;
@@ -911,9 +913,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	TimeTaker timer_step("ClientMap::updateDrawList");
 
-	auto &drawlist = !m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
-
-		drawlist.clear();
+	drawlist_map drawlist{MapBlockComparer(getNodeBlockPos(m_camera_position_node))};
 
 	//auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
 
@@ -1244,7 +1244,14 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	//for (auto & ir : *m_drawlist)
 	//	ir.second->refDrop();
 
-	m_drawlist_current = !m_drawlist_current;
+	const auto drawlist_size = drawlist.size();
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
+		const bool current = m_drawlist_current.load(std::memory_order_relaxed);
+		auto &back_drawlist = current ? m_drawlist_0 : m_drawlist_1;
+		back_drawlist = std::move(drawlist);
+		m_drawlist_current.store(!current, std::memory_order_release);
+	}
 
 /*
 	m_control.blocks_would_have_drawn = blocks_would_have_drawn;
@@ -1269,7 +1276,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	g_profiler->avg("MapBlock meshes in range [#]", blocks_in_range_with_mesh);
 	g_profiler->avg("MapBlocks occlusion culled [#]", blocks_occlusion_culled);
-	g_profiler->avg("MapBlocks drawn [#]", drawlist.size());
+	g_profiler->avg("MapBlocks drawn [#]", drawlist_size);
 	//g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);
 	g_profiler->avg("MapBlocks loaded [#]", m_blocks.size());
 }
@@ -1463,7 +1470,14 @@ static u32 transformBuffersToDrawOrder(
 void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 {
 
-	auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
+	std::vector<std::pair<v3bpos_t, MapBlockPtr>> drawlist_snapshot;
+	{
+		std::lock_guard<std::recursive_mutex> drawlist_lock(m_drawlist_mutex);
+		const auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
+		drawlist_snapshot.reserve(m_drawlist.size());
+		for (const auto &it : m_drawlist)
+			drawlist_snapshot.emplace_back(it);
+	}
 	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ZoneScoped;
@@ -1516,10 +1530,10 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
 
 	//const MeshGrid mesh_grid = m_client->getMeshGrid();
-    draw_order.reserve(m_drawlist.size());
-	mesh_keepalive.reserve(m_drawlist.size());
-	for (auto &i : m_drawlist) {
-		const v3s16 block_pos = i.first;
+    draw_order.reserve(drawlist_snapshot.size());
+	mesh_keepalive.reserve(drawlist_snapshot.size());
+	for (auto &i : drawlist_snapshot) {
+		const auto block_pos = i.first;
 		const auto & block = i.second;
 		int mesh_step = farmesh::getLodStep(
 				m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf);
@@ -2178,6 +2192,7 @@ void ClientMap::reportMetrics(u64 save_time_us, u32 saved_blocks, u32 all_blocks
 
 void ClientMap::updateTransparentMeshBuffers()
 {
+	std::lock_guard<std::recursive_mutex> drawlist_lock(m_drawlist_mutex);
 	auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 

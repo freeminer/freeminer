@@ -219,6 +219,7 @@ private:
     using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic_bool m_drawlist_current = false;
+	std::recursive_mutex m_drawlist_mutex;
     using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
