@@ -15,8 +15,6 @@ You should have received a copy of the GNU General Public License
 along with Freeminer. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "debug/dump.h"
-
 #include "config.h"
 #include "mapgen_terraindiffusion.h"
 #include "mapgen_terraindiffusion_native.h"
@@ -48,45 +46,42 @@ along with Freeminer. If not, see <http://www.gnu.org/licenses/>.
 
 namespace
 {
-	constexpr float TD_DEFAULT_HEAT = 20.0f;
-	constexpr float TD_DEFAULT_HUMIDITY = 50.0f;
+constexpr float TD_DEFAULT_HEAT = 20.0f;
+constexpr float TD_DEFAULT_HUMIDITY = 50.0f;
 
-	u16 readU16LE(const std::string &data, size_t offset)
-	{
-		const auto *bytes =
-				reinterpret_cast<const unsigned char *>(data.data() + offset);
-		return (u16)bytes[0] | ((u16)bytes[1] << 8);
-	}
+u16 readU16LE(const std::string &data, size_t offset)
+{
+	const auto *bytes = reinterpret_cast<const unsigned char *>(data.data() + offset);
+	return (u16)bytes[0] | ((u16)bytes[1] << 8);
+}
 
-	s16 readS16LE(const std::string &data, size_t offset)
-	{
-		return static_cast<s16>(readU16LE(data, offset));
-	}
+s16 readS16LE(const std::string &data, size_t offset)
+{
+	return static_cast<s16>(readU16LE(data, offset));
+}
 
-	float readFloatLE(const std::string &data, size_t offset)
-	{
-		const auto *bytes =
-				reinterpret_cast<const unsigned char *>(data.data() + offset);
-		const u32 bits = (u32)bytes[0] | ((u32)bytes[1] << 8) |
-				((u32)bytes[2] << 16) | ((u32)bytes[3] << 24);
-		float value;
-		static_assert(sizeof(value) == sizeof(bits), "float must be 32-bit");
-		std::memcpy(&value, &bits, sizeof(value));
-		return value;
-	}
+float readFloatLE(const std::string &data, size_t offset)
+{
+	const auto *bytes = reinterpret_cast<const unsigned char *>(data.data() + offset);
+	const u32 bits = (u32)bytes[0] | ((u32)bytes[1] << 8) | ((u32)bytes[2] << 16) |
+					 ((u32)bytes[3] << 24);
+	float value;
+	static_assert(sizeof(value) == sizeof(bits), "float must be 32-bit");
+	std::memcpy(&value, &bits, sizeof(value));
+	return value;
+}
 
-	std::string addTerrainApiParams(const std::string &base_url, pos_t min_x,
-			pos_t min_z, pos_t max_x, pos_t max_z, s16 scale, s32 seed,
-			bool send_seed)
-	{
-		std::ostringstream os;
-		os << base_url << (base_url.find('?') == std::string::npos ? '?' : '&')
-		   << "i1=" << min_z << "&j1=" << min_x << "&i2=" << (max_z + 1)
-		   << "&j2=" << (max_x + 1) << "&scale=" << scale;
-		if (send_seed)
-			os << "&seed=" << seed;
-		return os.str();
-	}
+std::string addTerrainApiParams(const std::string &base_url, pos_t min_x, pos_t min_z,
+		pos_t max_x, pos_t max_z, s16 scale, s32 seed, bool send_seed)
+{
+	std::ostringstream os;
+	os << base_url << (base_url.find('?') == std::string::npos ? '?' : '&')
+	   << "i1=" << min_z << "&j1=" << min_x << "&i2=" << (max_z + 1)
+	   << "&j2=" << (max_x + 1) << "&scale=" << scale;
+	if (send_seed)
+		os << "&seed=" << seed;
+	return os.str();
+}
 }
 
 class TerrainDiffusionOnnxModel
@@ -123,8 +118,8 @@ bool TerrainDiffusionOnnxModel::load(const std::string &path)
 		m_session_options->SetIntraOpNumThreads(1);
 		m_session_options->SetGraphOptimizationLevel(
 				GraphOptimizationLevel::ORT_ENABLE_BASIC);
-		m_session = std::make_unique<Ort::Session>(
-				*m_env, path.c_str(), *m_session_options);
+		m_session =
+				std::make_unique<Ort::Session>(*m_env, path.c_str(), *m_session_options);
 
 		Ort::AllocatorWithDefaultOptions allocator;
 		auto input_name = m_session->GetInputNameAllocated(0, allocator);
@@ -142,19 +137,17 @@ bool TerrainDiffusionOnnxModel::load(const std::string &path)
 			throw std::runtime_error("ONNX model has no outputs");
 
 		m_loaded = true;
-		infostream << "TerrainDiffusion mapgen loaded ONNX model " << path
-				   << std::endl;
+		infostream << "TerrainDiffusion mapgen loaded ONNX model " << path << std::endl;
 		return true;
 	} catch (const std::exception &e) {
-		errorstream << "TerrainDiffusion mapgen failed to load ONNX model "
-					<< path << ": " << e.what() << std::endl;
+		errorstream << "TerrainDiffusion mapgen failed to load ONNX model " << path
+					<< ": " << e.what() << std::endl;
 		m_loaded = false;
 		return false;
 	}
 #else
 	warningstream << "TerrainDiffusion mapgen ONNX model configured but "
-				  << "Freeminer was built without ONNX Runtime: " << path
-				  << std::endl;
+				  << "Freeminer was built without ONNX Runtime: " << path << std::endl;
 	return false;
 #endif
 }
@@ -183,13 +176,11 @@ bool TerrainDiffusionOnnxModel::sampleGrid(float node_scale, float height_scale,
 			}
 		}
 
-		std::array<int64_t, 2> input_shape{
-				static_cast<int64_t>(count), 2};
-		Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(
-				OrtArenaAllocator, OrtMemTypeDefault);
-		Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-				memory_info, coords.data(), coords.size(),
-				input_shape.data(), input_shape.size());
+		std::array<int64_t, 2> input_shape{static_cast<int64_t>(count), 2};
+		Ort::MemoryInfo memory_info =
+				Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+		Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info,
+				coords.data(), coords.size(), input_shape.data(), input_shape.size());
 
 		std::vector<const char *> input_names{m_input_name.c_str()};
 		std::vector<const char *> output_names;
@@ -197,9 +188,9 @@ bool TerrainDiffusionOnnxModel::sampleGrid(float node_scale, float height_scale,
 		for (const std::string &name : m_output_names)
 			output_names.push_back(name.c_str());
 
-		auto outputs = m_session->Run(Ort::RunOptions{nullptr},
-				input_names.data(), &input_tensor, input_names.size(),
-				output_names.data(), output_names.size());
+		auto outputs = m_session->Run(Ort::RunOptions{nullptr}, input_names.data(),
+				&input_tensor, input_names.size(), output_names.data(),
+				output_names.size());
 
 		if (outputs.empty())
 			return false;
@@ -230,17 +221,18 @@ bool TerrainDiffusionOnnxModel::sampleGrid(float node_scale, float height_scale,
 			if (climate_data && climate_channels >= 2) {
 				const float *climate = climate_data + n * climate_channels;
 				sample.heat = rangelim(std::lround(climate[0]), -273L, 2000L);
-				sample.humidity = climate_channels >= 3
-						? MapgenTerrainDiffusion::precipToHumidity(climate[2])
-						: rangelim(std::lround(climate[1]), 0L, 100L);
+				sample.humidity =
+						climate_channels >= 3
+								? MapgenTerrainDiffusion::precipToHumidity(climate[2])
+								: rangelim(std::lround(climate[1]), 0L, 100L);
 				sample.has_climate = true;
 			}
 		}
 
 		return true;
 	} catch (const std::exception &e) {
-		errorstream << "TerrainDiffusion mapgen ONNX inference failed: "
-					<< e.what() << std::endl;
+		errorstream << "TerrainDiffusion mapgen ONNX inference failed: " << e.what()
+					<< std::endl;
 		return false;
 	}
 #else
@@ -251,45 +243,35 @@ bool TerrainDiffusionOnnxModel::sampleGrid(float node_scale, float height_scale,
 void MapgenTerrainDiffusionParams::readParams(const Settings *settings)
 {
 	MapgenV7Params::readParams(settings);
-	settings->getFlagStrNoEx("mgterraindiffusion_spflags", spflags,
-			flagdesc_mapgen_v7);
+	settings->getFlagStrNoEx("mgterraindiffusion_spflags", spflags, flagdesc_mapgen_v7);
 	settings->getNoEx("mgterraindiffusion_height_model", height_model);
 	settings->getNoEx("mgterraindiffusion_native_model_dir", native_model_dir);
 	settings->getS16NoEx("mgterraindiffusion_native_node_scale", native_node_scale);
-	settings->getFloatNoEx("mgterraindiffusion_native_height_scale",
-			native_height_scale);
-	settings->getFloatNoEx("mgterraindiffusion_native_height_offset",
-			native_height_offset);
-	settings->getFloatNoEx("mgterraindiffusion_native_residual_std",
-			native_residual_std);
-	settings->getU16NoEx("mgterraindiffusion_native_cache_tiles",
-			native_cache_tiles);
+	settings->getFloatNoEx("mgterraindiffusion_native_height_scale", native_height_scale);
+	settings->getFloatNoEx(
+			"mgterraindiffusion_native_height_offset", native_height_offset);
+	settings->getFloatNoEx("mgterraindiffusion_native_residual_std", native_residual_std);
+	settings->getU16NoEx("mgterraindiffusion_native_cache_tiles", native_cache_tiles);
 	settings->getU16NoEx("mgterraindiffusion_native_cache_mb", native_cache_mb);
 	settings->getNoEx("mgterraindiffusion_native_provider", native_provider);
 	settings->getS16NoEx("mgterraindiffusion_native_device_id", native_device_id);
-	settings->getS16NoEx("mgterraindiffusion_native_intra_threads",
-			native_intra_threads);
-	settings->getNoEx("mgterraindiffusion_native_conditioning_stats",
-			native_conditioning_stats);
+	settings->getS16NoEx("mgterraindiffusion_native_intra_threads", native_intra_threads);
+	settings->getNoEx(
+			"mgterraindiffusion_native_conditioning_stats", native_conditioning_stats);
 	settings->getBoolNoEx("mgterraindiffusion_native_prefetch", native_prefetch);
-	settings->getFloatNoEx("mgterraindiffusion_model_node_scale",
-			model_node_scale);
-	settings->getFloatNoEx("mgterraindiffusion_model_height_scale",
-			model_height_scale);
-	settings->getFloatNoEx("mgterraindiffusion_model_height_offset",
-			model_height_offset);
+	settings->getFloatNoEx("mgterraindiffusion_model_node_scale", model_node_scale);
+	settings->getFloatNoEx("mgterraindiffusion_model_height_scale", model_height_scale);
+	settings->getFloatNoEx("mgterraindiffusion_model_height_offset", model_height_offset);
 	settings->getNoEx("mgterraindiffusion_api_url", api_url);
 	settings->getS16NoEx("mgterraindiffusion_api_scale", api_scale);
-	settings->getFloatNoEx("mgterraindiffusion_api_height_scale",
-			api_height_scale);
-	settings->getFloatNoEx("mgterraindiffusion_api_height_offset",
-			api_height_offset);
+	settings->getFloatNoEx("mgterraindiffusion_api_height_scale", api_height_scale);
+	settings->getFloatNoEx("mgterraindiffusion_api_height_offset", api_height_offset);
 	settings->getS32NoEx("mgterraindiffusion_api_timeout_ms", api_timeout_ms);
 	settings->getBoolNoEx("mgterraindiffusion_api_send_seed", api_send_seed);
-	settings->getFloatNoEx("mgterraindiffusion_fallback_height_scale",
-			fallback_height_scale);
-	settings->getFloatNoEx("mgterraindiffusion_fallback_detail_scale",
-			fallback_detail_scale);
+	settings->getFloatNoEx(
+			"mgterraindiffusion_fallback_height_scale", fallback_height_scale);
+	settings->getFloatNoEx(
+			"mgterraindiffusion_fallback_detail_scale", fallback_detail_scale);
 
 	model_node_scale = rangelim(model_node_scale, 0.00001f, 1000000.0f);
 	native_node_scale = rangelim(native_node_scale, (s16)1, (s16)64);
@@ -309,8 +291,7 @@ void MapgenTerrainDiffusionParams::readParams(const Settings *settings)
 
 void MapgenTerrainDiffusionParams::writeParams(Settings *settings) const
 {
-	settings->setFlagStr("mgterraindiffusion_spflags", spflags,
-			flagdesc_mapgen_v7);
+	settings->setFlagStr("mgterraindiffusion_spflags", spflags, flagdesc_mapgen_v7);
 	settings->set("mgterraindiffusion_height_model", height_model);
 	settings->set("mgterraindiffusion_native_model_dir", native_model_dir);
 	settings->setS16("mgterraindiffusion_native_node_scale", native_node_scale);
@@ -322,8 +303,8 @@ void MapgenTerrainDiffusionParams::writeParams(Settings *settings) const
 	settings->set("mgterraindiffusion_native_provider", native_provider);
 	settings->setS16("mgterraindiffusion_native_device_id", native_device_id);
 	settings->setS16("mgterraindiffusion_native_intra_threads", native_intra_threads);
-	settings->set("mgterraindiffusion_native_conditioning_stats",
-			native_conditioning_stats);
+	settings->set(
+			"mgterraindiffusion_native_conditioning_stats", native_conditioning_stats);
 	settings->setBool("mgterraindiffusion_native_prefetch", native_prefetch);
 	settings->setFloat("mgterraindiffusion_model_node_scale", model_node_scale);
 	settings->setFloat("mgterraindiffusion_model_height_scale", model_height_scale);
@@ -334,17 +315,14 @@ void MapgenTerrainDiffusionParams::writeParams(Settings *settings) const
 	settings->setFloat("mgterraindiffusion_api_height_offset", api_height_offset);
 	settings->setS32("mgterraindiffusion_api_timeout_ms", api_timeout_ms);
 	settings->setBool("mgterraindiffusion_api_send_seed", api_send_seed);
-	settings->setFloat("mgterraindiffusion_fallback_height_scale",
-			fallback_height_scale);
-	settings->setFloat("mgterraindiffusion_fallback_detail_scale",
-			fallback_detail_scale);
+	settings->setFloat("mgterraindiffusion_fallback_height_scale", fallback_height_scale);
+	settings->setFloat("mgterraindiffusion_fallback_detail_scale", fallback_detail_scale);
 	MapgenV7Params::writeParams(settings);
 }
 
 void MapgenTerrainDiffusionParams::setDefaultSettings(Settings *settings)
 {
-	settings->setDefault("mgterraindiffusion_spflags", flagdesc_mapgen_v7,
-			MGV7_CAVERNS);
+	settings->setDefault("mgterraindiffusion_spflags", flagdesc_mapgen_v7, MGV7_CAVERNS);
 	settings->setDefault("mgterraindiffusion_height_model", "");
 	settings->setDefault("mgterraindiffusion_native_model_dir", "");
 	settings->setDefault("mgterraindiffusion_native_node_scale", "30");
@@ -373,16 +351,15 @@ void MapgenTerrainDiffusionParams::setDefaultSettings(Settings *settings)
 
 MapgenTerrainDiffusion::MapgenTerrainDiffusion(
 		MapgenTerrainDiffusionParams *params, EmergeParams *emerge) :
-	MapgenV7((MapgenV7Params *)params, emerge),
-	mg_params(params),
-	m_model(std::make_unique<TerrainDiffusionOnnxModel>()),
-	m_native(std::make_unique<TerrainDiffusionNativePipeline>(seed,
-			mg_params->native_node_scale, mg_params->native_height_scale,
-			mg_params->native_height_offset, mg_params->native_residual_std,
-			mg_params->native_cache_tiles, mg_params->native_cache_mb,
-			mg_params->native_provider, mg_params->native_device_id,
-			mg_params->native_intra_threads,
-			mg_params->native_conditioning_stats, mg_params->native_prefetch))
+		MapgenV7((MapgenV7Params *)params, emerge), mg_params(params),
+		m_model(std::make_unique<TerrainDiffusionOnnxModel>()),
+		m_native(std::make_unique<TerrainDiffusionNativePipeline>(seed,
+				mg_params->native_node_scale, mg_params->native_height_scale,
+				mg_params->native_height_offset, mg_params->native_residual_std,
+				mg_params->native_cache_tiles, mg_params->native_cache_mb,
+				mg_params->native_provider, mg_params->native_device_id,
+				mg_params->native_intra_threads, mg_params->native_conditioning_stats,
+				mg_params->native_prefetch))
 {
 	if (!mg_params->native_model_dir.empty())
 		m_native->load(mg_params->native_model_dir);
@@ -408,8 +385,8 @@ weather::humidity_t MapgenTerrainDiffusion::precipToHumidity(float precipitation
 	return rangelim(std::lround(precipitation / 20.0f), 0L, 100L);
 }
 
-float MapgenTerrainDiffusion::sampleFbm(float x, float z, float scale,
-		s32 seed_off, int octaves, float persistence, float lacunarity) const
+float MapgenTerrainDiffusion::sampleFbm(float x, float z, float scale, s32 seed_off,
+		int octaves, float persistence, float lacunarity) const
 {
 	float amplitude = 1.0f;
 	float frequency = scale;
@@ -417,8 +394,7 @@ float MapgenTerrainDiffusion::sampleFbm(float x, float z, float scale,
 	float denom = 0.0f;
 
 	for (int i = 0; i < octaves; ++i) {
-		total += noise2d_value(x * frequency, z * frequency,
-						 seed + seed_off + i, true) *
+		total += noise2d_value(x * frequency, z * frequency, seed + seed_off + i, true) *
 				 amplitude;
 		denom += amplitude;
 		amplitude *= persistence;
@@ -428,8 +404,8 @@ float MapgenTerrainDiffusion::sampleFbm(float x, float z, float scale,
 	return denom > 0.0f ? total / denom : 0.0f;
 }
 
-float MapgenTerrainDiffusion::sampleRidged(float x, float z, float scale,
-		s32 seed_off, int octaves, float persistence, float lacunarity) const
+float MapgenTerrainDiffusion::sampleRidged(float x, float z, float scale, s32 seed_off,
+		int octaves, float persistence, float lacunarity) const
 {
 	float amplitude = 1.0f;
 	float frequency = scale;
@@ -437,8 +413,7 @@ float MapgenTerrainDiffusion::sampleRidged(float x, float z, float scale,
 	float denom = 0.0f;
 
 	for (int i = 0; i < octaves; ++i) {
-		float n = noise2d_value(x * frequency, z * frequency,
-				seed + seed_off + i, true);
+		float n = noise2d_value(x * frequency, z * frequency, seed + seed_off + i, true);
 		float ridge = 1.0f - std::fabs(n);
 		total += ridge * ridge * amplitude;
 		denom += amplitude;
@@ -452,10 +427,8 @@ float MapgenTerrainDiffusion::sampleRidged(float x, float z, float scale,
 float MapgenTerrainDiffusion::fallbackHeightAtPoint(pos_t x, pos_t z) const
 {
 	const float detail = std::max(mg_params->fallback_detail_scale, 0.0f);
-	const float continent = smoothstep(sampleFbm(x, z, 1.0f / 4800.0f,
-										 100, 5, 0.55f, 2.0f) *
-									  0.5f +
-			0.5f);
+	const float continent = smoothstep(
+			sampleFbm(x, z, 1.0f / 4800.0f, 100, 5, 0.55f, 2.0f) * 0.5f + 0.5f);
 	const float land = smoothstep((continent - 0.38f) / 0.38f);
 	const float basin = smoothstep((0.56f - continent) / 0.56f);
 	const float macro = sampleFbm(x, z, 1.0f / 1300.0f, 200, 4, 0.55f, 2.0f);
@@ -464,10 +437,9 @@ float MapgenTerrainDiffusion::fallbackHeightAtPoint(pos_t x, pos_t z) const
 
 	const float height_scale = mg_params->fallback_height_scale;
 	return water_level - height_scale * 0.58f * basin +
-			height_scale * (continent - 0.45f) +
-			land * (macro * height_scale * 0.45f +
-						   hills * height_scale * 0.18f * detail +
-						   ridges * height_scale * 0.75f);
+		   height_scale * (continent - 0.45f) +
+		   land * (macro * height_scale * 0.45f + hills * height_scale * 0.18f * detail +
+						  ridges * height_scale * 0.75f);
 }
 
 TerrainDiffusionSample MapgenTerrainDiffusion::fallbackSample(pos_t x, pos_t z) const
@@ -475,25 +447,21 @@ TerrainDiffusionSample MapgenTerrainDiffusion::fallbackSample(pos_t x, pos_t z) 
 	TerrainDiffusionSample sample;
 	sample.height = fallbackHeightAtPoint(x, z);
 
-	const float lat_noise =
-			sampleFbm(x, z, 1.0f / 12000.0f, 500, 3, 0.5f, 2.0f);
-	const float precip_noise =
-			sampleFbm(x, z, 1.0f / 2600.0f, 600, 4, 0.52f, 2.0f);
+	const float lat_noise = sampleFbm(x, z, 1.0f / 12000.0f, 500, 3, 0.5f, 2.0f);
+	const float precip_noise = sampleFbm(x, z, 1.0f / 2600.0f, 600, 4, 0.52f, 2.0f);
 	const float height_cooling = std::max(sample.height - water_level, 0.0f) / 180.0f;
 
-	sample.heat = rangelim(std::lround(
-								   TD_DEFAULT_HEAT + lat_noise * 28.0f -
-								   height_cooling * 8.0f),
+	sample.heat = rangelim(
+			std::lround(TD_DEFAULT_HEAT + lat_noise * 28.0f - height_cooling * 8.0f),
 			-50L, 60L);
-	sample.humidity = rangelim(std::lround(
-									   TD_DEFAULT_HUMIDITY + precip_noise * 45.0f),
-			0L, 100L);
+	sample.humidity =
+			rangelim(std::lround(TD_DEFAULT_HUMIDITY + precip_noise * 45.0f), 0L, 100L);
 	sample.has_climate = true;
 	return sample;
 }
 
-bool MapgenTerrainDiffusion::sampleOnnxGrid(v3pos_t minp, v3pos_t maxp,
-		std::vector<TerrainDiffusionSample> &samples)
+bool MapgenTerrainDiffusion::sampleOnnxGrid(
+		v3pos_t minp, v3pos_t maxp, std::vector<TerrainDiffusionSample> &samples)
 {
 	if (sampleApiGrid(minp, maxp, samples))
 		return true;
@@ -504,9 +472,8 @@ bool MapgenTerrainDiffusion::sampleOnnxGrid(v3pos_t minp, v3pos_t maxp,
 
 	if (m_model && m_model->loaded()) {
 		if (m_model->sampleGrid(mg_params->model_node_scale,
-					mg_params->model_height_scale,
-					mg_params->model_height_offset, minp.X, minp.Z,
-					maxp.X, maxp.Z, samples))
+					mg_params->model_height_scale, mg_params->model_height_offset, minp.X,
+					minp.Z, maxp.X, maxp.Z, samples))
 			return true;
 	}
 
@@ -520,8 +487,8 @@ bool MapgenTerrainDiffusion::sampleOnnxGrid(v3pos_t minp, v3pos_t maxp,
 	return false;
 }
 
-bool MapgenTerrainDiffusion::sampleApiGrid(v3pos_t minp, v3pos_t maxp,
-		std::vector<TerrainDiffusionSample> &samples)
+bool MapgenTerrainDiffusion::sampleApiGrid(
+		v3pos_t minp, v3pos_t maxp, std::vector<TerrainDiffusionSample> &samples)
 {
 	if (mg_params->api_url.empty())
 		return false;
@@ -536,9 +503,8 @@ bool MapgenTerrainDiffusion::sampleApiGrid(v3pos_t minp, v3pos_t maxp,
 		samples.resize(count);
 
 	HTTPFetchRequest request;
-	request.url = addTerrainApiParams(mg_params->api_url, minp.X, minp.Z,
-			maxp.X, maxp.Z, mg_params->api_scale, seed,
-			mg_params->api_send_seed);
+	request.url = addTerrainApiParams(mg_params->api_url, minp.X, minp.Z, maxp.X, maxp.Z,
+			mg_params->api_scale, seed, mg_params->api_send_seed);
 	request.method = HTTP_GET;
 	request.timeout = mg_params->api_timeout_ms;
 	request.connect_timeout = std::min<long>(mg_params->api_timeout_ms, 10000);
@@ -548,8 +514,8 @@ bool MapgenTerrainDiffusion::sampleApiGrid(v3pos_t minp, v3pos_t maxp,
 	httpfetch_sync(request, result);
 	if (!result.succeeded || result.response_code != 200) {
 		if (!m_warned_api_failed) {
-			warningstream << "TerrainDiffusion API request failed: "
-						  << request.url << " response=" << result.response_code
+			warningstream << "TerrainDiffusion API request failed: " << request.url
+						  << " response=" << result.response_code
 						  << (result.timeout ? " timeout" : "") << std::endl;
 			m_warned_api_failed = true;
 		}
@@ -571,8 +537,8 @@ bool MapgenTerrainDiffusion::sampleApiGrid(v3pos_t minp, v3pos_t maxp,
 	const bool has_climate = result.data.size() >= elevation_bytes + climate_bytes;
 	for (size_t n = 0; n < count; ++n) {
 		TerrainDiffusionSample &sample = samples[n];
-		sample.height = readS16LE(result.data, n * sizeof(s16)) *
-						mg_params->api_height_scale +
+		sample.height =
+				readS16LE(result.data, n * sizeof(s16)) * mg_params->api_height_scale +
 				mg_params->api_height_offset;
 		sample.heat = TD_DEFAULT_HEAT;
 		sample.humidity = TD_DEFAULT_HUMIDITY;
@@ -594,8 +560,7 @@ bool MapgenTerrainDiffusion::sampleApiGrid(v3pos_t minp, v3pos_t maxp,
 #else
 	if (!m_warned_api_failed) {
 		warningstream << "TerrainDiffusion API configured but Freeminer was "
-					  << "built without cURL: " << mg_params->api_url
-					  << std::endl;
+					  << "built without cURL: " << mg_params->api_url << std::endl;
 		m_warned_api_failed = true;
 	}
 	return false;
@@ -610,14 +575,13 @@ TerrainDiffusionSample MapgenTerrainDiffusion::samplePoint(pos_t x, pos_t z)
 
 	// Point queries run on the server thread and may share mapgen 0 with an
 	// emerge worker. Never wait for or start an expensive native tile here.
-	if (m_native && m_native->loaded() &&
-			m_native->sampleGridCached(x, z, x, z, samples))
+	if (m_native && m_native->loaded() && m_native->sampleGridCached(x, z, x, z, samples))
 		return samples[0];
 
 	if (m_model && m_model->loaded() &&
 			m_model->sampleGrid(mg_params->model_node_scale,
-					mg_params->model_height_scale,
-					mg_params->model_height_offset, x, z, x, z, samples))
+					mg_params->model_height_scale, mg_params->model_height_offset, x, z,
+					x, z, samples))
 		return samples[0];
 
 	return fallbackSample(x, z);
@@ -636,8 +600,8 @@ int MapgenTerrainDiffusion::getSpawnLevelAtPoint(v2pos_t p)
 	return y + 2;
 }
 
-weather::heat_t MapgenTerrainDiffusion::calcBlockHeat(const v3pos_t &p,
-		uint64_t seed, float timeofday, float totaltime, bool use_weather)
+weather::heat_t MapgenTerrainDiffusion::calcBlockHeat(const v3pos_t &p, uint64_t seed,
+		float timeofday, float totaltime, bool use_weather)
 {
 	const TerrainDiffusionSample sample = samplePoint(p.X, p.Z);
 	if (sample.has_climate)
@@ -666,7 +630,6 @@ int MapgenTerrainDiffusion::generateTerrain()
 	std::vector<TerrainDiffusionSample> samples((size_t)width * depth);
 
 	if (!sampleOnnxGrid(node_min, node_max, samples)) {
-DUMP("no onnx");
 		return -1;
 		size_t index = 0;
 		for (pos_t z = node_min.Z; z <= node_max.Z; ++z)
@@ -699,9 +662,8 @@ DUMP("no onnx");
 					} else {
 						MapNode n = layers_get(index3d);
 						bool protect = n.getContent() != CONTENT_AIR;
-						if (cave_noise_threshold &&
-								noise_cave_indev->result[index3d] >
-										cave_noise_threshold - 50) {
+						if (cave_noise_threshold && noise_cave_indev->result[index3d] >
+															cave_noise_threshold - 50) {
 							vm->m_data[vi] = protect ? n_stone : n;
 							protect = true;
 						} else {
@@ -711,12 +673,11 @@ DUMP("no onnx");
 							vm->m_flags[vi] |= VOXELFLAG_CHECKED2;
 					}
 				} else if (y <= water_level) {
-					vm->m_data[vi] = (sample.heat < 0 && y > sample.heat / 3) ?
-											 n_ice :
-											 n_water;
+					vm->m_data[vi] =
+							(sample.heat < 0 && y > sample.heat / 3) ? n_ice : n_water;
 					if (liquid_pressure > 0 && y <= 0) {
-						const int pressure = ((ItemGroupList)m_emerge->ndef
-												->get(vm->m_data[vi])
+						const int pressure =
+								((ItemGroupList)m_emerge->ndef->get(vm->m_data[vi])
 												.groups)["pressure"];
 						if (pressure > 0) {
 							int add = water_level - y;

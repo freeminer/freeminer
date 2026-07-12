@@ -14,11 +14,10 @@ struct TerrainDiffusionSample;
 class TerrainDiffusionNativePipeline
 {
 public:
-	TerrainDiffusionNativePipeline(uint64_t seed, int node_scale,
-			float height_scale, float height_offset, float residual_std,
-			unsigned int cache_tiles, unsigned int cache_mb,
-			const std::string &provider, int device_id, int intra_threads,
-			const std::string &conditioning_stats, bool prefetch);
+	TerrainDiffusionNativePipeline(uint64_t seed, int node_scale, float height_scale,
+			float height_offset, float residual_std, unsigned int cache_tiles,
+			unsigned int cache_mb, const std::string &provider, int device_id,
+			int intra_threads, const std::string &conditioning_stats, bool prefetch);
 	~TerrainDiffusionNativePipeline();
 
 	bool load(const std::string &model_dir);

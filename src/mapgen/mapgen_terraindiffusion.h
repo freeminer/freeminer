@@ -94,17 +94,17 @@ private:
 	bool m_warned_no_model = false;
 	bool m_warned_api_failed = false;
 
-	bool sampleApiGrid(v3pos_t minp, v3pos_t maxp,
-			std::vector<TerrainDiffusionSample> &samples);
-	bool sampleOnnxGrid(v3pos_t minp, v3pos_t maxp,
-			std::vector<TerrainDiffusionSample> &samples);
+	bool sampleApiGrid(
+			v3pos_t minp, v3pos_t maxp, std::vector<TerrainDiffusionSample> &samples);
+	bool sampleOnnxGrid(
+			v3pos_t minp, v3pos_t maxp, std::vector<TerrainDiffusionSample> &samples);
 	TerrainDiffusionSample samplePoint(pos_t x, pos_t z);
 	TerrainDiffusionSample fallbackSample(pos_t x, pos_t z) const;
 	float fallbackHeightAtPoint(pos_t x, pos_t z) const;
-	float sampleFbm(float x, float z, float scale, s32 seed_off,
-			int octaves, float persistence, float lacunarity) const;
-	float sampleRidged(float x, float z, float scale, s32 seed_off,
-			int octaves, float persistence, float lacunarity) const;
+	float sampleFbm(float x, float z, float scale, s32 seed_off, int octaves,
+			float persistence, float lacunarity) const;
+	float sampleRidged(float x, float z, float scale, s32 seed_off, int octaves,
+			float persistence, float lacunarity) const;
 
 	static float clamp01(float v);
 	static float smoothstep(float v);
