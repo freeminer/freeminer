@@ -66,6 +66,7 @@
 #cmakedefine01 USE_OPENSSL
 #define USE_POS32 @USE_POS32@
 #define USE_OPOS64 @USE_OPOS64@
+#cmakedefine01 USE_ONNXRUNTIME
 #cmakedefine01 HAVE_ENDIAN_H
 #cmakedefine01 HAVE_STRLCPY
 #cmakedefine01 HAVE_MALLOC_TRIM
