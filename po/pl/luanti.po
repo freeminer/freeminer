@@ -4,7 +4,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
 "PO-Revision-Date: 2026-07-13 21:01+0000\n"
-"Last-Translator: Maja Bauer <majab831@gmail.com>\n"
+"Last-Translator: Maja Bauer <majabauer0108@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/minetest/minetest/"
 "pl/>\n"
 "Language: pl\n"
@@ -269,9 +269,8 @@ msgid "The first octave is amplified by 1."
 msgstr "Pierwsza oktawa jest wzmacniana o 1."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
-#, fuzzy
 msgid "The first octave is scaled by 1."
-msgstr "Ta komenda jest dezaktywowana przez serwer."
+msgstr "Skala pierwszej oktawy wynosi 1."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "The multiplier for the noise before the offset is added."
@@ -377,9 +376,8 @@ msgid "Controls"
 msgstr "Sterowanie"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "Obrażenia / PvP"
+msgstr "Obrażenia"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
@@ -825,9 +823,8 @@ msgid "Unable to install a $1 as a texture pack"
 msgstr "Nie można zainstalować $1 jako paczki tekstur"
 
 #: builtin/mainmenu/content/pkgmgr.lua
-#, fuzzy
 msgid "World mods"
-msgstr "Nazwa świata"
+msgstr "Mody świata"
 
 #. TRANSLATORS: $1 = server name
 #: builtin/mainmenu/dlg_clients_list.lua
@@ -1923,7 +1920,7 @@ msgstr "Zmieniono poziom głośności na %d%%"
 
 #: src/client/game.cpp
 msgid "Wireframe not supported by video driver"
-msgstr "Wireframe nie jest wspierane przez sterownik"
+msgstr "Tryb szkieletowy (wireframe) nie jest wspierany przez sterownik"
 
 #: src/client/game.cpp
 msgid "Wireframe shown"
@@ -2310,7 +2307,7 @@ msgstr "Minimapa ukryta"
 #: src/client/minimap.cpp
 #, c-format
 msgid "Minimap in radar mode, Zoom x%d"
-msgstr "Minimapa w trybie radaru, Zoom x%d"
+msgstr "Minimapa w trybie radaru, powiększenie x%d"
 
 #: src/client/minimap.cpp
 #, c-format
@@ -2937,9 +2934,8 @@ msgid "Append item name to tooltips"
 msgstr "Dołącz nazwę przedmiotu do jego opisu"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Append the full item name to the tooltip of item stacks."
-msgstr "Dołącz nazwę przedmiotu do jego opisu."
+msgstr "Dopisz pełną nazwę przedmiotu do podpowiedzi stosu przedmiotów."
 
 #: src/settings_translation_file.cpp
 msgid "Apple trees noise"
@@ -3263,9 +3259,8 @@ msgid "Chat weblinks"
 msgstr "Chat widoczny"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Choose theme colors for the main menu background."
-msgstr "Włącz animację chmur w tle menu głównego."
+msgstr "Wybierz kolory motywu dla tła głównego menu."
 
 #: src/settings_translation_file.cpp
 msgid "Chunk size"
@@ -3349,7 +3344,6 @@ msgstr ""
 "Przydatne do testowania. Sprawdź al_extensions.[h,cpp] po szczegóły."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "Comma-separated list of flags to hide in the content repository.\n"
 "\"nonfree\" can be used to hide packages which do not qualify as 'free "
@@ -3522,9 +3516,8 @@ msgstr ""
 "Wpływa również na kolor obiektu celownika"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage flash"
-msgstr "Flagi generatora mapy"
+msgstr "Błysk obrażeń"
 
 #: src/settings_translation_file.cpp
 msgid "Debug log file size threshold"
@@ -4040,9 +4033,9 @@ msgid ""
 "Enables tradeoffs that reduce CPU load or increase rendering performance\n"
 "at the expense of minor visual glitches that do not impact game playability."
 msgstr ""
-"Umożliwia kompromisy, które zmniejszają obciążenie procesora lub zwiększają "
-"wydajność renderowania\n"
-"kosztem drobnych usterek wizualnych, które nie wpływają na grywalność gry."
+"Umożliwia uproszczenia, które zmniejszają obciążenie procesora lub "
+"zwiększają wydajność renderowania\n"
+"kosztem drobnych usterek wizualnych, które nie wpływają na grywalność."
 
 #: src/settings_translation_file.cpp
 msgid "Engine Profiler"
@@ -6092,7 +6085,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Open chat"
-msgstr "Otwórz chat"
+msgstr "Otwórz czat"
 
 #: src/settings_translation_file.cpp
 msgid "Open inventory"
@@ -7555,7 +7548,7 @@ msgstr "Mnożnik czułości ekranu dotykowego."
 
 #: src/settings_translation_file.cpp
 msgid "Tradeoffs for performance"
-msgstr "Kompromisy dla wydajności"
+msgstr "Uproszczenia dla wydajności"
 
 #: src/settings_translation_file.cpp
 msgid "Translucent foliage"
@@ -8175,7 +8168,7 @@ msgstr "Adres proxy cURL"
 #: src/util/screenshot.cpp
 #, c-format
 msgid "Failed to save screenshot to \"%s\""
-msgstr "Nie udało się zapisać zrzutu ekranu do „%s”"
+msgstr "Nie udało się zapisać zrzutu ekranu do \"%s\""
 
 #~ msgid "Append item name"
 #~ msgstr "Dołącz nazwę przedmiotu"
