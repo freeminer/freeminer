@@ -43,6 +43,7 @@
 #include "mapgen_earth.h"
 #include "mapgen_voxel_earth.h"
 #include "mapgen_erosion.h"
+#include "mapgen_terraindiffusion.h"
 #include "serverenvironment.h"
 
 
@@ -90,6 +91,7 @@ static MapgenDesc g_reg_mapgens[] = {
 	{"math",       true},
 	{"indev",      true},
 	{"erosion",    true},
+	{"terraindiffusion", true},
 // ===
 
 	{"v7",         true},
@@ -186,6 +188,9 @@ Mapgen *Mapgen::createMapgen(MapgenType mgtype, MapgenParams *params,
 		return new MapgenVoxelEarth((MapgenEarthParams *)params, emerge);
 	case MAPGEN_EROSION:
 		return new MapgenErosion((MapgenErosionParams *)params, emerge);
+	case MAPGEN_TERRAIN_DIFFUSION:
+		return new MapgenTerrainDiffusion(
+				(MapgenTerrainDiffusionParams *)params, emerge);
 
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathian((MapgenCarpathianParams *)params, emerge);
@@ -223,6 +228,8 @@ MapgenParams *Mapgen::createMapgenParams(MapgenType mgtype)
 		return new MapgenEarthParams;
 	case MAPGEN_EROSION:
 		return new MapgenErosionParams;
+	case MAPGEN_TERRAIN_DIFFUSION:
+		return new MapgenTerrainDiffusionParams;
 
 	case MAPGEN_CARPATHIAN:
 		return new MapgenCarpathianParams;
