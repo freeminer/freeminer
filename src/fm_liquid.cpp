@@ -542,6 +542,10 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 			if (gas) {
 				uint8_t gas_dirs[7] = {};
 				uint8_t gas_dir_count = 0;
+				const auto &gas_groups = nodemgr->get(liquid_kind).groups;
+				const auto float_height_it = gas_groups.find("float_height");
+				const bool has_float_height = float_height_it != gas_groups.end();
+				const int float_height = has_float_height ? float_height_it->second : 0;
 				const auto add_gas_dir = [&](uint8_t dir) {
 					if (!neighbors[dir].liquid)
 						return;
@@ -550,6 +554,11 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 							return;
 					gas_dirs[gas_dir_count++] = dir;
 				};
+
+				// A height-bound gas seeks its data-defined equilibrium layer.
+				// Direction order matters when indivisible levels are distributed.
+				if (has_float_height && p0.Y != float_height)
+					add_gas_dir(p0.Y < float_height ? D_TOP : D_BOTTOM);
 
 				const auto wind = getWind(p0, true);
 				const float wind_x = std::fabs(wind.X);
@@ -565,12 +574,15 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 						add_gas_dir(wind_dir);
 				}
 
-				add_gas_dir(D_TOP);
+				if (!has_float_height)
+					add_gas_dir(D_TOP);
 				for (uint8_t ir = D_SELF; ir < D_TOP; ++ir)
 					add_gas_dir(liquid_random_map[(loopcount + loop_rand + 1) % 4][ir]);
-				add_gas_dir(D_BOTTOM);
-				for (uint8_t dir = D_BOTTOM; dir <= D_TOP; ++dir)
-					add_gas_dir(dir);
+				if (!has_float_height) {
+					add_gas_dir(D_BOTTOM);
+					for (uint8_t dir = D_BOTTOM; dir <= D_TOP; ++dir)
+						add_gas_dir(dir);
+				}
 
 				if (gas_dir_count) {
 					int16_t remaining = total_level;
@@ -589,6 +601,35 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 						if (liquid_levels_want[dir] < level_max) {
 							++liquid_levels_want[dir];
 							--remaining;
+						}
+					}
+
+					// Preserve excess volume after the preferred equilibrium layer is
+					// full. These fallback directions are deliberately not part of the
+					// equal distribution above.
+					if (has_float_height && remaining > 0) {
+						uint8_t fallback_dirs[2] = {};
+						uint8_t fallback_count = 0;
+						if (p0.Y < float_height) {
+							fallback_dirs[fallback_count++] = D_BOTTOM;
+						} else if (p0.Y > float_height) {
+							fallback_dirs[fallback_count++] = D_TOP;
+						} else if ((loopcount + loop_rand) & 1) {
+							fallback_dirs[fallback_count++] = D_TOP;
+							fallback_dirs[fallback_count++] = D_BOTTOM;
+						} else {
+							fallback_dirs[fallback_count++] = D_BOTTOM;
+							fallback_dirs[fallback_count++] = D_TOP;
+						}
+						for (int tries = 0; remaining > 0 && fallback_count > 0 &&
+											tries < fallback_count * level_max;
+								++tries) {
+							const uint8_t dir = fallback_dirs[tries % fallback_count];
+							if (neighbors[dir].liquid &&
+									liquid_levels_want[dir] < level_max) {
+								++liquid_levels_want[dir];
+								--remaining;
+							}
 						}
 					}
 					total_level = remaining;
