@@ -3926,16 +3926,23 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 			}
 
 			if (client->use_weather) {
-				const auto humidity = client->getEnv().getClientMap().getHumidity(pos_i, 1);
-				const auto mul = (100 - humidity) / 100.0;
-				runData.fog_range *= mul * mul * mul * mul;
-				runData.fog_range += 50 * BS;
+				const float humidity = std::clamp(
+						client->getEnv().getClientMap().getHumidity(pos_i, 1) /
+								100.0f,
+						0.0f, 1.0f);
+				const float humidity_haze =
+						std::clamp((humidity - 0.35f) / 0.65f, 0.0f, 1.0f);
+				const float smooth_haze = humidity_haze * humidity_haze *
+						(3.0f - 2.0f * humidity_haze);
+				runData.fog_range *= 1.0f - 0.55f * smooth_haze;
 			}
 		}
 	}
 
-	runData.fog_range = std::min<f32>(client->getCamera()->getCameraNode()->getFarValue()/1.2,
-			fog_was + (runData.fog_range - fog_was) / 50);
+	const float fog_response = 1.0f - std::exp(-dtime / 1.5f);
+	runData.fog_range = std::min<f32>(
+			client->getCamera()->getCameraNode()->getFarValue() / 1.2f,
+			fog_was + (runData.fog_range - fog_was) * fog_response);
 
 	client->fog_range = runData.fog_range;
 
@@ -4244,10 +4251,15 @@ void Game::drawScene(ProfilerGraph *graph, RunStats *stats)
 		Fog
 	*/
 	if (this->fogEnabled()) {
+		const bool volumetric_fog_active =
+				this->draw_control->farmesh && g_settings->getPos("volumetric_fog") > 0;
+		const float fog_start = volumetric_fog_active
+				? std::max(this->sky->getFogStart(), 0.55f)
+				: this->sky->getFogStart();
 		this->driver->setFog(
 				fog_color,
 				video::EFT_FOG_LINEAR,
-				this->runData.fog_range * this->sky->getFogStart(),
+				this->runData.fog_range * fog_start,
 				this->runData.fog_range * 1.0f,
 				0.f, // unused
 				false, // pixel fog

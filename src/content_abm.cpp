@@ -529,8 +529,8 @@ public:
 		if (humidity > 100)
 			humidity = 100;
 
-		const int dry_air = 100 - humidity;
-		if (dry_air <= 0 || myrand_range(1, 100) > dry_air)
+		const int evaporation_chance = std::max(1, 100 - humidity);
+		if (myrand_range(1, 100) > evaporation_chance)
 			return;
 
 		const u8 level = n.getLevel(ndef);
