@@ -13,36 +13,239 @@ The mapgen has four terrain sources, tried in this order:
 If no external source is configured or reachable, it still generates terrain
 with the procedural fallback.
 
-## Build
+## Complete Native Setup Guide
 
-ONNX Runtime is optional.
+The commands below are intended to be run from the Freeminer repository root.
+They build the CPU execution provider, which works without an NVIDIA or AMD
+GPU. ONNX Runtime is optional for Freeminer generally, but is required for the
+native and compact ONNX terrain sources.
 
-The CMake option is enabled by default:
+Expect the complete source, build, checkpoint, Python environment, and ONNX
+export to require several gigabytes of disk space. The 30 m ONNX export alone
+is approximately 2.2 GB.
 
-```cmake
-ENABLE_ONNXRUNTIME=1
+### 1. Install build prerequisites
+
+On Ubuntu or Debian:
+
+```bash
+sudo apt update
+sudo apt install build-essential cmake ninja-build git \
+  python3 python3-dev python3-pip python3-venv
 ```
 
-The default ONNX Runtime root is:
+Freeminer has additional normal build dependencies outside the scope of this
+mapgen guide. Install those as required by the main project build.
+
+### 2. Clone ONNX Runtime
+
+Clone recursively because ONNX Runtime uses Git submodules:
+
+```bash
+git clone --recursive https://github.com/microsoft/onnxruntime.git \
+  src/external/onnxruntime
+```
+
+The revision tested with this integration is:
 
 ```text
-src/external/onnxruntime
+c4f19617bca2567ebd8a35a750c14158f3fa4a40
 ```
 
-The detector looks for headers like:
+To reproduce that revision exactly:
+
+```bash
+git -C src/external/onnxruntime checkout \
+  c4f19617bca2567ebd8a35a750c14158f3fa4a40
+git -C src/external/onnxruntime submodule update --init --recursive
+```
+
+Build a shared CPU library:
+
+```bash
+src/external/onnxruntime/build.sh \
+  --config Release \
+  --build_shared_lib \
+  --parallel \
+  --skip_tests
+```
+
+The expected outputs are:
 
 ```text
-include/onnxruntime/core/session/onnxruntime_cxx_api.h
+src/external/onnxruntime/include/onnxruntime/core/session/onnxruntime_cxx_api.h
+src/external/onnxruntime/build/Linux/Release/libonnxruntime.so
 ```
 
-and a library like:
+For an NVIDIA build, install a compatible CUDA Toolkit and cuDNN first, then
+add the ONNX Runtime CUDA options:
+
+```bash
+src/external/onnxruntime/build.sh \
+  --config Release \
+  --build_shared_lib \
+  --parallel \
+  --skip_tests \
+  --use_cuda \
+  --cuda_home /usr/local/cuda \
+  --cudnn_home /usr/local/cuda
+```
+
+The native setting `mgterraindiffusion_native_provider = auto` selects CUDA
+only when the built ONNX Runtime reports that provider; otherwise it uses CPU.
+
+### 3. Clone Terrain Diffusion
+
+```bash
+git clone https://github.com/xandergos/terrain-diffusion.git \
+  src/external/terrain-diffusion
+```
+
+The tested upstream revision is:
 
 ```text
-build/Linux/Release/libonnxruntime.so
+82a0431281f21a6ec3d691a12ee61525de5b0790
 ```
 
-If detection succeeds, CMake prints `Using ONNX Runtime`. If not, the mapgen is
-still available, but uses fallback terrain.
+The Freeminer checkout adds a small change to
+`terrain_diffusion/onnx/export.py` so the pipeline `config.json` is exported
+beside the graphs. When using an unmodified upstream checkout, copy that file
+manually in step 6.
+
+### 4. Create the Python export environment
+
+```bash
+python3 -m venv .venv-terraindiffusion
+source .venv-terraindiffusion/bin/activate
+python -m pip install --upgrade pip
+python -m pip install \
+  -r src/external/terrain-diffusion/requirements.txt
+python -m pip install onnx onnxruntime "huggingface_hub[cli]"
+```
+
+For CUDA export or verification, install the PyTorch and ONNX Runtime GPU
+packages matching the installed CUDA version instead of the CPU packages.
+Exporting on CPU works, but the large base model can take considerable time.
+
+### 5. Download the 30 m checkpoint
+
+Use the current `hf` command, not the deprecated `huggingface-cli` command:
+
+```bash
+hf download xandergos/terrain-diffusion-30m \
+  --local-dir checkpoints/models/terrain-diffusion-30m
+```
+
+The model is public. If Hugging Face requests authentication, run
+`hf auth login` and repeat the download.
+
+### 6. Export all three ONNX graphs
+
+Keep the virtual environment active and expose the cloned Python package with
+`PYTHONPATH`:
+
+```bash
+PYTHONPATH=src/external/terrain-diffusion \
+python -m terrain_diffusion.onnx.export \
+  checkpoints/models/terrain-diffusion-30m \
+  --output onnx_export/terrain-diffusion-30m \
+  --verify
+```
+
+If the upstream exporter does not create `config.json`, copy it explicitly:
+
+```bash
+cp checkpoints/models/terrain-diffusion-30m/config.json \
+  onnx_export/terrain-diffusion-30m/config.json
+```
+
+The resulting directory must contain:
+
+```text
+onnx_export/terrain-diffusion-30m/coarse_model.onnx
+onnx_export/terrain-diffusion-30m/base_model.onnx
+onnx_export/terrain-diffusion-30m/decoder_model.onnx
+onnx_export/terrain-diffusion-30m/config.json
+```
+
+Do not set any of these three graph paths as
+`mgterraindiffusion_height_model`; that setting is only for the optional compact
+coordinate-to-height model.
+
+### 7. Configure and build Freeminer
+
+The ONNX Runtime detector is enabled by default and expects the source layout
+used above. Configure explicitly so CMake output is easy to verify:
+
+```bash
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DBUILD_UNITTESTS=TRUE \
+  -DENABLE_ONNXRUNTIME=ON \
+  -DONNXRUNTIME_ROOT="$PWD/src/external/onnxruntime"
+cmake --build build --target freeminer -j"$(nproc)"
+```
+
+Configuration must print a line similar to:
+
+```text
+Using ONNX Runtime: .../include/onnxruntime/core/session .../libonnxruntime.so
+```
+
+If CMake cached a previous failed search, configure once with the exact paths:
+
+```bash
+cmake -S . -B build \
+  -DENABLE_ONNXRUNTIME=ON \
+  -DONNXRUNTIME_INCLUDE_DIR="$PWD/src/external/onnxruntime/include/onnxruntime/core/session" \
+  -DONNXRUNTIME_LIBRARY="$PWD/src/external/onnxruntime/build/Linux/Release/libonnxruntime.so"
+```
+
+Check that the executable resolves the shared library:
+
+```bash
+ldd build/freeminer | grep onnxruntime
+```
+
+When an installed or relocated executable reports `libonnxruntime.so => not
+found`, install the library in a system path or set its directory explicitly:
+
+```bash
+export LD_LIBRARY_PATH="$PWD/src/external/onnxruntime/build/Linux/Release:$LD_LIBRARY_PATH"
+```
+
+### 8. Verify the real model set
+
+With unit tests enabled, this loads and validates all three graph signatures
+without generating a full terrain tile:
+
+```bash
+FREEMINER_TD_MODEL_DIR="$PWD/onnx_export/terrain-diffusion-30m" \
+build/freeminer --run-unittests --test-module TestTerrainDiffusion
+```
+
+Both `testDeterministicHelpers` and `testModelLoad` should pass.
+
+### 9. Configure a world
+
+Use absolute paths in the world mapgen configuration:
+
+```conf
+mg_name = terraindiffusion
+mgterraindiffusion_native_model_dir = /absolute/path/to/onnx_export/terrain-diffusion-30m
+mgterraindiffusion_native_node_scale = 30
+mgterraindiffusion_native_provider = auto
+```
+
+At startup, successful native initialization logs:
+
+```text
+TerrainDiffusion mapgen loaded native three-model pipeline ...
+```
+
+The first generated native tile is intentionally expensive, especially on
+CPU. Later generation in the same area benefits from the coarse, latent, and
+decoded tile caches.
 
 ## Basic Configuration
 
@@ -189,33 +392,9 @@ Freeminer uses `temp` as heat and converts `precipitation` to humidity.
 
 ## Native Three-Model Pipeline
 
-Install the exporter dependencies in a virtual environment from the Freeminer
-repository root:
-
-```bash
-python -m venv .venv-terraindiffusion
-source .venv-terraindiffusion/bin/activate
-python -m pip install -r src/external/terrain-diffusion/requirements.txt
-python -m pip install onnx onnxruntime
-```
-
-Export all three upstream models into one directory:
-
-```bash
-PYTHONPATH=src/external/terrain-diffusion \
-python -m terrain_diffusion.onnx.export \
-  checkpoints/models/terrain-diffusion-30m \
-  --output onnx_export/terrain-diffusion-30m \
-  --verify
-```
-
-The directory must contain:
-
-```text
-coarse_model.onnx
-base_model.onnx
-decoder_model.onnx
-```
+Follow the complete setup guide above to clone both projects, build ONNX
+Runtime, download a checkpoint, and export the three graphs. This section
+describes optional conditioning and implementation details.
 
 For conditioning distributions derived from the same WorldClim data as the
 upstream pipeline, generate its quantile cache once:
@@ -322,8 +501,8 @@ Larger-scale model:
 xandergos/terrain-diffusion-90m
 ```
 
-The upstream README describes downloading and exporting models from Hugging
-Face. Its ONNX exporter produces multiple pipeline models:
+The setup guide uses the recommended 30 m model. The upstream ONNX exporter
+produces multiple pipeline models:
 
 ```text
 coarse_model.onnx
@@ -335,28 +514,19 @@ Set the directory containing these files as
 `mgterraindiffusion_native_model_dir`. Do not pass one of them to
 `mgterraindiffusion_height_model`.
 
-Example upstream export command:
-
-```bash
-hf download xandergos/terrain-diffusion-30m \
-  --local-dir checkpoints/models/terrain-diffusion-30m
-
-PYTHONPATH=src/external/terrain-diffusion \
-python -m terrain_diffusion.onnx.export \
-  checkpoints/models/terrain-diffusion-30m \
-  --output onnx_export/terrain-diffusion-30m \
-  --verify
-```
-
-The resulting directory can be used directly by the native pipeline.
+The resulting directory, including its pipeline `config.json`, can be used
+directly by the native pipeline.
 
 ## Runtime Behavior
 
-When a compatible ONNX model loads successfully, the log contains:
+When the native model set loads successfully, the log contains:
 
 ```text
-TerrainDiffusion mapgen loaded ONNX model ...
+TerrainDiffusion mapgen loaded native three-model pipeline ...
 ```
+
+The compact model path instead logs `TerrainDiffusion mapgen loaded ONNX
+model ...`.
 
 When no compatible model is available, the mapgen logs once:
 
@@ -367,9 +537,19 @@ TerrainDiffusion mapgen using procedural fallback
 The fallback is intentionally deterministic and terrain-like, so worlds remain
 usable even without ONNX Runtime or a model.
 
-## Current Limitation
+## Current Limitations
 
-The real Terrain Diffusion pipeline is supported through the upstream Python API
-server. The native ONNX path is still only a compact `coords -> height` model
-host and is not yet a complete native port of Terrain Diffusion's multi-stage
-inference pipeline.
+- Native inference runs the complete three-model pipeline, but its deterministic
+  synthetic conditioning is not byte-identical to the upstream Python
+  WorldClim pipeline. Generate and configure `synthetic_map_stats.json` for a
+  closer statistical match.
+- Loading the approximately 2 GB model set and generating the first decoded
+  tile can be slow. CPU generation is functional but substantially slower than
+  a supported GPU execution provider.
+- Generated caches belong to individual mapgen workers, while ONNX sessions are
+  shared. Increase cache settings carefully because their memory budgets apply
+  per worker.
+- Server spawn and climate point queries consume native results only when the
+  required decoded tiles are already cached. They fall back immediately when
+  the cache is busy or missing so an emerge worker cannot hold the server thread
+  behind a long inference lock.

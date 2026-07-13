@@ -2517,6 +2517,14 @@ to games.
 * `float`: the node will not fall through liquids (`liquidtype ~= "none"`)
      * A liquid source with `groups = {falling_node = 1, float = 1}`
        will fall through flowing liquids.
+* `gas`: with Freeminer's real-liquid solver, distributes the leveled liquid
+  node through available air and compatible gas nodes instead of applying
+  normal downward liquid gravity.
+* `float_height`: for a node in the `gas` group, the rating is an absolute
+  equilibrium Y coordinate. Gas prefers upward flow below this height,
+  downward flow above it, and horizontal spreading at the target height.
+  Vertical overflow is retained when the target layer is full. Omitting this
+  group preserves unrestricted gas spreading.
 * `level`: Can be used to give an additional sense of progression in the game.
      * A larger level will cause e.g. a weapon of a lower level make much less
        damage, and get worn out much faster, or not be able to get drops

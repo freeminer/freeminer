@@ -3,8 +3,6 @@
 #pragma once
 
 //freeminer:
-//#cmakedefine01 BUILD_CLIENT
-//#cmakedefine01 BUILD_SERVER
 #cmakedefine01 ENABLE_THREADS
 #cmakedefine01 EXCEPTION_DEBUG
 #cmakedefine01 HAVE_FUTURE
@@ -20,12 +18,13 @@
 #cmakedefine01 USE_IPV4_DEFAULT
 #cmakedefine01 USE_MANDELBULBER
 #cmakedefine01 USE_MULTI
+#cmakedefine01 USE_ONNXRUNTIME
 #cmakedefine01 USE_OSMIUM
 #cmakedefine01 USE_OSMIUM_TOOL
-#cmakedefine01 USE_VOXEL_EARTH
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_SQLITE3
 #cmakedefine01 USE_TIFF
+#cmakedefine01 USE_VOXEL_EARTH
 #cmakedefine01 USE_WEBSOCKET
 #cmakedefine01 USE_WEBSOCKET_SCTP
 #cmakedefine01 USE_CLIENT_MCP
@@ -33,6 +32,9 @@
 #cmakedefine01 Backtrace_FOUND
 #cmakedefine01 USE_ATOMIC_SHARED_PTR
 #define Backtrace_HEADER "@Backtrace_HEADER@"
+#define USE_POS32 @USE_POS32@
+#define USE_OPOS64 @USE_OPOS64@
+// ===
 
 
 #define PROJECT_NAME "@PROJECT_NAME@"
@@ -64,9 +66,6 @@
 #cmakedefine01 USE_SYSTEM_JSONCPP
 #cmakedefine01 USE_REDIS
 #cmakedefine01 USE_OPENSSL
-#define USE_POS32 @USE_POS32@
-#define USE_OPOS64 @USE_OPOS64@
-#cmakedefine01 USE_ONNXRUNTIME
 #cmakedefine01 HAVE_ENDIAN_H
 #cmakedefine01 HAVE_STRLCPY
 #cmakedefine01 HAVE_MALLOC_TRIM

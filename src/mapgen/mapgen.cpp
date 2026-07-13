@@ -37,7 +37,6 @@
 #include "dungeongen.h"
 
 // fm:
-#include "log_types.h"
 #include "mapgen_indev.h"
 #include "mapgen_math.h"
 #include "mapgen_earth.h"
@@ -85,23 +84,35 @@ struct MapgenDesc {
 // Of the remaining, v5 last due to age, v7 first due to being the default.
 // The order of 'enum MapgenType' in mapgen.h must match this order.
 static MapgenDesc g_reg_mapgens[] = {
-// fm:
-	{"earth",       true},
-	{"voxel_earth", true},
-	{"math",       true},
-	{"indev",      true},
-	{"erosion",    true},
-	{"terraindiffusion", true},
-// ===
+		// fm:
+		{"earth", true},
+		{"voxel_earth",
+#if USE_VOXEL_EARTH
+				true
+#else
+				false
+#endif
+		},
+		{"math", true},
+		{"indev", true},
+		{"erosion", true},
+		{"terraindiffusion",
+#if USE_ONNXRUNTIME
+				true
+#else
+				false
+#endif
+		},
+		// ===
 
-	{"v7",         true},
-	{"valleys",    true},
-	{"carpathian", true},
-	{"v5",         true},
-	{"flat",       true},
-	{"fractal",    true},
-	{"singlenode", true},
-	{"v6",         true},
+		{"v7",         true},
+		{"valleys",    true},
+		{"carpathian", true},
+		{"v5",         true},
+		{"flat",       true},
+		{"fractal",    true},
+		{"singlenode", true},
+		{"v6",         true},
 };
 
 static_assert(
