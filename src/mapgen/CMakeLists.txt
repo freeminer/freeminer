@@ -5,6 +5,8 @@ set(freeminer_mapgen_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_voxel_earth.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_erosion.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_terraindiffusion.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_terraindiffusion_native.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
 )

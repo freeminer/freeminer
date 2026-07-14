@@ -1492,7 +1492,7 @@ fixed_map_seed (Fixed map seed) string
 #    Creating a world in the main menu will override this.
 #    Current mapgens in a highly unstable state:
 #    -    The optional floatlands of v7 (disabled by default).
-mg_name (Mapgen name) enum earth earth,indev,math,v7,valleys,carpathian,v5,flat,fractal,singlenode,v6
+mg_name (Mapgen name) enum earth earth,voxel_earth,math,indev,erosion,terraindiffusion,v7,valleys,carpathian,v5,flat,fractal,singlenode,v6
 
 #    Water surface level of the world.
 water_level (Water level) int 1 -31000 31000
@@ -1806,6 +1806,97 @@ mgv7_np_cave2 (Cave2 noise) noise_params_3d 0, 12, (67, 67, 67), 10325, 3, 0.5, 
 
 #    3D noise that determines number of dungeons per mapchunk.
 mgv7_np_dungeons (Dungeon noise) noise_params_3d 0.9, 0.5, (500, 500, 500), 0, 2, 0.8, 2.0
+
+[*Mapgen Terrain Diffusion]
+
+#    Map generation attributes specific to Mapgen Terrain Diffusion.
+#    This mapgen derives from Mapgen v7. V7 cave, cavern, dungeon, decoration,
+#    ore, liquid, and layer settings still apply.
+#    'ridges': Rivers.
+#    'floatlands': Floating land masses in the atmosphere.
+#    'caverns': Giant caves deep underground.
+mgterraindiffusion_spflags (Mapgen Terrain Diffusion specific flags) flags caverns mountains,ridges,floatlands,caverns
+
+#    Simple ONNX height model path.
+#    Current native ONNX path expects a compact model with input coords [N,2]
+#    and output height [N], not the upstream three-model Terrain Diffusion
+#    pipeline export.
+mgterraindiffusion_height_model (Terrain Diffusion ONNX height model) string
+
+#    Directory containing the upstream ONNX export files coarse_model.onnx,
+#    base_model.onnx, and decoder_model.onnx. This enables the complete native
+#    three-stage pipeline and is tried after the API, before the compact model.
+mgterraindiffusion_native_model_dir (Terrain Diffusion native model directory) string
+
+#    Number of map nodes represented by one native model output pixel. The 30m
+#    model uses 30 for approximately physical horizontal scale.
+mgterraindiffusion_native_node_scale (Terrain Diffusion native node scale) int 30 1 64
+
+#    Final native elevation multiplier and offset.
+mgterraindiffusion_native_height_scale (Terrain Diffusion native height scale) float 1.0
+mgterraindiffusion_native_height_offset (Terrain Diffusion native height offset) float 0.0
+
+#    Decoder residual standard deviation. Keep this equal to the pipeline
+#    config used to train/export the selected model.
+mgterraindiffusion_native_residual_std (Terrain Diffusion native residual standard deviation) float 0.7 0.01 100.0
+
+#    Maximum decoded tiles retained by each mapgen worker. The memory limit can
+#    evict tiles before this count is reached.
+mgterraindiffusion_native_cache_tiles (Terrain Diffusion native cache tiles) int 8 1 256
+
+#    Total approximate memory budget for coarse, latent, and decoded caches.
+mgterraindiffusion_native_cache_mb (Terrain Diffusion native cache memory) int 128 16 65535
+
+#    ONNX Runtime provider: auto, cpu, cuda, or rocm.
+mgterraindiffusion_native_provider (Terrain Diffusion native execution provider) enum auto auto,cpu,cuda,rocm
+
+#    GPU device and ONNX intra-operation thread count.
+mgterraindiffusion_native_device_id (Terrain Diffusion native device) int 0 0 255
+mgterraindiffusion_native_intra_threads (Terrain Diffusion native inference threads) int 8 1 256
+
+#    Optional synthetic_map_stats.json generated from upstream WorldClim data.
+mgterraindiffusion_native_conditioning_stats (Terrain Diffusion conditioning statistics) string
+
+#    Generate neighboring decoded tiles on a background worker. This can make
+#    movement into adjacent mapchunks smoother but increases compute use.
+mgterraindiffusion_native_prefetch (Terrain Diffusion native prefetch) bool false
+
+#    Coordinate scale for the compact ONNX model.
+mgterraindiffusion_model_node_scale (Terrain Diffusion ONNX coordinate scale) float 1.0
+
+#    Height multiplier for the compact ONNX model.
+mgterraindiffusion_model_height_scale (Terrain Diffusion ONNX height scale) float 1.0
+
+#    Height offset for the compact ONNX model.
+mgterraindiffusion_model_height_offset (Terrain Diffusion ONNX height offset) float 0.0
+
+#    Terrain Diffusion API endpoint.
+#    Use terrain_diffusion.inference.api, for example:
+#    http://127.0.0.1:8000/terrain
+#    When set, this is tried before the compact ONNX model.
+mgterraindiffusion_api_url (Terrain Diffusion API URL) string
+
+#    Terrain Diffusion API scale. 1 is native API resolution, larger values ask
+#    the API to upsample.
+mgterraindiffusion_api_scale (Terrain Diffusion API scale) int 1 1 64
+
+#    Height multiplier for Terrain Diffusion API elevation values.
+mgterraindiffusion_api_height_scale (Terrain Diffusion API height scale) float 1.0
+
+#    Height offset for Terrain Diffusion API elevation values.
+mgterraindiffusion_api_height_offset (Terrain Diffusion API height offset) float 0.0
+
+#    Terrain Diffusion API request timeout in milliseconds.
+mgterraindiffusion_api_timeout_ms (Terrain Diffusion API timeout) int 30000 1000 600000
+
+#    Send the Freeminer mapgen seed to the Terrain Diffusion API.
+mgterraindiffusion_api_send_seed (Terrain Diffusion API sends seed) bool true
+
+#    Procedural fallback vertical scale used when no API or ONNX model works.
+mgterraindiffusion_fallback_height_scale (Terrain Diffusion fallback height scale) float 160.0 1.0 4096.0
+
+#    Procedural fallback detail multiplier.
+mgterraindiffusion_fallback_detail_scale (Terrain Diffusion fallback detail scale) float 1.0 0.0 8.0
 
 [*Mapgen Carpathian]
 
