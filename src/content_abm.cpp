@@ -530,7 +530,7 @@ public:
 			humidity = 100;
 
 		const int evaporation_chance = std::max(1, 100 - humidity);
-		if (myrand_range(1, 100) > evaporation_chance)
+		if (!activate && myrand_range(1, 100) > evaporation_chance)
 			return;
 
 		const u8 level = n.getLevel(ndef);
