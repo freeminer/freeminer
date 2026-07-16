@@ -6382,6 +6382,7 @@ Call these functions only at load time!
       according to its nature (e.g. `core.registered_nodes`)
 * `core.register_entity(name, entity definition)`
 * `core.register_abm(abm definition)`
+* `core.register_core_abm(core ABM definition)`
 * `core.register_lbm(lbm definition)`
 * `core.register_alias(alias, original_name)`
     * Also use this to set the 'mapgen aliases' needed in a game for the core
@@ -10118,6 +10119,173 @@ in active mapblocks.
     -- loaded mapblocks.
 }
 ```
+
+Core ABM definition
+-------------------
+
+Used by `core.register_core_abm`.
+
+A core ABM uses the normal ABM node selection and scheduling machinery, but
+executes a whitelisted C++ action instead of calling Lua for every matching
+node. Definitions must be registered during mod load time.
+
+```lua
+core.register_core_abm({
+    name = "example:steam_evaporate",
+    action = "steam_evaporate",
+    nodenames = {"group:steam"},
+    neighbors = {"air"},
+    without_neighbors = {},
+    interval = 10,
+    chance = 1,
+    neighbors_range = 1,
+    min_y = -32768,
+    max_y = 32767,
+    catch_up = true,
+    params = {
+        humidity_reference = 100,
+        min_evaporation_chance = 1,
+        level_step = 1,
+        evaporate_on_activate = true,
+    },
+})
+```
+
+The selection and scheduling fields have the same meaning as in an ordinary
+ABM definition. `name` must follow normal mod naming rules and must be unique.
+Values in `params` may be booleans, numbers, strings, or contiguous homogeneous
+lists containing only numbers or only strings. Actions validate their accepted
+parameter names and types during server startup.
+`action` selects one of the following native implementations:
+
+* `"steam_evaporate"`
+    * `humidity_reference` (1 to 100, default `100`): Humidity at which the
+      humidity-derived evaporation chance reaches zero before its minimum.
+    * `min_evaporation_chance` (0 to 100, default `1`): Minimum percent chance
+      of evaporation whenever the ABM runs.
+    * `level_step` (default `1`): Node levels removed by one evaporation.
+    * `evaporate_on_activate` (default `true`): Evaporate immediately when an
+      inactive block is activated, bypassing the humidity chance.
+* `"water_evaporate"`
+    * `humidity_stop` (default `96`): No evaporation at or above this humidity.
+    * `humid_air_stop` (default `75`), `humid_heat_min` (default `-2`) and
+      `humid_heat_max` (default `50`): Suppress evaporation from humid,
+      temperate air.
+    * `heat_min` (default `-5`): Minimum temperature for evaporation.
+    * `warm_scale` (default `45`) and `warm_max` (default `1.8`): Temperature
+      contribution to evaporation strength.
+    * `shade_factor` (0 to 1, default `0.35`): Fraction of evaporation retained
+      without direct sunlight.
+    * `rate` (default `6`): Overall evaporation strength.
+    * `max_level_loss` (default `8`): Maximum levels removed in one run.
+* `"rain_fill"`
+    * Adds leveled water above exposed nodes using native cloud noise, cloud
+      advection, terrain rain shadow, temperature, humidity, sunlight, and wind.
+    * `water_node` (default `"default:water_flowing"`): Leveled node to add.
+    * `cloud_height` (default `120`): Height used to sample cloud-level wind and
+      terrain rain shadow.
+    * `heat_min` (default `-2`), `heat_max` (default `50`) and
+      `phase_heat_max` (default `2`): Liquid precipitation temperature range.
+    * `rain_humidity` (default `75`): Humidity where rain starts.
+    * `wet_humidity` (default `55`) and `wet_span` (default `45`): Additional
+      collection strength from humid air.
+    * `rate` (default `2`) and `max_amount` (default `5`): Water-level addition
+      strength and per-run limit.
+    * `existing_water_multiplier` (default `4`): Multiplier when adding to an
+      existing `water_node` instead of creating one above the collector.
+    * `wind_scale` (default `0.35`), `wind_limit` (default `1`) and
+      `wind_chance_scale` (default `0.25`): Horizontal rain displacement.
+* `"snow_fill"`
+    * Deposits leveled snow above exposed nodes using native cloud advection,
+      terrain rain shadow, temperature, humidity, sunlight, and wind. Existing
+      snow is smoothed into nearby low levels; overflow compacts to ice and
+      continues into a snow layer above it.
+    * `snow_node` (default `"default:snow"`) and `ice_node` (default
+      `"default:ice"`): Nodes written by deposition and compaction.
+    * `cloud_height` (default `120`): Height used to sample cloud-level wind and
+      terrain rain shadow.
+    * `heat_max` (default `2`) and `phase_heat_min` (default `-2`): Solid
+      precipitation temperature range and transition.
+    * `snow_humidity` (default `65`): Humidity where snowfall starts.
+    * `wet_heat_min` (default `-12`), `wet_heat_span` (default `13`) and
+      `humidity_reference` (default `70`): Wet-snow accumulation factors.
+    * `rate` (default `2`) and `max_amount` (default `6`): Snow-level addition
+      strength and per-run limit.
+    * `sky_tolerance` (default `1`): Allowed reduction below full sunlight for
+      an otherwise exposed deposition position.
+    * `wind_scale` (default `0.55`), `wind_limit` (default `2`) and
+      `wind_chance_scale` (default `0.35`): Horizontal snow displacement.
+    * `time_speed` (default `1`): Values at or below zero disable overflow into
+      ice and an upper snow layer, matching stopped-time worlds.
+* `"snow_compact"`
+    * Converts a supported snow node to ice when snow or ice is directly above
+      it. Snow over air or an unloaded node is left unchanged.
+    * `snow_node` (default `"default:snow"`): Snow node checked above the
+      active node.
+    * `ice_node` (default `"default:ice"`): Ice node checked above and written
+      at the active node.
+* `"erosion"`
+    * Applies hydraulic and rain erosion using neighboring leveled-water energy,
+      cloud precipitation and rain shadow, humidity, temperature, and exposed
+      slope. Low-energy flow can deposit sediment; stronger flow transforms
+      materials according to their resistance and queues a falling-node update.
+    * `water_nodes`: String list of flowing-water nodes that contribute energy.
+    * `erosion_nodes`, `erosion_targets`, `erosion_resistances`, and
+      `erosion_humidity_min`: Equal-length source, result, positive resistance,
+      and minimum-humidity lists. Use `0` when a rule has no humidity minimum.
+    * `deposit_nodes` and `deposit_targets`: Equal-length sediment source and
+      settled-material lists.
+    * `cloud_height`, `rain_heat_min`, `rain_heat_max`, `rain_phase_max`,
+      `rain_humidity`, and `sky_tolerance`: Rainfall model parameters.
+    * `water_above_weight`, `water_side_weight`, `water_below_weight`,
+      `water_level_divisor`, and `water_level_max_reduction`: Neighboring water
+      energy parameters.
+    * `water_strength`, `rain_strength`, `wet_min`, `humidity_scale`,
+      `cold_offset`, `cold_scale`, and `cold_min`: Erosion strength factors.
+    * `unsupported_slope` and `air_side_slope`: Exposed-terrain multipliers.
+    * `deposit_strength_max`, `deposit_humidity_min`, `deposit_chance_max`, and
+      `deposit_chance_divisor`: Deposition thresholds and probability.
+    * `erosion_chance_max` and `erosion_chance_scale`: Material transformation
+      probability cap and scale.
+* `"soil_weather"`
+    * Updates exposed dirt and grass from native light, heat, humidity, snow
+      cover, support, and nearby vegetation checks. It also grows grass and
+      spreads registered nodes belonging to both `flower` and `flora` groups.
+    * `grass_heat_max` (default `51`) and `grass_heat_extreme` (default `71`):
+      Warm and extreme-heat transition thresholds.
+    * `grass_humidity_min` (default `4`), `grass_humidity_dry` (default `40`),
+      and `dirt_dry_humidity` (default `10`): Moisture thresholds.
+    * `grass_light_min` (default `6`): Minimum light for grass growth.
+    * `debug_fast` (default `false`): Uses the deterministic fast-growth roll.
+    * Node-name parameters: `dirt_node`, `grass_node`,
+      `grass_footsteps_node`, `dry_dirt_node`, `dry_grass_node`,
+      `dry_dirt_grass_node`, `snow_dirt_node`, `snow_node`, `snowblock_node`,
+      `ice_node`, and `grass_plant_node`. Their defaults are the corresponding
+      `default` mod nodes.
+* `"grass_weather"`
+    * Advances grass stages, restores dry grass and shrubs in suitable weather,
+      dries mature grass in hostile weather, and converts mature grass into a
+      climate-appropriate sapling when no tree or sapling is nearby.
+    * `grass_heat_max` (default `51`), `grass_humidity_min` (default `4`),
+      `grass_light_min` (default `6`), and `tree_light_min` (default `12`):
+      Climate and light thresholds.
+    * `debug_fast` (default `false`): Makes growth rolls immediately succeed.
+    * Node-name parameters: `grass_1_node` through `grass_5_node`,
+      `dry_grass_1_node` through `dry_grass_5_node`, `dry_shrub_node`,
+      `jungle_sapling_node`, `acacia_sapling_node`, `pine_sapling_node`,
+      `aspen_sapling_node`, and `sapling_node`. Their defaults are the
+      corresponding `default` mod nodes.
+* `"soil_hydrate"`
+    * Converts sand and dry dirt to dirt when nearby water, heat, and humidity
+      permit it. Dry grass soils recover to grass-covered dirt when sufficiently
+      lit.
+    * `heat_max` (default `51`), `humidity_min` (default `4`), and `light_min`
+      (default `6`): Recovery thresholds.
+    * `dirt_node`, `grass_node`, `dry_grass_node`, and
+      `dry_dirt_grass_node`: Configurable node names with `default` mod values.
+
+Unknown actions, parameters, and parameter types cause a startup error instead
+of silently falling back to defaults.
 
 LBM (LoadingBlockModifier) definition
 -------------------------------------

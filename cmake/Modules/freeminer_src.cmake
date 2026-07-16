@@ -503,6 +503,11 @@ set(FMcommon_SRCS ${FMcommon_SRCS}
     circuit.cpp
     content_abm_grow_tree.cpp
     content_abm.cpp
+    content_abm_core.cpp
+    content_abm_erosion.cpp
+    content_abm_evaporation.cpp
+    content_abm_growth.cpp
+    content_abm_precipitation.cpp
     fm_abm_world.cpp
     fm_abm.cpp
     fm_bitset.cpp

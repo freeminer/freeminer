@@ -19,16 +19,11 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "servermap.h"
-
 #include "content_abm.h"
-#include "light.h"
 #include "server.h"
 #include "serverenvironment.h"
+#include "servermap.h"
 #include "util/numeric.h"
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
 
 namespace
 {
@@ -421,129 +416,6 @@ public:
 	}
 };
 
-class WaterEvaporateABM : public ActiveBlockModifier
-{
-public:
-	WaterEvaporateABM(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	const std::vector<std::string> tc{"default:water_flowing"};
-	virtual const std::vector<std::string> &getTriggerContents() const override
-	{
-		return tc;
-	}
-	const std::vector<std::string> rn{"air"};
-	virtual const std::vector<std::string> &getRequiredNeighbors(
-			uint8_t activate) const override
-	{
-		return rn;
-	}
-	const std::vector<std::string> nothing;
-	virtual const std::vector<std::string> &getWithoutNeighbors() const override
-	{
-		return nothing;
-	};
-
-	virtual float getTriggerInterval() override { return 10; }
-	virtual u32 getTriggerChance() override { return 10; }
-	bool getSimpleCatchUp() override { return true; }
-	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
-	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
-	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			uint8_t activate) override
-	{
-		ServerMap *map = &env->getServerMap();
-		const auto *ndef = env->getGameDef()->ndef();
-		const v3pos_t top_pos = p + v3pos_t(0, 1, 0);
-		const MapNode top_node = map->getNodeTry(top_pos);
-		if (top_node.getContent() != CONTENT_AIR)
-			return;
-
-		int humidity = map->updateBlockHumidity(env, p);
-		if (humidity >= 96)
-			return;
-		humidity = rangelim(humidity, 0, 100);
-
-		const int heat = map->updateBlockHeat(env, p);
-		if (heat < -5)
-			return;
-		if (humidity >= 75 && heat >= -2 && heat <= 50)
-			return;
-
-		const auto light = top_node.getLight(LIGHTBANK_DAY, ndef->getLightingFlags(top_node));
-		const float sun = light >= LIGHT_SUN ? 1.0f :
-				static_cast<float>(light) / static_cast<float>(LIGHT_SUN);
-		const float dry = std::max(0.0f, static_cast<float>(96 - humidity) / 96.0f);
-		const float warm = rangelim(static_cast<float>(heat + 5) / 45.0f, 0.0f, 1.8f);
-		const float amount = dry * warm * (0.35f + 0.65f * sun) * 6.0f;
-		int whole = static_cast<int>(std::floor(amount));
-		const float frac = amount - whole;
-		if (myrand_range(0.0f, 1.0f) < frac)
-			++whole;
-
-		const int evaporate = rangelim(whole, 0, 8);
-		if (evaporate <= 0)
-			return;
-
-		n.addLevel(ndef, -evaporate);
-		map->setNode(p, n);
-		queue_liquid_update(map, p);
-	}
-};
-
-class SteamEvaporateABM : public ActiveBlockModifier
-{
-public:
-	SteamEvaporateABM(ServerEnvironment *env, NodeDefManager *nodemgr) {}
-	const std::vector<std::string> tc{"group:steam"};
-	virtual const std::vector<std::string> &getTriggerContents() const override
-	{
-		return tc;
-	}
-	const std::vector<std::string> nothing;
-	const std::vector<std::string> rn{"air"};
-	virtual const std::vector<std::string> &getRequiredNeighbors(
-			uint8_t activate) const override
-	{
-		return rn;
-	}
-	virtual const std::vector<std::string> &getWithoutNeighbors() const override
-	{
-		return nothing;
-	};
-
-	virtual float getTriggerInterval() override { return 10; }
-	virtual u32 getTriggerChance() override { return 1; }
-	bool getSimpleCatchUp() override { return true; }
-	virtual pos_t getMinY() override { return -MAX_MAP_GENERATION_LIMIT; };
-	virtual pos_t getMaxY() override { return MAX_MAP_GENERATION_LIMIT; };
-	virtual void trigger(ServerEnvironment *env, v3pos_t p, MapNode n,
-			u32 active_object_count, u32 active_object_count_wider, v3pos_t neighbor_pos,
-			uint8_t activate) override
-	{
-		ServerMap *map = &env->getServerMap();
-		const auto *ndef = env->getGameDef()->ndef();
-
-		int humidity = map->updateBlockHumidity(env, p);
-		if (humidity < 0)
-			humidity = 0;
-		if (humidity > 100)
-			humidity = 100;
-
-		const int evaporation_chance = std::max(1, 100 - humidity);
-		if (!activate && myrand_range(1, 100) > evaporation_chance)
-			return;
-
-		const u8 level = n.getLevel(ndef);
-		if (level <= 1) {
-			n = MapNode(CONTENT_AIR);
-		} else {
-			n.setLevel(ndef, level - 1);
-		}
-		map->setNode(p, n);
-		queue_liquid_update(map, p);
-	}
-};
-
 void add_abm_grow_tree(ServerEnvironment *env, NodeDefManager *nodedef);
 
 void add_fast_abms(ServerEnvironment *env, NodeDefManager *nodedef)
@@ -556,8 +428,6 @@ void add_fast_abms(ServerEnvironment *env, NodeDefManager *nodedef)
 		if (env->m_use_weather) {
 			env->addActiveBlockModifier(new LiquidFreeze(env, nodedef));
 			env->addActiveBlockModifier(new MeltWeather(env, nodedef));
-			env->addActiveBlockModifier(new WaterEvaporateABM(env, nodedef));
-			env->addActiveBlockModifier(new SteamEvaporateABM(env, nodedef));
 		}
 	}
 	add_abm_grow_tree(env, nodedef);
