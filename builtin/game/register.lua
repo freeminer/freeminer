@@ -20,6 +20,7 @@ core.register_alias_raw = nil
 --
 
 core.registered_abms = {}
+core.registered_core_abms = {}
 core.registered_lbms = {}
 core.registered_entities = {}
 core.registered_items = {}
@@ -98,6 +99,57 @@ function core.register_abm(spec)
 	assert(type(spec.action) == "function", "Required field 'action' of type function")
 
 	core.registered_abms[#core.registered_abms + 1] = spec
+	spec.mod_origin = core.get_current_modname() or "??"
+end
+
+local registered_core_abm_names = {}
+
+function core.register_core_abm(spec)
+	assert(type(spec) == "table", "Core ABM definition must be a table")
+	assert(type(spec.name) == "string", "Required field 'name' of type string")
+	spec.name = check_modname_prefix(spec.name)
+	assert(not registered_core_abm_names[spec.name],
+		"Core ABM '" .. spec.name .. "' is already registered")
+	assert(spec.nodenames ~= nil, "Required field 'nodenames'")
+	check_node_list(spec.nodenames, "nodenames")
+	check_node_list(spec.neighbors, "neighbors")
+	check_node_list(spec.without_neighbors, "without_neighbors")
+	assert(type(spec.action) == "string", "Required field 'action' of type string")
+	assert(spec.interval == nil or (type(spec.interval) == "number" and spec.interval > 0),
+		"Field 'interval' must be a positive number")
+	assert(spec.chance == nil or (type(spec.chance) == "number" and spec.chance >= 1),
+		"Field 'chance' must be a positive number")
+	assert(spec.params == nil or type(spec.params) == "table",
+		"Field 'params' must be a table")
+	for key, value in pairs(spec.params or {}) do
+		assert(type(key) == "string", "Core ABM parameter names must be strings")
+		local value_type = type(value)
+		assert(value_type == "boolean" or value_type == "number"
+				or value_type == "string" or value_type == "table",
+			"Core ABM parameter '" .. key
+					.. "' must be a boolean, number, string, or list")
+		if value_type == "table" then
+			local count = 0
+			local element_type
+			for index, element in pairs(value) do
+				assert(type(index) == "number" and index >= 1 and index % 1 == 0,
+					"Core ABM list parameter '" .. key .. "' must use integer indices")
+				local current_type = type(element)
+				assert(current_type == "number" or current_type == "string",
+					"Core ABM list parameter '" .. key
+						.. "' must contain only numbers or only strings")
+				element_type = element_type or current_type
+				assert(current_type == element_type,
+					"Core ABM list parameter '" .. key .. "' must not mix types")
+				count = count + 1
+			end
+			assert(count == #value,
+				"Core ABM list parameter '" .. key .. "' must be contiguous")
+		end
+	end
+
+	registered_core_abm_names[spec.name] = true
+	core.registered_core_abms[#core.registered_core_abms + 1] = spec
 	spec.mod_origin = core.get_current_modname() or "??"
 end
 
@@ -654,6 +706,7 @@ core.register_on_mods_loaded(function()
 
 		-- prevent direct modification
 		freeze_table(core.registered_abms)
+		freeze_table(core.registered_core_abms)
 		freeze_table(core.registered_lbms)
 		freeze_table(core.registered_items)
 		freeze_table(core.registered_nodes)
@@ -664,6 +717,7 @@ core.register_on_mods_loaded(function()
 
 		-- neutralize registration functions
 		core.register_abm = generic_reg_error("ABM")
+		core.register_core_abm = generic_reg_error("core ABM")
 		core.register_lbm = generic_reg_error("LBM")
 		core.register_item = generic_reg_error("item")
 		core.unregister_item = function(name)
