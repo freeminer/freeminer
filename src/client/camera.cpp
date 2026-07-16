@@ -106,7 +106,8 @@ Camera::~Camera()
 
 v3opos_t Camera::getHeadPosition() const
 {
-	return v3fToOpos(m_headnode->getAbsolutePosition());
+	return v3fToOpos(m_headnode->getAbsolutePosition()) +
+			intToFloat(m_camera_offset, BS);
 }
 
 void Camera::notifyFovChange()
@@ -311,9 +312,9 @@ void Camera::updateOffset()
 
 	// Update offset if too far away from the center of the map
 	m_camera_offset = v3pos_t(
-		floorf(cp.X / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP,
-		floorf(cp.Y / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP,
-		floorf(cp.Z / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP
+		std::floor(cp.X / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP,
+		std::floor(cp.Y / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP,
+		std::floor(cp.Z / CAMERA_OFFSET_STEP) * CAMERA_OFFSET_STEP
 	);
 
 	// No need to update m_cameranode as that will be done before the next render.
@@ -334,6 +335,11 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	// plus eye height.
 	if (player->getParent())
 		player_position = player->getParent()->getPosition();
+
+	// Irrlicht scene nodes use floats. Keep their coordinates close to zero so
+	// movement remains smooth at large world positions.
+	const auto camera_offset = intToFloat(m_camera_offset, BS);
+	player_position -= camera_offset;
 
 	// Smooth the camera movement after the player instantly moves upward due to stepheight.
 	// The smoothing usually continues until the camera position reaches the player position.
@@ -413,14 +419,17 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 tool_reload_ratio)
 	}
 
 	// Compute absolute camera position and target
-	auto tmp = oposToV3f(m_camera_position); // TODO use offset?
+	v3f tmp;
 	m_headnode->getAbsoluteTransformation().transformVect(tmp, rel_cam_pos);
-	m_camera_position = v3fToOpos(tmp);
+	m_camera_position = v3fToOpos(tmp) + camera_offset;
 	m_camera_direction = m_headnode->getAbsoluteTransformation()
 			.rotateAndScaleVect(rel_cam_target - rel_cam_pos);
 
 	v3f abs_cam_up = m_headnode->getAbsoluteTransformation()
 			.rotateAndScaleVect(rel_cam_up);
+
+	// Third-person collision checks use absolute world coordinates.
+	player_position += camera_offset;
 
 	// Reposition the camera for third person view
 	if (m_camera_mode > CAMERA_MODE_FIRST)
