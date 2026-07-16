@@ -201,10 +201,10 @@ void TestFmFarCalc::testRunFarAllVerification()
 
 	// Counter for visited blocks
 	int block_count = 0;
-	for (const auto &dc_csp : {0, 1, 3, 4}) {
-		// Test with different configurations
-		draw_control.cell_size_pow = dc_csp;  // cell size = 1
-		draw_control.cell_size = 1 << dc_csp; // cell size = 1
+	// Include client_mesh_chunk=2 and 4 (powers 1 and 2).
+	for (const auto &dc_csp : {0, 1, 2, 3, 4}) {
+		draw_control.cell_size_pow = dc_csp;
+		draw_control.cell_size = 1 << dc_csp;
 		draw_control.farmesh_quality_pow = draw_control.cell_size_pow;
 		for (const auto &dc_fm : {
 					 128,
@@ -228,18 +228,16 @@ void TestFmFarCalc::testRunFarAllVerification()
 									const block_step_t step) -> bool {
 								++block_count;
 
-								// Verify getFarStep for this block with cell_each=true returns a valid step
+								// Enumeration and point lookup must describe the same cell.
 								const auto res = farmesh::getFarParams(
 										draw_control, player_pos, block_pos, cell_each);
+								UASSERT(res.has_value());
 								const auto &check_step = res->step;
-								//const auto check_pos = farmesh::getFarActualBlockPos(draw_control, player_pos, block_pos, cell_each);
 								const auto &check_pos = res->pos;
-								DUMP(dc_csp, dc_fm, cell_each, two_d, check_step, step,
-										block_pos, check_pos, player_pos);
 								UASSERT(check_step >= 0);
 								UASSERT(check_step <= FARMESH_STEP_MAX);
 
-								// Verify getFarActualBlockPos for this block with cell_each=true
+								// Verify that lookup resolves the enumerated block origin.
 								UASSERTEQ(auto, check_pos.X, block_pos.X);
 								UASSERTEQ(auto, check_pos.Y, block_pos.Y);
 								UASSERTEQ(auto, check_pos.Z, block_pos.Z);
@@ -248,8 +246,8 @@ void TestFmFarCalc::testRunFarAllVerification()
 								UASSERT(step >= 0);
 								UASSERT(step <= FARMESH_STEP_MAX);
 								UASSERTEQ(auto, check_step, step);
-								// Check that size corresponds to step
-								//UASSERTEQ(bpos_t, size, res->size);
+								UASSERTEQ(bpos_t, size, res->size);
+								UASSERTEQ(bpos_t, size, static_cast<bpos_t>(1 << step));
 								// Continue processing
 								return false;
 							});
