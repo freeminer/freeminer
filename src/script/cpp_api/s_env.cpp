@@ -321,19 +321,20 @@ void ScriptApiEnv::readABMs()
 
 		definition.interval = std::max(
 				0.001f, getfloatfield_default(L, current_abm, "interval", 10.0f));
-		definition.chance = std::max(
-				1, getintfield_default(L, current_abm, "chance", 50));
-		definition.neighbors_range = std::clamp(
-				getintfield_default(L, current_abm, "neighbors_range", 1), 1,
-				static_cast<int>(UINT16_MAX));
+		const long chance = getintfield_default(L, current_abm, "chance", 50);
+		definition.chance = static_cast<uint32_t>(std::max(1L, chance));
+		const long neighbors_range =
+				getintfield_default(L, current_abm, "neighbors_range", 1);
+		definition.neighbors_range = static_cast<uint16_t>(
+				std::clamp(neighbors_range, 1L, static_cast<long>(UINT16_MAX)));
 		definition.catch_up =
 				getboolfield_default(L, current_abm, "catch_up", true);
-		definition.min_y = std::clamp(
-				getintfield_default(L, current_abm, "min_y", INT16_MIN),
-				static_cast<int>(INT16_MIN), static_cast<int>(INT16_MAX));
-		definition.max_y = std::clamp(
-				getintfield_default(L, current_abm, "max_y", INT16_MAX),
-				static_cast<int>(INT16_MIN), static_cast<int>(INT16_MAX));
+		const long min_y = getintfield_default(L, current_abm, "min_y", INT16_MIN);
+		definition.min_y = static_cast<int16_t>(std::clamp(min_y,
+				static_cast<long>(INT16_MIN), static_cast<long>(INT16_MAX)));
+		const long max_y = getintfield_default(L, current_abm, "max_y", INT16_MAX);
+		definition.max_y = static_cast<int16_t>(std::clamp(max_y,
+				static_cast<long>(INT16_MIN), static_cast<long>(INT16_MAX)));
 
 		lua_getfield(L, current_abm, "params");
 		if (!lua_isnil(L, -1)) {
