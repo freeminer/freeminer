@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Danish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-06-22 13:01+0000\n"
-"Last-Translator: Foolfl1ckz <Mariusnoahlaursen@gmail.com>\n"
+"PO-Revision-Date: 2026-07-18 23:01+0000\n"
+"Last-Translator: Peter Leth <peter@pluk.dk>\n"
 "Language-Team: Danish <https://hosted.weblate.org/projects/minetest/minetest/"
 "da/>\n"
 "Language: da\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -398,7 +398,7 @@ msgstr "Generelt"
 #. TRANSLATORS: Touchscreen gesture
 #: builtin/common/settings/dlg_settings.lua
 msgid "Long tap"
-msgstr ""
+msgstr "Langt tap"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Movement"
@@ -433,7 +433,7 @@ msgstr "Søg"
 #. TRANSLATORS: Touchscreen gesture
 #: builtin/common/settings/dlg_settings.lua
 msgid "Short tap"
-msgstr ""
+msgstr "Kort tap"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Show advanced settings"
@@ -460,6 +460,8 @@ msgid ""
 "These settings are unavailable due to your platform, hardware or in "
 "combination with the current settings."
 msgstr ""
+"Disse indstillinger er ikke tilgængelige på grund af din platform, hardware "
+"eller en kombination af de nuværende indstillinger."
 
 #: builtin/common/settings/dlg_settings.lua
 #, fuzzy
@@ -842,6 +844,8 @@ msgid ""
 "Players connected to\n"
 "$1"
 msgstr ""
+"Spillere forbundet til\n"
+"$1"
 
 #. TRANSLATORS: Message in the mod list when a mod is enabled with error
 #: builtin/mainmenu/dlg_config_world.lua
@@ -887,7 +891,7 @@ msgstr "Mod:"
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mods located inside the world folder."
-msgstr ""
+msgstr "Mods er placeret inde i verdenens mappe."
 
 #. TRANSLATORS: About mod dependencies
 #: builtin/mainmenu/dlg_config_world.lua
@@ -927,7 +931,7 @@ msgstr "aktiveret"
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Always show this dialog."
-msgstr ""
+msgstr "Vis altid denne dialog."
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 #, fuzzy
@@ -936,7 +940,7 @@ msgstr "Er du sikker på, at du vil slette »$1«?"
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Quit"
-msgstr ""
+msgstr "Forlad"
 
 #: builtin/mainmenu/dlg_create_world.lua
 msgid "A world named \"$1\" already exists"
@@ -1162,7 +1166,7 @@ msgstr ""
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "Close"
-msgstr ""
+msgstr "Luk"
 
 #: builtin/mainmenu/dlg_rebind_keys.lua
 msgid "Keybindings changed"
@@ -1639,7 +1643,7 @@ msgstr "Angivne kodeordsfil kunne ikke åbnes: "
 
 #: src/client/clientlauncher.cpp
 msgid "World does not exist and no game selected to create one."
-msgstr ""
+msgstr "Verdenen eksisterer ikke og intet spil er valgt for at oprette en."
 
 #: src/client/clientmedia.cpp src/client/game.cpp
 msgid "Media..."
@@ -2165,17 +2169,17 @@ msgstr ""
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "Museknap %d"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
 msgid "Mouse X1"
-msgstr ""
+msgstr "Mus X1"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
 msgid "Mouse X2"
-msgstr ""
+msgstr "Mus X2"
 
 #: src/client/keycode.cpp
 msgid "Num Lock"
@@ -2297,7 +2301,7 @@ msgstr "Højre meta"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Scancode: %d"
-msgstr ""
+msgstr "Scankode: %d"
 
 #: src/client/keycode.cpp
 msgid "Scroll Lock"
@@ -2828,7 +2832,7 @@ msgstr "Acceleration i luft"
 
 #: src/settings_translation_file.cpp
 msgid "Acceleration of gravity, in nodes per second per second."
-msgstr ""
+msgstr "Tyngdeacceleration, i blokke per sekund i anden."
 
 #: src/settings_translation_file.cpp
 msgid "Active Block Modifiers"
@@ -2878,11 +2882,11 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Allow clouds to look 3D instead of flat."
-msgstr ""
+msgstr "Tillad skyer at se 3D ud i stedet for flade."
 
 #: src/settings_translation_file.cpp
 msgid "Allows liquids to be translucent."
-msgstr ""
+msgstr "Tillad væsker at være gennemsigtig."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -2942,7 +2946,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Anticheat movement tolerance"
-msgstr ""
+msgstr "Anticheat bevægelsestolerance"
 
 #: src/settings_translation_file.cpp
 msgid "Append item name to tooltips"
@@ -2977,13 +2981,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Arm inertia"
-msgstr ""
+msgstr "Træghed i arme"
 
 #: src/settings_translation_file.cpp
 msgid ""
 "Arm inertia, gives a more realistic movement of\n"
 "the arm when the camera moves."
 msgstr ""
+"Træghed i armen giver en mere realistisk bevægelse af \n"
+"armen, når kameraet bevæges."
 
 #: src/settings_translation_file.cpp
 msgid "Array texture max layers"
@@ -3864,7 +3870,7 @@ msgstr "Aktivér joysticks"
 
 #: src/settings_translation_file.cpp
 msgid "Enable joysticks. Requires a restart to take effect"
-msgstr ""
+msgstr "Tænd for joysticks. Kræver genstart"
 
 #: src/settings_translation_file.cpp
 msgid "Enable mod channels support."
@@ -3876,7 +3882,7 @@ msgstr "Aktiver mod-sikkerhed"
 
 #: src/settings_translation_file.cpp
 msgid "Enable mouse wheel (scroll) for item selection in hotbar."
-msgstr ""
+msgstr "Aktivér for at vælge emner i hurtigbaren med scrollhjulet."
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -3896,7 +3902,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Enable split login/register"
-msgstr ""
+msgstr "Aktivér opdel login/registrer"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3999,7 +4005,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "FPS"
-msgstr ""
+msgstr "FPS"
 
 #: src/settings_translation_file.cpp
 msgid "FPS when unfocused"
@@ -4145,11 +4151,11 @@ msgstr "Skriftstørrelse"
 
 #: src/settings_translation_file.cpp
 msgid "Font bold by default"
-msgstr ""
+msgstr "Fed skrift som standard"
 
 #: src/settings_translation_file.cpp
 msgid "Font italic by default"
-msgstr ""
+msgstr "Kursiv skrift som standard"
 
 #: src/settings_translation_file.cpp
 msgid "Font shadow"
@@ -5001,15 +5007,15 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Key for moving fast in fast mode."
-msgstr ""
+msgstr "Genvej for at bevæge sig hurtig i hurtig tilstand."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type commands."
-msgstr ""
+msgstr "Genvej for at åbne chatten til at skrive kommandoer."
 
 #: src/settings_translation_file.cpp
 msgid "Key for opening the chat window to type local commands."
-msgstr ""
+msgstr "Genvej til at åbne for chatten til at skrive lokale kommandoer."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5043,7 +5049,7 @@ msgstr "Tastebindinger"
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
-msgstr ""
+msgstr "Tastatur og mus"
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard camera speed"
@@ -7642,7 +7648,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "cURL proxy address"
-msgstr ""
+msgstr "cURL proxy adresse"
 
 #: src/util/screenshot.cpp
 #, c-format
