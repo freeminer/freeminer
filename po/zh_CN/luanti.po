@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: Chinese (Simplified) (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-05-12 02:11+0000\n"
-"Last-Translator: saillill <2637298591@qq.com>\n"
+"PO-Revision-Date: 2026-07-18 23:01+0000\n"
+"Last-Translator: y5nw <y5nw@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/minetest/minetest/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 2026.5-dev\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -362,9 +362,8 @@ msgid "Controls"
 msgstr "控制"
 
 #: builtin/common/settings/dlg_settings.lua src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage"
-msgstr "伤害 / PvP"
+msgstr "伤害"
 
 #: builtin/common/settings/dlg_settings.lua
 #: builtin/common/settings/shadows_component.lua
@@ -406,9 +405,8 @@ msgstr "恢复默认设置"
 
 #. TRANSLATORS: $1 will be replaced with a default setting value
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Reset setting to default: $1"
-msgstr "恢复默认设置 ($1)"
+msgstr "恢复默认设置：$1"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
@@ -449,9 +447,8 @@ msgid "Touchscreen layout"
 msgstr "触摸屏布局"
 
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Unavailable"
-msgstr "<无可用命令>"
+msgstr "不可用"
 
 #: builtin/common/settings/settingtypes.lua
 msgid "Client Mods"
@@ -810,7 +807,7 @@ msgstr "无法将$1安装为材质包"
 #: builtin/mainmenu/content/pkgmgr.lua
 #, fuzzy
 msgid "World mods"
-msgstr "世界名称"
+msgstr "世界专用mod"
 
 #. TRANSLATORS: $1 = server name
 #: builtin/mainmenu/dlg_clients_list.lua
@@ -861,7 +858,7 @@ msgstr "Mod："
 
 #: builtin/mainmenu/dlg_config_world.lua
 msgid "Mods located inside the world folder."
-msgstr ""
+msgstr "世界文件夹内的mod"
 
 #. TRANSLATORS: About mod dependencies
 #: builtin/mainmenu/dlg_config_world.lua
@@ -1602,7 +1599,7 @@ msgstr "媒体..."
 #: src/client/fontengine.cpp
 #, fuzzy
 msgid "Failed to find a valid font"
-msgstr "“%s”着色器编译失败。"
+msgstr "无法找到可用字体"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -2109,7 +2106,7 @@ msgstr "鼠标中键"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "第%d个鼠标按键"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
@@ -2291,9 +2288,8 @@ msgid "Failed to create the texture \"%s\" for the rendering pipeline."
 msgstr ""
 
 #: src/client/renderingengine.cpp
-#, fuzzy
 msgid "Could not initialize any supported video driver!"
-msgstr "显卡驱动程序不支持绘制线框"
+msgstr "无法初始化任何可用的显卡驱动程序！"
 
 #: src/client/shader.cpp
 #, c-format
@@ -2301,9 +2297,9 @@ msgid "Failed to compile the \"%s\" shader."
 msgstr "“%s”着色器编译失败。"
 
 #: src/client/shader.cpp
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to find \"%s\" shader files."
-msgstr "“%s”着色器编译失败。"
+msgstr "无法找到“%s”着色器。"
 
 #. TRANSLATORS: GLSL = OpenGL Shading Language
 #: src/client/shader.cpp
@@ -2345,9 +2341,8 @@ msgid "Opening webpage"
 msgstr "正在打开网页"
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "主菜单脚本"
+msgstr "无法加载主菜单脚本！"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -3336,8 +3331,9 @@ msgstr ""
 "9 - 最佳压缩，最慢"
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid "Confirmation dialog before closing"
-msgstr ""
+msgstr "关闭前显示确认对话框"
 
 #: src/settings_translation_file.cpp
 msgid "Connect glass"
@@ -3785,14 +3781,12 @@ msgid "Enable Raytraced Culling"
 msgstr "启用光线追踪剔除"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable SSCSM"
-msgstr "全部启用"
+msgstr "启用SSCSM"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable a confirmation dialog before closing."
-msgstr "启用物品栏动画。"
+msgstr "关闭前显示确认对话框。"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3819,9 +3813,8 @@ msgid "Enable console window"
 msgstr "启用控制台窗口"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable dynamic shadows"
-msgstr "动态阴影"
+msgstr "启用动态阴影"
 
 #: src/settings_translation_file.cpp
 msgid "Enable joysticks"
