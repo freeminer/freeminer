@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-04-17 16:09+0000\n"
-"Last-Translator: Johannes Palola "
-"<jopasuomi@users.noreply.hosted.weblate.org>\n"
+"PO-Revision-Date: 2026-07-24 07:01+0000\n"
+"Last-Translator: Johannes Palola <jopasuomi@users.noreply.hosted.weblate.org>"
+"\n"
 "Language-Team: Toki Pona <https://hosted.weblate.org/projects/minetest/"
 "minetest/tok/>\n"
 "Language: tok\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.17.1-dev\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -519,7 +519,7 @@ msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "Main menu"
-msgstr ""
+msgstr "lipu open"
 
 #: builtin/fstk/ui.lua
 msgid "OK"
@@ -913,7 +913,7 @@ msgstr "o open e lipu ni lon tenpo ale."
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Are you sure you want to quit?"
-msgstr "sina wile ala wile pini e ilo Luwanti?"
+msgstr "sina wile ala wile pini e ilo Luwansi?"
 
 #: builtin/mainmenu/dlg_confirm_exit.lua
 msgid "Quit"
@@ -1288,7 +1288,7 @@ msgstr ""
 
 #: builtin/mainmenu/tab_about.lua
 msgid "About"
-msgstr "ilo Luwanti la"
+msgstr "ilo Luwansi la"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Active Contributors"
@@ -1570,7 +1570,7 @@ msgstr ""
 
 #: src/client/clientlauncher.cpp
 msgid "Main Menu"
-msgstr ""
+msgstr "lipu open"
 
 #: src/client/clientlauncher.cpp
 msgid "No world selected and no address provided. Nothing to do."
@@ -1936,12 +1936,12 @@ msgstr ""
 #. TRANSLATORS: Pause menu button, try to keep the translation short
 #: src/client/game_formspec.cpp
 msgid "Exit to Menu"
-msgstr "o tawa lipu open pi ilo Luwanti"
+msgstr "o tawa lipu open"
 
 #. TRANSLATORS: Pause menu button, try to keep the translation short (OS = Operating System)
 #: src/client/game_formspec.cpp
 msgid "Exit to OS"
-msgstr "o pini e ilo Luwanti"
+msgstr "o pini e ilo Luwansi"
 
 #: src/client/game_formspec.cpp
 msgid "Game info:"
@@ -3233,7 +3233,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Confirmation dialog before closing"
-msgstr "pini pi ilo Luwanti la o wile sona e wile jan"
+msgstr "pini pi ilo Luwansi la o wile sona e wile jan"
 
 #: src/settings_translation_file.cpp
 msgid "Connect glass"
@@ -3641,8 +3641,8 @@ msgstr "o kepeken e kipisi ale"
 #: src/settings_translation_file.cpp
 msgid "Enable a confirmation dialog before closing."
 msgstr ""
-"jan li wile pini e ilo Luwanti la o toki e ni: \"sina wile ala wile pini e "
-"ilo Luwanti?\""
+"jan li wile pini e ilo Luwansi la o toki e ni: \"sina wile ala wile pini e "
+"ilo Luwansi?\""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3804,11 +3804,12 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "FPS"
-msgstr ""
+msgstr "suli tenpo pi pali sitelen"
 
 #: src/settings_translation_file.cpp
 msgid "FPS when unfocused"
 msgstr ""
+"jan li kepeken ala e lipu musi la sitelen pi mute ni li kama lon tenpo lili"
 
 #: src/settings_translation_file.cpp
 msgid "Factor noise"
@@ -4043,11 +4044,11 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Full screen"
-msgstr ""
+msgstr "o kepeken e supa sitelen ale"
 
 #: src/settings_translation_file.cpp
 msgid "Fullscreen mode."
-msgstr ""
+msgstr "lipu pi musi Luwansi li kepeken e supa sitelen ale."
 
 #: src/settings_translation_file.cpp
 msgid "GUI"
@@ -4147,7 +4148,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Height component of the initial window size."
-msgstr ""
+msgstr "suli sewi open pi lipu Luwansi."
 
 #: src/settings_translation_file.cpp
 msgid "Height noise"
@@ -4399,6 +4400,9 @@ msgid ""
 "If FPS would go higher than this, limit it by sleeping\n"
 "to not waste CPU power for no benefit."
 msgstr ""
+"ilo li ken pali e sitelen pi mute suli. taso musi o pali e sitelen pi mute "
+"ni taso lon tenpo lili wan\n"
+"tan ni: musi o kepeken ala e wawa ilo mute tan ala."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5162,11 +5166,13 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS"
-msgstr ""
+msgstr "sitelen pi mute ni li ken kama lon tenpo lili"
 
 #: src/settings_translation_file.cpp
 msgid "Maximum FPS when the window is not focused."
 msgstr ""
+"musi li ken pali e sitelen pi mute ni taso lon tenpo ni: jan li kepeken ala "
+"e lipu musi."
 
 #: src/settings_translation_file.cpp
 msgid "Maximum distance to render shadows."
@@ -5546,6 +5552,9 @@ msgid ""
 "formspec is\n"
 "open."
 msgstr ""
+"jan li kepeken e lipu ante e lipu musi ala la o open e lipu pi tawa ala. "
+"lipu musi insa li lon\n"
+"lipu musi la lipu pi tawa ala li open ala; musi li awen tawa."
 
 #: src/settings_translation_file.cpp
 msgid "OpenGL debug"
@@ -5596,7 +5605,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Pause on lost window focus"
-msgstr ""
+msgstr "jan li kepeken ala e lipu Luwansi la o tawa ala"
 
 #: src/settings_translation_file.cpp
 msgid "Per-player limit of queued blocks load from disk"
@@ -5732,7 +5741,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Remember screen size"
-msgstr ""
+msgstr "o awen sona e suli open lipu"
 
 #: src/settings_translation_file.cpp
 msgid "Remote media"
@@ -5768,7 +5777,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Return to Main Menu"
-msgstr "o tawa lipu open pi ilo Luwanti"
+msgstr "o tawa lipu open pi ilo Luwansi"
 
 #: src/settings_translation_file.cpp
 msgid "Ridge mountain spread noise"
@@ -5841,6 +5850,11 @@ msgid ""
 "window\n"
 "is maximized is stored in window_maximized."
 msgstr ""
+"jan li ante e suli pi lipu Luwansi la ilo li awen sona e ni.\n"
+"lawa ni li lon la ilo li pana e sona pi suli lipu tawa nimi \"screen_w\" "
+"tawa nimi \"screen_h\";\n"
+"nimi \"window_maximized\" la ilo li pana e sona ni: lipu o suli ala suli "
+"sama supa sitelen."
 
 #: src/settings_translation_file.cpp
 msgid "Saving map received from server"
@@ -5866,11 +5880,11 @@ msgstr "supa sitelen"
 
 #: src/settings_translation_file.cpp
 msgid "Screen height"
-msgstr "suli sewi pi supa sitelen"
+msgstr "suli sewi open lipu"
 
 #: src/settings_translation_file.cpp
 msgid "Screen width"
-msgstr "suli poka pi supa sitelen"
+msgstr "suli poka open lipu"
 
 #: src/settings_translation_file.cpp
 msgid "Screenshot"
@@ -6064,8 +6078,8 @@ msgid ""
 "Set the language. By default, the system language is used.\n"
 "A restart is required after changing this."
 msgstr ""
-"o anu e toki. open la ilo Luwanti li kepeken e toki pi ilo pi jan musi.\n"
-"sina ante e lawa ni la o open sin e ilo Luwanti."
+"o anu e toki. open la ilo Luwansi li kepeken e toki pi ilo pi jan musi.\n"
+"sina ante e lawa ni la o open sin e ilo Luwansi."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6465,7 +6479,7 @@ msgstr ""
 "ni li wile ala e pali mute. musi ante mute li kepeken e nasin ni.\n"
 "\n"
 "* o luka kepeken tenpo suli\n"
-"tenpo pini la musi Luwanti li kepeken e nasin utala ni.\n"
+"tenpo pini la musi Luwansi li kepeken e nasin utala ni.\n"
 "nasin ni la jan li ken ala utala wawa e jan ante."
 
 #: src/settings_translation_file.cpp
@@ -7090,7 +7104,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Whether the window is maximized."
-msgstr ""
+msgstr "lipu Luwansi li suli ala suli sama supa sitelen."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7116,7 +7130,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Width component of the initial window size."
-msgstr ""
+msgstr "suli poka open pi lipu Luwansi."
 
 #: src/settings_translation_file.cpp
 msgid "Width of the selection box lines around nodes."
@@ -7128,7 +7142,7 @@ msgstr "jan li luka e nena ni la ona li pini kin tawa sinpin."
 
 #: src/settings_translation_file.cpp
 msgid "Window maximized"
-msgstr ""
+msgstr "lipu Luwansi li suli sama supa sitelen"
 
 #: src/settings_translation_file.cpp
 msgid ""
