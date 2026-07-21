@@ -41,7 +41,7 @@ public:
 	uint32_t world_merge_throttle{};
 	uint32_t world_merge_max_clients{};
 	int16_t world_merge_load_all{}; // -1 : auto;  0 : disable;   1 : force
-	bool farlights{true};
+	uint32_t farlights{0};
 	bool partial{};
 	uint32_t lazy_up{};
 	const NodeDefManager *const ndef{};

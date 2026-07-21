@@ -144,6 +144,8 @@ farmesh_server () bool true
 # Use all changed blocks in radius
 farmesh_all_changed () int 10000
 
+farlights (Far lights) int 200000
+
 # Draw coarse far-block volumetric fog up to this distance in nodes.
 # Set to 0 to disable.
 #

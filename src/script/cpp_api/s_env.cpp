@@ -3,10 +3,12 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "cpp_api/s_env.h"
+#include <algorithm>
 #include <cstdint>
 #include <utility>
 #include "cpp_api/s_internal.h"
 #include "common/c_converter.h"
+#include "content_abm.h"
 #include "log.h"
 #include "mapgen/mapgen.h"
 #include "lua_api/l_env.h"
@@ -287,6 +289,129 @@ void ScriptApiEnv::readABMs()
 		lua_pop(L, 1);
 	}
 	lua_pop(L, 1);
+
+	// fm:
+	// Native ABMs use Lua definitions for selection and tuning, but execute
+	// their whitelisted actions without a per-node Lua callback.
+	lua_getfield(L, -1, "registered_core_abms");
+	const int registered_core_abms = lua_gettop(L);
+	if (!lua_istable(L, registered_core_abms)) {
+		lua_pop(L, 1);
+		throw LuaError("core.registered_core_abms was not a lua table, as expected.");
+	}
+
+	lua_pushnil(L);
+	while (lua_next(L, registered_core_abms)) {
+		const int current_abm = lua_gettop(L);
+		CoreABMDefinition definition;
+		definition.name = getstringfield_default(L, current_abm, "name", "");
+		definition.action = getstringfield_default(L, current_abm, "action", "");
+
+		lua_getfield(L, current_abm, "nodenames");
+		read_nodenames(L, -1, definition.trigger_contents);
+		lua_pop(L, 1);
+
+		lua_getfield(L, current_abm, "neighbors");
+		read_nodenames(L, -1, definition.required_neighbors);
+		lua_pop(L, 1);
+
+		lua_getfield(L, current_abm, "without_neighbors");
+		read_nodenames(L, -1, definition.without_neighbors);
+		lua_pop(L, 1);
+
+		definition.interval = std::max(
+				0.001f, getfloatfield_default(L, current_abm, "interval", 10.0f));
+		const long chance = getintfield_default(L, current_abm, "chance", 50);
+		definition.chance = static_cast<uint32_t>(std::max(1L, chance));
+		const long neighbors_range =
+				getintfield_default(L, current_abm, "neighbors_range", 1);
+		definition.neighbors_range = static_cast<uint16_t>(
+				std::clamp(neighbors_range, 1L, static_cast<long>(UINT16_MAX)));
+		definition.catch_up =
+				getboolfield_default(L, current_abm, "catch_up", true);
+		const long min_y = getintfield_default(L, current_abm, "min_y", INT16_MIN);
+		definition.min_y = static_cast<int16_t>(std::clamp(min_y,
+				static_cast<long>(INT16_MIN), static_cast<long>(INT16_MAX)));
+		const long max_y = getintfield_default(L, current_abm, "max_y", INT16_MAX);
+		definition.max_y = static_cast<int16_t>(std::clamp(max_y,
+				static_cast<long>(INT16_MIN), static_cast<long>(INT16_MAX)));
+
+		lua_getfield(L, current_abm, "params");
+		if (!lua_isnil(L, -1)) {
+			luaL_checktype(L, -1, LUA_TTABLE);
+			const int params = lua_gettop(L);
+			lua_pushnil(L);
+			while (lua_next(L, params)) {
+				luaL_checktype(L, -2, LUA_TSTRING);
+				const std::string key = readParam<std::string>(L, -2);
+				switch (lua_type(L, -1)) {
+				case LUA_TBOOLEAN:
+					definition.params.emplace(key, static_cast<bool>(lua_toboolean(L, -1)));
+					break;
+				case LUA_TNUMBER:
+					definition.params.emplace(key, static_cast<double>(lua_tonumber(L, -1)));
+					break;
+				case LUA_TSTRING:
+					definition.params.emplace(key, readParam<std::string>(L, -1));
+					break;
+				case LUA_TTABLE: {
+					const int list = lua_gettop(L);
+					const size_t length = lua_objlen(L, list);
+					if (length == 0) {
+						definition.params.emplace(key, std::vector<std::string>{});
+						break;
+					}
+
+					lua_rawgeti(L, list, 1);
+					const int element_type = lua_type(L, -1);
+					lua_pop(L, 1);
+					if (element_type == LUA_TNUMBER) {
+						std::vector<double> values;
+						values.reserve(length);
+						for (size_t i = 1; i <= length; ++i) {
+							lua_rawgeti(L, list, i);
+							luaL_checktype(L, -1, LUA_TNUMBER);
+							values.emplace_back(lua_tonumber(L, -1));
+							lua_pop(L, 1);
+						}
+						definition.params.emplace(key, std::move(values));
+					} else if (element_type == LUA_TSTRING) {
+						std::vector<std::string> values;
+						values.reserve(length);
+						for (size_t i = 1; i <= length; ++i) {
+							lua_rawgeti(L, list, i);
+							luaL_checktype(L, -1, LUA_TSTRING);
+							values.emplace_back(readParam<std::string>(L, -1));
+							lua_pop(L, 1);
+						}
+						definition.params.emplace(key, std::move(values));
+					} else {
+						throw LuaError("Invalid list parameter '" + key + "' in core ABM '" +
+								definition.name + "': expected numbers or strings");
+					}
+					break;
+				}
+				default:
+					throw LuaError("Invalid parameter '" + key + "' in core ABM '" +
+							definition.name + "': expected boolean, number, string, or list");
+				}
+				lua_pop(L, 1);
+			}
+		}
+		lua_pop(L, 1);
+
+		std::string error;
+		ActiveBlockModifier *abm = create_core_abm(
+				definition, env->getGameDef()->ndef(), &error);
+		if (!abm)
+			throw LuaError("Failed to register core ABM '" + definition.name +
+					"': " + error);
+		env->addActiveBlockModifier(abm);
+
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
+	// ===
 }
 
 void ScriptApiEnv::readLBMs()

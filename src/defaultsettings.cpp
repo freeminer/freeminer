@@ -153,7 +153,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "3" : "5");
-	const auto farmesh = slow ? "5000" : std::to_string(FARMESH_LIMIT / 2);
+	const auto farmesh = slow ? "5000" : android ? "10000" : std::to_string(FARMESH_LIMIT / 2);
 	settings->setDefault("farmesh", farmesh);
 	const auto mesh_chunk_and_farmesh_quality = "2"; //slow ? "2" : "4";
 	settings->setDefault("client_mesh_chunk", mesh_chunk_and_farmesh_quality);
@@ -161,9 +161,9 @@ void fm_set_default_settings(Settings *settings) {
 			mesh_chunk_and_farmesh_quality); //depends on client_mesh_chunk
 	settings->setDefault("farmesh_stable", "20");
 	settings->setDefault("farmesh_server", "1");
-	settings->setDefault("farmesh_all_changed", slow ? "1000" : "10000");
-	settings->setDefault("volumetric_fog", farmesh);
-	settings->setDefault("farlights", "1");
+	settings->setDefault("farmesh_all_changed", slow ? "1000" : android ? "3000" : "10000");
+	settings->setDefault("volumetric_fog", (android || slow) ? "1000" : farmesh);
+	settings->setDefault("farlights", farmesh);
 
 	settings->setDefault("headless_optimize", "false");
 	//settings->setDefault("node_highlighting", "halo");
