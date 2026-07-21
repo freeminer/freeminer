@@ -839,7 +839,7 @@ void *WorldMergeThread::run()
 		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
 		g_settings->getU32NoEx("world_merge_max_clients", merger.world_merge_max_clients);
 		g_settings->getU32NoEx("world_merge_lazy_up", merger.lazy_up);
-		g_settings->getBoolNoEx("farlights", merger.farlights);
+		g_settings->getU32NoEx("farlights", merger.farlights);
 
 		{
 			merger.world_merge_load_all = -1;
