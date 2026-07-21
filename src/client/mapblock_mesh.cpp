@@ -1,6 +1,7 @@
 // Luanti
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+#include "fm_far_calc.h"
 
 #include "mapblock_mesh.h"
 #include "CMeshBuffer.h"
@@ -774,9 +775,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			mesh->addMeshBuffer(buf);
 			buf->drop();
 		}
-
-		if (static const auto farlights = g_settings->getBool("farlights");
-				farlights && far_step && !layer) {
+		if (static const auto farlights = g_settings->getU32("farlights");
+				far_step && farlights && farmesh::settingToStep(farlights) >= far_step && !layer) {
 				scene::SMeshBuffer *buffer = nullptr;
 				v3bpos_t ofs;
 				const auto &storage =

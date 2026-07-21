@@ -24,7 +24,7 @@ Changelog
 ### 5.14.0.0 (?)
   * Farmesh fixes and settings
      * Works with client_mesh_chunk: Just set client_mesh_chunk=4 for better quality
-     * Night lights: farlights=1
+     * Night lights: farlights=30000
   * Mapgen Earth: Now with buildings (OSM data + https://github.com/louis-e/arnis ) - no preparation required
 
 ### 5.8.0.0 (?)
