@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-06-22 13:01+0000\n"
-"Last-Translator: Omar The 2nd <omarthe3st@gmail.com>\n"
+"PO-Revision-Date: 2026-07-22 13:01+0000\n"
+"Last-Translator: علي زياد <lyzyad575@gmail.com>\n"
 "Language-Team: Arabic <https://hosted.weblate.org/projects/minetest/minetest/"
 "ar/>\n"
 "Language: ar\n"
@@ -13,7 +13,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 2026.7.dev0\n"
+"X-Generator: Weblate 2026.8.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -64,9 +64,8 @@ msgid "Command not available: "
 msgstr "الأمر غير متاح: "
 
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "Get help for commands (-t: output in chat)"
-msgstr "احصل على تعليمات الأوامر"
+msgstr "الحصول على مساعدة للأوامر (‑t: الإخراج داخل الدردشة)"
 
 #. TRANSLATORS: 'help' and 'all' mustn't be translated. cmd = command
 #: builtin/common/chatcommands.lua
@@ -77,9 +76,8 @@ msgstr ""
 
 #. TRANSLATORS: Syntax of 'help' command. Don't translate anything except 'cmd' (=command)
 #: builtin/common/chatcommands.lua
-#, fuzzy
 msgid "[all | <cmd>] [-t]"
-msgstr "[all | <cmd>]"
+msgstr "[الكل|<الأمر>][all | <cmd>]"
 
 #: builtin/common/settings/components.lua
 msgid "Add keybinding"
@@ -136,7 +134,7 @@ msgstr ""
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Amplifies every octave by (amplitude of the previous octave * Persistence)."
-msgstr ""
+msgstr "\"يُضاعِف كل أوكتاف بمقدار (سعة الأوكتاف السابق × الثبات).\""
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 #: builtin/mainmenu/content/dlg_install.lua
@@ -152,13 +150,15 @@ msgstr "ألغِ"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Controls how many octaves (layers) the noise will have."
-msgstr ""
+msgstr "يتحكم في عدد الطبقات التي تتكون منها الضوضاء."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
 "Each octave is a simple noise generator. Each one also adds more detail to "
 "the noise."
 msgstr ""
+"كل أوكتاف هو مولد ضوضاء بسيط، وكل واحدة منها تضيف أيضاً تفاصيل أكثر إلى "
+"الضوضاء."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Finally, all of the octaves will be combined to generate the noise."
@@ -169,6 +169,8 @@ msgid ""
 "Having lots of octaves is not recommended because it increases terrain "
 "generation time."
 msgstr ""
+"لا يُوصى باستخدام العديد من الثمانيات (Octaves) لأنها تزيد من وقت توليد "
+"التضاريس."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Lacunarity"
@@ -238,7 +240,7 @@ msgstr "تكبير/تصغير"
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales every octave by (scale of the previous octave / Lacunarity)."
-msgstr ""
+msgstr "تُنشئ كل أوكتاف بنسبة (مقياس الأوكتاف السابق / الفراغية)."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Scales the noise in the $1 axis by this value."
