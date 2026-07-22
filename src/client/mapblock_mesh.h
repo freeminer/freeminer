@@ -61,6 +61,7 @@ struct MeshMakeData
 	int range{1};
 	bool no_draw{};
 	unsigned int timestamp{};
+	uint64_t mesh_revision{};
 	bool debug{};
 	// ==
 
@@ -263,6 +264,7 @@ public:
 	const int fscale;
 	//bool no_draw = 0;
 	unsigned int timestamp{};
+	uint64_t mesh_revision{};
 	uint32_t last_used{};
 	// ===
 

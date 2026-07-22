@@ -486,13 +486,46 @@ public:
 	using mesh_type = std::shared_ptr<MapBlockMesh>;
 
 #if CHECK_CLIENT_BUILD() // Only on client
+	using mesh_revision_t = uint64_t;
+
 	const MapBlock::mesh_type getLodMesh(block_step_t step, bool allow_other = false);
 	void setLodMesh(const MapBlock::mesh_type &rmesh);
+	void clearLodMesh(block_step_t step);
 	const MapBlock::mesh_type getFarMesh(block_step_t step);
 	void setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step);
+
+	mesh_revision_t getMeshRevision() const
+	{
+		return m_mesh_revision.load(std::memory_order_acquire);
+	}
+
+	void updateMeshRevision(mesh_revision_t revision)
+	{
+		auto current = m_mesh_revision.load(std::memory_order_relaxed);
+		while (current < revision &&
+				!m_mesh_revision.compare_exchange_weak(current, revision,
+						std::memory_order_release, std::memory_order_relaxed)) {
+		}
+	}
+
+	bool tryMarkMeshRequested(block_step_t step, mesh_revision_t revision)
+	{
+		assert(step <= LODMESH_STEP_MAX);
+		assert(revision < (uint64_t{1} << 56));
+
+		const uint64_t request = (revision << 8) | step;
+		auto current = m_mesh_requested.load(std::memory_order_relaxed);
+		for (;;) {
+			const auto current_revision = current >> 8;
+			if (current_revision > revision || current == request)
+				return false;
+			if (m_mesh_requested.compare_exchange_weak(current, request,
+						std::memory_order_acq_rel, std::memory_order_relaxed))
+				return true;
+		}
+	}
+
 	std::mutex far_mutex;
-	uint32_t mesh_requested_timestamp{};
-	block_step_t mesh_requested_step{};
 
 protected:
 	friend class ClientMap;
@@ -504,6 +537,8 @@ protected:
 	std::array<atomic_shared_ptr, LODMESH_STEP_MAX + 1> m_lod_mesh;
 	std::array<atomic_shared_ptr, FARMESH_STEP_MAX + 1> m_far_mesh;
 	MapBlock::mesh_type delete_mesh;
+	std::atomic<mesh_revision_t> m_mesh_revision{1};
+	std::atomic_uint64_t m_mesh_requested{};
 
 public:
 	block_step_t far_step_draw{};

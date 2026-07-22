@@ -38,6 +38,10 @@ public:
 
 	// Tests blocks with a single recurring node
 	void testMonoblock(IGameDef *gamedef);
+
+#if CHECK_CLIENT_BUILD()
+	void testMeshRevision(IGameDef *gamedef);
+#endif
 };
 
 static TestMapBlock g_test_instance;
@@ -51,6 +55,9 @@ void TestMapBlock::runTests(IGameDef *gamedef)
 	TEST(testLoad20, gamedef);
 	TEST(testLoadNonStd, gamedef);
 	TEST(testMonoblock, gamedef);
+#if CHECK_CLIENT_BUILD()
+	TEST(testMeshRevision, gamedef);
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -338,6 +345,30 @@ void TestMapBlock::testLoad29(IGameDef *gamedef)
 	UASSERTEQ(int, ilist->getSize(), 32);
 	UASSERTEQ(auto, ilist->getItem(1).name, "default:stone");
 }
+
+#if CHECK_CLIENT_BUILD()
+void TestMapBlock::testMeshRevision(IGameDef *gamedef)
+{
+	MapBlock block({}, gamedef);
+
+	UASSERTEQ(uint64_t, block.getMeshRevision(), 1);
+	UASSERT(block.tryMarkMeshRequested(0, 1));
+	UASSERT(!block.tryMarkMeshRequested(0, 1));
+
+	// Changing LOD at the same content revision is a distinct request.
+	UASSERT(block.tryMarkMeshRequested(1, 1));
+	UASSERT(block.tryMarkMeshRequested(0, 1));
+
+	block.updateMeshRevision(5);
+	block.updateMeshRevision(3);
+	UASSERTEQ(uint64_t, block.getMeshRevision(), 5);
+	UASSERT(block.tryMarkMeshRequested(1, 5));
+
+	// A delayed request must not replace the marker for newer content.
+	UASSERT(!block.tryMarkMeshRequested(2, 4));
+	UASSERT(!block.tryMarkMeshRequested(1, 5));
+}
+#endif
 
 static const u8 coded_mapblock20[] = {
 	20,2,120,156,237,150,91,114,131,48,12,69,197,63,30,88,2,75,242,138,24,47,

@@ -50,11 +50,26 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 void Client::updateMeshTimestampWithEdge(const v3bpos_t &blockpos)
 {
+	const auto revision =
+			m_next_mesh_revision.fetch_add(1, std::memory_order_relaxed) + 1;
+	const auto mesh_grid = getMeshGrid();
+
 	for (const auto &dir : g_7dirs) {
-		auto *block = m_env.getMap().getBlockNoCreateNoEx(blockpos + dir);
+		const auto pos = blockpos + dir;
+		auto *block = m_env.getMap().getBlockNoCreateNoEx(pos);
 		if (!block)
 			continue;
 		block->setTimestampNoChangedFlag(m_uptime);
+		block->updateMeshRevision(revision);
+
+		// A mesh can cover multiple mapblocks and is stored in the block at
+		// the grid origin. Make dependency changes visible to that holder too.
+		const auto mesh_pos = mesh_grid.getMeshPos(pos);
+		if (mesh_pos != pos) {
+			if (auto *mesh_block =
+						m_env.getMap().getBlockNoCreateNoEx(mesh_pos))
+				mesh_block->updateMeshRevision(revision);
+		}
 	}
 
 	/*int to = FARMESH_STEP_MAX;
@@ -357,6 +372,11 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 		}
 	}
 
+	// Publish mesh invalidation immediately after installing the block data.
+	// Database work below is asynchronous and must not delay render freshness.
+	if (!step)
+		updateMeshTimestampWithEdge(bpos);
+
 	mesh_thread_pool.enqueue([this, block, bpos, step]() {
 		if (m_localdb && !is_simple_singleplayer_game) {
 			if (const auto db = GetFarDatabase({}, far_dbases, m_world_path, step); db) {
@@ -369,7 +389,6 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 		}
 
 		if (!step) {
-			updateMeshTimestampWithEdge(bpos);
 			if (!overload && block->m_is_mono_block &&
 					block->data[0].param0 != CONTENT_AIR) {
 				if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS))

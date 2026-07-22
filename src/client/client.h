@@ -181,6 +181,7 @@ void startMCPWebSocketServer(int port = 3001);
 	void stopMCPWebSocketServer();
 
 	std::atomic<double> m_uptime {};
+	std::atomic_uint64_t m_next_mesh_revision{1};
 	bool use_weather {};
 	unsigned int overload {};
 
@@ -419,9 +420,11 @@ public:
 
 	u64 getMapSeed() const { return m_map_seed; }
 
-	void addUpdateMeshTask(v3bpos_t blockpos, bool ack_to_server=false, bool urgent=false, int step = 0);
+	void addUpdateMeshTask(v3bpos_t blockpos, bool ack_to_server=false,
+			bool urgent=false, int step = -1);
 	// Including blocks at appropriate edges
-	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false, bool urgent=false);
+	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false,
+			bool urgent=false, int step = -1);
 	void addUpdateMeshTaskForNode(v3pos_t nodepos, bool ack_to_server=false, bool urgent=false);
 
 	bool hasClientEvents() const { return !m_client_event_queue.empty(); }
