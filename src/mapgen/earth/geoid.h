@@ -7,6 +7,8 @@
 #include <cstring>
 #include <fstream>
 #include <limits>
+#include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -16,6 +18,7 @@ namespace geoid_detail {
 struct Grid
 {
 	bool loaded = false;
+	std::string source_path;
 	double min_lat = 0.0;
 	double min_lon = 0.0;
 	double d_lat = 0.0;
@@ -51,9 +54,11 @@ inline float read_be_float(const unsigned char *p)
 	return out;
 }
 
-inline std::vector<std::string> geoid_paths()
+inline std::vector<std::string> geoid_paths(const std::string &preferred_path)
 {
 	std::vector<std::string> paths;
+	if (!preferred_path.empty())
+		paths.emplace_back(preferred_path);
 	if (const char *proj_data = std::getenv("PROJ_DATA"))
 		paths.emplace_back(std::string(proj_data) + "/egm96_15.gtx");
 	if (const char *proj_lib = std::getenv("PROJ_LIB"))
@@ -63,10 +68,10 @@ inline std::vector<std::string> geoid_paths()
 	return paths;
 }
 
-inline Grid load_grid()
+inline Grid load_grid(const std::string &preferred_path = {})
 {
 	Grid grid;
-	for (const std::string &path : geoid_paths()) {
+	for (const std::string &path : geoid_paths(preferred_path)) {
 		std::ifstream in(path, std::ios::binary);
 		if (!in)
 			continue;
@@ -95,24 +100,82 @@ inline Grid load_grid()
 		for (size_t i = 0; i < count; ++i)
 			grid.values[i] = read_be_float(raw.data() + i * sizeof(float));
 		grid.loaded = true;
+		grid.source_path = path;
 		return grid;
 	}
 	return {};
 }
 
-inline const Grid &grid()
+struct GridCache
 {
-	static const Grid g = load_grid();
-	return g;
+	std::mutex mutex;
+	std::string preferred_path;
+	std::shared_ptr<const Grid> grid;
+	bool attempted = false;
+};
+
+inline GridCache &grid_cache()
+{
+	static GridCache cache;
+	return cache;
+}
+
+inline std::shared_ptr<const Grid> grid()
+{
+	GridCache &cache = grid_cache();
+	const std::lock_guard<std::mutex> lock(cache.mutex);
+	if (!cache.attempted) {
+		cache.grid = std::make_shared<const Grid>(load_grid(cache.preferred_path));
+		cache.attempted = true;
+	}
+	return cache.grid;
 }
 
 } // namespace geoid_detail
 
+// Set a cache-file candidate before the first lookup. System PROJ locations are
+// still searched if this file is absent or invalid.
+inline void set_geoid_grid_path(const std::string &path)
+{
+	geoid_detail::GridCache &cache = geoid_detail::grid_cache();
+	const std::lock_guard<std::mutex> lock(cache.mutex);
+	if (cache.preferred_path == path)
+		return;
+	cache.preferred_path = path;
+	if (!cache.grid || !cache.grid->loaded)
+		cache.attempted = false;
+}
+
+// Retry loading after a missing grid has been downloaded.
+inline bool reload_geoid_grid()
+{
+	geoid_detail::GridCache &cache = geoid_detail::grid_cache();
+	const std::lock_guard<std::mutex> lock(cache.mutex);
+	cache.grid =
+			std::make_shared<const geoid_detail::Grid>(
+					geoid_detail::load_grid(cache.preferred_path));
+	cache.attempted = true;
+	return cache.grid->loaded;
+}
+
+inline bool geoid_grid_loaded()
+{
+	const auto grid = geoid_detail::grid();
+	return grid && grid->loaded;
+}
+
+inline std::string geoid_grid_path()
+{
+	const auto grid = geoid_detail::grid();
+	return grid ? grid->source_path : std::string{};
+}
+
 inline double geoid_undulation_m(double lat, double lon)
 {
-	const geoid_detail::Grid &g = geoid_detail::grid();
-	if (!g.loaded)
+	const auto grid = geoid_detail::grid();
+	if (!grid || !grid->loaded)
 		return 0.0;
+	const geoid_detail::Grid &g = *grid;
 
 	while (lon < g.min_lon)
 		lon += 360.0;
