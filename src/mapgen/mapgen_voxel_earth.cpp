@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include <cmath>
 #include <exception>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "filesys.h"
 #include "log.h"
+#include "mapgen/earth/http.h"
 #include "mapgen_voxel_earth.h"
 #include "mapnode.h"
 #include "server.h"
@@ -70,6 +72,29 @@ MapgenVoxelEarth::MapgenVoxelEarth(MapgenEarthParams *params_, EmergeParams *eme
 		MapgenEarth(params_, emerge)
 {
 #if USE_VOXEL_EARTH
+	const std::string geoid_path =
+			maps_holder->data_root + DIR_DELIM + "egm96_15.gtx";
+	earth::set_geoid_grid_path(geoid_path);
+	if (!earth::geoid_grid_loaded()) {
+		const auto lock = std::lock_guard(maps_holder->download_lock);
+		if (!earth::reload_geoid_grid()) {
+			// Remove a previous empty/partial download so multi_http_to_file()
+			// does not mistake it for valid cached data.
+			std::error_code ec;
+			std::filesystem::remove(geoid_path, ec);
+			multi_http_to_file("egm96_15.gtx",
+					{"https://download.osgeo.org/proj/vdatum/egm96_15/egm96_15.gtx"},
+					geoid_path);
+			earth::reload_geoid_grid();
+		}
+	}
+	if (earth::geoid_grid_loaded()) {
+		infostream << "Voxel earth EGM96 grid: " << earth::geoid_grid_path() << '\n';
+	} else {
+		errorstream << "Voxel earth requires egm96_15.gtx; voxel geometry will be "
+						"skipped instead of being placed at WGS84 ellipsoid height\n";
+	}
+
 	std::vector<std::string> texture_dirs;
 	std::string pure_colors_path;
 	fs::GetRecursiveDirs(texture_dirs, g_settings->get("texture_path"));
@@ -98,6 +123,8 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 {
 #if USE_VOXEL_EARTH
 	try {
+		if (!earth::geoid_grid_loaded())
+			return;
 		const std::string &apiKeyStr = api_key;
 		const pos_t terrain_y =
 				std::max(get_height(node_min.X + csize.X / 2, node_min.Z + csize.Z / 2),
