@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <exception>
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -161,26 +162,23 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 		// DUMP(node_min, node_max, lat, lon, origin.X, origin.Y, origin.Z, tiles.size());
 		const auto mg = this;
 
-		int set = 0, miss = 0;
+		std::vector<Voxel> voxels;
+		const auto collect_voxel = [&](const int x, const int y, const int z,
+										 const uint8_t r, const uint8_t g,
+										 const uint8_t b, const uint8_t a) {
+			const v3pos_t pos_rel{static_cast<pos_t>(x), static_cast<pos_t>(y),
+					static_cast<pos_t>(z)};
+			if (mg->vm->exists(node_min + pos_rel)) {
+				voxels.push_back({x, y, z, r, g, b, a});
+			}
+		};
+
 		for (const auto &tile : tiles) {
 			if (use_java_voxelizer) {
-				const auto callback = [&, this](const int &x, const int &y, const int &z,
+				const auto callback = [&](const int &x, const int &y, const int &z,
 											  const uint8_t &r, const uint8_t &g,
 											  const uint8_t &b, const uint8_t &a) {
-					const v3pos_t pos_rel{static_cast<pos_t>(x), static_cast<pos_t>(y),
-							//+ csize.Y/2
-							static_cast<pos_t>(z)};
-					const auto pos = node_min + pos_rel;
-
-					if (mg->vm->exists(pos)) {
-						const auto block_name = voxel_importer::rgb_to_block(r, g, b);
-						const auto id = ndef->getId(block_name);
-						MapNode node{id, LIGHT_SUN};
-						mg->vm->setNode(pos, node);
-						++set;
-					} else {
-						++miss;
-					}
+					collect_voxel(x, y, z, r, g, b, a);
 				};
 				const auto stats = cpuvoxelizer.voxelizeSingleGLB(tile, callback);
 			}
@@ -190,23 +188,39 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 						origin.Z, y_offset_nodes, center.X, center.Y, center.Z, scale.X,
 						scale.Y, scale.Z, node_min.X, node_min.Y, node_min.Z);
 				for (const auto &v : grid.voxels) {
-					const v3pos_t pos_rel{static_cast<pos_t>(v.x),
-							static_cast<pos_t>(v.y),
-							//+ csize.Y/2
-							static_cast<pos_t>(v.z)};
-					const auto pos = node_min + pos_rel;
-					if (mg->vm->exists(pos)) {
-						const auto block_name =
-								voxel_importer::rgb_to_block(v.r, v.g, v.b);
-						const auto id = ndef->getId(block_name);
-						MapNode node{id, LIGHT_SUN};
-						mg->vm->setNode(pos, node);
-						++set;
-					} else {
-						++miss;
-					}
+					collect_voxel(v.x, v.y, v.z, v.r, v.g, v.b, v.a);
 				}
 			}
+		}
+
+		// Terrain can be a few nodes above the photogrammetry surface. Carve each
+		// occupied column from its lowest model voxel upward, then restore the
+		// complete model so roofs and upper walls are not erased by the carving.
+		std::map<std::pair<pos_t, pos_t>, pos_t> column_bottoms;
+		for (const auto &v : voxels) {
+			const v3pos_t pos = node_min +
+					v3pos_t(static_cast<pos_t>(v.x), static_cast<pos_t>(v.y),
+							static_cast<pos_t>(v.z));
+			auto [it, inserted] =
+					column_bottoms.emplace(std::pair{pos.X, pos.Z}, pos.Y);
+			if (!inserted)
+				it->second = std::min(it->second, pos.Y);
+		}
+		for (const auto &[xz, bottom] : column_bottoms) {
+			for (pos_t y = bottom + 1; y <= node_max.Y; ++y) {
+				const v3pos_t pos{xz.first, y, xz.second};
+				if (mg->vm->exists(pos))
+					mg->vm->setNode(pos, n_air);
+			}
+		}
+
+		for (const auto &v : voxels) {
+			const v3pos_t pos = node_min +
+					v3pos_t(static_cast<pos_t>(v.x), static_cast<pos_t>(v.y),
+							static_cast<pos_t>(v.z));
+			const auto block_name = voxel_importer::rgb_to_block(v.r, v.g, v.b);
+			const auto id = ndef->getId(block_name);
+			mg->vm->setNode(pos, MapNode{id, LIGHT_SUN});
 		}
 	} catch (const std::exception &e) {
 		errorstream << "Voxel earth exception: " << e.what() << "\n";
