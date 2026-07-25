@@ -44,8 +44,16 @@ size_t http_to_file(const std::string &url, const std::string &path)
 		return uintmax_t{0};
 	}
 
-	std::ofstream(path, std::ios_base::binary) << res.data;
-	if (!std::filesystem::exists(path)) {
+	std::error_code ec;
+	const std::filesystem::path file_path(path);
+	if (!file_path.parent_path().empty())
+		std::filesystem::create_directories(file_path.parent_path(), ec);
+
+	std::ofstream output(path, std::ios_base::binary);
+	output.write(res.data.data(), res.data.size());
+	output.close();
+	if (!output || !std::filesystem::exists(path)) {
+		std::filesystem::remove(path, ec);
 		return uintmax_t{0};
 	}
 	return std::filesystem::file_size(path);
@@ -58,14 +66,16 @@ size_t multi_http_to_file(
 		path = porting::path_cache + DIR_DELIM + "earth" + "/" + name;
 	}
 
-	static concurrent_set<std::string> http_failed;
-	if (http_failed.contains(name)) {
-		return std::filesystem::exists(path) ? std::filesystem::file_size(path) : 0;
+	if (std::filesystem::exists(path)) {
+		if (const auto size = std::filesystem::file_size(path))
+			return size;
+		std::error_code ec;
+		std::filesystem::remove(path, ec);
 	}
 
-	if (std::filesystem::exists(path)) {
-		return std::filesystem::file_size(path);
-	}
+	static concurrent_set<std::string> http_failed;
+	if (http_failed.contains(name))
+		return 0;
 
 	for (const auto &uri : links) {
 		if (const auto size = http_to_file(uri, path)) {
@@ -84,8 +94,6 @@ size_t multi_http_to_file(
 			//<< " || " << "curl -o " << zipfull << " https://viewfinderpanoramas.org/dem3/" << zipfile
 			<< "\n";
 
-	std::ofstream(path, std::ios_base::binary) << ""; // create zero file
-
 	return 0;
 };
 
@@ -96,7 +104,7 @@ size_t multi_http_to_file_cdn(const std::string &dir, const std::string &name,
 #if defined(__EMSCRIPTEN__)
 			"/"
 #else
-			"http://cdn.freeminer.org/"
+			"https://cdn.freeminer.org/"
 #endif
 					+ dir + "/" + name);
 	return multi_http_to_file(name, links, path);
@@ -104,14 +112,16 @@ size_t multi_http_to_file_cdn(const std::string &dir, const std::string &name,
 
 size_t multi_http_to_file(const std::vector<std::string> &links, const std::string &path)
 {
-	static concurrent_set<std::string> http_failed;
-	if (http_failed.contains(path)) {
-		return std::filesystem::exists(path) ? std::filesystem::file_size(path) : 0;
+	if (std::filesystem::exists(path)) {
+		if (const auto size = std::filesystem::file_size(path))
+			return size;
+		std::error_code ec;
+		std::filesystem::remove(path, ec);
 	}
 
-	if (std::filesystem::exists(path)) {
-		return std::filesystem::file_size(path);
-	}
+	static concurrent_set<std::string> http_failed;
+	if (http_failed.contains(path))
+		return 0;
 
 	for (const auto &uri : links) {
 		if (const auto size = http_to_file(uri, path)) {
@@ -130,7 +140,6 @@ size_t multi_http_to_file(const std::vector<std::string> &links, const std::stri
 			//<< " || " << "curl -o " << zipfull << " https://viewfinderpanoramas.org/dem3/" << zipfile
 			<< "\n";
 
-	std::ofstream(path, std::ios_base::binary) << ""; // create zero file
 	return 0;
 };
 
