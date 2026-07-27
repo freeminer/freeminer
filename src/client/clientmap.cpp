@@ -1023,6 +1023,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			++blocks_in_range;
 
 			const int smesh_size = !mesh ? -1 : mesh->getMesh()->getMeshBufferCount();
+			const auto mesh_revision = block->getMeshRevision();
 
 			/*
 				Ignore if mesh doesn't exist
@@ -1032,13 +1033,11 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					blocks_in_range_without_mesh++;
 					if (m_mesh_queued < maxq || range_blocks <= 2) {
 						if (!mesh || speedf < BS * MAP_BLOCKSIZE) {
-							if (const auto bts = block->getTimestamp();
-									block->mesh_requested_timestamp < bts ||
-									block->mesh_requested_step != mesh_step) {
-								block->mesh_requested_timestamp = bts;
-								block->mesh_requested_step = mesh_step;
+							if (block->tryMarkMeshRequested(
+										mesh_step, mesh_revision)) {
 								//DUMP("goup", bp, m_mesh_queued);
-								m_client->addUpdateMeshTask(bp, false);
+								m_client->addUpdateMeshTask(
+										bp, false, false, mesh_step);
 								++m_mesh_queued;
 							}
 						}
@@ -1047,7 +1046,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 					//	continue;
 				}
 				if (mesh && mesh_step == mesh->lod_step &&
-						block->getTimestamp() <= mesh->timestamp && !smesh_size) {
+						mesh_revision <= mesh->mesh_revision && !smesh_size) {
 					++blocks_in_range_without_mesh;
 					continue;
 				}
@@ -1162,24 +1161,17 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				continue;
 */
 
-			if (mesh) {
-				if (mesh_step != mesh->lod_step && smesh_size < 0 &&
-						(m_mesh_queued < maxq * 1.2 || range_blocks <= 2)) {
-					m_client->addUpdateMeshTask(bp);
-					++m_mesh_queued;
-				} else if (const auto bts = block->getTimestamp();
-						   bts != BLOCK_TIMESTAMP_UNDEFINED &&
-						   block->getTimestamp() >
-								   mesh->timestamp + (smesh_size				 ? 0
-															 : range_blocks >= 2 ? 60
-																				 : 0) &&
-						   (m_mesh_queued < maxq * 1.5 || range_blocks <= 2)) {
-					if (mesh_step > 1)
-						m_client->addUpdateMeshTask(bp);
-					else
-						m_client->addUpdateMeshTaskWithEdge(bp);
-					++m_mesh_queued;
-				}
+			if (mesh && mesh_step == mesh->lod_step &&
+					mesh_revision > mesh->mesh_revision &&
+					(m_mesh_queued < maxq * 1.5 || range_blocks <= 2) &&
+					block->tryMarkMeshRequested(mesh_step, mesh_revision)) {
+				if (mesh_step > 1)
+					m_client->addUpdateMeshTask(
+							bp, false, false, mesh_step);
+				else
+					m_client->addUpdateMeshTaskWithEdge(
+							bp, false, false, mesh_step);
+				++m_mesh_queued;
 			}
 			if (!smesh_size)
 				continue;

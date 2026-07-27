@@ -769,13 +769,25 @@ void Client::step(float dtime)
 
 			num_processed_meshes++;
 
-			if (!r.mesh)
+			if (!r.mesh) {
+				for (auto map_block : r.map_blocks)
+					if (map_block)
+						map_block->refDrop();
 				continue;
+			}
 
 			std::vector<MinimapMapblock*> minimap_mapblocks;
 			bool do_mapper_update = true;
 
 			ClientMap &map = m_env.getClientMap();
+			MapBlock::mesh_revision_t current_mesh_revision = 0;
+			for (const auto &map_block : r.map_blocks) {
+				if (map_block) {
+					current_mesh_revision = std::max(
+							current_mesh_revision,
+							map_block->getMeshRevision());
+				}
+			}
 
 /*
 			MapSector *sector = map.emergeSector(v2s16(r.p.X, r.p.Z));
@@ -789,14 +801,22 @@ void Client::step(float dtime)
 */
 
 			MapBlock *block = map.getBlockNoCreateNoEx(r.p);
-			if (!block && r.mesh)
-				block = map.createBlankBlock(r.p).get();
-
 			if (block) {
+				current_mesh_revision = std::max(
+						current_mesh_revision, block->getMeshRevision());
+			}
+
+			// Do not let a result made from an older block snapshot replace a
+			// newer mesh. Normal and urgent queues can complete out of order.
+			if (r.mesh->mesh_revision >= current_mesh_revision) {
+				if (!block)
+					block = map.createBlankBlock(r.p).get();
+				block->updateMeshRevision(r.mesh->mesh_revision);
+
 				const auto old_mesh = block->getLodMesh(r.mesh->lod_step);
-				if (!old_mesh) {
+				if (!old_mesh && !r.mesh->isEmpty())
 					++m_new_meshes;
-				}
+
 				// Delete the old mesh
 				if (old_mesh)
 					map.invalidateMapBlockMesh(old_mesh.get());
@@ -807,19 +827,19 @@ void Client::step(float dtime)
 */
 				block->solid_sides = r.solid_sides;
 
-				if (r.mesh) {
-					minimap_mapblocks = r.mesh->moveMinimapMapblocks();
-					if (minimap_mapblocks.empty())
-						do_mapper_update = false;
+				minimap_mapblocks = r.mesh->moveMinimapMapblocks();
+				if (minimap_mapblocks.empty())
+					do_mapper_update = false;
 
-					if (!r.mesh->isEmpty()) {
-						// Replace with the new mesh
-						//block->mesh = r.mesh.release();
-         				block->setLodMesh(r.mesh);
-						if (r.urgent)
-							force_update_shadows = true;
-					}
-				}
+				if (r.mesh->isEmpty())
+					block->clearLodMesh(r.mesh->lod_step);
+				else
+					block->setLodMesh(r.mesh);
+
+				if (r.urgent)
+					force_update_shadows = true;
+			} else {
+				do_mapper_update = false;
 			}
 
 			if (m_minimap && do_mapper_update) {
@@ -2169,12 +2189,14 @@ void Client::addUpdateMeshTask(v3bpos_t p, bool ack_to_server, bool urgent, int 
 	//draw_control.block_overflow = qsize > 1000; // todo: depend on mesh make speed
 == == ===
 #endif
-	m_mesh_update_manager->updateBlock(&m_env.getMap(), p, ack_to_server, urgent);
+	m_mesh_update_manager->updateBlock(
+			&m_env.getMap(), p, ack_to_server, urgent, false, step);
 }
 
-void Client::addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server, bool urgent)
+void Client::addUpdateMeshTaskWithEdge(v3bpos_t blockpos, bool ack_to_server, bool urgent, int step)
 {
-	m_mesh_update_manager->updateBlock(&m_env.getMap(), blockpos, ack_to_server, urgent, true);
+	m_mesh_update_manager->updateBlock(
+			&m_env.getMap(), blockpos, ack_to_server, urgent, true, step);
 }
 
 void Client::addUpdateMeshTaskForNode(v3s16 nodepos, bool ack_to_server, bool urgent)

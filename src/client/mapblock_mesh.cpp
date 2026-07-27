@@ -657,6 +657,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 	lod_step{data->lod_step},
 	fscale{data->fscale},
 	timestamp{data->timestamp},
+	mesh_revision{data->mesh_revision},
 	last_used{static_cast<u32>(client->m_uptime)},
 
 	m_tsrc(client->getTextureSource()),

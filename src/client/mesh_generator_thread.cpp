@@ -104,7 +104,7 @@ MeshUpdateQueue::~MeshUpdateQueue()
 }
 
 bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server,
-	bool urgent, bool from_neighbor)
+	bool urgent, bool from_neighbor, int lod_step)
 {
 	// If block that causes update does not exist, skip.
 	if (!map->getBlockNoCreateNoEx(p))
@@ -135,6 +135,8 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server,
 			q->crack_level = m_client->getCrackLevel();
 			q->crack_pos = m_client->getCrackPos();
 			q->urgent |= urgent;
+			if (lod_step >= 0)
+				q->lod_step = lod_step;
 			q->retrieveBlocks(map, mesh_grid.cell_size);
 			return true;
 		}
@@ -150,6 +152,7 @@ bool MeshUpdateQueue::addBlock(Map *map, v3s16 p, bool ack_block_to_server,
 	q->crack_level = m_client->getCrackLevel();
 	q->crack_pos = m_client->getCrackPos();
 	q->urgent = urgent;
+	q->lod_step = lod_step;
 	q->retrieveBlocks(map, mesh_grid.cell_size);
 
 	/*
@@ -229,10 +232,12 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 {
 	auto mesh_grid = m_client->getMeshGrid();
 
-	const auto lod_step = farmesh::getLodStep(m_client->m_env.getClientMap().getControl(),
-			getNodeBlockPos(
-					floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)),
-			q->p, m_client->getEnv().getLocalPlayer()->getSpeed().getLength());
+	const auto lod_step = q->lod_step >= 0
+			? static_cast<block_step_t>(q->lod_step)
+			: farmesh::getLodStep(m_client->m_env.getClientMap().getControl(),
+					getNodeBlockPos(
+							floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)),
+					q->p, m_client->getEnv().getLocalPlayer()->getSpeed().getLength());
 
 	MeshMakeData *data = new MeshMakeData(m_client->ndef(),
 		MAP_BLOCKSIZE * mesh_grid.cell_size, mesh_grid,
@@ -257,6 +262,8 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 					bts != BLOCK_TIMESTAMP_UNDEFINED) {
 				data->timestamp = std::max(data->timestamp, bts);
 			}
+			data->mesh_revision =
+					std::max(data->mesh_revision, block->getMeshRevision());
 		}
 
 
@@ -336,8 +343,8 @@ MeshUpdateManager::MeshUpdateManager(Client *client):
 	m_workers.push_back(std::make_unique<MeshUpdateWorkerThread>(client, &m_queue_in_urgent, this));
 }
 
-void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
-		bool urgent, bool update_neighbors)
+void MeshUpdateManager::updateBlock(Map *map, v3bpos_t p, bool ack_block_to_server,
+		bool urgent, bool update_neighbors, int lod_step)
 {
 	if (static thread_local const bool headless_optimize =
 					g_settings->getBool("headless_optimize");
@@ -348,7 +355,8 @@ void MeshUpdateManager::updateBlock(Map *map, v3s16 p, bool ack_block_to_server,
 	static thread_local const bool many_neighbors =
 			g_settings->getBool("smooth_lighting")
 			&& !g_settings->getFlag("performance_tradeoffs");
-	if (!(urgent ? m_queue_in_urgent : m_queue_in).addBlock(map, p, ack_block_to_server, urgent, false)) {
+	if (!(urgent ? m_queue_in_urgent : m_queue_in)
+					.addBlock(map, p, ack_block_to_server, urgent, false, lod_step)) {
 		warningstream << "Update requested for non-existent block at "
 				<< p << std::endl;
 		return;
