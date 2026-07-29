@@ -61,69 +61,76 @@ hgts::hgts(const std::string &folder) : folder{folder}
 }
 
 // Get layer definitions
-std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::ll_t lon) {
+std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::ll_t lon)
+{
 	constexpr auto layers = true;
-	
-	auto place_dummy_generic = [](std::map<int, std::map<int, std::shared_ptr<height>>>& map,
-								 std::unordered_map<uint64_t, std::weak_ptr<height>>& cache,
-								 int lat_dec, int lon_dec) {
-		const static auto hgt_dummy = std::make_shared<height_dummy>();
-		if (!map[lat_dec].contains(lon_dec)) {
-			map[lat_dec][lon_dec] = hgt_dummy;
-			cache[make_tile_key(lat_dec, lon_dec)] = hgt_dummy;
-		}
-	};
-	
+
+	auto place_dummy_generic =
+			[](std::map<int, std::map<int, std::shared_ptr<height>>> &map,
+					std::unordered_map<uint64_t, std::weak_ptr<height>> &cache,
+					int lat_dec, int lon_dec) {
+				const static auto hgt_dummy = std::make_shared<height_dummy>();
+				if (!map[lat_dec].contains(lon_dec)) {
+					map[lat_dec][lon_dec] = hgt_dummy;
+					cache[make_tile_key(lat_dec, lon_dec)] = hgt_dummy;
+				}
+			};
+
 	auto identity_post_process = [](height::ll_t result) { return result; };
-	
-	return {
-		Layer{
-			.container = map1,
-			.cache = tl_container_cache.map1_cache,
-			.factory = [](const std::string& folder, height::ll_t lat, height::ll_t lon) {
-				return std::make_shared<height_hgt>(folder, lat, lon);
+
+	return {Layer{
+					.container = map1,
+					.cache = tl_container_cache.map1_cache,
+					.factory =
+							[](const std::string &folder, height::ll_t lat,
+									height::ll_t lon) {
+								return std::make_shared<height_hgt>(folder, lat, lon);
+							},
+					.post_process = identity_post_process,
+					.place_dummy = place_dummy_generic,
+					.min_height = 0.0f, // Primary layer can handle very low elevations
+					.max_height = 10000.0f, // Primary layer handles high elevations
 			},
-			.post_process = identity_post_process,
-			.place_dummy = place_dummy_generic,
-			.min_height = 0.0f,   // Primary layer can handle very low elevations
-			.max_height = 10000.0f,   // Primary layer handles high elevations
-		},
-		Layer{
-			.container = map1_seabed,
-			.cache = tl_container_cache.map1_seabed_cache,
-			.factory = [](const std::string& folder, height::ll_t lat, height::ll_t lon) {
-				return std::make_shared<height_seabed_tif>(folder, lat, lon);
-			},
-			.post_process = identity_post_process,
-			.place_dummy = place_dummy_generic,
-			.min_height = -12000.0f,  // Seabed handles deep ocean depths
-			.max_height = 0.0f,       // Seabed only for underwater/sea level
-		}
-	};
+			Layer{
+					.container = map1_seabed,
+					.cache = tl_container_cache.map1_seabed_cache,
+					.factory =
+							[](const std::string &folder, height::ll_t lat,
+									height::ll_t lon) {
+								return std::make_shared<height_seabed_tif>(
+										folder, lat, lon);
+							},
+					.post_process = identity_post_process,
+					.place_dummy = place_dummy_generic,
+					.min_height = -12000.0f, // Seabed handles deep ocean depths
+					.max_height = 0.0f,		 // Seabed only for underwater/sea level
+			}};
 }
 
 height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lon)
 {
 	const auto lat1 = height::lat_start(lat);
 	const auto lon1 = height::lon_start(lon);
-	
+
 	// First try thread-local container cache
 	const uint64_t tile_key = make_tile_key(lat1, lon1);
-	
+
 	// Get all layers
 	auto layers = get_layers(lat, lon);
-	
+
 	// Try each layer in cycle
-	for (auto& layer : layers) {
+	for (auto &layer : layers) {
 		// Check thread-local cache first
 		auto it = layer.cache.find(tile_key);
-		if (auto cached_height = it != layer.cache.end() ? it->second.lock() : std::shared_ptr<height>{};
-		    cached_height && cached_height->ok(lat, lon)) {
+		if (auto cached_height = it != layer.cache.end() ? it->second.lock()
+														 : std::shared_ptr<height>{};
+				cached_height && cached_height->ok(lat, lon)) {
 			const auto result = cached_height->get(lat, lon);
 			const auto processed_result = layer.post_process(result);
-			
+
 			// Check if result is within layer's valid range
-			if (processed_result > layer.min_height && processed_result < layer.max_height) {
+			if (processed_result > layer.min_height &&
+					processed_result < layer.max_height) {
 				return processed_result;
 			}
 			// If not in range, continue to next layer
@@ -131,16 +138,18 @@ height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lo
 	}
 
 	// Try each layer with lock
-	for (auto& layer : layers) {
+	for (auto &layer : layers) {
 		{
 			const auto lock = std::unique_lock(mutex);
 			if (const auto it = layer.container.find(lat1); it != layer.container.end()) {
-				if (const auto inner_it = it->second.find(lon1); inner_it != it->second.end()) {
+				if (const auto inner_it = it->second.find(lon1);
+						inner_it != it->second.end()) {
 					const auto result = inner_it->second->get(lat, lon);
 					const auto processed_result = layer.post_process(result);
-					
+
 					// Check if result is within layer's valid range
-					if (processed_result > layer.min_height && processed_result < layer.max_height) {
+					if (processed_result > layer.min_height &&
+							processed_result < layer.max_height) {
 						// Cache the height object for future fast access
 						layer.cache[tile_key] = inner_it->second;
 						return processed_result;
@@ -149,11 +158,11 @@ height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lo
 				}
 			}
 		} // Lock released
-		
+
 		// Load data outside the lock if needed and within valid range
 		if (lat <= 90 && lat >= -90 && lon <= 180 && lon >= -180) {
-			const auto& container_lat1 = layer.container[lat1];
-			
+			const auto &container_lat1 = layer.container[lat1];
+
 			if (!container_lat1.contains(lon1)) {
 				auto hgt = layer.factory(folder, lat, lon);
 				const int lat_dec = hgt->lat_start(lat);
@@ -164,17 +173,21 @@ height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lo
 						const auto lock = std::unique_lock(mutex);
 						layer.container[lat_dec][lon_dec] = std::move(hgt);
 					} // Lock released
-					
+
 					// Now get the result with a brief lock
 					const auto lock = std::unique_lock(mutex);
-					if (const auto it = layer.container.find(lat_dec); it != layer.container.end()) {
-						if (const auto inner_it = it->second.find(lon_dec); inner_it != it->second.end()) {
+					if (const auto it = layer.container.find(lat_dec);
+							it != layer.container.end()) {
+						if (const auto inner_it = it->second.find(lon_dec);
+								inner_it != it->second.end()) {
 							const auto result = inner_it->second->get(lat, lon);
 							const auto processed_result = layer.post_process(result);
-							
+
 							// Check if result is within layer's valid range
-							if (processed_result > layer.min_height && processed_result < layer.max_height) {
-								layer.cache[make_tile_key(lat_dec, lon_dec)] = layer.container[lat_dec][lon_dec];
+							if (processed_result > layer.min_height &&
+									processed_result < layer.max_height) {
+								layer.cache[make_tile_key(lat_dec, lon_dec)] =
+										layer.container[lat_dec][lon_dec];
 								return processed_result;
 							}
 						}
@@ -185,16 +198,18 @@ height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lo
 					layer.place_dummy(layer.container, layer.cache, lat1, lon1);
 				}
 			}
-			
+
 			// Final check with lock held
 			const auto lock = std::unique_lock(mutex);
 			if (const auto it = layer.container.find(lat1); it != layer.container.end()) {
-				if (const auto inner_it = it->second.find(lon1); inner_it != it->second.end()) {
+				if (const auto inner_it = it->second.find(lon1);
+						inner_it != it->second.end()) {
 					const auto result = inner_it->second->get(lat, lon);
 					const auto processed_result = layer.post_process(result);
-					
+
 					// Check if result is within layer's valid range
-					if (processed_result > layer.min_height && processed_result < layer.max_height) {
+					if (processed_result > layer.min_height &&
+							processed_result < layer.max_height) {
 						// Cache the height object for future fast access
 						layer.cache[tile_key] = inner_it->second;
 						return processed_result;
@@ -203,7 +218,7 @@ height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lo
 			}
 		}
 	}
-	
+
 	// If all layers failed or results were out of range, return 0 as fallback
 	return 0;
 }
@@ -363,19 +378,9 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 		std::string ffolder = folder + "/" + zipname;
 		std::string zstdfull = folder + "/" + zstfile;
 		std::error_code ec;
-		std::filesystem::create_directories(folder, ec);
+		std::filesystem::create_directories(ffolder, ec);
 
-		multi_http_to_file(zstfile,
-				{
-#if defined(__EMSCRIPTEN__)
-						"/"
-#else
-						"http://cdn.freeminer.org/"
-#endif
-						"earth/" +
-								zstfile,
-				},
-				zstdfull);
+		multi_http_to_file_cdn("earth", zstfile, {}, zstdfull);
 		if (std::filesystem::exists(zstdfull) && std::filesystem::file_size(zstdfull)) {
 
 			// FIXME: zero copy possible in c++26 or with custom rdbuf
@@ -393,14 +398,10 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 
 	// bz2 has best compression
 	/* use zstd
-	if (srtmTile.empty()) {
-		const auto bzipfile = zipname + ".tar.bz2";
-		std::string bzipfull = folder + "/" + bzipfile;
-		multi_http_to_file(bzipfile,
-				{
-						"http://cdn.freeminer.org/earth/" + bzipfile,
-				},
-				bzipfull);
+		if (srtmTile.empty()) {
+			const auto bzipfile = zipname + ".tar.bz2";
+			std::string bzipfull = folder + "/" + bzipfile;
+			multi_http_to_file_cdn("earth", bzipfile, {}, bzipfull);
 		if (std::filesystem::exists(bzipfull) && std::filesystem::file_size(bzipfull)) {
 			std::string cmd{"tar -jOxvf " + bzipfull + " " + zipname + "/" + filename};
 			actionstream << "Unpack: " << cmd << "\n";
@@ -418,10 +419,9 @@ bool height_hgt::load(ll_t lat, ll_t lon)
 
 		// TODO: https://viewfinderpanoramas.org/Coverage%20map%20viewfinderpanoramas_org15.htm
 
-		multi_http_to_file(zipfile,
-				{"http://cdn.freeminer.org/earth/" + zipfile,
-						"http://viewfinderpanoramas.org/dem1/" + zipfile,
-						"http://viewfinderpanoramas.org/dem3/" + zipfile},
+		multi_http_to_file_cdn("earth", zipfile,
+				{"https://viewfinderpanoramas.org/dem1/" + zipfile,
+						"https://viewfinderpanoramas.org/dem3/" + zipfile},
 				zipfull);
 	}
 
@@ -548,9 +548,8 @@ bool height_tif::load(ll_t lat, ll_t lon)
 		const auto zipfull = folder + "/" + zipname;
 		const auto tifname = folder + "/" + zipname + ".tif";
 		if (!std::filesystem::exists(tifname)) {
-			multi_http_to_file(zipfile,
-					{"http://cdn.freeminer.org/earth/" + zipfile,
-							"http://www.viewfinderpanoramas.org/DEM/TIF15/" + zipfile},
+			multi_http_to_file_cdn("earth", zipfile,
+					{"https://www.viewfinderpanoramas.org/DEM/TIF15/" + zipfile},
 					zipfull);
 		}
 
@@ -991,7 +990,7 @@ height::height_t height::get(ll_t lat, ll_t lon)
 				//lat_seconds, lon_seconds,
 				seconds_per_px_x, seconds_per_px_y, lat, lon, lat_loaded, lon_loaded,
 				(lat - lat_loaded), pixel_per_deg_x, (lon - lon_loaded), pixel_per_deg_y);
-		//return height[2]; // debug not interpolated
+	//return height[2]; // debug not interpolated
 #endif
 
 	// ratio where X lays
@@ -1077,17 +1076,10 @@ bool height_seabed_tif::load(height::ll_t lat, height::ll_t lon)
 	std::string lat_dir = lat_dir_buff;
 	std::string fullpath = folder + "/" + lat_dir + "/" + filename;
 
-	if (!std::filesystem::exists(fullpath)) {
-		std::error_code ec;
-		std::filesystem::create_directories(folder + "/" + lat_dir, ec);
-
-		std::string url =
-				std::string("http://cdn.freeminer.org/earth/") + lat_dir + "/" + filename;
-		multi_http_to_file(filename, {url}, fullpath);
-	}
-	if (!std::filesystem::exists(fullpath)) {
+	std::error_code ec;
+	std::filesystem::create_directories(folder + "/" + lat_dir, ec);
+	if (!multi_http_to_file_cdn("earth/" + lat_dir, filename, {}, fullpath))
 		return false;
-	}
 
 	if (const auto tif = TIFFOpen(fullpath.c_str(), "r"); tif) {
 		uint32_t w = 0, h = 0;
