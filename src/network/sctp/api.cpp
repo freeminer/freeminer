@@ -11,6 +11,7 @@ namespace con_sctp
 
 struct socket *Connection::getPeer(session_t peer_id)
 {
+	const auto lock = m_peers.lock_shared_rec();
 	auto node = m_peers.find(peer_id);
 
 	if (node == m_peers.end())
@@ -27,33 +28,39 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 	// peer->getAddress(MTP_PRIMARY, peer_address);
 
 	if (!peer_id) {
-		if (sock) {
-			usrsctp_close(sock);
-			sock = nullptr;
-
-			putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
-
-			return true;
-		} else {
+		if (!sock)
 			return false;
-		}
-	}
-	if (m_peers.find(peer_id) == m_peers.end())
-		return false;
 
-	// Create event
-	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
+		auto *peer_sock = sock;
+		sock = nullptr;
+		sock_connect = false;
+		sock_listen = false;
+		usrsctp_close(peer_sock);
+
+		putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
+		return true;
+	}
 
 	{
 		const auto lock = m_peers.lock_unique_rec();
-		auto sock = m_peers.get(peer_id);
-		if (sock)
-			usrsctp_close(sock);
+		auto node = m_peers.find(peer_id);
+		if (node == m_peers.end())
+			return false;
 
-		// delete m_peers[peer_id]; -- enet should handle this
-		m_peers.erase(peer_id);
+		auto *peer_sock = node->second;
+		if (peer_id == PEER_ID_SERVER && peer_sock == sock) {
+			sock = nullptr;
+			sock_connect = false;
+		}
+		if (peer_sock)
+			usrsctp_close(peer_sock);
+
+		m_peers.erase(node);
 	}
+
+	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
 	m_peers_address.erase(peer_id);
+	recv_buf.erase(peer_id);
 	return true;
 }
 
@@ -99,8 +106,7 @@ void Connection::Connect(Address address)
 
 bool Connection::Connected()
 {
-	auto node = m_peers.find(PEER_ID_SERVER);
-	if (node == m_peers.end())
+	if (!m_peers.count(PEER_ID_SERVER))
 		return false;
 
 	// TODO: why do we even need to know our peer id?
