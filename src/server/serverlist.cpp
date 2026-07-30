@@ -31,6 +31,15 @@ void addMultiProto(Json::Value &server, const u16 port)
 		server["proto_multi"]["sctp"] = port_multi;
 	}
 #endif
+#if USE_ENET
+	{
+		u16 port_multi = 0;
+		if (!g_settings->getU16NoEx("port_enet", port_multi)) {
+			port_multi = port + 200;
+		}
+		server["proto_multi"]["enet"] = port_multi;
+	}
+#endif
 #if USE_WEBSOCKET
 	{
 		u16 port_multi = 0;
@@ -47,15 +56,6 @@ void addMultiProto(Json::Value &server, const u16 port)
 			port_multi = port + 100;
 		}
 		server["proto_multi"]["sctp_wss"] = port_multi;
-	}
-#endif
-#if USE_ENET
-	{
-		u16 port_multi = 0;
-		if (!g_settings->getU16NoEx("port_enet", port_multi)) {
-			port_multi = port + 200;
-		}
-		server["proto_multi"]["enet"] = port_multi;
 	}
 #endif
 #endif

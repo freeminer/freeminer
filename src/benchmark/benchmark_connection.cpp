@@ -12,11 +12,11 @@
 #if MINETEST_TRANSPORT
 #include "network/mtp/impl.h"
 #endif
-#if USE_ENET
-#include "network/enet/connection.h"
-#endif
 #if USE_SCTP
 #include "network/sctp/connection.h"
+#endif
+#if USE_ENET
+#include "network/enet/connection.h"
 #endif
 #if USE_WEBSOCKET
 #include "network/ws/impl.h"
@@ -141,23 +141,6 @@ static std::vector<ConnectionBenchmarkBackend> getConnectionBenchmarkBackends()
 	});
 #endif
 
-#if USE_ENET
-	backends.push_back({
-		"ENet",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionEnet>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"",
-		"",
-		0,
-		false,
-	});
-#endif
-
 #if USE_SCTP
 	backends.push_back({
 		"SCTP",
@@ -172,6 +155,23 @@ static std::vector<ConnectionBenchmarkBackend> getConnectionBenchmarkBackends()
 		"raw SCTP uses process-global usrsctp UDP encapsulation; "
 		"the single-process benchmark cannot create independent "
 		"server/client SCTP stacks",
+		0,
+		false,
+	});
+#endif
+
+#if USE_ENET
+	backends.push_back({
+		"ENet",
+		[](con::PeerHandler *handler) {
+			return std::make_unique<con::ConnectionEnet>(
+					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+					CONNECTION_BENCHMARK_TIMEOUT,
+					true,
+					handler);
+		},
+		"",
+		"",
 		0,
 		false,
 	});
