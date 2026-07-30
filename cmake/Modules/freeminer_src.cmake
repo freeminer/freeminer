@@ -2,18 +2,21 @@ find_package(MsgPack REQUIRED)
 include_directories(${MSGPACK_INCLUDE_DIR})
 
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-    option(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 0)
     option(USE_MULTI "Enable MT+ENET+WSS networking" 1)
 endif()
 
 if(USE_MULTI)
-    set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
     set(ENABLE_ENET 1 CACHE BOOL "")
-    #set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
     if(NOT ANDROID)
         set(ENABLE_WEBSOCKET 0 CACHE BOOL "")
     endif()
 endif()
+
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten" OR USE_MULTI)
+    option(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 1)
+    #set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
+endif()
+
 
 if(ANDROID OR WIN32 OR EMSCRIPTEN OR USE_LIBCXX)
     option(FETCH_DEPS "Compile deps (boost,...) in place" 1)

@@ -42,11 +42,11 @@ const char *g_build_info =
 #if	USE_MULTI
 	"\n" "USE_MULTI"
 #endif
-#if	USE_ENET
-	"\n" "USE_ENET"
-#endif
 #if	USE_SCTP
 	"\n" "USE_SCTP"
+#endif
+#if	USE_ENET
+	"\n" "USE_ENET"
 #endif
 #if	USE_WEBSOCKET
 	"\n" "USE_WEBSOCKET"
