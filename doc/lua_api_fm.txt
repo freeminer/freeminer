@@ -82,6 +82,17 @@ core.stat_add(key, playername, value=1)
 
     freeze = "", -- ice/snow for water
     melt = "", -- water for snow/ice
+    groups.tree_liquid_water = 1,
+    ^ Native tree growth may consume liquids in group `water`.
+    ^ Replace `water` with any liquid group, for example
+    ^ `groups.tree_liquid_lava = 1` consumes only liquids in group `lava`.
+    ^ Multiple `tree_liquid_*` groups form a whitelist. With none, the tree
+    ^ does not absorb liquid nodes, but humidity absorption may still apply.
+    groups.tree_pipe_sides = 1,
+    ^ For trees storing liquid in param2, allow pumping through existing side
+    ^ branches without treating param2 as facedir. Such branches grow upward.
+    groups.tree_get_water_from_humidity = 0,
+    ^ Disables both humidity uptake and humidity-driven liquid loss.
     leveled = 0, -- Block contain level in param2. value - default level, used for snow.
     ^ Dont forget use "leveled" type nodebox.
     ^ Special sense for liquids with paramtype2="leveled" and source :
@@ -134,4 +145,3 @@ core.stat_add(key, playername, value=1)
 
 core.hud_set_hotbar_image(self, name, items)
 added optional param: items=1 mean gui_hotbar.png contains only one cell
-
