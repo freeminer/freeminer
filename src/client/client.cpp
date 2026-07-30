@@ -197,40 +197,10 @@ Client::Client(
 		m_sscsm_controller->runEvent(this, std::move(event2));
 	}
 
-	{
-		//FIXME: network packets
-		//FIXME: check that *client_builtin* is not overridden
-
-		std::string enable_sscsm = g_settings->get("enable_sscsm");
-		if (enable_sscsm == "singleplayer") { //FIXME: enum
-			auto event1 = std::make_unique<SSCSMEventUpdateVFSFiles>();
-
-			// some simple test code
-			event1->files.emplace_back("sscsm_test0:init.lua",
-					R"=+=(
-print("sscsm_test0: loading")
-
---print(dump(_G))
---print(debug.traceback())
-
-do
-	local pos = vector.zero()
-	local function print_nodes()
-		print(string.format("node at %s: %s", pos, dump(core.get_node_or_nil(pos))))
-		pos = pos:offset(1, 0, 0)
-		core.after(1, print_nodes)
-	end
-	core.after(0, print_nodes)
-end
-					)=+=");
-
-			m_sscsm_controller->runEvent(this, std::move(event1));
-
-			auto event2 = std::make_unique<SSCSMEventLoadMods>();
-			event2->mods.emplace_back("sscsm_test0", "sscsm_test0:init.lua");
-			m_sscsm_controller->runEvent(this, std::move(event2));
-		}
-	}
+	//FIXME: network packets
+	//FIXME: check that *client_builtin* is not overridden
+	// The sscsm_test0 preview mod is loaded from loadSSCSM(),
+	// once itemdefs/nodedefs actually exist to populate core.registered_*.
 }
 
 void Client::migrateModStorage()
@@ -1954,6 +1924,10 @@ void Client::afterContentReceived()
 	tu_args.text_base = wstrgettext("Initializing nodes");
 	NodeVisuals::fillNodeVisuals(m_nodedef, this, &tu_args);
 
+	// Runs after fillNodeVisuals(), which is where ContentFeatures::visuals and thus
+	// minimap_color, and palette - the two values we care for in SSCSM, get populated
+	m_sscsm_controller->runEvent(this, std::make_unique<SSCSMEventAfterContentReceived>());
+
 	// Start mesh update thread after setting up content definitions
 	infostream<<"- Starting mesh update thread"<<std::endl;
 	m_mesh_update_manager->start();
@@ -1966,6 +1940,48 @@ void Client::afterContentReceived()
 
 	m_rendering_engine->draw_load_screen(wstrgettext("Done!"), guienv, m_tsrc, 0, 100);
 	infostream<<"Client::afterContentReceived() done"<<std::endl;
+}
+
+void Client::loadSSCSM()
+{
+	std::string enable_sscsm = g_settings->get("enable_sscsm");
+	bool sscsm_enabled = enable_sscsm == "singleplayer"; //FIXME: enum
+	if (!sscsm_enabled)
+		return;
+
+	auto event1 = std::make_unique<SSCSMEventUpdateVFSFiles>();
+
+	// some simple test code
+	event1->files.emplace_back("sscsm_test0:init.lua",
+			R"=+=(
+print("sscsm_test0: loading")
+
+--print(dump(_G))
+--print(debug.traceback())
+
+do
+	local pos = vector.zero()
+	local function print_nodes()
+		print(string.format("node at %s: %s", pos, dump(core.get_node_or_nil(pos))))
+		pos = pos:offset(1, 0, 0)
+		core.after(1, print_nodes)
+	end
+	core.after(0, print_nodes)
+end
+
+do
+	local n = 0
+	for _ in pairs(core.registered_nodes) do n = n + 1 end
+	print("sscsm_test0: registered_nodes count: " .. n)
+end
+print("sscsm_test0: air def: " .. dump(core.registered_nodes["air"]))
+				)=+=");
+
+	m_sscsm_controller->runEvent(this, std::move(event1));
+
+	auto event2 = std::make_unique<SSCSMEventLoadMods>();
+	event2->mods.emplace_back("sscsm_test0", "sscsm_test0:init.lua");
+	m_sscsm_controller->runEvent(this, std::move(event2));
 }
 
 float Client::getRTT()
