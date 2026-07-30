@@ -3,7 +3,7 @@
 set -xeu
 
 pushd ../android
-ANDROID_HOME=${ANDROID_HOME-~/Android/Sdk/} ./gradlew assembleRelease
+ANDROID_HOME=${ANDROID_HOME-~/Android/Sdk/} ./gradlew assembleRelease $*
 
 PATH_IN=$(pwd)/app/build/outputs/apk/release/
 PATH_OUT=${PATH_IN}

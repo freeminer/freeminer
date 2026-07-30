@@ -7,7 +7,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 endif()
 
 if(USE_MULTI)
-    #set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
+    set(ENABLE_SCTP 1 CACHE BOOL "") # Maybe bugs
     set(ENABLE_ENET 1 CACHE BOOL "")
     #set(ENABLE_WEBSOCKET_SCTP 1 CACHE BOOL "") # NOT FINISHED
     if(NOT ANDROID)
@@ -94,7 +94,9 @@ if(FETCH_DEPS)
     )
     FetchContent_MakeAvailable(Boost)
     set(Boost_FOUND 1 CACHE INTERNAL "")
-    set(Boost_INCLUDE_DIRS "${BOOST_LIBRARY_INCLUDES} ${boost_SOURCE_DIR}/libs/numeric/conversion/include" CACHE INTERNAL "")
+    set(Boost_INCLUDE_DIRS
+        "${BOOST_LIBRARY_INCLUDES};${boost_SOURCE_DIR}/libs/numeric/conversion/include"
+        CACHE INTERNAL "" FORCE)
 endif()
 
 if(ENABLE_WEBSOCKET OR ENABLE_WEBSOCKET_SCTP)
@@ -133,29 +135,35 @@ endif()
 
 set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
-if((ENABLE_SCTP OR ENABLE_WEBSOCKET_SCTP) AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
-    message(WARNING "Please Clone usrsctp:  git clone --depth 1 https://github.com/sctplab/usrsctp ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
+set(SCTP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
+
+if((ENABLE_SCTP OR ENABLE_WEBSOCKET_SCTP) AND NOT EXISTS ${SCTP_SOURCE_DIR}/usrsctplib)
+    message(WARNING "Please git clone https://github.com/sctplab/usrsctp into ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp")
     set(ENABLE_SCTP 0)
 endif()
 
 if(ENABLE_SCTP OR ENABLE_WEBSOCKET_SCTP)
-    # from external/usrsctp/usrsctplib/CMakeLists.txt :
     if(SCTP_DEBUG)
-        set(sctp_debug 1 CACHE INTERNAL "")
+        set(sctp_debug ON CACHE BOOL "Build usrsctp with debug information" FORCE)
         add_definitions(-DSCTP_DEBUG=1)
+    else()
+        set(sctp_debug OFF CACHE BOOL "Build usrsctp with debug information" FORCE)
     endif()
-    set(sctp_build_programs 0 CACHE INTERNAL "")
-    set(sctp_werror 0 CACHE INTERNAL "")
+    set(sctp_build_programs OFF CACHE BOOL "Build usrsctp example programs" FORCE)
+    set(sctp_build_fuzzer OFF CACHE BOOL "Build usrsctp fuzzers" FORCE)
+    set(sctp_werror OFF CACHE BOOL "Treat usrsctp warnings as errors" FORCE)
     set(WERROR 0 CACHE INTERNAL "") #old
 
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp)
+    add_subdirectory(${SCTP_SOURCE_DIR} external/usrsctp EXCLUDE_FROM_ALL)
 
-    #include_directories(${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp/usrsctplib)
     set(SCTP_LIBRARY usrsctp)
+    if(ANDROID)
+        target_compile_definitions(${SCTP_LIBRARY} PRIVATE __Userspace_os_Linux)
+    endif()
 
     set(USE_SCTP 1)
 
-    message(STATUS "Using sctp: ${CMAKE_CURRENT_SOURCE_DIR}/external/usrsctp ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
+    message(STATUS "Using sctp: ${SCTP_SOURCE_DIR} ${SCTP_LIBRARY} SCTP_DEBUG=${SCTP_DEBUG}")
     set(FREEMINER_COMMON_LIBRARIES ${FREEMINER_COMMON_LIBRARIES} ${SCTP_LIBRARY})
 endif()
 
@@ -327,7 +335,11 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
         add_library(EXPAT::EXPAT ALIAS expat)
     endif()
     set(Boost_USE_STATIC_LIBS ${BUILD_STATIC_LIBS})
-    find_package(Boost COMPONENTS program_options)
+    if(TARGET Boost::headers AND TARGET Boost::program_options)
+        set(Boost_FOUND TRUE)
+    else()
+        find_package(Boost COMPONENTS program_options)
+    endif()
     if(Boost_FOUND)
         set(BUILD_TESTING 0 CACHE INTERNAL "")
         set(BUILD_DATA_TESTS 0 CACHE INTERNAL "")
@@ -346,7 +358,7 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
                     ${boost_SOURCE_DIR}/libs/numeric/conversion/include
                 )
             endif()
-            if(FETCH_DEPS)
+            if(FETCH_DEPS AND NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/CMakeLists.txt)
                 set(FETCH_OSMIUM 1 CACHE INTERNAL "")
             endif()
 
@@ -354,11 +366,17 @@ if(ENABLE_OSMIUM AND (OSMIUM_INCLUDE_DIR OR EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/m
             # TODO: support system installed libosmium
             if(NOT FETCH_OSMIUM AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/CMakeLists.txt)
                 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/cmake")
-                set(Osmium_USE_LZ4 1 CACHE INTERNAL "")
-                add_subdirectory(mapgen/earth/libosmium)
                 set(OSMIUM_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include ${Boost_INCLUDE_DIRS})
-                find_package(BZip2)
-                find_package(EXPAT)
+                if(TARGET BZip2::BZip2)
+                    set(BZIP2_FOUND TRUE)
+                else()
+                    find_package(BZip2)
+                endif()
+                if(TARGET EXPAT::EXPAT)
+                    set(EXPAT_FOUND TRUE)
+                else()
+                    find_package(EXPAT)
+                endif()
             else()
                 FetchContent_Declare(libosmium
                     GIT_REPOSITORY https://github.com/osmcode/libosmium
