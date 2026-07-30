@@ -19,8 +19,54 @@ if [ -z "$NO_DEPS" ]; then
   SUDO=${SUDO=$(which sudo ||:)}
   if [ "$DIST" = "Debian" ] || [ "$DIST" = "Ubuntu" ]; then
     ${SUDO} apt update
-    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install -y git subversion build-essential cmake ninja-build ccache libsdl2-dev libbz2-dev libzstd-dev  libjpeg-dev libfreetype6-dev libxxf86vm-dev libxi-dev libsqlite3-dev libhiredis-dev libvorbis-dev libopenal-dev libcurl4-openssl-dev libssl-dev libluajit-5.1-dev libgettextpo0 libdeflate-dev libmsgpack-dev libboost-dev libboost-system-dev libboost-program-options-dev  clang lld llvm libc++-dev libc++abi-dev
-    for PACKAGE in libpng12-dev libpng-dev libgles1-mesa-dev libgles2-mesa-dev libgl1-mesa-dev ; do
+    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install -y \
+        build-essential \
+        ccache \
+        clang \
+        cmake \
+        git \
+        libboost-dev \
+        libboost-program-options-dev \
+        libboost-system-dev \
+        libbz2-dev \
+        libc++-dev \
+        libc++abi-dev \
+        libcurl4-openssl-dev \
+        libdeflate-dev \
+        libfreetype6-dev \
+        libgettextpo0 \
+        libhiredis-dev \
+        libjpeg-dev \
+        libluajit-5.1-dev \
+        libmsgpack-dev \
+        libopenal-dev \
+        libosmium2-dev \
+        libsdl2-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        libvorbis-dev \
+        libxi-dev \
+        libxxf86vm-dev \
+        libzstd-dev \
+        lld \
+        llvm \
+        ninja-build \
+
+    for PACKAGE in \
+        libpng12-dev \
+        libpng-dev \
+        libgles1-mesa-dev \
+        libgles2-mesa-dev \
+        libgl1-mesa-dev \
+        clang-20 \
+        clang-21 \
+        clang-22 \
+        clang-23 \
+        lld-20 \
+        lld-21 \
+        lld-22 \
+        lld-23 \
+    ; do
         ${SUDO} apt install -y $PACKAGE ||:
     done
   elif [ -e /etc/arch-release ]; then
