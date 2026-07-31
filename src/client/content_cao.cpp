@@ -1745,12 +1745,14 @@ void GenericCAO::processMessage(const std::string &data)
 		{
 			if (m_hp == 0)
 			{
+				if (m_smgr) {
 				// TODO: Execute defined fast response
 				// As there is no definition, make a smoke puff
 				ClientSimpleObject *simple = createSmokePuff(
 						m_smgr, m_env, oposToV3f(m_position),
 						v2f(m_prop.visual_size.X, m_prop.visual_size.Y) * BS);
 				m_env->addSimpleObject(simple);
+				}
 			} else if (m_reset_textures_timer < 0 && !m_prop.damage_texture_modifier.empty()) {
 				m_reset_textures_timer = 0.05;
 				if(damage >= 2)
