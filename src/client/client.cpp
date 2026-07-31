@@ -68,6 +68,7 @@
 #include <IAnimatedMesh.h>
 #include <IFileSystem.h>
 #include <IReadFile.h>
+#include <IMeshCache.h>
 #include <json/json.h>
 
 #include <iostream>
@@ -2059,29 +2060,34 @@ ParticleManager* Client::getParticleManager()
 	return m_particle_manager.get();
 }
 
-scene::IAnimatedMesh* Client::getMesh(const std::string &filename, bool cache)
+scene::IAnimatedMesh *Client::getMesh(const std::string &filename, bool *is_shared)
 {
-	StringMap::const_iterator it = m_mesh_data.find(filename);
-	if (it == m_mesh_data.end()) {
-		errorstream << "Client::getMesh(): Mesh not found: \"" << filename
-			<< "\"" << std::endl;
-		return NULL;
-	}
-	const std::string &data    = it->second;
+	auto it = m_mesh_data.find(filename);
+	if (it == m_mesh_data.end())
+		return nullptr;
 
-	// Create the mesh, remove it from cache and return it
-	// This allows unique vertex colors and other properties for each instance
+	if (is_shared)
+		*is_shared = true; // this is currently always the case
+
+	// Try getting it from cache explicitly
+	auto *sm = m_rendering_engine->get_scene_manager();
+	auto *mesh = sm->getMeshCache()->getMeshByName(filename.c_str());
+	if (mesh) {
+		mesh->grab();
+		return mesh;
+	}
+
+	// Load the mesh from file data
+	const std::string &data = it->second;
 	io::IReadFile *rfile = m_rendering_engine->get_filesystem()->createMemoryReadFile(
 			data.c_str(), data.size(), filename.c_str());
 	FATAL_ERROR_IF(!rfile, "Could not create/open RAM file");
 
-	scene::IAnimatedMesh *mesh = m_rendering_engine->get_scene_manager()->getMesh(rfile);
+	mesh = sm->getMesh(rfile);
 	rfile->drop();
 	if (!mesh)
 		return nullptr;
 	mesh->grab();
-	if (!cache)
-		m_rendering_engine->removeMesh(mesh);
 	return mesh;
 }
 
