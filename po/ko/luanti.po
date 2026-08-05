@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Korean (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-05-06 19:14+0200\n"
-"PO-Revision-Date: 2026-04-20 07:09+0000\n"
+"PO-Revision-Date: 2026-08-10 15:18+0000\n"
 "Last-Translator: \"김현수 (khstony)\" <a34253492@gmail.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/minetest/minetest/"
 "ko/>\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.17.1-dev\n"
+"X-Generator: Weblate 2026.9.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -32,7 +32,7 @@ msgstr "유효하지 않은 명령어: "
 
 #: builtin/client/chatcommands.lua
 msgid "Issued command: "
-msgstr "명령어 발행됨: "
+msgstr "지시된 커맨드: "
 
 #: builtin/client/chatcommands.lua
 msgid "List online players"
@@ -48,7 +48,7 @@ msgstr "외부 채팅 대기열이 비어있습니다."
 
 #: builtin/client/chatcommands.lua
 msgid "This command is disabled by server."
-msgstr "서버에서 사용 할 수 없는 명령어입니다."
+msgstr "해당 명령어를 서버에서 비활성화했습니다."
 
 #: builtin/common/chatcommands.lua
 msgid "Available commands:"
@@ -71,7 +71,7 @@ msgstr "명령어 도움말 보기 (-t: 채팅에 출력)"
 msgid ""
 "Use '.help <cmd>' to get more information, or '.help all' to list everything."
 msgstr ""
-"자세한 정보를 얻으려면 '.help <cmd>'를 사용하고, 모든 것을 나열하려면 '.help "
+"개별 정보를 얻으려면 '.help <cmd>'를 사용하고, 모든 내용을 나열하려면 '.help "
 "all'을 사용하십시오."
 
 #. TRANSLATORS: Syntax of 'help' command. Don't translate anything except 'cmd' (=command)
@@ -165,6 +165,8 @@ msgid ""
 "Having lots of octaves is not recommended because it increases terrain "
 "generation time."
 msgstr ""
+"옥타브가 증가하면 지형을 생성하는 시간이 지연되므로 높게 설정하는 것을 "
+"추천하지 않습니다."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid "Lacunarity"
@@ -324,7 +326,7 @@ msgstr "(시스템 언어 사용)"
 #. TRANSLATORS: Shown when a default setting is the empty string
 #: builtin/common/settings/dlg_settings.lua
 msgid "<empty>"
-msgstr ""
+msgstr "<비어있음>"
 
 #: builtin/common/settings/dlg_settings.lua
 msgid "Accessibility"
@@ -406,13 +408,12 @@ msgstr "기본값으로 복원"
 
 #. TRANSLATORS: $1 will be replaced with a default setting value
 #: builtin/common/settings/dlg_settings.lua
-#, fuzzy
 msgid "Reset setting to default: $1"
-msgstr "기본 설정으로 재설정하기 ($1)"
+msgstr "기본 설정($1) 으로 재설정하기"
 
 #: builtin/common/settings/dlg_settings.lua builtin/mainmenu/tab_online.lua
 msgid "Search"
-msgstr "찾기"
+msgstr "검색"
 
 #. TRANSLATORS: Touchscreen gesture
 #: builtin/common/settings/dlg_settings.lua
@@ -1307,7 +1308,7 @@ msgstr "활성된 렌더러:"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Core Developers"
-msgstr "코어 개발자"
+msgstr "핵심 개발자"
 
 #: builtin/mainmenu/tab_about.lua
 msgid "Core Team"
@@ -1521,7 +1522,7 @@ msgstr ""
 #: builtin/mainmenu/tab_online.lua
 #, fuzzy
 msgid "Possible filters"
-msgstr "푸아송 필터링"
+msgstr "사용가능한 필터"
 
 #: builtin/mainmenu/tab_online.lua
 msgid "Public Servers"
@@ -1607,9 +1608,8 @@ msgid "Media..."
 msgstr "미디어..."
 
 #: src/client/fontengine.cpp
-#, fuzzy
 msgid "Failed to find a valid font"
-msgstr "\"%s\"쉐이더 파일을 찾는데 실패했습니다."
+msgstr "유효한 폰트를 찾지 못했습니다"
 
 #: src/client/game.cpp src/client/render/pipeline.cpp src/client/shader.cpp
 #: src/server.cpp
@@ -1643,11 +1643,11 @@ msgstr "자동 전진 활성화"
 
 #: src/client/game.cpp
 msgid "Block bounds hidden"
-msgstr "숨겨진 범위 차단"
+msgstr "블록 바운드 숨기기"
 
 #: src/client/game.cpp
 msgid "Block bounds shown for current block"
-msgstr "현재 블록의 경계 표시"
+msgstr "현재 블록의 블록 바운드 표시"
 
 #: src/client/game.cpp
 msgid "Block bounds shown for nearby blocks"
@@ -2120,7 +2120,7 @@ msgstr "가운데클릭"
 #: src/client/keycode.cpp
 #, c-format
 msgid "Mouse Button %d"
-msgstr ""
+msgstr "마우스 버튼 %d"
 
 #. TRANSLATORS: This is a mouse button.
 #: src/client/keycode.cpp
@@ -2302,7 +2302,7 @@ msgstr ""
 #: src/client/renderingengine.cpp
 #, fuzzy
 msgid "Could not initialize any supported video driver!"
-msgstr "비디오 드라이버가 와이어프레임을 지원하지 않음"
+msgstr "지원되는 비디오 드라이버를 초기화할 수 없습니다!"
 
 #: src/client/shader.cpp
 #, c-format
@@ -2357,9 +2357,8 @@ msgid "Opening webpage"
 msgstr "웹페이지 열기"
 
 #: src/gui/guiEngine.cpp
-#, fuzzy
 msgid "Failed to load main menu script!"
-msgstr "메인 메뉴 스크립트"
+msgstr "메인 메뉴 스크립트 로드 실패"
 
 #: src/gui/guiFormSpecMenu.cpp
 msgid "Proceed"
@@ -2846,10 +2845,10 @@ msgid ""
 "light, it has very little effect on natural night light."
 msgstr ""
 "'감마 보정'을 적용하여 조명 곡선을 변경합니다.\n"
-"값이 높을수록 중간 및 낮은 조명 수준이 더 밝아집니다.\n"
+"값이 높을수록 중간 및 낮은 조명이 더 밝아집니다.\n"
 "'1.0' 입력 시 조명 곡선을 변경하지 않습니다.\n"
-"이것은 일광 및 인공 조명에만 중요한 영향을 미칩니다.\n"
-"빛은, 자연적인 야간 조명에 거의 영향을 미치지 않습니다."
+"이것은 일광 및 인공 조명에만 유의미한 영향을 미칩니다.\n"
+"자연적인 야간 조명는에 거의 영향을 미치지 않습니다."
 
 #: src/settings_translation_file.cpp
 msgid "Always fly fast"
@@ -2861,7 +2860,7 @@ msgstr "주변 occlusion 감마"
 
 #: src/settings_translation_file.cpp
 msgid "Amplifies the valleys."
-msgstr "계곡을 증폭합니다."
+msgstr "협곡을 증폭합니다."
 
 #: src/settings_translation_file.cpp
 msgid "Anisotropic filtering"
@@ -2899,7 +2898,7 @@ msgstr "툴팁에 아이템 이름 추가."
 #: src/settings_translation_file.cpp
 #, fuzzy
 msgid "Append the full item name to the tooltip of item stacks."
-msgstr "툴팁에 아이템 이름 추가."
+msgstr "아이템 스택의 툴팁에 전체 아이템 이름 추가."
 
 #: src/settings_translation_file.cpp
 msgid "Apple trees noise"
@@ -2912,6 +2911,9 @@ msgid ""
 "Provides balance between speed and image quality.\n"
 "fxaa can used in combination with the other anti-aliasing methods"
 msgstr ""
+"고대비 가장자리를 감지하고 부드럽게 처리하는 후처리 필터를 적용합니다.\n"
+"속도와 이미지 품질 간의 균형을 제공합니다.\n"
+"FXAA는 다른 안티앨리어싱 방식과 함께 사용할 수 있습니다."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3466,9 +3468,8 @@ msgstr ""
 "또한 개체 십자선 색상을 제어합니다"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Damage flash"
-msgstr "세계 생성기 신호"
+msgstr "데미지 화면 효과"
 
 #: src/settings_translation_file.cpp
 msgid "Debug log file size threshold"
@@ -3809,9 +3810,8 @@ msgid "Enable Raytraced Culling"
 msgstr "레이 트레이싱 컬링 활성화"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Enable SSCSM"
-msgstr "모두 활성화"
+msgstr "SSCSM 활성화"
 
 #: src/settings_translation_file.cpp
 msgid "Enable a confirmation dialog before closing."
@@ -3826,7 +3826,7 @@ msgid ""
 msgstr ""
 "자동 노출 보정 활성화\n"
 "이 기능을 활성화하면 후처리 엔진이\n"
-"장면의 밝기에 자동으로 맞춰 조정되며,\n"
+"장면의 밝기에 자동으로 맞춰 조정됩니다.\n"
 "인간의 눈이 반응하는 방식을 모방합니다."
 
 #: src/settings_translation_file.cpp
@@ -3851,7 +3851,7 @@ msgstr "조이스틱 활성화"
 
 #: src/settings_translation_file.cpp
 msgid "Enable joysticks. Requires a restart to take effect"
-msgstr "조이스틱 활성화, 재시작해야 적용됩니다"
+msgstr "조이스틱 활성화. 재시작해야 적용됩니다"
 
 #: src/settings_translation_file.cpp
 msgid "Enable mod channels support."
@@ -3907,7 +3907,7 @@ msgid ""
 msgstr ""
 "원격 미디어 서버 사용 가능(서버 지원 시 적용).\n"
 "원격 서버들은 서버에 연결할 때 매우 빠르게 미디어를\n"
-"다운로드 할 수 있도록 제공합니다.(예: 텍스처)."
+"다운로드 할 수 있도록 제공합니다.(텍스처 등)."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3915,7 +3915,7 @@ msgid ""
 "For example: 0 for no view bobbing; 1.0 for normal; 2.0 for double."
 msgstr ""
 "화면 흔들림 멀티플라이어\n"
-"예 : 0은 화면 흔들림 없음; 1.0은 보통; 2.0은 두배로 적용됨."
+"예 : 0은 화면 흔들림 없음, 1.0은 보통, 2.0은 두배로 적용됨."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -3924,7 +3924,7 @@ msgid ""
 "appearance of high dynamic range images. Mid-range contrast is slightly\n"
 "enhanced, highlights and shadows are gradually compressed."
 msgstr ""
-"Hable의 ‘언차티드 2’ 영화적 톤 매핑을 활성화합니다.\n"
+"Hable의 ‘언차티드 2’ 영화의 톤 매핑을 활성화합니다.\n"
 "사진 필름의 톤 커브를 시뮬레이션하며, 이를 통해\n"
 "동적 범위 이미지의 외관을 근사화합니다. 중간 범위의 대비가 약간\n"
 "강화되고, 하이라이트와 그림자 영역이 점진적으로 압축됩니다."
@@ -4039,7 +4039,7 @@ msgid ""
 "the\n"
 "Multiplayer Tab."
 msgstr ""
-"멀티 플레이어 탭에 표시되는 즐겨 찾는 서버가 포함 된 \n"
+"멀티 플레이어 탭에 표시되는 즐겨 찾는 서버가 포함된\n"
 "client / serverlist / 경로의 파일입니다."
 
 #: src/settings_translation_file.cpp
@@ -4084,7 +4084,7 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Flashing of the screen when taking damage."
-msgstr ""
+msgstr "데미지를 받을때 화면 플래시 효과."
 
 #: src/settings_translation_file.cpp
 msgid "Floatland density"
@@ -5038,18 +5038,16 @@ msgid "Keyboard and Mouse"
 msgstr "키보드와 마우스"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keyboard camera speed"
-msgstr "키보드와 마우스"
+msgstr "키보드 카메라 속도"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Keyboard-controlled camera rotation speed, in degrees per second."
-msgstr "수직 등반 속도, 단위는 초당 노드/초입니다."
+msgstr "키보드로 카메라 컨트롤 할 때의 회전 속도, 단위는 초당 노드/초입니다."
 
 #: src/settings_translation_file.cpp
 msgid "Kick players who sent more than X messages per 10 seconds."
-msgstr "10초 안에 해당 수치 보다 더 많은 메세지를 보낸 플레이어를 추방합니다."
+msgstr "10초 안에 해당 수치 보다 더 많은 메세지를 보낸 플레이어를 퇴장시킵니다."
 
 #: src/settings_translation_file.cpp
 msgid "Lake steepness"
@@ -5259,21 +5257,19 @@ msgstr "지역 명령어"
 
 #: src/settings_translation_file.cpp
 msgid "Look down"
-msgstr ""
+msgstr "아래 보기"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Look left"
-msgstr "왼쪽으로 움직이기"
+msgstr "왼쪽 보기"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Look right"
-msgstr "오른쪽 움직임"
+msgstr "오른쪽 보기"
 
 #: src/settings_translation_file.cpp
 msgid "Look up"
-msgstr ""
+msgstr "위쪽 보기"
 
 #: src/settings_translation_file.cpp
 msgid "Lower Y limit of dungeons."
@@ -5647,9 +5643,8 @@ msgid "Measure time samples"
 msgstr "시간 샘플 측정"
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid "Menu theme"
-msgstr "Menu 키"
+msgstr "Menu theme"
 
 #: src/settings_translation_file.cpp
 msgid "Message of the day"
@@ -6341,7 +6336,7 @@ msgstr ""
 "일명 다중 샘플 앤티앨리어싱(MSAA)\n"
 "블록 가장자리를 매끄럽게 만들지만 텍스처 내부에는 영향을 미치지 않습니다.\n"
 "\n"
-"후처리가 비활성화된 경우 FSAA를 변경하려면 다시 시작해야 합니다.\n"
+"후처리가 비활성화된 경우 FSAA를 변경하면 재시작해야 적용됩니다.\n"
 "또한, 후처리가 비활성화된 경우 FSAA는 언더샘플링 또는 기본이 아닌\n"
 "\"3d_mode\" 설정과 함께 작동하지 않습니다.\n"
 "\n"
@@ -6350,8 +6345,8 @@ msgstr ""
 "속도와 이미지 품질 간의 균형을 제공합니다.\n"
 "\n"
 "* SSAA - 슈퍼 샘플링 앤티앨리어싱\n"
-"장면의 고해상도 이미지를 렌더링한 다음 축소하여 줄입니다.\n"
-"앨리어싱 효과가 있습니다. 이 방법은 가장 느리지만 가장 정확합니다."
+"고해상도 이미지를 렌더링한 다음 축소하여 앨리어싱\n"
+"효과를 줄입니다. 이 방법은 가장 느리지만 가장 정확합니다."
 
 #: src/settings_translation_file.cpp
 msgid "Selection box border color (R,G,B)."
@@ -7075,14 +7070,13 @@ msgstr ""
 "이는 active_object_send_range_blocks와 함께 구성되어야 합니다."
 
 #: src/settings_translation_file.cpp
-#, fuzzy
 msgid ""
 "The rendering back-end.\n"
 "Note: A restart is required after changing this!\n"
 "By default OpenGL3 is preferred on desktop, or OGLES2 on Android."
 msgstr ""
 "렌더링 백엔드.\n"
-"이 설정을 변경한 후에는 다시 시작해야 합니다!\n"
+"이 설정을 변경한 후에는 다시 시작해야 적용됩니다!\n"
 "데스크톱에서는 OpenGL이 기본이고, Android에서는 OGLES2가 기본입니다."
 
 #: src/settings_translation_file.cpp
@@ -7367,11 +7361,11 @@ msgid ""
 "to a non-default value."
 msgstr ""
 "언더샘플링은 낮은 스크린 해상도를 사용하는 것과 유사하나,\n"
-"오직 게임 세상에만 적용되고 GUI는 영향받지 않는다.\n"
-"덜 디테일한 이미지를 사용하므로 알아차릴 만한 성능 향상이 있을것이다.\n"
-"더 높은 값은 더 덜 디테일한 이미지를 사용하게 한다.\n"
+"오직 게임 월드에만 적용되고 GUI는 영향받지 않습니다.\n"
+"이미지의 품질이 떨어지지만 유의미하게 성능이 향상됩니다..\n"
+"값이 높을 수록 이미지 품질이 감소합니다.\n"
 "참고: 언더샘플링은 \"3d_mode\"설정이 기본이 아닌 값일 경우\n"
-"작동하지 않는다."
+"작동하지 않습니다."
 
 #: src/settings_translation_file.cpp
 msgid "Unlimited player transfer distance"
@@ -7683,6 +7677,8 @@ msgid ""
 "Where to enable server-sent client-side modding (SSCSM).\n"
 "Warning: Experimental."
 msgstr ""
+"SSCSM(server-sent client-side modding)을 활성화합니다.\n"
+"주의 : 실험적인 기능."
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7860,7 +7856,7 @@ msgstr "cURL 병렬 제한"
 
 #: src/settings_translation_file.cpp
 msgid "cURL proxy address"
-msgstr ""
+msgstr "cURL 프록시 주소"
 
 #: src/util/screenshot.cpp
 #, c-format
