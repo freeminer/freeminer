@@ -1406,7 +1406,7 @@ void GenericCAO::updateAnimation(u16 track_nr)
 
 void GenericCAO::setLocalPlayerAnimation(LocalPlayerAnimation local_anim, float speed)
 {
-	if (!m_animated_meshnode || m_animated_meshnode->getMesh()->getTrackCount() > 0)
+	if (!m_animated_meshnode || m_animated_meshnode->getMesh()->getTrackCount() == 0)
 		return;
 
 	assert(m_is_local_player);
