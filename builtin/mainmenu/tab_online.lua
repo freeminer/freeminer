@@ -76,12 +76,12 @@ local function set_selected_server(server)
 	if address and port then
 
 		-- fm:
-		--[[if server.proto_multi and server.proto_multi.sctp then
+		--[[
+		if server.proto_multi and server.proto_multi.sctp then
 			gamedata.proto = "sctp"
 			gamedata.port = server.proto_multi.sctp
 			port = gamedata.port
-		else]]
-		if server.proto_multi and server.proto_multi.enet then
+		else]] if server.proto_multi and server.proto_multi.enet then
 			gamedata.proto = "enet"
 			gamedata.port = server.proto_multi.enet
 			port = gamedata.port

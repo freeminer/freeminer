@@ -6,6 +6,7 @@
 #include <log.h>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "porting.h"
 #include "profiler.h"
 #include "activeobjectmgr.h"
 #include "util/numeric.h"
@@ -25,13 +26,38 @@ ActiveObjectMgr::~ActiveObjectMgr()
 void ActiveObjectMgr::step(
 		float dtime, const std::function<void(const ClientActiveObjectPtr&)> &f)
 {
-	size_t count = 0;
+	step(dtime, f, porting::getTimeMs() + 10);
+}
+
+void ActiveObjectMgr::step(float dtime,
+		const std::function<void(const ClientActiveObjectPtr &)> &f, u64 end_ms)
+{
+	const size_t count = m_active_objects.size();
+	const u16 resume_after = m_step_resume_after;
+	bool completed = true;
+	bool processed_any = false;
+
 	for (auto &ao_it : m_active_objects.iter()) {
 		if (!ao_it.second)
 			continue;
-		count++;
+		if (ao_it.first <= resume_after)
+			continue;
+
+		// Always process at least one object so an expired deadline cannot stall
+		// the cursor indefinitely.
+		if (processed_any && end_ms != 0 && porting::getTimeMs() >= end_ms) {
+			completed = false;
+			break;
+		}
+
 		f(ao_it.second);
+		processed_any = true;
+		m_step_resume_after = ao_it.first;
 	}
+
+	if (completed)
+		m_step_resume_after = 0;
+
 	g_profiler->avg("ActiveObjectMgr: CAO count [#]", count);
 }
 
