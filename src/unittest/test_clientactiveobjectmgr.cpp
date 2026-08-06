@@ -5,11 +5,14 @@
 #include "test.h"
 
 #include "client/activeobjectmgr.h"
+#include "porting.h"
 
 #include "catch.h"
 
+#include <algorithm>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 class TestClientActiveObject : public ClientActiveObject
 {
@@ -121,6 +124,37 @@ TEST_CASE("test client active object manager")
 		caomgr.removeObject(tcao1->getId()); // may invalidate tcao1
 		CHECK(caomgr.getActiveObject(id) == nullptr);
 	}
+
+	caomgr.clear();
+}
+
+TEST_CASE("client active object stepping resumes after the time limit")
+{
+	client::ActiveObjectMgr caomgr;
+	std::vector<u16> expected;
+	for (u16 i = 0; i < 3; ++i)
+		expected.push_back(register_default_test_object(caomgr)->getId());
+	std::sort(expected.begin(), expected.end());
+
+	std::vector<u16> stepped;
+	auto step_one = [&](const ClientActiveObjectPtr &obj) {
+		stepped.push_back(obj->getId());
+	};
+	const u64 expired_deadline = porting::getTimeMs();
+
+	// This deadline is already expired. Each call must nevertheless step one
+	// object and the next call must resume with the following object.
+	for (u16 id : expected) {
+		caomgr.step(0.0f, step_one, expired_deadline);
+		REQUIRE(stepped.size() == 1);
+		CHECK(stepped.front() == id);
+		stepped.clear();
+	}
+
+	// Completing the iteration resets the cursor for the next cycle.
+	caomgr.step(0.0f, step_one, expired_deadline);
+	REQUIRE(stepped.size() == 1);
+	CHECK(stepped.front() == expected.front());
 
 	caomgr.clear();
 }

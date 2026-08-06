@@ -18,6 +18,10 @@ public:
 
 	void step(float dtime,
 			const std::function<void(const ClientActiveObjectPtr &)> &f) override;
+	// end_ms is an absolute porting::getTimeMs() deadline; zero disables it.
+	void step(float dtime,
+			const std::function<void(const ClientActiveObjectPtr &)> &f,
+			u64 end_ms);
 	bool registerObject(std::shared_ptr<ClientActiveObject> obj) override;
 	void removeObject(u16 id) override;
 
@@ -28,5 +32,9 @@ public:
 	/// @note CAOs without a selection box are not returned.
 	/// @note Distances are along the @p shootline.
 	std::vector<DistanceSortedActiveObject> getActiveSelectableObjects(const core::line3d<f32> &shootline);
+
+private:
+	// Object IDs are ordered, so this remains a stable cursor across removals.
+	u16 m_step_resume_after = 0;
 };
 } // namespace client

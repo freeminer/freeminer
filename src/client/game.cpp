@@ -1148,6 +1148,7 @@ bool Game::connectToServer(const GameStartData &start_data,
 		fallback_address = Address();
 	}
 
+#if 0
 #if USE_MULTI
 	if (simple_singleplayer_mode) {
 		u16 port = 0;
@@ -1172,6 +1173,7 @@ bool Game::connectToServer(const GameStartData &start_data,
 		if (port)
 			connect_address.setPort(port);
 	}
+#endif
 #endif
 
 	fallback_address.setPort(connect_address.getPort());
