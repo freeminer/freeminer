@@ -8,7 +8,6 @@ Copyright (C) 2023 proller <proler@gmail.com>
 
 #if USE_WEBSOCKET_SCTP
 
-#include "debug/dump.h"
 #include "external/usrsctp/usrsctplib/usrsctp.h"
 #include "filesys.h"
 #include "log.h"
@@ -33,13 +32,17 @@ Copyright (C) 2023 proller <proler@gmail.com>
 #include <fstream>
 #include <memory>
 #include <string>
-#include <sys/socket.h>
 #include <system_error>
 
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/debug_asio_no_tls.hpp>
 #include <websocketpp/logger/syslog.hpp>
 #include <websocketpp/server.hpp>
+
+#ifdef _WIN32
+#else
+#include <sys/socket.h>
+#endif
 
 namespace con_ws_sctp
 {
