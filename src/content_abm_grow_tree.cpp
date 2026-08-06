@@ -82,7 +82,9 @@ constexpr auto D_BOTTOM = 6;
 
 struct GrowParams
 {
+	std::vector<std::string> tree_liquid_groups;
 	int tree_water_param2 = 0;
+	int tree_pipe_sides = 0;
 	int tree_water_max = 50; // todo: depend on humidity 10-100
 	int tree_grow_water_min = 20;
 	int tree_grow_heat_min = 7;
@@ -121,8 +123,19 @@ struct GrowParams
 
 	GrowParams(const ContentFeatures &cf, int16_t grow_debug_fast = 0)
 	{
+		static const std::string liquid_group_prefix = "tree_liquid_";
+		for (const auto &[group, value] : cf.groups) {
+			if (value > 0 && group.size() > liquid_group_prefix.size() &&
+					group.compare(0, liquid_group_prefix.size(), liquid_group_prefix) ==
+							0) {
+				tree_liquid_groups.emplace_back(group.substr(liquid_group_prefix.size()));
+			}
+		}
+
 		if (cf.groups.contains("tree_water_param2"))
 			tree_water_param2 = cf.groups.at("tree_water_param2");
+		if (cf.groups.contains("tree_pipe_sides"))
+			tree_pipe_sides = cf.groups.at("tree_pipe_sides");
 		if (cf.groups.contains("tree_water_max"))
 			tree_water_max = cf.groups.at("tree_water_max");
 		if (cf.groups.contains("tree_grow_water_min"))
@@ -203,6 +216,16 @@ struct GrowParams
 					leaves_grow_heat_max = 0;
 		}
 	}
+
+	bool consumesLiquid(const ContentFeatures &liquid) const
+	{
+		for (const auto &group : tree_liquid_groups) {
+			const auto found = liquid.groups.find(group);
+			if (found != liquid.groups.end() && found->second > 0)
+				return true;
+		}
+		return false;
+	}
 };
 
 class GrowTree : public ActiveBlockModifier
@@ -269,7 +292,7 @@ public:
 		bool around_all_is_tree{true};
 		int8_t near_tree{0};
 		int8_t near_soil{0};
-		int8_t near_liquid{0};
+		int8_t near_consumable_liquid{0};
 		content_t leaves_content{CONTENT_IGNORE};
 		//content_t fruit_content{CONTENT_IGNORE};
 
@@ -278,6 +301,7 @@ public:
 			MapNode node{};
 			content_t content{CONTENT_IGNORE};
 			bool is_liquid{false};
+			bool is_consumable_liquid{false};
 			bool is_my_leaves{false};
 			bool is_any_leaves{false};
 			//bool is_fruit{false};
@@ -409,7 +433,9 @@ public:
 					//nb.is_fruit = nb.content == fruit_content;
 					// DUMP(is_self, nb.is_leaves, "=", nb.content, "==", (int)leaves_content);
 					nb.is_liquid = nb.cf->groups.contains("liquid");
-					near_liquid += nb.is_liquid;
+					nb.is_consumable_liquid =
+							nb.is_liquid && params.consumesLiquid(*nb.cf);
+					near_consumable_liquid += nb.is_consumable_liquid;
 					///has_liquids.emplace_back(nb.pos);
 
 					if (nb.top && !nb.is_tree) {
@@ -435,9 +461,14 @@ public:
 
 				if (nb.self) {
 					// Can self grow to up/down?
-					nb.allow_grow_by_rotation = is_vertical_facedir(self_facedir);
+					nb.allow_grow_by_rotation =
+							params.tree_pipe_sides || is_vertical_facedir(self_facedir);
 				} else if (nb.top || nb.bottom) {
 					nb.allow_grow_by_rotation = nbh[D_SELF].allow_grow_by_rotation;
+				} else if (params.tree_pipe_sides) {
+					// param2 stores liquid, so side-pipe trees have no facedir.
+					// Their existing side branches transport liquid but grow upward.
+					nb.allow_grow_by_rotation = false;
 				} else if (look_direction == D_FRONT || look_direction == D_BACK) {
 					// Can self grow this sides?
 					nb.allow_grow_by_rotation = self_facedir == 7 || self_facedir == 9;
@@ -475,7 +506,7 @@ public:
 		if (params.tree_get_water_from_humidity &&
 				self_water_level < params.tree_water_max &&
 				self_water_level < params.tree_get_water_max_from_humidity - 1 &&
-				near_soil && self_allow_grow_by_rotation && !near_liquid) {
+				near_soil && self_allow_grow_by_rotation && !near_consumable_liquid) {
 			float humidity = map->updateBlockHumidity(env, pos);
 			if (humidity >= params.tree_get_water_from_humidity) {
 				if (grow_debug_fast) {
@@ -504,10 +535,10 @@ public:
 			bool up_all_leaves = true;
 			//DUMP("gr", i, nb.top, nb.bottom, allow_grow_by_light, nb.water_level, nb.is_leaves, nb.is_tree, nb.is_liquid, nb.is_soil);
 
-			// Absorb water from near water blocks, leave one level
-			// DUMP("absorb?", nb.pos.Y, self_water_level, params.tree_water_max, (int)near_soil, (int)near_liquid, allow_grow_up_by_rotation, nb.is_liquid);
+			// Absorb configured liquid from nearby blocks, leaving one level.
+			// DUMP("absorb?", nb.pos.Y, self_water_level, params.tree_water_max, (int)near_soil, (int)near_consumable_liquid, allow_grow_up_by_rotation, nb.is_consumable_liquid);
 			if (self_water_level < params.tree_water_max - 1 && near_soil &&
-					self_allow_grow_by_rotation && nb.is_liquid) {
+					self_allow_grow_by_rotation && nb.is_consumable_liquid) {
 				// TODO: cached and random
 				auto level = nb.node.getLevel(ndef);
 
@@ -749,7 +780,9 @@ public:
 
 				if (nb.side && nb.is_tree && self_allow_grow_by_rotation) {
 					if (nb.is_other_tree ||
-							next_grow_node_idx_by_facedir(nb.facedir) != look_direction) {
+							(!params.tree_pipe_sides &&
+									next_grow_node_idx_by_facedir(nb.facedir) !=
+											look_direction)) {
 						// Pump only into branches that point away from this trunk.
 						return false;
 					}
@@ -1250,7 +1283,7 @@ public:
 
 		// Slowly evaporate water and kill leaves with water_level==1
 		const auto can_decay = have_not_leaves && nbh[D_SELF].light < LIGHT_SUN - 1;
-		if (n_water_level > 1 && can_decay &&
+		if (params.tree_get_water_from_humidity && n_water_level > 1 && can_decay &&
 				(!myrand_range(0, 10 * (grow_debug_fast ? 1 : 10)))) {
 			float humidity = map->updateBlockHumidity(env, pos);
 			if (humidity < params.tree_get_water_from_humidity) {

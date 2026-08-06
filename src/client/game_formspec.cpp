@@ -434,6 +434,10 @@ void GameFormSpec::showPauseMenu()
 		os << "\n" << strgettext("- Proto: ") << g_settings->get("remote_proto") << "\n";
 	}
 
+	if (!simple_singleplayer_mode) {
+		os << strgettext("- Address: ") << g_settings->get("address") << ":" << g_settings->get("port") << "\n";
+	}
+
 	os << "\n";
 	if (simple_singleplayer_mode || address.empty()) {
 		static const std::string on = strgettext("On");

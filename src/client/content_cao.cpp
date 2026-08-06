@@ -567,7 +567,9 @@ void GenericCAO::removeFromScene(bool permanent)
 
 void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 {
-	static auto headless_optimize = g_settings->getBool("headless_optimize");
+	if (const static auto headless_optimize = g_settings->getBool("headless_optimize"); headless_optimize) {
+		return;
+	}
 
 	m_smgr = smgr;
 
@@ -727,7 +729,6 @@ void GenericCAO::addToScene(ITextureSource *tsrc, scene::ISceneManager *smgr)
 				}
 			});
 		} else
-		  if (!headless_optimize)
 			errorstream<<"GenericCAO::addToScene(): Could not load mesh "<<m_prop.mesh<<std::endl;
 		break;
 	}
@@ -1744,12 +1745,14 @@ void GenericCAO::processMessage(const std::string &data)
 		{
 			if (m_hp == 0)
 			{
+				if (m_smgr) {
 				// TODO: Execute defined fast response
 				// As there is no definition, make a smoke puff
 				ClientSimpleObject *simple = createSmokePuff(
 						m_smgr, m_env, oposToV3f(m_position),
 						v2f(m_prop.visual_size.X, m_prop.visual_size.Y) * BS);
 				m_env->addSimpleObject(simple);
+				}
 			} else if (m_reset_textures_timer < 0 && !m_prop.damage_texture_modifier.empty()) {
 				m_reset_textures_timer = 0.05;
 				if(damage >= 2)

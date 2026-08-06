@@ -224,6 +224,11 @@ void MapBlock::setLodMesh(const MapBlock::mesh_type &rmesh)
 	delete_mesh = m_lod_mesh[step].exchange(rmesh);
 }
 
+void MapBlock::clearLodMesh(block_step_t step)
+{
+	delete_mesh = m_lod_mesh[step].exchange(nullptr);
+}
+
 void MapBlock::setFarMesh(const MapBlock::mesh_type &rmesh, block_step_t step)
 {
 	delete_mesh = m_far_mesh[step].exchange(rmesh);

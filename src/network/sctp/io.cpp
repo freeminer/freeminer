@@ -118,11 +118,6 @@ int Connection::receive()
 		}
 	}
 
-	if (sock_connect && sock) {
-		const auto [nn, brk] = recv_(PEER_ID_SERVER, sock);
-		n += nn;
-	}
-
 	if (sock_listen && sock) {
 
 		usrsctp_set_non_blocking(sock, 1);
@@ -460,34 +455,24 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 						rcv_info.rcv_tsn, ntohl(rcv_info.rcv_ppid), rcv_info.rcv_context,
 						(flags & MSG_EOR) ? 1 : 0);
 				cs << buf;
-			} else {
-				/*
-								printf("Msg of length %llu received from %s:%u, complete
-				   %d.\n", (unsigned long long)n, inet_ntop(AF_INET6, &addr.sin6_addr,
-				   name, INET6_ADDRSTRLEN), ntohs(addr.sin6_port), (flags & MSG_EOR) ? 1 :
-				   0);
-				*/
-				recv_buf[peer_id][rcv_info.rcv_sid] +=
-						std::string(buffer, n); // optimize here if firs packet complete`
-				// cs <<  "recieved data n="<< n << " peer="<<peer_id<<"
-				// sid="<<rcv_info.rcv_sid<< " flags="<<flags<<" complete="<<(flags &
-				// MSG_EOR)<< " buf="<<recv_buf[peer_id].size()<<" from sock="<<sock<<"
-				// hash="<<std::dec<<std::hash<std::string>()(std::string(buffer,
-				// n))<<std::endl;
-				if ((flags & MSG_EOR)) {
-					// cs<<"recv: msg complete peer="<<peer_id<<"
-					// sid="<<rcv_info.rcv_sid<<"
-					// size="<<recv_buf[peer_id][rcv_info.rcv_sid].size()<<"
-					// hash="<<std::dec<<std::hash<std::string>()(recv_buf[peer_id][rcv_info.rcv_sid])<<std::endl;
-					// SharedBuffer<u8> resultdata((const unsigned char*)buffer, n);
-					SharedBuffer<u8> resultdata(
-							(const unsigned char *)recv_buf[peer_id][rcv_info.rcv_sid]
-									.c_str(),
-							recv_buf[peer_id][rcv_info.rcv_sid].size());
-					putEvent(ConnectionEvent::dataReceived(peer_id, resultdata));
-					// recv_buf[rcv_info.rcv_sid].erase(peer_id);
-					recv_buf[peer_id][rcv_info.rcv_sid].clear();
-				}
+			}
+
+			const size_t stream_id =
+					infotype == SCTP_RECVV_RCVINFO ? rcv_info.rcv_sid : 0;
+			auto &peer_recv_buf = recv_buf[peer_id];
+			if (stream_id >= peer_recv_buf.size()) {
+				cs << "Dropping SCTP data for peer " << peer_id << " on invalid stream "
+				   << stream_id << std::endl;
+				return {0, false};
+			}
+
+			auto &stream_recv_buf = peer_recv_buf[stream_id];
+			stream_recv_buf.append(buffer, static_cast<size_t>(n));
+			if (flags & MSG_EOR) {
+				SharedBuffer<u8> resultdata((const unsigned char *)stream_recv_buf.data(),
+						stream_recv_buf.size());
+				putEvent(ConnectionEvent::dataReceived(peer_id, resultdata));
+				stream_recv_buf.clear();
 			}
 		}
 	} else if (n == 0 || errno == EINPROGRESS || errno == EAGAIN) {
@@ -638,10 +623,9 @@ void Connection::connect_addr(const Address &address)
 	sctp_setup(address.getPort() + myrand_range(100, 1000));
 
 	m_last_recieved = porting::getTimeMs();
-	auto node = m_peers.find(PEER_ID_SERVER);
-	if (node != m_peers.end()) {
-		// throw ConnectionException("Already connected to a server");
+	if (m_peers.count(PEER_ID_SERVER)) {
 		putEvent(ConnectionEvent::connectFailed());
+		return;
 	}
 
 	// void * ulp_info = nullptr;
@@ -750,7 +734,9 @@ void Connection::connect_addr(const Address &address)
 			usrsctp_connect(sock, (struct sockaddr *)&addr, sizeof(addr));
 	if (connect_result < 0 && errno != EINPROGRESS) {
 		perror("usrsctp_connect fail");
-		sock = nullptr;
+		putEvent(ConnectionEvent::connectFailed());
+		disconnect();
+		return;
 	}
 
 	cs << "connect() ok sock=" << sock << std::endl;
@@ -907,9 +893,9 @@ DUMP("created handle_packets thrd", rc);
 void Connection::disconnect()
 {
 	struct socket *primary_sock = sock;
-	if (primary_sock)
-		usrsctp_close(primary_sock);
 	sock = nullptr;
+	sock_connect = false;
+	sock_listen = false;
 	{
 		const auto lock = m_peers.lock_unique_rec();
 
@@ -919,7 +905,10 @@ void Connection::disconnect()
 		}
 		m_peers.clear();
 	}
+	if (primary_sock)
+		usrsctp_close(primary_sock);
 	m_peers_address.clear();
+	recv_buf.clear();
 
 	if (conn_fd >= 0) {
 		usrsctp_deregister_address(&conn_fd);
