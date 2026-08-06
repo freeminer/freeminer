@@ -8,7 +8,6 @@ Copyright (C) 2023 proller <proler@gmail.com>
 
 #if USE_SCTP
 
-#include "debug/dump.h"
 #include "external/usrsctp/usrsctplib/usrsctp.h"
 #include "log.h"
 #include "network/networkexceptions.h"
@@ -27,8 +26,15 @@ Copyright (C) 2023 proller <proler@gmail.com>
 #include <cstdarg>
 #include <cstdio>
 #include <string_view>
-#include <sys/socket.h>
 #include <unistd.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#endif
 
 #ifdef __EMSCRIPTEN__
 #include <emsocket.h>

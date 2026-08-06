@@ -2,6 +2,7 @@
 Copyright (C) 2023 proller <proler@gmail.com>
 */
 
+#include <cstdint>
 #include "network/sctp/internal.h"
 
 #if USE_SCTP
@@ -20,7 +21,7 @@ void debug_printf(const char *format, ...)
 
 static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-	DUMP((long)addr, (long)buf, length, tos, set_df);
+	//DUMP((long)addr, (long)buf, length, tos, set_df);
 
 	char *dump_buf;
 	int *fdp;
@@ -31,10 +32,10 @@ static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_
 
 	if ((dump_buf = usrsctp_dumppacket(buf, length, SCTP_DUMP_OUTBOUND)) != NULL) {
 		fprintf(stderr, "%s", dump_buf);
-		DUMP("Out", dump_buf);
+		//DUMP("Out", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
-	if (send(*fdp, buf, length, 0) < 0) {
+	if (send(*fdp, static_cast<const char*>(buf), length, 0) < 0) {
 		return (errno);
 	} else {
 		return (0);
@@ -200,7 +201,7 @@ void Connection::sctp_setup(u16 port)
 #endif
 
 	cs << "sctp_setup(" << port << ")" << std::endl;
-	DUMP("sctp_conn_output", (long)sctp_conn_output);
+	//DUMP("sctp_conn_output", (uintptr_t)sctp_conn_output);
 	usrsctp_init(port, sctp_conn_output, debug_func);
 	// usrsctp_init_nothreads(port, nullptr, debug_func);
 
