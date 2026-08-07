@@ -83,6 +83,7 @@ constexpr auto D_BOTTOM = 6;
 struct GrowParams
 {
 	std::vector<std::string> tree_liquid_groups;
+	std::vector<std::string> leaves_die_under_groups;
 	int tree_water_param2 = 0;
 	int tree_pipe_sides = 0;
 	int tree_water_max = 50; // todo: depend on humidity 10-100
@@ -124,11 +125,19 @@ struct GrowParams
 	GrowParams(const ContentFeatures &cf, int16_t grow_debug_fast = 0)
 	{
 		static const std::string liquid_group_prefix = "tree_liquid_";
+		static const std::string leaves_die_under_group_prefix =
+				"leaves_die_under_";
 		for (const auto &[group, value] : cf.groups) {
 			if (value > 0 && group.size() > liquid_group_prefix.size() &&
 					group.compare(0, liquid_group_prefix.size(), liquid_group_prefix) ==
 							0) {
 				tree_liquid_groups.emplace_back(group.substr(liquid_group_prefix.size()));
+			}
+			if (value > 0 && group.size() > leaves_die_under_group_prefix.size() &&
+					group.compare(0, leaves_die_under_group_prefix.size(),
+							leaves_die_under_group_prefix) == 0) {
+				leaves_die_under_groups.emplace_back(
+						group.substr(leaves_die_under_group_prefix.size()));
 			}
 		}
 
@@ -222,6 +231,16 @@ struct GrowParams
 		for (const auto &group : tree_liquid_groups) {
 			const auto found = liquid.groups.find(group);
 			if (found != liquid.groups.end() && found->second > 0)
+				return true;
+		}
+		return false;
+	}
+
+	bool leavesDieUnder(const ContentFeatures &node) const
+	{
+		for (const auto &group : leaves_die_under_groups) {
+			const auto found = node.groups.find(group);
+			if (found != node.groups.end() && found->second > 0)
 				return true;
 		}
 		return false;
@@ -1201,6 +1220,8 @@ public:
 		}
 
 		const auto params = type_params.at(nbh[D_SELF].content);
+		const bool dies_under_top_node =
+				nbh[D_TOP].cf && params.leavesDieUnder(*nbh[D_TOP].cf);
 
 		auto &n_water_level = nbh[D_SELF].water_level;
 		const auto n_water_level_orig = n_water_level;
@@ -1300,6 +1321,9 @@ public:
 		} else if (
 				(n_water_level == 1 && can_decay &&
 						(!myrand_range(0, 30 * (grow_debug_fast ? 1 : 10)))) ||
+				(dies_under_top_node &&
+						(grow_debug_fast ||
+								!myrand_range(0, params.leaves_die_chance))) ||
 				(n_water_level >= 1 && // dont touch old static trees
 						have_not_leaves &&
 						((nbh[D_SELF].light < params.leaves_die_light_max &&
