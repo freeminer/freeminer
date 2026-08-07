@@ -83,7 +83,7 @@ constexpr auto D_BOTTOM = 6;
 struct GrowParams
 {
 	std::vector<std::string> tree_liquid_groups;
-	std::vector<std::string> leaves_die_under_groups;
+	std::vector<std::string> leaves_die_under;
 	int tree_water_param2 = 0;
 	int tree_pipe_sides = 0;
 	int tree_water_max = 50; // todo: depend on humidity 10-100
@@ -136,7 +136,7 @@ struct GrowParams
 			if (value > 0 && group.size() > leaves_die_under_group_prefix.size() &&
 					group.compare(0, leaves_die_under_group_prefix.size(),
 							leaves_die_under_group_prefix) == 0) {
-				leaves_die_under_groups.emplace_back(
+				leaves_die_under.emplace_back(
 						group.substr(leaves_die_under_group_prefix.size()));
 			}
 		}
@@ -238,8 +238,15 @@ struct GrowParams
 
 	bool leavesDieUnder(const ContentFeatures &node) const
 	{
-		for (const auto &group : leaves_die_under_groups) {
-			const auto found = node.groups.find(group);
+		for (const auto &target : leaves_die_under) {
+			// Node names contain ':'. Other targets are group names.
+			if (target.find(':') != std::string::npos) {
+				if (node.name == target)
+					return true;
+				continue;
+			}
+
+			const auto found = node.groups.find(target);
 			if (found != node.groups.end() && found->second > 0)
 				return true;
 		}
