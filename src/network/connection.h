@@ -7,6 +7,8 @@
 #include "networkprotocol.h" // session_t
 #include "socket.h" // Address
 
+#include <string_view>
+
 //namespace con_ws { class Connection; }
 
 class NetworkPacket;
