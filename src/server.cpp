@@ -75,11 +75,12 @@
 #include <sstream>
 #include <csignal>
 
-
+// fm:
 #if CHECK_CLIENT_BUILD() && !NDEBUG
 #include "network/clientopcodes.h"
 #endif
 #include "content_abm.h"
+#include "network/fm_connection.h"
 #include "tool.h"
 #include <iomanip>
 #include "msgpack_fix.h"
@@ -88,7 +89,7 @@
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
 #endif
-
+// ===
 
 /*
 class ClientNotFoundException : public BaseException
@@ -1641,7 +1642,8 @@ PlayerSAO *Server::StageTwoClientInit(session_t peer_id)
 
 		actionstream << player->getName() << " [" << ip_str << "] ("
 					 << player->protocol_version << " : " << net_proto_version_fm << " : "
-					 << full_version << ") joins game. List of players: ";
+					 << full_version << " : " << con::getProtocolName(*m_con, peer_id)
+					 << ") joins game. List of players: ";
 		for (const std::string &name : names)
 			actionstream << name << " ";
 		actionstream << player->getName() << std::endl;

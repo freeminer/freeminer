@@ -21,7 +21,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <array>
 #include <memory>
+#include <string_view>
 #include "network/address.h"
 #include "network/connection.h"
 #include "network/networkprotocol.h"
@@ -33,10 +35,6 @@ class NetworkPacket;
 namespace con
 {
 class PeerHandler;
-}
-namespace con_ws_sctp
-{
-class Connection;
 }
 
 namespace con
@@ -53,6 +51,7 @@ public:
 	void Connect(Address address) override;
 	bool Connected() override;
 	void Disconnect() override;
+	std::string_view getProtocolName(session_t peer_id);
 	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms) override;
 	void Send(
 			session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable) override;
@@ -63,31 +62,26 @@ public:
 	size_t events_size() override;
 
 private:
-#if USE_SCTP
-	std::shared_ptr<IConnection> m_con_sctp;
-#endif
-#if USE_WEBSOCKET
-	std::shared_ptr<IConnection> m_con_ws;
-#endif
-#if USE_WEBSOCKET_SCTP
-	std::shared_ptr<con_ws_sctp::Connection> m_con_ws_sctp;
-#endif
-#if USE_ENET
-	std::shared_ptr<IConnection> m_con_enet;
-#endif
-#if MINETEST_TRANSPORT
-	std::shared_ptr<IConnection> m_con;
-#endif
-	[[maybe_unused]] bool dummy;
 	enum class proto_name
 	{
 		none = 0,
-		minetest,
 		sctp,
+		enet,
 		websocket,
 		websocket_stcp,
-		enet,
+		minetest,
+		count,
 	};
+
+	using ConnectionPtr = std::shared_ptr<IConnection>;
+	using ConnectionList =
+			std::array<ConnectionPtr, static_cast<size_t>(proto_name::count)>;
+
+	static proto_name getProtocol(std::string_view name);
+	IConnection *getConnection(proto_name protocol) const;
+	IConnection *getConnection(session_t peer_id);
+
+	ConnectionList m_connections{};
 	proto_name connected_to = proto_name::none;
 };
 

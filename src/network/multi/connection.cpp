@@ -47,33 +47,81 @@ namespace con
 {
 
 ConnectionMulti::ConnectionMulti(
-		u32 max_packet_size, float timeout, bool ipv6, con::PeerHandler *peerhandler) :
+		u32 max_packet_size, float timeout, bool ipv6, con::PeerHandler *peerhandler)
+{
 #if USE_SCTP
-		m_con_sctp(std::make_shared<con_sctp::Connection>(
-				max_packet_size, timeout, ipv6, peerhandler)),
+	m_connections[static_cast<size_t>(proto_name::sctp)] =
+			std::make_shared<con_sctp::Connection>(
+					max_packet_size, timeout, ipv6, peerhandler);
 #endif
 #if USE_ENET
-		m_con_enet(std::make_shared<ConnectionEnet>(
-				max_packet_size, timeout, ipv6, peerhandler)),
+	m_connections[static_cast<size_t>(proto_name::enet)] =
+			std::make_shared<ConnectionEnet>(max_packet_size, timeout, ipv6, peerhandler);
 #endif
 #if USE_WEBSOCKET
-		m_con_ws(
-				std::make_shared<con_ws::Connection>(100000, timeout, ipv6, peerhandler)),
+	m_connections[static_cast<size_t>(proto_name::websocket)] =
+			std::make_shared<con_ws::Connection>(100000, timeout, ipv6, peerhandler);
 #endif
 #if USE_WEBSOCKET_SCTP
-		m_con_ws_sctp(std::make_shared<con_ws_sctp::Connection>(
-				PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler)),
+	m_connections[static_cast<size_t>(proto_name::websocket_stcp)] =
+			std::make_shared<con_ws_sctp::Connection>(
+					PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler);
 #endif
 #if MINETEST_TRANSPORT
-		m_con(std::make_shared<con::Connection>(
-				max_packet_size, timeout, ipv6, peerhandler)),
+	m_connections[static_cast<size_t>(proto_name::minetest)] =
+			std::make_shared<con::Connection>(
+					max_packet_size, timeout, ipv6, peerhandler);
 #endif
-		dummy{}
-{
 }
 
 ConnectionMulti::~ConnectionMulti()
 {
+}
+
+ConnectionMulti::proto_name ConnectionMulti::getProtocol(std::string_view name)
+{
+	if (name == "sctp")
+		return proto_name::sctp;
+	if (name == "enet")
+		return proto_name::enet;
+	if (name == "mt_ws" || name == "ws")
+		return proto_name::websocket;
+	if (name == "mt_ws_sctp" || name == "ws_sctp")
+		return proto_name::websocket_stcp;
+	if (name == "mt" || name.empty())
+		return proto_name::minetest;
+	return proto_name::none;
+}
+
+IConnection *ConnectionMulti::getConnection(proto_name protocol) const
+{
+	return m_connections[static_cast<size_t>(protocol)].get();
+}
+
+IConnection *ConnectionMulti::getConnection(session_t peer_id)
+{
+	if (peer_id == PEER_ID_SERVER)
+		return getConnection(connected_to);
+
+#if USE_WEBSOCKET_SCTP
+	// WebSocket-SCTP shares SCTP's peer ID range, so check its peer map first.
+	auto connection = static_cast<con_ws_sctp::Connection *>(
+			getConnection(proto_name::websocket_stcp));
+	if (connection && connection->getPeer(peer_id).lock())
+		return connection;
+#endif
+
+	if (peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) {
+		if (auto connection = getConnection(proto_name::sctp))
+			return connection;
+	}
+	if (peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX)
+		return getConnection(proto_name::enet);
+	if (peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX)
+		return getConnection(proto_name::websocket);
+	if (peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX)
+		return getConnection(proto_name::minetest);
+	return {};
 }
 
 void ConnectionMulti::Serve(Address bind_address)
@@ -81,54 +129,44 @@ void ConnectionMulti::Serve(Address bind_address)
 	infostream << "Multi serving at " << bind_address.serializeString() << ":"
 			   << std::to_string(bind_address.getPort()) << std::endl;
 
-#if USE_SCTP
-	if (m_con_sctp) {
+	if (auto connection = getConnection(proto_name::sctp)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
 			port = addr.getPort() + 100;
 		}
 		addr.setPort(port);
-		m_con_sctp->Serve(addr);
+		connection->Serve(addr);
 	}
-#endif
-#if USE_ENET
-	if (m_con_enet) {
+	if (auto connection = getConnection(proto_name::enet)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_enet", port)) {
 			port = addr.getPort() + 200;
 		}
 		addr.setPort(port);
-		m_con_enet->Serve(addr);
+		connection->Serve(addr);
 	}
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws) {
+	if (auto connection = getConnection(proto_name::websocket)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_wss", port)) {
 			port = addr.getPort();
 		}
 		addr.setPort(port); // same tcp
-		m_con_ws->Serve(addr);
+		connection->Serve(addr);
 	}
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp) {
+	if (auto connection = getConnection(proto_name::websocket_stcp)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_sctp_wss", port)) {
 			port = addr.getPort() + 100;
 		}
 		addr.setPort(port); // same tcp
-		m_con_ws_sctp->Serve(addr);
+		connection->Serve(addr);
 	}
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con)
-		m_con->Serve(bind_address);
-#endif
+	if (auto connection = getConnection(proto_name::minetest))
+		connection->Serve(bind_address);
 }
 
 void ConnectionMulti::Connect(Address address)
@@ -138,131 +176,60 @@ void ConnectionMulti::Connect(Address address)
 	actionstream << "Multi connect to " << address.serializeString() << ":"
 				 << std::to_string(address.getPort()) << " with " << remote_proto << '\n';
 
-#if USE_SCTP
-	if (m_con_sctp && remote_proto == "sctp") {
-		connected_to = proto_name::sctp;
-		m_con_sctp->Connect(address);
+	const auto protocol = getProtocol(remote_proto);
+	if (auto connection = getConnection(protocol)) {
+		connected_to = protocol;
+		connection->Connect(address);
 	}
-#endif
-#if USE_ENET
-	if (m_con_enet && remote_proto == "enet") {
-		connected_to = proto_name::enet;
-		m_con_enet->Connect(address);
-	}
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws && (remote_proto == "mt_ws" || remote_proto == "ws")) {
-		connected_to = proto_name::websocket;
-		m_con_ws->Connect(address);
-	}
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp && (remote_proto == "mt_ws_sctp" || remote_proto == "ws_sctp")) {
-		connected_to = proto_name::websocket_stcp;
-		m_con_ws_sctp->Connect(address);
-	}
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con && (remote_proto == "mt" || remote_proto.empty())) {
-		connected_to = proto_name::minetest;
-		m_con->Connect(address);
-	}
-#endif
 }
 
 bool ConnectionMulti::Connected()
 {
-#if USE_SCTP
-	if (m_con_sctp)
-		if (auto c = m_con_sctp->Connected(); c)
-			return c;
-#endif
-#if USE_ENET
-	if (m_con_enet)
-		if (auto c = m_con_enet->Connected(); c)
-			return c;
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws)
-		if (auto c = m_con_ws->Connected(); c)
-			return c;
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp)
-		if (auto c = m_con_ws_sctp->Connected(); c)
-			return c;
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con)
-		if (auto c = m_con->Connected(); c)
-			return c;
-#endif
+	for (const auto &connection : m_connections) {
+		if (connection && connection->Connected())
+			return true;
+	}
 	return false;
 }
 
 void ConnectionMulti::Disconnect()
 {
-#if USE_SCTP
-	if (m_con_sctp)
-		m_con_sctp->Disconnect();
-#endif
-#if USE_ENET
-	if (m_con_enet)
-		m_con_enet->Disconnect();
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws)
-		m_con_ws->Disconnect();
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp)
-		m_con_ws_sctp->Disconnect();
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con)
-		m_con->Disconnect();
-#endif
+	for (const auto &connection : m_connections) {
+		if (connection)
+			connection->Disconnect();
+	}
 	connected_to = proto_name::none;
+}
+
+std::string_view ConnectionMulti::getProtocolName(session_t peer_id)
+{
+	auto connection = getConnection(peer_id);
+	if (!connection)
+		return "unknown";
+	if (connection == getConnection(proto_name::sctp))
+		return "sctp";
+	if (connection == getConnection(proto_name::enet))
+		return "enet";
+	if (connection == getConnection(proto_name::websocket))
+		return "ws";
+	if (connection == getConnection(proto_name::websocket_stcp))
+		return "ws_sctp";
+	if (connection == getConnection(proto_name::minetest))
+		return "mt";
+	return "unknown";
 }
 
 bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
-	u32 ret = 0;
 	for (u32 i = 0; !i || (i < timeout_ms / 10); ++i) {
 		const u32 timeout = i ? 10 : 0;
 		//for (const auto &timeout : {u32(0), u32(1)}) {
-#if USE_SCTP
-		if (m_con_sctp)
-			ret += m_con_sctp->ReceiveTimeoutMs(pkt, timeout);
-		if (ret)
-			return ret;
-#endif
-#if USE_ENET
-		if (m_con_enet)
-			ret += m_con_enet->ReceiveTimeoutMs(pkt, timeout);
-		if (ret)
-			return ret;
-#endif
-#if USE_WEBSOCKET
-		if (m_con_ws)
-			ret += m_con_ws->ReceiveTimeoutMs(pkt, timeout);
-		if (ret)
-			return ret;
-#endif
-#if USE_WEBSOCKET_SCTP
-		if (m_con_ws_sctp)
-			ret += m_con_ws_sctp->ReceiveTimeoutMs(pkt, timeout);
-		if (ret)
-			return ret;
-#endif
-#if MINETEST_TRANSPORT
-		if (m_con)
-			ret += m_con->ReceiveTimeoutMs(pkt, timeout);
-#endif
-		if (ret)
-			return ret;
+		for (const auto &connection : m_connections) {
+			if (connection && connection->ReceiveTimeoutMs(pkt, timeout))
+				return true;
+		}
 	}
-	return ret;
+	return false;
 }
 
 /*
@@ -275,227 +242,47 @@ bool ConnectionMulti::TryReceive(NetworkPacket *pkt)
 void ConnectionMulti::Send(
 		session_t peer_id, u8 channelnum, NetworkPacket *pkt, bool reliable)
 {
-	// TODO send to one
-#if USE_SCTP
-	if (m_con_sctp &&
-			((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
-					(connected_to == proto_name::sctp && peer_id == PEER_ID_SERVER)))
-		m_con_sctp->Send(peer_id, channelnum, pkt, reliable);
-#endif
-#if USE_ENET
-	if (m_con_enet &&
-			((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
-					(connected_to == proto_name::enet && peer_id == PEER_ID_SERVER)))
-		m_con_enet->Send(peer_id, channelnum, pkt, reliable);
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws &&
-			((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
-					(connected_to == proto_name::websocket && peer_id == PEER_ID_SERVER)))
-		m_con_ws->Send(peer_id, channelnum, pkt, reliable);
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp && (m_con_ws_sctp->getPeer(peer_id).lock().get() ||
-								 (connected_to == proto_name::websocket_stcp &&
-										 peer_id == PEER_ID_SERVER)))
-		m_con_ws_sctp->Send(peer_id, channelnum, pkt, reliable);
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con &&
-			((peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
-					(connected_to == proto_name::minetest && peer_id == PEER_ID_SERVER)))
-		m_con->Send(peer_id, channelnum, pkt, reliable);
-#endif
+	if (auto connection = getConnection(peer_id))
+		connection->Send(peer_id, channelnum, pkt, reliable);
 }
-
-#if 0
-void ConnectionMulti::Send(
-		session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
-{
-	// TODO send to one
-#if USE_SCTP
-	if (m_con_sctp && ((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
-							  (connected_to == proto_name::sctp &&
-									  peer_id == PEER_ID_SERVER)))
-		m_con_sctp->Send(peer_id, channelnum, buffer, reliable);
-#endif
-#if USE_ENET
-	if (m_con_enet &&
-			((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
-					(connected_to == proto_name::enet && peer_id == PEER_ID_SERVER)))
-		m_con_enet->Send(peer_id, channelnum, buffer, reliable);
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp &&
-			(m_con_ws_sctp->getPeer(peer_id).lock().get() ||
-					(connected_to == proto_name::websocket_stcp &&
-							peer_id == PEER_ID_SERVER)))
-		m_con_ws_sctp->Send(peer_id, channelnum, buffer, reliable);
-#endif
-#if MINETEST_TRANSPORT
-		//	if (m_con && (peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
-		// peer_id == PEER_ID_SERVER) 		m_con->Send(peer_id, channelnum, buffer,
-		// reliable);
-#endif
-}
-#endif
 
 Address ConnectionMulti::GetPeerAddress(session_t peer_id)
 {
-#if USE_SCTP
-	if (m_con_sctp &&
-			((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
-					(connected_to == proto_name::sctp && peer_id == PEER_ID_SERVER)))
-		return m_con_sctp->GetPeerAddress(peer_id);
-#endif
-#if USE_ENET
 	try {
-		if (m_con_enet &&
-				((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
-						(connected_to == proto_name::enet && peer_id == PEER_ID_SERVER)))
-			return m_con_enet->GetPeerAddress(peer_id);
+		if (auto connection = getConnection(peer_id))
+			return connection->GetPeerAddress(peer_id);
 	} catch (...) {
 	}
-#endif
-#if USE_WEBSOCKET
-	try {
-		if (m_con_ws && ((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
-								(connected_to == proto_name::websocket &&
-										peer_id == PEER_ID_SERVER)))
-			return m_con_ws->GetPeerAddress(peer_id);
-	} catch (...) {
-	}
-#endif
-#if USE_WEBSOCKET_SCTP
-	try {
-		if (m_con_ws_sctp && (m_con_ws_sctp->getPeer(peer_id).lock().get() ||
-									 (connected_to == proto_name::websocket_stcp &&
-											 peer_id == PEER_ID_SERVER)))
-			return m_con_ws_sctp->GetPeerAddress(peer_id);
-	} catch (...) {
-	}
-#endif
-#if MINETEST_TRANSPORT
-	try {
-		if (m_con && ((peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
-							 (connected_to == proto_name::minetest &&
-									 peer_id == PEER_ID_SERVER)))
-			return m_con->GetPeerAddress(peer_id);
-	} catch (...) {
-	}
-#endif
 	throw con::PeerNotFoundException("No address for peer found!");
 }
 
 float ConnectionMulti::getPeerStat(session_t peer_id, con::rtt_stat_type type)
 {
-#if USE_SCTP
-	if (m_con_sctp &&
-			((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
-					(connected_to == proto_name::sctp && peer_id == PEER_ID_SERVER)))
-		return m_con_sctp->getPeerStat(peer_id, type);
-#endif
-#if USE_ENET
-	if (m_con_enet &&
-			((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
-					(connected_to == proto_name::enet && peer_id == PEER_ID_SERVER)))
-		return m_con_enet->getPeerStat(peer_id, type);
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws &&
-			((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
-					(connected_to == proto_name::websocket && peer_id == PEER_ID_SERVER)))
-		return m_con_ws->getPeerStat(peer_id, type);
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp && (m_con_ws_sctp->getPeer(peer_id).lock().get() ||
-								 (connected_to == proto_name::websocket_stcp &&
-										 peer_id == PEER_ID_SERVER)))
-		return m_con_ws_sctp->getPeerStat(peer_id, type);
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con &&
-			((peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
-					(connected_to == proto_name::minetest && peer_id == PEER_ID_SERVER)))
-		return m_con->getPeerStat(peer_id, type);
-#endif
+	if (auto connection = getConnection(peer_id))
+		return connection->getPeerStat(peer_id, type);
 	return {};
 }
 
 float ConnectionMulti::getLocalStat(con::rate_stat_type type)
 {
-#if USE_WEBSOCKET
-	if (m_con_ws)
-		return m_con_ws->getLocalStat(type);
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp)
-		return m_con_ws_sctp->getLocalStat(type);
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con)
-		return m_con->getLocalStat(type);
-#endif
+	if (auto connection = getConnection(connected_to))
+		return connection->getLocalStat(type);
 	return {};
 }
 
 void ConnectionMulti::DisconnectPeer(session_t peer_id)
 {
-#if USE_SCTP
-	if (m_con_sctp &&
-			((peer_id >= PEER_SCTP_MIN && peer_id <= PEER_SCTP_MAX) ||
-					(connected_to == proto_name::sctp && peer_id == PEER_ID_SERVER)))
-		return m_con_sctp->DisconnectPeer(peer_id);
-#endif
-#if USE_ENET
-	if (m_con_enet &&
-			((peer_id >= PEER_ENET_MIN && peer_id <= PEER_ENET_MAX) ||
-					(connected_to == proto_name::enet && peer_id == PEER_ID_SERVER)))
-		return m_con_enet->DisconnectPeer(peer_id);
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws &&
-			((peer_id >= PEER_WS_MIN && peer_id <= PEER_WS_MAX) ||
-					(connected_to == proto_name::websocket && peer_id == PEER_ID_SERVER)))
-		return m_con_ws->DisconnectPeer(peer_id);
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp && (m_con_ws_sctp->getPeer(peer_id).lock().get() ||
-								 (connected_to == proto_name::websocket_stcp &&
-										 peer_id == PEER_ID_SERVER)))
-		return m_con_ws_sctp->DisconnectPeer(peer_id);
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con &&
-			((peer_id >= PEER_MINETEST_MIN && peer_id <= PEER_MINETEST_MAX) ||
-					(connected_to == proto_name::minetest && peer_id == PEER_ID_SERVER)))
-		return m_con->DisconnectPeer(peer_id);
-#endif
+	if (auto connection = getConnection(peer_id))
+		connection->DisconnectPeer(peer_id);
 }
 
 size_t ConnectionMulti::events_size()
 {
 	size_t ret = 0;
-#if USE_SCTP
-	if (m_con_sctp)
-		ret += m_con_sctp->events_size();
-#endif
-#if USE_ENET
-	if (m_con_enet)
-		ret += m_con_enet->events_size();
-#endif
-#if USE_WEBSOCKET
-	if (m_con_ws)
-		ret += m_con_ws->events_size();
-#endif
-#if USE_WEBSOCKET_SCTP
-	if (m_con_ws_sctp)
-		ret += m_con_ws_sctp->events_size();
-#endif
-#if MINETEST_TRANSPORT
-	if (m_con)
-		ret += m_con->events_size();
-#endif
+	for (const auto &connection : m_connections) {
+		if (connection)
+			ret += connection->events_size();
+	}
 	return ret;
 }
 

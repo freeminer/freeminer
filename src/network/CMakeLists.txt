@@ -2,6 +2,7 @@ file(GLOB_RECURSE common_network_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 set(common_network_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_lan.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_connection.cpp
 	# TODO merge:
 	${CMAKE_CURRENT_SOURCE_DIR}/multi/connection.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/enet/connection.cpp
