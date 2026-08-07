@@ -12,6 +12,7 @@
 		android:icon="@mipmap/ic_launcher"
 		android:label="@string/label"
 		android:resizeableActivity="false"
+		android:appCategory="game"
 		tools:ignore="UnusedAttribute">
 
 		<meta-data
