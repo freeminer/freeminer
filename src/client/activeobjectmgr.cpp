@@ -5,7 +5,6 @@
 #include <cmath>
 #include <log.h>
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "porting.h"
 #include "profiler.h"
 #include "activeobjectmgr.h"
