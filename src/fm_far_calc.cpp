@@ -20,9 +20,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "fm_far_calc.h"
-#include <cstdint>
-#include <optional>
+#include <array>
 #include <bit>
+#include <cstdint>
+#include <limits>
+#include <optional>
 
 #include "client/clientmap.h"
 #include "irr_v3d.h"
@@ -63,6 +65,65 @@ block_step_t settingToStep(const int range)
 {
 	// really 4 ?
 	return rangeToStep(range / 4);
+}
+
+uint64_t getFarMeshNearRange(const MapDrawControl &draw_control)
+{
+	if (draw_control.farmesh <= 0)
+		return 0;
+
+	// A step-1 tree cell has a side of 2 * cell_size blocks.  It is split
+	// into step-0 cells while its center is closer than
+	//     cell_side << (1 + max(quality_pow, cell_size_pow) - cell_size_pow)
+	// Add half a cell on the outside and one mapblock for the camera's offset
+	// inside its current block.  This deliberately overestimates by at most one
+	// mapblock and avoids enumerating the complete far tree every draw-list update.
+	const unsigned cell_pow = draw_control.cell_size_pow;
+	const unsigned distance_pow =
+			2 + std::max<unsigned>(draw_control.farmesh_quality_pow, cell_pow);
+	if (cell_pow >= 63 || distance_pow >= 63)
+		return std::numeric_limits<uint64_t>::max();
+
+	const uint64_t blocks = (uint64_t{1} << distance_pow) + (uint64_t{1} << cell_pow);
+	if (blocks > std::numeric_limits<uint64_t>::max() / MAP_BLOCKSIZE)
+		return std::numeric_limits<uint64_t>::max();
+	return blocks * MAP_BLOCKSIZE;
+}
+
+bool cellIntersectsRange(const v3pos_t &cell_min, const pos_t cell_width,
+		const v3pos_t &camera_pos, const pos_t range)
+{
+	if (cell_width <= 0 || range < 0)
+		return false;
+
+	for (u8 axis = 0; axis < 3; ++axis) {
+		const int64_t cell_min_axis = cell_min[axis];
+		const int64_t cell_max_axis = cell_min_axis + cell_width - 1;
+		const int64_t range_min_axis = static_cast<int64_t>(camera_pos[axis]) - range;
+		const int64_t range_max_axis = static_cast<int64_t>(camera_pos[axis]) + range;
+		if (cell_max_axis < range_min_axis || cell_min_axis > range_max_axis)
+			return false;
+	}
+	return true;
+}
+
+uint64_t cellMaxDistance(
+		const v3pos_t &cell_min, const pos_t cell_width, const v3pos_t &camera_pos)
+{
+	if (cell_width <= 0)
+		return 0;
+
+	uint64_t distance = 0;
+	for (u8 axis = 0; axis < 3; ++axis) {
+		const int64_t cell_min_axis = cell_min[axis];
+		const int64_t cell_max_axis = cell_min_axis + cell_width - 1;
+		const int64_t camera_axis = camera_pos[axis];
+		const auto axis_distance =
+				static_cast<uint64_t>(std::max(std::abs(cell_min_axis - camera_axis),
+						std::abs(cell_max_axis - camera_axis)));
+		distance = std::max(distance, axis_distance);
+	}
+	return distance;
 }
 
 block_step_t getFarStepBad(const MapDrawControl &draw_control,
@@ -153,6 +214,49 @@ struct child_t
 	tpos_t size;
 };
 
+bool contains(const child_t &child, const v3tpos_t &pos)
+{
+	return pos.X >= child.pos.X && pos.X < child.pos.X + child.size &&
+		   pos.Y >= child.pos.Y && pos.Y < child.pos.Y + child.size &&
+		   pos.Z >= child.pos.Z && pos.Z < child.pos.Z + child.size;
+}
+
+bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
+		block_step_t cell_size_pow, block_step_t farmesh_quality_pow)
+{
+	if (child.size <= (1 << cell_size_pow))
+		return true;
+
+	const tpos_t child_size = child.size >> 1;
+	const tpos_t distance = std::max({
+			std::abs(player_pos.X - (child.pos.X + child_size)),
+			std::abs(player_pos.Y - (child.pos.Y + child_size)),
+			std::abs(player_pos.Z - (child.pos.Z + child_size)),
+	});
+	const auto quality_shift =
+			1 + std::max(farmesh_quality_pow, cell_size_pow) - cell_size_pow;
+	const tpos_t next_child_size = child.size << quality_shift;
+	return distance >= next_child_size;
+}
+
+std::array<child_t, 8> split(const child_t &child)
+{
+	const tpos_t size = child.size >> 1;
+	const auto x = child.pos.X;
+	const auto y = child.pos.Y;
+	const auto z = child.pos.Z;
+	return {{
+			{{x, y, z}, size},
+			{{x + size, y, z}, size},
+			{{x, y, z + size}, size},
+			{{x + size, y, z + size}, size},
+			{{x, y + size, z}, size},
+			{{x + size, y + size, z}, size},
+			{{x, y + size, z + size}, size},
+			{{x + size, y + size, z + size}, size},
+	}};
+}
+
 tree_result_t make_tree_result(
 		const child_t &child, block_step_t cell_size_pow, bool cell_size_each)
 {
@@ -164,80 +268,43 @@ tree_result_t make_tree_result(
 	};
 }
 
-std::optional<tree_result_t> find(
-		const find_param_t &param, const child_t &child, const uint16_t depth = 0)
+tree_result_t make_find_result(const child_t &mesh_child, const v3tpos_t &block_pos,
+		block_step_t cell_size_pow, bool cell_size_each)
 {
-	const auto make_result = [&param](const child_t &result_child) {
-		return make_tree_result(result_child, param.cell_size_pow, param.cell_size_each);
+	if (!cell_size_each)
+		return make_tree_result(mesh_child, cell_size_pow, false);
+
+	// A mesh cell consists of cell_size^3 independently stored blocks.  Select
+	// one by position after the adaptive mesh grid has been decided; running a
+	// second adaptive traversal would make boundary cells disagree.
+	const tpos_t storage_size = mesh_child.size >> cell_size_pow;
+	child_t storage_child{
+			.pos{
+					mesh_child.pos.X + ((block_pos.X - mesh_child.pos.X) / storage_size) *
+											   storage_size,
+					mesh_child.pos.Y + ((block_pos.Y - mesh_child.pos.Y) / storage_size) *
+											   storage_size,
+					mesh_child.pos.Z + ((block_pos.Z - mesh_child.pos.Z) / storage_size) *
+											   storage_size,
+			},
+			.size = storage_size,
 	};
+	return make_tree_result(storage_child, cell_size_pow, true);
+}
 
-	const auto sz = child.size; //<< param.cell_size_pow;
-	if (!(param.block_pos.X >= child.pos.X && param.block_pos.X < child.pos.X + sz &&
-				param.block_pos.Y >= child.pos.Y &&
-				param.block_pos.Y < child.pos.Y + sz &&
-				param.block_pos.Z >= child.pos.Z &&
-				param.block_pos.Z < child.pos.Z + sz)) {
+std::optional<tree_result_t> find(const find_param_t &param, const child_t &child)
+{
+	if (!contains(child, param.block_pos))
 		return {};
-		/*
-			if (depth) {
-			return {};
-		} else {
-			return make_result(child);
-		}
-	    */
-	}
 
-	if (child.size <= (1 << (param.cell_size_pow))) {
-		return make_result(child);
-	}
+	if (is_tree_cell(
+				child, param.player_pos, param.cell_size_pow, param.farmesh_quality_pow))
+		return make_find_result(
+				child, param.block_pos, param.cell_size_pow, param.cell_size_each);
 
-	const tpos_t childSize = child.size >> 1;
-	/* round
-	const auto distance =
-			((tpos_t)std::hypot(param.player_pos.X - (child.pos.X + childSize),
-					 param.player_pos.Y - (child.pos.Y + childSize),
-					 param.player_pos.Z - (child.pos.Z + childSize)));
-	*/
-
-	const auto distance =
-			(std::max({std::abs((tpos_t)param.player_pos.X - (child.pos.X + childSize)),
-					std::abs((tpos_t)param.player_pos.Y - (child.pos.Y + childSize)),
-					std::abs((tpos_t)param.player_pos.Z - (child.pos.Z + childSize))}));
-	const auto next_child_size =
-			child.size << (1 + std::max(param.farmesh_quality_pow, param.cell_size_pow) -
-						   (param.cell_size_each ? 0 : param.cell_size_pow));
-	if (distance >= next_child_size) {
-		return make_result(child);
-	}
-	const auto childSizePos = childSize;
-	for (const auto &child : {
-				 child_t{.pos{child.pos}, .size = childSize},
-				 child_t{.pos = v3tpos_t(
-								 child.pos.X + childSizePos, child.pos.Y, child.pos.Z),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(
-								 child.pos.X, child.pos.Y + childSizePos, child.pos.Z),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X + childSizePos,
-								 child.pos.Y + childSizePos, child.pos.Z),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(
-								 child.pos.X, child.pos.Y, child.pos.Z + childSizePos),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X + childSizePos, child.pos.Y,
-								 child.pos.Z + childSizePos),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X, child.pos.Y + childSizePos,
-								 child.pos.Z + childSizePos),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X + childSizePos,
-								 child.pos.Y + childSizePos, child.pos.Z + childSizePos),
-						 .size = childSize},
-		 }) {
-
-		if (const auto res = find(param, child, depth + 1); res) {
+	for (const auto &child : split(child)) {
+		if (const auto res = find(param, child); res)
 			return res;
-		}
 	}
 	return {};
 }
@@ -293,7 +360,8 @@ child_t tree_params_to_child(const tree_params_t &tree_params,
 std::optional<tree_result_t> getFarParams(const MapDrawControl &draw_control,
 		const v3bpos_t &player_block_pos, const v3bpos_t &blockpos, bool cell_each)
 {
-	const auto blockpos_aligned_cell = align_shift(blockpos, draw_control.cell_size_pow);
+	const auto blockpos_aligned_cell =
+			cell_each ? blockpos : align_shift(blockpos, draw_control.cell_size_pow);
 	const tree_params_t tree_params{.tree_pow{farmesh_to_tree_pow(draw_control.farmesh)}};
 	const auto start = tree_params_to_child(tree_params, player_block_pos);
 	const auto res =
@@ -356,84 +424,44 @@ struct each_param_t
 	const bool two_d{false};
 };
 
-void each(const each_param_t &param, const child_t &child)
+bool emit_tree_cell(const each_param_t &param, const child_t &mesh_child)
 {
-	const auto make_result = [&param](const child_t &result_child) {
-		return make_tree_result(result_child, param.cell_size_pow, param.cell_size_each);
-	};
-
-	if (child.size <= (1 << param.cell_size_pow)) {
-		param.func(make_result(child));
-		return;
+	if (!param.cell_size_each) {
+		return param.func(make_tree_result(mesh_child, param.cell_size_pow, false));
 	}
 
-	const tpos_t childSize = child.size >> 1;
-	/*
-	const auto distance =
-			((tpos_t)std::hypot(param.player_pos.X - (child.pos.X + childSize),
-					 param.player_pos.Y - (child.pos.Y + childSize),
-					 param.player_pos.Z - (child.pos.Z + childSize)) >>
-					param.cell_size_pow)
-			<< param.cell_size_pow;
-			*/
-
-	const auto distance =
-			(std::max({std::abs((tpos_t)param.player_pos.X - (child.pos.X + childSize)),
-					std::abs((tpos_t)param.player_pos.Y - (child.pos.Y + childSize)),
-					std::abs((tpos_t)param.player_pos.Z - (child.pos.Z + childSize))}));
-
-	const auto next_child_size =
-			child.size << (1 + std::max(param.farmesh_quality_pow, param.cell_size_pow) -
-						   (param.cell_size_each ? 0 : param.cell_size_pow));
-	if (distance >= next_child_size) {
-		param.func(make_result(child));
-		return;
-	}
-
-	const auto childPosNext = childSize;
-
-	uint8_t i{0};
-	for (const auto &child : {
-				 // first with unchanged Y for 2d
-				 child_t{.pos{child.pos}, .size = childSize},
-				 child_t{.pos = v3tpos_t(
-								 child.pos.X + childPosNext, child.pos.Y, child.pos.Z),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(
-								 child.pos.X, child.pos.Y, child.pos.Z + childPosNext),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X + childPosNext, child.pos.Y,
-								 child.pos.Z + childPosNext),
-						 .size = childSize},
-
-				 // two_d ends here
-
-				 child_t{.pos = v3tpos_t(
-								 child.pos.X, child.pos.Y + childPosNext, child.pos.Z),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X + childPosNext,
-								 child.pos.Y + childPosNext, child.pos.Z),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X, child.pos.Y + childPosNext,
-								 child.pos.Z + childPosNext),
-						 .size = childSize},
-				 child_t{.pos = v3tpos_t(child.pos.X + childPosNext,
-								 child.pos.Y + childPosNext, child.pos.Z + childPosNext),
-						 .size = childSize},
-		 }) {
-		if (param.two_d && i++ >= 4) {
-			break;
-		}
-
-		if (child.size <= (1 << (param.cell_size_pow))) {
-			if (param.func(make_result(child))) {
-				return;
+	const tpos_t storage_size = mesh_child.size >> param.cell_size_pow;
+	const size_t blocks_per_side = 1 << param.cell_size_pow;
+	const size_t y_count = param.two_d ? 1 : blocks_per_side;
+	for (size_t y = 0; y < y_count; ++y)
+		for (size_t z = 0; z < blocks_per_side; ++z)
+			for (size_t x = 0; x < blocks_per_side; ++x) {
+				const child_t storage_child{
+						.pos = mesh_child.pos + v3tpos_t(x * storage_size,
+														y * storage_size,
+														z * storage_size),
+						.size = storage_size,
+				};
+				if (param.func(
+							make_tree_result(storage_child, param.cell_size_pow, true)))
+					return true;
 			}
-			continue;
-		}
+	return false;
+}
 
-		each(param, child);
+bool each(const each_param_t &param, const child_t &child)
+{
+	if (is_tree_cell(
+				child, param.player_pos, param.cell_size_pow, param.farmesh_quality_pow))
+		return emit_tree_cell(param, child);
+
+	const auto children = split(child);
+	const size_t child_count = param.two_d ? 4 : children.size();
+	for (size_t i = 0; i < child_count; ++i) {
+		if (each(param, children[i]))
+			return true;
 	}
+	return false;
 }
 
 void runFarAll(const v3bpos_t &player_block_pos, uint8_t cell_size_pow, int farmesh,

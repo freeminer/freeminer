@@ -1420,7 +1420,7 @@ void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *
 	// scaled by 80, so that pi can fit into a u8
 	u8 fov           = std::fmin(255.0f, clientMap->getCameraFov() * 80.0f);
 	u8 wanted_range  = std::fmin(255.0f,
-			std::ceil(clientMap->getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
+			std::ceil(clientMap->getServerWantedRange() * (1.0f / MAP_BLOCKSIZE)));
 	f32 movement_speed = myplayer->control.movement_speed;
 	f32 movement_dir = myplayer->control.movement_direction;
 
@@ -1778,7 +1778,7 @@ void Client::sendPlayerPos()
 	ClientMap &map = m_env.getClientMap();
 	u8 camera_fov   = std::fmin(255.0f, map.getCameraFov() * 80.0f);
 	u8 wanted_range = std::fmin(255.0f,
-			std::ceil(map.getWantedRange() * (1.0f / MAP_BLOCKSIZE)));
+			std::ceil(map.getServerWantedRange() * (1.0f / MAP_BLOCKSIZE)));
 
 	u32 keyPressed = player->control.getKeysPressed();
 	bool camera_inverted = m_camera->getCameraMode() == CAMERA_MODE_THIRD_FRONT;

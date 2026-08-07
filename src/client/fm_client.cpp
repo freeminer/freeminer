@@ -531,8 +531,10 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 void Client::sendDrawControl()
 {
 	MSGPACK_PACKET_INIT((int)TOSERVER_DRAWCONTROL, 4);
-	const auto &draw_control = m_env.getClientMap().getControl();
-	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (int32_t)draw_control.wanted_range);
+	const auto &client_map = m_env.getClientMap();
+	const auto &draw_control = client_map.getControl();
+	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE,
+			(int32_t)client_map.getServerWantedRange());
 	//PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, draw_control.range_all);
 	PACK(TOSERVER_DRAWCONTROL_FARMESH, draw_control.farmesh);
 	//PACK(TOSERVER_DRAWCONTROL_LODMESH, draw_control.lodmesh);
