@@ -209,27 +209,40 @@ private:
 	video::SColor m_camera_light_color = video::SColor(0xFFFFFFFF);
 	bool m_needs_update_transparent_meshes = true;
 
-
-// fm:
+	// fm:
 public:
 	static irr_ptr<ClientMap> create(Client *client, RenderingEngine *rendering_engine,
 			MapDrawControl &control, s32 id);
+	f32 getServerWantedRange() const
+	{
+		const auto wanted_range = m_control.wanted_range.load(std::memory_order_relaxed);
+		if (!m_control.farmesh)
+			return wanted_range;
+		return std::max(
+				wanted_range, m_near_farmesh_range.load(std::memory_order_relaxed));
+	}
+
 private:
 	v3pos_t m_camera_position_node;
-    using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
+	// Near data must cover complete farmesh cells at the LOD handoff.  This is
+	// the resulting server request range; the configured rendering range stays
+	// unchanged for fog, UI, and near-cell selection.
+	std::atomic_int32_t m_near_farmesh_range{};
+	using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic_bool m_drawlist_current = false;
 	std::recursive_mutex m_drawlist_mutex;
-    using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
+	using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
-public:
-    async_step_runner update_drawlist_async;
-    async_step_runner update_shadows_async;
-	std::map<v3pos_t, MapBlock*> m_block_boundary;
-	void cleanPerodic(uint32_t uptime);
-private:
 
+public:
+	async_step_runner update_drawlist_async;
+	async_step_runner update_shadows_async;
+	std::map<v3pos_t, MapBlock *> m_block_boundary;
+	void cleanPerodic(uint32_t uptime);
+
+private:
 	void initFarFogMaterial();
 	void updateFarFogCells();
 	u32 rebuildFarFogMeshBuffer();
@@ -238,7 +251,8 @@ private:
 	bool m_far_fog_material_ready = false;
 	video::SMaterial m_far_fog_material;
 	std::vector<irr_ptr<scene::SMeshBuffer>> m_far_fog_meshbuffers;
-	struct FarFogCell {
+	struct FarFogCell
+	{
 		v3bpos_t block_pos;
 		block_step_t step = 0;
 		bpos_t block_span = 0;
@@ -267,7 +281,7 @@ private:
 	v3f m_far_fog_mesh_camera_direction = v3f(0.0f, 0.0f, 1.0f);
 	uint16_t m_far_fog_mesh_time_bucket = 0;
 	uint32_t m_far_fog_mesh_iteration_draw = 0;
-// ===
+	// ===
 
 	//std::map<v3bpos_t, MapBlock*, MapBlockComparer> m_drawlist;
 	// List of additional blocks to keep (relevant with mesh_chunk > 1, since

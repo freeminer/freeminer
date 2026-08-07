@@ -26,6 +26,7 @@
 #include "client/renderingengine.h"
 #include "util/numeric.h"
 
+#include <limits>
 #include <queue>
 
 namespace {
@@ -958,7 +959,8 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 	//bool free_move = g_settings->getBool("free_move");
 
-	auto range_max = m_control.range_all ? FARMESH_LIMIT*2 : m_control.wanted_range.load(std::memory_order::relaxed);
+	const auto wanted_range =
+			m_control.wanted_range.load(std::memory_order_relaxed);
 
 	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
@@ -993,209 +995,243 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		}
 	}
 
-	for(const auto & [bp, block] : vector) {
+	struct NearCandidate
+	{
+		v3bpos_t pos;
+		MapBlockPtr block;
+		MapBlock::mesh_type mesh;
+		int mesh_buffer_count;
+		int range_blocks;
+		bool covers_cell;
+	};
 
+	struct FarCellCoverage
+	{
+		farmesh::tree_result_t params;
+		std::vector<NearCandidate> candidates;
+		size_t expected_chunks{};
+		size_t ready_chunks{};
+
+		explicit FarCellCoverage(const farmesh::tree_result_t &params_) :
+				params(params_)
+		{
+		}
+	};
+
+	std::unordered_map<v3bpos_t, FarCellCoverage> transition_cells;
+	std::vector<NearCandidate> direct_near;
+
+	const auto camera_block = getNodeBlockPos(m_camera_position_node);
+	const auto far_camera_block = getNodeBlockPos(far_cam_pos_draw);
+	const pos_t near_cell_width = mesh_grid.cell_size * MAP_BLOCKSIZE;
+	const bool use_cell_handoff = !m_control.range_all && m_control.farmesh > 0 &&
+			far_iteration_draw != 0;
+
+	uint64_t near_handoff_range = std::max(0, wanted_range);
+	if (use_cell_handoff) {
+		// Farmesh step 0 is intentionally not generated.  Normal meshes must
+		// therefore remain requested and drawable until the first step-1 cells.
+		const auto far_grid_offset = radius_box(
+				far_camera_block * MAP_BLOCKSIZE, m_camera_position_node);
+		const auto far_near_range = farmesh::getFarMeshNearRange(m_control);
+		const auto far_near_range_from_camera =
+				far_grid_offset > std::numeric_limits<uint64_t>::max() - far_near_range
+				? std::numeric_limits<uint64_t>::max()
+				: far_grid_offset + far_near_range;
+		near_handoff_range = std::max(
+				near_handoff_range, far_near_range_from_camera);
+	}
+
+	// First find all far cells touched by the configured near range.  A touched
+	// cell is handed over as a unit so a single near chunk can never remove only
+	// part of a coarser far cell.
+	if (use_cell_handoff) {
+		for (const auto &[bp, block] : vector) {
+			if (!block || mesh_grid.getMeshPos(bp) != bp)
+				continue;
+			const auto near_cell_min = bp * MAP_BLOCKSIZE;
+			if (!farmesh::cellIntersectsRange(near_cell_min, near_cell_width,
+						m_camera_position_node, wanted_range))
+				continue;
+
+			const auto far_params = farmesh::getFarParams(
+					m_control, far_camera_block, bp);
+			if (!far_params || !far_params->step)
+				continue;
+
+			auto [it, inserted] =
+					transition_cells.try_emplace(far_params->pos, *far_params);
+			if (!inserted && it->second.params.step != far_params->step)
+				continue;
+
+			const pos_t far_cell_width = static_cast<pos_t>(
+					far_params->size) * near_cell_width;
+			near_handoff_range = std::max(near_handoff_range,
+					farmesh::cellMaxDistance(far_params->pos * MAP_BLOCKSIZE,
+							far_cell_width, m_camera_position_node));
+		}
+	}
+
+	const auto requested_range = static_cast<int32_t>(std::min<uint64_t>(
+			near_handoff_range, std::numeric_limits<int32_t>::max()));
+	m_near_farmesh_range.store(requested_range, std::memory_order_relaxed);
+
+	for (auto &entry : transition_cells) {
+		auto &coverage = entry.second;
+		const size_t side = static_cast<size_t>(coverage.params.size);
+		if (side && side <= std::numeric_limits<size_t>::max() / side &&
+				side * side <= std::numeric_limits<size_t>::max() / side)
+			coverage.expected_chunks = side * side * side;
+		else
+			coverage.expected_chunks = std::numeric_limits<size_t>::max();
+	}
+
+	const auto request_mesh = [&](const v3bpos_t &bp, const MapBlockPtr &block,
+			const block_step_t mesh_step, const MapBlock::mesh_type &mesh,
+			const int range_blocks) {
+		const auto mesh_revision = block->getMeshRevision();
+		const bool missing_or_wrong = !mesh || mesh->lod_step != mesh_step;
+
+		if (missing_or_wrong && (m_mesh_queued < maxq || range_blocks <= 2) &&
+				block->tryMarkMeshRequested(mesh_step, mesh_revision)) {
+			m_client->addUpdateMeshTask(bp, false, false, mesh_step);
+			++m_mesh_queued;
+		}
+
+		if (mesh && mesh->lod_step == mesh_step &&
+				mesh_revision > mesh->mesh_revision &&
+				(m_mesh_queued < maxq * 1.5 || range_blocks <= 2) &&
+				block->tryMarkMeshRequested(mesh_step, mesh_revision)) {
+			if (mesh_step > 1)
+				m_client->addUpdateMeshTask(bp, false, false, mesh_step);
+			else
+				m_client->addUpdateMeshTaskWithEdge(
+						bp, false, false, mesh_step);
+			++m_mesh_queued;
+		}
+	};
+
+	// Collect loaded near chunks out to the complete handoff-cell boundary.
+	// Missing chunks do not suppress farmesh; they are requested and the far
+	// cell remains the owner until every corresponding near mesh is ready.
+	for (const auto &[bp, block] : vector) {
 		if (!block)
 			continue;
 
-			f32 d = radius_box(bp*MAP_BLOCKSIZE, m_camera_position_node); //blockpos_relative.getLength();
-			if (d > range_max + m_client->getMeshGrid().cell_size * MAP_BLOCKSIZE) {
-				if (d > range_max * 4) {
-					int mul = d / range_max;
-					block->usage_timer_multiplier = mul;
-				}
-				continue;
+		const auto block_min = bp * MAP_BLOCKSIZE;
+		const bool keep_alive = m_control.range_all ||
+				farmesh::cellIntersectsRange(block_min, MAP_BLOCKSIZE,
+						m_camera_position_node, requested_range);
+		if (!keep_alive) {
+			if (wanted_range > 0) {
+				const auto distance = radius_box(block_min, m_camera_position_node);
+				if (distance > static_cast<uint64_t>(wanted_range) * 4)
+					block->usage_timer_multiplier = distance / wanted_range;
 			}
-			int range_blocks = d / MAP_BLOCKSIZE;
+			continue;
+		}
 
 		block->resetUsageTimer();
+		++blocks_in_range;
 
-		const auto mesh_step =
-				farmesh::getLodStep(m_control, getNodeBlockPos(m_camera_position_node), bp, speedf);
-	
+		// A client mesh is stored only at the origin of its MeshGrid cell.
+		// Non-origin blocks must never be treated as drawable coverage.
+		if (mesh_grid.getMeshPos(bp) != bp)
+			continue;
 
-			/*
-				Compare block position to camera position, skip
-				if not seen on display
-			*/
+		const auto near_cell_min = bp * MAP_BLOCKSIZE;
+		const bool in_wanted_range = m_control.range_all ||
+				farmesh::cellIntersectsRange(near_cell_min, near_cell_width,
+						m_camera_position_node, wanted_range);
 
+		std::optional<farmesh::tree_result_t> far_params;
+		if (use_cell_handoff &&
+				(in_wanted_range || farmesh::cellIntersectsRange(near_cell_min,
+						near_cell_width, m_camera_position_node, requested_range))) {
+			far_params = farmesh::getFarParams(
+					m_control, far_camera_block, bp);
+		}
+
+		FarCellCoverage *coverage = nullptr;
+		if (far_params && far_params->step) {
+			if (auto it = transition_cells.find(far_params->pos);
+					it != transition_cells.end() &&
+					it->second.params.step == far_params->step)
+				coverage = &it->second;
+		}
+		const bool requires_near_mesh = far_params && !far_params->step;
+
+		if (!coverage && !in_wanted_range && !requires_near_mesh)
+			continue;
+
+		const auto distance = radius_box(near_cell_min, m_camera_position_node);
+		const int range_blocks = distance / MAP_BLOCKSIZE;
+		const auto mesh_step = farmesh::getLodStep(
+				m_control, camera_block, bp, speedf);
 		const auto mesh = block->getLodMesh(mesh_step, true);
-		{
-			++blocks_in_range;
+		const bool covers_cell = mesh && mesh->lod_step == mesh_step;
+		const int mesh_buffer_count =
+				mesh ? mesh->getMesh()->getMeshBufferCount() : -1;
 
-			const int smesh_size = !mesh ? -1 : mesh->getMesh()->getMeshBufferCount();
-			const auto mesh_revision = block->getMeshRevision();
+		if (!covers_cell || mesh_buffer_count == 0)
+			++blocks_in_range_without_mesh;
+		request_mesh(bp, block, mesh_step, mesh, range_blocks);
 
-			/*
-				Ignore if mesh doesn't exist
-			*/
-			{
-				if ((!mesh && smesh_size < 0) || mesh_step != mesh->lod_step) {
-					blocks_in_range_without_mesh++;
-					if (m_mesh_queued < maxq || range_blocks <= 2) {
-						if (!mesh || speedf < BS * MAP_BLOCKSIZE) {
-							if (block->tryMarkMeshRequested(
-										mesh_step, mesh_revision)) {
-								//DUMP("goup", bp, m_mesh_queued);
-								m_client->addUpdateMeshTask(
-										bp, false, false, mesh_step);
-								++m_mesh_queued;
-							}
-						}
-					}
-					//if (!mesh)
-					//	continue;
-				}
-				if (mesh && mesh_step == mesh->lod_step &&
-						mesh_revision <= mesh->mesh_revision && !smesh_size) {
-					++blocks_in_range_without_mesh;
-					continue;
-				}
-			}
-
-			/*
-				Occlusion culling
-			*/
-
-/* old todo make cache in new
-			v3pos_t cpn = bp * MAP_BLOCKSIZE;
-			cpn += v3pos_t(MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2, MAP_BLOCKSIZE / 2);
-			float step = BS * 1;
-			float stepfac = 1.2;
-			float startoff = BS * 1;
-			// The occlusion search of 'isOccluded()' must stop short of the target
-			// point by distance 'endoff' (end offset) to not enter the target mapblock.
-			// For the 8 mapblock corners 'endoff' must therefore be the maximum diagonal
-			// of a mapblock, because we must consider all view angles.
-			// sqrt(1^2 + 1^2 + 1^2) = 1.732
-			float endoff = -BS * MAP_BLOCKSIZE * 1.732050807569;
-			v3pos_t spn = cam_pos_nodes;
-			s16 bs2 = MAP_BLOCKSIZE / 2 + 1;
-			// to reduce the likelihood of falsely occluded blocks
-			// require at least two solid blocks
-			// this is a HACK, we should think of a more precise algorithm
-			u32 needed_count = 2;
-			if (occlusion_culling_enabled &&
-				range > 1 && smesh_size &&
-					// For the central point of the mapblock 'endoff' can be halved
-					isOccluded(this, spn, cpn,
-						step, stepfac, startoff, endoff / 2.0f, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(bs2,bs2,bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(bs2,bs2,-bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(bs2,-bs2,bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(bs2,-bs2,-bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(-bs2,bs2,bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(-bs2,bs2,-bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(-bs2,-bs2,bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache) &&
-					isOccluded(this, spn, cpn + v3pos_t(-bs2,-bs2,-bs2),
-						step, stepfac, startoff, endoff, needed_count, nodemgr, occlude_cache)) {
-				blocks_occlusion_culled++;
-				continue;
-			}
-*/
-
-			if (m_client->getMeshGrid().cell_size > 1) {
-				// Calculate the coordinates for range and frustum culling
-				v3opos_t mesh_sphere_center;
-
-				f32 mesh_sphere_radius;
-
-				v3pos_t block_pos_nodes = block->getPosRelative();
-				if (mesh) {
-					mesh_sphere_center = intToFloat(block_pos_nodes, BS) +
-										 mesh->getBoundingSphereCenter();
-					mesh_sphere_radius = mesh->getBoundingRadius();
-				} else {
-					mesh_sphere_center = intToFloat(block_pos_nodes, BS) +
-										 v3opos_t((MAP_BLOCKSIZE * 0.5f - 0.5f) * BS);
-					mesh_sphere_radius = 0.0f;
-				}
-
-				// First, perform a simple distance check.
-				if (!m_control.range_all &&
-						radius_box(mesh_sphere_center, m_camera_position) >
-								m_control.wanted_range * BS + mesh_sphere_radius)
-					continue; // Out of range, skip.
-			}
-
-				// Keep the block alive as long as it is in range.
-				//block->resetUsageTimer();
-				//blocks_in_range_with_mesh++;
-
-				/*
-
-				// Frustum culling
-				// Only do coarse culling here, to account for fast camera movement.
-				// This is needed because this function is not called every frame.
-				float frustum_cull_extra_radius = 300.0f;
-				if (is_frustum_culled(mesh_sphere_center,
-						mesh_sphere_radius + frustum_cull_extra_radius)) {
-					blocks_frustum_culled++;
-					continue;
-				}
-
-				*/
-
-				// Raytraced occlusion culling - send rays from the camera to the block's corners
-				if (range_blocks>3)
-				if (!m_control.range_all && occlusion_culling_enabled && m_enable_raytraced_culling &&
-						mesh &&
-						isMeshOccluded(block.get(), mesh_grid.cell_size, m_camera_position_node)) {
-					blocks_occlusion_culled++;
-					continue;
-				}
-
-
-			// Limit block count in case of a sudden increase
-			blocks_in_range_with_mesh++;
-/*
-			if (blocks_drawn >= m_control.wanted_max_blocks &&
-					!m_control.range_all &&
-					d > m_control.wanted_range * BS)
-				continue;
-*/
-
-			if (mesh && mesh_step == mesh->lod_step &&
-					mesh_revision > mesh->mesh_revision &&
-					(m_mesh_queued < maxq * 1.5 || range_blocks <= 2) &&
-					block->tryMarkMeshRequested(mesh_step, mesh_revision)) {
-				if (mesh_step > 1)
-					m_client->addUpdateMeshTask(
-							bp, false, false, mesh_step);
-				else
-					m_client->addUpdateMeshTaskWithEdge(
-							bp, false, false, mesh_step);
-				++m_mesh_queued;
-			}
-			if (!smesh_size)
-				continue;
-
-			{
-				blocks_skip_farmesh.emplace(farmesh::getFarActualBlockPos(
-						m_control, getNodeBlockPos(far_cam_pos_draw), bp ));
-			}
-
-			if (mesh) {
-				mesh->last_used = m_client->m_uptime;
-			}
-			// Add to set
-			//block->refGrab();
-			//block->resetUsageTimer();
-			drawlist.insert_or_assign(bp, block);
-
-			//blocks_drawn++;
-
-			if(range_blocks * MAP_BLOCKSIZE > farthest_drawn)
-				farthest_drawn = range_blocks * MAP_BLOCKSIZE;
+		NearCandidate candidate{bp, block, mesh, mesh_buffer_count,
+				range_blocks, covers_cell};
+		if (coverage) {
+			coverage->candidates.emplace_back(std::move(candidate));
+			if (covers_cell)
+				++coverage->ready_chunks;
+		} else if (mesh) {
+			direct_near.emplace_back(std::move(candidate));
 		}
 	}
+
+	const auto draw_near = [&](const NearCandidate &candidate) {
+		if (!candidate.mesh || candidate.mesh_buffer_count <= 0)
+			return;
+
+		if (candidate.range_blocks > 3 && !m_control.range_all &&
+				occlusion_culling_enabled && m_enable_raytraced_culling &&
+				isMeshOccluded(candidate.block.get(), mesh_grid.cell_size,
+						m_camera_position_node)) {
+			++blocks_occlusion_culled;
+			return;
+		}
+
+		++blocks_in_range_with_mesh;
+		candidate.mesh->last_used = m_client->m_uptime;
+		drawlist.insert_or_assign(candidate.pos, candidate.block);
+		farthest_drawn = std::max(farthest_drawn,
+				static_cast<float>(candidate.range_blocks * MAP_BLOCKSIZE));
+	};
+
+	for (const auto &candidate : direct_near)
+		draw_near(candidate);
+
+	size_t near_owned_cells = 0;
+	size_t far_fallback_cells = 0;
+	for (auto &[pos, coverage] : transition_cells) {
+		const bool near_complete = coverage.expected_chunks != 0 &&
+				coverage.ready_chunks == coverage.expected_chunks;
+		if (near_complete) {
+			blocks_skip_farmesh.emplace(pos);
+			++near_owned_cells;
+			for (const auto &candidate : coverage.candidates)
+				draw_near(candidate);
+		} else {
+			// Keep farmesh as an underlay until every near chunk is ready.
+			// The loaded near chunks still extend detail across the transition;
+			// the far insertion below wins if both use the same map position.
+			++far_fallback_cells;
+			for (const auto &candidate : coverage.candidates)
+				draw_near(candidate);
+		}
+	}
+
+	g_profiler->avg("Client: Farmesh handoff near cells", near_owned_cells);
+	g_profiler->avg("Client: Farmesh handoff fallback cells", far_fallback_cells);
 	//m_drawlist_last = draw_nearest.size();
 
 	//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<" occache="<<occlude_cache.size()<<std::endl;
@@ -1211,6 +1247,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 																: m_far_blocks_delete_2;
 		m_far_blocks_delete.clear();
 		size_t farblocks_drawn = 0;
+		size_t farblocks_overrode_near = 0;
 		const auto lock = m_far_blocks.lock_unique_rec();
 		for (auto it = m_far_blocks.begin(); it != m_far_blocks.end();) {
 			const auto &block = it->second;
@@ -1219,7 +1256,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				it = m_far_blocks.erase(it);
 			} else if (block->far_iteration >= far_iteration_draw) {
 				if (!blocks_skip_farmesh.contains(it->first)) {
-					drawlist.emplace(it->first, block);
+					if (drawlist.contains(it->first))
+						++farblocks_overrode_near;
+					drawlist.insert_or_assign(it->first, block);
 					++farblocks_drawn;
 				}
 				++it;
@@ -1229,6 +1268,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		}
 
 		g_profiler->avg("Client: Farmesh drawn", farblocks_drawn);
+		g_profiler->avg("Client: Farmesh overrode near", farblocks_overrode_near);
 #if !NDEBUG		
 		g_profiler->avg("Client: Farmesh total", m_far_blocks.size());
 #endif
@@ -1268,6 +1308,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 
 	g_profiler->avg("MapBlock meshes in range [#]", blocks_in_range_with_mesh);
+	g_profiler->avg("MapBlocks in range [#]", blocks_in_range);
 	g_profiler->avg("MapBlocks occlusion culled [#]", blocks_occlusion_culled);
 	g_profiler->avg("MapBlocks drawn [#]", drawlist_size);
 	//g_profiler->avg("MapBlocks loaded [#]", blocks_loaded);

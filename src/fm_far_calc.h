@@ -85,4 +85,16 @@ void runFarAll(const v3bpos_t &player_block_pos, uint8_t cell_size_pow, int farm
 block_step_t rangeToStep(const int range);
 block_step_t settingToStep(const int range);
 
+// Farmesh step 0 is rendered by normal client meshes.  Return a conservative
+// node-distance that covers every possible step-0 cell for this grid.
+uint64_t getFarMeshNearRange(const MapDrawControl &draw_control);
+
+// Range checks in the near/far handoff use the same box-shaped distance as
+// radius_box().  cell_min and camera_pos are node coordinates, while cell_width
+// and range are measured in nodes.
+bool cellIntersectsRange(const v3pos_t &cell_min, pos_t cell_width,
+		const v3pos_t &camera_pos, pos_t range);
+uint64_t cellMaxDistance(
+		const v3pos_t &cell_min, pos_t cell_width, const v3pos_t &camera_pos);
+
 }
