@@ -26,7 +26,7 @@ ActiveObjectMgr::~ActiveObjectMgr()
 void ActiveObjectMgr::step(
 		float dtime, const std::function<void(const ClientActiveObjectPtr&)> &f)
 {
-	step(dtime, f, porting::getTimeMs() + 10);
+	step(dtime, f, 0);
 }
 
 void ActiveObjectMgr::step(float dtime,
