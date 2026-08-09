@@ -31,10 +31,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 class async_step_runner
 {
 	std::future<void> future;
-#if defined(DUMP_STREAM)
 	int runs = 0;
 	int skips = 0;
-#endif
 
 public:
 	~async_step_runner()
@@ -67,17 +65,13 @@ public:
 		if (future.valid()) {
 			auto res = future.wait_for(std::chrono::milliseconds(0));
 			if (res == std::future_status::timeout) {
-#if defined(DUMP_STREAM)
 				++skips;
-#endif
 				return IN_PROGRESS;
 			}
 		}
 
 		future = std::async(std::launch::async, func, std::forward<Args>(args)...);
-#if defined(DUMP_STREAM)
 		++runs;
-#endif
 		return future.valid();
 	}
 };

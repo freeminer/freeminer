@@ -1148,9 +1148,8 @@ bool Game::connectToServer(const GameStartData &start_data,
 		fallback_address = Address();
 	}
 
-#if 0
 #if USE_MULTI
-	if (simple_singleplayer_mode) {
+	if (simple_singleplayer_mode || start_data.local_server) {
 		u16 port = 0;
 #if USE_SCTP
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
@@ -1173,7 +1172,6 @@ bool Game::connectToServer(const GameStartData &start_data,
 		if (port)
 			connect_address.setPort(port);
 	}
-#endif
 #endif
 
 	fallback_address.setPort(connect_address.getPort());
