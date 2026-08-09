@@ -41,6 +41,7 @@ struct MapDrawControl
 
 	float farthest_drawn{};
 	bool enable_fog = g_settings->getBool("enable_fog");
+	bool enable_volumetric_fog = true;
 
 	void fm_init();
 	void registerSettingsCallbacks();
