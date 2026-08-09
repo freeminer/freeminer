@@ -3048,35 +3048,39 @@ Examples
     list[current_player;craft;3,0;3,3;]
     list[current_player;craftpreview;7,1;1,1;]
 
-Version History
----------------
+Formspec Version History
+------------------------
 
-* Formspec version 1 (pre-5.1.0):
+* Version 1 (pre-5.1.0):
   * (too much)
-* Formspec version 2 (5.1.0):
+* Version 2 (5.1.0):
   * Forced real coordinates
   * background9[]: 9-slice scaling parameters
-* Formspec version 3 (5.2.0):
+* Version 3 (5.2.0):
   * Formspec elements are drawn in the order of definition
   * bgcolor[]: use 3 parameters (bgcolor, formspec (now an enum), fbgcolor)
   * box[] and image[] elements enable clipping by default
   * new element: scroll_container[]
-* Formspec version 4 (5.4.0):
+* Version 4 (5.4.0):
   * Allow dropdown indexing events
-* Formspec version 5 (5.5.0):
+* Version 5 (5.5.0):
   * Added padding[] element
-* Formspec version 6 (5.6.0):
+* Version 6 (5.6.0):
   * Add nine-slice images, animated_image, and fgimg_middle
-* Formspec version 7 (5.8.0):
+* Version 7 (5.8.0):
   * style[]: Add focused state for buttons
   * Add field_enter_after_edit[] (experimental)
-* Formspec version 8 (5.10.0)
+* Version 8 (5.10.0)
   * scroll_container[]: content padding parameter
-* Formspec version 9 (5.12.0)
+* Version 9 (5.12.0)
   * Add allow_close[]
   * label[]: Add "area label" variant
-* Formspec version 10 (5.13.0)
+* Version 10 (5.13.0)
   * model[]: Support floating-point frames
+* Version 11 (5.17.0)
+  * Added hypertip[] element
+  * label[], textarea[] and field[] alignment styles
+
 
 Elements
 --------
