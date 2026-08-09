@@ -733,7 +733,7 @@ void ClientMap::updateFarFogCells()
 
 u32 ClientMap::rebuildFarFogMeshBuffer()
 {
-	if (!m_control.farmesh)
+	if (!m_control.farmesh || !m_control.enable_volumetric_fog)
 		return 0;
 
 	const pos_t volumetric_fog_range_nodes = g_settings->getPos("volumetric_fog");
@@ -1415,9 +1415,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 
 u32 ClientMap::renderFarFog(video::IVideoDriver *driver)
 {
-	thread_local static const auto volumetric_fog_range_nodes =
-			g_settings->getPos("volumetric_fog");
-	if (volumetric_fog_range_nodes <= 0)
+	if (!m_control.enable_volumetric_fog)
 		return 0;
 
 	const u32 vertex_count = rebuildFarFogMeshBuffer();
