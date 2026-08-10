@@ -2,10 +2,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 19:14+0200\n"
+"POT-Creation-Date: 2026-08-10 17:35+0200\n"
 "PO-Revision-Date: 2026-05-12 02:11+0000\n"
-"Last-Translator: Johannes Palola <jopasuomi@users.noreply.hosted.weblate.org>"
-"\n"
+"Last-Translator: Johannes Palola "
+"<jopasuomi@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Finnish <https://hosted.weblate.org/projects/minetest/"
 "minetest/fi/>\n"
 "Language: fi\n"
@@ -526,6 +526,10 @@ msgstr "Lua-skriptissä tapahtui virhe:"
 #: builtin/fstk/ui.lua
 msgid "An error occurred:"
 msgstr "Tapahtui virhe:"
+
+#: builtin/fstk/ui.lua
+msgid "Copy to clipboard"
+msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "Main menu"
@@ -1570,6 +1574,11 @@ msgstr "Poista suosikeista"
 msgid "Server Description"
 msgstr "Palvelimen kuvaus"
 
+#: src/chat.cpp
+#, fuzzy
+msgid "Player names: "
+msgstr "Pelaa peliä"
+
 #: src/client/client.cpp
 msgid "Connection aborted (protocol error?)."
 msgstr "Yhdistäminen keskeytettiin (protokollavirhe?)."
@@ -1761,6 +1770,11 @@ msgid "Fast mode enabled (note: no 'fast' privilege)"
 msgstr "Nopeutustila päällä (huomautus: sinulla ei ole \"fast\"-oikeutta)"
 
 #: src/client/game.cpp
+#, c-format
+msgid "Files: %d / %d"
+msgstr ""
+
+#: src/client/game.cpp
 msgid "Fly mode disabled"
 msgstr "Lentotila pois"
 
@@ -1789,11 +1803,13 @@ msgid "Item definitions..."
 msgstr "Esinemääritelmät..."
 
 #: src/client/game.cpp
-msgid "KiB/s"
+#, fuzzy
+msgid "KiB"
 msgstr "KiB/s"
 
 #: src/client/game.cpp
-msgid "MiB/s"
+#, fuzzy
+msgid "MiB"
 msgstr "MiB/s"
 
 #: src/client/game.cpp
@@ -1844,6 +1860,11 @@ msgstr "Sammutetaan..."
 #: src/client/game.cpp src/client/game_formspec.cpp
 msgid "Singleplayer"
 msgstr "Yksinpeli"
+
+#: src/client/game.cpp
+#, c-format
+msgid "Size: %.2f %s"
+msgstr ""
 
 #: src/client/game.cpp
 msgid "Sound muted"
@@ -2071,8 +2092,27 @@ msgid "Profiler shown (page %d of %d)"
 msgstr "Näytetään tekninen seuranta (sivu %d / %d)"
 
 #: src/client/keycode.cpp
+#, fuzzy
+msgid "A (Gamepad)"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "B (Gamepad)"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Back (Gamepad)"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
 msgid "Backspace"
 msgstr "Peruutusnäppäin"
+
+#: src/client/keycode.cpp
+msgid "Bottom Face Button (Gamepad)"
+msgstr ""
 
 #. TRANSLATORS: Usually paired with the Pause key
 #: src/client/keycode.cpp
@@ -2084,12 +2124,38 @@ msgid "Caps Lock"
 msgstr "Caps lock"
 
 #: src/client/keycode.cpp
+msgid "Circle (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
 msgid "Clear Key"
 msgstr "Clear"
 
 #: src/client/keycode.cpp
 msgid "Control Key"
 msgstr "Control"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Cross (Gamepad)"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "D-Pad Down"
+msgstr "Page down"
+
+#: src/client/keycode.cpp
+msgid "D-Pad Left"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "D-Pad Right"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "D-Pad Up"
+msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Delete Key"
@@ -2102,6 +2168,26 @@ msgstr "Nuoli alas"
 #: src/client/keycode.cpp
 msgid "End Key"
 msgstr "End"
+
+#: src/client/keycode.cpp
+#, fuzzy, c-format
+msgid "Gamepad Axis %d +"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
+#, fuzzy, c-format
+msgid "Gamepad Axis %d -"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
+#, fuzzy, c-format
+msgid "Gamepad Button %d"
+msgstr "Hiirennäppäin %d"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Guide (Gamepad)"
+msgstr "Videopeliohjaimet"
 
 #: src/client/keycode.cpp
 msgid "Help Key"
@@ -2128,12 +2214,51 @@ msgid "Left Control"
 msgstr "Vasen control"
 
 #: src/client/keycode.cpp
+msgid "Left Face Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Button"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Down"
+msgstr "Ohjaimen tunniste"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Left"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Right"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Up"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
 msgid "Left Menu"
 msgstr "Vasen menu"
 
 #: src/client/keycode.cpp
 msgid "Left Shift"
 msgstr "Vasen vaihto"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Shoulder"
+msgstr "Vasen vaihto"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Trigger"
+msgstr "Nuoli vasemmalle"
 
 #. TRANSLATORS: Name of key
 #: src/client/keycode.cpp
@@ -2245,6 +2370,14 @@ msgstr "Pause"
 msgid "Play"
 msgstr "Toista"
 
+#: src/client/keycode.cpp
+msgid "Primary Left Paddle"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Primary Right Paddle"
+msgstr ""
+
 #. TRANSLATORS: "Print screen" key
 #: src/client/keycode.cpp
 msgid "Print"
@@ -2267,12 +2400,50 @@ msgid "Right Control"
 msgstr "Oikea control"
 
 #: src/client/keycode.cpp
+msgid "Right Face Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Right Joystick Button"
+msgstr ""
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Down"
+msgstr "Ohjaimen tunniste"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Left"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Right"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Up"
+msgstr "Ohjaimen tyyppi"
+
+#: src/client/keycode.cpp
 msgid "Right Menu"
 msgstr "Oikea menu"
 
 #: src/client/keycode.cpp
 msgid "Right Shift"
 msgstr "Oikea vaihto"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Shoulder"
+msgstr "Oikea vaihto"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Trigger"
+msgstr "Nuoli oikealle"
 
 #. TRANSLATORS: Name of key
 #: src/client/keycode.cpp
@@ -2289,6 +2460,14 @@ msgid "Scroll Lock"
 msgstr "Scroll lock"
 
 #: src/client/keycode.cpp
+msgid "Secondary Left Paddle"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Secondary Right Paddle"
+msgstr ""
+
+#: src/client/keycode.cpp
 msgid "Select Key"
 msgstr "Select"
 
@@ -2301,12 +2480,44 @@ msgid "Space"
 msgstr "Välilyönti"
 
 #: src/client/keycode.cpp
+#, fuzzy
+msgid "Square (Gamepad)"
+msgstr "Palvelinpelaaminen"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Start (Gamepad)"
+msgstr "Aloita peli"
+
+#: src/client/keycode.cpp
 msgid "Tab Key"
 msgstr "Sarkain"
 
 #: src/client/keycode.cpp
+msgid "Top Face Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Touchpad Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Triangle (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
 msgid "Up Arrow"
 msgstr "Nuoli ylös"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "X (Gamepad)"
+msgstr "Videopeliohjaimet"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Y (Gamepad)"
+msgstr "Videopeliohjaimet"
 
 #: src/client/minimap.cpp
 msgid "Minimap hidden"
@@ -2626,6 +2837,10 @@ msgstr ""
 "Asiakasohjelmasi versiota ei tueta.\n"
 "Ota yhteyttä palvelimen ylläpitäjään."
 
+#: src/script/lua_api/l_mainmenu.cpp
+msgid "Copied to clipboard!"
+msgstr ""
+
 #: src/server.cpp
 #, c-format
 msgid "%s while shutting down: "
@@ -2823,6 +3038,11 @@ msgstr "Kiihtyvyys ilmassa"
 #: src/settings_translation_file.cpp
 msgid "Acceleration of gravity, in nodes per second per second."
 msgstr "Painovoiman kiihtyvyys; palikoita sekunnissa sekuntia kohden."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Actions and Keybindings"
+msgstr "Lisää näppäin"
 
 #: src/settings_translation_file.cpp
 msgid "Active Block Modifiers"
@@ -3037,12 +3257,12 @@ msgstr ""
 "Ilmoitetaan maailmakuutioina (16 kuutiota)."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
-"At this distance the server will perform a simpler and cheaper occlusion "
-"check.\n"
-"Smaller values potentially improve performance, at the expense of "
-"temporarily visible\n"
-"rendering glitches (missing blocks).\n"
+"At this distance the server will consider blocks as \"far away\".\n"
+"It will perform simpler and cheaper occlusion checks, update\n"
+"low priority block updates lazily, and limit the blocks sent to the\n"
+"client in one roundtrip.\n"
 "This is especially useful for very large viewing range (upwards of 500).\n"
 "Stated in MapBlocks (16 nodes)."
 msgstr ""
@@ -3934,15 +4154,6 @@ msgid "Enable dynamic shadows"
 msgstr "Ota dynaamiset varjot käyttöön"
 
 #: src/settings_translation_file.cpp
-msgid "Enable joysticks"
-msgstr "Ota peliohjaimet käyttöön"
-
-#: src/settings_translation_file.cpp
-msgid "Enable joysticks. Requires a restart to take effect"
-msgstr ""
-"Ota peliohjaimet käyttöön. Tarvitsee uudelleenkäynnistyksen toimiakseen"
-
-#: src/settings_translation_file.cpp
 msgid "Enable mod channels support."
 msgstr "Ota lisäosakanavatuki käyttöön."
 
@@ -4397,8 +4608,12 @@ msgid "GUI scaling filter"
 msgstr "Graafisen käyttöliittymän laajuuden suodatin"
 
 #: src/settings_translation_file.cpp
-msgid "Gamepads"
-msgstr "Videopeliohjaimet"
+msgid "Gamepads and Joysticks"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Gamma"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Global callbacks"
@@ -5041,24 +5256,22 @@ msgstr ""
 "maailmanluonti V7."
 
 #: src/settings_translation_file.cpp
-msgid "Joystick ID"
-msgstr "Ohjaimen tunniste"
-
-#: src/settings_translation_file.cpp
 msgid "Joystick button repetition interval"
 msgstr "Ohjainnäppäimen toiston väliaika"
-
-#: src/settings_translation_file.cpp
-msgid "Joystick dead zone"
-msgstr "Ohjaimen kuollut vyöhyke"
 
 #: src/settings_translation_file.cpp
 msgid "Joystick frustum sensitivity"
 msgstr "Ohjaimen näkymäherkkyys"
 
 #: src/settings_translation_file.cpp
-msgid "Joystick type"
-msgstr "Ohjaimen tyyppi"
+#, fuzzy
+msgid "Joystick inner dead zone"
+msgstr "Ohjaimen kuollut vyöhyke"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Joystick outer dead zone"
+msgstr "Ohjaimen kuollut vyöhyke"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5163,6 +5376,12 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
+"Key for opening the pause menu in-game.\n"
+"Pressing the escape key always opens the pause menu."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
 "Key for placing an item/block or for using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
@@ -5194,10 +5413,6 @@ msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
 "Näppäin, jolla avataan ja suljetaan teknisen seurannan näkymä. Käytetään "
 "kehittämiseen."
-
-#: src/settings_translation_file.cpp
-msgid "Keybindings"
-msgstr "Näppäinasetukset"
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
@@ -5466,6 +5681,16 @@ msgid ""
 msgstr ""
 "Sumun ja taivaan väri riippuu vuorokaudenajasta (auringonnousu/"
 "auringonlasku) ja katseen suunnasta."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Make volumetrics weaker against closer objects to emulate physical "
+"volumetrics."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Makes the color of light fog more saturated."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Map Compression Level for Disk Storage"
@@ -6105,6 +6330,10 @@ msgid "Open inventory"
 msgstr "Avaa tavaraluettelo"
 
 #: src/settings_translation_file.cpp
+msgid "Open pause menu"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid ""
 "Open the pause menu when the window's focus is lost. Does not pause if a "
 "formspec is\n"
@@ -6710,10 +6939,10 @@ msgstr ""
 "Arvo 0 tarkoittaa, että kallistusta ei ole eli kiertorata on pystysuuntainen."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "Set the exposure compensation in EV units.\n"
-"Value of 0.0 (default) means no exposure compensation.\n"
-"Range: from -1 to 1.0"
+"Value of 0.0 (default) means no exposure compensation."
 msgstr ""
 "Aseta valotuskompensaatio elektronivolttiyksikköinä.\n"
 "Arvo 0.0 (oletus) tarkoittaa, että valotuskompensaatiota ei ole.\n"
@@ -6731,6 +6960,12 @@ msgstr ""
 msgid ""
 "Set the maximum length of a chat message (in characters) sent by clients."
 msgstr "Aseta asiakkaan lähettämän keskuteluviestin suurin pituus (merkkeinä)."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Set the post processing gamma value.\n"
+"Higher values give lower contrast and vice versa."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6877,7 +7112,10 @@ msgstr ""
 "järjestelmät hyötyvät pienemmistä arvoista."
 
 #: src/settings_translation_file.cpp
-msgid "Simulate translucency when looking at foliage in the sunlight."
+#, fuzzy
+msgid ""
+"Simulate translucency when looking at foliage in the sunlight.\n"
+"It is recommended to use this with setting \"leaves_style\" set to \"fancy\"."
 msgstr "Jäljittele läpikuultavuutta, kun lehvästöä katsoo auringonvalossa."
 
 #: src/settings_translation_file.cpp
@@ -7172,10 +7410,6 @@ msgid "The URL for the content repository"
 msgstr "Sisältökirjaston URL-osoite"
 
 #: src/settings_translation_file.cpp
-msgid "The dead zone of the joystick"
-msgstr "Peliohjaimen kuollut vyöhyke"
-
-#: src/settings_translation_file.cpp
 msgid ""
 "The default format in which profiles are being saved,\n"
 "when calling `/profiler save [format]` without format."
@@ -7219,10 +7453,6 @@ msgstr ""
 "* Pitkä painallus\n"
 "Perinteisestä Luantin kännykkäohjaustavasta tuttu.\n"
 "Taistelu on aika lailla mahdotonta."
-
-#: src/settings_translation_file.cpp
-msgid "The identifier of the joystick to use"
-msgstr "Käytettävän ohjaimen tunniste"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7378,10 +7608,6 @@ msgstr ""
 "sijoittamisnäppäintä pidetään pohjassa."
 
 #: src/settings_translation_file.cpp
-msgid "The type of joystick"
-msgstr "Peliohjaimen tyyppi"
-
-#: src/settings_translation_file.cpp
 msgid ""
 "The vertical distance over which heat drops by 20 if 'altitude_chill' is\n"
 "enabled. Also, the vertical distance over which humidity drops by 10 if\n"
@@ -7426,6 +7652,19 @@ msgid "Timeout for client to remove unused map data from memory, in seconds."
 msgstr ""
 "Sekunteina ilmoitettu aikaraja, jolloin asiakas poistaa käyttämättömät "
 "maailmatiedot muistista."
+
+#: src/settings_translation_file.cpp
+msgid "Tint sunlight during sunrise/sunset."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Tinted fog"
+msgstr "Sumu päälle/pois"
+
+#: src/settings_translation_file.cpp
+msgid "Tinted sunlight"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7820,7 +8059,13 @@ msgid "Volume when unfocused"
 msgstr "Äänenvoimakkuus kun ei kohdistettu"
 
 #: src/settings_translation_file.cpp
-msgid "Volumetric lighting"
+#, fuzzy
+msgid "Volumetric Depth Attenuation"
+msgstr "Tilavuudellinen valaistus"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Volumetric Lighting"
 msgstr "Tilavuudellinen valaistus"
 
 #: src/settings_translation_file.cpp
@@ -7892,8 +8137,10 @@ msgid "Weblink color"
 msgstr "Verkkolinkin väri"
 
 #: src/settings_translation_file.cpp
-msgid "When enabled, liquid reflections are simulated."
-msgstr "Kun asetus on päällä, nesteiden heijastuksia jäljitellään."
+msgid ""
+"When enabled, crude liquid reflections are simulated.\n"
+"Wave height, length and speed will affect these reflections."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -8138,16 +8385,24 @@ msgstr "cURLin välityspalvelimen osoite"
 msgid "Failed to save screenshot to \"%s\""
 msgstr "Kuvankaappauksen tallentaminen kohteeseen \"%s\" epäonnistui"
 
-#~ msgid "Append item name"
-#~ msgstr "Liitä esinenimi"
+#~ msgid "Enable joysticks"
+#~ msgstr "Ota peliohjaimet käyttöön"
 
-#~ msgid ""
-#~ "Possible filters\n"
-#~ "game:<name>\n"
-#~ "mod:<name>\n"
-#~ "player:<name>"
+#~ msgid "Enable joysticks. Requires a restart to take effect"
 #~ msgstr ""
-#~ "Mahdolliset suodattimet\n"
-#~ "game:<nimi>\n"
-#~ "mod:<nimi>\n"
-#~ "player:<nimi>"
+#~ "Ota peliohjaimet käyttöön. Tarvitsee uudelleenkäynnistyksen toimiakseen"
+
+#~ msgid "Keybindings"
+#~ msgstr "Näppäinasetukset"
+
+#~ msgid "The dead zone of the joystick"
+#~ msgstr "Peliohjaimen kuollut vyöhyke"
+
+#~ msgid "The identifier of the joystick to use"
+#~ msgstr "Käytettävän ohjaimen tunniste"
+
+#~ msgid "The type of joystick"
+#~ msgstr "Peliohjaimen tyyppi"
+
+#~ msgid "When enabled, liquid reflections are simulated."
+#~ msgstr "Kun asetus on päällä, nesteiden heijastuksia jäljitellään."

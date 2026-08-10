@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Polish (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-06 19:14+0200\n"
+"POT-Creation-Date: 2026-08-10 17:35+0200\n"
 "PO-Revision-Date: 2026-07-13 21:01+0000\n"
 "Last-Translator: Maja Bauer <majabauer0108@gmail.com>\n"
 "Language-Team: Polish <https://hosted.weblate.org/projects/minetest/minetest/"
@@ -197,7 +197,8 @@ msgstr ""
 msgid ""
 "Lower values will result in smoother noise and higher values will result in "
 "rougher noise."
-msgstr "Niższe wartości dają gładszy szum, a wyższe — bardziej chropowaty szum."
+msgstr ""
+"Niższe wartości dają gładszy szum, a wyższe — bardziej chropowaty szum."
 
 #: builtin/common/settings/dlg_change_mapgen_flags.lua
 msgid ""
@@ -521,6 +522,10 @@ msgstr "Wystąpił błąd w skrypcie Lua:"
 #: builtin/fstk/ui.lua
 msgid "An error occurred:"
 msgstr "Wystąpił błąd:"
+
+#: builtin/fstk/ui.lua
+msgid "Copy to clipboard"
+msgstr ""
 
 #: builtin/fstk/ui.lua
 msgid "Main menu"
@@ -1565,6 +1570,11 @@ msgstr "Usuń z ulubionych"
 msgid "Server Description"
 msgstr "Opis serwera"
 
+#: src/chat.cpp
+#, fuzzy
+msgid "Player names: "
+msgstr "Graj"
+
 #: src/client/client.cpp
 msgid "Connection aborted (protocol error?)."
 msgstr "Połączenie zostało przerwane (błąd protokołu?)."
@@ -1755,6 +1765,11 @@ msgid "Fast mode enabled (note: no 'fast' privilege)"
 msgstr "Tryb szybki włączony (uwaga: nie masz uprawnień \"trybu szybkiego\")"
 
 #: src/client/game.cpp
+#, c-format
+msgid "Files: %d / %d"
+msgstr ""
+
+#: src/client/game.cpp
 msgid "Fly mode disabled"
 msgstr "Tryb latania wyłączony"
 
@@ -1783,11 +1798,13 @@ msgid "Item definitions..."
 msgstr "Definicje przedmiotów..."
 
 #: src/client/game.cpp
-msgid "KiB/s"
+#, fuzzy
+msgid "KiB"
 msgstr "KiB/s"
 
 #: src/client/game.cpp
-msgid "MiB/s"
+#, fuzzy
+msgid "MiB"
 msgstr "MiB/s"
 
 #: src/client/game.cpp
@@ -1837,6 +1854,11 @@ msgstr "Wyłączanie..."
 #: src/client/game.cpp src/client/game_formspec.cpp
 msgid "Singleplayer"
 msgstr "Pojedynczy gracz"
+
+#: src/client/game.cpp
+#, c-format
+msgid "Size: %.2f %s"
+msgstr ""
 
 #: src/client/game.cpp
 msgid "Sound muted"
@@ -2063,8 +2085,27 @@ msgid "Profiler shown (page %d of %d)"
 msgstr "Profiler wyświetlony (strona %d z %d)"
 
 #: src/client/keycode.cpp
+#, fuzzy
+msgid "A (Gamepad)"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "B (Gamepad)"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Back (Gamepad)"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
 msgid "Backspace"
 msgstr "Backspace"
+
+#: src/client/keycode.cpp
+msgid "Bottom Face Button (Gamepad)"
+msgstr ""
 
 #. TRANSLATORS: Usually paired with the Pause key
 #: src/client/keycode.cpp
@@ -2076,12 +2117,38 @@ msgid "Caps Lock"
 msgstr "Klawisz Caps Lock"
 
 #: src/client/keycode.cpp
+msgid "Circle (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
 msgid "Clear Key"
 msgstr "Clear"
 
 #: src/client/keycode.cpp
 msgid "Control Key"
 msgstr "Ctrl"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Cross (Gamepad)"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "D-Pad Down"
+msgstr "Page Down"
+
+#: src/client/keycode.cpp
+msgid "D-Pad Left"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "D-Pad Right"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "D-Pad Up"
+msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Delete Key"
@@ -2094,6 +2161,26 @@ msgstr "Strzałka w dół"
 #: src/client/keycode.cpp
 msgid "End Key"
 msgstr "End"
+
+#: src/client/keycode.cpp
+#, fuzzy, c-format
+msgid "Gamepad Axis %d +"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
+#, fuzzy, c-format
+msgid "Gamepad Axis %d -"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
+#, fuzzy, c-format
+msgid "Gamepad Button %d"
+msgstr "Przycisk myszy %d"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Guide (Gamepad)"
+msgstr "Kontrolery"
 
 #: src/client/keycode.cpp
 msgid "Help Key"
@@ -2120,12 +2207,51 @@ msgid "Left Control"
 msgstr "Lewy Control"
 
 #: src/client/keycode.cpp
+msgid "Left Face Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Button"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Down"
+msgstr "Identyfikator Joystick-a"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Left"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Right"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Joystick Up"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
 msgid "Left Menu"
 msgstr "Lewy Menu"
 
 #: src/client/keycode.cpp
 msgid "Left Shift"
 msgstr "Lewy Shift"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Shoulder"
+msgstr "Lewy Shift"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Left Trigger"
+msgstr "Strzałka w lewo"
 
 #. TRANSLATORS: Name of key
 #: src/client/keycode.cpp
@@ -2237,6 +2363,14 @@ msgstr "Pause"
 msgid "Play"
 msgstr "Graj"
 
+#: src/client/keycode.cpp
+msgid "Primary Left Paddle"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Primary Right Paddle"
+msgstr ""
+
 #. TRANSLATORS: "Print screen" key
 #: src/client/keycode.cpp
 msgid "Print"
@@ -2259,12 +2393,50 @@ msgid "Right Control"
 msgstr "Prawy Control"
 
 #: src/client/keycode.cpp
+msgid "Right Face Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Right Joystick Button"
+msgstr ""
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Down"
+msgstr "Identyfikator Joystick-a"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Left"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Right"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Joystick Up"
+msgstr "Typ Joysticka"
+
+#: src/client/keycode.cpp
 msgid "Right Menu"
 msgstr "Prawy Menu"
 
 #: src/client/keycode.cpp
 msgid "Right Shift"
 msgstr "Prawy Shift"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Shoulder"
+msgstr "Prawy Shift"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Right Trigger"
+msgstr "Strzałka w prawo"
 
 #. TRANSLATORS: Name of key
 #: src/client/keycode.cpp
@@ -2281,6 +2453,14 @@ msgid "Scroll Lock"
 msgstr "Scroll Lock"
 
 #: src/client/keycode.cpp
+msgid "Secondary Left Paddle"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Secondary Right Paddle"
+msgstr ""
+
+#: src/client/keycode.cpp
 msgid "Select Key"
 msgstr "Select"
 
@@ -2293,12 +2473,44 @@ msgid "Space"
 msgstr "Spacja"
 
 #: src/client/keycode.cpp
+#, fuzzy
+msgid "Square (Gamepad)"
+msgstr "Rozgrywka serwera"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Start (Gamepad)"
+msgstr "Rozpocznij grę"
+
+#: src/client/keycode.cpp
 msgid "Tab Key"
 msgstr "Tab"
 
 #: src/client/keycode.cpp
+msgid "Top Face Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Touchpad Button (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
+msgid "Triangle (Gamepad)"
+msgstr ""
+
+#: src/client/keycode.cpp
 msgid "Up Arrow"
 msgstr "Strzałka w górę"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "X (Gamepad)"
+msgstr "Kontrolery"
+
+#: src/client/keycode.cpp
+#, fuzzy
+msgid "Y (Gamepad)"
+msgstr "Kontrolery"
 
 #: src/client/minimap.cpp
 msgid "Minimap hidden"
@@ -2617,6 +2829,10 @@ msgstr ""
 "Wersja Twojego klienta nie jest wspierana.\n"
 "Skontaktuj się z administratorem serwera."
 
+#: src/script/lua_api/l_mainmenu.cpp
+msgid "Copied to clipboard!"
+msgstr ""
+
 #: src/server.cpp
 #, c-format
 msgid "%s while shutting down: "
@@ -2803,6 +3019,11 @@ msgstr "Przyspieszenie w powietrzu"
 #: src/settings_translation_file.cpp
 msgid "Acceleration of gravity, in nodes per second per second."
 msgstr "Przyśpieszenie grawitacyjne, w blokach na sekundę do kwadratu."
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Actions and Keybindings"
+msgstr "Dodaj przypisanie klawiszy"
 
 #: src/settings_translation_file.cpp
 msgid "Active Block Modifiers"
@@ -3015,12 +3236,12 @@ msgstr ""
 "Wyrażone w MapBlocks (16 węzłów)."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
-"At this distance the server will perform a simpler and cheaper occlusion "
-"check.\n"
-"Smaller values potentially improve performance, at the expense of "
-"temporarily visible\n"
-"rendering glitches (missing blocks).\n"
+"At this distance the server will consider blocks as \"far away\".\n"
+"It will perform simpler and cheaper occlusion checks, update\n"
+"low priority block updates lazily, and limit the blocks sent to the\n"
+"client in one roundtrip.\n"
 "This is especially useful for very large viewing range (upwards of 500).\n"
 "Stated in MapBlocks (16 nodes)."
 msgstr ""
@@ -3911,14 +4132,6 @@ msgid "Enable dynamic shadows"
 msgstr "Włącz dynamiczne cienie"
 
 #: src/settings_translation_file.cpp
-msgid "Enable joysticks"
-msgstr "Włącz joystick"
-
-#: src/settings_translation_file.cpp
-msgid "Enable joysticks. Requires a restart to take effect"
-msgstr "Włącza wsparcie dla kontrolerów. Wymaga restartu gry"
-
-#: src/settings_translation_file.cpp
 msgid "Enable mod channels support."
 msgstr "Włącz wsparcie kanałów z modami."
 
@@ -4361,8 +4574,12 @@ msgid "GUI scaling filter"
 msgstr "Filtr skalowania GUI"
 
 #: src/settings_translation_file.cpp
-msgid "Gamepads"
-msgstr "Kontrolery"
+msgid "Gamepads and Joysticks"
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Gamma"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Global callbacks"
@@ -5029,24 +5246,22 @@ msgstr ""
 "Przy iteracjach = 20 ten mapgen ma podobne obciążenie jak mapgen V7."
 
 #: src/settings_translation_file.cpp
-msgid "Joystick ID"
-msgstr "Identyfikator Joystick-a"
-
-#: src/settings_translation_file.cpp
 msgid "Joystick button repetition interval"
 msgstr "Interwał powtarzania przycisku joysticka"
-
-#: src/settings_translation_file.cpp
-msgid "Joystick dead zone"
-msgstr "Strefa martwa joysticka"
 
 #: src/settings_translation_file.cpp
 msgid "Joystick frustum sensitivity"
 msgstr "Czułość drgania joysticka"
 
 #: src/settings_translation_file.cpp
-msgid "Joystick type"
-msgstr "Typ Joysticka"
+#, fuzzy
+msgid "Joystick inner dead zone"
+msgstr "Strefa martwa joysticka"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Joystick outer dead zone"
+msgstr "Strefa martwa joysticka"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -5149,6 +5364,12 @@ msgstr "Klawisz do otwierania czatu, aby wpisać lokalne komendy."
 
 #: src/settings_translation_file.cpp
 msgid ""
+"Key for opening the pause menu in-game.\n"
+"Pressing the escape key always opens the pause menu."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid ""
 "Key for placing an item/block or for using something.\n"
 "(Note: The actual meaning might vary on a per-game basis.)"
 msgstr ""
@@ -5178,11 +5399,6 @@ msgstr ""
 msgid "Key for toggling the display of the profiler. Used for development."
 msgstr ""
 "Przycisk przełączający wyświetlanie okna profilera. Opcja dla programistów."
-
-#: src/settings_translation_file.cpp
-#, fuzzy
-msgid "Keybindings"
-msgstr "Przypisanie klawiszy."
 
 #: src/settings_translation_file.cpp
 msgid "Keyboard and Mouse"
@@ -5453,6 +5669,16 @@ msgid ""
 msgstr ""
 "Ustawia mgłę i kolor nieba zależny od pory dnia (świt/zachód słońca) oraz "
 "kierunku patrzenia."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Make volumetrics weaker against closer objects to emulate physical "
+"volumetrics."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+msgid "Makes the color of light fog more saturated."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid "Map Compression Level for Disk Storage"
@@ -6092,6 +6318,10 @@ msgid "Open inventory"
 msgstr "Otwórz ekwipunek"
 
 #: src/settings_translation_file.cpp
+msgid "Open pause menu"
+msgstr ""
+
+#: src/settings_translation_file.cpp
 msgid ""
 "Open the pause menu when the window's focus is lost. Does not pause if a "
 "formspec is\n"
@@ -6710,10 +6940,10 @@ msgstr ""
 "Wartość 0 oznacza brak nachylenia / orbitę pionową."
 
 #: src/settings_translation_file.cpp
+#, fuzzy
 msgid ""
 "Set the exposure compensation in EV units.\n"
-"Value of 0.0 (default) means no exposure compensation.\n"
-"Range: from -1 to 1.0"
+"Value of 0.0 (default) means no exposure compensation."
 msgstr ""
 "Ustaw współczynnik kompensacji ekspozycji w jednostkach EV.\n"
 "Wartość 0.0 (domyślna) oznacza brak kompensacji ekspozycji.\n"
@@ -6733,6 +6963,12 @@ msgid ""
 msgstr ""
 "Ustaw maksymalną długość (w znakach) wiadomości czatu wysyłanych przez "
 "klientów."
+
+#: src/settings_translation_file.cpp
+msgid ""
+"Set the post processing gamma value.\n"
+"Higher values give lower contrast and vice versa."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -6886,7 +7122,9 @@ msgstr ""
 
 #: src/settings_translation_file.cpp
 #, fuzzy
-msgid "Simulate translucency when looking at foliage in the sunlight."
+msgid ""
+"Simulate translucency when looking at foliage in the sunlight.\n"
+"It is recommended to use this with setting \"leaves_style\" set to \"fancy\"."
 msgstr ""
 "Symuluj półprzezroczystość podczas patrzenia na listowie w świetle "
 "słonecznym."
@@ -7183,10 +7421,6 @@ msgid "The URL for the content repository"
 msgstr "Adres URL repozytorium zawartości"
 
 #: src/settings_translation_file.cpp
-msgid "The dead zone of the joystick"
-msgstr "Zakres nieczułości joysticka"
-
-#: src/settings_translation_file.cpp
 msgid ""
 "The default format in which profiles are being saved,\n"
 "when calling `/profiler save [format]` without format."
@@ -7233,10 +7467,6 @@ msgstr ""
 "*long_tap\n"
 "Znany ze sterowania mobilnego w klasycznym Luanti.\n"
 "Walka jest mniej lub bardziej niemożliwa."
-
-#: src/settings_translation_file.cpp
-msgid "The identifier of the joystick to use"
-msgstr "Identyfikator użycia joysticka"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7398,10 +7628,6 @@ msgstr ""
 "przycisku umieszczania.."
 
 #: src/settings_translation_file.cpp
-msgid "The type of joystick"
-msgstr "Typ joysticka"
-
-#: src/settings_translation_file.cpp
 msgid ""
 "The vertical distance over which heat drops by 20 if 'altitude_chill' is\n"
 "enabled. Also, the vertical distance over which humidity drops by 10 if\n"
@@ -7444,6 +7670,19 @@ msgid "Timeout for client to remove unused map data from memory, in seconds."
 msgstr ""
 "Limit czasu na usunięcie przez klienta nieużywanych danych map z pamięci, w "
 "sekundach."
+
+#: src/settings_translation_file.cpp
+msgid "Tint sunlight during sunrise/sunset."
+msgstr ""
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Tinted fog"
+msgstr "Przełącz mgłę"
+
+#: src/settings_translation_file.cpp
+msgid "Tinted sunlight"
+msgstr ""
 
 #: src/settings_translation_file.cpp
 #, fuzzy
@@ -7850,7 +8089,13 @@ msgid "Volume when unfocused"
 msgstr "Głośność, gdy okno jest nieaktywne"
 
 #: src/settings_translation_file.cpp
-msgid "Volumetric lighting"
+#, fuzzy
+msgid "Volumetric Depth Attenuation"
+msgstr "Światło wolumetryczne"
+
+#: src/settings_translation_file.cpp
+#, fuzzy
+msgid "Volumetric Lighting"
 msgstr "Światło wolumetryczne"
 
 #: src/settings_translation_file.cpp
@@ -7922,8 +8167,10 @@ msgid "Weblink color"
 msgstr "Kolor zaznaczenia linku"
 
 #: src/settings_translation_file.cpp
-msgid "When enabled, liquid reflections are simulated."
-msgstr "Gdy jest włączona, to odbicia cieczy są symulowane."
+msgid ""
+"When enabled, crude liquid reflections are simulated.\n"
+"Wave height, length and speed will affect these reflections."
+msgstr ""
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -8170,16 +8417,24 @@ msgstr "Adres proxy cURL"
 msgid "Failed to save screenshot to \"%s\""
 msgstr "Nie udało się zapisać zrzutu ekranu do \"%s\""
 
-#~ msgid "Append item name"
-#~ msgstr "Dołącz nazwę przedmiotu"
+#~ msgid "Enable joysticks"
+#~ msgstr "Włącz joystick"
 
-#~ msgid ""
-#~ "Possible filters\n"
-#~ "game:<name>\n"
-#~ "mod:<name>\n"
-#~ "player:<name>"
-#~ msgstr ""
-#~ "Możliwe filtry\n"
-#~ "game:<nazwa>\n"
-#~ "mod:<nazwa>\n"
-#~ "player:<nazwa>"
+#~ msgid "Enable joysticks. Requires a restart to take effect"
+#~ msgstr "Włącza wsparcie dla kontrolerów. Wymaga restartu gry"
+
+#, fuzzy
+#~ msgid "Keybindings"
+#~ msgstr "Przypisanie klawiszy."
+
+#~ msgid "The dead zone of the joystick"
+#~ msgstr "Zakres nieczułości joysticka"
+
+#~ msgid "The identifier of the joystick to use"
+#~ msgstr "Identyfikator użycia joysticka"
+
+#~ msgid "The type of joystick"
+#~ msgstr "Typ joysticka"
+
+#~ msgid "When enabled, liquid reflections are simulated."
+#~ msgstr "Gdy jest włączona, to odbicia cieczy są symulowane."
