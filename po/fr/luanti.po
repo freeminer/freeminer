@@ -3,8 +3,8 @@ msgstr ""
 "Project-Id-Version: French (Minetest)\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-08-10 17:35+0200\n"
-"PO-Revision-Date: 2026-05-10 20:01+0000\n"
-"Last-Translator: waxtatect <piero@live.ie>\n"
+"PO-Revision-Date: 2026-08-12 20:51+0000\n"
+"Last-Translator: Nioh <niohiguess@mailfence.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/minetest/minetest/"
 "fr/>\n"
 "Language: fr\n"
@@ -12,7 +12,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2026.5-dev\n"
+"X-Generator: Weblate 2026.9.dev0\n"
 
 #: builtin/client/chatcommands.lua
 msgid "Clear the out chat queue"
@@ -531,7 +531,7 @@ msgstr "Une erreur est survenue :"
 
 #: builtin/fstk/ui.lua
 msgid "Copy to clipboard"
-msgstr ""
+msgstr "Copier dans le presse-papiers"
 
 #: builtin/fstk/ui.lua
 msgid "Main menu"
@@ -1582,9 +1582,8 @@ msgid "Server Description"
 msgstr "Description du serveur"
 
 #: src/chat.cpp
-#, fuzzy
 msgid "Player names: "
-msgstr "Jouer"
+msgstr "Noms des joueurs : "
 
 #: src/client/client.cpp
 msgid "Connection aborted (protocol error?)."
@@ -1780,7 +1779,7 @@ msgstr "Mode rapide activé (note : pas de privilège « fast »)"
 #: src/client/game.cpp
 #, c-format
 msgid "Files: %d / %d"
-msgstr ""
+msgstr "Fichiers : %d / %d"
 
 #: src/client/game.cpp
 msgid "Fly mode disabled"
@@ -1871,7 +1870,7 @@ msgstr "Solo"
 #: src/client/game.cpp
 #, c-format
 msgid "Size: %.2f %s"
-msgstr ""
+msgstr "Taille : %.2f %s"
 
 #: src/client/game.cpp
 msgid "Sound muted"
@@ -2130,7 +2129,7 @@ msgstr "Verr. maj."
 
 #: src/client/keycode.cpp
 msgid "Circle (Gamepad)"
-msgstr ""
+msgstr "Cercle (Manette)"
 
 #: src/client/keycode.cpp
 msgid "Clear Key"
@@ -2141,9 +2140,8 @@ msgid "Control Key"
 msgstr "Touche contrôle"
 
 #: src/client/keycode.cpp
-#, fuzzy
 msgid "Cross (Gamepad)"
-msgstr "Manettes de jeu"
+msgstr "Croix (Manette)"
 
 #: src/client/keycode.cpp
 #, fuzzy
@@ -2508,7 +2506,7 @@ msgstr ""
 
 #: src/client/keycode.cpp
 msgid "Triangle (Gamepad)"
-msgstr ""
+msgstr "Triangle (Manette)"
 
 #: src/client/keycode.cpp
 msgid "Up Arrow"
@@ -6309,7 +6307,7 @@ msgstr "Ouvrir l'inventaire"
 
 #: src/settings_translation_file.cpp
 msgid "Open pause menu"
-msgstr ""
+msgstr "Ouvre le menu pause"
 
 #: src/settings_translation_file.cpp
 msgid ""
@@ -7658,7 +7656,7 @@ msgstr "Brouillard"
 
 #: src/settings_translation_file.cpp
 msgid "Tinted sunlight"
-msgstr ""
+msgstr "Teinte de la lumière du soleil"
 
 #: src/settings_translation_file.cpp
 msgid ""
