@@ -151,7 +151,9 @@ int ModApiHttp::l_request_http_api(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	if (!ScriptApiSecurity::checkWhitelisted(L, "secure.http_mods") &&
+	// Builtin code is trusted and may use HTTP without being listed as a mod.
+	if (ScriptApiSecurity::getCurrentModName(L) != BUILTIN_MOD_NAME &&
+			!ScriptApiSecurity::checkWhitelisted(L, "secure.http_mods") &&
 			!ScriptApiSecurity::checkWhitelisted(L, "secure.trusted_mods")) {
 		lua_pushnil(L);
 		return 1;
