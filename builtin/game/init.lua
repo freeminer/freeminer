@@ -42,7 +42,14 @@ dofile(gamepath .. "knockback.lua")
 dofile(gamepath .. "async.lua")
 dofile(gamepath .. "death_screen.lua")
 
+-- fm:
 dofile(gamepath.."stat.lua")
+local mapgen_name = core.get_mapgen_setting("mg_name")
+if mapgen_name == "earth" or mapgen_name == "voxel_earth" then
+	dofile(gamepath .. "geo.lua")
+end
+-- ===
+
 if core.setting_getbool("mod_debugging") then
 	dofile(gamepath.."mod_debugging.lua")
 end

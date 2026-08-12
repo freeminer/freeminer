@@ -162,7 +162,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_stable", "20");
 	settings->setDefault("farmesh_server", "1");
 	settings->setDefault("farmesh_all_changed", slow ? "1000" : android ? "3000" : "10000");
-	settings->setDefault("volumetric_fog", (android || slow) ? "1000" : farmesh);
+	settings->setDefault("volumetric_fog", (android || slow) ? "0" : farmesh);
 	settings->setDefault("farlights", farmesh);
 
 	settings->setDefault("headless_optimize", "false");
