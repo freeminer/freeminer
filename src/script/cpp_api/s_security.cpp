@@ -794,11 +794,10 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 	if (DIR_DELIM_CHAR != '/')
 		std::replace(abs_path.begin(), abs_path.end(), '/', DIR_DELIM_CHAR);
 
-	tracestream << "ScriptApiSecurity: path \"" << path << "\" resolved to \""
-		<< abs_path << "\"" << std::endl;
-
-	if (abs_path.empty())
+	if (abs_path.empty()) {
+		infostream << "ScriptApiSecurity: \"" << path << "\" -> ???" << std::endl;
 		return false;
+	}
 
 	// Note: abs_path can be a valid path while path isn't, e.g.
 	// abs_path = "/home/user/.luanti"
@@ -808,7 +807,15 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 
 	// Ask the environment-specific implementation
 	auto *sec = ModApiBase::getScriptApi<ScriptApiSecurity>(L);
-	return sec->checkPathInternal(abs_path, write_required, write_allowed);
+	bool ret = sec->checkPathInternal(abs_path, write_required, write_allowed);
+
+	auto &log_to = ret ? tracestream : infostream;
+	log_to << "ScriptApiSecurity: \"" << path << "\"";
+	if (abs_path != path)
+		log_to << " -> \"" << abs_path << "\"";
+	log_to << " -> " << (ret ? "allow" : "BLOCK")
+		<< (write_required ? " (w)": "") << std::endl;
+	return ret;
 }
 
 // Path can be read, but may or may not be written to.
