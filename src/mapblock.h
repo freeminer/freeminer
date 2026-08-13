@@ -570,10 +570,11 @@ public:
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp{};
 	uint32_t m_next_analyze_timestamp{};
-	typedef std::list<abm_trigger_one> abm_triggers_type;
+	using abm_triggers_type = std::vector<abm_trigger_one>;
 	std::unique_ptr<abm_triggers_type> abm_triggers;
 	std::mutex abm_triggers_mutex;
 	size_t abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate = 0);
+	bool hasAbmTriggers();
 	uint32_t m_abm_timestamp{};
 	using light_t = uint32_t;
 	static light_t makeLightPoint(u8 level, video::SColor color)

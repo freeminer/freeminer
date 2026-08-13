@@ -6,6 +6,9 @@
 
 #include "fm_bitset.h"
 
+#include <array>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 #include <map>
@@ -19,6 +22,14 @@ class ServerEnvironment;
 class ServerMap;
 class MapBlock;
 class IGameDef;
+
+enum ABMActivationMode : uint8_t
+{
+	ABM_ACTIVATE_NORMAL = 0,
+	ABM_ACTIVATE_CATCH_UP = 1 << 0,
+	ABM_ACTIVATE_RANDOM = 1 << 1,
+	ABM_ACTIVATE_WORLD = 1 << 2,
+};
 
 /*
 	ABMs
@@ -68,13 +79,14 @@ struct ABMWithState
 	float timer = 0.0f;
 
 	// fm:
-	float interval = 10;
-	float chance = 50;
-	int neighbors_range;
-	bool simple_catchup;
+	float interval = 10.0f;
+	u32 chance = 50;
+	int neighbors_range = 1;
+	bool simple_catchup = true;
 	std::vector<content_t> trigger_ids;
 	FMBitset required_neighbors = CONTENT_ID_CAPACITY,
-			 required_neighbors_activate = CONTENT_ID_CAPACITY;
+			required_neighbors_activate = CONTENT_ID_CAPACITY,
+			without_neighbors = CONTENT_ID_CAPACITY;
 	// ===
 
 	ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv);
@@ -103,9 +115,9 @@ class ABMHandler
 	// vector index = content_t
 	//std::vector<std::vector<ActiveABM>*> m_aabms;
 
-	std::array<std::vector<ActiveABM> *, CONTENT_ID_CAPACITY> m_aabms;
-	std::list<std::vector<ActiveABM> *> m_aabms_list;
+	std::array<std::unique_ptr<std::vector<ActiveABM>>, CONTENT_ID_CAPACITY> m_aabms{};
 	bool m_aabms_empty{true};
+	bool m_initialized{false};
 
 public:
 	ABMHandler(std::vector<ABMWithState> &abms,
@@ -122,10 +134,10 @@ public:
 	void apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached);
 
 	// fm:
-    ABMHandler(ServerEnvironment *env);
+	explicit ABMHandler(ServerEnvironment *env);
 	void init(std::vector<ABMWithState> &abms);
-	void apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached, uint8_t activate = 0);
-    // ===
+	void apply(MapBlock *block, uint8_t activate = ABM_ACTIVATE_NORMAL);
+	// ===
 };
 
 /*

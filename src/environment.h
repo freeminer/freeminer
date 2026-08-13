@@ -110,8 +110,8 @@ public:
 	 */
 	void continueRaycast(RaycastState *state, PointedThing *result);
 
-	// counter used internally when triggering ABMs
-	std::atomic_uint m_added_objects;
+	// Monotonic event counter used to detect objects added while triggering ABMs.
+	std::atomic_uint m_added_objects{0};
 
 	IGameDef *getGameDef() { return m_gamedef; }
 

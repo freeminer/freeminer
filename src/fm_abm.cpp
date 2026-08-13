@@ -19,10 +19,13 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <sstream>
 #include <string>
+#include "itemgroup.h"
 #include "irr_v3d.h"
 #include "map.h"
 #include "profiler.h"
@@ -31,41 +34,78 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "serverenvironment.h"
 #include "servermap.h"
 
-ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env)
-//ABMHandler::ABMHandler(std::vector<ABMWithState> &abms, float dtime_s,
-//		ServerEnvironment *env, bool use_timers) : m_env{env}
+namespace
 {
-	m_aabms.fill(nullptr);
+
+template <typename GetNode>
+bool neighborsMatch(const ABMWithState &abmws, const v3pos_t &pos, uint8_t activate,
+		v3pos_t &neighbor_pos, GetNode &&get_node)
+{
+	const FMBitset &required_neighbors = (activate & ABM_ACTIVATE_CATCH_UP)
+												 ? abmws.required_neighbors_activate
+												 : abmws.required_neighbors;
+	const FMBitset &without_neighbors = abmws.without_neighbors;
+
+	neighbor_pos = {};
+	if (required_neighbors.empty() && without_neighbors.empty())
+		return true;
+
+	bool found_required = required_neighbors.empty();
+	const int range = abmws.neighbors_range;
+	for (pos_t x = pos.X - range; x <= pos.X + range; ++x)
+		for (pos_t y = pos.Y - range; y <= pos.Y + range; ++y)
+			for (pos_t z = pos.Z - range; z <= pos.Z + range; ++z) {
+				const v3pos_t neighbor(x, y, z);
+				if (neighbor == pos)
+					continue;
+
+				const content_t content = get_node(neighbor).getContent();
+				if (content == CONTENT_IGNORE)
+					continue;
+				if (without_neighbors.get(content))
+					return false;
+				if (!found_required && required_neighbors.get(content)) {
+					found_required = true;
+					neighbor_pos = neighbor;
+					if (without_neighbors.empty())
+						return true;
+				}
+			}
+
+	return found_required;
+}
+
+} // namespace
+
+ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env)
+{
 }
 
 void ABMHandler::init(std::vector<ABMWithState> &abms)
 {
-	for (auto &abmws : abms) {
-		auto i = &abmws;
-		ActiveABM aabm;
-		aabm.abmws = i;
+	if (m_initialized) {
+		warningstream << "ABMHandler::init() called more than once; ignoring" << '\n';
+		return;
+	}
+	m_initialized = true;
 
-		aabm.min_y = i->abm->getMinY();
-		aabm.max_y = i->abm->getMaxY();
+	for (auto &abmws : abms) {
+		ActiveABM aabm;
+		aabm.abmws = &abmws;
+
+		aabm.min_y = abmws.abm->getMinY();
+		aabm.max_y = abmws.abm->getMaxY();
 
 		// Trigger contents
-		for (auto &c : i->trigger_ids) {
+		for (content_t c : abmws.trigger_ids) {
 			if (!m_aabms[c]) {
-				m_aabms[c] = new std::vector<ActiveABM>;
-				m_aabms_list.emplace_back(m_aabms[c]);
+				m_aabms[c] = std::make_unique<std::vector<ActiveABM>>();
 			}
 			m_aabms[c]->emplace_back(aabm);
 			m_aabms_empty = false;
 		}
 	}
 }
-/*
-ABMHandler::~ABMHandler()
-{
-	for (auto i = m_aabms_list.begin(); i != m_aabms_list.end(); ++i)
-		delete *i;
-}
-*/
 
 // Find out how many objects the given block and its neighbours contain.
 // Returns the number of objects in the block, and also in 'wider' the
@@ -98,165 +138,127 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 	return active_object_count;
 }
 
-void ABMHandler::apply(MapBlock *block, int &blocks_scanned, int &abms_run,
-		int &blocks_cached, uint8_t activate)
+void ABMHandler::apply(MapBlock *block, uint8_t activate)
 {
-	if (m_aabms_empty)
+	if (!block)
 		return;
 
-	// infostream<<"ABMHandler::apply p="<<block->getPos()<<" block->abm_triggers="<<block->abm_triggers<<std::endl;
-	{
-		std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
-		if (block->abm_triggers)
-			block->abm_triggers->clear();
-	}
-
 #if ENABLE_THREADS
-	auto map = std::unique_ptr<VoxelManipulator>(new VoxelManipulator);
-	{
-		// ScopeProfiler sp(g_profiler, "ABM copy", SPT_ADD);
-		m_env->getServerMap().copy_27_blocks_to_vm(block, *map);
-	}
+	auto map = std::make_unique<VoxelManipulator>();
+	m_env->getServerMap().copy_27_blocks_to_vm(block, *map);
 #else
 	ServerMap *map = &m_env->getServerMap();
-#endif
-
-	{
-		// const auto lock = block->try_lock_unique_rec();
-		// if (!lock->owns_lock())
-		//	return;
-	}
-
-	ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
-
-	u32 active_object_count_wider;
-	u32 active_object_count =
-			this->countObjects(block, &m_env->getServerMap(), active_object_count_wider);
-	m_env->m_added_objects = 0;
-
-	auto *ndef = m_env->getGameDef()->ndef();
-
-#if !ENABLE_THREADS
-	auto lock_map = m_env->getServerMap().m_nothread_locker.try_lock_shared_rec();
+	auto lock_map = map->m_nothread_locker.try_lock_shared_rec();
 	if (!lock_map->owns_lock())
 		return;
 #endif
 
+	ScopeProfiler sp(g_profiler, "ABM select", SPT_ADD);
+
+	u32 active_object_count = 0;
+	u32 active_object_count_wider = 0;
+	if (!m_aabms_empty) {
+		active_object_count =
+				countObjects(block, &m_env->getServerMap(), active_object_count_wider);
+	}
+
+	const NodeDefManager *ndef = m_env->getGameDef()->ndef();
+	MapBlock::abm_triggers_type selected_triggers;
 	int heat_num = 0;
-	int heat_sum = 0;
+	float heat_sum = 0.0f;
 	int humidity_num = 0;
 
-	v3pos_t bpr = block->getPosRelative();
-	v3pos_t p0;
-	for (p0.X = 0; p0.X < MAP_BLOCKSIZE; p0.X++)
-		for (p0.Y = 0; p0.Y < MAP_BLOCKSIZE; p0.Y++)
-			for (p0.Z = 0; p0.Z < MAP_BLOCKSIZE; p0.Z++) {
-				v3pos_t p = p0 + bpr;
+	const auto record_climate = [&](const MapNode &node, int count = 1) {
+		const ItemGroupList &groups = ndef->get(node).groups;
+		const int hot = itemgroup_get(groups, "hot");
+		if (hot) {
+			heat_num += count;
+			heat_sum += static_cast<float>(hot) * count;
+		}
+
+		if (itemgroup_get(groups, "water") || itemgroup_get(groups, "steam"))
+			humidity_num += count;
+	};
+
+	const v3pos_t block_origin = block->getPosRelative();
+	bool mono_without_abm = false;
+	if (block->m_is_mono_block) {
+		const MapNode node = map->getNodeTry(block_origin);
+		const content_t content = node.getContent();
+		if (content != CONTENT_IGNORE && !m_aabms[content]) {
+			constexpr int node_count = MAP_BLOCKSIZE * MAP_BLOCKSIZE * MAP_BLOCKSIZE;
+			record_climate(node, node_count);
+			mono_without_abm = true;
+		}
+	}
+
+	if (!mono_without_abm) {
+		v3pos_t relative_pos;
+		for (relative_pos.X = 0; relative_pos.X < MAP_BLOCKSIZE; ++relative_pos.X)
+			for (relative_pos.Y = 0; relative_pos.Y < MAP_BLOCKSIZE; ++relative_pos.Y)
+				for (relative_pos.Z = 0; relative_pos.Z < MAP_BLOCKSIZE;
+						++relative_pos.Z) {
+					const v3pos_t pos = relative_pos + block_origin;
 #if ENABLE_THREADS
-				MapNode n = map->getNodeTry(p);
+					const MapNode node = map->getNodeTry(pos);
 #else
-				MapNode n = block->getNodeTry(p0);
+					const MapNode node = block->getNodeTry(relative_pos);
 #endif
-				content_t c = n.getContent();
-				if (c == CONTENT_IGNORE)
-					continue;
-
-				{
-					int hot = ((ItemGroupList)ndef->get(n).groups)["hot"];
-					// todo: int cold = ((ItemGroupList) ndef->get(n).groups)["cold"];
-					if (hot) {
-						++heat_num;
-						heat_sum += hot;
-					}
-
-					auto groups = (ItemGroupList)ndef->get(n).groups;
-					int humidity = groups["water"];
-					if (!humidity)
-						humidity = groups["steam"];
-					if (humidity) {
-						++humidity_num;
-					}
-				}
-
-				if (!m_aabms[c]) {
-					if (block->m_is_mono_block)
-						return;
-					continue;
-				}
-
-				for (auto &ir : *(m_aabms[c])) {
-					auto i = &ir;
-					// Check neighbors
-					v3pos_t neighbor_pos;
-					auto &required_neighbors =
-							activate == 1 ? ir.abmws->required_neighbors_activate
-										  : ir.abmws->required_neighbors;
-					if (!required_neighbors.empty()) {
-						v3pos_t p1;
-						int neighbors_range = i->abmws->neighbors_range;
-						for (p1.X = p.X - neighbors_range; p1.X <= p.X + neighbors_range;
-								++p1.X)
-							for (p1.Y = p.Y - neighbors_range;
-									p1.Y <= p.Y + neighbors_range; ++p1.Y)
-								for (p1.Z = p.Z - neighbors_range;
-										p1.Z <= p.Z + neighbors_range; ++p1.Z) {
-									if (p1 == p)
-										continue;
-									MapNode n = map->getNodeTry(p1);
-									content_t c = n.getContent();
-									if (c == CONTENT_IGNORE)
-										continue;
-									if (required_neighbors.get(c)) {
-										neighbor_pos = p1;
-										goto neighbor_found;
-									}
-								}
-						// No required neighbor found
+					const content_t content = node.getContent();
+					if (content == CONTENT_IGNORE)
 						continue;
+
+					record_climate(node);
+					if (!m_aabms[content])
+						continue;
+
+					for (ActiveABM &active_abm : *m_aabms[content]) {
+						if (pos.Y < active_abm.min_y || pos.Y > active_abm.max_y)
+							continue;
+
+						selected_triggers.emplace_back(abm_trigger_one{&active_abm, pos,
+								content, active_object_count, active_object_count_wider,
+								{}, activate});
 					}
-				neighbor_found:
-
-					std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
-
-					if (!block->abm_triggers)
-						block->abm_triggers =
-								std::make_unique<MapBlock::abm_triggers_type>();
-
-					block->abm_triggers->emplace_back(
-							abm_trigger_one{i, p, c, active_object_count,
-									active_object_count_wider, neighbor_pos, activate});
 				}
-			}
+	}
+
 	if (heat_num) {
-		float heat_avg = heat_sum / heat_num;
-		const int min = 2 * MAP_BLOCKSIZE;
-		float magic = heat_avg >= 1 ? min + (1024 - min) / (4096 / heat_avg) : min;
-		float heat_add = ((block->heat < 0 ? -block->heat : 0) + heat_avg) *
-						 (heat_num < magic ? heat_num / magic : 1);
-		if (block->heat > heat_add) {
-			block->heat_add = 0;
-		} else if (block->heat + heat_add > heat_avg) {
-			block->heat_add = heat_avg - block->heat;
-		} else {
-			block->heat_add = heat_add;
-		}
-		// infostream<<"heat_num=" << heat_num << " heat_sum="<<heat_sum<<" heat_add="<<heat_add << " bheat_add"<<block->heat_add<< " heat_avg="<<heat_avg  << " heatnow="<<block->heat<< " magic="<<magic << std::endl;
+		const float heat_avg = heat_sum / static_cast<float>(heat_num);
+		constexpr float min_nodes = 2.0f * MAP_BLOCKSIZE;
+		const float effect_nodes =
+				heat_avg >= 1.0f
+						? min_nodes + (1024.0f - min_nodes) / (4096.0f / heat_avg)
+						: min_nodes;
+		const float base_heat = block->heat.load();
+		const float density = std::min(1.0f, heat_num / effect_nodes);
+		const float requested_add =
+				((base_heat < 0.0f ? -base_heat : 0.0f) + heat_avg) * density;
+		const float max_add = std::max(0.0f, heat_avg - base_heat);
+		block->heat_add = std::clamp(requested_add, 0.0f, max_add);
+	} else {
+		block->heat_add = 0;
 	}
 
-	const float max_effect = 70;
-	if (humidity_num && block->humidity < max_effect) {
-		const float max_nodes = 4 * MAP_BLOCKSIZE;
-		float humidity_add = (max_effect - block->humidity) *
-							 (std::min<int>(humidity_num, max_nodes) / max_nodes);
-		if (block->humidity + humidity_add > max_effect) {
-			block->humidity_add = block->humidity - humidity_add;
-		} else {
-			block->humidity_add = humidity_add;
-		}
-		// infostream<<"humidity_num=" << humidity_num <<" humidity_add="<<humidity_add << " bhumidity_add"<<block->humidity_add<< " humiditynow="<<block->humidity<< std::endl;
+	constexpr float max_humidity_effect = 70.0f;
+	const float base_humidity = block->humidity.load();
+	if (humidity_num && base_humidity < max_humidity_effect) {
+		constexpr float max_nodes = 4.0f * MAP_BLOCKSIZE;
+		const float density = std::min(1.0f, humidity_num / max_nodes);
+		const float max_add = max_humidity_effect - base_humidity;
+		block->humidity_add = std::clamp(max_add * density, 0.0f, max_add);
+	} else {
+		block->humidity_add = 0;
 	}
 
-	// infostream<<"ABMHandler::apply reult p="<<block->getPos()<<" apply result:"<< (block->abm_triggers ? block->abm_triggers->size() : 0) <<std::endl;
+	auto replacement = selected_triggers.empty()
+							   ? nullptr
+							   : std::make_unique<MapBlock::abm_triggers_type>(
+										 std::move(selected_triggers));
+	{
+		std::lock_guard<std::mutex> lock(block->abm_triggers_mutex);
+		block->abm_triggers = std::move(replacement);
+	}
 }
 
 size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t activate)
@@ -275,96 +277,108 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 #if !ENABLE_THREADS
 	auto lock_map = m_env->getServerMap().m_nothread_locker.try_lock_shared_rec();
 	if (!lock_map->owns_lock())
-		return;
+		return 0;
 #endif
 
-	float dtime = 0;
-	if (m_abm_timestamp) {
+	float dtime = 1.0f;
+	if (m_abm_timestamp && time >= m_abm_timestamp) {
 		dtime = time - m_abm_timestamp;
 	} else {
-		u32 ts = getActualTimestamp();
-		if (ts)
+		const u32 ts = getActualTimestamp();
+		if (ts && time >= ts)
 			dtime = time - ts;
-		else
-			dtime = 1;
 	}
-	if (!dtime)
-		dtime = 1;
-	size_t triggers_count = 0;
-	unordered_map_v3bpos<int> active_object_added;
+	if (dtime <= 0.0f)
+		dtime = 1.0f;
 
-	// infostream<<"MapBlock::abmTriggersRun " << " abm_triggers="<<abm_triggers.get()<<" size()="<<abm_triggers->size()<<" time="<<time<<" dtime="<<dtime<<" activate="<<activate<<std::endl;
+	size_t triggers_count = 0;
+	unordered_map_v3bpos<u32> active_object_added;
+
 	m_abm_timestamp = time;
-	for (auto abm_trigger = abm_triggers->begin(); abm_trigger != abm_triggers->end();
-			++abm_trigger) {
-		// ScopeProfiler sp2(g_profiler, "ABM trigger nodes test", SPT_ADD);
-		auto &aabm = *abm_trigger->abm;
-		if (!abm_trigger->abm || !aabm.abmws || !aabm.abmws->interval) {
+	for (size_t index = 0; index < abm_triggers->size();) {
+		auto remove_trigger = [&]() {
+			if (index + 1 != abm_triggers->size())
+				(*abm_triggers)[index] = std::move(abm_triggers->back());
+			abm_triggers->pop_back();
+		};
+
+		auto &abm_trigger = (*abm_triggers)[index];
+		if (!abm_trigger.abm || !abm_trigger.abm->abmws || !abm_trigger.abm->abmws->abm ||
+				abm_trigger.abm->abmws->interval <= 0.0f) {
 			infostream << "remove strange abm trigger dtime=" << dtime << '\n';
-			abm_trigger = abm_triggers->erase(abm_trigger);
+			remove_trigger();
 			continue;
 		}
+		ActiveABM &aabm = *abm_trigger.abm;
 
-		const auto &p = abm_trigger->pos;
-
-		/*if ((p.Y < aabm.min_y) || (p.Y > aabm.max_y))
-			continue;*/
-		if ((p.Y < aabm.abmws->abm->getMinY()) || (p.Y > aabm.abmws->abm->getMaxY()))
+		const v3pos_t &p = abm_trigger.pos;
+		if (p.Y < aabm.min_y || p.Y > aabm.max_y) {
+			++index;
 			continue;
+		}
+		const uint8_t trigger_activate = abm_trigger.activate | activate;
+		// Activation is a property of this run, not of the persistent candidate.
+		abm_trigger.activate = ABM_ACTIVATE_NORMAL;
 
 		float intervals = dtime / aabm.abmws->interval;
-
 		if (!aabm.abmws->simple_catchup)
-			intervals = 1;
-
-		if (!intervals) {
+			intervals = 1.0f;
+		if (intervals <= 0.0f) {
 			verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime << '\n';
-			intervals = 1;
+			intervals = 1.0f;
 		}
-		int chance = (aabm.abmws->chance / intervals);
-		// infostream<<"TST: dtime="<<dtime<<" Achance="<<abm->abmws->chance<<"
-		// Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<"
-		// Rintervals="<<intervals << std::endl;
-		if (chance && myrand() % chance)
+		const double scaled_chance =
+				std::clamp(static_cast<double>(aabm.abmws->chance) / intervals, 1.0,
+						static_cast<double>(std::numeric_limits<u32>::max()));
+		const u32 chance = static_cast<u32>(scaled_chance);
+		if (myrand() % chance) {
+			++index;
 			continue;
-		// infostream<<"HIT! dtime="<<dtime<<" Achance="<<abm->abmws->chance<<"
-		// Ainterval="<<abm->abmws->interval<< " Rchance="<<chance<<"
-		// Rintervals="<<intervals << std::endl;
+		}
 
-		MapNode node = map->getNodeTry(abm_trigger->pos);
-		if (node.getContent() != abm_trigger->content) {
-			if (node)
-				abm_trigger = abm_triggers->erase(abm_trigger);
+		const MapNode node = map->getNodeTry(abm_trigger.pos);
+		if (node.getContent() != abm_trigger.content) {
+			if (node) {
+				remove_trigger();
+				continue;
+			}
+			++index;
 			continue;
 		}
-		// ScopeProfiler sp3(g_profiler, "ABM trigger nodes call", SPT_ADD);
-		const auto blockpos = getNodeBlockPos(abm_trigger->pos);
-		int active_object_add = 0;
-		if (active_object_added.count(blockpos))
-			active_object_add = active_object_added[blockpos];
-		aabm.abmws->abm->trigger(m_env, abm_trigger->pos, node,
-				abm_trigger->active_object_count + active_object_add,
-				abm_trigger->active_object_count_wider + active_object_add,
-				abm_trigger->neighbor_pos, activate);
+
+		v3pos_t neighbor_pos;
+		if (!neighborsMatch(*aabm.abmws, p, trigger_activate, neighbor_pos,
+					[&](const v3pos_t &neighbor) { return map->getNodeTry(neighbor); })) {
+			++index;
+			continue;
+		}
+		abm_trigger.neighbor_pos = neighbor_pos;
+
+		const v3bpos_t blockpos = getNodeBlockPos(abm_trigger.pos);
+		const auto added_it = active_object_added.find(blockpos);
+		const u32 active_object_add =
+				added_it == active_object_added.end() ? 0 : added_it->second;
+		const u32 objects_added_before = m_env->m_added_objects.load();
+		aabm.abmws->abm->trigger(m_env, abm_trigger.pos, node,
+				abm_trigger.active_object_count + active_object_add,
+				abm_trigger.active_object_count_wider + active_object_add,
+				abm_trigger.neighbor_pos, trigger_activate);
 		++triggers_count;
-		// Count surrounding objects again if the abms added any
-		// infostream<<" m_env->m_added_objects="<<m_env->m_added_objects<<"
-		// add="<<active_object_add<<"
-		// bp="<<getNodeBlockPos(abm_trigger->pos)<<std::endl;
-		if (m_env->m_added_objects > 0) {
+		if (isOrphan())
+			break;
+
+		if (m_env->m_added_objects.load() != objects_added_before) {
 			auto block = map->getBlock(blockpos);
 			if (block) {
-				auto was = abm_trigger->active_object_count;
-				abm_trigger->active_object_count = m_env->m_abmhandler.countObjects(
-						block.get(), map, abm_trigger->active_object_count_wider);
-				// infostream<<" was="<<was<<" now
-				// abm_trigger->active_object_count="<<abm_trigger->active_object_count<<std::endl;
-				if (abm_trigger->active_object_count > was)
-					active_object_added[blockpos] =
-							abm_trigger->active_object_count - was;
+				const u32 was = abm_trigger.active_object_count;
+				abm_trigger.active_object_count = m_env->m_abmhandler.countObjects(
+						block.get(), map, abm_trigger.active_object_count_wider);
+				if (abm_trigger.active_object_count > was)
+					active_object_added[blockpos] = abm_trigger.active_object_count - was;
 			}
-			m_env->m_added_objects = 0;
 		}
+
+		++index;
 	}
 	if (abm_triggers->empty())
 		abm_triggers.reset();
@@ -378,6 +392,12 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 	return triggers_count;
 }
 
+bool MapBlock::hasAbmTriggers()
+{
+	std::unique_lock<std::mutex> lock(abm_triggers_mutex, std::try_to_lock);
+	return lock.owns_lock() && abm_triggers && !abm_triggers->empty();
+}
+
 uint8_t ServerEnvironment::analyzeBlock(MapBlockPtr block)
 {
 	u32 block_timestamp = block->getActualTimestamp();
@@ -388,9 +408,10 @@ uint8_t ServerEnvironment::analyzeBlock(MapBlockPtr block)
 	ScopeProfiler sp(g_profiler, "ABM analyze", SPT_ADD);
 	if (!block->analyzeContent())
 		return {};
-	uint8_t activate = block_timestamp - block->m_next_analyze_timestamp > 3600 ? 1 : 0;
-	int dummy;
-	m_abmhandler.apply(block.get(), dummy, dummy, dummy, activate);
+	const uint8_t activate = block_timestamp - block->m_next_analyze_timestamp > 3600
+									 ? ABM_ACTIVATE_CATCH_UP
+									 : ABM_ACTIVATE_NORMAL;
+	m_abmhandler.apply(block.get(), activate);
 	// infostream<<"ServerEnvironment::analyzeBlock p="<<block->getPos()<< " tdiff="<<block_timestamp - block->m_next_analyze_timestamp <<" co="<<block->content_only <<" triggers="<<(block->abm_triggers ? block->abm_triggers->size() : -1) <<std::endl;
 	block->m_next_analyze_timestamp = block_timestamp + 2;
 	return activate;

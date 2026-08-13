@@ -26,12 +26,12 @@ FMBitset::FMBitset(size_t capacity) : m_bits(capacity, 0), m_count(0)
 {
 }
 
-size_t FMBitset::count()
+size_t FMBitset::count() const
 {
 	return m_count;
 }
 
-size_t FMBitset::size()
+size_t FMBitset::size() const
 {
 	return count();
 }
@@ -44,12 +44,12 @@ void FMBitset::set(size_t index, bool value)
 	}
 }
 
-bool FMBitset::get(size_t index)
+bool FMBitset::get(size_t index) const
 {
 	return m_bits[index];
 }
 
-bool FMBitset::empty()
+bool FMBitset::empty() const
 {
 	return !m_count;
 }
