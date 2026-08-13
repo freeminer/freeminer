@@ -790,9 +790,8 @@ bool ScriptApiSecurity::checkPath(lua_State *L, const char *path,
 	// since that wouldn't normalize subpaths that *do* exist.
 	// This is required so that comparisons with other normalized paths work correctly.
 	std::string abs_path = fs::AbsolutePathPartial(path);
-	// Make sure the delimiters are consistent, too
-	if (DIR_DELIM_CHAR != '/')
-		std::replace(abs_path.begin(), abs_path.end(), '/', DIR_DELIM_CHAR);
+	// Warning: abs_path may still be case-sensitive or contain mixed / and \\,
+	// so be careful handling it!
 
 	if (abs_path.empty()) {
 		infostream << "ScriptApiSecurity: \"" << path << "\" -> ???" << std::endl;
@@ -842,7 +841,7 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 	if (!g_settings_path.empty()) {
 		// Don't allow accessing the settings file
 		str = fs::AbsolutePathPartial(g_settings_path);
-		if (str == abs_path)
+		if (fs::PathsEqual(abs_path, str))
 			return false;
 	}
 
@@ -877,8 +876,13 @@ bool ScriptApiSecurity::checkPathWithGamedef(lua_State *L,
 	// that can easily lead to arbitrary code execution.
 	// This isn't technically Luanti's fault, but Git is very common so we block
 	// write access for safety.
-	bool is_git_path = abs_path.find(DIR_DELIM ".git" DIR_DELIM) != std::string::npos ||
-		str_ends_with(abs_path, DIR_DELIM ".git");
+	bool is_git_path;
+	{
+		std::string tmp = lowercase(abs_path) + DIR_DELIM;
+		if constexpr (DIR_DELIM_CHAR != '/')
+			str_replace(tmp, '/', DIR_DELIM_CHAR);
+		is_git_path = tmp.find(DIR_DELIM ".git" DIR_DELIM) != std::string::npos;
+	}
 
 	// Allow read/write access to global mod data path
 	str = fs::AbsolutePath(gamedef->getModDataPath());
