@@ -161,10 +161,12 @@ void *AbmWorldThread::run()
 				pos_opt.reset();
 				// Random better
 				for (size_t dirs = 0; dirs < 6; ++dirs, ++pos_dir) {
-					#pragma clang diagnostic push
-					#pragma clang diagnostic ignored "-Wuninitialized"
-					const auto pos_new = pos_old + g_6dirs[pos_dir % (sizeof(g_6dirs)/sizeof(g_6dirs[0]))];
-					#pragma clang diagnostic pop
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wuninitialized"
+					const auto pos_new =
+							pos_old +
+							g_6dirs[pos_dir % (sizeof(g_6dirs) / sizeof(g_6dirs[0]))];
+#pragma clang diagnostic pop
 					//DUMP(dirs, pos_new, pos_dir);
 					if (contains(pos_new)) {
 						//DUMP("ok", dirs, pos_opt, "->", pos_new);
@@ -238,7 +240,8 @@ void *AbmWorldThread::run()
 
 				//m_server->getEnv().activateBlock(block);
 
-				const auto activate = (1 << 2) | m_server->getEnv().analyzeBlock(block);
+				const auto activate =
+						ABM_ACTIVATE_WORLD | m_server->getEnv().analyzeBlock(block);
 				const auto triggers = m_server->getEnv().blockStep(block, 0, activate);
 				triggers_total += triggers;
 

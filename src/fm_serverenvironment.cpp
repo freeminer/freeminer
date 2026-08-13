@@ -54,12 +54,7 @@ size_t ServerEnvironment::blockStep(MapBlockPtr block, float dtime_s, uint8_t ac
 		return m_script->node_on_timer(p, n, t.elapsed, t.timeout);
 	});
 
-	size_t triggers_run = 0;
-	if (block->abm_triggers) {
-		//ScopeProfiler sp354(g_profiler, "ABM random trigger blocks", SPT_ADD);
-		triggers_run = block->abmTriggersRun(this, m_game_time, activate);
-	}
-	return triggers_run;
+	return block->abmTriggersRun(this, m_game_time, activate);
 }
 
 int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
@@ -116,7 +111,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 				const auto lock = m_map->m_blocks.try_lock_shared_rec();
 				if (lock->owns_lock())
 					for (const auto &ir : m_map->m_blocks) {
-						if (!ir.second || !ir.second->abm_triggers)
+						if (!ir.second || !ir.second->hasAbmTriggers())
 							continue;
 						m_abm_random_blocks.emplace_back(ir.first);
 					}
@@ -129,7 +124,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 			i = m_abm_random_blocks.erase(i);
 			//ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
 
-			blockStep(block, dtime, 1 << 1);
+			blockStep(block, dtime, ABM_ACTIVATE_RANDOM);
 
 			if (porting::getTimeMs() > end_ms) {
 				break;

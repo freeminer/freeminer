@@ -30,11 +30,11 @@ class FMBitset
 {
 public:
 	FMBitset(size_t capacity);
-	size_t count();
-	size_t size(); // std compat
+	size_t count() const;
+	size_t size() const; // std compat
 	void set(size_t index, bool value);
-	bool get(size_t index);
-	bool empty();
+	bool get(size_t index) const;
+	bool empty() const;
 
 private:
 	std::vector<char> m_bits;

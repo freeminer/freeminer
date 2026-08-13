@@ -36,10 +36,9 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 	simple_catchup = abm->getSimpleCatchUp();
 
 	// Initialize timer to random value to spread processing
-	float itv = abm->getTriggerInterval();
-	itv = MYMAX(0.001f, itv); // No less than 1ms
-	int minval = MYMAX(-0.51f * itv, -60); // Clamp to
-	int maxval = MYMIN( 0.51f * itv,  60); // +-60 seconds
+	interval = MYMAX(0.001f, abm->getTriggerInterval()); // No less than 1ms
+	int minval = MYMAX(-0.51f * interval, -60); // Clamp to
+	int maxval = MYMIN( 0.51f * interval,  60); // +-60 seconds
 	timer = myrand_range(minval, maxval);
 
 
@@ -51,9 +50,14 @@ ABMWithState::ABMWithState(ActiveBlockModifier *abm_, ServerEnvironment *senv):
 		ndef->getIds(i, required_neighbors_activate);
 	}
 
+	for (const auto &name : abm->getWithoutNeighbors()) {
+		ndef->getIds(name, without_neighbors);
+	}
+
 	for(auto & i : abm->getTriggerContents()) {
 		ndef->getIds(i, trigger_ids);
 	}
+	SORT_AND_UNIQUE(trigger_ids);
 }
 
 
@@ -119,18 +123,16 @@ ABMHandler::ABMHandler(std::vector<ABMWithState> &abms,
 			if (c >= m_aabms.size())
 				m_aabms.resize(c + 256, nullptr);
 */
-			if (!m_aabms[c])
-				m_aabms[c] = new std::vector<ActiveABM>;
+			if (!m_aabms[c]) {
+				m_aabms[c] = std::make_unique<std::vector<ActiveABM>>();
+				m_aabms_empty = false;
+			}
 			m_aabms[c]->push_back(aabm);
 		}
 	}
 }
 
-ABMHandler::~ABMHandler()
-{
-	for (auto &aabms : m_aabms)
-		delete aabms;
-}
+ABMHandler::~ABMHandler() = default;
 
 /*
 u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
@@ -159,7 +161,7 @@ u32 ABMHandler::countObjects(MapBlock *block, ServerMap *map, u32 &wider)
 
 void ABMHandler::apply(MapBlock *block, int &blocks_scanned, int &abms_run, int &blocks_cached)
 {
-	if (m_aabms.empty())
+	if (m_aabms_empty)
 		return;
 
 	// Check the content type cache first
@@ -184,8 +186,6 @@ void ABMHandler::apply(MapBlock *block, int &blocks_scanned, int &abms_run, int 
 
 	u32 active_object_count_wider;
 	u32 active_object_count = countObjects(block, map, active_object_count_wider);
-	m_env->m_added_objects = 0;
-
 	bool want_contents_cached = block->contents.empty() && !block->do_not_cache_contents;
 
 	v3pos_t p0;
@@ -265,6 +265,7 @@ neighbor_invalid:
 neighbor_found:
 
 			abms_run++;
+			const u32 objects_added_before = m_env->m_added_objects.load();
 			// Call all the trigger variations
 			//aabm.abm->trigger(m_env, p, n);
 			aabm.abm->trigger(m_env, p, n,
@@ -274,9 +275,8 @@ neighbor_found:
 				return;
 
 			// Count surrounding objects again if the abms added any
-			if (m_env->m_added_objects > 0) {
+			if (m_env->m_added_objects.load() != objects_added_before) {
 				active_object_count = countObjects(block, map, active_object_count_wider);
-				m_env->m_added_objects = 0;
 			}
 
 			// Update and check node after possible modification
