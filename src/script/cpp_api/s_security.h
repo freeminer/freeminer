@@ -95,11 +95,13 @@ protected:
 		bool write_required, bool *write_allowed);
 
 private:
-	int getThread(lua_State *L);
+	static int getThread(lua_State *L);
 	// sets the environment to the table that's on top of the stack
-	void setLuaEnv(lua_State *L, int thread);
+	static void setLuaEnv(lua_State *L, int thread);
 	// creates an empty Lua environment
-	void createEmptyEnv(lua_State *L);
+	static void createEmptyEnv(lua_State *L);
+	// replace "default files" (io.input/io.output) with /dev/null
+	static void replaceDefaultFiles(lua_State *L);
 
 	bool m_secure = false;
 

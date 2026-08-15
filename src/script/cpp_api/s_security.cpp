@@ -207,6 +207,8 @@ void ScriptApiSecurity::initializeSecurity()
 	lua_State *L = getStack();
 	const int sanity_check_top = lua_gettop(L);
 
+	replaceDefaultFiles(L); // do this first
+
 	/*
 		This function creates a secondary table, only accessible through
 		`core.request_insecure_environment` containing all insecure Lua functions.
@@ -633,6 +635,40 @@ void ScriptApiSecurity::setLuaEnv(lua_State *L, int thread)
 		"environment of the main Lua thread!");
 	lua_pop(L, 1);  // Pop thread
 #endif
+}
+
+void ScriptApiSecurity::replaceDefaultFiles(lua_State *L)
+{
+#ifdef _WIN32
+	const std::string null_file("NUL");
+	const bool should_unlink = false;
+#else
+	std::string null_file("/dev/null");
+	bool should_unlink = false;
+	// POSIX in fact guarantees /dev/null, but for the slim chance that it's
+	// not accessible use a (deleted) temporary file.
+	if (!fs::PathExists(null_file)) {
+		null_file = fs::CreateTempFile();
+		should_unlink = true;
+		FATAL_ERROR_IF(null_file.empty(), "Can't access /dev/null or a temporary file");
+	}
+#endif
+
+	// The "global state default files" Lua uses are quite flawed, but instead of
+	// trying to prevent their use by wrapping io.write, io.lines and more, we opt to
+	// simply replace them with dummy files.
+	// This ensures mods inside the sandbox can't mess with stdin or stdout.
+	lua_getglobal(L, "io");
+	lua_getfield(L, -1, "input");
+	lua_pushstring(L, null_file.c_str());
+	lua_call(L, 1, 0);
+	lua_getfield(L, -1, "output");
+	lua_pushstring(L, null_file.c_str());
+	lua_call(L, 1, 0);
+	lua_pop(L, 1); // 'io' table
+
+	if (should_unlink)
+		fs::DeleteSingleFileOrEmptyDirectory(null_file);
 }
 
 bool ScriptApiSecurity::isSecure(lua_State *L)
