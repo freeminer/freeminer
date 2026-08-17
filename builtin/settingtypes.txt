@@ -240,6 +240,9 @@ more_threads () bool true
 # Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
 abm_random () bool false
 
+# Maximum ABM callbacks per trigger when catching up after a long inactive period
+abm_max_catch_up_runs () int 10 1 100
+
 # Default privs in creative mode
 default_privs_creative () string interact, shout, fly, fast
 

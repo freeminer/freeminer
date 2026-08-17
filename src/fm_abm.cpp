@@ -75,6 +75,38 @@ bool neighborsMatch(const ABMWithState &abmws, const v3pos_t &pos, uint8_t activ
 	return found_required;
 }
 
+size_t getABMRunCount(const ABMWithState &abmws, float dtime)
+{
+	static const u32 max_catch_up_runs =
+			std::clamp<u32>(g_settings->getU32("abm_max_catch_up_runs"), 1, 100);
+
+	double intervals = dtime / abmws.interval;
+	if (!abmws.simple_catchup)
+		intervals = 1.0;
+	if (intervals <= 0.0) {
+		verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime << '\n';
+		intervals = 1.0;
+	}
+
+	const double scaled_chance =
+			static_cast<double>(std::max<u32>(abmws.chance, 1)) / intervals;
+	if (scaled_chance >= 1.0) {
+		const u32 chance = static_cast<u32>(std::min(
+				scaled_chance, static_cast<double>(std::numeric_limits<u32>::max())));
+		return myrand() % chance ? 0 : 1;
+	}
+
+	const double expected_runs = 1.0 / scaled_chance;
+	if (expected_runs >= max_catch_up_runs)
+		return max_catch_up_runs;
+
+	size_t runs = static_cast<size_t>(expected_runs);
+	const double fractional_run = expected_runs - runs;
+	if (myrand_float() < fractional_run)
+		++runs;
+	return runs;
+}
+
 } // namespace
 
 ABMHandler::ABMHandler(ServerEnvironment *env) : m_env(env)
@@ -320,62 +352,64 @@ size_t MapBlock::abmTriggersRun(ServerEnvironment *m_env, u32 time, uint8_t acti
 		// Activation is a property of this run, not of the persistent candidate.
 		abm_trigger.activate = ABM_ACTIVATE_NORMAL;
 
-		float intervals = dtime / aabm.abmws->interval;
-		if (!aabm.abmws->simple_catchup)
-			intervals = 1.0f;
-		if (intervals <= 0.0f) {
-			verbosestream << "abm: intervals=" << intervals << " dtime=" << dtime << '\n';
-			intervals = 1.0f;
-		}
-		const double scaled_chance =
-				std::clamp(static_cast<double>(aabm.abmws->chance) / intervals, 1.0,
-						static_cast<double>(std::numeric_limits<u32>::max()));
-		const u32 chance = static_cast<u32>(scaled_chance);
-		if (myrand() % chance) {
+		const size_t run_count = getABMRunCount(*aabm.abmws, dtime);
+		if (!run_count) {
 			++index;
 			continue;
 		}
-
-		const MapNode node = map->getNodeTry(abm_trigger.pos);
-		if (node.getContent() != abm_trigger.content) {
-			if (node) {
-				remove_trigger();
-				continue;
-			}
-			++index;
-			continue;
-		}
-
-		v3pos_t neighbor_pos;
-		if (!neighborsMatch(*aabm.abmws, p, trigger_activate, neighbor_pos,
-					[&](const v3pos_t &neighbor) { return map->getNodeTry(neighbor); })) {
-			++index;
-			continue;
-		}
-		abm_trigger.neighbor_pos = neighbor_pos;
 
 		const v3bpos_t blockpos = getNodeBlockPos(abm_trigger.pos);
 		const auto added_it = active_object_added.find(blockpos);
 		const u32 active_object_add =
 				added_it == active_object_added.end() ? 0 : added_it->second;
-		const u32 objects_added_before = m_env->m_added_objects.load();
-		aabm.abmws->abm->trigger(m_env, abm_trigger.pos, node,
-				abm_trigger.active_object_count + active_object_add,
-				abm_trigger.active_object_count_wider + active_object_add,
-				abm_trigger.neighbor_pos, trigger_activate);
-		++triggers_count;
+		u32 active_object_count = abm_trigger.active_object_count + active_object_add;
+		u32 active_object_count_wider =
+				abm_trigger.active_object_count_wider + active_object_add;
+		bool remove_current_trigger = false;
+
+		for (size_t run = 0; run < run_count; ++run) {
+			const MapNode node = map->getNodeTry(abm_trigger.pos);
+			if (node.getContent() != abm_trigger.content) {
+				remove_current_trigger = static_cast<bool>(node);
+				break;
+			}
+
+			v3pos_t neighbor_pos;
+			if (!neighborsMatch(*aabm.abmws, p, trigger_activate, neighbor_pos,
+						[&](const v3pos_t &neighbor) {
+							return map->getNodeTry(neighbor);
+						}))
+				break;
+			abm_trigger.neighbor_pos = neighbor_pos;
+
+			const u32 objects_added_before = m_env->m_added_objects.load();
+			aabm.abmws->abm->trigger(m_env, abm_trigger.pos, node, active_object_count,
+					active_object_count_wider, abm_trigger.neighbor_pos,
+					trigger_activate);
+			++triggers_count;
+			if (isOrphan())
+				break;
+
+			if (m_env->m_added_objects.load() != objects_added_before) {
+				auto block = map->getBlock(blockpos);
+				if (block) {
+					u32 wider = 0;
+					const u32 current =
+							m_env->m_abmhandler.countObjects(block.get(), map, wider);
+					if (current > active_object_count)
+						active_object_added[blockpos] += current - active_object_count;
+					active_object_count = current;
+					active_object_count_wider = wider;
+					abm_trigger.active_object_count = current;
+					abm_trigger.active_object_count_wider = wider;
+				}
+			}
+		}
 		if (isOrphan())
 			break;
-
-		if (m_env->m_added_objects.load() != objects_added_before) {
-			auto block = map->getBlock(blockpos);
-			if (block) {
-				const u32 was = abm_trigger.active_object_count;
-				abm_trigger.active_object_count = m_env->m_abmhandler.countObjects(
-						block.get(), map, abm_trigger.active_object_count_wider);
-				if (abm_trigger.active_object_count > was)
-					active_object_added[blockpos] = abm_trigger.active_object_count - was;
-			}
+		if (remove_current_trigger) {
+			remove_trigger();
+			continue;
 		}
 
 		++index;

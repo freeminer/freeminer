@@ -3,6 +3,8 @@
 
 #include "test.h"
 
+#include <algorithm>
+
 #include "emerge.h"
 #include "itemdef.h"
 #include "mock_server.h"
@@ -10,6 +12,7 @@
 #include "server/blockmodifier.h"
 #include "serverenvironment.h"
 #include "servermap.h"
+#include "settings.h"
 
 namespace
 {
@@ -107,7 +110,7 @@ void TestABM::runTests(IGameDef *gamedef)
 void TestABM::testCachedABM(ServerEnvironment *env, TestABMDefinition *definition,
 		content_t trigger_content, content_t excluded_content)
 {
-	const ABMWithState &state = env->m_abms.back();
+	ABMWithState &state = env->m_abms.back();
 	UASSERT(state.interval == 2.5f);
 	UASSERT(state.without_neighbors.get(excluded_content));
 
@@ -144,6 +147,21 @@ void TestABM::testCachedABM(ServerEnvironment *env, TestABMDefinition *definitio
 	UASSERTEQ(size_t, block->abmTriggersRun(env, 2), 1);
 	UASSERTEQ(unsigned int, definition->triggers, 1);
 	UASSERTEQ(uint8_t, definition->last_activate, ABM_ACTIVATE_NORMAL);
+
+	state.interval = 1.0f;
+	state.chance = 1;
+	definition->triggers = 0;
+	UASSERTEQ(size_t, block->abmTriggersRun(env, 102, ABM_ACTIVATE_CATCH_UP), 1);
+	UASSERTEQ(unsigned int, definition->triggers, 1);
+
+	state.simple_catchup = true;
+	definition->triggers = 0;
+	const u32 max_catch_up_runs =
+			std::clamp<u32>(g_settings->getU32("abm_max_catch_up_runs"), 1, 100);
+	UASSERTEQ(size_t, block->abmTriggersRun(env, 202, ABM_ACTIVATE_CATCH_UP),
+			static_cast<size_t>(max_catch_up_runs));
+	UASSERTEQ(unsigned int, definition->triggers, max_catch_up_runs);
+	UASSERTEQ(uint8_t, definition->last_activate, ABM_ACTIVATE_CATCH_UP);
 }
 
 } // namespace
