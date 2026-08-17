@@ -12,8 +12,10 @@
 #include <string>
 #include <vector>
 
-namespace earth {
-namespace geoid_detail {
+namespace earth
+{
+namespace geoid_detail
+{
 
 struct Grid
 {
@@ -41,9 +43,8 @@ inline double read_be_double(const unsigned char *p)
 inline std::uint32_t read_be_u32(const unsigned char *p)
 {
 	return (static_cast<std::uint32_t>(p[0]) << 24) |
-			(static_cast<std::uint32_t>(p[1]) << 16) |
-			(static_cast<std::uint32_t>(p[2]) << 8) |
-			static_cast<std::uint32_t>(p[3]);
+		   (static_cast<std::uint32_t>(p[1]) << 16) |
+		   (static_cast<std::uint32_t>(p[2]) << 8) | static_cast<std::uint32_t>(p[3]);
 }
 
 inline float read_be_float(const unsigned char *p)
@@ -151,9 +152,8 @@ inline bool reload_geoid_grid()
 {
 	geoid_detail::GridCache &cache = geoid_detail::grid_cache();
 	const std::lock_guard<std::mutex> lock(cache.mutex);
-	cache.grid =
-			std::make_shared<const geoid_detail::Grid>(
-					geoid_detail::load_grid(cache.preferred_path));
+	cache.grid = std::make_shared<const geoid_detail::Grid>(
+			geoid_detail::load_grid(cache.preferred_path));
 	cache.attempted = true;
 	return cache.grid->loaded;
 }
@@ -204,10 +204,8 @@ inline double geoid_undulation_m(double lat, double lon)
 	const double v10 = at(row0, col1);
 	const double v01 = at(row1, col0);
 	const double v11 = at(row1, col1);
-	return (1.0 - fx) * (1.0 - fy) * v00 +
-			fx * (1.0 - fy) * v10 +
-			(1.0 - fx) * fy * v01 +
-			fx * fy * v11;
+	return (1.0 - fx) * (1.0 - fy) * v00 + fx * (1.0 - fy) * v10 + (1.0 - fx) * fy * v01 +
+		   fx * fy * v11;
 }
 
 inline double ellipsoid_to_orthometric_height(double lat, double lon, double ellipsoid_h)
@@ -215,7 +213,8 @@ inline double ellipsoid_to_orthometric_height(double lat, double lon, double ell
 	return ellipsoid_h - geoid_undulation_m(lat, lon);
 }
 
-inline double orthometric_to_ellipsoid_height(double lat, double lon, double orthometric_h)
+inline double orthometric_to_ellipsoid_height(
+		double lat, double lon, double orthometric_h)
 {
 	return orthometric_h + geoid_undulation_m(lat, lon);
 }

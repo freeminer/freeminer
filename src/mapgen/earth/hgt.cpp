@@ -990,7 +990,7 @@ height::height_t height::get(ll_t lat, ll_t lon)
 				//lat_seconds, lon_seconds,
 				seconds_per_px_x, seconds_per_px_y, lat, lon, lat_loaded, lon_loaded,
 				(lat - lat_loaded), pixel_per_deg_x, (lon - lon_loaded), pixel_per_deg_y);
-	//return height[2]; // debug not interpolated
+		//return height[2]; // debug not interpolated
 #endif
 
 	// ratio where X lays

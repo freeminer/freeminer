@@ -528,6 +528,57 @@ MapgenEarth::~MapgenEarth()
 {
 }
 
+bool MapgenEarth::beginTileOverlay(int min_x, int min_z, int max_x, int max_z)
+{
+	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+	if (tile_overlay)
+		return false;
+	tile_overlay = std::make_unique<TileOverlay>();
+	tile_overlay->min_x = min_x; tile_overlay->min_z = min_z;
+	tile_overlay->max_x = max_x; tile_overlay->max_z = max_z;
+	return true;
+}
+
+bool MapgenEarth::writeTileOverlay(const v3pos_t &pos, const MapNode &node)
+{
+	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+	if (!tile_overlay)
+		return false;
+	tile_overlay->writes[{pos.X, pos.Y, pos.Z}] = node;
+	return true;
+}
+
+std::optional<MapNode> MapgenEarth::readTileOverlay(const v3pos_t &pos) const
+{
+	std::lock_guard<std::mutex> lock(const_cast<MapgenEarth *>(this)->tile_overlay_mutex);
+	if (!tile_overlay) return std::nullopt;
+	auto it = tile_overlay->writes.find({pos.X, pos.Y, pos.Z});
+	return it == tile_overlay->writes.end() ? std::nullopt : std::optional<MapNode>(it->second);
+}
+
+bool MapgenEarth::mergeTileOverlay()
+{
+	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+	if (!tile_overlay || !vm)
+		return false;
+	for (const auto &[key, node] : tile_overlay->writes) {
+		if (key.x < tile_overlay->min_x || key.x > tile_overlay->max_x ||
+				key.z < tile_overlay->min_z || key.z > tile_overlay->max_z)
+			continue;
+		const v3pos_t pos{key.x, key.y, key.z};
+		if (vm->exists(pos))
+			vm->setNode(pos, node);
+	}
+	tile_overlay.reset();
+	return true;
+}
+
+void MapgenEarth::discardTileOverlay()
+{
+	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+	tile_overlay.reset();
+}
+
 //////////////////////// Map generator
 
 MapNode MapgenEarth::layers_get(float value, float max)

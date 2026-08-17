@@ -194,6 +194,9 @@ public:
 			ground.mg = mg;
 			arnis::WorldEditor editor;
 			editor.mg = mg;
+			editor.set_tile_hooks([this](int min_x, int min_z, int max_x, int max_z) {
+				return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
+			}, [this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
 			editor.ground = &ground;
 			std::vector<arnis::ProcessedElement> v;
 			arnis::ProcessedWay w;
@@ -228,6 +231,9 @@ public:
 			ground.mg = mg;
 			arnis::WorldEditor editor;
 			editor.mg = mg;
+			editor.set_tile_hooks([this](int min_x, int min_z, int max_x, int max_z) {
+				return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
+			}, [this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
 			editor.ground = &ground;
 			std::vector<arnis::ProcessedElement> v;
 			//for (const auto &r : relation) {

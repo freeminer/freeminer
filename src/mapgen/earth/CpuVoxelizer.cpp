@@ -210,8 +210,8 @@ public:
 		// pixel bytes for us.
 		if (!model.images.empty()) {
 			const auto &img = model.images[0];
-			if (img.width > 0 && img.height > 0 && img.bits == 8 &&
-					!img.image.empty() && img.component > 0) {
+			if (img.width > 0 && img.height > 0 && img.bits == 8 && !img.image.empty() &&
+					img.component > 0) {
 				lr.texW = img.width;
 				lr.texH = img.height;
 				lr.texStride = img.width;
@@ -574,7 +574,7 @@ static inline float clamp01(float a)
 
 /* CUDA‑style bilinear sample */
 static std::array<uint8_t, 4> sampleCUDA(const std::vector<int> &pix, int w, int h,
-	int stride, float u, float v, bool flipV)
+		int stride, float u, float v, bool flipV)
 {
 	if (pix.empty() || w <= 0 || h <= 0)
 		return {255, 255, 255, 255};
@@ -618,8 +618,8 @@ static std::array<uint8_t, 4> sampleCUDA(const std::vector<int> &pix, int w, int
 /* Rasterisation per slab (parallel) */
 
 static int rasterizeSlab(const VoxelTriSOA &T, const IntArray &triList, int z0, int z1,
-		int G, bool flipV, std::vector<bool> &occ,
-		std::vector<uint32_t> &colors, std::vector<float> &bestD2)
+		int G, bool flipV, std::vector<bool> &occ, std::vector<uint32_t> &colors,
+		std::vector<float> &bestD2)
 {
 	const float eps = EPS;
 	const float nearFrac = NEAR_W_FRACTION;
@@ -739,8 +739,7 @@ static int rasterizeSlab(const VoxelTriSOA &T, const IntArray &triList, int z0, 
 					clamp01(l0 * tu0 + l1 * tu1 + l2 * tu2),
 					clamp01(l0 * tv0 + l1 * tv1 + l2 * tv2), flipV);
 			return (static_cast<uint32_t>(col[0]) << 16) |
-				   (static_cast<uint32_t>(col[1]) << 8) |
-				   static_cast<uint32_t>(col[2]);
+				   (static_cast<uint32_t>(col[1]) << 8) | static_cast<uint32_t>(col[2]);
 		};
 
 		// Scan rows in V
@@ -931,8 +930,8 @@ CpuVoxelizer::Stats CpuVoxelizer::voxelizeSingleGLB(
 	for (int s = 0; s < slabCount; ++s) {
 		int zStart = s * slabH;
 		int zEnd = std::min(grid_, zStart + slabH);
-		filled += rasterizeSlab(soa, slabBins[s], zStart, zEnd, grid_, FLIP_V, occ,
-				colors, bestD2);
+		filled += rasterizeSlab(
+				soa, slabBins[s], zStart, zEnd, grid_, FLIP_V, occ, colors, bestD2);
 	}
 
 	for (int i = 0; i < total; ++i) {

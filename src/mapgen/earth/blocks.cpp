@@ -154,6 +154,9 @@ Block IRON_ORE;
 Block COAL_ORE;
 Block GOLD_ORE;
 Block COPPER_ORE;
+Block LAPIS_ORE;
+Block REDSTONE_ORE;
+Block DIAMOND_ORE;
 Block CLAY;
 Block DIRT_PATH;
 Block ICE;
@@ -161,6 +164,7 @@ Block PACKED_ICE;
 Block MUD;
 Block DEAD_BUSH;
 Block TALL_GRASS_BOTTOM;
+Block SUGAR_CANE;
 Block TALL_GRASS_TOP;
 Block CRAFTING_TABLE;
 Block FURNACE;
@@ -307,7 +311,8 @@ void init(MapgenEarth *mg)
 
 	const auto def = mg->m_emerge->ndef->getId("default:cobble");
 
-	struct NodeResolver {
+	struct NodeResolver
+	{
 		MapgenEarth *mg;
 		content_t fallback;
 
@@ -377,7 +382,8 @@ void init(MapgenEarth *mg)
 	LADDER = g("default:ladder_wood");
 	LIGHT_BLUE_CONCRETE = g({"wool:cyan", "wool:blue", "basic_materials:concrete_block"});
 	LIGHT_BLUE_TERRACOTTA = g("default:clay");
-	LIGHT_GRAY_CONCRETE = g({"basic_materials:concrete_block", "wool:grey", "default:stone"});
+	LIGHT_GRAY_CONCRETE =
+			g({"basic_materials:concrete_block", "wool:grey", "default:stone"});
 	MOSS_BLOCK = g("default:mossycobble");
 	MOSSY_COBBLESTONE = g("default:mossycobble");
 	MUD_BRICKS = g("default:silver_sandstone_brick");
@@ -416,7 +422,8 @@ void init(MapgenEarth *mg)
 	SPONGE = g("sponge:sponge");
 	SPRUCE_LOG = g({"default:pine_tree", "default:tree"});
 	SPRUCE_PLANKS = g({"default:pine_wood", "default:wood"});
-	STONE_BLOCK_SLAB = g({"stairs:slab_stone_block", "default:stone_block", "default:stone"});
+	STONE_BLOCK_SLAB =
+			g({"stairs:slab_stone_block", "default:stone_block", "default:stone"});
 	STONE_BRICK_SLAB = g({"stairs:slab_stonebrick", "default:stonebrick"});
 	STONE_BRICKS = g("default:stonebrick");
 	STONE = g("default:stone");
@@ -426,27 +433,32 @@ void init(MapgenEarth *mg)
 	// Rust parity: water_depth.rs uses MineClone ocean/nether blocks.
 	// Divergence: Earth game maps them to available Minetest Game nodes.
 	SEAGRASS = g({"default:marram_grass_1", "default:grass_3"});
-	KELP_PLANT = g({"default:sand_with_kelp", "default:marram_grass_3", "default:marram_grass_1"});
+	KELP_PLANT = g({"default:sand_with_kelp", "default:marram_grass_3",
+			"default:marram_grass_1"});
 	MAGMA_BLOCK = g({"default:obsidian", "default:lava_source", "default:stone"});
 	KELP = KELP_PLANT;
 	TALL_SEAGRASS_BOTTOM = g({"default:marram_grass_2", "default:marram_grass_1"});
 	TALL_SEAGRASS_TOP = g({"default:marram_grass_3", "default:marram_grass_1"});
-	SEA_PICKLE = g({"default:coral_green", "default:coral_cyan", "default:coral_skeleton"});
+	SEA_PICKLE =
+			g({"default:coral_green", "default:coral_cyan", "default:coral_skeleton"});
 	SOUL_SAND = g({"default:desert_sand", "default:sand"});
 	WHITE_CONCRETE = g({"wool:white", "basic_materials:concrete_block", "default:stone"});
 	WHITE_FLOWER = g("flowers:dandelion_white");
 	WHITE_STAINED_GLASS = GLASS;
 	WHITE_TERRACOTTA = g("default:clay");
 	WHITE_WOOL = g("wool:white");
-	YELLOW_CONCRETE = g({"wool:yellow", "basic_materials:concrete_block", "default:stone"});
+	YELLOW_CONCRETE =
+			g({"wool:yellow", "basic_materials:concrete_block", "default:stone"});
 	YELLOW_FLOWER = g("flowers:dandelion_yellow");
 	YELLOW_WOOL = g("wool:yellow");
 	LIME_CONCRETE = g({"wool:green", "wool:yellow", "basic_materials:concrete_block"});
 	CYAN_WOOL = g("wool:cyan");
 	BLUE_CONCRETE = g({"wool:blue", "basic_materials:concrete_block", "default:stone"});
-	PURPLE_CONCRETE = g({"wool:violet", "basic_materials:concrete_block", "default:stone"});
+	PURPLE_CONCRETE =
+			g({"wool:violet", "basic_materials:concrete_block", "default:stone"});
 	RED_CONCRETE = g({"wool:red", "basic_materials:concrete_block", "default:stone"});
-	MAGENTA_CONCRETE = g({"wool:magenta", "wool:violet", "basic_materials:concrete_block"});
+	MAGENTA_CONCRETE =
+			g({"wool:magenta", "wool:violet", "basic_materials:concrete_block"});
 	BROWN_WOOL = g("wool:brown");
 	OXIDIZED_COPPER = g({"default:copperblock", "default:stone"});
 	YELLOW_TERRACOTTA = g("default:clay");
@@ -482,6 +494,11 @@ void init(MapgenEarth *mg)
 	COAL_ORE = g("default:stone_with_coal");
 	GOLD_ORE = g("default:stone_with_gold");
 	COPPER_ORE = g("default:stone_with_copper");
+	// Luanti's default game has no vanilla lapis/redstone equivalents; mese is
+	// the closest visible ore fallback while diamond is provided directly.
+	LAPIS_ORE = g({"default:stone_with_mese", "default:stone_with_coal"});
+	REDSTONE_ORE = g({"default:stone_with_mese", "default:stone_with_iron"});
+	DIAMOND_ORE = g({"default:stone_with_diamond", "default:stone_with_gold"});
 	CLAY = g("default:clay");
 	DIRT_PATH = g("default:dirt_with_grass_footsteps");
 	ICE = g("default:ice");
@@ -489,12 +506,14 @@ void init(MapgenEarth *mg)
 	MUD = g("default:dirt");
 	DEAD_BUSH = g("default:dry_shrub");
 	TALL_GRASS_BOTTOM = g("default:grass_5");
+	SUGAR_CANE = g({"farming:cotton_8", "default:papyrus", "default:grass_5"});
 	TALL_GRASS_TOP = g("default:grass_5");
 	CRAFTING_TABLE = g("default:wood");
 	FURNACE = g("default:furnace");
 	WHITE_CARPET = g("wool:white");
 	BOOKSHELF = g("default:bookshelf");
-	OAK_PRESSURE_PLATE = g({"mesecons_pressureplates:pressure_plate_wood_off", "default:wood"});
+	OAK_PRESSURE_PLATE =
+			g({"mesecons_pressureplates:pressure_plate_wood_off", "default:wood"});
 	OAK_STAIRS = g({"stairs:stair_wood", "stairs:stair_pine_wood"});
 	CHEST = g("default:chest");
 	RED_CARPET = g("wool:red");
@@ -519,8 +538,10 @@ void init(MapgenEarth *mg)
 	BLACK_TERRACOTTA = g("default:clay");
 	BROWN_TERRACOTTA = g("default:clay");
 	STONE_BRICK_STAIRS = g("stairs:stair_stonebrick");
-	MUD_BRICK_STAIRS = g({"stairs:stair_silver_sandstone_brick", "stairs:stair_stonebrick"});
-	POLISHED_BLACKSTONE_BRICK_STAIRS = g({"stairs:stair_obsidianbrick", "stairs:stair_obsidian_block"});
+	MUD_BRICK_STAIRS =
+			g({"stairs:stair_silver_sandstone_brick", "stairs:stair_stonebrick"});
+	POLISHED_BLACKSTONE_BRICK_STAIRS =
+			g({"stairs:stair_obsidianbrick", "stairs:stair_obsidian_block"});
 	BRICK_STAIRS = g({"stairs:stair_brick", "stairs:stair_cobble"});
 	POLISHED_GRANITE_STAIRS = STONE_BRICK_STAIRS;
 	END_STONE_BRICK_STAIRS = STONE_BRICK_STAIRS;
@@ -539,10 +560,12 @@ void init(MapgenEarth *mg)
 
 	CHAIN = g({"basic_materials:chain_steel", "xpanes:bar_flat", "default:steelblock"});
 	END_ROD = GLOWSTONE;
-	LIGHTNING_ROD = g({"default:copperblock", "basic_materials:brass_block", "default:steelblock"});
+	LIGHTNING_ROD = g(
+			{"default:copperblock", "basic_materials:brass_block", "default:steelblock"});
 	GOLD_BLOCK = g("default:goldblock");
 	SEA_LANTERN = GLOWSTONE;
-	ORANGE_CONCRETE = g({"wool:orange", "basic_materials:concrete_block", "default:stone"});
+	ORANGE_CONCRETE =
+			g({"wool:orange", "basic_materials:concrete_block", "default:stone"});
 	ORANGE_WOOL = g("wool:orange");
 	BLUE_WOOL = g("wool:blue");
 	GREEN_CONCRETE = g({"wool:green", "basic_materials:concrete_block", "default:stone"});
@@ -552,7 +575,8 @@ void init(MapgenEarth *mg)
 	CHAIN_Z = CHAIN;
 	SPRUCE_DOOR_LOWER = OAK_DOOR;
 	SPRUCE_DOOR_UPPER = OAK_DOOR;
-	SMOOTH_STONE_SLAB = g({"stairs:slab_stone_block", "stairs:slab_stone", "default:stone"});
+	SMOOTH_STONE_SLAB =
+			g({"stairs:slab_stone_block", "stairs:slab_stone", "default:stone"});
 	GLASS_PANE = g({"xpanes:pane_flat", "default:glass"});
 	LIGHT_GRAY_TERRACOTTA = g("default:clay");
 	OAK_SLAB_TOP = OAK_SLAB;
@@ -576,7 +600,8 @@ void init(MapgenEarth *mg)
 	DARK_OAK_TRAPDOOR = OAK_TRAPDOOR;
 	SPRUCE_TRAPDOOR = OAK_TRAPDOOR;
 	BIRCH_TRAPDOOR = OAK_TRAPDOOR;
-	MUD_BRICK_SLAB = g({"stairs:slab_silver_sandstone_brick", "default:silver_sandstone_brick"});
+	MUD_BRICK_SLAB =
+			g({"stairs:slab_silver_sandstone_brick", "default:silver_sandstone_brick"});
 	BRICK_SLAB = g({"stairs:slab_brick", "default:brick"});
 	POTTED_RED_TULIP = g("flowers:rose");
 	POTTED_DANDELION = g("flowers:dandelion_yellow");
@@ -599,10 +624,12 @@ void init(MapgenEarth *mg)
 	SPRUCE_STAIRS = g("stairs:stair_pine_wood");
 	DARK_OAK_STAIRS = OAK_STAIRS;
 	RED_NETHER_BRICK_STAIRS = NETHER_BRICK_STAIRS;
-	WAXED_OXIDIZED_CUT_COPPER_STAIRS = g({"stairs:stair_copperblock", "stairs:stair_stonebrick"});
+	WAXED_OXIDIZED_CUT_COPPER_STAIRS =
+			g({"stairs:stair_copperblock", "stairs:stair_stonebrick"});
 	WAXED_OXIDIZED_COPPER = g({"default:copperblock", "default:stone"});
 	ANDESITE_STAIRS = STONE_BRICK_STAIRS;
-	WAXED_EXPOSED_CUT_COPPER_STAIRS = g({"stairs:stair_copperblock", "stairs:stair_stonebrick"});
+	WAXED_EXPOSED_CUT_COPPER_STAIRS =
+			g({"stairs:stair_copperblock", "stairs:stair_stonebrick"});
 	WHITE_WALL_BANNER = WHITE_WOOL;
 	BLUE_WALL_BANNER = BLUE_WOOL;
 	BLACK_WALL_BANNER = BLACK_CONCRETE;

@@ -1,6 +1,7 @@
 
 #include "http.h"
 #include <filesystem>
+#include <limits>
 #include <thread>
 #include <fstream>
 #include "debug/dump.h"
@@ -108,6 +109,27 @@ size_t multi_http_to_file_cdn(const std::string &dir, const std::string &name,
 #endif
 					+ dir + "/" + name);
 	return multi_http_to_file(name, links, path);
+}
+
+std::string http_get_range(const std::string &url, std::uint64_t offset,
+		std::uint64_t length)
+{
+	if (length == 0 || offset > std::numeric_limits<std::uint64_t>::max() - (length - 1))
+		return {};
+	HTTPFetchRequest req;
+	req.url = url;
+	req.caller = HTTPFETCH_SYNC;
+	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
+	req.extra_headers.emplace_back("Range: bytes=" + std::to_string(offset) + "-" +
+			std::to_string(offset + length - 1));
+	req.quiet = true;
+	HTTPFetchResult res;
+	httpfetch_sync(req, res);
+	// A 200 response means Range was ignored. Do not return it: callers use
+	// this primitive specifically to avoid materialising whole COGs in memory.
+	if (!res.succeeded || res.response_code != 206 || res.data.empty())
+		return {};
+	return res.data;
 }
 
 size_t multi_http_to_file(const std::vector<std::string> &links, const std::string &path)
