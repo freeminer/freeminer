@@ -548,12 +548,10 @@ bool WSSocket::WaitData(int timeout_ms)
 	}
 
 	for (int ms = 0; ms < timeout_ms; ++ms) {
-		if (ws_serve && server.poll_one()) {
-			server.run_one();
-		}
-		if (ws_client && client.poll_one()) {
-			client.run_one();
-		}
+		if (ws_serve)
+			server.poll_one();
+		if (ws_client)
+			client.poll_one();
 		if (!incoming_queue.empty())
 			return true;
 		// TODO: condvar here
