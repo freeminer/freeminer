@@ -22,6 +22,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <array>
+#include <mutex>
+#include <unordered_map>
 #include <atomic>
 #include <memory>
 #include <mutex>
@@ -101,6 +103,28 @@ struct maps_holder_t
 class MapgenEarth : public MapgenV7
 {
 public:
+	struct TileWriteKey {
+		pos_t x = 0, y = 0, z = 0;
+		bool operator==(const TileWriteKey &) const = default;
+	};
+	struct TileWriteKeyHash {
+		std::size_t operator()(const TileWriteKey &p) const noexcept
+		{
+			return std::hash<pos_t>{}(p.x) ^ (std::hash<pos_t>{}(p.y) << 1) ^
+					(std::hash<pos_t>{}(p.z) << 2);
+		}
+	};
+	struct TileOverlay {
+		int min_x = 0, min_z = 0, max_x = -1, max_z = -1;
+		std::unordered_map<TileWriteKey, MapNode, TileWriteKeyHash> writes;
+	};
+	std::mutex tile_overlay_mutex;
+	std::unique_ptr<TileOverlay> tile_overlay;
+	bool beginTileOverlay(int min_x, int min_z, int max_x, int max_z);
+	bool writeTileOverlay(const v3pos_t &pos, const MapNode &node);
+	std::optional<MapNode> readTileOverlay(const v3pos_t &pos) const;
+	bool mergeTileOverlay();
+	void discardTileOverlay();
 	MapgenEarthParams *mg_params;
 
 	static std::unique_ptr<maps_holder_t> maps_holder;

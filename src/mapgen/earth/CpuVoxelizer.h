@@ -53,13 +53,10 @@ public:
      *
      * @throws std::runtime_error on failure.
      */
-using callback_t = 			std::function<void(const int &x, const int &y, const int &z,
-					const uint8_t &r, const uint8_t &g, const uint8_t &b,
-					const uint8_t &a)>;
+	using callback_t = std::function<void(const int &x, const int &y, const int &z,
+			const uint8_t &r, const uint8_t &g, const uint8_t &b, const uint8_t &a)>;
 
-
-     Stats voxelizeSingleGLB(const TileData &tile,
-          const callback_t &callback
+	Stats voxelizeSingleGLB(const TileData &tile, const callback_t &callback
 
 			//  const std::filesystem::path& glbPath,
 			// const std::filesystem::path& outDir
@@ -70,7 +67,7 @@ private:
 	bool tiles3d_;
 	bool verbose_;
 
-  /*
+	/*
 	// Internal helper functions (stubs for now)
 	std::string baseName(const std::filesystem::path &p) const;
 	void emitJSON(const std::filesystem::path &out, const std::vector<uint32_t> &colors,

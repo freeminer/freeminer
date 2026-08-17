@@ -23,22 +23,25 @@ Code (C++17):
 #include <limits>
 
 // clamp helper
-static inline double clamp01(double x) {
-    return std::max(0.0, std::min(1.0, x));
+static inline double clamp01(double x)
+{
+	return std::max(0.0, std::min(1.0, x));
 }
 
 // 1) Simple linear blue->red gradient inversion
 // Maps: blue (0,0,255) -> t=0  ; red (255,0,0) -> t=1
 // r,g,b are 0..255, returns temperature in Celsius between minTemp and maxTemp.
-double rgbToCelsiusLinear(int r, int g, int b, double minTemp = -30.0, double maxTemp = 50.0) {
-    double rn = clamp01(r / 255.0);
-    double bn = clamp01(b / 255.0);
+double rgbToCelsiusLinear(
+		int r, int g, int b, double minTemp = -30.0, double maxTemp = 50.0)
+{
+	double rn = clamp01(r / 255.0);
+	double bn = clamp01(b / 255.0);
 
-    // projection onto the R<-B gradient: t = (r_norm - b_norm + 1) / 2
-    double t = (rn - bn + 1.0) / 2.0;
-    t = clamp01(t);
+	// projection onto the R<-B gradient: t = (r_norm - b_norm + 1) / 2
+	double t = (rn - bn + 1.0) / 2.0;
+	t = clamp01(t);
 
-    return minTemp + t * (maxTemp - minTemp);
+	return minTemp + t * (maxTemp - minTemp);
 }
 
 // 2) Invert a typical "jet" / rainbow colormap numerically.
@@ -46,59 +49,63 @@ double rgbToCelsiusLinear(int r, int g, int b, double minTemp = -30.0, double ma
 // r = clamp(1.5 - |4t - 3|)
 // g = clamp(1.5 - |4t - 2|)
 // b = clamp(1.5 - |4t - 1|)
-static inline std::array<double,3> jetColor(double t) {
-    t = clamp01(t);
-    double r = clamp01(1.5 - std::fabs(4.0 * t - 3.0));
-    double g = clamp01(1.5 - std::fabs(4.0 * t - 2.0));
-    double b = clamp01(1.5 - std::fabs(4.0 * t - 1.0));
-    return {r, g, b};
+static inline std::array<double, 3> jetColor(double t)
+{
+	t = clamp01(t);
+	double r = clamp01(1.5 - std::fabs(4.0 * t - 3.0));
+	double g = clamp01(1.5 - std::fabs(4.0 * t - 2.0));
+	double b = clamp01(1.5 - std::fabs(4.0 * t - 1.0));
+	return {r, g, b};
 }
 
 // invert jet colormap by coarse-to-fine search
-double rgbToCelsiusJet(int r, int g, int b, double minTemp = -30.0, double maxTemp = 50.0) {
-    const double rn = clamp01(r / 255.0);
-    const double gn = clamp01(g / 255.0);
-    const double bn = clamp01(b / 255.0);
+double rgbToCelsiusJet(int r, int g, int b, double minTemp = -30.0, double maxTemp = 50.0)
+{
+	const double rn = clamp01(r / 255.0);
+	const double gn = clamp01(g / 255.0);
+	const double bn = clamp01(b / 255.0);
 
-    // coarse sampling to get initial guess
-    int coarseN = 800; // coarse samples (adjust for speed/precision)
-    double bestT = 0.0;
-    double bestErr = std::numeric_limits<double>::infinity();
+	// coarse sampling to get initial guess
+	int coarseN = 800; // coarse samples (adjust for speed/precision)
+	double bestT = 0.0;
+	double bestErr = std::numeric_limits<double>::infinity();
 
-    for (int i = 0; i < coarseN; ++i) {
-        double t = double(i) / double(coarseN - 1);
-        auto c = jetColor(t);
-        double err = (c[0] - rn)*(c[0] - rn) + (c[1] - gn)*(c[1] - gn) + (c[2] - bn)*(c[2] - bn);
-        if (err < bestErr) {
-            bestErr = err;
-            bestT = t;
-        }
-    }
+	for (int i = 0; i < coarseN; ++i) {
+		double t = double(i) / double(coarseN - 1);
+		auto c = jetColor(t);
+		double err = (c[0] - rn) * (c[0] - rn) + (c[1] - gn) * (c[1] - gn) +
+					 (c[2] - bn) * (c[2] - bn);
+		if (err < bestErr) {
+			bestErr = err;
+			bestT = t;
+		}
+	}
 
-    // refine around bestT with a few finer searches
-    double delta = 1.0 / double(coarseN - 1);
-    for (int pass = 0; pass < 4; ++pass) {
-        double start = clamp01(bestT - delta);
-        double end   = clamp01(bestT + delta);
-        int fineN = 200;
-        double localBestT = bestT;
-        double localBestErr = bestErr;
-        for (int i = 0; i < fineN; ++i) {
-            double t = start + (end - start) * double(i) / double(fineN - 1);
-            auto c = jetColor(t);
-            double err = (c[0] - rn)*(c[0] - rn) + (c[1] - gn)*(c[1] - gn) + (c[2] - bn)*(c[2] - bn);
-            if (err < localBestErr) {
-                localBestErr = err;
-                localBestT = t;
-            }
-        }
-        bestT = localBestT;
-        bestErr = localBestErr;
-        delta *= 0.25; // shrink search radius
-    }
+	// refine around bestT with a few finer searches
+	double delta = 1.0 / double(coarseN - 1);
+	for (int pass = 0; pass < 4; ++pass) {
+		double start = clamp01(bestT - delta);
+		double end = clamp01(bestT + delta);
+		int fineN = 200;
+		double localBestT = bestT;
+		double localBestErr = bestErr;
+		for (int i = 0; i < fineN; ++i) {
+			double t = start + (end - start) * double(i) / double(fineN - 1);
+			auto c = jetColor(t);
+			double err = (c[0] - rn) * (c[0] - rn) + (c[1] - gn) * (c[1] - gn) +
+						 (c[2] - bn) * (c[2] - bn);
+			if (err < localBestErr) {
+				localBestErr = err;
+				localBestT = t;
+			}
+		}
+		bestT = localBestT;
+		bestErr = localBestErr;
+		delta *= 0.25; // shrink search radius
+	}
 
-    double temp = minTemp + bestT * (maxTemp - minTemp);
-    return temp;
+	double temp = minTemp + bestT * (maxTemp - minTemp);
+	return temp;
 }
 
 /*

@@ -4,6 +4,7 @@
 
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <limits>
@@ -16,6 +17,8 @@
 #include <variant>
 #include <tuple>
 #include <utility>
+#include <filesystem>
+#include <functional>
 #include "../../irr_v2d.h"
 #include "map.h"
 #include "mapgen/mapgen_earth.h"
@@ -27,7 +30,10 @@
 
 #include "arnis-cpp/src/args.h"
 #include "arnis_block.h"
-#include "arnis-cpp/src/land_cover.h"
+#include "arnis-cpp/src/canopy/canopy.h"
+#include "arnis-cpp/src/biome.h"
+#include "arnis-cpp/src/urban_ground.h"
+#include "arnis-cpp/src/land_cover/land_cover.h"
 
 namespace arnis
 {
@@ -243,10 +249,18 @@ public:
 // A “Ground” class that can return ground level from a set of points
 struct Ground
 {
+	struct RotationMask { double cx=0,cz=0,neg_sin=0,cos=1; int orig_min_x=0,orig_max_x=0,orig_min_z=0,orig_max_z=0; };
 	MapgenEarth *mg = nullptr;
 	std::optional<land_cover::LandCoverData> land_cover;
 	std::size_t land_cover_world_width = 0;
 	std::size_t land_cover_world_height = 0;
+	std::optional<canopy::CanopyData> canopy_data;
+	std::size_t canopy_world_width = 0, canopy_world_height = 0;
+	double elevation_min_height_m = 0.0, elevation_blocks_per_meter = 0.0;
+	int snow_threshold_y = std::numeric_limits<int>::max();
+	std::optional<RotationMask> rotation_mask;
+	biome::Climate climate_state = biome::Climate::Temperate;
+	UrbanGroundLookup urban_lookup;
 
 	int get_absolute_y(int x_input, int y_offset, int z_input) const
 	{
@@ -275,6 +289,18 @@ struct Ground
 		return minY == 9999999 ? std::nullopt : std::optional<int>(minY);
 	}
 
+	// Rust's Ground exposes both aggregate queries.  Keep an empty input as
+	// None; callers use that distinction when a feature has no geometry.
+	std::optional<int> max_level(const std::vector<XZPoint> &points) const
+	{
+		if (points.empty())
+			return std::nullopt;
+		int maxY = std::numeric_limits<int>::min();
+		for (const auto &pt : points)
+			maxY = std::max(maxY, level(pt));
+		return maxY;
+	}
+
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
@@ -288,12 +314,58 @@ struct Ground
 
 	bool has_land_cover() const
 	{
-		return land_cover.has_value() && land_cover->width > 0 && land_cover->height > 0 &&
-			   land_cover_world_width > 0 && land_cover_world_height > 0;
+		return land_cover.has_value() && land_cover->width > 0 &&
+			   land_cover->height > 0 && land_cover_world_width > 0 &&
+			   land_cover_world_height > 0;
 	}
+	bool has_canopy() const { return canopy_data.has_value() && canopy_world_width > 0 && canopy_world_height > 0; }
+	// Names mirror ground.rs so library consumers do not need to know the
+	// mapgen-host field layout.
+	int snow_threshold() const { return snow_threshold_y; }
+	std::pair<std::size_t, std::size_t> world_dims() const
+	{
+		return has_land_cover()
+				? std::pair<std::size_t, std::size_t>{land_cover_world_width,
+						land_cover_world_height}
+				: std::pair<std::size_t, std::size_t>{canopy_world_width,
+						canopy_world_height};
+	}
+	void set_canopy_data(canopy::CanopyData data, std::size_t world_width, std::size_t world_height)
+	{
+		canopy_data = std::move(data); canopy_world_width = world_width; canopy_world_height = world_height;
+	}
+	std::pair<std::size_t,std::size_t> canopy_index(const XZPoint &coord) const
+	{
+		const auto &c=*canopy_data; const double xr=std::clamp(double(coord.x)/double(std::max<std::size_t>(1,canopy_world_width-1)),0.0,1.0); const double zr=std::clamp(double(coord.z)/double(std::max<std::size_t>(1,canopy_world_height-1)),0.0,1.0);
+		return {std::min<std::size_t>(std::llround(xr*double(c.width-1)),c.width-1),std::min<std::size_t>(std::llround(zr*double(c.height-1)),c.height-1)};
+	}
+	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const { if(!has_canopy()) return std::nullopt; const auto [x,z]=canopy_index(coord); return canopy_data->canopy_height_m(x,z); }
+	std::optional<double> canopy_fraction(const XZPoint &coord,int spacing) const
+	{
+		// `spacing` is in world blocks.  Sampling world coordinates first keeps
+		// the result identical whether the canopy raster is coarser or finer
+		// than terrain, and excludes no-data columns from the denominator.
+		if(!has_canopy() || spacing<=0) return std::nullopt;
+		std::uint32_t measured=0, wooded=0;
+		for(int dz=0;dz<spacing;++dz) for(int dx=0;dx<spacing;++dx)
+			if(const auto height=canopy_height_m({coord.x+dx,coord.z+dz})) {
+				++measured;
+				if(*height>=canopy::CANOPY_MIN_M) ++wooded;
+			}
+		return measured ? std::optional<double>(double(wooded)/double(measured)) : std::nullopt;
+	}
+	bool snow_capped(int y) const { return y >= snow_threshold_y; }
+	void set_elevation_metadata(double min_height_m,double blocks_per_meter,int snow_y) { elevation_min_height_m=min_height_m; elevation_blocks_per_meter=blocks_per_meter; snow_threshold_y=snow_y; }
+	void set_rotation_mask(RotationMask mask) { rotation_mask=mask; }
+	bool inside_rotation_mask(int x,int z) const { if(!rotation_mask) return true; const auto &m=*rotation_mask; const double dx=x-m.cx,dz=z-m.cz; const double ox=dx*m.cos+dz*m.neg_sin+m.cx, oz=-dx*m.neg_sin+dz*m.cos+m.cz; constexpr double eps=1e-9; return ox>=m.orig_min_x-eps&&ox<=m.orig_max_x+eps&&oz>=m.orig_min_z-eps&&oz<=m.orig_max_z+eps; }
+	bool is_in_rotated_bounds(int x, int z) const { return inside_rotation_mask(x, z); }
+	biome::Climate climate() const { return climate_state; }
+	void set_climate(biome::Climate value) { climate_state=value; }
+	void set_urban_lookup(UrbanGroundLookup lookup) { urban_lookup=std::move(lookup); }
+	bool is_urban(int x,int z) const { return urban_lookup.is_urban(x,z); }
 
-	void set_land_cover_data(land_cover::LandCoverData data,
-			std::size_t world_width, std::size_t world_height)
+	void set_land_cover_data(land_cover::LandCoverData data, std::size_t world_width,
+			std::size_t world_height)
 	{
 		// Rust parity: src/ground.rs land-cover accessors.
 		// Divergence: C++ currently receives an OSM-derived grid; ESA COG fetch is not ported.
@@ -311,17 +383,21 @@ struct Ground
 	{
 		// Rust parity: src/ground.rs::cover_class / water_distance sampling.
 		const auto &lc = *land_cover;
-		const double x_ratio = std::clamp(static_cast<double>(coord.x) /
-						static_cast<double>(std::max<std::size_t>(1, land_cover_world_width - 1)),
+		const double x_ratio = std::clamp(
+				static_cast<double>(coord.x) / static_cast<double>(std::max<std::size_t>(
+													   1, land_cover_world_width - 1)),
 				0.0, 1.0);
-		const double z_ratio = std::clamp(static_cast<double>(coord.z) /
-						static_cast<double>(std::max<std::size_t>(1, land_cover_world_height - 1)),
+		const double z_ratio = std::clamp(
+				static_cast<double>(coord.z) / static_cast<double>(std::max<std::size_t>(
+													   1, land_cover_world_height - 1)),
 				0.0, 1.0);
 		const auto x = std::min<std::size_t>(
-				static_cast<std::size_t>(std::llround(x_ratio * static_cast<double>(lc.width - 1))),
+				static_cast<std::size_t>(
+						std::llround(x_ratio * static_cast<double>(lc.width - 1))),
 				lc.width - 1);
 		const auto z = std::min<std::size_t>(
-				static_cast<std::size_t>(std::llround(z_ratio * static_cast<double>(lc.height - 1))),
+				static_cast<std::size_t>(
+						std::llround(z_ratio * static_cast<double>(lc.height - 1))),
 				lc.height - 1);
 		return {x, z};
 	}
@@ -354,15 +430,19 @@ struct Ground
 			return 0.0;
 
 		const double fx = std::clamp(static_cast<double>(coord.x) /
-						static_cast<double>(std::max<std::size_t>(1, land_cover_world_width - 1)),
-				0.0, 1.0) *
-				static_cast<double>(lc.width - 1);
+											 static_cast<double>(std::max<std::size_t>(
+													 1, land_cover_world_width - 1)),
+								  0.0, 1.0) *
+						  static_cast<double>(lc.width - 1);
 		const double fz = std::clamp(static_cast<double>(coord.z) /
-						static_cast<double>(std::max<std::size_t>(1, land_cover_world_height - 1)),
-				0.0, 1.0) *
-				static_cast<double>(lc.height - 1);
-		const auto x0 = std::min<std::size_t>(static_cast<std::size_t>(std::floor(fx)), lc.width - 1);
-		const auto z0 = std::min<std::size_t>(static_cast<std::size_t>(std::floor(fz)), lc.height - 1);
+											 static_cast<double>(std::max<std::size_t>(
+													 1, land_cover_world_height - 1)),
+								  0.0, 1.0) *
+						  static_cast<double>(lc.height - 1);
+		const auto x0 = std::min<std::size_t>(
+				static_cast<std::size_t>(std::floor(fx)), lc.width - 1);
+		const auto z0 = std::min<std::size_t>(
+				static_cast<std::size_t>(std::floor(fz)), lc.height - 1);
 		const auto x1 = std::min<std::size_t>(x0 + 1, lc.width - 1);
 		const auto z1 = std::min<std::size_t>(z0 + 1, lc.height - 1);
 		const double tx = fx - std::floor(fx);
@@ -402,14 +482,18 @@ struct Ground
 		if (!any)
 			return std::nullopt;
 
-		auto span = [](std::size_t g_lo, std::size_t g_hi,
-						 std::size_t world_dim, std::size_t grid_dim) {
+		auto span = [](std::size_t g_lo, std::size_t g_hi, std::size_t world_dim,
+							std::size_t grid_dim) {
 			if (grid_dim <= 1 || world_dim <= 1)
 				return std::pair<int, int>{0, static_cast<int>(world_dim - 1)};
 			const double f = static_cast<double>(world_dim - 1) /
-					static_cast<double>(grid_dim - 1);
-			const int lo = static_cast<int>(std::floor((static_cast<double>(g_lo) - 0.5) * f)) - 1;
-			const int hi = static_cast<int>(std::ceil((static_cast<double>(g_hi) + 0.5) * f)) + 1;
+							 static_cast<double>(grid_dim - 1);
+			const int lo =
+					static_cast<int>(std::floor((static_cast<double>(g_lo) - 0.5) * f)) -
+					1;
+			const int hi =
+					static_cast<int>(std::ceil((static_cast<double>(g_hi) + 0.5) * f)) +
+					1;
 			return std::pair<int, int>{
 					std::max(0, lo), std::min(static_cast<int>(world_dim - 1), hi)};
 		};
@@ -418,9 +502,25 @@ struct Ground
 		return std::tuple<int, int, int, int>{x0, z0, x1, z1};
 	}
 
+	// On gentle ground water follows the interpolated terrain.  Around small
+	// DEM/land-cover alignment errors, Rust snaps a steep shoreline to the
+	// local minimum; it deliberately does not cross a real cliff or waterfall.
+	int slope(const XZPoint &coord) const
+	{
+		constexpr int step = 4;
+		const int east=level({coord.x+step,coord.z}), west=level({coord.x-step,coord.z}),
+			north=level({coord.x,coord.z-step}), south=level({coord.x,coord.z+step});
+		return std::max({east,west,north,south})-std::min({east,west,north,south});
+	}
 	int water_level(const XZPoint &coord) const
 	{
-		return level(coord);
+		const int center=level(coord);
+		if(slope(coord)<=2) return center;
+		constexpr int radius=3; int lowest=center;
+		for(int r=1;r<=radius;++r)
+			for(const auto &[dx,dz]:std::array<std::pair<int,int>,8>{{{-r,0},{r,0},{0,-r},{0,r},{-r,-r},{-r,r},{r,-r},{r,r}}})
+				lowest=std::min(lowest,level({coord.x+dx,coord.z+dz}));
+		return center-lowest>radius ? center : lowest;
 	}
 };
 
@@ -431,6 +531,105 @@ struct WorldEditor
 {
 	MapgenEarth *mg{};
 	Ground *ground{};
+	// Generation-format state shared by the C++ orchestration layer.
+	int generation_format = 0; // Java=0, Bedrock=1, Luanti=2
+	bool bake_lighting = false, place_schematics = false, start_with_map = false, map_decals = false;
+	// Matches trees::RegionSelector::base_spacing() for the default pack; hosts
+	// loading a differently scaled schematic pack may override it.
+	int tree_slot_spacing = 5;
+	std::function<bool(int, int, int, std::uint8_t)> regional_tree_placer;
+	int gamemode = 0, world_time = 0;
+	std::string level_name, projection_name;
+	std::filesystem::path output_path;
+	// Geographic bounds are owned by the mapgen host.  Keeping them with the
+	// editor lets renderer-side pipeline ports (tree packs, previews, landmarks)
+	// use the same metadata without depending on a Rust-only GenerationOptions.
+	double min_lat = 0.0, max_lat = 0.0, min_lon = 0.0, max_lon = 0.0;
+	bool flush_requested = false, save_requested = false;
+	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink, world_settings_sink;
+	std::function<bool(int, int, int, int)> begin_tile_sink;
+	std::function<bool(int, int, int, int)> merge_tile_sink;
+	int spawn_x = 0, spawn_y = 0, spawn_z = 0;
+	double projection_scale = 1.0;
+	// A host that understands Java/Sponge block states can retain schematic
+	// properties (facing, axis, slab type, etc.) instead of losing them at the
+	// Freeminer Node boundary.  The default mapgen path still writes `block`.
+	std::function<void(const BlockWithProperties &, int, int, int)> block_properties_sink;
+	void set_generation_format(int f) { generation_format = f; }
+	int get_generation_format() const { return generation_format; }
+	void set_bake_lighting(bool v) { bake_lighting = v; }
+	void set_place_schematics(bool v) { place_schematics = v; }
+	void set_tree_slot_spacing(int spacing) { tree_slot_spacing = std::max(1, spacing); }
+	int get_tree_slot_spacing() const { return tree_slot_spacing; }
+	void set_regional_tree_placer(std::function<bool(int, int, int, std::uint8_t)> placer)
+	{
+		regional_tree_placer = std::move(placer);
+	}
+	bool place_regional_tree(int x, int y, int z, std::uint8_t cover)
+	{
+		return regional_tree_placer && regional_tree_placer(x, y, z, cover);
+	}
+	void set_start_with_map(bool v) { start_with_map = v; }
+	void set_map_decals(bool v) { map_decals = v; }
+	void set_game_settings(int mode, int time) { gamemode = mode; world_time = time; }
+	void set_level_name(std::string n) { level_name = std::move(n); }
+	void set_spawn(int x, int y, int z) { spawn_x=x; spawn_y=y; spawn_z=z; }
+	void set_projection_info(std::string p, double s) { projection_name=std::move(p); projection_scale=s; }
+	void set_geographic_bounds(double min_lat_, double max_lat_, double min_lon_, double max_lon_)
+	{
+		min_lat = min_lat_; max_lat = max_lat_; min_lon = min_lon_; max_lon = max_lon_;
+	}
+	std::array<double, 4> geographic_bounds() const { return {min_lat, max_lat, min_lon, max_lon}; }
+	void set_output_path(std::filesystem::path p) { output_path=std::move(p); }
+	void set_block_properties_sink(
+			std::function<void(const BlockWithProperties &, int, int, int)> sink)
+	{
+		block_properties_sink = std::move(sink);
+	}
+	void request_flush() { flush_requested = true; }
+	void request_save() { save_requested = true; }
+	void set_persistence_hooks(std::function<bool()> flush, std::function<bool()> save,
+			std::function<bool()> preview = {}, std::function<bool()> map_item = {},
+			std::function<bool()> world_settings = {})
+	{
+		flush_sink = std::move(flush); save_sink = std::move(save); preview_sink = std::move(preview);
+		map_item_sink = std::move(map_item); world_settings_sink = std::move(world_settings);
+	}
+	bool finalize_persistence()
+	{
+		if (flush_requested && flush_sink && !flush_sink()) return false;
+		if (save_requested && save_sink && !save_sink()) return false;
+		if (world_settings_sink && !world_settings_sink()) return false;
+		if (start_with_map && map_item_sink && !map_item_sink()) return false;
+		if (preview_sink && !preview_sink()) return false;
+		return true;
+	}
+	void set_tile_hooks(std::function<bool(int, int, int, int)> begin_tile,
+			std::function<bool(int, int, int, int)> merge_tile)
+	{
+		begin_tile_sink = std::move(begin_tile); merge_tile_sink = std::move(merge_tile);
+	}
+	bool begin_tile(int min_x, int min_z, int max_x, int max_z)
+	{
+		return !begin_tile_sink || begin_tile_sink(min_x, min_z, max_x, max_z);
+	}
+	bool merge_tile(int min_x, int min_z, int max_x, int max_z)
+	{
+		return !merge_tile_sink || merge_tile_sink(min_x, min_z, max_x, max_z);
+	}
+	bool flush_requested_now() const { return flush_requested; }
+	bool save_requested_now() const { return save_requested; }
+	void clear_flush_request() { flush_requested = false; }
+	void clear_save_request() { save_requested = false; }
+	std::filesystem::path schematic_asset_root;
+	void set_schematic_asset_root(std::filesystem::path root)
+	{
+		schematic_asset_root = std::move(root);
+	}
+	const std::filesystem::path &get_schematic_asset_root() const
+	{
+		return schematic_asset_root;
+	}
 	Ground *get_ground() const { return ground; }; // may return nullptr
 
 	bool pos_ok(const v2pos_t &pos)
@@ -494,17 +693,19 @@ struct WorldEditor
 		}
 		if (mg->vm->exists(pos)) {
 			bool should_set = true;
-			const auto current = mg->vm->getNode(pos);
+			const auto current = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos));
 			const auto content = current.getContent();
 			if (maybe_variants) {
 				should_set = std::any_of(maybe_variants->begin(), maybe_variants->end(),
 						[content](const Block &b) { return b.getContent() == content; });
 			} else if (maybe_replacements) {
-				should_set = std::none_of(maybe_replacements->begin(), maybe_replacements->end(),
+				should_set = std::none_of(maybe_replacements->begin(),
+						maybe_replacements->end(),
 						[content](const Block &b) { return b.getContent() == content; });
 			}
 			if (should_set) {
-				mg->vm->setNode(pos, block);
+				if (!mg->writeTileOverlay(pos, block))
+					mg->vm->setNode(pos, block);
 				++mg->stat.set;
 			}
 		} else {
@@ -520,6 +721,8 @@ struct WorldEditor
 	void set_block_with_properties_absolute(
 			BlockWithProperties bwp, int32_t x, int32_t y, int32_t z, void *a, void *b)
 	{
+		if (block_properties_sink && !bwp.properties.empty())
+			block_properties_sink(bwp, x, y, z);
 		set_block_absolute(bwp.block, x, y, z);
 	}
 	bool check_for_block(
@@ -533,7 +736,7 @@ struct WorldEditor
 		if (!mg->vm->exists(pos))
 			return false;
 
-		const auto n = mg->vm->getNode(pos);
+		const auto n = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos));
 		const auto content = n.getContent();
 		if (content == CONTENT_AIR || content == CONTENT_IGNORE)
 			return false;
@@ -542,6 +745,43 @@ struct WorldEditor
 					[content](const Block &b) { return b.getContent() == content; });
 		}
 		return true;
+	}
+
+	// Rust WorldEditor::block_at: true for a present non-air node.  It is kept
+	// separate from check_for_block because callers need an occupancy test,
+	// rather than a material filter (notably vertically-grown wetland reeds).
+	bool block_at(int x, int y, int z) const
+	{
+		if (!mg || !mg->vm)
+			return false;
+		const int absolute_y = ground ? ground->level({x, z}) + y : y;
+		const v3pos_t pos{static_cast<pos_t>(x), static_cast<pos_t>(absolute_y),
+				static_cast<pos_t>(z)};
+		if (!mg->vm->exists(pos))
+			return false;
+		const auto content = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent();
+		return content != CONTENT_AIR && content != CONTENT_IGNORE;
+	}
+
+	// Highest occupied absolute Y in an inclusive column interval.  Tree canopy
+	// placement samples this before writing leaves, just as Rust does, so a low
+	// roof only culls intersecting leaves instead of the complete canopy.
+	std::optional<int> highest_block_between(int x, int z, int min_y, int max_y) const
+	{
+		if (!mg || !mg->vm)
+			return std::nullopt;
+		if (min_y > max_y)
+			std::swap(min_y, max_y);
+		for (int y = max_y; y >= min_y; --y) {
+			const v3pos_t pos{static_cast<pos_t>(x), static_cast<pos_t>(y),
+					static_cast<pos_t>(z)};
+			if (!mg->vm->exists(pos))
+				continue;
+			const auto c = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent();
+			if (c != CONTENT_AIR && c != CONTENT_IGNORE)
+				return y;
+		}
+		return std::nullopt;
 	}
 
 	//inline auto node_to_xz(const osmium::NodeRef &node)
@@ -566,7 +806,10 @@ struct WorldEditor
 		return std::make_pair(mg->node_max.X, mg->node_max.Z);
 	};
 	int get_absolute_y(int x, int y, int z) { return ground->get_absolute_y(x, y, z); }
-	int get_ground_level(int x, int z) const { return ground ? ground->level({x, z}) : 0; }
+	int get_ground_level(int x, int z) const
+	{
+		return ground ? ground->level({x, z}) : 0;
+	}
 	int get_water_level(int x, int z) const
 	{
 		return ground ? ground->water_level({x, z}) : get_ground_level(x, z);
@@ -579,13 +822,11 @@ struct WorldEditor
 		}
 		if (!mg || !mg->vm)
 			return false;
-		const v3pos_t pos{
-				static_cast<pos_t>(x), static_cast<pos_t>(get_water_level(x, z)),
-				static_cast<pos_t>(z)};
+		const v3pos_t pos{static_cast<pos_t>(x),
+				static_cast<pos_t>(get_water_level(x, z)), static_cast<pos_t>(z)};
 		if (!mg->vm->exists(pos))
 			return false;
-		return mg->vm->getNode(pos).getContent() ==
-			   block_definitions::WATER.getContent();
+		return mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent() == block_definitions::WATER.getContent();
 	}
 	uint8_t water_distance(int x, int z) const
 	{
@@ -603,7 +844,7 @@ struct WorldEditor
 		++mg->stat.check;
 		if (!mg || !mg->vm || !mg->vm->exists(pos))
 			return false;
-		const auto n = mg->vm->getNode(pos);
+		const auto n = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos));
 		const auto content = n.getContent();
 		if (content == CONTENT_AIR || content == CONTENT_IGNORE)
 			return false;
@@ -629,8 +870,8 @@ struct WorldEditor
 			set_block_absolute(block, x, y, z);
 	}
 
-	void fill_column_absolute(const Block &block, int x, int z, int min_y, int max_y,
-			bool skip_existing)
+	void fill_column_absolute(
+			const Block &block, int x, int z, int min_y, int max_y, bool skip_existing)
 	{
 		if (max_y < min_y)
 			return;

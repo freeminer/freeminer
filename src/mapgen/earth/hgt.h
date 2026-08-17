@@ -153,31 +153,37 @@ class hgts
 	std::mutex mutex;
 
 	// Thread-local cache for container access
-	struct ThreadLocalContainerCache {
+	struct ThreadLocalContainerCache
+	{
 		std::unordered_map<uint64_t, std::weak_ptr<height>> map1_cache;
 		std::unordered_map<uint64_t, std::weak_ptr<height>> map1_seabed_cache;
 	};
-	
+
 	static thread_local ThreadLocalContainerCache tl_container_cache;
 
 	// Cache key generation for container access (lat/lon tile coordinates)
-	static uint64_t make_tile_key(int lat, int lon) {
-		return (uint64_t(static_cast<uint32_t>(lat)) << 32) | uint64_t(static_cast<uint32_t>(lon));
+	static uint64_t make_tile_key(int lat, int lon)
+	{
+		return (uint64_t(static_cast<uint32_t>(lat)) << 32) |
+			   uint64_t(static_cast<uint32_t>(lon));
 	}
 
 	// Layer definition structure
-	struct Layer {
-		std::map<int, std::map<int, std::shared_ptr<height>>>& container;
-		std::unordered_map<uint64_t, std::weak_ptr<height>>& cache;
-		std::function<std::shared_ptr<height>(const std::string&, height::ll_t, height::ll_t)> factory;
+	struct Layer
+	{
+		std::map<int, std::map<int, std::shared_ptr<height>>> &container;
+		std::unordered_map<uint64_t, std::weak_ptr<height>> &cache;
+		std::function<std::shared_ptr<height>(
+				const std::string &, height::ll_t, height::ll_t)>
+				factory;
 		std::function<height::height_t(height::ll_t)> post_process;
-		std::function<void(std::map<int, std::map<int, std::shared_ptr<height>>>&, 
-						  std::unordered_map<uint64_t, std::weak_ptr<height>>&, 
-						  int, int)> place_dummy;
+		std::function<void(std::map<int, std::map<int, std::shared_ptr<height>>> &,
+				std::unordered_map<uint64_t, std::weak_ptr<height>> &, int, int)>
+				place_dummy;
 		height::height_t min_height;
 		height::height_t max_height;
 	};
-	
+
 	// Get layer definitions
 	std::vector<Layer> get_layers(const height::ll_t lat, const height::ll_t lon);
 
