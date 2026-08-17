@@ -64,9 +64,9 @@ public:
 	// get max Y for apply abm
 	virtual s16 getMaxY() = 0;
 	// This is called usually at interval for 1/chance of the nodes
-/*	
+/*
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n){};
-*/	
+*/
 	virtual void trigger(ServerEnvironment *env, v3s16 p, MapNode n,
 		u32 active_object_count, u32 active_object_count_wider
 		, v3pos_t neighbor_pos = {}, uint8_t activate = 0
