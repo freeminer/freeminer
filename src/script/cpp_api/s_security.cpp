@@ -345,7 +345,6 @@ void ScriptApiSecurity::initializeSecurityClient()
 	static const char *whitelist[] = {
 		"assert",
 		"core",
-		"collectgarbage",
 		"DIR_DELIM",
 		"error",
 		"ipairs",
@@ -429,6 +428,7 @@ void ScriptApiSecurity::initializeSecurityClient()
 	SECURE_API(g, loadfile);
 	SECURE_API(g, loadstring);
 	SECURE_API(g, require);
+	SECURE_API(g, collectgarbage);
 	lua_pop(L, 2);
 
 
@@ -473,7 +473,6 @@ void ScriptApiSecurity::initializeSecuritySSCSM()
 	static const char *whitelist[] = {
 		"assert",
 		"core",
-		"collectgarbage",
 		"DIR_DELIM",
 		"error",
 		"ipairs",
@@ -555,6 +554,7 @@ void ScriptApiSecurity::initializeSecuritySSCSM()
 	SECURE_API(g, loadfile);
 	SECURE_API(g, loadstring);
 	SECURE_API(g, require);
+	SECURE_API(g, collectgarbage);
 	lua_pop(L, 2);
 
 
@@ -1025,6 +1025,17 @@ int ScriptApiSecurity::sl_g_require(lua_State *L)
 {
 	lua_pushliteral(L, "require() is disabled when mod security is on.");
 	return lua_error(L);
+}
+
+int ScriptApiSecurity::sl_g_collectgarbage(lua_State *L)
+{
+	if (!lua_isnoneornil(L, 1) && readParam<std::string_view>(L, 1) == "count") {
+		const int kb = lua_gc(L, LUA_GCCOUNT, 0);
+		lua_pushinteger(L, kb); // rounded (floor) to a kilobyte
+		return 1;
+	}
+	// do nothing instead of throwing so mods can more easily re-use code between server and client
+	return 0;
 }
 
 
