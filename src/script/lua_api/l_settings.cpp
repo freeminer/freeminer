@@ -93,8 +93,7 @@ void LuaSettings::create(lua_State *L, Settings *settings,
 // garbage collector
 int LuaSettings::gc_object(lua_State* L)
 {
-	LuaSettings* o = *(LuaSettings **)(lua_touserdata(L, 1));
-	delete o;
+	delete takeObjectForGC<LuaSettings>(L);
 	return 0;
 }
 
