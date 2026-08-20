@@ -34,6 +34,7 @@
 #include "arnis-cpp/src/biome.h"
 #include "arnis-cpp/src/urban_ground.h"
 #include "arnis-cpp/src/land_cover/land_cover.h"
+#include "arnis-cpp/src/decals/registry.h"
 
 namespace arnis
 {
@@ -249,7 +250,11 @@ public:
 // A “Ground” class that can return ground level from a set of points
 struct Ground
 {
-	struct RotationMask { double cx=0,cz=0,neg_sin=0,cos=1; int orig_min_x=0,orig_max_x=0,orig_min_z=0,orig_max_z=0; };
+	struct RotationMask
+	{
+		double cx = 0, cz = 0, neg_sin = 0, cos = 1;
+		int orig_min_x = 0, orig_max_x = 0, orig_min_z = 0, orig_max_z = 0;
+	};
 	MapgenEarth *mg = nullptr;
 	std::optional<land_cover::LandCoverData> land_cover;
 	std::size_t land_cover_world_width = 0;
@@ -257,6 +262,7 @@ struct Ground
 	std::optional<canopy::CanopyData> canopy_data;
 	std::size_t canopy_world_width = 0, canopy_world_height = 0;
 	double elevation_min_height_m = 0.0, elevation_blocks_per_meter = 0.0;
+	std::optional<int> elevation_ground_level;
 	int snow_threshold_y = std::numeric_limits<int>::max();
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
@@ -318,51 +324,99 @@ struct Ground
 			   land_cover->height > 0 && land_cover_world_width > 0 &&
 			   land_cover_world_height > 0;
 	}
-	bool has_canopy() const { return canopy_data.has_value() && canopy_world_width > 0 && canopy_world_height > 0; }
+	bool has_canopy() const
+	{
+		return canopy_data.has_value() && canopy_world_width > 0 &&
+			   canopy_world_height > 0;
+	}
 	// Names mirror ground.rs so library consumers do not need to know the
 	// mapgen-host field layout.
 	int snow_threshold() const { return snow_threshold_y; }
+	int base_level(int fallback = -62) const
+	{
+		return elevation_ground_level.value_or(fallback);
+	}
 	std::pair<std::size_t, std::size_t> world_dims() const
 	{
 		return has_land_cover()
-				? std::pair<std::size_t, std::size_t>{land_cover_world_width,
-						land_cover_world_height}
-				: std::pair<std::size_t, std::size_t>{canopy_world_width,
-						canopy_world_height};
+					   ? std::pair<std::size_t, std::size_t>{land_cover_world_width,
+								 land_cover_world_height}
+					   : std::pair<std::size_t, std::size_t>{
+								 canopy_world_width, canopy_world_height};
 	}
-	void set_canopy_data(canopy::CanopyData data, std::size_t world_width, std::size_t world_height)
+	void set_canopy_data(
+			canopy::CanopyData data, std::size_t world_width, std::size_t world_height)
 	{
-		canopy_data = std::move(data); canopy_world_width = world_width; canopy_world_height = world_height;
+		canopy_data = std::move(data);
+		canopy_world_width = world_width;
+		canopy_world_height = world_height;
 	}
-	std::pair<std::size_t,std::size_t> canopy_index(const XZPoint &coord) const
+	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const
 	{
-		const auto &c=*canopy_data; const double xr=std::clamp(double(coord.x)/double(std::max<std::size_t>(1,canopy_world_width-1)),0.0,1.0); const double zr=std::clamp(double(coord.z)/double(std::max<std::size_t>(1,canopy_world_height-1)),0.0,1.0);
-		return {std::min<std::size_t>(std::llround(xr*double(c.width-1)),c.width-1),std::min<std::size_t>(std::llround(zr*double(c.height-1)),c.height-1)};
+		const auto &c = *canopy_data;
+		const double xr = std::clamp(double(coord.x) / double(std::max<std::size_t>(1,
+															   canopy_world_width - 1)),
+				0.0, 1.0);
+		const double zr = std::clamp(double(coord.z) / double(std::max<std::size_t>(1,
+															   canopy_world_height - 1)),
+				0.0, 1.0);
+		return {std::min<std::size_t>(
+						std::llround(xr * double(c.width - 1)), c.width - 1),
+				std::min<std::size_t>(
+						std::llround(zr * double(c.height - 1)), c.height - 1)};
 	}
-	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const { if(!has_canopy()) return std::nullopt; const auto [x,z]=canopy_index(coord); return canopy_data->canopy_height_m(x,z); }
-	std::optional<double> canopy_fraction(const XZPoint &coord,int spacing) const
+	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const
+	{
+		if (!has_canopy())
+			return std::nullopt;
+		const auto [x, z] = canopy_index(coord);
+		return canopy_data->canopy_height_m(x, z);
+	}
+	std::optional<double> canopy_fraction(const XZPoint &coord, int spacing) const
 	{
 		// `spacing` is in world blocks.  Sampling world coordinates first keeps
 		// the result identical whether the canopy raster is coarser or finer
 		// than terrain, and excludes no-data columns from the denominator.
-		if(!has_canopy() || spacing<=0) return std::nullopt;
-		std::uint32_t measured=0, wooded=0;
-		for(int dz=0;dz<spacing;++dz) for(int dx=0;dx<spacing;++dx)
-			if(const auto height=canopy_height_m({coord.x+dx,coord.z+dz})) {
-				++measured;
-				if(*height>=canopy::CANOPY_MIN_M) ++wooded;
-			}
-		return measured ? std::optional<double>(double(wooded)/double(measured)) : std::nullopt;
+		if (!has_canopy() || spacing <= 0)
+			return std::nullopt;
+		std::uint32_t measured = 0, wooded = 0;
+		for (int dz = 0; dz < spacing; ++dz)
+			for (int dx = 0; dx < spacing; ++dx)
+				if (const auto height = canopy_height_m({coord.x + dx, coord.z + dz})) {
+					++measured;
+					if (*height >= canopy::CANOPY_MIN_M)
+						++wooded;
+				}
+		return measured ? std::optional<double>(double(wooded) / double(measured))
+						: std::nullopt;
 	}
 	bool snow_capped(int y) const { return y >= snow_threshold_y; }
-	void set_elevation_metadata(double min_height_m,double blocks_per_meter,int snow_y) { elevation_min_height_m=min_height_m; elevation_blocks_per_meter=blocks_per_meter; snow_threshold_y=snow_y; }
-	void set_rotation_mask(RotationMask mask) { rotation_mask=mask; }
-	bool inside_rotation_mask(int x,int z) const { if(!rotation_mask) return true; const auto &m=*rotation_mask; const double dx=x-m.cx,dz=z-m.cz; const double ox=dx*m.cos+dz*m.neg_sin+m.cx, oz=-dx*m.neg_sin+dz*m.cos+m.cz; constexpr double eps=1e-9; return ox>=m.orig_min_x-eps&&ox<=m.orig_max_x+eps&&oz>=m.orig_min_z-eps&&oz<=m.orig_max_z+eps; }
+	void set_elevation_metadata(
+			double min_height_m, double blocks_per_meter, int snow_y, int ground_level)
+	{
+		elevation_min_height_m = min_height_m;
+		elevation_blocks_per_meter = blocks_per_meter;
+		snow_threshold_y = snow_y;
+		elevation_ground_level = ground_level;
+	}
+	void set_rotation_mask(RotationMask mask) { rotation_mask = mask; }
+	bool inside_rotation_mask(int x, int z) const
+	{
+		if (!rotation_mask)
+			return true;
+		const auto &m = *rotation_mask;
+		const double dx = x - m.cx, dz = z - m.cz;
+		const double ox = dx * m.cos + dz * m.neg_sin + m.cx,
+					 oz = -dx * m.neg_sin + dz * m.cos + m.cz;
+		constexpr double eps = 1e-9;
+		return ox >= m.orig_min_x - eps && ox <= m.orig_max_x + eps &&
+			   oz >= m.orig_min_z - eps && oz <= m.orig_max_z + eps;
+	}
 	bool is_in_rotated_bounds(int x, int z) const { return inside_rotation_mask(x, z); }
 	biome::Climate climate() const { return climate_state; }
-	void set_climate(biome::Climate value) { climate_state=value; }
-	void set_urban_lookup(UrbanGroundLookup lookup) { urban_lookup=std::move(lookup); }
-	bool is_urban(int x,int z) const { return urban_lookup.is_urban(x,z); }
+	void set_climate(biome::Climate value) { climate_state = value; }
+	void set_urban_lookup(UrbanGroundLookup lookup) { urban_lookup = std::move(lookup); }
+	bool is_urban(int x, int z) const { return urban_lookup.is_urban(x, z); }
 
 	void set_land_cover_data(land_cover::LandCoverData data, std::size_t world_width,
 			std::size_t world_height)
@@ -508,19 +562,25 @@ struct Ground
 	int slope(const XZPoint &coord) const
 	{
 		constexpr int step = 4;
-		const int east=level({coord.x+step,coord.z}), west=level({coord.x-step,coord.z}),
-			north=level({coord.x,coord.z-step}), south=level({coord.x,coord.z+step});
-		return std::max({east,west,north,south})-std::min({east,west,north,south});
+		const int east = level({coord.x + step, coord.z}),
+				  west = level({coord.x - step, coord.z}),
+				  north = level({coord.x, coord.z - step}),
+				  south = level({coord.x, coord.z + step});
+		return std::max({east, west, north, south}) -
+			   std::min({east, west, north, south});
 	}
 	int water_level(const XZPoint &coord) const
 	{
-		const int center=level(coord);
-		if(slope(coord)<=2) return center;
-		constexpr int radius=3; int lowest=center;
-		for(int r=1;r<=radius;++r)
-			for(const auto &[dx,dz]:std::array<std::pair<int,int>,8>{{{-r,0},{r,0},{0,-r},{0,r},{-r,-r},{-r,r},{r,-r},{r,r}}})
-				lowest=std::min(lowest,level({coord.x+dx,coord.z+dz}));
-		return center-lowest>radius ? center : lowest;
+		const int center = level(coord);
+		if (slope(coord) <= 2)
+			return center;
+		constexpr int radius = 3;
+		int lowest = center;
+		for (int r = 1; r <= radius; ++r)
+			for (const auto &[dx, dz] : std::array<std::pair<int, int>, 8>{{{-r, 0},
+						 {r, 0}, {0, -r}, {0, r}, {-r, -r}, {-r, r}, {r, -r}, {r, r}}})
+				lowest = std::min(lowest, level({coord.x + dx, coord.z + dz}));
+		return center - lowest > radius ? center : lowest;
 	}
 };
 
@@ -529,11 +589,30 @@ namespace world_editor
 // A “WorldEditor” that can set blocks in your map
 struct WorldEditor
 {
+	struct DecalFrame
+	{
+		int x, y, z;
+		std::int8_t facing, rotation;
+		int map_id;
+		bool glow;
+	};
+	struct FrameCellHash
+	{
+		std::size_t operator()(const std::tuple<int, int, int> &p) const noexcept
+		{
+			const auto [x, y, z] = p;
+			std::size_t seed = std::hash<int>{}(x);
+			seed ^= std::hash<int>{}(y) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			seed ^= std::hash<int>{}(z) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			return seed;
+		}
+	};
 	MapgenEarth *mg{};
 	Ground *ground{};
 	// Generation-format state shared by the C++ orchestration layer.
 	int generation_format = 0; // Java=0, Bedrock=1, Luanti=2
-	bool bake_lighting = false, place_schematics = false, start_with_map = false, map_decals = false;
+	bool bake_lighting = false, place_schematics = false, start_with_map = false,
+		 map_decals = false;
 	// Matches trees::RegionSelector::base_spacing() for the default pack; hosts
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing = 5;
@@ -546,7 +625,8 @@ struct WorldEditor
 	// use the same metadata without depending on a Rust-only GenerationOptions.
 	double min_lat = 0.0, max_lat = 0.0, min_lon = 0.0, max_lon = 0.0;
 	bool flush_requested = false, save_requested = false;
-	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink, world_settings_sink;
+	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink,
+			world_settings_sink;
 	std::function<bool(int, int, int, int)> begin_tile_sink;
 	std::function<bool(int, int, int, int)> merge_tile_sink;
 	int spawn_x = 0, spawn_y = 0, spawn_z = 0;
@@ -555,6 +635,10 @@ struct WorldEditor
 	// properties (facing, axis, slab type, etc.) instead of losing them at the
 	// Freeminer Node boundary.  The default mapgen path still writes `block`.
 	std::function<void(const BlockWithProperties &, int, int, int)> block_properties_sink;
+	std::shared_ptr<const decals::DecalRegistry> decal_registry;
+	std::function<bool(const DecalFrame &)> decal_frame_sink;
+	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
+	std::optional<std::tuple<int, int, int, int>> strict_bounds;
 	void set_generation_format(int f) { generation_format = f; }
 	int get_generation_format() const { return generation_format; }
 	void set_bake_lighting(bool v) { bake_lighting = v; }
@@ -571,16 +655,158 @@ struct WorldEditor
 	}
 	void set_start_with_map(bool v) { start_with_map = v; }
 	void set_map_decals(bool v) { map_decals = v; }
-	void set_game_settings(int mode, int time) { gamemode = mode; world_time = time; }
-	void set_level_name(std::string n) { level_name = std::move(n); }
-	void set_spawn(int x, int y, int z) { spawn_x=x; spawn_y=y; spawn_z=z; }
-	void set_projection_info(std::string p, double s) { projection_name=std::move(p); projection_scale=s; }
-	void set_geographic_bounds(double min_lat_, double max_lat_, double min_lon_, double max_lon_)
+	void set_decal_registry(std::shared_ptr<const decals::DecalRegistry> registry)
 	{
-		min_lat = min_lat_; max_lat = max_lat_; min_lon = min_lon_; max_lon = max_lon_;
+		decal_registry = std::move(registry);
 	}
-	std::array<double, 4> geographic_bounds() const { return {min_lat, max_lat, min_lon, max_lon}; }
-	void set_output_path(std::filesystem::path p) { output_path=std::move(p); }
+	void set_decal_frame_sink(std::function<bool(const DecalFrame &)> sink)
+	{
+		decal_frame_sink = std::move(sink);
+	}
+	void set_strict_bounds(int min_x, int min_z, int max_x, int max_z)
+	{
+		strict_bounds = std::tuple{min_x, min_z, max_x, max_z};
+	}
+	bool owns(int x, int z) const
+	{
+		if (!strict_bounds)
+			return true;
+		const auto [min_x, min_z, max_x, max_z] = *strict_bounds;
+		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+	}
+	bool signage_enabled() const { return map_decals && bool(decal_registry); }
+	static std::tuple<int, int, int> decal_frame_cell(
+			int x, int y, int z, std::int8_t facing)
+	{
+		switch (facing) {
+		case 0:
+			return {x, y - 1, z};
+		case 1:
+			return {x, y + 1, z};
+		case 3:
+			return {x, y, z + 1};
+		case 4:
+			return {x - 1, y, z};
+		case 5:
+			return {x + 1, y, z};
+		default:
+			return {x, y, z - 1};
+		}
+	}
+	bool cell_has_frame(int x, int y, int z) const
+	{
+		return frame_cells.contains({x, y, z});
+	}
+	bool place_map_decal_ex(int x, int y, int z, std::int8_t facing, int map_id,
+			std::int8_t rotation = 0, bool glow = false, bool require_air = false)
+	{
+		const auto [fx, fy, fz] = decal_frame_cell(x, y, z, facing);
+		if (!owns(fx, fz) || fy - get_ground_level(fx, fz) < 1 ||
+				frame_cells.contains({fx, fy, fz}))
+			return false;
+		if (require_air && check_for_block_absolute(fx, fy, fz, std::nullopt))
+			return false;
+		const DecalFrame frame{
+				fx, fy, fz, facing, std::int8_t((rotation % 8 + 8) % 8), map_id, glow};
+		if (decal_frame_sink && !decal_frame_sink(frame))
+			return false;
+		frame_cells.insert({fx, fy, fz});
+		return true;
+	}
+	static std::tuple<int, int, int, int> panel_axes(std::int8_t facing)
+	{
+		switch (facing) {
+		case 0:
+		case 1:
+			return {1, 0, 0, 1};
+		case 2:
+			return {-1, 0, -1, 0};
+		case 3:
+			return {1, 0, -1, 0};
+		case 4:
+			return {0, 1, -1, 0};
+		default:
+			return {0, -1, -1, 0};
+		}
+	}
+	bool place_decal_panel(int x, int y, int z, std::int8_t facing,
+			const decals::DecalKey &key, bool glow = false, bool require_hosts = false)
+	{
+		if (!signage_enabled())
+			return false;
+		const auto entry = decal_registry->get(key);
+		if (!entry)
+			return false;
+		const auto [rx, rz, down_y, floor_z] = panel_axes(facing);
+		for (int row = 0; row < int(entry->rows); ++row)
+			for (int col = 0; col < int(entry->cols); ++col) {
+				const int hx = x + rx * col, hy = y + (facing <= 1 ? 0 : down_y * row),
+						  hz = z + rz * col + (facing <= 1 ? floor_z * row : 0);
+				const auto [fx, fy, fz] = decal_frame_cell(hx, hy, hz, facing);
+				if (!owns(fx, fz) || fy - get_ground_level(fx, fz) < 1 ||
+						frame_cells.contains({fx, fy, fz}) ||
+						(require_hosts &&
+								!check_for_block_absolute(hx, hy, hz, std::nullopt)))
+					return false;
+			}
+		for (int row = 0; row < int(entry->rows); ++row)
+			for (int col = 0; col < int(entry->cols); ++col) {
+				const int hx = x + rx * col, hy = y + (facing <= 1 ? 0 : down_y * row),
+						  hz = z + rz * col + (facing <= 1 ? floor_z * row : 0);
+				if (!place_map_decal_ex(
+							hx, hy, hz, facing, entry->tile_id(col, row), 0, glow, false))
+					return false;
+			}
+		return true;
+	}
+	bool place_decal(int x, int y, int z, std::int8_t facing, const decals::DecalKey &key)
+	{
+		return place_decal_panel(x, y, z, facing, key);
+	}
+	static std::pair<int, int> panel_left_anchor(
+			int x, int z, std::int8_t facing, int cols)
+	{
+		const auto [rx, rz, down_y, floor_z] = panel_axes(facing);
+		(void)down_y;
+		(void)floor_z;
+		const int half = (cols - 1) / 2;
+		return {x - rx * half, z - rz * half};
+	}
+	static std::int8_t facing_for_normal(int nx, int nz)
+	{
+		return std::abs(nx) >= std::abs(nz) ? (nx >= 0 ? 5 : 4) : (nz >= 0 ? 3 : 2);
+	}
+	void set_game_settings(int mode, int time)
+	{
+		gamemode = mode;
+		world_time = time;
+	}
+	void set_level_name(std::string n) { level_name = std::move(n); }
+	void set_spawn(int x, int y, int z)
+	{
+		spawn_x = x;
+		spawn_y = y;
+		spawn_z = z;
+	}
+	void set_projection_info(std::string p, double s)
+	{
+		projection_name = std::move(p);
+		projection_scale = s;
+	}
+	double scale() const { return projection_scale; }
+	void set_geographic_bounds(
+			double min_lat_, double max_lat_, double min_lon_, double max_lon_)
+	{
+		min_lat = min_lat_;
+		max_lat = max_lat_;
+		min_lon = min_lon_;
+		max_lon = max_lon_;
+	}
+	std::array<double, 4> geographic_bounds() const
+	{
+		return {min_lat, max_lat, min_lon, max_lon};
+	}
+	void set_output_path(std::filesystem::path p) { output_path = std::move(p); }
 	void set_block_properties_sink(
 			std::function<void(const BlockWithProperties &, int, int, int)> sink)
 	{
@@ -592,22 +818,31 @@ struct WorldEditor
 			std::function<bool()> preview = {}, std::function<bool()> map_item = {},
 			std::function<bool()> world_settings = {})
 	{
-		flush_sink = std::move(flush); save_sink = std::move(save); preview_sink = std::move(preview);
-		map_item_sink = std::move(map_item); world_settings_sink = std::move(world_settings);
+		flush_sink = std::move(flush);
+		save_sink = std::move(save);
+		preview_sink = std::move(preview);
+		map_item_sink = std::move(map_item);
+		world_settings_sink = std::move(world_settings);
 	}
 	bool finalize_persistence()
 	{
-		if (flush_requested && flush_sink && !flush_sink()) return false;
-		if (save_requested && save_sink && !save_sink()) return false;
-		if (world_settings_sink && !world_settings_sink()) return false;
-		if (start_with_map && map_item_sink && !map_item_sink()) return false;
-		if (preview_sink && !preview_sink()) return false;
+		if (flush_requested && flush_sink && !flush_sink())
+			return false;
+		if (save_requested && save_sink && !save_sink())
+			return false;
+		if (world_settings_sink && !world_settings_sink())
+			return false;
+		if (start_with_map && map_item_sink && !map_item_sink())
+			return false;
+		if (preview_sink && !preview_sink())
+			return false;
 		return true;
 	}
 	void set_tile_hooks(std::function<bool(int, int, int, int)> begin_tile,
 			std::function<bool(int, int, int, int)> merge_tile)
 	{
-		begin_tile_sink = std::move(begin_tile); merge_tile_sink = std::move(merge_tile);
+		begin_tile_sink = std::move(begin_tile);
+		merge_tile_sink = std::move(merge_tile);
 	}
 	bool begin_tile(int min_x, int min_z, int max_x, int max_z)
 	{
@@ -759,7 +994,8 @@ struct WorldEditor
 				static_cast<pos_t>(z)};
 		if (!mg->vm->exists(pos))
 			return false;
-		const auto content = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent();
+		const auto content =
+				mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent();
 		return content != CONTENT_AIR && content != CONTENT_IGNORE;
 	}
 
@@ -773,11 +1009,12 @@ struct WorldEditor
 		if (min_y > max_y)
 			std::swap(min_y, max_y);
 		for (int y = max_y; y >= min_y; --y) {
-			const v3pos_t pos{static_cast<pos_t>(x), static_cast<pos_t>(y),
-					static_cast<pos_t>(z)};
+			const v3pos_t pos{
+					static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 			if (!mg->vm->exists(pos))
 				continue;
-			const auto c = mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent();
+			const auto c =
+					mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent();
 			if (c != CONTENT_AIR && c != CONTENT_IGNORE)
 				return y;
 		}
@@ -826,7 +1063,8 @@ struct WorldEditor
 				static_cast<pos_t>(get_water_level(x, z)), static_cast<pos_t>(z)};
 		if (!mg->vm->exists(pos))
 			return false;
-		return mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent() == block_definitions::WATER.getContent();
+		return mg->readTileOverlay(pos).value_or(mg->vm->getNode(pos)).getContent() ==
+			   block_definitions::WATER.getContent();
 	}
 	uint8_t water_distance(int x, int z) const
 	{

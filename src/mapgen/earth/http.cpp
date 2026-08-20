@@ -1,5 +1,6 @@
 
 #include "http.h"
+#include "arnis-cpp/src/net.h"
 #include <filesystem>
 #include <limits>
 #include <thread>
@@ -13,6 +14,7 @@
 
 size_t http_to_file(const std::string &url, const std::string &path)
 {
+	auto request_permit = arnis::net::request_permit();
 	HTTPFetchRequest req;
 	req.url = url;
 	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
@@ -111,17 +113,18 @@ size_t multi_http_to_file_cdn(const std::string &dir, const std::string &name,
 	return multi_http_to_file(name, links, path);
 }
 
-std::string http_get_range(const std::string &url, std::uint64_t offset,
-		std::uint64_t length)
+std::string http_get_range(
+		const std::string &url, std::uint64_t offset, std::uint64_t length)
 {
 	if (length == 0 || offset > std::numeric_limits<std::uint64_t>::max() - (length - 1))
 		return {};
+	auto request_permit = arnis::net::request_permit();
 	HTTPFetchRequest req;
 	req.url = url;
 	req.caller = HTTPFETCH_SYNC;
 	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
 	req.extra_headers.emplace_back("Range: bytes=" + std::to_string(offset) + "-" +
-			std::to_string(offset + length - 1));
+								   std::to_string(offset + length - 1));
 	req.quiet = true;
 	HTTPFetchResult res;
 	httpfetch_sync(req, res);
