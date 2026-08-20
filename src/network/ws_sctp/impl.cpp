@@ -88,13 +88,13 @@ void debug_printf(const char *format, ...)
 // int Connection::
 static int sctp_send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info)
 {
-	DUMP((long)sock, sb_free, (long)ulp_info);
+	//DUMP((long)sock, sb_free, (long)ulp_info);
 	return 0;
 }
 
 static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
 {
-	DUMP((long)addr, (long)buf, length, tos, set_df);
+	//DUMP((long)addr, (long)buf, length, tos, set_df);
 
 	Connection::ulp_info_holder *ulp_info = (Connection::ulp_info_holder *)addr;
 	if (!ulp_info || !ulp_info->active.load(std::memory_order_acquire))
@@ -124,9 +124,9 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 	domain = AF_CONN;
 	// send_cb = Connection::sctp_send_cb;
 	server_send_cb = client_send_cb = sctp_send_cb;
-	DUMP((long)server_send_cb);
+	//DUMP((long)server_send_cb);
 	sctp_conn_output = conn_output;
-	DUMP((long)sctp_conn_output);
+	//DUMP((long)sctp_conn_output);
 	sctp_setup(0);
 	usrsctp_sysctl_set_sctp_asconf_enable(0);
 

@@ -23,9 +23,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/fm_far_container.h"
 #include "fm_far_calc.h"
 #include <atomic>
-#if USE_CLIENT_MCP
-#include "mcp_player_control.h"
-#endif
 
 #include "client.h"
 
@@ -211,11 +208,7 @@ Client::Client(
 
 #if USE_CLIENT_MCP
 	if (g_settings->getBool("enable_mcp")) {
-		// Initialize MCP Player Control
-		m_mcp_player_control = std::make_unique<MCPPlayerControl>(this);
-
-		// Start MCP WebSocket server for external tool integration
-		startMCPWebSocketServer(g_settings->getU16("mcp_ws_port"));
+		startMCPStreamableHttpServer(g_settings->getU16("mcp_port"));
 	}
 #endif
 
@@ -475,7 +468,7 @@ bool Client::isShutdown()
 Client::~Client()
 {
 	m_shutdown = true;
-	stopMCPWebSocketServer();
+	stopMCPServer();
 	if (m_con) {
 		m_con->Disconnect();
 		for (auto i = 0; i < 100; ++i) {
@@ -553,6 +546,10 @@ void Client::connect(const Address &address, const std::string &address_name)
 
 void Client::step(float dtime)
 {
+#if USE_CLIENT_MCP
+	processMCPRequests();
+#endif
+
 	m_uptime =  m_uptime + dtime;
 
 	// Limit a bit
@@ -2118,6 +2115,10 @@ bool Client::getChatMessage(std::wstring &res)
 	//m_chat_queue.pop();
 
 	res = L"";
+
+#if USE_CLIENT_MCP
+	recordMCPChatMessage(*chatMessage);
+#endif
 
 	switch (chatMessage->type) {
 		case CHATMESSAGE_TYPE_RAW:
