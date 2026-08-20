@@ -197,17 +197,17 @@ std::string string_sprintf(const char *format, ...)
 static int receive_cb(struct socket *sock, union sctp_sockstore addr, void *data,
 		size_t datalen, struct sctp_rcvinfo rcv, int flags, void *ulp_info)
 {
-	DUMP("rcb", (long)data, datalen);
+	//DUMP("rcb", (long)data, datalen);
 	if (data) {
 		if (flags & MSG_NOTIFICATION) {
-			DUMP(string_sprintf("Notification of length %d received.\n", (int)datalen));
+			//DUMP(string_sprintf("Notification of length %d received.\n", (int)datalen));
 		} else {
-			DUMP(string_sprintf("Msg of length %d received via %p:%u on stream %u with "
+			/*DUMP(string_sprintf("Msg of length %d received via %p:%u on stream %u with "
 								"SSN %u and TSN "
 								"%u, PPID %u, context %u.\n",
 					(int)datalen, addr.sconn.sconn_addr, ntohs(addr.sconn.sconn_port),
 					rcv.rcv_sid, rcv.rcv_ssn, rcv.rcv_tsn, (uint32_t)ntohl(rcv.rcv_ppid),
-					rcv.rcv_context));
+					rcv.rcv_context));*/
 		}
 		free(data);
 	} else {
@@ -219,7 +219,7 @@ static int receive_cb(struct socket *sock, union sctp_sockstore addr, void *data
 
 static int send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info)
 {
-	DUMP((long)sock, sb_free);
+	//DUMP((long)sock, sb_free);
 
 	return 1;
 }
@@ -302,7 +302,7 @@ void Connection::on_message(websocketpp::connection_hdl hdl, message_ptr msg)
 		return;
 	}
 
-	DUMP("usrsctp_conninput:", (long)peer->ulp_info.get(), msg->get_payload().size());
+	//DUMP("usrsctp_conninput:", (long)peer->ulp_info.get(), msg->get_payload().size());
 	usrsctp_conninput(peer->ulp_info.get(), (void *)msg->get_payload().data(),
 			msg->get_payload().size(), 0);
 }
@@ -358,8 +358,7 @@ void Connection::on_client_message(websocketpp::connection_hdl hdl, client_messa
 		return;
 	}
 
-	DUMP("client usrsctp_conninput:", (long)client_peer->ulp_info.get(),
-			msg->get_payload().size());
+	//DUMP("client usrsctp_conninput:", (long)client_peer->ulp_info.get(), msg->get_payload().size());
 	usrsctp_conninput(client_peer->ulp_info.get(), (void *)msg->get_payload().data(),
 			msg->get_payload().size(), 0);
 }

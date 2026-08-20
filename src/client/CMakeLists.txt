@@ -31,8 +31,6 @@ set(client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_clientmap.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_far_container.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_farmesh.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/mcp_player_control.cpp
-
 	${client_HDRS}
 	${sound_SRCS}
 	${CMAKE_CURRENT_SOURCE_DIR}/meshgen/collector.cpp

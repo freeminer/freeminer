@@ -24,7 +24,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #if USE_CLIENT_MCP
 
+#include <websocketpp/http/constants.hpp>
+
 #include "chat.h"
+#include "chatmessage.h"
 #include "client/localplayer.h"
 #include "clientmap.h"
 #include "constants.h"
@@ -34,7 +37,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "mapblock.h"
 #include "mapnode.h"
-#include "mcp_player_control.h"
 #include "nodedef.h"
 #include "settings.h"
 #include "util/numeric.h"
@@ -43,6 +45,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include <limits>
+#include <random>
 #include <sstream>
 
 static Json::Value makeMCPObjectSchema()
@@ -134,7 +139,8 @@ static Json::Value nodeToMCPJson(
 	return node_obj;
 }
 
-static void setMCPTextResult(Json::Value &response, const Json::Value &value)
+static void setMCPTextResult(
+		Json::Value &response, const Json::Value &value, bool is_error = false)
 {
 	Json::Value content_array(Json::arrayValue);
 	Json::Value content_item;
@@ -144,7 +150,15 @@ static void setMCPTextResult(Json::Value &response, const Json::Value &value)
 
 	Json::Value result;
 	result["content"] = content_array;
+	if (is_error)
+		result["isError"] = true;
 	response["result"] = result;
+}
+
+static void setMCPStatusResult(Json::Value &response, const Json::Value &status)
+{
+	setMCPTextResult(response, status,
+			status.isMember("success") && !status["success"].asBool());
 }
 
 static void setMCPEmptyResult(Json::Value &response)
@@ -361,27 +375,177 @@ static Json::Value chatBufferToMCPJson(const ChatBuffer &buffer, int count)
 	return chat_obj;
 }
 
-void Client::onWebSocketMessage(
-		websocketpp::connection_hdl hdl, Client::mcp_ws_server_t::message_ptr msg)
+static const char *mcpChatMessageTypeName(ChatMessageType type)
 {
-	Json::Value request;
-	Json::CharReaderBuilder reader;
-	std::string errors;
+	switch (type) {
+	case CHATMESSAGE_TYPE_RAW: return "raw";
+	case CHATMESSAGE_TYPE_NORMAL: return "player";
+	case CHATMESSAGE_TYPE_ANNOUNCE: return "announce";
+	case CHATMESSAGE_TYPE_SYSTEM: return "system";
+	default: return "unknown";
+	}
+}
 
-	std::unique_ptr<Json::CharReader> json_reader(reader.newCharReader());
-	if (!json_reader->parse(msg->get_payload().c_str(),
-				msg->get_payload().c_str() + msg->get_payload().length(), &request,
-				&errors)) {
-		Json::Value error_response;
-		error_response["jsonrpc"] = "2.0";
-		error_response["id"] = request.isMember("id") ? request["id"] : Json::Value();
-		setMCPError(error_response, -32700, "Parse error: " + errors);
-		m_mcp_websocket_server.send(hdl,
-				Json::writeString(Json::StreamWriterBuilder(), error_response),
-				websocketpp::frame::opcode::text);
-		return;
+void Client::recordMCPChatMessage(const ChatMessage &message)
+{
+	Json::Value item;
+	item["id"] = Json::UInt64(m_mcp_chat_next_id++);
+	item["type"] = mcpChatMessageTypeName(message.type);
+	item["sender"] = wide_to_utf8(unescape_enriched(message.sender));
+	item["text"] = wide_to_utf8(unescape_enriched(message.message));
+	item["timestamp"] = Json::Int64(message.timestamp);
+	if (!item["sender"].asString().empty())
+		item["formatted"] =
+				"<" + item["sender"].asString() + "> " + item["text"].asString();
+	else
+		item["formatted"] = item["text"];
+
+	m_mcp_chat_history.push_back(std::move(item));
+	while (m_mcp_chat_history.size() > 1000)
+		m_mcp_chat_history.pop_front();
+}
+
+Json::Value Client::getMCPChatMessages(u64 after_id, u32 count) const
+{
+	count = rangelim<u32>(count, 1, 200);
+	Json::Value result;
+	Json::Value messages(Json::arrayValue);
+	size_t start = 0;
+
+	if (after_id == 0 && m_mcp_chat_history.size() > count) {
+		start = m_mcp_chat_history.size() - count;
+	} else if (after_id != 0) {
+		while (start < m_mcp_chat_history.size() &&
+				m_mcp_chat_history[start]["id"].asUInt64() <= after_id)
+			start++;
 	}
 
+	size_t index = start;
+	for (; index < m_mcp_chat_history.size() && messages.size() < count; index++)
+		messages.append(m_mcp_chat_history[index]);
+
+	result["success"] = true;
+	result["messages"] = messages;
+	result["returned"] = static_cast<Json::UInt>(messages.size());
+	result["has_more"] = index < m_mcp_chat_history.size();
+	result["oldest_id"] = m_mcp_chat_history.empty()
+			? Json::UInt64(0) : m_mcp_chat_history.front()["id"];
+	result["latest_id"] = m_mcp_chat_history.empty()
+			? Json::UInt64(0) : m_mcp_chat_history.back()["id"];
+	result["next_after_id"] = messages.empty()
+			? Json::UInt64(after_id) : messages[messages.size() - 1]["id"];
+	return result;
+}
+
+static bool validateMCPToolArguments(const std::string &tool,
+		const Json::Value &args, std::string &error)
+{
+	auto require = [&](const char *name, Json::ValueType type) {
+		if (!args.isMember(name)) {
+			error = std::string(name) + " is required";
+			return false;
+		}
+		if (args[name].type() != type) {
+			error = std::string(name) + " has the wrong type";
+			return false;
+		}
+		return true;
+	};
+	auto require_integer = [&](const char *name) {
+		if (!args.isMember(name)) {
+			error = std::string(name) + " is required";
+			return false;
+		}
+		if (!(args[name].isInt64() || args[name].isUInt64())) {
+			error = std::string(name) + " must be an integer";
+			return false;
+		}
+		return true;
+	};
+	auto optional_type = [&](const char *name, Json::ValueType type) {
+		if (args.isMember(name) && args[name].type() != type) {
+			error = std::string(name) + " has the wrong type";
+			return false;
+		}
+		return true;
+	};
+	auto optional_integer = [&](const char *name) {
+		if (args.isMember(name) && !(args[name].isInt64() || args[name].isUInt64())) {
+			error = std::string(name) + " must be an integer";
+			return false;
+		}
+		return true;
+	};
+	auto require_position = [&]() {
+		return require_integer("x") && require_integer("y") && require_integer("z");
+	};
+
+	if (tool == "get_player_state" || tool == "get_inventory" ||
+			tool == "get_pointed_thing")
+		return true;
+	if (tool == "send_chat_message")
+		return require("message", Json::stringValue);
+	if (tool == "get_chat_messages")
+		return optional_integer("count") && optional_integer("after_id") &&
+				optional_type("buffer", Json::stringValue);
+	if (tool == "get_node" || tool == "dig_node" || tool == "move_player_to" ||
+			tool == "teleport_player")
+		return require_position();
+	if (tool == "get_nodes_area")
+		return require_integer("min_x") && require_integer("min_y") &&
+				require_integer("min_z") && require_integer("max_x") &&
+				require_integer("max_y") && require_integer("max_z");
+	if (tool == "set_wielded_item")
+		return optional_integer("slot") && optional_type("item", Json::stringValue);
+	if (tool == "move_inventory_item")
+		return require_integer("from_index") && require_integer("to_index") &&
+				optional_integer("count") && optional_type("from_list", Json::stringValue) &&
+				optional_type("to_list", Json::stringValue);
+	if (tool == "craft" || tool == "get_world_content")
+		return optional_integer(tool == "craft" ? "count" : "radius");
+	if (tool == "place_node") {
+		if (!require_position() || !optional_integer("slot") ||
+				!optional_type("item", Json::stringValue) || !optional_integer("under_x") ||
+				!optional_integer("under_y") || !optional_integer("under_z"))
+			return false;
+		const int under_count = args.isMember("under_x") + args.isMember("under_y") +
+				args.isMember("under_z");
+		if (under_count != 0 && under_count != 3) {
+			error = "under_x, under_y and under_z must be provided together";
+			return false;
+		}
+		return true;
+	}
+	if (tool == "rotate_player") {
+		if (!args.isMember("pitch") || !args["pitch"].isNumeric() ||
+				!args.isMember("yaw") || !args["yaw"].isNumeric()) {
+			error = "pitch and yaw must be numbers";
+			return false;
+		}
+		return true;
+	}
+	if (tool == "set_player_control") {
+		for (const char *name : {"forward", "backward", "left", "right", "jump",
+					 "sneak", "dig", "place", "aux1", "zoom"}) {
+			if (!optional_type(name, Json::booleanValue))
+				return false;
+		}
+		for (const char *name : {"pitch", "yaw"}) {
+			if (args.isMember(name) && !args[name].isNumeric()) {
+				error = std::string(name) + " must be a number";
+				return false;
+			}
+		}
+		return optional_integer("duration_ms");
+	}
+
+	// Unknown tools are handled by tools/call with an MCP invalid-params error.
+	return true;
+}
+
+void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
+		const Json::Value &request, const std::string &session_id)
+{
 	Json::Value response;
 	response["jsonrpc"] = "2.0";
 	response["id"] = request.isMember("id") ? request["id"] : Json::Value();
@@ -391,7 +555,14 @@ void Client::onWebSocketMessage(
 
 		if (method == "initialize") {
 			Json::Value result;
-			result["protocolVersion"] = "2024-11-05";
+			const std::string requested_version =
+					request["params"].get("protocolVersion", "").asString();
+			if (requested_version == "2024-11-05" ||
+					requested_version == "2025-03-26" ||
+					requested_version == "2025-06-18")
+				result["protocolVersion"] = requested_version;
+			else
+				result["protocolVersion"] = "2025-06-18";
 			result["serverInfo"]["name"] = "freeminer";
 			result["serverInfo"]["version"] = VERSION_STRING;
 			result["capabilities"]["tools"] = Json::Value(Json::objectValue);
@@ -406,18 +577,22 @@ void Client::onWebSocketMessage(
 
 			Json::Value send_chat_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(send_chat_schema, "message", "string",
-					"Chat message text to send. Commands may start with '/'.");
+					"Public chat text to send as the local player. Commands may start with '/'.");
 			addMCPRequired(send_chat_schema, "message");
 			tools.append(makeMCPTool("send_chat_message",
-					"Send a chat message as the local player.", send_chat_schema));
+					"Speak to other players in public chat as the local player, or issue a slash command.",
+					send_chat_schema));
 
 			Json::Value get_chat_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(get_chat_schema, "count", "integer",
 					"Maximum number of newest messages to return.");
 			addMCPSchemaProperty(get_chat_schema, "buffer", "string",
-					"Chat buffer to read: 'recent' or 'console'.");
+					"Source to read: 'history' (structured MCP history), 'recent', or 'console'.");
+			addMCPSchemaProperty(get_chat_schema, "after_id", "integer",
+					"For history, return only messages newer than this message ID.");
 			tools.append(makeMCPTool("get_chat_messages",
-					"Get messages from the local chat buffer.", get_chat_schema));
+					"Read structured messages from other players and the server. Use next_after_id for polling.",
+					get_chat_schema));
 
 			Json::Value control_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(control_schema, "forward", "boolean", "Hold forward.");
@@ -544,7 +719,7 @@ void Client::onWebSocketMessage(
 							static_cast<int>(player->getMaxHotbarItemcount());
 					player_state["success"] = true;
 				}
-				setMCPTextResult(response, player_state);
+				setMCPStatusResult(response, player_state);
 			} else if (tool_name == "get_inventory") {
 				Json::Value inventory_obj;
 				if (!player) {
@@ -561,28 +736,45 @@ void Client::onWebSocketMessage(
 							static_cast<int>(player->getMaxHotbarItemcount());
 					inventory_obj["lists"] = lists;
 				}
-				setMCPTextResult(response, inventory_obj);
+				setMCPStatusResult(response, inventory_obj);
 			} else if (tool_name == "send_chat_message") {
 				Json::Value status;
 				std::string message = args.get("message", "").asString();
 				if (message.empty()) {
 					status["success"] = false;
 					status["error"] = "message is required";
+				} else if (getState() != LC_Ready) {
+					status["success"] = false;
+					status["error"] = "Client is not connected and ready";
 				} else {
-					typeChatMessage(utf8_to_wide(message));
-					status["success"] = true;
-					status["message"] = message;
+					const bool send_now = canSendChatMessage();
+					const size_t queued_before = m_out_chat_queue.size();
+					sendChatMessage(utf8_to_wide(message));
+					if (send_now || m_out_chat_queue.size() > queued_before) {
+						status["success"] = true;
+						status["delivery"] = send_now ? "sent" : "queued";
+						status["message"] = message;
+						status["queued_messages"] =
+								static_cast<Json::UInt64>(m_out_chat_queue.size());
+					} else {
+						status["success"] = false;
+						status["error"] = "Outgoing chat queue is full";
+					}
 				}
-				setMCPTextResult(response, status);
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_chat_messages") {
 				Json::Value chat_obj;
-				if (!chat_backend) {
+				const std::string buffer_name =
+						args.get("buffer", "history").asString();
+				const int count = args.get("count", 50).asInt();
+				if (buffer_name == "history") {
+					chat_obj = getMCPChatMessages(
+							args.get("after_id", Json::UInt64(0)).asUInt64(), count);
+					chat_obj["buffer"] = "history";
+				} else if (!chat_backend) {
 					chat_obj["success"] = false;
 					chat_obj["error"] = "Chat backend is not available";
 				} else {
-					const std::string buffer_name =
-							args.get("buffer", "recent").asString();
-					const int count = args.get("count", 20).asInt();
 					if (buffer_name == "console") {
 						chat_obj = chatBufferToMCPJson(
 								chat_backend->getConsoleBuffer(), count);
@@ -593,10 +785,11 @@ void Client::onWebSocketMessage(
 						chat_obj["buffer"] = "recent";
 					} else {
 						chat_obj["success"] = false;
-						chat_obj["error"] = "buffer must be 'recent' or 'console'";
+						chat_obj["error"] =
+								"buffer must be 'history', 'recent', or 'console'";
 					}
 				}
-				setMCPTextResult(response, chat_obj);
+				setMCPStatusResult(response, chat_obj);
 			} else if (tool_name == "set_player_control") {
 				PlayerControl control;
 				if (args.isMember("forward") && args["forward"].asBool())
@@ -668,11 +861,11 @@ void Client::onWebSocketMessage(
 					}
 					area["nodes"] = nodes;
 				}
-				setMCPTextResult(response, area);
+				setMCPStatusResult(response, area);
 			} else if (tool_name == "set_wielded_item") {
 				Json::Value status;
 				selectMCPWieldedItem(this, player, args, status);
-				setMCPTextResult(response, status);
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "move_inventory_item") {
 				Json::Value status;
 				status["success"] = false;
@@ -690,7 +883,7 @@ void Client::onWebSocketMessage(
 					inventoryAction(a);
 					status["success"] = true;
 				}
-				setMCPTextResult(response, status);
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "craft") {
 				ICraftAction *a = new ICraftAction();
 				u16 count = args.get("count", 0).asUInt();
@@ -701,12 +894,12 @@ void Client::onWebSocketMessage(
 				Json::Value status;
 				status["success"] = true;
 				status["count"] = count;
-				setMCPTextResult(response, status);
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "place_node") {
 				Json::Value status;
 				v3pos_t target(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
 				if (!selectMCPWieldedItem(this, player, args, status)) {
-					setMCPTextResult(response, status);
+					setMCPStatusResult(response, status);
 				} else {
 					PointedThing pointed;
 					if (makeMCPPlacePointedThing(this, target, args, pointed, status)) {
@@ -716,7 +909,7 @@ void Client::onWebSocketMessage(
 						status["target"]["y"] = target.Y;
 						status["target"]["z"] = target.Z;
 					}
-					setMCPTextResult(response, status);
+					setMCPStatusResult(response, status);
 				}
 			} else if (tool_name == "dig_node") {
 				Json::Value status;
@@ -738,22 +931,34 @@ void Client::onWebSocketMessage(
 					status["success"] = true;
 					status["node"] = nodeToMCPJson(pos, node, ok, getNodeDefManager());
 				}
-				setMCPTextResult(response, status);
-			} else if (tool_name == "move_player_to" && m_mcp_player_control) {
-				m_mcp_player_control->movePlayerTo(
-						args["x"].asFloat(), args["y"].asFloat(), args["z"].asFloat());
-				setMCPEmptyResult(response);
-			} else if (tool_name == "rotate_player" && m_mcp_player_control) {
-				m_mcp_player_control->rotatePlayer(
-						args["pitch"].asFloat(), args["yaw"].asFloat());
-				setMCPEmptyResult(response);
-			} else if (tool_name == "teleport_player" && m_mcp_player_control) {
-				m_mcp_player_control->teleportPlayer(
-						args["x"].asFloat(), args["y"].asFloat(), args["z"].asFloat());
-				setMCPEmptyResult(response);
+				setMCPStatusResult(response, status);
+			} else if (tool_name == "move_player_to" || tool_name == "teleport_player") {
+				Json::Value status;
+				if (!player) {
+					status["success"] = false;
+					status["error"] = "No local player";
+				} else {
+					player->setPosition(v3opos_t(args["x"].asFloat() * BS,
+							args["y"].asFloat() * BS, args["z"].asFloat() * BS));
+					player->setSpeed(v3f(0.0f));
+					status["success"] = true;
+				}
+				setMCPStatusResult(response, status);
+			} else if (tool_name == "rotate_player") {
+				Json::Value status;
+				if (!player) {
+					status["success"] = false;
+					status["error"] = "No local player";
+				} else {
+					player->setPitch(args["pitch"].asFloat());
+					player->setYaw(args["yaw"].asFloat());
+					status["success"] = true;
+				}
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_pointed_thing") {
 				PointedThing pointed = getCurrentPointedThing();
 				Json::Value pointed_obj;
+				pointed_obj["success"] = true;
 				pointed_obj["type"] = (int)pointed.type;
 				pointed_obj["pointability"] = (int)pointed.pointability;
 
@@ -797,9 +1002,10 @@ void Client::onWebSocketMessage(
 				setMCPTextResult(response, pointed_obj);
 			} else if (tool_name == "get_world_content") {
 				int radius = args.get("radius", 5).asInt();
-				setMCPTextResult(response, getWorldContentAroundPlayer(radius));
+				Json::Value world = getWorldContentAroundPlayer(radius);
+				setMCPStatusResult(response, world);
 			} else {
-				setMCPError(response, -32601, "Tool not found: " + tool_name);
+				setMCPError(response, -32602, "Tool not found: " + tool_name);
 			}
 		} else {
 			setMCPError(response, -32601, "Method not found: " + method);
@@ -808,67 +1014,337 @@ void Client::onWebSocketMessage(
 		setMCPError(response, -32603, "Internal error: " + std::string(e.what()));
 	}
 
-	m_mcp_websocket_server.send(hdl,
-			Json::writeString(Json::StreamWriterBuilder(), response),
-			websocketpp::frame::opcode::text);
+	sendMCPResponse(connection, std::move(response), session_id);
+}
+
+void Client::sendMCPResponse(mcp_ws_server_t::connection_ptr connection,
+		Json::Value response,
+		const std::string &session_id)
+{
+	auto payload = std::make_shared<std::string>(
+			Json::writeString(Json::StreamWriterBuilder(), response));
+	m_mcp_http_server.get_io_service().post([connection, payload, session_id]() {
+			websocketpp::lib::error_code ec;
+			connection->append_header("Content-Type", "application/json");
+			if (!session_id.empty())
+				connection->append_header("Mcp-Session-Id", session_id);
+			connection->set_body(*payload);
+			connection->set_status(websocketpp::http::status_code::ok);
+			connection->send_http_response(ec);
+			if (ec)
+				verbosestream << "Failed to send MCP Streamable HTTP response: "
+						  << ec.message() << std::endl;
+	});
+}
+
+void Client::processMCPRequests()
+{
+	std::deque<PendingMCPRequest> requests;
+	{
+		std::lock_guard<std::mutex> lock(m_mcp_request_mutex);
+		requests.swap(m_mcp_requests);
+	}
+
+	for (const auto &pending : requests) {
+		handleMCPMessage(
+				pending.connection, pending.request, pending.session_id);
+	}
 }
 #endif
 
-void Client::startMCPWebSocketServer(int port)
+#if USE_CLIENT_MCP
+static std::string makeMCPHttpSessionId()
+{
+	std::random_device random;
+	std::ostringstream id;
+	id << std::hex << std::setfill('0');
+	for (unsigned int i = 0; i < 4; ++i)
+		id << std::setw(8) << random();
+	return id.str();
+}
+
+static bool isLocalMCPOrigin(const std::string &origin)
+{
+	if (origin.empty())
+		return true;
+	for (const char *prefix : {"http://127.0.0.1", "https://127.0.0.1",
+			 "http://localhost", "https://localhost", "http://[::1]",
+			 "https://[::1]"}) {
+		const size_t length = std::char_traits<char>::length(prefix);
+		if (origin.compare(0, length, prefix) == 0 &&
+				(origin.size() == length || origin[length] == ':'))
+			return true;
+	}
+	return false;
+}
+
+void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
+{
+	auto connection = m_mcp_http_server.get_con_from_hdl(hdl);
+	auto respond = [&](websocketpp::http::status_code::value status,
+			const std::string &body = "", const std::string &content_type = "") {
+		if (!content_type.empty())
+			connection->append_header("Content-Type", content_type);
+		connection->set_body(body);
+		connection->set_status(status);
+	};
+	auto json_error = [&](websocketpp::http::status_code::value status, int code,
+			const std::string &message, const Json::Value &id = Json::Value()) {
+		Json::Value response;
+		response["jsonrpc"] = "2.0";
+		response["id"] = id;
+		setMCPError(response, code, message);
+		Json::StreamWriterBuilder writer;
+		writer["indentation"] = "";
+		respond(status, Json::writeString(writer, response), "application/json");
+	};
+
+	std::string uri = connection->get_request().get_uri();
+	if (const auto query = uri.find('?'); query != std::string::npos)
+		uri.resize(query);
+	if (uri != "/mcp") {
+		respond(websocketpp::http::status_code::not_found);
+		return;
+	}
+	if (!isLocalMCPOrigin(connection->get_request_header("Origin"))) {
+		respond(websocketpp::http::status_code::forbidden,
+				"Untrusted Origin header\n", "text/plain; charset=utf-8");
+		return;
+	}
+
+	const std::string method = connection->get_request().get_method();
+	const std::string session_id = connection->get_request_header("Mcp-Session-Id");
+	if (method == "GET") {
+		// This server has no unsolicited server-to-client messages, so it does
+		// not expose an SSE listening stream.
+		respond(websocketpp::http::status_code::method_not_allowed);
+		return;
+	}
+	if (method == "DELETE") {
+		if (session_id.empty()) {
+			respond(websocketpp::http::status_code::bad_request);
+			return;
+		}
+		auto session = m_mcp_http_sessions.find(session_id);
+		if (session == m_mcp_http_sessions.end()) {
+			respond(websocketpp::http::status_code::not_found);
+			return;
+		}
+		m_mcp_http_sessions.erase(session);
+		respond(websocketpp::http::status_code::no_content);
+		return;
+	}
+	if (method != "POST") {
+		respond(websocketpp::http::status_code::method_not_allowed);
+		return;
+	}
+
+	const std::string accept = connection->get_request_header("Accept");
+	if (accept.find("application/json") == std::string::npos ||
+			accept.find("text/event-stream") == std::string::npos) {
+		respond(websocketpp::http::status_code::not_acceptable,
+				"Accept must include application/json and text/event-stream\n",
+				"text/plain; charset=utf-8");
+		return;
+	}
+	const std::string content_type = connection->get_request_header("Content-Type");
+	if (content_type.compare(0, std::string("application/json").size(),
+				"application/json") != 0) {
+		respond(websocketpp::http::status_code::unsupported_media_type);
+		return;
+	}
+
+	Json::Value request;
+	Json::CharReaderBuilder reader;
+	std::string errors;
+	const std::string &body = connection->get_request_body();
+	std::unique_ptr<Json::CharReader> json_reader(reader.newCharReader());
+	if (!json_reader->parse(
+			body.data(), body.data() + body.size(), &request, &errors)) {
+		json_error(websocketpp::http::status_code::bad_request, -32700,
+				"Parse error: " + errors);
+		return;
+	}
+	const bool has_id = request.isObject() && request.isMember("id");
+	const Json::Value response_id = has_id ? request["id"] : Json::Value();
+	if (!request.isObject() || request.get("jsonrpc", "").asString() != "2.0") {
+		json_error(websocketpp::http::status_code::bad_request, -32600,
+				"Invalid Request", response_id);
+		return;
+	}
+	if (!request.isMember("method")) {
+		// The server currently issues no JSON-RPC requests. Valid client
+		// responses therefore have nothing to dispatch, but are accepted as
+		// required by Streamable HTTP.
+		respond(websocketpp::http::status_code::accepted);
+		return;
+	}
+	if (!request["method"].isString()) {
+		json_error(websocketpp::http::status_code::bad_request, -32600,
+				"Invalid Request: method must be a string", response_id);
+		return;
+	}
+	if (has_id && !(request["id"].isString() || request["id"].isInt64() ||
+			request["id"].isUInt64())) {
+		json_error(websocketpp::http::status_code::bad_request, -32600,
+				"Invalid Request: id must be a string or integer");
+		return;
+	}
+	if (request.isMember("params") && !request["params"].isObject()) {
+		json_error(websocketpp::http::status_code::bad_request, -32602,
+				"Invalid params: params must be an object", response_id);
+		return;
+	}
+
+	const std::string rpc_method = request["method"].asString();
+	std::string request_session = session_id;
+	if (rpc_method == "initialize") {
+		if (!has_id || !session_id.empty()) {
+			json_error(websocketpp::http::status_code::bad_request, -32600,
+					"Initialize must be a request without a session ID", response_id);
+			return;
+		}
+		const Json::Value &params = request["params"];
+		if (!params.isObject() || !params["protocolVersion"].isString() ||
+				!params["capabilities"].isObject() || !params["clientInfo"].isObject()) {
+			json_error(websocketpp::http::status_code::bad_request, -32602,
+					"Invalid initialize parameters", response_id);
+			return;
+		}
+		request_session = makeMCPHttpSessionId();
+		const std::string requested = params["protocolVersion"].asString();
+		const std::string negotiated = requested == "2025-03-26" ||
+				requested == "2025-06-18" ? requested : "2025-06-18";
+		request["params"]["protocolVersion"] = negotiated;
+		m_mcp_http_sessions[request_session] =
+				{MCPConnectionState::AwaitingInitialized, negotiated};
+	} else {
+		if (session_id.empty()) {
+			respond(websocketpp::http::status_code::bad_request,
+					"Missing Mcp-Session-Id header\n", "text/plain; charset=utf-8");
+			return;
+		}
+		auto session = m_mcp_http_sessions.find(session_id);
+		if (session == m_mcp_http_sessions.end()) {
+			respond(websocketpp::http::status_code::not_found);
+			return;
+		}
+		const std::string protocol =
+				connection->get_request_header("MCP-Protocol-Version");
+		if (!protocol.empty() && protocol != session->second.protocol_version) {
+			respond(websocketpp::http::status_code::bad_request,
+					"Unsupported MCP-Protocol-Version\n", "text/plain; charset=utf-8");
+			return;
+		}
+		if (!has_id) {
+			if (rpc_method == "notifications/initialized" &&
+					session->second.state == MCPConnectionState::AwaitingInitialized)
+				session->second.state = MCPConnectionState::Ready;
+			respond(websocketpp::http::status_code::accepted);
+			return;
+		}
+		if (session->second.state != MCPConnectionState::Ready) {
+			json_error(websocketpp::http::status_code::bad_request, -32002,
+					"Server is not initialized", response_id);
+			return;
+		}
+	}
+
+	if (rpc_method == "tools/call") {
+		const Json::Value &params = request["params"];
+		if (!params.isObject() || !params["name"].isString() ||
+				(params.isMember("arguments") && !params["arguments"].isObject())) {
+			json_error(websocketpp::http::status_code::bad_request, -32602,
+					"Invalid tools/call parameters", response_id);
+			return;
+		}
+		const Json::Value arguments = params.isMember("arguments")
+				? params["arguments"] : Json::Value(Json::objectValue);
+		std::string argument_error;
+		if (!validateMCPToolArguments(
+				params["name"].asString(), arguments, argument_error)) {
+			json_error(websocketpp::http::status_code::bad_request, -32602,
+					"Invalid tool arguments: " + argument_error, response_id);
+			return;
+		}
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(m_mcp_request_mutex);
+		if (m_mcp_requests.size() >= 128) {
+			json_error(websocketpp::http::status_code::service_unavailable, -32000,
+					"MCP request queue is full", response_id);
+			return;
+		}
+		connection->defer_http_response();
+		m_mcp_requests.push_back({connection, request, request_session});
+	}
+}
+#endif
+
+void Client::startMCPStreamableHttpServer(int port)
 {
 #if USE_CLIENT_MCP
-	if (m_websocket_server_running)
+	if (m_http_server_running)
 		return;
 
 	try {
-		m_mcp_websocket_server.init_asio();
-		m_mcp_websocket_server.set_reuse_addr(true);
-		m_mcp_websocket_server.clear_access_channels(websocketpp::log::alevel::all);
-
-		m_mcp_websocket_server.set_message_handler(
-				[this](websocketpp::connection_hdl hdl,
-						mcp_ws_server_t::message_ptr msg) {
-					this->onWebSocketMessage(hdl, msg);
+		m_mcp_http_server.init_asio();
+		m_mcp_http_server.set_reuse_addr(true);
+		m_mcp_http_server.clear_access_channels(websocketpp::log::alevel::all);
+		m_mcp_http_server.set_http_handler(
+				[this](websocketpp::connection_hdl hdl) {
+					this->onMCPStreamableHttp(hdl);
 				});
 
-		m_mcp_websocket_server.set_open_handler([](websocketpp::connection_hdl) {
-			infostream << "MCP WebSocket client connected" << std::endl;
-		});
+		websocketpp::lib::error_code ec;
+		websocketpp::lib::asio::ip::tcp::endpoint endpoint(
+				websocketpp::lib::asio::ip::address::from_string("127.0.0.1"), port);
+		m_mcp_http_server.listen(endpoint, ec);
+		if (ec) {
+			errorstream << "Failed to bind MCP Streamable HTTP server to port "
+						<< port << ": " << ec.message() << std::endl;
+			return;
+		}
+		m_mcp_http_server.start_accept(ec);
+		if (ec) {
+			errorstream << "Failed to start MCP Streamable HTTP accept loop: "
+						<< ec.message() << std::endl;
+			return;
+		}
 
-		m_mcp_websocket_server.set_close_handler([](websocketpp::connection_hdl) {
-			infostream << "MCP WebSocket client disconnected" << std::endl;
-		});
-
-		m_mcp_websocket_server.listen("127.0.0.1", std::to_string(port));
-		m_mcp_websocket_server.start_accept();
-
-		m_websocket_server_running = true;
-		m_websocket_server_thread = std::thread([this]() {
+		m_http_server_running = true;
+		m_http_server_thread = std::thread([this]() {
 			try {
-				m_mcp_websocket_server.run();
+				m_mcp_http_server.run();
 			} catch (const std::exception &e) {
-				errorstream << "MCP WebSocket server error: " << e.what() << std::endl;
+				errorstream << "MCP Streamable HTTP server error: " << e.what()
+							<< std::endl;
 			}
 		});
-
-		infostream << "MCP WebSocket server started on 127.0.0.1:" << port << std::endl;
+		actionstream << "MCP Streamable HTTP transport started on http://127.0.0.1:"
+					 << port << "/mcp" << std::endl;
 	} catch (const std::exception &e) {
-		errorstream << "Failed to start MCP WebSocket server: " << e.what() << std::endl;
+		errorstream << "Failed to start MCP Streamable HTTP server: " << e.what()
+					<< std::endl;
 	}
 #endif
 }
 
-void Client::stopMCPWebSocketServer()
+void Client::stopMCPServer()
 {
 #if USE_CLIENT_MCP
-	if (m_websocket_server_running) {
-		m_websocket_server_running = false;
-		m_mcp_websocket_server.stop_listening();
-		m_mcp_websocket_server.stop();
-		if (m_websocket_server_thread.joinable())
-			m_websocket_server_thread.join();
-		infostream << "MCP WebSocket server stopped" << std::endl;
+	if (m_http_server_running) {
+		m_http_server_running = false;
+		m_mcp_http_server.stop_listening();
+		m_mcp_http_server.stop();
+		if (m_http_server_thread.joinable())
+			m_http_server_thread.join();
+		m_mcp_http_sessions.clear();
+		infostream << "MCP Streamable HTTP server stopped" << std::endl;
 	}
+	std::lock_guard<std::mutex> lock(m_mcp_request_mutex);
+	m_mcp_requests.clear();
 #endif
 }
 
@@ -887,7 +1363,12 @@ void Client::setMCPPlayerControl(PlayerControl control, u32 duration_ms)
 
 PointedThing Client::getCurrentPointedThing() const
 {
-	return PointedThing();
+	return m_mcp_pointed_thing;
+}
+
+void Client::setCurrentPointedThing(const PointedThing &pointed)
+{
+	m_mcp_pointed_thing = pointed;
 }
 
 Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
@@ -897,8 +1378,12 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 	radius_blocks = std::min(radius_blocks, 3);
 
 	LocalPlayer *player = m_env.getLocalPlayer();
-	if (!player)
+	if (!player) {
+		world_content["success"] = false;
+		world_content["error"] = "No local player";
 		return world_content;
+	}
+	world_content["success"] = true;
 
 	auto player_pos = player->getPosition();
 	auto player_block_pos = getNodeBlockPos(floatToInt(player_pos, BS));

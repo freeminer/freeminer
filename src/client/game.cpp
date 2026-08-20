@@ -1151,16 +1151,22 @@ bool Game::connectToServer(const GameStartData &start_data,
 #if USE_MULTI
 	if (simple_singleplayer_mode || start_data.local_server) {
 		u16 port = 0;
-#if USE_SCTP
-		if (!g_settings->getU16NoEx("port_sctp", port)) {
-			port = connect_address.getPort() + 100;
-		}
-		g_settings->set("remote_proto", "sctp");
-#elif USE_ENET
+//#if USE_SCTP
+//      // Not stable
+//		if (!g_settings->getU16NoEx("port_sctp", port)) {
+//			port = connect_address.getPort() + 100;
+//		}
+//		g_settings->set("remote_proto", "sctp");
+#if USE_ENET
 		if (!g_settings->getU16NoEx("port_enet", port)) {
 			port = connect_address.getPort() + 200;
 		}
 		g_settings->set("remote_proto", "enet");
+#elif USE_SCTP
+		if (!g_settings->getU16NoEx("port_sctp", port)) {
+			port = connect_address.getPort() + 100;
+		}
+		g_settings->set("remote_proto", "sctp");
 #elif USE_WEBSOCKET
 		if (!g_settings->getU16NoEx("port_wss", port)) {
 			port = connect_address.getPort();
@@ -3202,6 +3208,9 @@ void Game::processPlayerInteraction(f32 dtime, bool show_hud)
 			selected_def.pointabilities,
 			!runData.btn_down_for_dig,
 			camera_offset);
+#if USE_CLIENT_MCP
+	client->setCurrentPointedThing(pointed);
+#endif
 
 	if (pointed != runData.pointed_old)
 		infostream << "Pointing at " << pointed.dump() << std::endl;

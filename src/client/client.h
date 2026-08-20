@@ -16,8 +16,7 @@
 #include <EMaterialTypes.h>
 
 #if USE_CLIENT_MCP
-// WebSocket includes
-//#include "network/ws/wssocket.h"
+// websocketpp also provides the embedded HTTP listener used by MCP.
 #include <websocketpp/server.hpp>
 #include <websocketpp/config/asio.hpp>
 #include <json/json.h>
@@ -35,8 +34,12 @@ constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 #include "network/networkprotocol.h" // multiple enums
 #include "network/peerhandler.h"
 #include "util/numeric.h"
+#if USE_CLIENT_MCP
+#include "util/pointedthing.h"
+#endif
 #include "util/string.h" // StringMap
 
+#include <deque>
 #include <map>
 #include <memory>
 #include <ostream>
@@ -130,8 +133,6 @@ private:
 
 class WorldMerger;
 class FarMesh;
-class MCPPlayerControl;
-
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 {
 
@@ -142,31 +143,53 @@ private:
 	video::E_MATERIAL_TYPE m_far_light_material = video::EMT_SOLID;
 
 #if USE_CLIENT_MCP
-	// MCP Player Control
-	std::unique_ptr<MCPPlayerControl> m_mcp_player_control;
-
 public:
-
-	// Getter for MCP Player Control
-	MCPPlayerControl* getMCPPlayerControl() { return m_mcp_player_control.get(); }
-
-	// Accessor for the current pointed thing (to be implemented)
+	// MCP tools execute from Client::step(), never from the transport thread.
+	void processMCPRequests();
+	void setCurrentPointedThing(const PointedThing &pointed);
 	PointedThing getCurrentPointedThing() const;
 	
 	// Accessor for world content around player
 	Json::Value getWorldContentAroundPlayer(int radius_blocks = 10);
 
-	// WebSocket server for MCP integration
+	// HTTP server used by the MCP Streamable HTTP transport.
 	typedef websocketpp::server<websocketpp::config::asio> mcp_ws_server_t;
-	typedef websocketpp::server<websocketpp::config::asio>::message_ptr message_ptr;
-
-	// WebSocket server methods
-	void onWebSocketMessage(websocketpp::connection_hdl hdl, mcp_ws_server_t::message_ptr msg);
 
 private:
-	mcp_ws_server_t m_mcp_websocket_server;
-	bool m_websocket_server_running = false;
-	std::thread m_websocket_server_thread;
+	enum class MCPConnectionState {
+		Connected,
+		AwaitingInitialized,
+		Ready,
+	};
+	struct MCPHttpSession {
+		MCPConnectionState state = MCPConnectionState::Connected;
+		std::string protocol_version;
+	};
+
+	struct PendingMCPRequest {
+		mcp_ws_server_t::connection_ptr connection;
+		Json::Value request;
+		std::string session_id;
+	};
+
+	mcp_ws_server_t m_mcp_http_server;
+	bool m_http_server_running = false;
+	std::thread m_http_server_thread;
+	std::map<std::string, MCPHttpSession> m_mcp_http_sessions;
+	std::mutex m_mcp_request_mutex;
+	std::deque<PendingMCPRequest> m_mcp_requests;
+	PointedThing m_mcp_pointed_thing;
+	std::deque<Json::Value> m_mcp_chat_history;
+	u64 m_mcp_chat_next_id = 1;
+
+	void handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
+			const Json::Value &request, const std::string &session_id);
+	void sendMCPResponse(mcp_ws_server_t::connection_ptr connection,
+			Json::Value response,
+			const std::string &session_id);
+	void onMCPStreamableHttp(websocketpp::connection_hdl hdl);
+	void recordMCPChatMessage(const ChatMessage &message);
+	Json::Value getMCPChatMessages(u64 after_id, u32 count) const;
 	std::mutex m_mcp_control_mutex;
 	bool m_has_mcp_control_override = false;
 	PlayerControl m_mcp_control_override;
@@ -174,8 +197,8 @@ private:
 
 #endif
 public:
-void startMCPWebSocketServer(int port = 3001);
-	void stopMCPWebSocketServer();
+	void startMCPStreamableHttpServer(int port = 3001);
+	void stopMCPServer();
 
 	std::atomic<double> m_uptime {};
 	std::atomic_uint64_t m_next_mesh_revision{1};
