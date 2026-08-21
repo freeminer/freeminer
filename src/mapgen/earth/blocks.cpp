@@ -512,7 +512,7 @@ void init(MapgenEarth *mg)
 			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
 	TEXT_SIGN_LARGE = g({"street_signs:sign_highway_large_green",
 			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
-	DECAL_FRAME = g({"default:arnis_decal_frame", "air"});
+	DECAL_FRAME = g({"freeminer:arnis_decal_frame", "air"});
 	ANDESITE_WALL = g({"walls:cobble", "default:stone"});
 	STONE_BRICK_WALL = g("default:stonebrick");
 	CARROTS = g("farming:carrot_4");
