@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
+#include <unordered_set>
 #include <vector>
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -186,70 +187,66 @@ class MyHandler : public osmium::handler::Handler
 {
 public:
 	MapgenEarth *mg{};
+	std::vector<arnis::ProcessedElement> elements;
+	std::unordered_set<std::int64_t> seen_way_ids;
 
-	void way(const osmium::Way &way)
+	void append_way(const osmium::Way &way)
+	{
+		const auto id = static_cast<std::int64_t>(way.id());
+		if (!seen_way_ids.emplace(id).second)
+			return;
+
+		arnis::WorldEditor editor;
+		editor.mg = mg;
+		arnis::ProcessedWay processed_way;
+		processed_way.id = id;
+		for (const auto &tag : way.tags())
+			processed_way.tags.emplace(tag.key(), tag.value());
+		for (const auto &node : way.nodes()) {
+			arnis::ProcessedNode processed_node;
+			processed_node.tags = processed_way.tags;
+			const auto [x, z] = editor.node_to_xz(node);
+			processed_node.x = x;
+			processed_node.z = z;
+			processed_node.id = id;
+			processed_way.nodes.emplace_back(std::move(processed_node));
+		}
+		elements.emplace_back(processed_way);
+	}
+
+	void way(const osmium::Way &way) { append_way(way); }
+
+	void relation(const osmium::Relation &relation)
 	{
 		try {
-			arnis::Ground ground;
-			ground.mg = mg;
-			arnis::WorldEditor editor;
-			editor.mg = mg;
-			editor.set_tile_hooks([this](int min_x, int min_z, int max_x, int max_z) {
-				return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
-			}, [this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
-			editor.ground = &ground;
-			std::vector<arnis::ProcessedElement> v;
-			arnis::ProcessedWay w;
-			for (const auto &t : way.tags()) {
-				w.tags.emplace(t.key(), t.value());
+			for (const auto &sn : relation.subitems<osmium::Way>()) {
+				append_way(sn);
 			}
-			for (const auto &n : way.nodes()) {
-				arnis::ProcessedNode pn;
-				pn.tags = w.tags;
-				const auto [x, y] = editor.node_to_xz(n);
-				pn.x = x;
-				pn.z = y;
-				pn.id = w.id;
-				w.nodes.emplace_back(pn);
-			}
-			v.emplace_back(w);
-			arnis::FloodFillCache flood_fill_cache;
-			XZBBox xzbbox(editor.mg->node_min.X, editor.mg->node_min.Z,
-					editor.mg->node_max.X, editor.mg->node_max.Z);
-			arnis::BuildingFootprintBitmap building_footprints(xzbbox);
-			arnis::Args args;
-			arnis::generate_world(editor, v, args, flood_fill_cache, building_footprints);
 		} catch (const std::exception &ex) {
 			DUMP(ex.what());
 		}
 	}
 
-	void relation(const osmium::Relation &relation)
+	void generate()
 	{
-		try {
-			arnis::Ground ground;
-			ground.mg = mg;
-			arnis::WorldEditor editor;
-			editor.mg = mg;
-			editor.set_tile_hooks([this](int min_x, int min_z, int max_x, int max_z) {
-				return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
-			}, [this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
-			editor.ground = &ground;
-			std::vector<arnis::ProcessedElement> v;
-			//for (const auto &r : relation) {
-			//}
-			for (const auto &sn : relation.subitems<osmium::Way>()) {
-				way(sn);
-			}
-			arnis::FloodFillCache flood_fill_cache;
-			XZBBox xzbbox(editor.mg->node_min.X, editor.mg->node_min.Z,
-					editor.mg->node_max.X, editor.mg->node_max.Z);
-			arnis::BuildingFootprintBitmap building_footprints(xzbbox);
-			arnis::Args args;
-			arnis::generate_world(editor, v, args, flood_fill_cache, building_footprints);
-		} catch (const std::exception &ex) {
-			DUMP(ex.what());
-		}
+		if (elements.empty())
+			return;
+		arnis::Ground ground;
+		ground.mg = mg;
+		arnis::WorldEditor editor;
+		editor.mg = mg;
+		editor.set_tile_hooks(
+				[this](int min_x, int min_z, int max_x, int max_z) {
+					return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
+				},
+				[this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
+		editor.ground = &ground;
+		arnis::FloodFillCache flood_fill_cache;
+		XZBBox xzbbox(mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
+		arnis::BuildingFootprintBitmap building_footprints(xzbbox);
+		arnis::Args args;
+		arnis::generate_world(
+				editor, elements, args, flood_fill_cache, building_footprints);
 	}
 };
 class hdl : public handler_i
@@ -297,5 +294,10 @@ public:
 				mp_manager.handler([&handler](const osmium::memory::Buffer &area_buffer) {
 					osmium::apply(area_buffer, handler);
 				}));
+		try {
+			handler.generate();
+		} catch (const std::exception &ex) {
+			errorstream << "Earth exception: " << ex.what() << "\n";
+		}
 	}
 };
