@@ -232,7 +232,7 @@ void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_
 	// cut ipv6 braces []
 	// TODO cache resolve! :
 	a.Resolve(re.substr(re[0] == '[' ? 1 : 0, pos - 1 - (re[pos - 1] == ']' ? 1 : 0))
-					  .c_str());
+					.c_str());
 	a.setPort(from_string<uint16_t>(re.substr(pos + 1, re.size())));
 
 	if (!hdls.count(hdl)) {

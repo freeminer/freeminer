@@ -40,7 +40,7 @@ struct BlockMakeData {
 		std::string text;
 	};
 	struct GeneratedDecalMetadata {
-		v3s16 pos;
+		v3pos_t pos;
 		std::string texture;
 		int map_id = 0;
 		s8 facing = 2;
