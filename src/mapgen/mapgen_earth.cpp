@@ -530,7 +530,11 @@ MapgenEarth::~MapgenEarth()
 
 bool MapgenEarth::queueGeneratedSign(const v3pos_t &pos, const std::string &text)
 {
-	if (!active_block_data)
+	// Metadata must only be queued for nodes that were part of this emerge.  Arnis
+	// may calculate signs outside the active VM (most commonly above/below its Y
+	// range); set_block_absolute then skips the node, so queuing its metadata would
+	// make finishBlockMake try to emerge a block recursively and emit warnings.
+	if (!active_block_data || !vm || !vm->exists(pos))
 		return false;
 	active_block_data->generated_signs.push_back({pos, text});
 	return true;
@@ -539,7 +543,7 @@ bool MapgenEarth::queueGeneratedSign(const v3pos_t &pos, const std::string &text
 bool MapgenEarth::queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id,
 		s8 facing, s8 rotation, bool glow)
 {
-	if (!active_block_data)
+	if (!active_block_data || !vm || !vm->exists(pos))
 		return false;
 	active_block_data->generated_decals.push_back(
 			{pos, std::move(texture), map_id, facing, rotation, glow});
