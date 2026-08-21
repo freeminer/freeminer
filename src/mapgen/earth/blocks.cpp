@@ -105,6 +105,16 @@ Block TALL_SEAGRASS_BOTTOM;
 Block TALL_SEAGRASS_TOP;
 Block SEA_PICKLE;
 Block SOUL_SAND;
+Block EARTH_BENCH;
+Block EARTH_TRASH_CAN;
+Block EARTH_STREET_LAMP;
+Block EARTH_WELL;
+Block EARTH_BARBECUE;
+Block EARTH_GRATING;
+Block EARTH_FENCE_CHAINLINK;
+Block EARTH_FENCE_BARBED;
+Block EARTH_FENCE_PICKET;
+Block EARTH_FENCE_WROUGHT;
 Block WHITE_CONCRETE;
 Block WHITE_FLOWER;
 Block WHITE_STAINED_GLASS;
@@ -125,6 +135,11 @@ Block YELLOW_TERRACOTTA;
 Block SNOW_BLOCK;
 Block SNOW_LAYER;
 Block SIGN;
+Block STEEL_SIGN;
+Block TEXT_SIGN_SMALL;
+Block TEXT_SIGN_MEDIUM;
+Block TEXT_SIGN_LARGE;
+Block DECAL_FRAME;
 Block ANDESITE_WALL;
 Block STONE_BRICK_WALL;
 Block CARROTS;
@@ -149,6 +164,11 @@ Block RAIL_NORTH_EAST;
 Block RAIL_NORTH_WEST;
 Block RAIL_SOUTH_EAST;
 Block RAIL_SOUTH_WEST;
+Block ADV_RAIL_NORTH_SOUTH;
+Block ADV_RAIL_EAST_WEST;
+Block ADV_RAIL_DIAGONAL_NE_SW;
+Block ADV_RAIL_DIAGONAL_NW_SE;
+Block ADV_PLATFORM_HIGH;
 Block COARSE_DIRT;
 Block IRON_ORE;
 Block COAL_ORE;
@@ -432,16 +452,35 @@ void init(MapgenEarth *mg)
 	WATER = g("default:water_source");
 	// Rust parity: water_depth.rs uses MineClone ocean/nether blocks.
 	// Divergence: Earth game maps them to available Minetest Game nodes.
-	SEAGRASS = g({"default:marram_grass_1", "default:grass_3"});
-	KELP_PLANT = g({"default:sand_with_kelp", "default:marram_grass_3",
-			"default:marram_grass_1"});
+	SEAGRASS = g({"marinara:seagrass", "marinara:sand_with_seagrass",
+			"default:marram_grass_1", "default:grass_3"});
+	KELP_PLANT = g({"marinara:sand_with_kelp", "default:sand_with_kelp",
+			"default:marram_grass_3", "default:marram_grass_1"});
 	MAGMA_BLOCK = g({"default:obsidian", "default:lava_source", "default:stone"});
 	KELP = KELP_PLANT;
-	TALL_SEAGRASS_BOTTOM = g({"default:marram_grass_2", "default:marram_grass_1"});
-	TALL_SEAGRASS_TOP = g({"default:marram_grass_3", "default:marram_grass_1"});
-	SEA_PICKLE =
-			g({"default:coral_green", "default:coral_cyan", "default:coral_skeleton"});
+	TALL_SEAGRASS_BOTTOM = g({"marinara:sand_with_seagrass2", "default:marram_grass_2",
+			"default:marram_grass_1"});
+	TALL_SEAGRASS_TOP =
+			g({"marinara:seagrass2", "default:marram_grass_3", "default:marram_grass_1"});
+	SEA_PICKLE = g({"marinara:seaanemone_tentacle", "marinara:hardcoral_green",
+			"default:coral_green", "default:coral_cyan", "default:coral_skeleton"});
 	SOUL_SAND = g({"default:desert_sand", "default:sand"});
+	EARTH_BENCH = g({"homedecor:simple_bench", "stairs:slab_wood", "default:wood"});
+	EARTH_TRASH_CAN =
+			g({"homedecor:trash_can", "pipeworks:trashcan", "default:steelblock"});
+	EARTH_STREET_LAMP = g({"morelights_vintage:lantern_f", "homedecor:ground_lantern_14",
+			"default:meselamp"});
+	EARTH_WELL = g({"homedecor:well", "default:stonebrick"});
+	EARTH_BARBECUE = g({"homedecor:barbecue", "default:furnace", "default:stone"});
+	EARTH_GRATING = g({"pipeworks:grating", "xpanes:bar_flat", "default:steelblock"});
+	EARTH_FENCE_CHAINLINK =
+			g({"homedecor:fence_chainlink", "xpanes:bar_flat", "default:steelblock"});
+	EARTH_FENCE_BARBED =
+			g({"homedecor:fence_barbed_wire", "xpanes:bar_flat", "default:steelblock"});
+	EARTH_FENCE_PICKET =
+			g({"homedecor:fence_picket", "default:fence_wood", "default:wood"});
+	EARTH_FENCE_WROUGHT = g(
+			{"homedecor:fence_wrought_iron_2", "xpanes:bar_flat", "default:steelblock"});
 	WHITE_CONCRETE = g({"wool:white", "basic_materials:concrete_block", "default:stone"});
 	WHITE_FLOWER = g("flowers:dandelion_white");
 	WHITE_STAINED_GLASS = GLASS;
@@ -465,6 +504,15 @@ void init(MapgenEarth *mg)
 	SNOW_BLOCK = g("default:snow");
 	SNOW_LAYER = g("default:snow");
 	SIGN = g({"default:sign_wall_wood", "default:sign_wall", "default:wood"});
+	STEEL_SIGN = g(
+			{"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
+	TEXT_SIGN_SMALL = g({"street_signs:sign_highway_small_green",
+			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
+	TEXT_SIGN_MEDIUM = g({"street_signs:sign_highway_medium_green",
+			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
+	TEXT_SIGN_LARGE = g({"street_signs:sign_highway_large_green",
+			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
+	DECAL_FRAME = g({"default:arnis_decal_frame", "air"});
 	ANDESITE_WALL = g({"walls:cobble", "default:stone"});
 	STONE_BRICK_WALL = g("default:stonebrick");
 	CARROTS = g("farming:carrot_4");
@@ -489,6 +537,15 @@ void init(MapgenEarth *mg)
 	RAIL_NORTH_WEST = RAIL;
 	RAIL_SOUTH_EAST = RAIL;
 	RAIL_SOUTH_WEST = RAIL;
+	ADV_RAIL_NORTH_SOUTH = g({"advtrains:dtrack_st", "default:rail"});
+	ADV_RAIL_NORTH_SOUTH.setParam2(0);
+	ADV_RAIL_EAST_WEST = g({"advtrains:dtrack_st", "default:rail"});
+	ADV_RAIL_EAST_WEST.setParam2(1);
+	ADV_RAIL_DIAGONAL_NE_SW = g({"advtrains:dtrack_st_45", "default:rail"});
+	ADV_RAIL_DIAGONAL_NE_SW.setParam2(0);
+	ADV_RAIL_DIAGONAL_NW_SE = g({"advtrains:dtrack_st_45", "default:rail"});
+	ADV_RAIL_DIAGONAL_NW_SE.setParam2(1);
+	ADV_PLATFORM_HIGH = g({"advtrains:platform_high_stonebrick", "default:stonebrick"});
 	COARSE_DIRT = g("default:dry_dirt");
 	IRON_ORE = g("default:stone_with_iron");
 	COAL_ORE = g("default:stone_with_coal");

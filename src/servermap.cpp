@@ -26,6 +26,7 @@
 #include "config.h"
 #include "server.h"
 #include "serverenvironment.h"
+#include "nodemetadata.h"
 #include "database/database.h"
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
@@ -318,6 +319,27 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	MAP_NOTHREAD_LOCK(this);
 	data->vmanip->blitBackAll(changed_blocks, false, save_generated_block);
 	}
+
+	// fm:
+	for (const auto &sign : data->generated_signs) {
+		auto *meta = new NodeMetadata(m_gamedef->idef());
+		meta->setString("text", sign.text);
+		meta->setString("infotext", sign.text.empty() ? "" : "\"" + sign.text + "\"");
+		meta->setString("formspec", "field[text;;${text}]");
+		if (!setNodeMetadata(sign.pos, meta))
+			delete meta;
+	}
+	for (const auto &decal : data->generated_decals) {
+		auto *meta = new NodeMetadata(m_gamedef->idef());
+		meta->setString("texture", decal.texture);
+		meta->setString("map_id", std::to_string(decal.map_id));
+		meta->setString("facing", std::to_string(decal.facing));
+		meta->setString("rotation", std::to_string(decal.rotation));
+		meta->setString("glow", decal.glow ? "1" : "0");
+		if (!setNodeMetadata(decal.pos, meta))
+			delete meta;
+	}
+	// ===
 
 	EMERGE_DBG_OUT("finishBlockMake: changed_blocks.size()="
 		<< changed_blocks->size());

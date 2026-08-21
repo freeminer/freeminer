@@ -43,6 +43,27 @@ namespace block_definitions
 {
 extern Block LIGHT_GRAY_WALL_BANNER;
 extern Block WATER;
+extern Block SIGN;
+extern Block STEEL_SIGN;
+extern Block TEXT_SIGN_SMALL;
+extern Block TEXT_SIGN_MEDIUM;
+extern Block TEXT_SIGN_LARGE;
+extern Block DECAL_FRAME;
+extern Block EARTH_BENCH;
+extern Block EARTH_TRASH_CAN;
+extern Block EARTH_STREET_LAMP;
+extern Block EARTH_WELL;
+extern Block EARTH_BARBECUE;
+extern Block EARTH_GRATING;
+extern Block EARTH_FENCE_CHAINLINK;
+extern Block EARTH_FENCE_BARBED;
+extern Block EARTH_FENCE_PICKET;
+extern Block EARTH_FENCE_WROUGHT;
+extern Block ADV_RAIL_NORTH_SOUTH;
+extern Block ADV_RAIL_EAST_WEST;
+extern Block ADV_RAIL_DIAGONAL_NE_SW;
+extern Block ADV_RAIL_DIAGONAL_NW_SE;
+extern Block ADV_PLATFORM_HIGH;
 }
 
 struct XZPoint;
@@ -611,8 +632,10 @@ struct WorldEditor
 	Ground *ground{};
 	// Generation-format state shared by the C++ orchestration layer.
 	int generation_format = 0; // Java=0, Bedrock=1, Luanti=2
-	bool bake_lighting = false, place_schematics = false, start_with_map = false,
-		 map_decals = false;
+	bool bake_lighting = false;
+	bool start_with_map = false;
+	bool place_schematics = true;
+	bool map_decals = true;
 	// Matches trees::RegionSelector::base_spacing() for the default pack; hosts
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing = 5;
@@ -675,6 +698,38 @@ struct WorldEditor
 		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
 	}
 	bool signage_enabled() const { return map_decals && bool(decal_registry); }
+	bool place_text_sign(
+			int x, int y, int z, std::int8_t facing, const std::string &text, bool steel)
+	{
+		if (!mg || !mg->active_block_data || text.empty() || !owns(x, z))
+			return false;
+		Block sign = block_definitions::SIGN;
+		if (steel) {
+			std::size_t lines = 1;
+			std::size_t line_length = 0;
+			std::size_t max_line_length = 0;
+			for (char c : text) {
+				if (c == '\n') {
+					++lines;
+					max_line_length = std::max(max_line_length, line_length);
+					line_length = 0;
+				} else {
+					++line_length;
+				}
+			}
+			max_line_length = std::max(max_line_length, line_length);
+			if (lines <= 3 && max_line_length <= 50)
+				sign = block_definitions::TEXT_SIGN_SMALL;
+			else if (lines <= 6 && max_line_length <= 50)
+				sign = block_definitions::TEXT_SIGN_MEDIUM;
+			else
+				sign = block_definitions::TEXT_SIGN_LARGE;
+		}
+		sign.setParam2(static_cast<std::uint8_t>(facing));
+		set_block_absolute(sign, x, y, z, std::nullopt, std::nullopt);
+		return mg->queueGeneratedSign(
+				{static_cast<s16>(x), static_cast<s16>(y), static_cast<s16>(z)}, text);
+	}
 	static std::tuple<int, int, int> decal_frame_cell(
 			int x, int y, int z, std::int8_t facing)
 	{
