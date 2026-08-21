@@ -727,8 +727,14 @@ struct WorldEditor
 		}
 		sign.setParam2(static_cast<std::uint8_t>(facing));
 		set_block_absolute(sign, x, y, z, std::nullopt, std::nullopt);
-		return mg->queueGeneratedSign(
-				{static_cast<s16>(x), static_cast<s16>(y), static_cast<s16>(z)}, text);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-narrowing"
+#endif
+		return mg->queueGeneratedSign({x, y, z}, text);
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 	}
 	static std::tuple<int, int, int> decal_frame_cell(
 			int x, int y, int z, std::int8_t facing)

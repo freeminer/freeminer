@@ -528,7 +528,7 @@ MapgenEarth::~MapgenEarth()
 {
 }
 
-bool MapgenEarth::queueGeneratedSign(const v3s16 &pos, const std::string &text)
+bool MapgenEarth::queueGeneratedSign(const v3pos_t &pos, const std::string &text)
 {
 	if (!active_block_data)
 		return false;
@@ -536,7 +536,7 @@ bool MapgenEarth::queueGeneratedSign(const v3s16 &pos, const std::string &text)
 	return true;
 }
 
-bool MapgenEarth::queueGeneratedDecal(const v3s16 &pos, std::string texture, int map_id,
+bool MapgenEarth::queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id,
 		s8 facing, s8 rotation, bool glow)
 {
 	if (!active_block_data)

@@ -104,8 +104,8 @@ class MapgenEarth : public MapgenV7
 {
 public:
 	BlockMakeData *active_block_data = nullptr;
-	bool queueGeneratedSign(const v3s16 &pos, const std::string &text);
-	bool queueGeneratedDecal(const v3s16 &pos, std::string texture, int map_id, s8 facing,
+	bool queueGeneratedSign(const v3pos_t &pos, const std::string &text);
+	bool queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id, s8 facing,
 			s8 rotation, bool glow);
 	struct TileWriteKey
 	{
