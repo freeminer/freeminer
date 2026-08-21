@@ -528,14 +528,34 @@ MapgenEarth::~MapgenEarth()
 {
 }
 
+bool MapgenEarth::queueGeneratedSign(const v3s16 &pos, const std::string &text)
+{
+	if (!active_block_data)
+		return false;
+	active_block_data->generated_signs.push_back({pos, text});
+	return true;
+}
+
+bool MapgenEarth::queueGeneratedDecal(const v3s16 &pos, std::string texture, int map_id,
+		s8 facing, s8 rotation, bool glow)
+{
+	if (!active_block_data)
+		return false;
+	active_block_data->generated_decals.push_back(
+			{pos, std::move(texture), map_id, facing, rotation, glow});
+	return true;
+}
+
 bool MapgenEarth::beginTileOverlay(int min_x, int min_z, int max_x, int max_z)
 {
 	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
 	if (tile_overlay)
 		return false;
 	tile_overlay = std::make_unique<TileOverlay>();
-	tile_overlay->min_x = min_x; tile_overlay->min_z = min_z;
-	tile_overlay->max_x = max_x; tile_overlay->max_z = max_z;
+	tile_overlay->min_x = min_x;
+	tile_overlay->min_z = min_z;
+	tile_overlay->max_x = max_x;
+	tile_overlay->max_z = max_z;
 	return true;
 }
 
@@ -551,9 +571,11 @@ bool MapgenEarth::writeTileOverlay(const v3pos_t &pos, const MapNode &node)
 std::optional<MapNode> MapgenEarth::readTileOverlay(const v3pos_t &pos) const
 {
 	std::lock_guard<std::mutex> lock(const_cast<MapgenEarth *>(this)->tile_overlay_mutex);
-	if (!tile_overlay) return std::nullopt;
+	if (!tile_overlay)
+		return std::nullopt;
 	auto it = tile_overlay->writes.find({pos.X, pos.Y, pos.Z});
-	return it == tile_overlay->writes.end() ? std::nullopt : std::optional<MapNode>(it->second);
+	return it == tile_overlay->writes.end() ? std::nullopt
+											: std::optional<MapNode>(it->second);
 }
 
 bool MapgenEarth::mergeTileOverlay()
@@ -1102,6 +1124,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	//TimeTaker t("makeChunk");
 
 	this->generating = true;
+	this->active_block_data = data;
 	this->vm = data->vmanip;
 	this->ndef = data->nodedef;
 
@@ -1183,4 +1206,5 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 				full_node_min, full_node_max, propagate_shadow);
 
 	this->generating = false;
+	this->active_block_data = nullptr;
 }

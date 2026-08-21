@@ -34,6 +34,23 @@ struct MapDatabaseAccessor;
 
 // Structure containing inputs/outputs for chunk generation
 struct BlockMakeData {
+    // fm:
+	struct GeneratedSignMetadata {
+		v3pos_t pos;
+		std::string text;
+	};
+	struct GeneratedDecalMetadata {
+		v3s16 pos;
+		std::string texture;
+		int map_id = 0;
+		s8 facing = 2;
+		s8 rotation = 0;
+		bool glow = false;
+	};
+	std::vector<GeneratedSignMetadata> generated_signs;
+	std::vector<GeneratedDecalMetadata> generated_decals;
+	// ===
+
 	MMVManip *vmanip = nullptr;
 	// Global map seed
 	u64 seed = 0;

@@ -103,18 +103,25 @@ struct maps_holder_t
 class MapgenEarth : public MapgenV7
 {
 public:
-	struct TileWriteKey {
+	BlockMakeData *active_block_data = nullptr;
+	bool queueGeneratedSign(const v3s16 &pos, const std::string &text);
+	bool queueGeneratedDecal(const v3s16 &pos, std::string texture, int map_id, s8 facing,
+			s8 rotation, bool glow);
+	struct TileWriteKey
+	{
 		pos_t x = 0, y = 0, z = 0;
 		bool operator==(const TileWriteKey &) const = default;
 	};
-	struct TileWriteKeyHash {
+	struct TileWriteKeyHash
+	{
 		std::size_t operator()(const TileWriteKey &p) const noexcept
 		{
 			return std::hash<pos_t>{}(p.x) ^ (std::hash<pos_t>{}(p.y) << 1) ^
-					(std::hash<pos_t>{}(p.z) << 2);
+				   (std::hash<pos_t>{}(p.z) << 2);
 		}
 	};
-	struct TileOverlay {
+	struct TileOverlay
+	{
 		int min_x = 0, min_z = 0, max_x = -1, max_z = -1;
 		std::unordered_map<TileWriteKey, MapNode, TileWriteKeyHash> writes;
 	};
