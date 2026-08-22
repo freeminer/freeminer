@@ -18,6 +18,9 @@
 #else
 #define DIR_DELIM "/"
 #define DIR_DELIM_CHAR '/'
+// FIXME: the idea that "all filesystem on an UNIX system are case-sensitive"
+// is very wrong. Different folders on the same filesystem can even have differing
+// case-sensitivity. This seems tough to handle correctly however.
 #define FILESYS_CASE_INSENSITIVE false
 #define PATH_DELIM ":"
 #endif
@@ -85,7 +88,7 @@ std::vector<std::string> GetRecursiveDirs(const std::string &dir);
 /* The path itself not included, returns a list of all subpaths.
    dst - vector that contains all the subpaths.
    list files - include files in the list of subpaths.
-   ignore - paths that start with one of these charcters will not be listed.
+   ignore - paths that start with one of these characters will not be listed.
 */
 void GetRecursiveSubPaths(const std::string &path,
 		std::vector<std::string> &dst,
@@ -106,10 +109,22 @@ bool CopyDir(const std::string &source, const std::string &target);
 // Behavior with files/subdirs that start with a period is undefined
 bool MoveDir(const std::string &source, const std::string &target);
 
+// Check if two paths are the same
+// Ignores case differences and '/' vs. '\\' on Windows
+bool PathsEqual(const std::string &p1, const std::string &p2);
+
 // Check if one path is prefix of another
 // For example, "/tmp" is a prefix of "/tmp" and "/tmp/file" but not "/tmp2"
 // Ignores case differences and '/' vs. '\\' on Windows
 bool PathStartsWith(const std::string &path, const std::string &prefix);
+
+// If child is (as absolute path) inside parent (also as absolute path), returns
+// the part of child that is relative to parent.
+// Symlinks and "." and ".." components are removed.
+// If child and parent are (absolute) the same, the result is ".". (Otherwise it
+// never starts with '.'.)
+// Returns "" if child is not in parent, also returns "" on failure.
+std::string MakePathRelativeTo(const std::string &child, const std::string &parent);
 
 // Remove last path component and the dir delimiter before and/or after it.
 // If there's only one path component it will refuse to remove it (if absolute)

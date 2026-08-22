@@ -69,8 +69,7 @@ int LuaValueNoise::create_object(lua_State *L)
 
 int LuaValueNoise::gc_object(lua_State *L)
 {
-	LuaValueNoise *o = *(LuaValueNoise **)(lua_touserdata(L, 1));
-	delete o;
+	delete takeObjectForGC<LuaValueNoise>(L);
 	return 0;
 }
 
@@ -318,8 +317,7 @@ int LuaValueNoiseMap::create_object(lua_State *L)
 
 int LuaValueNoiseMap::gc_object(lua_State *L)
 {
-	LuaValueNoiseMap *o = *(LuaValueNoiseMap **)(lua_touserdata(L, 1));
-	delete o;
+	delete takeObjectForGC<LuaValueNoiseMap>(L);
 	return 0;
 }
 
@@ -436,8 +434,7 @@ int LuaPseudoRandom::create_object(lua_State *L)
 
 int LuaPseudoRandom::gc_object(lua_State *L)
 {
-	LuaPseudoRandom *o = *(LuaPseudoRandom **)(lua_touserdata(L, 1));
-	delete o;
+	delete takeObjectForGC<LuaPseudoRandom>(L);
 	return 0;
 }
 
@@ -549,8 +546,7 @@ int LuaPcgRandom::create_object(lua_State *L)
 
 int LuaPcgRandom::gc_object(lua_State *L)
 {
-	LuaPcgRandom *o = *(LuaPcgRandom **)(lua_touserdata(L, 1));
-	delete o;
+	delete takeObjectForGC<LuaPcgRandom>(L);
 	return 0;
 }
 
@@ -639,8 +635,7 @@ int LuaSecureRandom::create_object(lua_State *L)
 
 int LuaSecureRandom::gc_object(lua_State *L)
 {
-	LuaSecureRandom *o = *(LuaSecureRandom **)(lua_touserdata(L, 1));
-	delete o;
+	delete takeObjectForGC<LuaSecureRandom>(L);
 	return 0;
 }
 
