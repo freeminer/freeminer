@@ -286,7 +286,7 @@ void ScriptApiNode::node_on_activate(v3pos_t p, MapNode node)
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
-	auto *ndef = getServer()->ndef();
+	auto *ndef = getGameDef()->ndef();
 
 	// Push callback function on stack
 	if(!getItemCallback(ndef->get(node).name.c_str(), "on_activate"))
@@ -305,7 +305,7 @@ void ScriptApiNode::node_on_deactivate(v3pos_t p, MapNode node)
 
 	int error_handler = PUSH_ERROR_HANDLER(L);
 
-	auto *ndef = getServer()->ndef();
+	auto *ndef = getGameDef()->ndef();
 
 	// Push callback function on stack
 	if(!getItemCallback(ndef->get(node).name.c_str(), "on_deactivate"))

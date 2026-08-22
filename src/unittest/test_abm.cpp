@@ -80,7 +80,7 @@ content_t register_node(MockServer &server, const std::string &name)
 
 	ContentFeatures features;
 	features.name = name;
-	return nodedef->set(name, features);
+	return nodedef->set(name, std::move(features));
 }
 
 void TestABM::runTests(IGameDef *gamedef)
