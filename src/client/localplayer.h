@@ -185,7 +185,7 @@ private:
 			std::vector<CollisionInfo> *collision_info);
 	void handleAutojump(f32 dtime, Environment *env,
 		const CollisionMoveResult &result,
-		v3opos_t position_before_move, v3f speed_before_move);
+	    v3opos_t position_before_move, v3f speed_before_move);
 
 	v3opos_t m_position;
 	v3pos_t m_standing_node;

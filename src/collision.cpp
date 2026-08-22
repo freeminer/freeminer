@@ -374,26 +374,28 @@ static void add_object_boxes(Environment *env,
 	}
 }
 
-template <float v3f::*AX>
-inline void collide_with(const aabb3f &box_mov, const aabb3f &box_stat,
-	v3f *pos_f, v3f *speed_f, v3f *accel_f, const v3f &aspeed_f, float bounce)
+template <CollisionAxis Axis>
+inline void collide_with(const aabb3f &box_mov, const aabb3o &box_stat,
+	v3opos_t *pos_f, v3f *speed_f, v3f *accel_f, const v3f &aspeed_f, float bounce)
 {
-	const float speed = aspeed_f.*AX;
+	static_assert(Axis >= COLLISION_AXIS_X && Axis <= COLLISION_AXIS_Z);
+	constexpr u32 i = static_cast<u32>(Axis);
+	const float speed = aspeed_f[i];
 
 	if (speed) {
 		// Set the position along the axis of collision to exactly where the box collided.
 		// This gets rid of nasty floating point errors introduced by calculating
 		// the collision position based on 'nearest_dtime' and average velocity.
-		pos_f->*AX = speed < 0.0f
-			? (box_stat.MaxEdge.*AX - box_mov.MinEdge.*AX)
-			: (box_stat.MinEdge.*AX - box_mov.MaxEdge.*AX);
+		(*pos_f)[i] = speed < 0.0f
+			? box_stat.MaxEdge[i] - static_cast<opos_t>(box_mov.MinEdge[i])
+			: box_stat.MinEdge[i] - static_cast<opos_t>(box_mov.MaxEdge[i]);
 	}
 
 	if (bounce < -1e-4f && fabsf(speed) > BS * 3.0f) {
-		speed_f->*AX *= bounce;
+		(*speed_f)[i] *= bounce;
 	} else {
-		speed_f->*AX = 0;
-		accel_f->*AX = 0; // avoid colliding in the next iterations
+		(*speed_f)[i] = 0;
+		(*accel_f)[i] = 0; // avoid colliding in the next iterations
 	}
 }
 
@@ -573,9 +575,9 @@ CollisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			// Special case: Handle stairs
 			nearest_info.is_step_up = true;
 		} else if (nearest_collided == COLLISION_AXIS_X) {
-			collide_with<&v3opos_t::X>(box_0, cbox, pos_f, speed_f, &accel_f, aspeed_f, bounce);
+			collide_with<COLLISION_AXIS_X>(box_0, cbox, pos_f, speed_f, &accel_f, aspeed_f, bounce);
 		} else if (nearest_collided == COLLISION_AXIS_Y) {
-			collide_with<&v3opos_t::Y>(box_0, cbox, pos_f, speed_f, &accel_f, aspeed_f, bounce);
+			collide_with<COLLISION_AXIS_Y>(box_0, cbox, pos_f, speed_f, &accel_f, aspeed_f, bounce);
 
 			if (accel_f.Y == 0 && aspeed_f.Y < 0.0f) {
 				// Collided with ground. Update relevant variables.
@@ -584,7 +586,7 @@ CollisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			}
 		} else {
 			assert(nearest_collided == COLLISION_AXIS_Z);
-			collide_with<&v3opos_t::Z>(box_0, cbox, pos_f, speed_f, &accel_f, aspeed_f, bounce);
+			collide_with<COLLISION_AXIS_Z>(box_0, cbox, pos_f, speed_f, &accel_f, aspeed_f, bounce);
 		}
 
 		if (!nearest_info.is_unloaded && !step_up) {
@@ -611,7 +613,7 @@ CollisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	/*
 		Final touches: Step up stairs and ground detection (compat).
 	*/
-	auto mbox = box_0;
+	aabb3o mbox(ToOpos(box_0));
 	mbox.MinEdge += *pos_f;
 	mbox.MaxEdge += *pos_f;
 	for (const auto &box_info : cinfo) {
