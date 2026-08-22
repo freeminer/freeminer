@@ -6,18 +6,21 @@
 #include "networkpacket.h"
 #include <memory>
 #include <sstream>
+#include <string_view>
 #include "util/serialize.h"
 #include "networkprotocol.h"
 
-void NetworkPacket::checkReadOffset(u32 from_offset, u32 field_size) const
+u32 NetworkPacket::checkReadOffset(u32 from_offset, u32 field_size) const
 {
-	if (from_offset + field_size > m_datasize) {
+	u32 sum = from_offset + field_size;
+	if (sum > m_datasize || sum < field_size /* overflow? */) {
 		std::ostringstream ss;
 		ss << "Reading outside packet: cmd=" << getCommand()
 			<< " offset=" << from_offset
 			<< " size=" << getSize();
 		throw PacketError(ss.str());
 	}
+	return sum;
 }
 
 void NetworkPacket::putRawPacket(const u8 *data, u32 datasize, session_t peer_id)
@@ -36,7 +39,7 @@ void NetworkPacket::putRawPacket(const u8 *data, u32 datasize, session_t peer_id
 
 	m_data.resize(m_datasize);
 
-	// split command and datas
+	// split command and data
 	m_command = readU16(&data[0]);
 	if (m_datasize > 0)
 #if MINETEST_PROTO
@@ -55,17 +58,13 @@ void NetworkPacket::clear()
 	m_peer_id = 0;
 }
 
-const char* NetworkPacket::getString(u32 from_offset) const
+std::string_view NetworkPacket::getRemainingNoCopy() const
 {
-	checkReadOffset(from_offset, 0);
+	size_t len = getRemainingBytes();
+	if (len == 0)
+		return "";
 
-	return reinterpret_cast<const char*>(&m_data[from_offset]);
-}
-
-void NetworkPacket::skip(u32 count)
-{
-	checkReadOffset(m_read_offset, count);
-	m_read_offset += count;
+	return std::string_view(reinterpret_cast<const char*>(&m_data[m_read_offset]), len);
 }
 
 void NetworkPacket::putRawString(const char* src, u32 len)
@@ -594,9 +593,9 @@ Buffer<u8> NetworkPacket::oldForgePacket()
 }
 
 //freeminer:
-bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg) {
+bool parse_msgpack_packet(const std::string_view &data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg) {
 	try {
-		msgpack::unpack(msg, data, datasize);
+		msgpack::unpack(msg, data.data(), datasize);
 		msgpack::object obj = msg.get();
 
 /* todo: msgpack2+ ?
@@ -626,7 +625,7 @@ bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet,
 }
 
 int NetworkPacket::packet_unpack() {
-	auto datasize = getSize();
+	const auto datasize = getSize();
 
 	if(datasize < 2)
 		return 0;
@@ -636,13 +635,15 @@ int NetworkPacket::packet_unpack() {
 		packet = std::make_unique<MsgpackPacketSafe>();
 	if (!packet_unpacked)
 		packet_unpacked = std::make_unique<msgpack::unpacked>();
-	if (!parse_msgpack_packet(getString(
+	//if (!parse_msgpack_packet(getString(
+	if (!parse_msgpack_packet(getRemainingNoCopy().substr(
+	
 #if MINETEST_PROTO
 									  4
 #else
 									  0
 #endif
-									  ),
+									  ).data(),
 				datasize, packet.get(), &command, *packet_unpacked.get())) {
 		// verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<"
 		// (peer_id="<<peer_id<<") size="<<datasize<<std::endl;

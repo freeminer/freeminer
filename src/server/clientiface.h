@@ -48,7 +48,7 @@ class ServerEnvironment;
       |    Created      |
       |                 |
       \-----------------/
-               |                  depending of the incoming packet
+               |                  depending on the incoming packet
                ----------------------------------------
                                                       v
                                        +-----------------------------+

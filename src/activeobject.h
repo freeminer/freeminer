@@ -10,6 +10,7 @@
 #include <optional>
 #include <quaternion.h>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 
@@ -43,6 +44,8 @@ struct ActiveObjectMessage
 		, skip_by_pos(skip_by_pos_)
 	{}
 
+	void appendTo(std::string &data) const;
+
 	u16 id;
 	bool reliable;
 	std::string datastring;
@@ -50,7 +53,7 @@ struct ActiveObjectMessage
 	std::optional<v3opos_t> skip_by_pos; 
 };
 
-enum ActiveObjectCommand {
+enum ActiveObjectCommand : u8 {
 	AO_CMD_SET_PROPERTIES,
 	AO_CMD_UPDATE_POSITION,
 	AO_CMD_SET_TEXTURE_MOD,
@@ -64,7 +67,11 @@ enum ActiveObjectCommand {
 	AO_CMD_OBSOLETE1,
 	// ^ UPDATE_NAMETAG_ATTRIBUTES deprecated since 0.4.14, removed in 5.3.0
 	AO_CMD_SPAWN_INFANT,
-	AO_CMD_SET_ANIMATION_SPEED
+	AO_CMD_SET_ANIMATION_SPEED,
+	// >= 5.17.0-dev
+	AO_CMD_STOP_ANIMATION,
+	// When adding new commands, update Server::AsyncRunStep()
+	// to drop newer commands for older clients
 };
 
 struct BoneOverride
@@ -211,7 +218,7 @@ public:
 		setAttachment(0, "", v3f(), v3f(), false);
 	}
 
-	// To be be called from setAttachment() and descendants, but not manually!
+	// To be called from setAttachment() and descendants, but not manually!
 	virtual void addAttachmentChild(object_t child_id) {}
 	virtual void removeAttachmentChild(object_t child_id) {}
 

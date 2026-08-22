@@ -6,6 +6,7 @@
 #include "common/c_converter.h"
 #include "common/c_content.h"
 #include "lua_api/l_http.h"
+#include "cpp_api/s_base.h"
 #include "cpp_api/s_security.h"
 #include "util/enum_string.h"
 #include "httpfetch.h"
@@ -151,8 +152,12 @@ int ModApiHttp::l_request_http_api(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 
-	// Builtin code is trusted and may use HTTP without being listed as a mod.
-	if (ScriptApiSecurity::getCurrentModName(L) != BUILTIN_MOD_NAME &&
+	// getCurrentModName() deliberately returns empty for nested Lua stacks, including
+	// builtin/game/init.lua -> dofile("geo.lua").  Comparing the registry-backed
+	// value specifically against BUILTIN_MOD_NAME is documented as non-spoofable.
+	const bool is_builtin =
+			ScriptApiBase::getCurrentModNameInsecure(L) == BUILTIN_MOD_NAME;
+	if (!is_builtin &&
 			!ScriptApiSecurity::checkWhitelisted(L, "secure.http_mods") &&
 			!ScriptApiSecurity::checkWhitelisted(L, "secure.trusted_mods")) {
 		lua_pushnil(L);

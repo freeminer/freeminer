@@ -129,7 +129,7 @@ public:
 		const auto heat = map->updateBlockHeat(env, p);
 		// heater = rare
 		const auto c_top = map->getNodeTry(p - v3pos_t(0, -1, 0)).getContent(); // top
-		const auto nndef = ndef->get(n);
+		const auto &nndef = ndef->get(n);
 		// more chance to freeze if air at top
 		bool top_liquid = nndef.liquid_type > LIQUID_NONE && p.Y > water_level;
 		int freeze = ((ItemGroupList)nndef.groups)["freeze"];

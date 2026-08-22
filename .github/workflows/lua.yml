@@ -21,7 +21,7 @@ jobs:
     name: "Compile and run multiplayer tests"
     runs-on: ubuntu-24.04
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: recursive
         fetch-depth: 10
@@ -52,11 +52,11 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         submodules: recursive
         fetch-depth: 10
-    - uses: leafo/gh-actions-lua@v12
+    - uses: leafo/gh-actions-lua@v13
       with:
         luaVersion: "5.1.5"
     - uses: leafo/gh-actions-luarocks@v6

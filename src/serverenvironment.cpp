@@ -820,7 +820,8 @@ u8 ServerEnvironment::findSunlight(v3pos_t pos) const
 			MapNode node = m_map->getNode(neighborPos, &is_position_ok);
 			if (!is_position_ok) {
 				// This happens very rarely because the map at currentPos is loaded
-				m_map->emergeBlock(getNodeBlockPos(neighborPos), false);
+				auto blockpos = getNodeBlockPos(neighborPos);
+				m_map->emergeBlock(blockpos, false);
 				node = m_map->getNode(neighborPos, &is_position_ok);
 				if (!is_position_ok)
 					continue; // not generated
@@ -872,14 +873,9 @@ void ServerEnvironment::clearObjects(ClearObjectsMode mode)
 		deleteStaticFromBlock(obj.get(), id, MOD_REASON_CLEAR_ALL_OBJECTS, true);
 		obj->markForRemoval();
 
-		// If known by some client, don't delete immediately
-		if (obj->m_known_by_count > 0)
-			return false;
-
-		processActiveObjectRemove(obj);
-
-		// Delete active object
-		return true;
+		// Let the next server step delete it when it's safe to do so.
+		// (we might be here from inside a Lua callback)
+		return false;
 	};
 
 	m_ao_manager.clearIf(cb_removal);
@@ -2366,6 +2362,9 @@ AuthDatabase *ServerEnvironment::openAuthDatabase(
 
 	if (name == "files")
 		return new AuthDatabaseFiles(savedir);
+
+	if (name == "dummy")
+		return new AuthDatabaseDummy();
 
 #if USE_LEVELDB
 	if (name == "leveldb")

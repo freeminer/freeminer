@@ -155,12 +155,13 @@ void main(void)
 #endif
 	varTexCoord = inTexCoord0.st;
 
-	float disp_x;
-	float disp_z;
+	vec4 wpos = mWorld * inVertexPosition;
 // OpenGL < 4.3 does not support continued preprocessor lines
 #if (MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES) || (MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS && ENABLE_WAVING_PLANTS)
-	vec4 pos2 = mWorld * inVertexPosition;
-	float tOffset = (pos2.x + pos2.y) * 0.001 + pos2.z * 0.002;
+	float disp_x;
+	float disp_z;
+
+	float tOffset = (wpos.x + wpos.y) * 0.001 + wpos.z * 0.002;
 	disp_x = (smoothTriangleWave(animationTimer * 23.0 + tOffset) +
 		smoothTriangleWave(animationTimer * 11.0 + tOffset)) * 0.4;
 	disp_z = (smoothTriangleWave(animationTimer * 31.0 + tOffset) +
@@ -170,6 +171,7 @@ void main(void)
 
 	vec4 pos = inVertexPosition;
 #if MATERIAL_WAVING_LIQUID && ENABLE_WAVING_WATER
+/*
 	// Keep the animated surface continuous. Scrolling value noise makes
 	// individual vertices move like a sawtooth when crossing lattice cells.
 	vec3 wavePos = (mWorld * pos).xyz;
@@ -187,6 +189,17 @@ void main(void)
 		0.20 * sin(tau * ((wavePos.x + wavePos.z) /
 			(WATER_WAVE_LENGTH * 3.0) + waveTime * 1.31));
 	pos.y += (wave - 1.0) * WATER_WAVE_HEIGHT * 2.5;
+*/
+	// Generate waves with Perlin-type noise.
+	// The constants are calibrated such that they roughly
+	// correspond to the old sine waves.
+	vec3 wavePos = wpos.xyz + cameraOffset;
+	// The waves are slightly compressed along the z-axis to get
+	// wave-fronts along the x-axis.
+	wavePos.x /= WATER_WAVE_LENGTH * 3.0;
+	wavePos.z /= WATER_WAVE_LENGTH * 2.0;
+	wavePos.z += animationTimer * WATER_WAVE_SPEED * 10.0;
+	pos.y += (snoise(wavePos) - 1.0) * WATER_WAVE_HEIGHT * 5.0;
 #elif MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES && ENABLE_WAVING_LEAVES
 	pos.x += disp_x;
 	pos.y += disp_z * 0.1;
@@ -198,6 +211,11 @@ void main(void)
 		pos.z += disp_z;
 	}
 #endif
+#if MATERIAL_TYPE == TILE_MATERIAL_WAVING_LEAVES || MATERIAL_TYPE == TILE_MATERIAL_WAVING_PLANTS
+	// Prevent z-fighting of oversized plants
+	pos.z += fract(wpos.y * 0.1) * 0.1;
+#endif
+
 	worldPosition = (mWorld * pos).xyz;
 	gl_Position = mWorldViewProj * pos;
 

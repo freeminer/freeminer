@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <mutex>
 #include "database.h"
 #include "irrlichttypes.h"
 #include "threading/concurrent_map.h"
@@ -30,7 +31,7 @@ public:
 			const std::string &key, std::string *value);
 	bool hasModEntry(const std::string &modname, const std::string &key);
 	bool setModEntry(const std::string &modname,
-			const std::string &key,std::string_view value);
+			const std::string &key, std::string_view value);
 	bool removeModEntry(const std::string &modname, const std::string &key);
 	bool removeModEntries(const std::string &modname);
 	void listMods(std::vector<std::string> *res);
@@ -39,7 +40,32 @@ public:
 	void endSave() {}
 
 private:
-	concurrent_map<std::string, std::string> m_database;
+	// We could have used 3 mutexes, one per container, but as it's only for testing purposes, one mutex is enough.
+	std::mutex m_mutex;
+	std::map<std::string, std::string> m_database;
 	std::set<std::string> m_player_database;
 	std::unordered_map<std::string, StringMap> m_mod_storage_database;
+};
+
+/*
+ * Auth: kept here for completeness, declared alongside the other in-memory
+ * backends.
+ */
+class AuthDatabaseDummy : public AuthDatabase
+{
+public:
+	AuthDatabaseDummy() = default;
+	virtual ~AuthDatabaseDummy() = default;
+
+	virtual bool getAuth(const std::string &name, AuthEntry &res);
+	virtual bool saveAuth(const AuthEntry &authEntry);
+	virtual bool createAuth(AuthEntry &authEntry);
+	virtual bool deleteAuth(const std::string &name);
+	virtual void listNames(std::vector<std::string> &res);
+	virtual void reload();
+
+private:
+	std::mutex m_mutex;
+	std::unordered_map<std::string, AuthEntry> m_auth_entries;
+	u64 m_next_id = 1;
 };

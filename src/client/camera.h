@@ -256,7 +256,7 @@ private:
 
 
 // fm:
-	u8 m_wieldlight = 0;
+	//u8 m_wieldlight = 0;
 	u8 m_wieldlight_add = 0;
 	bool m_cache_movement_fov = false;
 	f32 m_cache_wanted_fps = 30;

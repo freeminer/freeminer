@@ -21,7 +21,9 @@ public:
 	void runTests(IGameDef *gamedef);
 
 	void testIsDirDelimiter();
+	void testPathsEqual();
 	void testPathStartsWith();
+	void testMakePathRelativeTo();
 	void testRemoveLastPathComponent();
 	void testRemoveLastPathComponentWithTrailingDelimiter();
 	void testRemoveRelativePathComponent();
@@ -38,7 +40,9 @@ static TestFileSys g_test_instance;
 void TestFileSys::runTests(IGameDef *gamedef)
 {
 	TEST(testIsDirDelimiter);
+	TEST(testPathsEqual);
 	TEST(testPathStartsWith);
+	TEST(testMakePathRelativeTo);
 	TEST(testRemoveLastPathComponent);
 	TEST(testRemoveLastPathComponentWithTrailingDelimiter);
 	TEST(testRemoveRelativePathComponent);
@@ -85,6 +89,54 @@ void TestFileSys::testIsDirDelimiter()
 	UASSERT(fs::IsDirDelimiter('A') == false);
 	UASSERT(fs::IsDirDelimiter(0) == false);
 	UASSERT(fs::IsDirDelimiter('\\') == win32);
+
+	UASSERT(my_tolower(DIR_DELIM_CHAR) == DIR_DELIM_CHAR);
+	for (int c = 0; c < 256; c++) {
+		if (c == DIR_DELIM_CHAR)
+			continue;
+		UASSERT(my_tolower((char)c) != DIR_DELIM_CHAR); // this would be very funny
+	}
+}
+
+
+void TestFileSys::testPathsEqual()
+{
+	const int numpaths = 6;
+	std::string paths[numpaths] = {
+		"",
+		p("/"),
+		p("/home/user/luanti"),
+		p("/home/user/LUANTI"),
+		p("//home//user//luanti"),
+		p("/home/user/luanti/"),
+	};
+	/*
+		expected fs::PathsEqual results
+		0 = returns false
+		1 = returns true
+		4 = returns true only when FILESYS_CASE_INSENSITIVE
+	*/
+	u8 expected_results[numpaths][numpaths] = {
+		{1,0,0,0,0,0},
+		{0,1,0,0,0,0},
+		{0,0,1,4,1,1},
+		{0,0,4,1,4,4},
+		{0,0,1,4,1,1},
+		{0,0,1,4,1,1},
+	};
+
+	for (int i = 0; i < numpaths; i++)
+	for (int j = 0; j < numpaths; j++){
+		bool equal = fs::PathsEqual(paths[i], paths[j]);
+		int expected = expected_results[i][j];
+		if(expected == 0){
+			UASSERT(equal == false);
+		} else if(expected == 1) {
+			UASSERT(equal == true);
+		} else  if(expected == 4) {
+			UASSERT(equal == (bool)FILESYS_CASE_INSENSITIVE);
+		}
+	}
 }
 
 
@@ -112,10 +164,9 @@ void TestFileSys::testPathStartsWith()
 		1 = returns true
 		2 = returns false on windows, true elsewhere
 		3 = returns true on windows, false elsewhere
-		4 = returns true if and only if
-			FILESYS_CASE_INSENSITIVE is true
+		4 = returns true only when FILESYS_CASE_INSENSITIVE
 	*/
-	int expected_results[numpaths][numpaths] = {
+	u8 expected_results[numpaths][numpaths] = {
 		{1,2,0,0,0,0,0,0,0,0,0,0},
 		{0,1,0,0,0,0,0,0,0,0,0,0},
 		{0,1,1,0,0,0,0,0,0,0,0,0},
@@ -146,6 +197,65 @@ void TestFileSys::testPathStartsWith()
 			UASSERT(starts == (bool)FILESYS_CASE_INSENSITIVE);
 		}
 	}
+}
+
+
+void TestFileSys::testMakePathRelativeTo()
+{
+	const auto dir_path = getTestTempDirectory() + DIR_DELIM "testMakePathRelativeToTestDir";
+	UASSERT(fs::CreateAllDirs(dir_path));
+
+	std::string dirs[] = {
+		dir_path + DIR_DELIM "d1",
+		dir_path + DIR_DELIM "d1" DIR_DELIM "d2",
+		dir_path + DIR_DELIM "_d3",
+		dir_path + DIR_DELIM "d12",
+		dir_path + DIR_DELIM "d22",
+	};
+	std::string files[] = {
+		dirs[0] + DIR_DELIM "f1",
+		dirs[1] + DIR_DELIM "f2",
+		dirs[0] + DIR_DELIM ".f3",
+	};
+
+	for (auto &it : dirs)
+		fs::CreateDir(it);
+	for (auto &it : files)
+		open_ofstream(it.c_str(), false).close();
+
+	auto rel = [&](auto &&child, auto &&parent) {
+		return fs::MakePathRelativeTo(
+				dir_path + DIR_DELIM + p(child),
+				dir_path + DIR_DELIM + p(parent)
+			);
+	};
+
+	UASSERTEQ(auto, rel("", ""), p("."));
+	UASSERTEQ(auto, rel(".", ""), p("."));
+	UASSERTEQ(auto, rel("./.", ""), p("."));
+	UASSERTEQ(auto, rel("d1", ""), p("d1"));
+	UASSERTEQ(auto, rel("d1/", ""), p("d1"));
+	UASSERTEQ(auto, rel("d1/d2", ""), p("d1/d2"));
+	UASSERTEQ(auto, rel("d1///d2/", ""), p("d1/d2"));
+	UASSERTEQ(auto, rel("_d3", ""), p("_d3"));
+	UASSERTEQ(auto, rel("d12", ""), p("d12"));
+	UASSERTEQ(auto, rel("d22", ""), p("d22"));
+	UASSERTEQ(auto, rel("non_existent", ""), p("non_existent"));
+	UASSERTEQ(auto, rel("d22/non_existent", ""), p("d22/non_existent"));
+	UASSERTEQ(auto, rel("non_existent/non_existent", ""), p("non_existent/non_existent"));
+	UASSERTEQ(auto, rel("d1/f1", ""), p("d1/f1"));
+
+	UASSERTEQ(auto, rel("", "."), p("."));
+	UASSERTEQ(auto, rel(".", ""), p("."));
+	UASSERTEQ(auto, rel(".", "."), p("."));
+	UASSERTEQ(auto, rel("d1", "."), p("d1"));
+	UASSERTEQ(auto, rel("d1", "d1"), p("."));
+	UASSERTEQ(auto, rel("d1/", "d1"), p("."));
+	UASSERTEQ(auto, rel("d1", "d1/."), p("."));
+	UASSERTEQ(auto, rel("d1/./d2", "d1/."), p("d2"));
+	UASSERTEQ(auto, rel("d1/..", "d1"), "");
+	UASSERTEQ(auto, rel("d1/../d12", "d1"), "");
+	UASSERTEQ(auto, rel("d1/../d1/d2/", "d1"), p("d2"));
 }
 
 
@@ -279,6 +389,9 @@ void TestFileSys::testAbsolutePath()
 		fs::CreateDir(dir_path2);
 		UASSERTCMP(auto, !=, fs::AbsolutePath(dir_path2), ""); // now it does
 		UASSERTEQ(auto, fs::AbsolutePath(dir_path2 + DIR_DELIM ".."), fs::AbsolutePath(dir_path));
+		// excess . and / are removed
+		UASSERTEQ(auto, fs::AbsolutePath(dir_path2 + p("//..")), fs::AbsolutePath(dir_path));
+		UASSERTEQ(auto, fs::AbsolutePath(dir_path2 + p("/./.././//")), fs::AbsolutePath(dir_path));
 	}
 
 	/* AbsolutePathPartial */

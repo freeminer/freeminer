@@ -520,7 +520,7 @@ void Mapgen::lightSpread(VoxelArea &a, std::queue<std::pair<v3pos_t, u8>> &queue
 	if (light_night > 0x10)
 		light_night -= 0x10;
 
-	// Bail out only if we have no more light from either bank to propogate, or
+	// Bail out only if we have no more light from either bank to propagate, or
 	// we hit a solid block that light cannot pass through.
 	if ((light_day  <= (n.param1 & 0x0F) &&
 			light_night <= (n.param1 & 0xF0)) ||

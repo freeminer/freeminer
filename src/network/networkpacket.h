@@ -62,13 +62,17 @@ public:
 	u32 getRemainingBytes() const { return m_datasize - m_read_offset; }
 	inline bool hasRemainingBytes() const { return getRemainingBytes() != 0; }
 
-	// Returns a pointer to buffer data.
-	// A better name for this would be getRawString()
-	const char *getString(u32 from_offset) const;
-	const char *getRemainingString() const { return getString(m_read_offset); }
+	//! Does not advance the data read offset!
+	std::string_view getRemainingNoCopy() const;
 
 	// Perform length check and skip ahead by `count` bytes.
-	void skip(u32 count);
+	inline void skip(u32 count) {
+		m_read_offset = checkReadOffset(m_read_offset, count);
+	}
+	//! Sets the read OR write offset (context-dependent)
+	inline void seek(u32 position) {
+		m_read_offset = checkReadOffset(position, 0);
+	}
 
 	// Appends bytes from string buffer to packet
 	void putRawString(const char *src, u32 len);
@@ -180,7 +184,8 @@ public:
 	Buffer<u8> oldForgePacket();
 
 private:
-	void checkReadOffset(u32 from_offset, u32 field_size) const;
+	/// Returns `from_offset + field_size` on success
+	u32 checkReadOffset(u32 from_offset, u32 field_size) const;
 
 	// resize data buffer for writing
 	inline void checkDataSize(u32 field_size)
@@ -208,4 +213,4 @@ private:
 	u16 m_proto_ver = 0;
 };
 
-bool parse_msgpack_packet(const char *data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);
+bool parse_msgpack_packet(const std::string_view &data, u32 datasize, MsgpackPacket *packet, int *command, msgpack::unpacked &msg);

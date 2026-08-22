@@ -499,7 +499,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 	}
 	if (!m_key_value_storage.contains(name)) {
 		m_key_value_storage.emplace(std::piecewise_construct, std::forward_as_tuple(name),
-				std::forward_as_tuple(getGameDef()->m_path_world, name));
+				std::forward_as_tuple(getServer()->m_path_world, name));
 	}
 	return m_key_value_storage.at(name);
 }
@@ -735,7 +735,6 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 
 	NetworkPacket pkt(TOCLIENT_BLOCKDATA_FM, buffer.size(), peer_id);
 	pkt.putLongString({buffer.data(), buffer.size()});
-	auto s = std::string{pkt.getString(0), pkt.getSize()};
 	Send(&pkt);
 }
 

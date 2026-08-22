@@ -9,7 +9,6 @@
 #include "serverenvironment.h"
 #include "map.h"
 #include "mapblock.h"
-#include "server.h"
 
 /*
 	NodeMetaRef

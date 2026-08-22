@@ -409,12 +409,8 @@ ContentFeatures::ContentFeatures()
 	reset();
 }
 
-ContentFeatures::~ContentFeatures()
-{
-#if CHECK_CLIENT_BUILD()
-	delete visuals;
-#endif
-}
+// Defined here, since NodeVisuals is not a complete type in the header
+ContentFeatures::~ContentFeatures() = default;
 
 void ContentFeatures::reset()
 {
@@ -947,10 +943,10 @@ void NodeDefManager::clear()
 			f.tiledef[t].name = "unknown_node.png";
 		// Insert directly into containers
 		content_t c = CONTENT_UNKNOWN;
-		m_content_features[c] = f;
 		for (u32 ci = 0; ci <= CONTENT_MAX; ci++)
 			m_content_lighting_flag_cache[ci] = f.getLightingFlags();
 		addNameIdMapping(c, f.name);
+		m_content_features[c] = std::move(f);
 	}
 
 	// Set CONTENT_AIR
@@ -972,9 +968,9 @@ void NodeDefManager::clear()
 //#endif
 		// Insert directly into containers
 		content_t c = CONTENT_AIR;
-		m_content_features[c] = f;
 		m_content_lighting_flag_cache[c] = f.getLightingFlags();
 		addNameIdMapping(c, f.name);
+		m_content_features[c] = std::move(f);
 	}
 
 	// Set CONTENT_IGNORE
@@ -995,12 +991,11 @@ void NodeDefManager::clear()
 //#endif
 		// Insert directly into containers
 		content_t c = CONTENT_IGNORE;
-		m_content_features[c] = f;
 		m_content_lighting_flag_cache[c] = f.getLightingFlags();
 		addNameIdMapping(c, f.name);
-		// mtproto: 0 must be ignore always
+		// mtproto: 0 must be ignored always
 		if (c)
-			m_content_features[0] = f;
+		m_content_features[c] = std::move(f);
 	}
 }
 
@@ -1252,7 +1247,7 @@ void NodeDefManager::eraseIdFromGroups(content_t id)
 
 
 // IWritableNodeDefManager
-content_t NodeDefManager::set(const std::string &name, const ContentFeatures &def)
+content_t NodeDefManager::set(const std::string &name, ContentFeatures &&def)
 {
 	// Pre-conditions
 /*
@@ -1260,10 +1255,6 @@ content_t NodeDefManager::set(const std::string &name, const ContentFeatures &de
 	assert(name != "ignore");
 	assert(name == def.name);
 */
-#if CHECK_CLIENT_BUILD()
-	// The ContentFeatures default copy constructor is only valid if visuals is null
-	assert(!def.visuals);
-#endif
 
 	content_t id = CONTENT_IGNORE;
 
@@ -1286,17 +1277,19 @@ content_t NodeDefManager::set(const std::string &name, const ContentFeatures &de
 	// Clear old groups in case of re-registration
 	eraseIdFromGroups(id);
 
-	m_content_features[id] = def;
-	m_content_features[id].floats = itemgroup_get(def.groups, "float") != 0;
-	m_content_lighting_flag_cache[id] = def.getLightingFlags();
-	verbosestream << "NodeDefManager: registering content id " << id
-		<< ": name=\"" << def.name << "\"" << std::endl;
+	m_content_features[id] = std::move(def);
+	ContentFeatures &f = m_content_features[id];
 
-	getNodeBoxUnion(def.selection_box, def, &m_selection_box_union);
+	f.floats = itemgroup_get(f.groups, "float") != 0;
+	m_content_lighting_flag_cache[id] = f.getLightingFlags();
+	verbosestream << "NodeDefManager: registering content id " << id
+		<< ": name=\"" << f.name << "\"" << std::endl;
+
+	getNodeBoxUnion(f.selection_box, f, &m_selection_box_union);
 	fixSelectionBoxIntUnion();
 
 	// Add this content to the list of all groups it belongs to
-	for (const auto &group : def.groups) {
+	for (const auto &group : f.groups) {
 		const std::string &group_name = group.first;
 		m_group_to_items[group_name].push_back(id);
 	}
@@ -1311,7 +1304,7 @@ content_t NodeDefManager::allocateDummy(const std::string &name)
 		return CONTENT_IGNORE;
 	ContentFeatures f;
 	f.name = name;
-	return set(name, f);
+	return set(name, std::move(f));
 }
 
 
@@ -1440,14 +1433,15 @@ void NodeDefManager::deSerialize(std::istream &is, u16 protocol_version)
 
 	u16 count = readU16(is);
 	std::istringstream is2(deSerializeString32(is), std::ios::binary);
-	ContentFeatures f;
+	ContentFeatures new_f;
 	for (u16 n = 0; n < count; n++) {
 		u16 i = readU16(is2);
 
 		// Read it from the string wrapper
 		std::string wrapper = deSerializeString16(is2);
 		std::istringstream wrapper_is(wrapper, std::ios::binary);
-		f.deSerialize(wrapper_is, protocol_version);
+		ContentFeatures *f = &new_f;
+		f->deSerialize(wrapper_is, protocol_version);
 
 		// Check error conditions
 		if (i == CONTENT_IGNORE || i == CONTENT_AIR || i == CONTENT_UNKNOWN) {
@@ -1455,7 +1449,7 @@ void NodeDefManager::deSerialize(std::istream &is, u16 protocol_version)
 				"not changing builtin node " << i << std::endl;
 			continue;
 		}
-		if (f.name.empty()) {
+		if (f->name.empty()) {
 			warningstream << "NodeDefManager::deSerialize(): "
 				"received empty name" << std::endl;
 			continue;
@@ -1463,22 +1457,24 @@ void NodeDefManager::deSerialize(std::istream &is, u16 protocol_version)
 
 		// Ignore aliases
 		u16 existing_id;
-		if (m_name_id_mapping.getId(f.name, existing_id) && i != existing_id) {
+		if (m_name_id_mapping.getId(f->name, existing_id) && i != existing_id) {
 			warningstream << "NodeDefManager::deSerialize(): "
-				"already defined with different ID: " << f.name << std::endl;
+				"already defined with different ID: " << f->name << std::endl;
 			continue;
 		}
 
 		// All is ok, add node definition with the requested ID
 		if (i >= m_content_features.size())
 			m_content_features.resize((size_t)(i) + 1);
-		m_content_features[i] = f;
-		m_content_features[i].floats = itemgroup_get(f.groups, "float") != 0;
-		m_content_lighting_flag_cache[i] = f.getLightingFlags();
-		addNameIdMapping(i, f.name);
-		TRACESTREAM(<< "NodeDef: deserialized " << f.name << std::endl);
+		m_content_features[i] = std::move(*f);
+		f = &m_content_features[i];
 
-		getNodeBoxUnion(f.selection_box, f, &m_selection_box_union);
+		f->floats = itemgroup_get(f->groups, "float") != 0;
+		m_content_lighting_flag_cache[i] = f->getLightingFlags();
+		addNameIdMapping(i, f->name);
+		TRACESTREAM(<< "NodeDef: deserialized " << f->name << std::endl);
+
+		getNodeBoxUnion(f->selection_box, *f, &m_selection_box_union);
 		fixSelectionBoxIntUnion();
 	}
 
@@ -1508,10 +1504,11 @@ void NodeDefManager::msgpack_unpack(msgpack::object o)
 	std::map<int, ContentFeatures> unpacked_features;
 	o.convert(unpacked_features);
 
-	for (std::map<int, ContentFeatures>::iterator it = unpacked_features.begin();
+	ContentFeatures new_f;
+	for (auto it = unpacked_features.begin();
 			it != unpacked_features.end(); ++it) {
 		unsigned int i = it->first;
-		ContentFeatures f = it->second;
+		auto *f = &new_f;
 
 		if(i == CONTENT_IGNORE || i == CONTENT_AIR
 				|| i == CONTENT_UNKNOWN){
@@ -1520,26 +1517,26 @@ void NodeDefManager::msgpack_unpack(msgpack::object o)
 				<<std::endl;
 			continue;
 		}
-		if(f.name == ""){
+		if(f->name == ""){
 			infostream<<"NodeDefManager::deSerialize(): WARNING: "
 				<<"received empty name"<<std::endl;
 			continue;
 		}
 		u16 existing_id;
-		bool found = m_name_id_mapping.getId(f.name, existing_id);  // ignore aliases
+		bool found = m_name_id_mapping.getId(f->name, existing_id);  // ignore aliases
 		if(found && i != existing_id){
 			infostream<<"NodeDefManager::deSerialize(): WARNING: "
 				<<"already defined with different ID: "
-				<<f.name<<std::endl;
+				<<f->name<<std::endl;
 			continue;
 		}
 
 		// All is ok, add node definition with the requested ID
 		if(i >= m_content_features.size())
 			m_content_features.resize((u32)(i) + 1);
-		m_content_features[i] = f;
-		addNameIdMapping(i, f.name);
-		verbosestream<<"deserialized "<<f.name<<std::endl;
+		addNameIdMapping(i, f->name);
+		verbosestream<<"deserialized "<<f->name<<std::endl;
+		m_content_features[i] = std::move(*f);
 	}
 }
 

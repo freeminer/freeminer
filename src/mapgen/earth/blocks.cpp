@@ -1,5 +1,6 @@
 #include "arnis_adapter.h"
 #include "emerge.h"
+#include "log.h"
 
 #include <initializer_list>
 
@@ -340,7 +341,7 @@ void init(MapgenEarth *mg)
 		{
 			const auto id = mg->m_emerge->ndef->getId(name);
 			if (id == CONTENT_IGNORE) {
-				DUMP("Mapping node not found", name);
+				actionstream << "Mapping node not found" << name << "\n";
 				return fallback;
 			}
 			return id;
