@@ -101,47 +101,62 @@ std::atomic_bool g_sighup, g_siginfo;
 
 #if !defined(_WIN32) // POSIX
 
+// Used to silence compiler warnings about unused function results.
+// Note that static_cast<void>(...) does not suffice for the [warn_unused_result] attribute.
+template<typename... Args>
+static void ignore(Args &&...)
+{
+}
+
 static void signal_handler(int sig)
 {
-	switch(sig) {
 #if defined(SIGINFO)
-		case SIGINFO:
+		if (sig == SIGINFO) {
 			g_siginfo = true;
-		break;
+			return;
+		}
 #endif
-		case SIGHUP:
-			g_sighup = true;
-		break;
-		case SIGINT:
-		case SIGTERM:
+	if (sig == SIGHUP) {
+		g_sighup = true;
+		return;
+	}
 
 	if (!g_killed) {
 		g_killed = true;
 		if (sig == SIGINT) {
-			const char *dbg_text{"INFO: signal_handler(): "
-				"Ctrl-C pressed, shutting down.\n"};
-			write(STDERR_FILENO, dbg_text, strlen(dbg_text));
+			const char *dbg_text = "INFO: signal_handler(): "
+				"Ctrl-C pressed, shutting down.\n";
+			// Not much we can safely do in a signal handler so ignore failing writes
+			ignore(write(STDERR_FILENO, dbg_text, strlen(dbg_text)));
 		} else if (sig == SIGTERM) {
-			const char *dbg_text{"INFO: signal_handler(): "
-				"got SIGTERM, shutting down.\n"};
-			write(STDERR_FILENO, dbg_text, strlen(dbg_text));
+			const char *dbg_text = "INFO: signal_handler(): "
+				"got SIGTERM, shutting down.\n";
+			// Not much we can safely do in a signal handler so ignore failing writes
+			ignore(write(STDERR_FILENO, dbg_text, strlen(dbg_text)));
 		}
-	}
-
-		default:
+		// g_killed = true;
+	} else {
+		// If it happens again, defer to the default action.
 		(void)signal(sig, SIG_DFL);
 	}
-
 }
 
-void signal_handler_init(void)
+void signal_handler_init()
 {
 	g_sighup = false;
 	g_siginfo = false;
 
 	(void)signal(SIGINT, signal_handler);
 	(void)signal(SIGTERM, signal_handler);
-	(void)signal(SIGHUP, signal_handler);
+
+	/*
+	 * Writing to a closed pipe or socket must not kill the entire process.
+	 * Code should handle write failures directly where relevant.
+	 * If we're unlucky the user's desktop environment might even connect std::cout
+	 * to a closed pipe (see issue #17366) and there's nothing we can do about it...
+	 */
+	(void)signal(SIGPIPE, SIG_IGN);
+
 #if defined(SIGINFO)
 	(void)signal(SIGINFO, signal_handler);
 #endif
@@ -162,7 +177,8 @@ static BOOL WINAPI event_handler(DWORD sig)
 				" shutting down." << std::endl;
 			g_killed = true;
 		} else {
-			(void)signal(SIGINT, SIG_DFL);
+			// If it happens again, defer to the default action.
+			SetConsoleCtrlHandler(NULL, FALSE);
 		}
 		break;
 	case CTRL_BREAK_EVENT:
@@ -172,7 +188,7 @@ static BOOL WINAPI event_handler(DWORD sig)
 	return TRUE;
 }
 
-void signal_handler_init(void)
+void signal_handler_init()
 {
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)event_handler, TRUE);
 }
@@ -523,7 +539,7 @@ bool setSystemPaths()
 	// Use ".\bin\.."
 	path_share = exepath + "\\..";
 	if (detectMSVCBuildDir(exepath)) {
-		// The msvc build dir schould normaly not be present if properly installed,
+		// The msvc build dir should normally not be present if properly installed,
 		// but its useful for debugging.
 		path_share += DIR_DELIM "..";
 	}

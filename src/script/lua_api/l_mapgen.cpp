@@ -1181,7 +1181,7 @@ int ModApiMapgen::l_register_biome(lua_State *L)
 	int index = 1;
 	luaL_checktype(L, index, LUA_TTABLE);
 
-	const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
+	const NodeDefManager *ndef = getGameDef(L)->getNodeDefManager();
 	BiomeManager *bmgr = getServer(L)->getEmergeManager()->getWritableBiomeManager();
 
 	Biome *biome = read_biome_def(L, index, ndef);
@@ -1207,7 +1207,7 @@ int ModApiMapgen::l_register_decoration(lua_State *L)
 	int index = 1;
 	luaL_checktype(L, index, LUA_TTABLE);
 
-	const NodeDefManager *ndef      = getServer(L)->getNodeDefManager();
+	const NodeDefManager *ndef      = getGameDef(L)->getNodeDefManager();
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 	DecorationManager *decomgr = emerge->getWritableDecorationManager();
 	BiomeManager *biomemgr     = emerge->getWritableBiomeManager();
@@ -1382,7 +1382,7 @@ int ModApiMapgen::l_register_ore(lua_State *L)
 	int index = 1;
 	luaL_checktype(L, index, LUA_TTABLE);
 
-	const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
+	const NodeDefManager *ndef = getGameDef(L)->getNodeDefManager();
 	EmergeManager *emerge = getServer(L)->getEmergeManager();
 	BiomeManager *bmgr    = emerge->getWritableBiomeManager();
 	OreManager *oremgr    = emerge->getWritableOreManager();
@@ -1723,7 +1723,7 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 {
 	GET_ENV_PTR;
 
-	const NodeDefManager *ndef = getServer(L)->getNodeDefManager();
+	const NodeDefManager *ndef = getGameDef(L)->getNodeDefManager();
 
 	const char *filename = luaL_checkstring(L, 4);
 	CHECK_SECURE_PATH(L, filename, true);

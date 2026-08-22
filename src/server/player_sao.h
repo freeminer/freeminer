@@ -229,7 +229,7 @@ public:
 	std::atomic<f32> m_fov {0.0f};
 	std::atomic_short m_wanted_range {0};
 
-	bool m_camera_inverted = false; // this is not store in the player db
+	bool m_camera_inverted = false; // this is not stored in the player db
 
 	SimpleMetadata m_meta;
 

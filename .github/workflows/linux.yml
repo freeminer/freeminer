@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-22.04
     if: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 10
@@ -72,7 +72,7 @@ jobs:
   gcc_14:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 10
@@ -103,7 +103,7 @@ jobs:
     if: false
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 10
@@ -133,7 +133,7 @@ jobs:
   clang_20:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 10
@@ -167,7 +167,7 @@ jobs:
     name: "clang (with Prometheus, ARM64)"
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 10

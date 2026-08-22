@@ -96,6 +96,7 @@ MeshUpdateQueue::MeshUpdateQueue(Client *client):
 {
 	m_cache_smooth_lighting = g_settings->getBool("smooth_lighting");
 	m_cache_enable_water_reflections = g_settings->getBool("enable_water_reflections");
+	m_cache_enable_waving_water = g_settings->getBool("enable_waving_water");
 }
 
 MeshUpdateQueue::~MeshUpdateQueue()
@@ -273,7 +274,7 @@ void MeshUpdateQueue::fillDataFromMapBlocks(QueuedMeshUpdate *q)
 	data->m_generate_minimap = !!m_client->getMinimap();
 	data->m_smooth_lighting = m_cache_smooth_lighting;
 	data->m_enable_water_reflections = m_cache_enable_water_reflections;
-
+	data->m_enable_waving_water = m_cache_enable_waving_water;
 	data->range = getNodeBlockPos(floatToInt(m_client->m_env.getLocalPlayer()->getPosition(), BS)).getDistanceFrom(q->p);
 }
 

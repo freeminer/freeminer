@@ -4,6 +4,7 @@
 
 #include "server.h"
 
+#include "activeobject.h"
 #include "chat_interface.h"
 #include "chatmessage.h"
 #include "config.h"
@@ -1177,7 +1178,8 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 			std::string reliable_data, unreliable_data;
 #endif
 			const auto uptime = getUptime();
-			for (const auto &client : clients) {
+			for (const auto &client_it : clients) {
+				const auto &client = client_it.second;
 #if MINETEST_PROTO
 				reliable_data.clear();
 				unreliable_data.clear();
@@ -1186,35 +1188,37 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 				ActiveObjectMessages unreliable_data;
 #endif
 				//RemoteClient *client = client_it.second;
-				PlayerSAO *player = getPlayerSAO(client.second->peer_id);
+				PlayerSAO *player = getPlayerSAO(client->peer_id);
 				// Go through all objects in message buffer
 				for (const auto &buffered_message : buffered_messages) {
 					// If object does not exist or is not known by client, skip it
 					u16 id = buffered_message.first;
 					ServerActiveObject *sao = m_env->getActiveObject(id);
-					if (!sao || client.second->m_known_objects.find(id) == client.second->m_known_objects.end())
+					if (!sao || client->m_known_objects.find(id) == client->m_known_objects.end())
 						continue;
 
 					// Get message list of object
 					std::vector<ActiveObjectMessage>* list = buffered_message.second;
 					// Go through every message
 					for (const ActiveObjectMessage &aom : *list) {
+						const auto cmd = static_cast<ActiveObjectCommand>(aom.datastring[0]);
+
 						// Send position updates to players who do not see the attachment
-						if (aom.datastring[0] == AO_CMD_UPDATE_POSITION) {
+						if (cmd == AO_CMD_UPDATE_POSITION) {
 							if (sao->getId() == player->getId())
 								continue;
 
 							// Do not send position updates for attached players
 							// as long the parent is known to the client
 							ServerActiveObject *parent = sao->getParent();
-							if (parent && client.second->m_known_objects.find(parent->getId()) !=
-									client.second->m_known_objects.end())
+							if (parent && client->m_known_objects.find(parent->getId()) !=
+									client->m_known_objects.end())
 								continue;
 
 							// Limit position packets for far objects
 							constexpr static auto max_seconds_skip = 30;
 							auto &[last_time, last_dist] =
-									client.second->m_objects_last_pos_sent[id];
+									client->m_objects_last_pos_sent[id];
 						
 							if (aom.skip_by_pos && last_time && last_time + max_seconds_skip > uptime) {
 								int32_t dist = aom.skip_by_pos.value().getDistanceFrom(
@@ -1242,14 +1246,12 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 						}
 
 #if MINETEST_PROTO
+						if (cmd >= AO_CMD_STOP_ANIMATION && client->net_proto_version < 52)
+							continue; // AO_CMD_STOP_ANIMATION added in protocol version 52
+
 						// Add full new data to appropriate buffer
 						std::string &buffer = aom.reliable ? reliable_data : unreliable_data;
-						char idbuf[2];
-						writeU16((u8*) idbuf, aom.id);
-						// u16 id
-						// std::string data
-						buffer.append(idbuf, sizeof(idbuf));
-						buffer.append(serializeString16(aom.datastring));
+						aom.appendTo(buffer);
 #else
 					if(aom.reliable)
 						reliable_data.push_back(make_pair(aom.id, aom.datastring));
@@ -1263,11 +1265,11 @@ void Server::AsyncRunStep(float dtime, bool initial_step)
 					Send them.
 				*/
 				if (!reliable_data.empty()) {
-					SendActiveObjectMessages(client.second->peer_id, reliable_data);
+					SendActiveObjectMessages(client->peer_id, reliable_data);
 				}
 
 				if (!unreliable_data.empty()) {
-					SendActiveObjectMessages(client.second->peer_id, unreliable_data, false);
+					SendActiveObjectMessages(client->peer_id, unreliable_data, false);
 				}
 			}
 		}
@@ -1599,7 +1601,7 @@ PlayerSAO *Server::StageTwoClientInit(session_t peer_id)
 	m_env->addPlayer(player);
 
 	/* Clean up old HUD elements from previous sessions */
-	player->clearHud();
+	player->hud.clear();
 
 	/* Add object to environment */
 	PlayerSAO *playersao = sao.get();
@@ -2262,7 +2264,11 @@ void Server::SendHUDAdd(session_t peer_id, u32 id, HudElement *form)
 	else
 		pkt << v2s32::from(form->size);
 
-	pkt << form->z_index << form->text2 << form->style;
+	/// Bit 0: hideable
+	/// Bits 1 ... 8: unused (set to 0)
+	u8 flags = form->hideable ? 1 : 0;
+
+	pkt << form->z_index << form->text2 << form->style << flags;
 
 	Send(&pkt);
 }
@@ -2302,6 +2308,9 @@ void Server::SendHUDChange(session_t peer_id, u32 id, HudElementStat stat, void 
 				pkt << v2s32::from(*v);
 			break;
 		}
+		case HUD_STAT_HIDEABLE:
+			pkt << u32{*(bool *) value};
+			break;
 		default: // all other types
 			pkt << *(u32 *) value;
 			break;
@@ -2466,8 +2475,14 @@ void Server::SendPlayerBreath(PlayerSAO *sao)
 
 void Server::SendMovePlayer(PlayerSAO *sao)
 {
-	// Send attachment updates instantly to the client prior updating position
-	sao->sendOutdatedData();
+	// Send attachment updates instantly to the client prior updating position.
+	if (sao->isAttachmentOutdated() && !sao->isAttached()) {
+		std::string data;
+		ActiveObjectMessage aom(
+				sao->getId(), true, sao->generateUpdateAttachmentCommand());
+		aom.appendTo(data);
+		SendActiveObjectMessages(sao->getPeerID(), data);
+	}
 
 	NetworkPacket pkt(TOCLIENT_MOVE_PLAYER, sizeof(v3f) + sizeof(f32) * 2, sao->getPeerID());
 	pkt << sao->getBasePosition() << sao->getLookPitch() << sao->getRotation().Y;
@@ -2971,7 +2986,8 @@ int Server::SendBlocks(float dtime)
 	std::vector<PrioritySortedBlockTransfer> queue;
 
 	int total = 0;
-	u32 total_sending = 0, unique_clients = 0;
+	//u32 total_sending = 0;
+	u32 unique_clients = 0;
 
 	{
 		ScopeProfiler sp2(g_profiler, "Server::SendBlocks(): Collect list");
@@ -3010,9 +3026,10 @@ int Server::SendBlocks(float dtime)
 
 	// Maximal total count calculation
 	// The per-client block sends is halved with the maximal online users
+/*
 	u32 max_blocks_to_send = (m_env->getPlayerCount() + g_settings->getU32("max_users")) *
 		g_settings->getU32("max_simultaneous_block_sends_per_client") / 4 + 1;
-
+*/
 	ScopeProfiler sp(g_profiler, "Server::SendBlocks(): Send to clients");
 	Map &map = m_env->getMap();
 
@@ -3185,10 +3202,11 @@ void Server::sendMediaAnnouncement(session_t peer_id, const std::string &lang_co
 	auto include = [&] (const std::string &name, const MediaInfo &info) -> bool {
 		if (info.no_announce)
 			return false;
-		// Only send translations matching the client's language
-		auto this_lang_code = Translations::getFileLanguage(name);
-		if (!this_lang_code.empty() && this_lang_code != lang_code)
-			return false;
+		if (Translations::isTranslationFileType(name)) {
+			// Only send translations matching the client's language
+			auto this_lang_code = Translations::getFileLanguage(name);
+			return !this_lang_code.empty() && this_lang_code == lang_code;
+		}
 		return true;
 	};
 
@@ -3978,14 +3996,14 @@ bool Server::showFormspec(const char *playername, const std::string &formspec,
 	return true;
 }
 
-u32 Server::hudAdd(RemotePlayer *player, HudElement *form)
+u32 Server::hudAdd(RemotePlayer *player, std::unique_ptr<HudElement> form)
 {
 	if (!player)
 		return -1;
 
-	u32 id = player->addHud(form);
+	u32 id = player->hud.add(std::move(form));
 
-	SendHUDAdd(player->getPeerId(), id, form);
+	SendHUDAdd(player->getPeerId(), id, player->hud.get(id));
 
 	return id;
 }
@@ -3994,12 +4012,8 @@ bool Server::hudRemove(RemotePlayer *player, u32 id) {
 	if (!player)
 		return false;
 
-	HudElement* todel = player->removeHud(id);
-
-	if (!todel)
+	if (!player->hud.remove(id))
 		return false;
-
-	delete todel;
 
 	SendHUDRemove(player->getPeerId(), id);
 	return true;

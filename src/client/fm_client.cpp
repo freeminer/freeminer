@@ -247,7 +247,6 @@ void Client::createFarMesh(MapBlockPtr &block)
 
 void Client::handleCommand_BlockDataFm(NetworkPacket *pkt)
 {
-	const auto str = std::string{pkt->getString(0), pkt->getSize()};
 	if (!pkt->packet_unpack()) {
 		return;
 	}

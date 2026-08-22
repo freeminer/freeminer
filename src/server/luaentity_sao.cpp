@@ -5,13 +5,13 @@
 
 #include "log_types.h"
 #include "luaentity_sao.h"
+#include "AnimSpec.h"
 #include "collision.h"
 #include "constants.h"
 #include "inventory.h"
 #include "irrlicht_changes/printing.h"
 #include "player_sao.h"
 #include "scripting_server.h"
-#include "server.h"
 #include "serverenvironment.h"
 #include "util/serialize.h"
 
@@ -164,7 +164,7 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 
 	m_last_sent_position_timer += dtime;
 
-	collisionMoveResult moveresult, *moveresult_p = nullptr;
+	CollisionMoveResult moveresult, *moveresult_p = nullptr;
 
 	// Each frame, parent position is copied if the object is attached, otherwise it's calculated normally
 	// If the object gets detached this comes into effect automatically from the last known origin
@@ -270,27 +270,32 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
 	writeU16(os, m_hp);
 
 	std::ostringstream msg_os(std::ios::binary);
-	msg_os << serializeString32(getPropertyPacket()); // message 1
-	msg_os << serializeString32(generateUpdateArmorGroupsCommand()); // 2
-	msg_os << serializeString32(generateUpdateAnimationCommand()); // 3
-	for (const auto &bone_override : m_bone_override) {
-		msg_os << serializeString32(generateUpdateBoneOverrideCommand(
-			bone_override.first, bone_override.second)); // 3 + N
-	}
-	msg_os << serializeString32(generateUpdateAttachmentCommand()); // 4 + m_bone_override.size
+	int message_count = 0;
+	auto append_message = [&](const std::string &message) {
+		msg_os << serializeString32(message);
+		++message_count;
+	};
 
-	int message_count = 4 + m_bone_override.size();
+	append_message(getPropertyPacket());
+	append_message(generateUpdateArmorGroupsCommand());
+	for (const auto &[track, anim] : getAnimation().tracks) {
+		if (anim.state != TrackAnimation::State::STOPPED)
+			append_message(generateUpdateAnimationCommand(track));
+	}
+	for (const auto &bone_override : m_bone_override) {
+		append_message(generateUpdateBoneOverrideCommand(
+			bone_override.first, bone_override.second));
+	}
+	append_message(generateUpdateAttachmentCommand());
 
 	for (const auto &id : getAttachmentChildIds()) {
 		if (ServerActiveObject *obj = m_env->getActiveObject(id)) {
-			message_count++;
-			msg_os << serializeString32(obj->generateUpdateInfantCommand(
+			append_message(obj->generateUpdateInfantCommand(
 				id, protocol_version));
 		}
 	}
 
-	msg_os << serializeString32(generateSetTextureModCommand());
-	message_count++;
+	append_message(generateSetTextureModCommand());
 
 	writeU8(os, message_count);
 	std::string serialized = msg_os.str();
@@ -301,7 +306,6 @@ std::string LuaEntitySAO::getClientInitializationData(u16 protocol_version)
            return "";
     }
 
-	// return result
 	return os.str();
 }
 

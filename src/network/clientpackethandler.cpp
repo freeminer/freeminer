@@ -264,11 +264,11 @@ void Client::handleCommand_AddNode(NetworkPacket* pkt)
 	v3s16 p;
 	*pkt >> p;
 
-	auto *ptr = reinterpret_cast<const u8*>(pkt->getRemainingString());
+	std::string_view str = pkt->getRemainingNoCopy();
 	pkt->skip(MapNode::serializedLength(m_server_ser_ver)); // performs length check
 
 	MapNode n;
-	n.deSerialize(ptr, m_server_ser_ver);
+	n.deSerialize((const u8 *)str.data(), m_server_ser_ver);
 
 	bool keep_metadata;
 	*pkt >> keep_metadata;
@@ -311,8 +311,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 	v3s16 p;
 	*pkt >> p;
 
-	std::string datastring(pkt->getRemainingString(), pkt->getRemainingBytes());
-	std::istringstream istr(datastring, std::ios_base::binary);
+	std::istringstream istr(std::string(pkt->getRemainingNoCopy()), std::ios_base::binary);
 
 	MapBlockPtr block;
 
@@ -376,7 +375,7 @@ void Client::handleCommand_Inventory(NetworkPacket* pkt)
 		datastring = pkt->readLongString();
 		*pkt >> m_skip_next_wield_animation;
 	} else {
-		datastring = std::string(pkt->getString(0), pkt->getSize());
+		datastring = pkt->getRemainingNoCopy();
 	}
 
 	std::istringstream is(datastring, std::ios_base::binary);
@@ -502,8 +501,7 @@ void Client::handleCommand_ActiveObjectMessages(NetworkPacket* pkt)
 			string message
 		}
 	*/
-	std::string datastring(pkt->getString(0), pkt->getSize());
-	std::istringstream is(datastring, std::ios_base::binary);
+	std::istringstream is(std::string(pkt->getRemainingNoCopy()), std::ios_base::binary);
 
 	while (canRead(is)) {
 		u16 id = readU16(is);
@@ -985,8 +983,7 @@ void Client::handleCommand_DetachedInventory(NetworkPacket* pkt)
 	// this used to be the length of the following string, ignore it
 	pkt->skip(2);
 
-	std::string contents(pkt->getRemainingString(), pkt->getRemainingBytes());
-	std::istringstream is(contents, std::ios::binary);
+	std::istringstream is(std::string(pkt->getRemainingNoCopy()), std::ios::binary);
 	inv->deSerialize(is);
 }
 
@@ -1008,8 +1005,7 @@ void Client::handleCommand_ShowFormSpec(NetworkPacket* pkt)
 
 void Client::handleCommand_SpawnParticle(NetworkPacket* pkt)
 {
-	std::string datastring(pkt->getString(0), pkt->getSize());
-	std::istringstream is(datastring, std::ios_base::binary);
+	std::istringstream is(std::string(pkt->getRemainingNoCopy()), std::ios_base::binary);
 
 	ParticleParameters p;
 	p.deSerialize(is, m_proto_ver);
@@ -1046,8 +1042,7 @@ void Client::handleCommand_SpawnParticleBatch(NetworkPacket *pkt)
 
 void Client::handleCommand_AddParticleSpawner(NetworkPacket* pkt)
 {
-	std::string datastring(pkt->getString(0), pkt->getSize());
-	std::istringstream is(datastring, std::ios_base::binary);
+	std::istringstream is(std::string(pkt->getRemainingNoCopy()), std::ios_base::binary);
 
 	ParticleSpawnerParameters p;
 	u32 server_id;
@@ -1208,6 +1203,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	s16 z_index = 0;
 	std::string text2;
 	u32 style = 0;
+	u8 flags = 1;
 
 	*pkt >> server_id >> type >> pos >> name >> scale >> text >> number >> item
 		>> dir >> align >> offset;
@@ -1236,6 +1232,12 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 			break;
 		// >= 5.5.0-dev
 		*pkt >> style;
+
+		if (!pkt->hasRemainingBytes())
+			break;
+		// >= 5.17.0-dev
+		*pkt >> flags;
+
 	} while (0);
 
 	ClientEvent *event = new ClientEvent();
@@ -1257,6 +1259,7 @@ void Client::handleCommand_HudAdd(NetworkPacket* pkt)
 	event->hudadd->z_index   = z_index;
 	event->hudadd->text2     = text2;
 	event->hudadd->style     = style;
+	event->hudadd->hideable  = flags % 2;
 	m_client_event_queue.push(event);
 }
 
@@ -1389,8 +1392,7 @@ void Client::handleCommand_HudSetSky(NetworkPacket* pkt)
 	if (m_proto_ver < 39) {
 		// Handle Protocol 38 and below servers with old set_sky,
 		// ensuring the classic look is kept.
-		std::string datastring(pkt->getString(0), pkt->getSize());
-		std::istringstream is(datastring, std::ios_base::binary);
+		std::istringstream is(std::string(pkt->getRemainingNoCopy()), std::ios_base::binary);
 
 		SkyboxParams skybox;
 		skybox.bgcolor = video::SColor(readARGB8(is));
