@@ -18,15 +18,7 @@ class Environment;
 class GenericCAO;
 class Map;
 struct CollisionInfo;
-struct collisionMoveResult;
-
-enum class LocalPlayerAnimation
-{
-	NO_ANIM,
-	WALK_ANIM,
-	DIG_ANIM,
-	WD_ANIM // walking + digging
-};
+struct CollisionMoveResult;
 
 struct PlayerSettings
 {
@@ -108,13 +100,15 @@ public:
 	float hurt_tilt_timer = 0.0f;
 	float hurt_tilt_strength = 0.0f;
 
+	PlayerHud csm_hud;
+
 	GenericCAO *getCAO() const { return m_cao; }
 
 	ClientActiveObject *getParent() const;
 
 	void setCAO(GenericCAO *toset)
 	{
-		assert(!m_cao); // Pre-condition
+		assert(!m_cao || !toset);
 		m_cao = toset;
 	}
 
@@ -176,8 +170,8 @@ private:
 	void old_move(f32 dtime, Environment *env,
 			std::vector<CollisionInfo> *collision_info);
 	void handleAutojump(f32 dtime, Environment *env,
-		const collisionMoveResult &result,
-		v3opos_t position_before_move, v3f speed_before_move);
+		const CollisionMoveResult &result,
+	    v3opos_t position_before_move, v3f speed_before_move);
 
 	v3opos_t m_position;
 	v3pos_t m_standing_node;

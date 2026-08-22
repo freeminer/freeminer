@@ -52,9 +52,27 @@ int ModApiClientSound::l_sound_play(lua_State *L)
 	return 1;
 }
 
+// debug_print_playing_sounds()
+int ModApiClientSound::l_debug_print_playing_sounds(lua_State *L)
+{
+	Client *client = getClient(L);
+
+	if (!client->checkPrivilege("debug")) {
+		warningstream << "core.debug_print_playing_sounds(): Missing priv: debug"
+				<< std::endl;
+		return 0;
+	}
+
+	ISoundManager *sound_manager = client->getSoundManager();
+	sound_manager->printPlayingSounds();
+
+	return 0;
+}
+
 void ModApiClientSound::Initialize(lua_State *L, int top)
 {
 	API_FCT(sound_play);
+	API_FCT(debug_print_playing_sounds);
 }
 
 /* ClientSoundHandle */
@@ -70,8 +88,8 @@ ClientSoundHandle *ClientSoundHandle::checkobject(lua_State *L, int narg)
 
 int ClientSoundHandle::gc_object(lua_State *L)
 {
-	ClientSoundHandle *o = *(ClientSoundHandle **)(lua_touserdata(L, 1));
-	if (getClient(L) && getClient(L)->getSoundManager())
+	ClientSoundHandle *o = takeObjectForGC<ClientSoundHandle>(L);
+	if (o && getClient(L) && getClient(L)->getSoundManager())
 		getClient(L)->getSoundManager()->freeId(o->m_handle);
 	delete o;
 	return 0;

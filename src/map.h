@@ -9,6 +9,7 @@
 #include <ostream>
 #include <set>
 #include <unordered_map>
+#include <memory>
 
 #include "irr_v2d.h"
 #include "irr_v3d.h"
@@ -276,9 +277,9 @@ public:
 
 	bool isBlockOccluded(MapBlock *block, v3pos_t cam_pos_nodes)
 	{
-		return isBlockOccluded(block->getPosRelative(), cam_pos_nodes, false);
+		return isBlockOccluded(block->getPosRelative(), cam_pos_nodes);
 	}
-	bool isBlockOccluded(v3pos_t pos_relative, v3pos_t cam_pos_nodes, bool simple_check = false);
+	bool isBlockOccluded(v3pos_t pos_relative, v3pos_t cam_pos_nodes, bool dense = false);
 
 protected:
 	IGameDef *m_gamedef;
@@ -291,6 +292,9 @@ protected:
 	MapSector *m_sector_cache = nullptr;
 	v2bpos_t m_sector_cache_p;
 
+	// Delayed deletion of old metadata objects
+	std::vector<std::unique_ptr<NodeMetadata>> m_metadata_trash;
+
 	// This stores the properties of the nodes on the map.
 	const NodeDefManager *m_nodedef;
 
@@ -300,8 +304,7 @@ protected:
 	bool determineAdditionalOcclusionCheck(v3pos_t pos_camera,
 		const core::aabbox3d<pos_t> &block_bounds, v3pos_t &to_check);
 	bool isOccluded(v3pos_t pos_camera, v3pos_t pos_target,
-		float step, float stepfac, float start_offset, float end_offset,
-		u32 needed_count);
+		float end_offset, u32 needed_count, bool dense);
 };
 
 class MMVManip : public VoxelManipulator
