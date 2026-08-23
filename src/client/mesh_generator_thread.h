@@ -85,7 +85,7 @@ public:
 	QueuedMeshUpdate *pop();
 
 	// Marks a position as finished, unblocking the next update
-	void done(v3pos_t pos);
+	void done(v3bpos_t pos);
 
 	size_t size()
 	{

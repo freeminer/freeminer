@@ -903,6 +903,7 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 				lua_pop(L, 1);
 				break;
 			}
+			f.tiledef_special[i] = read_tiledef(L, -1, f.drawtype, true);
 		}
 	}
 	lua_pop(L, 1);

@@ -654,7 +654,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		for (ofs.Z = 0; ofs.Z < mesh_grid.cell_size; ofs.Z++)
 		for (ofs.Y = 0; ofs.Y < mesh_grid.cell_size; ofs.Y++)
 		for (ofs.X = 0; ofs.X < mesh_grid.cell_size; ofs.X++) {
-			v3pos_t p = (bp + ofs) * MAP_BLOCKSIZE;
+			v3pos_t p = getBlockPosRelative(bp + ofs);
 			if (data->m_vmanip.getNodeNoEx(p).getContent() != CONTENT_IGNORE) {
 				MinimapMapblock *block = new MinimapMapblock;
 				m_minimap_mapblocks[mesh_grid.getOffsetIndex(ofs)] = block;
@@ -807,14 +807,14 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack,
 	return true;
 }
 
-void MapBlockMesh::updateTransparentBuffers(v3f camera_pos, v3pos_t block_pos,
+void MapBlockMesh::updateTransparentBuffers(v3f camera_pos, v3bpos_t block_pos,
 		bool group_by_buffers)
 {
 	// nothing to do if the entire block is opaque
 	if (m_transparent_triangles.empty())
 		return;
 
-	v3f block_posf = intToFloat(block_pos * MAP_BLOCKSIZE, BS);
+	v3f block_posf = intToFloat(getBlockPosRelative(block_pos), BS);
 	v3f rel_camera_pos = camera_pos - block_posf;
 
 	std::vector<s32> triangle_refs;
@@ -936,7 +936,7 @@ video::SColor encode_light(u16 light, u8 emissive_light)
 
 u8 get_solid_sides(MeshMakeData *data)
 {
-	v3pos_t blockpos_nodes = data->m_blockpos * MAP_BLOCKSIZE;
+	v3pos_t blockpos_nodes = getBlockPosRelative(data->m_blockpos);
 	const NodeDefManager *ndef = data->m_nodedef;
 
 	const u16 side = data->m_side_length;
