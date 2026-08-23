@@ -208,7 +208,7 @@ void Decoration::placeDeco(Mapgen *mg, u32 blockseed, v3pos_t nmin, v3pos_t nmax
 
 				if (flags & DECO_ALL_FLOORS) {
 					// Floor decorations
-					for (const s16 y : floors) {
+					for (const auto y : floors) {
 						if (y < y_min || y > y_max)
 							continue;
 

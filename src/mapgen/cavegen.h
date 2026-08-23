@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "irrlichttypes.h"
 #define VMANIP_FLAG_CAVE VOXELFLAG_CHECKED1
 
 typedef u16 biome_t;  // copy from mg_biome.h to avoid an unnecessary include
@@ -215,8 +216,8 @@ public:
 	s16 rs;   // tunnel radius size
 	v3f main_direction;
 
-	s16 route_y_min;
-	s16 route_y_max;
+	pos_t route_y_min;
+	pos_t route_y_max;
 
 	// ndef is a mandatory parameter.
 	// If gennotify is NULL, generation events are not logged.

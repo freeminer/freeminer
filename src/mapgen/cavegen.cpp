@@ -5,6 +5,7 @@
 // Copyright (C) 2010-2016 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "util/numeric.h"
 #include <cmath>
 #include "map.h"
@@ -84,7 +85,7 @@ void CavesNoiseIntersection::generateCaves(MMVManip *vm,
 		u16 depth_riverbed = biome->depth_riverbed;
 		u16 nplaced = 0;
 
-		s16 biome_y_next = m_bmgn->getNextTransitionY(nmax.Y);
+		auto biome_y_next = m_bmgn->getNextTransitionY(nmax.Y);
 
 		// Don't excavate the overgenerated stone at nmax.Y + 1,
 		// this creates a 'roof' over the tunnel, preventing light in
@@ -704,7 +705,7 @@ void CavesV6::makeCave(MMVManip *vm, v3pos_t nmin, v3pos_t nmax,
 	route_y_max = rangelim(route_y_max, 0, ar.Y - 1);
 
 	if (large_cave) {
-		s16 minpos = 0;
+		pos_t minpos = 0;
 		if (node_min.Y < water_level && node_max.Y > water_level) {
 			minpos = water_level - max_tunnel_diameter / 3 - of.Y;
 			route_y_max = water_level + max_tunnel_diameter / 3 - of.Y;

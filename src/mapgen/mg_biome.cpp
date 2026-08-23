@@ -201,7 +201,7 @@ pos_t BiomeGenOriginal::getNextTransitionY(pos_t y) const
 {
 	// Find first value that is less than y using binary search
 	auto it = std::lower_bound(m_transitions_y.begin(), m_transitions_y.end(), y, std::greater_equal<>());
-	return (it == m_transitions_y.end()) ? S16_MIN : *it;
+	return (it == m_transitions_y.end()) ? POS_MIN : *it;
 }
 
 BiomeGen *BiomeGenOriginal::clone(BiomeManager *biomemgr) const

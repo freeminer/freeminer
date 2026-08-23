@@ -12,6 +12,7 @@ Licensing changed by permission of Gael de Sailly.
 */
 
 
+#include "irrlichttypes.h"
 #include "mapgen.h"
 #include "voxel.h"
 #include "noise.h"
@@ -315,7 +316,7 @@ pos_t MapgenValleys::getSpawnLevelAtPoint(v2pos_t p)
 		if (density > 0.0f) {  // If solid
 			// Sometimes surface level is below river water level in places that are not
 			// river channels.
-			if (y < water_level || y > max_spawn_y || y < (s16)river_y)
+			if (y < water_level || y > max_spawn_y || y < (pos_t)river_y)
 				// Unsuitable spawn point
 				return MAX_MAP_GENERATION_LIMIT;
 

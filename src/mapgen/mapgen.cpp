@@ -738,7 +738,7 @@ void MapgenBasic::generateBiomes()
 		u16 depth_riverbed = 0;
 		u32 vi = vm->m_area.index(x, node_max.Y, z);
 
-		s16 biome_y_next = biomegen->getNextTransitionY(node_max.Y);
+		auto biome_y_next = biomegen->getNextTransitionY(node_max.Y);
 
 		// Check node at base of mapchunk above, either a node of a previously
 		// generated mapchunk or if not, a node of overgenerated base terrain.
@@ -1264,7 +1264,7 @@ std::pair<v3bpos_t, v3bpos_t> get_mapgen_edges(pos_t mapgen_limit, v3bpos_t chun
 	auto mapgen_limit_min = -mapgen_limit_b * MAP_BLOCKSIZE;
 	auto mapgen_limit_max = (mapgen_limit_b + 1) * MAP_BLOCKSIZE - 1;
 
-	const auto &calculate = [&] (pos_t cs) -> std::pair<pos_t, pos_t > {
+	const auto &calculate = [&] (pos_t cs) -> std::pair<pos_t, pos_t> {
 		// Central chunk offset, in blocks
 		pos_t ccoff_b = -cs / 2;
 		// Chunksize, in nodes

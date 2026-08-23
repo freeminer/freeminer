@@ -147,7 +147,7 @@ void Schematic::blitToVManip(MMVManip *vm, v3pos_t p, Rotation rot, bool force_p
 			i_step_z = zstride;
 	}
 
-	s16 y_map = p.Y;
+	auto y_map = p.Y;
 	for (s16 y = 0; y != sy; y++) {
 		if ((slice_probs[y] != MTSCHEM_PROB_ALWAYS) &&
 			(slice_probs[y] <= myrand_range(1, MTSCHEM_PROB_ALWAYS)))
@@ -562,10 +562,10 @@ bool Schematic::getSchematicFromMap(Map *map, v3pos_t p1, v3pos_t p2)
 	schemdata = new MapNode[size.X * size.Y * size.Z];
 
 	u32 i = 0;
-	for (s16 z = p1.Z; z <= p2.Z; z++)
-	for (s16 y = p1.Y; y <= p2.Y; y++) {
+	for (auto z = p1.Z; z <= p2.Z; z++)
+	for (auto y = p1.Y; y <= p2.Y; y++) {
 		u32 vi = vm->m_area.index(p1.X, y, z);
-		for (s16 x = p1.X; x <= p2.X; x++, i++, vi++) {
+		for (auto x = p1.X; x <= p2.X; x++, i++, vi++) {
 			schemdata[i] = vm->m_data[vi];
 			schemdata[i].param1 = MTSCHEM_PROB_ALWAYS;
 		}
