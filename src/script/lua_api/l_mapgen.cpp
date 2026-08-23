@@ -4,11 +4,11 @@
 
 #include "lua_api/l_mapgen.h"
 #include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "lua_api/l_internal.h"
 #include "lua_api/l_vmanip.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "common/helper.h"
 #include "cpp_api/s_security.h"
 #include "server.h"
 #include "serverenvironment.h"
@@ -230,9 +230,9 @@ bool read_schematic_def(lua_State *L, int index,
 	std::unordered_map<std::string, content_t> name_id_map;
 
 	u32 i = 0;
-	for (lua_pushnil(L); lua_next(L, -2); i++, lua_pop(L, 1)) {
+	LuaHelper::for_ipairs(L, -1, [&]() {
 		if (i >= numnodes)
-			continue;
+			return;
 
 		//// Read name
 		std::string name;
@@ -266,7 +266,8 @@ bool read_schematic_def(lua_State *L, int index,
 
 		//// Actually set the node in the schematic
 		schem->schemdata[i] = MapNode(name_index, param1, param2);
-	}
+		++i;
+	});
 
 	if (i != numnodes) {
 		errorstream << "read_schematic_def: incorrect number of "
@@ -282,15 +283,16 @@ bool read_schematic_def(lua_State *L, int index,
 
 	lua_getfield(L, index, "yslice_prob");
 	if (lua_istable(L, -1)) {
-		for (lua_pushnil(L); lua_next(L, -2); lua_pop(L, 1)) {
+		LuaHelper::for_ipairs(L, -1, [&]() {
 			u16 ypos;
 			if (!getintfield(L, -1, "ypos", ypos) || (ypos >= size.Y) ||
 				!getintfield(L, -1, "prob", schem->slice_probs[ypos]))
-				continue;
+				return;
 
 			schem->slice_probs[ypos] >>= 1;
-		}
+		});
 	}
+	lua_pop(L, 1);
 
 	return true;
 }
@@ -445,18 +447,18 @@ static size_t get_biome_list(lua_State *L, int index,
 	// returns number of failed resolutions
 	size_t fail_count = 0;
 
-	for (lua_pushnil(L); lua_next(L, index); lua_pop(L, 1)) {
+	LuaHelper::for_ipairs(L, index, [&]() {
 		Biome *biome = get_or_load_biome(L, -1, biomemgr);
 		if (!biome) {
 			fail_count++;
 			warningstream << "get_biome_list: failed to get biome '"
 				<< (lua_isstring(L, -1) ? lua_tostring(L, -1) : "")
 				<< "'" << std::endl;
-			continue;
+			return;
 		}
 
 		biome_ids->insert(biome->index);
-	}
+	});
 
 	return fail_count;
 }
@@ -650,10 +652,10 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 		LuaVoxelManip::create(L, vm, true);
 
 		// emerged min pos
-		push_v3pos(L, vm->m_area.MinEdge);
+		push_v3s16(L, vm->m_area.MinEdge);
 
 		// emerged max pos
-		push_v3pos(L, vm->m_area.MaxEdge);
+		push_v3s16(L, vm->m_area.MaxEdge);
 
 		return 3;
 	}
@@ -719,7 +721,7 @@ int ModApiMapgen::l_get_mapgen_object(lua_State *L)
 			lua_createtable(L, it->second.size(), 0);
 
 			for (size_t j = 0; j != it->second.size(); j++) {
-				push_v3pos(L, it->second[j]);
+				push_v3s16(L, it->second[j]);
 				lua_rawseti(L, -2, j + 1);
 			}
 
@@ -1072,20 +1074,16 @@ int ModApiMapgen::l_set_gen_notify(lua_State *L)
 	}
 
 	if (lua_istable(L, 2)) {
-		lua_pushnil(L);
-		while (lua_next(L, 2)) {
+		LuaHelper::for_ipairs(L, 2, [&]() {
 			if (lua_isnumber(L, -1))
 				emerge->gen_notify_on_deco_ids.insert((u32)lua_tonumber(L, -1));
-			lua_pop(L, 1);
-		}
+		});
 	}
 
 	if (lua_istable(L, 3)) {
-		lua_pushnil(L);
-		while (lua_next(L, 3)) {
+		LuaHelper::for_ipairs(L, 3, [&]() {
 			emerge->gen_notify_on_custom.insert(readParam<std::string>(L, -1));
-			lua_pop(L, 1);
-		}
+		});
 	}
 
 	// Clear sets if relevant flag disabled
@@ -1739,8 +1737,7 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 
 	std::vector<std::pair<v3pos_t, u8> > prob_list;
 	if (lua_istable(L, 3)) {
-		lua_pushnil(L);
-		while (lua_next(L, 3)) {
+		LuaHelper::for_ipairs(L, 3, [&]() {
 			if (lua_istable(L, -1)) {
 				lua_getfield(L, -1, "pos");
 				v3pos_t pos = check_v3pos(L, -1);
@@ -1749,23 +1746,18 @@ int ModApiMapgen::l_create_schematic(lua_State *L)
 				u8 prob = getintfield_default(L, -1, "prob", MTSCHEM_PROB_ALWAYS);
 				prob_list.emplace_back(pos, prob);
 			}
-
-			lua_pop(L, 1);
-		}
+		});
 	}
 
 	std::vector<std::pair<s16, u8> > slice_prob_list;
 	if (lua_istable(L, 5)) {
-		lua_pushnil(L);
-		while (lua_next(L, 5)) {
+		LuaHelper::for_ipairs(L, 5, [&]() {
 			if (lua_istable(L, -1)) {
 				s16 ypos = getintfield_default(L, -1, "ypos", 0);
 				u8 prob  = getintfield_default(L, -1, "prob", MTSCHEM_PROB_ALWAYS);
 				slice_prob_list.emplace_back(ypos, prob);
 			}
-
-			lua_pop(L, 1);
-		}
+		});
 	}
 
 	if (!schem.getSchematicFromMap(&env->getMap(), p1, p2)) {
