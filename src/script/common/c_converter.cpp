@@ -559,10 +559,10 @@ std::string getstringfield_default(lua_State *L, int table,
 	return result;
 }
 
-int getintfield_default(lua_State *L, int table,
-		const char *fieldname, int default_)
+long getintfield_default(lua_State *L, int table,
+		const char *fieldname, long default_)
 {
-	int result = default_;
+	auto result = default_;
 	getintfield(L, table, fieldname, result);
 	return result;
 }
