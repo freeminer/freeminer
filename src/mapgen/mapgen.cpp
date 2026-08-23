@@ -643,7 +643,7 @@ void MapgenBasic::generateBiomes()
 		u16 depth_riverbed = 0;
 		u32 vi = vm->m_area.index(x, node_max.Y, z);
 
-		s16 biome_y_next = biomegen->getNextTransitionY(node_max.Y);
+		auto biome_y_next = biomegen->getNextTransitionY(node_max.Y);
 
 		// Check node at base of mapchunk above, either a node of a previously
 		// generated mapchunk or if not, a node of overgenerated base terrain.
@@ -1141,21 +1141,21 @@ std::pair<v3pos_t, v3pos_t> get_mapgen_edges(pos_t mapgen_limit, v3pos_t chunksi
 	pos_t mapgen_limit_min = -mapgen_limit_b * MAP_BLOCKSIZE;
 	pos_t mapgen_limit_max = (mapgen_limit_b + 1) * MAP_BLOCKSIZE - 1;
 
-	const auto &calculate = [&] (s16 cs) -> std::pair<s16, s16> {
+	const auto &calculate = [&] (pos_t cs) -> std::pair<pos_t, pos_t> {
 		// Central chunk offset, in blocks
-		s16 ccoff_b = -cs / 2;
+		pos_t ccoff_b = -cs / 2;
 		// Chunksize, in nodes
 		s32 csize_n = cs * MAP_BLOCKSIZE;
 		// Minp/maxp of central chunk, in nodes
-		s16 ccmin = ccoff_b * MAP_BLOCKSIZE;
-		s16 ccmax = ccmin + csize_n - 1;
+		pos_t ccmin = ccoff_b * MAP_BLOCKSIZE;
+		pos_t ccmax = ccmin + csize_n - 1;
 		// Fullminp/fullmaxp of central chunk, in nodes
-		s16 ccfmin = ccmin - MAP_BLOCKSIZE;
-		s16 ccfmax = ccmax + MAP_BLOCKSIZE;
+		pos_t ccfmin = ccmin - MAP_BLOCKSIZE;
+		pos_t ccfmax = ccmax + MAP_BLOCKSIZE;
 		// Number of complete chunks from central chunk fullminp/fullmaxp
 		// to effective mapgen limits.
-		s16 numcmin = std::max((ccfmin - mapgen_limit_min) / csize_n, 0);
-		s16 numcmax = std::max((mapgen_limit_max - ccfmax) / csize_n, 0);
+		pos_t numcmin = std::max((ccfmin - mapgen_limit_min) / csize_n, 0);
+		pos_t numcmax = std::max((mapgen_limit_max - ccfmax) / csize_n, 0);
 		return {ccmin - numcmin * csize_n, ccmax + numcmax * csize_n};
 	};
 

@@ -20,7 +20,7 @@ public:
 			v2bpos_t p2d(x, z);
 			MapSector *sector = new MapSector(this, p2d, gamedef);
 			m_sectors[p2d] = sector;
-			for (bpos_t y = bpmin.Y; y <= bpmax.Y; y++)
+			for (auto y = bpmin.Y; y <= bpmax.Y; y++)
 				sector->createBlankBlock(y);
 		}
 	}
