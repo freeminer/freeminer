@@ -105,8 +105,8 @@ class MapgenEarth : public MapgenV7
 public:
 	BlockMakeData *active_block_data = nullptr;
 	bool queueGeneratedSign(const v3pos_t &pos, const std::string &text);
-	bool queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id, s8 facing,
-			s8 rotation, bool glow);
+	bool queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id,
+			s8 facing, s8 rotation, bool glow);
 	struct TileWriteKey
 	{
 		pos_t x = 0, y = 0, z = 0;
@@ -151,10 +151,12 @@ public:
 	v3d scale{1, 1, 1};
 	v3d center{0, 0, 0};
 	bool no_layers = false;
+	bool earth_layers = false;
 
 	MapNode n_air, n_water, n_stone;
 
 	MapNode layers_get(float value, float max);
+	MapNode earth_layer_get(pos_t x, pos_t y, pos_t z, pos_t surface_y, float heat);
 	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
 	MapNode visible_content(const v3pos_t &p, bool use_weather) override;
 

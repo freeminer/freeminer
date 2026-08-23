@@ -246,6 +246,21 @@ PngImage *earth_select_weather_image(std::unique_ptr<PngImage> &annual_image,
 void MapgenEarthParams::setDefaultSettings(Settings *settings)
 {
 	settings->setDefault("mgearth_spflags", flagdesc_mapgen_v7, 0);
+	settings->setDefault("mg_params", R"({
+		"layer_default_thickness": 1,
+		"layer_thickness_multiplier": 1,
+		"layers": [
+			{"name": "default:clay", "thickness": 2, "y_min": -512, "y_max": 128},
+			{"name": "default:sandstone", "thickness": 4, "y_min": -1024, "y_max": 160},
+			{"name": "default:desert_sandstone", "thickness": 3, "y_min": -1024, "y_max": 192},
+			{"name": "default:gravel", "thickness": 2, "y_min": -2048, "y_max": 256},
+			{"name": "default:stone", "thickness": 24},
+			{"name": "default:desert_stone", "thickness": 8, "y_min": -4096},
+			{"name": "default:silver_sandstone", "thickness": 3, "y_min": -3072, "y_max": 512},
+			{"name": "default:stone", "thickness": 18},
+			{"name": "default:obsidian", "thickness": 20, "y_max": -2048}
+		]
+	})");
 }
 
 void MapgenEarthParams::readParams(const Settings *settings)
@@ -334,6 +349,8 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	if (params.get("scale", Json::Value()).isObject())
 		scale = {params["scale"]["x"].asDouble(), params["scale"]["y"].asDouble(),
 				params["scale"]["z"].asDouble()};
+
+	earth_layers = params.get("earth_layers", 0).asBool();
 
 	/* todomake test
 	static bool shown = 0;
@@ -615,6 +632,93 @@ MapNode MapgenEarth::layers_get(float value, float max)
 	return layers_node[layer_index];
 }
 
+MapNode MapgenEarth::earth_layer_get(
+		pos_t x, pos_t y, pos_t z, pos_t surface_y, float heat)
+{
+	if (!earth_layers) {
+		return layers_get(0, 1);
+	}
+
+	if (layers_node_size <= 1)
+		return n_stone;
+
+	const auto depth = surface_y - y;
+	const bool oceanic = surface_y < water_level - 8;
+	const bool lowland = surface_y < water_level + 12;
+	const bool mountain = surface_y > water_level + 120;
+	const double terrain_lift = std::clamp((surface_y - water_level) / 180.0, 0.0, 1.8);
+	const bool exposed_bedrock = mountain || terrain_lift > 0.35;
+	const bool cold = heat < 0;
+
+	if (depth <= 1 && !exposed_bedrock)
+		return layers_node.front();
+
+	const double sx = static_cast<double>(x);
+	const double sz = static_cast<double>(z);
+	const double seed_phase = static_cast<double>(seed & 0xfffff) * 0.00001;
+
+	const double fold_angle =
+			seed_phase * 0.73 + std::sin((sx + sz) * 0.00008 + seed_phase) * 0.7;
+	const double ca = std::cos(fold_angle);
+	const double sa = std::sin(fold_angle);
+	const double along = sx * ca + sz * sa;
+	const double across = -sx * sa + sz * ca;
+
+	const double fold_noise = std::sin(along * 0.00055 + seed_phase) * 0.55 +
+							  std::sin(along * 0.00017 - seed_phase * 1.7) * 0.45;
+	const double fold_width = 36.0 + (0.5 + 0.5 * fold_noise) * 124.0;
+	const double fold_amplitude = (8.0 + terrain_lift * 48.0) * (oceanic ? 0.55 : 1.0);
+	constexpr double pi = 3.14159265358979323846;
+	const double chevron =
+			std::asin(std::sin(across / fold_width + fold_noise * 1.5)) * (2.0 / pi);
+	const double fold_arch = chevron * fold_amplitude;
+
+	const double layer_thickness = 4.0 + (0.5 + 0.5 * fold_noise) * 10.0;
+	const double plane_dip = 0.003 + terrain_lift * 0.018;
+	const double regional_dip =
+			along * 0.003 + across * plane_dip + fold_noise * (7.0 + terrain_lift * 10.0);
+	const double shear_width = 18.0 + (1.0 - std::min(1.0, terrain_lift)) * 42.0;
+	const double shear = std::asin(std::sin((across + along * 0.35) / shear_width +
+											seed_phase * 2.4)) *
+						 (2.0 / pi);
+	const double shear_offset = shear * terrain_lift * 18.0;
+
+	double stratigraphic_depth =
+			static_cast<double>(depth) + regional_dip + fold_arch + shear_offset;
+
+	if (depth < 4) {
+		stratigraphic_depth *= oceanic ? 0.15 : (exposed_bedrock ? 0.85 : 0.25);
+	} else if (depth < 24) {
+		stratigraphic_depth *= oceanic ? 0.35 : (exposed_bedrock ? 0.85 : 0.55);
+	}
+
+	if (lowland)
+		stratigraphic_depth -= 6.0;
+	if (oceanic && depth > 24)
+		stratigraphic_depth += 10.0;
+	if (mountain)
+		stratigraphic_depth += std::min(28.0, (surface_y - water_level) * 0.10);
+	if (cold && depth < 12)
+		stratigraphic_depth -= 4.0;
+
+	const int layer_count = static_cast<int>(layers_node_size);
+	int folded_index =
+			static_cast<int>(std::floor(stratigraphic_depth / layer_thickness));
+	folded_index %= layer_count;
+	if (folded_index < 0)
+		folded_index += layer_count;
+
+	const double hardening =
+			std::clamp(std::log1p(static_cast<double>(depth)) / 18.0 +
+							   (oceanic ? 0.08 : 0.0) + (mountain ? 0.08 : 0.0),
+					0.0, 0.70);
+	const int layer_index =
+			std::clamp(static_cast<int>(std::llround(folded_index * (1.0 - hardening) +
+													 (layer_count - 1) * hardening)),
+					0, layer_count - 1);
+	return layers_node[layer_index];
+}
+
 bool MapgenEarth::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
 {
 	return p.Y <= surface_y.value_or(get_height(p.X, p.Z));
@@ -722,7 +826,7 @@ int MapgenEarth::generateTerrain()
 				bool underground = height >= y;
 				if (underground) {
 					if (!vm->m_data[i]) {
-						vm->m_data[i] = layers_get(0, 1);
+						vm->m_data[i] = earth_layer_get(x, y, z, height, heat);
 					}
 				} else if (y <= water_level) {
 					vm->m_data[i] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
