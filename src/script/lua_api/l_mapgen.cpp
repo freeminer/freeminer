@@ -514,7 +514,7 @@ int ModApiMapgen::l_get_heat(lua_State *L)
 
 	v3pos_t pos = read_v3pos(L, 1);
 
-	// freeminer dynamic: default to total block climate, including local adders.
+	// == freeminer dynamic: default to total block climate, including local adders.
 	bool block_add = true;
 	if (lua_isnumber(L, 2))
 		block_add = lua_tonumber(L, 2) != 0;
@@ -523,6 +523,7 @@ int ModApiMapgen::l_get_heat(lua_State *L)
 	GET_ENV_PTR_NO_MAP_LOCK;
 	lua_pushnumber(L, env->getServerMap().updateBlockHeat(env, pos, nullptr, nullptr, block_add));
 	return 1;
+	// ===
 
 	const BiomeGen *biomegen = getBiomeGen(L);
 	if (!biomegen || biomegen->getType() != BIOMEGEN_ORIGINAL)
@@ -544,7 +545,7 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 
 	v3pos_t pos = read_v3pos(L, 1);
 
-	// freeminer dynamic: default to total block climate, including local adders.
+	// === freeminer dynamic: default to total block climate, including local adders.
 	bool block_add = true;
 	if (lua_isnumber(L, 2))
 		block_add = lua_tonumber(L, 2) != 0;
@@ -553,6 +554,7 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 	GET_ENV_PTR_NO_MAP_LOCK;
 	lua_pushnumber(L, env->getServerMap().updateBlockHumidity(env, pos, nullptr, nullptr, block_add));
 	return 1;
+	// ===
 
 	const BiomeGen *biomegen = getBiomeGen(L);
 	if (!biomegen || biomegen->getType() != BIOMEGEN_ORIGINAL)
@@ -827,9 +829,11 @@ int ModApiMapgen::l_get_mapgen_params(lua_State *L)
 	lua_pushinteger(L, stoi(value, -32768, 32767));
 	lua_setfield(L, -2, "water_level");
 
+    // fm:
 	settingsmgr->getMapSetting("liquid_pressure", &value);
 	lua_pushinteger(L, stoi(value, -32768, 32767));
 	lua_setfield(L, -2, "liquid_pressure");
+	// ===
 
 	settingsmgr->getMapSetting("chunksize", &value);
 	lua_pushinteger(L, stoi(value, -32768, 32767));
@@ -870,9 +874,11 @@ int ModApiMapgen::l_set_mapgen_params(lua_State *L)
 	if (lua_isnumber(L, -1))
 		settingsmgr->setMapSetting("water_level", readParam<std::string>(L, -1), true);
 
+    // fm:
 	lua_getfield(L, 1, "liquid_pressure");
 	if (lua_isnumber(L, -1))
 		settingsmgr->setMapSetting("liquid_pressure", lua_tostring(L, -1), true);
+	// ===
 
 	lua_getfield(L, 1, "chunksize");
 	if (lua_isnumber(L, -1))

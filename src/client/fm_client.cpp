@@ -232,6 +232,9 @@ void Client::createFarMesh(MapBlockPtr &block)
 				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0, step,
 				&m_client->far_container);
 		mesh_make_data.m_blockpos = blockpos;
+		static const auto enable_waving_water =
+				g_settings->getBool("enable_waving_water");
+		mesh_make_data.m_enable_waving_water = enable_waving_water;
 		const auto mesh = std::make_shared<MapBlockMesh>(m_client, &mesh_make_data);
 		block->setFarMesh(mesh, step);
 		block->far_step_draw = block->far_step;
