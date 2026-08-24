@@ -711,7 +711,7 @@ our $tasks = {
           . q{ --quiet }
           . ($config->{gdb_stay} ? '' : q{ --batch })
           . q { -iex='set auto-load safe-path /' }
-          #. q{ -iex='set debuginfod enabled on' }
+          . q{ -iex='set debuginfod enabled on' }
           . q{ -ex 'run' -ex 'backtrace' -ex 'thread apply all backtrace' }
           . ($config->{gdb_stay} ? '' : q{ -ex 'cont' -ex 'quit' })
           . q{ --args };
@@ -865,7 +865,7 @@ qq{$config->{vtune_amplifier}amplxe-cl -report $report -report-width=250 -report
         my $cwd = Cwd::cwd();
         chdir $config->{root_path};
         sy qq{(git stash && git pull --rebase >&2) | grep -v "No local changes to save" && git stash pop};
-        sy qq{git submodule update --init --recursive --remote};
+        sy qq{git submodule update --init --recursive};
         chdir $cwd;
         return 0;
     },
