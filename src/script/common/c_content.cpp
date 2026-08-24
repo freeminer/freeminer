@@ -4,6 +4,7 @@
 #include "common/c_content.h"
 #include "common/c_converter.h"
 #include "common/c_types.h"
+#include "common/helper.h"
 #include "nodedef.h"
 #include "object_properties.h"
 #include "collision.h"
@@ -344,8 +345,6 @@ void read_object_properties(lua_State *L, int index,
 
 	luaL_checktype(L, -1, LUA_TTABLE);
 
-	// fmtodo: const auto lock = prop->lock_unique();
-
 	int hp_max = 0;
 	if (getintfield(L, -1, "hp_max", hp_max)) {
 		prop->hp_max = (u16)rangelim(hp_max, 0, U16_MAX);
@@ -417,31 +416,29 @@ void read_object_properties(lua_State *L, int index,
 	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "textures");
-	if(lua_istable(L, -1)){
+	if (lua_istable(L, -1)) {
 		prop->textures.clear();
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		while(lua_next(L, table) != 0){
-			// key at index -2 and value at index -1
-			if(lua_isstring(L, -1))
+		LuaHelper::for_ipairs(L, -1, [&]() {
+			int tp = lua_type(L, -1);
+			if (tp == LUA_TSTRING) {
 				prop->textures.emplace_back(lua_tostring(L, -1));
-			else
+			} else {
+				script_log_unique(L, std::string("Textures must be strings, got ") +
+						lua_typename(L, tp), warningstream);
 				prop->textures.emplace_back("");
-			// removes value, keeps key for next iteration
-			lua_pop(L, 1);
-		}
+			};
+		});
 	}
 	lua_pop(L, 1);
 
 	lua_getfield(L, -1, "colors");
 	if (lua_istable(L, -1)) {
-		int table = lua_gettop(L);
 		prop->colors.clear();
-		for (lua_pushnil(L); lua_next(L, table); lua_pop(L, 1)) {
+		LuaHelper::for_ipairs(L, -1, [&]() {
 			video::SColor color(255, 255, 255, 255);
 			read_color(L, -1, &color);
 			prop->colors.push_back(color);
-		}
+		});
 	}
 	lua_pop(L, 1);
 
@@ -788,16 +785,82 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 	if(index < 0)
 		index = lua_gettop(L) + 1 + index;
 
-	/* Cache existence of some callbacks */
-	lua_getfield(L, index, "on_construct");
-	f.has_on_construct = !lua_isnil(L, -1);
-	lua_pop(L, 1);
-	lua_getfield(L, index, "on_destruct");
-	f.has_on_destruct = !lua_isnil(L, -1);
-	lua_pop(L, 1);
-	lua_getfield(L, index, "after_destruct");
-	f.has_after_destruct = !lua_isnil(L, -1);
-	lua_pop(L, 1);
+	// fm:
+	/* Circuit options */
+	{
+		lua_getfield(L, index, "is_wire");
+		if (!lua_isnil(L, -1)) {
+			f.is_wire = true;
+		}
+		lua_pop(L, 1);
+
+		lua_getfield(L, index, "is_wire_connector");
+		if (!lua_isnil(L, -1)) {
+			f.is_wire_connector = true;
+		}
+		lua_pop(L, 1);
+
+		lua_getfield(L, index, "wire_connections");
+		if (!lua_isnil(L, -1) && lua_istable(L, -1)) {
+			// Both can't be set to true
+			f.is_wire |= !f.is_wire_connector;
+			int table = lua_gettop(L);
+			lua_pushnil(L);
+			int i;
+			unsigned char current_shift = 1;
+			for (i = 0; (i < 6) && (lua_next(L, table) != 0); ++i) {
+				f.wire_connections[i] = lua_tonumber(L, -1);
+				f.wire_connections[i] |= current_shift;
+				current_shift <<= 1;
+				lua_pop(L, 1);
+			}
+			if (i < 6) {
+				luaL_error(
+						L, "Wire connectins array must have exactly 6 integer numbers.");
+			}
+
+			// Convert to two-way wire (one-way may cause undefined behavior)
+			for (i = 0; i < 6; ++i) {
+				for (int j = 0; j < 6; ++j) {
+					f.wire_connections[i] |= f.wire_connections[j] & (1 << i);
+					f.wire_connections[j] |= f.wire_connections[i] & (1 << j);
+				}
+			}
+
+		} else if (f.is_wire || f.is_wire_connector) {
+			// Assuming that it's a standart wire or wire connector
+			for (int i = 0; i < 6; ++i) {
+				f.wire_connections[i] = 0x3F;
+			}
+		}
+		lua_pop(L, 1);
+
+		lua_getfield(L, index, "circuit_states");
+		if (!lua_isnil(L, -1) && lua_istable(L, -1)) {
+			f.is_circuit_element = true;
+			int table = lua_gettop(L);
+			lua_pushnil(L);
+			int i;
+			for (i = 0; (i < 64) && (lua_next(L, table) != 0); ++i) {
+				f.circuit_element_func[i] = lua_tonumber(L, -1);
+				lua_pop(L, 1);
+			}
+			if (i < 64) {
+				luaL_error(L,
+						"Circuit element states table must have exactly 64 integer numbers.");
+			}
+		}
+		lua_pop(L, 1);
+
+		f.circuit_element_delay = getintfield_default(L, index, "circuit_element_delay",
+										  f.circuit_element_delay + 1) -
+								  1;
+		if (f.circuit_element_delay > 100) {
+			luaL_error(L,
+					"\"circuit_element_delay\" must be a positive integer number less than 101");
+		}
+	}
+
 	lua_getfield(L, index, "on_activate");
 	if(!lua_isnil(L, -1))
 	{
@@ -811,6 +874,24 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 		f.has_on_deactivate = true;
 		f.is_circuit_element = true;
 	}
+	lua_pop(L, 1);
+
+	getstringfield(L, index, "freeze", f.freeze);
+	getstringfield(L, index, "melt", f.melt);
+	f.light_vertical_dimnish = getfloatfield_default(L, index,
+			"light_vertical_dimnish", f.light_vertical_dimnish);
+
+	// ===
+
+	/* Cache existence of some callbacks */
+	lua_getfield(L, index, "on_construct");
+	f.has_on_construct = !lua_isnil(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, index, "on_destruct");
+	f.has_on_destruct = !lua_isnil(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, index, "after_destruct");
+	f.has_after_destruct = !lua_isnil(L, -1);
 	lua_pop(L, 1);
 
 	lua_getfield(L, index, "on_rightclick");
@@ -854,131 +935,33 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 	/* Meshnode model filename */
 	getstringfield(L, index, "mesh", f.mesh);
 
-	// tiles = {}
-	lua_getfield(L, index, "tiles");
-	if(lua_istable(L, -1)){
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		int i = 0;
-		while(lua_next(L, table) != 0){
-			// Read tiledef from value
-			f.tiledef[i] = read_tiledef(L, -1, f.drawtype, false);
-			// removes value, keeps key for next iteration
+	const auto read_tiles = [&](const char *name, TileDef *tiledefs) {
+		lua_getfield(L, index, name);
+		if (!lua_istable(L, -1)) {
 			lua_pop(L, 1);
-			i++;
-			if(i==6){
+			return;
+		}
+		int i = 0;
+		for (; LuaHelper::geti(L, -1, i); ++i, lua_pop(L, 1)) {
+			if (i >= 6) {
+				script_log_unique(L, std::string("Ignoring extraneous ") + name, warningstream);
 				lua_pop(L, 1);
 				break;
 			}
+			tiledefs[i] = read_tiledef(L, -1, f.drawtype, false);
 		}
 		// Copy last value to all remaining textures
-		if(i >= 1){
-			TileDef lasttile = f.tiledef[i-1];
-			while(i < 6){
-				f.tiledef[i] = lasttile;
-				i++;
+		if (i > 0 && i < 6) {
+			TileDef lasttile = tiledefs[i - 1];
+			for (int j = i; j < 6; ++j) {
+				tiledefs[j] = lasttile;
 			}
 		}
-	}
-	lua_pop(L, 1);
+		lua_pop(L, 1);
+	};
 
-// fm:
-/* Circuit options */
-	lua_getfield(L, index, "is_wire");
-	if(!lua_isnil(L, -1)) {
-		f.is_wire = true;
-	}
-	lua_pop(L, 1);
-	
-	lua_getfield(L, index, "is_wire_connector");
-	if(!lua_isnil(L, -1)) {
-		f.is_wire_connector = true;
-	}
-	lua_pop(L, 1);
-	
-	lua_getfield(L, index, "wire_connections");
-	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
-		// Both can't be set to true
-		f.is_wire |= !f.is_wire_connector;
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		int i;
-		unsigned char current_shift = 1;
-		for(i = 0; (i < 6) && (lua_next(L, table) != 0); ++i) {
-			f.wire_connections[i] = lua_tonumber(L, -1);
-			f.wire_connections[i] |= current_shift;
-			current_shift <<= 1;
-			lua_pop(L, 1);
-		}
-		if(i < 6) {
-			luaL_error(L, "Wire connectins array must have exactly 6 integer numbers.");
-		}
-
-		// Convert to two-way wire (one-way may cause undefined behavior)
-		for(i = 0; i < 6; ++i) {
-			for(int j = 0; j < 6; ++j) {
-				f.wire_connections[i] |= f.wire_connections[j] & (1 << i);
-				f.wire_connections[j] |= f.wire_connections[i] & (1 << j);
-			}
-		}
-		
-	} else if(f.is_wire || f.is_wire_connector) {
-		// Assuming that it's a standart wire or wire connector
-		for(int i = 0; i < 6; ++i) {
-			f.wire_connections[i] = 0x3F;
-		}
-	}
-	lua_pop(L, 1);
-	
-	lua_getfield(L, index, "circuit_states");
-	if(!lua_isnil(L, -1) && lua_istable(L, -1)) {
-		f.is_circuit_element = true;
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		int i;
-		for(i = 0; (i < 64) && (lua_next(L, table) != 0); ++i) {
-			f.circuit_element_func[i] = lua_tonumber(L, -1);
-			lua_pop(L, 1);
-		}
-		if(i < 64) {
-			luaL_error(L, "Circuit element states table must have exactly 64 integer numbers.");
-		}
-	}
-	lua_pop(L, 1);
-
-	f.circuit_element_delay = getintfield_default(L, index, "circuit_element_delay", f.circuit_element_delay + 1) - 1;
-	if(f.circuit_element_delay > 100) {
-		luaL_error(L, "\"circuit_element_delay\" must be a positive integer number less than 101");
-	}
-// ===
-
-	// overlay_tiles = {}
-	lua_getfield(L, index, "overlay_tiles");
-	if (lua_istable(L, -1)) {
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		int i = 0;
-		while (lua_next(L, table) != 0) {
-			// Read tiledef from value
-			f.tiledef_overlay[i] = read_tiledef(L, -1, f.drawtype, false);
-			// removes value, keeps key for next iteration
-			lua_pop(L, 1);
-			i++;
-			if (i == 6) {
-				lua_pop(L, 1);
-				break;
-			}
-		}
-		// Copy last value to all remaining textures
-		if (i >= 1) {
-			TileDef lasttile = f.tiledef_overlay[i - 1];
-			while (i < 6) {
-				f.tiledef_overlay[i] = lasttile;
-				i++;
-			}
-		}
-	}
-	lua_pop(L, 1);
+	read_tiles("tiles", f.tiledef);
+	read_tiles("overlay_tiles", f.tiledef_overlay);
 
 	// special_tiles = {}
 	lua_getfield(L, index, "special_tiles");
@@ -989,6 +972,7 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 				lua_pop(L, 1);
 				break;
 			}
+			f.tiledef_special[i] = read_tiledef(L, -1, f.drawtype, true);
 		}
 	}
 	lua_pop(L, 1);
@@ -1107,11 +1091,6 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 			"leveled_max", f.leveled_max);
 
 	getboolfield(L, index, "liquid_renewable", f.liquid_renewable);
-	getstringfield(L, index, "freeze", f.freeze);
-	getstringfield(L, index, "melt", f.melt);
-	f.light_vertical_dimnish = getfloatfield_default(L, index,
-			"light_vertical_dimnish", f.light_vertical_dimnish);
-
 	f.drowning = getintfield_default(L, index,
 			"drowning", f.drowning);
 	// Amount of light the node emits
@@ -1133,21 +1112,15 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 
 	lua_getfield(L, index, "connects_to");
 	if (lua_istable(L, -1)) {
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		while (lua_next(L, table) != 0) {
-			// Value at -1
+		LuaHelper::for_ipairs(L, -1, [&]() {
 			f.connects_to.emplace_back(lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
+		});
 	}
 	lua_pop(L, 1);
 
 	lua_getfield(L, index, "connect_sides");
 	if (lua_istable(L, -1)) {
-		int table = lua_gettop(L);
-		lua_pushnil(L);
-		while (lua_next(L, table) != 0) {
+		LuaHelper::for_ipairs(L, -1, [&]() {
 			// Value at -1
 			std::string_view side(lua_tostring(L, -1));
 			// Note faces are flipped to make checking easier
@@ -1166,8 +1139,7 @@ void read_content_features(lua_State *L, ContentFeatures &f, int index)
 			else
 				warningstream << "Unknown value for \"connect_sides\": "
 					<< side << std::endl;
-			lua_pop(L, 1);
-		}
+		});
 	}
 	lua_pop(L, 1);
 
@@ -1334,7 +1306,7 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 	lua_setfield(L, -2, "rightclickable");
 	lua_pushnumber(L, c.damage_per_second);
 	lua_setfield(L, -2, "damage_per_second");
-	//if (c.isLiquid()) {
+	if (1 || c.isLiquid()) {
 		lua_pushstring(L, liquid_type.c_str());
 		lua_setfield(L, -2, "liquid_type");
 		lua_pushstring(L, c.liquid_alternative_flowing.c_str());
@@ -1347,7 +1319,7 @@ void push_content_features(lua_State *L, const ContentFeatures &c)
 		lua_setfield(L, -2, "liquid_renewable");
 		lua_pushnumber(L, c.liquid_range);
 		lua_setfield(L, -2, "liquid_range");
-	//}
+	}
 	lua_pushnumber(L, c.drowning);
 	lua_setfield(L, -2, "drowning");
 	lua_pushboolean(L, c.floodable);
@@ -2278,6 +2250,7 @@ bool read_noiseparams(lua_State *L, int index, NoiseParams *np)
 	getfloatfield(L, index, "farspread",  np->far_spread);
 	getfloatfield(L, index, "farpersist",  np->far_persist);
 	getfloatfield(L, index, "farlacunarity",  np->far_lacunarity);
+	// ===
 
 	u32 flags    = 0;
 	u32 flagmask = 0;
@@ -2301,6 +2274,13 @@ void push_noiseparams(lua_State *L, NoiseParams *np)
 	setfloatfield(L, -1, "lacunarity",  np->lacunarity);
 	setintfield(  L, -1, "seed",        np->seed);
 	setintfield(  L, -1, "octaves",     np->octaves);
+
+	// fm:
+	setfloatfield(L, -1, "farscale",  np->far_scale);
+	setfloatfield(L, -1, "farspread",  np->far_spread);
+	setfloatfield(L, -1, "farpersist",  np->far_persist);
+	setfloatfield(L, -1, "farlacunarity",  np->far_lacunarity);
+	// ===
 
 	push_flags_string(L, flagdesc_noiseparams, np->flags,
 		np->flags);

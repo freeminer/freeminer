@@ -12,6 +12,8 @@ extern "C" {
 #include "log.h"
 #include "common/c_converter.h"
 #include "common/c_internal.h"
+#include "common/c_types.h"
+#include "common/helper.h"
 #include "constants.h"
 #include <set>
 #include <cmath>
@@ -491,14 +493,12 @@ size_t read_stringlist(lua_State *L, int index, std::vector<std::string> *result
 	size_t num_strings = 0;
 
 	if (lua_istable(L, index)) {
-		lua_pushnil(L);
-		while (lua_next(L, index)) {
+		LuaHelper::for_ipairs(L, index, [&]() {
 			if (lua_isstring(L, -1)) {
 				result->push_back(lua_tostring(L, -1));
 				num_strings++;
 			}
-			lua_pop(L, 1);
-		}
+		});
 	} else if (lua_isstring(L, index)) {
 		result->push_back(lua_tostring(L, index));
 		num_strings++;
