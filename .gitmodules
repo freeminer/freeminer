@@ -15,7 +15,7 @@
 	url = https://github.com/msgpack/msgpack-c.git
 [submodule "src/external/websocketpp"]
 	path = src/external/websocketpp
-	url = https://github.com/jcelerier/websocketpp.git
+	url = https://github.com/zaphoyd/websocketpp.git
 [submodule "src/external/leveldb"]
 	path = src/external/leveldb
 	url = https://github.com/google/leveldb
