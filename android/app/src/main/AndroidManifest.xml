@@ -64,7 +64,7 @@
 
 		<provider
             android:name=".LuantiDocumentsProvider"
-            android:authorities="net.minetest.minetest.documents"
+            android:authorities="org.freeminer.freeminer.documents"
             android:exported="true"
             android:grantUriPermissions="true"
             android:permission="android.permission.MANAGE_DOCUMENTS">
