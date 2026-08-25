@@ -101,6 +101,32 @@
 
 #endif
 
+/*
+ * Some libcs provide endian.h but hide the conversion helpers behind feature
+ * macros (or an Android API level).  Use the compiler byte-order definitions
+ * when they were not made available by the system header.
+ */
+#if !defined(be32toh) || !defined(htobe32)
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+    defined(__ORDER_BIG_ENDIAN__)
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#ifndef be32toh
+#define be32toh(x) __builtin_bswap32((uint32_t)(x))
+#endif
+#ifndef htobe32
+#define htobe32(x) __builtin_bswap32((uint32_t)(x))
+#endif
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#ifndef be32toh
+#define be32toh(x) ((uint32_t)(x))
+#endif
+#ifndef htobe32
+#define htobe32(x) ((uint32_t)(x))
+#endif
+#endif
+#endif
+#endif
+
 #ifndef __STRICT_ALIGNMENT
 #define __STRICT_ALIGNMENT
 #if defined(__i386) || defined(__i386__) || defined(__x86_64) ||               \

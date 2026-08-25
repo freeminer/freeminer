@@ -14,6 +14,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <vector>
 
 /* make sure BYTE_ORDER macros are available */
 #ifdef _WIN32
@@ -37,6 +38,54 @@
 	#define BYTE_ORDER _BYTE_ORDER
 #elif !defined(BYTE_ORDER) && defined(__BYTE_ORDER)
 	#define BYTE_ORDER __BYTE_ORDER
+#endif
+
+/*
+ * Some libcs expose endian.h but hide the be*toh/htobe* helpers behind
+ * feature macros or an Android API level.  Provide them from the compiler's
+ * byte-order definitions when the system header did not expose them.
+ */
+#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
+		defined(__ORDER_BIG_ENDIAN__)
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		#ifndef be16toh
+			#define be16toh(x) __builtin_bswap16((u16)(x))
+		#endif
+		#ifndef be32toh
+			#define be32toh(x) __builtin_bswap32((u32)(x))
+		#endif
+		#ifndef be64toh
+			#define be64toh(x) __builtin_bswap64((u64)(x))
+		#endif
+		#ifndef htobe16
+			#define htobe16(x) __builtin_bswap16((u16)(x))
+		#endif
+		#ifndef htobe32
+			#define htobe32(x) __builtin_bswap32((u32)(x))
+		#endif
+		#ifndef htobe64
+			#define htobe64(x) __builtin_bswap64((u64)(x))
+		#endif
+	#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+		#ifndef be16toh
+			#define be16toh(x) ((u16)(x))
+		#endif
+		#ifndef be32toh
+			#define be32toh(x) ((u32)(x))
+		#endif
+		#ifndef be64toh
+			#define be64toh(x) ((u64)(x))
+		#endif
+		#ifndef htobe16
+			#define htobe16(x) ((u16)(x))
+		#endif
+		#ifndef htobe32
+			#define htobe32(x) ((u32)(x))
+		#endif
+		#ifndef htobe64
+			#define htobe64(x) ((u64)(x))
+		#endif
+	#endif
 #endif
 
 //#include "../msgpack_fix.h"
