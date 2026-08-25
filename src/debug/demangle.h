@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <string>
-
+#include <cstdlib>
 
 /** Demangles C++ symbol name.
   * When demangling fails, returns the original name and sets status to non-zero.

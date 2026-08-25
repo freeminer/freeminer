@@ -5,6 +5,7 @@
 #pragma once
 
 #include "cpp_api/s_base.h"
+#include <vector>
 
 class ScriptApiSSCSM : virtual public ScriptApiBase
 {

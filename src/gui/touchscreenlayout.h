@@ -10,6 +10,7 @@
 #include "util/enum_string.h"
 #include <iostream>
 #include <unordered_map>
+#include <vector>
 
 class ISimpleTextureSource;
 namespace gui

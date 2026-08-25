@@ -6,6 +6,8 @@
 
 #include "irrlichttypes_bloated.h"
 
+#include <vector>
+
 namespace scene {
 	class IAnimatedMesh;
 	class IMesh;

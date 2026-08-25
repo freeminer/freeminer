@@ -8,6 +8,7 @@
 #include "log_types.h"
 
 #include <algorithm>
+#include <iterator>
 #include <stack>
 #include <utility>
 #include "serverenvironment.h"
