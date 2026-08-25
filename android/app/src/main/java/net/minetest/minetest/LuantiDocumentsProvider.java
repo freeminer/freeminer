@@ -1,4 +1,4 @@
-package net.minetest.minetest;
+package org.freeminer.freeminer;
 
 import static android.provider.DocumentsContract.Document;
 import static android.provider.DocumentsContract.Root;
