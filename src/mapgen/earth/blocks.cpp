@@ -3,6 +3,7 @@
 #include "log.h"
 
 #include <initializer_list>
+#include <mutex>
 
 namespace arnis
 {
@@ -322,15 +323,23 @@ Block LIGHT_GRAY_WALL_BANNER;
 Block &SMOOTH_STONE_BLOCK = SMOOTH_STONE;
 }
 
-bool inited = false;
+namespace
+{
+std::mutex block_mapping_mutex;
+const void *mapped_node_def_manager = nullptr;
+}
+
 void init(MapgenEarth *mg)
 {
-	if (inited) {
+	if (!mg || !mg->m_emerge || !mg->m_emerge->ndef)
 		return;
-	}
-	inited = true;
 
-	const auto def = mg->m_emerge->ndef->getId("default:cobble");
+	const auto *node_def_manager = mg->m_emerge->ndef;
+	const std::lock_guard<std::mutex> lock(block_mapping_mutex);
+	if (mapped_node_def_manager == node_def_manager)
+		return;
+
+	const auto def = node_def_manager->getId("default:cobble");
 
 	struct NodeResolver
 	{
@@ -428,7 +437,9 @@ void init(MapgenEarth *mg)
 	PURPUR_BLOCK = g("default:stone");
 	PURPUR_PILLAR = g("default:stone");
 	QUARTZ_BRICKS = g("default:stone");
-	RAIL = g("default:rail");
+	// default:rail is only a Lua alias in Minetest Game. NodeDefManager lookups do
+	// not reliably resolve item aliases, so prefer the actually registered node.
+	RAIL = g({"carts:rail", "default:rail"});
 	RED_FLOWER = g("flowers:tulip");
 	RED_NETHER_BRICK = g("default:obsidianbrick");
 	RED_TERRACOTTA = g("default:clay");
@@ -538,13 +549,13 @@ void init(MapgenEarth *mg)
 	RAIL_NORTH_WEST = RAIL;
 	RAIL_SOUTH_EAST = RAIL;
 	RAIL_SOUTH_WEST = RAIL;
-	ADV_RAIL_NORTH_SOUTH = g({"advtrains:dtrack_st", "default:rail"});
+	ADV_RAIL_NORTH_SOUTH = g({"advtrains:dtrack_st", "carts:rail", "default:rail"});
 	ADV_RAIL_NORTH_SOUTH.setParam2(0);
-	ADV_RAIL_EAST_WEST = g({"advtrains:dtrack_st", "default:rail"});
+	ADV_RAIL_EAST_WEST = g({"advtrains:dtrack_st", "carts:rail", "default:rail"});
 	ADV_RAIL_EAST_WEST.setParam2(1);
-	ADV_RAIL_DIAGONAL_NE_SW = g({"advtrains:dtrack_st_45", "default:rail"});
+	ADV_RAIL_DIAGONAL_NE_SW = g({"advtrains:dtrack_st_45", "carts:rail", "default:rail"});
 	ADV_RAIL_DIAGONAL_NE_SW.setParam2(0);
-	ADV_RAIL_DIAGONAL_NW_SE = g({"advtrains:dtrack_st_45", "default:rail"});
+	ADV_RAIL_DIAGONAL_NW_SE = g({"advtrains:dtrack_st_45", "carts:rail", "default:rail"});
 	ADV_RAIL_DIAGONAL_NW_SE.setParam2(1);
 	ADV_PLATFORM_HIGH = g({"advtrains:platform_high_stonebrick", "default:stonebrick"});
 	COARSE_DIRT = g("default:dry_dirt");
@@ -708,6 +719,11 @@ void init(MapgenEarth *mg)
 	CYAN_TERRACOTTA = CYAN_CONCRETE;
 	BLACK_WOOL = g("wool:black");
 	LIGHT_GRAY_WALL_BANNER = LIGHT_GRAY_CONCRETE;
+
+	// Content IDs are local to a NodeDefManager. A process may open another
+	// world/game without restarting, so remember which registry these mappings
+	// belong to instead of treating initialization as process-global.
+	mapped_node_def_manager = node_def_manager;
 }
 
 }

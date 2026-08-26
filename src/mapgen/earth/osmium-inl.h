@@ -188,16 +188,17 @@ class MyHandler : public osmium::handler::Handler
 public:
 	MapgenEarth *mg{};
 	std::vector<arnis::ProcessedElement> elements;
-	std::unordered_set<std::int64_t> seen_way_ids;
+	std::unordered_set<std::uint64_t> seen_way_ids;
 
 	void append_way(const osmium::Way &way)
 	{
-		const auto id = static_cast<std::int64_t>(way.id());
+		const auto id = static_cast<std::uint64_t>(way.id());
 		if (!seen_way_ids.emplace(id).second)
 			return;
 
 		arnis::WorldEditor editor;
 		editor.mg = mg;
+		editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
 		arnis::ProcessedWay processed_way;
 		processed_way.id = id;
 		for (const auto &tag : way.tags())
@@ -235,6 +236,7 @@ public:
 		ground.mg = mg;
 		arnis::WorldEditor editor;
 		editor.mg = mg;
+		editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
 		editor.set_tile_hooks(
 				[this](int min_x, int min_z, int max_x, int max_z) {
 					return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
@@ -245,6 +247,14 @@ public:
 		XZBBox xzbbox(mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
 		arnis::BuildingFootprintBitmap building_footprints(xzbbox);
 		arnis::Args args;
+		args.use_3d = true;
+		args.disable_height_limit = false;
+		args.interior = true;
+		args.roof = true;
+		args.signage = arnis::SignageLevel::Full;
+		args.fillground = true;
+		args.disable_height_limit = true;
+
 		arnis::generate_world(
 				editor, elements, args, flood_fill_cache, building_footprints);
 	}
