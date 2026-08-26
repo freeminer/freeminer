@@ -59,6 +59,15 @@ extern Block ADV_RAIL_NORTH_SOUTH;
 extern Block ADV_RAIL_EAST_WEST;
 extern Block ADV_RAIL_DIAGONAL_NE_SW;
 extern Block ADV_RAIL_DIAGONAL_NW_SE;
+extern Block ADV_RAIL_STRAIGHT_0;
+extern Block ADV_RAIL_STRAIGHT_30;
+extern Block ADV_RAIL_STRAIGHT_45;
+extern Block ADV_RAIL_STRAIGHT_60;
+extern Block ADV_RAIL_CURVE_0;
+extern Block ADV_RAIL_CURVE_30;
+extern Block ADV_RAIL_CURVE_45;
+extern Block ADV_RAIL_CURVE_60;
+extern bool ADVTRAINS_AVAILABLE;
 extern Block ADV_PLATFORM_HIGH;
 }
 
