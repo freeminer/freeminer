@@ -170,6 +170,15 @@ Block ADV_RAIL_NORTH_SOUTH;
 Block ADV_RAIL_EAST_WEST;
 Block ADV_RAIL_DIAGONAL_NE_SW;
 Block ADV_RAIL_DIAGONAL_NW_SE;
+Block ADV_RAIL_STRAIGHT_0;
+Block ADV_RAIL_STRAIGHT_30;
+Block ADV_RAIL_STRAIGHT_45;
+Block ADV_RAIL_STRAIGHT_60;
+Block ADV_RAIL_CURVE_0;
+Block ADV_RAIL_CURVE_30;
+Block ADV_RAIL_CURVE_45;
+Block ADV_RAIL_CURVE_60;
+bool ADVTRAINS_AVAILABLE = false;
 Block ADV_PLATFORM_HIGH;
 Block COARSE_DIRT;
 Block IRON_ORE;
@@ -549,13 +558,35 @@ void init(MapgenEarth *mg)
 	RAIL_NORTH_WEST = RAIL;
 	RAIL_SOUTH_EAST = RAIL;
 	RAIL_SOUTH_WEST = RAIL;
-	ADV_RAIL_NORTH_SOUTH = g({"advtrains:dtrack_st", "carts:rail", "default:rail"});
+	// Advtrains 2.5+ registers four angular variants and rotates each with
+	// param2. Resolve the complete family only when the mod is present; the
+	// railway renderer then selects either this family or carts for the whole
+	// path, never a per-cell mixture.
+	ADVTRAINS_AVAILABLE =
+			mg->m_emerge->ndef->getId("advtrains:dtrack_st") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_cr") != CONTENT_IGNORE;
+	if (ADVTRAINS_AVAILABLE) {
+		ADV_RAIL_STRAIGHT_0 = g("advtrains:dtrack_st");
+		ADV_RAIL_STRAIGHT_30 = g("advtrains:dtrack_st_30");
+		ADV_RAIL_STRAIGHT_45 = g("advtrains:dtrack_st_45");
+		ADV_RAIL_STRAIGHT_60 = g("advtrains:dtrack_st_60");
+		ADV_RAIL_CURVE_0 = g("advtrains:dtrack_cr");
+		ADV_RAIL_CURVE_30 = g("advtrains:dtrack_cr_30");
+		ADV_RAIL_CURVE_45 = g("advtrains:dtrack_cr_45");
+		ADV_RAIL_CURVE_60 = g("advtrains:dtrack_cr_60");
+	} else {
+		ADV_RAIL_STRAIGHT_0 = ADV_RAIL_STRAIGHT_30 = ADV_RAIL_STRAIGHT_45 =
+				ADV_RAIL_STRAIGHT_60 = RAIL;
+		ADV_RAIL_CURVE_0 = ADV_RAIL_CURVE_30 = ADV_RAIL_CURVE_45 =
+				ADV_RAIL_CURVE_60 = RAIL;
+	}
+	ADV_RAIL_NORTH_SOUTH = ADV_RAIL_STRAIGHT_0;
 	ADV_RAIL_NORTH_SOUTH.setParam2(0);
-	ADV_RAIL_EAST_WEST = g({"advtrains:dtrack_st", "carts:rail", "default:rail"});
+	ADV_RAIL_EAST_WEST = ADV_RAIL_STRAIGHT_0;
 	ADV_RAIL_EAST_WEST.setParam2(1);
-	ADV_RAIL_DIAGONAL_NE_SW = g({"advtrains:dtrack_st_45", "carts:rail", "default:rail"});
+	ADV_RAIL_DIAGONAL_NE_SW = ADV_RAIL_STRAIGHT_45;
 	ADV_RAIL_DIAGONAL_NE_SW.setParam2(0);
-	ADV_RAIL_DIAGONAL_NW_SE = g({"advtrains:dtrack_st_45", "carts:rail", "default:rail"});
+	ADV_RAIL_DIAGONAL_NW_SE = ADV_RAIL_STRAIGHT_45;
 	ADV_RAIL_DIAGONAL_NW_SE.setParam2(1);
 	ADV_PLATFORM_HIGH = g({"advtrains:platform_high_stonebrick", "default:stonebrick"});
 	COARSE_DIRT = g("default:dry_dirt");
