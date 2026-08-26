@@ -178,6 +178,9 @@ Block ADV_RAIL_CURVE_0;
 Block ADV_RAIL_CURVE_30;
 Block ADV_RAIL_CURVE_45;
 Block ADV_RAIL_CURVE_60;
+Block ADV_RAIL_SLOPE_UP;
+Block ADV_RAIL_SLOPE_DOWN;
+bool ADVTRAINS_SLOPES_AVAILABLE = false;
 bool ADVTRAINS_AVAILABLE = false;
 Block ADV_PLATFORM_HIGH;
 Block COARSE_DIRT;
@@ -565,6 +568,9 @@ void init(MapgenEarth *mg)
 	ADVTRAINS_AVAILABLE =
 			mg->m_emerge->ndef->getId("advtrains:dtrack_st") != CONTENT_IGNORE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_cr") != CONTENT_IGNORE;
+	ADVTRAINS_SLOPES_AVAILABLE = ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst1") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst2") != CONTENT_IGNORE;
 	if (ADVTRAINS_AVAILABLE) {
 		ADV_RAIL_STRAIGHT_0 = g("advtrains:dtrack_st");
 		ADV_RAIL_STRAIGHT_30 = g("advtrains:dtrack_st_30");
@@ -574,11 +580,19 @@ void init(MapgenEarth *mg)
 		ADV_RAIL_CURVE_30 = g("advtrains:dtrack_cr_30");
 		ADV_RAIL_CURVE_45 = g("advtrains:dtrack_cr_45");
 		ADV_RAIL_CURVE_60 = g("advtrains:dtrack_cr_60");
+		if (ADVTRAINS_SLOPES_AVAILABLE) {
+			ADV_RAIL_SLOPE_UP = g("advtrains:dtrack_vst1");
+			ADV_RAIL_SLOPE_DOWN = g("advtrains:dtrack_vst2");
+		} else {
+			ADV_RAIL_SLOPE_UP = ADV_RAIL_STRAIGHT_0;
+			ADV_RAIL_SLOPE_DOWN = ADV_RAIL_STRAIGHT_0;
+		}
 	} else {
 		ADV_RAIL_STRAIGHT_0 = ADV_RAIL_STRAIGHT_30 = ADV_RAIL_STRAIGHT_45 =
 				ADV_RAIL_STRAIGHT_60 = RAIL;
 		ADV_RAIL_CURVE_0 = ADV_RAIL_CURVE_30 = ADV_RAIL_CURVE_45 =
 				ADV_RAIL_CURVE_60 = RAIL;
+		ADV_RAIL_SLOPE_UP = ADV_RAIL_SLOPE_DOWN = RAIL;
 	}
 	ADV_RAIL_NORTH_SOUTH = ADV_RAIL_STRAIGHT_0;
 	ADV_RAIL_NORTH_SOUTH.setParam2(0);

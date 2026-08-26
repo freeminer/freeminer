@@ -67,6 +67,9 @@ extern Block ADV_RAIL_CURVE_0;
 extern Block ADV_RAIL_CURVE_30;
 extern Block ADV_RAIL_CURVE_45;
 extern Block ADV_RAIL_CURVE_60;
+extern Block ADV_RAIL_SLOPE_UP;
+extern Block ADV_RAIL_SLOPE_DOWN;
+extern bool ADVTRAINS_SLOPES_AVAILABLE;
 extern bool ADVTRAINS_AVAILABLE;
 extern Block ADV_PLATFORM_HIGH;
 }
