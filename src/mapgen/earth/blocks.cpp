@@ -580,10 +580,13 @@ void init(MapgenEarth *mg)
 		ADV_RAIL_CURVE_30 = g("advtrains:dtrack_cr_30");
 		ADV_RAIL_CURVE_45 = g("advtrains:dtrack_cr_45");
 		ADV_RAIL_CURVE_60 = g("advtrains:dtrack_cr_60");
-		ADV_RAIL_SLOPE_UP = ADVTRAINS_SLOPES_AVAILABLE ?
-				g("advtrains:dtrack_vst1") : ADV_RAIL_STRAIGHT_0;
-		ADV_RAIL_SLOPE_DOWN = ADVTRAINS_SLOPES_AVAILABLE ?
-				g("advtrains:dtrack_vst2") : ADV_RAIL_STRAIGHT_0;
+		if (ADVTRAINS_SLOPES_AVAILABLE) {
+			ADV_RAIL_SLOPE_UP = g("advtrains:dtrack_vst1");
+			ADV_RAIL_SLOPE_DOWN = g("advtrains:dtrack_vst2");
+		} else {
+			ADV_RAIL_SLOPE_UP = ADV_RAIL_STRAIGHT_0;
+			ADV_RAIL_SLOPE_DOWN = ADV_RAIL_STRAIGHT_0;
+		}
 	} else {
 		ADV_RAIL_STRAIGHT_0 = ADV_RAIL_STRAIGHT_30 = ADV_RAIL_STRAIGHT_45 =
 				ADV_RAIL_STRAIGHT_60 = RAIL;
