@@ -1875,3 +1875,5 @@ void MapblockMeshGenerator::generate()
 		drawNode();
 	}
 }
+
+#include "fm_content_mapblock.cpp.inc"
