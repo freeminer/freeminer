@@ -43,7 +43,7 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 					const ContentFeatures &side =
 							nodedef->get(data->m_vmanip.getNodeNoEx(p2 + dir));
 					const bool translucent =
-							!(side.visuals->solidness || side.visuals->visual_solidness);
+							!(side.visuals->solidness_far || side.visuals->solidness || side.visuals->visual_solidness);
 					const bool same_flowing_liquid = side.drawtype == NDT_FLOWINGLIQUID &&
 													 cur_node.f->sameLiquidRender(side);
 					if (translucent && !same_flowing_liquid) {
@@ -55,7 +55,7 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 
 			if (n2 != CONTENT_AIR) {
 				const ContentFeatures &f2 = nodedef->get(n2);
-				if (f2.visuals->solidness_far == 2 && !liquid_needs_top_face)
+				if ( f2.visuals->solidness == 2 || f2.visuals->solidness_far == 2 && !liquid_needs_top_face)
 					continue;
 				if (cur_node.f->drawtype == NDT_LIQUID) {
 					if (cur_node.f->sameLiquidRender(f2))
