@@ -83,7 +83,7 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 
 	const u8 mask = faces ^ 0b0011'1111;
 	const auto scaled = data->fscale * BS;
-	aabb3o box(v3f(-HBS, 1.5f * BS - scaled, -HBS),
+	aabb3f box(v3f(-HBS, 1.5f * BS - scaled, -HBS),
 			v3f(scaled - HBS, 1.5f * BS, scaled - HBS));
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
