@@ -183,10 +183,15 @@ std::array<Block, 4> ADV_RAIL_SWITCH_RIGHT_STRAIGHT;
 std::array<Block, 4> ADV_RAIL_Y_TURNOUT;
 std::array<Block, 4> ADV_RAIL_THREE_WAY_STRAIGHT;
 std::array<Block, 4> ADV_RAIL_PERP_CROSSING;
+std::array<Block, 6> ADV_RAIL_90_PLUS_CROSSING;
+std::array<Block, 7> ADV_RAIL_DIAGONAL_CROSSING;
 Block ADV_RAIL_SLOPE_UP;
 Block ADV_RAIL_SLOPE_DOWN;
+std::array<Block, 3> ADV_RAIL_GENTLE_SLOPE;
 bool ADVTRAINS_JUNCTIONS_AVAILABLE = false;
+bool ADVTRAINS_CROSSINGS_AVAILABLE = false;
 bool ADVTRAINS_SLOPES_AVAILABLE = false;
+bool ADVTRAINS_GENTLE_SLOPES_AVAILABLE = false;
 bool ADVTRAINS_AVAILABLE = false;
 Block ADV_PLATFORM_HIGH;
 Block COARSE_DIRT;
@@ -578,6 +583,11 @@ void init(MapgenEarth *mg)
 			ADVTRAINS_AVAILABLE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_vst1") != CONTENT_IGNORE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_vst2") != CONTENT_IGNORE;
+	ADVTRAINS_GENTLE_SLOPES_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst31") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst32") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst33") != CONTENT_IGNORE;
 	ADVTRAINS_JUNCTIONS_AVAILABLE =
 			ADVTRAINS_AVAILABLE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_swlst") != CONTENT_IGNORE &&
@@ -585,6 +595,10 @@ void init(MapgenEarth *mg)
 			mg->m_emerge->ndef->getId("advtrains:dtrack_sy_l") != CONTENT_IGNORE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_s3_s") != CONTENT_IGNORE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_xing_st") != CONTENT_IGNORE;
+	ADVTRAINS_CROSSINGS_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xing90plusx_30l") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xingdiag_30l45r") != CONTENT_IGNORE;
 	if (ADVTRAINS_AVAILABLE) {
 		ADV_RAIL_STRAIGHT_0 = g("advtrains:dtrack_st");
 		ADV_RAIL_STRAIGHT_30 = g("advtrains:dtrack_st_30");
@@ -612,6 +626,22 @@ void init(MapgenEarth *mg)
 						g(crossing.c_str());
 			}
 		}
+		if (ADVTRAINS_CROSSINGS_AVAILABLE) {
+			const std::array<const char *, 6> ninety{{"30l", "45l", "60l", "60r",
+					"45r", "30r"}};
+			for (std::size_t i = 0; i < ninety.size(); ++i) {
+				const std::string name =
+						"advtrains:dtrack_xing90plusx_" + std::string(ninety[i]);
+				ADV_RAIL_90_PLUS_CROSSING[i] = g(name.c_str());
+			}
+			const std::array<const char *, 7> diagonal{{"30l45r", "60l30l", "60l45r",
+					"60l60r", "60r45l", "60r30r", "30r45l"}};
+			for (std::size_t i = 0; i < diagonal.size(); ++i) {
+				const std::string name =
+						"advtrains:dtrack_xingdiag_" + std::string(diagonal[i]);
+				ADV_RAIL_DIAGONAL_CROSSING[i] = g(name.c_str());
+			}
+		}
 		if (ADVTRAINS_SLOPES_AVAILABLE) {
 			ADV_RAIL_SLOPE_UP = g("advtrains:dtrack_vst1");
 			ADV_RAIL_SLOPE_DOWN = g("advtrains:dtrack_vst2");
@@ -619,12 +649,20 @@ void init(MapgenEarth *mg)
 			ADV_RAIL_SLOPE_UP = ADV_RAIL_STRAIGHT_0;
 			ADV_RAIL_SLOPE_DOWN = ADV_RAIL_STRAIGHT_0;
 		}
+		if (ADVTRAINS_GENTLE_SLOPES_AVAILABLE) {
+			ADV_RAIL_GENTLE_SLOPE = {g("advtrains:dtrack_vst31"),
+					g("advtrains:dtrack_vst32"), g("advtrains:dtrack_vst33")};
+		} else {
+			ADV_RAIL_GENTLE_SLOPE = {ADV_RAIL_SLOPE_UP, ADV_RAIL_SLOPE_DOWN,
+					ADV_RAIL_SLOPE_DOWN};
+		}
 	} else {
 		ADV_RAIL_STRAIGHT_0 = ADV_RAIL_STRAIGHT_30 = ADV_RAIL_STRAIGHT_45 =
 				ADV_RAIL_STRAIGHT_60 = RAIL;
 		ADV_RAIL_CURVE_0 = ADV_RAIL_CURVE_30 = ADV_RAIL_CURVE_45 = ADV_RAIL_CURVE_60 =
 				RAIL;
 		ADV_RAIL_SLOPE_UP = ADV_RAIL_SLOPE_DOWN = RAIL;
+		ADV_RAIL_GENTLE_SLOPE = {RAIL, RAIL, RAIL};
 	}
 	ADV_RAIL_NORTH_SOUTH = ADV_RAIL_STRAIGHT_0;
 	ADV_RAIL_NORTH_SOUTH.setParam2(0);
