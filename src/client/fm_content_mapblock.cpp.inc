@@ -4,6 +4,34 @@
 
 
 #include "irr_v3d.h"
+
+namespace
+{
+MapNode simplifyFarEmbeddedNode(MapNode node, const NodeDefManager *nodedef)
+{
+	const auto &features = nodedef->get(node);
+	const auto marker = features.name.rfind("_with_");
+	if (marker == std::string::npos)
+		return node;
+
+	// Nodes named e.g. "default:stone_with_copper" are embedded variants of
+	// the node before "_with_". A coarse sample loses the original faces and
+	// can make an enclosed ore look exposed. Render its host material instead;
+	// omitting the whole coarse cell would create another hole.
+	content_t host = CONTENT_IGNORE;
+	if (!nodedef->getId(features.name.substr(0, marker), host))
+		return node;
+
+	const auto &host_features = nodedef->get(host);
+	if (host_features.drawtype != NDT_NORMAL ||
+			host_features.visuals->solidness != 2)
+		return node;
+
+	node.setContent(host);
+	return node;
+}
+}
+
 bool MapblockMeshGenerator::drawFmScaledNode()
 {
 	if (data->fscale <= 1)
@@ -83,6 +111,9 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 
 	const u8 mask = faces ^ 0b0011'1111;
 	const auto scaled = data->fscale * BS;
+	// Far samples represent a cell ending at the sampled Y level. Keep the
+	// original downward Y anchoring; expanding upward exposes underground
+	// samples (notably ores) above the surrounding stone surface.
 	aabb3f box(v3f(-HBS, 1.5f * BS - scaled, -HBS),
 			v3f(scaled - HBS, 1.5f * BS, scaled - HBS));
 	box.MinEdge += cur_node.origin;
@@ -151,6 +182,8 @@ bool MapblockMeshGenerator::generateFm()
 				cur_node.n =
 						data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + cur_node.p)
 								.first;
+				if (data->far_step)
+					cur_node.n = simplifyFarEmbeddedNode(cur_node.n, nodedef);
 				cur_node.f = &nodedef->get(cur_node.n);
 				drawNode();
 			}
