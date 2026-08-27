@@ -21,16 +21,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <future>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <unordered_set>
 #include "servermap.h"
 #include "mapblock.h"
 
 class Server;
 class MapDatabase;
+
+namespace world_merge
+{
+// Select the representative sample for a 2x2x2 far node. Occupancy is decided
+// independently from material so a preferred solid sample cannot outweigh an
+// otherwise empty cell.
+std::optional<size_t> selectFarNodeIndex(const std::array<MapNode, 8> &samples);
+}
+
 class WorldMerger
 {
 public:

@@ -3,6 +3,7 @@ file(GLOB unittest_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 set(unittest_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_terraindiffusion.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_world_merge.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_abm.cpp
 
 	${unittest_HDRS}
