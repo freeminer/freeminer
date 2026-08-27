@@ -178,8 +178,14 @@ Block ADV_RAIL_CURVE_0;
 Block ADV_RAIL_CURVE_30;
 Block ADV_RAIL_CURVE_45;
 Block ADV_RAIL_CURVE_60;
+std::array<Block, 4> ADV_RAIL_SWITCH_LEFT_STRAIGHT;
+std::array<Block, 4> ADV_RAIL_SWITCH_RIGHT_STRAIGHT;
+std::array<Block, 4> ADV_RAIL_Y_TURNOUT;
+std::array<Block, 4> ADV_RAIL_THREE_WAY_STRAIGHT;
+std::array<Block, 4> ADV_RAIL_PERP_CROSSING;
 Block ADV_RAIL_SLOPE_UP;
 Block ADV_RAIL_SLOPE_DOWN;
+bool ADVTRAINS_JUNCTIONS_AVAILABLE = false;
 bool ADVTRAINS_SLOPES_AVAILABLE = false;
 bool ADVTRAINS_AVAILABLE = false;
 Block ADV_PLATFORM_HIGH;
@@ -572,6 +578,13 @@ void init(MapgenEarth *mg)
 			ADVTRAINS_AVAILABLE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_vst1") != CONTENT_IGNORE &&
 			mg->m_emerge->ndef->getId("advtrains:dtrack_vst2") != CONTENT_IGNORE;
+	ADVTRAINS_JUNCTIONS_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_swlst") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_swrst") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_sy_l") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_s3_s") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xing_st") != CONTENT_IGNORE;
 	if (ADVTRAINS_AVAILABLE) {
 		ADV_RAIL_STRAIGHT_0 = g("advtrains:dtrack_st");
 		ADV_RAIL_STRAIGHT_30 = g("advtrains:dtrack_st_30");
@@ -581,6 +594,24 @@ void init(MapgenEarth *mg)
 		ADV_RAIL_CURVE_30 = g("advtrains:dtrack_cr_30");
 		ADV_RAIL_CURVE_45 = g("advtrains:dtrack_cr_45");
 		ADV_RAIL_CURVE_60 = g("advtrains:dtrack_cr_60");
+		if (ADVTRAINS_JUNCTIONS_AVAILABLE) {
+			const std::array<std::string, 4> suffixes{{"", "_30", "_45", "_60"}};
+			for (std::size_t i = 0; i < suffixes.size(); ++i) {
+				const std::string left = "advtrains:dtrack_swlst" + suffixes[i];
+				const std::string right = "advtrains:dtrack_swrst" + suffixes[i];
+				const std::string y_turnout = "advtrains:dtrack_sy_l" + suffixes[i];
+				const std::string three_way = "advtrains:dtrack_s3_s" + suffixes[i];
+				const std::string crossing = "advtrains:dtrack_xing_st" + suffixes[i];
+				ADV_RAIL_SWITCH_LEFT_STRAIGHT[i] =
+						g(left.c_str());
+				ADV_RAIL_SWITCH_RIGHT_STRAIGHT[i] =
+						g(right.c_str());
+				ADV_RAIL_Y_TURNOUT[i] = g(y_turnout.c_str());
+				ADV_RAIL_THREE_WAY_STRAIGHT[i] = g(three_way.c_str());
+				ADV_RAIL_PERP_CROSSING[i] =
+						g(crossing.c_str());
+			}
+		}
 		if (ADVTRAINS_SLOPES_AVAILABLE) {
 			ADV_RAIL_SLOPE_UP = g("advtrains:dtrack_vst1");
 			ADV_RAIL_SLOPE_DOWN = g("advtrains:dtrack_vst2");
