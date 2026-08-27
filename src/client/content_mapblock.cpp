@@ -442,10 +442,10 @@ void MapblockMeshGenerator::drawSolidNode()
 	u16 lights[6];
 	content_t n1 = cur_node.n.getContent();
 	for (int face = 0; face < 6; face++) {
-		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face] * data->fscale;
+		v3s16 p2 = blockpos_nodes + cur_node.p + tile_dirs[face];
 		MapNode neighbor = data->m_vmanip.getNodeNoEx(p2);
 		content_t n2 = neighbor.getContent();
-		bool backface_culling = cur_node.f->drawtype == NDT_NORMAL || data->fscale > 1;
+		bool backface_culling = cur_node.f->drawtype == NDT_NORMAL;
 		if (n2 == n1)
 			continue;
 		if (n2 == CONTENT_IGNORE)
@@ -480,19 +480,14 @@ void MapblockMeshGenerator::drawSolidNode()
 			}
 		}
 		if (n2 != CONTENT_AIR) {
-
-			if (data->far_step)
-				continue; // Maybe skip too much
-			// TODO: always draw corner block faces for far and maybe lod for closing step-change-holes
-
 			const ContentFeatures &f2 = nodedef->get(n2);
-			if ((data->fscale > 1 ? f2.visuals->solidness_far == 2 : f2.visuals->solidness == 2) && !liquid_needs_top_face)
+			if (f2.visuals->solidness == 2 && !liquid_needs_top_face)
 				continue;
 			if (cur_node.f->drawtype == NDT_LIQUID) {
 				if (cur_node.f->sameLiquidRender(f2))
 					continue;
 				backface_culling =
-					!liquid_needs_top_face && ((f2.visuals->solidness || f2.visuals->visual_solidness) || (data->fscale > 1 && f2.visuals->solidness_far));
+					!liquid_needs_top_face && (f2.visuals->solidness || f2.visuals->visual_solidness);
 			}
 		}
 		faces |= 1 << face;
@@ -509,17 +504,6 @@ void MapblockMeshGenerator::drawSolidNode()
 		return;
 	u8 mask = faces ^ 0b0011'1111; // k-th bit is set if k-th face is to be *omitted*, as expected by cuboid drawing functions.
 	auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
-
-	if (data->fscale > 1) {
-		// TODO: maybe possibe make simpler?/
-		box.MinEdge += v3f(HBS, 0, HBS);
-		box.MinEdge *= v3f(data->fscale, data->fscale, data->fscale);
-		box.MinEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
-		box.MaxEdge += v3f(HBS, 0, HBS);
-		box.MaxEdge *= v3f(data->fscale, data->fscale, data->fscale);
-		box.MaxEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
-	}
-
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
 	if (data->m_smooth_lighting) {
@@ -583,7 +567,6 @@ u8 MapblockMeshGenerator::getNodeBoxMask(aabb3f box, u8 solid_neighbors, u8 same
 			(box.MinEdge.Z == -NODE_BOUNDARY ? 32 : 0);
 
 	u8 sametype_mask = 0;
-    if (data->fscale <= 1)
 	if (cur_node.f->alpha == AlphaMode::ALPHAMODE_OPAQUE) {
 		// In opaque nodeboxes, faces on opposite sides can cancel
 		// each other out if there is a matching neighbor of the same type
@@ -1661,9 +1644,7 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			sametype_neighbors |= flag;
 
 		// mark neighbors that are simple solid blocks
-		if (nodedef->get(n2).drawtype == NDT_NORMAL 
-			|| data->far_step
-		)
+		if (nodedef->get(n2).drawtype == NDT_NORMAL)
 			solid_neighbors |= flag;
 
 		if (cur_node.f->node_box.type == NODEBOX_CONNECTED) {
@@ -1688,10 +1669,6 @@ void MapblockMeshGenerator::drawNodeboxNode()
 			is_transparent = true;
 			break;
 		}
-	}
-
-	if (data->far_step) {
-		is_transparent = 0;
 	}
 
 	// If "blend"-mode transparent, split boxes, so transparency sorting can work
@@ -1839,14 +1816,15 @@ void MapblockMeshGenerator::drawMeshNode()
 void MapblockMeshGenerator::errorUnknownDrawtype()
 {
 	infostream << "Got drawtype " << cur_node.f->drawtype << std::endl;
-/*
 	FATAL_ERROR("Unknown drawtype");
-*/
 }
 
 void MapblockMeshGenerator::drawNode()
 {
 	cur_node.origin = intToFloat(cur_node.p, BS);
+	if (drawFmScaledNode())
+		return;
+
 	switch (cur_node.f->drawtype) {
 		case NDT_AIRLIKE:  // Not drawn at all
 			return;
@@ -1857,12 +1835,6 @@ void MapblockMeshGenerator::drawNode()
 		default:
 			break;
 	}
-
-	if (data->fscale > 1) {
-		drawSolidNode();
-		return;
-	}
-
 	if (data->m_smooth_lighting) {
 		getSmoothLightFrame();
 	} else {
@@ -1891,31 +1863,14 @@ void MapblockMeshGenerator::generate()
 {
 	ZoneScoped;
 
-	const auto lstep = 1 << data->lod_step;
-	const auto fstep = 1 << data->far_step;
-	for (cur_node.pf.Z = cur_node.pr.Z = 0; cur_node.pr.Z < data->side_length_data; cur_node.pr.Z+=lstep, cur_node.pf.Z+=fstep)
-		for (cur_node.pf.X = cur_node.pr.X = 0; cur_node.pr.X < data->side_length_data; cur_node.pr.X += lstep, cur_node.pf.X += fstep) {
-            uint16_t prev_visibles = 0;
-            uint16_t prev_invisibles = 0;
-			for (cur_node.pf.Y = cur_node.pr.Y = 0; cur_node.pr.Y < data->side_length_data; cur_node.pr.Y += lstep, cur_node.pf.Y += fstep) {
-				cur_node.p = (data->far_step ? cur_node.pf : cur_node.pr);
-				const auto [n, visible] =
-						data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + cur_node.p);
+	if (generateFm())
+		return;
 
-				cur_node.n = n;
-				cur_node.f = &nodedef->get(cur_node.n);
-				drawNode();
-#if 0 && !defined(FARMESH_DEBUG)
-				if (prev_invisibles > 1 && prev_visibles > 2) {
-					// May cause holes
-					break;
-				}
-				if (visible) {
-					++prev_visibles;
-				} else {
-					++prev_invisibles;
-				}
-#endif				
-			}
-		}
+	for (cur_node.p.Z = 0; cur_node.p.Z < data->m_side_length; cur_node.p.Z++)
+	for (cur_node.p.Y = 0; cur_node.p.Y < data->m_side_length; cur_node.p.Y++)
+	for (cur_node.p.X = 0; cur_node.p.X < data->m_side_length; cur_node.p.X++) {
+		cur_node.n = data->m_vmanip.getNodeNoEx(blockpos_nodes + cur_node.p);
+		cur_node.f = &nodedef->get(cur_node.n);
+		drawNode();
+	}
 }

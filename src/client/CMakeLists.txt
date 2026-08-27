@@ -29,6 +29,7 @@ set(client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_client_mcp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_client.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_clientmap.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_content_mapblock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_far_container.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_farmesh.cpp
 	${client_HDRS}

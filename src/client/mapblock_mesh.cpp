@@ -722,6 +722,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 
       	    //if (step <= data->m_client->m_env.getClientMap().getControl().farmesh || !data->m_client->m_env.getClientMap().getControl().farmesh) {
 			// Generate animation data
+           if(far_step <= 0)
 			if (p.layer.material_flags & MATERIAL_FLAG_ANIMATION && !p.layer.frames->empty()) {
 				// Add to MapBlockMesh in order to animate these tiles
 				m_animation_info.emplace(std::make_pair(layer, i), AnimationInfo(p.layer));
@@ -742,6 +743,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			}
 
 			// Handle crack
+           if (far_step <= 0)
 			if (p.layer.material_flags & MATERIAL_FLAG_CRACK) {
 				auto *t = m_tsrc->getTextureForMesh("crack_anylength.png");
 				material.setTexture(TEXTURE_LAYER_CRACK, t);
@@ -857,7 +859,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 		}
 	}
 
-	if (data->lod_step <= 0)
+	if (data->far_step <= 0 && data->lod_step <= 0)
 	m_bsp_tree.buildTree(&m_transparent_triangles, data->m_side_length);
 
 	// Check if animation is required for this mesh
