@@ -2,7 +2,6 @@
 // Included at the end of content_mapblock.cpp so it can reuse its private
 // mesh-generator helpers without changing the upstream implementation.
 
-#pragma once
 
 #include "irr_v3d.h"
 bool MapblockMeshGenerator::drawFmScaledNode()
