@@ -311,25 +311,30 @@ void NodeVisuals::updateTextures(ContentFeatures &f, ITextureSource *tsrc,
 		is_liquid = true;
 		break;
 	case NDT_FLOWINGLIQUID:
+        solidness_far = 1;
 		solidness = 0;
 		if (!tsettings.translucent_liquids)
 			alpha = ALPHAMODE_OPAQUE;
 		is_liquid = true;
 		break;
 	case NDT_GLASSLIKE:
+        solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		break;
 	case NDT_GLASSLIKE_FRAMED:
+        solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		break;
 	case NDT_GLASSLIKE_FRAMED_OPTIONAL:
+        solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		drawtype = tsettings.connected_glass ? NDT_GLASSLIKE_FRAMED : NDT_GLASSLIKE;
 		break;
 	case NDT_ALLFACES:
+        solidness_far = 1;
 		solidness = 0;
 		visual_solidness = 1;
 		break;
@@ -372,6 +377,7 @@ void NodeVisuals::updateTextures(ContentFeatures &f, ITextureSource *tsrc,
 		break;
 	case NDT_MESH:
 	case NDT_NODEBOX:
+        solidness_far = 1;
 		solidness = 0;
 		if (waving == 1) {
 			material_type = TILE_MATERIAL_WAVING_PLANTS;
@@ -395,6 +401,7 @@ void NodeVisuals::updateTextures(ContentFeatures &f, ITextureSource *tsrc,
 	}
 
 	if (is_liquid) {
+        solidness_far = 1;
 		if (waving == 3) {
 			material_type = alpha == ALPHAMODE_OPAQUE ?
 				TILE_MATERIAL_WAVING_LIQUID_OPAQUE : (alpha == ALPHAMODE_CLIP ?

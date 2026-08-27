@@ -315,6 +315,14 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							{1, 0, 1},
 							{1, 1, 1},
 					}};
+					const std::array<v3pos_t, 6> side_dirs{{
+							{-1, 0, 0},
+							{1, 0, 0},
+							{0, -1, 0},
+							{0, 1, 0},
+							{0, 0, -1},
+							{0, 0, 1},
+					}};
 					for (size_t sample_index = 0; sample_index < sample_dirs.size();
 							++sample_index) {
 						const auto &dir = sample_dirs[sample_index];
@@ -327,19 +335,9 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						samples[sample_index] = n;
 
 						const auto &lf = ndef->getLightingFlags(c);
-						const auto &cf = ndef->get(c);
-
 						if (const auto light_night = n.getLightRaw(LIGHTBANK_NIGHT, lf);
 								light_night) {
 							max_light_night = std::max(max_light_night, light_night);
-						}
-						// TODO: whats with lava?
-						if (farlights && !step && (lf.light_source) && !cf.isLiquid()) {
-							const auto plpos =
-									block->getPosRelative() + p; //pos_in_block;
-							generated_light_points[bbpos].try_emplace(
-									plpos, MapBlock::makeLightPoint(lf.light_source,
-												   get_light_source_color(cf)));
 						}
 					}
 
@@ -347,6 +345,37 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					if (!selected)
 						continue;
 					auto n = samples[*selected];
+
+					// Emit at most one far-light point for the selected material.
+					if (farlights && !step) {
+						const auto source_lf = ndef->getLightingFlags(n.getContent());
+						bool has_transparent_side = false;
+						const auto source_pos = sample_dirs[*selected];
+						for (const auto &side_dir : side_dirs) {
+							const auto side_pos = source_pos + side_dir;
+							for (size_t side_index = 0; side_index < samples.size(); ++side_index) {
+								if (sample_dirs[side_index] != side_pos)
+									continue;
+
+								const auto side_content = samples[side_index].getContent();
+								const auto &side_features = ndef->get(side_content);
+								const auto &side_lf = ndef->getLightingFlags(side_content);
+								if (side_content == CONTENT_AIR || side_features.isLiquid() ||
+										side_lf.light_propagates) {
+									has_transparent_side = true;
+								}
+								break;
+							}
+							if (has_transparent_side)
+								break;
+						}
+						if (source_lf.light_source && has_transparent_side) {
+							const auto plpos = block->getPosRelative() + lpos + source_pos;
+							generated_light_points[bbpos].try_emplace(plpos,
+									MapBlock::makeLightPoint(source_lf.light_source,
+											get_light_source_color(ndef->get(n.getContent()))));
+						}
+					}
 
 					if (max_light_night) {
 						n.setLight(LIGHTBANK_NIGHT, max_light_night,
