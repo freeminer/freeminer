@@ -119,6 +119,54 @@ static bool within_lazy_window(uint64_t source_time, uint64_t target_time, uint3
 	return source_time - target_time < lazy;
 }
 
+std::optional<size_t> world_merge::selectFarNodeIndex(
+		const std::array<MapNode, 8> &samples)
+{
+	constexpr size_t main_sample = 3;
+	size_t valid_count = 0;
+	size_t solid_count = 0;
+
+	for (const auto &node : samples) {
+		const auto content = node.getContent();
+		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN)
+			continue;
+		++valid_count;
+		if (content != CONTENT_AIR)
+			++solid_count;
+	}
+
+	if (!valid_count)
+		return std::nullopt;
+
+	// A tie is solid so a flat surface with four samples above and four below
+	// remains closed. Sparse solids no longer survive merely because they happen
+	// to contain the grid-aligned sample.
+	const bool select_solid = solid_count * 2 >= valid_count;
+	std::optional<size_t> best_index;
+	size_t best_count = 0;
+
+	for (size_t i = 0; i < samples.size(); ++i) {
+		const auto content = samples[i].getContent();
+		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN ||
+				(content != CONTENT_AIR) != select_solid)
+			continue;
+
+		size_t count = 0;
+		for (const auto &candidate : samples) {
+			if (candidate.getContent() == content)
+				++count;
+		}
+
+		if (!best_index || count > best_count ||
+				(count == best_count && i == main_sample)) {
+			best_index = i;
+			best_count = count;
+		}
+	}
+
+	return best_index;
+}
+
 WorldMerger::~WorldMerger()
 {
 	std::future<void> async;
@@ -252,55 +300,31 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 // Simple grid aligned
 										auto n = block->getNodeNoLock(lpos);
 #else
-					// Top content count
-
-					bool maybe_air{};
-					MapNode air;
-					std::array<content_t, 8> contents{};
-					std::array<uint8_t, 8> weights{};
-					std::array<MapNode, 8> nodes{};
-					size_t content_count = 0;
+					// Decide occupancy first, then select a material. Combining both
+					// votes used to preserve sparse underground fragments.
+					std::array<MapNode, 8> samples;
+					samples.fill(MapNode(CONTENT_IGNORE));
 					uint8_t max_light_night = 0;
-					for (const auto &dir : {
-								 v3pos_t{0, 1, 0},
-								 v3pos_t{1, 0, 0},
-								 v3pos_t{0, 0, 1},
-								 v3pos_t{0, 0, 0},
-								 v3pos_t{1, 1, 0},
-								 v3pos_t{0, 1, 1},
-								 v3pos_t{1, 0, 1},
-								 v3pos_t{1, 1, 1},
-						 }) {
+					const std::array<v3pos_t, 8> sample_dirs{{
+							{0, 1, 0},
+							{1, 0, 0},
+							{0, 0, 1},
+							{0, 0, 0},
+							{1, 1, 0},
+							{0, 1, 1},
+							{1, 0, 1},
+							{1, 1, 1},
+					}};
+					for (size_t sample_index = 0; sample_index < sample_dirs.size();
+							++sample_index) {
+						const auto &dir = sample_dirs[sample_index];
 						const auto p = lpos + dir;
 						const auto &n = block->getNodeNoLock(p);
 						const auto c = n.getContent();
-						if (c == CONTENT_IGNORE) {
+						if (c == CONTENT_IGNORE || c == CONTENT_UNKNOWN) {
 							continue;
 						}
-						if (c == CONTENT_AIR) {
-							maybe_air = true;
-							air = n;
-						}
-
-						uint8_t weight = c == CONTENT_AIR ? 1 : 2;
-						if (!dir.getLengthSQ()) {
-							// main node priority TODO: tune 2
-							weight += 4;
-						}
-
-						size_t content_index = 0;
-						for (; content_index < content_count; ++content_index) {
-							if (contents[content_index] == c)
-								break;
-						}
-						if (content_index == content_count) {
-							contents[content_index] = c;
-							weights[content_index] = 0;
-							++content_count;
-						}
-
-						weights[content_index] += weight;
-						nodes[content_index] = n;
+						samples[sample_index] = n;
 
 						const auto &lf = ndef->getLightingFlags(c);
 						const auto &cf = ndef->get(c);
@@ -319,18 +343,10 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						}
 					}
 
-					if (!content_count) {
-						if (maybe_air) {
-							block_up->setNodeNoLock(npos, air, true);
-						}
+					const auto selected = world_merge::selectFarNodeIndex(samples);
+					if (!selected)
 						continue;
-					}
-					size_t best_index = 0;
-					for (size_t i = 1; i < content_count; ++i) {
-						if (weights[i] > weights[best_index])
-							best_index = i;
-					}
-					auto n = nodes[best_index];
+					auto n = samples[*selected];
 
 					if (max_light_night) {
 						n.setLight(LIGHTBANK_NIGHT, max_light_night,
