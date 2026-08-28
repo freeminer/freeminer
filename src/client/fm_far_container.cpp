@@ -94,16 +94,25 @@ std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t 
 		if (m_surface_depth >= 0 && m_mg->surface_2d()) {
 			const auto surface_y =
 					get_surface_height_cached(this, m_mg, v2pos_t(pos.X, pos.Z));
+			const auto cell_size = static_cast<pos_t>(1) << step;
+			const auto height_above_surface = pos.Y - surface_y;
+			if (height_above_surface >= 0 && height_above_surface < cell_size) {
+				// Far cells end at the sampled Y and expand downward. The cell that
+				// contains the terrain surface therefore normally has its sample just
+				// above the exact height. Give it the calculated weather-dependent
+				// surface material instead of a stored dirt/ore sample.
+				const auto fill = m_mg->visible_content(
+						v3pos_t(pos.X, surface_y, pos.Z), use_weather);
+				const auto content = fill.getContent();
+				if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+						content != CONTENT_AIR) {
+					return {fill, false};
+				}
+			}
 			const auto preserved_depth =
-					static_cast<pos_t>(m_surface_depth) * (static_cast<pos_t>(1) << step);
+					static_cast<pos_t>(m_surface_depth) * cell_size;
 			if (pos.Y <= surface_y - preserved_depth) {
-				// At depth zero the cutoff is the terrain surface itself.  Do not
-				// let a stored coarse sample (for example an ore) replace that
-				// surface; one sample would be enlarged to an entire far-mesh cell.
-				// Use visible_content() there to retain the biome's top material.
-				const auto fill = pos.Y == surface_y
-						? m_mg->visible_content(pos, use_weather)
-						: m_mg->visible_surface;
+				const auto fill = m_mg->visible_surface;
 				const auto content = fill.getContent();
 				if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
 						content != CONTENT_AIR) {

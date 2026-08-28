@@ -51,8 +51,13 @@ MapNode simplifyFarNode(MapNode node, const NodeDefManager *nodedef)
 	// Nodes named e.g. "default:stone_with_copper" are embedded variants of
 	// the node before "_with_". A coarse sample loses the original faces and
 	// can make an enclosed ore look exposed. Render its host material instead;
-	// omitting the whole coarse cell would create another hole.
-	setFarHostNode(node, features.name.substr(0, marker), nodedef);
+	// omitting the whole coarse cell would create another hole. Restrict this
+	// heuristic to stone hosts: surface nodes such as dirt_with_grass and
+	// dirt_with_snow deliberately use the same naming pattern for their cover.
+	const auto host_name = features.name.substr(0, marker);
+	content_t host = CONTENT_IGNORE;
+	if (nodedef->getId(host_name, host) && nodedef->get(host).getGroup("stone") > 0)
+		setFarHostNode(node, host_name, nodedef);
 	return node;
 }
 }
