@@ -274,7 +274,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 	// top/bottom and Z faces, depth rows for X faces.
 	static const int merge_axes[6] = {0, 0, 2, 2, 0, 0};
 
-	const auto set_axis = [](auto &pos, int axis, const auto& value) {
+	const auto set_axis = [](auto &pos, int axis, const auto &value) {
 		if (axis == 0)
 			pos.X = value;
 		else if (axis == 1)
@@ -359,7 +359,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		for (const auto fixed_1 : coords) {
 			FmFarFace run;
 			size_t run_length = 0;
-			for (const s16 merged : coords) {
+			for (const auto& merged : coords) {
 				v3pos_t pos;
 				set_axis(pos, merge_axis, merged);
 				set_axis(pos, fixed_axis_0, fixed_0);
