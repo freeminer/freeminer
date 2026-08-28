@@ -148,8 +148,20 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 	// Far samples represent a cell ending at the sampled Y level. Keep the
 	// original downward Y anchoring; expanding upward exposes underground
 	// samples (notably ores) above the surrounding stone surface.
-	aabb3f box(v3f(-HBS, 1.5f * BS - scaled, -HBS),
-			v3f(scaled - HBS, 1.5f * BS, scaled - HBS));
+
+	// aabb3f box(v3f(-HBS, 1.5f * BS - scaled, -HBS), v3f(scaled - HBS, 1.5f * BS, scaled - HBS));
+
+    auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
+    if (data->fscale > 1) {
+            // TODO: maybe possibe make simpler?/
+            box.MinEdge += v3f(HBS, 0, HBS);
+            box.MinEdge *= v3f(data->fscale, data->fscale, data->fscale);
+            box.MinEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+            box.MaxEdge += v3f(HBS, 0, HBS);
+            box.MaxEdge *= v3f(data->fscale, data->fscale, data->fscale);
+            box.MaxEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+    }
+
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
 	if (far) {
