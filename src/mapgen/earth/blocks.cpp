@@ -152,7 +152,7 @@ bool STREETS_MARKINGS_AVAILABLE = false;
 Block STREETS_POLE;
 Block STREETS_BOLLARD;
 Block STREETS_GUARDRAIL;
-Block STREETS_TRAFFIC_LIGHT;
+std::array<Block, 3> STREETS_TRAFFIC_LIGHTS;
 bool STREETS_RRXING_AVAILABLE = false;
 Block STREETS_RRXING_BOTTOM;
 Block STREETS_RRXING_MIDDLE;
@@ -599,7 +599,10 @@ void init(MapgenEarth *mg)
 	STREETS_BOLLARD = g({"streets:bollard_steel_manual_up", "walls:cobble",
 			"default:cobble"});
 	STREETS_GUARDRAIL = g({"streets:guardrail", "walls:cobble", "default:cobble"});
-	STREETS_TRAFFIC_LIGHT = optional_sign("streets:trafficlight_top_off");
+	STREETS_TRAFFIC_LIGHTS = {
+			optional_sign("streets:trafficlight_top_red"),
+			optional_sign("streets:trafficlight_top_yellow"),
+			optional_sign("streets:trafficlight_top_green")};
 	STREETS_MARKINGS_AVAILABLE = STREETS_AVAILABLE &&
 			mg->m_emerge->ndef->getId(
 					"streets:mark_dashed_white_center_line_on_asphalt") != CONTENT_IGNORE;
