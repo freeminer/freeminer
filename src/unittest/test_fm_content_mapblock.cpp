@@ -59,7 +59,7 @@ public:
 		return data;
 	}
 
-	content_t addSimpleNode(const std::string &name, u32 texture)
+	content_t addSimpleNode(const std::string &name, u32 texture, bool stone = false)
 	{
 		ItemDefinition itemdef;
 		itemdef.type = ITEM_NODE;
@@ -72,6 +72,8 @@ public:
 		f.drawtype = NDT_NORMAL;
 		f.visuals->solidness = 2;
 		f.alpha = ALPHAMODE_OPAQUE;
+		if (stone)
+			f.groups["stone"] = 1;
 		for (TileDef &tiledef : f.tiledef)
 			tiledef.name = name + ".png";
 		for (TileSpec &tile : f.visuals->tiles)
@@ -121,6 +123,7 @@ public:
 	void testFastFaceCoverage();
 	void testGrassUsesOpaqueGround();
 	void testEmbeddedNodeUsesHost();
+	void testSurfaceCoverKeepsTexture();
 };
 
 static TestFmContentMapblock g_test_instance;
@@ -135,6 +138,7 @@ void TestFmContentMapblock::runTests(IGameDef *gamedef)
 	TEST(testFastFaceCoverage);
 	TEST(testGrassUsesOpaqueGround);
 	TEST(testEmbeddedNodeUsesHost);
+	TEST(testSurfaceCoverKeepsTexture);
 }
 
 void TestFmContentMapblock::testFarNode()
@@ -312,7 +316,7 @@ void TestFmContentMapblock::testGrassUsesOpaqueGround()
 void TestFmContentMapblock::testEmbeddedNodeUsesHost()
 {
 	FmMockGameDef gamedef;
-	content_t stone = gamedef.addSimpleNode("stone", 42);
+	content_t stone = gamedef.addSimpleNode("stone", 42, true);
 	content_t ore = gamedef.addSimpleNode("stone_with_copper", 13);
 	UASSERT(stone != ore);
 	gamedef.finalize();
@@ -324,6 +328,25 @@ void TestFmContentMapblock::testEmbeddedNodeUsesHost()
 	UASSERTEQ(std::size_t, col.prebuffers[0].size(), 1);
 	const auto &buf = col.prebuffers[0][0];
 	UASSERTEQ(u32, buf.layer.texture_id, 42);
+	UASSERTEQ(std::size_t, buf.vertices.size(), 24);
+	UASSERTEQ(std::size_t, buf.indices.size(), 36);
+}
+
+void TestFmContentMapblock::testSurfaceCoverKeepsTexture()
+{
+	FmMockGameDef gamedef;
+	content_t dirt = gamedef.addSimpleNode("dirt", 42);
+	content_t grass = gamedef.addSimpleNode("dirt_with_grass", 13);
+	UASSERT(dirt != grass);
+	gamedef.finalize();
+	MeshMakeData data = gamedef.makeMMD();
+	data.m_vmanip.setNode({0, 0, 0}, {grass, 0, 0});
+
+	MeshCollector col{{}};
+	MapblockMeshGenerator{&data, &col}.generate();
+	UASSERTEQ(std::size_t, col.prebuffers[0].size(), 1);
+	const auto &buf = col.prebuffers[0][0];
+	UASSERTEQ(u32, buf.layer.texture_id, 13);
 	UASSERTEQ(std::size_t, buf.vertices.size(), 24);
 	UASSERTEQ(std::size_t, buf.indices.size(), 36);
 }

@@ -158,7 +158,6 @@ public:
 	MapNode layers_get(float value, float max);
 	MapNode earth_layer_get(pos_t x, pos_t y, pos_t z, pos_t surface_y, float heat);
 	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
-	bool visible_water_level(const v3pos_t &p) override;
 	MapNode visible_content(const v3pos_t &p, bool use_weather) override;
 
 	pos_t get_height(pos_t x, pos_t z);
