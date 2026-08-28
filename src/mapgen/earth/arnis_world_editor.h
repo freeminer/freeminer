@@ -101,9 +101,9 @@ struct WorldEditor
 	{
 		std::size_t operator()(const std::pair<int, int> &p) const noexcept
 		{
-			std::size_t seed = std::hash<int>{}(p.first);
-			seed ^= std::hash<int>{}(p.second) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-			return seed;
+			const auto key = (std::uint64_t(static_cast<std::uint32_t>(p.first)) << 32) |
+					std::uint32_t(p.second);
+			return std::hash<std::uint64_t>{}(key);
 		}
 	};
 	MapgenEarth *mg{};
@@ -153,7 +153,14 @@ struct WorldEditor
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
 	std::vector<DecalFrame> placed_frames;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> written_cells;
-	std::unordered_map<std::pair<int, int>, int, XZCellHash> road_surface_overrides;
+	// Effective terrain/road elevation cache. The dense part covers the mapchunk
+	// and its OSM halo; only unusual out-of-halo queries use the sparse fallback.
+	// Road registration overwrites an existing sampled terrain entry.
+	mutable std::vector<int> ground_level_cache;
+	mutable std::unordered_map<std::pair<int, int>, int, XZCellHash>
+			ground_level_overflow;
+	int ground_cache_min_x = 0, ground_cache_min_z = 0;
+	std::size_t ground_cache_width = 0, ground_cache_height = 0;
 	std::optional<std::tuple<int, int, int, int>> strict_bounds;
 	int ground_origin_x = 0, ground_origin_z = 0;
 	bool ground_origin_set = false;
@@ -174,6 +181,32 @@ struct WorldEditor
 		ground_origin_x = x;
 		ground_origin_z = z;
 		ground_origin_set = true;
+		ground_level_cache.clear();
+		ground_level_overflow.clear();
+		ground_cache_width = ground_cache_height = 0;
+	}
+	void reserve_ground_level_cache()
+	{
+		ground_level_cache.clear();
+		ground_level_overflow.clear();
+		if (mg) {
+			// OSM generation includes a two-mapblock halo around the core mapchunk.
+			ground_cache_min_x = mg->node_min.X - 32;
+			ground_cache_min_z = mg->node_min.Z - 32;
+			ground_cache_width =
+					std::size_t(std::max(1, mg->node_max.X - mg->node_min.X + 65));
+			ground_cache_height =
+					std::size_t(std::max(1, mg->node_max.Z - mg->node_min.Z + 65));
+			const std::size_t columns = ground_cache_width * ground_cache_height;
+			if (columns <= 262144) {
+				ground_level_cache.assign(columns, std::numeric_limits<int>::min());
+				ground_level_overflow.reserve(1024);
+				return;
+			}
+		}
+		ground_cache_width = ground_cache_height = 0;
+		ground_level_cache.clear();
+		ground_level_overflow.reserve(4096);
 	}
 	XZPoint ground_point(int x, int z) const
 	{
@@ -672,10 +705,30 @@ struct WorldEditor
 	int get_absolute_y(int x, int y, int z) const { return get_ground_level(x, z) + y; }
 	int get_ground_level(int x, int z) const
 	{
-		if (const auto it = road_surface_overrides.find({x, z});
-				it != road_surface_overrides.end())
+		const int local_x = x - ground_cache_min_x;
+		const int local_z = z - ground_cache_min_z;
+		if (local_x >= 0 && local_z >= 0 &&
+				std::size_t(local_x) < ground_cache_width &&
+				std::size_t(local_z) < ground_cache_height) {
+			const std::size_t index =
+					std::size_t(local_z) * ground_cache_width + std::size_t(local_x);
+			int &cached = ground_level_cache[index];
+			if (cached != std::numeric_limits<int>::min())
+				return cached;
+			if (!ground)
+				return 0;
+			cached = ground->level({x, z});
+			return cached;
+		}
+		const std::pair<int, int> position{x, z};
+		if (const auto it = ground_level_overflow.find(position);
+				it != ground_level_overflow.end())
 			return it->second;
-		return ground ? ground->level({x, z}) : 0;
+		if (!ground)
+			return 0;
+		const int level = ground->level({x, z});
+		ground_level_overflow.emplace(position, level);
+		return level;
 	}
 	std::optional<int> terrain_level(int x, int z) const
 	{
@@ -683,7 +736,16 @@ struct WorldEditor
 	}
 	void register_road_surface_y(int x, int z, int y)
 	{
-		road_surface_overrides[{x, z}] = y;
+		const int local_x = x - ground_cache_min_x;
+		const int local_z = z - ground_cache_min_z;
+		if (local_x >= 0 && local_z >= 0 &&
+				std::size_t(local_x) < ground_cache_width &&
+				std::size_t(local_z) < ground_cache_height) {
+			ground_level_cache[std::size_t(local_z) * ground_cache_width +
+					std::size_t(local_x)] = y;
+			return;
+		}
+		ground_level_overflow[{x, z}] = y;
 	}
 	bool water_source_is_enclosed(int x, int z) const
 	{

@@ -163,6 +163,7 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("farmesh_server", "1");
 	settings->setDefault("farmesh_all_changed", slow ? "1000" : android ? "3000" : "10000");
 	settings->setDefault("farmesh_surface_depth", "2");
+	settings->setDefault("farmesh_fast_faces", slow || android ? "true" : "false");
 	settings->setDefault("volumetric_fog", (android || slow) ? "0" : farmesh);
 	settings->setDefault("farlights", farmesh);
 

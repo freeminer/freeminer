@@ -4,12 +4,46 @@
 
 
 #include "irr_v3d.h"
+#include "fm_mapblock_mesh.cpp.inc"
 
 namespace
 {
-MapNode simplifyFarEmbeddedNode(MapNode node, const NodeDefManager *nodedef)
+static bool setFarHostNode(MapNode &node, const std::string &host_name,
+		const NodeDefManager *nodedef)
+{
+	content_t host = CONTENT_IGNORE;
+	if (!nodedef->getId(host_name, host))
+		return false;
+
+	const auto &host_features = nodedef->get(host);
+	if (host_features.drawtype != NDT_NORMAL ||
+			host_features.visuals->solidness != 2)
+		return false;
+
+	node.setContent(host);
+	return true;
+}
+
+MapNode simplifyFarNode(MapNode node, const NodeDefManager *nodedef)
 {
 	const auto &features = nodedef->get(node);
+
+	// Plantlike grass is mostly transparent. Enlarging it to a far cell makes
+	// the cutout pixels into terrain-sized holes, so use opaque grass-covered
+	// ground from the same namespace as its far representation.
+	const std::string grass_marker = ":grass_";
+	const auto grass = features.name.rfind(grass_marker);
+	if (features.drawtype == NDT_PLANTLIKE && grass != std::string::npos &&
+			grass + grass_marker.size() < features.name.size() &&
+			std::all_of(features.name.begin() + grass + grass_marker.size(),
+					features.name.end(),
+					[](unsigned char c) { return c >= '0' && c <= '9'; })) {
+		const auto host_name =
+				features.name.substr(0, grass) + ":dirt_with_grass";
+		if (setFarHostNode(node, host_name, nodedef))
+			return node;
+	}
+
 	const auto marker = features.name.rfind("_with_");
 	if (marker == std::string::npos)
 		return node;
@@ -18,16 +52,7 @@ MapNode simplifyFarEmbeddedNode(MapNode node, const NodeDefManager *nodedef)
 	// the node before "_with_". A coarse sample loses the original faces and
 	// can make an enclosed ore look exposed. Render its host material instead;
 	// omitting the whole coarse cell would create another hole.
-	content_t host = CONTENT_IGNORE;
-	if (!nodedef->getId(features.name.substr(0, marker), host))
-		return node;
-
-	const auto &host_features = nodedef->get(host);
-	if (host_features.drawtype != NDT_NORMAL ||
-			host_features.visuals->solidness != 2)
-		return node;
-
-	node.setContent(host);
+	setFarHostNode(node, features.name.substr(0, marker), nodedef);
 	return node;
 }
 }
@@ -54,7 +79,9 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 		bool backface_culling = true;
 
 		if (far) {
-			if (n2 != CONTENT_AIR)
+			// Missing far data must not occlude a known cell. The historical
+			// fast-face path also exposed solid/ignore boundaries.
+			if (!isFmFarEmpty(n2))
 				continue;
 		} else {
 			if (n2 == n1 || n2 == CONTENT_IGNORE)
@@ -83,7 +110,9 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 
 			if (n2 != CONTENT_AIR) {
 				const ContentFeatures &f2 = nodedef->get(n2);
-				if ( f2.visuals->solidness == 2 || f2.visuals->solidness_far == 2 && !liquid_needs_top_face)
+				if ((f2.visuals->solidness == 2 ||
+						f2.visuals->solidness_far == 2) &&
+						!liquid_needs_top_face)
 					continue;
 				if (cur_node.f->drawtype == NDT_LIQUID) {
 					if (cur_node.f->sameLiquidRender(f2))
@@ -118,6 +147,37 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 			v3f(scaled - HBS, 1.5f * BS, scaled - HBS));
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
+	if (far) {
+		const v3f center = (box.MinEdge + box.MaxEdge) * 0.5f / BS;
+		const v3f scale = (box.MaxEdge - box.MinEdge) / BS;
+		const v3f texture_pos = v3f::from(cur_node.p) /
+				static_cast<float>(data->fscale);
+		for (int face = 0; face < 6; ++face) {
+			if (mask & (1 << face))
+				continue;
+
+			u16 face_lights[4];
+			if (data->m_smooth_lighting) {
+				v3s16 corners[4];
+				getFmNodeVertexDirs(tile_dirs[face], corners);
+				for (int vertex = 0; vertex < 4; ++vertex) {
+					face_lights[vertex] = getSmoothLightSolid(blockpos_nodes + cur_node.p,
+							tile_dirs[face], corners[vertex], data);
+				}
+			} else {
+				std::fill_n(face_lights, 4, lights[face]);
+			}
+
+			const auto fast_face = makeFastFace(tiles[face], face_lights, texture_pos,
+					center, tile_dirs[face], scale, data->fscale,
+					cur_node.f->light_source);
+			const u16 *indices = fast_face.vertex_0_2_connected
+					? quad_indices_02
+					: quad_indices_13;
+			collector->append(fast_face.tile, fast_face.vertices, 4, indices, 6);
+		}
+		return true;
+	}
 
 	if (data->m_smooth_lighting) {
 		LightPair smooth_lights[6][4];
@@ -166,6 +226,8 @@ bool MapblockMeshGenerator::generateFm()
 {
 	if (data->fscale <= 1)
 		return false;
+	if (data->far_step >= 1 && g_settings->getBool("farmesh_fast_faces"))
+		return generateFmFarFastFaces();
 
 	const auto lod_stride = 1 << data->lod_step;
 	const auto far_stride = 1 << data->far_step;
@@ -183,10 +245,141 @@ bool MapblockMeshGenerator::generateFm()
 						data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + cur_node.p)
 								.first;
 				if (data->far_step)
-					cur_node.n = simplifyFarEmbeddedNode(cur_node.n, nodedef);
+					cur_node.n = simplifyFarNode(cur_node.n, nodedef);
 				cur_node.f = &nodedef->get(cur_node.n);
 				drawNode();
 			}
 
+	return true;
+}
+
+bool MapblockMeshGenerator::generateFmFarFastFaces()
+{
+	std::vector<s16> coords;
+	const auto lod_stride = 1 << data->lod_step;
+	const auto far_stride = 1 << data->far_step;
+	for (s16 regular = 0, far = 0; regular < data->side_length_data;
+			regular += lod_stride, far += far_stride)
+		coords.push_back(far);
+
+	static const v3s16 face_dirs[6] = {
+			{0, 1, 0}, {0, -1, 0}, {1, 0, 0},
+			{-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
+	// Match the historical fast-face row directions: horizontal rows for
+	// top/bottom and Z faces, depth rows for X faces.
+	static const int merge_axes[6] = {0, 0, 2, 2, 0, 0};
+
+	const auto set_axis = [](v3s16 &pos, int axis, s16 value) {
+		if (axis == 0)
+			pos.X = value;
+		else if (axis == 1)
+			pos.Y = value;
+		else
+			pos.Z = value;
+	};
+	const auto get_face = [&](const v3s16 &pos, int face) {
+		FmFarFace result;
+		cur_node.p = pos;
+		cur_node.n = simplifyFarNode(
+				data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + pos).first,
+				nodedef);
+		cur_node.f = &nodedef->get(cur_node.n);
+		if (isFmFarEmpty(cur_node.n.getContent()) ||
+				cur_node.f->drawtype == NDT_AIRLIKE)
+			return result;
+
+		const auto &dir = face_dirs[face];
+		const MapNode neighbor = data->m_vmanip.getNodeNoEx(
+				blockpos_nodes + pos + dir * data->fscale);
+		// CONTENT_IGNORE/UNKNOWN means that the adjacent far sample is not
+		// available. Hiding this known face would leave a visible mesh hole.
+		if (!isFmFarEmpty(neighbor.getContent()))
+			return result;
+
+		result.visible = true;
+		result.pos = pos;
+		result.emissive_light = cur_node.f->light_source;
+		getTile(dir, &result.tile);
+		for (auto &layer : result.tile.layers)
+			layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+
+		if (data->m_smooth_lighting) {
+			v3s16 corners[4];
+			getFmNodeVertexDirs(dir, corners);
+			for (int vertex = 0; vertex < 4; ++vertex) {
+				result.lights[vertex] = getSmoothLightSolid(blockpos_nodes + pos,
+						dir, corners[vertex], data);
+			}
+		} else {
+			std::fill_n(result.lights, 4,
+					getFaceLight(cur_node.n, neighbor, nodedef));
+		}
+		return result;
+	};
+	const auto append_run = [&](const FmFarFace &face, const v3s16 &dir,
+			int merge_axis, size_t count) {
+		v3f scale(data->fscale);
+		if (merge_axis == 0)
+			scale.X *= count;
+		else if (merge_axis == 1)
+			scale.Y *= count;
+		else
+			scale.Z *= count;
+
+		const float fscale = data->fscale;
+		v3f center = v3f::from(face.pos) +
+				v3f((fscale - 1.0f) * 0.5f, 1.5f - fscale * 0.5f,
+						(fscale - 1.0f) * 0.5f);
+		v3f row_dir;
+		if (merge_axis == 0)
+			row_dir.X = 1.0f;
+		else if (merge_axis == 1)
+			row_dir.Y = 1.0f;
+		else
+			row_dir.Z = 1.0f;
+		center += row_dir * (fscale * (count - 1) * 0.5f);
+
+		const auto fast_face = makeFastFace(face.tile, face.lights,
+				v3f::from(face.pos) / fscale, center, dir, scale,
+				data->fscale, face.emissive_light);
+		collector->append(fast_face.tile, fast_face.vertices, 4,
+				fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6);
+	};
+
+	for (int face = 0; face < 6; ++face) {
+		const int merge_axis = merge_axes[face];
+		const int fixed_axis_0 = merge_axis == 0 ? 1 : 0;
+		const int fixed_axis_1 = merge_axis == 2 ? 1 : 2;
+		for (const s16 fixed_0 : coords)
+		for (const s16 fixed_1 : coords) {
+			FmFarFace run;
+			size_t run_length = 0;
+			for (const s16 merged : coords) {
+				v3s16 pos;
+				set_axis(pos, merge_axis, merged);
+				set_axis(pos, fixed_axis_0, fixed_0);
+				set_axis(pos, fixed_axis_1, fixed_1);
+				auto next = get_face(pos, face);
+				v3s16 expected_pos = run.pos;
+				set_axis(expected_pos, merge_axis,
+						merge_axis == 0 ? run.pos.X + run_length * data->fscale :
+						merge_axis == 1 ? run.pos.Y + run_length * data->fscale :
+								run.pos.Z + run_length * data->fscale);
+				if (run_length && (next.pos != expected_pos ||
+						!canMergeFmFarFaces(run, next))) {
+					append_run(run, face_dirs[face], merge_axis, run_length);
+					run_length = 0;
+				}
+				if (!run_length && next.visible) {
+					run = std::move(next);
+					run_length = 1;
+				} else if (run_length) {
+					++run_length;
+				}
+			}
+			if (run_length)
+				append_run(run, face_dirs[face], merge_axis, run_length);
+		}
+	}
 	return true;
 }
