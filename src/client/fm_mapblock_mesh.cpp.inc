@@ -14,7 +14,7 @@ struct FmFarFace
 	bool visible{};
 	TileSpec tile;
 	u16 lights[4]{};
-	v3s16 pos;
+	v3pos_t pos;
 	u8 emissive_light{};
 };
 
@@ -57,7 +57,7 @@ static const v3s16 fm_vertex_dirs[] = {
 		{-1, -1, -1}, {-1, -1,  1}, {-1,  1,  1}, {-1,  1, -1}, // -X
 };
 
-static void getFmNodeVertexDirs(const v3s16 &dir, v3s16 vertex_dirs[4])
+static void getFmNodeVertexDirs(const auto &dir, v3s16 vertex_dirs[4])
 {
 	assert(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z == 1);
 	const u8 index = (((dir.X + 2 * dir.Y + 3 * dir.Z) & 7) - 1) * 4;
