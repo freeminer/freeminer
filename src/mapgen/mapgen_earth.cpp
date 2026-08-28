@@ -737,22 +737,20 @@ MapNode MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 	const auto surface_y = get_height(p.X, p.Z);
 	const auto solid = visible(p, surface_y);
 	const auto water = visible_water_level(p);
-	const auto water_surface = p.Y == water_level;
-	if (!solid && !water && !water_surface) {
+	if (!solid && !water) {
 		return visible_transparent;
 	}
 
 	const float timeofday = env ? env->getTimeOfDayF() : 0.0f;
 	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
 	const bool weather = use_weather && env && env->m_use_weather;
-	const v3pos_t climate_p(
-			p.X, water_surface || !solid ? water_level : surface_y, p.Z);
+	const v3pos_t climate_p(p.X, solid ? surface_y : water_level, p.Z);
 	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
 
-	// Keep a water surface at sea level even when the elevation sample is
-	// exactly equal to water_level. Otherwise that very common ocean value is
-	// classified as solid ground before water is considered.
-	if (water_surface || (!solid && water)) {
+	// This water is a far-visibility model only. It describes the space above
+	// terrain whose elevation is below sea level; generateTerrain() deliberately
+	// does not use it to flood the actual world.
+	if (!solid && water) {
 		if (heat < 0 && p.Y > heat / 3 && valid(c_ice))
 			return MapNode(c_ice, LIGHT_SUN);
 		return node_or(n_water, visible_water);
@@ -813,7 +811,6 @@ pos_t MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
 
 int MapgenEarth::generateTerrain()
 {
-	const MapNode n_ice(c_ice);
 	u32 index = 0;
 	const auto em = vm->m_area.getExtent();
 
@@ -828,15 +825,13 @@ int MapgenEarth::generateTerrain()
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {
 				bool underground = height >= y;
-				if (y == water_level) {
-					vm->m_data[i] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
-				} else if (underground) {
+				if (underground) {
 					if (!vm->m_data[i]) {
 						vm->m_data[i] = earth_layer_get(x, y, z, height, heat);
 					}
-				} else if (y <= water_level) {
-					vm->m_data[i] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
 				} else {
+					// Below-sea-level elevation alone must not flood generated Earth.
+					// Confirmed ESA/OSM water is placed later by Arnis.
 					vm->m_data[i] = n_air;
 				}
 				vm->m_area.add_y(em, i, 1);
