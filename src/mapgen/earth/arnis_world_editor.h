@@ -33,6 +33,11 @@
 namespace arnis
 {
 
+namespace signage
+{
+struct SignageContext;
+}
+
 namespace block_definitions
 {
 extern Block CHEST;
@@ -149,6 +154,9 @@ struct WorldEditor
 			const std::vector<std::pair<std::string, std::string>> &)>
 			banner_sink;
 	std::shared_ptr<const decals::DecalRegistry> decal_registry;
+	// Per-generation signage state.  Rust keeps this in WorldEditor so parallel
+	// emerge threads never exchange intersection indexes or regional styles.
+	std::shared_ptr<const signage::SignageContext> signage_context;
 	std::function<bool(const DecalFrame &)> decal_frame_sink;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
 	std::vector<DecalFrame> placed_frames;
@@ -230,6 +238,10 @@ struct WorldEditor
 	{
 		decal_registry = std::move(registry);
 	}
+	void set_signage_context(std::shared_ptr<const signage::SignageContext> context)
+	{
+		signage_context = std::move(context);
+	}
 	void set_decal_frame_sink(std::function<bool(const DecalFrame &)> sink)
 	{
 		decal_frame_sink = std::move(sink);
@@ -295,10 +307,32 @@ struct WorldEditor
 		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
 	}
 	bool signage_enabled() const { return map_decals && bool(decal_registry); }
+	bool place_sign_node(Block sign, int x, int y, int z, std::int8_t param2,
+			const std::string &text = {})
+	{
+		if (!owns(x, z) || sign.id() == CONTENT_AIR)
+			return false;
+		sign.setParam2(static_cast<std::uint8_t>(param2));
+		if (!try_set_block_absolute(sign, x, y, z, std::nullopt, std::nullopt))
+			return false;
+		if (text.empty())
+			return true;
+		if (!mg || !mg->active_block_data ||
+			x < std::numeric_limits<pos_t>::min() ||
+			x > std::numeric_limits<pos_t>::max() ||
+			y < std::numeric_limits<pos_t>::min() ||
+			y > std::numeric_limits<pos_t>::max() ||
+			z < std::numeric_limits<pos_t>::min() ||
+			z > std::numeric_limits<pos_t>::max())
+			return false;
+		return mg->queueGeneratedSign(
+				{static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)},
+				text);
+	}
 	bool place_text_sign(
 			int x, int y, int z, std::int8_t facing, const std::string &text, bool steel)
 	{
-		if (!mg || !mg->active_block_data || text.empty() || !owns(x, z))
+		if (text.empty())
 			return false;
 		Block sign = block_definitions::SIGN;
 		if (steel) {
@@ -322,19 +356,7 @@ struct WorldEditor
 			else
 				sign = block_definitions::TEXT_SIGN_LARGE;
 		}
-		sign.setParam2(static_cast<std::uint8_t>(facing));
-		if (!try_set_block_absolute(sign, x, y, z, std::nullopt, std::nullopt))
-			return false;
-		if (x < std::numeric_limits<pos_t>::min() ||
-				x > std::numeric_limits<pos_t>::max() ||
-				y < std::numeric_limits<pos_t>::min() ||
-				y > std::numeric_limits<pos_t>::max() ||
-				z < std::numeric_limits<pos_t>::min() ||
-				z > std::numeric_limits<pos_t>::max())
-			return false;
-		return mg->queueGeneratedSign(
-				{static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)},
-				text);
+		return place_sign_node(sign, x, y, z, facing, text);
 	}
 	static std::tuple<int, int, int> decal_frame_cell(
 			int x, int y, int z, std::int8_t facing)

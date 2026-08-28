@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "irr_v3d.h"
@@ -189,6 +190,37 @@ public:
 	MapgenEarth *mg{};
 	std::vector<arnis::ProcessedElement> elements;
 	std::unordered_set<std::uint64_t> seen_way_ids;
+	std::unordered_set<std::uint64_t> seen_node_ids;
+	std::unordered_map<std::uint64_t, arnis::tags_t> tagged_node_tags;
+
+	void node(const osmium::Node &node)
+	{
+		const auto id = static_cast<std::uint64_t>(node.id());
+		if (!seen_node_ids.emplace(id).second)
+			return;
+		arnis::tags_t tags;
+		for (const auto &tag : node.tags())
+			tags.emplace(tag.key(), tag.value());
+		if (tags.empty())
+			return;
+		tagged_node_tags.emplace(id, tags);
+		arnis::WorldEditor editor;
+		editor.mg = mg;
+		editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
+		const auto pos = mg->ll_to_pos(
+				{static_cast<ll_t>(node.location().lat()),
+						static_cast<ll_t>(node.location().lon())});
+		const int x = pos.X, z = pos.Y;
+		if (x < mg->node_min.X || x > mg->node_max.X ||
+				z < mg->node_min.Z || z > mg->node_max.Z)
+			return;
+		arnis::ProcessedNode processed_node;
+		processed_node.id = id;
+		processed_node.tags = std::move(tags);
+		processed_node.x = x;
+		processed_node.z = z;
+		elements.emplace_back(std::move(processed_node));
+	}
 
 	void append_way(const osmium::Way &way)
 	{
@@ -205,11 +237,14 @@ public:
 			processed_way.tags.emplace(tag.key(), tag.value());
 		for (const auto &node : way.nodes()) {
 			arnis::ProcessedNode processed_node;
-			processed_node.tags = processed_way.tags;
+			const auto node_id = static_cast<std::uint64_t>(node.ref());
+			if (const auto found = tagged_node_tags.find(node_id);
+					found != tagged_node_tags.end())
+				processed_node.tags = found->second;
 			const auto [x, z] = editor.node_to_xz(node);
 			processed_node.x = x;
 			processed_node.z = z;
-			processed_node.id = id;
+			processed_node.id = node_id;
 			processed_way.nodes.emplace_back(std::move(processed_node));
 		}
 		elements.emplace_back(processed_way);
@@ -243,9 +278,7 @@ public:
 				},
 				[this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
 		editor.ground = &ground;
-		arnis::FloodFillCache flood_fill_cache;
 		XZBBox xzbbox(mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
-		arnis::BuildingFootprintBitmap building_footprints(xzbbox);
 		arnis::Args args;
 		args.use_3d = true;
 		args.disable_height_limit = false;
@@ -254,6 +287,9 @@ public:
 		args.signage = arnis::SignageLevel::Full;
 		args.fillground = true;
 		args.disable_height_limit = true;
+		auto flood_fill_cache = arnis::FloodFillCache::precompute(elements, args.timeout);
+		auto building_footprints =
+				flood_fill_cache.collect_building_footprints(elements, xzbbox);
 
 		arnis::generate_world(
 				editor, elements, args, flood_fill_cache, building_footprints);
