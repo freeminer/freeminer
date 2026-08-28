@@ -47,6 +47,7 @@ class MapblockMeshGenerator
 {
 // fm:
 	bool generateFm();
+	bool generateFmFarFastFaces();
 	bool drawFmScaledNode();
 // ===
 

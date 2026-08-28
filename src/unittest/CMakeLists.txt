@@ -56,6 +56,7 @@ set(unittest_SRCS
 
 set(unittest_client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_far_calc.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_content_mapblock.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh_compare.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_clientactiveobjectmgr.cpp
