@@ -220,6 +220,10 @@ void EmergeManager::initMapgens(MapgenParams *params)
 
 void EmergeManager::initThreads(bool should_multithread)
 {
+	// fm:
+	should_multithread = true;
+	// ===
+
 	s16 nthreads = g_settings->getS16("num_emerge_threads");
 	if (nthreads <= 0 && should_multithread) {
 		u32 concurrency = Thread::getNumberOfProcessors();
@@ -474,6 +478,15 @@ EmergeThread *EmergeManager::getOptimalThread()
 	size_t nthreads = m_threads.size();
 
 	FATAL_ERROR_IF(nthreads == 0, "No emerge threads!");
+
+	// fm:
+	{
+		static size_t index = 0;
+		if (++index >= nthreads)
+			index = 0;
+		return m_threads[index];
+	}
+	// ===
 
 	size_t index = 0;
 	size_t nitems_lowest = m_threads[0]->m_block_queue.size();
