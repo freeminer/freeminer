@@ -164,17 +164,17 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 			u16 face_lights[4];
 			if (data->m_smooth_lighting) {
 				v3s16 corners[4];
-				getFmNodeVertexDirs(tile_dirs[face], corners);
+				getFmNodeVertexDirs(posToS16(tile_dirs[face]), corners);
 				for (int vertex = 0; vertex < 4; ++vertex) {
 					face_lights[vertex] = getSmoothLightSolid(blockpos_nodes + cur_node.p,
-							tile_dirs[face], corners[vertex], data);
+							tile_dirs[face], s16ToPos(corners[vertex]), data);
 				}
 			} else {
 				std::fill_n(face_lights, 4, lights[face]);
 			}
 
 			const auto fast_face = makeFastFace(tiles[face], face_lights, texture_pos,
-					center, tile_dirs[face], scale, data->fscale,
+					center, posToS16(tile_dirs[face]), scale, data->fscale,
 					cur_node.f->light_source);
 			const u16 *indices = fast_face.vertex_0_2_connected
 					? quad_indices_02
@@ -267,14 +267,14 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 			regular += lod_stride, far += far_stride)
 		coords.push_back(far);
 
-	static const v3s16 face_dirs[6] = {
+	static const v3pos_t face_dirs[6] = {
 			{0, 1, 0}, {0, -1, 0}, {1, 0, 0},
 			{-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
 	// Match the historical fast-face row directions: horizontal rows for
 	// top/bottom and Z faces, depth rows for X faces.
 	static const int merge_axes[6] = {0, 0, 2, 2, 0, 0};
 
-	const auto set_axis = [](v3s16 &pos, int axis, s16 value) {
+	const auto set_axis = [](auto &pos, int axis, const auto& value) {
 		if (axis == 0)
 			pos.X = value;
 		else if (axis == 1)
@@ -282,7 +282,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		else
 			pos.Z = value;
 	};
-	const auto get_face = [&](const v3s16 &pos, int face) {
+	const auto get_face = [&](const auto &pos, int face) {
 		FmFarFace result;
 		cur_node.p = pos;
 		cur_node.n = simplifyFarNode(
@@ -313,7 +313,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 			getFmNodeVertexDirs(dir, corners);
 			for (int vertex = 0; vertex < 4; ++vertex) {
 				result.lights[vertex] = getSmoothLightSolid(blockpos_nodes + pos,
-						dir, corners[vertex], data);
+						dir, s16ToPos(corners[vertex]), data);
 			}
 		} else {
 			std::fill_n(result.lights, 4,
@@ -321,7 +321,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		}
 		return result;
 	};
-	const auto append_run = [&](const FmFarFace &face, const v3s16 &dir,
+	const auto append_run = [&](const FmFarFace &face, const auto &dir,
 			int merge_axis, size_t count) {
 		v3f scale(data->fscale);
 		if (merge_axis == 0)
@@ -345,7 +345,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		center += row_dir * (fscale * (count - 1) * 0.5f);
 
 		const auto fast_face = makeFastFace(face.tile, face.lights,
-				v3f::from(face.pos) / fscale, center, dir, scale,
+				v3f::from(face.pos) / fscale, center, posToS16(dir), scale,
 				data->fscale, face.emissive_light);
 		collector->append(fast_face.tile, fast_face.vertices, 4,
 				fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6);
@@ -355,17 +355,17 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		const int merge_axis = merge_axes[face];
 		const int fixed_axis_0 = merge_axis == 0 ? 1 : 0;
 		const int fixed_axis_1 = merge_axis == 2 ? 1 : 2;
-		for (const s16 fixed_0 : coords)
-		for (const s16 fixed_1 : coords) {
+		for (const auto fixed_0 : coords)
+		for (const auto fixed_1 : coords) {
 			FmFarFace run;
 			size_t run_length = 0;
 			for (const s16 merged : coords) {
-				v3s16 pos;
+				v3pos_t pos;
 				set_axis(pos, merge_axis, merged);
 				set_axis(pos, fixed_axis_0, fixed_0);
 				set_axis(pos, fixed_axis_1, fixed_1);
 				auto next = get_face(pos, face);
-				v3s16 expected_pos = run.pos;
+				auto expected_pos = run.pos;
 				set_axis(expected_pos, merge_axis,
 						merge_axis == 0 ? run.pos.X + run_length * data->fscale :
 						merge_axis == 1 ? run.pos.Y + run_length * data->fscale :

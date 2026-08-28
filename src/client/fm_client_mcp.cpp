@@ -793,13 +793,13 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 			} else if (tool_name == "set_player_control") {
 				PlayerControl control;
 				if (args.isMember("forward") && args["forward"].asBool())
-					control.direction_keys |= 1;
+					control.up = 1.0f;
 				if (args.isMember("backward") && args["backward"].asBool())
-					control.direction_keys |= 2;
+					control.down = 1.0f;
 				if (args.isMember("left") && args["left"].asBool())
-					control.direction_keys |= 4;
+					control.left = 1.0f;
 				if (args.isMember("right") && args["right"].asBool())
-					control.direction_keys |= 8;
+					control.right = 1.0f;
 				if (args.isMember("jump"))
 					control.jump = args["jump"].asBool();
 				if (args.isMember("sneak"))

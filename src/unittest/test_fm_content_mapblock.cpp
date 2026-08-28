@@ -1,5 +1,6 @@
 // Freeminer far-mesh tests kept separate from the upstream mesh-generator tests.
 
+#include "irr_v3d.h"
 #include "test.h"
 
 #include "client/content_mapblock.h"
@@ -227,7 +228,7 @@ void TestFmContentMapblock::testUnknownNeighborDoesNotHideFace()
 	gamedef.finalize();
 	MeshMakeData data = gamedef.makeMMD();
 	data.m_vmanip.setNode({0, 0, 0}, {stone, 0, 0});
-	static const v3s16 directions[6] = {
+	static const v3pos_t directions[6] = {
 			{0, 1, 0}, {0, -1, 0}, {1, 0, 0},
 			{-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
 	for (const auto &dir : directions)
@@ -254,11 +255,11 @@ void TestFmContentMapblock::testFastFaceCoverage()
 	for (int z = 0; z < side; ++z) {
 		occupied[x][y][z] = (x + 2 * y + 3 * z) % 5 < 2;
 		if (occupied[x][y][z])
-			data.m_vmanip.setNode(v3s16(x, y, z) * data.fscale, {stone, 0, 0});
+			data.m_vmanip.setNode(v3pos_t(x, y, z) * data.fscale, {stone, 0, 0});
 	}
 
 	size_t expected_faces = 0;
-	static const v3s16 directions[6] = {
+	static const v3pos_t directions[6] = {
 			{0, 1, 0}, {0, -1, 0}, {1, 0, 0},
 			{-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
 	for (int x = 0; x < side; ++x)
