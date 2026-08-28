@@ -141,6 +141,43 @@ Block STEEL_SIGN;
 Block TEXT_SIGN_SMALL;
 Block TEXT_SIGN_MEDIUM;
 Block TEXT_SIGN_LARGE;
+bool STREETS_AVAILABLE = false;
+Block ROAD_ASPHALT;
+Block ROAD_SIDEWALK;
+Block ROAD_MARK_DASHED_WHITE;
+Block ROAD_MARK_DASHED_WHITE_R90;
+Block ROAD_MARK_SOLID_WHITE_STRIPE;
+Block ROAD_MARK_SOLID_WHITE_STRIPE_R90;
+bool STREETS_MARKINGS_AVAILABLE = false;
+Block STREETS_POLE;
+Block STREETS_BOLLARD;
+Block STREETS_GUARDRAIL;
+Block STREETS_TRAFFIC_LIGHT;
+bool STREETS_RRXING_AVAILABLE = false;
+Block STREETS_RRXING_BOTTOM;
+Block STREETS_RRXING_MIDDLE;
+Block STREETS_RRXING_TOP;
+Block STREETS_EU_SIGN_STOP;
+Block STREETS_EU_SIGN_YIELD;
+Block STREETS_EU_SIGN_NO_ENTRY;
+Block STREETS_EU_SIGN_CROSSING;
+Block STREETS_EU_SIGN_CROSSBUCK;
+std::array<Block, 6> STREETS_EU_SPEED_SIGNS;
+Block STREETS_US_SIGN_STOP;
+Block STREETS_US_SIGN_YIELD;
+Block STREETS_US_SIGN_NO_ENTRY;
+Block STREETS_US_SIGN_CROSSING;
+Block STREETS_US_SIGN_CROSSBUCK;
+bool STREET_SIGNS_AVAILABLE = false;
+Block STREET_SIGN_BASIC;
+Block STREET_SIGN_STOP;
+Block STREET_SIGN_YIELD;
+Block STREET_SIGN_SPEED_LIMIT;
+Block STREET_SIGN_DO_NOT_ENTER;
+Block STREET_SIGN_PEDESTRIAN_CROSSING;
+Block STREET_SIGN_RR_CROSSBUCK;
+Block STREET_SIGN_US_ROUTE;
+Block STREET_SIGN_US_INTERSTATE;
 Block DECAL_FRAME;
 Block ANDESITE_WALL;
 Block STONE_BRICK_WALL;
@@ -503,13 +540,13 @@ void init(MapgenEarth *mg)
 	EARTH_BENCH = g({"homedecor:simple_bench", "stairs:slab_wood", "default:wood"});
 	EARTH_TRASH_CAN =
 			g({"homedecor:trash_can", "pipeworks:trashcan", "default:steelblock"});
-	EARTH_STREET_LAMP = g({"morelights_vintage:lantern_f", "homedecor:ground_lantern_14",
+	EARTH_STREET_LAMP = g({"streets:light_vertical_on", "morelights_vintage:lantern_f", "homedecor:ground_lantern_14",
 			"default:meselamp"});
 	EARTH_WELL = g({"homedecor:well", "default:stonebrick"});
 	EARTH_BARBECUE = g({"homedecor:barbecue", "default:furnace", "default:stone"});
 	EARTH_GRATING = g({"pipeworks:grating", "xpanes:bar_flat", "default:steelblock"});
-	EARTH_FENCE_CHAINLINK =
-			g({"homedecor:fence_chainlink", "xpanes:bar_flat", "default:steelblock"});
+	EARTH_FENCE_CHAINLINK = g({"streets:fence_chainlink",
+			"homedecor:fence_chainlink", "xpanes:bar_flat", "default:steelblock"});
 	EARTH_FENCE_BARBED =
 			g({"homedecor:fence_barbed_wire", "xpanes:bar_flat", "default:steelblock"});
 	EARTH_FENCE_PICKET =
@@ -547,6 +584,74 @@ void init(MapgenEarth *mg)
 			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
 	TEXT_SIGN_LARGE = g({"street_signs:sign_highway_large_green",
 			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
+	auto optional_sign = [&](const char *name) {
+		const auto id = mg->m_emerge->ndef->getId(name);
+		if (id == CONTENT_IGNORE)
+			return Block{CONTENT_AIR};
+		return Block{id};
+	};
+	STREETS_AVAILABLE =
+			mg->m_emerge->ndef->getId("streets:asphalt") != CONTENT_IGNORE;
+	ROAD_ASPHALT = g({"streets:asphalt", "basic_materials:concrete_block",
+			"wool:grey", "default:stone"});
+	ROAD_SIDEWALK = g({"streets:sidewalk", "default:stone_block", "default:stone"});
+	STREETS_POLE = g({"streets:bigpole", "walls:cobble", "default:stone"});
+	STREETS_BOLLARD = g({"streets:bollard_steel_manual_up", "walls:cobble",
+			"default:cobble"});
+	STREETS_GUARDRAIL = g({"streets:guardrail", "walls:cobble", "default:cobble"});
+	STREETS_TRAFFIC_LIGHT = optional_sign("streets:trafficlight_top_off");
+	STREETS_MARKINGS_AVAILABLE = STREETS_AVAILABLE &&
+			mg->m_emerge->ndef->getId(
+					"streets:mark_dashed_white_center_line_on_asphalt") != CONTENT_IGNORE;
+	ROAD_MARK_DASHED_WHITE = optional_sign(
+			"streets:mark_dashed_white_center_line_on_asphalt");
+	ROAD_MARK_DASHED_WHITE_R90 = optional_sign(
+			"streets:mark_dashed_white_center_line_r90_on_asphalt");
+	ROAD_MARK_SOLID_WHITE_STRIPE = optional_sign(
+			"streets:mark_solid_white_stripe_on_asphalt");
+	ROAD_MARK_SOLID_WHITE_STRIPE_R90 = optional_sign(
+			"streets:mark_solid_white_stripe_r90_on_asphalt");
+	STREETS_RRXING_AVAILABLE =
+			mg->m_emerge->ndef->getId("streets:rrxing_bottom") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("streets:rrxing_middle_center_off") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("streets:rrxing_top") != CONTENT_IGNORE;
+	STREETS_RRXING_BOTTOM = optional_sign("streets:rrxing_bottom");
+	STREETS_RRXING_MIDDLE = optional_sign("streets:rrxing_middle_center_off");
+	STREETS_RRXING_TOP = optional_sign("streets:rrxing_top");
+	STREETS_EU_SIGN_STOP = optional_sign("streets:sign_eu_stop_center");
+	STREETS_EU_SIGN_YIELD = optional_sign("streets:sign_eu_yield_center");
+	STREETS_EU_SIGN_NO_ENTRY = optional_sign("streets:sign_eu_noentry_center");
+	STREETS_EU_SIGN_CROSSING =
+			optional_sign("streets:sign_eu_pedestriancrossing_center");
+	STREETS_EU_SIGN_CROSSBUCK = optional_sign("streets:sign_eu_standrews_center");
+	const std::array<const char *, 6> eu_speeds{{"10", "30", "50", "70", "100", "120"}};
+	for (std::size_t i = 0; i < eu_speeds.size(); ++i) {
+		const std::string name =
+				"streets:sign_eu_" + std::string(eu_speeds[i]) + "_center";
+		STREETS_EU_SPEED_SIGNS[i] = optional_sign(name.c_str());
+	}
+	STREETS_US_SIGN_STOP = optional_sign("streets:sign_us_stop_center");
+	STREETS_US_SIGN_YIELD = optional_sign("streets:sign_us_yield_center");
+	STREETS_US_SIGN_NO_ENTRY = optional_sign("streets:sign_us_donotenter_center");
+	STREETS_US_SIGN_CROSSING = optional_sign("streets:sign_us_pedwarning_center");
+	STREETS_US_SIGN_CROSSBUCK = optional_sign("streets:sign_us_crossbuck_center");
+	// signs_lib creates the *_onpole variants while registering street_signs.
+	// Keep these optional: Arnis uses its generated decal signs in games which do
+	// not load street_signs, but should prefer the native meshes when they exist.
+	STREET_SIGNS_AVAILABLE =
+			mg->m_emerge->ndef->getId("street_signs:sign_basic") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("street_signs:sign_stop_onpole") != CONTENT_IGNORE;
+	STREET_SIGN_BASIC = optional_sign("street_signs:sign_basic");
+	STREET_SIGN_STOP = optional_sign("street_signs:sign_stop_onpole");
+	STREET_SIGN_YIELD = optional_sign("street_signs:sign_yield_onpole");
+	STREET_SIGN_SPEED_LIMIT = optional_sign("street_signs:sign_speed_limit_onpole");
+	STREET_SIGN_DO_NOT_ENTER = optional_sign("street_signs:sign_do_not_enter_onpole");
+	STREET_SIGN_PEDESTRIAN_CROSSING =
+			optional_sign("street_signs:sign_pedestrian_crossing_onpole");
+	STREET_SIGN_RR_CROSSBUCK =
+			optional_sign("street_signs:sign_rr_grade_crossbuck_onpole");
+	STREET_SIGN_US_ROUTE = optional_sign("street_signs:sign_us_route_onpole");
+	STREET_SIGN_US_INTERSTATE = optional_sign("street_signs:sign_us_interstate_onpole");
 	DECAL_FRAME = g({"freeminer:arnis_decal_frame", "air"});
 	ANDESITE_WALL = g({"walls:cobble", "default:stone"});
 	STONE_BRICK_WALL = g("default:stonebrick");
