@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cstdint>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 #include "database/database.h"
 #include "fm_weather.h"
@@ -877,6 +878,32 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 #endif
 
 		auto m_blocks_size = m_blocks.size();
+		std::unordered_set<MapBlock *> blocks_over_limit;
+		if (max_loaded_blocks >= 0 &&
+				m_blocks_size > static_cast<size_t>(max_loaded_blocks)) {
+			using TimedBlock = std::pair<float, MapBlockPtr>;
+			std::vector<TimedBlock> candidates;
+			candidates.reserve(m_blocks_size);
+			size_t invalid_blocks = 0;
+			for (const auto &ir : m_blocks) {
+				if (ir.second)
+					candidates.emplace_back(ir.second->getUsageTimer(), ir.second);
+				else
+					++invalid_blocks;
+			}
+
+			const size_t excess = m_blocks_size - static_cast<size_t>(max_loaded_blocks);
+			const size_t excess_live = excess > invalid_blocks ? excess - invalid_blocks : 0;
+			const auto older_first = [](const TimedBlock &a, const TimedBlock &b) {
+				return a.first > b.first;
+			};
+			if (excess_live < candidates.size())
+				std::nth_element(candidates.begin(), candidates.begin() + excess_live,
+						candidates.end(), older_first);
+			blocks_over_limit.reserve(excess_live);
+			for (size_t i = 0; i < excess_live; ++i)
+				blocks_over_limit.emplace(candidates[i].second.get());
+		}
 
 		for (const auto &ir : m_blocks) {
 			if (n++ < m_blocks_update_last) {
@@ -912,7 +939,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 				if (!lock->owns_lock()) {
 					continue;
 				}
-				if (block->getUsageTimer() > unload_timeout) { // block->refGet() <= 0 &&
+				if (block->getUsageTimer() > unload_timeout ||
+						blocks_over_limit.contains(block.get())) { // block->refGet() <= 0 &&
 					const v3bpos_t p = block->getPos();
 					changed_blocks_for_merge.emplace(p);
 
