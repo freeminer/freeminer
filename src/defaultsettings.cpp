@@ -87,14 +87,17 @@ const bool emscripten =
 
 const bool slow = debug || emscripten; // || android
 
-void fm_set_default_settings(Settings *settings) {
+void fm_set_default_settings(Settings *settings)
+{
 
 	settings->setDefault("timelapse", "0");
 
 	// Paths
 	settings->setDefault("screenshot_path", "screenshots"); // "."
-	settings->setDefault("serverlist_file", "favoriteservers.json"); // "favoriteservers.txt"
-	settings->setDefault("serverlist_cache", porting::path_user + DIR_DELIM + "client" + DIR_DELIM + "servers_public.json");
+	settings->setDefault(
+			"serverlist_file", "favoriteservers.json"); // "favoriteservers.txt"
+	settings->setDefault("serverlist_cache", porting::path_user + DIR_DELIM + "client" +
+													 DIR_DELIM + "servers_public.json");
 	settings->setDefault("serverlist_lan", "1");
 
 	// Main menu
@@ -105,7 +108,8 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Debugging stuff
 	settings->setDefault("show_debug", debug ? "true" : "false"); // "true"
-	settings->setDefault("deprecated_lua_api_handling", debug ? "log" : "legacy"); // "log"
+	settings->setDefault(
+			"deprecated_lua_api_handling", debug ? "log" : "legacy");	 // "log"
 	settings->setDefault("profiler_print_interval", debug ? "10" : "0"); // "0"
 	settings->setDefault("time_taker_enabled", debug ? "5" : "0");
 
@@ -122,8 +126,14 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Fonts
 	settings->setDefault("freetype", "true"); // "false"
-	settings->setDefault("font_path", porting::getDataPath("fonts" DIR_DELIM "liberationsans.ttf")); // porting::getDataPath("fonts" DIR_DELIM "lucida_sans")
-	settings->setDefault("mono_font_path", porting::getDataPath("fonts" DIR_DELIM "liberationmono.ttf")); // porting::getDataPath("fonts" DIR_DELIM "mono_dejavu_sans")
+	settings->setDefault("font_path",
+			porting::getDataPath(
+					"fonts" DIR_DELIM
+					"liberationsans.ttf")); // porting::getDataPath("fonts" DIR_DELIM "lucida_sans")
+	settings->setDefault("mono_font_path",
+			porting::getDataPath(
+					"fonts" DIR_DELIM
+					"liberationmono.ttf")); // porting::getDataPath("fonts" DIR_DELIM "mono_dejavu_sans")
 
 	settings->setDefault("reconnects", win ? "1" : "10"); // TODO: wix windows
 
@@ -131,7 +141,7 @@ void fm_set_default_settings(Settings *settings) {
 	//settings->setDefault("mg_name", "indev"); // "v6"
 	//settings->setDefault("mg_flags", "trees, caves, dungeons"); // "dungeons"
 	//settings->setDefault("mgv6_spflags", "jungles, biome_blend, snowbiomes"); // "jungles, snowbiomes"
-	settings->setDefault("mg_math", ""); // configuration in json struct
+	settings->setDefault("mg_math", "");   // configuration in json struct
 	settings->setDefault("mg_params", ""); // configuration in json struct
 	settings->setDefault("static_spawnpoint_find", "0");
 
@@ -141,7 +151,7 @@ void fm_set_default_settings(Settings *settings) {
 	// Waving
 	settings->setDefault("enable_waving_leaves", "true"); // "false"
 	settings->setDefault("enable_waving_plants", "true"); // "false"
-	settings->setDefault("enable_waving_water", "true"); // "false"
+	settings->setDefault("enable_waving_water", "true");  // "false"
 
 	// Shaders
 	//settings->setDefault("enable_bumpmapping", "true"); // "false"
@@ -153,7 +163,9 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "3" : "5");
-	const auto farmesh = slow ? "5000" : android ? "10000" : std::to_string(FARMESH_LIMIT / 2);
+	const auto farmesh = slow	   ? "5000"
+						 : android ? "10000"
+								   : std::to_string(FARMESH_LIMIT / 2);
 	settings->setDefault("farmesh", farmesh);
 	const auto mesh_chunk_and_farmesh_quality = "2"; //slow ? "2" : "4";
 	settings->setDefault("client_mesh_chunk", mesh_chunk_and_farmesh_quality);
@@ -161,7 +173,9 @@ void fm_set_default_settings(Settings *settings) {
 			mesh_chunk_and_farmesh_quality); //depends on client_mesh_chunk
 	settings->setDefault("farmesh_stable", "20");
 	settings->setDefault("farmesh_server", "1");
-	settings->setDefault("farmesh_all_changed", slow ? "1000" : android ? "3000" : "10000");
+	settings->setDefault("farmesh_all_changed", slow	  ? "1000"
+												: android ? "3000"
+														  : "10000");
 	settings->setDefault("farmesh_surface_depth", "2");
 	settings->setDefault("farmesh_fast_faces", slow || android ? "true" : "false");
 	settings->setDefault("volumetric_fog", (android || slow) ? "500" : "3000");
@@ -194,12 +208,12 @@ void fm_set_default_settings(Settings *settings) {
 
 	// Liquid
 	settings->setDefault("liquid_real", "true");
-    settings->setDefault("liquid_step", "100");
+	settings->setDefault("liquid_step", "100");
 	settings->setDefault("liquid_send", android ? "3.0" : "1.0");
 	settings->setDefault("liquid_relax", android ? "1" : "2");
 	settings->setDefault("liquid_fast_flood", "-200");
 	settings->setDefault("liquid_pressure", "1");
-	
+
 	// Weather
 	settings->setDefault("weather", threads ? "true" : "false");
 	settings->setDefault("weather_biome", "false");
@@ -234,35 +248,40 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("remote_proto", "");
 	settings->setDefault("timeout_mul", android ? "5" : "1");
 	settings->setDefault("default_game", "default"); // "minetest"
-	settings->setDefault("max_users", "100"); // "15"
-	settings->setDefault("enable_any_name", "0"); // WARNING! SETTING TO "1" COULD CAUSE SECURITY RISKS WITH MODULES WITH PLAYER DATA IN FILES CONTAINS PLAYER NAME IN FILENAME
+	settings->setDefault("max_users", "100");		 // "15"
+	settings->setDefault("enable_any_name",
+			"0"); // WARNING! SETTING TO "1" COULD CAUSE SECURITY RISKS WITH MODULES WITH PLAYER DATA IN FILES CONTAINS PLAYER NAME IN FILENAME
 	settings->setDefault("default_privs_creative", "interact, shout, fly, fast");
 	settings->setDefault("vertical_spawn_range", "50"); // "16"
 	settings->setDefault("cache_block_before_spawn", "true");
 	settings->setDefault("abm_random", (android || win) ? "false" : "true");
 	settings->setDefault("abm_max_catch_up_runs", "10");
 	settings->setDefault("active_block_range", android ? "1" : threads ? "4" : "2");
-	settings->setDefault("abm_neighbors_range_max", (threads && !win32 && !android) ? "16" : "1");
+	settings->setDefault(
+			"abm_neighbors_range_max", (threads && !win32 && !android) ? "16" : "1");
 	settings->setDefault("enable_force_load", "true");
 #if !MINETEST_PROTO
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50"); // "10"
 #endif
-	settings->setDefault("max_block_send_distance", "30"); // "9"
+	settings->setDefault("max_block_send_distance", "30");			 // "9"
 	settings->setDefault("server_unload_unused_data_timeout", "65"); // "29"
-	settings->setDefault("max_objects_per_block", "100"); // "49"
+	settings->setDefault("max_objects_per_block", "100");			 // "49"
 	settings->setDefault("server_occlusion", "true");
 	settings->setDefault("ignore_world_load_errors", "true"); // "false"
-	settings->setDefault("emergequeue_limit_diskonly", ""); // autodetect from number of cpus
-	settings->setDefault("emergequeue_limit_generate", ""); // autodetect from number of cpus
+	settings->setDefault(
+			"emergequeue_limit_diskonly", ""); // autodetect from number of cpus
+	settings->setDefault(
+			"emergequeue_limit_generate", "");			 // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
-	settings->setDefault("num_emerge_threads", ""); // "1" // Fix and enable auto
+	settings->setDefault("num_emerge_threads", "");		 // "1" // Fix and enable auto
 	settings->setDefault("server_map_save_interval", "300"); // "5.3"
-	settings->setDefault("sqlite_synchronous", "1"); // "2"
+	settings->setDefault("sqlite_synchronous", "1");		 // "2"
 	settings->setDefault("save_generated_block", "true");
 	settings->setDefault("save_changed_block", "true");
-	settings->setDefault("block_delete_time", debug || slow ? "60" : threads ? "30" : "10");
+	settings->setDefault("block_delete_time", debug || slow ? "60"
+											  : threads		? "30"
+															: "10");
 	settings->setDefault("fix_not_generated", "false");
-	
 
 #if (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
 	//settings->setDefault("enable_ipv6", "true");
@@ -271,7 +290,8 @@ void fm_set_default_settings(Settings *settings) {
 #endif
 
 #if !USE_IPV4_DEFAULT && (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
-	settings->setDefault("ipv6_server", "true"); // problems on all windows versions (unable to play in local game)
+	settings->setDefault("ipv6_server",
+			"true"); // problems on all windows versions (unable to play in local game)
 #else
 	//settings->setDefault("ipv6_server", "false");
 #endif
@@ -282,13 +302,13 @@ void fm_set_default_settings(Settings *settings) {
 
 	settings->setDefault("movement_fov", "true");
 	settings->setDefault("movement_acceleration_default", "4"); // "3"
-	settings->setDefault("movement_acceleration_air", "4"); // "2"
-	settings->setDefault("movement_speed_walk", "6"); // "4"
-	settings->setDefault("movement_speed_crouch", "2"); // "1.35"
-	settings->setDefault("movement_speed_fast", "20.5"); // "20"
+	settings->setDefault("movement_acceleration_air", "4");		// "2"
+	settings->setDefault("movement_speed_walk", "6");			// "4"
+	settings->setDefault("movement_speed_crouch", "2");			// "1.35"
+	settings->setDefault("movement_speed_fast", "20.5");		// "20"
 	//settings->setDefault("movement_fall_aerodynamics", "110");
 
-/*
+	/*
 	settings->setDefault("animation_default_start", "0");
 	settings->setDefault("animation_default_stop", "79");
 	settings->setDefault("animation_walk_start", "168");
@@ -336,7 +356,7 @@ void fm_set_default_settings(Settings *settings) {
 	//settings->setDefault("viewing_range", "25");
 	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
-/* fmtodo
+	/* fmtodo
 	if (x_inches  < 7) {
 		settings->setDefault("enable_minimap", "false");
 	}
@@ -371,28 +391,30 @@ void fm_set_default_settings(Settings *settings) {
 	settings->setDefault("texture_min_size", "16");
 	settings->setDefault("cloud_radius", "6");
 
-
 	{
-	std::stringstream fontsize;
-	auto density = porting::getDisplayDensity();
-	if (density > 1.6 && porting::getDisplaySize().X > 1024)
-		density = 1.6;
-	float font_size = 10 * density;
+		std::stringstream fontsize;
+		auto density = porting::getDisplayDensity();
+		if (density > 1.6 && porting::getDisplaySize().X > 1024)
+			density = 1.6;
+		float font_size = 10 * density;
 
-	fontsize << (int)font_size;
+		fontsize << (int)font_size;
 
-	settings->setDefault("font_size", fontsize.str());
-	settings->setDefault("mono_font_size", fontsize.str());
-	settings->setDefault("fallback_font_size", fontsize.str());
+		settings->setDefault("font_size", fontsize.str());
+		settings->setDefault("mono_font_size", fontsize.str());
+		settings->setDefault("fallback_font_size", fontsize.str());
 
-	actionstream << "Autoconfig: "" displayX=" << porting::getDisplaySize().X 
-		<< " density=" << porting::getDisplayDensity() 
-		//<< " dpi=" << porting::get_dpi()
-		//<< " densityDpi=" << porting::get_densityDpi()
-		//<< " x_inches=" << x_inches 
-		<< " font=" << font_size 
-		//<< " lang=" << lang <<
-		<<"\n";
+		actionstream << "Autoconfig: "
+						" displayX="
+					 << porting::getDisplaySize().X << " density="
+					 << porting::getDisplayDensity()
+					 //<< " dpi=" << porting::get_dpi()
+					 //<< " densityDpi=" << porting::get_densityDpi()
+					 //<< " x_inches=" << x_inches
+					 << " font="
+					 << font_size
+					 //<< " lang=" << lang <<
+					 << "\n";
 	}
 
 #endif
@@ -404,12 +426,9 @@ void fm_set_default_settings(Settings *settings) {
 
 #ifdef __EMSCRIPTEN__
 	settings->setDefault("viewing_range", "100");
-	//settings->setDefault("client_mesh_chunk", "4");
+	settings->setDefault("client_mapblock_limit", "1000");
 #endif
-
-
 }
-
 
 // End of freeminer ======
 
