@@ -2116,9 +2116,31 @@ Mapgen *ModApiMapgen::getMapgen(lua_State *L)
 	return getServer(L)->getEmergeManager()->getCurrentMapgen();
 }
 
+
+// fm:
+// get_ground_level(x = num, z = num)
+int ModApiMapgen::l_get_ground_level(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+
+	pos_t x = luaL_checkinteger(L, 1);
+	pos_t z = luaL_checkinteger(L, 2);
+
+	EmergeManager *emerge = getServer(L)->getEmergeManager();
+	lua_pushinteger(L, emerge->getGroundLevelAtPoint(v2pos_t(x, z)));
+	return 1;
+}
+// ===
+
+
+
 void ModApiMapgen::Initialize(lua_State *L, int top)
 {
-	API_FCT(get_biome_id);
+// fm:
+	API_FCT(get_ground_level);
+// ===
+
+API_FCT(get_biome_id);
 	API_FCT(get_biome_name);
 	API_FCT(get_heat);
 	API_FCT(get_humidity);

@@ -7085,6 +7085,9 @@ Environment access
     * If `include_add` is false, local dynamic humidity additions are ignored.
 * `core.get_wind(pos, include_add=true)`
     * Returns the wind as a vector at the position, or `nil` on failure.
+* `core.get_ground_level(x, z)`
+    * Returns the mapgen's unmodified terrain ground level at the provided
+      `(x, z)` coordinates.
 * `core.get_biome_data(pos)`
     * Returns a table containing:
         * `biome` the biome id of the biome at that position
