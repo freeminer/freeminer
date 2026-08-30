@@ -69,7 +69,8 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 	if (cur_node.f->drawtype == NDT_AIRLIKE)
 		return true;
 
-	const bool far = data->far_step >= 1;
+
+	const bool is_far = data->far_step >= 1;
 	u8 faces = 0;
 	static const v3pos_t tile_dirs[6] = {v3pos_t(0, 1, 0), v3pos_t(0, -1, 0),
 			v3pos_t(1, 0, 0), v3pos_t(-1, 0, 0), v3pos_t(0, 0, 1), v3pos_t(0, 0, -1)};
@@ -83,7 +84,7 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 		const content_t n2 = neighbor.getContent();
 		bool backface_culling = true;
 
-		if (far) {
+		if (is_far) {
 			// Missing far data must not occlude a known cell. The historical
 			// fast-face path also exposed solid/ignore boundaries.
 			if (!isFmFarEmpty(n2))
@@ -164,7 +165,7 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
-	if (far) {
+	if (is_far) {
 		const v3f center = (box.MinEdge + box.MaxEdge) * 0.5f / BS;
 		const v3f scale = (box.MaxEdge - box.MinEdge) / BS;
 		const v3f texture_pos = v3f::from(cur_node.p) /
