@@ -1,6 +1,15 @@
+#include <algorithm>
+#include <cctype>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
+#include <limits>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "irr_v3d.h"
@@ -188,27 +197,61 @@ class MyHandler : public osmium::handler::Handler
 public:
 	MapgenEarth *mg{};
 	std::vector<arnis::ProcessedElement> elements;
-	std::unordered_set<std::int64_t> seen_way_ids;
+	std::unordered_set<std::uint64_t> seen_way_ids;
+	std::unordered_set<std::uint64_t> seen_node_ids;
+	std::unordered_map<std::uint64_t, arnis::tags_t> tagged_node_tags;
+
+	void node(const osmium::Node &node)
+	{
+		const auto id = static_cast<std::uint64_t>(node.id());
+		if (!seen_node_ids.emplace(id).second)
+			return;
+		arnis::tags_t tags;
+		for (const auto &tag : node.tags())
+			tags.emplace(tag.key(), tag.value());
+		if (tags.empty())
+			return;
+		tagged_node_tags.emplace(id, tags);
+		arnis::WorldEditor editor;
+		editor.mg = mg;
+		editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
+		const auto pos = mg->ll_to_pos({static_cast<ll_t>(node.location().lat()),
+				static_cast<ll_t>(node.location().lon())});
+		const int x = pos.X, z = pos.Y;
+		if (x < mg->node_min.X || x > mg->node_max.X || z < mg->node_min.Z ||
+				z > mg->node_max.Z)
+			return;
+		arnis::ProcessedNode processed_node;
+		processed_node.id = id;
+		processed_node.tags = std::move(tags);
+		processed_node.x = x;
+		processed_node.z = z;
+		elements.emplace_back(std::move(processed_node));
+	}
 
 	void append_way(const osmium::Way &way)
 	{
-		const auto id = static_cast<std::int64_t>(way.id());
+		const auto id = static_cast<std::uint64_t>(way.id());
 		if (!seen_way_ids.emplace(id).second)
 			return;
 
 		arnis::WorldEditor editor;
 		editor.mg = mg;
+		editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
 		arnis::ProcessedWay processed_way;
 		processed_way.id = id;
 		for (const auto &tag : way.tags())
 			processed_way.tags.emplace(tag.key(), tag.value());
 		for (const auto &node : way.nodes()) {
 			arnis::ProcessedNode processed_node;
-			processed_node.tags = processed_way.tags;
+			const auto node_id = static_cast<std::uint64_t>(node.ref());
+			if (const auto found = tagged_node_tags.find(node_id);
+					found != tagged_node_tags.end())
+				processed_node.tags = found->second;
 			const auto [x, z] = editor.node_to_xz(node);
 			processed_node.x = x;
 			processed_node.z = z;
-			processed_node.id = id;
+			processed_node.id = node_id;
 			processed_way.nodes.emplace_back(std::move(processed_node));
 		}
 		elements.emplace_back(processed_way);
@@ -226,29 +269,189 @@ public:
 			DUMP(ex.what());
 		}
 	}
-
-	void generate()
-	{
-		if (elements.empty())
-			return;
-		arnis::Ground ground;
-		ground.mg = mg;
-		arnis::WorldEditor editor;
-		editor.mg = mg;
-		editor.set_tile_hooks(
-				[this](int min_x, int min_z, int max_x, int max_z) {
-					return this->mg->beginTileOverlay(min_x, min_z, max_x, max_z);
-				},
-				[this](int, int, int, int) { return this->mg->mergeTileOverlay(); });
-		editor.ground = &ground;
-		arnis::FloodFillCache flood_fill_cache;
-		XZBBox xzbbox(mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
-		arnis::BuildingFootprintBitmap building_footprints(xzbbox);
-		arnis::Args args;
-		arnis::generate_world(
-				editor, elements, args, flood_fill_cache, building_footprints);
-	}
 };
+
+namespace earth_osmium_detail
+{
+
+arnis::Args earth_arnis_args()
+{
+	arnis::Args args;
+	args.use_3d = true;
+	args.interior = true;
+	args.roof = true;
+	args.signage = arnis::SignageLevel::Full;
+	args.fillground = true;
+	args.disable_height_limit = true;
+	return args;
+}
+
+std::optional<double> earth_dimension_meters(const std::string &text)
+{
+	const char *begin = text.c_str();
+	char *end = nullptr;
+	const double value = std::strtod(begin, &end);
+	if (end == begin || !std::isfinite(value) || value < 0.0)
+		return std::nullopt;
+	while (*end && std::isspace(static_cast<unsigned char>(*end)))
+		++end;
+	if ((*end == 'f' || *end == 'F') && (end[1] == 't' || end[1] == 'T'))
+		return value * 0.3048;
+	if (*end == '\'')
+		return value * 0.3048;
+	return value;
+}
+
+double earth_tag_number(const arnis::tags_t &tags, const char *key)
+{
+	const auto found = tags.find(key);
+	if (found == tags.end())
+		return 0.0;
+	return earth_dimension_meters(found->second).value_or(0.0);
+}
+
+pos_t earth_authored_height_margin(const std::vector<arnis::ProcessedElement> &elements)
+{
+	if (elements.empty())
+		return 0;
+	// Covers inferred buildings, trees, signs, street lights, bridge layers and
+	// rooftop details even when OSM has no explicit height tags.
+	double max_height = 256.0;
+	for (const auto &element : elements) {
+		const auto &tags = element.tags();
+		const double height = std::max({earth_tag_number(tags, "height"),
+				earth_tag_number(tags, "building:height"),
+				earth_tag_number(tags, "est_height")});
+		const double min_height = earth_tag_number(tags, "min_height");
+		const double roof_height = earth_tag_number(tags, "roof:height");
+		const double levels = std::max(earth_tag_number(tags, "building:levels"),
+				earth_tag_number(tags, "levels"));
+		const double min_level = earth_tag_number(tags, "building:min_level");
+		const double roof_levels = earth_tag_number(tags, "roof:levels");
+		const double layer = earth_tag_number(tags, "layer");
+
+		max_height = std::max(
+				max_height, std::max(height + min_height + roof_height,
+									(levels + min_level + roof_levels) * 6.0 + 16.0));
+		max_height = std::max(max_height, layer * 8.0 + 64.0);
+
+		const auto has_model_tag = [&tags](const char *key) {
+			const auto found = tags.find(key);
+			return found != tags.end() && !found->second.empty();
+		};
+		if (has_model_tag("wikidata") || has_model_tag("3dmr") ||
+				has_model_tag("ref:3dmr") || has_model_tag("model") ||
+				has_model_tag("model:uri"))
+			max_height = std::max(max_height, 640.0);
+
+		const std::string man_made = tags.get("man_made");
+		if (man_made == "tower" || man_made == "communications_tower" ||
+				man_made == "chimney" || man_made == "wind_turbine")
+			max_height = std::max(max_height, 320.0);
+	}
+	// Generation can add roof ornaments and lights above the tagged height.
+	const long double margin = std::ceil(max_height) + 64.0L;
+	return margin >= static_cast<long double>(std::numeric_limits<pos_t>::max())
+				   ? std::numeric_limits<pos_t>::max()
+				   : static_cast<pos_t>(margin);
+}
+
+pos_t earth_element_terrain_max(MapgenEarth *mg,
+		const std::vector<arnis::ProcessedElement> &elements, pos_t maximum)
+{
+	const auto update = [mg, &maximum](int x, int z) {
+		if (x < std::numeric_limits<pos_t>::min() ||
+				x > std::numeric_limits<pos_t>::max() ||
+				z < std::numeric_limits<pos_t>::min() ||
+				z > std::numeric_limits<pos_t>::max())
+			return;
+		maximum = std::max(
+				maximum, mg->get_height(static_cast<pos_t>(x), static_cast<pos_t>(z)));
+	};
+	for (const auto &element : elements) {
+		if (element.is_node()) {
+			const auto &node = element.as_node();
+			update(node.x, node.z);
+		} else if (element.is_way()) {
+			for (const auto &node : element.as_way().nodes)
+				update(node.x, node.z);
+		} else {
+			for (const auto &member : element.as_relation().members)
+				for (const auto &node : member.way.nodes)
+					update(node.x, node.z);
+		}
+	}
+	return maximum;
+}
+
+struct CachedArnisExtract
+{
+	std::once_flag parse_once;
+	std::once_flag flood_once;
+	std::mutex flood_wave_mutex;
+	std::size_t active_generators = 0;
+	bool flood_released = false;
+	std::vector<arnis::ProcessedElement> elements;
+	std::unique_ptr<arnis::FloodFillCache> flood_fill_cache;
+	std::unique_ptr<arnis::BuildingFootprintBitmap> building_footprints;
+	pos_t authored_max_y = std::numeric_limits<pos_t>::lowest();
+};
+
+class FloodWaveGuard
+{
+	CachedArnisExtract &cached;
+
+public:
+	explicit FloodWaveGuard(CachedArnisExtract &cached) : cached(cached)
+	{
+		std::lock_guard<std::mutex> lock(cached.flood_wave_mutex);
+		if (cached.flood_released) {
+			auto args = earth_arnis_args();
+			auto flood = arnis::FloodFillCache::precompute(cached.elements, args.timeout);
+			flood.retain_entries();
+			*cached.flood_fill_cache = std::move(flood);
+			cached.flood_released = false;
+		}
+		++cached.active_generators;
+	}
+
+	~FloodWaveGuard()
+	{
+		std::lock_guard<std::mutex> lock(cached.flood_wave_mutex);
+		if (--cached.active_generators == 0) {
+			cached.flood_fill_cache->clear();
+			cached.flood_released = true;
+		}
+	}
+
+	FloodWaveGuard(const FloodWaveGuard &) = delete;
+	FloodWaveGuard &operator=(const FloodWaveGuard &) = delete;
+};
+
+void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
+{
+	if (cached.elements.empty() || !cached.flood_fill_cache ||
+			!cached.building_footprints)
+		return;
+	arnis::Ground ground;
+	ground.mg = mg;
+	arnis::WorldEditor editor;
+	editor.mg = mg;
+	editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
+	editor.set_tile_hooks(
+			[mg](int min_x, int min_z, int max_x, int max_z) {
+				return mg->beginTileOverlay(min_x, min_z, max_x, max_z);
+			},
+			[mg](int, int, int, int) { return mg->mergeTileOverlay(); });
+	editor.ground = &ground;
+	auto args = earth_arnis_args();
+	FloodWaveGuard flood_wave(cached);
+	arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,
+			*cached.building_footprints, true);
+}
+
+} // namespace earth_osmium_detail
+
 class hdl : public handler_i
 {
 	using index_t = osmium::index::map::SparseMemArray<osmium::unsigned_object_id_type,
@@ -256,6 +459,11 @@ class hdl : public handler_i
 	using cache_t = osmium::handler::NodeLocationsForWays<index_t>;
 
 	const std::string path_name;
+	std::mutex cached_extracts_mutex;
+	std::unordered_map<EarthHorizontalKey,
+			std::shared_ptr<earth_osmium_detail::CachedArnisExtract>,
+			EarthHorizontalKeyHash>
+			cached_extracts;
 
 public:
 	hdl(MapgenEarth *mg, const std::string &path_name) : path_name{path_name} {}
@@ -264,38 +472,81 @@ public:
 
 	void apply(MapgenEarth *mg) override
 	{
-		osmium::area::Assembler::config_type assembler_config;
-		assembler_config.create_empty_areas = false;
-
-		osmium::area::MultipolygonManager<osmium::area::Assembler> mp_manager{
-				assembler_config};
-		index_t index;
-		cache_t cache{index};
-		cache.ignore_errors();
-		{
-			// const auto llmin = mg->pos_to_ll(mg->node_min.X, mg->node_min.Z);
-			// const auto llmax = mg->pos_to_ll(mg->node_max.X, mg->node_max.Z);
-		}
-		osmium::io::File file{path_name, "pbf"};
-		osmium::relations::read_relations(file, mp_manager);
-
-		osmium::io::Reader reader{file};
 		if (!mg->vm) {
 			errorstream << "wrong vm\n";
 			return;
 		}
 
-		arnis::init(mg);
+		const EarthHorizontalKey key = mg->horizontalKey();
+		std::shared_ptr<earth_osmium_detail::CachedArnisExtract> cached;
+		{
+			std::lock_guard<std::mutex> lock(cached_extracts_mutex);
+			if (!cached_extracts.contains(key) && cached_extracts.size() >= 8)
+				cached_extracts.erase(cached_extracts.begin());
+			auto [it, inserted] = cached_extracts.try_emplace(key);
+			if (inserted)
+				it->second = std::make_shared<earth_osmium_detail::CachedArnisExtract>();
+			cached = it->second;
+		}
 
-		MyHandler handler;
-
-		handler.mg = mg;
-		osmium::apply(reader, cache, handler,
-				mp_manager.handler([&handler](const osmium::memory::Buffer &area_buffer) {
-					osmium::apply(area_buffer, handler);
-				}));
 		try {
-			handler.generate();
+			std::call_once(cached->parse_once, [&]() {
+				osmium::area::Assembler::config_type assembler_config;
+				assembler_config.create_empty_areas = false;
+				osmium::area::MultipolygonManager<osmium::area::Assembler> mp_manager{
+						assembler_config};
+				index_t index;
+				cache_t node_cache{index};
+				node_cache.ignore_errors();
+				osmium::io::File file{path_name, "pbf"};
+				osmium::relations::read_relations(file, mp_manager);
+				osmium::io::Reader reader{file};
+				MyHandler handler;
+				handler.mg = mg;
+				osmium::apply(reader, node_cache, handler,
+						mp_manager.handler(
+								[&handler](const osmium::memory::Buffer &area_buffer) {
+									osmium::apply(area_buffer, handler);
+								}));
+				cached->elements = std::move(handler.elements);
+				const pos_t terrain_max = earth_osmium_detail::earth_element_terrain_max(
+						mg, cached->elements, mg->cachedOrComputeTerrainMaxY());
+				const pos_t margin = earth_osmium_detail::earth_authored_height_margin(
+						cached->elements);
+				const long double maximum =
+						static_cast<long double>(terrain_max) + margin;
+				cached->authored_max_y =
+						maximum >= static_cast<long double>(
+										   std::numeric_limits<pos_t>::max())
+								? std::numeric_limits<pos_t>::max()
+								: static_cast<pos_t>(maximum);
+				arnis::prepare_elements_for_generation(cached->elements);
+			});
+
+			mg->cacheAuthoredMaxY(cached->authored_max_y);
+			if (mg->node_min.Y > cached->authored_max_y)
+				return;
+			if (cached->elements.empty())
+				return;
+
+			std::call_once(cached->flood_once, [&]() {
+				auto args = earth_osmium_detail::earth_arnis_args();
+				auto flood =
+						arnis::FloodFillCache::precompute(cached->elements, args.timeout);
+				flood.retain_entries();
+				XZBBox xzbbox(
+						mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
+				auto footprints =
+						flood.collect_building_footprints(cached->elements, xzbbox);
+				cached->flood_fill_cache =
+						std::make_unique<arnis::FloodFillCache>(std::move(flood));
+				cached->building_footprints =
+						std::make_unique<arnis::BuildingFootprintBitmap>(
+								std::move(footprints));
+			});
+
+			arnis::init(mg);
+			earth_osmium_detail::generate_cached_arnis(mg, *cached);
 		} catch (const std::exception &ex) {
 			errorstream << "Earth exception: " << ex.what() << "\n";
 		}

@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <exception>
 #include <memory>
 #include <mutex>
+#include <limits>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -747,19 +748,21 @@ MapNode MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 	const v3pos_t climate_p(p.X, solid ? surface_y : water_level, p.Z);
 	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
 
-	if (solid) {
-		if (!use_weather)
-			return visible_surface_green;
-
-		const auto humidity =
-				calcBlockHumidity(climate_p, seed, timeofday, totaltime, weather);
-		return visible_surface_by_climate(heat, humidity);
-	}
-
-	if (p.Y <= water_level) {
+	// This water is a far-visibility model only. It describes the space above
+	// terrain whose elevation is below sea level; generateTerrain() deliberately
+	// does not use it to flood the actual world.
+	if (!solid && water) {
 		if (heat < 0 && p.Y > heat / 3 && valid(c_ice))
 			return MapNode(c_ice, LIGHT_SUN);
 		return node_or(n_water, visible_water);
+	}
+
+	if (solid) {
+		// use_weather selects live/monthly adjustments. Even when it is false,
+		// the annual Earth climate maps still determine the surface material.
+		const auto humidity =
+				calcBlockHumidity(climate_p, seed, timeofday, totaltime, weather);
+		return visible_surface_by_climate(heat, humidity);
 	}
 
 	return visible_transparent;
@@ -797,6 +800,74 @@ pos_t MapgenEarth::get_height(pos_t x, pos_t z)
 	return ceil(y / scale.Y) - center.Y;
 }
 
+EarthHorizontalKey MapgenEarth::horizontalKey() const
+{
+	return {node_min.X, node_min.Z, node_max.X, node_max.Z};
+}
+
+pos_t MapgenEarth::cachedOrComputeTerrainMaxY()
+{
+	const EarthHorizontalKey key = horizontalKey();
+	{
+		std::lock_guard<std::mutex> lock(maps_holder->vertical_bounds_lock);
+		const auto found = maps_holder->vertical_bounds.find(key);
+		if (found != maps_holder->vertical_bounds.end() && found->second.terrain_cached)
+			return found->second.terrain_max_y;
+	}
+
+	pos_t maximum = std::numeric_limits<pos_t>::lowest();
+	for (pos_t z = node_min.Z; z <= node_max.Z; ++z)
+		for (pos_t x = node_min.X; x <= node_max.X; ++x)
+			maximum = std::max(maximum, get_height(x, z));
+
+	std::lock_guard<std::mutex> lock(maps_holder->vertical_bounds_lock);
+	auto &bounds = maps_holder->vertical_bounds[key];
+	if (!bounds.terrain_cached) {
+		bounds.terrain_max_y = maximum;
+		bounds.terrain_cached = true;
+	}
+	const pos_t result = bounds.terrain_max_y;
+	// Keep this acceleration cache bounded independently from the PBF LRU.
+	if (maps_holder->vertical_bounds.size() > 2048)
+		maps_holder->vertical_bounds.erase(maps_holder->vertical_bounds.begin());
+	return result;
+}
+
+std::optional<pos_t> MapgenEarth::cachedAuthoredMaxY() const
+{
+	const EarthHorizontalKey key = horizontalKey();
+	std::lock_guard<std::mutex> lock(maps_holder->vertical_bounds_lock);
+	const auto found = maps_holder->vertical_bounds.find(key);
+	if (found == maps_holder->vertical_bounds.end())
+		return std::nullopt;
+	return found->second.authored_max_y;
+}
+
+void MapgenEarth::cacheAuthoredMaxY(pos_t max_y)
+{
+	const EarthHorizontalKey key = horizontalKey();
+	std::lock_guard<std::mutex> lock(maps_holder->vertical_bounds_lock);
+	auto &cached = maps_holder->vertical_bounds[key].authored_max_y;
+	if (!cached || max_y > *cached)
+		cached = max_y;
+}
+
+void MapgenEarth::fillChunkWithAir()
+{
+	if (!vm)
+		return;
+	const auto extent = vm->m_area.getExtent();
+	for (pos_t z = node_min.Z; z <= node_max.Z; ++z) {
+		for (pos_t x = node_min.X; x <= node_max.X; ++x) {
+			u32 index = vm->m_area.index(x, node_min.Y, z);
+			for (pos_t y = node_min.Y; y <= node_max.Y; ++y) {
+				vm->m_data[index] = n_air;
+				vm->m_area.add_y(extent, index, 1);
+			}
+		}
+	}
+}
+
 pos_t MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
 	return std::max(2, get_height(p.X, p.Y) + 2);
@@ -809,7 +880,6 @@ pos_t MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
 
 int MapgenEarth::generateTerrain()
 {
-	const MapNode n_ice(c_ice);
 	u32 index = 0;
 	const auto em = vm->m_area.getExtent();
 
@@ -828,9 +898,9 @@ int MapgenEarth::generateTerrain()
 					if (!vm->m_data[i]) {
 						vm->m_data[i] = earth_layer_get(x, y, z, height, heat);
 					}
-				} else if (y <= water_level) {
-					vm->m_data[i] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
 				} else {
+					// Below-sea-level elevation alone must not flood generated Earth.
+					// Confirmed ESA/OSM water is placed later by Arnis.
 					vm->m_data[i] = n_air;
 				}
 				vm->m_area.add_y(em, i, 1);
@@ -1017,14 +1087,16 @@ void MapgenEarth::generateBuildings()
 			}
 		}
 
+		maps_holder_t::osm_ptr hdlr;
 		{
 			auto lock = std::unique_lock{maps_holder->osm_bbox_lock};
-
-			if (const auto &hdlr = maps_holder->osm_bbox.get(bbox)) {
-				lock.unlock();
-				hdlr.value()->apply(this);
-			}
+			if (const auto &cached = maps_holder->osm_bbox.get(bbox))
+				hdlr = cached.value();
 		}
+		// Keep a shared reference while unlocked: another emerge thread may
+		// otherwise evict this LRU entry before apply() returns.
+		if (hdlr)
+			hdlr->apply(this);
 	} catch (const std::exception &ex) {
 		warningstream << node_min << " : " << ex.what() << " file=" << use_file << "\n";
 	}
@@ -1244,6 +1316,43 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	full_node_max = (blockpos_max + 2) * MAP_BLOCKSIZE - v3pos_t(1, 1, 1);
 
 	blockseed = getBlockSeed2(full_node_min, seed);
+	const auto finish_generation = [this]() {
+		this->generating = false;
+		this->active_block_data = nullptr;
+	};
+
+	// Once a horizontal extract has established its conservative authored
+	// ceiling, chunks wholly above it are known air and need no Earth/Arnis work.
+	if (const auto authored_max = cachedAuthoredMaxY();
+			authored_max && node_min.Y > *authored_max) {
+		fillChunkWithAir();
+		finish_generation();
+		return;
+	}
+
+	// On the first high chunk the authored ceiling may not exist yet. Avoid the
+	// base-terrain Y loop and let generateBuildings parse just enough to compute
+	// that ceiling; hdl::apply rejects the chunk before flood-fill/generation if
+	// it is also above every authored object.
+	const pos_t terrain_max_y = cachedOrComputeTerrainMaxY();
+	if (node_min.Y > terrain_max_y) {
+		fillChunkWithAir();
+		generateBuildings();
+
+		if (const auto authored_max = cachedAuthoredMaxY();
+				authored_max && node_min.Y > *authored_max) {
+			finish_generation();
+			return;
+		}
+
+		// A tall authored object may intersect this otherwise-air chunk.
+		updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
+		if (flags & MG_LIGHT)
+			calcLighting(node_min - v3pos_t(0, 1, 0), node_max + v3pos_t(0, 1, 0),
+					full_node_min, full_node_max, true);
+		finish_generation();
+		return;
+	}
 
 	//freeminer:
 	layers_prepare(node_min, node_max);
@@ -1313,6 +1422,5 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 		calcLighting(node_min - v3pos_t(0, 1, 0), node_max + v3pos_t(0, 1, 0),
 				full_node_min, full_node_max, propagate_shadow);
 
-	this->generating = false;
-	this->active_block_data = nullptr;
+	finish_generation();
 }

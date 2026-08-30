@@ -21,6 +21,7 @@ public:
 	void runTests(IGameDef *gamedef);
 
 	void testBasic(const NodeDefManager *nodedef);
+	void testNodeContainerCopy();
 	void testEmerge(IGameDef *gamedef);
 	void testBlitBack(IGameDef *gamedef);
 	void testBlitBack2(IGameDef *gamedef);
@@ -31,6 +32,7 @@ static TestVoxelManipulator g_test_instance;
 void TestVoxelManipulator::runTests(IGameDef *gamedef)
 {
 	TEST(testBasic, gamedef->ndef());
+	TEST(testNodeContainerCopy);
 	TEST(testEmerge, gamedef);
 	TEST(testBlitBack, gamedef);
 	TEST(testBlitBack2, gamedef);
@@ -64,6 +66,25 @@ void TestVoxelManipulator::testBasic(const NodeDefManager *nodedef)
 
 	UASSERT(v.getNode(v3pos_t(-1,0,-1)).getContent() == t_CONTENT_GRASS);
 	EXCEPTION_CHECK(InvalidPositionException, v.getNode(v3pos_t(0,1,1)));
+}
+
+void TestVoxelManipulator::testNodeContainerCopy()
+{
+	VoxelManipulator vm;
+	NodeContainer &container = vm;
+	const v3pos_t source_pos(0, 0, 0);
+	const v3pos_t destination_pos(123, 4, -56);
+	const v3pos_t size(1, 1, 1);
+	VoxelArea source_area(source_pos);
+	MapNode source(t_CONTENT_GRASS);
+
+	vm.addArea(VoxelArea(destination_pos));
+	container.copyFrom(&source, false, source_area,
+			source_pos, destination_pos, size);
+
+	UASSERTEQ(content_t,
+			vm.getNodeNoExNoEmerge(destination_pos).getContent(),
+			t_CONTENT_GRASS);
 }
 
 void TestVoxelManipulator::testEmerge(IGameDef *gamedef)

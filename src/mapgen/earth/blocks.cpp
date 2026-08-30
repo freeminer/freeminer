@@ -3,6 +3,7 @@
 #include "log.h"
 
 #include <initializer_list>
+#include <mutex>
 
 namespace arnis
 {
@@ -140,6 +141,43 @@ Block STEEL_SIGN;
 Block TEXT_SIGN_SMALL;
 Block TEXT_SIGN_MEDIUM;
 Block TEXT_SIGN_LARGE;
+bool STREETS_AVAILABLE = false;
+Block ROAD_ASPHALT;
+Block ROAD_SIDEWALK;
+Block ROAD_MARK_DASHED_WHITE;
+Block ROAD_MARK_DASHED_WHITE_R90;
+Block ROAD_MARK_SOLID_WHITE_STRIPE;
+Block ROAD_MARK_SOLID_WHITE_STRIPE_R90;
+bool STREETS_MARKINGS_AVAILABLE = false;
+Block STREETS_POLE;
+Block STREETS_BOLLARD;
+Block STREETS_GUARDRAIL;
+std::array<Block, 3> STREETS_TRAFFIC_LIGHTS;
+bool STREETS_RRXING_AVAILABLE = false;
+Block STREETS_RRXING_BOTTOM;
+Block STREETS_RRXING_MIDDLE;
+Block STREETS_RRXING_TOP;
+Block STREETS_EU_SIGN_STOP;
+Block STREETS_EU_SIGN_YIELD;
+Block STREETS_EU_SIGN_NO_ENTRY;
+Block STREETS_EU_SIGN_CROSSING;
+Block STREETS_EU_SIGN_CROSSBUCK;
+std::array<Block, 6> STREETS_EU_SPEED_SIGNS;
+Block STREETS_US_SIGN_STOP;
+Block STREETS_US_SIGN_YIELD;
+Block STREETS_US_SIGN_NO_ENTRY;
+Block STREETS_US_SIGN_CROSSING;
+Block STREETS_US_SIGN_CROSSBUCK;
+bool STREET_SIGNS_AVAILABLE = false;
+Block STREET_SIGN_BASIC;
+Block STREET_SIGN_STOP;
+Block STREET_SIGN_YIELD;
+Block STREET_SIGN_SPEED_LIMIT;
+Block STREET_SIGN_DO_NOT_ENTER;
+Block STREET_SIGN_PEDESTRIAN_CROSSING;
+Block STREET_SIGN_RR_CROSSBUCK;
+Block STREET_SIGN_US_ROUTE;
+Block STREET_SIGN_US_INTERSTATE;
 Block DECAL_FRAME;
 Block ANDESITE_WALL;
 Block STONE_BRICK_WALL;
@@ -169,6 +207,29 @@ Block ADV_RAIL_NORTH_SOUTH;
 Block ADV_RAIL_EAST_WEST;
 Block ADV_RAIL_DIAGONAL_NE_SW;
 Block ADV_RAIL_DIAGONAL_NW_SE;
+Block ADV_RAIL_STRAIGHT_0;
+Block ADV_RAIL_STRAIGHT_30;
+Block ADV_RAIL_STRAIGHT_45;
+Block ADV_RAIL_STRAIGHT_60;
+Block ADV_RAIL_CURVE_0;
+Block ADV_RAIL_CURVE_30;
+Block ADV_RAIL_CURVE_45;
+Block ADV_RAIL_CURVE_60;
+std::array<Block, 4> ADV_RAIL_SWITCH_LEFT_STRAIGHT;
+std::array<Block, 4> ADV_RAIL_SWITCH_RIGHT_STRAIGHT;
+std::array<Block, 4> ADV_RAIL_Y_TURNOUT;
+std::array<Block, 4> ADV_RAIL_THREE_WAY_STRAIGHT;
+std::array<Block, 4> ADV_RAIL_PERP_CROSSING;
+std::array<Block, 6> ADV_RAIL_90_PLUS_CROSSING;
+std::array<Block, 7> ADV_RAIL_DIAGONAL_CROSSING;
+Block ADV_RAIL_SLOPE_UP;
+Block ADV_RAIL_SLOPE_DOWN;
+std::array<Block, 3> ADV_RAIL_GENTLE_SLOPE;
+bool ADVTRAINS_JUNCTIONS_AVAILABLE = false;
+bool ADVTRAINS_CROSSINGS_AVAILABLE = false;
+bool ADVTRAINS_SLOPES_AVAILABLE = false;
+bool ADVTRAINS_GENTLE_SLOPES_AVAILABLE = false;
+bool ADVTRAINS_AVAILABLE = false;
 Block ADV_PLATFORM_HIGH;
 Block COARSE_DIRT;
 Block IRON_ORE;
@@ -322,15 +383,23 @@ Block LIGHT_GRAY_WALL_BANNER;
 Block &SMOOTH_STONE_BLOCK = SMOOTH_STONE;
 }
 
-bool inited = false;
+namespace
+{
+std::mutex block_mapping_mutex;
+const void *mapped_node_def_manager = nullptr;
+}
+
 void init(MapgenEarth *mg)
 {
-	if (inited) {
+	if (!mg || !mg->m_emerge || !mg->m_emerge->ndef)
 		return;
-	}
-	inited = true;
 
-	const auto def = mg->m_emerge->ndef->getId("default:cobble");
+	const auto *node_def_manager = mg->m_emerge->ndef;
+	const std::lock_guard<std::mutex> lock(block_mapping_mutex);
+	if (mapped_node_def_manager == node_def_manager)
+		return;
+
+	const auto def = node_def_manager->getId("default:cobble");
 
 	struct NodeResolver
 	{
@@ -428,7 +497,9 @@ void init(MapgenEarth *mg)
 	PURPUR_BLOCK = g("default:stone");
 	PURPUR_PILLAR = g("default:stone");
 	QUARTZ_BRICKS = g("default:stone");
-	RAIL = g("default:rail");
+	// default:rail is only a Lua alias in Minetest Game. NodeDefManager lookups do
+	// not reliably resolve item aliases, so prefer the actually registered node.
+	RAIL = g({"carts:rail", "default:rail"});
 	RED_FLOWER = g("flowers:tulip");
 	RED_NETHER_BRICK = g("default:obsidianbrick");
 	RED_TERRACOTTA = g("default:clay");
@@ -469,13 +540,13 @@ void init(MapgenEarth *mg)
 	EARTH_BENCH = g({"homedecor:simple_bench", "stairs:slab_wood", "default:wood"});
 	EARTH_TRASH_CAN =
 			g({"homedecor:trash_can", "pipeworks:trashcan", "default:steelblock"});
-	EARTH_STREET_LAMP = g({"morelights_vintage:lantern_f", "homedecor:ground_lantern_14",
+	EARTH_STREET_LAMP = g({"streets:light_vertical_on", "morelights_vintage:lantern_f", "homedecor:ground_lantern_14",
 			"default:meselamp"});
 	EARTH_WELL = g({"homedecor:well", "default:stonebrick"});
 	EARTH_BARBECUE = g({"homedecor:barbecue", "default:furnace", "default:stone"});
 	EARTH_GRATING = g({"pipeworks:grating", "xpanes:bar_flat", "default:steelblock"});
-	EARTH_FENCE_CHAINLINK =
-			g({"homedecor:fence_chainlink", "xpanes:bar_flat", "default:steelblock"});
+	EARTH_FENCE_CHAINLINK = g({"streets:fence_chainlink",
+			"homedecor:fence_chainlink", "xpanes:bar_flat", "default:steelblock"});
 	EARTH_FENCE_BARBED =
 			g({"homedecor:fence_barbed_wire", "xpanes:bar_flat", "default:steelblock"});
 	EARTH_FENCE_PICKET =
@@ -513,6 +584,77 @@ void init(MapgenEarth *mg)
 			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
 	TEXT_SIGN_LARGE = g({"street_signs:sign_highway_large_green",
 			"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
+	auto optional_sign = [&](const char *name) {
+		const auto id = mg->m_emerge->ndef->getId(name);
+		if (id == CONTENT_IGNORE)
+			return Block{CONTENT_AIR};
+		return Block{id};
+	};
+	STREETS_AVAILABLE =
+			mg->m_emerge->ndef->getId("streets:asphalt") != CONTENT_IGNORE;
+	ROAD_ASPHALT = g({"streets:asphalt", "basic_materials:concrete_block",
+			"wool:grey", "default:stone"});
+	ROAD_SIDEWALK = g({"streets:sidewalk", "default:stone_block", "default:stone"});
+	STREETS_POLE = g({"streets:bigpole", "walls:cobble", "default:stone"});
+	STREETS_BOLLARD = g({"streets:bollard_steel_manual_up", "walls:cobble",
+			"default:cobble"});
+	STREETS_GUARDRAIL = g({"streets:guardrail", "walls:cobble", "default:cobble"});
+	STREETS_TRAFFIC_LIGHTS = {
+			optional_sign("streets:trafficlight_top_red"),
+			optional_sign("streets:trafficlight_top_yellow"),
+			optional_sign("streets:trafficlight_top_green")};
+	STREETS_MARKINGS_AVAILABLE = STREETS_AVAILABLE &&
+			mg->m_emerge->ndef->getId(
+					"streets:mark_dashed_white_center_line_on_asphalt") != CONTENT_IGNORE;
+	ROAD_MARK_DASHED_WHITE = optional_sign(
+			"streets:mark_dashed_white_center_line_on_asphalt");
+	ROAD_MARK_DASHED_WHITE_R90 = optional_sign(
+			"streets:mark_dashed_white_center_line_r90_on_asphalt");
+	ROAD_MARK_SOLID_WHITE_STRIPE = optional_sign(
+			"streets:mark_solid_white_stripe_on_asphalt");
+	ROAD_MARK_SOLID_WHITE_STRIPE_R90 = optional_sign(
+			"streets:mark_solid_white_stripe_r90_on_asphalt");
+	STREETS_RRXING_AVAILABLE =
+			mg->m_emerge->ndef->getId("streets:rrxing_bottom") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("streets:rrxing_middle_center_off") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("streets:rrxing_top") != CONTENT_IGNORE;
+	STREETS_RRXING_BOTTOM = optional_sign("streets:rrxing_bottom");
+	STREETS_RRXING_MIDDLE = optional_sign("streets:rrxing_middle_center_off");
+	STREETS_RRXING_TOP = optional_sign("streets:rrxing_top");
+	STREETS_EU_SIGN_STOP = optional_sign("streets:sign_eu_stop_center");
+	STREETS_EU_SIGN_YIELD = optional_sign("streets:sign_eu_yield_center");
+	STREETS_EU_SIGN_NO_ENTRY = optional_sign("streets:sign_eu_noentry_center");
+	STREETS_EU_SIGN_CROSSING =
+			optional_sign("streets:sign_eu_pedestriancrossing_center");
+	STREETS_EU_SIGN_CROSSBUCK = optional_sign("streets:sign_eu_standrews_center");
+	const std::array<const char *, 6> eu_speeds{{"10", "30", "50", "70", "100", "120"}};
+	for (std::size_t i = 0; i < eu_speeds.size(); ++i) {
+		const std::string name =
+				"streets:sign_eu_" + std::string(eu_speeds[i]) + "_center";
+		STREETS_EU_SPEED_SIGNS[i] = optional_sign(name.c_str());
+	}
+	STREETS_US_SIGN_STOP = optional_sign("streets:sign_us_stop_center");
+	STREETS_US_SIGN_YIELD = optional_sign("streets:sign_us_yield_center");
+	STREETS_US_SIGN_NO_ENTRY = optional_sign("streets:sign_us_donotenter_center");
+	STREETS_US_SIGN_CROSSING = optional_sign("streets:sign_us_pedwarning_center");
+	STREETS_US_SIGN_CROSSBUCK = optional_sign("streets:sign_us_crossbuck_center");
+	// signs_lib creates the *_onpole variants while registering street_signs.
+	// Keep these optional: Arnis uses its generated decal signs in games which do
+	// not load street_signs, but should prefer the native meshes when they exist.
+	STREET_SIGNS_AVAILABLE =
+			mg->m_emerge->ndef->getId("street_signs:sign_basic") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("street_signs:sign_stop_onpole") != CONTENT_IGNORE;
+	STREET_SIGN_BASIC = optional_sign("street_signs:sign_basic");
+	STREET_SIGN_STOP = optional_sign("street_signs:sign_stop_onpole");
+	STREET_SIGN_YIELD = optional_sign("street_signs:sign_yield_onpole");
+	STREET_SIGN_SPEED_LIMIT = optional_sign("street_signs:sign_speed_limit_onpole");
+	STREET_SIGN_DO_NOT_ENTER = optional_sign("street_signs:sign_do_not_enter_onpole");
+	STREET_SIGN_PEDESTRIAN_CROSSING =
+			optional_sign("street_signs:sign_pedestrian_crossing_onpole");
+	STREET_SIGN_RR_CROSSBUCK =
+			optional_sign("street_signs:sign_rr_grade_crossbuck_onpole");
+	STREET_SIGN_US_ROUTE = optional_sign("street_signs:sign_us_route_onpole");
+	STREET_SIGN_US_INTERSTATE = optional_sign("street_signs:sign_us_interstate_onpole");
 	DECAL_FRAME = g({"freeminer:arnis_decal_frame", "air"});
 	ANDESITE_WALL = g({"walls:cobble", "default:stone"});
 	STONE_BRICK_WALL = g("default:stonebrick");
@@ -538,13 +680,105 @@ void init(MapgenEarth *mg)
 	RAIL_NORTH_WEST = RAIL;
 	RAIL_SOUTH_EAST = RAIL;
 	RAIL_SOUTH_WEST = RAIL;
-	ADV_RAIL_NORTH_SOUTH = g({"advtrains:dtrack_st", "default:rail"});
+	// Advtrains 2.5+ registers four angular variants and rotates each with
+	// param2. Resolve the complete family only when the mod is present; the
+	// railway renderer then selects either this family or carts for the whole
+	// path, never a per-cell mixture.
+	ADVTRAINS_AVAILABLE =
+			mg->m_emerge->ndef->getId("advtrains:dtrack_st") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_cr") != CONTENT_IGNORE;
+	ADVTRAINS_SLOPES_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst1") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst2") != CONTENT_IGNORE;
+	ADVTRAINS_GENTLE_SLOPES_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst31") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst32") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_vst33") != CONTENT_IGNORE;
+	ADVTRAINS_JUNCTIONS_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_swlst") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_swrst") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_sy_l") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_s3_s") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xing_st") != CONTENT_IGNORE;
+	ADVTRAINS_CROSSINGS_AVAILABLE =
+			ADVTRAINS_AVAILABLE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xing90plusx_30l") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xingdiag_30l45r") != CONTENT_IGNORE;
+	if (ADVTRAINS_AVAILABLE) {
+		ADV_RAIL_STRAIGHT_0 = g("advtrains:dtrack_st");
+		ADV_RAIL_STRAIGHT_30 = g("advtrains:dtrack_st_30");
+		ADV_RAIL_STRAIGHT_45 = g("advtrains:dtrack_st_45");
+		ADV_RAIL_STRAIGHT_60 = g("advtrains:dtrack_st_60");
+		ADV_RAIL_CURVE_0 = g("advtrains:dtrack_cr");
+		ADV_RAIL_CURVE_30 = g("advtrains:dtrack_cr_30");
+		ADV_RAIL_CURVE_45 = g("advtrains:dtrack_cr_45");
+		ADV_RAIL_CURVE_60 = g("advtrains:dtrack_cr_60");
+		if (ADVTRAINS_JUNCTIONS_AVAILABLE) {
+			const std::array<std::string, 4> suffixes{{"", "_30", "_45", "_60"}};
+			for (std::size_t i = 0; i < suffixes.size(); ++i) {
+				const std::string left = "advtrains:dtrack_swlst" + suffixes[i];
+				const std::string right = "advtrains:dtrack_swrst" + suffixes[i];
+				const std::string y_turnout = "advtrains:dtrack_sy_l" + suffixes[i];
+				const std::string three_way = "advtrains:dtrack_s3_s" + suffixes[i];
+				const std::string crossing = "advtrains:dtrack_xing_st" + suffixes[i];
+				ADV_RAIL_SWITCH_LEFT_STRAIGHT[i] =
+						g(left.c_str());
+				ADV_RAIL_SWITCH_RIGHT_STRAIGHT[i] =
+						g(right.c_str());
+				ADV_RAIL_Y_TURNOUT[i] = g(y_turnout.c_str());
+				ADV_RAIL_THREE_WAY_STRAIGHT[i] = g(three_way.c_str());
+				ADV_RAIL_PERP_CROSSING[i] =
+						g(crossing.c_str());
+			}
+		}
+		if (ADVTRAINS_CROSSINGS_AVAILABLE) {
+			const std::array<const char *, 6> ninety{{"30l", "45l", "60l", "60r",
+					"45r", "30r"}};
+			for (std::size_t i = 0; i < ninety.size(); ++i) {
+				const std::string name =
+						"advtrains:dtrack_xing90plusx_" + std::string(ninety[i]);
+				ADV_RAIL_90_PLUS_CROSSING[i] = g(name.c_str());
+			}
+			const std::array<const char *, 7> diagonal{{"30l45r", "60l30l", "60l45r",
+					"60l60r", "60r45l", "60r30r", "30r45l"}};
+			for (std::size_t i = 0; i < diagonal.size(); ++i) {
+				const std::string name =
+						"advtrains:dtrack_xingdiag_" + std::string(diagonal[i]);
+				ADV_RAIL_DIAGONAL_CROSSING[i] = g(name.c_str());
+			}
+		}
+		if (ADVTRAINS_SLOPES_AVAILABLE) {
+			ADV_RAIL_SLOPE_UP = g("advtrains:dtrack_vst1");
+			ADV_RAIL_SLOPE_DOWN = g("advtrains:dtrack_vst2");
+		} else {
+			ADV_RAIL_SLOPE_UP = ADV_RAIL_STRAIGHT_0;
+			ADV_RAIL_SLOPE_DOWN = ADV_RAIL_STRAIGHT_0;
+		}
+		if (ADVTRAINS_GENTLE_SLOPES_AVAILABLE) {
+			ADV_RAIL_GENTLE_SLOPE = {g("advtrains:dtrack_vst31"),
+					g("advtrains:dtrack_vst32"), g("advtrains:dtrack_vst33")};
+		} else {
+			ADV_RAIL_GENTLE_SLOPE = {ADV_RAIL_SLOPE_UP, ADV_RAIL_SLOPE_DOWN,
+					ADV_RAIL_SLOPE_DOWN};
+		}
+	} else {
+		ADV_RAIL_STRAIGHT_0 = ADV_RAIL_STRAIGHT_30 = ADV_RAIL_STRAIGHT_45 =
+				ADV_RAIL_STRAIGHT_60 = RAIL;
+		ADV_RAIL_CURVE_0 = ADV_RAIL_CURVE_30 = ADV_RAIL_CURVE_45 = ADV_RAIL_CURVE_60 =
+				RAIL;
+		ADV_RAIL_SLOPE_UP = ADV_RAIL_SLOPE_DOWN = RAIL;
+		ADV_RAIL_GENTLE_SLOPE = {RAIL, RAIL, RAIL};
+	}
+	ADV_RAIL_NORTH_SOUTH = ADV_RAIL_STRAIGHT_0;
 	ADV_RAIL_NORTH_SOUTH.setParam2(0);
-	ADV_RAIL_EAST_WEST = g({"advtrains:dtrack_st", "default:rail"});
+	ADV_RAIL_EAST_WEST = ADV_RAIL_STRAIGHT_0;
 	ADV_RAIL_EAST_WEST.setParam2(1);
-	ADV_RAIL_DIAGONAL_NE_SW = g({"advtrains:dtrack_st_45", "default:rail"});
+	ADV_RAIL_DIAGONAL_NE_SW = ADV_RAIL_STRAIGHT_45;
 	ADV_RAIL_DIAGONAL_NE_SW.setParam2(0);
-	ADV_RAIL_DIAGONAL_NW_SE = g({"advtrains:dtrack_st_45", "default:rail"});
+	ADV_RAIL_DIAGONAL_NW_SE = ADV_RAIL_STRAIGHT_45;
 	ADV_RAIL_DIAGONAL_NW_SE.setParam2(1);
 	ADV_PLATFORM_HIGH = g({"advtrains:platform_high_stonebrick", "default:stonebrick"});
 	COARSE_DIRT = g("default:dry_dirt");
@@ -618,8 +852,8 @@ void init(MapgenEarth *mg)
 
 	CHAIN = g({"basic_materials:chain_steel", "xpanes:bar_flat", "default:steelblock"});
 	END_ROD = GLOWSTONE;
-	LIGHTNING_ROD = g(
-			{"default:copperblock", "basic_materials:brass_block", "default:steelblock"});
+	LIGHTNING_ROD = g({"freeminer:lamp_red", "default:meselamp", "default:copperblock",
+			"basic_materials:brass_block", "default:steelblock"});
 	GOLD_BLOCK = g("default:goldblock");
 	SEA_LANTERN = GLOWSTONE;
 	ORANGE_CONCRETE =
@@ -708,6 +942,11 @@ void init(MapgenEarth *mg)
 	CYAN_TERRACOTTA = CYAN_CONCRETE;
 	BLACK_WOOL = g("wool:black");
 	LIGHT_GRAY_WALL_BANNER = LIGHT_GRAY_CONCRETE;
+
+	// Content IDs are local to a NodeDefManager. A process may open another
+	// world/game without restarting, so remember which registry these mappings
+	// belong to instead of treating initialization as process-global.
+	mapped_node_def_manager = node_def_manager;
 }
 
 }

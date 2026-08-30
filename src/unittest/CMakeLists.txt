@@ -3,6 +3,7 @@ file(GLOB unittest_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 set(unittest_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_terraindiffusion.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_world_merge.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_abm.cpp
 
 	${unittest_HDRS}
@@ -55,6 +56,7 @@ set(unittest_SRCS
 
 set(unittest_client_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_far_calc.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_content_mapblock.cpp
 
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh_compare.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_clientactiveobjectmgr.cpp

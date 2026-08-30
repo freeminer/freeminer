@@ -30,6 +30,7 @@ class Client;
 class FarContainer : public NodeContainer
 {
 	Client *m_client{};
+	int m_surface_depth{2};
 
 public:
 	Mapgen *m_mg{};

@@ -144,6 +144,15 @@ farmesh_server () bool true
 # Use all changed blocks in radius
 farmesh_all_changed () int 10000
 
+# Number of coarse far-mesh voxels of real data to preserve below the generated
+# terrain surface. Deeper space is treated as solid to hide caves and isolated
+# underground fragments. Set to -1 to disable this optimization.
+farmesh_surface_depth (Far mesh underground depth) int 2 -1 16
+
+# Merge adjacent compatible far-mesh faces into larger quads.
+# Disable to emit one quad for every exposed coarse node face.
+farmesh_fast_faces (Fast far-mesh faces) bool true
+
 farlights (Far lights) int 200000
 
 # Draw coarse far-block volumetric fog up to this distance in nodes.
