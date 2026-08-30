@@ -276,9 +276,9 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 	std::vector<s16> coords;
 	const auto lod_stride = 1 << data->lod_step;
 	const auto far_stride = 1 << data->far_step;
-	for (s16 regular = 0, far = 0; regular < data->side_length_data;
-			regular += lod_stride, far += far_stride)
-		coords.push_back(far);
+	for (s16 regular = 0, far_v = 0; regular < data->side_length_data;
+			regular += lod_stride, far_v += far_stride)
+		coords.push_back(far_v);
 
 	static const v3pos_t face_dirs[6] = {
 			{0, 1, 0}, {0, -1, 0}, {1, 0, 0},
