@@ -221,7 +221,6 @@ bool contains(const child_t &child, const v3tpos_t &pos)
 		   pos.Z >= child.pos.Z && pos.Z < child.pos.Z + child.size;
 }
 
-// fm: A 2-D surface traversal must be at least as fine as a later 3-D lookup.
 bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 		block_step_t cell_size_pow, block_step_t farmesh_quality_pow,
 		const bool two_d = false)
@@ -230,6 +229,8 @@ bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 		return true;
 
 	const tpos_t child_size = child.size >> 1;
+	// go_flat() moves these samples to terrain height before the 3-D lookup.
+	// Ignore Y so the sampling grid cannot become coarser due to its plane height.
 	const tpos_t distance = std::max({
 			std::abs(player_pos.X - (child.pos.X + child_size)),
 			two_d ? tpos_t{} : std::abs(player_pos.Y - (child.pos.Y + child_size)),
@@ -240,7 +241,6 @@ bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 	const tpos_t next_child_size = child.size << quality_shift;
 	return distance >= next_child_size;
 }
-// ===
 
 std::array<child_t, 8> split(const child_t &child)
 {
@@ -471,10 +471,10 @@ bool each(const each_param_t &param, const child_t &child)
 		return emit_tree_cell(param, child);
 	// ===
 
-	const auto children = split(child);
-	const size_t child_count = param.two_d ? 4 : children.size();
-	for (size_t i = 0; i < child_count; ++i) {
-		if (each(param, children[i]))
+	for (const auto &subchild : split(child)) {
+		if (param.two_d && subchild.pos.Y != child.pos.Y)
+			continue;
+		if (each(param, subchild))
 			return true;
 	}
 	return false;
