@@ -43,6 +43,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "server.h"
 #include "fm_world_merge.h"
+#include "fm_far_node.h"
 
 static video::SColor get_light_source_color(const ContentFeatures &cf)
 {
@@ -120,19 +121,24 @@ static bool within_lazy_window(uint64_t source_time, uint64_t target_time, uint3
 }
 
 std::optional<size_t> world_merge::selectFarNodeIndex(
-		const std::array<MapNode, 8> &samples, const std::array<bool, 8> *exposed)
+		const std::array<MapNode, 8> &samples, const std::array<bool, 8> *exposed,
+		const NodeDefManager *ndef)
 {
 	constexpr size_t main_sample = 3;
 	size_t valid_count = 0;
 	size_t solid_count = 0;
+	bool has_opaque_structure = false;
 
 	for (const auto &node : samples) {
 		const auto content = node.getContent();
 		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN)
 			continue;
 		++valid_count;
-		if (content != CONTENT_AIR)
+		if (content != CONTENT_AIR) {
 			++solid_count;
+			if (ndef && farmesh::isOpaqueStructure(ndef->get(content)))
+				has_opaque_structure = true;
+		}
 	}
 
 	if (!valid_count)
@@ -142,6 +148,15 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	// remains closed. Sparse solids no longer survive merely because they happen
 	// to contain the grid-aligned sample.
 	const bool select_solid = solid_count * 2 >= valid_count;
+	// Glass or foliage may cover ground or a wall in the upper samples. Do not let
+	// that transparent cover replace the structure of the entire coarse cell.
+	// Filter only the material vote: sparse cover must still lose to air.
+	const auto material_candidate = [&](content_t content) {
+		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+			   (content != CONTENT_AIR) == select_solid &&
+			   !(select_solid && has_opaque_structure &&
+					   farmesh::isTransparentCover(ndef->get(content)));
+	};
 	// Occupancy remains volume-based, but material can come from the exposed
 	// upper layer. This keeps grass, snow, roads, and similar surface covers from
 	// being outvoted by the dirt or stone directly underneath them.
@@ -150,8 +165,7 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	if (select_solid && exposed) {
 		for (size_t i = 0; i < samples.size(); ++i) {
 			const auto content = samples[i].getContent();
-			if ((*exposed)[i] && content != CONTENT_IGNORE &&
-					content != CONTENT_UNKNOWN && content != CONTENT_AIR) {
+			if ((*exposed)[i] && material_candidate(content)) {
 				selected_exposed_y =
 						std::max(selected_exposed_y, static_cast<int>(sample_y[i]));
 			}
@@ -162,8 +176,7 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 
 	for (size_t i = 0; i < samples.size(); ++i) {
 		const auto content = samples[i].getContent();
-		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN ||
-				(content != CONTENT_AIR) != select_solid ||
+		if (!material_candidate(content) ||
 				(selected_exposed_y >= 0 &&
 						(!(*exposed)[i] || sample_y[i] != selected_exposed_y)))
 			continue;
@@ -491,7 +504,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					}
 
 					const auto selected =
-							world_merge::selectFarNodeIndex(samples, &exposed);
+							world_merge::selectFarNodeIndex(samples, &exposed, ndef);
 					if (!selected)
 						continue;
 					auto n = samples[*selected];

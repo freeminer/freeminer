@@ -352,3 +352,7 @@ void TestFmContentMapblock::testSurfaceCoverKeepsTexture()
 	UASSERTEQ(std::size_t, buf.indices.size(), 36);
 }
 }
+
+// fm: Far transparent-cover selection and texture regression tests.
+#include "fm_test_far_material.cpp"
+// ===

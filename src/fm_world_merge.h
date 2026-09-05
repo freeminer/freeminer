@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Server;
 class MapDatabase;
+class NodeDefManager;
 
 namespace world_merge
 {
@@ -42,8 +43,11 @@ namespace world_merge
 // otherwise empty cell.
 // When exposure data is available, an upper node bordering transparent
 // space represents the visible surface material of an otherwise solid cell.
+// With node definitions, transparent cover yields to opaque structural material
+// in the same occupied cell. Cover still counts for occupancy and survives alone.
 std::optional<size_t> selectFarNodeIndex(const std::array<MapNode, 8> &samples,
-		const std::array<bool, 8> *exposed = nullptr);
+		const std::array<bool, 8> *exposed = nullptr,
+		const NodeDefManager *ndef = nullptr);
 }
 
 class WorldMerger
