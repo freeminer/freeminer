@@ -3,6 +3,7 @@
 // mesh-generator helpers without changing the upstream implementation.
 
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 // Far-mesh fast face builder, adapted from mapblock_mesh.cpp at 356205cd5.
 
 namespace
@@ -107,7 +108,7 @@ static void getFmNodeTextureCoords(
 
 static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 		const v3opos_t &texture_pos, const v3opos_t &center, const v3pos_t &dir,
-		const v3opos_t &scale, int texture_step, u8 emissive_light)
+		const v3f &scale, int texture_step, u8 emissive_light)
 {
 	float x0 = 0.0f;
 	float y0 = 0.0f;
@@ -115,7 +116,8 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 	getFmNodeVertexDirs(dir, vertex_dirs);
 	u16 lights[4] = {input_lights[0], input_lights[1], input_lights[2], input_lights[3]};
 
-	const v3opos_t logical_scale = scale / static_cast<float>(texture_step);
+	const v3opos_t logical_scale =
+			v3opos_t::from(scale) / static_cast<float>(texture_step);
 	if (tile.world_aligned)
 		getFmNodeTextureCoords(texture_pos, logical_scale, dir, &x0, &y0);
 
@@ -162,7 +164,7 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 			0.5f;
 	const v2f32 texture_coords[4] = {
 			{x0 + w, y0 + h}, {x0, y0 + h}, {x0, y0}, {x0 + w, y0}};
-	const v3opos_t normal = v3opos_t::from(dir);
+	const v3f normal = v3f::from(dir);
 	FastFace face;
 	face.tile = tile;
 	for (u8 i = 0; i < 4; ++i) {
@@ -173,7 +175,8 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 		auto color = encode_light(lights[i], emissive_light);
 		if (!emissive_light)
 			applyFacesShading(color, normal);
-		face.vertices[i] = video::S3DVertex(position, normal, color, texture_coords[i]);
+		face.vertices[i] =
+				video::S3DVertex(v3f::from(position), normal, color, texture_coords[i]);
 	}
 
 	const auto light_diff = [](u16 first, u16 second) {
@@ -333,22 +336,22 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 	// samples (notably ores) above the surrounding stone surface.
 	//	 aabb3f box(v3opos_t(-HBS, 1.5f * BS - scaled, -HBS), v3opos_t(scaled - HBS, 1.5f * BS, scaled - HBS));
 
-	auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
+	auto box = aabb3o(v3opos_t(-0.5 * BS), v3opos_t(0.5 * BS));
 	if (data->fscale > 1) {
 		// TODO: maybe possibe make simpler?/
-		box.MinEdge += v3f(HBS, 0, HBS);
-		box.MinEdge *= v3f(data->fscale, data->fscale, data->fscale);
-		box.MinEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
-		box.MaxEdge += v3f(HBS, 0, HBS);
-		box.MaxEdge *= v3f(data->fscale, data->fscale, data->fscale);
-		box.MaxEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+		box.MinEdge += v3opos_t(HBS, 0, HBS);
+		box.MinEdge *= v3opos_t(data->fscale, data->fscale, data->fscale);
+		box.MinEdge += v3opos_t(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+		box.MaxEdge += v3opos_t(HBS, 0, HBS);
+		box.MaxEdge *= v3opos_t(data->fscale, data->fscale, data->fscale);
+		box.MaxEdge += v3opos_t(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
 	}
 
-	box.MinEdge += cur_node.origin;
-	box.MaxEdge += cur_node.origin;
+	box.MinEdge += v3opos_t::from(cur_node.origin);
+	box.MaxEdge += v3opos_t::from(cur_node.origin);
 	if (is_far) {
 		const v3opos_t center = (box.MinEdge + box.MaxEdge) * 0.5f / BS;
-		const v3opos_t scale = (box.MaxEdge - box.MinEdge) / BS;
+		const v3f scale = v3f::from((box.MaxEdge - box.MinEdge) / BS);
 		const v3opos_t texture_pos =
 				v3opos_t::from(cur_node.p) / static_cast<float>(data->fscale);
 		for (int face = 0; face < 6; ++face) {
@@ -389,8 +392,8 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 			}
 		}
 
-		drawCuboid(box, tiles, 6, nullptr, mask,
-				[&](int face, video::S3DVertex vertices[4]) {
+		drawCuboid(aabb3f{v3f::from(box.MinEdge), v3f::from(box.MaxEdge)}, tiles, 6,
+				nullptr, mask, [&](int face, video::S3DVertex vertices[4]) {
 					const auto final_lights = smooth_lights[face];
 					for (int vertex_index = 0; vertex_index < 4; ++vertex_index) {
 						auto &vertex = vertices[vertex_index];
@@ -405,8 +408,8 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 								   : QuadDiagonal::Diag02;
 				});
 	} else {
-		drawCuboid(box, tiles, 6, nullptr, mask,
-				[&](int face, video::S3DVertex vertices[4]) {
+		drawCuboid(aabb3f{v3f::from(box.MinEdge), v3f::from(box.MaxEdge)}, tiles, 6,
+				nullptr, mask, [&](int face, video::S3DVertex vertices[4]) {
 					video::SColor color =
 							encode_light(lights[face], cur_node.f->light_source);
 					if (!cur_node.f->light_source)
@@ -509,7 +512,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 										  int u_axis, int v_axis, size_t width,
 										  size_t height) {
 		const float fscale = data->fscale;
-		v3opos_t scale(fscale);
+		v3f scale(fscale);
 		set_axis(scale, u_axis, fscale * width);
 		set_axis(scale, v_axis, fscale * height);
 
@@ -519,7 +522,8 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 				v3opos_t::from(face.pos) + v3opos_t((fscale - 1.0f) * 0.5f,
 												   1.5f - fscale * 0.5f,
 												   (fscale - 1.0f) * 0.5f);
-		const auto center = first_center + (scale - v3opos_t(fscale)) * 0.5f;
+		const auto center =
+				first_center + (v3opos_t::from(scale) - v3opos_t(fscale)) * 0.5f;
 		const auto fast_face =
 				makeFastFace(face.tile, face.lights, v3opos_t::from(face.pos) / fscale,
 						center, dir, scale, data->fscale, face.emissive_light);
