@@ -193,14 +193,14 @@ void TestFmContentMapblock::testFarNode()
 	UASSERTEQ(std::size_t, buf.vertices.size(), 20);
 	UASSERTEQ(std::size_t, buf.indices.size(), 30);
 	for (const auto &vertex : buf.vertices)
-		UASSERT(vertex.Normal != v3opos_t(1, 0, 0));
+		UASSERT(vertex.Normal != v3f(1, 0, 0));
 
 	aabb3f bounds(buf.vertices[0].Pos);
 	for (const auto &vertex : buf.vertices)
 		bounds.addInternalPoint(vertex.Pos);
-	UASSERT(bounds.MinEdge == v3opos_t(-HBS, 1.5f * BS - data.fscale * BS, -HBS));
+	UASSERT(bounds.MinEdge == v3f(-HBS, 1.5f * BS - data.fscale * BS, -HBS));
 	UASSERT(bounds.MaxEdge ==
-			v3opos_t(data.fscale * BS - HBS, 1.5f * BS, data.fscale * BS - HBS));
+			v3f(data.fscale * BS - HBS, 1.5f * BS, data.fscale * BS - HBS));
 }
 
 void TestFmContentMapblock::testFastFaceMerging()
@@ -222,9 +222,9 @@ void TestFmContentMapblock::testFastFaceMerging()
 	aabb3f bounds(buf.vertices[0].Pos);
 	for (const auto &vertex : buf.vertices)
 		bounds.addInternalPoint(vertex.Pos);
-	UASSERT(bounds.MinEdge == v3opos_t(-HBS, 1.5f * BS - data.fscale * BS, -HBS));
+	UASSERT(bounds.MinEdge == v3f(-HBS, 1.5f * BS - data.fscale * BS, -HBS));
 	UASSERT(bounds.MaxEdge ==
-			v3opos_t(2 * data.fscale * BS - HBS, 1.5f * BS, data.fscale * BS - HBS));
+			v3f(2 * data.fscale * BS - HBS, 1.5f * BS, data.fscale * BS - HBS));
 }
 
 void TestFmContentMapblock::testFastFaceRectangles()
@@ -271,11 +271,11 @@ void TestFmContentMapblock::testFastFaceRectangles()
 			aabb3f bounds(buf.vertices[0].Pos);
 			for (const auto &vertex : buf.vertices)
 				bounds.addInternalPoint(vertex.Pos);
-			const auto expected_min = v3opos_t::from(origin) * (BS * data.fscale) +
-									  v3opos_t(-HBS, 1.5f * BS - data.fscale * BS, -HBS);
+			const auto expected_min = v3f::from(origin) * (BS * data.fscale) +
+									  v3f(-HBS, 1.5f * BS - data.fscale * BS, -HBS);
 			UASSERT(bounds.MinEdge == expected_min);
 			UASSERT(bounds.MaxEdge ==
-					expected_min + v3opos_t::from(size) * (BS * data.fscale));
+					expected_min + v3f::from(size) * (BS * data.fscale));
 		}
 }
 
@@ -483,7 +483,7 @@ void TestFmContentMapblock::testFastFaceCoverage()
 		const auto &a = buf.vertices[buf.indices[i]];
 		const auto &b = buf.vertices[buf.indices[i + 1]];
 		const auto &c = buf.vertices[buf.indices[i + 2]];
-		const v3opos_t cross = (b.Pos - a.Pos).crossProduct(c.Pos - a.Pos);
+		const auto cross = (b.Pos - a.Pos).crossProduct(c.Pos - a.Pos);
 		UASSERT(cross.dotProduct(a.Normal) > 0.0f);
 		triangle_area += cross.getLength() * 0.5;
 	}

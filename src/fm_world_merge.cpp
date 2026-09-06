@@ -476,7 +476,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						sample_pos.Z %= MAP_BLOCKSIZE;
 						return sample_block_it->second->getNodeNoLock(sample_pos);
 					};
-					// TODO: tune block selector
+			// TODO: tune block selector
 
 #if 0
 // Simple grid aligned

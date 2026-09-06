@@ -18,7 +18,7 @@
 #include "fm_key_value_cached.h"
 
 KeyValueCached::KeyValueCached(const std::string &savedir, const std::string &name) :
-		database(savedir, name){};
+		database(savedir, name) {};
 
 KeyValueCached::~KeyValueCached()
 {
@@ -56,7 +56,7 @@ void KeyValueCached::close()
 	database.close();
 }
 
-const std::string & KeyValueCached::get(const std::string &key)
+const std::string &KeyValueCached::get(const std::string &key)
 {
 	std::lock_guard<std::mutex> lock(mutex);
 	if (!stats.contains(key))
@@ -65,7 +65,7 @@ const std::string & KeyValueCached::get(const std::string &key)
 	return stats[key];
 }
 
-const std::string & KeyValueCached::put(const std::string &key, const std::string &value)
+const std::string &KeyValueCached::put(const std::string &key, const std::string &value)
 {
 	//errorstream<<"stat one: "<<key<< " = "<< value<<std::endl;
 	std::lock_guard<std::mutex> lock(mutex);
