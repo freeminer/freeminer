@@ -48,6 +48,12 @@ namespace world_merge
 std::optional<size_t> selectFarNodeIndex(const std::array<MapNode, 8> &samples,
 		const std::array<bool, 8> *exposed = nullptr,
 		const NodeDefManager *ndef = nullptr);
+
+// Reduce a complete parent block's lights for the destination far step. Each
+// world-aligned region keeps up to eight original lights, so sparse regions
+// survive every level and dense regions have a bounded point density.
+MapBlock::light_points_t reduceFarLightPoints(
+		const MapBlock::light_points_t &lights, block_step_t far_step);
 }
 
 class WorldMerger
