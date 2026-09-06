@@ -410,7 +410,7 @@ void init(MapgenEarth *mg)
 		{
 			const auto id = mg->m_emerge->ndef->getId(name);
 			if (id == CONTENT_IGNORE) {
-				actionstream << "Mapping node not found" << name << "\n";
+				actionstream << "Mapping node not found " << name << "\n";
 				return fallback;
 			}
 			return id;

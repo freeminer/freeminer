@@ -239,9 +239,9 @@ public:
 	std::atomic_uint wanted_range{10};
 	std::atomic_bool range_all{};
 	std::atomic_int farmesh{};
-	uint8_t farmesh_quality{};
-	pos_t farmesh_all_changed{};
-	bool have_farmesh_quality{};
+	std::atomic_uint8_t farmesh_quality{};
+	std::atomic<pos_t> farmesh_all_changed{};
+	std::atomic_bool have_farmesh_quality{};
 	float fov{72};
 	//bool block_overflow;
 	ServerEnvironment *m_env{};
@@ -252,14 +252,24 @@ public:
 	//std::unordered_map<v3bpos_t, uint8_t> blocks;
 	void SetBlocksNotSent();
 	void SetBlockDeleted(const v3bpos_t &p);
-	std::vector<std::unordered_map<v3bpos_t, std::pair<block_step_t, int32_t>>>
-			far_blocks_requested{FARMESH_STEP_MAX};
-	std::vector<std::unordered_map<v3bpos_t, std::pair<block_step_t, int32_t>>>
-			far_blocks_sent{FARMESH_STEP_MAX};
+	struct FarBlockRequest
+	{
+		uint32_t iteration{};
+		int32_t retry_after{};
+	};
+	using far_block_requests_t =
+			std::vector<std::unordered_map<v3bpos_t, FarBlockRequest>>;
+	using far_blocks_ready_t =
+			std::vector<std::unordered_map<v3bpos_t, MapBlockPtr>>;
+	far_block_requests_t far_blocks_requested{FARMESH_STEP_MAX};
+	far_blocks_ready_t far_blocks_ready{FARMESH_STEP_MAX};
+	uint32_t far_blocks_requested_iteration{};
+	bool far_blocks_requested_iteration_valid{};
 	std::mutex far_blocks_requested_mutex;
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
 			std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
-	uint32_t SendFarBlocks(const int32_t uptime);
+	uint32_t SendFarBlocks(
+			int32_t uptime, const far_blocks_ready_t &new_far_blocks);
 	// ==
 
 	/* Authentication information */

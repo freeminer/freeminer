@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+#include "server/fm_emerge_smart.h"
+
 #include "scripting_server.h"
 #include "server.h"
 #include "log.h"
@@ -125,6 +127,7 @@ void ServerScripting::InitializeModApi(lua_State *L, int top)
 
     // freeminer:
 	ModApiKeyValueStorage::Initialize(L, top);
+	fm_register_emerge_smart_api(L, top);
 
 	// Register reference classes (userdata)
 	InvRef::Register(L);

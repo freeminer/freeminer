@@ -319,6 +319,10 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("animation_wd_stop", "219");
 */
 	settings->setDefault("more_threads", "true");
+	settings->setDefault("server_async_threads", "2");
+	settings->setDefault("emerge_smart_in_flight", "4");
+	settings->setDefault("emerge_smart_task_timeout", "600");
+	settings->setDefault("emerge_smart_max_cancel_retries", "60");
 	settings->setDefault("console_enabled", debug ? "true" : "false");
 
 	if (win32) {

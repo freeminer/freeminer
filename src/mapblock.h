@@ -545,7 +545,8 @@ public:
 #endif
 
 	block_step_t far_step{};
-	uint32_t far_make_mesh_timestamp{static_cast<uint32_t>(-1)};
+	// Mesh scheduling and received-data invalidation run on different threads.
+	std::atomic_uint32_t far_make_mesh_timestamp{static_cast<uint32_t>(-1)};
 	enum class far_status_e
 	{
 		none = 0,
@@ -556,7 +557,8 @@ public:
 		s5_mesh_start,
 		s6_mesh_complete,
 	};
-	far_status_e far_status{};
+	// Publish mesh state between the scanner, receiver and mesh workers.
+	std::atomic<far_status_e> far_status{};
 	std::atomic_uint32_t far_iteration{};
 	std::atomic_bool creating_far_mesh{};
 	std::atomic_short heat{};
@@ -607,7 +609,9 @@ public:
 				255, (light >> 16) & 0xff, (light >> 8) & 0xff, light & 0xff);
 	}
 
-	std::unordered_map<v3pos_t, light_t> m_light_points;
+	// Keep far-light iterations alive when a received block replaces its data.
+	using light_points_t = std::unordered_map<v3pos_t, light_t>;
+	std::shared_ptr<light_points_t> m_light_points = std::make_shared<light_points_t>();
 
 	u32 getActualTimestamp()
 	{

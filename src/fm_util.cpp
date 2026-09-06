@@ -31,8 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #endif
 
-PIDFileHandler::PIDFileHandler(const Settings &cmd_args)
-	: m_created(false)
+PIDFileHandler::PIDFileHandler(const Settings &cmd_args) : m_created(false)
 {
 	if (!cmd_args.exists("pid"))
 		return;

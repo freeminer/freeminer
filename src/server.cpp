@@ -81,12 +81,13 @@
 #include "network/clientopcodes.h"
 #endif
 #include "content_abm.h"
+#include "fm_server.h"
+#include "msgpack_fix.h"
 #include "network/fm_connection.h"
+#include "threading/ThreadPool.h"
 #include "tool.h"
 #include <iomanip>
-#include "msgpack_fix.h"
 #include <sys/types.h>
-#include "fm_server.h"
 #if !MINETEST_PROTO
 #include "network/fm_serverpacketsender.cpp"
 #endif
@@ -405,20 +406,9 @@ Server::~Server()
 
 	// Stop server step from happening
 	if (m_thread) {
-
-		if (m_env) m_env->getServerMap().save(MOD_STATE_WRITE_AT_UNLOAD); // save before merge thread exit
-
 		stop();
 		// (Do not delete yet. Accessed by setAsyncFatalError().)
 	}
-
-	// Stop all emerge activity and finish off mapgen callbacks. Do this before
-	// shutdown callbacks since there may be state that is finalized in a
-	// callback.
-	// Note: The emerge manager is not deleted yet because further code can
-	//       still interact with map loading.
-	if (m_emerge)
-		m_emerge->stopThreads();
 
 	if (m_env) {
 		EnvAutoLock envlock(this);
@@ -532,6 +522,7 @@ void Server::init()
 		m_sendblocks_thead = std::make_unique<SendBlocksThread>(this);
 		m_sendfarblocks_thead = std::make_unique<SendFarBlocksThread>(this);
 		m_liquid = std::make_unique<LiquidThread>(this);
+		m_lighting_thread = std::make_unique<LightingThread>(this);
 		m_env_thread = std::make_unique<EnvThread>(this);
 		m_abm_thread = std::make_unique<AbmThread>(this);
 		m_abm_world_thread = std::make_unique<AbmWorldThread>(this);
@@ -662,7 +653,12 @@ void Server::init()
 	add_fast_abms(m_env, m_nodedef);
 
 	m_env->m_abmhandler.init(m_env->m_abms); // uses result of add_legacy_abms and m_script->initializeEnvironment
-	m_liquid_send_interval = g_settings->getFloat("liquid_send");
+	m_lighting_update_interval =
+			std::max(0.001f, g_settings->getFloat("liquid_send"));
+	if (m_lighting_thread) {
+		m_lighting_thread->sleep_nothing = static_cast<int>(
+				1000 * m_lighting_update_interval);
+	}
 
 	// Those settings can be overwritten in world.mt, they are
 	// intended to be cached after environment loading.
@@ -694,6 +690,8 @@ void Server::start()
 		m_sendfarblocks_thead->restart();
 	if (m_liquid)
 		m_liquid->restart();
+	if (m_lighting_thread)
+		m_lighting_thread->restart();
 	if(m_env_thread)
 		m_env_thread->restart();
 	if(m_abm_thread)
@@ -808,13 +806,17 @@ void Server::stop()
 {
 	infostream<<"Server: Stopping and waiting for threads"<<std::endl;
 
-	if (m_env) m_env->getServerMap().save(MOD_STATE_WRITE_AT_UNLOAD);
-
-	// Stop threads (set run=false first so both start stopping)
+	// Stop the main server and generation producers before draining map work.
 	m_thread->stop();
+	m_thread->wait();
+	shutdownAsyncTasks();
+	if (m_emerge)
+		m_emerge->stopThreads();
 
 	if (m_liquid)
 		m_liquid->stop();
+	if (m_lighting_thread)
+		m_lighting_thread->stop();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->stop();
 	if (m_sendfarblocks_thead)
@@ -825,17 +827,13 @@ void Server::stop()
 		m_abm_thread->stop();
 	if(m_abm_world_thread)
 		m_abm_world_thread->stop();
-	if(m_world_merge_thread)
-		m_world_merge_thread->stop();
 	if(m_env_thread)
 		m_env_thread->stop();
 
-
-	m_thread->wait();
-
-
 	if (m_liquid)
 		m_liquid->join();
+	if (m_lighting_thread)
+		m_lighting_thread->join();
 	if (m_sendblocks_thead)
 		m_sendblocks_thead->join();
 	if (m_sendfarblocks_thead)
@@ -846,10 +844,20 @@ void Server::stop()
 		m_abm_thread->join();
 	if(m_abm_world_thread)
 		m_abm_world_thread->join();
-	if(m_world_merge_thread)
-		m_world_merge_thread->join();
 	if(m_env_thread)
 		m_env_thread->join();
+
+	if (m_env) {
+		auto &map = m_env->getServerMap();
+		map.drainLightingQueue();
+		map.save(MOD_STATE_WRITE_AT_UNLOAD);
+	}
+
+	// WorldMergeThread performs an unthrottled final merge after stop is requested.
+	if(m_world_merge_thread) {
+		m_world_merge_thread->stop();
+		m_world_merge_thread->join();
+	}
 
 	infostream<<"Server: Threads stopped"<<std::endl;
 }

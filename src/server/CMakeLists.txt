@@ -2,6 +2,7 @@ file(GLOB common_server_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 set(common_server_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_key_value_cached.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_emerge_smart.cpp
 
 	${common_server_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/activeobjectmgr.cpp

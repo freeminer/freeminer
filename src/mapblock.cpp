@@ -612,12 +612,13 @@ void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int
 		infostream<<" serialize not generated block"<<std::endl;
 	}
 
-// freeminer
-	if(!m_light_points.empty()) {
+    // fm:
+	const auto lock = lock_shared_rec();
+	const auto light_points = m_light_points;
+	if (light_points && !light_points->empty()) {
 		flags |= (1 << 7);
 	}
-	const auto lock = lock_shared_rec();
-// =========
+	// ===
 
 	writeU8(os, flags);
 	if (version >= 27) {
@@ -701,13 +702,13 @@ void MapBlock::serialize(std::ostream &os_compressed, u8 version, bool disk, int
 		}
 	}
 
-	// freeminer
+	// fm:
 	if (flags & (1 << 7)) {
 		MSGPACK_PACKET_INIT((int)MAPBLOCK_DATA, 1);
-		PACK(MAPBLOCK_LIGHT_POINTS, m_light_points);
+		PACK(MAPBLOCK_LIGHT_POINTS, *light_points);
 		os_raw << serializeString32(std::string_view{buffer.data(), buffer.size()});
 	}
-	// =========
+	// ===
 
 	if (version >= 29) {
 		// now compress the whole thing
@@ -890,18 +891,22 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 		analyzeContent();
 	}
 
+    // fm:
 	if (flags & (1 << 7)) {
-		size_t size = 0;
+		// size_t size = 0;
 		std::string data = deSerializeString32(is);
-		size = data.size();
+		// size = data.size();
 		if (!data.empty()) {
 			msgpack::unpacked msg;
 			msgpack::unpack(msg, data.data(), data.size());
 			auto packet = msg.get().as<MsgpackPacket>();
 			const auto it = packet.find(MAPBLOCK_LIGHT_POINTS);
-			if (it != packet.end()) {
-				try {
-					it->second.convert(m_light_points);
+				if (it != packet.end()) {
+					try {
+						// Publish complete light data at once, preserving active readers.
+						auto light_points = std::make_shared<light_points_t>();
+						it->second.convert(*light_points);
+						m_light_points = std::move(light_points);
 				} catch (const std::exception &ex) {
 					verbosestream << "MapBlock::deSerialize freeminer: pos=" << getPos()
 								  << " size=" << data.size()
@@ -911,6 +916,7 @@ bool MapBlock::deSerialize(std::istream &in_compressed, u8 version, bool disk)
 			}
 		}
 	}
+    // ===
 
 	TRACESTREAM(<<"MapBlock::deSerialize "<<getPos()
 			<<": Done."<<std::endl);

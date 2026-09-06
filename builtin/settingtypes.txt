@@ -241,6 +241,20 @@ time_taker_enabled () int 0
 # Enable thread for send_blocks and thread for map stuff (liquid, map save, ...)  Disable if you have frequent crashes
 more_threads () bool true
 
+# Number of workers in the generic core server task pool. The pool is created
+# lazily when its first task is submitted.
+server_async_threads (Server asynchronous task threads) int 2 1 32
+
+# Maximum number of mapblock columns requested concurrently by
+# /emerge_smart.
+emerge_smart_in_flight (Region generation columns in flight) int 4 1 1000
+
+# Maximum time in seconds for one mapblock attempt, including queue retries.
+emerge_smart_task_timeout (Region generation mapblock timeout) int 600 1 86400
+
+# Maximum number of cancelled emerge attempts before a column is marked failed.
+emerge_smart_max_cancel_retries (Region generation cancellation retries) int 60 0 10000
+
 # Process abms for blocks out of active area, one block per step. Can take 100-200ms per block
 abm_random () bool false
 

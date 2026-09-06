@@ -3,6 +3,10 @@
 // Copyright (C) 2025 cx384
 
 #include "node_visuals.h"
+// fm: Far cover nodes use opaque texture variants with the normal shaders.
+#include "fm_far_material.h"
+#include "fm_far_node.h"
+// ===
 
 #include "mesh.h"
 #include "shader.h"
@@ -167,6 +171,10 @@ static void fillTileAttribs(TileLayer *layer, TileAttribContext context,
 	}
 }
 
+// fm: Reuse the normal tile loader for far-only texture variants.
+#include "fm_far_material.inc.cpp"
+// ===
+
 static bool isWorldAligned(AlignStyle style, WorldAlignMode mode, NodeDrawType drawtype)
 {
 	if (style == ALIGN_STYLE_WORLD)
@@ -205,6 +213,12 @@ static size_t getArrayTextureMax(IShaderSource *shdsrc)
 
 NodeVisuals::~NodeVisuals()
 {
+	// fm: Far animation frame lists are owned independently of the near tiles.
+	if (fm_far_tiles) {
+		for (u8 j = 0; j < 6; ++j)
+			delete fm_far_tiles[j].frames;
+	}
+	// ===
 	for (u16 j = 0; j < 6; j++) {
 		delete tiles[j].layers[0].frames;
 		delete tiles[j].layers[1].frames;
@@ -247,6 +261,13 @@ void NodeVisuals::preUpdateTextures(const ContentFeatures &f, ITextureSource *ts
 	for (u32 j = 0; j < 6; j++) {
 		if (use)
 			consider_tile(f.tiledef[j], append);
+		// fm: Preload far variants into the same texture pool, including arrays.
+		if (farmesh::isTransparentCover(f)) {
+			consider_tile(farmesh::opaqueFarTileDef(f.tiledef[j]), append);
+			if (f.drawtype == NDT_ALLFACES_OPTIONAL)
+				consider_tile(farmesh::opaqueFarTileDef(f.tiledef_special[j]), append);
+		}
+		// ===
 	}
 	for (u32 j = 0; j < 6; j++) {
 		if (use_overlay)
@@ -272,6 +293,9 @@ void NodeVisuals::updateTextures(ContentFeatures &f, ITextureSource *tsrc,
 	const auto &color = f.color;
 	const auto &param_type_2 = f.param_type_2;
 	const auto &palette_name = f.palette_name;
+	// fm: Classify before optional foliage is converted to its actual drawtype.
+	const bool far_opaque_texture = farmesh::isTransparentCover(f);
+	// ===
 
 	// Figure out the actual tiles to use
 	TileDef tdef[6];
@@ -455,6 +479,10 @@ void NodeVisuals::updateTextures(ContentFeatures &f, ITextureSource *tsrc,
 
 		tiles[j].layers[0].need_polygon_offset = !tiles[j].layers[1].empty();
 		any_polygon_offset |= tiles[j].layers[0].need_polygon_offset;
+		// fm: Only the base becomes opaque; decorative overlays keep their alpha.
+		if (far_opaque_texture)
+			fillOpaqueFarTile(*this, j, tdef[j], tac, material_type, tile_shader);
+		// ===
 	}
 
 	if (drawtype == NDT_MESH && any_polygon_offset) {

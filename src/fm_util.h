@@ -26,7 +26,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Settings;
 
-class PIDFileHandler {
+class PIDFileHandler
+{
 private:
 	std::string m_pidfile;
 	bool m_created;

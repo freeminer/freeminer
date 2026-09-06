@@ -70,6 +70,11 @@ std::optional<tree_result_t> getFarParams(const MapDrawControl &draw_control,
 		const v3bpos_t &player_block_pos, const v3bpos_t &blockpos,
 		bool cell_each = false);
 
+// Server-side form which avoids constructing the client-only MapDrawControl.
+std::optional<tree_result_t> getFarParams(const v3bpos_t &player_block_pos,
+		uint8_t cell_size_pow, int farmesh, uint8_t farmesh_quality_pow,
+		const v3bpos_t &blockpos, bool cell_each = false);
+
 v3bpos_t getFarActualBlockPos(const MapDrawControl &draw_control,
 		const v3bpos_t &player_block_pos, const v3bpos_t &blockpos,
 		bool cell_each = false);

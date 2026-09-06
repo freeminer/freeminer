@@ -96,8 +96,8 @@ float clamp_weather_float(float value, float min_value, float max_value)
 }
 
 template <typename AtomicValue>
-void store_weather_split(
-		AtomicValue &base_ref, AtomicValue &add_ref, float total, float min_value, float max_value)
+void store_weather_split(AtomicValue &base_ref, AtomicValue &add_ref, float total,
+		float min_value, float max_value)
 {
 	total = clamp_weather_float(total, min_value, max_value);
 
@@ -504,8 +504,8 @@ u32 ServerMap::stepLoadedBlockWeather(
 		state.heat = block->heat + block->heat_add;
 		state.humidity = block->humidity + block->humidity_add;
 		state.wind = block->wind;
-		state.pressure = fm_weather_pressure(
-				state.heat, state.humidity, pos.Y * MAP_BLOCKSIZE);
+		state.pressure =
+				fm_weather_pressure(state.heat, state.humidity, pos.Y * MAP_BLOCKSIZE);
 		state.active = active;
 
 		index.emplace(pos, states.size());
@@ -614,8 +614,8 @@ u32 ServerMap::stepLoadedBlockWeather(
 		weather::wind_t wind = state.wind - pressure_gradient * (0.015f * dt);
 		wind *= std::exp(-0.08f * dt);
 		weather::wind_t mapgen_wind;
-		if (mapgen->calcBlockWind(
-					node_pos, seed, timeofday, gametime, env->m_use_weather, &mapgen_wind)) {
+		if (mapgen->calcBlockWind(node_pos, seed, timeofday, gametime, env->m_use_weather,
+					&mapgen_wind)) {
 			mapgen_wind.Y = wind.Y;
 			wind = mapgen_wind * 0.80f + wind * 0.20f;
 		}
@@ -652,8 +652,8 @@ u32 ServerMap::stepLoadedBlockWeather(
 			continue;
 		}
 
-		store_weather_split(state.block->heat, state.block->heat_add,
-				result.heat, -100.0f, 100.0f);
+		store_weather_split(
+				state.block->heat, state.block->heat_add, result.heat, -100.0f, 100.0f);
 		store_weather_split(state.block->humidity, state.block->humidity_add,
 				result.humidity, 0.0f, 100.0f);
 		state.block->wind = result.wind;
@@ -893,7 +893,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 			}
 
 			const size_t excess = m_blocks_size - static_cast<size_t>(max_loaded_blocks);
-			const size_t excess_live = excess > invalid_blocks ? excess - invalid_blocks : 0;
+			const size_t excess_live =
+					excess > invalid_blocks ? excess - invalid_blocks : 0;
 			const auto older_first = [](const TimedBlock &a, const TimedBlock &b) {
 				return a.first > b.first;
 			};
@@ -940,7 +941,8 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 					continue;
 				}
 				if (block->getUsageTimer() > unload_timeout ||
-						blocks_over_limit.contains(block.get())) { // block->refGet() <= 0 &&
+						blocks_over_limit.contains(
+								block.get())) { // block->refGet() <= 0 &&
 					const v3bpos_t p = block->getPos();
 					changed_blocks_for_merge.emplace(p);
 
@@ -1583,7 +1585,7 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 #endif
 
 u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
-		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms)
+		unordered_map_v3pos<int> &processed, unsigned int max_cycle_ms, bool load_blocks)
 {
 	std::map<v3pos_t, MapBlock *> modified_blocks;
 
@@ -1591,18 +1593,28 @@ u32 ServerMap::updateLighting(lighting_map_t &a_blocks,
 	int loopcount = 0;
 
 	TimeTaker timer("updateLighting");
+	const auto end_ms = max_cycle_ms ? porting::getTimeMs() + max_cycle_ms : 0;
 
 	for (auto i = a_blocks.begin(); i != a_blocks.end();) {
-		auto block = getBlockNoCreateNoEx(i->first);
+		auto *block = getBlockNoCreateNoEx(i->first);
+		MapBlockPtr loaded_block;
+		if (!block && load_blocks) {
+			loaded_block = loadBlock(i->first);
+			block = loaded_block.get();
+		}
 		if (!block) {
 			i = a_blocks.erase(i);
 			continue;
 		}
 		if (!voxalgo::repair_block_light(this, block, &modified_blocks)) {
 			processed[block->getPos()] = block->getPos().Y;
+		} else {
+			modified_blocks.erase(block->getPos());
 		}
 		++loopcount;
 		++i;
+		if (end_ms && porting::getTimeMs() > end_ms)
+			break;
 	}
 
 	for (const auto &i : modified_blocks) {
@@ -1764,7 +1776,7 @@ void ServerMap::lighting_modified_add(const v3bpos_t &pos, int range)
 {
 	MutexAutoLock lock(m_lighting_modified_mutex);
 	if (m_lighting_modified_blocks.contains(pos)) {
-		auto old_range = m_lighting_modified_blocks[pos];
+		const auto old_range = m_lighting_modified_blocks[pos];
 		if (old_range <= range)
 			return;
 		m_lighting_modified_blocks_range[old_range].erase(pos);
@@ -1773,7 +1785,8 @@ void ServerMap::lighting_modified_add(const v3bpos_t &pos, int range)
 	m_lighting_modified_blocks_range[range][pos] = range;
 };
 
-unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loopcount)
+unsigned int ServerMap::updateLightingQueue(
+		unsigned int max_cycle_ms, int &loopcount, bool load_blocks)
 {
 	unsigned int ret = 0;
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
@@ -1791,10 +1804,10 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 			blocks = r->second;
 			// infostream <<" go light range="<< r->first << " size="<<blocks.size()<< " ranges="<<m_lighting_modified_blocks_range.size()<<" total blk"<<m_lighting_modified_blocks.size()<< std::endl;
 			m_lighting_modified_blocks_range.erase(r);
-			for (auto &i : blocks)
+			for (const auto &i : blocks)
 				m_lighting_modified_blocks.erase(i.first);
 		}
-		ret += updateLighting(blocks, processed, max_cycle_ms);
+		ret += updateLighting(blocks, processed, max_cycle_ms, load_blocks);
 
 		{
 			MutexAutoLock lock(m_lighting_modified_mutex);
@@ -1811,8 +1824,8 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 
 	{
 		MutexAutoLock lock(m_lighting_modified_mutex);
-		for (auto &i : processed) {
-			if (m_lighting_modified_blocks.count(i.first)) {
+		for (const auto &i : processed) {
+			if (m_lighting_modified_blocks.contains(i.first)) {
 				m_lighting_modified_blocks_range[m_lighting_modified_blocks[i.first]]
 						.erase(i.first);
 				m_lighting_modified_blocks.erase(i.first);
@@ -1823,6 +1836,47 @@ unsigned int ServerMap::updateLightingQueue(unsigned int max_cycle_ms, int &loop
 	// infostream << "light ret=" << ret << " " << loopcount << std::endl;
 
 	return ret;
+}
+
+void ServerMap::drainLightingQueue()
+{
+	{
+		const auto lock = m_blocks.lock_shared_rec();
+		for (const auto &[pos, block] : m_blocks)
+			if (block && block->isGenerated() && block->getLightingComplete() != 0xffff)
+				lighting_modified_add(pos);
+	}
+
+	size_t pending;
+	{
+		MutexAutoLock lock(m_lighting_modified_mutex);
+		pending = m_lighting_modified_blocks.size();
+	}
+	if (!pending)
+		return;
+
+	actionstream << "ServerMap: Draining lighting queue: " << pending << " blocks"
+				 << std::endl;
+	const auto started = porting::getTimeMs();
+	auto last_log = started;
+	for (;;) {
+		int loopcount = 0;
+		updateLightingQueue(1000, loopcount, true);
+		{
+			MutexAutoLock lock(m_lighting_modified_mutex);
+			pending = m_lighting_modified_blocks.size();
+		}
+		if (!pending)
+			break;
+		const auto now = porting::getTimeMs();
+		if (now - last_log >= 10000) {
+			actionstream << "ServerMap: Lighting queue drain: " << pending
+						 << " blocks remaining" << std::endl;
+			last_log = now;
+		}
+	}
+	actionstream << "ServerMap: Lighting queue drained in "
+				 << (porting::getTimeMs() - started) / 1000 << "s" << std::endl;
 }
 
 /*

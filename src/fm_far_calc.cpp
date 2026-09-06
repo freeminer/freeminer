@@ -222,15 +222,18 @@ bool contains(const child_t &child, const v3tpos_t &pos)
 }
 
 bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
-		block_step_t cell_size_pow, block_step_t farmesh_quality_pow)
+		block_step_t cell_size_pow, block_step_t farmesh_quality_pow,
+		const bool two_d = false)
 {
 	if (child.size <= (1 << cell_size_pow))
 		return true;
 
 	const tpos_t child_size = child.size >> 1;
+	// go_flat() moves these samples to terrain height before the 3-D lookup.
+	// Ignore Y so the sampling grid cannot become coarser due to its plane height.
 	const tpos_t distance = std::max({
 			std::abs(player_pos.X - (child.pos.X + child_size)),
-			std::abs(player_pos.Y - (child.pos.Y + child_size)),
+			two_d ? tpos_t{} : std::abs(player_pos.Y - (child.pos.Y + child_size)),
 			std::abs(player_pos.Z - (child.pos.Z + child_size)),
 	});
 	const auto quality_shift =
@@ -360,16 +363,27 @@ child_t tree_params_to_child(const tree_params_t &tree_params,
 std::optional<tree_result_t> getFarParams(const MapDrawControl &draw_control,
 		const v3bpos_t &player_block_pos, const v3bpos_t &blockpos, bool cell_each)
 {
+	return getFarParams(player_block_pos, draw_control.cell_size_pow,
+			draw_control.farmesh, draw_control.farmesh_quality_pow, blockpos, cell_each);
+}
+
+std::optional<tree_result_t> getFarParams(const v3bpos_t &player_block_pos,
+		uint8_t cell_size_pow, int farmesh, uint8_t farmesh_quality_pow,
+		const v3bpos_t &blockpos, bool cell_each)
+{
+	if (farmesh <= 0)
+		return {};
+
 	const auto blockpos_aligned_cell =
-			cell_each ? blockpos : align_shift(blockpos, draw_control.cell_size_pow);
-	const tree_params_t tree_params{.tree_pow{farmesh_to_tree_pow(draw_control.farmesh)}};
+			cell_each ? blockpos : align_shift(blockpos, cell_size_pow);
+	const tree_params_t tree_params{.tree_pow{farmesh_to_tree_pow(farmesh)}};
 	const auto start = tree_params_to_child(tree_params, player_block_pos);
 	const auto res =
 			find({.player_pos{player_block_pos.X, player_block_pos.Y, player_block_pos.Z},
 						 .block_pos{blockpos_aligned_cell.X, blockpos_aligned_cell.Y,
 								 blockpos_aligned_cell.Z},
-						 .cell_size_pow{draw_control.cell_size_pow},
-						 .farmesh_quality_pow{draw_control.farmesh_quality_pow},
+						 .cell_size_pow{cell_size_pow},
+						 .farmesh_quality_pow{farmesh_quality_pow},
 						 .cell_size_each{cell_each}},
 					start);
 	return res;
@@ -451,14 +465,16 @@ bool emit_tree_cell(const each_param_t &param, const child_t &mesh_child)
 
 bool each(const each_param_t &param, const child_t &child)
 {
-	if (is_tree_cell(
-				child, param.player_pos, param.cell_size_pow, param.farmesh_quality_pow))
+	// fm: Ignore vertical distance while building a conservative surface grid.
+	if (is_tree_cell(child, param.player_pos, param.cell_size_pow,
+				param.farmesh_quality_pow, param.two_d))
 		return emit_tree_cell(param, child);
+	// ===
 
-	const auto children = split(child);
-	const size_t child_count = param.two_d ? 4 : children.size();
-	for (size_t i = 0; i < child_count; ++i) {
-		if (each(param, children[i]))
+	for (const auto &subchild : split(child)) {
+		if (param.two_d && subchild.pos.Y != child.pos.Y)
+			continue;
+		if (each(param, subchild))
 			return true;
 	}
 	return false;

@@ -157,8 +157,8 @@ static void setMCPTextResult(
 
 static void setMCPStatusResult(Json::Value &response, const Json::Value &status)
 {
-	setMCPTextResult(response, status,
-			status.isMember("success") && !status["success"].asBool());
+	setMCPTextResult(
+			response, status, status.isMember("success") && !status["success"].asBool());
 }
 
 static void setMCPEmptyResult(Json::Value &response)
@@ -378,11 +378,16 @@ static Json::Value chatBufferToMCPJson(const ChatBuffer &buffer, int count)
 static const char *mcpChatMessageTypeName(ChatMessageType type)
 {
 	switch (type) {
-	case CHATMESSAGE_TYPE_RAW: return "raw";
-	case CHATMESSAGE_TYPE_NORMAL: return "player";
-	case CHATMESSAGE_TYPE_ANNOUNCE: return "announce";
-	case CHATMESSAGE_TYPE_SYSTEM: return "system";
-	default: return "unknown";
+	case CHATMESSAGE_TYPE_RAW:
+		return "raw";
+	case CHATMESSAGE_TYPE_NORMAL:
+		return "player";
+	case CHATMESSAGE_TYPE_ANNOUNCE:
+		return "announce";
+	case CHATMESSAGE_TYPE_SYSTEM:
+		return "system";
+	default:
+		return "unknown";
 	}
 }
 
@@ -428,17 +433,17 @@ Json::Value Client::getMCPChatMessages(u64 after_id, u32 count) const
 	result["messages"] = messages;
 	result["returned"] = static_cast<Json::UInt>(messages.size());
 	result["has_more"] = index < m_mcp_chat_history.size();
-	result["oldest_id"] = m_mcp_chat_history.empty()
-			? Json::UInt64(0) : m_mcp_chat_history.front()["id"];
-	result["latest_id"] = m_mcp_chat_history.empty()
-			? Json::UInt64(0) : m_mcp_chat_history.back()["id"];
-	result["next_after_id"] = messages.empty()
-			? Json::UInt64(after_id) : messages[messages.size() - 1]["id"];
+	result["oldest_id"] = m_mcp_chat_history.empty() ? Json::UInt64(0)
+													 : m_mcp_chat_history.front()["id"];
+	result["latest_id"] = m_mcp_chat_history.empty() ? Json::UInt64(0)
+													 : m_mcp_chat_history.back()["id"];
+	result["next_after_id"] = messages.empty() ? Json::UInt64(after_id)
+											   : messages[messages.size() - 1]["id"];
 	return result;
 }
 
-static bool validateMCPToolArguments(const std::string &tool,
-		const Json::Value &args, std::string &error)
+static bool validateMCPToolArguments(
+		const std::string &tool, const Json::Value &args, std::string &error)
 {
 	auto require = [&](const char *name, Json::ValueType type) {
 		if (!args.isMember(name)) {
@@ -487,29 +492,31 @@ static bool validateMCPToolArguments(const std::string &tool,
 		return require("message", Json::stringValue);
 	if (tool == "get_chat_messages")
 		return optional_integer("count") && optional_integer("after_id") &&
-				optional_type("buffer", Json::stringValue);
+			   optional_type("buffer", Json::stringValue);
 	if (tool == "get_node" || tool == "dig_node" || tool == "move_player_to" ||
 			tool == "teleport_player")
 		return require_position();
 	if (tool == "get_nodes_area")
 		return require_integer("min_x") && require_integer("min_y") &&
-				require_integer("min_z") && require_integer("max_x") &&
-				require_integer("max_y") && require_integer("max_z");
+			   require_integer("min_z") && require_integer("max_x") &&
+			   require_integer("max_y") && require_integer("max_z");
 	if (tool == "set_wielded_item")
 		return optional_integer("slot") && optional_type("item", Json::stringValue);
 	if (tool == "move_inventory_item")
 		return require_integer("from_index") && require_integer("to_index") &&
-				optional_integer("count") && optional_type("from_list", Json::stringValue) &&
-				optional_type("to_list", Json::stringValue);
+			   optional_integer("count") &&
+			   optional_type("from_list", Json::stringValue) &&
+			   optional_type("to_list", Json::stringValue);
 	if (tool == "craft" || tool == "get_world_content")
 		return optional_integer(tool == "craft" ? "count" : "radius");
 	if (tool == "place_node") {
 		if (!require_position() || !optional_integer("slot") ||
-				!optional_type("item", Json::stringValue) || !optional_integer("under_x") ||
-				!optional_integer("under_y") || !optional_integer("under_z"))
+				!optional_type("item", Json::stringValue) ||
+				!optional_integer("under_x") || !optional_integer("under_y") ||
+				!optional_integer("under_z"))
 			return false;
 		const int under_count = args.isMember("under_x") + args.isMember("under_y") +
-				args.isMember("under_z");
+								args.isMember("under_z");
 		if (under_count != 0 && under_count != 3) {
 			error = "under_x, under_y and under_z must be provided together";
 			return false;
@@ -525,8 +532,8 @@ static bool validateMCPToolArguments(const std::string &tool,
 		return true;
 	}
 	if (tool == "set_player_control") {
-		for (const char *name : {"forward", "backward", "left", "right", "jump",
-					 "sneak", "dig", "place", "aux1", "zoom"}) {
+		for (const char *name : {"forward", "backward", "left", "right", "jump", "sneak",
+					 "dig", "place", "aux1", "zoom"}) {
 			if (!optional_type(name, Json::booleanValue))
 				return false;
 		}
@@ -557,8 +564,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 			Json::Value result;
 			const std::string requested_version =
 					request["params"].get("protocolVersion", "").asString();
-			if (requested_version == "2024-11-05" ||
-					requested_version == "2025-03-26" ||
+			if (requested_version == "2024-11-05" || requested_version == "2025-03-26" ||
 					requested_version == "2025-06-18")
 				result["protocolVersion"] = requested_version;
 			else
@@ -764,8 +770,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_chat_messages") {
 				Json::Value chat_obj;
-				const std::string buffer_name =
-						args.get("buffer", "history").asString();
+				const std::string buffer_name = args.get("buffer", "history").asString();
 				const int count = args.get("count", 50).asInt();
 				if (buffer_name == "history") {
 					chat_obj = getMCPChatMessages(
@@ -1018,21 +1023,20 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 }
 
 void Client::sendMCPResponse(mcp_ws_server_t::connection_ptr connection,
-		Json::Value response,
-		const std::string &session_id)
+		Json::Value response, const std::string &session_id)
 {
 	auto payload = std::make_shared<std::string>(
 			Json::writeString(Json::StreamWriterBuilder(), response));
 	m_mcp_http_server.get_io_service().post([connection, payload, session_id]() {
-			websocketpp::lib::error_code ec;
-			connection->append_header("Content-Type", "application/json");
-			if (!session_id.empty())
-				connection->append_header("Mcp-Session-Id", session_id);
-			connection->set_body(*payload);
-			connection->set_status(websocketpp::http::status_code::ok);
-			connection->send_http_response(ec);
-			if (ec)
-				verbosestream << "Failed to send MCP Streamable HTTP response: "
+		websocketpp::lib::error_code ec;
+		connection->append_header("Content-Type", "application/json");
+		if (!session_id.empty())
+			connection->append_header("Mcp-Session-Id", session_id);
+		connection->set_body(*payload);
+		connection->set_status(websocketpp::http::status_code::ok);
+		connection->send_http_response(ec);
+		if (ec)
+			verbosestream << "Failed to send MCP Streamable HTTP response: "
 						  << ec.message() << std::endl;
 	});
 }
@@ -1046,8 +1050,7 @@ void Client::processMCPRequests()
 	}
 
 	for (const auto &pending : requests) {
-		handleMCPMessage(
-				pending.connection, pending.request, pending.session_id);
+		handleMCPMessage(pending.connection, pending.request, pending.session_id);
 	}
 }
 #endif
@@ -1067,9 +1070,9 @@ static bool isLocalMCPOrigin(const std::string &origin)
 {
 	if (origin.empty())
 		return true;
-	for (const char *prefix : {"http://127.0.0.1", "https://127.0.0.1",
-			 "http://localhost", "https://localhost", "http://[::1]",
-			 "https://[::1]"}) {
+	for (const char *prefix :
+			{"http://127.0.0.1", "https://127.0.0.1", "http://localhost",
+					"https://localhost", "http://[::1]", "https://[::1]"}) {
 		const size_t length = std::char_traits<char>::length(prefix);
 		if (origin.compare(0, length, prefix) == 0 &&
 				(origin.size() == length || origin[length] == ':'))
@@ -1082,14 +1085,16 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 {
 	auto connection = m_mcp_http_server.get_con_from_hdl(hdl);
 	auto respond = [&](websocketpp::http::status_code::value status,
-			const std::string &body = "", const std::string &content_type = "") {
+						   const std::string &body = "",
+						   const std::string &content_type = "") {
 		if (!content_type.empty())
 			connection->append_header("Content-Type", content_type);
 		connection->set_body(body);
 		connection->set_status(status);
 	};
 	auto json_error = [&](websocketpp::http::status_code::value status, int code,
-			const std::string &message, const Json::Value &id = Json::Value()) {
+							  const std::string &message,
+							  const Json::Value &id = Json::Value()) {
 		Json::Value response;
 		response["jsonrpc"] = "2.0";
 		response["id"] = id;
@@ -1107,8 +1112,8 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 		return;
 	}
 	if (!isLocalMCPOrigin(connection->get_request_header("Origin"))) {
-		respond(websocketpp::http::status_code::forbidden,
-				"Untrusted Origin header\n", "text/plain; charset=utf-8");
+		respond(websocketpp::http::status_code::forbidden, "Untrusted Origin header\n",
+				"text/plain; charset=utf-8");
 		return;
 	}
 
@@ -1148,8 +1153,8 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 		return;
 	}
 	const std::string content_type = connection->get_request_header("Content-Type");
-	if (content_type.compare(0, std::string("application/json").size(),
-				"application/json") != 0) {
+	if (content_type.compare(
+				0, std::string("application/json").size(), "application/json") != 0) {
 		respond(websocketpp::http::status_code::unsupported_media_type);
 		return;
 	}
@@ -1159,8 +1164,7 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 	std::string errors;
 	const std::string &body = connection->get_request_body();
 	std::unique_ptr<Json::CharReader> json_reader(reader.newCharReader());
-	if (!json_reader->parse(
-			body.data(), body.data() + body.size(), &request, &errors)) {
+	if (!json_reader->parse(body.data(), body.data() + body.size(), &request, &errors)) {
 		json_error(websocketpp::http::status_code::bad_request, -32700,
 				"Parse error: " + errors);
 		return;
@@ -1168,8 +1172,8 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 	const bool has_id = request.isObject() && request.isMember("id");
 	const Json::Value response_id = has_id ? request["id"] : Json::Value();
 	if (!request.isObject() || request.get("jsonrpc", "").asString() != "2.0") {
-		json_error(websocketpp::http::status_code::bad_request, -32600,
-				"Invalid Request", response_id);
+		json_error(websocketpp::http::status_code::bad_request, -32600, "Invalid Request",
+				response_id);
 		return;
 	}
 	if (!request.isMember("method")) {
@@ -1185,7 +1189,7 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 		return;
 	}
 	if (has_id && !(request["id"].isString() || request["id"].isInt64() ||
-			request["id"].isUInt64())) {
+						  request["id"].isUInt64())) {
 		json_error(websocketpp::http::status_code::bad_request, -32600,
 				"Invalid Request: id must be a string or integer");
 		return;
@@ -1213,11 +1217,12 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 		}
 		request_session = makeMCPHttpSessionId();
 		const std::string requested = params["protocolVersion"].asString();
-		const std::string negotiated = requested == "2025-03-26" ||
-				requested == "2025-06-18" ? requested : "2025-06-18";
+		const std::string negotiated =
+				requested == "2025-03-26" || requested == "2025-06-18" ? requested
+																	   : "2025-06-18";
 		request["params"]["protocolVersion"] = negotiated;
-		m_mcp_http_sessions[request_session] =
-				{MCPConnectionState::AwaitingInitialized, negotiated};
+		m_mcp_http_sessions[request_session] = {
+				MCPConnectionState::AwaitingInitialized, negotiated};
 	} else {
 		if (session_id.empty()) {
 			respond(websocketpp::http::status_code::bad_request,
@@ -1259,10 +1264,11 @@ void Client::onMCPStreamableHttp(websocketpp::connection_hdl hdl)
 			return;
 		}
 		const Json::Value arguments = params.isMember("arguments")
-				? params["arguments"] : Json::Value(Json::objectValue);
+											  ? params["arguments"]
+											  : Json::Value(Json::objectValue);
 		std::string argument_error;
 		if (!validateMCPToolArguments(
-				params["name"].asString(), arguments, argument_error)) {
+					params["name"].asString(), arguments, argument_error)) {
 			json_error(websocketpp::http::status_code::bad_request, -32602,
 					"Invalid tool arguments: " + argument_error, response_id);
 			return;
@@ -1292,18 +1298,17 @@ void Client::startMCPStreamableHttpServer(int port)
 		m_mcp_http_server.init_asio();
 		m_mcp_http_server.set_reuse_addr(true);
 		m_mcp_http_server.clear_access_channels(websocketpp::log::alevel::all);
-		m_mcp_http_server.set_http_handler(
-				[this](websocketpp::connection_hdl hdl) {
-					this->onMCPStreamableHttp(hdl);
-				});
+		m_mcp_http_server.set_http_handler([this](websocketpp::connection_hdl hdl) {
+			this->onMCPStreamableHttp(hdl);
+		});
 
 		websocketpp::lib::error_code ec;
 		websocketpp::lib::asio::ip::tcp::endpoint endpoint(
 				websocketpp::lib::asio::ip::address::from_string("127.0.0.1"), port);
 		m_mcp_http_server.listen(endpoint, ec);
 		if (ec) {
-			errorstream << "Failed to bind MCP Streamable HTTP server to port "
-						<< port << ": " << ec.message() << std::endl;
+			errorstream << "Failed to bind MCP Streamable HTTP server to port " << port
+						<< ": " << ec.message() << std::endl;
 			return;
 		}
 		m_mcp_http_server.start_accept(ec);

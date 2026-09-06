@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/fm_farmesh.h"
 #include "client/localplayer.h"
 #include "client/mapblock_mesh.h"
+#include "client/mesh_generator_thread.h"
 #include "clientmap.h"
 #include "emerge.h"
 #include "filesys.h"
@@ -66,8 +67,7 @@ void Client::updateMeshTimestampWithEdge(const v3bpos_t &blockpos)
 		// the grid origin. Make dependency changes visible to that holder too.
 		const auto mesh_pos = mesh_grid.getMeshPos(pos);
 		if (mesh_pos != pos) {
-			if (auto *mesh_block =
-						m_env.getMap().getBlockNoCreateNoEx(mesh_pos))
+			if (auto *mesh_block = m_env.getMap().getBlockNoCreateNoEx(mesh_pos))
 				mesh_block->updateMeshRevision(revision);
 		}
 	}
@@ -228,9 +228,10 @@ void Client::createFarMesh(MapBlockPtr &block)
 		const auto &blockpos = block->getPos();
 		//const auto &m_camera_offset = m_camera->getOffset();
 		const auto &step = block->far_step;
+		FarContainer sampler(m_client->far_container, blockpos * MAP_BLOCKSIZE,
+				MAP_BLOCKSIZE * m_mesh_grid.cell_size, step);
 		MeshMakeData mesh_make_data(m_client->getNodeDefManager(),
-				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0, step,
-				&m_client->far_container);
+				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0, step, &sampler);
 		mesh_make_data.m_blockpos = blockpos;
 		static const auto enable_waving_water =
 				g_settings->getBool("enable_waving_water");
@@ -238,11 +239,10 @@ void Client::createFarMesh(MapBlockPtr &block)
 		const auto mesh = std::make_shared<MapBlockMesh>(m_client, &mesh_make_data);
 		block->setFarMesh(mesh, step);
 		block->far_step_draw = block->far_step;
-		block->creating_far_mesh = false;
-		block->far_status = MapBlock::far_status_e::s6_mesh_complete;
-		if (m_client->farmesh) {
-			m_client->farmesh->publishFarBlock(block);
-		}
+		// Preserve a received-data invalidation that arrived while meshing.
+		auto expected = MapBlock::far_status_e::s5_mesh_start;
+		block->far_status.compare_exchange_strong(
+				expected, MapBlock::far_status_e::s6_mesh_complete);
 		++m_client->m_new_meshes;
 		g_profiler->avg("Client: Farmesh mesh [ms]", timer.stop(true));
 	}
@@ -333,20 +333,11 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 
 		content_t content_only{CONTENT_IGNORE};
 		packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY, content_only);
-		/*
-		if (content_only != CONTENT_IGNORE) {
-			block->data[0].param0 = content_only;
-			packet.convert_safe(
-					TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->data[0].param1);
-			packet.convert_safe(
-					TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->data[0].param2);
-		}
-*/
-		if (content_only == CONTENT_IGNORE) {
-			//block->m_is_mono_block = false;
-			try {
-				block->deSerialize(istr, m_server_ser_ver, false);
-			} catch (const std::exception &ex) {
+		bool use_content_only = false;
+		try {
+			use_content_only = !block->deSerialize(istr, m_server_ser_ver, false);
+		} catch (const std::exception &ex) {
+			if (content_only == CONTENT_IGNORE) {
 				errorstream << "fm block deSerialize fail " << bpos << " "
 							<< block->far_step << " : " << ex.what() << " : "
 							<< packet.size() << " v=" << (short)m_server_ser_ver << "\n";
@@ -356,10 +347,18 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 #endif
 				return;
 			}
-		} else {
-			//block->m_is_mono_block = true;
-			//block->fill(block->data[0]);
-			block->fill(content_only);
+			use_content_only = true;
+		}
+		if (use_content_only) {
+			if (content_only == CONTENT_IGNORE)
+				return;
+			u8 param1 = 0;
+			u8 param2 = 0;
+			packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, param1);
+			packet.convert_safe(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, param2);
+			block->fill(MapNode(content_only, param1, param2));
+			block->m_light_points = std::make_shared<MapBlock::light_points_t>();
+			block->setGenerated(true);
 		}
 		weather::heat_t heat = 0; // for convert to atomic
 		packet[TOCLIENT_BLOCKDATA_HEAT].convert(heat);
@@ -433,16 +432,16 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 						control, getNodeBlockPos(client_map.far_cam_pos_mesh), blockpos);
 				if (!tree_result)
 					return;
-				auto &far_blocks = client_map.m_far_blocks;
 				bool other_draw_block = false;
 				if (tree_result->pos != blockpos || tree_result->step != step) {
 					other_draw_block = true;
 					auto &step = tree_result->step;
 					blockpos = tree_result->pos;
-					const auto lock = far_blocks.lock_unique_rec();
-					if (const auto &it = far_blocks.find(blockpos);
-							it != far_blocks.end() && it->second->far_step == step) {
-						auto &block = it->second;
+					auto &storage = client_map.far_blocks_storage[step];
+					const auto lock = storage.lock_shared_rec();
+					if (const auto it = storage.find(blockpos);
+							it != storage.end() && it->second.block) {
+						auto &block = it->second.block;
 						block_status(block, step);
 						/*
 						if (block->far_make_mesh_timestamp <= 0 ||
@@ -535,8 +534,7 @@ void Client::sendDrawControl()
 	MSGPACK_PACKET_INIT((int)TOSERVER_DRAWCONTROL, 4);
 	const auto &client_map = m_env.getClientMap();
 	const auto &draw_control = client_map.getControl();
-	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE,
-			(int32_t)client_map.getServerWantedRange());
+	PACK(TOSERVER_DRAWCONTROL_WANTED_RANGE, (int32_t)client_map.getServerWantedRange());
 	//PACK(TOSERVER_DRAWCONTROL_RANGE_ALL, draw_control.range_all);
 	PACK(TOSERVER_DRAWCONTROL_FARMESH, draw_control.farmesh);
 	//PACK(TOSERVER_DRAWCONTROL_LODMESH, draw_control.lodmesh);
@@ -608,4 +606,9 @@ void Client::onSettingChanged(const std::string &name)
 		control.cell_size = m_mesh_grid.cell_size;
 		control.cell_size_pow = farmesh::rangeToStep(control.cell_size);
 	}
+}
+
+bool Client::isMeshUpdatePending(const v3bpos_t &blockpos)
+{
+	return m_mesh_update_manager->hasPending(m_mesh_grid.getMeshPos(blockpos));
 }

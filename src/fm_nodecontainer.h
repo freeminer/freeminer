@@ -40,7 +40,10 @@ public:
 	{
 		return getNodeRefAndVisible(p).first;
 	};
-	virtual MapNode getNodeNoEx(const v3pos_t &p) { return getNodeRefAndVisible(p).first; };
+	virtual MapNode getNodeNoEx(const v3pos_t &p)
+	{
+		return getNodeRefAndVisible(p).first;
+	};
 	virtual const MapNode getNodeRefUnsafeCheckFlags(const v3pos_t &p)
 	{
 		return getNodeRefAndVisible(p).first;

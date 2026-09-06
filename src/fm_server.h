@@ -92,6 +92,15 @@ public:
 	void *run();
 };
 
+class LightingThread : public ServerThreadBase
+{
+public:
+	LightingThread(Server *server);
+
+private:
+	size_t step(float dtime) override;
+};
+
 class EnvThread : public thread_vector
 {
 	Server *const m_server;

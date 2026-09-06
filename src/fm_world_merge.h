@@ -34,13 +34,26 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Server;
 class MapDatabase;
+class NodeDefManager;
 
 namespace world_merge
 {
 // Select the representative sample for a 2x2x2 far node. Occupancy is decided
 // independently from material so a preferred solid sample cannot outweigh an
 // otherwise empty cell.
-std::optional<size_t> selectFarNodeIndex(const std::array<MapNode, 8> &samples);
+// When exposure data is available, an upper node bordering transparent
+// space represents the visible surface material of an otherwise solid cell.
+// With node definitions, transparent cover yields to opaque structural material
+// in the same occupied cell. Cover still counts for occupancy and survives alone.
+std::optional<size_t> selectFarNodeIndex(const std::array<MapNode, 8> &samples,
+		const std::array<bool, 8> *exposed = nullptr,
+		const NodeDefManager *ndef = nullptr);
+
+// Reduce a complete parent block's lights for the destination far step. Each
+// world-aligned region keeps up to eight original lights, so sparse regions
+// survive every level and dense regions have a bounded point density.
+MapBlock::light_points_t reduceFarLightPoints(
+		const MapBlock::light_points_t &lights, block_step_t far_step);
 }
 
 class WorldMerger
@@ -49,12 +62,14 @@ public:
 	std::function<bool(void)> stop_func;
 	std::function<bool(void)> throttle_func;
 	std::function<uint32_t(void)> get_time_func;
+	std::function<void(const MapBlockPtr &, block_step_t)> far_block_ready_func;
 
 	uint32_t world_merge_throttle{};
 	uint32_t world_merge_max_clients{};
 	int16_t world_merge_load_all{}; // -1 : auto;  0 : disable;   1 : force
 	uint32_t farlights{0};
 	bool partial{};
+	bool require_lighting_complete{};
 	uint32_t lazy_up{};
 	const NodeDefManager *const ndef{};
 	Map *const smap{};
@@ -75,6 +90,7 @@ public:
 	{
 		size_t lights_count{};
 		size_t lights_used{};
+		bool deferred{};
 	};
 
 	one_block_stat_t merge_one_block(MapDatabase *dbase, MapDatabase *dbase_up,

@@ -589,154 +589,153 @@ queue_full_break:
 	return num_blocks_selected - num_blocks_sending;
 }
 
-uint32_t RemoteClient::SendFarBlocks(const int32_t uptime)
+uint32_t RemoteClient::SendFarBlocks(
+		const int32_t uptime, const far_blocks_ready_t &new_far_blocks)
 {
-
 	TimeTaker time("Server: Send far [ms]");
 
-	const static thread_local auto client_unload_unused_data_timeout =
-			g_settings->getFloat("client_unload_unused_data_timeout");
+	const static thread_local int32_t retry_interval = static_cast<int32_t>(
+			std::max(1.0f, g_settings->getFloat("client_unload_unused_data_timeout")));
+	std::multimap<int32_t, MapBlockPtr> ordered;
 	uint16_t sent_cnt{};
-	TRY_UNIQUE_LOCK(far_blocks_requested_mutex)
+	constexpr uint16_t send_max{100};
+	WITH_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
-		std::multimap<int32_t, MapBlockPtr> ordered;
-		constexpr uint16_t send_max{100};
-		for (auto &far_blocks : far_blocks_requested) {
-			for (auto &[bpos, step_sent] : far_blocks) {
-				auto &[step, sent_ts] = step_sent;
-				if (sent_ts < 0 ||
-						(sent_ts &&
-								sent_ts + client_unload_unused_data_timeout > uptime)) {
-					continue;
-				}
-				if (step >= FARMESH_STEP_MAX - 1) {
-					sent_ts = -1;
-					continue;
-				}
-				const auto dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
-						m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
-				if (!dbase) {
-					sent_ts = -1;
-					continue;
-				}
-				const auto block = loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
-				if (!block) {
-					sent_ts = uptime + client_unload_unused_data_timeout * 3;
-					continue;
-				}
-
-				g_profiler->add("Server: Far blocks sent", 1);
-
-				block->far_step = step;
-				sent_ts = uptime ?: 1;
-				ordered.emplace(sent_ts - step, block);
-
-				if (++sent_cnt > send_max) {
-					break;
-				}
-			}
-		}
-
-		// TODO: why not have?
-		if (farmesh && have_farmesh_quality && farmesh_all_changed && ordered.empty()) {
-			auto *player = m_env->getPlayer(peer_id);
-			if (!player)
-				return 0;
-
-			const auto *sao = player->getPlayerSAO();
-			if (!sao)
-				return 0;
-
-			const auto playerpos = sao->getBasePosition();
-
-			const auto player_block_pos = floatToInt(playerpos, BS * MAP_BLOCKSIZE);
-
-			const auto cell_size = 1; // FMTODO from remoteclient
-			const auto cell_size_pow = farmesh::rangeToStep(cell_size);
-			thread_local static const pos_t setting_farmesh_all_changed =
-					g_settings->getU32("farmesh_all_changed");
-			const auto &use_farmesh_all_changed =
-					std::min(setting_farmesh_all_changed, farmesh_all_changed);
-			farmesh::runFarAll(player_block_pos, cell_size_pow, farmesh,
-					farmesh::rangeToStep(farmesh_quality), false, true, 0,
-					[this, &ordered, &player_block_pos, &use_farmesh_all_changed , &sent_cnt](
-							const v3bpos_t &bpos, const bpos_t &size,
-							const block_step_t &step) -> bool {
-						if (!size) {
-							return false;
-						}
-
-						// TODO: use block center
-						const auto bdist = radius_box(player_block_pos, bpos);
-						if (bdist << MAP_BLOCKP > use_farmesh_all_changed) {
-							return false;
-						}
-
-						if (far_blocks_requested.size() >= step) {
-							if (far_blocks_requested[step].contains(bpos)) {
-								return false;
-							}
-						}
-
-						if (far_blocks_sent.size() < step) {
-							far_blocks_sent.resize(step);
-						}
-
-						auto &[_, sent_ts] = far_blocks_sent[step][bpos];
-						if (sent_ts < 0) {
-							return false;
-						}
-
-						const auto dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
-								m_env->m_server->far_dbases, m_env->m_map->m_savedir,
-								step);
-						if (!dbase) {
-							sent_ts = -1;
-							return false;
-						}
-						const auto block =
-								loadBlockNoStore(m_env->m_map.get(), dbase, bpos);
-						if (!block) {
-							sent_ts = -1;
-							return false;
-						}
-
-						block->far_step = step;
-						//sent_ts = 0;
-						sent_ts = -1; //TODO
-						ordered.emplace(sent_ts - step, block);
-
-						if (++sent_cnt > send_max) {
-							return true;
-						}
-
-						return false;
-					});
-		}
-
-		// First with larger iteration and smaller step
-		std::vector<MapBlockPtr> blocks;
-		const auto send = [&]() {
-			if (!blocks.empty()) {
-				m_env->m_server->SendBlocksFm(
-						peer_id, blocks, serialization_version, net_proto_version);
-			}
+		const auto queue_block = [&ordered, &sent_cnt](
+										 const MapBlockPtr &block, block_step_t step) {
+			block->far_step = step;
+			// Reverse traversal below sends the smallest far step first.
+			ordered.emplace(-static_cast<int32_t>(step), block);
+			++sent_cnt;
 		};
-		for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
-			//	for (const auto &[key, block] : std::views::reverse(ordered)) {
-			if (net_proto_version_fm < 3) {
-				m_env->m_server->SendBlockFm(
-						peer_id, it->second, serialization_version, net_proto_version);
-			} else {
-				blocks.emplace_back(it->second);
-				if (blocks.size() >= 100) {
-					send();
-					blocks.clear();
+
+		thread_local static const pos_t setting_farmesh_all_changed =
+				g_settings->getU32("farmesh_all_changed");
+		const auto farmesh_range = farmesh.load();
+		const auto client_changed_range = farmesh_all_changed.load();
+		const auto quality = farmesh_quality.load();
+		const bool send_changed = farmesh_range && have_farmesh_quality.load() &&
+								  client_changed_range && setting_farmesh_all_changed;
+		const auto changed_range =
+				send_changed ? std::min(setting_farmesh_all_changed, client_changed_range)
+							 : 0;
+		const auto quality_pow = farmesh::rangeToStep(quality);
+		const auto cell_size_pow = farmesh::rangeToStep(1); // FMTODO from remoteclient
+
+		bool checked_player_block_pos{};
+		bool have_player_block_pos{};
+		v3bpos_t player_block_pos;
+		const auto changed_block_wanted = [&](const v3bpos_t &bpos, block_step_t step) {
+			if (!send_changed)
+				return false;
+			if (!checked_player_block_pos) {
+				auto *player = m_env->getPlayer(peer_id);
+				auto *sao = player ? player->getPlayerSAO() : nullptr;
+				if (sao) {
+					player_block_pos =
+							floatToInt(sao->getBasePosition(), BS * MAP_BLOCKSIZE);
+					have_player_block_pos = true;
 				}
+				checked_player_block_pos = true;
+			}
+			if (!have_player_block_pos)
+				return false;
+
+			// TODO: use block center, consistently with the old full-grid scan.
+			const auto bdist = radius_box(player_block_pos, bpos);
+			const auto bdist_nodes = static_cast<uint64_t>(bdist) << MAP_BLOCKP;
+			if (bdist_nodes > static_cast<uint64_t>(changed_range))
+				return false;
+
+			const auto params = farmesh::getFarParams(player_block_pos, cell_size_pow,
+					farmesh_range, quality_pow, bpos, true);
+			return params && params->pos == bpos && params->step == step;
+		};
+
+		// A merge notification carries the already-built block, so requested blocks
+		// avoid a database retry and changed blocks avoid a full far-grid scan.
+		for (block_step_t step = 0; step < new_far_blocks.size(); ++step) {
+			for (const auto &[bpos, block] : new_far_blocks[step]) {
+				if (!block)
+					continue;
+
+				auto requested = far_blocks_requested[step].find(bpos);
+				if (requested != far_blocks_requested[step].end()) {
+					far_blocks_requested[step].erase(requested);
+				} else if (!changed_block_wanted(bpos, step)) {
+					continue;
+				}
+				far_blocks_ready[step].insert_or_assign(bpos, block);
 			}
 		}
-		send();
+
+		// Newly created blocks have priority and remain queued if this batch fills.
+		for (block_step_t step = 0; step < far_blocks_ready.size() && sent_cnt < send_max;
+				++step) {
+			auto &ready = far_blocks_ready[step];
+			for (auto it = ready.begin(); it != ready.end() && sent_cnt < send_max;) {
+				queue_block(it->second, step);
+				it = ready.erase(it);
+			}
+		}
+
+		// Ordinary requests stay lazy. A database miss gets one infrequent safety
+		// retry; a merge notification above makes it immediately ready.
+		for (block_step_t step = 0;
+				step < far_blocks_requested.size() && sent_cnt < send_max; ++step) {
+			auto &requested = far_blocks_requested[step];
+			MapDatabase *dbase{};
+			bool checked_database{};
+			for (auto it = requested.begin();
+					it != requested.end() && sent_cnt < send_max;) {
+				if (it->second.retry_after > uptime) {
+					++it;
+					continue;
+				}
+
+				if (!checked_database) {
+					dbase = GetFarDatabase(m_env->m_map->m_db.dbase,
+							m_env->m_server->far_dbases, m_env->m_map->m_savedir, step);
+					checked_database = true;
+				}
+				const auto block =
+						dbase ? loadBlockNoStore(m_env->m_map.get(), dbase, it->first)
+							  : nullptr;
+				if (!block) {
+					it->second.retry_after = uptime + retry_interval;
+					++it;
+					continue;
+				}
+
+				queue_block(block, step);
+				it = requested.erase(it);
+			}
+		}
 	}
+
+	if (ordered.empty())
+		return 0;
+
+	g_profiler->add("Server: Far blocks sent", sent_cnt);
+	std::vector<MapBlockPtr> blocks;
+	const auto send = [&]() {
+		if (!blocks.empty())
+			m_env->m_server->SendBlocksFm(
+					peer_id, blocks, serialization_version, net_proto_version);
+	};
+	for (auto it = ordered.rbegin(); it != ordered.rend(); ++it) {
+		if (net_proto_version_fm < 3) {
+			m_env->m_server->SendBlockFm(
+					peer_id, it->second, serialization_version, net_proto_version);
+		} else {
+			blocks.emplace_back(it->second);
+			if (blocks.size() >= send_max) {
+				send();
+				blocks.clear();
+			}
+		}
+	}
+	send();
 
 	return sent_cnt;
 }

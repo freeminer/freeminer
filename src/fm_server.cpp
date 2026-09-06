@@ -51,6 +51,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "servermap.h"
 #include "debug/stacktrace.h"
 #include "serverenvironment.h"
+#include "threading/ThreadPool.h"
 #include "util/timetaker.h"
 
 ServerThreadBase::ServerThreadBase(Server *server, const std::string &name,
@@ -249,7 +250,7 @@ void *LiquidThread::run()
 {
 	BEGIN_DEBUG_EXCEPTION_HANDLER
 
-	unsigned int max_cycle_ms = 1000;
+	unsigned int max_cycle_ms = 10000;
 	while (!stopRequested()) {
 		try {
 			const auto time_start = porting::getTimeMs();
@@ -258,6 +259,10 @@ void *LiquidThread::run()
 			const auto processed = m_server->getEnv().getServerMap().transformLiquids(
 					modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
 			const auto time_spend = porting::getTimeMs() - time_start;
+			thread_local static size_t rare{};
+			if (!(rare++ % 1000))
+				infostream << m_name << ": processed=" << processed
+						   << " time=" << time_spend << "ms" << std::endl;
 
 			thread_local const auto static liquid_step =
 					g_settings->getBool("liquid_step");
@@ -280,6 +285,24 @@ void *LiquidThread::run()
 	}
 	END_DEBUG_EXCEPTION_HANDLER
 	return nullptr;
+}
+
+LightingThread::LightingThread(Server *server) : ServerThreadBase{server, "Lighting", 4}
+{
+}
+
+size_t LightingThread::step(float)
+{
+	const auto time_start = porting::getTimeMs();
+	m_server->getEnv().getMap().getBlockCacheFlush();
+	int loopcount{};
+	const auto updated =
+			m_server->getEnv().getServerMap().updateLightingQueue(10000, loopcount);
+	thread_local static size_t rare{};
+	if (!(rare++ % 1000))
+		infostream << m_name << ": updated=" << updated << " loops=" << loopcount
+				   << " time=" << porting::getTimeMs() - time_start << "ms" << std::endl;
+	return updated != 0 || loopcount != 0;
 }
 
 EnvThread::EnvThread(Server *server) : thread_vector{"Env", 20}, m_server{server}
@@ -331,7 +354,13 @@ void *AbmThread::run()
 			auto ctime = porting::getTimeMs();
 			auto dtimems = ctime - time;
 			time = ctime;
-			m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
+			const auto processed =
+					m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
+			thread_local static size_t rare{};
+			if (!(rare++ % 1000))
+				infostream << m_name << ": processed=" << processed
+						   << " time=" << porting::getTimeMs() - ctime << "ms"
+						   << std::endl;
 			std::this_thread::sleep_for(
 					std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
 #if !EXCEPTION_DEBUG
@@ -430,21 +459,23 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 		Set the modified blocks unsent for all the clients
 	*/
 
-	m_liquid_send_timer += dtime;
-	if (m_liquid_send_timer >= m_liquid_send_interval) {
+	if (!m_lighting_thread)
+		m_lighting_update_timer += dtime;
+	if (!m_lighting_thread && m_lighting_update_timer >= m_lighting_update_interval) {
 		// TimeTaker timer_step("Server step: updateLighting");
-		m_liquid_send_timer -= m_liquid_send_interval;
-		if (m_liquid_send_timer > m_liquid_send_interval * 2)
-			m_liquid_send_timer = 0;
+		m_lighting_update_timer -= m_lighting_update_interval;
+		if (m_lighting_update_timer > m_lighting_update_interval * 2)
+			m_lighting_update_timer = 0;
 
 		// concurrent_map<v3POS, MapBlock*> modified_blocks; //not used
 		// if (m_env->getMap().updateLighting(m_env->getMap().lighting_modified_blocks,
 		// modified_blocks, max_cycle_ms)) {
 		if (m_env->getServerMap().updateLightingQueue(max_cycle_ms, ret)) {
-			m_liquid_send_timer = m_liquid_send_interval;
+			m_lighting_update_timer = m_lighting_update_interval;
 			goto no_send;
 		}
 	}
+
 no_send:
 
 	ret += save(dtime, dedicated_server_step, true);
@@ -611,20 +642,42 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	{
 		ServerMap::far_blocks_req_t blocks;
 		packet[TOSERVER_GET_BLOCKS_BLOCKS].convert(blocks);
-		for (auto &step_data : client->far_blocks_requested) {
-			step_data.clear();
+
+		auto newest_iteration = client->far_blocks_requested_iteration;
+		auto have_iteration = client->far_blocks_requested_iteration_valid;
+		for (const auto &[_, step_iteration] : blocks) {
+			const auto iteration = step_iteration.second;
+			if (!have_iteration ||
+					static_cast<int32_t>(iteration - newest_iteration) > 0) {
+				newest_iteration = iteration;
+				have_iteration = true;
+			}
+		}
+
+		if (have_iteration &&
+				(!client->far_blocks_requested_iteration_valid ||
+						newest_iteration != client->far_blocks_requested_iteration)) {
+			for (auto &step_data : client->far_blocks_requested)
+				step_data.clear();
+			for (auto &step_data : client->far_blocks_ready)
+				step_data.clear();
+			client->far_blocks_requested_iteration = newest_iteration;
+			client->far_blocks_requested_iteration_valid = true;
 		}
 
 		for (const auto &[bpos, step_iteration] : blocks) {
-			const auto &[step, iteation] = step_iteration;
+			const auto &[step, iteration] = step_iteration;
 			if (step >= FARMESH_STEP_MAX - 1) {
 				continue;
 			}
-			if (client->far_blocks_requested.size() < step) {
-				client->far_blocks_requested.resize(step);
-			}
-			client->far_blocks_requested[step][bpos].first = step;
-			client->far_blocks_requested[step][bpos].second = iteation;
+			if (iteration != client->far_blocks_requested_iteration)
+				continue;
+
+			client->far_blocks_requested[step].insert_or_assign(
+					bpos, RemoteClient::FarBlockRequest{
+								  .iteration{iteration},
+								  .retry_after{},
+						  });
 		}
 	}
 }
@@ -780,10 +833,24 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 	Send(&pkt);
 }
 
+void Server::QueueFarBlockReady(const MapBlockPtr &block, block_step_t step)
+{
+	if (!block || step >= FARMESH_STEP_MAX - 1)
+		return;
+
+	std::lock_guard<std::mutex> lock(m_far_blocks_ready_mutex);
+	m_far_blocks_ready[step].insert_or_assign(block->getPos(), block);
+}
+
 uint32_t Server::SendFarBlocks(float dtime)
 {
 	int32_t uptime = m_uptime_counter->get();
 	ScopeProfiler sp(g_profiler, "Server: Far blocks send");
+	RemoteClient::far_blocks_ready_t new_far_blocks{FARMESH_STEP_MAX};
+	{
+		std::lock_guard<std::mutex> lock(m_far_blocks_ready_mutex);
+		new_far_blocks.swap(m_far_blocks_ready);
+	}
 	std::vector<RemoteClientPtr> clients;
 	{
 		const auto lock = m_clients.getClientList().lock_shared_rec();
@@ -797,7 +864,7 @@ uint32_t Server::SendFarBlocks(float dtime)
 	uint32_t sent{};
 	for (const auto &client : clients) {
 		const auto c = client;
-		sent += client->SendFarBlocks(uptime);
+		sent += client->SendFarBlocks(uptime, new_far_blocks);
 	}
 	return sent;
 }
@@ -826,6 +893,9 @@ void *WorldMergeThread::run()
 						merger.world_merge_max_clients);
 			}},
 			.get_time_func{[this]() { return m_server->getEnv().getGameTime(); }},
+			.far_block_ready_func{[this](const MapBlockPtr &block, block_step_t step) {
+				m_server->QueueFarBlockReady(block, step);
+			}},
 			.ndef{m_server->getNodeDefManager()},
 			.smap{m_server->getEnv().m_map.get()},
 			.far_dbases{m_server->far_dbases},
@@ -849,10 +919,12 @@ void *WorldMergeThread::run()
 			if (world_merge_all) {
 				merger.merge_all();
 			}
+			g_settings->setU64("world_merge_all", 0);
 		}
 	}
 	merger.world_merge_load_all = 0;
 	merger.partial = true;
+	merger.require_lighting_complete = true;
 
 	// Minimum blocks changed for periodic merge
 	uint64_t world_merge_min = 100;
@@ -878,6 +950,7 @@ void *WorldMergeThread::run()
 		merger.stop_func = {};
 		merger.throttle_func = {};
 		merger.world_merge_throttle = 0;
+		merger.require_lighting_complete = false;
 
 		if (!m_server->getEnv().getServerMap().changed_blocks_for_merge.empty()) {
 			actionstream
@@ -904,4 +977,37 @@ void Server::SetBlocksNotSent()
 			client->SetBlocksNotSent(/*block*/);
 	}
 #endif
+}
+
+std::future<void> Server::enqueueAsyncTask(std::function<void()> task)
+{
+	std::lock_guard<std::mutex> lock(m_async_pool_mutex);
+	if (m_async_pool_stopping.load())
+		throw std::runtime_error("server async task pool is stopping");
+
+	if (!m_async_pool) {
+		s16 threads = 2;
+		g_settings->getS16NoEx("server_async_threads", threads);
+		threads = std::clamp<s16>(threads, 1, 32);
+		m_async_pool = std::make_unique<progschj::ThreadPool>(threads);
+		actionstream << "Server async task pool started with " << threads << " thread(s)."
+					 << std::endl;
+	}
+
+	return m_async_pool->enqueue_block(std::move(task));
+}
+
+void Server::shutdownAsyncTasks()
+{
+	std::unique_ptr<progschj::ThreadPool> pool;
+	{
+		std::lock_guard<std::mutex> lock(m_async_pool_mutex);
+		m_async_pool_stopping.store(true);
+		pool = std::move(m_async_pool);
+	}
+
+	if (pool) {
+		pool.reset();
+		actionstream << "Server async task pool stopped." << std::endl;
+	}
 }

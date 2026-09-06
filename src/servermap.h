@@ -101,8 +101,10 @@ public:
 	u32 updateLighting(concurrent_map<v3bpos_t, MapBlock *> &a_blocks,
 			std::map<v3bpos_t, MapBlock *> &modified_blocks, unsigned int max_cycle_ms);
 	u32 updateLighting(lighting_map_t &a_blocks, unordered_map_v3pos<int> &processed,
-			unsigned int max_cycle_ms = 0);
-	unsigned int updateLightingQueue(unsigned int max_cycle_ms, int &loopcount);
+			unsigned int max_cycle_ms = 0, bool load_blocks = false);
+	unsigned int updateLightingQueue(
+			unsigned int max_cycle_ms, int &loopcount, bool load_blocks = false);
+	void drainLightingQueue();
 
 	bool propagateSunlight(const v3bpos_t &pos, std::set<v3pos_t> &light_sources,
 			bool remove_light = false);

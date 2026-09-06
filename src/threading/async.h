@@ -55,6 +55,14 @@ public:
 
 	inline bool valid() { return future.valid(); }
 
+	// Poll completion without starting another task or racing its output.
+	bool ready() const
+	{
+		return !future.valid() || future.wait_for(std::chrono::milliseconds(0)) ==
+				std::future_status::ready;
+	}
+	// ===
+
 	constexpr static uint8_t IN_PROGRESS = 2;
 	// 0 : started and finished
 	// 1 : started

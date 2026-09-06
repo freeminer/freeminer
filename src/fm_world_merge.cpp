@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "constants.h"
 #include "database/database.h"
 #include "irr_v3d.h"
@@ -43,6 +44,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "profiler.h"
 #include "server.h"
 #include "fm_world_merge.h"
+#include "fm_far_node.h"
 
 static video::SColor get_light_source_color(const ContentFeatures &cf)
 {
@@ -119,20 +121,110 @@ static bool within_lazy_window(uint64_t source_time, uint64_t target_time, uint3
 	return source_time - target_time < lazy;
 }
 
+MapBlock::light_points_t world_merge::reduceFarLightPoints(
+		const MapBlock::light_points_t &lights, block_step_t far_step)
+{
+	// Four regions along each axis of the destination block. The fixed local
+	// allowance preserves isolated lamps and roads instead of making them pay
+	// for dense city lights elsewhere in the block. Larger LODs use larger
+	// regions, without repeatedly thinning regions already below the allowance.
+	constexpr size_t lights_per_region = 8;
+	const auto region_shift = std::min<unsigned>(
+			MAP_BLOCKP - 2 + far_step, std::numeric_limits<pos_t>::digits - 1);
+	const int64_t region_width = int64_t{1} << region_shift;
+	const auto region_axis = [region_width](pos_t coordinate) -> pos_t {
+		const int64_t value = coordinate;
+		// Floor division keeps negative positions in the correct world cell.
+		return static_cast<pos_t>(value / region_width - (value % region_width < 0));
+	};
+	const auto position_hash = [](const v3pos_t &pos) {
+		uint64_t hash = 0xcbf29ce484222325ULL;
+		for (const auto coordinate : {pos.X, pos.Y, pos.Z}) {
+			hash ^= static_cast<uint64_t>(static_cast<int64_t>(coordinate));
+			hash *= 0x100000001b3ULL;
+		}
+		// Fixed mixing and a coordinate tie-break avoid container-order and
+		// platform-dependent std::hash choices between equally bright lights.
+		hash ^= hash >> 30;
+		hash *= 0xbf58476d1ce4e5b9ULL;
+		hash ^= hash >> 27;
+		hash *= 0x94d049bb133111ebULL;
+		return hash ^ (hash >> 31);
+	};
+	struct Candidate
+	{
+		v3pos_t pos;
+		v3pos_t region;
+		MapBlock::light_t light;
+		u8 level;
+		uint64_t rank;
+	};
+	std::vector<Candidate> candidates;
+	candidates.reserve(lights.size());
+	for (const auto &[pos, light] : lights) {
+		const auto level = MapBlock::getLightPointLevel(light);
+		if (!level)
+			continue;
+		candidates.push_back(
+				{pos, {region_axis(pos.X), region_axis(pos.Y), region_axis(pos.Z)}, light,
+						level, position_hash(pos)});
+	}
+	const auto position_less = [](const v3pos_t &a, const v3pos_t &b) {
+		if (a.X != b.X)
+			return a.X < b.X;
+		if (a.Y != b.Y)
+			return a.Y < b.Y;
+		return a.Z < b.Z;
+	};
+	std::sort(candidates.begin(), candidates.end(), [&](const auto &a, const auto &b) {
+		if (a.region != b.region)
+			return position_less(a.region, b.region);
+		if (a.level != b.level)
+			return a.level > b.level;
+		if (a.rank != b.rank)
+			return a.rank < b.rank;
+		return position_less(a.pos, b.pos);
+	});
+
+	MapBlock::light_points_t reduced;
+	// A parent normally contains 4^3 regions, with at most eight lights each.
+	reduced.reserve(std::min<size_t>(candidates.size(), 4 * 4 * 4 * lights_per_region));
+	v3pos_t region;
+	size_t retained = 0;
+	for (const auto &candidate : candidates) {
+		if (!retained || region != candidate.region) {
+			region = candidate.region;
+			retained = 0;
+		}
+		if (retained == lights_per_region)
+			continue;
+		// Retain an actual source's position, color and intensity. Summing the
+		// discarded lights into it would over-brighten dense areas again.
+		reduced.emplace(candidate.pos, candidate.light);
+		++retained;
+	}
+	return reduced;
+}
+
 std::optional<size_t> world_merge::selectFarNodeIndex(
-		const std::array<MapNode, 8> &samples)
+		const std::array<MapNode, 8> &samples, const std::array<bool, 8> *exposed,
+		const NodeDefManager *ndef)
 {
 	constexpr size_t main_sample = 3;
 	size_t valid_count = 0;
 	size_t solid_count = 0;
+	bool has_opaque_structure = false;
 
 	for (const auto &node : samples) {
 		const auto content = node.getContent();
 		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN)
 			continue;
 		++valid_count;
-		if (content != CONTENT_AIR)
+		if (content != CONTENT_AIR) {
 			++solid_count;
+			if (ndef && farmesh::isOpaqueStructure(ndef->get(content)))
+				has_opaque_structure = true;
+		}
 	}
 
 	if (!valid_count)
@@ -142,20 +234,53 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	// remains closed. Sparse solids no longer survive merely because they happen
 	// to contain the grid-aligned sample.
 	const bool select_solid = solid_count * 2 >= valid_count;
+	// Glass or foliage may cover ground or a wall in the upper samples. Do not let
+	// that transparent cover replace the structure of the entire coarse cell.
+	// Filter only the material vote: sparse cover must still lose to air.
+	const auto material_candidate = [&](content_t content) {
+		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+			   (content != CONTENT_AIR) == select_solid &&
+			   !(select_solid && has_opaque_structure &&
+					   farmesh::isTransparentCover(ndef->get(content)));
+	};
+	// Occupancy remains volume-based, but material can come from the exposed
+	// upper layer. This keeps grass, snow, roads, and similar surface covers from
+	// being outvoted by the dirt or stone directly underneath them.
+	constexpr std::array<uint8_t, 8> sample_y{{1, 0, 0, 0, 1, 1, 0, 1}};
+	int selected_exposed_y = -1;
+	if (select_solid && exposed) {
+		for (size_t i = 0; i < samples.size(); ++i) {
+			const auto content = samples[i].getContent();
+			if ((*exposed)[i] && material_candidate(content)) {
+				selected_exposed_y =
+						std::max(selected_exposed_y, static_cast<int>(sample_y[i]));
+			}
+		}
+	}
 	std::optional<size_t> best_index;
 	size_t best_count = 0;
 
 	for (size_t i = 0; i < samples.size(); ++i) {
 		const auto content = samples[i].getContent();
-		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN ||
-				(content != CONTENT_AIR) != select_solid)
+		if (!material_candidate(content) ||
+				(selected_exposed_y >= 0 &&
+						(!(*exposed)[i] || sample_y[i] != selected_exposed_y)))
 			continue;
 
 		size_t count = 0;
-		for (const auto &candidate : samples) {
-			if (candidate.getContent() == content)
+		for (size_t candidate_index = 0; candidate_index < samples.size();
+				++candidate_index) {
+			if (samples[candidate_index].getContent() == content &&
+					(selected_exposed_y < 0 ||
+							((*exposed)[candidate_index] &&
+									sample_y[candidate_index] == selected_exposed_y)))
 				++count;
 		}
+		// Preserve the grid-aligned surface material when it has support from
+		// another sample. Occupancy was already decided above, so this keeps road
+		// edges without bringing sparse underground fragments back.
+		if (select_solid && solid_count < valid_count && i == main_sample && count > 1)
+			count += 2;
 
 		if (!best_index || count > best_count ||
 				(count == best_count && i == main_sample)) {
@@ -194,8 +319,11 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	size_t wind_count = 0;
 	uint64_t heat_last_update = 0;
 	uint32_t humidity_last_update = 0;
+	one_block_stat_t one_step_stat;
 	using light_points_t = std::unordered_map<v3pos_t, MapBlock::light_t>;
 	std::unordered_map<v3bpos_t, light_points_t> generated_light_points;
+	// Cache source-neighbour blocks used by six-sided light exposure checks.
+	std::unordered_map<v3bpos_t, MapBlockPtr> light_neighbor_blocks;
 	{
 		for (bpos_t x = 0; x < step_size; ++x)
 			for (bpos_t y = 0; y < step_size; ++y)
@@ -215,6 +343,11 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						if (!nblock || !nblock->isGenerated()) {
 							continue;
 						}
+					}
+					if (require_lighting_complete && !step &&
+							nblock->getLightingComplete() != 0xffff) {
+						one_step_stat.deferred = true;
+						return one_step_stat;
 					}
 					if (const auto ts = nblock->getActualTimestamp(); ts > timestamp)
 						timestamp = ts;
@@ -275,6 +408,37 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 		block_up->wind = wind_count ? wind_sum / static_cast<float>(wind_count) : v3f();
 	}
 
+	// Read a source node across both coarse-cell and mapblock boundaries.
+	// World-merge blocks loaded outside the live map are retained in a small local
+	// cache so an exposed border lamp is tested against all six actual neighbours.
+	const auto get_light_neighbor = [&](const MapBlockPtr &source_block,
+											const v3pos_t &node_pos) -> MapNode {
+		const auto node_bpos = getNodeBlockPos(node_pos);
+		MapBlockPtr node_block;
+		if (source_block && source_block->getPos() == node_bpos) {
+			node_block = source_block;
+		} else if (!step) {
+			const v3bpos_t relative_bpos = node_bpos - bpos_aligned;
+			if (const auto block_it = blocks.find(relative_bpos);
+					block_it != blocks.end()) {
+				node_block = block_it->second;
+			} else {
+				auto [cache_it, inserted] = light_neighbor_blocks.try_emplace(node_bpos);
+				if (inserted) {
+					auto loaded = smap->getBlock(node_bpos);
+					if (!loaded || !loaded->isGenerated())
+						loaded = load_block(smap, dbase, node_bpos);
+					cache_it->second = std::move(loaded);
+				}
+				node_block = cache_it->second;
+			}
+		}
+
+		if (!node_block || !node_block->isGenerated())
+			return MapNode(CONTENT_IGNORE);
+		return node_block->getNodeNoLock(node_pos - node_block->getPosRelative());
+	};
+
 	size_t not_empty_nodes{};
 	{
 		const auto block_size = MAP_BLOCKSIZE;
@@ -294,6 +458,24 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					const v3pos_t lpos((x << step_pow) % MAP_BLOCKSIZE,
 							(y << step_pow) % MAP_BLOCKSIZE,
 							(z << step_pow) % MAP_BLOCKSIZE);
+					// Resolve samples through the loaded 2x2x2 source-block group so
+					// surface exposure is correct at a source mapblock boundary as well.
+					const auto get_source_node = [&blocks, &bbpos](v3pos_t sample_pos) {
+						const v3bpos_t sample_bbpos{
+								static_cast<bpos_t>(
+										bbpos.X + sample_pos.X / MAP_BLOCKSIZE),
+								static_cast<bpos_t>(
+										bbpos.Y + sample_pos.Y / MAP_BLOCKSIZE),
+								static_cast<bpos_t>(
+										bbpos.Z + sample_pos.Z / MAP_BLOCKSIZE)};
+						const auto sample_block_it = blocks.find(sample_bbpos);
+						if (sample_block_it == blocks.end() || !sample_block_it->second)
+							return MapNode(CONTENT_IGNORE);
+						sample_pos.X %= MAP_BLOCKSIZE;
+						sample_pos.Y %= MAP_BLOCKSIZE;
+						sample_pos.Z %= MAP_BLOCKSIZE;
+						return sample_block_it->second->getNodeNoLock(sample_pos);
+					};
 			// TODO: tune block selector
 
 #if 0
@@ -304,6 +486,8 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					// votes used to preserve sparse underground fragments.
 					std::array<MapNode, 8> samples;
 					samples.fill(MapNode(CONTENT_IGNORE));
+					// Mark solids whose node immediately above propagates light.
+					std::array<bool, 8> exposed{};
 					uint8_t max_light_night = 0;
 					const std::array<v3pos_t, 8> sample_dirs{{
 							{0, 1, 0},
@@ -315,6 +499,8 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							{1, 0, 1},
 							{1, 1, 1},
 					}};
+					// Visibility filtering applies to each light candidate, not only
+					// to the node that later wins coarse material selection.
 					const std::array<v3pos_t, 6> side_dirs{{
 							{-1, 0, 0},
 							{1, 0, 0},
@@ -327,12 +513,27 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							++sample_index) {
 						const auto &dir = sample_dirs[sample_index];
 						const auto p = lpos + dir;
-						const auto &n = block->getNodeNoLock(p);
+						const auto n = get_source_node(p);
 						const auto c = n.getContent();
 						if (c == CONTENT_IGNORE || c == CONTENT_UNKNOWN) {
 							continue;
 						}
 						samples[sample_index] = n;
+						// Prefer visible upper material without changing the solid/air
+						// occupancy decision for the coarse cell.
+						if (c != CONTENT_AIR) {
+							const auto above = get_source_node(p + v3pos_t(0, 1, 0));
+							const auto above_content = above.getContent();
+							if (above_content != CONTENT_IGNORE &&
+									above_content != CONTENT_UNKNOWN) {
+								const auto &above_features = ndef->get(above_content);
+								const auto &above_lighting =
+										ndef->getLightingFlags(above_content);
+								exposed[sample_index] = above_content == CONTENT_AIR ||
+														above_features.isLiquid() ||
+														above_lighting.light_propagates;
+							}
+						}
 
 						const auto &lf = ndef->getLightingFlags(c);
 						if (const auto light_night = n.getLightRaw(LIGHTBANK_NIGHT, lf);
@@ -341,41 +542,58 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						}
 					}
 
-					const auto selected = world_merge::selectFarNodeIndex(samples);
+					// Extract every exposed emitter before choosing the coarse terrain
+					// material. Sparse street lamps normally lose that occupancy vote to air.
+					if (farlights && !step) {
+						for (size_t source_index = 0; source_index < samples.size();
+								++source_index) {
+							const auto source_content =
+									samples[source_index].getContent();
+							if (source_content == CONTENT_IGNORE ||
+									source_content == CONTENT_UNKNOWN)
+								continue;
+
+							const auto &source_lf =
+									ndef->getLightingFlags(source_content);
+							if (!source_lf.light_source)
+								continue;
+
+							bool has_transparent_side = false;
+							const auto source_pos = sample_dirs[source_index];
+							const auto plpos =
+									block->getPosRelative() + lpos + source_pos;
+							for (const auto &side_dir : side_dirs) {
+								const auto side_content =
+										get_light_neighbor(block, plpos + side_dir)
+												.getContent();
+								if (side_content == CONTENT_IGNORE ||
+										side_content == CONTENT_UNKNOWN)
+									continue;
+								const auto &side_features = ndef->get(side_content);
+								const auto &side_lf =
+										ndef->getLightingFlags(side_content);
+								if (side_content == CONTENT_AIR ||
+										side_features.isLiquid() ||
+										side_lf.light_propagates) {
+									has_transparent_side = true;
+									break;
+								}
+							}
+
+							if (!has_transparent_side)
+								continue;
+							generated_light_points[bbpos].try_emplace(plpos,
+									MapBlock::makeLightPoint(source_lf.light_source,
+											get_light_source_color(
+													ndef->get(source_content))));
+						}
+					}
+
+					const auto selected =
+							world_merge::selectFarNodeIndex(samples, &exposed, ndef);
 					if (!selected)
 						continue;
 					auto n = samples[*selected];
-
-					// Emit at most one far-light point for the selected material.
-					if (farlights && !step) {
-						const auto source_lf = ndef->getLightingFlags(n.getContent());
-						bool has_transparent_side = false;
-						const auto source_pos = sample_dirs[*selected];
-						for (const auto &side_dir : side_dirs) {
-							const auto side_pos = source_pos + side_dir;
-							for (size_t side_index = 0; side_index < samples.size(); ++side_index) {
-								if (sample_dirs[side_index] != side_pos)
-									continue;
-
-								const auto side_content = samples[side_index].getContent();
-								const auto &side_features = ndef->get(side_content);
-								const auto &side_lf = ndef->getLightingFlags(side_content);
-								if (side_content == CONTENT_AIR || side_features.isLiquid() ||
-										side_lf.light_propagates) {
-									has_transparent_side = true;
-								}
-								break;
-							}
-							if (has_transparent_side)
-								break;
-						}
-						if (source_lf.light_source && has_transparent_side) {
-							const auto plpos = block->getPosRelative() + lpos + source_pos;
-							generated_light_points[bbpos].try_emplace(plpos,
-									MapBlock::makeLightPoint(source_lf.light_source,
-											get_light_source_color(ndef->get(n.getContent()))));
-						}
-					}
 
 					if (max_light_night) {
 						n.setLight(LIGHTBANK_NIGHT, max_light_night,
@@ -395,58 +613,58 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 				}
 	}
 	// TODO: skip full air;
-	one_block_stat_t one_step_stat;
-	block_up->m_light_points.clear();
+	// This block is not published yet; build its new light-point snapshot in place.
+	block_up->m_light_points = std::make_shared<MapBlock::light_points_t>();
 	if (farlights) {
-		constexpr auto some_magick_thinner_const = 2; // more -> less far ligts
-		constexpr auto min_no_skip_lights =
-				2; // do not skip this amount lights on block << farstep
+		MapBlock::light_points_t candidates;
 		for (const auto &[bpos, block] : blocks) {
 			if (!block) {
 				continue;
 			}
 			const light_points_t *light_points = nullptr;
+			std::shared_ptr<MapBlock::light_points_t> source_light_points;
 			if (!step) {
 				const auto lights_it = generated_light_points.find(bpos);
 				if (lights_it == generated_light_points.end())
 					continue;
 				light_points = &lights_it->second;
 			} else {
-				light_points = &block->m_light_points;
+				{
+					const auto lock = block->lock_shared_rec();
+					source_light_points = block->m_light_points;
+				}
+				light_points = source_light_points.get();
 			}
 			if (!light_points || light_points->empty())
 				continue;
 
-			size_t lights_in_block = 0;
-			//size_t lights_in_block_skipped = 0;
-			// TODO: apply some smart? filtering here
-			// block_up->m_light_points.insert(block->m_light_points.begin(), block->m_light_points.end());
-			const auto size = light_points->size();
-			if (!size)
-				continue;
-			block_up->m_light_points.reserve(block_up->m_light_points.size() + size / 2);
-			const auto coef = std::log2(size);
-			const auto keep_first =
-					min_no_skip_lights * (static_cast<size_t>(step) + 1) * 3;
-			for (const auto &lp : *light_points) {
-				++one_step_stat.lights_count;
-				++lights_in_block;
-				const auto level = MapBlock::getLightPointLevel(lp.second);
-				const auto mod = int(coef * some_magick_thinner_const * (16 - level));
-				if (mod > 1 && lights_in_block > keep_first &&
-						(one_step_stat.lights_count % mod)) {
-					//++lights_in_block_skipped;
-					continue;
+			one_step_stat.lights_count += light_points->size();
+			for (const auto &[pos, light] : *light_points) {
+				auto [it, inserted] = candidates.try_emplace(pos, light);
+				// Positions normally belong to one child. Resolve duplicate input
+				// deterministically as well, retaining the brighter original source.
+				if (!inserted) {
+					const auto level = MapBlock::getLightPointLevel(light);
+					const auto old_level = MapBlock::getLightPointLevel(it->second);
+					if (level > old_level || (level == old_level && light > it->second))
+						it->second = light;
 				}
-				++one_step_stat.lights_used;
-				block_up->m_light_points.emplace(lp);
 			}
 		}
+		*block_up->m_light_points =
+				world_merge::reduceFarLightPoints(candidates, step + 1);
+		one_step_stat.lights_used = block_up->m_light_points->size();
 	}
 
-	if (not_empty_nodes) {
+	// Sparse lamps may lose the terrain occupancy vote to air. Their retained
+	// light points still need a saved/generated block for subsequent LODs.
+	if (not_empty_nodes || !block_up->m_light_points->empty()) {
 		block_up->setGenerated(true);
-		ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level);
+		if (ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level) &&
+				far_block_ready_func) {
+			block_up->far_step = step + 1;
+			far_block_ready_func(block_up, step + 1);
+		}
 	} else {
 		dbase_up->deleteBlock(bpos_aligned);
 	}
@@ -505,11 +723,16 @@ bool WorldMerger::merge_one_step(
 				   << '\n';
 	};
 
+	std::unordered_set<v3bpos_t> blocks_seen;
+	std::unordered_set<v3bpos_t> blocks_deferred;
 	std::unordered_set<v3bpos_t> blocks_processed;
 
 	cur_n = 0;
 	for (const auto &bpos : blocks_todo) {
 		if (stop()) {
+			if (require_lighting_complete)
+				for (const auto &pending : blocks_todo)
+					smap->changed_blocks_for_merge.emplace(pending);
 			return true;
 		}
 
@@ -519,17 +742,26 @@ bool WorldMerger::merge_one_step(
 
 		v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift,
 				(bpos.Z >> shift) << shift);
-		if (blocks_processed.contains(bpos_aligned)) {
+		if (blocks_seen.contains(bpos_aligned)) {
+			if (require_lighting_complete && !step &&
+					blocks_deferred.contains(bpos_aligned))
+				smap->changed_blocks_for_merge.emplace(bpos);
 			continue;
 		}
-		blocks_processed.emplace(bpos_aligned);
-
-		++processed;
-		g_profiler->add("Server: World merge blocks", 1);
+		blocks_seen.emplace(bpos_aligned);
 
 		try {
 			const auto stat_block =
 					merge_one_block(dbase_current, dbase_up, bpos_aligned, step);
+			if (stat_block.deferred) {
+				blocks_deferred.emplace(bpos_aligned);
+				if (require_lighting_complete && !step)
+					smap->changed_blocks_for_merge.emplace(bpos);
+				continue;
+			}
+			blocks_processed.emplace(bpos_aligned);
+			++processed;
+			g_profiler->add("Server: World merge blocks", 1);
 			stat_step.lights_count += stat_block.lights_count;
 			stat_step.lights_used += stat_block.lights_used;
 
@@ -548,9 +780,17 @@ bool WorldMerger::merge_one_step(
 
 #if !EXCEPTION_DEBUG
 		} catch (const std::exception &e) {
+			if (require_lighting_complete && !step) {
+				blocks_deferred.emplace(bpos_aligned);
+				smap->changed_blocks_for_merge.emplace(bpos);
+			}
 			errorstream << "world merge" << ": exception: " << e.what() << "\n"
 						<< stacktrace() << '\n';
 		} catch (...) {
+			if (require_lighting_complete && !step) {
+				blocks_deferred.emplace(bpos_aligned);
+				smap->changed_blocks_for_merge.emplace(bpos);
+			}
 			errorstream << "world merge" << ": Unknown unhandled exception at "
 						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << '\n'
 						<< stacktrace() << '\n';

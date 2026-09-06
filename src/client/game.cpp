@@ -4042,26 +4042,25 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 	if (!runData.headless_optimize)
 	updateClouds(dtime);
 
+	// fm: Check movement promptly, including just after a previously completed grid.
 	thread_local static const auto farmesh_range = g_settings->getS32("farmesh");
 	if (client->farmesh) {
 		auto &complete = client->farmesh->game_update_complete;
-		thread_local static u64 next_run_time{};
-		if (!complete || porting::getTimeMs() > next_run_time) {
-			next_run_time = porting::getTimeMs() + 3000;
+		thread_local static u64 last_run_time{};
+		const auto now = porting::getTimeMs();
+		const auto speed = player->getSpeed().getLength();
+		const u64 interval = !complete || speed > 200 * BS ? 100 : 250;
+		if (now - last_run_time >= interval && client->farmesh_async.ready()) {
+			last_run_time = now;
 			client->farmesh_async.step([&, farmesh_range = farmesh_range,
-											   //yaw = player->getYaw(),
-											   //pitch = player->getPitch(),
-											   camera_pos = camera->getPosition(),
-											   camera_offset = camera->getOffset(),
-											   speed = player->getSpeed().getLength()]() {
-				complete = client->farmesh->update(camera_pos,
-						//camera->getDirection(), camera->getFovMax(), camera->getCameraMode(), pitch, yaw,
-						camera_offset,
-						//sky->getBrightness(),
-						farmesh_range, speed);
+					camera_pos = camera->getPosition(),
+					camera_offset = camera->getOffset(), speed]() {
+				complete = client->farmesh->update(
+						camera_pos, camera_offset, farmesh_range, speed);
 			});
 		}
 	}
+	// ===
 
 	/*
 		Update particles
