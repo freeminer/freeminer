@@ -23,6 +23,8 @@ struct NodeVisuals
 {
 // fm:
 	u8 solidness_far = 0;
+	// Opaque base textures for far cover nodes; normal tiles retain transparency.
+	std::unique_ptr<TileLayer[]> fm_far_tiles;
 // ===
 
 	// 0     1     2     3     4     5

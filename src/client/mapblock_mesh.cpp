@@ -359,6 +359,10 @@ void getNodeTileN(MapNode mn, const v3pos_t &p, u8 tileindex, MeshMakeData *data
 	const NodeDefManager *ndef = data->m_nodedef;
 	const ContentFeatures &f = ndef->get(mn);
 	tile = f.visuals->tiles[tileindex];
+	// fm: Select opaque far textures before applying node color and face rotation.
+	if (data->far_step > 0 && f.visuals->fm_far_tiles)
+		tile.layers[0] = f.visuals->fm_far_tiles[tileindex];
+	// ===
 	bool has_crack = p == data->m_crack_pos_relative;
 	for (TileLayer &layer : tile.layers) {
 		if (layer.empty())
