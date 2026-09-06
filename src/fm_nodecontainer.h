@@ -40,17 +40,14 @@ public:
 	{
 		return getNodeRefAndVisible(p).first;
 	};
-	virtual MapNode getNodeNoEx(const v3pos_t &p) { return getNodeRefAndVisible(p).first; };
+	virtual MapNode getNodeNoEx(const v3pos_t &p)
+	{
+		return getNodeRefAndVisible(p).first;
+	};
 	virtual const MapNode getNodeRefUnsafeCheckFlags(const v3pos_t &p)
 	{
 		return getNodeRefAndVisible(p).first;
 	};
-	// Optional vertical correction, in node units, for a coarse rendered cell.
-	// Most containers render directly at the sampled position.
-	virtual pos_t getNodeRenderYOffset(const v3pos_t &p, pos_t cell_size)
-	{
-		return 0;
-	}
 	virtual void setNode(const v3pos_t &p, const MapNode &n, bool important = false) {};
 	virtual void clear() {}
 	virtual void addArea(const VoxelArea &a) {};

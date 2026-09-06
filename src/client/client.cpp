@@ -416,12 +416,15 @@ void Client::Stop()
 	farmesh_async.wait();
 	mesh_thread_pool.wait_until_nothing_in_flight();
 	mesh_thread_pool.wait_until_empty();
+	// fm: Draw-list publication uses FarMesh until its current build finishes.
+	getEnv().getClientMap().update_drawlist_async.wait();
 	farmesh.reset();
 	farmesh_async.wait();
 	mesh_thread_pool.wait_until_empty();
 	merger.reset(); // before m_localdb
     getEnv().getClientMap().update_drawlist_async.wait();
 	mesh_thread_pool.wait_until_empty();
+	// ===
 
 	if (m_mods_loaded)
 		delete m_script;

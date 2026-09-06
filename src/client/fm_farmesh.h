@@ -24,6 +24,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <atomic>
 #include <cstdint>
 #include <thread>
+#include <mutex>
+#include "fm_far_mesh_update.h"
 #include "client/camera.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -62,7 +64,7 @@ public:
 	bool makeFarBlock(
 			const v3bpos_t &blockpos, block_step_t step, const bool low_priority = false);
 	size_t makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
-	void publishFarBlock(const MapBlockPtr &block, bool check_coarser = true);
+	void commitFarGrid();
 
 	bool enqueueFarMeshForBlock(const v3bpos_t &blockpos, const block_step_t step,
 			const MapBlockPtr &block, const double timestamp,
@@ -70,7 +72,7 @@ public:
 	void stop() { farmesh_thread_stop = true; }
 	void restart();
 
-	bool game_update_complete{};
+	std::atomic_bool game_update_complete{};
 
 private:
 	//std::vector<v3bpos_t> m_make_far_blocks_list;
@@ -85,7 +87,7 @@ private:
 	const MapDrawControl *m_control{};
 	pos_t distance_min{MAP_BLOCKSIZE * 9};
 	//v3pos_t m_camera_offset;
-	float m_speed{};
+	std::atomic_bool m_fast_move{};
 
 #if FARMESH_FAST
 	constexpr static uint16_t grid_size_max_y{32};
@@ -123,11 +125,15 @@ private:
 	int go_flat();
 	int go_container(bool only_received, const block_step_t step_limit = 0);
 	uint32_t far_iteration_pos{};
-	double far_iteration_pos_time{};
-	bool want_reset = false;
+	double m_next_refresh{};
+	bool m_grid_started{};
+	bool m_grid_ready{};
+	bool m_grid_committed{};
+	std::mutex m_grid_mutex;
+	concurrent_unordered_map<v3bpos_t, MapBlockPtr> m_pending_far_blocks;
+	std::atomic_bool want_reset{};
 	//bool mesh_complete_set{};
 	//bool grid_finished{};
-	uint32_t collect_reset_timestamp{static_cast<uint32_t>(-1)};
 	//uint8_t planes_processed_last{};
 	std::array<async_step_runner, 6> async_direction;
 	async_step_runner async_cleaner;
@@ -143,11 +149,13 @@ private:
 	std::array<concurrent_unordered_map<v3bpos_t, BlockTodo>, FARMESH_STEP_MAX * 2>
 			farmesh_make_queue;
 	std::atomic_bool farmesh_make_queue_complete{true};
-	std::atomic_size_t farmesh_make_queue_processed{};
-	std::atomic_size_t farmesh_make_queue_size{};
+	std::mutex m_queue_mutex;
+	farmesh::MeshJobs m_mesh_jobs;
+	bool m_queue_paused{};
+	bool queueFarBlock(const MapBlockPtr &block, bool low_priority = false);
 
 	std::thread farmesh_thread;
-	bool farmesh_thread_stop{};
+	std::atomic_bool farmesh_thread_stop{};
 	void processFarmeshQueue();
 	void onSettingChanged(const std::string &name);
 };

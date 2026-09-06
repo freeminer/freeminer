@@ -3,7 +3,177 @@
 // mesh-generator helpers without changing the upstream implementation.
 
 #include "irr_v3d.h"
-#include "fm_mapblock_mesh.inc.cpp"
+// Far-mesh fast face builder, adapted from mapblock_mesh.cpp at 356205cd5.
+
+namespace
+{
+struct FastFace
+{
+	TileSpec tile;
+	video::S3DVertex vertices[4];
+	bool vertex_0_2_connected{};
+};
+
+struct FmFarFace
+{
+	bool visible{};
+	TileSpec tile;
+	u16 lights[4]{};
+	v3pos_t pos;
+	u8 emissive_light{};
+};
+
+static bool isFmFarEmpty(content_t content)
+{
+	return content == CONTENT_AIR || content == CONTENT_IGNORE ||
+		   content == CONTENT_UNKNOWN;
+}
+
+static bool canMergeFmFarFaces(const FmFarFace &first, const FmFarFace &second)
+{
+	if (!first.visible || !second.visible || first.tile.rotation != TileRotation::None ||
+			second.tile.rotation != first.tile.rotation ||
+			second.tile.world_aligned != first.tile.world_aligned ||
+			second.emissive_light != first.emissive_light ||
+			!std::equal(std::begin(first.lights), std::end(first.lights),
+					std::begin(second.lights)))
+		return false;
+
+	for (int layer = 0; layer < MAX_TILE_LAYERS; ++layer) {
+		const auto &a = first.tile.layers[layer];
+		const auto &b = second.tile.layers[layer];
+		if (a != b || a.texture_layer_idx != b.texture_layer_idx || a.scale != b.scale ||
+				a.isTransparent() ||
+				!(a.material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL) ||
+				!(a.material_flags & MATERIAL_FLAG_TILEABLE_VERTICAL))
+			return false;
+	}
+	return true;
+}
+
+static const v3pos_t fm_vertex_dirs[] = {
+		{1, -1, 1}, {1, -1, -1}, {1, 1, -1}, {1, 1, 1},						// +X
+		{1, 1, -1}, {-1, 1, -1}, {-1, 1, 1}, {1, 1, 1},						// +Y
+		{-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1},						// +Z
+		{}, {}, {}, {}, {1, -1, -1}, {-1, -1, -1}, {-1, 1, -1}, {1, 1, -1}, // -Z
+		{1, -1, 1}, {-1, -1, 1}, {-1, -1, -1}, {1, -1, -1},					// -Y
+		{-1, -1, -1}, {-1, -1, 1}, {-1, 1, 1}, {-1, 1, -1},					// -X
+};
+
+static void getFmNodeVertexDirs(const auto &dir, v3pos_t vertex_dirs[4])
+{
+	assert(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z == 1);
+	const u8 index = (((dir.X + 2 * dir.Y + 3 * dir.Z) & 7) - 1) * 4;
+	std::copy_n(&fm_vertex_dirs[index], 4, vertex_dirs);
+}
+
+static void getFmNodeTextureCoords(
+		v3opos_t base, const v3opos_t &scale, const v3pos_t &dir, float *u, float *v)
+{
+	if (dir.X > 0 || dir.Y != 0 || dir.Z < 0)
+		base -= scale;
+	if (dir == v3pos_t(0, 0, 1)) {
+		*u = -base.X;
+		*v = -base.Y;
+	} else if (dir == v3pos_t(0, 0, -1)) {
+		*u = base.X + 1;
+		*v = -base.Y - 1;
+	} else if (dir == v3pos_t(1, 0, 0)) {
+		*u = base.Z + 1;
+		*v = -base.Y - 1;
+	} else if (dir == v3pos_t(-1, 0, 0)) {
+		*u = -base.Z;
+		*v = -base.Y;
+	} else if (dir == v3pos_t(0, 1, 0)) {
+		*u = base.X + 1;
+		*v = -base.Z - 1;
+	} else {
+		*u = base.X + 1;
+		*v = base.Z + 1;
+	}
+}
+
+static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
+		const v3opos_t &texture_pos, const v3opos_t &center, const v3pos_t &dir,
+		const v3opos_t &scale, int texture_step, u8 emissive_light)
+{
+	float x0 = 0.0f;
+	float y0 = 0.0f;
+	float w = 1.0f;
+	float h = 1.0f;
+	v3pos_t vertex_dirs[4];
+	getFmNodeVertexDirs(dir, vertex_dirs);
+	u16 lights[4] = {input_lights[0], input_lights[1], input_lights[2], input_lights[3]};
+
+	const v3opos_t logical_scale = scale / static_cast<float>(texture_step);
+	if (tile.world_aligned)
+		getFmNodeTextureCoords(texture_pos, logical_scale, dir, &x0, &y0);
+
+	auto rotate_once = [&]() {
+		const auto vertex = vertex_dirs[0];
+		vertex_dirs[0] = vertex_dirs[3];
+		vertex_dirs[3] = vertex_dirs[2];
+		vertex_dirs[2] = vertex_dirs[1];
+		vertex_dirs[1] = vertex;
+		const auto light = lights[0];
+		lights[0] = lights[3];
+		lights[3] = lights[2];
+		lights[2] = lights[1];
+		lights[1] = light;
+	};
+
+	switch (tile.rotation) {
+	case TileRotation::None:
+		break;
+	case TileRotation::R90:
+		rotate_once();
+		break;
+	case TileRotation::R180:
+		rotate_once();
+		rotate_once();
+		break;
+	case TileRotation::R270:
+		rotate_once();
+		rotate_once();
+		rotate_once();
+		break;
+	}
+
+	float texture_scale = 1.0f;
+	if (logical_scale.X < 0.999f || logical_scale.X > 1.001f)
+		texture_scale = logical_scale.X;
+	else if (logical_scale.Y < 0.999f || logical_scale.Y > 1.001f)
+		texture_scale = logical_scale.Y;
+	else if (logical_scale.Z < 0.999f || logical_scale.Z > 1.001f)
+		texture_scale = logical_scale.Z;
+	texture_scale *= texture_step;
+
+	const v2f32 texture_coords[4] = {{x0 + w * texture_scale, y0 + h}, {x0, y0 + h},
+			{x0, y0}, {x0 + w * texture_scale, y0}};
+	const v3opos_t normal = v3opos_t::from(dir);
+	FastFace face;
+	face.tile = tile;
+	for (u8 i = 0; i < 4; ++i) {
+		v3opos_t position(BS * 0.5f * vertex_dirs[i].X * scale.X,
+				BS * 0.5f * vertex_dirs[i].Y * scale.Y,
+				BS * 0.5f * vertex_dirs[i].Z * scale.Z);
+		position += center * BS;
+		auto color = encode_light(lights[i], emissive_light);
+		if (!emissive_light)
+			applyFacesShading(color, normal);
+		face.vertices[i] = video::S3DVertex(position, normal, color, texture_coords[i]);
+	}
+
+	const auto light_diff = [](u16 first, u16 second) {
+		const LightPair a(first);
+		const LightPair b(second);
+		return std::abs(a.lightDay - b.lightDay) + std::abs(a.lightNight - b.lightNight);
+	};
+	face.vertex_0_2_connected =
+			light_diff(lights[0], lights[2]) < light_diff(lights[1], lights[3]);
+	return face;
+}
+}
 
 namespace
 {
@@ -67,10 +237,6 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 		return true;
 
 	const bool is_far = data->far_step >= 1;
-	const auto render_offset_y =
-			is_far ? data->m_vmanip.getNodeRenderYOffset(
-							 blockpos_nodes + cur_node.p, data->fscale)
-				   : 0;
 	u8 faces = 0;
 	static const v3pos_t tile_dirs[6] = {v3pos_t(0, 1, 0), v3pos_t(0, -1, 0),
 			v3pos_t(1, 0, 0), v3pos_t(-1, 0, 0), v3pos_t(0, 0, 1), v3pos_t(0, 0, -1)};
@@ -85,17 +251,13 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 		bool backface_culling = true;
 
 		if (is_far) {
-			// Missing far data must not occlude a known cell. The historical
-			// fast-face path also exposed solid/ignore boundaries.
-			if (!isFmFarEmpty(n2)) {
-				// Surface cells are shifted onto the exact calculated terrain
-				// height. If adjacent cells have different offsets, expose only the
-				// higher cell's vertical side so the shifted tops remain watertight.
-				if (tile_dirs[face].Y != 0 ||
-						render_offset_y <=
-								data->m_vmanip.getNodeRenderYOffset(p2, data->fscale))
-					continue;
-			}
+			// fm: IGNORE/UNKNOWN inside an authoritative world-merge block is an
+			// invisible occluder, not open air. Exposing that boundary draws large,
+			// unlit underground walls. True missing data is replaced by mapgen in
+			// FarContainer and therefore arrives here as its real material.
+			if (n2 != CONTENT_AIR)
+				continue;
+			// ===
 		} else {
 			if (n2 == n1 || n2 == CONTENT_IGNORE)
 				continue;
@@ -143,6 +305,7 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 		for (auto &layer : tiles[face].layers) {
 			if (backface_culling)
 				layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
+			////layer.material_type = TILE_MATERIAL_BASIC; //TILE_MATERIAL_OPAQUE;
 		}
 		if (!data->m_smooth_lighting)
 			lights[face] = getFaceLight(cur_node.n, neighbor, nodedef);
@@ -156,35 +319,34 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 	// Far samples represent a cell ending at the sampled Y level. Keep the
 	// original downward Y anchoring; expanding upward exposes underground
 	// samples (notably ores) above the surrounding stone surface.
-	aabb3f box(v3f(-HBS, 1.5f * BS - scaled, -HBS),
-			v3f(scaled - HBS, 1.5f * BS, scaled - HBS));
+	aabb3f box(v3opos_t(-HBS, 1.5f * BS - scaled, -HBS),
+			v3opos_t(scaled - HBS, 1.5f * BS, scaled - HBS));
 
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
 	if (is_far) {
-		box.MinEdge.Y += render_offset_y * BS;
-		box.MaxEdge.Y += render_offset_y * BS;
-		const v3f center = (box.MinEdge + box.MaxEdge) * 0.5f / BS;
-		const v3f scale = (box.MaxEdge - box.MinEdge) / BS;
-		const v3f texture_pos = v3f::from(cur_node.p) / static_cast<float>(data->fscale);
+		const v3opos_t center = (box.MinEdge + box.MaxEdge) * 0.5f / BS;
+		const v3opos_t scale = (box.MaxEdge - box.MinEdge) / BS;
+		const v3opos_t texture_pos =
+				v3opos_t::from(cur_node.p) / static_cast<float>(data->fscale);
 		for (int face = 0; face < 6; ++face) {
 			if (mask & (1 << face))
 				continue;
 
 			u16 face_lights[4];
 			if (data->m_smooth_lighting) {
-				v3s16 corners[4];
-				getFmNodeVertexDirs(posToS16(tile_dirs[face]), corners);
+				v3pos_t corners[4];
+				getFmNodeVertexDirs(tile_dirs[face], corners);
 				for (int vertex = 0; vertex < 4; ++vertex) {
 					face_lights[vertex] = getSmoothLightSolid(blockpos_nodes + cur_node.p,
-							tile_dirs[face], s16ToPos(corners[vertex]), data);
+							tile_dirs[face], corners[vertex], data);
 				}
 			} else {
 				std::fill_n(face_lights, 4, lights[face]);
 			}
 
 			const auto fast_face = makeFastFace(tiles[face], face_lights, texture_pos,
-					center, posToS16(tile_dirs[face]), scale, data->fscale,
+					center, tile_dirs[face], scale, data->fscale,
 					cur_node.f->light_source);
 			const u16 *indices =
 					fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13;
@@ -302,31 +464,23 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		const auto &dir = face_dirs[face];
 		const MapNode neighbor =
 				data->m_vmanip.getNodeNoEx(blockpos_nodes + pos + dir * data->fscale);
-		const auto render_offset_y =
-				data->m_vmanip.getNodeRenderYOffset(blockpos_nodes + pos, data->fscale);
-		// CONTENT_IGNORE/UNKNOWN means that the adjacent far sample is not
-		// available. Hiding this known face would leave a visible mesh hole.
-		if (!isFmFarEmpty(neighbor.getContent())) {
-			const auto neighbor_offset_y = data->m_vmanip.getNodeRenderYOffset(
-					blockpos_nodes + pos + dir * data->fscale, data->fscale);
-			if (dir.Y != 0 || render_offset_y <= neighbor_offset_y)
-				return result;
-		}
-
+		// Only air exposes a face. Keep authoritative IGNORE/UNKNOWN cells as
+		// invisible occluders, matching the scaled-node path.
+		if (neighbor.getContent() != CONTENT_AIR)
+			return result;
 		result.visible = true;
 		result.pos = pos;
-		result.render_offset_y = render_offset_y;
 		result.emissive_light = cur_node.f->light_source;
 		getTile(dir, &result.tile);
 		for (auto &layer : result.tile.layers)
 			layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 
 		if (data->m_smooth_lighting) {
-			v3s16 corners[4];
+			v3pos_t corners[4];
 			getFmNodeVertexDirs(dir, corners);
 			for (int vertex = 0; vertex < 4; ++vertex) {
 				result.lights[vertex] = getSmoothLightSolid(
-						blockpos_nodes + pos, dir, s16ToPos(corners[vertex]), data);
+						blockpos_nodes + pos, dir, corners[vertex], data);
 			}
 		} else {
 			std::fill_n(result.lights, 4, getFaceLight(cur_node.n, neighbor, nodedef));
@@ -335,7 +489,7 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 	};
 	const auto append_run = [&](const FmFarFace &face, const auto &dir, int merge_axis,
 									size_t count) {
-		v3f scale(data->fscale);
+		v3opos_t scale(data->fscale);
 		if (merge_axis == 0)
 			scale.X *= count;
 		else if (merge_axis == 1)
@@ -344,11 +498,10 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 			scale.Z *= count;
 
 		const float fscale = data->fscale;
-		v3f center =
-				v3f::from(face.pos) +
-				v3f((fscale - 1.0f) * 0.5f, 1.5f - fscale * 0.5f, (fscale - 1.0f) * 0.5f);
-		center.Y += face.render_offset_y;
-		v3f row_dir;
+		v3opos_t center = v3opos_t::from(face.pos) + v3opos_t((fscale - 1.0f) * 0.5f,
+															 1.5f - fscale * 0.5f,
+															 (fscale - 1.0f) * 0.5f);
+		v3opos_t row_dir;
 		if (merge_axis == 0)
 			row_dir.X = 1.0f;
 		else if (merge_axis == 1)
@@ -358,8 +511,8 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		center += row_dir * (fscale * (count - 1) * 0.5f);
 
 		const auto fast_face =
-				makeFastFace(face.tile, face.lights, v3f::from(face.pos) / fscale, center,
-						posToS16(dir), scale, data->fscale, face.emissive_light);
+				makeFastFace(face.tile, face.lights, v3opos_t::from(face.pos) / fscale,
+						center, dir, scale, data->fscale, face.emissive_light);
 		collector->append(fast_face.tile, fast_face.vertices, 4,
 				fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6);
 	};

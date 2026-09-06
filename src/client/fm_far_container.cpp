@@ -21,6 +21,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 #include <array>
+// fm: Deferred mapgen fallback state.
+#include <optional>
+// ===
 
 #include "fm_far_container.h"
 #include "client.h"
@@ -78,23 +81,6 @@ pos_t get_surface_height_cached(
 }
 }
 
-pos_t FarContainer::getNodeRenderYOffset(const v3pos_t &pos, pos_t cell_size)
-{
-	if (!m_mg || !m_mg->surface_2d() || m_surface_depth < 0 || cell_size <= 1)
-		return 0;
-
-	const auto surface_y = get_surface_height_cached(this, m_mg, v2pos_t(pos.X, pos.Z));
-	// Visual water stays aligned to water_level. Only the synthesized terrain
-	// cell underneath dry air needs to be moved to the exact calculated height.
-	if (pos.Y > surface_y && m_mg->visible_water_level(pos))
-		return 0;
-
-	const auto height_above_surface = pos.Y - surface_y;
-	return height_above_surface >= 0 && height_above_surface < cell_size
-				   ? -height_above_surface
-				   : 0;
-}
-
 std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t &pos)
 {
 	const auto block_pos = getNodeBlockPos(pos);
@@ -107,50 +93,68 @@ std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t 
 	if (tree_result) {
 		const auto &step = tree_result->step;
 		const v3bpos_t &bpos_aligned = tree_result->pos;
+		// fm: Calculated terrain is owned by the missing-data path. Defer every
+		// synthesized node until after the far-block lookup so it can never be
+		// composited with an available world-merge block.
+		std::optional<MapNode> mapgen_fallback;
+		bool underground_occluder_candidate = false;
+		// ===
 
 		if (m_mg->surface_2d()) {
 			const auto surface_y =
 					get_surface_height_cached(this, m_mg, v2pos_t(pos.X, pos.Z));
+			// fm: Only samples strictly below the calculated surface may stand in as
+			// invisible occluders for omitted world-merge blocks. Surface and water
+			// samples still need visible mapgen fallback when their merge block is absent.
+			underground_occluder_candidate = pos.Y < surface_y;
+			// ===
 
-			// Far-mesh sea is visual only. Prefer the mapgen's calculated water
-			// throughout the space between below-sea-level terrain and water_level,
-			// even when the stored/generated block correctly contains air there.
+			// Far-mesh sea fallback is visual only. Retain calculated water between
+			// below-sea-level terrain and water_level when no merged block is available.
 			if (pos.Y > surface_y && m_mg->visible_water_level(pos)) {
 				const auto fill = m_mg->visible_content(pos, use_weather);
 				const auto content = fill.getContent();
 				if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
 						content != CONTENT_AIR) {
-					return {fill, false};
+					mapgen_fallback = fill;
 				}
 			}
 
 			if (m_surface_depth >= 0) {
 				const auto cell_size = static_cast<pos_t>(1) << step;
 				const auto height_above_surface = pos.Y - surface_y;
-				if (height_above_surface >= 0 && height_above_surface < cell_size) {
+				if (!mapgen_fallback && height_above_surface >= 0 &&
+						height_above_surface < cell_size) {
 					// Far cells end at the sampled Y and expand downward. The cell that
 					// contains the terrain surface therefore normally has its sample just
-					// above the exact height. Give it the calculated weather-dependent
-					// surface material instead of a stored dirt/ore sample.
+					// above the exact height. Retain its calculated weather-dependent
+					// surface material for the missing-block fallback.
 					const auto fill = m_mg->visible_content(
 							v3pos_t(pos.X, surface_y, pos.Z), use_weather);
 					const auto content = fill.getContent();
 					if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
 							content != CONTENT_AIR) {
-						return {fill, false};
+						// fm: Defer synthesized terrain until stored surface data was tried.
+						mapgen_fallback = fill;
+						// ===
 					}
 				}
 				const auto preserved_depth =
 						static_cast<pos_t>(m_surface_depth) * cell_size;
-				if (pos.Y <= surface_y - preserved_depth) {
+				// fm: At depth zero the surface sample also satisfies this boundary.
+				// Do not let the deep-fill optimization bypass stored road data there.
+				const bool fill_deep =
+						!mapgen_fallback && pos.Y <= surface_y - preserved_depth;
+				// ===
+				if (fill_deep) {
 					const auto fill = m_mg->visible_surface;
 					const auto content = fill.getContent();
 					if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
 							content != CONTENT_AIR) {
 						// Deep underground detail cannot affect the visible silhouette.
 						// Filling it suppresses cave and fragment faces, and also avoids a
-						// far database lookup for this sample.
-						return {fill, false};
+						// far database lookup when world-merge data is unavailable.
+						mapgen_fallback = fill;
 					}
 				}
 			}
@@ -210,7 +214,7 @@ std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t 
 			}
 		}
 
-		if (block) {
+		if (block && block->isGenerated()) {
 			block_cache_p = step_block_pos;
 			block_cache = block;
 
@@ -224,12 +228,49 @@ std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t 
 							std::min(MAP_BLOCKSIZE - 1, relpos.Z >> relpos_shift))};
 			{
 				const auto n = block->getNodeNoLock(relpos_shifted);
+				// fm: Explicit AIR and material cells are authoritative world-merge
+				// results. IGNORE/UNKNOWN only means that this individual coarse sample
+				// was unavailable, so let the missing-data path provide surface fallback.
 				const auto content = n.getContent();
 				if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN)
 					return {n, false};
+				// ===
+			}
+		}
+
+		// fm: World merge deliberately omits completely empty blocks. If another
+		// generated block exists in this X/Z mesh column, the column is nevertheless
+		// owned by world merge. Return IGNORE as an invisible occluder for its absent
+		// underground cells: the far mesher does not draw IGNORE itself, but it uses
+		// it to suppress the artificial black sides of adjacent solid cells.
+		if (underground_occluder_candidate && step < FARMESH_STEP_MAX) {
+			const auto mesh_result =
+					farmesh::getFarParams(control, player_block_pos, block_pos, false);
+			if (mesh_result && mesh_result->step == step) {
+				const auto &storage = client_map.far_blocks_storage[step];
+				const auto storage_lock = storage.lock_shared_rec();
+				const bpos_t step_width = static_cast<bpos_t>(1) << step;
+				const bpos_t blocks_per_column = static_cast<bpos_t>(1)
+												 << control.cell_size_pow;
+				for (bpos_t y = 0; y < blocks_per_column; ++y) {
+					const v3bpos_t column_pos{bpos_aligned.X,
+							static_cast<bpos_t>(mesh_result->pos.Y + y * step_width),
+							bpos_aligned.Z};
+					const auto it = storage.find(column_pos);
+					if (it != storage.end() && it->second.block &&
+							it->second.block->isGenerated()) {
+						return {MapNode(CONTENT_IGNORE), false};
+					}
 				}
 			}
 		}
+		// ===
+
+		// fm: No generated world-merge block was available; only now may mapgen
+		// supply the retained fallback node.
+		if (mapgen_fallback)
+			return {*mapgen_fallback, false};
+		// ===
 	}
 
 	if (const auto v = m_mg->visible_content(pos, use_weather);

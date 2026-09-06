@@ -237,11 +237,10 @@ void Client::createFarMesh(MapBlockPtr &block)
 		const auto mesh = std::make_shared<MapBlockMesh>(m_client, &mesh_make_data);
 		block->setFarMesh(mesh, step);
 		block->far_step_draw = block->far_step;
-		block->creating_far_mesh = false;
-		block->far_status = MapBlock::far_status_e::s6_mesh_complete;
-		if (m_client->farmesh) {
-			m_client->farmesh->publishFarBlock(block);
-		}
+		// Preserve a received-data invalidation that arrived while meshing.
+		auto expected = MapBlock::far_status_e::s5_mesh_start;
+		block->far_status.compare_exchange_strong(
+				expected, MapBlock::far_status_e::s6_mesh_complete);
 		++m_client->m_new_meshes;
 		g_profiler->avg("Client: Farmesh mesh [ms]", timer.stop(true));
 	}
@@ -431,16 +430,16 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 						control, getNodeBlockPos(client_map.far_cam_pos_mesh), blockpos);
 				if (!tree_result)
 					return;
-				auto &far_blocks = client_map.m_far_blocks;
 				bool other_draw_block = false;
 				if (tree_result->pos != blockpos || tree_result->step != step) {
 					other_draw_block = true;
 					auto &step = tree_result->step;
 					blockpos = tree_result->pos;
-					const auto lock = far_blocks.lock_unique_rec();
-					if (const auto &it = far_blocks.find(blockpos);
-							it != far_blocks.end() && it->second->far_step == step) {
-						auto &block = it->second;
+					auto &storage = client_map.far_blocks_storage[step];
+					const auto lock = storage.lock_shared_rec();
+					if (const auto it = storage.find(blockpos);
+							it != storage.end() && it->second.block) {
+						auto &block = it->second.block;
 						block_status(block, step);
 						/*
 						if (block->far_make_mesh_timestamp <= 0 ||

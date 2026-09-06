@@ -8,6 +8,12 @@
 #include "fm_far_calc.h"
 #include "client/clientmap.h"
 
+// fm: Dependencies for the far-mesh update regression tests.
+#include "client/fm_far_mesh_update.h"
+#include "threading/ThreadPool.h"
+#include "threading/async.h"
+// ===
+
 #include <limits>
 #include <vector>
 
@@ -696,3 +702,127 @@ void TestFmFarCalc::testRunFarAllStops()
 		UASSERTEQ(size_t, calls, 1);
 	}
 }
+
+// fm: Regression tests for scheduling and atomic moving-grid publication.
+namespace
+{
+class TestFmFarMeshUpdate : public TestBase
+{
+public:
+	TestFmFarMeshUpdate() { TestManager::registerTestModule(this); }
+	const char *getName() override { return "TestFmFarMeshUpdate"; }
+	void runTests(IGameDef *) override
+	{
+		TEST(testRunningJobsPreventCompletion);
+		TEST(testFailedJobsAreReaped);
+		TEST(testAsyncScanCompletion);
+		TEST(testMovingGridHandoff);
+		TEST(testEmptyMeshAndEmptyGrid);
+	}
+
+	void testRunningJobsPreventCompletion()
+	{
+		progschj::ThreadPool pool(2);
+		std::promise<void> release;
+		auto gate = release.get_future().share();
+		farmesh::MeshJobs jobs;
+		for (size_t i = 0; i < 2; ++i)
+			jobs.add(pool.enqueue([gate]() { gate.wait(); }));
+		pool.wait_until_empty();
+		bool error = false;
+		jobs.poll([&](const std::exception &) { error = true; });
+		const bool prematurely_complete = jobs.empty();
+		// Always release workers before asserting, including on a regression.
+		release.set_value();
+		pool.wait_until_nothing_in_flight();
+		jobs.poll([&](const std::exception &) { error = true; });
+		UASSERT(!prematurely_complete);
+		UASSERT(jobs.empty());
+		UASSERT(!error);
+	}
+
+	void testFailedJobsAreReaped()
+	{
+		farmesh::MeshJobs jobs;
+		std::promise<void> failed;
+		jobs.add(failed.get_future());
+		failed.set_exception(std::make_exception_ptr(std::runtime_error("mesh failed")));
+		size_t errors = 0;
+		jobs.poll([&](const std::exception &) { ++errors; });
+		UASSERTEQ(size_t, errors, 1);
+		UASSERT(jobs.empty());
+	}
+
+	void testAsyncScanCompletion()
+	{
+		async_step_runner scan;
+		UASSERT(scan.ready());
+		std::promise<void> release;
+		auto gate = release.get_future().share();
+		scan.step([gate]() { gate.wait(); });
+		const bool prematurely_ready = scan.ready();
+		release.set_value();
+		scan.wait();
+		UASSERT(!prematurely_ready);
+		UASSERT(scan.ready());
+	}
+
+	struct Mesh
+	{
+		block_step_t step{};
+		bool ready{};
+		bool operator==(const Mesh &) const = default;
+	};
+	using Grid = std::unordered_map<v3bpos_t, Mesh>;
+	static bool ready(const Mesh &mesh) { return mesh.ready; }
+
+	Grid gridAt(const v3bpos_t &player, const uint8_t cell_pow)
+	{
+		Grid grid;
+		farmesh::runFarAll(player, cell_pow, 256, cell_pow, 0, false, 0,
+				[&](const v3bpos_t &pos, const bpos_t &, const block_step_t &step) {
+					grid.emplace(pos, Mesh{step, true});
+					return false;
+				});
+		return grid;
+	}
+
+	void testMovingGridHandoff()
+	{
+		// Small moves, changes across several LOD levels, negative coordinates,
+		// and teleports must all retain the old grid until the last cell is ready.
+		for (const uint8_t cell_pow : {0, 1, 2}) {
+			auto visible = gridAt(v3bpos_t(0, 0, 0), cell_pow);
+			for (const auto player : {v3bpos_t(1, 0, 0), v3bpos_t(64, 32, -64),
+						 v3bpos_t(-257, -65, 127), v3bpos_t(4096, 256, -4096)}) {
+				const auto previous = visible;
+				auto pending = gridAt(player, cell_pow);
+				UASSERT(!pending.empty());
+				pending.begin()->second.ready = false;
+				UASSERT(!farmesh::publishReadyGrid(pending, visible, ready));
+				UASSERT(visible == previous);
+				pending.begin()->second.ready = true;
+				UASSERT(farmesh::publishReadyGrid(pending, visible, ready));
+				UASSERT(visible == pending);
+				// Coverage and disjointness of each canonical grid are checked by
+				// TestFmFarCalc; equality rules out any retained ancestor/descendant.
+			}
+		}
+	}
+
+	void testEmptyMeshAndEmptyGrid()
+	{
+		Grid visible{{v3bpos_t(0, 0, 0), Mesh{4, true}}};
+		// Mesh readiness is independent of vertex count: air is valid coverage.
+		Grid pending{{v3bpos_t(0, 0, 0), Mesh{2, true}}};
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready));
+		UASSERT(visible == pending);
+		pending.clear();
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready));
+		UASSERT(visible.empty());
+	}
+};
+
+TestFmFarMeshUpdate g_test_far_mesh_update;
+} // namespace
+// ===

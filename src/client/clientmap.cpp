@@ -911,6 +911,10 @@ void ClientMap::touchMapBlocks()
 
 void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 {
+	// fm: Switch the far grid before calculating this frame's near/far ownership.
+	if (m_client->farmesh)
+		m_client->farmesh->commitFarGrid();
+	// ===
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	TimeTaker timer_step("ClientMap::updateDrawList");
 
@@ -1220,12 +1224,21 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			for (const auto &candidate : coverage.candidates)
 				draw_near(candidate);
 		} else {
-			// Keep farmesh as an underlay until every near chunk is ready.
-			// The loaded near chunks still extend detail across the transition;
-			// the far insertion below wins if both use the same map position.
+			// fm: A far cell owns its whole volume until every near chunk is ready.
+			// Drawing a subset of near chunks over it causes intersecting layers.
 			++far_fallback_cells;
-			for (const auto &candidate : coverage.candidates)
-				draw_near(candidate);
+			bool far_ready = false;
+			{
+				const auto lock = m_far_blocks.lock_shared_rec();
+				const auto it = m_far_blocks.find(pos);
+				far_ready = it != m_far_blocks.end() && it->second &&
+						it->second->far_step == coverage.params.step &&
+						it->second->getFarMesh(coverage.params.step);
+			}
+			if (!far_ready)
+				for (const auto &candidate : coverage.candidates)
+					draw_near(candidate);
+			// ===
 		}
 	}
 

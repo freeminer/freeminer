@@ -38,7 +38,6 @@ public:
 	bool have_params{};
 	FarContainer(Client *client);
 	std::pair<const MapNode, bool> getNodeRefAndVisible(const v3pos_t &p) override;
-	pos_t getNodeRenderYOffset(const v3pos_t &p, pos_t cell_size) override;
 	const MapNode getNodeRefUnsafe(const v3pos_t &p) override
 	{
 		return getNodeRefAndVisible(p).first;
