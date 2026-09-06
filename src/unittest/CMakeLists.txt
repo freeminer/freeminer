@@ -55,8 +55,11 @@ set(unittest_SRCS
 	PARENT_SCOPE)
 
 set(unittest_client_SRCS
+	# fm: Sparse near-mesh readiness and far-geometry coverage regressions.
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_near_mesh_handoff.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_far_calc.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_content_mapblock.cpp
+	# ===
 
 	${CMAKE_CURRENT_SOURCE_DIR}/mesh_compare.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_clientactiveobjectmgr.cpp

@@ -420,12 +420,15 @@ void Client::Stop()
 	farmesh_async.wait();
 	mesh_thread_pool.wait_until_nothing_in_flight();
 	mesh_thread_pool.wait_until_empty();
+	// fm: Draw-list publication uses FarMesh until its current build finishes.
+	getEnv().getClientMap().update_drawlist_async.wait();
 	farmesh.reset();
 	farmesh_async.wait();
 	mesh_thread_pool.wait_until_empty();
 	merger.reset(); // before m_localdb
     getEnv().getClientMap().update_drawlist_async.wait();
 	mesh_thread_pool.wait_until_empty();
+	// ===
 
 	if (m_mods_loaded)
 		delete m_script;
@@ -786,8 +789,11 @@ void Client::step(float dtime)
 				block->updateMeshRevision(r.mesh->mesh_revision);
 
 				const auto old_mesh = block->getLodMesh(r.mesh->lod_step);
-				if (!old_mesh && !r.mesh->isEmpty())
+				// fm: Empty completions advance coverage; changes between empty
+				// and visible meshes also need a fresh draw list.
+				if (!old_mesh || old_mesh->isEmpty() != r.mesh->isEmpty())
 					++m_new_meshes;
+				// ===
 
 				// Delete the old mesh
 				if (old_mesh)
@@ -803,10 +809,11 @@ void Client::step(float dtime)
 				if (minimap_mapblocks.empty())
 					do_mapper_update = false;
 
-				if (r.mesh->isEmpty())
-					block->clearLodMesh(r.mesh->lod_step);
-				else
-					block->setLodMesh(r.mesh);
+				// fm: Preserve empty results as completed coverage. A null pointer
+				// must mean unfinished, otherwise the handoff waits forever for air
+				// and fully enclosed chunks whose mesh requests already completed.
+				block->setLodMesh(r.mesh);
+				// ===
 
 				if (r.urgent)
 					force_update_shadows = true;

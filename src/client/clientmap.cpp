@@ -4,6 +4,9 @@
 
 #include "fm_far_calc.h"
 #include "fm_farmesh.h"
+// fm: Coverage of sparse near chunks at the far-mesh handoff.
+#include "fm_near_mesh_handoff.h"
+// ===
 
 #include "clientmap.h"
 #include "client.h"
@@ -912,6 +915,10 @@ void ClientMap::touchMapBlocks()
 
 void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 {
+	// fm: Switch the far grid before calculating this frame's near/far ownership.
+	if (m_client->farmesh)
+		m_client->farmesh->commitFarGrid();
+	// ===
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	TimeTaker timer_step("ClientMap::updateDrawList");
 
@@ -995,6 +1002,26 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		}
 	}
 
+	// fm: A loaded member block can need a mesh even when its chunk origin was
+	// omitted by the server. Keep one request source and only draw at the origin.
+	struct NearChunk
+	{
+		MapBlockPtr origin;
+		MapBlockPtr source;
+	};
+	std::unordered_map<v3bpos_t, NearChunk> near_chunks;
+	for (const auto &[bp, block] : vector) {
+		if (!block)
+			continue;
+		const auto pos = mesh_grid.getMeshPos(bp);
+		auto &chunk = near_chunks[pos];
+		if (!chunk.source)
+			chunk.source = block;
+		if (pos == bp)
+			chunk.origin = block;
+	}
+	// ===
+
 	struct NearCandidate
 	{
 		v3bpos_t pos;
@@ -1009,13 +1036,14 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	{
 		farmesh::tree_result_t params;
 		std::vector<NearCandidate> candidates;
-		size_t expected_chunks{};
-		size_t ready_chunks{};
+		// fm: Readiness follows loaded chunks and the far mesh's geometry.
+		farmesh::NearMeshHandoff handoff;
 
-		explicit FarCellCoverage(const farmesh::tree_result_t &params_) :
-				params(params_)
+		FarCellCoverage(const farmesh::tree_result_t &params_, pos_t cell_size) :
+				params(params_), handoff(params_.pos, params_.step, cell_size)
 		{
 		}
+		// ===
 	};
 
 	std::unordered_map<v3bpos_t, FarCellCoverage> transition_cells;
@@ -1026,6 +1054,28 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	const pos_t near_cell_width = mesh_grid.cell_size * MAP_BLOCKSIZE;
 	const bool use_cell_handoff = !m_control.range_all && m_control.farmesh > 0 &&
 			far_iteration_draw != 0;
+
+	// fm: During regional publication, ownership comes from the actual displayed
+	// cells, which can still include coarse fallbacks from a previous origin.
+	std::unordered_map<v3bpos_t, farmesh::tree_result_t> displayed_far_cells;
+	if (use_cell_handoff) {
+		const auto lock = m_far_blocks.lock_shared_rec();
+		for (const auto &[pos, block] : m_far_blocks)
+			if (block && block->getFarMesh(block->far_step))
+				displayed_far_cells.emplace(pos, farmesh::tree_result_t{pos,
+						static_cast<bpos_t>(1 << block->far_step), block->far_step});
+	}
+	const auto draw_far_params = [&](const v3bpos_t &pos)
+			-> std::optional<farmesh::tree_result_t> {
+		const auto it = farmesh::findCoveringCell(displayed_far_cells, pos,
+				[](const auto &cell) { return cell.step; }, m_control.cell_size_pow);
+		if (it != displayed_far_cells.end())
+			return it->second;
+		const auto target = farmesh::getFarParams(m_control, far_camera_block, pos);
+		// Keep requesting the near-only core even before it has far coverage.
+		return target && !target->step ? target : std::nullopt;
+	};
+	// ===
 
 	uint64_t near_handoff_range = std::max(0, wanted_range);
 	if (use_cell_handoff) {
@@ -1046,21 +1096,24 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	// cell is handed over as a unit so a single near chunk can never remove only
 	// part of a coarser far cell.
 	if (use_cell_handoff) {
-		for (const auto &[bp, block] : vector) {
-			if (!block || mesh_grid.getMeshPos(bp) != bp)
-				continue;
+		// fm: Include chunks whose origin is missing but other blocks are loaded.
+		for (const auto &[bp, chunk] : near_chunks) {
+			// ===
 			const auto near_cell_min = bp * MAP_BLOCKSIZE;
 			if (!farmesh::cellIntersectsRange(near_cell_min, near_cell_width,
 						m_camera_position_node, wanted_range))
 				continue;
 
-			const auto far_params = farmesh::getFarParams(
-					m_control, far_camera_block, bp);
+			// fm: Use the currently displayed cell during a moving-grid handoff.
+			const auto far_params = draw_far_params(bp);
+			// ===
 			if (!far_params || !far_params->step)
 				continue;
 
-			auto [it, inserted] =
-					transition_cells.try_emplace(far_params->pos, *far_params);
+			// fm: Keep geometric coverage in near-chunk units.
+			auto [it, inserted] = transition_cells.try_emplace(
+					far_params->pos, *far_params, mesh_grid.cell_size);
+			// ===
 			if (!inserted && it->second.params.step != far_params->step)
 				continue;
 
@@ -1076,24 +1129,16 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			near_handoff_range, std::numeric_limits<int32_t>::max()));
 	m_near_farmesh_range.store(requested_range, std::memory_order_relaxed);
 
-	for (auto &entry : transition_cells) {
-		auto &coverage = entry.second;
-		const size_t side = static_cast<size_t>(coverage.params.size);
-		if (side && side <= std::numeric_limits<size_t>::max() / side &&
-				side * side <= std::numeric_limits<size_t>::max() / side)
-			coverage.expected_chunks = side * side * side;
-		else
-			coverage.expected_chunks = std::numeric_limits<size_t>::max();
-	}
-
 	const auto request_mesh = [&](const v3bpos_t &bp, const MapBlockPtr &block,
 			const block_step_t mesh_step, const MapBlock::mesh_type &mesh,
 			const int range_blocks) {
 		const auto mesh_revision = block->getMeshRevision();
 		const bool missing_or_wrong = !mesh || mesh->lod_step != mesh_step;
 
+		// fm: Deduplicate actual work, not a revision marker that can outlive
+		// rejected results or an unloaded chunk origin.
 		if (missing_or_wrong && (m_mesh_queued < maxq || range_blocks <= 2) &&
-				block->tryMarkMeshRequested(mesh_step, mesh_revision)) {
+				!m_client->isMeshUpdatePending(bp)) {
 			m_client->addUpdateMeshTask(bp, false, false, mesh_step);
 			++m_mesh_queued;
 		}
@@ -1101,7 +1146,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		if (mesh && mesh->lod_step == mesh_step &&
 				mesh_revision > mesh->mesh_revision &&
 				(m_mesh_queued < maxq * 1.5 || range_blocks <= 2) &&
-				block->tryMarkMeshRequested(mesh_step, mesh_revision)) {
+				!m_client->isMeshUpdatePending(bp)) {
 			if (mesh_step > 1)
 				m_client->addUpdateMeshTask(bp, false, false, mesh_step);
 			else
@@ -1109,11 +1154,12 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 						bp, false, false, mesh_step);
 			++m_mesh_queued;
 		}
+		// ===
 	};
 
-	// Collect loaded near chunks out to the complete handoff-cell boundary.
-	// Missing chunks do not suppress farmesh; they are requested and the far
-	// cell remains the owner until every corresponding near mesh is ready.
+	// fm: Keep loaded data alive throughout each touched handoff cell.
+	// Completely absent chunks are checked against far geometry below.
+	// ===
 	for (const auto &[bp, block] : vector) {
 		if (!block)
 			continue;
@@ -1133,11 +1179,17 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 
 		block->resetUsageTimer();
 		++blocks_in_range;
+	}
 
-		// A client mesh is stored only at the origin of its MeshGrid cell.
-		// Non-origin blocks must never be treated as drawable coverage.
-		if (mesh_grid.getMeshPos(bp) != bp)
+	// fm: Queue each populated chunk once, including an absent origin. Meshing
+	// from a loaded member creates the origin block when the result is installed.
+	for (const auto &[bp, chunk] : near_chunks) {
+		const auto &block = chunk.origin;
+		if (!m_control.range_all && !farmesh::cellIntersectsRange(
+					bp * MAP_BLOCKSIZE, near_cell_width, m_camera_position_node,
+					requested_range))
 			continue;
+		// ===
 
 		const auto near_cell_min = bp * MAP_BLOCKSIZE;
 		const bool in_wanted_range = m_control.range_all ||
@@ -1148,8 +1200,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		if (use_cell_handoff &&
 				(in_wanted_range || farmesh::cellIntersectsRange(near_cell_min,
 						near_cell_width, m_camera_position_node, requested_range))) {
-			far_params = farmesh::getFarParams(
-					m_control, far_camera_block, bp);
+			// fm: Match collection to the same displayed cell as the first pass.
+			far_params = draw_far_params(bp);
+			// ===
 		}
 
 		FarCellCoverage *coverage = nullptr;
@@ -1168,21 +1221,29 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		const int range_blocks = distance / MAP_BLOCKSIZE;
 		const auto mesh_step = farmesh::getLodStep(
 				m_control, camera_block, bp, speedf);
-		const auto mesh = block->getLodMesh(mesh_step, true);
+		// fm: A non-origin member is only a request source, never a mesh owner.
+		const auto mesh =
+				block ? block->getLodMesh(mesh_step, true) : MapBlock::mesh_type{};
+		// ===
 		const bool covers_cell = mesh && mesh->lod_step == mesh_step;
 		const int mesh_buffer_count =
 				mesh ? mesh->getMesh()->getMeshBufferCount() : -1;
 
-		if (!covers_cell || mesh_buffer_count == 0)
+		// fm: Empty completed chunks are ready. Missing origins need a request
+		// through a member that exists in the map, as addUpdateMeshTask requires.
+		if (!covers_cell)
 			++blocks_in_range_without_mesh;
-		request_mesh(bp, block, mesh_step, mesh, range_blocks);
+		const auto &source = block ? block : chunk.source;
+		request_mesh(source->getPos(), source, mesh_step, mesh, range_blocks);
+		// ===
 
 		NearCandidate candidate{bp, block, mesh, mesh_buffer_count,
 				range_blocks, covers_cell};
 		if (coverage) {
 			coverage->candidates.emplace_back(std::move(candidate));
-			if (covers_cell)
-				++coverage->ready_chunks;
+			// fm: Count every populated near chunk, including empty mesh results.
+			coverage->handoff.addChunk(bp, covers_cell);
+			// ===
 		} else if (mesh) {
 			direct_near.emplace_back(std::move(candidate));
 		}
@@ -1213,20 +1274,51 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	size_t near_owned_cells = 0;
 	size_t far_fallback_cells = 0;
 	for (auto &[pos, coverage] : transition_cells) {
-		const bool near_complete = coverage.expected_chunks != 0 &&
-				coverage.ready_chunks == coverage.expected_chunks;
+		// fm: Keep far geometry wherever a missing near chunk may be visible.
+		// Omitted air or enclosed space must not prevent populated surface chunks
+		// from taking ownership of this cell.
+		MapBlock::mesh_type far_mesh;
+		{
+			const auto lock = m_far_blocks.lock_shared_rec();
+			const auto it = m_far_blocks.find(pos);
+			if (it != m_far_blocks.end() && it->second &&
+					it->second->far_step == coverage.params.step)
+				far_mesh = it->second->getFarMesh(coverage.params.step);
+		}
+		bool near_complete = coverage.handoff.hasReadyChunk();
+		const auto omitted_is_occluded = [&](const v3bpos_t &chunk_pos) {
+			if (!occlusion_culling_enabled || !m_enable_raytraced_culling)
+				return false;
+			for (pos_t z = 0; z < mesh_grid.cell_size; ++z)
+				for (pos_t y = 0; y < mesh_grid.cell_size; ++y)
+					for (pos_t x = 0; x < mesh_grid.cell_size; ++x)
+						if (!isBlockOccluded(
+									(chunk_pos + v3bpos_t(x, y, z)) * MAP_BLOCKSIZE,
+									m_camera_position_node))
+							return false;
+			return true;
+		};
+		if (near_complete && far_mesh)
+			for (u8 layer = 0; layer < MAX_TILE_LAYERS; ++layer)
+				if (!coverage.handoff.covers(
+							*far_mesh->getMesh(layer), omitted_is_occluded)) {
+					near_complete = false;
+					break;
+				}
+		// ===
 		if (near_complete) {
 			blocks_skip_farmesh.emplace(pos);
 			++near_owned_cells;
 			for (const auto &candidate : coverage.candidates)
 				draw_near(candidate);
 		} else {
-			// Keep farmesh as an underlay until every near chunk is ready.
-			// The loaded near chunks still extend detail across the transition;
-			// the far insertion below wins if both use the same map position.
+			// fm: Keep the whole far cell until the sparse near coverage is ready.
+			// Drawing a subset of near chunks over it causes intersecting layers.
 			++far_fallback_cells;
-			for (const auto &candidate : coverage.candidates)
-				draw_near(candidate);
+			if (!far_mesh)
+				for (const auto &candidate : coverage.candidates)
+					draw_near(candidate);
+			// ===
 		}
 	}
 

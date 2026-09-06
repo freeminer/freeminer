@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "constants.h"
 #include "database/database.h"
 #include "irr_v3d.h"
@@ -118,6 +119,91 @@ static bool within_lazy_window(uint64_t source_time, uint64_t target_time, uint3
 	if (source_time < target_time)
 		return true;
 	return source_time - target_time < lazy;
+}
+
+MapBlock::light_points_t world_merge::reduceFarLightPoints(
+		const MapBlock::light_points_t &lights, block_step_t far_step)
+{
+	// Four regions along each axis of the destination block. The fixed local
+	// allowance preserves isolated lamps and roads instead of making them pay
+	// for dense city lights elsewhere in the block. Larger LODs use larger
+	// regions, without repeatedly thinning regions already below the allowance.
+	constexpr size_t lights_per_region = 8;
+	const auto region_shift = std::min<unsigned>(
+			MAP_BLOCKP - 2 + far_step, std::numeric_limits<pos_t>::digits - 1);
+	const int64_t region_width = int64_t{1} << region_shift;
+	const auto region_axis = [region_width](pos_t coordinate) -> pos_t {
+		const int64_t value = coordinate;
+		// Floor division keeps negative positions in the correct world cell.
+		return static_cast<pos_t>(value / region_width - (value % region_width < 0));
+	};
+	const auto position_hash = [](const v3pos_t &pos) {
+		uint64_t hash = 0xcbf29ce484222325ULL;
+		for (const auto coordinate : {pos.X, pos.Y, pos.Z}) {
+			hash ^= static_cast<uint64_t>(static_cast<int64_t>(coordinate));
+			hash *= 0x100000001b3ULL;
+		}
+		// Fixed mixing and a coordinate tie-break avoid container-order and
+		// platform-dependent std::hash choices between equally bright lights.
+		hash ^= hash >> 30;
+		hash *= 0xbf58476d1ce4e5b9ULL;
+		hash ^= hash >> 27;
+		hash *= 0x94d049bb133111ebULL;
+		return hash ^ (hash >> 31);
+	};
+	struct Candidate
+	{
+		v3pos_t pos;
+		v3pos_t region;
+		MapBlock::light_t light;
+		u8 level;
+		uint64_t rank;
+	};
+	std::vector<Candidate> candidates;
+	candidates.reserve(lights.size());
+	for (const auto &[pos, light] : lights) {
+		const auto level = MapBlock::getLightPointLevel(light);
+		if (!level)
+			continue;
+		candidates.push_back(
+				{pos, {region_axis(pos.X), region_axis(pos.Y), region_axis(pos.Z)}, light,
+						level, position_hash(pos)});
+	}
+	const auto position_less = [](const v3pos_t &a, const v3pos_t &b) {
+		if (a.X != b.X)
+			return a.X < b.X;
+		if (a.Y != b.Y)
+			return a.Y < b.Y;
+		return a.Z < b.Z;
+	};
+	std::sort(candidates.begin(), candidates.end(), [&](const auto &a, const auto &b) {
+		if (a.region != b.region)
+			return position_less(a.region, b.region);
+		if (a.level != b.level)
+			return a.level > b.level;
+		if (a.rank != b.rank)
+			return a.rank < b.rank;
+		return position_less(a.pos, b.pos);
+	});
+
+	MapBlock::light_points_t reduced;
+	// A parent normally contains 4^3 regions, with at most eight lights each.
+	reduced.reserve(std::min<size_t>(candidates.size(), 4 * 4 * 4 * lights_per_region));
+	v3pos_t region;
+	size_t retained = 0;
+	for (const auto &candidate : candidates) {
+		if (!retained || region != candidate.region) {
+			region = candidate.region;
+			retained = 0;
+		}
+		if (retained == lights_per_region)
+			continue;
+		// Retain an actual source's position, color and intensity. Summing the
+		// discarded lights into it would over-brighten dense areas again.
+		reduced.emplace(candidate.pos, candidate.light);
+		++retained;
+	}
+	return reduced;
 }
 
 std::optional<size_t> world_merge::selectFarNodeIndex(
@@ -530,9 +616,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	// This block is not published yet; build its new light-point snapshot in place.
 	block_up->m_light_points = std::make_shared<MapBlock::light_points_t>();
 	if (farlights) {
-		constexpr auto some_magick_thinner_const = 2; // more -> less far ligts
-		constexpr auto min_no_skip_lights =
-				2; // do not skip this amount lights on block << farstep
+		MapBlock::light_points_t candidates;
 		for (const auto &[bpos, block] : blocks) {
 			if (!block) {
 				continue;
@@ -554,35 +638,27 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 			if (!light_points || light_points->empty())
 				continue;
 
-			size_t lights_in_block = 0;
-			//size_t lights_in_block_skipped = 0;
-			// TODO: apply some smart? filtering here
-			// block_up->m_light_points.insert(block->m_light_points.begin(), block->m_light_points.end());
-			const auto size = light_points->size();
-			if (!size)
-				continue;
-			block_up->m_light_points->reserve(
-					block_up->m_light_points->size() + size / 2);
-			const auto coef = std::log2(size);
-			const auto keep_first =
-					min_no_skip_lights * (static_cast<size_t>(step) + 1) * 3;
-			for (const auto &lp : *light_points) {
-				++one_step_stat.lights_count;
-				++lights_in_block;
-				const auto level = MapBlock::getLightPointLevel(lp.second);
-				const auto mod = int(coef * some_magick_thinner_const * (16 - level));
-				if (mod > 1 && lights_in_block > keep_first &&
-						(one_step_stat.lights_count % mod)) {
-					//++lights_in_block_skipped;
-					continue;
+			one_step_stat.lights_count += light_points->size();
+			for (const auto &[pos, light] : *light_points) {
+				auto [it, inserted] = candidates.try_emplace(pos, light);
+				// Positions normally belong to one child. Resolve duplicate input
+				// deterministically as well, retaining the brighter original source.
+				if (!inserted) {
+					const auto level = MapBlock::getLightPointLevel(light);
+					const auto old_level = MapBlock::getLightPointLevel(it->second);
+					if (level > old_level || (level == old_level && light > it->second))
+						it->second = light;
 				}
-				++one_step_stat.lights_used;
-				block_up->m_light_points->emplace(lp);
 			}
 		}
+		*block_up->m_light_points =
+				world_merge::reduceFarLightPoints(candidates, step + 1);
+		one_step_stat.lights_used = block_up->m_light_points->size();
 	}
 
-	if (not_empty_nodes) {
+	// Sparse lamps may lose the terrain occupancy vote to air. Their retained
+	// light points still need a saved/generated block for subsequent LODs.
+	if (not_empty_nodes || !block_up->m_light_points->empty()) {
 		block_up->setGenerated(true);
 		if (ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level) &&
 				far_block_ready_func) {
