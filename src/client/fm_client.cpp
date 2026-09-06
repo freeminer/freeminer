@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/fm_farmesh.h"
 #include "client/localplayer.h"
 #include "client/mapblock_mesh.h"
+#include "client/mesh_generator_thread.h"
 #include "clientmap.h"
 #include "emerge.h"
 #include "filesys.h"
@@ -227,9 +228,10 @@ void Client::createFarMesh(MapBlockPtr &block)
 		const auto &blockpos = block->getPos();
 		//const auto &m_camera_offset = m_camera->getOffset();
 		const auto &step = block->far_step;
+		FarContainer sampler(m_client->far_container, blockpos * MAP_BLOCKSIZE,
+				MAP_BLOCKSIZE * m_mesh_grid.cell_size, step);
 		MeshMakeData mesh_make_data(m_client->getNodeDefManager(),
-				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0, step,
-				&m_client->far_container);
+				MAP_BLOCKSIZE * m_mesh_grid.cell_size, m_mesh_grid, 0, step, &sampler);
 		mesh_make_data.m_blockpos = blockpos;
 		static const auto enable_waving_water =
 				g_settings->getBool("enable_waving_water");
@@ -604,4 +606,9 @@ void Client::onSettingChanged(const std::string &name)
 		control.cell_size = m_mesh_grid.cell_size;
 		control.cell_size_pow = farmesh::rangeToStep(control.cell_size);
 	}
+}
+
+bool Client::isMeshUpdatePending(const v3bpos_t &blockpos)
+{
+	return m_mesh_update_manager->hasPending(m_mesh_grid.getMeshPos(blockpos));
 }

@@ -127,6 +127,7 @@ private:
 	uint32_t far_iteration_pos{};
 	double m_next_refresh{};
 	bool m_grid_started{};
+	bool m_grid_scanned{};
 	bool m_grid_ready{};
 	bool m_grid_committed{};
 	std::mutex m_grid_mutex;

@@ -90,6 +90,9 @@ public:
 
 	// Marks a position as finished, unblocking the next update
 	void done(v3s16 pos);
+	// fm: Check both waiting and running jobs under the queue lock.
+	bool hasPending(const v3bpos_t &pos);
+	// ===
 
 	size_t size()
 	{
@@ -160,6 +163,9 @@ public:
 
 	/// @note caller needs to refDrop() the affected map_blocks
 	bool getNextResult(MeshUpdateResult &r);
+	// fm: Readiness requests must also wait for completed results to be consumed.
+	bool hasPending(const v3bpos_t &pos);
+	// ===
 
 	/// @param finish if true, also clears updates that need to be acked to the server
 	void clearAllQueues(bool finish = false);
@@ -171,7 +177,12 @@ public:
 	bool isRunning();
 
 private:
-	typedef MutexedQueue<MeshUpdateResult> ResultQueue;
+	// fm: Read-only result lookup without changing the queue's semaphore.
+	struct ResultQueue : MutexedQueue<MeshUpdateResult>
+	{
+		bool hasPending(const v3bpos_t &pos);
+	};
+	// ===
 
 	void deferUpdate();
 

@@ -75,9 +75,6 @@ bool FarMesh::makeFarBlock(
 			entry.block = client_map.createBlankBlockNoInsert(blockpos);
 			entry.block->far_step = step;
 			entry.block->far_status = MapBlock::far_status_e::s1_created;
-			// Waiting longer for larger cells delays the entire visible horizon.
-			entry.block->far_make_mesh_timestamp =
-					m_client->m_uptime + (m_fast_move ? 0 : farmesh_wait_server);
 		}
 		block = entry.block;
 	}
@@ -85,6 +82,10 @@ bool FarMesh::makeFarBlock(
 	m_pending_far_blocks.insert_or_assign(blockpos, block);
 
 	if (block->far_status < MapBlock::far_status_e::s2_requested) {
+		// A received block can enter storage before its asynchronous invalidation
+		// runs. Initialize its deadline too, instead of leaving UINT32_MAX here.
+		block->far_make_mesh_timestamp =
+				m_client->m_uptime + (m_fast_move ? 0 : farmesh_wait_server);
 		for (pos_t x = 0; x < 1 << m_control->cell_size_pow; ++x)
 			for (pos_t y = 0; y < 1 << m_control->cell_size_pow; ++y)
 				for (pos_t z = 0; z < 1 << m_control->cell_size_pow; ++z)
@@ -636,12 +637,13 @@ void FarMesh::processFarmeshQueue()
 				break;
 
 			if (!farmesh_thread_stop && !m_queue_paused) {
-				// High priority surface cells precede surrounding cells. Large cells
-				// cover the horizon cheaply while the detailed cells are being built.
-				for (size_t priority = 0; priority < 2 && !m_mesh_jobs.full();
-						++priority) {
-					for (size_t step = FARMESH_STEP_MAX;
-							step-- > 1 && !m_mesh_jobs.full();) {
+				// Smaller steps cover terrain nearer the player. Submit each step's
+				// surface and surrounding cells before submitting more distant steps,
+				// so nearby replacement groups can become drawable sooner.
+				for (size_t step = 1; step < FARMESH_STEP_MAX && !m_mesh_jobs.full();
+						++step) {
+					for (size_t priority = 0; priority < 2 && !m_mesh_jobs.full();
+							++priority) {
 						auto &queue =
 								farmesh_make_queue[step + priority * FARMESH_STEP_MAX];
 						for (auto it = queue.begin();
@@ -713,20 +715,29 @@ bool FarMesh::enqueueFarMeshForBlock(const v3bpos_t &blockpos, const block_step_
 void FarMesh::commitFarGrid()
 {
 	const std::lock_guard grid_lock(m_grid_mutex);
-	if (!m_grid_ready || m_grid_committed)
+	if (!m_grid_scanned || m_grid_committed)
 		return;
 	auto &client_map = m_client->getEnv().getClientMap();
 	const auto lock = client_map.m_far_blocks.lock_unique_rec();
-	if (!farmesh::publishReadyGrid(
-				m_pending_far_blocks, client_map.m_far_blocks, [](const auto &block) {
-					return block && block->getFarMesh(block->far_step);
-				}))
-		return;
+	farmesh::publishReadyGrid(
+			m_pending_far_blocks, client_map.m_far_blocks,
+			[](const auto &block) { return block && block->getFarMesh(block->far_step); },
+			[](const auto &block) { return block->far_step; }, m_control->cell_size_pow,
+			[&](const auto &entry) {
+				// Keep old terrain in the new near-only core. The draw-list handoff
+				// hides it once all corresponding near chunks are available.
+				const auto target = farmesh::getFarParams(*m_control,
+						getNodeBlockPos(client_map.far_cam_pos_mesh), entry.first);
+				return target && !target->step;
+			});
+	// Retained owners remain drawable and must not be evicted as stale data.
+	for (const auto &[pos, block] : client_map.m_far_blocks)
+		block->far_iteration = client_map.far_iteration_mesh;
 
 	client_map.far_cam_pos_draw = client_map.far_cam_pos_mesh;
 	client_map.far_iteration_draw = client_map.far_iteration_mesh;
 	client_map.far_iteration_clean = client_map.far_iteration_mesh;
-	m_grid_committed = true;
+	m_grid_committed = m_grid_ready;
 }
 
 uint8_t FarMesh::update(
@@ -768,13 +779,14 @@ uint8_t FarMesh::update(
 		plane_processed.fill({});
 		direction_caches.fill({});
 		m_grid_started = true;
+		m_grid_scanned = false;
 		m_grid_ready = m_grid_committed = false;
 		m_next_refresh = m_client->m_uptime + 1;
 	}
 	if (m_grid_committed)
 		return true;
 	if (m_grid_ready)
-		return false; // The next draw-list build commits the whole grid.
+		return false; // The next draw-list build publishes the remaining groups.
 
 	bool grid_finished = true;
 	const bool flat = farmesh_flat && mg->surface_2d();
@@ -804,6 +816,7 @@ uint8_t FarMesh::update(
 	}
 	if (!grid_finished)
 		return false;
+	m_grid_scanned = true;
 
 	bool meshes_ready = true;
 	for (const auto &[pos, block] : m_pending_far_blocks) {
@@ -812,7 +825,10 @@ uint8_t FarMesh::update(
 		if (!block->getFarMesh(block->far_step))
 			meshes_ready = false;
 	}
-	m_grid_ready = meshes_ready && farmesh_make_queue_complete;
+	// Refresh jobs may keep arriving for cells that already have usable meshes.
+	// They must not prevent this grid from appearing. Changing the mesh origin
+	// still waits for our queue and in-flight jobs at the start of update().
+	m_grid_ready = meshes_ready;
 
 #if FARMESH_CLEAN
 	const auto now = m_client->m_uptime.load();
@@ -866,6 +882,6 @@ void FarMesh::restart()
 		const std::lock_guard lock(m_queue_mutex);
 		m_queue_paused = false;
 	}
-	m_grid_ready = false;
+	m_grid_scanned = m_grid_ready = false;
 	want_reset = true;
 }

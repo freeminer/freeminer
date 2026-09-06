@@ -454,3 +454,7 @@ bool MeshUpdateManager::isRunning()
 			return true;
 	return false;
 }
+
+// fm: Near mesh requests follow the lifetime of actual queue work.
+#include "fm_mesh_update_pending.inc.cpp"
+// ===

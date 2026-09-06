@@ -29,7 +29,8 @@ static bool isFmFarEmpty(content_t content)
 		   content == CONTENT_UNKNOWN;
 }
 
-static bool canMergeFmFarFaces(const FmFarFace &first, const FmFarFace &second)
+static bool canMergeFmFarFaces(
+		const FmFarFace &first, const FmFarFace &second, bool along_u)
 {
 	if (!first.visible || !second.visible || first.tile.rotation != TileRotation::None ||
 			second.tile.rotation != first.tile.rotation ||
@@ -39,10 +40,21 @@ static bool canMergeFmFarFaces(const FmFarFace &first, const FmFarFace &second)
 					std::begin(second.lights)))
 		return false;
 
+	// Equal corner arrays alone can contain a repeated gradient. Removing the
+	// internal vertices would stretch it across the merged face. Only extend
+	// along an axis on which the light is constant; a perpendicular gradient
+	// remains representable by the rectangle's four corners.
+	if (along_u ? (first.lights[0] != first.lights[1] ||
+						  first.lights[2] != first.lights[3])
+				: (first.lights[0] != first.lights[3] ||
+						  first.lights[1] != first.lights[2]))
+		return false;
+
 	for (int layer = 0; layer < MAX_TILE_LAYERS; ++layer) {
 		const auto &a = first.tile.layers[layer];
 		const auto &b = second.tile.layers[layer];
-		if (a != b || a.texture_layer_idx != b.texture_layer_idx || a.scale != b.scale ||
+		if (a != b || a.material_type != b.material_type ||
+				a.texture_layer_idx != b.texture_layer_idx || a.scale != b.scale ||
 				a.isTransparent() ||
 				!(a.material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL) ||
 				!(a.material_flags & MATERIAL_FLAG_TILEABLE_VERTICAL))
@@ -99,8 +111,6 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 {
 	float x0 = 0.0f;
 	float y0 = 0.0f;
-	float w = 1.0f;
-	float h = 1.0f;
 	v3pos_t vertex_dirs[4];
 	getFmNodeVertexDirs(dir, vertex_dirs);
 	u16 lights[4] = {input_lights[0], input_lights[1], input_lights[2], input_lights[3]};
@@ -139,17 +149,19 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 		break;
 	}
 
-	float texture_scale = 1.0f;
-	if (logical_scale.X < 0.999f || logical_scale.X > 1.001f)
-		texture_scale = logical_scale.X;
-	else if (logical_scale.Y < 0.999f || logical_scale.Y > 1.001f)
-		texture_scale = logical_scale.Y;
-	else if (logical_scale.Z < 0.999f || logical_scale.Z > 1.001f)
-		texture_scale = logical_scale.Z;
-	texture_scale *= texture_step;
-
-	const v2f32 texture_coords[4] = {{x0 + w * texture_scale, y0 + h}, {x0, y0 + h},
-			{x0, y0}, {x0 + w * texture_scale, y0}};
+	// Preserve the existing per-cell UV density in both directions, including
+	// rotated single faces. A rectangle must repeat V for each added row too.
+	const auto u_dir = vertex_dirs[0] - vertex_dirs[1];
+	const auto v_dir = vertex_dirs[0] - vertex_dirs[3];
+	const float w = (std::abs(u_dir.X) * scale.X + std::abs(u_dir.Y) * scale.Y +
+							std::abs(u_dir.Z) * scale.Z) *
+					0.5f;
+	const float h =
+			(std::abs(v_dir.X) * logical_scale.X + std::abs(v_dir.Y) * logical_scale.Y +
+					std::abs(v_dir.Z) * logical_scale.Z) *
+			0.5f;
+	const v2f32 texture_coords[4] = {
+			{x0 + w, y0 + h}, {x0, y0 + h}, {x0, y0}, {x0 + w, y0}};
 	const v3opos_t normal = v3opos_t::from(dir);
 	FastFace face;
 	face.tile = tile;
@@ -319,8 +331,18 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 	// Far samples represent a cell ending at the sampled Y level. Keep the
 	// original downward Y anchoring; expanding upward exposes underground
 	// samples (notably ores) above the surrounding stone surface.
-	aabb3f box(v3opos_t(-HBS, 1.5f * BS - scaled, -HBS),
-			v3opos_t(scaled - HBS, 1.5f * BS, scaled - HBS));
+	//	 aabb3f box(v3opos_t(-HBS, 1.5f * BS - scaled, -HBS), v3opos_t(scaled - HBS, 1.5f * BS, scaled - HBS));
+
+	auto box = aabb3f(v3f(-0.5 * BS), v3f(0.5 * BS));
+	if (data->fscale > 1) {
+		// TODO: maybe possibe make simpler?/
+		box.MinEdge += v3f(HBS, 0, HBS);
+		box.MinEdge *= v3f(data->fscale, data->fscale, data->fscale);
+		box.MinEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+		box.MaxEdge += v3f(HBS, 0, HBS);
+		box.MaxEdge *= v3f(data->fscale, data->fscale, data->fscale);
+		box.MaxEdge += v3f(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
+	}
 
 	box.MinEdge += cur_node.origin;
 	box.MaxEdge += cur_node.origin;
@@ -431,19 +453,15 @@ bool MapblockMeshGenerator::generateFm()
 
 bool MapblockMeshGenerator::generateFmFarFastFaces()
 {
-	std::vector<s16> coords;
+	std::vector<pos_t> coords;
 	const auto lod_stride = 1 << data->lod_step;
 	const auto far_stride = 1 << data->far_step;
-	for (s16 regular = 0, far_v = 0; regular < data->side_length_data;
+	for (pos_t regular = 0, far_v = 0; regular < data->side_length_data;
 			regular += lod_stride, far_v += far_stride)
 		coords.push_back(far_v);
 
 	static const v3pos_t face_dirs[6] = {
 			{0, 1, 0}, {0, -1, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 0, 1}, {0, 0, -1}};
-	// Match the historical fast-face row directions: horizontal rows for
-	// top/bottom and Z faces, depth rows for X faces.
-	static const int merge_axes[6] = {0, 0, 2, 2, 0, 0};
-
 	const auto set_axis = [](auto &pos, int axis, const auto &value) {
 		if (axis == 0)
 			pos.X = value;
@@ -487,29 +505,21 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		}
 		return result;
 	};
-	const auto append_run = [&](const FmFarFace &face, const auto &dir, int merge_axis,
-									size_t count) {
-		v3opos_t scale(data->fscale);
-		if (merge_axis == 0)
-			scale.X *= count;
-		else if (merge_axis == 1)
-			scale.Y *= count;
-		else
-			scale.Z *= count;
-
+	const auto append_rectangle = [&](const FmFarFace &face, const v3pos_t &dir,
+										  int u_axis, int v_axis, size_t width,
+										  size_t height) {
 		const float fscale = data->fscale;
-		v3opos_t center = v3opos_t::from(face.pos) + v3opos_t((fscale - 1.0f) * 0.5f,
-															 1.5f - fscale * 0.5f,
-															 (fscale - 1.0f) * 0.5f);
-		v3opos_t row_dir;
-		if (merge_axis == 0)
-			row_dir.X = 1.0f;
-		else if (merge_axis == 1)
-			row_dir.Y = 1.0f;
-		else
-			row_dir.Z = 1.0f;
-		center += row_dir * (fscale * (count - 1) * 0.5f);
+		v3opos_t scale(fscale);
+		set_axis(scale, u_axis, fscale * width);
+		set_axis(scale, v_axis, fscale * height);
 
+		// Grow from the first cell's minimum corner, preserving the downward
+		// Y anchoring used by individual far cells.
+		const v3opos_t first_center =
+				v3opos_t::from(face.pos) + v3opos_t((fscale - 1.0f) * 0.5f,
+												   1.5f - fscale * 0.5f,
+												   (fscale - 1.0f) * 0.5f);
+		const auto center = first_center + (scale - v3opos_t(fscale)) * 0.5f;
 		const auto fast_face =
 				makeFastFace(face.tile, face.lights, v3opos_t::from(face.pos) / fscale,
 						center, dir, scale, data->fscale, face.emissive_light);
@@ -517,40 +527,54 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 				fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6);
 	};
 
+	// Keep only one plane of face data. Sample each face once, then greedily
+	// extend a row along U and matching rows along V without crossing gaps.
+	const size_t side = coords.size();
+	std::vector<FmFarFace> plane(side * side);
 	for (int face = 0; face < 6; ++face) {
-		const int merge_axis = merge_axes[face];
-		const int fixed_axis_0 = merge_axis == 0 ? 1 : 0;
-		const int fixed_axis_1 = merge_axis == 2 ? 1 : 2;
-		for (const auto fixed_0 : coords)
-			for (const auto fixed_1 : coords) {
-				FmFarFace run;
-				size_t run_length = 0;
-				for (const auto &merged : coords) {
+		const auto &dir = face_dirs[face];
+		const int normal_axis = dir.X ? 0 : dir.Y ? 1 : 2;
+		const int u_axis = dir.X ? 2 : 0;
+		const int v_axis = dir.Y ? 2 : 1;
+		for (const auto slice : coords) {
+			for (size_t v = 0; v < side; ++v)
+				for (size_t u = 0; u < side; ++u) {
 					v3pos_t pos;
-					set_axis(pos, merge_axis, merged);
-					set_axis(pos, fixed_axis_0, fixed_0);
-					set_axis(pos, fixed_axis_1, fixed_1);
-					auto next = get_face(pos, face);
-					auto expected_pos = run.pos;
-					set_axis(expected_pos, merge_axis,
-							merge_axis == 0	  ? run.pos.X + run_length * data->fscale
-							: merge_axis == 1 ? run.pos.Y + run_length * data->fscale
-											  : run.pos.Z + run_length * data->fscale);
-					if (run_length && (next.pos != expected_pos ||
-											  !canMergeFmFarFaces(run, next))) {
-						append_run(run, face_dirs[face], merge_axis, run_length);
-						run_length = 0;
-					}
-					if (!run_length && next.visible) {
-						run = std::move(next);
-						run_length = 1;
-					} else if (run_length) {
-						++run_length;
-					}
+					set_axis(pos, normal_axis, slice);
+					set_axis(pos, u_axis, coords[u]);
+					set_axis(pos, v_axis, coords[v]);
+					plane[v * side + u] = get_face(pos, face);
 				}
-				if (run_length)
-					append_run(run, face_dirs[face], merge_axis, run_length);
-			}
+			for (size_t v = 0; v < side; ++v)
+				for (size_t u = 0; u < side; ++u) {
+					auto &first = plane[v * side + u];
+					if (!first.visible)
+						continue;
+					size_t width = 1;
+					while (u + width < side &&
+							canMergeFmFarFaces(first, plane[v * side + u + width], true))
+						++width;
+					size_t height = 1;
+					while (v + height < side) {
+						bool row_matches = true;
+						for (size_t x = 0; x < width; ++x) {
+							if (!canMergeFmFarFaces(first,
+										plane[(v + height) * side + u + x], false)) {
+								row_matches = false;
+								break;
+							}
+						}
+						if (!row_matches)
+							break;
+						++height;
+					}
+					append_rectangle(first, dir, u_axis, v_axis, width, height);
+					for (size_t y = 0; y < height; ++y)
+						for (size_t x = 0; x < width; ++x)
+							plane[(v + y) * side + u + x].visible = false;
+					u += width - 1;
+				}
+		}
 	}
 	return true;
 }

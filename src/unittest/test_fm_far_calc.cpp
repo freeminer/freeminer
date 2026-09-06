@@ -10,6 +10,7 @@
 
 // fm: Dependencies for the far-mesh update regression tests.
 #include "client/fm_far_mesh_update.h"
+#include "client/fm_far_sample_cache.h"
 #include "threading/ThreadPool.h"
 #include "threading/async.h"
 // ===
@@ -703,7 +704,7 @@ void TestFmFarCalc::testRunFarAllStops()
 	}
 }
 
-// fm: Regression tests for scheduling and atomic moving-grid publication.
+// fm: Regression tests for scheduling, sampling and regional grid publication.
 namespace
 {
 class TestFmFarMeshUpdate : public TestBase
@@ -716,7 +717,12 @@ public:
 		TEST(testRunningJobsPreventCompletion);
 		TEST(testFailedJobsAreReaped);
 		TEST(testAsyncScanCompletion);
+		TEST(testInitialGridProgress);
 		TEST(testMovingGridHandoff);
+		TEST(testIndependentRefinement);
+		TEST(testCoarseningWaits);
+		TEST(testSampleReuse);
+		TEST(testSampleLifetimeAndHalo);
 		TEST(testEmptyMeshAndEmptyGrid);
 	}
 
@@ -775,6 +781,29 @@ public:
 	};
 	using Grid = std::unordered_map<v3bpos_t, Mesh>;
 	static bool ready(const Mesh &mesh) { return mesh.ready; }
+	static block_step_t step(const Mesh &mesh) { return mesh.step; }
+
+	void testInitialGridProgress()
+	{
+		Grid visible;
+		Grid pending{{v3bpos_t(0, 0, 0), Mesh{2, true}},
+				{v3bpos_t(4, 0, 0), Mesh{2, false}}, {v3bpos_t(8, 0, 0), Mesh{3, false}}};
+		// Previously one waiting cell kept every completed mesh invisible at
+		// startup. A single canonical grid can safely appear cell by cell.
+		UASSERT(!farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERTEQ(size_t, visible.size(), 1);
+		UASSERT(visible.contains(v3bpos_t(0, 0, 0)));
+		pending.at(v3bpos_t(4, 0, 0)).ready = true;
+		UASSERT(!farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERTEQ(size_t, visible.size(), 2);
+		// An unfinished cell may remain pending while the rest stay visible.
+		const auto partial = visible;
+		UASSERT(!farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERT(visible == partial);
+		pending.at(v3bpos_t(8, 0, 0)).ready = true;
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERT(visible == pending);
+	}
 
 	Grid gridAt(const v3bpos_t &player, const uint8_t cell_pow)
 	{
@@ -789,8 +818,8 @@ public:
 
 	void testMovingGridHandoff()
 	{
-		// Small moves, changes across several LOD levels, negative coordinates,
-		// and teleports must all retain the old grid until the last cell is ready.
+		// Small moves, multi-level changes, negative coordinates and teleports
+		// must preserve coverage while independent replacement regions appear.
 		for (const uint8_t cell_pow : {0, 1, 2}) {
 			auto visible = gridAt(v3bpos_t(0, 0, 0), cell_pow);
 			for (const auto player : {v3bpos_t(1, 0, 0), v3bpos_t(64, 32, -64),
@@ -799,14 +828,141 @@ public:
 				auto pending = gridAt(player, cell_pow);
 				UASSERT(!pending.empty());
 				pending.begin()->second.ready = false;
-				UASSERT(!farmesh::publishReadyGrid(pending, visible, ready));
-				UASSERT(visible == previous);
+				UASSERT(!farmesh::publishReadyGrid(
+						pending, visible, ready, step, cell_pow));
+				assertDisjoint(visible, cell_pow);
+				assertCovered(previous, visible, cell_pow);
 				pending.begin()->second.ready = true;
-				UASSERT(farmesh::publishReadyGrid(pending, visible, ready));
+				UASSERT(farmesh::publishReadyGrid(
+						pending, visible, ready, step, cell_pow));
 				UASSERT(visible == pending);
 				// Coverage and disjointness of each canonical grid are checked by
 				// TestFmFarCalc; equality rules out any retained ancestor/descendant.
 			}
+		}
+	}
+
+	static bool contains(const v3bpos_t &a, int pow, const v3bpos_t &b)
+	{
+		const int64_t width = int64_t{1} << pow;
+		return b.X >= a.X && b.Y >= a.Y && b.Z >= a.Z &&
+			   int64_t(b.X) < int64_t(a.X) + width &&
+			   int64_t(b.Y) < int64_t(a.Y) + width && int64_t(b.Z) < int64_t(a.Z) + width;
+	}
+
+	void assertDisjoint(const Grid &grid, uint8_t cell_pow = 0)
+	{
+		for (const auto &[a, mesh_a] : grid)
+			for (const auto &[b, mesh_b] : grid)
+				if (a != b)
+					UASSERT(!contains(a, mesh_a.step + cell_pow, b));
+	}
+
+	void assertCovered(const Grid &before, const Grid &after, uint8_t cell_pow)
+	{
+		for (const auto &[a, mesh_a] : before) {
+			uint64_t volume = 0;
+			const auto pow_a = mesh_a.step + cell_pow;
+			for (const auto &[b, mesh_b] : after) {
+				const auto pow_b = mesh_b.step + cell_pow;
+				if (contains(a, pow_a, b) || contains(b, pow_b, a))
+					volume += uint64_t{1} << (3 * std::min(pow_a, pow_b));
+			}
+			UASSERTEQ(uint64_t, volume, uint64_t{1} << (3 * pow_a));
+		}
+	}
+
+	void testIndependentRefinement()
+	{
+		const v3bpos_t origin(-8, 0, 0), other(16, 0, 0);
+		Grid visible{{origin, Mesh{3, true}}, {other, Mesh{3, true}}};
+		Grid pending{{other, Mesh{2, true}}};
+		// A jump from step 3 to step 1 requires 64 descendants, not just eight.
+		for (pos_t z = 0; z < 8; z += 2)
+			for (pos_t y = 0; y < 8; y += 2)
+				for (pos_t x = 0; x < 8; x += 2)
+					pending.emplace(origin + v3bpos_t(x, y, z), Mesh{1, true});
+		pending.at(origin + v3bpos_t(6, 6, 6)).ready = false;
+		UASSERT(!farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERTEQ(size_t, visible.size(), 2);
+		UASSERTEQ(block_step_t, visible.at(origin).step, 3);
+		UASSERTEQ(block_step_t, visible.at(other).step, 2);
+		assertDisjoint(visible);
+		// Repeated publication must not let already published descendants cause
+		// a blocked sibling to evict its coarse owner.
+		UASSERT(!farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERTEQ(size_t, visible.size(), 2);
+		pending.at(origin + v3bpos_t(6, 6, 6)).ready = true;
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERT(visible == pending);
+		assertDisjoint(visible);
+	}
+
+	void testCoarseningWaits()
+	{
+		Grid visible;
+		for (pos_t z = 0; z < 4; z += 2)
+			for (pos_t y = 0; y < 4; y += 2)
+				for (pos_t x = 0; x < 4; x += 2)
+					visible.emplace(v3bpos_t(x, y, z), Mesh{1, true});
+		const auto previous = visible;
+		Grid pending{
+				{v3bpos_t(0, 0, 0), Mesh{2, false}}, {v3bpos_t(8, 0, 0), Mesh{2, true}}};
+		UASSERT(!farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERTEQ(size_t, visible.size(), 9);
+		assertCovered(previous, visible, 0);
+		assertDisjoint(visible);
+		pending.at(v3bpos_t(0, 0, 0)).ready = true;
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready, step));
+		UASSERT(visible == pending);
+		assertCovered(previous, visible, 0);
+		assertDisjoint(visible);
+	}
+
+	void testSampleReuse()
+	{
+		// Reproduce the six face passes and aligned strides that collapsed the
+		// old height cache to one or two slots. Each node is resolved once.
+		for (const block_step_t step : {1, 5, 6}) {
+			const pos_t spacing = 1 << step;
+			const v3pos_t origin(-4096, -4096, -4096);
+			farmesh::GridSampleCache<v3pos_t> samples(origin, 64, step);
+			size_t loads = 0;
+			for (size_t face = 0; face < 6; ++face)
+				for (pos_t z = -1; z <= 64; ++z)
+					for (pos_t y = -1; y <= 64; ++y)
+						for (pos_t x = -1; x <= 64; ++x) {
+							const auto p = origin + v3pos_t(x, y, z) * spacing;
+							UASSERTEQ(v3pos_t,
+									samples.get(p,
+											[&]() {
+												++loads;
+												return p;
+											}),
+									p);
+						}
+			UASSERTEQ(size_t, loads, 66 * 66 * 66);
+		}
+	}
+
+	void testSampleLifetimeAndHalo()
+	{
+		const v3pos_t origin(-1024, 0, 1024);
+		farmesh::GridSampleCache<int> first(origin, 4, 5);
+		int received = 0;
+		const auto load = [&]() { return received; };
+		UASSERTEQ(int, first.get(origin, load), 0);
+		received = 42;
+		// A job keeps a consistent miss; a subsequent job sees received data.
+		UASSERTEQ(int, first.get(origin, load), 0);
+		farmesh::GridSampleCache<int> second(origin, 4, 5);
+		UASSERTEQ(int, second.get(origin, load), 42);
+		// Off-grid smooth-light samples and positions beyond the halo must not
+		// alias an unrelated coarse sample or access past the dense array.
+		for (const auto delta :
+				{v3pos_t(1, 0, 0), v3pos_t(-64, 0, 0), v3pos_t(192, 0, 0)}) {
+			UASSERTEQ(int, first.get(origin + delta, load), 42);
+			UASSERTEQ(int, first.get(origin, load), 0);
 		}
 	}
 
@@ -815,10 +971,10 @@ public:
 		Grid visible{{v3bpos_t(0, 0, 0), Mesh{4, true}}};
 		// Mesh readiness is independent of vertex count: air is valid coverage.
 		Grid pending{{v3bpos_t(0, 0, 0), Mesh{2, true}}};
-		UASSERT(farmesh::publishReadyGrid(pending, visible, ready));
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready, step));
 		UASSERT(visible == pending);
 		pending.clear();
-		UASSERT(farmesh::publishReadyGrid(pending, visible, ready));
+		UASSERT(farmesh::publishReadyGrid(pending, visible, ready, step));
 		UASSERT(visible.empty());
 	}
 };
