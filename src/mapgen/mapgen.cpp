@@ -1295,9 +1295,9 @@ bool Mapgen::visible_water_level(const v3pos_t &p)
 	return p.Y <= water_level;
 }
 
-bool Mapgen::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
+bool Mapgen::visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
 {
-	return surface_y.value_or(getGroundLevelAtPoint({p.X, p.Z})) >= p.Y;
+	return surface_y.value_or(getGroundLevelAtPointStep({p.X, p.Z}, step)) >= p.Y;
 }
 
 MapNode Mapgen::visible_surface_by_climate(
@@ -1320,10 +1320,10 @@ MapNode Mapgen::visible_surface_by_climate(
 										 : visible_surface_rainforest;
 }
 
-MapNode Mapgen::visible_content(const v3pos_t &p, bool use_weather)
+MapNode Mapgen::visible_content(const v3pos_t &p, bool use_weather, block_step_t step)
 {
-	const int surface_y = getGroundLevelAtPoint({p.X, p.Z});
-	const bool solid = visible(p, surface_y);
+	const int surface_y = getGroundLevelAtPointStep({p.X, p.Z}, step);
+	const bool solid = visible(p, surface_y, step);
 	const bool water = visible_water_level(p);
 	if (!solid && !water)
 		return visible_transparent;

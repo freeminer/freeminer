@@ -191,10 +191,10 @@ public:
 		original.animation.vertical_frames.aspect_w = 16;
 		original.animation.vertical_frames.aspect_h = 16;
 		original.scale = 2;
-		const auto far = farmesh::opaqueFarTileDef(original);
-		UASSERTEQ(std::string, far.name, "glass.png^[opacity:64^[noalpha");
-		UASSERTEQ(TileAnimationType, far.animation.type, TAT_VERTICAL_FRAMES);
-		UASSERTEQ(u8, far.scale, original.scale);
+		const auto far_tile = farmesh::opaqueFarTileDef(original);
+		UASSERTEQ(std::string, far_tile.name, "glass.png^[opacity:64^[noalpha");
+		UASSERTEQ(TileAnimationType, far_tile.animation.type, TAT_VERTICAL_FRAMES);
+		UASSERTEQ(u8, far_tile.scale, original.scale);
 		UASSERTEQ(std::string, original.name, "glass.png^[opacity:64");
 		UASSERT(farmesh::opaqueFarTileDef(TileDef{}).name.empty());
 		ContentFeatures liquid;

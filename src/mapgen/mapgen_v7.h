@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "irrlichttypes.h"
 #include "mapgen.h"
 #include "mapgen_indev.h"
 
@@ -110,9 +111,8 @@ private:
 protected:
 	MapgenV7Params *sp{};
 	//virtual void generateExperimental();
-	// freeminer:
 public:
-	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y);
+	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step);
 
 private:
 	// =========

@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "client/client.h"
 #include "client/clientmap.h"
-#include "debug/dump.h"
 #include "fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "constants.h"
@@ -362,17 +361,46 @@ auto align_shift(auto pos, const auto amount)
 	return pos;
 }
 
+namespace
+{
+
+double heightLimitedFarRange(const v3pos_t &camera_pos, pos_t water_level, int max_range)
+{
+	const double height = std::max(0.0, double(camera_pos.Y) - water_level);
+	return std::min(double(max_range), 5000.0 + height * 30.0);
+}
+
+bool outsideFarRange(const v3bpos_t &bpos, bpos_t size, uint8_t cell_size_pow,
+		const v3pos_t &camera_pos, double range)
+{
+	// Keep cells overlapping the boundary, including their full mesh footprint.
+	const double side = double(size) * (1u << cell_size_pow) * MAP_BLOCKSIZE;
+	const double x = double(bpos.X) * MAP_BLOCKSIZE;
+	const double z = double(bpos.Z) * MAP_BLOCKSIZE;
+	const double dx = std::max({x - camera_pos.X, double(camera_pos.X) - x - side, 0.0});
+	const double dz = std::max({z - camera_pos.Z, double(camera_pos.Z) - z - side, 0.0});
+	return range <= 0.0 || radius_box(v3opos_t(dx, 0, dz), v3opos_t{}) > range;
+}
+
+} // namespace
+
 int FarMesh::go_container(bool only_received, const block_step_t step_limit)
 {
 	const auto &draw_control = *m_control;
+	// Do not limit 3d worlds
+	// const auto &camera_pos = m_client->getEnv().getClientMap().far_cam_pos_grid;
+	// const double far_range = heightLimitedFarRange(camera_pos, mg->water_level, draw_control.farmesh);
 	const auto player_block_pos =
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_cam_pos_grid);
 
 	size_t blocks_enqueued = 0;
 	farmesh::runFarAll(player_block_pos, draw_control.cell_size_pow, draw_control.farmesh,
 			draw_control.farmesh_quality_pow, 0, false, 0,
-			[this, &step_limit, &only_received, &blocks_enqueued](const v3bpos_t &bpos,
-					const bpos_t &size, const block_step_t &step) -> bool {
+			[this, &step_limit, &only_received, &blocks_enqueued
+					//, &draw_control ,&camera_pos, far_range
+	](const v3bpos_t &bpos, const bpos_t &size, const block_step_t &step) -> bool {
+				// if (outsideFarRange(bpos, size, draw_control.cell_size_pow, camera_pos, far_range))	return false;
+
 				if (!step || step >= FARMESH_STEP_MAX) {
 					return false;
 				}
@@ -407,6 +435,9 @@ int FarMesh::go_container(bool only_received, const block_step_t step_limit)
 int FarMesh::go_flat()
 {
 	const auto &draw_control = *m_control;
+	const auto &camera_pos = m_client->getEnv().getClientMap().far_cam_pos_grid;
+	const double far_range =
+			heightLimitedFarRange(camera_pos, mg->water_level, draw_control.farmesh);
 	const auto player_block_pos =
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_cam_pos_grid);
 	constexpr bool cell_each = false;
@@ -416,8 +447,13 @@ int FarMesh::go_flat()
 	farmesh::runFarAll(player_block_pos, draw_control.cell_size_pow, draw_control.farmesh,
 			draw_control.farmesh_quality_pow, 1, cell_each,
 			farmesh::settingToStep(draw_control.farmesh),
-			[this, &draw_control, &blocks, &player_block_pos](const v3bpos_t &bpos,
-					const bpos_t &size, const block_step_t &step) -> bool {
+			[this, &draw_control, &blocks, &player_block_pos, &camera_pos, far_range](
+					const v3bpos_t &bpos, const bpos_t &size,
+					const block_step_t &step) -> bool {
+				if (outsideFarRange(bpos, size, draw_control.cell_size_pow, camera_pos,
+							far_range))
+					return false;
+
 				const auto add_size = 1 << (step);
 				int low_priority = 0;
 				for (const auto &add : {
@@ -560,7 +596,7 @@ int FarMesh::go_direction(const size_t dir_n)
 					if (const auto &it = mg_cache.find(pos_int); it != mg_cache.end()) {
 						visible = it->second;
 					} else {
-						visible = mg->visible(pos_int, {}) ||
+						visible = mg->visible(pos_int, {}, step_aligned_pow) ||
 								  mg->visible_water_level(pos_int);
 						mg_cache[pos_int] = visible;
 					}
@@ -748,8 +784,13 @@ uint8_t FarMesh::update(
 		return true;
 	auto &client_map = m_client->getEnv().getClientMap();
 	const auto camera_pos_aligned = align_shift(floatToInt(camera_pos, BS), MAP_BLOCKP);
+	const auto height_range = heightLimitedFarRange(
+			camera_pos_aligned, mg->water_level, m_control->farmesh);
 	const auto distance_max =
-			(std::min<unsigned int>(render_range, 1.2 * m_client->fog_range / BS) >> 7)
+			(static_cast<unsigned int>(std::max(
+					 0.0, std::min({double(render_range), 1.2 * m_client->fog_range / BS,
+								  height_range}))) >>
+					7)
 			<< 7;
 	m_fast_move = speed > 200 * BS ||
 				  m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned) > 1000;

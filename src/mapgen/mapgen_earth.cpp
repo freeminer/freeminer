@@ -720,12 +720,14 @@ MapNode MapgenEarth::earth_layer_get(
 	return layers_node[layer_index];
 }
 
-bool MapgenEarth::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
+bool MapgenEarth::visible(
+		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
 {
-	return p.Y <= surface_y.value_or(get_height(p.X, p.Z));
+	return p.Y <= surface_y.value_or(get_height(p.X, p.Z, step));
 }
 
-MapNode MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
+MapNode MapgenEarth::visible_content(
+		const v3pos_t &p, bool use_weather, block_step_t step)
 {
 	const auto valid = [](content_t content) {
 		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
@@ -735,8 +737,8 @@ MapNode MapgenEarth::visible_content(const v3pos_t &p, bool use_weather)
 		return valid(node.getContent()) ? node : fallback;
 	};
 
-	const auto surface_y = get_height(p.X, p.Z);
-	const auto solid = visible(p, surface_y);
+	const auto surface_y = get_height(p.X, p.Z, step);
+	const auto solid = visible(p, surface_y, step);
 	const auto water = visible_water_level(p);
 	if (!solid && !water) {
 		return visible_transparent;
@@ -793,10 +795,10 @@ v2pos_t MapgenEarth::ll_to_pos(const ll &l)
 			(l.lat - center.Z) * (EQUATOR_LEN / 360) / scale.Z);
 }
 
-pos_t MapgenEarth::get_height(pos_t x, pos_t z)
+pos_t MapgenEarth::get_height(pos_t x, pos_t z, block_step_t step)
 {
 	const auto tc = pos_to_ll(x, z);
-	const auto y = maps_holder->hgt_reader.get(tc.lat, tc.lon);
+	const auto y = maps_holder->hgt_reader.get(tc.lat, tc.lon, step);
 	return ceil(y / scale.Y) - center.Y;
 }
 
@@ -818,7 +820,7 @@ pos_t MapgenEarth::cachedOrComputeTerrainMaxY()
 	pos_t maximum = std::numeric_limits<pos_t>::lowest();
 	for (pos_t z = node_min.Z; z <= node_max.Z; ++z)
 		for (pos_t x = node_min.X; x <= node_max.X; ++x)
-			maximum = std::max(maximum, get_height(x, z));
+			maximum = std::max(maximum, get_height(x, z, 0));
 
 	std::lock_guard<std::mutex> lock(maps_holder->vertical_bounds_lock);
 	auto &bounds = maps_holder->vertical_bounds[key];
@@ -870,12 +872,12 @@ void MapgenEarth::fillChunkWithAir()
 
 pos_t MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
-	return std::max(2, get_height(p.X, p.Y) + 2);
+	return std::max(2, get_height(p.X, p.Y,0 ) + 2);
 }
 
-pos_t MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
+pos_t MapgenEarth::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
 {
-	return get_height(p.X, p.Y); // + MGV6_AVERAGE_MUD_AMOUNT;
+	return get_height(p.X, p.Y, step); // + MGV6_AVERAGE_MUD_AMOUNT;
 }
 
 int MapgenEarth::generateTerrain()
@@ -890,7 +892,7 @@ int MapgenEarth::generateTerrain()
 							? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env,
 									  v3pos_t(x, node_max.Y, z), nullptr, &heat_cache)
 							: 0;
-			const auto height = get_height(x, z);
+			const auto height = get_height(x, z, 0);
 			u32 i = vm->m_area.index(x, node_min.Y, z);
 			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {
 				bool underground = height >= y;

@@ -23,9 +23,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "config.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapgen/mapgen.h"
 #include "mapgen/mapgen_v7.h"
-#include "json/json.h"
 
 #if USE_MANDELBULBER
 #define MANDELBULBER_EMBEDDED
@@ -81,7 +81,7 @@ public:
 	double (*func)(double, double, double, double, int, int);
 	MapNode layers_get(float value, float max);
 	std::pair<bool, double> calc_point(pos_t x, pos_t y, pos_t z);
-	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
-	MapNode visible_content(const v3pos_t &p, bool use_weather) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override;
+	MapNode visible_content(const v3pos_t &p, bool use_weather, block_step_t step) override;
 	bool surface_2d() override { return false; };
 };
