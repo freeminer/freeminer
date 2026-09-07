@@ -28,6 +28,7 @@ endif()
 list(APPEND mapgen_earth_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/hgt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/http.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/world_elevation.cpp
 )
 
 if(USE_VOXEL_EARTH)

@@ -519,23 +519,24 @@ if(USE_DEBUG_DUMP)
 endif()
 
 set(FMcommon_SRCS ${FMcommon_SRCS}
-    circuit_element_virtual.cpp
-    circuit_element.cpp
     circuit.cpp
-    content_abm_grow_tree.cpp
+    circuit_element.cpp
+    circuit_element_virtual.cpp
     content_abm.cpp
     content_abm_core.cpp
     content_abm_erosion.cpp
     content_abm_evaporation.cpp
     content_abm_growth.cpp
+    content_abm_grow_tree.cpp
     content_abm_precipitation.cpp
-    fm_abm_world.cpp
     fm_abm.cpp
+    fm_abm_world.cpp
     fm_bitset.cpp
     fm_clientiface.cpp
     fm_far_calc.cpp
     fm_liquid.cpp
     fm_map.cpp
+    fm_mapblock.cpp
     fm_server.cpp
     fm_serverenvironment.cpp
     fm_util.cpp

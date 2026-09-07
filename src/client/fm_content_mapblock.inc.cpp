@@ -2,9 +2,19 @@
 // Included at the end of content_mapblock.cpp so it can reuse its private
 // mesh-generator helpers without changing the upstream implementation.
 
+#if !defined(INCLUDE_FM_CONTENT_MAPBLOCK)
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
+#include "client/content_mapblock.h"
+#include "client/mapblock_mesh.h"
+#include "client/mesh.h"
+#include "client/meshgen/collector.h"
+#include "client/node_visuals.h"
+#include "client/tile.h"
+#include "mapnode.h"
+#include "nodedef.h"
 // Far-mesh fast face builder, adapted from mapblock_mesh.cpp at 356205cd5.
+#endif
 
 namespace
 {
@@ -65,12 +75,34 @@ static bool canMergeFmFarFaces(
 }
 
 static const v3pos_t fm_vertex_dirs[] = {
-		{1, -1, 1}, {1, -1, -1}, {1, 1, -1}, {1, 1, 1},						// +X
-		{1, 1, -1}, {-1, 1, -1}, {-1, 1, 1}, {1, 1, 1},						// +Y
-		{-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1},						// +Z
-		{}, {}, {}, {}, {1, -1, -1}, {-1, -1, -1}, {-1, 1, -1}, {1, 1, -1}, // -Z
-		{1, -1, 1}, {-1, -1, 1}, {-1, -1, -1}, {1, -1, -1},					// -Y
-		{-1, -1, -1}, {-1, -1, 1}, {-1, 1, 1}, {-1, 1, -1},					// -X
+		{1, -1, 1},
+		{1, -1, -1},
+		{1, 1, -1},
+		{1, 1, 1}, // +X
+		{1, 1, -1},
+		{-1, 1, -1},
+		{-1, 1, 1},
+		{1, 1, 1}, // +Y
+		{-1, -1, 1},
+		{1, -1, 1},
+		{1, 1, 1},
+		{-1, 1, 1}, // +Z
+		{},
+		{},
+		{},
+		{},
+		{1, -1, -1},
+		{-1, -1, -1},
+		{-1, 1, -1},
+		{1, 1, -1}, // -Z
+		{1, -1, 1},
+		{-1, -1, 1},
+		{-1, -1, -1},
+		{1, -1, -1}, // -Y
+		{-1, -1, -1},
+		{-1, -1, 1},
+		{-1, 1, 1},
+		{-1, 1, -1}, // -X
 };
 
 static void getFmNodeVertexDirs(const auto &dir, v3pos_t vertex_dirs[4])
@@ -261,7 +293,8 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 
 	for (int face = 0; face < 6; ++face) {
 		const auto p2 = blockpos_nodes + cur_node.p + tile_dirs[face] * data->fscale;
-		const MapNode neighbor = data->m_vmanip.getNodeNoEx(p2);
+		const MapNode neighbor =
+				data->m_vmanip.getNodeRefAndVisible(p2, data->far_step).first;
 		const content_t n2 = neighbor.getContent();
 		bool backface_culling = true;
 
@@ -285,8 +318,10 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 				static const v3pos_t horizontal_dirs[4] = {v3pos_t(1, 0, 0),
 						v3pos_t(-1, 0, 0), v3pos_t(0, 0, 1), v3pos_t(0, 0, -1)};
 				for (const auto &dir : horizontal_dirs) {
-					const ContentFeatures &side =
-							nodedef->get(data->m_vmanip.getNodeNoEx(p2 + dir));
+					const ContentFeatures &side = nodedef->get(
+							data->m_vmanip.getNodeRefAndVisible(p2 + dir, data->far_step)
+									.first);
+
 					const bool translucent =
 							!(side.visuals->solidness_far || side.visuals->solidness ||
 									side.visuals->visual_solidness);
@@ -442,9 +477,10 @@ bool MapblockMeshGenerator::generateFm()
 			for (far_pos.Y = regular_pos.Y = 0; regular_pos.Y < data->side_length_data;
 					regular_pos.Y += lod_stride, far_pos.Y += far_stride) {
 				cur_node.p = data->far_step ? far_pos : regular_pos;
-				cur_node.n =
-						data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + cur_node.p)
-								.first;
+				cur_node.n = data->m_vmanip
+									 .getNodeRefAndVisible(
+											 blockpos_nodes + cur_node.p, data->far_step)
+									 .first;
 				if (data->far_step)
 					cur_node.n = simplifyFarNode(cur_node.n, nodedef);
 				cur_node.f = &nodedef->get(cur_node.n);
@@ -477,14 +513,19 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		FmFarFace result;
 		cur_node.p = pos;
 		cur_node.n = simplifyFarNode(
-				data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + pos).first, nodedef);
+				data->m_vmanip.getNodeRefAndVisible(blockpos_nodes + pos, data->far_step)
+						.first,
+				nodedef);
 		cur_node.f = &nodedef->get(cur_node.n);
 		if (isFmFarEmpty(cur_node.n.getContent()) || cur_node.f->drawtype == NDT_AIRLIKE)
 			return result;
 
 		const auto &dir = face_dirs[face];
 		const MapNode neighbor =
-				data->m_vmanip.getNodeNoEx(blockpos_nodes + pos + dir * data->fscale);
+				data->m_vmanip
+						.getNodeRefAndVisible(
+								blockpos_nodes + pos + dir * data->fscale, data->far_step)
+						.first;
 		// Only air exposes a face. Keep authoritative IGNORE/UNKNOWN cells as
 		// invisible occluders, matching the scaled-node path.
 		if (neighbor.getContent() != CONTENT_AIR)

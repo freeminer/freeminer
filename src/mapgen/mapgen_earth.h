@@ -31,10 +31,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 
 #include "earth/hgt.h"
+#include "irrlichttypes.h"
 #include "mapgen/mapgen_v7.h"
 #include "porting.h"
 #include "filesys.h"
-#include "threading/concurrent_map.h"
 #include "threading/concurrent_vector.h"
 #include "util/lrucache.hpp"
 
@@ -177,7 +177,9 @@ public:
 	int generateTerrain() override;
 	void generateBuildings() override;
 	pos_t getSpawnLevelAtPoint(v2pos_t p) override;
-	pos_t getGroundLevelAtPoint(v2pos_t p) override;
+	//pos_t getGroundLevelAtPoint(v2pos_t p) override;
+	pos_t getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step) override;
+
 	bool calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime,
 			bool use_weather, weather::wind_t *wind) override;
 
@@ -190,10 +192,12 @@ public:
 
 	MapNode layers_get(float value, float max);
 	MapNode earth_layer_get(pos_t x, pos_t y, pos_t z, pos_t surface_y, float heat);
-	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
-	MapNode visible_content(const v3pos_t &p, bool use_weather) override;
+	bool visible(
+			const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override;
+	MapNode visible_content(
+			const v3pos_t &p, bool use_weather, block_step_t step) override;
 
-	pos_t get_height(pos_t x, pos_t z);
+	pos_t get_height(pos_t x, pos_t z, block_step_t step);
 	EarthHorizontalKey horizontalKey() const;
 	pos_t cachedOrComputeTerrainMaxY();
 	std::optional<pos_t> cachedAuthoredMaxY() const;

@@ -21,6 +21,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "world_elevation.h"
+#include "irrlichttypes.h"
+
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -30,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <thread>
 
 class height
 {
@@ -148,6 +150,7 @@ public:
 
 class hgts
 {
+	WorldElevation world_elevation;
 	std::map<int, std::map<int, std::shared_ptr<height>>> map1, map1_seabed; //, map90;
 	const std::string folder;
 	std::mutex mutex;
@@ -189,5 +192,6 @@ class hgts
 
 public:
 	hgts(const std::string &folder);
-	height::height_t get(const height::ll_t lat, const height::ll_t lon);
+	height::height_t get(
+			const height::ll_t lat, const height::ll_t lon, block_step_t step = 0);
 };

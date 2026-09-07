@@ -14,6 +14,7 @@ Licensing changed by permission of Gael de Sailly.
 
 #pragma once
 
+#include "irrlichttypes.h"
 #include "mapgen.h"
 
 #define MGVALLEYS_ALT_CHILL        0x01
@@ -79,7 +80,7 @@ public:
 	pos_t getSpawnLevelAtPoint(v2pos_t p);
 
 	//freeminer:
-	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override
 	{
 		// TODO: Make faster and more features
 		const auto sl = surface_y.value_or(getSpawnLevelAtPoint({p.X, p.Z}));

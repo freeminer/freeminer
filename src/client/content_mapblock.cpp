@@ -1876,4 +1876,5 @@ void MapblockMeshGenerator::generate()
 	}
 }
 
+#define INCLUDE_FM_CONTENT_MAPBLOCK
 #include "fm_content_mapblock.inc.cpp"

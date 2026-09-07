@@ -84,7 +84,7 @@ struct Ground
 		if (!mg)
 			return elevation_ground_level.value_or(0);
 		++mg->stat.level;
-		return mg->get_height(pos.X, pos.Y);
+		return mg->get_height(pos.X, pos.Y, 0);
 	}
 
 	bool has_land_cover() const
