@@ -30,7 +30,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "client/client.h"
 #include "client/clientmap.h"
-#include "debug/dump.h"
 #include "fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "constants.h"
@@ -560,7 +559,7 @@ int FarMesh::go_direction(const size_t dir_n)
 					if (const auto &it = mg_cache.find(pos_int); it != mg_cache.end()) {
 						visible = it->second;
 					} else {
-						visible = mg->visible(pos_int, {}) ||
+						visible = mg->visible(pos_int, {}, step_aligned_pow) ||
 								  mg->visible_water_level(pos_int);
 						mg_cache[pos_int] = visible;
 					}

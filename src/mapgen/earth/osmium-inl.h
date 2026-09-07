@@ -15,7 +15,6 @@
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "log.h"
-#include "map.h"
 #if !defined(FILE_INCLUDED)
 #include "debug/dump.h"
 #include <osmium/area/assembler.hpp>
@@ -366,7 +365,7 @@ pos_t earth_element_terrain_max(MapgenEarth *mg,
 				z > std::numeric_limits<pos_t>::max())
 			return;
 		maximum = std::max(
-				maximum, mg->get_height(static_cast<pos_t>(x), static_cast<pos_t>(z)));
+				maximum, mg->get_height(static_cast<pos_t>(x), static_cast<pos_t>(z), 0));
 	};
 	for (const auto &element : elements) {
 		if (element.is_node()) {

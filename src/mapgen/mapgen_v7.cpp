@@ -667,7 +667,7 @@ int MapgenV7::generateTerrain()
 void MapgenV7::generateExperimental() {
 }
 */
-bool MapgenV7::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
+bool MapgenV7::visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
 {
 	// return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
 

@@ -128,7 +128,7 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 			return;
 		const std::string &apiKeyStr = api_key;
 		const pos_t terrain_y =
-				std::max(get_height(node_min.X + csize.X / 2, node_min.Z + csize.Z / 2),
+				std::max(get_height(node_min.X + csize.X / 2, node_min.Z + csize.Z / 2, 0),
 						static_cast<pos_t>(water_level)) +
 				1;
 

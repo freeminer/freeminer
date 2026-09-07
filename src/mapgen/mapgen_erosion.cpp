@@ -42,7 +42,6 @@ void MapgenErosionParams::readParams(const Settings *settings)
 		params = erosion;
 }
 
-
 void MapgenErosionParams::writeParams(Settings *settings) const
 {
 	settings->setJson("mg_erosion", params);
@@ -50,16 +49,13 @@ void MapgenErosionParams::writeParams(Settings *settings) const
 	settings->setFlagStr("mgerosion_spflags", spflags, flagdesc_mapgen_v7);
 }
 
-
 void MapgenErosionParams::setDefaultSettings(Settings *settings)
 {
 	settings->setDefault("mgerosion_spflags", flagdesc_mapgen_v7, 0);
 }
 
-
 MapgenErosion::MapgenErosion(MapgenErosionParams *params, EmergeParams *emerge) :
-	MapgenV7((MapgenV7Params *)params, emerge),
-	mg_params(params)
+		MapgenV7((MapgenV7Params *)params, emerge), mg_params(params)
 {
 	Json::Value &cfg = mg_params->params;
 	m_octaves = rangelim(cfg.get("octaves", 5).asInt(), 1, 8);
@@ -75,32 +71,31 @@ MapgenErosion::MapgenErosion(MapgenErosionParams *params, EmergeParams *emerge) 
 	m_relief_scale = rangelim(cfg.get("relief_scale", 1.75).asFloat(), 0.5f, 4.0f);
 	m_continent_scale = rangelim(cfg.get("continent_scale", 1.0 / 4200.0).asFloat(),
 			1.0f / 20000.0f, 1.0f / 256.0f);
-	m_warp_scale = rangelim(cfg.get("warp_scale", 1.0 / 900.0).asFloat(),
-			1.0f / 8000.0f, 1.0f / 64.0f);
+	m_warp_scale = rangelim(
+			cfg.get("warp_scale", 1.0 / 900.0).asFloat(), 1.0f / 8000.0f, 1.0f / 64.0f);
 	m_warp_strength = rangelim(cfg.get("warp_strength", 220.0).asFloat(), 0.0f, 2048.0f);
-	m_detail_scale = rangelim(cfg.get("detail_scale", 1.0 / 180.0).asFloat(),
-			1.0f / 4000.0f, 1.0f / 16.0f);
+	m_detail_scale = rangelim(
+			cfg.get("detail_scale", 1.0 / 180.0).asFloat(), 1.0f / 4000.0f, 1.0f / 16.0f);
 	m_base_offset = rangelim(cfg.get("base_offset", -18.0).asFloat(), -256.0f, 256.0f);
 	m_base_height = rangelim(cfg.get("base_height", 96.0).asFloat(), 0.0f, 1024.0f);
-	m_mountain_height = rangelim(cfg.get("mountain_height", 340.0).asFloat(), 0.0f, 2048.0f);
+	m_mountain_height =
+			rangelim(cfg.get("mountain_height", 340.0).asFloat(), 0.0f, 2048.0f);
 	m_land_lift = rangelim(cfg.get("land_lift", 28.0).asFloat(), 0.0f, 128.0f);
 	m_coast_blend = rangelim(cfg.get("coast_blend", 72.0).asFloat(), 8.0f, 256.0f);
 	m_mountain_boost = rangelim(cfg.get("mountain_boost", 0.5).asFloat(), 0.0f, 2.0f);
-	m_mountain_threshold = rangelim(cfg.get("mountain_threshold", 0.1).asFloat(), -1.0f, 1.0f);
+	m_mountain_threshold =
+			rangelim(cfg.get("mountain_threshold", 0.1).asFloat(), -1.0f, 1.0f);
 }
-
 
 float MapgenErosion::clamp01(float v)
 {
 	return rangelim(v, 0.0f, 1.0f);
 }
 
-
 float MapgenErosion::lerp(float a, float b, float t)
 {
 	return a + (b - a) * t;
 }
-
 
 float MapgenErosion::easeOut(float t)
 {
@@ -108,12 +103,10 @@ float MapgenErosion::easeOut(float t)
 	return 1.0f - v * v;
 }
 
-
 float MapgenErosion::powInv(float t, float power)
 {
 	return 1.0f - std::pow(1.0f - clamp01(t), power);
 }
-
 
 float MapgenErosion::inverseLerp(float a, float b, float v)
 {
@@ -122,22 +115,19 @@ float MapgenErosion::inverseLerp(float a, float b, float v)
 	return clamp01((v - a) / (b - a));
 }
 
-
 float MapgenErosion::smoothstep5(float t)
 {
 	t = clamp01(t);
 	return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
 }
 
-
 float MapgenErosion::signNonZero(float v)
 {
 	return v < 0.0f ? -1.0f : 1.0f;
 }
 
-
-float MapgenErosion::sampleFbm(float x, float z, float scale, s32 seed_off,
-		int octaves, float persistence, float lacunarity) const
+float MapgenErosion::sampleFbm(float x, float z, float scale, s32 seed_off, int octaves,
+		float persistence, float lacunarity) const
 {
 	float amplitude = 1.0f;
 	float frequency = scale;
@@ -146,7 +136,7 @@ float MapgenErosion::sampleFbm(float x, float z, float scale, s32 seed_off,
 
 	for (int i = 0; i < octaves; ++i) {
 		total += noise2d_value(x * frequency, z * frequency, seed + seed_off + i, true) *
-				amplitude;
+				 amplitude;
 		denom += amplitude;
 		amplitude *= persistence;
 		frequency *= lacunarity;
@@ -154,7 +144,6 @@ float MapgenErosion::sampleFbm(float x, float z, float scale, s32 seed_off,
 
 	return denom > 0.0f ? total / denom : 0.0f;
 }
-
 
 float MapgenErosion::sampleRidged(float x, float z, float scale, s32 seed_off,
 		int octaves, float persistence, float lacunarity) const
@@ -177,7 +166,6 @@ float MapgenErosion::sampleRidged(float x, float z, float scale, s32 seed_off,
 	return denom > 0.0f ? total / denom : 0.0f;
 }
 
-
 float MapgenErosion::baseHeightAtPoint(pos_t x, pos_t z) const
 {
 	float warp_x = sampleFbm(x, z, m_warp_scale, 100, 3, 0.5f, 2.0f);
@@ -197,30 +185,30 @@ float MapgenErosion::baseHeightAtPoint(pos_t x, pos_t z) const
 	float basin_mask = smoothstep5(clamp01((0.55f - continent) / 0.55f));
 	float continental_height = lerp(-0.9f, 1.0f, continent) * m_base_height;
 	float macro_height = (macro * 42.0f + hills * 30.0f + detail * 12.0f) *
-			lerp(0.45f, 1.0f, land_mask);
+						 lerp(0.45f, 1.0f, land_mask);
 	float mountain_mask = smoothstep5(clamp01((continent - 0.42f) / 0.48f));
 	float mountain_height = std::pow(ridged, 1.35f) * mountain_mask * m_mountain_height;
 	float basin_depth = basin_mask * basin_mask * (m_base_height * 0.55f);
 
-	return water_level + m_base_offset + continental_height +
-			macro_height + mountain_height - basin_depth;
+	return water_level + m_base_offset + continental_height + macro_height +
+		   mountain_height - basin_depth;
 }
-
 
 float MapgenErosion::terrainBiasAtPoint(pos_t x, pos_t z, float base_height) const
 {
-	float coast_t = 1.0f - inverseLerp(
-			water_level - m_coast_blend, water_level + m_coast_blend * 0.5f, base_height);
+	float coast_t = 1.0f - inverseLerp(water_level - m_coast_blend,
+								   water_level + m_coast_blend * 0.5f, base_height);
 	float coast_lift = smoothstep5(coast_t) * m_land_lift;
 
-	float ridged = sampleRidged((float)x, (float)z, m_detail_scale * 0.18f, 800, 4, 0.55f, 2.0f);
-	float mountain_mask = smoothstep5(clamp01((ridged - m_mountain_threshold) /
-			std::max(1.0f - m_mountain_threshold, 0.001f)));
+	float ridged =
+			sampleRidged((float)x, (float)z, m_detail_scale * 0.18f, 800, 4, 0.55f, 2.0f);
+	float mountain_mask =
+			smoothstep5(clamp01((ridged - m_mountain_threshold) /
+								std::max(1.0f - m_mountain_threshold, 0.001f)));
 	float mountain_lift = mountain_mask * ridged * m_mountain_height * m_mountain_boost;
 
 	return coast_lift + mountain_lift;
 }
-
 
 u32 MapgenErosion::hash2D(s32 x, s32 y, u32 seed)
 {
@@ -235,15 +223,13 @@ u32 MapgenErosion::hash2D(s32 x, s32 y, u32 seed)
 	return h;
 }
 
-
 float MapgenErosion::hashToUnitFloat(u32 h)
 {
 	return (h & 0x00ffffffu) / float(0x01000000u);
 }
 
-
 MapgenErosion::WaveSample MapgenErosion::sampleWave(
-	const Vec2f &p, const Vec2f &grad, float cell_size, u32 octave_seed) const
+		const Vec2f &p, const Vec2f &grad, float cell_size, u32 octave_seed) const
 {
 	Vec2f flow = grad;
 	float grad_len = std::sqrt(flow.x * flow.x + flow.y * flow.y);
@@ -277,11 +263,9 @@ MapgenErosion::WaveSample MapgenErosion::sampleWave(
 			u32 h = hash2D(cx, cz, octave_seed);
 			float jx = (hashToUnitFloat(h) - 0.5f) * m_jitter;
 			float jz = (hashToUnitFloat(h ^ 0x68bc21ebu) - 0.5f) * m_jitter;
-			Vec2f pivot{
-				(cx + 0.5f + jx) * cell_size,
-				(cz + 0.5f + jz) * cell_size
-			};
-			float phase = ((p.x - pivot.x) * ortho.x + (p.y - pivot.y) * ortho.y) * stripe_scale;
+			Vec2f pivot{(cx + 0.5f + jx) * cell_size, (cz + 0.5f + jz) * cell_size};
+			float phase = ((p.x - pivot.x) * ortho.x + (p.y - pivot.y) * ortho.y) *
+						  stripe_scale;
 			sum_cos += std::cos(phase) * weight;
 			sum_sin += std::sin(phase) * weight;
 		}
@@ -299,14 +283,12 @@ MapgenErosion::WaveSample MapgenErosion::sampleWave(
 	return {sum_cos, signNonZero(sum_sin) * std::fabs(sum_sin)};
 }
 
-
-void MapgenErosion::applyErosionFilter(v3pos_t minp, v3pos_t maxp, std::vector<float> &heights)
+void MapgenErosion::applyErosionFilter(
+		v3pos_t minp, v3pos_t maxp, std::vector<float> &heights)
 {
 	const s32 w = maxp.X - minp.X + 1;
 	const s32 d = maxp.Z - minp.Z + 1;
-	const auto idx = [w](s32 x, s32 z) -> size_t {
-		return (size_t)z * w + x;
-	};
+	const auto idx = [w](s32 x, s32 z) -> size_t { return (size_t)z * w + x; };
 
 	std::vector<float> base_values = heights;
 	std::vector<float> values(heights.size(), 0.0f);
@@ -314,7 +296,8 @@ void MapgenErosion::applyErosionFilter(v3pos_t minp, v3pos_t maxp, std::vector<f
 	std::vector<float> next_values(w * d, 0.0f);
 
 	for (size_t i = 0; i < base_values.size(); ++i) {
-		float target = inverseLerp(m_valley_alt, m_peak_alt, base_values[i]) * 2.0f - 1.0f;
+		float target =
+				inverseLerp(m_valley_alt, m_peak_alt, base_values[i]) * 2.0f - 1.0f;
 		values[i] = target;
 		combi_mask[i] = 1.0f - easeOut(clamp01(std::fabs(target) * 0.35f));
 	}
@@ -333,7 +316,9 @@ void MapgenErosion::applyErosionFilter(v3pos_t minp, v3pos_t maxp, std::vector<f
 
 				float dx = values[idx(xp, z)] - values[idx(xm, z)];
 				float dz = values[idx(x, zp)] - values[idx(x, zm)];
-				float fade_target = inverseLerp(m_valley_alt, m_peak_alt, values[idx(x, z)]) * 2.0f - 1.0f;
+				float fade_target =
+						inverseLerp(m_valley_alt, m_peak_alt, values[idx(x, z)]) * 2.0f -
+						1.0f;
 
 				Vec2f p{float(minp.X + x), float(minp.Z + z)};
 				Vec2f grad{dx, dz};
@@ -344,9 +329,10 @@ void MapgenErosion::applyErosionFilter(v3pos_t minp, v3pos_t maxp, std::vector<f
 				float erosion_mask = clamp01(combi_mask[idx(x, z)] * terrain_mask);
 
 				float gully = lerp(fade_target, sample.cos_v, combi_mask[idx(x, z)]);
-				combi_mask[idx(x, z)] = powInv(combi_mask[idx(x, z)], m_detail) * new_mask;
+				combi_mask[idx(x, z)] =
+						powInv(combi_mask[idx(x, z)], m_detail) * new_mask;
 				next_values[idx(x, z)] =
-					lerp(values[idx(x, z)], gully, erosion_mask * octave_weight);
+						lerp(values[idx(x, z)], gully, erosion_mask * octave_weight);
 			}
 		}
 
@@ -366,7 +352,6 @@ void MapgenErosion::applyErosionFilter(v3pos_t minp, v3pos_t maxp, std::vector<f
 	}
 }
 
-
 float MapgenErosion::erosionHeightAtPoint(pos_t x, pos_t z)
 {
 	v3pos_t minp(x - 1, 0, z - 1);
@@ -381,12 +366,10 @@ float MapgenErosion::erosionHeightAtPoint(pos_t x, pos_t z)
 	return heights[4];
 }
 
-
 int MapgenErosion::getGroundLevelAtPoint(v2pos_t p)
 {
 	return myround(erosionHeightAtPoint(p.X, p.Y));
 }
-
 
 int MapgenErosion::getSpawnLevelAtPoint(v2pos_t p)
 {
@@ -396,12 +379,11 @@ int MapgenErosion::getSpawnLevelAtPoint(v2pos_t p)
 	return y + 2;
 }
 
-
-bool MapgenErosion::visible(const v3pos_t &p, std::optional<pos_t> surface_y)
+bool MapgenErosion::visible(
+		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
 {
 	return surface_y.value_or(getGroundLevelAtPoint({p.X, p.Z})) >= p.Y;
 }
-
 
 int MapgenErosion::generateTerrain()
 {
@@ -430,9 +412,11 @@ int MapgenErosion::generateTerrain()
 			pos_t surface_y = myround(heights[index2d]);
 			stone_surface_max_y = std::max(stone_surface_max_y, surface_y);
 
-			s16 heat = m_emerge->env->m_use_weather ?
-				m_emerge->env->getServerMap().updateBlockHeat(
-					m_emerge->env, v3pos_t(x, node_max.Y, z), nullptr, &heat_cache) : 0;
+			s16 heat =
+					m_emerge->env->m_use_weather
+							? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env,
+									  v3pos_t(x, node_max.Y, z), nullptr, &heat_cache)
+							: 0;
 
 			u32 vi = vm->m_area.index(x, node_min.Y - 1, z);
 			u32 index3d = (z - node_min.Z) * zstride_1u1d + (x - node_min.X);
@@ -449,8 +433,8 @@ int MapgenErosion::generateTerrain()
 					} else {
 						MapNode n = layers_get(index3d);
 						bool protect = n.getContent() != CONTENT_AIR;
-						if (cave_noise_threshold &&
-								noise_cave_indev->result[index3d] > cave_noise_threshold - 50) {
+						if (cave_noise_threshold && noise_cave_indev->result[index3d] >
+															cave_noise_threshold - 50) {
 							vm->m_data[vi] = protect ? n_stone : n;
 							protect = true;
 						} else {
@@ -462,8 +446,8 @@ int MapgenErosion::generateTerrain()
 				} else if (y <= water_level) {
 					vm->m_data[vi] = (heat < 0 && y > heat / 3) ? n_ice : n_water;
 					if (liquid_pressure > 0 && y <= 0) {
-						const int pressure = ((ItemGroupList)m_emerge->ndef
-												->get(vm->m_data[vi])
+						const int pressure =
+								((ItemGroupList)m_emerge->ndef->get(vm->m_data[vi])
 												.groups)["pressure"];
 						if (pressure > 0) {
 							int add = water_level - y;

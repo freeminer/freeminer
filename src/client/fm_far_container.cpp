@@ -21,9 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 #include <array>
-// fm: Deferred mapgen fallback state.
 #include <optional>
-// ===
 
 #include "fm_far_container.h"
 #include "fm_far_sample_cache.h"
@@ -33,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "fm_far_calc.h"
 #include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
 #include "mapnode.h"
@@ -91,18 +90,18 @@ FarContainer::FarContainer(const FarContainer &source, const v3pos_t &origin, po
 
 FarContainer::~FarContainer() = default;
 
-std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t &pos)
+std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t &pos, block_step_t step)
 {
 	if (!m_cache) {
 		// The client-wide container holds settings. Direct queries also get an
 		// isolated sampler instead of leaving stale thread-local blocks behind.
 		FarContainer sampler(*this, pos, 1, 0);
-		return sampler.getNodeRefAndVisible(pos);
+		return sampler.getNodeRefAndVisible(pos, step);
 	}
-	return m_cache->nodes.get(pos, [&]() -> Cache::Sample { return sample(pos); });
+	return m_cache->nodes.get(pos, [&]() -> Cache::Sample { return sample(pos, step); });
 }
 
-std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos)
+std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_step_t step)
 {
 	const auto block_pos = getNodeBlockPos(pos);
 	auto &client_map = m_client->getEnv().getClientMap();
@@ -200,7 +199,7 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos)
 			auto [height_it, height_inserted] =
 					m_cache->heights.try_emplace(v2pos_t(pos.X, pos.Z));
 			if (height_inserted)
-				height_it->second = m_mg->getGroundLevelAtPoint(height_it->first);
+				height_it->second = m_mg->getGroundLevelAtPointStep(height_it->first, step);
 			const auto surface_y = height_it->second;
 			// Only samples strictly below the calculated surface may stand in as
 			// invisible occluders for omitted world-merge blocks. Surface and water
@@ -211,7 +210,7 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos)
 			// Far-mesh sea fallback is visual only. Retain calculated water between
 			// below-sea-level terrain and water_level when no merged block is available.
 			if (pos.Y > surface_y && m_mg->visible_water_level(pos)) {
-				const auto fill = m_mg->visible_content(pos, use_weather);
+				const auto fill = m_mg->visible_content(pos, use_weather, step);
 				const auto content = fill.getContent();
 				if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
 						content != CONTENT_AIR) {
@@ -229,7 +228,7 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos)
 					// above the exact height. Retain its calculated weather-dependent
 					// surface material for the missing-block fallback.
 					const auto fill = m_mg->visible_content(
-							v3pos_t(pos.X, surface_y, pos.Z), use_weather);
+							v3pos_t(pos.X, surface_y, pos.Z), use_weather, step);
 					const auto content = fill.getContent();
 					if (content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
 							content != CONTENT_AIR) {
@@ -299,7 +298,7 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos)
 		// ===
 	}
 
-	if (const auto v = m_mg->visible_content(pos, use_weather);
+	if (const auto v = m_mg->visible_content(pos, use_weather, step);
 			v.getContent() != CONTENT_IGNORE && v.getContent() != CONTENT_UNKNOWN) {
 		const auto visible = m_mg->surface_2d() && v.getContent() != CONTENT_AIR;
 		return {v, visible};

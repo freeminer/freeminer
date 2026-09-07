@@ -7,6 +7,8 @@
 #pragma once
 
 #include "fm_weather.h"
+#include "irr_v3d.h"
+#include "irrlichttypes.h"
 #include "util/unordered_map_hash.h"
 
 #include "constants.h"
@@ -263,11 +265,12 @@ public:
 	MapNode visible_ice;
 	MapNode visible_transparent = {CONTENT_AIR, LIGHT_SUN};
 
+	virtual inline pos_t getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step) { return getGroundLevelAtPoint(p); }
 	MapNode visible_surface_by_climate(
 			weather::heat_t heat, weather::humidity_t humidity) const;
-	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y);
+	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step);
 	virtual bool visible_water_level(const v3pos_t &p);
-	virtual MapNode visible_content(const v3pos_t &p, bool use_weather);
+	virtual MapNode visible_content(const v3pos_t &p, bool use_weather, block_step_t step);
 	virtual bool surface_2d() { return true; };
 	virtual weather::heat_t calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather);
 	virtual weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather);

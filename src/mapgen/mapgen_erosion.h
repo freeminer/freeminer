@@ -19,6 +19,7 @@ along with Freeminer. If not, see <http://www.gnu.org/licenses/>.
 
 #include <vector>
 
+#include "irrlichttypes.h"
 #include "json/json.h"
 #include "mapgen/mapgen_v7.h"
 
@@ -46,7 +47,7 @@ public:
 	int generateTerrain() override;
 	int getSpawnLevelAtPoint(v2pos_t p) override;
 	int getGroundLevelAtPoint(v2pos_t p) override;
-	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override;
 
 private:
 	struct Vec2f {

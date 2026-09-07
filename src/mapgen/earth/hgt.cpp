@@ -38,8 +38,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <utility>
 #include <vector>
-#include "debug/dump.h"
 #include "http.h"
+#include "world_elevation.h"
+#include "irrlichttypes.h"
 #include "serialization.h"
 
 #if USE_TIFF
@@ -47,6 +48,10 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #define HGT_DEBUG 0
+
+#if HGT_DEBUG
+#include "debug/dump.h"
+#endif
 
 // bad anything but works
 // todo: prepare all data from all sources in one good tiled layer
@@ -107,8 +112,23 @@ std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::
 			}};
 }
 
-height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lon)
+height::height_t hgts::get(
+		const height_hgt::ll_t lat, const height_hgt::ll_t lon, block_step_t step)
 {
+
+/*
+	Use step >= 11—equivalent to the current step > 10.
+	Here, step is a power-of-two level: at the default Earth scale, level 11 samples every 2,048 metres, close to the map’s 1,855 metres per pixel.
+	For custom horizontal scales, choose the first level where:
+	(1ULL << step) * std::min(scale.X, scale.Z) >= 1855.0
+*/
+    // TODO : tune me
+    //if (step >= 11) 
+	if (step >= 8) 
+	{
+		if (const auto result = world_elevation.get(folder, lat, lon))
+			return *result;
+	}
 	const auto lat1 = height::lat_start(lat);
 	const auto lon1 = height::lon_start(lon);
 
@@ -990,7 +1010,7 @@ height::height_t height::get(ll_t lat, ll_t lon)
 				//lat_seconds, lon_seconds,
 				seconds_per_px_x, seconds_per_px_y, lat, lon, lat_loaded, lon_loaded,
 				(lat - lat_loaded), pixel_per_deg_x, (lon - lon_loaded), pixel_per_deg_y);
-		//return height[2]; // debug not interpolated
+	//return height[2]; // debug not interpolated
 #endif
 
 	// ratio where X lays

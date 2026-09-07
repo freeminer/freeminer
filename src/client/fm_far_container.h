@@ -22,8 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "fm_nodecontainer.h"
-#include "mapblock.h"
-#include "threading/concurrent_unordered_map.h"
+#include "irrlichttypes.h"
 #include <memory>
 
 class Mapgen;
@@ -34,7 +33,7 @@ class FarContainer : public NodeContainer
 	int m_surface_depth{2};
 	struct Cache;
 	std::unique_ptr<Cache> m_cache;
-	std::pair<const MapNode, bool> sample(const v3pos_t &p);
+	std::pair<const MapNode, bool> sample(const v3pos_t &p, block_step_t step);
 
 public:
 	Mapgen *m_mg{};
@@ -46,7 +45,7 @@ public:
 	FarContainer(const FarContainer &source, const v3pos_t &origin, pos_t side,
 			block_step_t step);
 	~FarContainer();
-	std::pair<const MapNode, bool> getNodeRefAndVisible(const v3pos_t &p) override;
+	std::pair<const MapNode, bool> getNodeRefAndVisible(const v3pos_t &p, block_step_t step = 0) override;
 	const MapNode getNodeRefUnsafe(const v3pos_t &p) override
 	{
 		return getNodeRefAndVisible(p).first;

@@ -165,7 +165,9 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("lodmesh", slow ? "3" : "5");
 	const auto farmesh = slow	   ? "5000"
 						 : android ? "10000"
-								   : std::to_string(FARMESH_LIMIT / 2);
+								   : "100000"
+			// std::to_string(FARMESH_LIMIT / 2)
+			;
 	settings->setDefault("farmesh", farmesh);
 	const auto mesh_chunk_and_farmesh_quality = "2"; //slow ? "2" : "4";
 	settings->setDefault("client_mesh_chunk", mesh_chunk_and_farmesh_quality);
