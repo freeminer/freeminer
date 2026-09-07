@@ -19,6 +19,10 @@
 #include "modifiedstate.h"
 #include "util/numeric.h" // getContainerPos
 
+#if !USE_ATOMIC_SHARED_PTR
+#include "threading/atomic.h"
+#endif
+
 class Circuit;
 class ServerEnvironment;
 struct ActiveABM;
