@@ -45,7 +45,8 @@ block_step_t getLodStep(const MapDrawControl &draw_control,
 		}
 		*/
 		const auto &cells = draw_control.cell_size_pow;
-		const auto max_lod = MAP_BLOCKP + draw_control.cell_size_pow;
+		// Neighbor sampling must fit the one-mapblock voxel padding.
+		const auto max_lod = MAP_BLOCKP;
 		for (int i = max_lod; i >= 1; --i) {
 			if (range >= (1 << cells) + (draw_control.lodmesh) * (1 << (i - 1))) {
 				return i;
