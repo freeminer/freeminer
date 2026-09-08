@@ -1,6 +1,10 @@
 
 #include "http.h"
+
+#if USE_OSMIUM
 #include "arnis-cpp/src/net.h"
+#endif
+
 #include <filesystem>
 #include <limits>
 #include <thread>
@@ -14,7 +18,9 @@
 
 size_t http_to_file(const std::string &url, const std::string &path)
 {
-	auto request_permit = arnis::net::request_permit();
+#if USE_OSMIUM
+	const auto request_permit = arnis::net::request_permit();
+#endif
 	HTTPFetchRequest req;
 	req.url = url;
 	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
@@ -118,10 +124,12 @@ std::string http_get_range(
 {
 	if (length == 0 || offset > std::numeric_limits<std::uint64_t>::max() - (length - 1))
 		return {};
-	auto request_permit = arnis::net::request_permit();
+#if USE_OSMIUM
+	const auto request_permit = arnis::net::request_permit();
+#endif
 	HTTPFetchRequest req;
 	req.url = url;
-	req.caller = HTTPFETCH_SYNC;
+	req.caller = HTTPFETCH_SYNC; 
 	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
 	req.extra_headers.emplace_back("Range: bytes=" + std::to_string(offset) + "-" +
 								   std::to_string(offset + length - 1));
