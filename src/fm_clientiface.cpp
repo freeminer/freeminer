@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "profiler.h"
 #include "remoteplayer.h"
+#include "server/luaentity_sao.h"
 #include "server/player_sao.h"
 #include "serverenvironment.h"
 #include "server.h"
@@ -38,6 +39,103 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/directiontables.h"
 #include "util/numeric.h"
 #include "util/unordered_map_hash.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+struct BlockSendPrediction
+{
+	// Blocks intersecting the movement line, starting at the player's block.
+	std::vector<v3bpos_t> path;
+	pos_t max_distance = 0;
+
+	std::vector<v3bpos_t> getLayer(pos_t layer) const;
+};
+
+BlockSendPrediction predictBlockSendCorridor(
+		const v3opos_t &playerpos, const v3opos_t &velocity, pos_t max_distance);
+
+std::vector<v3bpos_t> BlockSendPrediction::getLayer(pos_t layer) const
+{
+	if (layer == 0)
+		return path;
+	std::vector<v3bpos_t> result;
+	std::unordered_set<v3bpos_t, v3bposHash> visited;
+	const auto neighbors = FacePositionCache::getFacePositions(layer);
+	for (const auto &center : path) {
+		for (const auto &neighbor : neighbors) {
+			const auto p = center + neighbor;
+			if (radius_box(p, v3bpos_t()) > unsigned(max_distance) ||
+					!visited.insert(p).second)
+				continue;
+			// Overlapping shells must not reintroduce a block from a closer layer,
+			// even when the caller resumes scanning after skipping earlier layers.
+			if (std::any_of(path.begin(), path.end(), [&](const v3bpos_t &q) {
+					return radius_box(p, q) < unsigned(layer);
+				}))
+				continue;
+			result.push_back(p);
+		}
+	}
+	return result;
+}
+
+BlockSendPrediction predictBlockSendCorridor(
+		const v3opos_t &playerpos, const v3f &velocity, pos_t max_distance)
+{
+	BlockSendPrediction result;
+	result.max_distance = std::max<pos_t>(0, max_distance);
+	result.path.emplace_back(0, 0, 0);
+	if (max_distance <= 0)
+		return result;
+
+	constexpr opos_t block_size = MAP_BLOCKSIZE * BS;
+	const auto center = getNodeBlockPos(floatToInt(playerpos, BS));
+	const auto speed = velocity.getLength();
+	if (!(speed > 0) || !std::isfinite(speed))
+		return result;
+	// Two seconds for emergence, transfer and mesh preparation, with bounded work.
+	const auto distance =
+			std::min<opos_t>({speed * 2 / block_size, 15, opos_t(max_distance)});
+	const v3f movement = velocity / speed * (block_size * distance);
+	const auto end =
+			getNodeBlockPos(floatToInt(playerpos + v3fToOpos(movement), BS)) - center;
+
+	// Traverse block boundaries in time order. Work relative to the current block
+	// to retain precision at large world coordinates. Node centers lie on integers,
+	// so the lower face of a block is half a node below its first node's center.
+	const auto local = playerpos - intToFloat(center * MAP_BLOCKSIZE, BS);
+	v3opos_t next;
+	v3opos_t increment;
+	v3bpos_t step;
+	for (unsigned axis = 0; axis < 3; ++axis) {
+		if (movement[axis] == 0) {
+			next[axis] = increment[axis] = std::numeric_limits<opos_t>::infinity();
+			continue;
+		}
+		step[axis] = movement[axis] > 0 ? 1 : -1;
+		const opos_t boundary = step[axis] > 0 ? block_size - BS / 2 : -BS / 2;
+		next[axis] = (boundary - local[axis]) / movement[axis];
+		increment[axis] = block_size / std::abs(movement[axis]);
+	}
+	v3bpos_t offset;
+	while (offset != end) {
+		unsigned axis = 0;
+		opos_t earliest = std::numeric_limits<opos_t>::infinity();
+		for (unsigned i = 0; i < 3; ++i) {
+			if (offset[i] != end[i] && next[i] < earliest) {
+				axis = i;
+				earliest = next[i];
+			}
+		}
+		offset[axis] += step[axis];
+		next[axis] += increment[axis];
+		if (radius_box(offset, v3bpos_t()) <= unsigned(max_distance))
+			result.path.push_back(offset);
+	}
+	return result;
+}
 
 int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
@@ -84,14 +182,26 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	auto playerpos = sao->getBasePosition();
 
 	v3f playerspeed = player->getSpeed();
-	if (playerspeed.getLength() > 120.0 * BS) // cheater or bug, ignore him
-		return 0;
-	v3f playerspeeddir(0, 0, 0);
-	if (playerspeed.getLength() > 1.0 * BS)
-		playerspeeddir = playerspeed / playerspeed.getLength();
-	// Predict to next block
+	ServerActiveObject *movement_source = sao;
+	while (movement_source->getParent())
+		movement_source = movement_source->getParent();
+	if (auto *entity = dynamic_cast<LuaEntitySAO *>(movement_source))
+		playerspeed = entity->getVelocity();
+	const auto reported_speed = playerspeed.getLength();
+	if (!std::isfinite(reported_speed))
+		playerspeed = v3f();
+	else if (reported_speed > 120.0 * BS)
+		playerspeed *= (120.0 * BS / reported_speed);
+	const auto speed = playerspeed.getLength();
+	const auto speed_in_blocks = speed / (MAP_BLOCKSIZE * BS);
+	const bool predict_movement = speed_in_blocks > 0.8;
+	v3f playerspeeddir;
+	if (speed > 1.0 * BS)
+		playerspeeddir = playerspeed / speed;
+	// Keep fast-movement scans centered on the player; prefetch follows below.
 	v3opos_t playerpos_predicted =
-			playerpos + v3fToOpos(playerspeeddir) * MAP_BLOCKSIZE * BS;
+			predict_movement ? playerpos
+							 : playerpos + v3fToOpos(playerspeeddir) * MAP_BLOCKSIZE * BS;
 
 	v3pos_t center_nodepos = floatToInt(playerpos_predicted, BS);
 
@@ -110,8 +220,10 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		Get the starting value of the block finder radius.
 	*/
 
-	if (m_last_center != center) {
+	if (m_last_center != center ||
+			m_last_direction.getDistanceFrom(playerspeeddir) > 0.4) {
 		m_last_center = center;
+		m_last_direction = playerspeeddir;
 		m_nearest_unsent_reset_timer = 999;
 		m_nothing_to_send_pause_timer = -1;
 	}
@@ -135,7 +247,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		// infostream<<"Resetting m_nearest_unsent_d for "<<peer_id<<std::endl;
 	}
 
-	if (m_nothing_to_send_pause_timer >= 0) {
+	if (m_nothing_to_send_pause_timer >= 0 && !predict_movement) {
 		return 0;
 	}
 
@@ -216,9 +328,10 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	// std::endl;
 
 	s16 d_max = full_d_max;
-	thread_local static const s16 d_max_gen_s =
+	thread_local static const pos_t d_max_gen_s =
 			g_settings->getS16("max_block_generate_distance");
-	s16 d_max_gen = MYMIN(d_max_gen_s, wanted_range);
+	const pos_t d_max_gen =
+			wanted_range > 0 ? std::min<pos_t>(d_max_gen_s, wanted_range) : d_max_gen_s;
 
 	// Don't loop very much at a time
 	s16 max_d_increment_at_time = 10;
@@ -234,7 +347,9 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	s32 nearest_sent_d = -1;
 	// bool queue_is_full = false;
 
-	const f32 speed_in_blocks = (playerspeed / (MAP_BLOCKSIZE * BS)).getLength();
+	BlockSendPrediction prediction;
+	if (predict_movement)
+		prediction = predictBlockSendCorridor(playerpos, playerspeed, full_d_max);
 
 	int num_blocks_air = 0;
 	int blocks_occlusion_culled = 0;
@@ -267,46 +382,19 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		}
         */
 
-		bool can_skip = d > 1;
-		// Fast fall/move optimize. speed_in_blocks now limited to 6.4
-		if (speed_in_blocks > 0.8 && d <= 2) {
-			can_skip = false;
-			if (d == 0) {
-				for (s16 addn = 0; addn < (speed_in_blocks + 1) * 2; ++addn)
-					list.push_back(floatToInt(playerspeeddir * addn, 1));
-			} else if (d == 1) {
-				for (s16 addn = 0; addn < (speed_in_blocks + 1) * 1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(0, 0, 1)); // back
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(-1, 0, 0)); // left
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(1, 0, 0)); // right
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(0, 0, -1)); // front
-				}
-			} else if (d == 2) {
-				for (s16 addn = 0; addn < (speed_in_blocks + 1) * 1.5; ++addn) {
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(-1, 0, 1)); // back left
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(1, 0, 1)); // left right
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(-1, 0, -1)); // right left
-					list.push_back(floatToInt(playerspeeddir * addn, 1) +
-								   v3pos_t(1, 0, -1)); // front right
-				}
-			}
-		} else {
-			/*
-				Get the border/face dot coordinates of a "d-radiused"
-				box
-			*/
+		const bool can_skip = d > 1;
+		if (predict_movement)
+			list = prediction.getLayer(d);
+		else
 			list = FacePositionCache::getFacePositions(d);
-		}
 
 		for (auto li = list.begin(); li != list.end(); ++li) {
+			// A layer around the path can be longer than an ordinary shell.
+			if (predict_movement && porting::getTimeMs() > end_ms)
+				goto queue_full_break;
 			const auto p = *li + center;
+			const pos_t block_distance =
+					predict_movement ? radius_box(*li, v3bpos_t()) : d;
 
 			/*
 				Send throttling
@@ -337,7 +425,7 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 			}
 
 			// If this is true, inexistent block will be made from scratch
-			bool generate = d <= d_max_gen;
+			bool generate = block_distance <= d_max_gen;
 
 			// infostream<<"d="<<d<<std::endl;
 
@@ -527,7 +615,12 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 				Add block to send queue
 			*/
 
-			PrioritySortedBlockTransfer q((float)d, p, peer_id);
+			// Preserve line-first, then layer-by-layer order in the global send queue.
+			const float priority =
+					predict_movement
+							? float(d) + float(li - list.begin()) / (list.size() + 1)
+							: float(d);
+			PrioritySortedBlockTransfer q(priority, p, peer_id);
 
 			dest.push_back(q);
 
@@ -536,6 +629,10 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 			else
 				num_blocks_selected += 1;
 		}
+
+		// Finish emerging the movement line before spending work on its surroundings.
+		if (predict_movement && d == 0 && nearest_emerged_d == 0)
+			goto queue_full_break;
 
 		if (porting::getTimeMs() > end_ms) {
 			break;
@@ -565,7 +662,9 @@ queue_full_break:
 
 		// If nothing was found for sending and nothing was queued for
 		// emerging, continue next time browsing from here
-		if (nearest_emerged_d != -1 && nearest_emerged_d > nearest_emergefull_d) {
+		if (nearest_emerged_d != -1 &&
+				(nearest_emergefull_d == -1 ||
+						nearest_emerged_d <= nearest_emergefull_d)) {
 			new_nearest_unsent_d = nearest_emerged_d;
 		} else if (nearest_emergefull_d != -1) {
 			new_nearest_unsent_d = nearest_emergefull_d;
