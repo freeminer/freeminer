@@ -331,7 +331,8 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 					 .asBool(); //params["invert"].empty()?1:params["invert"].asBool();
 	invert_yz = params.get("invert_yz", 1).asBool();
 	invert_xy = params.get("invert_xy", 0).asBool();
-	size = params.get("size", (MAX_MAP_GENERATION_LIMIT - 1000)).asDouble(); // = max_r
+	size = params.get("size", static_cast<double>(MAX_MAP_GENERATION_LIMIT - 1000))
+				   .asDouble(); // = max_r
 	if (params.get("center", Json::Value()).isObject())
 		center = v3f(params["center"]["x"].asDouble(), params["center"]["y"].asDouble(),
 				params["center"]["z"].asDouble()); //v3f(5, -size - 5, 5);
@@ -346,7 +347,9 @@ MapgenMath::MapgenMath(MapgenMathParams *params_, EmergeParams *emerge) :
 	if (params["generator"].asString() == "mengersponge") {
 		internal = 1;
 		func = &mengersponge;
-		size = params.get("size", (MAX_MAP_GENERATION_LIMIT - 1000) / 2).asDouble();
+		size = params.get("size",
+							 static_cast<double>((MAX_MAP_GENERATION_LIMIT - 1000) / 2))
+					   .asDouble();
 		//scale = params.get("scale", 1.0 / size).asDouble();
 		iterations = params.get("N", 13).asInt();
 		//if(!center.getLength()) center = v3f(-size, -size, -size);
