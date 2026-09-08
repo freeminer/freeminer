@@ -2,8 +2,12 @@
 // Included by test_fm_content_mapblock.cpp to reuse FmMockGameDef.
 
 #include "client/fm_far_material.h"
+#include "client/fm_imagefilters.h"
 #include "fm_far_node.h"
 #include "fm_world_merge.h"
+#include "irr_ptr.h"
+#include <IVideoDriver.h>
+#include <irrlicht.h>
 
 namespace
 {
@@ -66,6 +70,7 @@ public:
 		TEST(testFarCoverRendering);
 		TEST(testOverlayAndNearTextures);
 		TEST(testTextureDefinitionAndClassification);
+		TEST(testOpaqueFarImage);
 	}
 
 	void testOpaqueUnderCover()
@@ -192,7 +197,7 @@ public:
 		original.animation.vertical_frames.aspect_h = 16;
 		original.scale = 2;
 		const auto far_tile = farmesh::opaqueFarTileDef(original);
-		UASSERTEQ(std::string, far_tile.name, "glass.png^[opacity:64^[noalpha");
+		UASSERTEQ(std::string, far_tile.name, "glass.png^[opacity:64^[fm_opaque");
 		UASSERTEQ(TileAnimationType, far_tile.animation.type, TAT_VERTICAL_FRAMES);
 		UASSERTEQ(u8, far_tile.scale, original.scale);
 		UASSERTEQ(std::string, original.name, "glass.png^[opacity:64");
@@ -203,6 +208,43 @@ public:
 		liquid.alpha = ALPHAMODE_BLEND;
 		UASSERT(!farmesh::isTransparentCover(liquid));
 		UASSERT(!farmesh::isOpaqueStructure(liquid));
+	}
+
+	void testOpaqueFarImage()
+	{
+		SIrrlichtCreationParameters params;
+		params.DriverType = video::EDT_NULL;
+		irr_ptr<IrrlichtDevice> device(createDeviceEx(params));
+		UASSERT(device);
+		irr_ptr<video::IImage> image(
+				device->getVideoDriver()->createImage(video::ECF_A8R8G8B8, {64, 64}));
+		UASSERT(image);
+		// A single off-grid visible pixel must fill even a large transparent area.
+		image->fill(video::SColor(0, 0, 0, 0));
+		const video::SColor leaf(255, 30, 180, 60);
+		image->setPixel(1, 1, leaf);
+		image->setPixel(2, 2, video::SColor(0, 255, 0, 255));
+		farmesh::makeOpaqueFarImage(image.get());
+		for (u32 y = 0; y < 64; ++y)
+			for (u32 x = 0; x < 64; ++x)
+				UASSERTEQ(u32, image->getPixel(x, y).color, leaf.color);
+
+		// Visible colors are alpha-weighted, and partial alpha is composited.
+		image->fill(video::SColor(0, 0, 0, 0));
+		image->setPixel(0, 0, video::SColor(255, 200, 100, 0));
+		image->setPixel(1, 0, video::SColor(85, 0, 100, 200));
+		farmesh::makeOpaqueFarImage(image.get());
+		UASSERTEQ(
+				u32, image->getPixel(0, 0).color, video::SColor(255, 200, 100, 0).color);
+		UASSERTEQ(u32, image->getPixel(1, 0).color,
+				video::SColor(255, 100, 100, 100).color);
+		UASSERTEQ(
+				u32, image->getPixel(2, 0).color, video::SColor(255, 150, 100, 50).color);
+
+		image->fill(video::SColor(0, 0, 0, 0));
+		farmesh::makeOpaqueFarImage(image.get());
+		UASSERTEQ(u32, image->getPixel(0, 0).color,
+				video::SColor(255, 128, 128, 128).color);
 	}
 };
 
