@@ -1,9 +1,4 @@
-
 #include "http.h"
-
-#if USE_OSMIUM
-#include "arnis-cpp/src/net.h"
-#endif
 
 #include <filesystem>
 #include <limits>
@@ -15,6 +10,10 @@
 #include "log.h"
 #include "settings.h"
 #include "threading/concurrent_set.h"
+
+#if USE_OSMIUM
+#include "arnis-cpp/src/net.h"
+#endif
 
 size_t http_to_file(const std::string &url, const std::string &path)
 {
@@ -129,7 +128,7 @@ std::string http_get_range(
 #endif
 	HTTPFetchRequest req;
 	req.url = url;
-	req.caller = HTTPFETCH_SYNC; 
+	req.caller = HTTPFETCH_SYNC;
 	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
 	req.extra_headers.emplace_back("Range: bytes=" + std::to_string(offset) + "-" +
 								   std::to_string(offset + length - 1));
