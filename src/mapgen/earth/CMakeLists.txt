@@ -17,14 +17,6 @@ if(ENABLE_VOXEL_EARTH AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/luanti-earth/nativ
     message(STATUS "Using voxel earth mapgen ${USE_VOXEL_EARTH}")
 endif()
 
-# if(USE_VOXEL_EARTH)
-#     set(mapgen_earth_SRCS
-#         ${mapgen_earth_SRCS}
-#         #${CMAKE_CURRENT_SOURCE_DIR}/voxel_earth.cpp
-#     )
-# endif()
-
-
 list(APPEND mapgen_earth_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/hgt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/http.cpp
@@ -52,37 +44,8 @@ if(USE_VOXEL_EARTH)
 endif()
 
 
-if(1)
-    message(WARNING "mapgen_earth_SRCS=${mapgen_earth_SRCS}")
-    set(freeminer_mapgen_SRCS ${freeminer_mapgen_SRCS}
-        ${mapgen_earth_SRCS}
-        PARENT_SCOPE
-    )
-endif()
+set(freeminer_mapgen_SRCS ${freeminer_mapgen_SRCS}
+    ${mapgen_earth_SRCS}
+    PARENT_SCOPE
+)
 
-if(0)
-    add_library(mapgen_earth
-        ${mapgen_earth_SRCS}
-    )
-
-    if(USE_VOXEL_EARTH)
-        #target_include_directories(mapgen_earth PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tinygltf)
-    endif()
-
-
-    target_compile_definitions(mapgen_earth PRIVATE "MT_BUILDTARGET=1")
-
-    #  ${CMAKE_SOURCE_DIR}/irr/include
-    target_include_directories(mapgen_earth PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_BINARY_DIR}/src)
-    target_link_libraries(
-        mapgen_earth
-        #${ZLIB_LIBRARIES}
-        IrrlichtMt::IrrlichtMt
-        #${ZSTD_LIBRARY}
-        #${SOUND_LIBRARIES}
-        #${LUA_LIBRARY}
-        #${GMP_LIBRARY}
-        ${JSON_LIBRARY}
-    )
-
-endif()
