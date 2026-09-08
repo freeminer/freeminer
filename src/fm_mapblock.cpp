@@ -110,7 +110,7 @@ const MapBlock::mesh_type MapBlock::getLodMesh(block_step_t step, bool allow_oth
 				return mn;
 			}
 		}
-		if (step - inc >= 0) {
+		if (inc <= step) {
 			if (auto mp = m_lod_mesh[step - inc].load()) {
 				return mp;
 			}

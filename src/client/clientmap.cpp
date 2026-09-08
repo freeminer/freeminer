@@ -1702,7 +1702,9 @@ void ClientMap::updateDrawListShadow(v3f shadow_light_pos, v3f shadow_light_dir,
 			Loop through blocks in sector
 		*/
 
-		for (const auto & [key, block] : m_blocks) {
+		// fm: Keep block entries alive throughout shadow-list traversal.
+		for (const auto blocks_lock = m_blocks.lock_shared_rec();
+				const auto &[key, block] : m_blocks) {
 			++blocks_loaded;
 			
 			const auto mesh = block->getLodMesh(farmesh::getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block->getPos(), speedf), true);
