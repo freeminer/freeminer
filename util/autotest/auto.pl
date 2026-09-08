@@ -319,6 +319,13 @@ our $options = {
         water_level       => -30000,
         static_spawnpoint => '(10,10,10)',
     },
+    fall4 => {
+        '--world'         => $script_path . 'world_fall4',
+        mg_name           => 'earth',
+        static_spawnpoint => '(0,10000000,0)',
+        farmesh           => 10000000,
+        enable_fog        => 0,
+    },
     far => {
         max_block_generate_distance => 50,
         max_block_send_distance     => 50,
