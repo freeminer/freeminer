@@ -221,4 +221,6 @@ public:
 		std::atomic_int fill{};
 		void clean() { set = miss = level = check = fill = 0; }
 	} stat;
+
+	static constexpr auto MAX_BUILDING_HEIGHT = 1100;
 };
