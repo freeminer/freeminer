@@ -508,8 +508,8 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 					for (const auto &dir : g_6dirs) {
 						if (const auto block_near = env->getMap().getBlock(p + dir)) {
 							const auto lock = block_near->lock_shared_rec();
-							if (block_near->m_is_mono_block &&
-									block_near->data[0].param0 != CONTENT_AIR) {
+
+							if (!block_near->isAir()) {
 								++not_air;
 								break;
 							}
@@ -526,16 +526,22 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 					continue;
 				}
 
-				// Reset usage timer, this block will be of use in the future.
-				block->resetUsageTimer();
+				if (!block->isGenerated()) {
+					// DUMP(p, block->isGenerated());
+					continue;
+				}
 
-				const auto complete = block->getLightingComplete();
-				if (!complete) {
-					env->getServerMap().lighting_modified_add(p, d);
+				if (!block->getLightingComplete()) {
+					if (!block->isAir()) {
+						env->getServerMap().lighting_modified_add(p, d);
+					}
 					if (block_sent && can_skip) {
 						continue;
 					}
 				}
+
+				// Reset usage timer, this block will be of use in the future.
+				block->resetUsageTimer();
 
 				// if (block->lighting_broken > 0 && (block_sent || can_skip))
 				//	continue;
@@ -547,11 +553,6 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 									block_is_invalid = true;
 								}
 				*/
-
-				if (block->isGenerated() == false) {
-					// DUMP(p, block->isGenerated());
-					continue;
-				}
 
 				/*
 					If block is not close, don't send it unless it is near

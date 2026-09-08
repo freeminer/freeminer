@@ -5,7 +5,7 @@ Upstream changes are merged for every release. The current merge tag is 5.17.0.
 
 - Minimize the diff from the upstream merge tag.
 - Put substantial changes in new files named `fm_*` whenever possible.
-- Freeminer specific files named "fm_*" or located in src/mapgen/earth
+- Freeminer specific files named "fm_*" or src/mapgen/mapgen_earth* or located in src/mapgen/earth
 - Including implementation files with `#include "fm_*.cpp"` is allowed for non Freeminer files.
 - After changing any Freeminer files, format them with `clang-format`.
 - In original non Freeminer files, mark each diff to upsteam release section with `// fm:` at the beginning and `// ===` at the end. Combine sections if possible if already exists.
