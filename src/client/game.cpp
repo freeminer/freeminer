@@ -2196,7 +2196,11 @@ void Game::toggleFog()
 			draw_control->enable_fog = allowed;
 			draw_control->enable_volumetric_fog = false;
 			m_game_ui->showTranslatedStatusText("Volumetric fog disabled");
+		} else if (!m_flags.disable_clouds) {
+			m_flags.disable_clouds = true;
+			m_game_ui->showTranslatedStatusText("Clouds disabled");
 		} else {
+			m_flags.disable_clouds = false;
 			draw_control->enable_fog = allowed;
 			draw_control->enable_volumetric_fog = true;
 			if (!allowed)
@@ -4191,9 +4195,9 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 
 void Game::updateClouds(float dtime)
 {
-    // fm:
-	if (draw_control->enable_volumetric_fog &&
-			g_settings->getPos("volumetric_fog") > 0) {
+	// fm:
+	if (m_flags.disable_clouds || (draw_control->enable_volumetric_fog &&
+			g_settings->getPos("volumetric_fog") > 0)) {
 		this->clouds->setVisible(false);
 		return;
 	}

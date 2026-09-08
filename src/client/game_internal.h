@@ -280,6 +280,9 @@ protected:
 private:
 	struct Flags {
 		bool disable_camera_update = false;
+		// fm:
+		bool disable_clouds = false;
+		// ===
 		/// 0 = no debug text active, see toggleDebug() for the rest
 		int debug_state = 0;
 	};
