@@ -57,12 +57,14 @@ void Mapgen_features::layers_init(EmergeParams *emerge, const Json::Value &param
 					MapNode(content, layerj["param1"].asInt(), layerj["param2"].asInt())};
 			layer.height_min =
 					layerj.get("y_min",
-								  layerj.get("height_min", -MAX_MAP_GENERATION_LIMIT)
+								  layerj.get("height_min",
+												Json::Int64(-MAX_MAP_GENERATION_LIMIT))
 										  .asInt())
 							.asInt();
 			layer.height_max =
 					layerj.get("y_max",
-								  layerj.get("height_max", +MAX_MAP_GENERATION_LIMIT)
+								  layerj.get("height_max",
+												Json::Int64(+MAX_MAP_GENERATION_LIMIT))
 										  .asInt())
 							.asInt();
 			layer.thickness = layerj.get("thickness", layer_default_thickness).asInt() *
