@@ -325,6 +325,7 @@ our $options = {
         static_spawnpoint => '(0,10000000,0)',
         farmesh           => 10000000,
         enable_fog        => 0,
+        movement_fov      => 0,
     },
     far => {
         max_block_generate_distance => 50,

@@ -1843,7 +1843,10 @@ void ServerMap::drainLightingQueue()
 	{
 		const auto lock = m_blocks.lock_shared_rec();
 		for (const auto &[pos, block] : m_blocks)
-			if (block && block->isGenerated() && block->getLightingComplete() != 0xffff)
+			if (block && block->isGenerated() && !block->isAir() &&
+					!block->getLightingComplete()
+					//&& block->getLightingComplete() != 0xffff
+			)
 				lighting_modified_add(pos);
 	}
 
