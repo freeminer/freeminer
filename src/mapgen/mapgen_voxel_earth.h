@@ -33,4 +33,6 @@ public:
 private:
 	void start_download_and_voxelize(double lat, double lon, double elevation,
 			double radius, int resolution, const std::string &api_key);
+
+	static constexpr auto MAX_BUILDING_HEIGHT = 1100;
 };

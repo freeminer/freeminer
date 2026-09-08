@@ -872,7 +872,7 @@ void MapgenEarth::fillChunkWithAir()
 
 int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 {
-	return std::max(2, get_height(p.X, p.Y,0 ) + 2);
+	return std::max(2, get_height(p.X, p.Y, 0) + 2);
 }
 
 pos_t MapgenEarth::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
@@ -1332,11 +1332,21 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 		return;
 	}
 
+	const pos_t terrain_max_y = cachedOrComputeTerrainMaxY();
+	// fm:
+	// Above 1000 metres of terrain clearance, skip even loading authored objects.
+	// Compare in metres so the cutoff also respects the Earth's vertical scale.
+	if ((static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y > MAX_BUILDING_HEIGHT) {
+		fillChunkWithAir();
+		finish_generation();
+		return;
+	}
+	// ===
+
 	// On the first high chunk the authored ceiling may not exist yet. Avoid the
 	// base-terrain Y loop and let generateBuildings parse just enough to compute
 	// that ceiling; hdl::apply rejects the chunk before flood-fill/generation if
 	// it is also above every authored object.
-	const pos_t terrain_max_y = cachedOrComputeTerrainMaxY();
 	if (node_min.Y > terrain_max_y) {
 		fillChunkWithAir();
 		generateBuildings();
