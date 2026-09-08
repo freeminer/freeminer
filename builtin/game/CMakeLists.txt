@@ -1,4 +1,11 @@
 set(BUILTIN_GAME_SRCS
+	game/fm_chat.lua
+	game/fm_register.lua
+	game/geo.lua
+	game/key_value_storage.lua
+	game/mod_debugging.lua
+	game/stat.lua
+
 	game/async.lua
 	game/auth.lua
 	game/chat.lua

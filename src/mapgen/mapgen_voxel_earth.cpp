@@ -73,8 +73,7 @@ MapgenVoxelEarth::MapgenVoxelEarth(MapgenEarthParams *params_, EmergeParams *eme
 		MapgenEarth(params_, emerge)
 {
 #if USE_VOXEL_EARTH
-	const std::string geoid_path =
-			maps_holder->data_root + DIR_DELIM + "egm96_15.gtx";
+	const std::string geoid_path = maps_holder->data_root + DIR_DELIM + "egm96_15.gtx";
 	earth::set_geoid_grid_path(geoid_path);
 	if (!earth::geoid_grid_loaded()) {
 		const auto lock = std::lock_guard(maps_holder->download_lock);
@@ -93,7 +92,7 @@ MapgenVoxelEarth::MapgenVoxelEarth(MapgenEarthParams *params_, EmergeParams *eme
 		infostream << "Voxel earth EGM96 grid: " << earth::geoid_grid_path() << '\n';
 	} else {
 		errorstream << "Voxel earth requires egm96_15.gtx; voxel geometry will be "
-						"skipped instead of being placed at WGS84 ellipsoid height\n";
+					   "skipped instead of being placed at WGS84 ellipsoid height\n";
 	}
 
 	std::vector<std::string> texture_dirs;
@@ -127,10 +126,10 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 		if (!earth::geoid_grid_loaded())
 			return;
 		const std::string &apiKeyStr = api_key;
-		const pos_t terrain_y =
-				std::max(get_height(node_min.X + csize.X / 2, node_min.Z + csize.Z / 2, 0),
-						static_cast<pos_t>(water_level)) +
-				1;
+		const pos_t terrain_y = std::max(get_height(node_min.X + csize.X / 2,
+												 node_min.Z + csize.Z / 2, 0),
+										static_cast<pos_t>(water_level)) +
+								1;
 
 		TileDownloader downloader(
 				apiKeyStr, maps_holder->data_root + DIR_DELIM + "voxel_earth");
@@ -164,10 +163,10 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 
 		std::vector<Voxel> voxels;
 		const auto collect_voxel = [&](const int x, const int y, const int z,
-										 const uint8_t r, const uint8_t g,
-										 const uint8_t b, const uint8_t a) {
-			const v3pos_t pos_rel{static_cast<pos_t>(x), static_cast<pos_t>(y),
-					static_cast<pos_t>(z)};
+										   const uint8_t r, const uint8_t g,
+										   const uint8_t b, const uint8_t a) {
+			const v3pos_t pos_rel{
+					static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 			if (mg->vm->exists(node_min + pos_rel)) {
 				voxels.push_back({x, y, z, r, g, b, a});
 			}
@@ -198,11 +197,10 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 		// complete model so roofs and upper walls are not erased by the carving.
 		std::map<std::pair<pos_t, pos_t>, pos_t> column_bottoms;
 		for (const auto &v : voxels) {
-			const v3pos_t pos = node_min +
-					v3pos_t(static_cast<pos_t>(v.x), static_cast<pos_t>(v.y),
-							static_cast<pos_t>(v.z));
-			auto [it, inserted] =
-					column_bottoms.emplace(std::pair{pos.X, pos.Z}, pos.Y);
+			const v3pos_t pos =
+					node_min + v3pos_t(static_cast<pos_t>(v.x), static_cast<pos_t>(v.y),
+									   static_cast<pos_t>(v.z));
+			auto [it, inserted] = column_bottoms.emplace(std::pair{pos.X, pos.Z}, pos.Y);
 			if (!inserted)
 				it->second = std::min(it->second, pos.Y);
 		}
@@ -215,9 +213,9 @@ void MapgenVoxelEarth::start_download_and_voxelize(double lat, double lon,
 		}
 
 		for (const auto &v : voxels) {
-			const v3pos_t pos = node_min +
-					v3pos_t(static_cast<pos_t>(v.x), static_cast<pos_t>(v.y),
-							static_cast<pos_t>(v.z));
+			const v3pos_t pos =
+					node_min + v3pos_t(static_cast<pos_t>(v.x), static_cast<pos_t>(v.y),
+									   static_cast<pos_t>(v.z));
 			const auto block_name = voxel_importer::rgb_to_block(v.r, v.g, v.b);
 			const auto id = ndef->getId(block_name);
 			mg->vm->setNode(pos, MapNode{id, LIGHT_SUN});
@@ -251,6 +249,15 @@ void MapgenVoxelEarth::makeChunk(BlockMakeData *data)
 	full_node_max = (blockpos_max + 2) * MAP_BLOCKSIZE - v3pos_t(1, 1, 1);
 
 	blockseed = getBlockSeed2(full_node_min, seed);
+
+	// Skip terrain generation and tile downloads above 1000 metres of clearance.
+	const pos_t terrain_max_y = cachedOrComputeTerrainMaxY();
+	if ((static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y >
+			MAX_BUILDING_HEIGHT) {
+		fillChunkWithAir();
+		this->generating = false;
+		return;
+	}
 
 	//freeminer:
 	layers_prepare(node_min, node_max);

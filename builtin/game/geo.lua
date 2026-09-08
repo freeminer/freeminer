@@ -139,7 +139,7 @@ local smooth_move_active = {}
 -- @param player   Player object to move.
 -- @param target   Table with x, y, z fields indicating the destination position.
 -- @param max_h    Maximum extra arc height (in nodes), also capped by horizontal distance.
--- @param duration Total time (in seconds) for the movement.
+-- @param duration Optional total time in seconds; defaults to logarithmic distance scaling.
 local function smooth_move_player(player, target, max_h, duration)
     if not player or not target then
         return
@@ -154,7 +154,14 @@ local function smooth_move_player(player, target, max_h, duration)
         y = target.y,
         z = target.z,
     }
-    duration = math.max(0.001, tonumber(duration) or 0.001)
+    -- Include altitude so vertical trips also take longer with distance.
+    local dx = target.x - start.x
+    local dy = target.y - start.y
+    local dz = target.z - start.z
+    local horizontal_distance = math.sqrt(dx * dx + dz * dz)
+    local distance = math.sqrt(dx * dx + dy * dy + dz * dz)
+    duration = math.max(0.001, tonumber(duration) or
+        (1 + 2 * math.log(1 + distance / 100) / math.log(10)))
     max_h = math.max(0, tonumber(max_h) or 0)
 
     local move_key = player:get_player_name()
@@ -167,10 +174,6 @@ local function smooth_move_player(player, target, max_h, duration)
     local step_interval = 0.05
     local steps = math.max(1, math.ceil(duration / step_interval))
     local actual_interval = duration / steps
-
-    local dx = target.x - start.x
-    local dz = target.z - start.z
-    local horizontal_distance = math.sqrt(dx * dx + dz * dz)
 
     -- Limit the arc height so long jumps rise visibly without becoming a
     -- near-vertical launch. For straight vertical moves, do not add an arc.
@@ -261,7 +264,8 @@ local function move_player_to_geo(player, data, smooth)
 
         local pos = ll_to_pos(geo_data)
 
-        pos.y = core.get_spawn_level(pos.x, pos.z) - center_y
+        -- Allow geographic destinations above the terrain.
+        pos.y = (data.altitude or core.get_spawn_level(pos.x, pos.z)) - center_y
         local message = "Earth: Moving to " .. (data.display_name or "") .. (data.country or "") .. " " ..
                             (data.city or "") .. " : " .. pos.x .. "," .. pos.y .. "," .. pos.z
         print(message)
@@ -275,7 +279,7 @@ local function move_player_to_geo(player, data, smooth)
         end
 
         if smooth then
-            smooth_move_player(player, pos, 100000, 5)
+            smooth_move_player(player, pos, 100000)
         else
             player:set_pos(pos)
         end
@@ -1017,16 +1021,25 @@ local function move_to_city(player, name)
 
     local pname = player:get_player_name()
 
+    -- The ISS position must be fetched fresh rather than cached as a city.
+    local is_iss = name:lower() == "iss"
     -- Check cache
-    local cached = cache_get(name)
+    local cached = not is_iss and cache_get(name)
     if cached and cached[1] then
         move_player_to_geo(player, cached[1], 1)
         return nil
     end
 
     local url = get_api_url_for_name(name)
+    if is_iss then
+        url = "https://api.wheretheiss.at/v1/satellites/25544"
+    end
 
     if not http then
+        if is_iss then
+            core.chat_send_player(pname, "[geoip] HTTP API not available; cannot locate the ISS.")
+            return nil
+        end
         print("[geoip] HTTP API not available on server; cannot perform GeoIP lookup.")
         local key = string.lower(name:gsub("[^%w]+", "_"))
         return cities[key]
@@ -1036,6 +1049,32 @@ local function move_to_city(player, name)
         url = url,
         timeout = 8,
     }, function(result)
+        -- Normalize the satellite response to a geographic destination.
+        if is_iss then
+            local current_player = core.get_player_by_name(pname)
+            if not current_player then
+                return
+            end
+            if not result or not result.succeeded or result.code ~= 200 then
+                core.chat_send_player(pname, "[geoip] ISS request failed.")
+                return
+            end
+            local ok, data = pcall(core.parse_json, result.data)
+            if not ok or type(data) ~= "table" or
+                type(data.latitude) ~= "number" or not (math.abs(data.latitude) <= 90) or
+                type(data.longitude) ~= "number" or not (math.abs(data.longitude) <= 180) or
+                type(data.altitude) ~= "number" or not (data.altitude >= 0 and data.altitude < math.huge) or
+                data.units ~= "kilometers" then
+                core.chat_send_player(pname, "[geoip] Invalid ISS response.")
+                return
+            end
+            return move_player_to_geo(current_player, {
+                lat = data.latitude,
+                lon = data.longitude,
+                altitude = data.altitude * 1000,
+                display_name = "ISS",
+            }, 1)
+        end
         if not result or not result.succeeded then
             local err = (result and result.error) and result.error or "unknown error"
             core.chat_send_player(pname, "[geoip] nominatim request failed: " .. tostring(err))
@@ -1068,8 +1107,8 @@ end
 
 if core.is_creative_enabled("") then
     core.register_chatcommand("geo", {
-        params = "",
-        description = "Teleport to geo, city or lat,lon",
+        params = "<city | iss | lat,lon | x,y,z>",
+        description = "Teleport to geo, city, lat,lon or integer world coordinates x,y,z",
         privs = {teleport = true},
         func = function(name, param)
             local player = core.get_player_by_name(name)
@@ -1078,6 +1117,17 @@ if core.is_creative_enabled("") then
             end
 
         print("/geo ", name, param)
+
+        -- Three comma-separated integers are direct world coordinates.
+        local x, y, z = param:match("^%s*([+-]?%d+)%s*,%s*([+-]?%d+)%s*,%s*([+-]?%d+)%s*$")
+        if x then
+            smooth_move_player(player, {
+                x = tonumber(x),
+                y = tonumber(y),
+                z = tonumber(z),
+            }, 100000)
+            return true, ""
+        end
 
         local params = {} -- Table to store split parameters
         -- First, try splitting by comma
