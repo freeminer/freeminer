@@ -43,6 +43,8 @@ dofile(gamepath .. "async.lua")
 dofile(gamepath .. "death_screen.lua")
 
 -- fm:
+assert(loadfile(gamepath .. "key_value_storage.lua"))(builtin_shared)
+assert(loadfile(gamepath .. "fm_chat.lua"))(builtin_shared)
 dofile(gamepath.."stat.lua")
 local mapgen_name = core.get_mapgen_setting("mg_name")
 if mapgen_name == "earth" or mapgen_name == "voxel_earth" then

@@ -51,8 +51,6 @@ dofile(commonpath .. "strict.lua")
 dofile(commonpath .. "serialize.lua")
 dofile(commonpath .. "misc_helpers.lua")
 
-dofile(scriptdir.."key_value_storage.lua")
-
 --PLATFORM = "Android" -- for test
 
 if INIT == "game" then

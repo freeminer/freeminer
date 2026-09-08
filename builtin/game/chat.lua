@@ -1279,19 +1279,6 @@ core.register_chatcommand("msg", {
 	end,
 })
 
-core.register_chatcommand("die", {
-	params = "",
-	description = "Kills yourself.",
-	func = function(name, param)
-		local player = core.get_player_by_name(name)
-		if not player then
-			return
-		end
-		player:set_hp(0)
-		core.stat_add("suicide", name)
-	end,
-})
-
 core.register_chatcommand("last-login", {
 	params = S("[<name>]"),
 	description = S("Get the last login time of a player or yourself"),
@@ -1369,18 +1356,4 @@ core.register_chatcommand("kill", {
 	func = function(name, param)
 		return handle_kill_command(name, param == "" and name or param)
 	end,
-})
-
-core.register_chatcommand( "stat", {
-	params = "[name]",
-	description = "show in-game action statistics",
-	func = function(name, param)
-		if param == "" then
-			param = name
-		elseif not core.get_player_by_name(param) then
-			return false, "No such player."
-		end
-		local formspec = core.stat_formspec(param)
-		core.show_formspec(name, 'stat', formspec)
-	end
 })
