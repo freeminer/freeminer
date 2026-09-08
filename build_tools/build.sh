@@ -70,7 +70,8 @@ if [ -z "$NO_DEPS" ]; then
         ${SUDO} apt install -y $PACKAGE ||:
     done
   elif [ -e /etc/arch-release ]; then
-    ${SUDO} pacman --needed --noconfirm -Sy which git subversion cmake ninja ccache bzip2 zstd libjpeg-turbo freetype2 glfw-x11 libxxf86vm libxi sqlite3 hiredis libvorbis openal curl luajit gettext msgpack-cxx boost  clang lld llvm libc++ libc++abi libpng12 libpng libunwind
+    ${SUDO} pacman --needed --noconfirm -Sy which git subversion cmake ninja ccache bzip2 zstd libjpeg-turbo freetype2 glfw-x11 libxxf86vm libxi sqlite3 hiredis libvorbis openal curl luajit gettext msgpack-cxx boost  clang lld llvm libc++ libc++abi libpng protozero
+     # libunwind
     CMAKE_OPT=${CMAKE_OPT=-DCMAKE_BUILD_WITH_INSTALL_RPATH=1}
   fi
 fi
