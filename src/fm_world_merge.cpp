@@ -214,11 +214,21 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	size_t valid_count = 0;
 	size_t solid_count = 0;
 	bool has_opaque_structure = false;
+	std::optional<size_t> flowing_index;
+	const auto is_flowing = [&](content_t content) {
+		return ndef && ndef->get(content).liquid_type == LIQUID_FLOWING;
+	};
 
-	for (const auto &node : samples) {
-		const auto content = node.getContent();
+	for (size_t i = 0; i < samples.size(); ++i) {
+		const auto content = samples[i].getContent();
 		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN)
 			continue;
+		// Flowing liquids are a last resort; even air takes precedence.
+		if (is_flowing(content)) {
+			if (!flowing_index || i == main_sample)
+				flowing_index = i;
+			continue;
+		}
 		++valid_count;
 		if (content != CONTENT_AIR) {
 			++solid_count;
@@ -228,7 +238,7 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	}
 
 	if (!valid_count)
-		return std::nullopt;
+		return flowing_index;
 
 	// A tie is solid so a flat surface with four samples above and four below
 	// remains closed. Sparse solids no longer survive merely because they happen
@@ -239,7 +249,7 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	// Filter only the material vote: sparse cover must still lose to air.
 	const auto material_candidate = [&](content_t content) {
 		return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
-			   (content != CONTENT_AIR) == select_solid &&
+			   !is_flowing(content) && (content != CONTENT_AIR) == select_solid &&
 			   !(select_solid && has_opaque_structure &&
 					   farmesh::isTransparentCover(ndef->get(content)));
 	};
@@ -476,7 +486,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						sample_pos.Z %= MAP_BLOCKSIZE;
 						return sample_block_it->second->getNodeNoLock(sample_pos);
 					};
-			// TODO: tune block selector
+					// TODO: tune block selector
 
 #if 0
 // Simple grid aligned

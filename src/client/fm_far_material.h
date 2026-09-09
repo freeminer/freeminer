@@ -8,10 +8,11 @@ namespace farmesh
 {
 inline TileDef opaqueFarTileDef(TileDef tile)
 {
-	// Apply after the node's own modifiers, so every base texel closes the coarse
-	// surface. Texture slicing for animation happens afterwards as usual.
+	// Fill transparent areas from visible colors after the node's own modifiers,
+	// so every base texel closes the coarse surface without exposing hidden RGB.
+	// Texture slicing for animation happens afterwards as usual.
 	if (!tile.name.empty())
-		tile.name += "^[noalpha";
+		tile.name += "^[fm_opaque";
 	return tile;
 }
 }
