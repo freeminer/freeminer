@@ -25,7 +25,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdio>
 #include <cstdint>
 #include <cstdlib>
-#include <exception>
 #include <memory>
 #include <mutex>
 #include <limits>
@@ -39,16 +38,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "emerge.h"
 #include "mapgen/earth/png_holder.h"
-#include "mapgen/earth/rgb_temp.h"
 #include "mapgen/mg_decoration.h"
 #include "mapgen/mg_ore.h"
 #include "server.h"
-#include "filesys.h"
 #include "irr_v2d.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "log_types.h"
-#include "log.h"
 #include "map.h"
 #include "mapblock.h"
 #include "mapgen_earth.h"
@@ -720,6 +716,26 @@ MapNode MapgenEarth::earth_layer_get(
 	return layers_node[layer_index];
 }
 
+namespace farmesh
+{
+// Display-only sea coverage. Never use this to choose generated world nodes.
+inline std::optional<pos_t> farWaterSampleY(
+		pos_t y, pos_t terrain_y, pos_t sea_y, block_step_t step)
+{
+	if (!step || step >= FARMESH_STEP_MAX || terrain_y > sea_y || y < terrain_y)
+		return {};
+
+	// Far cells extend downward from their sampled Y. Keep the cell containing
+	// the sea surface even when its sample lies above sea level. Include terrain
+	// rounded to sea level by coarse elevation data, giving water priority over
+	// its climate-derived ground material in the distant preview.
+	const s64 cell_size = s64{1} << step;
+	if (static_cast<s64>(y) - sea_y >= cell_size)
+		return {};
+	return std::min(y, sea_y);
+}
+}
+
 bool MapgenEarth::visible(
 		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
 {
@@ -738,8 +754,12 @@ MapNode MapgenEarth::visible_content(
 	};
 
 	const auto surface_y = get_height(p.X, p.Z, step);
-	const auto solid = visible(p, surface_y, step);
-	const auto water = visible_water_level(p);
+	// Far water owns the coarse sea-surface cell, including rounded zero
+	// elevation. This affects visibility only; get_height/generateTerrain keep
+	// their original elevations and world materials.
+	const auto far_water_y = farmesh::farWaterSampleY(p.Y, surface_y, water_level, step);
+	const auto solid = !far_water_y && visible(p, surface_y, step);
+	const auto water = far_water_y.has_value() || visible_water_level(p);
 	if (!solid && !water) {
 		return visible_transparent;
 	}
@@ -754,7 +774,8 @@ MapNode MapgenEarth::visible_content(
 	// terrain whose elevation is below sea level; generateTerrain() deliberately
 	// does not use it to flood the actual world.
 	if (!solid && water) {
-		if (heat < 0 && p.Y > heat / 3 && valid(c_ice))
+		// Evaluate ice at the water sample, not above a coarse sea-surface cell.
+		if (heat < 0 && far_water_y.value_or(p.Y) > heat / 3 && valid(c_ice))
 			return MapNode(c_ice, LIGHT_SUN);
 		return node_or(n_water, visible_water);
 	}
@@ -1336,7 +1357,8 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// fm:
 	// Above 1000 metres of terrain clearance, skip even loading authored objects.
 	// Compare in metres so the cutoff also respects the Earth's vertical scale.
-	if ((static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y > MAX_BUILDING_HEIGHT) {
+	if ((static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y >
+			MAX_BUILDING_HEIGHT) {
 		fillChunkWithAir();
 		finish_generation();
 		return;
