@@ -1441,6 +1441,28 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 
 	const auto end_time = porting::getTimeUs();
 	m_step_time_counter->increment(end_time - start_time);
+
+	// fm: Rare environment processing diagnostics.
+	{
+		thread_local static size_t rare{};
+		if (!(rare++ % 1000)) {
+			size_t node_updates;
+			{
+				std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
+				node_updates = m_nodeupdate_queue.size();
+			}
+			infostream << "ServerEnvironment::step: active_blocks="
+					   << m_active_blocks.m_list.size()
+					   << " loaded_blocks=" << m_map->m_blocks.size()
+					   << " node_update_queue=" << node_updates
+					   << " timer_resume_index=" << m_active_block_timer_last
+					   << " particle_spawners=" << m_particle_spawners.size()
+					   << " dtime=" << dtime
+					   << "s time=" << (end_time - start_time) / 1000.0 << "ms"
+					   << std::endl;
+		}
+	}
+	// ===
 }
 
 ServerEnvironment::BlockStatus ServerEnvironment::getBlockStatus(v3s16 blockpos)

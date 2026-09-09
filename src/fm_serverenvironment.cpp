@@ -59,6 +59,8 @@ size_t ServerEnvironment::blockStep(MapBlockPtr block, float dtime_s, uint8_t ac
 
 int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 {
+	const auto started = porting::getTimeMs();
+	size_t active_blocks = 0, analyzed = 0, random_calls = 0, random_triggers = 0;
 	u32 n = 0, calls = 0;
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	if (m_active_block_analyzed_last || m_analyze_blocks_interval.step(dtime, 1.0)) {
@@ -74,6 +76,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 				active_blocks_list = m_active_blocks.m_list;
 		}
 
+		active_blocks = active_blocks_list.size();
 		for (const auto &p : active_blocks_list) {
 			if (n++ < m_active_block_analyzed_last)
 				continue;
@@ -86,6 +89,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 				continue;
 
 			analyzeBlock(block);
+			++analyzed;
 
 			if (porting::getTimeMs() > end_ms) {
 				m_active_block_analyzed_last = n;
@@ -124,7 +128,8 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 			i = m_abm_random_blocks.erase(i);
 			//ScopeProfiler sp221(g_profiler, "ABM random look blocks", SPT_ADD);
 
-			blockStep(block, dtime, ABM_ACTIVATE_RANDOM);
+			random_triggers += blockStep(block, dtime, ABM_ACTIVATE_RANDOM);
+			++random_calls;
 
 			if (porting::getTimeMs() > end_ms) {
 				break;
@@ -132,6 +137,16 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 		}
 	}
 
+	thread_local static size_t rare{};
+	if (!(rare++ % 1000))
+		infostream << "ServerEnvironment::analyzeBlocks: candidates=" << active_blocks
+				   << " visited=" << calls << " analyzed=" << analyzed
+				   << " resume_index=" << m_active_block_analyzed_last
+				   << " random_calls=" << random_calls
+				   << " random_triggers=" << random_triggers
+				   << " random_queue=" << m_abm_random_blocks.size()
+				   << " budget=" << max_cycle_ms
+				   << "ms time=" << porting::getTimeMs() - started << "ms" << std::endl;
 	return calls;
 }
 
