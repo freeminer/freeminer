@@ -4,6 +4,10 @@
 
 #include "imagesource.h"
 
+// fm: Opaque far textures fill transparency from their visible colors.
+#include "fm_imagefilters.h"
+// ===
+
 #include "exceptions.h"
 #include <IFileSystem.h>
 #include <IReadFile.h>
@@ -1197,6 +1201,12 @@ bool ImageSource::generateImagePart(std::string_view part_of_name,
 
 			brighten(baseimg);
 		}
+		// fm: Preserve a closed far surface without exposing transparent black RGB.
+		else if (part_of_name == "[fm_opaque") {
+			CHECK_BASEIMG();
+			farmesh::makeOpaqueFarImage(baseimg);
+		}
+		// ===
 		/*
 			[noalpha
 			Make image completely opaque.
