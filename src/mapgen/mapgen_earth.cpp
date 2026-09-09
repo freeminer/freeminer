@@ -59,6 +59,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "voxel.h"
 #include "voxelalgorithms.h"
 #if USE_OSMIUM
+#include "mapgen/earth/rgb_temp.h"
 #include "earth/osmium-inl.h"
 #include <osmium/area/assembler.hpp>
 #include <osmium/area/multipolygon_manager.hpp>
