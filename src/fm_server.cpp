@@ -59,6 +59,11 @@ ServerThreadBase::ServerThreadBase(Server *server, const std::string &name,
 {
 }
 
+void ServerThreadBase::waitForWork(int milliseconds)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
 void *ServerThreadBase::run()
 {
 	// If something wrong with init order
@@ -73,8 +78,7 @@ void *ServerThreadBase::run()
 			const auto time_now = porting::getTimeMs();
 			const auto result = step((time_now - time_last) / 1000.0);
 			time_last = time_now;
-			std::this_thread::sleep_for(
-					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
+			waitForWork(result ? sleep_result : sleep_nothing);
 #if !EXCEPTION_DEBUG
 		} catch (const std::exception &e) {
 			errorstream << m_name << ": exception: " << e.what() << std::endl
@@ -227,6 +231,26 @@ SendFarBlocksThread::SendFarBlocksThread(Server *server) :
 size_t SendFarBlocksThread::step(float dtime)
 {
 	return m_server->SendFarBlocks(dtime);
+}
+
+void SendFarBlocksThread::wakeUp()
+{
+	std::lock_guard<std::mutex> lock(m_wake_mutex);
+	m_wake_pending = true;
+	m_wake_cv.notify_one();
+}
+
+void SendFarBlocksThread::waitForWork(int milliseconds)
+{
+	// Keep the active batch throttle even when producers continuously notify us.
+	if (milliseconds == sleep_result) {
+		ServerThreadBase::waitForWork(milliseconds);
+		return;
+	}
+	std::unique_lock<std::mutex> lock(m_wake_mutex);
+	m_wake_cv.wait_for(lock, std::chrono::milliseconds(milliseconds),
+			[this]() { return m_wake_pending; });
+	m_wake_pending = false;
 }
 
 SendBlocksThread::SendBlocksThread(Server *server) :
@@ -631,6 +655,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	if (!client)
 		return;
 	auto &packet = *(pkt->packet);
+	bool queued = false;
 	WITH_UNIQUE_LOCK(client->far_blocks_requested_mutex)
 	{
 		ServerMap::far_blocks_req_t blocks;
@@ -671,8 +696,11 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 								  .iteration{iteration},
 								  .retry_after{},
 						  });
+			queued = true;
 		}
 	}
+	if (queued && m_sendfarblocks_thead)
+		m_sendfarblocks_thead->wakeUp();
 }
 
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
@@ -831,8 +859,12 @@ void Server::QueueFarBlockReady(const MapBlockPtr &block, block_step_t step)
 	if (!block || step >= FARMESH_STEP_MAX - 1)
 		return;
 
-	std::lock_guard<std::mutex> lock(m_far_blocks_ready_mutex);
-	m_far_blocks_ready[step].insert_or_assign(block->getPos(), block);
+	{
+		std::lock_guard<std::mutex> lock(m_far_blocks_ready_mutex);
+		m_far_blocks_ready[step].insert_or_assign(block->getPos(), block);
+	}
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->wakeUp();
 }
 
 uint32_t Server::SendFarBlocks(float dtime)
