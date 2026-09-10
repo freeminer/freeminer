@@ -92,6 +92,7 @@ public:
 	void done(v3s16 pos);
 	// fm: Check both waiting and running jobs under the queue lock.
 	bool hasPending(const v3bpos_t &pos);
+	void prioritize(const v3bpos_t &camera);
 	// ===
 
 	size_t size()
@@ -165,6 +166,7 @@ public:
 	bool getNextResult(MeshUpdateResult &r);
 	// fm: Readiness requests must also wait for completed results to be consumed.
 	bool hasPending(const v3bpos_t &pos);
+	void prioritize(const v3bpos_t &camera);
 	// ===
 
 	/// @param finish if true, also clears updates that need to be acked to the server

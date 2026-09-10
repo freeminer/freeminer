@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "client/fm_farmesh.h"
 #include "client/fm_near_mesh_handoff.h"
+#include "client/fm_mesh_priority.h"
 #include "client/mapblock_mesh.h"
 #include "client/node_visuals.h"
 #include "clientmap.h"
@@ -41,6 +42,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cstdint>
 #include <unordered_map>
+
+
 irr_ptr<ClientMap> ClientMap::create(Client *client, RenderingEngine *rendering_engine,
 		MapDrawControl &control, s32 id)
 {
@@ -313,9 +316,15 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		++blocks_in_range;
 	}
 
+	// Fill the per-update budget nearest first, independent of hash-map order.
+	std::vector<std::pair<v3bpos_t, NearChunk>> ordered_chunks(
+			near_chunks.begin(), near_chunks.end());
+	sortMeshUpdatesNearFirst(
+			ordered_chunks, camera_block, [](const auto &chunk) { return chunk.first; });
+
 	// fm: Queue each populated chunk once, including an absent origin. Meshing
 	// from a loaded member creates the origin block when the result is installed.
-	for (const auto &[bp, chunk] : near_chunks) {
+	for (const auto &[bp, chunk] : ordered_chunks) {
 		const auto &block = chunk.origin;
 		if (!m_control.range_all &&
 				!farmesh::cellIntersectsRange(bp * MAP_BLOCKSIZE, near_cell_width,
@@ -358,7 +367,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		const auto mesh =
 				block ? block->getLodMesh(mesh_step, true) : MapBlock::mesh_type{};
 		// ===
-		const bool covers_cell = mesh && mesh->lod_step == mesh_step;
+		// A completed near LOD covers the chunk while its requested LOD builds.
+		// Requiring an exact LOD here hides terrain again whenever the camera moves.
+		const bool covers_cell = bool(mesh);
 		const int mesh_buffer_count = mesh ? mesh->getMesh()->getMeshBufferCount() : -1;
 
 		// fm: Empty completed chunks are ready. Missing origins need a request
@@ -380,6 +391,10 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			direct_near.emplace_back(std::move(candidate));
 		}
 	}
+
+	// Pending requests must also follow the new camera position. Deduplication
+	// alone would leave the nearest chunks behind the previous view's backlog.
+	m_client->prioritizeMeshUpdates(camera_block);
 
 	const auto draw_near = [&](const NearCandidate &candidate) {
 		if (!candidate.mesh || candidate.mesh_buffer_count <= 0)

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "client/fm_near_mesh_handoff.h"
+#include "client/fm_mesh_priority.h"
 #include "client/mesh_generator_thread.h"
 #include "test.h"
 #include <CMeshBuffer.h>
@@ -26,6 +27,7 @@ public:
 		TEST(testEmptyCompletedChunks);
 		TEST(testIdleRequestCanRetry, gamedef);
 		TEST(testPendingResults);
+		TEST(testMeshPriorityAfterMove);
 	}
 
 	static bool unknown(const v3bpos_t &) { return false; }
@@ -224,6 +226,29 @@ public:
 		// Whether the caller installs or rejects this result, an absent mesh
 		// can be requested again without requiring a block revision change.
 		UASSERT(!manager.hasPending(origin));
+	}
+
+	void testMeshPriorityAfterMove()
+	{
+		QueuedMeshUpdate a, b, c;
+		a.p = {-20, 0, 0};
+		b.p = {0, 0, 0};
+		c.p = {20, 0, 0};
+		a.urgent = true;
+		std::vector<QueuedMeshUpdate *> queue{&a, &b, &c};
+		const auto position = [](const auto *job) { return job->p; };
+		sortMeshUpdatesNearFirst(queue, {}, position);
+		UASSERT(queue[0] == &b);
+		UASSERT(queue[1] == &a); // Equal distances preserve arrival order.
+		sortMeshUpdatesNearFirst(queue, {21, 0, 0}, position);
+		UASSERT(queue[0] == &c);
+		UASSERT(queue[1] == &b);
+		UASSERT(queue[2] == &a);
+		UASSERT(a.urgent); // Explicit urgent edits retain their priority flag.
+		sortMeshUpdatesNearFirst(queue, {-21, 0, 0}, position);
+		UASSERT(queue[0] == &a);
+		UASSERT(queue[1] == &b);
+		UASSERT(queue[2] == &c);
 	}
 
 	void testPendingResults()

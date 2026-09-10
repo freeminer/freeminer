@@ -5,9 +5,11 @@
 #include "client/fm_imagefilters.h"
 #include "fm_far_node.h"
 #include "fm_world_merge.h"
+#include "mapgen/earth/fm_far_water.h"
 #include "irr_ptr.h"
 #include <IVideoDriver.h>
 #include <irrlicht.h>
+#include <limits>
 
 namespace
 {
@@ -71,6 +73,7 @@ public:
 		TEST(testOverlayAndNearTextures);
 		TEST(testTextureDefinitionAndClassification);
 		TEST(testOpaqueFarImage);
+		TEST(testFarWaterDisplay);
 	}
 
 	void testOpaqueUnderCover()
@@ -208,6 +211,34 @@ public:
 		liquid.alpha = ALPHAMODE_BLEND;
 		UASSERT(!farmesh::isTransparentCover(liquid));
 		UASSERT(!farmesh::isOpaqueStructure(liquid));
+	}
+
+	void testFarWaterDisplay()
+	{
+		for (block_step_t step = 1;
+				step < FARMESH_STEP_MAX && step < std::numeric_limits<pos_t>::digits;
+				++step) {
+			const pos_t size = static_cast<pos_t>(1) << step;
+			// Shallow and sea-level-quantized terrain both retain visible water.
+			for (const pos_t terrain : {pos_t(-1), pos_t(0)}) {
+				const auto sample = farmesh::farWaterSampleY(0, terrain, 0, step);
+				UASSERT(sample);
+				UASSERTEQ(pos_t, *sample, 0);
+			}
+			// A sea level off the sample grid must not lose its top water cell.
+			const auto top = farmesh::farWaterSampleY(size, -1, 1, step);
+			UASSERT(top);
+			UASSERTEQ(pos_t, *top, 1);
+			UASSERT(!farmesh::farWaterSampleY(size, -1, 0, step));
+			UASSERT(!farmesh::farWaterSampleY(0, 1, 0, step));
+			UASSERT(!farmesh::farWaterSampleY(-2, -1, 0, step));
+			const auto submerged = farmesh::farWaterSampleY(-1, -2, 0, step);
+			UASSERT(submerged);
+			UASSERTEQ(pos_t, *submerged, -1);
+		}
+		// Unscaled sampling keeps its existing behavior.
+		UASSERT(!farmesh::farWaterSampleY(0, 0, 0, 0));
+		UASSERT(!farmesh::farWaterSampleY(0, 0, 0, FARMESH_STEP_MAX));
 	}
 
 	void testOpaqueFarImage()
