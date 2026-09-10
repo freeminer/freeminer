@@ -119,7 +119,7 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("keymap_toggle_update_camera", debug ? "KEY_F4" : "");
 	settings->setDefault("keymap_toggle_block_boundaries", "KEY_F4");
 	settings->setDefault("keymap_playerlist", "KEY_TAB");
-	settings->setDefault("keymap_console", "KEY_OEM_3");
+    settings->setDefault("keymap_console", "`");
 
 	if (debug)
 		settings->setDefault("keymap_toggle_block_bounds", "KEY_F9");
@@ -796,7 +796,7 @@ void set_default_settings()
 	settings->setDefault("invert_hotbar_mouse_wheel", "false");
 	settings->setDefault("mouse_sensitivity", "0.2");
 	settings->setDefault("keyboard_camera_speed", "170.0");
-	settings->setDefault("repeat_place_time", "0.25");
+	settings->setDefault("repeat_place_time", "0.0025");
 	settings->setDefault("repeat_dig_time", "0.0");
 	settings->setDefault("safe_dig_and_place", "false");
 	settings->setDefault("random_input", "false");

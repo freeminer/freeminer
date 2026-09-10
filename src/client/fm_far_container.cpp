@@ -24,7 +24,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <optional>
 
 #include "fm_far_container.h"
-#include "fm_far_water.h"
 #include "fm_far_sample_cache.h"
 #include "client.h"
 #include "client/clientmap.h"
@@ -38,6 +37,28 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapnode.h"
 #include "server.h"
 #include "settings.h"
+
+namespace farmesh
+{
+// Earth generates dry air above its seabed. Keep its calculated sea in the
+// client preview even after an authoritative world-merge block supplies AIR.
+// This returns a display sample; it never modifies the stored block.
+inline MapNode applyFarWaterToAir(MapNode stored, const v3pos_t &pos, block_step_t step,
+		Mapgen &mapgen, bool use_weather)
+{
+	if (stored.getContent() != CONTENT_AIR || !step || mapgen.getType() != MAPGEN_EARTH)
+		return stored;
+
+	const auto calculated = mapgen.visible_content(pos, use_weather, step);
+	const auto content = calculated.getContent();
+	if (content == CONTENT_AIR || content == CONTENT_IGNORE || content == CONTENT_UNKNOWN)
+		return stored;
+	if (mapgen.ndef->get(calculated).isLiquid() ||
+			content == mapgen.visible_ice.getContent())
+		return calculated;
+	return stored;
+}
+}
 
 struct FarContainer::Cache
 {
