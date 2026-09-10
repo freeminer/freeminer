@@ -10,6 +10,9 @@ Core: fast reliable network protocol, fast multi-threaded server, utf8 chat, bui
 Changelog
 ======
 
+### 5.17.0.0 (?)
+  * Farmesh improvements
+
 ### 5.16.1.0 (?)
   * Core tnt blast ( also try enable_nuke=1 )
   * Colored far lights

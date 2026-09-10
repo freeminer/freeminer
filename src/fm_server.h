@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "threading/thread_vector.h"
+#include <condition_variable>
 
 class Server;
 
@@ -29,6 +30,7 @@ class ServerThreadBase : public thread_vector
 {
 protected:
 	Server *const m_server;
+	virtual void waitForWork(int milliseconds);
 
 public:
 	int sleep_start{1000};
@@ -77,9 +79,14 @@ class SendFarBlocksThread : public ServerThreadBase
 public:
 	//using ServerThreadBase::ServerThreadBase;
 	SendFarBlocksThread(Server *server);
+	void wakeUp();
 
 private:
 	size_t step(float dtime) override;
+	void waitForWork(int milliseconds) override;
+	std::mutex m_wake_mutex;
+	std::condition_variable m_wake_cv;
+	bool m_wake_pending{};
 };
 
 class LiquidThread : public thread_vector

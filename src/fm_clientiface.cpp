@@ -699,6 +699,7 @@ uint32_t RemoteClient::SendFarBlocks(
 	std::multimap<int32_t, MapBlockPtr> ordered;
 	uint16_t sent_cnt{};
 	constexpr uint16_t send_max{100};
+	bool disk_budget_exhausted{};
 	WITH_UNIQUE_LOCK(far_blocks_requested_mutex)
 	{
 		const auto queue_block = [&ordered, &sent_cnt](
@@ -769,28 +770,44 @@ uint32_t RemoteClient::SendFarBlocks(
 			}
 		}
 
-		// Newly created blocks have priority and remain queued if this batch fills.
-		for (block_step_t step = 0; step < far_blocks_ready.size() && sent_cnt < send_max;
-				++step) {
-			auto &ready = far_blocks_ready[step];
-			for (auto it = ready.begin(); it != ready.end() && sent_cnt < send_max;) {
-				queue_block(it->second, step);
-				it = ready.erase(it);
+		const auto queue_ready = [&](uint16_t limit) {
+			for (block_step_t step = 0;
+					step < far_blocks_ready.size() && sent_cnt < limit; ++step) {
+				auto &ready = far_blocks_ready[step];
+				for (auto it = ready.begin(); it != ready.end() && sent_cnt < limit;) {
+					// A repeated request may arrive while a ready block is queued.
+					far_blocks_requested[step].erase(it->first);
+					queue_block(it->second, step);
+					it = ready.erase(it);
+				}
 			}
-		}
+		};
+		// Reserve half the batch for disk requests, then reuse any spare capacity.
+		queue_ready(send_max / 2);
+		const auto disk_deadline = porting::getTimeMs() + 10;
 
 		// Ordinary requests stay lazy. A database miss gets one infrequent safety
 		// retry; a merge notification above makes it immediately ready.
-		for (block_step_t step = 0;
-				step < far_blocks_requested.size() && sent_cnt < send_max; ++step) {
+		for (block_step_t step = 0; step < far_blocks_requested.size() &&
+									sent_cnt < send_max && !disk_budget_exhausted;
+				++step) {
 			auto &requested = far_blocks_requested[step];
 			MapDatabase *dbase{};
 			bool checked_database{};
 			for (auto it = requested.begin();
 					it != requested.end() && sent_cnt < send_max;) {
+				if (far_blocks_ready[step].contains(it->first)) {
+					it = requested.erase(it);
+					continue;
+				}
 				if (it->second.retry_after > uptime) {
 					++it;
 					continue;
+				}
+
+				if (porting::getTimeMs() >= disk_deadline) {
+					disk_budget_exhausted = true;
+					break;
 				}
 
 				if (!checked_database) {
@@ -811,10 +828,12 @@ uint32_t RemoteClient::SendFarBlocks(
 				it = requested.erase(it);
 			}
 		}
+		queue_ready(send_max);
 	}
 
 	if (ordered.empty())
-		return 0;
+		// Continue unfinished lookups promptly even if this slice only found misses.
+		return disk_budget_exhausted ? 1 : 0;
 
 	g_profiler->add("Server: Far blocks sent", sent_cnt);
 	std::vector<MapBlockPtr> blocks;
