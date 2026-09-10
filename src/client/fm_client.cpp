@@ -72,6 +72,20 @@ void Client::updateMeshTimestampWithEdge(const v3bpos_t &blockpos)
 		}
 	}
 
+	// Wake the draw-list builder on receipt, including updates to existing blocks.
+	++m_new_meshes;
+
+	// The chunks around the player must not wait for a full draw-list scan or
+	// asynchronous database writes. The urgent queue coalesces repeated arrivals
+	// and keeps one follow-up job when this chunk is already being generated.
+	if (const auto *player = m_env.getLocalPlayer()) {
+		const auto camera_chunk = mesh_grid.getMeshPos(
+				getNodeBlockPos(floatToInt(player->getPosition(), BS)));
+		if (radius_box(mesh_grid.getMeshPos(blockpos), camera_chunk) <=
+				mesh_grid.cell_size)
+			addUpdateMeshTask(blockpos, false, true);
+	}
+
 	/*int to = FARMESH_STEP_MAX;
 	for (int step = 1; step <= to; ++step) {
 		v3pos_t actualpos = getFarmeshActual(blockpos, step);
@@ -389,14 +403,7 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 			}
 		}
 
-		if (!step) {
-			if (!overload && block->m_is_mono_block &&
-					block->data[0].param0 != CONTENT_AIR) {
-				if (getNodeBlockPos(floatToInt(m_env.getLocalPlayer()->getPosition(), BS))
-								.getDistanceFrom(bpos) <= 1)
-					addUpdateMeshTaskWithEdge(bpos);
-			}
-		} else {
+		if (step) {
 			static thread_local const auto settings_farmesh_server =
 					g_settings->getU16("farmesh_server");
 			static thread_local const auto settings_farmesh =
