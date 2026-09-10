@@ -750,8 +750,10 @@ bool FarMesh::enqueueFarMeshForBlock(const v3bpos_t &blockpos, const block_step_
 
 void FarMesh::commitFarGrid()
 {
-	const std::lock_guard grid_lock(m_grid_mutex);
-	if (!m_grid_scanned || m_grid_committed)
+	// Near draw-list publication must not wait for the far-grid updater.
+	// Keep the displayed grid for this frame and retry at the next update.
+	const std::unique_lock grid_lock(m_grid_mutex, std::try_to_lock);
+	if (!grid_lock.owns_lock() || !m_grid_scanned || m_grid_committed)
 		return;
 	auto &client_map = m_client->getEnv().getClientMap();
 	const auto lock = client_map.m_far_blocks.lock_unique_rec();

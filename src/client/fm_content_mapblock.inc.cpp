@@ -369,9 +369,10 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 	// Far samples represent a cell ending at the sampled Y level. Keep the
 	// original downward Y anchoring; expanding upward exposes underground
 	// samples (notably ores) above the surrounding stone surface.
-	//	 aabb3f box(v3opos_t(-HBS, 1.5f * BS - scaled, -HBS), v3opos_t(scaled - HBS, 1.5f * BS, scaled - HBS));
+	//aabb3o box(v3opos_t(-HBS, 1.5f * BS - scaled, -HBS), v3opos_t(scaled - HBS, 1.5f * BS, scaled - HBS));
 
-	auto box = aabb3o(v3opos_t(-0.5 * BS), v3opos_t(0.5 * BS));
+	 /*
+	aabb3o box {v3opos_t(-0.5 * BS), v3opos_t(0.5 * BS)};
 	if (data->fscale > 1) {
 		// TODO: maybe possibe make simpler?/
 		box.MinEdge += v3opos_t(HBS, 0, HBS);
@@ -381,9 +382,12 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 		box.MaxEdge *= v3opos_t(data->fscale, data->fscale, data->fscale);
 		box.MaxEdge += v3opos_t(-HBS, -HBS * (data->fscale) + HBS + BS, -HBS);
 	}
-
 	box.MinEdge += v3opos_t::from(cur_node.origin);
 	box.MaxEdge += v3opos_t::from(cur_node.origin);
+     */
+
+	const aabb3o box(v3opos_t{-HBS, 1.5f * BS - scaled, -HBS} + v3opos_t::from(cur_node.origin),v3opos_t{scaled - HBS, 1.5f * BS, scaled - HBS} +v3opos_t::from(cur_node.origin));
+
 	if (is_far) {
 		const v3opos_t center = (box.MinEdge + box.MaxEdge) * 0.5f / BS;
 		const v3f scale = v3f::from((box.MaxEdge - box.MinEdge) / BS);

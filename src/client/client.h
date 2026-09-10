@@ -444,6 +444,7 @@ public:
 			bool urgent=false, int step = -1);
 	// fm: Includes queued work, running work and results awaiting installation.
 	bool isMeshUpdatePending(const v3bpos_t &blockpos);
+	void prioritizeMeshUpdates(const v3bpos_t &camera);
 	// ===
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false,

@@ -24,6 +24,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <optional>
 
 #include "fm_far_container.h"
+#include "fm_far_water.h"
 #include "fm_far_sample_cache.h"
 #include "client.h"
 #include "client/clientmap.h"
@@ -90,7 +91,8 @@ FarContainer::FarContainer(const FarContainer &source, const v3pos_t &origin, po
 
 FarContainer::~FarContainer() = default;
 
-std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(const v3pos_t &pos, block_step_t step)
+std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(
+		const v3pos_t &pos, block_step_t step)
 {
 	if (!m_cache) {
 		// The client-wide container holds settings. Direct queries also get an
@@ -182,10 +184,11 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_st
 			const auto y = std::clamp<int>(rel.Y >> step, 0, MAP_BLOCKSIZE - 1);
 			const auto z = std::clamp<int>(rel.Z >> step, 0, MAP_BLOCKSIZE - 1);
 			const auto n = source.nodes[(z * MAP_BLOCKSIZE + y) * MAP_BLOCKSIZE + x];
-			// Explicit AIR and material cells own their volume. Only unavailable
-			// samples are allowed to fall back to calculated terrain.
+			// Stored materials own their volume. Earth keeps its sea as a display
+			// overlay on stored AIR because actual terrain generation stays dry.
 			if (n.getContent() != CONTENT_IGNORE && n.getContent() != CONTENT_UNKNOWN)
-				return {n, false};
+				return {farmesh::applyFarWaterToAir(n, pos, step, *m_mg, use_weather),
+						false};
 		}
 
 		// Calculated terrain is owned by the missing-data path. Defer every
@@ -199,7 +202,8 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_st
 			auto [height_it, height_inserted] =
 					m_cache->heights.try_emplace(v2pos_t(pos.X, pos.Z));
 			if (height_inserted)
-				height_it->second = m_mg->getGroundLevelAtPointStep(height_it->first, step);
+				height_it->second =
+						m_mg->getGroundLevelAtPointStep(height_it->first, step);
 			const auto surface_y = height_it->second;
 			// Only samples strictly below the calculated surface may stand in as
 			// invisible occluders for omitted world-merge blocks. Surface and water

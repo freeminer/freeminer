@@ -8,6 +8,7 @@
 #include "irr_ptr.h"
 #include <IVideoDriver.h>
 #include <irrlicht.h>
+#include <limits>
 
 namespace
 {
@@ -209,6 +210,7 @@ public:
 		UASSERT(!farmesh::isTransparentCover(liquid));
 		UASSERT(!farmesh::isOpaqueStructure(liquid));
 	}
+
 
 	void testOpaqueFarImage()
 	{

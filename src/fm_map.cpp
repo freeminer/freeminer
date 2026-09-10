@@ -1788,6 +1788,11 @@ void ServerMap::lighting_modified_add(const v3bpos_t &pos, int range)
 unsigned int ServerMap::updateLightingQueue(
 		unsigned int max_cycle_ms, int &loopcount, bool load_blocks)
 {
+	const auto started = porting::getTimeMs();
+	const auto initial_loopcount = loopcount;
+	thread_local static size_t rare{};
+	const bool log_info = !(rare++ % 1000);
+	size_t queued_blocks = 0, queued_ranges = 0;
 	unsigned int ret = 0;
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	unordered_map_v3pos<int> processed;
@@ -1833,7 +1838,19 @@ unsigned int ServerMap::updateLightingQueue(
 		}
 	}
 
-	// infostream << "light ret=" << ret << " " << loopcount << std::endl;
+	if (log_info) {
+		{
+			MutexAutoLock lock(m_lighting_modified_mutex);
+			queued_blocks = m_lighting_modified_blocks.size();
+			queued_ranges = m_lighting_modified_blocks_range.size();
+		}
+		infostream << "ServerMap::updateLightingQueue: result=" << ret
+				   << " processed_blocks=" << processed.size()
+				   << " batches=" << loopcount - initial_loopcount
+				   << " queue=" << queued_blocks << " ranges=" << queued_ranges
+				   << " load_blocks=" << load_blocks << " budget=" << max_cycle_ms
+				   << "ms time=" << porting::getTimeMs() - started << "ms" << std::endl;
+	}
 
 	return ret;
 }

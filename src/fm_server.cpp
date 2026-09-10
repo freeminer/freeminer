@@ -59,6 +59,11 @@ ServerThreadBase::ServerThreadBase(Server *server, const std::string &name,
 {
 }
 
+void ServerThreadBase::waitForWork(int milliseconds)
+{
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+}
+
 void *ServerThreadBase::run()
 {
 	// If something wrong with init order
@@ -73,8 +78,7 @@ void *ServerThreadBase::run()
 			const auto time_now = porting::getTimeMs();
 			const auto result = step((time_now - time_last) / 1000.0);
 			time_last = time_now;
-			std::this_thread::sleep_for(
-					std::chrono::milliseconds(result ? sleep_result : sleep_nothing));
+			waitForWork(result ? sleep_result : sleep_nothing);
 #if !EXCEPTION_DEBUG
 		} catch (const std::exception &e) {
 			errorstream << m_name << ": exception: " << e.what() << std::endl
@@ -229,6 +233,26 @@ size_t SendFarBlocksThread::step(float dtime)
 	return m_server->SendFarBlocks(dtime);
 }
 
+void SendFarBlocksThread::wakeUp()
+{
+	std::lock_guard<std::mutex> lock(m_wake_mutex);
+	m_wake_pending = true;
+	m_wake_cv.notify_one();
+}
+
+void SendFarBlocksThread::waitForWork(int milliseconds)
+{
+	// Keep the active batch throttle even when producers continuously notify us.
+	if (milliseconds == sleep_result) {
+		ServerThreadBase::waitForWork(milliseconds);
+		return;
+	}
+	std::unique_lock<std::mutex> lock(m_wake_mutex);
+	m_wake_cv.wait_for(lock, std::chrono::milliseconds(milliseconds),
+			[this]() { return m_wake_pending; });
+	m_wake_pending = false;
+}
+
 SendBlocksThread::SendBlocksThread(Server *server) :
 		ServerThreadBase{server, "SendBlocks", 30}
 {
@@ -259,10 +283,6 @@ void *LiquidThread::run()
 			const auto processed = m_server->getEnv().getServerMap().transformLiquids(
 					modified_blocks, &m_server->getEnv(), m_server, max_cycle_ms);
 			const auto time_spend = porting::getTimeMs() - time_start;
-			thread_local static size_t rare{};
-			if (!(rare++ % 1000))
-				infostream << m_name << ": processed=" << processed
-						   << " time=" << time_spend << "ms" << std::endl;
 
 			thread_local const auto static liquid_step =
 					g_settings->getBool("liquid_step");
@@ -293,15 +313,10 @@ LightingThread::LightingThread(Server *server) : ServerThreadBase{server, "Light
 
 size_t LightingThread::step(float)
 {
-	const auto time_start = porting::getTimeMs();
 	m_server->getEnv().getMap().getBlockCacheFlush();
 	int loopcount{};
 	const auto updated =
 			m_server->getEnv().getServerMap().updateLightingQueue(10000, loopcount);
-	thread_local static size_t rare{};
-	if (!(rare++ % 1000))
-		infostream << m_name << ": updated=" << updated << " loops=" << loopcount
-				   << " time=" << porting::getTimeMs() - time_start << "ms" << std::endl;
 	return updated != 0 || loopcount != 0;
 }
 
@@ -354,13 +369,7 @@ void *AbmThread::run()
 			auto ctime = porting::getTimeMs();
 			auto dtimems = ctime - time;
 			time = ctime;
-			const auto processed =
-					m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
-			thread_local static size_t rare{};
-			if (!(rare++ % 1000))
-				infostream << m_name << ": processed=" << processed
-						   << " time=" << porting::getTimeMs() - ctime << "ms"
-						   << std::endl;
+			m_server->getEnv().analyzeBlocks(dtimems / 1000.0f, max_cycle_ms);
 			std::this_thread::sleep_for(
 					std::chrono::milliseconds(dtimems > 1000 ? 100 : 1000 - dtimems));
 #if !EXCEPTION_DEBUG
@@ -382,6 +391,7 @@ void *AbmThread::run()
 
 int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async)
 {
+	const auto started = porting::getTimeMs();
 	TimeTaker timer_step("Server map step");
 	g_profiler->add("Server::AsyncRunMapStep (num)", 1);
 
@@ -479,6 +489,13 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 no_send:
 
 	ret += save(dtime, dedicated_server_step, true);
+	thread_local static size_t rare{};
+	if (!(rare++ % 1000))
+		infostream << "Server::AsyncRunMapStep: result=" << ret
+				   << " loaded_blocks=" << m_env->getMap().m_blocks.size()
+				   << " liquid_queue=" << m_env->getServerMap().transforming_liquid_size()
+				   << " maintenance=" << maintenance_status << " budget=" << max_cycle_ms
+				   << "ms time=" << porting::getTimeMs() - started << "ms" << std::endl;
 
 	return ret;
 }
@@ -638,6 +655,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 	if (!client)
 		return;
 	auto &packet = *(pkt->packet);
+	bool queued = false;
 	WITH_UNIQUE_LOCK(client->far_blocks_requested_mutex)
 	{
 		ServerMap::far_blocks_req_t blocks;
@@ -678,8 +696,11 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 								  .iteration{iteration},
 								  .retry_after{},
 						  });
+			queued = true;
 		}
 	}
+	if (queued && m_sendfarblocks_thead)
+		m_sendfarblocks_thead->wakeUp();
 }
 
 MapDatabase *GetFarDatabase(MapDatabase *dbase, ServerMap::far_dbases_t &far_dbases,
@@ -838,8 +859,12 @@ void Server::QueueFarBlockReady(const MapBlockPtr &block, block_step_t step)
 	if (!block || step >= FARMESH_STEP_MAX - 1)
 		return;
 
-	std::lock_guard<std::mutex> lock(m_far_blocks_ready_mutex);
-	m_far_blocks_ready[step].insert_or_assign(block->getPos(), block);
+	{
+		std::lock_guard<std::mutex> lock(m_far_blocks_ready_mutex);
+		m_far_blocks_ready[step].insert_or_assign(block->getPos(), block);
+	}
+	if (m_sendfarblocks_thead)
+		m_sendfarblocks_thead->wakeUp();
 }
 
 uint32_t Server::SendFarBlocks(float dtime)

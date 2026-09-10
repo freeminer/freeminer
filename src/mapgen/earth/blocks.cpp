@@ -405,12 +405,21 @@ void init(MapgenEarth *mg)
 	{
 		MapgenEarth *mg;
 		content_t fallback;
+		bool allow_liquids = false;
+
+		bool usable(content_t id) const
+		{
+			// Freeminer also models loose building materials as liquids.
+			// They cannot support walls or structures, so try a solid alternative.
+			return id != CONTENT_IGNORE &&
+				   (allow_liquids || !mg->m_emerge->ndef->get(id).isLiquid());
+		}
 
 		content_t operator()(const char *name) const
 		{
 			const auto id = mg->m_emerge->ndef->getId(name);
-			if (id == CONTENT_IGNORE) {
-				actionstream << "Mapping node not found " << name << "\n";
+			if (!usable(id)) {
+				actionstream << "Mapping node missing or liquid " << name << "\n";
 				return fallback;
 			}
 			return id;
@@ -420,15 +429,16 @@ void init(MapgenEarth *mg)
 		{
 			for (const auto *name : names) {
 				const auto id = mg->m_emerge->ndef->getId(name);
-				if (id != CONTENT_IGNORE)
+				if (usable(id))
 					return id;
 			}
 			if (names.size() > 0)
-				DUMP("Mapping node alternatives not found", *names.begin());
+				DUMP("Mapping node alternatives missing or liquid", *names.begin());
 			return fallback;
 		}
 	};
 	const NodeResolver g{mg, def};
+	const NodeResolver liquid{mg, def, true};
 
 	ACACIA_PLANKS = g({"default:acacia_wood", "default:wood"});
 	AIR = CONTENT_AIR;
@@ -521,7 +531,7 @@ void init(MapgenEarth *mg)
 	STONE = g("default:stone");
 	TERRACOTTA = g("default:clay");
 	WARPED_PLANKS = g("default:wood");
-	WATER = g("default:water_source");
+	WATER = liquid("default:water_source");
 	// Rust parity: water_depth.rs uses MineClone ocean/nether blocks.
 	// Divergence: Earth game maps them to available Minetest Game nodes.
 	SEAGRASS = g({"marinara:seagrass", "marinara:sand_with_seagrass",
@@ -540,13 +550,13 @@ void init(MapgenEarth *mg)
 	EARTH_BENCH = g({"homedecor:simple_bench", "stairs:slab_wood", "default:wood"});
 	EARTH_TRASH_CAN =
 			g({"homedecor:trash_can", "pipeworks:trashcan", "default:steelblock"});
-	EARTH_STREET_LAMP = g({"streets:light_vertical_on", "morelights_vintage:lantern_f", "homedecor:ground_lantern_14",
-			"default:meselamp"});
+	EARTH_STREET_LAMP = g({"streets:light_vertical_on", "morelights_vintage:lantern_f",
+			"homedecor:ground_lantern_14", "default:meselamp"});
 	EARTH_WELL = g({"homedecor:well", "default:stonebrick"});
 	EARTH_BARBECUE = g({"homedecor:barbecue", "default:furnace", "default:stone"});
 	EARTH_GRATING = g({"pipeworks:grating", "xpanes:bar_flat", "default:steelblock"});
-	EARTH_FENCE_CHAINLINK = g({"streets:fence_chainlink",
-			"homedecor:fence_chainlink", "xpanes:bar_flat", "default:steelblock"});
+	EARTH_FENCE_CHAINLINK = g({"streets:fence_chainlink", "homedecor:fence_chainlink",
+			"xpanes:bar_flat", "default:steelblock"});
 	EARTH_FENCE_BARBED =
 			g({"homedecor:fence_barbed_wire", "xpanes:bar_flat", "default:steelblock"});
 	EARTH_FENCE_PICKET =
@@ -590,33 +600,33 @@ void init(MapgenEarth *mg)
 			return Block{CONTENT_AIR};
 		return Block{id};
 	};
-	STREETS_AVAILABLE =
-			mg->m_emerge->ndef->getId("streets:asphalt") != CONTENT_IGNORE;
-	ROAD_ASPHALT = g({"streets:asphalt", "basic_materials:concrete_block",
-			"wool:grey", "default:stone"});
+	STREETS_AVAILABLE = mg->m_emerge->ndef->getId("streets:asphalt") != CONTENT_IGNORE;
+	ROAD_ASPHALT = g({"streets:asphalt", "basic_materials:concrete_block", "wool:grey",
+			"default:stone"});
 	ROAD_SIDEWALK = g({"streets:sidewalk", "default:stone_block", "default:stone"});
 	STREETS_POLE = g({"streets:bigpole", "walls:cobble", "default:stone"});
-	STREETS_BOLLARD = g({"streets:bollard_steel_manual_up", "walls:cobble",
-			"default:cobble"});
+	STREETS_BOLLARD =
+			g({"streets:bollard_steel_manual_up", "walls:cobble", "default:cobble"});
 	STREETS_GUARDRAIL = g({"streets:guardrail", "walls:cobble", "default:cobble"});
-	STREETS_TRAFFIC_LIGHTS = {
-			optional_sign("streets:trafficlight_top_red"),
+	STREETS_TRAFFIC_LIGHTS = {optional_sign("streets:trafficlight_top_red"),
 			optional_sign("streets:trafficlight_top_yellow"),
 			optional_sign("streets:trafficlight_top_green")};
-	STREETS_MARKINGS_AVAILABLE = STREETS_AVAILABLE &&
+	STREETS_MARKINGS_AVAILABLE =
+			STREETS_AVAILABLE &&
 			mg->m_emerge->ndef->getId(
 					"streets:mark_dashed_white_center_line_on_asphalt") != CONTENT_IGNORE;
-	ROAD_MARK_DASHED_WHITE = optional_sign(
-			"streets:mark_dashed_white_center_line_on_asphalt");
-	ROAD_MARK_DASHED_WHITE_R90 = optional_sign(
-			"streets:mark_dashed_white_center_line_r90_on_asphalt");
-	ROAD_MARK_SOLID_WHITE_STRIPE = optional_sign(
-			"streets:mark_solid_white_stripe_on_asphalt");
-	ROAD_MARK_SOLID_WHITE_STRIPE_R90 = optional_sign(
-			"streets:mark_solid_white_stripe_r90_on_asphalt");
+	ROAD_MARK_DASHED_WHITE =
+			optional_sign("streets:mark_dashed_white_center_line_on_asphalt");
+	ROAD_MARK_DASHED_WHITE_R90 =
+			optional_sign("streets:mark_dashed_white_center_line_r90_on_asphalt");
+	ROAD_MARK_SOLID_WHITE_STRIPE =
+			optional_sign("streets:mark_solid_white_stripe_on_asphalt");
+	ROAD_MARK_SOLID_WHITE_STRIPE_R90 =
+			optional_sign("streets:mark_solid_white_stripe_r90_on_asphalt");
 	STREETS_RRXING_AVAILABLE =
 			mg->m_emerge->ndef->getId("streets:rrxing_bottom") != CONTENT_IGNORE &&
-			mg->m_emerge->ndef->getId("streets:rrxing_middle_center_off") != CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("streets:rrxing_middle_center_off") !=
+					CONTENT_IGNORE &&
 			mg->m_emerge->ndef->getId("streets:rrxing_top") != CONTENT_IGNORE;
 	STREETS_RRXING_BOTTOM = optional_sign("streets:rrxing_bottom");
 	STREETS_RRXING_MIDDLE = optional_sign("streets:rrxing_middle_center_off");
@@ -624,8 +634,7 @@ void init(MapgenEarth *mg)
 	STREETS_EU_SIGN_STOP = optional_sign("streets:sign_eu_stop_center");
 	STREETS_EU_SIGN_YIELD = optional_sign("streets:sign_eu_yield_center");
 	STREETS_EU_SIGN_NO_ENTRY = optional_sign("streets:sign_eu_noentry_center");
-	STREETS_EU_SIGN_CROSSING =
-			optional_sign("streets:sign_eu_pedestriancrossing_center");
+	STREETS_EU_SIGN_CROSSING = optional_sign("streets:sign_eu_pedestriancrossing_center");
 	STREETS_EU_SIGN_CROSSBUCK = optional_sign("streets:sign_eu_standrews_center");
 	const std::array<const char *, 6> eu_speeds{{"10", "30", "50", "70", "100", "120"}};
 	for (std::size_t i = 0; i < eu_speeds.size(); ++i) {
@@ -705,8 +714,10 @@ void init(MapgenEarth *mg)
 			mg->m_emerge->ndef->getId("advtrains:dtrack_xing_st") != CONTENT_IGNORE;
 	ADVTRAINS_CROSSINGS_AVAILABLE =
 			ADVTRAINS_AVAILABLE &&
-			mg->m_emerge->ndef->getId("advtrains:dtrack_xing90plusx_30l") != CONTENT_IGNORE &&
-			mg->m_emerge->ndef->getId("advtrains:dtrack_xingdiag_30l45r") != CONTENT_IGNORE;
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xing90plusx_30l") !=
+					CONTENT_IGNORE &&
+			mg->m_emerge->ndef->getId("advtrains:dtrack_xingdiag_30l45r") !=
+					CONTENT_IGNORE;
 	if (ADVTRAINS_AVAILABLE) {
 		ADV_RAIL_STRAIGHT_0 = g("advtrains:dtrack_st");
 		ADV_RAIL_STRAIGHT_30 = g("advtrains:dtrack_st_30");
@@ -724,19 +735,16 @@ void init(MapgenEarth *mg)
 				const std::string y_turnout = "advtrains:dtrack_sy_l" + suffixes[i];
 				const std::string three_way = "advtrains:dtrack_s3_s" + suffixes[i];
 				const std::string crossing = "advtrains:dtrack_xing_st" + suffixes[i];
-				ADV_RAIL_SWITCH_LEFT_STRAIGHT[i] =
-						g(left.c_str());
-				ADV_RAIL_SWITCH_RIGHT_STRAIGHT[i] =
-						g(right.c_str());
+				ADV_RAIL_SWITCH_LEFT_STRAIGHT[i] = g(left.c_str());
+				ADV_RAIL_SWITCH_RIGHT_STRAIGHT[i] = g(right.c_str());
 				ADV_RAIL_Y_TURNOUT[i] = g(y_turnout.c_str());
 				ADV_RAIL_THREE_WAY_STRAIGHT[i] = g(three_way.c_str());
-				ADV_RAIL_PERP_CROSSING[i] =
-						g(crossing.c_str());
+				ADV_RAIL_PERP_CROSSING[i] = g(crossing.c_str());
 			}
 		}
 		if (ADVTRAINS_CROSSINGS_AVAILABLE) {
-			const std::array<const char *, 6> ninety{{"30l", "45l", "60l", "60r",
-					"45r", "30r"}};
+			const std::array<const char *, 6> ninety{
+					{"30l", "45l", "60l", "60r", "45r", "30r"}};
 			for (std::size_t i = 0; i < ninety.size(); ++i) {
 				const std::string name =
 						"advtrains:dtrack_xing90plusx_" + std::string(ninety[i]);
@@ -761,8 +769,8 @@ void init(MapgenEarth *mg)
 			ADV_RAIL_GENTLE_SLOPE = {g("advtrains:dtrack_vst31"),
 					g("advtrains:dtrack_vst32"), g("advtrains:dtrack_vst33")};
 		} else {
-			ADV_RAIL_GENTLE_SLOPE = {ADV_RAIL_SLOPE_UP, ADV_RAIL_SLOPE_DOWN,
-					ADV_RAIL_SLOPE_DOWN};
+			ADV_RAIL_GENTLE_SLOPE = {
+					ADV_RAIL_SLOPE_UP, ADV_RAIL_SLOPE_DOWN, ADV_RAIL_SLOPE_DOWN};
 		}
 	} else {
 		ADV_RAIL_STRAIGHT_0 = ADV_RAIL_STRAIGHT_30 = ADV_RAIL_STRAIGHT_45 =
