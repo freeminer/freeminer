@@ -272,7 +272,8 @@ local function move_player_to_geo(player, data, smooth)
         core.chat_send_player(player:get_player_name(), message)
 
         local proto_ver = core.get_player_information(player:get_player_name()).protocol_version
-        if proto_ver < 140 then
+        if proto_ver < 140 and
+            (math.abs(pos.x) > 31000 or math.abs(pos.y) > 31000 or math.abs(pos.z) > 31000) then
             core.chat_send_player(player:get_player_name(),
                 "Your client does not support 32bit worlds, Use freeminer.org")
             return false
