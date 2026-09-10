@@ -175,11 +175,7 @@ static std::vector<table_key> table = {
 	DEFINEKEY1(KEY_SLEEP, "Sleep Key")
 	DEFINEKEY1(KEY_OEM_1, "OEM 1") // KEY_OEM_[0-9] and KEY_OEM_102 are assigned to multiple
 	DEFINEKEY1(KEY_OEM_2, "OEM 2") // different chars (on different platforms too) and thus w/o char
-/*
-	DEFINEKEY1(KEY_OEM_3, "OEM 3")
-*/
-	DEFINEKEY1(KEY_OEM_3, N_("~"))
-
+    DEFINEKEY1(KEY_OEM_3, "OEM 3")
 	DEFINEKEY1(KEY_OEM_4, "OEM 4")
 	DEFINEKEY1(KEY_OEM_5, "OEM 5")
 	DEFINEKEY1(KEY_OEM_6, "OEM 6")
