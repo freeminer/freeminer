@@ -116,16 +116,13 @@ height::height_t hgts::get(
 		const height_hgt::ll_t lat, const height_hgt::ll_t lon, block_step_t step)
 {
 
-/*
+	/*
 	Use step >= 11—equivalent to the current step > 10.
 	Here, step is a power-of-two level: at the default Earth scale, level 11 samples every 2,048 metres, close to the map’s 1,855 metres per pixel.
 	For custom horizontal scales, choose the first level where:
 	(1ULL << step) * std::min(scale.X, scale.Z) >= 1855.0
 */
-    // TODO : tune me
-    //if (step >= 11) 
-	if (step >= 8) 
-	{
+	if (step >= 11) {
 		if (const auto result = world_elevation.get(folder, lat, lon))
 			return *result;
 	}

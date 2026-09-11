@@ -402,7 +402,7 @@ float far_fog_average_terrain_y(
 	float sum = 0.0f;
 	int count = 0;
 	const auto sample = [&](pos_t x, pos_t z) {
-		sum += static_cast<float>(mapgen->getGroundLevelAtPoint(v2pos_t(x, z)));
+		sum += static_cast<float>(mapgen->getGroundLevelAtPointStep(v2pos_t(x, z),16));
 		++count;
 	};
 

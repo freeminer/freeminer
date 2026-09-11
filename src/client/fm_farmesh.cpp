@@ -464,10 +464,12 @@ int FarMesh::go_flat()
 					v3bpos_t bpos_new{static_cast<bpos_t>(bpos.X + add.X), add.Y,
 							static_cast<bpos_t>(bpos.Z + add.Z)};
 					bpos_new.Y +=
-							mg->getGroundLevelAtPoint(v2pos_t{
-									static_cast<pos_t>((bpos_new.X << MAP_BLOCKP) - 1),
-									static_cast<pos_t>(
-											(bpos_new.Z << MAP_BLOCKP) - 1)}) >>
+							mg->getGroundLevelAtPointStep(
+									v2pos_t{static_cast<pos_t>(
+													(bpos_new.X << MAP_BLOCKP) - 1),
+											static_cast<pos_t>(
+													(bpos_new.Z << MAP_BLOCKP) - 1)},
+									step) >>
 							MAP_BLOCKP;
 					const auto res = farmesh::getFarParams(
 							draw_control, player_block_pos, bpos_new, cell_each);

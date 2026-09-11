@@ -897,6 +897,12 @@ int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 	return std::max(2, get_height(p.X, p.Y, 0) + 2);
 }
 
+pos_t MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
+{
+	// Flat far meshes and other surface queries need Earth's elevation too.
+	return getGroundLevelAtPointStep(p, 0);
+}
+
 pos_t MapgenEarth::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
 {
 	return get_height(p.X, p.Y, step); // + MGV6_AVERAGE_MUD_AMOUNT;
@@ -1236,7 +1242,7 @@ weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t se
 			const auto pixel = earth_sample_image(*cloud_image, pos_to_ll(p));
 			if (pixel && pixel->getAlpha()) {
 				const float cloud_percent = earth_pixel_to_cloud_percent(*pixel);
-				const pos_t surface_y = getGroundLevelAtPoint({p.X, p.Z});
+				const pos_t surface_y = getGroundLevelAtPointStep({p.X, p.Z},16);
 				if (!have_humidity) {
 					humidity = static_cast<float>(m_emerge->biomemgr->calcBlockHumidity(
 							p, seed, timeofday, totaltime, use_weather, surface_y));
@@ -1278,7 +1284,7 @@ weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t se
 	}
 
 	return m_emerge->biomemgr->calcBlockHumidity(p, seed, timeofday, totaltime,
-			use_weather, getGroundLevelAtPoint({p.X, p.Z}));
+			use_weather, getGroundLevelAtPointStep({p.X, p.Z}, 16));
 }
 
 bool MapgenEarth::calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday,
