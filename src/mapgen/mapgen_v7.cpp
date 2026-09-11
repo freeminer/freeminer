@@ -663,35 +663,28 @@ int MapgenV7::generateTerrain()
 }
 
 // fm:
-/*
-void MapgenV7::generateExperimental() {
-}
-*/
-bool MapgenV7::visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
+pos_t MapgenV7::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
 {
-	// return baseTerrainLevelAtPoint(p.X, p.Z) >= p.Y;
-
-	// from getSpawnLevelAtPoint
-
-	auto y = surface_y.value_or(baseTerrainLevelAtPoint(p.X, p.Z));
-
-	// If mountains are disabled, terrain level is base terrain level.
-	// Avoids mid-air spawn where mountain terrain would have been.
-	if (!(spflags & MGV7_MOUNTAINS)) {
-		return y + 1 >= p.Y;
-	}
-
-	// todo: make faster
-	int iters = 256;
-	while (iters > 0) {
-		if (!getMountainTerrainAtPoint(p.X, y + 1, p.Z)) {
-			return y + 1 >= p.Y;
+	// Match generateTerrain's conversion to an integer node height. The base
+	// Mapgen implementation returns zero, which makes ocean samples look solid.
+	pos_t surface_y = baseTerrainLevelAtPoint(p.X, p.Y);
+	if (spflags & MGV7_MOUNTAINS) {
+		// Keep the bounded mountain search used by the far visibility query.
+		for (int i = 0; i < 256; ++i) {
+			if (!getMountainTerrainAtPoint(p.X, surface_y + 1, p.Y))
+				break;
+			++surface_y;
 		}
-		y++;
-		iters--;
 	}
-
-	return false;
+	return surface_y;
 }
 
-// == 
+bool MapgenV7::visible(
+		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
+{
+	const pos_t ground =
+			surface_y ? *surface_y : getGroundLevelAtPointStep({p.X, p.Z}, step);
+	// The first node above terrain is air or water, never another solid layer.
+	return p.Y <= ground;
+}
+// ===
