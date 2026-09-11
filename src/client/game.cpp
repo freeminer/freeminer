@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "network/connection.h"
-
 #include "game_internal.h"
 
 #include <cmath>
@@ -55,6 +53,7 @@
 #include "item_visuals_manager.h"
 
 
+#include "network/connection.h"
 #include "client/fm_farmesh.h"
 #include "threading/async.h"
 #include "util/numeric.h"
@@ -4057,10 +4056,16 @@ void Game::updateFrame(ProfilerGraph *graph, RunStats *stats, f32 dtime,
 		if (now - last_run_time >= interval && client->farmesh_async.ready()) {
 			last_run_time = now;
 			client->farmesh_async.step([&, farmesh_range = farmesh_range,
-					camera_pos = camera->getPosition(),
-					camera_offset = camera->getOffset(), speed]() {
+					camera_pos = v3opos_t::from(camera->getPosition()),
+					camera_offset = v3pos_t::from(camera->getOffset()), speed,
+					view = farmesh::View::capture(
+							v3opos_t::from(camera->getPosition()) / BS,
+							v3opos_t::from(camera->getDirection()),
+							camera->getFovX(), camera->getFovY(),
+							g_settings->getFloat("fov", 45.0f, 160.0f),
+							g_settings->getU16("farmesh_zoom_levels"))]() {
 				complete = client->farmesh->update(
-						camera_pos, camera_offset, farmesh_range, speed);
+						camera_pos, camera_offset, farmesh_range, speed, view);
 			});
 		}
 	}

@@ -489,10 +489,12 @@ int Server::AsyncRunMapStep(float dtime, float dedicated_server_step, bool async
 no_send:
 
 	ret += save(dtime, dedicated_server_step, true);
+
+	const auto loaded_blocks = m_env->getMap().m_blocks.size();
 	thread_local static size_t rare{};
-	if (!(rare++ % 1000))
+	if (loaded_blocks && !(rare++ % 1000))
 		infostream << "Server::AsyncRunMapStep: result=" << ret
-				   << " loaded_blocks=" << m_env->getMap().m_blocks.size()
+				   << " loaded_blocks=" << loaded_blocks
 				   << " liquid_queue=" << m_env->getServerMap().transforming_liquid_size()
 				   << " maintenance=" << maintenance_status << " budget=" << max_cycle_ms
 				   << "ms time=" << porting::getTimeMs() - started << "ms" << std::endl;

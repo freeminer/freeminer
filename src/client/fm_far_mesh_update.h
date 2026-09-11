@@ -45,6 +45,20 @@ private:
 	std::vector<std::future<void>> m_jobs;
 };
 
+// A far mesh spans cell_size^3 storage blocks. Storage spacing depends on
+// far_step; client_mesh_chunk controls their count, not their spacing.
+template <typename Visit>
+void forEachMeshSource(
+		const v3bpos_t &origin, block_step_t step, uint8_t cell_pow, Visit visit)
+{
+	const pos_t count = pos_t(1) << cell_pow;
+	const pos_t stride = pos_t(1) << step;
+	for (pos_t z = 0; z < count; ++z)
+		for (pos_t y = 0; y < count; ++y)
+			for (pos_t x = 0; x < count; ++x)
+				visit(origin + v3bpos_t(x, y, z) * stride);
+}
+
 // Grid cells are aligned octree cubes. Lookup uses their actual step, since a
 // partially published grid can contain cells sampled for different origins.
 template <typename Grid, typename Step>

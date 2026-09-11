@@ -1443,8 +1443,9 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 
 	// fm: Rare environment processing diagnostics.
 	{
+        const auto loaded_blocks = m_map->m_blocks.size();
 		thread_local static size_t rare{};
-		if (!(rare++ % 1000)) {
+		if (loaded_blocks && !(rare++ % 1000)) {
 			size_t node_updates;
 			{
 				std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
@@ -1452,7 +1453,7 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 			}
 			infostream << "ServerEnvironment::step: active_blocks="
 					   << m_active_blocks.m_list.size()
-					   << " loaded_blocks=" << m_map->m_blocks.size()
+					   << " loaded_blocks=" << loaded_blocks
 					   << " node_update_queue=" << node_updates
 					   << " timer_resume_index=" << m_active_block_timer_last
 					   << " particle_spawners=" << m_particle_spawners.size()

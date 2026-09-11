@@ -76,6 +76,7 @@ struct FarContainer::Cache
 	uint8_t cell_pow;
 	int range;
 	uint8_t quality_pow;
+	farmesh::ViewPtr view;
 
 	Cache(Client *client, const v3pos_t &origin, pos_t side, block_step_t step) :
 			nodes(origin, side, step)
@@ -86,12 +87,13 @@ struct FarContainer::Cache
 		cell_pow = control.cell_size_pow;
 		range = control.farmesh;
 		quality_pow = control.farmesh_quality_pow;
+		view = std::atomic_load(&control.farmesh_view);
 	}
 
 	auto params(const v3bpos_t &pos, bool storage_cell) const
 	{
 		return farmesh::getFarParams(
-				player, cell_pow, range, quality_pow, pos, storage_cell);
+				player, cell_pow, range, quality_pow, pos, storage_cell, view.get());
 	}
 };
 
