@@ -207,6 +207,7 @@ struct find_param_t
 	const block_step_t cell_size_pow;
 	const block_step_t farmesh_quality_pow;
 	const bool cell_size_each{0};
+	const View *view{};
 };
 
 struct child_t
@@ -223,24 +224,39 @@ bool contains(const child_t &child, const v3tpos_t &pos)
 }
 
 bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
-		block_step_t cell_size_pow, block_step_t farmesh_quality_pow,
-		const bool two_d = false)
+		block_step_t cell_size_pow, block_step_t farmesh_quality_pow, bool two_d,
+		const View *view, int &refinements, double column_min_y = 0,
+		double column_max_y = 0)
 {
 	if (child.size <= (1 << cell_size_pow))
 		return true;
 
-	const tpos_t child_size = child.size >> 1;
-	// go_flat() moves these samples to terrain height before the 3-D lookup.
-	// Ignore Y so the sampling grid cannot become coarser due to its plane height.
-	const tpos_t distance = std::max({
-			std::abs(player_pos.X - (child.pos.X + child_size)),
-			two_d ? tpos_t{} : std::abs(player_pos.Y - (child.pos.Y + child_size)),
-			std::abs(player_pos.Z - (child.pos.Z + child_size)),
-	});
-	const auto quality_shift =
-			1 + std::max(farmesh_quality_pow, cell_size_pow) - cell_size_pow;
-	const tpos_t next_child_size = child.size << quality_shift;
-	return distance >= next_child_size;
+	if (refinements < 0) {
+		const tpos_t child_size = child.size >> 1;
+		// Surface samples are moved to terrain height before the 3-D lookup.
+		const tpos_t distance = std::max({
+				std::abs(player_pos.X - (child.pos.X + child_size)),
+				two_d ? tpos_t{} : std::abs(player_pos.Y - (child.pos.Y + child_size)),
+				std::abs(player_pos.Z - (child.pos.Z + child_size)),
+		});
+		const auto quality_shift =
+				1 + std::max(farmesh_quality_pow, cell_size_pow) - cell_size_pow;
+		if (distance < (child.size << quality_shift))
+			return false;
+		// Count from the ordinary leaf, respecting the configured zoom cap.
+		refinements = view ? std::min(view->levels, View::max_levels) : 0;
+	}
+	// Do not enlarge the step-0 core: only normal meshes can render step 0.
+	if (!refinements || child.size <= (2 << cell_size_pow))
+		return true;
+	const unsigned wanted = two_d ? view->columnRefinementLevels(child.pos, child.size,
+											column_min_y, column_max_y)
+								  : view->refinementLevels(child.pos, child.size);
+	const unsigned consumed = std::min(view->levels, View::max_levels) - refinements;
+	if (consumed >= wanted)
+		return true;
+	--refinements;
+	return false;
 }
 
 std::array<child_t, 8> split(const child_t &child)
@@ -296,18 +312,19 @@ tree_result_t make_find_result(const child_t &mesh_child, const v3tpos_t &block_
 	return make_tree_result(storage_child, cell_size_pow, true);
 }
 
-std::optional<tree_result_t> find(const find_param_t &param, const child_t &child)
+std::optional<tree_result_t> find(
+		const find_param_t &param, const child_t &child, int refinements = -1)
 {
 	if (!contains(child, param.block_pos))
 		return {};
 
-	if (is_tree_cell(
-				child, param.player_pos, param.cell_size_pow, param.farmesh_quality_pow))
+	if (is_tree_cell(child, param.player_pos, param.cell_size_pow,
+				param.farmesh_quality_pow, false, param.view, refinements))
 		return make_find_result(
 				child, param.block_pos, param.cell_size_pow, param.cell_size_each);
 
 	for (const auto &child : split(child)) {
-		if (const auto res = find(param, child); res)
+		if (const auto res = find(param, child, refinements); res)
 			return res;
 	}
 	return {};
@@ -365,12 +382,13 @@ std::optional<tree_result_t> getFarParams(const MapDrawControl &draw_control,
 		const v3bpos_t &player_block_pos, const v3bpos_t &blockpos, bool cell_each)
 {
 	return getFarParams(player_block_pos, draw_control.cell_size_pow,
-			draw_control.farmesh, draw_control.farmesh_quality_pow, blockpos, cell_each);
+			draw_control.farmesh, draw_control.farmesh_quality_pow, blockpos, cell_each,
+			std::atomic_load(&draw_control.farmesh_view).get());
 }
 
 std::optional<tree_result_t> getFarParams(const v3bpos_t &player_block_pos,
 		uint8_t cell_size_pow, int farmesh, uint8_t farmesh_quality_pow,
-		const v3bpos_t &blockpos, bool cell_each)
+		const v3bpos_t &blockpos, bool cell_each, const View *view)
 {
 	if (farmesh <= 0)
 		return {};
@@ -385,7 +403,8 @@ std::optional<tree_result_t> getFarParams(const v3bpos_t &player_block_pos,
 								 blockpos_aligned_cell.Z},
 						 .cell_size_pow{cell_size_pow},
 						 .farmesh_quality_pow{farmesh_quality_pow},
-						 .cell_size_each{cell_each}},
+						 .cell_size_each{cell_each},
+						 .view{view}},
 					start);
 	return res;
 }
@@ -437,6 +456,9 @@ struct each_param_t
 	const bool cell_size_each{1};
 	const std::function<bool(const tree_result_t &)> &func;
 	const bool two_d{false};
+	const View *view{};
+	const double column_min_y{};
+	const double column_max_y{};
 };
 
 bool emit_tree_cell(const each_param_t &param, const child_t &mesh_child)
@@ -464,18 +486,19 @@ bool emit_tree_cell(const each_param_t &param, const child_t &mesh_child)
 	return false;
 }
 
-bool each(const each_param_t &param, const child_t &child)
+bool each(const each_param_t &param, const child_t &child, int refinements = -1)
 {
 	// fm: Ignore vertical distance while building a conservative surface grid.
 	if (is_tree_cell(child, param.player_pos, param.cell_size_pow,
-				param.farmesh_quality_pow, param.two_d))
+				param.farmesh_quality_pow, param.two_d, param.view, refinements,
+				param.column_min_y, param.column_max_y))
 		return emit_tree_cell(param, child);
 	// ===
 
 	for (const auto &subchild : split(child)) {
 		if (param.two_d && subchild.pos.Y != child.pos.Y)
 			continue;
-		if (each(param, subchild))
+		if (each(param, subchild, refinements))
 			return true;
 	}
 	return false;
@@ -484,13 +507,16 @@ bool each(const each_param_t &param, const child_t &child)
 void runFarAll(const v3bpos_t &player_block_pos, uint8_t cell_size_pow, int farmesh,
 		uint8_t farmesh_quality_pow, pos_t two_d, bool cell_each, block_step_t max_step,
 		const std::function<bool(const v3bpos_t &, const bpos_t &, const block_step_t &)>
-				&func)
+				&func,
+		const View *view)
 {
 	// A tree cell cannot be smaller than one client mesh cell.
 	const auto tree_pow = std::max<block_step_t>(
 			cell_size_pow, max_step ?: farmesh_to_tree_pow(farmesh));
 	const tree_params_t tree_params{.tree_pow{tree_pow}};
 	const auto start = tree_params_to_child(tree_params, player_block_pos, two_d);
+	const auto volume = tree_params_to_child(
+			tree_params_t{.tree_pow{farmesh_to_tree_pow(farmesh)}}, player_block_pos);
 	const auto func_convert = [&func](const tree_result_t &child) {
 		return func(
 				v3bpos_t{child.pos.X, child.pos.Y, child.pos.Z}, child.size, child.step);
@@ -508,6 +534,9 @@ void runFarAll(const v3bpos_t &player_block_pos, uint8_t cell_size_pow, int farm
 					.two_d{
 							static_cast<bool>(two_d),
 					},
+					.view{view},
+					.column_min_y{double(volume.pos.Y)},
+					.column_max_y{double(volume.pos.Y) + volume.size},
 			},
 			start);
 }

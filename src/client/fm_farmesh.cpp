@@ -77,22 +77,44 @@ bool FarMesh::makeFarBlock(
 		}
 		block = entry.block;
 	}
-	block->far_iteration = iteration;
+	const bool first_in_grid = block->far_iteration.exchange(iteration) != iteration;
 	m_pending_far_blocks.insert_or_assign(blockpos, block);
 
-	if (block->far_status < MapBlock::far_status_e::s2_requested) {
-		// A received block can enter storage before its asynchronous invalidation
-		// runs. Initialize its deadline too, instead of leaving UINT32_MAX here.
+	const bool request_sources =
+			block->far_status < MapBlock::far_status_e::s2_requested ||
+			(first_in_grid && !meshReady(block));
+	if (first_in_grid || request_sources) {
+		// A mesh owns cell_size^3 source blocks, even when only its origin has
+		// a mesh/status entry. Rebuilding after zoom must request and retain
+		// the entire footprint, not assume that the old origin's status means
+		// all of its source blocks are still resident.
+		auto &storage = client_map.far_blocks_storage[step];
+		farmesh::forEachMeshSource(blockpos, step, m_control->cell_size_pow,
+				[&](const v3bpos_t &source_pos) {
+					{
+						const auto lock = storage.lock_unique_rec();
+						const auto it = storage.find(source_pos);
+						if (it != storage.end() && it->second.block) {
+							it->second.far_last_used = m_client->m_uptime;
+							it->second.block->far_iteration = iteration;
+						}
+					}
+					if (request_sources)
+						client_map.m_far_blocks_ask.insert_or_assign(
+								source_pos, std::make_pair(step, iteration));
+				});
+	}
+	if (request_sources) {
 		block->far_make_mesh_timestamp =
 				m_client->m_uptime + (m_fast_move ? 0 : farmesh_wait_server);
-		for (pos_t x = 0; x < 1 << m_control->cell_size_pow; ++x)
-			for (pos_t y = 0; y < 1 << m_control->cell_size_pow; ++y)
-				for (pos_t z = 0; z < 1 << m_control->cell_size_pow; ++z)
-					client_map.m_far_blocks_ask.insert_or_assign(
-							blockpos + v3bpos_t{x, y, z} * (1 << step),
-							std::make_pair(step, iteration));
-		block->far_status = MapBlock::far_status_e::s2_requested;
+		// Do not turn an already dispatched job back into an enqueueable one.
+		auto status = block->far_status.load();
+		while (status < MapBlock::far_status_e::s4_mesh_enqueued &&
+				!block->far_status.compare_exchange_weak(
+						status, MapBlock::far_status_e::s2_requested)) {
+		}
 	}
+
 	return queueFarBlock(block, low_priority);
 }
 
@@ -104,6 +126,10 @@ bool FarMesh::queueFarBlock(const MapBlockPtr &block, bool low_priority)
 		return false;
 	if (!m_fast_move && m_client->m_uptime < block->far_make_mesh_timestamp)
 		return false;
+	if (m_view && m_view->levels &&
+			!m_view->intersects(block->getPos(),
+					(1u << block->far_step) * m_control->cell_size, false))
+		low_priority = true;
 	return enqueueFarMeshForBlock(
 			block->getPos(), block->far_step, block, m_client->m_uptime, low_priority);
 }
@@ -384,7 +410,8 @@ bool outsideFarRange(const v3bpos_t &bpos, bpos_t size, uint8_t cell_size_pow,
 
 } // namespace
 
-int FarMesh::go_container(bool only_received, const block_step_t step_limit)
+int FarMesh::go_container(
+		bool only_received, const block_step_t step_limit, bool view_only)
 {
 	const auto &draw_control = *m_control;
 	// Do not limit 3d worlds
@@ -394,13 +421,29 @@ int FarMesh::go_container(bool only_received, const block_step_t step_limit)
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_cam_pos_grid);
 
 	size_t blocks_enqueued = 0;
-	farmesh::runFarAll(player_block_pos, draw_control.cell_size_pow, draw_control.farmesh,
+	farmesh::runFarAll(
+			player_block_pos, draw_control.cell_size_pow, draw_control.farmesh,
 			draw_control.farmesh_quality_pow, 0, false, 0,
-			[this, &step_limit, &only_received, &blocks_enqueued
+			[this, &step_limit, &only_received, &blocks_enqueued, view_only,
+					&player_block_pos
 					//, &draw_control ,&camera_pos, far_range
 	](const v3bpos_t &bpos, const bpos_t &size, const block_step_t &step) -> bool {
 				// if (outsideFarRange(bpos, size, draw_control.cell_size_pow, camera_pos, far_range))	return false;
 
+				if (farmesh_thread_stop)
+					return true;
+				if (view_only) {
+					// Collect complete replacement groups, including siblings
+					// just outside the frustum. Dropping them would expose holes
+					// when their coarse parent is retired.
+					const auto base = farmesh::getFarParams(player_block_pos,
+							m_control->cell_size_pow, m_control->farmesh,
+							m_control->farmesh_quality_pow, bpos);
+					if (!m_view || !base ||
+							!m_view->intersects(base->pos,
+									pos_t(base->size) << m_control->cell_size_pow))
+						return false;
+				}
 				if (!step || step >= FARMESH_STEP_MAX) {
 					return false;
 				}
@@ -428,8 +471,49 @@ int FarMesh::go_container(bool only_received, const block_step_t step_limit)
 				}
 
 				return false;
-			});
+			},
+			m_view.get());
 	return blocks_enqueued;
+}
+
+int FarMesh::go_visible()
+{
+	auto &client_map = m_client->getEnv().getClientMap();
+	std::vector<std::pair<v3bpos_t, block_step_t>> visible;
+	{
+		const auto lock = client_map.m_far_blocks.lock_shared_rec();
+		for (const auto &[pos, block] : client_map.m_far_blocks)
+			if (block)
+				visible.emplace_back(pos, block->far_step);
+	}
+	const auto &camera_pos = client_map.far_cam_pos_grid;
+	const auto player_pos = getNodeBlockPos(camera_pos);
+	const bool flat = farmesh_flat && mg->surface_2d();
+	const double far_range =
+			heightLimitedFarRange(camera_pos, mg->water_level, m_control->farmesh);
+	int enqueued = 0;
+	for (const auto &[pos, old_step] : visible) {
+		if (farmesh_thread_stop)
+			break;
+		const auto target = farmesh::getFarParams(*m_control, player_pos, pos);
+		// A flat/ray scan can miss a parent previously reached by fine zoom
+		// samples. Collect that whole parent before retiring its descendants.
+		// Equal-step owners must remain selected on later refreshes as well.
+		if (!target || !target->step || target->step < old_step)
+			continue;
+		if (flat && outsideFarRange(target->pos, target->size, m_control->cell_size_pow,
+							camera_pos, far_range))
+			continue;
+		enqueued += makeFarBlock(target->pos, target->step);
+	}
+	return enqueued;
+}
+
+int FarMesh::go_view()
+{
+	// The shared traversal refines only intersecting cells and emits a complete
+	// nonoverlapping grid. This also covers caves and overhangs in 3-D worlds.
+	return go_container(false, 0, true);
 }
 
 int FarMesh::go_flat()
@@ -444,7 +528,8 @@ int FarMesh::go_flat()
 	std::array<std::unordered_map<v3bpos_t, bool>, FARMESH_STEP_MAX> blocks;
 	// Collect the full footprint once; waiting at each radius makes fast movement
 	// continually outrun the outer terrain. All positions use the same grid.
-	farmesh::runFarAll(player_block_pos, draw_control.cell_size_pow, draw_control.farmesh,
+	farmesh::runFarAll(
+			player_block_pos, draw_control.cell_size_pow, draw_control.farmesh,
 			draw_control.farmesh_quality_pow, 1, cell_each,
 			farmesh::settingToStep(draw_control.farmesh),
 			[this, &draw_control, &blocks, &player_block_pos, &camera_pos, far_range](
@@ -489,7 +574,8 @@ int FarMesh::go_flat()
 					++low_priority;
 				}
 				return farmesh_thread_stop.load();
-			});
+			},
+			m_view.get());
 	for (size_t step = 1; step < blocks.size(); ++step)
 		for (const auto &[bpos, low_priority] : blocks[step])
 			makeFarBlock(bpos, step, low_priority);
@@ -750,6 +836,17 @@ bool FarMesh::enqueueFarMeshForBlock(const v3bpos_t &blockpos, const block_step_
 	return inserted;
 }
 
+bool FarMesh::meshReady(const MapBlockPtr &block) const
+{
+	if (!block)
+		return false;
+	const auto mesh = block->getFarMesh(block->far_step);
+	if (!mesh)
+		return false;
+	const auto old = m_view_old_meshes.find(block.get());
+	return old == m_view_old_meshes.end() || old->second.lock() != mesh;
+}
+
 void FarMesh::commitFarGrid()
 {
 	// Near draw-list publication must not wait for the far-grid updater.
@@ -761,7 +858,7 @@ void FarMesh::commitFarGrid()
 	const auto lock = client_map.m_far_blocks.lock_unique_rec();
 	farmesh::publishReadyGrid(
 			m_pending_far_blocks, client_map.m_far_blocks,
-			[](const auto &block) { return block && block->getFarMesh(block->far_step); },
+			[this](const auto &block) { return meshReady(block); },
 			[](const auto &block) { return block->far_step; }, m_control->cell_size_pow,
 			[&](const auto &entry) {
 				// Keep old terrain in the new near-only core. The draw-list handoff
@@ -780,8 +877,8 @@ void FarMesh::commitFarGrid()
 	m_grid_committed = m_grid_ready;
 }
 
-uint8_t FarMesh::update(
-		v3opos_t camera_pos, v3pos_t camera_offset, int render_range, float speed)
+uint8_t FarMesh::update(v3opos_t camera_pos, v3pos_t camera_offset, int render_range,
+		float speed, farmesh::View view)
 {
 	const std::lock_guard grid_lock(m_grid_mutex);
 	if (!mg || farmesh_thread_stop)
@@ -799,6 +896,11 @@ uint8_t FarMesh::update(
 	m_fast_move = speed > 200 * BS ||
 				  m_camera_pos_aligned.getDistanceFrom(camera_pos_aligned) > 1000;
 
+	const bool view_changed = !m_view || m_view->changed(view);
+	const bool accept_view =
+			view_changed && (!m_view || view.levels != m_view->levels ||
+									m_client->m_uptime >= m_next_view_change);
+
 	if (want_reset.exchange(false))
 		m_grid_started = false;
 
@@ -806,15 +908,41 @@ uint8_t FarMesh::update(
 	// Constant movement must not cancel every replacement before it can appear.
 	// Mesh jobs sample far_cam_pos_mesh, so it stays fixed until they all finish.
 	if (!m_grid_started ||
-			(m_grid_committed && (m_camera_pos_aligned != camera_pos_aligned ||
-										 m_client->m_uptime >= m_next_refresh ||
-										 last_distance_max != distance_max))) {
+			(m_grid_committed &&
+					(m_camera_pos_aligned != camera_pos_aligned ||
+							m_client->m_uptime >= m_next_refresh || accept_view ||
+							last_distance_max != distance_max))) {
 		if (!farmesh_make_queue_complete)
 			return false;
 		for (const auto &scan : async_direction)
 			if (!scan.ready())
 				return false;
 
+		// Move the snapshot only after all scanners and mesh jobs have drained.
+		// Existing meshes sampled LOD boundaries from the previous snapshot.
+		if (accept_view || (m_view && m_view->levels &&
+								   m_camera_pos_aligned != camera_pos_aligned)) {
+			m_view = std::make_shared<const farmesh::View>(view);
+			std::atomic_store(&m_control->farmesh_view, m_view);
+			m_next_view_change = m_client->m_uptime + 0.5;
+			std::erase_if(m_view_old_meshes,
+					[](const auto &entry) { return entry.second.expired(); });
+			for (auto &storage : client_map.far_blocks_storage) {
+				const auto lock = storage.lock_shared_rec();
+				for (const auto &[pos, entry] : storage) {
+					if (!entry.block)
+						continue;
+					// Sampling also depends on neighboring LODs. Revalidate cached
+					// meshes for each accepted view, retaining them as fallbacks.
+					const auto mesh = entry.block->getFarMesh(entry.block->far_step);
+					if (!mesh)
+						continue;
+					m_view_old_meshes.insert_or_assign(entry.block.get(), mesh);
+					entry.block->far_make_mesh_timestamp = m_client->m_uptime;
+					entry.block->far_status = MapBlock::far_status_e::s2_requested;
+				}
+			}
+		}
 		m_camera_pos_aligned = camera_pos_aligned;
 		client_map.far_cam_pos_grid = client_map.far_cam_pos_mesh = camera_pos_aligned;
 		client_map.far_iteration_grid = client_map.far_iteration_mesh =
@@ -825,6 +953,7 @@ uint8_t FarMesh::update(
 		direction_caches.fill({});
 		m_grid_started = true;
 		m_grid_scanned = false;
+		m_view_scanned = false;
 		m_grid_ready = m_grid_committed = false;
 		m_next_refresh = m_client->m_uptime + 1;
 	}
@@ -845,7 +974,16 @@ uint8_t FarMesh::update(
 		if (!plane_processed[i].processed)
 			continue;
 		grid_finished = false;
-		async_direction[i].step([this, i, flat]() {
+		const bool scan_view = !flat && farmesh_ray && i == 0 && m_view &&
+							   m_view->levels && !m_view_scanned;
+		if (scan_view)
+			m_view_scanned = true;
+		async_direction[i].step([this, i, flat, scan_view]() {
+			if (i == 0)
+				go_visible();
+			// Submit the visible refinement before the ordinary ray work.
+			if (scan_view)
+				go_view();
 			if (flat) {
 				go_flat();
 				go_container(true, farmesh::settingToStep(
@@ -867,7 +1005,7 @@ uint8_t FarMesh::update(
 	for (const auto &[pos, block] : m_pending_far_blocks) {
 		// Also retries failed jobs and revisits blocks after their server wait.
 		queueFarBlock(block);
-		if (!block->getFarMesh(block->far_step))
+		if (!meshReady(block))
 			meshes_ready = false;
 	}
 	// Refresh jobs may keep arriving for cells that already have usable meshes.
