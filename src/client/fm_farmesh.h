@@ -25,7 +25,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cstdint>
 #include <thread>
 #include <mutex>
+#include <unordered_map>
 #include "fm_far_mesh_update.h"
+#include "fm_far_view.h"
 #include "client/camera.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
@@ -60,7 +62,7 @@ public:
 			//v3f camera_dir, f32 camera_fov, CameraMode camera_mode, f32 camera_pitch, f32 camera_yaw,
 			v3pos_t m_camera_offset,
 			//float brightness,
-			int render_range, float speed);
+			int render_range, float speed, farmesh::View view);
 	bool makeFarBlock(
 			const v3bpos_t &blockpos, block_step_t step, const bool low_priority = false);
 	size_t makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
@@ -123,16 +125,26 @@ private:
 	std::atomic_uint last_distance_max{};
 	int go_direction(const size_t dir_n);
 	int go_flat();
-	int go_container(bool only_received, const block_step_t step_limit = 0);
+	int go_view();
+	int go_visible();
+	int go_container(bool only_received, const block_step_t step_limit = 0,
+			bool view_only = false);
 	uint32_t far_iteration_pos{};
 	double m_next_refresh{};
 	bool m_grid_started{};
 	bool m_grid_scanned{};
+	bool m_view_scanned{};
 	bool m_grid_ready{};
 	bool m_grid_committed{};
 	std::mutex m_grid_mutex;
 	concurrent_unordered_map<v3bpos_t, MapBlockPtr> m_pending_far_blocks;
 	std::atomic_bool want_reset{};
+	farmesh::ViewPtr m_view;
+	double m_next_view_change{};
+	// Old meshes remain visible, but cannot satisfy the new grid until rebuilt
+	// with its LOD-dependent boundary samples. Read-only while scanners run.
+	std::unordered_map<MapBlock *, std::weak_ptr<MapBlockMesh>> m_view_old_meshes;
+	bool meshReady(const MapBlockPtr &block) const;
 	//bool mesh_complete_set{};
 	//bool grid_finished{};
 	//uint8_t planes_processed_last{};

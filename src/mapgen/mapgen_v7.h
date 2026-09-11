@@ -107,15 +107,16 @@ private:
 
 	float *float_offset_cache = nullptr;
 
-    // freeminer:
+	// fm:
 protected:
 	MapgenV7Params *sp{};
 	//virtual void generateExperimental();
 public:
-	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step);
+	pos_t getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step) override;
+	virtual bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override;
 
 private:
-	// =========
+	// ===
 
 	Noise *noise_terrain_base = nullptr;
 	Noise *noise_terrain_alt = nullptr;

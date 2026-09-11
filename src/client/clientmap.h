@@ -4,10 +4,13 @@
 
 #pragma once
 
+// fm:
 #include "CMeshBuffer.h"
+#include "fm_far_view.h"
 #include "fm_weather.h"
 #include "threading/async.h"
 #include "settings.h"
+// ===
 
 #include "irrlichttypes_bloated.h"
 #include "map.h"
@@ -20,7 +23,9 @@
 struct MapDrawControl
 {
 
-	// freeminer:
+	// fm:
+	// Immutable snapshot is published only between far-grid generations.
+	mutable farmesh::ViewPtr farmesh_view;
 	int32_t farmesh{30000};
 	uint8_t farmesh_quality{};
 	uint16_t farmesh_stable{};

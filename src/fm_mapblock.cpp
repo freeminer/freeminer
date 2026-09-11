@@ -9,6 +9,10 @@
 #include "client/node_visuals.h"
 #endif
 
+#ifndef NDEBUG
+#include "profiler.h"
+#endif
+
 MapNode MapBlock::getNodeNoEx(v3pos_t p)
 {
 #ifndef NDEBUG

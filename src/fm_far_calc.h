@@ -22,6 +22,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <optional>
+#include <functional>
+#include "fm_far_view.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "mapblock.h"
@@ -73,7 +75,7 @@ std::optional<tree_result_t> getFarParams(const MapDrawControl &draw_control,
 // Server-side form which avoids constructing the client-only MapDrawControl.
 std::optional<tree_result_t> getFarParams(const v3bpos_t &player_block_pos,
 		uint8_t cell_size_pow, int farmesh, uint8_t farmesh_quality_pow,
-		const v3bpos_t &blockpos, bool cell_each = false);
+		const v3bpos_t &blockpos, bool cell_each = false, const View *view = nullptr);
 
 v3bpos_t getFarActualBlockPos(const MapDrawControl &draw_control,
 		const v3bpos_t &player_block_pos, const v3bpos_t &blockpos,
@@ -85,7 +87,8 @@ v3bpos_t playerBlockAlign(
 void runFarAll(const v3bpos_t &player_block_pos, uint8_t cell_size_pow, int farmesh,
 		uint8_t farmesh_quality_pow, pos_t two_d, bool cell_each, block_step_t max_step,
 		const std::function<bool(const v3bpos_t &, const bpos_t &, const block_step_t &)>
-				&func);
+				&func,
+		const View *view = nullptr);
 
 block_step_t rangeToStep(const int range);
 block_step_t settingToStep(const int range);

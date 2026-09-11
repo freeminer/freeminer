@@ -130,13 +130,20 @@
 wanted_fps (Wanted FPS) int 30
 
 # Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
-lodmesh () int 4
+lodmesh () int 4 0 5
 
 # Farmesh max distance, 0 for disable
-farmesh () int 30000
+farmesh () int 30000 0 2000000000
 
 # Farmesh quality (0 .. 4)
 farmesh_quality () int 2
+
+# fm: View-dependent far-mesh detail.
+#    Maximum additional detail levels while zooming. Each level halves voxel spacing,
+#    down to two nodes. Zero disables zoom refinement. The preload margin uses
+#    fewer levels. Higher limits increase mesh work and memory use at extreme zoom.
+farmesh_zoom_levels (Maximum extra farmesh zoom detail levels) int 7 0 7
+# ===
 
 # Farmesh map data from server
 farmesh_server () bool true
