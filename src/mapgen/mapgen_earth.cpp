@@ -897,7 +897,7 @@ int MapgenEarth::getSpawnLevelAtPoint(v2pos_t p)
 	return std::max(2, get_height(p.X, p.Y, 0) + 2);
 }
 
-pos_t MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
+int MapgenEarth::getGroundLevelAtPoint(v2pos_t p)
 {
 	// Flat far meshes and other surface queries need Earth's elevation too.
 	return getGroundLevelAtPointStep(p, 0);

@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
-#include "network/connection.h"
-
 #include "game_internal.h"
 
 #include <cmath>
@@ -55,6 +53,7 @@
 #include "item_visuals_manager.h"
 
 
+#include "network/connection.h"
 #include "client/fm_farmesh.h"
 #include "threading/async.h"
 #include "util/numeric.h"

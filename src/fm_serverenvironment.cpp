@@ -138,7 +138,7 @@ int ServerEnvironment::analyzeBlocks(float dtime, unsigned int max_cycle_ms)
 	}
 
 	thread_local static size_t rare{};
-	if (!(rare++ % 1000))
+	if (active_blocks && !(rare++ % 1000))
 		infostream << "ServerEnvironment::analyzeBlocks: candidates=" << active_blocks
 				   << " visited=" << calls << " analyzed=" << analyzed
 				   << " resume_index=" << m_active_block_analyzed_last

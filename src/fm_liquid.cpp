@@ -1157,7 +1157,7 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 	// g_profiler->avg("Server: liquids queue internal", m_transforming_liquid_local_size);
 
 	thread_local static size_t rare{};
-	if (!(rare++ % 1000))
+	if (initial_size && !(rare++ % 1000))
 		infostream << "ServerMap::transformLiquidsReal: processed=" << loopcount
 				   << " initial_queue=" << initial_size
 				   << " requeued=" << requeue_liquid.size()
