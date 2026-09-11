@@ -58,8 +58,8 @@ inline std::ostream &operator<<(std::ostream &s, const ll &p)
 
 struct MapgenEarthParams : public MapgenV7Params
 {
-	MapgenEarthParams() {};
-	~MapgenEarthParams() {};
+	MapgenEarthParams(){};
+	~MapgenEarthParams(){};
 
 	Json::Value params;
 
@@ -177,7 +177,7 @@ public:
 	int generateTerrain() override;
 	void generateBuildings() override;
 	pos_t getSpawnLevelAtPoint(v2pos_t p) override;
-	//pos_t getGroundLevelAtPoint(v2pos_t p) override;
+	pos_t getGroundLevelAtPoint(v2pos_t p) override;
 	pos_t getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step) override;
 
 	bool calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime,
