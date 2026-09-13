@@ -12,6 +12,8 @@
 #cmakedefine01 MINETEST_PROTO
 #cmakedefine01 MINETEST_TRANSPORT
 #cmakedefine01 STATIC_BUILD
+#cmakedefine01 USE_ARROW
+#cmakedefine01 USE_CLIENT_MCP
 #cmakedefine01 USE_ENET
 #cmakedefine01 USE_GPERF
 #cmakedefine01 USE_ICONV
@@ -24,11 +26,10 @@
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_SQLITE3
 #cmakedefine01 USE_TIFF
+#cmakedefine01 USE_UNWIND
 #cmakedefine01 USE_VOXEL_EARTH
 #cmakedefine01 USE_WEBSOCKET
 #cmakedefine01 USE_WEBSOCKET_SCTP
-#cmakedefine01 USE_CLIENT_MCP
-#cmakedefine01 USE_UNWIND
 #cmakedefine01 Backtrace_FOUND
 #cmakedefine01 USE_ATOMIC_SHARED_PTR
 #define Backtrace_HEADER "@Backtrace_HEADER@"

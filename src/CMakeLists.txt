@@ -666,6 +666,9 @@ add_dependencies(EngineCommon GenerateVersion GenerateBuiltinFilesCpp)
 target_link_libraries(EngineCommon
 	sha256
 )
+# fm:
+target_link_libraries(EngineCommon fm_dependencies)
+# ===
 if(USE_OPENSSL)
 	target_link_libraries(EngineCommon OpenSSL::Crypto)
 endif()

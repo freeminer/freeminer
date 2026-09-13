@@ -1,0 +1,30 @@
+# Freeminer sources added to the upstream common source list.
+list(
+    APPEND
+    FMcommon_SRCS
+    circuit.cpp
+    circuit_element.cpp
+    circuit_element_virtual.cpp
+    content_abm.cpp
+    content_abm_core.cpp
+    content_abm_erosion.cpp
+    content_abm_evaporation.cpp
+    content_abm_growth.cpp
+    content_abm_grow_tree.cpp
+    content_abm_precipitation.cpp
+    fm_abm.cpp
+    fm_abm_world.cpp
+    fm_bitset.cpp
+    fm_clientiface.cpp
+    fm_far_calc.cpp
+    fm_liquid.cpp
+    fm_map.cpp
+    fm_mapblock.cpp
+    fm_server.cpp
+    fm_serverenvironment.cpp
+    fm_util.cpp
+    fm_world_merge.cpp
+    key_value_storage.cpp
+    log_types.cpp
+    stat.cpp
+)
