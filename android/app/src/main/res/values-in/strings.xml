@@ -6,7 +6,7 @@
     <string name="loading">Memuat…</string>
     <string name="notification_channel_name">Pemberitahuan umum</string>
     <string name="unzip_notification_description">Kurang dari 1 menit…</string>
-    <string name="notification_channel_description">Pemberitahuan dari Luanti</string>
-    <string name="unzip_notification_title">Memuat Luanti…</string>
-    <string name="game_notification_title">Luanti sedang berjalan</string>
+    <string name="notification_channel_description">Pemberitahuan dari Freeminer</string>
+    <string name="unzip_notification_title">Memuat Freeminer…</string>
+    <string name="game_notification_title">Freeminer sedang berjalan</string>
 </resources>
