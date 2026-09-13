@@ -11,6 +11,8 @@ if not http then
     core.log("warning", "[geoip_on_join] HTTP API not available; geo lookups disabled")
 end
 
+local max_h = core.settings:get("geo.max_h") or 100000 -- todo: use player's farmesh param
+
 local function strip_port(ip)
     if not ip then
         return ""
@@ -280,7 +282,7 @@ local function move_player_to_geo(player, data, smooth)
         end
 
         if smooth then
-            smooth_move_player(player, pos, 100000)
+            smooth_move_player(player, pos, max_h)
         else
             player:set_pos(pos)
         end
@@ -1126,7 +1128,7 @@ if core.is_creative_enabled("") then
                 x = tonumber(x),
                 y = tonumber(y),
                 z = tonumber(z),
-            }, 100000)
+            }, max_h)
             return true, ""
         end
 
@@ -1179,7 +1181,7 @@ if core.is_creative_enabled("") then
 end
 
 if mg_earth_ok and mg_earth_data and mg_earth_data.center and mg_earth_data.center.x and mg_earth_data.center.z then
-elseif core.settings:get("earth_geo_spawn") then
+elseif core.settings:get("geo.spawn") then
     core.register_on_newplayer(do_geo_lookup_for_player)
     core.register_on_respawnplayer(do_geo_lookup_for_player_instant)
 end
