@@ -6,7 +6,7 @@
     <string name="loading">Cargando…</string>
     <string name="notification_channel_name">Notificación General</string>
     <string name="label">Freeminer</string>
-    <string name="notification_channel_description">Notificaciones de Luanti</string>
-    <string name="unzip_notification_title">Cargando Luanti</string>
-    <string name="game_notification_title">Luanti se está ejecutando</string>
+    <string name="notification_channel_description">Notificaciones de Freeminer</string>
+    <string name="unzip_notification_title">Cargando Freeminer</string>
+    <string name="game_notification_title">Freeminer se está ejecutando</string>
 </resources>

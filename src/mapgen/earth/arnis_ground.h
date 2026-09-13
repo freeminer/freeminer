@@ -237,8 +237,8 @@ struct Ground
 	void set_land_cover_data(land_cover::LandCoverData data, std::size_t world_width,
 			std::size_t world_height)
 	{
-		// Rust parity: src/ground.rs land-cover accessors.
-		// Divergence: C++ currently receives an OSM-derived grid; ESA COG fetch is not ported.
+		// Rust parity: src/ground.rs land-cover accessors. The active mapgen
+		// populates this from ESA WorldCover, then applies OSM overrides.
 		data.width = data.grid.empty() ? 0 : data.grid.front().size();
 		data.height = data.grid.size();
 		data.water_distance =

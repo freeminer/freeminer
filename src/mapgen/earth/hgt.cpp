@@ -122,12 +122,11 @@ height::height_t hgts::get(
 	For custom horizontal scales, choose the first level where:
 	(1ULL << step) * std::min(scale.X, scale.Z) >= 1855.0
 	*/
-#if !__EMSCRIPTEN__
+	// TODO: configurable by setting, less to emscripten/android/slow...
 	if (step >= 11) {
 		if (const auto result = world_elevation.get(folder, lat, lon))
 			return *result;
 	}
-#endif
 	const auto lat1 = height::lat_start(lat);
 	const auto lon1 = height::lon_start(lon);
 

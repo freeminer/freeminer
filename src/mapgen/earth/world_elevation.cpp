@@ -8,7 +8,13 @@
 
 void WorldElevation::load(const std::string &folder)
 {
+// Todo: configurable by settings
+#if __EMSCRIPTEN__ || __ANDROID__
+	const std::string name = "World_elevation_map-8192.png";
+#else
 	const std::string name = "World_elevation_map.png";
+#endif
+
 	const std::string path = folder + "/" + name;
 	if (!multi_http_to_file_cdn("earth", name, {}, path))
 		return;
