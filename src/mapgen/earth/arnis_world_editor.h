@@ -32,6 +32,7 @@
 
 namespace arnis
 {
+class CoordinateBitmap;
 
 namespace signage
 {
@@ -84,6 +85,13 @@ namespace world_editor
 // A “WorldEditor” that can set blocks in your map
 struct WorldEditor
 {
+	std::shared_ptr<const CoordinateBitmap> sealed_surface;
+	void set_sealed_surface(std::shared_ptr<const CoordinateBitmap> mask)
+	{
+		sealed_surface = std::move(mask);
+	}
+	void release_sealed_surface() { sealed_surface.reset(); }
+	bool surface_is_sealed(int x, int z) const;
 	struct DecalFrame
 	{
 		int x, y, z;
@@ -107,7 +115,7 @@ struct WorldEditor
 		std::size_t operator()(const std::pair<int, int> &p) const noexcept
 		{
 			const auto key = (std::uint64_t(static_cast<std::uint32_t>(p.first)) << 32) |
-					std::uint32_t(p.second);
+							 std::uint32_t(p.second);
 			return std::hash<std::uint64_t>{}(key);
 		}
 	};
@@ -317,13 +325,12 @@ struct WorldEditor
 			return false;
 		if (text.empty())
 			return true;
-		if (!mg || !mg->active_block_data ||
-			x < std::numeric_limits<pos_t>::min() ||
-			x > std::numeric_limits<pos_t>::max() ||
-			y < std::numeric_limits<pos_t>::min() ||
-			y > std::numeric_limits<pos_t>::max() ||
-			z < std::numeric_limits<pos_t>::min() ||
-			z > std::numeric_limits<pos_t>::max())
+		if (!mg || !mg->active_block_data || x < std::numeric_limits<pos_t>::min() ||
+				x > std::numeric_limits<pos_t>::max() ||
+				y < std::numeric_limits<pos_t>::min() ||
+				y > std::numeric_limits<pos_t>::max() ||
+				z < std::numeric_limits<pos_t>::min() ||
+				z > std::numeric_limits<pos_t>::max())
 			return false;
 		return mg->queueGeneratedSign(
 				{static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)},
@@ -729,8 +736,7 @@ struct WorldEditor
 	{
 		const int local_x = x - ground_cache_min_x;
 		const int local_z = z - ground_cache_min_z;
-		if (local_x >= 0 && local_z >= 0 &&
-				std::size_t(local_x) < ground_cache_width &&
+		if (local_x >= 0 && local_z >= 0 && std::size_t(local_x) < ground_cache_width &&
 				std::size_t(local_z) < ground_cache_height) {
 			const std::size_t index =
 					std::size_t(local_z) * ground_cache_width + std::size_t(local_x);
@@ -760,11 +766,10 @@ struct WorldEditor
 	{
 		const int local_x = x - ground_cache_min_x;
 		const int local_z = z - ground_cache_min_z;
-		if (local_x >= 0 && local_z >= 0 &&
-				std::size_t(local_x) < ground_cache_width &&
+		if (local_x >= 0 && local_z >= 0 && std::size_t(local_x) < ground_cache_width &&
 				std::size_t(local_z) < ground_cache_height) {
 			ground_level_cache[std::size_t(local_z) * ground_cache_width +
-					std::size_t(local_x)] = y;
+							   std::size_t(local_x)] = y;
 			return;
 		}
 		ground_level_overflow[{x, z}] = y;

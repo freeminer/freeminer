@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "arnis_types.h"
+#include "arnis-cpp/src/celestial.h"
 #include "mapgen/mapgen_earth.h"
 #include "arnis-cpp/src/biome.h"
 #include "arnis-cpp/src/canopy/canopy.h"
@@ -33,6 +34,10 @@ struct Ground
 	std::optional<canopy::CanopyData> canopy_data;
 	std::size_t canopy_world_width = 0, canopy_world_height = 0;
 	double elevation_min_height_m = 0.0, elevation_blocks_per_meter = 0.0;
+	// Converts host block-space slope back to the documented world-scale slope.
+	double elevation_slope_correction = 1.0;
+	bool extended_ceiling = false;
+	CelestialBody body = CelestialBody::Earth;
 	std::optional<int> elevation_ground_level;
 	int snow_threshold_y = std::numeric_limits<int>::max();
 	std::optional<RotationMask> rotation_mask;
@@ -101,6 +106,14 @@ struct Ground
 	// Names mirror ground.rs so library consumers do not need to know the
 	// mapgen-host field layout.
 	int snow_threshold() const { return snow_threshold_y; }
+	CelestialBody celestial_body() const { return body; }
+	bool is_earth() const { return arnis::is_earth(body); }
+	double blocks_per_meter() const
+	{
+		return elevation_blocks_per_meter > 0.0 ? elevation_blocks_per_meter : 1.0;
+	}
+	void set_celestial_body(CelestialBody value) { body = value; }
+	void set_extended_ceiling(bool value) { extended_ceiling = value; }
 	int base_level(int fallback = -62) const
 	{
 		return elevation_ground_level.value_or(fallback);
@@ -160,11 +173,45 @@ struct Ground
 						: std::nullopt;
 	}
 	bool snow_capped(int y) const { return y >= snow_threshold_y; }
-	void set_elevation_metadata(
-			double min_height_m, double blocks_per_meter, int snow_y, int ground_level)
+	// Rust ground.rs snow-line model.  It is expressed in terrain metres, then
+	// inverted through the actual elevation affine so a sunk terrain base or an
+	// extended build ceiling cannot shift every alpine surface.
+	static double snow_line_meters(double latitude_degrees)
+	{
+		const auto latitude = std::min(90.0, std::abs(latitude_degrees));
+		if (latitude <= 25.0)
+			return 4500.0 + (5700.0 - 4500.0) * latitude / 25.0;
+		if (latitude <= 46.0)
+			return 5700.0 + (3000.0 - 5700.0) * (latitude - 25.0) / (46.0 - 25.0);
+		return std::max(0.0, 3000.0 * (1.0 - (latitude - 46.0) / (90.0 - 46.0)));
+	}
+	void set_snow_line_for_latitude(double latitude_degrees)
+	{
+		if (!is_earth()) {
+			snow_threshold_y = std::numeric_limits<int>::max();
+			return;
+		}
+		const auto snowline = snow_line_meters(latitude_degrees);
+		if (elevation_blocks_per_meter <= 0.0) {
+			snow_threshold_y = elevation_min_height_m >= snowline
+									   ? std::numeric_limits<int>::min()
+									   : std::numeric_limits<int>::max();
+			return;
+		}
+		const auto y = base_level() +
+					   (snowline - elevation_min_height_m) * elevation_blocks_per_meter;
+		snow_threshold_y = y <= std::numeric_limits<int>::min()
+								   ? std::numeric_limits<int>::min()
+						   : y >= std::numeric_limits<int>::max()
+								   ? std::numeric_limits<int>::max()
+								   : static_cast<int>(std::llround(y));
+	}
+	void set_elevation_metadata(double min_height_m, double blocks_per_meter, int snow_y,
+			int ground_level, double slope_correction = 1.0)
 	{
 		elevation_min_height_m = min_height_m;
 		elevation_blocks_per_meter = blocks_per_meter;
+		elevation_slope_correction = slope_correction > 0.0 ? slope_correction : 1.0;
 		snow_threshold_y = snow_y;
 		elevation_ground_level = ground_level;
 	}
@@ -335,8 +382,9 @@ struct Ground
 				  west = level({coord.x - step, coord.z}),
 				  north = level({coord.x, coord.z - step}),
 				  south = level({coord.x, coord.z + step});
-		return std::max({east, west, north, south}) -
-			   std::min({east, west, north, south});
+		const int raw = std::max({east, west, north, south}) -
+						std::min({east, west, north, south});
+		return static_cast<int>(std::llround(raw * elevation_slope_correction));
 	}
 	int water_level(const XZPoint &coord) const
 	{
@@ -349,7 +397,11 @@ struct Ground
 			for (const auto &[dx, dz] : std::array<std::pair<int, int>, 8>{{{-r, 0},
 						 {r, 0}, {0, -r}, {0, r}, {-r, -r}, {-r, r}, {r, -r}, {r, r}}})
 				lowest = std::min(lowest, level({coord.x + dx, coord.z + dz}));
-		return center - lowest > radius ? center : lowest;
+		const int cliff_drop =
+				extended_ceiling ? std::max(radius, static_cast<int>(std::llround(
+															25.0 * blocks_per_meter())))
+								 : radius;
+		return center - lowest > cliff_drop ? center : lowest;
 	}
 };
 
