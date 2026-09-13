@@ -1,51 +1,26 @@
-
 if(USE_OSMIUM)
-    file(GLOB_RECURSE mapgen_earth_SRCS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/arnis-cpp/src/*.h" "${CMAKE_CURRENT_SOURCE_DIR}/arnis-cpp/src/*.cpp")
-    list(APPEND mapgen_earth_SRCS
-        ${CMAKE_CURRENT_SOURCE_DIR}/arnis_adapter.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/blocks.cpp
-    )
-    message(STATUS "Using osmium + arnis")
+     file(GLOB_RECURSE mapgen_earth_SRCS CONFIGURE_DEPENDS
+          "${CMAKE_CURRENT_SOURCE_DIR}/arnis-cpp/src/*.h"
+          "${CMAKE_CURRENT_SOURCE_DIR}/arnis-cpp/src/*.cpp"
+     )
+     list(APPEND mapgen_earth_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/arnis_adapter.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/blocks.cpp
+     )
+     message(STATUS "Using osmium + arnis")
 endif()
 
-if(NOT EMSCRIPTEN)
-    option(ENABLE_VOXEL_EARTH "Voxel earth mapgen" 1)
-endif()
-
-if(ENABLE_VOXEL_EARTH AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/luanti-earth/native/src/voxelizer.h")
-    option(USE_VOXEL_EARTH "Earth: Use voxel earth" 1)
-    message(STATUS "Using voxel earth mapgen ${USE_VOXEL_EARTH}")
-endif()
-
-list(APPEND mapgen_earth_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/hgt.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/http.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/world_elevation.cpp
+list(APPEND mapgen_earth_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/hgt.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/http.cpp ${CMAKE_CURRENT_SOURCE_DIR}/world_elevation.cpp
 )
 
 if(USE_VOXEL_EARTH)
-    set(TINYGLTF_BUILD_LOADER_EXAMPLE 0 CACHE INTERNAL "")
-    set(TINYGLTF_INSTALL 0 CACHE INTERNAL "")
-    set(TINYGLTF_INSTALL_VENDOR 0 CACHE INTERNAL "")
+     include_directories(${TINYGLTF_INCLUDE_DIR})
 
-    include_directories(${TINYGLTF_INCLUDE_DIR})
+     add_subdirectory(luanti-earth/native)
+     set(FREEMINER_CLIENT_LIBRARIES ${FREEMINER_CLIENT_LIBRARIES} earth_native PARENT_SCOPE)
+     set(FREEMINER_SERVER_LIBRARIES ${FREEMINER_SERVER_LIBRARIES} earth_native PARENT_SCOPE)
 
-    set(HAVE_NLOHMANN_JSON 1 CACHE INTERNAL "")
-    add_subdirectory(luanti-earth/native)
-    #set(FREEMINER_CLIENT_LIBRARIES ${FREEMINER_CLIENT_LIBRARIES} tinygltf::tinygltf PARENT_SCOPE)
-    #set(FREEMINER_SERVER_LIBRARIES ${FREEMINER_SERVER_LIBRARIES} tinygltf::tinygltf PARENT_SCOPE)
-    set(FREEMINER_CLIENT_LIBRARIES ${FREEMINER_CLIENT_LIBRARIES} earth_native PARENT_SCOPE)
-    set(FREEMINER_SERVER_LIBRARIES ${FREEMINER_SERVER_LIBRARIES} earth_native PARENT_SCOPE)
-
-    list(APPEND mapgen_earth_SRCS
-        #${CMAKE_CURRENT_SOURCE_DIR}/voxel_earth.cpp
-    )
-    message(STATUS "Earth: Using voxel-earth")
+     message(STATUS "Earth: Using voxel-earth")
 endif()
 
-
-set(freeminer_mapgen_SRCS ${freeminer_mapgen_SRCS}
-    ${mapgen_earth_SRCS}
-    PARENT_SCOPE
-)
-
+set(freeminer_mapgen_SRCS ${freeminer_mapgen_SRCS} ${mapgen_earth_SRCS} PARENT_SCOPE)
