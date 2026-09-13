@@ -1,0 +1,33 @@
+# TinyGLTF headers are used by both Arnis and the voxel Earth mapgen.
+if(TARGET fm_tinygltf)
+    return()
+endif()
+option(FETCH_EARTH_DEPS "Download missing Earth mapgen dependencies" ${FETCH_DEPS})
+
+if(FETCHCONTENT_SOURCE_DIR_TINYGLTF)
+    set(FM_TINYGLTF_SOURCE "${FETCHCONTENT_SOURCE_DIR_TINYGLTF}")
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltf/CMakeLists.txt")
+    set(FM_TINYGLTF_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltf")
+elseif(EXISTS "${FETCHCONTENT_BASE_DIR}/tinygltf-src/CMakeLists.txt")
+    set(FM_TINYGLTF_SOURCE "${FETCHCONTENT_BASE_DIR}/tinygltf-src")
+elseif(NOT FETCH_EARTH_DEPS)
+    message(STATUS "TinyGLTF missing; set FETCH_EARTH_DEPS=ON to download")
+    return()
+endif()
+if(FM_TINYGLTF_SOURCE)
+    set(FETCHCONTENT_SOURCE_DIR_TINYGLTF "${FM_TINYGLTF_SOURCE}")
+endif()
+FetchContent_Declare(
+    tinygltf GIT_REPOSITORY https://github.com/syoyo/tinygltf.git GIT_TAG v2.9.7 GIT_SHALLOW TRUE
+    EXCLUDE_FROM_ALL
+)
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
+set(TINYGLTF_INSTALL OFF)
+set(TINYGLTF_INSTALL_VENDOR OFF)
+block(SCOPE_FOR VARIABLES PROPAGATE tinygltf_SOURCE_DIR)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    FetchContent_MakeAvailable(tinygltf)
+endblock()
+set(TINYGLTF_INCLUDE_DIR "${tinygltf_SOURCE_DIR}")
+add_library(fm_tinygltf INTERFACE)
+target_include_directories(fm_tinygltf SYSTEM INTERFACE "${TINYGLTF_INCLUDE_DIR}")
