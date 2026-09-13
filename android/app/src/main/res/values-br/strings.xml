@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="unzip_notification_title">O kargañ Luanti</string>
-    <string name="label">Luanti</string>
+    <string name="unzip_notification_title">O kargañ Freeminer</string>
+    <string name="label">Freeminer</string>
     <string name="loading">O kargañ…</string>
-    <string name="notification_channel_description">Evezhiadennoù gant Luanti</string>
+    <string name="notification_channel_description">Evezhiadennoù gant Freeminer</string>
     <string name="unzip_notification_description">Nebeutoc\'h eget ur vunutenn…</string>
     <string name="ime_dialog_done">Graet</string>
     <string name="no_web_browser">Merdeer web ebet bet kavet</string>

@@ -2,11 +2,11 @@
 <resources>
     <string name="loading">Betöltés…</string>
     <string name="notification_channel_name">Általános értesítés</string>
-    <string name="notification_channel_description">Értesítések a Luanti-től</string>
-    <string name="unzip_notification_title">A Luanti épp betölt</string>
+    <string name="notification_channel_description">Értesítések a Freeminer-től</string>
+    <string name="unzip_notification_title">A Freeminer épp betölt</string>
     <string name="ime_dialog_done">Kész</string>
     <string name="no_web_browser">Nem található webböngésző</string>
     <string name="label">Freeminer</string>
     <string name="unzip_notification_description">Kevesebb, mint 1 perc…</string>
-    <string name="game_notification_title">A Luanti jelenleg fut</string>
+    <string name="game_notification_title">A Freeminer jelenleg fut</string>
 </resources>

@@ -3,7 +3,7 @@
     <string name="label">லுவாண்டி</string>
     <string name="loading">ஏற்றுகிறது…</string>
     <string name="notification_channel_name">பொது அறிவிப்பு</string>
-    <string name="notification_channel_description">Luanti இலிருந்து அறிவிப்புகள்</string>
+    <string name="notification_channel_description">Freeminer இலிருந்து அறிவிப்புகள்</string>
     <string name="unzip_notification_title">லுவான்டிஐ ஏற்றுகிறது</string>
     <string name="unzip_notification_description">1 நிமிடத்திற்கும் குறைவாக…</string>
     <string name="game_notification_title">லுவாண்டி ஓடுகிறார்</string>
