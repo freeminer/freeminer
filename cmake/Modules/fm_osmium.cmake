@@ -93,7 +93,7 @@ endif()
 
 add_library(fm_osmium INTERFACE)
 target_include_directories(
-    fm_osmium SYSTEM INTERFACE ${OSMIUM_INCLUDE_DIR} ${PROTOZERO_INCLUDE_DIR}
+    fm_osmium SYSTEM INTERFACE ${OSMIUM_INCLUDE_DIR} ${PROTOZERO_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
 )
 target_link_libraries(
     fm_osmium
@@ -105,6 +105,9 @@ target_link_libraries(
     ZLIB::ZLIB
     Threads::Threads
 )
+if(TARGET Boost::geometry)
+    target_link_libraries(fm_osmium INTERFACE Boost::geometry)
+endif()
 # The native voxelizer provides TinyGLTF's implementation when enabled.
 if(NOT USE_VOXEL_EARTH)
     target_link_libraries(fm_osmium INTERFACE tinygltf)

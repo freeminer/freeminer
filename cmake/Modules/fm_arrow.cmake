@@ -4,7 +4,9 @@ endif()
 
 set(USE_ARROW 0)
 
-if(ENABLE_ARROW AND EXISTS "${CMAKE_SOURCE_DIR}/src/external/arrow/cpp/CMakeLists.txt")
+if(NOT (ENABLE_ARROW AND EXISTS "${CMAKE_SOURCE_DIR}/src/external/arrow/cpp/CMakeLists.txt"))
+    message(STATUS "To enable arrow: git clone --recursive --depth 1 https://github.com/apache/arrow.git src/external/arrow")
+else()
     include(ExternalProject)
     set(ARROW_INSTALL_DIR "${CMAKE_BINARY_DIR}/src/external/arrow/install")
     set(ARROW_INCLUDE_DIR "${ARROW_INSTALL_DIR}/include")
