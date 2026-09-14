@@ -1,0 +1,35 @@
+include(fm_cmake_compat)
+
+if(TARGET PNG::PNG)
+    return()
+endif()
+
+find_package(PNG QUIET)
+if(TARGET PNG::PNG)
+    return()
+endif()
+if(NOT FETCH_DEPS)
+    find_package(PNG REQUIRED)
+    return()
+endif()
+
+message(STATUS "PNG not found; building libpng for ${CMAKE_SYSTEM_NAME}")
+include(FetchContent)
+function(fm_fetch_png)
+    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+    set(PNG_SHARED OFF)
+    set(PNG_STATIC ON)
+    set(PNG_TESTS OFF)
+    set(PNG_TOOLS OFF)
+    set(PNG_FRAMEWORK OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    FetchContent_Declare(
+        fm_libpng GIT_REPOSITORY https://github.com/pnggroup/libpng.git GIT_TAG v1.6.58
+        GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+    )
+    FetchContent_MakeAvailable(fm_libpng)
+    if(NOT TARGET PNG::PNG)
+        add_library(PNG::PNG ALIAS png_static)
+    endif()
+endfunction()
+fm_fetch_png()
