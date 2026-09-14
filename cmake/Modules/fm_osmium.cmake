@@ -1,3 +1,5 @@
+include(fm_cmake_compat)
+
 # Recompute detected features; never reuse results from an earlier configure.
 foreach(feature OSMIUM OSMIUM_TOOL)
     unset(USE_${feature} CACHE)
@@ -12,14 +14,14 @@ endif()
 
 if(NOT OSMIUM_INCLUDE_DIR)
     if(NOT FETCH_OSMIUM
-        AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include/osmium/osm.hpp"
+       AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include/osmium/osm.hpp"
     )
         set(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include")
     elseif(FETCH_DEPS)
         FetchContent_Declare(
             libosmium GIT_REPOSITORY https://github.com/osmcode/libosmium GIT_TAG v2.22.0
             GIT_SHALLOW TRUE # Header-only dependency; do not configure its tools or tests.
-            SOURCE_SUBDIR cmake EXCLUDE_FROM_ALL
+            SOURCE_SUBDIR cmake ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(libosmium)
         set(OSMIUM_INCLUDE_DIR "${libosmium_SOURCE_DIR}/include")
@@ -36,32 +38,34 @@ if(FETCH_DEPS)
     FetchContent_Declare(
         lz4 URL https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
         URL_HASH SHA256=537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b
-        SOURCE_SUBDIR build/cmake SYSTEM EXCLUDE_FROM_ALL
+        SOURCE_SUBDIR build/cmake ${FM_FETCH_SYSTEM} ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(lz4)
     set(LZ4_LIBRARIES lz4_static)
 
     FetchContent_Declare(
         protozero GIT_REPOSITORY https://github.com/mapbox/protozero GIT_TAG v1.8.1 GIT_SHALLOW TRUE
-        SOURCE_SUBDIR cmake EXCLUDE_FROM_ALL
+        SOURCE_SUBDIR cmake ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(protozero)
     set(PROTOZERO_INCLUDE_DIR "${protozero_SOURCE_DIR}/include")
 
-    block(SCOPE_FOR VARIABLES)
+    function(fm_fetch_expat)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         set(EXPAT_BUILD_TOOLS OFF)
         set(EXPAT_BUILD_EXAMPLES OFF)
         set(EXPAT_BUILD_TESTS OFF)
         FetchContent_Declare(
             expat GIT_REPOSITORY https://github.com/libexpat/libexpat/ GIT_TAG R_2_7_3
-            GIT_SHALLOW TRUE SOURCE_SUBDIR expat OVERRIDE_FIND_PACKAGE EXCLUDE_FROM_ALL
+            GIT_SHALLOW TRUE SOURCE_SUBDIR expat ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
+                                                 ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(expat)
         if(NOT TARGET EXPAT::EXPAT)
             add_library(EXPAT::EXPAT ALIAS expat)
         endif()
-    endblock()
+    endfunction()
+    fm_fetch_expat()
 endif()
 
 if(NOT TARGET Boost::headers)
@@ -79,7 +83,7 @@ if(NOT TARGET EXPAT::EXPAT)
 endif()
 # Osmium's supported readers need these libraries, regardless of header origin.
 if(NOT TARGET Boost::headers OR NOT PROTOZERO_INCLUDE_DIR OR NOT TARGET BZip2::BZip2
-    OR NOT TARGET EXPAT::EXPAT
+   OR NOT TARGET EXPAT::EXPAT
 )
     message(STATUS "Osmium disabled: requires Boost headers, protozero, BZip2 and EXPAT")
     return()
@@ -98,12 +102,12 @@ target_include_directories(
 target_link_libraries(
     fm_osmium
     INTERFACE fm_tinygltf
-    nlohmann_json::nlohmann_json
-    Boost::headers
-    BZip2::BZip2
-    EXPAT::EXPAT
-    ZLIB::ZLIB
-    Threads::Threads
+              nlohmann_json::nlohmann_json
+              Boost::headers
+              BZip2::BZip2
+              EXPAT::EXPAT
+              ZLIB::ZLIB
+              Threads::Threads
 )
 if(TARGET Boost::geometry)
     target_link_libraries(fm_osmium INTERFACE Boost::geometry)

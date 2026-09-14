@@ -58,7 +58,7 @@ if(ENABLE_WEBSOCKET OR (ENABLE_WEBSOCKET_SCTP AND FM_HAVE_SCTP_SOURCE))
             endif()
             message(
                 STATUS
-                "Using websocket ${USE_WEBSOCKET},${USE_WEBSOCKET_SCTP}: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp : ${WEBSOCKETPP_LIBRARY}"
+                    "Using websocket ${USE_WEBSOCKET},${USE_WEBSOCKET_SCTP}: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp : ${WEBSOCKETPP_LIBRARY}"
             )
             list(APPEND FREEMINER_COMMON_LIBRARIES ${WEBSOCKETPP_LIBRARY})
         endif()
@@ -68,7 +68,7 @@ endif()
 set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
 if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
-    block(SCOPE_FOR VARIABLES)
+    function(fm_add_usrsctp)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         if(SCTP_DEBUG)
             set(sctp_debug ON)
@@ -81,7 +81,8 @@ if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
         set(sctp_werror OFF)
 
         add_subdirectory("${SCTP_SOURCE_DIR}" external/usrsctp EXCLUDE_FROM_ALL)
-    endblock()
+    endfunction()
+    fm_add_usrsctp()
 
     set(SCTP_LIBRARY usrsctp)
     if(ANDROID)
@@ -96,7 +97,7 @@ endif()
 
 if(ENABLE_ENET)
     if(NOT ENABLE_SYSTEM_ENET AND EXISTS
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h
+                                  ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include/enet/enet.h
     )
         add_subdirectory(external/enet)
         set(ENET_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/enet/include)
