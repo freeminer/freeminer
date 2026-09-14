@@ -1,5 +1,10 @@
 include(fm_cmake_compat)
 
+# Keep support for system Boost installations without BoostConfig.cmake.
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 # Recompute detected features; never reuse results from an earlier configure.
 foreach(feature OSMIUM OSMIUM_TOOL)
     unset(USE_${feature} CACHE)
