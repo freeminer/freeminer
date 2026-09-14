@@ -771,9 +771,7 @@ MapNode MapgenEarth::visible_content(
 	const v3pos_t climate_p(p.X, solid ? surface_y : water_level, p.Z);
 	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
 
-	// This water is a far-visibility model only. It describes the space above
-	// terrain whose elevation is below sea level; generateTerrain() deliberately
-	// does not use it to flood the actual world.
+	// Match the sea-level water column filled by generateTerrain().
 	if (!solid && water) {
 		// Evaluate ice at the water sample, not above a coarse sea-surface cell.
 		if (heat < 0 && far_water_y.value_or(p.Y) > heat / 3 && valid(c_ice))
@@ -929,9 +927,10 @@ int MapgenEarth::generateTerrain()
 						vm->m_data[i] = earth_layer_get(x, y, z, height, heat);
 					}
 				} else {
-					// Below-sea-level elevation alone must not flood generated Earth.
-					// Confirmed ESA/OSM water is placed later by Arnis.
-					vm->m_data[i] = n_air;
+					// Bathymetry describes the seabed, not the water surface. Fill
+					// the entire sea-level column even without ESA/OSM coverage;
+					// Arnis subsequently places inland water and authored features.
+					vm->m_data[i] = y <= water_level ? n_water : n_air;
 				}
 				vm->m_area.add_y(em, i, 1);
 			}
@@ -1242,7 +1241,7 @@ weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t se
 			const auto pixel = earth_sample_image(*cloud_image, pos_to_ll(p));
 			if (pixel && pixel->getAlpha()) {
 				const float cloud_percent = earth_pixel_to_cloud_percent(*pixel);
-				const pos_t surface_y = getGroundLevelAtPointStep({p.X, p.Z},16);
+				const pos_t surface_y = getGroundLevelAtPointStep({p.X, p.Z}, 16);
 				if (!have_humidity) {
 					humidity = static_cast<float>(m_emerge->biomemgr->calcBlockHumidity(
 							p, seed, timeofday, totaltime, use_weather, surface_y));
@@ -1354,7 +1353,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// Once a horizontal extract has established its conservative authored
 	// ceiling, chunks wholly above it are known air and need no Earth/Arnis work.
 	if (const auto authored_max = cachedAuthoredMaxY();
-			authored_max && node_min.Y > *authored_max) {
+			authored_max && node_min.Y > *authored_max && node_min.Y > water_level) {
 		fillChunkWithAir();
 		finish_generation();
 		return;
@@ -1364,8 +1363,9 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// fm:
 	// Above 1000 metres of terrain clearance, skip even loading authored objects.
 	// Compare in metres so the cutoff also respects the Earth's vertical scale.
-	if ((static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y >
-			MAX_BUILDING_HEIGHT) {
+	if (node_min.Y > water_level &&
+			(static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y >
+					MAX_BUILDING_HEIGHT) {
 		fillChunkWithAir();
 		finish_generation();
 		return;
@@ -1376,7 +1376,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// base-terrain Y loop and let generateBuildings parse just enough to compute
 	// that ceiling; hdl::apply rejects the chunk before flood-fill/generation if
 	// it is also above every authored object.
-	if (node_min.Y > terrain_max_y) {
+	if (node_min.Y > terrain_max_y && node_min.Y > water_level) {
 		fillChunkWithAir();
 		generateBuildings();
 
