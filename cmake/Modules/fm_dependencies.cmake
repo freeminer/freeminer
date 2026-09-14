@@ -1,5 +1,10 @@
 include(fm_cmake_compat)
 
+# Keep support for system Boost installations without BoostConfig.cmake.
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 # Set the API baseline before configuring dependencies, including Clang/MinGW. Recent Boost.Atomic
 # requires WaitOnAddress and uses Windows 10 for its builds.
 if(WIN32)

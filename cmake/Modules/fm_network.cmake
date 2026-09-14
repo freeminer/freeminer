@@ -1,3 +1,8 @@
+# Keep support for system Boost installations without BoostConfig.cmake.
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 OLD)
+endif()
+
 # Recompute detected features; never reuse results from an earlier configure.
 foreach(feature ENET SCTP WEBSOCKET WEBSOCKET_SCTP CLIENT_MCP)
     unset(USE_${feature} CACHE)
@@ -67,7 +72,8 @@ if(ENABLE_WEBSOCKET OR (ENABLE_WEBSOCKET_SCTP AND FM_HAVE_SCTP_SOURCE))
     endif()
 endif()
 
-set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
+# TODO: fix with new boost and enable
+# set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
 if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
     function(fm_add_usrsctp)
