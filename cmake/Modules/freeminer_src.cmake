@@ -11,7 +11,7 @@ include(fm_sources)
 include(fm_arrow)
 
 # Collect common dependencies only after all feature modules have run.
-find_package(PNG REQUIRED)
+include(fm_png)
 target_link_libraries(fm_dependencies INTERFACE ${FREEMINER_COMMON_LIBRARIES} PNG::PNG)
 # fm: GeoParquet support is used by the Osmium map-generation path only.
 if(USE_ARROW AND USE_OSMIUM)
