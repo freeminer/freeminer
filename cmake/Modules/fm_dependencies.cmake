@@ -1,5 +1,11 @@
 include(fm_cmake_compat)
 
+# Set the API baseline before configuring dependencies, including Clang/MinGW. Recent Boost.Atomic
+# requires WaitOnAddress and uses Windows 10 for its builds.
+if(WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
 # Recompute detected features; never reuse results from an earlier configure.
 foreach(feature ICONV)
     unset(USE_${feature} CACHE)
