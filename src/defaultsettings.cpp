@@ -276,7 +276,6 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault(
 			"emergequeue_limit_generate", "");			 // autodetect from number of cpus
 	settings->setDefault("emergequeue_limit_total", ""); // autodetect from number of cpus
-	settings->setDefault("num_emerge_threads", "");		 // "1" // Fix and enable auto
 	settings->setDefault("server_map_save_interval", "300"); // "5.3"
 	settings->setDefault("sqlite_synchronous", "1");		 // "2"
 	settings->setDefault("save_generated_block", "true");
@@ -361,7 +360,7 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("emergequeue_limit_generate", "8");
 	*/
 	//settings->setDefault("viewing_range", "25");
-	settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
+	// settings->setDefault("num_emerge_threads", "1"); // too unstable when > 1
 	settings->setDefault("inventory_image_hack", "false");
 	/* fmtodo
 	if (x_inches  < 7) {
