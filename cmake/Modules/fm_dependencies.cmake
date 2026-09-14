@@ -1,3 +1,5 @@
+include(fm_cmake_compat)
+
 # Recompute detected features; never reuse results from an earlier configure.
 foreach(feature ICONV)
     unset(USE_${feature} CACHE)
@@ -19,22 +21,20 @@ if(TARGET BZip2::BZip2)
     message(STATUS "Using system BZip2: ${BZIP2_INCLUDE_DIRS}")
 elseif(FETCH_DEPS)
     message(STATUS "System BZip2 not found; using bundled BZip2")
-    block(SCOPE_FOR VARIABLES PROPAGATE bzip2_SOURCE_DIR)
+    function(fm_fetch_bzip2)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         set(ENABLE_LIB_ONLY ON)
         set(ENABLE_TESTS OFF)
         set(ENABLE_STATIC_LIB ON)
         FetchContent_Declare(
-            BZip2
-            GIT_REPOSITORY "https://gitlab.com/bzip2/bzip2.git"
-            GIT_TAG 66c46b8c9436613fd81bc5d03f63a61933a4dcc3
-            OVERRIDE_FIND_PACKAGE
-            USES_TERMINAL_DOWNLOAD TRUE
-            GIT_PROGRESS TRUE
-            EXCLUDE_FROM_ALL
+            BZip2 GIT_REPOSITORY "https://gitlab.com/bzip2/bzip2.git"
+            GIT_TAG 66c46b8c9436613fd81bc5d03f63a61933a4dcc3 ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
+            USES_TERMINAL_DOWNLOAD TRUE GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(BZip2)
-    endblock()
+        set(bzip2_SOURCE_DIR "${bzip2_SOURCE_DIR}" PARENT_SCOPE)
+    endfunction()
+    fm_fetch_bzip2()
     set(BZIP2_FOUND TRUE)
     if(NOT TARGET BZip2::BZip2)
         add_library(BZip2::BZip2 ALIAS bz2_static)
@@ -56,11 +56,9 @@ if(FETCH_OPENSSL)
             GIT_REPOSITORY https://github.com/jimmy-park/openssl-cmake
             GIT_TAG 48c3f910074784adab7fe422cb955d71eda8fc4b
             SOURCE_SUBDIR cmake
-            GIT_SUBMODULES_RECURSE OFF
-            OVERRIDE_FIND_PACKAGE
+            GIT_SUBMODULES_RECURSE OFF ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
             USES_TERMINAL_DOWNLOAD TRUE
-            GIT_PROGRESS TRUE
-            EXCLUDE_FROM_ALL
+            GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(openssl-cmake)
     else()
@@ -73,20 +71,15 @@ if(TARGET Boost::headers AND TARGET Boost::program_options)
     message(STATUS "Using system Boost: ${Boost_INCLUDE_DIRS}")
 elseif(FETCH_DEPS)
     message(STATUS "System Boost with program_options not found; using bundled Boost")
-    block(SCOPE_FOR VARIABLES PROPAGATE boost_SOURCE_DIR Boost_INCLUDE_DIRS Boost_FOUND)
+    function(fm_fetch_boost)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         set(BOOST_ENABLE_CMAKE ON)
         set(BOOST_INCLUDE_LIBRARIES program_options asio thread geometry)
 
         FetchContent_Declare(
-            Boost
-            GIT_REPOSITORY https://github.com/boostorg/boost.git
-            GIT_TAG boost-1.92.0
-            GIT_SHALLOW TRUE
-            OVERRIDE_FIND_PACKAGE
-            USES_TERMINAL_DOWNLOAD TRUE
-            GIT_PROGRESS TRUE
-            EXCLUDE_FROM_ALL
+            Boost GIT_REPOSITORY https://github.com/boostorg/boost.git GIT_TAG boost-1.92.0
+            GIT_SHALLOW TRUE ${FM_FETCH_OVERRIDE_FIND_PACKAGE} USES_TERMINAL_DOWNLOAD TRUE
+            GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(Boost)
         set(Boost_FOUND TRUE)
@@ -94,7 +87,11 @@ elseif(FETCH_DEPS)
             "${BOOST_LIBRARY_INCLUDES};${boost_SOURCE_DIR}/libs/geometry/include;${boost_SOURCE_DIR}/libs/numeric/conversion/include"
         )
         message(STATUS "Using fetched Boost: ${Boost_INCLUDE_DIRS}")
-    endblock()
+        set(boost_SOURCE_DIR "${boost_SOURCE_DIR}" PARENT_SCOPE)
+        set(Boost_INCLUDE_DIRS "${Boost_INCLUDE_DIRS}" PARENT_SCOPE)
+        set(Boost_FOUND "${Boost_FOUND}" PARENT_SCOPE)
+    endfunction()
+    fm_fetch_boost()
 else()
     message(STATUS "Boost not found; set FETCH_DEPS=ON to build bundled Boost")
 endif()

@@ -6,7 +6,7 @@ endforeach()
 
 option(ENABLE_TIFF "Enable tiff (geotiff for mapgen earth)" 1)
 if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeLists.txt)
-    block(SCOPE_FOR VARIABLES)
+    function(fm_add_tiff)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         set(tiff-tools OFF)
         set(tiff-tests OFF)
@@ -15,10 +15,11 @@ if(ENABLE_TIFF AND EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/CMakeList
         set(lerc OFF)
         set(webp OFF)
         add_subdirectory(external/libtiff)
-    endblock()
+    endfunction()
+    fm_add_tiff()
     set(TIFF_LIBRARY TIFF::tiff)
     set(TIFF_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/external/libtiff/libtiff
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/libtiff
+                         ${CMAKE_CURRENT_SOURCE_DIR}/external/libtiff/libtiff
     )
     target_include_directories(fm_dependencies SYSTEM INTERFACE ${TIFF_INCLUDE_DIR})
     message(STATUS "Using tiff: ${TIFF_INCLUDE_DIR} ${TIFF_LIBRARY}")
@@ -34,18 +35,18 @@ if(ENABLE_ONNXRUNTIME)
     find_path(
         ONNXRUNTIME_INCLUDE_DIR NAMES onnxruntime_cxx_api.h
         HINTS "${ONNXRUNTIME_ROOT}/include" "${ONNXRUNTIME_ROOT}/include/onnxruntime/core/session"
-        "${ONNXRUNTIME_ROOT}" PATH_SUFFIXES onnxruntime/core/session
+              "${ONNXRUNTIME_ROOT}" PATH_SUFFIXES onnxruntime/core/session
     )
     find_library(
         ONNXRUNTIME_LIBRARY
         NAMES onnxruntime
         HINTS "${ONNXRUNTIME_ROOT}/lib"
-        "${ONNXRUNTIME_ROOT}/lib64"
-        "${ONNXRUNTIME_ROOT}/build"
-        "${ONNXRUNTIME_ROOT}/build/Linux/Debug"
-        "${ONNXRUNTIME_ROOT}/build/Linux/Release"
-        "${ONNXRUNTIME_ROOT}/build/Linux/RelWithDebInfo"
-        "${ONNXRUNTIME_ROOT}/build/Linux/MinSizeRel"
+              "${ONNXRUNTIME_ROOT}/lib64"
+              "${ONNXRUNTIME_ROOT}/build"
+              "${ONNXRUNTIME_ROOT}/build/Linux/Debug"
+              "${ONNXRUNTIME_ROOT}/build/Linux/Release"
+              "${ONNXRUNTIME_ROOT}/build/Linux/RelWithDebInfo"
+              "${ONNXRUNTIME_ROOT}/build/Linux/MinSizeRel"
     )
     if(ONNXRUNTIME_INCLUDE_DIR AND ONNXRUNTIME_LIBRARY)
         target_include_directories(fm_dependencies SYSTEM INTERFACE ${ONNXRUNTIME_INCLUDE_DIR})
@@ -57,7 +58,7 @@ if(ENABLE_ONNXRUNTIME)
         if(EXISTS "${ONNXRUNTIME_ROOT}/include/onnxruntime/core/session/onnxruntime_cxx_api.h")
             message(
                 STATUS
-                "ONNX Runtime headers found in ${ONNXRUNTIME_ROOT}, but libonnxruntime was not found. Build ONNX Runtime first or set ONNXRUNTIME_LIBRARY."
+                    "ONNX Runtime headers found in ${ONNXRUNTIME_ROOT}, but libonnxruntime was not found. Build ONNX Runtime first or set ONNXRUNTIME_LIBRARY."
             )
         endif()
     endif()

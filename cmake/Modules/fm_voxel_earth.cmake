@@ -1,10 +1,12 @@
+include(fm_cmake_compat)
+
 # Configure voxel Earth dependencies before its native subdirectory is added.
 if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     option(ENABLE_VOXEL_EARTH "Voxel earth mapgen" ON)
 endif()
 option(FETCH_EARTH_DEPS "Download missing Earth mapgen dependencies" ${FETCH_DEPS})
 if(NOT ENABLE_VOXEL_EARTH
-    OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/luanti-earth/native/src/voxelizer.h"
+   OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/luanti-earth/native/src/voxelizer.h"
 )
     set(USE_VOXEL_EARTH 0)
     return()
@@ -31,8 +33,8 @@ if(FM_DRACO_SOURCE)
 endif()
 # This declaration also controls the native project's FetchContent call.
 FetchContent_Declare(
-    draco GIT_REPOSITORY https://github.com/google/draco.git GIT_TAG 1.5.7 GIT_SHALLOW TRUE
-    EXCLUDE_FROM_ALL
+    draco GIT_REPOSITORY https://github.com/google/draco.git GIT_TAG 1.5.7
+    GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
 )
 include(fm_tinygltf)
 if(NOT TARGET fm_tinygltf)

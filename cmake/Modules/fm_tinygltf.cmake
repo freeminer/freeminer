@@ -1,3 +1,5 @@
+include(fm_cmake_compat)
+
 # TinyGLTF headers are used by both Arnis and the voxel Earth mapgen.
 if(TARGET fm_tinygltf)
     return()
@@ -18,16 +20,18 @@ if(FM_TINYGLTF_SOURCE)
     set(FETCHCONTENT_SOURCE_DIR_TINYGLTF "${FM_TINYGLTF_SOURCE}")
 endif()
 FetchContent_Declare(
-    tinygltf GIT_REPOSITORY https://github.com/syoyo/tinygltf.git GIT_TAG v2.9.7 GIT_SHALLOW TRUE
-    EXCLUDE_FROM_ALL
+    tinygltf GIT_REPOSITORY https://github.com/syoyo/tinygltf.git GIT_TAG v2.9.7
+    GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
 )
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
 set(TINYGLTF_INSTALL OFF)
 set(TINYGLTF_INSTALL_VENDOR OFF)
-block(SCOPE_FOR VARIABLES PROPAGATE tinygltf_SOURCE_DIR)
+function(fm_fetch_tinygltf)
     set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
     FetchContent_MakeAvailable(tinygltf)
-endblock()
+    set(tinygltf_SOURCE_DIR "${tinygltf_SOURCE_DIR}" PARENT_SCOPE)
+endfunction()
+fm_fetch_tinygltf()
 set(TINYGLTF_INCLUDE_DIR "${tinygltf_SOURCE_DIR}")
 add_library(fm_tinygltf INTERFACE)
 target_include_directories(fm_tinygltf SYSTEM INTERFACE "${TINYGLTF_INCLUDE_DIR}")
