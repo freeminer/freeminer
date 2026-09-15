@@ -73,6 +73,16 @@ async def run(binary, enabled):
             ws = await open_service(request, "PROXY FAILED")
             await closed(ws)
 
+        # A resolved game address on this listener must select the game route,
+        # including the public address behind NAT and IPv4-mapped IPv6.
+        for family, host in (("IPV4", "127.0.0.1"), ("IPV6", "::ffff:127.0.0.1"),
+                             ("IPV4", "192.0.2.10"), ("IPV4", "10.0.0.1")):
+            ws = await open_service(f"PROXY {family} TCP {host} {port}", "GAME OK")
+            async with connected(ws):
+                packet = bytes.fromhex("4f45740300000001")
+                await ws.send(packet)
+                assert await ws.recv() == packet
+
         if not enabled:
             for target in ("IPV4 TCP 127.0.0.1 80", "IPV6 TCP fd00::1 8080"):
                 ws = await open_service("PROXY " + target, "PROXY FAILED")

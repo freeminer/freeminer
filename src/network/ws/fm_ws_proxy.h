@@ -37,6 +37,76 @@ inline bool parse_port(const std::string &text, uint16_t &port)
 	return true;
 }
 
+struct ProxyRequest
+{
+	asio::ip::address address;
+	uint16_t port = 0;
+
+	bool parse(const std::string &request)
+	{
+		if (request.size() > 512)
+			return false;
+		std::istringstream input(request);
+		std::string command, family, transport, host, port_text, extra;
+		input >> command >> family >> transport >> host >> port_text;
+		Error ec;
+		address = asio::ip::make_address(host, ec);
+		return command == "PROXY" && transport == "TCP" && parse_port(port_text, port) &&
+			   !(input >> extra) && !ec && (family == "IPV4" || family == "IPV6") &&
+			   (address.is_v4() == (family == "IPV4"));
+	}
+};
+
+inline asio::ip::address normalize_address(const asio::ip::address &address)
+{
+	if (address.is_v6() && address.to_v6().is_v4_mapped()) {
+		auto bytes = address.to_v6().to_bytes();
+		return asio::ip::address_v4({bytes[12], bytes[13], bytes[14], bytes[15]});
+	}
+	return address;
+}
+
+// The WASM shim sends game datagrams using the same PROXY ... TCP handshake as
+// real TCP streams. Recognize this server before handing a request to Proxy;
+// otherwise game packets are tunneled back into our own TLS listener.
+class GameRouter : public std::enable_shared_from_this<GameRouter>
+{
+public:
+	explicit GameRouter(asio::io_context &io) : m_resolver(io) {}
+
+	void resolve(const std::string &advertised_host)
+	{
+		if (advertised_host.empty())
+			return;
+		m_resolver.async_resolve(advertised_host, "", tcp::resolver::flags(),
+				[self = shared_from_this()](
+						Error ec, tcp::resolver::results_type results) {
+					if (!ec) {
+						for (const auto &entry : results)
+							self->m_addresses.insert(
+									normalize_address(entry.endpoint().address()));
+					}
+				});
+	}
+
+	bool matches(const std::string &request, const tcp::endpoint &local) const
+	{
+		ProxyRequest target;
+		if (!target.parse(request) || target.port != local.port())
+			return false;
+		const auto address = normalize_address(target.address);
+		return address == asio::ip::make_address("10.0.0.1") ||
+			   address == normalize_address(local.address()) ||
+			   m_addresses.count(address);
+	}
+
+	void stop() { m_resolver.cancel(); }
+
+private:
+	tcp::resolver m_resolver;
+	std::set<asio::ip::address> m_addresses;
+};
+
 // All callbacks run on the WebSocket server's io_context. No blocking network
 // operations or detached threads may hold up the game or outlive the server.
 template <typename Server>
@@ -52,19 +122,13 @@ public:
 
 	void start(const std::string &request)
 	{
-		std::istringstream input(request);
-		std::string command, family, transport, host, port_text, extra;
-		uint16_t port;
-		input >> command >> family >> transport >> host >> port_text;
-		Error ec;
-		auto address = asio::ip::make_address(host, ec);
-		if (request.size() > 512 || command != "PROXY" || transport != "TCP" ||
-				!parse_port(port_text, port) || (input >> extra) || ec ||
-				(family != "IPV4" && family != "IPV6") ||
-				(address.is_v4() != (family == "IPV4"))) {
+		ProxyRequest target;
+		if (!target.parse(request)) {
 			fail();
 			return;
 		}
+		const auto &address = target.address;
+		const auto port = target.port;
 		arm_timeout();
 		if (address == asio::ip::make_address("fd00::1")) {
 			if (port == 53) {
@@ -77,7 +141,7 @@ public:
 				fail();
 			}
 		} else if (m_enabled) {
-			connect(host, port_text, false);
+			connect(address.to_string(), std::to_string(port), false);
 		} else {
 			fail();
 		}

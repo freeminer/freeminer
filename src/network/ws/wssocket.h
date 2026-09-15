@@ -101,6 +101,8 @@ public:
 
 private:
 	// service sessions are separate from game peers
+	// distinguish this server from outbound proxy destinations
+	std::shared_ptr<fm_ws::GameRouter> m_game_router;
 	using proxy_t = fm_ws::Proxy<ws_server_t>;
 	std::map<websocketpp::connection_hdl, std::shared_ptr<proxy_t>,
 			std::owner_less<websocketpp::connection_hdl>>
