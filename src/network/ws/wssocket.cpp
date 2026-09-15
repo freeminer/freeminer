@@ -231,12 +231,12 @@ void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_
 		it->second->receive(msg->get_payload());
 		return;
 	}
-	if (!hdls.count(hdl)) {
-		// The WASM game currently uses 10.0.0.1 as a synthetic server address.
-		std::istringstream request(msg->get_payload());
-		std::string command, family, transport, host, port;
-		request >> command >> family >> transport >> host >> port;
-		if (command == "PROXY" && host != "10.0.0.1") {
+	// resolved game addresses must use the game queue, not a TCP tunnel
+	if (!hdls.count(hdl) && msg->get_payload().starts_with("PROXY")) {
+		auto con = server.get_con_from_hdl(hdl);
+		fm_ws::Error ec;
+		const auto local = con->get_raw_socket().local_endpoint(ec);
+		if (ec || !m_game_router || !m_game_router->matches(msg->get_payload(), local)) {
 			bool enabled = false;
 			g_settings->getBoolNoEx("ws_proxy_enable", enabled);
 			auto proxy = std::make_shared<proxy_t>(server, hdl, enabled);
@@ -252,14 +252,14 @@ void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_
 	// msg->get_payload().size() << " " << msg->get_payload() << std::endl;
 
 	ws_server_t::connection_ptr con = server.get_con_from_hdl(hdl);
-	Address a;
-	const auto re = con->get_remote_endpoint();
-	const auto pos = re.rfind(':');
-	// cut ipv6 braces []
-	// TODO cache resolve! :
-	a.Resolve(re.substr(re[0] == '[' ? 1 : 0, pos - 1 - (re[pos - 1] == ']' ? 1 : 0))
-					.c_str());
-	a.setPort(from_string<uint16_t>(re.substr(pos + 1, re.size())));
+	// read the socket address directly, including IPv4 and mapped IPv6
+	fm_ws::Error endpoint_error;
+	const auto remote = con->get_raw_socket().remote_endpoint(endpoint_error);
+	if (endpoint_error)
+		return;
+	Address a = remote.address().is_v6()
+						? Address(*reinterpret_cast<const sockaddr_in6 *>(remote.data()))
+						: Address(*reinterpret_cast<const sockaddr_in *>(remote.data()));
 
 	if (!hdls.count(hdl)) {
 		// DUMP("first", a, msg->get_payload().size(), con->get_host(),
@@ -402,6 +402,9 @@ WSSocket::context_ptr WSSocket::on_client_tls_init(
 
 WSSocket::~WSSocket()
 {
+	// cancel cached game address resolution before destroying the endpoint
+	if (m_game_router)
+		m_game_router->stop();
 	// cancel service callbacks before the endpoint is destroyed
 	for (auto &[hdl, proxy] : m_proxies)
 		proxy->stop();
@@ -485,6 +488,12 @@ void WSSocket::Bind(Address addr)
 		return;
 	}
 
+	// fm: include the advertised addresses, which may differ behind IPv4 NAT
+	std::string advertised_host;
+	g_settings->getNoEx("server_address", advertised_host);
+	m_game_router = std::make_shared<fm_ws::GameRouter>(server.get_io_context());
+	m_game_router->resolve(advertised_host);
+	// ===
 	ws_serve = true;
 }
 

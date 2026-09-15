@@ -25,13 +25,19 @@ returns a zero count. Queries must be sequential on a connection. Resolution
 and connection setup time out after 30 seconds; pending tunnel buffers are
 limited to 1 MiB per direction. Slow consumers exceeding this limit disconnect.
 
-The existing synthetic game address `10.0.0.1` keeps its game packet behavior.
+Game requests for this listener's address and port go directly to the game
+packet queue. The server also resolves `server_address` at startup and recognizes
+its IPv4/IPv6 addresses, including a public IPv4 address behind NAT. Configure
+`server_address` to the hostname players use when it differs from the listener's
+local address. The legacy synthetic address `10.0.0.1` is also accepted on the
+game port. These game routes do not require `ws_proxy_enable`.
 Private-network address assignment (`NEWADDR`) and encapsulated UDP (`BIND`)
 are separate protocols and are not implemented by this service.
 
-The referenced WASM client's `_proxy_dns_query` call is currently commented out
-and its DNS result is hardcoded to `10.0.0.1`. Enable the real query in the client
-to use this resolver; this server change does not modify that separate checkout.
+The WASM client can use real DNS results for the game destination. Its current
+shim labels game traffic `PROXY ... TCP` even though each following WebSocket
+message contains one game datagram. Outbound TCP proxying applies to destinations
+that do not match this server's game route.
 
 ## Protocol tests
 
@@ -44,5 +50,5 @@ python3 src/network/ws/tests/fm_proxy_test.py /path/to/fm_proxy_server
 
 The tests require Python's `websockets` package and use local DNS and loopback
 TCP listeners. They cover IPv4/IPv6 records, invalid input, disabled proxying,
-TCP streaming, fragmented CONNECT headers with initial tunnel data, refused
+resolved game addresses (including NAT and IPv4-mapped IPv6), TCP streaming, fragmented CONNECT headers with initial tunnel data, refused
 connections, and disconnects during resolution.
