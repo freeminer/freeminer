@@ -178,6 +178,12 @@ void WSSocket::on_close(const websocketpp::connection_hdl &hdl)
 	// auto ws = hdls.at(hdl);
 
 	// deletePeer(ws->peer_id, 0);
+	// cancel pending service operations when the browser disconnects
+	if (auto it = m_proxies.find(hdl); it != m_proxies.end()) {
+		it->second->stop();
+		m_proxies.erase(it);
+	}
+	// ===
 	hdls.erase(hdl);
 }
 
@@ -220,6 +226,26 @@ void WSSocket::on_client_message(
 
 void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg)
 {
+	// emsocket service connections must never enter the game packet queue
+	if (auto it = m_proxies.find(hdl); it != m_proxies.end()) {
+		it->second->receive(msg->get_payload());
+		return;
+	}
+	if (!hdls.count(hdl)) {
+		// The WASM game currently uses 10.0.0.1 as a synthetic server address.
+		std::istringstream request(msg->get_payload());
+		std::string command, family, transport, host, port;
+		request >> command >> family >> transport >> host >> port;
+		if (command == "PROXY" && host != "10.0.0.1") {
+			bool enabled = false;
+			g_settings->getBoolNoEx("ws_proxy_enable", enabled);
+			auto proxy = std::make_shared<proxy_t>(server, hdl, enabled);
+			m_proxies.emplace(hdl, proxy);
+			proxy->start(msg->get_payload());
+			return;
+		}
+	}
+
 	// DUMP("om", msg->get_payload().size(), msg->get_payload());
 
 	// cs << "on_message called with hdl: " << hdl.lock().get() << " and message: " <<
@@ -376,6 +402,9 @@ WSSocket::context_ptr WSSocket::on_client_tls_init(
 
 WSSocket::~WSSocket()
 {
+	// cancel service callbacks before the endpoint is destroyed
+	for (auto &[hdl, proxy] : m_proxies)
+		proxy->stop();
 }
 
 bool WSSocket::Connect(const Address &addr)

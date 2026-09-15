@@ -21,6 +21,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
 
+#include "fm_ws_proxy.h"
+
 #include <list>
 #include "network/address.h"
 
@@ -98,6 +100,11 @@ public:
 #endif
 
 private:
+	// service sessions are separate from game peers
+	using proxy_t = fm_ws::Proxy<ws_server_t>;
+	std::map<websocketpp::connection_hdl, std::shared_ptr<proxy_t>,
+			std::owner_less<websocketpp::connection_hdl>>
+			m_proxies;
 	struct queue_item
 	{
 		Address address;
