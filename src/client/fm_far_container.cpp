@@ -136,18 +136,26 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_st
 		const v3bpos_t &bpos_aligned = tree_result->pos;
 		if (step >= FARMESH_STEP_MAX)
 			return {m_mg->visible_transparent, false};
-		auto [source_it, inserted] = m_cache->sources[step].try_emplace(bpos_aligned);
-		auto &source = source_it->second;
-		if (inserted) {
+		const auto load_source = [&](block_step_t source_step, const v3bpos_t &source_pos,
+										 bool load_from_disk) -> const Cache::Source & {
+			auto [source_it, inserted] =
+					m_cache->sources[source_step].try_emplace(source_pos);
+			auto &source = source_it->second;
+			if (!inserted)
+				return source;
+
 			MapBlockPtr block;
-			{
-				const auto &storage = client_map.far_blocks_storage[step];
+			if (!source_step) {
+				// Full-resolution blocks are received into the normal client map.
+				block = client_map.getBlock(source_pos, false, true);
+			} else {
+				const auto &storage = client_map.far_blocks_storage[source_step];
 				const auto lock = storage.lock_shared_rec();
-				if (auto it = storage.find(bpos_aligned); it != storage.end())
+				if (auto it = storage.find(source_pos); it != storage.end())
 					block = it->second.block;
 			}
 
-			if (!block &&
+			if (!block && load_from_disk &&
 					!m_client->m_simple_singleplayer_mode
 					// TODO: remove and fix
 					&& !have_params
@@ -184,7 +192,7 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_st
 					return block;
 				};
 
-				block = loadBlock(bpos_aligned, step);
+				block = loadBlock(source_pos, source_step);
 			}
 			if (block) {
 				// Copy while locked: received data can replace/reallocate the source
@@ -200,17 +208,22 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_st
 										block->getNodeNoLock(v3pos_t(x, y, z)));
 				}
 			}
-		}
+			return source;
+		};
+
+		// Only use the selected step: updates to other LODs do not invalidate this
+		// mesh. Missing samples at this step must use the mapgen fallback below.
+		const auto &source = load_source(step, bpos_aligned, true);
 		if (source.generated) {
 			const v3pos_t rel = pos - bpos_aligned * MAP_BLOCKSIZE;
 			const auto x = std::clamp<int>(rel.X >> step, 0, MAP_BLOCKSIZE - 1);
 			const auto y = std::clamp<int>(rel.Y >> step, 0, MAP_BLOCKSIZE - 1);
 			const auto z = std::clamp<int>(rel.Z >> step, 0, MAP_BLOCKSIZE - 1);
-			const auto n = source.nodes[(z * MAP_BLOCKSIZE + y) * MAP_BLOCKSIZE + x];
-			// Stored materials own their volume. Earth keeps its sea as a display
-			// overlay on stored AIR because actual terrain generation stays dry.
-			if (n.getContent() != CONTENT_IGNORE && n.getContent() != CONTENT_UNKNOWN)
-				return {farmesh::applyFarWaterToAir(n, pos, step, *m_mg, use_weather),
+			const auto stored = source.nodes[(z * MAP_BLOCKSIZE + y) * MAP_BLOCKSIZE + x];
+			if (stored.getContent() != CONTENT_IGNORE &&
+					stored.getContent() != CONTENT_UNKNOWN)
+				return {farmesh::applyFarWaterToAir(
+								stored, pos, step, *m_mg, use_weather),
 						false};
 		}
 
@@ -289,7 +302,11 @@ std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_st
 		// owned by world merge. Return IGNORE as an invisible occluder for its absent
 		// underground cells: the far mesher does not draw IGNORE itself, but it uses
 		// it to suppress the artificial black sides of adjacent solid cells.
-		if (underground_occluder_candidate && step < FARMESH_STEP_MAX) {
+		// With depth limiting disabled, missing cells must reach mapgen even if
+		// another generated block is present in their column. Column occupancy
+		// does not establish that a missing cell is empty or safely hidden.
+		if (m_surface_depth >= 0 && underground_occluder_candidate &&
+				step < FARMESH_STEP_MAX) {
 			const auto mesh_result = m_cache->params(block_pos, false);
 			if (mesh_result && mesh_result->step == step) {
 				const v3bpos_t column_key(
