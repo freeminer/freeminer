@@ -339,6 +339,19 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 		if (!setNodeMetadata(decal.pos, meta))
 			delete meta;
 	}
+	for (const auto &entity : data->generated_schem_entities) {
+		auto *meta = new NodeMetadata(m_gamedef->idef());
+		static constexpr char hex[] = "0123456789abcdef";
+		std::string encoded;
+		encoded.reserve(entity.nbt.size() * 2);
+		for (auto byte : entity.nbt) {
+			encoded.push_back(hex[byte >> 4]);
+			encoded.push_back(hex[byte & 15]);
+		}
+		meta->setString("schematic_nbt_hex", encoded);
+		if (!setNodeMetadata(entity.pos, meta))
+			delete meta;
+	}
 	// ===
 
 	EMERGE_DBG_OUT("finishBlockMake: changed_blocks.size()="

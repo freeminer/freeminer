@@ -47,8 +47,13 @@ struct BlockMakeData {
 		s8 rotation = 0;
 		bool glow = false;
 	};
+	struct GeneratedSchemEntity {
+		v3pos_t pos;
+		std::vector<std::uint8_t> nbt;
+	};
 	std::vector<GeneratedSignMetadata> generated_signs;
 	std::vector<GeneratedDecalMetadata> generated_decals;
+	std::vector<GeneratedSchemEntity> generated_schem_entities;
 	// ===
 
 	MMVManip *vmanip = nullptr;

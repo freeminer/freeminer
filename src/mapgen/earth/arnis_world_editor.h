@@ -157,6 +157,9 @@ struct WorldEditor
 			int, int, int, const std::vector<std::tuple<std::string, int, int>> &)>
 			barrel_sink;
 	std::function<void(int, int, int)> bed_sink;
+	// Raw schematic block-entity payload, retained for backends that support it.
+	std::function<void(int, int, int, const std::vector<std::uint8_t> &)>
+			schem_entity_sink;
 	std::function<void(int, int, int, const std::string &)> item_frame_sink;
 	std::function<void(int, int, int, const std::string &, const std::string &,
 			const std::vector<std::pair<std::string, std::string>> &)>
@@ -286,6 +289,11 @@ struct WorldEditor
 	void set_bed_sink(std::function<void(int, int, int)> sink)
 	{
 		bed_sink = std::move(sink);
+	}
+	void set_schem_entity_sink(
+			std::function<void(int, int, int, const std::vector<std::uint8_t> &)> sink)
+	{
+		schem_entity_sink = std::move(sink);
 	}
 	void set_item_frame_sink(std::function<void(int, int, int, const std::string &)> sink)
 	{

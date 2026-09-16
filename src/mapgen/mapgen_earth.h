@@ -140,6 +140,8 @@ public:
 	bool queueGeneratedSign(const v3pos_t &pos, const std::string &text);
 	bool queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id,
 			s8 facing, s8 rotation, bool glow);
+	bool queueGeneratedSchemEntity(
+			const v3pos_t &pos, const std::vector<std::uint8_t> &nbt);
 	struct TileWriteKey
 	{
 		pos_t x = 0, y = 0, z = 0;
