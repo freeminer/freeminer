@@ -95,6 +95,7 @@ struct GenerateJob
 	v3bpos_t center_block;
 	v3bpos_t center_chunk;
 	v3bpos_t chunk_size;
+	u64 min_ring = 0;
 	u64 max_ring = 0;
 	u64 total = 0;
 	u64 ring = 0;
@@ -167,15 +168,18 @@ std::chrono::milliseconds retry_delay(u64 retry)
 					GENERATE_RETRY_MAX_DELAY));
 }
 
-bool parse_params(const std::string &params, int64_t &radius, int &in_flight)
+bool parse_params(const std::string &params, int64_t &min_radius, int64_t &max_radius)
 {
 	std::istringstream input(params);
-	if (!(input >> radius) || radius < 0)
+	if (!(input >> min_radius) || min_radius < 0)
 		return false;
 	input >> std::ws;
-	if (input.eof())
+	if (input.eof()) {
+		max_radius = min_radius;
+		min_radius = 0;
 		return true;
-	if (!(input >> in_flight) || in_flight < 1)
+	}
+	if (!(input >> max_radius) || max_radius < min_radius)
 		return false;
 	input >> std::ws;
 	return input.eof();
@@ -202,10 +206,10 @@ public:
 	bool prepare(const std::string &player_name, const std::string &params,
 			std::string &message)
 	{
-		int64_t radius_value = -1;
-		int in_flight_value = 0;
-		if (!parse_params(params, radius_value, in_flight_value)) {
-			message = "Usage: /emerge_smart radius [in_flight]";
+		int64_t min_radius_value = -1;
+		int64_t max_radius_value = -1;
+		if (!parse_params(params, min_radius_value, max_radius_value)) {
+			message = "Usage: /emerge_smart [min_radius] max_radius";
 			return false;
 		}
 
@@ -216,18 +220,15 @@ public:
 			return false;
 		}
 
-		if (radius_value > std::numeric_limits<pos_t>::max()) {
+		if (max_radius_value > std::numeric_limits<pos_t>::max()) {
 			message = "Radius is too large for this build.";
 			return false;
 		}
 
-		if (in_flight_value == 0) {
-			s16 configured = GENERATE_DEFAULT_IN_FLIGHT;
-			g_settings->getS16NoEx("emerge_smart_in_flight", configured);
-			in_flight_value = configured;
-		}
-		in_flight_value =
-				std::clamp(in_flight_value, 1, static_cast<int>(GENERATE_MAX_IN_FLIGHT));
+		s16 configured_in_flight = GENERATE_DEFAULT_IN_FLIGHT;
+		g_settings->getS16NoEx("emerge_smart_in_flight", configured_in_flight);
+		const int in_flight_value =
+				std::clamp<int>(configured_in_flight, 1, GENERATE_MAX_IN_FLIGHT);
 
 		const auto configured_chunk_size =
 				m_server->getEnv().getServerMap().getMapgenParams()->chunksize;
@@ -238,20 +239,27 @@ public:
 			return false;
 		}
 
-		const pos_t radius = static_cast<pos_t>(radius_value);
+		const pos_t min_radius = static_cast<pos_t>(min_radius_value);
+		const pos_t max_radius = static_cast<pos_t>(max_radius_value);
 		const u64 horizontal_chunk_nodes =
 				static_cast<u64>(std::min(chunk_size.X, chunk_size.Z)) * MAP_BLOCKSIZE;
-		const u64 max_ring = (static_cast<u64>(radius) + horizontal_chunk_nodes - 1) /
+		const u64 min_ring = (static_cast<u64>(min_radius) + horizontal_chunk_nodes - 1) /
 							 horizontal_chunk_nodes;
-		if (max_ring > (std::numeric_limits<u64>::max() - 1) / 2) {
+		const u64 max_ring = (static_cast<u64>(max_radius) + horizontal_chunk_nodes - 1) /
+							 horizontal_chunk_nodes;
+		if (max_ring > (std::numeric_limits<u64>::max() - 1) / 2 ||
+				min_ring > (std::numeric_limits<u64>::max() - 1) / 2) {
 			message = "Radius produces too many mapgen chunk rings.";
 			return false;
 		}
-		const u64 side = max_ring * 2 + 1;
-		if (side > std::numeric_limits<u64>::max() / side) {
+		const u64 max_side = max_ring * 2 + 1;
+		const u64 min_side = min_ring ? min_ring * 2 - 1 : 0;
+		if (max_side > std::numeric_limits<u64>::max() / max_side ||
+				(min_side && min_side > std::numeric_limits<u64>::max() / min_side)) {
 			message = "Radius produces too many mapgen chunk columns.";
 			return false;
 		}
+		const u64 total = max_side * max_side - min_side * min_side;
 
 		auto job = std::make_shared<GenerateJob>();
 		s32 task_timeout = GENERATE_DEFAULT_TASK_TIMEOUT_SECONDS;
@@ -267,8 +275,10 @@ public:
 		job->center_chunk = containing_chunk(job->center_block, chunk_size);
 		job->chunk_size = chunk_size;
 		job->changed_since = ServerMap::time_life.load(std::memory_order_relaxed);
+		job->min_ring = min_ring;
 		job->max_ring = max_ring;
-		job->total = side * side;
+		job->ring = min_ring;
+		job->total = total;
 		job->in_flight_limit = static_cast<u16>(in_flight_value);
 		job->max_cancel_retries = max_cancel_retries;
 		job->task_timeout = std::chrono::seconds(task_timeout);
@@ -292,8 +302,8 @@ public:
 		m_start_log = "[earth] " + message + " Player=" + player_name +
 					  ", center_block=" + blockpos_string(job->center_block) +
 					  ", center_chunk=" + blockpos_string(job->center_chunk) +
-					  ", radius=" + std::to_string(radius) +
-					  ", rings=" + std::to_string(max_ring);
+					  ", radius=" + std::to_string(min_radius) + ".." +
+					  std::to_string(max_radius) + ", rings=" + std::to_string(max_ring);
 		return true;
 	}
 

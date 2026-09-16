@@ -85,7 +85,8 @@ const bool emscripten =
 #endif
 ;
 
-const bool slow = debug || emscripten; // || android
+const bool slow = debug || emscripten;
+const bool medium = slow || android;
 
 void fm_set_default_settings(Settings *settings)
 {
@@ -121,8 +122,9 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("keymap_playerlist", "KEY_TAB");
     settings->setDefault("keymap_console", "`");
 
-	if (debug)
+	if (debug) {
 		settings->setDefault("keymap_toggle_block_bounds", "KEY_F9");
+	}
 
 	// Fonts
 	settings->setDefault("freetype", "true"); // "false"
@@ -164,7 +166,7 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "3" : "5");
 	const auto farmesh = slow	   ? "5000"
-						 : android ? "10000"
+						 : medium ? "10000"
 								   : "100000"
 			// std::to_string(FARMESH_LIMIT / 2)
 			;
@@ -176,12 +178,12 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_zoom_levels", "7");
 	settings->setDefault("farmesh_stable", "20");
 	settings->setDefault("farmesh_server", "1");
-	settings->setDefault("farmesh_all_changed", slow	  ? "1000"
-												: android ? "3000"
-														  : "10000");
-	settings->setDefault("farmesh_surface_depth", "2");
-	settings->setDefault("farmesh_fast_faces", slow || android ? "true" : "false");
-	settings->setDefault("volumetric_fog", (android || slow) ? "500" : "3000");
+	settings->setDefault("farmesh_all_changed", slow	 ? "1000"
+												: medium ? "3000"
+														 : "10000");
+	settings->setDefault("farmesh_surface_depth", "-1");
+	settings->setDefault("farmesh_fast_faces", medium ? "true" : "false");
+	settings->setDefault("volumetric_fog", medium ? "0" : "3000");
 	settings->setDefault("farlights", farmesh);
 
 	settings->setDefault("headless_optimize", "false");
