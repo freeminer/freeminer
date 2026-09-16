@@ -443,6 +443,10 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 			},
 			[mg](int, int, int, int) { return mg->mergeTileOverlay(); });
 	editor.ground = &ground;
+	editor.set_schem_entity_sink(
+			[mg](int x, int y, int z, const std::vector<std::uint8_t> &nbt) {
+				mg->queueGeneratedSchemEntity(v3pos_t(x, y, z), nbt);
+			});
 	auto args = earth_arnis_args();
 	FloodWaveGuard flood_wave(cached);
 	arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,

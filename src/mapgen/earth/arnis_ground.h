@@ -39,6 +39,9 @@ struct Ground
 	bool extended_ceiling = false;
 	CelestialBody body = CelestialBody::Earth;
 	std::optional<int> elevation_ground_level;
+	std::vector<std::vector<float>> elevation_grid;
+	std::size_t elevation_world_width = 0, elevation_world_height = 0;
+	bool elevation_enabled = false;
 	int snow_threshold_y = std::numeric_limits<int>::max();
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
@@ -86,6 +89,35 @@ struct Ground
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
+		if (elevation_enabled && !elevation_grid.empty() && elevation_world_width > 0 &&
+				elevation_world_height > 0) {
+			const auto height = elevation_grid.size();
+			const auto width = elevation_grid.front().size();
+			if (width > 0 && height > 0) {
+				const double xr =
+						std::clamp(double(pos.x) / double(std::max<std::size_t>(
+														   1, elevation_world_width - 1)),
+								0.0, 1.0) *
+						double(width - 1);
+				const double zr =
+						std::clamp(double(pos.z) / double(std::max<std::size_t>(1,
+														   elevation_world_height - 1)),
+								0.0, 1.0) *
+						double(height - 1);
+				const auto x0 =
+						std::min<std::size_t>(std::size_t(std::floor(xr)), width - 1);
+				const auto z0 =
+						std::min<std::size_t>(std::size_t(std::floor(zr)), height - 1);
+				const auto x1 = std::min(width - 1, x0 + 1),
+						   z1 = std::min(height - 1, z0 + 1);
+				const double tx = xr - std::floor(xr), tz = zr - std::floor(zr);
+				const double top =
+						elevation_grid[z0][x0] * (1.0 - tx) + elevation_grid[z0][x1] * tx;
+				const double bottom =
+						elevation_grid[z1][x0] * (1.0 - tx) + elevation_grid[z1][x1] * tx;
+				return static_cast<int>(std::llround(top * (1.0 - tz) + bottom * tz));
+			}
+		}
 		if (!mg)
 			return elevation_ground_level.value_or(0);
 		++mg->stat.level;
@@ -110,7 +142,9 @@ struct Ground
 	bool is_earth() const { return arnis::is_earth(body); }
 	double blocks_per_meter() const
 	{
-		return elevation_blocks_per_meter > 0.0 ? elevation_blocks_per_meter : 1.0;
+		return elevation_enabled && elevation_blocks_per_meter > 0.0
+					   ? elevation_blocks_per_meter
+					   : 1.0;
 	}
 	void set_celestial_body(CelestialBody value) { body = value; }
 	void set_extended_ceiling(bool value) { extended_ceiling = value; }
@@ -132,6 +166,17 @@ struct Ground
 		canopy_data = std::move(data);
 		canopy_world_width = world_width;
 		canopy_world_height = world_height;
+	}
+	// Rust-compatible convenience overload: replace an existing canopy raster
+	// while preserving the host world's sampling dimensions.
+	void set_canopy_data(
+			const std::vector<std::uint8_t> &grid, std::size_t width, std::size_t height)
+	{
+		if (width == 0 || height == 0)
+			return;
+		set_canopy_data(canopy::CanopyData(grid, width, height),
+				canopy_world_width ? canopy_world_width : width,
+				canopy_world_height ? canopy_world_height : height);
 	}
 	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const
 	{
@@ -215,6 +260,76 @@ struct Ground
 		snow_threshold_y = snow_y;
 		elevation_ground_level = ground_level;
 	}
+	void set_elevation_data(const std::vector<std::vector<float>> &heights,
+			std::size_t width, std::size_t height, std::size_t world_width,
+			std::size_t world_height)
+	{
+		elevation_grid = heights;
+		elevation_world_width = world_width ? world_width : width;
+		elevation_world_height = world_height ? world_height : height;
+		elevation_enabled = !elevation_grid.empty();
+	}
+	void set_elevation_data(const std::vector<std::vector<double>> &heights,
+			std::size_t width, std::size_t height, std::size_t world_width,
+			std::size_t world_height)
+	{
+		elevation_grid.clear();
+		elevation_grid.reserve(heights.size());
+		for (const auto &row : heights) {
+			elevation_grid.emplace_back();
+			elevation_grid.back().reserve(row.size());
+			for (double value : row)
+				elevation_grid.back().push_back(static_cast<float>(value));
+		}
+		elevation_world_width = world_width ? world_width : width;
+		elevation_world_height = world_height ? world_height : height;
+		elevation_enabled = !elevation_grid.empty();
+	}
+	void set_elevation_enabled(bool enabled) { elevation_enabled = enabled; }
+	void clear_elevation_data()
+	{
+		elevation_grid.clear();
+		elevation_world_width = elevation_world_height = 0;
+		elevation_enabled = false;
+	}
+	void set_world_dims(std::size_t world_width, std::size_t world_height)
+	{
+		elevation_world_width = world_width;
+		elevation_world_height = world_height;
+		if (land_cover) {
+			land_cover_world_width = world_width;
+			land_cover_world_height = world_height;
+		}
+		if (canopy_data) {
+			canopy_world_width = world_width;
+			canopy_world_height = world_height;
+		}
+	}
+	void apply_osm_water_override(
+			const std::vector<ProcessedElement> &elements, const XZBBox &bbox)
+	{
+		if (!land_cover || elevation_grid.empty())
+			return;
+		land_cover::apply_osm_water_override(*land_cover, elevation_grid,
+				elevation_world_width, elevation_world_height, elements, bbox);
+	}
+	void apply_osm_land_override(const std::vector<ProcessedElement> &elements,
+			const XZBBox &bbox, double scale)
+	{
+		if (!land_cover)
+			return;
+		land_cover::apply_osm_land_override(*land_cover, land_cover_world_width,
+				land_cover_world_height, elements, bbox, scale);
+		land_cover->refresh_water_blend_grid();
+	}
+	void apply_bridge_land_cover_repair(const std::vector<ProcessedElement> &elements,
+			const XZBBox &bbox, double scale)
+	{
+		if (!land_cover || elevation_grid.empty())
+			return;
+		land_cover::apply_bridge_land_cover_repair(*land_cover, elevation_grid,
+				elevation_world_width, elevation_world_height, elements, bbox, scale);
+	}
 	void set_rotation_mask(RotationMask mask) { rotation_mask = mask; }
 	bool inside_rotation_mask(int x, int z) const
 	{
@@ -247,6 +362,18 @@ struct Ground
 		land_cover = std::move(data);
 		land_cover_world_width = world_width;
 		land_cover_world_height = world_height;
+	}
+	void set_land_cover_data(const std::vector<std::vector<std::uint8_t>> &grid,
+			const std::vector<std::vector<std::uint8_t>> &water_distance,
+			std::size_t width, std::size_t height)
+	{
+		if (!land_cover)
+			return;
+		land_cover->grid = grid;
+		land_cover->water_distance = water_distance;
+		land_cover->width = width;
+		land_cover->height = height;
+		land_cover->refresh_water_blend_grid();
 	}
 
 	std::pair<std::size_t, std::size_t> land_cover_index(const XZPoint &coord) const
@@ -290,6 +417,13 @@ struct Ground
 			return 0;
 		return land_cover->water_distance[z][x];
 	}
+	bool is_interior_water(const XZPoint &coord) const
+	{
+		if (cover_class(coord) != land_cover::LC_WATER)
+			return false;
+		const auto distance = water_distance(coord);
+		return distance == 0 || distance >= 4;
+	}
 
 	double water_blend(const XZPoint &coord) const
 	{
@@ -324,6 +458,11 @@ struct Ground
 		const double top = w00 * (1.0 - tx) + w10 * tx;
 		const double bottom = w01 * (1.0 - tx) + w11 * tx;
 		return top * (1.0 - tz) + bottom * tz;
+	}
+	void warm_water_blend()
+	{
+		if (land_cover && land_cover->water_blend_grid.empty())
+			land_cover->refresh_water_blend_grid();
 	}
 
 	std::optional<std::tuple<int, int, int, int>> lc_water_block_bounds() const
