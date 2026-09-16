@@ -67,7 +67,6 @@ static bool canMergeFmFarFaces(
 		const auto &b = second.tile.layers[layer];
 		if (a != b || a.material_type != b.material_type ||
 				a.texture_layer_idx != b.texture_layer_idx || a.scale != b.scale ||
-				a.isTransparent() ||
 				!(a.material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL) ||
 				!(a.material_flags & MATERIAL_FLAG_TILEABLE_VERTICAL))
 			return false;
