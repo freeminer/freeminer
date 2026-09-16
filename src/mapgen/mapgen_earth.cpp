@@ -565,6 +565,15 @@ bool MapgenEarth::queueGeneratedDecal(const v3pos_t &pos, std::string texture, i
 	return true;
 }
 
+bool MapgenEarth::queueGeneratedSchemEntity(
+		const v3pos_t &pos, const std::vector<std::uint8_t> &nbt)
+{
+	if (!active_block_data || !vm || !vm->exists(pos))
+		return false;
+	active_block_data->generated_schem_entities.push_back({pos, nbt});
+	return true;
+}
+
 bool MapgenEarth::beginTileOverlay(int min_x, int min_z, int max_x, int max_z)
 {
 	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
