@@ -46,6 +46,22 @@ struct Ground
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
 	UrbanGroundLookup urban_lookup;
+	static Ground new_flat(int ground_level)
+	{
+		Ground ground;
+		ground.elevation_ground_level = ground_level;
+		ground.snow_threshold_y = std::numeric_limits<int>::max();
+		ground.elevation_enabled = false;
+		return ground;
+	}
+	static Ground new_flat_with_land_cover(land_cover::LandCoverData data,
+			std::size_t world_width, std::size_t world_height, int ground_level)
+	{
+		Ground ground = new_flat(ground_level);
+		ground.set_land_cover_data(std::move(data), world_width, world_height);
+		return ground;
+	}
+	void set_ground_level(int ground_level) { elevation_ground_level = ground_level; }
 
 	int get_absolute_y(int x_input, int y_offset, int z_input) const
 	{
@@ -59,6 +75,8 @@ struct Ground
 	// Return std::nullopt if no valid data, to match the Rust’s Option
 	std::optional<int> min_level(const std::vector<XZPoint> &points) const
 	{
+		if (!elevation_enabled)
+			return elevation_ground_level.value_or(0);
 		if (points.empty()) {
 			return std::nullopt;
 		}
@@ -78,6 +96,8 @@ struct Ground
 	// None; callers use that distinction when a feature has no geometry.
 	std::optional<int> max_level(const std::vector<XZPoint> &points) const
 	{
+		if (!elevation_enabled)
+			return elevation_ground_level.value_or(0);
 		if (points.empty())
 			return std::nullopt;
 		int maxY = std::numeric_limits<int>::min();
@@ -89,6 +109,11 @@ struct Ground
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
+		// Rust's disabled-elevation path is deliberately flat.  Do not consult
+		// the host mapgen height field when a caller supplied a ground level;
+		// doing so makes flat worlds acquire unrelated Luanti terrain relief.
+		if (!elevation_enabled && elevation_ground_level)
+			return *elevation_ground_level;
 		if (elevation_enabled && !elevation_grid.empty() && elevation_world_width > 0 &&
 				elevation_world_height > 0) {
 			const auto height = elevation_grid.size();
@@ -516,6 +541,8 @@ struct Ground
 	// local minimum; it deliberately does not cross a real cliff or waterfall.
 	int slope(const XZPoint &coord) const
 	{
+		if (!elevation_enabled)
+			return 0;
 		constexpr int step = 4;
 		const int east = level({coord.x + step, coord.z}),
 				  west = level({coord.x - step, coord.z}),
