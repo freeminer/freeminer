@@ -448,9 +448,6 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 				mg->queueGeneratedSchemEntity(v3pos_t(x, y, z), nbt);
 			});
 	auto args = earth_arnis_args();
-	// Match Rust's disabled-elevation Ground: cached generation uses the
-	// configured flat base level instead of inheriting unrelated host relief.
-	ground.set_ground_level(args.ground_level);
 	FloodWaveGuard flood_wave(cached);
 	arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,
 			*cached.building_footprints, true);

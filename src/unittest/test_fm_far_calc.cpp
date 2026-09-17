@@ -12,7 +12,6 @@
 #include "client/fm_far_mesh_update.h"
 #include "client/fm_far_sample_cache.h"
 #include "fm_far_view_tests.h"
-#include "fm_far_source_tests.h"
 #include "threading/ThreadPool.h"
 #include "threading/async.h"
 // ===
