@@ -2294,8 +2294,10 @@ void Client::afterContentReceived()
 				guienv, m_tsrc, 0, 68);
 		m_shsrc->rebuildShaders();
 		ShaderConstants constants;
+		// fm: Far lights fade with daylight using alpha blending.
 		const u32 shader_id = m_shsrc->getShader("far_light", constants,
-				video::EMT_SOLID);
+				video::EMT_TRANSPARENT_ALPHA_CHANNEL);
+		// ===
 		m_far_light_material = m_shsrc->getShaderInfo(shader_id).material;
 
 	} else {
