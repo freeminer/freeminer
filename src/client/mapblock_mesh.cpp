@@ -783,6 +783,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 			mesh->addMeshBuffer(buf);
 			buf->drop();
 		}
+
+		// fm:
 		if (static const auto farlights = g_settings->getU32("farlights");
 				far_step && farlights && farmesh::settingToStep(farlights) >= far_step && !layer) {
 				scene::SMeshBuffer *buffer = nullptr;
@@ -818,6 +820,8 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 								buffer->Material.MaterialType =
 										client->getFarLightMaterial();
 								buffer->Material.PointCloud = true;
+								// Fading light points must not occlude other geometry.
+								buffer->Material.ZWriteEnable = video::EZW_OFF;
 								buffer->Material.Thickness = 2.0f;
 								buffer->Material.BackfaceCulling = false;
 								buffer->Material.FogEnable = true;
@@ -863,6 +867,7 @@ MapBlockMesh::MapBlockMesh(Client *client, MeshMakeData *data):
 					buffer->drop();
 				}
 		}
+		// ===
 
 		if (mesh) {
 			// Use VBO for mesh (this just would set this for every buffer)

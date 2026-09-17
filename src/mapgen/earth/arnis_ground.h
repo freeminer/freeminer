@@ -96,8 +96,6 @@ struct Ground
 	// None; callers use that distinction when a feature has no geometry.
 	std::optional<int> max_level(const std::vector<XZPoint> &points) const
 	{
-		if (!elevation_enabled)
-			return elevation_ground_level.value_or(0);
 		if (points.empty())
 			return std::nullopt;
 		int maxY = std::numeric_limits<int>::min();
@@ -109,11 +107,6 @@ struct Ground
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
-		// Rust's disabled-elevation path is deliberately flat.  Do not consult
-		// the host mapgen height field when a caller supplied a ground level;
-		// doing so makes flat worlds acquire unrelated Luanti terrain relief.
-		if (!elevation_enabled && elevation_ground_level)
-			return *elevation_ground_level;
 		if (elevation_enabled && !elevation_grid.empty() && elevation_world_width > 0 &&
 				elevation_world_height > 0) {
 			const auto height = elevation_grid.size();
