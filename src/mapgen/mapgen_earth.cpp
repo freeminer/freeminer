@@ -726,6 +726,7 @@ MapNode MapgenEarth::earth_layer_get(
 	return layers_node[layer_index];
 }
 
+/*
 namespace farmesh
 {
 // Display-only sea coverage. Never use this to choose generated world nodes.
@@ -745,6 +746,7 @@ inline std::optional<pos_t> farWaterSampleY(
 	return std::min(y, sea_y);
 }
 }
+*/
 
 bool MapgenEarth::visible(
 		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
@@ -767,9 +769,13 @@ MapNode MapgenEarth::visible_content(
 	// Far water owns the coarse sea-surface cell, including rounded zero
 	// elevation. This affects visibility only; get_height/generateTerrain keep
 	// their original elevations and world materials.
-	const auto far_water_y = farmesh::farWaterSampleY(p.Y, surface_y, water_level, step);
-	const auto solid = !far_water_y && visible(p, surface_y, step);
-	const auto water = far_water_y.has_value() || visible_water_level(p);
+
+	//const auto far_water_y = farmesh::farWaterSampleY(p.Y, surface_y, water_level, step);
+	//const auto solid = !far_water_y && visible(p, surface_y, step);
+	//const auto water = far_water_y.has_value() || visible_water_level(p);
+
+	const auto solid = visible(p, surface_y, step);
+	const auto water = visible_water_level(p);
 	if (!solid && !water) {
 		return visible_transparent;
 	}
@@ -783,7 +789,8 @@ MapNode MapgenEarth::visible_content(
 	// Match the sea-level water column filled by generateTerrain().
 	if (!solid && water) {
 		// Evaluate ice at the water sample, not above a coarse sea-surface cell.
-		if (heat < 0 && far_water_y.value_or(p.Y) > heat / 3 && valid(c_ice))
+		if (heat < 0 && p.Y > heat / 3 && valid(c_ice))
+		//if (heat < 0 && far_water_y.value_or(p.Y) > heat / 3 && valid(c_ice))
 			return MapNode(c_ice, LIGHT_SUN);
 		return node_or(n_water, visible_water);
 	}
