@@ -27,8 +27,46 @@ Licensing changed by permission of Gael de Sailly.
 #include "mg_ore.h"
 #include "mg_decoration.h"
 #include "mapgen_valleys.h"
+#include "fm_mapgen_height.h"
 #include "cavegen.h"
 #include <cmath>
+
+// fm:
+pos_t MapgenValleys::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
+{
+	const auto sample = [&](Noise *noise) {
+		return NoiseFractal2D(&noise->np, p.X, p.Y, seed);
+	};
+	const float valley = sample(noise_valley_depth);
+	const float depth = valley * valley;
+	const float base = sample(noise_terrain_height) + depth;
+	const float river = std::fabs(sample(noise_rivers)) - river_size_factor;
+	const float tv = std::fmax(river / sample(noise_valley_profile), 0.0f);
+	const float valley_height = depth * (1.0f - std::exp(-tv * tv));
+	float height = base + valley_height;
+	if (river < 0.0f) {
+		const float tr = river / river_size_factor + 1.0f;
+		const float bed = river_depth_bed * std::sqrt(std::fmax(0.0f, 1.0f - tr * tr));
+		height = std::fmin(std::fmax(base - bed, float(water_level - 3)), height);
+		// Valleys uses a strict density > 0 test.
+		return static_cast<pos_t>(std::ceil(height)) - 1;
+	}
+	const float slope = sample(noise_inter_valley_slope) * valley_height;
+	const float center = height + slope * noise_inter_valley_fill->np.offset;
+	const float radius =
+			std::fabs(slope) * fm_mapgen::noiseAmplitude(noise_inter_valley_fill->np);
+	return fm_mapgen::surface(center - radius, center + radius, [&](pos_t y) {
+		return slope * NoiseFractal3D(&noise_inter_valley_fill->np, p.X, y, p.Y, seed) >
+			   y - height;
+	});
+}
+
+bool MapgenValleys::visible(
+		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
+{
+	return p.Y <= (surface_y ? *surface_y : getGroundLevelAtPointStep({p.X, p.Z}, step));
+}
+// ===
 
 
 const FlagDesc flagdesc_mapgen_valleys[] = {

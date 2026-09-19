@@ -60,6 +60,11 @@ public:
 
 	virtual void makeChunk(BlockMakeData *data);
 	int getSpawnLevelAtPoint(v2s16 p);
+	// fm:
+	pos_t getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y,
+			block_step_t step) override;
+	// ===
 	int generateBaseTerrain();
 
 private:

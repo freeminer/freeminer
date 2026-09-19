@@ -21,6 +21,31 @@
 #include "mg_decoration.h"
 #include "mapgen_v5.h"
 
+// fm:
+#include "fm_mapgen_height.h"
+pos_t MapgenV5::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
+{
+	float factor = 0.55f + NoiseFractal2D(&noise_factor->np, p.X, p.Y, seed);
+	if (factor < 0.01f)
+		factor = 0.01f;
+	else if (factor >= 1.0f)
+		factor *= 1.6f;
+	const float height = NoiseFractal2D(&noise_height->np, p.X, p.Y, seed);
+	const float center = height + factor * noise_ground->np.offset;
+	const float radius = factor * fm_mapgen::noiseAmplitude(noise_ground->np);
+	return fm_mapgen::surface(center - radius, center + radius, [&](pos_t y) {
+		return NoiseFractal3D(&noise_ground->np, p.X, y, p.Y, seed) * factor >=
+			   y - height;
+	});
+}
+
+bool MapgenV5::visible(
+		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
+{
+	return p.Y <= (surface_y ? *surface_y : getGroundLevelAtPointStep({p.X, p.Z}, step));
+}
+// ===
+
 
 const FlagDesc flagdesc_mapgen_v5[] = {
 	{"caverns", MGV5_CAVERNS},

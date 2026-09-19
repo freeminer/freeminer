@@ -22,6 +22,68 @@
 #include "mg_decoration.h"
 #include "mapgen_carpathian.h"
 
+// fm:
+#include "fm_mapgen_height.h"
+pos_t MapgenCarpathian::getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step)
+{
+	const auto sample = [&](Noise *noise) {
+		return NoiseFractal2D(&noise->np, p.X, p.Y, seed);
+	};
+	const float h1 = sample(noise_height1), h2 = sample(noise_height2);
+	const float h3 = sample(noise_height3), h4 = sample(noise_height4);
+	const float ht = std::fabs(sample(noise_hills_terrain));
+	const float hills = sample(noise_hills);
+	const float rt = std::fabs(sample(noise_ridge_terrain));
+	const float st = std::fabs(sample(noise_step_terrain));
+	const float mountains = ht * ht * ht * hills * hills +
+							rt * rt * rt * (1.0f - std::fabs(sample(noise_ridge_mnt))) +
+							st * st * st * getSteps(sample(noise_step_mnt));
+	float valley = 1.0f;
+	const bool rivers = spflags & MGCARPATHIAN_RIVERS;
+	const float river = rivers ? std::fabs(sample(noise_rivers)) - river_width : 0.0f;
+	if (rivers && river <= valley_width) {
+		if (river < 0.0f)
+			valley = river;
+		else {
+			const float scaled = river / valley_width;
+			valley = scaled * scaled * (3.0f - 2.0f * scaled);
+		}
+	}
+	const float max_height = std::fmax(std::fmax(std::fabs(h1), std::fabs(h2)),
+			std::fmax(std::fabs(h3), std::fabs(h4)));
+	const float variation = std::fabs(noise_mnt_var->np.offset) +
+							fm_mapgen::noiseAmplitude(noise_mnt_var->np);
+	const float bound = std::fabs(mountains) * max_height * (1.0f + 2.0f * variation);
+	// Both vertical gradients pull the surface towards water_level.
+	const float radius =
+			std::fabs(base_level + 1.0f - 2.0f * water_level) + bound +
+			(rivers ? std::sqrt(std::fabs(river)) * std::fabs(river_depth) : 0.0f);
+	return fm_mapgen::surface(water_level - radius, water_level + radius, [&](pos_t y) {
+		const float variation = NoiseFractal3D(&noise_mnt_var->np, p.X, y, p.Y, seed);
+		const float hilliness = std::fmax(
+				std::fmin(getLerp(h1, h2, variation), getLerp(h3, h4, variation)),
+				std::fmin(getLerp(h3, h2, variation), getLerp(h1, h4, variation)));
+		const float gradient = y < water_level
+									   ? 1.0f - water_level + (water_level - y) * 3.0f
+									   : 1.0f - y;
+		float level = base_level + mountains * hilliness + gradient;
+		if (rivers && river <= valley_width) {
+			if (valley < 0.0f)
+				level = std::fmin(level, water_level - std::sqrt(-valley) * river_depth);
+			else if (level > water_level)
+				level = water_level + (level - water_level) * valley;
+		}
+		return y < level;
+	});
+}
+
+bool MapgenCarpathian::visible(
+		const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step)
+{
+	return p.Y <= (surface_y ? *surface_y : getGroundLevelAtPointStep({p.X, p.Z}, step));
+}
+// ===
+
 
 const FlagDesc flagdesc_mapgen_carpathian[] = {
 	{"caverns", MGCARPATHIAN_CAVERNS},
