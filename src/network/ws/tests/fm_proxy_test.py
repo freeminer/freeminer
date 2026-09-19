@@ -4,6 +4,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import ipaddress
 import subprocess
+import struct
 import sys
 
 import websockets
@@ -73,15 +74,79 @@ async def run(binary, enabled):
             ws = await open_service(request, "PROXY FAILED")
             await closed(ws)
 
-        # A resolved game address on this listener must select the game route,
-        # including the public address behind NAT and IPv4-mapped IPv6.
-        for family, host in (("IPV4", "127.0.0.1"), ("IPV6", "::ffff:127.0.0.1"),
-                             ("IPV4", "192.0.2.10"), ("IPV4", "10.0.0.1")):
-            ws = await open_service(f"PROXY {family} TCP {host} {port}", "GAME OK")
-            async with connected(ws):
-                packet = bytes.fromhex("4f45740300000001")
-                await ws.send(packet)
-                assert await ws.recv() == packet
+        def envelope(host, port, payload):
+            address = ipaddress.ip_address(host)
+            if address.version == 4:
+                address = ipaddress.ip_address("::ffff:" + host)
+            return struct.pack("!I16sHH", 0x778B4CF6, address.packed, port, len(payload)) + payload
+
+        async def assignment():
+            async with connected(await connect(uri)) as ws:
+                await ws.send("NEWADDR")
+                command, address, passcode, joincode = (await ws.recv()).split(" ")
+                assert command == "ADDR" and ipaddress.ip_address(address).version == 6
+                assert address != "fd00::1"
+                assert len(passcode) == 32 and len(joincode) == 16
+                assert passcode != joincode
+                return address, passcode
+
+        address, passcode = await assignment()
+        address2, passcode2 = await assignment()
+        assert address != address2 and passcode != passcode2
+        game = await open_service(f"BIND {passcode} UDP 12345", "BIND OK")
+        async with connected(game):
+            # Check game routes, NAT, IPv4-mapped IPv6 and unchanged binary payloads.
+            for host in ("127.0.0.1", "::ffff:127.0.0.1", "192.0.2.10", "10.0.0.1"):
+                packet = envelope(host, port, bytes(range(256)))
+                await game.send(packet)
+                assert await game.recv() == packet
+
+            duplicate = await open_service(f"BIND {passcode} UDP 12345", "BIND FAILED")
+            async with connected(duplicate):
+                # A failed bind leaves the connection open for a fresh assignment.
+                await duplicate.send(f"BIND {passcode2} UDP 12345")
+                assert await duplicate.recv() == "BIND OK"
+                await duplicate.send(envelope(address, 12345, b"peer packet"))
+                assert await game.recv() == envelope(address2, 12345, b"peer packet")
+                await game.send(envelope(address2, 12345, b"reply"))
+                assert await duplicate.recv() == envelope(address, 12345, b"reply")
+
+            other_port = await open_service(f"BIND {passcode} UDP 12346", "BIND OK")
+            async with connected(other_port):
+                await other_port.send(envelope(address, 12345, b"same address"))
+                assert await game.recv() == envelope(address, 12346, b"same address")
+
+            # Unknown destinations must never enter the game queue.
+            await game.send(envelope("192.0.2.99", port, b"wrong host"))
+            await game.send(envelope("127.0.0.1", (port % 65535) + 1, b"wrong port"))
+            good = envelope("127.0.0.1", port, b"after dropped packets")
+            await game.send(good)
+            assert await game.recv() == good
+
+        # Closing a connection releases its port but retains its assignment.
+        rebound = await open_service(f"BIND {passcode} UDP 12345", "BIND OK")
+        await rebound.close()
+        for request in (
+            "BIND missing UDP 12345", f"BIND {passcode} TCP 12345",
+            f"BIND {passcode} UDP 0", f"BIND {passcode} UDP 65536",
+            f"BIND {passcode} UDP -1", f"BIND {passcode} UDP 12345 extra",
+            "BIND", "BIND " + "x" * 200,
+        ):
+            failed = await open_service(request, "BIND FAILED")
+            async with connected(failed):
+                await failed.send(f"BIND {passcode} UDP 12347")
+                assert await failed.recv() == "BIND OK"
+
+        good = envelope("127.0.0.1", port, b"payload")
+        for packet in (b"short", b"xxxx" + good[4:], good[:-1], good + b"extra",
+                       envelope("127.0.0.1", 0, b"invalid port"), "NEWADDR"):
+            ws = await open_service(f"BIND {passcode} UDP 12348", "BIND OK")
+            await ws.send(packet)
+            await closed(ws)
+        # Data without an authenticated bind is rejected.
+        async with connected(await connect(uri)) as ws:
+            await ws.send(good)
+            await closed(ws)
 
         if not enabled:
             for target in ("IPV4 TCP 127.0.0.1 80", "IPV6 TCP fd00::1 8080"):

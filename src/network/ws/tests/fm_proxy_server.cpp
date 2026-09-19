@@ -2,7 +2,7 @@
 // Standalone endpoint for protocol integration tests; no game process required.
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-#include "../fm_ws_proxy.h"
+#include "../fm_ws_datagram.h"
 #include <iostream>
 
 int main(int argc, char **argv)
@@ -18,34 +18,32 @@ int main(int argc, char **argv)
 	server.init_asio();
 	auto game_router = std::make_shared<fm_ws::GameRouter>(server.get_io_context());
 	game_router->resolve("192.0.2.10"); // Simulated advertised address behind NAT.
-	std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>>
-			games;
+	fm_ws::DatagramService<Server> *datagrams = nullptr;
+	fm_ws::DatagramService<Server> service(server, game_router,
+			[&](auto hdl, const std::string &payload) {
+				datagrams->send_game(hdl, payload); // Echo the game queue.
+			});
+	datagrams = &service;
 	server.set_message_handler([&](auto hdl, auto msg) {
-		auto it = sessions.find(hdl);
-		if (it == sessions.end()) {
-			websocketpp::lib::error_code ec;
-			if (games.count(hdl)) {
-				server.send(hdl, msg->get_payload(), msg->get_opcode(), ec);
-				return;
-			}
-			fm_ws::Error endpoint_error;
-			auto local = server.get_con_from_hdl(hdl)->get_raw_socket().local_endpoint(
-					endpoint_error);
-			if (!endpoint_error && game_router->matches(msg->get_payload(), local)) {
-				games.insert(hdl);
-				server.send(hdl, "GAME OK", websocketpp::frame::opcode::text, ec);
-				return;
-			}
+		if (auto it = sessions.find(hdl); it != sessions.end()) {
+			it->second->receive(msg->get_payload());
+			return;
+		}
+		const bool text = msg->get_opcode() == websocketpp::frame::opcode::text;
+		if (service.receive(hdl, msg->get_payload(), text))
+			return;
+		if (text && msg->get_payload().starts_with("PROXY ")) {
 			auto proxy = std::make_shared<Proxy>(
 					server, hdl, argc > 1 && std::string(argv[1]) == "enabled");
 			sessions.emplace(hdl, proxy);
 			proxy->start(msg->get_payload());
-		} else {
-			it->second->receive(msg->get_payload());
+			return;
 		}
+		websocketpp::lib::error_code ec;
+		server.close(hdl, websocketpp::close::status::protocol_error, "", ec);
 	});
 	server.set_close_handler([&](auto hdl) {
-		games.erase(hdl);
+		service.remove(hdl);
 		if (auto it = sessions.find(hdl); it != sessions.end()) {
 			it->second->stop();
 			sessions.erase(it);

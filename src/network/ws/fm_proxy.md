@@ -34,10 +34,18 @@ game port. These game routes do not require `ws_proxy_enable`.
 Private-network address assignment (`NEWADDR`) and encapsulated UDP (`BIND`)
 are separate protocols and are not implemented by this service.
 
-The WASM client can use real DNS results for the game destination. Its current
-shim labels game traffic `PROXY ... TCP` even though each following WebSocket
+The WASM client can use real DNS results for the game destination. In direct
+game mode its shim labels game traffic `PROXY ... TCP` even though each following WebSocket
 message contains one game datagram. Outbound TCP proxying applies to destinations
 that do not match this server's game route.
+
+Newer emsocket clients first send `NEWADDR` and expect `ADDR <address> <passcode>
+<joincode>`, then use `BIND` and encapsulated datagrams. This endpoint's legacy
+first-message acknowledgement is `PROXY OK`, including for `NEWADDR`. The shim
+must recognize that reply as direct game mode and open a fresh `PROXY ... TCP`
+connection on its first outgoing datagram. Simply accepting `PROXY OK` as an
+address assignment will not work: this endpoint does not implement `BIND` or
+the 24-byte UDP envelope. Proxies returning `ADDR ...` keep using those protocols.
 
 ## Protocol tests
 

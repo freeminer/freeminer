@@ -85,6 +85,10 @@ const bool emscripten =
 #endif
 ;
 
+#ifdef __EMSCRIPTEN__
+#undef ENABLE_UPDATE_CHECKER
+#endif
+
 const bool slow = debug || emscripten;
 const bool medium = slow || android;
 

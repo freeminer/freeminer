@@ -66,9 +66,8 @@ inline asio::ip::address normalize_address(const asio::ip::address &address)
 	return address;
 }
 
-// The WASM shim sends game datagrams using the same PROXY ... TCP handshake as
-// real TCP streams. Recognize this server before handing a request to Proxy;
-// otherwise game packets are tunneled back into our own TLS listener.
+// Recognize encapsulated game destinations, including advertised addresses
+// behind NAT, without sending the datagrams through another network socket.
 class GameRouter : public std::enable_shared_from_this<GameRouter>
 {
 public:
@@ -89,12 +88,11 @@ public:
 				});
 	}
 
-	bool matches(const std::string &request, const tcp::endpoint &local) const
+	bool matches(const tcp::endpoint &target, const tcp::endpoint &local) const
 	{
-		ProxyRequest target;
-		if (!target.parse(request) || target.port != local.port())
+		if (target.port() != local.port())
 			return false;
-		const auto address = normalize_address(target.address);
+		const auto address = normalize_address(target.address());
 		return address == asio::ip::make_address("10.0.0.1") ||
 			   address == normalize_address(local.address()) ||
 			   m_addresses.count(address);
