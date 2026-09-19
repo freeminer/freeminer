@@ -35,6 +35,7 @@ Block DEEPSLATE_BRICKS;
 Block DIORITE;
 Block DIRT;
 Block END_STONE_BRICKS;
+Block END_STONE;
 Block FARMLAND;
 Block GLASS;
 Block GLOWSTONE;
@@ -464,6 +465,7 @@ void init(MapgenEarth *mg)
 	DIORITE = g("default:stone");
 	DIRT = g("default:dirt");
 	END_STONE_BRICKS = g("default:stonebrick");
+	END_STONE = g("default:endstone");
 	FARMLAND = g("default:dirt");
 	GLASS = g("default:glass");
 	GLOWSTONE = g("default:meselamp");
