@@ -56,6 +56,7 @@ MapgenV5::MapgenV5(MapgenV5Params *params, EmergeParams *emerge)
 	noise_ground = new Noise(&params->np_ground, seed, csize.X, csize.Y + 2, csize.Z);
 
 	//freeminer:
+	y_oversize_down = 1;
 	noise_layers          = new Noise(&params->np_layers,         seed, csize.X, csize.Y + y_oversize_down + y_oversize_up, csize.Z);
 	layers_init(emerge, params->paramsj);
 	//=========
