@@ -184,6 +184,8 @@ void WSSocket::on_close(const websocketpp::connection_hdl &hdl)
 		m_proxies.erase(it);
 	}
 	// ===
+	if (m_datagrams)
+		m_datagrams->remove(hdl);
 	hdls.erase(hdl);
 }
 
@@ -231,61 +233,20 @@ void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_
 		it->second->receive(msg->get_payload());
 		return;
 	}
-	// resolved game addresses must use the game queue, not a TCP tunnel
-	if (!hdls.count(hdl) && msg->get_payload().starts_with("PROXY")) {
-		auto con = server.get_con_from_hdl(hdl);
-		fm_ws::Error ec;
-		const auto local = con->get_raw_socket().local_endpoint(ec);
-		if (ec || !m_game_router || !m_game_router->matches(msg->get_payload(), local)) {
-			bool enabled = false;
-			g_settings->getBoolNoEx("ws_proxy_enable", enabled);
-			auto proxy = std::make_shared<proxy_t>(server, hdl, enabled);
-			m_proxies.emplace(hdl, proxy);
-			proxy->start(msg->get_payload());
-			return;
-		}
-	}
-
-	// DUMP("om", msg->get_payload().size(), msg->get_payload());
-
-	// cs << "on_message called with hdl: " << hdl.lock().get() << " and message: " <<
-	// msg->get_payload().size() << " " << msg->get_payload() << std::endl;
-
-	ws_server_t::connection_ptr con = server.get_con_from_hdl(hdl);
-	// read the socket address directly, including IPv4 and mapped IPv6
-	fm_ws::Error endpoint_error;
-	const auto remote = con->get_raw_socket().remote_endpoint(endpoint_error);
-	if (endpoint_error)
+	const bool text = msg->get_opcode() == websocketpp::frame::opcode::text;
+	if (m_datagrams && m_datagrams->receive(hdl, msg->get_payload(), text))
 		return;
-	Address a = remote.address().is_v6()
-						? Address(*reinterpret_cast<const sockaddr_in6 *>(remote.data()))
-						: Address(*reinterpret_cast<const sockaddr_in *>(remote.data()));
-
-	if (!hdls.count(hdl)) {
-		// DUMP("first", a, msg->get_payload().size(), con->get_host(),
-		// con->get_request().get_headers(), con->get_proxy(),
-		// con->get_remote_endpoint());
-
-		cs << "first message from " << a << " : " << msg->get_payload().size() << " "
-		   << msg->get_payload() << '\n';
-
-		hdls.emplace(hdl, a);
-
-		websocketpp::lib::error_code ec;
-		server.send(hdl, "PROXY OK", msg->get_opcode(), ec);
-		if (ec) {
-			cs << "Echo failed because: " << "(" << ec.value() << ":" << ec.message()
-			   << ")" << '\n';
-		}
+	if (text && msg->get_payload().starts_with("PROXY ")) {
+		bool enabled = false;
+		g_settings->getBoolNoEx("ws_proxy_enable", enabled);
+		auto proxy = std::make_shared<proxy_t>(server, hdl, enabled);
+		m_proxies.emplace(hdl, proxy);
+		proxy->start(msg->get_payload());
 		return;
 	}
-
-	std::string s{msg->get_payload().data(), msg->get_payload().size()};
-#if !NDEBUG
-	cs << "A message: " << msg->get_payload().size() << " " << msg->get_payload() << '\n';
-#endif
-
-	incoming_queue.emplace_back(queue_item{a, std::move(s)});
+	websocketpp::lib::error_code ec;
+	server.close(hdl, websocketpp::close::status::protocol_error,
+			"Expected NEWADDR, BIND or PROXY", ec);
 }
 
 WSSocket::WSSocket(bool ipv6)
@@ -309,7 +270,7 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 		server.set_error_channels(websocketpp::log::elevel::none);
 		server.set_access_channels(websocketpp::log::alevel::none);
 	}
-	const auto timeouts = 30; // Config.GetWsTimeoutsMs();
+	const auto timeouts = 30 * 1000; // WebSocket++ expects milliseconds.
 	server.set_open_handshake_timeout(timeouts);
 	server.set_close_handshake_timeout(timeouts);
 	server.set_pong_timeout(timeouts);
@@ -493,6 +454,20 @@ void WSSocket::Bind(Address addr)
 	g_settings->getNoEx("server_address", advertised_host);
 	m_game_router = std::make_shared<fm_ws::GameRouter>(server.get_io_context());
 	m_game_router->resolve(advertised_host);
+	m_datagrams = std::make_unique<fm_ws::DatagramService<ws_server_t>>(
+			server, m_game_router, [this](auto hdl, const std::string &data) {
+				// Keep real remote addresses in the game queue for bans and logs;
+				// the private assignment is only an address on the virtual network.
+				fm_ws::Error ec;
+				const auto remote = server.get_con_from_hdl(hdl)->get_raw_socket().remote_endpoint(ec);
+				if (ec)
+					return;
+				Address address = remote.address().is_v6()
+						? Address(*reinterpret_cast<const sockaddr_in6 *>(remote.data()))
+						: Address(*reinterpret_cast<const sockaddr_in *>(remote.data()));
+				hdls.emplace(hdl, address);
+				incoming_queue.push_back({address, data});
+			});
 	// ===
 	ws_serve = true;
 }
@@ -537,7 +512,8 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 	if (ws_client && client_address == destination) {
 		client.send(hdl, data, size, websocketpp::frame::opcode::value::binary, ec);
 	} else {
-		server.send(hdl, data, size, websocketpp::frame::opcode::value::binary, ec);
+		if (m_datagrams)
+			m_datagrams->send_game(hdl, std::string(static_cast<const char *>(data), size));
 	}
 
 	if (ec.value()) {

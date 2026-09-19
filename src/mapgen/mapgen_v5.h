@@ -59,7 +59,11 @@ public:
 	virtual MapgenType getType() const { return MAPGEN_V5; }
 
 	virtual void makeChunk(BlockMakeData *data);
-	pos_t getSpawnLevelAtPoint(v2pos_t p);
+	// fm:
+	pos_t getGroundLevelAtPointStep(const v2pos_t &p, block_step_t step) override;
+	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y,
+			block_step_t step) override;
+	// ===
 	pos_t generateBaseTerrain();
 
 private:

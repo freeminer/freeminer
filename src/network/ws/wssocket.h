@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include "fm_ws_proxy.h"
+#include "fm_ws_datagram.h"
 
 #include <list>
 #include "network/address.h"
@@ -103,6 +104,7 @@ private:
 	// service sessions are separate from game peers
 	// distinguish this server from outbound proxy destinations
 	std::shared_ptr<fm_ws::GameRouter> m_game_router;
+	std::unique_ptr<fm_ws::DatagramService<ws_server_t>> m_datagrams;
 	using proxy_t = fm_ws::Proxy<ws_server_t>;
 	std::map<websocketpp::connection_hdl, std::shared_ptr<proxy_t>,
 			std::owner_less<websocketpp::connection_hdl>>
