@@ -96,6 +96,8 @@ struct Ground
 	// None; callers use that distinction when a feature has no geometry.
 	std::optional<int> max_level(const std::vector<XZPoint> &points) const
 	{
+		if (!elevation_enabled)
+			return elevation_ground_level.value_or(0);
 		if (points.empty())
 			return std::nullopt;
 		int maxY = std::numeric_limits<int>::min();
@@ -172,11 +174,14 @@ struct Ground
 	}
 	std::pair<std::size_t, std::size_t> world_dims() const
 	{
-		return has_land_cover()
-					   ? std::pair<std::size_t, std::size_t>{land_cover_world_width,
-								 land_cover_world_height}
-					   : std::pair<std::size_t, std::size_t>{
-								 canopy_world_width, canopy_world_height};
+		// Rust's Ground::world_dims prioritizes the elevation affine. Land
+		// cover and canopy are optional companions and may be unavailable even
+		// when the terrain grid loaded successfully.
+		if (elevation_enabled && elevation_world_width > 0 && elevation_world_height > 0)
+			return {elevation_world_width, elevation_world_height};
+		if (has_land_cover())
+			return {land_cover_world_width, land_cover_world_height};
+		return {canopy_world_width, canopy_world_height};
 	}
 	void set_canopy_data(
 			canopy::CanopyData data, std::size_t world_width, std::size_t world_height)
@@ -282,6 +287,9 @@ struct Ground
 			std::size_t width, std::size_t height, std::size_t world_width,
 			std::size_t world_height)
 	{
+		// Rust replaces the existing elevation dataset during rotation.  Accept
+		// the update even when the caller has not toggled the flag yet; the
+		// presence of a non-empty grid is the authoritative enabled state.
 		elevation_grid = heights;
 		elevation_world_width = world_width ? world_width : width;
 		elevation_world_height = world_height ? world_height : height;
