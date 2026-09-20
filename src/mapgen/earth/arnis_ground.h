@@ -549,9 +549,17 @@ struct Ground
 				  west = level({coord.x - step, coord.z}),
 				  north = level({coord.x, coord.z - step}),
 				  south = level({coord.x, coord.z + step});
-		const int raw = std::max({east, west, north, south}) -
-						std::min({east, west, north, south});
-		return static_cast<int>(std::llround(raw * elevation_slope_correction));
+		// Rust uses saturating_sub here; avoid signed overflow when malformed
+		// elevation metadata spans the complete integer range.
+		const auto hi = std::max({east, west, north, south});
+		const auto lo = std::min({east, west, north, south});
+		const auto raw = static_cast<long double>(hi) - static_cast<long double>(lo);
+		const auto scaled = raw * elevation_slope_correction;
+		if (scaled >= static_cast<long double>(std::numeric_limits<int>::max()))
+			return std::numeric_limits<int>::max();
+		if (scaled <= static_cast<long double>(std::numeric_limits<int>::min()))
+			return std::numeric_limits<int>::min();
+		return static_cast<int>(std::llround(scaled));
 	}
 	int water_level(const XZPoint &coord) const
 	{
