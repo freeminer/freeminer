@@ -169,6 +169,12 @@ struct WorldEditor
 	// emerge threads never exchange intersection indexes or regional styles.
 	std::shared_ptr<const signage::SignageContext> signage_context;
 	std::function<bool(const DecalFrame &)> decal_frame_sink;
+	// Backend contract for preset facade panels.  The mapgen layer supplies the
+	// already-cropped RGB panel; Java/Bedrock/Luanti hosts may encode or place
+	// it according to their native entity/texture mechanism.
+	std::function<bool(int, int, int, std::int8_t, const std::vector<std::uint8_t> &,
+			std::uint32_t, std::uint32_t)>
+			facade_panel_sink;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
 	std::vector<DecalFrame> placed_frames;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> written_cells;
