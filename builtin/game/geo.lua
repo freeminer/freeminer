@@ -289,8 +289,9 @@ local function move_player_to_geo(player, data, smooth)
         -- The C++ inverse conversion already returns the projected surface
         -- position. Flat legacy conversion still needs the spawn-level query;
         -- that API returns no Lua values for unsuitable locations.
+        local ground_y = core.get_ground_level(pos.x, pos.z)
         local spawn_y = core.get_spawn_level(pos.x, pos.z)
-        pos.y = (data.altitude or spawn_y or pos.y or 0) - center_y
+        pos.y = (data.altitude or ground_y or spawn_y or pos.y or 0) - center_y
         local message = "Earth: Moving to " .. (data.display_name or "") .. (data.country or "") .. " " ..
                             (data.city or "") .. " : " .. pos.x .. "," .. pos.y .. "," .. pos.z
         print(message)
