@@ -86,9 +86,9 @@ local scale = {
     X = 1,
     Z = 1,
 }
-function pos_to_ll(x, z)
+function pos_to_ll(x, y, z)
     if earth_pos_to_ll then
-        local ok, result = pcall(earth_pos_to_ll, {x = x, y = 0, z = z})
+        local ok, result = pcall(earth_pos_to_ll, {x = x, y = y, z = z})
         if ok and result then
             return result
         end
@@ -110,13 +110,14 @@ end
 
 function ll_to_pos(l)
     if earth_ll_to_pos then
-        local ok, result = pcall(earth_ll_to_pos, l)
-        if ok and result then
-            return {
-                x = math.floor(result.x),
-                z = math.floor(result.z),
-            }
-        end
+        -- Resolve terrain altitude in C++ before applying the projection.
+        -- Do not hide API errors by teleporting to flat fallback coordinates.
+        local result = earth_ll_to_pos(l, true)
+        return {
+            x = result.x,
+            y = result.y,
+            z = result.z,
+        }
     end
     local deg2m = EQUATOR_LEN / 360
     local x = math.floor((l.lon / scale.X - center.X) * deg2m)
@@ -285,21 +286,17 @@ local function move_player_to_geo(player, data, smooth)
 
         local pos = ll_to_pos(geo_data)
 
-        -- Allow geographic destinations above the terrain.
-        -- The C++ inverse conversion already returns the projected surface
-        -- position. Flat legacy conversion still needs the spawn-level query;
-        -- that API returns no Lua values for unsuitable locations.
-        local ground_y = core.get_ground_level(pos.x, pos.z)
-        -- Mapgen uses MAX_MAP_GENERATION_LIMIT for an unsuitable/unknown
-        -- column. Never use that sentinel as a teleport coordinate.
-        if ground_y and math.abs(ground_y) >= 100000000 then
-            ground_y = nil
+        if not earth_ll_to_pos then
+            local ground_y = core.get_ground_level(pos.x, pos.z)
+            if ground_y and math.abs(ground_y) >= 100000000 then
+                ground_y = nil
+            end
+            local spawn_y = core.get_spawn_level(pos.x, pos.z)
+            if spawn_y and math.abs(spawn_y) >= 100000000 then
+                spawn_y = nil
+            end
+            pos.y = (tonumber(data.altitude) or ground_y or spawn_y or 0) - center_y
         end
-        local spawn_y = core.get_spawn_level(pos.x, pos.z)
-        if spawn_y and math.abs(spawn_y) >= 100000000 then
-            spawn_y = nil
-        end
-        pos.y = (data.altitude or ground_y or spawn_y or pos.y or 0) - center_y
         local message = "Earth: Moving to " .. (data.display_name or "") .. (data.country or "") .. " " ..
                             (data.city or "") .. " : " .. pos.x .. "," .. pos.y .. "," .. pos.z
         print(message)
