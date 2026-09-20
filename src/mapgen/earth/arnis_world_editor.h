@@ -259,6 +259,7 @@ struct WorldEditor
 	}
 	void set_start_with_map(bool v) { start_with_map = v; }
 	void set_map_decals(bool v) { map_decals = v; }
+	bool map_decals_enabled() const { return map_decals; }
 	void set_decal_registry(std::shared_ptr<const decals::DecalRegistry> registry)
 	{
 		decal_registry = std::move(registry);
@@ -291,6 +292,7 @@ struct WorldEditor
 		return true;
 	}
 	void clear_facade_panels() { placed_facade_panels.clear(); }
+	const std::vector<FacadePanel> &facade_panels() const { return placed_facade_panels; }
 	void set_chest_sink(std::function<void(int, int, int,
 					const std::vector<std::tuple<std::string, int, int>> &)>
 					sink)
