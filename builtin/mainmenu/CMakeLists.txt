@@ -1,6 +1,8 @@
 add_subdirectory(content)
 
 set(BUILTIN_MAINMENU_SRCS
+    mainmenu/dlg_create_world_fm.lua
+
 	mainmenu/async_event.lua
 	mainmenu/common.lua
 	mainmenu/credits.json
