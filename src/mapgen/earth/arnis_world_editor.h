@@ -110,6 +110,13 @@ struct WorldEditor
 			return seed;
 		}
 	};
+	struct FacadePanel
+	{
+		int x{}, y{}, z{};
+		std::int8_t facing{};
+		std::uint32_t width{}, height{};
+		std::vector<std::uint8_t> pixels;
+	};
 	struct XZCellHash
 	{
 		std::size_t operator()(const std::pair<int, int> &p) const noexcept
@@ -175,6 +182,7 @@ struct WorldEditor
 	std::function<bool(int, int, int, std::int8_t, const std::vector<std::uint8_t> &,
 			std::uint32_t, std::uint32_t)>
 			facade_panel_sink;
+	std::vector<FacadePanel> placed_facade_panels;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
 	std::vector<DecalFrame> placed_frames;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> written_cells;
@@ -263,6 +271,26 @@ struct WorldEditor
 	{
 		decal_frame_sink = std::move(sink);
 	}
+	void set_facade_panel_sink(std::function<bool(int, int, int, std::int8_t,
+					const std::vector<std::uint8_t> &, std::uint32_t, std::uint32_t)>
+					sink)
+	{
+		facade_panel_sink = std::move(sink);
+	}
+	bool place_facade_panel(int x, int y, int z, std::int8_t facing,
+			const std::vector<std::uint8_t> &pixels, std::uint32_t width,
+			std::uint32_t height)
+	{
+		if (!width || !height || pixels.size() != std::size_t(width) * height * 3)
+			return false;
+		if (facade_panel_sink &&
+				!facade_panel_sink(x, y, z, facing, pixels, width, height))
+			return false;
+		placed_facade_panels.push_back(
+				FacadePanel{x, y, z, facing, width, height, pixels});
+		return true;
+	}
+	void clear_facade_panels() { placed_facade_panels.clear(); }
 	void set_chest_sink(std::function<void(int, int, int,
 					const std::vector<std::tuple<std::string, int, int>> &)>
 					sink)

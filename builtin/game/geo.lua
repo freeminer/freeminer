@@ -277,7 +277,7 @@ local function move_player_to_geo(player, data, smooth)
         local geo_data = simple_deepcopy(data)
 
         local center_y = 0
-        if mg_earth_ok and mg_earth_data and mg_earth_data.center then
+        if not earth_ll_to_pos and mg_earth_ok and mg_earth_data and mg_earth_data.center then
             geo_data.lon = geo_data.lon - mg_earth_data.center.x
             geo_data.lat = geo_data.lat - mg_earth_data.center.z
             center_y = mg_earth_data.center.y
@@ -286,7 +286,11 @@ local function move_player_to_geo(player, data, smooth)
         local pos = ll_to_pos(geo_data)
 
         -- Allow geographic destinations above the terrain.
-        pos.y = (data.altitude or core.get_spawn_level(pos.x, pos.z)) - center_y
+        -- The C++ inverse conversion already returns the projected surface
+        -- position. Flat legacy conversion still needs the spawn-level query;
+        -- that API returns no Lua values for unsuitable locations.
+        local spawn_y = core.get_spawn_level(pos.x, pos.z)
+        pos.y = (data.altitude or spawn_y or pos.y or 0) - center_y
         local message = "Earth: Moving to " .. (data.display_name or "") .. (data.country or "") .. " " ..
                             (data.city or "") .. " : " .. pos.x .. "," .. pos.y .. "," .. pos.z
         print(message)
