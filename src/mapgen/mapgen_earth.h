@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 
 #include "earth/hgt.h"
+#include "fm_earth_projection.h"
 #include "irrlichttypes.h"
 #include "mapgen/mapgen_v7.h"
 #include "porting.h"
@@ -58,8 +59,8 @@ inline std::ostream &operator<<(std::ostream &s, const ll &p)
 
 struct MapgenEarthParams : public MapgenV7Params
 {
-	MapgenEarthParams(){};
-	~MapgenEarthParams(){};
+	MapgenEarthParams() {};
+	~MapgenEarthParams() {};
 
 	Json::Value params;
 
@@ -187,6 +188,20 @@ public:
 
 	v3d scale{1, 1, 1};
 	v3d center{0, 0, 0};
+	// Public geometry API for later gravity and authored-object placement.
+	fm_earth::Adapter projection;
+	bool surface_2d() override { return !projection.curved; }
+	bool visible_water_level(const v3pos_t &p) override;
+	fm_earth::Sample sampleEarth(const v3pos_t &p) const;
+	double projectedElevation(const fm_earth::Sample &sample, block_step_t step);
+	v3pos_t climatePosition(const v3pos_t &p) const;
+	void configureProjection(const Json::Value &params);
+	template <class Projection>
+	int generateProjectedTerrain();
+	template <class Projection>
+	void bindProjection(const fm_earth::Parameters &params);
+	int (MapgenEarth::*projected_terrain)() = nullptr;
+	pos_t projectedGroundLevel(const v2pos_t &p, block_step_t step);
 	bool no_layers = false;
 	bool earth_layers = false;
 
