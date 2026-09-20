@@ -52,6 +52,10 @@ private:
 	// get_ground_level(x = num, z = num)
 	static int l_get_ground_level(lua_State *L);
 
+	// Earth projection conversions; use the active C++ mapgen geometry.
+	static int l_earth_pos_to_ll(lua_State *L);
+	static int l_earth_ll_to_pos(lua_State *L);
+
 	// get_mapgen_params()
 	// returns the currently active map generation parameter set
 	static int l_get_mapgen_params(lua_State *L);
