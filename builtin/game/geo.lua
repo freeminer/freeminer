@@ -290,7 +290,15 @@ local function move_player_to_geo(player, data, smooth)
         -- position. Flat legacy conversion still needs the spawn-level query;
         -- that API returns no Lua values for unsuitable locations.
         local ground_y = core.get_ground_level(pos.x, pos.z)
+        -- Mapgen uses MAX_MAP_GENERATION_LIMIT for an unsuitable/unknown
+        -- column. Never use that sentinel as a teleport coordinate.
+        if ground_y and math.abs(ground_y) >= 100000000 then
+            ground_y = nil
+        end
         local spawn_y = core.get_spawn_level(pos.x, pos.z)
+        if spawn_y and math.abs(spawn_y) >= 100000000 then
+            spawn_y = nil
+        end
         pos.y = (data.altitude or ground_y or spawn_y or pos.y or 0) - center_y
         local message = "Earth: Moving to " .. (data.display_name or "") .. (data.country or "") .. " " ..
                             (data.city or "") .. " : " .. pos.x .. "," .. pos.y .. "," .. pos.z
