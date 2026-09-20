@@ -19,6 +19,7 @@
 #include "mapgen/mg_ore.h"
 #include "mapgen/mg_decoration.h"
 #include "mapgen/mg_schematic.h"
+#include "mapgen/mapgen_earth.h"
 #include "mapgen/treegen.h"
 #include "filesys.h"
 #include "settings.h"
@@ -2130,6 +2131,50 @@ int ModApiMapgen::l_get_ground_level(lua_State *L)
 	lua_pushinteger(L, emerge->getGroundLevelAtPoint(v2pos_t(x, z)));
 	return 1;
 }
+
+int ModApiMapgen::l_earth_pos_to_ll(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const auto *earth = dynamic_cast<const MapgenEarth *>(getMapgen(L));
+	if (!earth)
+		return luaL_error(L, "earth projection API requires the earth mapgen");
+	const auto sample = earth->sampleEarth(check_v3pos(L, 1));
+	lua_newtable(L);
+	lua_pushnumber(L, sample.lat);
+	lua_setfield(L, -2, "lat");
+	lua_pushnumber(L, sample.lon);
+	lua_setfield(L, -2, "lon");
+	lua_pushnumber(L, sample.altitude);
+	lua_setfield(L, -2, "altitude");
+	return 1;
+}
+
+int ModApiMapgen::l_earth_ll_to_pos(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const auto *earth = dynamic_cast<const MapgenEarth *>(getMapgen(L));
+	if (!earth)
+		return luaL_error(L, "earth projection API requires the earth mapgen");
+	luaL_checktype(L, 1, LUA_TTABLE);
+	lua_getfield(L, 1, "lat");
+	const double lat = luaL_checknumber(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, 1, "lon");
+	const double lon = luaL_checknumber(L, -1);
+	lua_pop(L, 1);
+	lua_getfield(L, 1, "altitude");
+	const double altitude = lua_isnil(L, -1) ? 0.0 : luaL_checknumber(L, -1);
+	lua_pop(L, 1);
+	const auto pos = earth->projection.place(lat, lon, altitude);
+	lua_newtable(L);
+	lua_pushnumber(L, pos.X);
+	lua_setfield(L, -2, "x");
+	lua_pushnumber(L, pos.Y);
+	lua_setfield(L, -2, "y");
+	lua_pushnumber(L, pos.Z);
+	lua_setfield(L, -2, "z");
+	return 1;
+}
 // ===
 
 
@@ -2138,6 +2183,8 @@ void ModApiMapgen::Initialize(lua_State *L, int top)
 {
 // fm:
 	API_FCT(get_ground_level);
+	API_FCT(earth_pos_to_ll);
+	API_FCT(earth_ll_to_pos);
 // ===
 
 API_FCT(get_biome_id);

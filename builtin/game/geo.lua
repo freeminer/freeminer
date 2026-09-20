@@ -73,6 +73,10 @@ local function urlencode(str)
     return str
 end
 
+-- Delegate geometry to the active C++ projection. The fallback below keeps
+-- this file usable with older cores that do not provide these functions.
+local earth_pos_to_ll = core.earth_pos_to_ll
+local earth_ll_to_pos = core.earth_ll_to_pos
 local EQUATOR_LEN = 40075696.0
 local center = {
     X = 0,
@@ -83,6 +87,12 @@ local scale = {
     Z = 1,
 }
 function pos_to_ll(x, z)
+    if earth_pos_to_ll then
+        local ok, result = pcall(earth_pos_to_ll, {x = x, y = 0, z = z})
+        if ok and result then
+            return result
+        end
+    end
     local lon = (x * scale.X) / (EQUATOR_LEN / 360) + center.X
     local lat = (z * scale.Z) / (EQUATOR_LEN / 360) + center.Z
     if lat < 90 and lat > -90 and lon < 180 and lon > -180 then
@@ -99,6 +109,15 @@ function pos_to_ll(x, z)
 end
 
 function ll_to_pos(l)
+    if earth_ll_to_pos then
+        local ok, result = pcall(earth_ll_to_pos, l)
+        if ok and result then
+            return {
+                x = math.floor(result.x),
+                z = math.floor(result.z),
+            }
+        end
+    end
     local deg2m = EQUATOR_LEN / 360
     local x = math.floor((l.lon / scale.X - center.X) * deg2m)
     local z = math.floor((l.lat / scale.Z - center.Z) * deg2m)
