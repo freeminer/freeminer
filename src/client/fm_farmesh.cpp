@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "fm_far_calc.h"
 #include "client/mapblock_mesh.h"
 #include "constants.h"
+#include "mapgen/mapgen_earth.h"
 #include "emerge.h"
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
