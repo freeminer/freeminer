@@ -39,6 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
+#include "mapgen/mapgen_earth.h"
 #include "mapnode.h"
 #include "profiler.h"
 #include "server.h"
@@ -391,9 +392,14 @@ auto align_shift(auto pos, const auto amount)
 namespace
 {
 
-double heightLimitedFarRange(const v3pos_t &camera_pos, pos_t water_level, int max_range)
+double heightLimitedFarRange(const v3pos_t &camera_pos, Mapgen *mapgen, int max_range)
 {
-	const double height = std::max(0.0, double(camera_pos.Y) - water_level);
+	const auto *earth = dynamic_cast<MapgenEarth *>(mapgen);
+	const double altitude =
+			earth && earth->projection.curved
+					? earth->projection.altitude(v3opos_t::from(camera_pos))
+					: double(camera_pos.Y);
+	const double height = std::max(0.0, altitude - mapgen->water_level);
 	return std::min(double(max_range), 5000.0 + height * 30.0);
 }
 
@@ -490,8 +496,7 @@ int FarMesh::go_visible()
 	const auto &camera_pos = client_map.far_cam_pos_grid;
 	const auto player_pos = getNodeBlockPos(camera_pos);
 	const bool flat = farmesh_flat && mg->surface_2d();
-	const double far_range =
-			heightLimitedFarRange(camera_pos, mg->water_level, m_control->farmesh);
+	const double far_range = heightLimitedFarRange(camera_pos, mg, m_control->farmesh);
 	int enqueued = 0;
 	for (const auto &[pos, old_step] : visible) {
 		if (farmesh_thread_stop)
@@ -521,8 +526,7 @@ int FarMesh::go_flat()
 {
 	const auto &draw_control = *m_control;
 	const auto &camera_pos = m_client->getEnv().getClientMap().far_cam_pos_grid;
-	const double far_range =
-			heightLimitedFarRange(camera_pos, mg->water_level, draw_control.farmesh);
+	const double far_range = heightLimitedFarRange(camera_pos, mg, draw_control.farmesh);
 	const auto player_block_pos =
 			getNodeBlockPos(m_client->getEnv().getClientMap().far_cam_pos_grid);
 	constexpr bool cell_each = false;
@@ -886,8 +890,8 @@ uint8_t FarMesh::update(v3opos_t camera_pos, v3pos_t camera_offset, int render_r
 		return true;
 	auto &client_map = m_client->getEnv().getClientMap();
 	const auto camera_pos_aligned = align_shift(floatToInt(camera_pos, BS), MAP_BLOCKP);
-	const auto height_range = heightLimitedFarRange(
-			camera_pos_aligned, mg->water_level, m_control->farmesh);
+	const auto height_range =
+			heightLimitedFarRange(camera_pos_aligned, mg, m_control->farmesh);
 	const auto distance_max =
 			(static_cast<unsigned int>(std::max(
 					 0.0, std::min({double(render_range), 1.2 * m_client->fog_range / BS,

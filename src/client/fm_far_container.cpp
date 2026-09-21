@@ -34,6 +34,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
+#include "mapgen/mapgen_earth.h"
 #include "mapnode.h"
 #include "server.h"
 #include "settings.h"
@@ -128,6 +129,15 @@ std::pair<const MapNode, bool> FarContainer::getNodeRefAndVisible(
 
 std::pair<const MapNode, bool> FarContainer::sample(const v3pos_t &pos, block_step_t step)
 {
+	// The curved preview reconstructs the geographic surface, so its occupancy
+	// and material must come from the same projection as its vertices. Merged
+	// voxel samples can lie below the seabed or contain interior rock; projecting
+	// those materials onto the shell would erase oceans and surface climate.
+	if (step) {
+		if (auto *earth = dynamic_cast<MapgenEarth *>(m_mg);
+				earth && earth->projection.curved)
+			return {earth->visible_content(pos, use_weather, step), false};
+	}
 	const auto block_pos = getNodeBlockPos(pos);
 	auto &client_map = m_client->getEnv().getClientMap();
 	const auto tree_result = m_cache->params(block_pos, true);

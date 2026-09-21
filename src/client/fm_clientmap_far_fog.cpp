@@ -6,6 +6,7 @@
 #include "client/game_internal.h"
 #include "constants.h"
 #include "fm_far_calc.h"
+#include "fm_projected_surface.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
 #include "mapgen/mapgen_earth.h"
@@ -378,9 +379,11 @@ float far_fog_distance_to_box(const v3f &point, const v3f &box_min, float box_si
 	return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-std::size_t far_fog_terrain_cache_key(const v3bpos_t &block_pos, bpos_t block_span)
+std::size_t far_fog_terrain_cache_key(
+		const v3bpos_t &block_pos, bpos_t block_span, bool curved = false)
 {
-	const v3bpos_t column_pos{block_pos.X, 0, block_pos.Z};
+	const v3bpos_t column_pos{
+			block_pos.X, static_cast<bpos_t>(curved ? block_pos.Y : 0), block_pos.Z};
 	std::size_t h =
 			far_fog_hash(column_pos, farmesh::rangeToStep(block_span), 0x5c13d53u);
 	h ^= std::hash<bpos_t>{}(block_span) + 0x9e3779b97f4a7c15ull + (h << 6) + (h >> 2);
@@ -399,11 +402,19 @@ float far_fog_average_terrain_y(
 	const pos_t max_z = (block_pos.Z + block_span) * MAP_BLOCKSIZE - 1;
 	const pos_t center_x = min_x + (max_x - min_x) / 2;
 	const pos_t center_z = min_z + (max_z - min_z) / 2;
+	auto *earth = dynamic_cast<MapgenEarth *>(mapgen);
+	const bool curved = earth && earth->projection.curved;
+	const pos_t center_y =
+			block_pos.Y * MAP_BLOCKSIZE + (block_span * MAP_BLOCKSIZE - 1) / 2;
 
 	float sum = 0.0f;
 	int count = 0;
 	const auto sample = [&](pos_t x, pos_t z) {
-		sum += static_cast<float>(mapgen->getGroundLevelAtPointStep(v2pos_t(x, z), 16));
+		sum += curved ? static_cast<float>(std::max(double(mapgen->water_level),
+								earth->projectedElevation(
+										earth->sampleEarth({x, center_y, z}), 16)))
+					  : static_cast<float>(
+								mapgen->getGroundLevelAtPointStep(v2pos_t(x, z), 16));
 		++count;
 	};
 
@@ -478,13 +489,8 @@ void ClientMap::updateFarFogCells()
 				std::unordered_map<std::size_t, float> terrain_updates;
 				terrain_updates.reserve(1024);
 				auto *terrain_mapgen = m_client ? m_client->far_container.m_mg : nullptr;
-				// Far-fog terrain sampling assumes a flat X/Z height field. On
-				// curved Earth projections it causes thousands of expensive HGT
-				// queries and does not describe a meaningful vertical surface.
-				if (dynamic_cast<MapgenEarth *>(terrain_mapgen)) {
-					if (static_cast<MapgenEarth *>(terrain_mapgen)->projection.curved)
-						terrain_mapgen = nullptr;
-				}
+				const auto *earth = dynamic_cast<MapgenEarth *>(terrain_mapgen);
+				const bool curved = earth && earth->projection.curved;
 
 				{
 					std::lock_guard<std::mutex> lock(m_far_fog_terrain_cache_mutex);
@@ -543,7 +549,8 @@ void ClientMap::updateFarFogCells()
 
 				const auto terrain_reference = [&](const v3bpos_t &block_pos,
 													   bpos_t block_span) -> float {
-					const auto key = far_fog_terrain_cache_key(block_pos, block_span);
+					const auto key =
+							far_fog_terrain_cache_key(block_pos, block_span, curved);
 					if (const auto it = terrain_cache.find(key);
 							it != terrain_cache.end())
 						return it->second;
@@ -806,12 +813,21 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 			0.22f, 1.45f);
 	const v3f camera_scene_position =
 			far_fog_scene_camera_position(m_camera_position, m_camera_offset);
-	static const pos_t water_level_nodes = g_settings->getS16("water_level");
-	const bool camera_above_water = m_camera_position_node.Y > water_level_nodes;
+	const auto *mapgen = m_client ? m_client->far_container.m_mg : nullptr;
+	const auto *earth = dynamic_cast<const MapgenEarth *>(mapgen);
+	const auto *projection =
+			earth && earth->projection.curved ? &earth->projection : nullptr;
+	const pos_t water_level_nodes =
+			mapgen ? mapgen->water_level : g_settings->getS16("water_level");
+	const double camera_altitude =
+			projection ? projection->altitude(v3opos_t::from(m_camera_position_node))
+					   : double(m_camera_position_node.Y);
+	const bool camera_above_water = camera_altitude > water_level_nodes;
 	const float near_fog_reserve_range = std::min(volumetric_fog_range, 4096.0f * BS);
 	const auto terrain_reference = [&](const v3bpos_t &block_pos,
 										   bpos_t block_span) -> float {
-		const auto key = far_fog_terrain_cache_key(block_pos, block_span);
+		const auto key =
+				far_fog_terrain_cache_key(block_pos, block_span, projection != nullptr);
 		std::lock_guard<std::mutex> lock(m_far_fog_terrain_cache_mutex);
 		if (const auto it = m_far_fog_terrain_cache.find(key);
 				it != m_far_fog_terrain_cache.end())
@@ -905,8 +921,16 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		++candidate_count;
 
 		const float cell_size_nodes = cell_size / BS;
-		const float cell_min_y_nodes = static_cast<float>(cell_pos.Y * MAP_BLOCKSIZE);
-		const float cell_max_y_nodes = cell_min_y_nodes + cell_size_nodes;
+		const auto world_center = v3opos_t::from(cell_pos * MAP_BLOCKSIZE) +
+								  v3opos_t(cell_size_nodes * 0.5);
+		const auto altitude_bounds =
+				projection ? farmesh::surfaceAltitudeBounds(
+									 *projection, world_center, cell_size_nodes)
+						   : std::pair<double, double>{
+									 world_center.Y - cell_size_nodes * 0.5,
+									 world_center.Y + cell_size_nodes * 0.5};
+		const float cell_min_y_nodes = altitude_bounds.first;
+		const float cell_max_y_nodes = altitude_bounds.second;
 		const float cell_min_y_relative = cell_min_y_nodes - terrain_y_nodes;
 		const float cell_max_y_relative = cell_max_y_nodes - terrain_y_nodes;
 		if (camera_above_water && cell_max_y_nodes <= water_level_nodes)
@@ -980,10 +1004,19 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 						0.08f,
 				far_fog_signed_noise(cell_pos, cell_step, 0x27d4eb2fu) * visual_depth *
 						0.12f);
-		const v3f visual_center(cell_min.X + cell_size * 0.5f + center_jitter.X,
+		v3f visual_center(cell_min.X + cell_size * 0.5f + center_jitter.X,
 				cell_min.Y + (visual_center_y_nodes - cell_min_y_nodes) * BS +
 						center_jitter.Y,
 				cell_min.Z + cell_size * 0.5f + center_jitter.Z);
+		v3f local_up(0, 1, 0);
+		if (projection) {
+			const auto sample = projection->sample(world_center);
+			const auto placed =
+					projection->place(sample.lat, sample.lon, visual_center_y_nodes);
+			visual_center = v3f::from((placed - v3opos_t::from(m_camera_offset)) * BS) +
+							center_jitter;
+			local_up = v3f::from(projection->up(placed));
+		}
 
 		const float cell_box_distance =
 				far_fog_distance_to_box(camera_scene_position, cell_min, cell_size);
@@ -1019,9 +1052,9 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		const float top_view =
 				altitude.cave
 						? 0.0f
-						: smoothstep_f(0.15f, 0.85f, -forward.Y) *
+						: smoothstep_f(0.15f, 0.85f, -forward.dotProduct(local_up)) *
 								  smoothstep_f(30.0f, 220.0f,
-										  static_cast<float>(m_camera_position_node.Y) -
+										  static_cast<float>(camera_altitude) -
 												  visual_center_y_nodes);
 		const auto color = fog_color_for_climate(alpha, climate, altitude,
 				visual_center_y_nodes - terrain_y_nodes, density, top_view);
