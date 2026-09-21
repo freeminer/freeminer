@@ -109,6 +109,12 @@ struct Ground
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const
 	{
+		// Rust falls back to the configured base whenever elevation is enabled
+		// without a usable elevation dataset; do not silently query the legacy
+		// mapgen height in that state.
+		if (elevation_enabled && (elevation_grid.empty() || elevation_world_width == 0 ||
+										 elevation_world_height == 0))
+			return elevation_ground_level.value_or(0);
 		if (elevation_enabled && !elevation_grid.empty() && elevation_world_width > 0 &&
 				elevation_world_height > 0) {
 			const auto height = elevation_grid.size();
@@ -177,7 +183,8 @@ struct Ground
 		// Rust's Ground::world_dims prioritizes the elevation affine. Land
 		// cover and canopy are optional companions and may be unavailable even
 		// when the terrain grid loaded successfully.
-		if (elevation_enabled && elevation_world_width > 0 && elevation_world_height > 0)
+		if (!elevation_grid.empty() && elevation_world_width > 0 &&
+				elevation_world_height > 0)
 			return {elevation_world_width, elevation_world_height};
 		if (has_land_cover())
 			return {land_cover_world_width, land_cover_world_height};
@@ -406,13 +413,14 @@ struct Ground
 	{
 		// Rust parity: src/ground.rs::cover_class / water_distance sampling.
 		const auto &lc = *land_cover;
+		const auto [world_width, world_height] = world_dims();
 		const double x_ratio = std::clamp(
-				static_cast<double>(coord.x) / static_cast<double>(std::max<std::size_t>(
-													   1, land_cover_world_width - 1)),
+				static_cast<double>(coord.x) /
+						static_cast<double>(std::max<std::size_t>(1, world_width - 1)),
 				0.0, 1.0);
 		const double z_ratio = std::clamp(
-				static_cast<double>(coord.z) / static_cast<double>(std::max<std::size_t>(
-													   1, land_cover_world_height - 1)),
+				static_cast<double>(coord.z) /
+						static_cast<double>(std::max<std::size_t>(1, world_height - 1)),
 				0.0, 1.0);
 		const auto x = std::min<std::size_t>(
 				static_cast<std::size_t>(
@@ -458,15 +466,16 @@ struct Ground
 		const auto &lc = *land_cover;
 		if (lc.water_blend_grid.empty())
 			return 0.0;
+		const auto [world_width, world_height] = world_dims();
 
 		const double fx = std::clamp(static_cast<double>(coord.x) /
 											 static_cast<double>(std::max<std::size_t>(
-													 1, land_cover_world_width - 1)),
+													 1, world_width - 1)),
 								  0.0, 1.0) *
 						  static_cast<double>(lc.width - 1);
 		const double fz = std::clamp(static_cast<double>(coord.z) /
 											 static_cast<double>(std::max<std::size_t>(
-													 1, land_cover_world_height - 1)),
+													 1, world_height - 1)),
 								  0.0, 1.0) *
 						  static_cast<double>(lc.height - 1);
 		const auto x0 = std::min<std::size_t>(
@@ -495,7 +504,8 @@ struct Ground
 	{
 		// Rust parity: src/ground.rs::lc_water_block_bounds.
 		// Used by water_depth to avoid scanning the full world bbox.
-		if (!has_land_cover())
+		if (!has_land_cover() || elevation_grid.empty() || elevation_world_width == 0 ||
+				elevation_world_height == 0)
 			return std::nullopt;
 		const auto &lc = *land_cover;
 		std::size_t gx0 = std::numeric_limits<std::size_t>::max();
@@ -564,6 +574,10 @@ struct Ground
 	int water_level(const XZPoint &coord) const
 	{
 		const int center = level(coord);
+		// Flat worlds have no DEM shoreline correction; this explicit guard
+		// mirrors Ground::water_level in the Rust implementation.
+		if (!elevation_enabled)
+			return center;
 		if (slope(coord) <= 2)
 			return center;
 		constexpr int radius = 3;
@@ -576,7 +590,11 @@ struct Ground
 				extended_ceiling ? std::max(radius, static_cast<int>(std::llround(
 															25.0 * blocks_per_meter())))
 								 : radius;
-		return center - lowest > cliff_drop ? center : lowest;
+		// Match Rust's saturating_sub: malformed/overflowing DEM values must not
+		// wrap into a negative drop and accidentally bypass the cliff guard.
+		const auto drop =
+				static_cast<long double>(center) - static_cast<long double>(lowest);
+		return drop > static_cast<long double>(cliff_drop) ? center : lowest;
 	}
 };
 
