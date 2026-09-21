@@ -8,6 +8,7 @@
 #include "fm_far_calc.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
+#include "mapgen/mapgen_earth.h"
 #include "profiler.h"
 #include "util/numeric.h"
 namespace
@@ -402,7 +403,7 @@ float far_fog_average_terrain_y(
 	float sum = 0.0f;
 	int count = 0;
 	const auto sample = [&](pos_t x, pos_t z) {
-		sum += static_cast<float>(mapgen->getGroundLevelAtPointStep(v2pos_t(x, z),16));
+		sum += static_cast<float>(mapgen->getGroundLevelAtPointStep(v2pos_t(x, z), 16));
 		++count;
 	};
 
@@ -477,6 +478,13 @@ void ClientMap::updateFarFogCells()
 				std::unordered_map<std::size_t, float> terrain_updates;
 				terrain_updates.reserve(1024);
 				auto *terrain_mapgen = m_client ? m_client->far_container.m_mg : nullptr;
+				// Far-fog terrain sampling assumes a flat X/Z height field. On
+				// curved Earth projections it causes thousands of expensive HGT
+				// queries and does not describe a meaningful vertical surface.
+				if (dynamic_cast<MapgenEarth *>(terrain_mapgen)) {
+					if (static_cast<MapgenEarth *>(terrain_mapgen)->projection.curved)
+						terrain_mapgen = nullptr;
+				}
 
 				{
 					std::lock_guard<std::mutex> lock(m_far_fog_terrain_cache_mutex);

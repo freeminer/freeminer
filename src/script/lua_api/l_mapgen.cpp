@@ -2179,7 +2179,7 @@ int ModApiMapgen::l_earth_ll_to_pos(lua_State *L)
 	if (automatic_altitude)
 		altitude = std::max(earth->projectedElevation({lat, lon, 0}, 0),
 				double(earth->water_level)) + 2.0;
-	const auto pos = earth->projection.place(lat, lon, altitude);
+	const auto pos = earth->ll_to_pos3({lat, lon}, altitude);
 	lua_newtable(L);
 	lua_pushnumber(L, pos.X);
 	lua_setfield(L, -2, "x");
@@ -2187,6 +2187,8 @@ int ModApiMapgen::l_earth_ll_to_pos(lua_State *L)
 	lua_setfield(L, -2, "y");
 	lua_pushnumber(L, pos.Z);
 	lua_setfield(L, -2, "z");
+	lua_pushboolean(L, earth->projection.curved);
+	lua_setfield(L, -2, "curved");
 	return 1;
 }
 // ===

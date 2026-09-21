@@ -225,6 +225,7 @@ public:
 		processed_node.tags = std::move(tags);
 		processed_node.x = x;
 		processed_node.z = z;
+		processed_node.y = editor.node_to_position(node).Y;
 		elements.emplace_back(std::move(processed_node));
 	}
 
@@ -250,6 +251,7 @@ public:
 			const auto [x, z] = editor.node_to_xz(node);
 			processed_node.x = x;
 			processed_node.z = z;
+			processed_node.y = editor.node_to_position(node).Y;
 			processed_node.id = node_id;
 			processed_way.nodes.emplace_back(std::move(processed_node));
 		}
@@ -436,6 +438,10 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 	ground.mg = mg;
 	arnis::WorldEditor editor;
 	editor.mg = mg;
+	if (mg->projection.curved) {
+		const auto anchor = mg->pos_to_ll((mg->node_min + mg->node_max) / 2);
+		editor.projection_frame.bind(mg, anchor.lat, anchor.lon, 0.0);
+	}
 	editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
 	editor.set_tile_hooks(
 			[mg](int min_x, int min_z, int max_x, int max_z) {
@@ -512,8 +518,13 @@ public:
 									osmium::apply(area_buffer, handler);
 								}));
 				cached->elements = std::move(handler.elements);
+				// The flat-world terrain-max scan samples every X/Z column. On
+				// curved projections that becomes a very expensive cube conversion
+				// loop and does not describe a single horizontal ceiling.
 				const pos_t terrain_max = earth_osmium_detail::earth_element_terrain_max(
-						mg, cached->elements, mg->cachedOrComputeTerrainMaxY());
+						mg, cached->elements,
+						mg->projection.curved ? mg->water_level
+											  : mg->cachedOrComputeTerrainMaxY());
 				const pos_t margin = earth_osmium_detail::earth_authored_height_margin(
 						cached->elements);
 				const long double maximum =

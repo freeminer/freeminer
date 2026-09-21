@@ -22,6 +22,9 @@ mg_earth = {"scale":{"x":1,"y":1,"z":1},"projection":"flat"}
 # Spherical Earth
 mg_earth = {"scale":{"x":1,"y":1,"z":1},"projection":{"type":"sphere","radius":6378137,"origin":{"x":0,"y":0,"z":0}}}
 
+# Inverted spherical Earth (inside surface)
+mg_earth = {"scale":{"x":1,"y":1,"z":1},"projection":{"type":"inverted_sphere","radius":6378137,"origin":{"x":0,"y":0,"z":0}}}
+
 # Cubic Earth
 mg_earth = {"scale":{"x":1,"y":1,"z":1},"projection":{"type":"cube","radius":6378137,"origin":{"x":0,"y":0,"z":0}}}
 
@@ -50,7 +53,10 @@ mg_earth = {"scale":{"x":1,"y":1,"z":1},"projection":{"type":"torus","radius":63
 
 An omitted projection, `"projection":"flat"`, or
 `"projection":{"type":"flat"}` selects the existing flat world. The names
-`sphere` and `spherical` both select the spherical implementation.
+`sphere` and `spherical` select the outside spherical implementation.
+`inverted_sphere` and `inside_sphere` select an interior sphere. Its playable
+volume is inside the radius; altitude increases toward the centre and local up
+points inward.
 
 | Parameter | Meaning |
 | --- | --- |
@@ -73,6 +79,11 @@ its enclosing cube face. Its altitude is `max(abs(x),abs(y),abs(z)) - radius`.
 The cube face normal is axis-aligned, with deterministic X/Y/Z precedence at
 edges. Geographic elevation on a cube consequently expands or contracts faces
 radially; local normal and constant-geographic-coordinate displacement differ.
+
+For an inverted sphere, the shell is at altitude zero and the centre is at
+approximately `projection.radius` altitude. Points outside the sphere are
+outside the playable volume. The same Earth radius can be used for an interior
+world, but its terrain is placed on the inside of the shell.
 
 On a torus, longitude goes around the ring in the XZ plane. Twice the latitude
 is the angle around the tube, starting on its outer equator. Earth's two poles

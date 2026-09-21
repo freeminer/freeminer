@@ -87,6 +87,22 @@ mg_preset = {
             name = "tokyo",
             mg_earth = '{"center": {"z": 35.6835103, "x": 139.7538318   } }',
         },
+        {
+            name = "sphere",
+            mg_earth = '{"scale":{"x":1,"y":1,"z":1},"projection":{"type":"sphere","radius":6378137,"origin":{"x":0,"y":0,"z":0}},"center":{"x":0,"y":0,"z":0}}',
+        },
+        {
+            name = "inverted_sphere",
+            mg_earth = '{"scale":{"x":1,"y":1,"z":1},"projection":{"type":"inverted_sphere","radius":6378137,"origin":{"x":0,"y":0,"z":0}},"center":{"x":0,"y":0,"z":0}}',
+        },
+        {
+            name = "cube",
+            mg_earth = '{"scale":{"x":1,"y":1,"z":1},"projection":{"type":"cube","radius":6378137,"origin":{"x":0,"y":0,"z":0}},"center":{"x":0,"y":0,"z":0}}',
+        },
+        {
+            name = "torus",
+            mg_earth = '{"scale":{"x":1,"y":1,"z":1},"projection":{"type":"torus","radius":6378137,"major_radius":12756274,"origin":{"x":0,"y":0,"z":0}},"center":{"x":0,"y":0,"z":0}}',
+        },
     },
 }
 

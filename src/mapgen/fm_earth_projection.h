@@ -187,6 +187,43 @@ struct Sphere
 	}
 };
 
+// Interior sphere: altitude is measured inward from the shell and local up
+// points toward the centre. The volume inside the radius is playable.
+struct InvertedSphere : Sphere
+{
+	using Sphere::Sphere;
+	Sample sample(const v3opos_t &pos) const
+	{
+		const auto q = relative(pos);
+		return {std::atan2(q.Y, std::hypot(q.X, q.Z)) * degrees,
+				wrap(std::atan2(q.Z, q.X) * degrees), p.radius - q.getLength()};
+	}
+	double altitude(const v3opos_t &pos) const
+	{
+		return p.radius - relative(pos).getLength();
+	}
+	std::optional<double> top(double x, double z, double altitude) const
+	{
+		const double r = p.radius - altitude;
+		const double d = std::hypot(x - p.origin.X, z - p.origin.Z);
+		if (r < 0 || d > r)
+			return {};
+		return p.origin.Y - std::sqrt(std::max(0.0, r * r - d * d));
+	}
+	v3opos_t place(double lat, double lon, double altitude) const
+	{
+		return world(direction(lat, lon) * (p.radius - altitude));
+	}
+	v3d up(const v3opos_t &pos) const
+	{
+		auto q = relative(pos);
+		if (q.getLengthSQ() <= 0)
+			return {0, -1, 0};
+		q *= -1.0;
+		return q.normalize();
+	}
+};
+
 // Radial cube map: geographic direction is unchanged, altitude is the excess
 // of the largest absolute coordinate over the cube half-side. Face ties choose
 // X, then Y, then Z for the local normal; geographic coordinates stay continuous.

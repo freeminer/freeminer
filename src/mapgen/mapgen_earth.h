@@ -220,9 +220,10 @@ public:
 	std::optional<pos_t> cachedAuthoredMaxY() const;
 	void cacheAuthoredMaxY(pos_t max_y);
 	void fillChunkWithAir();
-	ll pos_to_ll(pos_t x, pos_t z);
-	ll pos_to_ll(const v3pos_t &p);
-	v2pos_t ll_to_pos(const ll &l);
+	ll pos_to_ll(pos_t x, pos_t z) const;
+	ll pos_to_ll(const v3pos_t &p) const;
+	v2pos_t ll_to_pos(const ll &l) const;
+	v3pos_t ll_to_pos3(const ll &l, double altitude = 0.0) const;
 
 	weather::heat_t calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday,
 			float totaltime, bool use_weather) override;
