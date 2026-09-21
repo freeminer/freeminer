@@ -17,6 +17,9 @@
 // Far-mesh fast face builder, adapted from mapblock_mesh.cpp at 356205cd5.
 #endif
 
+#include "client/fm_far_container.h"
+#include "mapgen/mapgen_earth.h"
+
 namespace
 {
 struct FastFace
@@ -469,7 +472,11 @@ bool MapblockMeshGenerator::generateFm()
 {
 	if (data->fscale <= 1)
 		return false;
-	if (data->far_step >= 1 && g_settings->getBool("farmesh_fast_faces"))
+	const auto *far_container = dynamic_cast<FarContainer *>(&data->m_vmanip);
+	const auto *earth =
+			far_container ? dynamic_cast<MapgenEarth *>(far_container->m_mg) : nullptr;
+	if (data->far_step >= 1 && ((earth && earth->projection.curved) ||
+									   g_settings->getBool("farmesh_fast_faces")))
 		return generateFmFarFastFaces();
 
 	const auto lod_stride = 1 << data->lod_step;
@@ -499,6 +506,11 @@ bool MapblockMeshGenerator::generateFm()
 
 bool MapblockMeshGenerator::generateFmFarFastFaces()
 {
+	const auto *far_container = dynamic_cast<FarContainer *>(&data->m_vmanip);
+	auto *earth =
+			far_container ? dynamic_cast<MapgenEarth *>(far_container->m_mg) : nullptr;
+	if (earth && !earth->projection.curved)
+		earth = nullptr;
 	std::vector<pos_t> coords;
 	const auto lod_stride = 1 << data->lod_step;
 	const auto far_stride = 1 << data->far_step;
@@ -528,6 +540,11 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 			return result;
 
 		const auto &dir = face_dirs[face];
+		if (earth) {
+			const auto world = v3opos_t::from(blockpos_nodes + pos);
+			if (earth->projection.up(world).dotProduct(v3d(dir.X, dir.Y, dir.Z)) <= 0)
+				return result;
+		}
 		const MapNode neighbor =
 				data->m_vmanip
 						.getNodeRefAndVisible(
@@ -572,9 +589,26 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 												   (fscale - 1.0f) * 0.5f);
 		const auto center =
 				first_center + (v3opos_t::from(scale) - v3opos_t(fscale)) * 0.5f;
-		const auto fast_face =
+		auto fast_face =
 				makeFastFace(face.tile, face.lights, v3opos_t::from(face.pos) / fscale,
 						center, dir, scale, data->fscale, face.emissive_light);
+		if (earth) {
+			for (int i = 0; i < 4; ++i) {
+				auto &vertex = fast_face.vertices[i];
+				const auto world =
+						v3opos_t::from(blockpos_nodes) + v3opos_t::from(vertex.Pos) / BS;
+				const auto sample = earth->projection.sample(world);
+				const double altitude = std::max(double(earth->water_level),
+						earth->projectedElevation(sample, data->far_step));
+				const auto surface =
+						earth->projection.place(sample.lat, sample.lon, altitude);
+				vertex.Pos = v3f::from((surface - v3opos_t::from(blockpos_nodes)) * BS);
+				vertex.Normal = v3f::from(earth->projection.up(surface));
+				vertex.Color = encode_light(face.lights[i], face.emissive_light);
+				if (!face.emissive_light)
+					applyFacesShading(vertex.Color, vertex.Normal);
+			}
+		}
 		collector->append(fast_face.tile, fast_face.vertices, 4,
 				fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6);
 	};
@@ -603,11 +637,11 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 					if (!first.visible)
 						continue;
 					size_t width = 1;
-					while (u + width < side &&
+					while (!earth && u + width < side &&
 							canMergeFmFarFaces(first, plane[v * side + u + width], true))
 						++width;
 					size_t height = 1;
-					while (v + height < side) {
+					while (!earth && v + height < side) {
 						bool row_matches = true;
 						for (size_t x = 0; x < width; ++x) {
 							if (!canMergeFmFarFaces(first,

@@ -991,7 +991,8 @@ MapNode MapgenEarth::visible_content(
 	//const auto solid = !far_water_y && visible(p, surface_y, step);
 	//const auto water = far_water_y.has_value() || visible_water_level(p);
 
-	const auto solid = projection.curved ? sample.altitude <= surface_altitude
+	const auto solid = projection.curved ? sample.altitude <= surface_altitude &&
+												   surface_altitude > water_level
 										 : visible(p, surface_y, step);
 	const auto water = visible_water_level(p);
 	if (!solid && !water) {
@@ -1002,7 +1003,9 @@ MapNode MapgenEarth::visible_content(
 	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
 	const bool weather = use_weather && env && env->m_use_weather;
 	const v3pos_t climate_p =
-			projection.curved ? p : v3pos_t(p.X, solid ? surface_y : water_level, p.Z);
+			projection.curved ? ll_to_pos3({sample.lat, sample.lon},
+										solid ? surface_altitude : water_level)
+							  : v3pos_t(p.X, solid ? surface_y : water_level, p.Z);
 	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
 
 	// Match the sea-level water column filled by generateTerrain().
