@@ -18,6 +18,7 @@
 #endif
 
 #include "client/fm_far_container.h"
+#include "client/fm_projected_surface.h"
 #include "mapgen/mapgen_earth.h"
 
 namespace
@@ -26,12 +27,14 @@ struct FastFace
 {
 	TileSpec tile;
 	video::S3DVertex vertices[4];
+	video::SColor unshaded_colors[4];
 	bool vertex_0_2_connected{};
 };
 
 struct FmFarFace
 {
 	bool visible{};
+	bool water{};
 	TileSpec tile;
 	u16 lights[4]{};
 	v3pos_t pos;
@@ -70,6 +73,7 @@ static bool canMergeFmFarFaces(
 		const auto &b = second.tile.layers[layer];
 		if (a != b || a.material_type != b.material_type ||
 				a.texture_layer_idx != b.texture_layer_idx || a.scale != b.scale ||
+				//a.isTransparent() ||
 				!(a.material_flags & MATERIAL_FLAG_TILEABLE_HORIZONTAL) ||
 				!(a.material_flags & MATERIAL_FLAG_TILEABLE_VERTICAL))
 			return false;
@@ -190,9 +194,10 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 	// rotated single faces. A rectangle must repeat V for each added row too.
 	const auto u_dir = vertex_dirs[0] - vertex_dirs[1];
 	const auto v_dir = vertex_dirs[0] - vertex_dirs[3];
-	const float w = (std::abs(u_dir.X) * scale.X + std::abs(u_dir.Y) * scale.Y +
-							std::abs(u_dir.Z) * scale.Z) *
-					0.5f;
+	const float w =
+			(std::abs(u_dir.X) * logical_scale.X + std::abs(u_dir.Y) * logical_scale.Y +
+					std::abs(u_dir.Z) * logical_scale.Z) *
+			0.5f;
 	const float h =
 			(std::abs(v_dir.X) * logical_scale.X + std::abs(v_dir.Y) * logical_scale.Y +
 					std::abs(v_dir.Z) * logical_scale.Z) *
@@ -208,6 +213,9 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 				BS * 0.5f * vertex_dirs[i].Z * scale.Z);
 		position += center * BS;
 		auto color = encode_light(lights[i], emissive_light);
+		// Preserve the rotated corner order when curved geometry replaces the
+		// axis-aligned normal and reapplies directional shading.
+		face.unshaded_colors[i] = color;
 		if (!emissive_light)
 			applyFacesShading(color, normal);
 		face.vertices[i] =
@@ -557,7 +565,11 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		result.visible = true;
 		result.pos = pos;
 		result.emissive_light = cur_node.f->light_source;
-		getTile(dir, &result.tile);
+		result.water =
+				earth && (cur_node.f->isLiquid() ||
+								 cur_node.n.getContent() == nodedef->getId("mapgen_ice"));
+		// Surface materials use their top texture on every projected hemisphere.
+		getTile(earth ? v3pos_t(0, 1, 0) : dir, &result.tile);
 		for (auto &layer : result.tile.layers)
 			layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 
@@ -597,20 +609,44 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 				auto &vertex = fast_face.vertices[i];
 				const auto world =
 						v3opos_t::from(blockpos_nodes) + v3opos_t::from(vertex.Pos) / BS;
-				const auto sample = earth->projection.sample(world);
-				const double altitude = std::max(double(earth->water_level),
-						earth->projectedElevation(sample, data->far_step));
-				const auto surface =
-						earth->projection.place(sample.lat, sample.lon, altitude);
-				vertex.Pos = v3f::from((surface - v3opos_t::from(blockpos_nodes)) * BS);
-				vertex.Normal = v3f::from(earth->projection.up(surface));
-				vertex.Color = encode_light(face.lights[i], face.emissive_light);
+				const auto surface = farmesh::projectSurface(
+						earth->projection, world, earth->water_level,
+						[&](const auto &sample) {
+							return earth->projectedElevation(sample, data->far_step);
+						},
+						face.water);
+				vertex.Pos = v3f::from(
+						(surface.position - v3opos_t::from(blockpos_nodes)) * BS);
+				vertex.Normal = v3f::from(surface.normal);
+				vertex.Color = fast_face.unshaded_colors[i];
 				if (!face.emissive_light)
 					applyFacesShading(vertex.Color, vertex.Normal);
 			}
 		}
-		collector->append(fast_face.tile, fast_face.vertices, 4,
-				fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6);
+		u16 indices[6];
+		std::copy_n(fast_face.vertex_0_2_connected ? quad_indices_02 : quad_indices_13, 6,
+				indices);
+		int index_count = 6;
+		if (earth) {
+			// Backface culling follows local up, including inward-facing worlds.
+			index_count = 0;
+			for (int i = 0; i < 6; i += 3) {
+				const auto &a = fast_face.vertices[indices[i]];
+				const auto &b = fast_face.vertices[indices[i + 1]];
+				const auto &c = fast_face.vertices[indices[i + 2]];
+				const int winding = farmesh::surfaceTriangleWinding(
+						a.Pos, b.Pos, c.Pos, a.Normal + b.Normal + c.Normal);
+				if (!winding)
+					continue;
+				if (winding < 0)
+					std::swap(indices[i + 1], indices[i + 2]);
+				for (int j = 0; j < 3; ++j)
+					indices[index_count++] = indices[i + j];
+			}
+		}
+		if (index_count)
+			collector->append(
+					fast_face.tile, fast_face.vertices, 4, indices, index_count);
 	};
 
 	// Keep only one plane of face data. Sample each face once, then greedily

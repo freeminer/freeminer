@@ -991,6 +991,8 @@ MapNode MapgenEarth::visible_content(
 	//const auto solid = !far_water_y && visible(p, surface_y, step);
 	//const auto water = far_water_y.has_value() || visible_water_level(p);
 
+	// A distant ocean cell can sample below the seabed. Its visible shell is
+	// still water; do not let coarse sampling replace oceans with land.
 	const auto solid = projection.curved ? sample.altitude <= surface_altitude &&
 												   surface_altitude > water_level
 										 : visible(p, surface_y, step);
@@ -1002,17 +1004,21 @@ MapNode MapgenEarth::visible_content(
 	const float timeofday = env ? env->getTimeOfDayF() : 0.0f;
 	const float totaltime = env ? env->getGameTime() * env->m_time_of_day_speed : 0.0f;
 	const bool weather = use_weather && env && env->m_use_weather;
-	const v3pos_t climate_p =
-			projection.curved ? ll_to_pos3({sample.lat, sample.lon},
-										solid ? surface_altitude : water_level)
-							  : v3pos_t(p.X, solid ? surface_y : water_level, p.Z);
+	v3pos_t climate_p(p.X, solid ? surface_y : water_level, p.Z);
+	if (projection.curved) {
+		const auto surface = projection.place(
+				sample.lat, sample.lon, solid ? surface_altitude : water_level);
+		climate_p = {earth_altitude_node(surface.X), earth_altitude_node(surface.Y),
+				earth_altitude_node(surface.Z)};
+	}
 	const auto heat = calcBlockHeat(climate_p, seed, timeofday, totaltime, weather);
 
 	// Match the sea-level water column filled by generateTerrain().
 	if (!solid && water) {
-		// Evaluate ice at the water sample, not above a coarse sea-surface cell.
-		if (heat < 0 && sample.altitude > heat / 3 && valid(c_ice))
-			//if (heat < 0 && far_water_y.value_or(p.Y) > heat / 3 && valid(c_ice))
+		// Curved preview cells represent the sea surface even when their sample
+		// lies deep below it. Ice selection must use that same surface altitude.
+		const double ice_altitude = projection.curved ? water_level : sample.altitude;
+		if (heat < 0 && ice_altitude > heat / 3 && valid(c_ice))
 			return MapNode(c_ice, LIGHT_SUN);
 		return node_or(n_water, visible_water);
 	}
@@ -1272,10 +1278,12 @@ void MapgenEarth::generateBuildings()
 		//#define FILE_INCLUDED 1
 		//#include "earth/osmium-inl.h"
 		constexpr auto extra = MAP_BLOCKSIZE * 2;
-		auto coord_min =
-				pos_to_ll({node_min.X - extra, node_min.Y - extra, node_min.Z - extra});
-		auto coord_max =
-				pos_to_ll({node_max.X + extra, node_max.Y + extra, node_max.Z + extra});
+		auto coord_min = pos_to_ll({static_cast<pos_t>(node_min.X - extra),
+				static_cast<pos_t>(node_min.Y - extra),
+				static_cast<pos_t>(node_min.Z - extra)});
+		auto coord_max = pos_to_ll({static_cast<pos_t>(node_max.X + extra),
+				static_cast<pos_t>(node_max.Y + extra),
+				static_cast<pos_t>(node_max.Z + extra)});
 		if (projection.curved) {
 			const auto regions = projection.coverage(
 					earth_node_position(node_min - v3pos_t(extra, extra, extra)),
