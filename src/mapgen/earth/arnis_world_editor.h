@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -19,9 +20,11 @@
 #include "map.h"
 #include "arnis_ground.h"
 #include "arnis_block.h"
+#include "arnis_projection_frame.h"
 #include "arnis-cpp/src/args.h"
 #include "arnis-cpp/src/decals/registry.h"
 #include "arnis-cpp/src/trees/tree_library.h"
+#include "mapgen/earth/arnis_projection_frame.h"
 
 #ifdef stoi
 #undef stoi
@@ -127,6 +130,8 @@ struct WorldEditor
 		}
 	};
 	MapgenEarth *mg{};
+	// Projection-aware local frame. Flat worlds retain the legacy X/Z behavior.
+	ProjectionFrame projection_frame;
 	Ground *ground{};
 	// Generation-format state shared by the C++ orchestration layer.
 	int generation_format = 0; // Java=0, Bedrock=1, Luanti=2
@@ -620,6 +625,22 @@ struct WorldEditor
 				block, x, get_absolute_y(x, y, z), z, replace_with, avoid);
 	}
 
+	// Convert a feature-local east/up/north coordinate into engine coordinates.
+	// Callers migrating curved placement should use this before absolute writes.
+	v3pos_t projection_position(double east, double up, double north) const
+	{
+		if (!projection_frame.curved)
+			return {static_cast<pos_t>(std::llround(east)),
+					static_cast<pos_t>(std::llround(up)),
+					static_cast<pos_t>(std::llround(north))};
+		const auto projected = projection_frame.place(east, up, north);
+		return {static_cast<pos_t>(std::llround(projected.X)),
+				static_cast<pos_t>(std::llround(projected.Y)),
+				static_cast<pos_t>(std::llround(projected.Z))};
+	}
+
+	const v3d &projection_up() const { return projection_frame.up; }
+
 	bool try_set_block_absolute(const Block &block, int x, int y, int z,
 			const std::optional<std::vector<Block>> &maybe_variants = {},
 			const std::optional<std::vector<Block>> &maybe_replacements = {})
@@ -679,6 +700,25 @@ struct WorldEditor
 			const std::optional<std::vector<Block>> &maybe_replacements = {})
 	{
 		(void)try_set_block_absolute(block, x, y, z, maybe_variants, maybe_replacements);
+	}
+
+	// Place feature-local east/up/north coordinates through the active
+	// projection frame. Absolute world writes deliberately remain separate.
+	bool try_set_block_local(const Block &block, double east, double up, double north,
+			const std::optional<std::vector<Block>> &maybe_variants = {},
+			const std::optional<std::vector<Block>> &maybe_replacements = {})
+	{
+		const auto pos = projection_position(east, up, north);
+		return try_set_block_absolute(
+				block, pos.X, pos.Y, pos.Z, maybe_variants, maybe_replacements);
+	}
+
+	void set_block_local(const Block &block, double east, double up, double north,
+			const std::optional<std::vector<Block>> &maybe_variants = {},
+			const std::optional<std::vector<Block>> &maybe_replacements = {})
+	{
+		(void)try_set_block_local(
+				block, east, up, north, maybe_variants, maybe_replacements);
 	}
 
 	void set_block_absolute(const Block &block, int x, int y, int z,
@@ -764,6 +804,15 @@ struct WorldEditor
 								static_cast<ll_t>(osmium::detail::coordinate_precision)});
 		// TODO: scale y
 		return std::make_pair(pos2.X, pos2.Y);
+	}
+
+	// Full projected position for feature anchors. The legacy node_to_xz()
+	// remains available for flat Arnis algorithms that only accept X/Z.
+	inline v3pos_t node_to_position(const auto &node, double altitude = 0.0) const
+	{
+		return mg->ll_to_pos3({static_cast<ll_t>(node.location().lat()),
+									  static_cast<ll_t>(node.location().lon())},
+				altitude);
 	}
 
 	std::pair<int, int> get_min_coords() const

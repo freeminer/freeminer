@@ -160,6 +160,8 @@ void MapgenEarth::configureProjection(const Json::Value &params)
 		bindProjection<fm_earth::Flat>(p);
 	else if (type == "sphere" || type == "spherical")
 		bindProjection<fm_earth::Sphere>(p);
+	else if (type == "inverted_sphere" || type == "inside_sphere")
+		bindProjection<fm_earth::InvertedSphere>(p);
 	else if (type == "cube")
 		bindProjection<fm_earth::Cube>(p);
 	else if (type == "torus") {
@@ -1027,7 +1029,7 @@ MapNode MapgenEarth::visible_content(
 //constexpr double EQUATOR_LEN = EARTH_RADIUS * 3.14159265358979323846 * 2;
 
 constexpr double EQUATOR_LEN{40075696.0};
-ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z)
+ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z) const
 {
 	if (projection.curved)
 		throw std::logic_error("Curved Earth coordinates require pos_to_ll(v3pos_t)");
@@ -1039,7 +1041,7 @@ ll MapgenEarth::pos_to_ll(const pos_t x, const pos_t z)
 		return {89.9999, 0};
 	}
 }
-ll MapgenEarth::pos_to_ll(const v3pos_t &p)
+ll MapgenEarth::pos_to_ll(const v3pos_t &p) const
 {
 	if (!projection.curved)
 		return pos_to_ll(p.X, p.Z);
@@ -1047,13 +1049,23 @@ ll MapgenEarth::pos_to_ll(const v3pos_t &p)
 	return {sample.lat, sample.lon};
 }
 
-v2pos_t MapgenEarth::ll_to_pos(const ll &l)
+v2pos_t MapgenEarth::ll_to_pos(const ll &l) const
 {
-	if (projection.curved)
-		throw std::logic_error(
-				"Curved Earth placement requires projection.place(lat, lon, altitude)");
-	return v2pos_t((l.lon - center.X) * (EQUATOR_LEN / 360) / scale.X,
-			(l.lat - center.Z) * (EQUATOR_LEN / 360) / scale.Z);
+	const auto projected = ll_to_pos3(l);
+	return v2pos_t(projected.X, projected.Z);
+}
+
+v3pos_t MapgenEarth::ll_to_pos3(const ll &l, double altitude) const
+{
+	if (projection.curved) {
+		const auto projected = projection.place(l.lat, l.lon, altitude);
+		return v3pos_t(static_cast<pos_t>(std::llround(projected.X)),
+				static_cast<pos_t>(std::llround(projected.Y)),
+				static_cast<pos_t>(std::llround(projected.Z)));
+	}
+	return v3pos_t(static_cast<pos_t>((l.lon - center.X) * (EQUATOR_LEN / 360) / scale.X),
+			static_cast<pos_t>(std::llround(altitude)),
+			static_cast<pos_t>((l.lat - center.Z) * (EQUATOR_LEN / 360) / scale.Z));
 }
 
 pos_t MapgenEarth::get_height(pos_t x, pos_t z, block_step_t step)
@@ -1244,7 +1256,9 @@ auto make_bbox(const auto &tc, auto div)
 
 void MapgenEarth::generateBuildings()
 {
-	// Arnis authors vertical columns and cannot yet place curved-world objects.
+	// Arnis currently assumes a flat X/Z ground plane. Disable the complete
+	// authored-building pipeline for curved projections until local gravity and
+	// tangent-frame placement are implemented.
 	if (projection.curved)
 		return;
 #if USE_OSMIUM
@@ -1255,8 +1269,23 @@ void MapgenEarth::generateBuildings()
 		//#define FILE_INCLUDED 1
 		//#include "earth/osmium-inl.h"
 		constexpr auto extra = MAP_BLOCKSIZE * 2;
-		const auto coord_min = pos_to_ll(node_min.X - extra, node_min.Z - extra);
-		const auto coord_max = pos_to_ll(node_max.X + extra, node_max.Z + extra);
+		auto coord_min =
+				pos_to_ll({node_min.X - extra, node_min.Y - extra, node_min.Z - extra});
+		auto coord_max =
+				pos_to_ll({node_max.X + extra, node_max.Y + extra, node_max.Z + extra});
+		if (projection.curved) {
+			const auto regions = projection.coverage(
+					earth_node_position(node_min - v3pos_t(extra, extra, extra)),
+					earth_node_position(node_max + v3pos_t(extra, extra, extra)));
+			coord_min = {90, 180};
+			coord_max = {-90, -180};
+			for (const auto &region : regions) {
+				coord_min.lat = std::min(coord_min.lat, region.min_lat);
+				coord_min.lon = std::min(coord_min.lon, region.min_lon);
+				coord_max.lat = std::max(coord_max.lat, region.max_lat);
+				coord_max.lon = std::max(coord_max.lon, region.max_lon);
+			}
+		}
 		static const auto folder = maps_holder->data_root;
 		const auto lat_dec = lat_start(coord_min.lat);
 		const auto lon_dec = lon_start(coord_min.lon);
@@ -1617,6 +1646,9 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	if (projection.curved) {
 		// Curved chunks have no single Y heightmap or horizontal authored ceiling.
 		generateTerrain();
+		// Experimental: keep Arnis' global-axis placement until local placement
+		// is complete, but actually run it for curved worlds as well.
+		generateBuildings();
 		if (flags & MG_LIGHT)
 			calcLighting(node_min - v3pos_t(0, 1, 0), node_max + v3pos_t(0, 1, 0),
 					full_node_min, full_node_max, true);

@@ -71,6 +71,8 @@ struct ProcessedNode
 	tags_t tags;
 	int x;
 	int z;
+	// Projected surface anchor. Flat generators may leave this at zero.
+	int y = 0;
 	XZ xz() const { return {x, z}; }
 };
 struct ProcessedWay
