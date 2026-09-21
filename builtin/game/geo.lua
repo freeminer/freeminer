@@ -119,7 +119,9 @@ function ll_to_pos(l)
                 curved = result.curved,
             }
         end
-        return nil, tostring(result)
+        -- The API is installed globally, but rejects worlds whose active
+        -- mapgen is not mg_earth. Keep /geo usable in those worlds by using
+        -- the legacy flat conversion below.
     end
     local deg2m = EQUATOR_LEN / 360
     local x = math.floor((l.lon / scale.X - center.X) * deg2m)
