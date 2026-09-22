@@ -25,9 +25,7 @@ if [ -z "$NO_DEPS" ]; then
         clang \
         cmake \
         git \
-        libboost-dev \
-        libboost-program-options-dev \
-        libboost-system-dev \
+        libboost-all-dev \
         libbz2-dev \
         libc++-dev \
         libc++abi-dev \
@@ -44,12 +42,12 @@ if [ -z "$NO_DEPS" ]; then
         libsdl2-dev \
         libsqlite3-dev \
         libssl-dev \
+        libtiff-dev \
         libvorbis-dev \
         libxi-dev \
         libxxf86vm-dev \
         libzstd-dev \
         lld \
-        llvm \
         ninja-build \
 
     for PACKAGE in \
