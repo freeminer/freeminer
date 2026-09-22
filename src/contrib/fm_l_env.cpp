@@ -655,7 +655,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 		for (const auto &candidate : shell_candidates) {
 			const content_t content = candidate.node.getContent();
-			if (!tnt_contents.count(content))
+			if (!tnt_contents.contains(content) || content == tnt_burning_content)
 				continue;
 
 			if (!last) {
