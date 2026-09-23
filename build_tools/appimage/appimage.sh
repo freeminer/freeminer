@@ -3,10 +3,11 @@ set -euo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
-builder="$script_dir/appimage-builder-x86_64.AppImage"
+MACHINE=$(uname --machine)
+builder="$script_dir/appimage-builder-${MACHINE}.AppImage"
 
 if [[ ! -f "$builder" ]]; then
-    wget -O "$builder" https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage
+    wget -O "$builder" https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-${MACHINE}.AppImage
 fi
 if [[ ! -x "$builder" ]]; then
     chmod +x "$builder"
