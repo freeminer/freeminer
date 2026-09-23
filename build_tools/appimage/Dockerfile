@@ -1,8 +1,5 @@
-# Build from the repository root:
-#   docker build -f build_tools/appimage/Dockerfile -t freeminer-appimage-builder build_tools/appimage
-# Run from the repository root:
-#   docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD:/workspace" freeminer-appimage-builder
-FROM ubuntu:24.04
+ARG FROM=ubuntu:24.04
+FROM $FROM
 
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /workspace
