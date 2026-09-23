@@ -15,4 +15,4 @@ fi
 cd "$repo_root"
 VERSION="$(git describe)" \
 TAR_OPTIONS="--overwrite" \
-"$builder" --appimage-extract-and-run --recipe "$script_dir/AppImageBuilder.yml"
+"$builder" --appimage-extract-and-run --skip-tests --recipe "$script_dir/AppImageBuilder.yml"

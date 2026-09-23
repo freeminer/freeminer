@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -xeuo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd -- "$script_dir/../.." && pwd)"
@@ -11,3 +11,5 @@ docker run --rm \
     -e HOME=/tmp \
     -v "$repo_root:/workspace" \
     "$image"
+
+[ -f deploy.sh ] && source deploy.sh

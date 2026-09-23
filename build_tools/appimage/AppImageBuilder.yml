@@ -19,23 +19,29 @@ AppDir:
     arch: amd64
     sources:
       - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
+      # - sourceline: deb http://archive.ubuntu.com/ubuntu/ focal main restricted universe multiverse
         key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920d1991bc93c'
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
     include:
-      - libboost-program-options1.83.0
+      # - libboost-program-options1.67.0 # focal
+      - libboost-program-options1.83.0 # noble
+      # - libboost-program-options1.90.0 # resolute
       - libcurl4
       - libdeflate0
       - libfreetype6
       - libgl1
       - libjpeg-turbo8
-      - libjsoncpp25
+      - libjsoncpp25 # noble
+      # - libjsoncpp1 # focal
       - libluajit-5.1-2
       - libopenal1
       - libpng16-16
       - libsqlite3-0
-      - libssl3t64
+      - libssl3t64 # noble
+      # - libssl1.1 # focal
+      - libwayland-egl1
       - libstdc++6
       - libvorbisfile3
       - libx11-6
@@ -45,6 +51,29 @@ AppDir:
       - zlib1g
     exclude:
       - libc6
+  test:
+      fedora:
+        image: appimagecrafters/tests-env:fedora-30
+        command: ./AppRun
+        use_host_x: true
+      debian:
+        image: appimagecrafters/tests-env:debian-stable
+        command: ./AppRun
+        use_host_x: true
+      arch:
+        image: appimagecrafters/tests-env:archlinux-latest
+        command: ./AppRun
+        use_host_x: true
+      centos:
+        image: appimagecrafters/tests-env:centos-7
+        command: ./AppRun
+        use_host_x: true
+      ubuntu:
+        image: appimagecrafters/tests-env:ubuntu-xenial
+        command: ./AppRun
+        use_host_x: true
+
+
 AppImage:
   update-information: guess
   sign-key: None
@@ -54,14 +83,22 @@ script: |
     rm -rf AppDir
 
     # Compile and install binaries into AppDir
-    cmake -G Ninja -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release -DRUN_IN_PLACE=FALSE
+    cmake -G Ninja -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release \
+       -DRUN_IN_PLACE=FALSE \
+       -DxxxSTATIC_BUILD=1 \
+       -DENABLE_SYSTEM_JSONCPP=0 \
+       -DCMAKE_FIND_LIBRARY_SUFFIXES=".a .so" \
+       -DBUILD_SHARED_LIBS=0 \
+       -DZLIB_USE_STATIC_LIBS=1 \
+       -DCURL_USE_STATIC_LIBS=1 \
+
     cmake --build appimage-build --parallel $(nproc) --config Release
     cmake --install appimage-build
 
     # Bundle project-built shared libraries, such as Arrow and Parquet, which
     # are outside AppImageBuilder's system package dependency scan.
-    cp -P appimage-build/src/external/arrow/install/lib/libarrow.so* appimage-build/src/external/arrow/install/lib/libparquet.so* AppDir/usr/lib/
-
+    cp -vP appimage-build/src/external/arrow/install/lib/libarrow.so* appimage-build/src/external/arrow/install/lib/libparquet.so* AppDir/usr/lib/
+    #cp -vP appimage-build/src/external/boost/install/lib/libboost_program_options.so* AppDir/usr/lib/
     # Is a backup icon location in case
-    mkdir -p AppDir/usr/share/freeminer/misc
-    cp AppDir/usr/share/icons/hicolor/128x128/apps/freeminer.png AppDir/usr/share/freeminer/misc/freeminer-xorg-icon-128.png
+    mkdir -vp AppDir/usr/share/freeminer/misc
+    cp -v AppDir/usr/share/icons/hicolor/128x128/apps/freeminer.png AppDir/usr/share/freeminer/misc/freeminer-xorg-icon-128.png

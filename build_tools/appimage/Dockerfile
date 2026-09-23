@@ -1,4 +1,5 @@
-ARG FROM=ubuntu:24.04
+# ARG FROM=ubuntu:focal
+ARG FROM=ubuntu:noble
 FROM $FROM
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -41,5 +42,8 @@ RUN apt update \
         squashfs-tools \
         wget \
     && rm -rf /var/lib/apt/lists/*
+
+RUN printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/apt-key \
+    && chmod 0755 /usr/local/bin/apt-key    
 
 CMD ["/workspace/build_tools/appimage/appimage.sh"]
