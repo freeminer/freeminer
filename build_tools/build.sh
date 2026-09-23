@@ -35,7 +35,6 @@ if [ -z "$NO_DEPS" ]; then
         libgettextpo0 \
         libhiredis-dev \
         libjpeg-dev \
-        libluajit-5.1-dev \
         libmsgpack-dev \
         libopenal-dev \
         libosmium2-dev \
@@ -51,11 +50,12 @@ if [ -z "$NO_DEPS" ]; then
         ninja-build \
 
     for PACKAGE in \
-        libpng12-dev \
-        libpng-dev \
+        libgl1-mesa-dev \
         libgles1-mesa-dev \
         libgles2-mesa-dev \
-        libgl1-mesa-dev \
+        libluajit-5.1-dev \
+        libpng12-dev \
+        libpng-dev \
         clang-20 \
         clang-21 \
         clang-22 \

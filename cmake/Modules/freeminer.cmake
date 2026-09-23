@@ -1,12 +1,18 @@
 # == freeminer:
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
+if (STATIC_BUILD)
+    list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
+    message(STATUS "Using static libs if available ${CMAKE_FIND_LIBRARY_SUFFIXES}")
+    link_libraries(m)
+endif()
+
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
     set(ENV{CCACHE_SLOPPINESS} pch_defines,time_macros)
-endif(CCACHE_FOUND)
+endif()
 
 set(BUILD_CLIENT TRUE CACHE BOOL "Build client")
 if(WIN32 OR APPLE)
