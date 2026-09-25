@@ -18,6 +18,9 @@ if(NOT ENABLE_OSMIUM)
 endif()
 
 if(NOT OSMIUM_INCLUDE_DIR)
+    find_path(OSMIUM_INCLUDE_DIR NAMES osmium/osm.hpp)
+endif()
+if(NOT OSMIUM_INCLUDE_DIR)
     if(NOT FETCH_OSMIUM
        AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include/osmium/osm.hpp"
     )
@@ -30,8 +33,6 @@ if(NOT OSMIUM_INCLUDE_DIR)
         )
         FetchContent_MakeAvailable(libosmium)
         set(OSMIUM_INCLUDE_DIR "${libosmium_SOURCE_DIR}/include")
-    else()
-        find_path(OSMIUM_INCLUDE_DIR NAMES osmium/osm.hpp)
     endif()
 endif()
 if(NOT OSMIUM_INCLUDE_DIR)
@@ -39,7 +40,17 @@ if(NOT OSMIUM_INCLUDE_DIR)
     return()
 endif()
 
-if(FETCH_DEPS)
+find_package(LibLZ4 QUIET)
+find_package(Protozero QUIET)
+find_package(EXPAT QUIET)
+if(TARGET LibLZ4::LibLZ4)
+    set(LZ4_LIBRARIES LibLZ4::LibLZ4)
+endif()
+if(TARGET Protozero::Protozero)
+    set(PROTOZERO_INCLUDE_DIR "")
+endif()
+
+if(FETCH_DEPS AND NOT LZ4_LIBRARIES)
     FetchContent_Declare(
         lz4 URL https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
         URL_HASH SHA256=537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b
@@ -49,7 +60,7 @@ if(FETCH_DEPS)
     set(LZ4_LIBRARIES lz4_static)
 
     FetchContent_Declare(
-        protozero GIT_REPOSITORY https://github.com/mapbox/protozero GIT_TAG v1.8.1 GIT_SHALLOW TRUE
+        protozero GIT_REPOSITORY https://github.com/mapbox/protozero GIT_TAG v1.8.2 GIT_SHALLOW TRUE
         SOURCE_SUBDIR cmake ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(protozero)
@@ -61,7 +72,7 @@ if(FETCH_DEPS)
         set(EXPAT_BUILD_EXAMPLES OFF)
         set(EXPAT_BUILD_TESTS OFF)
         FetchContent_Declare(
-            expat GIT_REPOSITORY https://github.com/libexpat/libexpat/ GIT_TAG R_2_7_3
+            expat GIT_REPOSITORY https://github.com/libexpat/libexpat/ GIT_TAG R_2_8_5
             GIT_SHALLOW TRUE SOURCE_SUBDIR expat ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
                                                  ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
@@ -70,7 +81,9 @@ if(FETCH_DEPS)
             add_library(EXPAT::EXPAT ALIAS expat)
         endif()
     endfunction()
-    fm_fetch_expat()
+    if(NOT TARGET EXPAT::EXPAT)
+        fm_fetch_expat()
+    endif()
 endif()
 
 if(NOT TARGET Boost::headers)

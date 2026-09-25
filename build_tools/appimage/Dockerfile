@@ -41,6 +41,7 @@ RUN apt update \
         pkg-config \
         squashfs-tools \
         wget \
+        docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 RUN printf '#!/bin/sh\nexit 0\n' > /usr/local/bin/apt-key \

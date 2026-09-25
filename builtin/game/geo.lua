@@ -229,6 +229,15 @@ local function smooth_move_player(player, target, max_h, duration)
         }
     end
 
+    -- Player velocity updates are additive, as with knockback. Compensate for
+    -- the last velocity reported by the client to approach the desired speed.
+    local function set_player_velocity(velocity)
+        local current = player:get_velocity()
+        if current then
+            player:add_velocity(vector.subtract(velocity, current))
+        end
+    end
+
     local function move_step(i)
         if smooth_move_active[move_key] ~= move_id then
             return
@@ -241,7 +250,7 @@ local function smooth_move_player(player, target, max_h, duration)
 
         if i >= steps then
             player:set_pos(target)
-            player:set_velocity({
+            set_player_velocity({
                 x = 0,
                 y = 0,
                 z = 0,
@@ -255,7 +264,7 @@ local function smooth_move_player(player, target, max_h, duration)
         local new_pos = path_pos(t)
         local next_pos = path_pos(next_t)
         player:set_pos(new_pos)
-        player:set_velocity({
+        set_player_velocity({
             x = (next_pos.x - new_pos.x) / actual_interval * 0.25,
             y = (next_pos.y - new_pos.y) / actual_interval * 0.25,
             z = (next_pos.z - new_pos.z) / actual_interval * 0.25,

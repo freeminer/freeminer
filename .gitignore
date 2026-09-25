@@ -155,6 +155,7 @@ build_ts*
 build_d*
 build_m*
 build_-*
+build_static
 
 util/autotest/logs.*
 util/autotest/auto.json
