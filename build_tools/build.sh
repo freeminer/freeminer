@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # script for fast installing on raspberry pi, odroid and other arm boards with debian
 
-set -e
-set -x
+set -exu
 
 # There's no package available, you have to compile it from source.
 # you can place this text to freeminer.sh file and run it
@@ -11,21 +10,22 @@ set -x
 # curl https://raw.githubusercontent.com/freeminer/freeminer/master/build_tools/build.sh | sh
 
 #1. To compile need to install packages:
-DIST=${DIST:=$(lsb_release --short --id)} ||:
-DIST=${DIST:=$(cat /etc/issue /etc/issue.net | head -n1 | cut -d " " -f1)}
-DIST=${DIST:=$(sh -c '. /etc/os-release && echo $NAME')}
+DIST=${DIST:-$(lsb_release --short --id)} ||:
+DIST=${DIST:-$(cat /etc/issue /etc/issue.net | head -n1 | cut -d " " -f1)}
+DIST=${DIST:-$(sh -c '. /etc/os-release && echo $NAME')}
 
-if [ -z "$NO_DEPS" ]; then
-  SUDO=${SUDO=$(which sudo ||:)}
+if [ -z "${NO_DEPS-}" ]; then
+  SUDO=${SUDO-$(which sudo ||:)}
   if [ "$DIST" = "Debian" ] || [ "$DIST" = "Ubuntu" ]; then
     ${SUDO} apt update
-    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install -y \
+    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install --yes --no-install-recommends \
         build-essential \
         ccache \
         clang \
         cmake \
         git \
         libboost-all-dev \
+        libbrotli-dev \
         libbz2-dev \
         libc++-dev \
         libc++abi-dev \
@@ -34,10 +34,14 @@ if [ -z "$NO_DEPS" ]; then
         libfreetype6-dev \
         libgettextpo0 \
         libhiredis-dev \
+        libidn2-dev \
         libjpeg-dev \
         libmsgpack-dev \
+        libnghttp2-dev \
         libopenal-dev \
         libosmium2-dev \
+        libprotozero-dev \
+        libpsl-dev  \
         libsdl2-dev \
         libsqlite3-dev \
         libssl-dev \
@@ -48,6 +52,7 @@ if [ -z "$NO_DEPS" ]; then
         libzstd-dev \
         lld \
         ninja-build \
+        zlib1g-dev \
 
     for PACKAGE in \
         libgl1-mesa-dev \
@@ -68,9 +73,39 @@ if [ -z "$NO_DEPS" ]; then
         ${SUDO} apt install -y $PACKAGE ||:
     done
   elif [ -e /etc/arch-release ]; then
-    ${SUDO} pacman --needed --noconfirm -Sy which git subversion cmake ninja ccache bzip2 zstd libjpeg-turbo freetype2 glfw-x11 libxxf86vm libxi sqlite3 hiredis libvorbis openal curl luajit gettext msgpack-cxx boost  clang lld llvm libc++ libc++abi libpng protozero
+    ${SUDO} pacman --needed --noconfirm -Sy \
+        boost \
+        bzip2 \
+        ccache \
+        clang \
+        cmake \
+        curl \
+        freetype2 \
+        gettext \
+        git \
+        glfw-x11 \
+        hiredis \
+        libc++ \
+        libc++abi \
+        libjpeg-turbo \
+        libpng \
+        libvorbis \
+        libxi \
+        libxxf86vm \
+        lld \
+        llvm \
+        luajit \
+        msgpack-cxx \
+        ninja \
+        openal \
+        protozero \
+        sqlite3 \
+        subversion \
+        which \
+        zstd \
+    
      # libunwind
-    CMAKE_OPT=${CMAKE_OPT=-DCMAKE_BUILD_WITH_INSTALL_RPATH=1}
+    CMAKE_OPT=${CMAKE_OPT:-"-DCMAKE_BUILD_WITH_INSTALL_RPATH=1"}
   fi
 fi
 
@@ -93,7 +128,7 @@ git pull --rebase ||:
 git submodule update --init --recursive ||:
 
 #compile
-cmake .. -GNinja -DENABLE_GLES=1 -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` -DBUILD_UNITTESTS=0 ${CMAKE_OPT}
+cmake .. -GNinja -DCMAKE_C_COMPILER=`which clang` -DCMAKE_CXX_COMPILER=`which clang++` -DBUILD_UNITTESTS=0 ${CMAKE_OPT-}
 nice cmake --build .
 
 

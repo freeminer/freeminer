@@ -80,20 +80,26 @@ AppImage:
   arch: x86_64
 script: |
     # Start from a clean AppDir so runtime setup cannot reuse stale files.
-    rm -rf AppDir
+    # rm -rf AppDir appimage-build
 
     # Compile and install binaries into AppDir
     cmake -G Ninja -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release \
-       -DRUN_IN_PLACE=FALSE \
-       -DxxxSTATIC_BUILD=1 \
-       -DENABLE_SYSTEM_JSONCPP=0 \
-       -DCMAKE_FIND_LIBRARY_SUFFIXES=".a .so" \
+     	 -DSTATIC_BUILD=ON \
        -DBUILD_SHARED_LIBS=0 \
-       -DZLIB_USE_STATIC_LIBS=1 \
+       -DCMAKE_FIND_LIBRARY_SUFFIXES=".a .so" \
        -DCURL_USE_STATIC_LIBS=1 \
+       -DENABLE_SYSTEM_JSONCPP=0 \
+       -DRUN_IN_PLACE=FALSE \
+       -DUSE_SDL2_STATIC=ON \
+       -DUSE_STATIC_LIBRARIES=ON \
+       -DENABLE_SYSTEM_TIFF=0 \
+       -DZLIB_USE_STATIC_LIBS=1 \
 
-    cmake --build appimage-build --parallel $(nproc) --config Release
+    cmake --build appimage-build --config Release
     cmake --install appimage-build
+    freeminer_binary="$(find appimage-build -type f -name freeminer -perm -111 -print -quit)"
+    test -n "$freeminer_binary"
+    install -Dm755 "$freeminer_binary" AppDir/usr/bin/freeminer
 
     # Bundle project-built shared libraries, such as Arrow and Parquet, which
     # are outside AppImageBuilder's system package dependency scan.

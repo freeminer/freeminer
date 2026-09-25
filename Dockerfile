@@ -9,7 +9,7 @@ ENV LUAJIT_VERSION=v2.1
 RUN apk add --no-cache git build-base cmake curl-dev zlib-dev zstd-dev \
         boost-system ccache \
         sqlite-dev postgresql-dev hiredis-dev leveldb-dev \
-		gmp-dev jsoncpp-dev ninja
+        gmp-dev jsoncpp-dev ninja libtiff-dev
 
 WORKDIR /usr/src/
 
