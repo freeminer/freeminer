@@ -217,11 +217,11 @@ static bool blast_object_visible(
 		ServerEnvironment *env, const v3opos_t &center, const ServerActiveObject &object)
 {
 	v3opos_t target = object.getBasePosition();
-	aabb3f box;
+	aabb3o box;
 	if (object.getCollisionBox(&box))
 		target = box.getCenter();
 	const auto *ndef = env->getGameDef()->ndef();
-	voxalgo::VoxelLineIterator ray(center / BS, (target - center) / BS);
+	voxalgo::VoxelLineIterator ray(center / BS, oposToV3f((target - center) / BS));
 	while (ray.hasNext()) {
 		ray.next();
 		const v3pos_t pos = ray.m_current_node_pos;
@@ -302,14 +302,15 @@ static void blast_objects(lua_State *L, ServerEnvironment *env, const v3pos_t &o
 								   (player ? player_knockback : 1.0));
 			const v3opos_t impulse = direction * static_cast<opos_t>(speed * BS);
 			if (player && speed > 0.0) {
-				player->setMaxSpeedOverride(impulse);
-				env->getServer()->SendPlayerSpeed(player->getPeerID(), impulse);
+				player->setMaxSpeedOverride(oposToV3f(impulse));
+				env->getServer()->SendPlayerSpeed(
+						player->getPeerID(), oposToV3f(impulse));
 			} else if (entity && speed > 0.0) {
-				v3opos_t velocity = entity->getVelocity() + impulse;
+				v3opos_t velocity = v3fToOpos(entity->getVelocity()) + impulse;
 				const auto length = velocity.getLength();
 				if (length > 250.0 * BS)
 					velocity *= (250.0 * BS) / length;
-				entity->setVelocity(velocity);
+				entity->setVelocity(oposToV3f(velocity));
 			}
 		}
 		if (do_damage) {
@@ -323,7 +324,7 @@ static void blast_objects(lua_State *L, ServerEnvironment *env, const v3pos_t &o
 				ToolCapabilities tool;
 				tool.full_punch_interval = 1.0;
 				tool.damageGroups["fleshy"] = static_cast<int>(damage);
-				entity->punch(direction, tool, entity, 1.0);
+				entity->punch(oposToV3f(direction), tool, entity, 1.0);
 			}
 		}
 	}
