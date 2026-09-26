@@ -66,6 +66,18 @@ function(fm_appimage_library package name)
     endforeach()
     if(name STREQUAL "SDL2")
         if(primary MATCHES "\\.a$")
+            find_package(SDL2 REQUIRED)
+            # Older SDL2 packages (including Focal) do not export this target.
+            # The archive and dependency closure have already passed our link check.
+            if(NOT TARGET SDL2::SDL2-static)
+                add_library(SDL2::SDL2-static STATIC IMPORTED GLOBAL)
+                set_target_properties(SDL2::SDL2-static PROPERTIES
+                    IMPORTED_LOCATION "${primary}"
+                    INTERFACE_INCLUDE_DIRECTORIES "${FM_PC_INCLUDE_DIRS}"
+                    INTERFACE_COMPILE_OPTIONS "${FM_PC_CFLAGS_OTHER}"
+                    INTERFACE_LINK_LIBRARIES "${dependencies}"
+                    INTERFACE_LINK_OPTIONS "${FM_PC_STATIC_LDFLAGS_OTHER}")
+            endif()
             set(USE_SDL2_STATIC ON CACHE BOOL "AppImage SDL selection" FORCE)
         else()
             set(USE_SDL2_STATIC OFF CACHE BOOL "AppImage SDL selection" FORCE)

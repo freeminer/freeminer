@@ -343,7 +343,7 @@ size_t ServerEnvironment::nodeUpdateReal(const v3pos_t &pos, u8 recursion_limit,
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
 		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
-		m_nodeupdate_queue.emplace_back(pos);
+		m_nodeupdate_queue.emplace_back(nodeUpdatePos{pos});
 		return 1;
 	}
 
