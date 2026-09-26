@@ -13,6 +13,9 @@
 class Draw3D : public RenderStep
 {
 public:
+	// fm: defer fog until scene depth is available
+	void deferFarFog(bool defer) { m_defer_far_fog = defer; }
+	// ===
 	virtual void setRenderSource(RenderSource *) override {}
 	virtual void setRenderTarget(RenderTarget *target) override { m_target = target; }
 
@@ -20,6 +23,9 @@ public:
 	virtual void run(PipelineContext &context) override;
 
 private:
+	// fm: half-resolution fog
+	bool m_defer_far_fog = false;
+	// ===
 	RenderTarget *m_target {nullptr};
 };
 

@@ -4,6 +4,9 @@
 // Copyright (C) 2017 numzero, Lobachevskiy Vitaliy <numzer0@yandex.ru>
 
 #include "plain.h"
+// fm: depth-aware fog pass
+#include "fm_far_fog.h"
+// ===
 #include "secondstage.h"
 #include "settings.h"
 #include "client/camera.h"
@@ -20,7 +23,14 @@ void Draw3D::run(PipelineContext &context)
 	if (m_target)
 		m_target->activate(context);
 
+	// fm: keep the full-resolution scene depth for the fog pass
+	auto &map = context.client->getEnv().getClientMap();
+	map.deferFarFog(m_defer_far_fog);
+	// ===
 	context.device->getSceneManager()->drawAll();
+	// fm: deferral applies only inside this scene pass
+	map.deferFarFog(false);
+	// ===
 	context.device->getVideoDriver()->setTransform(video::ETS_WORLD, core::IdentityMatrix);
 	if (!context.show_hud)
 		return;
@@ -101,6 +111,22 @@ std::unique_ptr<RenderStep> create3DStage(Client *client, v2f scale)
 		effect->setRenderTarget(pipeline->getOutput());
 		step = pipeline;
 	}
+	// fm: depth-aware fog also works without the other post-processing effects
+	else if (fmFarFogHalfResolution(client)) {
+		auto *pipeline = new RenderPipeline();
+		auto *scene = static_cast<Draw3D *>(step);
+		pipeline->addStep(pipeline->own(std::unique_ptr<RenderStep>(step)));
+		auto *buffer = pipeline->createOwned<TextureBuffer>();
+		auto *driver = client->getSceneManager()->getVideoDriver();
+		buffer->setTexture(0, scale, "fm_fog_scene", video::ECF_A8R8G8B8);
+		buffer->setTexture(1, scale, "fm_fog_depth", selectDepthFormat(driver));
+		scene->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(
+				buffer, std::vector<u8>{0}, 1));
+		fmAddFarFog(pipeline, scene, buffer, 0, 1, scale, client)
+				->setRenderTarget(pipeline->getOutput());
+		step = pipeline;
+	}
+	// ===
 	return std::unique_ptr<RenderStep>(step);
 }
 

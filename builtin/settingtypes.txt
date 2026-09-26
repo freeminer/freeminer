@@ -168,6 +168,15 @@ farlights (Far lights) int 200000
 # Requires: farmesh
 volumetric_fog (Volumetric fog) int 20000
 
+# Noise quality: 1 uses four noise octaves in total; 2 uses fourteen with lighting.
+# Changing this setting requires restarting the client.
+volumetric_fog_quality (Volumetric fog quality) int 1 1 2
+
+# Render fog at half resolution and upscale using scene depth to preserve edges.
+# Requires depth textures (OpenGL 3 or OpenGL ES 3 / WebGL 2).
+# Changing this setting requires restarting the client.
+volumetric_fog_half_resolution (Half-resolution volumetric fog) bool true
+
 # Set to true to disable wield light (enabled by default, requires shaders)
 disable_wieldlight () bool false
 

@@ -252,8 +252,19 @@ private:
 	void initFarFogMaterial();
 	void updateFarFogCells();
 	u32 rebuildFarFogMeshBuffer();
-	u32 renderFarFog(video::IVideoDriver *driver);
 
+public:
+	void deferFarFog(bool defer) { m_far_fog_deferred = defer; }
+	u32 renderFarFog(video::IVideoDriver *driver, video::ITexture *depth = nullptr);
+
+private:
+	bool m_far_fog_deferred = false;
+	core::matrix4 m_far_fog_view;
+	core::matrix4 m_far_fog_projection;
+	float m_far_fog_mesh_fov = 0.0f;
+	std::unordered_map<const scene::SMeshBuffer *, u32> m_far_fog_index_counts;
+
+	u32 m_far_fog_depth_shader = 0;
 	bool m_far_fog_material_ready = false;
 	video::SMaterial m_far_fog_material;
 	std::vector<irr_ptr<scene::SMeshBuffer>> m_far_fog_meshbuffers;

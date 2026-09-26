@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <set>
 #include "client/clientmap.h"
 #include "client/game_internal.h"
 #include "constants.h"
@@ -434,7 +435,12 @@ void ClientMap::initFarFogMaterial()
 		return;
 
 	auto *shader_source = m_client->getShaderSource();
-	const u32 shader_id = shader_source->getShaderRaw("far_fog_shader", true);
+	const int quality =
+			std::clamp<int>(g_settings->getS32("volumetric_fog_quality"), 1, 2);
+	const ShaderConstants constants{
+			{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 0}};
+	const u32 shader_id = shader_source->getShader(
+			"far_fog_shader", constants, video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 
 	m_far_fog_material = video::SMaterial();
 	m_far_fog_material.MaterialType = shader_source->getShaderInfo(shader_id).material;
@@ -462,9 +468,7 @@ void ClientMap::updateFarFogCells()
 	const auto far_iteration_draw_snapshot = far_iteration_draw;
 	const v3bpos_t player_block_pos = getNodeBlockPos(m_camera_position_node);
 	const auto cell_size_pow = m_control.cell_size_pow;
-	const auto farmesh = m_control.farmesh;
-	const auto fog_farmesh =
-			std::max<pos_t>(farmesh, g_settings->getPos("volumetric_fog"));
+	const auto fog_farmesh = g_settings->getPos("volumetric_fog");
 	const auto farmesh_quality_pow = m_control.farmesh_quality_pow;
 	const auto camera_offset = m_camera_offset;
 	const auto camera_scene_position =
@@ -478,6 +482,7 @@ void ClientMap::updateFarFogCells()
 			[this, cell_size_pow, fog_farmesh, farmesh_quality_pow, player_block_pos,
 					camera_offset, camera_scene_position, far_iteration_clean_snapshot,
 					far_iteration_draw_snapshot]() {
+				ScopeProfiler sp(g_profiler, "Client: Far fog cells [ms]", SPT_AVG);
 				std::vector<FarFogCell> cells;
 				cells.reserve(4096);
 				std::unordered_map<v3bpos_t, size_t, v3posHash, v3posEqual> cell_indexes;
@@ -491,11 +496,6 @@ void ClientMap::updateFarFogCells()
 				auto *terrain_mapgen = m_client ? m_client->far_container.m_mg : nullptr;
 				const auto *earth = dynamic_cast<MapgenEarth *>(terrain_mapgen);
 				const bool curved = earth && earth->projection.curved;
-
-				{
-					std::lock_guard<std::mutex> lock(m_far_fog_terrain_cache_mutex);
-					terrain_cache = m_far_fog_terrain_cache;
-				}
 
 				{
 					const auto lock = m_far_blocks.lock_shared_rec();
@@ -554,11 +554,31 @@ void ClientMap::updateFarFogCells()
 					if (const auto it = terrain_cache.find(key);
 							it != terrain_cache.end())
 						return it->second;
+					{
+						std::lock_guard<std::mutex> lock(m_far_fog_terrain_cache_mutex);
+						if (const auto it = m_far_fog_terrain_cache.find(key);
+								it != m_far_fog_terrain_cache.end()) {
+							terrain_cache.emplace(key, it->second);
+							return it->second;
+						}
+					}
 					const float terrain_y = far_fog_average_terrain_y(
 							terrain_mapgen, block_pos, block_span);
 					terrain_cache.emplace(key, terrain_y);
 					terrain_updates.emplace(key, terrain_y);
 					return terrain_y;
+				};
+
+				const auto source_in_range = [&](const v3bpos_t &pos, bpos_t span) {
+					// Curved projection can relocate a puff: cull those after placement.
+					if (curved)
+						return true;
+					const auto center = cell_center(pos, span);
+					const float radius = float(span * MAP_BLOCKSIZE) * BS * 3.0f;
+					const float range =
+							float(fog_farmesh + MAP_BLOCKSIZE * 2) * BS + radius;
+					return center.getDistanceFromSQ(camera_scene_position) <=
+						   range * range;
 				};
 
 				const auto add_cell = [&](const v3bpos_t &block_pos, block_step_t step,
@@ -579,8 +599,18 @@ void ClientMap::updateFarFogCells()
 						known_climate = *generated_climate;
 						has_known_climate = !far_fog_climate_missing(known_climate);
 					}
-					if (has_known_climate && known_climate.humidity <= 0.0f)
+					if (has_known_climate &&
+							known_climate.humidity <= FAR_FOG_MIN_VISIBLE_HUMIDITY)
 						return;
+
+					if (const auto it = cell_indexes.find(block_pos);
+							it != cell_indexes.end()) {
+						const auto &existing = cells[it->second];
+						if (existing.block_span == block_span &&
+								existing.block == block &&
+								(!generated_climate || existing.has_climate))
+							return;
+					}
 
 					const float terrain_y = terrain_reference(block_pos, block_span);
 					v3f wind = far_fog_wind_from_block(block);
@@ -639,6 +669,8 @@ void ClientMap::updateFarFogCells()
 				for (const auto &[block_pos, block] : published_blocks) {
 					const block_step_t step = block->far_step_draw ?: block->far_step;
 					const bpos_t block_span = 1 << (step + cell_size_pow);
+					if (!source_in_range(block_pos, block_span))
+						continue;
 					FarFogClimate generated_climate;
 					const FarFogClimate *generated_climate_ptr = nullptr;
 					if (far_fog_climate_missing(far_fog_climate_from_block(block))) {
@@ -653,6 +685,8 @@ void ClientMap::updateFarFogCells()
 															 const bpos_t block_span,
 															 const block_step_t step) {
 					if (step >= FARMESH_STEP_MAX)
+						return;
+					if (!source_in_range(block_pos, block_span))
 						return;
 					const auto block = find_stored_block(block_pos, step);
 					FarFogClimate generated_climate;
@@ -757,10 +791,12 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 			m_far_fog_mesh_iteration_draw == cells_iteration &&
 			m_far_fog_mesh_camera_bucket == camera_bucket &&
 			m_far_fog_mesh_camera_offset == m_camera_offset &&
-			m_far_fog_mesh_time_bucket == time_bucket && !direction_changed) {
+			m_far_fog_mesh_time_bucket == time_bucket &&
+			m_far_fog_mesh_fov == m_camera_fov && !direction_changed) {
 		return far_fog_vertex_count();
 	}
 
+	ScopeProfiler rebuild_profiler(g_profiler, "Client: Far fog mesh [ms]", SPT_AVG);
 	for (auto &buffer : m_far_fog_meshbuffers) {
 		if (!buffer)
 			continue;
@@ -919,6 +955,16 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 			return true;
 
 		++candidate_count;
+		if (climate.humidity <= FAR_FOG_MIN_VISIBLE_HUMIDITY)
+			return false;
+		if (!projection) {
+			const v3opos_t center = v3opos_t::from(cell_min) + v3opos_t(cell_size * 0.5f);
+			const float radius = cell_size * 3.0f;
+			const float range = volumetric_fog_range + radius;
+			if (center.getDistanceFromSQ(v3opos_t::from(camera_scene_position)) >
+					range * range)
+				return false;
+		}
 
 		const float cell_size_nodes = cell_size / BS;
 		const auto world_center = v3opos_t::from(cell_pos * MAP_BLOCKSIZE) +
@@ -1121,6 +1167,34 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		}
 		return split_pow;
 	};
+	std::set<std::pair<v3bpos_t, bpos_t>> emitted_sources;
+	const auto source_visible = [&](const v3bpos_t &pos, bpos_t span) {
+		if (projection)
+			return true;
+		const float size = float(span * MAP_BLOCKSIZE) * BS;
+		const v3opos_t center = intToFloat(pos * MAP_BLOCKSIZE - m_camera_offset, BS) +
+								v3opos_t(size * 0.5f);
+		const auto relative = center - v3opos_t::from(camera_scene_position);
+		const float distance = relative.getLength();
+		// Covers puff/jitter/subdivision bounds, wind (<= 180 world units),
+		// camera movement within the cached bucket and the 10-degree rotation bucket.
+		const float radius = size * 3.0f + 180.0f + MAP_BLOCKSIZE * BS * 2.0f;
+		if (distance > volumetric_fog_range + radius)
+			return false;
+		// m_camera_fov is max(horizontal, vertical), not the diagonal.
+		const float half_fov =
+				m_camera_fov >= float(M_PI)
+						? float(M_PI)
+						: std::atan(std::sqrt(2.0f) * std::tan(m_camera_fov * 0.5f)) +
+								  0.18f;
+		if (half_fov >= float(M_PI) * 0.5f || distance <= radius)
+			return true;
+		const float along = relative.dotProduct(v3opos_t::from(forward));
+		const float across =
+				std::sqrt(std::max(0.0f, distance * distance - along * along));
+		return along >= -radius &&
+			   across * std::cos(half_fov) - along * std::sin(half_fov) <= radius;
+	};
 	const auto draw_fog_source =
 			[&](const v3bpos_t &block_pos, const block_step_t fog_step,
 					const bpos_t block_span, const MapBlockPtr &block,
@@ -1128,6 +1202,9 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 					const v3f &source_wind_world) -> bool {
 		if (vertices->size() / 4 >= fog_quad_limit && !next_fog_buffer())
 			return true;
+
+		if (!source_visible(block_pos, block_span))
+			return false;
 
 		const block_step_t split_pow =
 				fog_split_pow(fog_step, block_span, cell_distance(block_pos, block_span));
@@ -1149,7 +1226,11 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		}
 		if (!missing_climate && block)
 			++stored_count;
-		if (missing_climate)
+		if (missing_climate || climate.humidity <= FAR_FOG_MIN_VISIBLE_HUMIDITY)
+			return false;
+
+		// The generated near grid and near drawlist can describe the same cell.
+		if (!emitted_sources.emplace(block_pos, block_span).second)
 			return false;
 
 		v3f wind_world = source_wind_world;
@@ -1389,7 +1470,11 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 			continue;
 		fog_buffer->Material = m_far_fog_material;
 		fog_buffer->setDirty(scene::EBT_VERTEX);
-		fog_buffer->setDirty(scene::EBT_INDEX);
+		// Quad topology only changes when the buffer grows/shrinks.
+		if (fog_buffer->getIndexCount() != m_far_fog_index_counts[fog_buffer.get()]) {
+			fog_buffer->setDirty(scene::EBT_INDEX);
+			m_far_fog_index_counts[fog_buffer.get()] = fog_buffer->getIndexCount();
+		}
 		fog_buffer->recalculateBoundingBox();
 	}
 	m_far_fog_mesh_valid = true;
@@ -1400,6 +1485,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	m_far_fog_mesh_camera_offset = m_camera_offset;
 	m_far_fog_mesh_camera_direction = forward;
 	m_far_fog_mesh_time_bucket = time_bucket;
+	m_far_fog_mesh_fov = m_camera_fov;
 
 	g_profiler->avg("Client: Far fog candidates", candidate_count);
 	g_profiler->avg("Client: Far fog stored", stored_count);
@@ -1418,21 +1504,57 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	return vertex_count;
 }
 
-u32 ClientMap::renderFarFog(video::IVideoDriver *driver)
+u32 ClientMap::renderFarFog(video::IVideoDriver *driver, video::ITexture *depth)
 {
 	if (!m_control.enable_volumetric_fog)
 		return 0;
 
+	if (!depth) {
+		m_far_fog_view = driver->getTransform(video::ETS_VIEW);
+		m_far_fog_projection = driver->getTransform(video::ETS_PROJECTION);
+		if (m_far_fog_deferred)
+			return 0;
+	}
 	const u32 vertex_count = rebuildFarFogMeshBuffer();
 	if (!vertex_count)
 		return 0;
 
+	ScopeProfiler submit_profiler(g_profiler, "Client: Far fog submit [ms]", SPT_AVG);
+	const auto old_view = driver->getTransform(video::ETS_VIEW);
+	const auto old_projection = driver->getTransform(video::ETS_PROJECTION);
+	auto material = m_far_fog_material;
+	if (depth) {
+		auto *source = m_client->getShaderSource();
+		if (!m_far_fog_depth_shader) {
+			const int quality =
+					std::clamp<int>(g_settings->getS32("volumetric_fog_quality"), 1, 2);
+			m_far_fog_depth_shader = source->getShader("far_fog_shader",
+					{{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 1}},
+					video::EMT_ONETEXTURE_BLEND);
+		}
+		material.MaterialType = source->getShaderInfo(m_far_fog_depth_shader).material;
+		// Accumulate premultiplied RGB and coverage in the transparent target.
+		material.MaterialTypeParam = video::pack_textureBlendFuncSeparate(
+				video::EBF_SRC_ALPHA, video::EBF_ONE_MINUS_SRC_ALPHA, video::EBF_ONE,
+				video::EBF_ONE_MINUS_SRC_ALPHA);
+		material.ZBuffer = video::ECFN_DISABLED;
+		material.setTexture(0, depth);
+		material.TextureLayers[0].MinFilter = video::ETMINF_NEAREST_MIPMAP_NEAREST;
+		material.TextureLayers[0].MagFilter = video::ETMAGF_NEAREST;
+		material.TextureLayers[0].TextureWrapU = video::ETC_CLAMP_TO_EDGE;
+		material.TextureLayers[0].TextureWrapV = video::ETC_CLAMP_TO_EDGE;
+		material.UseMipMaps = false;
+		driver->setTransform(video::ETS_VIEW, m_far_fog_view);
+		driver->setTransform(video::ETS_PROJECTION, m_far_fog_projection);
+	}
 	core::matrix4 identity;
 	driver->setTransform(video::ETS_WORLD, identity);
-	driver->setMaterial(m_far_fog_material);
+	driver->setMaterial(material);
 	for (const auto &buffer : m_far_fog_meshbuffers) {
 		if (buffer && buffer->getVertexCount())
 			driver->drawMeshBuffer(buffer.get());
 	}
+	driver->setTransform(video::ETS_VIEW, old_view);
+	driver->setTransform(video::ETS_PROJECTION, old_projection);
 	return vertex_count;
 }

@@ -5,6 +5,9 @@
 // Copyright (C) 2020 appgurueu, Lars Mueller <appgurulars@gmx.de>
 
 #include "secondstage.h"
+// fm: depth-aware fog pass
+#include "fm_far_fog.h"
+// ===
 #include "client/client.h"
 #include "client/shader.h"
 #include "settings.h"
@@ -191,7 +194,21 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 
 	// post-processing stage
 
-	u8 source = TEXTURE_COLOR;
+	// fm: composite fog before bloom, exposure and anti-aliasing
+	u8 scene_color = TEXTURE_COLOR;
+	if (fmFarFogHalfResolution(client)) {
+		auto *scene = dynamic_cast<Draw3D *>(previousStep);
+		if (scene) {
+			constexpr u8 fog_composite = 31;
+			buffer->setTexture(fog_composite, scale, "fm_fog_composite", color_format);
+			auto *fog = fmAddFarFog(pipeline, scene, buffer, TEXTURE_COLOR,
+					TEXTURE_DEPTH, scale, client);
+			fog->setRenderTarget(pipeline->createOwned<TextureBufferOutput>(buffer, fog_composite));
+			scene_color = fog_composite;
+		}
+	}
+	u8 source = scene_color;
+	// ===
 
 	// common downsampling step for bloom or autoexposure
 	if (enable_bloom || enable_auto_exposure) {
@@ -260,14 +277,18 @@ RenderStep *addPostProcessing(RenderPipeline *pipeline, RenderStep *previousStep
 	}
 
 	// FXAA
-	u8 final_stage_source = TEXTURE_COLOR;
+	// fm: use the scene with fog
+	u8 final_stage_source = scene_color;
+	// ===
 
 	if (enable_fxaa) {
 		final_stage_source = TEXTURE_FXAA;
 
 		buffer->setTexture(TEXTURE_FXAA, scale, "fxaa", color_format);
 		shader_id = client->getShaderSource()->getShaderRaw("fxaa");
-		PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader_id, std::vector<u8> { TEXTURE_COLOR });
+		// fm: use the scene with fog
+		PostProcessingStep *effect = pipeline->createOwned<PostProcessingStep>(shader_id, std::vector<u8> { scene_color });
+		// ===
 		pipeline->addStep(effect);
 		effect->setBilinearFilter(0, true);
 		effect->setRenderSource(buffer);

@@ -86,7 +86,7 @@ script: |
     cmake -G Ninja -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release \
      	 -DSTATIC_BUILD=ON \
        -DBUILD_SHARED_LIBS=0 \
-       -DCMAKE_FIND_LIBRARY_SUFFIXES=".a .so" \
+       -DCMAKE_PROJECT_freeminer_INCLUDE="$PWD/build_tools/appimage/fm_appimage_link.cmake" \
        -DCURL_USE_STATIC_LIBS=1 \
        -DENABLE_SYSTEM_JSONCPP=0 \
        -DRUN_IN_PLACE=FALSE \

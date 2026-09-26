@@ -1,13 +1,19 @@
+// fm: procedural fog quality and early rejection
 uniform lowp vec4 fogColor;
 uniform float fogDistance;
 uniform float fogShadingParameter;
-uniform float animationTimer;
-uniform vec3 windDirection;
+#ifndef FM_FOG_QUALITY
+#define FM_FOG_QUALITY 2
+#endif
+#if FM_FOG_DEPTH_TEST
+uniform sampler2D texture0;
+VARYING_ highp vec4 fogClipPos;
+#endif
 
 VARYING_ lowp vec4 varColor;
 VARYING_ mediump vec2 varTexCoord;
 VARYING_ highp vec3 eyeVec;
-VARYING_ highp vec3 fogWorldPos;
+VARYING_ highp vec3 cloud_pos;
 VARYING_ highp float fogPhase;
 
 float fogHash(vec3 p)
@@ -73,28 +79,28 @@ float fogMap3(vec3 p, float local_falloff)
 void main(void)
 {
 	vec2 centered_uv = varTexCoord * 2.0 - 1.0;
-	float radial_distance = length(centered_uv);
+	// Reject guaranteed transparent corners before any procedural noise.
+	float radius_squared = dot(centered_uv, centered_uv);
+	if (radius_squared >= 1.18 * 1.18)
+		discard;
+#if FM_FOG_DEPTH_TEST
+	vec2 screen_uv = fogClipPos.xy / fogClipPos.w * 0.5 + 0.5;
+	if (gl_FragCoord.z > texture2D(texture0, screen_uv).r)
+		discard;
+#endif
+	float radial_distance = sqrt(radius_squared);
 
-	float fog_time = animationTimer * 100.0;
-	float wind_speed = min(length(windDirection.xz), 80.0);
-	vec2 wind_dir = wind_speed > 0.001 ? normalize(windDirection.xz) : vec2(1.0, 0.0);
-	vec2 side_dir = vec2(-wind_dir.y, wind_dir.x);
-	vec3 wind_vec = vec3(wind_dir.x, 0.0, wind_dir.y);
-	vec3 side_vec = vec3(side_dir.x, 0.0, side_dir.y);
-	float wind_drift =
-		(fog_time * 0.026 + sin(fog_time * 0.17 + fogPhase) * 0.20) *
-		(0.35 + wind_speed * 0.025);
-	float curl_drift =
-		sin(fog_time * 0.11 + fogPhase * 1.73) *
-		(0.16 + wind_speed * 0.006);
-	vec3 drift = wind_vec * wind_drift + side_vec * curl_drift +
-		vec3(fog_time * 0.010, fog_time * 0.003, fog_time * -0.007);
-	vec3 cloud_pos = fogWorldPos * 0.00082 - drift + vec3(fogPhase * 0.37);
 	float local_falloff = radial_distance * 0.34 + abs(centered_uv.y) * 0.12;
+#if FM_FOG_QUALITY >= 2
 	float cloud = fogMap5(cloud_pos, local_falloff);
 	float detail = fogMap3(cloud_pos * 3.10 + vec3(7.1, fogPhase, 13.7),
 		local_falloff * 0.45);
 	float edge_breakup = fogMap3(vec3(centered_uv * 1.45, fogPhase), 0.08);
+#else
+	float cloud = fogMap3(cloud_pos, local_falloff);
+	float detail = 0.5;
+	float edge_breakup = fogNoise(vec3(centered_uv * 1.45, fogPhase));
+#endif
 	float radial = 1.0 - smoothstep(0.62 + edge_breakup * 0.16, 1.18, radial_distance);
 	radial *= 1.0 - smoothstep(1.00, 1.22, max(abs(centered_uv.x), abs(centered_uv.y)));
 	radial = smoothstep(0.0, 1.0, radial);
@@ -108,9 +114,13 @@ void main(void)
 	float distance_mix = clamp(length(eyeVec) / max(fogDistance, 1.0), 0.0, 1.0);
 	float fog_mix = clamp(0.16 + distance_mix * 0.22
 		+ (1.0 - fogShadingParameter) * 0.08, 0.12, 0.48);
+#if FM_FOG_QUALITY >= 2
 	vec3 sun_dir = normalize(vec3(-0.7071, 0.12, -0.7071));
 	float cloud_light_sample = fogMap3(cloud_pos + sun_dir * 0.42, local_falloff);
 	float direct_light = clamp((cloud - cloud_light_sample) / 0.55, 0.0, 1.0);
+#else
+	float direct_light = 0.0;
+#endif
 	vec3 cloud_light = vec3(0.91, 0.98, 1.05) + vec3(1.0, 0.60, 0.30) * direct_light * 0.28;
 	float density_shadow = smoothstep(0.16, 0.72, density);
 	float self_shadow = mix(1.00, 0.66,
@@ -119,3 +129,4 @@ void main(void)
 
 	gl_FragColor = vec4(color, alpha);
 }
+// ===
