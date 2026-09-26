@@ -154,6 +154,6 @@ size_t ServerEnvironment::nodeUpdate(
 		const v3pos_t &pos, u8 recursion_limit, u8 fast, bool destroy)
 {
 	std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
-	m_nodeupdate_queue.emplace_back(pos, recursion_limit, fast, destroy);
+	m_nodeupdate_queue.emplace_back(nodeUpdatePos{pos, recursion_limit, fast, destroy});
 	return 0;
 }
