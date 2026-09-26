@@ -111,7 +111,7 @@ script: |
 
     # Bundle project-built shared libraries, such as Arrow and Parquet, which
     # are outside AppImageBuilder's system package dependency scan.
-    cp -vP appimage-build/src/external/arrow/install/lib/libarrow.so* appimage-build/src/external/arrow/install/lib/libparquet.so* AppDir/usr/lib/
+    cp -vP appimage-build/src/external/arrow/install/lib/libarrow.so* appimage-build/src/external/arrow/install/lib/libparquet.so* AppDir/usr/lib/ || true
     #cp -vP appimage-build/src/external/boost/install/lib/libboost_program_options.so* AppDir/usr/lib/
     # Is a backup icon location in case
     mkdir -vp AppDir/usr/share/freeminer/misc
