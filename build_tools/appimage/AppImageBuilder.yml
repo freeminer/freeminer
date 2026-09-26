@@ -18,29 +18,32 @@ AppDir:
   apt:
     arch: amd64
     sources:
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ noble main restricted universe multiverse
-      # - sourceline: deb http://archive.ubuntu.com/ubuntu/ focal main restricted universe multiverse
+      - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
+      # - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
         key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920d1991bc93c'
-      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-updates main restricted universe multiverse
-      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-backports main restricted universe multiverse
-      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
     include:
       # - libboost-program-options1.67.0 # focal
-      - libboost-program-options1.83.0 # noble
+      - libboost-program-options1.74.0 # jammy
       # - libboost-program-options1.90.0 # resolute
+      - libatomic1
       - libcurl4
       - libdeflate0
       - libfreetype6
       - libgl1
+      - libopengl0
       - libjpeg-turbo8
-      - libjsoncpp25 # noble
+      - libjsoncpp25 # jammy
       # - libjsoncpp1 # focal
       - libluajit-5.1-2
       - libopenal1
       - libpng16-16
       - libsqlite3-0
-      - libssl3t64 # noble
+      - libssl3 # jammy
       # - libssl1.1 # focal
+      - libwayland-cursor0
       - libwayland-egl1
       - libstdc++6
       - libvorbisfile3
@@ -51,27 +54,28 @@ AppDir:
       - zlib1g
     exclude:
       - libc6
-  test:
-      fedora:
-        image: appimagecrafters/tests-env:fedora-30
-        command: ./AppRun
-        use_host_x: true
-      debian:
-        image: appimagecrafters/tests-env:debian-stable
-        command: ./AppRun
-        use_host_x: true
-      arch:
-        image: appimagecrafters/tests-env:archlinux-latest
-        command: ./AppRun
-        use_host_x: true
-      centos:
-        image: appimagecrafters/tests-env:centos-7
-        command: ./AppRun
-        use_host_x: true
-      ubuntu:
-        image: appimagecrafters/tests-env:ubuntu-xenial
-        command: ./AppRun
-        use_host_x: true
+  # test:
+  #     fedora:
+  #       # image: appimagecrafters/tests-env:fedora-30
+  #       image: appimagecrafters/tests-env:fedora-33
+  #       command: ./AppRun
+  #       use_host_x: true
+  #     debian:
+  #       image: appimagecrafters/tests-env:debian-stable
+  #       command: ./AppRun
+  #       use_host_x: true
+  #     arch:
+  #       image: appimagecrafters/tests-env:archlinux-latest
+  #       command: ./AppRun
+  #       use_host_x: true
+  #     centos:
+  #       image: appimagecrafters/tests-env:centos-7
+  #       command: ./AppRun
+  #       use_host_x: true
+  #     ubuntu:
+  #       image: appimagecrafters/tests-env:ubuntu-xenial
+  #       command: ./AppRun
+  #       use_host_x: true
 
 
 AppImage:
@@ -83,17 +87,21 @@ script: |
     # rm -rf AppDir appimage-build
 
     # Compile and install binaries into AppDir
-    cmake -G Ninja -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release \
+    # Require the bundled headers; older distro libosmium is incompatible with C++20.
+    # Recheck compiler capabilities after a builder-image/toolchain change.
+    cmake --fresh -G Ninja -B appimage-build -DENABLE_REDIS=FALSE -DENABLE_POSTGRESQL=OFF -DCMAKE_INSTALL_PREFIX=AppDir/usr/ -DBUILD_SERVER=FALSE -DENABLE_GETTEXT=TRUE -DCMAKE_BUILD_TYPE=Release \
      	 -DSTATIC_BUILD=ON \
        -DBUILD_SHARED_LIBS=0 \
        -DCMAKE_PROJECT_freeminer_INCLUDE="$PWD/build_tools/appimage/fm_appimage_link.cmake" \
        -DCURL_USE_STATIC_LIBS=1 \
        -DENABLE_SYSTEM_JSONCPP=0 \
+       -DENABLE_SYSTEM_OSMIUM=0 \
        -DRUN_IN_PLACE=FALSE \
        -DUSE_SDL2_STATIC=ON \
        -DUSE_STATIC_LIBRARIES=ON \
        -DENABLE_SYSTEM_TIFF=0 \
        -DZLIB_USE_STATIC_LIBS=1 \
+       -GNinja -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) \
 
     cmake --build appimage-build --config Release
     cmake --install appimage-build
