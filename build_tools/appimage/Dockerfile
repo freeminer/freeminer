@@ -1,4 +1,6 @@
-ARG FROM=ubuntu:jammy
+#ARG FROM=ubuntu:jammy
+#ARG FROM=debian:stable
+ARG FROM=debian:oldstable
 FROM $FROM
 
 ENV DEBIAN_FRONTEND=noninteractive
