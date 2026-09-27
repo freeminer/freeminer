@@ -18,12 +18,15 @@ AppDir:
   apt:
     arch: amd64
     sources:
-      - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
-      # - sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
-        key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920d1991bc93c'
+      #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy main restricted universe multiverse
+      #  key_url: 'http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x871920d1991bc93c'
       #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted universe multiverse
       #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-backports main restricted universe multiverse
       #- sourceline: deb http://archive.ubuntu.com/ubuntu/ jammy-security main restricted universe multiverse
+      - sourceline: deb http://deb.debian.org/debian oldstable main non-free-firmware
+        key_url: 'https://ftp-master.debian.org/keys/release-12.asc'
+      #- sourceline: deb http://deb.debian.org/debian oldstable-updates main non-free-firmware
+      #  key_url: 'https://ftp-master.debian.org/keys/archive-key-12.asc'
     include:
       # - libboost-program-options1.67.0 # focal
       - libboost-program-options1.74.0 # jammy
@@ -34,7 +37,8 @@ AppDir:
       - libfreetype6
       - libgl1
       - libopengl0
-      - libjpeg-turbo8
+      # - libjpeg-turbo8 jammy stable
+      - libjpeg62-turbo #oldstable
       - libjsoncpp25 # jammy
       # - libjsoncpp1 # focal
       - libluajit-5.1-2
@@ -54,29 +58,28 @@ AppDir:
       - zlib1g
     exclude:
       - libc6
-  # test:
-  #     fedora:
-  #       # image: appimagecrafters/tests-env:fedora-30
-  #       image: appimagecrafters/tests-env:fedora-33
-  #       command: ./AppRun
-  #       use_host_x: true
-  #     debian:
-  #       image: appimagecrafters/tests-env:debian-stable
-  #       command: ./AppRun
-  #       use_host_x: true
-  #     arch:
-  #       image: appimagecrafters/tests-env:archlinux-latest
-  #       command: ./AppRun
-  #       use_host_x: true
-  #     centos:
-  #       image: appimagecrafters/tests-env:centos-7
-  #       command: ./AppRun
-  #       use_host_x: true
-  #     ubuntu:
-  #       image: appimagecrafters/tests-env:ubuntu-xenial
-  #       command: ./AppRun
-  #       use_host_x: true
-
+  test:
+      # fedora:
+      #   # image: appimagecrafters/tests-env:fedora-30
+      #   image: appimagecrafters/tests-env:fedora-33
+      #   command: ./AppRun
+      #   use_host_x: true
+      # debian:
+      #   image: appimagecrafters/tests-env:debian-stable
+      #   command: ./AppRun
+      #   use_host_x: true
+      # arch:
+      #   image: appimagecrafters/tests-env:archlinux-latest
+      #   command: ./AppRun
+      #   use_host_x: true
+      # centos:
+      #   image: appimagecrafters/tests-env:centos-7
+      #   command: ./AppRun
+      #   use_host_x: true
+      # ubuntu:
+      #   image: appimagecrafters/tests-env:ubuntu-xenial
+      #   command: ./AppRun
+      #   use_host_x: true
 
 AppImage:
   update-information: guess
