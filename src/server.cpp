@@ -3414,12 +3414,13 @@ void Server::stepPendingDynMediaCallbacks(float dtime)
 {
 	EnvAutoLock lock(this);
 
-	erase_if(m_pending_dyn_media, [&] (decltype(m_pending_dyn_media)::value_type &it) {
-		auto &[token, state] = it;
+	for (auto it = m_pending_dyn_media.begin(); it != m_pending_dyn_media.end();) {
+		auto &[token, state] = *it;
 
 		state.expiry_timer -= dtime;
 		if (!state.waiting_players.empty() && state.expiry_timer >= 0)
-			return false;
+			++it;
+			continue;
 
 		const auto &name = state.filename;
 		if (!name.empty()) {
@@ -3431,8 +3432,8 @@ void Server::stepPendingDynMediaCallbacks(float dtime)
 			m_media.erase(it);
 		}
 		getScriptIface()->freeDynamicMediaCallback(token);
-		return true;
-	});
+		it = m_pending_dyn_media.erase(it);
+	}
 }
 
 void Server::SendMinimapModes(session_t peer_id,
