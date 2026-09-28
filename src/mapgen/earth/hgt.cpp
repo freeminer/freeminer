@@ -96,6 +96,7 @@ std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::
 					.min_height = 0.0f, // Primary layer can handle very low elevations
 					.max_height = 10000.0f, // Primary layer handles high elevations
 			},
+#if USE_TIFF
 			Layer{
 					.container = map1_seabed,
 					.cache = tl_container_cache.map1_seabed_cache,
@@ -109,7 +110,9 @@ std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::
 					.place_dummy = place_dummy_generic,
 					.min_height = -12000.0f, // Seabed handles deep ocean depths
 					.max_height = 0.0f,		 // Seabed only for underwater/sea level
-			}};
+			}
+#endif
+	};
 }
 
 height::height_t hgts::get(
@@ -1027,7 +1030,7 @@ height::height_t height::get(ll_t lat, ll_t lon)
 		   height[2] * (1 - dy) * (1 - dx) + height[3] * (1 - dy) * dx;
 }
 
-// height_sb_tif implementation
+#if USE_TIFF
 
 height_seabed_tif::height_seabed_tif(
 		const std::string &folder, height::ll_t lat, height::ll_t lon) : folder{folder}
@@ -1162,3 +1165,4 @@ bool height_seabed_tif::load(height::ll_t lat, height::ll_t lon)
 	}
 	return false;
 }
+#endif

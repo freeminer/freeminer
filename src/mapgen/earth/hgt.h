@@ -115,6 +115,7 @@ public:
 };
 #endif
 
+#if USE_TIFF
 class height_seabed_tif final : public height
 {
 	const std::string folder;
@@ -133,6 +134,7 @@ public:
 	static int lat_start(ll_t lat) { return floor(lat); }
 	static int lon_start(ll_t lon) { return floor(lon); }
 };
+#endif
 
 class height_dummy final : public height
 {
