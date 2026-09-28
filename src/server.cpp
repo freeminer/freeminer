@@ -3418,9 +3418,10 @@ void Server::stepPendingDynMediaCallbacks(float dtime)
 		auto &[token, state] = *it;
 
 		state.expiry_timer -= dtime;
-		if (!state.waiting_players.empty() && state.expiry_timer >= 0)
+		if (!state.waiting_players.empty() && state.expiry_timer >= 0) {
 			++it;
 			continue;
+		}
 
 		const auto &name = state.filename;
 		if (!name.empty()) {
