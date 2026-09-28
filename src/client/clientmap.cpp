@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+// fm:
 #include "fm_far_calc.h"
+#include "fm_far_draw.h"
+// ===
 
 #include "clientmap.h"
 #include "client.h"
@@ -373,6 +376,9 @@ private:
 void ClientMap::clearDrawList()
 {
 	std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
+	// fm: Cutouts and pinned near meshes belong to this draw list.
+	m_far_draw_state.reset();
+	// ===
 	auto & m_drawlist = m_drawlist_0;
 
 
@@ -1042,9 +1048,15 @@ static u32 transformBuffersToDrawOrder(
 void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 {
 
+	// fm: Pin the cutouts and their replacement meshes for this render pass.
+	std::shared_ptr<const farmesh::FarDrawState> far_draw;
+	// ===
 	std::vector<std::pair<v3bpos_t, MapBlockPtr>> drawlist_snapshot;
 	{
 		std::lock_guard<std::recursive_mutex> drawlist_lock(m_drawlist_mutex);
+		// fm:
+		far_draw = m_far_draw_state;
+		// ===
 		const auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
 		drawlist_snapshot.reserve(m_drawlist.size());
 		for (const auto &it : m_drawlist)
@@ -1085,6 +1097,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	/*
 		Update transparent meshes
 	*/
+	// fm: Also sort meshes pinned by a partial far-cell handoff.
+	const bool update_pinned_transparency = m_needs_update_transparent_meshes;
+	// ===
 	if (is_transparent_pass)
 		updateTransparentMeshBuffers();
 
@@ -1112,6 +1127,13 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 		// If the mesh of the block happened to get deleted, ignore it
 		auto block_mesh = block->getLodMesh(mesh_step, true);
+		// fm: Use exactly the mesh that owns this frame's far cutout.
+		if (far_draw) {
+			const auto near = far_draw->near_meshes.find(block_pos);
+			if (near != far_draw->near_meshes.end())
+				block_mesh = near->second;
+		}
+		// ===
 		bool is_far = false;
 		// If the mesh of the block happened to get deleted, ignore it
 
@@ -1163,6 +1185,18 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			Get the meshbuffers of the block
 		*/
 		if (is_transparent_pass) {
+			// fm: A pinned mesh may have been replaced in its MapBlock already.
+			if (far_draw && far_draw->near_meshes.contains(block_pos) &&
+					(update_pinned_transparency || block_mesh->getTransparentBuffers().empty())) {
+				const float sorting_distance = m_cache_transparency_sorting_distance * BS;
+				if (sorting_distance > 0 && camera_position.getDistanceFromSQ(mesh_sphere_center) <=
+						std::pow(sorting_distance + mesh_sphere_radius, 2.0f))
+					block_mesh->updateTransparentBuffers(m_camera_position, block_pos,
+							m_cache_transparency_sorting_group_by_buffers);
+				else
+					block_mesh->consolidateTransparentBuffers();
+			}
+			// ===
 			// In transparent pass, the mesh will give us
 			// the partial buffers in the correct order
 			for (auto &buffer : block_mesh->getTransparentBuffers())
@@ -1172,6 +1206,20 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			grouped_buffers.addFromBlock(block_pos, block_mesh.get(), driver);
 		}
 	}
+
+	// fm: Clipped far cells have separate entries, so a near chunk at the same
+	// origin cannot overwrite the remaining far geometry. Cached cutouts bypass
+	// buffer merging, which assumes an immutable source buffer for its lifetime.
+	if (!is_transparent_pass && far_draw)
+		for (const auto &[pos, clipped] : far_draw->clipped) {
+			clipped->source->last_used = m_client->m_uptime;
+			for (const auto &buffer : clipped->buffers) {
+				// Materials are read and changed only on the render thread.
+				buffer.mesh->Material = buffer.source->getMaterial();
+				draw_order.emplace_back(get_block_wpos(pos), buffer.mesh.get(), false);
+			}
+		}
+	// ===
 
 	assert(!is_transparent_pass || grouped_buffers.empty());
 	for (auto &map : grouped_buffers.maps) {

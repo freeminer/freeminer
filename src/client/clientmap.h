@@ -10,6 +10,7 @@
 #include "fm_weather.h"
 #include "threading/async.h"
 #include "settings.h"
+namespace farmesh { struct FarDrawState; }
 // ===
 
 #include "irrlichttypes_bloated.h"
@@ -230,14 +231,14 @@ public:
 
 private:
 	v3pos_t m_camera_position_node;
-	// Near data must cover complete farmesh cells at the LOD handoff.  This is
-	// the resulting server request range; the configured rendering range stays
-	// unchanged for fog, UI, and near-cell selection.
+	// Request enough near data for the step-0 core, independently of retained
+	// coarse far cells. The configured range remains unchanged for fog and UI.
 	std::atomic_int32_t m_near_farmesh_range{};
 	using drawlist_map = std::map<v3bpos_t, MapBlockPtr, MapBlockComparer>;
 	drawlist_map m_drawlist_0, m_drawlist_1;
 	std::atomic_bool m_drawlist_current = false;
 	std::recursive_mutex m_drawlist_mutex;
+	std::shared_ptr<const farmesh::FarDrawState> m_far_draw_state;
 	using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;

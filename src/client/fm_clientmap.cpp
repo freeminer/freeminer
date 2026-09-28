@@ -20,7 +20,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "client/fm_farmesh.h"
-#include "client/fm_near_mesh_handoff.h"
+#include "client/fm_far_draw.h"
+#include "client/fm_far_mesh_clip.h"
 #include "client/fm_mesh_priority.h"
 #include "client/mapblock_mesh.h"
 #include "client/node_visuals.h"
@@ -42,7 +43,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cstdint>
 #include <unordered_map>
-
 
 irr_ptr<ClientMap> ClientMap::create(Client *client, RenderingEngine *rendering_engine,
 		MapDrawControl &control, s32 id)
@@ -123,7 +123,12 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 			occlusion_culling_enabled = false;
 	}
 
-	std::unordered_set<v3bpos_t> blocks_skip_farmesh;
+	auto far_draw = std::make_shared<farmesh::FarDrawState>();
+	std::shared_ptr<const farmesh::FarDrawState> previous_far_draw;
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_drawlist_mutex);
+		previous_far_draw = m_far_draw_state;
+	}
 
 	unordered_map_v3pos<bool> occlude_cache;
 
@@ -161,105 +166,17 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		v3bpos_t pos;
 		MapBlockPtr block;
 		MapBlock::mesh_type mesh;
-		int mesh_buffer_count;
 		int range_blocks;
-		bool covers_cell;
 	};
 
-	struct FarCellCoverage
-	{
-		farmesh::tree_result_t params;
-		std::vector<NearCandidate> candidates;
-		// fm: Readiness follows loaded chunks and the far mesh's geometry.
-		farmesh::NearMeshHandoff handoff;
-
-		FarCellCoverage(const farmesh::tree_result_t &params_, pos_t cell_size) :
-				params(params_), handoff(params_.pos, params_.step, cell_size)
-		{
-		}
-		// ===
-	};
-
-	std::unordered_map<v3bpos_t, FarCellCoverage> transition_cells;
 	std::vector<NearCandidate> direct_near;
-
 	const auto camera_block = getNodeBlockPos(m_camera_position_node);
-	const auto far_camera_block = getNodeBlockPos(far_cam_pos_draw);
 	const pos_t near_cell_width = mesh_grid.cell_size * MAP_BLOCKSIZE;
-	const bool use_cell_handoff =
-			!m_control.range_all && m_control.farmesh > 0 && far_iteration_draw != 0;
 
-	// fm: During regional publication, ownership comes from the actual displayed
-	// cells, which can still include coarse fallbacks from a previous origin.
-	std::unordered_map<v3bpos_t, farmesh::tree_result_t> displayed_far_cells;
-	if (use_cell_handoff) {
-		const auto lock = m_far_blocks.lock_shared_rec();
-		for (const auto &[pos, block] : m_far_blocks)
-			if (block && block->getFarMesh(block->far_step))
-				displayed_far_cells.emplace(
-						pos, farmesh::tree_result_t{pos,
-									 static_cast<bpos_t>(1 << block->far_step),
-									 block->far_step});
-	}
-	const auto draw_far_params =
-			[&](const v3bpos_t &pos) -> std::optional<farmesh::tree_result_t> {
-		const auto it = farmesh::findCoveringCell(
-				displayed_far_cells, pos, [](const auto &cell) { return cell.step; },
-				m_control.cell_size_pow);
-		if (it != displayed_far_cells.end())
-			return it->second;
-		const auto target = farmesh::getFarParams(m_control, far_camera_block, pos);
-		// Keep requesting the near-only core even before it has far coverage.
-		return target && !target->step ? target : std::nullopt;
-	};
-	// ===
-
-	uint64_t near_handoff_range = std::max(0, wanted_range);
-	if (use_cell_handoff) {
-		// Farmesh step 0 is intentionally not generated.  Normal meshes must
-		// therefore remain requested and drawable until the first step-1 cells.
-		const auto far_grid_offset =
-				radius_box(far_camera_block * MAP_BLOCKSIZE, m_camera_position_node);
-		const auto far_near_range = farmesh::getFarMeshNearRange(m_control);
-		const auto far_near_range_from_camera =
-				far_grid_offset > std::numeric_limits<uint64_t>::max() - far_near_range
-						? std::numeric_limits<uint64_t>::max()
-						: far_grid_offset + far_near_range;
-		near_handoff_range = std::max(near_handoff_range, far_near_range_from_camera);
-	}
-
-	// First find all far cells touched by the configured near range.  A touched
-	// cell is handed over as a unit so a single near chunk can never remove only
-	// part of a coarser far cell.
-	if (use_cell_handoff) {
-		// fm: Include chunks whose origin is missing but other blocks are loaded.
-		for (const auto &[bp, chunk] : near_chunks) {
-			// ===
-			const auto near_cell_min = bp * MAP_BLOCKSIZE;
-			if (!farmesh::cellIntersectsRange(near_cell_min, near_cell_width,
-						m_camera_position_node, wanted_range))
-				continue;
-
-			// fm: Use the currently displayed cell during a moving-grid handoff.
-			const auto far_params = draw_far_params(bp);
-			// ===
-			if (!far_params || !far_params->step)
-				continue;
-
-			// fm: Keep geometric coverage in near-chunk units.
-			auto [it, inserted] = transition_cells.try_emplace(
-					far_params->pos, *far_params, mesh_grid.cell_size);
-			// ===
-			if (!inserted && it->second.params.step != far_params->step)
-				continue;
-
-			const pos_t far_cell_width =
-					static_cast<pos_t>(far_params->size) * near_cell_width;
-			near_handoff_range = std::max(near_handoff_range,
-					farmesh::cellMaxDistance(far_params->pos * MAP_BLOCKSIZE,
-							far_cell_width, m_camera_position_node));
-		}
-	}
+	// Near meshes are independent of the old far-grid origin after a teleport.
+	// Cover the step-0 core, but never request an entire coarse fallback cell.
+	const uint64_t near_handoff_range = std::max<uint64_t>(
+			std::max(0, wanted_range), farmesh::getFarMeshNearRange(m_control));
 
 	const auto requested_range = static_cast<int32_t>(
 			std::min<uint64_t>(near_handoff_range, std::numeric_limits<int32_t>::max()));
@@ -292,8 +209,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		// ===
 	};
 
-	// fm: Keep loaded data alive throughout each touched handoff cell.
-	// Completely absent chunks are checked against far geometry below.
+	// fm: Keep nearby loaded data alive while its meshes are built.
 	// ===
 	for (const auto &[bp, block] : vector) {
 		if (!block)
@@ -333,33 +249,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		// ===
 
 		const auto near_cell_min = bp * MAP_BLOCKSIZE;
-		const bool in_wanted_range =
-				m_control.range_all ||
-				farmesh::cellIntersectsRange(near_cell_min, near_cell_width,
-						m_camera_position_node, wanted_range);
-
-		std::optional<farmesh::tree_result_t> far_params;
-		if (use_cell_handoff &&
-				(in_wanted_range ||
-						farmesh::cellIntersectsRange(near_cell_min, near_cell_width,
-								m_camera_position_node, requested_range))) {
-			// fm: Match collection to the same displayed cell as the first pass.
-			far_params = draw_far_params(bp);
-			// ===
-		}
-
-		FarCellCoverage *coverage = nullptr;
-		if (far_params && far_params->step) {
-			if (auto it = transition_cells.find(far_params->pos);
-					it != transition_cells.end() &&
-					it->second.params.step == far_params->step)
-				coverage = &it->second;
-		}
-		const bool requires_near_mesh = far_params && !far_params->step;
-
-		if (!coverage && !in_wanted_range && !requires_near_mesh)
-			continue;
-
 		const auto distance = radius_box(near_cell_min, m_camera_position_node);
 		const int range_blocks = distance / MAP_BLOCKSIZE;
 		const auto mesh_step = farmesh::getLodStep(m_control, camera_block, bp, speedf);
@@ -370,7 +259,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		// A completed near LOD covers the chunk while its requested LOD builds.
 		// Requiring an exact LOD here hides terrain again whenever the camera moves.
 		const bool covers_cell = bool(mesh);
-		const int mesh_buffer_count = mesh ? mesh->getMesh()->getMeshBufferCount() : -1;
 
 		// fm: Empty completed chunks are ready. Missing origins need a request
 		// through a member that exists in the map, as addUpdateMeshTask requires.
@@ -380,16 +268,9 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		request_mesh(source->getPos(), source, mesh_step, mesh, range_blocks);
 		// ===
 
-		NearCandidate candidate{
-				bp, block, mesh, mesh_buffer_count, range_blocks, covers_cell};
-		if (coverage) {
-			coverage->candidates.emplace_back(std::move(candidate));
-			// fm: Count every populated near chunk, including empty mesh results.
-			coverage->handoff.addChunk(bp, covers_cell);
-			// ===
-		} else if (mesh) {
+		NearCandidate candidate{bp, block, mesh, range_blocks};
+		if (mesh)
 			direct_near.emplace_back(std::move(candidate));
-		}
 	}
 
 	// Pending requests must also follow the new camera position. Deduplication
@@ -397,7 +278,10 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	m_client->prioritizeMeshUpdates(camera_block);
 
 	const auto draw_near = [&](const NearCandidate &candidate) {
-		if (!candidate.mesh || candidate.mesh_buffer_count <= 0)
+		if (!candidate.mesh)
+			return;
+		far_draw->near_meshes.emplace(candidate.pos, candidate.mesh);
+		if (candidate.mesh->isEmpty())
 			return;
 
 		if (candidate.range_blocks > 3 && !m_control.range_all &&
@@ -418,67 +302,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	for (const auto &candidate : direct_near)
 		draw_near(candidate);
 
-	size_t near_owned_cells = 0;
-	size_t far_fallback_cells = 0;
-	for (auto &[pos, coverage] : transition_cells) {
-		// fm: Keep far geometry wherever a missing near chunk may be visible.
-		// Omitted air or enclosed space must not prevent populated surface chunks
-		// from taking ownership of this cell.
-		MapBlock::mesh_type far_mesh;
-		{
-			const auto lock = m_far_blocks.lock_shared_rec();
-			const auto it = m_far_blocks.find(pos);
-			if (it != m_far_blocks.end() && it->second &&
-					it->second->far_step == coverage.params.step)
-				far_mesh = it->second->getFarMesh(coverage.params.step);
-		}
-		bool near_complete = coverage.handoff.hasReadyChunk();
-		const auto omitted_is_occluded = [&](const v3bpos_t &chunk_pos) {
-			if (!occlusion_culling_enabled || !m_enable_raytraced_culling)
-				return false;
-			for (pos_t z = 0; z < mesh_grid.cell_size; ++z)
-				for (pos_t y = 0; y < mesh_grid.cell_size; ++y)
-					for (pos_t x = 0; x < mesh_grid.cell_size; ++x)
-						if (!isBlockOccluded(
-									(chunk_pos + v3bpos_t(x, y, z)) * MAP_BLOCKSIZE,
-									m_camera_position_node))
-							return false;
-			return true;
-		};
-		if (near_complete && far_mesh)
-			for (u8 layer = 0; layer < MAX_TILE_LAYERS; ++layer)
-				if (!coverage.handoff.covers(
-							*far_mesh->getMesh(layer), omitted_is_occluded)) {
-					near_complete = false;
-					break;
-				}
-		// ===
-		if (near_complete) {
-			blocks_skip_farmesh.emplace(pos);
-			++near_owned_cells;
-			for (const auto &candidate : coverage.candidates)
-				draw_near(candidate);
-		} else {
-			// fm: Keep the whole far cell until the sparse near coverage is ready.
-			// Drawing a subset of near chunks over it causes intersecting layers.
-			++far_fallback_cells;
-			if (!far_mesh)
-				for (const auto &candidate : coverage.candidates)
-					draw_near(candidate);
-			// ===
-		}
-	}
-
-	g_profiler->avg("Client: Farmesh handoff near cells", near_owned_cells);
-	g_profiler->avg("Client: Farmesh handoff fallback cells", far_fallback_cells);
-	//m_drawlist_last = draw_nearest.size();
-
-	//if (m_drawlist_last) infostream<<"breaked UDL "<<m_drawlist_last<<" collected="<<drawlist.size()<<" calls="<<calls<<" s="<<m_blocks.size()<<" maxms="<<max_cycle_ms<<" fw="<<getControl().fps_wanted<<" morems="<<porting::getTimeMs() - end_ms<< " meshq="<<m_mesh_queued<<" occache="<<occlude_cache.size()<<std::endl;
-
-	//if (m_drawlist_last) {
-	//	return;
-	//}
-
 	{
 		//if (m_client->farmesh_remake.empty())
 		m_far_blocks_delete_current = !m_far_blocks_delete_current;
@@ -486,28 +309,99 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 																: m_far_blocks_delete_2;
 		m_far_blocks_delete.clear();
 		size_t farblocks_drawn = 0;
-		size_t farblocks_overrode_near = 0;
-		const auto lock = m_far_blocks.lock_unique_rec();
-		for (auto it = m_far_blocks.begin(); it != m_far_blocks.end();) {
-			const auto &block = it->second;
-			if (far_iteration_clean && block->far_iteration < far_iteration_clean) {
-				m_far_blocks_delete.emplace_back(block);
-				it = m_far_blocks.erase(it);
-			} else if (block->far_iteration >= far_iteration_draw) {
-				if (!blocks_skip_farmesh.contains(it->first)) {
-					if (drawlist.contains(it->first))
-						++farblocks_overrode_near;
-					drawlist.insert_or_assign(it->first, block);
-					++farblocks_drawn;
+
+		std::vector<std::pair<v3bpos_t, MapBlockPtr>> far_blocks;
+		{
+			const auto lock = m_far_blocks.lock_unique_rec();
+			for (auto it = m_far_blocks.begin(); it != m_far_blocks.end();) {
+				const auto &block = it->second;
+				if (far_iteration_clean && block->far_iteration < far_iteration_clean) {
+					m_far_blocks_delete.emplace_back(block);
+					it = m_far_blocks.erase(it);
+				} else {
+					if (block->far_iteration >= far_iteration_draw)
+						far_blocks.emplace_back(*it);
+					++it;
 				}
-				++it;
-			} else {
-				++it;
+			}
+		}
+		for (auto it = far_blocks.begin(); it != far_blocks.end(); ++it) {
+			const auto &block = it->second;
+			{
+				const auto mesh = block->getFarMesh(block->far_step);
+				std::vector<v3bpos_t> chunks;
+				if (mesh) {
+					// Far nodes can extend beyond their nominal cell (especially
+					// downwards). Match actual geometry, including adjacent owners.
+					aabb3f bounds = mesh->getMesh()->getBoundingBox();
+					for (u8 layer = 1; layer < MAX_TILE_LAYERS; ++layer)
+						bounds.addInternalBox(mesh->getMesh(layer)->getBoundingBox());
+					const auto camera =
+							(v3opos_t::from(m_camera_position_node) -
+									v3opos_t::from(it->first) * MAP_BLOCKSIZE) *
+							BS;
+					const float reach = (double(requested_range) + near_cell_width) * BS;
+					bool nearby = m_control.range_all;
+					if (!nearby) {
+						nearby = true;
+						for (u8 axis = 0; axis < 3; ++axis)
+							nearby &= bounds.MaxEdge[axis] >= camera[axis] - reach &&
+									  bounds.MinEdge[axis] <= camera[axis] + reach;
+					}
+					if (nearby)
+						for (const auto &[pos, near] : far_draw->near_meshes) {
+							const auto minimum =
+									(v3opos_t::from(pos) - v3opos_t::from(it->first)) *
+											(MAP_BLOCKSIZE * BS) -
+									v3opos_t(0.5 * BS);
+							bool intersects = true;
+							for (u8 axis = 0; axis < 3; ++axis)
+								intersects &=
+										bounds.MaxEdge[axis] >= minimum[axis] &&
+										bounds.MinEdge[axis] <=
+												minimum[axis] + near_cell_width * BS;
+							if (intersects)
+								chunks.push_back(pos);
+						}
+				}
+				if (!chunks.empty()) {
+					std::sort(chunks.begin(), chunks.end());
+					std::shared_ptr<farmesh::ClippedFarMesh> clipped;
+					if (previous_far_draw) {
+						const auto old = previous_far_draw->clipped.find(it->first);
+						if (old != previous_far_draw->clipped.end() &&
+								old->second->source == mesh &&
+								old->second->cell_size == mesh_grid.cell_size &&
+								old->second->chunks == chunks)
+							clipped = old->second;
+					}
+					if (!clipped) {
+						clipped = std::make_shared<farmesh::ClippedFarMesh>();
+						clipped->source = mesh;
+						clipped->cell_size = mesh_grid.cell_size;
+						clipped->chunks = chunks;
+						farmesh::FarMeshClipMask mask(
+								it->first, block->far_step, mesh_grid.cell_size);
+						for (const auto &pos : chunks)
+							mask.addChunk(pos);
+						for (u8 layer = 0; layer < MAX_TILE_LAYERS; ++layer) {
+							const auto &source = *mesh->getMesh(layer);
+							for (u32 i = 0; i < source.getMeshBufferCount(); ++i)
+								for (auto &buffer : mask.clip(*source.getMeshBuffer(i)))
+									clipped->buffers.push_back(
+											{std::move(buffer), source.getMeshBuffer(i)});
+						}
+					}
+					far_draw->clipped.emplace(it->first, std::move(clipped));
+				} else {
+					drawlist.emplace(it->first, block);
+				}
+				++farblocks_drawn;
 			}
 		}
 
 		g_profiler->avg("Client: Farmesh drawn", farblocks_drawn);
-		g_profiler->avg("Client: Farmesh overrode near", farblocks_overrode_near);
+		g_profiler->avg("Client: Farmesh clipped cells", far_draw->clipped.size());
 #if !NDEBUG
 		g_profiler->avg("Client: Farmesh total", m_far_blocks.size());
 #endif
@@ -522,6 +416,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		const bool current = m_drawlist_current.load(std::memory_order_relaxed);
 		auto &back_drawlist = current ? m_drawlist_0 : m_drawlist_1;
 		back_drawlist = std::move(drawlist);
+		m_far_draw_state = std::move(far_draw);
 		m_drawlist_current.store(!current, std::memory_order_release);
 	}
 
