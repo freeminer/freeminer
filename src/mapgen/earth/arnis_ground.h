@@ -226,7 +226,7 @@ struct Ground
 	{
 		if (!has_canopy())
 			return std::nullopt;
-		const auto [x, z] = canopy_index(coord);
+		const auto &[x, z] = canopy_index(coord);
 		return canopy_data->canopy_height_m(x, z);
 	}
 	std::optional<double> canopy_fraction(const XZPoint &coord, int spacing) const
@@ -413,7 +413,7 @@ struct Ground
 	{
 		// Rust parity: src/ground.rs::cover_class / water_distance sampling.
 		const auto &lc = *land_cover;
-		const auto [world_width, world_height] = world_dims();
+		const auto &[world_width, world_height] = world_dims();
 		const double x_ratio = std::clamp(
 				static_cast<double>(coord.x) /
 						static_cast<double>(std::max<std::size_t>(1, world_width - 1)),
@@ -437,7 +437,7 @@ struct Ground
 	{
 		if (!has_land_cover())
 			return 0;
-		const auto [x, z] = land_cover_index(coord);
+		const auto &[x, z] = land_cover_index(coord);
 		return land_cover->grid[z][x];
 	}
 
