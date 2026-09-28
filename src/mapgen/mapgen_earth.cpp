@@ -1333,13 +1333,24 @@ void MapgenEarth::generateBuildings()
 					return true;
 				}
 
+				// Osmium opens the output without truncating an existing file. A
+				// previous interrupted extraction can leave this temporary file
+				// behind, which makes subsequent extractions fail (notably in
+				// Emscripten's persistent filesystem).
+				const auto temporary = filename + ".tmp";
+				std::error_code remove_error;
+				std::filesystem::remove(temporary, remove_error);
+				if (remove_error) {
+					return false;
+				}
+
 #if USE_OSMIUM_TOOL
 				{
 					verbosestream << "Extracting " << bbox << "\n";
 					CommandExtract extract{{}};
 					const std::vector<std::string> arguments{"--output-format", "pbf",
 							"--strategy", "smart", "--option", "types=any", "--bbox",
-							bbox, "--output", filename + ".tmp", path_name};
+							bbox, "--output", temporary, path_name};
 					extract.setup(arguments);
 					extract.run();
 				}
@@ -1347,18 +1358,18 @@ void MapgenEarth::generateBuildings()
 				{
 					std::stringstream cmd;
 					cmd << "osmium extract --output-format pbf --strategy smart --option types=any "
-						<< "--bbox " << bbox << " --output " << filename << ".tmp" << " "
+						<< "--bbox " << bbox << " --output " << temporary << " "
 						<< path_name;
 					exec_to_string(cmd.str());
 				}
 #endif
 
-				if (!std::filesystem::exists(filename + ".tmp")) {
+				if (!std::filesystem::exists(temporary)) {
 					return false;
 				}
 
 				std::error_code error_code;
-				std::filesystem::rename(filename + ".tmp", filename, error_code);
+				std::filesystem::rename(temporary, filename, error_code);
 				return !error_code.value();
 			};
 

@@ -36,10 +36,6 @@ Copyright (C) 2023 proller <proler@gmail.com>
 #include <sys/socket.h>
 #endif
 
-#ifdef __EMSCRIPTEN__
-#include <emsocket.h>
-#endif
-
 namespace con_sctp
 {
 

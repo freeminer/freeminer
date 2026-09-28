@@ -20,6 +20,7 @@ if [ -z "${NO_DEPS-}" ]; then
     ${SUDO} apt update
     ${SUDO} env DEBIAN_FRONTEND=noninteractive apt install --yes --no-install-recommends \
         build-essential \
+        ca-certificates \
         ccache \
         clang \
         cmake \
@@ -27,9 +28,9 @@ if [ -z "${NO_DEPS-}" ]; then
         libboost-all-dev \
         libbrotli-dev \
         libbz2-dev \
-        libc++-dev \
-        libc++abi-dev \
         libcurl4-openssl-dev \
+        libc++abi-dev \
+        libc++-dev \
         libdeflate-dev \
         libfreetype6-dev \
         libgettextpo0 \
@@ -128,7 +129,7 @@ git pull --rebase ||:
 git submodule update --init --recursive ||:
 
 #compile
-cmake .. -GNinja -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) -DBUILD_UNITTESTS=0 ${CMAKE_OPT-}
+cmake .. --fresh -GNinja -DBUILD_UNITTESTS=0 ${CMAKE_OPT-}
 nice cmake --build .
 
 
