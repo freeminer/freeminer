@@ -1129,9 +1129,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		auto block_mesh = block->getLodMesh(mesh_step, true);
 		// fm: Use exactly the mesh that owns this frame's far cutout.
 		if (far_draw) {
-			const auto near = far_draw->near_meshes.find(block_pos);
-			if (near != far_draw->near_meshes.end())
-				block_mesh = near->second;
+			const auto near_mesh = far_draw->near_meshes.find(block_pos);
+			if (near_mesh != far_draw->near_meshes.end())
+				block_mesh = near_mesh->second;
 		}
 		// ===
 		bool is_far = false;
