@@ -6,7 +6,7 @@ if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 endif()
 option(FETCH_EARTH_DEPS "Download missing Earth mapgen dependencies" ${FETCH_DEPS})
 if(NOT ENABLE_VOXEL_EARTH
-   OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/luanti-earth/native/src/voxelizer.h"
+    OR NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/luanti-earth/native/src/voxelizer.h"
 )
     set(USE_VOXEL_EARTH 0)
     return()

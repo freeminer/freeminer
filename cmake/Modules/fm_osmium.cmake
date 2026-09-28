@@ -22,7 +22,7 @@ if(NOT OSMIUM_INCLUDE_DIR AND ENABLE_SYSTEM_OSMIUM)
 endif()
 if(NOT OSMIUM_INCLUDE_DIR)
     if(NOT FETCH_OSMIUM
-       AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include/osmium/osm.hpp"
+        AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include/osmium/osm.hpp"
     )
         set(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include")
     elseif(FETCH_DEPS)
@@ -74,7 +74,7 @@ if(FETCH_DEPS AND NOT LZ4_LIBRARIES)
         FetchContent_Declare(
             expat GIT_REPOSITORY https://github.com/libexpat/libexpat/ GIT_TAG R_2_8_5
             GIT_SHALLOW TRUE SOURCE_SUBDIR expat ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
-                                                 ${FM_FETCH_EXCLUDE_FROM_ALL}
+            ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(expat)
         if(NOT TARGET EXPAT::EXPAT)
@@ -101,7 +101,7 @@ if(NOT TARGET EXPAT::EXPAT)
 endif()
 # Osmium's supported readers need these libraries, regardless of header origin.
 if(NOT TARGET Boost::headers OR NOT PROTOZERO_INCLUDE_DIR OR NOT TARGET BZip2::BZip2
-   OR NOT TARGET EXPAT::EXPAT
+    OR NOT TARGET EXPAT::EXPAT
 )
     message(STATUS "Osmium disabled: requires Boost headers, protozero, BZip2 and EXPAT")
     return()
@@ -113,6 +113,11 @@ if(NOT TARGET fm_tinygltf OR NOT TARGET nlohmann_json::nlohmann_json)
     return()
 endif()
 
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/arnis-cpp/src/data_processing.h)
+    message(STATUS "arnis-cpp sources not found, update submodules:  git submodule sync; git submodule update --init --recursive --jobs 4;")
+    return()
+endif()
+
 add_library(fm_osmium INTERFACE)
 target_include_directories(
     fm_osmium SYSTEM INTERFACE ${OSMIUM_INCLUDE_DIR} ${PROTOZERO_INCLUDE_DIR} ${Boost_INCLUDE_DIRS}
@@ -120,12 +125,12 @@ target_include_directories(
 target_link_libraries(
     fm_osmium
     INTERFACE fm_tinygltf
-              nlohmann_json::nlohmann_json
-              Boost::headers
-              BZip2::BZip2
-              EXPAT::EXPAT
-              ZLIB::ZLIB
-              Threads::Threads
+    nlohmann_json::nlohmann_json
+    Boost::headers
+    BZip2::BZip2
+    EXPAT::EXPAT
+    ZLIB::ZLIB
+    Threads::Threads
 )
 if(TARGET Boost::geometry)
     target_link_libraries(fm_osmium INTERFACE Boost::geometry)
