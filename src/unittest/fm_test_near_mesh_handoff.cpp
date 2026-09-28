@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "client/fm_near_mesh_handoff.h"
+#include "client/fm_far_mesh_clip.h"
 #include "client/fm_mesh_priority.h"
 #include "client/mesh_generator_thread.h"
 #include "test.h"
@@ -17,6 +18,13 @@ public:
 	const char *getName() override { return "TestFmNearMeshHandoff"; }
 	void runTests(IGameDef *gamedef) override
 	{
+		TEST(testClipPartialSurface);
+		TEST(testClipBoundaryFaces);
+		TEST(testClipOversizedFarGeometry);
+		TEST(testClipLights);
+		TEST(testClipVertexAttributes);
+		TEST(testClipTeleportFallback);
+		TEST(testClipBufferLimit);
 		TEST(testSparseTerrainHandoff);
 		TEST(testUnfinishedChunkAboveSurface);
 		TEST(testMissingVisibleSurface);
@@ -53,6 +61,152 @@ public:
 		}
 		const u16 indices[] = {0, 1, 2, 0, 2, 3};
 		mesh.getMeshBuffer(0)->append(vertices.data(), vertices.size(), indices, 6);
+	}
+
+	static double area(const std::vector<irr_ptr<scene::SMeshBuffer>> &buffers)
+	{
+		double result = 0;
+		for (const auto &buffer : buffers) {
+			const auto &indices = buffer->Indices->Data;
+			for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+				const auto a = buffer->getPosition(indices[i]);
+				const auto b = buffer->getPosition(indices[i + 1]);
+				const auto c = buffer->getPosition(indices[i + 2]);
+				result += (b - a).crossProduct(c - a).getLength() / (2 * BS * BS);
+			}
+		}
+		return result;
+	}
+
+	void testClipPartialSurface()
+	{
+		// One ready near chunk must appear while the other three surface
+		// chunks remain completely absent. Chunk size >=4 needs no occlusion.
+		for (pos_t cell_size : {1, 2, 4, 8}) {
+			const float width = cell_size * MAP_BLOCKSIZE;
+			const v3bpos_t origin(-32, -16, 64);
+			scene::SMesh mesh;
+			addQuad(mesh, 1, 1, width / 2 - 0.5f, -0.5f, 2 * width - 0.5f, -0.5f,
+					2 * width - 0.5f);
+			auto &source = *mesh.getMeshBuffer(0);
+			farmesh::FarMeshClipMask mask(origin, 1, cell_size);
+			mask.addChunk(origin);
+			auto clipped = mask.clip(source);
+			UASSERT(std::abs(area(clipped) - 3 * width * width) < 0.01);
+			// Clipping must preserve the cached far source for later movement.
+			UASSERTEQ(u32, source.getIndexCount(), 6);
+			mask.addChunk(origin + v3bpos_t(cell_size, 0, 0));
+			UASSERT(std::abs(area(mask.clip(source)) - 2 * width * width) < 0.01);
+			mask.addChunk(origin + v3bpos_t(0, 0, cell_size));
+			mask.addChunk(origin + v3bpos_t(cell_size, 0, cell_size));
+			UASSERT(mask.clip(source).empty());
+		}
+	}
+
+	void testClipBoundaryFaces()
+	{
+		for (u8 axis = 0; axis < 3; ++axis)
+			for (int sign : {-1, 1}) {
+				scene::SMesh mesh;
+				addQuad(mesh, axis, sign, 31.5f, -0.5f, 31.5f, -0.5f, 31.5f);
+				v3bpos_t owner;
+				if (sign < 0)
+					owner[axis] = 2;
+				farmesh::FarMeshClipMask mask({}, 1, 2);
+				mask.addChunk(owner);
+				UASSERT(mask.clip(*mesh.getMeshBuffer(0)).empty());
+				owner[axis] = 2 - owner[axis];
+				farmesh::FarMeshClipMask adjacent({}, 1, 2);
+				adjacent.addChunk(owner);
+				UASSERT(std::abs(area(adjacent.clip(*mesh.getMeshBuffer(0))) - 1024) <
+						0.01);
+			}
+	}
+
+	void testClipOversizedFarGeometry()
+	{
+		// Scaled far nodes can reach below their cell's origin. A near chunk
+		// there must remove that geometry without affecting its neighbors.
+		scene::SMesh mesh;
+		addQuad(mesh, 1, 1, -16.5f, -0.5f, 63.5f, -0.5f, 63.5f);
+		farmesh::FarMeshClipMask mask({}, 1, 2);
+		mask.addChunk({0, 0, 0});
+		UASSERT(std::abs(area(mask.clip(*mesh.getMeshBuffer(0))) - 4096) < 0.01);
+		mask.addChunk({0, -2, 0});
+		UASSERT(std::abs(area(mask.clip(*mesh.getMeshBuffer(0))) - 3072) < 0.01);
+	}
+
+	void testClipLights()
+	{
+		scene::SMeshBuffer source;
+		source.setPrimitiveType(scene::EPT_POINTS);
+		for (float x : {10.0f, 40.0f}) {
+			video::S3DVertex vertex(
+					v3f(x * BS, 10 * BS, 10 * BS), {}, video::SColor(0xffffffff), {});
+			const u16 index = 0;
+			source.append(&vertex, 1, &index, 1);
+		}
+		farmesh::FarMeshClipMask mask({}, 1, 2);
+		mask.addChunk({});
+		const auto clipped = mask.clip(source);
+		UASSERTEQ(size_t, clipped.size(), 1);
+		UASSERTEQ(u32, clipped[0]->getIndexCount(), 1);
+		UASSERTEQ(float, clipped[0]->getPosition(0).X, 40 * BS);
+	}
+
+	void testClipVertexAttributes()
+	{
+		scene::SMesh mesh;
+		addQuad(mesh, 1, 1, 15.5f, -0.5f, 63.5f, -0.5f, 63.5f);
+		auto &source = *static_cast<scene::SMeshBuffer *>(mesh.getMeshBuffer(0));
+		for (auto &vertex : source.Vertices->Data) {
+			vertex.TCoords = v2f(vertex.Pos.X / (64 * BS), vertex.Pos.Z / (64 * BS));
+			vertex.Aux = 37; // Texture-array layer must survive interpolation.
+		}
+		farmesh::FarMeshClipMask mask({}, 1, 2);
+		mask.addChunk({});
+		for (const auto &buffer : mask.clip(source))
+			for (const auto &vertex : buffer->Vertices->Data) {
+				UASSERTEQ(u16, vertex.Aux, 37);
+				UASSERT(std::abs(vertex.TCoords.X - vertex.Pos.X / (64 * BS)) < 0.0001);
+				UASSERT(std::abs(vertex.TCoords.Y - vertex.Pos.Z / (64 * BS)) < 0.0001);
+				UASSERTEQ(float, vertex.Normal.Y, 1);
+			}
+	}
+
+	void testClipTeleportFallback()
+	{
+		// A huge old cell contains one loaded chunk near the new camera.
+		// The mask stays sparse instead of iterating over (2^step)^3 chunks.
+		const v3bpos_t origin(-8192, 0, -8192);
+		const v3bpos_t near = origin + v3bpos_t(2048, 0, 4096);
+		farmesh::FarMeshClipMask mask(origin, 16, 2);
+		mask.addChunk(near);
+		scene::SMesh mesh;
+		const float x = 2048 * MAP_BLOCKSIZE - 0.5f;
+		const float z = 4096 * MAP_BLOCKSIZE - 0.5f;
+		addQuad(mesh, 1, 1, 15.5f, z, z + 64, x, x + 64);
+		UASSERT(std::abs(area(mask.clip(*mesh.getMeshBuffer(0))) - 3072) < 0.01);
+		farmesh::FarMeshClipMask moved(origin, 16, 2);
+		moved.addChunk(near + v3bpos_t(8, 0, 0));
+		UASSERT(std::abs(area(moved.clip(*mesh.getMeshBuffer(0))) - 4096) < 0.01);
+	}
+
+	void testClipBufferLimit()
+	{
+		scene::SMesh mesh;
+		for (unsigned i = 0; i < 12000; ++i)
+			addQuad(mesh, 1, 1, 15.5f, -0.5f, 63.5f, -0.5f, 63.5f);
+		farmesh::FarMeshClipMask mask({}, 1, 2);
+		mask.addChunk({});
+		const auto clipped = mask.clip(*mesh.getMeshBuffer(0));
+		UASSERT(clipped.size() > 1);
+		for (const auto &buffer : clipped) {
+			UASSERT(buffer->getVertexCount() <= U16_MAX);
+			for (const auto index : buffer->Indices->Data)
+				UASSERT(index < buffer->getVertexCount());
+		}
+		UASSERT(std::abs(area(clipped) - 12000.0 * 3072) < 0.01);
 	}
 
 	void testSparseTerrainHandoff()
