@@ -25,3 +25,7 @@ list(APPEND FREEMINER_SERVER_LIBRARIES fm_dependencies)
 
 # Mandelbulber's implementation is built into Freeminer.
 set(USE_MANDELBULBER 1)
+
+if(STATIC_BUILD AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_library(LIBBSD_STATIC NAMES libbsd.a)
+endif()

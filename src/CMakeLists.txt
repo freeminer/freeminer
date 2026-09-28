@@ -792,6 +792,9 @@ if(BUILD_CLIENT)
 	endif()
 	if (USE_POSTGRESQL)
 		target_link_libraries(${PROJECT_NAME} ${PostgreSQL_LIBRARIES})
+        # fm:
+		target_link_libraries(${PROJECT_NAME} ${LIBBSD_STATIC})
+		# ===
 	endif()
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
@@ -874,6 +877,9 @@ if(BUILD_SERVER)
 	endif()
 	if (USE_POSTGRESQL)
 		target_link_libraries(${PROJECT_NAME}server ${PostgreSQL_LIBRARIES})
+        # fm:
+		target_link_libraries(${PROJECT_NAME}server ${LIBBSD_STATIC})
+		# ===
 	endif()
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
