@@ -73,12 +73,12 @@ fi
 if [ "${FULL_STATIC:-0}" = 1 ]; then
 	cmake_args+=(
 		-DCMAKE_CXX_STANDARD_LIBRARIES=-lbsd
-		-DCMAKE_EXE_LINKER_FLAGS=-static\ -static-libgcc\ -static-libstdc++\ -lbsd
-		#-DSDL2_LIBRARY=/usr/lib/x86_64-linux-gnu/libSDL2.a
+		-DCMAKE_EXE_LINKER_FLAGS=-static\ -static-libgcc\ -static-libstdc++
+		#-DSDL2_LIBRARY=/usr/lib/x86_64-linux-gnu/libSDL2.a -lbsd
 	)
 fi
 
-cmake "${cmake_args[@]}" "$@"
+cmake --fresh "${cmake_args[@]}" "$@"
 cmake --build "${build_dir}"
 
 binary="${build_dir}/bin/freeminer"

@@ -106,7 +106,7 @@ struct WorldEditor
 	{
 		std::size_t operator()(const std::tuple<int, int, int> &p) const noexcept
 		{
-			const auto [x, y, z] = p;
+			const auto &[x, y, z] = p;
 			std::size_t seed = std::hash<int>{}(x);
 			seed ^= std::hash<int>{}(y) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 			seed ^= std::hash<int>{}(z) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
