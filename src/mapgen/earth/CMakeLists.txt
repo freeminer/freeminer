@@ -4,6 +4,9 @@ if(USE_OSMIUM)
           "${CMAKE_CURRENT_SOURCE_DIR}/arnis-cpp/src/*.cpp"
      )
      list(APPEND mapgen_earth_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/arnis_adapter.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/arnis_ground.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/arnis_world_editor.cpp
+          ${CMAKE_CURRENT_SOURCE_DIR}/arnis_projection_frame.cpp
           ${CMAKE_CURRENT_SOURCE_DIR}/blocks.cpp
      )
      message(STATUS "Using osmium + arnis")
