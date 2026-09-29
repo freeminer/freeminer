@@ -80,11 +80,11 @@ public:
 	MapgenV7(MapgenV7Params *params, EmergeParams *emerge);
 	~MapgenV7();
 
-	virtual MapgenType getType() const { return MAPGEN_V7; }
+	virtual MapgenType getType() const override { return MAPGEN_V7; }
 
-	virtual void makeChunk(BlockMakeData *data);
+	virtual void makeChunk(BlockMakeData *data) override;
 	virtual
-	pos_t getSpawnLevelAtPoint(v2pos_t p);
+	pos_t getSpawnLevelAtPoint(v2pos_t p) override;
 
 	float baseTerrainLevelAtPoint(pos_t x, pos_t z);
 	float baseTerrainLevelFromMap(int index);

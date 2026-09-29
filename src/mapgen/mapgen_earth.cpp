@@ -1349,7 +1349,9 @@ void MapgenEarth::generateBuildings()
 					verbosestream << "Extracting " << bbox << "\n";
 					CommandExtract extract{{}};
 					const std::vector<std::string> arguments{"--output-format", "pbf",
-							"--strategy", "smart", "--option", "types=any", "--bbox",
+							"--strategy", "smart", "--option", "types=any",
+							"--option", "complete-partial-relations=0",
+							"--bbox",
 							bbox, "--output", temporary, path_name};
 					extract.setup(arguments);
 					extract.run();
@@ -1357,7 +1359,7 @@ void MapgenEarth::generateBuildings()
 #else
 				{
 					std::stringstream cmd;
-					cmd << "osmium extract --output-format pbf --strategy smart --option types=any "
+					cmd << "osmium extract --output-format pbf --strategy smart --option types=any --option complete-partial-relations=0"
 						<< "--bbox " << bbox << " --output " << temporary << " "
 						<< path_name;
 					exec_to_string(cmd.str());

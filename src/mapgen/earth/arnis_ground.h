@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -12,6 +14,7 @@
 #include "arnis-cpp/src/biome.h"
 #include "arnis-cpp/src/canopy/canopy.h"
 #include "arnis-cpp/src/land_cover/land_cover.h"
+#include "arnis-cpp/src/ecoregion.h"
 #include "arnis-cpp/src/urban_ground.h"
 
 namespace arnis
@@ -44,6 +47,7 @@ struct Ground
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
 	UrbanGroundLookup urban_lookup;
+	std::optional<ecoregion::EcoMap> ecoregion_map;
 	static Ground new_flat(int ground_level)
 	{
 		Ground ground;
@@ -79,6 +83,12 @@ struct Ground
 
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const;
+	// Unrounded terrain height and the derived continuous terrain metrics used
+	// by Rust's surface/material selection.  Keeping these in Ground avoids
+	// reconstructing elevation interpolation in individual processors.
+	double level_exact(const XZPoint &pos) const;
+	double slope_exact(const XZPoint &pos) const;
+	double convexity(const XZPoint &pos) const;
 
 	bool has_land_cover() const;
 	bool has_canopy() const;
@@ -132,6 +142,8 @@ struct Ground
 	void set_climate(biome::Climate value) { climate_state = value; }
 	void set_urban_lookup(UrbanGroundLookup lookup) { urban_lookup = std::move(lookup); }
 	bool is_urban(int x, int z) const { return urban_lookup.is_urban(x, z); }
+	void set_ecoregion_map(ecoregion::EcoMap map) { ecoregion_map = std::move(map); }
+	std::optional<ecoregion::Ecoregion> ecoregion_at(const XZPoint &coord) const;
 
 	void set_land_cover_data(land_cover::LandCoverData data, std::size_t world_width,
 			std::size_t world_height);

@@ -40,6 +40,11 @@ namespace signage
 struct SignageContext;
 }
 
+namespace trees::mapped
+{
+class MappedTrunks;
+}
+
 namespace block_definitions
 {
 extern Block CHEST;
@@ -141,6 +146,9 @@ struct WorldEditor
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing_blocks = 5;
 	std::function<bool(int, int, int, std::uint8_t)> regional_tree_placer;
+	// Authored OSM trunks suppress procedural canopy crowns in the same cells,
+	// matching Rust's MappedTrunks pass during streamed ground decoration.
+	std::shared_ptr<const trees::mapped::MappedTrunks> mapped_trunks;
 	GameMode gamemode = GameMode::Creative;
 	std::int64_t world_time = 6000;
 	std::string level_name, projection_name;
@@ -188,6 +196,7 @@ struct WorldEditor
 	std::vector<FacadePanel> placed_facade_panels;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
 	std::vector<DecalFrame> placed_frames;
+	std::unordered_map<std::int64_t, Block> support_columns;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> written_cells;
 	// Effective terrain/road elevation cache. The dense part covers the mapchunk
 	// and its OSM halo; only unusual out-of-halo queries use the sparse fallback.
@@ -494,15 +503,17 @@ struct WorldEditor
 
 	bool check_for_block_absolute(int x, int y, int z,
 			const std::optional<std::vector<Block>> &blocks = {},
-			const std::optional<std::vector<Block>> &avoid = {});
+			const std::optional<std::vector<Block>> &avoid = {}) const;
 
-	bool block_exists_absolute(int x, int y, int z);
+	bool block_exists_absolute(int x, int y, int z) const;
 
 	std::optional<Block> get_block_absolute(int x, int y, int z) const;
 
 	bool cell_open_at(int x, int y, int z) const;
 
 	void set_block_if_absent_absolute(const Block &block, int x, int y, int z);
+	void register_support_column(int x, int z, const Block &block);
+	std::optional<Block> support_column(int x, int z) const;
 
 	void fill_column_absolute(
 			const Block &block, int x, int z, int min_y, int max_y, bool skip_existing);

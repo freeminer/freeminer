@@ -502,7 +502,7 @@ uint8_t WorldEditor::water_distance(int x, int z) const
 }
 bool WorldEditor::check_for_block_absolute(int x, int y, int z,
 		const std::optional<std::vector<Block>> &blocks,
-		const std::optional<std::vector<Block>> &avoid)
+		const std::optional<std::vector<Block>> &avoid) const
 {
 	const v3pos_t pos{
 			static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
@@ -526,7 +526,7 @@ bool WorldEditor::check_for_block_absolute(int x, int y, int z,
 	}
 	return true;
 }
-bool WorldEditor::block_exists_absolute(int x, int y, int z)
+bool WorldEditor::block_exists_absolute(int x, int y, int z) const
 {
 	return check_for_block_absolute(x, y, z);
 }
@@ -551,6 +551,19 @@ void WorldEditor::set_block_if_absent_absolute(const Block &block, int x, int y,
 {
 	if (!check_for_block_absolute(x, y, z))
 		set_block_absolute(block, x, y, z);
+}
+
+void WorldEditor::register_support_column(int x, int z, const Block &block)
+{
+	const auto key = (static_cast<std::int64_t>(x) << 32) ^ static_cast<std::uint32_t>(z);
+	support_columns[key] = block;
+}
+
+std::optional<Block> WorldEditor::support_column(int x, int z) const
+{
+	const auto key = (static_cast<std::int64_t>(x) << 32) ^ static_cast<std::uint32_t>(z);
+	const auto it = support_columns.find(key);
+	return it == support_columns.end() ? std::nullopt : std::optional<Block>(it->second);
 }
 void WorldEditor::fill_column_absolute(
 		const Block &block, int x, int z, int min_y, int max_y, bool skip_existing)
@@ -622,7 +635,6 @@ void WorldEditor::fill_blocks(const Block &block, std::int32_t x1, std::int32_t 
 	return fill_blocks(block, x1, y1, z1, x2, y2, z2, std::optional<std::vector<Block>>{},
 			std::optional<std::vector<Block>>{});
 }
-
 
 }
 

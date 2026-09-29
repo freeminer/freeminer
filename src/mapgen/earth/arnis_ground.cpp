@@ -69,6 +69,65 @@ int Ground::level(const XZPoint &pos) const
 	++mg->stat.level;
 	return mg->get_height(pos.X, pos.Y, 0);
 }
+
+double Ground::level_exact(const XZPoint &pos) const
+{
+	if (!elevation_enabled || elevation_grid.empty() || elevation_world_width == 0 ||
+			elevation_world_height == 0)
+		return static_cast<double>(elevation_ground_level.value_or(0));
+	const auto height = elevation_grid.size();
+	const auto width = elevation_grid.front().size();
+	if (width == 0 || height == 0)
+		return static_cast<double>(elevation_ground_level.value_or(0));
+	const double xr = std::clamp(double(pos.x) / double(std::max<std::size_t>(
+														 1, elevation_world_width - 1)),
+							  0.0, 1.0) *
+					  double(width - 1);
+	const double zr = std::clamp(double(pos.z) / double(std::max<std::size_t>(
+														 1, elevation_world_height - 1)),
+							  0.0, 1.0) *
+					  double(height - 1);
+	const auto x0 =
+			std::min<std::size_t>(static_cast<std::size_t>(std::floor(xr)), width - 1);
+	const auto z0 =
+			std::min<std::size_t>(static_cast<std::size_t>(std::floor(zr)), height - 1);
+	const auto x1 = std::min(width - 1, x0 + 1);
+	const auto z1 = std::min(height - 1, z0 + 1);
+	const double tx = xr - std::floor(xr), tz = zr - std::floor(zr);
+	const double top = elevation_grid[z0][x0] * (1.0 - tx) + elevation_grid[z0][x1] * tx;
+	const double bottom =
+			elevation_grid[z1][x0] * (1.0 - tx) + elevation_grid[z1][x1] * tx;
+	return top * (1.0 - tz) + bottom * tz;
+}
+
+double Ground::slope_exact(const XZPoint &pos) const
+{
+	if (!elevation_enabled)
+		return 0.0;
+	constexpr int step = 4;
+	const std::array<double, 4> samples{{level_exact({pos.x + step, pos.z}),
+			level_exact({pos.x - step, pos.z}), level_exact({pos.x, pos.z - step}),
+			level_exact({pos.x, pos.z + step})}};
+	const auto [min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
+	return std::max(0.0, (*max_it - *min_it) * elevation_slope_correction);
+}
+
+double Ground::convexity(const XZPoint &pos) const
+{
+	if (!elevation_enabled)
+		return 0.0;
+	constexpr int radius = 8;
+	constexpr int diagonal = 6;
+	const std::array<std::pair<int, int>, 8> ring{{{radius, 0}, {-radius, 0}, {0, radius},
+			{0, -radius}, {diagonal, diagonal}, {diagonal, -diagonal},
+			{-diagonal, diagonal}, {-diagonal, -diagonal}}};
+	double mean = 0.0;
+	for (const auto [dx, dz] : ring)
+		mean += level_exact({pos.x + dx, pos.z + dz});
+	mean /= static_cast<double>(ring.size());
+	// The sample ring is twice the four-block slope baseline used by Rust.
+	return (mean - level_exact(pos)) * 0.5 * elevation_slope_correction;
+}
 bool Ground::has_land_cover() const
 {
 	return land_cover.has_value() && land_cover->width > 0 && land_cover->height > 0 &&
@@ -77,6 +136,15 @@ bool Ground::has_land_cover() const
 bool Ground::has_canopy() const
 {
 	return canopy_data.has_value() && canopy_world_width > 0 && canopy_world_height > 0;
+}
+
+std::optional<ecoregion::Ecoregion> Ground::ecoregion_at(const XZPoint &coord) const
+{
+	if (!ecoregion_map || !mg)
+		return std::nullopt;
+	const auto [lat, lon] = mg->pos_to_ll(coord.X, coord.Y);
+	const auto id = ecoregion_map->id_at(lat, lon);
+	return id ? ecoregion::lookup(*id) : std::nullopt;
 }
 double Ground::blocks_per_meter() const
 {
