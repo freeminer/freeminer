@@ -435,8 +435,10 @@ void init(MapgenEarth *mg)
 				if (usable(id))
 					return id;
 			}
-			if (names.size() > 0)
-				DUMP("Mapping node alternatives missing or liquid", *names.begin());
+			if (names.size() > 0) {
+				errorstream << "Mapping node alternatives missing or liquid "
+							<< *names.begin() << "\n";
+			}
 			return fallback;
 		}
 	};

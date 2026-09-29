@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../../mapgen/fm_earth_projection.h"
+//#include "../../mapgen/fm_earth_projection.h"
 
 #include <cmath>
+#include "irr_v3d.h"
 
 class MapgenEarth;
 
