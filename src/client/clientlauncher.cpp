@@ -252,6 +252,7 @@ bool ClientLauncher::run(const GameParams &game_params, const Settings &cmd_args
 			){
 				m_rendering_engine->get_scene_manager()->clear();
 				errorstream << "Reconnecting "<< n << "/" << tries << " ..." << '\n';
+				sleep_ms(10000);
 			}
 #if NDEBUG && !EXCEPTION_DEBUG
 		} catch (std::exception &e) {
