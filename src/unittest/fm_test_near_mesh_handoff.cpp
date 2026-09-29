@@ -2,6 +2,7 @@
 
 #include "client/fm_near_mesh_handoff.h"
 #include "client/fm_far_mesh_clip.h"
+#include "client/fm_far_mesh_bounds.h"
 #include "client/fm_mesh_priority.h"
 #include "client/mesh_generator_thread.h"
 #include "test.h"
@@ -18,6 +19,8 @@ public:
 	const char *getName() override { return "TestFmNearMeshHandoff"; }
 	void runTests(IGameDef *gamedef) override
 	{
+		TEST(testFarBoundsSelectReadyChunks);
+		TEST(testFarBoundsIncludeLightPoint);
 		TEST(testClipPartialSurface);
 		TEST(testClipBoundaryFaces);
 		TEST(testClipOversizedFarGeometry);
@@ -76,6 +79,65 @@ public:
 			}
 		}
 		return result;
+	}
+
+	void testFarBoundsSelectReadyChunks()
+	{
+		// Reproduce the live cell: its aggregate bounds were zero even though
+		// its geometry spans four completed near chunks away from its origin.
+		const v3bpos_t origin(-16, 0, -19396);
+		scene::SMesh mesh;
+		addQuad(mesh, 1, 1, 43.5f, -0.5f, 63.5f, -0.5f, 63.5f);
+		UASSERT(mesh.getBoundingBox().MinEdge == v3f());
+		UASSERT(mesh.getBoundingBox().MaxEdge == v3f());
+		farmesh::updateMeshBounds(mesh);
+		const auto &bounds = mesh.getBoundingBox();
+		UASSERTEQ(float, bounds.MinEdge.Y, 43.5f * BS);
+		UASSERTEQ(float, bounds.MaxEdge.X, 63.5f * BS);
+		UASSERT(!farmesh::intersectsNearChunk(bounds, origin, origin, 32));
+
+		farmesh::FarMeshClipMask mask(origin, 1, 2);
+		size_t selected = 0;
+		for (pos_t z : {0, 2})
+			for (pos_t x : {0, 2}) {
+				const auto ready = origin + v3bpos_t(x, 2, z);
+				if (farmesh::intersectsNearChunk(bounds, origin, ready, 32)) {
+					mask.addChunk(ready);
+					++selected;
+				}
+			}
+		UASSERTEQ(size_t, selected, 4);
+		// The previous zero bounds selected none of these chunks, leaving the
+		// entire far surface visible over already drawn near terrain.
+		UASSERT(mask.clip(*mesh.getMeshBuffer(0)).empty());
+	}
+
+	void testFarBoundsIncludeLightPoint()
+	{
+		scene::SMesh mesh;
+		auto *buffer = new scene::SMeshBuffer();
+		buffer->setPrimitiveType(scene::EPT_POINTS);
+		// Far lights append directly to the vertex array, bypassing even the
+		// buffer's bounds. A single light is not an empty mesh.
+		buffer->Vertices->Data.emplace_back(
+				v3f(40 * BS, -20 * BS, 10 * BS), v3f{}, video::SColor(0xffffffff), v2f{});
+		buffer->Indices->Data.push_back(0);
+		mesh.addMeshBuffer(buffer);
+		buffer->drop();
+		farmesh::updateMeshBounds(mesh);
+		const auto point = buffer->getPosition(0);
+		UASSERT(mesh.getBoundingBox().MinEdge == point);
+		UASSERT(mesh.getBoundingBox().MaxEdge == point);
+		UASSERT(buffer->getBoundingBox().MinEdge == point);
+		UASSERT(farmesh::intersectsNearChunk(mesh.getBoundingBox(), {}, {2, -2, 0}, 32));
+		farmesh::FarMeshClipMask mask({}, 1, 2);
+		mask.addChunk({2, -2, 0});
+		UASSERT(mask.clip(*buffer).empty());
+
+		mesh.clear();
+		farmesh::updateMeshBounds(mesh);
+		UASSERT(mesh.getBoundingBox().MinEdge == v3f());
+		UASSERT(mesh.getBoundingBox().MaxEdge == v3f());
 	}
 
 	void testClipPartialSurface()

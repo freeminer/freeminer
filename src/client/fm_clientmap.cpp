@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "client/fm_farmesh.h"
 #include "client/fm_far_draw.h"
 #include "client/fm_far_mesh_clip.h"
+#include "client/fm_far_mesh_bounds.h"
 #include "client/fm_mesh_priority.h"
 #include "client/mapblock_mesh.h"
 #include "client/node_visuals.h"
@@ -349,20 +350,10 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 									  bounds.MinEdge[axis] <= camera[axis] + reach;
 					}
 					if (nearby)
-						for (const auto &[pos, near] : far_draw->near_meshes) {
-							const auto minimum =
-									(v3opos_t::from(pos) - v3opos_t::from(it->first)) *
-											(MAP_BLOCKSIZE * BS) -
-									v3opos_t(0.5 * BS);
-							bool intersects = true;
-							for (u8 axis = 0; axis < 3; ++axis)
-								intersects &=
-										bounds.MaxEdge[axis] >= minimum[axis] &&
-										bounds.MinEdge[axis] <=
-												minimum[axis] + near_cell_width * BS;
-							if (intersects)
+						for (const auto &[pos, near] : far_draw->near_meshes)
+							if (farmesh::intersectsNearChunk(
+										bounds, it->first, pos, near_cell_width))
 								chunks.push_back(pos);
-						}
 				}
 				if (!chunks.empty()) {
 					std::sort(chunks.begin(), chunks.end());
