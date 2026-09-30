@@ -71,7 +71,7 @@ size_t multi_http_to_file(
 		const std::string &name, const std::vector<std::string> &links, std::string path)
 {
 	if (path.empty()) {
-		path = porting::path_cache + DIR_DELIM + "earth" + "/" + name;
+		path = (std::filesystem::path(porting::path_cache) / "earth" / name).string();
 	}
 
 	if (std::filesystem::exists(path)) {
