@@ -396,6 +396,9 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			0.0, static_cast<double>(
 						 getfloatfield_default(L, 2, "blast_min_strength", 0.15f)));
 
+	const double blast_tnt_absorb_strength =
+			blast_multiplier(L, "blast_tnt_absorb_strength", 1.0);
+
 	const auto read_content = [&](const char *field, const char *fallback) {
 		const auto name = getstringfield_default(L, 2, field, fallback);
 		content_t id = CONTENT_IGNORE;
@@ -635,6 +638,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		MapNode node;
 		double strength = 0.0;
 		double step_cost = 0.0;
+		bool absorbed_tnt = false;
 	};
 
 	const auto charge_strength = [&](double cost) {
@@ -775,21 +779,23 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		shell_candidates.push_back(candidate);
 	};
 
-	const auto process_tnt_candidates = [&](double ray_strength) {
+	const auto process_tnt_candidates = [&]() {
 		double added_strength = 0.0;
 
-		for (const auto &candidate : shell_candidates) {
+		for (auto &candidate : shell_candidates) {
 			const content_t content = candidate.node.getContent();
 			if (!tnt_contents.contains(content) || content == tnt_burning_content)
 				continue;
 
 			if (!last) {
-				if (ray_strength <= blast_min_strength + candidate.step_cost) {
+				if (candidate.strength < blast_tnt_absorb_strength ||
+						candidate.strength <= blast_min_strength + candidate.step_cost) {
 					ignite_terminal_tnt(candidate.node_pos, candidate.node);
 					continue;
 				}
 
 				env->removeNode(candidate.node_pos, 2);
+				candidate.absorbed_tnt = true;
 				const double node_strength = tnt_node_blast_strength(content);
 				added_strength += node_strength;
 				remaining_strength += node_strength;
@@ -808,19 +814,19 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		add_to_layer_weights(layer_weights, added_strength);
 		for (auto &candidate : shell_candidates) {
 			candidate.strength += added_strength;
-			if (!last && tnt_contents.count(candidate.node.getContent()))
+			if (candidate.absorbed_tnt)
 				add_layer_weight(
 						next_layer_weights, candidate.node_pos, candidate.strength);
 		}
 	};
 
-	const auto process_candidate = [&](const BlastCandidate &candidate,
-										   double ray_strength) {
+	const auto process_candidate = [&](const BlastCandidate &candidate) {
 		const content_t content = candidate.node.getContent();
 		if (tnt_contents.count(content))
 			return;
 
-		const double available_strength = ray_strength;
+		// Preserve attenuation along this ray, including any TNT energy added this shell.
+		const double available_strength = candidate.strength;
 		if (available_strength <= blast_min_strength)
 			return;
 
@@ -832,7 +838,8 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		const bool destroyable = !empty_node;
 		const bool blocks_wave = destroyable && !blast_transparent;
 		const double resistance = blocks_wave ? node_resistance(content) : 0.0;
-		const double pass_loss = blocks_wave ? resistance : candidate.step_cost;
+		// Distance loss was already applied when building the layer.
+		const double pass_loss = blocks_wave ? resistance : 0.0;
 		const double hit_strength = std::max(0.0, available_strength - pass_loss);
 		const bool weak_edge =
 				available_strength <= blast_distance_loss + resistance + 1.0;
@@ -936,11 +943,12 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		if (!shell_candidates.empty()) {
 			const size_t active_rays = shell_candidates.size();
 			last_active_rays = active_rays;
-			last_ray_strength = active_rays > 0 ? remaining_strength /
-														  static_cast<double>(active_rays)
-												: 0.0;
+			process_tnt_candidates();
 
-			process_tnt_candidates(last_ray_strength);
+			last_ray_strength = 0.0;
+			for (const auto &candidate : shell_candidates)
+				last_ray_strength += candidate.strength;
+			last_ray_strength /= static_cast<double>(active_rays);
 
 			const size_t start = static_cast<size_t>(
 					myrand_range(0, static_cast<int>(shell_candidates.size() - 1)));
@@ -953,7 +961,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				if (tnt_contents.count(candidate.node.getContent()))
 					continue;
 
-				process_candidate(candidate, last_ray_strength);
+				process_candidate(candidate);
 			}
 		}
 
