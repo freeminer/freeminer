@@ -1530,12 +1530,15 @@ u32 ClientMap::renderFarFog(video::IVideoDriver *driver, video::ITexture *depth)
 					std::clamp<int>(g_settings->getS32("volumetric_fog_quality"), 1, 2);
 			m_far_fog_depth_shader = source->getShader("far_fog_shader",
 					{{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 1}},
-					video::EMT_ONETEXTURE_BLEND);
+					video::EMT_SOLID);
 		}
 		material.MaterialType = source->getShaderInfo(m_far_fog_depth_shader).material;
 		// Accumulate premultiplied RGB and coverage in the transparent target.
-		material.MaterialTypeParam = video::pack_textureBlendFuncSeparate(
-				video::EBF_SRC_ALPHA, video::EBF_ONE_MINUS_SRC_ALPHA, video::EBF_ONE,
+		// Use explicit shader blending: fixed-pipeline blend materials are rejected
+		// by ShaderSource, and the alpha-channel base overrides separate factors.
+		material.BlendOperation = video::EBO_ADD;
+		material.BlendFactor = video::pack_textureBlendFuncSeparate(video::EBF_SRC_ALPHA,
+				video::EBF_ONE_MINUS_SRC_ALPHA, video::EBF_ONE,
 				video::EBF_ONE_MINUS_SRC_ALPHA);
 		material.ZBuffer = video::ECFN_DISABLED;
 		material.setTexture(0, depth);
