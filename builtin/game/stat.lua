@@ -76,6 +76,22 @@ function core.stat_formspec(name)
 	return formspec
 end
 
+-- Returns the same statistics as plain multiline text. This is useful for
+-- server consoles and chat commands where a formspec cannot be displayed.
+function core.stat_text(name)
+	local lines = { "Statistics for " .. name .. ":" }
+	for key, eng_name in pairs(stat_table) do
+		local value = core.stat_get("player|"..key.."|"..name)
+		local line = eng_name .. ": " .. string.number_to_si(value)
+		if not core.is_singleplayer() then
+			line = line .. " (total: " ..
+				string.number_to_si(core.stat_get("total|"..key), 3) .. ")"
+		end
+		lines[#lines + 1] = line
+	end
+	return table.concat(lines, "\n")
+end
+
 
 core.register_on_leaveplayer(function(player)
 	local name = player:get_player_name()
