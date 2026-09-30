@@ -665,6 +665,9 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				tnt_burning_content == CONTENT_IGNORE || terminal_tnt_ignited.count(pos))
 			return false;
 
+		if (!ignore_protection && lua_is_node_protected(L, pos, owner))
+			return false;
+
 		terminal_tnt_ignited.emplace(pos);
 		env->setNode(pos, MapNode(tnt_burning_content), 2);
 		++ignited_tnts;
@@ -895,8 +898,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			}
 		}
 
-		if (!last && remaining_strength > blast_min_strength &&
-				hit_strength > blast_min_strength)
+		if (!last && hit_strength > blast_min_strength)
 			add_layer_weight(next_layer_weights, candidate.node_pos, hit_strength);
 	};
 
@@ -977,6 +979,16 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 		if (last)
 			break;
+	}
+
+	// Exhausting the shared budget must still ignite TNT immediately beyond
+	// the surviving rays. Zero weights make this an ignition-only shell:
+	// build_layer_weights cannot add candidates or advance the blast further.
+	if (!stopped_by_time && remaining_strength <= blast_min_strength &&
+			!next_layer_weights.empty()) {
+		for (auto &weight : next_layer_weights)
+			weight.second = 0.0;
+		build_layer_weights(dr + 1, next_layer_weights);
 	}
 
 	const bool stopped_by_strength =
