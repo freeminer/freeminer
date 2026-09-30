@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
+#include <filesystem>
 #include <limits>
 #include <memory>
 #include <mutex>
@@ -15,6 +16,7 @@
 #include "irr_v3d.h"
 #include "irrlichttypes.h"
 #include "log.h"
+#include "mapgen/earth/arnis-cpp/src/args.h"
 #if !defined(FILE_INCLUDED)
 #include "debug/dump.h"
 #include <osmium/area/assembler.hpp>
@@ -284,6 +286,20 @@ arnis::Args earth_arnis_args()
 	args.signage = arnis::SignageLevel::Full;
 	args.fillground = true;
 	args.disable_height_limit = true;
+	args.building_facades = true;
+	//args.mapillary_facades = true;
+	//args.mapillary_probe = true;
+	args.facade_detail = arnis::FacadeDetail::High;
+	// Reuse Luanti's configured cache root, the same root used by
+	// multi_http_to_file(), and keep facade products in their own subtree.
+	args.building_facades_dir =
+			(std::filesystem::path(porting::path_cache) / "earth" / "facade").string();
+	args.signage = arnis::SignageLevel::Full;
+	args.fillground = true;
+	args.caves = true;
+	args.cave_biomes =
+			"lush=100,dripstone=100,deepdark=100,mushroom=100,ice=100,amethyst=100,volcanic=100,coral=100";
+
 	return args;
 }
 
@@ -453,7 +469,7 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 			[mg](int x, int y, int z, const std::vector<std::uint8_t> &nbt) {
 				mg->queueGeneratedSchemEntity(v3pos_t(x, y, z), nbt);
 			});
-	auto args = earth_arnis_args();
+	const auto args = earth_arnis_args();
 	FloodWaveGuard flood_wave(cached);
 	arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,
 			*cached.building_footprints, true);
