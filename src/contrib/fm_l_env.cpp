@@ -159,15 +159,6 @@ static void add_layer_weight(
 	weights[pos] = strength;
 }
 
-static void add_to_layer_weights(unordered_map_v3pos<double> &weights, double strength)
-{
-	if (strength <= 0.0)
-		return;
-
-	for (auto &weight : weights)
-		weight.second += strength;
-}
-
 static pos_t radial_parent_component(pos_t value, int shell)
 {
 	if (shell <= 1)
@@ -814,9 +805,10 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		if (added_strength <= 0.0)
 			return;
 
-		add_to_layer_weights(layer_weights, added_strength);
+		const double added_ray_strength =
+				added_strength / static_cast<double>(shell_candidates.size());
 		for (auto &candidate : shell_candidates) {
-			candidate.strength += added_strength;
+			candidate.strength += added_ray_strength;
 			if (candidate.absorbed_tnt)
 				add_layer_weight(
 						next_layer_weights, candidate.node_pos, candidate.strength);
@@ -945,6 +937,17 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		if (!shell_candidates.empty()) {
 			const size_t active_rays = shell_candidates.size();
 			last_active_rays = active_rays;
+
+			// Branching copies parent weights. Dilute them to the available budget
+			// without restoring strength lost along individual paths.
+			double shell_strength = 0.0;
+			for (const auto &candidate : shell_candidates)
+				shell_strength += candidate.strength;
+			if (shell_strength > remaining_strength) {
+				const double dilution = remaining_strength / shell_strength;
+				for (auto &candidate : shell_candidates)
+					candidate.strength *= dilution;
+			}
 			process_tnt_candidates();
 
 			last_ray_strength = 0.0;
