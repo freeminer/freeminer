@@ -75,3 +75,8 @@ incoming strength before any TNT energy is added for that shell.
 Set this option directly in `core.tnt_explode`, through the `def` table passed to
 `tnt.boom`, or as `tnt.blast_tnt_absorb_strength` for the game's default. For example,
 `blast_tnt_absorb_strength = 2.0` requires a stronger hit before absorption.
+
+When the shared blast energy is exhausted, surviving rays perform one final
+ignition-only check in the next shell. Reachable TNT there starts its fuse without
+being absorbed; this check does not destroy nodes or extend the blast. Terminal
+ignition respects protection unless `ignore_protection` is enabled.
