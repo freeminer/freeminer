@@ -13,6 +13,7 @@ core.register_chatcommand( "stat", {
 		end
 		local formspec = core.stat_formspec(param)
 		core.show_formspec(name, 'stat', formspec)
+		return true, core.stat_text(param)
 	end
 })
 
