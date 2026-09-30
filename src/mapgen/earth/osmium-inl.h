@@ -459,6 +459,10 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 		editor.projection_frame.bind(mg, anchor.lat, anchor.lon, 0.0);
 	}
 	editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
+	// Entity/decal ownership must match block ownership so off-chunk signage
+	// is rejected before terrain queries and PNG texture generation.
+	editor.set_strict_bounds(
+			mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
 	editor.set_tile_hooks(
 			[mg](int min_x, int min_z, int max_x, int max_z) {
 				return mg->beginTileOverlay(min_x, min_z, max_x, max_z);

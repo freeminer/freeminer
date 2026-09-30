@@ -530,6 +530,24 @@ bool WorldEditor::block_exists_absolute(int x, int y, int z) const
 {
 	return check_for_block_absolute(x, y, z);
 }
+std::pair<int, int> WorldEditor::writable_y_bounds() const
+{
+	if (!mg || !mg->vm)
+		return {1, 0};
+	return {mg->vm->m_area.MinEdge.Y, mg->vm->m_area.MaxEdge.Y};
+}
+bool WorldEditor::check_for_block_type_absolute(
+		int x, int y, int z, const Block &block) const
+{
+	// Preserve the whitelist predicate's AIR/IGNORE and ownership semantics.
+	const auto current = get_block_absolute(x, y, z);
+	if (!current)
+		return false;
+	++mg->stat.check;
+	const auto content = current->getContent();
+	return content != CONTENT_AIR && content != CONTENT_IGNORE &&
+		   content == block.getContent();
+}
 std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 {
 	if (!mg || !mg->vm || !pos_ok(x, z))

@@ -44,6 +44,10 @@ namespace trees::mapped
 {
 class MappedTrunks;
 }
+namespace trees
+{
+struct MappedRequest;
+}
 
 namespace block_definitions
 {
@@ -146,6 +150,8 @@ struct WorldEditor
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing_blocks = 5;
 	std::function<bool(int, int, int, std::uint8_t)> regional_tree_placer;
+	std::function<bool(int, int, int, std::uint8_t, const trees::MappedRequest &)>
+			mapped_regional_tree_placer;
 	// Authored OSM trunks suppress procedural canopy crowns in the same cells,
 	// matching Rust's MappedTrunks pass during streamed ground decoration.
 	std::shared_ptr<const trees::mapped::MappedTrunks> mapped_trunks;
@@ -231,6 +237,16 @@ struct WorldEditor
 	bool place_regional_tree(int x, int y, int z, std::uint8_t cover)
 	{
 		return regional_tree_placer && regional_tree_placer(x, y, z, cover);
+	}
+	void set_mapped_regional_tree_placer(decltype(mapped_regional_tree_placer) placer)
+	{
+		mapped_regional_tree_placer = std::move(placer);
+	}
+	bool place_mapped_regional_tree(
+			int x, int y, int z, std::uint8_t cover, const trees::MappedRequest &request)
+	{
+		return mapped_regional_tree_placer &&
+			   mapped_regional_tree_placer(x, y, z, cover, request);
 	}
 	void set_start_with_map(bool v) { start_with_map = v; }
 	void set_map_decals(bool v) { map_decals = v; }
@@ -506,6 +522,9 @@ struct WorldEditor
 			const std::optional<std::vector<Block>> &avoid = {}) const;
 
 	bool block_exists_absolute(int x, int y, int z) const;
+	bool check_for_block_type_absolute(int x, int y, int z, const Block &block) const;
+	// Includes the writable voxel halo; empty without a voxel manipulator.
+	std::pair<int, int> writable_y_bounds() const;
 
 	std::optional<Block> get_block_absolute(int x, int y, int z) const;
 
