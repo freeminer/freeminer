@@ -1,5 +1,6 @@
 #include "arnis_world_editor.h"
 #include "map.h"
+#include "arnis-cpp/src/ground_decoration.h"
 
 namespace arnis
 {
@@ -287,6 +288,11 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 			++mg->stat.miss;
 		return false;
 	}
+	// Tile halos overlap so terrain features have context at their edges, but
+	// loose plants belong only to the tile that owns their column. Otherwise a
+	// halo can merge grass over a neighboring tile's water or trunk.
+	if (!owns(x, z) && ground_decoration::is_undergrowth(block))
+		return false;
 
 	const auto key = std::tuple{x, y, z};
 	const auto overlay = mg->readTileOverlay(pos);
