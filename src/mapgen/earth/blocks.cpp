@@ -104,6 +104,7 @@ Block WATER;
 Block SEAGRASS;
 Block KELP_PLANT;
 Block MAGMA_BLOCK;
+Block OBSIDIAN;
 Block KELP;
 Block TALL_SEAGRASS_BOTTOM;
 Block TALL_SEAGRASS_TOP;
@@ -248,6 +249,21 @@ Block CLAY;
 Block DIRT_PATH;
 Block ICE;
 Block PACKED_ICE;
+Block LAVA;
+Block POWDER_SNOW;
+Block AMETHYST_BLOCK;
+Block BUDDING_AMETHYST;
+Block AMETHYST_CLUSTER;
+Block SMALL_AMETHYST_BUD;
+Block MEDIUM_AMETHYST_BUD;
+Block LARGE_AMETHYST_BUD;
+Block DRIPSTONE_BLOCK;
+Block POINTED_DRIPSTONE;
+Block GLOW_LICHEN;
+Block BIG_DRIPLEAF;
+Block BIG_DRIPLEAF_STEM;
+Block SMALL_DRIPLEAF_LOWER;
+Block SMALL_DRIPLEAF_UPPER;
 Block MUD;
 Block DEAD_BUSH;
 Block MYCELIUM;
@@ -587,7 +603,8 @@ void init(MapgenEarth *mg)
 			"default:marram_grass_1", "default:grass_3"});
 	KELP_PLANT = g({"marinara:sand_with_kelp", "default:sand_with_kelp",
 			"default:marram_grass_3", "default:marram_grass_1"});
-	MAGMA_BLOCK = g({"default:obsidian", "default:lava_source", "default:stone"});
+	MAGMA_BLOCK = g({"mcl_nether:magma", "default:obsidian", "default:stone"});
+	OBSIDIAN = g({"mcl_core:obsidian", "default:obsidian", "default:stone"});
 	KELP = KELP_PLANT;
 	TALL_SEAGRASS_BOTTOM = g({"marinara:sand_with_seagrass2", "default:marram_grass_2",
 			"default:marram_grass_1"});
@@ -859,6 +876,29 @@ void init(MapgenEarth *mg)
 	ICE = g("default:ice");
 	PACKED_ICE = g("default:ice");
 	BLUE_ICE = g({"mcl_core:blue_ice", "default:ice"});
+	LAVA = liquid({"mcl_core:lava_source", "default:lava_source"});
+	POWDER_SNOW = g({"mcl_powder_snow:powder_snow", "mcl_core:snow", "default:snow"});
+	AMETHYST_BLOCK = g({"mcl_amethyst:amethyst_block", "mcl_core:stone"});
+	BUDDING_AMETHYST = g({"mcl_amethyst:budding_amethyst", "mcl_amethyst:amethyst_block",
+			"mcl_core:stone"});
+	AMETHYST_CLUSTER = g({"mcl_amethyst:amethyst_cluster",
+			"mcl_amethyst:large_amethyst_bud", "mcl_core:stone"});
+	SMALL_AMETHYST_BUD = g({"mcl_amethyst:small_amethyst_bud",
+			"mcl_amethyst:amethyst_cluster", "mcl_core:stone"});
+	MEDIUM_AMETHYST_BUD = g({"mcl_amethyst:medium_amethyst_bud",
+			"mcl_amethyst:amethyst_cluster", "mcl_core:stone"});
+	LARGE_AMETHYST_BUD = g({"mcl_amethyst:large_amethyst_bud",
+			"mcl_amethyst:amethyst_cluster", "mcl_core:stone"});
+	DRIPSTONE_BLOCK = g({"mcl_dripstone:dripstone_block", "mcl_core:stone"});
+	POINTED_DRIPSTONE = g({"mcl_dripstone:dripstone_bottom_tip",
+			"mcl_dripstone:dripstone_top_tip", "mcl_core:stone"});
+	GLOW_LICHEN = g({"mcl_core:glow_lichen_down", "mcl_core:glow_lichen_d"});
+	BIG_DRIPLEAF = g({"mcl_lush_caves:big_dripleaf_1", "mcl_core:stone"});
+	BIG_DRIPLEAF_STEM = g({"mcl_lush_caves:big_dripleaf_stem_1",
+			"mcl_lush_caves:big_dripleaf_1", "mcl_core:stone"});
+	SMALL_DRIPLEAF_LOWER = g({"mcl_lush_caves:small_dripleaf_1", "mcl_core:stone"});
+	SMALL_DRIPLEAF_UPPER = g({"mcl_lush_caves:small_dripleaf_2",
+			"mcl_lush_caves:small_dripleaf_1", "mcl_core:stone"});
 	MUD = g("default:dirt");
 	DEAD_BUSH = g("default:dry_shrub");
 	MYCELIUM = g({"default:mycelium", "mcl_core:mycelium"});

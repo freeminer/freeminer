@@ -40,6 +40,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server/luaentity_sao.h"
 #include "server/player_sao.h"
 #include "tool.h"
+#include "fm_blast_shell.h"
+#include "fm_blast_angular.h"
 #include "voxelalgorithms.h"
 #include "serverenvironment.h"
 #include "util/numeric.h"
@@ -141,14 +143,6 @@ static void push_blast_events(lua_State *L, const std::vector<TntBlastEvent> &ev
 	}
 }
 
-static double step_distance(const v3pos_t &dir)
-{
-	const auto dx = static_cast<double>(dir.X);
-	const auto dy = static_cast<double>(dir.Y);
-	const auto dz = static_cast<double>(dir.Z);
-	return std::sqrt(dx * dx + dy * dy + dz * dz);
-}
-
 static void add_layer_weight(
 		unordered_map_v3pos<double> &weights, const v3pos_t &pos, double strength)
 {
@@ -157,42 +151,6 @@ static void add_layer_weight(
 		return;
 
 	weights[pos] = strength;
-}
-
-static pos_t radial_parent_component(pos_t value, int shell)
-{
-	if (shell <= 1)
-		return 0;
-
-	const auto scaled = static_cast<double>(value) * static_cast<double>(shell - 1) /
-						static_cast<double>(shell);
-	return static_cast<pos_t>(std::round(scaled));
-}
-
-static v3pos_t radial_parent_rel(const v3pos_t &rel, int shell)
-{
-	return v3pos_t(radial_parent_component(rel.X, shell),
-			radial_parent_component(rel.Y, shell), radial_parent_component(rel.Z, shell));
-}
-
-static int shell_distance(const v3pos_t &rel)
-{
-	int distance = std::abs(static_cast<int>(rel.X));
-	distance = std::max(distance, std::abs(static_cast<int>(rel.Y)));
-	distance = std::max(distance, std::abs(static_cast<int>(rel.Z)));
-	return distance;
-}
-
-static v3pos_t radial_child_rel(const v3pos_t &rel, int shell)
-{
-	const int parent_shell = shell_distance(rel);
-	if (parent_shell <= 0)
-		return rel;
-
-	const double scale = static_cast<double>(shell) / static_cast<double>(parent_shell);
-	return v3pos_t(static_cast<pos_t>(std::round(static_cast<double>(rel.X) * scale)),
-			static_cast<pos_t>(std::round(static_cast<double>(rel.Y) * scale)),
-			static_cast<pos_t>(std::round(static_cast<double>(rel.Z) * scale)));
 }
 
 // Opt-in object effects. Distances and velocities in the Lua API use node units.
@@ -389,6 +347,34 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 	const double blast_tnt_absorb_strength =
 			blast_multiplier(L, "blast_tnt_absorb_strength", 1.0);
+
+	const double blast_tnt_ray_fraction = fm_blast_fraction(
+			//getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0.2), 0.2);
+			//getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0), 0);
+			//getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 1), 1);
+			getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0.8), 0.8);
+	//getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0.1), 0.1);
+	const double blast_shell_fraction = fm_blast_fraction(
+			//getfloatfield_default(L, 2, "blast_shell_fraction", 0.05), 0.05);
+			//getfloatfield_default(L, 2, "blast_shell_fraction", 0.2), 0.2);
+			//getfloatfield_default(L, 2, "blast_shell_fraction", 0.9), 0.9);
+			//getfloatfield_default(L, 2, "blast_shell_fraction", 0.1), 0.1);
+			//getfloatfield_default(L, 2, "blast_shell_fraction", 0.5), 0.5);
+			//getfloatfield_default(L, 2, "blast_shell_fraction", 0.1), 0.1);
+			getfloatfield_default(L, 2, "blast_shell_fraction", 0), 0);
+
+	const double blast_core_radius =
+			fm_blast_core_radius(getfloatfield_default(L, 2, "blast_core_radius",
+										 fm_blast_full_shell_radius(blast_strength)),
+					blast_strength);
+	const double blast_core_shell_fraction =
+			fm_blast_fraction(getfloatfield_default(L, 2, "blast_core_shell_fraction",
+									  //blast_shell_fraction
+									  //  0.9
+									  0),
+					blast_shell_fraction);
+
+	// Legacy scatter fractions are superseded by conservative angular overlap.
 
 	const auto read_content = [&](const char *field, const char *fallback) {
 		const auto name = getstringfield_default(L, 2, field, fallback);
@@ -629,6 +615,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		MapNode node;
 		double strength = 0.0;
 		double step_cost = 0.0;
+		double minimum_strength = 0.0;
 		bool absorbed_tnt = false;
 	};
 
@@ -674,63 +661,53 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		return ignite_terminal_tnt(pos, node);
 	};
 
-	const auto add_shell_weight =
-			[&](int shell, int dx, int dy, int dz,
-					const unordered_map_v3pos<double> &previous_weights) {
-				const v3pos_t rel(static_cast<pos_t>(dx), static_cast<pos_t>(dy),
-						static_cast<pos_t>(dz));
-				const v3pos_t parent_rel = radial_parent_rel(rel, shell);
-				const v3pos_t parent_pos = origin + parent_rel;
-				const auto parent = previous_weights.find(parent_pos);
-				if (parent == previous_weights.end())
-					return;
-
-				const double strength =
-						parent->second -
-						blast_distance_loss * step_distance(rel - parent_rel);
-				if (strength > blast_min_strength)
-					add_layer_weight(layer_weights, origin + rel, strength);
-				else
-					ignite_terminal_tnt_at(origin + rel);
-			};
-
+	unordered_map_v3pos<double> layer_steps;
+	FmBlastAngularHits angular_hits;
 	const auto build_layer_weights =
 			[&](int shell, const unordered_map_v3pos<double> &previous_weights) {
+				std::vector<FmBlastFootprint> incoming;
+				if (shell == 1) {
+					const auto source = previous_weights.find(origin);
+					if (source != previous_weights.end())
+						incoming = fm_blast_angular_seed(source->second);
+				} else {
+					for (const auto &[pos, strength] : previous_weights) {
+						const auto hit = angular_hits.find(pos - origin);
+						if (hit != angular_hits.end()) {
+							// Zero strength is used by the final ignition-only shell.
+							if (strength == 0.0) {
+								for (auto patch : hit->second.patches) {
+									patch.density = 0.0;
+									incoming.push_back(patch);
+								}
+							} else {
+								hit->second.append_survivors(strength, incoming);
+							}
+						}
+					}
+				}
+				fm_blast_angular_coalesce(incoming);
+				angular_hits = fm_blast_angular_project(incoming, shell);
+				if (shell <= blast_core_radius)
+					fm_blast_angular_mix_core(
+							angular_hits, shell, blast_core_shell_fraction);
+				fm_blast_angular_distance(angular_hits, blast_distance_loss);
 				layer_weights.clear();
-
-				for (int dx = -shell; dx <= shell; dx += shell * 2)
-					for (int dy = -shell; dy <= shell; ++dy)
-						for (int dz = -shell; dz <= shell; ++dz)
-							add_shell_weight(shell, dx, dy, dz, previous_weights);
-
-				for (int dy = -shell; dy <= shell; dy += shell * 2)
-					for (int dx = -shell + 1; dx <= shell - 1; ++dx)
-						for (int dz = -shell; dz <= shell; ++dz)
-							add_shell_weight(shell, dx, dy, dz, previous_weights);
-
-				for (int dz = -shell; dz <= shell; dz += shell * 2)
-					for (int dx = -shell + 1; dx <= shell - 1; ++dx)
-						for (int dy = -shell + 1; dy <= shell - 1; ++dy)
-							add_shell_weight(shell, dx, dy, dz, previous_weights);
-
-				for (const auto &previous : previous_weights) {
-					const v3pos_t parent_rel = previous.first - origin;
-					if (shell_distance(parent_rel) <= 0)
+				layer_steps.clear();
+				for (const auto &[rel, hit] : angular_hits) {
+					const auto pos = origin + rel;
+					if (hit.energy <= hit.cutoff(blast_min_strength)) {
+						ignite_terminal_tnt_at(pos);
 						continue;
-
-					const v3pos_t rel = radial_child_rel(parent_rel, shell);
-					const double strength =
-							previous.second -
-							blast_distance_loss * step_distance(rel - parent_rel);
-					if (strength > blast_min_strength)
-						add_layer_weight(layer_weights, origin + rel, strength);
-					else
-						ignite_terminal_tnt_at(origin + rel);
+					}
+					layer_weights[pos] = hit.energy;
+					layer_steps[pos] = hit.distance_cost;
 				}
 			};
 
-	if (blast_strength > blast_min_strength)
+	if (blast_strength > blast_min_strength) {
 		next_layer_weights[origin] = blast_strength;
+	}
 
 	std::vector<BlastCandidate> shell_candidates;
 
@@ -744,7 +721,8 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			return;
 
 		double strength = weight_found->second;
-		if (strength <= blast_min_strength)
+		const double minimum_strength = angular_hits.at(rel).cutoff(blast_min_strength);
+		if (strength <= minimum_strength)
 			return;
 
 		bool pos_ok = false;
@@ -768,8 +746,8 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		candidate.node_pos = node_pos;
 		candidate.node = node;
 		candidate.strength = strength;
-		candidate.step_cost =
-				blast_distance_loss * step_distance(rel - radial_parent_rel(rel, dr));
+		candidate.step_cost = layer_steps.at(node_pos);
+		candidate.minimum_strength = minimum_strength;
 		shell_candidates.push_back(candidate);
 	};
 
@@ -783,7 +761,8 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 			if (!last) {
 				if (candidate.strength < blast_tnt_absorb_strength ||
-						candidate.strength <= blast_min_strength + candidate.step_cost) {
+						candidate.strength <=
+								candidate.minimum_strength + candidate.step_cost) {
 					ignite_terminal_tnt(candidate.node_pos, candidate.node);
 					continue;
 				}
@@ -791,7 +770,10 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				env->removeNode(candidate.node_pos, 2);
 				candidate.absorbed_tnt = true;
 				const double node_strength = tnt_node_blast_strength(content);
-				added_strength += node_strength;
+				const auto energy =
+						fm_blast_split(node_strength, 1.0 - blast_tnt_ray_fraction);
+				candidate.strength += energy.ray;
+				added_strength += energy.shell;
 				remaining_strength += node_strength;
 				total_strength += node_strength;
 				++tnts;
@@ -802,16 +784,15 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			}
 		}
 
-		if (added_strength <= 0.0)
-			return;
-
+		// Even an entirely local boost must propagate through the absorbed TNT.
 		const double added_ray_strength =
 				added_strength / static_cast<double>(shell_candidates.size());
 		for (auto &candidate : shell_candidates) {
 			candidate.strength += added_ray_strength;
-			if (candidate.absorbed_tnt)
+			if (candidate.absorbed_tnt) {
 				add_layer_weight(
 						next_layer_weights, candidate.node_pos, candidate.strength);
+			}
 		}
 	};
 
@@ -822,7 +803,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 		// Preserve attenuation along this ray, including any TNT energy added this shell.
 		const double available_strength = candidate.strength;
-		if (available_strength <= blast_min_strength)
+		if (available_strength <= candidate.minimum_strength)
 			return;
 
 		const auto &cf = ndef->get(content);
@@ -842,12 +823,12 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				itemgroup_get(cf.groups, "tnt_melt_level_multiplier");
 		const bool forced_tnt_melt = melt_level_multiplier > 0;
 
-		if (blocks_wave && hit_strength <= blast_min_strength) {
+		if (blocks_wave && hit_strength <= candidate.minimum_strength) {
 			++last_blocked_rays;
 			return;
 		}
 
-		if (!blocks_wave && hit_strength <= blast_min_strength)
+		if (!blocks_wave && hit_strength <= candidate.minimum_strength)
 			return;
 
 		if (!blocks_wave && !charge_strength(candidate.step_cost))
@@ -890,8 +871,9 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			}
 		}
 
-		if (!last && hit_strength > blast_min_strength)
+		if (!last && hit_strength > candidate.minimum_strength) {
 			add_layer_weight(next_layer_weights, candidate.node_pos, hit_strength);
+		}
 	};
 
 	while (remaining_strength > blast_min_strength && !next_layer_weights.empty()) {
@@ -938,8 +920,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			const size_t active_rays = shell_candidates.size();
 			last_active_rays = active_rays;
 
-			// Branching copies parent weights. Dilute them to the available budget
-			// without restoring strength lost along individual paths.
+			// Keep the distributed energy within the remaining shared budget.
 			double shell_strength = 0.0;
 			for (const auto &candidate : shell_candidates)
 				shell_strength += candidate.strength;
