@@ -18,6 +18,7 @@ Block BIRCH_LEAVES;
 Block BIRCH_LOG;
 Block BLACK_CONCRETE;
 Block BLACKSTONE;
+Block BLUE_ICE;
 Block BLUE_FLOWER;
 Block BLUE_TERRACOTTA;
 Block BRICK;
@@ -390,6 +391,22 @@ Block GRAY_CONCRETE_POWDER;
 Block CYAN_TERRACOTTA;
 Block BLACK_WOOL;
 Block LIGHT_GRAY_WALL_BANNER;
+Block CORNFLOWER;
+Block OXEYE_DAISY;
+Block ALLIUM;
+Block LILY_OF_THE_VALLEY;
+Block RED_TULIP;
+Block ORANGE_TULIP;
+Block WHITE_TULIP;
+Block PINK_TULIP;
+Block SUNFLOWER_LOWER;
+Block SUNFLOWER_UPPER;
+Block LILAC_LOWER;
+Block LILAC_UPPER;
+Block ROSE_BUSH_LOWER;
+Block ROSE_BUSH_UPPER;
+Block PEONY_LOWER;
+Block PEONY_UPPER;
 
 Block &SMOOTH_STONE_BLOCK = SMOOTH_STONE;
 }
@@ -452,6 +469,9 @@ void init(MapgenEarth *mg)
 	};
 	const NodeResolver g{mg, def};
 	const NodeResolver liquid{mg, def, true};
+	const auto flower = [&](std::initializer_list<const char *> names, Block fallback) {
+		return Block{NodeResolver{mg, fallback.id()}(names)};
+	};
 
 	ACACIA_PLANKS = g({"default:acacia_wood", "default:wood"});
 	AIR = CONTENT_AIR;
@@ -461,6 +481,22 @@ void init(MapgenEarth *mg)
 	BLACK_CONCRETE = g({"wool:black", "basic_materials:concrete_block", "default:stone"});
 	BLACKSTONE = g("default:obsidian");
 	BLUE_FLOWER = g("flowers:geranium");
+	RED_FLOWER = g("flowers:tulip");
+	WHITE_FLOWER = g("flowers:dandelion_white");
+	YELLOW_FLOWER = g("flowers:dandelion_yellow");
+	CORNFLOWER = flower({"mcl_flowers:cornflower", "flowers:cornflower"}, BLUE_FLOWER);
+	OXEYE_DAISY =
+			flower({"mcl_flowers:oxeye_daisy", "flowers:oxeye_daisy"}, WHITE_FLOWER);
+	ALLIUM = flower({"mcl_flowers:allium", "flowers:allium"}, RED_FLOWER);
+	LILY_OF_THE_VALLEY =
+			flower({"mcl_flowers:lily_of_the_valley", "flowers:lily_of_the_valley"},
+					WHITE_FLOWER);
+	RED_TULIP = flower({"mcl_flowers:tulip_red", "flowers:tulip_red"}, RED_FLOWER);
+	ORANGE_TULIP =
+			flower({"mcl_flowers:tulip_orange", "flowers:tulip_orange"}, YELLOW_FLOWER);
+	WHITE_TULIP =
+			flower({"mcl_flowers:tulip_white", "flowers:tulip_white"}, WHITE_FLOWER);
+	PINK_TULIP = flower({"mcl_flowers:tulip_pink", "flowers:tulip_pink"}, RED_FLOWER);
 	BLUE_TERRACOTTA = g("default:clay");
 	BRICK = g("default:brick");
 	CAULDRON = g("default:steelblock");
@@ -524,7 +560,6 @@ void init(MapgenEarth *mg)
 	// default:rail is only a Lua alias in Minetest Game. NodeDefManager lookups do
 	// not reliably resolve item aliases, so prefer the actually registered node.
 	RAIL = g({"carts:rail", "default:rail"});
-	RED_FLOWER = g("flowers:tulip");
 	RED_NETHER_BRICK = g("default:obsidianbrick");
 	RED_TERRACOTTA = g("default:clay");
 	RED_WOOL = g("wool:red");
@@ -578,13 +613,11 @@ void init(MapgenEarth *mg)
 	EARTH_FENCE_WROUGHT = g(
 			{"homedecor:fence_wrought_iron_2", "xpanes:bar_flat", "default:steelblock"});
 	WHITE_CONCRETE = g({"wool:white", "basic_materials:concrete_block", "default:stone"});
-	WHITE_FLOWER = g("flowers:dandelion_white");
 	WHITE_STAINED_GLASS = GLASS;
 	WHITE_TERRACOTTA = g("default:clay");
 	WHITE_WOOL = g("wool:white");
 	YELLOW_CONCRETE =
 			g({"wool:yellow", "basic_materials:concrete_block", "default:stone"});
-	YELLOW_FLOWER = g("flowers:dandelion_yellow");
 	YELLOW_WOOL = g("wool:yellow");
 	LIME_CONCRETE = g({"wool:green", "wool:yellow", "basic_materials:concrete_block"});
 	CYAN_WOOL = g("wool:cyan");
@@ -825,6 +858,7 @@ void init(MapgenEarth *mg)
 	DIRT_PATH = g("default:dirt_with_grass_footsteps");
 	ICE = g("default:ice");
 	PACKED_ICE = g("default:ice");
+	BLUE_ICE = g({"mcl_core:blue_ice", "default:ice"});
 	MUD = g("default:dirt");
 	DEAD_BUSH = g("default:dry_shrub");
 	MYCELIUM = g({"default:mycelium", "mcl_core:mycelium"});
@@ -837,6 +871,18 @@ void init(MapgenEarth *mg)
 	TALL_GRASS_BOTTOM = g("default:grass_5");
 	SUGAR_CANE = g({"farming:cotton_8", "default:papyrus", "default:grass_5"});
 	TALL_GRASS_TOP = g("default:grass_5");
+	SUNFLOWER_LOWER =
+			flower({"mcl_flowers:sunflower", "flowers:sunflower"}, TALL_GRASS_BOTTOM);
+	SUNFLOWER_UPPER = flower(
+			{"mcl_flowers:sunflower_top", "flowers:sunflower_top"}, TALL_GRASS_TOP);
+	LILAC_LOWER = flower({"mcl_flowers:lilac", "flowers:lilac"}, TALL_GRASS_BOTTOM);
+	LILAC_UPPER = flower({"mcl_flowers:lilac_top", "flowers:lilac_top"}, TALL_GRASS_TOP);
+	ROSE_BUSH_LOWER =
+			flower({"mcl_flowers:rose_bush", "flowers:rose_bush"}, TALL_GRASS_BOTTOM);
+	ROSE_BUSH_UPPER = flower(
+			{"mcl_flowers:rose_bush_top", "flowers:rose_bush_top"}, TALL_GRASS_TOP);
+	PEONY_LOWER = flower({"mcl_flowers:peony", "flowers:peony"}, TALL_GRASS_BOTTOM);
+	PEONY_UPPER = flower({"mcl_flowers:peony_top", "flowers:peony_top"}, TALL_GRASS_TOP);
 	CRAFTING_TABLE = g("default:wood");
 	FURNACE = g("default:furnace");
 	WHITE_CARPET = g("wool:white");

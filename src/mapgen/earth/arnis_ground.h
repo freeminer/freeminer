@@ -88,6 +88,8 @@ struct Ground
 	// reconstructing elevation interpolation in individual processors.
 	double level_exact(const XZPoint &pos) const;
 	double slope_exact(const XZPoint &pos) const;
+	std::pair<double, std::pair<double, double>> slope_and_gradient(
+			const XZPoint &pos) const;
 	double convexity(const XZPoint &pos) const;
 
 	bool has_land_cover() const;
