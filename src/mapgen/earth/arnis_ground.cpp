@@ -102,14 +102,22 @@ double Ground::level_exact(const XZPoint &pos) const
 
 double Ground::slope_exact(const XZPoint &pos) const
 {
+	return slope_and_gradient(pos).first;
+}
+
+std::pair<double, std::pair<double, double>> Ground::slope_and_gradient(
+		const XZPoint &pos) const
+{
 	if (!elevation_enabled)
-		return 0.0;
+		return {0.0, {0.0, 0.0}};
 	constexpr int step = 4;
 	const std::array<double, 4> samples{{level_exact({pos.x + step, pos.z}),
 			level_exact({pos.x - step, pos.z}), level_exact({pos.x, pos.z - step}),
 			level_exact({pos.x, pos.z + step})}};
 	const auto [min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
-	return std::max(0.0, (*max_it - *min_it) * elevation_slope_correction);
+	const double raw = *max_it - *min_it;
+	const double slope = std::max(0.0, raw * elevation_slope_correction);
+	return {slope, {samples[0] - samples[1], samples[3] - samples[2]}};
 }
 
 double Ground::convexity(const XZPoint &pos) const
