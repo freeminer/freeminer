@@ -72,8 +72,7 @@ if(ENABLE_WEBSOCKET OR (ENABLE_WEBSOCKET_SCTP AND FM_HAVE_SCTP_SOURCE))
     endif()
 endif()
 
-# TODO: fix with new boost and enable
-# set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
+set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
 if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
     function(fm_add_usrsctp)

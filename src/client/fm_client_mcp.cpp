@@ -29,6 +29,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "chat.h"
 #include "chatmessage.h"
 #include "client/localplayer.h"
+#include "client/clientobject.h"
+#include "client/content_cao.h"
 #include "clientmap.h"
 #include "constants.h"
 #include "inventory.h"
@@ -159,13 +161,6 @@ static void setMCPStatusResult(Json::Value &response, const Json::Value &status)
 {
 	setMCPTextResult(
 			response, status, status.isMember("success") && !status["success"].asBool());
-}
-
-static void setMCPEmptyResult(Json::Value &response)
-{
-	Json::Value result;
-	result["content"] = Json::Value(Json::arrayValue);
-	response["result"] = result;
 }
 
 static void setMCPError(Json::Value &response, int code, const std::string &message)
@@ -465,6 +460,16 @@ static bool validateMCPToolArguments(
 			error = std::string(name) + " must be an integer";
 			return false;
 		}
+		const bool out_of_range =
+				args[name].isUInt64()
+						? args[name].asUInt64() > static_cast<Json::UInt64>(
+														  std::numeric_limits<s32>::max())
+						: args[name].asInt64() < std::numeric_limits<s32>::min() ||
+								  args[name].asInt64() > std::numeric_limits<s32>::max();
+		if (out_of_range) {
+			error = std::string(name) + " is out of range";
+			return false;
+		}
 		return true;
 	};
 	auto optional_type = [&](const char *name, Json::ValueType type) {
@@ -479,6 +484,20 @@ static bool validateMCPToolArguments(
 			error = std::string(name) + " must be an integer";
 			return false;
 		}
+		const bool out_of_range =
+				args.isMember(name) &&
+				(args[name].isUInt64()
+								? args[name].asUInt64() >
+										  static_cast<Json::UInt64>(
+												  std::numeric_limits<s32>::max())
+								: args[name].asInt64() <
+												  std::numeric_limits<s32>::min() ||
+										  args[name].asInt64() >
+												  std::numeric_limits<s32>::max());
+		if (out_of_range) {
+			error = std::string(name) + " is out of range";
+			return false;
+		}
 		return true;
 	};
 	auto require_position = [&]() {
@@ -486,12 +505,16 @@ static bool validateMCPToolArguments(
 	};
 
 	if (tool == "get_player_state" || tool == "get_inventory" ||
-			tool == "get_pointed_thing")
+			tool == "get_pointed_thing" || tool == "get_nearby_objects" ||
+			tool == "stop_player_control")
 		return true;
 	if (tool == "send_chat_message")
 		return require("message", Json::stringValue);
 	if (tool == "get_chat_messages")
-		return optional_integer("count") && optional_integer("after_id") &&
+		return optional_integer("count") &&
+			   (!args.isMember("count") || args["count"].asInt64() >= 1) &&
+			   optional_integer("after_id") &&
+			   (!args.isMember("after_id") || args["after_id"].asInt64() >= 0) &&
 			   optional_type("buffer", Json::stringValue);
 	if (tool == "get_node" || tool == "dig_node" || tool == "move_player_to" ||
 			tool == "teleport_player")
@@ -502,13 +525,55 @@ static bool validateMCPToolArguments(
 			   require_integer("max_y") && require_integer("max_z");
 	if (tool == "set_wielded_item")
 		return optional_integer("slot") && optional_type("item", Json::stringValue);
-	if (tool == "move_inventory_item")
-		return require_integer("from_index") && require_integer("to_index") &&
-			   optional_integer("count") &&
-			   optional_type("from_list", Json::stringValue) &&
-			   optional_type("to_list", Json::stringValue);
-	if (tool == "craft" || tool == "get_world_content")
-		return optional_integer(tool == "craft" ? "count" : "radius");
+	if (tool == "move_inventory_item") {
+		if (!require_integer("from_index") || !require_integer("to_index") ||
+				!optional_integer("count") ||
+				!optional_type("from_list", Json::stringValue) ||
+				!optional_type("to_list", Json::stringValue))
+			return false;
+		if (args["from_index"].asInt64() < 0 || args["to_index"].asInt64() < 0 ||
+				(args.isMember("count") && args["count"].asInt64() < 0)) {
+			error = "inventory indices and count must be non-negative";
+			return false;
+		}
+		return true;
+	}
+	if (tool == "craft" || tool == "get_world_content") {
+		const char *field = tool == "craft" ? "count" : "radius";
+		if (!optional_integer(field))
+			return false;
+		if (args.isMember(field) && args[field].asInt64() < 0) {
+			error = std::string(field) + " must be non-negative";
+			return false;
+		}
+		if (tool == "craft" && args.isMember(field) && args[field].asInt64() > 65535) {
+			error = "count exceeds the supported craft count";
+			return false;
+		}
+		return true;
+	}
+	if (tool == "use_item") {
+		if (!optional_integer("slot") || !optional_integer("object_id") ||
+				!optional_type("item", Json::stringValue))
+			return false;
+		if (args.isMember("object_id") &&
+				(args["object_id"].asInt64() <= 0 ||
+						args["object_id"].asInt64() > std::numeric_limits<u16>::max())) {
+			error = "object_id is out of range";
+			return false;
+		}
+		return true;
+	}
+	if (tool == "interact_with_object" || tool == "punch_object") {
+		if (!require_integer("object_id"))
+			return false;
+		if (args["object_id"].asInt64() <= 0 ||
+				args["object_id"].asInt64() > std::numeric_limits<u16>::max()) {
+			error = "object_id is out of range";
+			return false;
+		}
+		return true;
+	}
 	if (tool == "place_node") {
 		if (!require_position() || !optional_integer("slot") ||
 				!optional_type("item", Json::stringValue) ||
@@ -529,6 +594,11 @@ static bool validateMCPToolArguments(
 			error = "pitch and yaw must be numbers";
 			return false;
 		}
+		if (!std::isfinite(args["pitch"].asDouble()) ||
+				!std::isfinite(args["yaw"].asDouble())) {
+			error = "pitch and yaw must be finite";
+			return false;
+		}
 		return true;
 	}
 	if (tool == "set_player_control") {
@@ -538,12 +608,28 @@ static bool validateMCPToolArguments(
 				return false;
 		}
 		for (const char *name : {"pitch", "yaw"}) {
-			if (args.isMember(name) && !args[name].isNumeric()) {
-				error = std::string(name) + " must be a number";
+			if (args.isMember(name) &&
+					(!args[name].isNumeric() || !std::isfinite(args[name].asDouble()))) {
+				error = std::string(name) + " must be a finite number";
 				return false;
 			}
 		}
-		return optional_integer("duration_ms");
+		if (!optional_integer("duration_ms"))
+			return false;
+		if (args.isMember("duration_ms") && args["duration_ms"].asInt64() < 0) {
+			error = "duration_ms must be non-negative";
+			return false;
+		}
+		if (!args.isMember("forward") && !args.isMember("backward") &&
+				!args.isMember("left") && !args.isMember("right") &&
+				!args.isMember("jump") && !args.isMember("sneak") &&
+				!args.isMember("dig") && !args.isMember("place") &&
+				!args.isMember("aux1") && !args.isMember("zoom") &&
+				!args.isMember("pitch") && !args.isMember("yaw")) {
+			error = "at least one control field is required";
+			return false;
+		}
+		return true;
 	}
 
 	// Unknown tools are handled by tools/call with an MCP invalid-params error.
@@ -618,11 +704,17 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 			tools.append(makeMCPTool("set_player_control",
 					"Temporarily set player movement and action controls.",
 					control_schema));
+			tools.append(makeMCPTool("stop_player_control",
+					"Immediately release the active MCP control override."));
 
-			tools.append(makeMCPTool("get_node", "Get node data at a world position.",
+			tools.append(makeMCPTool("get_node",
+					"Get node data from the local client map at a world position. "
+					"After edits, this cached view may lag behind the server.",
 					makeMCPPositionSchema()));
 			tools.append(makeMCPTool("get_nodes_area",
-					"Get node data for a bounded world area.", makeMCPAreaSchema()));
+					"Get node data from the local client map for a bounded world area. "
+					"After edits, this cached view may lag behind the server.",
+					makeMCPAreaSchema()));
 
 			Json::Value wield_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(
@@ -643,6 +735,8 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					move_inv_schema, "to_index", "integer", "Destination stack index.");
 			addMCPSchemaProperty(
 					move_inv_schema, "count", "integer", "Count to move, or 0 for all.");
+			addMCPRequired(move_inv_schema, "from_index");
+			addMCPRequired(move_inv_schema, "to_index");
 			tools.append(makeMCPTool("move_inventory_item",
 					"Move an item stack inside the current player inventory.",
 					move_inv_schema));
@@ -685,6 +779,28 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					makeMCPPositionSchema()));
 			tools.append(makeMCPTool(
 					"get_pointed_thing", "Get the current pointed thing under cursor."));
+			tools.append(makeMCPTool("get_nearby_objects",
+					"List nearby visible objects with IDs, positions, velocity, and display text."));
+			Json::Value object_action_schema = makeMCPObjectSchema();
+			addMCPSchemaProperty(object_action_schema, "object_id", "integer",
+					"Object ID from get_nearby_objects.");
+			addMCPRequired(object_action_schema, "object_id");
+			tools.append(makeMCPTool("interact_with_object",
+					"Right-click an object by ID. The server applies its normal interaction checks.",
+					object_action_schema));
+			tools.append(makeMCPTool("punch_object",
+					"Punch an object by ID. The server applies its normal reach and combat rules.",
+					object_action_schema));
+			Json::Value use_schema = makeMCPObjectSchema();
+			addMCPSchemaProperty(
+					use_schema, "slot", "integer", "Optional hotbar slot to use.");
+			addMCPSchemaProperty(
+					use_schema, "item", "string", "Optional item name to find and use.");
+			addMCPSchemaProperty(use_schema, "object_id", "integer",
+					"Optional nearby object ID to target instead of the current pointed thing.");
+			tools.append(makeMCPTool("use_item",
+					"Use the wielded item on the current pointed thing or a nearby object ID, or activate it in air.",
+					use_schema));
 
 			Json::Value world_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(world_schema, "radius", "integer",
@@ -795,16 +911,25 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					}
 				}
 				setMCPStatusResult(response, chat_obj);
+			} else if (tool_name == "stop_player_control") {
+				{
+					std::lock_guard<std::mutex> lock(m_mcp_control_mutex);
+					m_has_mcp_control_override = false;
+				}
+				Json::Value status;
+				status["success"] = true;
+				status["state"] = "released";
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "set_player_control") {
-				PlayerControl control;
-				if (args.isMember("forward") && args["forward"].asBool())
-					control.up = 1.0f;
-				if (args.isMember("backward") && args["backward"].asBool())
-					control.down = 1.0f;
-				if (args.isMember("left") && args["left"].asBool())
-					control.left = 1.0f;
-				if (args.isMember("right") && args["right"].asBool())
-					control.right = 1.0f;
+				PlayerControl control = player ? player->control : PlayerControl();
+				if (args.isMember("forward"))
+					control.up = args["forward"].asBool() ? 1.0f : 0.0f;
+				if (args.isMember("backward"))
+					control.down = args["backward"].asBool() ? 1.0f : 0.0f;
+				if (args.isMember("left"))
+					control.left = args["left"].asBool() ? 1.0f : 0.0f;
+				if (args.isMember("right"))
+					control.right = args["right"].asBool() ? 1.0f : 0.0f;
 				if (args.isMember("jump"))
 					control.jump = args["jump"].asBool();
 				if (args.isMember("sneak"))
@@ -824,8 +949,26 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 
 				const u32 duration_ms =
 						rangelim(args.get("duration_ms", 250).asUInt(), 50, 5000);
-				setMCPPlayerControl(control, duration_ms);
-				setMCPEmptyResult(response);
+				if (player)
+					setMCPPlayerControl(control, duration_ms);
+				Json::Value status;
+				status["success"] = player != nullptr;
+				if (player)
+					status["state"] = "active";
+				else
+					status["error"] = "No local player";
+				status["duration_ms"] = duration_ms;
+				status["controls"]["forward"] = control.up != 0;
+				status["controls"]["backward"] = control.down != 0;
+				status["controls"]["left"] = control.left != 0;
+				status["controls"]["right"] = control.right != 0;
+				status["controls"]["jump"] = control.jump;
+				status["controls"]["sneak"] = control.sneak;
+				status["controls"]["dig"] = control.dig;
+				status["controls"]["place"] = control.place;
+				status["controls"]["aux1"] = control.aux1;
+				status["controls"]["zoom"] = control.zoom;
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_node") {
 				v3pos_t pos(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
 				bool ok = false;
@@ -833,9 +976,9 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				setMCPTextResult(
 						response, nodeToMCPJson(pos, node, ok, getNodeDefManager()));
 			} else if (tool_name == "get_nodes_area") {
-				v3s16 minp(args["min_x"].asInt(), args["min_y"].asInt(),
+				v3pos_t minp(args["min_x"].asInt(), args["min_y"].asInt(),
 						args["min_z"].asInt());
-				v3s16 maxp(args["max_x"].asInt(), args["max_y"].asInt(),
+				v3pos_t maxp(args["max_x"].asInt(), args["max_y"].asInt(),
 						args["max_z"].asInt());
 				if (maxp.X < minp.X)
 					std::swap(maxp.X, minp.X);
@@ -844,8 +987,10 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				if (maxp.Z < minp.Z)
 					std::swap(maxp.Z, minp.Z);
 
-				s64 volume = (s64)(maxp.X - minp.X + 1) * (maxp.Y - minp.Y + 1) *
-							 (maxp.Z - minp.Z + 1);
+				s64 dx = (s64)maxp.X - minp.X + 1;
+				s64 dy = (s64)maxp.Y - minp.Y + 1;
+				s64 dz = (s64)maxp.Z - minp.Z + 1;
+				s64 volume = dx > 4096 || dy > 4096 || dz > 4096 ? 4097 : dx * dy * dz;
 				Json::Value area;
 				area["success"] = volume <= 4096;
 				area["volume"] = (Json::Int64)volume;
@@ -853,10 +998,10 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					area["error"] = "Requested area is too large";
 				} else {
 					Json::Value nodes(Json::arrayValue);
-					for (auto x = minp.X; x <= maxp.X; x++) {
-						for (auto y = minp.Y; y <= maxp.Y; y++) {
-							for (auto z = minp.Z; z <= maxp.Z; z++) {
-								v3pos_t pos(x, y, z);
+					for (s64 x = minp.X; x <= maxp.X; x++) {
+						for (s64 y = minp.Y; y <= maxp.Y; y++) {
+							for (s64 z = minp.Z; z <= maxp.Z; z++) {
+								v3pos_t pos((s32)x, (s32)y, (s32)z);
 								bool ok = false;
 								MapNode node = m_env.getClientMap().getNode(pos, &ok);
 								nodes.append(nodeToMCPJson(
@@ -887,6 +1032,9 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					a->to_i = args["to_index"].asInt();
 					inventoryAction(a);
 					status["success"] = true;
+					status["state"] = "submitted";
+					status["note"] =
+							"Inventory move was submitted; read the inventory to confirm.";
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "craft") {
@@ -899,6 +1047,9 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				Json::Value status;
 				status["success"] = true;
 				status["count"] = count;
+				status["state"] = "submitted";
+				status["note"] =
+						"Craft request was submitted; read the inventory to confirm.";
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "place_node") {
 				Json::Value status;
@@ -913,6 +1064,10 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 						status["target"]["x"] = target.X;
 						status["target"]["y"] = target.Y;
 						status["target"]["z"] = target.Z;
+						status["state"] = "submitted";
+						status["note"] =
+								"Placement was sent to the server and is not yet confirmed. "
+								"The local map can remain stale until a server update arrives.";
 					}
 					setMCPStatusResult(response, status);
 				}
@@ -934,6 +1089,10 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					interact(INTERACT_START_DIGGING, pointed);
 					interact(INTERACT_DIGGING_COMPLETED, pointed);
 					status["success"] = true;
+					status["state"] = "submitted";
+					status["note"] =
+							"Dig request was sent and is not yet confirmed. "
+							"The local map can remain stale until a server update arrives.";
 					status["node"] = nodeToMCPJson(pos, node, ok, getNodeDefManager());
 				}
 				setMCPStatusResult(response, status);
@@ -947,6 +1106,9 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 							args["y"].asFloat() * BS, args["z"].asFloat() * BS));
 					player->setSpeed(v3f(0.0f));
 					status["success"] = true;
+					status["state"] = "submitted";
+					status["note"] =
+							"The local position was changed; the server may correct it. Read player state to confirm.";
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "rotate_player") {
@@ -1005,6 +1167,101 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 						pointed.raw_intersection_normal.Z;
 				pointed_obj["distance_sq"] = pointed.distanceSq;
 				setMCPTextResult(response, pointed_obj);
+			} else if (tool_name == "get_nearby_objects") {
+				Json::Value result;
+				LocalPlayer *local_player = m_env.getLocalPlayer();
+				if (!local_player) {
+					result["success"] = false;
+					result["error"] = "No local player";
+				} else {
+					std::vector<DistanceSortedActiveObject> objects;
+					m_env.getActiveObjects(
+							local_player->getPosition(), 32.0f * BS, objects);
+					Json::Value list(Json::arrayValue);
+					for (const auto &entry : objects) {
+						ClientActiveObject *object = entry.obj.get();
+						if (!object || object->isLocalPlayer())
+							continue;
+						const v3f pos = object->getPosition() / BS;
+						const v3f velocity = object->getVelocity() / BS;
+						Json::Value item;
+						item["id"] = object->getId();
+						item["position"]["x"] = pos.X;
+						item["position"]["y"] = pos.Y;
+						item["position"]["z"] = pos.Z;
+						item["velocity"]["x"] = velocity.X;
+						item["velocity"]["y"] = velocity.Y;
+						item["velocity"]["z"] = velocity.Z;
+						item["info"] = object->infoText();
+						if (const auto *cao = dynamic_cast<const GenericCAO *>(object))
+							item["name"] = cao->getName();
+						list.append(item);
+					}
+					result["success"] = true;
+					result["radius_nodes"] = 32;
+					result["objects"] = list;
+				}
+				setMCPStatusResult(response, result);
+			} else if (tool_name == "use_item") {
+				Json::Value status;
+				if (selectMCPWieldedItem(this, player, args, status)) {
+					PointedThing pointed = getCurrentPointedThing();
+					bool target_available = true;
+					if (args.isMember("object_id")) {
+						ClientActiveObject *object = m_env.getActiveObject(
+								static_cast<u16>(args["object_id"].asUInt()));
+						if (!object) {
+							target_available = false;
+							status["success"] = false;
+							status["error"] = "Object is no longer available";
+						} else {
+							const v3f position = object->getPosition();
+							const v3f normal(0.0f, 1.0f, 0.0f);
+							const f32 distance_sq =
+									player ? player->getPosition().getDistanceFromSQ(
+													 position)
+										   : 0.0f;
+							pointed = PointedThing(object->getId(), position, normal,
+									normal, distance_sq, PointabilityType::POINTABLE);
+						}
+					}
+					if (target_available) {
+						if (pointed.type == POINTEDTHING_NOTHING)
+							interact(INTERACT_ACTIVATE, pointed);
+						else
+							interact(INTERACT_USE, pointed);
+						status["success"] = true;
+						status["state"] = "submitted";
+						status["note"] = "Use request was sent to the server.";
+					}
+				}
+				setMCPStatusResult(response, status);
+			} else if (tool_name == "interact_with_object" ||
+					   tool_name == "punch_object") {
+				Json::Value status;
+				ClientActiveObject *object = m_env.getActiveObject(
+						static_cast<u16>(args["object_id"].asUInt()));
+				if (!object) {
+					status["success"] = false;
+					status["error"] = "Object is no longer available";
+				} else {
+					const v3f position = object->getPosition();
+					const v3f normal(0.0f, 1.0f, 0.0f);
+					const f32 distance_sq =
+							player ? player->getPosition().getDistanceFromSQ(position)
+								   : 0.0f;
+					PointedThing pointed(object->getId(), position, normal, normal,
+							distance_sq, PointabilityType::POINTABLE);
+					interact(tool_name == "punch_object" ? INTERACT_START_DIGGING
+														 : INTERACT_PLACE,
+							pointed);
+					status["success"] = true;
+					status["state"] = "submitted";
+					status["object_id"] = object->getId();
+					status["note"] =
+							"Request was sent; the server decides whether the interaction succeeds.";
+				}
+				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_world_content") {
 				int radius = args.get("radius", 5).asInt();
 				Json::Value world = getWorldContentAroundPlayer(radius);
@@ -1027,7 +1284,7 @@ void Client::sendMCPResponse(mcp_ws_server_t::connection_ptr connection,
 {
 	auto payload = std::make_shared<std::string>(
 			Json::writeString(Json::StreamWriterBuilder(), response));
-	m_mcp_http_server.get_io_service().post([connection, payload, session_id]() {
+	m_mcp_http_server.get_io_context().post([connection, payload, session_id]() {
 		websocketpp::lib::error_code ec;
 		connection->append_header("Content-Type", "application/json");
 		if (!session_id.empty())
@@ -1380,7 +1637,7 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 {
 	Json::Value world_content;
 
-	radius_blocks = std::min(radius_blocks, 3);
+	radius_blocks = rangelim(radius_blocks, 0, 3);
 
 	LocalPlayer *player = m_env.getLocalPlayer();
 	if (!player) {
@@ -1407,67 +1664,80 @@ Json::Value Client::getWorldContentAroundPlayer(int radius_blocks)
 	const int max_blocks = 27;
 	int block_count = 0;
 
-	auto min_block =
-			player_block_pos - v3pos_t(radius_blocks, radius_blocks, radius_blocks);
-	auto max_block =
-			player_block_pos + v3pos_t(radius_blocks, radius_blocks, radius_blocks);
+	std::vector<v3pos_t> candidates;
+	for (s32 x = -radius_blocks; x <= radius_blocks; ++x)
+		for (s32 y = -radius_blocks; y <= radius_blocks; ++y)
+			for (s32 z = -radius_blocks; z <= radius_blocks; ++z)
+				candidates.emplace_back(player_block_pos.X + x, player_block_pos.Y + y,
+						player_block_pos.Z + z);
+	std::sort(candidates.begin(), candidates.end(),
+			[&](const v3pos_t &a, const v3pos_t &b) {
+				auto dist_sq = [&](const v3pos_t &p) {
+					s64 x = (s64)p.X - player_block_pos.X;
+					s64 y = (s64)p.Y - player_block_pos.Y;
+					s64 z = (s64)p.Z - player_block_pos.Z;
+					return x * x + y * y + z * z;
+				};
+				return dist_sq(a) < dist_sq(b);
+			});
 
-	for (auto x = min_block.X; x <= max_block.X && block_count < max_blocks; x++) {
-		for (auto y = min_block.Y; y <= max_block.Y && block_count < max_blocks; y++) {
-			for (auto z = min_block.Z; z <= max_block.Z && block_count < max_blocks;
-					z++) {
-				v3pos_t block_pos(x, y, z);
-				MapBlock *block = map.getBlockNoCreateNoEx(block_pos);
+	for (const v3pos_t &block_pos : candidates) {
+		if (block_count >= max_blocks)
+			break;
+		MapBlock *block = map.getBlockNoCreateNoEx(block_pos);
 
-				if (!block)
-					continue;
+		if (!block)
+			continue;
 
-				Json::Value block_obj;
-				block_obj["position"]["x"] = block_pos.X;
-				block_obj["position"]["y"] = block_pos.Y;
-				block_obj["position"]["z"] = block_pos.Z;
-				block_obj["is_generated"] = block->isGenerated();
-				block_obj["timestamp"] = static_cast<int>(block->getTimestamp());
-				block_obj["is_air"] = block->isAir();
+		Json::Value block_obj;
+		block_obj["position"]["x"] = block_pos.X;
+		block_obj["position"]["y"] = block_pos.Y;
+		block_obj["position"]["z"] = block_pos.Z;
+		block_obj["is_generated"] = block->isGenerated();
+		block_obj["timestamp"] = static_cast<int>(block->getTimestamp());
+		block_obj["is_air"] = block->isAir();
 
-				Json::Value nodes_array(Json::arrayValue);
-				int sample_count = 0;
-				const int max_samples = 10;
+		Json::Value nodes_array(Json::arrayValue);
+		int sample_count = 0;
+		const int max_samples = 10;
 
-				for (s16 nx = 0; nx < MAP_BLOCKSIZE && sample_count < max_samples;
-						nx += 4) {
-					for (s16 ny = 0; ny < MAP_BLOCKSIZE && sample_count < max_samples;
-							ny += 4) {
-						for (s16 nz = 0; nz < MAP_BLOCKSIZE && sample_count < max_samples;
-								nz += 4) {
-							v3pos_t node_pos(nx, ny, nz);
-							MapNode node = block->getNodeNoCheck(node_pos);
+		for (s16 nx = 0; nx < MAP_BLOCKSIZE && sample_count < max_samples; nx += 4) {
+			for (s16 ny = 0; ny < MAP_BLOCKSIZE && sample_count < max_samples; ny += 4) {
+				for (s16 nz = 0; nz < MAP_BLOCKSIZE && sample_count < max_samples;
+						nz += 4) {
+					v3pos_t node_pos(nx, ny, nz);
+					MapNode node = block->getNodeNoCheck(node_pos);
 
-							if (node.getContent() != CONTENT_AIR &&
-									node.getContent() != CONTENT_IGNORE) {
-								Json::Value node_obj;
-								node_obj["pos"]["x"] = nx;
-								node_obj["pos"]["y"] = ny;
-								node_obj["pos"]["z"] = nz;
-								node_obj["content"] = static_cast<int>(node.getContent());
-								nodes_array.append(node_obj);
-								sample_count++;
-							}
-						}
+					if (node.getContent() != CONTENT_AIR &&
+							node.getContent() != CONTENT_IGNORE) {
+						Json::Value node_obj;
+						node_obj["pos"]["x"] = nx;
+						node_obj["pos"]["y"] = ny;
+						node_obj["pos"]["z"] = nz;
+						node_obj["content"] = static_cast<int>(node.getContent());
+						node_obj["name"] = getNodeDefManager()->get(node).name;
+						node_obj["world_pos"]["x"] = block_pos.X * MAP_BLOCKSIZE + nx;
+						node_obj["world_pos"]["y"] = block_pos.Y * MAP_BLOCKSIZE + ny;
+						node_obj["world_pos"]["z"] = block_pos.Z * MAP_BLOCKSIZE + nz;
+						nodes_array.append(node_obj);
+						sample_count++;
 					}
 				}
-
-				if (sample_count > 0)
-					block_obj["sampled_nodes"] = nodes_array;
-				block_obj["sample_count"] = sample_count;
-				blocks_array.append(block_obj);
-				block_count++;
 			}
 		}
+
+		if (sample_count > 0)
+			block_obj["sampled_nodes"] = nodes_array;
+		block_obj["sample_count"] = sample_count;
+		blocks_array.append(block_obj);
+		block_count++;
 	}
 
 	world_content["blocks"] = blocks_array;
 	world_content["block_count"] = (int)blocks_array.size();
+	world_content["truncated"] = candidates.size() > static_cast<size_t>(max_blocks);
+	world_content["sampling"] =
+			"nearest loaded blocks; up to 10 sampled non-air nodes per block";
 
 	return world_content;
 }
