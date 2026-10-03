@@ -47,6 +47,7 @@ class MappedTrunks;
 namespace trees
 {
 struct MappedRequest;
+enum class Habitat;
 }
 
 namespace block_definitions
@@ -149,8 +150,11 @@ struct WorldEditor
 	// Matches trees::RegionSelector::base_spacing() for the default pack; hosts
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing_blocks = 5;
-	std::function<bool(int, int, int, std::uint8_t)> regional_tree_placer;
-	std::function<bool(int, int, int, std::uint8_t, const trees::MappedRequest &)>
+	std::function<std::optional<bool>(int, int, int, std::uint8_t,
+			std::optional<trees::Habitat>, bool, bool, bool, bool)>
+			regional_tree_placer;
+	std::function<std::optional<bool>(
+			int, int, int, std::uint8_t, const trees::MappedRequest &)>
 			mapped_regional_tree_placer;
 	// Authored OSM trunks suppress procedural canopy crowns in the same cells,
 	// matching Rust's MappedTrunks pass during streamed ground decoration.
@@ -230,23 +234,32 @@ struct WorldEditor
 	void set_ground_origin(int x, int z);
 	void reserve_ground_level_cache();
 	XZPoint ground_point(int x, int z) const;
-	void set_regional_tree_placer(std::function<bool(int, int, int, std::uint8_t)> placer)
+	void set_regional_tree_placer(std::function<std::optional<bool>(int, int, int,
+					std::uint8_t, std::optional<trees::Habitat>, bool, bool, bool, bool)>
+					placer)
 	{
 		regional_tree_placer = std::move(placer);
 	}
-	bool place_regional_tree(int x, int y, int z, std::uint8_t cover)
+	std::optional<bool> place_regional_tree(int x, int y, int z, std::uint8_t cover,
+			std::optional<trees::Habitat> habitat_hint = std::nullopt,
+			bool tagged = false, bool wet_ground = false, bool allow_on_paved = false,
+			bool density_decided = false)
 	{
-		return regional_tree_placer && regional_tree_placer(x, y, z, cover);
+		if (!regional_tree_placer)
+			return std::nullopt;
+		return regional_tree_placer(x, y, z, cover, habitat_hint, tagged, wet_ground,
+				allow_on_paved, density_decided);
 	}
 	void set_mapped_regional_tree_placer(decltype(mapped_regional_tree_placer) placer)
 	{
 		mapped_regional_tree_placer = std::move(placer);
 	}
-	bool place_mapped_regional_tree(
+	std::optional<bool> place_mapped_regional_tree(
 			int x, int y, int z, std::uint8_t cover, const trees::MappedRequest &request)
 	{
-		return mapped_regional_tree_placer &&
-			   mapped_regional_tree_placer(x, y, z, cover, request);
+		if (!mapped_regional_tree_placer)
+			return std::nullopt;
+		return mapped_regional_tree_placer(x, y, z, cover, request);
 	}
 	void set_start_with_map(bool v) { start_with_map = v; }
 	void set_map_decals(bool v) { map_decals = v; }
