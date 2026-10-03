@@ -1182,7 +1182,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 						ClientActiveObject *object = entry.obj.get();
 						if (!object || object->isLocalPlayer())
 							continue;
-						const v3f pos = object->getPosition() / BS;
+						const auto pos = object->getPosition() / BS;
 						const v3f velocity = object->getVelocity() / BS;
 						Json::Value item;
 						item["id"] = object->getId();
@@ -1215,7 +1215,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 							status["success"] = false;
 							status["error"] = "Object is no longer available";
 						} else {
-							const v3f position = object->getPosition();
+							const auto position = object->getPosition();
 							const v3f normal(0.0f, 1.0f, 0.0f);
 							const f32 distance_sq =
 									player ? player->getPosition().getDistanceFromSQ(
@@ -1245,7 +1245,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					status["success"] = false;
 					status["error"] = "Object is no longer available";
 				} else {
-					const v3f position = object->getPosition();
+					const auto position = object->getPosition();
 					const v3f normal(0.0f, 1.0f, 0.0f);
 					const f32 distance_sq =
 							player ? player->getPosition().getDistanceFromSQ(position)
