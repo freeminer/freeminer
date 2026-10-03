@@ -4,79 +4,165 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
+#include <span>
 #include <tuple>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "irr_v3d.h"
-#include "util/unordered_map_hash.h"
+#include "mapnode.h"
+#include "fm_blast_shell.h"
 
-// Rectangles on the six faces of a unit cube describe persistent angular regions.
-// Density is energy per steradian; splitting a region never changes its density.
+// Local to explosions: mix every coordinate bit, including signs and X parity.
+struct FmBlastPosHash
+{
+	size_t operator()(const v3pos_t &p) const
+	{
+		const auto mix = [](uint64_t x) {
+			x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
+			x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
+			return x ^ (x >> 31);
+		};
+		return mix(mix(static_cast<uint64_t>(static_cast<int64_t>(p.X))) ^
+				   mix(static_cast<uint64_t>(static_cast<int64_t>(p.Y)) +
+						   0x9e3779b97f4a7c15ULL) ^
+				   mix(static_cast<uint64_t>(static_cast<int64_t>(p.Z)) +
+						   0x3c6ef372fe94f82aULL));
+	}
+};
+template <typename T>
+using FmBlastMap = std::unordered_map<v3pos_t, T, FmBlastPosHash>;
+using FmBlastSet = std::unordered_set<v3pos_t, FmBlastPosHash>;
+
 struct FmBlastFootprint
 {
-	int face;
-	double u0, u1, v0, v1;
-	double density;
+	int face = 0;
+	double u0 = 0, u1 = 0, v0 = 0, v1 = 0;
+	double density = 0;
+	double solid_angle = 0;
 
-	double area() const
+	FmBlastFootprint() = default;
+	FmBlastFootprint(
+			int face_, double u0_, double u1_, double v0_, double v1_, double density_) :
+			face(face_), u0(u0_), u1(u1_), v0(v0_), v1(v1_), density(density_)
 	{
 		const auto integral = [](double u, double v) {
 			return std::atan2(u * v, std::sqrt(1.0 + u * u + v * v));
 		};
-		return integral(u1, v1) - integral(u0, v1) - integral(u1, v0) + integral(u0, v0);
+		if (u1 > u0 && v1 > v0)
+			solid_angle = std::max(0.0, integral(u1, v1) - integral(u0, v1) -
+												integral(u1, v0) + integral(u0, v0));
 	}
+	double area() const { return solid_angle; }
 };
-
-inline double fm_blast_reference_area()
-{
-	// Preserve the old first-shell energy scale for air loss and cutoff settings.
-	return 4.0 * std::acos(-1.0) / 26.0;
-}
 
 inline std::vector<FmBlastFootprint> fm_blast_angular_seed(double energy)
 {
 	std::vector<FmBlastFootprint> result;
+	result.reserve(6);
 	for (int face = 0; face < 6; ++face)
-		result.push_back({face, -1.0, 1.0, -1.0, 1.0, energy / (4.0 * std::acos(-1.0))});
+		result.emplace_back(face, -1.0, 1.0, -1.0, 1.0, energy / (4.0 * std::acos(-1.0)));
 	return result;
 }
 
+// One record owns transport geometry and the engine's current node-hit state.
 struct FmBlastAngularHit
 {
-	std::vector<FmBlastFootprint> patches;
+	size_t first = 0, count = 0;
 	double energy = 0.0;
+	double projected_energy = 0.0;
 	double area = 0.0;
 	double distance_cost = 0.0;
+	MapNode node;
+	bool loaded = false;
+	bool protected_node = false;
+	bool absorbed_tnt = false;
+	FmBlastOutcome outcome = FmBlastOutcome::Blocked;
+	// The cutoff is energy per node, not density: tiny distant hits must expire.
+	bool can_travel(double minimum) const { return energy > minimum; }
+};
 
-	// Material loss or a local TNT boost changes every incoming contribution by
-	// the same factor. Directions and angular boundaries are never merged here.
-	void append_survivors(double remaining, std::vector<FmBlastFootprint> &out) const
+struct FmBlastAngularHits
+{
+	FmBlastMap<FmBlastAngularHit> hits;
+	std::vector<FmBlastFootprint> patches;
+	auto begin() { return hits.begin(); }
+	auto end() { return hits.end(); }
+	auto begin() const { return hits.begin(); }
+	auto end() const { return hits.end(); }
+	size_t size() const { return hits.size(); }
+	size_t count(const v3pos_t &pos) const { return hits.count(pos); }
+	auto &at(const v3pos_t &pos) { return hits.at(pos); }
+	const auto &at(const v3pos_t &pos) const { return hits.at(pos); }
+	std::span<FmBlastFootprint> regions(const FmBlastAngularHit &hit)
 	{
-		if (remaining <= 0.0 || energy <= 0.0)
-			return;
-		const double scale = remaining / energy;
-		for (auto patch : patches) {
-			patch.density *= scale;
-			if (patch.density > 0.0)
-				out.push_back(patch);
-		}
+		return std::span(patches).subspan(hit.first, hit.count);
 	}
-
-	double cutoff(double minimum) const
+	std::span<const FmBlastFootprint> regions(const FmBlastAngularHit &hit) const
 	{
-		return minimum * area / fm_blast_reference_area();
+		return std::span(patches).subspan(hit.first, hit.count);
+	}
+	double energy() const
+	{
+		double total = 0;
+		for (const auto &[pos, hit] : hits)
+			total += hit.energy;
+		return total;
+	}
+	void append_survivors(std::vector<FmBlastFootprint> &out) const
+	{
+		out.reserve(out.size() + patches.size());
+		for (const auto &[pos, hit] : hits) {
+			if (hit.energy <= 0.0 || hit.projected_energy <= 0.0)
+				continue;
+			const double scale = hit.energy / hit.projected_energy;
+			for (auto patch : regions(hit)) {
+				patch.density *= scale;
+				if (patch.density > 0.0)
+					out.push_back(patch);
+			}
+		}
 	}
 };
 
-using FmBlastAngularHits = unordered_map_v3pos<FmBlastAngularHit>;
+struct FmBlastPatchEntry
+{
+	v3pos_t pos;
+	FmBlastFootprint patch;
+};
+inline FmBlastAngularHits fm_blast_pack(const std::vector<FmBlastPatchEntry> &entries)
+{
+	FmBlastAngularHits result;
+	result.hits.reserve(entries.size());
+	for (const auto &entry : entries) {
+		auto &hit = result.hits[entry.pos];
+		++hit.count;
+		hit.area += entry.patch.area();
+		hit.energy += entry.patch.density * entry.patch.area();
+	}
+	size_t offset = 0;
+	for (auto &[pos, hit] : result) {
+		hit.first = offset;
+		offset += hit.count;
+		hit.count = 0;
+		hit.projected_energy = hit.energy;
+	}
+	result.patches.resize(offset);
+	for (const auto &entry : entries) {
+		auto &hit = result.at(entry.pos);
+		result.patches[hit.first + hit.count++] = entry.patch;
+	}
+	return result;
+}
 
-// Intersect each footprint with the angular projection of every covered voxel.
-// Face edges/corners contribute disjoint angular pieces to the same voxel.
 inline FmBlastAngularHits fm_blast_angular_project(
 		const std::vector<FmBlastFootprint> &patches, int shell)
 {
-	FmBlastAngularHits hits;
+	std::vector<FmBlastPatchEntry> entries;
 	if (shell <= 0)
-		return hits;
+		return {};
+	entries.reserve(patches.size() * 4);
 	for (const auto &patch : patches) {
 		const int first_u =
 				std::max(-shell, static_cast<int>(std::floor(patch.u0 * shell + 0.5)));
@@ -88,31 +174,23 @@ inline FmBlastAngularHits fm_blast_angular_project(
 				std::min(shell, static_cast<int>(std::floor(patch.v1 * shell + 0.5)));
 		for (int u = first_u; u <= last_u; ++u)
 			for (int v = first_v; v <= last_v; ++v) {
-				FmBlastFootprint child{patch.face, std::max(patch.u0, (u - 0.5) / shell),
+				FmBlastFootprint child(patch.face, std::max(patch.u0, (u - 0.5) / shell),
 						std::min(patch.u1, (u + 0.5) / shell),
 						std::max(patch.v0, (v - 0.5) / shell),
-						std::min(patch.v1, (v + 0.5) / shell), patch.density};
-				if (child.u1 <= child.u0 || child.v1 <= child.v0)
+						std::min(patch.v1, (v + 0.5) / shell), patch.density);
+				if (child.area() <= 0.0)
 					continue;
-				const double area = child.area();
-				if (area <= 0.0)
-					continue;
-				std::array<pos_t, 3> components;
+				std::array<pos_t, 3> p;
 				const int axis = patch.face / 2;
-				components[axis] = static_cast<pos_t>(patch.face % 2 ? -shell : shell);
-				components[(axis + 1) % 3] = static_cast<pos_t>(u);
-				components[(axis + 2) % 3] = static_cast<pos_t>(v);
-				auto &hit = hits[v3pos_t(components[0], components[1], components[2])];
-				hit.patches.push_back(child);
-				hit.area += area;
-				hit.energy += child.density * area;
+				p[axis] = static_cast<pos_t>(patch.face % 2 ? -shell : shell);
+				p[(axis + 1) % 3] = static_cast<pos_t>(u);
+				p[(axis + 2) % 3] = static_cast<pos_t>(v);
+				entries.push_back({v3pos_t(p[0], p[1], p[2]), child});
 			}
 	}
-	return hits;
+	return fm_blast_pack(entries);
 }
 
-// Rejoin only adjacent regions with the same energy density. This removes
-// temporary voxel boundaries in air without averaging away material shadows.
 inline void fm_blast_angular_coalesce(std::vector<FmBlastFootprint> &patches)
 {
 	bool changed;
@@ -139,12 +217,15 @@ inline void fm_blast_angular_coalesce(std::vector<FmBlastFootprint> &patches)
 							std::max({1.0, std::abs(last.density), std::abs(p.density)});
 					if (last.face == p.face && adjacent &&
 							std::abs(last.density - p.density) <= tolerance) {
-						const double a = last.area(), b = p.area();
-						last.density = (a * last.density + b * p.density) / (a + b);
+						const double area = last.area() + p.area();
+						last.density =
+								(last.area() * last.density + p.area() * p.density) /
+								area;
 						if (axis == 0)
 							last.u1 = p.u1;
 						else
 							last.v1 = p.v1;
+						last.solid_angle = area;
 						continue;
 					}
 				}
@@ -156,41 +237,76 @@ inline void fm_blast_angular_coalesce(std::vector<FmBlastFootprint> &patches)
 	} while (changed);
 }
 
-// Deliberate full-surface mixing is confined to the configured cubic core.
+// Split base minus cut into disjoint rectangles. Both lie on one cube face.
+inline void fm_blast_subtract(const FmBlastFootprint &base, const FmBlastFootprint &cut,
+		std::vector<FmBlastFootprint> &out)
+{
+	const double u0 = std::max(base.u0, cut.u0), u1 = std::min(base.u1, cut.u1);
+	const double v0 = std::max(base.v0, cut.v0), v1 = std::min(base.v1, cut.v1);
+	if (u0 >= u1 || v0 >= v1) {
+		out.push_back(base);
+		return;
+	}
+	const auto add = [&](double a, double b, double c, double d) {
+		if (b > a && d > c)
+			out.emplace_back(base.face, a, b, c, d, base.density);
+	};
+	add(base.u0, u0, base.v0, base.v1);
+	add(u1, base.u1, base.v0, base.v1);
+	add(u0, u1, base.v0, v0);
+	add(u0, u1, v1, base.v1);
+}
+
 inline void fm_blast_angular_mix_core(
 		FmBlastAngularHits &hits, int shell, double fraction)
 {
-	fraction = std::clamp(fraction, 0.0, 1.0);
-	if (fraction <= 0.0)
-		return;
-	double total = 0.0;
-	for (const auto &[pos, hit] : hits)
-		total += hit.energy;
-	if (total <= 0.0)
+	fraction = fm_blast_fraction(fraction, 0.0);
+	if (fraction <= 0.0 || hits.energy() <= 0.0)
 		return;
 	auto surface = fm_blast_angular_project(fm_blast_angular_seed(0.0), shell);
-	const double share = total * fraction / surface.size();
-	for (auto &[pos, hit] : surface) {
-		const auto old = hits.find(pos);
-		hit.energy =
-				share + (old != hits.end() ? old->second.energy * (1.0 - fraction) : 0.0);
-		for (auto &patch : hit.patches)
-			patch.density = hit.energy / hit.area;
+	const double share = hits.energy() * fraction / surface.size();
+	std::vector<FmBlastPatchEntry> entries;
+	entries.reserve(hits.patches.size() + surface.patches.size());
+	std::vector<FmBlastFootprint> gaps, next_gaps;
+	for (const auto &[pos, full] : surface) {
+		const double background = share / full.area;
+		const auto old = hits.hits.find(pos);
+		for (auto base : surface.regions(full)) {
+			base.density = background;
+			gaps.clear();
+			gaps.push_back(base);
+			if (old != hits.end() && fraction < 1.0) {
+				for (auto patch : hits.regions(old->second)) {
+					if (patch.face != base.face)
+						continue;
+					// Preserve every old density; add the pooled background once.
+					const double retained =
+							old->second.projected_energy > 0.0
+									? old->second.energy / old->second.projected_energy
+									: 0.0;
+					patch.density =
+							patch.density * retained * (1.0 - fraction) + background;
+					entries.push_back({pos, patch});
+					next_gaps.clear();
+					for (const auto &gap : gaps)
+						fm_blast_subtract(gap, patch, next_gaps);
+					gaps.swap(next_gaps);
+				}
+			}
+			for (const auto &gap : gaps)
+				entries.push_back({pos, gap});
+		}
 	}
-	hits = std::move(surface);
+	hits = fm_blast_pack(entries);
 }
 
-// Both loss and cutoff are per angular area, not per fragment or recipient cell.
 inline void fm_blast_angular_distance(FmBlastAngularHits &hits, double loss)
 {
-	const double density_loss = std::max(0.0, loss) / fm_blast_reference_area();
+	const double node_loss = std::max(0.0, loss);
 	for (auto &[pos, hit] : hits) {
-		const double before = hit.energy;
-		hit.energy = 0.0;
-		for (auto &patch : hit.patches) {
-			patch.density = std::max(0.0, patch.density - density_loss);
-			hit.energy += patch.density * patch.area();
-		}
-		hit.distance_cost = std::max(0.0, before - hit.energy);
+		// Charge once per node, regardless of angular area or patch count.
+		// append_survivors applies this loss proportionally to all contributions.
+		hit.distance_cost = std::min(hit.energy, node_loss);
+		hit.energy -= hit.distance_cost;
 	}
 }
