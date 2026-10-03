@@ -279,6 +279,12 @@ namespace earth_osmium_detail
 
 arnis::Args earth_arnis_args()
 {
+	// Freeminer owns the application cache directory; all Arnis providers derive
+	// their cache subdirectories from this one configured base.
+	arnis::cache::set_base_directory(std::filesystem::path(porting::path_cache));
+	// Assets are installed independently from the executable and cache tree.
+	arnis::assets::set_base_directory(
+			std::filesystem::path(porting::path_share) / "assets" / "arnis");
 	arnis::Args args;
 	args.use_3d = true;
 	args.interior = true;
@@ -290,10 +296,7 @@ arnis::Args earth_arnis_args()
 	//args.mapillary_facades = true;
 	//args.mapillary_probe = true;
 	args.facade_detail = arnis::FacadeDetail::High;
-	// Reuse Luanti's configured cache root, the same root used by
-	// multi_http_to_file(), and keep facade products in their own subtree.
-	args.building_facades_dir =
-			(std::filesystem::path(porting::path_cache) / "earth" / "facade").string();
+	args.building_facades_dir = arnis::cache::facade_cache_root().string();
 	args.signage = arnis::SignageLevel::Full;
 	args.fillground = true;
 	args.caves = true;

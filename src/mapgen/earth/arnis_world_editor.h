@@ -420,6 +420,7 @@ struct WorldEditor
 	void clear_flush_request() { flush_requested = false; }
 	void clear_save_request() { save_requested = false; }
 	std::filesystem::path schematic_asset_root;
+	std::filesystem::path cave_asset_root;
 	void set_schematic_asset_root(std::filesystem::path root)
 	{
 		schematic_asset_root = std::move(root);
@@ -428,6 +429,11 @@ struct WorldEditor
 	{
 		return schematic_asset_root;
 	}
+	void set_cave_asset_root(std::filesystem::path root)
+	{
+		cave_asset_root = std::move(root);
+	}
+	const std::filesystem::path &get_cave_asset_root() const { return cave_asset_root; }
 	Ground *get_ground() const { return ground; }; // may return nullptr
 
 	bool pos_ok(int x, int z) const;
