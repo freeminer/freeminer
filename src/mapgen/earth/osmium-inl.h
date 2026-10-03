@@ -281,7 +281,8 @@ arnis::Args earth_arnis_args()
 {
 	// Freeminer owns the application cache directory; all Arnis providers derive
 	// their cache subdirectories from this one configured base.
-	arnis::cache::set_base_directory(std::filesystem::path(porting::path_cache));
+	arnis::cache::set_base_directory(
+			std::filesystem::path(porting::path_cache) / "earth" / "arnis");
 	// Assets are installed independently from the executable and cache tree.
 	arnis::assets::set_base_directory(
 			std::filesystem::path(porting::path_share) / "assets" / "arnis");
