@@ -7,6 +7,8 @@
 #include "arnis_world_editor.h"
 
 #include "arnis-cpp/src/block_definitions.h"
+#include "arnis-cpp/src/assets_root.h"
+#include "arnis-cpp/src/cache_root.h"
 #include "arnis_projection_frame.h"
 
 namespace arnis

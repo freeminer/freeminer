@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
-#include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -13,12 +12,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include "irr_v3d.h"
-#include "irrlichttypes.h"
 #include "log.h"
 #include "mapgen/earth/arnis-cpp/src/args.h"
 #if !defined(FILE_INCLUDED)
-#include "debug/dump.h"
 #include <osmium/area/assembler.hpp>
 #include <osmium/area/multipolygon_manager.hpp>
 #include <osmium/dynamic_handler.hpp>
@@ -35,6 +31,7 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+#include "arnis-cpp/src/osm_parser.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -199,8 +196,16 @@ public:
 	MapgenEarth *mg{};
 	std::vector<arnis::ProcessedElement> elements;
 	std::unordered_set<std::uint64_t> seen_way_ids;
+	std::unordered_set<std::uint64_t> seen_relation_ids;
 	std::unordered_set<std::uint64_t> seen_node_ids;
 	std::unordered_map<std::uint64_t, arnis::tags_t> tagged_node_tags;
+	std::unordered_map<std::uint64_t, std::size_t> way_indices;
+	struct PendingRelation
+	{
+		arnis::ProcessedRelation relation;
+		std::vector<std::pair<std::uint64_t, arnis::ProcessedMemberRole>> ways;
+	};
+	std::vector<PendingRelation> pending_relations;
 
 	void node(const osmium::Node &node)
 	{
@@ -210,6 +215,7 @@ public:
 		arnis::tags_t tags;
 		for (const auto &tag : node.tags())
 			tags.emplace(tag.key(), tag.value());
+		arnis::osm_parser::filter_tags(tags);
 		if (tags.empty())
 			return;
 		tagged_node_tags.emplace(id, tags);
@@ -228,6 +234,8 @@ public:
 		processed_node.x = x;
 		processed_node.z = z;
 		processed_node.y = editor.node_to_position(node).Y;
+		processed_node.latitude = node.location().lat();
+		processed_node.longitude = node.location().lon();
 		elements.emplace_back(std::move(processed_node));
 	}
 
@@ -244,6 +252,7 @@ public:
 		processed_way.id = id;
 		for (const auto &tag : way.tags())
 			processed_way.tags.emplace(tag.key(), tag.value());
+		arnis::osm_parser::filter_tags(processed_way.tags);
 		for (const auto &node : way.nodes()) {
 			arnis::ProcessedNode processed_node;
 			const auto node_id = static_cast<std::uint64_t>(node.ref());
@@ -254,22 +263,97 @@ public:
 			processed_node.x = x;
 			processed_node.z = z;
 			processed_node.y = editor.node_to_position(node).Y;
+			if (node.location()) {
+				processed_node.latitude = node.location().lat();
+				processed_node.longitude = node.location().lon();
+			}
 			processed_node.id = node_id;
 			processed_way.nodes.emplace_back(std::move(processed_node));
 		}
-		elements.emplace_back(processed_way);
+		way_indices.emplace(id, elements.size());
+		elements.emplace_back(std::move(processed_way));
 	}
 
 	void way(const osmium::Way &way) { append_way(way); }
 
 	void relation(const osmium::Relation &relation)
 	{
-		try {
-			for (const auto &sn : relation.subitems<osmium::Way>()) {
-				append_way(sn);
+		const auto id = static_cast<std::uint64_t>(relation.id());
+		if (!seen_relation_ids.emplace(id).second)
+			return;
+		arnis::ProcessedRelation processed;
+		processed.id = id;
+		for (const auto &tag : relation.tags())
+			processed.tags.emplace(tag.key(), tag.value());
+		arnis::osm_parser::filter_tags(processed.tags);
+		const auto type = processed.tags.get("type");
+		if (type != "multipolygon" && type != "building")
+			return;
+		const bool building_relation = type == "building" ||
+									   processed.tags.contains("building") ||
+									   processed.tags.contains("building:part");
+		PendingRelation pending;
+		pending.relation = std::move(processed);
+		for (const auto &member : relation.members()) {
+			const auto member_id = static_cast<std::uint64_t>(member.ref());
+			std::string member_type;
+			switch (member.type()) {
+			case osmium::item_type::node:
+				member_type = "node";
+				break;
+			case osmium::item_type::way:
+				member_type = "way";
+				break;
+			case osmium::item_type::relation:
+				member_type = "relation";
+				break;
+			default:
+				continue;
 			}
-		} catch (const std::exception &ex) {
-			DUMP(ex.what());
+			pending.relation.source_members.push_back(
+					{member_type, member_id, std::string(member.role())});
+			if (member.type() != osmium::item_type::way)
+				continue;
+			const auto way_id = member_id;
+			const auto found = way_indices.find(way_id);
+			if (found == way_indices.end())
+				continue;
+			std::string role = member.role();
+			const auto first = role.find_first_not_of(" \t\r\n");
+			const auto last = role.find_last_not_of(" \t\r\n");
+			role = first == std::string::npos ? std::string{}
+											  : role.substr(first, last - first + 1);
+			std::transform(role.begin(), role.end(), role.begin(),
+					[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			std::optional<arnis::ProcessedMemberRole> processed_role;
+			if (role == "outer" || role == "outline")
+				processed_role = arnis::ProcessedMemberRole::Outer;
+			else if (role == "inner")
+				processed_role = arnis::ProcessedMemberRole::Inner;
+			else if (role == "part" && type == "building")
+				processed_role = arnis::ProcessedMemberRole::Part;
+			else if (role != "part" && building_relation)
+				processed_role = arnis::ProcessedMemberRole::Outer;
+			if (!processed_role)
+				continue;
+			pending.ways.emplace_back(way_id, *processed_role);
+		}
+		if (!pending.ways.empty())
+			pending_relations.push_back(std::move(pending));
+	}
+
+	void finish_relations()
+	{
+		for (auto &pending : pending_relations) {
+			for (const auto &[way_id, role] : pending.ways) {
+				const auto found = way_indices.find(way_id);
+				if (found == way_indices.end())
+					continue;
+				pending.relation.members.push_back(
+						{elements[found->second].as_way(), role});
+			}
+			if (!pending.relation.members.empty())
+				elements.emplace_back(std::move(pending.relation));
 		}
 	}
 };
@@ -279,6 +363,13 @@ namespace earth_osmium_detail
 
 arnis::Args earth_arnis_args()
 {
+	// Freeminer owns the application cache directory; all Arnis providers derive
+	// their cache subdirectories from this one configured base.
+	arnis::cache::set_base_directory(
+			std::filesystem::path(porting::path_cache) / "earth" / "arnis");
+	// Assets are installed independently from the executable and cache tree.
+	arnis::assets::set_base_directory(
+			std::filesystem::path(porting::path_share) / "assets" / "arnis");
 	arnis::Args args;
 	args.use_3d = true;
 	args.interior = true;
@@ -290,10 +381,7 @@ arnis::Args earth_arnis_args()
 	//args.mapillary_facades = true;
 	//args.mapillary_probe = true;
 	args.facade_detail = arnis::FacadeDetail::High;
-	// Reuse Luanti's configured cache root, the same root used by
-	// multi_http_to_file(), and keep facade products in their own subtree.
-	args.building_facades_dir =
-			(std::filesystem::path(porting::path_cache) / "earth" / "facade").string();
+	args.building_facades_dir = arnis::cache::facade_cache_root().string();
 	args.signage = arnis::SignageLevel::Full;
 	args.fillground = true;
 	args.caves = true;
@@ -409,6 +497,7 @@ struct CachedArnisExtract
 	std::size_t active_generators = 0;
 	bool flood_released = false;
 	std::vector<arnis::ProcessedElement> elements;
+	std::unique_ptr<arnis::PreparedBuildingData> prepared_buildings;
 	std::unique_ptr<arnis::FloodFillCache> flood_fill_cache;
 	std::unique_ptr<arnis::BuildingFootprintBitmap> building_footprints;
 	pos_t authored_max_y = std::numeric_limits<pos_t>::lowest();
@@ -476,7 +565,7 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 	const auto args = earth_arnis_args();
 	FloodWaveGuard flood_wave(cached);
 	arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,
-			*cached.building_footprints, true);
+			*cached.building_footprints, true, cached.prepared_buildings.get());
 }
 
 } // namespace earth_osmium_detail
@@ -537,7 +626,11 @@ public:
 								[&handler](const osmium::memory::Buffer &area_buffer) {
 									osmium::apply(area_buffer, handler);
 								}));
+				handler.finish_relations();
 				cached->elements = std::move(handler.elements);
+				cached->prepared_buildings =
+						std::make_unique<arnis::PreparedBuildingData>(
+								arnis::prepare_building_data(cached->elements));
 				// The flat-world terrain-max scan samples every X/Z column. On
 				// curved projections that becomes a very expensive cube conversion
 				// loop and does not describe a single horizontal ceiling.

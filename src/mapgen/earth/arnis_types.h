@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -73,6 +74,10 @@ struct ProcessedNode
 	int z;
 	// Projected surface anchor. Flat generators may leave this at zero.
 	int y = 0;
+	// Retain source geometry for geographic prepasses; projected integer X/Z can
+	// collapse narrow rings and change containment/suppression decisions.
+	double latitude = std::numeric_limits<double>::quiet_NaN();
+	double longitude = std::numeric_limits<double>::quiet_NaN();
 	XZ xz() const { return {x, z}; }
 };
 struct ProcessedWay
@@ -94,11 +99,20 @@ struct ProcessedMember
 	ProcessedMemberRole role;
 };
 
+struct ProcessedMemberRef
+{
+	std::string type;
+	std::uint64_t id;
+	std::string role;
+};
+
 struct ProcessedRelation
 {
 	std::uint64_t id;
 	tags_t tags;
 	std::vector<ProcessedMember> members;
+	// Raw member identities preserve nested relation roles for OSM prepasses.
+	std::vector<ProcessedMemberRef> source_members;
 };
 
 using variant_t = std::variant<ProcessedNode, ProcessedWay, ProcessedRelation>;
