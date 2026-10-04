@@ -20,6 +20,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "client.h"
+#include "itemdef.h"
+#include "client/inputhandler.h"
 
 #include "config.h"
 #if USE_CLIENT_MCP
@@ -53,6 +55,74 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <limits>
 #include <random>
 #include <sstream>
+#include <unordered_map>
+
+static bool getMCPGameKey(const std::string &name, GameKeyType &key)
+{
+	static const std::unordered_map<std::string, GameKeyType> key_map = {
+			{"FORWARD", KeyType::FORWARD},
+			{"BACKWARD", KeyType::BACKWARD},
+			{"LEFT", KeyType::LEFT},
+			{"RIGHT", KeyType::RIGHT},
+			{"JUMP", KeyType::JUMP},
+			{"AUX1", KeyType::AUX1},
+			{"SNEAK", KeyType::SNEAK},
+			{"AUTOFORWARD", KeyType::AUTOFORWARD},
+			{"DIG", KeyType::DIG},
+			{"PLACE", KeyType::PLACE},
+			{"ESC", KeyType::ESC},
+			{"CAMERA_YAW_LEFT", KeyType::CAMERA_YAW_LEFT},
+			{"CAMERA_YAW_RIGHT", KeyType::CAMERA_YAW_RIGHT},
+			{"CAMERA_PITCH_UP", KeyType::CAMERA_PITCH_UP},
+			{"CAMERA_PITCH_DOWN", KeyType::CAMERA_PITCH_DOWN},
+			{"DROP", KeyType::DROP},
+			{"INVENTORY", KeyType::INVENTORY},
+			{"CHAT", KeyType::CHAT},
+			{"CMD", KeyType::CMD},
+			{"CMD_LOCAL", KeyType::CMD_LOCAL},
+			{"CONSOLE", KeyType::CONSOLE},
+			{"MINIMAP", KeyType::MINIMAP},
+			{"FREEMOVE", KeyType::FREEMOVE},
+			{"PITCHMOVE", KeyType::PITCHMOVE},
+			{"FASTMOVE", KeyType::FASTMOVE},
+			{"NOCLIP", KeyType::NOCLIP},
+			{"HOTBAR_PREV", KeyType::HOTBAR_PREV},
+			{"HOTBAR_NEXT", KeyType::HOTBAR_NEXT},
+			{"MUTE", KeyType::MUTE},
+			{"INC_VOLUME", KeyType::INC_VOLUME},
+			{"DEC_VOLUME", KeyType::DEC_VOLUME},
+			{"CINEMATIC", KeyType::CINEMATIC},
+			{"SCREENSHOT", KeyType::SCREENSHOT},
+			{"TOGGLE_BLOCK_BOUNDS", KeyType::TOGGLE_BLOCK_BOUNDS},
+			{"TOGGLE_HUD", KeyType::TOGGLE_HUD},
+			{"TOGGLE_CHAT", KeyType::TOGGLE_CHAT},
+			{"TOGGLE_FOG", KeyType::TOGGLE_FOG},
+			{"TOGGLE_UPDATE_CAMERA", KeyType::TOGGLE_UPDATE_CAMERA},
+			{"TOGGLE_DEBUG", KeyType::TOGGLE_DEBUG},
+			{"TOGGLE_PROFILER", KeyType::TOGGLE_PROFILER},
+			{"CAMERA_MODE", KeyType::CAMERA_MODE},
+			{"INCREASE_VIEWING_RANGE", KeyType::INCREASE_VIEWING_RANGE},
+			{"DECREASE_VIEWING_RANGE", KeyType::DECREASE_VIEWING_RANGE},
+			{"RANGESELECT", KeyType::RANGESELECT},
+			{"ZOOM", KeyType::ZOOM},
+			{"QUICKTUNE_NEXT", KeyType::QUICKTUNE_NEXT},
+			{"QUICKTUNE_PREV", KeyType::QUICKTUNE_PREV},
+			{"QUICKTUNE_INC", KeyType::QUICKTUNE_INC},
+			{"QUICKTUNE_DEC", KeyType::QUICKTUNE_DEC},
+			{"PLAYERLIST", KeyType::PLAYERLIST},
+	};
+	if (const auto it = key_map.find(name); it != key_map.end()) {
+		key = it->second;
+		return true;
+	}
+	for (int slot = 1; slot <= 32; ++slot) {
+		if (name == "SLOT_" + std::to_string(slot)) {
+			key = static_cast<GameKeyType>(KeyType::SLOT_1 + slot - 1);
+			return true;
+		}
+	}
+	return false;
+}
 
 static Json::Value makeMCPObjectSchema()
 {
@@ -201,6 +271,7 @@ static bool selectMCPWieldedItem(
 		}
 
 		client->setPlayerItem((u16)slot);
+		client->pressMCPKey(static_cast<int>(GameKeyType::SLOT_1) + slot);
 		status["success"] = true;
 		status["slot"] = static_cast<int>(slot);
 		status["item"] = mainlist->getItem(slot).getItemString();
@@ -225,6 +296,7 @@ static bool selectMCPWieldedItem(
 		const ItemStack &stack = mainlist->getItem(i);
 		if (!stack.empty() && stack.name == item_name) {
 			client->setPlayerItem(i);
+			client->pressMCPKey(static_cast<int>(GameKeyType::SLOT_1) + i);
 			status["success"] = true;
 			status["slot"] = static_cast<int>(i);
 			status["item"] = stack.getItemString();
@@ -311,6 +383,76 @@ static PointedThing makeMCPNodePointedThing(
 	v3f normal(0.0f, 1.0f, 0.0f);
 	f32 distance_sq = player ? player->getPosition().getDistanceFromSQ(point) : 0.0f;
 	return PointedThing(pos, pos, pos, point, normal, 0, distance_sq, features.pointable);
+}
+
+static void setMCPCameraTarget(Client *client, const v3f &target)
+{
+	LocalPlayer *player = client->getEnv().getLocalPlayer();
+	if (!player)
+		return;
+
+	const v3f eye = oposToV3f(player->getEyePosition());
+	const v3f delta = target - eye;
+	const f32 horizontal = std::sqrt(delta.X * delta.X + delta.Z * delta.Z);
+	if (delta.getLengthSQ() < 0.0001f)
+		return;
+
+	constexpr f32 rad_to_deg = 180.0f / static_cast<f32>(M_PI);
+	const f32 pitch = -std::atan2(delta.Y, horizontal) * rad_to_deg;
+	const f32 yaw = -std::atan2(delta.X, delta.Z) * rad_to_deg;
+	client->setMCPRotationTarget(pitch, yaw);
+}
+
+static void setMCPCameraTarget(Client *client, v3pos_t pos)
+{
+	setMCPCameraTarget(client, intToFloat(pos, BS));
+}
+
+// MCP world actions should use normal movement and stay inside the server's
+// interaction reach. The caller retries the action after the short movement
+// pulse; that lets normal physics and collision determine whether the target
+// can actually be reached.
+static bool approachMCPInteractionTarget(
+		Client *client, const v3f &target, Json::Value &status)
+{
+	LocalPlayer *player = client->getEnv().getLocalPlayer();
+	if (!player) {
+		status["success"] = false;
+		status["error"] = "No local player";
+		return false;
+	}
+
+	const v3f position = player->getPosition();
+	const v3f delta = target - position;
+	const f32 distance = delta.getLength() / BS;
+	constexpr f32 interaction_reach = 3.5f;
+	if (distance <= interaction_reach)
+		return true;
+
+	setMCPCameraTarget(client, target);
+	constexpr f32 rad_to_deg = 180.0f / static_cast<f32>(M_PI);
+	PlayerControl control = player->control;
+	control.yaw = -std::atan2(delta.X, delta.Z) * rad_to_deg;
+	control.up = 1.0f;
+	control.down = 0.0f;
+	control.left = 0.0f;
+	control.right = 0.0f;
+	control.dig = false;
+	control.place = false;
+	control.setMovementFromKeys();
+	client->setMCPPlayerControl(control, 750);
+	status["success"] = true;
+	status["state"] = "approaching";
+	status["distance_nodes"] = distance;
+	status["interaction_reach_nodes"] = interaction_reach;
+	status["note"] =
+			"Walking toward target with normal controls. Retry the interaction after movement.";
+	return false;
+}
+
+static bool approachMCPInteractionNode(Client *client, v3pos_t pos, Json::Value &status)
+{
+	return approachMCPInteractionTarget(client, intToFloat(pos, BS), status);
 }
 
 static Json::Value inventoryListToMCPJson(const InventoryList *list)
@@ -506,10 +648,30 @@ static bool validateMCPToolArguments(
 		return require_integer("x") && require_integer("y") && require_integer("z");
 	};
 
-	if (tool == "get_player_state" || tool == "get_inventory" ||
-			tool == "get_pointed_thing" || tool == "get_nearby_objects" ||
-			tool == "stop_player_control")
+	if (tool == "get_player_state" || tool == "get_pointed_thing" ||
+			tool == "get_nearby_objects" || tool == "stop_player_control")
 		return true;
+	if (tool == "get_inventory") {
+		if (!optional_integer("node_x") || !optional_integer("node_y") ||
+				!optional_integer("node_z"))
+			return false;
+		const int node_count = args.isMember("node_x") + args.isMember("node_y") +
+							   args.isMember("node_z");
+		if (node_count != 0 && node_count != 3) {
+			error = "node_x, node_y and node_z must be provided together";
+			return false;
+		}
+		for (const char *axis : {"x", "y", "z"}) {
+			const std::string key = std::string("node_") + axis;
+			if (args.isMember(key) &&
+					(args[key].asInt64() < std::numeric_limits<s16>::min() ||
+							args[key].asInt64() > std::numeric_limits<s16>::max())) {
+				error = key + " is out of map coordinate range";
+				return false;
+			}
+		}
+		return true;
+	}
 	if (tool == "send_chat_message")
 		return require("message", Json::stringValue);
 	if (tool == "get_chat_messages")
@@ -531,8 +693,29 @@ static bool validateMCPToolArguments(
 		if (!require_integer("from_index") || !require_integer("to_index") ||
 				!optional_integer("count") ||
 				!optional_type("from_list", Json::stringValue) ||
-				!optional_type("to_list", Json::stringValue))
+				!optional_type("to_list", Json::stringValue) ||
+				!optional_integer("from_node_x") || !optional_integer("from_node_y") ||
+				!optional_integer("from_node_z") || !optional_integer("to_node_x") ||
+				!optional_integer("to_node_y") || !optional_integer("to_node_z"))
 			return false;
+		for (const char *prefix : {"from_node_", "to_node_"}) {
+			const std::string p = prefix;
+			const int node_count = args.isMember(p + "x") + args.isMember(p + "y") +
+								   args.isMember(p + "z");
+			if (node_count != 0 && node_count != 3) {
+				error = p + "x, " + p + "y and " + p + "z must be provided together";
+				return false;
+			}
+			for (const char *axis : {"x", "y", "z"}) {
+				const std::string key = p + axis;
+				if (args.isMember(key) &&
+						(args[key].asInt64() < std::numeric_limits<s16>::min() ||
+								args[key].asInt64() > std::numeric_limits<s16>::max())) {
+					error = key + " is out of map coordinate range";
+					return false;
+				}
+			}
+		}
 		if (args["from_index"].asInt64() < 0 || args["to_index"].asInt64() < 0 ||
 				(args.isMember("count") && args["count"].asInt64() < 0)) {
 			error = "inventory indices and count must be non-negative";
@@ -556,8 +739,25 @@ static bool validateMCPToolArguments(
 	}
 	if (tool == "use_item") {
 		if (!optional_integer("slot") || !optional_integer("object_id") ||
-				!optional_type("item", Json::stringValue))
+				!optional_type("item", Json::stringValue) ||
+				!optional_integer("node_x") || !optional_integer("node_y") ||
+				!optional_integer("node_z"))
 			return false;
+		const int node_count = args.isMember("node_x") + args.isMember("node_y") +
+							   args.isMember("node_z");
+		if (node_count != 0 && node_count != 3) {
+			error = "node_x, node_y and node_z must be provided together";
+			return false;
+		}
+		for (const char *axis : {"x", "y", "z"}) {
+			const std::string key = std::string("node_") + axis;
+			if (args.isMember(key) &&
+					(args[key].asInt64() < std::numeric_limits<s16>::min() ||
+							args[key].asInt64() > std::numeric_limits<s16>::max())) {
+				error = key + " is out of map coordinate range";
+				return false;
+			}
+		}
 		if (args.isMember("object_id") &&
 				(args["object_id"].asInt64() <= 0 ||
 						args["object_id"].asInt64() > std::numeric_limits<u16>::max())) {
@@ -603,6 +803,27 @@ static bool validateMCPToolArguments(
 		}
 		return true;
 	}
+	if (tool == "look_at_position") {
+		for (const char *axis : {"x", "y", "z"}) {
+			const std::string key = axis;
+			if (!args.isMember(key) || !args[key].isNumeric() ||
+					!std::isfinite(args[key].asDouble())) {
+				error = key + " must be a finite number";
+				return false;
+			}
+		}
+		return true;
+	}
+	if (tool == "look_at_object") {
+		if (!require_integer("object_id"))
+			return false;
+		if (args["object_id"].asInt64() <= 0 ||
+				args["object_id"].asInt64() > std::numeric_limits<u16>::max()) {
+			error = "object_id is out of range";
+			return false;
+		}
+		return true;
+	}
 	if (tool == "set_player_control") {
 		for (const char *name : {"forward", "backward", "left", "right", "jump", "sneak",
 					 "dig", "place", "aux1", "zoom"}) {
@@ -630,6 +851,27 @@ static bool validateMCPToolArguments(
 				!args.isMember("pitch") && !args.isMember("yaw")) {
 			error = "at least one control field is required";
 			return false;
+		}
+		return true;
+	}
+	if (tool == "press_keys") {
+		if (!args.isMember("keys") || !args["keys"].isArray() || args["keys"].empty()) {
+			error = "keys must be a non-empty array of game key names";
+			return false;
+		}
+		if (!optional_integer("duration_ms") ||
+				(args.isMember("duration_ms") &&
+						(args["duration_ms"].asInt64() < 50 ||
+								args["duration_ms"].asInt64() > 5000))) {
+			error = "duration_ms must be between 50 and 5000";
+			return false;
+		}
+		for (const auto &value : args["keys"]) {
+			GameKeyType key;
+			if (!value.isString() || !getMCPGameKey(value.asString(), key)) {
+				error = "keys contains an unknown game key name";
+				return false;
+			}
 		}
 		return true;
 	}
@@ -666,8 +908,14 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 
 			tools.append(makeMCPTool("get_player_state",
 					"Get the current player state including position, velocity, health and breath."));
+			Json::Value inventory_schema = makeMCPObjectSchema();
+			for (const char *axis : {"x", "y", "z"})
+				addMCPSchemaProperty(inventory_schema,
+						(std::string("node_") + axis).c_str(), "integer",
+						"Optional nearby node inventory coordinate.");
 			tools.append(makeMCPTool("get_inventory",
-					"Get the local player inventory lists and item stacks."));
+					"Get player inventory, or a nearby node inventory when node_x/y/z are provided.",
+					inventory_schema));
 
 			Json::Value send_chat_schema = makeMCPObjectSchema();
 			addMCPSchemaProperty(send_chat_schema, "message", "string",
@@ -706,6 +954,39 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 			tools.append(makeMCPTool("set_player_control",
 					"Temporarily set player movement and action controls.",
 					control_schema));
+			Json::Value keys_schema = makeMCPObjectSchema();
+			Json::Value key_names(Json::arrayValue);
+			for (const char *name : {"FORWARD", "BACKWARD", "LEFT", "RIGHT", "JUMP",
+						 "AUX1", "SNEAK", "AUTOFORWARD", "DIG", "PLACE", "ESC",
+						 "CAMERA_YAW_LEFT", "CAMERA_YAW_RIGHT", "CAMERA_PITCH_UP",
+						 "CAMERA_PITCH_DOWN", "DROP", "INVENTORY", "CHAT", "CMD",
+						 "CMD_LOCAL", "CONSOLE", "MINIMAP", "FREEMOVE", "PITCHMOVE",
+						 "FASTMOVE", "NOCLIP", "HOTBAR_PREV", "HOTBAR_NEXT", "MUTE",
+						 "INC_VOLUME", "DEC_VOLUME", "CINEMATIC", "SCREENSHOT",
+						 "TOGGLE_BLOCK_BOUNDS", "TOGGLE_HUD", "TOGGLE_CHAT", "TOGGLE_FOG",
+						 "TOGGLE_UPDATE_CAMERA", "TOGGLE_DEBUG", "TOGGLE_PROFILER",
+						 "CAMERA_MODE", "INCREASE_VIEWING_RANGE",
+						 "DECREASE_VIEWING_RANGE", "RANGESELECT", "ZOOM",
+						 "QUICKTUNE_NEXT", "QUICKTUNE_PREV", "QUICKTUNE_INC",
+						 "QUICKTUNE_DEC", "PLAYERLIST", "SLOT_1", "SLOT_2", "SLOT_3",
+						 "SLOT_4", "SLOT_5", "SLOT_6", "SLOT_7", "SLOT_8", "SLOT_9",
+						 "SLOT_10", "SLOT_11", "SLOT_12", "SLOT_13", "SLOT_14", "SLOT_15",
+						 "SLOT_16", "SLOT_17", "SLOT_18", "SLOT_19", "SLOT_20", "SLOT_21",
+						 "SLOT_22", "SLOT_23", "SLOT_24", "SLOT_25", "SLOT_26", "SLOT_27",
+						 "SLOT_28", "SLOT_29", "SLOT_30", "SLOT_31", "SLOT_32"})
+				key_names.append(name);
+			Json::Value key_items;
+			key_items["type"] = "string";
+			key_items["enum"] = key_names;
+			addMCPSchemaProperty(keys_schema, "keys", "array",
+					"Game action keys to press through the normal input handler.");
+			keys_schema["properties"]["keys"]["items"] = key_items;
+			addMCPSchemaProperty(keys_schema, "duration_ms", "integer",
+					"How long to hold each key (50 to 5000 ms).");
+			addMCPRequired(keys_schema, "keys");
+			tools.append(makeMCPTool("press_keys",
+					"Press mapped game actions (movement, UI, hotbar, camera, and toggles) briefly.",
+					keys_schema));
 			tools.append(makeMCPTool("stop_player_control",
 					"Immediately release the active MCP control override."));
 
@@ -737,10 +1018,16 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					move_inv_schema, "to_index", "integer", "Destination stack index.");
 			addMCPSchemaProperty(
 					move_inv_schema, "count", "integer", "Count to move, or 0 for all.");
+			for (const char *prefix : {"from_node_", "to_node_"}) {
+				for (const char *axis : {"x", "y", "z"})
+					addMCPSchemaProperty(move_inv_schema,
+							(std::string(prefix) + axis).c_str(), "integer",
+							"Optional node inventory coordinate.");
+			}
 			addMCPRequired(move_inv_schema, "from_index");
 			addMCPRequired(move_inv_schema, "to_index");
 			tools.append(makeMCPTool("move_inventory_item",
-					"Move an item stack inside the current player inventory.",
+					"Move an item stack between player inventory and a nearby node inventory.",
 					move_inv_schema));
 
 			Json::Value craft_schema = makeMCPObjectSchema();
@@ -776,6 +1063,22 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 			addMCPRequired(rotate_schema, "yaw");
 			tools.append(makeMCPTool("rotate_player",
 					"Rotate player camera to specific angles.", rotate_schema));
+			Json::Value look_at_schema = makeMCPObjectSchema();
+			for (const char *axis : {"x", "y", "z"})
+				addMCPSchemaProperty(look_at_schema, axis, "number",
+						"Target world position in node coordinates.");
+			for (const char *axis : {"x", "y", "z"})
+				addMCPRequired(look_at_schema, axis);
+			tools.append(makeMCPTool("look_at_position",
+					"Aim the camera at a world position without moving the player.",
+					look_at_schema));
+			Json::Value look_at_object_schema = makeMCPObjectSchema();
+			addMCPSchemaProperty(look_at_object_schema, "object_id", "integer",
+					"Object ID from get_nearby_objects.");
+			addMCPRequired(look_at_object_schema, "object_id");
+			tools.append(makeMCPTool("look_at_object",
+					"Aim the camera at a visible active object without moving the player.",
+					look_at_object_schema));
 			tools.append(makeMCPTool("teleport_player",
 					"Instantly teleport player to coordinates.",
 					makeMCPPositionSchema()));
@@ -800,8 +1103,11 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					use_schema, "item", "string", "Optional item name to find and use.");
 			addMCPSchemaProperty(use_schema, "object_id", "integer",
 					"Optional nearby object ID to target instead of the current pointed thing.");
+			for (const char *axis : {"x", "y", "z"})
+				addMCPSchemaProperty(use_schema, (std::string("node_") + axis).c_str(),
+						"integer", "Optional nearby node coordinate to target directly.");
 			tools.append(makeMCPTool("use_item",
-					"Use the wielded item on the current pointed thing or a nearby object ID, or activate it in air.",
+					"Use the wielded item on the current target or a nearby object ID; an explicit node target receives the normal right-click interaction.",
 					use_schema));
 
 			Json::Value world_schema = makeMCPObjectSchema();
@@ -850,15 +1156,47 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					inventory_obj["success"] = false;
 					inventory_obj["error"] = "No local player";
 				} else {
-					Json::Value lists(Json::arrayValue);
-					for (const InventoryList *list : player->inventory.getLists())
-						lists.append(inventoryListToMCPJson(list));
-					inventory_obj["success"] = true;
-					inventory_obj["wield_index"] =
-							static_cast<int>(player->getWieldIndex());
-					inventory_obj["hotbar_size"] =
-							static_cast<int>(player->getMaxHotbarItemcount());
-					inventory_obj["lists"] = lists;
+					Inventory *inventory = &player->inventory;
+					bool inventory_available = true;
+					if (args.isMember("node_x")) {
+						v3pos_t node_pos(args["node_x"].asInt(), args["node_y"].asInt(),
+								args["node_z"].asInt());
+						const v3f node_center = intToFloat(node_pos, BS);
+						if (player->getPosition().getDistanceFromSQ(node_center) >
+								8.0f * 8.0f * BS * BS) {
+							inventory_obj["success"] = false;
+							inventory_obj["error"] =
+									"Node inventory is farther than 8 nodes";
+							inventory_available = false;
+						} else {
+							InventoryLocation location;
+							location.setNodeMeta(
+									v3s16(node_pos.X, node_pos.Y, node_pos.Z));
+							inventory = getInventory(location);
+							if (!inventory) {
+								inventory_obj["success"] = false;
+								inventory_obj["error"] =
+										"Node inventory is not loaded; open it in game first";
+								inventory_available = false;
+							}
+						}
+						if (inventory_available) {
+							inventory_obj["node_position"]["x"] = node_pos.X;
+							inventory_obj["node_position"]["y"] = node_pos.Y;
+							inventory_obj["node_position"]["z"] = node_pos.Z;
+						}
+					}
+					if (inventory_available) {
+						Json::Value lists(Json::arrayValue);
+						for (const InventoryList *list : inventory->getLists())
+							lists.append(inventoryListToMCPJson(list));
+						inventory_obj["success"] = true;
+						inventory_obj["wield_index"] =
+								static_cast<int>(player->getWieldIndex());
+						inventory_obj["hotbar_size"] =
+								static_cast<int>(player->getMaxHotbarItemcount());
+						inventory_obj["lists"] = lists;
+					}
 				}
 				setMCPStatusResult(response, inventory_obj);
 			} else if (tool_name == "send_chat_message") {
@@ -948,6 +1286,8 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					control.pitch = args["pitch"].asFloat();
 				if (args.isMember("yaw"))
 					control.yaw = args["yaw"].asFloat();
+				if (args.isMember("pitch") || args.isMember("yaw"))
+					setMCPRotationTarget(control.pitch, control.yaw);
 
 				const u32 duration_ms =
 						rangelim(args.get("duration_ms", 250).asUInt(), 50, 5000);
@@ -970,6 +1310,30 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				status["controls"]["place"] = control.place;
 				status["controls"]["aux1"] = control.aux1;
 				status["controls"]["zoom"] = control.zoom;
+				setMCPStatusResult(response, status);
+			} else if (tool_name == "press_keys") {
+				Json::Value status;
+				if (!m_mcp_key_injector) {
+					status["success"] = false;
+					status["error"] = "Game input handler is unavailable";
+				} else {
+					const auto duration = std::chrono::milliseconds(
+							args.get("duration_ms", 250).asUInt());
+					Json::Value pressed(Json::arrayValue);
+					for (const auto &value : args["keys"]) {
+						GameKeyType key;
+						if (!getMCPGameKey(value.asString(), key))
+							continue;
+						const int key_id = static_cast<int>(key);
+						m_mcp_key_injector(key_id, true);
+						m_mcp_pressed_keys[key_id] =
+								std::chrono::steady_clock::now() + duration;
+						pressed.append(value.asString());
+					}
+					status["success"] = !pressed.empty();
+					status["keys"] = pressed;
+					status["duration_ms"] = duration.count();
+				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_node") {
 				v3pos_t pos(args["x"].asInt(), args["y"].asInt(), args["z"].asInt());
@@ -1024,19 +1388,47 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				if (!args.isMember("from_index") || !args.isMember("to_index")) {
 					status["error"] = "from_index and to_index are required";
 				} else {
-					IMoveAction *a = new IMoveAction();
-					a->count = args.get("count", 0).asUInt();
-					a->from_inv.setCurrentPlayer();
-					a->from_list = args.get("from_list", "main").asString();
-					a->from_i = args["from_index"].asInt();
-					a->to_inv.setCurrentPlayer();
-					a->to_list = args.get("to_list", "main").asString();
-					a->to_i = args["to_index"].asInt();
-					inventoryAction(a);
-					status["success"] = true;
-					status["state"] = "submitted";
-					status["note"] =
-							"Inventory move was submitted; read the inventory to confirm.";
+					auto get_location = [&](const char *prefix,
+												InventoryLocation &location,
+												const std::string &list_name, int index) {
+						const std::string key = std::string(prefix) + "x";
+						if (args.isMember(key)) {
+							v3pos_t node_pos(args[key].asInt(),
+									args[std::string(prefix) + "y"].asInt(),
+									args[std::string(prefix) + "z"].asInt());
+							if (!approachMCPInteractionNode(this, node_pos, status))
+								return false;
+							location.setNodeMeta(
+									v3s16(node_pos.X, node_pos.Y, node_pos.Z));
+						} else {
+							location.setCurrentPlayer();
+						}
+						Inventory *inventory = getInventory(location);
+						const InventoryList *list =
+								inventory ? inventory->getList(list_name) : nullptr;
+						if (!list || index >= list->getSize()) {
+							status["error"] =
+									"Inventory list or slot is unavailable; open node inventories in game first";
+							return false;
+						}
+						return true;
+					};
+					IMoveAction action;
+					action.count = args.get("count", 0).asUInt();
+					action.from_list = args.get("from_list", "main").asString();
+					action.from_i = args["from_index"].asInt();
+					action.to_list = args.get("to_list", "main").asString();
+					action.to_i = args["to_index"].asInt();
+					if (get_location("from_node_", action.from_inv, action.from_list,
+								action.from_i) &&
+							get_location("to_node_", action.to_inv, action.to_list,
+									action.to_i)) {
+						inventoryAction(new IMoveAction(action));
+						status["success"] = true;
+						status["state"] = "submitted";
+						status["note"] =
+								"Inventory move was submitted; read both inventories to confirm.";
+					}
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "craft") {
@@ -1061,15 +1453,18 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				} else {
 					PointedThing pointed;
 					if (makeMCPPlacePointedThing(this, target, args, pointed, status)) {
-						interact(INTERACT_PLACE, pointed);
-						status["success"] = true;
-						status["target"]["x"] = target.X;
-						status["target"]["y"] = target.Y;
-						status["target"]["z"] = target.Z;
-						status["state"] = "submitted";
-						status["note"] =
-								"Placement was sent to the server and is not yet confirmed. "
-								"The local map can remain stale until a server update arrives.";
+						if (approachMCPInteractionNode(this, target, status)) {
+							setMCPCameraTarget(this, target);
+							interact(INTERACT_PLACE, pointed);
+							status["success"] = true;
+							status["target"]["x"] = target.X;
+							status["target"]["y"] = target.Y;
+							status["target"]["z"] = target.Z;
+							status["state"] = "submitted";
+							status["note"] =
+									"Placement was sent to the server and is not yet confirmed. "
+									"The local map can remain stale until a server update arrives.";
+						}
 					}
 					setMCPStatusResult(response, status);
 				}
@@ -1087,15 +1482,20 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					status["error"] = "Node is not diggable";
 					status["node"] = nodeToMCPJson(pos, node, ok, getNodeDefManager());
 				} else {
-					PointedThing pointed = makeMCPNodePointedThing(this, pos, features);
-					interact(INTERACT_START_DIGGING, pointed);
-					interact(INTERACT_DIGGING_COMPLETED, pointed);
-					status["success"] = true;
-					status["state"] = "submitted";
-					status["note"] =
-							"Dig request was sent and is not yet confirmed. "
-							"The local map can remain stale until a server update arrives.";
-					status["node"] = nodeToMCPJson(pos, node, ok, getNodeDefManager());
+					if (approachMCPInteractionNode(this, pos, status)) {
+						setMCPCameraTarget(this, pos);
+						PointedThing pointed =
+								makeMCPNodePointedThing(this, pos, features);
+						interact(INTERACT_START_DIGGING, pointed);
+						interact(INTERACT_DIGGING_COMPLETED, pointed);
+						status["success"] = true;
+						status["state"] = "submitted";
+						status["note"] =
+								"Dig request was sent to the server and is not yet confirmed. "
+								"The local map can remain stale until a server update arrives.";
+						status["node"] =
+								nodeToMCPJson(pos, node, ok, getNodeDefManager());
+					}
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "move_player_to" || tool_name == "teleport_player") {
@@ -1119,9 +1519,69 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					status["success"] = false;
 					status["error"] = "No local player";
 				} else {
-					player->setPitch(args["pitch"].asFloat());
-					player->setYaw(args["yaw"].asFloat());
+					PlayerControl control = player->control;
+					control.pitch = args["pitch"].asFloat();
+					control.yaw = args["yaw"].asFloat();
+					setMCPRotationTarget(control.pitch, control.yaw);
+					setMCPPlayerControl(control, 250);
 					status["success"] = true;
+					status["state"] = "submitted";
+				}
+				setMCPStatusResult(response, status);
+			} else if (tool_name == "look_at_position" || tool_name == "look_at_object") {
+				Json::Value status;
+				if (!player) {
+					status["success"] = false;
+					status["error"] = "No local player";
+				} else {
+					v3f target;
+					bool target_available = true;
+					if (tool_name == "look_at_position") {
+						target = v3f(args["x"].asFloat(), args["y"].asFloat(),
+										 args["z"].asFloat()) *
+								 BS;
+					} else {
+						ClientActiveObject *object = m_env.getActiveObject(
+								static_cast<u16>(args["object_id"].asUInt()));
+						if (!object) {
+							status["success"] = false;
+							status["error"] = "Object is not currently available";
+							target_available = false;
+						} else {
+							target = object->getPosition();
+							status["object_id"] = object->getId();
+						}
+					}
+					if (target_available) {
+						const v3f eye = oposToV3f(player->getEyePosition());
+						const v3f delta = target - eye;
+						const f32 horizontal =
+								std::sqrt(delta.X * delta.X + delta.Z * delta.Z);
+						if (delta.getLengthSQ() < 0.0001f) {
+							status["success"] = false;
+							status["error"] =
+									"Target position is too close to the camera";
+						} else {
+							constexpr f32 rad_to_deg = 180.0f / static_cast<f32>(M_PI);
+							const f32 pitch =
+									-std::atan2(delta.Y, horizontal) * rad_to_deg;
+							const f32 yaw = -std::atan2(delta.X, delta.Z) * rad_to_deg;
+							PlayerControl control = player->control;
+							control.pitch = pitch;
+							control.yaw = yaw;
+							setMCPRotationTarget(pitch, yaw);
+							setMCPPlayerControl(control, 250);
+							status["success"] = true;
+							status["state"] = "submitted";
+							status["pitch"] = pitch;
+							status["yaw"] = yaw;
+							status["target"]["x"] = target.X / BS;
+							status["target"]["y"] = target.Y / BS;
+							status["target"]["z"] = target.Z / BS;
+							status["note"] =
+									"Camera rotation was submitted; read player state and get_pointed_thing to confirm aim.";
+						}
+					}
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_pointed_thing") {
@@ -1177,8 +1637,11 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					result["error"] = "No local player";
 				} else {
 					std::vector<DistanceSortedActiveObject> objects;
+					// Include the full active-object range so bots can plan where to
+					// travel next. The previous hard-coded 32-node radius made the
+					// tool unable to discover distant mobs and item drops.
 					m_env.getActiveObjects(
-							local_player->getPosition(), 32.0f * BS, objects);
+							local_player->getPosition(), 128.0f * BS, objects);
 					Json::Value list(Json::arrayValue);
 					for (const auto &entry : objects) {
 						ClientActiveObject *object = entry.obj.get();
@@ -1200,7 +1663,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 						list.append(item);
 					}
 					result["success"] = true;
-					result["radius_nodes"] = 32;
+					result["radius_nodes"] = 128;
 					result["objects"] = list;
 				}
 				setMCPStatusResult(response, result);
@@ -1209,7 +1672,40 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 				if (selectMCPWieldedItem(this, player, args, status)) {
 					PointedThing pointed = getCurrentPointedThing();
 					bool target_available = true;
-					if (args.isMember("object_id")) {
+					if (args.isMember("node_x")) {
+						v3pos_t node_pos(args["node_x"].asInt(), args["node_y"].asInt(),
+								args["node_z"].asInt());
+						const v3f node_center = intToFloat(node_pos, BS);
+						bool node_ok = false;
+						const MapNode node =
+								m_env.getClientMap().getNode(node_pos, &node_ok);
+						const ContentFeatures &features = getNodeDefManager()->get(node);
+						if (!player || player->getPosition().getDistanceFromSQ(
+											   node_center) > 8.0f * 8.0f * BS * BS) {
+							target_available = false;
+							status["error"] = "Node is farther than 8 nodes";
+						} else if (!node_ok || features.pointable ==
+													   PointabilityType::POINTABLE_NOT) {
+							target_available = false;
+							status["error"] = "Node is not loaded or pointable";
+						} else {
+							if (!approachMCPInteractionNode(this, node_pos, status)) {
+								target_available = false;
+							} else {
+								setMCPCameraTarget(this, node_pos);
+								const v3pos_t above = node_pos + v3pos_t(0, 1, 0);
+								const v3f normal(0.0f, 1.0f, 0.0f);
+								pointed = PointedThing(
+										v3s16(node_pos.X, node_pos.Y, node_pos.Z),
+										v3s16(above.X, above.Y, above.Z),
+										v3s16(node_pos.X, node_pos.Y, node_pos.Z),
+										node_center, normal, 0,
+										player->getPosition().getDistanceFromSQ(
+												node_center),
+										features.pointable);
+							}
+						}
+					} else if (args.isMember("object_id")) {
 						ClientActiveObject *object = m_env.getActiveObject(
 								static_cast<u16>(args["object_id"].asUInt()));
 						if (!object) {
@@ -1218,23 +1714,29 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 							status["error"] = "Object is no longer available";
 						} else {
 							const auto position = object->getPosition();
-							const v3f normal(0.0f, 1.0f, 0.0f);
-							const f32 distance_sq =
-									player ? player->getPosition().getDistanceFromSQ(
-													 position)
-										   : 0.0f;
-							pointed = PointedThing(object->getId(), position, normal,
-									normal, distance_sq, PointabilityType::POINTABLE);
+							if (!approachMCPInteractionTarget(this, position, status)) {
+								target_available = false;
+							} else {
+								setMCPCameraTarget(this, position);
+								const v3f normal(0.0f, 1.0f, 0.0f);
+								const f32 distance_sq =
+										player->getPosition().getDistanceFromSQ(position);
+								pointed = PointedThing(object->getId(), position, normal,
+										normal, distance_sq, PointabilityType::POINTABLE);
+							}
 						}
 					}
 					if (target_available) {
-						if (pointed.type == POINTEDTHING_NOTHING)
+						if (args.isMember("node_x"))
+							interact(INTERACT_PLACE, pointed);
+						else if (pointed.type == POINTEDTHING_NOTHING)
 							interact(INTERACT_ACTIVATE, pointed);
 						else
 							interact(INTERACT_USE, pointed);
 						status["success"] = true;
 						status["state"] = "submitted";
-						status["note"] = "Use request was sent to the server.";
+						status["note"] =
+								"Use request was sent to the server; read inventory to confirm.";
 					}
 				}
 				setMCPStatusResult(response, status);
@@ -1248,20 +1750,35 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					status["error"] = "Object is no longer available";
 				} else {
 					const auto position = object->getPosition();
-					const v3f normal(0.0f, 1.0f, 0.0f);
-					const f32 distance_sq =
-							player ? player->getPosition().getDistanceFromSQ(position)
-								   : 0.0f;
-					PointedThing pointed(object->getId(), position, normal, normal,
-							distance_sq, PointabilityType::POINTABLE);
-					interact(tool_name == "punch_object" ? INTERACT_START_DIGGING
-														 : INTERACT_PLACE,
-							pointed);
-					status["success"] = true;
-					status["state"] = "submitted";
-					status["object_id"] = object->getId();
-					status["note"] =
-							"Request was sent; the server decides whether the interaction succeeds.";
+					if (approachMCPInteractionTarget(this, position, status)) {
+						setMCPCameraTarget(this, position);
+						if (tool_name == "punch_object") {
+							const auto direction =
+									(position - player->getPosition()).normalize();
+							ItemStack selected_item;
+							ItemStack hand_item;
+							ItemStack *hand_item_ptr = nullptr;
+							if (m_itemdef->isKnown(""))
+								hand_item_ptr = &hand_item;
+							ItemStack &tool_item =
+									player->getWieldedItem(&selected_item, hand_item_ptr);
+							object->directReportPunch(
+									direction, &tool_item, hand_item_ptr, 1.0f);
+						}
+						const v3f normal(0.0f, 1.0f, 0.0f);
+						const f32 distance_sq =
+								player->getPosition().getDistanceFromSQ(position);
+						PointedThing pointed(object->getId(), position, normal, normal,
+								distance_sq, PointabilityType::POINTABLE);
+						interact(tool_name == "punch_object" ? INTERACT_START_DIGGING
+															 : INTERACT_PLACE,
+								pointed);
+						status["success"] = true;
+						status["state"] = "submitted";
+						status["object_id"] = object->getId();
+						status["note"] =
+								"Request was sent; the server decides whether the interaction succeeds.";
+					}
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_world_content") {
@@ -1303,6 +1820,17 @@ void Client::sendMCPResponse(mcp_ws_server_t::connection_ptr connection,
 
 void Client::processMCPRequests()
 {
+	const auto now = std::chrono::steady_clock::now();
+	for (auto it = m_mcp_pressed_keys.begin(); it != m_mcp_pressed_keys.end();) {
+		if (it->second <= now) {
+			if (m_mcp_key_injector)
+				m_mcp_key_injector(it->first, false);
+			it = m_mcp_pressed_keys.erase(it);
+		} else {
+			++it;
+		}
+	}
+
 	std::deque<PendingMCPRequest> requests;
 	{
 		std::lock_guard<std::mutex> lock(m_mcp_request_mutex);

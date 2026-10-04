@@ -516,10 +516,6 @@ void Client::connect(const Address &address, const std::string &address_name)
 
 void Client::step(float dtime)
 {
-#if USE_CLIENT_MCP
-	processMCPRequests();
-#endif
-
 	m_uptime =  m_uptime + dtime;
 
 	// Limit a bit

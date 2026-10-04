@@ -1212,6 +1212,13 @@ bool Game::connectToServer(const GameStartData &start_data,
 	}
 
 	client->chat_backend = chat_backend;
+// fm:
+#if USE_CLIENT_MCP
+	client->setMCPKeyInjector([this](int key, bool down) {
+		input->setMCPKeyDown(static_cast<GameKeyType>(key), down);
+	});
+#endif
+// ===
 	client->migrateModStorage();
 	client->m_simple_singleplayer_mode = simple_singleplayer_mode;
 	client->m_internal_server = !!server;
@@ -1651,6 +1658,11 @@ void Game::processUserInput(f32 dtime)
 
 	// Input handler step() (used by the random input generator)
 	input->step(dtime);
+// fm:
+#if USE_CLIENT_MCP
+	client->processMCPRequests();
+#endif
+// ===
 
 #ifdef __ANDROID__
 	if (!m_game_formspec.handleAndroidUIInput())
@@ -2428,6 +2440,17 @@ void Game::updateCameraDirection(CameraOrientation *cam, float dtime)
 	}
 	if (g_touchcontrols)
 		m_first_loop_after_window_activation = true;
+
+	// fm:
+#if USE_CLIENT_MCP
+	float mcp_pitch;
+	float mcp_yaw;
+	if (client->takeMCPRotationTarget(mcp_pitch, mcp_yaw)) {
+		cam->camera_pitch = rangelim(mcp_pitch, -90.0f, 90.0f);
+		cam->camera_yaw = mcp_yaw;
+	}
+#endif
+	// ===
 }
 
 // Get the factor to multiply with sensitivity to get the same mouse/joystick

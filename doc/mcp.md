@@ -23,6 +23,15 @@ The Freeminer client must already be running with `enable_mcp = true`.
 Each HTTP session must perform the MCP `initialize` exchange and send
 `notifications/initialized` before listing or calling tools.
 
+`rotate_player` sets absolute camera angles in degrees. `look_at_position`
+accepts a world position in node coordinates, and `look_at_object` accepts an
+active object ID from `get_nearby_objects`; both aim the camera without moving
+the player. These calls submit a rotation for the next client frame. Read
+`get_player_state` and `get_pointed_thing` afterward to confirm the resulting
+view. Aimed camera rays are useful for ordinary view-dependent interaction,
+while `dig_node`, `place_node`, and object action tools can target their
+explicit positions or IDs without changing the camera.
+
 ## Chat tools
 
 `send_chat_message` sends public chat as the connected player. Its result has a
