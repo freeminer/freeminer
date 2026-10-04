@@ -420,7 +420,11 @@ int WorldEditor::get_ground_level(int x, int z) const
 			return cached;
 		if (!ground)
 			return 0;
-		cached = ground->level({x, z});
+		// Raster elevation uses coordinates relative to the ground origin;
+		// Freeminer's get_height provider takes absolute world coordinates.
+		cached = ground->level(ground->mg && !ground->elevation_enabled
+									   ? XZPoint{x, z}
+									   : ground_point(x, z));
 		return cached;
 	}
 	const std::pair<int, int> position{x, z};
@@ -429,13 +433,18 @@ int WorldEditor::get_ground_level(int x, int z) const
 		return it->second;
 	if (!ground)
 		return 0;
-	const int level = ground->level({x, z});
+	const int level =
+			ground->level(ground->mg && !ground->elevation_enabled ? XZPoint{x, z}
+																   : ground_point(x, z));
 	ground_level_overflow.emplace(position, level);
 	return level;
 }
 std::optional<int> WorldEditor::terrain_level(int x, int z) const
 {
-	return ground ? std::optional<int>(ground->level({x, z})) : std::nullopt;
+	if (!ground)
+		return std::nullopt;
+	return ground->level(ground->mg && !ground->elevation_enabled ? XZPoint{x, z}
+																  : ground_point(x, z));
 }
 void WorldEditor::register_road_surface_y(int x, int z, int y)
 {
