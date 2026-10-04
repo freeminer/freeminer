@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
+#include <functional>
+#include <iterator>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -14,6 +16,7 @@
 #include <vector>
 #include "log.h"
 #include "mapgen/earth/arnis-cpp/src/args.h"
+#include "settings.h"
 #if !defined(FILE_INCLUDED)
 #include <osmium/area/assembler.hpp>
 #include <osmium/area/multipolygon_manager.hpp>
@@ -31,6 +34,8 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+#include "arnis-cpp/src/clipping.h"
+#include "arnis-cpp/src/floodfill_cache.h"
 #include "arnis-cpp/src/osm_parser.h"
 
 #if 0
@@ -352,6 +357,133 @@ public:
 				pending.relation.members.push_back(
 						{elements[found->second].as_way(), role});
 			}
+			const auto &tags = pending.relation.tags;
+			const bool filled_area = tags.contains("natural") ||
+									 tags.contains("landuse") || tags.contains("leisure");
+			const bool water_area =
+					tags.contains("water") ||
+					(tags.get("natural") == "water" || tags.get("natural") == "bay") ||
+					tags.get("waterway") == "dock";
+			const bool building_area =
+					tags.contains("building") || tags.contains("building:part");
+			const auto is_open = [](const arnis::ProcessedWay &way) {
+				if (way.nodes.size() < 3)
+					return true;
+				const auto &first = way.nodes.front();
+				const auto &last = way.nodes.back();
+				return first.id != last.id && (first.x != last.x || first.z != last.z);
+			};
+			const bool needs_ring_assembly =
+					!water_area && !building_area && tags.get("type") == "multipolygon" &&
+					filled_area &&
+					std::any_of(pending.relation.members.begin(),
+							pending.relation.members.end(), [&](const auto &member) {
+								return member.role != arnis::ProcessedMemberRole::Part &&
+									   is_open(member.way);
+							});
+			if (needs_ring_assembly) {
+				std::vector<std::vector<arnis::ProcessedNode>> outer_rings;
+				std::vector<std::vector<arnis::ProcessedNode>> inner_rings;
+				for (const auto &member : pending.relation.members) {
+					auto *rings = member.role == arnis::ProcessedMemberRole::Outer
+										  ? &outer_rings
+								  : member.role == arnis::ProcessedMemberRole::Inner
+										  ? &inner_rings
+										  : nullptr;
+					if (rings && member.way.nodes.size() >= 2)
+						rings->push_back(member.way.nodes);
+				}
+				std::function<void(std::vector<std::vector<arnis::ProcessedNode>> &)>
+						merge_segments;
+				merge_segments = [&](auto &rings) {
+					const auto matches = [](const auto &a, const auto &b) {
+						return a.id == b.id ||
+							   (std::abs(a.x - b.x) <= 1 && std::abs(a.z - b.z) <= 1);
+					};
+					std::vector<bool> removed(rings.size(), false);
+					std::vector<std::vector<arnis::ProcessedNode>> merged;
+					for (std::size_t i = 0; i < rings.size(); ++i) {
+						for (std::size_t j = 0; j < rings.size(); ++j) {
+							if (i == j || removed[i] || removed[j] || rings[i].empty() ||
+									rings[j].empty())
+								continue;
+							const auto &a = rings[i];
+							const auto &b = rings[j];
+							if (matches(a.front(), a.back()) ||
+									matches(b.front(), b.back()))
+								continue;
+							std::vector<arnis::ProcessedNode> joined;
+							if (matches(a.front(), b.front())) {
+								joined.assign(a.rbegin(), a.rend());
+								joined.insert(
+										joined.end(), std::next(b.begin()), b.end());
+							} else if (matches(a.back(), b.back())) {
+								joined = a;
+								joined.insert(
+										joined.end(), std::next(b.rbegin()), b.rend());
+							} else if (matches(a.front(), b.back())) {
+								joined = b;
+								joined.insert(
+										joined.end(), std::next(a.begin()), a.end());
+							} else if (matches(a.back(), b.front())) {
+								joined = a;
+								joined.insert(
+										joined.end(), std::next(b.begin()), b.end());
+							} else {
+								continue;
+							}
+							removed[i] = removed[j] = true;
+							merged.push_back(std::move(joined));
+						}
+					}
+					for (std::size_t i = removed.size(); i > 0; --i)
+						if (removed[i - 1])
+							rings.erase(
+									rings.begin() + static_cast<std::ptrdiff_t>(i - 1));
+					const auto merged_count = merged.size();
+					for (auto &ring : merged)
+						rings.push_back(std::move(ring));
+					if (merged_count > 0)
+						merge_segments(rings);
+				};
+				merge_segments(outer_rings);
+				merge_segments(inner_rings);
+				std::vector<arnis::ProcessedMember> assembled;
+				const XZBBox bbox(
+						mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
+				for (const auto &[role, rings] :
+						{std::pair{arnis::ProcessedMemberRole::Outer, &outer_rings},
+								std::pair{arnis::ProcessedMemberRole::Inner,
+										&inner_rings}}) {
+					std::size_t ring_index = 0;
+					for (auto ring : *rings) {
+						const std::size_t current_index = ring_index++;
+						if (ring.size() < 3)
+							continue;
+						const auto &first = ring.front();
+						const auto &last = ring.back();
+						if (first.id != last.id) {
+							if (std::abs(first.x - last.x) > 1 ||
+									std::abs(first.z - last.z) > 1)
+								continue;
+							ring.push_back(first);
+						}
+						auto clipped = arnis::clipping::clip_way_to_bbox(ring, bbox);
+						if (clipped.size() < 4)
+							continue;
+						arnis::ProcessedWay way;
+						way.id = (std::uint64_t{1} << 61) |
+								 ((pending.relation.id & ((std::uint64_t{1} << 45) - 1))
+										 << 16) |
+								 (role == arnis::ProcessedMemberRole::Inner ? (1U << 15)
+																			: 0U) |
+								 (current_index & 0x7fff);
+						way.nodes = std::move(clipped);
+						assembled.push_back({std::move(way), role});
+					}
+				}
+				pending.relation.members = std::move(assembled);
+			}
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
 		}
@@ -378,8 +510,15 @@ arnis::Args earth_arnis_args()
 	args.fillground = true;
 	args.disable_height_limit = true;
 	args.building_facades = true;
-	//args.mapillary_facades = true;
-	//args.mapillary_probe = true;
+	std::string mapillary_token;
+	g_settings->getNoEx("mapillary_token", mapillary_token);
+	if (!mapillary_token.empty()) {
+		args.mapillary_facades = true;
+		args.mapillary_probe = true;
+		args.mapillary_token = mapillary_token;
+		// mapillary_facades_dir is an existing export input, not a download
+		// cache. Providers already derive their cache from cache::base_directory().
+	}
 	args.facade_detail = arnis::FacadeDetail::High;
 	args.building_facades_dir = arnis::cache::facade_cache_root().string();
 	args.signage = arnis::SignageLevel::Full;
@@ -564,8 +703,10 @@ void generate_cached_arnis(MapgenEarth *mg, CachedArnisExtract &cached)
 			});
 	const auto args = earth_arnis_args();
 	FloodWaveGuard flood_wave(cached);
-	arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,
-			*cached.building_footprints, true, cached.prepared_buildings.get());
+	if (!arnis::generate_world(editor, cached.elements, args, *cached.flood_fill_cache,
+				*cached.building_footprints, true, cached.prepared_buildings.get()))
+		errorstream << "Earth: Arnis world generation failed; check generation options "
+					   "and provider configuration\n";
 }
 
 } // namespace earth_osmium_detail
