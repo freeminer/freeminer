@@ -404,6 +404,7 @@ Block WAXED_EXPOSED_CUT_COPPER;
 Block CHERRY_LOG;
 Block CHERRY_LEAVES;
 Block GRAY_CONCRETE_POWDER;
+Block BROWN_CONCRETE_POWDER;
 Block CYAN_TERRACOTTA;
 Block BLACK_WOOL;
 Block LIGHT_GRAY_WALL_BANNER;
@@ -1062,6 +1063,7 @@ void init(MapgenEarth *mg)
 	CHERRY_LOG = g({"default:aspen_tree", "default:tree"});
 	CHERRY_LEAVES = g({"default:aspen_leaves", "default:leaves"});
 	GRAY_CONCRETE_POWDER = g({"default:gravel", "dye:grey"});
+	BROWN_CONCRETE_POWDER = g({"default:gravel", "dye:brown"});
 	CYAN_TERRACOTTA = CYAN_CONCRETE;
 	BLACK_WOOL = g("wool:black");
 	LIGHT_GRAY_WALL_BANNER = LIGHT_GRAY_CONCRETE;

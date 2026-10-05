@@ -23,6 +23,11 @@ namespace arnis
 // A “Ground” class that can return ground level from a set of points
 struct Ground
 {
+	struct ElevationSoftTop
+	{
+		double knee_m = 0.0;
+		double width_blocks = 0.0;
+	};
 	struct RotationMask
 	{
 		double cx = 0, cz = 0, neg_sin = 0, cos = 1;
@@ -37,6 +42,7 @@ struct Ground
 	double elevation_min_height_m = 0.0, elevation_blocks_per_meter = 0.0;
 	// Converts host block-space slope back to the documented world-scale slope.
 	double elevation_slope_correction = 1.0;
+	std::optional<ElevationSoftTop> elevation_soft_top;
 	bool extended_ceiling = false;
 	CelestialBody body = CelestialBody::Earth;
 	std::optional<int> elevation_ground_level;
@@ -88,6 +94,7 @@ struct Ground
 	// reconstructing elevation interpolation in individual processors.
 	double level_exact(const XZPoint &pos) const;
 	double slope_exact(const XZPoint &pos) const;
+	double slope_soft_top_stretch(int y) const;
 	std::pair<double, std::pair<double, double>> slope_and_gradient(
 			const XZPoint &pos) const;
 	double convexity(const XZPoint &pos) const;
@@ -120,7 +127,8 @@ struct Ground
 	static double snow_line_meters(double latitude_degrees);
 	void set_snow_line_for_latitude(double latitude_degrees);
 	void set_elevation_metadata(double min_height_m, double blocks_per_meter, int snow_y,
-			int ground_level, double slope_correction);
+			int ground_level, double slope_correction,
+			std::optional<ElevationSoftTop> soft_top = std::nullopt);
 
 	void set_elevation_data(const std::vector<std::vector<float>> &heights,
 			std::size_t width, std::size_t height, std::size_t world_width,

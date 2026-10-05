@@ -72,7 +72,18 @@ int Ground::level(const XZPoint &pos) const
 
 double Ground::level_exact(const XZPoint &pos) const
 {
-	if (!elevation_enabled || elevation_grid.empty() || elevation_world_width == 0 ||
+	// Without Arnis elevation data, the Freeminer adapter still supplies the
+	// host mapgen's terrain through get_height(). Mirror level() here so slope,
+	// talus and snow-shape calculations see the same terrain instead of a flat
+	// configured-base plane.
+	if (!elevation_enabled) {
+		if (mg) {
+			++mg->stat.level;
+			return static_cast<double>(mg->get_height(pos.X, pos.Y, 0));
+		}
+		return static_cast<double>(elevation_ground_level.value_or(0));
+	}
+	if (elevation_grid.empty() || elevation_world_width == 0 ||
 			elevation_world_height == 0)
 		return static_cast<double>(elevation_ground_level.value_or(0));
 	const auto height = elevation_grid.size();
@@ -105,10 +116,22 @@ double Ground::slope_exact(const XZPoint &pos) const
 	return slope_and_gradient(pos).first;
 }
 
+double Ground::slope_soft_top_stretch(int y) const
+{
+	if (!elevation_soft_top || elevation_blocks_per_meter <= 0.0 ||
+			elevation_soft_top->width_blocks <= 0.0)
+		return 1.0;
+	const auto &top = *elevation_soft_top;
+	const double knee_y = base_level() + (top.knee_m - elevation_min_height_m) *
+												 elevation_blocks_per_meter;
+	const double above = static_cast<double>(y) - knee_y;
+	return above <= 0.0 ? 1.0 : std::cosh(above / top.width_blocks);
+}
+
 std::pair<double, std::pair<double, double>> Ground::slope_and_gradient(
 		const XZPoint &pos) const
 {
-	if (!elevation_enabled)
+	if (!elevation_enabled && !mg)
 		return {0.0, {0.0, 0.0}};
 	constexpr int step = 4;
 	const std::array<double, 4> samples{{level_exact({pos.x + step, pos.z}),
@@ -116,13 +139,15 @@ std::pair<double, std::pair<double, double>> Ground::slope_and_gradient(
 			level_exact({pos.x, pos.z + step})}};
 	const auto [min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
 	const double raw = *max_it - *min_it;
-	const double slope = std::max(0.0, raw * elevation_slope_correction);
+	const int mid_y = static_cast<int>(std::llround((*min_it + *max_it) * 0.5));
+	const double slope = std::max(
+			0.0, raw * elevation_slope_correction * slope_soft_top_stretch(mid_y));
 	return {slope, {samples[0] - samples[1], samples[3] - samples[2]}};
 }
 
 double Ground::convexity(const XZPoint &pos) const
 {
-	if (!elevation_enabled)
+	if (!elevation_enabled && !mg)
 		return 0.0;
 	constexpr int radius = 8;
 	constexpr int diagonal = 6;
@@ -134,7 +159,9 @@ double Ground::convexity(const XZPoint &pos) const
 		mean += level_exact({pos.x + dx, pos.z + dz});
 	mean /= static_cast<double>(ring.size());
 	// The sample ring is twice the four-block slope baseline used by Rust.
-	return (mean - level_exact(pos)) * 0.5 * elevation_slope_correction;
+	const int center_y = static_cast<int>(std::llround(level_exact(pos)));
+	return (mean - level_exact(pos)) * 0.5 * elevation_slope_correction *
+		   slope_soft_top_stretch(center_y);
 }
 bool Ground::has_land_cover() const
 {
@@ -252,19 +279,29 @@ void Ground::set_snow_line_for_latitude(double latitude_degrees)
 								   : std::numeric_limits<int>::max();
 		return;
 	}
-	const auto y = base_level() +
-				   (snowline - elevation_min_height_m) * elevation_blocks_per_meter;
+	double y = base_level() +
+			   (snowline - elevation_min_height_m) * elevation_blocks_per_meter;
+	if (elevation_soft_top && snowline > elevation_soft_top->knee_m &&
+			elevation_soft_top->width_blocks > 0.0) {
+		const auto &top = *elevation_soft_top;
+		const double knee_y = base_level() + (top.knee_m - elevation_min_height_m) *
+													 elevation_blocks_per_meter;
+		const double rise = (snowline - top.knee_m) * elevation_blocks_per_meter;
+		y = knee_y + top.width_blocks * std::asinh(rise / top.width_blocks);
+	}
 	snow_threshold_y =
 			y <= std::numeric_limits<int>::min()   ? std::numeric_limits<int>::min()
 			: y >= std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
 												   : static_cast<int>(std::llround(y));
 }
 void Ground::set_elevation_metadata(double min_height_m, double blocks_per_meter,
-		int snow_y, int ground_level, double slope_correction)
+		int snow_y, int ground_level, double slope_correction,
+		std::optional<ElevationSoftTop> soft_top)
 {
 	elevation_min_height_m = min_height_m;
 	elevation_blocks_per_meter = blocks_per_meter;
 	elevation_slope_correction = slope_correction > 0.0 ? slope_correction : 1.0;
+	elevation_soft_top = soft_top;
 	snow_threshold_y = snow_y;
 	elevation_ground_level = ground_level;
 }
@@ -511,7 +548,7 @@ std::optional<std::tuple<int, int, int, int>> Ground::lc_water_block_bounds() co
 }
 int Ground::slope(const XZPoint &coord) const
 {
-	if (!elevation_enabled)
+	if (!elevation_enabled && !mg)
 		return 0;
 	constexpr int step = 4;
 	const int east = level({coord.x + step, coord.z}),
@@ -523,7 +560,9 @@ int Ground::slope(const XZPoint &coord) const
 	const auto hi = std::max({east, west, north, south});
 	const auto lo = std::min({east, west, north, south});
 	const auto raw = static_cast<long double>(hi) - static_cast<long double>(lo);
-	const auto scaled = raw * elevation_slope_correction;
+	const int mid_y = static_cast<int>(
+			static_cast<std::int64_t>(lo) + (static_cast<std::int64_t>(hi) - lo) / 2);
+	const auto scaled = raw * elevation_slope_correction * slope_soft_top_stretch(mid_y);
 	if (scaled >= static_cast<long double>(std::numeric_limits<int>::max()))
 		return std::numeric_limits<int>::max();
 	if (scaled <= static_cast<long double>(std::numeric_limits<int>::min()))
@@ -535,7 +574,7 @@ int Ground::water_level(const XZPoint &coord) const
 	const int center = level(coord);
 	// Flat worlds have no DEM shoreline correction; this explicit guard
 	// mirrors Ground::water_level in the Rust implementation.
-	if (!elevation_enabled)
+	if (!elevation_enabled && !mg)
 		return center;
 	if (slope(coord) <= 2)
 		return center;
