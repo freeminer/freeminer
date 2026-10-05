@@ -241,16 +241,16 @@ public:
 		// A huge old cell contains one loaded chunk near the new camera.
 		// The mask stays sparse instead of iterating over (2^step)^3 chunks.
 		const v3bpos_t origin(-8192, 0, -8192);
-		const v3bpos_t near = origin + v3bpos_t(2048, 0, 4096);
+		const v3bpos_t nearr = origin + v3bpos_t(2048, 0, 4096);
 		farmesh::FarMeshClipMask mask(origin, 16, 2);
-		mask.addChunk(near);
+		mask.addChunk(nearr);
 		scene::SMesh mesh;
 		const float x = 2048 * MAP_BLOCKSIZE - 0.5f;
 		const float z = 4096 * MAP_BLOCKSIZE - 0.5f;
 		addQuad(mesh, 1, 1, 15.5f, z, z + 64, x, x + 64);
 		UASSERT(std::abs(area(mask.clip(*mesh.getMeshBuffer(0))) - 3072) < 0.01);
 		farmesh::FarMeshClipMask moved(origin, 16, 2);
-		moved.addChunk(near + v3bpos_t(8, 0, 0));
+		moved.addChunk(nearr + v3bpos_t(8, 0, 0));
 		UASSERT(std::abs(area(moved.clip(*mesh.getMeshBuffer(0))) - 4096) < 0.01);
 	}
 
