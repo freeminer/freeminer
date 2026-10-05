@@ -385,15 +385,15 @@ static PointedThing makeMCPNodePointedThing(
 	return PointedThing(pos, pos, pos, point, normal, 0, distance_sq, features.pointable);
 }
 
-static void setMCPCameraTarget(Client *client, const v3f &target)
+static void setMCPCameraTarget(Client *client, const v3opos_t &target)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	if (!player)
 		return;
 
-	const v3f eye = oposToV3f(player->getEyePosition());
-	const v3f delta = target - eye;
-	const f32 horizontal = std::sqrt(delta.X * delta.X + delta.Z * delta.Z);
+	const auto eye = player->getEyePosition();
+	const auto delta = target - eye;
+	const auto horizontal = std::sqrt(delta.X * delta.X + delta.Z * delta.Z);
 	if (delta.getLengthSQ() < 0.0001f)
 		return;
 
@@ -413,7 +413,7 @@ static void setMCPCameraTarget(Client *client, v3pos_t pos)
 // pulse; that lets normal physics and collision determine whether the target
 // can actually be reached.
 static bool approachMCPInteractionTarget(
-		Client *client, const v3f &target, Json::Value &status)
+		Client *client, const v3opos_t &target, Json::Value &status)
 {
 	LocalPlayer *player = client->getEnv().getLocalPlayer();
 	if (!player) {
@@ -422,9 +422,9 @@ static bool approachMCPInteractionTarget(
 		return false;
 	}
 
-	const v3f position = player->getPosition();
-	const v3f delta = target - position;
-	const f32 distance = delta.getLength() / BS;
+	const auto position = player->getPosition();
+	const auto delta = target - position;
+	const auto distance = delta.getLength() / BS;
 	constexpr f32 interaction_reach = 3.5f;
 	if (distance <= interaction_reach)
 		return true;
@@ -1161,7 +1161,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					if (args.isMember("node_x")) {
 						v3pos_t node_pos(args["node_x"].asInt(), args["node_y"].asInt(),
 								args["node_z"].asInt());
-						const v3f node_center = intToFloat(node_pos, BS);
+						const v3opos_t node_center = intToFloat(node_pos, BS);
 						if (player->getPosition().getDistanceFromSQ(node_center) >
 								8.0f * 8.0f * BS * BS) {
 							inventory_obj["success"] = false;
@@ -1170,8 +1170,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 							inventory_available = false;
 						} else {
 							InventoryLocation location;
-							location.setNodeMeta(
-									v3s16(node_pos.X, node_pos.Y, node_pos.Z));
+							location.setNodeMeta(node_pos);
 							inventory = getInventory(location);
 							if (!inventory) {
 								inventory_obj["success"] = false;
@@ -1398,8 +1397,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 									args[std::string(prefix) + "z"].asInt());
 							if (!approachMCPInteractionNode(this, node_pos, status))
 								return false;
-							location.setNodeMeta(
-									v3s16(node_pos.X, node_pos.Y, node_pos.Z));
+							location.setNodeMeta(node_pos);
 						} else {
 							location.setCurrentPlayer();
 						}
@@ -1534,10 +1532,10 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					status["success"] = false;
 					status["error"] = "No local player";
 				} else {
-					v3f target;
+					v3opos_t target;
 					bool target_available = true;
 					if (tool_name == "look_at_position") {
-						target = v3f(args["x"].asFloat(), args["y"].asFloat(),
+						target = v3opos_t(args["x"].asFloat(), args["y"].asFloat(),
 										 args["z"].asFloat()) *
 								 BS;
 					} else {
@@ -1553,8 +1551,8 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 						}
 					}
 					if (target_available) {
-						const v3f eye = oposToV3f(player->getEyePosition());
-						const v3f delta = target - eye;
+						const auto eye = player->getEyePosition();
+						const auto delta = target - eye;
 						const f32 horizontal =
 								std::sqrt(delta.X * delta.X + delta.Z * delta.Z);
 						if (delta.getLengthSQ() < 0.0001f) {
@@ -1675,7 +1673,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					if (args.isMember("node_x")) {
 						v3pos_t node_pos(args["node_x"].asInt(), args["node_y"].asInt(),
 								args["node_z"].asInt());
-						const v3f node_center = intToFloat(node_pos, BS);
+						const auto node_center = intToFloat(node_pos, BS);
 						bool node_ok = false;
 						const MapNode node =
 								m_env.getClientMap().getNode(node_pos, &node_ok);
@@ -1696,9 +1694,9 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 								const v3pos_t above = node_pos + v3pos_t(0, 1, 0);
 								const v3f normal(0.0f, 1.0f, 0.0f);
 								pointed = PointedThing(
-										v3s16(node_pos.X, node_pos.Y, node_pos.Z),
-										v3s16(above.X, above.Y, above.Z),
-										v3s16(node_pos.X, node_pos.Y, node_pos.Z),
+										v3pos_t(node_pos.X, node_pos.Y, node_pos.Z),
+										v3pos_t(above.X, above.Y, above.Z),
+										v3pos_t(node_pos.X, node_pos.Y, node_pos.Z),
 										node_center, normal, 0,
 										player->getPosition().getDistanceFromSQ(
 												node_center),
@@ -1753,8 +1751,8 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					if (approachMCPInteractionTarget(this, position, status)) {
 						setMCPCameraTarget(this, position);
 						if (tool_name == "punch_object") {
-							const auto direction =
-									(position - player->getPosition()).normalize();
+							const auto direction = oposToV3f(
+									(position - player->getPosition()).normalize());
 							ItemStack selected_item;
 							ItemStack hand_item;
 							ItemStack *hand_item_ptr = nullptr;
