@@ -349,11 +349,12 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 							nearby &= bounds.MaxEdge[axis] >= camera[axis] - reach &&
 									  bounds.MinEdge[axis] <= camera[axis] + reach;
 					}
-					if (nearby)
-						for (const auto &[pos, near] : far_draw->near_meshes)
+					if (nearby) {
+						for (const auto &[pos, near_m] : far_draw->near_meshes)
 							if (farmesh::intersectsNearChunk(
 										bounds, it->first, pos, near_cell_width))
 								chunks.push_back(pos);
+					}
 				}
 				if (!chunks.empty()) {
 					std::sort(chunks.begin(), chunks.end());
