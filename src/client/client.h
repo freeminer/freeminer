@@ -14,12 +14,16 @@
 #include "threading/async.h"
 #include "player.h"
 #include <EMaterialTypes.h>
+#include <chrono>
+#include <functional>
+#include <utility>
 
 #if USE_CLIENT_MCP
 // websocketpp also provides the embedded HTTP listener used by MCP.
 #include <websocketpp/server.hpp>
 #include <websocketpp/config/asio.hpp>
 #include <json/json.h>
+#include "util/pointedthing.h"
 #endif
 
 constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
@@ -34,18 +38,9 @@ constexpr const auto FARMESH_DEFAULT_MAPGEN = MAPGEN_FLAT;
 #include "network/networkprotocol.h" // multiple enums
 #include "network/peerhandler.h"
 #include "util/numeric.h"
-#if USE_CLIENT_MCP
-#include "util/pointedthing.h"
-#endif
 #include "util/string.h" // StringMap
 
 #include <deque>
-// fm:
-#include <chrono>
-#include <functional>
-// fm:
-#include <utility>
-// ===
 #include <map>
 #include <memory>
 #include <ostream>
@@ -150,16 +145,12 @@ private:
 
 #if USE_CLIENT_MCP
 public:
-	// fm:
 	// MCP tools execute from Game::processUserInput(), never on the transport thread.
-	// ===
 	void processMCPRequests();
-	// fm:
 	void setMCPKeyInjector(std::function<void(int, bool)> injector)
 	{
 		m_mcp_key_injector = std::move(injector);
 	}
-	// fm:
 	void pressMCPKey(int key, u32 duration_ms = 250)
 	{
 		if (!m_mcp_key_injector)
@@ -168,7 +159,6 @@ public:
 		m_mcp_pressed_keys[key] = std::chrono::steady_clock::now() +
 				std::chrono::milliseconds(duration_ms);
 	}
-	// fm:
 	void setMCPRotationTarget(float pitch, float yaw)
 	{
 		m_mcp_rotation_target = {pitch, yaw};
@@ -183,8 +173,6 @@ public:
 		m_has_mcp_rotation_target = false;
 		return true;
 	}
-	// ===
-	// ===
 	void setCurrentPointedThing(const PointedThing &pointed);
 	PointedThing getCurrentPointedThing() const;
 	
@@ -220,12 +208,10 @@ private:
 	PointedThing m_mcp_pointed_thing;
 	std::deque<Json::Value> m_mcp_chat_history;
 	u64 m_mcp_chat_next_id = 1;
-	// fm:
 	std::function<void(int, bool)> m_mcp_key_injector;
 	std::map<int, std::chrono::steady_clock::time_point> m_mcp_pressed_keys;
 	std::pair<float, float> m_mcp_rotation_target{};
 	bool m_has_mcp_rotation_target = false;
-	// ===
 
 	void handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 			const Json::Value &request, const std::string &session_id);
@@ -285,7 +271,9 @@ public:
 
 	video::E_MATERIAL_TYPE getFarLightMaterial() const { return m_far_light_material; }
 
-	// ==
+	bool isMeshUpdatePending(const v3bpos_t &blockpos);
+	void prioritizeMeshUpdates(const v3bpos_t &camera);
+	// ===
 
 public:
 	/*
@@ -475,7 +463,7 @@ public:
 	u16 getHP();
 
 	bool checkPrivilege(const std::string &priv) const
-	{ return true; (m_privileges.count(priv) != 0); }
+	{ (m_privileges.count(priv) != 0); }
 
 	const std::unordered_set<std::string> &getPrivilegeList() const
 	{ return m_privileges; }
@@ -487,10 +475,6 @@ public:
 
 	void addUpdateMeshTask(v3bpos_t blockpos, bool ack_to_server=false,
 			bool urgent=false, int step = -1);
-	// fm: Includes queued work, running work and results awaiting installation.
-	bool isMeshUpdatePending(const v3bpos_t &blockpos);
-	void prioritizeMeshUpdates(const v3bpos_t &camera);
-	// ===
 	// Including blocks at appropriate edges
 	void addUpdateMeshTaskWithEdge(v3pos_t blockpos, bool ack_to_server=false,
 			bool urgent=false, int step = -1);
