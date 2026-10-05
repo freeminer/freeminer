@@ -77,6 +77,15 @@ public:
 		axisValues.fill(0);
 	}
 
+	// fm:
+	void setMCPKeyDown(GameKeyType action, bool down)
+	{
+		if (action >= GameKeyType::INTERNAL_ENUM_COUNT)
+			return;
+		setKeyDown(action, {down ? 1.0f : 0.0f, true});
+	}
+	// ===
+
 	void clearWasKeyPressed()
 	{
 		keyWasPressed.reset();
@@ -216,6 +225,9 @@ public:
 
 	virtual void clear() {}
 	virtual void releaseAllKeys() {}
+	// fm:
+	virtual void setMCPKeyDown(GameKeyType, bool) {}
+	// ===
 
 	static void settingChangedCallback(const std::string &name, void *data)
 	{
@@ -288,6 +300,12 @@ public:
 	{
 		m_receiver->releaseAllKeys();
 	}
+	// fm:
+	void setMCPKeyDown(GameKeyType key, bool down)
+	{
+		m_receiver->setMCPKeyDown(key, down);
+	}
+	// ===
 
 private:
 	MyEventReceiver *m_receiver = nullptr;
