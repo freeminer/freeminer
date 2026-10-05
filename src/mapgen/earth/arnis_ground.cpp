@@ -155,7 +155,7 @@ double Ground::convexity(const XZPoint &pos) const
 			{0, -radius}, {diagonal, diagonal}, {diagonal, -diagonal},
 			{-diagonal, diagonal}, {-diagonal, -diagonal}}};
 	double mean = 0.0;
-	for (const auto [dx, dz] : ring)
+	for (const auto &[dx, dz] : ring)
 		mean += level_exact({pos.x + dx, pos.z + dz});
 	mean /= static_cast<double>(ring.size());
 	// The sample ring is twice the four-block slope baseline used by Rust.
