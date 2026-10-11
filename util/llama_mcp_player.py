@@ -91,6 +91,14 @@ open it and inspect again; do not repeat the unchanged failed move."""
 
 
 TOOL_GUIDANCE = {
+    "dig_node": (
+        " First read get_player_state and inspect nearby nodes. Dig only a loaded, "
+        "diggable node whose exact coordinates came from a recent get_node or "
+        "get_nodes_area result. Approach safely before digging; actual digging "
+        "requires being within 3.5 nodes. If the position is not loaded, do not "
+        "try neighboring guessed coordinates: inspect your position and scan "
+        "a small area around yourself, then choose a verified nearby target."
+    ),
     "use_item": (
         " Right-click a chest/container node with node_x/y/z to open its inventory "
         "before reading or moving its slots."
@@ -521,12 +529,21 @@ def split_server_address(value: str) -> tuple[str, int]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
+    model_source = parser.add_mutually_exclusive_group(required=True)
+    model_source.add_argument(
         "--model",
         # default="SoAIHQ/Qwen3.5-9B-GGUF:Q4_K_M",
-        default="khazarai/Qwen3.8-max-Reasoning-Distilled-GGUF:Q4_K_M",
+        #default="khazarai/Qwen3.8-max-Reasoning-Distilled-GGUF:Q4_K_M",
         help="Local GGUF path or Hugging Face repo[:quant], for example "
         "SoAIHQ/Qwen3.5-4B-GGUF:Q4_K_M",
+    )
+    model_source.add_argument(
+        "--hf-repo",
+        help="Hugging Face repository to pass to llama-server instead of --model",
+    )
+    parser.add_argument(
+        "--hf-file",
+        help="Exact model filename within --hf-repo, passed to llama-server",
     )
     parser.add_argument("server", help="Luanti host[:port]; port defaults to 30000")
     parser.add_argument(
@@ -598,6 +615,8 @@ def parse_args() -> argparse.Namespace:
         help="Do not read live instructions from the terminal",
     )
     args, trailing_args = parser.parse_known_args()
+    if args.hf_file and not args.hf_repo:
+        parser.error("--hf-file requires --hf-repo")
     if trailing_args and trailing_args[0] == "--":
         trailing_args = trailing_args[1:]
     args.freeminer_args = trailing_args
@@ -612,14 +631,21 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    model_path = Path(args.model).expanduser()
+    model_path = Path(args.model).expanduser() if args.model else None
     client_bin_arg = Path(args.client_bin).expanduser()
     client_bin = (
         client_bin_arg.resolve()
         if client_bin_arg.is_file()
         else Path(shutil.which(args.client_bin) or args.client_bin).expanduser()
     )
-    if model_path.is_file():
+    if args.hf_repo:
+        model_args = ["--hf-repo", args.hf_repo]
+        if args.hf_file:
+            model_args.extend(["--hf-file", args.hf_file])
+        model_display = f"Hugging Face {args.hf_repo}"
+        if args.hf_file:
+            model_display += f" / {args.hf_file}"
+    elif model_path.is_file():
         model_args = ["-m", str(model_path.resolve())]
         model_display = str(model_path.resolve())
     else:
@@ -767,7 +793,11 @@ def main() -> int:
         system_prompt = get_system_prompt()
         system_prompt += (
             f"\n\nYour current in-game player name is {args.name}. "
-            "Use this name when speaking in chat or referring to yourself."
+            "Use this name when speaking in chat or referring to yourself. "
+            f"{args.name} is YOU, never another player or your friend. "
+            "Ignore chat sent by your own name, including server echoes. "
+            "Never greet, follow, or answer yourself. Select a different verified "
+            "player; if none is available, search or wait."
         )
         if any(memories.values()):
             system_prompt += "\n\nReusable notes from previous runs (treat as fallible; verify when needed):"
@@ -1087,6 +1117,26 @@ def main() -> int:
                                 result = f"Tool request failed: {error}"
                         print(f"[result] {result[:1000]}", flush=True)
                         if name == "get_chat_messages":
+                            try:
+                                chat_data = json.loads(result)
+                            except (json.JSONDecodeError, TypeError):
+                                pass
+                            else:
+                                if isinstance(chat_data, dict) and isinstance(
+                                    chat_data.get("messages"), list
+                                ):
+                                    # Preserve the polling cursor while hiding echoes
+                                    # of our own messages from the model.
+                                    chat_data["messages"] = [
+                                        message
+                                        for message in chat_data["messages"]
+                                        if not (
+                                            isinstance(message, dict)
+                                            and str(message.get("sender", "")).casefold()
+                                            == args.name.casefold()
+                                        )
+                                    ]
+                                    result = json.dumps(chat_data, ensure_ascii=False)
                             result = add_player_memories_to_chat(
                                 result, memory_files["gameplay"].parent
                             )
@@ -1100,6 +1150,13 @@ def main() -> int:
                             player_health = result_data["health"]
                         if result_data.get("state") == "approaching":
                             time.sleep(0.85)
+                        if result_data.get("error") == "Node position is not loaded":
+                            result += (
+                                " Recovery: do not guess another coordinate. Your next "
+                                "action should be get_player_state, followed by a small "
+                                "get_nodes_area scan around that position. Choose a loaded "
+                                "node from the scan, approach safely, and then dig."
+                            )
                         if result_data.get("success") is False:
                             failure = (
                                 name,

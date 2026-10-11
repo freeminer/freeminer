@@ -174,6 +174,7 @@ struct WorldEditor
 	bool flush_requested = false, save_requested = false;
 	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink,
 			world_settings_sink;
+	std::function<void(const std::string &)> generation_error_sink;
 	std::function<bool(int, int, int, int)> begin_tile_sink;
 	std::function<bool(int, int, int, int)> merge_tile_sink;
 	int spawn_x = 0, spawn_y = 0, spawn_z = 0;
@@ -432,6 +433,15 @@ struct WorldEditor
 	}
 	void request_flush() { flush_requested = true; }
 	void request_save() { save_requested = true; }
+	void set_generation_error_sink(std::function<void(const std::string &)> sink)
+	{
+		generation_error_sink = std::move(sink);
+	}
+	void report_generation_error(const std::string &message) const
+	{
+		if (generation_error_sink)
+			generation_error_sink(message);
+	}
 	void set_persistence_hooks(std::function<bool()> flush, std::function<bool()> save,
 			std::function<bool()> preview = {}, std::function<bool()> map_item = {},
 			std::function<bool()> world_settings = {})

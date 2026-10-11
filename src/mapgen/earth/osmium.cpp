@@ -519,6 +519,8 @@ arnis::Args earth_arnis_args()
 	// Match Rust's default. The shared canopy cache keeps this single raster
 	// available across chunk-generation threads without per-thread downloads.
 	arnis.canopy_height = true;
+	arnis.building_facades_dir = ::arnis::cache::facade_cache_root().string();
+	const ::arnis::Args freeminer_defaults = arnis;
 
 	// Settings::getNoEx only exposes strings, so parse values here while leaving
 	// Args defaults intact whenever a setting is absent or malformed.
@@ -702,7 +704,6 @@ arnis::Args earth_arnis_args()
 	read_optional_string("mapillary_facades_dir", arnis.mapillary_facades_dir);
 	read_optional_string("mapillary_facade_debug_dir", arnis.mapillary_facade_debug_dir);
 	read_string("mapillary_facade_debug_walls", arnis.mapillary_facade_debug_walls);
-	arnis.building_facades_dir = ::arnis::cache::facade_cache_root().string();
 	read_optional_string("building_facades_dir", arnis.building_facades_dir);
 
 	// Cave tuning and tree-library paths.
@@ -755,6 +756,17 @@ arnis::Args earth_arnis_args()
 	// cannot accidentally retain Earth-only providers or structure passes.
 	arnis.apply_body_defaults();
 	arnis.apply_mode_defaults();
+	// A malformed or mutually incompatible optional setting must not disable
+	// the entire Freeminer mapgen. Keep the host's known-good defaults and let
+	// generation proceed; valid settings continue to override them normally.
+	if (!arnis.valid()) {
+		static std::once_flag invalid_settings_warning;
+		std::call_once(invalid_settings_warning, [] {
+			errorstream << "Earth: invalid or incompatible arnis.* settings; using "
+						   "Freeminer Arnis defaults for this generation\n";
+		});
+		arnis = freeminer_defaults;
+	}
 
 	return arnis;
 }
@@ -962,6 +974,9 @@ void generate_cached_arnis(
 	arnis::Ground ground;
 	ground.mg = mg;
 	arnis::WorldEditor editor;
+	editor.set_generation_error_sink([](const std::string &message) {
+		errorstream << "Earth: Arnis generation error: " << message << '\n';
+	});
 	editor.mg = mg;
 	if (mg->projection.curved) {
 		const auto anchor = mg->pos_to_ll((mg->node_min + mg->node_max) / 2);

@@ -101,6 +101,10 @@ You can also pass a single additional option with repeatable
 `--freeminer-arg=-option=value` arguments. Launcher-managed address, player
 name, and MCP settings are provided automatically.
 
+Instead of `--model`, pass `--hf-repo OWNER/REPO` and optionally
+`--hf-file MODEL.gguf` to select an exact Hugging Face file. Both options are
+forwarded to llama-server. `--hf-file` requires `--hf-repo`.
+
 Pass extra llama.cpp options with repeatable `--llama-arg=ARG` arguments. Use
 one launcher option for each llama-server argv item, including separate values:
 

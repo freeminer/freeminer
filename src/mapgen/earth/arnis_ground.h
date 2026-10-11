@@ -248,6 +248,7 @@ struct GroundFrame
 int min_ground_level_for(const Args &args);
 int extended_min_y_for(const Args &args);
 int extended_max_y_for(const Args &args);
+int world_top_y_for(const Args &args);
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const std::filesystem::path &cache_base = {});
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
