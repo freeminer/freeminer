@@ -51,6 +51,15 @@ int extended_max_y_for(const Args &args)
 	return 2031;
 }
 
+int world_top_y_for(const Args &args)
+{
+	if (!args.disable_height_limit || args.luanti)
+		return world_editor::DEFAULT_MAX_Y;
+	if (args.bedrock)
+		return 511;
+	return 2031;
+}
+
 int min_ground_level_for(const Args &args)
 {
 	const int floor = extended_min_y_for(args);

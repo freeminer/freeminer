@@ -410,7 +410,7 @@ bool WorldEditor::try_set_block_with_properties_absolute(const BlockWithProperti
 {
 	if (!try_set_block_absolute(bwp.block, x, y, z, variants, replacements))
 		return false;
-	if (block_properties_sink && !bwp.properties.empty())
+	if (block_properties_sink && !bwp.property_values().empty())
 		block_properties_sink(bwp, x, y, z);
 	return true;
 }
