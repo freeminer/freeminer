@@ -1191,9 +1191,16 @@ void ServerEnvironment::step(float dtime, double uptime, unsigned int max_cycle_
 
 		u32 n = 0, calls = 0;
 		const auto end_ms = porting::getTimeMs() + max_cycle_ms;
-		const auto lock = m_active_blocks.m_list.lock_shared_rec();
+		// fm: Release the active-block lock before node timers call into Lua.
+		// Lua callbacks may query block status while holding the script mutex.
+		std::vector<v3bpos_t> active_blocks;
+		{
+			const auto lock = m_active_blocks.m_list.lock_shared_rec();
+			active_blocks.assign(m_active_blocks.m_list.begin(),
+					m_active_blocks.m_list.end());
+		}
 
-		for (const auto &p: m_active_blocks.m_list) {
+		for (const auto &p : active_blocks) {
 			if (n++ < m_active_block_timer_last)
 				continue;
 			else
