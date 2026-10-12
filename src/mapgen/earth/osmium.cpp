@@ -41,6 +41,7 @@
 #include "arnis-cpp/src/clipping.h"
 #include "arnis-cpp/src/floodfill_cache.h"
 #include "arnis-cpp/src/osm_parser.h"
+#include "arnis-cpp/src/overture.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -352,6 +353,8 @@ public:
 	void finish_relations()
 	{
 		for (auto &pending : pending_relations) {
+			const XZBBox bbox(
+					mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
 			for (const auto &[way_id, role] : pending.ways) {
 				const auto found = way_indices.find(way_id);
 				if (found == way_indices.end())
@@ -368,6 +371,8 @@ public:
 					tags.get("waterway") == "dock";
 			const bool building_area =
 					tags.contains("building") || tags.contains("building:part");
+			const bool keep_unclipped =
+					water_area || (building_area && tags.get("type") == "multipolygon");
 			const auto is_open = [](const arnis::ProcessedWay &way) {
 				if (way.nodes.size() < 3)
 					return true;
@@ -451,8 +456,6 @@ public:
 				merge_segments(outer_rings);
 				merge_segments(inner_rings);
 				std::vector<arnis::ProcessedMember> assembled;
-				const XZBBox bbox(
-						mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
 				for (const auto &[role, rings] :
 						{std::pair{arnis::ProcessedMemberRole::Outer, &outer_rings},
 								std::pair{arnis::ProcessedMemberRole::Inner,
@@ -485,6 +488,18 @@ public:
 					}
 				}
 				pending.relation.members = std::move(assembled);
+			} else if (!keep_unclipped) {
+				std::vector<arnis::ProcessedMember> clipped_members;
+				clipped_members.reserve(pending.relation.members.size());
+				for (auto &member : pending.relation.members) {
+					auto clipped =
+							arnis::clipping::clip_way_to_bbox(member.way.nodes, bbox);
+					if (clipped.empty())
+						continue;
+					member.way.nodes = std::move(clipped);
+					clipped_members.push_back(std::move(member));
+				}
+				pending.relation.members = std::move(clipped_members);
 			}
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
@@ -909,6 +924,41 @@ bool earth_bounds_intersect(const EarthElementBounds &element, const XZBBox &bbo
 		   element.min_z <= bbox.max_z();
 }
 
+std::optional<arnis::geographic::LLBBox> earth_elements_geographic_bounds(
+		const std::vector<arnis::ProcessedElement> &elements)
+{
+	double min_lat = std::numeric_limits<double>::infinity();
+	double min_lon = std::numeric_limits<double>::infinity();
+	double max_lat = -std::numeric_limits<double>::infinity();
+	double max_lon = -std::numeric_limits<double>::infinity();
+	const auto include = [&](const arnis::ProcessedNode &node) {
+		if (!std::isfinite(node.latitude) || !std::isfinite(node.longitude) ||
+				node.latitude < -90.0 || node.latitude > 90.0 ||
+				node.longitude < -180.0 || node.longitude > 180.0)
+			return;
+		min_lat = std::min(min_lat, node.latitude);
+		min_lon = std::min(min_lon, node.longitude);
+		max_lat = std::max(max_lat, node.latitude);
+		max_lon = std::max(max_lon, node.longitude);
+	};
+	for (const auto &element : elements) {
+		if (element.is_node()) {
+			include(element.as_node());
+		} else if (element.is_way()) {
+			for (const auto &node : element.as_way().nodes)
+				include(node);
+		} else {
+			for (const auto &member : element.as_relation().members)
+				for (const auto &node : member.way.nodes)
+					include(node);
+		}
+	}
+	if (!std::isfinite(min_lat) || !std::isfinite(min_lon) || !std::isfinite(max_lat) ||
+			!std::isfinite(max_lon))
+		return std::nullopt;
+	return arnis::geographic::LLBBox(min_lat, min_lon, max_lat, max_lon);
+}
+
 struct CachedArnisChunk
 {
 	std::once_flag elements_once;
@@ -932,6 +982,7 @@ struct CachedArnisExtract
 	std::vector<arnis::ProcessedElement> elements;
 	std::vector<EarthElementBounds> element_bounds;
 	std::unique_ptr<arnis::PreparedBuildingData> prepared_buildings;
+	std::shared_ptr<arnis::mapillary::FacadeJob> facade_job;
 	pos_t authored_max_y = std::numeric_limits<pos_t>::lowest();
 };
 
@@ -1016,7 +1067,8 @@ void generate_cached_arnis(
 	}
 	editor.set_geographic_bounds(min_lat, max_lat, min_lon, max_lon);
 	if (!arnis::generate_world(editor, chunk.elements, args, *chunk.flood_fill_cache,
-				*chunk.building_footprints, true, tile.prepared_buildings.get()))
+				*chunk.building_footprints, true, tile.prepared_buildings.get(),
+				tile.facade_job.get()))
 		errorstream << "Earth: Arnis world generation failed; check generation options "
 					   "and provider configuration\n";
 }
@@ -1061,6 +1113,8 @@ public:
 				osmium::io::File file{path_name, "pbf"};
 				osmium::relations::read_relations(file, mp_manager);
 				osmium::io::Reader reader{file};
+				const auto source_header = reader.header();
+				const auto source_bounds = source_header.joined_boxes();
 				MyHandler handler;
 				handler.mg = mg;
 				osmium::apply(reader, node_cache, handler,
@@ -1070,8 +1124,66 @@ public:
 								}));
 				handler.finish_relations();
 				cached.elements = std::move(handler.elements);
+				const auto args = earth_osmium_detail::earth_arnis_args();
+				std::optional<arnis::geographic::LLBBox> bbox;
+				if (source_bounds.valid()) {
+					bbox.emplace(source_bounds.bottom_left().lat(),
+							source_bounds.bottom_left().lon(),
+							source_bounds.top_right().lat(),
+							source_bounds.top_right().lon());
+				} else {
+					bbox = earth_osmium_detail::earth_elements_geographic_bounds(
+							cached.elements);
+				}
+				if (bbox) {
+					const std::array<double, 4> geographic_bounds = {bbox->min().lat(),
+							bbox->max().lat(), bbox->min().lng(), bbox->max().lng()};
+					cached.facade_job =
+							arnis::start_mapillary_facade_job(args, geographic_bounds);
+				}
+				if (args.overture && !args.skip_objects()) {
+					if (bbox) {
+						try {
+							actionstream
+									<< "Earth: fetching Overture building data for cached OSM extract\n";
+							auto overture = arnis::overture::fetch_overture_data(
+									bbox->min().lat(), bbox->min().lng(),
+									bbox->max().lat(), bbox->max().lng(), args.scale,
+									args.debug, args.overture_source);
+							for (auto &element : overture.elements) {
+								if (!element.is_way())
+									continue;
+								auto &way = std::get<arnis::ProcessedWay>(
+										static_cast<arnis::variant_t &>(element));
+								for (auto &node : way.nodes) {
+									if (!std::isfinite(node.latitude) ||
+											!std::isfinite(node.longitude))
+										continue;
+									const auto position = mg->ll_to_pos(
+											{static_cast<ll_t>(node.latitude),
+													static_cast<ll_t>(node.longitude)});
+									node.x = position.X;
+									node.z = position.Y;
+								}
+							}
+							const auto [enriched, added] =
+									overture.merge_into(cached.elements);
+							if (enriched || added)
+								actionstream << "Earth: Overture enriched " << enriched
+											 << " OSM building(s), added " << added
+											 << " footprint(s)\n";
+						} catch (const std::exception &e) {
+							errorstream
+									<< "Earth: Overture fetch failed; continuing with OSM data: "
+									<< e.what() << '\n';
+						}
+					} else if (args.debug) {
+						errorstream
+								<< "Earth: Overture skipped; cached OSM extract has no geographic bounds\n";
+					}
+				}
 				const auto dropped = arnis::drop_buildings_on_aircraft_pavement(
-						cached.elements, earth_osmium_detail::earth_arnis_args().scale);
+						cached.elements, args.scale);
 				if (dropped > 0)
 					actionstream << "Earth: skipped " << dropped
 								 << " building(s) on aircraft pavement\n";

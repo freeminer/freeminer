@@ -14,6 +14,7 @@
 
 #include <future>
 #include <iostream>
+#include <png.h>
 #include <stdexcept>
 
 namespace arnis
@@ -32,6 +33,32 @@ int rust_round_i32(double value)
 	if (value <= static_cast<double>(std::numeric_limits<int>::min()))
 		return std::numeric_limits<int>::min();
 	return static_cast<int>(std::round(value));
+}
+
+std::string png_filename(const std::string &filename)
+{
+	return filename.ends_with(".png") ? filename : filename + ".png";
+}
+
+bool write_rgb_png(const std::string &filename, std::size_t width, std::size_t height,
+		const std::vector<std::uint8_t> &pixels)
+{
+	if (width == 0 || height == 0 || width > std::numeric_limits<png_uint_32>::max() ||
+			height > std::numeric_limits<png_uint_32>::max() ||
+			width > std::numeric_limits<std::size_t>::max() / height / 3 ||
+			pixels.size() != width * height * 3)
+		return false;
+	png_image image{};
+	image.version = PNG_IMAGE_VERSION;
+	image.width = static_cast<png_uint_32>(width);
+	image.height = static_cast<png_uint_32>(height);
+	image.format = PNG_FORMAT_RGB;
+	const bool ok = png_image_write_to_file(&image, png_filename(filename).c_str(), 0,
+							pixels.data(), 0, nullptr) != 0;
+	if (!ok)
+		std::cerr << image.message << '\n';
+	png_image_free(&image);
+	return ok;
 }
 } // namespace
 
@@ -198,10 +225,18 @@ GroundFetchPlan GroundFrame::fetch_plan(
 					double(pad_blocks) + 0.5;
 			const double x1 = x0 + double(padded_width - 1);
 			const double z1 = z0 + double(padded_height - 1);
-			const geographic::LLBBox centers(mercator->lat_for_z(z1),
-					mercator->lon_for_x(x0), mercator->lat_for_z(z0),
-					mercator->lon_for_x(x1));
-			return {centers, padded_dims, pad_blocks, {world_width, world_height}};
+			// Rust's LLBBox::new returns Err when padding pushes sample centres
+			// outside geographic bounds; in that case it drops padding and retries
+			// with the original bbox. Keep the same fallback here instead of
+			// letting the checked C++ constructor abort world generation.
+			try {
+				const geographic::LLBBox centers(mercator->lat_for_z(z1),
+						mercator->lon_for_x(x0), mercator->lat_for_z(z0),
+						mercator->lon_for_x(x1));
+				return {centers, padded_dims, pad_blocks, {world_width, world_height}};
+			} catch (const std::invalid_argument &) {
+				// Fall through to Rust's unpadded fetch plan below.
+			}
 		}
 	}
 	const auto dims = elevation::compute_grid_dims_for_world(world_width, world_height);
@@ -267,7 +302,8 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						  : 0;
 			const int carve_floor = world_editor::min_y() + max_carve_depth + 2;
 			const int water_floor = std::max(args.ground_level, carve_floor);
-			const int sink_floor = std::max(min_ground_level_for(args), carve_floor);
+			const int sink_floor = std::min(
+					std::max(min_ground_level_for(args), carve_floor), water_floor);
 			const int max_y = extended_max_y_for(args);
 			elevation::ProcessedElevationData processed;
 			if (earth) {
@@ -372,6 +408,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						 : args.body == CelestialBody::Mars ? RED_TERRACOTTA
 															: GRASS_BLOCK;
 	world_editor::set_base_chunk_block_id(static_cast<std::uint16_t>(filler.id()));
+	if (args.debug && args.terrain_enabled()) {
+		ground.save_debug_image("elevation_debug");
+		ground.save_land_cover_debug_image("landcover_debug");
+		ground.save_canopy_debug_image("canopy_debug");
+	}
 	return ground;
 }
 
@@ -557,7 +598,11 @@ std::optional<ecoregion::Ecoregion> Ground::ecoregion_at(const XZPoint &coord) c
 	}
 	if (!mg)
 		return std::nullopt;
-	const auto [lat, lon] = mg->pos_to_ll(coord.X, coord.Y);
+	// WorldEditor passes ground-local coordinates here. The global ecoregion
+	// raster is geographic, so project the corresponding world block position;
+	// omitting node_min made every streamed chunk query near the map origin.
+	const auto [lat, lon] = mg->pos_to_ll(static_cast<pos_t>(coord.X + mg->node_min.X),
+			static_cast<pos_t>(coord.Y + mg->node_min.Z));
 	const auto id = ecoregions->id_at(lat, lon);
 	return id ? ecoregion::lookup(*id) : std::nullopt;
 }
@@ -599,6 +644,110 @@ void Ground::set_canopy_data(
 			canopy_world_width ? canopy_world_width : width,
 			canopy_world_height ? canopy_world_height : height);
 }
+
+void Ground::save_debug_image(const std::string &filename) const
+{
+	if (elevation_grid.empty() || elevation_grid.front().empty())
+		return;
+	const std::size_t width = elevation_grid.front().size();
+	const std::size_t height = elevation_grid.size();
+	float min_height = std::numeric_limits<float>::max();
+	float max_height = std::numeric_limits<float>::lowest();
+	for (const auto &row : elevation_grid)
+		for (float value : row)
+			if (std::isfinite(value)) {
+				min_height = std::min(min_height, value);
+				max_height = std::max(max_height, value);
+			}
+	const float range = max_height - min_height;
+	std::vector<std::uint8_t> pixels(width * height * 3);
+	for (std::size_t z = 0; z < height; ++z)
+		for (std::size_t x = 0; x < width; ++x) {
+			const float value = elevation_grid[z][x];
+			const auto gray = range > 0.0f && std::isfinite(value)
+									  ? static_cast<std::uint8_t>(std::clamp(
+												(value - min_height) / range * 255.0f,
+												0.0f, 255.0f))
+									  : static_cast<std::uint8_t>(128);
+			const auto i = (z * width + x) * 3;
+			pixels[i] = pixels[i + 1] = pixels[i + 2] = gray;
+		}
+	if (!write_rgb_png(filename, width, height, pixels))
+		std::cerr << "Failed to save debug image: " << png_filename(filename) << '\n';
+}
+
+void Ground::save_land_cover_debug_image(const std::string &filename) const
+{
+	if (!land_cover || land_cover->width == 0 || land_cover->height == 0)
+		return;
+	using Color = std::array<std::uint8_t, 3>;
+	const auto color_for = [](std::uint8_t klass) -> Color {
+		switch (klass) {
+		case land_cover::LC_TREE_COVER:
+			return {0x00, 0x6e, 0x00};
+		case land_cover::LC_SHRUBLAND:
+			return {0xff, 0xbb, 0x22};
+		case land_cover::LC_GRASSLAND:
+			return {0xff, 0xff, 0x4c};
+		case land_cover::LC_CROPLAND:
+			return {0xf0, 0x96, 0xff};
+		case land_cover::LC_BUILT_UP:
+			return {0xfa, 0x00, 0x00};
+		case land_cover::LC_BARE:
+			return {0xb4, 0xb4, 0xb4};
+		case land_cover::LC_SNOW_ICE:
+			return {0xf0, 0xf0, 0xf0};
+		case land_cover::LC_WATER:
+			return {0x00, 0x64, 0xc8};
+		case land_cover::LC_WETLAND:
+			return {0x00, 0x96, 0xa0};
+		case land_cover::LC_MANGROVES:
+			return {0x00, 0xcf, 0x75};
+		case land_cover::LC_MOSS:
+			return {0xfa, 0xe6, 0xa0};
+		case land_cover::LC_BEACH:
+			return {0xe8, 0xd8, 0x9c};
+		default:
+			return {0x00, 0x00, 0x00};
+		}
+	};
+	std::vector<std::uint8_t> pixels(land_cover->width * land_cover->height * 3);
+	for (std::size_t z = 0; z < land_cover->height; ++z)
+		for (std::size_t x = 0; x < land_cover->width; ++x) {
+			const auto color = color_for(land_cover->grid[z][x]);
+			const auto i = (z * land_cover->width + x) * 3;
+			std::copy(color.begin(), color.end(), pixels.begin() + i);
+		}
+	if (!write_rgb_png(filename, land_cover->width, land_cover->height, pixels))
+		std::cerr << "Failed to save land cover debug image: " << png_filename(filename)
+				  << '\n';
+}
+
+void Ground::save_canopy_debug_image(const std::string &filename) const
+{
+	if (!canopy_data || canopy_data->width == 0 || canopy_data->height == 0)
+		return;
+	std::vector<std::uint8_t> pixels(canopy_data->width * canopy_data->height * 3);
+	for (std::size_t z = 0; z < canopy_data->height; ++z)
+		for (std::size_t x = 0; x < canopy_data->width; ++x) {
+			const auto height = canopy_data->at(x, z);
+			const auto i = (z * canopy_data->width + x) * 3;
+			if (height == canopy::CANOPY_NODATA) {
+				pixels[i] = pixels[i + 1] = pixels[i + 2] = 0;
+			} else if (height < canopy::CANOPY_MIN_M) {
+				pixels[i] = pixels[i + 1] = pixels[i + 2] = 0x30;
+			} else {
+				const float t = std::min(float(height) / 40.0f, 1.0f);
+				pixels[i] = static_cast<std::uint8_t>(64.0f * (1.0f - t));
+				pixels[i + 1] = static_cast<std::uint8_t>(64.0f + 191.0f * t);
+				pixels[i + 2] = 48;
+			}
+		}
+	if (!write_rgb_png(filename, canopy_data->width, canopy_data->height, pixels))
+		std::cerr << "Failed to save canopy debug image: " << png_filename(filename)
+				  << '\n';
+}
+
 std::pair<std::size_t, std::size_t> Ground::canopy_index(const XZPoint &coord) const
 {
 	const auto &c = *canopy_data;
@@ -963,9 +1112,9 @@ int Ground::slope(const XZPoint &coord) const
 int Ground::water_level(const XZPoint &coord) const
 {
 	const int center = level(coord);
-	// Flat worlds have no DEM shoreline correction; this explicit guard
-	// mirrors Ground::water_level in the Rust implementation.
-	if (!elevation_enabled && !mg)
+	// Rust returns the configured flat level without DEM shoreline snapping,
+	// regardless of whether the host mapgen happens to expose legacy terrain.
+	if (!elevation_enabled)
 		return center;
 	if (slope(coord) <= 2)
 		return center;

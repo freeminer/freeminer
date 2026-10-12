@@ -7,6 +7,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
 #include <tuple>
 
@@ -126,6 +127,9 @@ struct Ground
 	// while preserving the host world's sampling dimensions.
 	void set_canopy_data(
 			const std::vector<std::uint8_t> &grid, std::size_t width, std::size_t height);
+	void save_debug_image(const std::string &filename) const;
+	void save_land_cover_debug_image(const std::string &filename) const;
+	void save_canopy_debug_image(const std::string &filename) const;
 	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const;
 	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const;
 	std::optional<double> canopy_fraction(const XZPoint &coord, int spacing) const;

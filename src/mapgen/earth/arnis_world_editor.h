@@ -189,6 +189,10 @@ struct WorldEditor
 	std::function<void(
 			int, int, int, const std::vector<std::tuple<std::string, int, int>> &)>
 			barrel_sink;
+	// Full Java-style item compounds for backends that preserve item metadata
+	// (Slot, damage, display color, and modern item components).
+	std::function<void(int, int, int, const std::vector<nlohmann::json> &)>
+			barrel_nbt_sink;
 	std::function<void(int, int, int)> bed_sink;
 	// Optional backend event for newly generated water/lava source blocks. Java
 	// exporters serialize scheduled ticks; live-world hosts may handle flow via
@@ -326,8 +330,15 @@ struct WorldEditor
 	{
 		barrel_sink = std::move(sink);
 	}
+	void set_barrel_nbt_sink(
+			std::function<void(int, int, int, const std::vector<nlohmann::json> &)> sink)
+	{
+		barrel_nbt_sink = std::move(sink);
+	}
 	void set_barrel_with_items_absolute(int x, int y, int z,
 			const std::vector<std::tuple<std::string, int, int>> &items);
+	void set_barrel_with_nbt_items_absolute(
+			int x, int y, int z, const std::vector<nlohmann::json> &items);
 	void set_bed_sink(std::function<void(int, int, int)> sink)
 	{
 		bed_sink = std::move(sink);
@@ -356,6 +367,8 @@ struct WorldEditor
 		entity_sink = std::move(sink);
 	}
 	bool has_entity_sink() const { return static_cast<bool>(entity_sink); }
+	bool add_entity(const std::string &id, int x, int y, int z,
+			const nlohmann::json &extra = nlohmann::json::object());
 	bool add_item_display(double x, double absolute_y, double z, std::int64_t seed,
 			nlohmann::json extra);
 	void set_banner_sink(
@@ -370,6 +383,8 @@ struct WorldEditor
 		if (bed_sink && block_exists_absolute(x, y, z))
 			bed_sink(x, y, z);
 	}
+	// Inclusive tile ownership bounds. Geometry may write through the tile halo;
+	// owns() is reserved for single-owner side effects and undergrowth filtering.
 	void set_strict_bounds(int min_x, int min_z, int max_x, int max_z)
 	{
 		strict_bounds = std::tuple{min_x, min_z, max_x, max_z};
@@ -624,6 +639,7 @@ struct WorldEditor
 
 	std::optional<Block> get_block_absolute(int x, int y, int z) const;
 	std::optional<std::string> block_name_absolute(int x, int y, int z) const;
+	std::optional<std::string> block_name(const Block &block) const;
 
 	bool cell_open_at(int x, int y, int z) const;
 
@@ -633,6 +649,11 @@ struct WorldEditor
 
 	void fill_column_absolute(
 			const Block &block, int x, int z, int min_y, int max_y, bool skip_existing);
+	// Fill a column with a height-dependent block, resolving world bounds and
+	// column ownership once for the whole pass. Existing non-air cells are kept
+	// when skip_existing is true, matching fill_column_absolute.
+	void fill_column_with_absolute(int x, int z, int min_y, int max_y,
+			const std::function<Block(int)> &block_at, bool skip_existing = true);
 	// Fill completely untouched 16x16x16 sections below a terrain surface.
 	// Returns true only when every section in the requested range was empty.
 	bool bulk_fill_chunk_sections_below(int chunk_x, int chunk_z, int section_y_min,
