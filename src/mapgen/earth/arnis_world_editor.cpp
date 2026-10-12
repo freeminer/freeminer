@@ -59,7 +59,10 @@ bool WorldEditor::place_facade_panel(int x, int y, int z, std::int8_t facing,
 		const std::vector<std::uint8_t> &pixels, std::uint32_t width,
 		std::uint32_t height)
 {
-	if (!width || !height || pixels.size() != std::size_t(width) * height * 3)
+	// Tile editors render overlapping halos. The owning tile alone records
+	// backend-side panel metadata; block writes from halo tiles are merged later.
+	if (!owns(x, z) || !width || !height ||
+			pixels.size() != std::size_t(width) * height * 3)
 		return false;
 	if (facade_panel_sink && !facade_panel_sink(x, y, z, facing, pixels, width, height))
 		return false;
@@ -79,7 +82,7 @@ void WorldEditor::set_chest_with_items_absolute(
 {
 	if (try_set_block_absolute(
 				block_definitions::CHEST, x, y, z, std::nullopt, std::nullopt) &&
-			chest_sink)
+			chest_sink && owns(x, z))
 		chest_sink(x, y, z, items);
 }
 void WorldEditor::set_barrel_with_items_absolute(
@@ -88,8 +91,32 @@ void WorldEditor::set_barrel_with_items_absolute(
 	BlockWithProperties barrel{block_definitions::BARREL, {{"facing", "up"}}};
 	if (try_set_block_with_properties_absolute(
 				barrel, x, y, z, std::nullopt, std::nullopt) &&
-			barrel_sink)
+			barrel_sink && owns(x, z))
 		barrel_sink(x, y, z, items);
+}
+void WorldEditor::set_barrel_with_nbt_items_absolute(
+		int x, int y, int z, const std::vector<nlohmann::json> &items)
+{
+	BlockWithProperties barrel{block_definitions::BARREL, {{"facing", "up"}}};
+	if (!try_set_block_with_properties_absolute(
+				barrel, x, y, z, std::nullopt, std::nullopt))
+		return;
+	if (!owns(x, z))
+		return;
+	if (barrel_nbt_sink) {
+		barrel_nbt_sink(x, y, z, items);
+	} else if (barrel_sink) {
+		std::vector<std::tuple<std::string, int, int>> simple_items;
+		simple_items.reserve(items.size());
+		for (const auto &item : items) {
+			if (!item.is_object() || !item.contains("id") || !item["id"].is_string())
+				continue;
+			const int slot = item.value("Slot", 0);
+			const int count = item.value("Count", 1);
+			simple_items.emplace_back(item["id"].get<std::string>(), slot, count);
+		}
+		barrel_sink(x, y, z, simple_items);
+	}
 }
 bool WorldEditor::owns(int x, int z) const
 {
@@ -185,6 +212,43 @@ bool WorldEditor::add_item_display(
 			{"Pos", {x, absolute_y, z}}, {"Motion", {0.0, 0.0, 0.0}},
 			{"Rotation", {0.0f, 0.0f}}, {"OnGround", 1}, {"FallDistance", 0.0f},
 			{"Fire", -20}, {"Air", 300}, {"PortalCooldown", 0},
+			{"UUID", {uuid_word(seed_a >> 32), uuid_word(seed_a), uuid_word(seed_b >> 32),
+							 uuid_word(seed_b)}}};
+	for (auto it = extra.begin(); it != extra.end(); ++it)
+		entity[it.key()] = it.value();
+	return entity_sink(entity);
+}
+bool WorldEditor::add_entity(
+		const std::string &id, int x, int y, int z, const nlohmann::json &extra)
+{
+	if (!entity_sink || !owns(x, z) ||
+			(mg && (x < mg->node_min.X || x > mg->node_max.X || z < mg->node_min.Z ||
+						   z > mg->node_max.Z)) ||
+			!extra.is_object())
+		return false;
+	const int absolute_y = get_absolute_y(x, y, z);
+	std::int64_t face = -1;
+	if (extra.contains("Facing") && extra["Facing"].is_number_integer())
+		face = extra["Facing"].get<std::int64_t>();
+
+	// Keep the same stable entity identity as Rust's build_deterministic_uuid.
+	std::uint64_t hash = 17;
+	for (const unsigned char byte : id)
+		hash = hash * 31 + byte;
+	hash = hash * 31 + static_cast<std::uint64_t>(face);
+	const auto signed_x = static_cast<std::uint64_t>(static_cast<std::int64_t>(x));
+	const auto signed_y =
+			static_cast<std::uint64_t>(static_cast<std::int64_t>(absolute_y));
+	const auto signed_z = static_cast<std::uint64_t>(static_cast<std::int64_t>(z));
+	const std::uint64_t seed_a = hash ^ (signed_x << 32) ^ (signed_y * 17);
+	const std::uint64_t seed_b = std::rotl(hash, 7) ^ (signed_z * 31) ^ (signed_x * 13);
+	const auto uuid_word = [](std::uint64_t value) {
+		return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value));
+	};
+	nlohmann::json entity = {{"id", id},
+			{"Pos", {x + 0.5, static_cast<double>(absolute_y), z + 0.5}},
+			{"Motion", {0.0, 0.0, 0.0}}, {"Rotation", {0.0f, 0.0f}}, {"OnGround", 1},
+			{"FallDistance", 0.0f}, {"Fire", -20}, {"Air", 300}, {"PortalCooldown", 0},
 			{"UUID", {uuid_word(seed_a >> 32), uuid_word(seed_a), uuid_word(seed_b >> 32),
 							 uuid_word(seed_b)}}};
 	for (auto it = extra.begin(); it != extra.end(); ++it)
@@ -309,8 +373,12 @@ bool WorldEditor::finalize_persistence()
 }
 bool WorldEditor::pos_ok(int x, int z) const
 {
+	// A tile editor's strict bounds identify ownership, not its writable region:
+	// Rust lets normal geometry write into the editor halo and resolves overlap
+	// when the tile overlay is merged. owns() remains for single-owner side data
+	// and undergrowth.
 	return mg && x >= mg->node_min.X && x <= mg->node_max.X && z >= mg->node_min.Z &&
-		   z <= mg->node_max.Z && owns(x, z);
+		   z <= mg->node_max.Z;
 }
 void WorldEditor::set_block(const Block &block, int x, int y, int z,
 		const std::optional<std::vector<Block>> &replace_with,
@@ -410,7 +478,9 @@ bool WorldEditor::try_set_block_with_properties_absolute(const BlockWithProperti
 {
 	if (!try_set_block_absolute(bwp.block, x, y, z, variants, replacements))
 		return false;
-	if (block_properties_sink && !bwp.property_values().empty())
+	// Block states are carried by the tile's block output, but this legacy
+	// side-channel is not part of TileOverlay and must only be emitted once.
+	if (block_properties_sink && owns(x, z) && !bwp.property_values().empty())
 		block_properties_sink(bwp, x, y, z);
 	return true;
 }
@@ -535,7 +605,10 @@ biome::Climate WorldEditor::climate() const
 }
 int WorldEditor::get_water_level(int x, int z) const
 {
-	return ground ? ground->water_level({x, z}) : get_ground_level(x, z);
+	return ground ? ground->water_level(ground->mg && !ground->elevation_enabled
+												? XZPoint{x, z}
+												: ground_point(x, z))
+				  : get_ground_level(x, z);
 }
 bool WorldEditor::is_lc_water(int x, int z) const
 {
@@ -621,7 +694,7 @@ std::pair<int, int> WorldEditor::writable_y_bounds() const
 bool WorldEditor::check_for_block_type_absolute(
 		int x, int y, int z, const Block &block) const
 {
-	// Preserve the whitelist predicate's AIR/IGNORE and ownership semantics.
+	// Preserve the whitelist predicate's AIR/IGNORE semantics.
 	const auto current = get_block_absolute(x, y, z);
 	if (!current)
 		return false;
@@ -646,9 +719,13 @@ std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 std::optional<std::string> WorldEditor::block_name_absolute(int x, int y, int z) const
 {
 	const auto block = get_block_absolute(x, y, z);
-	if (!block || !mg || !mg->m_emerge || !mg->m_emerge->ndef)
+	return block ? block_name(*block) : std::nullopt;
+}
+std::optional<std::string> WorldEditor::block_name(const Block &block) const
+{
+	if (!mg || !mg->m_emerge || !mg->m_emerge->ndef)
 		return std::nullopt;
-	const auto &name = mg->m_emerge->ndef->get(block->id()).name;
+	const auto &name = mg->m_emerge->ndef->get(block.id()).name;
 	return name.empty() ? std::nullopt : std::optional<std::string>{name};
 }
 bool WorldEditor::cell_open_at(int x, int y, int z) const
@@ -714,6 +791,44 @@ void WorldEditor::fill_column_absolute(
 		if (skip_existing && check_for_block_absolute(x, y, z))
 			continue;
 		try_set_block_absolute(block, x, y, z, std::nullopt, replace_any);
+	}
+}
+
+void WorldEditor::fill_column_with_absolute(int x, int z, int min_y, int max_y,
+		const std::function<Block(int)> &block_at, bool skip_existing)
+{
+	if (!block_at || min_y > world_editor::world_max_y() || !mg || !mg->vm ||
+			!pos_ok(x, z))
+		return;
+	min_y = std::clamp(min_y, world_editor::min_y(), world_editor::world_max_y());
+	max_y = std::clamp(max_y, world_editor::min_y(), world_editor::world_max_y());
+	if (max_y < min_y)
+		return;
+	for (int y = min_y; y <= max_y; ++y) {
+		const Block block = block_at(y);
+		if (y < std::numeric_limits<pos_t>::min() ||
+				y > std::numeric_limits<pos_t>::max())
+			continue;
+		const v3pos_t pos{
+				static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
+		if (!mg->vm->exists(pos)) {
+			++mg->stat.miss;
+			continue;
+		}
+		const auto key = std::tuple{x, y, z};
+		const auto overlay = mg->readTileOverlay(pos);
+		if (skip_existing) {
+			++mg->stat.check;
+			if (overlay || written_cells.contains(key)) {
+				const auto content = overlay.value_or(mg->vm->getNode(pos)).getContent();
+				if (content != CONTENT_AIR && content != CONTENT_IGNORE)
+					continue;
+			}
+		}
+		if (!mg->writeTileOverlay(pos, block))
+			mg->vm->setNode(pos, block);
+		written_cells.insert(key);
+		++mg->stat.set;
 	}
 }
 
@@ -793,7 +908,7 @@ void WorldEditor::place_wall_banner(const Block &block, int x, int y, int z,
 	const BlockWithProperties banner{block, {{"facing", facing}}};
 	if (try_set_block_with_properties_absolute(
 				banner, x, y, z, std::nullopt, std::nullopt) &&
-			banner_sink)
+			banner_sink && owns(x, z))
 		banner_sink(x, y, z, facing, base_color, patterns);
 }
 void WorldEditor::place_wall_banner(int x, int y, int z, const std::string &facing,
