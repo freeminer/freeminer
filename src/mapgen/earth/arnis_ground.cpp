@@ -480,25 +480,20 @@ int Ground::level(const XZPoint &pos) const
 			return rust_round_i32(lerp_top + (lerp_bottom - lerp_top) * tz);
 		}
 	}
-	if (!mg)
-		return elevation_ground_level.value_or(0);
-	++mg->stat.level;
-	return mg->get_height(pos.X, pos.Y, 0);
+	// Match Rust Ground::level: a flat/land-cover-only ground is anchored at
+	// the configured ground level. Freeminer's host terrain is not an implicit
+	// substitute for Arnis elevation data; using it here made GeoOnly vary from
+	// the Rust generator and caused later object/terrain passes to disagree.
+	return elevation_ground_level.value_or(0);
 }
 
 double Ground::level_exact(const XZPoint &pos) const
 {
-	// Without Arnis elevation data, the Freeminer adapter still supplies the
-	// host mapgen's terrain through get_height(). Mirror level() here so slope,
-	// talus and snow-shape calculations see the same terrain instead of a flat
-	// configured-base plane.
-	if (!elevation_enabled) {
-		if (mg) {
-			++mg->stat.level;
-			return static_cast<double>(mg->get_height(pos.X, pos.Y, 0));
-		}
+	// Rust returns its configured flat base whenever elevation is disabled.
+	// Keep the continuous query consistent with level() and do not silently
+	// sample Freeminer's unrelated host mapgen terrain.
+	if (!elevation_enabled)
 		return static_cast<double>(elevation_ground_level.value_or(0));
-	}
 	if (elevation_grid.empty() || elevation_world_width == 0 ||
 			elevation_world_height == 0)
 		return static_cast<double>(elevation_ground_level.value_or(0));
@@ -625,8 +620,11 @@ std::pair<std::size_t, std::size_t> Ground::world_dims() const
 	// Rust's Ground::world_dims prioritizes the elevation affine. Land
 	// cover and canopy are optional companions and may be unavailable even
 	// when the terrain grid loaded successfully.
-	if (!elevation_grid.empty() && elevation_world_width > 0 &&
-			elevation_world_height > 0)
+	// Rust stores world dimensions independently of whether an elevation raster
+	// exists (flat/land-cover-only mode still has a coordinate frame). The host
+	// fields are shared with elevation data, but their presence is the invariant
+	// here; requiring a non-empty raster made flat Ground report (0, 0).
+	if (elevation_world_width > 0 && elevation_world_height > 0)
 		return {elevation_world_width, elevation_world_height};
 	if (has_land_cover())
 		return {land_cover_world_width, land_cover_world_height};
