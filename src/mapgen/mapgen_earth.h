@@ -22,11 +22,11 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <array>
+#include <atomic>
+#include <cstdint>
 #include <mutex>
 #include <unordered_map>
-#include <atomic>
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <string>
 
@@ -138,10 +138,12 @@ class MapgenEarth : public MapgenV7
 {
 public:
 	BlockMakeData *active_block_data = nullptr;
-	bool queueGeneratedSign(const v3pos_t &pos, const std::string &text);
-	bool queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id,
-			s8 facing, s8 rotation, bool glow);
-	bool queueGeneratedSchemEntity(
+	using TileOverlayId = std::uint64_t;
+	bool queueGeneratedSign(std::optional<TileOverlayId> tile_id, const v3pos_t &pos,
+			const std::string &text);
+	bool queueGeneratedDecal(std::optional<TileOverlayId> tile_id, const v3pos_t &pos,
+			std::string texture, int map_id, s8 facing, s8 rotation, bool glow);
+	bool queueGeneratedSchemEntity(std::optional<TileOverlayId> tile_id,
 			const v3pos_t &pos, const std::vector<std::uint8_t> &nbt);
 	struct TileWriteKey
 	{
@@ -158,15 +160,42 @@ public:
 	};
 	struct TileOverlay
 	{
+		struct Sign
+		{
+			v3pos_t pos;
+			std::string text;
+		};
+		struct Decal
+		{
+			v3pos_t pos;
+			std::string texture;
+			int map_id = 0;
+			s8 facing = 2;
+			s8 rotation = 0;
+			bool glow = false;
+		};
+		struct SchemEntity
+		{
+			v3pos_t pos;
+			std::vector<std::uint8_t> nbt;
+		};
 		int min_x = 0, min_z = 0, max_x = -1, max_z = -1;
+		std::mutex mutex;
+		bool closed = false;
 		std::unordered_map<TileWriteKey, MapNode, TileWriteKeyHash> writes;
+		std::vector<Sign> signs;
+		std::vector<Decal> decals;
+		std::vector<SchemEntity> schematic_entities;
 	};
 	std::mutex tile_overlay_mutex;
-	std::unique_ptr<TileOverlay> tile_overlay;
-	bool beginTileOverlay(int min_x, int min_z, int max_x, int max_z);
-	bool writeTileOverlay(const v3pos_t &pos, const MapNode &node);
-	std::optional<MapNode> readTileOverlay(const v3pos_t &pos) const;
-	bool mergeTileOverlay();
+	std::mutex tile_overlay_merge_mutex;
+	std::unordered_map<TileOverlayId, std::shared_ptr<TileOverlay>> tile_overlays;
+	std::atomic<TileOverlayId> next_tile_overlay_id{1};
+	std::optional<TileOverlayId> beginTileOverlay(
+			int min_x, int min_z, int max_x, int max_z);
+	bool writeTileOverlay(TileOverlayId id, const v3pos_t &pos, const MapNode &node);
+	std::optional<MapNode> readTileOverlay(TileOverlayId id, const v3pos_t &pos) const;
+	bool mergeTileOverlay(TileOverlayId id);
 	void discardTileOverlay();
 	MapgenEarthParams *mg_params;
 

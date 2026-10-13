@@ -754,7 +754,8 @@ MapgenEarth::~MapgenEarth()
 {
 }
 
-bool MapgenEarth::queueGeneratedSign(const v3pos_t &pos, const std::string &text)
+bool MapgenEarth::queueGeneratedSign(
+		std::optional<TileOverlayId> tile_id, const v3pos_t &pos, const std::string &text)
 {
 	// Metadata must only be queued for nodes that were part of this emerge.  Arnis
 	// may calculate signs outside the active VM (most commonly above/below its Y
@@ -762,88 +763,187 @@ bool MapgenEarth::queueGeneratedSign(const v3pos_t &pos, const std::string &text
 	// make finishBlockMake try to emerge a block recursively and emit warnings.
 	if (!active_block_data || !vm || !vm->exists(pos))
 		return false;
+	if (tile_id) {
+		std::shared_ptr<TileOverlay> overlay;
+		{
+			std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+			const auto it = tile_overlays.find(*tile_id);
+			if (it == tile_overlays.end())
+				return false;
+			overlay = it->second;
+		}
+		std::lock_guard<std::mutex> lock(overlay->mutex);
+		if (overlay->closed)
+			return false;
+		overlay->signs.push_back({pos, text});
+		return true;
+	}
 	active_block_data->generated_signs.push_back({pos, text});
 	return true;
 }
 
-bool MapgenEarth::queueGeneratedDecal(const v3pos_t &pos, std::string texture, int map_id,
-		s8 facing, s8 rotation, bool glow)
+bool MapgenEarth::queueGeneratedDecal(std::optional<TileOverlayId> tile_id,
+		const v3pos_t &pos, std::string texture, int map_id, s8 facing, s8 rotation,
+		bool glow)
 {
 	if (!active_block_data || !vm || !vm->exists(pos))
 		return false;
+	if (tile_id) {
+		std::shared_ptr<TileOverlay> overlay;
+		{
+			std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+			const auto it = tile_overlays.find(*tile_id);
+			if (it == tile_overlays.end())
+				return false;
+			overlay = it->second;
+		}
+		std::lock_guard<std::mutex> lock(overlay->mutex);
+		if (overlay->closed)
+			return false;
+		overlay->decals.push_back(
+				{pos, std::move(texture), map_id, facing, rotation, glow});
+		return true;
+	}
 	active_block_data->generated_decals.push_back(
 			{pos, std::move(texture), map_id, facing, rotation, glow});
 	return true;
 }
 
-bool MapgenEarth::queueGeneratedSchemEntity(
+bool MapgenEarth::queueGeneratedSchemEntity(std::optional<TileOverlayId> tile_id,
 		const v3pos_t &pos, const std::vector<std::uint8_t> &nbt)
 {
 	if (!active_block_data || !vm || !vm->exists(pos))
 		return false;
+	if (tile_id) {
+		std::shared_ptr<TileOverlay> overlay;
+		{
+			std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+			const auto it = tile_overlays.find(*tile_id);
+			if (it == tile_overlays.end())
+				return false;
+			overlay = it->second;
+		}
+		std::lock_guard<std::mutex> lock(overlay->mutex);
+		if (overlay->closed)
+			return false;
+		overlay->schematic_entities.push_back({pos, nbt});
+		return true;
+	}
 	active_block_data->generated_schem_entities.push_back({pos, nbt});
 	return true;
 }
 
-bool MapgenEarth::beginTileOverlay(int min_x, int min_z, int max_x, int max_z)
+std::optional<MapgenEarth::TileOverlayId> MapgenEarth::beginTileOverlay(
+		int min_x, int min_z, int max_x, int max_z)
 {
+	auto overlay = std::make_shared<TileOverlay>();
+	overlay->min_x = min_x;
+	overlay->min_z = min_z;
+	overlay->max_x = max_x;
+	overlay->max_z = max_z;
+	const auto id = next_tile_overlay_id.fetch_add(1, std::memory_order_relaxed);
 	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
-	if (tile_overlay)
-		return false;
-	tile_overlay = std::make_unique<TileOverlay>();
-	tile_overlay->min_x = min_x;
-	tile_overlay->min_z = min_z;
-	tile_overlay->max_x = max_x;
-	tile_overlay->max_z = max_z;
-	return true;
-}
-
-bool MapgenEarth::writeTileOverlay(const v3pos_t &pos, const MapNode &node)
-{
-	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
-	if (!tile_overlay)
-		return false;
-	tile_overlay->writes[{pos.X, pos.Y, pos.Z}] = node;
-	return true;
-}
-
-std::optional<MapNode> MapgenEarth::readTileOverlay(const v3pos_t &pos) const
-{
-	std::lock_guard<std::mutex> lock(const_cast<MapgenEarth *>(this)->tile_overlay_mutex);
-	if (!tile_overlay)
+	if (!tile_overlays.emplace(id, std::move(overlay)).second)
 		return std::nullopt;
-	auto it = tile_overlay->writes.find({pos.X, pos.Y, pos.Z});
-	return it == tile_overlay->writes.end() ? std::nullopt
-											: std::optional<MapNode>(it->second);
+	return id;
 }
 
-bool MapgenEarth::mergeTileOverlay()
+bool MapgenEarth::writeTileOverlay(
+		TileOverlayId id, const v3pos_t &pos, const MapNode &node)
 {
-	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
-	if (!tile_overlay || !vm)
-		return false;
-	for (const auto &[key, node] : tile_overlay->writes) {
-		const v3pos_t pos{key.x, key.y, key.z};
-		if (!vm->exists(pos))
-			continue;
-		const bool authoritative =
-				key.x >= tile_overlay->min_x && key.x <= tile_overlay->max_x &&
-				key.z >= tile_overlay->min_z && key.z <= tile_overlay->max_z;
-		// A tile owns its core and overwrites it. Its halo only supplies writes
-		// missed by the adjacent tile, matching Rust's WorldToModify::merge:
-		// preserve an earlier neighbor's non-air result, but fill remaining air.
-		if (!authoritative && vm->getNode(pos).getContent() != CONTENT_AIR)
-			continue;
-		vm->setNode(pos, node);
+	std::shared_ptr<TileOverlay> overlay;
+	{
+		std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+		const auto it = tile_overlays.find(id);
+		if (it == tile_overlays.end())
+			return false;
+		overlay = it->second;
 	}
-	tile_overlay.reset();
+	std::lock_guard<std::mutex> lock(overlay->mutex);
+	if (overlay->closed)
+		return false;
+	overlay->writes[{pos.X, pos.Y, pos.Z}] = node;
+	return true;
+}
+
+std::optional<MapNode> MapgenEarth::readTileOverlay(
+		TileOverlayId id, const v3pos_t &pos) const
+{
+	std::shared_ptr<TileOverlay> overlay;
+	{
+		std::lock_guard<std::mutex> lock(
+				const_cast<MapgenEarth *>(this)->tile_overlay_mutex);
+		const auto it = tile_overlays.find(id);
+		if (it == tile_overlays.end())
+			return std::nullopt;
+		overlay = it->second;
+	}
+	std::lock_guard<std::mutex> lock(overlay->mutex);
+	if (overlay->closed)
+		return std::nullopt;
+	const auto it = overlay->writes.find({pos.X, pos.Y, pos.Z});
+	return it == overlay->writes.end() ? std::nullopt
+									   : std::optional<MapNode>(it->second);
+}
+
+bool MapgenEarth::mergeTileOverlay(TileOverlayId id)
+{
+	std::shared_ptr<TileOverlay> overlay;
+	{
+		std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+		const auto it = tile_overlays.find(id);
+		if (it == tile_overlays.end())
+			return false;
+		overlay = it->second;
+	}
+	if (!vm)
+		return false;
+	{
+		// The VM is shared by all tile results. Workers may build overlays in
+		// parallel, but the caller merges them in Rust's deterministic tile order.
+		std::lock_guard<std::mutex> merge_lock(tile_overlay_merge_mutex);
+		std::lock_guard<std::mutex> overlay_lock(overlay->mutex);
+		if (overlay->closed)
+			return false;
+		overlay->closed = true;
+		for (const auto &[key, node] : overlay->writes) {
+			const v3pos_t pos{key.x, key.y, key.z};
+			if (!vm->exists(pos))
+				continue;
+			const bool authoritative = key.x >= overlay->min_x &&
+									   key.x <= overlay->max_x &&
+									   key.z >= overlay->min_z && key.z <= overlay->max_z;
+			// A tile owns its core and overwrites it. Its halo only supplies writes
+			// missed by the adjacent tile, matching Rust's WorldToModify::merge:
+			// preserve an earlier neighbor's non-air result, but fill remaining air.
+			if (!authoritative && vm->getNode(pos).getContent() != CONTENT_AIR)
+				continue;
+			vm->setNode(pos, node);
+		}
+		if (active_block_data) {
+			for (const auto &sign : overlay->signs)
+				active_block_data->generated_signs.push_back({sign.pos, sign.text});
+			for (const auto &decal : overlay->decals)
+				active_block_data->generated_decals.push_back({decal.pos, decal.texture,
+						decal.map_id, decal.facing, decal.rotation, decal.glow});
+			for (const auto &entity : overlay->schematic_entities)
+				active_block_data->generated_schem_entities.push_back(
+						{entity.pos, entity.nbt});
+		}
+	}
+	{
+		std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+		const auto it = tile_overlays.find(id);
+		if (it != tile_overlays.end() && it->second == overlay)
+			tile_overlays.erase(it);
+	}
 	return true;
 }
 
 void MapgenEarth::discardTileOverlay()
 {
 	std::lock_guard<std::mutex> lock(tile_overlay_mutex);
-	tile_overlay.reset();
+	tile_overlays.clear();
 }
 
 //////////////////////// Map generator

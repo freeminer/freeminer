@@ -21,7 +21,6 @@
 #include "arnis-cpp/src/canopy/canopy.h"
 #include "arnis-cpp/src/land_cover/land_cover.h"
 #include "arnis-cpp/src/ecoregion.h"
-#include "arnis-cpp/src/urban_ground.h"
 #include "arnis-cpp/src/coordinate_system/geographic/llbbox.h"
 #include "arnis-cpp/src/projection/web_mercator.h"
 
@@ -60,7 +59,6 @@ struct Ground
 	int snow_threshold_y = std::numeric_limits<int>::max();
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
-	UrbanGroundLookup urban_lookup;
 	// Shared immutable grid, matching Rust's Arc<EcoMap> and avoiding a full
 	// raster copy when Ground is copied for generation/transformation stages.
 	std::shared_ptr<const ecoregion::EcoMap> ecoregions;
@@ -116,6 +114,9 @@ struct Ground
 	int snow_threshold() const { return snow_threshold_y; }
 	CelestialBody celestial_body() const { return body; }
 	bool is_earth() const { return arnis::is_earth(body); }
+	// Rust Ground::slope_correction exposes the vertical scale used to turn
+	// sampled block heights back into the documented world-scale incline.
+	double slope_correction() const { return elevation_slope_correction; }
 	double blocks_per_meter() const;
 	void set_celestial_body(CelestialBody value) { body = value; }
 	void set_extended_ceiling(bool value) { extended_ceiling = value; }
@@ -180,8 +181,6 @@ struct Ground
 	bool is_in_rotated_bounds(int x, int z) const { return inside_rotation_mask(x, z); }
 	biome::Climate climate() const { return climate_state; }
 	void set_climate(biome::Climate value) { climate_state = value; }
-	void set_urban_lookup(UrbanGroundLookup lookup) { urban_lookup = std::move(lookup); }
-	bool is_urban(int x, int z) const { return urban_lookup.is_urban(x, z); }
 	void set_ecoregion_map(std::shared_ptr<const ecoregion::EcoMap> map)
 	{
 		ecoregions = std::move(map);
@@ -244,6 +243,7 @@ struct GroundFrame
 			std::optional<std::pair<double, double>> climate_anchor = std::nullopt,
 			std::optional<std::pair<double, double>> projection_origin = std::nullopt);
 	GroundFetchPlan fetch_plan(const geographic::LLBBox &, double scale) const;
+	biome::Climate climate(const geographic::LLBBox &) const;
 	double anchor_lat(const geographic::LLBBox &) const;
 	std::shared_ptr<const ecoregion::EcoMap> ecoregions(const geographic::LLBBox &,
 			std::size_t world_width, std::size_t world_height) const;

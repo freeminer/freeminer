@@ -9,6 +9,7 @@
 #include <array>
 #include <bit>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <string_view>
 
@@ -17,19 +18,148 @@ namespace arnis
 namespace world_editor
 {
 
+bool WorldEditor::tile_worker_callbacks_safe() const
+{
+	// These sinks either bypass the tile overlay or have no ownership token,
+	// so invoking them from independent tile workers could mutate a backend
+	// concurrently and make overlapping tiles order-dependent. The schematic
+	// entity sink and decal-frame sink are tile-aware and are safe to retain.
+	return !tile_active && !active_tile_overlay &&
+		   (!begin_tile_sink || tile_hooks_thread_safe) &&
+		   (!merge_tile_sink || tile_hooks_thread_safe) &&
+		   (!schem_entity_sink || schem_entity_sink_thread_safe) &&
+		   (!decal_frame_sink || decal_frame_sink_thread_safe) &&
+		   (!regional_tree_placer || regional_tree_placer_thread_safe) &&
+		   (!mapped_regional_tree_placer || mapped_regional_tree_placer_thread_safe) &&
+		   !flush_sink && !save_sink && !preview_sink && !map_item_sink &&
+		   !world_settings_sink && !block_properties_sink && !chest_sink &&
+		   !barrel_sink && !barrel_nbt_sink && !bed_sink && !fluid_tick_sink &&
+		   !item_frame_sink && !entity_sink && !banner_sink && !facade_panel_sink;
+}
+
+WorldEditor WorldEditor::make_tile_worker() const
+{
+	WorldEditor worker;
+	worker.sealed_surface = sealed_surface;
+	worker.mg = mg;
+	worker.projection_frame = projection_frame;
+	worker.ground = ground;
+	worker.generation_format = generation_format;
+	worker.bake_lighting = bake_lighting;
+	worker.start_with_map = start_with_map;
+	worker.place_schematics_enabled = place_schematics_enabled;
+	worker.schematic_tree_pack_available = schematic_tree_pack_available;
+	worker.map_decals = map_decals;
+	worker.first_decal_map_id = first_decal_map_id;
+	worker.tree_slot_spacing_blocks = tree_slot_spacing_blocks;
+	worker.regional_tree_placer = regional_tree_placer;
+	worker.regional_tree_placer_thread_safe = regional_tree_placer_thread_safe;
+	worker.mapped_regional_tree_placer = mapped_regional_tree_placer;
+	worker.mapped_regional_tree_placer_thread_safe =
+			mapped_regional_tree_placer_thread_safe;
+	worker.mapped_trunks = mapped_trunks;
+	worker.gamemode = gamemode;
+	worker.world_time = world_time;
+	worker.level_name = level_name;
+	worker.projection_name = projection_name;
+	worker.output_path = output_path;
+	worker.min_lat = min_lat;
+	worker.max_lat = max_lat;
+	worker.min_lon = min_lon;
+	worker.max_lon = max_lon;
+	worker.generation_error_sink = generation_error_sink;
+	worker.begin_tile_sink = begin_tile_sink;
+	worker.merge_tile_sink = merge_tile_sink;
+	worker.tile_hooks_thread_safe = tile_hooks_thread_safe;
+	worker.defer_tile_merges = true;
+	worker.spawn_x = spawn_x;
+	worker.spawn_y = spawn_y;
+	worker.spawn_z = spawn_z;
+	worker.projection_scale = projection_scale;
+	worker.schem_entity_sink = schem_entity_sink;
+	worker.schem_entity_sink_thread_safe = schem_entity_sink_thread_safe;
+	worker.item_frame_sink = item_frame_sink;
+	worker.entity_sink = entity_sink;
+	worker.banner_sink = banner_sink;
+	worker.decal_registry = decal_registry;
+	worker.signage_context = signage_context;
+	worker.decal_frame_sink = decal_frame_sink;
+	worker.decal_frame_sink_thread_safe = decal_frame_sink_thread_safe;
+	worker.facade_panel_sink = facade_panel_sink;
+	worker.schematic_asset_root = schematic_asset_root;
+	worker.cave_asset_root = cave_asset_root;
+	worker.ground_level_cache = ground_level_cache;
+	worker.ground_cache_min_x = ground_cache_min_x;
+	worker.ground_cache_min_z = ground_cache_min_z;
+	worker.ground_cache_width = ground_cache_width;
+	worker.ground_cache_height = ground_cache_height;
+	worker.ground_origin_x = ground_origin_x;
+	worker.ground_origin_z = ground_origin_z;
+	worker.ground_origin_set = ground_origin_set;
+	return worker;
+}
+
+bool WorldEditor::merge_tile_worker(
+		WorldEditor &&worker, int min_x, int min_z, int max_x, int max_z)
+{
+	if (worker.tile_active && !worker.merge_tile(min_x, min_z, max_x, max_z))
+		return false;
+
+	if (merge_tile_sink) {
+		for (const auto id : worker.deferred_tile_overlays) {
+			if (defer_tile_merges)
+				deferred_tile_overlays.push_back(id);
+			else if (!merge_tile_sink(id))
+				return false;
+		}
+	}
+	worker.deferred_tile_overlays.clear();
+
+	for (auto &[cell, y] : worker.road_surface_overrides)
+		road_surface_overrides.insert_or_assign(cell, y);
+	for (auto &[cell, block] : worker.support_columns)
+		support_columns.insert_or_assign(cell, std::move(block));
+	frame_cells.insert(worker.frame_cells.begin(), worker.frame_cells.end());
+	placed_frames.insert(placed_frames.end(),
+			std::make_move_iterator(worker.placed_frames.begin()),
+			std::make_move_iterator(worker.placed_frames.end()));
+	placed_block_entities.insert(placed_block_entities.end(),
+			std::make_move_iterator(worker.placed_block_entities.begin()),
+			std::make_move_iterator(worker.placed_block_entities.end()));
+	placed_schematic_entities.insert(placed_schematic_entities.end(),
+			std::make_move_iterator(worker.placed_schematic_entities.begin()),
+			std::make_move_iterator(worker.placed_schematic_entities.end()));
+	placed_entities.insert(placed_entities.end(),
+			std::make_move_iterator(worker.placed_entities.begin()),
+			std::make_move_iterator(worker.placed_entities.end()));
+	placed_facade_panels.insert(placed_facade_panels.end(),
+			std::make_move_iterator(worker.placed_facade_panels.begin()),
+			std::make_move_iterator(worker.placed_facade_panels.end()));
+	if (!tile_scope_active) {
+		tile_merged_written_cells.clear();
+		tile_merged_written_cells.insert(written_cells.begin(), written_cells.end());
+		tile_scope_active = true;
+	}
+	tile_merged_written_cells.insert(worker.tile_merged_written_cells.begin(),
+			worker.tile_merged_written_cells.end());
+	tile_merged_written_cells.insert(
+			worker.written_cells.begin(), worker.written_cells.end());
+	flush_requested = flush_requested || worker.flush_requested;
+	save_requested = save_requested || worker.save_requested;
+	return true;
+}
+
 void WorldEditor::set_ground_origin(int x, int z)
 {
 	ground_origin_x = x;
 	ground_origin_z = z;
 	ground_origin_set = true;
-	ground_level_cache.clear();
-	ground_level_overflow.clear();
+	ground_level_cache = std::make_shared<GroundLevelCache>();
 	ground_cache_width = ground_cache_height = 0;
 }
 void WorldEditor::reserve_ground_level_cache()
 {
-	ground_level_cache.clear();
-	ground_level_overflow.clear();
+	ground_level_cache = std::make_shared<GroundLevelCache>();
 	if (mg) {
 		// OSM generation includes a two-mapblock halo around the core mapchunk.
 		ground_cache_min_x = mg->node_min.X - 32;
@@ -40,14 +170,17 @@ void WorldEditor::reserve_ground_level_cache()
 				std::size_t(std::max(1, mg->node_max.Z - mg->node_min.Z + 65));
 		const std::size_t columns = ground_cache_width * ground_cache_height;
 		if (columns <= 262144) {
-			ground_level_cache.assign(columns, std::numeric_limits<int>::min());
-			ground_level_overflow.reserve(1024);
+			ground_level_cache->dense = std::make_unique<std::atomic<int>[]>(columns);
+			ground_level_cache->dense_size = columns;
+			for (std::size_t i = 0; i < columns; ++i)
+				ground_level_cache->dense[i].store(
+						std::numeric_limits<int>::min(), std::memory_order_relaxed);
+			ground_level_cache->overflow.reserve(1024);
 			return;
 		}
 	}
 	ground_cache_width = ground_cache_height = 0;
-	ground_level_cache.clear();
-	ground_level_overflow.reserve(4096);
+	ground_level_cache->overflow.reserve(4096);
 }
 XZPoint WorldEditor::ground_point(int x, int z) const
 {
@@ -56,8 +189,7 @@ XZPoint WorldEditor::ground_point(int x, int z) const
 	return {x - origin_x, z - origin_z};
 }
 bool WorldEditor::place_facade_panel(int x, int y, int z, std::int8_t facing,
-		const std::vector<std::uint8_t> &pixels, std::uint32_t width,
-		std::uint32_t height)
+		std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height)
 {
 	// Tile editors render overlapping halos. The owning tile alone records
 	// backend-side panel metadata; block writes from halo tiles are merged later.
@@ -66,33 +198,56 @@ bool WorldEditor::place_facade_panel(int x, int y, int z, std::int8_t facing,
 		return false;
 	if (facade_panel_sink && !facade_panel_sink(x, y, z, facing, pixels, width, height))
 		return false;
-	record_facade_panel(x, y, z, facing, pixels, width, height);
+	record_facade_panel(x, y, z, facing, std::move(pixels), width, height);
 	return true;
 }
 void WorldEditor::record_facade_panel(int x, int y, int z, std::int8_t facing,
-		const std::vector<std::uint8_t> &pixels, std::uint32_t width,
-		std::uint32_t height)
+		std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
+		const std::string &item_name)
 {
 	if (!width || !height || pixels.size() != std::size_t(width) * height * 3)
 		return;
-	placed_facade_panels.push_back(FacadePanel{x, y, z, facing, width, height, pixels});
+	placed_facade_panels.push_back(
+			FacadePanel{x, y, z, facing, width, height, std::move(pixels), item_name});
 }
 void WorldEditor::set_chest_with_items_absolute(
 		int x, int y, int z, const std::vector<std::tuple<std::string, int, int>> &items)
 {
-	if (try_set_block_absolute(
-				block_definitions::CHEST, x, y, z, std::nullopt, std::nullopt) &&
-			chest_sink && owns(x, z))
+	if (!try_set_block_absolute(
+				block_definitions::CHEST, x, y, z, std::nullopt, std::nullopt) ||
+			!owns(x, z))
+		return;
+	nlohmann::json nbt_items = nlohmann::json::array();
+	for (const auto &[id, slot, count] : items)
+		nbt_items.push_back({{"id", id}, {"Slot", slot}, {"Count", count}});
+	if (chest_sink) {
 		chest_sink(x, y, z, items);
+		return;
+	}
+	placed_block_entities.push_back({x, y, z,
+			{{"id", "minecraft:chest"}, {"x", x}, {"y", y}, {"z", z},
+					{"Items", std::move(nbt_items)}, {"keepPacked", 0}}});
 }
 void WorldEditor::set_barrel_with_items_absolute(
 		int x, int y, int z, const std::vector<std::tuple<std::string, int, int>> &items)
 {
 	BlockWithProperties barrel{block_definitions::BARREL, {{"facing", "up"}}};
-	if (try_set_block_with_properties_absolute(
-				barrel, x, y, z, std::nullopt, std::nullopt) &&
-			barrel_sink && owns(x, z))
+	if (!try_set_block_with_properties_absolute(
+				barrel, x, y, z, std::nullopt, std::nullopt) ||
+			!owns(x, z))
+		return;
+	nlohmann::json nbt_items = nlohmann::json::array();
+	for (const auto &[id, slot, count] : items)
+		nbt_items.push_back({{"id", id}, {"Slot", slot}, {"Count", count}});
+	if (barrel_nbt_sink) {
+		barrel_nbt_sink(x, y, z, nbt_items);
+	} else if (barrel_sink) {
 		barrel_sink(x, y, z, items);
+	} else {
+		placed_block_entities.push_back({x, y, z,
+				{{"id", "minecraft:barrel"}, {"x", x}, {"y", y}, {"z", z},
+						{"Items", std::move(nbt_items)}, {"keepPacked", 0}}});
+	}
 }
 void WorldEditor::set_barrel_with_nbt_items_absolute(
 		int x, int y, int z, const std::vector<nlohmann::json> &items)
@@ -105,7 +260,12 @@ void WorldEditor::set_barrel_with_nbt_items_absolute(
 		return;
 	if (barrel_nbt_sink) {
 		barrel_nbt_sink(x, y, z, items);
-	} else if (barrel_sink) {
+	} else {
+		placed_block_entities.push_back({x, y, z,
+				{{"id", "minecraft:barrel"}, {"x", x}, {"y", y}, {"z", z},
+						{"Items", items}, {"keepPacked", 0}}});
+		if (!barrel_sink)
+			return;
 		std::vector<std::tuple<std::string, int, int>> simple_items;
 		simple_items.reserve(items.size());
 		for (const auto &item : items) {
@@ -142,7 +302,7 @@ bool WorldEditor::place_sign_node(
 			z < std::numeric_limits<pos_t>::min() ||
 			z > std::numeric_limits<pos_t>::max())
 		return false;
-	return mg->queueGeneratedSign(
+	return mg->queueGeneratedSign(active_tile_overlay,
 			{static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)}, text);
 }
 bool WorldEditor::place_text_sign(
@@ -177,8 +337,7 @@ bool WorldEditor::place_text_sign(
 bool WorldEditor::add_item_display(
 		double x, double absolute_y, double z, std::int64_t seed, nlohmann::json extra)
 {
-	if (!entity_sink || !std::isfinite(x) || !std::isfinite(absolute_y) ||
-			!std::isfinite(z))
+	if (!std::isfinite(x) || !std::isfinite(absolute_y) || !std::isfinite(z))
 		return false;
 	constexpr auto min_coord = static_cast<double>(std::numeric_limits<int>::min());
 	constexpr auto max_coord = static_cast<double>(std::numeric_limits<int>::max());
@@ -216,12 +375,15 @@ bool WorldEditor::add_item_display(
 							 uuid_word(seed_b)}}};
 	for (auto it = extra.begin(); it != extra.end(); ++it)
 		entity[it.key()] = it.value();
-	return entity_sink(entity);
+	if (entity_sink && entity_sink(entity))
+		return true;
+	placed_entities.push_back(std::move(entity));
+	return true;
 }
 bool WorldEditor::add_entity(
 		const std::string &id, int x, int y, int z, const nlohmann::json &extra)
 {
-	if (!entity_sink || !owns(x, z) ||
+	if (!owns(x, z) ||
 			(mg && (x < mg->node_min.X || x > mg->node_max.X || z < mg->node_min.Z ||
 						   z > mg->node_max.Z)) ||
 			!extra.is_object())
@@ -253,7 +415,10 @@ bool WorldEditor::add_entity(
 							 uuid_word(seed_b)}}};
 	for (auto it = extra.begin(); it != extra.end(); ++it)
 		entity[it.key()] = it.value();
-	return entity_sink(entity);
+	if (entity_sink && entity_sink(entity))
+		return true;
+	placed_entities.push_back(std::move(entity));
+	return true;
 }
 std::tuple<int, int, int> WorldEditor::decal_frame_cell(
 		int x, int y, int z, std::int8_t facing)
@@ -275,23 +440,25 @@ std::tuple<int, int, int> WorldEditor::decal_frame_cell(
 }
 bool WorldEditor::cell_has_frame(int x, int y, int z) const
 {
-	return frame_cells.contains({x, y, z});
+	const auto &frames = tile_active ? active_frame_cells : frame_cells;
+	return frames.contains({x, y, z});
 }
 bool WorldEditor::place_map_decal_ex(int x, int y, int z, std::int8_t facing, int map_id,
 		std::int8_t rotation, bool glow, bool require_air)
 {
 	const auto [fx, fy, fz] = decal_frame_cell(x, y, z, facing);
-	if (!owns(fx, fz) || fy - get_ground_level(fx, fz) < 1 ||
-			frame_cells.contains({fx, fy, fz}))
+	if (!owns(fx, fz) || fy - get_ground_level(fx, fz) < 1 || cell_has_frame(fx, fy, fz))
 		return false;
 	if (require_air && check_for_block_absolute(fx, fy, fz, std::nullopt))
 		return false;
 	const DecalFrame frame{
 			fx, fy, fz, facing, std::int8_t((rotation % 8 + 8) % 8), map_id, glow};
-	if (decal_frame_sink && !decal_frame_sink(frame))
+	if (decal_frame_sink && !decal_frame_sink(*this, frame))
 		return false;
-	frame_cells.insert({fx, fy, fz});
-	placed_frames.push_back(frame);
+	auto &frames = tile_active ? active_frame_cells : frame_cells;
+	frames.insert({fx, fy, fz});
+	auto &placements = tile_active ? active_placed_frames : placed_frames;
+	placements.push_back(frame);
 	return true;
 }
 std::tuple<int, int, int, int> WorldEditor::panel_axes(std::int8_t facing)
@@ -325,7 +492,7 @@ bool WorldEditor::place_decal_panel(int x, int y, int z, std::int8_t facing,
 					  hz = z + rz * col + (facing <= 1 ? floor_z * row : 0);
 			const auto [fx, fy, fz] = decal_frame_cell(hx, hy, hz, facing);
 			if (!owns(fx, fz) || fy - get_ground_level(fx, fz) < 1 ||
-					frame_cells.contains({fx, fy, fz}) || !cell_open_at(fx, fy, fz) ||
+					cell_has_frame(fx, fy, fz) || !cell_open_at(fx, fy, fz) ||
 					(require_hosts && cell_open_at(hx, hy, hz)))
 				return false;
 		}
@@ -424,7 +591,9 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 		return false;
 
 	const auto key = std::tuple{x, y, z};
-	const auto overlay = mg->readTileOverlay(pos);
+	const auto overlay = active_tile_overlay
+								 ? mg->readTileOverlay(*active_tile_overlay, pos)
+								 : std::nullopt;
 	bool should_set = true;
 	if (!maybe_variants && !maybe_replacements) {
 		// Rust's None/None path records only the first generated block at a cell.
@@ -447,7 +616,7 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 	if (!should_set)
 		return false;
 
-	if (!mg->writeTileOverlay(pos, block))
+	if (!active_tile_overlay || !mg->writeTileOverlay(*active_tile_overlay, pos, block))
 		mg->vm->setNode(pos, block);
 	written_cells.insert(key);
 	++mg->stat.set;
@@ -544,34 +713,55 @@ int WorldEditor::get_absolute_y(int x, int y, int z) const
 }
 int WorldEditor::get_ground_level(int x, int z) const
 {
+	if (!active_road_surface_overrides.empty()) {
+		const auto road = active_road_surface_overrides.find({x, z});
+		if (road != active_road_surface_overrides.end())
+			return road->second;
+	}
+	if (!road_surface_overrides.empty()) {
+		const auto road = road_surface_overrides.find({x, z});
+		if (road != road_surface_overrides.end())
+			return road->second;
+	}
 	const int local_x = x - ground_cache_min_x;
 	const int local_z = z - ground_cache_min_z;
 	if (local_x >= 0 && local_z >= 0 && std::size_t(local_x) < ground_cache_width &&
 			std::size_t(local_z) < ground_cache_height) {
 		const std::size_t index =
 				std::size_t(local_z) * ground_cache_width + std::size_t(local_x);
-		int &cached = ground_level_cache[index];
-		if (cached != std::numeric_limits<int>::min())
-			return cached;
-		if (!ground)
-			return 0;
-		// Raster elevation uses coordinates relative to the ground origin;
-		// Freeminer's get_height provider takes absolute world coordinates.
-		cached = ground->level(ground->mg && !ground->elevation_enabled
-									   ? XZPoint{x, z}
-									   : ground_point(x, z));
-		return cached;
+		if (ground_level_cache && index < ground_level_cache->dense_size) {
+			auto &cached = ground_level_cache->dense[index];
+			const int value = cached.load(std::memory_order_acquire);
+			if (value != std::numeric_limits<int>::min())
+				return value;
+			if (!ground)
+				return 0;
+			const int level = ground->level(ground->mg && !ground->elevation_enabled
+													? XZPoint{x, z}
+													: ground_point(x, z));
+			int empty = std::numeric_limits<int>::min();
+			if (cached.compare_exchange_strong(empty, level, std::memory_order_acq_rel,
+						std::memory_order_acquire))
+				return level;
+			return empty;
+		}
 	}
 	const std::pair<int, int> position{x, z};
-	if (const auto it = ground_level_overflow.find(position);
-			it != ground_level_overflow.end())
-		return it->second;
+	if (ground_level_cache) {
+		std::lock_guard<std::mutex> lock(ground_level_cache->overflow_mutex);
+		if (const auto it = ground_level_cache->overflow.find(position);
+				it != ground_level_cache->overflow.end())
+			return it->second;
+	}
 	if (!ground)
 		return 0;
 	const int level =
 			ground->level(ground->mg && !ground->elevation_enabled ? XZPoint{x, z}
 																   : ground_point(x, z));
-	ground_level_overflow.emplace(position, level);
+	if (ground_level_cache) {
+		std::lock_guard<std::mutex> lock(ground_level_cache->overflow_mutex);
+		return ground_level_cache->overflow.emplace(position, level).first->second;
+	}
 	return level;
 }
 std::optional<int> WorldEditor::terrain_level(int x, int z) const
@@ -583,15 +773,28 @@ std::optional<int> WorldEditor::terrain_level(int x, int z) const
 }
 void WorldEditor::register_road_surface_y(int x, int z, int y)
 {
-	const int local_x = x - ground_cache_min_x;
-	const int local_z = z - ground_cache_min_z;
-	if (local_x >= 0 && local_z >= 0 && std::size_t(local_x) < ground_cache_width &&
-			std::size_t(local_z) < ground_cache_height) {
-		ground_level_cache[std::size_t(local_z) * ground_cache_width +
-						   std::size_t(local_x)] = y;
-		return;
+	auto &overrides =
+			tile_active ? active_road_surface_overrides : road_surface_overrides;
+	overrides.insert_or_assign({x, z}, y);
+}
+WorldEditor::RoadSurfaceOverrides WorldEditor::take_road_surface_overrides()
+{
+	return std::exchange(
+			tile_active ? active_road_surface_overrides : road_surface_overrides, {});
+}
+void WorldEditor::merge_road_surface_overrides(RoadSurfaceOverrides overrides)
+{
+	for (auto &[coordinate, y] : overrides)
+		road_surface_overrides.insert_or_assign(coordinate, y);
+}
+void WorldEditor::merge_road_surface_overrides_in_regions(RoadSurfaceOverrides overrides,
+		const std::unordered_set<std::pair<int, int>, XZCellHash> &regions)
+{
+	for (auto &[coordinate, y] : overrides) {
+		const auto [x, z] = coordinate;
+		if (regions.contains({x >> 9, z >> 9}))
+			road_surface_overrides.insert_or_assign(coordinate, y);
 	}
-	ground_level_overflow[{x, z}] = y;
 }
 bool WorldEditor::water_source_is_enclosed(int x, int z) const
 {
@@ -664,7 +867,9 @@ bool WorldEditor::check_for_block_absolute(int x, int y, int z,
 	if (!mg || !mg->vm || !pos_ok(x, z) || !mg->vm->exists(pos))
 		return false;
 	++mg->stat.check;
-	const auto overlay = mg->readTileOverlay(pos);
+	const auto overlay = active_tile_overlay
+								 ? mg->readTileOverlay(*active_tile_overlay, pos)
+								 : std::nullopt;
 	if (!overlay && !written_cells.contains({x, y, z}))
 		return false;
 	const auto n = overlay.value_or(mg->vm->getNode(pos));
@@ -711,7 +916,9 @@ std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 			static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 	if (!mg->vm->exists(pos))
 		return std::nullopt;
-	const auto overlay = mg->readTileOverlay(pos);
+	const auto overlay = active_tile_overlay
+								 ? mg->readTileOverlay(*active_tile_overlay, pos)
+								 : std::nullopt;
 	if (!overlay && !written_cells.contains({x, y, z}))
 		return std::nullopt;
 	return Block(overlay.value_or(mg->vm->getNode(pos)).getContent());
@@ -767,15 +974,17 @@ bool WorldEditor::set_block_if_absent_absolute(const Block &block, int x, int y,
 
 void WorldEditor::register_support_column(int x, int z, const Block &block)
 {
-	const auto key = (static_cast<std::int64_t>(x) << 32) ^ static_cast<std::uint32_t>(z);
-	support_columns[key] = block;
+	auto &columns = tile_active ? active_support_columns : support_columns;
+	columns.insert_or_assign({x, z}, block);
 }
 
 std::optional<Block> WorldEditor::support_column(int x, int z) const
 {
-	const auto key = (static_cast<std::int64_t>(x) << 32) ^ static_cast<std::uint32_t>(z);
-	const auto it = support_columns.find(key);
-	return it == support_columns.end() ? std::nullopt : std::optional<Block>(it->second);
+	const auto &columns = tile_active ? active_support_columns : support_columns;
+	if (columns.empty())
+		return std::nullopt;
+	const auto it = columns.find({x, z});
+	return it == columns.end() ? std::nullopt : std::optional<Block>(it->second);
 }
 void WorldEditor::fill_column_absolute(
 		const Block &block, int x, int z, int min_y, int max_y, bool skip_existing)
@@ -816,7 +1025,9 @@ void WorldEditor::fill_column_with_absolute(int x, int z, int min_y, int max_y,
 			continue;
 		}
 		const auto key = std::tuple{x, y, z};
-		const auto overlay = mg->readTileOverlay(pos);
+		const auto overlay = active_tile_overlay
+									 ? mg->readTileOverlay(*active_tile_overlay, pos)
+									 : std::nullopt;
 		if (skip_existing) {
 			++mg->stat.check;
 			if (overlay || written_cells.contains(key)) {
@@ -825,7 +1036,8 @@ void WorldEditor::fill_column_with_absolute(int x, int z, int min_y, int max_y,
 					continue;
 			}
 		}
-		if (!mg->writeTileOverlay(pos, block))
+		if (!active_tile_overlay ||
+				!mg->writeTileOverlay(*active_tile_overlay, pos, block))
 			mg->vm->setNode(pos, block);
 		written_cells.insert(key);
 		++mg->stat.set;
@@ -868,7 +1080,10 @@ bool WorldEditor::bulk_fill_chunk_sections_below(int chunk_x, int chunk_z,
 						writable = false;
 						break;
 					}
-					const auto overlay = mg->readTileOverlay(pos);
+					const auto overlay =
+							active_tile_overlay
+									? mg->readTileOverlay(*active_tile_overlay, pos)
+									: std::nullopt;
 					if (!overlay && !written_cells.contains({x, y, z}))
 						continue;
 					const auto node = overlay.value_or(mg->vm->getNode(pos));
@@ -892,7 +1107,8 @@ bool WorldEditor::bulk_fill_chunk_sections_below(int chunk_x, int chunk_z,
 					const int z = static_cast<int>(z0 + dz);
 					const v3pos_t pos{static_cast<pos_t>(x), static_cast<pos_t>(y),
 							static_cast<pos_t>(z)};
-					if (!mg->writeTileOverlay(pos, block))
+					if (!active_tile_overlay ||
+							!mg->writeTileOverlay(*active_tile_overlay, pos, block))
 						mg->vm->setNode(pos, block);
 					written_cells.emplace(x, y, z);
 					++mg->stat.set;
@@ -906,10 +1122,68 @@ void WorldEditor::place_wall_banner(const Block &block, int x, int y, int z,
 		const std::vector<std::pair<std::string, std::string>> &patterns)
 {
 	const BlockWithProperties banner{block, {{"facing", facing}}};
-	if (try_set_block_with_properties_absolute(
-				banner, x, y, z, std::nullopt, std::nullopt) &&
-			banner_sink && owns(x, z))
+	if (!try_set_block_with_properties_absolute(
+				banner, x, y, z, std::nullopt, std::nullopt) ||
+			!owns(x, z))
+		return;
+	if (banner_sink) {
 		banner_sink(x, y, z, facing, base_color, patterns);
+		return;
+	}
+	if (generation_format == 2)
+		return; // Rust's Luanti backend has no banner block-entity payload.
+	if (generation_format == 1) {
+		const auto color_id = [](const std::string &color) {
+			static const std::unordered_map<std::string, int> ids{{"black", 0},
+					{"red", 1}, {"green", 2}, {"brown", 3}, {"blue", 4}, {"purple", 5},
+					{"cyan", 6}, {"light_gray", 7}, {"gray", 8}, {"pink", 9},
+					{"lime", 10}, {"yellow", 11}, {"light_blue", 12}, {"magenta", 13},
+					{"orange", 14}, {"white", 15}};
+			const auto it = ids.find(color);
+			return it == ids.end() ? 0 : it->second;
+		};
+		const auto pattern_code = [](std::string pattern) {
+			if (pattern.starts_with("minecraft:"))
+				pattern.erase(0, 10);
+			static const std::unordered_map<std::string, std::string> codes{{"base", "b"},
+					{"square_bottom_left", "bl"}, {"square_bottom_right", "br"},
+					{"square_top_left", "tl"}, {"square_top_right", "tr"},
+					{"stripe_bottom", "bs"}, {"stripe_top", "ts"}, {"stripe_left", "ls"},
+					{"stripe_right", "rs"}, {"stripe_center", "cs"},
+					{"stripe_middle", "ms"}, {"stripe_downright", "drs"},
+					{"stripe_downleft", "dls"}, {"stripe_small", "ss"}, {"cross", "cr"},
+					{"straight_cross", "sc"}, {"triangle_bottom", "bt"},
+					{"triangle_top", "tt"}, {"triangles_bottom", "bts"},
+					{"triangles_top", "tts"}, {"diagonal_left", "ld"},
+					{"diagonal_right", "rd"}, {"diagonal_up_left", "lud"},
+					{"diagonal_up_right", "rud"}, {"circle", "mc"}, {"rhombus", "mr"},
+					{"half_vertical", "vh"}, {"half_vertical_right", "vhr"},
+					{"half_horizontal", "hh"}, {"half_horizontal_bottom", "hhb"},
+					{"border", "bo"}, {"curly_border", "cbo"}, {"gradient", "gra"},
+					{"gradient_up", "gru"}, {"bricks", "bri"}, {"globe", "glb"},
+					{"creeper", "cre"}, {"skull", "sku"}, {"flower", "flo"},
+					{"mojang", "moj"}, {"piglin", "pig"}, {"flow", "flw"},
+					{"guster", "gus"}};
+			const auto it = codes.find(pattern);
+			return it == codes.end() ? std::string("b") : it->second;
+		};
+		nlohmann::json entries = nlohmann::json::array();
+		for (const auto &[color, pattern] : patterns)
+			entries.push_back(
+					{{"Color", color_id(color)}, {"Pattern", pattern_code(pattern)}});
+		placed_block_entities.push_back({x, y, z,
+				{{"id", "Banner"}, {"x", x}, {"y", y}, {"z", z},
+						{"Base", color_id(base_color)}, {"Patterns", std::move(entries)},
+						{"Type", 0}}});
+		return;
+	}
+	nlohmann::json entries = nlohmann::json::array();
+	for (const auto &[color, pattern] : patterns)
+		entries.push_back({{"color", color}, {"pattern", pattern}});
+	placed_block_entities.push_back({x, y, z,
+			{{"id", "minecraft:banner"}, {"x", x}, {"y", y}, {"z", z}, {"keepPacked", 0},
+					{"patterns", std::move(entries)},
+					{"components", nlohmann::json::object()}}});
 }
 void WorldEditor::place_wall_banner(int x, int y, int z, const std::string &facing,
 		const std::vector<std::pair<std::string, std::string>> &patterns)

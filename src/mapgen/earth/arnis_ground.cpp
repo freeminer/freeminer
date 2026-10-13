@@ -170,6 +170,14 @@ double GroundFrame::anchor_lat(const geographic::LLBBox &bbox) const
 						  : (bbox.min().lat() + bbox.max().lat()) * 0.5;
 }
 
+biome::Climate GroundFrame::climate(const geographic::LLBBox &bbox) const
+{
+	const auto anchor = climate_anchor.value_or(
+			std::pair<double, double>{(bbox.min().lat() + bbox.max().lat()) * 0.5,
+					(bbox.min().lng() + bbox.max().lng()) * 0.5});
+	return climate::classify(anchor.first, anchor.second);
+}
+
 std::shared_ptr<const ecoregion::EcoMap> GroundFrame::ecoregions(
 		const geographic::LLBBox &bbox, std::size_t world_width,
 		std::size_t world_height) const
@@ -271,10 +279,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	ground.set_celestial_body(args.body);
 	ground.set_extended_ceiling(args.disable_height_limit &&
 								extended_max_y_for(args) > world_editor::DEFAULT_MAX_Y);
-	const auto climate_anchor = frame.climate_anchor.value_or(
-			std::pair<double, double>{(bbox.min().lat() + bbox.max().lat()) * 0.5,
-					(bbox.min().lng() + bbox.max().lng()) * 0.5});
-	ground.set_climate(climate::classify(climate_anchor.first, climate_anchor.second));
+	ground.set_climate(frame.climate(bbox));
 
 	const bool earth = is_earth(args.body);
 	std::future<std::optional<canopy::CanopyData>> canopy_job;
@@ -361,8 +366,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 					  << "; using flat ground.\n";
 			ground = Ground::new_flat(args.ground_level);
 			ground.set_celestial_body(args.body);
-			ground.set_climate(
-					climate::classify(climate_anchor.first, climate_anchor.second));
+			ground.set_climate(frame.climate(bbox));
 			cover.reset();
 		}
 	} else {
@@ -546,7 +550,7 @@ double Ground::slope_soft_top_stretch(int y) const
 std::pair<double, std::pair<double, double>> Ground::slope_and_gradient(
 		const XZPoint &pos) const
 {
-	if (!elevation_enabled && !mg)
+	if (!elevation_enabled)
 		return {0.0, {0.0, 0.0}};
 	constexpr int step = 4;
 	const std::array<double, 4> samples{{level_exact({pos.x + step, pos.z}),
@@ -562,7 +566,7 @@ std::pair<double, std::pair<double, double>> Ground::slope_and_gradient(
 
 double Ground::convexity(const XZPoint &pos) const
 {
-	if (!elevation_enabled && !mg)
+	if (!elevation_enabled)
 		return 0.0;
 	constexpr int radius = 8;
 	constexpr int diagonal = 6;
@@ -910,7 +914,6 @@ void Ground::apply_osm_land_override(
 		return;
 	land_cover::apply_osm_land_override(*land_cover, land_cover_world_width,
 			land_cover_world_height, elements, bbox, scale);
-	land_cover->refresh_water_blend_grid();
 }
 void Ground::mark_beaches()
 {
@@ -946,7 +949,7 @@ void Ground::set_land_cover_data(
 	data.height = data.grid.size();
 	data.water_distance =
 			land_cover::compute_water_distance(data.grid, data.width, data.height);
-	data.refresh_water_blend_grid();
+	data.invalidate_water_blend_grid();
 	land_cover = std::move(data);
 	land_cover_world_width = world_width;
 	land_cover_world_height = world_height;
@@ -961,7 +964,7 @@ void Ground::set_land_cover_data(const std::vector<std::vector<std::uint8_t>> &g
 	land_cover->water_distance = water_distance;
 	land_cover->width = width;
 	land_cover->height = height;
-	land_cover->refresh_water_blend_grid();
+	land_cover->invalidate_water_blend_grid();
 }
 std::pair<std::size_t, std::size_t> Ground::land_cover_index(const XZPoint &coord) const
 {
@@ -1015,7 +1018,8 @@ double Ground::water_blend(const XZPoint &coord) const
 	if (!has_land_cover())
 		return 0.0;
 	const auto &lc = *land_cover;
-	if (lc.water_blend_grid.empty())
+	const auto &blend = lc.water_blend_grid();
+	if (blend.empty())
 		return 0.0;
 	const auto [world_width, world_height] = world_dims();
 
@@ -1037,18 +1041,18 @@ double Ground::water_blend(const XZPoint &coord) const
 	const auto z1 = std::min<std::size_t>(z0 + 1, lc.height - 1);
 	const double tx = fx - std::floor(fx);
 	const double tz = fz - std::floor(fz);
-	const double w00 = lc.water_blend_grid[z0][x0];
-	const double w10 = lc.water_blend_grid[z0][x1];
-	const double w01 = lc.water_blend_grid[z1][x0];
-	const double w11 = lc.water_blend_grid[z1][x1];
+	const double w00 = blend[z0][x0];
+	const double w10 = blend[z0][x1];
+	const double w01 = blend[z1][x0];
+	const double w11 = blend[z1][x1];
 	const double top = w00 * (1.0 - tx) + w10 * tx;
 	const double bottom = w01 * (1.0 - tx) + w11 * tx;
 	return top * (1.0 - tz) + bottom * tz;
 }
 void Ground::warm_water_blend()
 {
-	if (land_cover && land_cover->water_blend_grid.empty())
-		land_cover->refresh_water_blend_grid();
+	if (land_cover)
+		(void)land_cover->water_blend_grid();
 }
 std::optional<std::tuple<int, int, int, int>> Ground::lc_water_block_bounds() const
 {
@@ -1088,7 +1092,7 @@ std::optional<std::tuple<int, int, int, int>> Ground::lc_water_block_bounds() co
 }
 int Ground::slope(const XZPoint &coord) const
 {
-	if (!elevation_enabled && !mg)
+	if (!elevation_enabled)
 		return 0;
 	constexpr int step = 4;
 	const int east = level({coord.x + step, coord.z}),
@@ -1099,15 +1103,15 @@ int Ground::slope(const XZPoint &coord) const
 	// elevation metadata spans the complete integer range.
 	const auto hi = std::max({east, west, north, south});
 	const auto lo = std::min({east, west, north, south});
-	const auto raw = static_cast<long double>(hi) - static_cast<long double>(lo);
-	const int mid_y = static_cast<int>(
-			static_cast<std::int64_t>(lo) + (static_cast<std::int64_t>(hi) - lo) / 2);
-	const auto scaled = raw * elevation_slope_correction * slope_soft_top_stretch(mid_y);
-	if (scaled >= static_cast<long double>(std::numeric_limits<int>::max()))
-		return std::numeric_limits<int>::max();
-	if (scaled <= static_cast<long double>(std::numeric_limits<int>::min()))
-		return std::numeric_limits<int>::min();
-	return rust_round_i32(static_cast<double>(scaled));
+	const auto difference = static_cast<std::int64_t>(hi) - lo;
+	const int raw = static_cast<int>(
+			std::min<std::int64_t>(difference, std::numeric_limits<int>::max()));
+	const auto midpoint = static_cast<std::int64_t>(lo) + raw / 2;
+	const int mid_y = static_cast<int>(std::clamp<std::int64_t>(
+			midpoint, std::numeric_limits<int>::min(), std::numeric_limits<int>::max()));
+	const double scaled = static_cast<double>(raw) * elevation_slope_correction *
+						  slope_soft_top_stretch(mid_y);
+	return rust_round_i32(scaled);
 }
 int Ground::water_level(const XZPoint &coord) const
 {
@@ -1129,8 +1133,10 @@ int Ground::water_level(const XZPoint &coord) const
 							 : radius;
 	// Match Rust's saturating_sub: malformed/overflowing DEM values must not
 	// wrap into a negative drop and accidentally bypass the cliff guard.
-	const auto drop = static_cast<long double>(center) - static_cast<long double>(lowest);
-	return drop > static_cast<long double>(cliff_drop) ? center : lowest;
+	const auto difference = static_cast<std::int64_t>(center) - lowest;
+	const int drop = static_cast<int>(
+			std::min<std::int64_t>(difference, std::numeric_limits<int>::max()));
+	return drop > cliff_drop ? center : lowest;
 }
 
 } // namespace arnis

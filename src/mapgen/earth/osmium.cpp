@@ -1039,15 +1039,19 @@ void generate_cached_arnis(
 	editor.set_strict_bounds(
 			mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
 	editor.set_tile_hooks(
-			[mg](int min_x, int min_z, int max_x, int max_z) {
+			[mg](int min_x, int min_z, int max_x,
+					int max_z) -> std::optional<MapgenEarth::TileOverlayId> {
 				return mg->beginTileOverlay(min_x, min_z, max_x, max_z);
 			},
-			[mg](int, int, int, int) { return mg->mergeTileOverlay(); });
+			[mg](MapgenEarth::TileOverlayId id) { return mg->mergeTileOverlay(id); },
+			true);
 	editor.ground = &ground;
 	editor.set_schem_entity_sink(
-			[mg](int x, int y, int z, const std::vector<std::uint8_t> &nbt) {
-				mg->queueGeneratedSchemEntity(v3pos_t(x, y, z), nbt);
-			});
+			[mg](std::optional<MapgenEarth::TileOverlayId> tile_id, int x, int y, int z,
+					const std::vector<std::uint8_t> &nbt) {
+				return mg->queueGeneratedSchemEntity(tile_id, v3pos_t(x, y, z), nbt);
+			},
+			true);
 	const auto args = earth_arnis_args();
 	// Raster providers use the editor bounds, even when the host enters through
 	// generate_world rather than generate_world_with_options.

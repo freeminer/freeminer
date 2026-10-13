@@ -1,11 +1,13 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <tuple>
@@ -129,6 +131,19 @@ struct WorldEditor
 		std::int8_t facing{};
 		std::uint32_t width{}, height{};
 		std::vector<std::uint8_t> pixels;
+		// Stable item-model name for entity-backed photo facades; empty for
+		// backends that consume the sprite through the facade-panel sink.
+		std::string item_name;
+	};
+	struct PlacedBlockEntity
+	{
+		int x{}, y{}, z{};
+		nlohmann::json nbt;
+	};
+	struct PlacedSchematicEntity
+	{
+		int x{}, y{}, z{};
+		std::vector<std::uint8_t> nbt;
 	};
 	struct XZCellHash
 	{
@@ -154,11 +169,11 @@ struct WorldEditor
 	// Matches trees::RegionSelector::base_spacing() for the default pack; hosts
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing_blocks = 5;
-	std::function<std::optional<bool>(int, int, int, std::uint8_t,
+	std::function<std::optional<bool>(WorldEditor &, int, int, int, std::uint8_t,
 			std::optional<trees::Habitat>, bool, bool, bool, bool)>
 			regional_tree_placer;
 	std::function<std::optional<bool>(
-			int, int, int, std::uint8_t, const trees::MappedRequest &)>
+			WorldEditor &, int, int, int, std::uint8_t, const trees::MappedRequest &)>
 			mapped_regional_tree_placer;
 	// Authored OSM trunks suppress procedural canopy crowns in the same cells,
 	// matching Rust's MappedTrunks pass during streamed ground decoration.
@@ -175,8 +190,12 @@ struct WorldEditor
 	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink,
 			world_settings_sink;
 	std::function<void(const std::string &)> generation_error_sink;
-	std::function<bool(int, int, int, int)> begin_tile_sink;
-	std::function<bool(int, int, int, int)> merge_tile_sink;
+	std::optional<std::uint64_t> active_tile_overlay;
+	std::function<std::optional<std::uint64_t>(int, int, int, int)> begin_tile_sink;
+	std::function<bool(std::uint64_t)> merge_tile_sink;
+	bool tile_hooks_thread_safe = false;
+	bool defer_tile_merges = false;
+	std::vector<std::uint64_t> deferred_tile_overlays;
 	int spawn_x = 0, spawn_y = 0, spawn_z = 0;
 	double projection_scale = 1.0;
 	// A host that understands Java/Sponge block states can retain schematic
@@ -193,19 +212,31 @@ struct WorldEditor
 	// (Slot, damage, display color, and modern item components).
 	std::function<void(int, int, int, const std::vector<nlohmann::json> &)>
 			barrel_nbt_sink;
+	// Block entities are retained when the corresponding backend sink is absent,
+	// matching Rust's chunk-owned block_entities collection for library callers.
+	std::vector<PlacedBlockEntity> placed_block_entities;
 	std::function<void(int, int, int)> bed_sink;
 	// Optional backend event for newly generated water/lava source blocks. Java
 	// exporters serialize scheduled ticks; live-world hosts may handle flow via
 	// their native simulation instead.
 	std::function<void(const Block &, pos_t, pos_t, pos_t)> fluid_tick_sink;
-	// Raw schematic block-entity payload, retained for backends that support it.
-	std::function<void(int, int, int, const std::vector<std::uint8_t> &)>
+	// Raw schematic block-entity payload. When set, the decoder passes payloads
+	// through unchanged instead of applying lossy built-in compatibility parsing.
+	std::function<bool(std::optional<std::uint64_t>, int, int, int,
+			const std::vector<std::uint8_t> &)>
 			schem_entity_sink;
+	bool schem_entity_sink_thread_safe = false;
+	// Original payloads retained when no raw sink is installed. If consuming both
+	// this and placed_block_entities, prefer the raw record at matching coords.
+	std::vector<PlacedSchematicEntity> placed_schematic_entities;
 	std::function<void(int, int, int, const std::string &)> item_frame_sink;
 	// Backend-native entity payload. Java-capable consumers can serialize this
 	// directly to entity NBT; the mapgen host may leave it unset when entities
-	// are not supported by its output format.
+	// are not supported by its output format. If absent or if it rejects an
+	// entity, the JSON is retained here so library callers can collect the same
+	// generated records Rust keeps in its world data.
 	std::function<bool(const nlohmann::json &)> entity_sink;
+	std::vector<nlohmann::json> placed_entities;
 	std::function<void(int, int, int, const std::string &, const std::string &,
 			const std::vector<std::pair<std::string, std::string>> &)>
 			banner_sink;
@@ -213,7 +244,8 @@ struct WorldEditor
 	// Per-generation signage state.  Rust keeps this in WorldEditor so parallel
 	// emerge threads never exchange intersection indexes or regional styles.
 	std::shared_ptr<const signage::SignageContext> signage_context;
-	std::function<bool(const DecalFrame &)> decal_frame_sink;
+	std::function<bool(WorldEditor &, const DecalFrame &)> decal_frame_sink;
+	bool decal_frame_sink_thread_safe = false;
 	// Backend contract for preset facade panels.  The mapgen layer supplies the
 	// already-cropped RGB panel; Java/Bedrock/Luanti hosts may encode or place
 	// it according to their native entity/texture mechanism.
@@ -223,17 +255,37 @@ struct WorldEditor
 	std::vector<FacadePanel> placed_facade_panels;
 	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> frame_cells;
 	std::vector<DecalFrame> placed_frames;
-	std::unordered_map<std::int64_t, Block> support_columns;
+	std::unordered_set<std::tuple<int, int, int>, FrameCellHash> active_frame_cells;
+	std::vector<DecalFrame> active_placed_frames;
+	std::unordered_map<std::pair<int, int>, Block, XZCellHash> support_columns;
+	std::unordered_map<std::pair<int, int>, Block, XZCellHash> active_support_columns;
+	// Sparse, tile-local road elevations. Keep these separate from the terrain
+	// sample cache so tile results can transfer only their own road surfaces.
+	using RoadSurfaceOverrides = std::unordered_map<std::pair<int, int>, int, XZCellHash>;
+	// Overrides emitted by the currently open tile are visible to that tile's
+	// terrain passes, then transferred to the committed map at ordered merge.
+	RoadSurfaceOverrides road_surface_overrides;
+	RoadSurfaceOverrides active_road_surface_overrides;
+	bool tile_active = false;
 	using WrittenCellSet = std::unordered_set<std::tuple<int, int, int>, FrameCellHash>;
 	WrittenCellSet written_cells;
 	WrittenCellSet tile_merged_written_cells;
 	bool tile_scope_active = false;
-	// Effective terrain/road elevation cache. The dense part covers the mapchunk
-	// and its OSM halo; only unusual out-of-halo queries use the sparse fallback.
-	// Road registration overwrites an existing sampled terrain entry.
-	mutable std::vector<int> ground_level_cache;
-	mutable std::unordered_map<std::pair<int, int>, int, XZCellHash>
-			ground_level_overflow;
+	// Effective terrain elevation cache. The dense part covers the mapchunk and
+	// its OSM halo; unusual out-of-halo queries use the sparse fallback. Road
+	// surface overrides are kept separately above and take precedence.
+	struct GroundLevelCache
+	{
+		std::unique_ptr<std::atomic<int>[]> dense;
+		std::size_t dense_size = 0;
+		mutable std::mutex overflow_mutex;
+		std::unordered_map<std::pair<int, int>, int, XZCellHash> overflow;
+	};
+	// Tile workers share immutable terrain samples and publish lazy cache entries
+	// atomically, matching Rust's Arc-backed Ground and avoiding a dense-cache copy
+	// per independent tile editor.
+	std::shared_ptr<GroundLevelCache> ground_level_cache =
+			std::make_shared<GroundLevelCache>();
 	int ground_cache_min_x = 0, ground_cache_min_z = 0;
 	std::size_t ground_cache_width = 0, ground_cache_height = 0;
 	std::optional<std::tuple<int, int, int, int>> strict_bounds;
@@ -259,12 +311,16 @@ struct WorldEditor
 	void set_ground_origin(int x, int z);
 	void reserve_ground_level_cache();
 	XZPoint ground_point(int x, int z) const;
-	void set_regional_tree_placer(std::function<std::optional<bool>(int, int, int,
-					std::uint8_t, std::optional<trees::Habitat>, bool, bool, bool, bool)>
-					placer)
+	void set_regional_tree_placer(
+			std::function<std::optional<bool>(WorldEditor &, int, int, int, std::uint8_t,
+					std::optional<trees::Habitat>, bool, bool, bool, bool)>
+					placer,
+			bool thread_safe = false)
 	{
 		regional_tree_placer = std::move(placer);
+		regional_tree_placer_thread_safe = thread_safe;
 	}
+	bool regional_tree_placer_thread_safe = false;
 	std::optional<bool> place_regional_tree(int x, int y, int z, std::uint8_t cover,
 			std::optional<trees::Habitat> habitat_hint = std::nullopt,
 			bool tagged = false, bool wet_ground = false, bool allow_on_paved = false,
@@ -272,19 +328,22 @@ struct WorldEditor
 	{
 		if (!regional_tree_placer)
 			return std::nullopt;
-		return regional_tree_placer(x, y, z, cover, habitat_hint, tagged, wet_ground,
-				allow_on_paved, density_decided);
+		return regional_tree_placer(*this, x, y, z, cover, habitat_hint, tagged,
+				wet_ground, allow_on_paved, density_decided);
 	}
-	void set_mapped_regional_tree_placer(decltype(mapped_regional_tree_placer) placer)
+	void set_mapped_regional_tree_placer(
+			decltype(mapped_regional_tree_placer) placer, bool thread_safe = false)
 	{
 		mapped_regional_tree_placer = std::move(placer);
+		mapped_regional_tree_placer_thread_safe = thread_safe;
 	}
+	bool mapped_regional_tree_placer_thread_safe = false;
 	std::optional<bool> place_mapped_regional_tree(
 			int x, int y, int z, std::uint8_t cover, const trees::MappedRequest &request)
 	{
 		if (!mapped_regional_tree_placer)
 			return std::nullopt;
-		return mapped_regional_tree_placer(x, y, z, cover, request);
+		return mapped_regional_tree_placer(*this, x, y, z, cover, request);
 	}
 	void set_start_with_map(bool v) { start_with_map = v; }
 	void set_map_decals(bool v) { map_decals = v; }
@@ -298,9 +357,11 @@ struct WorldEditor
 	{
 		signage_context = std::move(context);
 	}
-	void set_decal_frame_sink(std::function<bool(const DecalFrame &)> sink)
+	void set_decal_frame_sink(std::function<bool(WorldEditor &, const DecalFrame &)> sink,
+			bool thread_safe = false)
 	{
 		decal_frame_sink = std::move(sink);
+		decal_frame_sink_thread_safe = thread_safe;
 	}
 	void set_facade_panel_sink(std::function<bool(int, int, int, std::int8_t,
 					const std::vector<std::uint8_t> &, std::uint32_t, std::uint32_t)>
@@ -309,13 +370,12 @@ struct WorldEditor
 		facade_panel_sink = std::move(sink);
 	}
 	bool place_facade_panel(int x, int y, int z, std::int8_t facing,
-			const std::vector<std::uint8_t> &pixels, std::uint32_t width,
-			std::uint32_t height);
+			std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height);
 	void clear_facade_panels() { placed_facade_panels.clear(); }
 	const std::vector<FacadePanel> &facade_panels() const { return placed_facade_panels; }
 	void record_facade_panel(int x, int y, int z, std::int8_t facing,
-			const std::vector<std::uint8_t> &pixels, std::uint32_t width,
-			std::uint32_t height);
+			std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
+			const std::string &item_name = {});
 	void set_chest_sink(std::function<void(int, int, int,
 					const std::vector<std::tuple<std::string, int, int>> &)>
 					sink)
@@ -353,10 +413,26 @@ struct WorldEditor
 				fluid_tick_sink)
 			fluid_tick_sink(fluid, x, y, z);
 	}
-	void set_schem_entity_sink(
-			std::function<void(int, int, int, const std::vector<std::uint8_t> &)> sink)
+	void set_schem_entity_sink(std::function<bool(std::optional<std::uint64_t>, int, int,
+									   int, const std::vector<std::uint8_t> &)>
+									   sink,
+			bool thread_safe = false)
 	{
 		schem_entity_sink = std::move(sink);
+		schem_entity_sink_thread_safe = thread_safe;
+	}
+	void retain_schematic_entity(
+			int x, int y, int z, const std::vector<std::uint8_t> &nbt)
+	{
+		if (!owns(x, z))
+			return;
+		if (schem_entity_sink && schem_entity_sink(active_tile_overlay, x, y, z, nbt))
+			return;
+		placed_schematic_entities.push_back({x, y, z, nbt});
+	}
+	const std::vector<PlacedSchematicEntity> &get_placed_schematic_entities() const
+	{
+		return placed_schematic_entities;
 	}
 	void set_item_frame_sink(std::function<void(int, int, int, const std::string &)> sink)
 	{
@@ -371,6 +447,10 @@ struct WorldEditor
 			const nlohmann::json &extra = nlohmann::json::object());
 	bool add_item_display(double x, double absolute_y, double z, std::int64_t seed,
 			nlohmann::json extra);
+	const std::vector<nlohmann::json> &get_placed_entities() const
+	{
+		return placed_entities;
+	}
 	void set_banner_sink(
 			std::function<void(int, int, int, const std::string &, const std::string &,
 					const std::vector<std::pair<std::string, std::string>> &)>
@@ -380,8 +460,19 @@ struct WorldEditor
 	}
 	void set_bed_block_entity_absolute(int x, int y, int z)
 	{
-		if (bed_sink && block_exists_absolute(x, y, z))
+		if (!block_exists_absolute(x, y, z) || !owns(x, z))
+			return;
+		if (bed_sink) {
 			bed_sink(x, y, z);
+			return;
+		}
+		placed_block_entities.push_back({x, y, z,
+				{{"id", "minecraft:bed"}, {"x", x}, {"y", y}, {"z", z},
+						{"keepPacked", 0}}});
+	}
+	const std::vector<PlacedBlockEntity> &get_placed_block_entities() const
+	{
+		return placed_block_entities;
 	}
 	// Inclusive tile ownership bounds. Geometry may write through the tile halo;
 	// owns() is reserved for single-owner side effects and undergrowth filtering.
@@ -468,16 +559,38 @@ struct WorldEditor
 		world_settings_sink = std::move(world_settings);
 	}
 	bool finalize_persistence();
-	void set_tile_hooks(std::function<bool(int, int, int, int)> begin_tile,
-			std::function<bool(int, int, int, int)> merge_tile)
+	void set_tile_hooks(
+			std::function<std::optional<std::uint64_t>(int, int, int, int)> begin_tile,
+			std::function<bool(std::uint64_t)> merge_tile, bool thread_safe = false)
 	{
 		begin_tile_sink = std::move(begin_tile);
 		merge_tile_sink = std::move(merge_tile);
+		tile_hooks_thread_safe = thread_safe;
+	}
+	void set_defer_tile_merges(bool defer) { defer_tile_merges = defer; }
+	bool flush_deferred_tile_merges()
+	{
+		bool merged = true;
+		if (merge_tile_sink)
+			for (const auto id : deferred_tile_overlays)
+				merged = merge_tile_sink(id) && merged;
+		deferred_tile_overlays.clear();
+		return merged;
 	}
 	bool begin_tile(int min_x, int min_z, int max_x, int max_z)
 	{
-		if (begin_tile_sink && !begin_tile_sink(min_x, min_z, max_x, max_z))
-			return false;
+		tile_active = false;
+		active_tile_overlay.reset();
+		if (begin_tile_sink) {
+			active_tile_overlay = begin_tile_sink(min_x, min_z, max_x, max_z);
+			if (!active_tile_overlay)
+				return false;
+		}
+		tile_active = true;
+		active_road_surface_overrides.clear();
+		active_support_columns.clear();
+		active_frame_cells.clear();
+		active_placed_frames.clear();
 		if (!tile_scope_active) {
 			tile_merged_written_cells.clear();
 			tile_merged_written_cells.insert(written_cells.begin(), written_cells.end());
@@ -486,16 +599,39 @@ struct WorldEditor
 		written_cells.clear();
 		return true;
 	}
-	bool merge_tile(int min_x, int min_z, int max_x, int max_z)
+	bool merge_tile(int, int, int, int)
 	{
-		if (merge_tile_sink && !merge_tile_sink(min_x, min_z, max_x, max_z))
-			return false;
+		if (merge_tile_sink) {
+			if (!active_tile_overlay)
+				return false;
+			if (defer_tile_merges)
+				deferred_tile_overlays.push_back(*active_tile_overlay);
+			else if (!merge_tile_sink(*active_tile_overlay))
+				return false;
+		}
+		for (const auto &[coordinate, y] : active_road_surface_overrides)
+			road_surface_overrides.insert_or_assign(coordinate, y);
+		active_road_surface_overrides.clear();
+		for (const auto &[coordinate, block] : active_support_columns)
+			support_columns.insert_or_assign(coordinate, block);
+		active_support_columns.clear();
+		frame_cells.insert(active_frame_cells.begin(), active_frame_cells.end());
+		placed_frames.insert(placed_frames.end(), active_placed_frames.begin(),
+				active_placed_frames.end());
+		active_placed_frames.clear();
+		active_frame_cells.clear();
+		tile_active = false;
+		active_tile_overlay.reset();
 		if (tile_scope_active) {
 			tile_merged_written_cells.insert(written_cells.begin(), written_cells.end());
 			written_cells.clear();
 		}
 		return true;
 	}
+	WorldEditor make_tile_worker() const;
+	bool tile_worker_callbacks_safe() const;
+	bool merge_tile_worker(
+			WorldEditor &&worker, int min_x, int min_z, int max_x, int max_z);
 	void finish_tile_pass()
 	{
 		if (!tile_scope_active)
@@ -619,6 +755,10 @@ struct WorldEditor
 	int get_ground_level(int x, int z) const;
 	std::optional<int> terrain_level(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
+	RoadSurfaceOverrides take_road_surface_overrides();
+	void merge_road_surface_overrides(RoadSurfaceOverrides overrides);
+	void merge_road_surface_overrides_in_regions(RoadSurfaceOverrides overrides,
+			const std::unordered_set<std::pair<int, int>, XZCellHash> &regions);
 	bool water_source_is_enclosed(int x, int z) const;
 	biome::Climate climate() const;
 	int get_water_level(int x, int z) const;
