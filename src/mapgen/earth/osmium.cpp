@@ -534,7 +534,6 @@ arnis::Args earth_arnis_args()
 	// Match Rust's default. The shared canopy cache keeps this single raster
 	// available across chunk-generation threads without per-thread downloads.
 	arnis.canopy_height = true;
-	arnis.building_facades_dir = ::arnis::cache::facade_cache_root().string();
 	const ::arnis::Args freeminer_defaults = arnis;
 
 	// Settings::getNoEx only exposes strings, so parse values here while leaving
