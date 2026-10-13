@@ -444,12 +444,12 @@ std::optional<int> Ground::max_level(const std::vector<XZPoint> &points) const
 }
 int Ground::level(const XZPoint &pos) const
 {
-	// Rust falls back to the configured base whenever elevation is enabled
-	// without a usable elevation dataset; do not silently query the legacy
-	// mapgen height in that state.
+	// Rust falls back to its configured base when no elevation raster is
+	// available. Freeminer may explicitly provide its own host-height callback;
+	// keep that adapter-specific fallback separate from the standalone API.
 	if (elevation_enabled && (elevation_grid.empty() || elevation_world_width == 0 ||
 									 elevation_world_height == 0))
-		return elevation_ground_level.value_or(0);
+		return host_elevation ? host_elevation(pos) : elevation_ground_level.value_or(0);
 	if (elevation_enabled && !elevation_grid.empty() && elevation_world_width > 0 &&
 			elevation_world_height > 0) {
 		const auto height = elevation_grid.size();
@@ -490,13 +490,14 @@ int Ground::level(const XZPoint &pos) const
 double Ground::level_exact(const XZPoint &pos) const
 {
 	// Rust returns its configured flat base whenever elevation is disabled.
-	// Keep the continuous query consistent with level() and do not silently
-	// sample Freeminer's unrelated host mapgen terrain.
+	// Keep the continuous query consistent with level(); a Freeminer host-height
+	// fallback is used only when terrain mode is enabled and no raster exists.
 	if (!elevation_enabled)
 		return static_cast<double>(elevation_ground_level.value_or(0));
 	if (elevation_grid.empty() || elevation_world_width == 0 ||
 			elevation_world_height == 0)
-		return static_cast<double>(elevation_ground_level.value_or(0));
+		return static_cast<double>(host_elevation ? host_elevation(pos)
+												  : elevation_ground_level.value_or(0));
 	const auto height = elevation_grid.size();
 	const auto width = elevation_grid.front().size();
 	if (width == 0 || height == 0)

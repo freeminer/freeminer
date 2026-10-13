@@ -1022,8 +1022,19 @@ void generate_cached_arnis(
 {
 	if (chunk.elements.empty() || !chunk.flood_fill_cache || !chunk.building_footprints)
 		return;
+	const auto args = earth_arnis_args();
 	arnis::Ground ground;
 	ground.mg = mg;
+	ground.set_ground_level(args.ground_level);
+	ground.elevation_enabled = args.terrain_enabled();
+	if (ground.elevation_enabled) {
+		const int origin_x = mg->node_min.X;
+		const int origin_z = mg->node_min.Z;
+		ground.host_elevation = [mg, origin_x, origin_z](const arnis::XZPoint &point) {
+			return static_cast<int>(mg->get_height(static_cast<pos_t>(point.x + origin_x),
+					static_cast<pos_t>(point.z + origin_z), 0));
+		};
+	}
 	arnis::WorldEditor editor;
 	editor.set_generation_error_sink([](const std::string &message) {
 		errorstream << "Earth: Arnis generation error: " << message << '\n';
@@ -1052,7 +1063,6 @@ void generate_cached_arnis(
 				return mg->queueGeneratedSchemEntity(tile_id, v3pos_t(x, y, z), nbt);
 			},
 			true);
-	const auto args = earth_arnis_args();
 	// Raster providers use the editor bounds, even when the host enters through
 	// generate_world rather than generate_world_with_options.
 	const pos_t sample_y = ((mg->node_min + mg->node_max) / 2).Y;

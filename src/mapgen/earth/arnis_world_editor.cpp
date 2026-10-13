@@ -4,6 +4,7 @@
 #include "mapgen/mapgen_earth.h"
 #include "arnis-cpp/src/ground_decoration.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
+#include "arnis-cpp/src/climate.h"
 
 #include <algorithm>
 #include <array>
@@ -67,6 +68,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.max_lat = max_lat;
 	worker.min_lon = min_lon;
 	worker.max_lon = max_lon;
+	worker.climate_anchor = climate_anchor;
 	worker.generation_error_sink = generation_error_sink;
 	worker.begin_tile_sink = begin_tile_sink;
 	worker.merge_tile_sink = merge_tile_sink;
@@ -804,6 +806,11 @@ bool WorldEditor::water_source_is_enclosed(int x, int z) const
 }
 biome::Climate WorldEditor::climate() const
 {
+	if (climate_anchor)
+		return climate::classify(climate_anchor->first, climate_anchor->second);
+	if (std::isfinite(min_lat) && std::isfinite(max_lat) && std::isfinite(min_lon) &&
+			std::isfinite(max_lon) && max_lat > min_lat && max_lon > min_lon)
+		return climate::classify_bbox(min_lat, min_lon, max_lat, max_lon);
 	return ground ? ground->climate() : biome::Climate::Temperate;
 }
 int WorldEditor::get_water_level(int x, int z) const

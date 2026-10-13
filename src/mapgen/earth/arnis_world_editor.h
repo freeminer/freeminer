@@ -186,6 +186,9 @@ struct WorldEditor
 	// editor lets renderer-side pipeline ports (tree packs, previews, landmarks)
 	// use the same metadata without depending on a Rust-only GenerationOptions.
 	double min_lat = 0.0, max_lat = 0.0, min_lon = 0.0, max_lon = 0.0;
+	// One World generation uses a stable climate anchor so independently
+	// generated areas keep the same biome-sensitive palettes and vegetation.
+	std::optional<std::pair<double, double>> climate_anchor;
 	bool flush_requested = false, save_requested = false;
 	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink,
 			world_settings_sink;
@@ -530,6 +533,10 @@ struct WorldEditor
 	std::array<double, 4> geographic_bounds() const
 	{
 		return {min_lat, max_lat, min_lon, max_lon};
+	}
+	void set_climate_anchor(std::optional<std::pair<double, double>> anchor)
+	{
+		climate_anchor = std::move(anchor);
 	}
 	void set_output_path(std::filesystem::path p) { output_path = std::move(p); }
 	void set_block_properties_sink(
