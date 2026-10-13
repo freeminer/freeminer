@@ -14,7 +14,8 @@ namespace arnis
 class Block : public MapNode
 {
 public:
-	Block(content_t c = {}) : MapNode{c} {}
+	// Content ID zero can belong to a registered node, including water.
+	Block(content_t c = CONTENT_AIR) : MapNode{c} {}
 
 	content_t id() const { return getContent(); }
 };

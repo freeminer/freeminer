@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -41,6 +42,10 @@ struct Ground
 		int orig_min_x = 0, orig_max_x = 0, orig_min_z = 0, orig_max_z = 0;
 	};
 	MapgenEarth *mg = nullptr;
+	// Freeminer's mapgen adapter can delegate terrain queries to its native
+	// height sampler when no standalone Arnis elevation raster is installed.
+	// Coordinates are Ground-local, like the Rust-compatible elevation grid.
+	std::function<int(const XZPoint &)> host_elevation;
 	std::optional<land_cover::LandCoverData> land_cover;
 	std::size_t land_cover_world_width = 0;
 	std::size_t land_cover_world_height = 0;
