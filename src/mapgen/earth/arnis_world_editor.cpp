@@ -1037,11 +1037,14 @@ void WorldEditor::fill_column_with_absolute(int x, int z, int min_y, int max_y,
 									 : std::nullopt;
 		if (skip_existing) {
 			++mg->stat.check;
-			if (overlay || written_cells.contains(key)) {
-				const auto content = overlay.value_or(mg->vm->getNode(pos)).getContent();
-				if (content != CONTENT_AIR && content != CONTENT_IGNORE)
-					continue;
-			}
+			// Rust's WorldToModify::fill_column_with only fills AIR. The emerged
+			// Freeminer VM may already contain nodes that were not written through
+			// this editor, so written_cells alone is not enough to decide whether
+			// the position is occupied. The tile overlay, when present, remains the
+			// authoritative view of writes made by a parallel generation tile.
+			const auto content = overlay.value_or(mg->vm->getNode(pos)).getContent();
+			if (content != CONTENT_AIR && content != CONTENT_IGNORE)
+				continue;
 		}
 		if (!active_tile_overlay ||
 				!mg->writeTileOverlay(*active_tile_overlay, pos, block))
