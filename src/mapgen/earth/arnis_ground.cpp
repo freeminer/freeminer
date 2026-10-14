@@ -7,6 +7,7 @@
 #include "arnis-cpp/src/elevation/cache.h"
 #include "arnis-cpp/src/elevation/selector.h"
 #include "arnis-cpp/src/coordinate_system/transformation.h"
+#include "arnis-cpp/src/projection/projection_spec.h"
 #include "arnis-cpp/src/fm_ecoregion_cache.h"
 #include "arnis-cpp/src/grid_ops.h"
 #include "arnis-cpp/src/water_depth.h"
@@ -107,6 +108,7 @@ GroundFrame GroundFrame::local()
 
 GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &bbox)
 {
+	const auto spec = projection::ProjectionSpec::from_args(args);
 	if (args.one_world_run) {
 		elevation::AffinePolicy policy = elevation::AffinePolicy::fit_with_headroom();
 		if (args.one_world_run->elevation) {
@@ -118,11 +120,10 @@ GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &b
 			policy = elevation::AffinePolicy::fixed_mapping({stored.min_height_m,
 					stored.blocks_per_meter, stored.ground_level, soft_top});
 		}
-		const auto origin = std::pair<double, double>{
-				args.one_world_run->origin_lat, args.one_world_run->origin_lon};
 		try {
-			return projected(bbox, args.scale, one_world::ground_pad_blocks(args.scale),
-					policy, origin, origin);
+			return projected(bbox, spec.scale,
+					static_cast<std::size_t>(one_world::ground_pad_blocks(args.scale)),
+					policy, spec.origin, spec.origin);
 		} catch (const std::exception &) {
 			// ProjectionSpec::transformer in Rust returns an error for a bbox
 			// outside the supported projected domain, and GroundFrame deliberately
@@ -130,10 +131,10 @@ GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &b
 			return local();
 		}
 	}
-	if (args.projection == projection::ProjectionKind::Local)
+	if (spec.kind == projection::ProjectionKind::Local)
 		return local();
 	try {
-		return projected(bbox, args.scale);
+		return projected(bbox, spec.scale);
 	} catch (const std::exception &) {
 		return local();
 	}
@@ -144,20 +145,15 @@ GroundFrame GroundFrame::projected(const geographic::LLBBox &bbox, double scale,
 		std::optional<std::pair<double, double>> anchor,
 		std::optional<std::pair<double, double>> projection_origin)
 {
-	const auto [transformer, rect] =
-			projection_origin
-					? coordinate_system::CoordTransformer::with_web_mercator(bbox, scale,
-							  projection_origin->first, projection_origin->second)
-					: coordinate_system::CoordTransformer::with_web_mercator(bbox, scale);
+	const projection::ProjectionSpec spec{
+			projection::ProjectionKind::WebMercator, projection_origin, scale, 0};
+	const auto [transformer, rect] = spec.transformer(bbox);
 	(void)transformer;
 	GroundFrame frame;
 	frame.world_dims = std::pair<std::size_t, std::size_t>{
 			static_cast<std::size_t>(rect.total_blocks_x()),
 			static_cast<std::size_t>(rect.total_blocks_z())};
-	const auto origin = projection_origin.value_or(
-			std::pair<double, double>{(bbox.min().lat() + bbox.max().lat()) * 0.5,
-					(bbox.min().lng() + bbox.max().lng()) * 0.5});
-	frame.mercator.emplace(origin.first, origin.second, scale);
+	frame.mercator = spec.mercator(bbox);
 	frame.pad_blocks = pad;
 	frame.affine = policy;
 	frame.climate_anchor = std::move(anchor);
@@ -585,7 +581,9 @@ bool Ground::has_land_cover() const
 }
 bool Ground::has_canopy() const
 {
-	return canopy_data.has_value() && canopy_world_width > 0 && canopy_world_height > 0;
+	// Rust's has_canopy() only tests whether the raster exists. Its coordinate
+	// mapping uses Ground::world_dims(), not canopy-specific dimensions.
+	return canopy_data.has_value();
 }
 
 std::optional<ecoregion::Ecoregion> Ground::ecoregion_at(const XZPoint &coord) const
@@ -754,12 +752,13 @@ void Ground::save_canopy_debug_image(const std::string &filename) const
 std::pair<std::size_t, std::size_t> Ground::canopy_index(const XZPoint &coord) const
 {
 	const auto &c = *canopy_data;
+	const auto [world_width, world_height] = world_dims();
 	const double xr = std::clamp(
-			double(coord.x) / double(std::max<std::size_t>(1, canopy_world_width - 1)),
-			0.0, 1.0);
+			double(coord.x) / double(std::max<std::size_t>(1, world_width - 1)), 0.0,
+			1.0);
 	const double zr = std::clamp(
-			double(coord.z) / double(std::max<std::size_t>(1, canopy_world_height - 1)),
-			0.0, 1.0);
+			double(coord.z) / double(std::max<std::size_t>(1, world_height - 1)), 0.0,
+			1.0);
 	return {std::min<std::size_t>(std::llround(xr * double(c.width - 1)), c.width - 1),
 			std::min<std::size_t>(std::llround(zr * double(c.height - 1)), c.height - 1)};
 }
@@ -911,8 +910,9 @@ void Ground::apply_osm_land_override(
 {
 	if (!land_cover)
 		return;
-	land_cover::apply_osm_land_override(*land_cover, land_cover_world_width,
-			land_cover_world_height, elements, bbox, scale);
+	const auto [world_width, world_height] = world_dims();
+	land_cover::apply_osm_land_override(
+			*land_cover, world_width, world_height, elements, bbox, scale);
 }
 void Ground::mark_beaches()
 {
