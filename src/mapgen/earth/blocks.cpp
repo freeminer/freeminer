@@ -1954,7 +1954,9 @@ void init(MapgenEarth *mg)
 			"brown_concrete_powder", {"default:gravel", "mcl_core:gravel", "dye:brown"});
 	CYAN_TERRACOTTA = prefer_arnis("cyan_terracotta", CYAN_CONCRETE);
 	BLACK_WOOL = g("black_wool", "wool:black");
-	LIGHT_GRAY_WALL_BANNER = prefer_arnis("light_gray_wall_banner", LIGHT_GRAY_CONCRETE);
+	LIGHT_GRAY_WALL_BANNER = optional_g("light_gray_wall_banner", GRAY_WOOL,
+			{"mcl_banners:light_gray_wall_banner", "mcl_banners:light_grey_wall_banner",
+					"default:wall_sign"});
 
 	// Keep dedicated Rust palette entries distinct where the host game has a
 	// matching node. These used to be collapsed to generic material substitutes,
