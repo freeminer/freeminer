@@ -1159,9 +1159,8 @@ public:
 						try {
 							actionstream
 									<< "Earth: fetching Overture building data for cached OSM extract\n";
-							auto overture = arnis::overture::fetch_overture_data(
-									bbox->min().lat(), bbox->min().lng(),
-									bbox->max().lat(), bbox->max().lng(), args.scale,
+							auto overture = arnis::overture::fetch_overture_data(*bbox,
+									arnis::projection::ProjectionSpec::from_args(args),
 									args.debug, args.overture_source);
 							for (auto &element : overture.elements) {
 								if (!element.is_way())

@@ -195,6 +195,12 @@ struct Ground
 		ecoregions = std::make_shared<const ecoregion::EcoMap>(std::move(map));
 	}
 	std::optional<ecoregion::Ecoregion> ecoregion_at(const XZPoint &coord) const;
+	// Rust-compatible query name; retain ecoregion_at for existing Freeminer
+	// callers while exposing Ground::ecoregion to library consumers.
+	std::optional<ecoregion::Ecoregion> ecoregion(const XZPoint &coord) const
+	{
+		return ecoregion_at(coord);
+	}
 	// Rust Ground::ecoregion_map exposes a non-owning view of the full map.
 	const ecoregion::EcoMap *ecoregion_map() const { return ecoregions.get(); }
 
