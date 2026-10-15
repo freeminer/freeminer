@@ -699,24 +699,11 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 #endif
 				}
 
-				// calculate self level 5 blocks
+				// Keep the average for sea-level relaxation and fast flooding.
 				want_level = level_avg > level_max ? level_avg
 							 : total_level >= level_max * can_liquid_same_level
 									 ? level_max
 									 : total_level / can_liquid_same_level;
-				total_level -= want_level * can_liquid_same_level;
-
-				/*
-				if (pressure && total_level > 0 && neighbors[D_BOTTOM].liquid) { // bottom
-		pressure +1
-					++liquid_levels_want[D_BOTTOM];
-					--total_level;
-		#if LIQUID_DEBUG
-					infostream << " bottom1 pressure+1: " << " bottom=" <<
-		(int)liquid_levels_want[D_BOTTOM] << " total_level=" << (int)total_level <<
-		std::endl; #endif
-				}
-		*/
 
 				// relax down
 				// Pressure can legitimately push a partial node above the nominal
@@ -734,38 +721,61 @@ size_t ServerMap::transformLiquidsReal(Server *m_server,
 					total_level = 0;
 				}
 
-				for (uint8_t ir = D_SELF; ir < D_TOP; ++ir) { // fill only same level
-					uint8_t ii = liquid_random_map[(loopcount + loop_rand + 1) % 4][ir];
-					if (!neighbors[ii].liquid)
+				// Lazily redistribute the volume left after gravity.
+				int remaining = total_level;
+				for (uint8_t i = D_SELF; i < D_TOP; ++i) {
+					if (!neighbors[i].liquid)
 						continue;
-					liquid_levels_want[ii] = want_level;
-					// if (viscosity > 1 &&
-					// (liquid_levels_want[ii]-liquid_levels[ii]>8-viscosity))
-					//  randomly place rest of divide
-					if (liquid_levels_want[ii] < level_max && total_level > 0) {
-						if (level_max > LIQUID_LEVEL_SOURCE || loopcount % 3 ||
-								liquid_levels[ii] <= 0) {
-							if (liquid_levels[ii] > liquid_levels_want[ii]) {
-								++liquid_levels_want[ii];
-								--total_level;
-							}
-						} else {
-							++liquid_levels_want[ii];
-							--total_level;
-						}
-					}
+					liquid_levels_want[i] = std::max<int>(0, liquid_levels[i]);
+					remaining -= liquid_levels_want[i];
 				}
 
-				for (uint8_t ir = D_SELF; ir < D_TOP; ++ir) {
-					if (total_level < 1)
-						break;
-					uint8_t ii = liquid_random_map[(loopcount + loop_rand + 2) % 4][ir];
-					if (liquid_levels_want[ii] >= 0 &&
-							liquid_levels_want[ii] < level_max) {
-						++liquid_levels_want[ii];
-						--total_level;
+				// Account for vertical inflow/outflow without creating volume.
+				while (remaining != 0) {
+					int selected = -1;
+					for (uint8_t ir = D_SELF; ir < D_TOP; ++ir) {
+						const uint8_t i =
+								liquid_random_map[(loopcount + loop_rand + 1) % 4][ir];
+						if (!neighbors[i].liquid)
+							continue;
+						const int level = liquid_levels_want[i];
+						if (remaining > 0 ? level >= level_max : level <= 0)
+							continue;
+						if (selected < 0 ||
+								(remaining > 0 ? level < liquid_levels_want[selected]
+											   : level > liquid_levels_want[selected]))
+							selected = i;
 					}
+					if (selected < 0)
+						break;
+					const int change = remaining > 0 ? 1 : -1;
+					liquid_levels_want[selected] += change;
+					remaining -= change;
 				}
+				total_level = remaining;
+
+				// Equalize only across actual edges. A one-level difference
+				// stays at rest, so the thinnest edge cannot keep spreading.
+				bool moved;
+				do {
+					moved = false;
+					for (uint8_t ir = D_SELF + 1; ir < D_TOP; ++ir) {
+						const uint8_t i =
+								liquid_random_map[(loopcount + loop_rand + 2) % 4][ir];
+						if (!neighbors[i].liquid)
+							continue;
+						const int difference =
+								liquid_levels_want[D_SELF] - liquid_levels_want[i];
+						const uint8_t from = difference > 0 ? D_SELF : i;
+						const uint8_t to = difference > 0 ? i : D_SELF;
+						if (std::abs(difference) < 2 ||
+								liquid_levels_want[to] >= level_max)
+							continue;
+						--liquid_levels_want[from];
+						++liquid_levels_want[to];
+						moved = true;
+					}
+				} while (moved);
 
 				// Fill opposite vertical direction if there is still volume.
 				if (neighbors[secondary_dir].liquid && total_level > 0) {
