@@ -109,6 +109,11 @@ GroundFrame GroundFrame::local()
 GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &bbox)
 {
 	const auto spec = projection::ProjectionSpec::from_args(args);
+	// Match Rust GroundFrame::from_args: an explicitly local projection stays
+	// local even when One World state is present. The One World affine/padding
+	// policy only applies after a projected transformer has been selected.
+	if (spec.kind == projection::ProjectionKind::Local)
+		return local();
 	if (args.one_world_run) {
 		elevation::AffinePolicy policy = elevation::AffinePolicy::fit_with_headroom();
 		if (args.one_world_run->elevation) {
@@ -131,8 +136,6 @@ GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &b
 			return local();
 		}
 	}
-	if (spec.kind == projection::ProjectionKind::Local)
-		return local();
 	try {
 		return projected(bbox, spec.scale);
 	} catch (const std::exception &) {
