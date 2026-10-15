@@ -642,7 +642,10 @@ void Ground::set_canopy_data(
 void Ground::set_canopy_data(
 		const std::vector<std::uint8_t> &grid, std::size_t width, std::size_t height)
 {
-	if (width == 0 || height == 0)
+	// Rust's rotation-only overload replaces canopy pixels only when the Ground
+	// already has canopy data. Do not turn a previously unavailable/disabled
+	// canopy provider into an apparently valid all-zero raster during rotation.
+	if (!canopy_data || width == 0 || height == 0)
 		return;
 	set_canopy_data(canopy::CanopyData(grid, width, height),
 			canopy_world_width ? canopy_world_width : width,
