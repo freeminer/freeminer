@@ -1137,6 +1137,16 @@ local function move_to_city(player, name)
         end
         if not result or not result.succeeded then
             local err = (result and result.error) and result.error or "unknown error"
+            local key = string.lower(name:gsub("[^%w]+", "_"))
+            local city = cities[key]
+            if city then
+                print("nominatim fail", tostring(err), "using local city", key)
+                local current_player = core.get_player_by_name(pname)
+                if current_player then
+                    return move_player_to_geo(current_player, city, 1)
+                end
+                return
+            end
             core.chat_send_player(pname, "[geoip] nominatim request failed: " .. tostring(err))
             print("nominatim fail", tostring(err))
             return
