@@ -340,7 +340,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			blast_multiplier(L, "blast_tnt_absorb_strength", 1.0);
 
 	const double blast_tnt_ray_fraction = fm_blast_fraction(
-			getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0.8), 0.8);
+			getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0.2), 0.2);
 	const double blast_core_radius =
 			fm_blast_core_radius(getfloatfield_default(L, 2, "blast_core_radius",
 										 fm_blast_full_shell_radius(blast_strength)),

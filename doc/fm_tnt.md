@@ -90,7 +90,7 @@ Both `core.tnt_explode(pos, options)` and `tnt.boom(pos, def)` accept:
 
 | Option | Default | Meaning |
 | --- | ---: | --- |
-| `blast_tnt_ray_fraction` | `0.8` | Fraction of an absorbed explosive's energy added to the local path at its position. The remainder is shared equally among the current shell's active candidates, including that position. |
+| `blast_tnt_ray_fraction` | `0.2` | Fraction of an absorbed explosive's energy added to the local path at its position. The remainder is shared equally among the current shell's active candidates, including that position. |
 
 Fractions are clamped to `[0, 1]`; non-finite values use the default. Absorption
 adds the explosive's full energy to live hits. `tnt.blast_tnt_ray_fraction` is
@@ -109,7 +109,7 @@ tnt.boom(pos, {
     blast_strength = 3000,
     blast_core_radius = 3,
     blast_core_shell_fraction = 0.9,
-    blast_tnt_ray_fraction = 0.8,
+    blast_tnt_ray_fraction = 0.2,
     blast_distance_loss = 0.1,
     blast_resistance_scale = 1,
 })
