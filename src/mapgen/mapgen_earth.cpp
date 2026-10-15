@@ -548,6 +548,9 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	mg_params = params_;
 
 	const Json::Value &params = mg_params->params;
+	// Earth/Arnis supplies surface materials and vegetation. Preserve only the
+	// configured underground generation passes from mg_flags.
+	flags &= MG_CAVES | MG_DUNGEONS | MG_ORES;
 
 	if (params.get("light", 0).asBool())
 		this->flags &= ~MG_LIGHT;
