@@ -145,11 +145,15 @@ void LuaEmergeAreaCallback(v3bpos_t blockpos, EmergeAction action, void *param)
 	ScriptCallbackState *state = (ScriptCallbackState *)param;
 	assert(state != NULL);
 	assert(state->script != NULL);
-	assert(state->refcount > 0);
+	// fm: EnvAutoLock is disabled here. Serialize the complete callback lifetime
+	// with the Lua mutex, including refcount changes and state deletion.
 
 	// state must be protected by envlock
 	Server *server = state->script->getServer();
 	Server::EnvAutoLock envlock(server);
+	std::lock_guard<std::recursive_mutex> scriptlock(state->script->m_luastackmutex);
+	assert(state->refcount > 0);
+	// ===
 
 	state->refcount--;
 

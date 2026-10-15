@@ -244,8 +244,11 @@ MapgenIndevParams::MapgenIndevParams()
 void MapgenIndevParams::readParams(const Settings *settings)
 {
 	MapgenV6Params::readParams(settings);
+	// Indev has its own exposed flags; retain v6 flags as a legacy fallback.
+	if (settings->exists("mgindev_spflags"))
+		settings->getFlagStrNoEx("mgindev_spflags", spflags, flagdesc_mapgen_v6);
 
-	auto mg_params = settings->getJson("mg_params", paramsj);
+		auto mg_params = settings->getJson("mg_params", paramsj);
 	if (!mg_params.isNull())
 		paramsj = mg_params;
 
@@ -271,6 +274,7 @@ void MapgenIndevParams::readParams(const Settings *settings)
 void MapgenIndevParams::writeParams(Settings *settings) const
 {
 	MapgenV6Params::writeParams(settings);
+	settings->setFlagStr("mgindev_spflags", spflags, flagdesc_mapgen_v6);
 
 	settings->setJson("mg_params", paramsj);
 
@@ -394,7 +398,7 @@ pos_t MapgenIndev::generateGround()
 	// 'Generate floatlands in this mapchunk' bool for
 	// simplification of condition checks in y-loop.
 	bool gen_floatlands = false;
-	u8 cache_index = 0;
+	size_t cache_index = 0;
 	// Y values where floatland tapering starts
 	pos_t float_taper_ymax = floatland_ymax - floatland_taper;
 	pos_t float_taper_ymin = floatland_ymin + floatland_taper;
