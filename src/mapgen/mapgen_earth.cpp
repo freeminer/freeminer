@@ -90,6 +90,17 @@ namespace
 constexpr double earth_min_elevation = -32768;
 constexpr double earth_max_elevation = 32767;
 
+// Earth floatlands start 5 km above both zero and the local surface. Preserve
+// the configured v7 band thickness, moving its lower edge to Earth's cutoff.
+std::pair<double, double> earth_floatland_bounds(
+		pos_t surface, double vertical_scale, const MapgenV7Params &params)
+{
+	const double bottom =
+			std::max(0.0, double(surface)) + 5000.0 / std::abs(vertical_scale);
+	return {bottom, bottom + std::max(1.0, double(params.floatland_ymax) -
+												   params.floatland_ymin)};
+}
+
 v3opos_t earth_node_position(const v3pos_t &p)
 {
 	return {static_cast<opos_t>(p.X), static_cast<opos_t>(p.Y), static_cast<opos_t>(p.Z)};
@@ -537,7 +548,6 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	mg_params = params_;
 
 	const Json::Value &params = mg_params->params;
-	flags = 0;
 
 	if (params.get("light", 0).asBool())
 		this->flags &= ~MG_LIGHT;
@@ -1288,35 +1298,89 @@ int MapgenEarth::generateTerrain()
 {
 	if (projected_terrain)
 		return (this->*projected_terrain)();
-	u32 index = 0;
-	const auto em = vm->m_area.getExtent();
+	const auto procedural_limit = static_cast<pos_t>(1000 / scale.Y);
+	bool need_procedural = false;
+	bool need_floatlands = false;
+	for (pos_t z = node_min.Z; z <= node_max.Z; ++z) {
+		for (pos_t x = node_min.X; x <= node_max.X; ++x) {
+			const auto height = get_height(x, z, 0);
+			need_procedural |= std::abs(height - water_level) > procedural_limit;
+			const auto [bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
+			need_floatlands |= (spflags & MGV7_FLOATLANDS) && node_max.Y > bottom &&
+							   node_min.Y <= top;
+		}
+	}
 
-	for (pos_t z = node_min.Z; z <= node_max.Z; z++) {
-		for (pos_t x = node_min.X; x <= node_max.X; x++, index++) {
+	pos_t stone_surface_max_y = -MAX_MAP_GENERATION_LIMIT;
+	if (need_procedural) {
+		// Earth places floatlands separately at its surface-relative altitude.
+		const auto saved_spflags = spflags;
+		spflags &= ~MGV7_FLOATLANDS;
+		stone_surface_max_y = MapgenV7::generateTerrain();
+		spflags = saved_spflags;
+	}
+
+	std::unique_ptr<Noise> earth_floatland_noise;
+	if (need_floatlands) {
+		NoiseParams earth_floatland_params = sp->np_floatland;
+		// Keep Earth floatlands sparser than the standard v7 distribution.
+		earth_floatland_params.offset -= 0.35f;
+		earth_floatland_params.scale *= 0.75f;
+		earth_floatland_noise = std::make_unique<Noise>(
+				&earth_floatland_params, seed, csize.X, csize.Y + 2, csize.Z);
+		earth_floatland_noise->noiseMap3D(node_min.X, node_min.Y - 1, node_min.Z);
+	}
+
+	const auto em = vm->m_area.getExtent();
+	for (pos_t z = node_min.Z; z <= node_max.Z; ++z) {
+		for (pos_t x = node_min.X; x <= node_max.X; ++x) {
 			const auto heat =
 					m_emerge->env->m_use_weather
 							? m_emerge->env->getServerMap().updateBlockHeat(m_emerge->env,
 									  v3pos_t(x, node_max.Y, z), nullptr, &heat_cache)
 							: 0;
 			const auto height = get_height(x, z, 0);
+			const bool procedural = std::abs(height - water_level) > procedural_limit;
+			const auto [bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
+			const double taper = std::clamp(double(sp->floatland_taper), 1.0,
+					std::max(1.0, (top - bottom) / 2.0));
 			u32 i = vm->m_area.index(x, node_min.Y, z);
-			for (pos_t y = node_min.Y; y <= node_max.Y; y++) {
-				bool underground = height >= y;
-				if (underground) {
-					if (!vm->m_data[i]) {
-						vm->m_data[i] = earth_layer_get(x, y, z, height, heat);
+			for (pos_t y = node_min.Y; y <= node_max.Y; ++y) {
+				if (earth_floatland_noise && y > bottom && y <= top) {
+					float float_offset = 0.0f;
+					if (y > top - taper)
+						float_offset = std::pow((y - (top - taper)) / taper,
+											   sp->float_taper_exp) *
+									   4.0f;
+					else if (y < bottom + taper)
+						float_offset = std::pow((bottom + taper - y) / taper,
+											   sp->float_taper_exp) *
+									   4.0f;
+					const u32 index3d = (z - node_min.Z) * zstride_1u1d +
+										(x - node_min.X) +
+										(y - (node_min.Y - 1)) * ystride;
+					if (earth_floatland_noise->result[index3d] + sp->floatland_density -
+									float_offset >=
+							0.0f) {
+						vm->m_data[i] = Mapgen_features::layers_get(index3d);
+						stone_surface_max_y = std::max(stone_surface_max_y, y);
+					} else {
+						vm->m_data[i] = n_air;
 					}
-				} else {
-					// Bathymetry describes the seabed, not the water surface. Fill
-					// the entire sea-level column even without ESA/OSM coverage;
-					// Arnis subsequently places inland water and authored features.
-					vm->m_data[i] = y <= water_level ? n_water : n_air;
+				} else if (!procedural) {
+					if (y <= height) {
+						if (!vm->m_data[i])
+							vm->m_data[i] = earth_layer_get(x, y, z, height, heat);
+						stone_surface_max_y = std::max(stone_surface_max_y, y);
+					} else {
+						vm->m_data[i] = y <= water_level ? n_water : n_air;
+					}
 				}
 				vm->m_area.add_y(em, i, 1);
 			}
 		}
 	}
-	return 0;
+	return stone_surface_max_y;
 }
 
 int lat_start(ll_t lat_dec)
@@ -1803,10 +1867,26 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 		return;
 	}
 
+	// High chunks intersecting a floatland band must reach terrain generation.
+	bool floatland_chunk = false;
+	if (spflags & MGV7_FLOATLANDS) {
+		for (pos_t z = node_min.Z; z <= node_max.Z && !floatland_chunk; ++z) {
+			for (pos_t x = node_min.X; x <= node_max.X; ++x) {
+				const auto [bottom, top] =
+						earth_floatland_bounds(get_height(x, z, 0), scale.Y, *sp);
+				if (node_max.Y > bottom && node_min.Y <= top) {
+					floatland_chunk = true;
+					break;
+				}
+			}
+		}
+	}
+
 	// Once a horizontal extract has established its conservative authored
 	// ceiling, chunks wholly above it are known air and need no Earth/Arnis work.
 	if (const auto authored_max = cachedAuthoredMaxY();
-			authored_max && node_min.Y > *authored_max && node_min.Y > water_level) {
+			!floatland_chunk && authored_max && node_min.Y > *authored_max &&
+			node_min.Y > water_level) {
 		fillChunkWithAir();
 		finish_generation();
 		return;
@@ -1816,7 +1896,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// fm:
 	// Above 1000 metres of terrain clearance, skip even loading authored objects.
 	// Compare in metres so the cutoff also respects the Earth's vertical scale.
-	if (node_min.Y > water_level &&
+	if (!floatland_chunk && node_min.Y > water_level &&
 			(static_cast<double>(node_min.Y) - terrain_max_y) * scale.Y >
 					MAX_BUILDING_HEIGHT) {
 		fillChunkWithAir();
@@ -1829,7 +1909,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// base-terrain Y loop and let generateBuildings parse just enough to compute
 	// that ceiling; hdl::apply rejects the chunk before flood-fill/generation if
 	// it is also above every authored object.
-	if (node_min.Y > terrain_max_y && node_min.Y > water_level) {
+	if (!floatland_chunk && node_min.Y > terrain_max_y && node_min.Y > water_level) {
 		fillChunkWithAir();
 		generateBuildings();
 
@@ -1901,16 +1981,15 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	if (flags & MG_BIOMES)
 		dustTopNodes();
 
-	generateBuildings();
+	if (!floatland_chunk)
+		generateBuildings();
 
 	// Update liquids
 	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 
 	// Calculate lighting
 	// Limit floatland shadows
-	bool propagate_shadow =
-			!((spflags & MGV7_FLOATLANDS) && node_max.Y >= floatland_ymin - csize.Y * 2 &&
-					node_min.Y <= floatland_ymax);
+	bool propagate_shadow = !floatland_chunk;
 
 	if (flags & MG_LIGHT)
 		calcLighting(node_min - v3pos_t(0, 1, 0), node_max + v3pos_t(0, 1, 0),
