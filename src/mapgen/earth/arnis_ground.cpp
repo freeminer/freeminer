@@ -421,25 +421,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 
 std::optional<int> Ground::min_level(const std::vector<XZPoint> &points) const
 {
-	if (!elevation_enabled)
-		return elevation_ground_level.value_or(0);
-	if (points.empty())
-		return std::nullopt;
-	int min_y = level(points.front());
-	for (const auto &point : points)
-		min_y = std::min(min_y, level(point));
-	return min_y;
+	return min_level(points.begin(), points.end());
 }
 std::optional<int> Ground::max_level(const std::vector<XZPoint> &points) const
 {
-	if (!elevation_enabled)
-		return elevation_ground_level.value_or(0);
-	if (points.empty())
-		return std::nullopt;
-	int maxY = std::numeric_limits<int>::min();
-	for (const auto &pt : points)
-		maxY = std::max(maxY, level(pt));
-	return maxY;
+	return max_level(points.begin(), points.end());
 }
 int Ground::level(const XZPoint &pos) const
 {
