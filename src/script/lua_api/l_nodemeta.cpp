@@ -9,6 +9,9 @@
 #include "serverenvironment.h"
 #include "map.h"
 #include "mapblock.h"
+// fm: Complete node metadata snapshots for portal transfers.
+#include "fm_node_metadata.h"
+// ===
 
 /*
 	NodeMetaRef
@@ -118,6 +121,9 @@ void NodeMetaRef::handleToTable(lua_State *L, IMetadata *_meta)
 		lua_newtable(L);
 	}
 	lua_setfield(L, -2, "inventory");
+	// fm: Include privacy flags and inventory grid widths in snapshots.
+	fm_push_node_metadata_state(L, meta);
+	// ===
 }
 
 // from_table(self, table)
@@ -145,6 +151,10 @@ bool NodeMetaRef::handleFromTable(lua_State *L, int table, IMetadata *_meta)
 		}
 		lua_pop(L, 1);
 	}
+
+	// fm: Restore the optional complete-state fields after inventory lists.
+	fm_read_node_metadata_state(L, table, meta);
+	// ===
 
 	return true;
 }
