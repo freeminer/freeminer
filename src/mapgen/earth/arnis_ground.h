@@ -95,10 +95,34 @@ struct Ground
 	// Return the minimum ground level among points
 	// Return std::nullopt if no valid data, to match the Rust’s Option
 	std::optional<int> min_level(const std::vector<XZPoint> &points) const;
+	template <typename InputIt>
+	std::optional<int> min_level(InputIt first, InputIt last) const
+	{
+		if (!elevation_enabled)
+			return elevation_ground_level.value_or(0);
+		if (first == last)
+			return std::nullopt;
+		int result = level(*first++);
+		for (; first != last; ++first)
+			result = std::min(result, level(*first));
+		return result;
+	}
 
 	// Rust's Ground exposes both aggregate queries.  Keep an empty input as
 	// None; callers use that distinction when a feature has no geometry.
 	std::optional<int> max_level(const std::vector<XZPoint> &points) const;
+	template <typename InputIt>
+	std::optional<int> max_level(InputIt first, InputIt last) const
+	{
+		if (!elevation_enabled)
+			return elevation_ground_level.value_or(0);
+		if (first == last)
+			return std::nullopt;
+		int result = level(*first++);
+		for (; first != last; ++first)
+			result = std::max(result, level(*first));
+		return result;
+	}
 
 	// Return ground level for a single XZ point
 	int level(const XZPoint &pos) const;

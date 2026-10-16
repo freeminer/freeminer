@@ -1215,7 +1215,9 @@ public:
 										   std::numeric_limits<pos_t>::max())
 								? std::numeric_limits<pos_t>::max()
 								: static_cast<pos_t>(maximum);
-				arnis::prepare_elements_for_generation(cached.elements);
+				// Rust priority-sorts before applying OSM ground overrides, but delays
+				// ground-fill area ordering until shared generation indexes exist.
+				arnis::sort_elements_by_priority(cached.elements);
 				cached.element_bounds.reserve(cached.elements.size());
 				for (const auto &element : cached.elements)
 					cached.element_bounds.push_back(
