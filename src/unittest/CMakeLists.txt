@@ -4,6 +4,7 @@ set(unittest_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_indev.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_blast_shell.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_earth_projection.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_terrain_surface.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_terraindiffusion.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_world_merge.cpp

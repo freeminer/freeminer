@@ -10,6 +10,7 @@
 #include "arnis-cpp/src/projection/projection_spec.h"
 #include "arnis-cpp/src/fm_ecoregion_cache.h"
 #include "arnis-cpp/src/grid_ops.h"
+#include "arnis-cpp/src/land_cover/osm_water_override.h"
 #include "arnis-cpp/src/water_depth.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
 
