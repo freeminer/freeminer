@@ -1128,6 +1128,21 @@ public:
 				osmium::io::Reader reader{file};
 				const auto source_header = reader.header();
 				const auto source_bounds = source_header.joined_boxes();
+				const auto args = earth_osmium_detail::earth_arnis_args();
+				std::optional<arnis::geographic::LLBBox> bbox;
+				if (source_bounds.valid()) {
+					bbox.emplace(source_bounds.bottom_left().lat(),
+							source_bounds.bottom_left().lon(),
+							source_bounds.top_right().lat(),
+							source_bounds.top_right().lon());
+					const std::array<double, 4> geographic_bounds = {bbox->min().lat(),
+							bbox->max().lat(), bbox->min().lng(), bbox->max().lng()};
+					// Start while OSM elements are still being parsed. Rust starts the
+					// facade job as soon as the requested bbox is known, allowing image
+					// retrieval to overlap the other generation inputs.
+					cached.facade_job =
+							arnis::start_mapillary_facade_job(args, geographic_bounds);
+				}
 				MyHandler handler;
 				handler.mg = mg;
 				osmium::apply(reader, node_cache, handler,
@@ -1137,22 +1152,16 @@ public:
 								}));
 				handler.finish_relations();
 				cached.elements = std::move(handler.elements);
-				const auto args = earth_osmium_detail::earth_arnis_args();
-				std::optional<arnis::geographic::LLBBox> bbox;
-				if (source_bounds.valid()) {
-					bbox.emplace(source_bounds.bottom_left().lat(),
-							source_bounds.bottom_left().lon(),
-							source_bounds.top_right().lat(),
-							source_bounds.top_right().lon());
-				} else {
+				if (!bbox) {
 					bbox = earth_osmium_detail::earth_elements_geographic_bounds(
 							cached.elements);
-				}
-				if (bbox) {
-					const std::array<double, 4> geographic_bounds = {bbox->min().lat(),
-							bbox->max().lat(), bbox->min().lng(), bbox->max().lng()};
-					cached.facade_job =
-							arnis::start_mapillary_facade_job(args, geographic_bounds);
+					if (bbox) {
+						const std::array<double, 4> geographic_bounds = {
+								bbox->min().lat(), bbox->max().lat(), bbox->min().lng(),
+								bbox->max().lng()};
+						cached.facade_job = arnis::start_mapillary_facade_job(
+								args, geographic_bounds);
+					}
 				}
 				if (args.overture && !args.skip_objects()) {
 					if (bbox) {
