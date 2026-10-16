@@ -22,6 +22,10 @@
 #include "util/numeric.h"
 #include "version.h"
 #include "settings.h"
+// fm: Retry-After parsing for provider-backed integrations.
+#include <cctype>
+#include <string_view>
+// ===
 
 static std::mutex g_httpfetch_mutex;
 static std::unordered_map<u64, std::queue<HTTPFetchResult>>
@@ -53,6 +57,43 @@ static void httpfetch_deliver_result(const HTTPFetchResult &fetch_result)
 }
 
 static void httpfetch_request_clear(u64 caller);
+
+// fm: Keep the final response's Retry-After value available to provider clients.
+static size_t httpfetch_headerfunction(
+		char *buffer, size_t size, size_t count, void *userdata)
+{
+	const size_t bytes = size * count;
+	auto *retry_after = static_cast<std::string *>(userdata);
+	if (!retry_after || bytes == 0)
+		return bytes;
+	std::string_view line(buffer, bytes);
+	if (line.starts_with("HTTP/")) {
+		retry_after->clear();
+		return bytes;
+	}
+	const auto colon = line.find(':');
+	if (colon == std::string_view::npos)
+		return bytes;
+	const auto equal_name = [](std::string_view a, std::string_view b) {
+		if (a.size() != b.size())
+			return false;
+		for (size_t i = 0; i < a.size(); ++i)
+			if (std::tolower(static_cast<unsigned char>(a[i])) !=
+					std::tolower(static_cast<unsigned char>(b[i])))
+				return false;
+		return true;
+	};
+	if (!equal_name(line.substr(0, colon), "Retry-After"))
+		return bytes;
+	auto value = line.substr(colon + 1);
+	const auto first = value.find_first_not_of(" \t\r\n");
+	const auto last = value.find_last_not_of(" \t\r\n");
+	*retry_after = first == std::string_view::npos
+			? std::string{}
+			: std::string(value.substr(first, last - first + 1));
+	return bytes;
+}
+// ===
 
 u64 httpfetch_caller_alloc()
 {
@@ -318,6 +359,10 @@ HTTPFetchOngoing::HTTPFetchOngoing(const HTTPFetchRequest &request_,
 
 	// Set up a write callback that writes to the
 	// result struct, unless the data is to be discarded
+	// fm: Capture retry timing for Mapillary and other provider-backed integrations.
+	curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, httpfetch_headerfunction);
+	curl_easy_setopt(curl, CURLOPT_HEADERDATA, &result.retry_after);
+	// ===
 	if (request.caller == HTTPFETCH_DISCARD) {
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
 				httpfetch_discardfunction);

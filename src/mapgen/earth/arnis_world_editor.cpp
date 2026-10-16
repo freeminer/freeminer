@@ -553,7 +553,7 @@ void WorldEditor::set_block(const Block &block, int x, int y, int z,
 		const std::optional<std::vector<Block>> &replace_with,
 		const std::optional<std::vector<Block>> &avoid)
 {
-	if (!ground || !pos_ok(x, z))
+	if (!pos_ok(x, z))
 		return;
 	return set_block_absolute(block, x, get_absolute_y(x, y, z), z, replace_with, avoid);
 }
@@ -676,7 +676,7 @@ void WorldEditor::set_block_with_properties_absolute(const BlockWithProperties &
 bool WorldEditor::check_for_block(
 		int x, int y, int z, const std::optional<std::vector<Block>> &blocks)
 {
-	if (!ground || !pos_ok(x, z))
+	if (!pos_ok(x, z))
 		return false;
 	return check_for_block_absolute(x, get_absolute_y(x, y, z), z, blocks);
 }
@@ -818,7 +818,7 @@ int WorldEditor::get_water_level(int x, int z) const
 	return ground ? ground->water_level(ground->mg && !ground->elevation_enabled
 												? XZPoint{x, z}
 												: ground_point(x, z))
-				  : get_ground_level(x, z);
+				  : 0;
 }
 bool WorldEditor::is_lc_water(int x, int z) const
 {
