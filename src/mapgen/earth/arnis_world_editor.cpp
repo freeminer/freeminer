@@ -12,12 +12,158 @@
 #include <cmath>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <string_view>
+#include <tuple>
 
 namespace arnis
 {
 namespace world_editor
 {
+
+namespace
+{
+using EntityKey = std::tuple<int, int, int, bool, std::array<std::int32_t, 4>, int>;
+
+std::optional<int> entity_value_to_int(const nlohmann::json &value)
+{
+	if (value.is_number_unsigned()) {
+		const auto number = value.get<std::uint64_t>();
+		if (number > static_cast<std::uint64_t>(std::numeric_limits<int>::max()))
+			return std::nullopt;
+		return static_cast<int>(number);
+	}
+	if (value.is_number_integer()) {
+		const auto number = value.get<std::int64_t>();
+		if (number < std::numeric_limits<int>::min() ||
+				number > std::numeric_limits<int>::max())
+			return std::nullopt;
+		return static_cast<int>(number);
+	}
+	if (value.is_number_float()) {
+		const double number = value.get<double>();
+		if (!std::isfinite(number))
+			return 0;
+		return static_cast<int>(
+				std::clamp(number, static_cast<double>(std::numeric_limits<int>::min()),
+						static_cast<double>(std::numeric_limits<int>::max())));
+	}
+	return std::nullopt;
+}
+
+std::optional<EntityKey> entity_key(const nlohmann::json &entity)
+{
+	if (!entity.is_object())
+		return std::nullopt;
+	std::array<std::int32_t, 4> uuid{};
+	bool has_uuid = false;
+	if (const auto it = entity.find("UUID");
+			it != entity.end() && it->is_array() && it->size() == uuid.size()) {
+		has_uuid = true;
+		for (std::size_t i = 0; i < uuid.size(); ++i) {
+			const auto word = entity_value_to_int((*it)[i]);
+			if (!word) {
+				has_uuid = false;
+				break;
+			}
+			uuid[i] = static_cast<std::int32_t>(*word);
+		}
+	}
+	int facing = -1;
+	if (const auto it = entity.find("Facing"); it != entity.end())
+		facing = entity_value_to_int(*it).value_or(-1);
+
+	std::array<int, 3> pos{};
+	bool has_pos = false;
+	if (const auto it = entity.find("Pos");
+			it != entity.end() && it->is_array() && it->size() == pos.size()) {
+		has_pos = true;
+		for (std::size_t i = 0; i < pos.size(); ++i) {
+			const auto coordinate = entity_value_to_int((*it)[i]);
+			if (!coordinate) {
+				has_pos = false;
+				break;
+			}
+			pos[i] = *coordinate;
+		}
+	}
+	if (!has_pos) {
+		const auto x = entity.find("x");
+		const auto y = entity.find("y");
+		const auto z = entity.find("z");
+		if (x == entity.end() || y == entity.end() || z == entity.end())
+			return std::nullopt;
+		const auto ix = entity_value_to_int(*x);
+		const auto iy = entity_value_to_int(*y);
+		const auto iz = entity_value_to_int(*z);
+		if (!ix || !iy || !iz)
+			return std::nullopt;
+		pos = {*ix, *iy, *iz};
+	}
+	return EntityKey{pos[0], pos[1], pos[2], has_uuid, uuid, has_uuid ? -1 : facing};
+}
+
+void deduplicate_entities(std::vector<nlohmann::json> &entities)
+{
+	std::map<EntityKey, std::size_t> indexes;
+	std::vector<nlohmann::json> unique;
+	unique.reserve(entities.size());
+	for (auto &entity : entities) {
+		const auto key = entity_key(entity);
+		if (!key) {
+			unique.push_back(std::move(entity));
+			continue;
+		}
+		const auto [it, inserted] = indexes.emplace(*key, unique.size());
+		if (inserted)
+			unique.push_back(std::move(entity));
+		else
+			unique[it->second] = std::move(entity);
+	}
+	entities = std::move(unique);
+}
+
+void deduplicate_block_entities(std::vector<WorldEditor::PlacedBlockEntity> &entities)
+{
+	using Key = std::tuple<int, int, int, int>;
+	std::map<Key, std::size_t> indexes;
+	std::vector<WorldEditor::PlacedBlockEntity> unique;
+	unique.reserve(entities.size());
+	for (auto &entity : entities) {
+		int facing = -1;
+		if (entity.nbt.is_object()) {
+			const auto it = entity.nbt.find("Facing");
+			if (it != entity.nbt.end())
+				facing = entity_value_to_int(*it).value_or(-1);
+		}
+		const Key key{entity.x, entity.y, entity.z, facing};
+		const auto [it, inserted] = indexes.emplace(key, unique.size());
+		if (inserted)
+			unique.push_back(std::move(entity));
+		else
+			unique[it->second] = std::move(entity);
+	}
+	entities = std::move(unique);
+}
+
+void deduplicate_schematic_entities(
+		std::vector<WorldEditor::PlacedSchematicEntity> &entities)
+{
+	using Key = std::tuple<int, int, int>;
+	std::map<Key, std::size_t> indexes;
+	std::vector<WorldEditor::PlacedSchematicEntity> unique;
+	unique.reserve(entities.size());
+	for (auto &entity : entities) {
+		const Key key{entity.x, entity.y, entity.z};
+		const auto [it, inserted] = indexes.emplace(key, unique.size());
+		if (inserted)
+			unique.push_back(std::move(entity));
+		else
+			unique[it->second] = std::move(entity);
+	}
+	entities = std::move(unique);
+}
+} // namespace
 
 bool WorldEditor::tile_worker_callbacks_safe() const
 {
@@ -128,12 +274,21 @@ bool WorldEditor::merge_tile_worker(
 	placed_block_entities.insert(placed_block_entities.end(),
 			std::make_move_iterator(worker.placed_block_entities.begin()),
 			std::make_move_iterator(worker.placed_block_entities.end()));
+	// Block entities have no UUID: Rust distinguishes same-cell hanging entries by
+	// Facing, then retains the final payload for each coordinate/facing identity.
+	deduplicate_block_entities(placed_block_entities);
 	placed_schematic_entities.insert(placed_schematic_entities.end(),
 			std::make_move_iterator(worker.placed_schematic_entities.begin()),
 			std::make_move_iterator(worker.placed_schematic_entities.end()));
+	// Schematic payloads are block entities; only one payload can own a block.
+	deduplicate_schematic_entities(placed_schematic_entities);
 	placed_entities.insert(placed_entities.end(),
 			std::make_move_iterator(worker.placed_entities.begin()),
 			std::make_move_iterator(worker.placed_entities.end()));
+	// Rust's Java writer collapses halo duplicates by full UUID (or by cell and
+	// Facing for UUID-less entities) while retaining distinct entities sharing
+	// one block. Apply the same identity rule when tile-local records are merged.
+	deduplicate_entities(placed_entities);
 	placed_facade_panels.insert(placed_facade_panels.end(),
 			std::make_move_iterator(worker.placed_facade_panels.begin()),
 			std::make_move_iterator(worker.placed_facade_panels.end()));
