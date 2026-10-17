@@ -1308,7 +1308,7 @@ int MapgenEarth::generateTerrain()
 		for (pos_t x = node_min.X; x <= node_max.X; ++x) {
 			const auto height = get_height(x, z, 0);
 			need_procedural |= std::abs(height - water_level) > procedural_limit;
-			const auto [bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
+			const auto &[bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
 			need_floatlands |= (spflags & MGV7_FLOATLANDS) && node_max.Y > bottom &&
 							   node_min.Y <= top;
 		}
@@ -1344,7 +1344,7 @@ int MapgenEarth::generateTerrain()
 							: 0;
 			const auto height = get_height(x, z, 0);
 			const bool procedural = std::abs(height - water_level) > procedural_limit;
-			const auto [bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
+			const auto &[bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
 			const double taper = std::clamp(double(sp->floatland_taper), 1.0,
 					std::max(1.0, (top - bottom) / 2.0));
 			u32 i = vm->m_area.index(x, node_min.Y, z);

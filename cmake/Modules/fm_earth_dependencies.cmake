@@ -64,7 +64,7 @@ endif()
 # optional for platforms without libwebp; the provider then reports unavailable
 # and the Rust-compatible AWS Terrarium fallback is used.
 find_package(PkgConfig QUIET)
-if(PkgConfig_FOUND)
+if(PkgConfig_FOUND AND NOT CMAKE_CROSSCOMPILING)
     pkg_check_modules(FM_WEBP QUIET IMPORTED_TARGET libwebp)
 endif()
 if(TARGET PkgConfig::FM_WEBP)
