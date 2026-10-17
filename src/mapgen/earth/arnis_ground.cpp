@@ -151,7 +151,7 @@ GroundFrame GroundFrame::projected(const geographic::LLBBox &bbox, double scale,
 {
 	const projection::ProjectionSpec spec{
 			projection::ProjectionKind::WebMercator, projection_origin, scale, 0};
-	const auto [transformer, rect] = spec.transformer(bbox);
+	const auto &[transformer, rect] = spec.transformer(bbox);
 	(void)transformer;
 	GroundFrame frame;
 	frame.world_dims = std::pair<std::size_t, std::size_t>{
@@ -216,7 +216,7 @@ GroundFetchPlan GroundFrame::fetch_plan(
 		const auto dims = elevation::compute_grid_dims(bbox, scale);
 		return {bbox, dims, 0, {std::get<0>(dims), std::get<1>(dims)}};
 	}
-	const auto [world_width, world_height] = *world_dims;
+	const auto &[world_width, world_height] = *world_dims;
 	if (pad_blocks <= (std::numeric_limits<std::size_t>::max() - world_width) / 2 &&
 			pad_blocks <= (std::numeric_limits<std::size_t>::max() - world_height) / 2) {
 		const auto padded_width = world_width + 2 * pad_blocks;
@@ -264,9 +264,9 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 
 	const auto plan = frame.fetch_plan(bbox, args.scale);
 	const auto &fetch_bbox = plan.bbox;
-	const auto [world_width, world_height, grid_width, grid_height] = plan.dims;
-	const auto [final_width, final_height] = plan.final_dims;
-	const auto pad = plan.pad_blocks;
+	const auto &[world_width, world_height, grid_width, grid_height] = plan.dims;
+	const auto &[final_width, final_height] = plan.final_dims;
+	const auto &pad = plan.pad_blocks;
 	const auto bounds = land_cover::GeographicBounds{fetch_bbox.min().lat(),
 			fetch_bbox.min().lng(), fetch_bbox.max().lat(), fetch_bbox.max().lng()};
 	const auto canopy_root = cache_base.empty() ? cache::provider_cache_root("canopy")
@@ -284,7 +284,8 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	const bool earth = is_earth(args.body);
 	std::future<std::optional<canopy::CanopyData>> canopy_job;
 	if (earth && args.canopy_height) {
-		canopy_job = std::async(std::launch::async, [&]() {
+		canopy_job = std::async(std::launch::async, [&, grid_width = grid_width,
+															grid_height = grid_height]() {
 			return canopy::fetch_canopy_data(canopy_root, bounds.min_lat, bounds.min_lng,
 					bounds.max_lat, bounds.max_lng, grid_width, grid_height);
 		});
