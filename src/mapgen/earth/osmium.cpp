@@ -352,6 +352,11 @@ public:
 
 	void finish_relations()
 	{
+		// Keep one immutable source way for every relation that references it,
+		// matching Rust's Arc-backed ways_map. Relations that need clipping get
+		// their own way below, just as the Rust parser creates a new Arc there.
+		std::unordered_map<std::uint64_t, std::shared_ptr<arnis::ProcessedWay>>
+				shared_relation_ways;
 		for (auto &pending : pending_relations) {
 			const XZBBox bbox(
 					mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
@@ -359,8 +364,11 @@ public:
 				const auto found = way_indices.find(way_id);
 				if (found == way_indices.end())
 					continue;
-				pending.relation.members.push_back(
-						{elements[found->second].as_way(), role});
+				auto [shared, inserted] = shared_relation_ways.try_emplace(way_id);
+				if (inserted)
+					shared->second = std::make_shared<arnis::ProcessedWay>(
+							elements[found->second].as_way());
+				pending.relation.members.emplace_back(shared->second, role);
 			}
 			const auto &tags = pending.relation.tags;
 			const bool filled_area = tags.contains("natural") ||
@@ -386,7 +394,7 @@ public:
 					std::any_of(pending.relation.members.begin(),
 							pending.relation.members.end(), [&](const auto &member) {
 								return member.role != arnis::ProcessedMemberRole::Part &&
-									   is_open(member.way);
+									   is_open(*member.way);
 							});
 			if (needs_ring_assembly) {
 				std::vector<std::vector<arnis::ProcessedNode>> outer_rings;
@@ -397,8 +405,8 @@ public:
 								  : member.role == arnis::ProcessedMemberRole::Inner
 										  ? &inner_rings
 										  : nullptr;
-					if (rings && member.way.nodes.size() >= 2)
-						rings->push_back(member.way.nodes);
+					if (rings && member.way->nodes.size() >= 2)
+						rings->push_back(member.way->nodes);
 				}
 				std::function<void(std::vector<std::vector<arnis::ProcessedNode>> &)>
 						merge_segments;
@@ -493,10 +501,11 @@ public:
 				clipped_members.reserve(pending.relation.members.size());
 				for (auto &member : pending.relation.members) {
 					auto clipped =
-							arnis::clipping::clip_way_to_bbox(member.way.nodes, bbox);
+							arnis::clipping::clip_way_to_bbox(member.way->nodes, bbox);
 					if (clipped.empty())
 						continue;
-					member.way.nodes = std::move(clipped);
+					member.way = std::make_shared<arnis::ProcessedWay>(*member.way);
+					member.way->nodes = std::move(clipped);
 					clipped_members.push_back(std::move(member));
 				}
 				pending.relation.members = std::move(clipped_members);
@@ -876,7 +885,7 @@ pos_t earth_element_terrain_max(MapgenEarth *mg,
 				update(node.x, node.z);
 		} else {
 			for (const auto &member : element.as_relation().members)
-				for (const auto &node : member.way.nodes)
+				for (const auto &node : member.way->nodes)
 					update(node.x, node.z);
 		}
 	}
@@ -910,7 +919,7 @@ EarthElementBounds earth_element_bounds(const arnis::ProcessedElement &element)
 			include(node.x, node.z);
 	} else {
 		for (const auto &member : element.as_relation().members)
-			for (const auto &node : member.way.nodes)
+			for (const auto &node : member.way->nodes)
 				include(node.x, node.z);
 	}
 	return bounds;
@@ -948,7 +957,7 @@ std::optional<arnis::geographic::LLBBox> earth_elements_geographic_bounds(
 				include(node);
 		} else {
 			for (const auto &member : element.as_relation().members)
-				for (const auto &node : member.way.nodes)
+				for (const auto &node : member.way->nodes)
 					include(node);
 		}
 	}

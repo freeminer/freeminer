@@ -2,10 +2,12 @@
 
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -95,8 +97,20 @@ enum class ProcessedMemberRole
 };
 struct ProcessedMember
 {
-	ProcessedWay way;
 	ProcessedMemberRole role;
+	// Rust stores relation members as Arc<ProcessedWay>. Share their geometry
+	// across relations instead of copying every member's node vector for each
+	// relation that references it.
+	std::shared_ptr<ProcessedWay> way;
+
+	ProcessedMember(ProcessedWay value, ProcessedMemberRole member_role) :
+			role(member_role), way(std::make_shared<ProcessedWay>(std::move(value)))
+	{
+	}
+	ProcessedMember(std::shared_ptr<ProcessedWay> value,
+			ProcessedMemberRole member_role) : role(member_role), way(std::move(value))
+	{
+	}
 };
 
 struct ProcessedMemberRef
