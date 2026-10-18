@@ -563,6 +563,8 @@ arnis::Args earth_arnis_args()
 	arnis.interior = true;
 	arnis.roof = true;
 	arnis.signage = ::arnis::SignageLevel::Full;
+	arnis.moving_cars = true;
+	arnis.traffic_lights = true;
 	arnis.fillground = true;
 	arnis.disable_height_limit = true;
 	arnis.building_facades = true;
@@ -679,6 +681,8 @@ arnis::Args earth_arnis_args()
 	read_bool("aws_only_elevation", arnis.aws_only_elevation);
 	read_bool("city_boundaries", arnis.city_boundaries);
 	read_bool("caves", arnis.caves);
+	read_bool("traffic_lights", arnis.traffic_lights);
+	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
 	{

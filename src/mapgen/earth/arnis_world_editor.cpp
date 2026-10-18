@@ -188,6 +188,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 {
 	WorldEditor worker;
 	worker.traffic_signal_index = traffic_signal_index;
+	worker.car_network = car_network;
 	worker.sealed_surface = sealed_surface;
 	worker.mg = mg;
 	worker.projection_frame = projection_frame;
@@ -1145,6 +1146,15 @@ bool WorldEditor::set_block_if_absent_absolute(const Block &block, int x, int y,
 	if (!check_for_block_absolute(x, y, z))
 		return try_set_block_absolute(block, x, y, z);
 	return false;
+}
+
+bool WorldEditor::set_block_with_properties_if_absent_absolute(
+		const BlockWithProperties &bwp, int x, int y, int z)
+{
+	// Rust's set_with_props_if_absent writes only to an AIR cell. Passing AIR as
+	// the whitelist preserves that contract while retaining block properties.
+	const std::optional<std::vector<Block>> air_only{{block_definitions::AIR}};
+	return try_set_block_with_properties_absolute(bwp, x, y, z, air_only, std::nullopt);
 }
 
 void WorldEditor::register_support_column(int x, int z, const Block &block)

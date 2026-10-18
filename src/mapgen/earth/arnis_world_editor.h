@@ -46,6 +46,10 @@ struct SignageContext;
 namespace highways
 {
 class SignalIndex;
+namespace cars
+{
+class CarNetwork;
+}
 }
 
 namespace trees::mapped
@@ -105,6 +109,7 @@ namespace world_editor
 struct WorldEditor
 {
 	std::shared_ptr<const highways::SignalIndex> traffic_signal_index;
+	std::shared_ptr<const highways::cars::CarNetwork> car_network;
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
 	void set_sealed_surface(std::shared_ptr<const CoordinateBitmap> mask)
 	{
@@ -806,6 +811,8 @@ struct WorldEditor
 	bool cell_open_at(int x, int y, int z) const;
 
 	bool set_block_if_absent_absolute(const Block &block, int x, int y, int z);
+	bool set_block_with_properties_if_absent_absolute(
+			const BlockWithProperties &bwp, int x, int y, int z);
 	void register_support_column(int x, int z, const Block &block);
 	std::optional<Block> support_column(int x, int z) const;
 
