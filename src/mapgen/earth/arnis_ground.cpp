@@ -567,8 +567,9 @@ double Ground::convexity(const XZPoint &pos) const
 }
 bool Ground::has_land_cover() const
 {
-	return land_cover.has_value() && land_cover->width > 0 && land_cover->height > 0 &&
-		   land_cover_world_width > 0 && land_cover_world_height > 0;
+	// Match Rust Ground::has_land_cover: availability means the optional raster
+	// was supplied; dimensions are handled by the accessors that consume it.
+	return land_cover.has_value();
 }
 bool Ground::has_canopy() const
 {
