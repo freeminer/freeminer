@@ -24,6 +24,7 @@ Block BAMBOO_SLAB;
 Block BAMBOO_STAIRS;
 Block BIRCH_LEAVES;
 Block BIRCH_LOG;
+Block BIRCH_PLANKS;
 Block BIRCH_BUTTON;
 Block BIRCH_DOOR;
 Block BIRCH_FENCE;
@@ -528,13 +529,19 @@ Block WAXED_EXPOSED_CUT_COPPER_SLAB;
 Block LODESTONE;
 Block MANGROVE_LOG;
 Block MANGROVE_LEAVES;
+Block MANGROVE_PLANKS;
+Block MANGROVE_STAIRS;
+Block MANGROVE_SLAB;
 Block CHERRY_LOG;
 Block CHERRY_LEAVES;
 Block CHERRY_PLANKS;
 Block CHERRY_SLAB;
 Block CHERRY_STAIRS;
+Block DEEPSLATE_TILE_STAIRS;
 Block GRAY_CONCRETE_POWDER;
 Block LIGHT_GRAY_CONCRETE_POWDER;
+Block LIGHT_GRAY_WOOL;
+Block LIGHT;
 Block BROWN_CONCRETE_POWDER;
 Block CYAN_TERRACOTTA;
 Block BLACK_WOOL;
@@ -547,6 +554,8 @@ Block RED_TULIP;
 Block ORANGE_TULIP;
 Block WHITE_TULIP;
 Block PINK_TULIP;
+Block PINK_TERRACOTTA;
+Block LIME_TERRACOTTA;
 Block SUNFLOWER_LOWER;
 Block SUNFLOWER_UPPER;
 Block LILAC_LOWER;
@@ -585,6 +594,9 @@ Block QUARTZ_PILLAR;
 Block REDSTONE_TORCH;
 Block REDSTONE_WALL_TORCH;
 Block RED_NETHER_BRICK_SLAB;
+Block NETHER_BRICK_SLAB;
+Block POLISHED_GRANITE_SLAB;
+Block WAXED_OXIDIZED_CUT_COPPER_SLAB;
 Block SANDSTONE_WALL;
 Block SMOOTH_QUARTZ_SLAB;
 Block SMOOTH_QUARTZ_STAIRS;
@@ -863,6 +875,8 @@ void init(MapgenEarth *mg)
 	ANDESITE = g("andesite", "default:stone");
 	BIRCH_LEAVES = g("birch_leaves", {"default:aspen_leaves", "default:leaves"});
 	BIRCH_LOG = g("birch_log", {"default:aspen_tree", "default:tree"});
+	BIRCH_PLANKS = g("birch_planks", {"mcl_core:birchwood", "mcl_trees:birch_planks",
+											 "default:aspen_wood", "default:wood"});
 	BLACK_CONCRETE = g("black_concrete",
 			{"wool:black", "basic_materials:concrete_block", "default:stone"});
 	BLACKSTONE = g("blackstone", "default:obsidian");
@@ -1009,6 +1023,8 @@ void init(MapgenEarth *mg)
 	SPRUCE_FENCE = g("spruce_fence",
 			{"mcl_fences:spruce_fence", "default:fence_pine_wood", "default:fence_wood"});
 	ORANGE_TERRACOTTA = g("orange_terracotta", "default:clay");
+	PINK_TERRACOTTA = g("pink_terracotta", "default:clay");
+	LIME_TERRACOTTA = g("lime_terracotta", "default:clay");
 	PODZOL = g("podzol", "default:dirt_with_coniferous_litter");
 	SNOWY_PODZOL = g("snowy_podzol",
 			{"mcl_core:podzol", "default:dirt_with_coniferous_litter", "default:dirt"});
@@ -1121,6 +1137,9 @@ void init(MapgenEarth *mg)
 	WHITE_STAINED_GLASS = prefer_arnis("white_stained_glass", GLASS);
 	WHITE_TERRACOTTA = g("white_terracotta", "default:clay");
 	WHITE_WOOL = g("white_wool", "wool:white");
+	LIGHT_GRAY_WOOL = g("light_gray_wool",
+			{"mcl_wool:light_gray", "wool:light_grey", "wool:grey", "wool:gray"});
+	LIGHT = optional_g("light", AIR, {"mcl_core:light", "mcl_lighting:light"});
 	YELLOW_CONCRETE = g("yellow_concrete",
 			{"wool:yellow", "basic_materials:concrete_block", "default:stone"});
 	YELLOW_WOOL = g("yellow_wool", "wool:yellow");
@@ -1907,6 +1926,9 @@ void init(MapgenEarth *mg)
 			{"stairs:stair_mossycobble", "stairs:stair_stonebrick"});
 	MOSSY_COBBLESTONE_STAIRS = g("mossy_cobblestone_stairs", "stairs:stair_mossycobble");
 	DEEPSLATE_BRICK_STAIRS = prefer_arnis("deepslate_brick_stairs", STONE_BRICK_STAIRS);
+	DEEPSLATE_TILE_STAIRS = g("deepslate_tile_stairs",
+			{"mcl_stairs:stair_deepslate_tile", "stairs:stair_deepslate",
+					"stairs:stair_stonebrick"});
 	POLISHED_DEEPSLATE_STAIRS =
 			prefer_arnis("polished_deepslate_stairs", STONE_BRICK_STAIRS);
 	RED_NETHER_BRICKS = prefer_arnis("red_nether_bricks", NETHER_BRICK);
@@ -1941,6 +1963,12 @@ void init(MapgenEarth *mg)
 	WAXED_EXPOSED_CUT_COPPER =
 			g("waxed_exposed_cut_copper", {"default:copperblock", "default:stone"});
 	MANGROVE_LOG = g("mangrove_log", {"mcl_core:mangrove_log", "default:tree"});
+	MANGROVE_PLANKS = g("mangrove_planks",
+			{"mcl_core:mangrove_wood", "mcl_trees:mangrove_planks", "default:wood"});
+	MANGROVE_STAIRS = g("mangrove_stairs",
+			{"mcl_stairs:stair_mangrove", "stairs:stair_wood", "default:wood"});
+	MANGROVE_SLAB = g("mangrove_slab",
+			{"mcl_stairs:slab_mangrove", "stairs:slab_wood", "default:wood"});
 	MANGROVE_LEAVES =
 			g("mangrove_leaves", {"mcl_core:mangrove_leaves", "default:leaves"});
 	CHERRY_LOG = g("cherry_log", {"default:aspen_tree", "default:tree"});
@@ -2003,6 +2031,9 @@ void init(MapgenEarth *mg)
 	WAXED_EXPOSED_CUT_COPPER_SLAB = g("waxed_exposed_cut_copper_slab",
 			{"mcl_stairs:slab_waxed_exposed_cut_copper", "mcl_stairs:slab_copper",
 					"stairs:slab_copperblock", "default:copperblock"});
+	WAXED_OXIDIZED_CUT_COPPER_SLAB = g("waxed_oxidized_cut_copper_slab",
+			{"mcl_stairs:slab_waxed_oxidized_cut_copper", "mcl_stairs:slab_copper",
+					"stairs:slab_copperblock", "default:copperblock"});
 
 	ANDESITE_SLAB =
 			g("andesite_slab", {"mcl_stairs:slab_andesite", "stairs:slab_andesite",
@@ -2038,6 +2069,9 @@ void init(MapgenEarth *mg)
 	CHERRY_STAIRS = g("cherry_stairs",
 			{"mcl_stairs:stair_cherry", "mcl_core:cherry_stairs",
 					"stairs:stair_aspen_wood", "stairs:stair_wood", "default:wood"});
+	POLISHED_GRANITE_SLAB = g("polished_granite_slab",
+			{"mcl_stairs:slab_polished_granite", "stairs:slab_stonebrick",
+					"stairs:slab_stone"});
 	COBBLED_DEEPSLATE_SLAB = g("cobbled_deepslate_slab",
 			{"mcl_stairs:slab_cobbled_deepslate", "mcl_stairs:slab_cobbled_deepslate",
 					"stairs:slab_cobble", "default:cobble"});
@@ -2166,6 +2200,9 @@ void init(MapgenEarth *mg)
 	RED_NETHER_BRICK_SLAB = g("red_nether_brick_slab",
 			{"mcl_stairs:slab_red_nether_brick", "stairs:slab_obsidianbrick",
 					"default:obsidianbrick"});
+	NETHER_BRICK_SLAB = g("nether_brick_slab",
+			{"mcl_stairs:slab_nether_brick", "stairs:slab_nether_brick",
+					"stairs:slab_obsidianbrick"});
 	SANDSTONE_WALL = g("sandstone_wall",
 			{"mcl_walls:sandstone", "mcl_walls:sandstone_wall", "default:sandstone"});
 	SMOOTH_QUARTZ_SLAB = g("smooth_quartz_slab",

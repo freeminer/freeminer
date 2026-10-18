@@ -8,11 +8,13 @@
 #include <exception>
 #include <filesystem>
 #include <functional>
+#include <iomanip>
 #include <iterator>
 #include <limits>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -208,6 +210,9 @@ public:
 	std::unordered_set<std::uint64_t> seen_way_ids;
 	std::unordered_set<std::uint64_t> seen_relation_ids;
 	std::unordered_set<std::uint64_t> seen_node_ids;
+	std::uint64_t unresolved_node_refs = 0;
+	std::uint64_t total_node_refs = 0;
+	std::uint64_t ways_missing_nodes = 0;
 	std::unordered_map<std::uint64_t, arnis::tags_t> tagged_node_tags;
 	std::unordered_map<std::uint64_t, std::size_t> way_indices;
 	struct PendingRelation
@@ -219,6 +224,10 @@ public:
 
 	void node(const osmium::Node &node)
 	{
+		// Rust only puts nodes with coordinates in nodes_map. In particular, do
+		// not let an earlier incomplete duplicate hide a later located copy.
+		if (!node.location())
+			return;
 		const auto id = static_cast<std::uint64_t>(node.id());
 		if (!seen_node_ids.emplace(id).second)
 			return;
@@ -261,7 +270,14 @@ public:
 		for (const auto &tag : way.tags())
 			processed_way.tags.emplace(tag.key(), tag.value());
 		arnis::osm_parser::filter_tags(processed_way.tags);
+		bool way_missing_nodes = false;
 		for (const auto &node : way.nodes()) {
+			++total_node_refs;
+			if (!node.location()) {
+				++unresolved_node_refs;
+				way_missing_nodes = true;
+				continue;
+			}
 			arnis::ProcessedNode processed_node;
 			const auto node_id = static_cast<std::uint64_t>(node.ref());
 			if (const auto found = tagged_node_tags.find(node_id);
@@ -278,6 +294,7 @@ public:
 			processed_node.id = node_id;
 			processed_way.nodes.emplace_back(std::move(processed_node));
 		}
+		ways_missing_nodes += way_missing_nodes;
 		way_indices.emplace(id, elements.size());
 		elements.emplace_back(std::move(processed_way));
 	}
@@ -513,6 +530,19 @@ public:
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
 		}
+		if (unresolved_node_refs > 0) {
+			const double percent =
+					100.0 * unresolved_node_refs /
+					static_cast<double>(std::max<std::uint64_t>(1, total_node_refs));
+			std::ostringstream message;
+			message << std::fixed << std::setprecision(1) << percent;
+			warningstream
+					<< "Earth: " << unresolved_node_refs << " of " << total_node_refs
+					<< " way node references (" << message.str()
+					<< "%) could not be resolved, affecting " << ways_missing_nodes
+					<< " ways. Areas missing a corner cannot be filled; this may indicate "
+					   "an incomplete OSM response.\n";
+		}
 	}
 };
 
@@ -533,6 +563,8 @@ arnis::Args earth_arnis_args()
 	arnis.interior = true;
 	arnis.roof = true;
 	arnis.signage = ::arnis::SignageLevel::Full;
+	arnis.moving_cars = true;
+	arnis.traffic_lights = true;
 	arnis.fillground = true;
 	arnis.disable_height_limit = true;
 	arnis.building_facades = true;
@@ -649,6 +681,8 @@ arnis::Args earth_arnis_args()
 	read_bool("aws_only_elevation", arnis.aws_only_elevation);
 	read_bool("city_boundaries", arnis.city_boundaries);
 	read_bool("caves", arnis.caves);
+	read_bool("traffic_lights", arnis.traffic_lights);
+	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
 	{
