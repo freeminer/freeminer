@@ -43,6 +43,11 @@ namespace signage
 struct SignageContext;
 }
 
+namespace highways
+{
+class SignalIndex;
+}
+
 namespace trees::mapped
 {
 class MappedTrunks;
@@ -99,6 +104,7 @@ namespace world_editor
 // A “WorldEditor” that can set blocks in your map
 struct WorldEditor
 {
+	std::shared_ptr<const highways::SignalIndex> traffic_signal_index;
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
 	void set_sealed_surface(std::shared_ptr<const CoordinateBitmap> mask)
 	{
@@ -448,8 +454,16 @@ struct WorldEditor
 	bool has_entity_sink() const { return static_cast<bool>(entity_sink); }
 	bool add_entity(const std::string &id, int x, int y, int z,
 			const nlohmann::json &extra = nlohmann::json::object());
+	bool add_entity_exact(const std::string &id, double x, double absolute_y, double z,
+			std::int64_t seed, nlohmann::json extra);
 	bool add_item_display(double x, double absolute_y, double z, std::int64_t seed,
 			nlohmann::json extra);
+	bool add_block_display(double x, double absolute_y, double z, std::int64_t seed,
+			nlohmann::json extra)
+	{
+		return add_entity_exact(
+				"minecraft:block_display", x, absolute_y, z, seed, std::move(extra));
+	}
 	const std::vector<nlohmann::json> &get_placed_entities() const
 	{
 		return placed_entities;
@@ -534,6 +548,7 @@ struct WorldEditor
 	{
 		return {min_lat, max_lat, min_lon, max_lon};
 	}
+	std::pair<double, double> geo_anchor() const;
 	void set_climate_anchor(std::optional<std::pair<double, double>> anchor)
 	{
 		climate_anchor = std::move(anchor);

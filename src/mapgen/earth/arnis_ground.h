@@ -28,6 +28,11 @@
 namespace arnis
 {
 
+namespace osm_parser
+{
+struct RawOsmDocument;
+}
+
 // A “Ground” class that can return ground level from a set of points
 struct Ground
 {
@@ -289,8 +294,24 @@ int extended_min_y_for(const Args &args);
 int extended_max_y_for(const Args &args);
 int world_top_y_for(const Args &args);
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+		const std::filesystem::path &cache_base = {},
+		const elevation::TerrainHints &terrain_hints = {});
+// Convenience entry points matching Rust's OSM-to-terrain hint handoff.
+// Natural peaks always inform terrain; tall-model headroom is used only when
+// 3D model placement is enabled.
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const osm_parser::RawOsmDocument &osm,
 		const std::filesystem::path &cache_base = {});
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
-		const GroundFrame &frame, const std::filesystem::path &cache_base = {});
+		const std::filesystem::path &cache_base, const elevation::PeakSource &peaks);
+Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const std::filesystem::path &cache_base = {},
+		const elevation::TerrainHints &terrain_hints = {});
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
+		const std::filesystem::path &cache_base = {});
+Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const std::filesystem::path &cache_base,
+		const elevation::PeakSource &peaks);
 
 }

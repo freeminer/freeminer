@@ -11,6 +11,8 @@
 #include "arnis-cpp/src/fm_ecoregion_cache.h"
 #include "arnis-cpp/src/grid_ops.h"
 #include "arnis-cpp/src/land_cover/osm_water_override.h"
+#include "arnis-cpp/src/osm_parser.h"
+#include "arnis-cpp/src/elevation/peaks.h"
 #include "arnis-cpp/src/water_depth.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
 
@@ -96,10 +98,27 @@ int min_ground_level_for(const Args &args)
 }
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
-		const std::filesystem::path &cache_base)
+		const std::filesystem::path &cache_base,
+		const elevation::TerrainHints &terrain_hints)
 {
 	return generate_ground_data(
-			args, bbox, GroundFrame::from_args(args, bbox), cache_base);
+			args, bbox, GroundFrame::from_args(args, bbox), cache_base, terrain_hints);
+}
+
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const osm_parser::RawOsmDocument &osm, const std::filesystem::path &cache_base)
+{
+	auto terrain_hints = elevation::terrain_hints_in(osm);
+	if (!args.use_3d)
+		terrain_hints.tall_models.clear();
+	return generate_ground_data(args, bbox, cache_base, terrain_hints);
+}
+
+Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+		const std::filesystem::path &cache_base, const elevation::PeakSource &peaks)
+{
+	const auto terrain_hints = peaks.take();
+	return generate_ground_data(args, bbox, cache_base, terrain_hints);
 }
 
 GroundFrame GroundFrame::local()
@@ -252,7 +271,8 @@ GroundFetchPlan GroundFrame::fetch_plan(
 }
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
-		const GroundFrame &frame, const std::filesystem::path &cache_base)
+		const GroundFrame &frame, const std::filesystem::path &cache_base,
+		const elevation::TerrainHints &terrain_hints)
 {
 	if (!args.valid())
 		throw std::invalid_argument("invalid Arnis ground-generation options");
@@ -321,7 +341,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						world_width, world_height, grid_width, grid_height, args.scale,
 						args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, true, cover ? &*cover : nullptr,
-						frame.affine);
+						frame.affine, {}, terrain_hints);
 			} else {
 				auto raw = elevation::fetch_planetary_elevation(args.body, fetch_bbox,
 						grid_width, grid_height, elevation::http_planetary_range_reader(),
@@ -333,7 +353,8 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 				raw->world_height = world_height;
 				processed = elevation::process_elevation_data(fetch_bbox, std::move(*raw),
 						args.scale, args.height_multiplier, water_floor, sink_floor,
-						args.disable_height_limit, max_y, false, nullptr, frame.affine);
+						args.disable_height_limit, max_y, false, nullptr, frame.affine,
+						{}, terrain_hints);
 			}
 			if (frame.mercator) {
 				const auto source = [&](std::size_t z) {
@@ -419,6 +440,24 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		ground.save_canopy_debug_image("canopy_debug");
 	}
 	return ground;
+}
+
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
+		const std::filesystem::path &cache_base)
+{
+	auto terrain_hints = elevation::terrain_hints_in(osm);
+	if (!args.use_3d)
+		terrain_hints.tall_models.clear();
+	return generate_ground_data(args, bbox, frame, cache_base, terrain_hints);
+}
+
+Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const std::filesystem::path &cache_base,
+		const elevation::PeakSource &peaks)
+{
+	const auto terrain_hints = peaks.take();
+	return generate_ground_data(args, bbox, frame, cache_base, terrain_hints);
 }
 
 std::optional<int> Ground::min_level(const std::vector<XZPoint> &points) const

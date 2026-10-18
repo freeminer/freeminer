@@ -187,6 +187,7 @@ bool WorldEditor::tile_worker_callbacks_safe() const
 WorldEditor WorldEditor::make_tile_worker() const
 {
 	WorldEditor worker;
+	worker.traffic_signal_index = traffic_signal_index;
 	worker.sealed_surface = sealed_surface;
 	worker.mg = mg;
 	worker.projection_frame = projection_frame;
@@ -494,6 +495,13 @@ bool WorldEditor::place_text_sign(
 bool WorldEditor::add_item_display(
 		double x, double absolute_y, double z, std::int64_t seed, nlohmann::json extra)
 {
+	return add_entity_exact(
+			"minecraft:item_display", x, absolute_y, z, seed, std::move(extra));
+}
+
+bool WorldEditor::add_entity_exact(const std::string &id, double x, double absolute_y,
+		double z, std::int64_t seed, nlohmann::json extra)
+{
 	if (!std::isfinite(x) || !std::isfinite(absolute_y) || !std::isfinite(z))
 		return false;
 	constexpr auto min_coord = static_cast<double>(std::numeric_limits<int>::min());
@@ -510,10 +518,10 @@ bool WorldEditor::add_item_display(
 	if (!extra.is_object())
 		return false;
 
-	// Match Rust's build_deterministic_uuid("minecraft:item_display", bx, by,
-	// bz, seed), using unsigned operations to make wrapping explicit.
+	// Match Rust's build_deterministic_uuid(id, bx, by, bz, seed), using
+	// unsigned operations to make wrapping explicit.
 	std::uint64_t hash = 17;
-	for (const unsigned char byte : std::string_view("minecraft:item_display"))
+	for (const unsigned char byte : id)
 		hash = hash * 31 + byte;
 	hash = hash * 31 + static_cast<std::uint64_t>(seed);
 	const auto signed_x = static_cast<std::uint64_t>(static_cast<std::int64_t>(bx));
@@ -524,10 +532,9 @@ bool WorldEditor::add_item_display(
 	const auto uuid_word = [](std::uint64_t value) {
 		return std::bit_cast<std::int32_t>(static_cast<std::uint32_t>(value));
 	};
-	nlohmann::json entity = {{"id", "minecraft:item_display"},
-			{"Pos", {x, absolute_y, z}}, {"Motion", {0.0, 0.0, 0.0}},
-			{"Rotation", {0.0f, 0.0f}}, {"OnGround", 1}, {"FallDistance", 0.0f},
-			{"Fire", -20}, {"Air", 300}, {"PortalCooldown", 0},
+	nlohmann::json entity = {{"id", id}, {"Pos", {x, absolute_y, z}},
+			{"Motion", {0.0, 0.0, 0.0}}, {"Rotation", {0.0f, 0.0f}}, {"OnGround", 1},
+			{"FallDistance", 0.0f}, {"Fire", -20}, {"Air", 300}, {"PortalCooldown", 0},
 			{"UUID", {uuid_word(seed_a >> 32), uuid_word(seed_a), uuid_word(seed_b >> 32),
 							 uuid_word(seed_b)}}};
 	for (auto it = extra.begin(); it != extra.end(); ++it)
@@ -967,6 +974,12 @@ biome::Climate WorldEditor::climate() const
 			std::isfinite(max_lon) && max_lat > min_lat && max_lon > min_lon)
 		return climate::classify_bbox(min_lat, min_lon, max_lat, max_lon);
 	return ground ? ground->climate() : biome::Climate::Temperate;
+}
+std::pair<double, double> WorldEditor::geo_anchor() const
+{
+	if (climate_anchor)
+		return *climate_anchor;
+	return {(min_lat + max_lat) * .5, (min_lon + max_lon) * .5};
 }
 int WorldEditor::get_water_level(int x, int z) const
 {
