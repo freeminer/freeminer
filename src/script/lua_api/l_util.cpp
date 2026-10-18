@@ -561,6 +561,9 @@ int ModApiUtil::l_get_version(lua_State *L)
 
 	lua_pushboolean(L, DEVELOPMENT_BUILD);
 	lua_setfield(L, table, "is_dev");
+	// fm: expose compiled network transports to the menu.
+#include "fm_transport_info.cpp.inc"
+	// ===
 	return 1;
 }
 

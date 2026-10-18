@@ -2,6 +2,10 @@
 -- Copyright (C) 2014 sapier
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
+-- fm:
+local transport = dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_transport.lua")
+-- ===
+
 local function get_sorted_servers()
 	local servers = {
 		fav = {},
@@ -75,21 +79,8 @@ local function set_selected_server(server)
 	if address and port then
 
 		-- fm:
-		--[[
-		if server.proto_multi and server.proto_multi.sctp then
-			gamedata.proto = "sctp"
-			gamedata.port = server.proto_multi.sctp
-			port = gamedata.port
-		else]] if server.proto_multi and server.proto_multi.enet then
-			gamedata.proto = "enet"
-			gamedata.port = server.proto_multi.enet
-			port = gamedata.port
-		elseif server.proto then
-			gamedata.proto = server.proto
-		else
-			gamedata.proto = "mt"
-		end
-		core.settings:set("remote_proto", gamedata.proto or "mt")
+		gamedata.proto, port = transport.select(server)
+		core.settings:set("remote_proto", gamedata.proto)
 		-- ===
 
 		core.settings:set("address", address)
@@ -102,12 +93,16 @@ local function find_selected_server()
 	local address = core.settings:get("address")
 	local port = tonumber(core.settings:get("remote_port"))
 	for _, server in ipairs(serverlistmgr.servers) do
-		if server.address == address and server.port == port then
+		-- fm: include advertised alternate transport ports.
+		if transport.matches(server, address, port) then
+		-- ===
 			return server
 		end
 	end
 	for _, server in ipairs(serverlistmgr.get_favorites()) do
-		if server.address == address and server.port == port then
+		-- fm: include advertised alternate transport ports.
+		if transport.matches(server, address, port) then
+		-- ===
 			return server
 		end
 	end
@@ -167,6 +162,13 @@ local function get_formspec(tabview, name, tabdata)
 		"pwdfield[2.875,0.2;2.625,0.75;te_pwd;]" ..
 		"container_end[]"
 
+	-- fm:
+	if transport.formspec(find_selected_server()) ~= "" then
+		retval = retval:gsub("5%.25,2%.7", "5.25,2.1")
+	end
+	retval = retval .. transport.formspec(find_selected_server())
+	-- ===
+
 	-- Connect
 	if core.settings:get_bool("enable_split_login_register") then
 		-- TRANSLATORS: Register an account on a server
@@ -182,6 +184,12 @@ local function get_formspec(tabview, name, tabdata)
 			retval = retval .. "textarea[0.25,1.85;5.25,2.7;;;" ..
 				core.formspec_escape(selected_server.description) .. "]"
 		end
+
+		-- fm:
+		if transport.formspec(find_selected_server()) ~= "" then
+			retval = retval:gsub("5%.25,2%.7", "5.25,2.1")
+		end
+		-- ===
 
 		-- URL button
 		if selected_server.url then
@@ -530,6 +538,30 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		core.settings:set("name", fields.te_name)
 	end
 
+	-- fm:
+	if fields.fm_transport and transport.from_index(fields.fm_transport, find_selected_server()) ~=
+			core.settings:get("remote_proto") then
+		local server = find_selected_server()
+		if server and fields.te_address and not transport.matches(server,
+				fields.te_address, tonumber(fields.te_port)) then
+			server = nil
+		end
+		local proto = transport.from_index(fields.fm_transport, find_selected_server())
+		if proto then
+			core.settings:set("remote_proto", proto)
+			gamedata.proto = proto
+			if server then
+				set_selected_server(server)
+			else
+				core.settings:set("address", fields.te_address or "")
+				core.settings:set("remote_port", fields.te_port or "30000")
+			end
+		end
+		return true
+	end
+	gamedata.proto = core.settings:get("remote_proto") or "mt"
+	-- ===
+
 	if fields.servers then
 		local event = core.explode_table_event(fields.servers)
 		local server = tabdata.lookup[event.row]
@@ -556,6 +588,9 @@ local function main_button_handler(tabview, fields, name, tabdata)
 
 				if gamedata.address and gamedata.port then
 					set_selected_server(server)
+					-- fm: use the selected transport endpoint on double click too.
+					gamedata.port = tonumber(core.settings:get("remote_port"))
+					-- ===
 					core.start()
 				end
 				return true
@@ -641,8 +676,9 @@ local function main_button_handler(tabview, fields, name, tabdata)
 		local idx = core.get_table_index("servers")
 		local server = idx and tabdata.lookup[idx]
 
-		if server and server.address == gamedata.address and
-				server.port == gamedata.port then
+		-- fm:
+		if server and transport.matches(server, gamedata.address, gamedata.port) then
+		-- ===
 
 			serverlistmgr.add_favorite(server)
 
@@ -668,7 +704,9 @@ local function main_button_handler(tabview, fields, name, tabdata)
 	if fields.btn_mp_register and host_filled then
 		local idx = core.get_table_index("servers")
 		local server = idx and tabdata.lookup[idx]
-		if server and (server.address ~= fields.te_address or server.port ~= te_port_number) then
+		-- fm:
+		if server and not transport.matches(server, fields.te_address, te_port_number) then
+		-- ===
 			server = nil
 		end
 
