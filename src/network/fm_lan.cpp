@@ -127,9 +127,7 @@ void lan_adv::send_string(const std::string &str)
 	if (scopes.empty())
 		scopes.push_back(0);
 
-	struct addrinfo hints
-	{
-	};
+	struct addrinfo hints{};
 	hints.ai_family = AF_INET6;
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
@@ -253,6 +251,8 @@ void *lan_adv::run()
 						<< std::endl;
 
 				server["clients"] = clients_num.load();
+				ServerList::addMultiProto(server, server_port);
+
 				answer_str = fastWriteJson(server);
 
 				limiter[addr_str] = now + 3000;
