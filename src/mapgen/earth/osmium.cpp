@@ -1156,8 +1156,9 @@ public:
 		}
 
 		const EarthHorizontalKey key = mg->horizontalKey();
-
+		const char *generation_stage = "Arnis setup";
 		try {
+			generation_stage = "OSM extract parsing and preparation";
 			std::call_once(cached.parse_once, [&]() {
 				osmium::area::Assembler::config_type assembler_config;
 				assembler_config.create_empty_areas = false;
@@ -1298,6 +1299,7 @@ public:
 				}
 			}
 
+			generation_stage = "chunk element selection";
 			std::call_once(chunk->elements_once, [&]() {
 				constexpr int extra = MAP_BLOCKSIZE * 2;
 				const XZBBox context_bbox(mg->node_min.X - extra, mg->node_min.Z - extra,
@@ -1310,6 +1312,7 @@ public:
 			if (chunk->elements.empty())
 				return;
 
+			generation_stage = "chunk flood-fill preparation";
 			std::call_once(chunk->flood_once, [&]() {
 				auto args = earth_osmium_detail::earth_arnis_args();
 				auto flood =
@@ -1322,6 +1325,7 @@ public:
 			// The parsed tile stays shared, but expensive dispatch/fill preparation
 			// uses only this chunk's spatial view plus the original two-mapblock halo.
 			earth_osmium_detail::FloodWaveGuard flood_wave(*chunk);
+			generation_stage = "chunk building-footprint preparation";
 			std::call_once(chunk->footprints_once, [&]() {
 				XZBBox xzbbox(
 						mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
@@ -1331,9 +1335,11 @@ public:
 										chunk->elements, xzbbox));
 			});
 			arnis::init(mg);
+			generation_stage = "Arnis world generation";
 			earth_osmium_detail::generate_cached_arnis(mg, cached, *chunk);
 		} catch (const std::exception &ex) {
-			errorstream << "Earth exception: " << ex.what() << "\n";
+			errorstream << "Earth exception during " << generation_stage << ": "
+						<< ex.what() << "\n";
 		}
 	}
 };
