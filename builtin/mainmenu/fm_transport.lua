@@ -60,8 +60,8 @@ function transport.formspec(server)
 	for i, proto in ipairs(available) do
 		if proto == normalize(core.settings:get("remote_proto")) then selected = i end
 	end
-	return "label[0.25,4.3;" .. fgettext("Protocol") .. "]" ..
-		"dropdown[1.4,4.05;1.9,0.5;fm_transport;" ..
+	return "label[0.25,1.55;" .. fgettext("Protocol") .. "]" ..
+		"dropdown[1.4,1.3;1.9,0.5;fm_transport;" ..
 		table.concat(available, ",") .. ";" .. selected .. ";true]"
 end
 function transport.from_index(index, server)
