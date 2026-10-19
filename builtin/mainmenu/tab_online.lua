@@ -165,6 +165,8 @@ local function get_formspec(tabview, name, tabdata)
 	-- fm:
 	if transport.formspec(find_selected_server()) ~= "" then
 		retval = retval:gsub("5%.25,2%.7", "5.25,2.1")
+			:gsub("0%.25,1%.6;", "0.25,2.2;")
+			:gsub("0%.25,1%.85;", "0.25,2.45;")
 	end
 	retval = retval .. transport.formspec(find_selected_server())
 	-- ===
@@ -188,6 +190,7 @@ local function get_formspec(tabview, name, tabdata)
 		-- fm:
 		if transport.formspec(find_selected_server()) ~= "" then
 			retval = retval:gsub("5%.25,2%.7", "5.25,2.1")
+				:gsub("0%.25,1%.85;", "0.25,2.45;")
 		end
 		-- ===
 

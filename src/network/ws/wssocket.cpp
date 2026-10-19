@@ -395,9 +395,10 @@ bool WSSocket::Connect(const Address &addr)
 				&WSSocket::on_client_tls_init, this, websocketpp::lib::placeholders::_1));
 #endif
 
-		// Create connection URI
-		std::string uri =
-				"ws://" + addr.serializeString() + ":" + std::to_string(addr.getPort());
+		// URI authority syntax requires IPv6 literals to be enclosed in brackets.
+		const std::string host = addr.isIPv6() ? "[" + addr.serializeString() + "]"
+											   : addr.serializeString();
+		std::string uri = "ws://" + host + ":" + std::to_string(addr.getPort());
 
 		// Create connection
 		websocketpp::lib::error_code ec;
