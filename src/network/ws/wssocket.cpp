@@ -194,36 +194,102 @@ void WSSocket::on_open(const websocketpp::connection_hdl &)
 	cs << "open handler" << '\n';
 }
 
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Native client for emsocket's address assignment and encapsulated UDP protocol.
+// Included by wssocket.cpp.
+
 void WSSocket::on_client_open(const websocketpp::connection_hdl &hdl)
 {
-	cs << "client open handler" << '\n';
-	// Add the client connection to hdls map
-	hdls.emplace(hdl, client_address);
+	websocketpp::lib::error_code ec;
+	client.send(hdl, "NEWADDR", websocketpp::frame::opcode::text, ec);
+	if (ec)
+		errorstream << "WS address request failed: " << ec.message() << '\n';
 }
 
 void WSSocket::on_client_fail(const websocketpp::connection_hdl &hdl)
 {
-	cs << "client fail handler" << '\n';
-	hdls.erase(hdl);
+	auto con = client.get_con_from_hdl(hdl);
+	errorstream << "WS connection failed: " << con->get_ec().message() << '\n';
+	m_client_bound = false;
+	m_client_pending.clear();
+	m_client_pending_bytes = 0;
 }
 
 void WSSocket::on_client_close(const websocketpp::connection_hdl &hdl)
 {
-	cs << "client close handler" << '\n';
-	hdls.erase(hdl);
+	auto con = client.get_con_from_hdl(hdl);
+	errorstream << "WS connection closed: " << con->get_remote_close_code() << " "
+				<< con->get_remote_close_reason() << '\n';
+	m_client_bound = false;
+	m_client_pending.clear();
+	m_client_pending_bytes = 0;
 }
 
 void WSSocket::on_client_message(
 		const websocketpp::connection_hdl &hdl, const client_message_ptr &msg)
 {
-	// For client messages, we use the client address
-	std::string s{msg->get_payload().data(), msg->get_payload().size()};
-#if !NDEBUG
-	cs << "Client message: " << msg->get_payload().size() << " " << msg->get_payload()
-	   << '\n';
-#endif
+	const auto &data = msg->get_payload();
+	if (msg->get_opcode() == websocketpp::frame::opcode::text) {
+		websocketpp::lib::error_code ec;
+		if (!m_client_bound && !m_client_binding && data.starts_with("ADDR ")) {
+			std::istringstream input(data);
+			std::string command, address, passcode, joincode, extra;
+			if (!(input >> command >> address >> passcode >> joincode) ||
+					(input >> extra) || passcode.size() != 32) {
+				errorstream << "WS server returned an invalid address assignment\n";
+				return;
+			}
+			m_client_binding = true;
+			client.send(hdl, "BIND " + passcode + " UDP 49152",
+					websocketpp::frame::opcode::text, ec);
+		} else if (m_client_binding && data == "BIND OK") {
+			m_client_binding = false;
+			m_client_bound = true;
+			infostream << "WS datagram handshake completed\n";
+			auto pending = std::move(m_client_pending);
+			m_client_pending.clear();
+			m_client_pending_bytes = 0;
+			for (const auto &payload : pending)
+				sendClientPacket(payload);
+		} else {
+			errorstream << "WS server rejected the datagram handshake\n";
+			client.close(hdl, websocketpp::close::status::protocol_error,
+					"Unexpected datagram handshake response", ec);
+		}
+		if (ec)
+			errorstream << "WS datagram handshake failed: " << ec.message() << '\n';
+		return;
+	}
+	fm_ws::Datagram packet;
+	if (!m_client_bound || !packet.parse(data)) {
+		errorstream << "WS server returned an invalid datagram\n";
+		return;
+	}
+	std::lock_guard lock(m_incoming_mutex);
+	incoming_queue.push_back({client_address, std::move(packet.payload)});
+}
 
-	incoming_queue.emplace_back(queue_item{client_address, std::move(s)});
+void WSSocket::sendClientPacket(const std::string &payload)
+{
+	if (!m_client_bound) {
+		// The game can send before the asynchronous WebSocket handshake completes.
+		if (m_client_pending_bytes + payload.size() <= 1024 * 1024) {
+			m_client_pending.push_back(payload);
+			m_client_pending_bytes += payload.size();
+		}
+		return;
+	}
+	// This listener's game route is also available through its synthetic address,
+	// including when the public WebSocket address is translated by NAT.
+	const fm_ws::tcp::endpoint destination(
+			fm_ws::asio::ip::make_address("10.0.0.1"), client_address.getPort());
+	const auto data = fm_ws::Datagram::encode(destination, payload);
+	if (data.empty())
+		return;
+	websocketpp::lib::error_code ec;
+	client.send(client_hdl, data, websocketpp::frame::opcode::binary, ec);
+	if (ec)
+		errorstream << "WS datagram send failed: " << ec.message() << '\n';
 }
 
 void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg)
@@ -363,6 +429,9 @@ WSSocket::context_ptr WSSocket::on_client_tls_init(
 
 WSSocket::~WSSocket()
 {
+	client.stop();
+	if (m_client_thread.joinable())
+		m_client_thread.join();
 	// cancel cached game address resolution before destroying the endpoint
 	if (m_game_router)
 		m_game_router->stop();
@@ -395,9 +464,15 @@ bool WSSocket::Connect(const Address &addr)
 				&WSSocket::on_client_tls_init, this, websocketpp::lib::placeholders::_1));
 #endif
 
-		// Create connection URI
-		std::string uri =
-				"ws://" + addr.serializeString() + ":" + std::to_string(addr.getPort());
+		// URI authority syntax requires IPv6 literals to be enclosed in brackets.
+		const std::string host = addr.isIPv6() ? "[" + addr.serializeString() + "]"
+											   : addr.serializeString();
+#if USE_SSL
+		const std::string scheme = "wss://";
+#else
+		const std::string scheme = "ws://";
+#endif
+		std::string uri = scheme + host + ":" + std::to_string(addr.getPort());
 
 		// Create connection
 		websocketpp::lib::error_code ec;
@@ -417,14 +492,13 @@ bool WSSocket::Connect(const Address &addr)
 		client.connect(con);
 
 		// Run the client io_service in a separate thread
-		std::thread client_thread([this]() {
+		m_client_thread = std::thread([this]() {
 			try {
 				client.run();
 			} catch (const std::exception &e) {
 				errorstream << "Client run error: " << e.what() << std::endl;
 			}
 		});
-		client_thread.detach();
 
 		return true;
 	} catch (const std::exception &e) {
@@ -435,6 +509,9 @@ bool WSSocket::Connect(const Address &addr)
 
 void WSSocket::Bind(Address addr)
 {
+	// Outgoing WebSockets already have a local TCP socket; do not start a listener.
+	if (ws_client)
+		return;
 
 	websocketpp::lib::error_code ec;
 	server.listen(addr.getPort(), ec);
@@ -459,13 +536,19 @@ void WSSocket::Bind(Address addr)
 				// Keep real remote addresses in the game queue for bans and logs;
 				// the private assignment is only an address on the virtual network.
 				fm_ws::Error ec;
-				const auto remote = server.get_con_from_hdl(hdl)->get_raw_socket().remote_endpoint(ec);
+				const auto remote =
+						server.get_con_from_hdl(hdl)->get_raw_socket().remote_endpoint(
+								ec);
 				if (ec)
 					return;
-				Address address = remote.address().is_v6()
-						? Address(*reinterpret_cast<const sockaddr_in6 *>(remote.data()))
-						: Address(*reinterpret_cast<const sockaddr_in *>(remote.data()));
+				Address address =
+						remote.address().is_v6()
+								? Address(*reinterpret_cast<const sockaddr_in6 *>(
+										  remote.data()))
+								: Address(*reinterpret_cast<const sockaddr_in *>(
+										  remote.data()));
 				hdls.emplace(hdl, address);
+				std::lock_guard lock(m_incoming_mutex);
 				incoming_queue.push_back({address, data});
 			});
 	// ===
@@ -510,10 +593,14 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 
 	websocketpp::lib::error_code ec;
 	if (ws_client && client_address == destination) {
-		client.send(hdl, data, size, websocketpp::frame::opcode::value::binary, ec);
+		client.get_io_context().post(
+				[this, payload = std::string(static_cast<const char *>(data), size)]() {
+					sendClientPacket(payload);
+				});
 	} else {
 		if (m_datagrams)
-			m_datagrams->send_game(hdl, std::string(static_cast<const char *>(data), size));
+			m_datagrams->send_game(
+					hdl, std::string(static_cast<const char *>(data), size));
 	}
 
 	if (ec.value()) {
@@ -529,8 +616,14 @@ int WSSocket::Receive(Address &sender, void *data, int size)
 	if (!WaitData(m_timeout_ms))
 		return -1;
 
-	const auto item = incoming_queue.front();
-	incoming_queue.pop_front();
+	queue_item item;
+	{
+		std::lock_guard lock(m_incoming_mutex);
+		if (incoming_queue.empty())
+			return -1;
+		item = std::move(incoming_queue.front());
+		incoming_queue.pop_front();
+	}
 	int received = item.data.size();
 	if (size < received) {
 		tracestream << "Packet size " << size << " larger than buffer " << received
@@ -564,13 +657,15 @@ bool WSSocket::WaitData(int timeout_ms)
 	for (int ms = 0; ms < timeout_ms; ++ms) {
 		if (ws_serve)
 			server.poll_one();
-		if (ws_client)
-			client.poll_one();
-		if (!incoming_queue.empty())
-			return true;
+		{
+			std::lock_guard lock(m_incoming_mutex);
+			if (!incoming_queue.empty())
+				return true;
+		}
 		// TODO: condvar here
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
+	std::lock_guard lock(m_incoming_mutex);
 	return !incoming_queue.empty();
 }
 
