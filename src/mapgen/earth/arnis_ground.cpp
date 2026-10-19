@@ -650,15 +650,14 @@ int Ground::base_level(int fallback) const
 }
 std::pair<std::size_t, std::size_t> Ground::world_dims() const
 {
-	// Rust's Ground::world_dims prioritizes the elevation affine. Land
-	// cover and canopy are optional companions and may be unavailable even
-	// when the terrain grid loaded successfully.
-	// Rust stores world dimensions independently of whether an elevation raster
-	// exists (flat/land-cover-only mode still has a coordinate frame). The host
-	// fields are shared with elevation data, but their presence is the invariant
-	// here; requiring a non-empty raster made flat Ground report (0, 0).
+	// Match Rust Ground::world_dims: elevation dimensions win when a sampled
+	// elevation raster is installed; otherwise use the independent flat-mode
+	// frame. Companion grids are only a fallback for legacy callers that have
+	// not supplied either coordinate frame explicitly.
 	if (elevation_world_width > 0 && elevation_world_height > 0)
 		return {elevation_world_width, elevation_world_height};
+	if (world_width > 0 && world_height > 0)
+		return {world_width, world_height};
 	if (has_land_cover())
 		return {land_cover_world_width, land_cover_world_height};
 	return {canopy_world_width, canopy_world_height};
@@ -837,14 +836,14 @@ double Ground::snow_line_meters(double latitude_degrees)
 void Ground::set_snow_line_for_latitude(double latitude_degrees)
 {
 	if (!is_earth()) {
-		snow_threshold_y = std::numeric_limits<int>::max();
+		snow_threshold_y_ = std::numeric_limits<int>::max();
 		return;
 	}
 	const auto snowline = snow_line_meters(latitude_degrees);
 	if (elevation_blocks_per_meter <= 0.0) {
-		snow_threshold_y = elevation_min_height_m >= snowline
-								   ? std::numeric_limits<int>::min()
-								   : std::numeric_limits<int>::max();
+		snow_threshold_y_ = elevation_min_height_m >= snowline
+									? std::numeric_limits<int>::min()
+									: std::numeric_limits<int>::max();
 		return;
 	}
 	double y = base_level() +
@@ -857,7 +856,7 @@ void Ground::set_snow_line_for_latitude(double latitude_degrees)
 		const double rise = (snowline - top.knee_m) * elevation_blocks_per_meter;
 		y = knee_y + top.width_blocks * std::asinh(rise / top.width_blocks);
 	}
-	snow_threshold_y =
+	snow_threshold_y_ =
 			y <= std::numeric_limits<int>::min()   ? std::numeric_limits<int>::min()
 			: y >= std::numeric_limits<int>::max() ? std::numeric_limits<int>::max()
 												   : static_cast<int>(std::llround(y));
@@ -870,7 +869,7 @@ void Ground::set_elevation_metadata(double min_height_m, double blocks_per_meter
 	elevation_blocks_per_meter = blocks_per_meter;
 	elevation_slope_correction = slope_correction > 0.0 ? slope_correction : 1.0;
 	elevation_soft_top = soft_top;
-	snow_threshold_y = snow_y;
+	snow_threshold_y_ = snow_y;
 	elevation_ground_level = ground_level;
 }
 void Ground::set_elevation_data(const std::vector<std::vector<float>> &heights,
@@ -910,7 +909,7 @@ void Ground::set_elevation_data(
 	std::optional<ElevationSoftTop> top;
 	if (data.soft_top)
 		top = ElevationSoftTop{data.soft_top->knee_m, data.soft_top->width_blocks};
-	set_elevation_metadata(data.min_height_m, data.blocks_per_meter, snow_threshold_y,
+	set_elevation_metadata(data.min_height_m, data.blocks_per_meter, snow_threshold_y_,
 			data.ground_level, data.slope_correction, top);
 	set_snow_line_for_latitude(latitude_for_snow_line);
 }
@@ -923,16 +922,8 @@ void Ground::clear_elevation_data()
 }
 void Ground::set_world_dims(std::size_t world_width, std::size_t world_height)
 {
-	elevation_world_width = world_width;
-	elevation_world_height = world_height;
-	if (land_cover) {
-		land_cover_world_width = world_width;
-		land_cover_world_height = world_height;
-	}
-	if (canopy_data) {
-		canopy_world_width = world_width;
-		canopy_world_height = world_height;
-	}
+	this->world_width = world_width;
+	this->world_height = world_height;
 }
 void Ground::apply_osm_water_override(
 		const std::vector<ProcessedElement> &elements, const XZBBox &bbox)
@@ -989,6 +980,10 @@ void Ground::set_land_cover_data(
 	land_cover = std::move(data);
 	land_cover_world_width = world_width;
 	land_cover_world_height = world_height;
+	if (world_width > 0 && world_height > 0) {
+		this->world_width = world_width;
+		this->world_height = world_height;
+	}
 }
 void Ground::set_land_cover_data(const std::vector<std::vector<std::uint8_t>> &grid,
 		const std::vector<std::vector<std::uint8_t>> &water_distance, std::size_t width,
