@@ -54,6 +54,10 @@ struct Ground
 	std::optional<land_cover::LandCoverData> land_cover;
 	std::size_t land_cover_world_width = 0;
 	std::size_t land_cover_world_height = 0;
+	// Rust Ground keeps the flat-mode coordinate frame independently from the
+	// sampled elevation raster. In particular, set_world_dims must not mutate
+	// ElevationData after a rotation has already installed its own dimensions.
+	std::size_t world_width = 0, world_height = 0;
 	std::optional<canopy::CanopyData> canopy_data;
 	std::size_t canopy_world_width = 0, canopy_world_height = 0;
 	double elevation_min_height_m = 0.0, elevation_blocks_per_meter = 0.0;
@@ -61,12 +65,12 @@ struct Ground
 	double elevation_slope_correction = 1.0;
 	std::optional<ElevationSoftTop> elevation_soft_top;
 	bool extended_ceiling = false;
-	CelestialBody body = CelestialBody::Earth;
+	CelestialBody body_ = CelestialBody::Earth;
 	std::optional<int> elevation_ground_level;
 	std::vector<std::vector<float>> elevation_grid;
 	std::size_t elevation_world_width = 0, elevation_world_height = 0;
 	bool elevation_enabled = false;
-	int snow_threshold_y = std::numeric_limits<int>::max();
+	int snow_threshold_y_ = std::numeric_limits<int>::max();
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
 	// Shared immutable grid, matching Rust's Arc<EcoMap> and avoiding a full
@@ -76,7 +80,7 @@ struct Ground
 	{
 		Ground ground;
 		ground.elevation_ground_level = ground_level;
-		ground.snow_threshold_y = std::numeric_limits<int>::max();
+		ground.snow_threshold_y_ = std::numeric_limits<int>::max();
 		ground.elevation_enabled = false;
 		return ground;
 	}
@@ -145,14 +149,17 @@ struct Ground
 	bool has_canopy() const;
 	// Names mirror ground.rs so library consumers do not need to know the
 	// mapgen-host field layout.
-	int snow_threshold() const { return snow_threshold_y; }
-	CelestialBody celestial_body() const { return body; }
-	bool is_earth() const { return arnis::is_earth(body); }
+	int snow_threshold_y() const { return snow_threshold_y_; }
+	// Backward-compatible spelling used by older Freeminer call sites.
+	int snow_threshold() const { return snow_threshold_y(); }
+	CelestialBody body() const { return body_; }
+	CelestialBody celestial_body() const { return body(); }
+	bool is_earth() const { return arnis::is_earth(body_); }
 	// Rust Ground::slope_correction exposes the vertical scale used to turn
 	// sampled block heights back into the documented world-scale incline.
 	double slope_correction() const { return elevation_slope_correction; }
 	double blocks_per_meter() const;
-	void set_celestial_body(CelestialBody value) { body = value; }
+	void set_celestial_body(CelestialBody value) { body_ = value; }
 	void set_extended_ceiling(bool value) { extended_ceiling = value; }
 	int base_level(int fallback = -62) const;
 	std::pair<std::size_t, std::size_t> world_dims() const;
@@ -168,7 +175,7 @@ struct Ground
 	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const;
 	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const;
 	std::optional<double> canopy_fraction(const XZPoint &coord, int spacing) const;
-	bool snow_capped(int y) const { return y >= snow_threshold_y; }
+	bool snow_capped(int y) const { return y >= snow_threshold_y_; }
 	// Rust ground.rs snow-line model.  It is expressed in terrain metres, then
 	// inverted through the actual elevation affine so a sunk terrain base or an
 	// extended build ceiling cannot shift every alpine surface.
