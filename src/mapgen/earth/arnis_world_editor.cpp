@@ -735,6 +735,12 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 		const std::optional<std::vector<Block>> &maybe_variants,
 		const std::optional<std::vector<Block>> &maybe_replacements)
 {
+	// Match Rust WorldToModify: discard writes above the selected world's ceiling,
+	// but clamp writes below its floor onto the floor section (bedrock placement
+	// relies on this when the host VM exposes a deeper range).
+	if (y > world_editor::world_max_y())
+		return false;
+	y = std::max(y, world_editor::min_y());
 	if (x < std::numeric_limits<pos_t>::min() || x > std::numeric_limits<pos_t>::max() ||
 			y < std::numeric_limits<pos_t>::min() ||
 			y > std::numeric_limits<pos_t>::max() ||
@@ -1038,6 +1044,9 @@ bool WorldEditor::check_for_block_absolute(int x, int y, int z,
 		const std::optional<std::vector<Block>> &blocks,
 		const std::optional<std::vector<Block>> &avoid) const
 {
+	if (y > world_editor::world_max_y())
+		return false;
+	y = std::max(y, world_editor::min_y());
 	const v3pos_t pos{
 			static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 	if (!mg || !mg->vm || !pos_ok(x, z) || !mg->vm->exists(pos))
@@ -1086,6 +1095,9 @@ bool WorldEditor::check_for_block_type_absolute(
 }
 std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 {
+	if (y > world_editor::world_max_y())
+		return std::nullopt;
+	y = std::max(y, world_editor::min_y());
 	if (!mg || !mg->vm || !pos_ok(x, z))
 		return std::nullopt;
 	const v3pos_t pos{

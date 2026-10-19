@@ -51,6 +51,78 @@ public:
 	{
 		if (value.empty())
 			return {};
+		// Most block states recur many times while a building is emitted. Check
+		// a bounded worker-local weak cache before sorting/serializing the map or
+		// touching the shared intern table.
+		struct LocalStateCache
+		{
+			std::unordered_map<std::size_t, std::vector<std::weak_ptr<const Properties>>>
+					states;
+			std::size_t entry_count = 0;
+
+			std::shared_ptr<const Properties> find(
+					std::size_t hash, const Properties &value)
+			{
+				const auto found = states.find(hash);
+				if (found == states.end())
+					return {};
+				auto &entries = found->second;
+				for (auto it = entries.begin(); it != entries.end();) {
+					if (auto shared = it->lock()) {
+						if (*shared == value)
+							return shared;
+						++it;
+					} else {
+						it = entries.erase(it);
+						--entry_count;
+					}
+				}
+				if (entries.empty())
+					states.erase(found);
+				return {};
+			}
+
+			void remember(
+					std::size_t hash, const std::shared_ptr<const Properties> &value)
+			{
+				if (entry_count >= 512) {
+					for (auto bucket = states.begin(); bucket != states.end();) {
+						auto &entries = bucket->second;
+						for (auto it = entries.begin(); it != entries.end();) {
+							if (it->expired()) {
+								it = entries.erase(it);
+								--entry_count;
+							} else {
+								++it;
+							}
+						}
+						if (entries.empty())
+							bucket = states.erase(bucket);
+						else
+							++bucket;
+					}
+					if (entry_count >= 512) {
+						auto bucket = states.begin();
+						bucket->second.erase(bucket->second.begin());
+						--entry_count;
+						if (bucket->second.empty())
+							states.erase(bucket);
+					}
+				}
+				states[hash].push_back(value);
+				++entry_count;
+			}
+		};
+		static thread_local LocalStateCache local_cache;
+		std::size_t local_hash = value.size();
+		for (const auto &[name, state] : value) {
+			std::size_t pair_hash = std::hash<std::string>{}(name);
+			pair_hash ^= std::hash<std::string>{}(state) + 0x9e3779b97f4a7c15ULL +
+						 (pair_hash << 6) + (pair_hash >> 2);
+			local_hash ^= pair_hash * 0x9e3779b97f4a7c15ULL;
+		}
+		if (auto shared = local_cache.find(local_hash, value))
+			return shared;
 		// Match Rust's weak, sharded intern table: block sections own the states,
 		// and the cache must not keep them alive after the last placed block is
 		// released. This matters for long-lived mapgen worker threads, whose
@@ -81,8 +153,10 @@ public:
 		auto &shard = cache.shards[shard_hash % cache.shards.size()];
 		std::lock_guard lock(shard.mutex);
 		if (const auto it = shard.states.find(key); it != shard.states.end())
-			if (auto shared = it->second.lock())
+			if (auto shared = it->second.lock()) {
+				local_cache.remember(local_hash, shared);
 				return shared;
+			}
 		if (shard.states.size() >= shard.sweep_at) {
 			for (auto it = shard.states.begin(); it != shard.states.end();) {
 				if (it->second.expired())
@@ -93,7 +167,8 @@ public:
 			shard.sweep_at = std::max<std::size_t>(64, shard.states.size() * 2);
 		}
 		auto shared = std::make_shared<const Properties>(std::move(value));
-		shard.states.insert_or_assign(std::move(key), shared);
+		shard.states.insert_or_assign(key, shared);
+		local_cache.remember(local_hash, shared);
 		return shared;
 	}
 };
