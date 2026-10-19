@@ -38,6 +38,7 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 #include "util/numeric.h"
 #include "util/string.h"
 #include <string>
+#include <boost/asio/post.hpp>
 
 #ifdef _WIN32
 // Without this some of the network functions are not found on mingw
@@ -593,7 +594,7 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 
 	websocketpp::lib::error_code ec;
 	if (ws_client && client_address == destination) {
-		client.get_io_context().post(
+		boost::asio::post(client.get_io_context(),
 				[this, payload = std::string(static_cast<const char *>(data), size)]() {
 					sendClientPacket(payload);
 				});
