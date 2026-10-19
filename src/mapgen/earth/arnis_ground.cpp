@@ -1,4 +1,5 @@
 #include "arnis_ground.h"
+#include "arnis-cpp/src/coordinate_system/cartesian/xzpoint.h"
 
 #include "arnis-cpp/src/cache_root.h"
 #include "arnis-cpp/src/block_definitions.h"
@@ -621,10 +622,12 @@ std::optional<ecoregion::Ecoregion> Ground::ecoregion_at(const XZPoint &coord) c
 {
 	if (!ecoregions)
 		return std::nullopt;
-	if (ecoregions->is_local()) {
-		const auto [align_x, align_z] = ecoregions->alignment();
-		return ecoregions->at({coord.x + align_x, coord.z + align_z});
-	}
+	// EcoMap::build uses the projected alignment only to phase its sampling
+	// lattice; the stored cells and Ground queries remain area-local. Match
+	// Rust Ground::ecoregion, which passes the ground coordinate straight to
+	// EcoMap::at rather than adding that alignment a second time.
+	if (ecoregions->is_local())
+		return ecoregions->at(cartesian::XZPoint{coord.x, coord.z});
 	if (!mg)
 		return std::nullopt;
 	// WorldEditor passes ground-local coordinates here. The global ecoregion
