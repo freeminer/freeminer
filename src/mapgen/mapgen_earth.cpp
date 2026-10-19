@@ -1942,10 +1942,16 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 	// Create heightmap
 	updateHeightmap(node_min, node_max);
 
-	// Init biome generator, place biome-specific nodes, and build biomemap
-	if (flags & MG_BIOMES) {
+	// Caves and dungeons need current-chunk biome data even when Earth skips
+	// biome terrain placement. This also sets the origin for point lookups.
+	if (flags & (MG_BIOMES | MG_CAVES | MG_DUNGEONS))
 		biomegen->calcBiomeNoise(node_min);
+
+	if (flags & MG_BIOMES) {
 		generateBiomes();
+	} else if (flags & MG_CAVES) {
+		// Populate the cave column lookup without replacing Earth's nodes.
+		biomegen->getBiomes(heightmap, node_min);
 	}
 
 	// Generate tunnels, caverns and large randomwalk caves
