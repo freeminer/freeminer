@@ -1,4 +1,5 @@
 #include "test.h"
+#include "mapgen/earth/arnis_ground.h"
 #include "mapgen/earth/arnis-cpp/src/elevation/peaks.h"
 #include "mapgen/earth/arnis-cpp/src/coordinate_system/geographic/llbbox.h"
 #include "mapgen/earth/arnis-cpp/src/terrain_surface.h"
@@ -17,6 +18,7 @@ public:
 		TEST(testDisabledSnowLineDoesNotSnow);
 		TEST(testNonFinitePeakHintDoesNotPoisonElevationGrid);
 		TEST(testNonFinitePeakResolutionDoesNotPoisonElevationGrid);
+		TEST(testFlatWorldDimensionsDoNotOverwriteElevationDimensions);
 	}
 
 	void testSnowCoverMatchesRustThresholds()
@@ -80,6 +82,23 @@ public:
 			raise_peaks(grid, bbox, {{0.0, 0.0, 200.0}}, resolution);
 			UASSERT(grid == before);
 		}
+	}
+
+	void testFlatWorldDimensionsDoNotOverwriteElevationDimensions()
+	{
+		arnis::Ground ground;
+		const std::vector<std::vector<float>> heights{{1.0f, 2.0f}, {3.0f, 4.0f}};
+		ground.set_elevation_data(heights, 2, 2, 100, 80);
+		ground.set_world_dims(64, 48);
+		const auto elevation_dims = ground.world_dims();
+		UASSERT(elevation_dims.first == 100 && elevation_dims.second == 80);
+
+		auto flat = arnis::Ground::new_flat(0);
+		flat.set_world_dims(64, 48);
+		UASSERT(flat.body() == arnis::CelestialBody::Earth);
+		UASSERT(flat.snow_threshold_y() == std::numeric_limits<int>::max());
+		const auto flat_dims = flat.world_dims();
+		UASSERT(flat_dims.first == 64 && flat_dims.second == 48);
 	}
 };
 
