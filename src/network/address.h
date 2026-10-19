@@ -30,9 +30,12 @@ public:
 	Address(u32 address, u16 port);
 	Address(u8 a, u8 b, u8 c, u8 d, u16 port);
 	Address(const IPv6AddressBytes *ipv6_bytes, u16 port);
+	// fm:
 	Address(const in6_addr & addr, u16 port) { setAddress(addr); setPort(port); };
-	Address(const sockaddr_in6 & sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); };
+	Address(const sockaddr_in6 &sai) { m_address.ipv6 = sai; m_addr_family = sai.sin6_family; m_port = ntohs(sai.sin6_port); if (!IN6_IS_ADDR_LINKLOCAL(&m_address.ipv6.sin6_addr)) m_address.ipv6.sin6_scope_id = 0; };
 	Address(const sockaddr_in & sai) { m_address.ipv4 = sai; m_addr_family = sai.sin_family; m_port = ntohs(sai.sin_port); };
+	void setAddress(const in6_addr &addr) { m_address.ipv6.sin6_addr = addr; m_address.ipv6.sin6_family = m_addr_family = AF_INET6; m_address.ipv6.sin6_port = ntohs(m_port); m_address.ipv6.sin6_scope_id = 0; }
+	// ===
 
 	bool operator==(const Address &address) const;
 	bool operator!=(const Address &address) const { return !(*this == address); }
@@ -61,7 +64,6 @@ public:
 	void setAddress(u32 address);
 	void setAddress(u8 a, u8 b, u8 c, u8 d);
 	void setAddress(const IPv6AddressBytes *ipv6_bytes);
-	void setAddress(const in6_addr & addr) { m_address.ipv6.sin6_addr = addr; m_address.ipv6.sin6_family = m_addr_family = AF_INET6; m_address.ipv6.sin6_port = ntohs(m_port); }
 	void setPort(u16 port);
 
 private:

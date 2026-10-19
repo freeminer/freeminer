@@ -102,6 +102,10 @@ void Address::Resolve(const char *name, Address *fallback)
 			struct sockaddr_in6 *t = (struct sockaddr_in6 *)ai->ai_addr;
 			to->m_addr_family = AF_INET6;
 			to->m_address.ipv6 = *t;
+			// fm: a zone id is meaningful for link-local IPv6 addresses only.
+			if (!IN6_IS_ADDR_LINKLOCAL(&to->m_address.ipv6.sin6_addr))
+				to->m_address.ipv6.sin6_scope_id = 0;
+			// ===
 		} else {
 			to->m_addr_family = 0;
 		}
@@ -154,7 +158,12 @@ std::string Address::serializeString() const
 	if (!inet_ntop(m_addr_family, (m_addr_family == AF_INET) ? (void*)&(m_address.ipv4.sin_addr) : (void*)&(m_address.ipv6.sin6_addr), str, INET6_ADDRSTRLEN)) {
 		return "";
 	}
-	return std::string{str} + ((m_addr_family == AF_INET6) ? (m_address.ipv6.sin6_scope_id ? "%" + itos(m_address.ipv6.sin6_scope_id) : "") : "");
+	// fm: only link-local addresses use an interface zone in their text form.
+	if (m_addr_family == AF_INET6 && IN6_IS_ADDR_LINKLOCAL(&m_address.ipv6.sin6_addr) &&
+			m_address.ipv6.sin6_scope_id)
+		return std::string{str} + "%" + itos(m_address.ipv6.sin6_scope_id);
+	// ===
+	return str;
 }
 
 bool Address::isAny() const
@@ -190,16 +199,22 @@ void Address::setAddress(const IPv6AddressBytes *ipv6_bytes)
 		memcpy(m_address.ipv6.sin6_addr.s6_addr, ipv6_bytes->bytes, 16);
 	else
 		memset(m_address.ipv6.sin6_addr.s6_addr, 0, 16);
-		
+	// fm: this setter has no zone-id argument, so clear any previous zone.
+	m_address.ipv6.sin6_scope_id = 0;
+	// ===
 }
 
 void Address::setPort(u16 port)
 {
 	m_port = port;
-	if (m_addr_family == AF_INET6)
+
+	// fm:
+	if (m_addr_family == AF_INET6) {
 		m_address.ipv6.sin6_port = ntohs(m_port);
-	else 
+	} else {
 		m_address.ipv4.sin_port = ntohs(m_port);
+	}
+	// ===
 }
 
 void Address::print(std::ostream& s) const
