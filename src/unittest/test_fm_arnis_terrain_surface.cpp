@@ -1,4 +1,6 @@
 #include "test.h"
+#include "mapgen/earth/arnis-cpp/src/elevation/peaks.h"
+#include "mapgen/earth/arnis-cpp/src/coordinate_system/geographic/llbbox.h"
 #include "mapgen/earth/arnis-cpp/src/terrain_surface.h"
 
 #include <limits>
@@ -13,6 +15,8 @@ public:
 		TEST(testSnowCoverMatchesRustThresholds);
 		TEST(testSnowDepthFollowsUnroundedTerrain);
 		TEST(testDisabledSnowLineDoesNotSnow);
+		TEST(testNonFinitePeakHintDoesNotPoisonElevationGrid);
+		TEST(testNonFinitePeakResolutionDoesNotPoisonElevationGrid);
 	}
 
 	void testSnowCoverMatchesRustThresholds()
@@ -52,6 +56,30 @@ public:
 		UASSERT(snow_cover(
 				disabled.depth(0, 0, 5000), 0.0, [] { return 2.0; }, 1.0, 0, 0)
 						.is_none());
+	}
+
+	void testNonFinitePeakHintDoesNotPoisonElevationGrid()
+	{
+		using namespace arnis::elevation;
+		const arnis::geographic::LLBBox bbox(-1.0, -1.0, 1.0, 1.0);
+		std::vector<std::vector<double>> grid(5, std::vector<double>(5, 100.0));
+		const auto before = grid;
+		raise_peaks(
+				grid, bbox, {{0.0, 0.0, std::numeric_limits<double>::quiet_NaN()}}, 10.0);
+		UASSERT(grid == before);
+	}
+
+	void testNonFinitePeakResolutionDoesNotPoisonElevationGrid()
+	{
+		using namespace arnis::elevation;
+		const arnis::geographic::LLBBox bbox(-1.0, -1.0, 1.0, 1.0);
+		for (const double resolution : {std::numeric_limits<double>::quiet_NaN(),
+					 std::numeric_limits<double>::infinity()}) {
+			std::vector<std::vector<double>> grid(5, std::vector<double>(5, 100.0));
+			const auto before = grid;
+			raise_peaks(grid, bbox, {{0.0, 0.0, 200.0}}, resolution);
+			UASSERT(grid == before);
+		}
 	}
 };
 

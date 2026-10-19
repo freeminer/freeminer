@@ -51,13 +51,21 @@ public:
 	{
 		if (value.empty())
 			return {};
-		struct Shard
+		// Match Rust's weak, sharded intern table: block sections own the states,
+		// and the cache must not keep them alive after the last placed block is
+		// released. This matters for long-lived mapgen worker threads, whose
+		// thread-local strong caches would otherwise retain every state they saw.
+		struct StateShard
 		{
 			std::mutex mutex;
 			std::unordered_map<std::string, std::weak_ptr<const Properties>> states;
 			std::size_t sweep_at = 64;
 		};
-		static std::array<Shard, 16> shards;
+		struct StateCache
+		{
+			std::array<StateShard, 16> shards;
+		};
+		static StateCache cache;
 
 		std::vector<std::pair<std::string, std::string>> ordered(
 				value.begin(), value.end());
@@ -67,8 +75,10 @@ public:
 			key += std::to_string(name.size()) + ':' + name;
 			key += std::to_string(state.size()) + ':' + state;
 		}
-		const auto shard_index = std::hash<std::string>{}(key) % shards.size();
-		auto &shard = shards[shard_index];
+		std::size_t shard_hash = 0;
+		for (const unsigned char byte : key)
+			shard_hash = shard_hash * 31u + byte;
+		auto &shard = cache.shards[shard_hash % cache.shards.size()];
 		std::lock_guard lock(shard.mutex);
 		if (const auto it = shard.states.find(key); it != shard.states.end())
 			if (auto shared = it->second.lock())
@@ -83,7 +93,7 @@ public:
 			shard.sweep_at = std::max<std::size_t>(64, shard.states.size() * 2);
 		}
 		auto shared = std::make_shared<const Properties>(std::move(value));
-		shard.states[std::move(key)] = shared;
+		shard.states.insert_or_assign(std::move(key), shared);
 		return shared;
 	}
 };

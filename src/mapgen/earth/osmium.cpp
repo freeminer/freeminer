@@ -267,6 +267,7 @@ public:
 		editor.set_ground_origin(mg->node_min.X, mg->node_min.Z);
 		arnis::ProcessedWay processed_way;
 		processed_way.id = id;
+		std::vector<std::uint64_t> source_node_refs;
 		for (const auto &tag : way.tags())
 			processed_way.tags.emplace(tag.key(), tag.value());
 		arnis::osm_parser::filter_tags(processed_way.tags);
@@ -274,10 +275,21 @@ public:
 		for (const auto &node : way.nodes()) {
 			++total_node_refs;
 			if (!node.location()) {
+				if (!way_missing_nodes) {
+					// Until this point every source ref is represented by a processed
+					// node. Materialize the full topology only for ways that actually
+					// lose a node while resolving locations.
+					source_node_refs.reserve(way.nodes().size());
+					for (const auto &processed_node : processed_way.nodes)
+						source_node_refs.push_back(processed_node.id);
+				}
+				source_node_refs.push_back(static_cast<std::uint64_t>(node.ref()));
 				++unresolved_node_refs;
 				way_missing_nodes = true;
 				continue;
 			}
+			if (way_missing_nodes)
+				source_node_refs.push_back(static_cast<std::uint64_t>(node.ref()));
 			arnis::ProcessedNode processed_node;
 			const auto node_id = static_cast<std::uint64_t>(node.ref());
 			if (const auto found = tagged_node_tags.find(node_id);
@@ -295,6 +307,10 @@ public:
 			processed_way.nodes.emplace_back(std::move(processed_node));
 		}
 		ways_missing_nodes += way_missing_nodes;
+		// Resolved ways already retain the same node IDs in `nodes`; keep a
+		// separate topology list only for ways where unresolved refs were dropped.
+		if (way_missing_nodes)
+			processed_way.source_node_refs = std::move(source_node_refs);
 		way_indices.emplace(id, elements.size());
 		elements.emplace_back(std::move(processed_way));
 	}

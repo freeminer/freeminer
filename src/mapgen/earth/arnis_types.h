@@ -87,6 +87,10 @@ struct ProcessedWay
 	std::uint64_t id;
 	std::vector<ProcessedNode> nodes;
 	tags_t tags;
+	// Preserve source topology even when osmium cannot resolve a node's
+	// location. Geographic prepasses need endpoint IDs to close split rings;
+	// unresolved coordinates are still omitted from rendered geometry.
+	std::vector<std::uint64_t> source_node_refs;
 };
 
 enum class ProcessedMemberRole
