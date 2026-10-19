@@ -430,9 +430,10 @@ WSSocket::context_ptr WSSocket::on_client_tls_init(
 
 WSSocket::~WSSocket()
 {
-	client.stop();
-	if (m_client_thread.joinable())
+	if (m_client_thread.joinable()) {
+		client.stop();
 		m_client_thread.join();
+	}
 	// cancel cached game address resolution before destroying the endpoint
 	if (m_game_router)
 		m_game_router->stop();
