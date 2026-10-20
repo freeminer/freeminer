@@ -73,7 +73,7 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
 #endif
 
 #define MAX_PACKET_SIZE (1 << 16)
-#define BUFFER_SIZE 80
+#define BUFFER_SIZE (1 << 16)
 #define DISCARD_PPID 39
 
 static void *handle_packets(void *arg)
@@ -114,9 +114,15 @@ int Connection::receive()
 	{
 		const auto lock = m_peers.lock_unique_rec();
 		for (const auto &i : m_peers) {
-			const auto [nn, brk] = recv_(i.first, i.second);
-			n += nn;
-			if (brk)
+			bool removed = false;
+			for (unsigned budget = 0; budget < 16; ++budget) {
+				const auto [nn, brk] = recv_(i.first, i.second);
+				n += nn;
+				removed = brk;
+				if (brk || nn <= 0)
+					break;
+			}
+			if (removed)
 				break;
 		}
 	}
@@ -131,7 +137,6 @@ int Connection::receive()
 		if ((conn_sock = usrsctp_accept(
 					 sock, (struct sockaddr *)&remote_addr, &addr_len)) == NULL) {
 			if (errno == EWOULDBLOCK) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
 				return n;
 			} else {
 				cs << "usrsctp_accept failed.  exiting...\n";
@@ -180,7 +185,7 @@ void Connection::handle_association_change_event(
 		break;
 	case SCTP_COMM_LOST:
 		cs << ("SCTP_COMM_LOST");
-		// deletePeer(peer_id,  false);
+		deletePeer(peer_id, false);
 		break;
 	case SCTP_RESTART:
 		cs << ("SCTP_RESTART");
@@ -313,7 +318,7 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 	struct sctp_rcvinfo rcv_info = {};
 	socklen_t infolen = (socklen_t)sizeof(rcv_info);
 	unsigned int infotype = {};
-	char buffer[BUFFER_SIZE]; // move to class
+	alignas(sctp_notification) char buffer[BUFFER_SIZE];
 	auto n = usrsctp_recvv(sock, (void *)buffer, BUFFER_SIZE, (struct sockaddr *)&addr,
 			&from_len, (void *)&rcv_info, &infolen, &infotype, &flags);
 	if (n > 0) {
@@ -325,8 +330,29 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 
 			const sctp_notification &notification =
 					reinterpret_cast<const sctp_notification &>(buffer);
-			if (notification.sn_header.sn_length != n) {
-				cs << " wrong notification" << std::endl;
+			if (n < static_cast<decltype(n)>(sizeof(notification.sn_header)) ||
+					notification.sn_header.sn_length != static_cast<size_t>(n) ||
+					!(flags & MSG_EOR)) {
+				deletePeer(peer_id, false);
+				return {0, true};
+			}
+			size_t required = sizeof(notification.sn_header);
+			switch (notification.sn_header.sn_type) {
+			case SCTP_ASSOC_CHANGE:
+				required = sizeof(sctp_assoc_change);
+				break;
+			case SCTP_PARTIAL_DELIVERY_EVENT:
+				required = sizeof(sctp_pdapi_event);
+				break;
+			case SCTP_PEER_ADDR_CHANGE:
+				required = sizeof(sctp_paddr_change);
+				break;
+			default:
+				break;
+			}
+			if (static_cast<size_t>(n) < required) {
+				deletePeer(peer_id, false);
+				return {0, true};
 			}
 
 			switch (notification.sn_header.sn_type) {
@@ -351,6 +377,8 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 					}
 					handle_association_change_event(
 							peer_id, &(notification.sn_assoc_change));
+					if (!getPeer(peer_id))
+						return {static_cast<int>(n), true};
 					onAssociationChange(peer_id, &(notification.sn_assoc_change));
 #if 0
 					const sctp_assoc_change& change = notification.sn_assoc_change;
@@ -408,6 +436,13 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				cs << "SCTP_ADAPTATION_INDICATION" << std::endl;
 				break;
 			case SCTP_PARTIAL_DELIVERY_EVENT:
+				if (notification.sn_pdapi_event.pdapi_indication ==
+						SCTP_PARTIAL_DELIVERY_ABORTED) {
+					auto &streams = recv_buf[peer_id];
+					const auto stream = notification.sn_pdapi_event.pdapi_stream;
+					if (stream < streams.size())
+						streams[stream].clear();
+				}
 				cs << "SCTP_PARTIAL_DELIVERY_EVENT" << std::endl;
 				break;
 			case SCTP_AUTHENTICATION_EVENT:
@@ -478,7 +513,11 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				stream_recv_buf.clear();
 			}
 		}
-	} else if (n == 0 || errno == EINPROGRESS || errno == EAGAIN) {
+	} else if (n == 0) {
+		deletePeer(peer_id, false);
+		return {0, true};
+	} else if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK ||
+			   errno == EINTR) {
 		// nothing
 	} else {
 
@@ -493,12 +532,13 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 		return {0, true};
 	}
 
-	return {0, false};
+	return {static_cast<int>(std::max<ssize_t>(n, 0)), false};
 }
 
 static uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE,
-		SCTP_REMOTE_ERROR, SCTP_SHUTDOWN_EVENT, SCTP_ADAPTATION_INDICATION,
-		SCTP_SEND_FAILED_EVENT, SCTP_STREAM_RESET_EVENT, SCTP_STREAM_CHANGE_EVENT};
+		SCTP_REMOTE_ERROR, SCTP_SHUTDOWN_EVENT, SCTP_PARTIAL_DELIVERY_EVENT,
+		SCTP_ADAPTATION_INDICATION, SCTP_SEND_FAILED_EVENT, SCTP_STREAM_RESET_EVENT,
+		SCTP_STREAM_CHANGE_EVENT};
 
 void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 {
@@ -517,6 +557,8 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 	}
 
 	const int one = 1;
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_RECVRCVINFO, &one, sizeof(one)) < 0)
+		throw ConnectionException("Cannot enable SCTP receive stream information");
 	if (domain != AF_CONN) {
 		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_I_WANT_MAPPED_V4_ADDR, &one,
 					sizeof(one)) < 0) {
@@ -908,6 +950,7 @@ void Connection::disconnect()
 		usrsctp_close(primary_sock);
 	m_peers_address.clear();
 	recv_buf.clear();
+	pending_sends.clear();
 
 	if (conn_fd >= 0) {
 		usrsctp_deregister_address(&conn_fd);

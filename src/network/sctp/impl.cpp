@@ -35,7 +35,7 @@ static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_
 		//DUMP("Out", dump_buf);
 		usrsctp_freedumpbuffer(dump_buf);
 	}
-	if (send(*fdp, static_cast<const char*>(buf), length, 0) < 0) {
+	if (send(*fdp, static_cast<const char *>(buf), length, 0) < 0) {
 		return (errno);
 	} else {
 		return (0);
@@ -46,12 +46,13 @@ Connection::Connection(u32 max_packet_size, float timeout, bool ipv6,
 		PeerHandler *peerhandler, bool start_worker) :
 		thread_vector("Connection"),
 		//m_protocol_id(protocol_id),
-		m_max_packet_size(max_packet_size),
-		m_timeout(timeout), sock(nullptr), m_peer_id(0), m_bc_peerhandler(peerhandler),
-		m_last_recieved(0), m_last_recieved_warn(0)
+		m_max_packet_size(max_packet_size), m_timeout(timeout), sock(nullptr),
+		m_peer_id(0), m_bc_peerhandler(peerhandler), m_last_recieved(0),
+		m_last_recieved_warn(0)
 
 #ifdef __EMSCRIPTEN__
-		, domain{AF_CONN}
+		,
+		domain{AF_CONN}
 #endif
 {
 
@@ -113,6 +114,7 @@ void *Connection::run()
 			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
+		flushPendingSends();
 		if (receive() <= 0) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
@@ -241,7 +243,6 @@ void Connection::sctp_setup(u16 port)
 	// usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
 	// #endif
 }
-
 
 } // namespace
 
