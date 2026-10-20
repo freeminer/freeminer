@@ -1050,6 +1050,37 @@ uint8_t Ground::cover_class(const XZPoint &coord) const
 	const auto &[x, z] = land_cover_index(coord);
 	return land_cover->grid[z][x];
 }
+
+bool Ground::has_cover_neighbour(const XZPoint &coord, std::uint8_t class_id) const
+{
+	if (!land_cover || land_cover->grid.empty() || land_cover->width == 0 ||
+			land_cover->height == 0)
+		return false;
+	const auto [gx, gz] = land_cover_index(coord);
+	const auto [world_width, world_height] = world_dims();
+	constexpr std::array<std::pair<int, int>, 4> offsets{
+			{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
+	for (const auto &[dx, dz] : offsets) {
+		const auto nx = static_cast<std::int64_t>(gx) + dx;
+		const auto nz = static_cast<std::int64_t>(gz) + dz;
+		if (nx < 0 || nz < 0 || nx >= static_cast<std::int64_t>(land_cover->width) ||
+				nz >= static_cast<std::int64_t>(land_cover->height))
+			continue;
+		// Rotation padding duplicates the selected raster edge. Do not treat a
+		// clamped duplicate as a second independent cover cell.
+		const int world_x = static_cast<int>(std::llround(
+				double(nx) / double(std::max<std::size_t>(1, land_cover->width - 1)) *
+				double(std::max<std::size_t>(1, world_width - 1))));
+		const int world_z = static_cast<int>(std::llround(
+				double(nz) / double(std::max<std::size_t>(1, land_cover->height - 1)) *
+				double(std::max<std::size_t>(1, world_height - 1))));
+		if (inside_rotation_mask(world_x, world_z) &&
+				land_cover->grid[static_cast<std::size_t>(nz)]
+								[static_cast<std::size_t>(nx)] == class_id)
+			return true;
+	}
+	return false;
+}
 uint8_t Ground::water_distance(const XZPoint &coord) const
 {
 	if (!has_land_cover())

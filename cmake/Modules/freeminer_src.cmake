@@ -16,7 +16,7 @@ target_link_libraries(fm_dependencies INTERFACE ${FREEMINER_COMMON_LIBRARIES} PN
 # GeoParquet support is used by the Osmium map-generation path only.
 if(USE_ARROW AND USE_OSMIUM)
     target_link_libraries(fm_dependencies INTERFACE Parquet::parquet_shared)
-    # target_compile_definitions(fm_dependencies INTERFACE USE_ARROW=1)
+    target_compile_definitions(fm_dependencies INTERFACE USE_ARROW=1)
 endif()
 
 list(APPEND FREEMINER_CLIENT_LIBRARIES fm_dependencies)
