@@ -121,6 +121,13 @@ size_t multi_http_to_file_cdn(const std::string &dir, const std::string &name,
 std::string http_get_range(
 		const std::string &url, std::uint64_t offset, std::uint64_t length)
 {
+	return http_get_range(
+			url, offset, length, g_settings->getS32("curl_file_download_timeout"));
+}
+
+std::string http_get_range(const std::string &url, std::uint64_t offset,
+		std::uint64_t length, int timeout_seconds)
+{
 	if (length == 0 || offset > std::numeric_limits<std::uint64_t>::max() - (length - 1))
 		return {};
 #if USE_OSMIUM
@@ -129,7 +136,9 @@ std::string http_get_range(
 	HTTPFetchRequest req;
 	req.url = url;
 	req.caller = HTTPFETCH_SYNC;
-	req.connect_timeout = req.timeout = g_settings->getS32("curl_file_download_timeout");
+	// Rust's canopy client applies one 90-second request timeout. Range callers
+	// can override this without changing Freeminer's general file-download setting.
+	req.connect_timeout = req.timeout = timeout_seconds;
 	req.extra_headers.emplace_back("Range: bytes=" + std::to_string(offset) + "-" +
 								   std::to_string(offset + length - 1));
 	req.quiet = true;

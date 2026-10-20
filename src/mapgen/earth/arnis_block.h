@@ -5,12 +5,15 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 namespace arnis
 {
+using BlockProperties = std::unordered_map<std::string, std::string>;
+
 class Block : public MapNode
 {
 public:
@@ -18,11 +21,12 @@ public:
 	Block(content_t c = CONTENT_AIR) : MapNode{c} {}
 
 	content_t id() const { return getContent(); }
+	std::optional<BlockProperties> properties() const;
 };
 class BlockWithProperties
 {
 public:
-	using Properties = std::unordered_map<std::string, std::string>;
+	using Properties = BlockProperties;
 
 	Block block;
 	// Java/Sponge block-state values.  MapNode has no portable generic state
@@ -172,5 +176,8 @@ public:
 		return shared;
 	}
 };
+
+// Rust's Block::properties() defaults for significant Java block states.
+BlockWithProperties::Properties default_block_properties(const Block &block);
 
 }

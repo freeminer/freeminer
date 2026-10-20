@@ -115,9 +115,16 @@ struct WorldEditor
 	{
 		sealed_surface = std::move(mask);
 	}
-	void release_sealed_surface() { sealed_surface.reset(); }
+	void release_sealed_surface()
+	{
+		sealed_surface.reset();
+		mapped_trunks.reset();
+	}
+	bool under_mapped_crown(int x, int z) const;
 	bool surface_is_sealed(int x, int z) const;
 	bool nested_area_owns(int x, int z) const;
+	uint8_t cover_class(int x, int z) const;
+	std::optional<ecoregion::Ecoregion> ecoregion(int x, int z) const;
 	struct DecalFrame
 	{
 		int x, y, z;
