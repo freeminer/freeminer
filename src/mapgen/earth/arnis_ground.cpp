@@ -65,6 +65,16 @@ bool write_rgb_png(const std::string &filename, std::size_t width, std::size_t h
 	png_image_free(&image);
 	return ok;
 }
+
+elevation::TerrainHints terrain_hints_for(
+		const Args &args, const osm_parser::RawOsmDocument &osm)
+{
+	elevation::TerrainHints hints;
+	hints.peaks = elevation::peaks_in(osm);
+	if (args.use_3d)
+		hints.tall_models = elevation::tall_models_in(osm);
+	return hints;
+}
 } // namespace
 
 int extended_min_y_for(const Args &args)
@@ -109,9 +119,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
 		const osm_parser::RawOsmDocument &osm, const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = elevation::terrain_hints_in(osm);
-	if (!args.use_3d)
-		terrain_hints.tall_models.clear();
+	auto terrain_hints = terrain_hints_for(args, osm);
 	return generate_ground_data(args, bbox, cache_base, terrain_hints);
 }
 
@@ -277,6 +285,16 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 {
 	if (!args.valid())
 		throw std::invalid_argument("invalid Arnis ground-generation options");
+	// Rust only collects tall-model hints when 3D placement is enabled. Enforce
+	// that policy here too, including callers that supply TerrainHints directly
+	// instead of going through generate_ground_data_from_osm(). Natural peaks
+	// remain active independently of the model-placement toggle.
+	elevation::TerrainHints effective_terrain_hints;
+	const elevation::TerrainHints *hints = &terrain_hints;
+	if (!args.use_3d && !terrain_hints.tall_models.empty()) {
+		effective_terrain_hints.peaks = terrain_hints.peaks;
+		hints = &effective_terrain_hints;
+	}
 	// Match Rust's once-daily background sweep of stale elevation/land-cover
 	// tiles. Keep the host-supplied cache root authoritative when present.
 	elevation::spawn_throttled_cleanup(
@@ -342,7 +360,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						world_width, world_height, grid_width, grid_height, args.scale,
 						args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, true, cover ? &*cover : nullptr,
-						frame.affine, {}, terrain_hints);
+						frame.affine, {}, *hints);
 			} else {
 				auto raw = elevation::fetch_planetary_elevation(args.body, fetch_bbox,
 						grid_width, grid_height, elevation::http_planetary_range_reader(),
@@ -355,7 +373,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 				processed = elevation::process_elevation_data(fetch_bbox, std::move(*raw),
 						args.scale, args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, false, nullptr, frame.affine,
-						{}, terrain_hints);
+						{}, *hints);
 			}
 			if (frame.mercator) {
 				const auto source = [&](std::size_t z) {
@@ -447,9 +465,7 @@ Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox 
 		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
 		const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = elevation::terrain_hints_in(osm);
-	if (!args.use_3d)
-		terrain_hints.tall_models.clear();
+	auto terrain_hints = terrain_hints_for(args, osm);
 	return generate_ground_data(args, bbox, frame, cache_base, terrain_hints);
 }
 
