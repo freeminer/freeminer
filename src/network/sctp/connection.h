@@ -36,6 +36,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/pointer.h"
 
 #include <mutex>
+#include <deque>
 
 #define CHANNEL_COUNT 3
 
@@ -101,9 +102,9 @@ protected:
 	void send_(float dtime);
 	virtual int receive();
 	void runTimeouts(float dtime);
-	virtual void serve(const Address & address);
-	void connect_addr(const Address & address);
-	void connect_conn(const Address & address);
+	virtual void serve(const Address &address);
+	void connect_addr(const Address &address);
+	void connect_conn(const Address &address);
 	void disconnect();
 	void finish_sctp();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
@@ -113,8 +114,8 @@ protected:
 	struct socket *getPeer(session_t peer_id);
 
 	virtual bool deletePeer(session_t peer_id, bool timeout = 0);
-private:
 
+private:
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
 
@@ -124,12 +125,14 @@ private:
 	// struct sctp_udpencaps encaps;
 protected:
 	struct socket *sock = nullptr;
+
 private:
 	session_t m_peer_id;
 	session_t m_next_remote_peer_id = PEER_SCTP_MIN;
 
 protected:
 	concurrent_map<session_t, struct socket *> m_peers;
+
 private:
 	concurrent_unordered_map<session_t, Address> m_peers_address;
 	concurrent_unordered_map<session_t, int[2]> m_peers_fd;
@@ -146,15 +149,16 @@ private:
 
 protected:
 	std::string getDesc();
-private:
 
+private:
 	bool sock_listen = false, sock_connect = false, sctp_inited_by_me = false;
 	bool sctp_ref_registered = false;
 	static bool sctp_inited;
 	static std::mutex sctp_init_mutex;
 	static unsigned int sctp_refcount;
+
 protected:
-/*
+	/*
 #ifdef __EMSCRIPTEN__
 	const int domain = AF_CONN;
 	//using sockaddr_t = sockaddr_conn;
@@ -168,9 +172,12 @@ protected:
 
 	int domain = AF_INET6;
 	//bool use_conn = false;
-	int (*sctp_conn_output)(void *addr, void *buffer, size_t length, uint8_t tos, uint8_t set_df) = nullptr;
-	int (*server_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
-	int (*client_send_cb)(struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
+	int (*sctp_conn_output)(void *addr, void *buffer, size_t length, uint8_t tos,
+			uint8_t set_df) = nullptr;
+	int (*server_send_cb)(
+			struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
+	int (*client_send_cb)(
+			struct socket *sock, uint32_t sb_free, void *ulp_info) = nullptr;
 
 	std::pair<int, bool> recv_(session_t peer_id, struct socket *sock);
 	void sock_setup(/*session_t peer_id,*/ struct socket *sock);
@@ -178,7 +185,17 @@ protected:
 	struct socket *sctp_server_sock{};
 	virtual void onAssociationChange(
 			session_t peer_id, const struct sctp_assoc_change *sac);
+
 private:
+	struct PendingSend
+	{
+		u8 channel;
+		SharedBuffer<u8> data;
+		bool reliable;
+		size_t offset = 0;
+	};
+	std::unordered_map<session_t, std::deque<PendingSend>> pending_sends;
+	void flushPendingSends();
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
 
 	void handle_association_change_event(

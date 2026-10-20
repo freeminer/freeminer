@@ -19,104 +19,59 @@ void Connection::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
 void Connection::send_(
 		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
 {
-	// cs<<" === sending to peer_id="<<peer_id <<" channelnum="<<(int)channelnum<< "
-	// reliable="<<reliable<< " bytes="<<data.getSize()<<" hash=" <<std::dec<<
-	// std::hash<std::string>()(std::string((const char*)*data,
-	// data.getSize()))<<std::endl;
-	{
-		if (m_peers.find(peer_id) == m_peers.end()) {
-			cs << " === send no peer " << peer_id << std::endl;
-			return;
-		}
-	}
-	dout_con << getDesc() << " sending to peer_id=" << peer_id << std::endl;
-
-	if (channelnum >= CHANNEL_COUNT) {
-		cs << " === send no chan " << channelnum << "/" << CHANNEL_COUNT << std::endl;
+	if (channelnum >= CHANNEL_COUNT || !getPeer(peer_id) || !data.getSize())
 		return;
-	}
+	pending_sends[peer_id].push_back({channelnum, data, reliable});
+}
 
-	auto sock = getPeer(peer_id);
-	if (!sock) {
-		cs << " === send no peer sock" << std::endl;
-		deletePeer(peer_id, false);
-		return;
-	}
-
-	// cs<<" === send to peer " << peer_id<< "sock="<< peer<<std::endl;
-
-	usrsctp_set_non_blocking(sock, 1);
-
-	uint32_t flags = 0;
-
-	struct sctp_sendv_spa spa = {};
-	spa.sendv_sndinfo.snd_sid = channelnum + 1 + (!reliable) * 4;
-
-	if (!reliable) {
-		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-		spa.sendv_prinfo.pr_value = 1; // units?
-		spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
-		flags = SCTP_UNORDERED;
-		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
-	}
-
-	// spa.sendv_sndinfo = sndinfo;
-	spa.sendv_flags |= SCTP_SEND_SNDINFO_VALID;
-
-	size_t maxlen = 0xffff - 1000;
-	// size_t maxlen = 1400;
-	size_t buflen = data.getSize();
-	size_t sendlen = std::min(buflen, maxlen);
-	size_t remlen = buflen;
-	size_t curpos = 0;
-
-	while (remlen > 0) {
-		if (remlen <= maxlen) {
-			spa.sendv_sndinfo.snd_flags |= SCTP_EOR;
-		}
-
-		// cs<<" psend" << " remlen=" << remlen << " curpos="<<curpos<< "
-		// sendlen="<<sendlen << " buflen="<<buflen<< " nowsent="<<(curpos+sendlen)<<"
-		// flags="<<spa.sendv_sndinfo.snd_flags<< " sid="<<spa.sendv_sndinfo.snd_sid
-		//<<" hash=" <<std::dec<< std::hash<std::string>()(std::string((const char*)*data,
-		// data.getSize()))
-		//<<std::endl;
-
-		// int len = usrsctp_sendv(sock, *data + curpos, sendlen, NULL, 0, (void
-		// *)&spa.sendv_sndinfo, sizeof(spa.sendv_sndinfo), SCTP_SENDV_SNDINFO, 0);
-		int len = usrsctp_sendv(sock, *data + curpos, sendlen, NULL, 0, (void *)&spa,
-				sizeof(spa), SCTP_SENDV_SPA, flags);
-		if (len > 0) {
-			curpos += len;
-			remlen -= len;
-			sendlen = std::min(remlen, maxlen);
-		}
-		if (errno == EWOULDBLOCK) {
-			cs << "send EWOULDBLOCK len=" << len << std::endl;
-			usrsctp_set_non_blocking(sock, 0);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-
+void Connection::flushPendingSends()
+{
+	// Snapshot IDs because a fatal send error removes the peer and its queue.
+	std::vector<session_t> peers;
+	for (const auto &[id, queue] : pending_sends)
+		peers.push_back(id);
+	for (auto id : peers) {
+		auto *peer = getPeer(id);
+		if (!peer) {
+			// Derived transports can remove their sockets directly.
+			pending_sends.erase(id);
 			continue;
 		}
-		if (errno == EAGAIN) {
-			cs << "send EAGAIN len=" << len << std::endl;
-			continue;
+		auto &queue = pending_sends.at(id);
+		for (unsigned budget = 0; budget < 16 && !queue.empty(); ++budget) {
+			auto &message = queue.front();
+			sctp_sendv_spa spa = {};
+			spa.sendv_flags = SCTP_SEND_SNDINFO_VALID;
+			spa.sendv_sndinfo.snd_sid = message.channel + 1 + (!message.reliable) * 4;
+			if (!message.reliable) {
+				// No retransmissions, but allow the initial transmission to wait
+				// for congestion control instead of expiring after one millisecond.
+				spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
+				spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+				spa.sendv_prinfo.pr_value = 0;
+				spa.sendv_sndinfo.snd_flags = SCTP_UNORDERED;
+			}
+			const size_t remaining = message.data.getSize() - message.offset;
+			const size_t length = std::min(remaining, size_t(0xffff - 1000));
+			if (length == remaining)
+				spa.sendv_sndinfo.snd_flags |= SCTP_EOR;
+			const auto sent = usrsctp_sendv(peer, *message.data + message.offset, length,
+					nullptr, 0, &spa, sizeof(spa), SCTP_SENDV_SPA, 0);
+			if (sent < 0) {
+				if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR)
+					break;
+				deletePeer(id, false);
+				break;
+			}
+			if (!sent)
+				break;
+			message.offset += sent;
+			if (message.offset == message.data.getSize())
+				queue.pop_front();
 		}
-		if (len < 0) {
-			perror("usrsctp_sendv");
-			deletePeer(peer_id, 0);
-
-			cs << " === sending FAILED to peer_id=" << peer_id
-			   << " bytes=" << data.getSize() << " sock=" << sock << " len=" << len
-			   << " curpos=" << curpos << std::endl;
-			break;
-		}
-
-		// if(len != buflen)
-		// cs<<" part send" << " len="<<len<< " / "<<buflen<<std::endl;
 	}
 }
 
-} // namespace
+} // namespace con_sctp
 
 #endif
