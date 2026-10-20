@@ -142,6 +142,7 @@ Block RAIL;
 Block POWERED_RAIL;
 Block RED_FLOWER;
 Block RED_NETHER_BRICK;
+Block RED_SAND;
 Block RED_TERRACOTTA;
 Block RED_WOOL;
 Block SAND;
@@ -1047,12 +1048,14 @@ void init(MapgenEarth *mg)
 	RED_TERRACOTTA = g("red_terracotta", "default:clay");
 	RED_WOOL = g("red_wool", "wool:red");
 	SAND = g("sand", {"default:sand", "mcl_core:sand", "basenodes:sand", "mapgen_sand",
-							 "spring:sand", "mcl_core:red_sand", "mcl_core:redsand",
-							 "default:red_sand", "default:redsand", "default:desert_sand",
-							 "mcl_core:desert_sand", "basenodes:desert_sand",
+							 "spring:sand",
 							 "mapgen_desert_sand", "default:silver_sand", "ethereal:sand",
 							 "default:silver_sand", "mcl_core:sandstone",
 							 "default:sandstone", "basenodes:stone", "default:stone"});
+	RED_SAND = optional_g("red_sand", SAND,
+			{"mcl_core:red_sand", "mcl_core:redsand", "default:red_sand",
+					"default:redsand", "default:desert_sand", "mcl_core:desert_sand",
+					"basenodes:desert_sand", "mapgen_desert_sand"});
 	SANDSTONE = g("sandstone", "default:sandstone");
 	SCAFFOLDING = g("scaffolding", "default:ladder_steel");
 	SMOOTH_QUARTZ = g("smooth_quartz", "default:stone");

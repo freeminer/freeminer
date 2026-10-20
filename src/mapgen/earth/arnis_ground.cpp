@@ -65,6 +65,16 @@ bool write_rgb_png(const std::string &filename, std::size_t width, std::size_t h
 	png_image_free(&image);
 	return ok;
 }
+
+elevation::TerrainHints terrain_hints_for(
+		const Args &args, const osm_parser::RawOsmDocument &osm)
+{
+	elevation::TerrainHints hints;
+	hints.peaks = elevation::peaks_in(osm);
+	if (args.use_3d)
+		hints.tall_models = elevation::tall_models_in(osm);
+	return hints;
+}
 } // namespace
 
 int extended_min_y_for(const Args &args)
@@ -109,9 +119,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
 		const osm_parser::RawOsmDocument &osm, const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = elevation::terrain_hints_in(osm);
-	if (!args.use_3d)
-		terrain_hints.tall_models.clear();
+	auto terrain_hints = terrain_hints_for(args, osm);
 	return generate_ground_data(args, bbox, cache_base, terrain_hints);
 }
 
@@ -277,6 +285,16 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 {
 	if (!args.valid())
 		throw std::invalid_argument("invalid Arnis ground-generation options");
+	// Rust only collects tall-model hints when 3D placement is enabled. Enforce
+	// that policy here too, including callers that supply TerrainHints directly
+	// instead of going through generate_ground_data_from_osm(). Natural peaks
+	// remain active independently of the model-placement toggle.
+	elevation::TerrainHints effective_terrain_hints;
+	const elevation::TerrainHints *hints = &terrain_hints;
+	if (!args.use_3d && !terrain_hints.tall_models.empty()) {
+		effective_terrain_hints.peaks = terrain_hints.peaks;
+		hints = &effective_terrain_hints;
+	}
 	// Match Rust's once-daily background sweep of stale elevation/land-cover
 	// tiles. Keep the host-supplied cache root authoritative when present.
 	elevation::spawn_throttled_cleanup(
@@ -342,7 +360,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						world_width, world_height, grid_width, grid_height, args.scale,
 						args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, true, cover ? &*cover : nullptr,
-						frame.affine, {}, terrain_hints);
+						frame.affine, {}, *hints);
 			} else {
 				auto raw = elevation::fetch_planetary_elevation(args.body, fetch_bbox,
 						grid_width, grid_height, elevation::http_planetary_range_reader(),
@@ -355,7 +373,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 				processed = elevation::process_elevation_data(fetch_bbox, std::move(*raw),
 						args.scale, args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, false, nullptr, frame.affine,
-						{}, terrain_hints);
+						{}, *hints);
 			}
 			if (frame.mercator) {
 				const auto source = [&](std::size_t z) {
@@ -447,9 +465,7 @@ Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox 
 		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
 		const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = elevation::terrain_hints_in(osm);
-	if (!args.use_3d)
-		terrain_hints.tall_models.clear();
+	auto terrain_hints = terrain_hints_for(args, osm);
 	return generate_ground_data(args, bbox, frame, cache_base, terrain_hints);
 }
 
@@ -873,21 +889,24 @@ void Ground::set_elevation_metadata(double min_height_m, double blocks_per_meter
 	elevation_ground_level = ground_level;
 }
 void Ground::set_elevation_data(const std::vector<std::vector<float>> &heights,
-		std::size_t width, std::size_t height, std::size_t world_width,
-		std::size_t world_height)
+		std::size_t, std::size_t, std::size_t world_width, std::size_t world_height)
 {
-	// Rust replaces the existing elevation dataset during rotation.  Accept
-	// the update even when the caller has not toggled the flag yet; the
-	// presence of a non-empty grid is the authoritative enabled state.
+	// This overload mirrors Rust's rotation-only replacement API: a transform
+	// must not create elevation state when the source ground had none.
+	if (elevation_grid.empty())
+		return;
 	elevation_grid = heights;
-	elevation_world_width = world_width ? world_width : width;
-	elevation_world_height = world_height ? world_height : height;
+	elevation_world_width = world_width;
+	elevation_world_height = world_height;
 	elevation_enabled = !elevation_grid.empty();
 }
 void Ground::set_elevation_data(const std::vector<std::vector<double>> &heights,
-		std::size_t width, std::size_t height, std::size_t world_width,
-		std::size_t world_height)
+		std::size_t, std::size_t, std::size_t world_width, std::size_t world_height)
 {
+	// As above, this is the Rust-parity rotation replacement overload, not the
+	// initial provider-data installation path.
+	if (elevation_grid.empty())
+		return;
 	elevation_grid.clear();
 	elevation_grid.reserve(heights.size());
 	for (const auto &row : heights) {
@@ -896,16 +915,20 @@ void Ground::set_elevation_data(const std::vector<std::vector<double>> &heights,
 		for (double value : row)
 			elevation_grid.back().push_back(static_cast<float>(value));
 	}
-	elevation_world_width = world_width ? world_width : width;
-	elevation_world_height = world_height ? world_height : height;
+	elevation_world_width = world_width;
+	elevation_world_height = world_height;
 	elevation_enabled = !elevation_grid.empty();
 }
 
 void Ground::set_elevation_data(
 		const elevation::ProcessedElevationData &data, double latitude_for_snow_line)
 {
-	set_elevation_data(
-			data.heights, data.width, data.height, data.world_width, data.world_height);
+	// Initial provider installation is separate from the Rust rotation setter:
+	// this path is allowed to create elevation state on a fresh Ground.
+	elevation_grid = data.heights;
+	elevation_world_width = data.world_width;
+	elevation_world_height = data.world_height;
+	elevation_enabled = !elevation_grid.empty();
 	std::optional<ElevationSoftTop> top;
 	if (data.soft_top)
 		top = ElevationSoftTop{data.soft_top->knee_m, data.soft_top->width_blocks};
@@ -1026,6 +1049,37 @@ uint8_t Ground::cover_class(const XZPoint &coord) const
 		return 0;
 	const auto &[x, z] = land_cover_index(coord);
 	return land_cover->grid[z][x];
+}
+
+bool Ground::has_cover_neighbour(const XZPoint &coord, std::uint8_t class_id) const
+{
+	if (!land_cover || land_cover->grid.empty() || land_cover->width == 0 ||
+			land_cover->height == 0)
+		return false;
+	const auto [gx, gz] = land_cover_index(coord);
+	const auto [world_width, world_height] = world_dims();
+	constexpr std::array<std::pair<int, int>, 4> offsets{
+			{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
+	for (const auto &[dx, dz] : offsets) {
+		const auto nx = static_cast<std::int64_t>(gx) + dx;
+		const auto nz = static_cast<std::int64_t>(gz) + dz;
+		if (nx < 0 || nz < 0 || nx >= static_cast<std::int64_t>(land_cover->width) ||
+				nz >= static_cast<std::int64_t>(land_cover->height))
+			continue;
+		// Rotation padding duplicates the selected raster edge. Do not treat a
+		// clamped duplicate as a second independent cover cell.
+		const int world_x = static_cast<int>(std::llround(
+				double(nx) / double(std::max<std::size_t>(1, land_cover->width - 1)) *
+				double(std::max<std::size_t>(1, world_width - 1))));
+		const int world_z = static_cast<int>(std::llround(
+				double(nz) / double(std::max<std::size_t>(1, land_cover->height - 1)) *
+				double(std::max<std::size_t>(1, world_height - 1))));
+		if (inside_rotation_mask(world_x, world_z) &&
+				land_cover->grid[static_cast<std::size_t>(nz)]
+								[static_cast<std::size_t>(nx)] == class_id)
+			return true;
+	}
+	return false;
 }
 uint8_t Ground::water_distance(const XZPoint &coord) const
 {

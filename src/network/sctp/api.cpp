@@ -61,6 +61,7 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
 	m_peers_address.erase(peer_id);
 	recv_buf.erase(peer_id);
+	pending_sends.erase(peer_id);
 	return true;
 }
 
