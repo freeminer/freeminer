@@ -99,6 +99,13 @@ local function find_selected_server()
 			return server
 		end
 	end
+	-- fm:
+	for _, server in ipairs(core.get_lan_servers()) do
+		if transport.matches(server, address, port) then
+			return server
+		end
+	end
+	-- ===
 	for _, server in ipairs(serverlistmgr.get_favorites()) do
 		-- fm: include advertised alternate transport ports.
 		if transport.matches(server, address, port) then
