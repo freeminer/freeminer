@@ -3,6 +3,7 @@
 #include "emerge.h"
 #include "mapgen/mapgen_earth.h"
 #include "arnis-cpp/src/ground_decoration.h"
+#include "arnis-cpp/src/trees/mapped.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
 #include "arnis-cpp/src/climate.h"
 
@@ -20,6 +21,21 @@ namespace arnis
 {
 namespace world_editor
 {
+
+bool WorldEditor::under_mapped_crown(int x, int z) const
+{
+	return mapped_trunks && mapped_trunks->under_crown(x, z);
+}
+
+uint8_t WorldEditor::cover_class(int x, int z) const
+{
+	return ground ? ground->cover_class(ground_point(x, z)) : 0;
+}
+
+std::optional<ecoregion::Ecoregion> WorldEditor::ecoregion(int x, int z) const
+{
+	return ground ? ground->ecoregion(ground_point(x, z)) : std::nullopt;
+}
 
 namespace
 {
@@ -1001,14 +1017,14 @@ bool WorldEditor::is_lc_water(int x, int z) const
 	// the column as ESA water, not whether an earlier generation pass wrote a
 	// water block there.  The distinction matters while reconstructing water
 	// areas, before their own fill decisions have completed.
-	return ground && ground->cover_class(ground_point(x, z)) == land_cover::LC_WATER;
+	return ground && cover_class(x, z) == land_cover::LC_WATER;
 }
 bool WorldEditor::is_steep_land(int x, int z) const
 {
 	if (!ground)
 		return false;
 	const auto point = ground_point(x, z);
-	const auto cover = ground->cover_class(point);
+	const auto cover = cover_class(x, z);
 	return cover != 0 && cover != land_cover::LC_WATER && ground->slope(point) > 4;
 }
 bool WorldEditor::land_cover_backs_trees(int x, int z) const
@@ -1022,7 +1038,7 @@ bool WorldEditor::land_cover_backs_trees(int x, int z) const
 	}
 	if (!ground->has_land_cover())
 		return true;
-	const auto cover = ground->cover_class(point);
+	const auto cover = cover_class(x, z);
 	return cover == land_cover::LC_TREE_COVER || cover == land_cover::LC_SHRUBLAND;
 }
 std::optional<trees::TreeSize> WorldEditor::canopy_size_hint(int x, int z) const

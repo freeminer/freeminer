@@ -10,6 +10,8 @@ size_t http_to_file(const std::string &url, const std::string &zipfull);
 // downloads of complete multi-hundred-megabyte COG files.
 std::string http_get_range(
 		const std::string &url, std::uint64_t offset, std::uint64_t length);
+std::string http_get_range(const std::string &url, std::uint64_t offset,
+		std::uint64_t length, int timeout_seconds);
 size_t multi_http_to_file(const std::string &zipfile,
 		const std::vector<std::string> &links, std::string zipfull = {});
 size_t multi_http_to_file(

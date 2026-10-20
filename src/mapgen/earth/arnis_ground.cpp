@@ -873,21 +873,24 @@ void Ground::set_elevation_metadata(double min_height_m, double blocks_per_meter
 	elevation_ground_level = ground_level;
 }
 void Ground::set_elevation_data(const std::vector<std::vector<float>> &heights,
-		std::size_t width, std::size_t height, std::size_t world_width,
-		std::size_t world_height)
+		std::size_t, std::size_t, std::size_t world_width, std::size_t world_height)
 {
-	// Rust replaces the existing elevation dataset during rotation.  Accept
-	// the update even when the caller has not toggled the flag yet; the
-	// presence of a non-empty grid is the authoritative enabled state.
+	// This overload mirrors Rust's rotation-only replacement API: a transform
+	// must not create elevation state when the source ground had none.
+	if (elevation_grid.empty())
+		return;
 	elevation_grid = heights;
-	elevation_world_width = world_width ? world_width : width;
-	elevation_world_height = world_height ? world_height : height;
+	elevation_world_width = world_width;
+	elevation_world_height = world_height;
 	elevation_enabled = !elevation_grid.empty();
 }
 void Ground::set_elevation_data(const std::vector<std::vector<double>> &heights,
-		std::size_t width, std::size_t height, std::size_t world_width,
-		std::size_t world_height)
+		std::size_t, std::size_t, std::size_t world_width, std::size_t world_height)
 {
+	// As above, this is the Rust-parity rotation replacement overload, not the
+	// initial provider-data installation path.
+	if (elevation_grid.empty())
+		return;
 	elevation_grid.clear();
 	elevation_grid.reserve(heights.size());
 	for (const auto &row : heights) {
@@ -896,16 +899,20 @@ void Ground::set_elevation_data(const std::vector<std::vector<double>> &heights,
 		for (double value : row)
 			elevation_grid.back().push_back(static_cast<float>(value));
 	}
-	elevation_world_width = world_width ? world_width : width;
-	elevation_world_height = world_height ? world_height : height;
+	elevation_world_width = world_width;
+	elevation_world_height = world_height;
 	elevation_enabled = !elevation_grid.empty();
 }
 
 void Ground::set_elevation_data(
 		const elevation::ProcessedElevationData &data, double latitude_for_snow_line)
 {
-	set_elevation_data(
-			data.heights, data.width, data.height, data.world_width, data.world_height);
+	// Initial provider installation is separate from the Rust rotation setter:
+	// this path is allowed to create elevation state on a fresh Ground.
+	elevation_grid = data.heights;
+	elevation_world_width = data.world_width;
+	elevation_world_height = data.world_height;
+	elevation_enabled = !elevation_grid.empty();
 	std::optional<ElevationSoftTop> top;
 	if (data.soft_top)
 		top = ElevationSoftTop{data.soft_top->knee_m, data.soft_top->width_blocks};
