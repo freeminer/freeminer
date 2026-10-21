@@ -294,6 +294,9 @@ struct WorldEditor
 	// terrain passes, then transferred to the committed map at ordered merge.
 	RoadSurfaceOverrides road_surface_overrides;
 	RoadSurfaceOverrides active_road_surface_overrides;
+	// Bounds of the full generation area. Tile merges keep the owning tile's
+	// road elevations and retain non-owned values only outside this area.
+	std::optional<std::tuple<int, int, int, int>> generation_bounds;
 	bool tile_active = false;
 	using WrittenCellSet = std::unordered_set<std::tuple<int, int, int>, FrameCellHash>;
 	WrittenCellSet written_cells;
@@ -639,7 +642,11 @@ struct WorldEditor
 		written_cells.clear();
 		return true;
 	}
-	bool merge_tile(int, int, int, int)
+	void set_generation_bounds(int min_x, int min_z, int max_x, int max_z)
+	{
+		generation_bounds = std::tuple{min_x, min_z, max_x, max_z};
+	}
+	bool merge_tile(int min_x, int min_z, int max_x, int max_z)
 	{
 		if (merge_tile_sink) {
 			if (!active_tile_overlay)
@@ -649,8 +656,18 @@ struct WorldEditor
 			else if (!merge_tile_sink(*active_tile_overlay))
 				return false;
 		}
-		for (const auto &[coordinate, y] : active_road_surface_overrides)
-			road_surface_overrides.insert_or_assign(coordinate, y);
+		for (const auto &[coordinate, y] : active_road_surface_overrides) {
+			const auto [x, z] = coordinate;
+			const bool owned = x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+			const bool outside_world = !generation_bounds || [&] {
+				const auto [world_min_x, world_min_z, world_max_x, world_max_z] =
+						*generation_bounds;
+				return x < world_min_x || x > world_max_x || z < world_min_z ||
+					   z > world_max_z;
+			}();
+			if (owned || outside_world)
+				road_surface_overrides.insert_or_assign(coordinate, y);
+		}
 		active_road_surface_overrides.clear();
 		for (const auto &[coordinate, block] : active_support_columns)
 			support_columns.insert_or_assign(coordinate, block);

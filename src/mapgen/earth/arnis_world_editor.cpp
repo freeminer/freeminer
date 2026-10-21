@@ -280,6 +280,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.ground_origin_x = ground_origin_x;
 	worker.ground_origin_z = ground_origin_z;
 	worker.ground_origin_set = ground_origin_set;
+	worker.generation_bounds = generation_bounds;
 	return worker;
 }
 
@@ -299,8 +300,18 @@ bool WorldEditor::merge_tile_worker(
 	}
 	worker.deferred_tile_overlays.clear();
 
-	for (auto &[cell, y] : worker.road_surface_overrides)
-		road_surface_overrides.insert_or_assign(cell, y);
+	for (auto &[cell, y] : worker.road_surface_overrides) {
+		const auto [x, z] = cell;
+		const bool owned = x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+		const bool outside_world = !generation_bounds || [&] {
+			const auto [world_min_x, world_min_z, world_max_x, world_max_z] =
+					*generation_bounds;
+			return x < world_min_x || x > world_max_x || z < world_min_z ||
+				   z > world_max_z;
+		}();
+		if (owned || outside_world)
+			road_surface_overrides.insert_or_assign(cell, y);
+	}
 	for (auto &[cell, block] : worker.support_columns)
 		support_columns.insert_or_assign(cell, std::move(block));
 	frame_cells.insert(worker.frame_cells.begin(), worker.frame_cells.end());

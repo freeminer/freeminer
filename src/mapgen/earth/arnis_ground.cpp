@@ -1123,15 +1123,13 @@ bool Ground::is_interior_water(const XZPoint &coord) const
 	const auto distance = water_distance(coord);
 	return distance == 0 || distance >= 4;
 }
-double Ground::water_blend(const XZPoint &coord) const
+bool Ground::water_blend_is_water(const XZPoint &coord) const
 {
 	if (!has_land_cover())
-		return 0.0;
+		return false;
 	const auto [world_width, world_height] = world_dims();
 	return land_cover->water_blend_mask(world_width, world_height)
-						   .contains(coord.x, coord.z)
-				   ? 1.0
-				   : 0.0;
+			.contains(coord.x, coord.z);
 }
 void Ground::warm_water_blend()
 {
