@@ -73,6 +73,7 @@ struct Ground
 	int snow_threshold_y_ = std::numeric_limits<int>::max();
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
+	bool winter_state = false;
 	// Shared immutable grid, matching Rust's Arc<EcoMap> and avoiding a full
 	// raster copy when Ground is copied for generation/transformation stages.
 	std::shared_ptr<const ecoregion::EcoMap> ecoregions;
@@ -174,6 +175,8 @@ struct Ground
 	void save_canopy_debug_image(const std::string &filename) const;
 	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const;
 	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const;
+	std::optional<std::pair<double, std::uint8_t>> canopy_cell(
+			const XZPoint &origin, int span) const;
 	std::optional<double> canopy_fraction(const XZPoint &coord, int spacing) const;
 	bool snow_capped(int y) const { return y >= snow_threshold_y_; }
 	// Rust ground.rs snow-line model.  It is expressed in terrain metres, then
@@ -214,6 +217,7 @@ struct Ground
 			const std::vector<ProcessedElement> &elements, const XZBBox &bbox);
 	void apply_osm_land_override(const std::vector<ProcessedElement> &elements,
 			const XZBBox &bbox, double scale);
+	void finish_land_cover(GenerationMode mode);
 	void mark_beaches();
 	void apply_bridge_land_cover_repair(const std::vector<ProcessedElement> &elements,
 			const XZBBox &bbox, double scale);
@@ -222,6 +226,8 @@ struct Ground
 	bool is_in_rotated_bounds(int x, int z) const { return inside_rotation_mask(x, z); }
 	biome::Climate climate() const { return climate_state; }
 	void set_climate(biome::Climate value) { climate_state = value; }
+	bool winter() const { return winter_state; }
+	void set_winter(bool value) { winter_state = value; }
 	void set_ecoregion_map(std::shared_ptr<const ecoregion::EcoMap> map)
 	{
 		ecoregions = std::move(map);
@@ -282,13 +288,11 @@ struct GroundFrame
 	std::optional<projection::WebMercatorProjection> mercator;
 	std::size_t pad_blocks = 0;
 	elevation::AffinePolicy affine{};
-	std::optional<std::pair<double, double>> climate_anchor;
 
 	static GroundFrame local();
 	static GroundFrame from_args(const Args &, const geographic::LLBBox &);
 	static GroundFrame projected(const geographic::LLBBox &, double scale,
 			std::size_t pad_blocks = 0, const elevation::AffinePolicy &affine = {},
-			std::optional<std::pair<double, double>> climate_anchor = std::nullopt,
 			std::optional<std::pair<double, double>> projection_origin = std::nullopt);
 	GroundFetchPlan fetch_plan(const geographic::LLBBox &, double scale) const;
 	biome::Climate climate(const geographic::LLBBox &) const;

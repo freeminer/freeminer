@@ -187,6 +187,7 @@ struct WorldEditor
 	// Matches trees::RegionSelector::base_spacing() for the default pack; hosts
 	// loading a differently scaled schematic pack may override it.
 	int tree_slot_spacing_blocks = 5;
+	std::function<double(int)> tree_crown_columns;
 	std::function<std::optional<bool>(WorldEditor &, int, int, int, std::uint8_t,
 			std::optional<trees::Habitat>, bool, bool, bool, bool)>
 			regional_tree_placer;
@@ -196,6 +197,7 @@ struct WorldEditor
 	// Authored OSM trunks suppress procedural canopy crowns in the same cells,
 	// matching Rust's MappedTrunks pass during streamed ground decoration.
 	std::shared_ptr<const trees::mapped::MappedTrunks> mapped_trunks;
+	std::shared_ptr<const std::vector<std::pair<int, int>>> mapped_cranes;
 	GameMode gamemode = GameMode::Creative;
 	std::int64_t world_time = 6000;
 	std::string level_name, projection_name;
@@ -204,9 +206,8 @@ struct WorldEditor
 	// editor lets renderer-side pipeline ports (tree packs, previews, landmarks)
 	// use the same metadata without depending on a Rust-only GenerationOptions.
 	double min_lat = 0.0, max_lat = 0.0, min_lon = 0.0, max_lon = 0.0;
-	// One World generation uses a stable climate anchor so independently
-	// generated areas keep the same biome-sensitive palettes and vegetation.
-	std::optional<std::pair<double, double>> climate_anchor;
+	// Climate and regional palettes use the center of these area bounds, matching
+	// the Rust writer for both normal generation and One World extensions.
 	bool flush_requested = false, save_requested = false;
 	std::function<bool()> flush_sink, save_sink, preview_sink, map_item_sink,
 			world_settings_sink;
@@ -280,6 +281,12 @@ struct WorldEditor
 	std::vector<DecalFrame> active_placed_frames;
 	std::unordered_map<std::pair<int, int>, Block, XZCellHash> support_columns;
 	std::unordered_map<std::pair<int, int>, Block, XZCellHash> active_support_columns;
+	// Track hedge cells so later area cleanup (for example sports-pitch clearing)
+	// does not erase a living boundary that was emitted by the barrier pass.
+	std::unordered_set<std::pair<int, int>, XZCellHash> hedge_columns;
+	// Claim each deterministic regional-tree trunk slot once per tile editor, as
+	// in Rust, so several ground cells snapping to one schematic do not stamp it twice.
+	std::unordered_set<std::pair<int, int>, XZCellHash> claimed_tree_slots;
 	// Sparse, tile-local road elevations. Keep these separate from the terrain
 	// sample cache so tile results can transfer only their own road surfaces.
 	using RoadSurfaceOverrides = std::unordered_map<std::pair<int, int>, int, XZCellHash>;
@@ -511,6 +518,9 @@ struct WorldEditor
 	}
 	void clear_strict_bounds() { strict_bounds.reset(); }
 	bool owns(int x, int z) const;
+	void register_hedge(int x, int z) { hedge_columns.emplace(x, z); }
+	bool is_hedge(int x, int z) const { return hedge_columns.contains({x, z}); }
+	bool claim_tree_slot(int x, int z) { return claimed_tree_slots.emplace(x, z).second; }
 	bool signage_enabled() const { return map_decals && bool(decal_registry); }
 	bool place_sign_node(Block sign, int x, int y, int z, std::int8_t param2,
 			const std::string &text = {});
@@ -561,10 +571,6 @@ struct WorldEditor
 		return {min_lat, max_lat, min_lon, max_lon};
 	}
 	std::pair<double, double> geo_anchor() const;
-	void set_climate_anchor(std::optional<std::pair<double, double>> anchor)
-	{
-		climate_anchor = std::move(anchor);
-	}
 	void set_output_path(std::filesystem::path p) { output_path = std::move(p); }
 	void set_block_properties_sink(
 			std::function<void(const BlockWithProperties &, int, int, int)> sink)
@@ -799,6 +805,10 @@ struct WorldEditor
 	bool is_lc_water(int x, int z) const;
 	bool is_steep_land(int x, int z) const;
 	bool land_cover_backs_trees(int x, int z) const;
+	std::optional<std::optional<std::uint8_t>> canopy_top_m(
+			int x, int z, int radius) const;
+	std::optional<int> canopy_height_hint(int x, int z) const;
+	std::optional<double> typical_mapped_tree_height_m() const;
 	std::optional<trees::TreeSize> canopy_size_hint(int x, int z) const;
 	uint8_t water_distance(int x, int z) const;
 

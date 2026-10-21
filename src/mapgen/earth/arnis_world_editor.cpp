@@ -130,34 +130,51 @@ void deduplicate_entities(std::vector<nlohmann::json> &entities)
 			unique.push_back(std::move(entity));
 			continue;
 		}
-		const auto [it, inserted] = indexes.emplace(*key, unique.size());
+		const bool inserted = indexes.emplace(*key, unique.size()).second;
 		if (inserted)
 			unique.push_back(std::move(entity));
-		else
-			unique[it->second] = std::move(entity);
+		// A duplicate is intentionally ignored: Rust's dedup_extend keeps the
+		// destination copy and drops an incoming copy from a later tile halo.
 	}
 	entities = std::move(unique);
 }
 
 void deduplicate_block_entities(std::vector<WorldEditor::PlacedBlockEntity> &entities)
 {
-	using Key = std::tuple<int, int, int, int>;
+	using Key = std::tuple<int, int, int, bool, std::array<std::int32_t, 4>, int>;
 	std::map<Key, std::size_t> indexes;
 	std::vector<WorldEditor::PlacedBlockEntity> unique;
 	unique.reserve(entities.size());
 	for (auto &entity : entities) {
-		int facing = -1;
+		std::array<std::int32_t, 4> uuid{};
+		bool has_uuid = false;
 		if (entity.nbt.is_object()) {
+			const auto it = entity.nbt.find("UUID");
+			if (it != entity.nbt.end() && it->is_array() && it->size() == uuid.size()) {
+				has_uuid = true;
+				for (std::size_t i = 0; i < uuid.size(); ++i) {
+					const auto word = entity_value_to_int((*it)[i]);
+					if (!word) {
+						has_uuid = false;
+						break;
+					}
+					uuid[i] = static_cast<std::int32_t>(*word);
+				}
+			}
+		}
+		int facing = -1;
+		if (!has_uuid && entity.nbt.is_object()) {
 			const auto it = entity.nbt.find("Facing");
 			if (it != entity.nbt.end())
 				facing = entity_value_to_int(*it).value_or(-1);
 		}
-		const Key key{entity.x, entity.y, entity.z, facing};
-		const auto [it, inserted] = indexes.emplace(key, unique.size());
+		const Key key{
+				entity.x, entity.y, entity.z, has_uuid, uuid, has_uuid ? -1 : facing};
+		const bool inserted = indexes.emplace(key, unique.size()).second;
 		if (inserted)
 			unique.push_back(std::move(entity));
-		else
-			unique[it->second] = std::move(entity);
+		// Match Rust's tile-list merge: the destination block entity wins when
+		// two tile halos carry the same coordinate/facing identity.
 	}
 	entities = std::move(unique);
 }
@@ -217,12 +234,14 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.map_decals = map_decals;
 	worker.first_decal_map_id = first_decal_map_id;
 	worker.tree_slot_spacing_blocks = tree_slot_spacing_blocks;
+	worker.tree_crown_columns = tree_crown_columns;
 	worker.regional_tree_placer = regional_tree_placer;
 	worker.regional_tree_placer_thread_safe = regional_tree_placer_thread_safe;
 	worker.mapped_regional_tree_placer = mapped_regional_tree_placer;
 	worker.mapped_regional_tree_placer_thread_safe =
 			mapped_regional_tree_placer_thread_safe;
 	worker.mapped_trunks = mapped_trunks;
+	worker.mapped_cranes = mapped_cranes;
 	worker.gamemode = gamemode;
 	worker.world_time = world_time;
 	worker.level_name = level_name;
@@ -232,7 +251,6 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.max_lat = max_lat;
 	worker.min_lon = min_lon;
 	worker.max_lon = max_lon;
-	worker.climate_anchor = climate_anchor;
 	worker.generation_error_sink = generation_error_sink;
 	worker.begin_tile_sink = begin_tile_sink;
 	worker.merge_tile_sink = merge_tile_sink;
@@ -991,8 +1009,6 @@ bool WorldEditor::water_source_is_enclosed(int x, int z) const
 }
 biome::Climate WorldEditor::climate() const
 {
-	if (climate_anchor)
-		return climate::classify(climate_anchor->first, climate_anchor->second);
 	if (std::isfinite(min_lat) && std::isfinite(max_lat) && std::isfinite(min_lon) &&
 			std::isfinite(max_lon) && max_lat > min_lat && max_lon > min_lon)
 		return climate::classify_bbox(min_lat, min_lon, max_lat, max_lon);
@@ -1000,8 +1016,6 @@ biome::Climate WorldEditor::climate() const
 }
 std::pair<double, double> WorldEditor::geo_anchor() const
 {
-	if (climate_anchor)
-		return *climate_anchor;
 	return {(min_lat + max_lat) * .5, (min_lon + max_lon) * .5};
 }
 int WorldEditor::get_water_level(int x, int z) const
@@ -1049,6 +1063,52 @@ std::optional<trees::TreeSize> WorldEditor::canopy_size_hint(int x, int z) const
 	if (!height || *height < canopy::CANOPY_MIN_M)
 		return std::nullopt;
 	return trees::size_for_canopy_m(*height);
+}
+std::optional<int> WorldEditor::canopy_height_hint(int x, int z) const
+{
+	const int radius = std::max(1, static_cast<int>(std::lround(2.0 * scale())));
+	const auto top = canopy_top_m(x, z, radius);
+	if (!top)
+		return std::nullopt;
+	std::optional<std::uint8_t> measured_top = *top;
+	if (!measured_top) {
+		const int wider =
+				std::max(radius + 1, static_cast<int>(std::lround(8.0 * scale())));
+		if (const auto neighbours = canopy_top_m(x, z, wider); neighbours && *neighbours)
+			measured_top = **neighbours;
+	}
+	double height_m =
+			4.0 +
+			4.0 * double(land_cover::coord_hash(x ^ 0x9A3, z ^ 0x51F) % 1000) / 1000.0;
+	if (measured_top) {
+		if (*measured_top < canopy::CANOPY_MIN_M)
+			return std::nullopt;
+		height_m = *measured_top;
+	}
+	return std::max(1, static_cast<int>(std::lround(height_m * scale())));
+}
+std::optional<std::optional<std::uint8_t>> WorldEditor::canopy_top_m(
+		int x, int z, int radius) const
+{
+	if (!ground || !ground->has_canopy())
+		return std::nullopt;
+	bool measured = false;
+	std::optional<std::uint8_t> top;
+	for (int dz = -radius; dz <= radius; ++dz)
+		for (int dx = -radius; dx <= radius; ++dx)
+			if (const auto height =
+							ground->canopy_height_m(ground_point(x + dx, z + dz))) {
+				measured = true;
+				if (*height >= canopy::CANOPY_MIN_M)
+					top = std::max(top, height);
+			}
+	if (!measured)
+		return std::nullopt;
+	return std::optional<std::optional<std::uint8_t>>(std::in_place, top);
+}
+std::optional<double> WorldEditor::typical_mapped_tree_height_m() const
+{
+	return mapped_trunks ? mapped_trunks->typical_height_m() : std::nullopt;
 }
 uint8_t WorldEditor::water_distance(int x, int z) const
 {
@@ -1125,7 +1185,7 @@ std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 								 : std::nullopt;
 	if (!overlay && !written_cells.contains({x, y, z}))
 		return std::nullopt;
-	return Block(overlay.value_or(mg->vm->getNode(pos)).getContent());
+	return Block(overlay.value_or(mg->vm->getNode(pos)));
 }
 std::optional<std::string> WorldEditor::block_name_absolute(int x, int y, int z) const
 {

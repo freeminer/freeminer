@@ -19,6 +19,9 @@ class Block : public MapNode
 public:
 	// Content ID zero can belong to a registered node, including water.
 	Block(content_t c = CONTENT_AIR) : MapNode{c} {}
+	// Preserve Luanti's packed orientation/shape fields when an existing node is
+	// read back for a material-only transformation (winter and ruin weathering).
+	Block(const MapNode &node) : MapNode{node} {}
 
 	content_t id() const { return getContent(); }
 	std::optional<BlockProperties> properties() const;
