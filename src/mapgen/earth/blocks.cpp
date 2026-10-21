@@ -334,6 +334,14 @@ Block CAVE_VINES;
 Block CAVE_VINES_PLANT;
 Block CAVE_VINES_UNLIT;
 Block CAVE_VINES_PLANT_LIT;
+Block NETHERRACK;
+Block FIRE;
+Block CRACKED_DEEPSLATE_BRICKS;
+Block CRACKED_DEEPSLATE_TILES;
+Block CRACKED_POLISHED_BLACKSTONE_BRICKS;
+Block CRACKED_NETHER_BRICKS;
+Block MOSSY_COBBLESTONE_WALL;
+Block VINE;
 Block SPORE_BLOSSOM;
 Block AZALEA;
 Block FLOWERING_AZALEA;
@@ -1048,9 +1056,8 @@ void init(MapgenEarth *mg)
 	RED_TERRACOTTA = g("red_terracotta", "default:clay");
 	RED_WOOL = g("red_wool", "wool:red");
 	SAND = g("sand", {"default:sand", "mcl_core:sand", "basenodes:sand", "mapgen_sand",
-							 "spring:sand",
-							 "mapgen_desert_sand", "default:silver_sand", "ethereal:sand",
-							 "default:silver_sand", "mcl_core:sandstone",
+							 "spring:sand", "mapgen_desert_sand", "default:silver_sand",
+							 "ethereal:sand", "default:silver_sand", "mcl_core:sandstone",
 							 "default:sandstone", "basenodes:stone", "default:stone"});
 	RED_SAND = optional_g("red_sand", SAND,
 			{"mcl_core:red_sand", "mcl_core:redsand", "default:red_sand",
@@ -1490,6 +1497,16 @@ void init(MapgenEarth *mg)
 					"default:stone"});
 	CAVE_VINES_PLANT = prefer_arnis("cave_vines_plant", CAVE_VINES_UNLIT);
 	CAVE_VINES_PLANT_LIT = prefer_arnis("cave_vines_plant_lit", CAVE_VINES);
+	NETHERRACK = prefer_arnis("netherrack", NETHER_BRICK);
+	FIRE = optional_g("fire", AIR, {"mcl_fire:fire", "fire:basic_flame"});
+	CRACKED_DEEPSLATE_BRICKS = prefer_arnis("cracked_deepslate_bricks", DEEPSLATE_BRICKS);
+	CRACKED_DEEPSLATE_TILES = prefer_arnis("cracked_deepslate_tiles", DEEPSLATE_TILES);
+	CRACKED_POLISHED_BLACKSTONE_BRICKS = prefer_arnis(
+			"cracked_polished_blackstone_bricks", POLISHED_BLACKSTONE_BRICKS);
+	CRACKED_NETHER_BRICKS = prefer_arnis("cracked_nether_bricks", NETHER_BRICK);
+	MOSSY_COBBLESTONE_WALL = prefer_arnis("mossy_cobblestone_wall", COBBLESTONE_WALL);
+	VINE = optional_g("vine", AIR,
+			{"mcl_vines:vine", "mcl_core:vine", "flowers:vine", "default:vine"});
 	SPORE_BLOSSOM = g("spore_blossom",
 			{"mcl_lush_caves:spore_blossom", "spore_blossom",
 					"mcl_lush_caves:spore_blossom_hanging",

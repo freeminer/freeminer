@@ -12,6 +12,7 @@
 #include "arnis-cpp/src/fm_ecoregion_cache.h"
 #include "arnis-cpp/src/grid_ops.h"
 #include "arnis-cpp/src/land_cover/osm_water_override.h"
+#include "arnis-cpp/src/land_cover/naturalize.h"
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/elevation/peaks.h"
 #include "arnis-cpp/src/water_depth.h"
@@ -157,7 +158,7 @@ GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &b
 		try {
 			return projected(bbox, spec.scale,
 					static_cast<std::size_t>(one_world::ground_pad_blocks(args.scale)),
-					policy, spec.origin, spec.origin);
+					policy, spec.origin);
 		} catch (const std::exception &) {
 			// ProjectionSpec::transformer in Rust returns an error for a bbox
 			// outside the supported projected domain, and GroundFrame deliberately
@@ -174,7 +175,6 @@ GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &b
 
 GroundFrame GroundFrame::projected(const geographic::LLBBox &bbox, double scale,
 		std::size_t pad, const elevation::AffinePolicy &policy,
-		std::optional<std::pair<double, double>> anchor,
 		std::optional<std::pair<double, double>> projection_origin)
 {
 	const projection::ProjectionSpec spec{
@@ -188,22 +188,18 @@ GroundFrame GroundFrame::projected(const geographic::LLBBox &bbox, double scale,
 	frame.mercator = spec.mercator(bbox);
 	frame.pad_blocks = pad;
 	frame.affine = policy;
-	frame.climate_anchor = std::move(anchor);
 	return frame;
 }
 
 double GroundFrame::anchor_lat(const geographic::LLBBox &bbox) const
 {
-	return climate_anchor ? climate_anchor->first
-						  : (bbox.min().lat() + bbox.max().lat()) * 0.5;
+	return (bbox.min().lat() + bbox.max().lat()) * 0.5;
 }
 
 biome::Climate GroundFrame::climate(const geographic::LLBBox &bbox) const
 {
-	const auto anchor = climate_anchor.value_or(
-			std::pair<double, double>{(bbox.min().lat() + bbox.max().lat()) * 0.5,
-					(bbox.min().lng() + bbox.max().lng()) * 0.5});
-	return climate::classify(anchor.first, anchor.second);
+	return climate::classify_bbox(
+			bbox.min().lat(), bbox.min().lng(), bbox.max().lat(), bbox.max().lng());
 }
 
 std::shared_ptr<const ecoregion::EcoMap> GroundFrame::ecoregions(
@@ -821,6 +817,26 @@ std::optional<std::uint8_t> Ground::canopy_height_m(const XZPoint &coord) const
 	const auto &[x, z] = canopy_index(coord);
 	return canopy_data->canopy_height_m(x, z);
 }
+std::optional<std::pair<double, std::uint8_t>> Ground::canopy_cell(
+		const XZPoint &origin, int span) const
+{
+	if (!has_canopy() || span <= 0)
+		return std::nullopt;
+	std::uint32_t measured = 0, wooded = 0;
+	std::uint8_t top = 0;
+	for (int dz = 0; dz < span; ++dz)
+		for (int dx = 0; dx < span; ++dx)
+			if (const auto height = canopy_height_m({origin.x + dx, origin.z + dz})) {
+				++measured;
+				if (*height >= canopy::CANOPY_MIN_M) {
+					++wooded;
+					top = std::max(top, *height);
+				}
+			}
+	if (!measured)
+		return std::nullopt;
+	return std::pair{double(wooded) / measured, top};
+}
 std::optional<double> Ground::canopy_fraction(const XZPoint &coord, int spacing) const
 {
 	// `spacing` is in world blocks.  Sampling world coordinates first keeps
@@ -970,6 +986,14 @@ void Ground::mark_beaches()
 	if (land_cover)
 		land_cover::mark_beaches(*land_cover);
 }
+void Ground::finish_land_cover(GenerationMode mode)
+{
+	if (!land_cover)
+		return;
+	if (generation_mode_natural_land_cover(mode))
+		land_cover::naturalize(*land_cover, &elevation_grid, climate_state);
+	mark_beaches();
+}
 void Ground::apply_bridge_land_cover_repair(
 		const std::vector<ProcessedElement> &elements, const XZBBox &bbox, double scale)
 {
@@ -1103,42 +1127,18 @@ double Ground::water_blend(const XZPoint &coord) const
 {
 	if (!has_land_cover())
 		return 0.0;
-	const auto &lc = *land_cover;
-	const auto &blend = lc.water_blend_grid();
-	if (blend.empty())
-		return 0.0;
 	const auto [world_width, world_height] = world_dims();
-
-	const double fx = std::clamp(static_cast<double>(coord.x) /
-										 static_cast<double>(std::max<std::size_t>(
-												 1, world_width - 1)),
-							  0.0, 1.0) *
-					  static_cast<double>(lc.width - 1);
-	const double fz = std::clamp(static_cast<double>(coord.z) /
-										 static_cast<double>(std::max<std::size_t>(
-												 1, world_height - 1)),
-							  0.0, 1.0) *
-					  static_cast<double>(lc.height - 1);
-	const auto x0 =
-			std::min<std::size_t>(static_cast<std::size_t>(std::floor(fx)), lc.width - 1);
-	const auto z0 = std::min<std::size_t>(
-			static_cast<std::size_t>(std::floor(fz)), lc.height - 1);
-	const auto x1 = std::min<std::size_t>(x0 + 1, lc.width - 1);
-	const auto z1 = std::min<std::size_t>(z0 + 1, lc.height - 1);
-	const double tx = fx - std::floor(fx);
-	const double tz = fz - std::floor(fz);
-	const double w00 = blend[z0][x0];
-	const double w10 = blend[z0][x1];
-	const double w01 = blend[z1][x0];
-	const double w11 = blend[z1][x1];
-	const double top = w00 * (1.0 - tx) + w10 * tx;
-	const double bottom = w01 * (1.0 - tx) + w11 * tx;
-	return top * (1.0 - tz) + bottom * tz;
+	return land_cover->water_blend_mask(world_width, world_height)
+						   .contains(coord.x, coord.z)
+				   ? 1.0
+				   : 0.0;
 }
 void Ground::warm_water_blend()
 {
-	if (land_cover)
-		(void)land_cover->water_blend_grid();
+	if (land_cover) {
+		const auto [world_width, world_height] = world_dims();
+		(void)land_cover->water_blend_mask(world_width, world_height);
+	}
 }
 std::optional<std::tuple<int, int, int, int>> Ground::lc_water_block_bounds() const
 {
