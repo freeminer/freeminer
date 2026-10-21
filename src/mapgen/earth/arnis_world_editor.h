@@ -301,6 +301,15 @@ struct WorldEditor
 	using WrittenCellSet = std::unordered_set<std::tuple<int, int, int>, FrameCellHash>;
 	WrittenCellSet written_cells;
 	WrittenCellSet tile_merged_written_cells;
+	// Preserve generic block states alongside mapgen's MapNode representation so
+	// later material-only passes can retain the state at that exact position.
+	std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<const BlockProperties>,
+			FrameCellHash>
+			block_properties_by_cell;
+	// Retain only the block-state bit needed by winter roof styling. MapNode does
+	// not carry generic Java/Sponge properties, so the output callback alone
+	// cannot answer whether a generated slab or stair has a full top face.
+	WrittenCellSet full_top_state_cells;
 	bool tile_scope_active = false;
 	// Effective terrain elevation cache. The dense part covers the mapchunk and
 	// its OSM halo; unusual out-of-halo queries use the sparse fallback. Road
@@ -778,6 +787,10 @@ struct WorldEditor
 	// separate from check_for_block because callers need an occupancy test,
 	// rather than a material filter (notably vertically-grown wetland reeds).
 	bool block_at(int x, int y, int z) const;
+	bool has_full_top_state(int x, int y, int z) const
+	{
+		return full_top_state_cells.contains({x, y, z});
+	}
 
 	// Highest occupied absolute Y in an inclusive column interval.  Tree canopy
 	// placement samples this before writing leaves, just as Rust does, so a low
@@ -839,6 +852,8 @@ struct WorldEditor
 	std::pair<int, int> writable_y_bounds() const;
 
 	std::optional<Block> get_block_absolute(int x, int y, int z) const;
+	std::optional<BlockWithProperties> get_block_with_properties_absolute(
+			int x, int y, int z) const;
 	std::optional<std::string> block_name_absolute(int x, int y, int z) const;
 	std::optional<std::string> block_name(const Block &block) const;
 
