@@ -260,7 +260,7 @@ struct Ground
 	uint8_t water_distance(const XZPoint &coord) const;
 	bool is_interior_water(const XZPoint &coord) const;
 
-	double water_blend(const XZPoint &coord) const;
+	bool water_blend_is_water(const XZPoint &coord) const;
 	void warm_water_blend();
 
 	std::optional<std::tuple<int, int, int, int>> lc_water_block_bounds() const;
