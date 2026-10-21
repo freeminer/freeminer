@@ -1058,9 +1058,10 @@ bool Ground::has_cover_neighbour(const XZPoint &coord, std::uint8_t class_id) co
 		return false;
 	const auto [gx, gz] = land_cover_index(coord);
 	const auto [world_width, world_height] = world_dims();
-	constexpr std::array<std::pair<int, int>, 4> offsets{
-			{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}};
-	for (const auto &[dx, dz] : offsets) {
+	constexpr int offsets[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+	for (const auto &offset : offsets) {
+		const int dx = offset[0];
+		const int dz = offset[1];
 		const auto nx = static_cast<std::int64_t>(gx) + dx;
 		const auto nz = static_cast<std::int64_t>(gz) + dz;
 		if (nx < 0 || nz < 0 || nx >= static_cast<std::int64_t>(land_cover->width) ||

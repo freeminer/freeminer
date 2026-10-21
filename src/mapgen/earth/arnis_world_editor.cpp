@@ -130,34 +130,51 @@ void deduplicate_entities(std::vector<nlohmann::json> &entities)
 			unique.push_back(std::move(entity));
 			continue;
 		}
-		const auto [it, inserted] = indexes.emplace(*key, unique.size());
+		const bool inserted = indexes.emplace(*key, unique.size()).second;
 		if (inserted)
 			unique.push_back(std::move(entity));
-		else
-			unique[it->second] = std::move(entity);
+		// A duplicate is intentionally ignored: Rust's dedup_extend keeps the
+		// destination copy and drops an incoming copy from a later tile halo.
 	}
 	entities = std::move(unique);
 }
 
 void deduplicate_block_entities(std::vector<WorldEditor::PlacedBlockEntity> &entities)
 {
-	using Key = std::tuple<int, int, int, int>;
+	using Key = std::tuple<int, int, int, bool, std::array<std::int32_t, 4>, int>;
 	std::map<Key, std::size_t> indexes;
 	std::vector<WorldEditor::PlacedBlockEntity> unique;
 	unique.reserve(entities.size());
 	for (auto &entity : entities) {
-		int facing = -1;
+		std::array<std::int32_t, 4> uuid{};
+		bool has_uuid = false;
 		if (entity.nbt.is_object()) {
+			const auto it = entity.nbt.find("UUID");
+			if (it != entity.nbt.end() && it->is_array() && it->size() == uuid.size()) {
+				has_uuid = true;
+				for (std::size_t i = 0; i < uuid.size(); ++i) {
+					const auto word = entity_value_to_int((*it)[i]);
+					if (!word) {
+						has_uuid = false;
+						break;
+					}
+					uuid[i] = static_cast<std::int32_t>(*word);
+				}
+			}
+		}
+		int facing = -1;
+		if (!has_uuid && entity.nbt.is_object()) {
 			const auto it = entity.nbt.find("Facing");
 			if (it != entity.nbt.end())
 				facing = entity_value_to_int(*it).value_or(-1);
 		}
-		const Key key{entity.x, entity.y, entity.z, facing};
-		const auto [it, inserted] = indexes.emplace(key, unique.size());
+		const Key key{
+				entity.x, entity.y, entity.z, has_uuid, uuid, has_uuid ? -1 : facing};
+		const bool inserted = indexes.emplace(key, unique.size()).second;
 		if (inserted)
 			unique.push_back(std::move(entity));
-		else
-			unique[it->second] = std::move(entity);
+		// Match Rust's tile-list merge: the destination block entity wins when
+		// two tile halos carry the same coordinate/facing identity.
 	}
 	entities = std::move(unique);
 }
