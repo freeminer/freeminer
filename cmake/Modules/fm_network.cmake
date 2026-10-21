@@ -98,7 +98,6 @@ if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
             message(FATAL_ERROR "Cannot apply Freeminer's usrsctp IPv6 scope patch: ${FM_USRSCTP_PATCH_ERROR}")
         endif()
     endif()
-    # ===
     function(fm_add_usrsctp)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         if(SCTP_DEBUG)
