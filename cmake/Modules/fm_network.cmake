@@ -75,6 +75,29 @@ endif()
 set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
 if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
+    # fm: Keep link-local IPv6 scope IDs when usrsctp sends UDP-encapsulated SCTP.
+    set(FM_USRSCTP_SCOPE_PATCH "${CMAKE_CURRENT_LIST_DIR}/../../src/network/sctp/fm_usrsctp_scope.patch")
+    file(READ "${SCTP_SOURCE_DIR}/usrsctplib/user_socket.c" FM_USRSCTP_USER_SOCKET)
+    if(NOT FM_USRSCTP_USER_SOCKET MATCHES "fm: sendto needs the zone index")
+        execute_process(
+            COMMAND git apply --check "${FM_USRSCTP_SCOPE_PATCH}"
+            WORKING_DIRECTORY "${SCTP_SOURCE_DIR}"
+            RESULT_VARIABLE FM_USRSCTP_PATCH_CHECK
+            ERROR_VARIABLE FM_USRSCTP_PATCH_ERROR
+        )
+        if(NOT FM_USRSCTP_PATCH_CHECK EQUAL 0)
+            message(FATAL_ERROR "Cannot apply Freeminer's usrsctp IPv6 scope patch: ${FM_USRSCTP_PATCH_ERROR}")
+        endif()
+        execute_process(
+            COMMAND git apply "${FM_USRSCTP_SCOPE_PATCH}"
+            WORKING_DIRECTORY "${SCTP_SOURCE_DIR}"
+            RESULT_VARIABLE FM_USRSCTP_PATCH_RESULT
+            ERROR_VARIABLE FM_USRSCTP_PATCH_ERROR
+        )
+        if(NOT FM_USRSCTP_PATCH_RESULT EQUAL 0)
+            message(FATAL_ERROR "Cannot apply Freeminer's usrsctp IPv6 scope patch: ${FM_USRSCTP_PATCH_ERROR}")
+        endif()
+    endif()
     function(fm_add_usrsctp)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         if(SCTP_DEBUG)

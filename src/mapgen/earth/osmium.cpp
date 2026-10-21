@@ -404,8 +404,12 @@ public:
 				pending.relation.members.emplace_back(shared->second, role);
 			}
 			const auto &tags = pending.relation.tags;
+			const auto man_made = tags.get("man_made");
 			const bool filled_area = tags.contains("natural") ||
-									 tags.contains("landuse") || tags.contains("leisure");
+									 tags.contains("landuse") ||
+									 tags.contains("leisure") ||
+									 (man_made == "pier" || man_made == "breakwater" ||
+											 man_made == "groyne");
 			const bool water_area =
 					tags.contains("water") ||
 					(tags.get("natural") == "water" || tags.get("natural") == "bay") ||
@@ -697,6 +701,8 @@ arnis::Args earth_arnis_args()
 	read_bool("aws_only_elevation", arnis.aws_only_elevation);
 	read_bool("city_boundaries", arnis.city_boundaries);
 	read_bool("caves", arnis.caves);
+	read_bool("winter", arnis.winter);
+	read_bool("post_apocalyptic", arnis.post_apocalyptic);
 	read_bool("traffic_lights", arnis.traffic_lights);
 	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("benchmark", arnis.benchmark);
