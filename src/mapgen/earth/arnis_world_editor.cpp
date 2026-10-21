@@ -348,6 +348,33 @@ bool WorldEditor::merge_tile_worker(
 			worker.tile_merged_written_cells.end());
 	tile_merged_written_cells.insert(
 			worker.written_cells.begin(), worker.written_cells.end());
+	auto merge_top_states = [&](const WrittenCellSet &written) {
+		for (const auto &cell : written) {
+			const auto [x, y, z] = cell;
+			if (!worker.owns(x, z))
+				continue;
+			if (worker.full_top_state_cells.contains(cell))
+				full_top_state_cells.insert(cell);
+			else
+				full_top_state_cells.erase(cell);
+		}
+	};
+	auto merge_block_properties = [&](const WrittenCellSet &written) {
+		for (const auto &cell : written) {
+			const auto [x, y, z] = cell;
+			if (!worker.owns(x, z))
+				continue;
+			if (const auto found = worker.block_properties_by_cell.find(cell);
+					found != worker.block_properties_by_cell.end())
+				block_properties_by_cell.insert_or_assign(cell, found->second);
+			else
+				block_properties_by_cell.erase(cell);
+		}
+	};
+	merge_top_states(worker.tile_merged_written_cells);
+	merge_top_states(worker.written_cells);
+	merge_block_properties(worker.tile_merged_written_cells);
+	merge_block_properties(worker.written_cells);
 	flush_requested = flush_requested || worker.flush_requested;
 	save_requested = save_requested || worker.save_requested;
 	return true;
@@ -835,6 +862,8 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 	if (!active_tile_overlay || !mg->writeTileOverlay(*active_tile_overlay, pos, block))
 		mg->vm->setNode(pos, block);
 	written_cells.insert(key);
+	full_top_state_cells.erase(key);
+	block_properties_by_cell.erase(key);
 	++mg->stat.set;
 	return true;
 }
@@ -863,10 +892,23 @@ bool WorldEditor::try_set_block_with_properties_absolute(const BlockWithProperti
 {
 	if (!try_set_block_absolute(bwp.block, x, y, z, variants, replacements))
 		return false;
+	const auto key =
+			std::tuple{static_cast<int>(x), static_cast<int>(y), static_cast<int>(z)};
+	if (bwp.property_values().empty())
+		block_properties_by_cell.erase(key);
+	else
+		block_properties_by_cell.insert_or_assign(key, bwp.properties);
 	// Block states are carried by the tile's block output, but this legacy
 	// side-channel is not part of TileOverlay and must only be emitted once.
 	if (block_properties_sink && owns(x, z) && !bwp.property_values().empty())
 		block_properties_sink(bwp, x, y, z);
+	const auto &properties = bwp.property_values();
+	const auto type = properties.find("type");
+	const auto half = properties.find("half");
+	if (owns(x, z) && ((type != properties.end() &&
+							   (type->second == "top" || type->second == "double")) ||
+							  (half != properties.end() && half->second == "top")))
+		full_top_state_cells.emplace(x, y, z);
 	return true;
 }
 void WorldEditor::set_block_with_properties_absolute(const BlockWithProperties &bwp,
@@ -1197,6 +1239,19 @@ std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 	if (!overlay && !written_cells.contains({x, y, z}))
 		return std::nullopt;
 	return Block(overlay.value_or(mg->vm->getNode(pos)));
+}
+std::optional<BlockWithProperties> WorldEditor::get_block_with_properties_absolute(
+		int x, int y, int z) const
+{
+	const auto block = get_block_absolute(x, y, z);
+	if (!block)
+		return std::nullopt;
+	if (const auto found = block_properties_by_cell.find({x, y, z});
+			found != block_properties_by_cell.end())
+		return BlockWithProperties{*block, found->second};
+	if (const auto properties = block->properties())
+		return BlockWithProperties{*block, *properties};
+	return BlockWithProperties{*block};
 }
 std::optional<std::string> WorldEditor::block_name_absolute(int x, int y, int z) const
 {
