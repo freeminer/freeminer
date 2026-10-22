@@ -550,6 +550,25 @@ public:
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
 		}
+		// Rust keeps unclipped geometry only in the relation-way store.  The
+		// immutable copies above are sufficient for assembled relation rings;
+		// standalone way elements should retain only their visible clipped nodes.
+		// Move their source vectors through the owned clipper so large OSM ways do
+		// not keep the out-of-bounds geometry resident for the whole generation.
+		const XZBBox bbox(mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
+		for (auto &element : elements) {
+			if (!element.is_way())
+				continue;
+			auto way = element.as_way();
+			way.nodes =
+					arnis::clipping::clip_way_to_bbox_owned(std::move(way.nodes), bbox);
+		}
+		elements.erase(std::remove_if(elements.begin(), elements.end(),
+							   [](const auto &element) {
+								   return element.is_way() &&
+										  element.as_way().nodes.empty();
+							   }),
+				elements.end());
 		if (unresolved_node_refs > 0) {
 			const double percent =
 					100.0 * unresolved_node_refs /
@@ -1047,6 +1066,7 @@ struct CachedArnisExtract
 	std::vector<EarthElementBounds> element_bounds;
 	std::unique_ptr<arnis::PreparedBuildingData> prepared_buildings;
 	std::shared_ptr<arnis::mapillary::FacadeJob> facade_job;
+	bool skip_osm = false;
 	pos_t authored_max_y = std::numeric_limits<pos_t>::lowest();
 };
 
@@ -1182,6 +1202,28 @@ public:
 		try {
 			generation_stage = "OSM extract parsing and preparation";
 			std::call_once(cached.parse_once, [&]() {
+				const auto args = earth_osmium_detail::earth_arnis_args();
+				cached.skip_osm = args.skip_osm();
+				if (cached.skip_osm) {
+					// Rust does not load an OSM file below the object scale or for
+					// non-Earth bodies, but still runs terrain generation. Preserve
+					// that path here: an empty feature set must not short-circuit the
+					// Arnis terrain pass. Keep enough of the vertical terrain extent
+					// for generated vegetation and ground decorations to reach this
+					// handler; authored OSM heights are absent by definition.
+					const long double max_y =
+							static_cast<long double>(mg->cachedOrComputeTerrainMaxY()) +
+							256.0L;
+					cached.authored_max_y =
+							max_y >= static_cast<long double>(
+											 std::numeric_limits<pos_t>::max())
+									? std::numeric_limits<pos_t>::max()
+									: static_cast<pos_t>(max_y);
+					cached.prepared_buildings =
+							std::make_unique<arnis::PreparedBuildingData>(
+									arnis::prepare_building_data(cached.elements));
+					return;
+				}
 				osmium::area::Assembler::config_type assembler_config;
 				assembler_config.create_empty_areas = false;
 				osmium::area::MultipolygonManager<osmium::area::Assembler> mp_manager{
@@ -1194,7 +1236,6 @@ public:
 				osmium::io::Reader reader{file};
 				const auto source_header = reader.header();
 				const auto source_bounds = source_header.joined_boxes();
-				const auto args = earth_osmium_detail::earth_arnis_args();
 				std::optional<arnis::geographic::LLBBox> bbox;
 				if (source_bounds.valid()) {
 					bbox.emplace(source_bounds.bottom_left().lat(),
@@ -1302,7 +1343,7 @@ public:
 			mg->cacheAuthoredMaxY(cached.authored_max_y);
 			if (mg->node_min.Y > cached.authored_max_y)
 				return;
-			if (cached.elements.empty())
+			if (cached.elements.empty() && !cached.skip_osm)
 				return;
 
 			std::shared_ptr<earth_osmium_detail::CachedArnisChunk> chunk;
@@ -1326,12 +1367,28 @@ public:
 				constexpr int extra = MAP_BLOCKSIZE * 2;
 				const XZBBox context_bbox(mg->node_min.X - extra, mg->node_min.Z - extra,
 						mg->node_max.X + extra, mg->node_max.Z + extra);
-				for (std::size_t i = 0; i < cached.elements.size(); ++i)
-					if (earth_osmium_detail::earth_bounds_intersect(
+				for (std::size_t i = 0; i < cached.elements.size(); ++i) {
+					if (!earth_osmium_detail::earth_bounds_intersect(
 								cached.element_bounds[i], context_bbox))
-						chunk->elements.push_back(cached.elements[i]);
+						continue;
+					const auto &source = cached.elements[i];
+					if (source.is_way()) {
+						const auto &source_way = source.as_way();
+						arnis::ProcessedWay clipped_way;
+						clipped_way.id = source_way.id;
+						clipped_way.tags = source_way.tags;
+						clipped_way.source_node_refs = source_way.source_node_refs;
+						clipped_way.nodes = arnis::clipping::clip_way_to_bbox(
+								source_way.nodes, context_bbox);
+						if (clipped_way.nodes.empty())
+							continue;
+						chunk->elements.emplace_back(std::move(clipped_way));
+					} else {
+						chunk->elements.push_back(source);
+					}
+				}
 			});
-			if (chunk->elements.empty())
+			if (chunk->elements.empty() && !cached.skip_osm)
 				return;
 
 			generation_stage = "chunk flood-fill preparation";

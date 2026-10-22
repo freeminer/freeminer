@@ -829,6 +829,9 @@ struct WorldEditor
 	void merge_road_surface_overrides(RoadSurfaceOverrides overrides);
 	void merge_road_surface_overrides_in_regions(RoadSurfaceOverrides overrides,
 			const std::unordered_set<std::pair<int, int>, XZCellHash> &regions);
+	// Road elevations are generation-only inputs. Drop them after the final
+	// world-style pass has consumed them, before backend persistence/finalization.
+	void release_road_surface_overrides();
 	bool water_source_is_enclosed(int x, int z) const;
 	biome::Climate climate() const;
 	int get_water_level(int x, int z) const;
