@@ -6,6 +6,7 @@
 #include "arnis-cpp/src/trees/mapped.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
 #include "arnis-cpp/src/climate.h"
+#include "arnis-cpp/src/element_processing/signage.h"
 
 #include <algorithm>
 #include <array>
@@ -719,6 +720,10 @@ bool WorldEditor::place_decal_panel(int x, int y, int z, std::int8_t facing,
 {
 	if (!signage_enabled())
 		return false;
+	// Prefer one registered sign over a potentially multi-tile entity panel.
+	if (!glow &&
+			signage::place_native_sign_panel(*this, x, y, z, facing, key, require_hosts))
+		return true;
 	const auto entry = decal_registry->get(key);
 	if (!entry)
 		return false;
@@ -1053,6 +1058,19 @@ void WorldEditor::merge_road_surface_overrides_in_regions(RoadSurfaceOverrides o
 		if (regions.contains({x >> 9, z >> 9}))
 			road_surface_overrides.insert_or_assign(coordinate, y);
 	}
+}
+
+void WorldEditor::release_road_surface_overrides(int region_x, int region_z)
+{
+	const auto x0 = std::int64_t(region_x) * 512;
+	const auto z0 = std::int64_t(region_z) * 512;
+	const auto erase_region = [&](RoadSurfaceOverrides &overrides) {
+		for (std::int64_t z = z0; z < z0 + 512; ++z)
+			for (std::int64_t x = x0; x < x0 + 512; ++x)
+				overrides.erase({static_cast<int>(x), static_cast<int>(z)});
+	};
+	erase_region(road_surface_overrides);
+	erase_region(active_road_surface_overrides);
 }
 
 void WorldEditor::release_road_surface_overrides()
