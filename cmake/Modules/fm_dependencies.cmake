@@ -92,6 +92,9 @@ elseif(FETCH_DEPS)
             GIT_SHALLOW TRUE ${FM_FETCH_OVERRIDE_FIND_PACKAGE} USES_TERMINAL_DOWNLOAD TRUE
             GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
+        # Boost 1.92 creates Boost::headers as a compatibility target itself.
+        # Skip libs/headers, whose CMakeLists adds the same alias unconditionally.
+        set(BOOST_EXCLUDE_LIBRARIES headers)
         FetchContent_MakeAvailable(Boost)
         set(Boost_FOUND TRUE)
         set(Boost_INCLUDE_DIRS
