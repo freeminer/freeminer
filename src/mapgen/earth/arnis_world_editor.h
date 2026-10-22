@@ -9,6 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -530,6 +531,16 @@ struct WorldEditor
 	}
 	void clear_strict_bounds() { strict_bounds.reset(); }
 	bool owns(int x, int z) const;
+	// Whether a cell is inside the full generation rectangle. Unlike pos_ok(),
+	// this is independent of the active mapgen buffer and is shared by tile
+	// workers; owned clip-margin cells may still be processed outside it.
+	bool in_bounds(int x, int z) const
+	{
+		if (!generation_bounds)
+			return pos_ok(x, z);
+		const auto [min_x, min_z, max_x, max_z] = *generation_bounds;
+		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+	}
 	void register_hedge(int x, int z) { hedge_columns.emplace(x, z); }
 	bool is_hedge(int x, int z) const { return hedge_columns.contains({x, z}); }
 	bool claim_tree_slot(int x, int z) { return claimed_tree_slots.emplace(x, z).second; }
@@ -696,8 +707,9 @@ struct WorldEditor
 	}
 	WorldEditor make_tile_worker() const;
 	bool tile_worker_callbacks_safe() const;
-	bool merge_tile_worker(
-			WorldEditor &&worker, int min_x, int min_z, int max_x, int max_z);
+	bool merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, int max_x,
+			int max_z,
+			const std::set<std::pair<int, int>> *road_surface_regions = nullptr);
 	void finish_tile_pass()
 	{
 		if (!tile_scope_active)

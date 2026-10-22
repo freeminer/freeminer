@@ -285,8 +285,8 @@ WorldEditor WorldEditor::make_tile_worker() const
 	return worker;
 }
 
-bool WorldEditor::merge_tile_worker(
-		WorldEditor &&worker, int min_x, int min_z, int max_x, int max_z)
+bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, int max_x,
+		int max_z, const std::set<std::pair<int, int>> *road_surface_regions)
 {
 	if (worker.tile_active && !worker.merge_tile(min_x, min_z, max_x, max_z))
 		return false;
@@ -310,7 +310,15 @@ bool WorldEditor::merge_tile_worker(
 			return x < world_min_x || x > world_max_x || z < world_min_z ||
 				   z > world_max_z;
 		}();
-		if (owned || outside_world)
+		int region_x = x / 512;
+		int region_z = z / 512;
+		if (x % 512 < 0)
+			--region_x;
+		if (z % 512 < 0)
+			--region_z;
+		const bool needed_region = !road_surface_regions ||
+								   road_surface_regions->contains({region_x, region_z});
+		if ((owned || outside_world) && needed_region)
 			road_surface_overrides.insert_or_assign(cell, y);
 	}
 	for (auto &[cell, block] : worker.support_columns)
