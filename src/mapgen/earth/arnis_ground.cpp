@@ -449,6 +449,10 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						 : args.body == CelestialBody::Mars ? RED_TERRACOTTA
 															: GRASS_BLOCK;
 	world_editor::set_base_chunk_block_id(static_cast<std::uint16_t>(filler.id()));
+	// Rust returns Ground with the requested seasonal state already installed;
+	// callers that use this generator directly must not depend on the later
+	// data-processing pass to enable winter styling.
+	ground.set_winter(args.winter);
 	if (args.debug && args.terrain_enabled()) {
 		ground.save_debug_image("elevation_debug");
 		ground.save_land_cover_debug_image("landcover_debug");

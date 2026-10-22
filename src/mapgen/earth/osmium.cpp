@@ -31,8 +31,10 @@
 #include <osmium/index/map/sparse_mem_array.hpp>
 #include <osmium/io/file.hpp>
 #include <osmium/io/pbf_input.hpp>
+#include <osmium/io/reader.hpp>
 #include <osmium/osm/entity_bits.hpp>
 #include <osmium/osm/node.hpp>
+#include <osmium/osm/relation.hpp>
 #include <osmium/osm/way.hpp>
 #include <osmium/tags/tags_filter.hpp>
 
@@ -44,6 +46,7 @@
 #include "arnis-cpp/src/floodfill_cache.h"
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/overture.h"
+#include "arnis-cpp/src/element_processing/way_segments.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -215,6 +218,7 @@ public:
 	std::uint64_t ways_missing_nodes = 0;
 	std::unordered_map<std::uint64_t, arnis::tags_t> tagged_node_tags;
 	std::unordered_map<std::uint64_t, std::size_t> way_indices;
+	const std::unordered_set<std::uint64_t> *relation_way_ids{};
 	struct PendingRelation
 	{
 		arnis::ProcessedRelation relation;
@@ -311,6 +315,15 @@ public:
 		// separate topology list only for ways where unresolved refs were dropped.
 		if (way_missing_nodes)
 			processed_way.source_node_refs = std::move(source_node_refs);
+		// Relation rings need the original geometry until they have been assembled.
+		// Standalone ways can discard out-of-bounds nodes immediately, rather than
+		// retaining every source vertex through relation processing.
+		if (!relation_way_ids || !relation_way_ids->contains(id)) {
+			const XZBBox bbox(
+					mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
+			processed_way.nodes = arnis::clipping::clip_way_to_bbox_owned(
+					std::move(processed_way.nodes), bbox);
+		}
 		way_indices.emplace(id, elements.size());
 		elements.emplace_back(std::move(processed_way));
 	}
@@ -445,61 +458,10 @@ public:
 					if (rings && member.way->nodes.size() >= 2)
 						rings->push_back(member.way->nodes);
 				}
-				std::function<void(std::vector<std::vector<arnis::ProcessedNode>> &)>
-						merge_segments;
-				merge_segments = [&](auto &rings) {
-					const auto matches = [](const auto &a, const auto &b) {
-						return a.id == b.id ||
-							   (std::abs(a.x - b.x) <= 1 && std::abs(a.z - b.z) <= 1);
-					};
-					std::vector<bool> removed(rings.size(), false);
-					std::vector<std::vector<arnis::ProcessedNode>> merged;
-					for (std::size_t i = 0; i < rings.size(); ++i) {
-						for (std::size_t j = 0; j < rings.size(); ++j) {
-							if (i == j || removed[i] || removed[j] || rings[i].empty() ||
-									rings[j].empty())
-								continue;
-							const auto &a = rings[i];
-							const auto &b = rings[j];
-							if (matches(a.front(), a.back()) ||
-									matches(b.front(), b.back()))
-								continue;
-							std::vector<arnis::ProcessedNode> joined;
-							if (matches(a.front(), b.front())) {
-								joined.assign(a.rbegin(), a.rend());
-								joined.insert(
-										joined.end(), std::next(b.begin()), b.end());
-							} else if (matches(a.back(), b.back())) {
-								joined = a;
-								joined.insert(
-										joined.end(), std::next(b.rbegin()), b.rend());
-							} else if (matches(a.front(), b.back())) {
-								joined = b;
-								joined.insert(
-										joined.end(), std::next(a.begin()), a.end());
-							} else if (matches(a.back(), b.front())) {
-								joined = a;
-								joined.insert(
-										joined.end(), std::next(b.begin()), b.end());
-							} else {
-								continue;
-							}
-							removed[i] = removed[j] = true;
-							merged.push_back(std::move(joined));
-						}
-					}
-					for (std::size_t i = removed.size(); i > 0; --i)
-						if (removed[i - 1])
-							rings.erase(
-									rings.begin() + static_cast<std::ptrdiff_t>(i - 1));
-					const auto merged_count = merged.size();
-					for (auto &ring : merged)
-						rings.push_back(std::move(ring));
-					if (merged_count > 0)
-						merge_segments(rings);
-				};
-				merge_segments(outer_rings);
-				merge_segments(inner_rings);
+				// Share the same Rust-parity segment merger used by the land and water
+				// override paths, keeping multipolygon ring closure rules in one place.
+				arnis::merge_way_segments(outer_rings);
+				arnis::merge_way_segments(inner_rings);
 				std::vector<arnis::ProcessedMember> assembled;
 				for (const auto &[role, rings] :
 						{std::pair{arnis::ProcessedMemberRole::Outer, &outer_rings},
@@ -560,6 +522,8 @@ public:
 			if (!element.is_way())
 				continue;
 			auto way = element.as_way();
+			if (!relation_way_ids || !relation_way_ids->contains(way.id))
+				continue;
 			way.nodes =
 					arnis::clipping::clip_way_to_bbox_owned(std::move(way.nodes), bbox);
 		}
@@ -1232,7 +1196,34 @@ public:
 				cache_t node_cache{index};
 				node_cache.ignore_errors();
 				osmium::io::File file{path_name, "pbf"};
-				osmium::relations::read_relations(file, mp_manager);
+				std::unordered_set<std::uint64_t> relation_way_ids;
+				{
+					// Collect relation member IDs alongside libosmium's multipolygon
+					// relation pass. This keeps original geometry only for member ways
+					// without adding another scan of the PBF.
+					struct RelationWayIdCollector : public osmium::handler::Handler
+					{
+						std::unordered_set<std::uint64_t> &ids;
+						explicit RelationWayIdCollector(
+								std::unordered_set<std::uint64_t> &relation_way_ids) :
+								ids(relation_way_ids)
+						{
+						}
+
+						void relation(const osmium::Relation &relation) const
+						{
+							for (const auto &member : relation.members())
+								if (member.type() == osmium::item_type::way)
+									ids.insert(static_cast<std::uint64_t>(member.ref()));
+						}
+					};
+					RelationWayIdCollector collector{relation_way_ids};
+					osmium::io::Reader relation_reader{
+							file, osmium::osm_entity_bits::relation};
+					osmium::apply(relation_reader, mp_manager, collector);
+					relation_reader.close();
+					mp_manager.prepare_for_lookup();
+				}
 				osmium::io::Reader reader{file};
 				const auto source_header = reader.header();
 				const auto source_bounds = source_header.joined_boxes();
@@ -1252,6 +1243,7 @@ public:
 				}
 				MyHandler handler;
 				handler.mg = mg;
+				handler.relation_way_ids = &relation_way_ids;
 				osmium::apply(reader, node_cache, handler,
 						mp_manager.handler(
 								[&handler](const osmium::memory::Buffer &area_buffer) {
