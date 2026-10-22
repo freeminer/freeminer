@@ -3,6 +3,9 @@
 ARG FROM=debian:oldstable
 FROM $FROM
 
+# https://packages.debian.org/search?keywords=clang&searchon=names&suite=oldstable&section=all
+ARG CLANG=22
+
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /workspace
 
@@ -12,14 +15,13 @@ RUN apt update \
         ca-certificates \
         ccache \
         gettext \
-        clang \
-        lld \
-        libc++-dev \
-        libc++abi-dev \
+        clang-$CLANG \
+        lld-$CLANG \
+        libc++-$CLANG-dev \
+        libc++abi-$CLANG-dev \
         git \
         gnupg \
         gtk-update-icon-cache \
-        libboost-all-dev \
         libbz2-dev \
         libcurl4-openssl-dev \
         libdeflate-dev \

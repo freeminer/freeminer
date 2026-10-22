@@ -29,7 +29,7 @@ AppDir:
       #  key_url: 'https://ftp-master.debian.org/keys/archive-key-12.asc'
     include:
       # - libboost-program-options1.67.0 # focal
-      - libboost-program-options1.74.0 # jammy
+      # - libboost-program-options1.74.0 # jammy oldstable
       # - libboost-program-options1.90.0 # resolute
       - libatomic1
       - libcurl4
@@ -43,7 +43,7 @@ AppDir:
       # - libjsoncpp1 # focal
       - libluajit-5.1-2
       - libopenal1
-      - libpng16-16
+      - libpng16-16 # oldstable
       - libsqlite3-0
       - libssl3 # jammy
       # - libssl1.1 # focal
@@ -104,7 +104,8 @@ script: |
        -DUSE_STATIC_LIBRARIES=ON \
        -DENABLE_SYSTEM_TIFF=0 \
        -DZLIB_USE_STATIC_LIBS=1 \
-       -GNinja -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) \
+       -DUSE_LIBCXX=0 \
+       -GNinja -DCMAKE_C_COMPILER=$(which clang-24 clang-22 clang-19 clang | head -n1) -DCMAKE_CXX_COMPILER=$(which clang++-24 clang++-22 clang++-19 clang++ | head -n1) \
 
     cmake --build appimage-build --config Release
     cmake --install appimage-build
