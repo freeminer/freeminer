@@ -1,4 +1,5 @@
 #include "arnis_adapter.h"
+#include "arnis-cpp/src/fm_native_signs.h"
 #include "emerge.h"
 #include "log.h"
 
@@ -1188,6 +1189,25 @@ void init(MapgenEarth *mg)
 		const auto id = resolver.find(name);
 		return Block{static_cast<content_t>(id == CONTENT_IGNORE ? CONTENT_AIR : id)};
 	};
+	native_sign_nodes.clear();
+	for (const char *name : {"streets:sign_eu_majorroad_center",
+				 "streets:sign_eu_noparking_center",
+				 "streets:sign_us_noparkingboth_center",
+				 "streets:sign_eu_deadendstreet_center", "streets:sign_us_deadend_center",
+				 "streets:sign_eu_onewayright_center",
+				 "streets:sign_us_onewayright_center", "streets:sign_eu_highway_center",
+				 "streets:sign_eu_highwayend_center", "streets:sign_eu_cyclepath_center",
+				 "streets:sign_us_bikelane_center", "streets:sign_eu_parkingsite_center",
+				 "streets:sign_eu_info_center", "streets:sign_eu_busstation_center",
+				 "streets:sign_us_speedlimit50_center", "default:sign_wall_steel",
+				 "default:sign_wall_wood", "street_signs:sign_highway_small_green",
+				 "street_signs:sign_highway_medium_green",
+				 "street_signs:sign_highway_large_green",
+				 "street_signs:sign_basic_top_only"}) {
+		const auto sign = optional_sign(name);
+		if (sign.id() != CONTENT_AIR)
+			native_sign_nodes.emplace(name, sign);
+	}
 	STREETS_AVAILABLE = available_node("streets:asphalt");
 	ROAD_ASPHALT = g("road_asphalt", {"streets:asphalt", "basic_materials:concrete_block",
 											 "wool:grey", "default:stone"});

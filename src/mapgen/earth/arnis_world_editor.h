@@ -829,6 +829,7 @@ struct WorldEditor
 	void merge_road_surface_overrides(RoadSurfaceOverrides overrides);
 	void merge_road_surface_overrides_in_regions(RoadSurfaceOverrides overrides,
 			const std::unordered_set<std::pair<int, int>, XZCellHash> &regions);
+	void release_road_surface_overrides(int region_x, int region_z);
 	// Road elevations are generation-only inputs. Drop them after the final
 	// world-style pass has consumed them, before backend persistence/finalization.
 	void release_road_surface_overrides();
