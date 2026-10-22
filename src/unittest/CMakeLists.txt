@@ -5,6 +5,12 @@ set(unittest_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_blast_shell.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_earth_projection.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_terrain_surface.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_naturalize.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_deferred_placement.cpp
+	# fm: Keep Arnis generation behavior and bundled tree-pack assets aligned with Rust.
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_tree_packs.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mode_filter.cpp
+	# ===
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_terraindiffusion.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_world_merge.cpp
