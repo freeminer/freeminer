@@ -1054,6 +1054,13 @@ void WorldEditor::merge_road_surface_overrides_in_regions(RoadSurfaceOverrides o
 			road_surface_overrides.insert_or_assign(coordinate, y);
 	}
 }
+
+void WorldEditor::release_road_surface_overrides()
+{
+	RoadSurfaceOverrides{}.swap(road_surface_overrides);
+	RoadSurfaceOverrides{}.swap(active_road_surface_overrides);
+}
+
 bool WorldEditor::water_source_is_enclosed(int x, int z) const
 {
 	const int base = get_ground_level(x, z);
@@ -1115,7 +1122,7 @@ std::optional<trees::TreeSize> WorldEditor::canopy_size_hint(int x, int z) const
 	const auto height = ground->canopy_height_m(ground_point(x, z));
 	if (!height || *height < canopy::CANOPY_MIN_M)
 		return std::nullopt;
-	return trees::size_for_canopy_m(*height);
+	return trees::size_for_height(*height);
 }
 std::optional<int> WorldEditor::canopy_height_hint(int x, int z) const
 {
