@@ -439,7 +439,10 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				break;
 			case SCTP_SEND_FAILED_EVENT: {
 				const auto &failure = notification.sn_send_failed_event;
-				const bool reliable = !(failure.ssfe_info.snd_flags & SCTP_UNORDERED);
+				// usrsctp reports internal fragment flags here, which cannot
+				// reliably identify SCTP_UNORDERED. Use our stream allocation.
+				const auto stream = failure.ssfe_info.snd_sid;
+				const bool reliable = stream < 5 || stream >= 5 + CHANNEL_COUNT;
 				const u32 now = porting::getTimeMs();
 				auto &[last, suppressed] = m_send_failure_log[peer_id];
 				if (reliable || !last || u32(now - last) >= 10000) {
