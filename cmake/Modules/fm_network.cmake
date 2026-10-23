@@ -75,49 +75,6 @@ endif()
 set(USE_CLIENT_MCP "${USE_WEBSOCKET}")
 
 if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
-    # fm: Apply the bundled-stack fixes once, including after a fresh dependency clone.
-    set(FM_USRSCTP_PATCH_DIR "${CMAKE_CURRENT_LIST_DIR}/../../src/network/sctp")
-    function(fm_patch_usrsctp name source marker)
-        file(READ "${SCTP_SOURCE_DIR}/usrsctplib/${source}" FM_USRSCTP_SOURCE)
-        # Migrate identifiers from earlier versions of these local patches.
-        set(original_source "${FM_USRSCTP_SOURCE}")
-        string(REPLACE "fm_usrsctp_addr_monitor.c" "usrsctp_addr_monitor.c" FM_USRSCTP_SOURCE "${FM_USRSCTP_SOURCE}")
-        string(REPLACE "fm_sctp_" "sctp_" FM_USRSCTP_SOURCE "${FM_USRSCTP_SOURCE}")
-        string(REPLACE "FM_SCTP_" "SCTP_" FM_USRSCTP_SOURCE "${FM_USRSCTP_SOURCE}")
-        if(NOT original_source STREQUAL FM_USRSCTP_SOURCE)
-            file(WRITE "${SCTP_SOURCE_DIR}/usrsctplib/${source}" "${FM_USRSCTP_SOURCE}")
-        endif()
-        if(NOT FM_USRSCTP_SOURCE MATCHES "${marker}")
-            set(patch "${FM_USRSCTP_PATCH_DIR}/usrsctp_${name}.patch")
-            execute_process(
-                COMMAND git apply --check "${patch}"
-                WORKING_DIRECTORY "${SCTP_SOURCE_DIR}"
-                RESULT_VARIABLE result
-                ERROR_VARIABLE error
-            )
-            if(NOT result EQUAL 0)
-                message(FATAL_ERROR "Cannot apply usrsctp ${name} patch: ${error}")
-            endif()
-            execute_process(
-                COMMAND git apply "${patch}"
-                WORKING_DIRECTORY "${SCTP_SOURCE_DIR}"
-                RESULT_VARIABLE result
-                ERROR_VARIABLE error
-            )
-            if(NOT result EQUAL 0)
-                message(FATAL_ERROR "Cannot apply usrsctp ${name} patch: ${error}")
-            endif()
-        endif()
-    endfunction()
-    fm_patch_usrsctp(notifications usrsctp.h "Match the emitted ABI")
-    fm_patch_usrsctp(activity netinet/sctp_usrreq.c "case 0x7f000001:")
-    fm_patch_usrsctp(scope user_socket.c "fm: sendto needs the zone index")
-    fm_patch_usrsctp(source user_socket.c "source_info[.]ipi_spec_dst")
-    fm_patch_usrsctp(mobility user_recv_thread.c "usrsctp_addr_monitor[.]c")
-    fm_patch_usrsctp(routing netinet/sctp_output.c "sctp_userspace_route_source")
-    fm_patch_usrsctp(handshake netinet/sctp_output.c "Prefer an eligible OS-selected source")
-    fm_patch_usrsctp(diagnostics netinet/sctp_asconf.c "SCTP_ASCONF_LOG")
-    # ===
     function(fm_add_usrsctp)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         if(SCTP_DEBUG)
@@ -135,7 +92,6 @@ if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
     fm_add_usrsctp()
 
     set(SCTP_LIBRARY usrsctp)
-    target_include_directories(usrsctp PRIVATE "${FM_USRSCTP_PATCH_DIR}")
     if(ANDROID)
         target_compile_definitions(${SCTP_LIBRARY} PRIVATE __Userspace_os_Linux)
     endif()

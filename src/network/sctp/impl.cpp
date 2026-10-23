@@ -8,10 +8,6 @@ Copyright (C) 2023 proller <proler@gmail.com>
 
 #if USE_SCTP
 
-#if defined(__linux__) && !defined(__EMSCRIPTEN__)
-extern "C" void sctp_set_diagnostic_logger(void (*logger)(int, const char *));
-#endif
-
 namespace con_sctp
 {
 
@@ -148,11 +144,12 @@ void Connection::checkPeerTimeouts()
 		auto *peer = getPeer(id);
 		if (!peer)
 			continue;
-		// Private bundled-usrsctp option: sctp_assoc_value holds an RX sequence.
+		// SCTP_PEER_ACTIVITY returns the association receive sequence.
 		sctp_assoc_value response = {};
 		socklen_t length = sizeof(response);
 		// A failed query does not extend the deadline.
-		if (usrsctp_getsockopt(peer, IPPROTO_SCTP, 0x7f000001, &response, &length) == 0 &&
+		if (usrsctp_getsockopt(
+					peer, IPPROTO_SCTP, SCTP_PEER_ACTIVITY, &response, &length) == 0 &&
 				response.assoc_value != activity.first) {
 			activity = {response.assoc_value, now};
 		}
@@ -247,7 +244,7 @@ void Connection::sctp_setup(u16 port)
 	cs << "sctp_setup(" << port << ")" << std::endl;
 	//DUMP("sctp_conn_output", (uintptr_t)sctp_conn_output);
 #if defined(__linux__) && !defined(__EMSCRIPTEN__)
-	sctp_set_diagnostic_logger([](int warning, const char *message) {
+	usrsctp_set_diagnostic_logger([](int warning, const char *message) {
 		(warning ? warningstream : infostream) << "SCTP " << message << std::endl;
 	});
 #endif
