@@ -202,6 +202,7 @@ private:
 	std::unordered_map<session_t, std::deque<PendingSend>> pending_sends;
 	void flushPendingSends();
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
+	std::unordered_map<session_t, std::pair<u32, u32>> m_send_failure_log;
 
 	void handle_association_change_event(
 			session_t peer_id, const struct sctp_assoc_change *sac);

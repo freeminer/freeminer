@@ -28,6 +28,7 @@ void Connection::clearPeerState(session_t peer_id)
 	m_peers_address.erase(peer_id);
 	recv_buf.erase(peer_id);
 	pending_sends.erase(peer_id);
+	m_send_failure_log.erase(peer_id);
 }
 
 bool Connection::deletePeer(session_t peer_id, bool timeout)

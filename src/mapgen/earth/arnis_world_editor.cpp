@@ -321,6 +321,18 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 		if ((owned || outside_world) && needed_region)
 			road_surface_overrides.insert_or_assign(cell, y);
 	}
+	for (const auto &cell : worker.lamp_columns) {
+		const auto &[x, z] = cell;
+		const bool owned = x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+		const bool outside_world = !generation_bounds || [&] {
+			const auto [world_min_x, world_min_z, world_max_x, world_max_z] =
+					*generation_bounds;
+			return x < world_min_x || x > world_max_x || z < world_min_z || z > world_max_z;
+		}();
+		if (owned || outside_world)
+			lamp_columns.push_back(cell);
+	}
+	worker.lamp_columns.clear();
 	for (auto &[cell, block] : worker.support_columns)
 		support_columns.insert_or_assign(cell, std::move(block));
 	frame_cells.insert(worker.frame_cells.begin(), worker.frame_cells.end());

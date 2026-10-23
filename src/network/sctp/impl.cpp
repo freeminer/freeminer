@@ -7,6 +7,10 @@ Copyright (C) 2023 proller <proler@gmail.com>
 
 #if USE_SCTP
 
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+extern "C" void sctp_set_diagnostic_logger(void (*logger)(int, const char *));
+#endif
+
 namespace con_sctp
 {
 
@@ -204,6 +208,11 @@ void Connection::sctp_setup(u16 port)
 
 	cs << "sctp_setup(" << port << ")" << std::endl;
 	//DUMP("sctp_conn_output", (uintptr_t)sctp_conn_output);
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+	sctp_set_diagnostic_logger([](int warning, const char *message) {
+		(warning ? warningstream : infostream) << "SCTP " << message << std::endl;
+	});
+#endif
 	usrsctp_init(port, sctp_conn_output, debug_func);
 	// usrsctp_init_nothreads(port, nullptr, debug_func);
 
@@ -220,7 +229,7 @@ void Connection::sctp_setup(u16 port)
 	usrsctp_sysctl_set_sctp_asconf_enable(0);
 #endif
 
-	fmConfigureSctpDefaults();
+	configureDefaults();
 }
 
 } // namespace
