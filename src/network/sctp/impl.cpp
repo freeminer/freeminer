@@ -220,28 +220,7 @@ void Connection::sctp_setup(u16 port)
 	usrsctp_sysctl_set_sctp_asconf_enable(0);
 #endif
 
-	// #if __ANDROID__
-#ifndef __EMSCRIPTEN__
-	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
-	usrsctp_sysctl_set_sctp_mobility_base(1);
-
-	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
-#endif
-
-	usrsctp_sysctl_set_sctp_cmt_on_off(1); // SCTP_CMT_MAX
-	usrsctp_sysctl_set_sctp_cmt_use_dac(1);
-	usrsctp_sysctl_set_sctp_buffer_splitting(1);
-
-	// usrsctp_sysctl_set_sctp_max_retran_chunk(5); // def 30
-	usrsctp_sysctl_set_sctp_shutdown_guard_time_default(20); // def 180
-	usrsctp_sysctl_set_sctp_heartbeat_interval_default(10);
-	// usrsctp_sysctl_set_sctp_init_rtx_max_default(5); //def 8
-	// usrsctp_sysctl_set_sctp_assoc_rtx_max_default(5); //def 10
-	// usrsctp_sysctl_set_sctp_max_retran_chunk(5); //30
-
-	// #if !defined(SCTP_WITH_NO_CSUM)
-	// usrsctp_sysctl_set_sctp_no_csum_on_loopback(1);
-	// #endif
+	fmConfigureSctpDefaults();
 }
 
 } // namespace

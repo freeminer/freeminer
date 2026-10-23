@@ -37,6 +37,8 @@ void Connection::flushPendingSends()
 			pending_sends.erase(id);
 			continue;
 		}
+		if (!m_established_peers.count(id))
+			continue; // Wait for COMM_UP and stream-count validation.
 		auto &queue = pending_sends.at(id);
 		for (unsigned budget = 0; budget < 16 && !queue.empty(); ++budget) {
 			auto &message = queue.front();
@@ -58,8 +60,10 @@ void Connection::flushPendingSends()
 			const auto sent = usrsctp_sendv(peer, *message.data + message.offset, length,
 					nullptr, 0, &spa, sizeof(spa), SCTP_SENDV_SPA, 0);
 			if (sent < 0) {
-				if (errno == EWOULDBLOCK || errno == EAGAIN || errno == EINTR)
+				if (fmSctpRetryableError(errno))
 					break;
+				warningstream << "SCTP send failed for peer " << id << " errno=" << errno
+							  << std::endl;
 				deletePeer(id, false);
 				break;
 			}

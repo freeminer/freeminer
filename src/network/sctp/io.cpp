@@ -2,8 +2,10 @@
 Copyright (C) 2023 proller <proler@gmail.com>
 */
 
+#include <algorithm>
 #include <cstdint>
 #include "network/sctp/internal.h"
+#include "network/sctp/fm_sctp_address.h"
 
 #if USE_SCTP
 
@@ -132,7 +134,7 @@ int Connection::receive()
 		usrsctp_set_non_blocking(sock, 1);
 
 		struct socket *conn_sock = nullptr;
-		struct sockaddr_in6 remote_addr;
+		struct sockaddr_storage remote_addr = {};
 		socklen_t addr_len = sizeof(remote_addr);
 		if ((conn_sock = usrsctp_accept(
 					 sock, (struct sockaddr *)&remote_addr, &addr_len)) == NULL) {
@@ -163,7 +165,8 @@ int Connection::receive()
 		   << " id=" << peer_id << std::endl;
 
 		m_peers.insert_or_assign(peer_id, conn_sock);
-		Address sender(remote_addr.sin6_addr, remote_addr.sin6_port);
+		Address sender = fmSctpPeerAddress(
+				reinterpret_cast<const sockaddr *>(&remote_addr), addr_len);
 		m_peers_address.insert_or_assign(peer_id, sender);
 
 		putEvent(ConnectionEvent::peerAdded(peer_id, sender));
@@ -172,78 +175,107 @@ int Connection::receive()
 	return n;
 }
 
-// static
 void Connection::handle_association_change_event(
-		u16 peer_id, const struct sctp_assoc_change *sac)
+		session_t peer_id, const struct sctp_assoc_change *sac)
 {
-	unsigned int i, n;
-
-	cs << ("Association change ");
+	const bool was_ready = m_established_peers.count(peer_id) != 0;
+	bool remove = false;
+	bool setup_failed = false;
+	const char *state = "UNKNOWN";
 	switch (sac->sac_state) {
 	case SCTP_COMM_UP:
-		cs << ("SCTP_COMM_UP");
+	case SCTP_RESTART:
+		state = sac->sac_state == SCTP_COMM_UP ? "SCTP_COMM_UP" : "SCTP_RESTART";
+		if (sac->sac_state == SCTP_RESTART) {
+			// Keep the game peer, but never join pre-restart fragments to new data.
+			recv_buf.erase(peer_id);
+			auto pending = pending_sends.find(peer_id);
+			if (pending != pending_sends.end()) {
+				auto &queue = pending->second;
+				queue.erase(std::remove_if(queue.begin(), queue.end(),
+									[](const PendingSend &message) {
+										return message.offset != 0;
+									}),
+						queue.end());
+			}
+		}
+		// Streams 1..3 are reliable and 5..7 are unreliable.
+		if (sac->sac_inbound_streams < 8 || sac->sac_outbound_streams < 8) {
+			warningstream << "SCTP peer " << peer_id << " negotiated too few streams: in="
+						  << sac->sac_inbound_streams
+						  << " out=" << sac->sac_outbound_streams << std::endl;
+			remove = setup_failed = true;
+		} else {
+			m_established_peers.insert(peer_id);
+			if (peer_id == PEER_ID_SERVER)
+				m_association_ready.store(true, std::memory_order_release);
+		}
 		break;
 	case SCTP_COMM_LOST:
-		cs << ("SCTP_COMM_LOST");
-		deletePeer(peer_id, false);
-		break;
-	case SCTP_RESTART:
-		cs << ("SCTP_RESTART");
+		state = "SCTP_COMM_LOST";
+		remove = true;
+		setup_failed = !was_ready;
 		break;
 	case SCTP_SHUTDOWN_COMP:
-		cs << ("SCTP_SHUTDOWN_COMP");
-		deletePeer(peer_id, false);
+		state = "SCTP_SHUTDOWN_COMP";
+		remove = true;
+		setup_failed = !was_ready;
 		break;
 	case SCTP_CANT_STR_ASSOC:
-		cs << ("SCTP_CANT_STR_ASSOC");
-		deletePeer(peer_id, false);
+		state = "SCTP_CANT_STR_ASSOC";
+		remove = setup_failed = true;
 		break;
 	default:
-		cs << ("UNKNOWN");
 		break;
 	}
-	// cs << ", streams (in/out) = (" << sac->sac_inbound_streams << "/" <<
-	// sac->sac_outbound_streams << ")";
-	n = sac->sac_length - sizeof(struct sctp_assoc_change);
-	if (((sac->sac_state == SCTP_COMM_UP) || (sac->sac_state == SCTP_RESTART)) &&
-			(n > 0)) {
-		cs << (", supports");
-		for (i = 0; i < n; i++) {
+
+	auto &out = remove && sac->sac_state != SCTP_SHUTDOWN_COMP ? warningstream : cs;
+	out << "SCTP peer " << peer_id << ": " << state << " error=" << sac->sac_error
+		<< " streams(in/out)=" << sac->sac_inbound_streams << "/"
+		<< sac->sac_outbound_streams;
+	const size_t extra =
+			sac->sac_length >= sizeof(*sac) ? sac->sac_length - sizeof(*sac) : 0;
+	if (sac->sac_state == SCTP_COMM_UP || sac->sac_state == SCTP_RESTART) {
+		out << " supports:";
+		for (size_t i = 0; i < extra; ++i) {
 			switch (sac->sac_info[i]) {
 			case SCTP_ASSOC_SUPPORTS_PR:
-				cs << (" PR");
+				out << " PR";
 				break;
 			case SCTP_ASSOC_SUPPORTS_AUTH:
-				cs << (" AUTH");
+				out << " AUTH";
 				break;
 			case SCTP_ASSOC_SUPPORTS_ASCONF:
-				cs << (" ASCONF");
+				out << " ASCONF";
 				break;
 			case SCTP_ASSOC_SUPPORTS_MULTIBUF:
-				cs << (" MULTIBUF");
+				out << " MULTIBUF";
 				break;
 			case SCTP_ASSOC_SUPPORTS_RE_CONFIG:
-				cs << (" RE-CONFIG");
+				out << " RE-CONFIG";
+				break;
+			case SCTP_ASSOC_SUPPORTS_INTERLEAVING:
+				out << " I-DATA";
 				break;
 			default:
-				cs << " UNKNOWN(" << sac->sac_info[i] << ")";
+				out << " UNKNOWN(" << unsigned(sac->sac_info[i]) << ")";
 				break;
 			}
 		}
-	} else if (((sac->sac_state == SCTP_COMM_LOST) ||
-					   (sac->sac_state == SCTP_CANT_STR_ASSOC)) &&
-			   (n > 0)) {
-		cs << (", ABORT =");
-		for (i = 0; i < n; i++) {
-			cs << " " << sac->sac_info[i];
-		}
+	} else if (extra) {
+		out << " abort data:";
+		for (size_t i = 0; i < extra; ++i)
+			out << " " << unsigned(sac->sac_info[i]);
 	}
-	cs << (".\n");
-	if ((sac->sac_state == SCTP_CANT_STR_ASSOC) ||
-			(sac->sac_state == SCTP_SHUTDOWN_COMP) ||
-			(sac->sac_state == SCTP_COMM_LOST)) {
+	out << std::endl;
+
+	// Deliver every association event to derived transports before cleanup.
+	onAssociationChange(peer_id, sac);
+	if (remove) {
+		deletePeer(peer_id, false);
+		if (setup_failed && peer_id == PEER_ID_SERVER)
+			putEvent(ConnectionEvent::connectFailed());
 	}
-	return;
 }
 
 static void handle_peer_address_change_event(const struct sctp_paddr_change *spc)
@@ -356,70 +388,32 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 			}
 
 			switch (notification.sn_header.sn_type) {
-			case SCTP_ASSOC_CHANGE:
-				// cs << "SCTP_ASSOC_CHANGE" << std::endl;
-				// OnNotificationAssocChange(notification.sn_assoc_change);
-				{
-					switch (notification.sn_assoc_change.sac_state) {
-					/*
-						case SCTP_CANT_STR_ASSOC:
-							cs<<("SCTP_CANT_STR_ASSOC");
-							deletePeer(peer_id,  false);
-							break;
-					*/
-					case SCTP_COMM_UP:
-						m_peers_address.insert_or_assign(
-								peer_id, Address(addr.sin6_addr, addr.sin6_port));
-						/*							ConnectionEvent e;
-													e.peerAdded(peer_id);
-													putEvent(e);*/
-						break;
-					}
-					handle_association_change_event(
-							peer_id, &(notification.sn_assoc_change));
-					if (!getPeer(peer_id))
-						return {static_cast<int>(n), true};
-					onAssociationChange(peer_id, &(notification.sn_assoc_change));
-#if 0
-					const sctp_assoc_change& change = notification.sn_assoc_change;
-					switch (change.sac_state) {
-					case SCTP_COMM_UP:
-						cs << "Association change SCTP_COMM_UP" << std::endl;
-
-						{
-							m_peers_address.set(peer_id, Address(addr.sin6_addr, addr.sin6_port));
-							ConnectionEvent e;
-							e.peerAdded(peer_id);
-							putEvent(e);
-						}
-						break;
-					case SCTP_COMM_LOST: {
-						cs << "Association change SCTP_COMM_LOST" << std::endl;
-						deletePeer(peer_id,  false);
-					}
-					break;
-					case SCTP_RESTART:
-						cs << "Association change SCTP_RESTART" << std::endl;
-						break;
-					case SCTP_SHUTDOWN_COMP:
-						cs << "Association change SCTP_SHUTDOWN_COMP" << std::endl;
-						break;
-					case SCTP_CANT_STR_ASSOC:
-						cs << "Association change SCTP_CANT_STR_ASSOC" << std::endl;
-						break;
-					default:
-						cs << "Association change UNKNOWN " << std::endl;
-						break;
-					}
-#endif
+			case SCTP_ASSOC_CHANGE: {
+				if (notification.sn_assoc_change.sac_state == SCTP_COMM_UP) {
+					const auto peer_address = fmSctpPeerAddress(
+							reinterpret_cast<const sockaddr *>(&addr), from_len);
+					// Keep the scoped endpoint saved by connect/accept.
+					// AF_CONN carries an opaque pointer, not an IP address.
+					if (peer_address.isValid() && !m_peers_address.count(peer_id))
+						m_peers_address.insert_or_assign(peer_id, peer_address);
 				}
-
+				handle_association_change_event(peer_id, &notification.sn_assoc_change);
+				if (!getPeer(peer_id))
+					return {static_cast<int>(n), true};
 				break;
+			}
 			case SCTP_PEER_ADDR_CHANGE: {
 				const sctp_paddr_change *spc = &notification.sn_paddr_change;
 				// printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state,
 				// spc->spc_error);
 				handle_peer_address_change_event(spc);
+				if (spc->spc_state == SCTP_ADDR_MADE_PRIM) {
+					const auto address = fmSctpPeerAddress(
+							reinterpret_cast<const sockaddr *>(&spc->spc_aaddr),
+							sizeof(spc->spc_aaddr));
+					if (address.isValid())
+						m_peers_address.insert_or_assign(peer_id, address);
+				}
 				cs << "SCTP_PEER_ADDR_CHANGE state=" << spc->spc_state
 				   << " error=" << spc->spc_error << std::endl;
 				break;
@@ -516,8 +510,7 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 	} else if (n == 0) {
 		deletePeer(peer_id, false);
 		return {0, true};
-	} else if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK ||
-			   errno == EINTR) {
+	} else if (errno == EINPROGRESS || fmSctpRetryableError(errno)) {
 		// nothing
 	} else {
 
@@ -544,6 +537,7 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 {
 
 	usrsctp_set_non_blocking(sock, 1);
+	fmConfigureSctpInterleaving(sock);
 
 	struct sctp_event event = {};
 	event.se_assoc_id = SCTP_ALL_ASSOC;
@@ -700,6 +694,7 @@ void Connection::connect_addr(const Address &address)
 	sock_setup(/*PEER_ID_SERVER,*/ sock);
 
 	m_peers.insert_or_assign(PEER_ID_SERVER, sock);
+	m_peers_address.insert_or_assign(PEER_ID_SERVER, address);
 
 	cs << "connect() using encaps " << address.getPort() << std::endl;
 
@@ -896,6 +891,7 @@ void Connection::connect_conn(const Address &address)
 	sock_setup(/*PEER_ID_SERVER,*/ sock);
 
 	m_peers.insert_or_assign(PEER_ID_SERVER, sock);
+	m_peers_address.insert_or_assign(PEER_ID_SERVER, address);
 
 	struct sockaddr_conn sconn = {};
 	sconn.sconn_family = AF_CONN;
@@ -919,7 +915,8 @@ void Connection::connect_conn(const Address &address)
 #endif
 	sconn.sconn_port = htons(address.getPort());
 	sconn.sconn_addr = &conn_fd;
-	if (usrsctp_connect(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0) {
+	if (usrsctp_connect(sock, (struct sockaddr *)&sconn, sizeof(sconn)) < 0 &&
+			errno != EINPROGRESS && errno != EWOULDBLOCK) {
 		perror("usrsctp_connect");
 		putEvent(ConnectionEvent::connectFailed());
 		disconnect();
@@ -951,6 +948,8 @@ void Connection::disconnect()
 	m_peers_address.clear();
 	recv_buf.clear();
 	pending_sends.clear();
+	m_established_peers.clear();
+	m_association_ready.store(false, std::memory_order_release);
 
 	if (conn_fd >= 0) {
 		usrsctp_deregister_address(&conn_fd);

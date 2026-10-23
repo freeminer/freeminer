@@ -165,7 +165,7 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 #if USE_WS_SCTP_SSL
 		//Server.set_tls_init_handler(bind(&broadcast_server::on_tls_init, this,				websocketpp::lib::placeholders::_1));
 		Server.set_tls_init_handler(
-			bind(&Connection::on_tls_init, this, websocketpp::lib::placeholders::_1));
+				bind(&Connection::on_tls_init, this, websocketpp::lib::placeholders::_1));
 #endif
 		// Server.set_timer(long duration, timer_handler callback);
 		//}
@@ -183,8 +183,8 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 				this, websocketpp::lib::placeholders::_1,
 				websocketpp::lib::placeholders::_2));
 #if USE_WS_SCTP_SSL
-		Client.set_tls_init_handler(bind(
-				&Connection::on_client_tls_init, this, websocketpp::lib::placeholders::_1));
+		Client.set_tls_init_handler(bind(&Connection::on_client_tls_init, this,
+				websocketpp::lib::placeholders::_1));
 #endif
 
 #if 0 && USE_WS_SCTP_SSL
@@ -247,8 +247,8 @@ void Connection::Connect(Address address)
 bool Connection::Connected()
 {
 	return con_sctp::Connection::Connected() &&
-			ws_client_open.load(std::memory_order_acquire) &&
-			ws_sctp_connected.load(std::memory_order_acquire);
+		   ws_client_open.load(std::memory_order_acquire) &&
+		   ws_sctp_connected.load(std::memory_order_acquire);
 }
 
 void Connection::connectWebSocket(const Address &address)
@@ -325,6 +325,7 @@ void Connection::onAssociationChange(
 
 	switch (sac->sac_state) {
 	case SCTP_COMM_UP:
+	case SCTP_RESTART:
 		ws_sctp_connected.store(true, std::memory_order_release);
 		break;
 	case SCTP_COMM_LOST:
@@ -356,11 +357,9 @@ void Connection::serve(const Address &bind_address)
 
 	websocketpp::lib::error_code ec;
 	if (ws_ipv6 || bind_address.isIPv6()) {
-		Server.listen(websocketpp::lib::asio::ip::tcp::v6(),
-				bind_address.getPort(), ec);
+		Server.listen(websocketpp::lib::asio::ip::tcp::v6(), bind_address.getPort(), ec);
 	} else {
-		Server.listen(websocketpp::lib::asio::ip::tcp::v4(),
-				bind_address.getPort(), ec);
+		Server.listen(websocketpp::lib::asio::ip::tcp::v4(), bind_address.getPort(), ec);
 	}
 	if (ec) {
 		errorstream << "WS SCTP listen fail: " << ec.message() << std::endl;
