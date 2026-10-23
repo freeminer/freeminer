@@ -1,0 +1,34 @@
+diff --git a/usrsctplib/user_recv_thread.c b/usrsctplib/user_recv_thread.c
+index 75c9076..8c57990 100755
+--- a/usrsctplib/user_recv_thread.c
++++ b/usrsctplib/user_recv_thread.c
+@@ -45,6 +45,9 @@
+ #include <netinet/sctp_var.h>
+ #include <netinet/sctp_pcb.h>
+ #include <netinet/sctp_input.h>
++#if defined(__linux__) && !defined(__EMSCRIPTEN__)
++#include "fm_usrsctp_addr_monitor.c"
++#endif
+ #if 0
+ #if defined(__linux__)
+ #include <linux/netlink.h>
+@@ -1425,6 +1428,9 @@ recv_thread_init(void)
+ 		}
+ 	}
+ #endif
++#if defined(__linux__) && !defined(__EMSCRIPTEN__)
++	fm_sctp_start_address_monitor();
++#endif
+ #if defined(__APPLE__) || defined(__DragonFly__) || defined(__FreeBSD__)
+ #if defined(INET) || defined(INET6)
+ 	if (SCTP_BASE_VAR(userspace_route) != -1) {
+@@ -1499,6 +1505,9 @@ recv_thread_init(void)
+ void
+ recv_thread_destroy(void)
+ {
++#if defined(__linux__) && !defined(__EMSCRIPTEN__)
++	fm_sctp_stop_address_monitor();
++#endif
+ #if defined(__APPLE__) || defined(__DragonFly__) || defined(__FreeBSD__)
+ #if defined(INET) || defined(INET6)
+ 	if (SCTP_BASE_VAR(userspace_route) != -1) {
