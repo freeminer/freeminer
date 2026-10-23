@@ -45,6 +45,19 @@ static auto &cs = errorstream; // remove after debug
 static auto &cs = verbosestream; // remove after debug
 #endif
 
+// A route can disappear during handoff while the association is still valid.
+// Let SCTP's association timers decide when the peer has actually been lost.
+inline bool fmSctpRetryableError(int error)
+{
+	return error == EWOULDBLOCK || error == EAGAIN || error == EINTR ||
+		   error == ENOBUFS || error == ENOMEM || error == ENETDOWN ||
+		   error == ENETUNREACH || error == EHOSTUNREACH || error == EADDRNOTAVAIL
+#ifdef EHOSTDOWN
+		   || error == EHOSTDOWN
+#endif
+			;
+}
+
 inline void fmConfigureSctpDefaults()
 {
 	const auto configure = [](const char *name, int result) {
@@ -52,8 +65,18 @@ inline void fmConfigureSctpDefaults()
 			warningstream << "SCTP: cannot configure " << name << std::endl;
 	};
 
-	// This transport uses a single destination. CMT and buffer splitting
-	// are multipath policies, not single-path throughput optimizations.
+#ifndef __EMSCRIPTEN__
+	// Dynamic address reconfiguration requires AUTH on both endpoints.
+	configure("AUTH", usrsctp_sysctl_set_sctp_auth_enable(1));
+	configure("ASCONF", usrsctp_sysctl_set_sctp_asconf_enable(1));
+	configure("automatic ASCONF", usrsctp_sysctl_set_sctp_auto_asconf(1));
+	configure("mobility", usrsctp_sysctl_set_sctp_mobility_base(1));
+	configure("fast handoff", usrsctp_sysctl_set_sctp_mobility_fasthandoff(1));
+	configure("NAT friendly INIT", usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1));
+#endif
+
+	// CMT sends concurrently over paths; normal failover and ASCONF remain
+	// enabled independently. Buffer splitting is a CMT throughput policy.
 	configure("CMT", usrsctp_sysctl_set_sctp_cmt_on_off(0));
 	configure("CMT delayed acknowledgments", usrsctp_sysctl_set_sctp_cmt_use_dac(0));
 	configure("CMT buffer splitting", usrsctp_sysctl_set_sctp_buffer_splitting(0));

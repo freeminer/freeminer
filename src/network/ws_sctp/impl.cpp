@@ -325,9 +325,9 @@ void Connection::onAssociationChange(
 
 	switch (sac->sac_state) {
 	case SCTP_COMM_UP:
+	case SCTP_RESTART:
 		ws_sctp_connected.store(true, std::memory_order_release);
 		break;
-	case SCTP_RESTART:
 	case SCTP_COMM_LOST:
 	case SCTP_SHUTDOWN_COMP:
 	case SCTP_CANT_STR_ASSOC:

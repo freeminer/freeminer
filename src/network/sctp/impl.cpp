@@ -220,14 +220,6 @@ void Connection::sctp_setup(u16 port)
 	usrsctp_sysctl_set_sctp_asconf_enable(0);
 #endif
 
-	// #if __ANDROID__
-#ifndef __EMSCRIPTEN__
-	usrsctp_sysctl_set_sctp_mobility_fasthandoff(1);
-	usrsctp_sysctl_set_sctp_mobility_base(1);
-
-	usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1);
-#endif
-
 	fmConfigureSctpDefaults();
 }
 

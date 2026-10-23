@@ -2,6 +2,7 @@
 Copyright (C) 2023 proller <proler@gmail.com>
 */
 
+#include <algorithm>
 #include <cstdint>
 #include "network/sctp/internal.h"
 #include "network/sctp/fm_sctp_address.h"
@@ -183,7 +184,21 @@ void Connection::handle_association_change_event(
 	const char *state = "UNKNOWN";
 	switch (sac->sac_state) {
 	case SCTP_COMM_UP:
-		state = "SCTP_COMM_UP";
+	case SCTP_RESTART:
+		state = sac->sac_state == SCTP_COMM_UP ? "SCTP_COMM_UP" : "SCTP_RESTART";
+		if (sac->sac_state == SCTP_RESTART) {
+			// Keep the game peer, but never join pre-restart fragments to new data.
+			recv_buf.erase(peer_id);
+			auto pending = pending_sends.find(peer_id);
+			if (pending != pending_sends.end()) {
+				auto &queue = pending->second;
+				queue.erase(std::remove_if(queue.begin(), queue.end(),
+									[](const PendingSend &message) {
+										return message.offset != 0;
+									}),
+						queue.end());
+			}
+		}
 		// Streams 1..3 are reliable and 5..7 are unreliable.
 		if (sac->sac_inbound_streams < 8 || sac->sac_outbound_streams < 8) {
 			warningstream << "SCTP peer " << peer_id << " negotiated too few streams: in="
@@ -198,13 +213,6 @@ void Connection::handle_association_change_event(
 		break;
 	case SCTP_COMM_LOST:
 		state = "SCTP_COMM_LOST";
-		remove = true;
-		setup_failed = !was_ready;
-		break;
-	case SCTP_RESTART:
-		state = "SCTP_RESTART";
-		// A transport restart does not restore the game's login/session state.
-		// Require a fresh game connection instead of reusing queued messages.
 		remove = true;
 		setup_failed = !was_ready;
 		break;
@@ -399,6 +407,13 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				// printf("SCTP_PEER_ADDR_CHANGE: state=%d, error=%d\n",spc->spc_state,
 				// spc->spc_error);
 				handle_peer_address_change_event(spc);
+				if (spc->spc_state == SCTP_ADDR_MADE_PRIM) {
+					const auto address = fmSctpPeerAddress(
+							reinterpret_cast<const sockaddr *>(&spc->spc_aaddr),
+							sizeof(spc->spc_aaddr));
+					if (address.isValid())
+						m_peers_address.insert_or_assign(peer_id, address);
+				}
 				cs << "SCTP_PEER_ADDR_CHANGE state=" << spc->spc_state
 				   << " error=" << spc->spc_error << std::endl;
 				break;
@@ -495,8 +510,7 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 	} else if (n == 0) {
 		deletePeer(peer_id, false);
 		return {0, true};
-	} else if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK ||
-			   errno == EINTR) {
+	} else if (errno == EINPROGRESS || fmSctpRetryableError(errno)) {
 		// nothing
 	} else {
 
