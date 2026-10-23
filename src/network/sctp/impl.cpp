@@ -100,13 +100,18 @@ void Connection::finish_sctp()
 	}
 
 	for (int i = 0; i < 100; ++i) {
-		if (!usrsctp_finish())
-			break;
+		if (!usrsctp_finish()) {
+			sctp_inited = false;
+			sctp_inited_by_me = false;
+			return;
+		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		// cs << "Connection::~Connection() wait " << i << std::endl;
 	}
 
-	sctp_inited = false;
+	// Pending sockets still belong to the live stack. A later connection must
+	// reuse it; calling usrsctp_init again would overwrite active stack state.
+	warningstream << "SCTP shutdown still pending; retaining the initialized stack"
+				  << std::endl;
 	sctp_inited_by_me = false;
 }
 
@@ -211,6 +216,9 @@ void Connection::processCommand(ConnectionCommandPtr c)
 		*/
 	case CONCMD_ACK:
 	case CONCMD_CREATE_PEER:
+	case CONNCMD_RESEND_ONE:
+	case CONNCMD_PEER_ID_SET:
+		// MTP control commands; SCTP manages retransmission and peers itself.
 		break;
 	}
 }
