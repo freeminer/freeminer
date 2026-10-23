@@ -201,6 +201,11 @@ private:
 	std::unordered_set<session_t> m_established_peers;
 	std::unordered_map<session_t, std::deque<PendingSend>> pending_sends;
 	void flushPendingSends();
+	void checkPeerTimeouts();
+	u32 m_peer_timeout_ms = 60000;
+	u32 m_last_timeout_check = 0;
+	// Received sequence and local monotonic time when it last changed.
+	std::unordered_map<session_t, std::pair<u32, u32>> m_peer_activity;
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
 	std::unordered_map<session_t, std::pair<u32, u32>> m_send_failure_log;
 

@@ -1,0 +1,17 @@
+diff --git a/usrsctplib/usrsctp.h b/usrsctplib/usrsctp.h
+index 93e89b3..d1b279e 100644
+--- a/usrsctplib/usrsctp.h
++++ b/usrsctplib/usrsctp.h
+@@ -342,8 +342,10 @@ struct sctp_pdapi_event {
+ 	uint16_t pdapi_flags;
+ 	uint32_t pdapi_length;
+ 	uint32_t pdapi_indication;
+-	uint32_t pdapi_stream;
+-	uint32_t pdapi_seq;
++	/* fm: Match the emitted ABI in netinet/sctp_uio.h. */
++	uint16_t pdapi_stream;
++	uint16_t pdapi_seq;
++	/* === */
+ 	sctp_assoc_t pdapi_assoc_id;
+ };
+ 

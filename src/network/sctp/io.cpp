@@ -206,6 +206,7 @@ void Connection::handle_association_change_event(
 			remove = setup_failed = true;
 		} else {
 			m_established_peers.insert(peer_id);
+			m_peer_activity[peer_id] = {0, porting::getTimeMs()};
 			if (peer_id == PEER_ID_SERVER)
 				m_association_ready.store(true, std::memory_order_release);
 		}
@@ -342,6 +343,9 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 			if (n < static_cast<decltype(n)>(sizeof(notification.sn_header)) ||
 					notification.sn_header.sn_length != static_cast<size_t>(n) ||
 					!(flags & MSG_EOR)) {
+				warningstream << "SCTP peer " << peer_id
+							  << " malformed or incomplete notification: bytes=" << n
+							  << " flags=" << flags << std::endl;
 				deletePeer(peer_id, false);
 				return {0, true};
 			}
@@ -366,6 +370,9 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				break;
 			}
 			if (static_cast<size_t>(n) < required) {
+				warningstream << "SCTP peer " << peer_id << " short notification: type="
+							  << notification.sn_header.sn_type << " bytes=" << n
+							  << " required=" << required << std::endl;
 				deletePeer(peer_id, false);
 				return {0, true};
 			}
@@ -417,6 +424,8 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				cs << "SCTP_ADAPTATION_INDICATION" << std::endl;
 				break;
 			case SCTP_PARTIAL_DELIVERY_EVENT:
+				static_assert(sizeof(sctp_pdapi_event) == 20,
+						"Partial delivery notification must match the bundled stack ABI");
 				if (notification.sn_pdapi_event.pdapi_indication ==
 						SCTP_PARTIAL_DELIVERY_ABORTED) {
 					auto &streams = recv_buf[peer_id];
@@ -543,6 +552,18 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 
 	usrsctp_set_non_blocking(sock, 1);
 	configureInterleaving(sock);
+
+	// usrsctp is shared with AF_CONN transports: configure capabilities per socket.
+	sctp_assoc_value capability = {};
+	capability.assoc_id = SCTP_FUTURE_ASSOC;
+	capability.assoc_value = domain != AF_CONN;
+	if (capability.assoc_value &&
+			usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_AUTH_SUPPORTED, &capability,
+					sizeof(capability)) < 0)
+		throw ConnectionException("Cannot enable SCTP AUTH for address migration");
+	if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_ASCONF_SUPPORTED, &capability,
+				sizeof(capability)) < 0)
+		throw ConnectionException("Cannot configure SCTP address migration");
 
 	struct sctp_event event = {};
 	event.se_assoc_id = SCTP_ALL_ASSOC;
@@ -955,6 +976,7 @@ void Connection::disconnect()
 	pending_sends.clear();
 	m_send_failure_log.clear();
 	m_established_peers.clear();
+	m_peer_activity.clear();
 	m_association_ready.store(false, std::memory_order_release);
 
 	if (conn_fd >= 0) {
