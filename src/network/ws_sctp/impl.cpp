@@ -128,7 +128,6 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool
 	sctp_conn_output = conn_output;
 	//DUMP((long)sctp_conn_output);
 	sctp_setup(0);
-	usrsctp_sysctl_set_sctp_asconf_enable(0);
 
 	{
 
