@@ -40,3 +40,6 @@
 [submodule "src/mapgen/earth/luanti-earth"]
 	path = src/mapgen/earth/luanti-earth
 	url = https://github.com/freeminer/luanti-earth.git
+[submodule "src/external/usrsctp"]
+	path = src/external/usrsctp
+	url = https://github.com/freeminer/usrsctp.git
