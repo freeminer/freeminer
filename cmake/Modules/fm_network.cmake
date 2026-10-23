@@ -114,6 +114,7 @@ if(FM_HAVE_SCTP_SOURCE AND (ENABLE_SCTP OR USE_WEBSOCKET_SCTP))
     fm_patch_usrsctp(source user_socket.c "source_info[.]ipi_spec_dst")
     fm_patch_usrsctp(mobility user_recv_thread.c "usrsctp_addr_monitor[.]c")
     fm_patch_usrsctp(routing netinet/sctp_output.c "sctp_userspace_route_source")
+    fm_patch_usrsctp(handshake netinet/sctp_output.c "Prefer an eligible OS-selected source")
     fm_patch_usrsctp(diagnostics netinet/sctp_asconf.c "SCTP_ASCONF_LOG")
     # ===
     function(fm_add_usrsctp)
