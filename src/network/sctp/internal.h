@@ -14,6 +14,7 @@ Copyright (C) 2023 proller <proler@gmail.com>
 #include "network/networkpacket.h"
 #include "network/networkprotocol.h"
 #include "network/sctp/connection.h"
+#include "network/address.h"
 #include "porting.h"
 #include "profiler.h"
 #include "serialization.h"
@@ -24,8 +25,10 @@ Copyright (C) 2023 proller <proler@gmail.com>
 
 #include <cerrno>
 #include <cstdarg>
+#include <cstring>
 #include <cstdio>
 #include <string_view>
+#include <sstream>
 #include <unistd.h>
 
 #ifdef _WIN32
@@ -45,9 +48,110 @@ static auto &cs = errorstream; // remove after debug
 static auto &cs = verbosestream; // remove after debug
 #endif
 
+inline Address getPeerAddress(const sockaddr *address, size_t length)
+{
+	if (!address || length < sizeof(address->sa_family))
+		return {};
+	if (address->sa_family == AF_INET6 && length >= sizeof(sockaddr_in6)) {
+		sockaddr_in6 ipv6;
+		std::memcpy(&ipv6, address, sizeof(ipv6));
+		return Address(ipv6); // Preserve the zone and convert the port to host order.
+	}
+	if (address->sa_family == AF_INET && length >= sizeof(sockaddr_in)) {
+		sockaddr_in ipv4;
+		std::memcpy(&ipv4, address, sizeof(ipv4));
+		return Address(ipv4);
+	}
+	return {}; // AF_CONN is not an IP endpoint.
+}
+
+inline size_t getAddressSize(const sockaddr *address)
+{
+	switch (address->sa_family) {
+	case AF_INET:
+		return sizeof(sockaddr_in);
+	case AF_INET6:
+		return sizeof(sockaddr_in6);
+	case AF_CONN:
+		return sizeof(sockaddr_conn);
+	default:
+		return 0;
+	}
+}
+
+inline std::string getEndpoint(const sockaddr *address)
+{
+	if (address->sa_family == AF_CONN)
+		return "AF_CONN";
+	const auto endpoint = getPeerAddress(address, getAddressSize(address));
+	std::ostringstream out;
+	endpoint.print(out);
+	return out.str();
+}
+
+// Only called for association/path transitions, never for individual packets.
+inline void logPaths(session_t peer_id, struct socket *sock, const char *reason)
+{
+	sctp_status status = {};
+	socklen_t length = sizeof(status);
+	if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_STATUS, &status, &length) == 0)
+		infostream << "SCTP peer " << peer_id << " paths reason=" << reason
+				   << " assoc=" << status.sstat_assoc_id
+				   << " state=" << status.sstat_state
+				   << " unacked=" << status.sstat_unackdata << " primary="
+				   << getEndpoint(reinterpret_cast<const sockaddr *>(
+							  &status.sstat_primary.spinfo_address))
+				   << std::endl;
+	for (bool remote : {false, true}) {
+		sockaddr *addresses = nullptr;
+		const int count = remote ? usrsctp_getpaddrs(sock, 0, &addresses)
+								 : usrsctp_getladdrs(sock, 0, &addresses);
+		const int error = count < 0 ? errno : 0;
+		infostream << "SCTP peer " << peer_id
+				   << (remote ? " remote-known" : " local-bound") << " count=" << count
+				   << " errno=" << error << std::endl;
+		const sockaddr *address = addresses;
+		for (int i = 0; address && i < count; ++i) {
+			const size_t size = getAddressSize(address);
+			if (!size)
+				break;
+			std::ostringstream line;
+			line << "SCTP peer " << peer_id
+				 << (remote ? " remote-known=" : " local-bound=") << getEndpoint(address);
+			if (remote && address->sa_family != AF_CONN) {
+				sctp_udpencaps encaps = {};
+				std::memcpy(&encaps.sue_address, address, size);
+				length = sizeof(encaps);
+				if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_REMOTE_UDP_ENCAPS_PORT,
+							&encaps, &length) == 0)
+					line << " udp_port=" << ntohs(encaps.sue_port);
+				else
+					line << " udp_port_unavailable_errno=" << errno;
+				sctp_paddrinfo path = {};
+				std::memcpy(&path.spinfo_address, address, size);
+				length = sizeof(path);
+				if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_GET_PEER_ADDR_INFO, &path,
+							&length) == 0)
+					line << " state=" << path.spinfo_state
+						 << " srtt_ms=" << path.spinfo_srtt
+						 << " rto_ms=" << path.spinfo_rto << " mtu=" << path.spinfo_mtu;
+			}
+			infostream << line.str() << std::endl;
+			address = reinterpret_cast<const sockaddr *>(
+					reinterpret_cast<const char *>(address) + size);
+		}
+		if (addresses) {
+			if (remote)
+				usrsctp_freepaddrs(addresses);
+			else
+				usrsctp_freeladdrs(addresses);
+		}
+	}
+}
+
 // A route can disappear during handoff while the association is still valid.
 // Let SCTP's association timers decide when the peer has actually been lost.
-inline bool fmSctpRetryableError(int error)
+inline bool isRetryableError(int error)
 {
 	return error == EWOULDBLOCK || error == EAGAIN || error == EINTR ||
 		   error == ENOBUFS || error == ENOMEM || error == ENETDOWN ||
@@ -58,7 +162,7 @@ inline bool fmSctpRetryableError(int error)
 			;
 }
 
-inline void fmConfigureSctpDefaults()
+inline void configureDefaults()
 {
 	const auto configure = [](const char *name, int result) {
 		if (result != 0)
@@ -94,7 +198,7 @@ inline void fmConfigureSctpDefaults()
 	configure("SACK frequency", usrsctp_sysctl_set_sctp_sack_freq_default(2));
 }
 
-inline void fmConfigureSctpInterleaving(struct socket *sock)
+inline void configureInterleaving(struct socket *sock)
 {
 	// Level 2 permits partial delivery on separate streams of one association.
 	const uint32_t level = 2;

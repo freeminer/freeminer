@@ -60,10 +60,17 @@ void Connection::flushPendingSends()
 			const auto sent = usrsctp_sendv(peer, *message.data + message.offset, length,
 					nullptr, 0, &spa, sizeof(spa), SCTP_SENDV_SPA, 0);
 			if (sent < 0) {
-				if (fmSctpRetryableError(errno))
+				const int error = errno;
+				if (isRetryableError(error))
 					break;
-				warningstream << "SCTP send failed for peer " << id << " errno=" << errno
-							  << std::endl;
+				warningstream << "SCTP send failed for peer " << id << " errno=" << error
+							  << " (" << std::strerror(error)
+							  << ") stream=" << spa.sendv_sndinfo.snd_sid
+							  << " reliable=" << message.reliable
+							  << " bytes=" << message.data.getSize()
+							  << " submitted=" << message.offset
+							  << " queued_messages=" << queue.size() << std::endl;
+				logPaths(id, peer, "fatal send error");
 				deletePeer(id, false);
 				break;
 			}

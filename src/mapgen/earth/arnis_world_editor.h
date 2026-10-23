@@ -295,6 +295,9 @@ struct WorldEditor
 	// terrain passes, then transferred to the committed map at ordered merge.
 	RoadSurfaceOverrides road_surface_overrides;
 	RoadSurfaceOverrides active_road_surface_overrides;
+	// Lamps are installed before later water passes; retain their columns so
+	// quay-edge false positives can be removed once water has been carved.
+	std::vector<std::pair<int, int>> lamp_columns;
 	// Bounds of the full generation area. Tile merges keep the owning tile's
 	// road elevations and retain non-owned values only outside this area.
 	std::optional<std::tuple<int, int, int, int>> generation_bounds;
@@ -844,6 +847,11 @@ struct WorldEditor
 	std::optional<int> terrain_level(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
 	RoadSurfaceOverrides take_road_surface_overrides();
+	void register_lamp(int x, int z) { lamp_columns.emplace_back(x, z); }
+	std::vector<std::pair<int, int>> take_lamps()
+	{
+		return std::exchange(lamp_columns, {});
+	}
 	void merge_road_surface_overrides(RoadSurfaceOverrides overrides);
 	void merge_road_surface_overrides_in_regions(RoadSurfaceOverrides overrides,
 			const std::unordered_set<std::pair<int, int>, XZCellHash> &regions);
