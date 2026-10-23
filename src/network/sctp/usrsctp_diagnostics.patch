@@ -1,0 +1,60 @@
+diff --git a/usrsctplib/netinet/sctp_asconf.c b/usrsctplib/netinet/sctp_asconf.c
+index d1825e7..c4010c1 100755
+--- a/usrsctplib/netinet/sctp_asconf.c
++++ b/usrsctplib/netinet/sctp_asconf.c
+@@ -42,6 +42,30 @@
+ #include <netinet/sctp_asconf.h>
+ #include <netinet/sctp_timer.h>
+ 
++#if defined(__linux__) && !defined(__EMSCRIPTEN__) && (defined(INET) || defined(INET6))
++/* fm: Focused ASCONF diagnostics, independent of SCTP_DEBUG. */
++extern void sctp_diagnostic(int warning, const char *message);
++static void sctp_asconf_diagnostic(struct sctp_tcb *stcb,
++    const char *event, uint32_t parameter, uint32_t error)
++{
++	char message[192];
++	const char *operation = parameter == SCTP_ADD_IP_ADDRESS ? "ADD" :
++	    parameter == SCTP_DEL_IP_ADDRESS ? "DELETE" :
++	    parameter == SCTP_SET_PRIM_ADDR ? "PRIMARY" : "OTHER";
++	snprintf(message, sizeof(message),
++	    "ASCONF %s assoc=%u expected_ack=%u operation=%s parameter=%u cause=%u",
++	    event, (unsigned)stcb->asoc.assoc_id,
++	    (unsigned)(stcb->asoc.asconf_seq_out_acked + 1),
++	    operation, (unsigned)parameter, (unsigned)error);
++	sctp_diagnostic(error != 0 || strcmp(event, "operation failed") == 0, message);
++}
++#define SCTP_ASCONF_LOG(stcb, event, parameter, error) \
++    sctp_asconf_diagnostic(stcb, event, parameter, error)
++#else
++#define SCTP_ASCONF_LOG(stcb, event, parameter, error) ((void)0)
++#endif
++
++
+ /*
+  * debug flags:
+  * SCTP_DEBUG_ASCONF1: protocol info, general info and errors
+@@ -1344,6 +1368,7 @@ sctp_asconf_queue_mgmt(struct sctp_tcb *stcb, struct sctp_ifa *ifa,
+ 	aa->sent = 0;		/* clear sent flag */
+ 
+ 	TAILQ_INSERT_TAIL(&stcb->asoc.asconf_queue, aa, next);
++	SCTP_ASCONF_LOG(stcb, "operation queued", type, 0);
+ #ifdef SCTP_DEBUG
+ 	if (SCTP_BASE_SYSCTL(sctp_debug_on) & SCTP_DEBUG_ASCONF2) {
+ 		if (type == SCTP_ADD_IP_ADDRESS) {
+@@ -1617,6 +1642,7 @@ sctp_asconf_process_error(struct sctp_tcb *stcb SCTP_UNUSED,
+ 	/* which error code ? */
+ 	error_code = ntohs(eh->code);
+ 	param_type = ntohs(aph->ph.param_type);
++	SCTP_ASCONF_LOG(stcb, "rejected", param_type, error_code);
+ 	/* FIX: this should go back up the REMOTE_ERROR ULP notify */
+ 	switch (error_code) {
+ 	case SCTP_CAUSE_RESOURCE_SHORTAGE:
+@@ -1648,6 +1674,8 @@ sctp_asconf_process_param_ack(struct sctp_tcb *stcb,
+ 
+ 	/* process this param */
+ 	param_type = aparam->ap.aph.ph.param_type;
++	SCTP_ASCONF_LOG(stcb, flag ? "operation accepted" : "operation failed",
++	    param_type, 0);
+ 	switch (param_type) {
+ 	case SCTP_ADD_IP_ADDRESS:
+ 		SCTPDBG(SCTP_DEBUG_ASCONF1,
