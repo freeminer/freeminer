@@ -302,7 +302,7 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 	worker.deferred_tile_overlays.clear();
 
 	for (auto &[cell, y] : worker.road_surface_overrides) {
-		const auto [x, z] = cell;
+		const auto &[x, z] = cell;
 		const bool owned = x >= min_x && x <= max_x && z >= min_z && z <= max_z;
 		const bool outside_world = !generation_bounds || [&] {
 			const auto [world_min_x, world_min_z, world_max_x, world_max_z] =
@@ -359,7 +359,7 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 			worker.written_cells.begin(), worker.written_cells.end());
 	auto merge_top_states = [&](const WrittenCellSet &written) {
 		for (const auto &cell : written) {
-			const auto [x, y, z] = cell;
+			const auto &[x, y, z] = cell;
 			if (!worker.owns(x, z))
 				continue;
 			if (worker.full_top_state_cells.contains(cell))
@@ -370,7 +370,7 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 	};
 	auto merge_block_properties = [&](const WrittenCellSet &written) {
 		for (const auto &cell : written) {
-			const auto [x, y, z] = cell;
+			const auto &[x, y, z] = cell;
 			if (!worker.owns(x, z))
 				continue;
 			if (const auto found = worker.block_properties_by_cell.find(cell);
@@ -1062,7 +1062,7 @@ void WorldEditor::merge_road_surface_overrides_in_regions(RoadSurfaceOverrides o
 		const std::unordered_set<std::pair<int, int>, XZCellHash> &regions)
 {
 	for (auto &[coordinate, y] : overrides) {
-		const auto [x, z] = coordinate;
+		const auto &[x, z] = coordinate;
 		if (regions.contains({x >> 9, z >> 9}))
 			road_surface_overrides.insert_or_assign(coordinate, y);
 	}

@@ -595,7 +595,7 @@ std::pair<double, std::pair<double, double>> Ground::slope_and_gradient(
 	const std::array<double, 4> samples{{level_exact({pos.x + step, pos.z}),
 			level_exact({pos.x - step, pos.z}), level_exact({pos.x, pos.z - step}),
 			level_exact({pos.x, pos.z + step})}};
-	const auto [min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
+	const auto &[min_it, max_it] = std::minmax_element(samples.begin(), samples.end());
 	const double raw = *max_it - *min_it;
 	const int mid_y = rust_round_i32((*min_it + *max_it) * 0.5);
 	const double slope = std::max(
