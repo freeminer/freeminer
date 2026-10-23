@@ -94,7 +94,6 @@ const bool medium = slow || android;
 
 void fm_set_default_settings(Settings *settings)
 {
-
 	settings->setDefault("timelapse", "0");
 
 	// Paths
@@ -258,6 +257,9 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("server_proto", server_proto);
 	settings->setDefault("remote_proto", "");
 	settings->setDefault("timeout_mul", android ? "5" : "1");
+
+	settings->setDefault("sctp_peer_timeout", "60");
+
 	settings->setDefault("default_game", "default"); // "minetest"
 	settings->setDefault("max_users", "100");		 // "15"
 	settings->setDefault("enable_any_name",
