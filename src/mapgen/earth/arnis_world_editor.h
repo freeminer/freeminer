@@ -398,6 +398,12 @@ struct WorldEditor
 	{
 		signage_context = std::move(context);
 	}
+	std::shared_ptr<const signage::SignageContext> take_signage_context()
+	{
+		auto context = std::move(signage_context);
+		signage_context.reset();
+		return context;
+	}
 	void set_decal_frame_sink(std::function<bool(WorldEditor &, const DecalFrame &)> sink,
 			bool thread_safe = false)
 	{

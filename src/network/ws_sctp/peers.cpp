@@ -40,8 +40,8 @@ bool Connection::setupListenSocket(const std::shared_ptr<ws_peer> &peer)
 	if (!peer || !peer->ulp_info)
 		return false;
 
-	if ((peer->listen_sock = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL,
-				 NULL, 0, NULL)) == NULL) {
+	if ((peer->listen_sock = usrsctp_socket(
+				 AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 		return false;
 	}
@@ -71,8 +71,8 @@ bool Connection::setupClientSocket(
 	if (!peer || !peer->ulp_info)
 		return false;
 
-	if ((peer->sock = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL,
-				 NULL, 0, NULL)) == NULL) {
+	if ((peer->sock = usrsctp_socket(
+				 AF_CONN, SOCK_STREAM, IPPROTO_SCTP, NULL, NULL, 0, NULL)) == NULL) {
 		perror("usrsctp_socket");
 		return false;
 	}
@@ -113,6 +113,7 @@ void Connection::closePeer(const std::shared_ptr<ws_peer> &peer, bool timeout)
 	if (!peer)
 		return;
 
+	clearPeerState(peer->peer_id);
 	if (peer->peer_added) {
 		putEvent(ConnectionEvent::peerRemoved(peer->peer_id, timeout, {}));
 		peer->peer_added = false;
@@ -153,11 +154,10 @@ void Connection::cleanupRetiredUlpInfo(bool force)
 	}
 
 	const auto expire_before = std::chrono::steady_clock::now() - WS_SCTP_RETIRED_ULP_TTL;
-	retiredUlpInfo.erase(
-			std::remove_if(retiredUlpInfo.begin(), retiredUlpInfo.end(),
-					[expire_before](const retired_ulp_info &info) {
-						return info.retired_at < expire_before;
-					}),
+	retiredUlpInfo.erase(std::remove_if(retiredUlpInfo.begin(), retiredUlpInfo.end(),
+								 [expire_before](const retired_ulp_info &info) {
+									 return info.retired_at < expire_before;
+								 }),
 			retiredUlpInfo.end());
 
 	if (retiredUlpInfo.size() > WS_SCTP_RETIRED_ULP_MAX) {
@@ -179,15 +179,15 @@ void Connection::closeWebSocketState()
 
 	for (const auto &entry : peers) {
 		ec.clear();
-		Server.close(entry.first, websocketpp::close::status::going_away,
-				"disconnect", ec);
+		Server.close(
+				entry.first, websocketpp::close::status::going_away, "disconnect", ec);
 		closePeer(entry.second, false);
 	}
 
 	if (client_peer) {
 		ec.clear();
-		Client.close(client_hdl, websocketpp::close::status::going_away,
-				"disconnect", ec);
+		Client.close(
+				client_hdl, websocketpp::close::status::going_away, "disconnect", ec);
 		closePeer(client_peer, false);
 		client_peer.reset();
 	}
@@ -240,8 +240,8 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 {
 	if (peer_id == PEER_ID_SERVER && client_peer) {
 		websocketpp::lib::error_code ec;
-		Client.close(client_hdl, websocketpp::close::status::going_away,
-				"peer removed", ec);
+		Client.close(
+				client_hdl, websocketpp::close::status::going_away, "peer removed", ec);
 		closePeer(client_peer, timeout);
 		client_peer.reset();
 		ws_client_open.store(false, std::memory_order_release);
@@ -263,15 +263,13 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 		}
 
 		websocketpp::lib::error_code ec;
-		Server.close(hdl, websocketpp::close::status::going_away,
-				"peer removed", ec);
+		Server.close(hdl, websocketpp::close::status::going_away, "peer removed", ec);
 		closePeer(peer, timeout);
 		return true;
 	}
 
 	return con_sctp::Connection::deletePeer(peer_id, timeout);
 }
-
 
 websocketpp::connection_hdl Connection::getPeer(session_t peer_id)
 {

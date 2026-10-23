@@ -709,18 +709,20 @@ bool WorldEditor::place_map_decal_ex(int x, int y, int z, std::int8_t facing, in
 }
 std::tuple<int, int, int, int> WorldEditor::panel_axes(std::int8_t facing)
 {
+	// Luanti's left-handed view reverses Minecraft's horizontal panel axes.
+	// Keep tile columns and panel_left_anchor in the same viewer-right direction.
 	switch (facing) {
 	case 0:
 	case 1:
 		return {1, 0, 0, 1};
 	case 2:
-		return {-1, 0, -1, 0};
-	case 3:
 		return {1, 0, -1, 0};
+	case 3:
+		return {-1, 0, -1, 0};
 	case 4:
-		return {0, 1, -1, 0};
-	default:
 		return {0, -1, -1, 0};
+	default:
+		return {0, 1, -1, 0};
 	}
 }
 bool WorldEditor::place_decal_panel(int x, int y, int z, std::int8_t facing,
