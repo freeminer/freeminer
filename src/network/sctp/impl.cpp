@@ -2,6 +2,7 @@
 Copyright (C) 2023 proller <proler@gmail.com>
 */
 
+#include <algorithm>
 #include <cstdint>
 #include "network/sctp/internal.h"
 
@@ -66,6 +67,10 @@ Connection::Connection(u32 max_packet_size, float timeout, bool ipv6,
 	}
 	// #endif
 
+	const u32 peer_timeout =
+			std::min(g_settings->getU32("sctp_peer_timeout"), u32(86400));
+	m_peer_timeout_ms = peer_timeout * 1000;
+
 	if (start_worker)
 		start();
 }
@@ -118,6 +123,7 @@ void *Connection::run()
 			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
+		checkPeerTimeouts();
 		flushPendingSends();
 		if (receive() <= 0) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -127,6 +133,38 @@ void *Connection::run()
 	disconnect();
 
 	return nullptr;
+}
+
+void Connection::checkPeerTimeouts()
+{
+	if (!m_peer_timeout_ms)
+		return;
+	const u32 now = porting::getTimeMs();
+	if (u32(now - m_last_timeout_check) < 1000)
+		return;
+	m_last_timeout_check = now;
+	std::vector<session_t> expired;
+	for (auto &[id, activity] : m_peer_activity) {
+		auto *peer = getPeer(id);
+		if (!peer)
+			continue;
+		// Private bundled-usrsctp option: sctp_assoc_value holds an RX sequence.
+		sctp_assoc_value response = {};
+		socklen_t length = sizeof(response);
+		// A failed query does not extend the deadline.
+		if (usrsctp_getsockopt(peer, IPPROTO_SCTP, 0x7f000001, &response, &length) == 0 &&
+				response.assoc_value != activity.first) {
+			activity = {response.assoc_value, now};
+		}
+		if (u32(now - activity.second) >= m_peer_timeout_ms)
+			expired.push_back(id);
+	}
+	for (auto id : expired) {
+		warningstream << "SCTP peer " << id << " timed out: no peer response for "
+					  << m_peer_timeout_ms / 1000 << " seconds" << std::endl;
+		logPaths(id, getPeer(id), "peer response timeout");
+		deletePeer(id, true);
+	}
 }
 
 /* Internal stuff */

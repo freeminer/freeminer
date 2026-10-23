@@ -429,20 +429,14 @@ mg_math () string {"generator":"sphere"}
 #animation_wd_stop = 219
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+[**Network]
+# SCTP transport settings.
+#    Disconnect an established SCTP peer after this many seconds without received
+#    data or control traffic, including heartbeat acknowledgements. Local send
+#    attempts do not extend the deadline. Applies to clients and servers.
+#    Zero disables this timeout. Network changes must recover within this period.
+#    Read when the connection is created; restart/reconnect after changing it.
+sctp_peer_timeout (SCTP peer response timeout) int 60 0 86400
 
 
 

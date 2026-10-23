@@ -206,6 +206,7 @@ void Connection::handle_association_change_event(
 			remove = setup_failed = true;
 		} else {
 			m_established_peers.insert(peer_id);
+			m_peer_activity[peer_id] = {0, porting::getTimeMs()};
 			if (peer_id == PEER_ID_SERVER)
 				m_association_ready.store(true, std::memory_order_release);
 		}
@@ -955,6 +956,7 @@ void Connection::disconnect()
 	pending_sends.clear();
 	m_send_failure_log.clear();
 	m_established_peers.clear();
+	m_peer_activity.clear();
 	m_association_ready.store(false, std::memory_order_release);
 
 	if (conn_fd >= 0) {
