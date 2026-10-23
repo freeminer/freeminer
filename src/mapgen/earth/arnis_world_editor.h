@@ -398,6 +398,12 @@ struct WorldEditor
 	{
 		signage_context = std::move(context);
 	}
+	std::shared_ptr<const signage::SignageContext> take_signage_context()
+	{
+		auto context = std::move(signage_context);
+		signage_context.reset();
+		return context;
+	}
 	void set_decal_frame_sink(std::function<bool(WorldEditor &, const DecalFrame &)> sink,
 			bool thread_safe = false)
 	{
@@ -538,7 +544,7 @@ struct WorldEditor
 	{
 		if (!generation_bounds)
 			return pos_ok(x, z);
-		const auto [min_x, min_z, max_x, max_z] = *generation_bounds;
+		const auto &[min_x, min_z, max_x, max_z] = *generation_bounds;
 		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
 	}
 	void register_hedge(int x, int z) { hedge_columns.emplace(x, z); }
@@ -677,10 +683,10 @@ struct WorldEditor
 				return false;
 		}
 		for (const auto &[coordinate, y] : active_road_surface_overrides) {
-			const auto [x, z] = coordinate;
+			const auto &[x, z] = coordinate;
 			const bool owned = x >= min_x && x <= max_x && z >= min_z && z <= max_z;
 			const bool outside_world = !generation_bounds || [&] {
-				const auto [world_min_x, world_min_z, world_max_x, world_max_z] =
+				const auto &[world_min_x, world_min_z, world_max_x, world_max_z] =
 						*generation_bounds;
 				return x < world_min_x || x > world_max_x || z < world_min_z ||
 					   z > world_max_z;
