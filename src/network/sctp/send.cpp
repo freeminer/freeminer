@@ -37,6 +37,8 @@ void Connection::flushPendingSends()
 			pending_sends.erase(id);
 			continue;
 		}
+		if (!m_established_peers.count(id))
+			continue; // Wait for COMM_UP and stream-count validation.
 		auto &queue = pending_sends.at(id);
 		for (unsigned budget = 0; budget < 16 && !queue.empty(); ++budget) {
 			auto &message = queue.front();

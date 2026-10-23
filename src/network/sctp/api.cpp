@@ -20,6 +20,16 @@ struct socket *Connection::getPeer(session_t peer_id)
 	return node->second;
 }
 
+void Connection::clearPeerState(session_t peer_id)
+{
+	if (peer_id == PEER_ID_SERVER)
+		m_association_ready.store(false, std::memory_order_release);
+	m_established_peers.erase(peer_id);
+	m_peers_address.erase(peer_id);
+	recv_buf.erase(peer_id);
+	pending_sends.erase(peer_id);
+}
+
 bool Connection::deletePeer(session_t peer_id, bool timeout)
 {
 	cs << "Connection::deletePeer " << peer_id << ", " << timeout << std::endl;
@@ -58,10 +68,8 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 		m_peers.erase(node);
 	}
 
+	clearPeerState(peer_id);
 	putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
-	m_peers_address.erase(peer_id);
-	recv_buf.erase(peer_id);
-	pending_sends.erase(peer_id);
 	return true;
 }
 
@@ -107,7 +115,8 @@ void Connection::Connect(Address address)
 
 bool Connection::Connected()
 {
-	if (!m_peers.count(PEER_ID_SERVER))
+	if (!m_association_ready.load(std::memory_order_acquire) ||
+			!m_peers.count(PEER_ID_SERVER))
 		return false;
 
 	// TODO: why do we even need to know our peer id?

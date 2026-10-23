@@ -35,6 +35,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "util/container.h"
 #include "util/pointer.h"
 
+#include <atomic>
+#include <unordered_set>
 #include <mutex>
 #include <deque>
 
@@ -114,6 +116,7 @@ protected:
 	struct socket *getPeer(session_t peer_id);
 
 	virtual bool deletePeer(session_t peer_id, bool timeout = 0);
+	void clearPeerState(session_t peer_id);
 
 private:
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
@@ -194,6 +197,8 @@ private:
 		bool reliable;
 		size_t offset = 0;
 	};
+	std::atomic_bool m_association_ready{false};
+	std::unordered_set<session_t> m_established_peers;
 	std::unordered_map<session_t, std::deque<PendingSend>> pending_sends;
 	void flushPendingSends();
 	std::unordered_map<session_t, std::array<std::string, 10>> recv_buf;
