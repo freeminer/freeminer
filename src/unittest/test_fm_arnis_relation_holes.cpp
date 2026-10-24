@@ -100,11 +100,11 @@ public:
 		UASSERT(!holes->contains(15, 30));
 		UASSERT(holes->covers(15, 30));
 		const auto outer_fill = fills.get_or_compute(outer, std::nullopt);
-		const auto kept = arnis::without_holes(outer_fill, &*holes);
+		const auto kept = arnis::without_holes(*outer_fill, &*holes);
 		const std::pair<int, int> land_cell{5, 5};
 		const std::pair<int, int> hole_cell{20, 20};
-		UASSERT(std::find(kept->begin(), kept->end(), land_cell) != kept->end());
-		UASSERT(std::find(kept->begin(), kept->end(), hole_cell) == kept->end());
+		UASSERT(std::find(kept.begin(), kept.end(), land_cell) != kept.end());
+		UASSERT(std::find(kept.begin(), kept.end(), hole_cell) == kept.end());
 		UASSERT(!fills.holes_in(island, inners, std::nullopt).has_value());
 	}
 
