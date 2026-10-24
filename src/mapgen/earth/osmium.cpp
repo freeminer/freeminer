@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -47,6 +48,7 @@
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/element_processing/way_segments.h"
+#include "arnis-cpp/src/element_processing/relation_area.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -205,6 +207,78 @@ public:
 };
 #endif
 
+namespace
+{
+using MemberRole = arnis::ProcessedMemberRole;
+
+bool closed_ring(const arnis::ProcessedWay &way)
+{
+	if (way.nodes.size() < 3)
+		return false;
+	const auto &first = way.nodes.front();
+	const auto &last = way.nodes.back();
+	return first.id == last.id || (first.x == last.x && first.z == last.z);
+}
+
+std::optional<bool> ring_contains(
+		const std::vector<arnis::ProcessedNode> &ring, int x, int z)
+{
+	if (ring.size() < 3)
+		return std::nullopt;
+	bool inside = false;
+	for (std::size_t i = 0, j = ring.size() - 1; i < ring.size(); j = i++) {
+		const auto &a = ring[i];
+		const auto &b = ring[j];
+		const auto cross = (std::int64_t(b.x) - a.x) * (std::int64_t(z) - a.z) -
+						   (std::int64_t(b.z) - a.z) * (std::int64_t(x) - a.x);
+		if (cross == 0 && x >= std::min(a.x, b.x) && x <= std::max(a.x, b.x) &&
+				z >= std::min(a.z, b.z) && z <= std::max(a.z, b.z))
+			return std::nullopt;
+		if ((a.z > z) != (b.z > z) &&
+				double(x) < (double(b.x) - double(a.x)) * double(std::int64_t(z) - a.z) /
+											double(std::int64_t(b.z) - a.z) +
+									a.x)
+			inside = !inside;
+	}
+	return inside;
+}
+
+bool mostly_inside(const std::vector<arnis::ProcessedNode> &ring,
+		const std::vector<arnis::ProcessedNode> &around)
+{
+	if (ring.size() < 3 || around.size() < 3)
+		return false;
+	std::int32_t rx0 = ring.front().x, rx1 = rx0, rz0 = ring.front().z, rz1 = rz0;
+	std::int32_t ax0 = around.front().x, ax1 = ax0, az0 = around.front().z, az1 = az0;
+	for (const auto &node : ring) {
+		rx0 = std::min(rx0, node.x);
+		rx1 = std::max(rx1, node.x);
+		rz0 = std::min(rz0, node.z);
+		rz1 = std::max(rz1, node.z);
+	}
+	for (const auto &node : around) {
+		ax0 = std::min(ax0, node.x);
+		ax1 = std::max(ax1, node.x);
+		az0 = std::min(az0, node.z);
+		az1 = std::max(az1, node.z);
+	}
+	if (std::int64_t(rx0) < std::int64_t(ax0) - 1 ||
+			std::int64_t(rz0) < std::int64_t(az0) - 1 ||
+			std::int64_t(rx1) > std::int64_t(ax1) + 1 ||
+			std::int64_t(rz1) > std::int64_t(az1) + 1)
+		return false;
+	std::size_t inside = 0, outside = 0;
+	for (const auto &node : ring)
+		if (const auto hit = ring_contains(around, node.x, node.z)) {
+			if (*hit)
+				++inside;
+			else
+				++outside;
+		}
+	return inside > outside;
+}
+} // namespace
+
 class MyHandler : public osmium::handler::Handler
 {
 public:
@@ -218,11 +292,16 @@ public:
 	std::uint64_t ways_missing_nodes = 0;
 	std::unordered_map<std::uint64_t, arnis::tags_t> tagged_node_tags;
 	std::unordered_map<std::uint64_t, std::size_t> way_indices;
-	const std::unordered_set<std::uint64_t> *relation_way_ids{};
 	struct PendingRelation
 	{
+		struct Way
+		{
+			std::uint64_t id;
+			std::optional<arnis::ProcessedMemberRole> role;
+			bool blank_role;
+		};
 		arnis::ProcessedRelation relation;
-		std::vector<std::pair<std::uint64_t, arnis::ProcessedMemberRole>> ways;
+		std::vector<Way> ways;
 	};
 	std::vector<PendingRelation> pending_relations;
 
@@ -315,15 +394,10 @@ public:
 		// separate topology list only for ways where unresolved refs were dropped.
 		if (way_missing_nodes)
 			processed_way.source_node_refs = std::move(source_node_refs);
-		// Relation rings need the original geometry until they have been assembled.
-		// Standalone ways can discard out-of-bounds nodes immediately, rather than
-		// retaining every source vertex through relation processing.
-		if (!relation_way_ids || !relation_way_ids->contains(id)) {
-			const XZBBox bbox(
-					mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
-			processed_way.nodes = arnis::clipping::clip_way_to_bbox_owned(
-					std::move(processed_way.nodes), bbox);
-		}
+		// This handler populates an extract-wide cache shared by many mapchunks.
+		// Keep source geometry here: clipping to the first caller's mapchunk loses
+		// all the other chunks' buildings/roads before their views are constructed.
+		// The chunk element-selection pass below performs the bounded clipping.
 		way_indices.emplace(id, elements.size());
 		elements.emplace_back(std::move(processed_way));
 	}
@@ -388,9 +462,8 @@ public:
 				processed_role = arnis::ProcessedMemberRole::Part;
 			else if (role != "part" && building_relation)
 				processed_role = arnis::ProcessedMemberRole::Outer;
-			if (!processed_role)
-				continue;
-			pending.ways.emplace_back(way_id, *processed_role);
+			pending.ways.push_back({way_id, processed_role,
+					role.empty() && type == "multipolygon" && !building_relation});
 		}
 		if (!pending.ways.empty())
 			pending_relations.push_back(std::move(pending));
@@ -403,18 +476,108 @@ public:
 		// their own way below, just as the Rust parser creates a new Arc there.
 		std::unordered_map<std::uint64_t, std::shared_ptr<arnis::ProcessedWay>>
 				shared_relation_ways;
+		std::unordered_set<std::uint64_t> repeated_outers;
 		for (auto &pending : pending_relations) {
-			const XZBBox bbox(
-					mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
-			for (const auto &[way_id, role] : pending.ways) {
-				const auto found = way_indices.find(way_id);
+			std::vector<std::shared_ptr<arnis::ProcessedWay>> member_ways(
+					pending.ways.size());
+			std::vector<std::optional<MemberRole>> roles(pending.ways.size());
+			for (std::size_t i = 0; i < pending.ways.size(); ++i) {
+				const auto &pending_way = pending.ways[i];
+				const auto found = way_indices.find(pending_way.id);
 				if (found == way_indices.end())
 					continue;
-				auto [shared, inserted] = shared_relation_ways.try_emplace(way_id);
+				auto [shared, inserted] =
+						shared_relation_ways.try_emplace(pending_way.id);
 				if (inserted)
 					shared->second = std::make_shared<arnis::ProcessedWay>(
 							elements[found->second].as_way());
-				pending.relation.members.emplace_back(shared->second, role);
+				member_ways[i] = shared->second;
+				roles[i] = pending_way.role;
+			}
+			// Rust resolves a blank role geometrically for multipolygons: open
+			// pieces must join a ring end-to-end, while closed rings use nesting
+			// parity. Leave isolated blank ways out of the relation.
+			std::unordered_map<std::uint64_t, std::size_t> end_degree;
+			std::unordered_map<std::uint64_t, std::vector<MemberRole>>
+					explicit_roles_at_end;
+			for (std::size_t i = 0; i < member_ways.size(); ++i) {
+				if ((!roles[i] && !pending.ways[i].blank_role) || !member_ways[i] ||
+						member_ways[i]->nodes.size() < 2 || closed_ring(*member_ways[i]))
+					continue;
+				const auto &nodes = member_ways[i]->nodes;
+				for (const auto id : {nodes.front().id, nodes.back().id}) {
+					++end_degree[id];
+					if (roles[i] && *roles[i] != MemberRole::Part)
+						explicit_roles_at_end[id].push_back(*roles[i]);
+				}
+			}
+			for (std::size_t i = 0; i < member_ways.size(); ++i) {
+				if (!pending.ways[i].blank_role || !member_ways[i] ||
+						member_ways[i]->nodes.size() < 2 || closed_ring(*member_ways[i]))
+					continue;
+				const auto &nodes = member_ways[i]->nodes;
+				const auto a = nodes.front().id, b = nodes.back().id;
+				if (end_degree[a] != 2 || end_degree[b] != 2)
+					continue;
+				std::vector<MemberRole> adjacent;
+				for (const auto id : {a, b})
+					if (const auto it = explicit_roles_at_end.find(id);
+							it != explicit_roles_at_end.end())
+						adjacent.insert(
+								adjacent.end(), it->second.begin(), it->second.end());
+				roles[i] =
+						!adjacent.empty() && std::all_of(adjacent.begin(), adjacent.end(),
+													 [](MemberRole role) {
+														 return role == MemberRole::Inner;
+													 })
+								? MemberRole::Inner
+								: MemberRole::Outer;
+			}
+			std::vector<std::pair<std::optional<std::size_t>,
+					std::vector<arnis::ProcessedNode>>>
+					closed_containers;
+			std::vector<std::vector<arnis::ProcessedNode>> resolved_outer_pieces;
+			std::vector<std::vector<arnis::ProcessedNode>> resolved_inner_pieces;
+			for (std::size_t i = 0; i < member_ways.size(); ++i) {
+				if (!member_ways[i] || !roles[i] || *roles[i] == MemberRole::Part ||
+						closed_ring(*member_ways[i]))
+					continue;
+				auto &ring_sets = *roles[i] == MemberRole::Inner ? resolved_inner_pieces
+																 : resolved_outer_pieces;
+				ring_sets.push_back(member_ways[i]->nodes);
+			}
+			arnis::merge_way_segments(resolved_outer_pieces);
+			arnis::merge_way_segments(resolved_inner_pieces);
+			for (const auto *ring_set : {&resolved_outer_pieces, &resolved_inner_pieces})
+				for (const auto &ring : *ring_set)
+					if (ring.size() >= 3 &&
+							(ring.front().id == ring.back().id ||
+									(ring.front().x == ring.back().x &&
+											ring.front().z == ring.back().z)))
+						closed_containers.emplace_back(std::nullopt, ring);
+			for (std::size_t i = 0; i < member_ways.size(); ++i) {
+				if (!member_ways[i] || !closed_ring(*member_ways[i]) ||
+						(!roles[i] && !pending.ways[i].blank_role) ||
+						(roles[i] && *roles[i] == MemberRole::Part))
+					continue;
+				closed_containers.emplace_back(i, member_ways[i]->nodes);
+			}
+			for (std::size_t i = 0; i < member_ways.size(); ++i) {
+				if (!pending.ways[i].blank_role || !member_ways[i] ||
+						!closed_ring(*member_ways[i]))
+					continue;
+				std::size_t containing = 0;
+				for (const auto &[member_index, ring] : closed_containers) {
+					if (member_index == i)
+						continue;
+					if (mostly_inside(member_ways[i]->nodes, ring))
+						++containing;
+				}
+				roles[i] = containing % 2 ? MemberRole::Inner : MemberRole::Outer;
+			}
+			for (std::size_t i = 0; i < member_ways.size(); ++i) {
+				if (member_ways[i] && roles[i])
+					pending.relation.members.emplace_back(member_ways[i], *roles[i]);
 			}
 			const auto &tags = pending.relation.tags;
 			const auto man_made = tags.get("man_made");
@@ -429,8 +592,6 @@ public:
 					tags.get("waterway") == "dock";
 			const bool building_area =
 					tags.contains("building") || tags.contains("building:part");
-			const bool keep_unclipped =
-					water_area || (building_area && tags.get("type") == "multipolygon");
 			const auto is_open = [](const arnis::ProcessedWay &way) {
 				if (way.nodes.size() < 3)
 					return true;
@@ -480,8 +641,7 @@ public:
 								continue;
 							ring.push_back(first);
 						}
-						auto clipped = arnis::clipping::clip_way_to_bbox(ring, bbox);
-						if (clipped.size() < 4)
+						if (ring.size() < 4)
 							continue;
 						arnis::ProcessedWay way;
 						way.id = (std::uint64_t{1} << 61) |
@@ -490,48 +650,54 @@ public:
 								 (role == arnis::ProcessedMemberRole::Inner ? (1U << 15)
 																			: 0U) |
 								 (current_index & 0x7fff);
-						way.nodes = std::move(clipped);
+						way.nodes = std::move(ring);
 						assembled.push_back({std::move(way), role});
 					}
 				}
 				pending.relation.members = std::move(assembled);
-			} else if (!keep_unclipped) {
-				std::vector<arnis::ProcessedMember> clipped_members;
-				clipped_members.reserve(pending.relation.members.size());
-				for (auto &member : pending.relation.members) {
-					auto clipped =
-							arnis::clipping::clip_way_to_bbox(member.way->nodes, bbox);
-					if (clipped.empty())
+			}
+			const auto area_kind = arnis::element_processing::relation_area(tags);
+			const bool draws_area =
+					area_kind &&
+					arnis::element_processing::relation_area_draws_area(*area_kind, tags);
+			const bool has_inner = std::any_of(roles.begin(), roles.end(),
+					[](const auto &role) { return role && *role == MemberRole::Inner; });
+			if (draws_area && has_inner) {
+				auto relation_tag_matches = [&](const std::string &key,
+													const std::string &value) {
+					return key == "name" || key.ends_with("_name") || key == "wikidata" ||
+						   key == "area" || key == "type" || tags.get(key) == value;
+				};
+				for (std::size_t i = 0; i < member_ways.size(); ++i) {
+					if (!member_ways[i] || !roles[i] || *roles[i] != MemberRole::Outer ||
+							!closed_ring(*member_ways[i]))
 						continue;
-					member.way = std::make_shared<arnis::ProcessedWay>(*member.way);
-					member.way->nodes = std::move(clipped);
-					clipped_members.push_back(std::move(member));
+					const auto &way_tags = member_ways[i]->tags;
+					const bool has_extra_tag = std::any_of(
+							way_tags.begin(), way_tags.end(), [&](const auto &tag) {
+								return tag.first != "name" &&
+									   !tag.first.ends_with("_name") &&
+									   tag.first != "wikidata" && tag.first != "area" &&
+									   tag.first != "type";
+							});
+					if (has_extra_tag && std::all_of(way_tags.begin(), way_tags.end(),
+												 [&](const auto &tag) {
+													 return relation_tag_matches(
+															 tag.first, tag.second);
+												 }))
+						repeated_outers.insert(member_ways[i]->id);
 				}
-				pending.relation.members = std::move(clipped_members);
 			}
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
 		}
-		// Rust keeps unclipped geometry only in the relation-way store.  The
-		// immutable copies above are sufficient for assembled relation rings;
-		// standalone way elements should retain only their visible clipped nodes.
-		// Move their source vectors through the owned clipper so large OSM ways do
-		// not keep the out-of-bounds geometry resident for the whole generation.
-		const XZBBox bbox(mg->node_min.X, mg->node_min.Z, mg->node_max.X, mg->node_max.Z);
-		for (auto &element : elements) {
-			if (!element.is_way())
-				continue;
-			auto way = element.as_way();
-			if (!relation_way_ids || !relation_way_ids->contains(way.id))
-				continue;
-			way.nodes =
-					arnis::clipping::clip_way_to_bbox_owned(std::move(way.nodes), bbox);
-		}
-		elements.erase(std::remove_if(elements.begin(), elements.end(),
-							   [](const auto &element) {
-								   return element.is_way() &&
-										  element.as_way().nodes.empty();
-							   }),
+		elements.erase(
+				std::remove_if(elements.begin(), elements.end(),
+						[&](const auto &element) {
+							return element.is_way() &&
+								   (element.as_way().nodes.empty() ||
+										   repeated_outers.contains(element.as_way().id));
+						}),
 				elements.end());
 		if (unresolved_node_refs > 0) {
 			const double percent =
@@ -1196,31 +1362,10 @@ public:
 				cache_t node_cache{index};
 				node_cache.ignore_errors();
 				osmium::io::File file{path_name, "pbf"};
-				std::unordered_set<std::uint64_t> relation_way_ids;
 				{
-					// Collect relation member IDs alongside libosmium's multipolygon
-					// relation pass. This keeps original geometry only for member ways
-					// without adding another scan of the PBF.
-					struct RelationWayIdCollector : public osmium::handler::Handler
-					{
-						std::unordered_set<std::uint64_t> &ids;
-						explicit RelationWayIdCollector(
-								std::unordered_set<std::uint64_t> &relation_way_ids) :
-								ids(relation_way_ids)
-						{
-						}
-
-						void relation(const osmium::Relation &relation) const
-						{
-							for (const auto &member : relation.members())
-								if (member.type() == osmium::item_type::way)
-									ids.insert(static_cast<std::uint64_t>(member.ref()));
-						}
-					};
-					RelationWayIdCollector collector{relation_way_ids};
 					osmium::io::Reader relation_reader{
 							file, osmium::osm_entity_bits::relation};
-					osmium::apply(relation_reader, mp_manager, collector);
+					osmium::apply(relation_reader, mp_manager);
 					relation_reader.close();
 					mp_manager.prepare_for_lookup();
 				}
@@ -1243,7 +1388,6 @@ public:
 				}
 				MyHandler handler;
 				handler.mg = mg;
-				handler.relation_way_ids = &relation_way_ids;
 				osmium::apply(reader, node_cache, handler,
 						mp_manager.handler(
 								[&handler](const osmium::memory::Buffer &area_buffer) {
@@ -1375,6 +1519,36 @@ public:
 						if (clipped_way.nodes.empty())
 							continue;
 						chunk->elements.emplace_back(std::move(clipped_way));
+					} else if (source.is_relation()) {
+						auto relation = source.as_relation();
+						const auto &tags = relation.tags;
+						// Like Rust parsing, water and building multipolygons must keep
+						// their source arcs until the renderer joins them into rings.
+						const bool keep_unclipped =
+								tags.contains("water") ||
+								tags.get("natural") == "water" ||
+								tags.get("natural") == "bay" ||
+								tags.get("waterway") == "dock" ||
+								((tags.contains("building") ||
+										 tags.contains("building:part")) &&
+										tags.get("type") == "multipolygon");
+						if (!keep_unclipped) {
+							std::vector<arnis::ProcessedMember> members;
+							members.reserve(relation.members.size());
+							for (const auto &member : relation.members) {
+								auto nodes = arnis::clipping::clip_way_to_bbox(
+										member.way->nodes, context_bbox);
+								if (nodes.empty())
+									continue;
+								auto way = std::make_shared<arnis::ProcessedWay>(
+										*member.way);
+								way->nodes = std::move(nodes);
+								members.emplace_back(std::move(way), member.role);
+							}
+							relation.members = std::move(members);
+						}
+						if (!relation.members.empty())
+							chunk->elements.emplace_back(std::move(relation));
 					} else {
 						chunk->elements.push_back(source);
 					}

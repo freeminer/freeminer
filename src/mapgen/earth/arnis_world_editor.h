@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -51,6 +52,16 @@ namespace cars
 {
 class CarNetwork;
 }
+}
+
+namespace trains
+{
+class TrainRouteNetwork;
+}
+
+namespace fuel_stations
+{
+class FuelIndex;
 }
 
 namespace trees::mapped
@@ -106,19 +117,69 @@ extern Block ADV_PLATFORM_HIGH;
 
 namespace world_editor
 {
+using RailHeightKey = std::tuple<std::uint64_t, int, int>;
+using RailHeightMap = std::map<RailHeightKey, int>;
+
 // A “WorldEditor” that can set blocks in your map
 struct WorldEditor
 {
 	std::shared_ptr<const highways::SignalIndex> traffic_signal_index;
 	std::shared_ptr<const highways::cars::CarNetwork> car_network;
+	// Backend-neutral train routes and schedules, shared with tile workers for
+	// consumers that animate or otherwise interpret generated rail services.
+	std::shared_ptr<const trains::TrainRouteNetwork> train_network;
+	// Actual rail-node elevations keyed by OSM way and world XZ. The shared
+	// storage is written by parallel tile editors and read after generation.
+	std::shared_ptr<RailHeightMap> rail_heights;
+	std::shared_ptr<std::mutex> rail_heights_mutex;
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
+	std::shared_ptr<const CoordinateBitmap> clear_corridors;
+	std::shared_ptr<const fuel_stations::FuelIndex> fuel_index;
+	void enable_rail_height_collection()
+	{
+		rail_heights = std::make_shared<RailHeightMap>();
+		rail_heights_mutex = std::make_shared<std::mutex>();
+	}
+	void register_rail(std::uint64_t way, int x, int z, int y) const
+	{
+		if (!rail_heights || !rail_heights_mutex)
+			return;
+		std::lock_guard<std::mutex> lock(*rail_heights_mutex);
+		rail_heights->insert_or_assign(RailHeightKey{way, x, z}, y);
+	}
+	std::optional<int> rail_height(std::uint64_t way, int x, int z) const
+	{
+		if (!rail_heights || !rail_heights_mutex)
+			return std::nullopt;
+		std::lock_guard<std::mutex> lock(*rail_heights_mutex);
+		const auto it = rail_heights->find(RailHeightKey{way, x, z});
+		return it == rail_heights->end() ? std::nullopt : std::optional<int>(it->second);
+	}
+	RailHeightMap rail_height_snapshot() const
+	{
+		if (!rail_heights || !rail_heights_mutex)
+			return {};
+		std::lock_guard<std::mutex> lock(*rail_heights_mutex);
+		return *rail_heights;
+	}
 	void set_sealed_surface(std::shared_ptr<const CoordinateBitmap> mask)
 	{
 		sealed_surface = std::move(mask);
 	}
+	void set_clear_corridors(std::shared_ptr<const CoordinateBitmap> mask)
+	{
+		clear_corridors = std::move(mask);
+	}
+	void set_fuel_index(std::shared_ptr<const fuel_stations::FuelIndex> index)
+	{
+		fuel_index = std::move(index);
+	}
+	bool in_clear_corridor(int x, int z) const;
 	void release_sealed_surface()
 	{
 		sealed_surface.reset();
+		clear_corridors.reset();
+		fuel_index.reset();
 		mapped_trunks.reset();
 	}
 	bool under_mapped_crown(int x, int z) const;
@@ -844,6 +905,7 @@ struct WorldEditor
 	std::pair<int, int> get_max_coords() const;
 	int get_absolute_y(int x, int y, int z) const;
 	int get_ground_level(int x, int z) const;
+	std::optional<int> road_surface_y(int x, int z) const;
 	std::optional<int> terrain_level(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
 	RoadSurfaceOverrides take_road_surface_overrides();
