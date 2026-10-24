@@ -99,8 +99,8 @@ public:
 		UASSERT(!holes->contains(5, 5));
 		UASSERT(!holes->contains(15, 30));
 		UASSERT(holes->covers(15, 30));
-		const auto kept =
-				arnis::without_holes(fills.get_or_compute(outer, std::nullopt), &*holes);
+		const auto outer_fill = fills.get_or_compute(outer, std::nullopt);
+		const auto kept = arnis::without_holes(outer_fill, &*holes);
 		const std::pair<int, int> land_cell{5, 5};
 		const std::pair<int, int> hole_cell{20, 20};
 		UASSERT(std::find(kept->begin(), kept->end(), land_cell) != kept->end());
