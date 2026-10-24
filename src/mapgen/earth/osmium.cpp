@@ -732,6 +732,7 @@ arnis::Args earth_arnis_args()
 	arnis.interior = true;
 	arnis.roof = true;
 	arnis.signage = ::arnis::SignageLevel::Full;
+	arnis.moving_vehicles = true;
 	arnis.moving_cars = true;
 	arnis.traffic_lights = true;
 	arnis.fillground = true;
