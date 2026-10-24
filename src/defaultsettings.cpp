@@ -258,7 +258,7 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("remote_proto", "");
 	settings->setDefault("timeout_mul", android ? "5" : "1");
 
-	settings->setDefault("sctp_peer_timeout", "60");
+	settings->setDefault("sctp_peer_timeout", "30");
 	// Optional browser/reverse-proxy endpoint for SCTP over WebSocket.
 	settings->setDefault("ws_sctp_url", "");
 
