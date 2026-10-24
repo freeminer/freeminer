@@ -435,7 +435,10 @@ mg_math () string {"generator":"sphere"}
 #    Disconnect an established SCTP peer after this many seconds without received
 #    data or control traffic, including heartbeat acknowledgements. Local send
 #    attempts do not extend the deadline. Applies to clients and servers.
-#    Zero disables this timeout. Network changes must recover within this period.
+#    When enabled, this deadline replaces association retry-count expiry;
+#    individual paths still fail over normally. Configure both endpoints.
+#    Zero restores SCTP retry-count expiry. Network changes must recover within
+#    the configured period.
 #    Read when the connection is created; restart/reconnect after changing it.
 sctp_peer_timeout (SCTP peer response timeout) int 60 0 86400
 

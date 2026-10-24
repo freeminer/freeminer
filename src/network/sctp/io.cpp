@@ -553,6 +553,8 @@ void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 	usrsctp_set_non_blocking(sock, 1);
 	configureInterleaving(sock);
 
+	configurePeerTimeout(sock, m_peer_timeout_ms != 0);
+
 	// usrsctp is shared with AF_CONN transports: configure capabilities per socket.
 	sctp_assoc_value capability = {};
 	capability.assoc_id = SCTP_FUTURE_ASSOC;
