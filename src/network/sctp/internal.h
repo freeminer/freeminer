@@ -177,6 +177,11 @@ inline void configureDefaults()
 	configure("mobility", usrsctp_sysctl_set_sctp_mobility_base(1));
 	configure("fast handoff", usrsctp_sysctl_set_sctp_mobility_fasthandoff(1));
 	configure("NAT friendly INIT", usrsctp_sysctl_set_sctp_inits_include_nat_friendly(1));
+	// After NAT rebinding, data can arrive before the authenticated ASCONF that
+	// identifies its new source. Do not kill the sender with a reflected OOTB
+	// ABORT while that update is in flight. Unknown packets are still dropped;
+	// AUTH validation and ABORT processing for known associations are unchanged.
+	configure("out-of-the-blue packet policy", usrsctp_sysctl_set_sctp_blackhole(2));
 #endif
 
 	// CMT sends concurrently over paths; normal failover and ASCONF remain
@@ -196,6 +201,22 @@ inline void configureDefaults()
 	configure(
 			"delayed SACK timer", usrsctp_sysctl_set_sctp_delayed_sack_time_default(20));
 	configure("SACK frequency", usrsctp_sysctl_set_sctp_sack_freq_default(2));
+}
+
+inline void configurePeerTimeout(struct socket *sock, bool enabled)
+{
+	if (enabled) {
+		// Several paths/control timers can consume the default ten retries in
+		// seconds during handoff. Let checkPeerTimeouts() enforce the configured
+		// receive deadline instead. Path failure detection and INIT retries keep
+		// their normal limits, so alternate paths can still take over promptly.
+		sctp_assocparams association = {};
+		association.sasoc_assoc_id = SCTP_FUTURE_ASSOC;
+		association.sasoc_asocmaxrxt = UINT16_MAX;
+		if (usrsctp_setsockopt(sock, IPPROTO_SCTP, SCTP_ASSOCINFO, &association,
+					sizeof(association)) < 0)
+			throw ConnectionException("Cannot configure SCTP association retry limit");
+	}
 }
 
 inline void configureInterleaving(struct socket *sock)
