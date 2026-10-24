@@ -666,17 +666,13 @@ int Ground::base_level(int fallback) const
 }
 std::pair<std::size_t, std::size_t> Ground::world_dims() const
 {
-	// Match Rust Ground::world_dims: elevation dimensions win when a sampled
-	// elevation raster is installed; otherwise use the independent flat-mode
-	// frame. Companion grids are only a fallback for legacy callers that have
-	// not supplied either coordinate frame explicitly.
+	// Match Rust Ground::world_dims exactly: an installed elevation raster owns
+	// the coordinate frame; flat terrain uses only the explicitly stored frame.
+	// Land-cover and canopy rasters are sampled within that frame and must not
+	// silently redefine it when their own resolution differs.
 	if (elevation_world_width > 0 && elevation_world_height > 0)
 		return {elevation_world_width, elevation_world_height};
-	if (world_width > 0 && world_height > 0)
-		return {world_width, world_height};
-	if (has_land_cover())
-		return {land_cover_world_width, land_cover_world_height};
-	return {canopy_world_width, canopy_world_height};
+	return {world_width, world_height};
 }
 void Ground::set_canopy_data(
 		canopy::CanopyData data, std::size_t world_width, std::size_t world_height)

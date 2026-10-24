@@ -4,7 +4,7 @@
 
 #include "config.h"
 #include "network/networkexceptions.h"
-#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
+#if USE_WEBSOCKET
 
 #include <iomanip>
 #include <cerrno>
@@ -1284,13 +1284,15 @@ ConnectionEventPtr ConnectionEvent::bindFailed()
 	Connection
 */
 
-Connection::Connection(u32 max_packet_size, float timeout,
-		bool ipv6, PeerHandler *peerhandler) :
-	m_udpSocket(ipv6),
-	m_protocol_id(PROTOCOL_ID),
-	m_sendThread(new ConnectionSendThread(max_packet_size, timeout)),
-	m_receiveThread(new ConnectionReceiveThread()),
-	m_bc_peerhandler(peerhandler)
+Connection::Connection(
+		u32 max_packet_size, float timeout, bool ipv6, PeerHandler *peerhandler) :
+		m_udpSocket(ipv6), m_protocol_id(PROTOCOL_ID),
+		// The envelope stores the complete game datagram length in 16 bits.
+		// Clamp before fragmentation, including for callers requesting larger packets.
+		m_sendThread(new ConnectionSendThread(
+				std::min<u32>(max_packet_size, ws_transport::Datagram::MAX_PAYLOAD_SIZE),
+				timeout)),
+		m_receiveThread(new ConnectionReceiveThread()), m_bc_peerhandler(peerhandler)
 
 {
 	/* Amount of time Receive() will wait for data, this is entirely different
@@ -1303,7 +1305,6 @@ Connection::Connection(u32 max_packet_size, float timeout,
 	m_sendThread->start();
 	m_receiveThread->start();
 }
-
 
 Connection::~Connection()
 {

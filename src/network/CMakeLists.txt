@@ -11,8 +11,7 @@ set(common_network_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/sctp/io.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sctp/send.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/impl.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/peers.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/websocket.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ws/transport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/wssocket.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/impl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws/threads.cpp

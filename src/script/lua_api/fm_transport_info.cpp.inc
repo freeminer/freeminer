@@ -10,7 +10,7 @@ lua_setfield(L, -2, "mt");
 lua_pushboolean(L, true);
 lua_setfield(L, -2, "enet");
 #endif
-#if USE_SCTP
+#if USE_SCTP && !defined(__EMSCRIPTEN__)
 lua_pushboolean(L, true);
 lua_setfield(L, -2, "sctp");
 #endif

@@ -13,14 +13,14 @@ std::string_view getProtocolName(IConnection &connection, session_t peer_id)
 #else
 	(void)connection;
 	(void)peer_id;
-#if USE_ENET
-	return "enet";
-#elif USE_SCTP
-	return "sctp";
+#if USE_WEBSOCKET
+	return "ws";
 #elif USE_WEBSOCKET_SCTP
 	return "ws_sctp";
-#elif USE_WEBSOCKET
-	return "ws";
+#elif USE_SCTP
+	return "sctp";
+#elif USE_ENET
+	return "enet";
 #elif MINETEST_TRANSPORT
 	return "mt";
 #else

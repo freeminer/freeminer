@@ -49,11 +49,11 @@ the 24-byte UDP envelope. Proxies returning `ADDR ...` keep using those protocol
 
 ## Protocol tests
 
-Build `tests/fm_proxy_server.cpp` as a standalone executable with the same Boost
+Build `tests/proxy_server.cpp` as a standalone executable with the same Boost
 and WebSocket++ include paths as the server, C++20, and pthread support. Run:
 
 ```
-python3 src/network/ws/tests/fm_proxy_test.py /path/to/fm_proxy_server
+python3 src/network/ws/tests/proxy_test.py /path/to/proxy_server
 ```
 
 The tests require Python's `websockets` package and use local DNS and loopback
