@@ -440,7 +440,7 @@ mg_math () string {"generator":"sphere"}
 #    Zero restores SCTP retry-count expiry. Network changes must recover within
 #    the configured period.
 #    Read when the connection is created; restart/reconnect after changing it.
-sctp_peer_timeout (SCTP peer response timeout) int 60 0 86400
+sctp_peer_timeout (SCTP peer response timeout) int 30 0 86400
 
 # WebSocket carrier endpoint.
 #    Optional full ws:// or wss:// URL for SCTP over WebSocket.
