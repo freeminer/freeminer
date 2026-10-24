@@ -27,9 +27,15 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 */
 
 #include "config.h"
-#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
+#if USE_WEBSOCKET
 
 #include "wssocket.h"
+#include "endpoint.h"
+#include "transport.h"
+#include "http.h"
+#if USE_SSL
+#include "tls.h"
+#endif
 #include "constants.h"
 #include "filesys.h"
 #include "log.h"
@@ -78,90 +84,7 @@ auto &cs = tracestream; // remove after debug
 
 void WSSocket::on_http(const websocketpp::connection_hdl &hdl)
 {
-	ws_server_t::connection_ptr con = server.get_con_from_hdl(hdl);
-
-	std::string res = con->get_request_body();
-
-	std::stringstream ss;
-	ss << "got HTTP request with " << res.size() << " bytes of body data.";
-	cs << ss.str() << '\n';
-	std::string http_root = porting::path_share + DIR_DELIM + "http_root" + DIR_DELIM;
-	g_settings->getNoEx("http_root", http_root);
-
-	if (con->get_request().get_method() == "GET") {
-
-		if (con->get_request().get_uri().find("..") != std::string::npos) {
-			con->set_status(websocketpp::http::status_code::bad_request);
-			return;
-		}
-
-		std::string path_serve;
-
-		auto uri = con->get_request().get_uri();
-		if (const auto f = uri.find('?'); f != std::string::npos) {
-			uri.resize(f);
-		}
-		if (uri == "/") {
-			uri = "index.html";
-		}
-
-		if (uri == "/favicon.ico") {
-			path_serve = porting::path_share + DIR_DELIM + "misc" + DIR_DELIM +
-						 PROJECT_NAME + ".ico";
-			con->append_header("Content-Type", "image/x-icon");
-		} else if (!uri.empty()) {
-			path_serve = http_root + uri;
-			if (uri.ends_with(".wasm")) {
-				con->append_header("Content-Type", "application/wasm");
-			} else if (uri.ends_with(".js")) {
-				con->append_header("Content-Type", "application/javascript");
-			}
-		}
-
-		std::string body;
-		if (uri == "/status.json") {
-			path_serve = {};
-			body = ServerList::last_status;
-			con->append_header("Content-Type", "application/json; charset=utf-8");
-		}
-
-		bool defered = false;
-		if (!path_serve.empty() && body.empty()) {
-			con->append_header("Access-Control-Allow-Origin", "*");
-			con->append_header("Cross-Origin-Embedder-Policy", "require-corp");
-			con->append_header("Cross-Origin-Opener-Policy", "same-origin");
-			con->defer_http_response();
-			defered = true;
-			std::ifstream t(path_serve);
-			std::stringstream buffer;
-			buffer << t.rdbuf();
-			body = buffer.str();
-		}
-
-		actionstream << con->get_request().get_version() << " "
-					 << con->get_request().get_method() << " "
-					 << con->get_request().get_uri()
-					 //<< " " << res.size()
-					 << " " << body.size() << "\n";
-
-		if (!body.empty()) {
-			con->set_body(std::move(body));
-			con->set_status(websocketpp::http::status_code::ok);
-			websocketpp::lib::error_code ec;
-			if (defered) {
-				con->send_http_response(ec);
-				if (ec.value())
-					errorstream << "http send error:" << ec.category().name() << " "
-								<< ec.value() << " " << ec.message() << "\n";
-			}
-			// TODO: serve log here?
-			return;
-		}
-	}
-	// DUMP(con->get_request().get_method(), con->get_request().get_version(), con->get_request().get_uri(), con->get_request().get_headers(), res);
-
-	con->set_status(websocketpp::http::status_code::not_found);
-	con->set_body(ss.str());
+	ws_transport::serveHttp(server, hdl);
 }
 
 void WSSocket::on_fail(const websocketpp::connection_hdl &hdl)
@@ -210,7 +133,10 @@ void WSSocket::on_client_open(const websocketpp::connection_hdl &hdl)
 void WSSocket::on_client_fail(const websocketpp::connection_hdl &hdl)
 {
 	auto con = client.get_con_from_hdl(hdl);
-	errorstream << "WS connection failed: " << con->get_ec().message() << '\n';
+	errorstream << "WS connection failed: " << con->get_ec().message();
+	if (const auto status = con->get_response_code(); status != 0)
+		errorstream << " (HTTP " << status << " " << con->get_response_msg() << ")";
+	errorstream << '\n';
 	m_client_bound = false;
 	m_client_pending.clear();
 	m_client_pending_bytes = 0;
@@ -261,7 +187,7 @@ void WSSocket::on_client_message(
 			errorstream << "WS datagram handshake failed: " << ec.message() << '\n';
 		return;
 	}
-	fm_ws::Datagram packet;
+	ws_transport::Datagram packet;
 	if (!m_client_bound || !packet.parse(data)) {
 		errorstream << "WS server returned an invalid datagram\n";
 		return;
@@ -282,9 +208,9 @@ void WSSocket::sendClientPacket(const std::string &payload)
 	}
 	// This listener's game route is also available through its synthetic address,
 	// including when the public WebSocket address is translated by NAT.
-	const fm_ws::tcp::endpoint destination(
-			fm_ws::asio::ip::make_address("10.0.0.1"), client_address.getPort());
-	const auto data = fm_ws::Datagram::encode(destination, payload);
+	const ws_transport::tcp::endpoint destination(
+			ws_transport::asio::ip::make_address("10.0.0.1"), client_address.getPort());
+	const auto data = ws_transport::Datagram::encode(destination, payload);
 	if (data.empty())
 		return;
 	websocketpp::lib::error_code ec;
@@ -325,29 +251,8 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 {
 	setTimeoutMs(0);
 
-	/*	if (socket_enable_debug_output /*con_debug* /) {
-		server.set_error_channels(websocketpp::log::elevel::all);
-		server.set_access_channels(websocketpp::log::alevel::all ^
-								   websocketpp::log::alevel::frame_payload ^
-								   websocketpp::log::alevel::frame_header);
+	ws_transport::initServer(server);
 
-	} else 
-	*/
-	{
-		server.set_error_channels(websocketpp::log::elevel::none);
-		server.set_access_channels(websocketpp::log::alevel::none);
-	}
-	const auto timeouts = 30 * 1000; // WebSocket++ expects milliseconds.
-	server.set_open_handshake_timeout(timeouts);
-	server.set_close_handshake_timeout(timeouts);
-	server.set_pong_timeout(timeouts);
-	server.set_listen_backlog(100);
-	server.set_max_http_body_size(500000000);
-	server.set_max_message_size(500000000);
-
-	server.init_asio();
-
-	server.set_reuse_addr(true);
 	server.set_open_handler(websocketpp::lib::bind(
 			&WSSocket::on_open, this, websocketpp::lib::placeholders::_1));
 	server.set_close_handler(websocketpp::lib::bind(
@@ -368,63 +273,13 @@ bool WSSocket::init(bool ipv6, bool noExceptions)
 	return true;
 }
 #if USE_SSL
-WSSocket::context_ptr WSSocket::on_tls_init(const websocketpp::connection_hdl & /* hdl */)
+WSSocket::context_ptr WSSocket::on_tls_init(const websocketpp::connection_hdl &)
 {
-	namespace asio = websocketpp::lib::asio;
-	context_ptr ctx = websocketpp::lib::make_shared<asio::ssl::context>(
-			// asio::ssl::context::tlsv13
-			asio::ssl::context::tlsv13_server);
-	try {
-		ctx->set_options(asio::ssl::context::default_workarounds |
-						 asio::ssl::context::no_sslv2 | asio::ssl::context::no_sslv3 |
-						 asio::ssl::context::single_dh_use);
-		ctx->set_password_callback(std::bind([&]() {
-			return ""; /*GetSSLPassword();*/
-		}));
-
-		std::string chain = "fullchain.pem";
-		std::string key = "privkey.pem";
-		g_settings->getNoEx("https_chain", chain);
-		g_settings->getNoEx("https_key", key);
-		ctx->use_certificate_chain_file(chain /*GetSSLCertificateChain()*/);
-		ctx->use_private_key_file(key /*GetSSLPrivateKey()*/, asio::ssl::context::pem);
-		std::string ciphers; // = GetSSLCiphers();
-		if (ciphers.empty())
-			ciphers = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:"
-					  "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:"
-					  "DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+"
-					  "AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:"
-					  "ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-"
-					  "AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-"
-					  "SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-"
-					  "AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:"
-					  "DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!"
-					  "EXPORT:!DES:!RC4:!3DES:!MD5:!PSK";
-
-		if (SSL_CTX_set_cipher_list(ctx->native_handle(), ciphers.c_str()) != 1) {
-			warningstream << "Error setting cipher list";
-		}
-	} catch (const std::exception &e) {
-		errorstream << "Exception: " << e.what();
-	}
-	return ctx;
+	return ws_transport::serverTlsContext();
 }
-#endif
-
-#if USE_SSL
-WSSocket::context_ptr WSSocket::on_client_tls_init(
-		const websocketpp::connection_hdl & /* hdl */)
+WSSocket::context_ptr WSSocket::on_client_tls_init(const websocketpp::connection_hdl &)
 {
-	namespace asio = websocketpp::lib::asio;
-	context_ptr ctx = websocketpp::lib::make_shared<asio::ssl::context>(
-			asio::ssl::context::tlsv13_client);
-	try {
-		ctx->set_options(asio::ssl::context::default_workarounds |
-						 asio::ssl::context::no_sslv2 | asio::ssl::context::no_sslv3);
-	} catch (const std::exception &e) {
-		errorstream << "Client TLS init exception: " << e.what();
-	}
-	return ctx;
+	return ws_transport::clientTlsContext();
 }
 #endif
 
@@ -445,10 +300,7 @@ WSSocket::~WSSocket()
 bool WSSocket::Connect(const Address &addr)
 {
 	try {
-		// Initialize client
-		client.set_access_channels(websocketpp::log::alevel::none);
-		client.set_error_channels(websocketpp::log::elevel::none);
-		client.init_asio();
+		ws_transport::initEndpoint(client);
 
 		// Set up client handlers
 		client.set_open_handler(websocketpp::lib::bind(
@@ -466,15 +318,7 @@ bool WSSocket::Connect(const Address &addr)
 				&WSSocket::on_client_tls_init, this, websocketpp::lib::placeholders::_1));
 #endif
 
-		// URI authority syntax requires IPv6 literals to be enclosed in brackets.
-		const std::string host = addr.isIPv6() ? "[" + addr.serializeString() + "]"
-											   : addr.serializeString();
-#if USE_SSL
-		const std::string scheme = "wss://";
-#else
-		const std::string scheme = "ws://";
-#endif
-		std::string uri = scheme + host + ":" + std::to_string(addr.getPort());
+		const std::string uri = ws_transport::makeUri(addr, USE_SSL);
 
 		// Create connection
 		websocketpp::lib::error_code ec;
@@ -531,13 +375,13 @@ void WSSocket::Bind(Address addr)
 	// fm: include the advertised addresses, which may differ behind IPv4 NAT
 	std::string advertised_host;
 	g_settings->getNoEx("server_address", advertised_host);
-	m_game_router = std::make_shared<fm_ws::GameRouter>(server.get_io_context());
+	m_game_router = std::make_shared<ws_transport::GameRouter>(server.get_io_context());
 	m_game_router->resolve(advertised_host);
-	m_datagrams = std::make_unique<fm_ws::DatagramService<ws_server_t>>(
+	m_datagrams = std::make_unique<ws_transport::DatagramService<ws_server_t>>(
 			server, m_game_router, [this](auto hdl, const std::string &data) {
 				// Keep real remote addresses in the game queue for bans and logs;
 				// the private assignment is only an address on the virtual network.
-				fm_ws::Error ec;
+				ws_transport::Error ec;
 				const auto remote =
 						server.get_con_from_hdl(hdl)->get_raw_socket().remote_endpoint(
 								ec);
@@ -570,46 +414,32 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 		return;
 	}
 
-	websocketpp::connection_hdl hdl;
-	bool found = false;
-
-	// Check if this is a client connection
-	if (ws_client && client_address == destination) {
-		hdl = client_hdl;
-		found = true;
-	} else {
-		// Check server connections
-		for (const auto &[h, addr] : hdls) {
-			if (addr == destination) {
-				hdl = h;
-				found = true;
-				break;
-			}
-		}
-	}
-
-	if (!found) {
-		verbosestream << " Send to " << destination << " not found in peers" << '\n';
+	if (size < 0 ||
+			static_cast<size_t>(size) > ws_transport::Datagram::MAX_PAYLOAD_SIZE) {
+		errorstream << "WS datagram exceeds envelope limit: " << size << '\n';
 		return;
 	}
-
-	websocketpp::lib::error_code ec;
-	if (ws_client && client_address == destination) {
+	std::string payload(static_cast<const char *>(data), size);
+	if (ws_client) {
+		if (client_address != destination)
+			return;
 		boost::asio::post(client.get_io_context(),
-				[this, payload = std::string(static_cast<const char *>(data), size)]() {
-					sendClientPacket(payload);
+				[this, payload = std::move(payload)]() { sendClientPacket(payload); });
+	} else if (ws_serve) {
+		// Session and handle maps belong to the WebSocket event loop. The game
+		// send thread must not read them while receive/close handlers modify them.
+		boost::asio::post(server.get_io_context(),
+				[this, destination, payload = std::move(payload)]() {
+					if (!m_datagrams)
+						return;
+					for (const auto &[hdl, address] : hdls) {
+						if (address == destination) {
+							m_datagrams->send_game(hdl, payload);
+							return;
+						}
+					}
 				});
-	} else {
-		if (m_datagrams)
-			m_datagrams->send_game(
-					hdl, std::string(static_cast<const char *>(data), size));
 	}
-
-	if (ec.value()) {
-		verbosestream << "WS Send failed " << ec.value() << ":" << ec.message() << '\n';
-		// Maybe delete peer here?
-	}
-	// Server.run_one();
 }
 
 int WSSocket::Receive(Address &sender, void *data, int size)

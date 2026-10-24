@@ -127,6 +127,8 @@
 
 #    Minimum wanted FPS.
 #    The amount of rendered stuff is dynamically set according to this. and viewing range min and max.
+# fm:
+
 wanted_fps (Wanted FPS) int 30
 
 # Start optimizing far blocks, in blocks (16 nodes). good values 2 - 5 . 0 = disable
@@ -143,7 +145,6 @@ farmesh_quality () int 2
 #    down to two nodes. Zero disables zoom refinement. The preload margin uses
 #    fewer levels. Higher limits increase mesh work and memory use at extreme zoom.
 farmesh_zoom_levels (Maximum extra farmesh zoom detail levels) int 7 0 7
-# ===
 
 # Farmesh map data from server
 farmesh_server () bool true
@@ -437,6 +438,13 @@ mg_math () string {"generator":"sphere"}
 #    Zero disables this timeout. Network changes must recover within this period.
 #    Read when the connection is created; restart/reconnect after changing it.
 sctp_peer_timeout (SCTP peer response timeout) int 60 0 86400
+
+# WebSocket carrier endpoint.
+#    Optional full ws:// or wss:// URL for SCTP over WebSocket.
+#    Useful for browser TLS certificates and reverse-proxy paths.
+#    Empty uses the selected server address and port. HTTPS pages use wss://.
+ws_sctp_url (SCTP WebSocket URL override) string
+# ===
 
 
 

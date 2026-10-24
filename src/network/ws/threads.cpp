@@ -5,7 +5,7 @@
 
 #include "config.h"
 #include "network/networkexceptions.h"
-#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
+#if USE_WEBSOCKET
 
 #include "network/ws/threads.h"
 #include "log.h"

@@ -1,381 +1,265 @@
 /*
 Copyright (C) 2023 proller <proler@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
 */
-
 #include "network/ws_sctp/internal.h"
-
 #if USE_WEBSOCKET_SCTP
+#include <atomic>
+#include <mutex>
+#include <unordered_map>
 
 namespace con_ws_sctp
 {
-
-////////////////////////////////////////////////////////////////////////////////
-///////////////// Custom Config for debugging custom policies //////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-struct debug_custom : public websocketpp::config::debug_asio
+namespace
 {
-	typedef debug_custom type;
-	typedef debug_asio base;
-
-	typedef base::concurrency_type concurrency_type;
-
-	typedef base::request_type request_type;
-	typedef base::response_type response_type;
-
-	typedef base::message_type message_type;
-	typedef base::con_msg_manager_type con_msg_manager_type;
-	typedef base::endpoint_msg_manager_type endpoint_msg_manager_type;
-
-	/// Custom Logging policies
-	/*typedef websocketpp::log::syslog<concurrency_type,
-		websocketpp::log::elevel> elog_type;
-	typedef websocketpp::log::syslog<concurrency_type,
-		websocketpp::log::alevel> alog_type;
-	*/
-	typedef base::alog_type alog_type;
-	typedef base::elog_type elog_type;
-
-	typedef base::rng_type rng_type;
-
-	struct transport_config : public base::transport_config
-	{
-		typedef type::concurrency_type concurrency_type;
-		typedef type::alog_type alog_type;
-		typedef type::elog_type elog_type;
-		typedef type::request_type request_type;
-		typedef type::response_type response_type;
-		typedef websocketpp::transport::asio::basic_socket::endpoint socket_type;
-	};
-
-	typedef websocketpp::transport::asio::endpoint<transport_config> transport_type;
-
-	static const long timeout_open_handshake = 0;
+struct Output
+{
+	std::weak_ptr<ws_transport::Transport> transport;
+	ws_transport::Transport::Id websocket;
 };
-
-////////////////////////////////////////////////////////////////////////////////
-
-typedef websocketpp::server<debug_custom> server;
-
-static constexpr long WS_SCTP_TIMEOUT_MS = 5000;
-
-static std::string makeWebSocketUri(const std::string &scheme, const Address &address)
+std::mutex output_mutex;
+std::unordered_map<void *, Output> outputs;
+std::atomic<uintptr_t> next_address{1};
+void *registerOutput(const std::shared_ptr<ws_transport::Transport> &transport,
+		ws_transport::Transport::Id websocket)
 {
-	std::string host = address.serializeString();
-	if (address.isIPv6()) {
-		std::string escaped_host;
-		escaped_host.reserve(host.size());
-		for (char c : host) {
-			if (c == '%')
-				escaped_host += "%25";
-			else
-				escaped_host += c;
-		}
-		host = "[" + escaped_host + "]";
+	// Never recycle opaque AF_CONN addresses: late stack callbacks cannot target
+	// a newer connection, and no dangling application pointer is dereferenced.
+	void *address = reinterpret_cast<void *>(next_address.fetch_add(1));
+	std::lock_guard lock(output_mutex);
+	outputs.emplace(address, Output{transport, websocket});
+	return address;
+}
+}
+int connectionOutput(void *address, void *data, size_t size, uint8_t, uint8_t)
+{
+	std::shared_ptr<ws_transport::Transport> transport;
+	ws_transport::Transport::Id websocket;
+	{
+		std::lock_guard lock(output_mutex);
+		auto it = outputs.find(address);
+		if (it == outputs.end())
+			return EINVAL;
+		transport = it->second.transport.lock();
+		websocket = it->second.websocket;
 	}
-	return scheme + host + ":" + std::to_string(address.getPort());
+	return transport ? transport->send(websocket, data, size) : EINVAL;
 }
-
-void debug_printf(const char *format, ...)
-{
-	printf("WS_DEBUG: ");
-	va_list ap;
-	va_start(ap, format);
-	vprintf(format, ap);
-	va_end(ap);
-}
-
-// int Connection::
-static int sctp_send_cb(struct socket *sock, uint32_t sb_free, void *ulp_info)
-{
-	//DUMP((long)sock, sb_free, (long)ulp_info);
-	return 0;
-}
-
-static int conn_output(void *addr, void *buf, size_t length, uint8_t tos, uint8_t set_df)
-{
-	//DUMP((long)addr, (long)buf, length, tos, set_df);
-
-	Connection::ulp_info_holder *ulp_info = (Connection::ulp_info_holder *)addr;
-	if (!ulp_info || !ulp_info->active.load(std::memory_order_acquire))
-		return EINVAL;
-	Connection *self = ulp_info->self.load(std::memory_order_acquire);
-	if (!self)
-		return EINVAL;
-
-	websocketpp::lib::error_code ec;
-	if (ulp_info->client) {
-		self->Client.send(ulp_info->hdl, buf, length,
-				websocketpp::frame::opcode::value::binary, ec);
-	} else {
-		self->Server.send(ulp_info->hdl, buf, length,
-				websocketpp::frame::opcode::value::binary, ec);
-	}
-	return ec ? ec.value() : 0;
-}
-
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-		PeerHandler *peerhandler) :
+		con::PeerHandler *peerhandler) :
 		con_sctp::Connection(max_packet_size, timeout, ipv6, peerhandler, false)
 {
 	(void)protocol_id;
-	ws_ipv6 = ipv6;
-
+	m_ipv6 = ipv6;
 	domain = AF_CONN;
-	// send_cb = Connection::sctp_send_cb;
-	server_send_cb = client_send_cb = sctp_send_cb;
-	//DUMP((long)server_send_cb);
-	sctp_conn_output = conn_output;
-	//DUMP((long)sctp_conn_output);
-	sctp_setup(0);
-
-	{
-
-		if (0 /*con_debug*/) {
-
-			Server.set_error_channels(websocketpp::log::elevel::all);
-			Server.set_access_channels(websocketpp::log::alevel::all ^
-									   websocketpp::log::alevel::frame_payload ^
-									   websocketpp::log::alevel::frame_header);
-
-		} else {
-			Server.set_error_channels(websocketpp::log::elevel::none);
-			Server.set_access_channels(websocketpp::log::alevel::none);
-		}
-		Server.set_open_handshake_timeout(WS_SCTP_TIMEOUT_MS);
-		Server.set_close_handshake_timeout(WS_SCTP_TIMEOUT_MS);
-		Server.set_pong_timeout(WS_SCTP_TIMEOUT_MS);
-		Server.set_listen_backlog(100);
-		Server.set_max_http_body_size(500000000);
-		Server.set_max_message_size(500000000);
-		Server.init_asio();
-
-		Server.set_reuse_addr(true);
-		Server.set_open_handler(websocketpp::lib::bind(
-				&Connection::on_open, this, websocketpp::lib::placeholders::_1));
-		Server.set_close_handler(websocketpp::lib::bind(
-				&Connection::on_close, this, websocketpp::lib::placeholders::_1));
-		Server.set_message_handler(websocketpp::lib::bind(&Connection::on_message, this,
-				websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
-		// Server.set_message_handler(websocketpp::lib::bind(&Connection::on_message,
-		// this, websocketpp::lib::placeholders::_1, websocketpp::lib::placeholders::_2));
-		Server.set_http_handler(websocketpp::lib::bind(
-				&Connection::on_http, this, websocketpp::lib::placeholders::_1));
-#if USE_WS_SCTP_SSL
-		//Server.set_tls_init_handler(bind(&broadcast_server::on_tls_init, this,				websocketpp::lib::placeholders::_1));
-		Server.set_tls_init_handler(
-				bind(&Connection::on_tls_init, this, websocketpp::lib::placeholders::_1));
-#endif
-		// Server.set_timer(long duration, timer_handler callback);
-		//}
-
-		Client.set_error_channels(websocketpp::log::elevel::none);
-		Client.set_access_channels(websocketpp::log::alevel::none);
-		Client.init_asio();
-		Client.set_open_handler(websocketpp::lib::bind(
-				&Connection::on_client_open, this, websocketpp::lib::placeholders::_1));
-		Client.set_fail_handler(websocketpp::lib::bind(
-				&Connection::on_client_fail, this, websocketpp::lib::placeholders::_1));
-		Client.set_close_handler(websocketpp::lib::bind(
-				&Connection::on_client_close, this, websocketpp::lib::placeholders::_1));
-		Client.set_message_handler(websocketpp::lib::bind(&Connection::on_client_message,
-				this, websocketpp::lib::placeholders::_1,
-				websocketpp::lib::placeholders::_2));
-#if USE_WS_SCTP_SSL
-		Client.set_tls_init_handler(bind(&Connection::on_client_tls_init, this,
-				websocketpp::lib::placeholders::_1));
-#endif
-
-#if 0 && USE_WS_SCTP_SSL
-		context_ptr on_tls_init(websocketpp::connection_hdl /* hdl */)
-		{
-			namespace asio = websocketpp::lib::asio;
-			context_ptr ctx = websocketpp::lib::make_shared<asio::ssl::context>(
-					asio::ssl::context::tlsv12);
-			try {
-				ctx->set_options(asio::ssl::context::default_workarounds |
-								 asio::ssl::context::no_sslv2 |
-								 asio::ssl::context::no_sslv3 |
-								 asio::ssl::context::single_dh_use);
-				ctx->set_password_callback(std::bind([&]() { return GetSSLPassword(); }));
-				ctx->use_certificate_chain_file(GetSSLCertificateChain());
-				ctx->use_private_key_file(GetSSLPrivateKey(), asio::ssl::context::pem);
-				std::string ciphers = GetSSLCiphers();
-				if (ciphers.empty())
-					ciphers = "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:"
-							  "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:"
-							  "DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+"
-							  "AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:"
-							  "ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-"
-							  "AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-"
-							  "SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-"
-							  "AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:"
-							  "DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!"
-							  "EXPORT:!DES:!RC4:!3DES:!MD5:!PSK";
-
-				if (SSL_CTX_set_cipher_list(ctx->native_handle(), ciphers.c_str()) != 1) {
-					warningstream << "Error setting cipher list";
-				}
-			} catch (const std::exception &e) {
-				errorstream << "Exception: " << e.what();
-			}
-			return ctx;
-		}
-#endif
-	}
-
+	sctp_conn_output = connectionOutput;
+	m_transport = std::make_shared<ws_transport::Transport>();
 	start();
 }
-
-// bool Connection::sctp_inited = false;
-
 Connection::~Connection()
 {
 	join();
-	closeWebSocketState();
 	disconnect();
 	finish_sctp();
-	cleanupRetiredUlpInfo(true);
 }
-
-void Connection::Connect(Address address)
+void Connection::processCommand(con::ConnectionCommandPtr command)
 {
-	putCommand(ConnectionCommand::connect(address));
+	switch (command->type) {
+	case con::CONNCMD_CONNECT:
+		stopWebSockets();
+		m_transport = std::make_shared<ws_transport::Transport>();
+		m_connecting = true;
+		m_destination = command->address;
+		if (!m_transport->connect(m_destination)) {
+			m_connecting = false;
+			putEvent(con::ConnectionEvent::connectFailed());
+		}
+		return;
+	case con::CONNCMD_DISCONNECT:
+		disconnect();
+		return;
+	default:
+		con_sctp::Connection::processCommand(command);
+		return;
+	}
 }
-
-bool Connection::Connected()
+void Connection::serve(const Address &address)
 {
-	return con_sctp::Connection::Connected() &&
-		   ws_client_open.load(std::memory_order_acquire) &&
-		   ws_sctp_connected.load(std::memory_order_acquire);
+	m_port = address.getPort();
+	const Address listener =
+			m_ipv6 && address.isAny()
+					? Address(static_cast<const IPv6AddressBytes *>(nullptr),
+							  address.getPort())
+					: address;
+	if (!m_transport->listen(listener))
+		putEvent(con::ConnectionEvent::bindFailed());
 }
-
-void Connection::connectWebSocket(const Address &address)
+bool Connection::openPeer(const ws_transport::Transport::Event &event)
 {
-	client_address = address;
-	ws_client = true;
-	ws_client_open.store(false, std::memory_order_release);
-	ws_sctp_connected.store(false, std::memory_order_release);
-	Client.reset();
-
-#if USE_WS_SCTP_SSL
-	const std::string scheme = "wss://";
-#else
-	const std::string scheme = "ws://";
+	// Do not eagerly initialize the shared stack with UDP disabled just because
+	// multi mode constructs an unused WebSocket transport.
+	sctp_setup(0);
+	auto peer = std::make_shared<Peer>();
+	peer->websocket = event.id;
+	if (event.client)
+		peer->id = PEER_ID_SERVER;
+	else {
+		for (size_t i = 0; i <= LAST_PEER_ID - FIRST_PEER_ID; ++i) {
+			const auto id = m_next_id++;
+			if (m_next_id > LAST_PEER_ID)
+				m_next_id = FIRST_PEER_ID;
+			if (!m_reserved_ids.count(id)) {
+				peer->id = id;
+				break;
+			}
+		}
+		if (peer->id == PEER_ID_INEXISTENT)
+			return false;
+	}
+	m_reserved_ids.insert(peer->id);
+	peer->address = registerOutput(m_transport, event.id);
+	usrsctp_register_address(peer->address);
+	m_websockets.emplace(event.id, peer);
+	setPeerAddress(peer->id, event.client ? m_destination : event.address);
+	auto *socket = usrsctp_socket(
+			AF_CONN, SOCK_STREAM, IPPROTO_SCTP, nullptr, nullptr, 0, nullptr);
+	if (!socket)
+		return false;
+	if (event.client)
+		peer->socket = socket;
+	else
+		peer->listener = socket;
+	sock_setup(socket);
+	sockaddr_conn address = {};
+	address.sconn_family = AF_CONN;
+#ifdef HAVE_SCONN_LEN
+	address.sconn_len = sizeof(address);
 #endif
-	const std::string uri = makeWebSocketUri(scheme, address);
-
-	websocketpp::lib::error_code ec;
-	auto con = Client.get_connection(uri, ec);
-	if (ec) {
-		errorstream << "Could not create WS SCTP connection to " << uri << ": "
-					<< ec.message() << std::endl;
-		putEvent(ConnectionEvent::connectFailed());
-		return;
+	address.sconn_port = htons(event.client ? 0 : m_port);
+	address.sconn_addr = event.client ? nullptr : peer->address;
+	if (usrsctp_bind(socket, reinterpret_cast<sockaddr *>(&address), sizeof(address)) < 0)
+		return false;
+	if (!event.client)
+		return usrsctp_listen(socket, 1) == 0;
+	address.sconn_addr = peer->address;
+	address.sconn_port = htons(m_destination.getPort());
+	m_peers.insert_or_assign(peer->id, socket);
+	if (usrsctp_connect(socket, reinterpret_cast<sockaddr *>(&address), sizeof(address)) <
+					0 &&
+			errno != EINPROGRESS && errno != EAGAIN && errno != EWOULDBLOCK)
+		return false;
+	return true;
+}
+void Connection::closePeer(const std::shared_ptr<Peer> &peer, bool timeout)
+{
+	if (peer->address) {
+		std::lock_guard lock(output_mutex);
+		outputs.erase(peer->address);
 	}
-
-	client_hdl = con->get_handle();
-	Client.connect(con);
+	m_reserved_ids.erase(peer->id);
+	clearPeerState(peer->id);
+	m_peers.erase(peer->id);
+	if (peer->socket)
+		usrsctp_close(peer->socket);
+	if (peer->listener)
+		usrsctp_close(peer->listener);
+	if (peer->address)
+		usrsctp_deregister_address(peer->address);
+	peer->socket = peer->listener = nullptr;
+	peer->address = nullptr;
+	if (peer->added)
+		putEvent(con::ConnectionEvent::peerRemoved(peer->id, timeout, {}));
 }
-
-void Connection::Disconnect()
+bool Connection::deletePeer(session_t id, bool timeout)
 {
-	putCommand(ConnectionCommand::disconnect());
-}
-
-void Connection::DisconnectPeer(session_t peer_id)
-{
-	putCommand(ConnectionCommand::disconnect_peer(peer_id));
-}
-
-void Connection::disconnectWebSocket()
-{
-	closeWebSocketState();
-	disconnect();
-}
-
-void Connection::processCommand(ConnectionCommandPtr c)
-{
-	switch (c->type) {
-	case CONNCMD_CONNECT:
-		dout_con << getDesc() << " processing WS SCTP CONNCMD_CONNECT" << std::endl;
-		connectWebSocket(c->address);
-		return;
-	case CONNCMD_DISCONNECT:
-		dout_con << getDesc() << " processing WS SCTP CONNCMD_DISCONNECT" << std::endl;
-		disconnectWebSocket();
-		return;
-	case CONNCMD_DISCONNECT_PEER:
-		dout_con << getDesc() << " processing WS SCTP CONNCMD_DISCONNECT_PEER"
-				 << std::endl;
-		deletePeer(c->peer_id, false);
-		return;
-	default:
-		con_sctp::Connection::processCommand(c);
-		return;
+	for (auto it = m_websockets.begin(); it != m_websockets.end(); ++it) {
+		if (it->second->id != id)
+			continue;
+		auto peer = it->second;
+		m_websockets.erase(it);
+		closePeer(peer, timeout);
+		m_transport->close(peer->websocket);
+		return true;
 	}
+	return false;
 }
-
-void Connection::onAssociationChange(
-		session_t peer_id, const struct sctp_assoc_change *sac)
+void Connection::disconnect()
 {
-	if (peer_id != PEER_ID_SERVER || !sac)
+	stopWebSockets();
+	con_sctp::Connection::disconnect();
+}
+void Connection::onAssociationChange(session_t id, const sctp_assoc_change *change)
+{
+	if (id != PEER_ID_SERVER)
 		return;
-
-	switch (sac->sac_state) {
-	case SCTP_COMM_UP:
-	case SCTP_RESTART:
-		ws_sctp_connected.store(true, std::memory_order_release);
-		break;
-	case SCTP_COMM_LOST:
-	case SCTP_SHUTDOWN_COMP:
-	case SCTP_CANT_STR_ASSOC:
-		ws_sctp_connected.store(false, std::memory_order_release);
-		break;
-	default:
-		break;
+	m_connecting = false;
+	if (change->sac_state == SCTP_COMM_UP || change->sac_state == SCTP_RESTART) {
+		for (auto &[websocket, peer] : m_websockets)
+			if (peer->id == id)
+				peer->added = true;
 	}
 }
-
-/* Internal stuff */
-
+void Connection::stopWebSockets()
+{
+	for (auto &[id, peer] : m_websockets)
+		closePeer(peer, false);
+	m_websockets.clear();
+	if (m_transport)
+		m_transport->stop();
+	m_connecting = false;
+}
 int Connection::receive()
 {
-	pumpWebSockets();
-	cleanupRetiredUlpInfo();
-	return acceptPeers() + con_sctp::Connection::receive();
+	int progress = 0;
+	for (auto &event : m_transport->poll()) {
+		++progress;
+		if (event.type == ws_transport::Transport::Type::Open) {
+			if (!openPeer(event)) {
+				auto it = m_websockets.find(event.id);
+				if (it != m_websockets.end()) {
+					closePeer(it->second, false);
+					m_websockets.erase(it);
+				}
+				m_transport->close(event.id);
+				if (event.client) {
+					m_connecting = false;
+					putEvent(con::ConnectionEvent::connectFailed());
+				}
+			}
+		} else if (event.type == ws_transport::Transport::Type::Message) {
+			auto it = m_websockets.find(event.id);
+			if (it != m_websockets.end())
+				usrsctp_conninput(
+						it->second->address, event.data.data(), event.data.size(), 0);
+		} else {
+			const bool connecting = event.client && m_connecting;
+			auto it = m_websockets.find(event.id);
+			if (it != m_websockets.end()) {
+				auto peer = it->second;
+				m_websockets.erase(it);
+				closePeer(peer, false);
+			}
+			if (connecting) {
+				m_connecting = false;
+				putEvent(con::ConnectionEvent::connectFailed());
+			}
+			m_transport->close(event.id);
+		}
+	}
+	for (auto &[id, peer] : m_websockets) {
+		if (!peer->listener || peer->socket)
+			continue;
+		peer->socket = usrsctp_accept(peer->listener, nullptr, nullptr);
+		if (!peer->socket)
+			continue;
+		// Accepted sockets inherit their listener's negotiated SCTP options.
+		usrsctp_set_non_blocking(peer->socket, 1);
+		m_peers.insert_or_assign(peer->id, peer->socket);
+		peer->added = true;
+		putEvent(con::ConnectionEvent::peerAdded(peer->id, {}));
+		++progress;
+	}
+	return progress + con_sctp::Connection::receive();
 }
-
-// host
-void Connection::serve(const Address &bind_address)
-{
-	infostream << getDesc() << "WS serving at " << bind_address.serializeString() << ":"
-			   << std::to_string(bind_address.getPort()) << std::endl;
-	ws_sctp_port = bind_address.getPort();
-	Server.reset();
-
-	websocketpp::lib::error_code ec;
-	if (ws_ipv6 || bind_address.isIPv6()) {
-		Server.listen(websocketpp::lib::asio::ip::tcp::v6(), bind_address.getPort(), ec);
-	} else {
-		Server.listen(websocketpp::lib::asio::ip::tcp::v4(), bind_address.getPort(), ec);
-	}
-	if (ec) {
-		errorstream << "WS SCTP listen fail: " << ec.message() << std::endl;
-		putEvent(ConnectionEvent::bindFailed());
-		return;
-	}
-
-	Server.start_accept(ec);
-	if (ec) {
-		errorstream << "WS SCTP accept start fail: " << ec.message() << std::endl;
-		putEvent(ConnectionEvent::bindFailed());
-		return;
-	}
-
-	ws_serve = true;
 }
-
-} // namespace
-
 #endif

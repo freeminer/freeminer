@@ -2,18 +2,19 @@
 // emsocket address assignments and bound, encapsulated UDP sockets.
 #pragma once
 
-#include "fm_ws_proxy.h"
+#include "proxy.h"
 #include <openssl/rand.h>
 #include <algorithm>
 #include <functional>
 #include <map>
 #include <optional>
 
-namespace fm_ws
+namespace ws_transport
 {
 struct Datagram
 {
 	static constexpr size_t HEADER_SIZE = 24;
+	static constexpr size_t MAX_PAYLOAD_SIZE = 65535;
 	tcp::endpoint endpoint;
 	std::string payload;
 
@@ -23,20 +24,21 @@ struct Datagram
 			return false;
 		auto word = [&](size_t offset) {
 			return (static_cast<unsigned char>(data[offset]) << 8) |
-					static_cast<unsigned char>(data[offset + 1]);
+				   static_cast<unsigned char>(data[offset + 1]);
 		};
 		if (data.size() - HEADER_SIZE != static_cast<size_t>(word(22)) || !word(20))
 			return false;
 		asio::ip::address_v6::bytes_type bytes;
 		std::copy_n(data.begin() + 4, bytes.size(), bytes.begin());
-		endpoint = tcp::endpoint(normalize_address(asio::ip::address_v6(bytes)), word(20));
+		endpoint =
+				tcp::endpoint(normalize_address(asio::ip::address_v6(bytes)), word(20));
 		payload = data.substr(HEADER_SIZE);
 		return true;
 	}
 
 	static std::string encode(const tcp::endpoint &source, const std::string &payload)
 	{
-		if (payload.size() > 65535)
+		if (payload.size() > MAX_PAYLOAD_SIZE)
 			return {};
 		std::string result("\x77\x8b\x4c\xf6", 4);
 		asio::ip::address_v6::bytes_type bytes{};
@@ -66,7 +68,8 @@ public:
 	using GameHandler = std::function<void(Handle, const std::string &)>;
 	using Clock = std::chrono::steady_clock;
 
-	DatagramService(Server &server, std::shared_ptr<GameRouter> router, GameHandler game) :
+	DatagramService(
+			Server &server, std::shared_ptr<GameRouter> router, GameHandler game) :
 			m_server(server), m_router(std::move(router)), m_game(std::move(game))
 	{
 	}
@@ -82,13 +85,15 @@ public:
 			}
 			auto &session = it->second;
 			Error ec;
-			auto local = m_server.get_con_from_hdl(hdl)->get_raw_socket().local_endpoint(ec);
+			auto local =
+					m_server.get_con_from_hdl(hdl)->get_raw_socket().local_endpoint(ec);
 			if (!ec && m_router->matches(packet.endpoint, local)) {
 				session.game_source = packet.endpoint;
 				m_game(hdl, packet.payload);
 			} else if (auto target = m_bindings.find(packet.endpoint);
-					target != m_bindings.end()) {
-				send(target->second, Datagram::encode(session.endpoint, packet.payload), false);
+					   target != m_bindings.end()) {
+				send(target->second, Datagram::encode(session.endpoint, packet.payload),
+						false);
 			}
 			// This endpoint serves the game and its virtual network, not arbitrary
 			// internet UDP destinations. Unbound/unknown destinations drop like UDP.
@@ -194,16 +199,17 @@ private:
 		std::copy_n(random.begin(), 8, bytes.begin() + 8);
 		asio::ip::address address = asio::ip::address_v6(bytes);
 		const auto passcode = hex(8, 24);
-		if (address == asio::ip::make_address("fd00::1") ||
-				m_leases.count(passcode) ||
+		if (address == asio::ip::make_address("fd00::1") || m_leases.count(passcode) ||
 				std::any_of(m_leases.begin(), m_leases.end(), [&](const auto &entry) {
 					return entry.second.address == address;
 				})) {
 			close(hdl, websocketpp::close::status::try_again_later);
 			return;
 		}
-		m_leases.emplace(passcode, Lease{address, Clock::now() + std::chrono::minutes(30)});
-		send(hdl, "ADDR " + address.to_string() + " " + passcode + " " + hex(24, 32), true);
+		m_leases.emplace(
+				passcode, Lease{address, Clock::now() + std::chrono::minutes(30)});
+		send(hdl, "ADDR " + address.to_string() + " " + passcode + " " + hex(24, 32),
+				true);
 	}
 
 	void bind(Handle hdl, const std::string &data)
@@ -248,10 +254,12 @@ private:
 			close(hdl, websocketpp::close::status::policy_violation);
 			return;
 		}
-		m_server.send(hdl, data, text ? websocketpp::frame::opcode::text :
-				websocketpp::frame::opcode::binary, ec);
+		m_server.send(hdl, data,
+				text ? websocketpp::frame::opcode::text
+					 : websocketpp::frame::opcode::binary,
+				ec);
 		if (ec)
 			close(hdl, websocketpp::close::status::internal_endpoint_error);
 	}
 };
-} // namespace fm_ws
+} // namespace ws_transport

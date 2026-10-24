@@ -259,6 +259,8 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("timeout_mul", android ? "5" : "1");
 
 	settings->setDefault("sctp_peer_timeout", "60");
+	// Optional browser/reverse-proxy endpoint for SCTP over WebSocket.
+	settings->setDefault("ws_sctp_url", "");
 
 	settings->setDefault("default_game", "default"); // "minetest"
 	settings->setDefault("max_users", "100");		 // "15"

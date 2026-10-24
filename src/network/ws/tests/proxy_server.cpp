@@ -2,13 +2,13 @@
 // Standalone endpoint for protocol integration tests; no game process required.
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
-#include "../fm_ws_datagram.h"
+#include "../datagram.h"
 #include <iostream>
 
 int main(int argc, char **argv)
 {
 	using Server = websocketpp::server<websocketpp::config::asio>;
-	using Proxy = fm_ws::Proxy<Server>;
+	using Proxy = ws_transport::Proxy<Server>;
 	Server server;
 	std::map<websocketpp::connection_hdl, std::shared_ptr<Proxy>,
 			std::owner_less<websocketpp::connection_hdl>>
@@ -16,11 +16,12 @@ int main(int argc, char **argv)
 	server.clear_access_channels(websocketpp::log::alevel::all);
 	server.clear_error_channels(websocketpp::log::elevel::all);
 	server.init_asio();
-	auto game_router = std::make_shared<fm_ws::GameRouter>(server.get_io_context());
+	auto game_router =
+			std::make_shared<ws_transport::GameRouter>(server.get_io_context());
 	game_router->resolve("192.0.2.10"); // Simulated advertised address behind NAT.
-	fm_ws::DatagramService<Server> *datagrams = nullptr;
-	fm_ws::DatagramService<Server> service(server, game_router,
-			[&](auto hdl, const std::string &payload) {
+	ws_transport::DatagramService<Server> *datagrams = nullptr;
+	ws_transport::DatagramService<Server> service(
+			server, game_router, [&](auto hdl, const std::string &payload) {
 				datagrams->send_game(hdl, payload); // Echo the game queue.
 			});
 	datagrams = &service;
@@ -49,9 +50,10 @@ int main(int argc, char **argv)
 			sessions.erase(it);
 		}
 	});
-	server.listen(fm_ws::tcp::endpoint(fm_ws::asio::ip::make_address("127.0.0.1"), 0));
+	server.listen(ws_transport::tcp::endpoint(
+			ws_transport::asio::ip::make_address("127.0.0.1"), 0));
 	server.start_accept();
-	fm_ws::Error ec;
+	ws_transport::Error ec;
 	std::cout << server.get_local_endpoint(ec).port() << std::endl;
 	server.run();
 }

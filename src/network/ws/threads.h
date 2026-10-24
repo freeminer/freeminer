@@ -6,7 +6,7 @@
 #pragma once
 
 #include "config.h"
-#if USE_WEBSOCKET || USE_WEBSOCKET_SCTP
+#if USE_WEBSOCKET
 
 /********************************************/
 /* may only be included from in src/network */

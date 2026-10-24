@@ -15,7 +15,7 @@
 #include <sstream>
 #include <string>
 
-namespace fm_ws
+namespace ws_transport
 {
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
@@ -428,4 +428,4 @@ private:
 				});
 	}
 };
-} // namespace fm_ws
+} // namespace ws_transport
