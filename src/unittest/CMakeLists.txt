@@ -9,6 +9,7 @@ set(unittest_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_deferred_placement.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_tree_packs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mode_filter.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_relation_holes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/fm_test_lock.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_terraindiffusion.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_world_merge.cpp

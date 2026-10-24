@@ -7,6 +7,9 @@ Copyright (C) 2023 proller <proler@gmail.com>
 #include "network/sctp/internal.h"
 
 #if USE_SCTP
+#if USE_WEBSOCKET_SCTP
+#include "network/ws_sctp/connection.h"
+#endif
 
 namespace con_sctp
 {
@@ -256,7 +259,11 @@ void Connection::sctp_setup(u16 port)
 		(warning ? warningstream : infostream) << "SCTP " << message << std::endl;
 	});
 #endif
+#if USE_WEBSOCKET_SCTP
+	usrsctp_init(port, con_ws_sctp::connectionOutput, debug_func);
+#else
 	usrsctp_init(port, sctp_conn_output, debug_func);
+#endif
 	// usrsctp_init_nothreads(port, nullptr, debug_func);
 
 #if SCTP_DEBUG

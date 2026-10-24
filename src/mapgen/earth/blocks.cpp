@@ -468,6 +468,9 @@ Block BRICK_WALL;
 Block REDSTONE_BLOCK;
 Block CHAIN_X;
 Block CHAIN_Z;
+Block CHAIN_Y;
+Block PINK_CONCRETE;
+Block LIME_STAINED_GLASS;
 Block SPRUCE_DOOR_LOWER;
 Block SPRUCE_DOOR_UPPER;
 Block SMOOTH_STONE_SLAB;
@@ -1913,10 +1916,14 @@ void init(MapgenEarth *mg)
 	BLUE_WOOL = g("blue_wool", "wool:blue");
 	GREEN_CONCRETE = g("green_concrete",
 			{"wool:green", "basic_materials:concrete_block", "default:stone"});
+	PINK_CONCRETE = prefer_arnis("pink_concrete",
+			g("pink_concrete",
+					{"wool:pink", "basic_materials:concrete_block", "default:stone"}));
 	BRICK_WALL = g("brick_wall", "default:brick");
 	REDSTONE_BLOCK = g("redstone_block", "default:mese");
 	CHAIN_X = prefer_arnis("chain", CHAIN);
 	CHAIN_Z = prefer_arnis("chain", CHAIN);
+	CHAIN_Y = prefer_arnis("chain", CHAIN);
 	SPRUCE_DOOR_LOWER = prefer_arnis("spruce_door", OAK_DOOR);
 	SPRUCE_DOOR_UPPER = prefer_arnis("spruce_door", OAK_DOOR);
 	SMOOTH_STONE_SLAB = g("smooth_stone_slab",
@@ -1935,6 +1942,7 @@ void init(MapgenEarth *mg)
 	YELLOW_STAINED_GLASS = prefer_arnis("yellow_stained_glass", GLASS);
 	PURPLE_STAINED_GLASS = prefer_arnis("purple_stained_glass", GLASS);
 	ORANGE_STAINED_GLASS = prefer_arnis("orange_stained_glass", GLASS);
+	LIME_STAINED_GLASS = prefer_arnis("lime_stained_glass", GLASS);
 	MAGENTA_STAINED_GLASS = prefer_arnis("magenta_stained_glass", GLASS);
 	FLOWER_POT = g("flower_pot", "default:clay");
 	OAK_TRAPDOOR_OPEN_NORTH = prefer_arnis("oak_trapdoor", OAK_TRAPDOOR);

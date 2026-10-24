@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Protocol integration tests. Pass the compiled fm_proxy_server executable."""
+"""Protocol integration tests. Pass the compiled proxy_server executable."""
 import asyncio
 from contextlib import asynccontextmanager
 import ipaddress
@@ -100,6 +100,19 @@ async def run(binary, enabled):
                 packet = envelope(host, port, bytes(range(256)))
                 await game.send(packet)
                 assert await game.recv() == packet
+
+            # The envelope length is uint16: full-size game fragments must survive.
+            # Definition packets exceed this and arrive as several fragments.
+            definitions = bytes(range(256)) * 550
+            received = bytearray()
+            for offset in range(0, len(definitions), 65535):
+                chunk = definitions[offset:offset + 65535]
+                packet = envelope("10.0.0.1", port, chunk)
+                await game.send(packet)
+                reply = await game.recv()
+                assert reply == packet
+                received.extend(reply[24:])
+            assert received == definitions
 
             duplicate = await open_service(f"BIND {passcode} UDP 12345", "BIND FAILED")
             async with connected(duplicate):

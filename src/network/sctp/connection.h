@@ -107,7 +107,7 @@ protected:
 	virtual void serve(const Address &address);
 	void connect_addr(const Address &address);
 	void connect_conn(const Address &address);
-	void disconnect();
+	virtual void disconnect();
 	void finish_sctp();
 	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
 	void send_(session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
@@ -117,6 +117,10 @@ protected:
 
 	virtual bool deletePeer(session_t peer_id, bool timeout = 0);
 	void clearPeerState(session_t peer_id);
+	void setPeerAddress(session_t peer_id, const Address &address)
+	{
+		m_peers_address.insert_or_assign(peer_id, address);
+	}
 
 private:
 	MutexedQueue<ConnectionEventPtr> m_event_queue;

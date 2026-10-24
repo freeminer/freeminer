@@ -3,6 +3,7 @@
 #include "emerge.h"
 #include "mapgen/mapgen_earth.h"
 #include "arnis-cpp/src/ground_decoration.h"
+#include "arnis-cpp/src/floodfill_cache.h"
 #include "arnis-cpp/src/trees/mapped.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
 #include "arnis-cpp/src/climate.h"
@@ -26,6 +27,11 @@ namespace world_editor
 bool WorldEditor::under_mapped_crown(int x, int z) const
 {
 	return mapped_trunks && mapped_trunks->under_crown(x, z);
+}
+
+bool WorldEditor::in_clear_corridor(int x, int z) const
+{
+	return clear_corridors && clear_corridors->contains(x, z);
 }
 
 uint8_t WorldEditor::cover_class(int x, int z) const
@@ -223,7 +229,12 @@ WorldEditor WorldEditor::make_tile_worker() const
 	WorldEditor worker;
 	worker.traffic_signal_index = traffic_signal_index;
 	worker.car_network = car_network;
+	worker.train_network = train_network;
+	worker.rail_heights = rail_heights;
+	worker.rail_heights_mutex = rail_heights_mutex;
 	worker.sealed_surface = sealed_surface;
+	worker.clear_corridors = clear_corridors;
+	worker.fuel_index = fuel_index;
 	worker.mg = mg;
 	worker.projection_frame = projection_frame;
 	worker.ground = ground;
@@ -327,7 +338,8 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 		const bool outside_world = !generation_bounds || [&] {
 			const auto [world_min_x, world_min_z, world_max_x, world_max_z] =
 					*generation_bounds;
-			return x < world_min_x || x > world_max_x || z < world_min_z || z > world_max_z;
+			return x < world_min_x || x > world_max_x || z < world_min_z ||
+				   z > world_max_z;
 		}();
 		if (owned || outside_world)
 			lamp_columns.push_back(cell);
@@ -996,7 +1008,7 @@ int WorldEditor::get_absolute_y(int x, int y, int z) const
 {
 	return get_ground_level(x, z) + y;
 }
-int WorldEditor::get_ground_level(int x, int z) const
+std::optional<int> WorldEditor::road_surface_y(int x, int z) const
 {
 	if (!active_road_surface_overrides.empty()) {
 		const auto road = active_road_surface_overrides.find({x, z});
@@ -1008,6 +1020,12 @@ int WorldEditor::get_ground_level(int x, int z) const
 		if (road != road_surface_overrides.end())
 			return road->second;
 	}
+	return std::nullopt;
+}
+int WorldEditor::get_ground_level(int x, int z) const
+{
+	if (const auto road = road_surface_y(x, z))
+		return *road;
 	const int local_x = x - ground_cache_min_x;
 	const int local_z = z - ground_cache_min_z;
 	if (local_x >= 0 && local_z >= 0 && std::size_t(local_x) < ground_cache_width &&

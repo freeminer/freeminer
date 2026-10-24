@@ -104,10 +104,10 @@ IConnection *ConnectionMulti::getConnection(session_t peer_id)
 		return getConnection(connected_to);
 
 #if USE_WEBSOCKET_SCTP
-	// WebSocket-SCTP shares SCTP's peer ID range, so check its peer map first.
+	// WebSocket-SCTP owns a separate peer map and session range.
 	auto connection = static_cast<con_ws_sctp::Connection *>(
 			getConnection(proto_name::websocket_stcp));
-	if (connection && connection->getPeer(peer_id).lock())
+	if (connection && connection->hasPeer(peer_id))
 		return connection;
 #endif
 
