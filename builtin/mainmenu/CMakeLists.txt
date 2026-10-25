@@ -1,7 +1,8 @@
 add_subdirectory(content)
 
 set(BUILTIN_MAINMENU_SRCS
-    mainmenu/dlg_create_world_fm.lua
+	mainmenu/fm_dlg_create_world.lua
+	mainmenu/fm_transport.lua
 
 	mainmenu/async_event.lua
 	mainmenu/common.lua

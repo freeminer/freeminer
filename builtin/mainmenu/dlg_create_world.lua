@@ -2,7 +2,7 @@
 -- Copyright (C) 2014 sapier
 -- SPDX-License-Identifier: LGPL-2.1-or-later
 
-dofile(core.get_mainmenu_path()..DIR_DELIM.."dlg_create_world_fm.lua")
+dofile(core.get_mainmenu_path()..DIR_DELIM.."fm_dlg_create_world.lua")
 
 local function table_to_flags(ftable)
 	-- Convert e.g. { jungles = true, caves = false } to "jungles,nocaves"
