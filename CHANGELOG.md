@@ -12,6 +12,8 @@ Changelog
 
 ### 5.17.0.0 (?)
   * Farmesh improvements
+  * Better earth mapgen
+  * SCTP protocol fixes
 
 ### 5.16.1.0 (?)
   * Core tnt blast ( also try enable_nuke=1 )
