@@ -8,6 +8,8 @@ Copyright (C) 2023 proller <proler@gmail.com>
 
 #if USE_SCTP
 
+#include "network/sctp/addresses.h"
+
 namespace con_sctp
 {
 
@@ -681,7 +683,7 @@ void Connection::serve(const Address &bind_address)
 }
 
 // peer
-void Connection::connect_addr(const Address &address)
+void Connection::connect_addr(const Address &address, const std::string &address_name)
 {
 	infostream << getDesc() << "SCTP connect to " << address.serializeString() << ":"
 			   << std::to_string(address.getPort()) << std::endl;
@@ -759,46 +761,14 @@ void Connection::connect_addr(const Address &address)
 		perror("usrsctp_bind");
 	}
 
-	addr = {};
-
-#if SCTP_V4
-	addr = address.getAddress();
-#else
-	if (!address.isIPv6()) {
-		cs << "connect() transform to v6 " << address.serializeString() << std::endl;
-		if (address.serializeString() == "127.0.0.1")
-			addr.sin6_addr = in6addr_loopback;
-		else
-			inet_pton(AF_INET6, ("::ffff:" + address.serializeString()).c_str(),
-					&addr.sin6_addr);
-	} else {
-		addr = address.getAddress6();
-	}
-#endif
-
-#if SCTP_V4
-#ifdef HAVE_SIN6_LEN
-	addr.sin6_len = sizeof(struct sockaddr_in6);
-#endif
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(address.getPort());
-#else
-#ifdef HAVE_SIN6_LEN
-	addr.sin6_len = sizeof(struct sockaddr_in6);
-#endif
-	addr.sin6_family = domain;
-	addr.sin6_port = htons(address.getPort());
-#endif
-
-	usrsctp_set_non_blocking(sock, 1);
-
-	cs << "connect() ... " << __LINE__
-#if !SCTP_V4
-	   << " scope=" << addr.sin6_scope_id
-#endif
-	   << std::endl;
-	const int connect_result =
-			usrsctp_connect(sock, (struct sockaddr *)&addr, sizeof(addr));
+	auto addresses = resolvePeerAddresses(
+			address, address_name, g_settings->getBool("enable_ipv6"));
+	auto packed_addresses = packPeerAddresses(addresses);
+	infostream << "SCTP connecting with " << addresses.size()
+			   << " remote address candidate(s)" << std::endl;
+	const int connect_result = usrsctp_connectx(sock,
+			reinterpret_cast<struct sockaddr *>(packed_addresses.data()),
+			static_cast<int>(addresses.size()), nullptr);
 	if (connect_result < 0 && errno != EINPROGRESS) {
 		perror("usrsctp_connect fail");
 		putEvent(ConnectionEvent::connectFailed());

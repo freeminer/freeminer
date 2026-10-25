@@ -509,7 +509,10 @@ void Client::connect(const Address &address, const std::string &address_name)
 	address.print(infostream);
 	infostream << std::endl;
 
-	m_con->Connect(address);
+	//m_con->Connect(address);
+	// fm: retain DNS alternatives for transport address migration.
+	m_con->ConnectToHost(address, address_name);
+	// ===
 
 	initLocalMapSaving(address, m_address_name);
 }
