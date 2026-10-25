@@ -223,7 +223,10 @@ bool closed_ring(const arnis::ProcessedWay &way)
 bool mostly_inside(const std::vector<arnis::ProcessedNode> &ring,
 		const std::vector<arnis::ProcessedNode> &around)
 {
-	return arnis::element_processing::mostly_inside(ring, around);
+	return arnis::element_processing::mostly_inside(
+			ring, around, [](const arnis::ProcessedNode &point) {
+				return std::pair<std::int32_t, std::int32_t>{point.x, point.z};
+			});
 }
 
 bool repeats_relation_area_tags(
@@ -431,7 +434,11 @@ public:
 				processed_role = arnis::ProcessedMemberRole::Inner;
 			else if (role == "part" && type == "building")
 				processed_role = arnis::ProcessedMemberRole::Part;
-			else if (role != "part" && building_relation)
+			// Rust treats a `part` member as a building part only on
+			// type=building relations. On a building multipolygon it is not
+			// an outer ring either, so do not let the generic building fallback
+			// turn it into one.
+			else if (building_relation && role != "part")
 				processed_role = arnis::ProcessedMemberRole::Outer;
 			pending.ways.push_back({way_id, processed_role,
 					role.empty() && type == "multipolygon" && !building_relation});
@@ -521,10 +528,9 @@ public:
 			arnis::merge_way_segments(resolved_inner_pieces);
 			for (const auto *ring_set : {&resolved_outer_pieces, &resolved_inner_pieces})
 				for (const auto &ring : *ring_set)
-					if (ring.size() >= 3 &&
-							(ring.front().id == ring.back().id ||
-									(ring.front().x == ring.back().x &&
-											ring.front().z == ring.back().z)))
+					// Match Rust's container predicate: a closed polygon has at least
+					// four entries including its repeated first-node endpoint.
+					if (ring.size() >= 4 && ring.front().id == ring.back().id)
 						closed_containers.emplace_back(std::nullopt, ring);
 			for (std::size_t i = 0; i < member_ways.size(); ++i) {
 				if (!member_ways[i] || !closed_ring(*member_ways[i]) ||

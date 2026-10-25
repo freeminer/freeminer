@@ -1,5 +1,6 @@
 #include "test.h"
 
+#include "mapgen/earth/arnis-cpp/src/decals/pictograms.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/attractions.h"
 
 #include <initializer_list>
@@ -27,6 +28,7 @@ public:
 		TEST(testRideBuildingsAndHalls);
 		TEST(testGenericRideFeatureOwnership);
 		TEST(testSpinnerPartReplacement);
+		TEST(testBusinessKindMatchesRustTagCoverage);
 	}
 
 	void testRideBuildingsAndHalls()
@@ -69,6 +71,19 @@ public:
 				tags({{"attraction", "amusement_ride"}, {"railway", "rail"}})));
 		UASSERT(arnis::attractions::claims(
 				tags({{"attraction", "amusement_ride"}, {"name", "Tagada"}})));
+	}
+
+	void testBusinessKindMatchesRustTagCoverage()
+	{
+		using arnis::decals::pictograms::business_kind;
+		UASSERT(business_kind(tags({{"shop", "department_store"}})) == "supermarket");
+		UASSERT(business_kind(tags({{"shop", "bakery"}})) == "bakery");
+		UASSERT(business_kind(tags({{"shop", "unknown_thing"}})) == "shop");
+		UASSERT(business_kind(tags({{"amenity", "conference_centre"}})) == "office");
+		UASSERT(business_kind(tags({{"tourism", "gallery"}})) == "museum");
+		UASSERT(business_kind(tags({{"leisure", "water_park"}})) == "swimming");
+		UASSERT(business_kind(tags({{"healthcare", "physiotherapist"}})) == "doctors");
+		UASSERT(!business_kind(tags({{"amenity", "bench"}})));
 	}
 };
 
