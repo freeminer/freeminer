@@ -179,6 +179,14 @@ public:
 		return std::get<ProcessedWay>(*this);
 	}
 
+	ProcessedWay &as_way()
+	{
+		if (!is_way()) {
+			throw std::runtime_error("ProcessedElement: not a Way");
+		}
+		return std::get<ProcessedWay>(*this);
+	}
+
 	ProcessedRelation const &as_relation() const
 	{
 		if (!is_relation()) {

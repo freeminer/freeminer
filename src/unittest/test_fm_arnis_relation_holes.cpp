@@ -3,11 +3,15 @@
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
+#include "mapgen/earth/arnis-cpp/src/osm_parser.h"
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <optional>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace
@@ -32,9 +36,11 @@ public:
 	void runTests(IGameDef *) override
 	{
 		TEST(testNestedOuterGetsItsOwnHoleGroup);
+		TEST(testHoleGroupingIgnoresBoundaryVertices);
 		TEST(testInnerRingsCutHolesButIslandsStayWhole);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
+		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
 	}
 
 	void testNestedOuterGetsItsOwnHoleGroup()
@@ -50,6 +56,32 @@ public:
 		UASSERT(groups[0].second == (std::vector<std::size_t>{0, 1}));
 		UASSERT(groups[1].first == std::vector<std::size_t>{1});
 		UASSERT(groups[1].second == std::vector<std::size_t>{1});
+	}
+
+	void testHoleGroupingIgnoresBoundaryVertices()
+	{
+		auto ring = [](std::initializer_list<std::pair<int, int>> coordinates) {
+			std::vector<arnis::ProcessedNode> result;
+			for (const auto &[x, z] : coordinates) {
+				arnis::ProcessedNode node{};
+				node.x = x;
+				node.z = z;
+				result.push_back(node);
+			}
+			return result;
+		};
+		// Boundary vertices count as neither inside nor outside in Rust's
+		// majority test, so the outside vertices keep this ring from being an island.
+		const auto island =
+				ring({{-1, 1}, {0, 1}, {5, 1}, {5, 5}, {0, 5}, {-1, 5}, {-1, 1}});
+		const auto hole = ring({{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}});
+		UASSERT(!arnis::element_processing::mostly_inside(island, hole));
+		const auto groups = arnis::element_processing::hole_groups(
+				std::vector<std::vector<arnis::ProcessedNode>>{island},
+				std::vector<std::vector<arnis::ProcessedNode>>{hole});
+		UASSERT(groups.size() == 1);
+		UASSERT(groups[0].first == std::vector<std::size_t>{0});
+		UASSERT(groups[0].second == std::vector<std::size_t>{0});
 	}
 
 	void testMissingLanduseTagRetainsRustPredicateSemantics()
@@ -101,12 +133,11 @@ public:
 		UASSERT(holes->covers(15, 30));
 		const auto outer_fill = fills.get_or_compute(outer, std::nullopt);
 		UASSERT(outer_fill != nullptr);
-		const auto kept = arnis::without_holes(outer_fill, &*holes);
+		const auto kept = arnis::without_holes(*outer_fill, &*holes);
 		const std::pair<int, int> land_cell{5, 5};
 		const std::pair<int, int> hole_cell{20, 20};
-		UASSERT(kept != nullptr);
-		UASSERT(std::find(kept->begin(), kept->end(), land_cell) != kept->end());
-		UASSERT(std::find(kept->begin(), kept->end(), hole_cell) == kept->end());
+		UASSERT(std::find(kept.begin(), kept.end(), land_cell) != kept.end());
+		UASSERT(std::find(kept.begin(), kept.end(), hole_cell) == kept.end());
 		UASSERT(!fills.holes_in(island, inners, std::nullopt).has_value());
 	}
 
@@ -138,6 +169,41 @@ public:
 				{{0.2, 0.2}, {0.2, 0.3}, {0.3, 0.3}, {0.3, 0.2}, {0.2, 0.2}}, part_tags));
 		const auto prepared = arnis::prepare_building_data(elements);
 		UASSERT(prepared.outline_suppression.contains({"way", 2}));
+	}
+
+	void testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder()
+	{
+		std::istringstream xml(
+				"<?xml version='1.0'?><osm><!-- <node id='999'/> -->"
+				"<bounds minlat='1' minlon='2' maxlat='3' maxlon='4'/>"
+				"<node id='1' lat='1.5' lon='2.5' note='a > b'>"
+				"<tag k='building' v='yes'/><tag k='start_date' v='1900'/><tag "
+				"k='name' v='A &amp;gt; B &amp; C'/><tag k='name:en' v='filtered'/>"
+				"</node><node id='4'/><node id='5' lat='2.5' lon='3.5'/><way id='2'><nd "
+				"ref='1'/><tag k='highway' v='road'/></way>"
+				"<relation id='3'><member type='way' ref='2' role='outer'/></relation>"
+				"</osm>");
+		const auto document = arnis::osm_parser::parse_osm_xml(xml);
+		UASSERT(document.nodes.size() == 3);
+		UASSERT(document.nodes[0].id == 1);
+		UASSERT(document.nodes[1].id == 4);
+		UASSERT(!document.nodes[1].lat && !document.nodes[1].lon);
+		UASSERT(document.nodes[0].tags.get("name") == "A &gt; B & C");
+		UASSERT(document.nodes[0].tags.get("start_date") == "1900");
+		UASSERT(!document.nodes[0].tags.contains("name:en"));
+		UASSERT(document.ways.size() == 1);
+		UASSERT(document.ways[0].node_refs == std::vector<std::uint64_t>{1});
+		UASSERT(document.relations.size() == 1);
+		UASSERT(document.relations[0].members.size() == 1);
+		UASSERT(document.bounds.has_value());
+		UASSERT((*document.bounds)[0] == 1.0 && (*document.bounds)[1] == 2.0 &&
+				(*document.bounds)[2] == 3.0 && (*document.bounds)[3] == 4.0);
+		auto without_source_bounds = document;
+		without_source_bounds.bounds.reset();
+		const auto derived = arnis::osm_parser::resolve_bbox(without_source_bounds);
+		UASSERT(derived.has_value());
+		UASSERT((*derived)[0] == 1.5 && (*derived)[1] == 2.5 && (*derived)[2] == 2.5 &&
+				(*derived)[3] == 3.5);
 	}
 };
 

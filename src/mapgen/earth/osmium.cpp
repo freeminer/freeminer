@@ -220,62 +220,33 @@ bool closed_ring(const arnis::ProcessedWay &way)
 	return first.id == last.id || (first.x == last.x && first.z == last.z);
 }
 
-std::optional<bool> ring_contains(
-		const std::vector<arnis::ProcessedNode> &ring, int x, int z)
-{
-	if (ring.size() < 3)
-		return std::nullopt;
-	bool inside = false;
-	for (std::size_t i = 0, j = ring.size() - 1; i < ring.size(); j = i++) {
-		const auto &a = ring[i];
-		const auto &b = ring[j];
-		const auto cross = (std::int64_t(b.x) - a.x) * (std::int64_t(z) - a.z) -
-						   (std::int64_t(b.z) - a.z) * (std::int64_t(x) - a.x);
-		if (cross == 0 && x >= std::min(a.x, b.x) && x <= std::max(a.x, b.x) &&
-				z >= std::min(a.z, b.z) && z <= std::max(a.z, b.z))
-			return std::nullopt;
-		if ((a.z > z) != (b.z > z) &&
-				double(x) < (double(b.x) - double(a.x)) * double(std::int64_t(z) - a.z) /
-											double(std::int64_t(b.z) - a.z) +
-									a.x)
-			inside = !inside;
-	}
-	return inside;
-}
-
 bool mostly_inside(const std::vector<arnis::ProcessedNode> &ring,
 		const std::vector<arnis::ProcessedNode> &around)
 {
-	if (ring.size() < 3 || around.size() < 3)
+	return arnis::element_processing::mostly_inside(ring, around);
+}
+
+bool repeats_relation_area_tags(
+		const arnis::ProcessedWay &way, const arnis::tags_t &relation)
+{
+	if (!closed_ring(way))
 		return false;
-	std::int32_t rx0 = ring.front().x, rx1 = rx0, rz0 = ring.front().z, rz1 = rz0;
-	std::int32_t ax0 = around.front().x, ax1 = ax0, az0 = around.front().z, az1 = az0;
-	for (const auto &node : ring) {
-		rx0 = std::min(rx0, node.x);
-		rx1 = std::max(rx1, node.x);
-		rz0 = std::min(rz0, node.z);
-		rz1 = std::max(rz1, node.z);
-	}
-	for (const auto &node : around) {
-		ax0 = std::min(ax0, node.x);
-		ax1 = std::max(ax1, node.x);
-		az0 = std::min(az0, node.z);
-		az1 = std::max(az1, node.z);
-	}
-	if (std::int64_t(rx0) < std::int64_t(ax0) - 1 ||
-			std::int64_t(rz0) < std::int64_t(az0) - 1 ||
-			std::int64_t(rx1) > std::int64_t(ax1) + 1 ||
-			std::int64_t(rz1) > std::int64_t(az1) + 1)
+	const auto area = arnis::element_processing::relation_area(relation);
+	if (!area || !arnis::element_processing::relation_area_draws_area(*area, relation))
 		return false;
-	std::size_t inside = 0, outside = 0;
-	for (const auto &node : ring)
-		if (const auto hit = ring_contains(around, node.x, node.z)) {
-			if (*hit)
-				++inside;
-			else
-				++outside;
-		}
-	return inside > outside;
+	const auto inherited_or_descriptive = [&](const auto &tag) {
+		const auto &key = tag.first;
+		return key == "name" || key.ends_with("_name") || key == "wikidata" ||
+			   key == "area" || key == "type" || relation.get(key) == tag.second;
+	};
+	const bool has_independent_tag =
+			std::any_of(way.tags.begin(), way.tags.end(), [&](const auto &tag) {
+				const auto &key = tag.first;
+				return key != "name" && !key.ends_with("_name") && key != "wikidata" &&
+					   key != "area" && key != "type";
+			});
+	return has_independent_tag &&
+		   std::all_of(way.tags.begin(), way.tags.end(), inherited_or_descriptive);
 }
 } // namespace
 
@@ -476,7 +447,7 @@ public:
 		// their own way below, just as the Rust parser creates a new Arc there.
 		std::unordered_map<std::uint64_t, std::shared_ptr<arnis::ProcessedWay>>
 				shared_relation_ways;
-		std::unordered_set<std::uint64_t> repeated_outers;
+		std::unordered_set<std::uint64_t> repeated_outer_ways;
 		for (auto &pending : pending_relations) {
 			std::vector<std::shared_ptr<arnis::ProcessedWay>> member_ways(
 					pending.ways.size());
@@ -656,49 +627,35 @@ public:
 				}
 				pending.relation.members = std::move(assembled);
 			}
-			const auto area_kind = arnis::element_processing::relation_area(tags);
-			const bool draws_area =
-					area_kind &&
-					arnis::element_processing::relation_area_draws_area(*area_kind, tags);
-			const bool has_inner = std::any_of(roles.begin(), roles.end(),
-					[](const auto &role) { return role && *role == MemberRole::Inner; });
-			if (draws_area && has_inner) {
-				auto relation_tag_matches = [&](const std::string &key,
-													const std::string &value) {
-					return key == "name" || key.ends_with("_name") || key == "wikidata" ||
-						   key == "area" || key == "type" || tags.get(key) == value;
-				};
+			const bool holed = std::any_of(pending.relation.members.begin(),
+					pending.relation.members.end(), [](const auto &member) {
+						return member.role == arnis::ProcessedMemberRole::Inner;
+					});
+			if (holed) {
 				for (std::size_t i = 0; i < member_ways.size(); ++i) {
-					if (!member_ways[i] || !roles[i] || *roles[i] != MemberRole::Outer ||
-							!closed_ring(*member_ways[i]))
-						continue;
-					const auto &way_tags = member_ways[i]->tags;
-					const bool has_extra_tag = std::any_of(
-							way_tags.begin(), way_tags.end(), [&](const auto &tag) {
-								return tag.first != "name" &&
-									   !tag.first.ends_with("_name") &&
-									   tag.first != "wikidata" && tag.first != "area" &&
-									   tag.first != "type";
-							});
-					if (has_extra_tag && std::all_of(way_tags.begin(), way_tags.end(),
-												 [&](const auto &tag) {
-													 return relation_tag_matches(
-															 tag.first, tag.second);
-												 }))
-						repeated_outers.insert(member_ways[i]->id);
+					if (member_ways[i] && roles[i] &&
+							*roles[i] == arnis::ProcessedMemberRole::Outer &&
+							repeats_relation_area_tags(*member_ways[i], tags))
+						repeated_outer_ways.insert(member_ways[i]->id);
 				}
 			}
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
 		}
-		elements.erase(
-				std::remove_if(elements.begin(), elements.end(),
-						[&](const auto &element) {
-							return element.is_way() &&
-								   (element.as_way().nodes.empty() ||
-										   repeated_outers.contains(element.as_way().id));
-						}),
+		elements.erase(std::remove_if(elements.begin(), elements.end(),
+							   [&](const auto &element) {
+								   return element.is_way() &&
+										  element.as_way().nodes.empty();
+							   }),
 				elements.end());
+		if (!repeated_outer_ways.empty())
+			elements.erase(std::remove_if(elements.begin(), elements.end(),
+								   [&](const auto &element) {
+									   return element.is_way() &&
+											  repeated_outer_ways.contains(
+													  element.as_way().id);
+								   }),
+					elements.end());
 		if (unresolved_node_refs > 0) {
 			const double percent =
 					100.0 * unresolved_node_refs /
