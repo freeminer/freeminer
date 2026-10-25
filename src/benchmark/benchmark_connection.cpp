@@ -64,23 +64,23 @@ enum class ExternalBenchmarkPacketMode : char
 };
 
 static constexpr auto g_connection_client_counts = {
-	1,
-	2,
-	4,
-//	8,
-	//16,
-	// 32,
-	// 64,
-	// 128,
+		1,
+		2,
+		4,
+		//	8,
+		//16,
+		// 32,
+		// 64,
+		// 128,
 };
 
 static constexpr auto g_connection_payload_sizes = {
-	64,
-	256,
-	1024,
-//	4 * 1024,
-//	16 * 1024,
-	//64 * 1024,
+		64,
+		256,
+		1024,
+		//	4 * 1024,
+		//	16 * 1024,
+		//64 * 1024,
 };
 
 enum class TrafficMode
@@ -92,10 +92,7 @@ enum class TrafficMode
 
 struct BenchmarkPeerHandler : public con::PeerHandler
 {
-	void peerAdded(session_t peer_id) override
-	{
-		peer_ids.push_back(peer_id);
-	}
+	void peerAdded(session_t peer_id) override { peer_ids.push_back(peer_id); }
 
 	void deletingPeer(session_t peer_id, bool) override
 	{
@@ -126,178 +123,157 @@ static std::vector<ConnectionBenchmarkBackend> getConnectionBenchmarkBackends()
 
 #if MINETEST_TRANSPORT
 	backends.push_back({
-		"MTP",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::Connection>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"",
-		"",
-		0,
-		false,
+			"MTP",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::Connection>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"",
+			"",
+			0,
+			false,
 	});
 #endif
 
 #if USE_SCTP
 	backends.push_back({
-		"SCTP",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con_sctp::Connection>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"",
-		"raw SCTP uses process-global usrsctp UDP encapsulation; "
-		"the single-process benchmark cannot create independent "
-		"server/client SCTP stacks",
-		0,
-		false,
+			"SCTP",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con_sctp::Connection>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"",
+			"raw SCTP uses process-global usrsctp UDP encapsulation; "
+			"the single-process benchmark cannot create independent "
+			"server/client SCTP stacks",
+			0,
+			false,
 	});
 #endif
 
 #if USE_ENET
 	backends.push_back({
-		"ENet",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionEnet>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"",
-		"",
-		0,
-		false,
+			"ENet",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::ConnectionEnet>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"",
+			"",
+			0,
+			false,
 	});
 #endif
 
 #if USE_WEBSOCKET
 	backends.push_back({
-		"WebSocket",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con_ws::Connection>(
-					CONNECTION_BENCHMARK_WS_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"",
-		"",
-		0,
-		false,
+			"WebSocket",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con_ws::Connection>(
+						CONNECTION_BENCHMARK_WS_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"",
+			"",
+			0,
+			false,
 	});
 #endif
 
 #if USE_WEBSOCKET_SCTP
 	backends.push_back({
-		"WebSocketSCTP",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con_ws_sctp::Connection>(
-					PROTOCOL_ID,
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"",
-		"WebSocketSCTP currently uses process-global usrsctp state and is "
-		"not stable in the single-process benchmark harness",
-		0,
-		false,
+			"WebSocketSCTP",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con_ws_sctp::Connection>(PROTOCOL_ID,
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"",
+			"WebSocketSCTP currently uses process-global usrsctp state and is "
+			"not stable in the single-process benchmark harness",
+			0,
+			false,
 	});
 #endif
 
 #if USE_MULTI && MINETEST_TRANSPORT
 	backends.push_back({
-		"MultiMTP",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionMulti>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"mt",
-		"",
-		0,
-		true,
+			"MultiMTP",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::ConnectionMulti>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"mt",
+			"",
+			0,
+			true,
 	});
 #endif
 
 #if USE_MULTI && USE_SCTP
 	backends.push_back({
-		"MultiSCTP",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionMulti>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"sctp",
-		"raw SCTP uses process-global usrsctp UDP encapsulation; "
-		"the single-process benchmark cannot create independent "
-		"server/client SCTP stacks",
-		100,
-		true,
+			"MultiSCTP",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::ConnectionMulti>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"sctp",
+			"raw SCTP uses process-global usrsctp UDP encapsulation; "
+			"the single-process benchmark cannot create independent "
+			"server/client SCTP stacks",
+			100,
+			true,
 	});
 #endif
 
 #if USE_MULTI && USE_WEBSOCKET
 	backends.push_back({
-		"MultiWebSocket",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionMulti>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"ws",
-		"",
-		0,
-		true,
+			"MultiWebSocket",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::ConnectionMulti>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"ws",
+			"",
+			0,
+			true,
 	});
 #endif
 
 #if USE_MULTI && USE_WEBSOCKET_SCTP
 	backends.push_back({
-		"MultiWebSocketSCTP",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionMulti>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"ws_sctp",
-		"WebSocketSCTP currently uses process-global usrsctp state and is "
-		"not stable in the single-process benchmark harness",
-		100,
-		true,
+			"MultiWebSocketSCTP",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::ConnectionMulti>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"ws_sctp",
+			"WebSocketSCTP currently uses process-global usrsctp state and is "
+			"not stable in the single-process benchmark harness",
+			100,
+			true,
 	});
 #endif
 
 #if USE_MULTI && USE_ENET
 	backends.push_back({
-		"MultiENet",
-		[](con::PeerHandler *handler) {
-			return std::make_unique<con::ConnectionMulti>(
-					CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
-					CONNECTION_BENCHMARK_TIMEOUT,
-					true,
-					handler);
-		},
-		"enet",
-		"",
-		200,
-		true,
+			"MultiENet",
+			[](con::PeerHandler *handler) {
+				return std::make_unique<con::ConnectionMulti>(
+						CONNECTION_BENCHMARK_MAX_PACKET_SIZE,
+						CONNECTION_BENCHMARK_TIMEOUT, true, handler);
+			},
+			"enet",
+			"",
+			200,
+			true,
 	});
 #endif
 
@@ -306,8 +282,8 @@ static std::vector<ConnectionBenchmarkBackend> getConnectionBenchmarkBackends()
 
 static u16 nextBenchmarkPort()
 {
-	static u16 next_port = static_cast<u16>(42000 +
-			(std::chrono::steady_clock::now().time_since_epoch().count() % 8000));
+	static u16 next_port = static_cast<u16>(
+			42000 + (std::chrono::steady_clock::now().time_since_epoch().count() % 8000));
 	const u16 port = next_port;
 	next_port += 7;
 	return port;
@@ -349,8 +325,8 @@ static Address resolveBenchmarkServerAddress(const std::string &server, u16 port
 	try {
 		address.Resolve(server.c_str());
 	} catch (const ResolveError &e) {
-		throw std::runtime_error("connection benchmark server resolve failed: " +
-				std::string(e.what()));
+		throw std::runtime_error(
+				"connection benchmark server resolve failed: " + std::string(e.what()));
 	}
 
 	if (address.isAny())
@@ -384,7 +360,7 @@ static std::string makeConnectionBenchmarkName(const ConnectionBenchmarkBackend 
 		TrafficMode mode, size_t clients, size_t payload_size)
 {
 	return "Conn_" + backend.name + "_" + trafficModeName(mode) + "_" +
-			std::to_string(clients) + "c_" + std::to_string(payload_size) + "B";
+		   std::to_string(clients) + "c_" + std::to_string(payload_size) + "B";
 }
 
 struct ConnectionBenchmarkMetadata
@@ -395,8 +371,7 @@ struct ConnectionBenchmarkMetadata
 	size_t payload_size = 0;
 };
 
-static bool parseNumberWithSuffix(
-		std::string_view value, char suffix, size_t *result)
+static bool parseNumberWithSuffix(std::string_view value, char suffix, size_t *result)
 {
 	if (value.size() < 2 || value.back() != suffix)
 		return false;
@@ -445,10 +420,10 @@ static std::optional<ConnectionBenchmarkMetadata> parseConnectionBenchmarkName(
 	}
 
 	return ConnectionBenchmarkMetadata{
-		std::string(parts[0]),
-		std::string(parts[1]),
-		clients,
-		payload_size,
+			std::string(parts[0]),
+			std::string(parts[1]),
+			clients,
+			payload_size,
 	};
 }
 
@@ -481,8 +456,8 @@ public:
 		if (!metadata)
 			return;
 
-		const size_t packets_per_batch = metadata->clients *
-				(metadata->mode == "both" ? 2 : 1);
+		const size_t packets_per_batch =
+				metadata->clients * (metadata->mode == "both" ? 2 : 1);
 		const double mean_ns = stats.mean.point.count();
 		if (mean_ns <= 0.0 || packets_per_batch == 0)
 			return;
@@ -491,20 +466,21 @@ public:
 		const double packets_per_second =
 				batches_per_second * static_cast<double>(packets_per_batch);
 		const double mib_per_second = packets_per_second *
-				static_cast<double>(metadata->payload_size) / (1024.0 * 1024.0);
+									  static_cast<double>(metadata->payload_size) /
+									  (1024.0 * 1024.0);
 		const double latency_us_per_packet =
 				mean_ns / static_cast<double>(packets_per_batch) / 1000.0;
 
 		m_results.push_back({
-			metadata->backend,
-			metadata->mode,
-			metadata->clients,
-			metadata->payload_size,
-			packets_per_batch,
-			mean_ns,
-			packets_per_second,
-			mib_per_second,
-			latency_us_per_packet,
+				metadata->backend,
+				metadata->mode,
+				metadata->clients,
+				metadata->payload_size,
+				packets_per_batch,
+				mean_ns,
+				packets_per_second,
+				mib_per_second,
+				latency_us_per_packet,
 		});
 	}
 
@@ -519,27 +495,20 @@ public:
 
 		out << "\nConnection total packet throughput and latency "
 			<< "(iops = packets/sec, derived from Catch2 benchmark mean)\n";
-		out << std::left << std::setw(11) << "backend"
-			<< std::setw(9) << "mode"
-			<< std::right << std::setw(8) << "clients"
-			<< std::setw(10) << "size"
-			<< std::setw(15) << "iops"
-			<< std::setw(15) << "MiB/sec"
-			<< std::setw(15) << "lat us/pkt"
-			<< std::setw(15) << "mean us/batch" << '\n';
+		out << std::left << std::setw(11) << "backend" << std::setw(9) << "mode"
+			<< std::right << std::setw(8) << "clients" << std::setw(10) << "size"
+			<< std::setw(15) << "iops" << std::setw(15) << "MiB/sec" << std::setw(15)
+			<< "lat us/pkt" << std::setw(15) << "mean us/batch" << '\n';
 		out << std::string(98, '-') << '\n';
 
 		for (const auto &result : m_results) {
-			out << std::left << std::setw(11) << result.backend
-				<< std::setw(9) << result.mode
-				<< std::right << std::setw(8) << result.clients
+			out << std::left << std::setw(11) << result.backend << std::setw(9)
+				<< result.mode << std::right << std::setw(8) << result.clients
 				<< std::setw(10) << formatPayloadSize(result.payload_size)
 				<< std::setw(15) << std::fixed << std::setprecision(0)
-				<< result.packets_per_second
-				<< std::setw(15) << std::fixed << std::setprecision(2)
-				<< result.mib_per_second
-				<< std::setw(15) << std::fixed << std::setprecision(2)
-				<< result.latency_us_per_packet
+				<< result.packets_per_second << std::setw(15) << std::fixed
+				<< std::setprecision(2) << result.mib_per_second << std::setw(15)
+				<< std::fixed << std::setprecision(2) << result.latency_us_per_packet
 				<< std::setw(15) << std::fixed << std::setprecision(2)
 				<< result.mean_ns / 1000.0 << '\n';
 		}
@@ -580,11 +549,10 @@ static size_t readPayloadSize(const NetworkPacket &pkt)
 	if (pkt.getSize() < 5)
 		return 0;
 
-	const auto *data = reinterpret_cast<const unsigned char *>(pkt.getString(0));
-	return (static_cast<size_t>(data[1]) << 24) |
-			(static_cast<size_t>(data[2]) << 16) |
-			(static_cast<size_t>(data[3]) << 8) |
-			static_cast<size_t>(data[4]);
+	const auto data = pkt.getRemainingNoCopy();
+	const auto *bytes = reinterpret_cast<const unsigned char *>(data.data());
+	return (static_cast<size_t>(bytes[1]) << 24) | (static_cast<size_t>(bytes[2]) << 16) |
+		   (static_cast<size_t>(bytes[3]) << 8) | static_cast<size_t>(bytes[4]);
 }
 
 static NetworkPacket makeBenchmarkPacket(ExternalBenchmarkPacketMode mode,
@@ -647,9 +615,7 @@ class ConnectionBenchmarkCluster
 {
 public:
 	ConnectionBenchmarkCluster(const ConnectionBenchmarkBackend &backend,
-			size_t client_count) :
-		m_backend(backend),
-		m_port(getBenchmarkBasePort())
+			size_t client_count) : m_backend(backend), m_port(getBenchmarkBasePort())
 	{
 		configureBenchmarkSettings(m_backend, m_port);
 
@@ -701,7 +667,8 @@ public:
 			expected_client_packets = m_clients.size();
 		}
 
-		const auto deadline = std::chrono::steady_clock::now() +
+		const auto deadline =
+				std::chrono::steady_clock::now() +
 				std::chrono::milliseconds(CONNECTION_BENCHMARK_TRAFFIC_TIMEOUT_MS);
 
 		const size_t server_packets = receivePackets(
@@ -723,7 +690,8 @@ public:
 private:
 	void waitConnected(size_t client_count)
 	{
-		const auto deadline = std::chrono::steady_clock::now() +
+		const auto deadline =
+				std::chrono::steady_clock::now() +
 				std::chrono::milliseconds(CONNECTION_BENCHMARK_CONNECT_TIMEOUT_MS);
 
 		NetworkPacket pkt;
@@ -770,7 +738,8 @@ private:
 				continue;
 			}
 			if (pkt.getSize() != expected_size)
-				throw std::runtime_error("connection benchmark received wrong packet size");
+				throw std::runtime_error(
+						"connection benchmark received wrong packet size");
 			++received;
 		}
 		return received;
@@ -788,18 +757,16 @@ class ConnectionBenchmarkExternalServer
 {
 public:
 	ConnectionBenchmarkExternalServer(const ConnectionBenchmarkBackend &backend,
-			size_t client_count) :
-		m_backend(backend),
-		m_port(getBenchmarkBasePort())
+			size_t client_count) : m_backend(backend), m_port(getBenchmarkBasePort())
 	{
 		configureBenchmarkSettings(m_backend, m_port);
 
 		m_server = m_backend.factory(&m_server_handler);
 		m_server->Serve(makeAnyAddress(m_port));
 
-		Catch::cerr() << "\nConnection benchmark server listening on [::]:"
-					  << m_port << " for " << client_count << " "
-					  << m_backend.name << " client(s)\n";
+		Catch::cerr() << "\nConnection benchmark server listening on [::]:" << m_port
+					  << " for " << client_count << " " << m_backend.name
+					  << " client(s)\n";
 		Catch::cerr() << "Connection benchmark server ready\n";
 	}
 
@@ -829,11 +796,12 @@ private:
 		if (pkt.getCommand() != CONNECTION_BENCHMARK_COMMAND || pkt.getSize() == 0)
 			return;
 
-		const auto mode = static_cast<ExternalBenchmarkPacketMode>(pkt.getString(0)[0]);
+		const auto payload = pkt.getRemainingNoCopy();
+		const auto mode = static_cast<ExternalBenchmarkPacketMode>(payload[0]);
 		switch (mode) {
 		case ExternalBenchmarkPacketMode::SendAck: {
-			NetworkPacket ack = makeBenchmarkPacket(
-					ExternalBenchmarkPacketMode::Ack, 5, 0);
+			NetworkPacket ack =
+					makeBenchmarkPacket(ExternalBenchmarkPacketMode::Ack, 5, 0);
 			m_server->Send(pkt.getPeerId(), 0, &ack, true);
 			return;
 		}
@@ -862,9 +830,7 @@ class ConnectionBenchmarkExternalClient
 {
 public:
 	ConnectionBenchmarkExternalClient(const ConnectionBenchmarkBackend &backend,
-			size_t client_count) :
-		m_backend(backend),
-		m_port(getBenchmarkBasePort())
+			size_t client_count) : m_backend(backend), m_port(getBenchmarkBasePort())
 	{
 		configureBenchmarkSettings(m_backend, m_port);
 
@@ -896,12 +862,12 @@ public:
 
 	size_t runBatch(TrafficMode mode, size_t payload_size)
 	{
-		NetworkPacket send_packet = makeBenchmarkPacket(
-				ExternalBenchmarkPacketMode::SendAck, payload_size);
+		NetworkPacket send_packet =
+				makeBenchmarkPacket(ExternalBenchmarkPacketMode::SendAck, payload_size);
 		NetworkPacket receive_request = makeBenchmarkPacket(
 				ExternalBenchmarkPacketMode::ReceiveRequest, 5, payload_size);
-		NetworkPacket echo_packet = makeBenchmarkPacket(
-				ExternalBenchmarkPacketMode::Echo, payload_size);
+		NetworkPacket echo_packet =
+				makeBenchmarkPacket(ExternalBenchmarkPacketMode::Echo, payload_size);
 
 		NetworkPacket *packet = &send_packet;
 		size_t expected_response_size = 5;
@@ -919,12 +885,13 @@ public:
 		for (auto &client : m_clients)
 			client->Send(PEER_ID_SERVER, 0, packet, true);
 
-		const auto deadline = std::chrono::steady_clock::now() +
+		const auto deadline =
+				std::chrono::steady_clock::now() +
 				std::chrono::milliseconds(CONNECTION_BENCHMARK_TRAFFIC_TIMEOUT_MS);
 
 		for (auto &client : m_clients) {
-			const size_t packets = receivePackets(
-					*client, 1, deadline, expected_response_size);
+			const size_t packets =
+					receivePackets(*client, 1, deadline, expected_response_size);
 			if (packets != 1)
 				throw std::runtime_error(
 						"connection benchmark external client missed response");
@@ -936,7 +903,8 @@ public:
 private:
 	void waitConnected()
 	{
-		const auto deadline = std::chrono::steady_clock::now() +
+		const auto deadline =
+				std::chrono::steady_clock::now() +
 				std::chrono::milliseconds(CONNECTION_BENCHMARK_CONNECT_TIMEOUT_MS);
 
 		NetworkPacket pkt;
@@ -959,11 +927,12 @@ private:
 
 	void waitReady()
 	{
-		NetworkPacket probe = makeBenchmarkPacket(
-				ExternalBenchmarkPacketMode::SendAck, 5, 0);
+		NetworkPacket probe =
+				makeBenchmarkPacket(ExternalBenchmarkPacketMode::SendAck, 5, 0);
 		std::vector<bool> ready(m_clients.size(), false);
 		size_t ready_count = 0;
-		const auto deadline = std::chrono::steady_clock::now() +
+		const auto deadline =
+				std::chrono::steady_clock::now() +
 				std::chrono::milliseconds(CONNECTION_BENCHMARK_TRAFFIC_TIMEOUT_MS);
 
 		while (ready_count < m_clients.size() &&
@@ -977,8 +946,7 @@ private:
 				if (ready[i])
 					continue;
 				const auto response_deadline = std::min(deadline,
-						std::chrono::steady_clock::now() +
-								std::chrono::milliseconds(5));
+						std::chrono::steady_clock::now() + std::chrono::milliseconds(5));
 				if (receivePackets(*m_clients[i], 1, response_deadline, 5) == 1) {
 					ready[i] = true;
 					++ready_count;
@@ -1045,9 +1013,8 @@ static void benchmarkConnectionTraffic(const ConnectionBenchmarkBackend &backend
 		cluster = std::make_unique<ConnectionBenchmarkCluster>(backend, client_count);
 	}
 
-	BENCHMARK_ADVANCED(makeConnectionBenchmarkName(
-			backend, mode, client_count, payload_size))(
-			Catch::Benchmark::Chronometer meter)
+	BENCHMARK_ADVANCED(makeConnectionBenchmarkName(backend, mode, client_count,
+			payload_size))(Catch::Benchmark::Chronometer meter)
 	{
 		meter.measure([&](int) {
 			if (external_client)
@@ -1071,8 +1038,7 @@ TEST_CASE("benchmark_connection_operations")
 			if (options.mode == ConnectionBenchmarkMode::ClientServer &&
 					!backend.skip_reason.empty()) {
 				Catch::cerr() << "\nSkipping " << backend.name
-							  << " connection benchmark: " << backend.skip_reason
-							  << '\n';
+							  << " connection benchmark: " << backend.skip_reason << '\n';
 				return;
 			}
 
@@ -1089,12 +1055,12 @@ TEST_CASE("benchmark_connection_operations")
 								return;
 							}
 
-							benchmarkConnectionTraffic(backend, client_count, payload_size,
-									TrafficMode::ClientToServer);
-							benchmarkConnectionTraffic(backend, client_count, payload_size,
-									TrafficMode::ServerToClient);
-							benchmarkConnectionTraffic(
-									backend, client_count, payload_size, TrafficMode::Both);
+							benchmarkConnectionTraffic(backend, client_count,
+									payload_size, TrafficMode::ClientToServer);
+							benchmarkConnectionTraffic(backend, client_count,
+									payload_size, TrafficMode::ServerToClient);
+							benchmarkConnectionTraffic(backend, client_count,
+									payload_size, TrafficMode::Both);
 						}
 					}
 				}

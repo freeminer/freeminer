@@ -2,6 +2,7 @@
 
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/subprocessor/interior/index.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/osm_water_override.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
@@ -41,6 +42,7 @@ public:
 		TEST(testHoleGroupingIgnoresBoundaryVertices);
 		TEST(testInnerRingsCutHolesButIslandsStayWhole);
 		TEST(testWaterOverrideKeepsPondOnIslandInHole);
+		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
@@ -144,6 +146,50 @@ public:
 		UASSERT(data.grid[5][5] == arnis::land_cover::LC_WATER);
 		UASSERT(data.grid[20][20] != arnis::land_cover::LC_WATER);
 		UASSERT(data.grid[30][30] == arnis::land_cover::LC_WATER);
+	}
+
+	void testBuildingInAreaHoleDoesNotInheritAreaUse()
+	{
+		auto way = [](std::uint64_t id, int min, int max, arnis::tags_t tags = {}) {
+			arnis::ProcessedWay result;
+			result.id = id;
+			result.tags = std::move(tags);
+			const int coords[5][2]{
+					{min, min}, {max, min}, {max, max}, {min, max}, {min, min}};
+			for (int i = 0; i < 5; ++i) {
+				arnis::ProcessedNode node{};
+				node.id = id * 10 + static_cast<std::uint64_t>(i);
+				node.x = coords[i][0];
+				node.z = coords[i][1];
+				result.nodes.push_back(node);
+			}
+			return result;
+		};
+		auto building_tags = [] {
+			arnis::tags_t tags;
+			tags.emplace("building", "yes");
+			return tags;
+		};
+		arnis::tags_t area_tags;
+		area_tags.emplace("landuse", "industrial");
+		area_tags.emplace("type", "multipolygon");
+		arnis::ProcessedRelation area{};
+		area.id = 9;
+		area.tags = std::move(area_tags);
+		area.members.emplace_back(way(50, 0, 150), arnis::ProcessedMemberRole::Outer);
+		area.members.emplace_back(way(51, 40, 120), arnis::ProcessedMemberRole::Inner);
+		area.members.emplace_back(way(52, 90, 110), arnis::ProcessedMemberRole::Outer);
+		std::vector<arnis::ProcessedElement> elements;
+		elements.emplace_back(way(1, 10, 20, building_tags()));
+		elements.emplace_back(way(2, 60, 70, building_tags()));
+		elements.emplace_back(way(3, 95, 105, building_tags()));
+		elements.emplace_back(std::move(area));
+
+		const auto bbox = XZBBox(0, 0, 199, 199);
+		const auto index = arnis::interior_uses::InteriorUseIndex::build(elements, bbox);
+		UASSERT(index.area(1)->kind == arnis::interior_uses::UseKind::Factory);
+		UASSERT(!index.area(2).has_value());
+		UASSERT(index.area(3)->kind == arnis::interior_uses::UseKind::Factory);
 	}
 
 	void testInnerRingsCutHolesButIslandsStayWhole()
