@@ -193,7 +193,7 @@ void Connection::processCommand(ConnectionCommandPtr c)
 		return;
 	case CONNCMD_CONNECT:
 		dout_con << getDesc() << " processing CONNCMD_CONNECT" << std::endl;
-		connect_addr(c->address);
+		connect_addr(c->address, c->address_name);
 		return;
 	case CONNCMD_DISCONNECT:
 		dout_con << getDesc() << " processing CONNCMD_DISCONNECT" << std::endl;

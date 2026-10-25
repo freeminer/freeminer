@@ -78,6 +78,7 @@ public:
 
 	void Serve(Address bind_addr) override;
 	void Connect(Address address) override;
+	void ConnectToHost(Address address, const std::string &address_name) override;
 	bool Connected() override;
 	void Disconnect() override;
 	bool ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms) override;
@@ -105,7 +106,7 @@ protected:
 	virtual int receive();
 	void runTimeouts(float dtime);
 	virtual void serve(const Address &address);
-	void connect_addr(const Address &address);
+	void connect_addr(const Address &address, const std::string &address_name);
 	void connect_conn(const Address &address);
 	virtual void disconnect();
 	void finish_sctp();
