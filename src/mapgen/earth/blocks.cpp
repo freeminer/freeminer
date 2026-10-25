@@ -1922,8 +1922,11 @@ void init(MapgenEarth *mg)
 	BRICK_WALL = g("brick_wall", "default:brick");
 	REDSTONE_BLOCK = g("redstone_block", "default:mese");
 	CHAIN_X = prefer_arnis("chain", CHAIN);
+	CHAIN_X.param2 = 12; // Mineclonia chain axis=x, matching Rust's CHAIN_X.
 	CHAIN_Z = prefer_arnis("chain", CHAIN);
+	CHAIN_Z.param2 = 4; // Mineclonia chain axis=z, matching Rust's CHAIN_Z.
 	CHAIN_Y = prefer_arnis("chain", CHAIN);
+	CHAIN_Y.param2 = 0; // Mineclonia's default chain axis is vertical.
 	SPRUCE_DOOR_LOWER = prefer_arnis("spruce_door", OAK_DOOR);
 	SPRUCE_DOOR_UPPER = prefer_arnis("spruce_door", OAK_DOOR);
 	SMOOTH_STONE_SLAB = g("smooth_stone_slab",
