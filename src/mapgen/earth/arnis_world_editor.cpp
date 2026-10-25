@@ -1022,6 +1022,10 @@ std::optional<int> WorldEditor::road_surface_y(int x, int z) const
 	}
 	return std::nullopt;
 }
+std::optional<int> WorldEditor::surface_override(int x, int z) const
+{
+	return road_surface_y(x, z);
+}
 int WorldEditor::get_ground_level(int x, int z) const
 {
 	if (const auto road = road_surface_y(x, z))

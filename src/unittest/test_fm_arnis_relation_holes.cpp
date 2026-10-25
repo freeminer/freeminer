@@ -41,6 +41,7 @@ public:
 		TEST(testNestedOuterGetsItsOwnHoleGroup);
 		TEST(testHoleGroupingIgnoresBoundaryVertices);
 		TEST(testInnerRingsCutHolesButIslandsStayWhole);
+		TEST(testBuildingCourtyardKeepsNestedKeepFootprint);
 		TEST(testWaterOverrideKeepsPondOnIslandInHole);
 		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
@@ -236,6 +237,35 @@ public:
 		UASSERT(std::find(kept.begin(), kept.end(), land_cell) != kept.end());
 		UASSERT(std::find(kept.begin(), kept.end(), hole_cell) == kept.end());
 		UASSERT(!fills.holes_in(island, inners, std::nullopt).has_value());
+	}
+
+	void testBuildingCourtyardKeepsNestedKeepFootprint()
+	{
+		auto make_way = [](std::uint64_t id, int min, int max) {
+			arnis::ProcessedWay way;
+			way.id = id;
+			way.nodes = square(min, max);
+			for (std::size_t i = 0; i + 1 < way.nodes.size(); ++i)
+				way.nodes[i].id = id * 10 + i;
+			way.nodes.back().id = way.nodes.front().id;
+			return way;
+		};
+		auto outer = make_way(1, 10, 90);
+		auto courtyard = make_way(2, 20, 80);
+		auto keep = make_way(3, 40, 60);
+		arnis::ProcessedRelation castle{};
+		castle.id = 9;
+		castle.tags.emplace("building", "castle");
+		castle.members.emplace_back(outer, arnis::ProcessedMemberRole::Outer);
+		castle.members.emplace_back(courtyard, arnis::ProcessedMemberRole::Inner);
+		castle.members.emplace_back(keep, arnis::ProcessedMemberRole::Outer);
+		const std::vector<arnis::ProcessedElement> elements{castle};
+		const XZBBox bbox(0, 0, 99, 99);
+		const auto footprints =
+				arnis::FloodFillCache{}.collect_building_footprints(elements, bbox);
+		UASSERT(footprints.contains(15, 15));
+		UASSERT(!footprints.contains(30, 30));
+		UASSERT(footprints.contains(50, 50));
 	}
 
 	void testOpenRideOutlineSuppressesContainedBuildingPart()

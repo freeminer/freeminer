@@ -905,6 +905,9 @@ struct WorldEditor
 	std::pair<int, int> get_max_coords() const;
 	int get_absolute_y(int x, int y, int z) const;
 	int get_ground_level(int x, int z) const;
+	// Rust-compatible name for the ground Y already assigned by a road, track,
+	// or cut at this column. Keep road_surface_y for existing Freeminer callers.
+	std::optional<int> surface_override(int x, int z) const;
 	std::optional<int> road_surface_y(int x, int z) const;
 	std::optional<int> terrain_level(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
