@@ -12,6 +12,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
@@ -76,6 +77,16 @@ public:
 				ring({{-1, 1}, {0, 1}, {5, 1}, {5, 5}, {0, 5}, {-1, 5}, {-1, 1}});
 		const auto hole = ring({{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}});
 		UASSERT(!arnis::element_processing::mostly_inside(island, hole));
+		auto xz = [](const auto &points) {
+			std::vector<std::pair<std::int32_t, std::int32_t>> result;
+			for (const auto &point : points)
+				result.emplace_back(point.x, point.z);
+			return result;
+		};
+		const auto island_points = xz(island);
+		const auto hole_points = xz(hole);
+		UASSERT(!arnis::element_processing::mostly_inside(
+				island_points, hole_points, [](const auto &point) { return point; }));
 		const auto groups = arnis::element_processing::hole_groups(
 				std::vector<std::vector<arnis::ProcessedNode>>{island},
 				std::vector<std::vector<arnis::ProcessedNode>>{hole});
