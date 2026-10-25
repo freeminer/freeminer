@@ -312,7 +312,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 
 	Ground ground = Ground::new_flat(args.ground_level);
 	ground.set_celestial_body(args.body);
-	ground.set_extended_ceiling(args.disable_height_limit &&
+	ground.set_extended_ceiling(args.terrain_enabled() && args.disable_height_limit &&
 								extended_max_y_for(args) > world_editor::DEFAULT_MAX_Y);
 	ground.set_climate(frame.climate(bbox));
 

@@ -15,6 +15,7 @@ public:
 	{
 		TEST(testSnowCoverMatchesRustThresholds);
 		TEST(testSnowDepthFollowsUnroundedTerrain);
+		TEST(testSnowShadeMatchesRustPoleAndRotationRules);
 		TEST(testDisabledSnowLineDoesNotSnow);
 		TEST(testNonFinitePeakHintDoesNotPoisonElevationGrid);
 		TEST(testNonFinitePeakResolutionDoesNotPoisonElevationGrid);
@@ -49,6 +50,25 @@ public:
 		UASSERT(snow_eighths(Snow::block()) == 0);
 		UASSERT(snow_eighths(Snow::layer(7), 3.0) == 1);
 		UASSERT(snow_eighths(Snow::none(), 0.5) == 0);
+	}
+
+	void testSnowShadeMatchesRustPoleAndRotationRules()
+	{
+		using arnis::terrain_surface::SnowLine;
+		const SnowLine north(0, 1.0, 47.0, 0.0);
+		const SnowLine south(0, 1.0, -47.0, 0.0);
+		const SnowLine tropics(0, 1.0, 3.0, 0.0);
+		UASSERT(std::abs(north.shade(0.0, 1.0, 4.0) - 1.0) < 1e-9);
+		UASSERT(std::abs(south.shade(0.0, 1.0, 4.0) + 1.0) < 1e-9);
+		UASSERT(std::abs(north.shade(0.0, 1.0, 2.0) - 0.5) < 1e-9);
+		UASSERT(std::abs(north.shade(0.0, 1.0, 8.0) - 1.0) < 1e-9);
+		UASSERT(std::abs(north.shade(0.0, 1.0, 14.0) - 0.25) < 1e-9);
+		UASSERT(tropics.shade(0.0, 1.0, 4.0) == 0.0);
+
+		// A quarter turn points the pole direction along +X, perpendicular to this slope.
+		const SnowLine rotated(0, 1.0, 47.0, 90.0);
+		UASSERT(std::abs(rotated.shade(0.0, 1.0, 4.0)) < 1e-9);
+		UASSERT(std::abs(rotated.shade(1.0, 0.0, 4.0) - 1.0) < 1e-9);
 	}
 
 	void testDisabledSnowLineDoesNotSnow()

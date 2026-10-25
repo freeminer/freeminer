@@ -3,6 +3,7 @@
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
+#include "mapgen/earth/arnis-cpp/src/land_cover/osm_water_override.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
 
 #include <algorithm>
@@ -39,6 +40,7 @@ public:
 		TEST(testNestedOuterGetsItsOwnHoleGroup);
 		TEST(testHoleGroupingIgnoresBoundaryVertices);
 		TEST(testInnerRingsCutHolesButIslandsStayWhole);
+		TEST(testWaterOverrideKeepsPondOnIslandInHole);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
@@ -76,7 +78,10 @@ public:
 		const auto island =
 				ring({{-1, 1}, {0, 1}, {5, 1}, {5, 5}, {0, 5}, {-1, 5}, {-1, 1}});
 		const auto hole = ring({{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}});
-		UASSERT(!arnis::element_processing::mostly_inside(island, hole));
+		UASSERT(!arnis::element_processing::mostly_inside(
+				island, hole, [](const arnis::ProcessedNode &point) {
+					return std::pair<std::int32_t, std::int32_t>{point.x, point.z};
+				}));
 		auto xz = [](const auto &points) {
 			std::vector<std::pair<std::int32_t, std::int32_t>> result;
 			for (const auto &point : points)
@@ -104,6 +109,41 @@ public:
 		UASSERT(arnis::element_processing::landuse_paints_ground({}));
 		UASSERT(!arnis::element_processing::landuse_paints_ground(residential));
 		UASSERT(arnis::element_processing::landuse_paints_ground(forest));
+	}
+
+	void testWaterOverrideKeepsPondOnIslandInHole()
+	{
+		auto make_way = [](std::uint64_t id, int min, int max) {
+			arnis::ProcessedWay way;
+			way.id = id;
+			way.nodes = square(min, max);
+			for (std::size_t i = 0; i + 1 < way.nodes.size(); ++i)
+				way.nodes[i].id = id * 10 + i;
+			way.nodes.back().id = way.nodes.front().id;
+			return way;
+		};
+		auto outer = make_way(1, 0, 60);
+		auto hole = make_way(2, 15, 45);
+		auto pond = make_way(3, 25, 35);
+		arnis::ProcessedRelation relation{};
+		relation.id = 9;
+		relation.tags.emplace("natural", "water");
+		relation.members.emplace_back(outer, arnis::ProcessedMemberRole::Outer);
+		relation.members.emplace_back(hole, arnis::ProcessedMemberRole::Inner);
+		relation.members.emplace_back(pond, arnis::ProcessedMemberRole::Outer);
+
+		constexpr std::size_t side = 61;
+		arnis::land_cover::LandCoverData data;
+		data.width = data.height = side;
+		data.grid.assign(side, std::vector<std::uint8_t>(side, 1));
+		std::vector<std::vector<float>> heights(side, std::vector<float>(side, 10.0f));
+		const auto bbox = XZBBox(0, 0, 60, 60);
+		arnis::land_cover::apply_osm_water_override(
+				data, heights, side, side, {arnis::ProcessedElement(relation)}, bbox);
+
+		UASSERT(data.grid[5][5] == arnis::land_cover::LC_WATER);
+		UASSERT(data.grid[20][20] != arnis::land_cover::LC_WATER);
+		UASSERT(data.grid[30][30] == arnis::land_cover::LC_WATER);
 	}
 
 	void testInnerRingsCutHolesButIslandsStayWhole()
