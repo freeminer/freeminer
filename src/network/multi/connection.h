@@ -49,6 +49,7 @@ public:
 
 	void Serve(Address bind_addr) override;
 	void Connect(Address address) override;
+	void ConnectToHost(Address address, const std::string &address_name) override;
 	bool Connected() override;
 	void Disconnect() override;
 	std::string_view getProtocolName(session_t peer_id);

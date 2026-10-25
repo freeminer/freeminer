@@ -171,6 +171,11 @@ void ConnectionMulti::Serve(Address bind_address)
 
 void ConnectionMulti::Connect(Address address)
 {
+	ConnectToHost(address, {});
+}
+
+void ConnectionMulti::ConnectToHost(Address address, const std::string &address_name)
+{
 	const auto remote_proto = g_settings->get("remote_proto");
 
 	actionstream << "Multi connect to " << address.serializeString() << ":"
@@ -179,7 +184,7 @@ void ConnectionMulti::Connect(Address address)
 	const auto protocol = getProtocol(remote_proto);
 	if (auto connection = getConnection(protocol)) {
 		connected_to = protocol;
-		connection->Connect(address);
+		connection->ConnectToHost(address, address_name);
 	}
 }
 

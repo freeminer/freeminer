@@ -334,6 +334,9 @@ struct ConnectionCommand
 {
 	const ConnectionCommandType type;
 	Address address;
+	// fm: carry the hostname to the transport worker for multihomed connect.
+	std::string address_name;
+	// ===
 	session_t peer_id = PEER_ID_INEXISTENT;
 	u8 channelnum = 0;
 	Buffer<u8> data;

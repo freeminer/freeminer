@@ -112,7 +112,14 @@ void Connection::Serve(Address bind_addr)
 
 void Connection::Connect(Address address)
 {
-	putCommand(ConnectionCommand::connect(address));
+	ConnectToHost(address, {});
+}
+
+void Connection::ConnectToHost(Address address, const std::string &address_name)
+{
+	auto command = ConnectionCommand::connect(address);
+	command->address_name = address_name;
+	putCommand(command);
 }
 
 bool Connection::Connected()

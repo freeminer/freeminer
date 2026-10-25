@@ -6,6 +6,9 @@
 #include "irrlichttypes.h"
 #include "networkprotocol.h" // session_t
 #include "socket.h" // Address
+// fm: the hostname-aware default method forwards an Address by value.
+#include "address.h"
+// ===
 
 #include <string_view>
 
@@ -61,6 +64,12 @@ public:
 
 	virtual void Serve(Address bind_addr) = 0;
 	virtual void Connect(Address address) = 0;
+	// fm: transports with multiple paths can also use the server hostname.
+	virtual void ConnectToHost(Address address, const std::string &)
+	{
+		Connect(address);
+	}
+	// ===
 	virtual bool Connected() = 0;
 	virtual void Disconnect() = 0;
 	virtual void DisconnectPeer(session_t peer_id) = 0;
