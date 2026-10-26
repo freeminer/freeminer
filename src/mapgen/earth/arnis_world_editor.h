@@ -59,6 +59,13 @@ namespace trains
 class TrainRouteNetwork;
 }
 
+// fm: Shared native rail geometry must survive chunk clipping and tile workers.
+namespace railways::advtrains
+{
+struct RailNetwork;
+}
+// ===
+
 namespace fuel_stations
 {
 class FuelIndex;
@@ -128,6 +135,10 @@ struct WorldEditor
 	// Backend-neutral train routes and schedules, shared with tile workers for
 	// consumers that animate or otherwise interpret generated rail services.
 	std::shared_ptr<const trains::TrainRouteNetwork> train_network;
+	// fm: Full-source native topology and grades, immutable during generation.
+	std::shared_ptr<const railways::advtrains::RailNetwork> native_rail_network;
+	std::set<std::uint64_t> native_generated_rails;
+	// ===
 	// Actual rail-node elevations keyed by OSM way and world XZ. The shared
 	// storage is written by parallel tile editors and read after generation.
 	std::shared_ptr<RailHeightMap> rail_heights;

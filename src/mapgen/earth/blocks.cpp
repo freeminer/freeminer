@@ -1,5 +1,9 @@
 #include "arnis_adapter.h"
 #include "arnis-cpp/src/fm_native_signs.h"
+// fm: Native train placement configuration and host node resolution.
+#include "arnis-cpp/src/fm_native_trains.h"
+#include "settings.h"
+// ===
 #include "emerge.h"
 #include "log.h"
 
@@ -1281,6 +1285,15 @@ void init(MapgenEarth *mg)
 	STREET_SIGN_US_ROUTE = optional_sign("street_signs:sign_us_route_onpole");
 	STREET_SIGN_US_INTERSTATE = optional_sign("street_signs:sign_us_interstate_onpole");
 	DECAL_FRAME = g("decal_frame", {"freeminer:arnis_decal_frame", "air"});
+	// fm: Disabled modes preserve the existing backend representation.
+	std::string train_mode = "auto";
+	g_settings->getNoEx("arnis_train_mode", train_mode);
+	native_train_marker =
+			train_mode == "auto" ? optional_sign("freeminer:arnis_train_spawn") : AIR;
+	u32 train_interval = 512;
+	g_settings->getU32NoEx("arnis_train_interval", train_interval);
+	native_train_interval = std::clamp<u32>(train_interval, 64, 65536);
+	// ===
 	ANDESITE_WALL = g("andesite_wall", {"walls:cobble", "default:stone"});
 	STONE_BRICK_WALL = g("stone_brick_wall", "default:stonebrick");
 	CARROTS = g("carrots", {"farming:carrot_4", "mcl_farming:carrot_7",

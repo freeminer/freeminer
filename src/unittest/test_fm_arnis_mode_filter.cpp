@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/mode_filter.h"
+#include "mapgen/earth/arnis-cpp/src/world_editor/common.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -46,6 +47,7 @@ public:
 		TEST(testTerrainOnlyKeepsWaterAndNature);
 		TEST(testTerrainOnlyDropsBuiltFeatures);
 		TEST(testBlueprintKeepsPlansAndDropsFurniture);
+		TEST(testStorageMayContainChecksItsRepresentation);
 	}
 
 	void testTerrainOnlyKeepsWaterAndNature()
@@ -87,6 +89,25 @@ public:
 			UASSERT(has_id(elements, id));
 		for (std::uint64_t id : {7, 9, 10, 11, 12, 13, 14})
 			UASSERT(!has_id(elements, id));
+	}
+
+	void testStorageMayContainChecksItsRepresentation()
+	{
+		const arnis::Block low_a(1), low_b(2), high(300);
+		arnis::world_editor::BlockStorage dense(low_a);
+		UASSERT(dense.may_contain(low_a));
+		UASSERT(!dense.may_contain(low_b));
+		dense.set(0, low_b);
+		UASSERT(dense.may_contain(low_b));
+		dense.set(0, low_a);
+		UASSERT(!dense.may_contain(low_b));
+
+		arnis::world_editor::BlockStorage paletted(low_a);
+		paletted.set(0, high);
+		UASSERT(paletted.may_contain(high));
+		paletted.set(0, low_a);
+		// A palette may retain an ID after the last corresponding cell changes.
+		UASSERT(paletted.may_contain(high));
 	}
 };
 
