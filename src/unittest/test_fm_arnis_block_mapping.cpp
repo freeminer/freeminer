@@ -16,6 +16,7 @@ public:
 		TEST(testNewRustBlocksHaveLuantiMappings);
 		TEST(testPottedPlantBedrockMapping);
 		TEST(testWaterloggedBedrockState);
+		TEST(testGenericBedrockNameMapping);
 	}
 
 	void testNewRustBlocksHaveLuantiMappings()
@@ -34,8 +35,7 @@ public:
 	{
 		using namespace arnis;
 		UASSERT(BEDROCK_BLOCK_STATE_VERSION == ((1 << 24) | (21 << 16) | (60 << 8) | 33));
-		const auto plant = potted_plant(FLOWER_POT);
-		UASSERT(plant && plant->name == "minecraft:poppy");
+		UASSERT(!potted_plant(FLOWER_POT));
 		const auto tulip = potted_plant(POTTED_RED_TULIP);
 		UASSERT(tulip && tulip->name == "minecraft:red_tulip");
 		const auto dandelion = potted_plant(POTTED_DANDELION);
@@ -53,6 +53,33 @@ public:
 				OAK_STAIRS, BlockWithProperties::Properties{{"waterlogged", "true"}}}));
 		UASSERT(!is_waterlogged(BlockWithProperties{
 				OAK_STAIRS, BlockWithProperties::Properties{{"waterlogged", "false"}}}));
+	}
+
+	void testGenericBedrockNameMapping()
+	{
+		using namespace arnis;
+		const Block unlisted{CONTENT_UNKNOWN};
+		const auto cobweb = to_bedrock_block(unlisted, "minecraft:cobweb");
+		UASSERT(cobweb.name == "minecraft:web");
+		UASSERT(to_bedrock_block(RAW_GOLD_BLOCK).name == "minecraft:raw_gold_block");
+		UASSERT(to_bedrock_block(LAPIS_BLOCK).name == "minecraft:lapis_block");
+		const auto potted_poppy = potted_plant(unlisted, "minecraft:potted_poppy");
+		UASSERT(potted_poppy && potted_poppy->name == "minecraft:poppy");
+		UASSERT(!potted_plant(unlisted, "minecraft:flower_pot"));
+		UASSERT(is_waterlogged(
+				BlockWithProperties{unlisted}, "minecraft:tube_coral_fan"));
+		UASSERT(!is_waterlogged(
+				BlockWithProperties{unlisted,
+						BlockWithProperties::Properties{{"waterlogged", "false"}}},
+				"minecraft:tube_coral_fan"));
+		const auto stairs = to_bedrock_block_with_properties(
+				BlockWithProperties{
+						unlisted, BlockWithProperties::Properties{{"facing", "east"},
+										  {"half", "top"}}},
+				"oak_stairs");
+		UASSERT(stairs.name == "minecraft:oak_stairs");
+		UASSERT(std::get<int>(stairs.states.at("weirdo_direction")) == 0);
+		UASSERT(std::get<bool>(stairs.states.at("upside_down_bit")));
 	}
 };
 

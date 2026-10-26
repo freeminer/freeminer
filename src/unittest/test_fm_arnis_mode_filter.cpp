@@ -1,6 +1,8 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/mode_filter.h"
+#include "mapgen/earth/arnis-cpp/src/osm_parser.h"
+#include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/world_editor/common.h"
 
 #include <algorithm>
@@ -48,6 +50,8 @@ public:
 		TEST(testTerrainOnlyDropsBuiltFeatures);
 		TEST(testBlueprintKeepsPlansAndDropsFurniture);
 		TEST(testStorageMayContainChecksItsRepresentation);
+		TEST(testRustParityOsmTagFilters);
+		TEST(testRustPrioritySortLeavesBroadLanduseLast);
 	}
 
 	void testTerrainOnlyKeepsWaterAndNature()
@@ -108,6 +112,58 @@ public:
 		paletted.set(0, low_a);
 		// A palette may retain an ID after the last corresponding cell changes.
 		UASSERT(paletted.may_contain(high));
+	}
+
+	void testRustParityOsmTagFilters()
+	{
+		arnis::tags_t proposed;
+		proposed.emplace("highway", "proposed");
+		proposed.emplace("bridge", "yes");
+		proposed.emplace("tunnel", "yes");
+		proposed.emplace("layer", "1");
+		arnis::osm_parser::filter_tags(proposed);
+		UASSERT(proposed.empty());
+
+		arnis::tags_t railway_bridge;
+		railway_bridge.emplace("highway", "razed");
+		railway_bridge.emplace("railway", "rail");
+		railway_bridge.emplace("bridge", "yes");
+		railway_bridge.emplace("natural", "peninsula");
+		arnis::osm_parser::filter_tags(railway_bridge);
+		UASSERT(!railway_bridge.contains("highway"));
+		UASSERT(!railway_bridge.contains("natural"));
+		UASSERT(railway_bridge.get("railway") == "rail");
+		UASSERT(railway_bridge.get("bridge") == "yes");
+
+		arnis::tags_t construction;
+		construction.emplace("highway", "construction");
+		arnis::osm_parser::filter_tags(construction);
+		UASSERT(construction.get("highway") == "construction");
+		arnis::tags_t woodland;
+		woodland.emplace("natural", "wood");
+		arnis::osm_parser::filter_tags(woodland);
+		UASSERT(woodland.get("natural") == "wood");
+	}
+
+	void testRustPrioritySortLeavesBroadLanduseLast()
+	{
+		std::vector<arnis::ProcessedElement> elements{way(1, {{"landuse", "meadow"}}),
+				way(2, {{"man_made", "mast"}}), way(3, {{"amenity", "parking"}}),
+				way(4, {{"building:part", "yes"}}), way(5, {{"highway", "service"}}),
+				way(6, {{"building", "yes"}})};
+		arnis::sort_elements_by_priority(elements);
+		const std::vector<std::uint64_t> expected{6, 5, 3, 4, 2, 1};
+		for (std::size_t i = 0; i < expected.size(); ++i)
+			UASSERT(elements[i].id() == expected[i]);
+
+		// A building carrying landuse is still sorted by its building priority.
+		elements = {way(10, {{"landuse", "meadow"}}),
+				way(11, {{"building", "retail"}, {"landuse", "retail"}}),
+				way(12, {{"building:part", "yes"}})};
+		arnis::sort_elements_by_priority(elements);
+		UASSERT(elements[0].id() == 11);
+		UASSERT(elements[1].id() == 12);
+		UASSERT(elements[2].id() == 10);
 	}
 };
 

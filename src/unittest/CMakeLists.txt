@@ -18,6 +18,8 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_aerialways.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_relation_holes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_railways.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_steps.cpp
 	)
 # ===
 endif()
