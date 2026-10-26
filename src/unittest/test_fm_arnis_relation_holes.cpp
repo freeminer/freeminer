@@ -105,12 +105,15 @@ public:
 
 	void testMissingLanduseTagRetainsRustPredicateSemantics()
 	{
-		arnis::tags_t residential;
-		residential.emplace("landuse", "residential");
+		for (const auto *value :
+				{"residential", "commercial", "education", "religious"}) {
+			arnis::tags_t broad_area;
+			broad_area.emplace("landuse", value);
+			UASSERT(!arnis::element_processing::landuse_paints_ground(broad_area));
+		}
 		arnis::tags_t forest;
 		forest.emplace("landuse", "forest");
 		UASSERT(arnis::element_processing::landuse_paints_ground({}));
-		UASSERT(!arnis::element_processing::landuse_paints_ground(residential));
 		UASSERT(arnis::element_processing::landuse_paints_ground(forest));
 	}
 

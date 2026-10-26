@@ -1,5 +1,9 @@
 #include "arnis_adapter.h"
 #include "arnis-cpp/src/fm_native_signs.h"
+// fm: Native train placement configuration and host node resolution.
+#include "arnis-cpp/src/fm_native_trains.h"
+#include "settings.h"
+// ===
 #include "emerge.h"
 #include "log.h"
 
@@ -56,6 +60,7 @@ Block CRIMSON_SLAB;
 Block CRIMSON_STAIRS;
 Block CUT_SANDSTONE;
 Block CUT_SANDSTONE_SLAB;
+Block CHISELED_SANDSTONE;
 Block CYAN_CARPET;
 Block CYAN_CONCRETE;
 Block DARK_OAK_PLANKS;
@@ -459,6 +464,8 @@ Block CHAIN;
 Block END_ROD;
 Block LIGHTNING_ROD;
 Block GOLD_BLOCK;
+Block RAW_GOLD_BLOCK;
+Block LAPIS_BLOCK;
 Block SEA_LANTERN;
 Block ORANGE_CONCRETE;
 Block ORANGE_WOOL;
@@ -944,6 +951,9 @@ void init(MapgenEarth *mg)
 	CRACKED_STONE_BRICKS = g("cracked_stone_bricks", "default:stonebrick");
 	CRIMSON_PLANKS = g("crimson_planks", "default:wood");
 	CUT_SANDSTONE = g("cut_sandstone", "default:sandstone");
+	CHISELED_SANDSTONE = g("chiseled_sandstone",
+			{"mcl_core:chiseled_sandstone", "mcl_core:sandstone_chiseled",
+					"default:sandstone"});
 	CYAN_CONCRETE = g("cyan_concrete",
 			{"wool:cyan", "basic_materials:concrete_block", "default:stone"});
 	DARK_OAK_PLANKS = g("dark_oak_planks", {"default:wood", "default:junglewood"});
@@ -1275,6 +1285,15 @@ void init(MapgenEarth *mg)
 	STREET_SIGN_US_ROUTE = optional_sign("street_signs:sign_us_route_onpole");
 	STREET_SIGN_US_INTERSTATE = optional_sign("street_signs:sign_us_interstate_onpole");
 	DECAL_FRAME = g("decal_frame", {"freeminer:arnis_decal_frame", "air"});
+	// fm: Disabled modes preserve the existing backend representation.
+	std::string train_mode = "auto";
+	g_settings->getNoEx("arnis_train_mode", train_mode);
+	native_train_marker =
+			train_mode == "auto" ? optional_sign("freeminer:arnis_train_spawn") : AIR;
+	u32 train_interval = 512;
+	g_settings->getU32NoEx("arnis_train_interval", train_interval);
+	native_train_interval = std::clamp<u32>(train_interval, 64, 65536);
+	// ===
 	ANDESITE_WALL = g("andesite_wall", {"walls:cobble", "default:stone"});
 	STONE_BRICK_WALL = g("stone_brick_wall", "default:stonebrick");
 	CARROTS = g("carrots", {"farming:carrot_4", "mcl_farming:carrot_7",
@@ -1889,6 +1908,11 @@ void init(MapgenEarth *mg)
 			{"freeminer:lamp_red", "default:meselamp", "default:copperblock",
 					"basic_materials:brass_block", "default:steelblock"});
 	GOLD_BLOCK = g("gold_block", "default:goldblock");
+	RAW_GOLD_BLOCK =
+			g("raw_gold_block", {"mcl_core:raw_gold_block", "mcl_raw_ores:raw_gold_block",
+										"default:goldblock"});
+	LAPIS_BLOCK = g("lapis_block",
+			{"mcl_core:lapisblock", "mcl_core:lapis_block", "default:stone"});
 	SEA_LANTERN = prefer_arnis("sea_lantern", GLOWSTONE);
 	LANTERN = g("lantern", {"mcl_lantern:lantern", "default:torch", "default:meselamp"});
 	SOUL_LANTERN = g("soul_lantern",

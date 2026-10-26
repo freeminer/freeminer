@@ -43,6 +43,8 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+// Native track geometry is planned before chunk-local feature clipping.
+#include "arnis-cpp/src/element_processing/advtrains.h"
 #include "arnis-cpp/src/clipping.h"
 #include "arnis-cpp/src/floodfill_cache.h"
 #include "arnis-cpp/src/osm_parser.h"
@@ -1152,6 +1154,9 @@ struct CachedArnisChunk
 struct CachedArnisExtract
 {
 	std::once_flag parse_once;
+	// Adjacent chunks must share topology, route tie-breaks, and rail grades.
+	mutable std::once_flag native_rails_once;
+	mutable std::shared_ptr<const arnis::railways::advtrains::RailNetwork> native_rails;
 	std::mutex chunks_mutex;
 	std::unordered_map<EarthHorizontalKey, std::shared_ptr<CachedArnisChunk>,
 			EarthHorizontalKeyHash>
@@ -1235,6 +1240,15 @@ void generate_cached_arnis(
 			[mg](MapgenEarth::TileOverlayId id) { return mg->mergeTileOverlay(id); },
 			true);
 	editor.ground = &ground;
+	// Build once from uncut source ways and sample terrain in world coordinates.
+	// Routing independently clipped ways changes endpoints and obstacles at seams.
+	if (arnis::railways::advtrains::available()) {
+		std::call_once(tile.native_rails_once, [&]() {
+			tile.native_rails =
+					arnis::railways::advtrains::build_network(tile.elements, editor);
+		});
+		editor.native_rail_network = tile.native_rails;
+	}
 	editor.set_schem_entity_sink(
 			[mg](std::optional<MapgenEarth::TileOverlayId> tile_id, int x, int y, int z,
 					const std::vector<std::uint8_t> &nbt) {
@@ -1462,18 +1476,33 @@ public:
 				}
 			}
 
+			// Resolve native rail availability before caching chunk source geometry.
+			arnis::init(mg);
 			generation_stage = "chunk element selection";
 			std::call_once(chunk->elements_once, [&]() {
 				constexpr int extra = MAP_BLOCKSIZE * 2;
 				const XZBBox context_bbox(mg->node_min.X - extra, mg->node_min.Z - extra,
 						mg->node_max.X + extra, mg->node_max.Z + extra);
+				// Native routing can detour up to 48 nodes from source geometry.
+				const XZBBox rail_context_bbox(mg->node_min.X - 64, mg->node_min.Z - 64,
+						mg->node_max.X + 64, mg->node_max.Z + 64);
 				for (std::size_t i = 0; i < cached.elements.size(); ++i) {
-					if (!earth_osmium_detail::earth_bounds_intersect(
-								cached.element_bounds[i], context_bbox))
-						continue;
+					// Select routed tracks even when only their detour enters this chunk.
 					const auto &source = cached.elements[i];
+					const bool native_rail = arnis::railways::advtrains::available() &&
+											 source.is_way() &&
+											 source.as_way().tags.contains("railway");
+					if (!earth_osmium_detail::earth_bounds_intersect(
+								cached.element_bounds[i],
+								native_rail ? rail_context_bbox : context_bbox))
+						continue;
 					if (source.is_way()) {
 						const auto &source_way = source.as_way();
+						// Keep original native railway endpoints and shared OSM nodes.
+						if (native_rail) {
+							chunk->elements.push_back(source);
+							continue;
+						}
 						arnis::ProcessedWay clipped_way;
 						clipped_way.id = source_way.id;
 						clipped_way.tags = source_way.tags;
@@ -1543,7 +1572,6 @@ public:
 								chunk->flood_fill_cache->collect_building_footprints(
 										chunk->elements, xzbbox));
 			});
-			arnis::init(mg);
 			generation_stage = "Arnis world generation";
 			earth_osmium_detail::generate_cached_arnis(mg, cached, *chunk);
 		} catch (const std::exception &ex) {

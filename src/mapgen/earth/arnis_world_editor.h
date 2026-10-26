@@ -59,6 +59,13 @@ namespace trains
 class TrainRouteNetwork;
 }
 
+// fm: Shared native rail geometry must survive chunk clipping and tile workers.
+namespace railways::advtrains
+{
+struct RailNetwork;
+}
+// ===
+
 namespace fuel_stations
 {
 class FuelIndex;
@@ -128,6 +135,10 @@ struct WorldEditor
 	// Backend-neutral train routes and schedules, shared with tile workers for
 	// consumers that animate or otherwise interpret generated rail services.
 	std::shared_ptr<const trains::TrainRouteNetwork> train_network;
+	// fm: Full-source native topology and grades, immutable during generation.
+	std::shared_ptr<const railways::advtrains::RailNetwork> native_rail_network;
+	std::set<std::uint64_t> native_generated_rails;
+	// ===
 	// Actual rail-node elevations keyed by OSM way and world XZ. The shared
 	// storage is written by parallel tile editors and read after generation.
 	std::shared_ptr<RailHeightMap> rail_heights;
@@ -484,6 +495,10 @@ struct WorldEditor
 			std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height);
 	void clear_facade_panels() { placed_facade_panels.clear(); }
 	const std::vector<FacadePanel> &facade_panels() const { return placed_facade_panels; }
+	std::vector<FacadePanel> take_facade_panels()
+	{
+		return std::exchange(placed_facade_panels, {});
+	}
 	void record_facade_panel(int x, int y, int z, std::int8_t facing,
 			std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
 			const std::string &item_name = {});

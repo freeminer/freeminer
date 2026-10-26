@@ -5,6 +5,8 @@
 
 #include "catch.h"
 
+#include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <stdexcept>
 #include <string>
@@ -81,8 +83,36 @@ static bool parseConnectionBenchmarkEndpoint(std::string_view value)
 	return true;
 }
 
-static bool getOptionValue(int argc, char *argv[], int *index,
-		std::string_view option, std::string_view *value)
+static bool parseConnectionBenchmarkBackends(
+		std::string_view value, std::vector<std::string> *backends)
+{
+	if (value.empty())
+		return false;
+
+	size_t start = 0;
+	while (start <= value.size()) {
+		const size_t separator = value.find(',', start);
+		const size_t end = separator == std::string_view::npos ? value.size() : separator;
+		auto backend = value.substr(start, end - start);
+		while (!backend.empty() &&
+				std::isspace(static_cast<unsigned char>(backend.front())))
+			backend.remove_prefix(1);
+		while (!backend.empty() &&
+				std::isspace(static_cast<unsigned char>(backend.back())))
+			backend.remove_suffix(1);
+		if (backend.empty())
+			return false;
+		if (std::find(backends->begin(), backends->end(), backend) == backends->end())
+			backends->emplace_back(backend);
+		if (separator == std::string_view::npos)
+			break;
+		start = separator + 1;
+	}
+	return true;
+}
+
+static bool getOptionValue(int argc, char *argv[], int *index, std::string_view option,
+		std::string_view *value)
 {
 	const std::string_view arg(argv[*index]);
 	const std::string prefix = std::string(option) + "=";
@@ -118,37 +148,59 @@ int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_a
 
 		try {
 			if (arg == "--connection-benchmark-client-only") {
-				g_connection_benchmark_options.mode =
-						ConnectionBenchmarkMode::ClientOnly;
+				g_connection_benchmark_options.mode = ConnectionBenchmarkMode::ClientOnly;
 				continue;
 			}
 			if (arg == "--connection-benchmark-server-only") {
-				g_connection_benchmark_options.mode =
-						ConnectionBenchmarkMode::ServerOnly;
+				g_connection_benchmark_options.mode = ConnectionBenchmarkMode::ServerOnly;
 				continue;
 			}
 			if (getOptionValue(argc, argv, &i, "--connection-benchmark-mode", &value)) {
 				if (!parseConnectionBenchmarkMode(value)) {
-					Catch::cerr() << "Invalid --connection-benchmark-mode: "
-								  << value << '\n';
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-mode: " << value << '\n';
 					return 1;
 				}
 				continue;
 			}
 			if (getOptionValue(argc, argv, &i, "--connection-benchmark-server", &value)) {
 				if (!parseConnectionBenchmarkEndpoint(value)) {
-					Catch::cerr() << "Invalid --connection-benchmark-server: "
-								  << value << '\n';
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-server: " << value << '\n';
 					return 1;
 				}
 				continue;
 			}
 			if (getOptionValue(argc, argv, &i, "--connection-benchmark-port", &value)) {
 				if (!parseU16(value, &g_connection_benchmark_options.port)) {
-					Catch::cerr() << "Invalid --connection-benchmark-port: "
-								  << value << '\n';
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-port: " << value << '\n';
 					return 1;
 				}
+				continue;
+			}
+			if (getOptionValue(argc, argv, &i, "--connection-benchmark-window", &value)) {
+				if (!parseU16(value, &g_connection_benchmark_options.window) ||
+						g_connection_benchmark_options.window == 0) {
+					Catch::cerr() << "Invalid --connection-benchmark-window: " << value
+								  << " (expected 1..65535 packets per client)\n";
+					return 1;
+				}
+				continue;
+			}
+			if (getOptionValue(
+						argc, argv, &i, "--connection-benchmark-backends", &value)) {
+				if (!parseConnectionBenchmarkBackends(
+							value, &g_connection_benchmark_options.backends)) {
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-backends: " << value
+							<< " (expected a comma-separated list of backend names)\n";
+					return 1;
+				}
+				continue;
+			}
+			if (arg.size() >= 2 && arg[0] == '-' && arg[1] != '-') {
+				// skip settings
 				continue;
 			}
 		} catch (const std::exception &e) {
