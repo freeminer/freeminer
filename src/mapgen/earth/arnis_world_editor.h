@@ -484,6 +484,10 @@ struct WorldEditor
 			std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height);
 	void clear_facade_panels() { placed_facade_panels.clear(); }
 	const std::vector<FacadePanel> &facade_panels() const { return placed_facade_panels; }
+	std::vector<FacadePanel> take_facade_panels()
+	{
+		return std::exchange(placed_facade_panels, {});
+	}
 	void record_facade_panel(int x, int y, int z, std::int8_t facing,
 			std::vector<std::uint8_t> pixels, std::uint32_t width, std::uint32_t height,
 			const std::string &item_name = {});
