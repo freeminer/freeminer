@@ -160,9 +160,9 @@ void Connection::closePeer(const std::shared_ptr<Peer> &peer, bool timeout)
 	clearPeerState(peer->id);
 	m_peers.erase(peer->id);
 	if (peer->socket)
-		usrsctp_close(peer->socket);
+		closeSocket(peer->socket);
 	if (peer->listener)
-		usrsctp_close(peer->listener);
+		closeSocket(peer->listener);
 	if (peer->address)
 		usrsctp_deregister_address(peer->address);
 	peer->socket = peer->listener = nullptr;
@@ -253,7 +253,7 @@ int Connection::receive()
 		if (!peer->socket)
 			continue;
 		// Accepted sockets inherit their listener's negotiated SCTP options.
-		usrsctp_set_non_blocking(peer->socket, 1);
+		configureSocketWakeup(peer->socket);
 		m_peers.insert_or_assign(peer->id, peer->socket);
 		peer->added = true;
 		putEvent(con::ConnectionEvent::peerAdded(peer->id, {}));
