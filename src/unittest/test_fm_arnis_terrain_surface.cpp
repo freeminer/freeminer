@@ -127,6 +127,7 @@ public:
 
 	void testTerrainTileSamplingIncludesSplineNeighbourTiles()
 	{
+		using arnis::elevation::providers::tile_math::bspline_weights;
 		using arnis::elevation::providers::tile_math::sample_pixels;
 		using arnis::elevation::providers::tile_math::tap_tile_range;
 		constexpr unsigned zoom = 6;
@@ -149,6 +150,26 @@ public:
 			return x < 0 ? std::numeric_limits<double>::quiet_NaN() : ramp(x, y);
 		};
 		UASSERT(std::isfinite(sample_pixels(0.75, 0.5, true, holey)));
+		const auto wx = bspline_weights(0.25);
+		const auto wy = bspline_weights(0.0);
+		double expected = 0.0;
+		for (std::size_t j = 0; j < wy.size(); ++j)
+			for (std::size_t i = 1; i < wx.size(); ++i)
+				expected += wx[i] * wy[j] *
+							ramp(static_cast<int>(i) - 1, static_cast<int>(j) - 1);
+		expected /= wx[1] + wx[2] + wx[3];
+		UASSERT(std::abs(sample_pixels(0.75, 0.5, true, holey) - expected) < 1e-9);
+
+		const auto bowl = [](int x, int y) {
+			return x > 3 ? std::numeric_limits<double>::quiet_NaN()
+						 : static_cast<double>(x * x + x * y + y * y);
+		};
+		for (const double py : {0.5, 1.3, 2.8}) {
+			const double before = sample_pixels(2.5 - 1e-9, py, true, bowl);
+			const double after = sample_pixels(2.5, py, true, bowl);
+			UASSERT(std::abs(before - after) < 1e-6);
+			UASSERT(std::abs(after - sample_pixels(2.5, py, false, bowl)) > 0.1);
+		}
 		UASSERT(std::isnan(sample_pixels(0.5, 0.5, true,
 				[](int, int) { return std::numeric_limits<double>::quiet_NaN(); })));
 	}

@@ -5,8 +5,12 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstdint>
+#include <functional>
 #include <initializer_list>
 #include <limits>
+#include <optional>
 #include <set>
 #include <vector>
 
