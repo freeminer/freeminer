@@ -242,13 +242,14 @@ bool repeats_relation_area_tags(
 	const auto inherited_or_descriptive = [&](const auto &tag) {
 		const auto &key = tag.first;
 		return key == "name" || key.ends_with("_name") || key == "wikidata" ||
-			   key == "area" || key == "type" || relation.get(key) == tag.second;
+			   key == "wikipedia" || key == "area" || key == "type" ||
+			   relation.get(key) == tag.second;
 	};
 	const bool has_independent_tag =
 			std::any_of(way.tags.begin(), way.tags.end(), [&](const auto &tag) {
 				const auto &key = tag.first;
 				return key != "name" && !key.ends_with("_name") && key != "wikidata" &&
-					   key != "area" && key != "type";
+					   key != "wikipedia" && key != "area" && key != "type";
 			});
 	return has_independent_tag &&
 		   std::all_of(way.tags.begin(), way.tags.end(), inherited_or_descriptive);
@@ -797,6 +798,7 @@ arnis::Args earth_arnis_args()
 	read_optional_string("world_name", arnis.world_name);
 	read_bool("bedrock", arnis.bedrock);
 	read_bool("luanti", arnis.luanti);
+	read_bool("vanilla_height", arnis.vanilla_height);
 
 	// Core generation and terrain settings.
 	read_double("scale", arnis.scale);
@@ -816,12 +818,18 @@ arnis::Args earth_arnis_args()
 	read_bool("aws_only_elevation", arnis.aws_only_elevation);
 	read_bool("city_boundaries", arnis.city_boundaries);
 	read_bool("caves", arnis.caves);
+	read_bool("disasters", arnis.disasters);
 	read_bool("winter", arnis.winter);
 	read_bool("post_apocalyptic", arnis.post_apocalyptic);
 	read_bool("traffic_lights", arnis.traffic_lights);
 	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
+	if (arnis.vanilla_height) {
+		std::string disable_height_setting;
+		if (!get_setting("disable_height_limit", disable_height_setting))
+			arnis.disable_height_limit = false;
+	}
 	{
 		std::string mode;
 		if (get_setting("mode", mode)) {
@@ -950,6 +958,7 @@ arnis::Args earth_arnis_args()
 	// cannot accidentally retain Earth-only providers or structure passes.
 	arnis.apply_body_defaults();
 	arnis.apply_mode_defaults();
+	arnis.apply_feature_needs();
 	// A malformed or mutually incompatible optional setting must not disable
 	// the entire Freeminer mapgen. Keep the host's known-good defaults and let
 	// generation proceed; valid settings continue to override them normally.
@@ -1507,10 +1516,25 @@ public:
 						clipped_way.id = source_way.id;
 						clipped_way.tags = source_way.tags;
 						clipped_way.source_node_refs = source_way.source_node_refs;
+						const bool aerialway_with_distinct_ends =
+								source_way.tags.contains("aerialway") &&
+								source_way.nodes.size() >= 2 &&
+								source_way.nodes.front().id != source_way.nodes.back().id;
+						const std::array<std::pair<int, int>, 2> original_ends =
+								aerialway_with_distinct_ends
+										? std::array<std::pair<int, int>,
+												  2>{{{source_way.nodes.front().x,
+															  source_way.nodes.front().z},
+												  {source_way.nodes.back().x,
+														  source_way.nodes.back().z}}}
+										: std::array<std::pair<int, int>, 2>{};
 						clipped_way.nodes = arnis::clipping::clip_way_to_bbox(
 								source_way.nodes, context_bbox);
 						if (clipped_way.nodes.empty())
 							continue;
+						if (aerialway_with_distinct_ends)
+							arnis::clipping::mark_cut_ends(
+									clipped_way.nodes, original_ends, source_way.id);
 						chunk->elements.emplace_back(std::move(clipped_way));
 					} else if (source.is_relation()) {
 						auto relation = source.as_relation();

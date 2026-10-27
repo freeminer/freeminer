@@ -106,8 +106,8 @@ ASAN_OPTIONS=detect_container_overflow=0 $0 ---cmake_leveldb=0 -DENABLE_SYSTEM_J
 
 $0 benchmark
 $0 ---run_add="--connection-benchmark-backends=mt,enet --connection-benchmark-window=256" benchmark
-$0 ---run_add="--connection-benchmark-clients=1,8,128 --connection-benchmark-sizes=64,4096,32768" benchmark
-$0 ---run_add=--connection-benchmark-backends=mt_enet,sctp,ws,multi_sctp benchmark
+$0 ---run_add="benchmark_connection_operations --connection-benchmark-clients=1,8,128 --connection-benchmark-sizes=64,4096,32768" benchmark
+$0 ---run_add=--connection-benchmark-backends=mt,enet,sctp,ws,multi_sctp benchmark
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -526,8 +526,7 @@ $commands = {
           $commands->{executable}(),
           qq{--run-benchmarks},
           qq{$config->{run_add} },
-          #(-s '/etc/ssl/certs/ssl-cert-snakeoil.pem' ? q{ -https_chain=/etc/ssl/certs/ssl-cert-snakeoil.pem } : ''),
-          #(-s '/etc/ssl/private/ssl-cert-snakeoil.key' ? q{ -https_key=/etc/ssl/private/ssl-cert-snakeoil.key } : ''),
+          ( map { ' --' . $_ . '=' . $options->{pass}{$_} } sort keys %{$options->{pass}} ) 
     }],
     set_bot         => {'----bot' => 1, }, # '----bot_random' => 1,
     run_bot         => ['set_bot', 'set_client', 'run_single'],

@@ -1,10 +1,13 @@
 #include "test.h"
 #include "mapgen/earth/arnis_ground.h"
 #include "mapgen/earth/arnis-cpp/src/elevation/peaks.h"
+#include "mapgen/earth/arnis-cpp/src/elevation/tile_math.h"
 #include "mapgen/earth/arnis-cpp/src/coordinate_system/geographic/llbbox.h"
 #include "mapgen/earth/arnis-cpp/src/terrain_surface.h"
 
+#include <cmath>
 #include <limits>
+#include <utility>
 
 class TestFmArnisTerrainSurface : public TestBase
 {
@@ -20,6 +23,7 @@ public:
 		TEST(testNonFinitePeakHintDoesNotPoisonElevationGrid);
 		TEST(testNonFinitePeakResolutionDoesNotPoisonElevationGrid);
 		TEST(testFlatWorldDimensionsDoNotOverwriteElevationDimensions);
+		TEST(testTerrainTileSamplingIncludesSplineNeighbourTiles);
 	}
 
 	void testSnowCoverMatchesRustThresholds()
@@ -119,6 +123,34 @@ public:
 		UASSERT(flat.snow_threshold_y() == std::numeric_limits<int>::max());
 		const auto flat_dims = flat.world_dims();
 		UASSERT(flat_dims.first == 64 && flat_dims.second == 48);
+	}
+
+	void testTerrainTileSamplingIncludesSplineNeighbourTiles()
+	{
+		using arnis::elevation::providers::tile_math::sample_pixels;
+		using arnis::elevation::providers::tile_math::tap_tile_range;
+		constexpr unsigned zoom = 6;
+		constexpr double tile_pixels = 512.0;
+		const double tile_span = tile_pixels * (1u << zoom);
+		const double seam = tile_pixels / tile_span;
+		const auto [x0, x1] =
+				tap_tile_range(zoom, seam + 1.0 / tile_span, seam + 2.0 / tile_span, 512);
+		UASSERT(x0 == 0 && x1 == 1);
+		const auto [edge0, edge1] = tap_tile_range(zoom, 0.0, 1.0 / tile_span, 512);
+		UASSERT(edge0 == 0 && edge1 == 0);
+
+		const auto ramp = [](int x, int y) { return 3.0 * x - 2.0 * y + 7.0; };
+		for (const auto [x, y] :
+				{std::pair{3.2, 4.7}, std::pair{100.01, 0.99}, std::pair{-5.5, 2.25}}) {
+			UASSERT(std::abs(sample_pixels(x, y, true, ramp) -
+							 sample_pixels(x, y, false, ramp)) < 1e-9);
+		}
+		const auto holey = [&](int x, int y) {
+			return x < 0 ? std::numeric_limits<double>::quiet_NaN() : ramp(x, y);
+		};
+		UASSERT(std::isfinite(sample_pixels(0.75, 0.5, true, holey)));
+		UASSERT(std::isnan(sample_pixels(0.5, 0.5, true,
+				[](int, int) { return std::numeric_limits<double>::quiet_NaN(); })));
 	}
 };
 

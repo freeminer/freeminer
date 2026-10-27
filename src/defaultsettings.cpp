@@ -297,12 +297,6 @@ void fm_set_default_settings(Settings *settings)
 															: "10");
 	settings->setDefault("fix_not_generated", "false");
 
-#if (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
-	//settings->setDefault("enable_ipv6", "true");
-#else
-	settings->setDefault("enable_ipv6", "false");
-#endif
-
 #if !USE_IPV4_DEFAULT && (ENET_IPV6 || MINETEST_TRANSPORT || USE_SCTP)
 	settings->setDefault("ipv6_server",
 			"true"); // problems on all windows versions (unable to play in local game)

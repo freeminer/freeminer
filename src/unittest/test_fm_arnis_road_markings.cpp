@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/element_processing/road_markings.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/signage.h"
 
 #include <cstdint>
 #include <initializer_list>
@@ -64,6 +65,8 @@ public:
 		TEST(testOnePaintedRoadNodeWins);
 		TEST(testUnmarkedRoadNodesSuppressDefaultZebra);
 		TEST(testUnrelatedCrossingNodeDoesNotControlWay);
+		TEST(testUntaggedCrossingNodeAloneStaysBare);
+		TEST(testStopSignHeadingFollowsNearestJunction);
 	}
 
 	void testCrossingWayUsesTagsFromRoadNodes()
@@ -117,6 +120,34 @@ public:
 						.crossing_way_paint(elements[2].as_way());
 		UASSERT(paint.has_value());
 		UASSERT(paint->kind == CrossingPaint::Kind::Zebra);
+	}
+
+	void testUntaggedCrossingNodeAloneStaysBare()
+	{
+		const std::vector<ProcessedElement> elements{ProcessedElement(way(1,
+				{node(10, 0, 50), node(2, 40, 50, {{"highway", "crossing"}}),
+						node(11, 100, 50)},
+				{{"highway", "secondary"}}))};
+		const auto index =
+				RoadMarkingIndex::build(elements, 1.0, decals::SignRegion::Europe);
+		UASSERT(index.way(1) == nullptr);
+	}
+
+	void testStopSignHeadingFollowsNearestJunction()
+	{
+		const auto stop = node(2, 0, -5, {{"highway", "stop"}});
+		std::vector<ProcessedElement> elements{ProcessedElement(stop),
+				ProcessedElement(
+						way(1, {node(10, 0, -40), node(2, 0, -5), node(3, 0, 40)},
+								{{"highway", "residential"}})),
+				ProcessedElement(
+						way(2, {node(11, -40, 40), node(3, 0, 40), node(12, 40, 40)},
+								{{"highway", "primary"}}))};
+		const auto headings = signage::build_node_headings(elements, SignageLevel::Full);
+		const auto found = headings.find(2);
+		UASSERT(found != headings.end());
+		UASSERT(found->second.dir.second > 0.99);
+		UASSERT(!found->second.both_ways);
 	}
 };
 
