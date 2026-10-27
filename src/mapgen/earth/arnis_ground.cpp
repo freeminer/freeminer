@@ -348,6 +348,11 @@ GroundFetchPlan GroundFrame::fetch_plan(
 			}
 		}
 	}
+	if (pad_blocks > 0) {
+		std::cout
+				<< "Note: this area is too wide for the seam margin, so terrain near its "
+				   "edges may not match the neighbouring areas exactly.\n";
+	}
 	const auto dims = elevation::compute_grid_dims_for_world(world_width, world_height);
 	return {bbox, dims, 0, {world_width, world_height}};
 }

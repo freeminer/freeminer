@@ -72,6 +72,8 @@ public:
 		TEST(testBuiltUpFallbackUsesClimate);
 		TEST(testBridgeReturnsToRiverAndLowersDeck);
 		TEST(testHighDamStaysLand);
+		TEST(testBlueprintCausewayIsNotReclaimed);
+		TEST(testWideWaterfrontStaysLand);
 	}
 
 	void testFieldsBecomeGrassland()
@@ -151,6 +153,33 @@ public:
 		naturalize(data, &heights, arnis::biome::Climate::Temperate);
 		UASSERT(data.grid[15][14] == LC_GRASSLAND);
 		UASSERT(heights[15][14] == 40.0f);
+	}
+
+	void testBlueprintCausewayIsNotReclaimed()
+	{
+		using namespace arnis::land_cover;
+		std::vector<std::string> rows(30, std::string(30, 'w'));
+		for (auto &row : rows)
+			std::fill(row.begin() + 13, row.begin() + 17, 'b');
+		auto data = make_land_cover(rows, 0.2);
+		std::vector<std::vector<float>> heights(30, std::vector<float>(30, 10.0f));
+		naturalize(data, &heights, arnis::biome::Climate::Temperate, {0, 0}, false);
+		UASSERT(data.grid[15][14] == LC_GRASSLAND);
+		UASSERT(heights[15][14] == 10.0f);
+	}
+
+	void testWideWaterfrontStaysLand()
+	{
+		using namespace arnis::land_cover;
+		std::vector<std::string> rows(30, std::string(30, 'b'));
+		for (auto &row : rows) {
+			std::fill(row.begin(), row.begin() + 5, 'w');
+			std::fill(row.end() - 5, row.end(), 'w');
+		}
+		auto data = make_land_cover(rows, 0.2);
+		naturalize(data, nullptr, arnis::biome::Climate::Temperate);
+		UASSERT(count_class(data, LC_WATER) == 10 * 30);
+		UASSERT(count_class(data, LC_GRASSLAND) == 20 * 30);
 	}
 };
 

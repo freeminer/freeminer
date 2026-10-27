@@ -29,6 +29,7 @@ public:
 		TEST(testGenericRideFeatureOwnership);
 		TEST(testSpinnerPartReplacement);
 		TEST(testBusinessKindMatchesRustTagCoverage);
+		TEST(testDropTowerNameHintsRespectWordBoundaries);
 	}
 
 	void testRideBuildingsAndHalls()
@@ -84,6 +85,18 @@ public:
 		UASSERT(business_kind(tags({{"leisure", "water_park"}})) == "swimming");
 		UASSERT(business_kind(tags({{"healthcare", "physiotherapist"}})) == "doctors");
 		UASSERT(!business_kind(tags({{"amenity", "bench"}})));
+	}
+
+	void testDropTowerNameHintsRespectWordBoundaries()
+	{
+		for (const char *name : {"Wirbelsturm", "El Torrente", "Le Tour des Jardins",
+					 "Big Bird's Tour Bus"})
+			UASSERT(!arnis::attractions::replaces_parts(
+					tags({{"attraction", "amusement_ride"}, {"name", name}})));
+		for (const char *name :
+				{"Freifallturm", "Kristallturm", "La Tour des Moussaillons", "Tårnet"})
+			UASSERT(arnis::attractions::replaces_parts(
+					tags({{"attraction", "amusement_ride"}, {"name", name}})));
 	}
 };
 
