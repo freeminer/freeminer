@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "network/mtp/internal.h"
 #include "network/enet/connection.h"
+#include "network/enet/fm_enet_packet.h"
 #include "log.h"
 #include "network/networkpacket.h"
 #include "network/peerhandler.h"
@@ -105,6 +106,8 @@ ConnectionEnet::ConnectionEnet(
 
 ConnectionEnet::~ConnectionEnet()
 {
+	stop();
+	m_wakeup.notify();
 	join();
 	if (m_enet_host)
 		enet_host_destroy(m_enet_host);
@@ -114,19 +117,31 @@ ConnectionEnet::~ConnectionEnet()
 /* Internal stuff */
 void *ConnectionEnet::run()
 {
+	constexpr unsigned budget = 256;
 	while (!stopRequested()) {
 		EXCEPTION_HANDLER_BEGIN;
-		while (!m_command_queue.empty()) {
+		m_wakeup.drain();
+		unsigned commands = 0;
+		while (commands < budget && !m_command_queue.empty()) {
 			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
+			++commands;
 		}
-		if (receive() <= 0) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		// Flush once per command batch: service() may return an already queued
+		// event before it sends outgoing packets.
+		if (commands && m_enet_host)
+			enet_host_flush(m_enet_host);
+		unsigned events = 0;
+		while (events < budget && receive() > 0)
+			++events;
+		if (events < budget && m_command_queue.empty() && !stopRequested()) {
+			// Network traffic and commands both wake this wait. The timeout
+			// preserves the previous 1 ms bound for ENet timer servicing.
+			m_wakeup.wait(m_enet_host ? m_enet_host->socket : ENET_SOCKET_NULL, 1);
 		}
 		EXCEPTION_HANDLER_END;
 	}
 	disconnect();
-
 	return nullptr;
 }
 
@@ -162,11 +177,11 @@ void ConnectionEnet::processCommand(ConnectionCommandPtr c)
 		return;
 	case CONNCMD_SEND:
 		dout_con << getDesc() << " processing CONNCMD_SEND" << std::endl;
-		send(c->peer_id, c->channelnum, c->data, c->reliable);
+		send(c);
 		return;
 	case CONNCMD_SEND_TO_ALL:
 		dout_con << getDesc() << " processing CONNCMD_SEND_TO_ALL" << std::endl;
-		sendToAll(c->channelnum, c->data, c->reliable);
+		sendToAll(c);
 		return;
 	/*
 	case CONNCMD_DELETE_PEER:
@@ -190,7 +205,7 @@ int ConnectionEnet::receive()
 		return ret;
 	}
 	ENetEvent event;
-	ret += enet_host_service(m_enet_host, &event, 10);
+	ret += enet_host_service(m_enet_host, &event, 0);
 	if (ret > 0) {
 		m_last_recieved = porting::getTimeMs();
 		m_last_recieved_warn = 0;
@@ -376,41 +391,33 @@ void ConnectionEnet::disconnect()
 	m_peers_address.clear();
 }
 
-void ConnectionEnet::sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable)
+void ConnectionEnet::sendToAll(const ConnectionCommandPtr &command)
 {
-	ENetPacket *packet = enet_packet_create(
-			*data, data.getSize(), reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
-	enet_host_broadcast(m_enet_host, 0, packet);
+	if (!m_enet_host)
+		return;
+	if (auto *packet = makeEnetPacket(command))
+		enet_host_broadcast(m_enet_host, command->channelnum, packet);
+	else
+		errorstream << "ENet packet allocation failed" << std::endl;
 }
 
-void ConnectionEnet::send(
-		u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
+void ConnectionEnet::send(const ConnectionCommandPtr &command)
 {
-	{
-		// MutexAutoLock peerlock(m_peers_mutex);
-		if (m_peers.find(peer_id) == m_peers.end())
-			return;
-	}
-	// dout_con<<getDesc()<<" sending to peer_id="<<peer_id<<std::endl;
-
-	assert(channelnum < CHANNEL_COUNT);
-
-	ENetPacket *packet = enet_packet_create(
-			*data, data.getSize(), reliable ? ENET_PACKET_FLAG_RELIABLE : 0);
-
-	ENetPeer *peer = getPeer(peer_id);
-	if (!peer) {
-		deletePeer(peer_id, false);
+	assert(command->channelnum < CHANNEL_COUNT);
+	ENetPeer *peer = getPeer(command->peer_id);
+	if (!peer)
+		return;
+	auto *packet = makeEnetPacket(command);
+	if (!packet) {
+		errorstream << "ENet packet allocation failed" << std::endl;
 		return;
 	}
-	if (enet_peer_send(peer, channelnum, packet) < 0) {
-		infostream << "enet_peer_send failed peer=" << peer_id << " reliable=" << reliable
-				   << " size=" << data.getSize() << std::endl;
-		/*
-				if (reliable)
-					deletePeer(peer_id, false);
-		*/
-		return;
+	if (enet_peer_send(peer, command->channelnum, packet) < 0) {
+		infostream << "enet_peer_send failed peer=" << command->peer_id
+				   << " reliable=" << command->reliable
+				   << " size=" << command->data.getSize() << std::endl;
+		// Failed sends do not transfer ownership to ENet.
+		enet_packet_destroy(packet);
 	}
 }
 
@@ -471,11 +478,15 @@ ConnectionEventPtr ConnectionEnet::waitEvent(u32 timeout_ms)
 
 void ConnectionEnet::putCommand(ConnectionCommandPtr c)
 {
-	// TODO? if (!m_shutting_down)
+	bool wake;
 	{
+		std::lock_guard lock(m_command_mutex);
+		wake = m_command_queue.empty();
 		m_command_queue.push_back(c);
-		// m_sendThread->Trigger();
 	}
+	// Coalesce a burst of commands into one local wakeup datagram.
+	if (wake)
+		m_wakeup.notify();
 }
 
 void ConnectionEnet::Serve(Address bind_addr)

@@ -18,6 +18,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <enet/enet.h>
+#include "fm_enet_wakeup.h"
+#include <mutex>
 //#include "network/fm_connection_multi.h"
 #include "network/connection.h"
 #include "network/mtp/impl.h"
@@ -83,8 +85,8 @@ private:
 	void serve(Address address);
 	void connect(Address address);
 	void disconnect();
-	void sendToAll(u8 channelnum, SharedBuffer<u8> data, bool reliable);
-	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void sendToAll(const ConnectionCommandPtr &command);
+	void send(const ConnectionCommandPtr &command);
 
 protected:
 	ENetPeer *getPeer(u16 peer_id);
@@ -94,6 +96,8 @@ private:
 
 	MutexedQueue<ConnectionEventPtr> m_event_queue;
 	MutexedQueue<ConnectionCommandPtr> m_command_queue;
+	std::mutex m_command_mutex;
+	EnetWakeup m_wakeup;
 
 	float m_timeout;
 	ENetHost *m_enet_host;

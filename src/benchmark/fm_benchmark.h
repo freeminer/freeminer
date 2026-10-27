@@ -20,6 +20,8 @@ struct ConnectionBenchmarkOptions
 	ConnectionBenchmarkMode mode = ConnectionBenchmarkMode::ClientServer;
 	std::string server = "::1";
 	u16 port = 0;
+	u16 window = 1;
+	std::vector<std::string> backends;
 };
 
 const ConnectionBenchmarkOptions &get_connection_benchmark_options();

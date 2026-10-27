@@ -43,6 +43,7 @@ if [ -z "${NO_DEPS-}" ]; then
         libosmium2-dev \
         libprotozero-dev \
         libpsl-dev  \
+        libpq-dev \
         libsdl2-dev \
         libsqlite3-dev \
         libssl-dev \

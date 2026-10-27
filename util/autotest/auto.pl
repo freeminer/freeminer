@@ -104,7 +104,9 @@ $0 ----fall1 -continuous_forward=1 bot
 
 ASAN_OPTIONS=detect_container_overflow=0 $0 ---cmake_leveldb=0 -DENABLE_SYSTEM_JSONCPP=0 -DENABLE_WEBSOCKET=0 -keymap_toggle_block_bounds=KEY_F9 ----fall2 set_client asan build_client run_single
 
-$0 -DBUILD_BENCHMARKS=1 go --run-benchmarks  
+$0 benchmark
+$0 ---run_add="--connection-benchmark-backends=mt,enet --connection-benchmark-window=256" benchmark
+$0 ---run_add=--connection-benchmark-backends=mt_enet,sctp,ws,multi_sctp benchmark
 };
 
 no if $] >= 5.017011, warnings => 'experimental::smartmatch';
@@ -510,13 +512,21 @@ $commands = {
           qq{--run-unittests --logfile $config->{logdir}/autotest.$g->{task_name}.test.log},
           options_make([qw(verbose trace)]);
     },
-    benchmark => ['build_client', sub {
+    benchmark => [ {
+            '-DBUILD_BENCHMARKS' => 1,
+        },
+        'build_client', sub {
+        if (! -s 'privkey.pem' || ! -s 'fullchain.pem') {
+            sy q{openssl req -new -x509 -days 365 -noenc -out fullchain.pem -keyout privkey.pem -subj "/C=/ST=/L=/O=MyCompany/OU=/CN=example.com"};
+        }
         sy $commands->{env}(),
           $config->{runner},
           qq{@_},
           $commands->{executable}(),
           qq{--run-benchmarks},
-          ;
+          qq{$config->{run_add} },
+          #(-s '/etc/ssl/certs/ssl-cert-snakeoil.pem' ? q{ -https_chain=/etc/ssl/certs/ssl-cert-snakeoil.pem } : ''),
+          #(-s '/etc/ssl/private/ssl-cert-snakeoil.key' ? q{ -https_key=/etc/ssl/private/ssl-cert-snakeoil.key } : ''),
     }],
     set_bot         => {'----bot' => 1, }, # '----bot_random' => 1,
     run_bot         => ['set_bot', 'set_client', 'run_single'],

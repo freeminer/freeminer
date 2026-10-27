@@ -2,6 +2,7 @@
 
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/subprocessor/interior/index.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/osm_water_override.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
@@ -40,7 +41,9 @@ public:
 		TEST(testNestedOuterGetsItsOwnHoleGroup);
 		TEST(testHoleGroupingIgnoresBoundaryVertices);
 		TEST(testInnerRingsCutHolesButIslandsStayWhole);
+		TEST(testBuildingCourtyardKeepsNestedKeepFootprint);
 		TEST(testWaterOverrideKeepsPondOnIslandInHole);
+		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
@@ -102,12 +105,15 @@ public:
 
 	void testMissingLanduseTagRetainsRustPredicateSemantics()
 	{
-		arnis::tags_t residential;
-		residential.emplace("landuse", "residential");
+		for (const auto *value :
+				{"residential", "commercial", "education", "religious"}) {
+			arnis::tags_t broad_area;
+			broad_area.emplace("landuse", value);
+			UASSERT(!arnis::element_processing::landuse_paints_ground(broad_area));
+		}
 		arnis::tags_t forest;
 		forest.emplace("landuse", "forest");
 		UASSERT(arnis::element_processing::landuse_paints_ground({}));
-		UASSERT(!arnis::element_processing::landuse_paints_ground(residential));
 		UASSERT(arnis::element_processing::landuse_paints_ground(forest));
 	}
 
@@ -144,6 +150,50 @@ public:
 		UASSERT(data.grid[5][5] == arnis::land_cover::LC_WATER);
 		UASSERT(data.grid[20][20] != arnis::land_cover::LC_WATER);
 		UASSERT(data.grid[30][30] == arnis::land_cover::LC_WATER);
+	}
+
+	void testBuildingInAreaHoleDoesNotInheritAreaUse()
+	{
+		auto way = [](std::uint64_t id, int min, int max, arnis::tags_t tags = {}) {
+			arnis::ProcessedWay result;
+			result.id = id;
+			result.tags = std::move(tags);
+			const int coords[5][2]{
+					{min, min}, {max, min}, {max, max}, {min, max}, {min, min}};
+			for (int i = 0; i < 5; ++i) {
+				arnis::ProcessedNode node{};
+				node.id = id * 10 + static_cast<std::uint64_t>(i);
+				node.x = coords[i][0];
+				node.z = coords[i][1];
+				result.nodes.push_back(node);
+			}
+			return result;
+		};
+		auto building_tags = [] {
+			arnis::tags_t tags;
+			tags.emplace("building", "yes");
+			return tags;
+		};
+		arnis::tags_t area_tags;
+		area_tags.emplace("landuse", "industrial");
+		area_tags.emplace("type", "multipolygon");
+		arnis::ProcessedRelation area{};
+		area.id = 9;
+		area.tags = std::move(area_tags);
+		area.members.emplace_back(way(50, 0, 150), arnis::ProcessedMemberRole::Outer);
+		area.members.emplace_back(way(51, 40, 120), arnis::ProcessedMemberRole::Inner);
+		area.members.emplace_back(way(52, 90, 110), arnis::ProcessedMemberRole::Outer);
+		std::vector<arnis::ProcessedElement> elements;
+		elements.emplace_back(way(1, 10, 20, building_tags()));
+		elements.emplace_back(way(2, 60, 70, building_tags()));
+		elements.emplace_back(way(3, 95, 105, building_tags()));
+		elements.emplace_back(std::move(area));
+
+		const auto bbox = XZBBox(0, 0, 199, 199);
+		const auto index = arnis::interior_uses::InteriorUseIndex::build(elements, bbox);
+		UASSERT(index.area(1)->kind == arnis::interior_uses::UseKind::Factory);
+		UASSERT(!index.area(2).has_value());
+		UASSERT(index.area(3)->kind == arnis::interior_uses::UseKind::Factory);
 	}
 
 	void testInnerRingsCutHolesButIslandsStayWhole()
@@ -190,6 +240,35 @@ public:
 		UASSERT(std::find(kept.begin(), kept.end(), land_cell) != kept.end());
 		UASSERT(std::find(kept.begin(), kept.end(), hole_cell) == kept.end());
 		UASSERT(!fills.holes_in(island, inners, std::nullopt).has_value());
+	}
+
+	void testBuildingCourtyardKeepsNestedKeepFootprint()
+	{
+		auto make_way = [](std::uint64_t id, int min, int max) {
+			arnis::ProcessedWay way;
+			way.id = id;
+			way.nodes = square(min, max);
+			for (std::size_t i = 0; i + 1 < way.nodes.size(); ++i)
+				way.nodes[i].id = id * 10 + i;
+			way.nodes.back().id = way.nodes.front().id;
+			return way;
+		};
+		auto outer = make_way(1, 10, 90);
+		auto courtyard = make_way(2, 20, 80);
+		auto keep = make_way(3, 40, 60);
+		arnis::ProcessedRelation castle{};
+		castle.id = 9;
+		castle.tags.emplace("building", "castle");
+		castle.members.emplace_back(outer, arnis::ProcessedMemberRole::Outer);
+		castle.members.emplace_back(courtyard, arnis::ProcessedMemberRole::Inner);
+		castle.members.emplace_back(keep, arnis::ProcessedMemberRole::Outer);
+		const std::vector<arnis::ProcessedElement> elements{castle};
+		const XZBBox bbox(0, 0, 99, 99);
+		const auto footprints =
+				arnis::FloodFillCache{}.collect_building_footprints(elements, bbox);
+		UASSERT(footprints.contains(15, 15));
+		UASSERT(!footprints.contains(30, 30));
+		UASSERT(footprints.contains(50, 50));
 	}
 
 	void testOpenRideOutlineSuppressesContainedBuildingPart()
