@@ -153,7 +153,7 @@ struct WorldEditor
 	}
 	void register_rail(std::uint64_t way, int x, int z, int y) const
 	{
-		if (!rail_heights || !rail_heights_mutex)
+		if (!owns(x, z) || !rail_heights || !rail_heights_mutex)
 			return;
 		std::lock_guard<std::mutex> lock(*rail_heights_mutex);
 		rail_heights->insert_or_assign(RailHeightKey{way, x, z}, y);
@@ -925,6 +925,7 @@ struct WorldEditor
 	std::optional<int> surface_override(int x, int z) const;
 	std::optional<int> road_surface_y(int x, int z) const;
 	std::optional<int> terrain_level(int x, int z) const;
+	std::optional<double> terrain_level_exact(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
 	RoadSurfaceOverrides take_road_surface_overrides();
 	void register_lamp(int x, int z) { lamp_columns.emplace_back(x, z); }

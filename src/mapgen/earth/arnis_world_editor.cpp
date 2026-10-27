@@ -1085,6 +1085,14 @@ std::optional<int> WorldEditor::terrain_level(int x, int z) const
 	return ground->level(ground->mg && !ground->elevation_enabled ? XZPoint{x, z}
 																  : ground_point(x, z));
 }
+std::optional<double> WorldEditor::terrain_level_exact(int x, int z) const
+{
+	if (!ground)
+		return std::nullopt;
+	const auto point =
+			ground->mg && !ground->elevation_enabled ? XZPoint{x, z} : ground_point(x, z);
+	return ground->level_exact(point);
+}
 void WorldEditor::register_road_surface_y(int x, int z, int y)
 {
 	auto &overrides =

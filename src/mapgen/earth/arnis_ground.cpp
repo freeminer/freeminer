@@ -7,6 +7,7 @@
 #include "arnis-cpp/src/elevation/planetary.h"
 #include "arnis-cpp/src/elevation/cache.h"
 #include "arnis-cpp/src/elevation/selector.h"
+#include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/coordinate_system/transformation.h"
 #include "arnis-cpp/src/projection/projection_spec.h"
 #include "arnis-cpp/src/fm_ecoregion_cache.h"
@@ -20,8 +21,11 @@
 
 #include <future>
 #include <iostream>
+#include <limits>
 #include <png.h>
+#include <sstream>
 #include <stdexcept>
+#include <utility>
 
 namespace arnis
 {
@@ -67,14 +71,56 @@ bool write_rgb_png(const std::string &filename, std::size_t width, std::size_t h
 	return ok;
 }
 
-elevation::TerrainHints terrain_hints_for(
-		const Args &args, const osm_parser::RawOsmDocument &osm)
+elevation::TerrainHints terrain_hints_for(const Args &args,
+		const osm_parser::RawOsmDocument &osm,
+		const overture::OvertureData *overture_data = nullptr)
 {
 	elevation::TerrainHints hints;
 	hints.peaks = elevation::peaks_in(osm);
-	if (args.use_3d)
+	if (args.use_3d && !args.skip_objects())
 		hints.tall_models = elevation::tall_models_in(osm);
+	const bool automatic_height =
+			!args.skip_objects() && args.mode != GenerationMode::Blueprint &&
+			!args.vanilla_height && !args.disable_height_limit && !args.luanti &&
+			is_earth(args.body) && !args.one_world_run;
+	if (automatic_height) {
+		if (overture_data && args.overture) {
+			hints.tall_structures =
+					elevation::overture_terrain_hints_in(osm, args.scale, *overture_data)
+							.tall_structures;
+		} else {
+			hints.tall_structures = elevation::tall_structures_in(osm, args.scale);
+		}
+	}
 	return hints;
+}
+
+std::optional<std::string> height_overflow_without_terrain(const Args &args,
+		const geographic::LLBBox &bbox, const elevation::TerrainHints &hints)
+{
+	if (args.ground_level < world_editor::DEFAULT_MIN_Y + 2 ||
+			args.ground_level >
+					world_editor::DEFAULT_MAX_Y - elevation::TERRAIN_HEIGHT_BUFFER)
+		return "ground level " + std::to_string(args.ground_level) +
+			   " is outside the vanilla range";
+
+	constexpr int vanilla_top = world_editor::DEFAULT_MAX_Y - 2;
+	double top = std::numeric_limits<double>::lowest();
+	const auto collect = [&](const std::vector<elevation::TallModel> &models) {
+		for (const auto &model : models)
+			if (model.lat >= bbox.min().lat() && model.lat <= bbox.max().lat() &&
+					model.lon >= bbox.min().lng() && model.lon <= bbox.max().lng())
+				top = std::max(top, args.ground_level + model.height_m * args.scale);
+	};
+	collect(hints.tall_models);
+	collect(hints.tall_structures);
+	if (top > vanilla_top) {
+		std::ostringstream message;
+		message << "a building or landmark reaches Y " << std::ceil(top)
+				<< ", vanilla Minecraft has room up to Y " << vanilla_top;
+		return message.str();
+	}
+	return std::nullopt;
 }
 } // namespace
 
@@ -109,26 +155,49 @@ int min_ground_level_for(const Args &args)
 	return floor >= world_editor::DEFAULT_MIN_Y ? args.ground_level : floor + 2;
 }
 
-Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
-		const std::filesystem::path &cache_base,
-		const elevation::TerrainHints &terrain_hints)
+bool auto_height_for(const Args &args)
 {
-	return generate_ground_data(
-			args, bbox, GroundFrame::from_args(args, bbox), cache_base, terrain_hints);
+	return !args.vanilla_height && !args.disable_height_limit && !args.luanti &&
+		   is_earth(args.body) && !args.one_world_run;
+}
+
+void extend_world_bounds_for(const Args &args)
+{
+	const int minimum = args.bedrock ? world_editor::DEFAULT_MIN_Y : -2032;
+	const int maximum = args.bedrock ? 511 : extended_max_y_for(args);
+	world_editor::set_world_bounds(minimum, maximum);
+}
+
+Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+		const std::filesystem::path &cache_base, elevation::TerrainHints terrain_hints,
+		const std::function<std::vector<elevation::TallModel>()> &late_overture)
+{
+	return generate_ground_data(args, bbox, GroundFrame::from_args(args, bbox),
+			cache_base, std::move(terrain_hints), late_overture);
 }
 
 Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
 		const osm_parser::RawOsmDocument &osm, const std::filesystem::path &cache_base)
 {
 	auto terrain_hints = terrain_hints_for(args, osm);
-	return generate_ground_data(args, bbox, cache_base, terrain_hints);
+	return generate_ground_data(args, bbox, cache_base, std::move(terrain_hints));
+}
+
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const osm_parser::RawOsmDocument &osm,
+		const overture::OvertureData &overture_data,
+		const std::filesystem::path &cache_base)
+{
+	auto terrain_hints = terrain_hints_for(args, osm, &overture_data);
+	return generate_ground_data(args, bbox, cache_base, std::move(terrain_hints));
 }
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const std::filesystem::path &cache_base, const elevation::PeakSource &peaks)
 {
-	const auto terrain_hints = peaks.take();
-	return generate_ground_data(args, bbox, cache_base, terrain_hints);
+	auto terrain_hints = peaks.take();
+	return generate_ground_data(args, bbox, cache_base, std::move(terrain_hints),
+			[&peaks] { return peaks.take_overture(); });
 }
 
 GroundFrame GroundFrame::local()
@@ -194,6 +263,14 @@ GroundFrame GroundFrame::projected(const geographic::LLBBox &bbox, double scale,
 double GroundFrame::anchor_lat(const geographic::LLBBox &bbox) const
 {
 	return (bbox.min().lat() + bbox.max().lat()) * 0.5;
+}
+
+std::pair<int, int> GroundFrame::origin_for(const geographic::LLBBox &bbox) const
+{
+	if (!mercator)
+		return {0, 0};
+	return {projection::snap_edge(mercator->x_for_lon(bbox.min().lng()), false),
+			projection::snap_edge(mercator->z_for_lat(bbox.max().lat()), false)};
 }
 
 biome::Climate GroundFrame::climate(const geographic::LLBBox &bbox) const
@@ -277,7 +354,8 @@ GroundFetchPlan GroundFrame::fetch_plan(
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const GroundFrame &frame, const std::filesystem::path &cache_base,
-		const elevation::TerrainHints &terrain_hints)
+		elevation::TerrainHints terrain_hints,
+		const std::function<std::vector<elevation::TallModel>()> &late_overture)
 {
 	if (!args.valid())
 		throw std::invalid_argument("invalid Arnis ground-generation options");
@@ -285,12 +363,14 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	// that policy here too, including callers that supply TerrainHints directly
 	// instead of going through generate_ground_data_from_osm(). Natural peaks
 	// remain active independently of the model-placement toggle.
-	elevation::TerrainHints effective_terrain_hints;
-	const elevation::TerrainHints *hints = &terrain_hints;
-	if (!args.use_3d && !terrain_hints.tall_models.empty()) {
-		effective_terrain_hints.peaks = terrain_hints.peaks;
-		hints = &effective_terrain_hints;
-	}
+	if (!args.use_3d)
+		std::vector<elevation::TallModel>().swap(terrain_hints.tall_models);
+	// Keep the fallback decision separately: the hint lists themselves are moved
+	// into elevation processing and tall structures are released after band pick.
+	const auto no_terrain_overflow =
+			auto_height_for(args)
+					? height_overflow_without_terrain(args, bbox, terrain_hints)
+					: std::nullopt;
 	// Match Rust's once-daily background sweep of stale elevation/land-cover
 	// tiles. Keep the host-supplied cache root authoritative when present.
 	elevation::spawn_throttled_cleanup(
@@ -311,6 +391,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 										: cache_base / "elevation";
 
 	Ground ground = Ground::new_flat(args.ground_level);
+	ground.set_origin(frame.origin_for(bbox));
 	ground.set_celestial_body(args.body);
 	ground.set_extended_ceiling(args.terrain_enabled() && args.disable_height_limit &&
 								extended_max_y_for(args) > world_editor::DEFAULT_MAX_Y);
@@ -341,11 +422,35 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 					cover ? water_depth::estimate_max_carve_depth(
 									cover->grid, world_width, world_height)
 						  : 0;
-			const int carve_floor = world_editor::min_y() + max_carve_depth + 2;
+			const int current_min_y = args.disable_height_limit
+											  ? extended_min_y_for(args)
+											  : world_editor::DEFAULT_MIN_Y;
+			const int carve_floor =
+					cover ? current_min_y + max_carve_depth + 2 : current_min_y;
 			const int water_floor = std::max(args.ground_level, carve_floor);
 			const int sink_floor = std::min(
 					std::max(min_ground_level_for(args), carve_floor), water_floor);
 			const int max_y = extended_max_y_for(args);
+			const bool automatic_height = auto_height_for(args);
+			const bool force_extended_height =
+					automatic_height &&
+					(args.ground_level < world_editor::DEFAULT_MIN_Y + 2 ||
+							args.ground_level > world_editor::DEFAULT_MAX_Y -
+														elevation::TERRAIN_HEIGHT_BUFFER);
+			std::optional<elevation::HeightBand> taller_band;
+			if (automatic_height) {
+				const int taller_min_y =
+						args.bedrock ? world_editor::DEFAULT_MIN_Y : -2032;
+				const int taller_carve_floor =
+						cover ? taller_min_y + max_carve_depth + 2 : taller_min_y;
+				const int taller_water_floor =
+						std::max(args.ground_level, taller_carve_floor);
+				const int taller_sink_floor =
+						std::min(std::max(taller_min_y + 2, taller_carve_floor),
+								taller_water_floor);
+				taller_band = elevation::HeightBand{
+						taller_water_floor, taller_sink_floor, max_y, true};
+			}
 			elevation::ProcessedElevationData processed;
 			if (earth) {
 				elevation::Selector selector(elevation_root,
@@ -356,7 +461,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						world_width, world_height, grid_width, grid_height, args.scale,
 						args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, true, cover ? &*cover : nullptr,
-						frame.affine, {}, *hints);
+						frame.affine, {}, std::move(terrain_hints), automatic_height,
+						taller_band, force_extended_height,
+						frame.pad_blocks > 0 ? std::optional<std::size_t>(pad)
+											 : std::nullopt,
+						late_overture);
 			} else {
 				auto raw = elevation::fetch_planetary_elevation(args.body, fetch_bbox,
 						grid_width, grid_height, elevation::http_planetary_range_reader(),
@@ -369,7 +478,10 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 				processed = elevation::process_elevation_data(fetch_bbox, std::move(*raw),
 						args.scale, args.height_multiplier, water_floor, sink_floor,
 						args.disable_height_limit, max_y, false, nullptr, frame.affine,
-						{}, *hints);
+						{}, std::move(terrain_hints), false, std::nullopt, false,
+						frame.pad_blocks > 0 ? std::optional<std::size_t>(pad)
+											 : std::nullopt,
+						late_overture);
 			}
 			if (frame.mercator) {
 				const auto source = [&](std::size_t z) {
@@ -385,6 +497,9 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 							fetch_bbox.max().lat(), fetch_bbox.min().lat());
 			}
 			if (pad) {
+				processed.halo = std::make_shared<const elevation::ElevationHalo>(
+						elevation::ElevationHalo::cut(
+								processed.heights, pad, pad, final_width, final_height));
 				grid_ops::crop_rows(
 						processed.heights, pad, pad, final_width, final_height);
 				processed.width =
@@ -396,15 +511,25 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 					cover->crop(pad, pad, final_width, final_height);
 			}
 			elevation_lowest_y = processed.lowest_y();
+			if (processed.extended_ceiling) {
+				ground.set_extended_ceiling(true);
+				extend_world_bounds_for(args);
+			}
 			ground.set_elevation_data(processed, frame.anchor_lat(bbox));
 			elevation_ready = true;
 		} catch (const std::exception &e) {
 			std::cerr << "Failed to fetch elevation data: " << e.what()
 					  << "; using flat ground.\n";
 			ground = Ground::new_flat(args.ground_level);
+			ground.set_origin(frame.origin_for(bbox));
 			ground.set_celestial_body(args.body);
 			ground.set_climate(frame.climate(bbox));
 			cover.reset();
+			if (auto_height_for(args) && no_terrain_overflow) {
+				std::clog << "Extended build height: " << *no_terrain_overflow << '\n';
+				ground.set_extended_ceiling(true);
+				extend_world_bounds_for(args);
+			}
 		}
 	} else {
 		ground.set_ground_level(args.ground_level);
@@ -413,6 +538,13 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 			cover->remap_rows_to_mercator(fetch_bbox.max().lat(), fetch_bbox.min().lat());
 		if (cover && pad)
 			cover->crop(pad, pad, final_width, final_height);
+	}
+	if (!args.terrain_enabled() && auto_height_for(args)) {
+		if (no_terrain_overflow) {
+			std::clog << "Extended build height: " << *no_terrain_overflow << '\n';
+			ground.set_extended_ceiling(true);
+			extend_world_bounds_for(args);
+		}
 	}
 
 	if (cover && elevation_ready)
@@ -466,15 +598,25 @@ Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox 
 		const std::filesystem::path &cache_base)
 {
 	auto terrain_hints = terrain_hints_for(args, osm);
-	return generate_ground_data(args, bbox, frame, cache_base, terrain_hints);
+	return generate_ground_data(args, bbox, frame, cache_base, std::move(terrain_hints));
+}
+
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
+		const overture::OvertureData &overture_data,
+		const std::filesystem::path &cache_base)
+{
+	auto terrain_hints = terrain_hints_for(args, osm, &overture_data);
+	return generate_ground_data(args, bbox, frame, cache_base, std::move(terrain_hints));
 }
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const GroundFrame &frame, const std::filesystem::path &cache_base,
 		const elevation::PeakSource &peaks)
 {
-	const auto terrain_hints = peaks.take();
-	return generate_ground_data(args, bbox, frame, cache_base, terrain_hints);
+	auto terrain_hints = peaks.take();
+	return generate_ground_data(args, bbox, frame, cache_base, std::move(terrain_hints),
+			[&peaks] { return peaks.take_overture(); });
 }
 
 std::optional<int> Ground::min_level(const std::vector<XZPoint> &points) const
@@ -493,6 +635,9 @@ int Ground::level(const XZPoint &pos) const
 	if (elevation_enabled && (elevation_grid.empty() || elevation_world_width == 0 ||
 									 elevation_world_height == 0))
 		return host_elevation ? host_elevation(pos) : elevation_ground_level.value_or(0);
+	if (elevation_enabled && elevation_halo)
+		if (const auto height = elevation_halo->at(pos.x, pos.z))
+			return rust_round_i32(*height);
 	if (elevation_enabled && !elevation_grid.empty() && elevation_world_width > 0 &&
 			elevation_world_height > 0) {
 		const auto height = elevation_grid.size();
@@ -537,6 +682,9 @@ double Ground::level_exact(const XZPoint &pos) const
 	// fallback is used only when terrain mode is enabled and no raster exists.
 	if (!elevation_enabled)
 		return static_cast<double>(elevation_ground_level.value_or(0));
+	if (elevation_halo)
+		if (const auto height = elevation_halo->at(pos.x, pos.z))
+			return static_cast<double>(*height);
 	if (elevation_grid.empty() || elevation_world_width == 0 ||
 			elevation_world_height == 0)
 		return static_cast<double>(host_elevation ? host_elevation(pos)
@@ -817,6 +965,16 @@ std::optional<std::uint8_t> Ground::canopy_height_m(const XZPoint &coord) const
 	const auto &[x, z] = canopy_index(coord);
 	return canopy_data->canopy_height_m(x, z);
 }
+bool Ground::canopy_measured(const XZPoint &origin, int span) const
+{
+	if (!has_canopy() || span <= 0)
+		return false;
+	for (int dz = 0; dz < span; ++dz)
+		for (int dx = 0; dx < span; ++dx)
+			if (canopy_height_m({origin.x + dx, origin.z + dz}))
+				return true;
+	return false;
+}
 std::optional<std::pair<double, std::uint8_t>> Ground::canopy_cell(
 		const XZPoint &origin, int span) const
 {
@@ -911,6 +1069,7 @@ void Ground::set_elevation_data(const std::vector<std::vector<float>> &heights,
 	// must not create elevation state when the source ground had none.
 	if (elevation_grid.empty())
 		return;
+	elevation_halo.reset();
 	elevation_grid = heights;
 	elevation_world_width = world_width;
 	elevation_world_height = world_height;
@@ -923,6 +1082,7 @@ void Ground::set_elevation_data(const std::vector<std::vector<double>> &heights,
 	// initial provider-data installation path.
 	if (elevation_grid.empty())
 		return;
+	elevation_halo.reset();
 	elevation_grid.clear();
 	elevation_grid.reserve(heights.size());
 	for (const auto &row : heights) {
@@ -942,6 +1102,7 @@ void Ground::set_elevation_data(
 	// Initial provider installation is separate from the Rust rotation setter:
 	// this path is allowed to create elevation state on a fresh Ground.
 	elevation_grid = data.heights;
+	elevation_halo = data.halo;
 	elevation_world_width = data.world_width;
 	elevation_world_height = data.world_height;
 	elevation_enabled = !elevation_grid.empty();
@@ -956,6 +1117,7 @@ void Ground::set_elevation_data(
 void Ground::clear_elevation_data()
 {
 	elevation_grid.clear();
+	elevation_halo.reset();
 	elevation_world_width = elevation_world_height = 0;
 	elevation_enabled = false;
 }
@@ -991,7 +1153,8 @@ void Ground::finish_land_cover(GenerationMode mode)
 	if (!land_cover)
 		return;
 	if (generation_mode_natural_land_cover(mode))
-		land_cover::naturalize(*land_cover, &elevation_grid, climate_state);
+		land_cover::naturalize(*land_cover, &elevation_grid, climate_state, origin,
+				generation_mode_skips_objects(mode));
 	mark_beaches();
 }
 void Ground::apply_bridge_land_cover_repair(
