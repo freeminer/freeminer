@@ -192,8 +192,11 @@ void WSSocket::on_client_message(
 		errorstream << "WS server returned an invalid datagram\n";
 		return;
 	}
-	std::lock_guard lock(m_incoming_mutex);
-	incoming_queue.push_back({client_address, std::move(packet.payload)});
+	{
+		std::lock_guard lock(m_incoming_mutex);
+		incoming_queue.push_back({client_address, std::move(packet.payload)});
+	}
+	m_incoming_ready.notify_one();
 }
 
 void WSSocket::sendClientPacket(const std::string &payload)
@@ -285,6 +288,10 @@ WSSocket::context_ptr WSSocket::on_client_tls_init(const websocketpp::connection
 
 WSSocket::~WSSocket()
 {
+	if (m_server_thread.joinable()) {
+		server.stop();
+		m_server_thread.join();
+	}
 	if (m_client_thread.joinable()) {
 		client.stop();
 		m_client_thread.join();
@@ -394,11 +401,21 @@ void WSSocket::Bind(Address addr)
 								: Address(*reinterpret_cast<const sockaddr_in *>(
 										  remote.data()));
 				hdls.emplace(hdl, address);
-				std::lock_guard lock(m_incoming_mutex);
-				incoming_queue.push_back({address, data});
+				{
+					std::lock_guard lock(m_incoming_mutex);
+					incoming_queue.push_back({address, data});
+				}
+				m_incoming_ready.notify_one();
 			});
 	// ===
 	ws_serve = true;
+	m_server_thread = std::thread([this] {
+		try {
+			server.run();
+		} catch (const std::exception &e) {
+			errorstream << "WS server run error: " << e.what() << std::endl;
+		}
+	});
 }
 
 void WSSocket::Send(const Address &destination, const void *data, int size)
@@ -481,24 +498,13 @@ void WSSocket::setTimeoutMs(int timeout_ms)
 
 bool WSSocket::WaitData(int timeout_ms)
 {
-	if (!ws_serve && !ws_client) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(m_timeout_ms));
-		return false;
+	std::unique_lock lock(m_incoming_mutex);
+	const auto ready = [this] { return !incoming_queue.empty(); };
+	if (timeout_ms < 0) {
+		m_incoming_ready.wait(lock, ready);
+		return true;
 	}
-
-	for (int ms = 0; ms < timeout_ms; ++ms) {
-		if (ws_serve)
-			server.poll_one();
-		{
-			std::lock_guard lock(m_incoming_mutex);
-			if (!incoming_queue.empty())
-				return true;
-		}
-		// TODO: condvar here
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
-	std::lock_guard lock(m_incoming_mutex);
-	return !incoming_queue.empty();
+	return m_incoming_ready.wait_for(lock, std::chrono::milliseconds(timeout_ms), ready);
 }
 
 #endif

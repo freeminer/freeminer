@@ -8,6 +8,7 @@ set(common_network_SRCS
 	${CMAKE_CURRENT_SOURCE_DIR}/enet/connection.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sctp/api.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sctp/impl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sctp/fm_sctp_wakeup.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sctp/io.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sctp/send.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ws_sctp/impl.cpp

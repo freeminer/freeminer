@@ -4,12 +4,13 @@
 Run with python3 send_queue_test.py; requires a C++17 compiler.
 The fake socket API lets failures and short writes be tested without a network.
 """
+
 import pathlib
 import subprocess
 import tempfile
 
 SOURCE = pathlib.Path(__file__).resolve().parents[1] / "send.cpp"
-MOCK = r'''
+MOCK = r"""
 #pragma once
 #include <algorithm>
 #include <cassert>
@@ -42,21 +43,26 @@ template<class T> struct SharedBuffer {
  size_t getSize() const { return bytes->size(); }
  T *operator*() const { return bytes->data(); }
 };
+struct ConnectionCommand { u8 channelnum; SharedBuffer<u8> data; bool reliable; };
+using ConnectionCommandPtr = std::shared_ptr<ConnectionCommand>;
 struct PeerMap : std::unordered_map<session_t, socket *> {
  int lock_unique_rec() { return 0; }
 };
 namespace con_sctp {
 inline void logPaths(session_t, socket *, const char *) {}
 struct Connection {
- struct PendingSend { u8 channel; SharedBuffer<u8> data; bool reliable; size_t offset=0; };
+ struct PendingSend { u8 channel; ConnectionCommandPtr command; bool reliable; size_t offset=0; };
  PeerMap m_peers;
  std::unordered_set<session_t> m_established_peers;
  std::unordered_map<session_t, std::deque<PendingSend>> pending_sends;
  socket *getPeer(session_t id) { auto i=m_peers.find(id); return i==m_peers.end()?nullptr:i->second; }
  bool deletePeer(session_t id, bool) { m_peers.erase(id); m_established_peers.erase(id); pending_sends.erase(id); return true; }
- void sendToAll(u8, SharedBuffer<u8>, bool);
- void send_(session_t, u8, SharedBuffer<u8>, bool);
- void flushPendingSends();
+ void sendToAll(const ConnectionCommandPtr &);
+ void send_(session_t, const ConnectionCommandPtr &);
+ void send_(session_t id, u8 channel, SharedBuffer<u8> data, bool reliable) {
+  send_(id, std::make_shared<ConnectionCommand>(ConnectionCommand{channel, data, reliable}));
+ }
+ bool flushPendingSends();
 };
 }
 struct Write { unsigned peer; size_t size; sctp_sendv_spa info; };
@@ -71,15 +77,19 @@ inline int usrsctp_sendv(socket *s, const void *, size_t n, void *, int,
  if (short_write) { short_write=false; return static_cast<int>(n/2); }
  return static_cast<int>(n);
 }
-'''
+"""
 # Use the production error classification, just like the production send loop.
 internal = (SOURCE.parent / "internal.h").read_text()
 retry_helper = internal.split("inline bool isRetryableError", 1)[1].split(
     "inline void configureDefaults", 1
 )[0]
-MOCK = MOCK.replace("namespace con_sctp {", "namespace con_sctp {\ninline bool isRetryableError" + retry_helper, 1)
+MOCK = MOCK.replace(
+    "namespace con_sctp {",
+    "namespace con_sctp {\ninline bool isRetryableError" + retry_helper,
+    1,
+)
 
-TEST = r'''
+TEST = r"""
 int main() {
  using con_sctp::Connection;
  socket a{1}, b{2};
@@ -131,16 +141,27 @@ int main() {
  c.flushPendingSends();
  assert(!c.getPeer(1) && !c.pending_sends.count(1));
  for (unsigned i=0;i<20;++i) c.send_(2,0,SharedBuffer<u8>(10),true);
- c.flushPendingSends();
+ assert(c.flushPendingSends()); // budget exhausted, worker must not sleep
  assert(c.pending_sends[2].size()==4); // bounded work per peer
- c.flushPendingSends();
+ assert(!c.flushPendingSends());
  assert(c.pending_sends[2].empty());
+ auto owner=std::make_shared<ConnectionCommand>(ConnectionCommand{0,SharedBuffer<u8>(64),true});
+ std::weak_ptr<ConnectionCommand> weak=owner;
+ c.send_(2,owner);
+ owner.reset();
+ assert(!weak.expired());
+ failures[2]=EWOULDBLOCK;
+ assert(!c.flushPendingSends()); // wait for writable notification, no busy spin
+ assert(!weak.expired()); // retry still owns the original command buffer
+ failures[2]=0;
+ assert(!c.flushPendingSends());
+ assert(weak.expired());
  c.send_(2,0,SharedBuffer<u8>(10),true);
  c.m_peers.erase(2); // derived transports can remove sockets directly
  c.flushPendingSends();
  assert(!c.pending_sends.count(2));
 }
-'''
+"""
 with tempfile.TemporaryDirectory(prefix="fm-sctp-test-") as tmp:
     root = pathlib.Path(tmp)
     header = root / "network/sctp/internal.h"
@@ -149,6 +170,8 @@ with tempfile.TemporaryDirectory(prefix="fm-sctp-test-") as tmp:
     source = root / "test.cpp"
     source.write_text(f'#include "{SOURCE}"\n' + TEST)
     binary = root / "test"
-    subprocess.run(["c++", "-std=c++17", "-I", tmp, str(source), "-o", str(binary)], check=True)
+    subprocess.run(
+        ["c++", "-std=c++17", "-I", tmp, str(source), "-o", str(binary)], check=True
+    )
     subprocess.run([str(binary)], check=True)
 print("SCTP send queue regression checks passed")

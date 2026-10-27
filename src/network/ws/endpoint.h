@@ -16,6 +16,14 @@ void initEndpoint(Endpoint &endpoint)
 	endpoint.set_pong_timeout(30000);
 	endpoint.set_max_message_size(16 * 1024 * 1024);
 	endpoint.init_asio();
+	// Game datagrams should not wait for Nagle/delayed-ACK coalescing.
+	endpoint.set_tcp_post_init_handler([&endpoint](websocketpp::connection_hdl hdl) {
+		websocketpp::lib::asio::error_code ec;
+		endpoint.get_con_from_hdl(hdl)->get_raw_socket().set_option(
+				websocketpp::lib::asio::ip::tcp::no_delay(true), ec);
+		if (ec)
+			warningstream << "WebSocket TCP_NODELAY: " << ec.message() << '\n';
+	});
 }
 template <class Endpoint>
 void initServer(Endpoint &endpoint)

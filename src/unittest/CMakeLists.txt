@@ -5,6 +5,11 @@ if(USE_ENET)
 	list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_enet.cpp)
 endif()
 
+# SCTP wakeup lifetime and message assembly regressions.
+if(USE_SCTP)
+	list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_sctp.cpp)
+endif()
+
 #  Arnis tests include its adapter, which requires Osmium headers.
 if(USE_OSMIUM)
 	list(APPEND unittest_SRCS
@@ -20,6 +25,9 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_railways.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_steps.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_road_markings.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_planes.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_roof_layers.cpp
 	)
 # ===
 endif()

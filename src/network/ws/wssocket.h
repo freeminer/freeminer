@@ -27,6 +27,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
 #include <thread>
 #include "network/address.h"
 
@@ -83,7 +84,7 @@ public:
 	ws_server_t server;
 	ws_client_t client;
 	hdl_list hdls;
-	bool ws_serve = false;
+	std::atomic<bool> ws_serve{false};
 	std::atomic<bool> ws_client{false};
 	websocketpp::connection_hdl client_hdl;
 	Address client_address;
@@ -119,6 +120,8 @@ private:
 	};
 	std::list<queue_item> incoming_queue;
 	std::mutex m_incoming_mutex;
+	std::condition_variable m_incoming_ready;
+	std::thread m_server_thread;
 	std::thread m_client_thread;
 	// Handshake and pending packets are owned by the client io_context thread.
 	bool m_client_bound = false;

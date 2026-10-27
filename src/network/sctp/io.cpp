@@ -9,6 +9,7 @@ Copyright (C) 2023 proller <proler@gmail.com>
 #if USE_SCTP
 
 #include "network/sctp/addresses.h"
+#include "network/sctp/fm_sctp_receive.h"
 
 namespace con_sctp
 {
@@ -132,8 +133,6 @@ int Connection::receive()
 
 	if (sock_listen && sock) {
 
-		usrsctp_set_non_blocking(sock, 1);
-
 		struct socket *conn_sock = nullptr;
 		struct sockaddr_storage remote_addr = {};
 		socklen_t addr_len = sizeof(remote_addr);
@@ -165,6 +164,7 @@ int Connection::receive()
 		cs << "receive() accepted " << conn_sock << " addr_len=" << addr_len
 		   << " id=" << peer_id << std::endl;
 
+		configureSocketWakeup(conn_sock);
 		m_peers.insert_or_assign(peer_id, conn_sock);
 		Address sender = getPeerAddress(
 				reinterpret_cast<const sockaddr *>(&remote_addr), addr_len);
@@ -321,8 +321,6 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 	if (!sock) {
 		return {0, false};
 	}
-
-	usrsctp_set_non_blocking(sock, 1);
 
 	struct sockaddr_in6 addr = {};
 	socklen_t from_len = (socklen_t)sizeof(addr);
@@ -516,13 +514,10 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 			}
 
 			auto &stream_recv_buf = peer_recv_buf[stream_id];
-			stream_recv_buf.append(buffer, static_cast<size_t>(n));
-			if (flags & MSG_EOR) {
-				SharedBuffer<u8> resultdata((const unsigned char *)stream_recv_buf.data(),
-						stream_recv_buf.size());
-				putEvent(ConnectionEvent::dataReceived(peer_id, resultdata));
-				stream_recv_buf.clear();
-			}
+			if (auto message = assembleSctpMessage(stream_recv_buf,
+						reinterpret_cast<const u8 *>(buffer), static_cast<size_t>(n),
+						(flags & MSG_EOR) != 0))
+				putEvent(ConnectionEvent::dataReceived(peer_id, *message));
 		}
 	} else if (n == 0) {
 		infostream << "SCTP peer " << peer_id << " disconnect: receive EOF" << std::endl;
@@ -552,7 +547,7 @@ static uint16_t event_types[] = {SCTP_ASSOC_CHANGE, SCTP_PEER_ADDR_CHANGE,
 void Connection::sock_setup(/*session_t peer_id,*/ struct socket *sock)
 {
 
-	usrsctp_set_non_blocking(sock, 1);
+	configureSocketWakeup(sock);
 	configureInterleaving(sock);
 
 	configurePeerTimeout(sock, m_peer_timeout_ms != 0);
@@ -937,12 +932,12 @@ void Connection::disconnect()
 
 		for (auto i = m_peers.begin(); i != m_peers.end(); ++i) {
 			if (i->second && i->second != primary_sock)
-				usrsctp_close(i->second);
+				closeSocket(i->second);
 		}
 		m_peers.clear();
 	}
 	if (primary_sock)
-		usrsctp_close(primary_sock);
+		closeSocket(primary_sock);
 	m_peers_address.clear();
 	recv_buf.clear();
 	pending_sends.clear();

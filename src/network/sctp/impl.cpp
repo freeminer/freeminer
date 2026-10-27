@@ -80,7 +80,8 @@ unsigned int Connection::sctp_refcount = 0;
 
 Connection::~Connection()
 {
-
+	stop();
+	m_wakeup->notify();
 	join();
 	disconnect();
 
@@ -123,20 +124,38 @@ void Connection::finish_sctp()
 void *Connection::run()
 {
 	while (!stopRequested()) {
-		while (!m_command_queue.empty()) {
+		m_wakeup->wait(0);
+		for (unsigned budget = 0; budget < 256 && !m_command_queue.empty(); ++budget) {
 			auto c = m_command_queue.pop_frontNoEx();
 			processCommand(c);
 		}
 		checkPeerTimeouts();
-		flushPendingSends();
-		if (receive() <= 0) {
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		const bool more_sends = flushPendingSends();
+		const int received = receive();
+		if (received <= 0 && !more_sends && m_command_queue.empty() && !stopRequested()) {
+			// Commands and socket upcalls interrupt this wait immediately. Keep
+			// the old retry bound for transient route errors with no upcall.
+			m_wakeup->wait(1);
 		}
 	}
 
 	disconnect();
-
 	return nullptr;
+}
+
+void Connection::configureSocketWakeup(struct socket *peer)
+{
+	if (usrsctp_set_non_blocking(peer, 1) < 0 ||
+			SctpSocketWakeup::attach(peer, m_wakeup) < 0)
+		throw ConnectionException("Cannot configure SCTP worker notifications");
+}
+
+void Connection::closeSocket(struct socket *peer)
+{
+	if (!peer)
+		return;
+	SctpSocketWakeup::detach(peer);
+	usrsctp_close(peer);
 }
 
 void Connection::checkPeerTimeouts()
@@ -206,11 +225,11 @@ void Connection::processCommand(ConnectionCommandPtr c)
 		return;
 	case CONNCMD_SEND:
 		dout_con << getDesc() << " processing CONNCMD_SEND" << std::endl;
-		send_(c->peer_id, c->channelnum, c->data, c->reliable);
+		send_(c->peer_id, c);
 		return;
 	case CONNCMD_SEND_TO_ALL:
 		dout_con << getDesc() << " processing CONNCMD_SEND_TO_ALL" << std::endl;
-		sendToAll(c->channelnum, c->data, c->reliable);
+		sendToAll(c);
 		return;
 		/*	case CONNCMD_DELETE_PEER:
 				dout_con << getDesc() << " processing CONNCMD_DELETE_PEER" << std::endl;

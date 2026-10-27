@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/assets_root.h"
+#include "mapgen/earth/arnis-cpp/src/trees/region.h"
 #include "mapgen/earth/arnis-cpp/src/trees/schematic.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_pack.h"
@@ -21,6 +22,7 @@ public:
 		TEST(testContributedTreePackAssets);
 		TEST(testTreePackRealmMapping);
 		TEST(testTreeSizeTiers);
+		TEST(testTreePackCrownCapsAndSlotSpacing);
 	}
 
 	void testTreePackRealmMapping()
@@ -49,6 +51,29 @@ public:
 		UASSERT(defaults.allows(TreeSize::Big));
 		UASSERT(defaults.allows(TreeSize::Tall));
 		UASSERT(defaults.allows(TreeSize::Giant));
+	}
+
+	void testTreePackCrownCapsAndSlotSpacing()
+	{
+		using namespace arnis::trees;
+		const auto source =
+				TreePackSource::embedded("eur", arnis::assets::path("tree-packs"));
+		const auto capped = RegionSelector::load(
+				source, 1.0, -62, SizeFilter::up_to(TreeSize::Small));
+		const auto full = RegionSelector::load(source, 1.0, -62);
+		UTEST(capped.has_value(), "%s", "Failed to load capped European tree pack");
+		UTEST(full.has_value(), "%s", "Failed to load European tree pack");
+		if (!capped || !full)
+			return;
+		UASSERT(capped->crown_columns(25) == capped->crown_columns(6));
+		UASSERT(full->crown_columns(25) > full->crown_columns(6));
+
+		const auto scaled = RegionSelector::load(source, 0.5, -62);
+		UTEST(scaled.has_value(), "%s", "Failed to load scaled European tree pack");
+		if (!scaled)
+			return;
+		UASSERT(scaled->slot_spacing(true) == 4);
+		UASSERT(scaled->slot_spacing(false) == scaled->base_spacing());
 	}
 
 	void testContributedTreePackAssets()
