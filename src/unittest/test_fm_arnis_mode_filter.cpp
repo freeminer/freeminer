@@ -143,6 +143,15 @@ public:
 		woodland.emplace("natural", "wood");
 		arnis::osm_parser::filter_tags(woodland);
 		UASSERT(woodland.get("natural") == "wood");
+
+		arnis::tags_t discovery;
+		discovery.emplace("historic", "memorial");
+		discovery.emplace("wikipedia", "de:Anti-Kriegs-Museum");
+		discovery.emplace("wikimedia_commons", "File:Plaque.jpg");
+		arnis::osm_parser::filter_tags(discovery);
+		UASSERT(discovery.contains("wikipedia"));
+		UASSERT(discovery.get("wikipedia").empty());
+		UASSERT(!discovery.contains("wikimedia_commons"));
 	}
 
 	void testRustPrioritySortLeavesBroadLanduseLast()

@@ -897,6 +897,20 @@ template <typename F>
 int ModApiEnvBase::findNodesInArea(lua_State *L, const NodeDefManager *ndef,
 		const std::vector<content_t> &filter, bool grouped, F &&iterate)
 {
+	// fm: Resolve each content ID once instead of scanning large group filters
+	// for every node. Keep the first index, matching std::find for duplicates.
+	std::vector<u32> filter_index;
+	if (!filter.empty()) {
+		filter_index.resize(static_cast<size_t>(*std::max_element(filter.begin(), filter.end())) + 1,
+				filter.size());
+		for (u32 i = 0; i < filter.size(); ++i)
+			if (filter_index[filter[i]] == filter.size())
+				filter_index[filter[i]] = i;
+	}
+	const auto find_filter_index = [&](content_t c) -> size_t {
+		return c < filter_index.size() ? filter_index[c] : filter.size();
+	};
+	// ===
 	if (grouped) {
 		// create the table we will be returning
 		lua_createtable(L, 0, filter.size());
@@ -911,10 +925,11 @@ int ModApiEnvBase::findNodesInArea(lua_State *L, const NodeDefManager *ndef,
 		iterate([&](v3s16 p, MapNode n) -> bool {
 			content_t c = n.getContent();
 
-			auto it = std::find(filter.begin(), filter.end(), c);
-			if (it != filter.end()) {
+			// fm:
+			auto filt_index = find_filter_index(c);
+			if (filt_index != filter.size()) {
 				// Calculate index of the table and append the position
-				u32 filt_index = it - filter.begin();
+				// ===
 				push_v3s16(L, p);
 				lua_rawseti(L, base + 1 + filt_index, ++idx[filt_index]);
 			}
@@ -945,12 +960,15 @@ int ModApiEnvBase::findNodesInArea(lua_State *L, const NodeDefManager *ndef,
 		iterate([&](v3s16 p, MapNode n) -> bool {
 			content_t c = n.getContent();
 
-			auto it = std::find(filter.begin(), filter.end(), c);
-			if (it != filter.end()) {
+			// fm:
+			auto filt_index = find_filter_index(c);
+			if (filt_index != filter.size()) {
+				// ===
 				push_v3s16(L, p);
 				lua_rawseti(L, -2, ++i);
 
-				u32 filt_index = it - filter.begin();
+				// fm: filt_index was resolved above.
+				// ===
 				individual_count[filt_index]++;
 			}
 
