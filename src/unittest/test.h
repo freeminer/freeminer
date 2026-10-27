@@ -38,12 +38,14 @@ public:
 
 // Asserts the specified condition is true, or fails the current unit test
 // and prints the format specifier fmt
-#define UTEST(x, fmt, ...) \
+// fm: Allow message-only assertions as well as printf-style diagnostics.
+#define UTEST(x, ...) \
 	if (!(x)) { \
 		char utest_buf[1024]; \
-		porting::mt_snprintf(utest_buf, sizeof(utest_buf), fmt, __VA_ARGS__); \
+		porting::mt_snprintf(utest_buf, sizeof(utest_buf), __VA_ARGS__); \
 		throw TestFailedException(utest_buf, __FILE__, __LINE__); \
 	}
+// ===
 
 // Asserts the comparison specified by CMP is true, or fails the current unit test
 #define UASSERTCMP(T, CMP, actual, expected) { \

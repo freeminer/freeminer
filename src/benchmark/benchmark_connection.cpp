@@ -67,22 +67,14 @@ enum class ExternalBenchmarkPacketMode : char
 
 static constexpr auto g_connection_client_counts = {
 		1,
-		2,
-		4,
-		//	8,
-		//16,
-		// 32,
-		// 64,
-		// 128,
+		8,
+		32,
 };
 
 static constexpr auto g_connection_payload_sizes = {
 		64,
-		256,
 		1024,
-		//	4 * 1024,
-		//	16 * 1024,
-		//64 * 1024,
+		32 * 1024,
 };
 
 enum class TrafficMode
@@ -583,10 +575,12 @@ static NetworkPacket makeBenchmarkPacket(const std::string &payload)
 	return pkt;
 }
 
+// Configure the benchmark server for this case's client count.
 static void configureBenchmarkSettings(
-		const ConnectionBenchmarkBackend &backend, u16 port)
+		const ConnectionBenchmarkBackend &backend, u16 port, size_t client_count)
 {
-	g_settings->setU16("max_users", 256);
+	const size_t max_users = std::max<size_t>(256, client_count);
+	g_settings->setU16("max_users", static_cast<u16>(max_users));
 	g_settings->setU16("timeout_mul", 1);
 	g_settings->setBool("enable_ipv6", true);
 	g_settings->setBool("ipv6_server", true);
@@ -620,7 +614,7 @@ public:
 	ConnectionBenchmarkCluster(const ConnectionBenchmarkBackend &backend,
 			size_t client_count) : m_backend(backend), m_port(getBenchmarkBasePort())
 	{
-		configureBenchmarkSettings(m_backend, m_port);
+		configureBenchmarkSettings(m_backend, m_port, client_count);
 
 		m_server = m_backend.factory(&m_server_handler);
 
@@ -766,7 +760,7 @@ public:
 	ConnectionBenchmarkExternalServer(const ConnectionBenchmarkBackend &backend,
 			size_t client_count) : m_backend(backend), m_port(getBenchmarkBasePort())
 	{
-		configureBenchmarkSettings(m_backend, m_port);
+		configureBenchmarkSettings(m_backend, m_port, client_count);
 
 		m_server = m_backend.factory(&m_server_handler);
 		m_server->Serve(makeAnyAddress(m_port));
@@ -842,7 +836,7 @@ public:
 	ConnectionBenchmarkExternalClient(const ConnectionBenchmarkBackend &backend,
 			size_t client_count) : m_backend(backend), m_port(getBenchmarkBasePort())
 	{
-		configureBenchmarkSettings(m_backend, m_port);
+		configureBenchmarkSettings(m_backend, m_port, client_count);
 
 		const auto &options = get_connection_benchmark_options();
 		const u16 connect_port = m_port + m_backend.connect_port_offset;
@@ -1053,6 +1047,17 @@ TEST_CASE("benchmark_connection_operations")
 {
 	const auto backends = getConnectionBenchmarkBackends();
 	const auto &options = get_connection_benchmark_options();
+	// Command-line lists override the checkout's existing benchmark defaults.
+	const auto client_counts =
+			options.client_counts.empty()
+					? std::vector<size_t>(g_connection_client_counts.begin(),
+							  g_connection_client_counts.end())
+					: options.client_counts;
+	const auto payload_sizes =
+			options.payload_sizes.empty()
+					? std::vector<size_t>(g_connection_payload_sizes.begin(),
+							  g_connection_payload_sizes.end())
+					: options.payload_sizes;
 	REQUIRE(!backends.empty());
 	for (const auto &selected : options.backends) {
 		if (std::none_of(backends.begin(), backends.end(),
@@ -1081,15 +1086,17 @@ TEST_CASE("benchmark_connection_operations")
 				return;
 			}
 
-			for (const size_t client_count : g_connection_client_counts) {
+			// Iterate over the selected client counts and payload sizes.
+			for (const size_t client_count : client_counts) {
 				SECTION(std::to_string(client_count) + " clients")
 				{
-					for (const size_t payload_size : g_connection_payload_sizes) {
+					for (const size_t payload_size : payload_sizes) {
 						SECTION(formatPayloadSize(payload_size))
 						{
 							if (options.mode == ConnectionBenchmarkMode::ServerOnly) {
 								ConnectionBenchmarkExternalServer server(
-										backend, client_count);
+										backend, *std::max_element(client_counts.begin(),
+														 client_counts.end()));
 								server.run();
 								return;
 							}
