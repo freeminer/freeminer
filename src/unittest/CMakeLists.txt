@@ -32,6 +32,7 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_planes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_roof_layers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mapillary_atlas.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_world_utils.cpp
 	)
 # ===
 endif()

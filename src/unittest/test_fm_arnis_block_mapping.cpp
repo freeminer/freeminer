@@ -17,6 +17,7 @@ public:
 		TEST(testPottedPlantBedrockMapping);
 		TEST(testWaterloggedBedrockState);
 		TEST(testGenericBedrockNameMapping);
+		TEST(testBedrockHoppersStartUnlocked);
 	}
 
 	void testNewRustBlocksHaveLuantiMappings()
@@ -80,6 +81,22 @@ public:
 		UASSERT(stairs.name == "minecraft:oak_stairs");
 		UASSERT(std::get<int>(stairs.states.at("weirdo_direction")) == 0);
 		UASSERT(std::get<bool>(stairs.states.at("upside_down_bit")));
+	}
+
+	void testBedrockHoppersStartUnlocked()
+	{
+		using namespace arnis;
+		const auto hopper = to_bedrock_block_with_properties(BlockWithProperties{HOPPER});
+		UASSERT(hopper.name == "minecraft:hopper");
+		UASSERT(!std::get<bool>(hopper.states.at("toggle_bit")));
+
+		const auto locked = to_bedrock_block_with_properties(BlockWithProperties{
+				HOPPER, BlockWithProperties::Properties{{"enabled", "false"}}});
+		UASSERT(std::get<bool>(locked.states.at("toggle_bit")));
+
+		const auto enabled = to_bedrock_block_with_properties(BlockWithProperties{
+				HOPPER, BlockWithProperties::Properties{{"enabled", "true"}}});
+		UASSERT(!std::get<bool>(enabled.states.at("toggle_bit")));
 	}
 };
 
