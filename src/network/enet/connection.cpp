@@ -149,6 +149,7 @@ void ConnectionEnet::putEvent(ConnectionEventPtr e)
 {
 	assert(e->type != CONNEVENT_NONE); // Pre-condition
 	m_event_queue.push_back(e);
+	notifyReceive();
 }
 
 void ConnectionEnet::processCommand(ConnectionCommandPtr c)

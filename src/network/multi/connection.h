@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 
 class NetworkPacket;
+class TestFmMulti;
 
 namespace con
 {
@@ -63,6 +64,7 @@ public:
 	size_t events_size() override;
 
 private:
+	friend class ::TestFmMulti;
 	enum class proto_name
 	{
 		none = 0,
@@ -80,10 +82,18 @@ private:
 
 	static proto_name getProtocol(std::string_view name);
 	IConnection *getConnection(proto_name protocol) const;
+	IConnection *ensureConnection(proto_name protocol);
 	IConnection *getConnection(session_t peer_id);
 
+	u32 m_max_packet_size;
+	float m_timeout;
+	bool m_ipv6;
+	PeerHandler *m_peerhandler;
+	std::shared_ptr<ReceiveSignal> m_receive_signal = std::make_shared<ReceiveSignal>();
 	ConnectionList m_connections{};
 	proto_name connected_to = proto_name::none;
+	bool m_serving = false;
+	size_t m_receive_cursor = 0;
 };
 
 } // namespace

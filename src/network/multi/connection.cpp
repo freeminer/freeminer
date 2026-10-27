@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "network/networkpacket.h"
 #include "settings.h"
 #include "config.h"
+#include <chrono>
 
 #if USE_SCTP
 #include "network/sctp/connection.h"
@@ -47,31 +48,53 @@ namespace con
 {
 
 ConnectionMulti::ConnectionMulti(
-		u32 max_packet_size, float timeout, bool ipv6, con::PeerHandler *peerhandler)
+		u32 max_packet_size, float timeout, bool ipv6, con::PeerHandler *peerhandler) :
+		m_max_packet_size(max_packet_size), m_timeout(timeout), m_ipv6(ipv6),
+		m_peerhandler(peerhandler)
 {
+}
+
+IConnection *ConnectionMulti::ensureConnection(proto_name protocol)
+{
+	auto &connection = m_connections[static_cast<size_t>(protocol)];
+	if (connection)
+		return connection.get();
+	switch (protocol) {
 #if USE_SCTP
-	m_connections[static_cast<size_t>(proto_name::sctp)] =
-			std::make_shared<con_sctp::Connection>(
-					max_packet_size, timeout, ipv6, peerhandler);
+	case proto_name::sctp:
+		connection = std::make_shared<con_sctp::Connection>(
+				m_max_packet_size, m_timeout, m_ipv6, m_peerhandler);
+		break;
 #endif
 #if USE_ENET
-	m_connections[static_cast<size_t>(proto_name::enet)] =
-			std::make_shared<ConnectionEnet>(max_packet_size, timeout, ipv6, peerhandler);
+	case proto_name::enet:
+		connection = std::make_shared<ConnectionEnet>(
+				m_max_packet_size, m_timeout, m_ipv6, m_peerhandler);
+		break;
 #endif
 #if USE_WEBSOCKET
-	m_connections[static_cast<size_t>(proto_name::websocket)] =
-			std::make_shared<con_ws::Connection>(100000, timeout, ipv6, peerhandler);
+	case proto_name::websocket:
+		connection = std::make_shared<con_ws::Connection>(
+				100000, m_timeout, m_ipv6, m_peerhandler);
+		break;
 #endif
 #if USE_WEBSOCKET_SCTP
-	m_connections[static_cast<size_t>(proto_name::websocket_stcp)] =
-			std::make_shared<con_ws_sctp::Connection>(
-					PROTOCOL_ID, max_packet_size, timeout, ipv6, peerhandler);
+	case proto_name::websocket_stcp:
+		connection = std::make_shared<con_ws_sctp::Connection>(
+				PROTOCOL_ID, m_max_packet_size, m_timeout, m_ipv6, m_peerhandler);
+		break;
 #endif
 #if MINETEST_TRANSPORT
-	m_connections[static_cast<size_t>(proto_name::minetest)] =
-			std::make_shared<con::Connection>(
-					max_packet_size, timeout, ipv6, peerhandler);
+	case proto_name::minetest:
+		connection = std::make_shared<con::Connection>(
+				m_max_packet_size, m_timeout, m_ipv6, m_peerhandler);
+		break;
 #endif
+	default:
+		return nullptr;
+	}
+	connection->setReceiveSignal(m_receive_signal);
+	return connection.get();
 }
 
 ConnectionMulti::~ConnectionMulti()
@@ -126,10 +149,11 @@ IConnection *ConnectionMulti::getConnection(session_t peer_id)
 
 void ConnectionMulti::Serve(Address bind_address)
 {
+	m_serving = true;
 	infostream << "Multi serving at " << bind_address.serializeString() << ":"
 			   << std::to_string(bind_address.getPort()) << std::endl;
 
-	if (auto connection = getConnection(proto_name::sctp)) {
+	if (auto connection = ensureConnection(proto_name::sctp)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
@@ -138,7 +162,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		addr.setPort(port);
 		connection->Serve(addr);
 	}
-	if (auto connection = getConnection(proto_name::enet)) {
+	if (auto connection = ensureConnection(proto_name::enet)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_enet", port)) {
@@ -147,7 +171,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		addr.setPort(port);
 		connection->Serve(addr);
 	}
-	if (auto connection = getConnection(proto_name::websocket)) {
+	if (auto connection = ensureConnection(proto_name::websocket)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_wss", port)) {
@@ -156,7 +180,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		addr.setPort(port); // same tcp
 		connection->Serve(addr);
 	}
-	if (auto connection = getConnection(proto_name::websocket_stcp)) {
+	if (auto connection = ensureConnection(proto_name::websocket_stcp)) {
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_sctp_wss", port)) {
@@ -165,7 +189,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		addr.setPort(port); // same tcp
 		connection->Serve(addr);
 	}
-	if (auto connection = getConnection(proto_name::minetest))
+	if (auto connection = ensureConnection(proto_name::minetest))
 		connection->Serve(bind_address);
 }
 
@@ -182,7 +206,7 @@ void ConnectionMulti::ConnectToHost(Address address, const std::string &address_
 				 << std::to_string(address.getPort()) << " with " << remote_proto << '\n';
 
 	const auto protocol = getProtocol(remote_proto);
-	if (auto connection = getConnection(protocol)) {
+	if (auto connection = ensureConnection(protocol)) {
 		connected_to = protocol;
 		connection->ConnectToHost(address, address_name);
 	}
@@ -190,6 +214,10 @@ void ConnectionMulti::ConnectToHost(Address address, const std::string &address_
 
 bool ConnectionMulti::Connected()
 {
+	if (!m_serving) {
+		auto *connection = getConnection(connected_to);
+		return connection && connection->Connected();
+	}
 	for (const auto &connection : m_connections) {
 		if (connection && connection->Connected())
 			return true;
@@ -226,15 +254,34 @@ std::string_view ConnectionMulti::getProtocolName(session_t peer_id)
 
 bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
-	for (u32 i = 0; !i || (i < timeout_ms / 10); ++i) {
-		const u32 timeout = i ? 10 : 0;
-		//for (const auto &timeout : {u32(0), u32(1)}) {
-		for (const auto &connection : m_connections) {
-			if (connection && connection->ReceiveTimeoutMs(pkt, timeout))
-				return true;
-		}
+	if (!m_serving) {
+		if (auto *connection = getConnection(connected_to))
+			return connection->ReceiveTimeoutMs(pkt, timeout_ms);
+		// Disconnect clears the selected protocol, but queued events still
+		// need to reach their peer handlers.
 	}
-	return false;
+
+	using Clock = std::chrono::steady_clock;
+	const auto deadline = Clock::now() + std::chrono::milliseconds(timeout_ms);
+	for (;;) {
+		m_receive_signal->wait(0);
+		// Scan without blocking; waiting on one transport would delay every
+		// other one. Rotate the first slot so a busy backend cannot starve peers.
+		for (size_t i = 0; i < m_connections.size(); ++i) {
+			const size_t index = (m_receive_cursor + i) % m_connections.size();
+			const auto &connection = m_connections[index];
+			if (connection && connection->ReceiveTimeoutMs(pkt, 0)) {
+				m_receive_cursor = (index + 1) % m_connections.size();
+				return true;
+			}
+		}
+		const auto now = Clock::now();
+		if (now >= deadline)
+			return false;
+		const auto remaining =
+				std::chrono::ceil<std::chrono::milliseconds>(deadline - now);
+		m_receive_signal->wait(static_cast<unsigned>(remaining.count()));
+	}
 }
 
 /*
@@ -283,6 +330,10 @@ void ConnectionMulti::DisconnectPeer(session_t peer_id)
 
 size_t ConnectionMulti::events_size()
 {
+	if (!m_serving) {
+		if (auto *connection = getConnection(connected_to))
+			return connection->events_size();
+	}
 	size_t ret = 0;
 	for (const auto &connection : m_connections) {
 		if (connection)

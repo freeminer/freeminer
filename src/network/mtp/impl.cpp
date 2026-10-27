@@ -1344,6 +1344,9 @@ void Connection::putEvent(ConnectionEventPtr e)
 {
 	assert(e->type != CONNEVENT_NONE); // Pre-condition
 	m_event_queue.push_back(e);
+	// fm: Wake a multi-transport receiver after publishing the event.
+	notifyReceive();
+	// ===
 }
 
 void Connection::TriggerSend()
