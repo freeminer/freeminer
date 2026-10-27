@@ -28,6 +28,11 @@
 namespace arnis
 {
 
+namespace overture
+{
+struct OvertureData;
+}
+
 namespace osm_parser
 {
 struct RawOsmDocument;
@@ -68,9 +73,13 @@ struct Ground
 	CelestialBody body_ = CelestialBody::Earth;
 	std::optional<int> elevation_ground_level;
 	std::vector<std::vector<float>> elevation_grid;
+	std::shared_ptr<const elevation::ElevationHalo> elevation_halo;
 	std::size_t elevation_world_width = 0, elevation_world_height = 0;
 	bool elevation_enabled = false;
 	int snow_threshold_y_ = std::numeric_limits<int>::max();
+	// Absolute block coordinate of the first ground-grid cell; keeps natural
+	// land-cover lattice noise stable across adjacent One World areas.
+	std::pair<int, int> origin{0, 0};
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
 	bool winter_state = false;
@@ -93,6 +102,7 @@ struct Ground
 		return ground;
 	}
 	void set_ground_level(int ground_level) { elevation_ground_level = ground_level; }
+	void set_origin(std::pair<int, int> value) { origin = value; }
 
 	int get_absolute_y(int x_input, int y_offset, int z_input) const
 	{
@@ -175,6 +185,7 @@ struct Ground
 	void save_canopy_debug_image(const std::string &filename) const;
 	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const;
 	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const;
+	bool canopy_measured(const XZPoint &origin, int span) const;
 	std::optional<std::pair<double, std::uint8_t>> canopy_cell(
 			const XZPoint &origin, int span) const;
 	std::optional<double> canopy_fraction(const XZPoint &coord, int spacing) const;
@@ -295,6 +306,7 @@ struct GroundFrame
 			std::size_t pad_blocks = 0, const elevation::AffinePolicy &affine = {},
 			std::optional<std::pair<double, double>> projection_origin = std::nullopt);
 	GroundFetchPlan fetch_plan(const geographic::LLBBox &, double scale) const;
+	std::pair<int, int> origin_for(const geographic::LLBBox &) const;
 	biome::Climate climate(const geographic::LLBBox &) const;
 	double anchor_lat(const geographic::LLBBox &) const;
 	std::shared_ptr<const ecoregion::EcoMap> ecoregions(const geographic::LLBBox &,
@@ -307,20 +319,29 @@ int extended_max_y_for(const Args &args);
 int world_top_y_for(const Args &args);
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const std::filesystem::path &cache_base = {},
-		const elevation::TerrainHints &terrain_hints = {});
+		elevation::TerrainHints terrain_hints = {},
+		const std::function<std::vector<elevation::TallModel>()> &late_overture = {});
 // Convenience entry points matching Rust's OSM-to-terrain hint handoff.
 // Natural peaks always inform terrain; tall-model headroom is used only when
 // 3D model placement is enabled.
 Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
 		const osm_parser::RawOsmDocument &osm,
 		const std::filesystem::path &cache_base = {});
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const osm_parser::RawOsmDocument &osm, const overture::OvertureData &overture,
+		const std::filesystem::path &cache_base = {});
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const std::filesystem::path &cache_base, const elevation::PeakSource &peaks);
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const GroundFrame &frame, const std::filesystem::path &cache_base = {},
-		const elevation::TerrainHints &terrain_hints = {});
+		elevation::TerrainHints terrain_hints = {},
+		const std::function<std::vector<elevation::TallModel>()> &late_overture = {});
 Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
 		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
+		const std::filesystem::path &cache_base = {});
+Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
+		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
+		const overture::OvertureData &overture,
 		const std::filesystem::path &cache_base = {});
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 		const GroundFrame &frame, const std::filesystem::path &cache_base,

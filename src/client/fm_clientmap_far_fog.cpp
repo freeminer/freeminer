@@ -466,7 +466,7 @@ void ClientMap::updateFarFogCells()
 		return;
 
 	const auto far_iteration_draw_snapshot = far_iteration_draw;
-	const v3bpos_t player_block_pos = getNodeBlockPos(m_camera_position_node);
+	const v3bpos_t player_block_pos = getNodeBlockPos(floatToInt(m_camera_position, BS));
 	const auto cell_size_pow = m_control.cell_size_pow;
 	const auto fog_farmesh = g_settings->getPos("volumetric_fog");
 	const auto farmesh_quality_pow = m_control.farmesh_quality_pow;
@@ -772,10 +772,11 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	forward.normalize();
 
 	constexpr pos_t camera_bucket_size = MAP_BLOCKSIZE;
+	const v3pos_t camera_node = floatToInt(m_camera_position, BS);
 	const v3pos_t camera_bucket{
-			static_cast<pos_t>(m_camera_position_node.X / camera_bucket_size),
-			static_cast<pos_t>(m_camera_position_node.Y / camera_bucket_size),
-			static_cast<pos_t>(m_camera_position_node.Z / camera_bucket_size),
+			static_cast<pos_t>(camera_node.X / camera_bucket_size),
+			static_cast<pos_t>(camera_node.Y / camera_bucket_size),
+			static_cast<pos_t>(camera_node.Z / camera_bucket_size),
 	};
 	const float time_of_day = m_client->getEnv().getTimeOfDayF();
 	const auto time_bucket = static_cast<uint16_t>(
@@ -856,8 +857,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	const pos_t water_level_nodes =
 			mapgen ? mapgen->water_level : g_settings->getS16("water_level");
 	const double camera_altitude =
-			projection ? projection->altitude(v3opos_t::from(m_camera_position_node))
-					   : double(m_camera_position_node.Y);
+			projection ? projection->altitude(v3opos_t::from(camera_node))
+					   : double(camera_node.Y);
 	const bool camera_above_water = camera_altitude > water_level_nodes;
 	const float near_fog_reserve_range = std::min(volumetric_fog_range, 4096.0f * BS);
 	const auto terrain_reference = [&](const v3bpos_t &block_pos,
@@ -1151,15 +1152,9 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		return block_center.getDistanceFrom(camera_scene_position);
 	};
 
-	const auto fog_split_pow = [&](block_step_t fog_step, bpos_t block_span,
-									   float distance) -> block_step_t {
+	const auto fog_split_pow = [&](bpos_t block_span) -> block_step_t {
 		const float block_size = static_cast<float>(MAP_BLOCKSIZE * block_span) * BS;
-		float target_size = static_cast<float>(MAP_BLOCKSIZE) * 4.0f * BS;
-		const float range_part = distance / std::max(volumetric_fog_range, 1.0f);
-		if (range_part > 0.55f)
-			target_size *= 4.0f;
-		else if (range_part > 0.30f)
-			target_size *= 2.0f;
+		const float target_size = static_cast<float>(MAP_BLOCKSIZE) * 4.0f * BS;
 		block_step_t split_pow = 0;
 		while ((1 << split_pow) < block_span && split_pow < 2 &&
 				block_size / static_cast<float>(1 << split_pow) > target_size) {
@@ -1206,8 +1201,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		if (!source_visible(block_pos, block_span))
 			return false;
 
-		const block_step_t split_pow =
-				fog_split_pow(fog_step, block_span, cell_distance(block_pos, block_span));
+		const block_step_t split_pow = fog_split_pow(block_span);
 		const bpos_t split_count = 1 << split_pow;
 		const bpos_t cell_span = block_span >> split_pow;
 		const block_step_t cell_step = static_cast<block_step_t>(

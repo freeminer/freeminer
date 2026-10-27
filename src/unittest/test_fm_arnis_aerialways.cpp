@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/element_processing/aerialways.h"
+#include "mapgen/earth/arnis-cpp/src/clipping.h"
 
 #include <vector>
 
@@ -13,6 +14,7 @@ public:
 	{
 		TEST(testLiftKindsMatchRust);
 		TEST(testCorridorCoversLineAndTerminals);
+		TEST(testClippedLiftEndIsNotAnOsmTerminal);
 		TEST(testNoLiftsReturnEmptyBitmap);
 	}
 
@@ -57,6 +59,27 @@ public:
 	{
 		const XZBBox bounds(-32, -32, 280, 32);
 		UASSERT(arnis::aerialways::clear_corridors({}, bounds).is_empty());
+	}
+
+	void testClippedLiftEndIsNotAnOsmTerminal()
+	{
+		arnis::ProcessedNode start{};
+		start.id = 2;
+		start.x = 0;
+		start.z = 0;
+		arnis::ProcessedNode end{};
+		end.id = 3;
+		end.x = 100;
+		end.z = 0;
+		const XZBBox bounds(0, -5, 90, 5);
+		auto clipped = arnis::clipping::clip_way_to_bbox({start, end}, bounds);
+		UASSERT(clipped.size() == 2);
+		UASSERT(clipped.front().id == start.id);
+		UASSERT(clipped.back().id == end.id);
+		arnis::clipping::mark_cut_ends(
+				clipped, {{{start.x, start.z}, {end.x, end.z}}}, 7);
+		UASSERT(clipped.front().id == start.id);
+		UASSERT(arnis::clipping::is_invented_node_id(clipped.back().id));
 	}
 };
 
