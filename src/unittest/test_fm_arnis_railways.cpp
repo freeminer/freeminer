@@ -202,7 +202,7 @@ public:
 		const std::vector<arnis::ProcessedElement> empty;
 		auto joins =
 				arnis::railways::RailJoins::build(empty, arnis::railways::track_level);
-		joins.meet_at_edge_of({0, 0, 9, 9});
+		joins.meet_at_edge_of(arnis::cartesian::XZBBox::rect_from_min_max(0, 0, 9, 9));
 		const std::vector<std::pair<int, int>> cells{{-1, 5}, {0, 5}, {10, 5}, {11, 5}};
 		const auto crossings = joins.edge_crossings(cells);
 		UASSERT(crossings.size() == 2);

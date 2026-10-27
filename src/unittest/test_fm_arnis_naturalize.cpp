@@ -74,6 +74,7 @@ public:
 		TEST(testHighDamStaysLand);
 		TEST(testBlueprintCausewayIsNotReclaimed);
 		TEST(testWideWaterfrontStaysLand);
+		TEST(testOverlappingAreasShareNaturalizedBorders);
 	}
 
 	void testFieldsBecomeGrassland()
@@ -180,6 +181,30 @@ public:
 		naturalize(data, nullptr, arnis::biome::Climate::Temperate);
 		UASSERT(count_class(data, LC_WATER) == 10 * 30);
 		UASSERT(count_class(data, LC_GRASSLAND) == 20 * 30);
+	}
+
+	void testOverlappingAreasShareNaturalizedBorders()
+	{
+		using namespace arnis::land_cover;
+		const auto source_class = [](int x) {
+			return x < 100 ? 't' : x < 200 ? 'b' : 'g';
+		};
+		const auto make_area = [&](int x0, int z0, int width, int height) {
+			std::vector<std::string> rows(height, std::string(width, 'g'));
+			for (int z = 0; z < height; ++z)
+				for (int x = 0; x < width; ++x)
+					rows[z][x] = source_class(x0 + x);
+			auto data = make_land_cover(rows, 1.0);
+			naturalize(data, nullptr, arnis::biome::Climate::Temperate, {x0, z0});
+			return data;
+		};
+		const auto whole = make_area(0, 0, 300, 260);
+		const auto part = make_area(37, 23, 226, 200);
+		for (int z = 0; z < 200; ++z)
+			for (int x = 0; x < 226; ++x)
+				UASSERT(part.grid[z][x] == whole.grid[z + 23][x + 37]);
+		UASSERT(count_class(whole, LC_TREE_COVER) > 100 * 260);
+		UASSERT(count_class(whole, LC_GRASSLAND) > 100 * 260);
 	}
 };
 
