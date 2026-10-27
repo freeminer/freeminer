@@ -47,7 +47,7 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 		sock = nullptr;
 		sock_connect = false;
 		sock_listen = false;
-		usrsctp_close(peer_sock);
+		closeSocket(peer_sock);
 
 		putEvent(ConnectionEvent::peerRemoved(peer_id, timeout, {}));
 		return true;
@@ -65,7 +65,7 @@ bool Connection::deletePeer(session_t peer_id, bool timeout)
 			sock_connect = false;
 		}
 		if (peer_sock)
-			usrsctp_close(peer_sock);
+			closeSocket(peer_sock);
 
 		m_peers.erase(node);
 	}
@@ -98,11 +98,8 @@ ConnectionEventPtr Connection::waitEvent(u32 timeout_ms)
 
 void Connection::putCommand(ConnectionCommandPtr c)
 {
-	// TODO? if (!m_shutting_down)
-	{
-		m_command_queue.push_back(c);
-		// m_sendThread->Trigger();
-	}
+	m_command_queue.push_back(c);
+	m_wakeup->notify();
 }
 
 void Connection::Serve(Address bind_addr)
