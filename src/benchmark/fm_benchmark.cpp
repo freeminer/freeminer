@@ -8,10 +8,12 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 
 namespace
 {
@@ -111,6 +113,37 @@ static bool parseConnectionBenchmarkBackends(
 	return true;
 }
 
+static bool parseNumberList(std::string_view value, size_t minimum, size_t maximum,
+		std::vector<size_t> *numbers)
+{
+	std::vector<size_t> parsed_numbers;
+	size_t start = 0;
+	while (start <= value.size()) {
+		const size_t separator = value.find(',', start);
+		const size_t end = separator == std::string_view::npos ? value.size() : separator;
+		auto item = value.substr(start, end - start);
+		while (!item.empty() && std::isspace(static_cast<unsigned char>(item.front())))
+			item.remove_prefix(1);
+		while (!item.empty() && std::isspace(static_cast<unsigned char>(item.back())))
+			item.remove_suffix(1);
+		size_t number = 0;
+		const auto result =
+				std::from_chars(item.data(), item.data() + item.size(), number);
+		if (item.empty() || result.ec != std::errc() ||
+				result.ptr != item.data() + item.size() || number < minimum ||
+				number > maximum)
+			return false;
+		if (std::find(parsed_numbers.begin(), parsed_numbers.end(), number) ==
+				parsed_numbers.end())
+			parsed_numbers.push_back(number);
+		if (separator == std::string_view::npos)
+			break;
+		start = separator + 1;
+	}
+	*numbers = std::move(parsed_numbers);
+	return true;
+}
+
 static bool getOptionValue(int argc, char *argv[], int *index, std::string_view option,
 		std::string_view *value)
 {
@@ -199,6 +232,27 @@ int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_a
 				}
 				continue;
 			}
+			if (getOptionValue(
+						argc, argv, &i, "--connection-benchmark-clients", &value)) {
+				if (!parseNumberList(value, 1, std::numeric_limits<u16>::max(),
+							&g_connection_benchmark_options.client_counts)) {
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-clients: " << value
+							<< " (expected comma-separated counts from 1 to 65535)\n";
+					return 1;
+				}
+				continue;
+			}
+			if (getOptionValue(argc, argv, &i, "--connection-benchmark-sizes", &value)) {
+				if (!parseNumberList(value, 1, std::numeric_limits<u32>::max() - 2,
+							&g_connection_benchmark_options.payload_sizes)) {
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-sizes: " << value
+							<< " (expected comma-separated byte counts from 1 to 4294967293)\n";
+					return 1;
+				}
+				continue;
+			}
 			if (arg.size() >= 2 && arg[0] == '-' && arg[1] != '-') {
 				// skip settings
 				continue;
@@ -211,5 +265,14 @@ int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_a
 		catch_argv->push_back(argv[i]);
 	}
 
+	// External mode uses a five-byte control header in benchmark packets.
+	if (g_connection_benchmark_options.mode != ConnectionBenchmarkMode::ClientServer &&
+			std::any_of(g_connection_benchmark_options.payload_sizes.begin(),
+					g_connection_benchmark_options.payload_sizes.end(),
+					[](size_t size) { return size < 5; })) {
+		Catch::cerr() << "Invalid --connection-benchmark-sizes: external mode requires "
+					  << "at least 5 bytes\n";
+		return 1;
+	}
 	return 0;
 }

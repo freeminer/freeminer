@@ -1,6 +1,9 @@
 file(GLOB unittest_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-# fm: ENet payload ownership and worker wakeup regressions.
+# fm: Multi-transport dispatch, wakeup and fairness regressions.
+list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_multi.cpp)
+
+# ENet payload ownership and worker wakeup regressions.
 if(USE_ENET)
 	list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_enet.cpp)
 endif()

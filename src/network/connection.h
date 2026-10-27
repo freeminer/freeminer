@@ -8,6 +8,9 @@
 #include "socket.h" // Address
 // fm: the hostname-aware default method forwards an Address by value.
 #include "address.h"
+#include "fm_receive_signal.h"
+#include <memory>
+#include <utility>
 // ===
 
 #include <string_view>
@@ -85,6 +88,25 @@ public:
 	virtual Address GetPeerAddress(session_t peer_id) = 0;
 	virtual float getPeerStat(session_t peer_id, rtt_stat_type type) = 0;
 	virtual float getLocalStat(rate_stat_type type) = 0;
+	// fm: Install once, before Serve/Connect publishes work to transport threads.
+	void setReceiveSignal(std::shared_ptr<ReceiveSignal> signal)
+	{
+		m_receive_signal_owner = std::move(signal);
+		m_receive_signal.store(m_receive_signal_owner.get(), std::memory_order_release);
+	}
+
+protected:
+	void notifyReceive()
+	{
+		if (auto *signal = m_receive_signal.load(std::memory_order_acquire))
+			signal->notify();
+	}
+
+private:
+	// Outlives derived transport threads and keeps late notifications safe.
+	std::shared_ptr<ReceiveSignal> m_receive_signal_owner;
+	std::atomic<ReceiveSignal *> m_receive_signal{nullptr};
+	// ===
 };
 
 // MTP = Minetest Protocol

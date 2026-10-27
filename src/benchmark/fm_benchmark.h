@@ -5,6 +5,7 @@
 
 #include "irrlichttypes.h"
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,8 @@ struct ConnectionBenchmarkOptions
 	u16 port = 0;
 	u16 window = 1;
 	std::vector<std::string> backends;
+	std::vector<size_t> client_counts;
+	std::vector<size_t> payload_sizes;
 };
 
 const ConnectionBenchmarkOptions &get_connection_benchmark_options();
