@@ -6,7 +6,7 @@ local aliases = { mt_ws = "ws", wss = "ws", mt_ws_sctp = "ws_sctp",
 local function normalize(proto)
 	return aliases[proto] or proto or "mt"
 end
-for _, proto in ipairs({ "enet", "mt", "sctp", "ws", "ws_sctp" }) do
+for _, proto in ipairs({ "sctp", "enet", "mt", "ws", "ws_sctp" }) do
 	if version.transports and version.transports[proto] then
 		protocols[#protocols + 1] = proto
 	end

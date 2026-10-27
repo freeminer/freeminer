@@ -1155,22 +1155,16 @@ bool Game::connectToServer(const GameStartData &start_data,
 #if USE_MULTI
 	if (start_data.isAnyServer()) { //simple_singleplayer_mode || start_data.local_server) {
 		u16 port = 0;
-//#if USE_SCTP
-//      // Not stable
-//		if (!g_settings->getU16NoEx("port_sctp", port)) {
-//			port = connect_address.getPort() + 100;
-//		}
-//		g_settings->set("remote_proto", "sctp");
-#if USE_ENET
-		if (!g_settings->getU16NoEx("port_enet", port)) {
-			port = connect_address.getPort() + 200;
-		}
-		g_settings->set("remote_proto", "enet");
-#elif USE_SCTP
+#if USE_SCTP
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
 			port = connect_address.getPort() + 100;
 		}
 		g_settings->set("remote_proto", "sctp");
+#elif USE_ENET
+		if (!g_settings->getU16NoEx("port_enet", port)) {
+			port = connect_address.getPort() + 200;
+		}
+		g_settings->set("remote_proto", "enet");
 #elif USE_WEBSOCKET
 		if (!g_settings->getU16NoEx("port_wss", port)) {
 			port = connect_address.getPort();

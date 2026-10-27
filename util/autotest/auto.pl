@@ -526,7 +526,7 @@ $commands = {
           $commands->{executable}(),
           qq{--run-benchmarks},
           qq{$config->{run_add} },
-          ( map { $_ . "=" . $options->{pass}{$_} } sort keys %{$options->{pass}} ) 
+          ( map { ' --' . $_ . '=' . $options->{pass}{$_} } sort keys %{$options->{pass}} ) 
     }],
     set_bot         => {'----bot' => 1, }, # '----bot_random' => 1,
     run_bot         => ['set_bot', 'set_client', 'run_single'],
