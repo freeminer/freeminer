@@ -1243,6 +1243,28 @@ uint8_t Ground::cover_class(const XZPoint &coord) const
 	return land_cover->grid[z][x];
 }
 
+bool Ground::beach_within(const XZPoint &coord, double reach) const
+{
+	if (!land_cover || land_cover->width == 0 || land_cover->height == 0)
+		return false;
+	const auto [x, z] = land_cover_index(coord);
+	const auto [world_width, world_height] = world_dims();
+	const double sx = static_cast<double>(land_cover->width - 1) /
+					  static_cast<double>(std::max<std::size_t>(1, world_width - 1));
+	const double sz = static_cast<double>(land_cover->height - 1) /
+					  static_cast<double>(std::max<std::size_t>(1, world_height - 1));
+	// Match Rust's saturating float-to-usize conversion after ceil(). NaN and
+	// negative reaches become zero; positive infinity searches the whole grid.
+	const double raw_cells = std::ceil(reach * std::max(sx, sz));
+	const auto max_cells = std::numeric_limits<std::size_t>::max();
+	const auto cells =
+			std::isnan(raw_cells) || raw_cells <= 0.0 ? std::size_t{0}
+			: !std::isfinite(raw_cells) || raw_cells >= static_cast<double>(max_cells)
+					? max_cells
+					: static_cast<std::size_t>(raw_cells);
+	return land_cover->beach_within(x, z, cells);
+}
+
 bool Ground::has_cover_neighbour(const XZPoint &coord, std::uint8_t class_id) const
 {
 	if (!land_cover || land_cover->grid.empty() || land_cover->width == 0 ||

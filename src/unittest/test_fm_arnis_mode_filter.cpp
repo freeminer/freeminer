@@ -152,6 +152,19 @@ public:
 		UASSERT(discovery.contains("wikipedia"));
 		UASSERT(discovery.get("wikipedia").empty());
 		UASSERT(!discovery.contains("wikimedia_commons"));
+
+		arnis::tags_t pool;
+		pool.emplace("leisure", "swimming_pool");
+		pool.emplace("natural", "water");
+		pool.emplace("water", "pool");
+		arnis::osm_parser::filter_tags(pool);
+		UASSERT(pool.size() == 1);
+		UASSERT(pool.get("leisure") == "swimming_pool");
+		arnis::tags_t lake;
+		lake.emplace("natural", "water");
+		lake.emplace("water", "lake");
+		arnis::osm_parser::filter_tags(lake);
+		UASSERT(lake.size() == 2);
 	}
 
 	void testRustPrioritySortLeavesBroadLanduseLast()
