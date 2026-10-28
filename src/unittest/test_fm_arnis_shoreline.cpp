@@ -1,10 +1,16 @@
 #include "test.h"
 
+#include "mapgen/earth/arnis_ground.h"
+#include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/land_cover.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/shoreline.h"
+#include "mapgen/earth/arnis-cpp/src/water_depth.h"
+#include "mapgen/earth/arnis_world_editor.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
+#include <unordered_set>
 #include <vector>
 
 namespace
@@ -39,7 +45,94 @@ class TestFmArnisShoreline : public TestBase
 public:
 	TestFmArnisShoreline() { TestManager::registerTestModule(this); }
 	const char *getName() override { return "TestFmArnisShoreline"; }
-	void runTests(IGameDef *) override { TEST(testSinglePixelPondAndIslandSurvive); }
+	void runTests(IGameDef *) override
+	{
+		TEST(testSinglePixelPondAndIslandSurvive);
+		TEST(testBeachProximityIndexAndInvalidation);
+		TEST(testBeachProximityAcrossTileBoundary);
+		TEST(testWorldEditorBeachProximityUsesGroundCoordinates);
+		TEST(testShallowBedsUseBeachSandAndInlandMaterials);
+	}
+
+	void testShallowBedsUseBeachSandAndInlandMaterials()
+	{
+		using namespace arnis;
+		land_cover::LandCoverData data;
+		data.width = 64;
+		data.height = 64;
+		data.grid.assign(data.height,
+				std::vector<std::uint8_t>(data.width, land_cover::LC_GRASSLAND));
+		for (std::size_t z = 0; z < data.height; ++z)
+			for (std::size_t x = 0; x < 4; ++x)
+				data.grid[z][x] = land_cover::LC_BEACH;
+		auto ground = Ground::new_flat_with_land_cover(std::move(data), 64, 64, 0);
+		WorldEditor editor;
+		editor.ground = &ground;
+
+		const auto [beach_bed, beach_under] = water_depth::shallow_bed(editor, 5, 30);
+		UASSERT(beach_bed == SAND);
+		UASSERT(beach_under == SANDSTONE);
+
+		std::unordered_set<content_t> inland_beds;
+		std::size_t inland_sand = 0;
+		for (int x = 16; x < 64; ++x) {
+			for (int z = 0; z < 64; ++z) {
+				const auto [bed, under] = water_depth::shallow_bed(editor, x, z);
+				UASSERT(under == DIRT);
+				inland_beds.insert(bed.id());
+				inland_sand += bed == SAND;
+			}
+		}
+		UASSERT(inland_beds.size() >= 3);
+		UASSERT(inland_sand * 4 < 48U * 64U);
+	}
+
+	void testBeachProximityIndexAndInvalidation()
+	{
+		using namespace arnis::land_cover;
+		LandCoverData data;
+		data.width = 64;
+		data.height = 64;
+		data.grid.assign(
+				data.height, std::vector<std::uint8_t>(data.width, LC_GRASSLAND));
+		data.grid[30][3] = LC_BEACH;
+		UASSERT(data.beach_within(7, 30, 4));
+		UASSERT(!data.beach_within(8, 30, 4));
+		data.grid[30][12] = LC_BEACH;
+		data.invalidate_water_blend_grid();
+		UASSERT(data.beach_within(8, 30, 4));
+	}
+
+	void testBeachProximityAcrossTileBoundary()
+	{
+		using namespace arnis::land_cover;
+		LandCoverData data;
+		data.width = 64;
+		data.height = 64;
+		data.grid.assign(
+				data.height, std::vector<std::uint8_t>(data.width, LC_GRASSLAND));
+		// The query spans several 16x16 cache tiles; only the far tile has beach.
+		data.grid[30][33] = LC_BEACH;
+		UASSERT(data.beach_within(15, 30, 20));
+		UASSERT(!data.beach_within(15, 30, 17));
+	}
+
+	void testWorldEditorBeachProximityUsesGroundCoordinates()
+	{
+		using namespace arnis;
+		land_cover::LandCoverData data;
+		data.width = 64;
+		data.height = 64;
+		data.grid.assign(data.height,
+				std::vector<std::uint8_t>(data.width, land_cover::LC_GRASSLAND));
+		data.grid[30][33] = land_cover::LC_BEACH;
+		auto ground = Ground::new_flat_with_land_cover(std::move(data), 64, 64, 0);
+		WorldEditor editor;
+		editor.ground = &ground;
+
+		UASSERT(editor.near_beach(15, 30, 20.0));
+		UASSERT(!editor.near_beach(15, 30, 17.0));
+	}
 
 	void testSinglePixelPondAndIslandSurvive()
 	{

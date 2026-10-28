@@ -197,6 +197,7 @@ struct WorldEditor
 	bool surface_is_sealed(int x, int z) const;
 	bool nested_area_owns(int x, int z) const;
 	uint8_t cover_class(int x, int z) const;
+	bool near_beach(int x, int z, double reach) const;
 	std::optional<ecoregion::Ecoregion> ecoregion(int x, int z) const;
 	struct DecalFrame
 	{

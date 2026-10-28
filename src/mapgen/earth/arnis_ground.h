@@ -266,6 +266,7 @@ struct Ground
 	std::pair<std::size_t, std::size_t> land_cover_index(const XZPoint &coord) const;
 
 	uint8_t cover_class(const XZPoint &coord) const;
+	bool beach_within(const XZPoint &coord, double reach) const;
 	bool has_cover_neighbour(const XZPoint &coord, std::uint8_t class_id) const;
 
 	uint8_t water_distance(const XZPoint &coord) const;
