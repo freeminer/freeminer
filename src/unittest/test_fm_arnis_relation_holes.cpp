@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
+#include "mapgen/earth/arnis-cpp/src/building_suppression.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/subprocessor/interior/index.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
@@ -46,6 +47,7 @@ public:
 		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
+		TEST(testListedNonResidentialPartRelationDoesNotInheritHousing);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
 	}
 
@@ -299,6 +301,58 @@ public:
 				{{0.2, 0.2}, {0.2, 0.3}, {0.3, 0.3}, {0.3, 0.2}, {0.2, 0.2}}, part_tags));
 		const auto prepared = arnis::prepare_building_data(elements);
 		UASSERT(prepared.outline_suppression.contains({"way", 2}));
+	}
+
+	void testListedNonResidentialPartRelationDoesNotInheritHousing()
+	{
+		auto way = [](std::uint64_t id, double min, double max) {
+			arnis::ProcessedWay result;
+			result.id = id;
+			const double coords[5][2]{
+					{min, min}, {max, min}, {max, max}, {min, max}, {min, min}};
+			for (int i = 0; i < 5; ++i) {
+				arnis::ProcessedNode node{};
+				node.id = id * 10 + static_cast<std::uint64_t>(i);
+				node.latitude = coords[i][0];
+				node.longitude = coords[i][1];
+				result.nodes.push_back(node);
+				result.source_node_refs.push_back(node.id);
+			}
+			return result;
+		};
+		auto outer = way(10, 0.0, 1.0);
+		auto part = way(20, 0.2, 0.4);
+		arnis::ProcessedRelation housing_outline{};
+		housing_outline.id = 1;
+		housing_outline.tags.emplace("type", "multipolygon");
+		housing_outline.tags.emplace("building", "apartments");
+		housing_outline.source_members.push_back({"way", outer.id, "outer"});
+		arnis::ProcessedRelation part_relation{};
+		part_relation.id = 2;
+		part_relation.tags.emplace("type", "multipolygon");
+		part_relation.tags.emplace("building:part", "yes");
+		part_relation.source_members.push_back({"way", part.id, "outer"});
+
+		const auto prepare = [&](bool listed_by_office) {
+			std::vector<arnis::ProcessedElement> elements;
+			elements.emplace_back(outer);
+			elements.emplace_back(part);
+			elements.emplace_back(housing_outline);
+			elements.emplace_back(part_relation);
+			if (listed_by_office) {
+				arnis::ProcessedRelation office{};
+				office.id = 3;
+				office.tags.emplace("type", "building");
+				office.tags.emplace("building", "office");
+				office.source_members.push_back(
+						{"relation", housing_outline.id, "outline"});
+				office.source_members.push_back({"relation", part_relation.id, "part"});
+				elements.emplace_back(std::move(office));
+			}
+			return arnis::prepare_building_data(elements);
+		};
+		UASSERT(prepare(false).housing_relation_parts.contains(part_relation.id));
+		UASSERT(!prepare(true).housing_relation_parts.contains(part_relation.id));
 	}
 
 	void testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder()
