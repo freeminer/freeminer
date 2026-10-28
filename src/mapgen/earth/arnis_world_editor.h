@@ -25,6 +25,7 @@
 #include "arnis_block.h"
 #include "arnis_projection_frame.h"
 #include "arnis-cpp/src/args.h"
+#include "arnis-cpp/src/bedrock_addon.h"
 #include "arnis-cpp/src/decals/registry.h"
 #include "arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis_projection_frame.h"
@@ -135,6 +136,9 @@ struct WorldEditor
 	// Backend-neutral train routes and schedules, shared with tile workers for
 	// consumers that animate or otherwise interpret generated rail services.
 	std::shared_ptr<const trains::TrainRouteNetwork> train_network;
+	// Bedrock's backend-neutral vehicle records and geometry, ready for a host
+	// to package into behavior/resource packs or consume natively.
+	std::shared_ptr<const bedrock_addon::VehiclePayload> bedrock_vehicle_payload;
 	// fm: Full-source native topology and grades, immutable during generation.
 	std::shared_ptr<const railways::advtrains::RailNetwork> native_rail_network;
 	std::set<std::uint64_t> native_generated_rails;

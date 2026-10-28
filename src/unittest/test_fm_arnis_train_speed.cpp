@@ -49,7 +49,7 @@ public:
 					distance %= lap;
 					distance = std::min<std::int64_t>(distance, lap - distance);
 				}
-				largest = std::max(largest, distance);
+				largest = std::max(largest, static_cast<std::int64_t>(distance));
 			}
 			UASSERT(largest > 7000 && largest < 8000);
 		}

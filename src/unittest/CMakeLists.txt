@@ -16,6 +16,7 @@ endif()
 #  Arnis tests include its adapter, which requires Osmium headers.
 if(USE_OSMIUM)
 	list(APPEND unittest_SRCS
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_bridge_clipping.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_aerialways.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_attractions.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_block_mapping.cpp
@@ -23,6 +24,7 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_floodfill.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mapillary_atlas.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mode_filter.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_natural.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_naturalize.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_peaks.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_planes.cpp
