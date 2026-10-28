@@ -1,13 +1,16 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis_ground.h"
+#include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/land_cover.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/shoreline.h"
+#include "mapgen/earth/arnis-cpp/src/water_depth.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include <unordered_set>
 #include <vector>
 
 namespace
@@ -48,6 +51,40 @@ public:
 		TEST(testBeachProximityIndexAndInvalidation);
 		TEST(testBeachProximityAcrossTileBoundary);
 		TEST(testWorldEditorBeachProximityUsesGroundCoordinates);
+		TEST(testShallowBedsUseBeachSandAndInlandMaterials);
+	}
+
+	void testShallowBedsUseBeachSandAndInlandMaterials()
+	{
+		using namespace arnis;
+		land_cover::LandCoverData data;
+		data.width = 64;
+		data.height = 64;
+		data.grid.assign(data.height,
+				std::vector<std::uint8_t>(data.width, land_cover::LC_GRASSLAND));
+		for (std::size_t z = 0; z < data.height; ++z)
+			for (std::size_t x = 0; x < 4; ++x)
+				data.grid[z][x] = land_cover::LC_BEACH;
+		auto ground = Ground::new_flat_with_land_cover(std::move(data), 64, 64, 0);
+		WorldEditor editor;
+		editor.ground = &ground;
+
+		const auto [beach_bed, beach_under] = water_depth::shallow_bed(editor, 5, 30);
+		UASSERT(beach_bed == SAND);
+		UASSERT(beach_under == SANDSTONE);
+
+		std::unordered_set<content_t> inland_beds;
+		std::size_t inland_sand = 0;
+		for (int x = 16; x < 64; ++x) {
+			for (int z = 0; z < 64; ++z) {
+				const auto [bed, under] = water_depth::shallow_bed(editor, x, z);
+				UASSERT(under == DIRT);
+				inland_beds.insert(bed.id());
+				inland_sand += bed == SAND;
+			}
+		}
+		UASSERT(inland_beds.size() >= 3);
+		UASSERT(inland_sand * 4 < 48U * 64U);
 	}
 
 	void testBeachProximityIndexAndInvalidation()
