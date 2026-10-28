@@ -17,6 +17,7 @@ endif()
 if(USE_OSMIUM)
 	list(APPEND unittest_SRCS
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_bridge_clipping.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_bedrock_models.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_aerialways.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_attractions.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_block_mapping.cpp
