@@ -1348,7 +1348,7 @@ void Client::handleMCPMessage(mcp_ws_server_t::connection_ptr connection,
 					}
 					status["success"] = !pressed.empty();
 					status["keys"] = pressed;
-					status["duration_ms"] = duration.count();
+					status["duration_ms"] = static_cast<Json::Int64>(duration.count());
 				}
 				setMCPStatusResult(response, status);
 			} else if (tool_name == "get_node") {
