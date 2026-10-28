@@ -36,6 +36,7 @@
 #include <iomanip>
 #include <memory>
 #include <optional>
+#include <random>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
@@ -350,11 +351,14 @@ static std::string trafficModeName(TrafficMode mode)
 
 // Label and report both reliability variants.
 static std::string makeConnectionBenchmarkName(const ConnectionBenchmarkBackend &backend,
-		TrafficMode mode, size_t clients, size_t payload_size, bool reliable)
+		TrafficMode mode, size_t clients, size_t payload_size, bool reliable,
+		bool random_size)
 {
 	std::string name = "Conn_" + backend.name + "_" + trafficModeName(mode) + "_" +
 					   std::to_string(clients) + "c_" + std::to_string(payload_size) +
 					   "B";
+	if (random_size)
+		name += "_random";
 	const auto window = get_connection_benchmark_options().window;
 	if (window > 1)
 		name += "_" + std::to_string(window) + "w";
@@ -371,6 +375,7 @@ struct ConnectionBenchmarkMetadata
 	size_t payload_size = 0;
 	size_t window = 1;
 	bool reliable = true;
+	bool random_size = false;
 };
 
 static bool parseNumberWithSuffix(std::string_view value, char suffix, size_t *result)
@@ -402,7 +407,8 @@ static std::optional<ConnectionBenchmarkMetadata> parseConnectionBenchmarkName(
 	bool reliable = true;
 	constexpr std::string_view unreliable_suffix = "_unreliable";
 	if (remaining.size() >= unreliable_suffix.size() &&
-			remaining.substr(remaining.size() - unreliable_suffix.size()) == unreliable_suffix) {
+			remaining.substr(remaining.size() - unreliable_suffix.size()) ==
+					unreliable_suffix) {
 		remaining.remove_suffix(unreliable_suffix.size());
 		reliable = false;
 	}
@@ -418,6 +424,13 @@ static std::optional<ConnectionBenchmarkMetadata> parseConnectionBenchmarkName(
 	if (!remaining.empty() && remaining.back() == 'w' &&
 			!parseNumberWithSuffix(takeLast(), 'w', &window))
 		return std::nullopt;
+	bool random_size = false;
+	constexpr std::string_view random_suffix = "_random";
+	if (remaining.size() >= random_suffix.size() &&
+			remaining.substr(remaining.size() - random_suffix.size()) == random_suffix) {
+		remaining.remove_suffix(random_suffix.size());
+		random_size = true;
+	}
 	const auto size = takeLast();
 	const auto clients_part = takeLast();
 	const auto mode = takeLast();
@@ -428,8 +441,8 @@ static std::optional<ConnectionBenchmarkMetadata> parseConnectionBenchmarkName(
 			!parseNumberWithSuffix(size, 'B', &payload_size))
 		return std::nullopt;
 
-	return ConnectionBenchmarkMetadata{
-			std::string(remaining), std::string(mode), clients, payload_size, window, reliable};
+	return ConnectionBenchmarkMetadata{std::string(remaining), std::string(mode), clients,
+			payload_size, window, reliable, random_size};
 }
 
 struct ConnectionBenchmarkResult
@@ -440,6 +453,7 @@ struct ConnectionBenchmarkResult
 	size_t clients = 0;
 	size_t payload_size = 0;
 	size_t window = 1;
+	bool random_size = false;
 	size_t packets_per_batch = 0;
 	double mean_ns = 0.0;
 	double packets_per_second = 0.0;
@@ -472,9 +486,9 @@ public:
 		const double batches_per_second = 1000000000.0 / mean_ns;
 		const double packets_per_second =
 				batches_per_second * static_cast<double>(packets_per_batch);
-		const double mib_per_second = packets_per_second *
-									  static_cast<double>(metadata->payload_size) /
-									  (1024.0 * 1024.0);
+		const double mib_per_second =
+				packets_per_second * static_cast<double>(metadata->payload_size) /
+				(metadata->random_size ? 2.0 : 1.0) / (1024.0 * 1024.0);
 		const double latency_us_per_packet =
 				mean_ns / static_cast<double>(packets_per_batch) / 1000.0;
 
@@ -485,6 +499,7 @@ public:
 				metadata->clients,
 				metadata->payload_size,
 				metadata->window,
+				metadata->random_size,
 				packets_per_batch,
 				mean_ns,
 				packets_per_second,
@@ -499,12 +514,16 @@ public:
 			return;
 
 		auto &out = Catch::cerr();
+		if (std::any_of(m_results.begin(), m_results.end(),
+					[](const auto &result) { return result.random_size; }))
+			out << "\nRandom-size MiB/sec uses the expected mean payload size.\n";
 		const auto old_flags = out.flags();
 		const auto old_precision = out.precision();
 		const auto has_unreliable = [&](const auto &predicate) {
-			return std::any_of(m_results.begin(), m_results.end(), [&](const auto &result) {
-				return !result.reliable && predicate(result.backend);
-			});
+			return std::any_of(
+					m_results.begin(), m_results.end(), [&](const auto &result) {
+						return !result.reliable && predicate(result.backend);
+					});
 		};
 		if (has_unreliable([](const auto &) { return true; })) {
 			out << "\nUnreliable results require every packet to arrive; loss causes a timeout.\n";
@@ -514,7 +533,7 @@ public:
 				out << "ENet can send oversized unreliable packets as reliable fragments.\n";
 			if (has_unreliable([](const auto &backend) {
 					return backend == "ws" || backend == "multi_ws" ||
-							backend == "WebSocketSCTP" || backend == "multi_ws_sctp";
+						   backend == "WebSocketSCTP" || backend == "multi_ws_sctp";
 				}))
 				out << "WebSocket traffic uses TCP.\n";
 		}
@@ -522,25 +541,26 @@ public:
 		out << "\nConnection total packet throughput and latency "
 			<< "(iops = packets/sec, derived from Catch2 benchmark mean)\n";
 		out << std::left << std::setw(11) << "backend" << std::setw(9) << "mode"
-			<< std::setw(12) << "reliability"
-			<< std::right << std::setw(8) << "clients" << std::setw(8) << "window"
-			<< std::setw(10) << "size" << std::setw(15) << "iops" << std::setw(15)
-			<< "MiB/sec" << std::setw(15) << "lat us/pkt" << std::setw(15)
-			<< "mean us/batch" << '\n';
+			<< std::setw(12) << "reliability" << std::right << std::setw(8) << "clients"
+			<< std::setw(8) << "window" << std::setw(10) << "size" << std::setw(15)
+			<< "iops" << std::setw(15) << "MiB/sec" << std::setw(15) << "lat us/pkt"
+			<< std::setw(15) << "mean us/batch" << '\n';
 		out << std::string(118, '-') << '\n';
 
 		for (const auto &result : m_results) {
 			out << std::left << std::setw(11) << result.backend << std::setw(9)
 				<< result.mode << std::setw(12)
 				<< (result.reliable ? "reliable" : "unreliable") << std::right
-				<< std::setw(8) << result.clients
-				<< std::setw(8) << result.window << std::setw(10)
-				<< formatPayloadSize(result.payload_size) << std::setw(15) << std::fixed
-				<< std::setprecision(0) << result.packets_per_second << std::setw(15)
-				<< std::fixed << std::setprecision(2) << result.mib_per_second
+				<< std::setw(8) << result.clients << std::setw(8) << result.window
+				<< std::setw(10)
+				<< (result.random_size ? "0-" + formatPayloadSize(result.payload_size)
+									   : formatPayloadSize(result.payload_size))
+				<< std::setw(15) << std::fixed << std::setprecision(0)
+				<< result.packets_per_second << std::setw(15) << std::fixed
+				<< std::setprecision(2) << result.mib_per_second << std::setw(15)
+				<< std::fixed << std::setprecision(2) << result.latency_us_per_packet
 				<< std::setw(15) << std::fixed << std::setprecision(2)
-				<< result.latency_us_per_packet << std::setw(15) << std::fixed
-				<< std::setprecision(2) << result.mean_ns / 1000.0 << '\n';
+				<< result.mean_ns / 1000.0 << '\n';
 		}
 
 		out.flags(old_flags);
@@ -590,8 +610,8 @@ static NetworkPacket makeBenchmarkPacket(ExternalBenchmarkPacketMode mode,
 		size_t packet_size, size_t requested_payload_size, bool reliable = true)
 {
 	std::string payload = generatePayload(packet_size);
-	payload[0] = static_cast<char>(static_cast<u8>(mode) |
-			(reliable ? 0 : CONNECTION_BENCHMARK_UNRELIABLE));
+	payload[0] = static_cast<char>(
+			static_cast<u8>(mode) | (reliable ? 0 : CONNECTION_BENCHMARK_UNRELIABLE));
 	writePayloadSize(&payload, requested_payload_size);
 
 	NetworkPacket pkt(CONNECTION_BENCHMARK_COMMAND, payload.size());
@@ -914,9 +934,8 @@ public:
 						payload_size, reliable);
 		NetworkPacket receive_request = makeBenchmarkPacket(
 				ExternalBenchmarkPacketMode::ReceiveRequest, 5, payload_size, reliable);
-		NetworkPacket echo_packet =
-				makeBenchmarkPacket(ExternalBenchmarkPacketMode::Echo, payload_size,
-						payload_size, reliable);
+		NetworkPacket echo_packet = makeBenchmarkPacket(
+				ExternalBenchmarkPacketMode::Echo, payload_size, payload_size, reliable);
 
 		NetworkPacket *packet = &send_packet;
 		size_t expected_response_size = 5;
@@ -1061,9 +1080,13 @@ private:
 
 // Measure the selected reliability mode.
 static void benchmarkConnectionTraffic(const ConnectionBenchmarkBackend &backend,
-		size_t client_count, size_t payload_size, TrafficMode mode, bool reliable)
+		size_t client_count, int64_t size_spec, TrafficMode mode, bool reliable)
 {
-	const std::string payload = generatePayload(payload_size);
+	const bool random_size = size_spec < 0;
+	const size_t payload_size = static_cast<size_t>(random_size ? -size_spec : size_spec);
+	std::mt19937 rng(std::random_device{}());
+	std::uniform_int_distribution<size_t> distribution(0, payload_size);
+	const std::string payload = generatePayload(random_size ? 0 : payload_size);
 	NetworkPacket packet = makeBenchmarkPacket(payload);
 	const auto &options = get_connection_benchmark_options();
 	std::unique_ptr<ConnectionBenchmarkCluster> cluster;
@@ -1076,11 +1099,18 @@ static void benchmarkConnectionTraffic(const ConnectionBenchmarkBackend &backend
 		cluster = std::make_unique<ConnectionBenchmarkCluster>(backend, client_count);
 	}
 
-	BENCHMARK_ADVANCED(
-			makeConnectionBenchmarkName(backend, mode, client_count, payload_size, reliable))
+	BENCHMARK_ADVANCED(makeConnectionBenchmarkName(
+			backend, mode, client_count, payload_size, reliable, random_size))
 	(Catch::Benchmark::Chronometer meter)
 	{
 		meter.measure([&](int) {
+			if (random_size) {
+				const size_t selected_size = distribution(rng);
+				if (external_client)
+					return external_client->runBatch(mode, selected_size + 5, reliable);
+				auto random_packet = makeBenchmarkPacket(generatePayload(selected_size));
+				return cluster->runBatch(mode, random_packet, reliable);
+			}
 			if (external_client)
 				return external_client->runBatch(mode, payload_size, reliable);
 			return cluster->runBatch(mode, packet, reliable);
@@ -1102,7 +1132,7 @@ TEST_CASE("benchmark_connection_operations")
 					: options.client_counts;
 	const auto payload_sizes =
 			options.payload_sizes.empty()
-					? std::vector<size_t>(g_connection_payload_sizes.begin(),
+					? std::vector<int64_t>(g_connection_payload_sizes.begin(),
 							  g_connection_payload_sizes.end())
 					: options.payload_sizes;
 	REQUIRE(!backends.empty());
@@ -1137,8 +1167,10 @@ TEST_CASE("benchmark_connection_operations")
 			for (const size_t client_count : client_counts) {
 				SECTION(std::to_string(client_count) + " clients")
 				{
-					for (const size_t payload_size : payload_sizes) {
-						SECTION(formatPayloadSize(payload_size))
+					for (const int64_t payload_size : payload_sizes) {
+						SECTION(payload_size < 0
+										? "random 0-" + formatPayloadSize(-payload_size)
+										: formatPayloadSize(payload_size))
 						{
 							if (options.mode == ConnectionBenchmarkMode::ServerOnly) {
 								ConnectionBenchmarkExternalServer server(
@@ -1151,16 +1183,21 @@ TEST_CASE("benchmark_connection_operations")
 							// Run each requested delivery variant.
 							for (const bool reliable : {true, false}) {
 								if ((reliable && options.reliability ==
-											ConnectionBenchmarkReliability::Unreliable) ||
-										(!reliable && options.reliability ==
-											ConnectionBenchmarkReliability::Reliable))
+														 ConnectionBenchmarkReliability::
+																 Unreliable) ||
+										(!reliable &&
+												options.reliability ==
+														ConnectionBenchmarkReliability::
+																Reliable))
 									continue;
 								SECTION(reliable ? "reliable" : "unreliable")
 								{
 									benchmarkConnectionTraffic(backend, client_count,
-											payload_size, TrafficMode::ClientToServer, reliable);
+											payload_size, TrafficMode::ClientToServer,
+											reliable);
 									benchmarkConnectionTraffic(backend, client_count,
-											payload_size, TrafficMode::ServerToClient, reliable);
+											payload_size, TrafficMode::ServerToClient,
+											reliable);
 									benchmarkConnectionTraffic(backend, client_count,
 											payload_size, TrafficMode::Both, reliable);
 								}

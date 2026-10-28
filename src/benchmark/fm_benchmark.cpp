@@ -144,6 +144,36 @@ static bool parseNumberList(std::string_view value, size_t minimum, size_t maxim
 	return true;
 }
 
+static bool parsePayloadSizes(std::string_view value, std::vector<int64_t> *sizes)
+{
+	std::vector<int64_t> parsed;
+	size_t start = 0;
+	while (start <= value.size()) {
+		const size_t separator = value.find(',', start);
+		const size_t end = separator == std::string_view::npos ? value.size() : separator;
+		auto item = value.substr(start, end - start);
+		while (!item.empty() && std::isspace(static_cast<unsigned char>(item.front())))
+			item.remove_prefix(1);
+		while (!item.empty() && std::isspace(static_cast<unsigned char>(item.back())))
+			item.remove_suffix(1);
+		int64_t number = 0;
+		const auto result =
+				std::from_chars(item.data(), item.data() + item.size(), number);
+		constexpr int64_t max_size = std::numeric_limits<u32>::max() - 2LL;
+		if (item.empty() || result.ec != std::errc() ||
+				result.ptr != item.data() + item.size() || number == 0 ||
+				number > max_size || number < -max_size + 5)
+			return false;
+		if (std::find(parsed.begin(), parsed.end(), number) == parsed.end())
+			parsed.push_back(number);
+		if (separator == std::string_view::npos)
+			break;
+		start = separator + 1;
+	}
+	*sizes = std::move(parsed);
+	return true;
+}
+
 static bool getOptionValue(int argc, char *argv[], int *index, std::string_view option,
 		std::string_view *value)
 {
@@ -263,11 +293,11 @@ int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_a
 				continue;
 			}
 			if (getOptionValue(argc, argv, &i, "--connection-benchmark-sizes", &value)) {
-				if (!parseNumberList(value, 1, std::numeric_limits<u32>::max() - 2,
-							&g_connection_benchmark_options.payload_sizes)) {
+				if (!parsePayloadSizes(
+							value, &g_connection_benchmark_options.payload_sizes)) {
 					Catch::cerr()
 							<< "Invalid --connection-benchmark-sizes: " << value
-							<< " (expected comma-separated byte counts from 1 to 4294967293)\n";
+							<< " (expected positive byte counts or negative random-size limits)\n";
 					return 1;
 				}
 				continue;
@@ -288,7 +318,7 @@ int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_a
 	if (g_connection_benchmark_options.mode != ConnectionBenchmarkMode::ClientServer &&
 			std::any_of(g_connection_benchmark_options.payload_sizes.begin(),
 					g_connection_benchmark_options.payload_sizes.end(),
-					[](size_t size) { return size < 5; })) {
+					[](int64_t size) { return size > 0 && size < 5; })) {
 		Catch::cerr() << "Invalid --connection-benchmark-sizes: external mode requires "
 					  << "at least 5 bytes\n";
 		return 1;
