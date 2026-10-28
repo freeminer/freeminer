@@ -16,9 +16,17 @@ enum class ConnectionBenchmarkMode
 	ServerOnly,
 };
 
+enum class ConnectionBenchmarkReliability
+{
+	Reliable,
+	Unreliable,
+	Both,
+};
+
 struct ConnectionBenchmarkOptions
 {
 	ConnectionBenchmarkMode mode = ConnectionBenchmarkMode::ClientServer;
+	ConnectionBenchmarkReliability reliability = ConnectionBenchmarkReliability::Reliable;
 	std::string server = "::1";
 	u16 port = 0;
 	u16 window = 1;

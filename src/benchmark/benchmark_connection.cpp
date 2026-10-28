@@ -53,6 +53,8 @@ static constexpr u16 CONNECTION_BENCHMARK_COMMAND = 0x7ffe;
 static constexpr u32 CONNECTION_BENCHMARK_CONNECT_TIMEOUT_MS = 5000;
 static constexpr u32 CONNECTION_BENCHMARK_TRAFFIC_TIMEOUT_MS = 10000;
 static constexpr u16 CONNECTION_BENCHMARK_EXTERNAL_PORT = 42000;
+// Mark the requested response reliability in external benchmark packets.
+static constexpr u8 CONNECTION_BENCHMARK_UNRELIABLE = 0x80;
 
 enum class ExternalBenchmarkPacketMode : char
 {
@@ -346,8 +348,9 @@ static std::string trafficModeName(TrafficMode mode)
 	return "unknown";
 }
 
+// Label and report both reliability variants.
 static std::string makeConnectionBenchmarkName(const ConnectionBenchmarkBackend &backend,
-		TrafficMode mode, size_t clients, size_t payload_size)
+		TrafficMode mode, size_t clients, size_t payload_size, bool reliable)
 {
 	std::string name = "Conn_" + backend.name + "_" + trafficModeName(mode) + "_" +
 					   std::to_string(clients) + "c_" + std::to_string(payload_size) +
@@ -355,6 +358,8 @@ static std::string makeConnectionBenchmarkName(const ConnectionBenchmarkBackend 
 	const auto window = get_connection_benchmark_options().window;
 	if (window > 1)
 		name += "_" + std::to_string(window) + "w";
+	if (!reliable)
+		name += "_unreliable";
 	return name;
 }
 
@@ -365,6 +370,7 @@ struct ConnectionBenchmarkMetadata
 	size_t clients = 0;
 	size_t payload_size = 0;
 	size_t window = 1;
+	bool reliable = true;
 };
 
 static bool parseNumberWithSuffix(std::string_view value, char suffix, size_t *result)
@@ -393,6 +399,13 @@ static std::optional<ConnectionBenchmarkMetadata> parseConnectionBenchmarkName(
 
 	// Decode fixed fields from the right; backend names may contain underscores.
 	std::string_view remaining(name.data() + prefix.size(), name.size() - prefix.size());
+	bool reliable = true;
+	constexpr std::string_view unreliable_suffix = "_unreliable";
+	if (remaining.size() >= unreliable_suffix.size() &&
+			remaining.substr(remaining.size() - unreliable_suffix.size()) == unreliable_suffix) {
+		remaining.remove_suffix(unreliable_suffix.size());
+		reliable = false;
+	}
 	const auto takeLast = [&]() {
 		const size_t separator = remaining.rfind('_');
 		if (separator == std::string_view::npos)
@@ -416,13 +429,14 @@ static std::optional<ConnectionBenchmarkMetadata> parseConnectionBenchmarkName(
 		return std::nullopt;
 
 	return ConnectionBenchmarkMetadata{
-			std::string(remaining), std::string(mode), clients, payload_size, window};
+			std::string(remaining), std::string(mode), clients, payload_size, window, reliable};
 }
 
 struct ConnectionBenchmarkResult
 {
 	std::string backend;
 	std::string mode;
+	bool reliable = true;
 	size_t clients = 0;
 	size_t payload_size = 0;
 	size_t window = 1;
@@ -467,6 +481,7 @@ public:
 		m_results.push_back({
 				metadata->backend,
 				metadata->mode,
+				metadata->reliable,
 				metadata->clients,
 				metadata->payload_size,
 				metadata->window,
@@ -486,19 +501,39 @@ public:
 		auto &out = Catch::cerr();
 		const auto old_flags = out.flags();
 		const auto old_precision = out.precision();
+		const auto has_unreliable = [&](const auto &predicate) {
+			return std::any_of(m_results.begin(), m_results.end(), [&](const auto &result) {
+				return !result.reliable && predicate(result.backend);
+			});
+		};
+		if (has_unreliable([](const auto &) { return true; })) {
+			out << "\nUnreliable results require every packet to arrive; loss causes a timeout.\n";
+			if (has_unreliable([](const auto &backend) {
+					return backend == "enet" || backend == "multi_enet";
+				}))
+				out << "ENet can send oversized unreliable packets as reliable fragments.\n";
+			if (has_unreliable([](const auto &backend) {
+					return backend == "ws" || backend == "multi_ws" ||
+							backend == "WebSocketSCTP" || backend == "multi_ws_sctp";
+				}))
+				out << "WebSocket traffic uses TCP.\n";
+		}
 
 		out << "\nConnection total packet throughput and latency "
 			<< "(iops = packets/sec, derived from Catch2 benchmark mean)\n";
 		out << std::left << std::setw(11) << "backend" << std::setw(9) << "mode"
+			<< std::setw(12) << "reliability"
 			<< std::right << std::setw(8) << "clients" << std::setw(8) << "window"
 			<< std::setw(10) << "size" << std::setw(15) << "iops" << std::setw(15)
 			<< "MiB/sec" << std::setw(15) << "lat us/pkt" << std::setw(15)
 			<< "mean us/batch" << '\n';
-		out << std::string(106, '-') << '\n';
+		out << std::string(118, '-') << '\n';
 
 		for (const auto &result : m_results) {
 			out << std::left << std::setw(11) << result.backend << std::setw(9)
-				<< result.mode << std::right << std::setw(8) << result.clients
+				<< result.mode << std::setw(12)
+				<< (result.reliable ? "reliable" : "unreliable") << std::right
+				<< std::setw(8) << result.clients
 				<< std::setw(8) << result.window << std::setw(10)
 				<< formatPayloadSize(result.payload_size) << std::setw(15) << std::fixed
 				<< std::setprecision(0) << result.packets_per_second << std::setw(15)
@@ -550,11 +585,13 @@ static size_t readPayloadSize(const NetworkPacket &pkt)
 		   (static_cast<size_t>(bytes[3]) << 8) | static_cast<size_t>(bytes[4]);
 }
 
+// Preserve the reliability request in the external packet header.
 static NetworkPacket makeBenchmarkPacket(ExternalBenchmarkPacketMode mode,
-		size_t packet_size, size_t requested_payload_size)
+		size_t packet_size, size_t requested_payload_size, bool reliable = true)
 {
 	std::string payload = generatePayload(packet_size);
-	payload[0] = static_cast<char>(mode);
+	payload[0] = static_cast<char>(static_cast<u8>(mode) |
+			(reliable ? 0 : CONNECTION_BENCHMARK_UNRELIABLE));
 	writePayloadSize(&payload, requested_payload_size);
 
 	NetworkPacket pkt(CONNECTION_BENCHMARK_COMMAND, payload.size());
@@ -647,7 +684,8 @@ public:
 			m_server->Disconnect();
 	}
 
-	size_t runBatch(TrafficMode mode, NetworkPacket &packet)
+	// Pass the selected delivery mode to both sides.
+	size_t runBatch(TrafficMode mode, NetworkPacket &packet, bool reliable)
 	{
 		const size_t window = get_connection_benchmark_options().window;
 		size_t expected_server_packets = 0;
@@ -656,14 +694,14 @@ public:
 		if (mode == TrafficMode::ClientToServer || mode == TrafficMode::Both) {
 			for (size_t i = 0; i < window; ++i)
 				for (auto &client : m_clients)
-					client->Send(PEER_ID_SERVER, 0, &packet, true);
+					client->Send(PEER_ID_SERVER, 0, &packet, reliable);
 			expected_server_packets = m_clients.size() * window;
 		}
 
 		if (mode == TrafficMode::ServerToClient || mode == TrafficMode::Both) {
 			for (size_t i = 0; i < window; ++i)
 				for (session_t peer_id : m_server_handler.peer_ids)
-					m_server->Send(peer_id, 0, &packet, true);
+					m_server->Send(peer_id, 0, &packet, reliable);
 			expected_client_packets = m_clients.size() * window;
 		}
 
@@ -792,13 +830,17 @@ public:
 	}
 
 private:
+	// Apply the requested reliability to measured server responses.
 	void handlePacket(NetworkPacket &pkt)
 	{
 		if (pkt.getCommand() != CONNECTION_BENCHMARK_COMMAND || pkt.getSize() == 0)
 			return;
 
 		const auto payload = pkt.getRemainingNoCopy();
-		const auto mode = static_cast<ExternalBenchmarkPacketMode>(payload[0]);
+		const u8 flags = static_cast<u8>(payload[0]);
+		const bool reliable = (flags & CONNECTION_BENCHMARK_UNRELIABLE) == 0;
+		const auto mode = static_cast<ExternalBenchmarkPacketMode>(
+				flags & ~CONNECTION_BENCHMARK_UNRELIABLE);
 		switch (mode) {
 		case ExternalBenchmarkPacketMode::Ready:
 		case ExternalBenchmarkPacketMode::SendAck: {
@@ -813,11 +855,11 @@ private:
 			const size_t payload_size = readPayloadSize(pkt);
 			NetworkPacket response = makeBenchmarkPacket(
 					ExternalBenchmarkPacketMode::Response, payload_size);
-			m_server->Send(pkt.getPeerId(), 0, &response, true);
+			m_server->Send(pkt.getPeerId(), 0, &response, reliable);
 			return;
 		}
 		case ExternalBenchmarkPacketMode::Echo:
-			m_server->Send(pkt.getPeerId(), 0, &pkt, true);
+			m_server->Send(pkt.getPeerId(), 0, &pkt, reliable);
 			return;
 		default:
 			return;
@@ -864,14 +906,17 @@ public:
 			client->Disconnect();
 	}
 
-	size_t runBatch(TrafficMode mode, size_t payload_size)
+	// Keep control requests reliable and apply the selected mode to data.
+	size_t runBatch(TrafficMode mode, size_t payload_size, bool reliable)
 	{
 		NetworkPacket send_packet =
-				makeBenchmarkPacket(ExternalBenchmarkPacketMode::SendAck, payload_size);
+				makeBenchmarkPacket(ExternalBenchmarkPacketMode::SendAck, payload_size,
+						payload_size, reliable);
 		NetworkPacket receive_request = makeBenchmarkPacket(
-				ExternalBenchmarkPacketMode::ReceiveRequest, 5, payload_size);
+				ExternalBenchmarkPacketMode::ReceiveRequest, 5, payload_size, reliable);
 		NetworkPacket echo_packet =
-				makeBenchmarkPacket(ExternalBenchmarkPacketMode::Echo, payload_size);
+				makeBenchmarkPacket(ExternalBenchmarkPacketMode::Echo, payload_size,
+						payload_size, reliable);
 
 		NetworkPacket *packet = &send_packet;
 		size_t expected_response_size = 5;
@@ -889,7 +934,8 @@ public:
 
 		for (size_t i = 0; i < window; ++i)
 			for (auto &client : m_clients)
-				client->Send(PEER_ID_SERVER, 0, packet, true);
+				client->Send(PEER_ID_SERVER, 0, packet,
+						mode == TrafficMode::ServerToClient || reliable);
 
 		const auto deadline =
 				std::chrono::steady_clock::now() +
@@ -1013,8 +1059,9 @@ private:
 	std::vector<std::unique_ptr<con::IConnection>> m_clients;
 };
 
+// Measure the selected reliability mode.
 static void benchmarkConnectionTraffic(const ConnectionBenchmarkBackend &backend,
-		size_t client_count, size_t payload_size, TrafficMode mode)
+		size_t client_count, size_t payload_size, TrafficMode mode, bool reliable)
 {
 	const std::string payload = generatePayload(payload_size);
 	NetworkPacket packet = makeBenchmarkPacket(payload);
@@ -1030,13 +1077,13 @@ static void benchmarkConnectionTraffic(const ConnectionBenchmarkBackend &backend
 	}
 
 	BENCHMARK_ADVANCED(
-			makeConnectionBenchmarkName(backend, mode, client_count, payload_size))
+			makeConnectionBenchmarkName(backend, mode, client_count, payload_size, reliable))
 	(Catch::Benchmark::Chronometer meter)
 	{
 		meter.measure([&](int) {
 			if (external_client)
-				return external_client->runBatch(mode, payload_size);
-			return cluster->runBatch(mode, packet);
+				return external_client->runBatch(mode, payload_size, reliable);
+			return cluster->runBatch(mode, packet, reliable);
 		});
 	};
 }
@@ -1101,12 +1148,23 @@ TEST_CASE("benchmark_connection_operations")
 								return;
 							}
 
-							benchmarkConnectionTraffic(backend, client_count,
-									payload_size, TrafficMode::ClientToServer);
-							benchmarkConnectionTraffic(backend, client_count,
-									payload_size, TrafficMode::ServerToClient);
-							benchmarkConnectionTraffic(backend, client_count,
-									payload_size, TrafficMode::Both);
+							// Run each requested delivery variant.
+							for (const bool reliable : {true, false}) {
+								if ((reliable && options.reliability ==
+											ConnectionBenchmarkReliability::Unreliable) ||
+										(!reliable && options.reliability ==
+											ConnectionBenchmarkReliability::Reliable))
+									continue;
+								SECTION(reliable ? "reliable" : "unreliable")
+								{
+									benchmarkConnectionTraffic(backend, client_count,
+											payload_size, TrafficMode::ClientToServer, reliable);
+									benchmarkConnectionTraffic(backend, client_count,
+											payload_size, TrafficMode::ServerToClient, reliable);
+									benchmarkConnectionTraffic(backend, client_count,
+											payload_size, TrafficMode::Both, reliable);
+								}
+							}
 						}
 					}
 				}

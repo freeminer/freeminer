@@ -222,6 +222,25 @@ int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_a
 				continue;
 			}
 			if (getOptionValue(
+						argc, argv, &i, "--connection-benchmark-reliability", &value)) {
+				if (value == "reliable")
+					g_connection_benchmark_options.reliability =
+							ConnectionBenchmarkReliability::Reliable;
+				else if (value == "unreliable")
+					g_connection_benchmark_options.reliability =
+							ConnectionBenchmarkReliability::Unreliable;
+				else if (value == "both")
+					g_connection_benchmark_options.reliability =
+							ConnectionBenchmarkReliability::Both;
+				else {
+					Catch::cerr()
+							<< "Invalid --connection-benchmark-reliability: " << value
+							<< " (expected reliable, unreliable, or both)\n";
+					return 1;
+				}
+				continue;
+			}
+			if (getOptionValue(
 						argc, argv, &i, "--connection-benchmark-backends", &value)) {
 				if (!parseConnectionBenchmarkBackends(
 							value, &g_connection_benchmark_options.backends)) {
