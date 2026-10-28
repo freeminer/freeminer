@@ -303,7 +303,8 @@ public:
 
 	inline MapNode getNodeNoCheck(s16 x, s16 y, s16 z)
 	{
-		const auto lock = lock_shared_rec();
+		//  Avoid allocating the recursive lock wrapper for every node read.
+		locker<>::lock_rec_shared lock(mtx, thread_id, false);
 		return data[m_is_mono_block ? 0 : z * zstride + y * ystride + x];
 	}
 

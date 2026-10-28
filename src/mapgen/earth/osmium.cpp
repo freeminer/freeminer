@@ -45,6 +45,8 @@
 #include "arnis-cpp/src/data_processing.h"
 // Native track geometry is planned before chunk-local feature clipping.
 #include "arnis-cpp/src/element_processing/advtrains.h"
+#include "arnis-cpp/src/fm_native_trains.h"
+#include "map.h"
 #include "arnis-cpp/src/clipping.h"
 #include "arnis-cpp/src/floodfill_cache.h"
 #include "arnis-cpp/src/osm_parser.h"
@@ -1286,6 +1288,32 @@ void generate_cached_arnis(
 				tile.facade_job.get()))
 		errorstream << "Earth: Arnis world generation failed; check generation options "
 					   "and provider configuration\n";
+	if (editor.native_rail_network) {
+		for (auto id : editor.native_generated_rails) {
+			const auto it = editor.native_rail_network->plans.find(id);
+			if (it == editor.native_rail_network->plans.end())
+				continue;
+			const auto &plan = it->second;
+			for (std::size_t i = 0; i < plan.line.size(); ++i) {
+				const auto &[x, z] = plan.line[i];
+				for (pos_t dy : {1, 2}) {
+					if (dy == 2 && arnis::block_definitions::native_train_marker ==
+										   arnis::block_definitions::AIR)
+						continue;
+					const v3pos_t p(x, plan.heights[i] + dy, z);
+					if (p.X >= mg->node_min.X && p.X <= mg->node_max.X &&
+							p.Y >= mg->node_min.Y && p.Y <= mg->node_max.Y &&
+							p.Z >= mg->node_min.Z && p.Z <= mg->node_max.Z &&
+							mg->vm->getNode(p).getContent() ==
+									(dy == 1 ? plan.rails[i].getContent()
+											 : arnis::block_definitions::
+															native_train_marker
+																	.getContent()))
+						mg->generated_rail_positions.push_back(p);
+				}
+			}
+		}
+	}
 }
 
 } // namespace earth_osmium_detail
