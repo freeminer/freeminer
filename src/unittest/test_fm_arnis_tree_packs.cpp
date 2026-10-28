@@ -8,6 +8,7 @@
 #include "mapgen/earth/arnis-cpp/src/trees/schematic.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_pack.h"
+#include "mapgen/earth/arnis-cpp/src/structures/schem_decoder.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
 #include <filesystem>
@@ -27,10 +28,42 @@ public:
 		TEST(testContributedTreePackAssets);
 		TEST(testTreePackRealmMapping);
 		TEST(testTreeSizeTiers);
+		TEST(testTreeConnectivityDenseAndSparse);
 		TEST(testTreePackCrownCapsAndSlotSpacing);
 		TEST(testScatteredTreesRespectSealedSurface);
 		TEST(testMappedTreesMayUseSealedSurface);
 		TEST(testMappedTreesMayUsePavingButNeverWater);
+	}
+
+	void testTreeConnectivityDenseAndSparse()
+	{
+		// Standalone unit tests do not register game nodes; give leaves a
+		// distinct ID so they are not mistaken for the default-valued logs.
+		struct RestoreLeaves
+		{
+			arnis::Block original = arnis::block_definitions::OAK_LEAVES;
+			~RestoreLeaves() { arnis::block_definitions::OAK_LEAVES = original; }
+		} restore;
+		arnis::block_definitions::OAK_LEAVES = arnis::Block(123);
+		arnis::structures::SchemDocument source;
+		source.width = 20;
+		source.height = 40;
+		source.length = 40;
+		source.voxels = {{1, 1, 1, "minecraft:oak_log", {}, {}},
+				{3, 3, 3, "minecraft:oak_leaves", {}, {}},
+				{5, 5, 5, "minecraft:oak_leaves", {}, {}},
+				{15, 15, 15, "minecraft:oak_leaves", {}, {}}};
+		const auto dense = arnis::trees::tree_only(source);
+		source.width = 2000; // Exceeds the dense-index limit.
+		const auto sparse = arnis::trees::tree_only(source);
+		UASSERTEQ(std::size_t, dense.voxels.size(), 3);
+		UASSERTEQ(std::size_t, sparse.voxels.size(), dense.voxels.size());
+		for (std::size_t i = 0; i < dense.voxels.size(); ++i) {
+			UASSERTEQ(int, dense.voxels[i].x, sparse.voxels[i].x);
+			UASSERTEQ(int, dense.voxels[i].y, sparse.voxels[i].y);
+			UASSERTEQ(int, dense.voxels[i].z, sparse.voxels[i].z);
+			UASSERT(dense.voxels[i].block == sparse.voxels[i].block);
+		}
 	}
 
 	void testTreePackRealmMapping()
