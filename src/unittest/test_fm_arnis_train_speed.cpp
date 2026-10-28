@@ -42,12 +42,12 @@ public:
 			const auto lap = service.period;
 			std::int64_t largest = 0;
 			for (std::size_t i = 1; i < service.timetable.size(); ++i) {
-				auto distance =
-						std::llabs(static_cast<std::int64_t>(service.timetable[i]) -
-								   service.timetable[i - 1]);
+				std::int64_t distance = static_cast<std::int64_t>(service.timetable[i]) -
+										service.timetable[i - 1];
+				distance = distance < 0 ? -distance : distance;
 				if (lap > 0) {
 					distance %= lap;
-					distance = std::min(distance, lap - distance);
+					distance = std::min<std::int64_t>(distance, lap - distance);
 				}
 				largest = std::max(largest, distance);
 			}

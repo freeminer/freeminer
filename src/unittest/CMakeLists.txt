@@ -34,7 +34,7 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_swimming_pools.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_terrain_surface.cpp
-		# ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_train_speed.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_train_speed.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_tree_packs.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_steps.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_world_utils.cpp
