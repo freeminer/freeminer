@@ -134,7 +134,7 @@ const ServerCommandFactory serverCommandFactoryTable[TOSERVER_NUM_MSG_TYPES] =
 
 // fm:
 	{ "TOSERVER_INIT_FM",            1, true }, // 0x03
-	{ "TOSERVER_GET_BLOCKS",         0, false }, // 0x04
+	{ "TOSERVER_GET_BLOCKS",         0, true }, // 0x04
 	{ "TOSERVER_DRAWCONTROL",        0, false }, // 0x05
 // ==
 
