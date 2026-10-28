@@ -138,6 +138,8 @@ class MapgenEarth : public MapgenV7
 {
 public:
 	BlockMakeData *active_block_data = nullptr;
+	// Positions authored by the native railway generator in this chunk.
+	std::vector<v3pos_t> generated_rail_positions;
 	using TileOverlayId = std::uint64_t;
 	bool queueGeneratedSign(std::optional<TileOverlayId> tile_id, const v3pos_t &pos,
 			const std::string &text);

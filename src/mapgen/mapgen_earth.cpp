@@ -49,6 +49,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "map.h"
 #include "mapblock.h"
 #include "mapgen_earth.h"
+#include "earth/fm_arnis_rail_notify.h"
 #include "mapgen/earth/hgt.h"
 #include "mapgen/earth/http.h"
 #include "mapnode.h"
@@ -1831,6 +1832,7 @@ maps_holder_t::~maps_holder_t()
 
 void MapgenEarth::makeChunk(BlockMakeData *data)
 {
+	generated_rail_positions.clear();
 	// Pre-conditions
 	assert(data->vmanip);
 	assert(data->nodedef);
@@ -1851,6 +1853,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 
 	blockseed = getBlockSeed2(full_node_min, seed);
 	const auto finish_generation = [this]() {
+		fm_notify_arnis_rails(gennotify, generated_rail_positions);
 		this->generating = false;
 		this->active_block_data = nullptr;
 	};

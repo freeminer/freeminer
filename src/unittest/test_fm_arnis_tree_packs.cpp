@@ -1,14 +1,20 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/assets_root.h"
+#include "mapgen/earth/arnis-cpp/src/block_definitions.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/tree.h"
+#include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis-cpp/src/trees/region.h"
 #include "mapgen/earth/arnis-cpp/src/trees/schematic.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_pack.h"
+#include "mapgen/earth/arnis-cpp/src/structures/schem_decoder.h"
+#include "mapgen/earth/arnis_world_editor.h"
 
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <memory>
 #include <set>
 #include <string>
 
@@ -22,7 +28,42 @@ public:
 		TEST(testContributedTreePackAssets);
 		TEST(testTreePackRealmMapping);
 		TEST(testTreeSizeTiers);
+		TEST(testTreeConnectivityDenseAndSparse);
 		TEST(testTreePackCrownCapsAndSlotSpacing);
+		TEST(testScatteredTreesRespectSealedSurface);
+		TEST(testMappedTreesMayUseSealedSurface);
+		TEST(testMappedTreesMayUsePavingButNeverWater);
+	}
+
+	void testTreeConnectivityDenseAndSparse()
+	{
+		// Standalone unit tests do not register game nodes; give leaves a
+		// distinct ID so they are not mistaken for the default-valued logs.
+		struct RestoreLeaves
+		{
+			arnis::Block original = arnis::block_definitions::OAK_LEAVES;
+			~RestoreLeaves() { arnis::block_definitions::OAK_LEAVES = original; }
+		} restore;
+		arnis::block_definitions::OAK_LEAVES = arnis::Block(123);
+		arnis::structures::SchemDocument source;
+		source.width = 20;
+		source.height = 40;
+		source.length = 40;
+		source.voxels = {{1, 1, 1, "minecraft:oak_log", {}, {}},
+				{3, 3, 3, "minecraft:oak_leaves", {}, {}},
+				{5, 5, 5, "minecraft:oak_leaves", {}, {}},
+				{15, 15, 15, "minecraft:oak_leaves", {}, {}}};
+		const auto dense = arnis::trees::tree_only(source);
+		source.width = 2000; // Exceeds the dense-index limit.
+		const auto sparse = arnis::trees::tree_only(source);
+		UASSERTEQ(std::size_t, dense.voxels.size(), 3);
+		UASSERTEQ(std::size_t, sparse.voxels.size(), dense.voxels.size());
+		for (std::size_t i = 0; i < dense.voxels.size(); ++i) {
+			UASSERTEQ(int, dense.voxels[i].x, sparse.voxels[i].x);
+			UASSERTEQ(int, dense.voxels[i].y, sparse.voxels[i].y);
+			UASSERTEQ(int, dense.voxels[i].z, sparse.voxels[i].z);
+			UASSERT(dense.voxels[i].block == sparse.voxels[i].block);
+		}
 	}
 
 	void testTreePackRealmMapping()
@@ -74,6 +115,71 @@ public:
 			return;
 		UASSERT(scaled->slot_spacing(true) == 4);
 		UASSERT(scaled->slot_spacing(false) == scaled->base_spacing());
+	}
+
+	void testScatteredTreesRespectSealedSurface()
+	{
+		using namespace arnis;
+		WorldEditor editor;
+		const XZBBox bounds(0, 0, 31, 31);
+		auto sealed = std::make_shared<CoordinateBitmap>(bounds);
+		sealed->set(16, 16);
+		editor.set_sealed_surface(sealed);
+
+		Tree::create(editor, Coord{16, 0, 16});
+		for (int y = 0; y < 40; ++y)
+			UASSERT(!editor.block_exists_absolute(16, y, 16));
+
+		Tree::create(editor, Coord{20, 0, 20});
+		bool planted = false;
+		for (int y = 0; y < 40; ++y)
+			planted = planted || editor.block_exists_absolute(20, y, 20);
+		UASSERT(planted);
+	}
+
+	void testMappedTreesMayUseSealedSurface()
+	{
+		using namespace arnis;
+		WorldEditor editor;
+		const XZBBox bounds(0, 0, 31, 31);
+		auto sealed = std::make_shared<CoordinateBitmap>(bounds);
+		sealed->set(16, 16);
+		editor.set_sealed_surface(sealed);
+
+		Tree::create_of_type(editor, Coord{16, 0, 16}, TreeType::Oak, nullptr, nullptr,
+				true, std::nullopt, false, false, false);
+		bool planted = false;
+		for (int y = 0; y < 40; ++y)
+			planted = planted || editor.block_exists_absolute(16, y, 16);
+		UASSERT(planted);
+	}
+
+	void testMappedTreesMayUsePavingButNeverWater()
+	{
+		using namespace arnis;
+		auto place = [](WorldEditor &editor, bool allow_on_paved) {
+			Tree::create_of_type(editor, Coord{30, 1, 30}, TreeType::Oak, nullptr,
+					nullptr, allow_on_paved, std::nullopt, false, false, false);
+		};
+		auto has_trunk = [](WorldEditor &editor) {
+			return editor.check_for_block(
+					30, 2, 30, std::optional<std::vector<Block>>({OAK_LOG}));
+		};
+
+		WorldEditor scattered;
+		scattered.set_block_absolute(SMOOTH_STONE, 30, 0, 30);
+		place(scattered, false);
+		UASSERT(!has_trunk(scattered));
+
+		WorldEditor mapped;
+		mapped.set_block_absolute(SMOOTH_STONE, 30, 0, 30);
+		place(mapped, true);
+		UASSERT(has_trunk(mapped));
+
+		WorldEditor underwater;
+		underwater.set_block_absolute(WATER, 30, 0, 30);
+		place(underwater, true);
+		UASSERT(!has_trunk(underwater));
 	}
 
 	void testContributedTreePackAssets()

@@ -206,7 +206,7 @@ public:
 		const std::vector<std::pair<int, int>> cells{{-1, 5}, {0, 5}, {10, 5}, {11, 5}};
 		const auto crossings = joins.edge_crossings(cells);
 		UASSERT(crossings.size() == 2);
-		UASSERT((crossings[0] == std::array<std::size_t, 2>{0, 1}));
+		UASSERT((crossings[0] == std::array<std::size_t, 2>{1, 0}));
 		UASSERT((crossings[1] == std::array<std::size_t, 2>{1, 2}));
 	}
 

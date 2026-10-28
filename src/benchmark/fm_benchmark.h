@@ -6,6 +6,7 @@
 #include "irrlichttypes.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -16,15 +17,23 @@ enum class ConnectionBenchmarkMode
 	ServerOnly,
 };
 
+enum class ConnectionBenchmarkReliability
+{
+	Reliable,
+	Unreliable,
+	Both,
+};
+
 struct ConnectionBenchmarkOptions
 {
 	ConnectionBenchmarkMode mode = ConnectionBenchmarkMode::ClientServer;
+	ConnectionBenchmarkReliability reliability = ConnectionBenchmarkReliability::Reliable;
 	std::string server = "::1";
 	u16 port = 0;
 	u16 window = 1;
 	std::vector<std::string> backends;
 	std::vector<size_t> client_counts;
-	std::vector<size_t> payload_sizes;
+	std::vector<int64_t> payload_sizes;
 };
 
 const ConnectionBenchmarkOptions &get_connection_benchmark_options();

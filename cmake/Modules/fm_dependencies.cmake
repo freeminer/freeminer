@@ -88,9 +88,15 @@ elseif(FETCH_DEPS)
         set(BOOST_INCLUDE_LIBRARIES program_options asio thread geometry)
 
         FetchContent_Declare(
-            Boost GIT_REPOSITORY https://github.com/boostorg/boost.git GIT_TAG boost-1.92.0
-            GIT_SHALLOW TRUE ${FM_FETCH_OVERRIDE_FIND_PACKAGE} USES_TERMINAL_DOWNLOAD TRUE
-            GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+            Boost GIT_REPOSITORY https://github.com/boostorg/boost.git 
+            GIT_TAG boost-1.92.0
+            GIT_SHALLOW TRUE 
+            SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/boost"
+            BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/boost"
+            ${FM_FETCH_OVERRIDE_FIND_PACKAGE} 
+            USES_TERMINAL_DOWNLOAD TRUE
+            GIT_PROGRESS TRUE 
+            ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         # Boost 1.92 creates Boost::headers as a compatibility target itself.
         # Skip libs/headers, whose CMakeLists adds the same alias unconditionally.

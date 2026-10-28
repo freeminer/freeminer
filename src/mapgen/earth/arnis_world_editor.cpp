@@ -39,6 +39,11 @@ uint8_t WorldEditor::cover_class(int x, int z) const
 	return ground ? ground->cover_class(ground_point(x, z)) : 0;
 }
 
+bool WorldEditor::near_beach(int x, int z, double reach) const
+{
+	return ground && ground->beach_within(ground_point(x, z), reach);
+}
+
 std::optional<ecoregion::Ecoregion> WorldEditor::ecoregion(int x, int z) const
 {
 	return ground ? ground->ecoregion(ground_point(x, z)) : std::nullopt;
