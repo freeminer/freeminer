@@ -8,6 +8,7 @@
 #include <cmath>
 #include <limits>
 #include <utility>
+#include <vector>
 
 class TestFmArnisTerrainSurface : public TestBase
 {
@@ -20,6 +21,8 @@ public:
 		TEST(testSnowDepthFollowsUnroundedTerrain);
 		TEST(testSnowShadeMatchesRustPoleAndRotationRules);
 		TEST(testDisabledSnowLineDoesNotSnow);
+		TEST(testWaterLevelSnapsSmallStepsButPreservesCliffs);
+		TEST(testWaterSnapCliffCutoffScalesOnlyWithExtendedCeiling);
 		TEST(testNonFinitePeakHintDoesNotPoisonElevationGrid);
 		TEST(testNonFinitePeakResolutionDoesNotPoisonElevationGrid);
 		TEST(testFlatWorldDimensionsDoNotOverwriteElevationDimensions);
@@ -82,6 +85,65 @@ public:
 		UASSERT(snow_cover(
 				disabled.depth(0, 0, 5000), 0.0, [] { return 2.0; }, 1.0, 0, 0)
 						.is_none());
+	}
+
+	void testWaterLevelSnapsSmallStepsButPreservesCliffs()
+	{
+		const auto make_ground = [](std::vector<std::vector<float>> heights) {
+			auto ground = arnis::Ground::new_flat(0);
+			ground.elevation_grid = std::move(heights);
+			ground.elevation_world_width = 16;
+			ground.elevation_world_height = 16;
+			ground.elevation_enabled = true;
+			return ground;
+		};
+		const auto step_grid = [](float high, float low) {
+			std::vector<std::vector<float>> heights(16, std::vector<float>(16, low));
+			for (auto &row : heights)
+				for (int x = 0; x <= 7; ++x)
+					row[x] = high;
+			return heights;
+		};
+
+		const auto flat = make_ground(
+				std::vector<std::vector<float>>(16, std::vector<float>(16, 5.0f)));
+		UASSERT(flat.water_level({8, 8}) == 5);
+
+		const auto step = make_ground(step_grid(10.0f, 7.0f));
+		UASSERT(step.water_level({7, 8}) == 7);
+
+		const auto cliff = make_ground(step_grid(30.0f, 0.0f));
+		UASSERT(cliff.water_level({7, 8}) == 30);
+	}
+
+	void testWaterSnapCliffCutoffScalesOnlyWithExtendedCeiling()
+	{
+		const auto water_level = [](double drop, double blocks_per_meter,
+										 double slope_correction, bool extended_ceiling) {
+			auto ground = arnis::Ground::new_flat(0);
+			ground.elevation_grid.assign(16, std::vector<float>(16));
+			for (auto &row : ground.elevation_grid)
+				for (int x = 0; x < 16; ++x)
+					row[x] = x <= 7 ? static_cast<float>(drop) : 0.0f;
+			ground.elevation_world_width = 16;
+			ground.elevation_world_height = 16;
+			ground.elevation_enabled = true;
+			ground.elevation_blocks_per_meter = blocks_per_meter;
+			ground.elevation_slope_correction = slope_correction;
+			ground.extended_ceiling = extended_ceiling;
+			return ground.water_level({7, 8});
+		};
+
+		// Under the vanilla ceiling the cliff cutoff remains in block-space.
+		UASSERT(water_level(3.0, 1.0, 1.0, false) == 0);
+		UASSERT(water_level(4.0, 1.0, 1.0, false) == 4);
+		UASSERT(water_level(4.0, 0.12, 8.33, false) == 4);
+
+		// A raised ceiling expresses the cutoff as 25 metres, but never below 3 blocks.
+		UASSERT(water_level(3.0, 0.12, 8.33, true) == 0);
+		UASSERT(water_level(4.0, 0.12, 8.33, true) == 4);
+		UASSERT(water_level(10.0, 1.0, 1.0, true) == 0);
+		UASSERT(water_level(26.0, 1.0, 1.0, true) == 26);
 	}
 
 	void testNonFinitePeakHintDoesNotPoisonElevationGrid()

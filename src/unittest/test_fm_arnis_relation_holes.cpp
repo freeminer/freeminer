@@ -2,12 +2,14 @@
 
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/building_suppression.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/buildings.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/subprocessor/interior/index.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/waterfront.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/osm_water_override.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
+#include "mapgen/earth/fm_osm_relation_tags.h"
 
 #include <algorithm>
 #include <cstddef>
@@ -16,6 +18,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -46,11 +49,15 @@ public:
 		TEST(testPierKeepsDeckOnIslandInsideHole);
 		TEST(testBuildingCourtyardKeepsNestedKeepFootprint);
 		TEST(testWaterOverrideKeepsPondOnIslandInHole);
+		TEST(testWaterOverrideClipsStraddlingPolygon);
+		TEST(testWaterGuardUsesStableNearestSeedTieBreak);
 		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
 		TEST(testListedNonResidentialPartRelationDoesNotInheritHousing);
+		TEST(testHousingPartRelationUsesHousingStoreyHeight);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
+		TEST(testRepeatedRelationAreaTagsLeaveIndependentWayTags);
 	}
 
 	void testNestedOuterGetsItsOwnHoleGroup()
@@ -154,6 +161,55 @@ public:
 		UASSERT(data.grid[5][5] == arnis::land_cover::LC_WATER);
 		UASSERT(data.grid[20][20] != arnis::land_cover::LC_WATER);
 		UASSERT(data.grid[30][30] == arnis::land_cover::LC_WATER);
+	}
+
+	void testWaterOverrideClipsStraddlingPolygon()
+	{
+		arnis::ProcessedWay way;
+		way.id = 41;
+		way.tags.emplace("natural", "water");
+		const int coordinates[5][2]{{8, 4}, {30, 4}, {30, 11}, {8, 11}, {8, 4}};
+		for (std::size_t i = 0; i < 5; ++i) {
+			arnis::ProcessedNode node{};
+			node.id = i == 4 ? 1 : i + 1;
+			node.x = coordinates[i][0];
+			node.z = coordinates[i][1];
+			way.nodes.push_back(std::move(node));
+		}
+
+		constexpr std::size_t side = 16;
+		arnis::land_cover::LandCoverData data;
+		data.width = data.height = side;
+		data.grid.assign(side, std::vector<std::uint8_t>(side, 0));
+		std::vector<std::vector<float>> heights(side, std::vector<float>(side, 0.0f));
+		arnis::land_cover::apply_osm_water_override(data, heights, side, side,
+				{arnis::ProcessedElement(way)}, XZBBox(0, 0, 15, 15));
+
+		UASSERT(data.grid[7][10] == arnis::land_cover::LC_WATER);
+		for (std::size_t z = 0; z < side; ++z)
+			for (std::size_t x = 0; x < side; ++x)
+				if (data.grid[z][x] == arnis::land_cover::LC_WATER)
+					UASSERT(x >= 8 && x <= 15 && z >= 4 && z <= 11);
+	}
+
+	void testWaterGuardUsesStableNearestSeedTieBreak()
+	{
+		using namespace arnis::land_cover;
+		constexpr std::size_t side = 3;
+		std::vector<std::vector<std::uint8_t>> grid(
+				side, std::vector<std::uint8_t>(side, LC_BARE));
+		std::vector<std::vector<float>> heights(side, std::vector<float>(side, 0.0f));
+		grid[0][0] = grid[0][2] = LC_WATER;
+		heights[0][0] = 10.0f;
+		heights[0][2] = 20.0f;
+
+		const auto guard = build_water_override_guard(grid, heights, 0.0);
+		UASSERT(guard.has_elevation);
+		UASSERT(guard.nearest_water_y.size() == side * side);
+		// Multi-source BFS seeds are enqueued in row-major order. The equidistant
+		// middle cell therefore retains the first water source's elevation.
+		UASSERT(guard.nearest_water_y[1] == 10.0f);
+		UASSERT(guard.nearest_water_y[2] == 20.0f);
 	}
 
 	void testBuildingInAreaHoleDoesNotInheritAreaUse()
@@ -403,6 +459,47 @@ public:
 		UASSERT(!prepare(true).housing_relation_parts.contains(part_relation.id));
 	}
 
+	void testHousingPartRelationUsesHousingStoreyHeight()
+	{
+		using namespace arnis;
+		ProcessedWay outer;
+		outer.id = 7;
+		const int coordinates[5][2]{{20, 20}, {40, 20}, {40, 36}, {20, 36}, {20, 20}};
+		for (std::size_t i = 0; i < 5; ++i) {
+			ProcessedNode node{};
+			node.id = 70 + i;
+			node.x = coordinates[i][0];
+			node.z = coordinates[i][1];
+			outer.nodes.push_back(node);
+		}
+
+		ProcessedRelation relation{};
+		relation.id = 9;
+		relation.tags.emplace("type", "multipolygon");
+		relation.tags.emplace("building:part", "yes");
+		relation.tags.emplace("building:levels", "5");
+		relation.tags.emplace("roof:shape", "flat");
+		relation.members.emplace_back(outer, ProcessedMemberRole::Outer);
+
+		const XZBBox bbox(0, 0, 79, 79);
+		const auto top = [&](const std::unordered_set<std::uint64_t> &housing_parts) {
+			WorldEditor editor;
+			Args args;
+			args.mode = GenerationMode::GeoOnly;
+			args.ground_level = 0;
+			FloodFillCache cache;
+			const auto passages = CoordinateBitmap::new_empty();
+			buildings::generate_building_from_relation(editor, relation, args, cache,
+					bbox, passages, nullptr, nullptr, nullptr, nullptr, &housing_parts);
+			return editor.highest_block_between(30, 20, -64, 300);
+		};
+
+		const std::unordered_set<std::uint64_t> ordinary_parts;
+		const std::unordered_set<std::uint64_t> housing_parts{relation.id};
+		UASSERT(top(ordinary_parts) == std::optional<int>(23));
+		UASSERT(top(housing_parts) == std::optional<int>(18));
+	}
+
 	void testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder()
 	{
 		std::istringstream xml(
@@ -436,6 +533,38 @@ public:
 		UASSERT(derived.has_value());
 		UASSERT((*derived)[0] == 1.5 && (*derived)[1] == 2.5 && (*derived)[2] == 2.5 &&
 				(*derived)[3] == 3.5);
+	}
+
+	void testRepeatedRelationAreaTagsLeaveIndependentWayTags()
+	{
+		arnis::tags_t water_way;
+		water_way.emplace("natural", "water");
+		water_way.emplace("water", "lake");
+		water_way.emplace("highway", "footway");
+		arnis::tags_t water_relation;
+		water_relation.emplace("natural", "water");
+		water_relation.emplace("water", "lake");
+		arnis::osm_parser::drop_repeated_area_tags(water_way, water_relation);
+		UASSERT(!water_way.contains("natural"));
+		UASSERT(!water_way.contains("water"));
+		UASSERT(water_way.get("highway") == "footway");
+
+		arnis::tags_t land_way;
+		land_way.emplace("landuse", "residential");
+		land_way.emplace("highway", "service");
+		land_way.emplace("name", "Old road");
+		arnis::tags_t land_relation;
+		land_relation.emplace("landuse", "residential");
+		arnis::osm_parser::drop_repeated_area_tags(land_way, land_relation);
+		UASSERT(!land_way.contains("landuse"));
+		UASSERT(land_way.get("highway") == "service");
+		UASSERT(land_way.get("name") == "Old road");
+
+		arnis::tags_t unrelated_way;
+		unrelated_way.emplace("landuse", "forest");
+		unrelated_way.emplace("highway", "track");
+		arnis::osm_parser::drop_repeated_area_tags(unrelated_way, land_relation);
+		UASSERT(unrelated_way.get("landuse") == "forest");
 	}
 };
 

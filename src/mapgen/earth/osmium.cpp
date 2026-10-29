@@ -21,8 +21,10 @@
 #include <unordered_set>
 #include <vector>
 #include "log.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/osmium-inl.h"
 #include "mapgen/earth/arnis-cpp/src/args.h"
+#include "mapgen/earth/fm_osm_relation_tags.h"
 #include "settings.h"
 #if !defined(FILE_INCLUDED)
 #include <osmium/area/assembler.hpp>
@@ -52,7 +54,6 @@
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/element_processing/way_segments.h"
-#include "arnis-cpp/src/element_processing/relation_area.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -233,29 +234,6 @@ bool mostly_inside(const std::vector<arnis::ProcessedNode> &ring,
 			});
 }
 
-bool repeats_relation_area_tags(
-		const arnis::ProcessedWay &way, const arnis::tags_t &relation)
-{
-	if (!closed_ring(way))
-		return false;
-	const auto area = arnis::element_processing::relation_area(relation);
-	if (!area || !arnis::element_processing::relation_area_draws_area(*area, relation))
-		return false;
-	const auto inherited_or_descriptive = [&](const auto &tag) {
-		const auto &key = tag.first;
-		return key == "name" || key.ends_with("_name") || key == "wikidata" ||
-			   key == "wikipedia" || key == "area" || key == "type" ||
-			   relation.get(key) == tag.second;
-	};
-	const bool has_independent_tag =
-			std::any_of(way.tags.begin(), way.tags.end(), [&](const auto &tag) {
-				const auto &key = tag.first;
-				return key != "name" && !key.ends_with("_name") && key != "wikidata" &&
-					   key != "wikipedia" && key != "area" && key != "type";
-			});
-	return has_independent_tag &&
-		   std::all_of(way.tags.begin(), way.tags.end(), inherited_or_descriptive);
-}
 } // namespace
 
 class MyHandler : public osmium::handler::Handler
@@ -459,7 +437,6 @@ public:
 		// their own way below, just as the Rust parser creates a new Arc there.
 		std::unordered_map<std::uint64_t, std::shared_ptr<arnis::ProcessedWay>>
 				shared_relation_ways;
-		std::unordered_set<std::uint64_t> repeated_outer_ways;
 		for (auto &pending : pending_relations) {
 			std::vector<std::shared_ptr<arnis::ProcessedWay>> member_ways(
 					pending.ways.size());
@@ -642,12 +619,17 @@ public:
 					pending.relation.members.end(), [](const auto &member) {
 						return member.role == arnis::ProcessedMemberRole::Inner;
 					});
-			if (holed) {
+			if (holed && tags.get("type") == "multipolygon" &&
+					!tags.contains("building") && !tags.contains("building:part")) {
 				for (std::size_t i = 0; i < member_ways.size(); ++i) {
-					if (member_ways[i] && roles[i] &&
-							*roles[i] == arnis::ProcessedMemberRole::Outer &&
-							repeats_relation_area_tags(*member_ways[i], tags))
-						repeated_outer_ways.insert(member_ways[i]->id);
+					if (member_ways[i] && pending.ways[i].role &&
+							*pending.ways[i].role == arnis::ProcessedMemberRole::Outer &&
+							way_indices.contains(member_ways[i]->id)) {
+						auto &standalone_way =
+								elements[way_indices.at(member_ways[i]->id)].as_way();
+						arnis::osm_parser::drop_repeated_area_tags(
+								standalone_way.tags, tags);
+					}
 				}
 			}
 			if (!pending.relation.members.empty())
@@ -659,14 +641,6 @@ public:
 										  element.as_way().nodes.empty();
 							   }),
 				elements.end());
-		if (!repeated_outer_ways.empty())
-			elements.erase(std::remove_if(elements.begin(), elements.end(),
-								   [&](const auto &element) {
-									   return element.is_way() &&
-											  repeated_outer_ways.contains(
-													  element.as_way().id);
-								   }),
-					elements.end());
 		if (unresolved_node_refs > 0) {
 			const double percent =
 					100.0 * unresolved_node_refs /

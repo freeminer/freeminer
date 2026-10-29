@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <nlohmann/json.hpp>
 #include <memory>
 #include <set>
@@ -46,6 +47,17 @@ public:
 		TEST(testMappedTreesMayUsePavingButNeverWater);
 		TEST(testMappedTreeTypicalHeightUsesSeenCanopyMedian);
 		TEST(testCanopyMeasuredMatchesCanopyCellAvailability);
+		TEST(testTreeProbeRoundingMatchesRustSaturatingCast);
+	}
+
+	void testTreeProbeRoundingMatchesRustSaturatingCast()
+	{
+		UASSERTEQ(int, arnis::crown_probe_blocks(0.0), 1);
+		UASSERTEQ(int, arnis::crown_probe_blocks(0.75), 2);
+		UASSERTEQ(int,
+				arnis::crown_probe_blocks(std::numeric_limits<double>::quiet_NaN()), 1);
+		UASSERTEQ(int, arnis::crown_probe_blocks(std::numeric_limits<double>::max()),
+				std::numeric_limits<int>::max());
 	}
 
 	void testSchematicUsesBlockDefaultProperties()
