@@ -84,6 +84,29 @@ public:
 		TEST(testStopNamesUseReadableTwoLineFallback);
 		TEST(testStopNameTextStaysOffPlateBorder);
 		TEST(testPierFootwayIsNotARoadSurface);
+		TEST(testUkRouteShieldColours);
+	}
+
+	void testUkRouteShieldColours()
+	{
+		const auto shield_for = [](const char *highway, const char *ref) {
+			tags_t tags;
+			tags.emplace("highway", highway);
+			tags.emplace("ref", ref);
+			const auto signs =
+					signage::highway_way_signs(tags, decals::SignRegion::UkIreland);
+			UASSERT(signs.shield.has_value());
+			const auto *shield = std::get_if<decals::RouteShieldKey>(&*signs.shield);
+			UASSERT(shield != nullptr);
+			return shield->style;
+		};
+
+		UASSERT(shield_for("motorway", "M25") == decals::ShieldStyle::Blue);
+		UASSERT(shield_for("motorway", "A1(M)") == decals::ShieldStyle::Blue);
+		UASSERT(shield_for("trunk", "A40") == decals::ShieldStyle::Green);
+		UASSERT(shield_for("primary", "N7") == decals::ShieldStyle::Green);
+		UASSERT(shield_for("primary", "A501") == decals::ShieldStyle::WhitePlate);
+		UASSERT(shield_for("secondary", "B1234") == decals::ShieldStyle::WhitePlate);
 	}
 
 	void testPierFootwayIsNotARoadSurface()

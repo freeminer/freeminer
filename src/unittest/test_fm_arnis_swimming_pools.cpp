@@ -60,6 +60,8 @@ public:
 		TEST(testPoolKeepsDeckAndRoadsidePath);
 		TEST(testMultipolygonPoolLeavesItsIslandDry);
 		TEST(testLapPoolLaneLinesMatchMappedDimensions);
+		TEST(testLapPoolCrossbarsAtLargeScale);
+		TEST(testPoolDepthUsesMetresAndWorldScale);
 	}
 
 	void testPoolIsLinedAndRimmed()
@@ -189,6 +191,61 @@ public:
 			lane_count += contains(editor, 17, -2, z, BLUE_CONCRETE);
 		UASSERT(lane_count == 4);
 		UASSERT(!contains(editor, 5, -2, 7, BLUE_CONCRETE));
+	}
+
+	void testPoolDepthUsesMetresAndWorldScale()
+	{
+		using namespace arnis;
+		const XZBBox bbox(0, 0, 63, 63);
+		const auto way = rectangular_pool();
+		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
+		const auto cache = FloodFillCache::precompute(elements, std::nullopt);
+		const BuildingFootprintBitmap footprints(bbox);
+		const RoadMaskBitmap roads(bbox);
+
+		WorldEditor tagged_editor;
+		tagged_editor.set_projection_info("test", 1.0);
+		auto tagged = way;
+		tagged.tags.emplace("depth", "3.5 m");
+		const std::vector<ProcessedElement> tagged_elements{ProcessedElement(tagged)};
+		const auto tagged_cache =
+				FloodFillCache::precompute(tagged_elements, std::nullopt);
+		swimming_pools::generate(
+				tagged_editor, tagged, Args{}, tagged_cache, footprints, roads);
+		UASSERT(contains(tagged_editor, 14, -3, 12, WATER));
+		UASSERT(contains(tagged_editor, 14, -4, 12, swimming_pools::LINING));
+
+		WorldEditor scaled_editor;
+		scaled_editor.set_projection_info("test", 2.0);
+		swimming_pools::generate(scaled_editor, way, Args{}, cache, footprints, roads);
+		// The default two-metre pool depth scales to four blocks in a 2x world.
+		UASSERT(contains(scaled_editor, 14, -3, 12, WATER));
+		UASSERT(contains(scaled_editor, 14, -4, 12, swimming_pools::LINING));
+	}
+
+	void testLapPoolCrossbarsAtLargeScale()
+	{
+		using namespace arnis;
+		WorldEditor editor;
+		editor.set_projection_info("test", 2.0);
+		const XZBBox bbox(0, 0, 63, 63);
+		auto way = rectangular_ring(703, 5, 5, 54, 28);
+		way.tags.emplace("leisure", "swimming_pool");
+		way.tags.emplace("sport", "swimming");
+		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
+		const auto cache = FloodFillCache::precompute(elements, std::nullopt);
+		const BuildingFootprintBitmap footprints(bbox);
+		const RoadMaskBitmap roads(bbox);
+
+		swimming_pools::generate(editor, way, Args{}, cache, footprints, roads);
+
+		int lane_cells = 0;
+		int crossbar_cells = 0;
+		for (int z = 5; z <= 28; ++z) {
+			lane_cells += contains(editor, 30, -4, z, BLUE_CONCRETE);
+			crossbar_cells += contains(editor, 8, -4, z, BLUE_CONCRETE);
+		}
+		UASSERT(crossbar_cells > lane_cells);
 	}
 };
 

@@ -4,6 +4,7 @@
 #include "mapgen/earth/arnis-cpp/src/building_suppression.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/subprocessor/interior/index.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/waterfront.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/osm_water_override.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
@@ -42,6 +43,7 @@ public:
 		TEST(testNestedOuterGetsItsOwnHoleGroup);
 		TEST(testHoleGroupingIgnoresBoundaryVertices);
 		TEST(testInnerRingsCutHolesButIslandsStayWhole);
+		TEST(testPierKeepsDeckOnIslandInsideHole);
 		TEST(testBuildingCourtyardKeepsNestedKeepFootprint);
 		TEST(testWaterOverrideKeepsPondOnIslandInHole);
 		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
@@ -242,6 +244,52 @@ public:
 		UASSERT(std::find(kept.begin(), kept.end(), land_cell) != kept.end());
 		UASSERT(std::find(kept.begin(), kept.end(), hole_cell) == kept.end());
 		UASSERT(!fills.holes_in(island, inners, std::nullopt).has_value());
+	}
+
+	void testPierKeepsDeckOnIslandInsideHole()
+	{
+		auto ring = [](std::uint64_t id, int min, int max) {
+			arnis::ProcessedWay way;
+			way.id = id;
+			way.nodes = square(min, max);
+			for (std::size_t i = 0; i + 1 < way.nodes.size(); ++i)
+				way.nodes[i].id = id * 10 + i;
+			way.nodes.back().id = way.nodes.front().id;
+			return way;
+		};
+
+		arnis::ProcessedRelation pier{};
+		pier.id = 9;
+		pier.tags.emplace("man_made", "pier");
+		pier.members.emplace_back(ring(1, 10, 60), arnis::ProcessedMemberRole::Outer);
+		pier.members.emplace_back(ring(2, 20, 50), arnis::ProcessedMemberRole::Inner);
+		pier.members.emplace_back(ring(3, 30, 40), arnis::ProcessedMemberRole::Outer);
+
+		auto footway = [](std::uint64_t id, int x0, int x1, int z) {
+			arnis::ProcessedWay way;
+			way.id = id;
+			way.tags.emplace("highway", "footway");
+			for (const auto &[x, node_id] : std::vector<std::pair<int, std::uint64_t>>{
+						 {x0, id * 10}, {x1, id * 10 + 1}}) {
+				arnis::ProcessedNode node{};
+				node.id = node_id;
+				node.x = x;
+				node.z = z;
+				way.nodes.push_back(node);
+			}
+			return way;
+		};
+		std::vector<arnis::ProcessedElement> elements{
+				arnis::ProcessedElement(std::move(pier)),
+				arnis::ProcessedElement(footway(4, 32, 38, 35)),
+				arnis::ProcessedElement(footway(5, 22, 28, 25))};
+		const auto cache = arnis::FloodFillCache::precompute(elements, std::nullopt);
+
+		UASSERT(arnis::waterfront::drop_paths_on_piers(
+						elements, 1.0, cache, std::nullopt) == 1);
+		UASSERT(elements.size() == 2);
+		UASSERT(elements[1].is_way());
+		UASSERT(elements[1].as_way().id == 5);
 	}
 
 	void testBuildingCourtyardKeepsNestedKeepFootprint()
