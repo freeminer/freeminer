@@ -48,6 +48,7 @@ public:
 	void runTests(IGameDef *) override
 	{
 		TEST(testSinglePixelPondAndIslandSurvive);
+		TEST(testCoarseGridKeepsThePixelSample);
 		TEST(testBeachProximityIndexAndInvalidation);
 		TEST(testBeachProximityAcrossTileBoundary);
 		TEST(testWorldEditorBeachProximityUsesGroundCoordinates);
@@ -161,6 +162,27 @@ public:
 		UASSERT(data.grid[235][235] == LC_WATER);
 		UASSERT(data.grid[255][255] == LC_TREE_COVER);
 		UASSERT(count_water(data) > 400);
+	}
+
+	void testCoarseGridKeepsThePixelSample()
+	{
+		using namespace arnis::land_cover;
+		auto tile = make_tile();
+		// At 40 pixels per degree, a 60-cell grid over one degree has fewer
+		// than two grid cells per source pixel. Rust skips polygon smoothing at
+		// that resolution but must retain its already sampled water pixels.
+		for (std::size_t z = 0; z < tile.height; ++z)
+			for (std::size_t x = 60; x <= 64; ++x)
+				tile.pixels[z * tile.width + x] = LC_WATER;
+
+		LandCoverData data;
+		data.source_bounds = {0.0, 0.0, 1.0, 1.0};
+		data.width = 60;
+		data.height = 60;
+		data.grid.assign(data.height, std::vector<std::uint8_t>(data.width));
+		UASSERT(!reconstruct_water_shoreline(data, {tile}));
+		UASSERT(data.grid[30][32] == LC_WATER);
+		UASSERT(data.grid[30][10] == LC_GRASSLAND);
 	}
 };
 

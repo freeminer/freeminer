@@ -92,6 +92,17 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 	CachedVertexShaderSetting<float, 3> m_camera_offset_vertex{"cameraOffset"};
 	CachedVertexShaderSetting<float, 3> m_wind_direction_vertex{"windDirection"};
 	CachedPixelShaderSetting<float, 3> m_wind_direction_pixel{"windDirection"};
+	// fm: Reuse wind between shader callbacks instead of querying the map per draw.
+	CachedVertexShaderSetting<float, 3> m_sun_world_position_vertex{"sunPosition"};
+	CachedPixelShaderSetting<float, 3> m_sun_world_position_pixel{"sunPosition"};
+	v3f m_cached_wind{};
+	u64 m_wind_update_time = 0;
+	bool m_wind_initialized = false;
+	u64 m_wield_light_update_time = 0;
+	bool m_wield_light_initialized = false;
+	f32 m_wield_light = 0;
+	f32 m_wield_light_brightness = 0;
+	// ===
 	CachedPixelShaderSetting<float, 3> m_camera_position_pixel{"cameraPosition"};
 	CachedVertexShaderSetting<float, 3> m_camera_position_vertex{"cameraPosition"};
 	CachedVertexShaderSetting<float, 2> m_texel_size0_vertex{"texelSize0"};
@@ -183,34 +194,39 @@ public:
 		} else {
 			sun_moon_position = v3f(0.0, m_client->getEnv().getLocalPlayer()->getEyePosition().Y*BS+900.0, 0.0);
 		}
-		services->setPixelShaderConstant(services->getPixelShaderConstantID("sunPosition"), (f32 *)&sun_moon_position, 3);
-		services->setVertexShaderConstant(services->getPixelShaderConstantID("sunPosition"), (f32 *)&sun_moon_position, 3);
+		// fm: Skip uniform lookups and uploads while the position is unchanged.
+		m_sun_world_position_pixel.set(sun_moon_position, services);
+		m_sun_world_position_vertex.set(sun_moon_position, services);
+		// ===
 
-		//FMTODO!!
+		// fm: Compute wield light once per frame, not once per shader draw.
 		{
-			const auto *inventory = &m_client->getEnv().getLocalPlayer()->inventory;
-			ItemStack playeritem;
-			{
-				auto *mlist = inventory->getList("main");
-				if (mlist != NULL) {
-					playeritem = mlist->getItem(
-							m_client->getEnv().getLocalPlayer()->getWieldIndex());
+			const u64 frame_time = m_client->getEnv().getFrameTime();
+			if (!m_wield_light_initialized || frame_time != m_wield_light_update_time) {
+				auto *player = m_client->getEnv().getLocalPlayer();
+				const auto *mlist = player->inventory.getList("main");
+				const std::string item_name = mlist ?
+						mlist->getItem(player->getWieldIndex()).name : std::string();
+				m_wield_light = 0;
+				if (!g_settings->getBool("disable_wieldlight")) {
+					const auto &groups = m_client->idef()->get(item_name).groups;
+					const auto it = groups.find("wield_light");
+					if (it != groups.end())
+						m_wield_light = static_cast<f32>(it->second);
 				}
+				m_wield_light_brightness = rangelim(
+						decode_light_f(m_wield_light / (f32)LIGHT_SUN) * 0.7,
+						0.0f, 1.0f);
+				m_wield_light_update_time = frame_time;
+				m_wield_light_initialized = true;
 			}
-			f32 wieldLight = 0;
-			if (!g_settings->getBool("disable_wieldlight"))
-				wieldLight = (f32)((ItemGroupList)m_client->idef()
-												->get(playeritem.name)
-												.groups)["wield_light"];
-			f32 wieldLightBrightness = rangelim(
-					decode_light_f(wieldLight / (f32)LIGHT_SUN) * 0.7, // 1.04f,
-					0.0f, 1.0f);
 			services->setPixelShaderConstant(
-					services->getPixelShaderConstantID("wieldLight"), &wieldLight, 1);
+					services->getPixelShaderConstantID("wieldLight"), &m_wield_light, 1);
 			services->setPixelShaderConstant(
 					services->getPixelShaderConstantID("wieldLightBrightness"),
-					&wieldLightBrightness, 1);
+					&m_wield_light_brightness, 1);
 		}
+		// ===
 	   }
 
 		if (m_client->getMinimap()) {
@@ -226,10 +242,17 @@ public:
 		m_camera_position_pixel.set(camera_position, services);
 		m_camera_position_vertex.set(camera_position, services);
 
-		v3f wind = m_client->getEnv().getClientMap().getWind(
-				floatToInt(m_client->getEnv().getLocalPlayer()->getPosition(), BS), true);
-		m_wind_direction_vertex.set(wind, services);
-		m_wind_direction_pixel.set(wind, services);
+		// fm: Wind changes slowly; refresh each shader's cached value every two seconds.
+		const u64 now = m_client->getEnv().getFrameTime();
+		if (!m_wind_initialized || now - m_wind_update_time >= 2000) {
+			m_cached_wind = m_client->getEnv().getClientMap().getWind(
+					floatToInt(m_client->getEnv().getLocalPlayer()->getPosition(), BS), true);
+			m_wind_update_time = now;
+			m_wind_initialized = true;
+		}
+		m_wind_direction_vertex.set(m_cached_wind, services);
+		m_wind_direction_pixel.set(m_cached_wind, services);
+		// ===
 
 		m_texel_size0_vertex.set(m_texel_size0, services);
 		m_texel_size0_pixel.set(m_texel_size0, services);

@@ -74,9 +74,12 @@ public:
 		TEST(testShoreRoadReclaimsOnlyItsWaterCells);
 		TEST(testMappedWaterBoundaryTrimsTheMixedPixelRim);
 		TEST(testWaterwayCentrelineDoesNotCloseTheRiver);
+		TEST(testMappedPondDoesNotTrimWaterAcrossLand);
 		TEST(testPoolReclaimsESAWaterAndLeavesMappedLake);
 		TEST(testLargePoolReclaimsESAWaterFarFromShore);
 		TEST(testPiersAndBridgesAreNotLandEvidence);
+		TEST(testOpenWaterFarFromShoreIsNotTrimmed);
+		TEST(testAbsurdWaterwayWidthIsClamped);
 	}
 
 	void testShoreRoadReclaimsOnlyItsWaterCells()
@@ -110,6 +113,20 @@ public:
 				way(3, {node(1, 30, 0), node(2, 30, 59)}, {{"waterway", "stream"}});
 		run(data, {ProcessedElement(river)});
 		for (int x = 20; x < 40; ++x)
+			UASSERT(data.grid[30][x] == LC_WATER);
+	}
+
+	void testMappedPondDoesNotTrimWaterAcrossLand()
+	{
+		auto data = grid_from(false);
+		for (auto &row : data.grid) {
+			std::fill(row.begin() + 5, row.begin() + 15, LC_WATER);
+			std::fill(row.begin() + 40, row.begin() + 55, LC_WATER);
+		}
+		data.water_distance = compute_water_distance(data.grid, data.width, data.height);
+		const auto pond = rectangle(4, 7, 5, 13, 55, {{"natural", "water"}});
+		run(data, {ProcessedElement(pond)});
+		for (int x = 40; x < 55; ++x)
 			UASSERT(data.grid[30][x] == LC_WATER);
 	}
 
@@ -160,6 +177,24 @@ public:
 						  ProcessedElement(path_on_pier)});
 		UASSERT(data.grid[15][32] == LC_WATER);
 		UASSERT(data.grid[35][34] == LC_WATER);
+	}
+
+	void testOpenWaterFarFromShoreIsNotTrimmed()
+	{
+		auto data = grid_from(true);
+		const auto building = rectangle(10, 0, 0, 59, 59, {{"building", "yes"}});
+		run(data, {ProcessedElement(building)});
+		UASSERT(data.grid[30][31] != LC_WATER);
+		UASSERT(data.grid[30][50] == LC_WATER);
+	}
+
+	void testAbsurdWaterwayWidthIsClamped()
+	{
+		auto data = grid_from(true);
+		const auto river = way(11, {node(1, 32, 0), node(2, 32, 59)},
+				{{"waterway", "river"}, {"width", "999999999"}});
+		run(data, {ProcessedElement(river)});
+		UASSERT(data.grid[30][50] == LC_WATER);
 	}
 };
 

@@ -1,5 +1,6 @@
 #include "test.h"
 
+#include "mapgen/earth/arnis_ground.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/swimming_pools.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis_world_editor.h"
@@ -56,8 +57,11 @@ public:
 	void runTests(IGameDef *) override
 	{
 		TEST(testPoolIsLinedAndRimmed);
+		TEST(testPoolOnSlopeStaysLevelAndWallsItsLowEnd);
 		TEST(testPoolDepthSaturatesBeforeIntegerConversion);
 		TEST(testPoolKeepsDeckAndRoadsidePath);
+		TEST(testIndoorPoolNeedsAFloor);
+		TEST(testDivingPoolDoesNotGetLapLaneLines);
 		TEST(testMultipolygonPoolLeavesItsIslandDry);
 		TEST(testLapPoolLaneLinesMatchMappedDimensions);
 		TEST(testLapPoolCrossbarsAtLargeScale);
@@ -102,6 +106,45 @@ public:
 				}
 	}
 
+	void testPoolOnSlopeStaysLevelAndWallsItsLowEnd()
+	{
+		using namespace arnis;
+		Ground ground = Ground::new_flat(0);
+		ground.elevation_grid.assign(64, std::vector<float>(64));
+		for (auto &row : ground.elevation_grid)
+			for (std::size_t x = 0; x < row.size(); ++x)
+				row[x] = 4.0f + 0.25f * static_cast<float>(x);
+		ground.elevation_world_width = 64;
+		ground.elevation_world_height = 64;
+		ground.elevation_enabled = true;
+
+		WorldEditor editor;
+		editor.ground = &ground;
+		const XZBBox bbox(0, 0, 63, 63);
+		auto way = rectangular_ring(704, 10, 10, 21, 15);
+		way.tags.emplace("leisure", "swimming_pool");
+		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
+		const auto cache = FloodFillCache::precompute(elements, std::nullopt);
+		const BuildingFootprintBitmap footprints(bbox);
+		const RoadMaskBitmap roads(bbox);
+		const int low = editor.get_ground_level(10, 12);
+		const int high = editor.get_ground_level(21, 12);
+		UASSERT(high >= low + 2);
+
+		swimming_pools::generate(editor, way, Args{}, cache, footprints, roads);
+
+		for (int x = 10; x <= 21; ++x) {
+			UASSERT(contains(editor, x, high, 12, WATER));
+			UASSERT(!editor.block_exists_absolute(x, high + 1, 12));
+		}
+		const int rim_ground = editor.get_ground_level(9, 12);
+		UASSERT(contains(editor, 9, high, 12, swimming_pools::COPING));
+		for (int y = rim_ground + 1; y < high; ++y)
+			UASSERT(contains(editor, 9, y, 12, swimming_pools::COPING));
+		for (int y = low; y < high - 2; ++y)
+			UASSERT(contains(editor, 10, y, 12, swimming_pools::LINING));
+	}
+
 	void testPoolKeepsDeckAndRoadsidePath()
 	{
 		using namespace arnis;
@@ -124,6 +167,56 @@ public:
 		UASSERT(contains(editor, 9, 0, 12, GRAVEL));
 		UASSERT(contains(editor, 9, -1, 12, swimming_pools::LINING));
 		UASSERT(contains(editor, 9, 0, 13, swimming_pools::COPING));
+	}
+
+	void testIndoorPoolNeedsAFloor()
+	{
+		using namespace arnis;
+		const XZBBox bbox(0, 0, 63, 63);
+		const auto way = rectangular_pool();
+		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
+		const auto cache = FloodFillCache::precompute(elements, std::nullopt);
+		BuildingFootprintBitmap footprints(bbox);
+		for (int x = 8; x <= 21; ++x)
+			for (int z = 8; z <= 17; ++z)
+				footprints.set(x, z);
+		const RoadMaskBitmap roads(bbox);
+
+		WorldEditor hall;
+		for (int x = 8; x <= 21; ++x)
+			for (int z = 8; z <= 17; ++z)
+				hall.set_block_absolute(STONE_BRICKS, x, 0, z);
+		swimming_pools::generate(hall, way, Args{}, cache, footprints, roads);
+		for (int x = 8; x <= 21; ++x)
+			for (int z = 8; z <= 17; ++z) {
+				UASSERT(!contains(hall, x, 0, z, WATER));
+				UASSERT(!contains(hall, x, 0, z, swimming_pools::COPING));
+			}
+
+		// The same footprint without a floor represents a canopy on posts, not a hall.
+		WorldEditor canopy;
+		swimming_pools::generate(canopy, way, Args{}, cache, footprints, roads);
+		UASSERT(contains(canopy, 14, 0, 12, WATER));
+		UASSERT(contains(canopy, 9, 0, 12, swimming_pools::COPING));
+	}
+
+	void testDivingPoolDoesNotGetLapLaneLines()
+	{
+		using namespace arnis;
+		WorldEditor editor;
+		const XZBBox bbox(0, 0, 63, 63);
+		auto way = rectangular_ring(702, 5, 5, 29, 16);
+		way.tags.emplace("leisure", "swimming_pool");
+		way.tags.emplace("swimming_pool", "diving");
+		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
+		const auto cache = FloodFillCache::precompute(elements, std::nullopt);
+		const BuildingFootprintBitmap footprints(bbox);
+		const RoadMaskBitmap roads(bbox);
+
+		swimming_pools::generate(editor, way, Args{}, cache, footprints, roads);
+		for (int x = 5; x <= 29; ++x)
+			for (int z = 5; z <= 16; ++z)
+				UASSERT(!contains(editor, x, -2, z, BLUE_CONCRETE));
 	}
 
 	void testPoolDepthSaturatesBeforeIntegerConversion()

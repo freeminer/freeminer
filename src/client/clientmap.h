@@ -230,6 +230,8 @@ public:
 	}
 
 private:
+	void renderMapShadowsFm(video::IVideoDriver *driver,
+			ModifyMaterialCallback cb, s32 pass, int frame, int total_frames);
 	v3pos_t m_camera_position_node;
 	// Request enough near data for the step-0 core, independently of retained
 	// coarse far cells. The configured range remains unchanged for fog and UI.
@@ -239,6 +241,10 @@ private:
 	std::atomic_bool m_drawlist_current = false;
 	std::recursive_mutex m_drawlist_mutex;
 	std::shared_ptr<const farmesh::FarDrawState> m_far_draw_state;
+	//  Pin one coherent draw-list snapshot for both scene passes.
+	std::vector<std::pair<v3bpos_t, MapBlockPtr>> m_render_drawlist_snapshot;
+	std::shared_ptr<const farmesh::FarDrawState> m_render_far_draw;
+	bool m_render_snapshot_valid = false;
 	using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
@@ -251,7 +257,8 @@ public:
 
 private:
 	void initFarFogMaterial();
-	void updateFarFogCells();
+	void updateFarFogCells(pos_t fog_range);
+	std::atomic<pos_t> m_cache_volumetric_fog{};
 	u32 rebuildFarFogMeshBuffer();
 
 public:

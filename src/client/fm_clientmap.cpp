@@ -53,10 +53,10 @@ irr_ptr<ClientMap> ClientMap::create(Client *client, RenderingEngine *rendering_
 
 void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 {
-	// fm: Switch the far grid before calculating this frame's near/far ownership.
+	// Switch the far grid before calculating this frame's near/far ownership.
 	if (m_client->farmesh)
 		m_client->farmesh->commitFarGrid();
-	// ===
+
 	ScopeProfiler sp(g_profiler, "CM::updateDrawList()", SPT_AVG);
 	TimeTaker timer_step("ClientMap::updateDrawList");
 
@@ -142,7 +142,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		}
 	}
 
-	// fm: A loaded member block can need a mesh even when its chunk origin was
+	// A loaded member block can need a mesh even when its chunk origin was
 	// omitted by the server. Keep one request source and only draw at the origin.
 	struct NearChunk
 	{
@@ -160,7 +160,6 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		if (pos == bp)
 			chunk.origin = block;
 	}
-	// ===
 
 	struct NearCandidate
 	{
@@ -190,7 +189,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 		const auto mesh_revision = block->getMeshRevision();
 		const bool missing_or_wrong = !mesh || mesh->lod_step != mesh_step;
 
-		// fm: Deduplicate actual work, not a revision marker that can outlive
+		// Deduplicate actual work, not a revision marker that can outlive
 		// rejected results or an unloaded chunk origin.
 		if (missing_or_wrong && (m_mesh_queued < maxq || range_blocks <= 2) &&
 				!m_client->isMeshUpdatePending(bp)) {
@@ -207,11 +206,10 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				m_client->addUpdateMeshTaskWithEdge(bp, false, false, mesh_step);
 			++m_mesh_queued;
 		}
-		// ===
 	};
 
-	// fm: Keep nearby loaded data alive while its meshes are built.
-	// ===
+	// Keep nearby loaded data alive while its meshes are built.
+
 	for (const auto &[bp, block] : vector) {
 		if (!block)
 			continue;
@@ -239,7 +237,7 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 	sortMeshUpdatesNearFirst(
 			ordered_chunks, camera_block, [](const auto &chunk) { return chunk.first; });
 
-	// fm: Queue each populated chunk once, including an absent origin. Meshing
+	// Queue each populated chunk once, including an absent origin. Meshing
 	// from a loaded member creates the origin block when the result is installed.
 	for (const auto &[bp, chunk] : ordered_chunks) {
 		const auto &block = chunk.origin;
@@ -247,27 +245,25 @@ void ClientMap::updateDrawListFm(float dtime, unsigned int max_cycle_ms)
 				!farmesh::cellIntersectsRange(bp * MAP_BLOCKSIZE, near_cell_width,
 						m_camera_position_node, requested_range))
 			continue;
-		// ===
 
 		const auto near_cell_min = bp * MAP_BLOCKSIZE;
 		const auto distance = radius_box(near_cell_min, m_camera_position_node);
 		const int range_blocks = distance / MAP_BLOCKSIZE;
 		const auto mesh_step = farmesh::getLodStep(m_control, camera_block, bp, speedf);
-		// fm: A non-origin member is only a request source, never a mesh owner.
+		// A non-origin member is only a request source, never a mesh owner.
 		const auto mesh =
 				block ? block->getLodMesh(mesh_step, true) : MapBlock::mesh_type{};
-		// ===
+
 		// A completed near LOD covers the chunk while its requested LOD builds.
 		// Requiring an exact LOD here hides terrain again whenever the camera moves.
 		const bool covers_cell = bool(mesh);
 
-		// fm: Empty completed chunks are ready. Missing origins need a request
+		// Empty completed chunks are ready. Missing origins need a request
 		// through a member that exists in the map, as addUpdateMeshTask requires.
 		if (!covers_cell)
 			++blocks_in_range_without_mesh;
 		const auto &source = block ? block : chunk.source;
 		request_mesh(source->getPos(), source, mesh_step, mesh, range_blocks);
-		// ===
 
 		NearCandidate candidate{bp, block, mesh, range_blocks};
 		if (mesh)

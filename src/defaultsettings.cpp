@@ -168,8 +168,8 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("enable_zoom_cinematic", "true");
 	settings->setDefault("wanted_fps", slow ? "25" : "30");
 	settings->setDefault("lodmesh", slow ? "3" : "5");
-	const auto farmesh = slow	   ? "5000"
-						 : medium ? "10000"
+	const auto farmesh = slow	   ? "2000"
+						 : medium ? "5000"
 								   : "100000"
 			// std::to_string(FARMESH_LIMIT / 2)
 			;
@@ -182,7 +182,7 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("farmesh_stable", "20");
 	settings->setDefault("farmesh_server", "1");
 	settings->setDefault("farmesh_all_changed", slow	 ? "1000"
-												: medium ? "3000"
+												: medium ? "2000"
 														 : "10000");
 	settings->setDefault("farmesh_surface_depth", "-1");
 	settings->setDefault("farmesh_fast_faces", medium ? "true" : "false");
@@ -438,7 +438,7 @@ void fm_set_default_settings(Settings *settings)
 
 #ifdef __EMSCRIPTEN__
 	settings->setDefault("viewing_range", "100");
-	settings->setDefault("client_mapblock_limit", "1000");
+	settings->setDefault("client_mapblock_limit", "3000");
 #endif
 }
 
@@ -1006,7 +1006,7 @@ void set_default_settings()
 	settings->setDefault("max_block_generate_distance", "5");
 	settings->setDefault("sqlite_synchronous", "1");
 	settings->setDefault("server_map_save_interval", "15");
-	settings->setDefault("client_mapblock_limit", "1500");
+	settings->setDefault("client_mapblock_limit", "5000");
 	settings->setDefault("active_block_range", "2");
 	settings->setDefault("viewing_range", "70");
 	settings->setDefault("leaves_style", "simple");
