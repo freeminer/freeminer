@@ -57,7 +57,7 @@ public:
 		TEST(testListedNonResidentialPartRelationDoesNotInheritHousing);
 		TEST(testHousingPartRelationUsesHousingStoreyHeight);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
-		TEST(testRepeatedRelationAreaTagsLeaveIndependentWayTags);
+		TEST(testRepeatedRelationAreaOuterSuppressionMatchesRust);
 	}
 
 	void testNestedOuterGetsItsOwnHoleGroup()
@@ -535,36 +535,35 @@ public:
 				(*derived)[3] == 3.5);
 	}
 
-	void testRepeatedRelationAreaTagsLeaveIndependentWayTags()
+	void testRepeatedRelationAreaOuterSuppressionMatchesRust()
 	{
-		arnis::tags_t water_way;
-		water_way.emplace("natural", "water");
-		water_way.emplace("water", "lake");
-		water_way.emplace("highway", "footway");
+		arnis::tags_t repeated_outer;
+		repeated_outer.emplace("natural", "water");
+		repeated_outer.emplace("name", "Lake");
+		repeated_outer.emplace("wikidata", "Q123");
 		arnis::tags_t water_relation;
 		water_relation.emplace("natural", "water");
-		water_relation.emplace("water", "lake");
-		arnis::osm_parser::drop_repeated_area_tags(water_way, water_relation);
-		UASSERT(!water_way.contains("natural"));
-		UASSERT(!water_way.contains("water"));
-		UASSERT(water_way.get("highway") == "footway");
+		UASSERT(arnis::osm_parser::repeats_relation_area_tags(
+				repeated_outer, water_relation));
 
-		arnis::tags_t land_way;
-		land_way.emplace("landuse", "residential");
-		land_way.emplace("highway", "service");
-		land_way.emplace("name", "Old road");
+		// An outer with a separate highway feature remains a standalone way.
+		arnis::tags_t independent_way = repeated_outer;
+		independent_way.emplace("highway", "footway");
+		UASSERT(!arnis::osm_parser::repeats_relation_area_tags(
+				independent_way, water_relation));
+
+		// A differently-valued classification is not repeated relation data.
+		arnis::tags_t different_water;
+		different_water.emplace("water", "lake");
 		arnis::tags_t land_relation;
-		land_relation.emplace("landuse", "residential");
-		arnis::osm_parser::drop_repeated_area_tags(land_way, land_relation);
-		UASSERT(!land_way.contains("landuse"));
-		UASSERT(land_way.get("highway") == "service");
-		UASSERT(land_way.get("name") == "Old road");
+		land_relation.emplace("water", "river");
+		UASSERT(!arnis::osm_parser::repeats_relation_area_tags(
+				different_water, land_relation));
 
-		arnis::tags_t unrelated_way;
-		unrelated_way.emplace("landuse", "forest");
-		unrelated_way.emplace("highway", "track");
-		arnis::osm_parser::drop_repeated_area_tags(unrelated_way, land_relation);
-		UASSERT(unrelated_way.get("landuse") == "forest");
+		arnis::tags_t metadata_only;
+		metadata_only.emplace("name", "Unclassified ring");
+		UASSERT(!arnis::osm_parser::repeats_relation_area_tags(
+				metadata_only, water_relation));
 	}
 };
 

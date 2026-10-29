@@ -437,6 +437,9 @@ public:
 		// their own way below, just as the Rust parser creates a new Arc there.
 		std::unordered_map<std::uint64_t, std::shared_ptr<arnis::ProcessedWay>>
 				shared_relation_ways;
+		// fm: Match Rust's repeating_outers pass after all role inference is done.
+		std::unordered_set<std::uint64_t> repeated_area_outer_ids;
+		// ===
 		for (auto &pending : pending_relations) {
 			std::vector<std::shared_ptr<arnis::ProcessedWay>> member_ways(
 					pending.ways.size());
@@ -619,26 +622,32 @@ public:
 					pending.relation.members.end(), [](const auto &member) {
 						return member.role == arnis::ProcessedMemberRole::Inner;
 					});
-			if (holed && tags.get("type") == "multipolygon" &&
-					!tags.contains("building") && !tags.contains("building:part")) {
+			// fm: Rust removes only redundant standalone closed area ways. Do not
+			// strip tag values in place: a differently classified outer may still
+			// represent an independent water or land-use feature.
+			const auto area_kind = arnis::element_processing::relation_area(tags);
+			if (holed && area_kind &&
+					arnis::element_processing::relation_area_draws_area(*area_kind, tags)) {
 				for (std::size_t i = 0; i < member_ways.size(); ++i) {
-					if (member_ways[i] && pending.ways[i].role &&
-							*pending.ways[i].role == arnis::ProcessedMemberRole::Outer &&
-							way_indices.contains(member_ways[i]->id)) {
-						auto &standalone_way =
-								elements[way_indices.at(member_ways[i]->id)].as_way();
-						arnis::osm_parser::drop_repeated_area_tags(
-								standalone_way.tags, tags);
-					}
+					if (!member_ways[i] || !roles[i] ||
+							*roles[i] != arnis::ProcessedMemberRole::Outer ||
+							!closed_ring(*member_ways[i]))
+						continue;
+					if (arnis::osm_parser::repeats_relation_area_tags(
+							member_ways[i]->tags, tags))
+						repeated_area_outer_ids.insert(member_ways[i]->id);
 				}
 			}
+			// ===
 			if (!pending.relation.members.empty())
 				elements.emplace_back(std::move(pending.relation));
 		}
 		elements.erase(std::remove_if(elements.begin(), elements.end(),
 							   [&](const auto &element) {
 								   return element.is_way() &&
-										  element.as_way().nodes.empty();
+										  (element.as_way().nodes.empty() ||
+												repeated_area_outer_ids.contains(
+													element.as_way().id));
 							   }),
 				elements.end());
 		if (unresolved_node_refs > 0) {

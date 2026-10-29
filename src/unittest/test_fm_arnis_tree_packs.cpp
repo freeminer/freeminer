@@ -19,11 +19,14 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <limits>
 #include <nlohmann/json.hpp>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class TestFmArnisTreePacks : public TestBase
@@ -40,6 +43,9 @@ public:
 		TEST(testTreeConnectivityDenseAndSparse);
 		TEST(testTreePackCrownCapsAndSlotSpacing);
 		TEST(testMappedPackTreesKeepPositionAndAreNeverThinned);
+		TEST(testMappedPackTreesStandInEveryEcoregionMix);
+		TEST(testTreeRowPositionsMatchRust);
+		TEST(testMappedTreeTagsMatchRust);
 		TEST(testPackTreeHeightFollowsRequestedCanopyHeight);
 		TEST(testTreeSlotClaimIsUnique);
 		TEST(testScatteredTreesRespectSealedSurface);
@@ -233,6 +239,122 @@ public:
 			UASSERT(selected->x == x && selected->z == z);
 			UASSERT(library->schematic(selected->schematic_index) != nullptr);
 		}
+	}
+
+	void testMappedPackTreesStandInEveryEcoregionMix()
+	{
+		using namespace arnis::trees;
+		struct Case
+		{
+			const char *pack;
+			std::uint16_t ecoregion;
+		};
+		// These exercise cross-pack communities: the local realm pack can have
+		// no usable species of the requested leaf type, but a mapped tree must
+		// still resolve a model from its ecoregion's complete mix.
+		for (const auto &[pack, eco_id] :
+				std::array<Case, 3>{{{"eur", 795}, {"ena", 330}, {"sam", 576}}}) {
+			const auto source =
+					TreePackSource::embedded(pack, arnis::assets::path("tree-packs"));
+			const auto library = RegionSelector::load(source, 1.0, -62, SizeFilter{},
+					false, 0.0, std::vector<std::uint16_t>{eco_id});
+			UTEST(library.has_value(), "Failed to load tree pack %s for ecoregion %u",
+					pack, static_cast<unsigned>(eco_id));
+			if (!library)
+				continue;
+			const auto eco = arnis::ecoregion::lookup(eco_id);
+			UTEST(eco.has_value(), "Missing ecoregion data for %u",
+					static_cast<unsigned>(eco_id));
+			if (!eco)
+				continue;
+			for (const auto conifer : {std::optional<bool>{}, std::optional<bool>{true},
+						 std::optional<bool>{false}}) {
+				for (int k = 0; k < 500; ++k) {
+					const int x = k * 37 % 3001 - 1500;
+					const int z = k * 91 % 2999 - 1500;
+					MappedRequest request;
+					request.eco = eco;
+					request.conifer = conifer;
+					const auto selected =
+							library->pick_mapped(x, z, Habitat::Lowland, 0, request);
+					UTEST(selected.has_value(),
+							"No mapped tree selected for %s ecoregion %u conifer=%d",
+							pack, static_cast<unsigned>(eco_id),
+							conifer ? (*conifer ? 1 : 0) : -1);
+					if (selected)
+						UASSERT(selected->x == x && selected->z == z);
+				}
+			}
+		}
+	}
+
+	void testTreeRowPositionsMatchRust()
+	{
+		using namespace arnis::trees::mapped;
+		std::unordered_map<std::string, std::string> row_tags{{"natural", "tree_row"}};
+		UASSERT(is_tree_row(row_tags));
+		for (const char *key : {"building", "building:part", "highway", "landuse"}) {
+			row_tags.emplace(key, "yes");
+			UASSERT(!is_tree_row(row_tags));
+			row_tags.erase(key);
+		}
+
+		const std::vector<std::pair<int, int>> straight{{0, 0}, {40, 0}};
+		UASSERT((tree_row_positions(straight, 1.0) ==
+				 std::vector<std::pair<int, int>>{
+						 {0, 0}, {8, 0}, {16, 0}, {24, 0}, {32, 0}, {40, 0}}));
+
+		// Spacing follows the polyline around a corner, not the endpoint chord.
+		const std::vector<std::pair<int, int>> bent{{0, 0}, {12, 0}, {12, 12}};
+		const auto bent_positions = tree_row_positions(bent, 1.0);
+		UASSERT(bent_positions.size() == 4);
+		if (!bent_positions.empty()) {
+			UASSERT((bent_positions.front() == std::pair<int, int>{0, 0}));
+			UASSERT((bent_positions.back() == std::pair<int, int>{12, 12}));
+		}
+		UASSERT(tree_row_positions(straight, 0.5).size() == 11);
+		UASSERT((tree_row_positions({{3, 4}}, 1.0) ==
+				 std::vector<std::pair<int, int>>{{3, 4}}));
+	}
+
+	void testMappedTreeTagsMatchRust()
+	{
+		using arnis::TreeType;
+		using arnis::trees::mapped::MappedTree;
+		auto from = [](std::initializer_list<std::pair<const std::string, std::string>>
+									pairs) {
+			return MappedTree::from_tags(
+					std::unordered_map<std::string, std::string>(pairs), 1);
+		};
+
+		auto robinia = from({{"species", "Robinia pseudoacacia"}});
+		UASSERT(robinia.kind == TreeType::Oak || robinia.kind == TreeType::TallOak);
+		UASSERT(robinia.genus == std::optional<std::string>("Robinia"));
+		UASSERT(robinia.conifer == std::optional<bool>(false));
+
+		UASSERT(from({{"genus", "Tilia"}}).genus == std::optional<std::string>("Tilia"));
+		UASSERT(from({{"species", "tilia cordata 'Greenspire'"}}).genus ==
+				std::optional<std::string>("Tilia"));
+		UASSERT(from({{"genus:wikidata", "Q12004"}}).genus ==
+				std::optional<std::string>("Betula"));
+		UASSERT(!from({{"leaf_type", "broadleaved"}}).genus);
+
+		const auto yew = from({{"species", "Taxus baccata"}});
+		UASSERT(yew.kind == TreeType::Spruce);
+		UASSERT(yew.conifer == std::optional<bool>(true));
+		const auto pine = from({{"species", "Pinus nigra"}});
+		UASSERT(pine.kind == TreeType::Pine);
+		const auto tagged_conifer =
+				from({{"species", "Foo bar"}, {"leaf_type", "needleleaved"}});
+		UASSERT(tagged_conifer.kind == TreeType::Spruce ||
+				tagged_conifer.kind == TreeType::Pine);
+		UASSERT(tagged_conifer.conifer == std::optional<bool>(true));
+		UASSERT(!from({}).conifer);
+
+		UASSERT(from({{"height", "12"}}).height_m == 12.0);
+		UASSERT(from({{"height", "12.5 m"}}).height_m == 12.5);
+		UASSERT(!from({{"height", "0"}}).height_m);
+		UASSERT(!from({{"height", "tall"}}).height_m);
 	}
 
 	void testPackTreeHeightFollowsRequestedCanopyHeight()
