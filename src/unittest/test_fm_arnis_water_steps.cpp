@@ -1,11 +1,14 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/block_definitions.h"
+#include "mapgen/earth/arnis-cpp/src/land_cover/land_cover.h"
 #include "mapgen/earth/arnis-cpp/src/water_depth.h"
 #include "mapgen/earth/arnis-cpp/src/water_steps.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 class TestFmArnisWaterSteps : public TestBase
 {
@@ -16,6 +19,8 @@ public:
 	{
 		TEST(testOneBlockWaterDropGetsVanillaRunUp);
 		TEST(testBoundedTreeClearStopsAtItsColumns);
+		TEST(testCarveDepthEstimateHandlesNoWater);
+		TEST(testCarveDepthEstimateCapsLargeWaterBodies);
 	}
 
 	void testOneBlockWaterDropGetsVanillaRunUp()
@@ -69,6 +74,20 @@ public:
 
 		water_depth::clear_tree_from(editor, 21, 2, 5);
 		UASSERT(is_empty(63, 2));
+	}
+
+	void testCarveDepthEstimateHandlesNoWater()
+	{
+		const std::vector<std::vector<std::uint8_t>> grid(
+				16, std::vector<std::uint8_t>(16, arnis::land_cover::LC_GRASSLAND));
+		UASSERT(arnis::water_depth::estimate_max_carve_depth(grid, 16, 16) == 0);
+	}
+
+	void testCarveDepthEstimateCapsLargeWaterBodies()
+	{
+		const std::vector<std::vector<std::uint8_t>> grid(
+				32, std::vector<std::uint8_t>(32, arnis::land_cover::LC_WATER));
+		UASSERT(arnis::water_depth::estimate_max_carve_depth(grid, 32, 32) == 6);
 	}
 };
 

@@ -413,6 +413,11 @@ mg_math () string {"generator":"sphere"}
 #some possible params:
 #mg_math = {"generator":"mengersponge", "size":1000, "distance":0.01, "center":{"x":5,"y":-100,"z":42}, "invert":1, "scale":0.001, "iterations":10}
 
+#    Minimum power-of-two step level at which Earth mapgen tries the coarse
+#    world elevation raster first. Lower values use it at finer levels; 256
+#    disables it. Missing raster values fall back to detailed elevation data.
+#    Read when Earth map data is initialized.
+earth_world_elevation_step (Earth coarse elevation minimum step) int 11 0 256
 
 # Player model animations (sent to client to be handled locally)
 # NOT USED!

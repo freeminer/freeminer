@@ -59,7 +59,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Thread-local container cache definition
 thread_local hgts::ThreadLocalContainerCache hgts::tl_container_cache;
 
-hgts::hgts(const std::string &folder) : folder{folder}
+hgts::hgts(const std::string &folder, int16_t world_elevation_step) :
+		folder{folder}, world_elevation_step{world_elevation_step}
 {
 	std::error_code ec;
 	std::filesystem::create_directories(folder, ec);
@@ -125,8 +126,7 @@ height::height_t hgts::get(
 	For custom horizontal scales, choose the first level where:
 	(1ULL << step) * std::min(scale.X, scale.Z) >= 1855.0
 	*/
-	// TODO: configurable by setting, less to emscripten/android/slow...
-	if (step >= 11) {
+	if (step >= world_elevation_step) {
 		if (const auto result = world_elevation.get(folder, lat, lon))
 			return *result;
 	}

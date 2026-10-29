@@ -1,6 +1,7 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis-cpp/src/bedrock_addon/models.h"
+#include "mapgen/earth/arnis-cpp/src/models_3d/voxelize.h"
 
 #include <cmath>
 
@@ -15,6 +16,9 @@ public:
 		TEST(testCubeCoordinatesMatchBedrockGeometryFrame);
 		TEST(testBrakeLampCreatesDimAndEmissiveBones);
 		TEST(testTiltUsesTheLowerCornerAsPivot);
+		TEST(testModelTransformIdentityAndWorldYaw);
+		TEST(testModelTransformIntrinsicYawAndScaleTranslation);
+		TEST(testModelTransformNonuniformWorldScale);
 	}
 
 	void testVisibleBoundsOffsetUsesUnroundedHeight()
@@ -80,6 +84,46 @@ public:
 		const auto &cube = geometry["minecraft:geometry"][0]["bones"][0]["cubes"][0];
 		UASSERT(cube["pivot"] == nlohmann::json::array({-16.0, 4.0, 32.0}));
 		UASSERT(std::abs(cube["rotation"][0].get<double>() + 28.648) < 1e-9);
+	}
+
+	void testModelTransformIdentityAndWorldYaw()
+	{
+		using arnis::models_3d::WorldTransform;
+		const auto identity =
+				WorldTransform(0.0, 1.0, {0, 0, 0}, 1.0, 0.0, 0, 0, 0).apply({1, 2, 3});
+		UASSERT(std::abs(identity[0] - 1.0f) < 1e-5f);
+		UASSERT(std::abs(identity[1] - 2.0f) < 1e-5f);
+		UASSERT(std::abs(identity[2] - 3.0f) < 1e-5f);
+
+		const auto rotated =
+				WorldTransform(0.0, 1.0, {0, 0, 0}, 1.0, 90.0, 0, 0, 0).apply({1, 0, 0});
+		UASSERT(std::abs(rotated[0]) < 1e-5f);
+		UASSERT(std::abs(rotated[2] - 1.0f) < 1e-5f);
+	}
+
+	void testModelTransformIntrinsicYawAndScaleTranslation()
+	{
+		using arnis::models_3d::WorldTransform;
+		const auto rotated =
+				WorldTransform(90.0, 1.0, {0, 0, 0}, 1.0, 0.0, 0, 0, 0).apply({1, 0, 0});
+		UASSERT(std::abs(rotated[0]) < 1e-5f);
+		UASSERT(std::abs(rotated[2] - 1.0f) < 1e-5f);
+
+		const auto translated =
+				WorldTransform(0.0, 2.0, {5, 0, 0}, 1.0, 0.0, 0, 0, 0).apply({1, 0, 0});
+		UASSERT(std::abs(translated[0] - 7.0f) < 1e-5f);
+		UASSERT(std::abs(translated[1]) < 1e-5f);
+		UASSERT(std::abs(translated[2]) < 1e-5f);
+	}
+
+	void testModelTransformNonuniformWorldScale()
+	{
+		const auto transformed = arnis::models_3d::WorldTransform::with_world_scale_xyz(
+				0.0, 1.0, {0, 0, 0}, {3.0f, 5.0f, 7.0f}, 0.0, 0, 0, 0)
+										 .apply({1, 1, 1});
+		UASSERT(std::abs(transformed[0] - 3.0f) < 1e-5f);
+		UASSERT(std::abs(transformed[1] - 5.0f) < 1e-5f);
+		UASSERT(std::abs(transformed[2] - 7.0f) < 1e-5f);
 	}
 };
 
