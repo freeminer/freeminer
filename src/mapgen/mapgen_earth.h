@@ -108,7 +108,8 @@ struct EarthVerticalBounds
 struct maps_holder_t
 {
 	const std::string data_root{porting::path_cache + DIR_DELIM + "earth"};
-	hgts hgt_reader{data_root};
+	hgts hgt_reader;
+	explicit maps_holder_t(int16_t world_elevation_step);
 	using osm_ptr = std::shared_ptr<handler_i>;
 	// Parsed dense-city extracts are large; keep only the active neighbourhood.
 	lru_cache<std::string, osm_ptr, 4> osm_bbox;

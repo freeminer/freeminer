@@ -209,8 +209,10 @@ void Connection::handle_association_change_event(
 		} else {
 			m_established_peers.insert(peer_id);
 			m_peer_activity[peer_id] = {0, porting::getTimeMs()};
-			if (peer_id == PEER_ID_SERVER)
+			if (peer_id == PEER_ID_SERVER) {
+				m_last_recieved = porting::getTimeMs();
 				m_association_ready.store(true, std::memory_order_release);
+			}
 		}
 		break;
 	case SCTP_COMM_LOST:
@@ -512,6 +514,9 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				   << stream_id << std::endl;
 				return {0, false};
 			}
+
+			if (peer_id == PEER_ID_SERVER)
+				m_last_recieved = porting::getTimeMs();
 
 			auto &stream_recv_buf = peer_recv_buf[stream_id];
 			if (auto message = assembleSctpMessage(stream_recv_buf,

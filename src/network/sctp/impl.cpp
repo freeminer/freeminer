@@ -166,7 +166,7 @@ void Connection::checkPeerTimeouts()
 	if (u32(now - m_last_timeout_check) < 1000)
 		return;
 	m_last_timeout_check = now;
-	std::vector<session_t> expired;
+	std::vector<std::pair<session_t, bool>> expired;
 	for (auto &[id, activity] : m_peer_activity) {
 		auto *peer = getPeer(id);
 		if (!peer)
@@ -180,13 +180,20 @@ void Connection::checkPeerTimeouts()
 				response.assoc_value != activity.first) {
 			activity = {response.assoc_value, now};
 		}
-		if (u32(now - activity.second) >= m_peer_timeout_ms)
-			expired.push_back(id);
+		// A live control plane does not prove that game data can be delivered.
+		// Servers send time-of-day updates every five seconds, even when idle.
+		// Limit this check to clients: generic/idle peers may send no game data.
+		const bool data_stalled =
+				id == PEER_ID_SERVER && u32(now - m_last_recieved) >= m_peer_timeout_ms;
+		if (data_stalled || u32(now - activity.second) >= m_peer_timeout_ms)
+			expired.emplace_back(id, data_stalled);
 	}
-	for (auto id : expired) {
-		warningstream << "SCTP peer " << id << " timed out: no peer response for "
+	for (auto [id, data_stalled] : expired) {
+		warningstream << "SCTP peer " << id << " timed out: no "
+					  << (data_stalled ? "game data" : "peer response") << " for "
 					  << m_peer_timeout_ms / 1000 << " seconds" << std::endl;
-		logPaths(id, getPeer(id), "peer response timeout");
+		logPaths(id, getPeer(id),
+				data_stalled ? "game data timeout" : "peer response timeout");
 		deletePeer(id, true);
 	}
 }

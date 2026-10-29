@@ -17,15 +17,23 @@ endif()
 if(USE_OSMIUM)
 	list(APPEND unittest_SRCS
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_bridge_clipping.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_bedrock_models.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_aerialways.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_attractions.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_block_mapping.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_deferred_placement.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_disaster_surface.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_floodfill.cpp
+		# fm: Rust fuel-station forecourt placement regression.
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_fuel_stations.cpp
+		# ===
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mapillary_atlas.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mode_filter.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_natural.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_naturalize.cpp
+		# fm: Rust osm_land_override shoreline, channel, pool and over-water parity cases.
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_osm_land_override.cpp
+		# ===
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_peaks.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_planes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_railways.cpp
@@ -36,6 +44,9 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_swimming_pools.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_terrain_surface.cpp
+		# fm: C++ regression for the Rust area-wide traffic-signal index.
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_traffic_lights.cpp
+		# ===
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_train_speed.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_tree_packs.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_steps.cpp

@@ -3,6 +3,8 @@
 #include "mapgen/earth/arnis-cpp/src/element_processing/aerialways.h"
 #include "mapgen/earth/arnis-cpp/src/clipping.h"
 
+#include <cstdint>
+#include <utility>
 #include <vector>
 
 class TestFmArnisAerialways : public TestBase
@@ -14,6 +16,7 @@ public:
 	{
 		TEST(testLiftKindsMatchRust);
 		TEST(testCorridorCoversLineAndTerminals);
+		TEST(testCorridorsStopAtWorldEdge);
 		TEST(testClippedLiftEndIsNotAnOsmTerminal);
 		TEST(testNoLiftsReturnEmptyBitmap);
 	}
@@ -53,6 +56,36 @@ public:
 		UASSERT(corridors.contains(125, 8));
 		UASSERT(!corridors.contains(125, 20));
 		UASSERT(corridors.contains(-12, 0));
+	}
+
+	void testCorridorsStopAtWorldEdge()
+	{
+		const XZBBox bounds(0, 0, 400, 400);
+		auto lift = [](std::uint64_t id, int ax, int az, int bx, int bz) {
+			arnis::ProcessedWay way{};
+			way.id = id;
+			way.tags.emplace("aerialway", "chair_lift");
+			arnis::ProcessedNode start{};
+			start.id = id;
+			start.x = ax;
+			start.z = az;
+			arnis::ProcessedNode end{};
+			end.id = id + 1;
+			end.x = bx;
+			end.z = bz;
+			way.nodes = {start, end};
+			return arnis::ProcessedElement{std::move(way)};
+		};
+		const auto inside = lift(1, -100, 200, 100, 200);
+		const auto outside = lift(3, -500, -500, -450, -500);
+		const auto corridors =
+				arnis::aerialways::clear_corridors({inside, outside}, bounds);
+		UASSERT(corridors.contains(0, 200));
+		UASSERT(corridors.contains(100, 208));
+		UASSERT(corridors.contains(112, 200));
+		UASSERT(!corridors.contains(300, 200));
+		UASSERT(!corridors.contains(0, 0));
+		UASSERT(arnis::aerialways::clear_corridors({outside}, bounds).is_empty());
 	}
 
 	void testNoLiftsReturnEmptyBitmap()

@@ -5,18 +5,25 @@
 #include "mapgen/earth/arnis-cpp/src/element_processing/tree.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis-cpp/src/trees/region.h"
+#include "mapgen/earth/arnis-cpp/src/trees/mapped.h"
 #include "mapgen/earth/arnis-cpp/src/trees/schematic.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis-cpp/src/trees/tree_pack.h"
 #include "mapgen/earth/arnis-cpp/src/structures/schem_decoder.h"
+#include "mapgen/earth/arnis_ground.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
+#include <array>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
 class TestFmArnisTreePacks : public TestBase
 {
@@ -25,14 +32,90 @@ public:
 	const char *getName() override { return "TestFmArnisTreePacks"; }
 	void runTests(IGameDef *) override
 	{
+		TEST(testSchematicUsesBlockDefaultProperties);
 		TEST(testContributedTreePackAssets);
 		TEST(testTreePackRealmMapping);
 		TEST(testTreeSizeTiers);
 		TEST(testTreeConnectivityDenseAndSparse);
 		TEST(testTreePackCrownCapsAndSlotSpacing);
+		TEST(testMappedPackTreesKeepPositionAndAreNeverThinned);
+		TEST(testPackTreeHeightFollowsRequestedCanopyHeight);
+		TEST(testTreeSlotClaimIsUnique);
 		TEST(testScatteredTreesRespectSealedSurface);
 		TEST(testMappedTreesMayUseSealedSurface);
 		TEST(testMappedTreesMayUsePavingButNeverWater);
+		TEST(testMappedTreeTypicalHeightUsesSeenCanopyMedian);
+		TEST(testCanopyMeasuredMatchesCanopyCellAvailability);
+	}
+
+	void testSchematicUsesBlockDefaultProperties()
+	{
+		// Rust maps this structure-only palette alias to smooth sandstone too.
+		UASSERT(arnis::structures::resolve_schem_block("minecraft:cut_sandstone") ==
+				arnis::SMOOTH_SANDSTONE);
+
+		const auto trapdoor = arnis::structures::resolve_schem_block_with_properties(
+				"minecraft:oak_trapdoor");
+		const auto expected = arnis::default_block_properties(trapdoor.block);
+		UASSERT(!expected.empty());
+		UASSERT(trapdoor.property_values() == expected);
+		UASSERT(trapdoor.property_values().at("facing") == "north");
+		UASSERT(trapdoor.property_values().at("open") == "true");
+		UASSERT(trapdoor.property_values().at("half") == "top");
+
+		// Explicit palette states take precedence over block defaults just as in
+		// Rust's make_palette_item(stored_props.or_else(Block::properties)).
+		const auto explicit_state =
+				arnis::structures::resolve_schem_block_with_properties(
+						"minecraft:oak_trapdoor[facing=south,open=false,half=bottom]");
+		UASSERT(explicit_state.property_values().at("facing") == "south");
+		UASSERT(explicit_state.property_values().at("open") == "false");
+		UASSERT(explicit_state.property_values().at("half") == "bottom");
+	}
+
+	void testCanopyMeasuredMatchesCanopyCellAvailability()
+	{
+		arnis::Ground ground = arnis::Ground::new_flat(0);
+		ground.set_world_dims(4, 4);
+		std::vector<std::uint8_t> canopy(16, arnis::canopy::CANOPY_NODATA);
+		canopy[1] = 9;
+		ground.set_canopy_data(canopy, 4, 4);
+
+		const std::array<std::array<int, 3>, 4> probes{
+				{{{0, 0, 2}}, {{2, 0, 2}}, {{0, 3, 1}}, {{0, 0, 0}}}};
+		for (const auto &probe : probes) {
+			const arnis::XZPoint origin{probe[0], probe[1]};
+			UASSERT(ground.canopy_measured(origin, probe[2]) ==
+					ground.canopy_cell(origin, probe[2]).has_value());
+		}
+		UASSERT(!arnis::Ground::new_flat(0).canopy_measured({0, 0}, 2));
+	}
+
+	void testMappedTreeTypicalHeightUsesSeenCanopyMedian()
+	{
+		std::vector<arnis::ProcessedElement> trees;
+		for (std::uint64_t i = 0; i < 30; ++i) {
+			arnis::ProcessedNode node{};
+			node.id = i;
+			node.tags.emplace("natural", "tree");
+			node.x = static_cast<int>(i) * 10;
+			node.z = 0;
+			trees.emplace_back(node);
+		}
+
+		auto trunks = arnis::trees::mapped::MappedTrunks::collect(trees, 1.0);
+		trunks.measure_typical_height([](int x, int) -> std::optional<std::uint8_t> {
+			return x % 20 == 0 ? std::optional<std::uint8_t>(
+										 static_cast<std::uint8_t>(4 + x / 20))
+							   : std::nullopt;
+		});
+		UASSERT(trunks.typical_height_m() == 11.0);
+
+		auto sparse = arnis::trees::mapped::MappedTrunks::collect(trees, 1.0);
+		sparse.measure_typical_height([](int x, int) -> std::optional<std::uint8_t> {
+			return x < 50 ? std::optional<std::uint8_t>(15) : std::nullopt;
+		});
+		UASSERT(!sparse.typical_height_m());
 	}
 
 	void testTreeConnectivityDenseAndSparse()
@@ -115,6 +198,87 @@ public:
 			return;
 		UASSERT(scaled->slot_spacing(true) == 4);
 		UASSERT(scaled->slot_spacing(false) == scaled->base_spacing());
+	}
+
+	void testMappedPackTreesKeepPositionAndAreNeverThinned()
+	{
+		using namespace arnis::trees;
+		const auto source =
+				TreePackSource::embedded("eur", arnis::assets::path("tree-packs"));
+		const auto library = RegionSelector::load(source, 1.0, -62);
+		UTEST(library.has_value(), "%s", "Failed to load European tree pack");
+		if (!library)
+			return;
+
+		for (int k = 0; k < 2000; ++k) {
+			const int x = k * 37 % 3001 - 1500;
+			const int z = k * 91 % 2999 - 1500;
+			const auto selected =
+					library->pick_mapped(x, z, Habitat::Lowland, 0, MappedRequest{});
+			UASSERT(selected.has_value());
+			if (!selected)
+				continue;
+			UASSERT(selected->x == x && selected->z == z);
+			UASSERT(library->schematic(selected->schematic_index) != nullptr);
+		}
+	}
+
+	void testPackTreeHeightFollowsRequestedCanopyHeight()
+	{
+		using namespace arnis::trees;
+		const auto source =
+				TreePackSource::embedded("eur", arnis::assets::path("tree-packs"));
+		const auto library = RegionSelector::load(source, 1.0, -62);
+		UTEST(library.has_value(), "%s", "Failed to load European tree pack");
+		if (!library)
+			return;
+
+		int previous_median = 0;
+		std::size_t expected_count = 0;
+		for (const int wanted : {5, 10, 15, 20, 25}) {
+			SlotRequest request;
+			request.want_height = wanted;
+			request.density_decided = true;
+			std::vector<int> heights;
+			for (int k = 0; k < 2000; ++k) {
+				const auto selected =
+						library->pick_slot(k * 3, k * 7, Habitat::Lowland, 0, request);
+				if (!selected)
+					continue;
+				const auto *schematic = library->schematic(selected->schematic_index);
+				UASSERT(schematic != nullptr);
+				if (schematic)
+					heights.push_back(schematic->height);
+			}
+			UASSERT(heights.size() > 1000);
+			if (heights.empty())
+				continue;
+			if (!expected_count)
+				expected_count = heights.size();
+			else
+				UASSERT(heights.size() == expected_count);
+
+			const int tolerance =
+					std::max(2, static_cast<int>(std::lround(wanted * .15)));
+			const auto close = std::count_if(heights.begin(), heights.end(),
+					[&](int h) { return std::abs(h - wanted) <= tolerance; });
+			UASSERT(close * 10 > heights.size() * 8);
+			std::sort(heights.begin(), heights.end());
+			const int median = heights[heights.size() / 2];
+			UASSERT(median > previous_median);
+			previous_median = median;
+		}
+	}
+
+	void testTreeSlotClaimIsUnique()
+	{
+		// Rust's regional tree placement claims the snapped trunk slot before
+		// stamping a schematic. Multiple cells in that slot must not graft a
+		// second tree onto the first one.
+		arnis::WorldEditor editor;
+		UASSERT(editor.claim_tree_slot(12, -7));
+		UASSERT(!editor.claim_tree_slot(12, -7));
+		UASSERT(editor.claim_tree_slot(13, -7));
 	}
 
 	void testScatteredTreesRespectSealedSurface()

@@ -413,6 +413,11 @@ mg_math () string {"generator":"sphere"}
 #some possible params:
 #mg_math = {"generator":"mengersponge", "size":1000, "distance":0.01, "center":{"x":5,"y":-100,"z":42}, "invert":1, "scale":0.001, "iterations":10}
 
+#    Minimum power-of-two step level at which Earth mapgen tries the coarse
+#    world elevation raster first. Lower values use it at finer levels; 256
+#    disables it. Missing raster values fall back to detailed elevation data.
+#    Read when Earth map data is initialized.
+earth_world_elevation_step (Earth coarse elevation minimum step) int 11 0 256
 
 # Player model animations (sent to client to be handled locally)
 # NOT USED!
@@ -435,6 +440,8 @@ mg_math () string {"generator":"sphere"}
 #    Disconnect an established SCTP peer after this many seconds without received
 #    data or control traffic, including heartbeat acknowledgements. Local send
 #    attempts do not extend the deadline. Applies to clients and servers.
+#    Clients also require received game data within this period; heartbeat and
+#    address-management traffic alone cannot keep a stalled game connected.
 #    When enabled, this deadline replaces association retry-count expiry;
 #    individual paths still fail over normally. Configure both endpoints.
 #    Zero restores SCTP retry-count expiry. Network changes must recover within
