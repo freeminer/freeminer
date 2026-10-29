@@ -230,6 +230,8 @@ public:
 	}
 
 private:
+	void renderMapShadowsFm(video::IVideoDriver *driver,
+			ModifyMaterialCallback cb, s32 pass, int frame, int total_frames);
 	v3pos_t m_camera_position_node;
 	// Request enough near data for the step-0 core, independently of retained
 	// coarse far cells. The configured range remains unchanged for fog and UI.
@@ -251,7 +253,8 @@ public:
 
 private:
 	void initFarFogMaterial();
-	void updateFarFogCells();
+	void updateFarFogCells(pos_t fog_range);
+	std::atomic<pos_t> m_cache_volumetric_fog{};
 	u32 rebuildFarFogMeshBuffer();
 
 public:
