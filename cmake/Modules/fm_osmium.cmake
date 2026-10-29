@@ -58,14 +58,18 @@ if(FETCH_DEPS AND NOT LZ4_LIBRARIES)
     )
     FetchContent_MakeAvailable(lz4)
     set(LZ4_LIBRARIES lz4_static)
+endif()
 
+if(FETCH_DEPS AND NOT PROTOZERO_INCLUDE_DIR AND NOT TARGET Protozero::Protozero)
     FetchContent_Declare(
         protozero GIT_REPOSITORY https://github.com/mapbox/protozero GIT_TAG v1.8.2 GIT_SHALLOW TRUE
         SOURCE_SUBDIR cmake ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(protozero)
     set(PROTOZERO_INCLUDE_DIR "${protozero_SOURCE_DIR}/include")
+endif()
 
+if(FETCH_DEPS AND NOT TARGET EXPAT::EXPAT)
     function(fm_fetch_expat)
         set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
         set(EXPAT_BUILD_TOOLS OFF)
@@ -100,7 +104,7 @@ if(NOT TARGET EXPAT::EXPAT)
     find_package(EXPAT QUIET)
 endif()
 # Osmium's supported readers need these libraries, regardless of header origin.
-if(NOT TARGET Boost::headers OR NOT PROTOZERO_INCLUDE_DIR OR NOT TARGET BZip2::BZip2
+if(NOT TARGET Boost::headers OR (NOT PROTOZERO_INCLUDE_DIR AND NOT TARGET Protozero::Protozero) OR NOT TARGET BZip2::BZip2
     OR NOT TARGET EXPAT::EXPAT
 )
     message(STATUS "Osmium disabled: requires Boost headers, protozero, BZip2 and EXPAT")
@@ -134,6 +138,9 @@ target_link_libraries(
 )
 if(TARGET Boost::geometry)
     target_link_libraries(fm_osmium INTERFACE Boost::geometry)
+endif()
+if(TARGET Protozero::Protozero)
+    target_link_libraries(fm_osmium INTERFACE Protozero::Protozero)
 endif()
 # The native voxelizer provides TinyGLTF's implementation when enabled.
 if(NOT USE_VOXEL_EARTH)

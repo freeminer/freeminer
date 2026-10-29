@@ -62,11 +62,14 @@ if(FETCH_OPENSSL)
         message(STATUS "Using system OpenSSL: ${OPENSSL_VERSION}")
     elseif(FETCH_DEPS)
         message(STATUS "System OpenSSL 3.0 not found; using bundled OpenSSL")
+        if(ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
+            # OpenSSL 4.0's AArch64 Poly1305 assembly has non-PIC SVE2 references.
+            list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
+        endif()
         FetchContent_Declare(
             openssl-cmake
             GIT_REPOSITORY https://github.com/jimmy-park/openssl-cmake
             GIT_TAG 48c3f910074784adab7fe422cb955d71eda8fc4b
-            SOURCE_SUBDIR cmake
             GIT_SUBMODULES_RECURSE OFF ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
             USES_TERMINAL_DOWNLOAD TRUE
             GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
@@ -112,6 +115,11 @@ elseif(FETCH_DEPS)
         set(Boost_FOUND "${Boost_FOUND}" PARENT_SCOPE)
     endfunction()
     fm_fetch_boost()
+    if(NOT TARGET Boost::headers)
+        add_library(fm_boost_headers INTERFACE)
+        target_include_directories(fm_boost_headers SYSTEM INTERFACE ${Boost_INCLUDE_DIRS})
+        add_library(Boost::headers ALIAS fm_boost_headers)
+    endif()
 else()
     message(STATUS "Boost not found; set FETCH_DEPS=ON to build bundled Boost")
 endif()
