@@ -45,8 +45,11 @@ namespace {
 		bool empty() const
 		{
 			for (auto &map : maps) {
-				if (!map.empty())
-					return false;
+				// fm: Retained material groups can have no buffers this pass.
+				for (const auto &entry : map)
+					if (!entry.second.empty())
+						return false;
+				// ===
 			}
 			return true;
 		}
@@ -56,6 +59,18 @@ namespace {
 			for (auto &map : maps)
 				map.clear();
 		}
+		// fm: Reuse allocations while bounding stale material keys.
+		void clearReuse()
+		{
+			for (auto &map : maps) {
+				if (map.size() > 4096)
+					map.clear();
+				else
+					for (auto &entry : map)
+						entry.second.clear();
+			}
+		}
+		// ===
 
 		void add(scene::IMeshBuffer *buf, v3s16 position, u8 layer)
 		{
@@ -1056,25 +1071,24 @@ static u32 transformBuffersToDrawOrder(
 void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 {
 
-	// fm: Pin the cutouts and their replacement meshes for this render pass.
-	std::shared_ptr<const farmesh::FarDrawState> far_draw;
-	// ===
-	std::vector<std::pair<v3bpos_t, MapBlockPtr>> drawlist_snapshot;
-	{
+	// fm: Pin the same draw list and cutouts for the solid and transparent passes.
+	const bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
+	if (!is_transparent_pass || !m_render_snapshot_valid) {
 		std::lock_guard<std::recursive_mutex> drawlist_lock(m_drawlist_mutex);
-		// fm:
-		far_draw = m_far_draw_state;
-		// ===
+		m_render_far_draw = m_far_draw_state;
 		const auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
-		drawlist_snapshot.reserve(m_drawlist.size());
+		m_render_drawlist_snapshot.clear();
+		m_render_drawlist_snapshot.reserve(m_drawlist.size());
 		for (const auto &it : m_drawlist)
-			drawlist_snapshot.emplace_back(it);
+			m_render_drawlist_snapshot.emplace_back(it);
+		m_render_snapshot_valid = true;
 	}
+	const auto &far_draw = m_render_far_draw;
+	const auto &drawlist_snapshot = m_render_drawlist_snapshot;
+	// ===
 	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ZoneScoped;
-
-	const bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
 
 	std::string prefix;
 	if (pass == scene::ESNRP_SOLID)
@@ -1119,7 +1133,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	MeshBufListMaps &grouped_buffers = tl_meshbuflistmaps;
 	DrawDescriptorList &draw_order = tl_drawdescriptorlist;
 	std::vector<MapBlock::mesh_type> mesh_keepalive;
-	grouped_buffers.clear();
+	// fm: Keep material groups and their allocated buffer lists between passes.
+	grouped_buffers.clearReuse();
+	// ===
 	draw_order.clear();
 
 	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
@@ -1232,6 +1248,10 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	assert(!is_transparent_pass || grouped_buffers.empty());
 	for (auto &map : grouped_buffers.maps) {
 		for (auto &list : map) {
+			// fm: Reused groups may be empty.
+			if (list.second.empty())
+				continue;
+			// ===
 			merged_count += transformBuffersToDrawOrder(
 				list.second, draw_order, get_block_wpos, m_dynamic_buffers);
 		}
@@ -1332,6 +1352,13 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	if(is_transparent_pass)
 		m_far_blocks_delete.clear();
+	// fm: Release pinned blocks after the paired pass.
+	if (is_transparent_pass) {
+		m_render_drawlist_snapshot.clear();
+		m_render_far_draw.reset();
+		m_render_snapshot_valid = false;
+	}
+	// ===
 
 	if (material_swaps && array_texture_use) {
 		int percent = (100.0f * array_texture_use) / material_swaps;

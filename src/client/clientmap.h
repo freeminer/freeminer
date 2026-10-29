@@ -241,6 +241,10 @@ private:
 	std::atomic_bool m_drawlist_current = false;
 	std::recursive_mutex m_drawlist_mutex;
 	std::shared_ptr<const farmesh::FarDrawState> m_far_draw_state;
+	//  Pin one coherent draw-list snapshot for both scene passes.
+	std::vector<std::pair<v3bpos_t, MapBlockPtr>> m_render_drawlist_snapshot;
+	std::shared_ptr<const farmesh::FarDrawState> m_render_far_draw;
+	bool m_render_snapshot_valid = false;
 	using drawlist_shadow_map = std::map<v3bpos_t, MapBlockPtr>;
 	drawlist_shadow_map m_drawlist_shadow_0, m_drawlist_shadow_1;
 	std::atomic_bool m_drawlist_shadow_current = false;
