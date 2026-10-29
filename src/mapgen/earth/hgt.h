@@ -155,6 +155,7 @@ class hgts
 	WorldElevation world_elevation;
 	std::map<int, std::map<int, std::shared_ptr<height>>> map1, map1_seabed; //, map90;
 	const std::string folder;
+	const int16_t world_elevation_step;
 	std::mutex mutex;
 
 	// Thread-local cache for container access
@@ -193,7 +194,7 @@ class hgts
 	std::vector<Layer> get_layers(const height::ll_t lat, const height::ll_t lon);
 
 public:
-	hgts(const std::string &folder);
+	hgts(const std::string &folder, int16_t world_elevation_step = 11);
 	height::height_t get(
 			const height::ll_t lat, const height::ll_t lon, block_step_t step = 0);
 };

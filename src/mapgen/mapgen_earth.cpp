@@ -620,7 +620,9 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 */
 
 	if (!maps_holder) {
-		maps_holder = std::make_unique<maps_holder_t>();
+		s16 world_elevation_step = 11;
+		g_settings->getS16NoEx("earth_world_elevation_step", world_elevation_step);
+		maps_holder = std::make_unique<maps_holder_t>(world_elevation_step);
 	}
 
 	{
@@ -1818,6 +1820,11 @@ bool MapgenEarth::calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday
 
 	*wind = weather::wind_t(u, 0.0f, v);
 	return true;
+}
+
+maps_holder_t::maps_holder_t(int16_t world_elevation_step) :
+		hgt_reader{data_root, world_elevation_step}
+{
 }
 
 maps_holder_t::~maps_holder_t()
