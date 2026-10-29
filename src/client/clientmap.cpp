@@ -1760,8 +1760,8 @@ void ClientMap::renderMapShadowsFm(video::IVideoDriver *driver,
 
 	const auto mesh_grid = m_client->getMeshGrid();
 	// Gets world position from block map position
-	const auto get_block_wpos = [&] (v3s16 pos) -> v3f {
-		return intToFloat(mesh_grid.getMeshPos(pos) * MAP_BLOCKSIZE - m_camera_offset, BS);
+	const auto get_block_wpos = [&] (v3bpos_t pos) -> v3f {
+		return oposToV3f(intToFloat(mesh_grid.getMeshPos(pos) * MAP_BLOCKSIZE - m_camera_offset, BS));
 	};
 
 	static thread_local MeshBufListMaps shadow_buffers;
@@ -1798,8 +1798,8 @@ void ClientMap::renderMapShadowsFm(video::IVideoDriver *driver,
 		if (count > high_bound)
 			break;
 
-		v3bpos_t block_pos = i.first;
-		auto block = i.second;
+		const auto & block_pos = i.first;
+		const auto & block = i.second;
 
 		// If the mesh of the block happened to get deleted, ignore it
 		auto mapBlockMesh = block->getLodMesh(farmesh::getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block_pos, speedf), true);
@@ -1829,7 +1829,7 @@ void ClientMap::renderMapShadowsFm(video::IVideoDriver *driver,
 		}
 	}
 
-	for (auto &map : grouped_buffers.maps) {
+	for (const auto &map : grouped_buffers.maps) {
 		for (auto &list : map) {
 			if (list.second.empty())
 				continue;
@@ -1857,7 +1857,7 @@ void ClientMap::renderMapShadowsFm(video::IVideoDriver *driver,
 		auto *shdsrc = m_client->getShaderSource();
 		// Find out all materials used by leaves so we can identify them
 		leaves_material.reserve(m_nodedef->m_leaves_materials.size());
-		for (u32 shader_id : m_nodedef->m_leaves_materials)
+		for (const auto &  shader_id : m_nodedef->m_leaves_materials)
 			leaves_material.push_back(shdsrc->getShaderInfo(shader_id).material);
 	}
 
