@@ -248,9 +248,12 @@ set(link_includes
 	"${PNG_INCLUDE_DIR}"
 	"$<$<NOT:$<BOOL:${USE_SDL3}>>:${SDL2_INCLUDE_DIRS}>"
 
-	${OPENGL_INCLUDE_DIR}
 	${EGL_INCLUDE_DIR}
 )
+
+if(ENABLE_OPENGL)
+	list(APPEND link_includes ${OPENGL_INCLUDE_DIR})
+endif()
 
 # Source files
 

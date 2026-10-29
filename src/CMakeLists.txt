@@ -79,6 +79,9 @@ if(ENABLE_CURL)
 	if (CURL_FOUND)
 		if(ANDROID)
 			set(CURL_LIBRARIES ${CURL_LIBRARY} ${CURL_EXTRA_LIBRARIES})
+			# fm: Use Android's bundled curl dependencies instead of host pkg-config metadata.
+			include(fm_android_curl)
+			# ===
 		endif()
 		message(STATUS "cURL support enabled.")
 		set(USE_CURL TRUE)
