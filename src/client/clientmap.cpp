@@ -45,8 +45,11 @@ namespace {
 		bool empty() const
 		{
 			for (auto &map : maps) {
-				if (!map.empty())
-					return false;
+				// fm: Retained material groups can have no buffers this pass.
+				for (const auto &entry : map)
+					if (!entry.second.empty())
+						return false;
+				// ===
 			}
 			return true;
 		}
@@ -56,6 +59,18 @@ namespace {
 			for (auto &map : maps)
 				map.clear();
 		}
+		// fm: Reuse allocations while bounding stale material keys.
+		void clearReuse()
+		{
+			for (auto &map : maps) {
+				if (map.size() > 4096)
+					map.clear();
+				else
+					for (auto &entry : map)
+						entry.second.clear();
+			}
+		}
+		// ===
 
 		void add(scene::IMeshBuffer *buf, v3pos_t position, u8 layer)
 		{
@@ -159,6 +174,9 @@ static const std::string ClientMap_settings[] = {
 	"transparency_sorting_distance",
 	"occlusion_culler",
 	"enable_raytraced_culling",
+	// fm:
+	"volumetric_fog",
+	// ===
 };
 
 ClientMap::ClientMap(
@@ -210,6 +228,11 @@ void ClientMap::onSettingChanged(std::string_view name, bool all)
 		m_loops_occlusion_culler = g_settings->get("occlusion_culler") == "loops";
 	if (all || name == "enable_raytraced_culling")
 		m_enable_raytraced_culling = g_settings->getBool("enable_raytraced_culling");
+	// fm:
+	if (all || name == "volumetric_fog")
+		m_cache_volumetric_fog.store(g_settings->getPos("volumetric_fog"),
+				std::memory_order_relaxed);
+	// ===
 }
 
 ClientMap::~ClientMap()
@@ -1048,25 +1071,24 @@ static u32 transformBuffersToDrawOrder(
 void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 {
 
-	// fm: Pin the cutouts and their replacement meshes for this render pass.
-	std::shared_ptr<const farmesh::FarDrawState> far_draw;
-	// ===
-	std::vector<std::pair<v3bpos_t, MapBlockPtr>> drawlist_snapshot;
-	{
+	// fm: Pin the same draw list and cutouts for the solid and transparent passes.
+	const bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
+	if (!is_transparent_pass || !m_render_snapshot_valid) {
 		std::lock_guard<std::recursive_mutex> drawlist_lock(m_drawlist_mutex);
-		// fm:
-		far_draw = m_far_draw_state;
-		// ===
+		m_render_far_draw = m_far_draw_state;
 		const auto &m_drawlist = m_drawlist_current ? m_drawlist_1 : m_drawlist_0;
-		drawlist_snapshot.reserve(m_drawlist.size());
+		m_render_drawlist_snapshot.clear();
+		m_render_drawlist_snapshot.reserve(m_drawlist.size());
 		for (const auto &it : m_drawlist)
-			drawlist_snapshot.emplace_back(it);
+			m_render_drawlist_snapshot.emplace_back(it);
+		m_render_snapshot_valid = true;
 	}
+	const auto &far_draw = m_render_far_draw;
+	const auto &drawlist_snapshot = m_render_drawlist_snapshot;
+	// ===
 	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
 
 	ZoneScoped;
-
-	const bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
 
 	std::string prefix;
 	if (pass == scene::ESNRP_SOLID)
@@ -1111,7 +1133,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	MeshBufListMaps &grouped_buffers = tl_meshbuflistmaps;
 	DrawDescriptorList &draw_order = tl_drawdescriptorlist;
 	std::vector<MapBlock::mesh_type> mesh_keepalive;
-	grouped_buffers.clear();
+	// fm: Keep material groups and their allocated buffer lists between passes.
+	grouped_buffers.clearReuse();
+	// ===
 	draw_order.clear();
 
 	auto is_frustum_culled = m_client->getCamera()->getFrustumCuller();
@@ -1224,6 +1248,10 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	assert(!is_transparent_pass || grouped_buffers.empty());
 	for (auto &map : grouped_buffers.maps) {
 		for (auto &list : map) {
+			// fm: Reused groups may be empty.
+			if (list.second.empty())
+				continue;
+			// ===
 			merged_count += transformBuffersToDrawOrder(
 				list.second, draw_order, get_block_wpos, m_dynamic_buffers);
 		}
@@ -1324,6 +1352,13 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 
 	if(is_transparent_pass)
 		m_far_blocks_delete.clear();
+	// fm: Release pinned blocks after the paired pass.
+	if (is_transparent_pass) {
+		m_render_drawlist_snapshot.clear();
+		m_render_far_draw.reset();
+		m_render_snapshot_valid = false;
+	}
+	// ===
 
 	if (material_swaps && array_texture_use) {
 		int percent = (100.0f * array_texture_use) / material_swaps;
@@ -1575,6 +1610,9 @@ void ClientMap::PrintInfo(std::ostream &out)
 void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 		ModifyMaterialCallback cb, s32 pass, int frame, int total_frames)
 {
+	// fm: Reuse shadow material groups between passes.
+	return renderMapShadowsFm(driver, cb, pass, frame, total_frames);
+
 	auto &m_drawlist_shadow =
 			m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
 	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
@@ -1705,6 +1743,153 @@ void ClientMap::renderMapShadows(video::IVideoDriver *driver,
 	g_profiler->avg(prefix + "drawcalls [#]", drawcall_count);
 	g_profiler->avg(prefix + "material swaps [#]", material_swaps);
 }
+
+void ClientMap::renderMapShadowsFm(video::IVideoDriver *driver,
+		ModifyMaterialCallback cb, s32 pass, int frame, int total_frames)
+{
+	auto &m_drawlist_shadow =
+			m_drawlist_shadow_current ? m_drawlist_shadow_1 : m_drawlist_shadow_0;
+	const auto speedf = m_client->getEnv().getLocalPlayerSpeedLength();
+
+	bool is_transparent_pass = pass != scene::ESNRP_SOLID;
+	std::string prefix;
+	if (is_transparent_pass)
+		prefix = "renderMap(SHADOW TRANS): ";
+	else
+		prefix = "renderMap(SHADOW SOLID): ";
+
+	const auto mesh_grid = m_client->getMeshGrid();
+	// Gets world position from block map position
+	const auto get_block_wpos = [&] (v3s16 pos) -> v3f {
+		return intToFloat(mesh_grid.getMeshPos(pos) * MAP_BLOCKSIZE - m_camera_offset, BS);
+	};
+
+	static thread_local MeshBufListMaps shadow_buffers;
+	MeshBufListMaps &grouped_buffers = shadow_buffers;
+	DrawDescriptorList &draw_order = tl_drawdescriptorlist;
+	std::vector<MapBlock::mesh_type> mesh_keepalive;
+	for (auto &map : grouped_buffers.maps) {
+		if (map.size() > 4096)
+			map.clear();
+		else
+			for (auto &entry : map)
+				entry.second.clear();
+	}
+	draw_order.clear();
+	mesh_keepalive.reserve(is_transparent_pass ? m_drawlist_shadow.size() :
+			m_drawlist_shadow.size() / total_frames + 1);
+	TimeTaker collect("");
+
+	std::size_t count = 0;
+	std::size_t meshes_per_frame = m_drawlist_shadow.size() / total_frames + 1;
+	std::size_t low_bound = is_transparent_pass ? 0 : meshes_per_frame * frame;
+	std::size_t high_bound = is_transparent_pass ? m_drawlist_shadow.size() : meshes_per_frame * (frame + 1);
+
+	// transparent pass should be rendered in one go
+	if (is_transparent_pass && frame != total_frames - 1) {
+		return;
+	}
+
+	for (const auto &i : m_drawlist_shadow) {
+		// only process specific part of the list & break early
+		++count;
+		if (count <= low_bound)
+			continue;
+		if (count > high_bound)
+			break;
+
+		v3bpos_t block_pos = i.first;
+		auto block = i.second;
+
+		// If the mesh of the block happened to get deleted, ignore it
+		auto mapBlockMesh = block->getLodMesh(farmesh::getLodStep(m_control, getNodeBlockPos(m_camera_position_node), block_pos, speedf), true);
+
+#if FARMESH_SHADOWS
+		if (!mapBlockMesh) {
+			mapBlockMesh = block->getFarMesh(block->far_step_draw?:block->far_step);
+		}
+#endif
+
+		if (!mapBlockMesh)
+			continue;
+
+		mesh_keepalive.push_back(mapBlockMesh);
+
+		/*
+			Get the meshbuffers of the block
+		*/
+		if (is_transparent_pass) {
+			// In transparent pass, the mesh will give us
+			// the partial buffers in the correct order
+			for (auto &buffer : mapBlockMesh->getTransparentBuffers())
+				draw_order.emplace_back(get_block_wpos(block_pos), &buffer);
+		} else {
+			// Otherwise, group them
+			grouped_buffers.addFromBlock(block_pos, mapBlockMesh.get(), driver, true);
+		}
+	}
+
+	for (auto &map : grouped_buffers.maps) {
+		for (auto &list : map) {
+			if (list.second.empty())
+				continue;
+			transformBuffersToDrawOrder(
+				list.second, draw_order, get_block_wpos, m_dynamic_buffers);
+		}
+	}
+
+	g_profiler->avg(prefix + "collecting [ms]", collect.stop(true));
+	TimeTaker draw("");
+
+	core::matrix4 m; // Model matrix
+	u32 drawcall_count = 0;
+	u32 vertex_count = 0;
+	u32 material_swaps = 0;
+
+	// Render all mesh buffers in order
+	drawcall_count += draw_order.size();
+
+	bool translucent_foliage = g_settings->getBool("enable_translucent_foliage");
+
+	// For translucent leaves, we want to use backface culling instead of frontface.
+	std::vector<video::E_MATERIAL_TYPE> leaves_material;
+	if (translucent_foliage) {
+		auto *shdsrc = m_client->getShaderSource();
+		// Find out all materials used by leaves so we can identify them
+		leaves_material.reserve(m_nodedef->m_leaves_materials.size());
+		for (u32 shader_id : m_nodedef->m_leaves_materials)
+			leaves_material.push_back(shdsrc->getShaderInfo(shader_id).material);
+	}
+
+	for (auto &descriptor : draw_order) {
+		if (!descriptor.m_reuse_material) {
+			video::SMaterial local_material = descriptor.getMaterial();
+			bool is_foliage = translucent_foliage && CONTAINS(leaves_material, local_material.MaterialType);
+			cb(local_material, is_foliage);
+			driver->setMaterial(local_material);
+			++material_swaps;
+		}
+
+		m.setTranslation(descriptor.m_pos);
+
+		driver->setTransform(video::ETS_WORLD, m);
+		vertex_count += descriptor.draw(driver);
+	}
+
+	// restore the driver material state
+	video::SMaterial clean;
+	clean.BlendOperation = video::EBO_ADD;
+	driver->setMaterial(clean);
+	// This is somehow needed to fully reset the rendering state, or later operations
+	// will be broken. (TODO why?)
+	driver->draw3DLine(v3f(), v3f(), video::SColor(0));
+
+	g_profiler->avg(prefix + "draw meshes [ms]", draw.stop(true));
+	g_profiler->avg(prefix + "vertices drawn [#]", vertex_count);
+	g_profiler->avg(prefix + "drawcalls [#]", drawcall_count);
+	g_profiler->avg(prefix + "material swaps [#]", material_swaps);
+}
+// ===
 
 void ClientMap::clearDrawListShadow()
 {

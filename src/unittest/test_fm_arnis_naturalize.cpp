@@ -70,7 +70,9 @@ public:
 		TEST(testFieldsBecomeGrassland);
 		TEST(testTownTakesSurroundingForest);
 		TEST(testBuiltUpFallbackUsesClimate);
+		TEST(testBareGroundSpreadsOnlyInDryOrColdClimates);
 		TEST(testBridgeReturnsToRiverAndLowersDeck);
+		TEST(testRiverReadAsTownIsClosed);
 		TEST(testHighDamStaysLand);
 		TEST(testBlueprintCausewayIsNotReclaimed);
 		TEST(testWideWaterfrontStaysLand);
@@ -112,6 +114,25 @@ public:
 		UASSERT(count_class(desert, LC_BARE) == 8);
 	}
 
+	void testBareGroundSpreadsOnlyInDryOrColdClimates()
+	{
+		using namespace arnis::land_cover;
+		std::vector<std::string> rows(50, std::string(400, 'b'));
+		for (auto &row : rows) {
+			std::fill(row.begin(), row.begin() + 100, 'r');
+			std::fill(row.begin() + 300, row.end(), 't');
+		}
+		auto temperate = make_land_cover(rows, 1.0);
+		naturalize(temperate, nullptr, arnis::biome::Climate::Temperate);
+		UASSERT(count_class(temperate, LC_BARE) == 100 * 50);
+
+		auto desert = make_land_cover(rows, 1.0);
+		naturalize(desert, nullptr, arnis::biome::Climate::HotDesert);
+		UASSERT(count_class(desert, LC_BARE) > 150 * 50);
+		UASSERT(count_class(desert, LC_TREE_COVER) > 150 * 50);
+		UASSERT(count_class(desert, LC_BUILT_UP) == 0);
+	}
+
 	void testBridgeReturnsToRiverAndLowersDeck()
 	{
 		using namespace arnis::land_cover;
@@ -137,6 +158,25 @@ public:
 		for (int z : {0, 9, 20, 29})
 			UASSERT(data.grid[z][15] == LC_GRASSLAND);
 		UASSERT(data.water_distance[15][15] > 0);
+	}
+
+	void testRiverReadAsTownIsClosed()
+	{
+		using namespace arnis::land_cover;
+		std::vector<std::string> rows(30, std::string(40, 'w'));
+		for (int z = 0; z < 30; ++z) {
+			if (z < 10 || z >= 20)
+				std::fill(rows[z].begin(), rows[z].end(), 'b');
+			else
+				std::fill(rows[z].begin() + 15, rows[z].begin() + 23, 'b');
+		}
+		auto data = make_land_cover(rows, 0.2);
+		naturalize(data, nullptr, arnis::biome::Climate::Temperate);
+		for (int z = 10; z < 20; ++z)
+			for (int x = 15; x < 23; ++x)
+				UASSERT(data.grid[z][x] == LC_WATER);
+		UASSERT(data.grid[5][19] == LC_GRASSLAND);
+		UASSERT(data.grid[25][19] == LC_GRASSLAND);
 	}
 
 	void testHighDamStaysLand()

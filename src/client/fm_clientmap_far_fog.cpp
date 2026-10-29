@@ -460,7 +460,7 @@ void ClientMap::initFarFogMaterial()
 	m_far_fog_material_ready = true;
 }
 
-void ClientMap::updateFarFogCells()
+void ClientMap::updateFarFogCells(pos_t fog_range)
 {
 	if (!m_control.farmesh)
 		return;
@@ -468,7 +468,7 @@ void ClientMap::updateFarFogCells()
 	const auto far_iteration_draw_snapshot = far_iteration_draw;
 	const v3bpos_t player_block_pos = getNodeBlockPos(floatToInt(m_camera_position, BS));
 	const auto cell_size_pow = m_control.cell_size_pow;
-	const auto fog_farmesh = g_settings->getPos("volumetric_fog");
+	const auto fog_farmesh = fog_range;
 	const auto farmesh_quality_pow = m_control.farmesh_quality_pow;
 	const auto camera_offset = m_camera_offset;
 	const auto camera_scene_position =
@@ -749,14 +749,15 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	if (!m_control.farmesh || !m_control.enable_volumetric_fog)
 		return 0;
 
-	const pos_t volumetric_fog_range_nodes = g_settings->getPos("volumetric_fog");
+	const pos_t volumetric_fog_range_nodes =
+			m_cache_volumetric_fog.load(std::memory_order_relaxed);
 	if (volumetric_fog_range_nodes <= 0)
 		return 0;
 	const float volumetric_fog_range =
 			static_cast<float>(volumetric_fog_range_nodes) * BS;
 
 	initFarFogMaterial();
-	updateFarFogCells();
+	updateFarFogCells(volumetric_fog_range_nodes);
 	const auto far_fog_vertex_count = [&]() {
 		u32 vertex_count = 0;
 		for (const auto &buffer : m_far_fog_meshbuffers) {
