@@ -1,0 +1,7 @@
+if(TARGET CURL::libcurl)
+    set_target_properties(CURL::libcurl PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${CURL_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES "${CURL_EXTRA_LIBRARIES}"
+        INTERFACE_LINK_OPTIONS ""
+    )
+endif()
