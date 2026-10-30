@@ -54,7 +54,7 @@ elseif(ENABLE_WEBSOCKET OR (ENABLE_WEBSOCKET_SCTP AND FM_HAVE_SCTP_SOURCE))
             endif()
 
             if(ENABLE_WEBSOCKET AND NOT TARGET OpenSSL::SSL)
-                message(FATAL_ERROR "WebSocket requires OpenSSL; provide an Android-compatible OpenSSL or set FETCH_OPENSSL=ON and FETCH_DEPS=ON")
+                message(FATAL_ERROR "WebSocket requires OpenSSL; provide an Android-compatible OpenSSL or set FETCH_DEPS=ON")
             endif()
 
             set(WEBSOCKETPP_LIBRARY Boost::headers)

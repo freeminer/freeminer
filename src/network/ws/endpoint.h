@@ -2,6 +2,7 @@
 #pragma once
 #include "log.h"
 #include "settings.h"
+#include <websocketpp/common/asio.hpp>
 #include <websocketpp/client.hpp>
 #include <websocketpp/server.hpp>
 namespace ws_transport
