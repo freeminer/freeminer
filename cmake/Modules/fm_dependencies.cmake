@@ -74,7 +74,7 @@ elseif(FETCH_DEPS)
     FetchContent_Declare(
         openssl-cmake
         GIT_REPOSITORY https://github.com/jimmy-park/openssl-cmake
-        GIT_TAG 48c3f910074784adab7fe422cb955d71eda8fc4b
+        GIT_TAG 4.1.0
         GIT_SUBMODULES_RECURSE OFF
         ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
         SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/openssl"
