@@ -118,14 +118,15 @@ public:
 		return false;
 	}
 
-	void send_game(Handle hdl, const std::string &payload)
+	bool send_game(Handle hdl, const std::string &payload)
 	{
 		auto it = m_sessions.find(hdl);
 		if (it != m_sessions.end() && it->second.game_source) {
 			auto data = Datagram::encode(*it->second.game_source, payload);
 			if (!data.empty())
-				send(hdl, data, false);
+				return send(hdl, data, false, true);
 		}
+		return true;
 	}
 
 	void remove(Handle hdl)
@@ -246,13 +247,17 @@ private:
 		remove(hdl);
 	}
 
-	void send(Handle hdl, const std::string &data, bool text)
+	bool send(Handle hdl, const std::string &data, bool text, bool backpressure = false)
 	{
 		websocketpp::lib::error_code ec;
 		auto con = m_server.get_con_from_hdl(hdl, ec);
-		if (ec || con->get_buffered_amount() + data.size() > 1024 * 1024) {
+		if (ec)
+			return true; // The session has already closed.
+		if (con->get_buffered_amount() + data.size() > 1024 * 1024) {
+			if (backpressure)
+				return false;
 			close(hdl, websocketpp::close::status::policy_violation);
-			return;
+			return true;
 		}
 		m_server.send(hdl, data,
 				text ? websocketpp::frame::opcode::text
@@ -260,6 +265,7 @@ private:
 				ec);
 		if (ec)
 			close(hdl, websocketpp::close::status::internal_endpoint_error);
+		return true;
 	}
 };
 } // namespace ws_transport

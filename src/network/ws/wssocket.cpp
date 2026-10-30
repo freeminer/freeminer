@@ -44,6 +44,8 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 #include "util/numeric.h"
 #include "util/string.h"
 #include <string>
+#include <future>
+#include <chrono>
 #include <boost/asio/post.hpp>
 
 #ifdef _WIN32
@@ -443,19 +445,40 @@ void WSSocket::Send(const Address &destination, const void *data, int size)
 		boost::asio::post(client.get_io_context(),
 				[this, payload = std::move(payload)]() { sendClientPacket(payload); });
 	} else if (ws_serve) {
-		// Session and handle maps belong to the WebSocket event loop. The game
-		// send thread must not read them while receive/close handlers modify them.
-		boost::asio::post(server.get_io_context(),
-				[this, destination, payload = std::move(payload)]() {
-					if (!m_datagrams)
-						return;
-					for (const auto &[hdl, address] : hdls) {
-						if (address == destination) {
-							m_datagrams->send_game(hdl, payload);
-							return;
+		// Keep the posted queue bounded too: wait for the event loop to admit
+		// each datagram before posting another. The event loop remains free to
+		// drain the WebSocket and process disconnects while we wait.
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+		for (;;) {
+			auto result = std::make_shared<std::promise<bool>>();
+			auto ready = result->get_future();
+			boost::asio::post(
+					server.get_io_context(), [this, destination, payload, result]() {
+						bool accepted = true;
+						if (m_datagrams) {
+							for (const auto &[hdl, address] : hdls) {
+								if (address == destination) {
+									accepted = m_datagrams->send_game(hdl, payload);
+									break;
+								}
+							}
 						}
-					}
-				});
+						result->set_value(accepted);
+					});
+			if (ready.wait_until(deadline) != std::future_status::ready) {
+				warningstream
+						<< "WS send event loop stalled; reliable packet will be retried\n";
+				return;
+			}
+			if (ready.get())
+				return;
+			if (std::chrono::steady_clock::now() >= deadline) {
+				warningstream
+						<< "WS send buffer remained full; reliable packet will be retried\n";
+				return;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		}
 	}
 }
 

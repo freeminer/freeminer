@@ -31,6 +31,27 @@ int main(int argc, char **argv)
 			return;
 		}
 		const bool text = msg->get_opcode() == websocketpp::frame::opcode::text;
+		if (text && msg->get_payload() == "TEST BURST") {
+			auto remaining = std::make_shared<int>(4096);
+			auto timer = std::make_shared<ws_transport::asio::steady_timer>(
+					server.get_io_context());
+			auto pump = std::make_shared<std::function<void()>>();
+			*pump = [&, hdl, remaining, timer, pump]() {
+				while (*remaining && service.send_game(hdl, std::string(2048, 'x')))
+					--*remaining;
+				if (*remaining) {
+					timer->expires_after(std::chrono::milliseconds(1));
+					timer->async_wait([pump](auto ec) {
+						if (!ec)
+							(*pump)();
+					});
+				} else {
+					*pump = {};
+				}
+			};
+			(*pump)();
+			return;
+		}
 		if (service.receive(hdl, msg->get_payload(), text))
 			return;
 		if (text && msg->get_payload().starts_with("PROXY ")) {
