@@ -83,6 +83,10 @@ elevation::TerrainHints terrain_hints_for(const Args &args,
 			!args.skip_objects() && args.mode != GenerationMode::Blueprint &&
 			!args.vanilla_height && !args.disable_height_limit && !args.luanti &&
 			is_earth(args.body) && !args.one_world_run;
+	// Rust's TerrainHints::from_osm marks the staged Overture message whenever
+	// automatic height fitting can use Overture structures, even if this caller
+	// has already fetched Overture and supplies it synchronously below.
+	hints.overture_follows = args.overture && automatic_height;
 	if (automatic_height) {
 		if (overture_data && args.overture) {
 			hints.tall_structures =
