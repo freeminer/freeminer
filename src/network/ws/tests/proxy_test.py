@@ -114,6 +114,13 @@ async def run(binary, enabled):
                 received.extend(reply[24:])
             assert received == definitions
 
+            # The server must pause a burst above its 1 MiB WebSocket buffer
+            # limit and resume without closing or dropping game datagrams.
+            await game.send("TEST BURST")
+            for _ in range(4096):
+                reply = await asyncio.wait_for(game.recv(), 30)
+                assert reply[24:] == b"x" * 2048
+
             duplicate = await open_service(f"BIND {passcode} UDP 12345", "BIND FAILED")
             async with connected(duplicate):
                 # A failed bind leaves the connection open for a fresh assignment.
