@@ -38,9 +38,15 @@ elseif(FETCH_DEPS)
         set(ENABLE_TESTS OFF)
         set(ENABLE_STATIC_LIB ON)
         FetchContent_Declare(
-            BZip2 GIT_REPOSITORY "https://gitlab.com/bzip2/bzip2.git"
-            GIT_TAG 66c46b8c9436613fd81bc5d03f63a61933a4dcc3 ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
-            USES_TERMINAL_DOWNLOAD TRUE GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+            BZip2
+            GIT_REPOSITORY "https://gitlab.com/bzip2/bzip2.git"
+            GIT_TAG 66c46b8c9436613fd81bc5d03f63a61933a4dcc3
+            ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
+            SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/bzip2"
+            BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/bzip2"
+            USES_TERMINAL_DOWNLOAD TRUE
+            GIT_PROGRESS TRUE
+            ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(BZip2)
         set(bzip2_SOURCE_DIR "${bzip2_SOURCE_DIR}" PARENT_SCOPE)
@@ -56,28 +62,28 @@ else()
     message(STATUS "BZip2 not found; set FETCH_DEPS=ON to build bundled BZip2")
 endif()
 
-if(FETCH_OPENSSL)
-    find_package(OpenSSL 3.0 QUIET)
-    if(TARGET OpenSSL::SSL)
-        message(STATUS "Using system OpenSSL: ${OPENSSL_VERSION}")
-    elseif(FETCH_DEPS)
-        message(STATUS "System OpenSSL 3.0 not found; using bundled OpenSSL")
-        if(ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
-            # OpenSSL 4.0's AArch64 Poly1305 assembly has non-PIC SVE2 references.
-            list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
-        endif()
-        FetchContent_Declare(
-            openssl-cmake
-            GIT_REPOSITORY https://github.com/jimmy-park/openssl-cmake
-            GIT_TAG 48c3f910074784adab7fe422cb955d71eda8fc4b
-            GIT_SUBMODULES_RECURSE OFF ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
-            USES_TERMINAL_DOWNLOAD TRUE
-            GIT_PROGRESS TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
-        )
-        FetchContent_MakeAvailable(openssl-cmake)
-    else()
-        message(STATUS "OpenSSL 3.0 not found; set FETCH_DEPS=ON to build bundled OpenSSL")
+find_package(OpenSSL 3.0 QUIET)
+if(TARGET OpenSSL::SSL)
+    message(STATUS "Using system OpenSSL: ${OPENSSL_VERSION}")
+elseif(FETCH_DEPS)
+    message(STATUS "System OpenSSL 3.0 not found; using bundled OpenSSL")
+    if(ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
+        # OpenSSL 4.0's AArch64 Poly1305 assembly has non-PIC SVE2 references.
+        list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
     endif()
+    FetchContent_Declare(
+        openssl-cmake
+        GIT_REPOSITORY https://github.com/jimmy-park/openssl-cmake
+        GIT_TAG 48c3f910074784adab7fe422cb955d71eda8fc4b
+        GIT_SUBMODULES_RECURSE OFF
+        ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
+        SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/openssl"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/openssl"
+        USES_TERMINAL_DOWNLOAD TRUE
+        GIT_PROGRESS TRUE
+        ${FM_FETCH_EXCLUDE_FROM_ALL}
+    )
+    FetchContent_MakeAvailable(openssl-cmake)
 endif()
 
 find_package(Boost 1.69 QUIET COMPONENTS program_options geometry)
@@ -91,7 +97,8 @@ elseif(FETCH_DEPS)
         set(BOOST_INCLUDE_LIBRARIES program_options asio thread geometry)
 
         FetchContent_Declare(
-            Boost GIT_REPOSITORY https://github.com/boostorg/boost.git 
+            Boost
+            GIT_REPOSITORY https://github.com/boostorg/boost.git 
             GIT_TAG boost-1.92.0
             GIT_SHALLOW TRUE 
             SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/boost"
