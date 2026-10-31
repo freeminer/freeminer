@@ -54,6 +54,7 @@
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/element_processing/way_segments.h"
+#include "arnis-cpp/src/models_3d/wikidata/prescan.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -627,14 +628,15 @@ public:
 			// represent an independent water or land-use feature.
 			const auto area_kind = arnis::element_processing::relation_area(tags);
 			if (holed && area_kind &&
-					arnis::element_processing::relation_area_draws_area(*area_kind, tags)) {
+					arnis::element_processing::relation_area_draws_area(
+							*area_kind, tags)) {
 				for (std::size_t i = 0; i < member_ways.size(); ++i) {
 					if (!member_ways[i] || !roles[i] ||
 							*roles[i] != arnis::ProcessedMemberRole::Outer ||
 							!closed_ring(*member_ways[i]))
 						continue;
 					if (arnis::osm_parser::repeats_relation_area_tags(
-							member_ways[i]->tags, tags))
+								member_ways[i]->tags, tags))
 						repeated_area_outer_ids.insert(member_ways[i]->id);
 				}
 			}
@@ -646,8 +648,8 @@ public:
 							   [&](const auto &element) {
 								   return element.is_way() &&
 										  (element.as_way().nodes.empty() ||
-												repeated_area_outer_ids.contains(
-													element.as_way().id));
+												  repeated_area_outer_ids.contains(
+														  element.as_way().id));
 							   }),
 				elements.end());
 		if (unresolved_node_refs > 0) {
@@ -1501,6 +1503,9 @@ public:
 			generation_stage = "chunk element selection";
 			std::call_once(chunk->elements_once, [&]() {
 				constexpr int extra = MAP_BLOCKSIZE * 2;
+				const auto args = earth_osmium_detail::earth_arnis_args();
+				const double model_halo =
+						arnis::models_3d::wikidata::MAX_XZ_EXTENT_M * args.scale;
 				const XZBBox context_bbox(mg->node_min.X - extra, mg->node_min.Z - extra,
 						mg->node_max.X + extra, mg->node_max.Z + extra);
 				// Native routing can detour up to 48 nodes from source geometry.
@@ -1509,6 +1514,24 @@ public:
 				for (std::size_t i = 0; i < cached.elements.size(); ++i) {
 					// Select routed tracks even when only their detour enters this chunk.
 					const auto &source = cached.elements[i];
+					const auto &tags = source.tags();
+					const auto wikidata = tags.find("wikidata");
+					const bool model =
+							args.use_3d && wikidata != tags.end() &&
+							arnis::models_3d::lookup_wikidata(wikidata->second);
+					const auto &bounds = cached.element_bounds[i];
+					const bool model_intersects =
+							model && bounds.valid &&
+							double(bounds.max_x) >= double(mg->node_min.X) - model_halo &&
+							double(bounds.min_x) <= double(mg->node_max.X) + model_halo &&
+							double(bounds.max_z) >= double(mg->node_min.Z) - model_halo &&
+							double(bounds.min_z) <= double(mg->node_max.Z) + model_halo;
+					// Model anchors and dimensions must use the same complete geometry
+					// in every chunk, including chunks touched only by the model.
+					if (model_intersects) {
+						chunk->elements.push_back(source);
+						continue;
+					}
 					const bool native_rail = arnis::railways::advtrains::available() &&
 											 source.is_way() &&
 											 source.as_way().tags.contains("railway");

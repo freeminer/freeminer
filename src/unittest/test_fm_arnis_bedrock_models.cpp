@@ -19,6 +19,7 @@ public:
 		TEST(testModelTransformIdentityAndWorldYaw);
 		TEST(testModelTransformIntrinsicYawAndScaleTranslation);
 		TEST(testModelTransformNonuniformWorldScale);
+		TEST(testModelTriangleTraversalStaysWithinBounds);
 	}
 
 	void testVisibleBoundsOffsetUsesUnroundedHeight()
@@ -124,6 +125,23 @@ public:
 		UASSERT(std::abs(transformed[0] - 3.0f) < 1e-5f);
 		UASSERT(std::abs(transformed[1] - 5.0f) < 1e-5f);
 		UASSERT(std::abs(transformed[2] - 7.0f) < 1e-5f);
+	}
+
+	void testModelTriangleTraversalStaysWithinBounds()
+	{
+		const std::array<std::array<float, 3>, 3> triangle = {
+				{{-8671.08691f, 39.2496719f, -10232.4111f},
+						{-8671.54297f, 34.8054886f, -10232.7949f},
+						{-8672.01367f, 31.9554958f, -10232.6064f}}};
+		unsigned count = 0;
+		arnis::models_3d::visit_triangle_voxels(
+				triangle, [&](const std::array<int, 3> &p) {
+					UASSERT(p[0] >= -8674 && p[0] <= -8669);
+					UASSERT(p[1] >= 30 && p[1] <= 41);
+					UASSERT(p[2] >= -10235 && p[2] <= -10230);
+					UASSERT(++count < 100);
+				});
+		UASSERT(count > 0);
 	}
 };
 
