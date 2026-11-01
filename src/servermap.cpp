@@ -254,18 +254,26 @@ bool ServerMap::initBlockMake(v3bpos_t blockpos, BlockMakeData *data)
 	for (auto x = full_bpmin.X; x <= full_bpmax.X; x++)
 	for (auto z = full_bpmin.Z; z <= full_bpmax.Z; z++)
 	for (auto y = full_bpmin.Y; y <= full_bpmax.Y; y++) {
-			v3pos_t p(x, y, z);
-
-			auto block = emergeBlockPtr(p, false);
-			if (!block) {
-				block = createBlock(p);
+			// fm: Pin the exact block still in the map before an unload can erase it.
+			v3bpos_t p(x, y, z);
+			for (;;) {
+				auto block = emergeBlockPtr(p, false);
+				if (!block) {
+					block = createBlock(p);
 
 				// Block gets sunlight if this is true.
 				// Refer to the map generator heuristics.
-				bool ug = m_emerge->isBlockUnderground(p);
-				block->setIsUnderground(ug);
+					bool ug = m_emerge->isBlockUnderground(p);
+					block->setIsUnderground(ug);
+				}
+				const auto lock = m_blocks.lock_unique_rec();
+				const auto it = m_blocks.find(p);
+				if (it == m_blocks.end() || it->second != block)
+					continue;
+				block->refGrab();
+				break;
 			}
-			block->refGrab();
+			// ===
 	}
 
 	/*

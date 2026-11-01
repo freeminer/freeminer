@@ -41,9 +41,9 @@ if [ -z "${NO_DEPS-}" ]; then
         libnghttp2-dev \
         libopenal-dev \
         libosmium2-dev \
+        libpq-dev \
         libprotozero-dev \
         libpsl-dev  \
-        libpq-dev \
         libsdl2-dev \
         libsqlite3-dev \
         libssl-dev \
@@ -51,6 +51,7 @@ if [ -z "${NO_DEPS-}" ]; then
         libvorbis-dev \
         libxi-dev \
         libxxf86vm-dev \
+        libzip-dev \
         libzstd-dev \
         lld \
         ninja-build \

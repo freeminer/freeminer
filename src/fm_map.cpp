@@ -920,11 +920,9 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 				continue;
 			}
 
-			/*
 			if (block->refGet()) {
 				continue;
 			}
-			*/
 
 			if (!block->isGenerated())
 #if CHECK_CLIENT_BUILD()
@@ -993,8 +991,14 @@ u32 Map::timerUpdate(float uptime, float unload_timeout, s32 max_loaded_blocks,
 	if (!calls)
 		m_blocks_update_last = 0;
 
-	for (auto &block : blocks_delete)
-		eraseBlock(block);
+	for (auto &block : blocks_delete) {
+		if (!block)
+			continue;
+		const auto lock = m_blocks.lock_unique_rec();
+		const auto it = m_blocks.find(block->getPos());
+		if (it != m_blocks.end() && it->second == block && !block->refGet())
+			eraseBlock(block);
+	}
 
 	// Finally delete the empty sectors
 
