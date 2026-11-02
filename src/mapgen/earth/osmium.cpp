@@ -848,6 +848,11 @@ arnis::Args earth_arnis_args()
 		if (get_setting("max_tree_size", size))
 			arnis.max_tree_size = ::arnis::trees::tree_size_from_string(size);
 	}
+	{
+		std::string fields;
+		if (get_setting("fields", fields))
+			arnis.fields = ::arnis::field_texture::field_preset_from_string(fields);
+	}
 
 	// Facade, Mapillary, signage, and Overture options.
 	read_bool("building_facades", arnis.building_facades);
