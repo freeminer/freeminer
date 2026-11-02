@@ -53,14 +53,16 @@
 #include "item_visuals_manager.h"
 
 
-#include "network/connection.h"
+// fm:
 #include "client/fm_farmesh.h"
+#include "gui/guiTable.h"
+#include "network/connection.h"
+#include "network/multi/connection_ports.h"
 #include "threading/async.h"
 #include "util/numeric.h"
 #include <future>
 #include <memory>
-#include "gui/guiTable.h"
-
+// ===
 
 #if USE_SOUND
 	#include "client/sound/sound_openal.h"
@@ -1180,17 +1182,18 @@ bool Game::connectToServer(const GameStartData &start_data,
 		u16 port = 0;
 #if USE_SCTP
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
-			port = connect_address.getPort() + 100;
+			port = connect_address.getPort() + con::sctp_port_diff;
+		
 		}
 		g_settings->set("remote_proto", "sctp");
 #elif USE_ENET
 		if (!g_settings->getU16NoEx("port_enet", port)) {
-			port = connect_address.getPort() + 200;
+			port = connect_address.getPort() + con::enet_port_diff;
 		}
 		g_settings->set("remote_proto", "enet");
 #elif USE_WEBSOCKET
 		if (!g_settings->getU16NoEx("port_wss", port)) {
-			port = connect_address.getPort();
+			port = connect_address.getPort() + con::wss_port_diff;
 		}
 		g_settings->set("remote_proto", "wss");
 #else

@@ -15,6 +15,8 @@
 #include "config.h"
 #include "server.h"
 
+#include "network/multi/connection_ports.h"
+
 namespace ServerList
 {
 
@@ -26,7 +28,7 @@ void addMultiProto(Json::Value &server, const u16 port)
 	{
 		u16 port_multi = 0;
 		if (!g_settings->getU16NoEx("port_sctp", port_multi)) {
-			port_multi = port + 100;
+			port_multi = port + con::sctp_port_diff;
 		}
 		server["proto_multi"]["sctp"] = port_multi;
 	}
@@ -35,7 +37,7 @@ void addMultiProto(Json::Value &server, const u16 port)
 	{
 		u16 port_multi = 0;
 		if (!g_settings->getU16NoEx("port_enet", port_multi)) {
-			port_multi = port + 200;
+			port_multi = port + con::enet_port_diff;
 		}
 		server["proto_multi"]["enet"] = port_multi;
 	}
@@ -44,7 +46,7 @@ void addMultiProto(Json::Value &server, const u16 port)
 	{
 		u16 port_multi = 0;
 		if (!g_settings->getU16NoEx("port_wss", port_multi)) {
-			port_multi = port;
+			port_multi = port + con::wss_port_diff;
 		}
 		server["proto_multi"]["wss"] = port_multi;
 	}
@@ -52,8 +54,8 @@ void addMultiProto(Json::Value &server, const u16 port)
 #if USE_WEBSOCKET_SCTP
 	{
 		u16 port_multi = 0;
-		if (!g_settings->getU16NoEx("port_sctp_wss", port_multi)) {
-			port_multi = port + 100;
+		if (!g_settings->getU16NoEx("port_wss_sctp", port_multi)) {
+			port_multi = port + con::wss_sctp_port_diff;
 		}
 		server["proto_multi"]["sctp_wss"] = port_multi;
 	}
