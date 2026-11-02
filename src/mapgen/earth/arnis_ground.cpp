@@ -545,13 +545,12 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						taller_water_floor, taller_sink_floor, max_y, true, taller_min_y};
 			}
 			elevation::ProcessedElevationData processed;
-			auto source_mode = elevation::providers::SourceMode::Auto;
+			auto source_mode = elevation::providers::SourceMode::Auto();
 			if (!earth)
-				source_mode = elevation::providers::SourceMode::Planetary;
+				source_mode = elevation::providers::SourceMode::Planetary(args.body);
 			else if (args.aws_only_elevation)
-				source_mode = elevation::providers::SourceMode::AwsOnly;
-			elevation::Selector selector(elevation_root, source_mode,
-					!earth ? std::optional<CelestialBody>(args.body) : std::nullopt);
+				source_mode = elevation::providers::SourceMode::AwsOnly();
+			elevation::Selector selector(elevation_root, source_mode);
 			processed = elevation::fetch_elevation_data(selector, fetch_bbox, world_width,
 					world_height, grid_width, grid_height, args.scale,
 					args.height_multiplier, water_floor, sink_floor,
@@ -1427,7 +1426,7 @@ bool Ground::inland_water_mapped(const XZPoint &coord) const
 std::optional<int> Ground::sea_surface_max_y() const
 {
 	const auto affine = elevation_affine();
-	if (!affine)
+	if (!affine || elevation_blocks_per_meter <= 0.0)
 		return std::nullopt;
 	return static_cast<int>(std::floor(affine->y_for_metres(5.0)));
 }
