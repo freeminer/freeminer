@@ -811,7 +811,12 @@ arnis::Args earth_arnis_args()
 	read_bool("disasters", arnis.disasters);
 	read_bool("winter", arnis.winter);
 	read_bool("post_apocalyptic", arnis.post_apocalyptic);
+	read_bool("body_gravity", arnis.body_gravity);
 	read_bool("traffic_lights", arnis.traffic_lights);
+	read_bool("discoveries", arnis.discoveries);
+	read_bool("pause_menu", arnis.pause_menu);
+	read_bool("zombie_outbreak", arnis.zombie_outbreak);
+	read_bool("moving_vehicles", arnis.moving_vehicles);
 	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
@@ -937,6 +942,19 @@ arnis::Args earth_arnis_args()
 		std::string gamemode;
 		if (get_setting("gamemode", gamemode))
 			arnis.gamemode = ::arnis::game_mode_from_string(gamemode);
+	}
+	{
+		std::string world_type;
+		if (get_setting("world_type", world_type))
+			arnis.world_type = world_type == "flat" ? ::arnis::WorldType::Flat
+													: ::arnis::WorldType::Void;
+	}
+	{
+		std::string mob_spawning;
+		if (get_setting("mob_spawning", mob_spawning))
+			arnis.mob_spawning = mob_spawning == "animals" ? ::arnis::MobSpawning::Animals
+								 : mob_spawning == "all"   ? ::arnis::MobSpawning::All
+														   : ::arnis::MobSpawning::Off;
 	}
 	{
 		std::optional<double> seconds;
