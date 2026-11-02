@@ -503,7 +503,7 @@ void Client::connect(const Address &address, const std::string &address_name)
 	}
 
 	m_address_name = address_name;
-	m_con.reset(con::createMTP(CONNECTION_TIMEOUT, address.isIPv6(), this, is_simple_singleplayer_game));
+	m_con.reset(con::createMTP(CONNECTION_TIMEOUT, address.isIPv6(), this, m_simple_singleplayer_mode));
 
 	infostream << "Connecting to server at ";
 	address.print(infostream);

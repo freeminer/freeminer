@@ -161,6 +161,7 @@ util/autotest/logs.*
 util/autotest/auto.json
 util/autotest/world*
 util/autotest/screenshot*
+util/buildbot/mingw
 client/favoriteservers.json
 client/servers_public.json
 

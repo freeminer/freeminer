@@ -20,7 +20,7 @@ if(USE_MULTI)
     option(ENABLE_SCTP "Enable SCTP networking (EXPERIMENTAL)" 1)
     option(ENABLE_WEBSOCKET "Enable Websocket server" 1)
     if(NOT ANDROID)
-        option(ENABLE_WEBSOCKET_SCTP "Enable Websocket server" 0)
+        option(ENABLE_WEBSOCKET_SCTP "Enable Websocket server" 1)
     endif()
 endif()
 
@@ -67,17 +67,18 @@ elseif(ENABLE_WEBSOCKET OR (ENABLE_WEBSOCKET_SCTP AND FM_HAVE_SCTP_SOURCE))
             endif()
 
             if(ENABLE_WEBSOCKET_SCTP AND FM_HAVE_SCTP_SOURCE)
-                option(ENABLE_WEBSOCKET_SCTP_TLS "Use TLS for native SCTP WebSockets" OFF)
-                if(ENABLE_WEBSOCKET_SCTP_TLS AND NOT TARGET OpenSSL::SSL)
-                    message(FATAL_ERROR "SCTP WebSocket TLS requires OpenSSL")
+                if (TARGET OpenSSL::SSL)
+                    option(ENABLE_WEBSOCKET_SCTP_TLS "Use TLS for native SCTP WebSockets" ON)
                 endif()
-                target_compile_definitions(fm_dependencies INTERFACE
-                    USE_WS_SCTP_SSL=$<BOOL:${ENABLE_WEBSOCKET_SCTP_TLS}>)
-                set(USE_WEBSOCKET_SCTP 1)
+
+                if (ENABLE_WEBSOCKET_SCTP_TLS)
+                    target_compile_definitions(fm_dependencies INTERFACE USE_WS_SCTP_SSL=$<BOOL:${ENABLE_WEBSOCKET_SCTP_TLS}>)
+                    set(USE_WEBSOCKET_SCTP 1)
+                endif()
             endif()
             message(
                 STATUS
-                    "Using websocket ${USE_WEBSOCKET},${USE_WEBSOCKET_SCTP}: ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp : ${WEBSOCKETPP_LIBRARY}"
+                    "Using websocket=${USE_WEBSOCKET},sctp=${USE_WEBSOCKET_SCTP},tls=${ENABLE_WEBSOCKET_SCTP_TLS}:  ${CMAKE_CURRENT_SOURCE_DIR}/external/websocketpp : ${WEBSOCKETPP_LIBRARY}"
             )
             list(APPEND FREEMINER_COMMON_LIBRARIES ${WEBSOCKETPP_LIBRARY})
         else()

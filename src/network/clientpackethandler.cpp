@@ -346,7 +346,7 @@ void Client::handleCommand_BlockData(NetworkPacket* pkt)
 		++m_new_meshes;
 	}
 
-	if (m_localdb && !is_simple_singleplayer_game) {
+	if (m_localdb && !m_simple_singleplayer_mode) {
 		ServerMap::saveBlock(block.get(), m_localdb.get());
 		if (!far_container.have_params) {
 			merger->add_changed(p);
