@@ -4,7 +4,6 @@
 #include "arnis-cpp/src/cache_root.h"
 #include "arnis-cpp/src/block_definitions.h"
 #include "arnis-cpp/src/climate.h"
-#include "arnis-cpp/src/elevation/planetary.h"
 #include "arnis-cpp/src/elevation/cache.h"
 #include "arnis-cpp/src/elevation/selector.h"
 #include "arnis-cpp/src/overture.h"
@@ -18,6 +17,7 @@
 #include "arnis-cpp/src/elevation/peaks.h"
 #include "arnis-cpp/src/water_depth.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
+#include "arnis-cpp/src/world_utils.h"
 
 #include <future>
 #include <iostream>
@@ -31,6 +31,18 @@ namespace arnis
 {
 namespace
 {
+std::optional<std::pair<std::int32_t, std::int32_t>> existing_java_tall_range(
+		const Args &args)
+{
+	if (args.tall_range)
+		return args.tall_range;
+	if (args.one_world_run)
+		return world_utils::tall_datapack_range(args.one_world_run->world_dir);
+	if (args.path && !args.path->empty())
+		return world_utils::tall_datapack_range(*args.path);
+	return std::nullopt;
+}
+
 // Rust's `f64::round() as i32` rounds ties away from zero, maps NaN to zero,
 // and saturates infinities/out-of-range values. Avoid `llround` followed by a
 // narrowing cast, whose result is not defined for those boundary inputs.
@@ -72,72 +84,110 @@ bool write_rgb_png(const std::string &filename, std::size_t width, std::size_t h
 }
 
 elevation::TerrainHints terrain_hints_for(const Args &args,
-		const osm_parser::RawOsmDocument &osm,
+		const geographic::LLBBox &bbox, const osm_parser::RawOsmDocument &osm,
 		const overture::OvertureData *overture_data = nullptr)
 {
-	elevation::TerrainHints hints;
-	hints.peaks = elevation::peaks_in(osm);
-	if (args.use_3d && !args.skip_objects())
-		hints.tall_models = elevation::tall_models_in(osm);
-	const bool automatic_height =
-			!args.skip_objects() && args.mode != GenerationMode::Blueprint &&
-			!args.vanilla_height && !args.disable_height_limit && !args.luanti &&
-			is_earth(args.body) && !args.one_world_run;
-	// Rust's TerrainHints::from_osm marks the staged Overture message whenever
-	// automatic height fitting can use Overture structures, even if this caller
-	// has already fetched Overture and supplies it synchronously below.
-	hints.overture_follows = args.overture && automatic_height;
-	if (automatic_height) {
-		if (overture_data && args.overture) {
-			hints.tall_structures =
-					elevation::overture_terrain_hints_in(osm, args.scale, *overture_data)
-							.tall_structures;
-		} else {
-			hints.tall_structures = elevation::tall_structures_in(osm, args.scale);
-		}
+	const bool collect_graded = args.terrain_enabled() && !args.aws_only_elevation;
+	const bool automatic_height = !args.vanilla_height && !args.disable_height_limit &&
+								  !args.luanti && is_earth(args.body) &&
+								  !args.one_world_run;
+	const bool wants_structures = automatic_height && !args.skip_objects() &&
+								  args.mode != GenerationMode::Blueprint;
+	auto hints = elevation::terrain_hints_in(osm, args.scale,
+			args.use_3d && !args.skip_objects(), wants_structures,
+			args.overture && wants_structures, collect_graded,
+			collect_graded && !args.skip_objects());
+	if (args.use_3d && !args.skip_objects()) {
+		auto landmark_models = elevation::landmark_tall_models_in(osm, bbox);
+		hints.tall_models.insert(
+				hints.tall_models.end(), landmark_models.begin(), landmark_models.end());
 	}
+	// Rust only lets generated structures affect height fitting when the run
+	// actually places them; preserve that gate for synchronously fetched Overture.
+	if (wants_structures && overture_data && args.overture)
+		hints.tall_structures =
+				elevation::overture_terrain_hints_in(osm, args.scale, *overture_data)
+						.tall_structures;
 	return hints;
 }
 
-std::optional<std::string> height_overflow_without_terrain(const Args &args,
+struct FlatHeightOverflow
+{
+	std::string reason;
+	elevation::ProcessedElevationData::RaisedFor raised_for;
+};
+
+std::optional<FlatHeightOverflow> height_overflow_without_terrain(const Args &args,
 		const geographic::LLBBox &bbox, const elevation::TerrainHints &hints,
 		const std::function<std::vector<elevation::TallModel>()> &late_overture)
 {
+	const auto overflow =
+			[&](std::string reason, double tallest_m,
+					bool overture_pending) -> std::optional<FlatHeightOverflow> {
+		return FlatHeightOverflow{std::move(reason),
+				{args.ground_level, static_cast<int>(std::ceil(tallest_m * args.scale)),
+						overture_pending}};
+	};
 	if (args.ground_level < world_editor::DEFAULT_MIN_Y + 2 ||
 			args.ground_level >
 					world_editor::DEFAULT_MAX_Y - elevation::TERRAIN_HEIGHT_BUFFER)
-		return "ground level " + std::to_string(args.ground_level) +
-			   " is outside the vanilla range";
+		return overflow("ground level " + std::to_string(args.ground_level) +
+								" is outside the vanilla range",
+				0.0, hints.overture_follows);
 
 	constexpr int vanilla_top = world_editor::DEFAULT_MAX_Y - 2;
 	double top = std::numeric_limits<double>::lowest();
+	double tallest_m = 0.0;
 	const auto collect = [&](const std::vector<elevation::TallModel> &models) {
-		for (const auto &model : models)
+		for (const auto &model : models) {
+			tallest_m = std::max(tallest_m, model.height_m);
 			if (model.lat >= bbox.min().lat() && model.lat <= bbox.max().lat() &&
 					model.lon >= bbox.min().lng() && model.lon <= bbox.max().lng())
 				top = std::max(top, args.ground_level + model.height_m * args.scale);
+		}
 	};
 	collect(hints.tall_models);
 	collect(hints.tall_structures);
 	// Match Rust's vanilla_misses: Overture is a lazy second source, consulted
 	// only when OSM peaks and structures still fit. Flat terrain has no elevation
 	// pipeline to do this check later, so resolve the pending source here.
-	if (top <= vanilla_top && hints.overture_follows && late_overture)
+	bool overture_checked = false;
+	if (top <= vanilla_top && hints.overture_follows && late_overture) {
 		collect(late_overture());
+		overture_checked = true;
+	}
 	if (top > vanilla_top) {
 		std::ostringstream message;
 		message << "a building or landmark reaches Y " << std::ceil(top)
 				<< ", vanilla Minecraft has room up to Y " << vanilla_top;
-		return message.str();
+		return overflow(
+				message.str(), tallest_m, hints.overture_follows && !overture_checked);
 	}
 	return std::nullopt;
+}
+
+void resolve_flat_overture(FlatHeightOverflow &overflow,
+		const std::function<std::vector<elevation::TallModel>()> &late_overture,
+		double scale)
+{
+	if (!overflow.raised_for.overture_pending || !late_overture)
+		return;
+	double tallest_m = 0.0;
+	for (const auto &model : late_overture())
+		tallest_m = std::max(tallest_m, model.height_m);
+	overflow.raised_for.tallest_blocks = std::max(overflow.raised_for.tallest_blocks,
+			static_cast<int>(std::ceil(tallest_m * scale)));
+	overflow.raised_for.overture_pending = false;
 }
 } // namespace
 
 int extended_min_y_for(const Args &args)
 {
-	if (args.disable_height_limit && !args.bedrock && !args.luanti)
-		return -2032;
+	if (args.disable_height_limit && !args.bedrock && !args.luanti) {
+		if (const auto range = existing_java_tall_range(args))
+			return range->first;
+		return world_utils::TALL_DATAPACK_FULL_RANGE.first;
+	}
 	return world_editor::DEFAULT_MIN_Y;
 }
 
@@ -147,7 +197,9 @@ int extended_max_y_for(const Args &args)
 		return 512;
 	if (args.luanti)
 		return world_editor::DEFAULT_MAX_Y;
-	return 2031;
+	if (const auto range = existing_java_tall_range(args))
+		return range->second;
+	return world_utils::TALL_DATAPACK_FULL_RANGE.second;
 }
 
 int world_top_y_for(const Args &args)
@@ -156,7 +208,7 @@ int world_top_y_for(const Args &args)
 		return world_editor::DEFAULT_MAX_Y;
 	if (args.bedrock)
 		return 511;
-	return 2031;
+	return extended_max_y_for(args);
 }
 
 int min_ground_level_for(const Args &args)
@@ -171,10 +223,28 @@ bool auto_height_for(const Args &args)
 		   is_earth(args.body) && !args.one_world_run;
 }
 
-void extend_world_bounds_for(const Args &args)
+int floor_div_16(int value)
 {
-	const int minimum = args.bedrock ? world_editor::DEFAULT_MIN_Y : -2032;
-	const int maximum = args.bedrock ? 511 : extended_max_y_for(args);
+	return value >= 0 ? value / 16 : (value - 15) / 16;
+}
+
+void extend_world_bounds_for(const Args &args,
+		const std::optional<elevation::ProcessedElevationData::RaisedFor> &raised_for =
+				std::nullopt,
+		int base = 0)
+{
+	int minimum = args.bedrock ? world_editor::DEFAULT_MIN_Y : -2032;
+	int maximum = args.bedrock ? 511 : extended_max_y_for(args);
+	if (raised_for && !args.bedrock) {
+		constexpr int full_min = -2032;
+		constexpr int full_max = 2031;
+		const int floor = floor_div_16(base - world_editor::TERRAIN_FLOOR_DEPTH) * 16;
+		minimum = std::clamp(floor, full_min, world_editor::DEFAULT_MIN_Y);
+		const int top = std::max(raised_for->terrain_top_y + 208,
+				raised_for->terrain_top_y + raised_for->tallest_blocks + 32);
+		maximum = std::clamp(
+				floor_div_16(top + 16) * 16 - 1, world_editor::DEFAULT_MAX_Y, full_max);
+	}
 	world_editor::set_world_bounds(minimum, maximum);
 }
 
@@ -189,7 +259,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox &bbox,
 		const osm_parser::RawOsmDocument &osm, const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = terrain_hints_for(args, osm);
+	auto terrain_hints = terrain_hints_for(args, bbox, osm);
 	return generate_ground_data(args, bbox, cache_base, std::move(terrain_hints));
 }
 
@@ -198,7 +268,7 @@ Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox 
 		const overture::OvertureData &overture_data,
 		const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = terrain_hints_for(args, osm, &overture_data);
+	auto terrain_hints = terrain_hints_for(args, bbox, osm, &overture_data);
 	return generate_ground_data(args, bbox, cache_base, std::move(terrain_hints));
 }
 
@@ -325,7 +395,7 @@ GroundFetchPlan GroundFrame::fetch_plan(
 {
 	if (!world_dims) {
 		const auto dims = elevation::compute_grid_dims(bbox, scale);
-		return {bbox, dims, 0, {std::get<0>(dims), std::get<1>(dims)}};
+		return {bbox, dims, 0, {std::get<0>(dims), std::get<1>(dims)}, std::nullopt};
 	}
 	const auto &[world_width, world_height] = *world_dims;
 	if (pad_blocks <= (std::numeric_limits<std::size_t>::max() - world_width) / 2 &&
@@ -352,7 +422,10 @@ GroundFetchPlan GroundFrame::fetch_plan(
 				const geographic::LLBBox centers(mercator->lat_for_z(z1),
 						mercator->lon_for_x(x0), mercator->lat_for_z(z0),
 						mercator->lon_for_x(x1));
-				return {centers, padded_dims, pad_blocks, {world_width, world_height}};
+				return {centers, padded_dims, pad_blocks, {world_width, world_height},
+						std::pair<std::int64_t, std::int64_t>{
+								static_cast<std::int64_t>(std::llround(x0 - 0.5)),
+								static_cast<std::int64_t>(std::llround(z0 - 0.5))}};
 			} catch (const std::invalid_argument &) {
 				// Fall through to Rust's unpadded fetch plan below.
 			}
@@ -364,7 +437,7 @@ GroundFetchPlan GroundFrame::fetch_plan(
 				   "edges may not match the neighbouring areas exactly.\n";
 	}
 	const auto dims = elevation::compute_grid_dims_for_world(world_width, world_height);
-	return {bbox, dims, 0, {world_width, world_height}};
+	return {bbox, dims, 0, {world_width, world_height}, std::nullopt};
 }
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
@@ -469,40 +542,25 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						std::min(std::max(taller_min_y + 2, taller_carve_floor),
 								taller_water_floor);
 				taller_band = elevation::HeightBand{
-						taller_water_floor, taller_sink_floor, max_y, true};
+						taller_water_floor, taller_sink_floor, max_y, true, taller_min_y};
 			}
 			elevation::ProcessedElevationData processed;
-			if (earth) {
-				elevation::Selector selector(elevation_root,
-						args.aws_only_elevation
-								? elevation::providers::SourceMode::AwsOnly
-								: elevation::providers::SourceMode::Auto);
-				processed = elevation::fetch_elevation_data(selector, fetch_bbox,
-						world_width, world_height, grid_width, grid_height, args.scale,
-						args.height_multiplier, water_floor, sink_floor,
-						args.disable_height_limit, max_y, true, cover ? &*cover : nullptr,
-						frame.affine, {}, std::move(terrain_hints), automatic_height,
-						taller_band, force_extended_height,
-						frame.pad_blocks > 0 ? std::optional<std::size_t>(pad)
-											 : std::nullopt,
-						late_overture);
-			} else {
-				auto raw = elevation::fetch_planetary_elevation(args.body, fetch_bbox,
-						grid_width, grid_height, elevation::http_planetary_range_reader(),
-						elevation_root);
-				if (!raw)
-					throw std::runtime_error(
-							"planetary elevation provider returned no data");
-				raw->world_width = world_width;
-				raw->world_height = world_height;
-				processed = elevation::process_elevation_data(fetch_bbox, std::move(*raw),
-						args.scale, args.height_multiplier, water_floor, sink_floor,
-						args.disable_height_limit, max_y, false, nullptr, frame.affine,
-						{}, std::move(terrain_hints), false, std::nullopt, false,
-						frame.pad_blocks > 0 ? std::optional<std::size_t>(pad)
-											 : std::nullopt,
-						late_overture);
-			}
+			auto source_mode = elevation::providers::SourceMode::Auto;
+			if (!earth)
+				source_mode = elevation::providers::SourceMode::Planetary;
+			else if (args.aws_only_elevation)
+				source_mode = elevation::providers::SourceMode::AwsOnly;
+			elevation::Selector selector(elevation_root, source_mode,
+					!earth ? std::optional<CelestialBody>(args.body) : std::nullopt);
+			processed = elevation::fetch_elevation_data(selector, fetch_bbox, world_width,
+					world_height, grid_width, grid_height, args.scale,
+					args.height_multiplier, water_floor, sink_floor,
+					args.disable_height_limit, max_y, earth,
+					earth && cover ? &*cover : nullptr, frame.affine, {},
+					std::move(terrain_hints), automatic_height, taller_band,
+					force_extended_height,
+					frame.pad_blocks > 0 ? std::optional<std::size_t>(pad) : std::nullopt,
+					late_overture, plan.origin);
 			if (frame.mercator) {
 				const auto source = [&](std::size_t z) {
 					return grid_ops::mercator_source_row(fetch_bbox.max().lat(),
@@ -515,6 +573,16 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 				if (cover)
 					cover->remap_rows_to_mercator(
 							fetch_bbox.max().lat(), fetch_bbox.min().lat());
+			}
+			if (processed.raised_for && processed.raised_for->overture_pending &&
+					late_overture) {
+				double overture_tallest_m = 0.0;
+				for (const auto &model : late_overture())
+					overture_tallest_m = std::max(overture_tallest_m, model.height_m);
+				processed.raised_for->tallest_blocks = std::max(
+						processed.raised_for->tallest_blocks,
+						static_cast<int>(std::ceil(overture_tallest_m * args.scale)));
+				processed.raised_for->overture_pending = false;
 			}
 			if (pad) {
 				processed.halo = std::make_shared<const elevation::ElevationHalo>(
@@ -533,7 +601,8 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 			elevation_lowest_y = processed.lowest_y();
 			if (processed.extended_ceiling) {
 				ground.set_extended_ceiling(true);
-				extend_world_bounds_for(args);
+				extend_world_bounds_for(
+						args, processed.raised_for, processed.ground_level);
 			}
 			ground.set_elevation_data(processed, frame.anchor_lat(bbox));
 			elevation_ready = true;
@@ -554,9 +623,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 						args, bbox, overture_hints, no_late_overture);
 			}
 			if (auto_height_for(args) && flat_overflow) {
-				std::clog << "Extended build height: " << *flat_overflow << '\n';
+				resolve_flat_overture(*flat_overflow, late_overture, args.scale);
+				std::clog << "Extended build height: " << flat_overflow->reason << '\n';
 				ground.set_extended_ceiling(true);
-				extend_world_bounds_for(args);
+				extend_world_bounds_for(
+						args, flat_overflow->raised_for, args.ground_level);
 			}
 		}
 	} else {
@@ -569,9 +640,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	}
 	if (!args.terrain_enabled() && auto_height_for(args)) {
 		if (no_terrain_overflow) {
-			std::clog << "Extended build height: " << *no_terrain_overflow << '\n';
+			auto flat_overflow = *no_terrain_overflow;
+			resolve_flat_overture(flat_overflow, late_overture, args.scale);
+			std::clog << "Extended build height: " << flat_overflow.reason << '\n';
 			ground.set_extended_ceiling(true);
-			extend_world_bounds_for(args);
+			extend_world_bounds_for(args, flat_overflow.raised_for, args.ground_level);
 		}
 	}
 
@@ -625,7 +698,7 @@ Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox 
 		const GroundFrame &frame, const osm_parser::RawOsmDocument &osm,
 		const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = terrain_hints_for(args, osm);
+	auto terrain_hints = terrain_hints_for(args, bbox, osm);
 	return generate_ground_data(args, bbox, frame, cache_base, std::move(terrain_hints));
 }
 
@@ -634,7 +707,7 @@ Ground generate_ground_data_from_osm(const Args &args, const geographic::LLBBox 
 		const overture::OvertureData &overture_data,
 		const std::filesystem::path &cache_base)
 {
-	auto terrain_hints = terrain_hints_for(args, osm, &overture_data);
+	auto terrain_hints = terrain_hints_for(args, bbox, osm, &overture_data);
 	return generate_ground_data(args, bbox, frame, cache_base, std::move(terrain_hints));
 }
 
@@ -1157,8 +1230,14 @@ void Ground::set_world_dims(std::size_t world_width, std::size_t world_height)
 void Ground::apply_osm_water_override(
 		const std::vector<ProcessedElement> &elements, const XZBBox &bbox)
 {
-	if (!land_cover || elevation_grid.empty())
+	if (!land_cover)
 		return;
+	if (elevation_grid.empty()) {
+		const auto [world_width, world_height] = world_dims();
+		land_cover::mark_inland_water(
+				*land_cover, world_width, world_height, elements, bbox);
+		return;
+	}
 	land_cover::apply_osm_water_override(*land_cover, elevation_grid,
 			elevation_world_width, elevation_world_height, elements, bbox);
 }
@@ -1224,13 +1303,15 @@ void Ground::set_land_cover_data(
 	}
 }
 void Ground::set_land_cover_data(const std::vector<std::vector<std::uint8_t>> &grid,
-		const std::vector<std::vector<std::uint8_t>> &water_distance, std::size_t width,
+		const std::vector<std::vector<std::uint8_t>> &water_distance,
+		const std::vector<std::uint64_t> &inland_water_bits, std::size_t width,
 		std::size_t height)
 {
 	if (!land_cover)
 		return;
 	land_cover->grid = grid;
 	land_cover->water_distance = water_distance;
+	land_cover->inland_water_bits = inland_water_bits;
 	land_cover->width = width;
 	land_cover->height = height;
 	land_cover->invalidate_water_blend_grid();
@@ -1335,6 +1416,20 @@ bool Ground::is_interior_water(const XZPoint &coord) const
 		return false;
 	const auto distance = water_distance(coord);
 	return distance == 0 || distance >= 4;
+}
+bool Ground::inland_water_mapped(const XZPoint &coord) const
+{
+	if (!land_cover)
+		return false;
+	const auto [x, z] = land_cover_index(coord);
+	return land_cover->inland_water_at(x, z);
+}
+std::optional<int> Ground::sea_surface_max_y() const
+{
+	const auto affine = elevation_affine();
+	if (!affine)
+		return std::nullopt;
+	return static_cast<int>(std::floor(affine->y_for_metres(5.0)));
 }
 bool Ground::water_blend_is_water(const XZPoint &coord) const
 {

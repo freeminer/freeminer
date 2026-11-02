@@ -46,14 +46,15 @@ int connectionOutput(void *address, void *data, size_t size, uint8_t, uint8_t)
 	return transport ? transport->send(websocket, data, size) : EINVAL;
 }
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-		con::PeerHandler *peerhandler) :
+		con::PeerHandler *peerhandler, bool local) :
 		con_sctp::Connection(max_packet_size, timeout, ipv6, peerhandler, false)
 {
 	(void)protocol_id;
 	m_ipv6 = ipv6;
+	m_local = local;
 	domain = AF_CONN;
 	sctp_conn_output = connectionOutput;
-	m_transport = std::make_shared<ws_transport::Transport>();
+	m_transport = std::make_shared<ws_transport::Transport>(m_local);
 	start();
 }
 Connection::~Connection()
@@ -67,10 +68,10 @@ void Connection::processCommand(con::ConnectionCommandPtr command)
 	switch (command->type) {
 	case con::CONNCMD_CONNECT:
 		stopWebSockets();
-		m_transport = std::make_shared<ws_transport::Transport>();
+		m_transport = std::make_shared<ws_transport::Transport>(m_local);
 		m_connecting = true;
 		m_destination = command->address;
-		if (!m_transport->connect(m_destination)) {
+		if (!m_transport->connect(m_destination, command->address_name)) {
 			m_connecting = false;
 			putEvent(con::ConnectionEvent::connectFailed());
 		}

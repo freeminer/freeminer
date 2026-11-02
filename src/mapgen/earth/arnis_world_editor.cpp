@@ -8,6 +8,9 @@
 #include "arnis-cpp/src/world_editor/floor_state.h"
 #include "arnis-cpp/src/climate.h"
 #include "arnis-cpp/src/element_processing/signage.h"
+#include "arnis-cpp/src/element_processing/stations.h"
+#include "arnis-cpp/src/water_depth.h"
+#include "arnis-cpp/src/world_editor/common.h"
 
 #include <algorithm>
 #include <array>
@@ -31,7 +34,33 @@ bool WorldEditor::under_mapped_crown(int x, int z) const
 
 bool WorldEditor::in_clear_corridor(int x, int z) const
 {
-	return clear_corridors && clear_corridors->contains(x, z);
+	return (clear_corridors && clear_corridors->contains(x, z)) ||
+		   (station_tree_clearance && station_tree_clearance->contains(x, z));
+}
+
+std::optional<int> WorldEditor::station_track_bed(std::uint64_t way, int x, int z) const
+{
+	return station_track_beds ? station_track_beds->get(way, x, z) : std::nullopt;
+}
+
+bool WorldEditor::station_on_platform(int x, int z) const
+{
+	return station_tunnel_pins && station_tunnel_pins->is_platform(x, z);
+}
+
+std::optional<std::pair<int, bool>> WorldEditor::station_tunnel_pin(
+		std::uint64_t way, int x, int z) const
+{
+	if (!station_tunnel_pins)
+		return std::nullopt;
+	const auto pin = station_tunnel_pins->get(way, x, z);
+	return pin ? std::optional<std::pair<int, bool>>{{pin->floor, pin->in_hall}}
+			   : std::nullopt;
+}
+
+std::optional<int> WorldEditor::station_tunnel_joint_floor(int x, int z) const
+{
+	return station_tunnel_pins ? station_tunnel_pins->joint_floor(x, z) : std::nullopt;
 }
 
 uint8_t WorldEditor::cover_class(int x, int z) const
@@ -242,10 +271,15 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.rail_heights_mutex = rail_heights_mutex;
 	worker.sealed_surface = sealed_surface;
 	worker.clear_corridors = clear_corridors;
+	worker.station_tree_clearance = station_tree_clearance;
+	worker.station_track_beds = station_track_beds;
+	worker.station_surface_levels = station_surface_levels;
+	worker.station_tunnel_pins = station_tunnel_pins;
 	worker.fuel_index = fuel_index;
 	worker.mg = mg;
 	worker.projection_frame = projection_frame;
 	worker.ground = ground;
+	worker.water_field = water_field;
 	worker.generation_format = generation_format;
 	worker.bake_lighting = bake_lighting;
 	worker.start_with_map = start_with_map;
@@ -263,6 +297,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.mapped_trunks = mapped_trunks;
 	worker.mapped_cranes = mapped_cranes;
 	worker.gamemode = gamemode;
+	worker.mob_spawning = mob_spawning;
 	worker.world_time = world_time;
 	worker.level_name = level_name;
 	worker.projection_name = projection_name;
@@ -1090,6 +1125,25 @@ std::optional<int> WorldEditor::terrain_level(int x, int z) const
 	return ground->level(ground->mg && !ground->elevation_enabled ? XZPoint{x, z}
 																  : ground_point(x, z));
 }
+
+std::optional<int> WorldEditor::carved_bed(int x, int z) const
+{
+	if (!water_field)
+		return std::nullopt;
+	return water_depth::lc_carved_bed(*this, *water_field, x, z);
+}
+
+std::optional<int> WorldEditor::lowest_carved_bed(int x, int z, int radius) const
+{
+	if (!water_field || !water_field->reaches(x, z, radius))
+		return std::nullopt;
+	std::optional<int> lowest;
+	for (int dz = -radius; dz <= radius; ++dz)
+		for (int dx = -radius; dx <= radius; ++dx)
+			if (const auto bed = carved_bed(x + dx, z + dz))
+				lowest = lowest ? std::min(*lowest, *bed) : *bed;
+	return lowest;
+}
 std::optional<double> WorldEditor::terrain_level_exact(int x, int z) const
 {
 	if (!ground)
@@ -1141,6 +1195,7 @@ void WorldEditor::release_road_surface_overrides()
 {
 	RoadSurfaceOverrides{}.swap(road_surface_overrides);
 	RoadSurfaceOverrides{}.swap(active_road_surface_overrides);
+	station_surface_levels.reset();
 }
 
 bool WorldEditor::water_source_is_enclosed(int x, int z) const

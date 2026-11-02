@@ -261,7 +261,8 @@ struct Ground
 			std::size_t world_height);
 	void set_land_cover_data(const std::vector<std::vector<std::uint8_t>> &grid,
 			const std::vector<std::vector<std::uint8_t>> &water_distance,
-			std::size_t width, std::size_t height);
+			const std::vector<std::uint64_t> &inland_water_bits, std::size_t width,
+			std::size_t height);
 
 	std::pair<std::size_t, std::size_t> land_cover_index(const XZPoint &coord) const;
 
@@ -271,6 +272,8 @@ struct Ground
 
 	uint8_t water_distance(const XZPoint &coord) const;
 	bool is_interior_water(const XZPoint &coord) const;
+	bool inland_water_mapped(const XZPoint &coord) const;
+	std::optional<int> sea_surface_max_y() const;
 
 	bool water_blend_is_water(const XZPoint &coord) const;
 	void warm_water_blend();
@@ -290,6 +293,9 @@ struct GroundFetchPlan
 	std::tuple<std::size_t, std::size_t, std::size_t, std::size_t> dims;
 	std::size_t pad_blocks = 0;
 	std::pair<std::size_t, std::size_t> final_dims;
+	// World block of the padded grid's first sample, present only when the grid
+	// is an exact one-cell-per-block One World fetch.
+	std::optional<std::pair<std::int64_t, std::int64_t>> origin;
 };
 
 // The Rust GroundFrame contract, split from the Freeminer host so library

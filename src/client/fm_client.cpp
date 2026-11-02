@@ -393,7 +393,7 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 		updateMeshTimestampWithEdge(bpos);
 
 	mesh_thread_pool.enqueue([this, block, bpos, step]() {
-		if (m_localdb && !is_simple_singleplayer_game) {
+		if (m_localdb && !m_simple_singleplayer_mode) {
 			if (const auto db = GetFarDatabase({}, far_dbases, m_world_path, step); db) {
 				ServerMap::saveBlock(block.get(), db);
 

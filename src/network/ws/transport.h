@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace ws_transport
@@ -14,6 +15,26 @@ inline std::string makeUri(const Address &address, bool secure)
 {
 	std::string host = address.serializeString();
 	if (address.isIPv6()) {
+		size_t offset = 0;
+		while ((offset = host.find('%', offset)) != std::string::npos) {
+			host.replace(offset, 1, "%25");
+			offset += 3;
+		}
+		host = "[" + host + "]";
+	}
+	return std::string(secure ? "wss://" : "ws://") + host + ":" +
+		   std::to_string(address.getPort());
+}
+inline std::string makeUri(
+		const Address &address, bool secure, std::string_view host_name)
+{
+	if (host_name.empty())
+		return makeUri(address, secure);
+	std::string host(host_name);
+	if (host.size() > 1 && host.front() == '[' && host.back() == ']')
+		host = host.substr(1, host.size() - 2);
+	const bool ipv6 = host.find(':') != std::string::npos;
+	if (ipv6) {
 		size_t offset = 0;
 		while ((offset = host.find('%', offset)) != std::string::npos) {
 			host.replace(offset, 1, "%25");
@@ -45,9 +66,9 @@ public:
 		Address address;
 		std::string data;
 	};
-	Transport();
+	explicit Transport(bool local = false);
 	~Transport();
-	bool connect(const Address &address);
+	bool connect(const Address &address, std::string_view host_name = {});
 	bool listen(const Address &address);
 	int send(Id id, const void *data, size_t size);
 	void close(Id id);
