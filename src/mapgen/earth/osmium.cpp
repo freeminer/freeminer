@@ -45,6 +45,9 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+// fm: Keep C++ preprocessing aligned with the Rust highway pavement filter.
+#include "arnis-cpp/src/element_processing/highways.h"
+// ===
 // Native track geometry is planned before chunk-local feature clipping.
 #include "arnis-cpp/src/element_processing/advtrains.h"
 #include "arnis-cpp/src/fm_native_trains.h"
@@ -1451,8 +1454,13 @@ public:
 								<< "Earth: Overture skipped; cached OSM extract has no geographic bounds\n";
 					}
 				}
-				const auto dropped = arnis::drop_buildings_on_aircraft_pavement(
-						cached.elements, args.scale);
+				// fm: Runway suppression belongs to the shared highway preprocessing pass.
+				std::vector<arnis::ProcessedElement> aircraft_filtered;
+				const auto dropped = arnis::highways::drop_buildings_on_aircraft_pavement(
+						cached.elements, aircraft_filtered, args.scale);
+				if (dropped > 0)
+					cached.elements = std::move(aircraft_filtered);
+				// ===
 				if (dropped > 0)
 					actionstream << "Earth: skipped " << dropped
 								 << " building(s) on aircraft pavement\n";
