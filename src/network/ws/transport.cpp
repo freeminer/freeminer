@@ -247,8 +247,7 @@ bool Transport::connect(const Address &address, std::string_view host_name)
 #ifdef __EMSCRIPTEN__
 	if (!emscripten_websocket_is_supported() || state.socket)
 		return false;
-	const bool secure =
-			MAIN_THREAD_EM_ASM_INT({ return location.protocol == = 'https:'; });
+	const bool secure = MAIN_THREAD_EM_ASM_INT({ return location.protocol == 'https:'; });
 	const auto uri = connectionUri(address, secure, host_name);
 	EmscriptenWebSocketCreateAttributes attributes = {};
 	attributes.url = uri.c_str();

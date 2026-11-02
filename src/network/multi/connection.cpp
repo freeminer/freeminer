@@ -21,6 +21,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "network/multi/connection.h"
 #include "connection.h"
+#include "network/multi/connection_ports.h"
 #include "network/networkexceptions.h"
 #include "network/networkpacket.h"
 #include "settings.h"
@@ -157,7 +158,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
-			port = addr.getPort() + 100;
+			port = addr.getPort() + con::sctp_port_diff;
 		}
 		addr.setPort(port);
 		connection->Serve(addr);
@@ -166,7 +167,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_enet", port)) {
-			port = addr.getPort() + 200;
+			port = addr.getPort() + con::enet_port_diff;
 		}
 		addr.setPort(port);
 		connection->Serve(addr);
@@ -175,7 +176,7 @@ void ConnectionMulti::Serve(Address bind_address)
 		auto addr = bind_address;
 		u16 port = 0;
 		if (!g_settings->getU16NoEx("port_wss", port)) {
-			port = addr.getPort();
+			port = addr.getPort() + con::wss_port_diff;
 		}
 		addr.setPort(port); // same tcp
 		connection->Serve(addr);
@@ -183,8 +184,8 @@ void ConnectionMulti::Serve(Address bind_address)
 	if (auto connection = ensureConnection(proto_name::websocket_stcp)) {
 		auto addr = bind_address;
 		u16 port = 0;
-		if (!g_settings->getU16NoEx("port_sctp_wss", port)) {
-			port = addr.getPort() + 100;
+		if (!g_settings->getU16NoEx("port_wss_sctp", port)) {
+			port = addr.getPort() + con::wss_sctp_port_diff;
 		}
 		addr.setPort(port); // same tcp
 		connection->Serve(addr);
