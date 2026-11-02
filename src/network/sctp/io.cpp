@@ -366,7 +366,10 @@ std::pair<int, bool> Connection::recv_(session_t peer_id, struct socket *sock)
 				required = sizeof(sctp_send_failed_event);
 				break;
 			case SCTP_PEER_ADDR_CHANGE:
-				required = sizeof(sctp_paddr_change);
+				// The public structure includes optional trailing padding that
+				// the stack does not include in its notification on every ABI.
+				required = offsetof(sctp_paddr_change, spc_assoc_id) +
+						   sizeof(notification.sn_paddr_change.spc_assoc_id);
 				break;
 			default:
 				break;

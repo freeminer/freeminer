@@ -38,6 +38,13 @@ IConnection *createMTP(float timeout, bool ipv6, PeerHandler *handler, bool simp
 												   1350;
 #endif
 
+#if defined(__EMSCRIPTEN__) && USE_WEBSOCKET_SCTP
+	// Connect the embedded server and client through an in-process SCTP carrier.
+	if (simple_singleplayer_mode)
+		return new con_ws_sctp::Connection(
+				0, MAX_PACKET_SIZE, timeout, ipv6, handler, true);
+#endif
+
 #if USE_MULTI
 	return new con::ConnectionMulti(MAX_PACKET_SIZE, timeout, ipv6, handler);
 #elif USE_WEBSOCKET_SCTP
