@@ -12,6 +12,7 @@ function fm_customize_mainmenu(tabview)
         table = true,
         textlist = true,
         textarea = true,
+        hypertext = true,
         box = true,
         scroll_container = true,
     }
@@ -31,7 +32,7 @@ function fm_customize_mainmenu(tabview)
 
     local function stretch_content(formspec, scale)
         return (formspec:gsub("([%a_]+)%[([^%]]*)%]", function(element, body)
-            local x, y, rest = body:match("^([%-%d%.]+),([%-%d%.]+)(;.*)$")
+            local x, y, rest = body:match("^([%-%d%.]+),([%-%d%.]+)(.*)$")
             if not x then
                 return element .. "[" .. body .. "]"
             end
@@ -125,7 +126,12 @@ function fm_customize_mainmenu(tabview)
         local tab = self.tablist[self.last_tab_index]
         local get_content = tab.get_formspec
         tab.get_formspec = function(...)
-            local content, prepend = get_content(...)
+            self.height = base_height
+            local ok, content, prepend = pcall(get_content, ...)
+            self.height = MAIN_TAB_H
+            if not ok then
+                error(content)
+            end
             return stretch_content(content, MAIN_TAB_H / base_height), prepend
         end
         local ok, formspec = pcall(original_get_formspec, self)
