@@ -85,9 +85,15 @@ function singleplayer_refresh_gamebar()
 		+ TABHEADER_H -- tabheader included in formspec size
 		+ (TOUCH_GUI and GAMEBAR_OFFSET_TOUCH or GAMEBAR_OFFSET_DESKTOP)
 
+	-- fm: Align the game bar with the content beside the desktop sidebar.
+	local gamebar_x = core.global_exists("fm_mainmenu_sidebar_width") and
+			fm_mainmenu_sidebar_width or 0
+	-- ===
 	local btnbar = buttonbar_create(
 			"game_button_bar",
-			{x = 0, y = gamebar_pos_y},
+			-- fm: Offset the game bar for the Freeminer sidebar.
+			{x = gamebar_x, y = gamebar_pos_y},
+			-- ===
 			{x = MAIN_TAB_W, y = GAMEBAR_H},
 			"#000000",
 			game_buttonbar_button_handler)

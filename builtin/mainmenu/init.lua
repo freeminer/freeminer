@@ -118,6 +118,11 @@ local function init_globals()
 
 	-- Create main tabview
 	local tv_main = tabview_create("maintab", {x = MAIN_TAB_W, y = MAIN_TAB_H}, {x = 0, y = 0})
+	-- fm: Apply the desktop Freeminer menu theme when loaded through fm_init.lua.
+	if core.global_exists("fm_customize_mainmenu") then
+		fm_customize_mainmenu(tv_main)
+	end
+	-- ===
 
 	tv_main:set_autosave_tab(true)
 	tv_main:add(tabs.local_game)
