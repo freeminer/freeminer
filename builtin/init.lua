@@ -73,10 +73,11 @@ elseif INIT == "mainmenu" then
 	end
 	if not custom_loaded then
       if PLATFORM == "Android" then
-    	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
+    	--dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
+		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
 	  else
-		-- FMTODO: dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
-    	dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
+    	--dofile(core.get_mainmenu_path() .. DIR_DELIM .. "init.lua")
+		dofile(core.get_mainmenu_path() .. DIR_DELIM .. "fm_init.lua")
 	  end
 	end
 elseif INIT == "async"  then

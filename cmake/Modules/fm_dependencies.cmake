@@ -67,7 +67,7 @@ if(TARGET OpenSSL::SSL)
     message(STATUS "Using system OpenSSL: ${OPENSSL_VERSION}")
 elseif(FETCH_DEPS)
     message(STATUS "System OpenSSL 3.0 not found; using bundled OpenSSL")
-    if(ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
+    if((ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a") OR EMSCRIPTEN)
         # OpenSSL 4.0's AArch64 Poly1305 assembly has non-PIC SVE2 references.
         list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
     endif()
